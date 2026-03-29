@@ -28,7 +28,7 @@ HeaderBar {
 HeaderBar #headerBrand {
     width: auto;
     min-width: 10;
-    color: #c0392b;
+    color: $primary;
     text-style: bold;
 }
 

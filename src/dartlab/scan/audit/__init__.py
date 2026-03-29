@@ -14,6 +14,25 @@ _OPINION_RISK = {
 }
 
 
+def _numericYears(years: list) -> list[str]:
+    """숫자 연도만 필터링 후 내림차순 정렬 (한국 회계연도 포맷 제외)."""
+    numeric = [str(y) for y in years if str(y).strip().isdigit()]
+    return sorted(numeric, key=lambda y: int(y), reverse=True)
+
+
+def _sortedYears(years: list) -> list[str]:
+    """모든 연도를 정렬: 숫자 연도 우선 (내림차순), 그 다음 한국 회계연도 (문자열 내림차순)."""
+    numeric = []
+    other = []
+    for y in years:
+        s = str(y).strip()
+        if s.isdigit():
+            numeric.append(s)
+        elif s and s != "-":
+            other.append(s)
+    return sorted(numeric, key=lambda y: int(y), reverse=True) + sorted(other, reverse=True)
+
+
 def _scanAuditFees() -> dict[str, dict]:
     """auditContract + nonAuditContract → {종목코드: {감사보수, 비감사보수, 독립성비율}}."""
     audit = scan_parquets(
@@ -28,7 +47,7 @@ def _scanAuditFees() -> dict[str, dict]:
     # 감사보수: 최신 연도 Q4 기준
     auditFees: dict[str, float] = {}
     if not audit.is_empty():
-        years = sorted(audit["year"].unique().to_list(), reverse=True)
+        years = _numericYears(audit["year"].unique().to_list())
         for y in years:
             sub = audit.filter(pl.col("year") == y)
             q4 = sub.filter(pl.col("quarter") == "4분기")
@@ -44,7 +63,7 @@ def _scanAuditFees() -> dict[str, dict]:
     # 비감사보수: 최신 연도
     nonAuditFees: dict[str, float] = {}
     if not nonAudit.is_empty():
-        years = sorted(nonAudit["year"].unique().to_list(), reverse=True)
+        years = _numericYears(nonAudit["year"].unique().to_list())
         for y in years:
             sub = nonAudit.filter(pl.col("year") == y)
             q4 = sub.filter(pl.col("quarter") == "4분기")
@@ -89,14 +108,6 @@ def scanAudit() -> pl.DataFrame:
     if raw.is_empty():
         return pl.DataFrame()
 
-    # Q4(사업보고서) 우선, 없으면 가장 큰 분기
-    years = sorted(raw["year"].unique().to_list(), reverse=True)
-    if not years:
-        return pl.DataFrame()
-
-    # 최신 2개 연도 필요 (감사인 변경 감지용)
-    validYears = years[:2] if len(years) >= 2 else years
-
     # 감사독립성 데이터 수집
     feeMap = _scanAuditFees()
 
@@ -104,8 +115,13 @@ def scanAudit() -> pl.DataFrame:
     for code in raw["stockCode"].unique().to_list():
         sub = raw.filter(pl.col("stockCode") == code)
 
+        # 종목별 연도 정렬 (숫자 우선, 한국 회계연도 포함)
+        codeYears = _sortedYears(sub["year"].unique().to_list())
+        if not codeYears:
+            continue
+
         # 최신 연도 데이터
-        latestSub = sub.filter(pl.col("year") == validYears[0])
+        latestSub = sub.filter(pl.col("year") == codeYears[0])
         if latestSub.is_empty():
             continue
 
@@ -120,8 +136,8 @@ def scanAudit() -> pl.DataFrame:
 
         # 감사인 변경 감지
         auditorChanged = False
-        if len(validYears) >= 2:
-            prevSub = sub.filter(pl.col("year") == validYears[1])
+        if len(codeYears) >= 2:
+            prevSub = sub.filter(pl.col("year") == codeYears[1])
             if not prevSub.is_empty():
                 prevQ4 = prevSub.filter(pl.col("quarter") == "4분기")
                 prevBest = prevQ4 if not prevQ4.is_empty() else prevSub
@@ -174,4 +190,17 @@ def scanAudit() -> pl.DataFrame:
             }
         )
 
-    return pl.DataFrame(rows) if rows else pl.DataFrame()
+    if not rows:
+        return pl.DataFrame()
+    schema = {
+        "stockCode": pl.Utf8,
+        "opinion": pl.Utf8,
+        "auditor": pl.Utf8,
+        "auditorChanged": pl.Boolean,
+        "hasSpecialMatter": pl.Boolean,
+        "auditFee": pl.Float64,
+        "nonAuditFee": pl.Float64,
+        "independenceRatio": pl.Float64,
+        "riskLevel": pl.Utf8,
+    }
+    return pl.DataFrame(rows, schema=schema)

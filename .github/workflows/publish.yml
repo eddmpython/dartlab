@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   id-token: write
+  attestations: write
 
 jobs:
   test:
@@ -64,11 +65,21 @@ jobs:
       - name: Build sdist and wheel
         run: python -m build
 
+      - name: Generate SBOM
+        run: |
+          pip install cyclonedx-bom
+          cyclonedx-py environment --output-format json -o dist/dartlab-sbom.json
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*.whl
 
   publish:
     name: Publish to PyPI
@@ -109,4 +120,7 @@ jobs:
         with:
           body: ${{ steps.changelog.outputs.body }}
           generate_release_notes: ${{ steps.changelog.outputs.body == '' }}
-          files: dist/*
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/dartlab-sbom.json

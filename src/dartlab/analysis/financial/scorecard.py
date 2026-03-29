@@ -10,6 +10,42 @@ _GRADE_MAP = {
 }
 
 
+def _sectorRelativeScore(company, value: float, metric: str) -> int:
+    """섹터 분포 기준 상대 점수 (0~4).
+
+    Q3 초과 → 4(A), 중앙값~Q3 → 3(B), Q1~중앙값 → 2(C),
+    Q1 미만이면서 양수 → 1(D), 음수 → 0(F).
+    벤치마크가 없으면 절대 기준 fallback.
+    """
+    try:
+        from dartlab.analysis.financial.insight.benchmark import getBenchmark
+
+        sector = company.sector
+        if sector is not None:
+            bm = getBenchmark(sector.sector)
+            median = getattr(bm, f"{metric}Median", None)
+            q1 = getattr(bm, f"{metric}Q1", None)
+            q3 = getattr(bm, f"{metric}Q3", None)
+            if median is not None and q1 is not None and q3 is not None:
+                if value >= q3:
+                    return 4
+                if value >= median:
+                    return 3
+                if value >= q1:
+                    return 2
+                if value > 0:
+                    return 1
+                return 0
+    except (ValueError, KeyError, AttributeError):
+        pass
+    # fallback: 절대 기준
+    if value > 0.15 if metric == "tat" else value > 10:
+        return 3
+    if value > 0:
+        return 1
+    return 0
+
+
 def calcScorecard(company) -> dict | None:
     """8영역 등급 요약.
 
@@ -54,7 +90,11 @@ def calcScorecard(company) -> dict | None:
 
 
 def _calcEfficiencyGrade(company) -> str | None:
-    """총자산회전율 추세로 효율성 등급 산출."""
+    """총자산회전율 추세로 효율성 등급 산출 — 섹터 상대 등급.
+
+    업종별 TAT 분포(중앙값/사분위)를 기준으로 상대 위치 판정.
+    추세 개선 시 +1 보너스.
+    """
     try:
         result = company.finance.ratioSeries
         if result is None:
@@ -71,15 +111,14 @@ def _calcEfficiencyGrade(company) -> str | None:
     latest = recent[-1]
     improving = len(recent) >= 2 and recent[-1] >= recent[-2]
 
-    if latest >= 1.0 and improving:
-        return "A"
-    if latest >= 0.7:
-        return "B"
-    if latest >= 0.4:
-        return "C"
-    if latest >= 0.2:
-        return "D"
-    return "F"
+    # 섹터 상대 등급 (0~4)
+    score = _sectorRelativeScore(company, latest, "tat")
+
+    # 추세 개선 보너스 (+1)
+    if improving:
+        score = min(4, score + 1)
+
+    return ["F", "D", "C", "B", "A"][score]
 
 
 def _calcEarningsQualityGrade(company) -> str | None:
@@ -147,7 +186,7 @@ def _calcEarningsQualityGrade(company) -> str | None:
 
 
 def _calcInvestmentGrade(company) -> str | None:
-    """투자효율 등급 -- ROIC 절대값 기반."""
+    """투자효율 등급 -- ROIC 섹터 상대 등급."""
     try:
         from dartlab.analysis.financial.investmentAnalysis import calcRoicTimeline
 
@@ -160,15 +199,10 @@ def _calcInvestmentGrade(company) -> str | None:
         if roic is None:
             return None
 
-        if roic > 15:
-            return "A"
-        if roic > 10:
-            return "B"
-        if roic > 5:
-            return "C"
-        if roic > 0:
-            return "D"
-        return "F"
+        # 섹터 상대 등급 (0~4)
+        score = _sectorRelativeScore(company, roic, "roic")
+
+        return ["F", "D", "C", "B", "A"][score]
     except (ImportError, AttributeError, TypeError, ValueError, KeyError):
         return None
 

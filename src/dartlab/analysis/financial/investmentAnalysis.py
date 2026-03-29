@@ -238,6 +238,69 @@ def calcEvaTimeline(company) -> dict | None:
     return {"history": history} if history else None
 
 
+# ── 타법인 출자 현황 (docs) ──
+
+
+def calcInvestmentInOther(company) -> dict | None:
+    """investmentInOtherDetail docs 토픽에서 타법인 출자 총액 추출.
+
+    반환::
+
+        {
+            "totalBookValue": float | None,
+            "description": str | None,
+            "period": str | None,
+        }
+    """
+    import re
+
+    from dartlab.analysis.financial._helpers import parseNumStr
+
+    result = company.show("investmentInOtherDetail")
+    if result is None:
+        return None
+
+    import polars as pl
+
+    if not isinstance(result, pl.DataFrame):
+        return None
+
+    # block index 형태 — text 블록에서 총액 서술 추출
+    if "block" in result.columns and "preview" in result.columns:
+        textBlocks = result.filter(pl.col("type") == "text")
+        for row in textBlocks.iter_rows(named=True):
+            preview = str(row.get("preview", ""))
+            # "타법인 출자 금액은 장부금액 기준 59조 2,469억원" 패턴
+            m = re.search(r"출자\s*금액[^\d]*?([\d,]+)\s*조\s*([\d,]+)\s*억", preview)
+            if m:
+                tril = parseNumStr(m.group(1))
+                bil = parseNumStr(m.group(2))
+                if tril is not None and bil is not None:
+                    total = tril * 10000 + bil  # 억원 단위
+                    # 연도 추출
+                    ym = re.search(r"(\d{4})년", preview)
+                    period = ym.group(1) if ym else None
+                    return {
+                        "totalBookValue": total,
+                        "description": preview[:200],
+                        "period": period,
+                    }
+            # "XX억원" 패턴 (조 단위 없는 경우)
+            m2 = re.search(r"출자\s*금액[^\d]*?([\d,]+)\s*억", preview)
+            if m2:
+                bil = parseNumStr(m2.group(1))
+                if bil is not None:
+                    ym = re.search(r"(\d{4})년", preview)
+                    period = ym.group(1) if ym else None
+                    return {
+                        "totalBookValue": bil,
+                        "description": preview[:200],
+                        "period": period,
+                    }
+
+    return None
+
+
 # ── 플래그 ──
 
 

@@ -88,7 +88,22 @@ def scan_workforce(*, verbose: bool = True) -> pl.DataFrame:
             }
         )
 
-    df = pl.DataFrame(results)
+    schema = {
+        "종목코드": pl.Utf8,
+        "직원수": pl.Float64,
+        "평균급여_만원": pl.Float64,
+        "남녀격차": pl.Float64,
+        "근속_년": pl.Float64,
+        "직원당매출_억": pl.Float64,
+        "인건비율": pl.Float64,
+        "1인당부가가치_억": pl.Float64,
+        "급여성장률": pl.Float64,
+        "매출성장률": pl.Float64,
+        "급여매출괴리": pl.Float64,
+        "최고보수_억": pl.Float64,
+        "공개인원": pl.Float64,
+    }
+    df = pl.DataFrame(results, schema=schema)
     _log(f"인력 스캔 완료: {df.shape[0]}종목, 6/6")
     return df
 

@@ -55,10 +55,15 @@ def buildCompactMap(company: Any) -> str:
     if stmts:
         lines.append(f"- 재무: {', '.join(stmts)}")
 
-    # 핵심 비율 (최신 값)
-    ratioLines = _buildRatioSummary(company)
-    if ratioLines:
-        lines.append(f"- 비율: {ratioLines}")
+    # 비율 사용 가능 여부 (수치는 코드로 조회하도록 유도)
+    try:
+        ratios = getattr(company, "ratios", None)
+        if callable(ratios):
+            r = ratios()
+            if r is not None and hasattr(r, "columns"):
+                lines.append(f"- 비율: c.ratios()로 조회 가능 ({len(r.columns)}개 지표)")
+    except (AttributeError, TypeError, ValueError):
+        pass
 
     # sections 정보
     try:
@@ -89,44 +94,16 @@ def buildCompactMap(company: Any) -> str:
     except (AttributeError, TypeError, ValueError):
         pass
 
-    # insight 등급 (빠르게)
+    # insight 사용 가능 여부
     try:
         from dartlab.analysis.financial.insight.pipeline import analyze as insightAnalyze
 
         result = insightAnalyze(stockCode, company=company)
         if result is not None:
-            overall = getattr(result, "overall", None) or getattr(result, "grade", None)
-            if overall:
-                lines.append(f"- 인사이트: {overall}")
+            lines.append("- 인사이트: dartlab.analysis(c, axes=['financial']) 또는 c.insights로 조회 가능")
     except (ImportError, AttributeError, KeyError, TypeError, ValueError):
         pass
 
     return "\n".join(lines) if len(lines) > 1 else ""
 
 
-def _buildRatioSummary(company: Any) -> str:
-    """핵심 비율 5-6개 최신 값 요약."""
-    try:
-        from dartlab.ai.context.company_adapter import get_headline_ratios
-
-        r = get_headline_ratios(company)
-        if r is None:
-            return ""
-        parts = []
-        if r.roe is not None:
-            parts.append(f"ROE {r.roe:.1f}%")
-        if r.debtRatio is not None:
-            parts.append(f"부채 {r.debtRatio:.0f}%")
-        if hasattr(r, "operatingMargin") and r.operatingMargin is not None:
-            parts.append(f"영업마진 {r.operatingMargin:.1f}%")
-        if r.currentRatio is not None:
-            parts.append(f"유동 {r.currentRatio:.0f}%")
-        per = getattr(r, "per", None)
-        if per is not None:
-            parts.append(f"PER {per:.1f}")
-        pbr = getattr(r, "pbr", None)
-        if pbr is not None:
-            parts.append(f"PBR {pbr:.2f}")
-        return ", ".join(parts) if parts else ""
-    except (ImportError, AttributeError, KeyError, TypeError, ValueError):
-        return ""

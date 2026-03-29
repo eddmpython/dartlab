@@ -44,8 +44,37 @@ def _clean_number(text: str | None) -> float | None:
 # ══════════════════════════════════════
 
 
+def _parseInfos(infos: list[dict]) -> dict[str, str]:
+    """totalInfos 배열을 {code: value} dict로 변환."""
+    return {item.get("code", ""): item.get("value", "") for item in infos if item.get("code")}
+
+
+def _parseMarketCap(text: str) -> float:
+    """'1,063조 7,589억' -> 숫자 변환."""
+    if not text:
+        return 0.0
+    total = 0.0
+    text = text.replace(",", "")
+    if "조" in text:
+        parts = text.split("조")
+        total += (_clean_number(parts[0]) or 0.0) * 1_0000_0000_0000
+        text = parts[1] if len(parts) > 1 else ""
+    if "억" in text:
+        parts = text.split("억")
+        total += (_clean_number(parts[0]) or 0.0) * 1_0000_0000
+    return total
+
+
+def _cleanSuffix(text: str, *suffixes: str) -> str:
+    """'27.38배' -> '27.38', '6,564원' -> '6564'."""
+    for suffix in suffixes:
+        text = text.replace(suffix, "")
+    return text.strip()
+
+
 async def fetch_price(stock_code: str, client, **kwargs) -> PriceSnapshot | None:
-    """네이버 → 현재가 + PER/PBR + 52주 범위."""
+    """네이버 -> 현재가 + PER/PBR + 52주 범위 + 시총."""
+    # basic: 현재가, 등락
     url = f"{_API_BASE}/{stock_code}/basic"
     try:
         resp = await client.get(url, headers={"Accept": "application/json"})
@@ -58,17 +87,42 @@ async def fetch_price(stock_code: str, client, **kwargs) -> PriceSnapshot | None
     if not current:
         return None
 
+    # integration: 시총, PER, PBR, 52주 범위
+    marketCap = 0.0
+    per = None
+    pbr = None
+    high52w = 0.0
+    low52w = 0.0
+    volume = int(_clean_number(data.get("accumulatedTradingVolume")) or 0)
+    dividendYield = None
+
+    try:
+        intUrl = f"{_API_BASE}/{stock_code}/integration"
+        intResp = await client.get(intUrl, headers={"Accept": "application/json"})
+        intData = intResp.json()
+        infos = _parseInfos(intData.get("totalInfos", []))
+
+        marketCap = _parseMarketCap(infos.get("marketValue", ""))
+        per = _clean_number(_cleanSuffix(infos.get("per", ""), "배"))
+        pbr = _clean_number(_cleanSuffix(infos.get("pbr", ""), "배"))
+        high52w = _clean_number(_cleanSuffix(infos.get("highPriceOf52Weeks", ""), "원")) or 0.0
+        low52w = _clean_number(_cleanSuffix(infos.get("lowPriceOf52Weeks", ""), "원")) or 0.0
+        volume = int(_clean_number(infos.get("accumulatedTradingVolume", "").replace("백만", "")) or volume)
+        dividendYield = _clean_number(_cleanSuffix(infos.get("dividendYieldRatio", ""), "%"))
+    except (SourceUnavailableError, ValueError, KeyError):
+        log.debug("naver integration fallback 실패 (%s)", stock_code)
+
     return PriceSnapshot(
         current=current,
         change=_clean_number(data.get("compareToPreviousClosePrice")) or 0.0,
         change_pct=_clean_number(data.get("fluctuationsRatio")) or 0.0,
-        high_52w=_clean_number(data.get("high52wPrice")) or 0.0,
-        low_52w=_clean_number(data.get("low52wPrice")) or 0.0,
-        volume=int(_clean_number(data.get("accumulatedTradingVolume")) or 0),
-        market_cap=_clean_number(data.get("marketCap")) or 0.0,
-        per=_clean_number(data.get("per")),
-        pbr=_clean_number(data.get("pbr")),
-        dividend_yield=_clean_number(data.get("dividendYield")),
+        high_52w=high52w,
+        low_52w=low52w,
+        volume=volume,
+        market_cap=marketCap,
+        per=per,
+        pbr=pbr,
+        dividend_yield=dividendYield,
         source="naver",
         fetched_at=datetime.now(timezone.utc).isoformat(),
         currency="KRW",

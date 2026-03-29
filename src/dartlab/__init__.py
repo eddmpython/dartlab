@@ -14,6 +14,7 @@ from dartlab.gather.listing import codeToName, fuzzySearch, getKindList, nameToC
 from dartlab.providers.dart.company import Company as _DartEngineCompany
 from dartlab.providers.dart.openapi.dart import OpenDart
 from dartlab.providers.edgar.openapi.edgar import OpenEdgar
+from dartlab.audit import queryAudit, runAudit
 from dartlab.review import Review
 
 # .env 자동 로드 — API 키 등 환경변수
@@ -265,15 +266,29 @@ def checkFreshness(stockCode: str, *, forceCheck: bool = False):
         - 누락 공시 수 + 최신 여부 판정
         - 캐시된 결과 재사용 (forceCheck=False)
 
+    Requires:
+        API 키: DART_API_KEY
+
+    AIContext:
+        - 분석 전 데이터 최신성 확인에 사용
+        - isFresh=False이면 collect()로 갱신 권장
+        - missingCount로 누락 규모 파악 후 수집 우선순위 판단
+
+    Guide:
+        - "내 데이터 최신이야?" -> checkFreshness("005930")
+        - "공시 누락 있어?" -> checkFreshness로 missingCount 확인
+        - "데이터 업데이트 필요해?" -> checkFreshness 후 collect 안내
+
+    SeeAlso:
+        - collect: 누락 공시 실제 수집 (checkFreshness에서 발견한 gap 채우기)
+        - Company: 종목 데이터 접근 (최신 데이터 기반 분석)
+
     Args:
         stockCode: 종목코드 ("005930").
         forceCheck: True면 캐시 무시, DART API 강제 조회.
 
     Returns:
         FreshnessResult — isFresh (bool), missingCount (int), lastLocalDate, lastRemoteDate.
-
-    Requires:
-        API 키: DART_API_KEY
 
     Example::
 
@@ -297,11 +312,28 @@ def network():
         - 브라우저에서 인터랙티브 그래프 표시
         - 노드(기업) + 엣지(지분 관계) 구조
 
-    Returns:
-        NetworkResult — .show()로 브라우저 시각화, .nodes/.edges로 데이터 접근.
-
     Requires:
         데이터: docs (자동 다운로드)
+
+    AIContext:
+        - 기업 간 지분 관계 파악에 사용
+        - 그룹사 구조, 모자회사 관계 시각적 탐색
+        - nodes/edges 데이터로 프로그래밍 방식 관계 분석 가능
+
+    Guide:
+        - "상장사 관계 보여줘" -> network().show()
+        - "기업 간 지분 관계 알려줘" -> network()로 네트워크 데이터 접근
+        - "그룹사 구조 시각화" -> network().show()로 브라우저 렌더링
+
+    SeeAlso:
+        - governance: 개별 기업 지배구조 상세 (network는 전체 관계 지도)
+        - scan: 전종목 횡단 비교 (network는 관계 중심)
+
+    Args:
+        없음.
+
+    Returns:
+        NetworkResult — .show()로 브라우저 시각화, .nodes/.edges로 데이터 접근.
 
     Example::
 
@@ -328,11 +360,29 @@ def governance():
         - 최대주주 지분율, 사외이사 비율, 감사위원회 설치 여부
         - 지분 변동 추이, 특수관계인 거래
 
-    Returns:
-        pl.DataFrame — 전종목 지배구조 지표 (종목코드, 종목명, 최대주주지분율, ...).
-
     Requires:
         데이터: report (dartlab.downloadAll("report")로 사전 다운로드)
+
+    AIContext:
+        - 전체 시장의 지배구조 리스크 스크리닝에 사용
+        - 최대주주 지분율 극단값, 사외이사 미선임 기업 탐지
+        - governance 점수가 낮은 기업군 필터링 후 심화 분석 연계
+
+    Guide:
+        - "지배구조 좋은 기업 찾아줘" -> governance()로 횡단 비교
+        - "최대주주 지분율 높은 기업?" -> governance() DataFrame 정렬
+        - "사외이사 비율 낮은 곳은?" -> governance() 결과 필터링
+
+    SeeAlso:
+        - network: 기업 간 지분 관계 시각화 (governance는 개별 기업 지표)
+        - scan: 전종목 횡단 비교 통합 인터페이스
+        - workforce: 인력/급여 횡단 비교 (governance와 함께 ESG 분석)
+
+    Args:
+        없음.
+
+    Returns:
+        pl.DataFrame — 전종목 지배구조 지표 (종목코드, 종목명, 최대주주지분율, ...).
 
     Example::
 
@@ -356,11 +406,29 @@ def workforce():
         - 임직원 수, 평균 근속연수, 평균 급여, 성별 비율
         - 업종별/규모별 비교
 
-    Returns:
-        pl.DataFrame — 전종목 인력 지표 (종목코드, 종목명, 직원수, 평균급여, ...).
-
     Requires:
         데이터: report (dartlab.downloadAll("report")로 사전 다운로드)
+
+    AIContext:
+        - 업종별 인력 효율성 비교에 사용
+        - 평균급여 대비 매출/이익 생산성 분석 연계
+        - 직원 수 증감 추이로 사업 확장/축소 신호 탐지
+
+    Guide:
+        - "평균 급여 높은 기업?" -> workforce() DataFrame 정렬
+        - "직원 수 많은 기업 순위" -> workforce() 결과 필터링
+        - "인력 현황 비교해줘" -> workforce()로 횡단 비교
+
+    SeeAlso:
+        - governance: 지배구조 횡단 비교 (workforce와 함께 ESG 분석)
+        - capital: 주주환원 횡단 비교 (인력 투자 vs 주주 환원 비교)
+        - scan: 전종목 횡단 비교 통합 인터페이스
+
+    Args:
+        없음.
+
+    Returns:
+        pl.DataFrame — 전종목 인력 지표 (종목코드, 종목명, 직원수, 평균급여, ...).
 
     Example::
 
@@ -384,11 +452,29 @@ def capital():
         - 배당수익률, 배당성향, 자사주 매입/소각 이력
         - 유상증자/무상증자 이력
 
-    Returns:
-        pl.DataFrame — 전종목 주주환원 지표 (종목코드, 종목명, 배당수익률, ...).
-
     Requires:
         데이터: report (dartlab.downloadAll("report")로 사전 다운로드)
+
+    AIContext:
+        - 배당주 스크리닝, 주주환원 정책 비교에 사용
+        - 배당수익률/배당성향 조합으로 지속가능성 판단
+        - 자사주 매입/소각 이력으로 주주 친화도 평가
+
+    Guide:
+        - "배당 좋은 기업 찾아줘" -> capital() DataFrame 정렬
+        - "자사주 매입한 기업?" -> capital() 결과 필터링
+        - "주주환원 비교해줘" -> capital()로 횡단 비교
+
+    SeeAlso:
+        - debt: 부채 구조 횡단 비교 (배당 여력과 부채 부담 동시 분석)
+        - workforce: 인력/급여 횡단 비교 (인력 투자 vs 주주 환원)
+        - insights: 개별 기업 배당 등급 분석 (capital은 전체 시장)
+
+    Args:
+        없음.
+
+    Returns:
+        pl.DataFrame — 전종목 주주환원 지표 (종목코드, 종목명, 배당수익률, ...).
 
     Example::
 
@@ -412,11 +498,29 @@ def debt():
         - 부채비율, 차입금 의존도, 이자보상배율
         - 단기/장기 차입금 구성, 사채 발행 현황
 
-    Returns:
-        pl.DataFrame — 전종목 부채 지표 (종목코드, 종목명, 부채비율, ...).
-
     Requires:
         데이터: report (dartlab.downloadAll("report")로 사전 다운로드)
+
+    AIContext:
+        - 재무 안정성 리스크 스크리닝에 사용
+        - 부채비율/이자보상배율 극단값으로 위험 기업 탐지
+        - 단기/장기 차입 구조 분석으로 유동성 리스크 평가
+
+    Guide:
+        - "부채비율 높은 기업?" -> debt() DataFrame 정렬
+        - "재무 안정적인 기업 찾아줘" -> debt() 결과 필터링
+        - "부채 구조 비교해줘" -> debt()로 횡단 비교
+
+    SeeAlso:
+        - capital: 주주환원 횡단 비교 (부채 vs 배당 균형 분석)
+        - insights: 개별 기업 안정성 등급 (debt는 전체 시장)
+        - scan: 전종목 횡단 비교 통합 인터페이스
+
+    Args:
+        없음.
+
+    Returns:
+        pl.DataFrame — 전종목 부채 지표 (종목코드, 종목명, 부채비율, ...).
 
     Example::
 
@@ -442,6 +546,25 @@ def setup(provider: str | None = None):
         - OpenAI/Gemini/Groq/Cerebras/Mistral API 키 설정
         - Ollama 로컬 LLM 설치 안내
 
+    Requires:
+        없음
+
+    AIContext:
+        - AI 분석 기능 사용 전 provider 설정 상태 확인
+        - 미설정 provider 감지 시 setup() 안내로 연결
+        - 설정 완료 여부를 프로그래밍 방식으로 체크 가능
+
+    Guide:
+        - "AI 설정 어떻게 해?" -> setup()으로 전체 현황 확인
+        - "ChatGPT 연결하고 싶어" -> setup("chatgpt")
+        - "OpenAI 키 등록" -> setup("openai")
+        - "Ollama 어떻게 써?" -> setup("ollama")
+
+    SeeAlso:
+        - ask: AI 질문 (setup 완료 후 사용)
+        - chat: AI 대화 (setup 완료 후 사용)
+        - llm.configure: 프로그래밍 방식 provider 설정
+
     Args:
         provider: provider명 또는 alias. None이면 전체 현황 표시.
             지원: "chatgpt", "openai", "gemini", "groq", "cerebras",
@@ -449,9 +572,6 @@ def setup(provider: str | None = None):
 
     Returns:
         None (터미널/노트북에 안내 출력).
-
-    Requires:
-        없음
 
     Example::
 
@@ -787,11 +907,28 @@ def plugins():
         - 설치된 dartlab 플러그인 자동 탐색
         - 플러그인 메타데이터 (이름, 버전, 제공 topic) 조회
 
-    Returns:
-        list[PluginMeta] — 로드된 플러그인 목록.
-
     Requires:
         없음
+
+    AIContext:
+        - 확장 기능 탐색 시 설치된 플러그인 목록 확인
+        - 플러그인이 제공하는 topic을 show()에서 사용 가능
+        - 플러그인 유무에 따라 분석 범위 동적 결정
+
+    Guide:
+        - "플러그인 뭐 있어?" -> plugins()
+        - "확장 기능 목록" -> plugins()로 설치된 플러그인 확인
+        - "ESG 플러그인 있어?" -> plugins()에서 검색
+
+    SeeAlso:
+        - reload_plugins: 새 플러그인 설치 후 재스캔
+        - Company.show: 플러그인 topic 조회 (plugins가 제공한 topic 사용)
+
+    Args:
+        없음.
+
+    Returns:
+        list[PluginMeta] — 로드된 플러그인 목록.
 
     Example::
 
@@ -811,11 +948,26 @@ def reload_plugins():
         - 새로 설치한 플러그인 즉시 인식 (세션 재시작 불필요)
         - entry_points 재스캔
 
-    Returns:
-        list[PluginMeta] — 재스캔 후 플러그인 목록.
-
     Requires:
         없음
+
+    AIContext:
+        - pip install 후 세션 재시작 없이 플러그인 즉시 활성화
+        - 새로 인식된 topic이 Company.show()에서 바로 사용 가능
+
+    Guide:
+        - "새 플러그인 설치했는데 안 보여" -> reload_plugins()
+        - "플러그인 재스캔" -> reload_plugins()
+
+    SeeAlso:
+        - plugins: 현재 로드된 플러그인 확인 (reload 전후 비교)
+        - Company.show: 플러그인 topic 조회
+
+    Args:
+        없음.
+
+    Returns:
+        list[PluginMeta] — 재스캔 후 플러그인 목록.
 
     Example::
 
@@ -843,14 +995,29 @@ def audit(codeOrName: str):
         - 핵심감사사항 (KAM) 추출
         - 내부회계관리제도 검토의견
 
+    Requires:
+        데이터: docs + report (자동 다운로드)
+
+    AIContext:
+        - 투자 의사결정 전 감사 리스크 사전 점검에 사용
+        - goingConcern 플래그로 계속기업 불확실성 즉시 감지
+        - 감사인 변경 + 한정의견 조합으로 회계 신뢰도 평가
+
+    Guide:
+        - "이 회사 감사의견 괜찮아?" -> audit("005930")
+        - "감사인 바뀐 적 있어?" -> audit()에서 auditorChanges 확인
+        - "계속기업 불확실성 있어?" -> audit()에서 goingConcern 확인
+
+    SeeAlso:
+        - insights: 7영역 종합 등급 (audit는 감사 특화)
+        - research: 종합 리포트 (audit 결과 포함)
+        - governance: 지배구조 횡단 비교 (감사위원회 정보)
+
     Args:
         codeOrName: 종목코드 ("005930") 또는 종목명 ("삼성전자").
 
     Returns:
         dict — opinion, auditorChanges, goingConcern, kam, internalControl 등.
-
-    Requires:
-        데이터: docs + report (자동 다운로드)
 
     Example::
 
@@ -867,20 +1034,35 @@ def forecast(codeOrName: str, *, horizon: int = 3):
     """매출 앙상블 예측.
 
     Capabilities:
-        - 매출 시계열 기반 앙상블 예측 (ARIMA + 선형 + 지��평활)
+        - 매출 시계열 기반 앙상블 예측 (ARIMA + 선형 + 지수평활)
         - 업종 성장률 가중 보정
         - 신뢰구간 (80%, 95%) 제공
         - 최대 N년 전망 (기본 3년)
 
+    Requires:
+        데이터: finance (자동 다운로드)
+
+    AIContext:
+        - 매출 성장 전망 수치를 DCF/밸류에이션에 입력으로 활용
+        - 신뢰구간으로 예측 불확실성 정량화
+        - 업종 성장률 반영으로 단순 추세 외삽보다 현실적 전망
+
+    Guide:
+        - "매출 전망 보여줘" -> forecast("005930")
+        - "5년 뒤 매출 예측" -> forecast("005930", horizon=5)
+        - "이 회사 성장할까?" -> forecast()로 매출 추세 확인
+
+    SeeAlso:
+        - valuation: 밸류에이션 (forecast 결과를 DCF에 활용)
+        - simulation: 시나리오별 재무 영향 (forecast는 기본 전망)
+        - insights: 성장성 등급 (forecast는 미래 추정)
+
     Args:
         codeOrName: 종목코드 ("005930") 또는 종목명.
-        horizon: 예측 기간 (��). 기본 3.
+        horizon: 예측 기간 (년). 기본 3.
 
     Returns:
         ForecastResult — predicted, confidence80, confidence95, components.
-
-    Requires:
-        데이터: finance (자동 다운로드)
 
     Example::
 
@@ -915,15 +1097,30 @@ def valuation(codeOrName: str, *, shares: int | None = None):
         - 상대가치 (PER/PBR/EV-EBITDA 동종업계 비교)
         - 적정주가 범위 산출
 
+    Requires:
+        데이터: finance (자동 다운로드)
+
+    AIContext:
+        - 적정주가 범위 산출로 투자 판단 근거 제공
+        - DCF/DDM/상대가치 3가지 관점의 교차 검증
+        - shares 자동 조회로 주당 가치 즉시 산출
+
+    Guide:
+        - "적정 주가 얼마야?" -> valuation("005930")
+        - "이 회사 저평가야?" -> valuation()에서 summary 확인
+        - "DCF 해줘" -> valuation()에서 dcf 항목 조회
+
+    SeeAlso:
+        - forecast: 매출 예측 (valuation의 DCF 입력에 활용)
+        - insights: 밸류에이션 등급 (valuation은 절대/상대 가치 상세)
+        - research: 종합 리포트 (valuation 결과 포함)
+
     Args:
         codeOrName: 종목코드 ("005930") 또는 종목명.
         shares: 발행주식수. None이면 프로필에서 자동 조회.
 
     Returns:
         ValuationResult — dcf, ddm, relative, summary.
-
-    Requires:
-        데이터: finance (자동 다운로드)
 
     Example::
 
@@ -956,14 +1153,29 @@ def insights(codeOrName: str):
         - 종합 등급 + 강점/약점 요약
         - 동종업계 백분위 위치
 
+    Requires:
+        데이터: finance (자동 다운로드)
+
+    AIContext:
+        - 기업의 재무 건전성을 7영역 등급으로 요약
+        - 강점/약점 자동 식별로 분석 포커스 결정
+        - 동종업계 백분위로 상대적 위치 즉시 파악
+
+    Guide:
+        - "이 회사 재무 어때?" -> insights("005930")
+        - "수익성 등급 알려줘" -> insights()에서 grades 조회
+        - "강점이 뭐야?" -> insights()에서 strengths 확인
+
+    SeeAlso:
+        - audit: 감사 Red Flag 분석 (insights는 재무 등급)
+        - valuation: 밸류에이션 상세 (insights는 종합 등급)
+        - research: 종합 리포트 (insights 결과 포함)
+
     Args:
         codeOrName: 종목코드 ("005930") 또는 종목명.
 
     Returns:
         InsightResult — grades (영역별 등급), summary, strengths, weaknesses.
-
-    Requires:
-        데이터: finance (자동 다운로드)
 
     Example::
 
@@ -981,9 +1193,27 @@ def simulation(codeOrName: str, *, scenarios: list[str] | None = None):
 
     Capabilities:
         - 거시경제 시나리오별 재무 영향 시뮬레이션
-        - 기본 시나리오: 금리 인상, 경기 침체, 원��재 급등, 환율 변동
+        - 기본 시나리오: 금리 인상, 경기 침체, 원자재 급등, 환율 변동
         - 매출/영업이익/순이익 변동 추정
         - 업종별 민감도 차등 적용
+
+    Requires:
+        데이터: finance (자동 다운로드)
+
+    AIContext:
+        - 거시 변수 변동이 개별 기업 재무에 미치는 영향 정량화
+        - 업종별 민감도 차등으로 현실적 스트레스 테스트
+        - 복수 시나리오 동시 비교로 리스크 범위 파악
+
+    Guide:
+        - "금리 오르면 이 회사 어떻게 돼?" -> simulation("005930")
+        - "경기 침체 시나리오" -> simulation()에서 해당 시나리오 확인
+        - "환율 영향 분석" -> simulation()으로 환율 변동 시나리오 조회
+
+    SeeAlso:
+        - forecast: 매출 예측 (simulation은 시나리오별 변동)
+        - valuation: 밸류에이션 (시나리오별 적정가치 비교에 활용)
+        - research: 종합 리포트 (simulation 결과 포함)
 
     Args:
         codeOrName: 종목코드 ("005930") 또는 종목명.
@@ -991,9 +1221,6 @@ def simulation(codeOrName: str, *, scenarios: list[str] | None = None):
 
     Returns:
         SimulationResult — scenarios별 재무 영향 추정.
-
-    Requires:
-        데이터: finance (자동 다운로드)
 
     Example::
 
@@ -1023,6 +1250,24 @@ def research(codeOrName: str, *, sections: list[str] | None = None, includeMarke
         - 재무비율 추세, 동종업계 비교, 시장 포지션
         - 구조화된 마크다운 출력
 
+    Requires:
+        데이터: finance + docs (자동 다운로드)
+
+    AIContext:
+        - 재무 + 시장 + 공시 통합 리포트 자동 생성
+        - 마크다운 구조로 LLM이 섹션별 참조 가능
+        - 섹션 선택으로 특정 관점만 추출 가능
+
+    Guide:
+        - "기업 분석 리포트 만들어줘" -> research("005930")
+        - "재무분석만 보고 싶어" -> research("005930", includeMarket=False)
+        - "종합 분석해줘" -> research()로 전체 리포트 생성
+
+    SeeAlso:
+        - insights: 7영역 등급 (research는 서술형 리포트)
+        - ask: AI가 해석하는 분석 (research는 엔진 기반 구조화)
+        - forecast: 매출 예측 (research 리포트에 포함)
+
     Args:
         codeOrName: 종목코드 ("005930") 또는 종목명.
         sections: 포함할 섹션명 목록. None이면 전체.
@@ -1030,9 +1275,6 @@ def research(codeOrName: str, *, sections: list[str] | None = None, includeMarke
 
     Returns:
         ResearchResult — 구조화된 분석 리포트.
-
-    Requires:
-        데이터: finance + docs (자동 다운로드)
 
     Example::
 
@@ -1061,11 +1303,23 @@ def scanAccount(
         - DART(KR) + EDGAR(US) 양쪽 지원
         - 분기별/연간 선택, 연결/별도 선택
 
-    Returns:
-        pl.DataFrame — 종목코드 × 기간 피벗 테이블.
-
     Requires:
         데이터: finance (dartlab.downloadAll("finance")로 사전 다운로드)
+
+    AIContext:
+        - 전종목 동일 계정을 한 번에 비교하여 이상치/트렌드 탐지
+        - 피벗 테이블 형태로 시계열 분석 즉시 가능
+        - KR/US 양쪽 시장 동일 인터페이스로 글로벌 비교
+
+    Guide:
+        - "전종목 매출 비교" -> scan("account", "매출액")
+        - "전체 기업 자산 순위" -> scan("account", "total_assets") 후 정렬
+        - "미국 기업 매출 비교" -> scan("account", "sales", market="edgar")
+
+    SeeAlso:
+        - scanRatio: 전종목 재무비율 횡단 비교 (scanAccount는 원시 계정)
+        - scan: 전종목 횡단 비교 통합 인터페이스
+        - Company.finance: 개별 기업 재무 상세
 
     Args:
         snakeId: 계정 식별자. 영문("sales") 또는 한글("매출액") 모두 가능.
@@ -1073,6 +1327,9 @@ def scanAccount(
         sjDiv: 재무제표 구분 ("IS", "BS", "CF"). None이면 자동 결정. (dart만)
         fsPref: 연결/별도 우선순위 ("CFS"=연결 우선, "OFS"=별도 우선). (dart만)
         annual: True면 연간 (기본 False=분기별 standalone).
+
+    Returns:
+        pl.DataFrame — 종목코드 × 기간 피벗 테이블.
 
     Example::
 
@@ -1107,17 +1364,32 @@ def scanRatio(
         - DART(KR) + EDGAR(US) 양쪽 지원
         - 분기별/연간 선택
 
-    Returns:
-        pl.DataFrame — 종목코드 × 기간 피벗 테이블.
-
     Requires:
         데이터: finance (dartlab.downloadAll("finance")로 사전 다운로드)
+
+    AIContext:
+        - 전종목 동일 비율을 한 번에 비교하여 업종별 분포 파악
+        - ROE/영업이익률 등 핵심 비율의 시장 전체 추이 분석
+        - 이상치 기업 탐지 및 피어 그룹 벤치마킹에 활용
+
+    Guide:
+        - "전종목 ROE 비교" -> scan("ratio", "roe")
+        - "영업이익률 높은 기업 순위" -> scan("ratio", "operatingMargin") 후 정렬
+        - "미국 기업 ROE 비교" -> scan("ratio", "roe", market="edgar")
+
+    SeeAlso:
+        - scanAccount: 전종목 원시 계정 횡단 비교 (scanRatio는 가공된 비율)
+        - scan: 전종목 횡단 비교 통합 인터페이스
+        - insights: 개별 기업 등급 (scanRatio는 시장 전체)
 
     Args:
         ratioName: 비율 식별자 ("roe", "operatingMargin", "debtRatio" 등).
         market: "dart" (한국, 기본) 또는 "edgar" (미국).
         fsPref: 연결/별도 우선순위. (dart만)
         annual: True면 연간 (기본 False=분기별).
+
+    Returns:
+        pl.DataFrame — 종목코드 × 기간 피벗 테이블.
 
     Example::
 
@@ -1152,11 +1424,23 @@ def digest(
         - 텍스트 변화량 + 재무 변화 통합 스코어링
         - DataFrame/마크다운/JSON 출력
 
-    Returns:
-        pl.DataFrame | str — format에 따라 DataFrame 또는 마크다운/JSON 문자열.
-
     Requires:
         데이터: docs (dartlab.downloadAll("docs")로 사전 다운로드)
+
+    AIContext:
+        - 시장 전체에서 공시 변화가 큰 기업을 중요도 순으로 제공
+        - 섹터별 필터링으로 관심 업종의 변화 포착
+        - 마크다운/JSON 출력으로 LLM 컨텍스트에 직접 주입 가능
+
+    Guide:
+        - "최근 공시 변화 큰 기업?" -> digest()
+        - "반도체 섹터 공시 변화" -> digest(sector="반도체")
+        - "시장 동향 요약해줘" -> digest(format="markdown")
+
+    SeeAlso:
+        - scan: 전종목 횡단 비교 통합 (digest는 공시 변화 특화)
+        - Company.diff: 개별 기업 기간간 변화 (digest는 시장 전체)
+        - checkFreshness: 데이터 최신성 확인 (digest 전 갱신 여부 판단)
 
     Args:
         sector: 섹터 필터 (예: "반도체"). None이면 전체.
@@ -1164,6 +1448,9 @@ def digest(
         format: "dataframe", "markdown", "json".
         stock_codes: 직접 종목코드 목록 지정.
         verbose: 진행 상황 출력.
+
+    Returns:
+        pl.DataFrame | str — format에 따라 DataFrame 또는 마크다운/JSON 문자열.
 
     Example::
 
@@ -1302,4 +1589,66 @@ __all__ = [
     "Review",
     "SelectResult",
     "ChartResult",
+    "capabilities",
 ]
+
+
+def capabilities(key: str | None = None, *, search: str | None = None) -> dict | list[str]:
+    """dartlab 전체 기능 카탈로그 조회.
+
+    Capabilities:
+        CAPABILITIES dict에서 부분 조회 가능.
+        key 없이 호출 시 전체 키 목록(summary 포함) 반환.
+        key 지정 시 해당 항목의 상세(guide, capabilities, seeAlso 등) 반환.
+        search 지정 시 자연어 질문 기반 관련 API 검색 (상위 10개).
+
+    Requires:
+        없음
+
+    AIContext:
+        AI가 "dartlab에 뭐가 있는지" 모를 때 탐색용.
+        capabilities() → 목차 확인 → capabilities("analysis") → 상세 확인 → execute_code.
+        capabilities(search="재무건전성") → 질문 관련 API 검색 → 코드 생성.
+
+    Guide:
+        - "dartlab 뭐 할 수 있어?" -> capabilities()
+        - "분석 기능 뭐 있어?" -> capabilities("analysis")
+        - "scan 어떻게 써?" -> capabilities("scan")
+        - "재무건전성 관련 API?" -> capabilities(search="재무건전성")
+
+    SeeAlso:
+        - ask: AI 질문 (capabilities로 기능 파악 후 ask로 분석)
+        - setup: AI provider 설정 (capabilities 확인 후 설정)
+
+    Args:
+        key: 조회할 기능 키. None이면 전체 목차.
+        search: 자연어 질문 기반 검색. key와 동시 사용 불가.
+
+    Returns:
+        dict | list[str] — key 있으면 해당 항목 dict, 없으면 키+summary 목록.
+
+    Example::
+
+        dartlab.capabilities()                       # 전체 목차
+        dartlab.capabilities("analysis")             # analysis 상세 (guide, capabilities)
+        dartlab.capabilities("Company.analysis")     # Company.analysis 상세
+        dartlab.capabilities("scan")                 # scan 상세
+        dartlab.capabilities(search="재무건전성")     # 질문 기반 검색 → 상위 10개
+    """
+    if search is not None:
+        from dartlab.core._capabilitySearch import searchCapabilities
+
+        results = searchCapabilities(search)
+        return {key: entry for key, entry, _score in results}
+
+    from dartlab.core._generatedCapabilities import CAPABILITIES
+
+    if key is None:
+        return {k: v.get("summary", "") for k, v in CAPABILITIES.items()}
+    if key in CAPABILITIES:
+        return CAPABILITIES[key]
+    # 부분 매칭: "analysis" → "Company.analysis" 등도 포함
+    matched = {k: v for k, v in CAPABILITIES.items() if key.lower() in k.lower()}
+    if matched:
+        return matched
+    return {}

@@ -53,6 +53,12 @@ SECTIONS: list[SectionMeta] = [
     SectionMeta("자본배분", "3-3", "자본 배분 -- 번 돈을 어디에 쓰는가"),
     SectionMeta("투자효율", "3-4", "투자 효율 -- 투자가 가치를 만드는가"),
     SectionMeta("재무정합성", "3-5", "재무 정합성 -- 재무제표가 서로 맞는가"),
+    # ── 4부: 가치평가 ──
+    SectionMeta("가치평가", "4-1", "가치평가 -- 이 회사의 적정 가치는 얼마인가"),
+    # ── 5부: 비재무 심화 ──
+    SectionMeta("지배구조", "5-1", "지배구조 -- 이 회사의 주인은 누구이며 감시는 작동하는가"),
+    SectionMeta("공시변화", "5-2", "공시변화 -- 이 회사의 공시가 뭐가 달라졌는가"),
+    SectionMeta("비교분석", "5-3", "비교분석 -- 이 회사는 시장에서 어디에 서 있는가"),
 ]
 
 # ── 블록 정의 (리스트 순서 = 렌더링 순서. 순서 변경은 여기서만.) ──
@@ -139,6 +145,30 @@ _BLOCKS: list[BlockMeta] = [
     BlockMeta("effectiveTaxRate", "유효세율", "재무정합성", "유효세율, 법정세율 대비 갭"),
     BlockMeta("deferredTax", "이연법인세", "재무정합성", "이연법인세 자산/부채 추세"),
     BlockMeta("crossStatementFlags", "재무정합성 플래그", "재무정합성", "교차검증+세금 경고 신호"),
+    # ── 4-1 가치평가 ──
+    BlockMeta("dcfValuation", "DCF 밸류에이션", "가치평가", "현금흐름 할인 모델 적정가치"),
+    BlockMeta("ddmValuation", "DDM 밸류에이션", "가치평가", "배당 할인 모델 적정가치"),
+    BlockMeta("relativeValuation", "상대가치", "가치평가", "PER/PBR/EV-EBITDA/PSR/PEG 배수 비교"),
+    BlockMeta("residualIncome", "RIM 밸류에이션", "가치평가", "잔여이익모델 기반 적정가치"),
+    BlockMeta("priceTarget", "확률 가중 목표주가", "가치평가", "5 시나리오 + Monte Carlo 목표가"),
+    BlockMeta("reverseImplied", "역내재성장률", "가치평가", "시장이 내재하는 매출 성장률 역산"),
+    BlockMeta("sensitivity", "민감도 분석", "가치평가", "WACC x 성장률 그리드"),
+    BlockMeta("valuationSynthesis", "종합 적정가치", "가치평가", "DCF+DDM+상대가치 통합 판정"),
+    BlockMeta("valuationFlags", "가치평가 플래그", "가치평가", "가치평가 관련 경고/기회 신호"),
+    # ── 5-1 지배구조 ──
+    BlockMeta("ownershipTrend", "최대주주 지분 추이", "지배구조", "최대주주 지분율 시계열과 주주 구성"),
+    BlockMeta("boardComposition", "이사회 구성", "지배구조", "사외이사비율, 전체 임원 수"),
+    BlockMeta("auditOpinionTrend", "감사의견 시계열", "지배구조", "감사의견과 감사인 변경 이력"),
+    BlockMeta("governanceFlags", "지배구조 플래그", "지배구조", "지배구조 관련 경고/기회 신호"),
+    # ── 5-2 공시변화 ──
+    BlockMeta("disclosureChangeSummary", "공시변화 종합", "공시변화", "전체 topic 변화 요약과 상위 변화"),
+    BlockMeta("keyTopicChanges", "핵심 공시 변화", "공시변화", "사업개요/리스크/회계정책 등 핵심 topic 변화"),
+    BlockMeta("changeIntensity", "변화 크기 분석", "공시변화", "바이트 기준 변화량 상위 topic"),
+    BlockMeta("disclosureDeltaFlags", "공시변화 플래그", "공시변화", "공시변화 관련 경고/기회 신호"),
+    # ── 5-3 비교분석 ──
+    BlockMeta("peerRanking", "시장 내 백분위 순위", "비교분석", "핵심 재무비율 시장 내 백분위"),
+    BlockMeta("riskReturnPosition", "수익-위험 포지션", "비교분석", "ROE x 부채비율 사분면 위치"),
+    BlockMeta("peerBenchmarkFlags", "비교분석 플래그", "비교분석", "비교분석 관련 경고/기회 신호"),
 ]
 
 # ── 파생 인덱스 (자동 생성, 직접 수정 금지) ──

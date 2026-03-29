@@ -11,7 +11,6 @@ from typing import Any
 import polars as pl
 
 from dartlab import Company
-from dartlab.ai.context.snapshot import build_snapshot
 from dartlab.ai.conversation.focus import build_diff_context, build_focus_context
 from dartlab.ai.conversation.history import build_history_messages
 from dartlab.ai.conversation.prompts import build_dynamic_chat_prompt
@@ -137,7 +136,6 @@ __all__ = [
     "build_dynamic_chat_prompt",
     "build_focus_context",
     "build_history_messages",
-    "build_snapshot",
     "build_topic_summary_prompt",
     "build_topic_summary_question",
     "extract_last_stock_code",

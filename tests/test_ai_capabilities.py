@@ -10,7 +10,6 @@ import polars as pl
 
 from dartlab.ai.context import build_context_skeleton
 from dartlab.ai.context.company_adapter import get_headline_ratios, get_ratio_series
-from dartlab.ai.context.snapshot import build_snapshot
 from dartlab.ai.runtime.events import EventKind
 from dartlab.ai.spec import buildSpec
 from dartlab.ai.tools.registry import build_tool_runtime
@@ -93,34 +92,14 @@ def test_ratio_adapter_prefers_get_ratios_over_dataframe_surface():
 
     ratios = get_headline_ratios(company)
     ratio_series = get_ratio_series(company)
-    snapshot = build_snapshot(company)
     context_text, included = build_context_skeleton(company)
 
     assert ratios is not None
     assert ratios.roe == 11.2
     assert ratio_series is not None
     assert ratio_series.roe[-1] == 11.2
-    assert snapshot is not None
-    assert any(item["label"] == "매출(TTM)" for item in snapshot["items"])
     assert "ROE: 11.2%" in context_text
     assert "ratios" in included
-
-
-def test_build_snapshot_can_skip_insights(monkeypatch):
-    company = FakeCompany()
-    insight_calls = {"count": 0}
-
-    def fake_analyze(*args, **kwargs):
-        insight_calls["count"] += 1
-        return None
-
-    monkeypatch.setattr("dartlab.analysis.financial.insight.pipeline.analyze", fake_analyze)
-
-    snapshot = build_snapshot(company, includeInsights=False)
-
-    assert snapshot is not None
-    assert insight_calls["count"] == 0
-    assert "grades" not in snapshot
 
 
 def test_event_kind_exposes_canonical_ui_action_only():

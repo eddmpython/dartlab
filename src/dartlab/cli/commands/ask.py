@@ -1,7 +1,11 @@
-"""`dartlab ask` command — 자연어 원스톱 + Rich 스트리밍."""
+"""`dartlab ask` command -- one-shot AI analysis with tool visibility."""
 
 from __future__ import annotations
 
+import time
+
+from dartlab.cli.brand import CLR, CLR_MUTED
+from dartlab.cli.constants import TOOL_LABELS, toolLabel, toolResultPreview
 from dartlab.cli.context import PROVIDERS
 from dartlab.cli.services.errors import CLIError
 from dartlab.cli.services.providers import detect_provider
@@ -9,7 +13,7 @@ from dartlab.cli.services.runtime import configure_dartlab
 
 
 def configure_parser(subparsers) -> None:
-    """ask 서브커맨드 등록 — 자연어 원스톱 AI 분석."""
+    """ask 서브커맨드 등록 -- one-shot AI 분석."""
     parser = subparsers.add_parser(
         "ask",
         help="LLM에게 기업 분석 질문 (자연어 원스톱)",
@@ -36,100 +40,233 @@ def configure_parser(subparsers) -> None:
 
 def run(args) -> int:
     """질문에서 종목을 추출하고 AI 분석 결과를 Rich 스트리밍으로 출력한다."""
-    from rich.console import Console
+    from rich.console import Console, Group
     from rich.live import Live
     from rich.markdown import Markdown
+    from rich.spinner import Spinner
+    from rich.text import Text
 
     dartlab = configure_dartlab()
     provider = args.provider or detect_provider()
     console = Console()
 
-    # 자연어 원스톱: query를 하나로 합치고 종목+질문 자동 분리
+    # ── 종목 추출 ──
     full_query = " ".join(args.query)
+    company, question = _resolveCompany(full_query, args, dartlab)
 
-    if args.company:
-        # --company 명시: query 전체가 질문
-        try:
-            company = dartlab.Company(args.company)
-        except (ValueError, FileNotFoundError, OSError, RuntimeError) as exc:
-            raise CLIError(str(exc)) from exc
-        question = full_query
-    else:
-        # 비교 패턴 감지: 여러 종목이 포함되면 company=None으로 LLM에 위임
-        import re
-
-        _COMPARE_RE = re.compile(r"(랑|와|과|이랑|하고|vs\.?|VS\.?|versus)\s", re.IGNORECASE)
-        if _COMPARE_RE.search(full_query):
-            company = None
-            question = full_query
-        else:
-            # 자연어에서 종목 자동 추출 — 실패해도 company=None으로 진행
-            from dartlab.core.resolve import resolve_from_text
-
-            company, question = resolve_from_text(full_query)
-            if company is None:
-                question = full_query  # 원본 질문 보존
-
+    # ── 헤더 ──
     if company is not None:
-        console.print(f"\n  [bold]{company.corpName}[/] ({company.stockCode})")
+        console.print(f"\n  [bold {CLR}]{company.corpName}[/] ({company.stockCode})")
     else:
-        console.print("\n  [bold]Free analysis[/] [dim](LLM will search for companies)[/]")
-    providerLine = f"  [dim]provider: {provider}"
+        console.print(f"\n  [bold {CLR}]Free analysis[/] [dim](LLM will search for companies)[/]")
+    providerLine = f"  [{CLR_MUTED}]provider: {provider}"
     if args.model:
         providerLine += f" / {args.model}"
     providerLine += "[/]"
     console.print(providerLine)
     console.print()
 
-    from dartlab.ai.runtime.standalone import ask as _ask
-
-    # 대화 연속 모드
+    # ── 히스토리 연속 ──
     session_id = None
     history = None
     if args.cont and company is not None:
-        from dartlab.cli.services.history import get_latest_session, get_messages
+        session_id, history = _loadHistory(company.stockCode, console)
 
-        session_id = get_latest_session(company.stockCode)
-        if session_id:
-            history = get_messages(session_id)
-            console.print(f"  [dim]이전 대화 이어가기 (메시지 {len(history)}개)[/]\n")
+    # ── analyze() 직접 호출 (이벤트 스트림) ──
+    from dartlab.ai.runtime.core import analyze
 
-    answer = _ask(
+    events = analyze(
         company,
         question,
         include=args.include,
         exclude=args.exclude,
         provider=provider,
         model=args.model,
-        stream=args.stream,
         base_url=args.base_url,
         api_key=args.api_key,
         history=history,
-        pattern=args.pattern,
         report_mode=args.report,
+        use_tools=True,
+        max_turns=10 if args.report else 5,
     )
 
-    if args.stream:
-        buffer = ""
-        with Live(console=console, refresh_per_second=8, vertical_overflow="visible") as live:
-            for chunk in answer:
-                buffer += chunk
-                live.update(Markdown(buffer))
+    buffer = ""
+    toolLines: list[str] = []
+    toolPanels: list[str] = []
+    toolCount = 0
+    toolStartTime: float | None = None
+    queryStart = time.monotonic()
+
+    try:
+        with Live(
+            Spinner("dots", text=f"[{CLR_MUTED}]Thinking...[/]", style=CLR_MUTED),
+            console=console,
+            refresh_per_second=8,
+            vertical_overflow="visible",
+            transient=True,
+        ) as live:
+            for ev in events:
+                if ev.kind == "chunk":
+                    buffer += ev.data["text"]
+                    live.update(Markdown(buffer))
+
+                elif ev.kind == "tool_call":
+                    toolCount += 1
+                    label = toolLabel(ev.data.get("name", ""))
+                    toolStartTime = time.monotonic()
+                    toolSpinner = Spinner(
+                        "dots",
+                        text=f"[{CLR_MUTED}][{toolCount}] {label}...[/]",
+                        style=CLR_MUTED,
+                    )
+                    statusBlock = "\n".join(toolLines)
+                    if statusBlock:
+                        live.update(Group(Markdown(statusBlock), toolSpinner))
+                    else:
+                        live.update(toolSpinner)
+
+                elif ev.kind == "tool_result":
+                    label = toolLabel(ev.data.get("name", ""))
+                    elapsed = ""
+                    if toolStartTime is not None:
+                        dt = time.monotonic() - toolStartTime
+                        elapsed = f" ({dt:.1f}s)"
+                        toolStartTime = None
+                    resultText = ev.data.get("result", "")
+                    preview = toolResultPreview(resultText)
+                    line = f"> {label} done{elapsed}"
+                    if preview:
+                        line += f" -- {preview}"
+                        toolPanels.append(resultText)
+                    toolLines.append(line)
+                    live.update(Markdown("\n".join(toolLines)))
+
+                elif ev.kind == "error":
+                    errorMsg = ev.data.get("error", "Unknown error")
+                    _printErrorWithHint(errorMsg, console)
+                    return 1
+
+    except KeyboardInterrupt:
+        console.print(f"\n  [{CLR_MUTED}]Interrupted[/]")
+
+    # ── 도구 호출 로그 ──
+    if toolLines:
+        for tl in toolLines:
+            console.print(f"  [{CLR_MUTED}]{tl}[/]")
+
+    # ── 도구 데이터 테이블 ──
+    if toolPanels:
+        for panel in toolPanels:
+            _renderToolData(panel, console)
+
+    # ── 최종 응답 ──
+    if buffer:
         console.print()
-    else:
-        buffer = answer
-        console.print(Markdown(answer))
+        console.print(Markdown(buffer))
 
-    # 히스토리 저장
-    if company is not None:
-        try:
-            from dartlab.cli.services.history import add_message, create_session
+    # ── footer ──
+    console.print()
+    totalElapsed = time.monotonic() - queryStart
+    footerParts = [f"{totalElapsed:.1f}s"]
+    if toolCount > 0:
+        footerParts.append(f"{toolCount} tool{'s' if toolCount != 1 else ''}")
+    console.print(Text("  " + "  |  ".join(footerParts), style="dim"))
 
-            if session_id is None:
-                session_id = create_session(company.stockCode)
-            add_message(session_id, "user", question)
-            add_message(session_id, "assistant", buffer)
-        except (OSError, ImportError):
-            pass
+    # ── 히스토리 저장 ──
+    if company is not None and buffer:
+        _saveHistory(company.stockCode, session_id, question, buffer)
 
     return 0
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _resolveCompany(full_query: str, args, dartlab):
+    """자연어에서 종목 추출. 비교 패턴이면 company=None."""
+    if args.company:
+        try:
+            company = dartlab.Company(args.company)
+        except (ValueError, FileNotFoundError, OSError, RuntimeError) as exc:
+            raise CLIError(str(exc)) from exc
+        return company, full_query
+
+    import re
+
+    _COMPARE_RE = re.compile(r"(랑|와|과|이랑|하고|vs\.?|VS\.?|versus)\s", re.IGNORECASE)
+    if _COMPARE_RE.search(full_query):
+        return None, full_query
+
+    from dartlab.core.resolve import resolve_from_text
+
+    company, question = resolve_from_text(full_query)
+    if company is None:
+        question = full_query
+    return company, question
+
+
+def _loadHistory(stockCode: str, console):
+    """이전 대화 세션 로드."""
+    try:
+        from dartlab.cli.services.history import get_latest_session, get_messages
+
+        session_id = get_latest_session(stockCode)
+        if session_id:
+            history = get_messages(session_id)
+            console.print(f"  [{CLR_MUTED}]Resuming session ({len(history)} messages)[/]\n")
+            return session_id, history
+    except (OSError, ImportError):
+        pass
+    return None, None
+
+
+def _saveHistory(stockCode: str, session_id, question: str, answer: str) -> None:
+    """대화 히스토리 SQLite 저장."""
+    try:
+        from dartlab.cli.services.history import add_message, create_session
+
+        if session_id is None:
+            session_id = create_session(stockCode)
+        add_message(session_id, "user", question)
+        add_message(session_id, "assistant", answer)
+    except (OSError, ImportError):
+        pass
+
+
+def _printErrorWithHint(errorMsg: str, console) -> None:
+    """에러 메시지 + 복구 힌트 출력."""
+    from dartlab.cli.brand import CLR_DANGER, CLR_MUTED
+
+    console.print(f"\n  [{CLR_DANGER}]{errorMsg}[/]")
+
+    msg = errorMsg.lower()
+    if any(w in msg for w in ("api key", "auth", "401", "403", "invalid key", "unauthorized")):
+        console.print(f"  [{CLR_MUTED}]hint: run `dartlab setup` to configure your API key[/]")
+    elif any(w in msg for w in ("connection", "timeout", "network", "refused", "resolve")):
+        console.print(f"  [{CLR_MUTED}]hint: check network or try --provider <other>[/]")
+    elif any(w in msg for w in ("context", "token", "too long", "limit")):
+        console.print(f"  [{CLR_MUTED}]hint: try --exclude <topic> to reduce context size[/]")
+    elif "provider" in msg or "no provider" in msg:
+        console.print(f"  [{CLR_MUTED}]hint: run `dartlab setup` or pass --provider <name>[/]")
+
+
+def _renderToolData(resultText: str, console) -> None:
+    """도구 결과 테이블 렌더링."""
+    from dartlab.cli.rendering import renderToolResult
+
+    if renderToolResult(resultText, console):
+        return
+
+    from rich.markdown import Markdown
+    from rich.panel import Panel
+
+    lines = resultText.strip().splitlines()
+    hasTable = any(ln.startswith("|") for ln in lines)
+    if hasTable:
+        if len(lines) > 30:
+            truncated = "\n".join(lines[:30]) + f"\n\n... (+{len(lines) - 30} lines)"
+        else:
+            truncated = resultText.strip()
+        console.print(Panel(Markdown(truncated), border_style="dim", padding=(0, 1)))

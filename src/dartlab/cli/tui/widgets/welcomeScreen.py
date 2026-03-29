@@ -8,6 +8,8 @@ from textual.containers import Center, Vertical
 from textual.widget import Widget
 from textual.widgets import Static
 
+from dartlab.cli.brand import CLR
+
 _LOGO = """\
 ██████╗  █████╗ ██████╗ ████████╗██╗      █████╗ ██████╗
 ██╔══██╗██╔══██╗██╔══██╗╚══██╔══╝██║     ██╔══██╗██╔══██╗
@@ -35,7 +37,7 @@ class _Logo(Static):
         for i, line in enumerate(logo.split("\n")):
             if i > 0:
                 text.append("\n")
-            text.append(line, style="bold #c0392b")
+            text.append(line, style=f"bold {CLR}")
         return text
 
 

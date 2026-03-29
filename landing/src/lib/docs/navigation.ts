@@ -25,7 +25,8 @@ export const navigation: NavItem[] = [
 			{ title: 'Timeseries', href: '/docs/api/timeseries' },
 			{ title: 'Sector', href: '/docs/api/sector' },
 			{ title: 'Insight', href: '/docs/api/insight' },
-			{ title: 'Rank', href: '/docs/api/rank' }
+			{ title: 'Rank', href: '/docs/api/rank' },
+			{ title: 'Full Reference', href: '/docs/api/generated-reference' }
 		]
 	},
 	{

@@ -335,11 +335,131 @@ def calcFcfUsage(company) -> dict | None:
     return {"history": history} if history else None
 
 
-# ── 플래그 ─���
+# ── 배당 서술 보강 (docs) ──
+
+
+def calcDividendDocs(company) -> dict | None:
+    """docs dividend 토픽에서 배당성향, 배당수익률, 주당배당금 추출.
+
+    반환::
+
+        {
+            "dps": float | None,
+            "payoutRatio": float | None,
+            "dividendYield": float | None,
+            "period": str,
+        }
+    """
+    from dartlab.analysis.financial._helpers import parseNumStr
+
+    result = company.select("dividend", ["주당현금배당금", "현금배당성향", "현금배당수익률"])
+    if result is None:
+        return None
+
+    import polars as pl
+
+    df = result if isinstance(result, pl.DataFrame) else getattr(result, "df", None)
+    if df is None or "항목" not in df.columns:
+        return None
+
+    from dartlab.analysis.financial._helpers import periodCols
+
+    pCols = periodCols(df)
+    if not pCols:
+        return None
+
+    latestCol = pCols[0]
+    items = df["항목"].to_list()
+    vals = df[latestCol].to_list()
+
+    dps = None
+    payoutRatio = None
+    dividendYield = None
+
+    for it, v in zip(items, vals):
+        it = str(it)
+        parsed = parseNumStr(str(v))
+        if parsed is None:
+            continue
+        if "주당현금배당금" in it and "보통주" in it and dps is None:
+            dps = parsed
+        elif "현금배당성향" in it and "당기" in it and payoutRatio is None:
+            payoutRatio = parsed
+        elif "현금배당수익률" in it and "보통주" in it and dividendYield is None:
+            dividendYield = parsed
+
+    if dps is None and payoutRatio is None and dividendYield is None:
+        return None
+
+    return {
+        "dps": dps,
+        "payoutRatio": payoutRatio,
+        "dividendYield": dividendYield,
+        "period": latestCol,
+    }
+
+
+# ── 자사주 현황 (docs/report) ──
+
+
+def calcTreasuryStockStatus(company) -> dict | None:
+    """treasuryStock 토픽에서 자사주 취득/처분/소각 현황 추출.
+
+    반환::
+
+        {
+            "rows": [
+                {"method": str, "beginShares": float, "acquired": float,
+                 "disposed": float, "retired": float, "endShares": float},
+                ...
+            ],
+        }
+    """
+    result = company.show("treasuryStock")
+    if result is None:
+        return None
+
+    import polars as pl
+
+    if not isinstance(result, pl.DataFrame):
+        return None
+
+    # report 토픽 — 이미 수치 DataFrame
+    if "기말수량" not in result.columns and "기말잔량" not in result.columns:
+        return None
+
+    endCol = "기말수량" if "기말수량" in result.columns else "기말잔량"
+    beginCol = "기초수량" if "기초수량" in result.columns else None
+    acqCol = "변동수량(취득)" if "변동수량(취득)" in result.columns else None
+    dispCol = "변동수량(처분)" if "변동수량(처분)" in result.columns else None
+    retCol = "변동수량(소각)" if "변동수량(소각)" in result.columns else None
+
+    # 총계 행만 추출
+    rows = []
+    for row in result.iter_rows(named=True):
+        method = str(row.get("취득방법(대)", row.get("취득방법(중)", "")))
+        if "총계" not in method:
+            continue
+        entry = {"method": method}
+        if beginCol:
+            entry["beginShares"] = row.get(beginCol)
+        if acqCol:
+            entry["acquired"] = row.get(acqCol)
+        if dispCol:
+            entry["disposed"] = row.get(dispCol)
+        if retCol:
+            entry["retired"] = row.get(retCol)
+        entry["endShares"] = row.get(endCol)
+        rows.append(entry)
+
+    return {"rows": rows} if rows else None
+
+
+# ── 플래그 ──
 
 
 def calcCapitalAllocationFlags(company) -> list[str]:
-    """��본배분 경고 신호."""
+    """자본배분 경고 신호."""
     flags = []
 
     dividend = calcDividendPolicy(company)

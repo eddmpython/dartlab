@@ -438,11 +438,21 @@ class Company:
             - DART Company와 동일한 stockCode 인터페이스 제공
             - 서버 API, export, AI 컨텍스트에서 종목 식별에 사용
 
-        Returns:
-            str — ticker 심볼 (예: "AAPL").
-
         Requires:
             데이터: 없음 (인스턴스 속성)
+
+        AIContext:
+            - 서버 API/export에서 종목 식별 키로 사용
+
+        Guide:
+            - "이 기업 ticker가 뭐야?" → c.stockCode
+
+        SeeAlso:
+            - market: 시장 식별자
+            - currency: 통화 식별자
+
+        Returns:
+            str — ticker 심볼 (예: "AAPL").
 
         Example::
 
@@ -459,11 +469,21 @@ class Company:
             - 미국 시장 "US" 고정 반환
             - 멀티마켓 분기 로직에서 시장 판별에 사용
 
-        Returns:
-            str — "US".
-
         Requires:
             데이터: 없음 (상수)
+
+        AIContext:
+            - 시장 구분에 따른 분석 분기 판별에 사용
+
+        Guide:
+            - "이 기업 시장이 어디야?" → c.market
+
+        SeeAlso:
+            - stockCode: ticker 식별자
+            - currency: 통화 식별자
+
+        Returns:
+            str — "US".
 
         Example::
 
@@ -480,11 +500,21 @@ class Company:
             - 미국 달러 "USD" 고정 반환
             - 재무제표 금액 단위 표시, 밸류에이션 통화 기준에 사용
 
-        Returns:
-            str — "USD".
-
         Requires:
             데이터: 없음 (상수)
+
+        AIContext:
+            - 재무 수치 통화 단위 명시에 사용
+
+        Guide:
+            - "이 기업 통화가 뭐야?" → c.currency
+
+        SeeAlso:
+            - stockCode: ticker 식별자
+            - market: 시장 식별자
+
+        Returns:
+            str — "USD".
 
         Example::
 
@@ -500,14 +530,25 @@ class Company:
             - 로컬 서버 기동 후 브라우저에서 sections 탐색
             - topic별 텍스트/테이블, 기간 비교를 인터랙티브로 확인
 
+        Requires:
+            데이터: sections (SEC EDGAR 자동 수집)
+
+        AIContext:
+            - 시각적 탐색 도구로, CLI/노트북이 아닌 브라우저 환경 제공
+
+        Guide:
+            - "공시 내용을 브라우저에서 보고 싶어" → c.view()
+
+        SeeAlso:
+            - sections: 수평화 보드 원본 데이터
+            - index: topic 메타데이터 보드
+            - show: 특정 topic 데이터 조회
+
         Args:
             port: 로컬 서버 포트 (기본 8400).
 
         Returns:
             None — 브라우저가 자동으로 열림.
-
-        Requires:
-            데이터: sections (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -527,14 +568,23 @@ class Company:
             - SEC XBRL 분기별 재무 시계열 원본
             - BS/IS/CF/CIS 전 제표 계정의 분기 수치
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
         AIContext:
             - ask()/chat()에서 추세 분석, 성장률 계산 컨텍스트
 
+        Guide:
+            - "분기별 재무 데이터 원본이 필요해" → c.timeseries
+            - "분기별 추세를 보고 싶어" → c.timeseries로 원본 조회 후 분석
+
+        SeeAlso:
+            - annual: 연간 재무 시계열
+            - BS, IS, CF, CIS: 제표별 DataFrame
+            - ratios: 재무비율 시계열
+
         Returns:
             tuple[dict, list[str]] — (계정별 시계열 dict, 기간 리스트) 또는 None.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -551,14 +601,23 @@ class Company:
             - SEC XBRL 연간 재무 시계열 원본
             - 분기 집계가 아닌 10-K 기준 연간 수치
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
         AIContext:
             - ask()/chat()에서 연간 추세, YoY 비교 컨텍스트
 
+        Guide:
+            - "연간 재무 데이터 원본이 필요해" → c.annual
+            - "YoY 비교를 하고 싶어" → c.annual로 연도별 원본 조회
+
+        SeeAlso:
+            - timeseries: 분기별 재무 시계열
+            - BS, IS, CF, CIS: 제표별 DataFrame
+            - ratios: 재무비율 시계열
+
         Returns:
             tuple[dict, list[str]] — (계정별 시계열 dict, 연도 리스트) 또는 None.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -575,14 +634,25 @@ class Company:
             - SEC XBRL 정규화 재무상태표
             - 최대 10년 분기/연도 시계열
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
         AIContext:
             - ask()/chat()에서 자산/부채/자본 구조 분석 컨텍스트
 
+        Guide:
+            - "재무상태표 보여줘" → c.BS 또는 c.show("BS")
+            - "자산 구조가 어떻게 돼?" → c.BS로 확인
+
+        SeeAlso:
+            - IS: 손익계산서
+            - CF: 현금흐름표
+            - CIS: 포괄손익계산서
+            - select: 특정 계정/기간 필터
+            - show: topic 통합 조회
+
         Returns:
             pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -599,14 +669,25 @@ class Company:
             - SEC XBRL 정규화 손익계산서
             - 매출, 영업이익, 순이익 등 수익성 계정 시계열
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
         AIContext:
             - ask()/chat()에서 수익성, 마진 분석 컨텍스트
 
+        Guide:
+            - "손익계산서 보여줘" → c.IS 또는 c.show("IS")
+            - "매출 추이가 어떻게 돼?" → c.IS로 확인
+
+        SeeAlso:
+            - BS: 재무상태표
+            - CF: 현금흐름표
+            - CIS: 포괄손익계산서
+            - select: 특정 계정/기간 필터
+            - show: topic 통합 조회
+
         Returns:
             pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -623,14 +704,25 @@ class Company:
             - SEC XBRL 정규화 현금흐름표
             - 영업/투자/재무 활동별 현금흐름 시계열
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
         AIContext:
             - ask()/chat()에서 현금 창출력, FCF 분석 컨텍스트
 
+        Guide:
+            - "현금흐름표 보여줘" → c.CF 또는 c.show("CF")
+            - "FCF가 얼마야?" → c.CF로 영업/투자 현금흐름 확인
+
+        SeeAlso:
+            - BS: 재무상태표
+            - IS: 손익계산서
+            - CIS: 포괄손익계산서
+            - select: 특정 계정/기간 필터
+            - show: topic 통합 조회
+
         Returns:
             pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -647,14 +739,25 @@ class Company:
             - SEC XBRL 정규화 포괄손익계산서
             - 기타포괄손익 항목 시계열
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
         AIContext:
             - ask()/chat()에서 포괄손익 구성 분석 컨텍스트
 
+        Guide:
+            - "포괄손익계산서 보여줘" → c.CIS 또는 c.show("CIS")
+            - "기타포괄손익이 뭐가 있어?" → c.CIS로 확인
+
+        SeeAlso:
+            - BS: 재무상태표
+            - IS: 손익계산서
+            - CF: 현금흐름표
+            - SCE: 자본변동표
+            - show: topic 통합 조회
+
         Returns:
             pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -671,14 +774,23 @@ class Company:
             - SEC XBRL 정규화 자본변동표
             - 자본금, 이익잉여금, 자기주식 등 자본 구성 변동 시계열
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
         AIContext:
             - ask()/chat()에서 자본 구조 변동, 자사주 매입 분석 컨텍스트
 
+        Guide:
+            - "자본변동표 보여줘" → c.SCE
+            - "자사주 매입 내역이 궁금해" → c.SCE로 확인
+
+        SeeAlso:
+            - BS: 재무상태표
+            - CIS: 포괄손익계산서
+            - show: topic 통합 조회
+
         Returns:
             pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -695,14 +807,24 @@ class Company:
             - 10-K/10-Q/20-F 문서 항목 + 재무제표를 단일 DataFrame으로 통합
             - topic별 blockType(text/table), 기간별 셀 구조
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
         AIContext:
             - ask()/chat()에서 기업 전체 공시 구조 파악 컨텍스트
 
+        Guide:
+            - "전체 공시 지도를 보고 싶어" → c.sections
+            - "어떤 topic이 있는지 전체 구조를 보여줘" → c.sections
+
+        SeeAlso:
+            - topics: topic 목록 요약
+            - index: topic 메타데이터 보드
+            - show: 특정 topic 조회
+            - diff: 기간간 텍스트 변화 비교
+
         Returns:
             pl.DataFrame — topic | blockType | blockOrder | 2024 | 2023 | ... 또는 None.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -719,14 +841,23 @@ class Company:
             - 수익성/안정성/성장성/효율성/현금흐름 5대 카테고리 30+ 지표
             - 최대 10년 연도별 시계열
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
         AIContext:
             - ask()/chat()에서 재무 건전성, 추세 비교 컨텍스트
 
+        Guide:
+            - "재무비율 보여줘" → c.ratios 또는 c.show("ratios")
+            - "ROE 추이가 어떻게 돼?" → c.ratios로 확인
+
+        SeeAlso:
+            - insights: 재무비율 기반 자동 등급/해설
+            - BS, IS, CF: 원본 재무제표
+            - timeseries: 분기별 원본 시계열
+
         Returns:
             pl.DataFrame — category | metric | 2024 | 2023 | ... 또는 None.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -753,14 +884,23 @@ class Company:
             - 수익성/안정성/성장성/효율성/현금흐름 5대 영역 자동 등급
             - 각 영역별 핵심 지표 해설 텍스트
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
         AIContext:
             - ask()/chat()에서 재무 건전성 요약 컨텍스트
 
+        Guide:
+            - "재무 상태가 어때?" → c.insights로 자동 등급 확인
+            - "재무 건전성 요약" → c.insights
+
+        SeeAlso:
+            - ratios: 재무비율 시계열 원본
+            - analysis: 8대 분석 영역 (insights보다 심화)
+            - ask: AI 기반 해석
+
         Returns:
             AnalysisResult — 영역별 등급/해설 객체 또는 None.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -791,15 +931,28 @@ class Company:
             - strategy/accounting/financial/forecast/valuation/risk/comparative/macro 8축
             - axis 없이 호출하면 사용 가능한 축 목록 반환
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        AIContext:
+            - ask()/chat()에서 심화 분석 패키지 선택 컨텍스트
+
+        Guide:
+            - "재무 분석 해줘" → c.analysis("financial")
+            - "어떤 분석이 가능해?" → c.analysis()로 축 목록 확인
+
+        SeeAlso:
+            - insights: 재무 인사이트 (간편 요약)
+            - forecast: 매출 예측
+            - valuation: 밸류에이션
+            - ask: AI 기반 해석
+
         Args:
             axis: 분석 축 이름 (예: "financial", "valuation"). None이면 축 목록.
             **kwargs: 축별 추가 파라미터.
 
         Returns:
             분석 결과 객체 또는 축 목록 dict.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -821,15 +974,26 @@ class Company:
             - 주가, 뉴스, 매크로 등 외부 데이터 소스 수집
             - axis 없이 호출하면 사용 가능한 축 목록 반환
 
+        Requires:
+            데이터: 인터넷 연결 (외부 API 호출)
+
+        AIContext:
+            - ask()/chat()에서 주가, 뉴스 등 외부 컨텍스트 보강
+
+        Guide:
+            - "주가 데이터가 필요해" → c.gather("price")
+            - "어떤 외부 데이터를 수집할 수 있어?" → c.gather()
+
+        SeeAlso:
+            - news: 뉴스 수집 (gather("news") 바로가기)
+            - analysis: 분석 영역 (수집 데이터를 소비)
+
         Args:
             axis: 수집 축 이름 (예: "price", "news"). None이면 축 목록.
             **kwargs: 축별 추가 파라미터.
 
         Returns:
             수집 결과 DataFrame 또는 축 목록.
-
-        Requires:
-            데이터: 인터넷 연결 (외부 API 호출)
 
         Example::
 
@@ -851,11 +1015,23 @@ class Company:
             - 사전 수집된 filing 메타데이터 조회
             - formType, filedAt, accessionNo 등 컬럼 포함
 
-        Returns:
-            pl.DataFrame — docId | filedAt | formType | ... 또는 None.
-
         Requires:
             데이터: 없음 (SEC EDGAR 자동 수집)
+
+        AIContext:
+            - 보유 공시 목록 확인으로 분석 범위 결정에 활용
+
+        Guide:
+            - "이 회사 공시 목록 보여줘" → c.filings()
+            - "어떤 보고서가 있어?" → c.filings()로 보유 문서 확인
+
+        SeeAlso:
+            - disclosure: SEC filing 검색 (기간/유형/키워드 필터)
+            - liveFilings: 실시간 최신 filing 조회
+            - readFiling: filing 원문 읽기
+
+        Returns:
+            pl.DataFrame — docId | filedAt | formType | ... 또는 None.
 
         Example::
 
@@ -880,6 +1056,21 @@ class Company:
             - 기간/유형/키워드 필터로 SEC filing 검색
             - DART disclosure()와 동일한 인터페이스
 
+        Requires:
+            데이터: 인터넷 연결 (SEC EDGAR API)
+
+        AIContext:
+            - 최근 공시 빈도/유형으로 기업 이벤트 감지에 활용
+
+        Guide:
+            - "최근 공시 뭐 나왔어?" → c.disclosure(days=30)
+            - "10-K만 보고 싶어" → c.disclosure(type="10-K")
+
+        SeeAlso:
+            - liveFilings: 실시간 최신 filing (정규화 포맷)
+            - readFiling: filing 원문 텍스트 읽기
+            - filings: 사전 수집된 filing 목록
+
         Args:
             start: 시작일 (YYYY-MM-DD). None이면 end 기준 days일 전.
             end: 종료일 (YYYY-MM-DD). None이면 오늘.
@@ -890,9 +1081,6 @@ class Company:
 
         Returns:
             pl.DataFrame — docId | filedAt | title | formType | docUrl | ...
-
-        Requires:
-            데이터: 인터넷 연결 (SEC EDGAR API)
 
         Example::
 
@@ -921,6 +1109,22 @@ class Company:
             - form 유형, 기간, 키워드 복합 필터
             - readFiling()과 연계하여 원문 읽기 가능
 
+        Requires:
+            데이터: 인터넷 연결 (SEC EDGAR API)
+
+        AIContext:
+            - 최신 공시 모니터링으로 기업 이벤트 실시간 감지
+            - readFiling()과 조합하여 최신 공시 원문 분석
+
+        Guide:
+            - "최신 공시 목록 보여줘" → c.liveFilings()
+            - "10-K만 최근 5건" → c.liveFilings(forms=["10-K"], limit=5)
+
+        SeeAlso:
+            - readFiling: filing 원문 텍스트 읽기
+            - disclosure: 기간/유형/키워드 검색 (liveFilings 위임)
+            - filings: 사전 수집된 filing 목록
+
         Args:
             start: 시작일 (YYYY-MM-DD).
             end: 종료일 (YYYY-MM-DD).
@@ -932,9 +1136,6 @@ class Company:
 
         Returns:
             pl.DataFrame — docId | filedAt | title | formType | docUrl | ...
-
-        Requires:
-            데이터: 인터넷 연결 (SEC EDGAR API)
 
         Example::
 
@@ -1043,15 +1244,27 @@ class Company:
             - filing URL, accessionNo 문자열, liveFilings() row 모두 지원
             - HTML 자동 텍스트 변환, maxChars 기준 truncate
 
+        Requires:
+            데이터: 인터넷 연결 (SEC EDGAR 문서 다운로드)
+
+        AIContext:
+            - ask()/chat()에서 특정 filing 원문을 읽어 심층 분석에 활용
+
+        Guide:
+            - "이 공시 원문 읽어줘" → c.readFiling(filing)
+            - "최신 10-K 내용 보여줘" → liveFilings()로 조회 후 readFiling()
+
+        SeeAlso:
+            - liveFilings: 실시간 filing 목록 (readFiling 입력 소스)
+            - disclosure: filing 검색
+            - show: topic 기반 조회 (수평화된 데이터)
+
         Args:
             filing: filing URL(str), accessionNo(str), 또는 liveFilings() row.
             maxChars: 최대 문자수. None이면 전체.
 
         Returns:
             dict — docId, market, title, docUrl, raw, text, truncated 키 포함.
-
-        Requires:
-            데이터: 인터넷 연결 (SEC EDGAR 문서 다운로드)
 
         Example::
 
@@ -1121,11 +1334,23 @@ class Company:
             - finance(BS/IS/CF/CIS/ratios) + docs(10-K/10-Q 항목) 전체 topic 열거
             - 각 topic의 source, 블록 수, 기간 수 요약
 
-        Returns:
-            pl.DataFrame — topic | source | blocks | periods.
-
         Requires:
             데이터: 없음 (SEC EDGAR 자동 수집)
+
+        AIContext:
+            - 사용 가능한 topic 목록으로 질문 라우팅 판단에 활용
+
+        Guide:
+            - "어떤 topic이 있어?" → c.topics
+            - "분석 가능한 항목 목록" → c.topics로 확인
+
+        SeeAlso:
+            - sections: 전체 수평화 보드
+            - index: topic 메타데이터 보드
+            - show: 특정 topic 데이터 조회
+
+        Returns:
+            pl.DataFrame — topic | source | blocks | periods.
 
         Example::
 
@@ -1201,8 +1426,22 @@ class Company:
             - period 리스트 전달 시 세로 뷰 (기간 x 항목) 변환
             - 단축 alias 지원: "risk" → "item1ARiskFactors", "mdna" → "item7Mdna"
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
         AIContext:
             - ask()/chat()에서 특정 topic 원문/수치 조회 컨텍스트
+
+        Guide:
+            - "재무상태표 보여줘" → c.show("BS")
+            - "리스크 팩터 내용 보여줘" → c.show("risk") 또는 c.show("10-K::item1ARiskFactors")
+            - "2024년 손익만 보고 싶어" → c.show("IS", period="2024")
+
+        SeeAlso:
+            - select: show() 결과에서 행/열 필터
+            - trace: topic 데이터 출처 추적
+            - sections: 전체 수평화 보드
+            - topics: 사용 가능한 topic 목록
 
         Args:
             topic: topic 이름 (BS, IS, 10-K::item1Business, risk, mdna 등).
@@ -1211,9 +1450,6 @@ class Company:
 
         Returns:
             pl.DataFrame — 블록 목차 또는 실제 데이터. 없으면 None.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -1323,6 +1559,20 @@ class Company:
             - show() 결과에서 행(계정명)과 열(기간) 동시 필터
             - SelectResult 객체로 반환하여 체이닝/export 가능
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        AIContext:
+            - ask()/chat()에서 특정 계정 x 기간 조합을 정밀 추출
+
+        Guide:
+            - "Total Assets 2024년 값만 보여줘" → c.select("BS", "Total Assets", "2024")
+            - "매출과 순이익 최근 2년" → c.select("IS", ["Revenue", "Net Income"], ["2024", "2023"])
+
+        SeeAlso:
+            - show: topic 전체 데이터 조회 (select의 입력 소스)
+            - trace: topic 출처 추적
+
         Args:
             topic: topic 이름 (BS, IS 등).
             indList: 행 필터 — 계정명 문자열 또는 리스트.
@@ -1330,9 +1580,6 @@ class Company:
 
         Returns:
             SelectResult — 필터된 DataFrame 래퍼. 없으면 None.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -1370,15 +1617,27 @@ class Company:
             - topic 데이터가 docs/finance 중 어디서 왔는지 추적
             - 선택 근거(whySelected), 우선순위, 커버리지 정보 포함
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        AIContext:
+            - 데이터 신뢰성 검증에 활용 — 출처와 커버리지 확인
+
+        Guide:
+            - "이 데이터 어디서 왔어?" → c.trace("BS")
+            - "docs에서 온 건지 finance에서 온 건지" → c.trace(topic)
+
+        SeeAlso:
+            - show: topic 데이터 조회
+            - sections: 전체 수평화 보드
+            - index: topic 메타데이터 보드
+
         Args:
             topic: topic 이름 (BS, IS, 10-K::item1ARiskFactors 등).
             period: 특정 기간 필터 (선택).
 
         Returns:
             dict — topic, primarySource, whySelected, availableSources 등. 없으면 None.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -1473,11 +1732,24 @@ class Company:
             - 전체 topic의 chapter, label, kind(finance/docs), source, periods, shape 요약
             - sections 수평화 보드의 메타 레이어
 
-        Returns:
-            pl.DataFrame — chapter | topic | label | kind | source | periods | shape | preview.
-
         Requires:
             데이터: 없음 (SEC EDGAR 자동 수집)
+
+        AIContext:
+            - 전체 topic 구조를 한눈에 파악하여 분석 계획 수립에 활용
+
+        Guide:
+            - "전체 인덱스 보여줘" → c.index
+            - "어떤 데이터가 있는지 요약" → c.index로 메타 정보 확인
+
+        SeeAlso:
+            - topics: topic 목록 간단 요약
+            - sections: 전체 수평화 보드 원본
+            - show: 특정 topic 데이터 조회
+            - view: 브라우저에서 시각적 탐색
+
+        Returns:
+            pl.DataFrame — chapter | topic | label | kind | source | periods | shape | preview.
 
         Example::
 
@@ -1634,6 +1906,22 @@ class Company:
             - 특정 topic의 기간별 변경 이력
             - 두 기간 지정 시 줄 단위 diff (추가/삭제/변경)
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        AIContext:
+            - ask()/chat()에서 공시 변경 포인트 감지 및 해석에 활용
+
+        Guide:
+            - "전체적으로 뭐가 바뀌었어?" → c.diff()
+            - "리스크 팩터 변경 내역" → c.diff("10-K::item1ARiskFactors")
+            - "2023→2024 MD&A 비교" → c.diff("10-K::item7Mdna", "2023", "2024")
+
+        SeeAlso:
+            - watch: 변화 중요도 스코어링 (diff보다 요약)
+            - keywordTrend: 키워드 빈도 추이
+            - show: topic 데이터 조회
+
         Args:
             topic: topic 이름. None이면 전체 변경 요약.
             fromPeriod: 비교 시작 기간 (예: "2023").
@@ -1641,9 +1929,6 @@ class Company:
 
         Returns:
             pl.DataFrame — 변경 요약/이력/줄단위 diff. 없으면 None.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -1681,15 +1966,27 @@ class Company:
             - 단일 키워드 또는 복수 키워드 동시 추적
             - 키워드 미지정 시 내장 기본 키워드(AI, risk 등) 전체 분석
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        AIContext:
+            - 공시 텍스트 내 특정 주제의 강조도 변화를 추적
+
+        Guide:
+            - "AI라는 단어가 공시에서 얼마나 자주 나와?" → c.keywordTrend("AI")
+            - "여러 키워드 추이를 한번에" → c.keywordTrend(keywords=["AI", "supply chain"])
+
+        SeeAlso:
+            - diff: 기간간 텍스트 변경 비교
+            - watch: 변화 중요도 스코어링
+            - show: topic 원문 조회
+
         Args:
             keyword: 단일 키워드 문자열.
             keywords: 복수 키워드 리스트. keyword와 동시 지정 시 keyword 우선.
 
         Returns:
             pl.DataFrame — topic | period | keyword | count. 없으면 None.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -1717,14 +2014,26 @@ class Company:
             - 종목명/ticker 기반 최근 뉴스 수집
             - 기간 조절 가능 (기본 30일)
 
+        Requires:
+            데이터: 인터넷 연결 (뉴스 API)
+
+        AIContext:
+            - ask()/chat()에서 최근 이벤트 맥락 파악에 활용
+
+        Guide:
+            - "최근 뉴스 뭐 있어?" → c.news()
+            - "지난 1주일 뉴스만" → c.news(days=7)
+
+        SeeAlso:
+            - gather: 외부 데이터 수집 (뉴스 포함)
+            - watch: 공시 변화 감지
+            - disclosure: SEC filing 검색
+
         Args:
             days: 수집 기간 일수 (기본 30).
 
         Returns:
             pl.DataFrame — 뉴스 제목, 날짜, URL 등 포함.
-
-        Requires:
-            데이터: 인터넷 연결 (뉴스 API)
 
         Example::
 
@@ -1747,14 +2056,26 @@ class Company:
             - topic 미지정 시 전체 topic 중요도 순 정렬
             - 특정 topic 지정 시 해당 topic 상세 변화 분석
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        AIContext:
+            - ask()/chat()에서 주목할 공시 변화 포인트 자동 감지에 활용
+
+        Guide:
+            - "뭐가 중요하게 바뀌었어?" → c.watch()
+            - "리스크 팩터 변화 상세" → c.watch("10-K::item1ARiskFactors")
+
+        SeeAlso:
+            - diff: 기간간 텍스트 변경 비교 (줄 단위)
+            - keywordTrend: 키워드 빈도 추이
+            - show: topic 데이터 조회
+
         Args:
             topic: topic 이름. None이면 전체 topic 요약.
 
         Returns:
             pl.DataFrame — topic | score | summary 등. 없으면 None.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -1778,14 +2099,26 @@ class Company:
             - 복수 통계 모델 앙상블로 향후 N년 매출 예측
             - 신뢰구간 포함 시나리오 제공
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        AIContext:
+            - ask()/chat()에서 매출 전망 시나리오 제시에 활용
+
+        Guide:
+            - "매출 전망이 어때?" → c.forecast()
+            - "5년 후 매출 예측" → c.forecast(horizon=5)
+
+        SeeAlso:
+            - valuation: 밸류에이션 (DCF에서 forecast 결과 활용)
+            - analysis: 8대 분석 영역
+            - IS: 손익계산서 원본
+
         Args:
             horizon: 예측 기간 연수 (기본 3년).
 
         Returns:
             ForecastResult — 예측값, 신뢰구간, 모델별 결과.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -1812,14 +2145,26 @@ class Company:
             - DCF, DDM, 상대가치 3가지 밸류에이션 모델 동시 실행
             - 주당 적정가치 산출 (shares 지정 시)
 
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        AIContext:
+            - ask()/chat()에서 적정가치 판단 컨텍스트로 활용
+
+        Guide:
+            - "이 기업 적정가치가 얼마야?" → c.valuation()
+            - "주식수 직접 넣어서 계산" → c.valuation(shares=15_000_000_000)
+
+        SeeAlso:
+            - forecast: 매출 예측 (DCF 입력)
+            - analysis: 8대 분석 영역
+            - ratios: 재무비율 시계열
+
         Args:
             shares: 발행주식수. None이면 profile에서 자동 조회.
 
         Returns:
             ValuationResult — 모델별 적정가치, 요약.
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
 
         Example::
 
@@ -1858,6 +2203,21 @@ class Company:
             - include/exclude로 컨텍스트 범위 조절
             - 복수 LLM provider 지원 (openai, ollama 등)
 
+        Requires:
+            데이터: LLM API 키 설정 (dartlab ai 또는 환경변수)
+
+        AIContext:
+            - Engine-First: 엔진이 계산 후 결과를 LLM에게 전달하여 해석
+
+        Guide:
+            - "이 기업 리스크가 뭐야?" → c.ask("What are the key risks?")
+            - "매출 추세 분석해줘" → c.ask("Revenue trend analysis")
+
+        SeeAlso:
+            - chat: agent mode (tool calling으로 심화 분석)
+            - analysis: 8대 분석 영역 (ask의 컨텍스트 소스)
+            - insights: 재무 인사이트 (ask의 컨텍스트 소스)
+
         Args:
             question: 자연어 질문.
             include: 포함할 컨텍스트 키 리스트.
@@ -1869,9 +2229,6 @@ class Company:
 
         Returns:
             str — LLM 응답 텍스트.
-
-        Requires:
-            데이터: LLM API 키 설정 (dartlab ai 또는 환경변수)
 
         Example::
 
@@ -1911,6 +2268,21 @@ class Company:
             - 최대 max_turns 반복으로 원본 탐색, 비교 분석, 메타 질문 처리
             - tool_call/tool_result 콜백으로 진행 과정 모니터링
 
+        Requires:
+            데이터: LLM API 키 설정 (tool calling 지원 provider 필요)
+
+        AIContext:
+            - Tier 2 AI: LLM이 자율적으로 저수준 tool을 호출하여 심화 탐색
+
+        Guide:
+            - "배당 추이를 깊이 분석해줘" → c.chat("Analyze dividend trends and find anomalies")
+            - "MSFT와 마진 비교" → c.chat("Compare margins with MSFT")
+
+        SeeAlso:
+            - ask: 단일 질문 응답 (chat보다 간편, tool calling 없음)
+            - analysis: 8대 분석 영역
+            - select: 특정 계정/기간 필터
+
         Args:
             question: 자연어 질문.
             provider: LLM provider 이름.
@@ -1921,9 +2293,6 @@ class Company:
 
         Returns:
             str — LLM 최종 응답 텍스트.
-
-        Requires:
-            데이터: LLM API 키 설정 (tool calling 지원 provider 필요)
 
         Example::
 

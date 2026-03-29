@@ -353,6 +353,32 @@ class _ProfileAccessor:
             return "audit"
         return apiType
 
+    @property
+    def sharesOutstanding(self) -> int | None:
+        """발행주식수 (유통중 보통주 기준, stockTotal report)."""
+        cacheKey = "_sharesOutstanding"
+        if cacheKey in self._company._cache:
+            return self._company._cache[cacheKey]
+
+        result = None
+        try:
+            df = self._company.report.extractAnnual("stockTotal")
+            if df is not None and len(df) > 0:
+                # se='보통주', 최신 날짜 기준 istc_totqy(유통중주식총수) 추출
+                common = df.filter(pl.col("se") == "보통주")
+                if len(common) > 0 and "istc_totqy" in common.columns:
+                    # 최신순 정렬
+                    if "stlm_dt" in common.columns:
+                        common = common.sort("stlm_dt", descending=True)
+                    val = common["istc_totqy"][0]
+                    if val is not None:
+                        result = int(float(val))
+        except (AttributeError, KeyError, IndexError, ValueError, TypeError):
+            pass
+
+        self._company._cache[cacheKey] = result
+        return result
+
     def _sourcePriority(self, topic: str) -> str:
         if topic in {"BS", "IS", "CIS", "CF", "SCE"}:
             return "finance"

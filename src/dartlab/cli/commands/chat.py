@@ -19,99 +19,32 @@ from dartlab.cli.services.providers import detect_provider
 from dartlab.cli.services.runtime import configure_dartlab
 
 # ---------------------------------------------------------------------------
-# Brand colors (synced with landing/src/lib/brand.ts)
+# Brand colors (terminal palette — see brand.py)
 # ---------------------------------------------------------------------------
 
-_CLR = "#ea4647"  # primary (brand.ts primary — 로고/강조)
-_CLR_DIM = "#c83232"  # primaryDark (brand.ts primaryDark — 보조 강조)
-_CLR_ACCENT = "#fb923c"  # accent (brand.ts accent)
-_CLR_MUTED = "#94a3b8"  # textMuted (brand.ts textMuted)
-_CLR_SUCCESS = "#34d399"  # success (brand.ts success)
-_CLR_WARN = "#fbbf24"  # warning (brand.ts warning)
+from dartlab.cli.brand import CLR, CLR_ACCENT, CLR_DIM, CLR_MUTED, CLR_SUCCESS, CLR_WARN
+
+_CLR = CLR
+_CLR_DIM = CLR_DIM
+_CLR_ACCENT = CLR_ACCENT
+_CLR_MUTED = CLR_MUTED
+_CLR_SUCCESS = CLR_SUCCESS
+_CLR_WARN = CLR_WARN
 
 # ---------------------------------------------------------------------------
-# Suggestions (English defaults)
+# Shared constants (re-exported for backward compat with TUI app.py imports)
 # ---------------------------------------------------------------------------
 
-_SUGGESTIONS = [
-    "Analyze profitability trends and earnings quality",
-    "Evaluate financial health and cash flow sustainability",
-    "Assess debt structure and liquidity risks",
-    "Compare dividend sustainability and shareholder returns",
-    "Summarize the key investment thesis for this company",
-]
-
-# ---------------------------------------------------------------------------
-# Tool labels
-# ---------------------------------------------------------------------------
-
-_TOOL_LABELS = {
-    "explore": "Disclosure",
-    "finance": "Financial Data",
-    "analysis": "Analysis Engine",
-    "scan": "Market Scan",
-    "gather": "Market Data",
-    "review": "Review Report",
-    "openapi": "OpenDART API",
-    "system": "System Info",
-    "chart": "Chart",
-    "research": "Research",
-    "macro": "Macro",
-    "company": "Company",
-    "ui": "UI",
-    # legacy
-    "analyze": "Analysis Engine",
-    "market": "Market Data",
-}
-
-# ---------------------------------------------------------------------------
-# Slash command registry
-# ---------------------------------------------------------------------------
-
-_COMMANDS: list[tuple[str, tuple[str, ...], str]] = [
-    ("/help", (), "Show available commands"),
-    ("/company", ("/c",), "Switch or show current company"),
-    ("/model", ("/m",), "Switch model"),
-    ("/provider", ("/p",), "Switch LLM provider"),
-    ("/clear", (), "Clear conversation history"),
-    ("/suggest", ("/s",), "Suggested questions"),
-    ("/status", (), "Session status and config"),
-    ("/cost", (), "Token usage and cost"),
-    ("/export", (), "Export conversation to markdown"),
-    ("/history", ("/h",), "Show recent conversation turns"),
-    ("/compact", (), "Compact conversation history"),
-    ("/report", ("/r",), "Deep analysis (report mode)"),
-    ("/quit", ("/exit", "/q"), "Exit"),
-]
-
-# ---------------------------------------------------------------------------
-# Skill commands (analysis domain shortcuts)
-# ---------------------------------------------------------------------------
-
-_SKILL_COMMANDS: list[tuple[str, str, str]] = [
-    ("/profitability", "profitability", "Profitability analysis (DuPont, margins, earnings quality)"),
-    ("/health", "health", "Financial health (leverage, liquidity, coverage)"),
-    ("/valuation", "valuation", "Valuation (multiples, DCF, fair value range)"),
-    ("/risk", "risk", "Risk assessment (financial, business, accounting)"),
-    ("/strategy", "strategy", "Business strategy (segments, moat, growth)"),
-    ("/accounting", "accounting", "Accounting quality (accruals, audit, changes)"),
-    ("/dividend", "dividend", "Dividend analysis (sustainability, payout, yield)"),
-    ("/comprehensive", "comprehensive", "Comprehensive investment analysis"),
-]
-
-_SKILL_DEFAULT_QUESTIONS: dict[str, str] = {
-    "profitability": "Analyze profitability trends: DuPont decomposition, margin structure, and earnings quality",
-    "health": "Evaluate financial health: leverage structure, liquidity layers, and debt coverage",
-    "valuation": "Assess valuation: key multiples vs peers, DCF fair value range, and safety margin",
-    "risk": "Identify risks: financial distress signals, business risks, and accounting red flags",
-    "strategy": "Analyze business strategy: segment structure, competitive moat, and growth direction",
-    "accounting": "Evaluate accounting quality: accrual ratio, audit history, and policy changes",
-    "dividend": "Analyze dividends: payout history, FCF sustainability, and shareholder return policy",
-    "comprehensive": "Provide a comprehensive investment analysis covering financials, valuation, risks, and thesis",
-}
-
-_SLASH_WORDS: list[str] = [_name for _name, _, _ in _COMMANDS]
-_SLASH_WORDS.extend(_skillCmd for _skillCmd, _, _ in _SKILL_COMMANDS)
+from dartlab.cli.constants import (
+    COMMANDS as _COMMANDS,
+    SKILL_COMMANDS as _SKILL_COMMANDS,
+    SKILL_DEFAULT_QUESTIONS as _SKILL_DEFAULT_QUESTIONS,
+    SLASH_WORDS as _SLASH_WORDS,
+    SUGGESTIONS as _SUGGESTIONS,
+    TOOL_LABELS as _TOOL_LABELS,
+    toolLabel as _toolLabel,
+    toolResultPreview as _toolResultPreview,
+)
 
 
 def configure_parser(subparsers) -> None:
@@ -150,6 +83,7 @@ class _ChatState:
     queryCount: int = 0
     toolCallCount: int = 0
     companiesUsed: list[str] = field(default_factory=list)
+    skillsUsed: list[str] = field(default_factory=list)
     cachedSnapshot: dict | None = None
     lastFollowUps: list[str] = field(default_factory=list)
 
@@ -347,9 +281,6 @@ def _executeQuery(
     }
     if skillId:
         analyzeKwargs["question_types"] = (skillId,)
-    if state.cachedSnapshot:
-        analyzeKwargs["snapshot"] = state.cachedSnapshot
-
     events = analyze(state.company, question, **analyzeKwargs)
 
     buffer = ""
@@ -375,11 +306,16 @@ def _executeQuery(
                     thinkingPhase = False
                     toolName = ev.data.get("name", "")
                     label = _toolLabel(toolName)
+                    from dartlab.cli.constants import formatToolArgs
+
+                    toolArgs = ev.data.get("arguments", {})
+                    argPreview = formatToolArgs(toolArgs) if toolArgs else ""
+                    displayLabel = f"{label} ({argPreview})" if argPreview else label
                     toolStartTime = time.monotonic()
                     state.toolCallCount += 1
                     queryToolCount += 1
                     toolSpinner = Spinner(
-                        "dots", text=f"[{_CLR_MUTED}][{queryToolCount}] {label}...[/]", style=_CLR_MUTED
+                        "dots", text=f"[{_CLR_MUTED}][{queryToolCount}] {displayLabel}...[/]", style=_CLR_MUTED
                     )
                     statusBlock = "\n".join(toolLines)
                     if statusBlock:
@@ -453,20 +389,6 @@ def _executeQuery(
                     console.print(f"  [{_CLR_MUTED}]{i}. {fq}[/]")
 
 
-def _toolResultPreview(resultText: str) -> str:
-    """Extract a one-line preview from tool result text."""
-    if not resultText or resultText.startswith("[Error]") or resultText.startswith("["):
-        return ""
-    lines = resultText.strip().splitlines()
-    tableRows = [ln for ln in lines if ln.startswith("|") and "---" not in ln]
-    if len(tableRows) > 1:
-        return f"{len(tableRows) - 1} rows"
-    firstLine = lines[0].strip().lstrip("#").strip() if lines else ""
-    if len(firstLine) > 60:
-        firstLine = firstLine[:57] + "..."
-    return firstLine
-
-
 def _renderToolData(resultText: str, console) -> None:
     """Render tool result data — Rich Table for tables, Markdown panel fallback."""
     from dartlab.cli.rendering import renderToolResult
@@ -486,11 +408,6 @@ def _renderToolData(resultText: str, console) -> None:
         else:
             truncated = resultText.strip()
         console.print(Panel(Markdown(truncated), border_style="dim", padding=(0, 1)))
-
-
-def _toolLabel(toolName: str) -> str:
-    """Resolve tool name to display label."""
-    return _TOOL_LABELS.get(toolName, toolName)
 
 
 # ---------------------------------------------------------------------------
@@ -541,22 +458,8 @@ def _tryAutoDetect(userInput: str, state: _ChatState, console) -> None:
 
 
 def _displaySnapshot(company: Any, state: _ChatState, console) -> None:
-    """Show key metrics snapshot when a company loads."""
-    try:
-        from dartlab.ai.context.snapshot import build_snapshot
-
-        snap = build_snapshot(company, includeInsights=False)
-        if snap is None:
-            return
-        items = snap.get("items", [])
-        if not items:
-            return
-        state.cachedSnapshot = snap
-        from dartlab.cli.rendering import renderSnapshot
-
-        renderSnapshot(items, console)
-    except (ImportError, AttributeError, KeyError, OSError):
-        pass
+    """Show key metrics snapshot when a company loads (no-op after briefing removal)."""
+    pass
 
 
 # ---------------------------------------------------------------------------
@@ -879,13 +782,26 @@ def _cmdSuggest(_arg: str, state: _ChatState, console) -> None:
 
 
 def _cmdStatus(_arg: str, state: _ChatState, console) -> None:
-    mode = "general (no company)" if state.company is None else f"analysis ({state.company.corpName})"
-    console.print(f"  mode:     {mode}")
-    console.print(f"  provider: [bold]{state.provider}[/]")
-    console.print(f"  model:    {state.model or '(default)'}")
-    console.print(f"  history:  {len(state.history)} messages")
-    console.print(f"  queries:  {state.queryCount}")
-    console.print(f"  tools:    {state.toolCallCount} calls")
+    console.print()
+    console.print(f"  [bold {_CLR}]Session[/]")
+    console.print(f"  [{_CLR_MUTED}]{'─' * 40}[/]")
+    if state.company:
+        console.print(f"  Company:  [bold]{state.company.corpName}[/] ({state.stockCode})")
+    else:
+        console.print(f"  Company:  [{_CLR_MUTED}](none -- general mode)[/]")
+    console.print(f"  Provider: [bold]{state.provider or '(none)'}[/]" + (f" / {state.model}" if state.model else ""))
+    console.print(f"  History:  {len(state.history)} messages")
+    avgTools = f" (avg {state.toolCallCount // state.queryCount} tools)" if state.queryCount > 0 else ""
+    console.print(f"  Queries:  {state.queryCount}{avgTools}")
+    elapsed = time.monotonic() - state.startTime
+    minutes = int(elapsed) // 60
+    seconds = int(elapsed) % 60
+    console.print(f"  Elapsed:  {minutes}m {seconds}s")
+    if state.skillsUsed:
+        console.print(f"  Skills:   {', '.join('/' + s for s in state.skillsUsed)}")
+    if len(state.companiesUsed) > 1:
+        console.print(f"  Visited:  {', '.join(state.companiesUsed)}")
+    console.print()
 
 
 def _cmdCost(_arg: str, _state: _ChatState, console) -> None:
@@ -964,6 +880,8 @@ def _cmdSkill(skillId: str, arg: str, state: _ChatState, console) -> None:
     question = arg or _SKILL_DEFAULT_QUESTIONS.get(skillId, "Analyze this company")
     if state.company is None:
         console.print(f"  [{_CLR_MUTED}]No company loaded — LLM will search via tools[/]")
+    if skillId not in state.skillsUsed:
+        state.skillsUsed.append(skillId)
     console.print(f"  [{_CLR_ACCENT}]Running {skillId} analysis...[/]")
     _executeQuery(question, state, console, skillId=skillId)
 

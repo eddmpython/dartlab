@@ -23,9 +23,10 @@ Desktop.ini
 
 CLAUDE.md
 AGENTS.md
+PLAN.md
 .agent/
 .claude/
-# Data (available via gh release)
+# Data
 data/
 
 # Backup (파일 삭제 대신 이동)
@@ -41,6 +42,9 @@ landing/static/blog/assets/
 
 # MkDocs build
 site/
+
+# Hypothesis test artifacts
+.hypothesis/
 
 # Local experiment artifacts
 experiments/**/output/

@@ -542,9 +542,18 @@ def _detectArchetype(series: dict[str, dict[str, list[float | None]]]) -> str:
     }
     scores["securities"] = len(_SEC_IS.intersection(isKeys)) + len(_SEC_BS.intersection(bsKeys))
 
+    # 일반 기업 시그니처 -- 매출/매출원가가 있으면 general 우세
+    _GENERAL_IS = {"sales", "revenue", "cost_of_sales", "selling_and_administrative_expenses"}
+    generalSignals = len(_GENERAL_IS.intersection(isKeys))
+
     # 최고 점수 archetype 선택
     max_score = max(scores.values())
     if max_score == 0:
+        return "general"
+
+    # 일반 기업 시그니처가 있으면 (매출 존재) 금융업 오분류 방지
+    # 최소 3점 이상이어야 금융업 확정. BS 금융자산만으로는 부족.
+    if max_score < 3 and generalSignals >= 1:
         return "general"
 
     top = [k for k, v in scores.items() if v == max_score]

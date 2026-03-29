@@ -530,6 +530,18 @@ class Company:
         Returns:
             pl.DataFrame | None — year, rceptDate, rceptNo, reportNm, viewerUrl 등.
 
+        AIContext:
+            - 어떤 공시가 보유돼 있는지 확인하여 분석 범위 결정에 활용
+
+        Guide:
+            - "이 회사 공시 목록 보여줘" → c.filings()
+            - "어떤 보고서가 있어?" → c.filings()로 보유 문서 확인
+
+        SeeAlso:
+            - disclosure: OpenDART API 기반 실시간 공시 목록 (로컬 보유가 아닌 전체)
+            - liveFilings: 최신 공시 실시간 조회
+            - update: 누락 공시 증분 수집
+
         Requires:
             데이터: docs (자동 다운로드)
         """
@@ -547,6 +559,17 @@ class Company:
 
         Returns:
             dict — {카테고리: 수집 건수}.
+
+        AIContext:
+            - 데이터 최신성 유지에 활용 — 분석 전 자동 갱신 트리거 가능
+
+        Guide:
+            - "최신 공시 반영해줘" → c.update()
+            - "데이터 업데이트" → c.update()로 증분 수집
+
+        SeeAlso:
+            - filings: 현재 보유 공시 목록 확인
+            - disclosure: OpenDART 전체 공시 조회
 
         Requires:
             API 키: DART_API_KEY
@@ -605,6 +628,20 @@ class Company:
             c.disclosure(days=30)           # 최근 30일
             c.disclosure(type="A")          # 정기공시만
             c.disclosure(keyword="사업보고서")
+
+        AIContext:
+            - 특정 유형 공시 존재 여부 확인 → 분석 범위 동적 결정
+            - 최근 공시 빈도/유형 패턴으로 기업 이벤트 감지
+
+        Guide:
+            - "최근 공시 뭐 나왔어?" → c.disclosure(days=30)
+            - "주요사항 공시 있어?" → c.disclosure(type="B")
+            - "사업보고서 언제 나왔어?" → c.disclosure(keyword="사업보고서")
+
+        SeeAlso:
+            - liveFilings: 실시간 최신 공시 (정규화된 포맷)
+            - readFiling: 공시 원문 텍스트 읽기
+            - filings: 로컬 보유 공시 목록
         """
         from dartlab.providers.dart.openapi.dart import Dart
 
@@ -656,6 +693,20 @@ class Company:
             c.liveFilings()                 # 최근 공시 20건
             c.liveFilings(days=7)           # 최근 7일
             c.liveFilings(keyword="배당")   # 키워드 필터
+
+        AIContext:
+            - 최신 공시 모니터링으로 기업 이벤트(배당, 유증, 합병 등) 실시간 감지
+            - readFiling()과 조합하여 최신 공시 원문 분석
+
+        Guide:
+            - "최근 공시 확인해줘" → c.liveFilings()
+            - "이번 주 공시 있어?" → c.liveFilings(days=7)
+            - "배당 관련 공시" → c.liveFilings(keyword="배당")
+
+        SeeAlso:
+            - disclosure: 과거 전체 공시 이력 조회
+            - readFiling: 공시 원문 텍스트 읽기
+            - watch: 공시 변화 중요도 스코어링
         """
         del forms  # DART는 forms 개념이 없다.
 
@@ -766,6 +817,18 @@ class Company:
             c = Company("005930")
             result = c.readFiling("20240315000123")
             result = c.readFiling("20240315000123", sections=True)
+
+        AIContext:
+            - 공시 원문 텍스트를 LLM 컨텍스트에 주입하여 심층 분석 수행
+            - sections=True로 구조화하면 특정 섹션만 선택적 분석 가능
+
+        Guide:
+            - "이 공시 내용 보여줘" → c.readFiling(접수번호)
+            - "공시 원문 분석해줘" → c.readFiling()으로 원문 확보 후 ask()로 분석
+
+        SeeAlso:
+            - liveFilings: 최신 공시 목록에서 접수번호 확인
+            - disclosure: 과거 공시 목록에서 접수번호 확인
         """
         record = filingRecord(filing) or {}
 
@@ -845,6 +908,18 @@ class Company:
             c = Company("005930")
             c.rawDocs              # 삼성전자 공시 문서 원본
             c.rawDocs.columns      # 컬럼 목록 확인
+
+        AIContext:
+            - 원본 데이터 구조 파악 — 파싱 전 상태로 디버깅/검증에 활용
+
+        Guide:
+            - "원본 공시 데이터 보여줘" → c.rawDocs
+            - "가공 전 데이터 확인" → c.rawDocs
+
+        SeeAlso:
+            - sections: docs 가공 후 topic x period 통합 지도
+            - rawFinance: 재무제표 원본 데이터
+            - rawReport: 정기보고서 원본 데이터
         """
         if not self._hasDocs:
             self._hintOnce("rawDocs", "rawDocs", "docs")
@@ -875,6 +950,18 @@ class Company:
             c = Company("005930")
             c.rawFinance           # 삼성전자 재무제표 원본
             c.rawFinance.columns   # 컬럼 목록 확인
+
+        AIContext:
+            - XBRL 정규화 전 원본 구조 파악 — 매핑 검증에 활용
+
+        Guide:
+            - "원본 재무 데이터 보여줘" → c.rawFinance
+            - "XBRL 원본 확인" → c.rawFinance
+
+        SeeAlso:
+            - BS: 가공된 재무상태표
+            - IS: 가공된 손익계산서
+            - rawDocs: 공시 문서 원본
         """
         if not self._hasFinanceParquet:
             self._hintOnce("rawFinance", "rawFinance", "finance")
@@ -905,6 +992,18 @@ class Company:
             c = Company("005930")
             c.rawReport            # 삼성전자 정기보고서 원본
             c.rawReport.columns    # 컬럼 목록 확인
+
+        AIContext:
+            - 정기보고서 API 원본 확인 — report topic 매핑 검증에 활용
+
+        Guide:
+            - "원본 보고서 데이터 보여줘" → c.rawReport
+            - "정기보고서 원본 확인" → c.rawReport
+
+        SeeAlso:
+            - rawDocs: 공시 문서 원본
+            - rawFinance: 재무제표 원본
+            - show: 가공된 topic 데이터 조회
         """
         if not self._hasReport:
             self._hintOnce("rawReport", "rawReport", "report")
@@ -934,6 +1033,17 @@ class Company:
 
             c = Company("005930")
             c.notes                # 주석사항 접근자
+
+        AIContext:
+            - K-IFRS 주석에서 회계정책, 우발부채, 관계사 거래 등 정성 정보 추출
+
+        Guide:
+            - "주석사항 보여줘" → c.notes
+            - "회계정책 확인" → c.notes에서 해당 항목 조회
+
+        SeeAlso:
+            - BS: 재무상태표 (주석이 보충하는 본문)
+            - rawFinance: 재무 원본 데이터
         """
         return self._notesAccessor
 
@@ -1202,6 +1312,17 @@ class Company:
         AIContext:
             - ask()/chat()에서 자산/부채/자본 구조 분석 컨텍스트
 
+        Guide:
+            - "재무상태표 보여줘" → c.BS
+            - "자산/부채 구조" → c.BS로 확인
+            - "유동비율은?" → c.ratios 또는 c.BS에서 계산
+
+        SeeAlso:
+            - IS: 손익계산서 (수익성 분석)
+            - CF: 현금흐름표 (현금창출력)
+            - ratios: 재무비율 (BS 기반 안정성 비율 포함)
+            - select: 특정 계정만 추출 + 시각화
+
         Returns:
             pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
 
@@ -1229,6 +1350,17 @@ class Company:
 
         AIContext:
             - ask()/chat()에서 수익성/매출 구조 분석 컨텍스트
+
+        Guide:
+            - "손익계산서 보여줘" → c.IS
+            - "매출/영업이익 추이" → c.IS 또는 c.select("IS", ["매출액", "영업이익"])
+            - "수익 구조 분석" → c.IS + c.analysis("수익구조")
+
+        SeeAlso:
+            - BS: 재무상태표 (자산/부채 구조)
+            - CF: 현금흐름표 (실제 현금 기반)
+            - CIS: 포괄손익계산서 (기타포괄손익 포함)
+            - select: 특정 계정 추출 + 시각화
 
         Returns:
             pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
@@ -1258,6 +1390,14 @@ class Company:
         AIContext:
             - ask()/chat()에서 기타포괄손익/총포괄이익 분석 컨텍스트
 
+        Guide:
+            - "포괄손익계산서 보여줘" → c.CIS
+            - "기타포괄손익 항목은?" → c.CIS
+
+        SeeAlso:
+            - IS: 일반 손익계산서 (당기순이익까지)
+            - SCE: 자본변동표 (포괄손익이 자본에 미치는 영향)
+
         Returns:
             pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
 
@@ -1285,6 +1425,16 @@ class Company:
 
         AIContext:
             - ask()/chat()에서 현금창출력/투자/재무활동 분석 컨텍스트
+
+        Guide:
+            - "현금흐름표 보여줘" → c.CF
+            - "영업현금흐름 추이" → c.select("CF", ["영업활동으로인한현금흐름"])
+            - "FCF 확인" → c.ratios에서 FCF 비율 또는 c.CF에서 직접 계산
+
+        SeeAlso:
+            - IS: 손익계산서 (발생주의 vs 현금주의 비교)
+            - BS: 재무상태표 (현금성자산 확인)
+            - ratios: 재무비율 (현금흐름 관련 비율 포함)
 
         Returns:
             pl.DataFrame — 계정명 | 2024Q4 | 2024Q3 | ... 또는 None.
@@ -1318,6 +1468,15 @@ class Company:
         AIContext:
             - 회사 전체 지도 — 모든 분석의 출발점
             - ask()/chat()에서 topic 탐색 컨텍스트
+
+        Guide:
+            - "이 회사 전체 데이터 지도" → c.sections
+            - "어떤 topic이 있어?" → c.sections 또는 c.topics
+
+        SeeAlso:
+            - topics: sections 기반 topic 요약 (더 간결)
+            - show: 특정 topic 데이터 조회
+            - index: 전체 구조 메타데이터 목차
 
         Returns:
             pl.DataFrame — chapter | topic | period | source | ... 또는 None.
@@ -1860,6 +2019,22 @@ class Company:
             c.show("IS", period="2023")    # 2023년 손익계산서
             c.show("dividend")             # 배당
             c.show("IS", period=["2022", "2023"])  # 세로 비교
+
+        AIContext:
+            - 120+ topic에 대한 단일 접근점 — LLM이 데이터를 조회하는 핵심 도구
+            - period 리스트로 기간 비교 뷰 생성 가능
+
+        Guide:
+            - "배당 정보 보여줘" → c.show("dividend")
+            - "사업 개요 확인" → c.show("businessOverview")
+            - "2023년 손익계산서" → c.show("IS", period="2023")
+            - "연도별 비교" → c.show("IS", period=["2022", "2023"])
+
+        SeeAlso:
+            - select: show() 결과에서 특정 행/열 필터 + 차트
+            - trace: 데이터 출처 추적
+            - topics: 사용 가능한 topic 전체 목록
+            - diff: 기간간 텍스트 변경 비교
         """
         # alias 해석 (board → boardOfDirectors 등)
         topic = _TOPIC_ALIASES.get(topic, topic)
@@ -2181,6 +2356,19 @@ class Company:
             c.select("IS", ["매출액", "영업이익"])
             c.select("IS", ["매출액"]).chart()
             c.select("BS", ["자본총계"], ["2024", "2023"])
+
+        AIContext:
+            - 특정 계정의 시계열 추출 — 추세 분석 및 차트 생성의 기본 도구
+            - .chart() 체이닝으로 시각화까지 한 번에
+
+        Guide:
+            - "매출액 추이 그래프" → c.select("IS", ["매출액"]).chart()
+            - "영업이익만 뽑아줘" → c.select("IS", ["영업이익"])
+            - "2023-2024 자본 비교" → c.select("BS", ["자본총계"], ["2024", "2023"])
+
+        SeeAlso:
+            - show: 전체 topic ��이터 조회 (select의 원본)
+            - table: docs 마크다운 테이블 구조화 파싱
         """
         from dartlab.core.select import SelectResult
         from dartlab.core.show import selectFromShow
@@ -2239,6 +2427,18 @@ class Company:
 
             c.trace("BS")           # 재무상태표 출처
             c.trace("dividend")     # 배당 데이터 출처
+
+        AIContext:
+            - 데이터 출처 신뢰도 판단 — finance > report > docs 우선순위 확인
+            - 분석 결과의 근거 투명성 확보
+
+        Guide:
+            - "이 데이터 어디서 온 거야?" → c.trace("BS")
+            - "데이터 출처 확인" → c.trace(topic)
+
+        SeeAlso:
+            - show: topic 데이터 조회 (trace로 출처 확인 후 열람)
+            - sources: 3개 source 전체 가용 현황
         """
         topic = _TOPIC_ALIASES.get(topic, topic)
         if topic == "docsStatus" and not self._hasDocs:
@@ -2329,6 +2529,20 @@ class Company:
             c.diff()                                    # 전체 변경 요약
             c.diff("businessOverview")                  # 사업개요 변경 이력
             c.diff("businessOverview", "2023", "2024")  # 줄 단위 diff
+
+        AIContext:
+            - 기간간 공시 변경 감지 — 사업 방향 전환, 리스크 요인 변화 탐지
+            - watch()보다 세밀한 줄 단위 변경 추적
+
+        Guide:
+            - "공시에서 뭐가 바뀌었어?" → c.diff()
+            - "사업개요 변경 이력" → c.diff("businessOverview")
+            - "2023 vs 2024 차이" → c.diff("businessOverview", "2023", "2024")
+
+        SeeAlso:
+            - watch: 변화 중요도 스코어링 (diff보다 요약적)
+            - keywordTrend: 키워드 ��도 추이 (텍스트 변화의 다른 관점)
+            - show: 특정 기간 원문 조회
         """
         if topic is not None:
             topic = _TOPIC_ALIASES.get(topic, topic)
@@ -2377,6 +2591,19 @@ class Company:
             c.keywordTrend("AI")
             c.keywordTrend(keywords=["AI", "ESG"])
             c.keywordTrend()                  # 54개 내장 키워드 전체
+
+        AIContext:
+            - 공시 텍스트의 키워드 빈도 변화로 전략 방향 전환 감지
+            - AI, ESG, 탄소중립 등 트렌드 키워드 모니터링
+
+        Guide:
+            - "AI 언급 추이" → c.keywordTrend("AI")
+            - "ESG 관련 변화" → c.keywordTrend("ESG")
+            - "전체 키워드 트렌드" → c.keywordTrend()
+
+        SeeAlso:
+            - diff: 텍스트 줄 단위 변경 비교 (키워드가 아닌 전체 변경)
+            - watch: 변화 중요도 스코어링
         """
         from dartlab.core.docs.diff import keywordFrequency
 
@@ -2411,6 +2638,18 @@ class Company:
 
             c.news()           # 최근 30일
             c.news(days=7)     # 최근 7일
+
+        AIContext:
+            - 최근 뉴스로 시장 반응, 이슈, 이벤트 파악
+            - ask()/chat()에서 정성적 시장 맥락 보충
+
+        Guide:
+            - "최근 뉴스 보여줘" → c.news()
+            - "이번 주 뉴스" → c.news(days=7)
+
+        SeeAlso:
+            - liveFilings: 최신 공시 (뉴스가 아닌 공식 공시)
+            - gather: 뉴스 포함 4축 외부 데이터 수집
         """
         from dartlab.gather import getDefaultGather
 
@@ -2440,6 +2679,18 @@ class Company:
 
             c.watch()                    # 전체 중요도 순
             c.watch("riskManagement")    # 특정 topic
+
+        AIContext:
+            - 공시 변화 중요도 자동 평가 — 분석 우선순위 결정에 활용
+            - 텍스트 변화량 + 재무 영향 통합 스코어
+
+        Guide:
+            - "뭐가 크게 바뀌었어?" → c.watch()
+            - "리스크 관련 변화" → c.watch("riskManagement")
+
+        SeeAlso:
+            - diff: 줄 단위 상세 변경 비교 (watch보다 세밀)
+            - keywordTrend: 키워드 빈도 추이
         """
         from dartlab.scan.watch.scanner import scan_company
 
@@ -2477,6 +2728,16 @@ class Company:
 
             c.review()                        # 전체 검토서
             c.review("수익구조")                # 특정 섹션
+
+        Guide:
+            - "재무 검토서 만들어줘" → c.review()
+            - "수익구조 분석" → c.review("수익구조")
+            - "AI 의견 포함 보고서" → c.reviewer() (review + AI 해석)
+
+        SeeAlso:
+            - reviewer: review() + AI 섹션별 종합의견 (AI 해석 포함)
+            - analysis: 14축 개별 분석 (review가 내부적으로 소비)
+            - insights: 7영역 등급 + 이상치 요약
         """
         from dartlab.review.registry import buildReview
 
@@ -2513,6 +2774,16 @@ class Company:
             c.reviewer()
             c.reviewer("수익구조")
             c.reviewer(guide="반도체 사이클 관점에서 평가해줘")
+
+        Guide:
+            - "AI가 분석한 보고서" → c.reviewer()
+            - "반도체 관점에서 분석" → c.reviewer(guide="반도체 사이클 관점에서 평가해줘")
+            - "특정 섹션만 AI 분석" → c.reviewer("수익구조")
+
+        SeeAlso:
+            - review: AI 없는 순수 데이터 검토서 (reviewer의 기반)
+            - ask: 자유 질문 기반 AI 분석
+            - chat: 에이전트 모드 심화 분석
         """
         from dartlab.ai.reviewer import buildReviewWithAI
 
@@ -2545,6 +2816,16 @@ class Company:
             c = Company("005930")
             c.analysis()              # 14축 가이드
             c.analysis("수익구조")     # 수익구조 분석
+
+        Guide:
+            - "14축 분석 뭐가 있어?" → c.analysis() (가이드 반환)
+            - "수익구조 분석해줘" → c.analysis("수익구조")
+            - "안정성 분석" → c.analysis("안정성")
+
+        SeeAlso:
+            - review: 14축 분석을 14개 섹션 보고서로 조합
+            - insights: 7영역 등급 요약 (analysis보다 요약적)
+            - ratios: 재무비율 시계열 (analysis의 입력 데이터)
         """
         from dartlab.analysis.financial import Analysis
 
@@ -2584,6 +2865,16 @@ class Company:
             c.gather()                 # 4축 가이드
             c.gather("price")          # 주가 시계열
             c.gather("news")           # 뉴스
+
+        Guide:
+            - "주가 데이터" → c.gather("price")
+            - "외국인/기관 수급" → c.gather("flow")
+            - "거시경제 지표" → c.gather("macro")
+            - "뉴스 수집" → c.gather("news") 또는 c.news()
+
+        SeeAlso:
+            - news: 뉴스 전용 단축 메서드
+            - ask: gather 데이터를 컨텍스트로 활용한 AI 분석
         """
         from dartlab.gather.entry import GatherEntry
 
@@ -2625,6 +2916,18 @@ class Company:
             c.table("employee")                    # 첫 번째 subtopic
             c.table("employee", "직원현황")         # 특정 subtopic
             c.table("employee", numeric=True)       # 숫자 변환
+
+        AIContext:
+            - docs 원문 테이블을 구조화하여 정량 분석에 활용
+            - numeric=True로 금액 문자열을 수치화하면 계산 가능
+
+        Guide:
+            - "직원 현황 테이블" → c.table("employee")
+            - "표 데이터를 숫자로" → c.table(topic, numeric=True)
+
+        SeeAlso:
+            - show: topic 전체 데이터 (table은 subtopic 단위 파싱)
+            - select: show() 결과에서 행/열 필터
         """
         result = self._topicSubtables(topic)
         if result is None:
@@ -2656,6 +2959,15 @@ class Company:
         AIContext:
             - LLM이 가용 topic 목록을 파악하는 데 사용
             - 분석 범위 결정 시 참조
+
+        Guide:
+            - "어떤 데이터가 있어?" → c.topics
+            - "topic 목록" → c.topics
+
+        SeeAlso:
+            - show: 특정 topic 데이터 조회
+            - sections: topic x period 전체 지도 (topics보다 상세)
+            - index: 전체 구조 메타데이터 목차
 
         Returns:
             pl.DataFrame -- 컬럼: order, chapter, topic, source, blocks, periods, latestPeriod
@@ -2733,6 +3045,17 @@ class Company:
 
             c = Company("005930")
             c.sources                  # 3행 DataFrame
+
+        AIContext:
+            - 데이터 가용성 사전 점검 — 분석 가능 범위 판단의 기초
+
+        Guide:
+            - "데이터 뭐가 있어?" → c.sources
+            - "docs/finance/report 상태" → c.sources
+
+        SeeAlso:
+            - topics: topic 단위 상세 데이터 지도
+            - trace: 특정 topic의 출처 추적
         """
         rows = []
         for source, raw in (
@@ -2764,6 +3087,15 @@ class Company:
         AIContext:
             - LLM이 Company 전체 구조를 파악하는 핵심 진입점
             - ask()에서 어떤 데이터를 참조할지 결정하는 기초 정보
+
+        Guide:
+            - "전체 목차 보여줘" → c.index
+            - "어떤 데이터가 있는지 구조적으로" → c.index
+
+        SeeAlso:
+            - topics: topic 단위 요약 (index보다 간결)
+            - sections: 전체 sections 지도 (index의 원본)
+            - profile: 통합 프로필 접근자
 
         Returns:
             pl.DataFrame -- 컬럼: chapter, topic, label, kind, source, periods, shape, preview
@@ -3105,6 +3437,14 @@ class Company:
             - c.sections는 내부적으로 profile.sections를 반환
             - 분석/리뷰에서 통합된 데이터를 소비하는 기본 경로
 
+        Guide:
+            - "통합 프로필" → c.profile
+            - "merge된 sections" → c.profile.sections
+
+        SeeAlso:
+            - sections: profile.sections의 단축 접근
+            - show: profile 기반 topic 데이터 조회
+
         Returns:
             _ProfileAccessor -- sections, show(), topics 메서드 제공
 
@@ -3132,6 +3472,14 @@ class Company:
             - ask()/chat()에서 원문 기반 답변 생성 시 소스로 사용
             - retrieval 기반 컨텍스트 주입의 원천 데이터
 
+        Guide:
+            - "원문 검색용 블록" → c.retrievalBlocks
+            - "RAG용 데이터" → c.retrievalBlocks
+
+        SeeAlso:
+            - contextSlices: retrievalBlocks를 LLM 윈도우에 맞게 슬라이싱한 결과
+            - sections: 구조화된 데이터 지도 (retrievalBlocks의 원본)
+
         Returns:
             pl.DataFrame | None -- 컬럼: topic, subtopic, period, content 등. docs 없으면 None.
 
@@ -3157,6 +3505,14 @@ class Company:
         AIContext:
             - ask()/chat()의 시스템 프롬프트에 직접 주입되는 데이터
             - LLM이 소비하는 최종 형태의 컨텍스트
+
+        Guide:
+            - "LLM에 들어가는 컨텍스트" → c.contextSlices
+            - "AI가 보는 데이터" → c.contextSlices
+
+        SeeAlso:
+            - retrievalBlocks: 슬라이싱 전 전체 retrieval 블록
+            - ask: contextSlices를 내부적으로 소비하는 AI 질문 인터페이스
 
         Returns:
             pl.DataFrame | None -- 슬라이싱된 context 블록. docs 없으면 None.
@@ -3276,12 +3632,26 @@ class Company:
 
     @property
     def ratios(self) -> pl.DataFrame | None:
-        """재무비율 시계열 (분류/항목 × 기간 DataFrame).
+        """재무비율 시계열 (분류/항목 x 기간 DataFrame).
 
         Capabilities:
             - 수익성/안정성/성장성/효율성/밸류에이션 5대 분류
             - 분기별 시계열 비율 자동 계산
             - finance XBRL 기반 정확한 비율
+
+        AIContext:
+            - ask()/chat()에서 재무 건전성/수익성 평가의 핵심 데이터
+            - insights, review가 내부적으로 ratios를 소비
+
+        Guide:
+            - "재무비율 보여줘" → c.ratios
+            - "ROE 추이" → c.ratios에서 ROE 행 확인
+            - "부채비율은?" → c.ratios에서 안정성 분류 확인
+
+        SeeAlso:
+            - ratioSeries: dict 구조 재무비율 (프로그래밍 용도)
+            - insights: 재무비율 기반 등급 + 이상치 분석
+            - select: c.select("ratios", ["ROE"]) 특정 비율 추출
 
         Returns:
             pl.DataFrame — 분류 | 항목 | 2025Q3 | 2025Q2 | ... 또는 None.
@@ -3317,6 +3687,19 @@ class Company:
             - 최대 10년 분기별 데이터
             - finance XBRL 정규화 기반
 
+        AIContext:
+            - insights, forecast, valuation 등 분석 엔진의 핵심 입력 데이터
+            - 분기별 추세 분석의 기초
+
+        Guide:
+            - "분기별 시계열 데이터" → c.timeseries
+            - "매출 분기별 추이" → series, periods = c.timeseries; series["IS"]["sales"]
+
+        SeeAlso:
+            - annual: 연도별 집계 시계열
+            - cumulative: 분기별 누적(YTD) 시계열
+            - BS: DataFrame 형태 재무상태표 (timeseries의 다른 뷰)
+
         Returns:
             (series, periods) 또는 None.
             series = {"BS": {"snakeId": [값...]}, "IS": {...}, "CF": {...}}
@@ -3345,6 +3728,18 @@ class Company:
             - 분기 데이터를 연도 단위로 집계
             - finance XBRL 정규화 기반
 
+        AIContext:
+            - 연도 단위 추세 분석 — forecast, ratioSeries의 기초 데이터
+
+        Guide:
+            - "연���별 시계열" → c.annual
+            - "연간 매출 추이" → series, years = c.annual; series["IS"]["sales"]
+
+        SeeAlso:
+            - timeseries: 분기별 시계열 (더 세밀)
+            - cumulative: 분기별 누적 시계열
+            - ratioSeries: 연도별 재무비율 시계열
+
         Returns:
             (series, years) 또는 None.
 
@@ -3371,6 +3766,17 @@ class Company:
             - Q1→Q2→Q3→Q4 누적 합산
             - finance XBRL 정규화 기반
 
+        AIContext:
+            - Q4 누적이 연간 실적 — 연중 진행률 파악에 활용
+
+        Guide:
+            - "누적 시계열" → c.cumulative
+            - "올해 누적 매출" → series, periods = c.cumulative
+
+        SeeAlso:
+            - timeseries: 분기별 standalone (누적이 아닌 개별 분기)
+            - annual: 연도별 집계
+
         Returns:
             (series, periods) 또는 None.
 
@@ -3392,9 +3798,21 @@ class Company:
         """자본변동표 연도별 매트릭스 (연결 기준).
 
         Capabilities:
-            - 원인(cause) × 세부(detail) × 연도 3차원 매트릭스
+            - 원인(cause) x 세부(detail) x 연도 3차원 매트릭스
             - 자본 구성요소별 변동 원인 추적
             - finance XBRL 정규화 기반
+
+        AIContext:
+            - 자본 변동 원인 분석 — 배당/자사주/유증 등 자본 이벤트 추적
+
+        Guide:
+            - "자본변동표 매트릭스" → c.sceMatrix
+            - "자본 변동 원인 추적" → matrix, years = c.sceMatrix
+
+        SeeAlso:
+            - SCE: DataFrame 형태 자본변동표 (sceMatrix의 2D 뷰)
+            - BS: 재무상태표 (자본 잔액 확인)
+            - capital: 주주환원 분석 (배당/자사주)
 
         Returns:
             (matrix, years) 또는 None.
@@ -3446,6 +3864,15 @@ class Company:
         AIContext:
             - ask()/chat()에서 자본 구조 변동 분석 컨텍스트
 
+        Guide:
+            - "자본변동표 보여줘" → c.SCE
+            - "자본 구성 변화" → c.SCE
+
+        SeeAlso:
+            - sceMatrix: 3차원 매트릭스 형태 (원인별 상세 추적)
+            - CIS: 포괄손익계산서 (자본변동의 원천)
+            - BS: 재무상태표 (자본 잔액)
+
         Returns:
             pl.DataFrame — 계정명 | 2024 | 2023 | ... 또는 None.
 
@@ -3470,6 +3897,17 @@ class Company:
             - 수익성/안정성/성장성/효율성/밸류에이션 비율
             - 연도별 dict 구조 (timeseries/annual과 동일 형태)
             - finance XBRL 기반 정확한 비율
+
+        AIContext:
+            - 프로그래밍 방식 비율 접근 — insights/analysis 엔진이 내부적으로 소비
+
+        Guide:
+            - "비율 시계열 dict" → c.ratioSeries
+            - "ROE 연도별 리스트" → series, years = c.ratioSeries; series["RATIO"]["roe"]
+
+        SeeAlso:
+            - ratios: DataFrame 형태 재무비율 (사용자 열람용)
+            - annual: 연도별 재무 시계열 (비율이 아닌 원본 금액)
 
         Returns:
             ({"RATIO": {snakeId: [v1, v2, ...]}}, years) 또는 None.
@@ -3511,6 +3949,19 @@ class Company:
             c.sector              # SectorInfo(IT/반도체와반도체장비, conf=1.00, src=override)
             c.sector.sector       # Sector.IT
             c.sector.industryGroup  # IndustryGroup.SEMICONDUCTOR
+
+        AIContext:
+            - 섹터 분류 결과로 동종업계 비교, 섹터 파라미터 자동 선택
+            - analysis/valuation에서 섹터별 벤치마크 기준으로 활용
+
+        Guide:
+            - "이 회사 어떤 섹터야?" → c.sector
+            - "업종 분류" → c.sector
+
+        SeeAlso:
+            - sectorParams: 섹터별 밸���에이션 파라미터 (할인율, PER 등)
+            - rank: 섹�� 내 규모 순위
+            - insights: 섹터 기준 등급 평가
         """
         cacheKey = "_sector"
         if cacheKey in self._cache:
@@ -3544,6 +3995,18 @@ class Company:
             c = Company("005930")
             c.sectorParams.perMultiple   # 15
             c.sectorParams.discountRate  # 13.0
+
+        AIContext:
+            - valuation()에서 DCF 할인율, 성장률 자동 적용
+            - 섹터 특성 반영된 밸류에이션 파라미터
+
+        Guide:
+            - "이 섹터 할인율은?" → c.sectorParams.discountRate
+            - "PER 멀티플" → c.sectorParams.perMultiple
+
+        SeeAlso:
+            - sector: 섹터 분류 정보 (sectorParams의 기반)
+            - valuation: 밸류에이션 (sectorParams를 내부적으로 소비)
         """
         cacheKey = "_sectorParams"
         if cacheKey in self._cache:
@@ -3583,6 +4046,19 @@ class Company:
             c.rank.revenueRank        # 2
             c.rank.revenueRankInSector # 2
             c.rank.sizeClass          # "large"
+
+        AIContext:
+            - 시장/섹터 내 상대 위치 파악 — 피어 비교 분석의 기초
+            - sizeClass로 대형/중형/소형주 분류
+
+        Guide:
+            - "이 회사 순위는?" → c.rank
+            - "시장에서 몇 등이야?" → c.rank.revenueRank
+            - "대형주야?" → c.rank.sizeClass
+
+        SeeAlso:
+            - sector: 섹터 분류 (rank의 기준 그룹)
+            - insights: 종합 등급 평가
         """
         cacheKey = "_rank"
         if cacheKey in self._cache:
@@ -3617,6 +4093,20 @@ class Company:
             c.insights.summary        # "삼성전자는 실적, 재무건전성 등..."
             c.insights.anomalies      # [Anomaly(...), ...]
             c.insights.profile        # "premium"
+
+        AIContext:
+            - ask()/chat()에서 재무 건전성 종합 판단의 핵심 데이터
+            - 7영역 등급 + 이상치 + 투자 프로파일을 컨텍스트로 주입
+
+        Guide:
+            - "이 회사 재무 등급은?" → c.insights.grades()
+            - "이상 징후 있어?" → c.insights.anomalies
+            - "투자 프로파일" → c.insights.profile
+
+        SeeAlso:
+            - analysis: 14축 개별 상세 분석 (insights보다 세밀)
+            - review: 14섹션 보고서 (insights를 내부적으로 참조)
+            - ratios: 재무비율 시계열 (insights의 입력 데이터)
         """
         if not self._hasFinance:
             self._hintOnce("insights", "insights", "finance")
@@ -3658,6 +4148,20 @@ class Company:
 
             c = Company("005930")
             c.audit()
+
+        AIContext:
+            - 감사 리스크 종합 평가 — 투자 의사결정의 핵심 안전장치
+            - 감사의견 변경, 계속기업 불확실성은 최고 경고 수준
+
+        Guide:
+            - "감사의견 확인" → c.audit()
+            - "감사인 바뀌었어?" → c.audit()["auditorChanges"]
+            - "계속기업 의문은?" → c.audit()["goingConcern"]
+
+        SeeAlso:
+            - governance: 지배구조 분석 (감사위원회 구성 포함)
+            - insights: 종합 등급 (감사 리스크도 반영)
+            - review: 재무정합성 섹션에서 감사 결과 활용
         """
         from dartlab.analysis.financial.insight.pipeline import analyzeAudit
 
@@ -3685,6 +4189,20 @@ class Company:
             c = Company("005930")
             c.forecast()
             c.forecast(horizon=5)
+
+        AIContext:
+            - 매출 예측 결과를 valuation, simulation과 조합하여 종합 전망 생성
+            - 신뢰구간으로 불확실성 정도 전달
+
+        Guide:
+            - "매출 예측해줘" → c.forecast()
+            - "5년 예측" → c.forecast(horizon=5)
+            - "예측 신뢰구간" → result.upper, result.lower
+
+        SeeAlso:
+            - valuation: 예측 기반 적정가치 산출
+            - simulation: 시나리오별 영향 추정
+            - annual: 예측의 입력 데이터 (과거 연도별 실적)
         """
         from dartlab.analysis.forecast.revenueForecast import forecastRevenue
 
@@ -3722,6 +4240,20 @@ class Company:
             c = Company("005930")
             c.valuation()
             c.valuation(shares=5_969_782_550)
+
+        AIContext:
+            - DCF/DDM/상대가치 종합 적정가치 — 투자 판단의 핵심 출력
+            - ask()에서 "적정가치" 질문 시 자동으로 이 결과 활용
+
+        Guide:
+            - "적정가치 구해줘" → c.valuation()
+            - "DCF 밸류에이션" → c.valuation().dcf
+            - "PER 기준 가치" → c.valuation().relative
+
+        SeeAlso:
+            - forecast: 매출 예측 (valuation의 입력)
+            - sectorParams: 섹터별 할인율/멀티플 (valuation이 내부 사용)
+            - simulation: 시나리오별 가치 변동 추정
         """
         from dartlab.analysis.valuation.valuation import fullValuation
 
@@ -3755,6 +4287,20 @@ class Company:
             c = Company("005930")
             c.simulation()
             c.simulation(scenarios=["금리인상", "경기침체"])
+
+        AIContext:
+            - 거시경제 충격 시나리오별 재무 영향 정량화
+            - ask()에서 리스크 질문 시 시뮬레이션 결과 컨텍스트로 활용
+
+        Guide:
+            - "금리인상 영향은?" → c.simulation(scenarios=["금리인상"])
+            - "경기침체 시 실적 전망" → c.simulation(scenarios=["경기침체"])
+            - "전체 시나리오 분석" → c.simulation()
+
+        SeeAlso:
+            - forecast: 기본 시나리오 매출 예측
+            - valuation: 적정가치 산출
+            - gather: 거시경제 지표 수집 (macro 축)
         """
         from dartlab.analysis.forecast.simulation import simulateAllScenarios
 
@@ -3792,6 +4338,19 @@ class Company:
             c = Company("005930")
             c.research()
             c.research(sections=["financial", "risk"])
+
+        AIContext:
+            - 재무 + 시장 + 공시 통합 리포트 — ask()에서 종합 분석 컨텍스트
+            - 섹션별 선택적 생성으로 필요한 부분만 딥다이브
+
+        Guide:
+            - "종합 리서치 보고서" → c.research()
+            - "재무+리스크만 분석" → c.research(sections=["financial", "risk"])
+
+        SeeAlso:
+            - review: 14섹션 구조화 보고서 (research보다 구조적)
+            - insights: 7영역 등급 요약 (research보다 간결)
+            - analysis: 14축 개별 분석
         """
         cacheKey = "_research"
         if cacheKey in self._cache:
@@ -3806,6 +4365,9 @@ class Company:
     def market(self) -> str:
         """시장 코드 (DART 제공자는 항상 KR).
 
+        SeeAlso:
+            - currency: 통화 코드
+
         Returns:
             str — "KR".
 
@@ -3819,6 +4381,9 @@ class Company:
     @property
     def currency(self) -> str:
         """통화 코드 (DART 제공자는 항상 KRW).
+
+        SeeAlso:
+            - market: 시장 코드
 
         Returns:
             str — "KRW".
@@ -3871,6 +4436,20 @@ class Company:
             c.network("edges")       # 출자/지분 연결 DataFrame
             c.network("cycles")      # 순환출자 경로 DataFrame
             c.network("peers")       # 이 회사 중심 서브그래프 DataFrame
+
+        AIContext:
+            - 그룹 계열사/출자 구조 파악 — 지배구조 분석의 기초 데이터
+            - 순환출자 탐지로 거버넌스 리스크 감지
+
+        Guide:
+            - "계열사 관계도" → c.network() 또는 c.network().show()
+            - "같은 그룹 계열사" → c.network("members")
+            - "출자/지분 구조" → c.network("edges")
+            - "순환출자 있어?" → c.network("cycles")
+
+        SeeAlso:
+            - governance: 이사회/감사위원/최대주주 분석
+            - capital: 주주환원 분석
         """
         result = self._ensureNetwork()
         if result is None:
@@ -4043,6 +4622,19 @@ class Company:
             c = Company("005930")
             c.governance()           # 삼성전자 거버넌스
             c.governance("all")      # 전체 상장사
+
+        AIContext:
+            - 지배구조 리스크 평가 — 사외이사/감사위원/최대주주 정량 데이터
+            - 시장 횡단 비교로 상대적 거버넌스 수준 판단
+
+        Guide:
+            - "지배구조 분석" → c.governance()
+            - "사외이사 비율은?" → c.governance()
+            - "전체 상장사 거버넌스 비교" → c.governance("all")
+
+        SeeAlso:
+            - network: 출자/계열사 관계 (거버넌스의 다른 관점)
+            - audit: 감사 리스크 (감사위원회와 연관)
         """
         return self._scanView(self._ensureGovernance(), view)
 
@@ -4078,6 +4670,19 @@ class Company:
             c = Company("005930")
             c.workforce()            # 삼성전자 인력 현황
             c.workforce("all")       # 전체 상장사
+
+        AIContext:
+            - 인력 효율성/근무환경 정량 평가 — 1인당 매출, 급여 수준 비교
+            - 시장 횡단 비교로 인적자원 경쟁력 판단
+
+        Guide:
+            - "직원 현황" → c.workforce()
+            - "평균 급여는?" → c.workforce()
+            - "전체 상장사 인력 비교" → c.workforce("all")
+
+        SeeAlso:
+            - governance: 이사회/감사위원 구성 (인력의 다른 관점)
+            - show: c.show("employee")로 docs 기반 직원 상세
         """
         return self._scanView(self._ensureWorkforce(), view)
 
@@ -4113,6 +4718,20 @@ class Company:
             c = Company("005930")
             c.capital()              # 삼성전자 주주환원
             c.capital("all")         # 전체 상장사
+
+        AIContext:
+            - 주주환원 정책 평가 — 배당수익률/성향/자사주 정량 데이터
+            - 시장 횡단 비교로 상대적 환원 수준 판단
+
+        Guide:
+            - "배당 정보" → c.capital() 또는 c.show("dividend")
+            - "주주환원율은?" → c.capital()
+            - "전체 상장사 배당 비교" → c.capital("all")
+
+        SeeAlso:
+            - show: c.show("dividend")로 docs 기반 배당 상세
+            - sceMatrix: 자본변동표 (배당/자사주가 자본에 미치는 영향)
+            - debt: 부채 구조 (자본 정책의 다른 면)
         """
         return self._scanView(self._ensureCapital(), view)
 
@@ -4148,6 +4767,20 @@ class Company:
             c = Company("005930")
             c.debt()                 # 삼성전자 부채 구조
             c.debt("all")            # 전체 상장사
+
+        AIContext:
+            - 부채 구조/건전성 정량 평가 — 차입금 의존도, 만기 구조
+            - 시장 횡단 비교로 상대적 재무 안정성 판단
+
+        Guide:
+            - "부채 구조 분석" → c.debt()
+            - "부채비율은?" → c.debt() 또는 c.ratios
+            - "전체 상장사 부채 비교" → c.debt("all")
+
+        SeeAlso:
+            - BS: 재무상태표 (부채 원본 데이터)
+            - ratios: 재무비율 (부채비율 포함)
+            - capital: 주주환원 (자본 정책의 다른 면)
         """
         return self._scanView(self._ensureDebt(), view)
 
@@ -4208,6 +4841,17 @@ class Company:
 
             c = Company("005930")
             c.view()
+
+        AIContext:
+            - 시각적 탐색 인터페이스 — 사용자가 브라우저에서 직접 데이터 탐색
+
+        Guide:
+            - "공시 뷰어 열어줘" → c.view()
+            - "브라우저에서 보기" → c.view()
+
+        SeeAlso:
+            - index: 뷰어가 소비하는 메타데이터 (프로그래밍 접근)
+            - sections: 뷰어의 원본 데��터
         """
         from dartlab.core.viewer import launchViewer
 
@@ -4262,6 +4906,16 @@ class Company:
             # 스트리밍
             for chunk in c.ask("배당 분석해줘", stream=True):
                 print(chunk, end="")
+
+        Guide:
+            - "영업이익률 분석해줘" → c.ask("영업이익률 추세는?")
+            - "AI한테 질문하고 싶어" → c.ask("질문")
+            - "스트리밍으로 답변받기" → c.ask("질문", stream=True)
+
+        SeeAlso:
+            - chat: 에이전트 모드 (tool calling 기반 심화 분석)
+            - reviewer: 구조화된 AI 보고서 (자유 질문이 아닌 섹션별)
+            - review: AI 없는 데이터 검토서
         """
         from dartlab.ai.runtime.standalone import ask as _ask
 
@@ -4319,6 +4973,15 @@ class Company:
 
             c = Company("005930")
             c.chat("배당 추세를 분석하고 이상 징후를 찾아줘")
+
+        Guide:
+            - "심층 분석해줘" → c.chat("질문")
+            - "AI가 직접 데이터 찾아서 분석" → c.chat("질문")
+            - "여러 단계 분석 필요한 질문" → c.chat("복합 질문")
+
+        SeeAlso:
+            - ask: 단일 턴 질문 (chat보다 빠르지만 덜 심층)
+            - reviewer: 구조화된 AI 보고서
         """
         from dartlab.ai.runtime.standalone import chat as _chat
 

@@ -298,6 +298,95 @@ def buildBlocks(company):
         lambda: crossStatementFlagsBlock(calcCrossStatementFlags(company) + calcTaxFlags(company))
     )
 
+    # ── 4부: 가치평가 ──
+    from dartlab.analysis.financial.valuation import (
+        calcDcf,
+        calcDdm,
+        calcPriceTarget,
+        calcReverseImplied,
+        calcSensitivity,
+        calcValuationFlags,
+        calcValuationSynthesis,
+    )
+    from dartlab.analysis.financial.valuation import (
+        calcRelativeValuation as calcRelVal,
+    )
+    from dartlab.analysis.financial.valuation import (
+        calcResidualIncome as calcRim,
+    )
+    from dartlab.review.builders import (
+        dcfValuationBlock,
+        ddmValuationBlock,
+        priceTargetBlock,
+        relativeValuationBlock,
+        residualIncomeBlock,
+        reverseImpliedBlock,
+        sensitivityBlock,
+        valuationFlagsBlock,
+        valuationSynthesisBlock,
+    )
+
+    b["dcfValuation"] = _safe(lambda: dcfValuationBlock(calcDcf(company)))
+    b["ddmValuation"] = _safe(lambda: ddmValuationBlock(calcDdm(company)))
+    b["relativeValuation"] = _safe(lambda: relativeValuationBlock(calcRelVal(company)))
+    b["residualIncome"] = _safe(lambda: residualIncomeBlock(calcRim(company)))
+    b["priceTarget"] = _safe(lambda: priceTargetBlock(calcPriceTarget(company)))
+    b["reverseImplied"] = _safe(lambda: reverseImpliedBlock(calcReverseImplied(company)))
+    b["sensitivity"] = _safe(lambda: sensitivityBlock(calcSensitivity(company)))
+    b["valuationSynthesis"] = _safe(lambda: valuationSynthesisBlock(calcValuationSynthesis(company)))
+    b["valuationFlags"] = _safe(lambda: valuationFlagsBlock(calcValuationFlags(company)))
+
+    # ── 5부: 비재무 심화 ──
+    from dartlab.analysis.financial.governance import (
+        calcAuditOpinionTrend,
+        calcBoardComposition,
+        calcGovernanceFlags,
+        calcOwnershipTrend,
+    )
+    from dartlab.analysis.financial.disclosureDelta import (
+        calcChangeIntensity,
+        calcDisclosureChangeSummary,
+        calcDisclosureDeltaFlags,
+        calcKeyTopicChanges,
+    )
+    from dartlab.analysis.financial.peerBenchmark import (
+        calcPeerBenchmarkFlags,
+        calcPeerRanking,
+        calcRiskReturnPosition,
+    )
+    from dartlab.review.builders import (
+        auditOpinionTrendBlock,
+        boardCompositionBlock,
+        changeIntensityBlock,
+        disclosureChangeSummaryBlock,
+        disclosureDeltaFlagsBlock,
+        governanceFlagsBlock,
+        keyTopicChangesBlock,
+        ownershipTrendBlock,
+        peerBenchmarkFlagsBlock,
+        peerRankingBlock,
+        riskReturnPositionBlock,
+    )
+
+    # ── 지배구조 ──
+    b["ownershipTrend"] = _safe(lambda: ownershipTrendBlock(calcOwnershipTrend(company)))
+    b["boardComposition"] = _safe(lambda: boardCompositionBlock(calcBoardComposition(company)))
+    b["auditOpinionTrend"] = _safe(lambda: auditOpinionTrendBlock(calcAuditOpinionTrend(company)))
+    b["governanceFlags"] = _safe(lambda: governanceFlagsBlock(calcGovernanceFlags(company)))
+
+    # ── 공시변화 ──
+    b["disclosureChangeSummary"] = _safe(
+        lambda: disclosureChangeSummaryBlock(calcDisclosureChangeSummary(company))
+    )
+    b["keyTopicChanges"] = _safe(lambda: keyTopicChangesBlock(calcKeyTopicChanges(company)))
+    b["changeIntensity"] = _safe(lambda: changeIntensityBlock(calcChangeIntensity(company)))
+    b["disclosureDeltaFlags"] = _safe(lambda: disclosureDeltaFlagsBlock(calcDisclosureDeltaFlags(company)))
+
+    # ── 비교분석 ──
+    b["peerRanking"] = _safe(lambda: peerRankingBlock(calcPeerRanking(company)))
+    b["riskReturnPosition"] = _safe(lambda: riskReturnPositionBlock(calcRiskReturnPosition(company)))
+    b["peerBenchmarkFlags"] = _safe(lambda: peerBenchmarkFlagsBlock(calcPeerBenchmarkFlags(company)))
+
     from dartlab.review.blockMap import BlockMap
 
     return BlockMap(b)

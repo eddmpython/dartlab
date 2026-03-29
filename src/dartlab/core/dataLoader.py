@@ -29,6 +29,7 @@ _DOWNLOAD_TIMEOUT = 30
 _MAX_RETRIES = 3
 _EDGAR_UNIVERSE_TTL_HOURS = 24
 _EDGAR_DOCS_FRESHNESS_TTL_HOURS = 24
+_DART_FRESHNESS_TTL_HOURS = 72
 _SEC_HEADERS = {"User-Agent": "DartLab eddmpython@gmail.com"}
 _LISTED_EXCHANGES = {"Nasdaq", "NYSE", "CBOE"}
 
@@ -126,6 +127,46 @@ def _download(stockCode: str, dest: Path, category: str = "docs") -> None:
     _saveEtag(stockCode, dest, category)
 
 
+def _shouldRefreshDart(path: Path, refresh: str) -> bool:
+    """DART 카테고리 로컬 파일의 갱신 필요 여부 판단."""
+    if refresh == "local_only":
+        return False
+    if refresh == "force_check":
+        return True
+    # auto: TTL 기반 — etag 파일의 mtime이 TTL보다 오래됐으면 체크
+    etagPath = path.with_suffix(".parquet.etag")
+    if not etagPath.exists():
+        return False  # etag 없으면 HF에서 받은 게 아님 (collect로 수집)
+    try:
+        age = time.time() - etagPath.stat().st_mtime
+        return age > _DART_FRESHNESS_TTL_HOURS * 3600
+    except OSError:
+        return False
+
+
+def _refreshFromHf(stockCode: str, path: Path, category: str) -> None:
+    """ETag 비교 후 HF가 최신이면 다운로드로 갱신. 실패 시 기존 파일 유지."""
+    stale = _checkRemoteFreshness(stockCode, path, category)
+    if stale is not True:
+        return
+    from dartlab.core.guidance import emit
+
+    label = DATA_RELEASES[category]["label"]
+    tmpPath = path.with_suffix(".tmp")
+    try:
+        emit("download:start", stockCode=stockCode, label=label)
+        hfUrl = f"{hfBaseUrl(category)}/{stockCode}.parquet"
+        _downloadWithRetry(hfUrl, tmpPath)
+        tmpPath.replace(path)
+        _saveEtag(stockCode, path, category)
+        size = path.stat().st_size
+        sizeStr = f"{size / 1024:.0f}KB" if size < 1024 * 1024 else f"{size / 1024 / 1024:.1f}MB"
+        emit("download:done_short", sizeStr=sizeStr)
+    except (URLError, socket.timeout, OSError):
+        if tmpPath.exists():
+            tmpPath.unlink()
+
+
 def loadData(
     stockCode: str,
     category: str = "docs",
@@ -172,6 +213,8 @@ def loadData(
             if path.exists():
                 path.unlink()
             raise
+    elif _shouldRefreshDart(path, refresh):
+        _refreshFromHf(stockCode, path, category)
     # lazy scan: sinceYear 필터 또는 컬럼 프로젝션이 있으면 scan_parquet 사용
     yearColCandidates = ("year", "bsns_year")
     useLazy = sinceYear is not None or columns is not None
@@ -662,6 +705,9 @@ def _optimizeMemory(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def _normalizeLoadedFrame(df: pl.DataFrame, category: str) -> pl.DataFrame:
+    # pandas 레거시 인덱스 컬럼 제거
+    if "__index_level_0__" in df.columns:
+        df = df.drop("__index_level_0__")
     if category == "docs":
         df = _normalizeDartDocs(df)
     elif category == "edgarDocs":

@@ -1814,5 +1814,531 @@ def deferredTaxBlock(data: dict) -> list:
 
 
 def crossStatementFlagsBlock(flags: list[str]) -> list:
-    """교차검증+세금 플래그 통합 → FlagBlock."""
+    """교차검증+세금 플래그 통합 -> FlagBlock."""
     return _flagsBlock(flags)
+
+
+# ── 4부: 가치평가 빌더 ──
+
+
+def dcfValuationBlock(data: dict) -> list:
+    """calcDcf 결과 -> HeadingBlock + MetricBlock + TableBlock."""
+    if not data:
+        return []
+    blocks: list = [
+        HeadingBlock(
+            _meta("dcfValuation").label,
+            level=2,
+            helper="FCF 기반 기업가치 추정 -- 할인율과 성장률 가정 확인 필수",
+        ),
+    ]
+    metrics = []
+    if data.get("perShareValue") is not None:
+        metrics.append(("적정가", f"{data['perShareValue']:,.0f}"))
+    if data.get("currentPrice") is not None:
+        metrics.append(("현재가", f"{data['currentPrice']:,.0f}"))
+    if data.get("marginOfSafety") is not None:
+        metrics.append(("안전마진", f"{data['marginOfSafety']:.1f}%"))
+    metrics.append(("할인율", f"{data.get('discountRate', 0):.1f}%"))
+    metrics.append(("영구성장률", f"{data.get('terminalGrowth', 0):.1f}%"))
+    if metrics:
+        blocks.append(MetricBlock("", dict(metrics)))
+
+    # FCF 추정 테이블
+    projections = data.get("fcfProjections", [])
+    if projections:
+        rows = [{"연차": f"Y{i + 1}", "FCF": round(v / 1e8, 1)} for i, v in enumerate(projections)]
+        blocks.append(TableBlock("FCF 추정 (억원)", pl.DataFrame(rows)))
+
+    for w in data.get("warnings", []):
+        blocks.append(TextBlock(f"-- {w}", style="dim"))
+    return blocks
+
+
+def ddmValuationBlock(data: dict) -> list:
+    """calcDdm 결과 -> MetricBlock."""
+    if not data:
+        return []
+    if data.get("modelUsed") == "N/A":
+        return [
+            HeadingBlock(_meta("ddmValuation").label, level=2),
+            TextBlock("DDM 적용 불가 (무배당 또는 데이터 부족)", style="dim"),
+        ]
+
+    blocks: list = [
+        HeadingBlock(
+            _meta("ddmValuation").label,
+            level=2,
+            helper="배당 기반 가치 -- 배당 지속성이 핵심 가정",
+        ),
+    ]
+    metrics = {}
+    if data.get("intrinsicValue") is not None:
+        metrics["적정가"] = f"{data['intrinsicValue']:,.0f}"
+    if data.get("dividendPerShare") is not None:
+        metrics["주당��당금"] = f"{data['dividendPerShare']:,.0f}"
+    if data.get("dividendGrowth") is not None:
+        metrics["배당성장률"] = f"{data['dividendGrowth']:.1f}%"
+    if data.get("payoutRatio") is not None:
+        metrics["배당성향"] = f"{data['payoutRatio']:.1f}%"
+    if metrics:
+        blocks.append(MetricBlock("", metrics))
+    return blocks
+
+
+def relativeValuationBlock(data: dict) -> list:
+    """calcRelativeValuation 결과 -> TableBlock."""
+    if not data:
+        return []
+    blocks: list = [
+        HeadingBlock(
+            _meta("relativeValuation").label,
+            level=2,
+            helper="섹터 배수 대비 현재 배수 비교 -- 업종 평균과 괴리 확인",
+        ),
+    ]
+
+    implied = data.get("impliedValues", {})
+    sectorMults = data.get("sectorMultiples", {})
+    currentMults = data.get("currentMultiples", {})
+    premium = data.get("premiumDiscount", {})
+
+    rows = []
+    for key in ["PER", "PBR", "EV/EBITDA", "PSR", "PEG"]:
+        iv = implied.get(key)
+        if iv is None:
+            continue
+        row = {
+            "지표": key,
+            "섹터배수": f"{sectorMults.get(key, 0):.1f}" if sectorMults.get(key) else "-",
+            "현재배수": f"{currentMults.get(key, 0):.1f}" if currentMults.get(key) else "-",
+            "적정가": f"{iv:,.0f}",
+        }
+        pd = premium.get(key)
+        row["할증/할인"] = f"{pd:+.1f}%" if pd is not None else "-"
+        rows.append(row)
+
+    if rows:
+        blocks.append(TableBlock("", pl.DataFrame(rows)))
+
+    consensus = data.get("consensusValue")
+    if consensus:
+        blocks.append(MetricBlock("", {"종합 적정가": f"{consensus:,.0f}"}))
+    return blocks
+
+
+def residualIncomeBlock(data: dict) -> list:
+    """calcResidualIncome 결과 -> MetricBlock."""
+    if not data:
+        return []
+    blocks: list = [
+        HeadingBlock(
+            _meta("residualIncome").label,
+            level=2,
+            helper="BPS + 초과이익 현가 -- ���기자본비용 대비 초과수익 평가",
+        ),
+    ]
+    metrics = {}
+    if data.get("bps"):
+        metrics["BPS"] = f"{data['bps']:,.0f}"
+    metrics["자기자본비용"] = f"{data.get('coe', 0):.1f}%"
+    if data.get("intrinsicValue") is not None:
+        metrics["적정가"] = f"{data['intrinsicValue']:,.0f}"
+    if data.get("upside") is not None:
+        metrics["업사이드"] = f"{data['upside']:+.1f}%"
+    if metrics:
+        blocks.append(MetricBlock("", metrics))
+    return blocks
+
+
+def priceTargetBlock(data: dict) -> list:
+    """calcPriceTarget 결과 -> MetricBlock + TableBlock(시나리오)."""
+    if not data:
+        return []
+    blocks: list = [
+        HeadingBlock(
+            _meta("priceTarget").label,
+            level=2,
+            helper="5개 거시 시나리오 x DCF + Monte Carlo 분포",
+        ),
+    ]
+    metrics = {}
+    metrics["가중 목표가"] = f"{data.get('weightedTarget', 0):,.0f}"
+    if data.get("currentPrice"):
+        metrics["현재가"] = f"{data['currentPrice']:,.0f}"
+    if data.get("upside") is not None:
+        metrics["업사이드"] = f"{data['upside']:+.1f}%"
+    metrics["투자 신호"] = data.get("signal", "-")
+    metrics["신뢰도"] = data.get("confidence", "-")
+    blocks.append(MetricBlock("", metrics))
+
+    # 시나리오 테이블
+    scenarios = data.get("scenarios", [])
+    if scenarios:
+        rows = []
+        for s in scenarios:
+            rows.append(
+                {
+                    "시나리오": s["name"],
+                    "확률": f"{s['probability'] * 100:.0f}%",
+                    "목표가": f"{s['perShareValue']:,.0f}",
+                }
+            )
+        blocks.append(TableBlock("시나��오별 목표가", pl.DataFrame(rows)))
+
+    # Monte Carlo 백분위
+    pctls = data.get("percentiles", {})
+    if pctls:
+        rows = [{"백분위": k, "주가": f"{v:,.0f}"} for k, v in sorted(pctls.items())]
+        blocks.append(TableBlock("Monte Carlo 분포", pl.DataFrame(rows)))
+    return blocks
+
+
+def reverseImpliedBlock(data: dict) -> list:
+    """calcReverseImplied 결과 -> MetricBlock."""
+    if not data:
+        return []
+    blocks: list = [
+        HeadingBlock(
+            _meta("reverseImplied").label,
+            level=2,
+            helper="현재 시가총액이 내재하는 매출 성장률 -- 시장 기대와 엔진 예측 비교",
+        ),
+    ]
+    metrics = {
+        "내재성장률": f"{data.get('impliedGrowthRate', 0):.1f}%",
+        "최근 매출": f"{data.get('latestRevenue', 0) / 1e8:,.0f}억",
+        "가정 WACC": f"{data.get('assumedWacc', 0):.1f}%",
+    }
+    signal = data.get("signal")
+    if signal:
+        metrics["신호"] = signal
+    blocks.append(MetricBlock("", metrics))
+    return blocks
+
+
+def sensitivityBlock(data: dict) -> list:
+    """calcSensitivity 결과 -> TableBlock(그리드)."""
+    if not data:
+        return []
+    blocks: list = [
+        HeadingBlock(
+            _meta("sensitivity").label,
+            level=2,
+            helper="WACC x 영구성장률 조합별 적정가 변화",
+        ),
+    ]
+
+    grid = data.get("grid", [])
+    if not grid:
+        return blocks
+
+    # 피벗: 행=WACC, 열=성장률
+    waccVals = sorted({g["wacc"] for g in grid})
+    growthVals = sorted({g["terminalGrowth"] for g in grid})
+
+    lookup = {(g["wacc"], g["terminalGrowth"]): g.get("perShareValue") for g in grid}
+
+    rows = []
+    for wacc in waccVals:
+        row: dict = {"WACC": f"{wacc:.1f}%"}
+        for tg in growthVals:
+            val = lookup.get((wacc, tg))
+            colName = f"g={tg:.1f}%"
+            row[colName] = f"{val:,.0f}" if val is not None else "-"
+        rows.append(row)
+
+    if rows:
+        blocks.append(TableBlock("WACC x 성장률 민감도 (주당 적정가)", pl.DataFrame(rows)))
+
+    baseVal = data.get("baseValue")
+    if baseVal is not None:
+        blocks.append(MetricBlock("", {"기준 적정가": f"{baseVal:,.0f}"}))
+    return blocks
+
+
+def valuationSynthesisBlock(data: dict) -> list:
+    """calcValuationSynthesis 결과 -> MetricBlock + TextBlock."""
+    if not data:
+        return []
+    blocks: list = [
+        HeadingBlock(
+            _meta("valuationSynthesis").label,
+            level=2,
+            helper="DCF + DDM + 상대가치 종합 -- 모델 간 범위와 판정",
+        ),
+    ]
+
+    fvr = data.get("fairValueRange")
+    metrics = {}
+    if fvr:
+        metrics["적정가 범위"] = f"{fvr[0]:,.0f} ~ {fvr[1]:,.0f}"
+    if data.get("currentPrice"):
+        metrics["현재가"] = f"{data['currentPrice']:,.0f}"
+    metrics["판정"] = data.get("verdict", "-")
+    blocks.append(MetricBlock("", metrics))
+
+    # 모델별 추정치
+    estimates = data.get("estimates", [])
+    if estimates:
+        rows = [{"모델": e["method"], "적정가": f"{e['value']:,.0f}"} for e in estimates]
+        blocks.append(TableBlock("모델별 적정가", pl.DataFrame(rows)))
+    return blocks
+
+
+def valuationFlagsBlock(flags: list[dict]) -> list:
+    """calcValuationFlags 결과 -> FlagBlock."""
+    if not flags:
+        return []
+    flagTexts = []
+    for f in flags:
+        prefix = {"warning": "[!]", "opportunity": "[+]", "info": "[i]"}.get(f.get("signal", ""), "")
+        flagTexts.append(f"{prefix} {f.get('label', '')}")
+    return _flagsBlock(flagTexts)
+
+
+# ── 5-1 지배구조 ──
+
+
+def ownershipTrendBlock(data: dict) -> list:
+    """calcOwnershipTrend 결과 -> 지분 추이 테이블 + 주주 구성."""
+    if not data:
+        return []
+    blocks: list = []
+
+    history = data.get("history", [])
+    if history:
+        rows = []
+        for h in history:
+            row: dict = {"연도": h["year"]}
+            row["지분율(%)"] = h["ratio"]
+            row["변동(%p)"] = h.get("change")
+            rows.append(row)
+        blocks.append(
+            HeadingBlock(
+                _meta("ownershipTrend").label,
+                level=2,
+                helper="연도별 최대주주 지분율 추이",
+            )
+        )
+        blocks.append(TableBlock("", pl.DataFrame(rows)))
+
+    holders = data.get("latestHolders", [])
+    if holders:
+        hRows = []
+        for h in holders[:5]:
+            hRows.append({
+                "성명": h.get("name", ""),
+                "관계": h.get("relate", ""),
+                "지분율(%)": h.get("ratio"),
+            })
+        blocks.append(TableBlock("최근 주요 주주", pl.DataFrame(hRows)))
+
+    return blocks
+
+
+def boardCompositionBlock(data: dict) -> list:
+    """calcBoardComposition 결과 -> 이사회 구성 메트릭."""
+    if not data:
+        return []
+    metrics = [
+        ("전체 임원", f"{data['totalCount']}명"),
+        ("사내이사", f"{data['registeredCount']}명"),
+        ("사외이사", f"{data['outsideCount']}명"),
+    ]
+    outsideRatio = data.get("outsideRatio")
+    if outsideRatio is not None:
+        metrics.append(("사외이사비율", f"{outsideRatio:.1f}%"))
+    return [
+        HeadingBlock(
+            _meta("boardComposition").label,
+            level=2,
+            helper="사외이사비율로 이사회 독립성을 판단한다",
+        ),
+        MetricBlock(metrics),
+    ]
+
+
+def auditOpinionTrendBlock(data: dict) -> list:
+    """calcAuditOpinionTrend 결과 -> 감사의견 시계열."""
+    if not data:
+        return []
+    history = data.get("history", [])
+    if not history:
+        return []
+    rows = []
+    for h in history:
+        row: dict = {"연도": h["year"], "감사의견": h.get("opinion", "")}
+        auditor = h.get("auditor", "")
+        if auditor:
+            row["감사인"] = auditor
+        if h.get("auditorChanged"):
+            row["변경"] = "Y"
+        rows.append(row)
+    return [
+        HeadingBlock(
+            _meta("auditOpinionTrend").label,
+            level=2,
+            helper="감사의견과 감사인 변경을 추적한다",
+        ),
+        TableBlock("", pl.DataFrame(rows)),
+    ]
+
+
+def governanceFlagsBlock(flags: list[tuple[str, str]]) -> list:
+    """calcGovernanceFlags 결과 -> FlagBlock."""
+    return _tupleFlags(flags)
+
+
+# ── 5-2 공시변화 ──
+
+
+def disclosureChangeSummaryBlock(data: dict) -> list:
+    """calcDisclosureChangeSummary 결과 -> 요약 메트릭 + 상위 변화 테이블."""
+    if not data:
+        return []
+    blocks: list = []
+
+    metrics = [
+        ("변화 건수", f"{data['totalChanges']}건"),
+        ("변화 topic", f"{data['changedTopics']}/{data['totalTopics']}"),
+        ("무변화 topic", f"{data['unchangedTopics']}"),
+    ]
+    blocks.append(
+        HeadingBlock(
+            _meta("disclosureChangeSummary").label,
+            level=2,
+            helper="전체 topic 변화 현황",
+        )
+    )
+    blocks.append(MetricBlock(metrics))
+
+    topChanged = data.get("topChanged", [])
+    if topChanged:
+        rows = [
+            {"topic": t["topic"], "변화횟수": t["changedCount"], "변화율": f"{t['changeRate']:.0%}"}
+            for t in topChanged[:5]
+        ]
+        blocks.append(TableBlock("변화율 상위 topic", pl.DataFrame(rows)))
+
+    return blocks
+
+
+def keyTopicChangesBlock(data: dict) -> list:
+    """calcKeyTopicChanges 결과 -> 핵심 topic 변화 테이블."""
+    if not data:
+        return []
+    keyTopics = data.get("keyTopics", [])
+    if not keyTopics:
+        return []
+    rows = [
+        {
+            "topic": kt["topic"],
+            "기간수": kt["totalPeriods"],
+            "변화": kt["changedCount"],
+            "변화율": f"{kt['changeRate']:.0%}",
+        }
+        for kt in keyTopics
+    ]
+    return [
+        HeadingBlock(
+            _meta("keyTopicChanges").label,
+            level=2,
+            helper="핵심 공시 topic의 변화 이력",
+        ),
+        TableBlock("", pl.DataFrame(rows)),
+    ]
+
+
+def changeIntensityBlock(data: dict) -> list:
+    """calcChangeIntensity 결과 -> 변화 크기 테이블."""
+    if not data:
+        return []
+    topByDelta = data.get("topByDelta", [])
+    if not topByDelta:
+        return []
+    rows = [
+        {"topic": t["topic"], "변화량(bytes)": t["totalDeltaBytes"]}
+        for t in topByDelta[:5]
+    ]
+    return [
+        HeadingBlock(
+            _meta("changeIntensity").label,
+            level=2,
+            helper="바이트 기준 변화량 상위 topic",
+        ),
+        TableBlock("", pl.DataFrame(rows)),
+    ]
+
+
+def disclosureDeltaFlagsBlock(flags: list[tuple[str, str]]) -> list:
+    """calcDisclosureDeltaFlags 결과 -> FlagBlock."""
+    return _tupleFlags(flags)
+
+
+# ── 5-3 비교분석 ──
+
+
+def peerRankingBlock(data: dict) -> list:
+    """calcPeerRanking 결과 -> 백분위 순위 테이블."""
+    if not data:
+        return []
+    rankings = data.get("rankings", [])
+    if not rankings:
+        return []
+    rows = [
+        {
+            "지표": r["label"],
+            "값": r["value"],
+            "백분위": f"{r['percentile']:.0f}%",
+            "순위": f"{r['rank']}/{r['total']}",
+        }
+        for r in rankings
+    ]
+    return [
+        HeadingBlock(
+            _meta("peerRanking").label,
+            level=2,
+            helper="전종목 대비 핵심 비율 위치 (백분위가 높을수록 상위)",
+        ),
+        TableBlock("", pl.DataFrame(rows)),
+    ]
+
+
+def riskReturnPositionBlock(data: dict) -> list:
+    """calcRiskReturnPosition 결과 -> 사분면 메트릭."""
+    if not data:
+        return []
+    metrics = [
+        ("ROE", f"{data['roe']:.1f}% (상위 {100 - data['roePercentile']:.0f}%)"),
+        ("부채비율", f"{data['debtRatio']:.1f}% (상위 {100 - data['debtRatioPercentile']:.0f}%)"),
+        ("포지션", data["quadrant"]),
+        ("평가", data["assessment"]),
+    ]
+    return [
+        HeadingBlock(
+            _meta("riskReturnPosition").label,
+            level=2,
+            helper="ROE(수익) x 부채비율(위험) 사분면 위치",
+        ),
+        MetricBlock(metrics),
+    ]
+
+
+def peerBenchmarkFlagsBlock(flags: list[tuple[str, str]]) -> list:
+    """calcPeerBenchmarkFlags 결과 -> FlagBlock."""
+    return _tupleFlags(flags)
+
+
+def _tupleFlags(flags: list[tuple[str, str]]) -> list:
+    """(message, kind) 튜플 리스트 -> FlagBlock(s)."""
+    if not flags:
+        return []
+    warnings = [f for f, k in flags if k == "warning"]
+    opportunities = [f for f, k in flags if k == "opportunity"]
+    blocks: list = []
+    if warnings:
+        blocks.append(FlagBlock(warnings, kind="warning"))
+    if opportunities:
+        blocks.append(FlagBlock(opportunities, kind="opportunity"))
+    return blocks

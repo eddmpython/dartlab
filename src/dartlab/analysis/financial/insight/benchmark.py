@@ -27,6 +27,14 @@ class SectorBenchmark:
     d2dMedian: Optional[float] = None
     d2dQ1: Optional[float] = None
     d2dQ3: Optional[float] = None
+    # 총자산회전율 벤치마크 (섹터별 구조적 차이 반영)
+    tatMedian: Optional[float] = None
+    tatQ1: Optional[float] = None
+    tatQ3: Optional[float] = None
+    # ROIC 벤치마크
+    roicMedian: Optional[float] = None
+    roicQ1: Optional[float] = None
+    roicQ3: Optional[float] = None
 
 
 BENCHMARKS: dict[Sector, SectorBenchmark] = {
@@ -41,6 +49,12 @@ BENCHMARKS: dict[Sector, SectorBenchmark] = {
         d2dMedian=4.0,
         d2dQ1=2.4,
         d2dQ3=6.7,
+        tatMedian=0.7,
+        tatQ1=0.35,
+        tatQ3=1.1,
+        roicMedian=5.0,
+        roicQ1=-2.0,
+        roicQ3=12.0,
     ),
     Sector.HEALTHCARE: SectorBenchmark(
         omMedian=2.2,
@@ -53,6 +67,12 @@ BENCHMARKS: dict[Sector, SectorBenchmark] = {
         d2dMedian=2.9,
         d2dQ1=1.7,
         d2dQ3=6.1,
+        tatMedian=0.5,
+        tatQ1=0.2,
+        tatQ3=0.9,
+        roicMedian=3.0,
+        roicQ1=-8.0,
+        roicQ3=10.0,
     ),
     Sector.CONSUMER_DISC: SectorBenchmark(
         omMedian=3.2,
@@ -65,6 +85,12 @@ BENCHMARKS: dict[Sector, SectorBenchmark] = {
         d2dMedian=4.3,
         d2dQ1=2.9,
         d2dQ3=7.0,
+        tatMedian=0.9,
+        tatQ1=0.5,
+        tatQ3=1.3,
+        roicMedian=8.0,
+        roicQ1=0.0,
+        roicQ3=15.0,
     ),
     Sector.FINANCIALS: SectorBenchmark(
         omMedian=6.9,
@@ -75,6 +101,12 @@ BENCHMARKS: dict[Sector, SectorBenchmark] = {
         roeQ3=43.8,
         n=63,
         # 금융업: Merton D2D 구조적 왜곡으로 벤치마크 미설정
+        tatMedian=0.05,
+        tatQ1=0.02,
+        tatQ3=0.1,
+        roicMedian=2.0,
+        roicQ1=0.5,
+        roicQ3=5.0,
     ),
     Sector.INDUSTRIALS: SectorBenchmark(
         omMedian=3.5,
@@ -87,6 +119,12 @@ BENCHMARKS: dict[Sector, SectorBenchmark] = {
         d2dMedian=4.1,
         d2dQ1=2.8,
         d2dQ3=6.6,
+        tatMedian=0.8,
+        tatQ1=0.45,
+        tatQ3=1.2,
+        roicMedian=7.0,
+        roicQ1=-1.0,
+        roicQ3=14.0,
     ),
     Sector.MATERIALS: SectorBenchmark(
         omMedian=3.4,
@@ -99,6 +137,12 @@ BENCHMARKS: dict[Sector, SectorBenchmark] = {
         d2dMedian=3.4,
         d2dQ1=2.1,
         d2dQ3=5.3,
+        tatMedian=0.7,
+        tatQ1=0.4,
+        tatQ3=1.1,
+        roicMedian=5.0,
+        roicQ1=-3.0,
+        roicQ3=12.0,
     ),
     Sector.ENERGY: SectorBenchmark(
         omMedian=2.1,
@@ -111,6 +155,12 @@ BENCHMARKS: dict[Sector, SectorBenchmark] = {
         d2dMedian=2.9,
         d2dQ1=1.8,
         d2dQ3=4.3,
+        tatMedian=0.6,
+        tatQ1=0.3,
+        tatQ3=1.0,
+        roicMedian=5.0,
+        roicQ1=-3.0,
+        roicQ3=12.0,
     ),
     Sector.UTILITIES: SectorBenchmark(
         omMedian=2.9,
@@ -123,6 +173,12 @@ BENCHMARKS: dict[Sector, SectorBenchmark] = {
         d2dMedian=6.0,
         d2dQ1=4.0,
         d2dQ3=8.0,
+        tatMedian=0.3,
+        tatQ1=0.15,
+        tatQ3=0.5,
+        roicMedian=3.0,
+        roicQ1=1.0,
+        roicQ3=6.0,
     ),
     Sector.COMMUNICATION: SectorBenchmark(
         omMedian=1.0,
@@ -135,6 +191,12 @@ BENCHMARKS: dict[Sector, SectorBenchmark] = {
         d2dMedian=3.4,
         d2dQ1=2.1,
         d2dQ3=6.6,
+        tatMedian=0.5,
+        tatQ1=0.2,
+        tatQ3=0.9,
+        roicMedian=3.0,
+        roicQ1=-5.0,
+        roicQ3=10.0,
     ),
     Sector.CONSUMER_STAPLES: SectorBenchmark(
         omMedian=3.7,
@@ -147,6 +209,12 @@ BENCHMARKS: dict[Sector, SectorBenchmark] = {
         d2dMedian=5.1,
         d2dQ1=3.6,
         d2dQ3=8.3,
+        tatMedian=0.9,
+        tatQ1=0.5,
+        tatQ3=1.3,
+        roicMedian=7.0,
+        roicQ1=0.0,
+        roicQ3=14.0,
     ),
     Sector.REAL_ESTATE: SectorBenchmark(
         omMedian=2.6,
@@ -159,6 +227,12 @@ BENCHMARKS: dict[Sector, SectorBenchmark] = {
         d2dMedian=4.0,
         d2dQ1=2.8,
         d2dQ3=6.0,
+        tatMedian=0.2,
+        tatQ1=0.08,
+        tatQ3=0.4,
+        roicMedian=3.0,
+        roicQ1=-2.0,
+        roicQ3=8.0,
     ),
 }
 
@@ -170,6 +244,12 @@ DEFAULT_BENCHMARK = SectorBenchmark(
     roeQ1=-16.9,
     roeQ3=31.1,
     n=2167,
+    tatMedian=0.7,
+    tatQ1=0.3,
+    tatQ3=1.2,
+    roicMedian=5.0,
+    roicQ1=-2.0,
+    roicQ3=12.0,
 )
 
 # ── US (S&P 500) 섹터 벤치마크 ── 공개 데이터 기반 추정, 추후 실험으로 정밀 보정

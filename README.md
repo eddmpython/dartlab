@@ -31,6 +31,26 @@
 
 > **Note:** DartLab is under active development. APIs may change between versions, and documentation may lag behind the latest code.
 
+## Table of Contents
+
+- [Install](#install)
+- [Quick Start](#quick-start)
+- [What DartLab Is](#what-dartlab-is)
+  - [Company — 7 Things to Remember](#company--7-things-to-remember)
+  - [Scan — The Whole Market in One Call](#scan--the-whole-market-in-one-call)
+  - [Analysis — Full Financial Statement Analysis](#analysis--full-financial-statement-analysis)
+  - [Review — Analysis to Report](#review--analysis-to-report)
+  - [Gather — External Market Data](#gather--external-market-data-in-one-call)
+- [EDGAR (US)](#edgar-us)
+- [AI Analysis](#ai-analysis)
+- [MCP — AI Assistant Integration](#mcp--ai-assistant-integration)
+- [OpenAPI — Raw Public APIs](#openapi--raw-public-apis)
+- [Data](#data)
+- [Try It Now](#try-it-now)
+- [Documentation](#documentation)
+- [Stability](#stability)
+- [Contributing](#contributing)
+
 ## Install
 
 Requires **Python 3.12+**.
@@ -116,7 +136,7 @@ us.show("business")
 us.ratios
 
 # No code needed — ask in natural language
-dartlab.ask("Analyze Samsung Electronics financial health", stream=True)
+dartlab.ask("Analyze Samsung Electronics financial health")
 ```
 
 ## What DartLab Is
@@ -154,20 +174,11 @@ Hyundai    "II. 사업의 내용 [자동차부문]"   → businessOverview
 Kakao      "2. 사업의 내용"               → businessOverview
 ```
 
-The mapping pipeline: **text normalization** → **545 hardcoded title mappings** → **73 regex patterns** → canonical topic. ~95%+ mapping rate across all listed companies. Each cell keeps the full text with heading/body separation, tables, and original evidence. Comparing "what did the company say about risk last year vs. this year" becomes a single `diff()` call.
+~95%+ mapping rate across all listed companies. Each cell keeps the full text with heading/body separation, tables, and original evidence. Comparing "what did the company say about risk last year vs. this year" becomes a single `diff()` call.
 
 **2. Every company names the same number differently.**
 
-Account standardization normalizes every XBRL account through a 4-step pipeline:
-
-```
-Raw XBRL account_id
-  → Strip prefixes (ifrs-full_, dart_, ifrs_, ifrs-smes_)
-  → English ID synonyms (59 rules)
-  → Korean name synonyms (104 rules)
-  → Learned mapping table (34,249 entries)
-  → Result: revenue, operatingIncome, totalAssets, …
-```
+Account standardization normalizes every XBRL account into a single canonical name:
 
 ```
 Before (raw XBRL):                          After (standardized):
@@ -199,19 +210,7 @@ All data is pre-built on [HuggingFace](https://huggingface.co/datasets/eddmpytho
 | DART scan | Pre-built cross-company | ~271 MB |
 | EDGAR | On-demand | SEC API (auto-fetched) |
 
-Want to collect directly from the source? Use the raw public APIs:
-
-```python
-from dartlab import OpenDart           # Korea DART (requires free API key)
-d = OpenDart()
-d.filings("삼성전자", "2024")
-
-from dartlab import OpenEdgar          # US SEC (no key required)
-e = OpenEdgar()
-e.filings("AAPL", forms=["10-K"])
-```
-
-See [Data](#data) for the full pipeline (cache, freshness, batch collection).
+Want to collect directly from the source? See [OpenAPI](#openapi--raw-public-apis) and [Data](#data) for the full pipeline.
 
 ### Company — 7 Things to Remember
 
@@ -266,7 +265,7 @@ dartlab.scan("cashflow")              # OCF/ICF/FCF + 8-pattern classification
 | account | Account | Single account time-series (target required) |
 | ratio | Ratio | Single ratio time-series (target required) |
 
-Each axis is a lazy-loaded module registered in `_AXIS_REGISTRY`. Adding a new axis means one entry in the registry and one module — no other code changes.
+Adding a new axis means one module — no other code changes needed.
 
 ### Analysis — Full Financial Statement Analysis
 
@@ -280,18 +279,6 @@ analysis()  →  14-axis structured data (amounts + ratios + YoY + flags)
  review()       AI(ask)        human
  reports        interpret      interpret
 ```
-
-`select()` is the single data tool for analysis — same pattern for financial statements and disclosure documents:
-
-```python
-c.select("IS", ["매출액", "영업이익"])                # income statement
-c.select("CF", ["depreciation", "interest_paid"])    # cash flow (snake_id)
-c.select("productService", ["DX_매출액"])            # business unit revenue from docs
-c.select("salesOrder", ["TV, 모니터 등"])             # product sales from docs
-```
-
-When IS doesn't have cost details (e.g. non-manufacturing firms), CF adjustment items provide the breakdown:
-`depreciation`, `retirement_benefits`, `stock_compensation_expenses`.
 
 Same 3-step call pattern as scan.
 
@@ -321,26 +308,14 @@ c.analysis("수익성")                   # profitability analysis
 | 3-4 | 투자효율 | Does investment create value | 4 |
 | 3-5 | 재무정합성 | Do statements reconcile | 5 |
 
-Each axis is a set of `calc*(company) -> dict` pure functions. No rendering, no side effects.
-
-### Review — analysis to Report
-
-Review consumes analysis() output and assembles structured reports:
-
-```
-calc*(company) -> dict -> block builders -> BlockMap -> templates -> sections -> render
-```
+### Review — Analysis to Report
 
 ```python
 c.review()              # all 14 sections, full report
 c.review("수익구조")     # single section
-
-b = blocks(c)           # 60+ blocks as a dict (Korean/English keys)
-b["growth"]             # English key
-b["매출 성장률"]         # Korean label -- same block
 ```
 
-4 output formats: `rich` (terminal), `html`, `markdown`, `json`. Cross-section narrative threads (e.g., "revenue decline -> margin pressure -> cash deterioration") are auto-detected and injected.
+4 output formats: `rich` (terminal), `html`, `markdown`, `json`.
 
 ### Reviewer — review + AI Interpretation
 
@@ -386,7 +361,7 @@ L1  providers/   Country-specific data (DART, EDGAR, EDINET)
     scan/        Market-wide cross-sectional analysis (13 axes)
 L2  analysis/    8 analytical domains (strategy → macro)
     review/      Block-template report assembly
-L3  ai/          LLM-powered analysis (5 providers, 8 super tools)
+L3  ai/          LLM-powered analysis (5 providers)
 ```
 
 Import direction is enforced by CI — no reverse dependencies allowed. The four axes compose naturally: **Company** (one firm, deep) → **Analysis** (judgment) → **Review** (presentation) → **Scan** (all firms, wide).
@@ -526,13 +501,11 @@ dartlab ask --continue "배당 추세는?"
 # auto-generate report
 dartlab report "삼성전자" -o report.md
 
-# web UI
-dartlab                    # open browser UI
 dartlab --help             # show all commands
 ```
 
 <details>
-<summary>All CLI commands (16)</summary>
+<summary>All CLI commands (15)</summary>
 
 | Category | Command | Description |
 |----------|---------|-------------|
@@ -548,8 +521,7 @@ dartlab --help             # show all commands
 | Collect | `collect` | Download / refresh / batch collect |
 | Collect | `collect --check` | Check freshness (new filings) |
 | Collect | `collect --incremental` | Incremental collect (missing only) |
-| Server | `ai` | Launch web UI (localhost:8400) |
-| Server | `share` | Tunnel sharing (ngrok / cloudflared) |
+| Server | `ai` | AI analysis server |
 | Server | `status` | Provider connection status |
 | Server | `setup` | Provider setup wizard |
 | MCP | `mcp` | Start MCP stdio server |
@@ -587,8 +559,6 @@ dartlab.ask("삼성전자 분석", provider="free")
 **Why no Claude provider?** Anthropic does not offer OAuth-based access. Without OAuth, there is no way to let users authenticate with their existing subscription — we would have to ask users to paste API keys, which goes against DartLab's frictionless design. If Anthropic adds OAuth support in the future, we will add a Claude provider. For now, Claude works through **MCP** (see below) — Claude Desktop, Claude Code, and Cursor can call DartLab's 60 tools directly.
 
 **`oauth-codex`** is the recommended provider — if you have a ChatGPT subscription, it works out of the box with no API keys. Run `dartlab setup oauth-codex` to authenticate.
-
-**Web UI (`dartlab`)** launches a browser-based chat interface for interactive analysis. This feature is currently **experimental** — we are evaluating the right scope and UX for visualization and collaborative features.
 
 ### Project Settings (`.dartlab.yml`)
 
@@ -778,7 +748,7 @@ dartlab collect --batch --mode all         # re-collect everything
 | **Company** | `Company("005930")` -- index, show, select, trace, diff + finance shortcuts | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py) |
 | **Scan** | `scan()` -- 13-axis cross-market scan, 2,700+ companies | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_scan.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/02_scan.py) |
 | **Review** | `c.review()` -- 14-section structured report + `c.reviewer()` AI interpretation | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_review.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/03_review.py) |
-| **Gather** | `price()`, `macro()`, `consensus()` -- market data with fallback chains | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/04_gather.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/04_gather.py) |
+| **Gather** | `gather()` -- price, flow, macro, news in one call | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/04_gather.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/04_gather.py) |
 
 <details>
 <summary>Run locally with Marimo</summary>

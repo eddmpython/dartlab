@@ -54,12 +54,13 @@ def calcIsCfDivergence(company) -> dict | None:
                     "ocf": float,
                     "divergence": float | None,
                     "direction": str | None,
+                    "nonRecurringDistortion": bool,
                 },
                 ...
             ],
         }
     """
-    isResult = company.select("IS", ["당기순이익"])
+    isResult = company.select("IS", ["당기순이익", "영업이익"])
     cfResult = company.select("CF", ["영업활동현금흐름"])
 
     isParsed = _toDict(isResult)
@@ -71,6 +72,7 @@ def calcIsCfDivergence(company) -> dict | None:
     cfData, cfPeriods = cfParsed
 
     niRow = isData.get("당기순이익", {})
+    opRow = isData.get("영업이익", {})
     ocfRow = cfData.get("영업활동현금흐름", {})
 
     yCols = _annualCols(cfPeriods, _MAX_YEARS)
@@ -81,6 +83,7 @@ def calcIsCfDivergence(company) -> dict | None:
     for col in yCols:
         ni = _get(niRow, col)
         ocf = _get(ocfRow, col)
+        opIncome = _get(opRow, col)
 
         divergence = None
         direction = None
@@ -93,6 +96,12 @@ def calcIsCfDivergence(company) -> dict | None:
             else:
                 direction = "일치"
 
+        # 일회성 왜곡 판정: 영업이익 대비 순이익이 극단적으로 작으면
+        # 영업외 일회성 항목(중단사업손실, 대규모 손상 등)이 순이익을 지배
+        nonRecurring = False
+        if opIncome != 0 and abs(ni) < abs(opIncome) * 0.3:
+            nonRecurring = True
+
         history.append(
             {
                 "period": col,
@@ -100,6 +109,7 @@ def calcIsCfDivergence(company) -> dict | None:
                 "ocf": ocf,
                 "divergence": divergence,
                 "direction": direction,
+                "nonRecurringDistortion": nonRecurring,
             }
         )
 
@@ -244,6 +254,9 @@ def calcAnomalyScore(company) -> dict | None:
         div = cf.get("divergence")
         if div is not None:
             cfScore = min(30, abs(div) / 100 * 30)
+            # 일회성 왜곡(중단사업손실 등)이면 점수 절반 감쇄
+            if cf.get("nonRecurringDistortion"):
+                cfScore = cfScore * 0.5
             score += cfScore
             components["isCfDivergence"] = cfScore
 
@@ -302,7 +315,8 @@ def calcCrossStatementFlags(company) -> list[str]:
         h0 = isCf["history"][0]
         div = h0.get("divergence")
         if div is not None and abs(div) > 50:
-            flags.append(f"IS-CF 괴리 {div:.0f}% — 순이익 ��비 현금��름 극심한 차이")
+            suffix = " (일회성 영업외항목 왜곡)" if h0.get("nonRecurringDistortion") else ""
+            flags.append(f"IS-CF 괴리 {div:.0f}% — 순이익 대비 현금흐름 극심한 차이{suffix}")
 
     isBs = calcIsBsDivergence(company)
     if isBs and isBs["history"]:

@@ -592,6 +592,28 @@ def scanRatioList() -> list[dict[str, str]]:
     return [{"name": k, "label": v["label"]} for k, v in _RATIO_DEFS.items()]
 
 
+def scanAccountList() -> list[dict[str, str]]:
+    """사용 가능한 계정 목록 반환 (sortOrder.json 기준 + 한글 역매핑)."""
+    from dartlab.core.finance.ordering import _ensureLoaded
+
+    data = _ensureLoaded()
+
+    # 한글명 역매핑: snakeId → 한글 계정명
+    mapper = AccountMapper.get()
+    idToKr: dict[str, str] = {}
+    if mapper._mappings:
+        for krName, snakeId in mapper._mappings.items():
+            if not krName.isascii() and snakeId not in idToKr:
+                idToKr[snakeId] = krName
+
+    result = []
+    for sjDiv in ("IS", "BS", "CF"):
+        for snakeId in data.get(sjDiv, {}):
+            label = idToKr.get(snakeId, snakeId)
+            result.append({"name": snakeId, "label": label, "statement": sjDiv})
+    return result
+
+
 def _calcSimpleRatio(defn: dict, fsPref: str, *, annual: bool = False) -> pl.DataFrame:
     """분자/분모 비율 계산."""
     numer = scanAccount(defn["numer"], fsPref=fsPref, annual=annual)

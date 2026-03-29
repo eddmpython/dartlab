@@ -31,6 +31,26 @@
 
 > **참고:** DartLab은 활발히 개발 중이다. 버전 간 API가 바뀔 수 있으며, 문서가 최신 코드를 따라가지 못하는 경우가 있다.
 
+## 목차
+
+- [설치](#설치)
+- [빠른 시작](#빠른-시작)
+- [DartLab은 무엇인가](#dartlab은-무엇인가)
+  - [Company -- 기억할 것 7개](#company--기억할-것-7개)
+  - [Scan -- 시장 전체를 한 번에](#scan--시장-전체를-한-번에)
+  - [Analysis -- 재무제표 완전 분석](#analysis--재무제표-완전-분석)
+  - [Review -- analysis를 보고서로](#review--analysis를-보고서로)
+  - [Gather -- 외부 시장 데이터 수집](#gather--외부-시장-데이터-수집)
+- [EDGAR (미국)](#edgar-미국)
+- [AI 분석](#ai-분석)
+- [MCP -- AI 어시스턴트 연동](#mcp--ai-어시스턴트-연동)
+- [OpenAPI -- 원본 공공 API](#openapi--원본-공공-api)
+- [데이터](#데이터)
+- [바로 시작하기](#바로-시작하기)
+- [문서](#문서)
+- [안정성](#안정성)
+- [기여](#기여)
+
 ## 설치
 
 **Python 3.12+** 필요.
@@ -116,7 +136,7 @@ us.show("business")
 us.ratios
 
 # 코드 없이 자연어로 질문
-dartlab.ask("삼성전자 재무건전성 분석해줘", stream=True)
+dartlab.ask("삼성전자 재무건전성 분석해줘")
 ```
 
 ## DartLab은 무엇인가
@@ -154,20 +174,11 @@ Before (원본 섹션 제목):                     After (canonical topic):
 카카오      "2. 사업의 내용"                 → businessOverview
 ```
 
-매핑 파이프라인: **텍스트 정규화** → **545개 하드코딩 매핑** → **73개 regex 패턴** → canonical topic. 전체 상장사 ~95%+ 매핑률. 각 셀에는 heading/body로 분리된 원문, 테이블, 증거가 보존된다. "작년 대비 올해 리스크 기술이 어떻게 바뀌었는지"를 `diff()` 한 줄로 비교할 수 있다.
+전체 상장사 ~95%+ 매핑률. 각 셀에는 heading/body로 분리된 원문, 테이블, 증거가 보존된다. "작년 대비 올해 리스크 기술이 어떻게 바뀌었는지"를 `diff()` 한 줄로 비교할 수 있다.
 
 **2. 모든 기업이 같은 숫자를 다르게 부른다.**
 
-계정 표준화는 모든 XBRL 계정을 4단계 파이프라인으로 정규화한다:
-
-```
-원본 XBRL account_id
-  → 접두사 제거 (ifrs-full_, dart_, ifrs_, ifrs-smes_)
-  → 영문 ID 동의어 (59개 규칙)
-  → 한글명 동의어 (104개 규칙)
-  → 학습된 매핑 테이블 (34,249개 엔트리)
-  → 결과: revenue, operatingIncome, totalAssets, …
-```
+계정 표준화는 모든 XBRL 계정을 하나의 canonical 이름으로 정규화한다:
 
 ```
 Before (원본 XBRL):                        After (표준화):
@@ -199,19 +210,7 @@ LG에너지    Revenue             매출         →  revenue    매출액
 | DART scan | 전종목 사전 계산 | ~271 MB |
 | EDGAR | 온디맨드 | SEC API (자동 수집) |
 
-원본에서 직접 수집하고 싶다면 공공 API를 쓸 수 있다:
-
-```python
-from dartlab import OpenDart           # 한국 DART (무료 API 키 필요)
-d = OpenDart()
-d.filings("삼성전자", "2024")
-
-from dartlab import OpenEdgar          # 미국 SEC (키 불필요)
-e = OpenEdgar()
-e.filings("AAPL", forms=["10-K"])
-```
-
-전체 파이프라인(캐시, 최신화, 일괄 수집)은 [데이터](#데이터) 참조.
+원본에서 직접 수집하고 싶다면 [OpenAPI](#openapi--원본-공공-api)를 참조. 전체 파이프라인(캐시, 최신화, 일괄 수집)은 [데이터](#데이터) 참조.
 
 ### Company — 기억할 것 7개
 
@@ -264,7 +263,7 @@ dartlab.scan("cashflow")              # OCF/ICF/FCF + 8유형 패턴 분류
 | account | 계정 | 전종목 단일 계정 시계열 (target 필수) |
 | ratio | 비율 | 전종목 단일 재무비율 시계열 (target 필수) |
 
-각 축은 `_AXIS_REGISTRY`에 등록된 lazy-loaded 모듈이다. 새 축 추가 = 레지스트리 1줄 + 모듈 1개.
+새 축 추가 = 모듈 1개. 다른 코드 수정 불필요.
 
 ### Analysis — 재무제표 완전 분석
 
@@ -278,18 +277,6 @@ analysis()  →  14축 구조화 데이터 (금액 + 비율 + YoY + 플래그)
  review()       AI(ask)        사람
  보고서화        해석           해석
 ```
-
-`select()`는 analysis의 유일한 데이터 도구다 -- 재무제표와 사업보고서를 같은 패턴으로 접근한다:
-
-```python
-c.select("IS", ["매출액", "영업이익"])                # 손익계산서
-c.select("CF", ["depreciation", "interest_paid"])    # 현금흐름표 (snake_id)
-c.select("productService", ["DX_매출액"])            # 사업부별 매출 (docs sections)
-c.select("salesOrder", ["TV, 모니터 등"])             # 제품별 매출 (docs sections)
-```
-
-IS에 비용 세부가 없는 기업(비제조업 등)은 CF 조정항목이 대안이 된다:
-`depreciation`, `retirement_benefits`, `stock_compensation_expenses`.
 
 scan과 동일한 3단계 호출 패턴.
 
@@ -319,26 +306,14 @@ c.analysis("수익성")                   # 수익성 분석
 | 3-4 | 투자효율 | 투자가 가치를 만드는가 | 4 |
 | 3-5 | 재무정합성 | 재무제표가 서로 맞는가 | 5 |
 
-각 축은 `calc*(company) -> dict` 순수 함수 집합이다. 렌더링 없음, 부수 효과 없음.
-
 ### Review — analysis를 보고서로
-
-analysis()의 출력을 소비하여 구조화된 보고서를 조립한다:
-
-```
-calc*(company) -> dict -> 블록 빌더 -> BlockMap -> 템플릿 -> 섹션 -> 렌더링
-```
 
 ```python
 c.review()              # 14개 섹션 전체 보고서
 c.review("수익구조")     # 단일 섹션
-
-b = blocks(c)           # 60+개 블록 사전 (한글/영문 key)
-b["growth"]             # 영문 key
-b["매출 성장률"]         # 한글 label -- 같은 블록
 ```
 
-4개 출력 형식: `rich`(터미널), `html`, `markdown`, `json`. 섹션 간 순환 서사("매출 하락 -> 마진 압박 -> 현금 악화")를 자동 감지하여 주입한다.
+4개 출력 형식: `rich`(터미널), `html`, `markdown`, `json`.
 
 ### Reviewer — review + AI 해석
 
@@ -384,7 +359,7 @@ L1  providers/   국가별 데이터 (DART, EDGAR, EDINET)
     scan/        시장 횡단분석 (13축)
 L2  analysis/    8대 분석 영역 (strategy → macro)
     review/      블록-템플릿 보고서 조립
-L3  ai/          LLM 기반 분석 (5개 provider, 8개 super tool)
+L3  ai/          LLM 기반 분석 (5개 provider)
 ```
 
 import 방향은 CI에서 강제한다 — 역방향 의존 불허. 4개 축이 자연스럽게 합성된다: **Company**(한 기업, 깊이) → **Analysis**(판단) → **Review**(표현) → **Scan**(전 기업, 폭).
@@ -524,13 +499,11 @@ dartlab ask --continue "배당 추세는?"
 # 보고서 자동 생성
 dartlab report "삼성전자" -o report.md
 
-# 웹 UI
-dartlab                    # 브라우저 UI 실행
 dartlab --help             # 전체 명령어 확인
 ```
 
 <details>
-<summary>전체 CLI 명령어 (16개)</summary>
+<summary>전체 CLI 명령어 (15개)</summary>
 
 | 분류 | 명령어 | 설명 |
 |------|--------|------|
@@ -546,8 +519,7 @@ dartlab --help             # 전체 명령어 확인
 | 수집 | `collect` | 데이터 다운로드 / 갱신 / 배치 수집 |
 | 수집 | `collect --check` | 새 공시 감지 (freshness 체크) |
 | 수집 | `collect --incremental` | 누락 공시만 증분 수집 |
-| 서버 | `ai` | 웹 UI 실행 (localhost:8400) |
-| 서버 | `share` | 터널 공유 (ngrok / cloudflared) |
+| 서버 | `ai` | AI 분석 서버 |
 | 서버 | `status` | Provider 연결 상태 |
 | 서버 | `setup` | Provider 설정 마법사 |
 | MCP | `mcp` | MCP stdio 서버 실행 |
@@ -585,8 +557,6 @@ dartlab.ask("삼성전자 분석", provider="free")
 **Claude provider가 없는 이유:** Anthropic은 OAuth 기반 접근을 제공하지 않는다. OAuth 없이는 사용자가 기존 구독으로 인증할 방법이 없어서 API 키를 직접 입력하게 해야 하는데, 이는 DartLab의 마찰 없는 설계에 맞지 않는다. Anthropic이 향후 OAuth를 지원하면 Claude provider를 추가할 예정이다. 현재 Claude는 **MCP**로 사용 가능 — Claude Desktop, Claude Code, Cursor에서 DartLab의 60개 도구를 직접 호출할 수 있다.
 
 **`oauth-codex`**가 권장 provider다 — ChatGPT 구독이 있으면 API 키 없이 바로 작동한다. `dartlab setup oauth-codex`로 인증.
-
-**웹 UI (`dartlab`)** 는 브라우저 기반 대화형 분석 인터페이스를 실행한다. 이 기능은 현재 **실험적** 단계로, 시각화와 협업 기능의 범위와 UX를 검토 중이다.
 
 ### 프로젝트 설정 (`.dartlab.yml`)
 
@@ -776,7 +746,7 @@ dartlab collect --batch --mode all         # 전체 재수집
 | **Company** | `Company("005930")` -- index, show, select, trace, diff + 재무 바로가기 | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py) |
 | **Scan** | `scan()` -- 13축 전종목 횡단 스캔, 2,700+ 기업 | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_scan.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/02_scan.py) |
 | **Review** | `c.review()` -- 14개 섹션 구조화 보고서 + `c.reviewer()` AI 해석 | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_review.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/03_review.py) |
-| **Gather** | `price()`, `macro()`, `consensus()` -- fallback 체인 시장 데이터 | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/04_gather.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/04_gather.py) |
+| **Gather** | `gather()` -- 주가, 수급, 거시, 뉴스를 한 번에 | [![Open in Colab](https://img.shields.io/badge/Open_in_Colab-Google-ea4647?style=for-the-badge&labelColor=050811&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/04_gather.ipynb) | [![Open in Molab](https://img.shields.io/badge/Open_in_Molab-marimo-38bdf8?style=for-the-badge&labelColor=050811)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/04_gather.py) |
 
 <details>
 <summary>로컬에서 Marimo로 실행</summary>

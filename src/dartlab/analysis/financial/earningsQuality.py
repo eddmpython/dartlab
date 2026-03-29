@@ -339,9 +339,11 @@ def calcEarningsQualityFlags(company) -> list[str]:
             nonOpIncome = h0.get("nonOperatingIncome")
             if nonOpRatio is not None and nonOpRatio > 30:
                 if nonOpIncome is not None and nonOpIncome < 0:
-                    flags.append(f"영업외손실 비중 {nonOpRatio:.0f}% — 영업이익을 상쇄")
+                    suffix = " (일회성 항목 가능성)" if nonOpRatio > 100 else ""
+                    flags.append(f"영업외손실 비중 {nonOpRatio:.0f}% — 영업이익을 상쇄{suffix}")
                 else:
-                    flags.append(f"영업외이익 비중 {nonOpRatio:.0f}% — 일회성 이익 의존")
+                    suffix = " (일회성 항목 가능성)" if nonOpRatio > 100 else ""
+                    flags.append(f"영업외이익 비중 {nonOpRatio:.0f}% — 일회성 이익 의존{suffix}")
 
         cv = persistence.get("earningsVolatility")
         if cv is not None and cv > 0.5:

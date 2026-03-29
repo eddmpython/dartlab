@@ -135,7 +135,11 @@ def _pythonApiSection() -> str:
     detailEntries: list[tuple[str, dict[str, str]]] = []
 
     for name in allNames:
-        obj = getattr(dartlab, name, None)
+        try:
+            obj = getattr(dartlab, name, None)
+        except (ImportError, ModuleNotFoundError, AttributeError):
+            lines.append(f"| `{name}` | - | (lazy import 미완) |")
+            continue
         if obj is None:
             lines.append(f"| `{name}` | - | - |")
             continue
@@ -1304,7 +1308,10 @@ def _generateCapabilitiesPy() -> str:
     # 1) __all__ 함수/클래스
     allNames = getattr(dartlab, "__all__", [])
     for name in allNames:
-        obj = getattr(dartlab, name, None)
+        try:
+            obj = getattr(dartlab, name, None)
+        except (ImportError, ModuleNotFoundError, AttributeError):
+            continue
         if obj is None:
             continue
         kind = "class" if inspect.isclass(obj) else "function" if callable(obj) else "module"
@@ -1418,6 +1425,220 @@ def _generateCapabilitiesPy() -> str:
     )
 
 
+# ─── API Reference 자동 생성 (JSON + MD) ─────────────────────
+
+
+def _extractSignature(obj: Any, name: str) -> dict[str, Any]:
+    """callable의 시그니처를 dict로 추출."""
+    result: dict[str, Any] = {"name": name}
+    try:
+        sig = inspect.signature(obj)
+    except (ValueError, TypeError):
+        return result
+
+    params = []
+    for pName, param in sig.parameters.items():
+        if pName in ("self", "cls"):
+            continue
+        pInfo: dict[str, str] = {"name": pName}
+        if param.annotation is not inspect.Parameter.empty:
+            ann = param.annotation
+            pInfo["type"] = ann.__name__ if hasattr(ann, "__name__") else str(ann).replace("typing.", "")
+        if param.default is not inspect.Parameter.empty:
+            pInfo["default"] = repr(param.default)
+        if param.kind == inspect.Parameter.KEYWORD_ONLY:
+            pInfo["keyword_only"] = "true"
+        params.append(pInfo)
+    result["params"] = params
+
+    if sig.return_annotation is not inspect.Signature.empty:
+        ra = sig.return_annotation
+        result["returnType"] = ra.__name__ if hasattr(ra, "__name__") else str(ra).replace("typing.", "")
+
+    return result
+
+
+def _collectApiReference() -> list[dict[str, Any]]:
+    """공개 API 전체의 시그니처 + 독스트링 수집.
+
+    화이트리스트: __all__ + Company 공개 메서드/프로퍼티.
+    """
+    import dartlab
+    from dartlab.providers.dart.company import Company as DartCompany
+
+    entries: list[dict[str, Any]] = []
+
+    # 1) __all__ 함수/클래스
+    allNames = getattr(dartlab, "__all__", [])
+    for name in allNames:
+        try:
+            obj = getattr(dartlab, name, None)
+        except (ImportError, ModuleNotFoundError, AttributeError):
+            continue
+        if obj is None:
+            continue
+        kind = "class" if inspect.isclass(obj) else "function" if callable(obj) else "module"
+        doc = inspect.getdoc(obj)
+        summary = doc.split("\n")[0].strip() if doc else ""
+        sections = _parseDocstringSections(doc)
+
+        entry: dict[str, Any] = {"name": name, "kind": kind, "summary": summary, "group": "dartlab"}
+        if callable(obj) and not inspect.isclass(obj):
+            entry.update(_extractSignature(obj, name))
+        for key in ("args", "returns", "example", "capabilities", "requires", "guide", "seealso"):
+            if val := sections.get(key):
+                entry[key] = val
+        entries.append(entry)
+
+    # 2) Company 공개 메서드/프로퍼티
+    for memberName in sorted(dir(DartCompany)):
+        if memberName.startswith("_"):
+            continue
+        obj = getattr(DartCompany, memberName, None)
+        if obj is None or isinstance(obj, (staticmethod, classmethod)):
+            continue
+
+        kind = "property" if isinstance(inspect.getattr_static(DartCompany, memberName), property) else "method"
+        doc = None
+        if kind == "property":
+            prop = inspect.getattr_static(DartCompany, memberName)
+            if prop.fget:
+                doc = inspect.getdoc(prop.fget)
+        else:
+            doc = inspect.getdoc(obj)
+        if doc is None:
+            continue
+
+        summary = doc.split("\n")[0].strip()
+        sections = _parseDocstringSections(doc)
+        entry = {"name": f"Company.{memberName}", "kind": kind, "summary": summary, "group": "Company"}
+        if kind == "method":
+            entry.update(_extractSignature(obj, memberName))
+        for key in ("args", "returns", "example", "capabilities", "requires", "guide", "seealso"):
+            if val := sections.get(key):
+                entry[key] = val
+        entries.append(entry)
+
+    return entries
+
+
+def _renderParamList(params: list[dict]) -> list[str]:
+    """파라미터 리스트를 시그니처 문자열 리스트로 렌더링. *, 는 한 번만."""
+    result = []
+    kwInserted = False
+    for p in params:
+        s = p["name"]
+        if "type" in p:
+            s += f": {p['type']}"
+        if "default" in p:
+            s += f" = {p['default']}"
+        if p.get("keyword_only") and not kwInserted:
+            result.append("*")
+            kwInserted = True
+        result.append(s)
+    return result
+
+
+def generateApiReferenceJson() -> str:
+    """API 레퍼런스 JSON — landing SvelteKit이 소비."""
+    entries = _collectApiReference()
+    return json.dumps(entries, ensure_ascii=False, indent=2)
+
+
+def generateApiReferenceMd() -> str:
+    """API 레퍼런스 마크다운 — docs/api/ 자동 생성 페이지."""
+    entries = _collectApiReference()
+
+    lines = [
+        "---",
+        "title: API Reference (Auto-generated)",
+        "---",
+        "",
+        "# API Reference",
+        "",
+        "> 이 문서는 `scripts/generateSpec.py`에 의해 자동 생성됩니다. 직접 수정 금지.",
+        "",
+    ]
+
+    # 그룹별 분리
+    dartlabEntries = [e for e in entries if e.get("group") == "dartlab"]
+    companyEntries = [e for e in entries if e.get("group") == "Company"]
+
+    # ── dartlab 공개 함수 ──
+    lines.append("## dartlab 공개 API")
+    lines.append("")
+
+    for e in dartlabEntries:
+        kind = e.get("kind", "")
+        name = e["name"]
+        summary = e.get("summary", "")
+
+        # 시그니처 렌더링
+        if kind == "function" and "params" in e:
+            paramStrs = _renderParamList(e["params"])
+            sig = ", ".join(paramStrs)
+            retStr = f" -> {e['returnType']}" if "returnType" in e else ""
+            lines.append(f"### `dartlab.{name}({sig}){retStr}`")
+        elif kind == "class":
+            lines.append(f"### `dartlab.{name}`")
+        else:
+            lines.append(f"### `dartlab.{name}`")
+
+        if summary:
+            lines.append(f"\n{summary}")
+
+        if args := e.get("args"):
+            lines.append(f"\n**Args:**\n")
+            for argLine in args.split("\n"):
+                if argLine.strip():
+                    lines.append(f"- {argLine.strip()}")
+
+        if returns := e.get("returns"):
+            lines.append(f"\n**Returns:** {returns}")
+
+        if example := e.get("example"):
+            lines.append(f"\n```python\n{example}\n```")
+
+        lines.append("")
+
+    # ── Company 메서드/프로퍼티 ──
+    lines.append("---")
+    lines.append("")
+    lines.append("## Company")
+    lines.append("")
+
+    for e in companyEntries:
+        kind = e.get("kind", "")
+        name = e["name"]
+        summary = e.get("summary", "")
+
+        if kind == "method" and "params" in e:
+            paramStrs = _renderParamList(e["params"])
+            sig = ", ".join(paramStrs)
+            retStr = f" -> {e['returnType']}" if "returnType" in e else ""
+            lines.append(f"### `{name}({sig}){retStr}`")
+        elif kind == "property":
+            lines.append(f"### `{name}` (property)")
+        else:
+            lines.append(f"### `{name}`")
+
+        if summary:
+            lines.append(f"\n{summary}")
+
+        if args := e.get("args"):
+            lines.append(f"\n**Args:**\n")
+            for argLine in args.split("\n"):
+                if argLine.strip():
+                    lines.append(f"- {argLine.strip()}")
+
+        if example := e.get("example"):
+            lines.append(f"\n```python\n{example}\n```")
+
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 # ─── main ───────────────────────────────────────────────────────
 
 
@@ -1449,6 +1670,18 @@ def main():
     capabilitiesPy = _generateCapabilitiesPy()
     capabilitiesPyPath.write_text(capabilitiesPy, encoding="utf-8")
     print(f"  _generatedCapabilities.py ({len(capabilitiesPy):,} chars) -> {capabilitiesPyPath}")
+
+    # API Reference (JSON for SvelteKit + MD for docs/)
+    apiRefJsonPath = ROOT / "landing" / "static" / "api-reference.json"
+    apiRefMdPath = ROOT / "docs" / "api" / "generated-reference.md"
+
+    apiRefJson = generateApiReferenceJson()
+    apiRefJsonPath.write_text(apiRefJson, encoding="utf-8")
+    print(f"  api-reference.json ({len(apiRefJson):,} chars) -> {apiRefJsonPath}")
+
+    apiRefMd = generateApiReferenceMd()
+    apiRefMdPath.write_text(apiRefMd, encoding="utf-8")
+    print(f"  generated-reference.md ({len(apiRefMd):,} chars) -> {apiRefMdPath}")
 
     print("\n  완료.")
 

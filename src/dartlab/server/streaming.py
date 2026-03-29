@@ -107,27 +107,6 @@ async def _build_kwargs(
         "report_mode": req.reportMode,
     }
 
-    # snapshot 캐시: 서버 세션에서 Company별 1회 계산
-    if c is not None and not not_found_msg:
-        from dartlab.ai.context.snapshot import build_snapshot
-        from dartlab.ai.runtime.core import _resolve_snapshot_policy
-
-        stock_id = getattr(c, "stockCode", getattr(c, "ticker", ""))
-        snapshotPolicy = _resolve_snapshot_policy(req.question, (), req.reportMode)
-        if snapshotPolicy["enabled"]:
-            cached = company_cache.get(stock_id)
-            if cached:
-                kwargs["snapshot"] = cached[1]
-            else:
-                snapshot = await asyncio.to_thread(
-                    build_snapshot,
-                    c,
-                    includeInsights=snapshotPolicy["includeInsights"],
-                )
-                company_cache.put(stock_id, c, snapshot)
-                kwargs["snapshot"] = snapshot
-        kwargs["auto_snapshot"] = False
-
     return kwargs
 
 

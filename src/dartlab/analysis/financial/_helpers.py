@@ -2,7 +2,32 @@
 
 from __future__ import annotations
 
+import re
+
 import polars as pl
+
+_TRIANGLE_RE = re.compile(r"[△▲\u25B3\u25B2]")
+
+
+def parseNumStr(s: str | None) -> float | None:
+    """문자열 숫자를 float로 변환. 콤마, △(마이너스), % 처리."""
+    if s is None:
+        return None
+    s = str(s).strip()
+    if not s or s == "-":
+        return None
+    negative = False
+    if _TRIANGLE_RE.match(s):
+        negative = True
+        s = _TRIANGLE_RE.sub("", s)
+    s = s.replace(",", "").replace("%", "").strip()
+    if not s:
+        return None
+    try:
+        v = float(s)
+        return -v if negative else v
+    except ValueError:
+        return None
 
 
 def periodCols(df: pl.DataFrame) -> list[str]:

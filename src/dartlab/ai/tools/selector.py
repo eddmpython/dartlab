@@ -177,6 +177,7 @@ def buildToolPrompt(runtime: ToolRuntime | None = None) -> str:
             "- **배당**: `c.show('dividend')`, `c.CF`",
             "- **기업 비교**: 복수 Company 생성 후 데이터 비교",
             "- **시장 스캔**: `dartlab.scan('governance')`, `dartlab.scan('screen', ...)`",
+            "- CAPABILITIES의 Guide/SeeAlso를 참고하여 최적 API를 선택하세요.",
         ]
     )
 

@@ -82,6 +82,8 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         example='scan("account", "매출액")',
         targetParam="snakeId",
         targetRequired=True,
+        listModule="dartlab.providers.dart.finance.scanAccount",
+        listFn="scanAccountList",
     ),
     "ratio": _AxisEntry(
         module="dartlab.providers.dart.finance.scanAccount",
@@ -95,8 +97,8 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         listFn="scanRatioList",
     ),
     "digest": _AxisEntry(
-        module="dartlab.scan.watch.digest",
-        fn="build_digest",
+        module="dartlab.scan.watch",
+        fn="scanDigest",
         label="다이제스트",
         description="시장 전체 공시 변화 다이제스트",
         example='scan("digest")',
@@ -144,6 +146,20 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="유동비율 + 당좌비율 — 단기 지급능력",
         example='scan("liquidity")',
     ),
+    "growth": _AxisEntry(
+        module="dartlab.scan.growth",
+        fn="scanGrowth",
+        label="성장성",
+        description="매출/영업이익/순이익 CAGR + 성장 패턴 분류 (6종)",
+        example='scan("growth")',
+    ),
+    "profitability": _AxisEntry(
+        module="dartlab.scan.profitability",
+        fn="scanProfitability",
+        label="수익성",
+        description="영업이익률/순이익률/ROE/ROA + 등급",
+        example='scan("profitability")',
+    ),
 }
 
 
@@ -151,30 +167,54 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
 
 
 _ALIASES: dict[str, str] = {
+    # governance
     "거버넌스": "governance",
     "지배구조": "governance",
+    # workforce
     "인력": "workforce",
     "급여": "workforce",
+    "인력/급여": "workforce",
+    # capital
     "주주환원": "capital",
     "배당": "capital",
+    # debt
     "부채": "debt",
+    "부채구조": "debt",
+    "사채": "debt",
+    # account
     "계정": "account",
+    # ratio
     "비율": "ratio",
+    # network
     "네트워크": "network",
     "관계": "network",
+    # digest
     "다이제스트": "digest",
     "변화": "digest",
+    "변동감지": "digest",
+    # cashflow
     "현금흐름": "cashflow",
     "현금": "cashflow",
+    # audit
     "감사": "audit",
     "감사리스크": "audit",
+    # insider
     "내부자": "insider",
+    "내부자지분": "insider",
     "지분": "insider",
+    # quality
     "이익의질": "quality",
+    "이익의 질": "quality",
     "이익품질": "quality",
     "어닝퀄리티": "quality",
+    # liquidity
     "유동성": "liquidity",
     "유동비율": "liquidity",
+    # growth
+    "성장성": "growth",
+    "성장": "growth",
+    # profitability
+    "수익성": "profitability",
 }
 
 
@@ -195,12 +235,43 @@ def _resolveAxis(axis: str) -> str:
 
 
 def available_scans() -> list[str]:
-    """가용 scan 축 이름 목록."""
+    """가용 scan 축 이름 목록.
+
+    Capabilities:
+        - 15축 scan 축 이름을 알파벳순 리스트로 반환
+        - 프로그래밍 방식으로 가용 축을 탐색할 때 사용
+
+    Requires:
+        없음 (레지스트리 메타데이터만 참조)
+
+    AIContext:
+        사용자가 "어떤 scan이 있어?" 질문 시 축 목록 제공.
+
+    Guide:
+        - "scan 뭐 있어?" -> available_scans()로 축 이름 목록 확인
+        - "어떤 분석 가능해?" -> available_scans() + scan() 가이드 조합
+        - scan()을 인자 없이 호출하면 설명 포함 가이드 DataFrame 반환.
+
+    SeeAlso:
+        - scan: 축 이름으로 실제 횡단분석 실행
+        - Scan.__call__: axis=None이면 설명 포함 가이드 DataFrame 반환
+
+    Args:
+        없음.
+
+    Returns:
+        list[str] — 알파벳순 축 이름 목록 (예: ["account", "audit", ...]).
+
+    Example::
+
+        from dartlab.scan import available_scans
+        available_scans()   # ['account', 'audit', 'capital', ...]
+    """
     return sorted(_AXIS_REGISTRY.keys())
 
 
 class Scan:
-    """시장 전체 횡단분석 — 13축, 전부 Polars DataFrame.
+    """시장 전체 횡단분석 -- 15축, 전부 Polars DataFrame.
 
     Capabilities:
         - governance: 최대주주 지분, 사외이사, 감사위원회 종합 등급
@@ -210,10 +281,12 @@ class Scan:
         - account: 전종목 단일 계정 시계열 (매출액, 영업이익 등)
         - ratio: 전종목 단일 재무비율 시계열 (ROE, 부채비율 등)
         - cashflow: OCF/ICF/FCF + 현금흐름 패턴 분류
-        - audit: 감사의견, 감사인변경, 특기사항
+        - audit: 감사의견, 감사인변경, 특기사항, 감사독립성
         - insider: 최대주주 지분변동, 자기주식, 경영권 안정성
-        - quality: Accrual Ratio + CF/NI — 이익의 현금 뒷받침
-        - liquidity: 유동비율 + 당좌비율 — 단기 지급능력
+        - quality: Accrual Ratio + CF/NI -- 이익의 현금 뒷받침
+        - liquidity: 유동비율 + 당좌비율 -- 단기 지급능력
+        - growth: 매출/영업이익/순이익 CAGR + 성장 패턴 분류
+        - profitability: 영업이익률/순이익률/ROE/ROA + 등급
         - digest: 시장 전체 공시 변화 다이제스트
         - network: 상장사 관계 네트워크 (출자/지분/계열)
 
@@ -289,6 +362,16 @@ class Scan:
                 if col in result.columns:
                     result = result.filter(pl.col(col) == target)
                     break
+
+        # 종목 필터 후 빈 결과면 사유 안내
+        if target and isinstance(result, pl.DataFrame) and result.height == 0 and entry.targetParam is None:
+            _MISSING_HINTS = {
+                "liquidity": "금융업(은행/보험/증권)은 유동자산/유동부채 계정이 없어 유동성 분석 불가",
+                "debt": "해당 종목에 사채/부채 데이터 없음",
+                "audit": "해당 종목에 감사의견 데이터 없음",
+            }
+            hint = _MISSING_HINTS.get(resolved, f"'{target}'에 해당 데이터 없음")
+            return pl.DataFrame({"info": [hint]})
 
         return result
 

@@ -8,6 +8,8 @@ from textual.css.query import NoMatches
 from textual.reactive import reactive
 from textual.widgets import LoadingIndicator, Markdown, Static
 
+from dartlab.cli.brand import CLR, CLR_SUCCESS
+
 
 class ChatItem(Static):
     """Single message bubble (oterm ChatItem pattern).
@@ -110,7 +112,7 @@ class ChatContainer(VerticalScroll):
         group = self._ensureToolGroup()
         group.mount(
             Static(
-                f"[#cba6f7]>[/] [dim]{label}[/] ...",
+                f"[{CLR}]>[/] [dim]{label}[/] ...",
                 id=toolId,
                 classes="toolStatus",
             )
@@ -125,7 +127,7 @@ class ChatContainer(VerticalScroll):
         except NoMatches:
             return
         elapsedStr = f"{elapsed * 1000:.0f}ms" if elapsed < 1.0 else f"{elapsed:.1f}s"
-        line = f"[#a6e3a1]>[/] done ({elapsedStr})"
+        line = f"[{CLR_SUCCESS}]>[/] done ({elapsedStr})"
         if preview:
             line += f" [dim]-- {preview}[/]"
         widget.update(line)

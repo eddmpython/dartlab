@@ -7,9 +7,26 @@ select()로 BS/IS/CF 원본 계정을 가져와서
 
 from __future__ import annotations
 
-from dartlab.analysis.financial._helpers import MAX_RATIO_YEARS, getRatios, toDict
+from dartlab.analysis.financial._helpers import MAX_RATIO_YEARS, getRatios, toDict, toDictBySnakeId
 
 _MAX_YEARS = MAX_RATIO_YEARS
+
+
+def _isHoldingOrFinancial(company) -> bool:
+    """지주사 또는 금융업 판별."""
+    try:
+        name = getattr(company, "corpName", "") or ""
+        if any(k in name for k in ("지주", "홀딩스", "Holdings")):
+            return True
+        sector = getattr(company, "sector", None)
+        if sector is not None:
+            from dartlab.core.sector.types import Sector
+
+            if sector.sector == Sector.FINANCIALS:
+                return True
+    except (AttributeError, ImportError):
+        pass
+    return False
 
 
 def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
@@ -102,8 +119,9 @@ def calcLeverageTrend(company) -> dict | None:
 def calcCoverageTrend(company) -> dict | None:
     """이자보상배율 시계열 -- 이자를 갚을 능력이 있는가.
 
-    IS에서 영업이익과 금융비용을 가져와서
-    이자보상배율을 금액과 함께 보여준다.
+    IS 영업이익 / 이자비용으로 산출.
+    이자비용 소스 우선순위: IS 이자비용 → CF interest_paid → IS 금융비용.
+    금융비용은 외환손실·파생상품 등 비이자 항목 포함하여 과대계상 위험.
     """
     isResult = company.select("IS", ["영업이익", "금융비용", "이자비용"])
     parsed = toDict(isResult)
@@ -115,6 +133,17 @@ def calcCoverageTrend(company) -> dict | None:
     finCost = data.get("금융비용", {})
     intCost = data.get("이자비용", {})
 
+    # CF interest_paid (실제 현금 이자 지급액)
+    cfIntPaid: dict = {}
+    try:
+        cfResult = company.select("CF", ["interest_paid"])
+        cfParsed = toDictBySnakeId(cfResult)
+        if cfParsed is not None:
+            cfData, _ = cfParsed
+            cfIntPaid = cfData.get("interest_paid", {})
+    except (ValueError, KeyError, AttributeError):
+        pass
+
     yCols = _annualCols(periods, _MAX_YEARS + 1)
     if len(yCols) < 2:
         return None
@@ -123,11 +152,24 @@ def calcCoverageTrend(company) -> dict | None:
     for i, col in enumerate(yCols[:-1]):
         prevCol = yCols[i + 1] if i + 1 < len(yCols) else None
         o = op.get(col)
-        # 이자비용 우선, 없으면 금융비용 fallback
+
+        # 이자비용 우선순위: IS 이자비용 → CF interest_paid → IS 금융비용
         intVal = intCost.get(col)
+        cfVal = cfIntPaid.get(col)
         finVal = finCost.get(col)
-        interest = intVal or finVal
-        source = "이자비용" if intVal else ("금융비용" if finVal else None)
+
+        if intVal:
+            interest = intVal
+            source = "이자비용"
+        elif cfVal:
+            interest = abs(cfVal)  # CF는 지출이라 음수일 수 있음
+            source = "CF이자지급"
+        elif finVal:
+            interest = finVal
+            source = "금융비용"
+        else:
+            interest = None
+            source = None
 
         coverage = None
         if o is not None and interest is not None and interest != 0:
@@ -515,17 +557,26 @@ def calcStabilityFlags(company) -> list[str]:
             nd = lev["history"][0].get("netDebt")
             if nd is not None and nd < 0:
                 isNetCash = True
+        # 지주사/금융업: 영업이익 구조적 저수준 (지분법이익이 영업외에 잡힘)
+        isHoldingOrFinancial = _isHoldingOrFinancial(company)
         if ic is not None:
-            if ic < 1 and not isNetCash:
+            if isHoldingOrFinancial:
+                # 지주사/금융은 영업이익 기반 이자보상배율이 구조적으로 낮음
+                if ic < 1:
+                    flags.append(f"이자보상배율 {ic:.1f}배 -- 지주/금융 구조상 저수준 (영업외 수익이 이자 커버)")
+            elif ic < 1 and not isNetCash:
                 flags.append(f"이자보상배율 {ic:.1f}배 -- 이자 지급 불능 위험")
             elif ic < 3 and not (isNetCash and source == "금융비용"):
                 flags.append(f"이자보상배율 {ic:.1f}배 -- 이자 부담 과다")
 
-    # Altman Z-Score
+    # Altman Z-Score (제조업 기반 모형 — 금융/지주사는 구조적 왜곡)
     distress = calcDistressScore(company)
     if distress and distress.get("latestScore") is not None:
         z = distress["latestScore"]
         if z < 1.81:
-            flags.append(f"Altman Z-Score {z:.2f} -- 부실 위험 구간")
+            if isHoldingOrFinancial:
+                flags.append(f"Altman Z-Score {z:.2f} -- 금융/지주 구조상 저평가 (참고용)")
+            else:
+                flags.append(f"Altman Z-Score {z:.2f} -- 부실 위험 구간")
 
     return flags

@@ -24,8 +24,9 @@ COMMAND_SPECS = (
     CommandSpec("excel", "dartlab.cli.commands.excel", "기업 데이터 Excel 내보내기"),
     # 분석
     CommandSpec("review", "dartlab.cli.commands.review", "기업 분석 검토서 (데이터/AI)"),
-    # 수집
+    # 수집/갱신
     CommandSpec("collect", "dartlab.cli.commands.collect", "DART/EDGAR 데이터 수집"),
+    CommandSpec("update", "dartlab.cli.commands.update", "로컬 데이터를 HuggingFace 최신으로 갱신"),
     # 서버 / 설정
     CommandSpec("ai", "dartlab.cli.commands.ai", "AI 분석 웹 인터페이스 실행"),
     CommandSpec("share", "dartlab.cli.commands.share", "터널로 로컬 서버 외부 공유"),

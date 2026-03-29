@@ -336,6 +336,7 @@ class LocalPythonBackend(CodingBackend):
                     [sys.executable, "-X", "utf8", str(scriptPath)],
                     capture_output=True,
                     text=True,
+                    encoding="utf-8",
                     timeout=timeout,
                     cwd=tmpDir,
                     env={
@@ -484,6 +485,7 @@ class DartlabCodeExecutor(LocalPythonBackend):
                     [sys.executable, "-X", "utf8", str(scriptPath)],
                     capture_output=True,
                     text=True,
+                    encoding="utf-8",
                     timeout=timeout,
                     cwd=tmpDir,
                     env=env,

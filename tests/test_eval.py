@@ -160,17 +160,6 @@ def test_evaluate_replay_uses_structural_and_answer_checks():
     assert "retrieval_failure" in result.score.failure_types
 
 
-def test_runtime_evidence_labels_include_user_facing_names():
-    from dartlab.ai.runtime.core import _build_included_evidence
-
-    evidence = _build_included_evidence(["IS", "report_dividend", "section_businessOverview"])
-    assert evidence == [
-        {"name": "IS", "label": "손익계산서"},
-        {"name": "report_dividend", "label": "배당"},
-        {"name": "section_businessOverview", "label": "사업의 개요"},
-    ]
-
-
 def test_append_and_load_review_log(tmp_path, monkeypatch):
     import dartlab.ai.eval.replayRunner as replayRunner
     from dartlab.ai.eval import (

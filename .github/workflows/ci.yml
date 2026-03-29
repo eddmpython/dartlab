@@ -99,7 +99,7 @@ jobs:
 
       - name: Check spec is up to date
         run: |
-          if ! git diff --quiet CAPABILITIES.md landing/static/llms.txt; then
+          if ! git diff --quiet CAPABILITIES.md landing/static/llms.txt landing/static/api-reference.json docs/api/generated-reference.md; then
             echo "::error::Spec files out of sync. Run: uv run python scripts/generateSpec.py"
             git diff --stat
             exit 1
@@ -169,8 +169,16 @@ jobs:
           pip install -e . pip-audit
 
       - name: Run pip-audit
-        run: pip-audit --strict --desc on
+        run: pip-audit --strict --desc on 2>&1 | tee audit-report.txt
         continue-on-error: true
+
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-report
+          path: audit-report.txt
+          retention-days: 30
 
   quality-gate:
     runs-on: ubuntu-latest

@@ -132,24 +132,6 @@ def test_scan_tool_not_registered_without_company():
     assert "get_scan_data" not in names
 
 
-def test_pipeline_classify_governance():
-    """거버넌스 질문이 '지배구조'로 분류되는지."""
-    from dartlab.ai.runtime.pipeline import classify_question
-
-    assert classify_question("이 회사의 거버넌스는 어때?") == "지배구조"
-    assert classify_question("지배구조 현황을 알려줘") == "지배구조"
-
-
-def test_pipeline_scan_axes_mapping():
-    """질문 유형별 scan 축 매핑이 정의되어 있는지."""
-    from dartlab.ai.runtime.pipeline import _SCAN_AXES_BY_QTYPE
-
-    assert "지배구조" in _SCAN_AXES_BY_QTYPE
-    assert "governance" in _SCAN_AXES_BY_QTYPE["지배구조"]
-    assert "리스크" in _SCAN_AXES_BY_QTYPE
-    assert "debt" in _SCAN_AXES_BY_QTYPE["리스크"]
-
-
 @requires_report
 class TestScanIntegration:
     """scan 통합 테스트 — 데이터 필요."""
@@ -168,14 +150,6 @@ class TestScanIntegration:
         result = rt.execute_tool("get_scan_data", {"axis": "governance"})
         assert "종목코드" in result
         assert "005930" in result
-
-    def test_pipeline_scan_injection(self):
-        """pipeline이 지배구조 질문에 scan context를 주입하는지."""
-        from dartlab.ai.runtime.pipeline import _run_scan
-
-        result = _run_scan(self.c, "지배구조")
-        assert result is not None
-        assert "지배구조 스캔" in result
 
     def test_scan_all_axes(self):
         """get_scan_data(axis='all')이 4축 모두 반환하는지."""

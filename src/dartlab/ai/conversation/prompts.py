@@ -291,46 +291,17 @@ def build_system_prompt_parts(
             )
         return stripped
 
-    # Engine-First: 브리핑 데이터 우선 활용 안내
-    _briefing_first_note = (
-        "## [핵심] 분석 브리핑 우선 활용\n"
-        "- 사용자 질문 앞에 '분석 브리핑'이 제공됩니다. 이것은 dartlab 엔진이 사전 계산한 정확한 분석 결과입니다.\n"
-        "- **브리핑의 수치와 등급을 최우선 근거로 사용**하세요. 브리핑에 있는 데이터를 도구로 재조회하지 마세요.\n"
-        "- 도구는 브리핑에 없는 추가 정보가 필요할 때만 보충적으로 사용하세요 (예: 공시 원문 검색, 실시간 주가, 웹 검색).\n"
-        "- 답변 시 브리핑의 구체적 수치를 인용하고, 그 수치가 의미하는 바를 해석/설명하세요."
-    )
-
-    # Code Execution: CAPABILITIES 기반 코드 생성 안내
+    # Code Execution: ```python 코드블록 자동 실행 안내
     _code_execution_guide = (
-        "## execute_code -- dartlab 코드 실행\n"
-        "execute_code 도구로 dartlab Python 코드를 직접 실행할 수 있습니다.\n"
-        "\n"
-        "**사용 시점** (다른 도구로 불가능할 때):\n"
-        "- 복합 조건 필터링/비교 (예: 'ROE 10% 이상이면서 부채비율 100% 이하')\n"
-        "- 여러 기업 데이터를 조합한 비교 테이블\n"
-        "- 커스텀 계산/집계가 필요한 분석\n"
-        "- 기존 도구 하나로 해결되지 않는 멀티스텝 작업\n"
-        "\n"
-        "**사용하지 않을 때** (기존 도구가 더 빠르고 정확):\n"
-        "- 단일 기업 재무제표 조회 -> finance 도구\n"
-        "- 사업 개요/공시 검색 -> explore 도구\n"
-        "- 단일 분석 축 실행 -> analysis 도구\n"
-        "- 시장 스캔 -> scan 도구\n"
+        "## 코드 실행\n"
+        "```python 코드블록을 작성하면 자동 실행되고 결과가 피드백됩니다.\n"
         "\n"
         "**코드 작성 규칙**:\n"
-        "- `import dartlab` 하나로 시작. CAPABILITIES에 나온 API만 사용.\n"
+        "- `import dartlab` 하나로 시작.\n"
+        "- 어떤 API가 있는지 모르면 `dartlab.capabilities(search='키워드')`로 조회.\n"
         "- 결과는 반드시 `print()`로 출력 (stdout만 캡처됨).\n"
         "- DataFrame은 `print(df)` 또는 `print(df.to_pandas().to_markdown())`.\n"
         "- 실행 실패 시 에러를 읽고 수정 코드를 재생성하세요."
-    )
-
-    no_tools_note = (
-        "## 현재 실행 제약\n"
-        "- 이번 답변에서는 도구 호출을 사용할 수 없습니다.\n"
-        "- 도구 호출 계획을 문장으로 출력하지 마세요.\n"
-        "- `IS/BS/CF/ratios/TTM/costByNature/businessOverview` 같은 내부 약어나 모듈명을 그대로 쓰지 말고 "
-        "`손익계산서/재무상태표/현금흐름표/재무비율/최근 4분기 합산/성격별 비용 분류/사업의 개요`처럼 사용자 언어로 바꾸세요.\n"
-        "- 이미 제공된 컨텍스트만 사용해 바로 답변하고, 확인 질문이 필요하면 한 문장만 하세요."
     )
 
     if compact:
@@ -367,11 +338,7 @@ def build_system_prompt_parts(
         if report_mode:
             dynamic_parts.append(_REPORT_PROMPT_COMPACT)
 
-        if not allow_tools:
-            dynamic_parts.append(no_tools_note)
-
-        # Engine-First: 브리핑 우선 안내 + 코드 실행 가이드 + 도구 카탈로그 (보충용)
-        static_parts.append(_briefing_first_note)
+        # tool calling provider일 때만 도구 카탈로그 추가
         if allow_tools:
             static_parts.append(_code_execution_guide)
             static_parts.append(_TOOL_CATALOG if hasCompany else _TOOL_CATALOG_NO_COMPANY)
@@ -432,11 +399,7 @@ def build_system_prompt_parts(
     if report_mode:
         dynamic_parts.append(_REPORT_PROMPT)
 
-    if not allow_tools:
-        dynamic_parts.append(no_tools_note)
-
-    # Engine-First: 브리핑 우선 안내 + 코드 실행 가이드 + 도구 카탈로그
-    static_parts.append(_briefing_first_note)
+    # 코드 실행 가이드 + 도구 카탈로그
     if allow_tools:
         static_parts.append(_code_execution_guide)
         static_parts.append(_TOOL_CATALOG if hasCompany else _TOOL_CATALOG_NO_COMPANY)

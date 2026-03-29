@@ -240,6 +240,81 @@ def calcBreakevenEstimate(company) -> dict | None:
     return {"history": history} if history else None
 
 
+# ── 원재료 비중 (docs 보강) ──
+
+
+def calcRawMaterialBreakdown(company) -> dict | None:
+    """주요 원재료 품목별 매입액 비중 — rawMaterial docs 토픽 기반.
+
+    부문/품목별 매입액 금액 행만 추출 (비중% 행 제외).
+    계층적 테이블의 경우 부문별 첫 품목 금액이 대표값으로 나타남.
+    """
+    from dartlab.analysis.financial._helpers import parseNumStr
+
+    result = company.select("rawMaterial", ["매입액"])
+    if result is None:
+        return None
+
+    import polars as pl
+
+    df = result if isinstance(result, pl.DataFrame) else getattr(result, "df", None)
+    if df is None or "항목" not in df.columns:
+        return None
+
+    from dartlab.analysis.financial._helpers import periodCols
+
+    pCols = periodCols(df)
+    if not pCols:
+        return None
+
+    # 최신 연도 컬럼 사용 (Q 없는 연도 우선, 없으면 최신 분기)
+    annuals = [c for c in pCols if "Q" not in c]
+    latestCol = annuals[0] if annuals else pCols[0]
+
+    items = df["항목"].to_list()
+    vals = df[latestCol].to_list()
+
+    # 총계 행 찾기
+    totalAmount = None
+    for it, v in zip(items, vals):
+        if any(k in str(it) for k in ["총계", "합계"]):
+            totalAmount = parseNumStr(str(v))
+            break
+
+    if totalAmount is None or totalAmount <= 0:
+        return None
+
+    # 금액 행만 추출 (소계/총계 제외, % 비중 행 제외)
+    segments = []
+    for it, v in zip(items, vals):
+        it = str(it)
+        vStr = str(v).strip()
+        if any(k in it for k in ["총계", "합계", "소계"]):
+            continue
+        if "%" in vStr:
+            continue
+        parsed = parseNumStr(vStr)
+        if parsed is None or parsed <= 0:
+            continue
+        name = it.replace("_매입액", "").strip()
+        if not name:
+            continue
+        pct = parsed / totalAmount * 100
+        if pct < 1:
+            continue
+        segments.append({"name": name, "amount": parsed, "pct": round(pct, 1)})
+
+    if not segments:
+        return None
+
+    segments.sort(key=lambda x: x["amount"], reverse=True)
+    return {
+        "segments": segments[:8],
+        "totalAmount": totalAmount,
+        "period": latestCol,
+    }
+
+
 # ── 플래그 ──
 
 

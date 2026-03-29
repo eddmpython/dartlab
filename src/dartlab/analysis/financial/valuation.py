@@ -39,7 +39,7 @@ def _fetchPriceContext(company: Any) -> dict | None:
             "per": snapshot.per,
             "pbr": snapshot.pbr,
         }
-    except (ImportError, OSError, RuntimeError):
+    except (ImportError, OSError, RuntimeError, AttributeError):
         log.debug("price fetch 실패: %s", stockCode)
         return None
 

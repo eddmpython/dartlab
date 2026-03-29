@@ -1,20 +1,12 @@
-"""AI 분석 통합 오케스트레이터.
+"""AI 분석 통합 오케스트레이터 — CAPABILITIES-Driven 순수 스트리밍.
 
 dartlab.ask(), server UI, CLI가 모두 이 코어를 소비한다.
 동기 제너레이터로 AnalysisEvent를 생산하며, 소비자가 형식(SSE/텍스트/제너레이터)을 결정.
 
-사용법::
+새 구조::
 
-    from dartlab.ai.runtime.core import analyze
-
-    # 코드에서 직접
-    for event in analyze(company, "영업이익률 추세는?"):
-        if event.kind == "chunk":
-            print(event.data["text"], end="")
-
-    # 서버에서 (SSE 변환)
-    for event in analyze(company, question, snapshot=snapshot, ...):
-        yield event_to_sse(event)
+    질문 → CAPABILITIES 검색(ms) → 시스템 프롬프트 주입
+         → LLM 스트리밍 → 코드블록 감지 → execute_code → 결과 해석 → 스트리밍 답변
 """
 
 from __future__ import annotations
@@ -29,12 +21,6 @@ from dartlab.ai.runtime.post_processing import (
     _run_validation,
     autoInjectArtifacts,
     buildCorrectionPrompt,
-)
-from dartlab.ai.runtime.run_modes import (
-    _run_agent,
-    _run_agent_autonomous,
-    _run_light_mode,
-    _run_stream,
 )
 
 # ── company=None 사전 종목 검색 ───────────────────────────
@@ -83,147 +69,8 @@ def _searchCompanyCodes(question: str) -> str:
     if not results:
         return ""
 
-    header = "## 사전 종목코드 확인 결과\n아래 종목코드가 확인되었습니다. 도구 호출 시 이 코드를 사용하세요:\n"
+    header = "## 사전 종목코드 확인 결과\n아래 종목코드가 확인되었습니다. 코드 작성 시 이 코드를 사용하세요:\n"
     return header + "\n".join(results)
-
-
-# ── 질문 복잡도 → 동적 max_turns ─────────────────────────
-
-_MULTI_KEYWORDS = frozenset({"비교", "vs", "종합", "전체", "전반", "왜", "구체적", "상세", "분석해"})
-_VALIDATION_MODULES = frozenset({"BS", "IS", "CF", "ratios", "fsSummary"})
-_FOLLOW_UP_PERIOD_HINTS = frozenset(
-    {
-        "최근",
-        "올해",
-        "작년",
-        "전년",
-        "개년",
-        "년간",
-        "추세",
-        "현황",
-    }
-)
-_FOLLOW_UP_PREFIXES = ("그럼", "그러면", "이어", "계속", "더", "같은 기준", "같은 방식")
-
-
-def _estimate_max_turns(question: str, q_type: str) -> int:
-    """질문 복잡도에 따라 agent loop max_turns를 5~10 범위로 결정."""
-    turns = 5
-    if any(k in question for k in _MULTI_KEYWORDS):
-        turns += 2
-    if q_type in ("사업", "리스크", "공시"):
-        turns += 1
-    if q_type == "종합":
-        turns += 3
-    return min(turns, 10)
-
-
-def _should_run_validation(included_tables: list[str]) -> bool:
-    """재무 컨텍스트가 실제로 포함된 경우에만 검증을 수행한다."""
-    return bool(_VALIDATION_MODULES & set(included_tables))
-
-
-def _build_included_evidence(included_tables: list[str]) -> list[dict[str, str]]:
-    """내부 모듈명을 사용자용 evidence label로 함께 정리한다."""
-    if not included_tables:
-        return []
-
-    from dartlab.ai.context.builder import _section_key_to_module_name
-    from dartlab.ai.metadata import get_meta
-
-    special_labels = {
-        "BS": "재무상태표",
-        "IS": "손익계산서",
-        "CF": "현금흐름표",
-        "CIS": "포괄손익계산서",
-        "SCE": "자본변동표",
-        "ratios": "핵심 재무비율",
-        "dividend": "배당 데이터",
-        "shareCapital": "자본 변동 데이터",
-        "audit": "감사 관련 데이터",
-        "businessOverview": "사업의 개요",
-        "productService": "제품·서비스",
-        "disclosureChanges": "공시 변화",
-        "riskDerivative": "리스크·파생상품",
-        "costByNature": "성격별 비용 분류",
-        "segments": "사업부문 데이터",
-        "IS_quarterly": "분기별 손익계산서",
-        "CF_quarterly": "분기별 현금흐름표",
-        "BS_quarterly": "분기별 재무상태표",
-        "_dart_openapi_filings": "최근 공시 목록",
-        "_diff": "공시 변화 비교",
-        "_changes": "공시 변화 요약",
-        "_response_contract": "응답 계약",
-        "_clarify": "확인 질문",
-    }
-    evidence: list[dict[str, str]] = []
-    for raw_name in included_tables:
-        normalized = _section_key_to_module_name(raw_name)
-        meta = get_meta(normalized)
-        if meta and meta.label and meta.label != normalized and meta.label != raw_name:
-            label = meta.label
-        else:
-            label = special_labels.get(raw_name, special_labels.get(normalized, normalized))
-        evidence.append({"name": raw_name, "label": label})
-    return evidence
-
-
-def _context_label(module_name: str, explicit_label: str | None = None) -> str | None:
-    """context 이벤트용 사용자 표시 라벨."""
-    if explicit_label:
-        return explicit_label
-
-    from dartlab.ai.context.builder import _section_key_to_module_name
-    from dartlab.ai.metadata import get_meta
-
-    normalized = _section_key_to_module_name(module_name)
-    meta = get_meta(normalized)
-    if meta and meta.label and meta.label != normalized and meta.label != module_name:
-        return meta.label
-    return next(
-        (
-            label
-            for key, label in {
-                "BS": "재무상태표",
-                "IS": "손익계산서",
-                "CF": "현금흐름표",
-                "CIS": "포괄손익계산서",
-                "SCE": "자본변동표",
-                "ratios": "핵심 재무비율",
-                "dividend": "배당 데이터",
-                "shareCapital": "자본 변동 데이터",
-                "audit": "감사 관련 데이터",
-                "businessOverview": "사업의 개요",
-                "productService": "제품·서비스",
-                "disclosureChanges": "공시 변화",
-                "riskDerivative": "리스크·파생상품",
-                "costByNature": "성격별 비용 분류",
-                "segments": "사업부문 데이터",
-                "_dart_openapi_filings": "최근 공시 목록",
-                "_diff": "공시 변화 비교",
-                "_changes": "공시 변화 요약",
-            }.items()
-            if normalized == key or module_name == key
-        ),
-        normalized,
-    )
-
-
-def _should_use_light_mode(company: Any | None, question: str, state: Any, report_mode: bool) -> bool:
-    """가벼운 대화/메타 질문에만 light mode를 허용한다."""
-    if company is None or report_mode:
-        return False
-
-    from dartlab.ai.conversation.intent import has_analysis_intent, is_meta_question, is_pure_conversation
-
-    effective_question = state.question if state is not None and getattr(state, "question", None) else question
-    if _is_analysis_follow_up(effective_question, state):
-        return False
-    if is_pure_conversation(effective_question):
-        return True
-    if is_meta_question(effective_question) and not has_analysis_intent(effective_question):
-        return True
-    return False
 
 
 # ── 데이터 신선도 추출 ────────────────────────────────────
@@ -240,36 +87,6 @@ def _extract_data_date(company: Any) -> str | None:
     except (AttributeError, TypeError, KeyError):
         pass
     return None
-
-
-# ── context tier는 제거됨 — compact map 체제로 전환 ─────────
-
-
-# _resolve_runtime_route, _resolve_snapshot_policy 제거 — compact map 체제에서 불필요.
-
-
-def _resolve_follow_up_include(include: list[str] | None, question: str, state: Any | None) -> list[str] | None:
-    if include or state is None:
-        return include
-
-    history_modules = [name for name in getattr(state, "modules", ()) if isinstance(name, str) and name]
-    if not history_modules:
-        return include
-
-    if not _is_analysis_follow_up(question, state):
-        return include
-
-    return history_modules
-
-
-def _is_analysis_follow_up(question: str, state: Any | None) -> bool:
-    if state is None or getattr(state, "dialogue_mode", "") != "follow_up":
-        return False
-    if not getattr(state, "modules", ()):
-        return False
-
-    lowered = question.strip().lower()
-    return any(keyword in lowered for keyword in _FOLLOW_UP_PERIOD_HINTS) or lowered.startswith(_FOLLOW_UP_PREFIXES)
 
 
 # ── 에러 분류 ─────────────────────────────────────────────
@@ -340,6 +157,285 @@ def _enrich_with_guide(result: dict[str, str]) -> dict[str, str]:
     return result
 
 
+# ── Config 해석 ──────────────────────────────────────────
+
+
+def _resolveAnalysisConfig(
+    provider: str | None,
+    role: str | None,
+    model: str | None,
+    api_key: str | None,
+    base_url: str | None,
+    **kwargs: Any,
+) -> Any:
+    """Config 해석 — free provider chain, get_config, merge overrides."""
+    from dartlab.ai import get_config
+
+    if provider == "free":
+        from dartlab.ai.providers.fallback import buildFreeChain
+
+        free_chain = buildFreeChain()
+        if free_chain:
+            provider = free_chain[0]
+        else:
+            provider = None
+
+    config_ = get_config(role=role)
+    overrides = {
+        k: v
+        for k, v in {
+            "provider": provider,
+            "model": model,
+            "api_key": api_key,
+            "base_url": base_url,
+            **kwargs,
+        }.items()
+        if v is not None
+    }
+    if overrides:
+        config_ = config_.merge(overrides)
+
+    return config_
+
+
+# ── 코드블록 감지 + 실행 ─────────────────────────────────
+
+_CODE_BLOCK_RE = re.compile(r"```python\s*\n(.*?)```", re.DOTALL)
+
+
+def _extractCodeBlocks(text: str) -> list[str]:
+    """텍스트에서 ```python 코드블록을 추출."""
+    return _CODE_BLOCK_RE.findall(text)
+
+
+def _executeCodeBlock(code: str, stockCode: str | None = None) -> str:
+    """DartlabCodeExecutor로 코드를 실행하고 결과를 반환."""
+    from dartlab.ai.tools.coding import DartlabCodeExecutor
+
+    executor = DartlabCodeExecutor()
+    return executor.execute(code, stockCode=stockCode, timeout=60)
+
+
+def _streamWithCodeExecution(
+    llm: Any,
+    messages: list[dict],
+    stockCode: str | None,
+    *,
+    maxRounds: int = 5,
+) -> Generator[str, None, None]:
+    """LLM 스트리밍 + 코드블록 자동 감지/실행 루프.
+
+    LLM이 ```python 블록을 생성하면 자동 실행하고
+    결과를 LLM에 피드백하여 해석을 이어간다.
+    """
+    for _round in range(maxRounds):
+        buffer = ""
+        for chunk in llm.stream(messages):
+            buffer += chunk
+            yield chunk
+
+        # 코드블록 감지
+        codeBlocks = _extractCodeBlocks(buffer)
+        if not codeBlocks:
+            return  # 코드 없음 → 스트리밍 완료
+
+        # 마지막 코드블록 실행
+        code = codeBlocks[-1]
+        try:
+            result = _executeCodeBlock(code, stockCode=stockCode)
+        except (OSError, RuntimeError, TimeoutError, ValueError) as exc:
+            result = f"실행 오류: {exc}"
+
+        # 실행 결과 알림
+        yield f"\n\n```\n[실행 결과]\n{result}\n```\n\n"
+
+        # 결과를 대화에 추가하여 LLM이 해석하도록 재요청
+        messages.append({"role": "assistant", "content": buffer})
+        messages.append({
+            "role": "user",
+            "content": f"코드 실행 결과입니다. 이 결과를 분석하고 해석해주세요:\n\n```\n{result}\n```",
+        })
+
+    # maxRounds 도달 — 마지막 스트리밍으로 종합
+    yield from llm.stream(messages)
+
+
+# ── 대화 상태 빌드 (history만 유지) ─────────────────────────
+
+
+def _buildHistoryMessages(
+    history: list | None,
+    history_messages: list[dict] | None,
+) -> list[dict] | None:
+    """히스토리 messages 자동 빌드."""
+    if history_messages is not None:
+        return history_messages
+
+    if history is None:
+        return None
+
+    from dartlab.ai.conversation.history import build_history_messages, compress_history
+    from dartlab.ai.types import history_from_dicts
+
+    light_history = history_from_dicts(history)
+    compressed = compress_history(light_history)
+    return build_history_messages(compressed)
+
+
+# ── 모듈/섹터 감지 ────────────────────────────────────────
+
+
+def _detectAvailableModules(company: Any) -> list[str]:
+    """Company에서 사용 가능한 데이터 모듈 감지."""
+    modules: list[str] = []
+    for name in ("BS", "IS", "CF", "CIS", "SCE"):
+        df = getattr(company, name, None)
+        if df is not None and hasattr(df, "__len__") and len(df) > 0:
+            modules.append(name)
+    if getattr(company, "ratios", None) is not None:
+        modules.append("ratios")
+    if getattr(company, "sections", None) is not None:
+        modules.append("sections")
+    if getattr(company, "insights", None) is not None:
+        modules.append("insights")
+    return modules
+
+
+def _detectSector(company: Any) -> str | None:
+    """Company의 섹터 분류."""
+    stockCode = getattr(company, "stockCode", getattr(company, "ticker", None))
+    if not stockCode:
+        return None
+    try:
+        from dartlab.core.sector import classify
+
+        info = classify(stockCode)
+        if info and hasattr(info, "sectorName"):
+            return info.sectorName
+        if isinstance(info, dict):
+            return info.get("sectorName")
+    except (ImportError, AttributeError, KeyError, TypeError, ValueError):
+        pass
+    return None
+
+
+# ── 분석 워크플로우 가이드 ────────────────────────────────
+
+_ANALYSIS_WORKFLOW_GUIDE = """\
+## dartlab — 기업 분석 플랫폼
+
+`import dartlab` 하나로 모든 기능 접근. ```python 코드블록은 자동 실행되고 결과가 피드백됩니다.
+
+### 분석 도구 — 무엇이 나오는지 알고 써라
+
+**c.insights** (가장 먼저 확인 — 전체 그림을 잡는다)
+→ 10개 영역 등급(A~F): performance, profitability, health, cashflow, governance, risk, opportunity 등
+→ anomalies: 이상치 11개 룰 (영업이익 증가인데 CF 감소, 매출채권/재고 급증, 감사의견 변화 등)
+→ distress: 5축 부실 스코어카드 (Ohlson O-Score + Altman Z/Z'' + Beneish M + Merton PD + 감사위험)
+→ distress.level: safe/watch/warning/danger/critical, creditGrade: AAA~D
+→ distress.cashRunwayMonths, riskFactors[]
+→ profile: premium/growth/stable/caution/distress/mixed
+
+**dartlab.analysis(c)** (14축 재무 분석 — 깊이를 더한다)
+→ Part 1 사업구조: 수익구조(segmentComposition, concentration, revenueQuality), 자금조달, 자산구조, 현금흐름
+→ Part 2 핵심비율: 수익성, 성장성, 안정성(leverageTrend, distressScore, debtMaturity), 효율성, 종합평가
+→ Part 3 심화: 이익품질(Beneish M-Score, Sloan Accrual, OCF/NI), 비용구조, 자본배분, 투자효율, 재무정합성
+→ 각 축마다 flags(적색신호/기회신호)가 포함됨
+
+**dartlab.valuation(c)** (적정가치 — 투자 판단의 핵심)
+→ dcf: FCF 시계열 + WACC + 터미널밸류 → 주당가치 + marginOfSafety
+→ ddm: 배당할인모형 (Gordon Growth / Two-Stage)
+→ relative: 피어 멀티플(PER/PBR/EV-EBITDA) 대비 프리미엄/디스카운트 + 합의가치
+→ fairValueRange: (low, high)
+
+**dartlab.forecast(c)** (미래 추정 — 시나리오별 확률 가중)
+→ predicted/upper/lower: 3~5년 매출 예측 + 신뢰구간
+→ signals: insight 등급 반영 확률 조정 (performance=F → bull 하향), 섹터 사이클리컬리티, 공시 톤 변화
+→ scenario별 확률 가중 (bull/base/bear)
+
+**dartlab.review(c)** (14섹션 종합 보고서 — 한번에 전체를 본다)
+→ 각 섹션: TextBlock(서술) + MetricBlock(KPI) + TableBlock(다년비교) + FlagBlock(적색/기회 신호)
+→ DuPont 5-factor ROE 분해, Beneish M-Score, 운전자본 사이클, 부채만기구조, 피어 벤치마크 포함
+
+### 분석 워크플로우
+
+**기업 종합 분석** (c.ratios만 보지 마라):
+1. `c.insights` → 등급/이상치/부실점수로 전체 그림 파악
+2. `dartlab.analysis(c)` → 14축 상세 (약한 축을 깊이 파고든다)
+3. `dartlab.valuation(c)` → 적정가치 범위 산출
+4. 필요시 `dartlab.forecast(c)` → 미래 시나리오
+
+**기업 비교 분석**:
+1. `dartlab.scan('peer', stockCode)` → 동종 기업 자동 선별
+2. `dartlab.scan('screen', metric='roe', n=20)` → 조건부 스크리닝
+3. `dartlab.governance()` / `dartlab.capital()` / `dartlab.debt()` → 시장 횡단
+
+**사업/전략 분석**:
+1. `c.show(topic)` → 공시 원문 (사업모델, 경쟁우위, 리스크)
+2. `c.sections` → 사용 가능한 topic 지도
+3. `dartlab.analysis(c, axes=['strategy','accounting'])` → 회계정책, 사업전략
+
+**리스크/부실 심화**:
+1. `c.insights.distress` → 5축 스코어카드 개별 확인 (Beneish 높은데 Ohlson 낮으면 다른 이야기)
+2. `c.insights.anomalies` → 이상치 패턴 (OP 증가인데 CF 감소 = 이익품질 적색신호)
+3. `dartlab.audit(c)` → 감사인 변경, 계속기업 의심, 핵심감사사항
+
+### 기업 데이터
+- `c = dartlab.Company('종목코드')` — 기업 데이터의 뿌리
+- `c.ratios` 비율 (property), `c.BS`/`c.IS`/`c.CF` 재무제표 (property)
+- `c.show(topic)` 공시 원문, `c.sections` 토픽 지도
+
+### API 탐색
+- `dartlab.capabilities(search='키워드')` → 어떤 API가 있는지 검색
+- `dartlab.capabilities()` → 전체 목록
+
+### 규칙
+- 데이터가 필요한 질문은 코드로 조회. 일반 지식은 바로 답변 가능.
+- 결과는 `print()`로 출력. 실행 실패 시 에러를 읽고 수정 코드 재생성.
+- **c.ratios만 보고 끝내지 마라.** insights → analysis → valuation 순서로 깊이를 더해라.
+- **이상치(anomalies)를 먼저 확인하라.** OP 증가 + CF 감소, 매출채권 급증, 감사의견 변화는 분석 방향을 바꾸는 신호다.
+- 비율만 나열하지 말고, 추세/원인/시사점/비교 관점으로 해석하라.
+- 한 축만 보지 말고 복수 축을 교차 검증하라 (건전성 + 수익성 + 이익품질 + 캐시플로우).
+"""
+
+
+# ── 프롬프트 조립 ─────────────────────────────────────────
+
+
+def _buildSystemPrompt(
+    config_: Any,
+    company: Any | None,
+    question: str,
+    *,
+    report_mode: bool,
+    market: str,
+) -> str:
+    """시스템 프롬프트 조립 — 동적 모듈/섹터/질문유형 감지 + 분석 워크플로우."""
+    from dartlab.ai.conversation.prompts import _classify_question, build_system_prompt_parts
+
+    q_type = _classify_question(question)
+    included_modules = _detectAvailableModules(company) if company else []
+    sector = _detectSector(company) if company else None
+
+    static_part, dynamic_part = build_system_prompt_parts(
+        config_.system_prompt,
+        included_modules=included_modules,
+        sector=sector,
+        question_type=q_type,
+        compact=True,
+        report_mode=report_mode,
+        market=market,
+        allow_tools=True,
+        hasCompany=(company is not None),
+    )
+
+    parts = [static_part, _ANALYSIS_WORKFLOW_GUIDE]
+    if dynamic_part:
+        parts.append(dynamic_part)
+
+    return "\n\n".join(parts)
+
+
 # ── 통합 오케스트레이터 ──────────────────────────────────
 
 
@@ -357,13 +453,13 @@ def analyze(
     exclude: list[str] | None = None,
     # 멀티컴퍼니 비교 지원
     companies: list[Any] | None = None,
-    # 모드
+    # 모드 (하위호환 — 내부적으로 무시)
     use_tools: bool = True,
     max_turns: int = 5,
     max_tools: int | None = None,
     reflect: bool = False,
     report_mode: bool = False,
-    # 자동 계산 OR pre-computed
+    # 하위호환 파라미터 (내부적으로 무시)
     snapshot: dict | None = None,
     auto_snapshot: bool = True,
     focus_context: str | None = None,
@@ -386,38 +482,10 @@ def analyze(
 ) -> Generator[AnalysisEvent, None, None]:
     """AI 분석 이벤트 스트림 생산.
 
-    Args:
-        company: Company 인스턴스 (DART/EDGAR). None이면 순수 대화.
-        question: 질문 텍스트.
-        provider: LLM provider override.
-        role: role-aware provider/model binding override.
-        model: 모델 override.
-        api_key: API 키 override.
-        base_url: Base URL override.
-        include: 포함할 데이터 모듈.
-        exclude: 제외할 데이터 모듈.
-        use_tools: True면 에이전트 모드 (도구 사용).
-        max_turns: 에이전트 최대 반복 횟수.
-        max_tools: 도구 최대 개수 (소형 모델용).
-        reflect: True면 답변 자체 검증 (1회 reflection).
-        snapshot: pre-computed 핵심 수치 스냅샷.
-        auto_snapshot: True면 snapshot 미전달 시 자동 계산.
-        focus_context: pre-computed 뷰어 포커스 컨텍스트.
-        diff_context: pre-computed 기간간 변화 핫스팟.
-        auto_diff: True면 diff_context 미전달 시 자동 계산.
-        history: raw 히스토리 (dict/Pydantic). 자동으로 경량 타입 변환.
-        history_messages: pre-computed LLM messages 포맷 히스토리.
-        view_context: raw 뷰어 컨텍스트 (dict/Pydantic).
-        dialogue_policy: pre-computed 대화 정책 텍스트.
-        conversation_meta: 대화 메타 정보 (meta 이벤트에 포함).
-        question_types: 질문 유형 분류 결과.
-        validate: True면 LLM 답변 숫자 검증.
-        detect_navigate: True면 navigate ui_action 감지.
-        emit_system_prompt: True면 system_prompt 이벤트 생산.
-        not_found_msg: 종목 미발견 메시지. 설정 시 meta+chunk+done만 emit.
-
-    Yields:
-        AnalysisEvent — kind별 이벤트.
+    3단계 구조:
+        1. Config 해석 + Meta 이벤트
+        2. CAPABILITIES 검색 → 시스템 프롬프트 조립
+        3. LLM 스트리밍 + 코드블록 자동 실행 → chunk 이벤트
     """
     # ── not_found 단축 경로 ──
     if not_found_msg:
@@ -435,7 +503,6 @@ def analyze(
 
     full_response_parts: list[str] = []
     done_payload: dict[str, Any] = {}
-    included_tables: list[str] = []
 
     try:
         yield from _analyze_inner(
@@ -446,31 +513,14 @@ def analyze(
             model=model,
             api_key=api_key,
             base_url=base_url,
-            include=include,
-            exclude=exclude,
-            companies=companies,
-            use_tools=use_tools,
-            max_turns=max_turns,
-            max_tools=max_tools,
-            reflect=reflect,
             report_mode=report_mode,
-            snapshot=snapshot,
-            auto_snapshot=auto_snapshot,
-            focus_context=focus_context,
-            diff_context=diff_context,
-            auto_diff=auto_diff,
             history=history,
             history_messages=history_messages,
-            view_context=view_context,
-            dialogue_policy=dialogue_policy,
             conversation_meta=conversation_meta,
-            question_types=question_types,
             validate=validate,
-            detect_navigate=detect_navigate,
             emit_system_prompt=emit_system_prompt,
             _full_response_parts=full_response_parts,
             _done_payload=done_payload,
-            _included_tables=included_tables,
             **kwargs,
         )
     except Exception as e:
@@ -483,7 +533,7 @@ def analyze(
             yield nav_event
 
     # ── 후처리: validation ──
-    if validate and company is not None and full_response_parts and _should_run_validation(included_tables):
+    if validate and company is not None and full_response_parts:
         val_event = _run_validation(company, full_response_parts)
         if val_event:
             yield val_event
@@ -513,381 +563,130 @@ def analyze(
                 done_payload["pluginHintsText"] = hint_text
 
     # ── Done 이벤트 ──
-    done_payload.setdefault("includedModules", included_tables)
     yield AnalysisEvent("done", done_payload)
 
 
-def _resolveAnalysisConfig(
+def _analyze_inner(
+    company: Any | None,
+    question: str,
+    *,
     provider: str | None,
     role: str | None,
     model: str | None,
     api_key: str | None,
     base_url: str | None,
-    **kwargs: Any,
-) -> Any:
-    """Config 해석 — free provider chain, get_config, merge overrides."""
-    from dartlab.ai import get_config
-
-    # "free" 모드: API 키가 있는 무료 프로바이더 중 첫 번째를 자동 선택
-    if provider == "free":
-        from dartlab.ai.providers.fallback import buildFreeChain
-
-        free_chain = buildFreeChain()
-        if free_chain:
-            provider = free_chain[0]
-        else:
-            provider = None  # 기본 provider fallback
-
-    config_ = get_config(role=role)
-    overrides = {
-        k: v
-        for k, v in {
-            "provider": provider,
-            "model": model,
-            "api_key": api_key,
-            "base_url": base_url,
-            **kwargs,
-        }.items()
-        if v is not None
-    }
-    if overrides:
-        config_ = config_.merge(overrides)
-
-    return config_
-
-
-def _buildConversationState(
-    question: str,
-    company: Any | None,
+    report_mode: bool,
     history: list | None,
     history_messages: list[dict] | None,
-    view_context: dict | None,
-    dialogue_policy: str | None,
     conversation_meta: dict | None,
-    question_types: tuple[str, ...],
-    include: list[str] | None,
-    _done_payload: dict[str, Any],
-) -> tuple:
-    """대화 상태 자동 빌드 — state, history_messages, dialogue_policy 등 반환."""
-    state = None
-    if history is not None or view_context is not None:
-        from dartlab.ai.conversation.dialogue import build_conversation_state
-        from dartlab.ai.types import history_from_dicts, view_context_from_dict
-
-        light_history = history_from_dicts(history)
-        light_view = view_context_from_dict(view_context)
-
-        # 순수 대화이면 viewContext 무시
-        from dartlab.ai.conversation.intent import is_pure_conversation
-
-        if is_pure_conversation(question):
-            light_view = None
-
-        state = build_conversation_state(
-            question,
-            history=light_history,
-            company=company,
-            view_context=light_view,
-        )
-
-        # dialogue_policy 자동 생성
-        if dialogue_policy is None:
-            from dartlab.ai.conversation.dialogue import build_dialogue_policy
-
-            dialogue_policy = build_dialogue_policy(state)
-
-        # conversation_meta 자동 생성
-        if conversation_meta is None:
-            from dartlab.ai.conversation.dialogue import conversation_state_to_meta
-
-            conversation_meta = conversation_state_to_meta(state)
-
-        # question_types 자동 추출
-        if not question_types and state.question_types:
-            question_types = state.question_types
-
-    # ── 히스토리 messages 자동 빌드 ──
-    if history_messages is None and history is not None:
-        from dartlab.ai.conversation.history import build_history_messages, compress_history
-        from dartlab.ai.types import history_from_dicts
-
-        light_history = history_from_dicts(history)
-        compressed = compress_history(light_history)
-        history_messages = build_history_messages(compressed)
-
-    effective_include = _resolve_follow_up_include(include, question, state)
-    if effective_include and effective_include != include:
-        _done_payload["inheritedModules"] = list(effective_include)
-
-    return (state, history_messages, dialogue_policy, conversation_meta, question_types, effective_include)
-
-
-def _buildAnalysisContext(
-    company: Any | None,
-    question: str,
-    companies: list[Any] | None,
-    corp_name: str | None,
-    use_tools: bool,
-    report_mode: bool,
-    focus_context: str | None,
-    diff_context: str | None,
-    dart_filing_prefetch: Any,
-) -> Generator[AnalysisEvent, None, str]:
-    """Engine-First briefing 체제 — context_text를 빌드하고 context 이벤트를 yield.
-
-    Returns:
-        context_text via StopIteration.value.
-    """
-    context_text = ""
-
-    # company=None + tool capable이면 종목명 사전 검색으로 종목코드 제공
-    if company is None and use_tools:
-        _prefetch = _searchCompanyCodes(question)
-        if _prefetch:
-            context_text = _prefetch
-
-    if company is not None:
-        from dartlab.ai.context.briefing import buildBriefing, buildBriefingMulti
-
-        if companies and len(companies) > 1:
-            # 멀티컴퍼니: 주 기업 briefing + 추가 기업 compact map
-            briefingText, briefingEvents = buildBriefingMulti(
-                companies,
-                company,
-                question,
-                reportMode=report_mode,
-            )
-            for evtModule, evtLabel in briefingEvents:
-                yield AnalysisEvent(
-                    "context",
-                    {"module": evtModule, "label": evtLabel, "text": ""},
-                )
-        else:
-            # 단일 기업: 풍부한 briefing
-            briefingText = buildBriefing(
-                company,
-                question,
-                reportMode=report_mode,
-            )
-            if briefingText:
-                yield AnalysisEvent(
-                    "context",
-                    {
-                        "module": "_briefing",
-                        "label": f"{corp_name} 분석 브리핑",
-                        "text": briefingText,
-                    },
-                )
-
-        context_parts = []
-        if briefingText:
-            context_parts.append(briefingText)
-
-        # report_mode에서만 사전 전달된 focus/diff 컨텍스트 포함
-        if report_mode:
-            if focus_context:
-                context_parts.append(focus_context)
-            if diff_context:
-                context_parts.append(diff_context)
-
-        context_text = "\n\n".join(context_parts)
-
-    if dart_filing_prefetch.matched and dart_filing_prefetch.contextText:
-        context_text = (
-            f"{context_text}\n\n{dart_filing_prefetch.contextText}"
-            if context_text
-            else dart_filing_prefetch.contextText
-        )
-        yield AnalysisEvent(
-            "context",
-            {
-                "module": "_dart_openapi_filings",
-                "label": "OpenDART 공시목록",
-                "text": dart_filing_prefetch.contextText,
-            },
-        )
-
-    return context_text
-
-
-def _buildPromptMessages(
-    config_: Any,
-    company: Any | None,
-    question: str,
-    context_text: str,
-    *,
-    use_tools: bool,
-    report_mode: bool,
-    question_types: tuple[str, ...],
-    history_messages: list[dict] | None,
-    dialogue_policy: str | None,
-    stock_id: str | None,
-    dataReadySummary: str,
+    validate: bool,
     emit_system_prompt: bool,
+    _full_response_parts: list[str],
     _done_payload: dict[str, Any],
-) -> Generator[AnalysisEvent, None, tuple[list[dict], str]]:
-    """프롬프트 조립 — messages 배열과 q_type을 빌드하고 system_prompt 이벤트를 yield.
+    **kwargs: Any,
+) -> Generator[AnalysisEvent, None, None]:
+    """analyze() 본체 — 3단계 순수 스트리밍."""
 
-    Returns:
-        (messages, q_type) via StopIteration.value.
-    """
-    from dartlab.ai.conversation.prompts import (
-        _classify_question,
-        build_system_prompt_parts,
-    )
+    # ── 1. Config 해석 + Meta 이벤트 ──
+    config_ = _resolveAnalysisConfig(provider, role, model, api_key, base_url, **kwargs)
 
-    resolved_provider = config_.provider
+    corp_name = getattr(company, "corpName", "Unknown") if company else None
+    stock_id = getattr(company, "stockCode", getattr(company, "ticker", "")) if company else None
 
-    q_type = _classify_question(question)
-    _done_payload["_q_type"] = q_type
-    _done_payload["_tool_call_names"] = []
+    meta = conversation_meta or {}
+    if corp_name:
+        meta.setdefault("company", corp_name)
+    if stock_id:
+        meta.setdefault("stockCode", stock_id)
+    if company is not None:
+        _dataDate = _extract_data_date(company)
+        if _dataDate:
+            meta.setdefault("dataDate", _dataDate)
+    yield AnalysisEvent("meta", meta)
+
+    # ── 2. 시스템 프롬프트 조립 (CAPABILITIES 검색 기반) ──
     company_market = getattr(company, "market", "KR") if company else "KR"
-    allow_tool_guidance = use_tools and resolved_provider in {"openai", "ollama", "custom", "gemini", "oauth-codex"}
-
-    # compact map 체제: 항상 compact, sector/included_modules는 미전달
-    static_part, dynamic_part = build_system_prompt_parts(
-        config_.system_prompt,
-        included_modules=[],
-        sector=None,
-        question_type=q_type,
-        question_types=list(question_types) if question_types else None,
-        compact=True,
+    system_prompt = _buildSystemPrompt(
+        config_,
+        company,
+        question,
         report_mode=report_mode,
         market=company_market,
-        allow_tools=allow_tool_guidance,
-        hasCompany=(company is not None),
     )
 
-    if dataReadySummary:
-        dataReadyBlock = f"데이터 가용성\n{dataReadySummary}"
-        dynamic_part = f"{dynamic_part}\n\n{dataReadyBlock}" if dynamic_part else dataReadyBlock
+    # company=None이면 종목명 사전 검색
+    prefetchText = ""
+    if company is None:
+        prefetchText = _searchCompanyCodes(question)
 
-    # 이전 분석 기록 주입 (세션 간 메모리)
+    if emit_system_prompt:
+        yield AnalysisEvent("system_prompt", {"text": system_prompt})
+
+    # ── Messages 조립 ──
+    messages: list[dict] = [{"role": "system", "content": system_prompt}]
+
+    # 히스토리 주입
+    effective_history = _buildHistoryMessages(history, history_messages)
+    if effective_history:
+        messages.extend(effective_history)
+
+    # 메모리 (세션 간) — 질문 이력만 참조, 수치/요약은 제외 (코드 실행 유도)
+    memoryHints = ""
     if stock_id:
         try:
             from dartlab.ai.memory.store import getMemory
 
-            memoryContext = getMemory().toPromptContext(stock_id)
-            if memoryContext:
-                dynamic_part = f"{dynamic_part}\n\n{memoryContext}" if dynamic_part else memoryContext
+            records = getMemory().recallForStock(stock_id, limit=3)
+            if records:
+                import datetime
+
+                hints = []
+                for r in records:
+                    dt = datetime.datetime.fromtimestamp(r.timestamp).strftime("%Y-%m-%d")
+                    hints.append(f"- {dt}: {r.question} ({r.questionType})")
+                memoryHints = "## 이전 질문 이력\n" + "\n".join(hints)
         except (ImportError, OSError, sqlite3.Error):
             pass
 
-    if dialogue_policy:
-        dynamic_part = dynamic_part + "\n\n" + dialogue_policy if dynamic_part else dialogue_policy
+    # user 메시지 조립
+    userParts: list[str] = []
+    if corp_name and stock_id:
+        userParts.append(f"분석 대상: {corp_name} (종목코드: {stock_id})")
+    if prefetchText:
+        userParts.append(prefetchText)
+    if memoryHints:
+        userParts.append(memoryHints)
+    userParts.append(f"질문: {question}")
+    userContent = "\n\n---\n\n".join(userParts)
+    messages.append({"role": "user", "content": userContent})
 
-    system = static_part + "\n" + dynamic_part if dynamic_part else static_part
-
-    if emit_system_prompt:
-        yield AnalysisEvent("system_prompt", {"text": system})
-
-    # ── Messages 조립 (Claude prompt caching 적용) ──
-    # Claude provider면 정적/동적 분리 → cache_control 블록으로 전달
-    if resolved_provider == "claude" and dynamic_part:
-        system_content: str | list[dict] = [
-            {"type": "text", "text": static_part, "cache_control": {"type": "ephemeral"}},
-            {"type": "text", "text": dynamic_part},
-        ]
-    else:
-        system_content = system
-    messages: list[dict] = [{"role": "system", "content": system_content}]
-
-    if history_messages:
-        messages.extend(history_messages)
-
-    user_content = f"{context_text}\n\n---\n\n질문: {question}" if context_text else question
-
-    # Route Hint 비활성화 — Super Tool enum description이 대체
-    # routeHint.py는 deprecated. 향후 제거 예정.
-
-    # 플러그인 힌트를 LLM context에 주입 (AI가 자연스럽게 안내)
-    if question:
-        from dartlab.ai.runtime.plugin_hints import (
-            detect_plugin_hints,
-            format_plugin_hints,
-        )
-        from dartlab.core.plugins import get_loaded_plugins
-
-        _loaded = [p.name for p in get_loaded_plugins()]
-        _hints = detect_plugin_hints(question, _loaded)
-        if _hints:
-            _hint_ctx = format_plugin_hints(_hints)
-            if _hint_ctx:
-                user_content += f"\n\n---\n{_hint_ctx}"
-
-    messages.append({"role": "user", "content": user_content})
-
-    if emit_system_prompt:
-        yield AnalysisEvent("system_prompt", {"text": system, "userContent": user_content})
-
-    return (messages, q_type)
-
-
-def _executeLlmAndPostprocess(
-    config_: Any,
-    company: Any | None,
-    question: str,
-    messages: list[dict],
-    q_type: str,
-    *,
-    use_tools: bool,
-    max_turns: int,
-    max_tools: int | None,
-    report_mode: bool,
-    validate: bool,
-    stock_id: str | None,
-    _full_response_parts: list[str],
-    _done_payload: dict[str, Any],
-    _included_tables: list[str],
-) -> Generator[AnalysisEvent, None, None]:
-    """LLM 호출 + self-verification + response meta + memory 저장 + meta 업데이트."""
+    # ── 3. LLM 스트리밍 + 코드블록 자동 실행 ──
     from dartlab.ai.providers import create_provider
 
     llm = create_provider(config_)
 
-    tool_capable = use_tools and getattr(llm, "supports_native_tools", False) and hasattr(llm, "complete_with_tools")
-    use_guided = not tool_capable and company is not None and hasattr(llm, "complete_json")
+    from dartlab.ai.conversation.prompts import _classify_question
 
-    if tool_capable:
-        # 모든 provider에서 Super Tool 모드 기본 활성화 — 8개 도구로 통합
-        _useSuperTools = True
-        effective_turns = max(max_turns, _estimate_max_turns(question, q_type or ""))
+    q_type = _classify_question(question)
+    _done_payload["_q_type"] = q_type
+    _done_payload["_tool_call_names"] = []
 
-        # report_mode → 자율 탐색 에이전트 (Tier 2)
-        _agent_fn = _run_agent_autonomous if report_mode else _run_agent
-        _effective_max = max(effective_turns, 15) if report_mode else effective_turns
+    for chunk in _streamWithCodeExecution(llm, messages, stockCode=stock_id):
+        _full_response_parts.append(chunk)
+        yield AnalysisEvent("chunk", {"text": chunk})
 
-        for _ev in _agent_fn(
-            llm,
-            messages,
-            company,
-            question,
-            max_turns=_effective_max,
-            max_tools=max_tools,
-            q_type=q_type,
-            useSuperTools=_useSuperTools,
-            _full_response_parts=_full_response_parts,
-        ):
-            if _ev.kind == "tool_call" and isinstance(_ev.data, dict):
-                _done_payload["_tool_call_names"].append(_ev.data.get("name", ""))
-            yield _ev
-    else:
-        yield from _run_stream(llm, messages, _full_response_parts)
-
-    # ── Self-Verification (Reflexion) — 수치 불일치 시 correction 턴 ──
-    if validate and company is not None and _full_response_parts and _should_run_validation(_included_tables):
+    # ── Self-Verification (correction) ──
+    if validate and company is not None and _full_response_parts:
         correction_prompt = buildCorrectionPrompt(company, _full_response_parts)
         if correction_prompt:
             _done_payload["selfVerification"] = True
             yield AnalysisEvent("correction", {"message": correction_prompt})
 
-            # LLM에 correction prompt 전달 → 수정된 답변 스트리밍
             correction_messages = [
                 *messages,
                 {"role": "assistant", "content": "".join(_full_response_parts)},
                 {"role": "user", "content": correction_prompt},
             ]
-            # 기존 답변 클리어 후 수정 답변으로 교체
             _full_response_parts.clear()
             yield AnalysisEvent("chunk", {"text": "\n\n---\n*[수치 검증 후 수정된 답변]*\n\n"})
             _full_response_parts.append("\n\n---\n*[수치 검증 후 수정된 답변]*\n\n")
@@ -921,216 +720,3 @@ def _executeLlmAndPostprocess(
             )
         except (ImportError, OSError, sqlite3.Error):
             pass
-
-    # ── Meta 업데이트 (includedModules, yearRange) ──
-    if _included_tables:
-        includedEvidence = _build_included_evidence(_included_tables)
-        meta_update: dict[str, Any] = {
-            "includedModules": _included_tables,
-            "includedModuleLabels": [item["label"] for item in includedEvidence],
-            "includedEvidence": includedEvidence,
-        }
-        _done_payload["includedEvidence"] = includedEvidence
-        if company is not None and _included_tables:
-            from dartlab.ai.context.builder import detect_year_range
-
-            year_range = detect_year_range(company, _included_tables)
-            if year_range:
-                meta_update["dataYearRange"] = year_range
-        yield AnalysisEvent("meta", meta_update)
-
-
-def _analyze_inner(
-    company: Any | None,
-    question: str,
-    *,
-    provider: str | None,
-    role: str | None,
-    model: str | None,
-    api_key: str | None,
-    base_url: str | None,
-    include: list[str] | None,
-    exclude: list[str] | None,
-    companies: list[Any] | None,
-    use_tools: bool,
-    max_turns: int,
-    max_tools: int | None,
-    reflect: bool,
-    report_mode: bool,
-    snapshot: dict | None,
-    auto_snapshot: bool,
-    focus_context: str | None,
-    diff_context: str | None,
-    auto_diff: bool,
-    history: list | None,
-    history_messages: list[dict] | None,
-    view_context: dict | None,
-    dialogue_policy: str | None,
-    conversation_meta: dict | None,
-    question_types: tuple[str, ...],
-    validate: bool,
-    detect_navigate: bool,
-    emit_system_prompt: bool,
-    _full_response_parts: list[str],
-    _done_payload: dict[str, Any],
-    _included_tables: list[str],
-    **kwargs: Any,
-) -> Generator[AnalysisEvent, None, None]:
-    """analyze() 본체 — 에러 핸들링은 외부에서."""
-    from dartlab.ai.context.dartOpenapi import (
-        buildDartFilingPrefetch,
-        buildMissingDartKeyUiAction,
-    )
-
-    # ── report_mode 강제 설정 ──
-    if report_mode:
-        max_turns = max(max_turns, 10)
-
-    # ── 1. Config 해석 ──
-    config_ = _resolveAnalysisConfig(
-        provider, role, model, api_key, base_url, **kwargs,
-    )
-    resolved_provider = config_.provider
-
-    corp_name = getattr(company, "corpName", "Unknown") if company else None
-    stock_id = getattr(company, "stockCode", getattr(company, "ticker", "")) if company else None
-    dataReadySummary = ""
-
-    # ── 2. 대화 상태 자동 빌드 ──
-    # snapshot/focus/diff 자동계산 제거 — AI가 도구로 직접 조회.
-    # 사전 전달된 값은 하위 호환을 위해 유지.
-    (
-        state,
-        history_messages,
-        dialogue_policy,
-        conversation_meta,
-        question_types,
-        effective_include,
-    ) = _buildConversationState(
-        question,
-        company,
-        history,
-        history_messages,
-        view_context,
-        dialogue_policy,
-        conversation_meta,
-        question_types,
-        include,
-        _done_payload,
-    )
-
-    # ── 3. Intent 분류 → light mode 감지 ──
-    is_light = _should_use_light_mode(company, question, state, report_mode)
-    dart_filing_prefetch = buildDartFilingPrefetch(question, company=company)
-
-    # ── 4. Meta 이벤트 (데이터 신선도 포함) ──
-    meta = conversation_meta or {}
-    if corp_name:
-        meta.setdefault("company", corp_name)
-    if stock_id:
-        meta.setdefault("stockCode", stock_id)
-    if company is not None:
-        _dataDate = _extract_data_date(company)
-        if _dataDate:
-            meta.setdefault("dataDate", _dataDate)
-        if stock_id:
-            try:
-                from dartlab.ai.conversation.data_ready import formatDataReadyStatus
-
-                dataReadySummary = formatDataReadyStatus(stock_id, detailed=False)
-                _done_payload["dataReady"] = dataReadySummary
-            except (AttributeError, ImportError, KeyError, OSError, RuntimeError, TypeError, ValueError):
-                dataReadySummary = ""
-    yield AnalysisEvent("meta", meta)
-
-    # ── 5. Snapshot 이벤트 ──
-    if snapshot is not None:
-        yield AnalysisEvent("snapshot", snapshot)
-
-    if dart_filing_prefetch.matched and dart_filing_prefetch.needsKey:
-        ui_action = dart_filing_prefetch.uiAction or buildMissingDartKeyUiAction()
-        yield AnalysisEvent("ui_action", ui_action)
-        yield AnalysisEvent(
-            "context",
-            {
-                "module": "_dart_openapi_filings",
-                "label": "OpenDART 키 설정 안내",
-                "text": dart_filing_prefetch.message,
-            },
-        )
-        _full_response_parts.append(dart_filing_prefetch.message)
-        yield AnalysisEvent("chunk", {"text": dart_filing_prefetch.message})
-        return
-
-    # ── 6. Light mode 경로 ──
-    if is_light:
-        yield from _run_light_mode(
-            company,
-            question,
-            config_,
-            state,
-            focus_context=focus_context,
-            history_messages=history_messages,
-            dialogue_policy=dialogue_policy,
-            emit_system_prompt=emit_system_prompt,
-            _full_response_parts=_full_response_parts,
-        )
-        return
-
-    # ── 7. Full analysis 경로 — context 빌드 ──
-    _ctx_gen = _buildAnalysisContext(
-        company,
-        question,
-        companies,
-        corp_name,
-        use_tools,
-        report_mode,
-        focus_context,
-        diff_context,
-        dart_filing_prefetch,
-    )
-    try:
-        while True:
-            yield next(_ctx_gen)
-    except StopIteration as _stop:
-        context_text: str = _stop.value
-
-    # ── 8. 프롬프트 조립 ──
-    _msg_gen = _buildPromptMessages(
-        config_,
-        company,
-        question,
-        context_text,
-        use_tools=use_tools,
-        report_mode=report_mode,
-        question_types=question_types,
-        history_messages=history_messages,
-        dialogue_policy=dialogue_policy,
-        stock_id=stock_id,
-        dataReadySummary=dataReadySummary,
-        emit_system_prompt=emit_system_prompt,
-        _done_payload=_done_payload,
-    )
-    try:
-        while True:
-            yield next(_msg_gen)
-    except StopIteration as _stop:
-        messages, q_type = _stop.value
-
-    # ── 9. LLM 호출 + 후처리 ──
-    yield from _executeLlmAndPostprocess(
-        config_,
-        company,
-        question,
-        messages,
-        q_type,
-        use_tools=use_tools,
-        max_turns=max_turns,
-        max_tools=max_tools,
-        report_mode=report_mode,
-        validate=validate,
-        stock_id=stock_id,
-        _full_response_parts=_full_response_parts,
-        _done_payload=_done_payload,
-        _included_tables=_included_tables,
-    )

@@ -82,30 +82,6 @@ class TestModuleCoverage:
             assert len(modules) == len(set(modules)), f"'{q_type}'에 중복 모듈: {modules}"
 
 
-class TestPipelineCoverage:
-    """pipeline runner가 빈 슬롯 없이 구성되었는지 검증."""
-
-    def test_no_empty_pipeline_except_gongsi(self):
-        """공시를 제외한 모든 질문 유형에 runner가 존재."""
-        from dartlab.ai.runtime.pipeline import _PIPELINE_MAP
-
-        for q_type, runners in _PIPELINE_MAP.items():
-            if q_type == "공시":
-                continue
-            assert len(runners) >= 1, f"질문 유형 '{q_type}'에 pipeline runner 없음"
-
-    def test_pipeline_map_keys_match_question_modules(self):
-        """pipeline과 builder의 질문 유형 키가 일치."""
-        from dartlab.ai.runtime.pipeline import _PIPELINE_MAP
-
-        pipeline_keys = set(_PIPELINE_MAP.keys())
-        builder_keys = set(_QUESTION_MODULES.keys())
-
-        assert pipeline_keys == builder_keys, (
-            f"불일치 — pipeline만: {pipeline_keys - builder_keys}, builder만: {builder_keys - pipeline_keys}"
-        )
-
-
 class TestRegistryCentralization:
     """registry 기반 자동 생성 검증."""
 

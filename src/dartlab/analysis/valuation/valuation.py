@@ -696,6 +696,7 @@ def sensitivityAnalysis(
             result = dcfValuation(
                 series,
                 shares=shares,
+                sectorParams=sectorParams,
                 discountRate=wacc,
                 terminalGrowth=tg,
                 currentPrice=currentPrice,

@@ -29,11 +29,13 @@ _TTL_CHOICES = [
     ("24h", 86400, "24시간"),
 ]
 
-# dartlab 컬러 팔레트 (display.py 동일)
-_PR = "#ea4647"
-_AC = "#fb923c"
-_TM = "#94a3b8"
-_TX = "#f1f5f9"
+# dartlab 컬러 팔레트 (brand.py 단일 소스)
+from dartlab.cli.brand import CLR, CLR_ACCENT, CLR_MUTED
+
+_PR = CLR
+_AC = CLR_ACCENT
+_TM = CLR_MUTED
+_TX = "#cdd6f4"  # Catppuccin Mocha text
 
 
 def configure_parser(subparsers) -> None:

@@ -35,6 +35,13 @@ async def fetch(
     chain = get_price_fallback(market)
     chain = health_tracker.reorder(chain)
 
+    # client=None이면 자체 생성
+    ownClient = False
+    if client is None:
+        from .http import GatherHttpClient
+        client = GatherHttpClient()
+        ownClient = True
+
     for source_name in chain:
         if circuit_breaker.is_open(source_name):
             log.debug("price skip %s (circuit open)", source_name)

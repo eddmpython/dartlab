@@ -10,14 +10,16 @@ import re
 from typing import Any
 
 # ---------------------------------------------------------------------------
-# Brand colors (synced with chat.py / landing brand.ts)
+# Brand colors (terminal palette — see brand.py)
 # ---------------------------------------------------------------------------
 
-_CLR = "#ea4647"  # primary (brand.ts primary — 로고/강조)
-_CLR_SUCCESS = "#34d399"  # success (brand.ts success)
-_CLR_WARN = "#fbbf24"  # warning (brand.ts warning)
-_CLR_DANGER = "#ea4647"  # primary (brand.ts primary — 위험/음수)
-_CLR_MUTED = "#94a3b8"  # textMuted (brand.ts textMuted)
+from dartlab.cli.brand import CLR, CLR_ACCENT, CLR_DANGER, CLR_MUTED, CLR_SUCCESS, CLR_WARN
+
+_CLR = CLR
+_CLR_SUCCESS = CLR_SUCCESS
+_CLR_WARN = CLR_WARN
+_CLR_DANGER = CLR_DANGER
+_CLR_MUTED = CLR_MUTED
 
 _STATUS_COLORS = {
     "good": _CLR_SUCCESS,
@@ -39,9 +41,9 @@ _GRADE_COLORS = {
     "C+": "yellow",
     "C": "yellow",
     "C-": "yellow",
-    "D+": "#fb923c",
-    "D": "#fb923c",
-    "D-": "#fb923c",
+    "D+": CLR_ACCENT,
+    "D": CLR_ACCENT,
+    "D-": CLR_ACCENT,
     "F": "bold red",
 }
 
