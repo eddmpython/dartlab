@@ -1,4 +1,4 @@
-"""Prompt input -- oterm FlexibleInput pattern, simplified for dartlab."""
+"""Prompt input widget for chat TUI."""
 
 from __future__ import annotations
 
@@ -14,8 +14,35 @@ from textual.widgets import TextArea
 class Prompt(TextArea):
     """Chat input (Enter to submit, Shift+Enter for newline)."""
 
+    DEFAULT_CSS = """
+    Prompt {
+        dock: bottom;
+        width: 1fr;
+        height: 1;
+        max-height: 6;
+        border: none;
+        padding: 0 0 0 1;
+        background: $surface;
+    }
+    Prompt:focus {
+        border: none;
+        background: $surface-lighten-1;
+    }
+    Prompt.-blocked {
+        opacity: 0.4;
+    }
+    Prompt .text-area--cursor-line {
+        background: transparent;
+    }
+    Prompt .text-area--cursor-gutter {
+        background: transparent;
+    }
+    """
+
     BINDINGS = [
         Binding("ctrl+shift+v", "paste", "Paste", show=False),
+        Binding("ctrl+up", "historyBack", "History back", show=False),
+        Binding("ctrl+down", "historyForward", "History forward", show=False),
     ]
 
     @dataclass
@@ -36,23 +63,29 @@ class Prompt(TextArea):
         )
         self._inputHistory: list[str] = []
         self._historyIdx: int = -1
-
-    def on_mount(self) -> None:
-        self.border_title = "Message"
-        self.border_subtitle = "Enter send  |  Shift+Enter newline  |  / commands"
+        self._navigating: bool = False
 
     @on(TextArea.Changed)
     def _onChanged(self, event: TextArea.Changed) -> None:
-        self._historyIdx = -1
-        if self.text.strip():
-            self.border_subtitle = "Enter to send"
-        else:
-            self.border_subtitle = "Enter send  |  Shift+Enter newline  |  / commands"
+        if not self._navigating:
+            self._historyIdx = -1
 
     def watch_disabled(self, value: bool) -> None:
         self.set_class(value, "-blocked")
 
+    def on_focus(self) -> None:
+        self.add_class("-focused")
+
+    def on_blur(self) -> None:
+        self.remove_class("-focused")
+
     async def _on_key(self, event: events.Key) -> None:
+        if self.disabled and event.key not in {"ctrl+c", "ctrl+d"}:
+            self.app.bell()
+            event.stop()
+            event.prevent_default()
+            return
+
         key = event.key
 
         # Enter = submit
@@ -60,13 +93,11 @@ class Prompt(TextArea):
             event.stop()
             event.prevent_default()
             text = self.text.strip()
-            if text and not self.disabled:
+            if text:
                 self._inputHistory.append(text)
                 self._historyIdx = -1
                 self.clear()
                 self.post_message(Prompt.Submitted(value=text))
-            elif self.disabled:
-                self.app.bell()
             return
 
         # Shift+Enter = newline
@@ -76,16 +107,12 @@ class Prompt(TextArea):
             self.insert("\n")
             return
 
-        # History navigation
-        if key == "ctrl+up":
+        # Escape = clear input
+        if key == "escape":
             event.stop()
             event.prevent_default()
-            self._navigateHistory(-1)
-            return
-        if key == "ctrl+down":
-            event.stop()
-            event.prevent_default()
-            self._navigateHistory(1)
+            if self.text:
+                self.clear()
             return
 
         # Pass-through app-level shortcuts
@@ -93,6 +120,12 @@ class Prompt(TextArea):
             return
 
         await super()._on_key(event)
+
+    def action_historyBack(self) -> None:
+        self._navigateHistory(-1)
+
+    def action_historyForward(self) -> None:
+        self._navigateHistory(1)
 
     def _navigateHistory(self, direction: int) -> None:
         if not self._inputHistory:
@@ -109,6 +142,10 @@ class Prompt(TextArea):
                 return
             if self._historyIdx >= len(self._inputHistory):
                 self._historyIdx = -1
+                self._navigating = True
                 self.clear()
+                self._navigating = False
                 return
+        self._navigating = True
         self.load_text(self._inputHistory[self._historyIdx])
+        self._navigating = False

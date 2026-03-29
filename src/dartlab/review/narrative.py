@@ -587,21 +587,28 @@ def _detectStructuralEfficiency(company, blockMap) -> NarrativeThread | None:
 # ── 메인 ──
 
 
-_DETECTORS = [
-    _detectRevenueDeclineChain,
-    _detectDebtBurdenChain,
-    _detectWorkingCapitalStrain,
-    _detectOverinvestment,
-    _detectEarningsManipulation,
-    _detectGrowthProfitability,
-    _detectStructuralEfficiency,
+_DETECTORS: list[tuple] = [
+    (_detectRevenueDeclineChain, {"수익구조", "수익성", "현금흐름"}),
+    (_detectDebtBurdenChain, {"자금조달", "안정성", "수익성"}),
+    (_detectWorkingCapitalStrain, {"자산구조", "효율성", "현금흐름"}),
+    (_detectOverinvestment, {"자산구조", "투자효율", "현금흐름"}),
+    (_detectEarningsManipulation, {"이익품질", "재무정합성"}),
+    (_detectGrowthProfitability, {"성장성", "수익성", "수익구조"}),
+    (_detectStructuralEfficiency, {"효율성", "비용구조", "수익성"}),
 ]
 
 
-def detectThreads(company, blockMap) -> list[NarrativeThread]:
-    """7가지 인과 패턴을 감지하여 NarrativeThread 리스트 반환."""
+def detectThreads(
+    company, blockMap, sections: set[str] | None = None
+) -> list[NarrativeThread]:
+    """7가지 인과 패턴을 감지하여 NarrativeThread 리스트 반환.
+
+    sections가 지정되면 관련 섹션이 겹치는 detector만 실행.
+    """
     threads = []
-    for detect in _DETECTORS:
+    for detect, involved in _DETECTORS:
+        if sections is not None and not (sections & involved):
+            continue
         try:
             thread = detect(company, blockMap)
             if thread is not None:

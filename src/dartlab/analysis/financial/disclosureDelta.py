@@ -73,8 +73,13 @@ def calcKeyTopicChanges(company) -> dict | None:
         return None
 
     summaryMap = {s.topic: s for s in diffResult.summaries}
-    topics = company.topics if hasattr(company, "topics") else []
-    availableTopics = set(topics) if topics else set(summaryMap.keys())
+    topicsAttr = getattr(company, "topics", None)
+    if topicsAttr is not None and hasattr(topicsAttr, "get_column"):
+        availableTopics = set(topicsAttr.get_column("topic").to_list())
+    elif isinstance(topicsAttr, list):
+        availableTopics = set(topicsAttr)
+    else:
+        availableTopics = set(summaryMap.keys())
 
     results = []
     for topic in _KEY_TOPICS:
@@ -184,12 +189,24 @@ def calcDisclosureDeltaFlags(company) -> list[tuple[str, str]]:
 
 
 def _safeDiffResult(company):
-    """company.docs.sections에서 DiffResult를 안전하게 얻는다."""
+    """company.docs.sections에서 DiffResult를 안전하게 얻는다.
+
+    결과를 company._cache에 저장하여 4개 calc 함수가 공유.
+    """
+    cache = getattr(company, "_cache", None)
+    _KEY = "_diffResult"
+    if cache is not None and _KEY in cache:
+        return cache[_KEY]
+
+    result = None
     try:
         docsSections = company.docs.sections
-        if docsSections is None:
-            return None
-        from dartlab.core.docs.diff import sectionsDiff
-        return sectionsDiff(docsSections)
+        if docsSections is not None:
+            from dartlab.core.docs.diff import sectionsDiff
+            result = sectionsDiff(docsSections)
     except (AttributeError, ValueError, KeyError, TypeError, ImportError):
-        return None
+        pass
+
+    if cache is not None:
+        cache[_KEY] = result
+    return result

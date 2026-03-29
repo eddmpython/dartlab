@@ -67,6 +67,8 @@ _SIMPLE: dict[str, str] = {
     # listing
     "listing:download": "KRX KIND 상장법인 목록 다운로드 중...",
     "listing:done": "{count}개 종목 로드 완료",
+    "listing:krx:download": "KRX 상장법인 목록 다운로드 중...",
+    "listing:krx:done": "{count}개 종목 로드 완료",
     # scan
     "scan:signal_start": "서술형 시그널 스캔: {count}사",
     "scan:network_health": "그룹 건전성 분석 중...",

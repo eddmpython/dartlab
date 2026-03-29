@@ -1,7 +1,9 @@
-"""KRX KIND 상장법인 목록 — 종목코드 ↔ 회사명 매퍼."""
+"""KRX KIND + KRX data 상장법인 목록 — 종목코드 ↔ 회사��� 매퍼."""
 
 from __future__ import annotations
 
+import json
+import logging
 import threading
 import time
 from html.parser import HTMLParser
@@ -10,11 +12,19 @@ from pathlib import Path
 import polars as pl
 import requests
 
+log = logging.getLogger(__name__)
+
 
 def _cacheFile() -> Path:
     from dartlab.core.dataLoader import _getDataRoot
 
     return _getDataRoot() / "kindList" / "corpList.parquet"
+
+
+def _krxCacheFile() -> Path:
+    from dartlab.core.dataLoader import _getDataRoot
+
+    return _getDataRoot() / "krxList" / "corpList.parquet"
 
 
 CACHE_TTL = 86400
@@ -352,3 +362,120 @@ def fuzzySearch(keyword: str, *, maxResults: int = 10) -> pl.DataFrame:
     scored.sort(key=lambda x: (x[1], x[2]))
     indices = [s[0] for s in scored[:maxResults]]
     return df[indices]
+
+
+# ── KRX data.krx.co.kr 상장법인 목록 ──────────────────────────────
+
+
+_KRX_URL = "http://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd"
+_KRX_DATA = {
+    "locale": "ko_KR",
+    "mktsel": "ALL",
+    "typeNo": "0",
+    "searchText": "",
+    "bld": "dbms/comm/finder/finder_stkisu",
+}
+_KRX_HEADERS = {
+    "User-Agent": "Mozilla/5.0",
+    "Referer": "http://data.krx.co.kr/contents/MDC/MDI/mdiLoader/index.cmd?menuId=MDC0201020101",
+}
+
+_krxMemory: pl.DataFrame | None = None
+_krxMemoryTs: float = 0.0
+_krxMemoryLock = threading.Lock()
+
+
+def _fetchKrx() -> pl.DataFrame:
+    """KRX data.krx.co.kr에서 상장법인 목록 수집."""
+    schema = {
+        "full_code": pl.Utf8,
+        "short_code": pl.Utf8,
+        "codeName": pl.Utf8,
+        "marketName": pl.Utf8,
+    }
+    try:
+        r = requests.post(
+            _KRX_URL,
+            data=_KRX_DATA,
+            headers=_KRX_HEADERS,
+            timeout=30,
+        )
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError) as exc:
+        log.warning("KRX 상장법인 목록 수집 실패: %s", exc)
+        return pl.DataFrame(schema=schema)
+
+    if r.status_code != 200:
+        log.warning("KRX 상장법인 목록 HTTP %d", r.status_code)
+        return pl.DataFrame(schema=schema)
+
+    try:
+        jo = json.loads(r.text)
+    except (json.JSONDecodeError, ValueError) as exc:
+        log.warning("KRX 응답 JSON 파싱 실패: %s", exc)
+        return pl.DataFrame(schema=schema)
+
+    block = jo.get("block1", [])
+    if not block:
+        log.warning("KRX 응답에 block1 데이터 없음")
+        return pl.DataFrame(schema=schema)
+
+    df = pl.DataFrame(block)
+    return df
+
+
+def _loadKrxCache() -> pl.DataFrame | None:
+    path = _krxCacheFile()
+    if not path.exists():
+        return None
+    age = time.time() - path.stat().st_mtime
+    if age > CACHE_TTL:
+        return None
+    return pl.read_parquet(str(path))
+
+
+def _saveKrxCache(df: pl.DataFrame) -> None:
+    path = _krxCacheFile()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    df.write_parquet(str(path))
+
+
+def getKrxList(*, forceRefresh: bool = False) -> pl.DataFrame:
+    """KRX data.krx.co.kr 상장법인 전체 목록.
+
+    캐시 우선순위: 메모리 -> 파일(24h TTL) -> KRX API.
+    KIND 목록보다 상세 컬럼(full_code, short_code, marketName 등) 제공.
+
+    Args:
+        forceRefresh: True면 캐시 무시하고 KRX API 재요청.
+
+    Returns:
+        DataFrame -- KRX 상장법인 목록.
+    """
+    global _krxMemory, _krxMemoryTs
+
+    if not forceRefresh and _krxMemory is not None:
+        if (time.time() - _krxMemoryTs) < CACHE_TTL:
+            return _krxMemory
+
+    with _krxMemoryLock:
+        if not forceRefresh and _krxMemory is not None:
+            if (time.time() - _krxMemoryTs) < CACHE_TTL:
+                return _krxMemory
+
+        if not forceRefresh:
+            cached = _loadKrxCache()
+            if cached is not None:
+                _krxMemory = cached
+                _krxMemoryTs = time.time()
+                return cached
+
+        from dartlab.core.guidance import emit
+
+        emit("listing:krx:download")
+        df = _fetchKrx()
+        if df.height > 0:
+            _saveKrxCache(df)
+        _krxMemory = df
+        _krxMemoryTs = time.time()
+        emit("listing:krx:done", count=df.height)
+        return df

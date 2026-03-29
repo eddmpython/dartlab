@@ -10,7 +10,12 @@ import logging
 from datetime import datetime, timezone
 
 from ..market_config import resolve_ticker
-from ..types import ConsensusData, GatherError, PriceSnapshot, RevenueConsensus
+from ..types import (
+    ConsensusData,
+    GatherError,
+    PriceSnapshot,
+    RevenueConsensus,
+)
 
 log = logging.getLogger(__name__)
 

@@ -304,6 +304,9 @@ class TestPeerBenchmark:
         company.stockCode = "005930"
 
         with patch(
+            "dartlab.analysis.financial.peerBenchmark.calcPeerRanking",
+            return_value=None,
+        ), patch(
             "dartlab.analysis.financial.peerBenchmark._getLatestValue",
             side_effect=lambda sc, rn: (15.0, 75.0) if rn == "roe" else (80.0, 30.0),
         ):
@@ -319,6 +322,9 @@ class TestPeerBenchmark:
         company.stockCode = "005930"
 
         with patch(
+            "dartlab.analysis.financial.peerBenchmark.calcPeerRanking",
+            return_value=None,
+        ), patch(
             "dartlab.analysis.financial.peerBenchmark._getLatestValue",
             side_effect=lambda sc, rn: (3.0, 20.0) if rn == "roe" else (300.0, 80.0),
         ):

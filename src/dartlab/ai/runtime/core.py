@@ -357,13 +357,17 @@ _ANALYSIS_WORKFLOW_GUIDE = """\
 → 각 섹션: TextBlock(서술) + MetricBlock(KPI) + TableBlock(다년비교) + FlagBlock(적색/기회 신호)
 → DuPont 5-factor ROE 분해, Beneish M-Score, 운전자본 사이클, 부채만기구조, 피어 벤치마크 포함
 
-### 분석 워크플로우
+### 분석 워크플로우 — 빠른 것부터 쓰고, 필요하면 깊이를 더한다
 
 **기업 종합 분석** (c.ratios만 보지 마라):
-1. `c.insights` → 등급/이상치/부실점수로 전체 그림 파악
-2. `dartlab.analysis(c)` → 14축 상세 (약한 축을 깊이 파고든다)
-3. `dartlab.valuation(c)` → 적정가치 범위 산출
-4. 필요시 `dartlab.forecast(c)` → 미래 시나리오
+1단계 (1-3초): `c.insights` → 등급/이상치/부실점수. 여기서 전체 그림이 잡힌다.
+2단계 (5초): 약한 축을 골라서 `dartlab.analysis("해당축", c)` → 단일 축 상세
+3단계 (필요시): `dartlab.valuation(c)` → 적정가치, `dartlab.forecast(c)` → 미래 시나리오
+4단계 (필요시): `c.review("섹션명")` → 특정 섹션만 구조화 보고서
+
+주의: `c.review()` (파라미터 없음)는 14섹션 전부 계산하므로 느리다 (30초+).
+      특정 섹션이 필요하면 `c.review("안정성")` 같이 섹션명을 지정하라.
+      `dartlab.analysis("축", c)`가 `review()`보다 빠르다 — 축별로 호출하라.
 
 **기업 비교 분석**:
 1. `dartlab.scan('peer', stockCode)` → 동종 기업 자동 선별
@@ -390,7 +394,8 @@ _ANALYSIS_WORKFLOW_GUIDE = """\
 - `dartlab.capabilities()` → 전체 목록
 
 ### 규칙
-- 데이터가 필요한 질문은 코드로 조회. 일반 지식은 바로 답변 가능.
+- **즉시 실행 원칙**: 데이터 요청이 오면 범위/조건을 되묻지 말고 즉시 코드를 짜서 실행하라. "어떤 기간?" "어떤 지표?" 같은 질문 금지. 합리적 기본값으로 먼저 보여주고, 사용자가 조정하면 그때 바꿔라.
+- **모르면 capabilities 검색**: API가 뭔지 모르겠으면 `dartlab.capabilities(search='키워드')`로 찾아서 실행하라. 사용자에게 "이런 기능이 있습니다" 안내만 하고 끝내지 마라.
 - 결과는 `print()`로 출력. 실행 실패 시 에러를 읽고 수정 코드 재생성.
 - **c.ratios만 보고 끝내지 마라.** insights → analysis → valuation 순서로 깊이를 더해라.
 - **이상치(anomalies)를 먼저 확인하라.** OP 증가 + CF 감소, 매출채권 급증, 감사의견 변화는 분석 방향을 바꾸는 신호다.
@@ -486,84 +491,123 @@ def analyze(
         1. Config 해석 + Meta 이벤트
         2. CAPABILITIES 검색 → 시스템 프롬프트 조립
         3. LLM 스트리밍 + 코드블록 자동 실행 → chunk 이벤트
-    """
-    # ── not_found 단축 경로 ──
-    if not_found_msg:
-        meta = conversation_meta or {}
-        corp_name = getattr(company, "corpName", None) if company else None
-        stock_id = getattr(company, "stockCode", getattr(company, "ticker", "")) if company else None
-        if corp_name:
-            meta.setdefault("company", corp_name)
-        if stock_id:
-            meta.setdefault("stockCode", stock_id)
-        yield AnalysisEvent("meta", meta)
-        yield AnalysisEvent("chunk", {"text": not_found_msg})
-        yield AnalysisEvent("done", {})
-        return
 
-    full_response_parts: list[str] = []
-    done_payload: dict[str, Any] = {}
+    로그: ``dartlab.askLog = True``로 설정하면 data/ask_logs/에 세션별 JSONL 저장.
+    """
+    # ── ask 로그 초기화 ──
+    _logFile = None
+    try:
+        from dartlab import config as _cfg
+
+        if getattr(_cfg, "askLog", False):
+            import datetime
+            import json
+            from pathlib import Path
+
+            logDir = Path(_cfg.dataDir) / "ask_logs"
+            logDir.mkdir(parents=True, exist_ok=True)
+            ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            _stock = getattr(company, "stockCode", getattr(company, "ticker", "unknown")) if company else "none"
+            _logPath = logDir / f"{ts}_{_stock}.jsonl"
+            _logFile = open(_logPath, "w", encoding="utf-8")  # noqa: SIM115
+            # 첫 줄: 질문
+            _logFile.write(json.dumps({"kind": "question", "data": {"question": question}}, ensure_ascii=False) + "\n")
+    except (ImportError, OSError):
+        _logFile = None
+
+    def _emit(event: AnalysisEvent) -> AnalysisEvent:
+        if _logFile is not None:
+            import json
+
+            try:
+                _logFile.write(json.dumps({"kind": event.kind, "data": event.data}, ensure_ascii=False, default=str) + "\n")
+                _logFile.flush()
+            except (OSError, TypeError):
+                pass
+        return event
 
     try:
-        yield from _analyze_inner(
-            company,
-            question,
-            provider=provider,
-            role=role,
-            model=model,
-            api_key=api_key,
-            base_url=base_url,
-            report_mode=report_mode,
-            history=history,
-            history_messages=history_messages,
-            conversation_meta=conversation_meta,
-            validate=validate,
-            emit_system_prompt=emit_system_prompt,
-            _full_response_parts=full_response_parts,
-            _done_payload=done_payload,
-            **kwargs,
-        )
-    except Exception as e:
-        yield AnalysisEvent("error", _enrich_with_guide(_classify_error(e)))
+        # ── not_found 단축 경로 ──
+        if not_found_msg:
+            meta = conversation_meta or {}
+            corp_name = getattr(company, "corpName", None) if company else None
+            stock_id = getattr(company, "stockCode", getattr(company, "ticker", "")) if company else None
+            if corp_name:
+                meta.setdefault("company", corp_name)
+            if stock_id:
+                meta.setdefault("stockCode", stock_id)
+            yield _emit(AnalysisEvent("meta", meta))
+            yield _emit(AnalysisEvent("chunk", {"text": not_found_msg}))
+            yield _emit(AnalysisEvent("done", {}))
+            return
 
-    # ── 후처리: navigate ui_action ──
-    if detect_navigate and company is not None:
-        nav_event = _detect_navigate_action(company, question)
-        if nav_event:
-            yield nav_event
+        full_response_parts: list[str] = []
+        done_payload: dict[str, Any] = {}
 
-    # ── 후처리: validation ──
-    if validate and company is not None and full_response_parts:
-        val_event = _run_validation(company, full_response_parts)
-        if val_event:
-            yield val_event
+        try:
+            for ev in _analyze_inner(
+                company,
+                question,
+                provider=provider,
+                role=role,
+                model=model,
+                api_key=api_key,
+                base_url=base_url,
+                report_mode=report_mode,
+                history=history,
+                history_messages=history_messages,
+                conversation_meta=conversation_meta,
+                validate=validate,
+                emit_system_prompt=emit_system_prompt,
+                _full_response_parts=full_response_parts,
+                _done_payload=done_payload,
+                **kwargs,
+            ):
+                yield _emit(ev)
+        except Exception as e:
+            yield _emit(AnalysisEvent("error", _enrich_with_guide(_classify_error(e))))
 
-    # ── 후처리: auto-artifact injection ──
-    if company is not None:
-        _q_type = done_payload.get("_q_type")
-        _tc_names = done_payload.pop("_tool_call_names", [])
-        done_payload.pop("_q_type", None)
-        for art_event in autoInjectArtifacts(company, _q_type, _tc_names):
-            yield art_event
+        # ── 후처리: navigate ui_action ──
+        if detect_navigate and company is not None:
+            nav_event = _detect_navigate_action(company, question)
+            if nav_event:
+                yield _emit(nav_event)
 
-    # ── 후처리: plugin hints ──
-    if question:
-        from dartlab.ai.runtime.plugin_hints import (
-            detect_plugin_hints,
-            format_plugin_hints,
-        )
-        from dartlab.core.plugins import get_loaded_plugins
+        # ── 후처리: validation ──
+        if validate and company is not None and full_response_parts:
+            val_event = _run_validation(company, full_response_parts)
+            if val_event:
+                yield _emit(val_event)
 
-        loaded_names = [p.name for p in get_loaded_plugins()]
-        hints = detect_plugin_hints(question, loaded_names)
-        if hints:
-            done_payload["pluginHints"] = hints
-            hint_text = format_plugin_hints(hints)
-            if hint_text:
-                done_payload["pluginHintsText"] = hint_text
+        # ── 후처리: auto-artifact injection ──
+        if company is not None:
+            _q_type = done_payload.get("_q_type")
+            _tc_names = done_payload.pop("_tool_call_names", [])
+            done_payload.pop("_q_type", None)
+            for art_event in autoInjectArtifacts(company, _q_type, _tc_names):
+                yield _emit(art_event)
 
-    # ── Done 이벤트 ──
-    yield AnalysisEvent("done", done_payload)
+        # ── 후처리: plugin hints ──
+        if question:
+            from dartlab.ai.runtime.plugin_hints import (
+                detect_plugin_hints,
+                format_plugin_hints,
+            )
+            from dartlab.core.plugins import get_loaded_plugins
+
+            loaded_names = [p.name for p in get_loaded_plugins()]
+            hints = detect_plugin_hints(question, loaded_names)
+            if hints:
+                done_payload["pluginHints"] = hints
+                hint_text = format_plugin_hints(hints)
+                if hint_text:
+                    done_payload["pluginHintsText"] = hint_text
+
+        # ── Done 이벤트 ──
+        yield _emit(AnalysisEvent("done", done_payload))
+    finally:
+        if _logFile is not None:
+            _logFile.close()
 
 
 def _analyze_inner(

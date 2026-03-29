@@ -237,6 +237,65 @@ class GatherHttpClient:
 
         raise SourceUnavailableError(f"{domain} 요청 실패 ({max_retries}회 재시도): {last_exc}")
 
+    async def post(
+        self,
+        url: str,
+        *,
+        data: dict | None = None,
+        json: dict | None = None,
+        headers: dict | None = None,
+        timeout: float | None = None,
+        max_retries: int = 3,
+    ) -> httpx.Response:
+        """POST 요청 -- rate limit + semaphore + 재시도 (async).
+
+        Raises:
+            SourceUnavailableError: 모든 재시도 실패.
+        """
+        domain = urlparse(url).netloc
+        policy = self._get_policy(domain)
+        limiter = self._get_limiter(domain)
+        semaphore = self._get_semaphore(domain)
+        req_timeout = timeout or policy.timeout
+
+        last_exc: Exception | None = None
+        for attempt in range(max_retries):
+            jitter = random.uniform(policy.jitter_min, policy.jitter_max)
+            await asyncio.sleep(jitter)
+
+            await limiter.acquire()
+            async with semaphore:
+                try:
+                    req_headers = {"User-Agent": random.choice(_USER_AGENTS)}
+                    if headers:
+                        req_headers.update(headers)
+                    resp = await self._client.post(
+                        url,
+                        data=data,
+                        json=json,
+                        headers=req_headers,
+                        timeout=req_timeout,
+                    )
+                    if resp.status_code == 429:
+                        base = 2**attempt
+                        wait = base * (attempt + 1) + random.uniform(0.5, 2.0)
+                        log.warning("%s 429 rate limited, %.1fs 대기", domain, wait)
+                        await asyncio.sleep(wait)
+                        continue
+                    if resp.status_code >= 500:
+                        wait = 2**attempt + random.uniform(0.1, 0.5)
+                        log.warning("%s %d 서버 오류, %.1fs 대기", domain, resp.status_code, wait)
+                        await asyncio.sleep(wait)
+                        continue
+                    resp.raise_for_status()
+                    return resp
+                except httpx.HTTPError as exc:
+                    last_exc = exc
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(2**attempt + random.uniform(0.1, 0.5))
+
+        raise SourceUnavailableError(f"{domain} POST 요청 실패 ({max_retries}회 재시도): {last_exc}")
+
     async def close(self) -> None:
         """HTTP 클라이언트 종료."""
         await self._client.aclose()

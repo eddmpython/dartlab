@@ -9,12 +9,25 @@ from typing import Any
 from textual import on, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
+from textual.theme import Theme
 from textual.widgets import Footer
 
+from dartlab.cli.brand import CLR, CLR_ACCENT, CLR_DANGER, CLR_DIM, CLR_SUCCESS, CLR_WARN
 from dartlab.cli.tui.widgets.chatContainer import ChatContainer
 from dartlab.cli.tui.widgets.headerBar import HeaderBar
 from dartlab.cli.tui.widgets.prompt import Prompt
 from dartlab.cli.tui.widgets.welcomeScreen import WelcomeScreen
+
+_THEME = Theme(
+    name="dartlab",
+    primary=CLR,
+    secondary=CLR_DIM,
+    accent=CLR_ACCENT,
+    success=CLR_SUCCESS,
+    warning=CLR_WARN,
+    error=CLR_DANGER,
+    dark=True,
+)
 
 
 class DartLabApp(App[None]):
@@ -23,6 +36,7 @@ class DartLabApp(App[None]):
     CSS_PATH = "app.tcss"
     TITLE = "DartLab"
     SUB_TITLE = "DART / EDGAR AI Analysis"
+    theme = "dartlab"
 
     BINDINGS = [
         Binding("ctrl+c", "cancelOrQuit", "Cancel/Quit", priority=True),
@@ -32,6 +46,7 @@ class DartLabApp(App[None]):
 
     def __init__(self, args: Any = None, **kwargs) -> None:
         super().__init__(**kwargs)
+        self.register_theme(_THEME)
         self._args = args
         self._state: Any = None
         self._inferenceTask: asyncio.Task | None = None

@@ -34,7 +34,11 @@ class ChatItem(Static):
             md = self.query_one(".messageText", Markdown)
             await md.update(text)
         except NoMatches:
-            pass
+            return
+        # Markdown height changed -- ask parent container to scroll
+        parent = self.parent
+        if isinstance(parent, ChatContainer):
+            parent._autoScroll()
 
 
 class ChatContainer(VerticalScroll):
@@ -50,15 +54,19 @@ class ChatContainer(VerticalScroll):
         self._toolCount: int = 0
         self._currentToolId: str | None = None
 
+    _userScrolledUp: bool = False
+
+    def on_scroll_up(self) -> None:
+        self._userScrolledUp = True
+
     def _autoScroll(self) -> None:
-        scrollY = self.scroll_y
-        maxY = self.max_scroll_y
-        if scrollY >= maxY - 3:
-            self.scroll_end(animate=False)
+        if not self._userScrolledUp:
+            self.call_later(lambda: self.scroll_end(animate=False))
 
     # -- Messages --
 
     def appendUser(self, text: str) -> None:
+        self._userScrolledUp = False
         item = ChatItem(classes="userMessage")
         item.author = "user"
         item.text = text
@@ -70,6 +78,7 @@ class ChatContainer(VerticalScroll):
         self._autoScroll()
 
     def beginAssistant(self) -> None:
+        self._userScrolledUp = False
         self._toolGroup = None
         self._buffer = ""
         item = ChatItem(classes="assistantMessage")

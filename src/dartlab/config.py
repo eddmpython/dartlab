@@ -24,6 +24,7 @@ import os
 from pathlib import Path
 
 verbose: bool = True
+askLog: bool = False
 
 _DEFAULT_DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 

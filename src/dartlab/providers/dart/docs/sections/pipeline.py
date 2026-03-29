@@ -1537,8 +1537,8 @@ def sections(stockCode: str) -> pl.DataFrame | None:
                     "_repPeriod": periodKey,
                 }
 
-        # 매 4기간마다 GC — 중간 객체 해제
-        if _pIdx % 4 == 3:
+        # 매 10기간마다 GC — 중간 객체 해제
+        if _pIdx % 10 == 9:
             gc.collect()
 
     # 메모리 해제: periodRows는 pop으로 이미 소진, 빈 dict 정리

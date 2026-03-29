@@ -300,7 +300,7 @@ def build_system_prompt_parts(
         "- `import dartlab` 하나로 시작.\n"
         "- 어떤 API가 있는지 모르면 `dartlab.capabilities(search='키워드')`로 조회.\n"
         "- 결과는 반드시 `print()`로 출력 (stdout만 캡처됨).\n"
-        "- DataFrame은 `print(df)` 또는 `print(df.to_pandas().to_markdown())`.\n"
+        "- DataFrame 출력: Polars는 `print(df)` 사용. 큰 숫자가 과학적 표기(e13)면 `import polars as pl; pl.Config.set_fmt_float('full')` 후 출력.\n"
         "- 실행 실패 시 에러를 읽고 수정 코드를 재생성하세요."
     )
 

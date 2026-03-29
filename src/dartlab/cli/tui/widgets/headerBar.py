@@ -1,11 +1,23 @@
-"""Header bar -- provider/model/company display."""
+"""Header bar -- brand + provider/model/company display."""
 
 from __future__ import annotations
 
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import Label
+from textual.widgets import Static
+
+from dartlab.cli.brand import CLR, CLR_ACCENT, CLR_DIM, CLR_MUTED
+
+
+class _BrandLabel(Static):
+    """Styled brand label with accent separator."""
+
+    def render(self) -> Text:
+        t = Text()
+        t.append("DartLab", style=f"bold {CLR}")
+        return t
 
 
 class HeaderBar(Widget):
@@ -16,8 +28,8 @@ class HeaderBar(Widget):
     stockCode: reactive[str] = reactive("", layout=True)
 
     def compose(self) -> ComposeResult:
-        yield Label("DartLab", id="headerBrand")
-        yield Label("", id="headerInfo")
+        yield _BrandLabel(id="headerBrand")
+        yield Static("", id="headerInfo")
 
     def watch_provider(self) -> None:
         self._updateInfo()
@@ -29,12 +41,20 @@ class HeaderBar(Widget):
         self._updateInfo()
 
     def _updateInfo(self) -> None:
-        info = self.query_one("#headerInfo", Label)
+        info = self.query_one("#headerInfo", Static)
+        t = Text()
         parts = []
         if self.stockCode:
-            parts.append(self.stockCode)
+            parts.append(("stockCode", self.stockCode))
         if self.provider:
-            parts.append(self.provider)
+            parts.append(("provider", self.provider))
         if self.model:
-            parts.append(self.model)
-        info.update(" | ".join(parts) if parts else "")
+            parts.append(("model", self.model))
+        for i, (kind, val) in enumerate(parts):
+            if i > 0:
+                t.append(" | ", style=CLR_MUTED)
+            if kind == "stockCode":
+                t.append(val, style=f"bold {CLR_ACCENT}")
+            else:
+                t.append(val, style=CLR_MUTED)
+        info.update(t)

@@ -29,8 +29,11 @@ if TYPE_CHECKING:
 from . import consensus as _consensus
 from . import flow as _flow
 from . import history as _history
+from . import insider as _insider
 from . import news as _news
+from . import ownership as _ownership
 from . import price as _price
+from . import sector as _sector
 from .cache import GatherCache
 from .domains import load_domain
 from .http import GatherHttpClient, run_async
@@ -40,11 +43,15 @@ from .types import (
     FlowData,
     GatherResult,
     GatherSnapshot,
+    InsiderTrade,
+    InstitutionOwnership,
+    MajorHolder,
     MarketSnapshot,
     NewsItem,
     PeerData,
     PriceSnapshot,
     RevenueConsensus,
+    SectorInfo,
     SourceUnavailableError,
 )
 
@@ -506,6 +513,143 @@ class Gather:
                 continue
         return []
 
+    # ── 업종 분류 ──
+
+    def sector(self, stock_code: str, *, market: str = "KR") -> SectorInfo | None:
+        """업종 분류 조회 -- KR(KIND+Naver) / US(Yahoo assetProfile).
+
+        Args:
+            stock_code: 종목코드 ("005930") 또는 티커 ("AAPL").
+            market: "KR" 또는 "US". 기본 "KR".
+
+        Returns:
+            SectorInfo | None -- 업종코드, 업종명, 시장구분.
+
+        Example::
+
+            g = getDefaultGather()
+            g.sector("005930")              # 삼성전자 업종
+            g.sector("AAPL", market="US")   # Apple 업종
+        """
+        cache_key = f"{stock_code}:{market}"
+        cached = self._cache.get_typed(cache_key, "sector_info")
+        if cached is not None:
+            return cached  # type: ignore[return-value]
+        result = run_async(_sector.fetch(stock_code, market=market, client=self._client))
+        if result:
+            self._cache.put_typed(cache_key, "sector_info", result)
+        return result
+
+    # ── 내부자 거래 ──
+
+    def insiderTrading(self, stock_code: str, *, market: str = "KR") -> list[InsiderTrade]:
+        """내부자(임원/주요주주) 거래 내역 조회.
+
+        Args:
+            stock_code: 종목코드 ("005930") 또는 티커 ("AAPL").
+            market: "KR" 또는 "US". 기본 "KR".
+
+        Returns:
+            list[InsiderTrade] -- 내부자 거래 내역. 없으면 빈 리스트.
+
+        Example::
+
+            g = getDefaultGather()
+            g.insiderTrading("005930")              # 삼성전자 임원 거래
+            g.insiderTrading("AAPL", market="US")   # Apple 내부자 거래
+        """
+        cache_key = f"{stock_code}:{market}:insider"
+        cached = self._cache.get_typed(cache_key, "insider")
+        if cached is not None:
+            return cached  # type: ignore[return-value]
+        result = run_async(
+            _insider.fetchInsiderTrading(stock_code, market=market, client=self._client)
+        )
+        if result:
+            self._cache.put_typed(cache_key, "insider", result)
+        return result
+
+    def majorShareholders(self, stock_code: str, *, market: str = "KR") -> list[MajorHolder]:
+        """5% 이상 대량보유 주주 변동 조회 (KR 전용).
+
+        Args:
+            stock_code: 종목코드 ("005930").
+            market: "KR"만 지원.
+
+        Returns:
+            list[MajorHolder] -- 대량보유 변동 내역. 없으면 빈 리스트.
+
+        Example::
+
+            g = getDefaultGather()
+            g.majorShareholders("005930")   # 삼성전자 대량보유
+        """
+        cache_key = f"{stock_code}:{market}:major_holder"
+        cached = self._cache.get_typed(cache_key, "major_holder")
+        if cached is not None:
+            return cached  # type: ignore[return-value]
+        result = run_async(
+            _insider.fetchMajorShareholders(stock_code, market=market, client=self._client)
+        )
+        if result:
+            self._cache.put_typed(cache_key, "major_holder", result)
+        return result
+
+    # ── 지분 보유 ──
+
+    def ownership(self, stock_code: str, *, market: str = "KR") -> list[InstitutionOwnership]:
+        """기관/외국인 지분 보유 조회.
+
+        Args:
+            stock_code: 종목코드 ("005930") 또는 티커 ("AAPL").
+            market: "KR" 또는 "US". 기본 "KR".
+
+        Returns:
+            list[InstitutionOwnership] -- 지분 보유 목록.
+
+        Example::
+
+            g = getDefaultGather()
+            g.ownership("005930")              # 삼성전자 외국인 보유
+            g.ownership("AAPL", market="US")   # Apple 기관 보유
+        """
+        cache_key = f"{stock_code}:{market}:ownership"
+        cached = self._cache.get_typed(cache_key, "ownership")
+        if cached is not None:
+            return cached  # type: ignore[return-value]
+        result = run_async(
+            _ownership.fetch(stock_code, market=market, client=self._client)
+        )
+        if result:
+            self._cache.put_typed(cache_key, "ownership", result)
+        return result
+
+    # ── 업종 피어 ──
+
+    def industryPeers(self, stock_code: str, *, market: str = "KR") -> list[dict]:
+        """같은 업종 내 피어 종목 목록 (시총 포함).
+
+        Args:
+            stock_code: 종목코드 ("005930").
+            market: "KR" 기본.
+
+        Returns:
+            list[dict] -- stockCode, stockName, marketCap 등.
+
+        Example::
+
+            g = getDefaultGather()
+            g.industryPeers("005930")   # 삼성전자 동종업종
+        """
+        sectorInfo = self.sector(stock_code, market=market)
+        if not sectorInfo or not sectorInfo.industryCode:
+            return []
+        if market == "KR":
+            from .domains.krx import fetchIndustryPeers
+
+            return run_async(fetchIndustryPeers(sectorInfo.industryCode, self._client))
+        return []
+
     # ── 거시지표 (eddmpython 검증 목록) ──
 
     _KNOWN_MARKETS = {"KR", "US"}
@@ -722,24 +866,37 @@ class Gather:
         return snapshot
 
     async def _collect_async(self, stock_code: str, market: str) -> GatherSnapshot:
-        """내부 async 수집 — 도메인별 + 뉴스 병렬, 10초 타임아웃."""
+        """내부 async 수집 — 도메인별 + 보조 데이터 병렬, 10초 타임아웃."""
         config = get_market_config(market)
         domains = list(dict.fromkeys(config.fallback_chain))  # 순서 유지 중복 제거
 
         domainTasks = [self._fetch_domain_async(name, stock_code, market) for name in domains]
         newsTask = _news._fetchAsync(stock_code, market=market, days=7, client=self._client)
+        sectorTask = _sector.fetch(stock_code, market=market, client=self._client)
+        insiderTask = _insider.fetchInsiderTrading(
+            stock_code, market=market, client=self._client
+        )
 
         try:
             allResults = await asyncio.wait_for(
-                asyncio.gather(*domainTasks, newsTask, return_exceptions=True),
+                asyncio.gather(
+                    *domainTasks, newsTask, sectorTask, insiderTask,
+                    return_exceptions=True,
+                ),
                 timeout=10.0,
             )
         except asyncio.TimeoutError:
             log.warning("collect 10초 타임아웃 — 부분 결과 사용")
-            allResults = [GatherResult(domain=d, error="timeout") for d in domains] + [[]]
+            allResults = (
+                [GatherResult(domain=d, error="timeout") for d in domains]
+                + [[], None, []]
+            )
 
-        domainResults = allResults[: len(domains)]
-        newsResult = allResults[len(domains)]
+        nDomains = len(domains)
+        domainResults = allResults[:nDomains]
+        newsResult = allResults[nDomains]
+        sectorResult = allResults[nDomains + 1]
+        insiderResult = allResults[nDomains + 2]
 
         results: dict[str, GatherResult] = {}
         for name, raw in zip(domains, domainResults):
@@ -758,6 +915,8 @@ class Gather:
             results=results,
             collected_at=datetime.now(timezone.utc).isoformat(),
             _news=newsItems,
+            _sectorInfo=sectorResult if isinstance(sectorResult, SectorInfo) else None,
+            _insiderTrades=insiderResult if isinstance(insiderResult, list) else [],
         )
 
     async def _fetch_domain_async(self, domain_name: str, stock_code: str, market: str) -> GatherResult:
@@ -840,4 +999,8 @@ __all__ = [
     "FlowData",
     "GatherResult",
     "RevenueConsensus",
+    "SectorInfo",
+    "InsiderTrade",
+    "MajorHolder",
+    "InstitutionOwnership",
 ]

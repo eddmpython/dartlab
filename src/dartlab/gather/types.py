@@ -134,6 +134,104 @@ class NewsItem:
 
 
 @dataclass
+class SectorInfo:
+    """업종 분류 정보."""
+
+    sectorCode: str = ""
+    sectorName: str = ""
+    industryCode: str = ""
+    industryName: str = ""
+    market: str = ""  # KOSPI/KOSDAQ
+    source: str = ""
+
+    def __repr__(self) -> str:
+        parts = [f"Sector({self.sectorName}"]
+        if self.industryName:
+            parts[0] += f"/{self.industryName}"
+        parts[0] += f", {self.market})"
+        return parts[0]
+
+
+@dataclass
+class ShortSellingData:
+    """공매도 잔고/거래 데이터."""
+
+    date: str = ""
+    shortVolume: int = 0
+    shortAmount: int = 0  # 원
+    totalVolume: int = 0
+    shortRatio: float = 0.0  # 공매도 비중 (%)
+    balance: int = 0  # 잔고 수량
+    balanceRatio: float = 0.0  # 잔고 비율 (%)
+    source: str = ""
+
+    def __repr__(self) -> str:
+        return f"Short(비중={self.shortRatio:.1f}%, 잔고비율={self.balanceRatio:.1f}%)"
+
+
+@dataclass
+class InsiderTrade:
+    """내부자(임원/주요주주) 주식 거래."""
+
+    date: str = ""
+    name: str = ""
+    position: str = ""
+    tradeType: str = ""  # 취득/처분/장내매수/장내매도
+    changeShares: int = 0
+    afterShares: int = 0
+    reason: str = ""
+    source: str = ""
+
+    def __repr__(self) -> str:
+        return f"Insider({self.name} {self.tradeType} {self.changeShares:+,}주 {self.date})"
+
+
+@dataclass
+class MajorHolder:
+    """5% 이상 대량보유 주주."""
+
+    holderName: str = ""
+    shares: int = 0
+    ratio: float = 0.0  # 보유비율 (%)
+    changeDate: str = ""
+    changeType: str = ""  # 취득/처분/변동
+    source: str = ""
+
+    def __repr__(self) -> str:
+        return f"MajorHolder({self.holderName} {self.ratio:.1f}% {self.changeType})"
+
+
+@dataclass
+class InstitutionOwnership:
+    """기관/외국인 지분 보유."""
+
+    holderName: str = ""
+    shares: int = 0
+    ratio: float = 0.0  # 보유비율 (%)
+    value: float = 0.0  # 보유금액
+    changeShares: int = 0  # 변동수량
+    source: str = ""
+
+    def __repr__(self) -> str:
+        return f"Institution({self.holderName} {self.ratio:.1f}%)"
+
+
+@dataclass
+class UpgradeDowngrade:
+    """애널리스트 등급 변경."""
+
+    date: str = ""
+    firm: str = ""
+    toGrade: str = ""
+    fromGrade: str = ""
+    action: str = ""  # upgrade/downgrade/init/maintain/reiterated
+    source: str = ""
+
+    def __repr__(self) -> str:
+        return f"Rating({self.firm} {self.action}: {self.fromGrade}->{self.toGrade})"
+
+
+@dataclass
 class GatherResult:
     """도메인 1개의 수집 결과 — 병렬 수집 시 반환 단위."""
 
@@ -142,6 +240,9 @@ class GatherResult:
     consensus: ConsensusData | None = None
     flow: FlowData | None = None
     sector_per: float | None = None
+    sectorInfo: SectorInfo | None = None
+    insiderTrades: list[InsiderTrade] = field(default_factory=list)
+    shortSelling: ShortSellingData | None = None
     error: str | None = None
 
 
@@ -153,6 +254,9 @@ class GatherSnapshot:
     results: dict[str, GatherResult] = field(default_factory=dict)
     collected_at: str = ""
     _news: list[NewsItem] = field(default_factory=list)
+    _sectorInfo: SectorInfo | None = None
+    _insiderTrades: list[InsiderTrade] = field(default_factory=list)
+    _shortSelling: ShortSellingData | None = None
 
     @property
     def price(self) -> PriceSnapshot | None:
@@ -182,6 +286,30 @@ class GatherSnapshot:
     def news(self) -> list[NewsItem]:
         """수집된 뉴스 항목."""
         return self._news
+
+    @property
+    def sectorInfo(self) -> SectorInfo | None:
+        """수집된 업종 분류."""
+        for r in self.results.values():
+            if r.sectorInfo:
+                return r.sectorInfo
+        return self._sectorInfo
+
+    @property
+    def insiderTrades(self) -> list[InsiderTrade]:
+        """수집된 내부자 거래."""
+        for r in self.results.values():
+            if r.insiderTrades:
+                return r.insiderTrades
+        return self._insiderTrades
+
+    @property
+    def shortSelling(self) -> ShortSellingData | None:
+        """수집된 공매도 데이터."""
+        for r in self.results.values():
+            if r.shortSelling:
+                return r.shortSelling
+        return self._shortSelling
 
     @property
     def sources_available(self) -> list[str]:

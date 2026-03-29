@@ -32,4 +32,8 @@ def load_domain(name: str):
         from . import fmp
 
         return fmp
+    if name == "krx":
+        from . import krx
+
+        return krx
     raise ValueError(f"알 수 없는 도메인: {name}")

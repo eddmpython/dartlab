@@ -1,4 +1,4 @@
-"""Welcome screen -- centered brand logo."""
+"""Welcome screen -- centered brand logo with gradient."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from textual.containers import Center, Vertical
 from textual.widget import Widget
 from textual.widgets import Static
 
-from dartlab.cli.brand import CLR
+from dartlab.cli.brand import CLR, CLR_DIM
 
 _LOGO = """\
 ██████╗  █████╗ ██████╗ ████████╗██╗      █████╗ ██████╗
@@ -25,6 +25,9 @@ _LOGO_SMALL = """\
  / /_/ / /_/ / /  / /_/ /___/ /_/ / /_/ /
 /_____/\\__,_/_/   \\__/_____/\\__,_/_.___/"""
 
+# cyan gradient (top to bottom): bright → dim
+_GRADIENT = [CLR, CLR, CLR, CLR_DIM, CLR_DIM, CLR_DIM]
+
 
 class _Logo(Static):
     def render(self) -> Text:
@@ -33,11 +36,13 @@ class _Logo(Static):
         except Exception:
             w = 100
         logo = _LOGO if w >= 70 else _LOGO_SMALL
+        lines = logo.split("\n")
         text = Text()
-        for i, line in enumerate(logo.split("\n")):
+        for i, line in enumerate(lines):
             if i > 0:
                 text.append("\n")
-            text.append(line, style=f"bold {CLR}")
+            color = _GRADIENT[i] if i < len(_GRADIENT) else CLR_ACCENT
+            text.append(line, style=f"bold {color}")
         return text
 
 

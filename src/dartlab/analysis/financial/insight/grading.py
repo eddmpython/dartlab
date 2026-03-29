@@ -1081,21 +1081,10 @@ def disclosureGapFlags(
     if company is None:
         return []
 
-    try:
-        sections = company.docs.sections
-        if sections is None or sections.is_empty():
-            return []
-    except (AttributeError, ValueError):
-        return []
+    from dartlab.analysis.financial.disclosureDelta import _safeDiffResult
 
-    from dartlab.core.docs.diff import sectionsDiff
-
-    try:
-        diffResult = sectionsDiff(sections)
-    except (ValueError, TypeError):
-        return []
-
-    if not diffResult.entries:
+    diffResult = _safeDiffResult(company)
+    if diffResult is None or not diffResult.entries:
         return []
 
     # 리스크 관련 topic 식별

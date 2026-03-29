@@ -48,6 +48,26 @@ _AXIS_REGISTRY: dict[str, _GatherAxisEntry] = {
         description="Google News RSS — 최근 30일",
         example='gather("news", "삼성전자")',
     ),
+    "sector": _GatherAxisEntry(
+        label="업종",
+        description="업종 분류 — KR(KIND+Naver) / US(Yahoo)",
+        example='gather("sector", "005930")',
+    ),
+    "insider": _GatherAxisEntry(
+        label="내부자거래",
+        description="임원/주요주주 주식 거래 — KR(DART) / US(Yahoo)",
+        example='gather("insider", "005930")',
+    ),
+    "ownership": _GatherAxisEntry(
+        label="지분",
+        description="기관/외국인 보유 현황",
+        example='gather("ownership", "005930")',
+    ),
+    "peers": _GatherAxisEntry(
+        label="피어",
+        description="같은 업종 내 피어 종목 목록 (시총 포함)",
+        example='gather("peers", "005930")',
+    ),
 }
 
 _ALIASES: dict[str, str] = {
@@ -56,6 +76,11 @@ _ALIASES: dict[str, str] = {
     "거시": "macro",
     "매크로": "macro",
     "뉴스": "news",
+    "업종": "sector",
+    "내부자": "insider",
+    "지분": "ownership",
+    "피어": "peers",
+    "동종업종": "peers",
 }
 
 
@@ -73,13 +98,17 @@ def _resolveAxis(axis: str) -> str:
 
 
 class GatherEntry:
-    """외부 시장 데이터 통합 수집 — 4축, 전부 Polars DataFrame.
+    """외부 시장 데이터 통합 수집 — 8축, 전부 Polars DataFrame.
 
     Capabilities:
         - price: OHLCV 시계열 (KR Naver/US Yahoo, 기본 1년, 최대 6000거래일)
         - flow: 외국인/기관 수급 동향 (KR 전용, Naver)
         - macro: ECOS(KR 12개) / FRED(US 25개) 거시지표 시계열
         - news: Google News RSS 뉴스 수집 (최근 30일)
+        - sector: 업종 분류 (KR KIND+Naver)
+        - insider: 내부자 거래 (KR DART)
+        - ownership: 기관/외국인 지분 보유 (KR Naver)
+        - peers: 동종업종 피어 종목 (시총 포함, KR Naver)
         - 자동 fallback 체인, circuit breaker, TTL 캐시
 
     AIContext:
@@ -91,6 +120,10 @@ class GatherEntry:
         - "외국인 매매 동향" -> gather("flow", "005930")
         - "금리 추이 알려줘" -> gather("macro", "BASE_RATE") 또는 gather("macro", "FEDFUNDS")
         - "최근 뉴스 찾아줘" -> gather("news", "삼성전자")
+        - "업종 알려줘" -> gather("sector", "005930")
+        - "내부자 거래 보여줘" -> gather("insider", "005930")
+        - "지분 보유 현황" -> gather("ownership", "005930")
+        - "동종업종 비교" -> gather("peers", "005930")
         - "미국 거시지표 전체" -> gather("macro", market="US") 또는 gather("US")
         - 주가+수급은 scan과 다름. scan은 재무 기반 횡단, gather는 시장 실시간.
 
@@ -163,6 +196,38 @@ class GatherEntry:
         if axis == "news":
             days = kwargs.pop("days", 30)
             return g.news(target, market=market, days=days)
+        if axis == "sector":
+            result = g.sector(target, market=market)
+            if result is None:
+                return pl.DataFrame()
+            return pl.DataFrame([{
+                "sectorCode": result.sectorCode,
+                "sectorName": result.sectorName,
+                "industryCode": result.industryCode,
+                "industryName": result.industryName,
+                "market": result.market,
+            }])
+        if axis == "insider":
+            trades = g.insiderTrading(target, market=market)
+            if not trades:
+                return pl.DataFrame()
+            return pl.DataFrame([{
+                "date": t.date, "name": t.name, "position": t.position,
+                "tradeType": t.tradeType, "changeShares": t.changeShares,
+            } for t in trades])
+        if axis == "ownership":
+            owners = g.ownership(target, market=market)
+            if not owners:
+                return pl.DataFrame()
+            return pl.DataFrame([{
+                "holderName": o.holderName, "ratio": o.ratio,
+                "shares": o.shares, "value": o.value,
+            } for o in owners])
+        if axis == "peers":
+            peers = g.industryPeers(target, market=market)
+            if not peers:
+                return pl.DataFrame()
+            return pl.DataFrame(peers)
 
         raise ValueError(f"미지원 gather 축: {axis}")
 

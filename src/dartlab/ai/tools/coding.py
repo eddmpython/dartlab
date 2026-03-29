@@ -164,7 +164,6 @@ _FORBIDDEN_CALLS = frozenset(
         "__import__",
         "globals",
         "locals",
-        "getattr",
         "setattr",
         "delattr",
         "breakpoint",
@@ -420,7 +419,12 @@ class DartlabCodeExecutor(LocalPythonBackend):
         cleanCode = _stripDuplicateImport(code, "dartlab")
 
         # dartlab context preamble
-        preamble = "import dartlab\n"
+        preamble = (
+            "import dartlab\n"
+            "import polars as pl\n"
+            "pl.Config.set_fmt_float('full')\n"
+            "pl.Config.set_tbl_cols(20)\n"
+        )
         if stockCode:
             preamble += f'_c = dartlab.Company("{stockCode}")\n'
 
@@ -549,9 +553,26 @@ class DartlabCodeExecutor(LocalPythonBackend):
         return code
 
     def _formatResult(self, answer: str) -> str:
-        """DataFrame 텍스트를 마크다운으로 변환한다."""
-        # polars DataFrame의 기본 repr은 이미 테이블 형태
-        # 필요시 여기서 추가 포매팅 가능
+        """코드 실행 결과의 과학적 표기법을 읽기 좋은 숫자로 변환한다."""
+        import re
+
+        def _replaceScientific(m: re.Match) -> str:
+            try:
+                val = float(m.group(0))
+                absVal = abs(val)
+                if absVal >= 1e12:
+                    sign = "-" if val < 0 else ""
+                    return f"{sign}{absVal / 1e12:,.1f}조"
+                if absVal >= 1e8:
+                    sign = "-" if val < 0 else ""
+                    return f"{sign}{absVal / 1e8:,.0f}억"
+                if absVal >= 1:
+                    return f"{int(val):,}"
+                return m.group(0)
+            except (ValueError, OverflowError):
+                return m.group(0)
+
+        answer = re.sub(r"-?\d+\.?\d*[eE][+-]?\d+", _replaceScientific, answer)
         if len(answer) > 6000:
             return answer[:6000] + "\n\n... (결과 잘림)"
         return answer

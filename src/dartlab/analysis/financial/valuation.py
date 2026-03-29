@@ -20,28 +20,38 @@ log = logging.getLogger(__name__)
 def _fetchPriceContext(company: Any) -> dict | None:
     """gather.price에서 현재가/시총 가져오기 (sync).
 
+    같은 company에 대해 세션 내 1회만 네트워크 호출.
     실패 시 None 반환 -- 시가 의존 calc만 graceful skip.
     """
+    # company._cache에 저장하여 동일 세션 내 재활용
+    cache = getattr(company, "_cache", None)
+    _KEY = "_priceContext"
+    if cache is not None and _KEY in cache:
+        return cache[_KEY]
+
     stockCode = getattr(company, "stockCode", None)
     if not stockCode:
         return None
 
+    result = None
     try:
         from dartlab.gather.http import run_async
         from dartlab.gather.price import fetch
 
         snapshot = run_async(fetch(stockCode, market="KR"))
-        if snapshot is None:
-            return None
-        return {
-            "currentPrice": snapshot.current,
-            "marketCap": snapshot.market_cap,
-            "per": snapshot.per,
-            "pbr": snapshot.pbr,
-        }
+        if snapshot is not None:
+            result = {
+                "currentPrice": snapshot.current,
+                "marketCap": snapshot.market_cap,
+                "per": snapshot.per,
+                "pbr": snapshot.pbr,
+            }
     except (ImportError, OSError, RuntimeError, AttributeError):
         log.debug("price fetch 실패: %s", stockCode)
-        return None
+
+    if cache is not None:
+        cache[_KEY] = result
+    return result
 
 
 def _getSeriesAndShares(company: Any) -> tuple[dict, int | None, str]:
