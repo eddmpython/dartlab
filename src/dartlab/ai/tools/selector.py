@@ -157,68 +157,28 @@ def buildToolPrompt(runtime: ToolRuntime | None = None) -> str:
                 shortDesc = shortDesc.rsplit(" ", 1)[0] + "…"
             lines.append(f"- `{spec.id}`: {shortDesc}")
 
-    # Super Tool 모드 여부 판단 (도구가 10개 이하면 Super Tool)
-    _isSuperToolMode = len(specs) <= 10
-
-    if _isSuperToolMode:
-        lines.extend(
-            [
-                "",
-                "### [필수] 도구 선택 규칙:",
-                "- **회사 데이터가 필요한 질문은 반드시 explore 또는 finance를 먼저 호출한다.**",
-                "- 위에 제공된 핵심 수치는 참고용 요약이다. 질문에 답하려면 반드시 도구로 상세 데이터를 조회해야 한다.",
-                "- system은 메타 질문('뭘 할 수 있어?', '데이터 상태')에만 사용한다.",
-                "- 회사 분석 질문에 system을 호출하면 안 된다.",
-                "- 데이터를 조회하지 않고 답변을 지어내면 안 된다. 반드시 도구 결과를 근거로 답변한다.",
-                "- 재무/공시/배당/리스크 질문에 도구 호출 없이 답변하면 안 된다.",
-                "",
-                "### 분석 절차 (Super Tool):",
-                "1. 질문이 회사/재무/공시에 관한 것이면 → explore 또는 finance 호출",
-                "2. 질문이 시스템 기능에 관한 것이면 → system 호출",
-                "3. 일반 대화(인사, 잡담)이면 → 도구 없이 직접 답변",
-                "",
-                "### 도구 매핑:",
-                "- 사업/제품/리스크/경영진/주석/원재료 → explore(action='show', target=topic)",
-                "- 재무제표/매출/이익/비율 → finance(action='data', module='IS/BS/CF/ratios')",
-                "- 배당/임원보수/최대주주 → finance(action='report', apiType='dividend/executive/majorHolder')",
-                "- topic을 모르겠으면 → explore(action='topics') 또는 explore(action='search', keyword='키워드')",
-                "- 인사이트/ESG/밸류에이션 → analyze(action='insight/esg/valuation')",
-                "",
-                "### 전문가 플로우:",
-                "- **사업 구조**: explore(show, businessOverview) → explore(show, productService)",
-                "- **재무 심층**: finance(data, IS) → finance(data, BS) → finance(ratios)",
-                "- **리스크**: explore(show, riskDerivative) → explore(diff, riskDerivative)",
-                "- **배당**: finance(report, dividend) → finance(data, CF)",
-                "- **키워드 검색**: explore(search, '비용의 성격별분류') → explore(show, 찾은topic)",
-            ]
-        )
-    else:
-        lines.extend(
-            [
-                "",
-                "### 분석 절차:",
-                "1. 질문을 이해하고 `기능 탐색`인지 `회사 분석`인지 먼저 구분",
-                "2. 기능 탐색 질문이면 `system(action='features')` 먼저 호출",
-                "3. 회사 분석이면 `explore(action='topics')`로 공시 topic을 먼저 확인",
-                "4. 최근 공시/filing 목록은 `openapi(action='search')`, 공시 본문은 `openapi(action='call')`",
-                "5. 공시 topic 원문이 필요하면 `explore(action='show')`, 변화가 궁금하면 `explore(action='diff')`",
-                "6. 재무 수치가 필요하면 `finance(action='data', module='BS/IS/CF')`, 정기보고서는 `explore(action='report')`",
-                "7. 코드 작업 요청이면 coding 도구 사용 검토",
-                "8. 필요 시 `analyze()` 도구로 심층 분석",
-                "9. 결과를 종합하여 구조화된 답변 작성 (테이블 활용)",
-                "10. 모든 수치에 출처(테이블명, 연도)를 반드시 인용",
-                "",
-                "### 전문가 분석 도구 플로우:",
-                "- **사업 구조**: explore(action='topics') → explore(action='show', topic='businessOverview') → explore(action='show', topic='segments')",
-                "- **최근 공시 읽기**: openapi(action='search') → openapi(action='call')",
-                "- **재무 심층**: finance(action='data', module='IS') → finance(action='data', module='BS') → finance(action='ratios') → analyze(action='insight')",
-                "- **이익의 질**: finance(action='data', module='IS') → finance(action='data', module='CF') → finance(action='ratios')",
-                "- **리스크 종합**: explore(action='show', topic='riskFactor') → explore(action='show', topic='contingentLiability') → explore(action='diff', topic='riskFactor')",
-                "- **배당 지속가능성**: explore(action='report', apiType='dividend') → finance(action='data', module='CF') → finance(action='ratios')",
-                "- **경영진 품질**: explore(action='show', topic='executive') → explore(action='show', topic='executivePay') → explore(action='show', topic='boardOfDirectors')",
-                "- **종합 평가**: analyze(action='insight') → finance(action='ratios') → explore(action='topics') → explore(action='show', topic='riskFactor')",
-            ]
-        )
+    lines.extend(
+        [
+            "",
+            "### [필수] 도구 사용 규칙:",
+            "- **모든 수치 답변은 반드시 execute_code로 실제 데이터를 조회한 뒤 답변하세요.**",
+            "- 추측이나 일반 지식으로 숫자를 답하지 마세요.",
+            "- 도구 호출 없이 재무 수치를 언급하면 오답 위험이 큽니다.",
+            "",
+            "### 분석 절차:",
+            "1. 질문이 회사/재무/공시에 관한 것이면 → execute_code로 dartlab API 호출 코드 생성",
+            "2. 일반 대화(인사, 잡담)이면 → 도구 없이 직접 답변",
+            "3. 결과를 종합하여 구조화된 답변 작성 (테이블 활용)",
+            "",
+            "### 코드 생성 패턴:",
+            "- **사업 구조**: `c.show('businessOverview')`, `c.show('productService')`",
+            "- **재무 심층**: `c.IS`, `c.BS`, `c.CF`, `c.ratios`",
+            "- **리스크**: `c.show('riskFactor')`, `c.diff('riskFactor')`",
+            "- **배당**: `c.show('dividend')`, `c.CF`",
+            "- **기업 비교**: 복수 Company 생성 후 데이터 비교",
+            "- **시장 스캔**: `dartlab.scan('governance')`, `dartlab.scan('screen', ...)`",
+        ]
+    )
 
     lines.extend(
         [

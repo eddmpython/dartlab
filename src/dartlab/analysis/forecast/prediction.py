@@ -148,21 +148,6 @@ def collectSignals(company) -> ContextSignals:
     except (ImportError, AttributeError, TypeError):
         pass
 
-    # 5. 공시 정성 신호
-    try:
-        from dartlab.analysis.accounting.disclosureSignal import extractSignal
-
-        sections = getattr(company, "sections", None)
-        if sections is not None:
-            ds = extractSignal(sections)
-            if ds:
-                signals.disclosureTone = ds.toneScore
-                signals.disclosureChangeIntensity = ds.changeIntensity
-                signals.disclosureGrowthAdj = ds.impliedGrowthAdj
-                signals.disclosureConfidence = ds.confidence
-    except (ImportError, AttributeError, TypeError):
-        pass
-
     # 신호에서 조정치 계산
     adjustments, reasoning = _computeAdjustments(signals)
     signals.adjustments = adjustments
