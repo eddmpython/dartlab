@@ -169,6 +169,7 @@ ignore = ["E402", "E501", "E741", "F841"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+python_files = ["test_*.py", "bench_*.py"]
 addopts = "-v --tb=short"
 asyncio_mode = "auto"
 markers = [
