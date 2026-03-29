@@ -195,6 +195,7 @@ _ALLOWED_IMPORTS = frozenset(
         "polars",
         "numpy",
         "pandas",
+        "dartlab",
     }
 )
 
@@ -376,6 +377,182 @@ class LocalPythonBackend(CodingBackend):
                     model="local",
                     metadata={"timeout": timeout},
                 )
+
+
+def _stripDuplicateImport(code: str, module: str) -> str:
+    """사용자 코드에서 `import <module>` 단독 문을 제거한다 (preamble에서 주입하므로)."""
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return code
+    # import dartlab 단독 문(from dartlab ... 은 유지)만 제거
+    linesToRemove: set[int] = set()
+    for node in tree.body:
+        if isinstance(node, ast.Import) and len(node.names) == 1 and node.names[0].name == module and node.names[0].asname is None:
+            linesToRemove.add(node.lineno)
+    if not linesToRemove:
+        return code
+    lines = code.split("\n")
+    return "\n".join(line for i, line in enumerate(lines, 1) if i not in linesToRemove)
+
+
+class DartlabCodeExecutor(LocalPythonBackend):
+    """dartlab 전용 코드 실행기 -- CAPABILITIES 기반 코드 생성 + 실행.
+
+    LocalPythonBackend를 확장하여:
+    1. dartlab 패키지를 import 허용
+    2. PYTHONPATH에 dartlab 경로 전달
+    3. company context를 preamble로 주입
+    4. DataFrame 결과를 마크다운 테이블로 변환
+    """
+
+    name = "dartlab_executor"
+    label = "DartLab Executor"
+    description = "dartlab Python 코드를 안전하게 실행합니다."
+
+    def __init__(self, *, defaultTimeout: int = 30, maxTimeout: int = 60) -> None:
+        super().__init__(defaultTimeout=defaultTimeout, maxTimeout=maxTimeout)
+
+    def execute(self, code: str, *, stockCode: str | None = None, timeout: int = 30) -> str:
+        """dartlab 코드를 실행하고 결과를 반환한다."""
+        # 사용자 코드에서 중복 import dartlab 제거 (preamble에서 주입)
+        cleanCode = _stripDuplicateImport(code, "dartlab")
+
+        # dartlab context preamble
+        preamble = "import dartlab\n"
+        if stockCode:
+            preamble += f'_c = dartlab.Company("{stockCode}")\n'
+
+        # 결과 캡처 래퍼: 마지막 expression의 결과를 출력
+        wrappedCode = self._wrapForCapture(cleanCode)
+        fullCode = preamble + wrappedCode
+
+        result = self.run_task(
+            prompt="",
+            code=fullCode,
+            timeout_seconds=min(timeout, self._maxTimeout),
+        )
+        return self._formatResult(result.answer)
+
+    def run_task(
+        self,
+        prompt: str,
+        *,
+        sandbox: str = "isolated",
+        model: str | None = None,
+        timeout_seconds: int = 30,
+        code: str | None = None,
+        dataJson: str | None = None,
+    ) -> CodingTaskResult:
+        """dartlab용 환경 변수로 실행한다."""
+        if not code:
+            return CodingTaskResult(
+                backend=self.name,
+                answer="[오류] 실행할 코드가 없습니다.",
+                sandbox=sandbox,
+                model="local",
+            )
+
+        # AST 안전성 검증
+        violations = _validateCode(code)
+        if violations:
+            return CodingTaskResult(
+                backend=self.name,
+                answer="[보안 위반] 코드가 안전하지 않습니다:\n" + "\n".join(f"- {v}" for v in violations),
+                sandbox=sandbox,
+                model="local",
+            )
+
+        timeout = min(max(timeout_seconds, 5), self._maxTimeout)
+
+        with tempfile.TemporaryDirectory(prefix="dartlab_exec_") as tmpDir:
+            scriptPath = Path(tmpDir) / "run.py"
+            scriptPath.write_text(code, encoding="utf-8")
+
+            # dartlab이 import 가능하도록 PYTHONPATH 설정
+            import os
+
+            pythonPath = os.pathsep.join(sys.path)
+
+            env = os.environ.copy()
+            env["PYTHONPATH"] = pythonPath
+            env["PYTHONDONTWRITEBYTECODE"] = "1"
+            env["PYTHONUTF8"] = "1"
+
+            try:
+                result = subprocess.run(
+                    [sys.executable, "-X", "utf8", str(scriptPath)],
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout,
+                    cwd=tmpDir,
+                    env=env,
+                )
+
+                stdout = result.stdout[:8000] if result.stdout else ""
+                stderr = result.stderr[:2000] if result.stderr else ""
+
+                if result.returncode == 0:
+                    answer = stdout if stdout else "(실행 완료, 출력 없음)"
+                else:
+                    answer = f"[실행 오류] (exit code {result.returncode})\n"
+                    if stderr:
+                        answer += f"```\n{stderr}\n```\n"
+                    if stdout:
+                        answer += f"\n출력:\n{stdout}"
+
+                return CodingTaskResult(
+                    backend=self.name,
+                    answer=answer,
+                    sandbox="isolated",
+                    model="local",
+                    metadata={
+                        "returncode": result.returncode,
+                        "timeout": timeout,
+                        "codeLength": len(code),
+                    },
+                )
+
+            except subprocess.TimeoutExpired:
+                return CodingTaskResult(
+                    backend=self.name,
+                    answer=f"[시간 초과] {timeout}초 내에 실행이 완료되지 않았습니다.",
+                    sandbox="isolated",
+                    model="local",
+                    metadata={"timeout": timeout},
+                )
+
+    def _wrapForCapture(self, code: str) -> str:
+        """마지막 expression의 결과를 자동으로 print한다."""
+        try:
+            tree = ast.parse(code)
+        except SyntaxError:
+            return code
+
+        if not tree.body:
+            return code
+
+        lastNode = tree.body[-1]
+        if isinstance(lastNode, ast.Expr):
+            # AST 기반: preceding 노드들을 unparse하고 마지막만 _result로 변환
+            exprSource = ast.unparse(lastNode.value)
+            preceding = tree.body[:-1]
+            parts: list[str] = []
+            for node in preceding:
+                parts.append(ast.unparse(node))
+            parts.append(f"_result = {exprSource}")
+            parts.append("if _result is not None:")
+            parts.append("    print(_result)")
+            return "\n".join(parts)
+        return code
+
+    def _formatResult(self, answer: str) -> str:
+        """DataFrame 텍스트를 마크다운으로 변환한다."""
+        # polars DataFrame의 기본 repr은 이미 테이블 형태
+        # 필요시 여기서 추가 포매팅 가능
+        if len(answer) > 6000:
+            return answer[:6000] + "\n\n... (결과 잘림)"
+        return answer
 
 
 class CodingRuntime:

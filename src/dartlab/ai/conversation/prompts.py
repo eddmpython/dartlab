@@ -71,14 +71,50 @@ _PLUGIN_SYSTEM_PROMPT = """
 
 # ── 도구 카탈로그 (자동 생성 파일에서 로드) ──────────────────────
 try:
-    from ._generatedCatalog import TOOL_CATALOG as _TOOL_CATALOG
+    from ._generatedCatalog import TOOL_CATALOG as _TOOL_CATALOG_FULL
 except ImportError:
-    _TOOL_CATALOG = (
+    _TOOL_CATALOG_FULL = (
         "## 보충 도구 사용 규칙\n"
         "- 분석 브리핑에 이미 포함된 수치는 도구를 재호출하지 마세요.\n"
         "- 브리핑에 없는 추가 정보(공시 원문, 실시간 주가, 웹 검색)만 도구로 조회하세요.\n"
         "- 도구 목록은 generateSpec.py 실행 후 자동 생성됩니다.\n"
     )
+
+# company=None일 때 company 카테고리 도구 제거
+_COMPANY_CATEGORIES = {"company", "finance", "analysis", "ui"}
+
+
+def _filterCatalogForNoCompany(catalog: str) -> str:
+    """company=None일 때 company 종속 도구 섹션 + 연쇄 패턴을 제거한다."""
+    lines = catalog.split("\n")
+    filtered: list[str] = []
+    skip = False
+    inChainSection = False
+    for line in lines:
+        # 도구 연쇄 패턴 섹션 제거 (company 도구 참조)
+        if line.startswith("## 도구 연쇄 패턴"):
+            inChainSection = True
+            continue
+        if inChainSection:
+            if line.startswith("## "):
+                inChainSection = False
+            else:
+                continue
+
+        if line.startswith("### "):
+            # category 확인: "### explore (priority: 95, category: company)"
+            skip = False
+            for cat in _COMPANY_CATEGORIES:
+                if f"category: {cat}" in line:
+                    skip = True
+                    break
+        if not skip:
+            filtered.append(line)
+    return "\n".join(filtered)
+
+
+_TOOL_CATALOG = _TOOL_CATALOG_FULL
+_TOOL_CATALOG_NO_COMPANY = _filterCatalogForNoCompany(_TOOL_CATALOG_FULL)
 
 # ── 스킬 매칭 헬퍼 ──────────────────────────────────
 
@@ -210,6 +246,7 @@ def build_system_prompt_parts(
     report_mode: bool = False,
     market: str = "KR",
     allow_tools: bool = True,
+    hasCompany: bool = True,
 ) -> tuple[str, str]:
     """시스템 프롬프트를 (정적, 동적) 2파트로 분리 반환.
 
@@ -263,6 +300,30 @@ def build_system_prompt_parts(
         "- 답변 시 브리핑의 구체적 수치를 인용하고, 그 수치가 의미하는 바를 해석/설명하세요."
     )
 
+    # Code Execution: CAPABILITIES 기반 코드 생성 안내
+    _code_execution_guide = (
+        "## execute_code -- dartlab 코드 실행\n"
+        "execute_code 도구로 dartlab Python 코드를 직접 실행할 수 있습니다.\n"
+        "\n"
+        "**사용 시점** (다른 도구로 불가능할 때):\n"
+        "- 복합 조건 필터링/비교 (예: 'ROE 10% 이상이면서 부채비율 100% 이하')\n"
+        "- 여러 기업 데이터를 조합한 비교 테이블\n"
+        "- 커스텀 계산/집계가 필요한 분석\n"
+        "- 기존 도구 하나로 해결되지 않는 멀티스텝 작업\n"
+        "\n"
+        "**사용하지 않을 때** (기존 도구가 더 빠르고 정확):\n"
+        "- 단일 기업 재무제표 조회 -> finance 도구\n"
+        "- 사업 개요/공시 검색 -> explore 도구\n"
+        "- 단일 분석 축 실행 -> analysis 도구\n"
+        "- 시장 스캔 -> scan 도구\n"
+        "\n"
+        "**코드 작성 규칙**:\n"
+        "- `import dartlab` 하나로 시작. CAPABILITIES에 나온 API만 사용.\n"
+        "- 결과는 반드시 `print()`로 출력 (stdout만 캡처됨).\n"
+        "- DataFrame은 `print(df)` 또는 `print(df.to_pandas().to_markdown())`.\n"
+        "- 실행 실패 시 에러를 읽고 수정 코드를 재생성하세요."
+    )
+
     no_tools_note = (
         "## 현재 실행 제약\n"
         "- 이번 답변에서는 도구 호출을 사용할 수 없습니다.\n"
@@ -309,10 +370,11 @@ def build_system_prompt_parts(
         if not allow_tools:
             dynamic_parts.append(no_tools_note)
 
-        # Engine-First: 브리핑 우선 안내 + 도구 카탈로그 (보충용)
+        # Engine-First: 브리핑 우선 안내 + 코드 실행 가이드 + 도구 카탈로그 (보충용)
         static_parts.append(_briefing_first_note)
         if allow_tools:
-            static_parts.append(_TOOL_CATALOG)
+            static_parts.append(_code_execution_guide)
+            static_parts.append(_TOOL_CATALOG if hasCompany else _TOOL_CATALOG_NO_COMPANY)
 
         dynamic_parts.append(
             "\n플러그인: 사용자가 '플러그인 만들어줘'하면 create_plugin 도구 사용. "
@@ -372,6 +434,12 @@ def build_system_prompt_parts(
 
     if not allow_tools:
         dynamic_parts.append(no_tools_note)
+
+    # Engine-First: 브리핑 우선 안내 + 코드 실행 가이드 + 도구 카탈로그
+    static_parts.append(_briefing_first_note)
+    if allow_tools:
+        static_parts.append(_code_execution_guide)
+        static_parts.append(_TOOL_CATALOG if hasCompany else _TOOL_CATALOG_NO_COMPANY)
 
     dynamic_parts.append(_PLUGIN_SYSTEM_PROMPT)
 

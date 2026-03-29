@@ -90,7 +90,7 @@ def build_tool_runtime(
     company: Any | None = None,
     *,
     name: str = "session",
-    useSuperTools: bool = False,
+    useSuperTools: bool = True,
 ) -> ToolRuntime:
     """Build an isolated tool runtime populated with current default tools."""
     runtime = create_tool_runtime(name=name)
@@ -111,12 +111,9 @@ def register_defaults(
     company: Any | None = None,
     *,
     runtime: ToolRuntime | None = None,
-    useSuperTools: bool = False,
+    useSuperTools: bool = True,
 ) -> ToolRuntime:
-    """전역 기능 + Company 바인딩 분석 도구 등록.
-
-    useSuperTools=True이면 101개 도구 대신 7개 Super Tool만 등록.
-    """
+    """execute_code 도구를 등록한다. CAPABILITIES 기반 코드 생성 + 실행."""
     if runtime is not None:
         previous_runtime = get_default_tool_runtime()
         set_default_tool_runtime(runtime)
@@ -127,14 +124,9 @@ def register_defaults(
 
     clear_registry()
 
-    if useSuperTools:
-        from .superTools import registerSuperTools
+    from .superTools import registerSuperTools
 
-        registerSuperTools(company, register_tool)
-    else:
-        from .defaults import register_all_defaults
-
-        register_all_defaults(company, register_tool)
+    registerSuperTools(company, register_tool)
 
     # CapabilitySpec 메타데이터에서 QUESTION_TYPE_MAP 자동 갱신
     try:

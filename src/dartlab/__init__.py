@@ -697,9 +697,7 @@ def ask(
 
 
 def chat(
-    codeOrName: str,
-    question: str,
-    *,
+    *args: str,
     provider: str | None = None,
     model: str | None = None,
     max_turns: int = 5,
@@ -714,6 +712,7 @@ def chat(
         - 원본 공시 탐색, 계정 시계열 비교, 섹터 통계 등 심화 분석
         - 최대 N회 도구 호출 반복 (multi-turn)
         - 도구 호출/결과 콜백으로 UI 연동
+        - 종목 없이도 동작 (시장 전체 질문, 메타 질문 등)
 
     Requires:
         AI: provider 설정 (tool calling 지원 provider 권장)
@@ -721,19 +720,21 @@ def chat(
     AIContext:
         - ask()와 동일한 기본 컨텍스트 + 저수준 도구 접근
         - LLM이 부족하다 판단하면 추가 데이터 자율 수집
+        - company=None이면 scan/gather/system 도구만 활성화
 
     Guide:
-        - "깊게 분석해줘" -> chat()으로 에이전트 모드 실행
-        - "배당 이상치 찾아줘" -> chat("005930", "배당 추세를 분석하고 이상 징후를 찾아줘")
+        - "깊게 분석해줘" -> chat("005930", "배당 추세를 분석하고 이상 징후를 찾아줘")
+        - "시장 전체 거버넌스 비교" -> chat("코스피 거버넌스 좋은 회사 찾아줘")
+        - "dartlab 뭐 할 수 있어?" -> chat("dartlab 기능 알려줘")
         - ask()보다 심화 분석이 필요할 때 사용. LLM이 자율적으로 도구 호출
 
     SeeAlso:
         - ask: 단일 질문 (간단한 분석)
         - Company: 프로그래밍 방식 직접 접근
+        - scan: 전종목 횡단분석
 
     Args:
-        codeOrName: 종목코드, 회사명, 또는 US ticker.
-        question: 질문 텍스트.
+        *args: (종목, 질문) 2개 또는 질문만 1개.
         provider: LLM provider.
         model: 모델 override.
         max_turns: 최대 도구 호출 반복 횟수.
@@ -745,10 +746,28 @@ def chat(
 
         import dartlab
         dartlab.chat("005930", "배당 추세를 분석하고 이상 징후를 찾아줘")
+        dartlab.chat("코스피 ROE 높은 회사 알려줘")  # 종목 없이 시장 질문
     """
     from dartlab.ai.runtime.standalone import chat as _chat
 
-    company = Company(codeOrName)
+    if len(args) == 2:
+        company = Company(args[0])
+        question = args[1]
+    elif len(args) == 1:
+        from dartlab.core.resolve import resolve_from_text
+
+        company, question = resolve_from_text(args[0])
+        if company is None:
+            question = args[0]
+    elif len(args) == 0:
+        print("\n  질문을 입력해 주세요.")
+        print("  예: dartlab.chat('005930', '배당 추세 분석해줘')")
+        print("  예: dartlab.chat('코스피 ROE 높은 회사 알려줘')\n")
+        return ""
+    else:
+        print(f"\n  인자는 1~2개만 허용됩니다 (받은 수: {len(args)})")
+        return ""
+
     return _chat(
         company,
         question,

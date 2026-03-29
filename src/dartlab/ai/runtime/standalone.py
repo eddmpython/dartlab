@@ -125,7 +125,7 @@ def ask(
 
 
 def chat(
-    company: Any,
+    company: Any | None,
     question: str,
     *,
     provider: str | None = None,
@@ -138,7 +138,7 @@ def chat(
     """에이전트 모드: LLM이 필요한 도구를 직접 선택하여 분석.
 
     Args:
-        company: Company 인스턴스.
+        company: Company 인스턴스. None이면 종목 없이 동작 (scan/gather/system만).
         question: 질문 텍스트.
         provider: per-call provider override.
         model: per-call model override.

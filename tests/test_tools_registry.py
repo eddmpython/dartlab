@@ -148,10 +148,7 @@ class TestRegisterTool:
         runtime = build_tool_runtime(None, name="isolated-test")
         names = [schema["function"]["name"] for schema in runtime.get_tool_schemas()]
         assert runtime.name == "isolated-test"
-        assert "get_system_spec" in names
-        assert "get_coding_runtime_status" in names
-        assert "run_coding_task" in names
-        assert "run_codex_task" in names
+        assert "execute_code" in names
 
     def test_error_handling(self):
         """실행 중 에러가 발생하면 에러 메시지 반환."""
@@ -174,368 +171,32 @@ class TestRegisterDefaults:
     def setup_method(self):
         clear_registry()
 
-    def test_registers_global_tools_without_company(self):
+    def test_registers_execute_code_without_company(self):
         register_defaults(None)
         schemas = get_tool_schemas()
         names = [s["function"]["name"] for s in schemas]
-        assert "get_system_spec" in names
-        assert "get_engine_spec" in names
-        assert "get_runtime_capabilities" in names
-        assert "get_tool_catalog" in names
-        assert "get_coding_runtime_status" in names
-        assert "get_openapi_capabilities" in names
-        assert "call_dart_openapi" in names
-        assert "search_dart_filings" in names
-        assert "get_dart_filing_text" in names
-        assert "call_edgar_openapi" in names
-        assert "openapi_save" in names
-        assert "run_coding_task" in names
-        assert "run_codex_task" in names
-        assert "search_company" in names
-        assert "download_data" in names
-        assert "data_status" in names
-        assert "get_data" not in names
+        assert "execute_code" in names
+        assert len(names) == 1
 
-    def test_register_defaults_hides_coding_tools_on_nonlocal_host(self, monkeypatch):
-        monkeypatch.setenv("DARTLAB_HOST", "0.0.0.0")
-        monkeypatch.delenv("DARTLAB_ENABLE_CODING_RUNTIME", raising=False)
-        register_defaults(None)
-        names = [s["function"]["name"] for s in get_tool_schemas()]
-        assert "get_coding_runtime_status" in names
-        assert "run_coding_task" not in names
-        assert "run_codex_task" not in names
-        result = execute_tool("get_runtime_capabilities", {})
-        assert "비활성화" in result
-        assert "안전 정책" in result
-
-    def test_runtime_capabilities_mentions_edgar_and_coding_scope(self):
-        register_defaults(None)
-        result = execute_tool("get_runtime_capabilities", {})
-        assert "OpenEdgar" in result
-        assert "EDGAR" in result
-        assert "Codex" in result or "codex" in result
-        assert "workspace-write" in result
-        assert "run_coding_task" in result
-        assert "run_codex_task" in result
-
-    def test_get_tool_catalog_includes_runtime_tools(self):
-        register_defaults(None)
-        result = execute_tool("get_tool_catalog", {"include_parameters": True})
-        assert "get_runtime_capabilities" in result
-        assert "get_coding_runtime_status" in result
-        assert "run_coding_task" in result
-        assert "run_codex_task" in result
-        assert "timeout_seconds" in result
-
-    def test_get_coding_runtime_status(self, monkeypatch):
-        from dartlab.ai.providers.support import codex_cli
-
-        monkeypatch.setattr(
-            codex_cli,
-            "inspect_codex_cli",
-            lambda: {
-                "installed": True,
-                "authenticated": True,
-                "version": "0.99.0",
-                "configuredModel": "gpt-5.4",
-                "sandboxModes": ["read-only", "workspace-write"],
-            },
-        )
-        register_defaults(None)
-        result = execute_tool("get_coding_runtime_status", {})
-        assert "Coding Runtime" in result
-        assert "`codex`" in result
-        assert "0.99.0" in result
-        assert "workspace-write" in result
-
-    def test_run_coding_task(self, monkeypatch):
-        from dartlab.ai.providers.support import codex_cli
-
-        monkeypatch.setattr(
-            codex_cli,
-            "inspect_codex_cli",
-            lambda: {
-                "installed": True,
-                "authenticated": True,
-                "configuredModel": "gpt-5.4",
-                "sandboxModes": ["read-only", "workspace-write"],
-            },
-        )
-        monkeypatch.setattr(
-            codex_cli,
-            "run_codex_exec",
-            lambda prompt, model=None, sandbox="read-only", timeout=300: (
-                f"done: {prompt}",
-                {"total_tokens": 123},
-            ),
-        )
-        register_defaults(None)
-        result = execute_tool(
-            "run_coding_task",
-            {
-                "prompt": "foo.py를 수정해줘",
-                "backend": "codex",
-                "sandbox": "workspace-write",
-                "timeout_seconds": 120,
-            },
-        )
-        assert "Coding 작업 결과" in result
-        assert "backend: codex" in result
-        assert "workspace-write" in result
-        assert "done: foo.py를 수정해줘" in result
-
-    def test_run_codex_task(self, monkeypatch):
-        from dartlab.ai.providers.support import codex_cli
-
-        monkeypatch.setattr(
-            codex_cli,
-            "inspect_codex_cli",
-            lambda: {
-                "installed": True,
-                "authenticated": True,
-                "configuredModel": "gpt-5.4",
-                "sandboxModes": ["read-only", "workspace-write"],
-            },
-        )
-        monkeypatch.setattr(
-            codex_cli,
-            "run_codex_exec",
-            lambda prompt, model=None, sandbox="read-only", timeout=300: (f"done: {prompt}", {"total_tokens": 123}),
-        )
-        register_defaults(None)
-        result = execute_tool(
-            "run_codex_task",
-            {"prompt": "foo.py를 수정해줘", "sandbox": "workspace-write", "timeout_seconds": 120},
-        )
-        assert "Codex 작업 결과" in result
-        assert "workspace-write" in result
-        assert "done: foo.py를 수정해줘" in result
-
-    def test_call_dart_openapi_search(self, monkeypatch):
-        import dartlab
-
-        class FakeOpenDart:
-            @staticmethod
-            def reportTypes():
-                return ["배당", "직원"]
-
-            @staticmethod
-            def filingTypes():
-                return {"A": "정기공시"}
-
-            @staticmethod
-            def markets():
-                return {"Y": "유가증권"}
-
-            def search(self, query, listed=False):
-                assert query == "삼성"
-                assert listed is True
-                return pl.DataFrame({"corp_name": ["삼성전자"], "stock_code": ["005930"]})
-
-        monkeypatch.setattr(dartlab, "OpenDart", FakeOpenDart)
-        register_defaults(None)
-        result = execute_tool("call_dart_openapi", {"action": "search", "query": "삼성", "listed": True})
-        assert "005930" in result
-
-    def test_call_dart_openapi_document_text(self, monkeypatch):
-        import dartlab
-
-        class FakeOpenDart:
-            @staticmethod
-            def reportTypes():
-                return ["배당"]
-
-            @staticmethod
-            def filingTypes():
-                return {"A": "정기공시"}
-
-            @staticmethod
-            def markets():
-                return {"Y": "유가증권"}
-
-            def documentText(self, rcept_no):
-                assert rcept_no == "20240312000736"
-                return "<html><body>단일판매공급계약 본문</body></html>"
-
-        monkeypatch.setattr(dartlab, "OpenDart", FakeOpenDart)
-        monkeypatch.setattr("dartlab.ai.context.dartOpenapi.hasDartApiKey", lambda startPath=None: True)
-        register_defaults(None)
-        result = execute_tool(
-            "call_dart_openapi",
-            {"action": "document_text", "rcept_no": "20240312000736", "max_chars": 200},
-        )
-        assert "단일판매공급계약 본문" in result
-
-    def test_search_dart_filings_tool(self, monkeypatch):
-        import dartlab
-
-        class FakeOpenDart:
-            def filings(self, corp=None, start=None, end=None, type=None, final=False, market=None):
-                assert start == "20240301"
-                assert end == "20240307"
-                return pl.DataFrame(
-                    {
-                        "rcept_dt": ["20240307"],
-                        "corp_name": ["테스트기업"],
-                        "stock_code": ["000000"],
-                        "corp_cls": ["K"],
-                        "report_nm": ["단일판매공급계약체결"],
-                        "rcept_no": ["20240307000001"],
-                    }
-                )
-
-        monkeypatch.setattr(dartlab, "OpenDart", FakeOpenDart)
-        monkeypatch.setattr("dartlab.ai.context.dartOpenapi.hasDartApiKey", lambda startPath=None: True)
-        register_defaults(None)
-        result = execute_tool(
-            "search_dart_filings",
-            {
-                "start": "20240301",
-                "end": "20240307",
-                "keywords": "단일판매공급계약,공급계약",
-                "limit": 10,
-            },
-        )
-        assert "OpenDART 공시목록 검색 결과" in result
-        assert "단일판매공급계약체결" in result
-
-    def test_call_edgar_openapi_company(self, monkeypatch):
-        import dartlab
-
-        class FakeOpenEdgar:
-            def company(self, identifier):
-                assert identifier == "AAPL"
-                return {"ticker": "AAPL", "cik": "0000320193", "title": "Apple Inc."}
-
-        monkeypatch.setattr(dartlab, "OpenEdgar", FakeOpenEdgar)
-        register_defaults(None)
-        result = execute_tool("call_edgar_openapi", {"action": "company", "identifier": "AAPL"})
-        assert "Apple Inc." in result
-        assert "0000320193" in result
-
-    def test_openapi_save_edgar_docs(self, monkeypatch):
-        import dartlab
-
-        class FakeOpenEdgarCompany:
-            def saveDocs(self, sinceYear=2009):
-                assert sinceYear == 2018
-                return Path("C:/temp/AAPL.parquet")
-
-        class FakeOpenEdgar:
-            def __call__(self, identifier):
-                assert identifier == "AAPL"
-                return FakeOpenEdgarCompany()
-
-        monkeypatch.setattr(dartlab, "OpenEdgar", FakeOpenEdgar)
-        register_defaults(None)
-        result = execute_tool(
-            "openapi_save",
-            {"market": "edgar", "identifier": "AAPL", "dataset": "docs", "since_year": 2018},
-        )
-        assert "AAPL.parquet" in result
-
-    def test_download_data_specific_category_uses_loaddata(self, monkeypatch):
-        import dartlab.core.dataLoader as data_loader
-
-        called = {}
-
-        def fake_load_data(stock_code, category="docs", **kwargs):
-            called["stock_code"] = stock_code
-            called["category"] = category
-            return pl.DataFrame()
-
-        monkeypatch.setattr(data_loader, "loadData", fake_load_data)
-        register_defaults(None)
-        result = execute_tool("download_data", {"stock_code": "AAPL", "category": "edgarDocs"})
-        assert called == {"stock_code": "AAPL", "category": "edgarDocs"}
-        assert "AAPL edgarDocs 데이터 다운로드 완료." in result
-
-    def test_registers_tools(self):
+    def test_registers_execute_code_with_company(self):
         company = MockCompany()
         register_defaults(company)
         schemas = get_tool_schemas()
-        assert len(schemas) >= 6
         names = [s["function"]["name"] for s in schemas]
-        assert "get_data" in names
-        assert "compute_ratios" in names
-        assert "detect_anomalies" in names
-        assert "compute_growth" in names
-        assert "yoy_analysis" in names
-        assert "get_summary" in names
-        assert "get_company_info" in names
-        assert "list_live_filings" in names
-        assert "read_filing" in names
+        assert "execute_code" in names
+        assert len(names) == 1
 
-    def test_get_data(self):
-        company = MockCompany()
-        register_defaults(company)
-        result = execute_tool("get_data", {"module_name": "BS"})
-        assert "자산총계" in result or "부채총계" in result
+    def test_execute_code_basic(self):
+        register_defaults(None)
+        result = execute_tool("execute_code", {"code": "print('hello')"})
+        assert "hello" in result
 
-    def test_get_data_missing(self):
-        company = MockCompany()
-        register_defaults(company)
-        result = execute_tool("get_data", {"module_name": "nonexistent"})
-        assert "없습니다" in result
+    def test_execute_code_forbidden_module(self):
+        register_defaults(None)
+        result = execute_tool("execute_code", {"code": "import os\nprint(os.getcwd())"})
+        assert "보안" in result or "오류" in result
 
-    def test_compute_ratios(self):
-        company = MockCompany()
-        register_defaults(company)
-        result = execute_tool("compute_ratios", {})
-        assert "부채비율" in result or "ROE" in result or "|" in result
-
-    def test_detect_anomalies_no_anomalies(self):
-        company = MockCompany()
-        register_defaults(company)
-        result = execute_tool("detect_anomalies", {"module_name": "CF"})
-        # CF에 큰 변동이 있을 수 있으므로 결과 타입만 확인
-        assert isinstance(result, str)
-
-    def test_get_company_info(self):
-        company = MockCompany()
-        register_defaults(company)
-        result = execute_tool("get_company_info", {})
-        assert "테스트기업" in result
-        assert "000000" in result
-
-    def test_list_live_filings(self):
-        company = MockCompany()
-        register_defaults(company)
-        result = execute_tool("list_live_filings", {"days": 7, "limit": 5})
-        assert "실시간 공시목록" in result
-        assert "단일판매공급계약체결" in result
-
-    def test_read_filing(self):
-        company = MockCompany()
-        register_defaults(company)
-        result = execute_tool("read_filing", {"doc_id": "20240312000736", "max_chars": 200})
-        assert "공시 본문 테스트" in result
-
-    def test_list_live_filings_guides_missing_dart_key(self, monkeypatch):
-        monkeypatch.setattr("dartlab.providers.dart.openapi.dartKey.hasDartApiKey", lambda: False)
-        company = MockDartCompany()
-        register_defaults(company)
-        result = execute_tool("list_live_filings", {"days": 7, "limit": 5})
-        assert "OpenDART API 키가 필요합니다" in result
-        assert "우상단 설정" in result
-        assert "DART_API_KEY" in result
-
-    def test_read_filing_guides_missing_dart_key(self, monkeypatch):
-        monkeypatch.setattr("dartlab.providers.dart.openapi.dartKey.hasDartApiKey", lambda: False)
-        company = MockDartCompany()
-        register_defaults(company)
-        result = execute_tool("read_filing", {"doc_id": "20240312000736", "max_chars": 200})
-        assert "OpenDART API 키가 필요합니다" in result
-        assert "공시 원문 조회" in result
-
-    def test_yoy_analysis(self):
-        company = MockCompany()
-        register_defaults(company)
-        result = execute_tool("yoy_analysis", {"module_name": "IS"})
-        assert isinstance(result, str)
-
-    def test_get_summary(self):
-        company = MockCompany()
-        register_defaults(company)
-        result = execute_tool("get_summary", {"module_name": "dividend"})
-        assert isinstance(result, str)
+    def test_execute_code_empty(self):
+        register_defaults(None)
+        result = execute_tool("execute_code", {"code": ""})
+        assert "오류" in result

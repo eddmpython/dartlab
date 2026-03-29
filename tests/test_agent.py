@@ -297,22 +297,13 @@ class TestAgentLoop:
 class TestAgentSystemAddition:
     def test_contains_tool_descriptions(self):
         prompt = build_agent_system_addition(build_tool_runtime(MockCompany(), name="agent-system-test"))
-        assert "get_data" in prompt
-        assert "compute_ratios" in prompt
-        assert "detect_anomalies" in prompt
-        assert "get_runtime_capabilities" in prompt
-        assert "get_tool_catalog" in prompt
-        assert "get_coding_runtime_status" in prompt
-        assert "call_dart_openapi" in prompt
-        assert "call_edgar_openapi" in prompt
-        assert "run_coding_task" in prompt
-        assert "run_codex_task" in prompt
+        assert "execute_code" in prompt
         assert "AGENT_SYSTEM_ADDITION" not in prompt
 
     def test_contains_procedure(self):
         prompt = build_agent_system_addition(build_tool_runtime(MockCompany(), name="agent-system-test"))
         assert "분석 절차" in prompt
-        assert "run_coding_task" in prompt
+        assert "execute_code" in prompt
 
     def test_hides_coding_tools_when_runtime_disabled(self, monkeypatch):
         monkeypatch.setenv("DARTLAB_HOST", "0.0.0.0")

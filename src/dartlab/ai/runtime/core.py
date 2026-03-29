@@ -807,6 +807,7 @@ def _analyze_inner(
         report_mode=report_mode,
         market=company_market,
         allow_tools=allow_tool_guidance,
+        hasCompany=(company is not None),
     )
 
     if dataReadySummary:

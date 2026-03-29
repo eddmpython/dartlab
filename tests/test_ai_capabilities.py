@@ -73,10 +73,10 @@ def test_build_tool_runtime_registers_capability_metadata():
     specs = get_capability_specs()
     by_id = {spec.id: spec for spec in specs}
 
-    assert "get_system_spec" in by_id
-    assert by_id["get_system_spec"].kind == CapabilityKind.SYSTEM
-    assert "run_coding_task" in by_id
-    assert by_id["run_coding_task"].kind == CapabilityKind.CODING
+    assert "execute_code" in by_id
+    assert by_id["execute_code"].kind == CapabilityKind.WORKFLOW
+    assert "create_plugin" in by_id
+    assert by_id["create_plugin"].kind == CapabilityKind.WORKFLOW
 
 
 def test_build_spec_includes_capability_summary():
@@ -85,7 +85,7 @@ def test_build_spec_includes_capability_summary():
 
     assert "capabilities" in spec
     assert spec["capabilities"]["summary"]["total"] > 0
-    assert "system" in spec["capabilities"]["summary"]["byKind"]
+    assert "workflow" in spec["capabilities"]["summary"]["byKind"]
 
 
 def test_ratio_adapter_prefers_get_ratios_over_dataframe_surface():

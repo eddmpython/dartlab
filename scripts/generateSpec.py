@@ -1162,13 +1162,13 @@ def generateSkillRef() -> str:
 # ─── _generated_catalog.py 생성 ────────────────────────────────
 
 
-_SUPER_TOOL_NAMES = {"explore", "finance", "analysis", "scan", "gather", "review", "research", "openapi", "system", "chart"}
+_SUPER_TOOL_NAMES = {"execute_code"}
 
 
 def _generateCatalog() -> str:
     """AI 시스템 프롬프트용 도구 카탈로그 Python 파일 생성.
 
-    Super Tool 10개만 포함 — LLM이 실제 tool calling으로 사용하는 도구만.
+    Super Tool 11개만 포함 — LLM이 실제 tool calling으로 사용하는 도구만.
     defaults 도구는 Super Tool 내부에서 dispatch되므로 여기 불필요.
     """
     allTools = _collectAllToolSpecs()
@@ -1258,14 +1258,19 @@ def _generateCatalog() -> str:
         catalogLines.extend(chains)
         catalogLines.append("")
 
-    # 기업 비교 패턴
+    # 기업 비교 패턴 (execute_code 기반)
     catalogLines.extend(
         [
             "## 기업 비교 패턴",
-            "두 기업의 매출/이익/비율을 비교하려면 scan 도구를 사용:",
-            "1. scan(action='account', target='sales', code='005930,000660') -- 두 기업 매출 시계열",
-            "2. scan(action='ratio', target='operatingMargin', code='005930,000660') -- 두 기업 영업이익률",
-            "code에 종목코드를 쉼표로 나열하면 해당 종목만 필터링.",
+            "두 기업의 매출/이익/비율을 비교하려면 execute_code로 코드 생성:",
+            "```",
+            "import dartlab",
+            "c1 = dartlab.Company('005930')",
+            "c2 = dartlab.Company('000660')",
+            "print('삼성전자 IS:', c1.IS)",
+            "print('SK하이닉스 IS:', c2.IS)",
+            "```",
+            "CAPABILITIES의 Company API를 참조하여 비교 코드를 작성.",
             "",
         ]
     )
@@ -1276,7 +1281,7 @@ def _generateCatalog() -> str:
         '"""AI 시스템 프롬프트용 도구 카탈로그 (자동 생성).\n'
         "\n"
         "이 파일은 scripts/generateSpec.py가 자동 생성합니다. 직접 수정 금지.\n"
-        "Super Tool 10개만 포함 -- LLM이 실제 tool calling으로 사용하는 도구.\n"
+        "execute_code 도구 -- CAPABILITIES 기반 코드 생성 + 실행.\n"
         '"""\n'
         "\n"
         f"TOOL_CATALOG = {json.dumps(catalogText, ensure_ascii=False, indent=None)}\n"

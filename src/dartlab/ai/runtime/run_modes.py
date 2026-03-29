@@ -174,7 +174,7 @@ def _run_agent(
     max_turns: int = 5,
     max_tools: int | None = None,
     q_type: str | None = None,
-    useSuperTools: bool = False,
+    useSuperTools: bool = True,
     _full_response_parts: list[str],
 ) -> Generator[AnalysisEvent, None, None]:
     """에이전트 모드 — 도구 호출 + 스트리밍 응답."""

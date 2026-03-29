@@ -111,14 +111,18 @@ scan: 전종목 비교 (ask보다 직접적)
 원본 공시 탐색, 계정 시계열 비교, 섹터 통계 등 심화 분석
 최대 N회 도구 호출 반복 (multi-turn)
 도구 호출/결과 콜백으로 UI 연동
+종목 없이도 동작 (시장 전체 질문, 메타 질문 등)
 **Requires:** AI: provider 설정 (tool calling 지원 provider 권장)
 **AIContext:** ask()와 동일한 기본 컨텍스트 + 저수준 도구 접근
 LLM이 부족하다 판단하면 추가 데이터 자율 수집
-**Guide:** "깊게 분석해줘" -> chat()으로 에이전트 모드 실행
-"배당 이상치 찾아줘" -> chat("005930", "배당 추세를 분석하고 이상 징후를 찾아줘")
+company=None이면 scan/gather/system 도구만 활성화
+**Guide:** "깊게 분석해줘" -> chat("005930", "배당 추세를 분석하고 이상 징후를 찾아줘")
+"시장 전체 거버넌스 비교" -> chat("코스피 거버넌스 좋은 회사 찾아줘")
+"dartlab 뭐 할 수 있어?" -> chat("dartlab 기능 알려줘")
 ask()보다 심화 분석이 필요할 때 사용. LLM이 자율적으로 도구 호출
 **SeeAlso:** ask: 단일 질문 (간단한 분석)
 Company: 프로그래밍 방식 직접 접근
+scan: 전종목 횡단분석
 
 #### setup
 **Capabilities:** 전체 AI provider 설정 현황 테이블 표시
