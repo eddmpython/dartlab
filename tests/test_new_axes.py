@@ -367,7 +367,7 @@ class TestPeerBenchmark:
 class TestAxisRegistry:
     def test_registry_has_18_axes(self):
         from dartlab.analysis.financial import _AXIS_REGISTRY
-        assert len(_AXIS_REGISTRY) == 18
+        assert len(_AXIS_REGISTRY) == 19
 
     def test_new_axes_in_registry(self):
         from dartlab.analysis.financial import _AXIS_REGISTRY
@@ -392,7 +392,7 @@ class TestAxisRegistry:
 class TestCatalog:
     def test_sections_count(self):
         from dartlab.review.catalog import SECTIONS
-        assert len(SECTIONS) == 18
+        assert len(SECTIONS) == 19
 
     def test_new_sections_exist(self):
         from dartlab.review.catalog import SECTIONS

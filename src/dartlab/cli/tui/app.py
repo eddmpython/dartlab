@@ -243,7 +243,7 @@ class DartLabApp(App[None]):
         Path(path).write_text("\n".join(lines), encoding="utf-8")
         container.appendSystem(f"[dim]Exported to {path}[/]")
 
-    # -- Query execution (oterm asyncio.create_task pattern) --
+    # -- Query execution --
 
     def _executeQuery(self, question: str, *, reportMode: bool = False, skillId: str | None = None) -> None:
         if self._inferenceTask and not self._inferenceTask.done():
@@ -253,7 +253,7 @@ class DartLabApp(App[None]):
         prompt.disabled = True
 
         container = self.query_one(ChatContainer)
-        container.showThinking()
+        container.showSpinner("Thinking")
 
         self._inferenceTask = asyncio.get_event_loop().create_task(self._runInThread(question, reportMode, skillId))
 
@@ -272,7 +272,7 @@ class DartLabApp(App[None]):
         container = self.query_one(ChatContainer)
 
         if not state.provider:
-            self.call_from_thread(container.hideThinking)
+            self.call_from_thread(container.hideSpinner)
             self.call_from_thread(container.appendSystem, "[bold red]No AI provider. Run: dartlab setup[/]")
             self.call_from_thread(self._finalize)
             return
@@ -307,7 +307,7 @@ class DartLabApp(App[None]):
                 if ev.kind == "chunk":
                     text = ev.data.get("text", "")
                     if not assistantStarted:
-                        self.call_from_thread(container.hideThinking)
+                        self.call_from_thread(container.hideSpinner)
                         self.call_from_thread(container.beginAssistant)
                         assistantStarted = True
                     self.call_from_thread(container.appendChunk, text)
@@ -323,25 +323,27 @@ class DartLabApp(App[None]):
                     toolCount += 1
                     state.toolCallCount += 1
                     self.call_from_thread(container.addToolCall, toolName, label)
+                    self.call_from_thread(container.showSpinner, f"Running {_TOOL_LABELS.get(toolName, toolName)}")
                     ev.data["_start"] = time.monotonic()
 
                 elif ev.kind == "tool_result":
                     elapsed = time.monotonic() - ev.data.get("_start", time.monotonic())
                     preview = str(ev.data.get("result", ""))[:60]
                     self.call_from_thread(container.finishToolCall, elapsed, preview)
+                    self.call_from_thread(container.showSpinner, "Thinking")
 
                 elif ev.kind == "error":
-                    self.call_from_thread(container.hideThinking)
+                    self.call_from_thread(container.hideSpinner)
                     errorMsg = ev.data.get("error", "Unknown error")
                     self.call_from_thread(container.appendSystem, f"[bold red]{errorMsg}[/]")
                     break
 
         except Exception as exc:
-            self.call_from_thread(container.hideThinking)
+            self.call_from_thread(container.hideSpinner)
             self.call_from_thread(container.appendSystem, f"[bold red]{type(exc).__name__}: {exc}[/]")
 
         # Finalize
-        self.call_from_thread(container.hideThinking)
+        self.call_from_thread(container.hideSpinner)
         content = ""
         if assistantStarted:
             content = self.call_from_thread(container.finishAssistant)
@@ -380,6 +382,7 @@ class DartLabApp(App[None]):
         if self._inferenceTask and not self._inferenceTask.done():
             self._inferenceTask.cancel()
             container = self.query_one(ChatContainer)
+            container.hideSpinner()
             container.markCancelled()
             container.appendSystem("[dim]Cancelled.[/]")
             self._finalize()

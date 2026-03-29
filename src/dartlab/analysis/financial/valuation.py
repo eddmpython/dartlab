@@ -22,19 +22,41 @@ _IG_TO_SECTOR_KEY: dict[str, str] = {
     "CHEMICAL": "화학",
     "METALS": "철강",
     "CONSTRUCTION": "건설",
+    "CONSTRUCTION_MATERIALS": "건설",
     "BANK": "금융/은행",
     "INSURANCE": "금융/보험",
     "DIVERSIFIED_FINANCIALS": "금융/증권",
     "SOFTWARE": "IT/소프트웨어",
     "IT_SERVICE": "IT/소프트웨어",
     "INTERNET": "IT/소프트웨어",
+    "TECH_HARDWARE": "전자/하드웨어",
+    "DISPLAY": "디스플레이",
     "TELECOM": "통신",
     "RETAIL": "유통",
-    "FOOD_BEVERAGE": "식품",
+    "FOOD_BEV_TOBACCO": "식품",
+    "FOOD_STAPLES": "식품",
+    "HOUSEHOLD": "식품",
     "PHARMA_BIO": "제약/바이오",
     "HEALTHCARE_EQUIP": "제약/바이오",
     "UTILITIES": "전력/에너지",
     "ELECTRIC": "전력/에너지",
+    "GAS_UTILITY": "전력/에너지",
+    "ENERGY_EQUIP": "에너지/자원",
+    "OIL_GAS": "에너지/자원",
+    "CAPITAL_GOODS": "산업재",
+    "MACHINERY": "산업재",
+    "TRANSPORTATION": "산업재",
+    "COMMERCIAL_SERVICE": "산업재",
+    "SHIPBUILDING": "조선",
+    "CONSUMER_DURABLES": "섬유/의류",
+    "CONSUMER_SERVICE": "유통",
+    "MEDIA_ENTERTAINMENT": "미디어/엔터",
+    "MEDIA": "미디어/엔터",
+    "GAME": "게임",
+    "REAL_ESTATE": "부동산",
+    "REIT": "부동산",
+    "AEROSPACE_DEFENSE": "산업재",
+    "HOTEL_LEISURE": "유통",
 }
 
 
@@ -420,18 +442,18 @@ def calcValuationSynthesis(company: Any) -> dict | None:
     )
 
     estimates: list[dict] = []
-    if result.dcf and result.dcf.perShareValue:
+    if result.dcf and result.dcf.perShareValue and result.dcf.perShareValue > 0:
         estimates.append({"method": "DCF", "value": result.dcf.perShareValue, "weight": weights.get("DCF", 0)})
-    if result.ddm and result.ddm.intrinsicValue:
+    if result.ddm and result.ddm.intrinsicValue and result.ddm.intrinsicValue > 0:
         estimates.append({"method": "DDM", "value": result.ddm.intrinsicValue, "weight": weights.get("DDM", 0)})
-    if result.relative and result.relative.consensusValue:
+    if result.relative and result.relative.consensusValue and result.relative.consensusValue > 0:
         estimates.append({"method": "상대가치", "value": result.relative.consensusValue, "weight": weights.get("상대가치", 0)})
 
     # RIM 결과도 합성에 포함
     from dartlab.analysis.valuation.residualIncome import calcResidualIncome as _rimCalc
     beta = sp.beta if sp else None
     rimResult = _rimCalc(series, shares=shares, currentPrice=currentPrice, currency=currency, beta=beta)
-    if rimResult and rimResult.intrinsicValue:
+    if rimResult and rimResult.intrinsicValue and rimResult.intrinsicValue > 0:
         estimates.append({"method": "RIM", "value": rimResult.intrinsicValue, "weight": weights.get("RIM", 0)})
 
     # 가중 합성 적정가

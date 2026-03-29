@@ -257,6 +257,7 @@ def _splitContentBlocks(content: str) -> list[tuple[str, str]]:
 def _reportRowsToTopicRows(
     subset: pl.DataFrame,
     contentCol: str,
+    topics: set[str] | None = None,
 ) -> list[dict[str, object]]:
     emitted: list[dict[str, object]] = []
     topicBlockCounts: dict[tuple[str, str], int] = {}
@@ -305,7 +306,8 @@ def _reportRowsToTopicRows(
             if ch is not None:
                 rawT = stripSectionPrefix(pTitle)
                 tp = mapSectionTitle(rawT)
-                _registerContent(ch, tp, rawT, pContent, pMajor)
+                if topics is None or tp in topics:
+                    _registerContent(ch, tp, rawT, pContent, pMajor)
         pendingChapter = None
 
     def _flushPending() -> None:
@@ -343,6 +345,8 @@ def _reportRowsToTopicRows(
 
         rawTitle = stripSectionPrefix(title)
         topic = mapSectionTitle(rawTitle)
+        if topics is not None and topic not in topics:
+            continue
         _registerContent(chapter, topic, rawTitle, content.strip(), currentMajorNum)
 
     # 마지막 장 처리
@@ -1402,13 +1406,14 @@ def semanticCollisions(
     return registry.filter(pl.col("hasCollision"))
 
 
-def sections(stockCode: str) -> pl.DataFrame | None:
+def sections(stockCode: str, topics: set[str] | None = None) -> pl.DataFrame | None:
     """전 기간 보고서 섹션 — (topic, blockType, blockOrder) × period DataFrame.
 
     텍스트와 테이블을 분리하여 같은 topic이라도 text 행과 table 행으로 나뉜다.
 
     Args:
         stockCode: 종목코드
+        topics: 필요한 topic 집합. None이면 전체.
 
     Returns:
         (topic, blockType, blockOrder)(행) × period(열) DataFrame. 값은 텍스트(str).
@@ -1428,7 +1433,7 @@ def sections(stockCode: str) -> pl.DataFrame | None:
 
     for periodKey, reportKind, ccol, subset in iterPeriodSubsets(stockCode):
         validPeriods.append(periodKey)
-        topicRows = _reportRowsToTopicRows(subset, ccol)
+        topicRows = _reportRowsToTopicRows(subset, ccol, topics=topics)
         periodRows[periodKey] = topicRows
         if reportKind == "annual" and latestAnnualRows is None:
             latestAnnualRows = topicRows
@@ -1452,6 +1457,8 @@ def sections(stockCode: str) -> pl.DataFrame | None:
             periodRows.pop(periodKey, []),
             teacherTopics,
         )
+        if topics is not None:
+            projected = [r for r in projected if r.get("topic") in topics]
         for row in _expandStructuredRows(projected):
             chapter = row["chapter"]
             topic = row["topic"]

@@ -1,4 +1,4 @@
-"""Chat container -- oterm ChatContainer + ChatItem pattern with Toad design."""
+"""Chat container -- message display with streaming and tool call visualization."""
 
 from __future__ import annotations
 
@@ -6,17 +6,53 @@ from textual.app import ComposeResult
 from textual.containers import Vertical, VerticalScroll
 from textual.css.query import NoMatches
 from textual.reactive import reactive
-from textual.widgets import LoadingIndicator, Markdown, Static
+from textual.timer import Timer
+from textual.widgets import Markdown, Static
 
-from dartlab.cli.brand import CLR, CLR_SUCCESS
+from dartlab.cli.brand import CLR, CLR_MUTED, CLR_SUCCESS
+
+_SPINNER_FRAMES = [".", "..", "...", ".."]
+
+
+class SpinnerWidget(Static):
+    """Animated spinner with label text."""
+
+    DEFAULT_CSS = """
+    SpinnerWidget {
+        height: 1;
+        margin: 0 1;
+    }
+    """
+
+    _frame: reactive[int] = reactive(0)
+
+    def __init__(self, label: str = "Thinking", **kwargs) -> None:
+        super().__init__(f"[{CLR}]{label}[/] [{CLR_MUTED}]...[/]", **kwargs)
+        self._label = label
+        self._timer: Timer | None = None
+
+    def on_mount(self) -> None:
+        self._timer = self.set_interval(0.4, self._tick)
+
+    def _tick(self) -> None:
+        self._frame = (self._frame + 1) % len(_SPINNER_FRAMES)
+
+    def watch__frame(self, _value: int) -> None:
+        dots = _SPINNER_FRAMES[self._frame]
+        self.update(f"[{CLR}]{self._label}[/] [{CLR_MUTED}]{dots}[/]")
+
+    def setLabel(self, label: str) -> None:
+        self._label = label
+        dots = _SPINNER_FRAMES[self._frame]
+        self.update(f"[{CLR}]{self._label}[/] [{CLR_MUTED}]{dots}[/]")
+
+    def on_unmount(self) -> None:
+        if self._timer:
+            self._timer.stop()
 
 
 class ChatItem(Static):
-    """Single message bubble (oterm ChatItem pattern).
-
-    User messages render as plain text.
-    Assistant messages render as Markdown with streaming support.
-    """
+    """Single message bubble. User=plain text, Assistant=Markdown streaming."""
 
     text: reactive[str] = reactive("")
     author: reactive[str] = reactive("")
@@ -35,14 +71,13 @@ class ChatItem(Static):
             await md.update(text)
         except NoMatches:
             return
-        # Markdown height changed -- ask parent container to scroll
         parent = self.parent
         if isinstance(parent, ChatContainer):
             parent._autoScroll()
 
 
 class ChatContainer(VerticalScroll):
-    """Scrollable chat area (oterm messageContainer pattern)."""
+    """Scrollable chat area with streaming support."""
 
     can_focus = False
 
@@ -53,6 +88,7 @@ class ChatContainer(VerticalScroll):
         self._toolGroup: Vertical | None = None
         self._toolCount: int = 0
         self._currentToolId: str | None = None
+        self._spinner: SpinnerWidget | None = None
 
     _userScrolledUp: bool = False
 
@@ -62,6 +98,21 @@ class ChatContainer(VerticalScroll):
     def _autoScroll(self) -> None:
         if not self._userScrolledUp:
             self.call_later(lambda: self.scroll_end(animate=False))
+
+    # -- Spinner --
+
+    def showSpinner(self, label: str = "Thinking") -> None:
+        if self._spinner:
+            self._spinner.setLabel(label)
+            return
+        self._spinner = SpinnerWidget(label)
+        self.mount(self._spinner)
+        self._autoScroll()
+
+    def hideSpinner(self) -> None:
+        if self._spinner:
+            self._spinner.remove()
+            self._spinner = None
 
     # -- Messages --
 
@@ -106,7 +157,7 @@ class ChatContainer(VerticalScroll):
         if self._streamingItem is not None:
             self._streamingItem.add_class("cancelledMessage")
 
-    # -- Tool calls (Toad pattern: collapsible group with status) --
+    # -- Tool calls --
 
     def _ensureToolGroup(self) -> Vertical:
         if self._toolGroup is None:
@@ -121,7 +172,7 @@ class ChatContainer(VerticalScroll):
         group = self._ensureToolGroup()
         group.mount(
             Static(
-                f"[{CLR}]>[/] [dim]{label}[/] ...",
+                f"[{CLR}]>[/] [dim]{label}[/]",
                 id=toolId,
                 classes="toolStatus",
             )
@@ -144,22 +195,10 @@ class ChatContainer(VerticalScroll):
         widget.add_class("toolDone")
         self._currentToolId = None
 
-    # -- Thinking indicator --
-
-    def showThinking(self) -> None:
-        self.hideThinking()
-        self.mount(LoadingIndicator(id="thinkingIndicator"))
-        self._autoScroll()
-
-    def hideThinking(self) -> None:
-        try:
-            self.query_one("#thinkingIndicator").remove()
-        except NoMatches:
-            pass
-
     # -- Clear --
 
     def clearAll(self) -> None:
+        self.hideSpinner()
         self.remove_children()
         self._streamingItem = None
         self._buffer = ""

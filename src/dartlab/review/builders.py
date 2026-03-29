@@ -2349,3 +2349,242 @@ def _tupleFlags(flags: list[tuple[str, str]]) -> list:
     if opportunities:
         blocks.append(FlagBlock(opportunities, kind="opportunity"))
     return blocks
+
+
+# ── 6-1 매출전망 빌더 ──
+
+
+def _fmtEstimate(value: float | None, currency: str = "KRW") -> str:
+    """추정치 포맷팅 (억원/M 단위)."""
+    if value is None:
+        return "-"
+    if currency == "KRW":
+        return f"{value / 1e8:,.0f}억(E)"
+    return f"${value / 1e6:,.0f}M(E)"
+
+
+def revenueForecastBlock(data: dict) -> list:
+    """calcRevenueForecast -> 시나리오 테이블 + 신뢰도."""
+    if not data:
+        return []
+    cur = data.get("currency", "KRW")
+    blocks: list = [
+        HeadingBlock(
+            _meta("revenueForecast").label,
+            level=2,
+            helper="7-소스 앙상블 매출 예측 -- 모든 수치는 추정치",
+        ),
+    ]
+
+    # 신뢰도 + 방법론 요약
+    metrics = [
+        ("방법", data.get("method", "")),
+        ("신뢰도", data.get("confidence", "")),
+    ]
+    lifecycle = data.get("lifecycle", "")
+    if lifecycle:
+        metrics.append(("라이프사이클", lifecycle))
+    blocks.append(MetricBlock(metrics))
+
+    # 시나리오 테이블
+    scenarios = data.get("scenarios", {})
+    if scenarios:
+        rows = []
+        for label in ("bull", "base", "bear"):
+            sc = scenarios.get(label)
+            if not sc:
+                continue
+            proj = sc.get("projected", [])
+            gr = sc.get("growthRates", [])
+            prob = sc.get("probability", 0)
+            row = {"시나리오": f"{label.title()} ({prob:.0f}%)"}
+            for i, (p, g) in enumerate(zip(proj, gr)):
+                row[f"+{i + 1}년"] = f"{_fmtEstimate(p, cur)} ({g:+.1f}%)"
+            rows.append(row)
+        if rows:
+            blocks.append(TableBlock("[추정] 시나리오별 매출 전망", pl.DataFrame(rows)))
+    else:
+        # 시나리오 없이 기본 전망만
+        projected = data.get("projected", [])
+        growthRates = data.get("growthRates", [])
+        if projected:
+            rows = []
+            for i, (p, g) in enumerate(zip(projected, growthRates)):
+                rows.append({"연차": f"+{i + 1}년", "매출": _fmtEstimate(p, cur), "성장률": f"{g:+.1f}%"})
+            blocks.append(TableBlock("[추정] 매출 전망", pl.DataFrame(rows)))
+
+    blocks.append(TextBlock(data.get("disclaimer", ""), style="dim"))
+    return blocks
+
+
+def segmentForecastBlock(data: dict) -> list:
+    """calcSegmentForecast -> 세그먼트별 성장 테이블."""
+    if not data:
+        return []
+    segments = data.get("segments", [])
+    if not segments:
+        return []
+
+    cur = data.get("currency", "KRW")
+    blocks: list = [
+        HeadingBlock(
+            _meta("segmentForecast").label,
+            level=2,
+            helper="부문별 개별 매출 성장 전망",
+        ),
+    ]
+
+    rows = []
+    for seg in segments:
+        gr = seg.get("growthRates", [])
+        row = {
+            "부문": seg.get("name", ""),
+            "매출비중": f"{seg.get('shareOfRevenue', 0):.1f}%",
+            "방법": seg.get("method", ""),
+        }
+        for i, g in enumerate(gr):
+            row[f"+{i + 1}년"] = f"{g:+.1f}%"
+        rows.append(row)
+    if rows:
+        blocks.append(TableBlock("[추정] 세그먼트별 성장률", pl.DataFrame(rows)))
+
+    return blocks
+
+
+def proFormaHighlightsBlock(data: dict) -> list:
+    """calcProFormaHighlights -> IS 요약 전망 테이블."""
+    if not data:
+        return []
+    years = data.get("years", [])
+    if not years:
+        return []
+
+    cur = data.get("currency", "KRW")
+    blocks: list = [
+        HeadingBlock(
+            _meta("proFormaHighlights").label,
+            level=2,
+            helper="매출 성장 경로에 따른 IS/CF 핵심 전망",
+        ),
+    ]
+
+    # WACC + 성장률
+    metrics = [("WACC", f"{data.get('wacc', 0):.1f}%")]
+    grPath = data.get("revenueGrowthPath", [])
+    if grPath:
+        metrics.append(("성장률 경로", " -> ".join(f"{g:+.1f}%" for g in grPath)))
+    blocks.append(MetricBlock(metrics))
+
+    # 전망 테이블
+    rows = []
+    for yr in years:
+        rows.append({
+            "연차": f"+{yr['yearOffset']}년",
+            "매출": _fmtEstimate(yr.get("revenue"), cur),
+            "영업이익": _fmtEstimate(yr.get("operatingIncome"), cur),
+            "순이익": _fmtEstimate(yr.get("netIncome"), cur),
+            "FCF": _fmtEstimate(yr.get("fcf"), cur),
+        })
+    blocks.append(TableBlock("[추정] Pro-Forma IS 요약", pl.DataFrame(rows)))
+
+    for w in data.get("warnings", []):
+        blocks.append(TextBlock(f"-- {w}", style="dim"))
+    return blocks
+
+
+def scenarioImpactBlock(data: dict) -> list:
+    """calcScenarioImpact -> 매크로 시나리오 비교 그리드."""
+    if not data:
+        return []
+    scenarios = data.get("scenarios", {})
+    if not scenarios:
+        return []
+
+    blocks: list = [
+        HeadingBlock(
+            _meta("scenarioImpact").label,
+            level=2,
+            helper="거시경제 시나리오별 매출/마진 영향 비교",
+        ),
+    ]
+
+    rows = []
+    for name, sc in scenarios.items():
+        rows.append({
+            "시나리오": sc.get("label", name),
+            "매출변화": f"{sc.get('revenueChangePct', 0):+.1f}%",
+            "마진변화": f"{sc.get('marginChangeBps', 0):+.0f}bps",
+        })
+    blocks.append(TableBlock("[추정] 매크로 시나리오 영향", pl.DataFrame(rows)))
+    return blocks
+
+
+def forecastMethodologyBlock(data: dict) -> list:
+    """calcForecastMethodology -> 소스 가중치 + 가정."""
+    if not data:
+        return []
+    blocks: list = [
+        HeadingBlock(
+            _meta("forecastMethodology").label,
+            level=2,
+            helper="예측 방법론 투명성 공개",
+        ),
+    ]
+
+    # 소스 가중치
+    weights = data.get("sourceWeights", {})
+    if weights:
+        metrics = [(src, f"{w:.0%}") for src, w in weights.items()]
+        blocks.append(MetricBlock(metrics))
+
+    # 가정
+    assumptions = data.get("assumptions", [])
+    if assumptions:
+        for a in assumptions:
+            blocks.append(TextBlock(f"- {a}", style="dim"))
+
+    # 경고
+    for w in data.get("warnings", []):
+        blocks.append(TextBlock(f"-- {w}", style="dim"))
+
+    return blocks
+
+
+def historicalRatiosBlock(data: dict) -> list:
+    """calcHistoricalRatios -> 과거 구조 비율."""
+    if not data:
+        return []
+    blocks: list = [
+        HeadingBlock(
+            _meta("historicalRatios").label,
+            level=2,
+            helper="Pro-Forma의 기반이 되는 과거 재무 비율",
+        ),
+    ]
+
+    metrics = [
+        ("매출총이익률", f"{data.get('grossMargin', 0):.1f}%"),
+        ("판관비율", f"{data.get('sgaRatio', 0):.1f}%"),
+        ("유효세율", f"{data.get('effectiveTaxRate', 0):.1f}%"),
+        ("CAPEX/매출", f"{data.get('capexToRevenue', 0):.1f}%"),
+        ("NWC/매출", f"{data.get('nwcToRevenue', 0):.1f}%"),
+        ("배당성향", f"{data.get('dividendPayout', 0):.1f}%"),
+        ("사용 연수", f"{data.get('yearsUsed', 0)}년"),
+        ("신뢰도", data.get("confidence", "")),
+    ]
+    blocks.append(MetricBlock(metrics))
+
+    for w in data.get("warnings", []):
+        blocks.append(TextBlock(f"-- {w}", style="dim"))
+    return blocks
+
+
+def forecastFlagsBlock(data: dict) -> list:
+    """calcForecastFlags -> FlagBlock."""
+    if not data:
+        return []
+    flags = data.get("flags", [])
+    if not flags:
+        return []
+    messages = [msg for _, msg in flags]
+    return [FlagBlock(messages, kind="warning")]

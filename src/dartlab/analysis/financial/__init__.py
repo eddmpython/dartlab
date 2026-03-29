@@ -448,6 +448,42 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
             ),
         ),
     ),
+    # ── 6부: 전망분석 ──
+    "매출전망": _AxisEntry(
+        section="매출전망",
+        partId="6-1",
+        description="이 회사의 매출은 어디로 가며 재무는 어떻게 변하는가",
+        example='analysis("매출전망", c)',
+        calcs=(
+            _CalcEntry(
+                "calcRevenueForecast", "dartlab.analysis.financial.forecastCalcs", "revenueForecast", "매출 예측"
+            ),
+            _CalcEntry(
+                "calcSegmentForecast", "dartlab.analysis.financial.forecastCalcs", "segmentForecast", "세그먼트별 전망"
+            ),
+            _CalcEntry(
+                "calcProFormaHighlights",
+                "dartlab.analysis.financial.forecastCalcs",
+                "proFormaHighlights",
+                "Pro-Forma 전망",
+            ),
+            _CalcEntry(
+                "calcScenarioImpact", "dartlab.analysis.financial.forecastCalcs", "scenarioImpact", "시나리오 영향"
+            ),
+            _CalcEntry(
+                "calcForecastMethodology",
+                "dartlab.analysis.financial.forecastCalcs",
+                "forecastMethodology",
+                "예측 방법론",
+            ),
+            _CalcEntry(
+                "calcHistoricalRatios", "dartlab.analysis.financial.forecastCalcs", "historicalRatios", "과거 구조 비율"
+            ),
+            _CalcEntry(
+                "calcForecastFlags", "dartlab.analysis.financial.forecastCalcs", "forecastFlags", "매출전망 플래그"
+            ),
+        ),
+    ),
 }
 
 
@@ -472,6 +508,8 @@ _ALIASES: dict[str, str] = {
     "governance": "지배구조",
     "disclosureDelta": "공시변화",
     "peerBenchmark": "비교분석",
+    "forecast": "매출전망",
+    "전망": "매출전망",
 }
 
 

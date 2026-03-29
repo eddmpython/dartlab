@@ -543,6 +543,45 @@ def buildBlocks(company, keys: set[str] | None = None):
         if _need("peerBenchmarkFlags"):
             b["peerBenchmarkFlags"] = _safe(lambda: peerBenchmarkFlagsBlock(calcPeerBenchmarkFlags(company)))
 
+    # ── 6부: 전망분석 ──
+    if keys is None or keys & {
+        "revenueForecast", "segmentForecast", "proFormaHighlights",
+        "scenarioImpact", "forecastMethodology", "historicalRatios", "forecastFlags",
+    }:
+        from dartlab.analysis.financial.forecastCalcs import (
+            calcForecastFlags,
+            calcForecastMethodology,
+            calcHistoricalRatios,
+            calcProFormaHighlights,
+            calcRevenueForecast,
+            calcScenarioImpact,
+            calcSegmentForecast,
+        )
+        from dartlab.review.builders import (
+            forecastFlagsBlock,
+            forecastMethodologyBlock,
+            historicalRatiosBlock,
+            proFormaHighlightsBlock,
+            revenueForecastBlock,
+            scenarioImpactBlock,
+            segmentForecastBlock,
+        )
+
+        if _need("revenueForecast"):
+            b["revenueForecast"] = _safe(lambda: revenueForecastBlock(calcRevenueForecast(company)))
+        if _need("segmentForecast"):
+            b["segmentForecast"] = _safe(lambda: segmentForecastBlock(calcSegmentForecast(company)))
+        if _need("proFormaHighlights"):
+            b["proFormaHighlights"] = _safe(lambda: proFormaHighlightsBlock(calcProFormaHighlights(company)))
+        if _need("scenarioImpact"):
+            b["scenarioImpact"] = _safe(lambda: scenarioImpactBlock(calcScenarioImpact(company)))
+        if _need("forecastMethodology"):
+            b["forecastMethodology"] = _safe(lambda: forecastMethodologyBlock(calcForecastMethodology(company)))
+        if _need("historicalRatios"):
+            b["historicalRatios"] = _safe(lambda: historicalRatiosBlock(calcHistoricalRatios(company)))
+        if _need("forecastFlags"):
+            b["forecastFlags"] = _safe(lambda: forecastFlagsBlock(calcForecastFlags(company)))
+
     from dartlab.review.blockMap import BlockMap
 
     return BlockMap(b)

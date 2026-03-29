@@ -229,6 +229,13 @@ def _dcf_from_proforma(
             terminal_value = ebitda * exit_multiple
             pv_tv = terminal_value / ((1 + discount_rate) ** last_year)
             enterprise_value = pv_tv  # FCF PV 무시, EBITDA exit만 사용
+        elif last.revenue > 0:
+            # EBITDA 음수 기업 — EV/Sales fallback (보수적)
+            # 적자 지속 → 낮은 배수. 시나리오별 매출 차이는 반영
+            sales_multiple = max(0.2, min(1 / discount_rate * 0.08, 0.8))
+            terminal_value = last.revenue * sales_multiple
+            pv_tv = terminal_value / ((1 + discount_rate) ** last_year)
+            enterprise_value = pv_tv
         else:
             enterprise_value = 0
 
@@ -366,6 +373,10 @@ def _monte_carlo_price_distribution(
         elif last_ebitda > 0:
             exit_mult = max(6.0, min(1 / noisy_wacc, 15.0))
             tv = last_ebitda * exit_mult
+        elif rev > 0:
+            # EBITDA 음수 — EV/Sales fallback (보수적)
+            sales_mult = max(0.2, min(1 / noisy_wacc * 0.08, 0.8))
+            tv = rev * sales_mult
         else:
             tv = 0
         pv_tv = tv / ((1 + noisy_wacc) ** 5)

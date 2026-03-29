@@ -59,6 +59,8 @@ SECTIONS: list[SectionMeta] = [
     SectionMeta("지배구조", "5-1", "지배구조 -- 이 회사의 주인은 누구이며 감시는 작동하는가"),
     SectionMeta("공시변화", "5-2", "공시변화 -- 이 회사의 공시가 뭐가 달라졌는가"),
     SectionMeta("비교분석", "5-3", "비교분석 -- 이 회사는 시장에서 어디에 서 있는가"),
+    # ── 6부: 전망분석 ──
+    SectionMeta("매출전망", "6-1", "매출 전망 -- 이 회사의 매출은 어디로 가는가"),
 ]
 
 # ── 블록 정의 (리스트 순서 = 렌더링 순서. 순서 변경은 여기서만.) ──
@@ -169,6 +171,14 @@ _BLOCKS: list[BlockMeta] = [
     BlockMeta("peerRanking", "시장 내 백분위 순위", "비교분석", "핵심 재무비율 시장 내 백분위"),
     BlockMeta("riskReturnPosition", "수익-위험 포지션", "비교분석", "ROE x 부채비율 사분면 위치"),
     BlockMeta("peerBenchmarkFlags", "비교분석 플래그", "비교분석", "비교분석 관련 경고/기회 신호"),
+    # ── 6-1 매출전망 ──
+    BlockMeta("revenueForecast", "[추정] 매출 예측", "매출전망", "7-소스 앙상블 3-시나리오 매출 전망"),
+    BlockMeta("segmentForecast", "[추정] 세그먼트별 전망", "매출전망", "부문별 개별 매출 성장 전망"),
+    BlockMeta("proFormaHighlights", "[추정] Pro-Forma 전망", "매출전망", "매출->영업이익->순이익->FCF 전망"),
+    BlockMeta("scenarioImpact", "[추정] 시나리오 영향", "매출전망", "매크로 시나리오별 매출/마진 영향"),
+    BlockMeta("forecastMethodology", "예측 방법론", "매출전망", "소스 가중치, 가정, 데이터 품질"),
+    BlockMeta("historicalRatios", "과거 구조 비율", "매출전망", "Pro-Forma 기반 과거 재무 비율"),
+    BlockMeta("forecastFlags", "매출전망 플래그", "매출전망", "예측 관련 경고/제한 사항"),
 ]
 
 # ── 파생 인덱스 (자동 생성, 직접 수정 금지) ──
