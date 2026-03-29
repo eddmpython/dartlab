@@ -2113,6 +2113,44 @@ class Company:
             return parts[0]
         return pl.concat(parts, how="diagonal_relaxed")
 
+    def _selectFromDocsTopicAll(
+        self,
+        topic: str,
+        indList: list[str] | None,
+        colList: list[str] | None,
+    ) -> pl.DataFrame | None:
+        """multi-block docs topic: indList/colList 조합 처리.
+
+        indList가 있으면 cascade 매칭, None이면 전체 항목.
+        colList는 기간 필터.
+        """
+        from dartlab.core.show import selectFromShow
+
+        if indList is not None:
+            return self._selectFromDocsTopic(topic, indList, colList)
+
+        # indList=None → 전체 테이블 블록 수평화 결과 concat + colList 필터
+        idx = self._buildDocsItemIndex(topic)
+        if not idx:
+            return None
+
+        seenBo: set[int] = set()
+        parts: list[pl.DataFrame] = []
+        for entries in idx.values():
+            for bo, hDf in entries:
+                if bo in seenBo:
+                    continue
+                seenBo.add(bo)
+                filtered = selectFromShow(hDf, None, colList)
+                if filtered is not None:
+                    parts.append(filtered)
+
+        if not parts:
+            return None
+        if len(parts) == 1:
+            return parts[0]
+        return pl.concat(parts, how="diagonal_relaxed")
+
     def select(
         self,
         topic: str,
@@ -2163,8 +2201,8 @@ class Company:
             and "preview" in df.columns
             and topic not in self._FINANCE_TOPICS
         )
-        if isBlockIndex and indList is not None:
-            filtered = self._selectFromDocsTopic(topic, indList, colList)
+        if isBlockIndex and (indList is not None or colList is not None):
+            filtered = self._selectFromDocsTopicAll(topic, indList, colList)
         else:
             filtered = selectFromShow(df, indList, colList)
         if filtered is None:
