@@ -9,6 +9,31 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.13] - 2026-03-29
+
+### Added
+
+- **review 매출전망 섹션 (6부)**: `c.review("매출전망")` — 7-소스 앙상블 매출 예측. revenueForecast, segmentForecast, proFormaHighlights, scenarioImpact, forecastMethodology, historicalRatios, forecastFlags 7개 블록. 업종별 시나리오 분화 지원
+- **review 선택적 빌드**: `buildBlocks(company, keys=)` — section 지정 시 해당 블록만 빌드. 단일 섹션 0.5초 vs 전체 54초 (108x 속도 향상)
+- **dartlab.askLog**: `dartlab.askLog = True`로 ask/chat 세션의 JSONL 이벤트 로그 토글
+- **gather 확장**: sector, insider, ownership 수집 경로 추가
+- **18축 분석 엔진 확장**: audit 모듈 + analysis 캐시 최적화
+
+### Changed
+
+- **AI 워크플로우 가이드 축소**: 90줄 절차 강제 → 25줄 원칙만. `capabilities(search=)` 자율 탐색 기반으로 전환. 주가 질문에 재무분석 강제하던 문제 해소
+- **투하자본 계산 개선**: `calcEvaTimeline` — 부채총계 → 이자부차입금(단기+장기+사채) - 현금. ROIC와 동일 기준
+- **AI 코드 실행기 개선**: Polars `set_fmt_float('full')` + `set_tbl_cols(20)` 자동 주입. 과학적 표기(e-01) 및 컬럼 잘림 해소
+- **시스템 프롬프트**: "즉시 코드 실행" 원칙 3개 프롬프트(KR full/EN full/compact) 전부 반영
+
+### Fixed
+
+- **tabulate 의존성 에러**: AI가 `to_pandas().to_markdown()` 생성 → `print(df)` + Polars config으로 대체
+- **getattr 보안 위반 오탐**: `c.gather()` 호출 시 AST 검증기가 차단 → FORBIDDEN_CALLS에서 제거
+- **CF 계정명 fallback**: 투자자산 계정 변경 대응 + CF 패턴 미보고 처리
+- **동의어 계정 중복 경고**: WACC/EVA 계산 + MetricBlock 수정
+- **review trend 블록**: history 구조 불일치 수정 — 18축 전부 렌더링
+
 ## [0.7.12] - 2026-03-28
 
 ### Added
