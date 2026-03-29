@@ -246,6 +246,22 @@ def dcfValuation(
     fcfCurrent = _getFcfFromSeries(series)
     fcfHist = _fcfHistory(series)
 
+    # ── 정규화 FCF (mid-cycle) ──
+    # 사이클 기업은 최근 FCF가 호황/불황에 극단적 왜곡.
+    # 과거 양수 FCF의 중앙값을 base로 사용하여 사이클 중립화.
+    positiveFcfs = [f for f in fcfHist if f is not None and f > 0]
+    if len(positiveFcfs) >= 3:
+        midCycleFcf = sorted(positiveFcfs)[len(positiveFcfs) // 2]
+        # 최근 FCF와 mid-cycle의 괴리가 크면 mid-cycle 채택
+        if fcfCurrent is not None and fcfCurrent > 0:
+            ratio = fcfCurrent / midCycleFcf if midCycleFcf > 0 else 1
+            if ratio > 1.8 or ratio < 0.5:
+                fcfCurrent = midCycleFcf
+                warnings.append(f"사이클 정규화: mid-cycle FCF 적용 (최근 대비 {ratio:.1f}배 괴리)")
+        elif fcfCurrent is None or fcfCurrent <= 0:
+            fcfCurrent = midCycleFcf
+            warnings.append("FCF 음수 → mid-cycle 양수 FCF 중앙값으로 대체")
+
     if fcfCurrent is None or fcfCurrent <= 0:
         ocf = getTTM(series, "CF", "operating_cashflow")
         if ocf is not None and ocf > 0:
@@ -267,9 +283,12 @@ def dcfValuation(
                 currency=currency,
             )
 
+    # ── 성장률 추정 ──
+    # 3Y CAGR 상한 15% (30%는 사이클 호황 왜곡 유발)
+    # 업계 표준: Simply Wall St 10Y 컨센서스, GuruFocus 10Y 평균 + 20% 상한
     revCagr = getRevenueGrowth3Y(series)
     if revCagr is not None:
-        initialGrowth = min(max(revCagr, -5.0), 30.0)
+        initialGrowth = min(max(revCagr, -5.0), 15.0)
     else:
         initialGrowth = sectorGrowth
         warnings.append("매출 3Y CAGR 미확인 → 섹터 평균 성장률 적용")
