@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from dartlab.analysis.strategy._helpers import (
     MAX_RATIO_YEARS,
-    getRatioSeries,
     toDict,
 )
 
@@ -125,16 +124,20 @@ def calcGrowthQuality(company) -> dict | None:
     revCagr = cagr.get("revenue")
     opCagr = cagr.get("operatingIncome")
 
+    niCagr = cagr.get("netIncome")
+
     quality = "판단 불가"
     if revCagr is not None and opCagr is not None:
-        if revCagr > 0 and opCagr < revCagr * 0.5:
+        if revCagr < 0:
+            quality = "역성장"
+        elif niCagr is not None and niCagr < -5:
+            quality = "이익 역성장"
+        elif opCagr < revCagr * 0.5:
             quality = "외형 위주"
         elif opCagr > revCagr * 1.5 and opCagr > 0:
             quality = "내실 위주"
         elif revCagr > 0 and opCagr > 0:
             quality = "균형"
-        elif revCagr < 0:
-            quality = "역성장"
 
     # 이익 성장률이 매출보다 빠른지 (operating leverage)
     hist = trend["history"]
@@ -185,15 +188,12 @@ def calcSustainableGrowthRate(company) -> dict | None:
     ni = isData.get("당기순이익", {})
     eq = bsData.get("자본총계", {})
 
-    # 배당성향은 ratioSeries에서 (배당은 IS/BS로 직접 구하기 어려움)
-    result = getRatioSeries(company)
-    payoutData = {}
-    if result:
-        data, years = result
-        payoutVals = data.get("RATIO", {}).get("dividendPayoutRatio", [])
-        for i, y in enumerate(years):
-            if i < len(payoutVals):
-                payoutData[y] = payoutVals[i]
+    # 배당성향: CF 배당금지급 / 당기순이익
+    from dartlab.analysis.strategy._helpers import toDictBySnakeId
+
+    cfResult = company.select("CF", ["dividends_paid"])
+    cfParsed = toDictBySnakeId(cfResult)
+    divRow = cfParsed[0].get("dividends_paid", {}) if cfParsed else {}
 
     yCols = _annualCols(isPeriods, _MAX_YEARS + 1)
     if len(yCols) < 2:
@@ -209,7 +209,8 @@ def calcSustainableGrowthRate(company) -> dict | None:
 
         roe = round(niVal / eqVal * 100, 2) if niVal is not None and eqVal and eqVal != 0 else None
         actualGrowth = _yoy(revVal, revPrev)
-        payoutRatio = payoutData.get(col)
+        divPaid = abs(divRow.get(col) or 0)
+        payoutRatio = round(divPaid / niVal * 100, 2) if niVal and niVal > 0 and divPaid > 0 else None
 
         sgr = None
         retentionRatio = None

@@ -124,8 +124,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         example='analysis("수익성", c)',
         calcs=(
             _CalcEntry("calcMarginTrend", "dartlab.analysis.strategy.profitability", "marginTrend", "마진 추이"),
-            _CalcEntry("calcReturnTrend", "dartlab.analysis.strategy.profitability", "returnTrend", "수익률 추이"),
-            _CalcEntry("calcDupont", "dartlab.analysis.strategy.profitability", "dupont", "듀퐁 5요소 분해"),
+            _CalcEntry("calcReturnTrend", "dartlab.analysis.strategy.profitability", "returnTrend", "ROE 분해 (듀퐁 5요���)"),
             _CalcEntry(
                 "calcMarginWaterfall", "dartlab.analysis.strategy.profitability", "marginWaterfall", "마진 워터폴"
             ),
@@ -176,8 +175,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="이 회사는 자산을 잘 굴리는가",
         example='analysis("효율성", c)',
         calcs=(
-            _CalcEntry("calcTurnoverTrend", "dartlab.analysis.strategy.efficiency", "turnoverTrend", "회전율 추이"),
-            _CalcEntry("calcCccTrend", "dartlab.analysis.strategy.efficiency", "cccTrend", "CCC 추이"),
+            _CalcEntry("calcTurnoverTrend", "dartlab.analysis.strategy.efficiency", "turnoverTrend", "회전율 + CCC 추이"),
             _CalcEntry(
                 "calcEfficiencyFlags", "dartlab.analysis.strategy.efficiency", "efficiencyFlags", "효율성 플래그"
             ),

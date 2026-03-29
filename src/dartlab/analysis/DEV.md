@@ -517,6 +517,11 @@ analysis 14축의 재무분석 영역(수익성/성장성/안정성/투자효율
 - `calcDistressScore`: 시가총액(X4) 없을 때 Altman Z'' (4변수) 자동 fallback
 - `calcStabilityFlags`: 부채 3기 연속 증가 플래그 추가
 
+**추가 전환**:
+- `investmentAnalysis.py calcRoicTimeline`: ratioSeries에서 ROIC 가져오던 것 → IS+BS에서 NOPAT/IC 직접 계산. 금액(영업이익, NOPAT, 투하자본) 포함
+- `growthAnalysis.py calcSustainableGrowthRate`: 배당성향을 ratioSeries에서 가져오던 것 → CF select("dividends_paid") / 당기순이익으로 직접 계산
+- **결과**: strategy/ 폴더 전체에서 getRatioSeries/buildTimeline 호출 0건 달성
+
 **5섹터 검증 결과** (삼성/현대/NAVER/셀트리온/미래에셋):
 - 5기 시계열 확보 (분기 전용 기업 포함)
 - 금액 기반으로 규모감 확인 가능: 삼성 매출 93.8조, 현대 46.8조

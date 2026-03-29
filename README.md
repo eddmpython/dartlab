@@ -268,7 +268,18 @@ Each axis is a lazy-loaded module registered in `_AXIS_REGISTRY`. Adding a new a
 
 ### Analysis — Full Financial Statement Analysis
 
-`analysis()` provides access to 14 analytical axes. Same 3-step call pattern as scan.
+`analysis()` transforms raw financial statements into **story-ready structured data**. It is the middle layer between raw data and every consumer — Review (reports), AI (interpretation), and humans (direct reading). When analysis quality improves, all three benefit simultaneously.
+
+```
+Financial Statements (IS/BS/CF)
+    ↓  Company.select()
+analysis()  →  14-axis structured data (amounts + ratios + YoY + flags)
+    ↓              ↓              ↓
+ review()       AI(ask)        human
+ reports        interpret      interpret
+```
+
+Same 3-step call pattern as scan.
 
 ```python
 dartlab.analysis()                    # 14-axis guide

@@ -1,26 +1,20 @@
 """투자 분석 -- ROIC, NOPAT, 투자 강도 시계열.
 
-투자가 실제로 가치를 만드는지를 시계열로 추적한다.
+select()로 IS/BS/CF 원본 계정을 가져와서
+투자가 실제로 가치를 만드는지를 금액과 함께 시계열로 추적한다.
 """
 
 from __future__ import annotations
 
+from dartlab.analysis.strategy._helpers import toDict
+
 _MAX_YEARS = 5
-
-
-# ── 유틸 ──
 
 
 def _toDictBySnakeId(selectResult) -> tuple[dict[str, dict], list[str]] | None:
     from dartlab.analysis.strategy._helpers import toDictBySnakeId
 
     return toDictBySnakeId(selectResult)
-
-
-def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
-    from dartlab.analysis.strategy._helpers import toDict
-
-    return toDict(selectResult)
 
 
 def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
@@ -38,46 +32,91 @@ def _get(row: dict, col: str) -> float:
 def _pct(part: float, total: float) -> float | None:
     if total is None or total == 0:
         return None
-    return part / total * 100
+    return round(part / total * 100, 2)
 
 
-# ── ROIC ──
+def _yoy(cur, prev) -> float | None:
+    if cur is None or prev is None or prev == 0:
+        return None
+    return round((cur - prev) / abs(prev) * 100, 2)
+
+
+# ── ROIC (NOPAT / 투하자본) ──
 
 
 def calcRoicTimeline(company) -> dict | None:
-    """ROIC 연간 시계열.
+    """ROIC 시계열 -- 투하자본 대비 실제 수익률.
 
-    ratioSeries에서 Q4(연간) 값만 추출하여 연간 시계열로 변환.
+    IS에서 영업이익 + 세율, BS에서 자본 + 차입금으로 직접 계산.
+    ROIC = NOPAT / Invested Capital
     """
-    from dartlab.analysis.strategy._helpers import getRatioSeries
+    isResult = company.select("IS", ["영업이익", "법인세비용", "법인세차감전순이익"])
+    bsResult = company.select(
+        "BS",
+        ["자본총계", "단기차입금", "장기차입금", "사채", "현금및현금성자산"],
+    )
 
-    rs = getRatioSeries(company)
-    if rs is None:
+    isParsed = toDict(isResult)
+    bsParsed = toDict(bsResult)
+    if isParsed is None or bsParsed is None:
         return None
 
-    data, years = rs
-    ratioDict = data.get("RATIO", {})
-    roicVals = ratioDict.get("roic", [])
+    isData, isPeriods = isParsed
+    bsData, _ = bsParsed
 
-    if not roicVals or not years:
+    opRow = isData.get("영업이익", {})
+    taxRow = isData.get("법인세비용", {})
+    ptRow = isData.get("법인세차감전순이익", {})
+    eqRow = bsData.get("자본총계", {})
+    stRow = bsData.get("단기차입금", {})
+    ltRow = bsData.get("장기차입금", {})
+    bondRow = bsData.get("사채", {})
+    cashRow = bsData.get("현금및현금성자산", {})
+
+    yCols = _annualCols(isPeriods, _MAX_YEARS + 1)
+    if len(yCols) < 2:
         return None
-
-    # Q4(연간) 데이터만 필터
-    annualPairs = []
-    for i, y in enumerate(years):
-        if "Q" not in y or y.endswith("Q4"):
-            roic = roicVals[i] if i < len(roicVals) else None
-            annualPairs.append((y, roic))
-
-    if not annualPairs:
-        return None
-
-    # 최신 _MAX_YEARS개
-    annualPairs = annualPairs[-_MAX_YEARS:]
 
     history = []
-    for period, roic in reversed(annualPairs):  # 최신 먼저
-        history.append({"period": period, "roic": roic})
+    for i, col in enumerate(yCols[:-1]):
+        prevCol = yCols[i + 1] if i + 1 < len(yCols) else None
+        opIncome = _get(opRow, col)
+        taxExpense = _get(taxRow, col)
+        ptIncome = _get(ptRow, col)
+
+        # 유효세율
+        effectiveTaxRate = abs(taxExpense) / abs(ptIncome) if ptIncome != 0 else 0.25
+        effectiveTaxRate = min(effectiveTaxRate, 0.5)
+
+        nopat = round(opIncome * (1 - effectiveTaxRate)) if opIncome != 0 else None
+
+        equity = _get(eqRow, col)
+        totalBorrowing = _get(stRow, col) + _get(ltRow, col) + _get(bondRow, col)
+        cash = _get(cashRow, col)
+        investedCapital = equity + totalBorrowing - cash
+
+        roic = round(nopat / investedCapital * 100, 2) if nopat is not None and investedCapital > 0 else None
+
+        history.append(
+            {
+                "period": col,
+                "operatingIncome": opIncome if opIncome != 0 else None,
+                "effectiveTaxRate": round(effectiveTaxRate * 100, 2),
+                "nopat": nopat,
+                "equity": equity if equity != 0 else None,
+                "totalBorrowing": totalBorrowing if totalBorrowing > 0 else None,
+                "cash": cash if cash != 0 else None,
+                "investedCapital": investedCapital if investedCapital > 0 else None,
+                "roic": roic,
+                "roicYoy": _yoy(roic, None),  # 이전 기간 ROIC는 아래서 계산
+            }
+        )
+
+    # ROIC YoY 후처리 (history가 최신→과거 순)
+    for i in range(len(history) - 1):
+        cur = history[i].get("roic")
+        prev = history[i + 1].get("roic")
+        history[i]["roicYoy"] = _yoy(cur, prev)
 
     return {"history": history} if history else None
 
@@ -94,8 +133,8 @@ def calcInvestmentIntensity(company) -> dict | None:
     isResult = company.select("IS", ["매출액"])
     bsResult = company.select("BS", ["유형자산", "무형자산", "자산총계"])
 
-    isParsed = _toDict(isResult)
-    bsParsed = _toDict(bsResult)
+    isParsed = toDict(isResult)
+    bsParsed = toDict(bsResult)
     if isParsed is None or bsParsed is None:
         return None
 
@@ -126,6 +165,11 @@ def calcInvestmentIntensity(company) -> dict | None:
         history.append(
             {
                 "period": col,
+                "capex": capex if capex > 0 else None,
+                "revenue": rev if rev != 0 else None,
+                "tangibleAssets": ppe if ppe != 0 else None,
+                "intangibleAssets": intangible if intangible != 0 else None,
+                "totalAssets": ta if ta != 0 else None,
                 "capexToRevenue": _pct(capex, rev),
                 "tangibleRatio": _pct(ppe, ta),
                 "intangibleRatio": _pct(intangible, ta),
@@ -135,7 +179,7 @@ def calcInvestmentIntensity(company) -> dict | None:
     return {"history": history} if history else None
 
 
-# ── NOPAT ──
+# ── NOPAT + 투하자본 ──
 
 
 def calcEvaTimeline(company) -> dict | None:
@@ -143,8 +187,8 @@ def calcEvaTimeline(company) -> dict | None:
     isResult = company.select("IS", ["영업이익", "법인세비용", "법인세차감전순이익"])
     bsResult = company.select("BS", ["자본총계", "부채총계"])
 
-    isParsed = _toDict(isResult)
-    bsParsed = _toDict(bsResult)
+    isParsed = toDict(isResult)
+    bsParsed = toDict(bsResult)
     if isParsed is None or bsParsed is None:
         return None
 

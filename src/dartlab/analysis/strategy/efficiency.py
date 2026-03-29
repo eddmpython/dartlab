@@ -48,7 +48,7 @@ def calcTurnoverTrend(company) -> dict | None:
     isResult = company.select("IS", ["매출액", "매출원가"])
     bsResult = company.select(
         "BS",
-        ["자산총계", "매출채권", "재고자산", "매입채무"],
+        ["자산총계", "매출채권", "매출채권및기타채권", "재고자산", "매입채무", "매입채무및기타채무"],
     )
 
     isParsed = toDict(isResult)
@@ -62,9 +62,9 @@ def calcTurnoverTrend(company) -> dict | None:
     rev = isData.get("매출액", {})
     cogs = isData.get("매출원가", {})
     ta = bsData.get("자산총계", {})
-    ar = bsData.get("매출채권", {})
+    ar = bsData.get("매출채권", {}) or bsData.get("매출채권및기타채권", {})
     inv = bsData.get("재고자산", {})
-    ap = bsData.get("매입채무", {})
+    ap = bsData.get("매입채무", {}) or bsData.get("매입채무및기타채무", {})
 
     yCols = _annualCols(isPeriods, _MAX_YEARS + 1)
     if len(yCols) < 2:

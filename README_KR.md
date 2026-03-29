@@ -266,7 +266,18 @@ dartlab.scan("cashflow")              # OCF/ICF/FCF + 8유형 패턴 분류
 
 ### Analysis — 재무제표 완전 분석
 
-`analysis()` 하나로 14개 분석축에 접근한다. scan과 동일한 3단계 호출 패턴.
+`analysis()`는 원본 재무제표를 **스토리가 가능한 구조화 데이터**로 가공하는 중간 계층이다. Review(보고서), AI(해석), 사람(직접 해석) 세 소비자 모두를 위한 분석의 중간재 -- analysis 품질이 올라가면 셋 다 좋아진다.
+
+```
+재무제표 (IS/BS/CF)
+    ↓  Company.select()
+analysis()  →  14축 구조화 데이터 (금액 + 비율 + YoY + 플래그)
+    ↓              ↓              ↓
+ review()       AI(ask)        사람
+ 보고서화        해석           해석
+```
+
+scan과 동일한 3단계 호출 패턴.
 
 ```python
 dartlab.analysis()                    # 14축 가이드

@@ -123,8 +123,11 @@ def calcCoverageTrend(company) -> dict | None:
     for i, col in enumerate(yCols[:-1]):
         prevCol = yCols[i + 1] if i + 1 < len(yCols) else None
         o = op.get(col)
-        # 이자비용 우선, 없으면 금융비용
-        interest = intCost.get(col) or finCost.get(col)
+        # 이자비용 우선, 없으면 금융비용 fallback
+        intVal = intCost.get(col)
+        finVal = finCost.get(col)
+        interest = intVal or finVal
+        source = "이자비용" if intVal else ("금융비용" if finVal else None)
 
         coverage = None
         if o is not None and interest is not None and interest != 0:
@@ -136,6 +139,7 @@ def calcCoverageTrend(company) -> dict | None:
                 "operatingIncome": o,
                 "operatingIncomeYoy": _yoy(o, op.get(prevCol)) if prevCol else None,
                 "interestExpense": interest,
+                "interestExpenseSource": source,
                 "interestCoverage": coverage,
             }
         )
@@ -504,10 +508,17 @@ def calcStabilityFlags(company) -> list[str]:
     if cov and cov["history"]:
         h0 = cov["history"][0]
         ic = h0.get("interestCoverage")
+        source = h0.get("interestExpenseSource")
+        # 순현금 여부 확인 -- 순현금이면 금융비용 기반 저배율은 오진 가능
+        isNetCash = False
+        if lev and lev["history"]:
+            nd = lev["history"][0].get("netDebt")
+            if nd is not None and nd < 0:
+                isNetCash = True
         if ic is not None:
-            if ic < 1:
+            if ic < 1 and not isNetCash:
                 flags.append(f"이자보상배율 {ic:.1f}배 -- 이자 지급 불능 위험")
-            elif ic < 3:
+            elif ic < 3 and not (isNetCash and source == "금융비용"):
                 flags.append(f"이자보상배율 {ic:.1f}배 -- 이자 부담 과다")
 
     # Altman Z-Score

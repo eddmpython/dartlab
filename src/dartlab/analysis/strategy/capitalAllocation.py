@@ -32,7 +32,7 @@ def _get(row: dict, col: str) -> float:
 def _pct(part: float, total: float) -> float | None:
     if total is None or total == 0:
         return None
-    return part / total * 100
+    return round(part / total * 100, 2)
 
 
 # ── 배당 정책 ──
@@ -91,7 +91,7 @@ def calcDividendPolicy(company) -> dict | None:
             prevCol = yCols[i + 1]
             prevDiv = abs(_get(divRow, prevCol))
             if prevDiv > 0:
-                dividendGrowth = (divPaid - prevDiv) / prevDiv * 100
+                dividendGrowth = round((divPaid - prevDiv) / prevDiv * 100, 2)
 
         history.append(
             {
