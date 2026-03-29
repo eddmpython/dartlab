@@ -389,6 +389,13 @@ _ANALYSIS_WORKFLOW_GUIDE = """\
 - `c.ratios` 비율 (property), `c.BS`/`c.IS`/`c.CF` 재무제표 (property)
 - `c.show(topic)` 공시 원문, `c.sections` 토픽 지도
 
+### 시장 데이터 (주가/수급/거시/뉴스)
+- `c.gather("price")` → 주가 OHLCV 시계열 (기본 1년)
+- `c.gather("flow")` → 외국인/기관 수급 동향
+- `dartlab.gather("macro")` → 거시경제 지표
+- `dartlab.gather("news", "키워드")` → 뉴스 수집
+- 주가/시세/수급 질문에는 gather를 먼저 쓰라. 재무분석(ratios/insights)이 아니다.
+
 ### API 탐색
 - `dartlab.capabilities(search='키워드')` → 어떤 API가 있는지 검색
 - `dartlab.capabilities()` → 전체 목록
