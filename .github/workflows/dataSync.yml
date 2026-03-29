@@ -30,7 +30,7 @@ jobs:
         category: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.category == 'all' && 'finance","report","docs' || inputs.category)) || fromJSON('["finance","report","docs"]') }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
