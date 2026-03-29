@@ -68,13 +68,19 @@ jobs:
       - name: Generate SBOM
         run: |
           pip install cyclonedx-bom
-          cyclonedx-py environment --output-format json -o dist/dartlab-sbom.json
+          cyclonedx-py environment --output-format json -o dartlab-sbom.json
 
-      - name: Upload artifacts
+      - name: Upload dist artifacts
         uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: dartlab-sbom.json
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v2
@@ -92,6 +98,11 @@ jobs:
         with:
           name: dist
           path: dist
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: sbom
+          path: sbom
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -123,4 +134,4 @@ jobs:
           files: |
             dist/*.whl
             dist/*.tar.gz
-            dist/dartlab-sbom.json
+            sbom/dartlab-sbom.json
