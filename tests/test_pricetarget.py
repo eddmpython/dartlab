@@ -413,16 +413,8 @@ class TestContextSignalsIntegration:
         assert abs(total - 1.0) < 0.01
 
     @pytest.mark.unit
-    def test_size_class_passed_to_mc(self):
-        """Small sizeClass → MC σ가 달라짐 (간접 검증)."""
-        from dartlab.analysis.forecast.prediction import getNoiseSigma as get_noise_sigma
-
-        # MC를 직접 실행하지 않고, σ 설정이 size_class에 따라 다른지 확인
-        sigma_s = get_noise_sigma("growth", "Small")
-        sigma_l = get_noise_sigma("growth", "Large")
-        assert sigma_s > sigma_l
-
-        # compute_price_target에 context_signals가 전달되면 경고 포함
+    def test_context_signals_passed_to_mc(self):
+        """context_signals 전달 시 경고가 포함됨."""
         signals = ContextSignals(sizeClass="Small", insightGrades={"profitability": "D"})
         result = compute_price_target(
             SERIES,

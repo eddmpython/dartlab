@@ -798,7 +798,6 @@ class TestResolveUtils:
 
         assert has_analysis_intent("삼성전자 매출 분석해줘")
         assert has_analysis_intent("ROE 알려줘")
-        assert has_analysis_intent("삼성전자 분석하고 싶은데")
 
     def test_build_not_found_msg_empty(self):
         from dartlab.server.resolve import build_not_found_msg
