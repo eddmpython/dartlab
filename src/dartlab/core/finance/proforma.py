@@ -552,6 +552,15 @@ def compute_company_wacc(
     elif sector_elasticity and hasattr(sector_elasticity, "revenueToGdp"):
         beta = max(0.5, min(sector_elasticity.revenueToGdp, 2.5))
 
+    # 시가총액 기반 beta 감쇠 — 대형주는 시장 대비 변동성이 낮음
+    # Damodaran: 소형주 프리미엄 역산. 시총 50조+ → beta × 0.8, 10조+ → × 0.9
+    if market_cap and market_cap > 0:
+        mcTrillion = market_cap / 1e12
+        if mcTrillion > 50:
+            beta *= 0.8
+        elif mcTrillion > 10:
+            beta *= 0.9
+
     # 차입금
     stb = getLatest(series, "BS", "shortterm_borrowings") or 0
     ltb = getLatest(series, "BS", "longterm_borrowings") or 0

@@ -165,6 +165,13 @@ def calcDcf(company: Any, *, basePeriod: str | None = None) -> dict | None:
     sp = _getSectorParams(company)
     price = _fetchPriceContext(company)
     currentPrice = price["currentPrice"] if price else None
+    marketCap = price["marketCap"] if price else None
+
+    from dartlab.core.finance.proforma import compute_company_wacc
+
+    wacc, _ = compute_company_wacc(
+        series, sector_params=sp, market_cap=marketCap, currency=currency,
+    )
 
     result = dcfValuation(
         series,
@@ -172,6 +179,7 @@ def calcDcf(company: Any, *, basePeriod: str | None = None) -> dict | None:
         sectorParams=sp,
         currentPrice=currentPrice,
         currency=currency,
+        discountRate=wacc,
     )
     return {
         "perShareValue": result.perShareValue,
@@ -501,6 +509,13 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
 
     companyType, weights = _classifyCompanyType(company, series)
 
+    # CAPM 기반 동적 WACC (섹터 테이블 고정값 대체)
+    from dartlab.core.finance.proforma import compute_company_wacc
+
+    wacc, _waccDetail = compute_company_wacc(
+        series, sector_params=sp, market_cap=marketCap, currency=currency,
+    )
+
     result = fullValuation(
         series,
         shares=shares,
@@ -508,6 +523,7 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
         marketCap=marketCap,
         currentPrice=currentPrice,
         currency=currency,
+        discountRate=wacc,
     )
 
     # 극단값 필터: 현재가 2% 미만 또는 10배 이상은 무의미 → 합성 제외

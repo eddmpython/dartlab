@@ -824,9 +824,10 @@ def fullValuation(
     marketCap: Optional[float] = None,
     currentPrice: Optional[float] = None,
     currency: str = "KRW",
+    discountRate: Optional[float] = None,
 ) -> ValuationSummary:
     """DCF + DDM + 상대가치 종합 밸류에이션."""
-    dcf = dcfValuation(series, shares=shares, sectorParams=sectorParams, currentPrice=currentPrice, currency=currency)
+    dcf = dcfValuation(series, shares=shares, sectorParams=sectorParams, currentPrice=currentPrice, currency=currency, discountRate=discountRate)
     ddm = ddmValuation(series, shares=shares, sectorParams=sectorParams, currentPrice=currentPrice)
     ddm.currency = currency
     rel = relativeValuation(
