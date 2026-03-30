@@ -106,6 +106,7 @@ def _fetchPriceContext(company: Any) -> dict | None:
                 "marketCap": snapshot.market_cap,
                 "per": snapshot.per,
                 "pbr": snapshot.pbr,
+                "isStale": getattr(snapshot, "is_stale", False),
             }
     except (ImportError, OSError, RuntimeError, AttributeError):
         log.debug("price fetch 실패: %s", stockCode)
@@ -553,6 +554,10 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
                 "signal": ri.get("signal"),
             }
 
+    warnings = []
+    if price and price.get("isStale"):
+        warnings.append("주가 데이터가 최신이 아닐 수 있습니다 (stale cache)")
+
     return {
         "fairValueRange": result.fairValueRange,
         "verdict": result.verdict,
@@ -563,6 +568,7 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
         "modelWeights": weights,
         "currency": currency,
         "reverseImplied": reverseImplied,
+        "warnings": warnings,
     }
 
 

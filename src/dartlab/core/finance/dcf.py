@@ -734,7 +734,9 @@ def _epsGrowth3Y(series: dict, shares: int) -> Optional[float]:
         return None
 
     years = len(validNi) - 1
-    return _cagr(epsStart, epsEnd, years)
+    cagr = _cagr(epsStart, epsEnd, years)
+    # PEG 산출용 상한: 50% (사이클 기업 적자→흑전 시 수천% 방지)
+    return min(cagr, 50.0) if cagr is not None else None
 
 
 # ── 민감도 분석 ──────────────────────────────────────────────
