@@ -538,11 +538,8 @@ def calcStabilityFlags(company, *, basePeriod: str | None = None) -> list[str]:
         if dr is not None:
             if isFinancial:
                 # 금융업: 예수부채로 부채비율이 구조적으로 높음. 비금융 기준 적용 불가
-                if dr < 1000:
-                    flags.append(f"부채비율 {dr:.0f}% -- 금융업 양호")
-                elif dr < 1500:
-                    flags.append(f"부채비율 {dr:.0f}% -- 금융업 보통")
-                else:
+                # 양호/보통은 플래그로 안 넣음 (중복 방지). 과다만 경고.
+                if dr >= 1500:
                     flags.append(f"부채비율 {dr:.0f}% -- 금융업 과다")
             elif dr > 200:
                 flags.append(f"부채비율 {dr:.0f}% -- 재무 위험")

@@ -471,6 +471,13 @@ def _safePct(a: float | None, b: float | None) -> float | None:
     return round(r * 100, 2)
 
 
+def _safePctPositive(a: float | None, b: float | None) -> float | None:
+    """분모가 양수일 때만 비율 계산. 적자(음수) 분모는 None."""
+    if b is not None and b < 0:
+        return None
+    return _safePct(a, b)
+
+
 def _safeRound(v: float | None, n: int = 2) -> float | None:
     if v is None:
         return None
@@ -969,7 +976,7 @@ def _calcCashflow(
         r.fcf = r.operatingCashflowTTM - capexAmt
 
     r.operatingCfMargin = _safePct(r.operatingCashflowTTM, r.revenueTTM)
-    r.operatingCfToNetIncome = _safePct(r.operatingCashflowTTM, r.netIncomeTTM)
+    r.operatingCfToNetIncome = _safePctPositive(r.operatingCashflowTTM, r.netIncomeTTM)
 
     # 영업CF/유동부채: 단기 채무를 영업현금흐름으로 상환할 수 있는 능력
     r.operatingCfToCurrentLiab = _safePct(r.operatingCashflowTTM, r.currentLiabilities)
@@ -1643,7 +1650,7 @@ def calcRatioSeries(
             rs.fcf.append(None)
 
         rs.operatingCfMargin.append(_safePct(opcf_i, rev_i))
-        rs.operatingCfToNetIncome.append(_safePct(opcf_i, np_i))
+        rs.operatingCfToNetIncome.append(_safePctPositive(opcf_i, np_i))
 
         # 영업CF/유동부채
         rs.operatingCfToCurrentLiab.append(_safePct(opcf_i, cl_i))

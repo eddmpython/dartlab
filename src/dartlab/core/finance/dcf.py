@@ -876,6 +876,11 @@ def fullValuation(
     if rel.consensusValue is not None and rel.consensusValue > 0:
         estimates.append(rel.consensusValue)
 
+    # 극단값 제거: 현재가의 1/20 미만은 모델 오류 가능성 높음
+    if currentPrice and currentPrice > 0:
+        _floor = currentPrice / 20
+        estimates = [e for e in estimates if e >= _floor]
+
     fairRange = None
     verdict = "판단불가"
 

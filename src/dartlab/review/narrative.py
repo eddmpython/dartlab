@@ -253,6 +253,15 @@ def _detectWorkingCapitalStrain(company, blockMap) -> NarrativeThread | None:
     if cr0 is None or cr1 is None or cr0 >= cr1:
         return None
 
+    # 순현금 상태이면 "유동성 위기" 서사 억제
+    try:
+        ratios = company.finance.ratios
+        nd = getattr(ratios, "netDebt", None)
+        if nd is not None and nd < 0:
+            return None  # 순현금이면 유동성 위기 아님
+    except (AttributeError, ValueError):
+        pass
+
     ocfNiRatio = ocf0 / ni0 * 100
 
     evidence = [

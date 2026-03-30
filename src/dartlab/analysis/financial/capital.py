@@ -748,8 +748,14 @@ def calcCapitalFlags(company, *, basePeriod: str | None = None) -> list[tuple[st
         flags.append((f"이자보상 {severity} ({ic:.1f}배)", "warning"))
 
     cr = getattr(ratios, "currentRatio", None)
+    nd = getattr(ratios, "netDebt", None)
+    isNetCash = nd is not None and nd < 0
     if not isFinancial and cr is not None and cr < 100:
-        flags.append((f"유동성 위기 (유동비율 {cr:.0f}%)", "warning"))
+        if isNetCash:
+            # 순현금이면 유동비율 낮아도 실질 유동성 위험 낮음 (IFRS16 리스부채 등)
+            flags.append((f"유동비율 주의 ({cr:.0f}%) — 순현금이므로 실질 위험 낮음", "warning"))
+        else:
+            flags.append((f"유동성 위기 (유동비율 {cr:.0f}%)", "warning"))
 
     az = getattr(ratios, "altmanZScore", None) or getattr(ratios, "altmanZppScore", None)
     if not isFinancial and az is not None and az < 1.81:
