@@ -25,6 +25,7 @@ from dartlab.guide.readiness import (
     registerChecker,
 )
 from dartlab.guide.credentials import CredentialManager, CredentialStatus, EnvironmentSnapshot
+from dartlab.guide import hints
 from dartlab.guide.capabilities import (
     CapabilityChannel,
     CapabilityKind,

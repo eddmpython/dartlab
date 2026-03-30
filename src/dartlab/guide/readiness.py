@@ -136,10 +136,12 @@ def _checkAi(*, provider: str | None = None, **_kw: Any) -> ReadinessResult:
         detected = auto_detect_provider()
         context["detected_provider"] = detected
         if detected is None:
+            from dartlab.guide.hints import onKeyRequired
+
             issues.append(ReadinessIssue(
                 kind="no_provider",
                 message="사용 가능한 AI provider가 없습니다",
-                fixAction='dartlab.setup("gemini")  # 무료, 권장',
+                fixAction=onKeyRequired("gemini").strip(),
             ))
     except ImportError:
         issues.append(ReadinessIssue(
@@ -162,13 +164,15 @@ def _checkDartKey(**_kw: Any) -> ReadinessResult:
     hasKey = _lazyHasDartKey()
     if hasKey:
         return ReadinessResult(feature="dart_key", status=ReadyStatus.READY)
+    from dartlab.guide.hints import onKeyRequired
+
     return ReadinessResult(
         feature="dart_key",
         status=ReadyStatus.PARTIAL,
         issues=[ReadinessIssue(
             kind="missing_key",
             message="DART API 키 미설정 (직접 수집 불가, 사전 데이터만 가능)",
-            fixAction="dartlab setup dart-key",
+            fixAction=onKeyRequired("dart").strip(),
             severity="warning",
         )],
     )

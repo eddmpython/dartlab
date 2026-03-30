@@ -23,9 +23,6 @@ def wrapError(error: Exception, *, feature: str | None = None, stockCode: str | 
         from dartlab.guide import guide
 
         resolvedFeature = feature or inferFeature(error)
-        kwargs = {}
-        if stockCode:
-            kwargs["stockCode"] = stockCode
         guideMsg = guide.handleError(error, feature=resolvedFeature)
         if guideMsg and guideMsg != f"오류: {error}":
             return f"{error}\n\n{guideMsg}"
@@ -55,28 +52,3 @@ def inferFeature(error: Exception) -> str | None:
         return "ai"
 
     return None
-
-
-def cliCompany(codeOrName: str):
-    """CLI용 Company 생성 + guide 에러 래핑.
-
-    모든 CLI command에서 Company() 생성 시 이 함수를 사용하면
-    에러 발생 시 guide 안내가 자동 포함된 CLIError가 발생한다.
-
-    Args:
-        codeOrName: 종목코드 또는 회사명.
-
-    Returns:
-        Company 인스턴스.
-
-    Raises:
-        CLIError: Company 생성 실패 시 guide 안내 포함.
-    """
-    import dartlab
-
-    try:
-        return dartlab.Company(codeOrName)
-    except (ValueError, FileNotFoundError, OSError, RuntimeError) as exc:
-        from dartlab.cli.services.errors import CLIError
-
-        raise CLIError(wrapError(exc, feature="data", stockCode=codeOrName)) from exc

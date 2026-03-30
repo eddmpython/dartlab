@@ -41,6 +41,24 @@ def renderCompany(company: Any) -> str:
         chapters = sections.get_column("chapter").unique()
         lines.append(f"  sections: {len(topics)} topics · {len(chapters)} chapters")
 
+    # guide 힌트 (데이터 보완, freshness 등)
+    try:
+        from dartlab.guide.hints import onCompanyCreated, nextSteps
+
+        hints = onCompanyCreated(company)
+        if hints:
+            lines.append("")
+            for h in hints:
+                lines.append(f"  [dim yellow]{h}[/dim yellow]")
+
+        steps = nextSteps(company)
+        if steps:
+            lines.append("")
+            for s in steps:
+                lines.append(f"  [dim]{s}[/dim]")
+    except ImportError:
+        pass
+
     body = "\n".join(lines)
     corpName = getattr(company, "corpName", "")
     stockCode = getattr(company, "stockCode", "") or getattr(company, "ticker", "")
