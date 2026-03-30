@@ -2,6 +2,37 @@
 
 from __future__ import annotations
 
+# 계정 alias: 기업마다 같은 개념이 다른 snakeId로 매핑되는 경우 fallback
+_ACCOUNT_ALIASES: dict[str, list[str]] = {
+    "total_equity": ["total_stockholders_equity", "owners_of_parent_equity"],
+    "revenue": ["sales"],
+    "sales": ["revenue"],
+}
+
+
+def _hasNonNull(vals: list | None) -> bool:
+    """리스트에 non-null 값이 3개 이상 있는지."""
+    if not vals:
+        return False
+    return sum(1 for v in vals if v is not None) >= 3
+
+
+def _resolveVals(
+    series: dict[str, dict[str, list[float | None]]],
+    sjDiv: str,
+    snakeId: str,
+) -> list[float | None] | None:
+    """snakeId로 값을 찾되, 유효 데이터 부족 시 alias 체인으로 fallback."""
+    vals = series.get(sjDiv, {}).get(snakeId)
+    if _hasNonNull(vals):
+        return vals
+    for alias in _ACCOUNT_ALIASES.get(snakeId, []):
+        avals = series.get(sjDiv, {}).get(alias)
+        if _hasNonNull(avals):
+            return avals
+    # 원본이라도 있으면 반환 (non-null 2개라도)
+    return vals if vals else None
+
 
 def getTTM(
     series: dict[str, dict[str, list[float | None]]],
@@ -28,7 +59,7 @@ def getTTM(
     Returns:
         TTM 합계 또는 None.
     """
-    vals = series.get(sjDiv, {}).get(snakeId)
+    vals = _resolveVals(series, sjDiv, snakeId)
     if not vals:
         return None
     # 끝에서 trailing None 제거 후 최근 4개 선택 (미공시 기간 대응)
@@ -66,7 +97,7 @@ def getLatest(
     Returns:
         최신 값 또는 None.
     """
-    vals = series.get(sjDiv, {}).get(snakeId)
+    vals = _resolveVals(series, sjDiv, snakeId)
     if not vals:
         return None
     for v in reversed(vals):
@@ -85,7 +116,7 @@ def getAnnualValues(
     Returns:
         값 리스트 (None 포함). 계정이 없으면 빈 리스트.
     """
-    return series.get(sjDiv, {}).get(snakeId, [])
+    return _resolveVals(series, sjDiv, snakeId) or []
 
 
 def getRevenueGrowth3Y(
@@ -95,7 +126,7 @@ def getRevenueGrowth3Y(
 
     연간 데이터 기준: 끝에서 4번째 vs 마지막 non-null.
     """
-    vals = series.get("IS", {}).get("sales")
+    vals = _resolveVals(series, "IS", "sales")
     if not vals:
         return None
 
