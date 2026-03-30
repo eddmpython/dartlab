@@ -71,38 +71,20 @@ class ChannelAdapter(ABC):
         """사용자 메시지를 분석하고 응답을 전송한다.
 
         모든 어댑터가 공유하는 핵심 로직:
-        1. 종목 + 질문 분리
-        2. AI 분석 실행
-        3. 응답 청킹 + 전송
+        1. AI에 질문 전달 (종목은 AI가 자율 판단)
+        2. 응답 청킹 + 전송
         """
-        from dartlab.core.resolve import resolve_from_text
-
         user_text = user_text.strip()
         if not user_text:
             await self.send_text(channel_id, "질문을 입력해주세요. 예: 삼성전자 재무분석")
             return
 
-        # 종목 해석
-        company, question = resolve_from_text(user_text)
-        if company is None:
-            await self.send_text(
-                channel_id,
-                f"종목을 찾을 수 없습니다: {user_text}\n"
-                "종목코드 또는 회사명과 함께 질문해주세요.\n"
-                "예: 삼성전자 배당 분석",
-            )
-            return
-
-        if not question:
-            question = "전체 분석"
-
-        # 분석 중 표시
-        company_name = getattr(company, "name", str(company))
-        await self.send_text(channel_id, f"{company_name} 분석 중...")
+        question = user_text
+        await self.send_text(channel_id, "분석 중...")
 
         # AI 분석 실행 (blocking → asyncio.to_thread)
         try:
-            answer = await asyncio.to_thread(self._run_analysis, company, question)
+            answer = await asyncio.to_thread(self._run_analysis, None, question)
         except Exception as exc:  # noqa: BLE001
             logger.exception("분석 실패: %s", exc)
             await self.send_text(channel_id, f"분석 중 오류가 발생했습니다: {exc}")

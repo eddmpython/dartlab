@@ -154,7 +154,8 @@ def run(args) -> int:
 
                 elif ev.kind == "error":
                     errorMsg = ev.data.get("error", "Unknown error")
-                    _printErrorWithHint(errorMsg, console)
+                    guideMsg = ev.data.get("guide")
+                    _printErrorWithHint(errorMsg, console, guideMsg=guideMsg)
                     return 1
 
     except KeyboardInterrupt:
@@ -196,26 +197,13 @@ def run(args) -> int:
 
 
 def _resolveCompany(full_query: str, args, dartlab):
-    """자연어에서 종목 추출. 비교 패턴이면 company=None."""
+    """--company 플래그만 처리. 나머지는 AI가 자율 판단."""
     if args.company:
-        try:
-            company = dartlab.Company(args.company)
-        except (ValueError, FileNotFoundError, OSError, RuntimeError) as exc:
-            raise CLIError(str(exc)) from exc
+        from dartlab.guide.integration import cliCompany
+
+        company = cliCompany(args.company)
         return company, full_query
-
-    import re
-
-    _COMPARE_RE = re.compile(r"(랑|와|과|이랑|하고|vs\.?|VS\.?|versus)\s", re.IGNORECASE)
-    if _COMPARE_RE.search(full_query):
-        return None, full_query
-
-    from dartlab.core.resolve import resolve_from_text
-
-    company, question = resolve_from_text(full_query)
-    if company is None:
-        question = full_query
-    return company, question
+    return None, full_query
 
 
 def _loadHistory(stockCode: str, console):
@@ -246,12 +234,19 @@ def _saveHistory(stockCode: str, session_id, question: str, answer: str) -> None
         pass
 
 
-def _printErrorWithHint(errorMsg: str, console) -> None:
+def _printErrorWithHint(errorMsg: str, console, *, guideMsg: str | None = None) -> None:
     """에러 메시지 + 복구 힌트 출력."""
     from dartlab.cli.brand import CLR_DANGER, CLR_MUTED
 
     console.print(f"\n  [{CLR_DANGER}]{errorMsg}[/]")
 
+    # guide 안내 데스크 메시지 우선
+    if guideMsg:
+        for line in guideMsg.split("\n"):
+            console.print(f"  [{CLR_MUTED}]{line}[/]")
+        return
+
+    # 폴백: 키워드 기반 힌트
     msg = errorMsg.lower()
     if any(w in msg for w in ("api key", "auth", "401", "403", "invalid key", "unauthorized")):
         console.print(f"  [{CLR_MUTED}]hint: run `dartlab setup` to configure your API key[/]")

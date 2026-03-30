@@ -109,22 +109,21 @@ class TestHandleAsk:
         assert "질문을 입력" in adapter.sent[0][1]
 
     @pytest.mark.asyncio
-    async def test_company_not_found(self):
-        with patch("dartlab.core.resolve.resolve_from_text", return_value=(None, "blah")):
+    async def test_any_question_goes_to_ai(self):
+        """종목 없는 질문도 AI에 전달된다 (company=None)."""
+        with patch("dartlab.channel.adapters.base.ChannelAdapter._run_analysis", return_value="답변입니다") as mock_run:
             adapter = MockAdapter()
             await adapter.handle_ask("ch1", "blah blah")
-            assert len(adapter.sent) == 1
-            assert "종목을 찾을 수 없습니다" in adapter.sent[0][1]
+            # "분석 중..." + 결과 = 2개 메시지
+            assert len(adapter.sent) == 2
+            assert "분석 중" in adapter.sent[0][1]
+            assert "답변" in adapter.sent[1][1]
+            # company=None으로 호출됨
+            mock_run.assert_called_once_with(None, "blah blah")
 
     @pytest.mark.asyncio
     async def test_successful_analysis(self):
-        mock_company = MagicMock()
-        mock_company.name = "삼성전자"
-
-        with (
-            patch("dartlab.core.resolve.resolve_from_text", return_value=(mock_company, "배당 분석")),
-            patch("dartlab.channel.adapters.base.ChannelAdapter._run_analysis", return_value="삼성전자의 배당은..."),
-        ):
+        with patch("dartlab.channel.adapters.base.ChannelAdapter._run_analysis", return_value="삼성전자의 배당은..."):
             adapter = MockAdapter()
             await adapter.handle_ask("ch1", "삼성전자 배당 분석")
             # "분석 중..." + 결과 = 2개 메시지
@@ -134,14 +133,9 @@ class TestHandleAsk:
 
     @pytest.mark.asyncio
     async def test_long_response_chunked(self):
-        mock_company = MagicMock()
-        mock_company.name = "테스트"
         long_text = "x" * 250
 
-        with (
-            patch("dartlab.core.resolve.resolve_from_text", return_value=(mock_company, "분석")),
-            patch("dartlab.channel.adapters.base.ChannelAdapter._run_analysis", return_value=long_text),
-        ):
+        with patch("dartlab.channel.adapters.base.ChannelAdapter._run_analysis", return_value=long_text):
             adapter = MockAdapter()
             await adapter.handle_ask("ch1", "테스트 분석")
             # "분석 중..." + 청크들

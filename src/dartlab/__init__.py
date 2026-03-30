@@ -595,10 +595,8 @@ def setup(provider: str | None = None):
 
     if provider == "oauth-codex":
         _setup_oauth_interactive()
-    elif provider == "openai":
-        _setup_openai_interactive()
     else:
-        print(provider_guide(provider))
+        _setup_apikey_interactive(provider)
 
 
 def _setup_oauth_interactive():
@@ -622,31 +620,24 @@ def _setup_oauth_interactive():
         print("  CLI에서 실행: dartlab setup oauth-codex\n")
 
 
-def _setup_openai_interactive():
-    """노트북에서 OpenAI API 키 인라인 설정."""
-    import os
+def _setup_apikey_interactive(provider: str):
+    """API 키 기반 provider 인터랙티브 설정."""
+    from dartlab.guide.providers import _PROVIDERS
 
-    from dartlab.core.ai.guide import provider_guide
+    spec = _PROVIDERS.get(provider)
+    if spec is None or not spec.env_key:
+        from dartlab.core.ai.guide import provider_guide
 
-    existing_key = os.environ.get("OPENAI_API_KEY")
-    if existing_key:
-        print(f"\n  ✓ OPENAI_API_KEY 환경변수가 설정되어 있습니다. (sk-...{existing_key[-4:]})\n")
+        print(provider_guide(provider))
         return
 
-    print(provider_guide("openai"))
-    print()
+    from dartlab.guide.env import promptAndSave
 
-    try:
-        from getpass import getpass
-
-        key = getpass("  API 키 입력 (Enter로 건너뛰기): ").strip()
-        if key:
-            llm.configure(provider="openai", api_key=key)
-            print("\n  ✓ OpenAI API 키가 설정되었습니다.\n")
-        else:
-            print("\n  건너뛰었습니다.\n")
-    except (EOFError, KeyboardInterrupt):
-        print("\n  건너뛰었습니다.\n")
+    promptAndSave(
+        spec.env_key,
+        label=spec.label,
+        guide=spec.signupUrl or spec.description,
+    )
 
 
 def _auto_stream(gen) -> str:
@@ -753,15 +744,19 @@ def ask(
         provider = detected
 
     if len(args) == 2:
+        import warnings
+
+        warnings.warn(
+            "dartlab.ask(stock, question) is deprecated. "
+            "Use dartlab.ask('삼성전자 분석해줘') instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         company = Company(args[0])
         question = args[1]
     elif len(args) == 1:
-        from dartlab.core.resolve import resolve_from_text
-
-        company, question = resolve_from_text(args[0])
-        if company is None:
-            # 종목 없이 AI 진행 (범용 질문: scan, gather, 거시경제 등)
-            question = args[0]
+        company = None
+        question = args[0]
     elif len(args) == 0:
         print("\n  질문을 입력해 주세요.")
         print("  예: dartlab.ask('삼성전자 재무건전성 분석해줘')")
