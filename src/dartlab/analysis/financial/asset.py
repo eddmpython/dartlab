@@ -389,7 +389,7 @@ def calcCapexPattern(company, *, basePeriod: str | None = None) -> dict | None:
         }
     """
     # CAPEX = 유형자산 취득(CF 투자활동에서)
-    cfAccounts = ["유형자산의취득", "무형자산의취득"]
+    cfAccounts = ["유형자산의취득", "무형자산의취득", "감가상각비"]
     bsAccounts = ["건설중인자산", "유형자산", "자산총계"]
     isAccounts = ["감가상각비"]
 
@@ -413,7 +413,11 @@ def calcCapexPattern(company, *, basePeriod: str | None = None) -> dict | None:
     taRow = bsData.get("자산총계", {})
     capexRow = cfDict.get("유형자산의취득", {})
     intCapexRow = cfDict.get("무형자산의취득", {})
-    depRow = isDict.get("감가상각비", {})
+    # 감가상각 3-tier fallback:
+    # 1순위: IS 감가상각비 (있는 기업은 직접 사용)
+    # 2순위: CF 영업활동 감가상각비 (한국전력 등)
+    # 3순위: 업종별 추정 (유형자산 / 추정내용연수 10년)
+    depRow = isDict.get("감가상각비") or cfDict.get("감가상각비") or {}
 
     yCols = _annualColsFromPeriods(bsPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
@@ -429,6 +433,9 @@ def calcCapexPattern(company, *, basePeriod: str | None = None) -> dict | None:
         # CAPEX는 CF에서 음수로 나옴 → abs
         capex = abs(_get(capexRow, col)) + abs(_get(intCapexRow, col))
         dep = abs(_get(depRow, col))
+        # 3순위 fallback: 감가상각 null이면 유형자산/10으로 추정
+        if dep == 0 and ppe is not None and ppe > 0:
+            dep = ppe / 10  # 평균 내용연수 10년 가정
 
         ratio = capex / dep if dep > 0 else None
         cipPct = _pct(cip, ta) if ta > 0 else 0
