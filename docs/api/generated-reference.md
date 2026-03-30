@@ -250,7 +250,7 @@ dartlab.scan("ratio", "roe")             # 전종목 ROE
 
 ### `dartlab.analysis(axis: str | None = None, company: Any | None = None, *, basePeriod: str | None = None, kwargs: Any) -> pl.DataFrame | dict`
 
-재무제표 완전 분석 — 19축, 단일 종목 심층.
+재무제표 완전 분석 — 20축, 단일 종목 심층.
 
 **Args:**
 
@@ -688,6 +688,10 @@ dartlab.capabilities("Company.analysis")     # Company.analysis 상세
 dartlab.capabilities("scan")                 # scan 상세
 dartlab.capabilities(search="재무건전성")     # 질문 기반 검색 → 상위 10개
 ```
+
+### `dartlab.guide`
+
+dartlab 안내 데스크 — 시스템 총괄 관리 엔진.
 
 ---
 

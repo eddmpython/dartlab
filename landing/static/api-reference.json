@@ -369,7 +369,7 @@
   {
     "name": "analysis",
     "kind": "function",
-    "summary": "재무제표 완전 분석 — 19축, 단일 종목 심층.",
+    "summary": "재무제표 완전 분석 — 20축, 단일 종목 심층.",
     "group": "dartlab",
     "params": [
       {
@@ -974,6 +974,12 @@
     "requires": "없음",
     "guide": "\"dartlab 뭐 할 수 있어?\" -> capabilities()\n\"분석 기능 뭐 있어?\" -> capabilities(\"analysis\")\n\"scan 어떻게 써?\" -> capabilities(\"scan\")\n\"재무건전성 관련 API?\" -> capabilities(search=\"재무건전성\")",
     "seealso": "ask: AI 질문 (capabilities로 기능 파악 후 ask로 분석)\nsetup: AI provider 설정 (capabilities 확인 후 설정)"
+  },
+  {
+    "name": "guide",
+    "kind": "module",
+    "summary": "dartlab 안내 데스크 — 시스템 총괄 관리 엔진.",
+    "group": "dartlab"
   },
   {
     "name": "Company.BS",

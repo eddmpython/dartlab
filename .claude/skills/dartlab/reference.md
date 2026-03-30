@@ -5,7 +5,7 @@
 
 ---
 
-## Python API (49개)
+## Python API (50개)
 
 `import dartlab` 후 사용 가능한 공개 API.
 
@@ -28,7 +28,7 @@
 | `collectAll` | function | 전체 상장종목 DART 데이터 일괄 수집. |
 | `downloadAll` | function | HuggingFace에서 전체 시장 데이터 다운로드. |
 | `scan` | function | 시장 전체 횡단분석 -- 15축, 전부 Polars DataFrame. |
-| `analysis` | function | 재무제표 완전 분석 — 19축, 단일 종목 심층. |
+| `analysis` | function | 재무제표 완전 분석 — 20축, 단일 종목 심층. |
 | `gather` | function | 외부 시장 데이터 통합 수집 — 8축, 전부 Polars DataFrame. |
 | `network` | function | 한국 상장사 전체 관계 지도. |
 | `audit` | function | 감사 Red Flag 분석. |
@@ -60,6 +60,7 @@
 | `SelectResult` | class | select() 반환 객체 — DataFrame 위임 + 체이닝. |
 | `ChartResult` | class | chart() 반환 객체 — 시각화 + 렌더링. |
 | `capabilities` | function | dartlab 전체 기능 카탈로그 조회. |
+| `guide` | module | dartlab 안내 데스크 — 시스템 총괄 관리 엔진. |
 
 ### Python API 상세
 
@@ -707,7 +708,7 @@ setup: AI provider 설정 (capabilities 확인 후 설정)
 
 ---
 
-## Scan Axis (18개 축)
+## Scan Axis (19개 축)
 
 `dartlab.scan(axis, target)` 형태로 전종목 횡단분석.
 
@@ -730,6 +731,7 @@ setup: AI provider 설정 (capabilities 확인 후 설정)
 | `efficiency` | 효율성 | 자산/재고/매출채권 회전율 + CCC(현금전환주기) + 등급 | stockCode 필터 | - | DataFrame |
 | `valuation` | 밸류에이션 | PER/PBR/PSR + 시가총액 + 등급 (네이버 실시간) | stockCode 필터 | - | DataFrame |
 | `dividendTrend` | 배당추이 | DPS 3개년 시계열 + 패턴 분류 (연속증가/안정/감소/시작/중단) | stockCode 필터 | - | DataFrame |
+| `macroBeta` | 거시베타 | 전종목 GDP/금리/환율 베타 횡단면 (OLS 회귀). 사전 수집: Ecos().series('GDP', enrich=True) | stockCode 필터 | - | DataFrame |
 | `screen` | 스크리닝 | 멀티팩터 스크리닝 (value/dividend/growth/risk/quality 프리셋) | target | - | DataFrame |
 
 **한글 별칭:**
@@ -745,6 +747,7 @@ setup: AI provider 설정 (capabilities 확인 후 설정)
 - `growth`: 성장성, 성장
 - `insider`: 내부자, 내부자지분, 지분
 - `liquidity`: 유동성, 유동비율
+- `macroBeta`: 거시베타, 매크로베타, 거시민감도
 - `network`: 네트워크, 관계
 - `profitability`: 수익성
 - `quality`: 이익의질, 이익의 질, 이익품질, 어닝퀄리티

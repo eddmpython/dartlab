@@ -5,7 +5,7 @@
 - landing/static/llms.txt   — AI 크롤러용 구조화 문서
 - .claude/skills/dartlab/reference.md — Claude Code 스킬 레퍼런스
 - src/dartlab/ai/conversation/_generated_catalog.py — AI 시스템 프롬프트용 도구 카탈로그
-- src/dartlab/core/_generatedCapabilities.py — 런타임 capabilities 카탈로그
+- src/dartlab/guide/_generated.py — 런타임 capabilities 카탈로그
 
 실행:
     uv run python scripts/generateSpec.py
@@ -1647,7 +1647,7 @@ def main():
     llmsTxtPath = ROOT / "landing" / "static" / "llms.txt"
     skillRefPath = ROOT / ".claude" / "skills" / "dartlab" / "reference.md"
     catalogPath = SRC / "dartlab" / "ai" / "conversation" / "_generatedCatalog.py"
-    capabilitiesPyPath = SRC / "dartlab" / "core" / "_generatedCapabilities.py"
+    capabilitiesPyPath = SRC / "dartlab" / "guide" / "_generated.py"
 
     skillRefPath.parent.mkdir(parents=True, exist_ok=True)
 
