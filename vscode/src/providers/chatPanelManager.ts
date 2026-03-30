@@ -42,7 +42,14 @@ export class ChatPanelManager {
       "dartlab.chat",
       "DartLab",
       vscode.ViewColumn.One,
-      { retainContextWhenHidden: true },
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+        localResourceRoots: [
+          vscode.Uri.joinPath(this.context.extensionUri, "dist", "webview"),
+          vscode.Uri.joinPath(this.context.extensionUri, "resources"),
+        ],
+      },
     );
 
     this.base.setup(this.panel.webview, (msg) => this.postMessage(msg));

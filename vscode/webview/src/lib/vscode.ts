@@ -11,6 +11,11 @@ interface VsCodeApi {
 const vscode: VsCodeApi = (window as any).acquireVsCodeApi();
 
 export function postMessage(msg: unknown): void {
+  // Debug: also send log to extension host
+  const m = msg as Record<string, unknown>;
+  if (m.type !== "log") {
+    vscode.postMessage({ type: "log", message: `postMessage: type=${m.type}` });
+  }
   vscode.postMessage(msg);
 }
 

@@ -26,9 +26,16 @@ export class ChatWebviewBase {
 
     webview.html = this.getHtml(webview);
 
-    webview.onDidReceiveMessage((msg: WebViewMessage) =>
-      this.onMessage(msg, postMessage),
-    );
+    webview.onDidReceiveMessage((msg: unknown) => {
+      const m = msg as Record<string, unknown>;
+      // Debug: log all webview messages to output channel
+      if (m.type === "log") {
+        this.log(`[webview] ${m.message}`);
+      } else {
+        this.log(`[webview→ext] type=${m.type}`);
+        this.onMessage(m as WebViewMessage, postMessage);
+      }
+    });
 
     postMessage({
       type: "serverState",
@@ -38,6 +45,10 @@ export class ChatWebviewBase {
     this.stateListener = this.stdioProxy.onStateChange((state) => {
       postMessage({ type: "serverState", state });
     });
+  }
+
+  private log(msg: string): void {
+    this.stdioProxy.output.appendLine(msg);
   }
 
   dispose(): void {

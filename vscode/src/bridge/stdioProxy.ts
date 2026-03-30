@@ -75,7 +75,7 @@ export class StdioProxy {
   private rl: Interface | null = null;
   private _state: ServerState = "stopped";
   private listeners: StateListener[] = [];
-  private output: vscode.OutputChannel;
+  readonly output: vscode.OutputChannel;
   private disposed = false;
 
   // Request routing
