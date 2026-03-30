@@ -29,5 +29,10 @@ export function setState<T>(state: T): void {
 
 /** Listen for messages from Extension Host. */
 export function onMessage(handler: (msg: unknown) => void): void {
-  window.addEventListener("message", (e) => handler(e.data));
+  window.addEventListener("message", (e) => {
+    const m = e.data as Record<string, unknown>;
+    // Debug: log received messages
+    vscode.postMessage({ type: "log", message: `recv: type=${m.type} ${m.type === "serverState" ? `state=${m.state}` : ""}` });
+    handler(e.data);
+  });
 }

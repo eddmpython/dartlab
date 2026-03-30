@@ -280,6 +280,44 @@ _INDICATORS: dict[str, dict] = {
         "unit": "천명",
         "desc": "15세이상 취업자수",
     },
+    # 서비스업 생산 (외생변수 Axis 5)
+    "SVC_PROD": {
+        "table": "901Y033",
+        "item": "AC00",
+        "label": "서비스업생산지수",
+        "group": "산업/생산",
+        "freq": "M",
+        "unit": "2020=100",
+        "desc": "서비스업 생산지수",
+    },
+    # BSI 기업경기실사 (외생변수 Axis 3)
+    "BSI_ALL": {
+        "table": "512Y014",
+        "item": "99988",
+        "label": "BSI 전산업",
+        "group": "경기/심리",
+        "freq": "M",
+        "unit": "지수",
+        "desc": "전산업 업황 BSI (기업체감경기)",
+    },
+    "BSI_DOMESTIC": {
+        "table": "512Y014",
+        "item": "X9000",
+        "label": "BSI 내수기업",
+        "group": "경기/심리",
+        "freq": "M",
+        "unit": "지수",
+        "desc": "내수기업 업황 BSI",
+    },
+    "BSI_EXPORT": {
+        "table": "512Y014",
+        "item": "X8000",
+        "label": "BSI 수출기업",
+        "group": "경기/심리",
+        "freq": "M",
+        "unit": "지수",
+        "desc": "수출기업 업황 BSI",
+    },
 }
 
 # 빌드 캐시

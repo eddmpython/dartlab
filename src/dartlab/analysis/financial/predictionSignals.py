@@ -616,38 +616,37 @@ def calcMacroRegression(company, *, basePeriod: str | None = None) -> dict | Non
     revRow = isData.get("매출액", {})
     oiRow = isData.get("영업이익", {})
 
-    cols = _annualCols(isPeriods, basePeriod=basePeriod)
-    if len(cols) < 4:
-        return None
-
-    # 매출/영업이익 시계열 추출
-    revValues = [_get(revRow, c) or None for c in cols]
-    oiValues = [_get(oiRow, c) or None for c in cols]
-
-    # 매출 성장률 계산
+    # 분기 YoY 기반: 동일 분기 대비 성장률 (관측치 ~36개)
+    qCols = sorted([p for p in isPeriods if "Q" in p], reverse=True)
+    yoyCols: list[str] = []
     revGrowth: list[float | None] = []
-    for i in range(len(revValues) - 1):
-        cur, prev = revValues[i], revValues[i + 1]
+    marginChange: list[float | None] = []
+
+    for col in qCols:
+        prevCol = f"{int(col[:4]) - 1}{col[-2:]}"
+        if prevCol not in isPeriods:
+            continue
+        cur = _get(revRow, col) or None
+        prev = _get(revRow, prevCol) or None
         if cur is not None and prev is not None and prev != 0:
             revGrowth.append((cur - prev) / abs(prev) * 100)
         else:
             revGrowth.append(None)
 
-    # 마진 시계열 계산
-    margins: list[float | None] = []
-    for r, o in zip(revValues, oiValues):
-        if r is not None and o is not None and r != 0:
-            margins.append(o / r * 100)
-        else:
-            margins.append(None)
-
-    marginChange: list[float | None] = []
-    for i in range(len(margins) - 1):
-        cur, prev = margins[i], margins[i + 1]
-        if cur is not None and prev is not None:
-            marginChange.append(cur - prev)  # bps
+        curOi = _get(oiRow, col) or None
+        prevOi = _get(oiRow, prevCol) or None
+        curMargin = curOi / cur * 100 if cur and curOi and cur != 0 else None
+        prevMargin = prevOi / prev * 100 if prev and prevOi and prev != 0 else None
+        if curMargin is not None and prevMargin is not None:
+            marginChange.append(curMargin - prevMargin)
         else:
             marginChange.append(None)
+
+        yoyCols.append(col)
+
+    cols = yoyCols
+    if len(cols) < 6:
+        return None
 
     # 거시 + 산업 지표 시계열 로드 (Parquet 캐시 우선)
     stockCode = _getStockCode(company)
@@ -713,59 +712,56 @@ def _loadMacroAligned(
     periodCols: list[str],
     stockCode: str | None = None,
 ) -> dict[str, list[float | None]] | None:
-    """Parquet 캐시에서 거시+산업 지표를 로드하고 재무 기간에 맞춰 정렬.
+    """Parquet 캐시에서 거시 지표를 로드 → YoY 변화율을 직접 계산.
 
-    stockCode가 주어지면 kindList 주요제품에서 산업 지표를 자동 매핑하여 추가.
+    periodCols가 분기("2024Q3" 등)이면 전년동기 대비 YoY,
+    연간이면 전년 대비 변화율.
 
     Returns:
-        {"gdp": [...], "rate": [...], "fx": [...], "ind0": [...], "ind1": [...]}
+        {"v0": [yoy_change, ...], "v1": [...], "_usedIndicators": {...}}
         또는 None (데이터 없음).
     """
     from dartlab.gather.macro import alignToFinancialPeriods, loadMacroParquet
 
-    # 산업 지표가 있으면 GDP 대신 사용 (변수 3개 유지 → 과적합 방지)
-    # gdp 슬롯: 산업지표 > IPI > GDP
-    gdpCandidates: list[tuple[str, str]] = []
+    try:
+        from dartlab.core.finance.exogenousAxes import getExogenousSeriesIds
 
-    if stockCode:
-        try:
-            from dartlab.core.finance.productIndicators import getProductIndicators
+        seriesPairs = getExogenousSeriesIds(stockCode=stockCode)
+    except (ImportError, KeyError):
+        seriesPairs = [("IPI", "ecos"), ("BASE_RATE", "ecos"), ("USDKRW", "ecos")]
 
-            prodInds = getProductIndicators(stockCode)
-            if prodInds:
-                # 첫 번째 산업 지표를 gdp 슬롯에 사용
-                ind = prodInds[0]
-                gdpCandidates.append((ind["seriesId"], ind["source"]))
-        except (ImportError, KeyError):
-            pass
+    # 전년동기 기간 생성
+    prevCols = [f"{int(c[:4]) - 1}{c[4:]}" for c in periodCols]
 
-    # 산업 지표 없으면 IPI/GDP fallback
-    gdpCandidates.extend([("IPI", "ecos"), ("GDP", "ecos"), ("GROWTH", "ecos")])
-
-    indicators: dict[str, list[tuple[str, str]]] = {
-        "gdp": gdpCandidates,
-        "rate": [("BASE_RATE", "ecos")],
-        "fx": [("USDKRW", "ecos")],
-    }
     result: dict[str, list[float | None]] = {}
-    usedIndicators: dict[str, str] = {}  # key → 실제 사용된 시리즈 ID
+    usedIndicators: dict[str, str] = {}
+    isRateVar = {"BASE_RATE", "BAMLH0A0HYM2", "CORP_BOND_3Y"}
 
-    for key, candidates in indicators.items():
-        loaded = False
-        for indicatorId, source in candidates:
-            df = loadMacroParquet(indicatorId, source=source)
-            if df is not None and not df.is_empty():
-                aligned = alignToFinancialPeriods(df, periodCols)
-                result[key] = aligned.get_column("value").to_list()
-                usedIndicators[key] = indicatorId
-                loaded = True
-                break
-        if not loaded:
+    for i, (seriesId, source) in enumerate(seriesPairs[:3]):
+        key = f"v{i}"
+        df = loadMacroParquet(seriesId, source=source)
+        if df is not None and not df.is_empty():
+            curVals = alignToFinancialPeriods(df, periodCols).get_column("value").to_list()
+            prevVals = alignToFinancialPeriods(df, prevCols).get_column("value").to_list()
+
+            # YoY 변화율 계산
+            changes: list[float | None] = []
+            for cur, prev in zip(curVals, prevVals):
+                if cur is not None and prev is not None and prev != 0:
+                    if seriesId in isRateVar:
+                        changes.append(cur - prev)  # 금리: 절대 변화 (pp)
+                    else:
+                        changes.append((cur - prev) / abs(prev) * 100)  # %
+                else:
+                    changes.append(None)
+            result[key] = changes
+            usedIndicators[key] = seriesId
+        else:
             result[key] = [None] * len(periodCols)
+            usedIndicators[key] = seriesId
 
     result["_usedIndicators"] = usedIndicators  # type: ignore[assignment]
 
-    # 최소 1개 지표에 데이터가 있어야 함
     hasData = any(
         any(v is not None for v in vals)
         for k, vals in result.items()
@@ -787,36 +783,20 @@ def _fitOLS(
     Returns:
         (betas, r_squared, n_obs) 또는 (None, None, 0).
     """
+    # macroData는 이미 YoY 변화율 (또는 level). _loadMacroAligned가 변화율 반환.
     varNames = [k for k in macroData.keys() if k != "_usedIndicators" and isinstance(macroData[k], list)]
+    if not varNames:
+        return None, None, 0
 
-    # 거시/산업 변화율 계산 (전년대비)
-    macroChanges: dict[str, list[float | None]] = {}
-    for key in varNames:
-        vals = macroData[key]
-        changes = []
-        for i in range(len(vals) - 1):
-            cur, prev = vals[i], vals[i + 1]
-            if cur is not None and prev is not None and prev != 0:
-                if key == "rate":
-                    changes.append(cur - prev)  # 금리는 절대 변화 (pp)
-                else:
-                    changes.append((cur - prev) / abs(prev) * 100)  # %
-            else:
-                changes.append(None)
-        macroChanges[key] = changes
-
-    # 유효 관측치만 추출 (기본 3개 gdp/rate/fx는 필수, 산업 지표는 optional)
-    baseVars = [v for v in varNames if v in ("gdp", "rate", "fx")]
-    indVars = [v for v in varNames if v.startswith("ind")]
-    n = min(len(y), *(len(macroChanges[v]) for v in baseVars if v in macroChanges))
+    n = min(len(y), *(len(macroData[v]) for v in varNames))
 
     validY: list[float] = []
     validX: list[list[float]] = []
-    activeVars: list[str] = []  # 실제 사용된 변수
+    activeVars: list[str] = []
 
-    # 어떤 변수가 데이터가 있는지 먼저 결정
-    for v in baseVars + indVars:
-        if v in macroChanges and any(x is not None for x in macroChanges[v][:n]):
+    # 데이터가 있는 변수만 사용
+    for v in varNames:
+        if any(x is not None for x in macroData[v][:n]):
             activeVars.append(v)
 
     for i in range(n):
@@ -826,7 +806,7 @@ def _fitOLS(
         xVals = []
         skip = False
         for v in activeVars:
-            val = macroChanges[v][i] if i < len(macroChanges[v]) else None
+            val = macroData[v][i] if i < len(macroData[v]) else None
             if val is None:
                 skip = True
                 break

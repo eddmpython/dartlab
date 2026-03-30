@@ -111,6 +111,10 @@ channel-full = [
     "slack-bolt>=1.18,<2",
     "discord.py>=2.4,<3",
 ]
+vector = [
+    "sentence-transformers>=3.0.0,<4",
+    "lancedb>=0.15.0,<1",
+]
 all = ["dartlab[channel-full,altair]"]
 
 [project.scripts]

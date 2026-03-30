@@ -33,9 +33,12 @@ def run(args) -> int:
     dartlab = configure_dartlab()
     console = get_console()
 
-    from dartlab.guide.integration import cliCompany
+    try:
+        company = dartlab.Company(args.company)
+    except (ValueError, FileNotFoundError, OSError, RuntimeError) as exc:
+        from dartlab.guide.integration import wrapError
 
-    company = cliCompany(args.company)
+        raise CLIError(wrapError(exc, stockCode=args.company)) from exc
 
     label = _LABELS.get(args.name, args.name)
     console.print(f"\n  [bold]{company.corpName}[/] ({company.stockCode}) — {label}\n")

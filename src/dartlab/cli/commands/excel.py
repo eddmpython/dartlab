@@ -19,9 +19,12 @@ def run(args) -> int:
     """Company 생성 후 지정 모듈을 Excel 파일로 내보낸다."""
     dartlab = configure_dartlab()
 
-    from dartlab.guide.integration import cliCompany
+    try:
+        company = dartlab.Company(args.company)
+    except (ValueError, FileNotFoundError, OSError, RuntimeError) as exc:
+        from dartlab.guide.integration import wrapError
 
-    company = cliCompany(args.company)
+        raise CLIError(wrapError(exc, stockCode=args.company)) from exc
 
     from dartlab.export.excel import exportToExcel
 

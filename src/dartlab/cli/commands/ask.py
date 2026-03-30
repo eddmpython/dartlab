@@ -199,9 +199,12 @@ def run(args) -> int:
 def _resolveCompany(full_query: str, args, dartlab):
     """--company 플래그만 처리. 나머지는 AI가 자율 판단."""
     if args.company:
-        from dartlab.guide.integration import cliCompany
+        try:
+            company = dartlab.Company(args.company)
+        except (ValueError, FileNotFoundError, OSError, RuntimeError) as exc:
+            from dartlab.guide.integration import wrapError
 
-        company = cliCompany(args.company)
+            raise CLIError(wrapError(exc, stockCode=args.company)) from exc
         return company, full_query
     return None, full_query
 

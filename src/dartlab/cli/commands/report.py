@@ -24,9 +24,12 @@ def run(args) -> int:
     """기업 분석 Markdown 보고서를 생성해 stdout 또는 파일로 출력한다."""
     dartlab = configure_dartlab()
 
-    from dartlab.guide.integration import cliCompany
+    try:
+        company = dartlab.Company(args.company)
+    except (ValueError, FileNotFoundError, OSError, RuntimeError) as exc:
+        from dartlab.guide.integration import wrapError
 
-    company = cliCompany(args.company)
+        raise CLIError(wrapError(exc, stockCode=args.company)) from exc
 
     name = getattr(company, "corpName", args.company) or args.company
     code = getattr(company, "stockCode", "") or ""

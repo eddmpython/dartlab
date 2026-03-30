@@ -34,6 +34,10 @@ DATA_RELEASES: dict[str, dict] = {
         "dir": "edgar/finance",
         "label": "SEC EDGAR 재무 데이터",
     },
+    "allFilings": {
+        "dir": "dart/allFilings",
+        "label": "DART 전체 공시 원문 데이터",
+    },
     "edinetDocs": {
         "dir": "edinet/docs",
         "label": "EDINET 공시 문서 데이터 (일본)",
