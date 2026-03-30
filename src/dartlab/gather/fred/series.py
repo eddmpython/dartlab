@@ -19,6 +19,7 @@ def fetch_series(
     end: str | None = None,
     frequency: str | None = None,
     aggregation: str = "avg",
+    enrich: bool = False,
 ) -> pl.DataFrame:
     """FRED 시계열 → Polars DataFrame ``(date, value)``.
 
@@ -28,6 +29,7 @@ def fetch_series(
         end: 종료일. None이면 최신까지.
         frequency: 리샘플 주파수 (d/w/bw/m/q/sa/a). None이면 원본.
         aggregation: 리샘플 집계 방법 (avg/sum/eop).
+        enrich: True이면 변화율 추가 + Parquet 영구 캐시.
     """
     cached = _cache.get(series_id, start, end, frequency, aggregation)
     if cached is not None:
@@ -72,6 +74,12 @@ def fetch_series(
 
     is_daily = frequency == "d" or (frequency is None and len(df) > 500)
     _cache.put(series_id, start, end, frequency, aggregation, df, daily=is_daily)
+
+    if enrich:
+        from dartlab.gather.macro import enrichAndCache
+
+        df = enrichAndCache(series_id, df, source="fred")
+
     return df
 
 

@@ -295,6 +295,26 @@ _TOOLS: list[dict] = [
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
+_TOOL_FEATURE_MAP: dict[str, str] = {
+    "companyReview": "ai",
+    "companyInsights": "ai",
+    "companyAnalysis": "data",
+    "companyFinancials": "data",
+    "companyRatios": "data",
+    "companyValuation": "valuation",
+    "companyForecast": "valuation",
+    "companyShow": "data",
+    "companyTopics": "data",
+    "companyDiff": "data",
+    "companyGovernance": "data",
+    "companyAudit": "data",
+    "companyProfile": "data",
+    "companySections": "data",
+    "marketScan": "data",
+    "searchCompany": "data",
+}
+
+
 def _executeTool(name: str, args: dict) -> str:
     """MCP 도구 실행."""
     import dartlab
@@ -364,7 +384,14 @@ def _executeTool(name: str, args: dict) -> str:
 
     except Exception as e:
         _log.error("Tool %s error: %s\n%s", name, e, traceback.format_exc())
-        return f"Error: {e}"
+        try:
+            from dartlab.guide import guide
+
+            feature = _TOOL_FEATURE_MAP.get(name, "data")
+            guideMsg = guide.handleError(e, feature=feature)
+            return f"Error: {e}\n\n{guideMsg}"
+        except ImportError:
+            return f"Error: {e}"
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

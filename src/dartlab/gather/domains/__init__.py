@@ -9,7 +9,7 @@ PRICE_FALLBACK = ["naver", "yahoo_direct"]
 CONSENSUS_FALLBACK = ["naver", "yahoo_direct"]
 FLOW_FALLBACK = ["naver"]
 DIVIDENDS_FALLBACK = ["yahoo_direct", "fmp"]
-HISTORY_FALLBACK = ["yahoo_direct"]
+HISTORY_FALLBACK = ["fdr", "yahoo_direct"]
 
 
 def get_price_fallback(market: str = "KR") -> list[str]:
@@ -36,4 +36,8 @@ def load_domain(name: str):
         from . import krx
 
         return krx
+    if name == "fdr":
+        from . import fdr
+
+        return fdr
     raise ValueError(f"알 수 없는 도메인: {name}")

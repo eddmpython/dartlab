@@ -38,7 +38,7 @@ from .common import (
     normalize_provider_name as _normalize_provider_name,
 )
 from .common import (
-    sanitize_error as _sanitize_error,
+    guideDetail as _guideDetail,
 )
 
 logger = logging.getLogger(__name__)
@@ -199,9 +199,9 @@ def api_suggest(stockCode: str = Query(..., description="추천 질문을 생성
             "dataReady": {},
         }
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=_sanitize_error(e)) from e
+        raise HTTPException(status_code=400, detail=_guideDetail(e)) from e
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=500, detail=_sanitize_error(e)) from e
+        raise HTTPException(status_code=500, detail=_guideDetail(e)) from e
 
 
 @router.post("/api/provider/validate")
@@ -272,9 +272,9 @@ def api_validate_dart_key(req: DartKeyUpdateRequest):
         result = validateDartApiKey(api_key)
         return result | {"openDart": _build_open_dart_status()}
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=_sanitize_error(e)) from e
+        raise HTTPException(status_code=400, detail=_guideDetail(e)) from e
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=500, detail=_sanitize_error(e)) from e
+        raise HTTPException(status_code=500, detail=_guideDetail(e)) from e
 
 
 @router.put("/api/openapi/dart-key")
@@ -289,7 +289,7 @@ def api_save_dart_key(req: DartKeyUpdateRequest):
         env_path = saveDartKeyToDotenv(api_key)
         return {"ok": True, "envPath": str(env_path), "openDart": _build_open_dart_status()}
     except OSError as e:
-        raise HTTPException(status_code=500, detail=_sanitize_error(e)) from e
+        raise HTTPException(status_code=500, detail=_guideDetail(e)) from e
 
 
 @router.delete("/api/openapi/dart-key")
@@ -301,7 +301,7 @@ def api_delete_dart_key():
         env_path = clearDartKeyFromDotenv()
         return {"ok": True, "envPath": str(env_path), "openDart": _build_open_dart_status()}
     except OSError as e:
-        raise HTTPException(status_code=500, detail=_sanitize_error(e)) from e
+        raise HTTPException(status_code=500, detail=_guideDetail(e)) from e
 
 
 @router.post("/api/channels/{platform}/start")
@@ -313,9 +313,9 @@ def api_channel_start(platform: str, req: ChannelConnectRequest):
         payload = req.model_dump(exclude_none=True)
         return channel_runtime.start(platform, **payload)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=_sanitize_error(e)) from e
+        raise HTTPException(status_code=400, detail=_guideDetail(e)) from e
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=500, detail=_sanitize_error(e)) from e
+        raise HTTPException(status_code=500, detail=_guideDetail(e)) from e
 
 
 @router.post("/api/channels/{platform}/stop")
@@ -326,9 +326,9 @@ def api_channel_stop(platform: str):
 
         return channel_runtime.stop(platform)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=_sanitize_error(e)) from e
+        raise HTTPException(status_code=400, detail=_guideDetail(e)) from e
     except _HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=500, detail=_sanitize_error(e)) from e
+        raise HTTPException(status_code=500, detail=_guideDetail(e)) from e
 
 
 @router.get("/api/ai/profile/events")
@@ -487,9 +487,9 @@ def api_codex_logout():
     try:
         logout_codex_cli()
     except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=_sanitize_error(exc)) from exc
+        raise HTTPException(status_code=404, detail=_guideDetail(exc)) from exc
     except RuntimeError as exc:
-        raise HTTPException(status_code=400, detail=_sanitize_error(exc)) from exc
+        raise HTTPException(status_code=400, detail=_guideDetail(exc)) from exc
     return {"ok": True}
 
 
@@ -639,6 +639,6 @@ async def api_ollama_pull(req: dict):
                         }
             yield {"event": "done", "data": "{}"}
         except _HANDLED_API_ERRORS as exc:
-            yield {"event": "error", "data": orjson.dumps({"error": _sanitize_error(exc)}).decode()}
+            yield {"event": "error", "data": orjson.dumps({"error": _guideDetail(exc)}).decode()}
 
     return EventSourceResponse(_stream_pull(), media_type="text/event-stream")

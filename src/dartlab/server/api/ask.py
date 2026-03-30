@@ -26,8 +26,8 @@ from ..services.ai_analysis import run_plain_chat
 from ..streaming import stream_ask
 from .common import (
     HANDLED_API_ERRORS,
+    guideDetail,
     normalize_provider_name,
-    sanitize_error,
 )
 
 router = APIRouter()
@@ -107,4 +107,4 @@ async def api_ask(req: AskRequest):
             "answer": answer,
         }
     except HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=500, detail=sanitize_error(e))
+        raise HTTPException(status_code=500, detail=guideDetail(e, feature="ai"))

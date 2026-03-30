@@ -174,6 +174,13 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="DPS 3개년 시계열 + 패턴 분류 (연속증가/안정/감소/시작/중단)",
         example='scan("dividendTrend")',
     ),
+    "macroBeta": _AxisEntry(
+        module="dartlab.scan.macroBeta",
+        fn="scan_macroBeta",
+        label="거시베타",
+        description="전종목 GDP/금리/환율 베타 횡단면 (OLS 회귀). 사전 수집: Ecos().series('GDP', enrich=True)",
+        example='scan("macroBeta")',
+    ),
     "screen": _AxisEntry(
         module="dartlab.scan.screen",
         fn="scanScreen",
@@ -229,6 +236,10 @@ _ALIASES: dict[str, str] = {
     # liquidity
     "유동성": "liquidity",
     "유동비율": "liquidity",
+    # macroBeta
+    "거시베타": "macroBeta",
+    "매크로베타": "macroBeta",
+    "거시민감도": "macroBeta",
     # growth
     "성장성": "growth",
     "성장": "growth",

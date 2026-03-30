@@ -18,7 +18,7 @@ from .common import (
     HANDLED_API_ERRORS,
     etag_response,
     normalize_provider_name,
-    sanitize_error,
+    guideDetail,
     serialize_payload,
 )
 
@@ -52,7 +52,7 @@ def api_search(q: str = Query(..., min_length=1)):
             )
         return {"results": mapped, "fuzzy": fuzzy_used}
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=400, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=400, detail=guideDetail(exc)) from exc
 
 
 @router.get("/api/company/{code}")
@@ -74,7 +74,7 @@ def api_company(code: str):
             },
         }
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
 
 @router.get("/api/company/{code}/index")
@@ -89,7 +89,7 @@ def api_company_index(code: str, request: Request, response: Response):
         }
         return etag_response(request, response, data, max_age=300, swr=1800)
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
 
 @router.get("/api/company/{code}/sections")
@@ -104,7 +104,7 @@ def api_company_sections(code: str, request: Request, response: Response):
         }
         return etag_response(request, response, data, max_age=300, swr=1800)
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
 
 @router.get("/api/company/{code}/init")
@@ -140,7 +140,7 @@ def api_company_init(code: str, request: Request, response: Response):
         }
         return etag_response(request, response, result, max_age=300, swr=1800)
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
 
 @router.get("/api/company/{code}/toc")
@@ -151,7 +151,7 @@ def api_company_toc(code: str, request: Request, response: Response):
         data = build_toc(company)
         return etag_response(request, response, data, max_age=300, swr=1800)
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
 
 @router.get("/api/company/{code}/viewer/{topic}")
@@ -196,7 +196,7 @@ def api_company_viewer_topic(
 
         return etag_response(request, response, data, max_age=120, swr=600)
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
 
 @router.get("/api/company/{code}/viewer2/{topic}")
@@ -233,7 +233,7 @@ def apiViewerDoc(
         doc["topicLabel"] = safe_topic_label(company, topic)
         return etag_response(request, response, doc, max_age=120, swr=600)
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
 
 @router.post("/api/company/{code}/viewer/batch")
@@ -257,7 +257,7 @@ async def api_company_viewer_batch(code: str, request: Request, response: Respon
                 results[topic] = None
         return etag_response(request, response, {"results": results}, max_age=120, swr=600)
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
 
 @router.get("/api/company/{code}/show/{topic}/all")
@@ -281,7 +281,7 @@ def api_company_show_all(code: str, topic: str, raw: bool = Query(False)):
             "textDocument": serializeViewerTextDocument(viewerTextDocument(topic, blocks)),
         }
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
 
 @router.post("/api/company/{code}/show/{topic}/{block_idx}/parse")
@@ -311,7 +311,7 @@ async def api_parse_raw_table(code: str, topic: str, block_idx: int):
     except HTTPException:
         raise
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=500, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=500, detail=guideDetail(exc)) from exc
 
 
 @router.get("/api/company/{code}/show/{topic}")
@@ -331,7 +331,7 @@ def api_company_show(code: str, topic: str, block: int | None = Query(None), raw
             "payload": serialize_payload(result),
         }
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
 
 @router.get("/api/company/{code}/trace/{topic}")
@@ -346,7 +346,7 @@ def api_company_trace(code: str, topic: str):
             "payload": serialize_payload(company.trace(topic)),
         }
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
 
 @router.get("/api/company/{code}/summary/{topic}")
@@ -360,7 +360,7 @@ async def api_company_topic_summary(
     try:
         company = get_company(code)
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
     try:
         overview = company.show(topic)
@@ -385,7 +385,7 @@ def api_company_insights(code: str):
     try:
         company = get_company(code)
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
     from dartlab.analysis.financial.insight.pipeline import analyze as insight_analyze
 
@@ -445,7 +445,7 @@ def api_company_network(code: str, hops: int = 1):
     try:
         company = get_company(code)
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
     try:
         result = company._ensureNetwork()
@@ -472,7 +472,7 @@ def api_company_scan(code: str, axis: str):
     try:
         company = get_company(code)
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
     valid_axes = {"governance", "workforce", "capital", "debt"}
 
@@ -539,7 +539,7 @@ def api_company_insights_unified(code: str):
     try:
         company = get_company(code)
     except HANDLED_API_ERRORS as exc:
-        raise HTTPException(status_code=404, detail=sanitize_error(exc)) from exc
+        raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
     from dartlab.scan.payload import build_unified_payload
 

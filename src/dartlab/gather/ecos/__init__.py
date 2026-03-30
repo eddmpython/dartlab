@@ -49,6 +49,7 @@ class Ecos:
         *,
         start: str | None = None,
         end: str | None = None,
+        enrich: bool = False,
     ) -> pl.DataFrame:
         """단일 시계열 조회 → DataFrame ``(date, value)``.
 
@@ -56,8 +57,9 @@ class Ecos:
             indicatorId: 카탈로그 지표 ID (예: "GDP", "CPI", "BASE_RATE").
             start: 시작일 (YYYY, YYYYMM, YYYYMMDD).
             end: 종료일.
+            enrich: True이면 변화율 추가 + Parquet 영구 캐시.
         """
-        return fetchSeries(self._client, indicatorId, start=start, end=end)
+        return fetchSeries(self._client, indicatorId, start=start, end=end, enrich=enrich)
 
     def compare(
         self,

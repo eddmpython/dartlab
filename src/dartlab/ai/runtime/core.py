@@ -140,15 +140,24 @@ def _classify_error(e: Exception) -> dict[str, str]:
     return {"error": err_str, "action": ""}
 
 
-def _enrich_with_guide(result: dict[str, str]) -> dict[str, str]:
-    """설정 관련 에러에 guide 메시지를 추가."""
-    if result.get("action") in ("config", "install", "login", "relogin"):
-        try:
-            from dartlab.core.ai.guide import no_provider_message
+def _enrich_with_guide(result: dict[str, str], error: Exception | None = None) -> dict[str, str]:
+    """에러에 guide 안내 데스크 메시지를 추가."""
+    try:
+        from dartlab.guide import guide
 
-            result["guide"] = no_provider_message()
-        except ImportError:
-            pass
+        guideMsg = guide.handleError(
+            error or RuntimeError(result.get("error", "")),
+            feature="ai",
+        )
+        result["guide"] = guideMsg
+    except ImportError:
+        if result.get("action") in ("config", "install", "login", "relogin"):
+            try:
+                from dartlab.guide.aiSetup import no_provider_message
+
+                result["guide"] = no_provider_message()
+            except ImportError:
+                pass
     return result
 
 
@@ -590,7 +599,7 @@ def analyze(
             ):
                 yield _emit(ev)
         except Exception as e:
-            yield _emit(AnalysisEvent("error", _enrich_with_guide(_classify_error(e))))
+            yield _emit(AnalysisEvent("error", _enrich_with_guide(_classify_error(e), error=e)))
 
         # ── 후처리: plugin hints ──
         if question:

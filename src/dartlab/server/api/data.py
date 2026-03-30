@@ -15,7 +15,7 @@ from dartlab import Company
 
 from .common import (
     HANDLED_API_ERRORS,
-    sanitize_error,
+    guideDetail,
     serialize_payload,
 )
 
@@ -31,7 +31,7 @@ async def api_data_sources(code: str):
     try:
         c = await asyncio.to_thread(Company, code)
     except (ValueError, OSError) as e:
-        raise HTTPException(status_code=404, detail=sanitize_error(e))
+        raise HTTPException(status_code=404, detail=guideDetail(e))
 
     from dartlab.core.registry import getEntries
 
@@ -88,7 +88,7 @@ async def api_data_preview(code: str, module: str, max_rows: int = Query(50, ge=
     try:
         c = await asyncio.to_thread(Company, code)
     except (ValueError, OSError) as e:
-        raise HTTPException(status_code=404, detail=sanitize_error(e))
+        raise HTTPException(status_code=404, detail=guideDetail(e))
 
     from dartlab.core.registry import getEntry
 
@@ -199,7 +199,7 @@ async def api_export_modules(code: str):
     try:
         c = await asyncio.to_thread(Company, code)
     except (ValueError, OSError) as e:
-        raise HTTPException(status_code=404, detail=sanitize_error(e))
+        raise HTTPException(status_code=404, detail=guideDetail(e))
 
     from dartlab.export.excel import listAvailableModules
 
@@ -217,7 +217,7 @@ async def api_export_sources(code: str):
     try:
         c = await asyncio.to_thread(Company, code)
     except (ValueError, OSError) as e:
-        raise HTTPException(status_code=404, detail=sanitize_error(e))
+        raise HTTPException(status_code=404, detail=guideDetail(e))
 
     from dartlab.export.sources import discoverSources
 
@@ -285,7 +285,7 @@ async def api_export_excel(
     try:
         c = await asyncio.to_thread(Company, code)
     except (ValueError, OSError) as e:
-        raise HTTPException(status_code=404, detail=sanitize_error(e))
+        raise HTTPException(status_code=404, detail=guideDetail(e))
 
     tmpDir = Path(tempfile.gettempdir())
     safeName = c.corpName.replace("/", "_").replace("\\", "_")
@@ -303,7 +303,7 @@ async def api_export_excel(
         try:
             await asyncio.to_thread(exportWithTemplate, c, tmpl, outPath)
         except ValueError as e:
-            raise HTTPException(status_code=400, detail=sanitize_error(e))
+            raise HTTPException(status_code=400, detail=guideDetail(e))
         return FileResponse(
             path=str(outPath),
             filename=f"{c.stockCode}_{safeName}_{templateSafe}.xlsx",
@@ -318,7 +318,7 @@ async def api_export_excel(
 
         await asyncio.to_thread(exportToExcel, c, outputPath=outPath, modules=modList)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=sanitize_error(e))
+        raise HTTPException(status_code=400, detail=guideDetail(e))
 
     return FileResponse(
         path=str(outPath),

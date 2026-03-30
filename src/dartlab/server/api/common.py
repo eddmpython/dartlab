@@ -39,6 +39,23 @@ def sanitize_error(exc: BaseException) -> str:
     return msg
 
 
+def guideDetail(exc: BaseException, *, feature: str | None = None) -> str:
+    """sanitize_error + guide 안내 포함. Server API 에러 응답 표준."""
+    detail = sanitize_error(exc)
+    try:
+        from dartlab.guide.integration import wrapError, inferFeature
+
+        resolvedFeature = feature or inferFeature(exc)  # type: ignore[arg-type]
+        from dartlab.guide import guide
+
+        guideMsg = guide.handleError(exc, feature=resolvedFeature)  # type: ignore[arg-type]
+        if guideMsg and guideMsg != f"오류: {exc}":
+            detail = f"{detail}\n\n{guideMsg}"
+    except ImportError:
+        pass
+    return detail
+
+
 def normalize_provider_name(provider: str | None) -> str | None:
     """Provider 이름을 정규화한다."""
     return normalize_provider(provider)

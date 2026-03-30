@@ -88,6 +88,7 @@ def fetchSeries(
     *,
     start: str | None = None,
     end: str | None = None,
+    enrich: bool = False,
 ) -> pl.DataFrame:
     """ECOS 지표 시계열 → Polars DataFrame ``(date, value)``.
 
@@ -95,6 +96,7 @@ def fetchSeries(
         indicatorId: 카탈로그 지표 ID (예: "GDP", "CPI", "BASE_RATE").
         start: 시작일 (YYYY, YYYYMM, YYYYMMDD). None이면 2000년부터.
         end: 종료일. None이면 최신까지.
+        enrich: True이면 변화율 추가 + Parquet 영구 캐시.
     """
     cached = _cache.get(indicatorId, start, end)
     if cached is not None:
@@ -145,6 +147,12 @@ def fetchSeries(
 
     isDailyFreq = entry.frequency == "D"
     _cache.put(indicatorId, start, end, df, daily=isDailyFreq)
+
+    if enrich:
+        from dartlab.gather.macro import enrichAndCache
+
+        df = enrichAndCache(indicatorId, df, source="ecos")
+
     return df
 
 

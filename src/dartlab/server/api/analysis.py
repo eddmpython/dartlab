@@ -15,7 +15,7 @@ from ..services.company_api import (
 from .common import (
     HANDLED_API_ERRORS,
     etag_response,
-    sanitize_error,
+    guideDetail,
     serialize_payload,
 )
 
@@ -33,7 +33,7 @@ def api_company_diff(code: str):
             "payload": serialize_payload(c.diff()),
         }
     except HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=sanitize_error(e))
+        raise HTTPException(status_code=404, detail=guideDetail(e))
 
 
 @router.get("/api/company/{code}/diff/matrix")
@@ -46,7 +46,7 @@ def api_company_diff_matrix(
     try:
         c = get_company(code)
     except HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=sanitize_error(e))
+        raise HTTPException(status_code=404, detail=guideDetail(e))
 
     from dartlab.core.docs.diff import build_diff_matrix, build_heatmap_spec
 
@@ -55,7 +55,7 @@ def api_company_diff_matrix(
         matrix_data = build_diff_matrix(sections, textOnly=textOnly)
         heatmap = build_heatmap_spec(matrix_data, c.corpName, top_n=topN)
     except HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=sanitize_error(e))
+        raise HTTPException(status_code=404, detail=guideDetail(e))
 
     return {
         "stockCode": c.stockCode,
@@ -77,7 +77,7 @@ def api_company_diff_topic_summary(code: str, topic: str):
     except HTTPException:
         raise
     except HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=sanitize_error(e))
+        raise HTTPException(status_code=404, detail=guideDetail(e))
 
 
 @router.get("/api/company/{code}/diff/{topic}")
@@ -142,7 +142,7 @@ def api_company_diff_topic(
             "diff": diff_chunks,
         }
     except HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=sanitize_error(e))
+        raise HTTPException(status_code=404, detail=guideDetail(e))
 
 
 @router.get("/api/company/{code}/bridge/{topic}")
@@ -156,7 +156,7 @@ def api_company_bridge(
     try:
         c = get_company(code)
     except HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=sanitize_error(e))
+        raise HTTPException(status_code=404, detail=guideDetail(e))
 
     import polars as pl
 
@@ -192,7 +192,7 @@ def api_company_bridge(
     except HTTPException:
         raise
     except HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=sanitize_error(e))
+        raise HTTPException(status_code=404, detail=guideDetail(e))
 
     return {
         "stockCode": c.stockCode,
@@ -215,7 +215,7 @@ def api_company_topics_graph(
     try:
         c = get_company(code)
     except HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=sanitize_error(e))
+        raise HTTPException(status_code=404, detail=guideDetail(e))
 
     from dartlab.core.docs.topicGraph import (
         analyze_graph,
@@ -230,7 +230,7 @@ def api_company_topics_graph(
         edges = [{"source": src, "target": tgt, "weight": cnt} for (src, tgt), cnt in analysis.get("top_edges", [])]
         hubs = [{"topic": t, "degree": d} for t, d in analysis.get("hubs", [])]
     except HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=sanitize_error(e))
+        raise HTTPException(status_code=404, detail=guideDetail(e))
 
     return {
         "stockCode": c.stockCode,
@@ -293,7 +293,7 @@ def api_company_search_sections(code: str, q: str = Query("", description="ê²€ìƒ
 
         return {"stockCode": c.stockCode, "corpName": c.corpName, "query": q, "results": results}
     except HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=sanitize_error(e))
+        raise HTTPException(status_code=404, detail=guideDetail(e))
 
 
 @router.get("/api/company/{code}/searchIndex")
@@ -357,7 +357,7 @@ def api_company_search_index(code: str, request: Request, response: Response):
         }
         return etag_response(request, response, data, max_age=600, swr=1800)
     except HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=sanitize_error(e))
+        raise HTTPException(status_code=404, detail=guideDetail(e))
 
 
 @router.get("/api/company/{code}/modules")
@@ -370,4 +370,4 @@ def api_company_modules(code: str):
         modules = list(topics) if topics else []
         return {"stockCode": c.stockCode, "corpName": c.corpName, "modules": modules}
     except HANDLED_API_ERRORS as e:
-        raise HTTPException(status_code=404, detail=sanitize_error(e))
+        raise HTTPException(status_code=404, detail=guideDetail(e))
