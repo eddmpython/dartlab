@@ -374,7 +374,7 @@ L0  core/        프로토콜, 재무 유틸, docs 유틸, 레지스트리
 L1  providers/   국가별 데이터 (DART, EDGAR, EDINET)
     gather/      외부 시장 데이터 (Naver, Yahoo, FRED)
     scan/        시장 횡단분석 (13축)
-L2  analysis/    8대 분석 영역 (strategy → macro)
+L2  analysis/    분석 (financial / forecast / valuation)
     review/      블록-템플릿 보고서 조립
 L3  ai/          LLM 기반 분석 (5개 provider)
 ```

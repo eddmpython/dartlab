@@ -71,6 +71,9 @@ export async function activate(
   // Register commands
   registerCommands(context, processManager, chatPanelManager);
 
+  // Auto-register MCP server for Claude Code / Codex / Copilot
+  ensureMcpConfig();
+
   // Auto-start if enabled
   const autoStart = vscode.workspace
     .getConfiguration("dartlab")
@@ -78,6 +81,55 @@ export async function activate(
 
   if (autoStart) {
     startServer(context);
+  }
+}
+
+/** Auto-register dartlab MCP server for Claude Code + Copilot/Codex.
+ *  - .mcp.json (project root) -> Claude Code reads this
+ *  - .vscode/mcp.json -> Copilot / Codex reads this
+ */
+async function ensureMcpConfig(): Promise<void> {
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (!workspaceFolders?.length) return;
+
+  const root = workspaceFolders[0].uri;
+  const dartlabEntry = {
+    command: "uv",
+    args: ["run", "python", "-X", "utf8", "-m", "dartlab.mcp"],
+  };
+
+  // 1. .mcp.json (Claude Code)
+  await ensureMcpFile(
+    vscode.Uri.joinPath(root, ".mcp.json"),
+    "mcpServers",
+    dartlabEntry,
+  );
+
+  // 2. .vscode/mcp.json (Copilot / Codex)
+  const vscodeDirUri = vscode.Uri.joinPath(root, ".vscode");
+  try { await vscode.workspace.fs.createDirectory(vscodeDirUri); } catch { /* exists */ }
+  await ensureMcpFile(
+    vscode.Uri.joinPath(root, ".vscode", "mcp.json"),
+    "servers",
+    dartlabEntry,
+  );
+}
+
+async function ensureMcpFile(
+  uri: vscode.Uri,
+  serversKey: string,
+  entry: Record<string, unknown>,
+): Promise<void> {
+  try {
+    const raw = Buffer.from(await vscode.workspace.fs.readFile(uri)).toString("utf8");
+    const config = JSON.parse(raw);
+    if (config?.[serversKey]?.dartlab) return;
+    config[serversKey] = config[serversKey] ?? {};
+    config[serversKey].dartlab = entry;
+    await vscode.workspace.fs.writeFile(uri, Buffer.from(JSON.stringify(config, null, 2), "utf8"));
+  } catch {
+    const config = { [serversKey]: { dartlab: entry } };
+    await vscode.workspace.fs.writeFile(uri, Buffer.from(JSON.stringify(config, null, 2), "utf8"));
   }
 }
 

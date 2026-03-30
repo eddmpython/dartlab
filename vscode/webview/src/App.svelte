@@ -6,40 +6,47 @@
 
 <style>
   :global(:root) {
-    /* DartLab brand — landing primary */
+    /* DartLab brand (replaces Claude orange) */
     --dl-primary: #ea4647;
     --dl-primary-dark: #c83232;
     --dl-primary-light: #f87171;
     --dl-accent: #fb923c;
-    --dl-accent-light: #fdba74;
-    /* layout tokens */
-    --dl-spacing-xs: 4px;
-    --dl-spacing-sm: 8px;
-    --dl-spacing-md: 12px;
-    --dl-spacing-lg: 16px;
-    --dl-radius-sm: 4px;
-    --dl-radius-md: 6px;
-    --dl-radius-lg: 8px;
+    /* Claude Code layout tokens */
+    --corner-radius-small: 4px;
+    --corner-radius-medium: 6px;
+    --corner-radius-large: 8px;
+    --app-spacing-small: 4px;
+    --app-spacing-medium: 8px;
+    --app-spacing-large: 12px;
+  }
+  :global(html) {
+    display: flex;
+    overscroll-behavior: none;
+    position: relative;
+    flex: 1;
+    height: 100%;
   }
   :global(body) {
+    display: flex;
+    overscroll-behavior: none;
+    font-size: var(--vscode-chat-font-size, 13px);
+    font-family: var(--vscode-chat-font-family);
+    flex: 1;
+    max-width: 100%;
     margin: 0;
     padding: 0;
-    overflow: hidden;
-    background: var(--vscode-sideBar-background);
-    color: var(--vscode-editor-foreground);
-    font-family: var(--vscode-font-family);
-    font-size: var(--vscode-font-size);
+  }
+  :global(#app) {
+    display: flex;
+    flex: 1;
+    max-width: 100%;
   }
   :global(*) {
     box-sizing: border-box;
   }
   :global(a) {
-    color: var(--dl-primary-light);
+    color: var(--vscode-textLink-foreground);
   }
-  :global(a:hover) {
-    color: var(--dl-primary);
-  }
-  /* scrollbar */
   :global(::-webkit-scrollbar) {
     width: 6px;
   }
@@ -49,8 +56,5 @@
   :global(::-webkit-scrollbar-thumb) {
     background: var(--vscode-scrollbarSlider-background);
     border-radius: 3px;
-  }
-  :global(::-webkit-scrollbar-thumb:hover) {
-    background: var(--vscode-scrollbarSlider-hoverBackground);
   }
 </style>

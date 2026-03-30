@@ -896,7 +896,7 @@ class Company:
 
         SeeAlso:
             - ratios: 재무비율 시계열 원본
-            - analysis: 8대 분석 영역 (insights보다 심화)
+            - analysis: 분석 엔진 (insights보다 심화)
             - ask: AI 기반 해석
 
         Returns:
@@ -925,7 +925,7 @@ class Company:
         return self._cache["_insights"]
 
     def analysis(self, axis: str | None = None, **kwargs):
-        """8대 분석 영역 실행 — analysis()에 self를 바인딩.
+        """분석 엔진 실행 — analysis()에 self를 바인딩.
 
         Capabilities:
             - strategy/accounting/financial/forecast/valuation/risk/comparative/macro 8축
@@ -2111,7 +2111,7 @@ class Company:
 
         SeeAlso:
             - valuation: 밸류에이션 (DCF에서 forecast 결과 활용)
-            - analysis: 8대 분석 영역
+            - analysis: 분석 엔진
             - IS: 손익계산서 원본
 
         Args:
@@ -2157,7 +2157,7 @@ class Company:
 
         SeeAlso:
             - forecast: 매출 예측 (DCF 입력)
-            - analysis: 8대 분석 영역
+            - analysis: 분석 엔진
             - ratios: 재무비율 시계열
 
         Args:
@@ -2215,7 +2215,7 @@ class Company:
 
         SeeAlso:
             - chat: agent mode (tool calling으로 심화 분석)
-            - analysis: 8대 분석 영역 (ask의 컨텍스트 소스)
+            - analysis: 분석 엔진 (ask의 컨텍스트 소스)
             - insights: 재무 인사이트 (ask의 컨텍스트 소스)
 
         Args:
@@ -2280,7 +2280,7 @@ class Company:
 
         SeeAlso:
             - ask: 단일 질문 응답 (chat보다 간편, tool calling 없음)
-            - analysis: 8대 분석 영역
+            - analysis: 분석 엔진
             - select: 특정 계정/기간 필터
 
         Args:

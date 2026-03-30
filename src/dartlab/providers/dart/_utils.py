@@ -187,7 +187,10 @@ def _checkDartDocsFreshness(stockCode: str, category: str = "docs"):
 
     from dartlab.providers.dart.openapi.freshness import checkFreshness
 
-    result = checkFreshness(stockCode)
+    try:
+        result = checkFreshness(stockCode)
+    except Exception:
+        return None
     if not result.isFresh:
         latestReport = result.missingFilings[0]["report_nm"] if result.missingFilings else ""
         emit("hint:newFilingsAvailable", stockCode=stockCode, count=result.missingCount, latestReport=latestReport)

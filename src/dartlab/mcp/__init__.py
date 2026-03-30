@@ -1,34 +1,24 @@
-"""DartLab MCP 서버 — Claude Desktop / Claude Code / Cursor 연동.
+"""DartLab MCP 서버 -- 한국 상장기업 전자공시 분석.
 
-사용법::
+설치 후 바로 사용::
 
-        # stdio 모드로 서버 실행
-        dartlab mcp
+    pip install dartlab
+    # Claude Code / Codex에서 "삼성전자 분석해줘" → 바로 동작
 
-        # 또는 직접 실행
-        python -m dartlab.mcp
+수동 설정 (.mcp.json)::
 
-Claude Desktop config.json 예시::
-
-        {
-            "mcpServers": {
-                "dartlab": {
-                    "command": "uv",
-                    "args": ["run", "dartlab", "mcp"]
-                }
+    {
+        "mcpServers": {
+            "dartlab": {
+                "command": "uv",
+                "args": ["run", "python", "-X", "utf8", "-m", "dartlab.mcp"]
             }
         }
+    }
 
-Claude Code (~/.claude/settings.json)::
+자동 설정::
 
-        {
-            "mcpServers": {
-                "dartlab": {
-                    "command": "uv",
-                    "args": ["--directory", "/path/to/dartlab", "run", "dartlab", "mcp"]
-                }
-            }
-        }
+    dartlab mcp --install   # .mcp.json 자동 생성
 """
 
 from __future__ import annotations
@@ -37,43 +27,315 @@ import json
 import logging
 import sys
 import time
+import traceback
 from typing import Any
 
-# stderr 로깅 — stdout은 MCP stdio 프로토콜 전용
 _log = logging.getLogger("dartlab.mcp")
 _log.addHandler(logging.StreamHandler(sys.stderr))
 _log.setLevel(logging.INFO)
 
-# 회사 세션 캐시 — LRU 5개, TTL 600초, 무한 누적 방지
-_MCP_CACHE_MAX = 5
-_MCP_CACHE_TTL = 600
-_company_cache: dict[str, tuple[Any, float]] = {}
+_CACHE_MAX = 5
+_CACHE_TTL = 600
+_cache: dict[str, tuple[Any, float]] = {}
 
 
-def _get_or_create_company(stock_code: str | None) -> Any | None:
-    """종목코드로 Company 인스턴스 가져오기 (LRU 캐싱, TTL 600초, 최대 5개)."""
-    if not stock_code:
-        return None
-    entry = _company_cache.get(stock_code)
-    if entry is not None:
-        company, created = entry
-        if (time.monotonic() - created) < _MCP_CACHE_TTL:
-            return company
-        del _company_cache[stock_code]
-
+def _getCompany(stockCode: str) -> Any:
+    """종목코드로 Company 인스턴스 (캐싱)."""
+    entry = _cache.get(stockCode)
+    if entry:
+        obj, ts = entry
+        if (time.monotonic() - ts) < _CACHE_TTL:
+            return obj
+        del _cache[stockCode]
     from dartlab import Company
-
-    _log.info("Company('%s') 로딩 중...", stock_code)
-    c = Company(stock_code)
-    # LRU 퇴출: 가장 오래된 항목 제거
-    if len(_company_cache) >= _MCP_CACHE_MAX:
-        oldest = next(iter(_company_cache))
-        _log.info("캐시 퇴출: %s", oldest)
-        del _company_cache[oldest]
-    _company_cache[stock_code] = (c, time.monotonic())
-    _log.info("Company('%s') 로딩 완료 — 캐시 %d/%d", stock_code, len(_company_cache), _MCP_CACHE_MAX)
+    _log.info("Company('%s') loading...", stockCode)
+    c = Company(stockCode)
+    if len(_cache) >= _CACHE_MAX:
+        del _cache[next(iter(_cache))]
+    _cache[stockCode] = (c, time.monotonic())
+    _log.info("Company('%s') ready", stockCode)
     return c
 
+
+def _df(obj) -> str:
+    """DataFrame/객체를 문자열로."""
+    if obj is None:
+        return "데이터 없음"
+    if hasattr(obj, "to_pandas"):
+        return obj.to_pandas().to_string()
+    return str(obj)[:8000]
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Instructions -- LLM에게 사용법을 알려준다
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+_MCP_INSTRUCTIONS = """\
+dartlab은 한국 상장기업 전자공시(DART) 분석 도구입니다.
+
+## review vs analysis
+- companyReview: analysis 전체 축을 한번에 실행한 정리된 보고서. 사용자에게 보여줄 최종 보고서가 필요할 때만 사용.
+- companyAnalysis: 특정 영역의 원본 데이터 + 계산 결과. 너(AI)가 직접 데이터를 보고 해석할 때 사용.
+- companyInsights: 7영역 등급 요약. 빠른 판단에 사용.
+- 기본적으로 companyInsights나 companyAnalysis로 데이터를 직접 보고 네가 해석하라.
+- companyReview는 사용자가 "보고서 만들어줘"라고 명시할 때만 사용.
+
+## 도구 사용 흐름
+1. 종목코드를 모르면 → searchCompany
+2. 빠른 판단 → companyInsights (등급 + 프로파일)
+3. 심층 분석 → companyAnalysis("수익구조") 등 필요한 축을 직접 호출
+4. 원본 데이터 → companyFinancials, companyRatios
+5. 밸류에이션 → companyValuation, companyForecast
+6. 시장 비교 → marketScan
+7. 정리된 보고서 → companyReview (사용자가 요청할 때만)
+
+## 규칙
+- 분석 요청 시 되묻지 말고 즉시 도구를 호출하라.
+- 숫자만 나열하지 말고 원인, 추세, 시사점을 해석하라.
+- 한국어 질문에는 한국어로 답변하라.
+- 도구로 확인되지 않은 수치를 인용하지 마라.
+- 현재 한국 DART 기업만 지원한다.
+"""
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# MCP 도구 정의
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+_STOCK = {"type": "string", "description": "종목코드 (005930) 또는 회사명 (삼성전자)"}
+
+_TOOLS: list[dict] = [
+    # ── 1순위: 직접 보고 판단 ──
+    {
+        "name": "companyInsights",
+        "description": (
+            "[먼저 사용] 7영역 등급 (A~F) + 투자 프로파일 + 핵심 서사. "
+            "수익성, 안정성, 성장성, 현금흐름, 효율성, 투자효율, 밸류에이션. "
+            "분석 요청 시 이 도구로 먼저 전체 그림을 파악한 뒤, 필요한 영역을 companyAnalysis로 파고들어라."
+        ),
+        "params": {"stockCode": _STOCK},
+        "required": ["stockCode"],
+    },
+    {
+        "name": "searchCompany",
+        "description": "한국 상장기업 검색. 종목코드(005930), 회사명(삼성전자), 부분검색(삼성) 가능. 종목코드를 모를 때 먼저 사용.",
+        "params": {"query": {"type": "string", "description": "검색어"}},
+        "required": ["query"],
+    },
+
+    # ── 재무 데이터 (깊이가 필요할 때) ──
+    {
+        "name": "companyFinancials",
+        "description": "재무제표 원본 조회. IS(손익), BS(재무상태), CF(현금흐름), CIS(포괄손익), SCE(자본변동) 중 선택.",
+        "params": {
+            "stockCode": _STOCK,
+            "statement": {"type": "string", "description": "IS / BS / CF / CIS / SCE", "enum": ["IS", "BS", "CF", "CIS", "SCE"]},
+        },
+        "required": ["stockCode", "statement"],
+    },
+    {
+        "name": "companyRatios",
+        "description": "재무비율 55개 시계열. ROE, ROA, 부채비율, 영업이익률, PER, PBR 등.",
+        "params": {"stockCode": _STOCK},
+        "required": ["stockCode"],
+    },
+    {
+        "name": "companyAnalysis",
+        "description": (
+            "14축 재무 심층 분석. review보다 세밀한 데이터가 필요할 때 사용. "
+            "축: 수익구조, 안정성, 성장성, 현금흐름, 자금조달, 자산구조, 수익성, 효율성, "
+            "이익품질, 비용구조, 자본배분, 투자효율, 재무정합성, 종합평가"
+        ),
+        "params": {
+            "stockCode": _STOCK,
+            "axis": {"type": "string", "description": "분석 축 (생략 시 가이드 반환)"},
+        },
+        "required": ["stockCode"],
+    },
+
+    # ── 전망/가치평가 ──
+    {
+        "name": "companyValuation",
+        "description": "종합 밸류에이션 (DCF + DDM + 상대가치 + RIM). 적정가치 범위, 현재가 대비 고평가/저평가 판정.",
+        "params": {"stockCode": _STOCK},
+        "required": ["stockCode"],
+    },
+    {
+        "name": "companyForecast",
+        "description": "매출 예측 (Base/Bull/Bear 시나리오). 선형회귀 + CAGR + 이동평균 앙상블.",
+        "params": {"stockCode": _STOCK},
+        "required": ["stockCode"],
+    },
+
+    # ── 공시 원문/비교 ──
+    {
+        "name": "companyShow",
+        "description": "공시 토픽 원문 조회. 예: businessOverview(사업개요), revenue(매출), riskFactors(위험요인). companyTopics로 목록 확인.",
+        "params": {
+            "stockCode": _STOCK,
+            "topic": {"type": "string", "description": "토픽명"},
+        },
+        "required": ["stockCode", "topic"],
+    },
+    {
+        "name": "companyTopics",
+        "description": "이 기업에서 조회 가능한 공시 토픽 목록. companyShow의 topic에 쓸 수 있는 값.",
+        "params": {"stockCode": _STOCK},
+        "required": ["stockCode"],
+    },
+    {
+        "name": "companyDiff",
+        "description": "기간간 공시 텍스트 변경 비교. 사업 방향 전환, 리스크 변화 감지.",
+        "params": {
+            "stockCode": _STOCK,
+            "topic": {"type": "string", "description": "토픽명 (생략 시 전체 요약)"},
+        },
+        "required": ["stockCode"],
+    },
+
+    # ── 거버넌스/감사 ──
+    {
+        "name": "companyGovernance",
+        "description": "지배구조 분석 (사외이사 비율, 감사위원, 최대주주 지분율, 시장 비교).",
+        "params": {"stockCode": _STOCK},
+        "required": ["stockCode"],
+    },
+    {
+        "name": "companyAudit",
+        "description": "감사 리스크 (감사의견, 감사인 변경, 계속기업 불확실성, 핵심감사사항).",
+        "params": {"stockCode": _STOCK},
+        "required": ["stockCode"],
+    },
+
+    # ── 기본 정보 ──
+    {
+        "name": "companyProfile",
+        "description": "기업 기본 정보 (회사명, 업종, 시장, 대표자, 설립일).",
+        "params": {"stockCode": _STOCK},
+        "required": ["stockCode"],
+    },
+    {
+        "name": "companySections",
+        "description": "전체 데이터 구조 지도 (topic x period). 이 기업에 어떤 데이터가 있는지 한눈에 확인.",
+        "params": {"stockCode": _STOCK},
+        "required": ["stockCode"],
+    },
+
+    # ── 시장 전체 ──
+    {
+        "name": "marketScan",
+        "description": (
+            "한국 시장 전체 횡단분석. "
+            "축: governance(지배구조), workforce(인력/급여), capital(주주환원), "
+            "debt(부채), screen(스크리닝), profitability(수익성), growth(성장성)"
+        ),
+        "params": {"axis": {"type": "string", "description": "분석 축"}},
+        "required": ["axis"],
+    },
+
+    # ── 보고서 (사용자가 명시적으로 요청할 때만) ──
+    {
+        "name": "companyReview",
+        "description": (
+            "정리된 종합 보고서 (마크다운). 사용자가 '보고서 만들어줘'라고 명시할 때만 사용. "
+            "일반 분석에는 companyInsights + companyAnalysis로 직접 해석하라. "
+            "section 지정 시 해당 섹션만 반환. "
+            "유효 섹션: 수익구조, 자금조달, 자산구조, 현금흐름, 수익성, 성장성, 안정성, "
+            "효율성, 종합평가, 이익품질, 비용구조, 자본배분, 투자효율, 재무정합성, "
+            "가치평가, 지배구조, 공시변화, 비교분석, 매출전망"
+        ),
+        "params": {
+            "stockCode": _STOCK,
+            "section": {"type": "string", "description": "특정 섹션만 조회 (생략 시 전체)"},
+        },
+        "required": ["stockCode"],
+    },
+]
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 도구 실행
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+def _executeTool(name: str, args: dict) -> str:
+    """MCP 도구 실행."""
+    import dartlab
+
+    code = args.get("stockCode")
+
+    try:
+        if name == "companyReview":
+            c = _getCompany(code)
+            section = args.get("section")
+            if section:
+                return c.review(section).toMarkdown()
+            return c.review().toMarkdown()
+
+        if name == "companyInsights":
+            return str(_getCompany(code).insights)[:8000]
+
+        if name == "searchCompany":
+            return _df(dartlab.search(args["query"]))
+
+        if name == "companyFinancials":
+            return _df(getattr(_getCompany(code), args["statement"], None))
+
+        if name == "companyRatios":
+            return _df(_getCompany(code).ratios)
+
+        if name == "companyAnalysis":
+            c = _getCompany(code)
+            axis = args.get("axis")
+            return _df(c.analysis(axis) if axis else c.analysis())
+
+        if name == "companyValuation":
+            return _df(_getCompany(code).valuation())
+
+        if name == "companyForecast":
+            return _df(_getCompany(code).forecast())
+
+        if name == "companyShow":
+            return str(_getCompany(code).show(args["topic"]))[:8000]
+
+        if name == "companyTopics":
+            return json.dumps(_getCompany(code).topics, ensure_ascii=False, indent=2)
+
+        if name == "companyDiff":
+            c = _getCompany(code)
+            topic = args.get("topic")
+            return str(c.diff(topic) if topic else c.diff())[:8000]
+
+        if name == "companyGovernance":
+            return _df(_getCompany(code).governance())
+
+        if name == "companyAudit":
+            return str(_getCompany(code).audit())[:8000]
+
+        if name == "companyProfile":
+            p = _getCompany(code).profile
+            if hasattr(p, "__dict__"):
+                return json.dumps(
+                    {k: str(v)[:500] for k, v in p.__dict__.items() if not k.startswith("_")},
+                    ensure_ascii=False, indent=2,
+                )
+            return str(p)[:8000]
+
+        if name == "companySections":
+            return _df(_getCompany(code).sections)
+
+        if name == "marketScan":
+            return _df(dartlab.scan(args["axis"]))
+
+        return f"Unknown tool: {name}"
+
+    except Exception as e:
+        _log.error("Tool %s error: %s\n%s", name, e, traceback.format_exc())
+        return f"Error: {e}"
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# MCP 서버 생성
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 def create_server():
     """MCP 서버 인스턴스 생성."""
@@ -82,228 +344,121 @@ def create_server():
         from mcp.server.lowlevel.server import ReadResourceContents
         from mcp.types import Resource, TextContent, Tool
     except ImportError as exc:
-        raise ImportError("MCP SDK가 필요합니다.\n  uv add 'mcp[cli]>=1.0'\n또는: pip install 'mcp[cli]>=1.0'") from exc
+        raise ImportError("MCP SDK 필요: uv add 'mcp[cli]>=1.0'") from exc
 
-    from dartlab.ai.tools.registry import build_tool_runtime
-
-    from .bridge import build_mcp_tools
-
-    app = Server("dartlab")
-
-    # stock_code 파라미터 정의 — company 필요 도구에 주입
-    _STOCK_CODE_PROP = {
-        "stock_code": {
-            "type": "string",
-            "description": "종목코드 (예: 005930) 또는 티커 (예: AAPL). 기업별 도구 호출 시 필수.",
-        }
-    }
-
-    # company=None 일 때만 노출되는 도구 (stock_code 불필요)
-    _runtime_no_company = build_tool_runtime(None, name="mcp-schema-base")
-    _base_tool_names = {s["function"]["name"] for s in _runtime_no_company.get_tool_schemas()}
-
-    # dummy object로 전체 도구 스키마 수집 (실제 Company 로딩 없이)
-    _runtime_full = build_tool_runtime(object(), name="mcp-schema-full")
-    _all_tool_count = _runtime_full.size
-
-    _log.info(
-        "MCP 서버 초기화 — 전체 %d 도구 (글로벌 %d + 기업별 %d)",
-        _all_tool_count,
-        len(_base_tool_names),
-        _all_tool_count - len(_base_tool_names),
-    )
-
-    # ── list_tools ──
+    app = Server("dartlab", instructions=_MCP_INSTRUCTIONS)
+    _log.info("MCP 서버 초기화 -- %d 도구", len(_TOOLS))
 
     @app.list_tools()
     async def list_tools() -> list[Tool]:
-        """등록된 MCP 도구 목록을 반환한다."""
-        mcp_tools = build_mcp_tools(_runtime_full)
-        result = []
-        for t in mcp_tools:
-            schema = dict(t.inputSchema)
-            # company 필요 도구에 stock_code 파라미터 주입
-            if t.name not in _base_tool_names:
-                props = dict(schema.get("properties", {}))
-                props.update(_STOCK_CODE_PROP)
-                schema["properties"] = props
-                req = list(schema.get("required", []))
-                if "stock_code" not in req:
-                    req.insert(0, "stock_code")
-                schema["required"] = req
-            result.append(
-                Tool(
-                    name=t.name,
-                    description=t.description,
-                    inputSchema=schema,
-                )
+        return [
+            Tool(
+                name=t["name"],
+                description=t["description"],
+                inputSchema={
+                    "type": "object",
+                    "properties": t["params"],
+                    "required": t["required"],
+                },
             )
-        return result
-
-    # ── call_tool ──
+            for t in _TOOLS
+        ]
 
     @app.call_tool()
     async def call_tool(name: str, arguments: dict) -> list[TextContent]:
-        """MCP 도구를 실행하고 결과 텍스트를 반환한다."""
-        args = dict(arguments)
-        stock_code = args.pop("stock_code", None)
-
-        # company-bound 도구인데 stock_code 없으면 에러
-        if name not in _base_tool_names and not stock_code:
-            return [
-                TextContent(
-                    type="text",
-                    text=f"오류: '{name}'은 기업별 도구입니다. stock_code 파라미터가 필요합니다.\n"
-                    f'예: {{"stock_code": "005930", ...}}',
-                )
-            ]
-
-        try:
-            company = _get_or_create_company(stock_code)
-        except (FileNotFoundError, ValueError, RuntimeError) as e:
-            _log.warning("Company('%s') 생성 실패: %s", stock_code, e)
-            return [
-                TextContent(
-                    type="text",
-                    text=f"기업 데이터 로딩 실패 ({stock_code}): {e}",
-                )
-            ]
-
-        runtime = build_tool_runtime(company, name="mcp-call")
-
-        if not runtime.has_tool(name):
-            return [
-                TextContent(
-                    type="text",
-                    text=f"오류: '{name}' 도구를 찾을 수 없습니다. list_tools로 사용 가능한 도구를 확인하세요.",
-                )
-            ]
-
-        _log.info("call_tool: %s(stock_code=%s, args=%s)", name, stock_code, list(args.keys()))
-        result = runtime.execute_tool(name, args)
-        return [TextContent(type="text", text=result)]
-
-    # ── list_resources ──
+        _log.info("call_tool: %s(%s)", name, list(arguments.keys()))
+        return [TextContent(type="text", text=_executeTool(name, arguments))]
 
     @app.list_resources()
     async def list_resources() -> list[Resource]:
-        """MCP 리소스 목록(서버 정보 + 캐시된 기업별 리소스)을 반환한다."""
         resources = [
             Resource(
                 uri="dartlab://info",
-                name="DartLab 정보",
-                description="DartLab 버전, 사용 가능한 도구 수, 캐시된 기업 목록",
+                name="DartLab",
+                description="한국 상장기업 전자공시 분석 도구 (DART)",
                 mimeType="application/json",
             ),
         ]
-        # 캐시된 기업별 리소스 노출
-        for code in _company_cache:
-            resources.extend(
-                [
-                    Resource(
-                        uri=f"dartlab://company/{code}/sections",
-                        name=f"{code} sections",
-                        description=f"{code} 공시 섹션 지도 (topic × period 수평화)",
-                        mimeType="application/json",
-                    ),
-                    Resource(
-                        uri=f"dartlab://company/{code}/topics",
-                        name=f"{code} topics",
-                        description=f"{code} 조회 가능 topic 목록",
-                        mimeType="application/json",
-                    ),
-                    Resource(
-                        uri=f"dartlab://company/{code}/ratios",
-                        name=f"{code} ratios",
-                        description=f"{code} 재무비율 (55개 비율 + 복합지표)",
-                        mimeType="application/json",
-                    ),
-                ]
-            )
+        for code in _cache:
+            resources.append(Resource(
+                uri=f"dartlab://company/{code}/topics",
+                name=f"{code} topics",
+                description=f"{code} 조회 가능 토픽",
+                mimeType="application/json",
+            ))
         return resources
-
-    # ── read_resource ──
 
     @app.read_resource()
     async def read_resource(uri: str) -> list[ReadResourceContents]:
-        """URI에 해당하는 MCP 리소스 내용을 읽어 반환한다."""
         uri_str = str(uri)
-
-        def _json_content(data: Any) -> list[ReadResourceContents]:
-            return [
-                ReadResourceContents(
-                    content=json.dumps(data, ensure_ascii=False, indent=2, default=str),
-                    mime_type="application/json",
-                )
-            ]
-
-        def _text_content(text: str) -> list[ReadResourceContents]:
-            return [ReadResourceContents(content=text, mime_type="text/plain")]
-
-        # dartlab://info
         if uri_str == "dartlab://info":
             import dartlab
-
-            return _json_content(
-                {
+            return [ReadResourceContents(
+                content=json.dumps({
                     "version": getattr(dartlab, "__version__", "unknown"),
-                    "tools": _all_tool_count,
-                    "globalTools": len(_base_tool_names),
-                    "companyTools": _all_tool_count - len(_base_tool_names),
-                    "cachedCompanies": list(_company_cache.keys()),
-                    "cacheMax": _MCP_CACHE_MAX,
-                    "cacheTtlSeconds": _MCP_CACHE_TTL,
-                }
-            )
-
-        # dartlab://company/{code}/{resource}
+                    "tools": len(_TOOLS),
+                    "cached": list(_cache.keys()),
+                }, ensure_ascii=False, indent=2),
+                mime_type="application/json",
+            )]
         if uri_str.startswith("dartlab://company/"):
             parts = uri_str.replace("dartlab://company/", "").split("/", 1)
-            if len(parts) != 2:
-                return _text_content("잘못된 URI 형식")
-            code, resource = parts
-            company = _get_or_create_company(code)
-            if company is None:
-                return _text_content(f"기업 '{code}'를 찾을 수 없습니다")
-
-            if resource == "sections":
-                secs = getattr(company, "sections", None)
-                if secs is not None and hasattr(secs, "to_dicts"):
-                    return _json_content(secs.to_dicts())
-                if secs is not None and hasattr(secs, "to_dict"):
-                    return _json_content(secs.to_dict())
-                return _json_content({"error": "sections 데이터 없음"})
-
-            if resource == "topics":
-                topics = getattr(company, "topics", None)
-                data = topics if isinstance(topics, list) else list(topics) if topics else []
-                return _json_content(data)
-
-            if resource == "ratios":
-                ratios = getattr(company, "ratios", None)
-                if ratios is not None and hasattr(ratios, "__dict__"):
-                    data = {k: v for k, v in ratios.__dict__.items() if not k.startswith("_")}
-                elif ratios is not None and hasattr(ratios, "to_dict"):
-                    data = ratios.to_dict()
-                else:
-                    data = {"error": "ratios 데이터 없음"}
-                return _json_content(data)
-
-            return _text_content(f"알 수 없는 리소스: {resource}")
-
-        return _text_content(f"알 수 없는 URI: {uri_str}")
+            if len(parts) == 2 and parts[1] == "topics":
+                return [ReadResourceContents(
+                    content=json.dumps(_getCompany(parts[0]).topics, ensure_ascii=False, indent=2),
+                    mime_type="application/json",
+                )]
+        return [ReadResourceContents(content="Unknown resource", mime_type="text/plain")]
 
     return app
 
 
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 설치 헬퍼 -- dartlab mcp --install
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+def installMcpConfig(targetDir: str | None = None) -> str:
+    """프로젝트에 .mcp.json을 자동 생성한다.
+
+    Returns:
+        생성된 파일 경로.
+    """
+    import os
+    from pathlib import Path
+
+    root = Path(targetDir) if targetDir else Path.cwd()
+    mcpFile = root / ".mcp.json"
+
+    config: dict = {}
+    if mcpFile.exists():
+        try:
+            config = json.loads(mcpFile.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            config = {}
+
+    servers = config.setdefault("mcpServers", {})
+    if "dartlab" in servers:
+        return f"이미 등록됨: {mcpFile}"
+
+    servers["dartlab"] = {
+        "command": "uv",
+        "args": ["run", "python", "-X", "utf8", "-m", "dartlab.mcp"],
+    }
+    mcpFile.write_text(json.dumps(config, indent=2, ensure_ascii=False), encoding="utf-8")
+    return f"생성 완료: {mcpFile}"
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 엔트리포인트
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 def run_stdio():
     """stdio 모드로 MCP 서버 실행."""
     import asyncio
-
     try:
         from mcp.server.stdio import stdio_server
     except ImportError as exc:
-        raise ImportError("MCP SDK가 필요합니다.\n  uv add 'mcp[cli]>=1.0'\n또는: pip install 'mcp[cli]>=1.0'") from exc
+        raise ImportError("MCP SDK 필요: uv add 'mcp[cli]>=1.0'") from exc
 
     app = create_server()
 
