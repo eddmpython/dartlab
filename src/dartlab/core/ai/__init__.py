@@ -1,5 +1,7 @@
-from dartlab.core.ai.profile import AiProfileManager, get_profile_manager
-from dartlab.core.ai.providers import (
+"""core/ai 패키지 — guide 패키지에서 re-import."""
+
+from dartlab.guide.profile import AiProfileManager, get_profile_manager
+from dartlab.guide.providers import (
     build_provider_catalog,
     cli_provider_choices,
     get_provider_spec,
@@ -7,8 +9,8 @@ from dartlab.core.ai.providers import (
     provider_choices,
     public_provider_ids,
 )
-from dartlab.core.ai.routing import AI_ROLES, DEFAULT_ROLE, normalize_role
-from dartlab.core.ai.secrets import SecretStore, get_secret_store
+from dartlab.guide.routing import AI_ROLES, DEFAULT_ROLE, normalize_role
+from dartlab.guide.secrets import SecretStore, get_secret_store
 
 __all__ = [
     "AI_ROLES",

@@ -162,9 +162,12 @@ def _refreshFromHf(stockCode: str, path: Path, category: str) -> None:
         size = path.stat().st_size
         sizeStr = f"{size / 1024:.0f}KB" if size < 1024 * 1024 else f"{size / 1024 / 1024:.1f}MB"
         emit("download:done_short", sizeStr=sizeStr)
-    except (URLError, socket.timeout, OSError):
+    except (URLError, socket.timeout, OSError) as e:
         if tmpPath.exists():
             tmpPath.unlink()
+        from dartlab.core.guidance import progress
+
+        progress(f"데이터 갱신 실패 ({stockCode}): {e} — 기존 데이터로 계속 진행")
 
 
 def loadData(
