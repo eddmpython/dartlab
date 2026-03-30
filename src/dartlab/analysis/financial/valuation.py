@@ -215,18 +215,31 @@ def calcDdm(company: Any, *, basePeriod: str | None = None) -> dict | None:
     price = _fetchPriceContext(company)
     currentPrice = price["currentPrice"] if price else None
 
-    # calcDividendPolicy에서 연간 배당 추출 (정확한 연간 합산)
+    # 1순위: Report API DPS (가장 정확한 연간 주당배당금)
     annualDivs: list[float] | None = None
-    divPolicy = calcDividendPolicy(company, basePeriod=basePeriod)
-    if divPolicy and divPolicy.get("history"):
-        hist = divPolicy["history"]
-        # 의미 있는 배당만 추출 (주당 100원 미만 잡액 제거)
-        minDiv = shares * 100 if shares and shares > 0 else 1e9
-        annualDivs = [
-            h["dividendsPaid"]
-            for h in reversed(hist)
-            if h.get("dividendsPaid") and h["dividendsPaid"] > minDiv
-        ]
+    try:
+        from dartlab.providers.dart.report.pivot import pivotDividend
+
+        stockCode = getattr(company, "stockCode", None)
+        divResult = pivotDividend(stockCode) if stockCode else None
+        if divResult and divResult.dps:
+            validDps = [d for d in divResult.dps if d is not None and d > 0]
+            if validDps and shares and shares > 0:
+                annualDivs = [dps * shares for dps in validDps]
+    except (ImportError, ValueError, KeyError, AttributeError):
+        pass
+
+    # 2순위: calcDividendPolicy CF 기반 (Report 없을 때 fallback)
+    if not annualDivs:
+        divPolicy = calcDividendPolicy(company, basePeriod=basePeriod)
+        if divPolicy and divPolicy.get("history"):
+            hist = divPolicy["history"]
+            minDiv = shares * 100 if shares and shares > 0 else 1e9
+            annualDivs = [
+                h["dividendsPaid"]
+                for h in reversed(hist)
+                if h.get("dividendsPaid") and h["dividendsPaid"] > minDiv
+            ]
 
     result = ddmValuation(
         series,
