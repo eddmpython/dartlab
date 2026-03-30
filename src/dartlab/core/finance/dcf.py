@@ -263,12 +263,21 @@ def dcfValuation(
             warnings.append("FCF 음수 → mid-cycle 양수 FCF 중앙값으로 대체")
 
     if fcfCurrent is None or fcfCurrent <= 0:
-        ocf = getTTM(series, "CF", "operating_cashflow")
-        if ocf is not None and ocf > 0:
-            fcfCurrent = ocf * 0.7
-            warnings.append("FCF 음수/미확인 → 영업CF × 70%로 대체 추정")
+        # 영업CF fallback도 mid-cycle 적용 (호황기 영업CF 과대 방지)
+        ocfHist = getAnnualValues(series, "CF", "operating_cashflow")
+        positiveOcfs = [v for v in ocfHist if v is not None and v > 0]
+        if len(positiveOcfs) >= 3:
+            midOcf = sorted(positiveOcfs)[len(positiveOcfs) // 2]
+            fcfCurrent = midOcf * 0.7
+            warnings.append("FCF 음수 → mid-cycle 영업CF × 70%로 대체 (정규화)")
         else:
-            return DCFResult(
+            ocf = getTTM(series, "CF", "operating_cashflow")
+            if ocf is not None and ocf > 0:
+                fcfCurrent = ocf * 0.7
+                warnings.append("FCF 음수/미확인 → 영업CF × 70%로 대체 추정")
+
+    if fcfCurrent is None or fcfCurrent <= 0:
+        return DCFResult(
                 fcfHistorical=fcfHist,
                 fcfProjections=[],
                 terminalValue=0,
