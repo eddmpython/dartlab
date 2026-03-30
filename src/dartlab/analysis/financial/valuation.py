@@ -495,21 +495,25 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
         currency=currency,
     )
 
-    # 극단값 필터: 현재가 2% 미만 결과는 무의미 → 제외
+    # 극단값 필터: 현재가 2% 미만 또는 10배 이상은 무의미 → 합성 제외
     _minVal = currentPrice * 0.02 if currentPrice and currentPrice > 0 else 0
+    _maxVal = currentPrice * 10 if currentPrice and currentPrice > 0 else float("inf")
+
+    def _inRange(v: float) -> bool:
+        return _minVal < v < _maxVal
 
     estimates: list[dict] = []
-    if result.dcf and result.dcf.perShareValue and result.dcf.perShareValue > _minVal:
+    if result.dcf and result.dcf.perShareValue and _inRange(result.dcf.perShareValue):
         estimates.append({"method": "DCF", "value": result.dcf.perShareValue, "weight": weights.get("DCF", 0)})
-    if result.ddm and result.ddm.intrinsicValue and result.ddm.intrinsicValue > _minVal:
+    if result.ddm and result.ddm.intrinsicValue and _inRange(result.ddm.intrinsicValue):
         estimates.append({"method": "DDM", "value": result.ddm.intrinsicValue, "weight": weights.get("DDM", 0)})
-    if result.relative and result.relative.consensusValue and result.relative.consensusValue > _minVal:
+    if result.relative and result.relative.consensusValue and _inRange(result.relative.consensusValue):
         estimates.append({"method": "상대가치", "value": result.relative.consensusValue, "weight": weights.get("상대가치", 0)})
 
     # RIM 결과도 합성에 포함
     beta = sp.beta if sp else None
     rimResult = _rimCalc(series, shares=shares, currentPrice=currentPrice, currency=currency, beta=beta)
-    if rimResult and rimResult.intrinsicValue and rimResult.intrinsicValue > _minVal:
+    if rimResult and rimResult.intrinsicValue and _inRange(rimResult.intrinsicValue):
         estimates.append({"method": "RIM", "value": rimResult.intrinsicValue, "weight": weights.get("RIM", 0)})
 
     # 가중 합성 적정가
