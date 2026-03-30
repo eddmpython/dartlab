@@ -41,10 +41,6 @@ from dartlab.gather.listing import (
     searchName,
 )
 
-from dartlab.providers.dart._diff_helpers import (
-    _buildTopicChangeLedger,
-    _normalizeTextCell,
-)
 from dartlab.providers.dart._docs_accessor import _DocsAccessor
 from dartlab.providers.dart._finance_accessor import _FinanceAccessor
 from dartlab.providers.dart._finance_helpers import (
@@ -60,7 +56,6 @@ from dartlab.providers.dart._finance_helpers import (
     _shouldFallbackToAnnualRatios,
 )
 from dartlab.providers.dart._profile_accessor import _ProfileAccessor
-from dartlab.providers.dart._report_accessor import REPORT_COL_KR as _REPORT_COL_KR
 from dartlab.providers.dart._report_accessor import _ReportAccessor
 from dartlab.providers.dart._sections_source import _SectionsSource
 from dartlab.providers.dart._utils import (

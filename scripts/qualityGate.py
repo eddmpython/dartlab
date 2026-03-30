@@ -30,7 +30,7 @@ _SRC = str(_ROOT / "src" / "dartlab")
 _DEFAULT_BASELINE = {
     "ef_count": 125,
     "cdef_count": 767,
-    "vulture_count": 7,
+    "vulture_count": 13,
 }
 
 

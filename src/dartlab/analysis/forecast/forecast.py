@@ -12,7 +12,6 @@ from dartlab.core.finance.ols import (
     MultiOlsResult,
     _coefficientOfVariation,
     _detectStructuralBreak,
-    _invertMatrix,
     _ols,
     _olsMulti,
 )

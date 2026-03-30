@@ -1,4 +1,4 @@
-"""MCP 서버 기본 테스트 — bridge, tool 변환, 캐싱."""
+"""MCP 서버 기본 테스트 — 도구 정의, 실행, 캐싱."""
 
 from __future__ import annotations
 
@@ -6,86 +6,50 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from dartlab.mcp.bridge import MCPToolDef, build_mcp_tools, openai_schema_to_mcp_tool
 
-# ── bridge 변환 ──
+def test_mcp_tools_defined():
+    from dartlab.mcp import _TOOLS
 
-
-def test_openai_schema_to_mcp_tool():
-    schema = {
-        "type": "function",
-        "function": {
-            "name": "search_company",
-            "description": "회사를 검색한다.",
-            "parameters": {
-                "type": "object",
-                "properties": {"query": {"type": "string"}},
-                "required": ["query"],
-            },
-        },
-    }
-    tool = openai_schema_to_mcp_tool(schema)
-
-    assert isinstance(tool, MCPToolDef)
-    assert tool.name == "search_company"
-    assert tool.description == "회사를 검색한다."
-    assert "query" in tool.inputSchema["properties"]
+    assert len(_TOOLS) > 10
+    names = {t["name"] for t in _TOOLS}
+    assert "companyInsights" in names
+    assert "searchCompany" in names
+    assert "companyReview" in names
+    assert "marketScan" in names
 
 
-def test_openai_schema_empty_function():
-    tool = openai_schema_to_mcp_tool({})
+def test_mcp_tool_schema_valid():
+    from dartlab.mcp import _TOOLS
 
-    assert tool.name == ""
-    assert tool.description == ""
-    assert tool.inputSchema == {"type": "object", "properties": {}}
-
-
-def test_build_mcp_tools_from_runtime():
-    class FakeRuntime:
-        def get_tool_schemas(self):
-            return [
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "tool_a",
-                        "description": "A",
-                        "parameters": {"type": "object", "properties": {}},
-                    },
-                },
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "tool_b",
-                        "description": "B",
-                        "parameters": {"type": "object", "properties": {}},
-                    },
-                },
-            ]
-
-    tools = build_mcp_tools(FakeRuntime())
-
-    assert len(tools) == 2
-    assert tools[0].name == "tool_a"
-    assert tools[1].name == "tool_b"
+    for tool in _TOOLS:
+        assert "name" in tool
+        assert "description" in tool
+        assert "params" in tool
+        assert "required" in tool
+        assert isinstance(tool["params"], dict)
+        assert isinstance(tool["required"], list)
 
 
-# ── 캐시 테스트는 MCP 리팩터로 제거됨 ──
+def test_fmt_none():
+    from dartlab.mcp import _fmt
+
+    assert _fmt(None) == "데이터 없음"
 
 
-# ── MCP SDK 없이도 bridge 모듈은 임포트 가능 ──
+def test_fmt_dict():
+    from dartlab.mcp import _fmt
+
+    result = _fmt({"key": "value"})
+    assert "key" in result
+    assert "value" in result
 
 
-def test_bridge_importable_without_mcp_sdk():
-    from dartlab.mcp.bridge import MCPResource, build_company_resources
+def test_fmt_list():
+    from dartlab.mcp import _fmt
 
-    resources = build_company_resources("005930")
-
-    assert len(resources) == 3
-    assert any("sections" in r.uri for r in resources)
-    assert all(isinstance(r, MCPResource) for r in resources)
-
-
-# ── create_server는 MCP SDK가 없으면 ImportError ──
+    result = _fmt(["a", "b"])
+    assert "a" in result
+    assert "b" in result
 
 
 def test_create_server_requires_mcp_sdk(monkeypatch):
