@@ -47,15 +47,32 @@ def _estimateWacc(company) -> float | None:
             return None
         series, _ = annual
         sectorParams = getattr(company, "sectorParams", None)
+        # 시총: gather.price 경유 (beta 감쇠에 필요)
         marketCap = None
-        market = getattr(company, "market", None)
-        if market and isinstance(market, dict):
-            marketCap = market.get("marketCap")
+        try:
+            from dartlab.gather.http import run_async
+            from dartlab.gather.price import fetch
+
+            stockCode = getattr(company, "stockCode", "")
+            snapshot = run_async(fetch(stockCode, market="KR")) if stockCode else None
+            if snapshot:
+                marketCap = snapshot.market_cap
+        except (ImportError, OSError, RuntimeError):
+            pass
+        # 개별 beta
+        betaCalc = None
+        try:
+            from dartlab.core.finance.proforma import _fetchBeta
+
+            betaCalc = _fetchBeta(getattr(company, "stockCode", ""), getattr(company, "currency", "KRW"))
+        except (ImportError, OSError, RuntimeError):
+            pass
         wacc, _ = compute_company_wacc(
             series,
             sector_params=sectorParams,
             market_cap=marketCap,
             currency=getattr(company, "currency", "KRW"),
+            beta_override=betaCalc,
         )
         return round(wacc, 2)
     except (ImportError, AttributeError, TypeError, ValueError):
@@ -112,6 +129,13 @@ def calcRoicTimeline(company, *, basePeriod: str | None = None) -> dict | None:
         nopat = round(opIncome * (1 - effectiveTaxRate)) if opIncome != 0 else None
 
         equity = _get(eqRow, col)
+        # equity 누락(0) 시 인접 기간 값으로 fallback (매핑 공백 대응)
+        if equity == 0:
+            for adjCol in yCols:
+                adjEq = _get(eqRow, adjCol)
+                if adjEq > 0:
+                    equity = adjEq
+                    break
         totalBorrowing = _get(stRow, col) + _get(ltRow, col) + _get(bondRow, col)
         cash = _get(cashRow, col)
         investedCapital = equity + totalBorrowing - cash

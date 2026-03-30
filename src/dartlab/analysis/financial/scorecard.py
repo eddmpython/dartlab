@@ -54,6 +54,14 @@ def calcScorecard(company, *, basePeriod: str | None = None) -> dict | None:
     """
     insights = getattr(company, "insights", None)
 
+    # 금융업 판별
+    sector = getattr(company, "sector", None)
+    isFinancial = False
+    if sector:
+        sectorVal = getattr(sector, "sector", None)
+        if sectorVal and hasattr(sectorVal, "value") and sectorVal.value == "금융":
+            isFinancial = True
+
     items = []
     if insights is not None:
         grades = insights.grades()
@@ -61,6 +69,9 @@ def calcScorecard(company, *, basePeriod: str | None = None) -> dict | None:
             for eng, kor in _GRADE_MAP.items():
                 grade = grades.get(eng)
                 if grade:
+                    # 금융업: 안정성/효율성은 제조업 기준 부적합 → 등급 미표시
+                    if isFinancial and kor in ("안정성", "효율성"):
+                        continue
                     items.append({"area": kor, "grade": grade})
 
     # 효율성은 ratioSeries 기반으로 직접 판정

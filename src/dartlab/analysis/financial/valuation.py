@@ -422,6 +422,44 @@ def calcPriceTarget(company: Any, *, basePeriod: str | None = None) -> dict | No
         shares=shares,
         market_cap=marketCap,
     )
+
+    # 금융업 등 DCF 불가 시: 시나리오 전부 0이면 DDM/RIM으로 대체
+    allZero = all(s.per_share_value == 0 for s in result.scenarios) if result.scenarios else True
+    if allZero:
+        ddmResult = calcDdm(company, basePeriod=basePeriod)
+        rimResult = calcResidualIncome(company, basePeriod=basePeriod)
+        fallbackValue = None
+        if ddmResult and ddmResult.get("intrinsicValue") and ddmResult["intrinsicValue"] > 0:
+            fallbackValue = ddmResult["intrinsicValue"]
+        elif rimResult and rimResult.get("intrinsicValue") and rimResult["intrinsicValue"] > 0:
+            fallbackValue = rimResult["intrinsicValue"]
+        if fallbackValue:
+            # DDM/RIM 기반 시나리오 생성 (±10%, ±20% 변동)
+            from dartlab.analysis.valuation.pricetarget import ScenarioPriceTarget
+            fallbackScenarios = [
+                ScenarioPriceTarget("baseline", 0.55, None, 0, 0, fallbackValue, 0, 0, None),
+                ScenarioPriceTarget("rate_hike", 0.20, None, 0, 0, fallbackValue * 0.9, 0, 0, None),
+                ScenarioPriceTarget("china_slowdown", 0.15, None, 0, 0, fallbackValue * 0.85, 0, 0, None),
+                ScenarioPriceTarget("adverse", 0.10, None, 0, 0, fallbackValue * 0.75, 0, 0, None),
+            ]
+            wt = sum(s.per_share_value * s.probability for s in fallbackScenarios)
+            up = ((wt / currentPrice - 1) * 100) if currentPrice and currentPrice > 0 else None
+            sig = "buy" if up and up > 10 else ("sell" if up and up < -10 else "hold")
+            from dartlab.analysis.valuation.pricetarget import PriceTargetResult
+            result = PriceTargetResult(
+                scenarios=fallbackScenarios,
+                weighted_target=wt,
+                percentiles=result.percentiles,
+                expected_value=fallbackValue,
+                current_price=currentPrice,
+                upside_pct=up,
+                probability_above_current=result.probability_above_current,
+                signal=sig,
+                confidence="low",
+                wacc_details=getattr(result, "wacc_details", {}),
+                warnings=result.warnings + ["DCF 시나리오 불가 → DDM/RIM 기반 fallback"],
+            )
+
     scenarios = []
     for s in result.scenarios:
         scenarios.append(

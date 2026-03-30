@@ -181,6 +181,9 @@ def calcCashQuality(company, *, basePeriod: str | None = None) -> dict | None:
         rev = _get(revRow, col)
 
         ocfToNi = ocf / ni * 100 if ni != 0 else None
+        # 극단값 클램핑: ±1000% 초과는 "의미 없는 비율" → None
+        if ocfToNi is not None and abs(ocfToNi) > 1000:
+            ocfToNi = None
         ocfMargin = ocf / rev * 100 if rev > 0 else None
 
         history.append(
