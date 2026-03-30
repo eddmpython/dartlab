@@ -683,11 +683,13 @@ def relativeValuation(
 
     # 가중 합의값 -- EV/EBITDA(자본구조 중립) > PER > PBR > PSR > PEG
     multWeights = {"EV/EBITDA": 3.0, "PER": 2.5, "PBR": 1.5, "PSR": 1.0, "PEG": 1.0}
+    # 극단값 상한: 현재가의 5배 이상인 개별 멀티플은 consensus에서 제외
+    _ivCap = currentPrice * 5 if currentPrice and currentPrice > 0 else float("inf")
     weightedSum = 0.0
     totalWeight = 0.0
     for key in multKeys:
         iv = implied[key]
-        if iv is not None and iv > 0:
+        if iv is not None and 0 < iv < _ivCap:
             w = multWeights.get(key, 1.0)
             weightedSum += iv * w
             totalWeight += w

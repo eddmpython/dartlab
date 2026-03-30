@@ -524,18 +524,15 @@ def _classifyCompanyType(company: Any, series: dict) -> tuple[str, dict[str, flo
             if sectorStr == "금융":
                 isFinancial = True
 
-    if isFinancial:
-        # 금융업: FCF 무의미, RIM/DDM 우선, DCF 제외
-        return "financial", {"DCF": 0.0, "DDM": 0.35, "상대가치": 0.30, "RIM": 0.35}
-
-    # 지주사 판별: 업종명에 "지주" 포함, 또는 IndustryGroup이 HOLDING
+    # 지주사 판별 (금융보다 우선 — 한진칼 같은 금융 분류 지주사 대응)
     igVal = getattr(sector, "industryGroup", None) if sector else None
     igStr = igVal.name if igVal and hasattr(igVal, "name") else str(igVal or "")
     corpName = getattr(company, "corpName", "")
-    # 지주사: 업종/이름 + 한국 주요 지주사 직접 매칭
-    _holdingCodes = {"034730", "003550", "028260", "005490"}  # SK, LG, 삼성물산, POSCO홀딩스
+    _holdingCodes = {"034730", "003550", "028260", "005490", "180640"}  # SK, LG, 삼성물산, POSCO홀딩스, 한진칼
     stockCode = getattr(company, "stockCode", "")
-    isHolding = (
+    # 금융지주(신한지주, KB금융 등)는 financial이지 holding이 아님
+    isFinancialHolding = isFinancial and ("지주" in corpName or "금융" in corpName)
+    isHolding = not isFinancialHolding and (
         "HOLDING" in igStr.upper()
         or "지주" in corpName
         or "지주" in sectorStr
@@ -546,14 +543,22 @@ def _classifyCompanyType(company: Any, series: dict) -> tuple[str, dict[str, flo
         # 지주사: DCF(연결 기반) 과대평가 위험 → 상대가치/RIM 우선, DCF 대폭 축소
         return "holding", {"DCF": 0.05, "DDM": 0.10, "상대가치": 0.15, "RIM": 0.30, "NAV": 0.40}
 
+    if isFinancial:
+        # 금융업: FCF 무의미, RIM/DDM 우선, DCF 제외
+        return "financial", {"DCF": 0.0, "DDM": 0.35, "상대가치": 0.30, "RIM": 0.35}
+
     # ── 사이클 업종 사전 판별 (섹터 기반 — CAGR/CV보다 우선) ──
     _cyclicalIg = {
         "SEMICONDUCTOR", "CHEMICAL", "METALS", "SHIPBUILDING",
         "TRANSPORTATION", "OIL_GAS", "ENERGY_EQUIP", "CONSTRUCTION_MATERIALS",
         "CAPITAL_GOODS", "AUTO", "DISPLAY", "AIRLINE",
     }
-    # 통신/유틸리티는 NI CV가 높아도 사업 특성상 안정 → cyclical 제외
-    _stableIg = {"TELECOM", "UTILITIES", "GAS_UTILITY", "ELECTRIC"}
+    # NI CV가 높아도 사이클 기업이 아닌 업종 → cyclical 제외
+    _stableIg = {
+        "TELECOM", "UTILITIES", "GAS_UTILITY", "ELECTRIC",
+        "SOFTWARE", "IT_SERVICE", "INTERNET", "MEDIA_ENTERTAINMENT",
+        "MEDIA", "GAME",
+    }
 
     isCyclicalSector = igStr.upper() in _cyclicalIg
     isStableSector = igStr.upper() in _stableIg
