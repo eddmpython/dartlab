@@ -1,7 +1,8 @@
 /**
  * StdioProxy -- dartlab CLI child process + JSON Lines protocol.
- * Claude Code pattern: spawn + stdin/stdout.
+ * Claude Code / Codex pattern: spawn + stdin/stdout.
  * Auto-restart with exponential backoff + healthcheck.
+ * Fallback chain: uv run → python -m dartlab → dartlab CLI.
  */
 
 import { ChildProcess, spawn } from "child_process";
@@ -24,6 +25,51 @@ const HEALTH_INTERVAL_MS = 60_000;
 const HEALTH_TIMEOUT_MS = 10_000;
 const READY_TIMEOUT_MS = 30_000;
 
+/** Command candidates to spawn dartlab chat --stdio. */
+interface SpawnCandidate {
+  cmd: string;
+  args: string[];
+  label: string;
+}
+
+function buildCandidates(pythonPath?: string): SpawnCandidate[] {
+  const candidates: SpawnCandidate[] = [];
+
+  // 1. Explicit python path
+  if (pythonPath) {
+    candidates.push({
+      cmd: pythonPath,
+      args: ["-X", "utf8", "-m", "dartlab", "chat", "--stdio"],
+      label: `${pythonPath} -m dartlab`,
+    });
+  }
+
+  // 2. uv run (in uv-managed projects)
+  candidates.push({
+    cmd: "uv",
+    args: ["run", "python", "-X", "utf8", "-m", "dartlab", "chat", "--stdio"],
+    label: "uv run python -m dartlab",
+  });
+
+  // 3. python -m dartlab (pip installed)
+  for (const py of ["python", "python3"]) {
+    candidates.push({
+      cmd: py,
+      args: ["-X", "utf8", "-m", "dartlab", "chat", "--stdio"],
+      label: `${py} -m dartlab`,
+    });
+  }
+
+  // 4. dartlab CLI entry point (pip install dartlab)
+  candidates.push({
+    cmd: "dartlab",
+    args: ["chat", "--stdio"],
+    label: "dartlab chat --stdio",
+  });
+
+  return candidates;
+}
+
 export class StdioProxy {
   private proc: ChildProcess | null = null;
   private rl: Interface | null = null;
@@ -41,6 +87,7 @@ export class StdioProxy {
   // Auto-restart
   private restartCount = 0;
   private lastPythonPath?: string;
+  private lastWorkingCandidate?: SpawnCandidate;
   private healthTimer: ReturnType<typeof setInterval> | null = null;
   private stderrBuffer = "";
 
@@ -62,146 +109,174 @@ export class StdioProxy {
     for (const fn of this.listeners) fn(s);
   }
 
-  /** Start dartlab chat --stdio child process. */
+  /** Start dartlab chat --stdio, trying multiple spawn candidates. */
   async start(pythonPath?: string): Promise<boolean> {
     if (this.disposed) return false;
     this.lastPythonPath = pythonPath;
     this.setState("starting");
+
+    // If we have a previously working candidate, try it first
+    if (this.lastWorkingCandidate) {
+      const ok = await this.trySpawn(this.lastWorkingCandidate);
+      if (ok) return true;
+      this.lastWorkingCandidate = undefined;
+    }
+
+    // Try each candidate
+    const candidates = buildCandidates(pythonPath);
+    for (const candidate of candidates) {
+      const ok = await this.trySpawn(candidate);
+      if (ok) {
+        this.lastWorkingCandidate = candidate;
+        return true;
+      }
+    }
+
+    // All candidates failed
+    this.setState("error");
+    vscode.window.showErrorMessage(
+      "DartLab: Could not start. Install dartlab: pip install dartlab",
+      "Show Logs",
+    ).then((c) => { if (c) this.showLogs(); });
+    return false;
+  }
+
+  /** Try spawning a single candidate. Returns true if ready signal received. */
+  private async trySpawn(candidate: SpawnCandidate): Promise<boolean> {
     this.stderrBuffer = "";
-
     const cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    const cmd = pythonPath || "uv";
-    const args = pythonPath
-      ? ["-X", "utf8", "-m", "dartlab", "chat", "--stdio"]
-      : ["run", "python", "-X", "utf8", "-m", "dartlab", "chat", "--stdio"];
 
-    this.output.appendLine(`[DartLab] spawn: ${cmd} ${args.join(" ")} (cwd: ${cwd ?? "none"})`);
+    this.output.appendLine(`[DartLab] trying: ${candidate.label} (cwd: ${cwd ?? "none"})`);
+
+    // Clean up previous attempt
+    if (this.proc) {
+      try { this.proc.kill("SIGKILL"); } catch { /* ignore */ }
+      this.proc = null;
+    }
+    if (this.rl) {
+      this.rl.close();
+      this.rl = null;
+    }
 
     try {
-      this.proc = spawn(cmd, args, {
+      this.proc = spawn(candidate.cmd, candidate.args, {
         stdio: ["pipe", "pipe", "pipe"],
         env: { ...process.env },
         ...(cwd ? { cwd } : {}),
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      this.output.appendLine(`[DartLab] spawn failed: ${msg}`);
-      this.setState("error");
+      this.output.appendLine(`[DartLab] spawn failed: ${err instanceof Error ? err.message : err}`);
       return false;
     }
 
-    // Collect stderr for error diagnosis
+    // Collect stderr
     this.proc.stderr?.on("data", (data: Buffer) => {
       const text = data.toString();
       this.output.append(text);
-      this.stderrBuffer += text;
-      // Keep only last 2KB
-      if (this.stderrBuffer.length > 2048) {
-        this.stderrBuffer = this.stderrBuffer.slice(-2048);
-      }
+      this.stderrBuffer = (this.stderrBuffer + text).slice(-2048);
     });
 
-    this.proc.on("error", (err) => {
-      this.output.appendLine(`[DartLab] process error: ${err.message}`);
-      this.handleProcessExit(-1);
+    // Handle immediate exit (wrong command, module not found, etc.)
+    let exited = false;
+    const exitPromise = new Promise<number>((resolve) => {
+      this.proc!.on("exit", (code) => {
+        exited = true;
+        resolve(code ?? -1);
+      });
+      this.proc!.on("error", (err) => {
+        this.output.appendLine(`[DartLab] error: ${err.message}`);
+        exited = true;
+        resolve(-1);
+      });
     });
 
-    this.proc.on("exit", (code) => {
-      this.output.appendLine(`[DartLab] process exited: code=${code}`);
-      this.handleProcessExit(code ?? -1);
-    });
-
-    // Read stdout JSON lines
-    this.rl = createInterface({ input: this.proc.stdout!, crlfDelay: Infinity });
-
-    const ready = await this.waitForReady();
-    if (ready) {
-      this.restartCount = 0;
-      this.startHealthCheck();
+    // Set up readline
+    if (!this.proc.stdout) {
+      this.output.appendLine("[DartLab] no stdout");
+      return false;
     }
-    return ready;
+    this.rl = createInterface({ input: this.proc.stdout, crlfDelay: Infinity });
+
+    // Wait for ready signal OR process exit
+    const ready = await Promise.race([
+      this.waitForReady(),
+      exitPromise.then(() => false),
+      new Promise<false>((resolve) => setTimeout(() => resolve(false), READY_TIMEOUT_MS)),
+    ]);
+
+    if (ready) {
+      this.output.appendLine(`[DartLab] ready via: ${candidate.label}`);
+      this.restartCount = 0;
+      this.setupExitHandler();
+      this.startHealthCheck();
+      this.setState("ready");
+      return true;
+    }
+
+    // Failed -- clean up
+    this.output.appendLine(`[DartLab] failed: ${candidate.label} (stderr: ${this.stderrBuffer.trim().split("\n").pop() ?? ""})`);
+    if (!exited) {
+      try { this.proc?.kill("SIGKILL"); } catch { /* ignore */ }
+    }
+    this.proc = null;
+    if (this.rl) { this.rl.close(); this.rl = null; }
+    return false;
   }
 
   private waitForReady(): Promise<boolean> {
     return new Promise<boolean>((resolve) => {
-      const timeout = setTimeout(() => {
-        this.output.appendLine("[DartLab] timeout waiting for ready signal");
-        this.setState("error");
-        resolve(false);
-      }, READY_TIMEOUT_MS);
-
       const onLine = (line: string) => {
         this.output.appendLine(`[stdout] ${line.slice(0, 200)}`);
         try {
           const msg = JSON.parse(line);
           if (msg.event === "ready") {
-            clearTimeout(timeout);
-            this.setState("ready");
             this.rl?.removeListener("line", onLine);
             this.rl?.on("line", (l) => this.handleLine(l));
             resolve(true);
           }
         } catch { /* non-JSON, ignore */ }
       };
-
       this.rl!.on("line", onLine);
     });
   }
 
-  private handleProcessExit(code: number): void {
-    if (this.disposed) return;
+  private setupExitHandler(): void {
+    this.proc?.removeAllListeners("exit");
+    this.proc?.removeAllListeners("error");
 
-    this.rl = null;
-    this.proc = null;
-    this.stopHealthCheck();
+    this.proc?.on("exit", (code) => {
+      if (this.disposed) return;
+      this.output.appendLine(`[DartLab] process exited: code=${code}`);
+      this.rl = null;
+      this.proc = null;
+      this.stopHealthCheck();
 
-    // Notify current request
-    if (this.currentCallbacks) {
-      this.currentCallbacks.onError("Process exited unexpectedly");
-      this.currentCallbacks.onDone();
-      this.currentCallbacks = null;
-      this.currentRequestId = null;
-    }
+      // Notify current request
+      if (this.currentCallbacks) {
+        this.currentCallbacks.onError("Process exited unexpectedly");
+        this.currentCallbacks.onDone();
+        this.currentCallbacks = null;
+        this.currentRequestId = null;
+      }
 
-    // Auto-restart with backoff
-    if (this._state === "ready" && this.restartCount < MAX_RESTARTS) {
-      this.restartCount++;
-      const delay = BACKOFF_BASE_MS * Math.pow(2, this.restartCount - 1);
-      this.output.appendLine(`[DartLab] auto-restart ${this.restartCount}/${MAX_RESTARTS} in ${delay}ms`);
-      this.setState("starting");
-      setTimeout(() => {
-        if (!this.disposed) this.start(this.lastPythonPath);
-      }, delay);
-    } else {
-      this.setState("error");
-      this.showStartupError(code);
-    }
-  }
-
-  private showStartupError(code: number): void {
-    let detail = "";
-    const stderr = this.stderrBuffer.toLowerCase();
-
-    if (stderr.includes("no module named") && stderr.includes("dartlab")) {
-      detail = "dartlab is not installed. Run: pip install dartlab";
-    } else if (stderr.includes("no module named uv") || stderr.includes("'uv' is not recognized") || code === 9009) {
-      detail = "uv is required. Install: https://docs.astral.sh/uv/";
-    } else if (stderr.includes("python") && stderr.includes("not found")) {
-      detail = "Python 3.12+ is required.";
-    } else if (this.stderrBuffer.trim()) {
-      detail = this.stderrBuffer.trim().split("\n").pop() || "Unknown error";
-    } else {
-      detail = `Process exited with code ${code}`;
-    }
-
-    vscode.window.showErrorMessage(
-      `DartLab: ${detail}`,
-      "Show Logs", "Retry",
-    ).then((choice) => {
-      if (choice === "Show Logs") this.showLogs();
-      else if (choice === "Retry") {
-        this.restartCount = 0;
-        this.start(this.lastPythonPath);
+      // Auto-restart with backoff
+      if (this.restartCount < MAX_RESTARTS) {
+        this.restartCount++;
+        const delay = BACKOFF_BASE_MS * Math.pow(2, this.restartCount - 1);
+        this.output.appendLine(`[DartLab] auto-restart ${this.restartCount}/${MAX_RESTARTS} in ${delay}ms`);
+        this.setState("starting");
+        setTimeout(() => {
+          if (!this.disposed) this.start(this.lastPythonPath);
+        }, delay);
+      } else {
+        this.setState("error");
+        vscode.window.showErrorMessage(
+          "DartLab process crashed. Check logs.",
+          "Show Logs", "Retry",
+        ).then((c) => {
+          if (c === "Show Logs") this.showLogs();
+          else if (c === "Retry") { this.restartCount = 0; this.start(this.lastPythonPath); }
+        });
       }
     });
   }
@@ -214,28 +289,20 @@ export class StdioProxy {
   }
 
   private stopHealthCheck(): void {
-    if (this.healthTimer) {
-      clearInterval(this.healthTimer);
-      this.healthTimer = null;
-    }
+    if (this.healthTimer) { clearInterval(this.healthTimer); this.healthTimer = null; }
   }
+
+  private _pongCallback: (() => void) | null = null;
 
   private ping(): void {
     if (this._state !== "ready" || !this.proc?.stdin?.writable) return;
-
     const timeout = setTimeout(() => {
       this.output.appendLine("[DartLab] healthcheck timeout -- killing process");
       this.proc?.kill("SIGKILL");
     }, HEALTH_TIMEOUT_MS);
-
-    // pong listener is handled in handleLine
-    const onPong = () => clearTimeout(timeout);
-    this._pongCallback = onPong;
-
+    this._pongCallback = () => clearTimeout(timeout);
     this.send({ type: "ping" });
   }
-
-  private _pongCallback: (() => void) | null = null;
 
   // --- Communication ---
 
@@ -246,7 +313,6 @@ export class StdioProxy {
 
   private handleLine(line: string): void {
     this.output.appendLine(`[stdout] ${line.slice(0, 200)}`);
-
     let msg: Record<string, unknown>;
     try { msg = JSON.parse(line); } catch { return; }
 
@@ -254,37 +320,16 @@ export class StdioProxy {
     const data = msg.data as Record<string, unknown>;
     const id = msg.id as string | undefined;
 
-    // Pong response
-    if (event === "pong") {
-      this._pongCallback?.();
-      this._pongCallback = null;
-      return;
-    }
+    if (event === "pong") { this._pongCallback?.(); this._pongCallback = null; return; }
+    if (event === "status") { for (const fn of this.statusListeners) fn(data); this.statusListeners = []; return; }
+    if (event === "providerChanged") { for (const fn of this.providerListeners) fn(data); this.providerListeners = []; return; }
 
-    // Status response
-    if (event === "status") {
-      for (const fn of this.statusListeners) fn(data);
-      this.statusListeners = [];
-      return;
-    }
-
-    // Provider changed
-    if (event === "providerChanged") {
-      for (const fn of this.providerListeners) fn(data);
-      this.providerListeners = [];
-      return;
-    }
-
-    // Route to current request callbacks
     if (this.currentCallbacks && (!id || id === this.currentRequestId)) {
       if (event === "done") {
         this.currentCallbacks.onEvent(event, data);
         this.currentCallbacks.onDone();
         this.currentCallbacks = null;
         this.currentRequestId = null;
-      } else if (event === "error") {
-        this.currentCallbacks.onEvent(event, data);
-        // Don't clear -- wait for done event
       } else {
         this.currentCallbacks.onEvent(event, data);
       }
@@ -296,9 +341,7 @@ export class StdioProxy {
   requestStatus(callback: (data: Record<string, unknown>) => void): void {
     this.statusListeners.push(callback);
     this.send({ type: "status" });
-    setTimeout(() => {
-      this.statusListeners = this.statusListeners.filter(l => l !== callback);
-    }, 5000);
+    setTimeout(() => { this.statusListeners = this.statusListeners.filter(l => l !== callback); }, 5000);
   }
 
   setProvider(provider: string, model?: string, callback?: (data: Record<string, unknown>) => void): void {
@@ -306,35 +349,21 @@ export class StdioProxy {
     this.send({ type: "setProvider", provider, model });
   }
 
-  ask(
-    question: string,
-    company: string | undefined,
-    history: unknown[] | undefined,
-    callbacks: StdioCallbacks,
-  ): void {
-    // Cancel previous
-    if (this.currentCallbacks) {
-      this.currentCallbacks.onError("Cancelled");
-      this.currentCallbacks.onDone();
-    }
-
+  ask(question: string, company: string | undefined, history: unknown[] | undefined, callbacks: StdioCallbacks): void {
+    if (this.currentCallbacks) { this.currentCallbacks.onError("Cancelled"); this.currentCallbacks.onDone(); }
     const id = Date.now().toString(36);
     this.currentRequestId = id;
     this.currentCallbacks = callbacks;
-
     this.send({ id, type: "ask", question, company, history });
   }
 
   cancelCurrent(): void {
-    if (this.currentCallbacks) {
-      this.currentCallbacks.onDone();
-      this.currentCallbacks = null;
-      this.currentRequestId = null;
-    }
+    if (this.currentCallbacks) { this.currentCallbacks.onDone(); this.currentCallbacks = null; this.currentRequestId = null; }
   }
 
   async restart(pythonPath?: string): Promise<boolean> {
     this.restartCount = 0;
+    this.lastWorkingCandidate = undefined;
     await this.stop();
     return this.start(pythonPath ?? this.lastPythonPath);
   }
@@ -342,26 +371,18 @@ export class StdioProxy {
   async stop(): Promise<void> {
     this.stopHealthCheck();
     if (!this.proc) return;
-
     try { this.send({ type: "exit" }); } catch { /* ignore */ }
-
     const proc = this.proc;
     this.proc = null;
-    this.rl = null;
-
+    if (this.rl) { this.rl.close(); this.rl = null; }
     await new Promise<void>((resolve) => {
       const timeout = setTimeout(() => { proc.kill("SIGKILL"); resolve(); }, 3_000);
       proc.on("exit", () => { clearTimeout(timeout); resolve(); });
     });
-
     this.setState("stopped");
   }
 
   showLogs(): void { this.output.show(); }
 
-  dispose(): void {
-    this.disposed = true;
-    this.stop();
-    this.output.dispose();
-  }
+  dispose(): void { this.disposed = true; this.stop(); this.output.dispose(); }
 }
