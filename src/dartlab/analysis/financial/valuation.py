@@ -757,6 +757,13 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
     if price and price.get("isStale"):
         warnings.append("주가 데이터가 최신이 아닐 수 있습니다 (stale cache)")
 
+    # 모델 간 극단 괴리 경고
+    if len(estimates) >= 2:
+        vals = [e["value"] for e in estimates]
+        maxVal, minVal = max(vals), min(vals)
+        if minVal > 0 and maxVal / minVal > 10:
+            warnings.append(f"모델 간 극단 괴리 ({maxVal/minVal:.0f}배) — 합성 신뢰도 낮음")
+
     return {
         "fairValueRange": result.fairValueRange,
         "verdict": result.verdict,

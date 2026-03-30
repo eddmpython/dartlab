@@ -266,10 +266,14 @@ def dcfValuation(
         # 영업CF fallback도 mid-cycle 적용 (호황기 영업CF 과대 방지)
         ocfHist = getAnnualValues(series, "CF", "operating_cashflow")
         positiveOcfs = [v for v in ocfHist if v is not None and v > 0]
+        allOcfs = [v for v in ocfHist if v is not None]
         if len(positiveOcfs) >= 3:
             midOcf = sorted(positiveOcfs)[len(positiveOcfs) // 2]
-            fcfCurrent = midOcf * 0.7
-            warnings.append("FCF 음수 → mid-cycle 영업CF × 70%로 대체 (정규화)")
+            # 적자 비율 50%+ → 추가 할인 (호황기 mid-cycle 과대 방지)
+            lossRatio = 1 - len(positiveOcfs) / max(len(allOcfs), 1) if allOcfs else 0
+            discount = 0.5 if lossRatio >= 0.5 else 0.7
+            fcfCurrent = midOcf * discount
+            warnings.append(f"FCF 음수 → mid-cycle 영업CF × {discount*100:.0f}%로 대체 (적자비율 {lossRatio*100:.0f}%)")
         else:
             ocf = getTTM(series, "CF", "operating_cashflow")
             if ocf is not None and ocf > 0:
