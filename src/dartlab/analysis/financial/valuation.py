@@ -505,8 +505,11 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
     estimates: list[dict] = []
     if result.dcf and result.dcf.perShareValue and _inRange(result.dcf.perShareValue):
         estimates.append({"method": "DCF", "value": result.dcf.perShareValue, "weight": weights.get("DCF", 0)})
-    if result.ddm and result.ddm.intrinsicValue and _inRange(result.ddm.intrinsicValue):
-        estimates.append({"method": "DDM", "value": result.ddm.intrinsicValue, "weight": weights.get("DDM", 0)})
+    # DDM: fullValuation 내부 DDM 대신 calcDdm 사용 (calcDividendPolicy 기반, 더 정확)
+    ddmResult = calcDdm(company, basePeriod=basePeriod)
+    ddmValue = ddmResult.get("intrinsicValue") if ddmResult else None
+    if ddmValue and _inRange(ddmValue):
+        estimates.append({"method": "DDM", "value": ddmValue, "weight": weights.get("DDM", 0)})
     if result.relative and result.relative.consensusValue and _inRange(result.relative.consensusValue):
         estimates.append({"method": "상대가치", "value": result.relative.consensusValue, "weight": weights.get("상대가치", 0)})
 

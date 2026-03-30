@@ -25,7 +25,7 @@ def _annualColsFromPeriods(
 ) -> list[str]:
     from dartlab.analysis.financial._helpers import annualColsFromPeriods
 
-    return annualColsFromPeriods(periods, maxYears, basePeriod=basePeriod)
+    return annualColsFromPeriods(periods, basePeriod=basePeriod, maxYears=maxYears)
 
 
 def _get(row: dict, col: str) -> float:
