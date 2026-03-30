@@ -32,7 +32,7 @@ interface SpawnCandidate {
   label: string;
 }
 
-function buildCandidates(pythonPath?: string): SpawnCandidate[] {
+export function buildCandidates(pythonPath?: string): SpawnCandidate[] {
   const candidates: SpawnCandidate[] = [];
 
   // 1. Explicit python path

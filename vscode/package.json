@@ -105,6 +105,8 @@
   "scripts": {
     "dev": "node esbuild.mjs --watch",
     "build": "node esbuild.mjs --production",
+    "test": "npx vitest run",
+    "verify": "node esbuild.mjs --production && cd webview && npx vite build && cd .. && npx vitest run",
     "lint": "eslint src/",
     "package": "vsce package",
     "publish": "vsce publish"
@@ -116,6 +118,7 @@
     "@vscode/test-electron": "^2.5.2",
     "esbuild": "^0.24.0",
     "mocha": "^11.7.5",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.2"
   }
 }
