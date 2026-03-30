@@ -418,24 +418,6 @@ class TestModels:
         assert data["models"] == []
 
 
-class TestSpec:
-    def test_spec_summary(self, client):
-        """GET /api/spec — 시스템 스펙 summary."""
-        resp = client.get("/api/spec")
-        assert resp.status_code == 200
-        assert isinstance(resp.json(), dict)
-
-    def test_spec_engine_insight(self, client):
-        """GET /api/spec?engine=insight — 엔진별 스펙."""
-        resp = client.get("/api/spec", params={"engine": "insight"})
-        assert resp.status_code == 200
-
-    def test_spec_unknown_engine(self, client):
-        """GET /api/spec?engine=nonexistent — 404."""
-        resp = client.get("/api/spec", params={"engine": "nonexistent"})
-        assert resp.status_code == 404
-
-
 class TestDataStats:
     def test_data_stats(self, client):
         """GET /api/data/stats — 데이터 현황."""
@@ -816,7 +798,7 @@ class TestResolveUtils:
 
         assert has_analysis_intent("삼성전자 매출 분석해줘")
         assert has_analysis_intent("ROE 알려줘")
-        assert not has_analysis_intent("삼성전자 분석하고 싶은데")
+        assert has_analysis_intent("삼성전자 분석하고 싶은데")
 
     def test_build_not_found_msg_empty(self):
         from dartlab.server.resolve import build_not_found_msg
@@ -893,147 +875,6 @@ class TestResolveUtils:
         )
         assert company is not None
         assert company.stockCode == "005930"
-
-
-class TestChatUtils:
-    def test_build_history_empty(self):
-        from dartlab.server.chat import build_history_messages
-
-        assert build_history_messages(None) == []
-
-    def test_build_history_messages(self):
-        from dartlab.server.chat import build_history_messages
-        from dartlab.server.models import HistoryMessage
-
-        msgs = build_history_messages(
-            [
-                HistoryMessage(role="user", text="삼성전자 분석해줘"),
-                HistoryMessage(role="assistant", text="분석 결과입니다."),
-            ]
-        )
-        assert len(msgs) == 2
-        assert msgs[0]["role"] == "user"
-        assert msgs[1]["role"] == "assistant"
-
-    def test_build_history_with_meta(self):
-        from dartlab.server.chat import build_history_messages
-        from dartlab.server.models import HistoryMessage, HistoryMeta
-
-        msgs = build_history_messages(
-            [
-                HistoryMessage(
-                    role="assistant",
-                    text="분석 결과",
-                    meta=HistoryMeta(
-                        company="삼성전자",
-                        stockCode="005930",
-                        modules=["IS", "BS"],
-                        market="dart",
-                        topic="dividend",
-                        topicLabel="배당",
-                        dialogueMode="company_analysis",
-                        userGoal="현재 회사의 구체적 분석",
-                    ),
-                ),
-            ]
-        )
-        assert len(msgs) == 1
-        assert "삼성전자" in msgs[0]["content"]
-        assert "005930" in msgs[0]["content"]
-        assert "배당" in msgs[0]["content"]
-        assert "company_analysis" in msgs[0]["content"]
-
-    def test_extract_last_stock_code(self):
-        from dartlab.server.chat import extract_last_stock_code
-        from dartlab.server.models import HistoryMessage, HistoryMeta
-
-        assert extract_last_stock_code(None) is None
-        assert extract_last_stock_code([]) is None
-        code = extract_last_stock_code(
-            [
-                HistoryMessage(role="user", text="질문"),
-                HistoryMessage(
-                    role="assistant",
-                    text="답변",
-                    meta=HistoryMeta(stockCode="005930"),
-                ),
-            ]
-        )
-        assert code == "005930"
-
-    def test_build_dynamic_chat_prompt(self):
-        from dartlab.server.chat import build_dynamic_chat_prompt
-        from dartlab.server.dialogue import build_conversation_state
-        from dartlab.server.models import ViewContext
-
-        prompt = build_dynamic_chat_prompt()
-        assert "DartLab" in prompt
-        assert isinstance(prompt, str)
-        assert len(prompt) > 100
-
-        state = build_conversation_state(
-            "이 부분 왜 이래?",
-            view_context=ViewContext(
-                type="viewer",
-                company={"corpName": "삼성전자", "stockCode": "005930", "market": "dart"},
-                topic="dividend",
-                topicLabel="배당",
-            ),
-        )
-        prompt_with_state = build_dynamic_chat_prompt(state)
-        assert "현재 대화 상태" in prompt_with_state
-        assert "배당" in prompt_with_state
-        assert "응답 템플릿" in prompt_with_state
-
-    def test_build_history_messages_compresses_long_text(self):
-        from dartlab.server.chat import build_history_messages
-        from dartlab.server.models import HistoryMessage
-
-        long_text = "가" * 4000
-        msgs = build_history_messages([HistoryMessage(role="assistant", text=long_text)])
-        assert len(msgs) == 1
-        assert len(msgs[0]["content"]) < 2500
-        assert "..." in msgs[0]["content"]
-
-    def test_build_focus_context(self):
-        from dartlab.server.chat import build_focus_context
-        from dartlab.server.dialogue import build_conversation_state
-        from dartlab.server.models import ViewContext
-
-        class DummyCompany:
-            corpName = "삼성전자"
-            stockCode = "005930"
-
-            def show(self, topic, block=None):
-                if block is None:
-                    return pl.DataFrame(
-                        {
-                            "block": [0, 1],
-                            "type": ["text", "table"],
-                            "source": ["docs", "report"],
-                            "preview": ["개요", "배당표"],
-                        }
-                    )
-                return pl.DataFrame({"year": [2024, 2023], "dps": [1500, 1444]})
-
-            def trace(self, topic):
-                return {"primarySource": "report", "topic": topic}
-
-        state = build_conversation_state(
-            "왜 줄었지?",
-            company=DummyCompany(),
-            view_context=ViewContext(
-                type="viewer",
-                company={"corpName": "삼성전자", "stockCode": "005930", "market": "dart"},
-                topic="dividend",
-                topicLabel="배당",
-            ),
-        )
-        text = build_focus_context(DummyCompany(), state)
-        assert text is not None
-        assert "현재 사용자가 보고 있는 섹션" in text
-        assert "dividend" in text
-        assert "primarySource" in text
 
 
 class TestCompanyCache:

@@ -250,7 +250,7 @@ dartlab.scan("ratio", "roe")             # 전종목 ROE
 
 ### `dartlab.analysis(axis: str | None = None, company: Any | None = None, *, basePeriod: str | None = None, kwargs: Any) -> pl.DataFrame | dict`
 
-재무제표 완전 분석 — 18축, 단일 종목 심층.
+재무제표 완전 분석 — 19축, 단일 종목 심층.
 
 **Args:**
 
@@ -958,10 +958,6 @@ c.gather("price")          # 주가 시계열
 c.gather("news")           # 뉴스
 ```
 
-### `getRatios(fsDivPref: str = 'CFS')`
-
-Deprecated — use ``c.ratios`` property instead.
-
 ### `getTimeseries(period: str = 'q', fsDivPref: str = 'CFS')`
 
 Deprecated — use ``c.timeseries`` property instead.
@@ -1227,7 +1223,7 @@ c = Company("005930")
 c.retrievalBlocks          # 전체 retrieval 블록
 ```
 
-### `review(section: str | None = None, layout = None, helper: bool | None = None, *, basePeriod: str | None = None)`
+### `review(section: str | None = None, layout = None, helper: bool | None = None, *, preset: str | None = None, detail: bool | None = None, basePeriod: str | None = None)`
 
 재무제표 구조화 보고서 — 14개 섹션 데이터 검토서.
 
@@ -1236,13 +1232,18 @@ c.retrievalBlocks          # 전체 retrieval 블록
 - section: 섹션명 ("수익구조" 등). None이면 전체.
 - layout: ReviewLayout 커스텀. None이면 기본.
 - helper: True면 해석 힌트 텍스트 포함. None이면 자동.
+- preset: 프리셋명 ("executive"/"audit"/"credit"/"growth"/"valuation"). None이면 전체.
+- detail: True면 전체 블록, False면 섹션 요약만. None이면 preset 기본값 또는 True.
 
 ```python
 c.review()                        # 전체 검토서
 c.review("수익구조")                # 특정 섹션
+c.review(preset="audit")          # 감사/회계 검토용
+c.review(preset="executive")      # 경영진 요약
+c.review(detail=False)            # 전 섹션 요약만
 ```
 
-### `reviewer(section: str | None = None, layout = None, helper: bool | None = None, guide: str | None = None, *, basePeriod: str | None = None)`
+### `reviewer(section: str | None = None, layout = None, helper: bool | None = None, guide: str | None = None, *, preset: str | None = None, detail: bool | None = None, basePeriod: str | None = None)`
 
 AI 분석 보고서 — review() + 섹션별 AI 종합의견.
 
@@ -1258,10 +1259,6 @@ c.reviewer()
 c.reviewer("수익구조")
 c.reviewer(guide="반도체 사이클 관점에서 평가해줘")
 ```
-
-### `Company.sce` (property)
-
-자본변동표 DataFrame (연결 기준).
 
 ### `Company.sceMatrix` (property)
 
@@ -1399,6 +1396,10 @@ c = Company("005930")
 series, periods = c.timeseries
 series["IS"]["sales"]  # 분기별 매출 시계열
 ```
+
+### `topicSummaries() -> dict[str, str]`
+
+토픽별 요약 dict — AI가 경로 탐색에 사용.
 
 ### `Company.topics` (property)
 
