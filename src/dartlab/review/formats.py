@@ -21,6 +21,24 @@ def renderHtml(review) -> str:
         f"<h2 style='font-family:Pretendard,-apple-system,sans-serif'>{review.corpName} ({review.stockCode})</h2>"
     )
 
+    if review.summaryCard:
+        card = review.summaryCard
+        cardParts = []
+        if card.conclusion:
+            cardParts.append(f"<strong>{card.conclusion}</strong>")
+        if card.grades:
+            gradeStr = " | ".join(f"{k} {v}" for k, v in card.grades.items())
+            cardParts.append(f"<span style='color:#888'>{gradeStr}</span>")
+        for s in card.strengths:
+            cardParts.append(f"<span style='color:#2e7d32'>+ {s}</span>")
+        for w in card.warnings:
+            cardParts.append(f"<span style='color:#f9a825'>- {w}</span>")
+        parts.append(
+            "<div style='border:2px solid #333;padding:12px;margin:8px 0;border-radius:4px'>"
+            + "<br/>".join(cardParts)
+            + "</div>"
+        )
+
     if review.circulationSummary:
         parts.append(
             f"<div style='border:1px solid #ddd;padding:12px;margin:8px 0;border-radius:4px'>"
@@ -28,15 +46,21 @@ def renderHtml(review) -> str:
             f"{'<br/>'.join(review.circulationSummary.split(chr(10)))}</div>"
         )
 
+    detailMode = getattr(review.layout, "detail", True)
+
     for section in review.sections:
+        if not detailMode:
+            parts.append(f"<h3>{section.title}</h3>")
+            if section.summary:
+                parts.append(f"<p style='color:#888'>{section.summary}</p>")
+            continue
         if section.threads:
             for t in section.threads:
                 colorMap = {"critical": "#d32f2f", "warning": "#f9a825", "positive": "#2e7d32", "neutral": "#757575"}
                 color = colorMap.get(t.severity, "#757575")
                 parts.append(
                     f"<div style='border-left:3px solid {color};padding:4px 12px;margin:4px 0'>"
-                    f"<strong style='color:{color}'>{t.title}</strong><br/>"
-                    f"<span>{t.story}</span></div>"
+                    f"<strong style='color:{color}'>>> {t.title}</strong></div>"
                 )
         for block in section.blocks:
             if isinstance(block, HeadingBlock):
@@ -73,14 +97,33 @@ def renderMarkdown(review) -> str:
     parts: list[str] = []
     parts.append(f"## {review.corpName} ({review.stockCode})\n")
 
+    if review.summaryCard:
+        card = review.summaryCard
+        cardLines = []
+        if card.conclusion:
+            cardLines.append(f"**{card.conclusion}**")
+        for s in card.strengths:
+            cardLines.append(f"- [+] {s}")
+        for w in card.warnings:
+            cardLines.append(f"- [-] {w}")
+        if cardLines:
+            parts.append("\n".join(cardLines))
+
     if review.circulationSummary:
         parts.append(f"> **재무 순환 서사**\n> {review.circulationSummary.replace(chr(10), chr(10) + '> ')}")
 
+    detailMode = getattr(review.layout, "detail", True)
+
     for section in review.sections:
+        if not detailMode:
+            parts.append(f"### {section.title}")
+            if section.summary:
+                parts.append(f"*{section.summary}*")
+            continue
         if section.threads:
             for t in section.threads:
                 icon = {"critical": "[!!]", "warning": "[!]", "positive": "[+]", "neutral": "[-]"}
-                parts.append(f"**{icon.get(t.severity, '')} {t.title}**\n{t.story}")
+                parts.append(f"**{icon.get(t.severity, '')} {t.title}**")
         for block in section.blocks:
             if isinstance(block, HeadingBlock):
                 prefix = "###" if block.level == 1 else "####"
@@ -91,11 +134,27 @@ def renderMarkdown(review) -> str:
                 for label, value in block.metrics:
                     parts.append(f"- **{label}**: {value}")
             elif isinstance(block, TableBlock):
+                rendered = False
                 if hasattr(block.df, "to_pandas"):
                     try:
                         parts.append(block.df.to_pandas().to_markdown(index=False))
-                    except ImportError:
-                        parts.append(str(block.df))
+                        rendered = True
+                    except (ImportError, Exception):
+                        pass
+                if not rendered:
+                    # Polars str() fallback — shape/타입 행 제거
+                    raw = str(block.df)
+                    cleaned = []
+                    for l in raw.split("\n"):
+                        if l.startswith("shape:"):
+                            continue
+                        # --- 행 (separator) 과 타입 행 (str, i64, f64 등) 제거
+                        inner = l.replace("│", "").replace("┆", "").strip()
+                        tokens = inner.split()
+                        if tokens and all(t in ("---", "str", "i64", "f64", "i32", "u32", "bool", "date", "null") for t in tokens):
+                            continue
+                        cleaned.append(l)
+                    parts.append("\n".join(cleaned))
             elif isinstance(block, FlagBlock):
                 icon = "⚠" if block.kind == "warning" else "✦"
                 for f in block.flags:
@@ -116,8 +175,18 @@ def renderJson(review) -> str:
         TextBlock,
     )
 
+    detailMode = getattr(review.layout, "detail", True)
+
     sections: list[dict[str, Any]] = []
     for section in review.sections:
+        if not detailMode:
+            sectionDict: dict[str, Any] = {
+                "key": section.key,
+                "title": section.title,
+                "summary": section.summary,
+            }
+            sections.append(sectionDict)
+            continue
         items: list[dict] = []
         for block in section.blocks:
             if isinstance(block, HeadingBlock):
@@ -157,9 +226,10 @@ def renderJson(review) -> str:
                     "evidence": t.evidence,
                 }
             )
-        sectionDict: dict[str, Any] = {
+        sectionDict = {
             "key": section.key,
             "title": section.title,
+            "summary": section.summary,
             "blocks": items,
         }
         if threadDicts:
@@ -171,6 +241,14 @@ def renderJson(review) -> str:
         "corpName": review.corpName,
         "sections": sections,
     }
+    if review.summaryCard:
+        card = review.summaryCard
+        result["summaryCard"] = {
+            "conclusion": card.conclusion,
+            "strengths": card.strengths,
+            "warnings": card.warnings,
+            "grades": card.grades,
+        }
     if review.circulationSummary:
         result["circulationSummary"] = review.circulationSummary
 
