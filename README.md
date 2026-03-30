@@ -326,6 +326,11 @@ c.review("수익구조")     # single section
 | [Kia](docs/samples/000270.md) | Auto | EV transition capex impact, dividend policy |
 | [HD Hyundai Heavy Industries](docs/samples/042660.md) | Shipbuilding | Loss-making turnaround, backlog-driven valuation gap |
 | [SK Telecom](docs/samples/017670.md) | Telecom | Stable dividend, holding-like subsidiary structure |
+| [LG Chem](docs/samples/051910.md) | Chemical/Battery | EBITDA-negative EV/Sales fallback, segment divergence |
+| [SK](docs/samples/034730.md) | Holding | Conglomerate discount, NAV/SOTP gap |
+| [NCSoft](docs/samples/036570.md) | Game | Pipeline-dependent, R&D-driven valuation |
+| [Amorepacific](docs/samples/090430.md) | Consumer | Brand value, channel shift (duty-free to e-commerce) |
+| [Hyundai Steel](docs/samples/004020.md) | Steel/Cyclical | Mid-cycle normalization, China overcapacity |
 
 Each report ends with an **Analysis Limitations** section documenting known model constraints.
 
