@@ -773,6 +773,8 @@ def ask(
         print("  예: dartlab.ask('005930', '영업이익률 추세는?')\n")
         return None
 
+    # kwargs에서 company 제거 (내부에서 직접 전달)
+    kwargs.pop("company", None)
     _call_kwargs = dict(
         company=company,
         include=include,

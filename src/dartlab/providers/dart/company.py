@@ -2718,7 +2718,7 @@ class Company:
             return None
         return result.to_dataframe()
 
-    def review(self, section: str | None = None, layout=None, helper: bool | None = None, *, basePeriod: str | None = None):
+    def review(self, section: str | None = None, layout=None, helper: bool | None = None, *, preset: str | None = None, detail: bool | None = None, basePeriod: str | None = None):
         """재무제표 구조화 보고서 — 14개 섹션 데이터 검토서.
 
         Capabilities:
@@ -2726,6 +2726,8 @@ class Company:
             - 단일 섹션 지정 가능
             - 4개 출력 형식 (rich, html, markdown, json)
             - 섹션간 순환 서사 자동 감지
+            - 프리셋 지원 (executive/audit/credit/growth/valuation)
+            - detail=False로 요약만 표시
             - 레이아웃 커스텀
 
         AIContext:
@@ -2736,9 +2738,11 @@ class Company:
             section: 섹션명 ("수익구조" 등). None이면 전체.
             layout: ReviewLayout 커스텀. None이면 기본.
             helper: True면 해석 힌트 텍스트 포함. None이면 자동.
+            preset: 프리셋명 ("executive"/"audit"/"credit"/"growth"/"valuation"). None이면 전체.
+            detail: True면 전체 블록, False면 섹션 요약만. None이면 preset 기본값 또는 True.
 
         Returns:
-            Review — 14개 섹션 구조화 보고서.
+            Review — 구조화 보고서.
 
         Requires:
             데이터: finance + report (자동 다운로드)
@@ -2747,11 +2751,16 @@ class Company:
 
             c.review()                        # 전체 검토서
             c.review("수익구조")                # 특정 섹션
+            c.review(preset="audit")          # 감사/회계 검토용
+            c.review(preset="executive")      # 경영진 요약
+            c.review(detail=False)            # 전 섹션 요약만
 
         Guide:
-            - "재무 검토서 만들어줘" → c.review()
-            - "수익구조 분석" → c.review("수익구조")
-            - "AI 의견 포함 보고서" → c.reviewer() (review + AI 해석)
+            - "재무 검토서 만들어줘" -> c.review()
+            - "수익구조 분석" -> c.review("수익구조")
+            - "감사용 리뷰" -> c.review(preset="audit")
+            - "요약만 보여줘" -> c.review(detail=False)
+            - "AI 의견 포함 보고서" -> c.reviewer() (review + AI 해석)
 
         SeeAlso:
             - reviewer: review() + AI 섹션별 종합의견 (AI 해석 포함)
@@ -2760,9 +2769,9 @@ class Company:
         """
         from dartlab.review.registry import buildReview
 
-        return buildReview(self, section=section, layout=layout, helper=helper, basePeriod=basePeriod)
+        return buildReview(self, section=section, layout=layout, helper=helper, preset=preset, detail=detail, basePeriod=basePeriod)
 
-    def reviewer(self, section: str | None = None, layout=None, helper: bool | None = None, guide: str | None = None, *, basePeriod: str | None = None):
+    def reviewer(self, section: str | None = None, layout=None, helper: bool | None = None, guide: str | None = None, *, preset: str | None = None, detail: bool | None = None, basePeriod: str | None = None):
         """AI 분석 보고서 — review() + 섹션별 AI 종합의견.
 
         Capabilities:
@@ -2806,7 +2815,7 @@ class Company:
         """
         from dartlab.ai.reviewer import buildReviewWithAI
 
-        return buildReviewWithAI(self, section=section, layout=layout, helper=helper, guide=guide, basePeriod=basePeriod)
+        return buildReviewWithAI(self, section=section, layout=layout, helper=helper, guide=guide, preset=preset, detail=detail, basePeriod=basePeriod)
 
     def analysis(self, axis: str | None = None, **kwargs):
         """재무제표 완전 분석 — 14축, 단일 종목 심층.
@@ -4897,8 +4906,8 @@ class Company:
             - 스트리밍 응답 지원
 
         AIContext:
-            Tier 1 시스템 주도 분석. 질문 분류 후 엔진이 계산한 결과를
-            컨텍스트로 조립하여 LLM이 해석/설명만 수행.
+            AI가 분석 전 과정을 주도. dartlab 엔진(analysis, scan, gather 등)을
+            도구로 호출하여 데이터 수집, 계산, 판단, 해석을 수행.
 
         Args:
             question: 질문 텍스트.

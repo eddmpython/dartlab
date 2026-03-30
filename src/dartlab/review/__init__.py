@@ -48,6 +48,7 @@ from dartlab.review.layout import DEFAULT_LAYOUT, ReviewLayout
 from dartlab.review.registry import buildBlocks, buildReview
 from dartlab.review.renderer import renderReview
 from dartlab.review.section import Section
+from dartlab.review.summary import SummaryCard
 from dartlab.review.utils import fmtAmt, fmtAmtScale, isTerminal, unifyTableScale
 
 
@@ -178,6 +179,7 @@ class Review:
     layout: ReviewLayout = field(default_factory=ReviewLayout)
     aiNote: str | None = None  # AI 미설정 시 안내 메시지
     circulationSummary: str = ""  # 재무제표 순환 서사 요약
+    summaryCard: SummaryCard | None = None  # 최상단 요약 카드
 
     def __init__(
         self,
@@ -189,6 +191,7 @@ class Review:
         layout: ReviewLayout | None = None,
         aiNote: str | None = None,
         circulationSummary: str = "",
+        summaryCard: SummaryCard | None = None,
     ):
         """리스트 전달 시 자유 조립, 아니면 일반 생성."""
         if isinstance(itemsOrStockCode, list):
@@ -211,6 +214,7 @@ class Review:
             self.layout = layout or ReviewLayout()
             self.aiNote = aiNote
             self.circulationSummary = circulationSummary
+            self.summaryCard = summaryCard
         elif isinstance(itemsOrStockCode, str):
             # Review("005930", corpName=..., ...)
             self.stockCode = itemsOrStockCode
@@ -219,6 +223,7 @@ class Review:
             self.layout = layout or ReviewLayout()
             self.aiNote = aiNote
             self.circulationSummary = circulationSummary
+            self.summaryCard = summaryCard
         else:
             # Review(stockCode=..., corpName=..., ...)
             self.stockCode = stockCode
@@ -227,6 +232,7 @@ class Review:
             self.layout = layout or ReviewLayout()
             self.aiNote = aiNote
             self.circulationSummary = circulationSummary
+            self.summaryCard = summaryCard
 
     def render(self, fmt: str = "rich") -> str:
         """통합 렌더러 — rich/html/markdown/json 4종 출력.
@@ -428,6 +434,7 @@ __all__ = [
     "Review",
     "ReviewLayout",
     "Section",
+    "SummaryCard",
     "Block",
     "TextBlock",
     "HeadingBlock",

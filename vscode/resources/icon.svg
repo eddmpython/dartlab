@@ -1,0 +1,17 @@
+<svg width="24" height="24" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <mask id="eyes">
+      <rect width="128" height="128" fill="white"/>
+      <ellipse cx="42" cy="68" rx="8" ry="10" fill="black"/>
+      <ellipse cx="72" cy="65" rx="7" ry="9" fill="black"/>
+    </mask>
+  </defs>
+  <!-- blob body with eye holes -->
+  <ellipse cx="58" cy="72" rx="52" ry="48" fill="#C5C5C5" mask="url(#eyes)"/>
+  <!-- magnifier lens -->
+  <circle cx="88" cy="38" r="24" fill="none" stroke="#C5C5C5" stroke-width="8"/>
+  <!-- magnifier handle -->
+  <line x1="106" y1="56" x2="120" y2="76" stroke="#C5C5C5" stroke-width="8" stroke-linecap="round"/>
+  <!-- left cheek -->
+  <ellipse cx="30" cy="82" rx="7" ry="4" fill="#C5C5C5" opacity="0.5"/>
+</svg>

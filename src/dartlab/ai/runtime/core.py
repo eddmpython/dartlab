@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import re
 import sqlite3
+from difflib import SequenceMatcher
 from typing import Any, Generator
 
 from dartlab.ai.runtime.events import AnalysisEvent
@@ -210,18 +211,27 @@ def _executeCodeBlock(code: str, stockCode: str | None = None) -> str:
     return executor.execute(code, stockCode=stockCode, timeout=60)
 
 
+_LOOP_SIMILARITY_THRESHOLD = 0.85
+
+
 def _streamWithCodeExecution(
     llm: Any,
     messages: list[dict],
     stockCode: str | None,
     *,
     maxRounds: int = 5,
-) -> Generator[str, None, None]:
+) -> Generator[str | AnalysisEvent, None, None]:
     """LLM 스트리밍 + 코드블록 자동 감지/실행 루프.
 
     LLM이 ```python 블록을 생성하면 자동 실행하고
     결과를 LLM에 피드백하여 해석을 이어간다.
+
+    Yields:
+        str: 텍스트 청크 (chunk 이벤트로 변환됨)
+        AnalysisEvent: code_round 이벤트 (진행 상태)
     """
+    prevCode: str | None = None
+
     for _round in range(maxRounds):
         buffer = ""
         for chunk in llm.stream(messages):
@@ -235,6 +245,22 @@ def _streamWithCodeExecution(
 
         # 마지막 코드블록 실행
         code = codeBlocks[-1]
+
+        # 반복 루프 감지 — 이전 코드와 유사하면 조기 종료
+        if prevCode is not None:
+            similarity = SequenceMatcher(None, prevCode, code).ratio()
+            if similarity >= _LOOP_SIMILARITY_THRESHOLD:
+                yield f"\n\n[반복 코드 감지 — 루프 종료 (유사도 {similarity:.0%})]\n\n"
+                return
+        prevCode = code
+
+        # 진행 이벤트
+        yield AnalysisEvent("code_round", {
+            "round": _round + 1,
+            "maxRounds": maxRounds,
+            "status": "executing",
+        })
+
         try:
             result = _executeCodeBlock(code, stockCode=stockCode)
         except (OSError, RuntimeError, TimeoutError, ValueError) as exc:
@@ -245,16 +271,23 @@ def _streamWithCodeExecution(
 
         # 결과를 대화에 추가하여 LLM이 해석하도록 재요청
         messages.append({"role": "assistant", "content": buffer})
-        messages.append({
-            "role": "user",
-            "content": (
+        # 에러 여부에 따라 피드백 메시지 분기
+        isError = "실행 오류" in result or "Error" in result or "Traceback" in result
+        if isError:
+            feedback = (
+                "코드 실행 결과:\n\n"
+                f"```\n{result}\n```\n\n"
+                "에러를 읽고 원인을 진단하세요. 같은 코드를 반복하지 마세요.\n"
+                "API를 모르겠으면 `dartlab.capabilities(search='키워드')`로 검색하세요."
+            )
+        else:
+            feedback = (
                 "코드 실행 결과:\n\n"
                 f"```\n{result}\n```\n\n"
                 "이 결과를 바탕으로 해석하세요. "
-                "오류가 있으면 수정 코드를 짜서 재실행하세요. "
                 "결과가 잘렸으면 .head()/.filter()로 범위를 좁혀 재실행하세요."
-            ),
-        })
+            )
+        messages.append({"role": "user", "content": feedback})
 
     # maxRounds 도달 — 마지막 스트리밍으로 종합
     yield from llm.stream(messages)
@@ -285,30 +318,61 @@ def _buildHistoryMessages(
 # ── 시스템 프롬프트 ───────────────────────────────────────
 
 _SYSTEM_PROMPT = """\
-당신은 dartlab 재무분석 플랫폼의 AI입니다.
+당신은 기업분석가이자 경제분석가입니다.
+dartlab 재무분석 플랫폼을 사용해 한국/미국 상장기업을 분석합니다.
 ```python 코드블록을 작성하면 자동 실행되고 결과가 피드백됩니다.
 
-## 사용법
-- `import dartlab` 하나로 시작. 종목코드 하나면 모든 분석 가능.
-- API를 모르면 `dartlab.capabilities(search='키워드')`로 검색.
-- 결과는 `print()`로 출력. 실행 실패 시 에러를 읽고 수정 코드 재생성.
+## 실행 환경
+코드 실행 시 아래가 이미 준비되어 있습니다. 다시 선언하지 마세요:
+- `dartlab` — dartlab 패키지
+- `pl` — polars (DataFrame 처리)
+{env_block}
 
-## 도구 우선순위 — 1차부터 쓰고, 깊이가 필요하면 2차로
-**1차 (여기서 시작):**
-- 기업 분석 → `c.review("섹션명")` — 구조화된 보고서 (수익구조, 안정성, 성장성, 종합진단 등)
-- 기업간 비교 → `dartlab.scan("축", "종목코드")` — 동종업계 순위
-- 외부 데이터 → `dartlab.gather("종류", "종목코드")` — 주가, 컨센서스, 수급
+## 도구 — 1순위부터 쓰고, 깊이가 필요하면 2순위로
 
-**2차 (깊이가 필요할 때):**
-- `c.analysis("축")` — 14축 상세 (waterfall, 듀퐁, Sloan 등)
-- `c.ratios`, `c.BS`, `c.IS`, `c.CF` — 원본 재무제표/비율
-- `c.sections`, `c.show("토픽")` — 공시 원문
+### review — 기업 분석 보고서 (1순위)
+c.review()              # 전체 보고서
+c.review("수익구조")    # 단일 섹션
+결과를 텍스트로 보려면: print(c.review("수익구조").toMarkdown())
+유효 섹션: 수익구조, 자금조달, 자산구조, 현금흐름, 수익성, 성장성, 안정성,
+          효율성, 종합평가, 이익품질, 비용구조, 자본배분, 투자효율, 재무정합성,
+          가치평가, 지배구조, 공시변화, 비교분석, 매출전망
+
+### scan — 기업간 비교/순위 (시장 전체, 1순위)
+dartlab.scan("축")                    # 시장 전체
+dartlab.scan("축", "005930")          # 특정 종목 포함 순위
+유효 축: governance, workforce, capital, debt, cashflow, audit, insider,
+        quality, liquidity, growth, profitability, digest, network
+반환: Polars DataFrame
+
+### gather — 외부 시장 데이터 (1순위)
+c.gather("price")       # 주가
+c.gather("flow")        # 수급 (외인/기관/개인)
+c.gather("consensus")   # 컨센서스 (목표가/의견)
+c.gather("news")        # 뉴스
+c.gather("macro")       # 거시경제 지표
+
+### analysis — 상세 분석 (2순위, 깊이가 필요할 때)
+c.analysis("축")
+유효 축: 수익구조, 안정성, 성장성, 효율성, 수익성, 현금흐름, 이익품질,
+        비용구조, 자본배분, 투자효율, 가치평가, 듀퐁, 워터폴, Sloan
+
+### Company 원본 데이터 (2순위)
+c.BS, c.IS, c.CF        # 재무제표 (Polars DataFrame)
+c.ratios                 # 재무비율
+c.sections               # 공시 원문 (topic x period)
+c.show("토픽")           # 특정 토픽 원문
+
+### API 검색 — 모르는 API가 있을 때
+dartlab.capabilities(search="키워드")
 
 ## 규칙
 - 되묻지 말고 즉시 코드를 실행하라. 합리적 기본값 사용.
 - 숫자 나열이 아니라 원인/추세/시사점을 해석하라.
 - 한국어 질문에는 한국어로 답변.
 - 코드로 확인되지 않은 수치를 인용하지 마라.
+- 에러 발생 시: 에러를 읽고 원인을 진단한 뒤 수정. 같은 코드를 반복하지 마라.
+- review/scan/gather를 먼저 쓰고, 깊이가 필요할 때만 analysis/원본데이터.
 """
 
 _EDGAR_SUPPLEMENT = """
@@ -321,13 +385,29 @@ _EDGAR_SUPPLEMENT = """
 # ── 프롬프트 조립 ─────────────────────────────────────────
 
 
-def _buildSystemPrompt(config_: Any, *, market: str = "KR") -> str:
-    """시스템 프롬프트 조립 — CAPABILITIES + 사용설명서."""
+def _buildSystemPrompt(
+    config_: Any,
+    *,
+    market: str = "KR",
+    hasCompany: bool = False,
+    stockCode: str | None = None,
+    corpName: str | None = None,
+) -> str:
+    """시스템 프롬프트 조립 — 역할 + 실행환경 + 도구 상세 + 규칙."""
     custom = getattr(config_, "system_prompt", None)
     if custom:
         return custom
 
-    parts = [_SYSTEM_PROMPT]
+    # 실행 환경 블록 동적 생성
+    if hasCompany and stockCode:
+        label = f"{corpName}({stockCode})" if corpName else stockCode
+        env_block = f"- `c` — {label} Company 객체 (이미 생성됨. 바로 c.review() 등 사용)"
+    else:
+        env_block = "- 종목 분석이 필요하면 `c = dartlab.Company('종목코드')`로 생성하세요"
+
+    prompt = _SYSTEM_PROMPT.replace("{env_block}", env_block)
+
+    parts = [prompt]
     if market == "US":
         parts.append(_EDGAR_SUPPLEMENT)
     return "\n".join(parts)
@@ -516,7 +596,13 @@ def _analyze_inner(
 
     # ── 2. 시스템 프롬프트 조립 ──
     company_market = getattr(company, "market", "KR") if company else "KR"
-    system_prompt = _buildSystemPrompt(config_, market=company_market)
+    system_prompt = _buildSystemPrompt(
+        config_,
+        market=company_market,
+        hasCompany=company is not None,
+        stockCode=stock_id,
+        corpName=corp_name,
+    )
 
     # company=None이면 종목명 사전 검색
     prefetchText = ""
@@ -569,9 +655,12 @@ def _analyze_inner(
 
     llm = create_provider(config_)
 
-    for chunk in _streamWithCodeExecution(llm, messages, stockCode=stock_id):
-        _full_response_parts.append(chunk)
-        yield AnalysisEvent("chunk", {"text": chunk})
+    for item in _streamWithCodeExecution(llm, messages, stockCode=stock_id):
+        if isinstance(item, AnalysisEvent):
+            yield item
+        else:
+            _full_response_parts.append(item)
+            yield AnalysisEvent("chunk", {"text": item})
 
     # ── 분석 메모리 저장 ──
     if stock_id and _full_response_parts:

@@ -1,0 +1,9 @@
+src/**
+webview/**
+webview-report/**
+node_modules/**
+.gitignore
+tsconfig.json
+esbuild.mjs
+**/*.ts
+**/*.map

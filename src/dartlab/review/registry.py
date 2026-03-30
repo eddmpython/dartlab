@@ -593,12 +593,30 @@ def buildReview(
     layout: ReviewLayout | None = None,
     helper: bool | None = None,
     *,
+    preset: str | None = None,
+    detail: bool | None = None,
     basePeriod: str | None = None,
 ):
     """Company에서 Review를 생성."""
     from dartlab.review import Review
 
-    ly = layout or DEFAULT_LAYOUT
+    ly = layout or ReviewLayout()
+
+    # ── 프리셋 적용 ──
+    if preset is not None:
+        from dartlab.review.presets import PRESETS
+
+        if preset not in PRESETS:
+            raise ValueError(f"알 수 없는 프리셋: {preset}. 사용 가능: {', '.join(PRESETS)}")
+        cfg = PRESETS[preset]
+        ly.sectionOrder = cfg["sections"]
+        if detail is None:
+            ly.detail = cfg.get("detail", True)
+
+    # detail 명시 오버라이드
+    if detail is not None:
+        ly.detail = detail
+
     showHelper = helper if helper is not None else ly.helper
 
     corpName = getattr(company, "corpName", "")
@@ -684,5 +702,22 @@ def buildReview(
                 if sec.key in thread.involvedSections:
                     sec.threads.append(thread)
         review.circulationSummary = buildCirculationSummary(threads) if threads else ""
+
+        # ── 요약 카드 생성 ──
+        from dartlab.review.summary import buildSectionSummary, buildSummaryCard
+
+        scorecardData = None
+        try:
+            from dartlab.analysis.financial.scorecard import calcScorecard
+
+            scorecardData = calcScorecard(company, basePeriod=basePeriod)
+        except (ImportError, KeyError, ValueError, TypeError, AttributeError):
+            pass
+
+        review.summaryCard = buildSummaryCard(threads, scorecardData, review.sections)
+
+        # ── 섹션별 요약 생성 ──
+        for sec in review.sections:
+            sec.summary = buildSectionSummary(sec)
 
     return review

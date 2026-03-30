@@ -2207,7 +2207,7 @@ class Company:
             데이터: LLM API 키 설정 (dartlab ai 또는 환경변수)
 
         AIContext:
-            - Engine-First: 엔진이 계산 후 결과를 LLM에게 전달하여 해석
+            AI가 분석 전 과정을 주도. dartlab 엔진을 도구로 호출하여 분석 수행.
 
         Guide:
             - "이 기업 리스크가 뭐야?" → c.ask("What are the key risks?")

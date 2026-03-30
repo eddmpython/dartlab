@@ -1,0 +1,109 @@
+{
+  "name": "dartlab",
+  "displayName": "DartLab",
+  "description": "DART 전자공시 AI 기업분석",
+  "version": "0.1.0",
+  "publisher": "eddmpython",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Data Science",
+    "Other"
+  ],
+  "keywords": [
+    "dart",
+    "financial",
+    "korea",
+    "stock",
+    "analysis",
+    "edgar"
+  ],
+  "icon": "resources/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eddmpython/dartlab"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "dartlab",
+          "title": "DartLab",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "dartlab": [
+        {
+          "type": "webview",
+          "id": "dartlab.sidebar",
+          "name": "DartLab"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "dartlab.open",
+        "title": "DartLab: New Chat",
+        "icon": "$(add)"
+      },
+      {
+        "command": "dartlab.settings",
+        "title": "DartLab: AI Settings"
+      },
+      {
+        "command": "dartlab.restart",
+        "title": "DartLab: Restart Server"
+      },
+      {
+        "command": "dartlab.showLogs",
+        "title": "DartLab: Show Server Logs"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "dartlab.open",
+        "key": "ctrl+shift+d",
+        "mac": "cmd+shift+d"
+      }
+    ],
+    "configuration": {
+      "title": "DartLab",
+      "properties": {
+        "dartlab.pythonPath": {
+          "type": "string",
+          "default": "",
+          "description": "Python executable path (auto-detect if empty)"
+        },
+        "dartlab.serverPort": {
+          "type": "number",
+          "default": 8400,
+          "description": "Server port (default: 8400)"
+        },
+        "dartlab.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-start server on activation"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "dev": "node esbuild.mjs --watch",
+    "build": "node esbuild.mjs --production",
+    "lint": "eslint src/",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.0"
+  }
+}

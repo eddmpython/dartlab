@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-extension",
+      "type": "shell",
+      "command": "node esbuild.mjs --production",
+      "problemMatcher": []
+    },
+    {
+      "label": "build-webview",
+      "type": "shell",
+      "command": "npx vite build",
+      "options": {
+        "cwd": "${workspaceFolder}/webview"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "build",
+      "dependsOn": ["build-extension", "build-webview"],
+      "dependsOrder": "sequence",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

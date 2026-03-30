@@ -519,13 +519,22 @@ def calcStabilityFlags(company, *, basePeriod: str | None = None) -> list[str]:
     flags: list[str] = []
 
     # 레버리지
+    isFinancial = _isHoldingOrFinancial(company)
     lev = calcLeverageTrend(company, basePeriod=basePeriod)
     if lev and lev["history"]:
         hist = lev["history"]
         h0 = hist[0]
         dr = h0.get("debtRatio")
         if dr is not None:
-            if dr > 200:
+            if isFinancial:
+                # 금융업: 예수부채로 부채비율이 구조적으로 높음. 비금융 기준 적용 불가
+                if dr < 1000:
+                    flags.append(f"부채비율 {dr:.0f}% -- 금융업 양호")
+                elif dr < 1500:
+                    flags.append(f"부채비율 {dr:.0f}% -- 금융업 보통")
+                else:
+                    flags.append(f"부채비율 {dr:.0f}% -- 금융업 과다")
+            elif dr > 200:
                 flags.append(f"부채비율 {dr:.0f}% -- 재무 위험")
             elif dr < 50:
                 flags.append(f"부채비율 {dr:.0f}% -- 매우 안정")
@@ -550,9 +559,8 @@ def calcStabilityFlags(company, *, basePeriod: str | None = None) -> list[str]:
             if nd is not None and nd < 0:
                 isNetCash = True
         # 지주사/금융업: 영업이익 구조적 저수준 (지분법이익이 영업외에 잡힘)
-        isHoldingOrFinancial = _isHoldingOrFinancial(company)
         if ic is not None:
-            if isHoldingOrFinancial:
+            if isFinancial:
                 # 지주사/금융은 영업이익 기반 이자보상배율이 구조적으로 낮음
                 if ic < 1:
                     flags.append(f"이자보상배율 {ic:.1f}배 -- 지주/금융 구조상 저수준 (영업외 수익이 이자 커버)")
@@ -562,13 +570,11 @@ def calcStabilityFlags(company, *, basePeriod: str | None = None) -> list[str]:
                 flags.append(f"이자보상배율 {ic:.1f}배 -- 이자 부담 과다")
 
     # Altman Z-Score (제조업 기반 모형 — 금융/지주사는 구조적 왜곡)
-    distress = calcDistressScore(company, basePeriod=basePeriod)
-    if distress and distress.get("latestScore") is not None:
-        z = distress["latestScore"]
-        if z < 1.81:
-            if isHoldingOrFinancial:
-                flags.append(f"Altman Z-Score {z:.2f} -- 금융/지주 구조상 저평가 (참고용)")
-            else:
+    if not isFinancial:
+        distress = calcDistressScore(company, basePeriod=basePeriod)
+        if distress and distress.get("latestScore") is not None:
+            z = distress["latestScore"]
+            if z < 1.81:
                 flags.append(f"Altman Z-Score {z:.2f} -- 부실 위험 구간")
 
     return flags

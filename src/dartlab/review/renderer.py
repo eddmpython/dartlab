@@ -24,6 +24,10 @@ def renderReview(console, review) -> None:
     console.print(f"[dim]{'─' * ly.separatorWidth}[/]")
     console.print("[dim]  dartlab review[/]")
 
+    # 요약 카드 (summaryCard가 있으면 circulationSummary 위에 표시)
+    if review.summaryCard:
+        _renderSummaryCard(console, review.summaryCard, ly)
+
     # 순환 서사 요약
     if review.circulationSummary:
         _renderCirculationSummary(console, review.circulationSummary, ly)
@@ -37,6 +41,41 @@ def renderReview(console, review) -> None:
         console.print(f"[dim]      {review.aiNote}[/]")
 
     console.print()
+
+
+def _renderSummaryCard(console, card, ly) -> None:
+    """최상단 요약 카드 렌더링."""
+    from rich.padding import Padding
+    from rich.panel import Panel
+    from rich.text import Text
+
+    lines = Text()
+
+    if card.conclusion:
+        lines.append(card.conclusion, style="bold white")
+        lines.append("\n")
+
+    if card.grades:
+        gradeStr = " | ".join(f"{k} {v}" for k, v in card.grades.items())
+        lines.append(gradeStr, style="dim")
+        lines.append("\n")
+
+    if card.strengths:
+        lines.append("\n")
+        for s in card.strengths:
+            lines.append(f"  + {s}\n", style="green")
+
+    if card.warnings:
+        for w in card.warnings:
+            lines.append(f"  - {w}\n", style="yellow")
+
+    console.print()
+    panel = Panel(
+        lines,
+        border_style="bold",
+        padding=(0, 2),
+    )
+    console.print(Padding(panel, (0, 0, 0, ly.indentH2)))
 
 
 def _renderCirculationSummary(console, summary: str, ly) -> None:
@@ -60,10 +99,20 @@ def _renderSection(console, section: Section, ly: ReviewLayout) -> None:
     from rich.padding import Padding
     from rich.text import Text
 
+    h1 = " " * ly.indentH1
+
+    # detail=False: summary만 표시
+    if not ly.detail:
+        if section.title:
+            console.print()
+            console.print(f"{h1}[bold cyan]■ {section.title}[/]")
+        if section.summary:
+            console.print(Padding(Text(section.summary, style="dim"), (0, 0, 0, ly.indentH2)))
+        return
+
     prevBlockType = None
     helperRendered = False
 
-    h1 = " " * ly.indentH1
     h2 = " " * ly.indentH2
     body = " " * ly.indentBody
 
@@ -170,12 +219,8 @@ def _renderSection(console, section: Section, ly: ReviewLayout) -> None:
 
 
 def _renderSectionThreads(console, threads, ly) -> None:
-    """섹션에 연결된 인과 서사 렌더링."""
-    from rich.padding import Padding
-    from rich.text import Text
-
+    """섹션에 연결된 인과 서사 -- title만 표시 (story는 상단 순환 서사에서 1회)."""
     h2 = " " * ly.indentH2
-    body = " " * ly.indentBody
 
     console.print()
     for t in threads:
@@ -187,18 +232,6 @@ def _renderSectionThreads(console, threads, ly) -> None:
         }
         color = colorMap.get(t.severity, "dim")
         console.print(f"{h2}[{color}]>> {t.title}[/]")
-        for line in t.story.split("\n"):
-            if line.strip():
-                console.print(
-                    Padding(
-                        Text(line.strip(), style=color.replace("bold ", "")),
-                        (0, 0, 0, ly.indentBody),
-                    )
-                )
-        # 관련 섹션 표시
-        others = [s for s in t.involvedSections if s != ""]
-        if others:
-            console.print(f"{body}[dim]-> 관련: {', '.join(others)}[/]")
 
 
 def _renderDataFrame(console, block: TableBlock, indent: int = 6) -> None:

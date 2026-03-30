@@ -31,7 +31,10 @@ class EventKind:
     VALIDATION = "validation"
     CORRECTION = "correction"
 
-    # ── UI 제어 이벤트 (신규) ──
+    # ── 코드 실행 이벤트 ──
+    CODE_ROUND = "code_round"
+
+    # ── UI 제어 이벤트 ──
     UI_ACTION = "ui_action"
 
 
@@ -50,6 +53,7 @@ class AnalysisEvent:
         - "done": 완료 (response_meta 포함 가능)
         - "error": 에러 (error, action)
         - "system_prompt": 시스템 프롬프트 (text, userContent)
+        - "code_round": 코드 실행 라운드 진행 (round, maxRounds, status)
         - "validation": 숫자 검증 결과 (mismatches[])
         - "ui_action": canonical UI action payload
     """

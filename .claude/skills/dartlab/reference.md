@@ -28,8 +28,8 @@
 | `collectAll` | function | 전체 상장종목 DART 데이터 일괄 수집. |
 | `downloadAll` | function | HuggingFace에서 전체 시장 데이터 다운로드. |
 | `scan` | function | 시장 전체 횡단분석 -- 15축, 전부 Polars DataFrame. |
-| `analysis` | function | 재무제표 완전 분석 — 15축, 단일 종목 심층. |
-| `gather` | function | 외부 시장 데이터 통합 수집 — 4축, 전부 Polars DataFrame. |
+| `analysis` | function | 재무제표 완전 분석 — 18축, 단일 종목 심층. |
+| `gather` | function | 외부 시장 데이터 통합 수집 — 8축, 전부 Polars DataFrame. |
 | `network` | function | 한국 상장사 전체 관계 지도. |
 | `audit` | function | 감사 Red Flag 분석. |
 | `forecast` | function | 매출 앙상블 예측. |
@@ -240,6 +240,7 @@ gather: 주가/수급 데이터 (모멘텀 보완)
 Part 2 — 핵심비율: 수익성, 성장성, 안정성, 효율성, 종합평가
 Part 3 — 심화분석: 이익품질, 비용구조, 자본배분, 투자효율, 재무정합성
 Part 4 — 가치평가: DCF, DDM, 상대가치, RIM, 목표주가, 역내재성장률, 민감도
+Part 5 — 비재무 심화: 지배구조, 공시변화감지, 비교분석
 각 축은 Company를 받아 dict를 반환하는 순수 함수 집합
 review()가 이 결과를 소비하여 구조화 보고서 생성
 **Requires:** 데이터: finance (자동 다운로드)
@@ -261,6 +262,10 @@ Company.insights: 7영역 인사이트 등급 (빠른 요약)
 flow: 외국인/기관 수급 동향 (KR 전용, Naver)
 macro: ECOS(KR 12개) / FRED(US 25개) 거시지표 시계열
 news: Google News RSS 뉴스 수집 (최근 30일)
+sector: 업종 분류 (KR KIND+Naver)
+insider: 내부자 거래 (KR DART)
+ownership: 기관/외국인 지분 보유 (KR Naver)
+peers: 동종업종 피어 종목 (시총 포함, KR Naver)
 자동 fallback 체인, circuit breaker, TTL 캐시
 **Requires:** price/flow/news: 없음 (공개 API)
 macro: API 키 — ECOS_API_KEY (KR) 또는 FRED_API_KEY (US)
@@ -270,6 +275,10 @@ macro: API 키 — ECOS_API_KEY (KR) 또는 FRED_API_KEY (US)
 "외국인 매매 동향" -> gather("flow", "005930")
 "금리 추이 알려줘" -> gather("macro", "BASE_RATE") 또는 gather("macro", "FEDFUNDS")
 "최근 뉴스 찾아줘" -> gather("news", "삼성전자")
+"업종 알려줘" -> gather("sector", "005930")
+"내부자 거래 보여줘" -> gather("insider", "005930")
+"지분 보유 현황" -> gather("ownership", "005930")
+"동종업종 비교" -> gather("peers", "005930")
 "미국 거시지표 전체" -> gather("macro", market="US") 또는 gather("US")
 주가+수급은 scan과 다름. scan은 재무 기반 횡단, gather는 시장 실시간.
 **SeeAlso:** scan: 재무 기반 전종목 횡단분석 (거버넌스, 현금흐름 등)
@@ -564,7 +573,7 @@ setup: AI provider 설정 (capabilities 확인 후 설정)
 
 ---
 
-## CLI (18개 명령)
+## CLI (19개 명령)
 
 `dartlab <command>` 형태로 사용.
 
@@ -582,6 +591,7 @@ setup: AI provider 설정 (capabilities 확인 후 설정)
 | `excel` | 기업 데이터 Excel 내보내기 |
 | `review` | 기업 분석 검토서 (데이터/AI) |
 | `collect` | DART/EDGAR 데이터 수집 |
+| `update` | 로컬 데이터를 HuggingFace 최신으로 갱신 |
 | `ai` | AI 분석 웹 인터페이스 실행 |
 | `share` | 터널로 로컬 서버 외부 공유 |
 | `status` | LLM 연결 상태 확인 |
@@ -750,7 +760,7 @@ dartlab.scan.topics()                   # 가용 축 목록
 
 ---
 
-## Gather Axis (4개 축)
+## Gather Axis (8개 축)
 
 `dartlab.gather(axis, target)` 형태로 외부 시장 데이터 수집.
 
@@ -760,13 +770,21 @@ dartlab.scan.topics()                   # 가용 축 목록
 | `flow` | 수급 | 외국인/기관 매매 동향 (KR 전용) | O |
 | `macro` | 거시지표 | ECOS(KR 12개) / FRED(US 25개) 거시 시계열 | - |
 | `news` | 뉴스 | Google News RSS — 최근 30일 | O |
+| `sector` | 업종 | 업종 분류 — KR(KIND+Naver) / US(Yahoo) | O |
+| `insider` | 내부자거래 | 임원/주요주주 주식 거래 — KR(DART) / US(Yahoo) | O |
+| `ownership` | 지분 | 기관/외국인 보유 현황 | O |
+| `peers` | 피어 | 같은 업종 내 피어 종목 목록 (시총 포함) | O |
 
 **한글 별칭:**
 
 - `flow`: 수급
+- `insider`: 내부자
 - `macro`: 거시, 매크로
 - `news`: 뉴스
+- `ownership`: 지분
+- `peers`: 피어, 동종업종
 - `price`: 주가
+- `sector`: 업종
 
 **사용법:**
 
@@ -979,8 +997,8 @@ ratioSeries: 연도별 재무비율 시계열
 멀티 provider 지원 (openai, ollama, codex 등)
 스트리밍 응답 지원
 **Requires:** API 키: LLM provider API 키 (OPENAI_API_KEY 등)
-**AIContext:** Tier 1 시스템 주도 분석. 질문 분류 후 엔진이 계산한 결과를
-컨텍스트로 조립하여 LLM이 해석/설명만 수행.
+**AIContext:** AI가 분석 전 과정을 주도. dartlab 엔진(analysis, scan, gather 등)을
+도구로 호출하여 데이터 수집, 계산, 판단, 해석을 수행.
 **Guide:** "영업이익률 분석해줘" → c.ask("영업이익률 추세는?")
 "AI한테 질문하고 싶어" → c.ask("질문")
 "스트리밍으로 답변받기" → c.ask("질문", stream=True)
@@ -1826,6 +1844,8 @@ show: c.show("employee")로 docs 기반 직원 상세
 | `evEbitdaMultiple` | `float` |  |
 | `label` | `str` |  |
 | `description` | `str` |  |
+| `beta` | `float` | 1.0 |
+| `exitMultiple` | `float` | 0.0 |
 
 ### RankInfo
 

@@ -459,7 +459,8 @@ class DartlabCodeExecutor(LocalPythonBackend):
             "pl.Config.set_tbl_width_chars(120)\n"
         )
         if stockCode:
-            preamble += f'_c = dartlab.Company("{stockCode}")\n'
+            preamble += f'c = dartlab.Company("{stockCode}")\n'
+            preamble += "company = c\n"
 
         # 결과 캡처 래퍼: 마지막 expression의 결과를 출력
         wrappedCode = self._wrapForCapture(cleanCode)

@@ -141,6 +141,17 @@ def run(args) -> int:
                     toolLines.append(line)
                     live.update(Markdown("\n".join(toolLines)))
 
+                elif ev.kind == "code_round":
+                    r = ev.data.get("round", "?")
+                    mx = ev.data.get("maxRounds", "?")
+                    live.update(
+                        Spinner(
+                            "dots",
+                            text=f"[{CLR_MUTED}]코드 실행 {r}/{mx}...[/]",
+                            style=CLR_MUTED,
+                        )
+                    )
+
                 elif ev.kind == "error":
                     errorMsg = ev.data.get("error", "Unknown error")
                     _printErrorWithHint(errorMsg, console)

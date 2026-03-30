@@ -248,9 +248,9 @@ dartlab.scan("account", "매출액")          # 전종목 매출액
 dartlab.scan("ratio", "roe")             # 전종목 ROE
 ```
 
-### `dartlab.analysis(axis: str | None = None, company: Any | None = None, kwargs: Any) -> pl.DataFrame | dict`
+### `dartlab.analysis(axis: str | None = None, company: Any | None = None, *, basePeriod: str | None = None, kwargs: Any) -> pl.DataFrame | dict`
 
-재무제표 완전 분석 — 15축, 단일 종목 심층.
+재무제표 완전 분석 — 18축, 단일 종목 심층.
 
 **Args:**
 
@@ -273,7 +273,7 @@ c.analysis("수익성")                     # Company 바인딩
 
 ### `dartlab.gather(axis: str | None = None, target: str | None = None, kwargs: Any) -> pl.DataFrame`
 
-외부 시장 데이터 통합 수집 — 4축, 전부 Polars DataFrame.
+외부 시장 데이터 통합 수집 — 8축, 전부 Polars DataFrame.
 
 **Args:**
 
@@ -1227,7 +1227,7 @@ c = Company("005930")
 c.retrievalBlocks          # 전체 retrieval 블록
 ```
 
-### `review(section: str | None = None, layout = None, helper: bool | None = None)`
+### `review(section: str | None = None, layout = None, helper: bool | None = None, *, basePeriod: str | None = None)`
 
 재무제표 구조화 보고서 — 14개 섹션 데이터 검토서.
 
@@ -1242,7 +1242,7 @@ c.review()                        # 전체 검토서
 c.review("수익구조")                # 특정 섹션
 ```
 
-### `reviewer(section: str | None = None, layout = None, helper: bool | None = None, guide: str | None = None)`
+### `reviewer(section: str | None = None, layout = None, helper: bool | None = None, guide: str | None = None, *, basePeriod: str | None = None)`
 
 AI 분석 보고서 — review() + 섹션별 AI 종합의견.
 

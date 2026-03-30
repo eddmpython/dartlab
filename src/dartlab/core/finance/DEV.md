@@ -181,7 +181,7 @@ strong_sell: upside < -30% AND P90 < current
 ## 설계 원칙
 
 1. **외부 의존성 제로**: `random`, `math` 모듈만 (numpy/scipy 불필요)
-2. **2-Tier 준수**: 계산은 엔진, LLM은 해석만
+2. **AI 도구로 활용**: AI가 이 엔진을 도구로 호출하여 분석 수행
 3. **투명성**: 모든 확률 조정에 reasoning 첨부 (블랙박스 금지)
 4. **메모리 안전**: 전체 <200KB (proforma ~100KB + prediction ~50KB + MC ~40KB)
 5. **하위호환**: `compute_price_target()` 서명 유지, signals는 optional

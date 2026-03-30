@@ -643,6 +643,23 @@ def _classifyCfPattern(ocf: str, icf: str, fcf: str) -> str | None:
     return patterns.get((ocf, icf, fcf))
 
 
+def _isFinancialCompany(company) -> bool:
+    """금융업 판별 (capital.py 내부용)."""
+    try:
+        sector = getattr(company, "sector", None)
+        if sector is not None:
+            from dartlab.core.sector.types import Sector
+
+            if sector.sector == Sector.FINANCIALS:
+                return True
+        name = getattr(company, "corpName", "") or ""
+        if any(k in name for k in ("지주", "홀딩스", "Holdings")):
+            return True
+    except (AttributeError, ImportError):
+        pass
+    return False
+
+
 def calcDistressIndicators(company, *, basePeriod: str | None = None) -> dict | None:
     """Altman Z, Ohlson O, Piotroski F, Springate S.
 
@@ -654,19 +671,22 @@ def calcDistressIndicators(company, *, basePeriod: str | None = None) -> dict | 
     if ratios is None:
         return None
 
+    isFinancial = _isFinancialCompany(company)
     metrics = []
 
-    az = getattr(ratios, "altmanZScore", None)
-    if az is None:
-        az = getattr(ratios, "altmanZppScore", None)
-    if az is not None:
-        if az > 2.99:
-            quality = "안전"
-        elif az > 1.81:
-            quality = "회색지대"
-        else:
-            quality = "부실 위험"
-        metrics.append(("Altman Z", f"{az:.2f} — {quality}"))
+    # Altman Z-Score: 비금융 제조업용 모형 — 금융업에는 적용 불가
+    if not isFinancial:
+        az = getattr(ratios, "altmanZScore", None)
+        if az is None:
+            az = getattr(ratios, "altmanZppScore", None)
+        if az is not None:
+            if az > 2.99:
+                quality = "안전"
+            elif az > 1.81:
+                quality = "회색지대"
+            else:
+                quality = "부실 위험"
+            metrics.append(("Altman Z", f"{az:.2f} — {quality}"))
 
     op = getattr(ratios, "ohlsonProbability", None)
     if op is not None:
@@ -706,21 +726,28 @@ def calcCapitalFlags(company, *, basePeriod: str | None = None) -> list[tuple[st
     if ratios is None:
         return flags
 
+    isFinancial = _isFinancialCompany(company)
+
     dr = getattr(ratios, "debtRatio", None)
-    if dr is not None and dr > 200:
-        flags.append((f"고부채 (부채비율 {dr:.0f}%)", "warning"))
+    if dr is not None:
+        if isFinancial:
+            # 금융업은 예수부채로 부채비율이 구조적으로 높음
+            if dr > 2000:
+                flags.append((f"금융업 부채비율 {dr:.0f}% — 과다", "warning"))
+        elif dr > 200:
+            flags.append((f"고부채 (부채비율 {dr:.0f}%)", "warning"))
 
     ic = getattr(ratios, "interestCoverage", None)
-    if ic is not None and ic < 3:
+    if not isFinancial and ic is not None and ic < 3:
         severity = "심각" if ic < 1.5 else "주의"
         flags.append((f"이자보상 {severity} ({ic:.1f}배)", "warning"))
 
     cr = getattr(ratios, "currentRatio", None)
-    if cr is not None and cr < 100:
+    if not isFinancial and cr is not None and cr < 100:
         flags.append((f"유동성 위기 (유동비율 {cr:.0f}%)", "warning"))
 
     az = getattr(ratios, "altmanZScore", None) or getattr(ratios, "altmanZppScore", None)
-    if az is not None and az < 1.81:
+    if not isFinancial and az is not None and az < 1.81:
         flags.append((f"Altman Z 부실 경계 ({az:.2f})", "warning"))
 
     pf = getattr(ratios, "piotroskiFScore", None)

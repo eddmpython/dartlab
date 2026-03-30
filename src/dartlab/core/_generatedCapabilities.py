@@ -81,7 +81,7 @@ CAPABILITIES: dict[str, dict] = {
         "summary": "연도별 시계열 (연결 기준)."
     },
     "Company.ask": {
-        "aicontext": "Tier 1 시스템 주도 분석. 질문 분류 후 엔진이 계산한 결과를\n컨텍스트로 조립하여 LLM이 해석/설명만 수행.",
+        "aicontext": "AI가 분석 전 과정을 주도. dartlab 엔진(analysis, scan, gather 등)을\n도구로 호출하여 데이터 수집, 계산, 판단, 해석을 수행.",
         "capabilities": "엔진 계산 결과를 컨텍스트로 조립하여 LLM에 전달\n질문 분류 기반 분석 패키지 자동 선택 (financial, valuation, risk 등)\n멀티 provider 지원 (openai, ollama, codex 등)\n스트리밍 응답 지원",
         "guide": "\"영업이익률 분석해줘\" → c.ask(\"영업이익률 추세는?\")\n\"AI한테 질문하고 싶어\" → c.ask(\"질문\")\n\"스트리밍으로 답변받기\" → c.ask(\"질문\", stream=True)",
         "kind": "method",
@@ -601,12 +601,12 @@ CAPABILITIES: dict[str, dict] = {
     },
     "analysis": {
         "aicontext": "reviewer()가 analysis 결과를 소비하여 AI 해석 생성\nask()에서 재무분석 컨텍스트로 활용\n70개 calc* 함수의 개별 결과를 LLM에 주입 가능",
-        "capabilities": "Part 1 — 사업구조: 수익구조, 자금조달, 자산구조, 현금흐름\nPart 2 — 핵심비율: 수익성, 성장성, 안정성, 효율성, 종합평가\nPart 3 — 심화분석: 이익품질, 비용구조, 자본배분, 투자효율, 재무정합성\nPart 4 — 가치평가: DCF, DDM, 상대가치, RIM, 목표주가, 역내재성장률, 민감도\n각 축은 Company를 받아 dict를 반환하는 순수 함수 집합\nreview()가 이 결과를 소비하여 구조화 보고서 생성",
+        "capabilities": "Part 1 — 사업구조: 수익구조, 자금조달, 자산구조, 현금흐름\nPart 2 — 핵심비율: 수익성, 성장성, 안정성, 효율성, 종합평가\nPart 3 — 심화분석: 이익품질, 비용구조, 자본배분, 투자효율, 재무정합성\nPart 4 — 가치평가: DCF, DDM, 상대가치, RIM, 목표주가, 역내재성장률, 민감도\nPart 5 — 비재무 심화: 지배구조, 공시변화감지, 비교분석\n각 축은 Company를 받아 dict를 반환하는 순수 함수 집합\nreview()가 이 결과를 소비하여 구조화 보고서 생성",
         "guide": "\"이 회사 수익구조?\" -> analysis(\"수익구조\", company) — 매출원가율, 판관비율 등\n\"재무 건전한가?\" -> analysis(\"안정성\", company) — 부채비율, 유동비율, ICR\n\"이익이 진짜야?\" -> analysis(\"이익품질\", company) — 발생주의 비율, OCF/NI\n\"적정가치?\" -> analysis(\"가치평가\", company) — DCF/DDM/상대/RIM/목표가\n\"전체 종합?\" -> analysis(\"종합평가\", company) — 15축 통합 스코어\n15축 전부 보고 싶으면 review() 사용 권장",
         "kind": "function",
         "requires": "데이터: finance (자동 다운로드)",
         "seeAlso": "review: analysis 결과를 구조화 보고서로 렌더링\nscan: 전종목 비교 (analysis는 단일 종목 심층)\nCompany.insights: 7영역 인사이트 등급 (빠른 요약)",
-        "summary": "재무제표 완전 분석 — 15축, 단일 종목 심층."
+        "summary": "재무제표 완전 분석 — 18축, 단일 종목 심층."
     },
     "ask": {
         "aicontext": "재무비율, 추세, 동종업계 비교를 자동 계산하여 LLM에 제공\nsections 서술형 데이터 + finance 숫자 데이터 동시 주입\ntool calling provider에서는 LLM이 추가 데이터 자율 탐색",
@@ -727,12 +727,12 @@ CAPABILITIES: dict[str, dict] = {
     },
     "gather": {
         "aicontext": "ask()/chat()에서 주가/수급/거시 데이터를 컨텍스트로 주입 가능\n기업 분석 시 시장 데이터 보충 자료로 활용",
-        "capabilities": "price: OHLCV 시계열 (KR Naver/US Yahoo, 기본 1년, 최대 6000거래일)\nflow: 외국인/기관 수급 동향 (KR 전용, Naver)\nmacro: ECOS(KR 12개) / FRED(US 25개) 거시지표 시계열\nnews: Google News RSS 뉴스 수집 (최근 30일)\n자동 fallback 체인, circuit breaker, TTL 캐시",
-        "guide": "\"주가 추이 보여줘\" -> gather(\"price\", \"005930\")\n\"외국인 매매 동향\" -> gather(\"flow\", \"005930\")\n\"금리 추이 알려줘\" -> gather(\"macro\", \"BASE_RATE\") 또는 gather(\"macro\", \"FEDFUNDS\")\n\"최근 뉴스 찾아줘\" -> gather(\"news\", \"삼성전자\")\n\"미국 거시지표 전체\" -> gather(\"macro\", market=\"US\") 또는 gather(\"US\")\n주가+수급은 scan과 다름. scan은 재무 기반 횡단, gather는 시장 실시간.",
+        "capabilities": "price: OHLCV 시계열 (KR Naver/US Yahoo, 기본 1년, 최대 6000거래일)\nflow: 외국인/기관 수급 동향 (KR 전용, Naver)\nmacro: ECOS(KR 12개) / FRED(US 25개) 거시지표 시계열\nnews: Google News RSS 뉴스 수집 (최근 30일)\nsector: 업종 분류 (KR KIND+Naver)\ninsider: 내부자 거래 (KR DART)\nownership: 기관/외국인 지분 보유 (KR Naver)\npeers: 동종업종 피어 종목 (시총 포함, KR Naver)\n자동 fallback 체인, circuit breaker, TTL 캐시",
+        "guide": "\"주가 추이 보여줘\" -> gather(\"price\", \"005930\")\n\"외국인 매매 동향\" -> gather(\"flow\", \"005930\")\n\"금리 추이 알려줘\" -> gather(\"macro\", \"BASE_RATE\") 또는 gather(\"macro\", \"FEDFUNDS\")\n\"최근 뉴스 찾아줘\" -> gather(\"news\", \"삼성전자\")\n\"업종 알려줘\" -> gather(\"sector\", \"005930\")\n\"내부자 거래 보여줘\" -> gather(\"insider\", \"005930\")\n\"지분 보유 현황\" -> gather(\"ownership\", \"005930\")\n\"동종업종 비교\" -> gather(\"peers\", \"005930\")\n\"미국 거시지표 전체\" -> gather(\"macro\", market=\"US\") 또는 gather(\"US\")\n주가+수급은 scan과 다름. scan은 재무 기반 횡단, gather는 시장 실시간.",
         "kind": "function",
         "requires": "price/flow/news: 없음 (공개 API)\nmacro: API 키 — ECOS_API_KEY (KR) 또는 FRED_API_KEY (US)",
         "seeAlso": "scan: 재무 기반 전종목 횡단분석 (거버넌스, 현금흐름 등)\nCompany: 개별 종목 공시/재무 데이터\nanalysis: 14축 전략분석 (재무비율, 수익구조 등)",
-        "summary": "외부 시장 데이터 통합 수집 — 4축, 전부 Polars DataFrame."
+        "summary": "외부 시장 데이터 통합 수집 — 8축, 전부 Polars DataFrame."
     },
     "getKindList": {
         "kind": "function",

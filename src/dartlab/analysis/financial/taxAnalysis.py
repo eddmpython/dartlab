@@ -222,11 +222,32 @@ def calcTaxFlags(company, *, basePeriod: str | None = None) -> list[str]:
     if etr and etr["history"]:
         h0 = etr["history"][0]
         rate = h0.get("effectiveTaxRate")
+        statutory = h0.get("statutoryRate", 24.0)
         if rate is not None:
             if rate < 10:
                 flags.append(f"유효세율 {rate:.1f}% — 극저세율 (세금 혜택 또는 이연)")
             elif rate > 35:
                 flags.append(f"유효세율 {rate:.1f}% — 고세율 (추가 세금 부담)")
+
+            # 법정세율의 50% 미만이 3기 연속이면 구조적 세금혜택 의존
+            if len(etr["history"]) >= 3:
+                lowTaxYears = sum(
+                    1
+                    for h in etr["history"][:3]
+                    if h.get("effectiveTaxRate") is not None and h["effectiveTaxRate"] < statutory * 0.5
+                )
+                if lowTaxYears >= 3:
+                    flags.append("유효세율 3기 연속 법정세율의 50% 미만 — 세금혜택 구조적 의존")
+
+            # 유효세율 변동성
+            rates = [h.get("effectiveTaxRate") for h in etr["history"][:5] if h.get("effectiveTaxRate") is not None]
+            if len(rates) >= 3:
+                mean = sum(rates) / len(rates)
+                if mean > 0:
+                    std = (sum((r - mean) ** 2 for r in rates) / len(rates)) ** 0.5
+                    cv = std / mean
+                    if cv > 0.5:
+                        flags.append(f"유효세율 변동계수 {cv:.2f} — 세금 비용 불안정")
 
     cashConv = calcTaxCashConversion(company, basePeriod=basePeriod)
     if cashConv and cashConv["history"]:
@@ -238,9 +259,15 @@ def calcTaxFlags(company, *, basePeriod: str | None = None) -> list[str]:
     deferred = calcDeferredTax(company, basePeriod=basePeriod)
     if deferred and len(deferred["history"]) >= 2:
         hist = deferred["history"]
-        dta0 = hist[0]["deferredTaxAsset"]
-        dta1 = hist[1]["deferredTaxAsset"]
-        if dta1 > 0 and dta0 / dta1 > 2:
+        dta0 = hist[0].get("deferredTaxAsset")
+        dta1 = hist[1].get("deferredTaxAsset")
+        if dta0 is not None and dta1 is not None and dta1 > 0 and dta0 / dta1 > 2:
             flags.append(f"이연법인세자산 {dta0 / dta1:.1f}배 급증 — 미래 과세소득 가정 검토")
+
+        # 이연법인세자산 3기 연속 증가
+        if len(hist) >= 3:
+            dtas = [h.get("deferredTaxAsset") for h in hist[:3]]
+            if all(v is not None for v in dtas) and dtas[0] > dtas[1] > dtas[2] > 0:
+                flags.append("이연법인세자산 3기 연속 증가 — 실현 가능성 점검 필요")
 
     return flags

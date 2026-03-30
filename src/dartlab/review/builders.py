@@ -53,10 +53,8 @@ def segmentCompositionBlock(data: dict) -> list:
         row = {"부문": seg["name"], "매출": rev, "비중": f"{pct:.0f}%"}
         if hasOp and seg.get("opIncome") is not None:
             row["영업이익"] = seg["opIncome"]
-            if rev > 0:
-                row["이익률"] = f"{seg['opIncome'] / rev * 100:.1f}%"
-            else:
-                row["이익률"] = "-"
+            margin = seg.get("opMargin")
+            row["이익률"] = f"{margin:.1f}%" if margin is not None else "-"
         rows.append(row)
 
     valueCols = ["매출"]
@@ -924,11 +922,26 @@ def _timelineTable(
     return cols
 
 
+_POSITIVE_KEYWORDS = ("안정", "건전", "양호", "우량", "순현금", "충분", "개선")
+
+
 def _flagsBlock(flags: list[str]) -> list:
-    """플래그 리스트 → FlagBlock. 공통 래퍼."""
+    """플래그 리스트 → FlagBlock. 긍정/경고 자동 분류."""
     if not flags:
         return []
-    return [FlagBlock(flags, kind="warning")]
+    warnings = []
+    opportunities = []
+    for f in flags:
+        if any(kw in f for kw in _POSITIVE_KEYWORDS):
+            opportunities.append(f)
+        else:
+            warnings.append(f)
+    result = []
+    if warnings:
+        result.append(FlagBlock(warnings, kind="warning"))
+    if opportunities:
+        result.append(FlagBlock(opportunities, kind="opportunity"))
+    return result
 
 
 # ── 2-1 수익성 ──

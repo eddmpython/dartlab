@@ -19,6 +19,8 @@ def buildReviewWithAI(
     helper: bool | None = None,
     guide: str | None = None,
     *,
+    preset: str | None = None,
+    detail: bool | None = None,
     basePeriod: str | None = None,
 ):
     """AI 섹션별 의견이 포함된 분석 보고서.
@@ -27,7 +29,7 @@ def buildReviewWithAI(
     """
     from dartlab.review.registry import buildReview
 
-    report = buildReview(company, section=section, layout=layout, helper=helper, basePeriod=basePeriod)
+    report = buildReview(company, section=section, layout=layout, helper=helper, preset=preset, detail=detail, basePeriod=basePeriod)
 
     # AI 설정 확인
     llm = _getProvider()

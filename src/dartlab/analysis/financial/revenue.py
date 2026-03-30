@@ -203,7 +203,8 @@ def calcSegmentComposition(company, *, basePeriod: str | None = None) -> dict | 
         rev = vals.get(latestYear)
         if rev is not None and rev > 0:
             opIncome = opData.get(segName, {}).get(latestYear) if opData else None
-            segments.append({"name": segName, "revenue": rev, "opIncome": opIncome})
+            opMargin = opIncome / rev * 100 if opIncome is not None and rev > 0 else None
+            segments.append({"name": segName, "revenue": rev, "opIncome": opIncome, "opMargin": opMargin})
 
     if not segments:
         return None

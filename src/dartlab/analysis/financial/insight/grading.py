@@ -228,7 +228,10 @@ def analyzeProfitability(
 
     if roe is not None and roa is not None and roa > 0:
         leverage = roe / roa
-        if leverage > 4:
+        if isFinancial:
+            # 금융업은 구조적으로 레버리지가 높음 (예수부채). 경고 대상이 아님
+            details.append(f"금융업 레버리지 {leverage:.1f}x (구조적 특성)")
+        elif leverage > 4:
             details.append(f"높은 레버리지로 ROE 달성 (ROE/ROA={leverage:.1f}x)")
             risks.append(Flag("warning", "finance", f"ROE/ROA {leverage:.1f}x — 부채 활용 높음"))
         elif leverage < 1.5 and roe > 15:

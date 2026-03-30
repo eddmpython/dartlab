@@ -28,5 +28,8 @@ class ReviewLayout:
     # 섹션 헬퍼 텍스트 표시 여부
     helper: bool = True
 
+    # detail 모드: True면 전체 블록, False면 summary만 표시
+    detail: bool = True
+
 
 DEFAULT_LAYOUT = ReviewLayout()
