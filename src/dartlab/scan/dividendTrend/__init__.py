@@ -92,11 +92,11 @@ def scanDividendTrend(*, verbose: bool = True) -> pl.DataFrame:
     if not years:
         return pl.DataFrame()
 
-    # 유효 데이터가 500종목 이상인 최신 연도
+    # Q4 기준 유효 데이터 500종목 이상인 최신 연도 (결산 완료 연도)
     latestYear = None
     for y in years:
-        sub = dpsRows.filter(pl.col("year") == y)
-        if sub["stockCode"].n_unique() >= 500:
+        q4sub = dpsRows.filter((pl.col("year") == y) & (pl.col("quarter") == "4분기"))
+        if q4sub["stockCode"].n_unique() >= 500:
             latestYear = y
             break
     if latestYear is None:

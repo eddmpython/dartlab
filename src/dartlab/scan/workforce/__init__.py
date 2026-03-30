@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import polars as pl
 
-from dartlab.scan.workforce.efficiency import scan_labor_ratio, scan_value_added
 from dartlab.scan.workforce.growth import (
     compute_salary_vs_revenue,
     scan_revenue_growth,
@@ -42,12 +41,7 @@ def scan_workforce(*, verbose: bool = True) -> pl.DataFrame:
     rpe_map = scan_revenue_per_employee()
     _log(f"  → {len(rpe_map)}종목")
 
-    _log("3/6 인건비 효율...")
-    labor_map = scan_labor_ratio()
-    va_map = scan_value_added()
-    _log(f"  → 인건비율 {len(labor_map)}종목, 부가가치 {len(va_map)}종목")
-
-    _log("4/6 급여 vs 매출 성장률...")
+    _log("3/5 급여 vs 매출 성장률...")
     sal_map = scan_salary_growth()
     rev_map = scan_revenue_growth()
     growth_df = compute_salary_vs_revenue(sal_map, rev_map)
@@ -56,12 +50,12 @@ def scan_workforce(*, verbose: bool = True) -> pl.DataFrame:
         growth_dict[row["종목코드"]] = row
     _log(f"  → {len(growth_dict)}종목")
 
-    _log("5/6 고액 보수...")
+    _log("4/5 고액 보수...")
     top_map = scan_top_pay()
     _log(f"  → {len(top_map)}종목")
 
     # 합집합
-    all_codes = set(emp_map) | set(rpe_map) | set(labor_map) | set(va_map) | set(growth_dict) | set(top_map)
+    all_codes = set(emp_map) | set(rpe_map) | set(growth_dict) | set(top_map)
 
     results = []
     for code in all_codes:
@@ -78,8 +72,6 @@ def scan_workforce(*, verbose: bool = True) -> pl.DataFrame:
                 "남녀격차": emp.get("남녀격차"),
                 "근속_년": emp.get("근속_년"),
                 "직원당매출_억": rpe,
-                "인건비율": labor_map.get(code),
-                "1인당부가가치_억": va_map.get(code),
                 "급여성장률": g.get("급여성장률"),
                 "매출성장률": g.get("매출성장률"),
                 "급여매출괴리": g.get("급여매출괴리"),
@@ -95,8 +87,6 @@ def scan_workforce(*, verbose: bool = True) -> pl.DataFrame:
         "남녀격차": pl.Float64,
         "근속_년": pl.Float64,
         "직원당매출_억": pl.Float64,
-        "인건비율": pl.Float64,
-        "1인당부가가치_억": pl.Float64,
         "급여성장률": pl.Float64,
         "매출성장률": pl.Float64,
         "급여매출괴리": pl.Float64,
@@ -104,7 +94,7 @@ def scan_workforce(*, verbose: bool = True) -> pl.DataFrame:
         "공개인원": pl.Float64,
     }
     df = pl.DataFrame(results, schema=schema)
-    _log(f"인력 스캔 완료: {df.shape[0]}종목, 6/6")
+    _log(f"인력 스캔 완료: {df.shape[0]}종목, 5/5")
     return df
 
 

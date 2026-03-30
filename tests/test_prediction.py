@@ -1,6 +1,6 @@
 """Context Signal Fusion 테스트.
 
-ContextSignals, adjust_probabilities, get_noise_sigma 검증.
+ContextSignals, adjust_probabilities 검증.
 """
 
 from __future__ import annotations
@@ -8,14 +8,11 @@ from __future__ import annotations
 import pytest
 
 from dartlab.analysis.forecast.prediction import (
-    NOISE_CONFIG,
     ContextSignals,
+    _computeAdjustments,
 )
 from dartlab.analysis.forecast.prediction import (
     adjustProbabilities as adjust_probabilities,
-)
-from dartlab.analysis.forecast.prediction import (
-    getNoiseSigma as get_noise_sigma,
 )
 from dartlab.analysis.valuation.pricetarget import SCENARIO_PROBABILITIES
 
@@ -149,54 +146,13 @@ class TestAdjustProbabilities:
     def test_reasoning_populated(self):
         """조정 발생 시 reasoning이 채워져야 함."""
         signals = ContextSignals(insightGrades={"profitability": "D"})
-        # _compute_adjustments는 ContextSignals 생성 시 직접 호출 안 됨
-        # adjust_probabilities는 signals.adjustments를 사용
-        from dartlab.analysis.forecast.prediction import _computeAdjustments as _compute_adjustments
-
-        adj, reasons = _compute_adjustments(signals)
+        adj, reasons = _computeAdjustments(signals)
         assert len(reasons) > 0
         assert "수익성" in reasons[0]
 
     @pytest.mark.unit
     def test_cashflow_d_increases_adverse(self):
         """현금흐름 D → adverse +3%p."""
-        base = dict(SCENARIO_PROBABILITIES)
         signals = ContextSignals(insightGrades={"cashflow": "D"})
-        from dartlab.analysis.forecast.prediction import _computeAdjustments as _compute_adjustments
-
-        adj, _ = _compute_adjustments(signals)
+        adj, _ = _computeAdjustments(signals)
         assert adj.get("adverse", 0) > 0
-
-
-# ── get_noise_sigma ─────────────────────────────────────
-
-
-class TestNoiseSigma:
-    @pytest.mark.unit
-    def test_default_mid(self):
-        sigma = get_noise_sigma("growth", "Mid")
-        assert sigma == NOISE_CONFIG["growth"]["baseSigma"] * 1.0
-
-    @pytest.mark.unit
-    def test_small_amplifies(self):
-        sigma_mid = get_noise_sigma("growth", "Mid")
-        sigma_small = get_noise_sigma("growth", "Small")
-        assert sigma_small > sigma_mid
-
-    @pytest.mark.unit
-    def test_large_dampens(self):
-        sigma_mid = get_noise_sigma("growth", "Mid")
-        sigma_large = get_noise_sigma("growth", "Large")
-        assert sigma_large < sigma_mid
-
-    @pytest.mark.unit
-    def test_unknown_variable(self):
-        sigma = get_noise_sigma("unknown", "Mid")
-        assert sigma == 1.0
-
-    @pytest.mark.unit
-    def test_all_variables_have_config(self):
-        for var in ["growth", "margin", "wacc", "capex", "tax"]:
-            for size in ["Small", "Mid", "Large"]:
-                sigma = get_noise_sigma(var, size)
-                assert sigma > 0
