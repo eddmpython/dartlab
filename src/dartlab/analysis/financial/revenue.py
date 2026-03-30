@@ -355,6 +355,22 @@ def calcRevenueGrowth(company, *, basePeriod: str | None = None) -> dict | None:
     yoy = getattr(ratios, "revenueGrowth", None) if ratios else None
     cagr = getattr(ratios, "revenueGrowth3Y", None) if ratios else None
 
+    # annual 기반 CAGR 교차 검증 — ratioSeries 분기 기반이 왜곡될 수 있음
+    try:
+        ann = company.annual
+        if ann:
+            from dartlab.core.finance.extract import getRevenueGrowth3Y
+
+            annualCagr = getRevenueGrowth3Y(ann[0])
+            if annualCagr is not None:
+                if cagr is None:
+                    cagr = annualCagr
+                elif abs((cagr or 0) - annualCagr) > 5:
+                    # 분기 CAGR과 연간 CAGR이 5%p 이상 차이나면 연간 우선
+                    cagr = annualCagr
+    except (ValueError, KeyError, AttributeError):
+        pass
+
     quarterly = None
     try:
         result = company.select("IS", ["매출액"])
