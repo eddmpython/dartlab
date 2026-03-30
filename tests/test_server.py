@@ -173,28 +173,14 @@ class TestStatus:
         company.corpName = "삼성전자"
 
         monkeypatch.setattr("dartlab.server.services.company_api.get_company", lambda code: company)
-        monkeypatch.setattr(
-            "dartlab.ai.conversation.suggestions.suggestQuestions",
-            lambda _: ["이 회사의 핵심 투자 포인트를 한눈에 정리해주세요"],
-        )
-        monkeypatch.setattr(
-            "dartlab.ai.conversation.data_ready.getDataReadyStatus",
-            lambda code: {
-                "stockCode": code,
-                "allReady": False,
-                "available": ["docs"],
-                "missing": ["finance", "report"],
-                "categories": {},
-            },
-        )
 
         resp = client.get("/api/suggest", params={"stockCode": "005930"})
         assert resp.status_code == 200
         data = resp.json()
         assert data["stockCode"] == "005930"
         assert data["company"] == "삼성전자"
-        assert data["suggestions"] == ["이 회사의 핵심 투자 포인트를 한눈에 정리해주세요"]
-        assert data["dataReady"]["missing"] == ["finance", "report"]
+        assert data["suggestions"] == []
+        assert data["dataReady"] == {}
 
 
 class TestConfigure:

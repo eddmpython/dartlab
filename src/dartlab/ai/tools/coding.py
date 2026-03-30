@@ -128,124 +128,13 @@ class CodexCodingBackend(CodingBackend):
 # LocalPythonBackend -- subprocess 기반 안전 실행
 # ══════════════════════════════════════
 
-# AST 기반 안전 검증 -- 금지 패턴
-_FORBIDDEN_IMPORTS = frozenset(
-    {
-        "subprocess",
-        "os",
-        "sys",
-        "shutil",
-        "signal",
-        "ctypes",
-        "socket",
-        "http",
-        "urllib",
-        "requests",
-        "httpx",
-        "aiohttp",
-        "multiprocessing",
-        "threading",
-        "asyncio",
-        "pickle",
-        "shelve",
-        "marshal",
-        "importlib",
-        "runpy",
-        "code",
-        "codeop",
-    }
-)
-
-_FORBIDDEN_CALLS = frozenset(
-    {
-        "exec",
-        "eval",
-        "compile",
-        "__import__",
-        "globals",
-        "locals",
-        "setattr",
-        "delattr",
-        "breakpoint",
-        "exit",
-        "quit",
-        "open",  # 파일 쓰기 방지 (읽기도 차단 -- 데이터는 data 변수로 주입)
-    }
-)
-
-_ALLOWED_IMPORTS = frozenset(
-    {
-        "math",
-        "statistics",
-        "json",
-        "datetime",
-        "collections",
-        "itertools",
-        "functools",
-        "operator",
-        "decimal",
-        "fractions",
-        "re",
-        "textwrap",
-        "string",
-        "copy",
-        "dataclasses",
-        "time",
-        "polars",
-        "numpy",
-        "pandas",
-        "dartlab",
-    }
-)
-
-
-class _SafetyVisitor(ast.NodeVisitor):
-    """AST 방문자 -- 금지 패턴 탐지."""
-
-    def __init__(self) -> None:
-        self.violations: list[str] = []
-
-    def visit_Import(self, node: ast.Import) -> None:
-        """import 문에서 금지된 모듈을 탐지한다."""
-        for alias in node.names:
-            modName = alias.name.split(".")[0]
-            if modName in _FORBIDDEN_IMPORTS:
-                self.violations.append(f"금지된 import: {alias.name}")
-            elif modName not in _ALLOWED_IMPORTS:
-                self.violations.append(f"허용되지 않은 모듈: {alias.name}")
-        self.generic_visit(node)
-
-    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
-        """from-import 문에서 금지된 모듈을 탐지한다."""
-        if node.module:
-            modName = node.module.split(".")[0]
-            if modName in _FORBIDDEN_IMPORTS:
-                self.violations.append(f"금지된 import: {node.module}")
-            elif modName not in _ALLOWED_IMPORTS:
-                self.violations.append(f"허용되지 않은 모듈: {node.module}")
-        self.generic_visit(node)
-
-    def visit_Call(self, node: ast.Call) -> None:
-        """함수 호출에서 금지된 내장 함수를 탐지한다."""
-        funcName = ""
-        if isinstance(node.func, ast.Name):
-            funcName = node.func.id
-        elif isinstance(node.func, ast.Attribute):
-            funcName = node.func.attr
-        if funcName in _FORBIDDEN_CALLS:
-            self.violations.append(f"금지된 호출: {funcName}()")
-        self.generic_visit(node)
-
-
 def _validateCode(code: str) -> list[str]:
-    """코드 안전성 검증. 위반사항 리스트 반환 (빈 리스트 = 안전)."""
+    """구문 검증만 수행. 제한 없음 — 로컬 도구이므로 자유 실행."""
     try:
-        tree = ast.parse(code)
+        ast.parse(code)
     except SyntaxError as e:
         return [f"구문 오류: {e}"]
-    visitor = _SafetyVisitor()
-    visitor.visit(tree)
-    return visitor.violations
+    return []
 
 
 class LocalPythonBackend(CodingBackend):
@@ -269,8 +158,7 @@ class LocalPythonBackend(CodingBackend):
             "python": sys.version,
             "defaultTimeout": self._defaultTimeout,
             "maxTimeout": self._maxTimeout,
-            "allowedModules": sorted(_ALLOWED_IMPORTS),
-            "forbiddenImports": sorted(_FORBIDDEN_IMPORTS),
+            "restrictions": "none (unrestricted local execution)",
         }
 
     def run_task(
@@ -458,8 +346,9 @@ class DartlabCodeExecutor(LocalPythonBackend):
             "pl.Config.set_tbl_rows(25)\n"
             "pl.Config.set_tbl_width_chars(120)\n"
         )
+        preamble += "Company = dartlab.Company\n"
         if stockCode:
-            preamble += f'c = dartlab.Company("{stockCode}")\n'
+            preamble += f'c = Company("{stockCode}")\n'
             preamble += "company = c\n"
 
         # 결과 캡처 래퍼: 마지막 expression의 결과를 출력
@@ -531,7 +420,7 @@ class DartlabCodeExecutor(LocalPythonBackend):
 
                 rawStdout = result.stdout or ""
                 rawStderr = result.stderr or ""
-                _MAX_OUT = 4000
+                _MAX_OUT = 8000
                 stdoutTruncated = len(rawStdout) > _MAX_OUT
                 stdout = rawStdout[:_MAX_OUT]
                 if stdoutTruncated:
@@ -612,8 +501,8 @@ class DartlabCodeExecutor(LocalPythonBackend):
                 return m.group(0)
 
         answer = re.sub(r"-?\d+\.?\d*[eE][+-]?\d+", _replaceScientific, answer)
-        if len(answer) > 4000:
-            return answer[:4000] + "\n\n... (결과가 너무 깁니다. .head()/.filter()로 범위를 좁혀주세요)"
+        if len(answer) > 8000:
+            return answer[:8000] + "\n\n... (결과가 너무 깁니다. .head()/.filter()로 범위를 좁혀주세요)"
         return answer
 
 

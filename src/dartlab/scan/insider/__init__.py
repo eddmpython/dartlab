@@ -63,15 +63,15 @@ def _scanHolderChange() -> dict[str, dict]:
 
 
 def _scanTreasuryStock() -> dict[str, dict]:
-    """treasuryStock → 종목별 자기주식 현황."""
+    """treasuryStock → 종목별 자기주식 현황 (기말 보유수량 기준)."""
     raw = scan_parquets(
         "treasuryStock",
-        ["stockCode", "year", "quarter", "stock_knd", "acqs_mth1", "acqs_mth2", "acqs_mth3", "bsis_posesn_stock_co"],
+        ["stockCode", "year", "quarter", "stock_knd", "trmend_qy"],
     )
     if raw.is_empty():
         return {}
 
-    latestYear = find_latest_year(raw, "bsis_posesn_stock_co", 100)
+    latestYear = find_latest_year(raw, "trmend_qy", 100)
     if latestYear is None:
         return {}
 
@@ -81,7 +81,7 @@ def _scanTreasuryStock() -> dict[str, dict]:
         grp = sub.filter(pl.col("stockCode") == code)
         totalShares = 0
         for row in grp.iter_rows(named=True):
-            v = parse_num(row.get("bsis_posesn_stock_co"))
+            v = parse_num(row.get("trmend_qy"))
             if v is not None and v > 0:
                 totalShares += int(v)
         if totalShares > 0:

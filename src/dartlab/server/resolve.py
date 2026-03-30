@@ -4,14 +4,38 @@ from __future__ import annotations
 
 from dartlab import Company
 
-# ── 의도 분류: engines/ai/intent.py에서 re-export ──
-from dartlab.ai.conversation.intent import (
-    has_analysis_intent,
-    is_meta_question,
-)
-from dartlab.ai.conversation.intent import (
-    is_pure_conversation as _is_pure_conversation,
-)
+import re as _re
+
+
+def is_meta_question(q: str) -> bool:
+    """메타 질문(버전, 사용법, 데이터 현황 등) 판별."""
+    _META_PATTERNS = (
+        "버전", "사용법", "도움말", "help", "version",
+        "데이터 현황", "어떤 기능", "뭘 할 수 있",
+    )
+    ql = q.lower().strip()
+    return any(p in ql for p in _META_PATTERNS)
+
+
+def has_analysis_intent(q: str) -> bool:
+    """분석 의도가 있는 질문인지 판별."""
+    _ANALYSIS_PATTERNS = (
+        "분석", "평가", "진단", "검토", "리뷰",
+        "전망", "비교", "추이", "추세", "성장",
+        "수익", "매출", "영업이익", "배당", "부채",
+        "재무", "주가", "투자", "리스크", "위험",
+    )
+    return any(p in q for p in _ANALYSIS_PATTERNS)
+
+
+def _is_pure_conversation(q: str) -> bool:
+    """순수 대화(응, 고마워 등)인지 판별."""
+    ql = q.strip()
+    if len(ql) <= 5 and not _re.search(r"\d{6}", ql):
+        return True
+    _CONV_PATTERNS = ("고마워", "감사", "잘됐", "알겠", "네", "응", "ㅇㅇ", "ㅎㅎ", "ㅋㅋ")
+    return ql in _CONV_PATTERNS
+
 from dartlab.core.resolve import (
     _RESOLVE_ERRORS,
 )

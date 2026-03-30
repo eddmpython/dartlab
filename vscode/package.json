@@ -80,11 +80,6 @@
           "default": "",
           "description": "Python executable path (auto-detect if empty)"
         },
-        "dartlab.serverPort": {
-          "type": "number",
-          "default": 8400,
-          "description": "Server port (default: 8400)"
-        },
         "dartlab.autoStart": {
           "type": "boolean",
           "default": true,

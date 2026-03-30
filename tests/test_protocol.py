@@ -47,7 +47,7 @@ def test_edgar_company_class_has_all_protocol_members():
 
 
 def test_dart_docs_class_has_all_protocol_members():
-    from dartlab.providers.dart.company import _DocsAccessor
+    from dartlab.providers.dart._docs_accessor import _DocsAccessor
 
     members = _get_protocol_required_members(DocsProtocol)
     missing = _class_has_all_members(_DocsAccessor, members)
@@ -63,7 +63,7 @@ def test_edgar_docs_class_has_all_protocol_members():
 
 
 def test_dart_finance_class_has_all_protocol_members():
-    from dartlab.providers.dart.company import _FinanceAccessor
+    from dartlab.providers.dart._finance_accessor import _FinanceAccessor
 
     members = _get_protocol_required_members(FinanceProtocol)
     missing = _class_has_all_members(_FinanceAccessor, members)

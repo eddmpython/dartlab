@@ -1,4 +1,4 @@
-"""LocalPythonBackend 안전성 + 기능 테스트."""
+"""LocalPythonBackend 기능 테스트."""
 
 import pytest
 
@@ -7,7 +7,7 @@ pytestmark = pytest.mark.unit
 from dartlab.ai.tools.coding import LocalPythonBackend, _validateCode
 
 # ══════════════════════════════════════
-# AST 안전성 검증
+# 구문 검증 (보안 제한 없음 — 구문만 확인)
 # ══════════════════════════════════════
 
 
@@ -16,61 +16,9 @@ def test_validateCode_safe():
     assert _validateCode(code) == []
 
 
-def test_validateCode_forbidden_import():
-    code = "import os\nos.system('rm -rf /')"
-    violations = _validateCode(code)
-    assert len(violations) >= 1
-    assert any("os" in v for v in violations)
-
-
-def test_validateCode_forbidden_subprocess():
-    code = "import subprocess\nsubprocess.run(['ls'])"
-    violations = _validateCode(code)
-    assert any("subprocess" in v for v in violations)
-
-
-def test_validateCode_forbidden_eval():
-    code = "eval('1+1')"
-    violations = _validateCode(code)
-    assert any("eval" in v for v in violations)
-
-
-def test_validateCode_forbidden_exec():
-    code = "exec('print(1)')"
-    violations = _validateCode(code)
-    assert any("exec" in v for v in violations)
-
-
-def test_validateCode_forbidden_open():
-    code = "f = open('/etc/passwd')"
-    violations = _validateCode(code)
-    assert any("open" in v for v in violations)
-
-
-def test_validateCode_forbidden_network():
-    code = "import requests\nrequests.get('http://evil.com')"
-    violations = _validateCode(code)
-    assert any("requests" in v for v in violations)
-
-
-def test_validateCode_forbidden_dunder_import():
-    code = "__import__('os')"
-    violations = _validateCode(code)
-    assert any("__import__" in v for v in violations)
-
-
-def test_validateCode_allowed_modules():
-    code = "import json\nimport datetime\nimport collections\nprint('ok')"
-    assert _validateCode(code) == []
-
-
-def test_validateCode_polars_allowed():
-    code = "import polars as pl\ndf = pl.DataFrame({'a': [1, 2, 3]})\nprint(df)"
-    assert _validateCode(code) == []
-
-
-def test_validateCode_numpy_allowed():
-    code = "import numpy as np\narr = np.array([1, 2, 3])\nprint(arr.mean())"
+def test_validateCode_any_module_allowed():
+    """제한 없음 — 어떤 모듈이든 import 가능."""
+    code = "import os\nimport requests\nimport subprocess"
     assert _validateCode(code) == []
 
 
@@ -79,18 +27,6 @@ def test_validateCode_syntax_error():
     violations = _validateCode(code)
     assert len(violations) == 1
     assert "구문 오류" in violations[0]
-
-
-def test_validateCode_from_import_forbidden():
-    code = "from socket import socket"
-    violations = _validateCode(code)
-    assert any("socket" in v for v in violations)
-
-
-def test_validateCode_unknown_module():
-    code = "import boto3"
-    violations = _validateCode(code)
-    assert any("boto3" in v for v in violations)
 
 
 # ══════════════════════════════════════
@@ -103,7 +39,7 @@ def test_backend_inspect():
     info = backend.inspect()
     assert info["available"] is True
     assert info["name"] == "local_python"
-    assert "polars" in info["allowedModules"]
+    assert info["restrictions"] == "none (unrestricted local execution)"
 
 
 def test_backend_no_code():
@@ -126,10 +62,11 @@ def test_backend_math_code():
     assert "3.14" in result.answer
 
 
-def test_backend_forbidden_code_blocked():
+def test_backend_unrestricted_execution():
+    """제한 없음 — os, open 등 자유 실행."""
     backend = LocalPythonBackend()
-    result = backend.run_task("", code="import os\nos.system('echo hi')")
-    assert "[보안 위반]" in result.answer
+    result = backend.run_task("", code="import os\nprint(os.getcwd())")
+    assert result.metadata["returncode"] == 0
 
 
 def test_backend_timeout():

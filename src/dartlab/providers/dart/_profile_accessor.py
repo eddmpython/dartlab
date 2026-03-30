@@ -282,7 +282,7 @@ class _ProfileAccessor:
         if topic in {"BS", "IS", "CF", "CIS"}:
             return getattr(self._company.finance, topic)
         if topic == "SCE":
-            return self._company.finance.sce
+            return self._company.finance.SCE
         if topic in self._REPORT_AUTHORITATIVE_TOPICS and self._company.report is not None:
             if topic == "audit":
                 return self._company.report.audit

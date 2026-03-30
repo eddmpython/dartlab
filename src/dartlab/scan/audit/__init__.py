@@ -11,7 +11,37 @@ _OPINION_RISK = {
     "부적정의견": 3,
     "한정의견": 2,
     "적정의견": 0,
+    "적정": 0,
 }
+
+
+def _normalizeOpinion(raw: str | None) -> str | None:
+    """감사의견 정규화 — 다양한 표기를 통일."""
+    if not raw:
+        return None
+    s = raw.strip().replace(" ", "").replace("\n", "")
+    if not s or s == "-":
+        return None
+    # "적정" 계열
+    if s in ("적정", "적정의견"):
+        return "적정의견"
+    if "적정" in s and "부적정" not in s and "한정" not in s:
+        return "적정의견"
+    # "한정" 계열
+    if "한정" in s:
+        return "한정의견"
+    # "부적정" 계열
+    if "부적정" in s:
+        return "부적정의견"
+    # "의견거절" 계열
+    if "의견거절" in s or "거절" in s:
+        return "의견거절"
+    # 기타 (해당사항없음, 검토 등)
+    if "해당" in s or "없음" in s or "예외" in s:
+        return None  # 감사의견 대상 아님
+    if "검토" in s:
+        return None  # 반기검토는 감사의견 아님
+    return raw.strip()
 
 
 def _numericYears(years: list) -> list[str]:
@@ -120,29 +150,48 @@ def scanAudit() -> pl.DataFrame:
         if not codeYears:
             continue
 
-        # 최신 연도 데이터
-        latestSub = sub.filter(pl.col("year") == codeYears[0])
-        if latestSub.is_empty():
-            continue
+        # opinion이 있는 행을 우선 탐색 (최신 연도부터)
+        opinion = None
+        auditor = None
+        specialMatter = None
+        bestYear = None
+        for y in codeYears:
+            ySub = sub.filter(pl.col("year") == y)
+            # Q4 우선
+            q4 = ySub.filter(pl.col("quarter") == "4분기")
+            candidate = q4 if not q4.is_empty() else ySub
+            for r in candidate.iter_rows(named=True):
+                normalized = _normalizeOpinion(r.get("adt_opinion"))
+                if normalized:
+                    opinion = normalized
+                    auditor = r.get("adtor", "")
+                    specialMatter = r.get("adt_reprt_spcmnt_matter", "")
+                    bestYear = y
+                    break
+            if opinion:
+                break
 
-        # Q4 우선 선택
-        q4 = latestSub.filter(pl.col("quarter") == "4분기")
-        best = q4 if not q4.is_empty() else latestSub
-        row = best.row(0, named=True)
+        # opinion 못 찾으면 최신 연도에서 auditor라도 가져옴
+        if opinion is None:
+            latestSub = sub.filter(pl.col("year") == codeYears[0])
+            q4 = latestSub.filter(pl.col("quarter") == "4분기")
+            best = q4 if not q4.is_empty() else latestSub
+            if not best.is_empty():
+                row = best.row(0, named=True)
+                auditor = row.get("adtor", "")
+                specialMatter = row.get("adt_reprt_spcmnt_matter", "")
+            bestYear = codeYears[0]
 
-        opinion = row.get("adt_opinion", "")
-        auditor = row.get("adtor", "")
-        specialMatter = row.get("adt_reprt_spcmnt_matter", "")
-
-        # 감사인 변경 감지
+        # 감사인 변경 감지: bestYear 직전 연도와 비교
         auditorChanged = False
-        if len(codeYears) >= 2:
-            prevSub = sub.filter(pl.col("year") == codeYears[1])
+        bestIdx = codeYears.index(bestYear) if bestYear in codeYears else 0
+        if bestIdx + 1 < len(codeYears):
+            prevSub = sub.filter(pl.col("year") == codeYears[bestIdx + 1])
             if not prevSub.is_empty():
                 prevQ4 = prevSub.filter(pl.col("quarter") == "4분기")
                 prevBest = prevQ4 if not prevQ4.is_empty() else prevSub
                 prevAuditor = prevBest.row(0, named=True).get("adtor", "")
-                if prevAuditor and auditor and prevAuditor != auditor:
+                if prevAuditor and auditor and str(prevAuditor).strip() != str(auditor).strip():
                     auditorChanged = True
 
         # 특기사항 유무
@@ -157,7 +206,7 @@ def scanAudit() -> pl.DataFrame:
         independenceRatio = fees.get("독립성비율")
 
         # 종합 리스크 레벨
-        opinionRisk = _OPINION_RISK.get(str(opinion).strip(), 1)
+        opinionRisk = _OPINION_RISK.get(opinion, 1) if opinion else 1
         riskScore = opinionRisk
         if auditorChanged:
             riskScore += 1
@@ -179,7 +228,7 @@ def scanAudit() -> pl.DataFrame:
         rows.append(
             {
                 "stockCode": code,
-                "opinion": str(opinion).strip() if opinion else None,
+                "opinion": opinion,
                 "auditor": str(auditor).strip() if auditor else None,
                 "auditorChanged": auditorChanged,
                 "hasSpecialMatter": hasSpecialMatter,

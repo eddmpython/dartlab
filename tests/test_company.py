@@ -131,7 +131,7 @@ def _legacyIndexFrame(company) -> pl.DataFrame:
 
 class TestProfileChangeLedgerHelpers:
     def test_change_point_collapses_repeated_periods(self):
-        from dartlab.providers.dart.company import _buildTopicChangeLedger
+        from dartlab.providers.dart._diff_helpers import _buildTopicChangeLedger
 
         blocks = _topicBlocksFrame(
             "companyOverview",
@@ -148,7 +148,7 @@ class TestProfileChangeLedgerHelpers:
         assert set(ledger["period"].to_list()) == {"2024Q1", "2024Q3"}
 
     def test_restated_text_is_separated_from_edited_text(self):
-        from dartlab.providers.dart.company import _buildTopicChangeLedger
+        from dartlab.providers.dart._diff_helpers import _buildTopicChangeLedger
 
         blocks = _topicBlocksFrame(
             "companyOverview",
@@ -165,7 +165,7 @@ class TestProfileChangeLedgerHelpers:
         assert latest.item(0, "changeType") == "restated"
 
     def test_table_structure_change_is_not_treated_as_value_edit(self):
-        from dartlab.providers.dart.company import _buildTopicChangeLedger
+        from dartlab.providers.dart._diff_helpers import _buildTopicChangeLedger
 
         blocks = _topicBlocksFrame(
             "salesOrder",
@@ -195,7 +195,7 @@ class TestProfileChangeLedgerHelpers:
         assert latest.item(0, "changeType") == "added"
 
     def test_placeholder_is_tracked_with_own_change_type(self):
-        from dartlab.providers.dart.company import _buildTopicChangeLedger
+        from dartlab.providers.dart._diff_helpers import _buildTopicChangeLedger
 
         blocks = _topicBlocksFrame(
             "companyOverview",

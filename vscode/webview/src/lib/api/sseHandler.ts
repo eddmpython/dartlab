@@ -9,7 +9,9 @@ export interface Message {
   meta?: Record<string, unknown>;
   snapshot?: Record<string, unknown>;
   contexts?: Array<{ module: string; label: string; text: string }>;
-  toolEvents?: Array<{ type: string; name: string; [k: string]: unknown }>;
+  toolEvents?: Array<{ type: string; name: string; arguments?: unknown; result?: unknown; [k: string]: unknown }>;
+  systemPrompt?: string;
+  userContent?: string;
   duration?: number;
   startedAt?: number;
 }
@@ -56,6 +58,13 @@ export function createSseHandler(
           updateMessage({ contexts });
           break;
         }
+
+        case "system_prompt":
+          updateMessage({
+            systemPrompt: (d as { text?: string }).text ?? undefined,
+            userContent: (d as { userContent?: string }).userContent ?? undefined,
+          });
+          break;
 
         case "chunk":
           chunkBuffer += (d as { text: string }).text ?? "";

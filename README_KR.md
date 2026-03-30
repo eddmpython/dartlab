@@ -586,15 +586,25 @@ verbose: false
 
 ## MCP — AI 어시스턴트 연동
 
-DartLab은 [MCP](https://modelcontextprotocol.io/) 서버를 내장하고 있다. 60개 도구 (글로벌 16 + 기업별 44)를 Claude Desktop, Claude Code, Cursor 등 MCP 호환 클라이언트에 노출한다.
+DartLab은 [MCP](https://modelcontextprotocol.io/) 서버를 내장하고 있다. Claude Desktop, Claude Code, Cursor 등 MCP 호환 클라이언트에서 사용할 수 있다.
+
+### 빠른 설정 — 복사 + 붙여넣기
+
+**Claude Code:**
 
 ```bash
-uv add "dartlab[mcp]"
+pip install "dartlab[mcp]" && claude mcp add dartlab -- uv run dartlab mcp
 ```
 
-### Claude Desktop
+**OpenAI Codex CLI:**
 
-`claude_desktop_config.json`에 추가:
+```bash
+pip install "dartlab[mcp]" && codex mcp add dartlab -- uv run dartlab mcp
+```
+
+한 줄이면 설치 + 등록 끝.
+
+**Claude Desktop** — `claude_desktop_config.json`에 추가:
 
 ```json
 {
@@ -607,46 +617,27 @@ uv add "dartlab[mcp]"
 }
 ```
 
-### Claude Code
+**Cursor** — `.cursor/mcp.json`에 위와 동일한 형식으로 추가.
 
-```bash
-claude mcp add dartlab -- uv run dartlab mcp
-```
-
-또는 `~/.claude/settings.json`에 추가:
-
-```json
-{
-  "mcpServers": {
-    "dartlab": {
-      "command": "uv",
-      "args": ["run", "dartlab", "mcp"]
-    }
-  }
-}
-```
-
-### Cursor
-
-`.cursor/mcp.json`에 Claude Desktop과 동일한 형식으로 추가.
-
-### 사용 가능한 기능
-
-연결하면 AI 어시스턴트가 다음을 수행할 수 있다:
-
-- **검색** — 이름이나 코드로 기업 찾기 (`search_company`)
-- **공시 조회** — 임의 topic의 공시 데이터 열기 (`show_topic`, `list_topics`, `diff_topic`)
-- **재무** — BS, IS, CF, 재무비율 (`get_financial_statements`, `get_ratios`)
-- **분석** — 인사이트, 섹터 순위, 밸류에이션 (`get_insight`, `get_ranking`)
-- **EDGAR** — 미국 기업도 동일한 도구로 지원 (`stock_code: "AAPL"`)
-
-플랫폼별 설정 자동 생성:
+설정 파일 위치를 모르겠다면 자동 생성:
 
 ```bash
 dartlab mcp --config claude-desktop
 dartlab mcp --config claude-code
 dartlab mcp --config cursor
 ```
+
+### 사용 가능한 기능
+
+연결하면 AI 어시스턴트가 다음을 수행할 수 있다:
+
+- **검색** — 이름이나 코드로 기업 찾기 (`searchCompany`)
+- **프로필** — 기업 개요, 지배구조, 업종 (`companyProfile`, `companyGovernance`)
+- **재무** — BS, IS, CF, 재무비율 (`companyFinancials`, `companyRatios`)
+- **분석** — 인사이트, 밸류에이션, 전망 (`companyInsights`, `companyValuation`, `companyForecast`)
+- **공시** — 임의 topic 조회, 기간간 비교 (`companyShow`, `companyTopics`, `companyDiff`)
+- **리뷰** — 전체 분석 보고서 (`companyReview`, `companyAudit`)
+- **시장** — 섹터 스크리닝, 피어 비교 (`marketScan`)
 
 ## OpenAPI — 원본 공공 API
 

@@ -113,7 +113,6 @@ def status(provider: str | None = None, *, role: str | None = None) -> dict:
     return result
 
 
-from dartlab.ai import aiParser as ai
 from dartlab.ai.tools.plugin import get_plugin_registry, tool
 
-__all__ = ["configure", "get_config", "status", "LLMConfig", "LLMResponse", "ai", "tool", "get_plugin_registry"]
+__all__ = ["configure", "get_config", "status", "LLMConfig", "LLMResponse", "tool", "get_plugin_registry"]

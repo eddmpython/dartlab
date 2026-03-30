@@ -588,15 +588,25 @@ verbose: false
 
 ## MCP — AI Assistant Integration
 
-DartLab includes a built-in [MCP](https://modelcontextprotocol.io/) server that exposes 60 tools (16 global + 44 per-company) to Claude Desktop, Claude Code, Cursor, and any MCP-compatible client.
+DartLab includes a built-in [MCP](https://modelcontextprotocol.io/) server for Claude Desktop, Claude Code, Cursor, and any MCP-compatible client.
+
+### Quick Setup — Copy & Paste
+
+**Claude Code:**
 
 ```bash
-uv add "dartlab[mcp]"
+pip install "dartlab[mcp]" && claude mcp add dartlab -- uv run dartlab mcp
 ```
 
-### Claude Desktop
+**OpenAI Codex CLI:**
 
-Add to `claude_desktop_config.json`:
+```bash
+pip install "dartlab[mcp]" && codex mcp add dartlab -- uv run dartlab mcp
+```
+
+One line. Install + register in a single command.
+
+**Claude Desktop** — add to `claude_desktop_config.json`:
 
 ```json
 {
@@ -609,46 +619,27 @@ Add to `claude_desktop_config.json`:
 }
 ```
 
-### Claude Code
+**Cursor** — add to `.cursor/mcp.json` with the same format as above.
 
-```bash
-claude mcp add dartlab -- uv run dartlab mcp
-```
-
-Or add to `~/.claude/settings.json`:
-
-```json
-{
-  "mcpServers": {
-    "dartlab": {
-      "command": "uv",
-      "args": ["run", "dartlab", "mcp"]
-    }
-  }
-}
-```
-
-### Cursor
-
-Add to `.cursor/mcp.json` with the same config format as Claude Desktop.
-
-### What's Available
-
-Once connected, your AI assistant can:
-
-- **Search** — find companies by name or code (`search_company`)
-- **Show** — read any disclosure topic (`show_topic`, `list_topics`, `diff_topic`)
-- **Finance** — balance sheet, income statement, cash flow, ratios (`get_financial_statements`, `get_ratios`)
-- **Analysis** — insights, sector ranking, valuation (`get_insight`, `get_ranking`)
-- **EDGAR** — same tools work for US companies (`stock_code: "AAPL"`)
-
-Auto-generate config for your platform:
+Auto-generate config if you're not sure where the file is:
 
 ```bash
 dartlab mcp --config claude-desktop
 dartlab mcp --config claude-code
 dartlab mcp --config cursor
 ```
+
+### What's Available
+
+Once connected, your AI assistant can:
+
+- **Search** — find companies by name or code (`searchCompany`)
+- **Profile** — company overview, governance, sector (`companyProfile`, `companyGovernance`)
+- **Financials** — balance sheet, income statement, cash flow, ratios (`companyFinancials`, `companyRatios`)
+- **Analysis** — insights, valuation, forecast (`companyInsights`, `companyValuation`, `companyForecast`)
+- **Disclosure** — read any topic, diff across periods (`companyShow`, `companyTopics`, `companyDiff`)
+- **Review** — full analysis report (`companyReview`, `companyAudit`)
+- **Market** — sector screening, peer comparison (`marketScan`)
 
 ## OpenAPI — Raw Public APIs
 

@@ -189,17 +189,14 @@ def api_status(
 def api_suggest(stockCode: str = Query(..., description="추천 질문을 생성할 종목코드")):
     """회사 데이터 상태에 맞는 추천 질문 목록을 반환한다."""
     try:
-        from dartlab.ai.conversation.data_ready import getDataReadyStatus
-        from dartlab.ai.conversation.suggestions import suggestQuestions
-
         from ..services.company_api import get_company
 
         company = get_company(stockCode)
         return {
             "stockCode": getattr(company, "stockCode", stockCode),
             "company": getattr(company, "corpName", stockCode),
-            "suggestions": suggestQuestions(company),
-            "dataReady": getDataReadyStatus(getattr(company, "stockCode", stockCode)),
+            "suggestions": [],
+            "dataReady": {},
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=_sanitize_error(e)) from e

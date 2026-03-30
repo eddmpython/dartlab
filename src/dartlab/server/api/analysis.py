@@ -364,10 +364,10 @@ def api_company_search_index(code: str, request: Request, response: Response):
 def api_company_modules(code: str):
     """기업의 사용 가능한 데이터 모듈 목록."""
     try:
-        from dartlab.ai.context.builder import scan_available_modules
-
         c = get_company(code)
-        modules = scan_available_modules(c)
+        # scan_available_modules 제거됨 — topics 목록으로 대체
+        topics = getattr(c, "topics", None)
+        modules = list(topics) if topics else []
         return {"stockCode": c.stockCode, "corpName": c.corpName, "modules": modules}
     except HANDLED_API_ERRORS as e:
         raise HTTPException(status_code=404, detail=sanitize_error(e))

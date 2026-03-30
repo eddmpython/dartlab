@@ -56,10 +56,17 @@ def configure_parser(subparsers) -> None:
     parser.add_argument("--base-url", default=None, help="Custom API URL")
     parser.add_argument("--api-key", default=None, help="API key")
     parser.add_argument("--continue", dest="cont", action="store_true", help="Resume previous conversation")
-    # Route to Textual TUI
-    from dartlab.cli.tui import run as tuiRun
+    parser.add_argument("--stdio", action="store_true", help="JSON Lines stdio mode (for VSCode extension)")
 
-    parser.set_defaults(handler=tuiRun)
+    def _handler(args):
+        if getattr(args, "stdio", False):
+            from dartlab.cli.stdio import run
+            run()
+        else:
+            from dartlab.cli.tui import run as tuiRun
+            tuiRun(args)
+
+    parser.set_defaults(handler=_handler)
 
 
 # ---------------------------------------------------------------------------
@@ -765,15 +772,7 @@ def _cmdClear(_arg: str, state: _ChatState, console) -> None:
 
 def _cmdSuggest(_arg: str, state: _ChatState, console) -> None:
     questions = _SUGGESTIONS
-    if state.company:
-        try:
-            from dartlab.ai.conversation.suggestions import suggestQuestions
-
-            engineQuestions = suggestQuestions(state.company)
-            if engineQuestions:
-                questions = engineQuestions
-        except (ImportError, AttributeError):
-            pass
+    # suggestQuestions 모듈 제거됨 — 기본 제안 사용
 
     console.print()
     for i, q in enumerate(questions, 1):

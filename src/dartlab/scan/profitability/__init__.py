@@ -168,6 +168,14 @@ def _computeProfitability(target: pl.DataFrame, scCol: str) -> pl.DataFrame:
         if opMargin is None and netMargin is None and roe is None and roa is None:
             continue
 
+        # netMargin이 opMargin 대비 극단적으로 크면 비경상 이익 의심
+        hasNonRecurring = (
+            netMargin is not None
+            and opMargin is not None
+            and abs(netMargin) > abs(opMargin) * 3
+            and abs(netMargin) > 50
+        )
+
         rows.append({
             "stockCode": code,
             "opMargin": opMargin,
@@ -175,6 +183,7 @@ def _computeProfitability(target: pl.DataFrame, scCol: str) -> pl.DataFrame:
             "roe": roe,
             "roa": roa,
             "grade": _gradeProfitability(opMargin, roe),
+            "nonRecurring": hasNonRecurring,
         })
 
     if not rows:
@@ -187,6 +196,7 @@ def _computeProfitability(target: pl.DataFrame, scCol: str) -> pl.DataFrame:
         "roe": pl.Float64,
         "roa": pl.Float64,
         "grade": pl.Utf8,
+        "nonRecurring": pl.Boolean,
     }
     return pl.DataFrame(rows, schema=schema)
 

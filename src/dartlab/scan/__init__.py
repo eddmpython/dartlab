@@ -160,6 +160,27 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="영업이익률/순이익률/ROE/ROA + 등급",
         example='scan("profitability")',
     ),
+    "efficiency": _AxisEntry(
+        module="dartlab.scan.efficiency",
+        fn="scanEfficiency",
+        label="효율성",
+        description="자산/재고/매출채권 회전율 + CCC(현금전환주기) + 등급",
+        example='scan("efficiency")',
+    ),
+    "valuation": _AxisEntry(
+        module="dartlab.scan.valuation",
+        fn="scanValuation",
+        label="밸류에이션",
+        description="PER/PBR/PSR + 시가총액 + 등급 (네이버 실시간)",
+        example='scan("valuation")',
+    ),
+    "dividendTrend": _AxisEntry(
+        module="dartlab.scan.dividendTrend",
+        fn="scanDividendTrend",
+        label="배당추이",
+        description="DPS 3개년 시계열 + 패턴 분류 (연속증가/안정/감소/시작/중단)",
+        example='scan("dividendTrend")',
+    ),
 }
 
 
@@ -215,11 +236,23 @@ _ALIASES: dict[str, str] = {
     "성장": "growth",
     # profitability
     "수익성": "profitability",
+    # efficiency
+    "효율성": "efficiency",
+    "회전율": "efficiency",
+    # valuation
+    "밸류에이션": "valuation",
+    "밸류": "valuation",
+    # dividendTrend
+    "배당추이": "dividendTrend",
+    "배당시계열": "dividendTrend",
+    "배당트렌드": "dividendTrend",
 }
 
 
 def _resolveAxis(axis: str) -> str:
     """축 이름 또는 alias → 정규 축 이름."""
+    if axis in _AXIS_REGISTRY:
+        return axis
     lower = axis.lower()
     if lower in _AXIS_REGISTRY:
         return lower

@@ -485,6 +485,56 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
             ),
         ),
     ),
+    "예측신호": _AxisEntry(
+        section="예측신호",
+        partId="6-2",
+        description="이 회사의 실적은 어디로 향하는가",
+        example='analysis("예측신호", c)',
+        calcs=(
+            _CalcEntry(
+                "calcEarningsMomentum",
+                "dartlab.analysis.financial.predictionSignals",
+                "earningsMomentum",
+                "이익 모멘텀",
+            ),
+            _CalcEntry(
+                "calcPeerPrediction",
+                "dartlab.analysis.financial.predictionSignals",
+                "peerPrediction",
+                "횡단면 피어 예측",
+            ),
+            _CalcEntry(
+                "calcStructuralBreak",
+                "dartlab.analysis.financial.predictionSignals",
+                "structuralBreak",
+                "구조변화 감지",
+            ),
+            _CalcEntry(
+                "calcMacroSensitivity",
+                "dartlab.analysis.financial.predictionSignals",
+                "macroSensitivity",
+                "거시경제 민감도",
+            ),
+            _CalcEntry(
+                "calcDisclosureDelta",
+                "dartlab.analysis.financial.predictionSignals",
+                "disclosureDelta",
+                "공시 변화 신호",
+            ),
+            _CalcEntry(
+                "calcPredictionSynthesis",
+                "dartlab.analysis.financial.predictionSignals",
+                "predictionSynthesis",
+                "예측 신호 종합",
+            ),
+            _CalcEntry(
+                "calcPredictionFlags",
+                "dartlab.analysis.financial.predictionSignals",
+                "predictionFlags",
+                "예측신호 플래그",
+            ),
+        ),
+    ),
 }
 
 
@@ -511,6 +561,9 @@ _ALIASES: dict[str, str] = {
     "peerBenchmark": "비교분석",
     "forecast": "매출전망",
     "전망": "매출전망",
+    "prediction": "예측신호",
+    "predictionSignals": "예측신호",
+    "전망신호": "예측신호",
 }
 
 
@@ -551,7 +604,7 @@ def _acceptsBasePeriod(fn) -> bool:
 
 
 class Analysis:
-    """재무제표 완전 분석 — 18축, 단일 종목 심층.
+    """재무제표 완전 분석 — 19축, 단일 종목 심층.
 
     Capabilities:
         Part 1 — 사업구조: 수익구조, 자금조달, 자산구조, 현금흐름
@@ -559,6 +612,7 @@ class Analysis:
         Part 3 — 심화분석: 이익품질, 비용구조, 자본배분, 투자효율, 재무정합성
         Part 4 — 가치평가: DCF, DDM, 상대가치, RIM, 목표주가, 역내재성장률, 민감도
         Part 5 — 비재무 심화: 지배구조, 공시변화감지, 비교분석
+        Part 6 — 전망분석: 매출전망, 예측신호
         - 각 축은 Company를 받아 dict를 반환하는 순수 함수 집합
         - review()가 이 결과를 소비하여 구조화 보고서 생성
 

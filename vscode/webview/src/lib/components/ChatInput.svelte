@@ -106,8 +106,10 @@
 
 <style>
   .input-area {
-    padding: 0 20px 12px;
+    padding: 0 16px 12px;
     position: relative;
+    width: 100%;
+    max-width: 100%;
   }
 
   /* exact Claude Code: .inputContainer_cKsPxg */

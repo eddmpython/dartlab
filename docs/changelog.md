@@ -9,6 +9,32 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.15] - 2026-03-30
+
+### Added
+
+- **`c.topicSummaries()`**: 토픽별 200자 요약 dict 반환 — docs topics는 최신 사업보고서에서 자동 추출, finance topics는 고정 설명. AI가 어떤 토픽에 뭐가 있는지 코드로 조회해서 경로 탐색 라운드 절약
+- **scan 3축 신규**: `scan("efficiency")` 효율성(자산/재고/매출채권 회전율+CCC), `scan("valuation")` 밸류에이션(PER/PBR/PSR+시가총액), `scan("dividendTrend")` 배당추이(DPS 3개년+패턴분류). 한국어 alias 포함
+- **scan audit 품질 개선**: 감사의견 패턴 매칭 강화, 계속기업 의심/강조사항 분류 정밀화
+- **scan profitability 개선**: 금융업(은행/보험/증권) 영업이익률 fallback 로직 추가
+- **VSCode MessageBubble 마크다운 렌더링**: 테이블/코드블록/리스트 완전 렌더링, 코드 복사 버튼, 접이식 thinking 블록
+- **VSCode ChatPanel stdio 통신**: SSE 프록시 제거 → stdio 직접 통신으로 전환. healthCheck/portManager/processManager 제거
+
+### Changed
+
+- **AI 엔진 대폭 경량화 (15,420줄 삭제)**: context/, conversation/(history 제외), eval/, skills/, tools/(coding+plugin 제외), spec.py, metadata.py, reviewer.py, agent.py, aiParser.py 전부 제거. 클로드 코드 모델 — 시스템 프롬프트 + 자유 코드 실행만 남김
+- **AI coding.py 샌드박스 제거**: `_FORBIDDEN_IMPORTS`, `_FORBIDDEN_CALLS`, `_ALLOWED_IMPORTS`, `_SafetyVisitor` 전부 제거. 로컬 도구에 서버급 샌드박스는 과잉 — 타임아웃만 유지
+- **Company 구조 정리**: deprecated `sce` property 제거(→ `c.SCE`), deprecated `getRatios()` 제거(→ `c.ratios`), finance 위임 보일러플레이트 `_financeProperty()` 헬퍼로 압축, re-export 주석 정리
+- **서버/MCP stdio 통신 전환**: SSE bridge 제거, stdio proxy 도입. MCP `__init__.py` 경량화
+- **테스트 import 경로 정규화**: `test_company.py`, `test_protocol.py`, `test_fixture_finance.py` — re-export 경유 → 원본 모듈 직접 import
+
+### Removed
+
+- **AI 레거시 모듈 60+ 파일**: context/, conversation/(templates 포함), eval/, skills/, tools/(discovery, registry, runtime, selector, superTools/, _helpers), spec.py, metadata.py, reviewer.py, agent.py, aiParser.py
+- **AI 레거시 테스트 13파일**: test_ai_capabilities, test_ai_context_modules, test_ai_parser, test_benchmarks, test_context, test_context_coverage, test_dialogue, test_eval, test_eval_deterministic, test_metadata, test_prompts, test_spec_integrity, test_tools_registry
+- **VSCode 레거시**: SettingsPanel.svelte, WelcomeView.svelte, chatViewProvider.ts, sseProxy.ts, healthCheck.ts, portManager.ts, processManager.ts
+- **deprecated**: `c.sce` (→ `c.SCE`), `c.getRatios()` (→ `c.ratios`), `finance.sce` (→ `finance.SCE`)
+
 ## [0.7.14] - 2026-03-30
 
 ### Added

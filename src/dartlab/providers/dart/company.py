@@ -41,16 +41,13 @@ from dartlab.gather.listing import (
     searchName,
 )
 
-# ── 분리된 모듈-레벨 헬퍼 re-export (외부 import 경로 유지) ──
-from dartlab.providers.dart._diff_helpers import (  # noqa: F401
+from dartlab.providers.dart._diff_helpers import (
     _buildTopicChangeLedger,
     _normalizeTextCell,
 )
-
-# ── 분리된 accessor 클래스 re-export (외부 import 경로 유지) ──
-from dartlab.providers.dart._docs_accessor import _DocsAccessor  # noqa: F401
-from dartlab.providers.dart._finance_accessor import _FinanceAccessor  # noqa: F401
-from dartlab.providers.dart._finance_helpers import (  # noqa: F401
+from dartlab.providers.dart._docs_accessor import _DocsAccessor
+from dartlab.providers.dart._finance_accessor import _FinanceAccessor
+from dartlab.providers.dart._finance_helpers import (
     _RATIO_TEMPLATE_FIELDS,
     _financeCisAnnual,
     _financeCisQuarterly,
@@ -62,11 +59,11 @@ from dartlab.providers.dart._finance_helpers import (  # noqa: F401
     _sceToDataFrame,
     _shouldFallbackToAnnualRatios,
 )
-from dartlab.providers.dart._profile_accessor import _ProfileAccessor  # noqa: F401
-from dartlab.providers.dart._report_accessor import REPORT_COL_KR as _REPORT_COL_KR  # noqa: F401
-from dartlab.providers.dart._report_accessor import _ReportAccessor  # noqa: F401
-from dartlab.providers.dart._sections_source import _SectionsSource  # noqa: F401
-from dartlab.providers.dart._utils import (  # noqa: F401
+from dartlab.providers.dart._profile_accessor import _ProfileAccessor
+from dartlab.providers.dart._report_accessor import REPORT_COL_KR as _REPORT_COL_KR
+from dartlab.providers.dart._report_accessor import _ReportAccessor
+from dartlab.providers.dart._sections_source import _SectionsSource
+from dartlab.providers.dart._utils import (
     _checkDartDocsFreshness,
     _ensureAllData,
     _ensureData,
@@ -348,6 +345,80 @@ class Company:
         from dartlab.core.guidance import emit
 
         emit(f"hint:no_{category}", stockCode=self.stockCode, prop=prop)
+
+    def _financeProperty(self, name: str):
+        """finance accessor 위임 + hint."""
+        result = getattr(self.finance, name)
+        if result is None:
+            self._hintOnce(name, name, "finance")
+        return result
+
+    def topicSummaries(self) -> dict[str, str]:
+        """토픽별 요약 dict — AI가 경로 탐색에 사용.
+
+        각 docs topic의 최신 기간 첫 텍스트에서 200자 요약을 추출한다.
+        finance topic은 고정 설명을 반환한다.
+        """
+        cacheKey = "_topicSummaries"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
+
+        summaries: dict[str, str] = {}
+
+        # finance 고정 설명
+        _FINANCE_SUMMARIES = {
+            "BS": "재무상태표 — 자산, 부채, 자본 잔액",
+            "IS": "손익계산서 — 매출, 영업이익, 당기순이익",
+            "CIS": "포괄손익계산서 — 기타포괄손익 포함",
+            "CF": "현금흐름표 — 영업/투자/재무 활동 현금",
+            "SCE": "자본변동표 — 자본 구성요소별 변동",
+            "ratios": "재무비율 — 수익성/안정성/성장성/효율성/밸류에이션",
+        }
+        summaries.update(_FINANCE_SUMMARIES)
+
+        # docs topic 요약 — 최신 기간 첫 텍스트 200자
+        if self._hasDocs:
+            raw = loadData(
+                self.stockCode,
+                category="docs",
+                sinceYear=2016,
+                columns=["year", "report_type", "section_order", "section_title", "section_content"],
+            )
+            if raw is not None and not raw.is_empty() and "section_content" in raw.columns:
+                from dartlab.core.reportSelector import selectReport
+                from dartlab.providers.dart.docs.sections.mapper import mapSectionTitle
+
+                # 최신 연도의 사업보고서에서 추출
+                years = sorted(
+                    {str(y) for y in raw["year"].drop_nulls().to_list()},
+                    reverse=True,
+                )
+                for year in years:
+                    report = selectReport(raw, year, reportKind="annual")
+                    if report is None or report.is_empty():
+                        continue
+                    scoped = (
+                        report.filter(pl.col("section_content").is_not_null())
+                        .sort("section_order")
+                    )
+                    seen: set[str] = set()
+                    for row in scoped.iter_rows(named=True):
+                        rawTitle = str(row.get("section_title") or "").strip()
+                        topic = mapSectionTitle(rawTitle)
+                        if not topic or topic in seen or topic in summaries:
+                            continue
+                        seen.add(topic)
+                        content = str(row.get("section_content") or "").strip()
+                        if not content:
+                            continue
+                        # 첫 200자 (줄바꿈 → 공백)
+                        preview = content.replace("\n", " ").replace("  ", " ")[:200].strip()
+                        if preview:
+                            summaries[topic] = preview
+                    break  # 최신 연도만
+
+        self._cache[cacheKey] = summaries
+        return summaries
 
     @property
     def _analyzer(self):
@@ -1334,10 +1405,7 @@ class Company:
             c = Company("005930")
             c.BS  # 재무상태표
         """
-        result = self.finance.BS
-        if result is None:
-            self._hintOnce("BS", "BS", "finance")
-        return result
+        return self._financeProperty("BS")
 
     @property
     def IS(self) -> pl.DataFrame | None:
@@ -1373,10 +1441,7 @@ class Company:
             c = Company("005930")
             c.IS  # 손익계산서
         """
-        result = self.finance.IS
-        if result is None:
-            self._hintOnce("IS", "IS", "finance")
-        return result
+        return self._financeProperty("IS")
 
     @property
     def CIS(self) -> pl.DataFrame | None:
@@ -1409,10 +1474,7 @@ class Company:
             c = Company("005930")
             c.CIS  # 포괄손익계산서
         """
-        result = self.finance.CIS
-        if result is None:
-            self._hintOnce("CIS", "CIS", "finance")
-        return result
+        return self._financeProperty("CIS")
 
     @property
     def CF(self) -> pl.DataFrame | None:
@@ -1447,10 +1509,7 @@ class Company:
             c = Company("005930")
             c.CF  # 현금흐름표
         """
-        result = self.finance.CF
-        if result is None:
-            self._hintOnce("CF", "CF", "finance")
-        return result
+        return self._financeProperty("CF")
 
     @property
     def sections(self) -> pl.DataFrame | None:
@@ -2813,9 +2872,9 @@ class Company:
             - ask: 자유 질문 기반 AI 분석
             - chat: 에이전트 모드 심화 분석
         """
-        from dartlab.ai.reviewer import buildReviewWithAI
+        from dartlab.review.registry import buildReview
 
-        return buildReviewWithAI(self, section=section, layout=layout, helper=helper, guide=guide, preset=preset, detail=detail, basePeriod=basePeriod)
+        return buildReview(self, section=section, layout=layout, basePeriod=basePeriod)
 
     def analysis(self, axis: str | None = None, **kwargs):
         """재무제표 완전 분석 — 14축, 단일 종목 심층.
@@ -3647,17 +3706,6 @@ class Company:
         self._cache[cacheKey] = result
         return result
 
-    def getRatios(self, fsDivPref: str = "CFS"):
-        """Deprecated — use ``c.ratios`` property instead."""
-        import warnings
-
-        warnings.warn(
-            "getRatios()는 deprecated입니다. c.ratios를 사용하세요.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self._getRatiosInternal(fsDivPref)
-
     @property
     def ratios(self) -> pl.DataFrame | None:
         """재무비율 시계열 (분류/항목 x 기간 DataFrame).
@@ -3742,10 +3790,7 @@ class Company:
             series, periods = c.timeseries
             series["IS"]["sales"]  # 분기별 매출 시계열
         """
-        result = self.finance.timeseries
-        if result is None:
-            self._hintOnce("timeseries", "timeseries", "finance")
-        return result
+        return self._financeProperty("timeseries")
 
     @property
     def annual(self):
@@ -3780,10 +3825,7 @@ class Company:
             series, years = c.annual
             series["IS"]["sales"]  # 연도별 매출 시계열
         """
-        result = self.finance.annual
-        if result is None:
-            self._hintOnce("annual", "annual", "finance")
-        return result
+        return self._financeProperty("annual")
 
     @property
     def cumulative(self):
@@ -3816,10 +3858,7 @@ class Company:
             c = Company("005930")
             series, periods = c.cumulative
         """
-        result = self.finance.cumulative
-        if result is None:
-            self._hintOnce("cumulative", "cumulative", "finance")
-        return result
+        return self._financeProperty("cumulative")
 
     @property
     def sceMatrix(self):
@@ -3856,29 +3895,7 @@ class Company:
             matrix, years = c.sceMatrix
             matrix["2024"]["net_income"]["retained_earnings"]
         """
-        result = self.finance.sceMatrix
-        if result is None:
-            self._hintOnce("sceMatrix", "sceMatrix", "finance")
-        return result
-
-    @property
-    def sce(self):
-        """자본변동표 DataFrame (연결 기준).
-
-        .. deprecated::
-            v0.8.0에서 제거. ``c.SCE`` 사용.
-
-        Returns:
-            계정명 × 연도 컬럼 DataFrame 또는 None.
-        """
-        import warnings
-
-        warnings.warn(
-            "c.sce는 v0.8.0에서 제거됩니다. c.SCE를 사용하세요.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.finance.SCE
+        return self._financeProperty("sceMatrix")
 
     @property
     def SCE(self):
@@ -3912,10 +3929,7 @@ class Company:
             c = Company("005930")
             c.SCE  # 자본변동표
         """
-        result = self.finance.SCE
-        if result is None:
-            self._hintOnce("SCE", "SCE", "finance")
-        return result
+        return self._financeProperty("SCE")
 
     @property
     def ratioSeries(self):
@@ -3949,10 +3963,7 @@ class Company:
             series, years = c.ratioSeries
             series["RATIO"]["roe"]  # [8.69, 13.20, 16.55, ...]
         """
-        result = self.finance.ratioSeries
-        if result is None:
-            self._hintOnce("ratioSeries", "ratioSeries", "finance")
-        return result
+        return self._financeProperty("ratioSeries")
 
     # ── 섹터 분류 ──
 

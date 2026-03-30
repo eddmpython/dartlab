@@ -1,7 +1,6 @@
 <script lang="ts">
   import MessageBubble from "./MessageBubble.svelte";
   import ChatInput from "./ChatInput.svelte";
-  import WelcomeView from "./WelcomeView.svelte";
   import ChatHeader from "./ChatHeader.svelte";
   import { createMessageId, createSseHandler, type Message } from "../api/sseHandler";
   import * as client from "../api/client";
@@ -20,15 +19,13 @@
     activeConversationId: string | null;
   }
 
-  // Restore state
   const saved = getState<PanelState>();
   let conversations: Conversation[] = $state(saved?.conversations ?? []);
   let activeConversationId: string | null = $state(saved?.activeConversationId ?? null);
-
   let serverState = $state("starting");
+  let providerLabel = $state("");
   let streaming = $state(false);
   let messagesEl: HTMLDivElement | undefined = $state();
-
   let currentHandler: ReturnType<typeof createSseHandler> | null = null;
 
   let messages = $derived(
@@ -38,7 +35,6 @@
   function persist() {
     const state: PanelState = { conversations, activeConversationId };
     setState(state);
-    // Backup to Extension Host globalState
     client.syncConversations(state);
   }
 
@@ -48,111 +44,84 @@
     });
   }
 
-  function newConversation(): string {
-    const conv: Conversation = {
-      id: createMessageId(),
+  function getConv(): Conversation | undefined {
+    return conversations.find(c => c.id === activeConversationId);
+  }
+
+  function ensureConversation(): string {
+    if (activeConversationId && getConv()) return activeConversationId;
+    const id = createMessageId();
+    conversations = [{
+      id,
       title: "New conversation",
       messages: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
-    };
-    conversations = [conv, ...conversations];
-    activeConversationId = conv.id;
+    }, ...conversations];
+    activeConversationId = id;
     persist();
-    return conv.id;
+    return id;
   }
 
-  function updateActiveMessages(msgs: Message[]) {
-    const idx = conversations.findIndex(c => c.id === activeConversationId);
+  // Update messages by convId (avoids stale closure on conv object)
+  function updateMessages(convId: string, msgs: Message[]) {
+    const idx = conversations.findIndex(c => c.id === convId);
     if (idx < 0) return;
-    conversations[idx] = { ...conversations[idx], messages: msgs, updatedAt: Date.now() };
-    // Auto-title
-    if (!conversations[idx].title || conversations[idx].title === "New conversation") {
+    const conv = conversations[idx];
+    conv.messages = msgs;
+    conv.updatedAt = Date.now();
+    if (conv.title === "New conversation") {
       const first = msgs.find(m => m.role === "user");
-      if (first) {
-        conversations[idx].title = first.text.slice(0, 40) + (first.text.length > 40 ? "..." : "");
-      }
+      if (first) conv.title = first.text.slice(0, 40) + (first.text.length > 40 ? "..." : "");
     }
     conversations = [...conversations];
     persist();
   }
 
-  function updateTitleFromMeta(meta: Record<string, unknown>) {
-    const idx = conversations.findIndex(c => c.id === activeConversationId);
-    if (idx < 0) return;
-    const company = meta.company as string | undefined;
-    if (company && conversations[idx].title === "New conversation") {
-      conversations[idx].title = `${company} analysis`;
-      conversations = [...conversations];
-      persist();
-    }
-  }
-
-  function selectConversation(id: string) {
-    if (streaming) return;
-    activeConversationId = id;
-    persist();
-    scrollToBottom();
-  }
-
-  function deleteConversation(id: string) {
-    conversations = conversations.filter(c => c.id !== id);
-    if (activeConversationId === id) {
-      activeConversationId = conversations[0]?.id ?? null;
-    }
-    persist();
-  }
-
-  function handleNewChat() {
-    if (streaming) return;
-    newConversation();
-      }
-
   function handleSubmit(text: string) {
-    if (!activeConversationId) newConversation();
-    
-    const currentMessages = [...messages];
+    const convId = ensureConversation();
 
-    const userMsg: Message = {
+    const conv = conversations.find(c => c.id === convId)!;
+    const msgs = [...conv.messages];
+
+    msgs.push({
       id: createMessageId(),
       role: "user",
       text,
       loading: false,
       error: false,
-    };
-    currentMessages.push(userMsg);
+    });
 
-    const assistantMsg: Message = {
+    msgs.push({
       id: createMessageId(),
       role: "assistant",
       text: "",
       loading: true,
       error: false,
       startedAt: Date.now(),
-    };
-    currentMessages.push(assistantMsg);
+    });
 
     streaming = true;
-    updateActiveMessages(currentMessages);
+    updateMessages(convId, msgs);
     scrollToBottom();
 
-    const history = currentMessages
+    const history = msgs
       .slice(0, -2)
       .filter(m => m.text)
       .map(m => ({ role: m.role, text: m.text }));
 
+    // Use convId in closures to avoid stale references
     currentHandler = createSseHandler(
       () => {
-        const msgs = conversations.find(c => c.id === activeConversationId)?.messages ?? [];
-        return msgs[msgs.length - 1];
+        const c = conversations.find(c => c.id === convId);
+        return c?.messages[c.messages.length - 1] ?? { id: "", role: "assistant" as const, text: "", loading: true, error: false };
       },
       (patch) => {
-        const conv = conversations.find(c => c.id === activeConversationId);
-        if (!conv) return;
-        const msgs = [...conv.messages];
-        const last = msgs.length - 1;
-        msgs[last] = { ...msgs[last], ...patch };
-        updateActiveMessages(msgs);
+        const c = conversations.find(c => c.id === convId);
+        if (!c) return;
+        const m = [...c.messages];
+        m[m.length - 1] = { ...m[m.length - 1], ...patch };
+        updateMessages(convId, m);
         scrollToBottom();
       },
       () => {
@@ -162,67 +131,55 @@
       },
     );
 
-    client.ask(text, undefined, history);
+    client.ask(text, text, history);
   }
 
   function handleStop() {
     client.stopStream();
     streaming = false;
+    currentHandler = null;
   }
 
   function handleSlashCommand(cmd: string) {
-    switch (cmd) {
-      case "settings":
-      case "model":
-      case "provider":
-        // TODO: open settings via Extension Host command
-        break;
-      case "new":
-        handleNewChat();
-        break;
-      case "clear":
-        if (activeConversationId) deleteConversation(activeConversationId);
-        break;
-      case "resume":
-        // Trigger history dropdown in header -- dispatch custom event
-        window.dispatchEvent(new CustomEvent("dartlab:openHistory"));
-        break;
-      case "help": {
-        // Show help as a system message
-        if (!activeConversationId) newConversation();
-        const helpText = [
-          "**Available commands:**",
-          "- `/model` -- Change AI model",
-          "- `/provider` -- Change AI provider",
-          "- `/settings` -- Open AI settings panel",
-          "- `/resume` -- Resume a past conversation",
-          "- `/new` -- Start new conversation",
-          "- `/clear` -- Clear current conversation",
-          "- `/help` -- Show this help",
-        ].join("\n");
-        const helpMsg: Message = {
-          id: createMessageId(),
-          role: "assistant",
-          text: helpText,
-          loading: false,
-          error: false,
-        };
-        const conv = conversations.find(c => c.id === activeConversationId);
-        if (conv) updateActiveMessages([...conv.messages, helpMsg]);
-        break;
+    if (cmd === "new") {
+      if (!streaming) {
+        activeConversationId = null;
+        ensureConversation();
       }
+    } else if (cmd === "clear") {
+      if (activeConversationId) {
+        conversations = conversations.filter(c => c.id !== activeConversationId);
+        activeConversationId = conversations[0]?.id ?? null;
+        persist();
+      }
+    } else if (cmd === "help") {
+      const convId = ensureConversation();
+      const conv = conversations.find(c => c.id === convId)!;
+      updateMessages(convId, [...conv.messages, {
+        id: createMessageId(),
+        role: "assistant",
+        text: "**Commands:** `/new` `/clear` `/help`\n\nType a stock code (005930) or company name.\nMCP tools available in Claude Code / Copilot Chat.",
+        loading: false,
+        error: false,
+      }]);
     }
   }
 
-  // Extension Host messages
   onMessage((msg: unknown) => {
     const m = msg as Record<string, unknown>;
     switch (m.type) {
       case "sseEvent":
         currentHandler?.handleEvent(m.event as string, m.data);
-        // Update title from meta event
         if (m.event === "meta" && m.data) {
-          updateTitleFromMeta(m.data as Record<string, unknown>);
+          const company = (m.data as Record<string, unknown>).company as string | undefined;
+          if (company && activeConversationId) {
+            const conv = getConv();
+            if (conv && conv.title === "New conversation") {
+              conv.title = company;
+              conversations = [...conversations];
+              persist();
+            }
+          }
         }
         break;
       case "streamEnd":
@@ -234,6 +191,11 @@
       case "serverState":
         serverState = m.state as string;
         break;
+      case "profile": {
+        const p = m.payload as Record<string, unknown> | null;
+        if (p?.provider) providerLabel = String(p.provider);
+        break;
+      }
       case "restoreConversations": {
         const restored = m.payload as PanelState | null;
         if (restored && conversations.length === 0) {
@@ -245,7 +207,11 @@
       }
       case "selectConversation": {
         const payload = m.payload as { id: string };
-        if (payload.id) selectConversation(payload.id);
+        if (payload.id && !streaming) {
+          activeConversationId = payload.id;
+          persist();
+          scrollToBottom();
+        }
         break;
       }
     }
@@ -255,17 +221,25 @@
 </script>
 
 <div class="chat-panel">
-  <ChatHeader {serverState} />
+  <ChatHeader {serverState} {providerLabel} />
 
-  {#if messages.length === 0}
-    <WelcomeView {serverState} onsubmit={handleSubmit} />
-  {:else}
-    <div class="messages" bind:this={messagesEl}>
-      {#each messages as message (message.id)}
-        <MessageBubble {message} />
-      {/each}
+  {#if messages.length === 0 && !streaming}
+    {@const avatarSrc = document.getElementById("app")?.dataset.avatar ?? ""}
+    <div class="welcome">
+      {#if avatarSrc}
+        <img src={avatarSrc} alt="DartLab" width="56" height="56" class="welcome-avatar" />
+      {/if}
+      <h2 class="welcome-title">DartLab</h2>
+      <p class="welcome-text">Type a stock code or company name to start.</p>
+      <p class="welcome-sub">MCP tools available in Claude Code / Copilot Chat.</p>
     </div>
   {/if}
+
+  <div class="messages" bind:this={messagesEl}>
+    {#each messages as message (message.id)}
+      <MessageBubble {message} />
+    {/each}
+  </div>
 
   <ChatInput
     disabled={serverState !== "ready"}
@@ -281,11 +255,44 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
+    width: 100%;
     overflow: hidden;
+  }
+  .welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 24px 16px;
+    text-align: center;
+  }
+  .welcome-avatar {
+    border-radius: 50%;
+    margin-bottom: 12px;
+    box-shadow: 0 0 20px rgba(234, 70, 71, 0.15);
+  }
+  .welcome-title {
+    margin: 0 0 8px;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--vscode-editor-foreground);
+  }
+  .welcome-text {
+    font-size: 13px;
+    color: var(--vscode-descriptionForeground);
+    margin: 0 0 6px;
+  }
+  .welcome-sub {
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+    opacity: 0.6;
+    margin: 0;
   }
   .messages {
     flex: 1;
     overflow-y: auto;
-    padding: 8px 20px 40px;
+    padding: 12px 16px 40px;
+    width: 100%;
   }
 </style>

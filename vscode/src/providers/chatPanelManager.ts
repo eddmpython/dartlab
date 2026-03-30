@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import type { ExtensionMessage } from "../bridge/messageProtocol";
 import { ChatWebviewBase } from "./chatWebviewBase";
-import { ProcessManager } from "../server/processManager";
+import { StdioProxy } from "../bridge/stdioProxy";
 
 /** Manages DartLab chat as an editor tab (WebviewPanel). */
 export class ChatPanelManager {
@@ -11,8 +11,7 @@ export class ChatPanelManager {
 
   constructor(
     private readonly context: vscode.ExtensionContext,
-    private readonly processManager: ProcessManager,
-    private readonly port: () => number,
+    private readonly stdioProxy: StdioProxy,
   ) {
     this.base = this.createBase();
   }
@@ -24,8 +23,7 @@ export class ChatPanelManager {
   private createBase(): ChatWebviewBase {
     return new ChatWebviewBase(
       this.context.extensionUri,
-      this.processManager,
-      this.port,
+      this.stdioProxy,
       this.context.globalState,
       () => this.sidebarRefresh?.(),
     );

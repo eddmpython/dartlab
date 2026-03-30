@@ -52,9 +52,9 @@ def _runReviewer(args) -> int:
     except (ValueError, OSError) as exc:
         raise CLIError(str(exc)) from exc
 
-    from dartlab.ai.reviewer import buildReviewWithAI
+    from dartlab.review.registry import buildReview
 
-    report = buildReviewWithAI(company, section=args.section)
+    report = buildReview(company, section=args.section)
     return _printReport(report, args)
 
 

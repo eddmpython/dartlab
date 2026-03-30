@@ -65,8 +65,12 @@ class ContextSignals:
 # ======================================
 
 
-def collectSignals(company) -> ContextSignals:
-    """Company 객체에서 맥락 신호를 수집한다."""
+def collectSignals(company, *, usePredictionAxis: bool = False) -> ContextSignals:
+    """Company 객체에서 맥락 신호를 수집한다.
+
+    usePredictionAxis=True이면 analysis("예측신호") 결과를 추가로 소비하여
+    공시 tone, 변화 강도, 성장 조정치를 enrichment한다.
+    """
     signals = ContextSignals()
 
     # 1. insight 등급 수집
@@ -128,12 +132,45 @@ def collectSignals(company) -> ContextSignals:
     except (ImportError, AttributeError, TypeError):
         pass
 
+    # 5. 예측신호 축 enrichment (선택적)
+    if usePredictionAxis:
+        _enrichFromPredictionAxis(company, signals)
+
     # 신호에서 조정치 계산
     adjustments, reasoning = _computeAdjustments(signals)
     signals.adjustments = adjustments
     signals.reasoning = reasoning
 
     return signals
+
+
+def _enrichFromPredictionAxis(company, signals: ContextSignals) -> None:
+    """analysis("예측신호") 결과로 ContextSignals를 보강한다."""
+    try:
+        from dartlab.analysis.financial.predictionSignals import (
+            calcDisclosureDelta,
+            calcPredictionSynthesis,
+        )
+
+        # 공시 변화 신호 → disclosure 필드 enrichment
+        disclosure = calcDisclosureDelta(company)
+        if disclosure is not None:
+            intensity = disclosure["overallChangeRate"] / 100.0
+            signals.disclosureChangeIntensity = intensity
+            if disclosure["signalDirection"] == "negative":
+                signals.disclosureTone = -0.3 * intensity
+            elif disclosure["signalDirection"] == "positive":
+                signals.disclosureTone = 0.2 * intensity
+
+        # 종합 신호 → 성장 조정치
+        synthesis = calcPredictionSynthesis(company)
+        if synthesis is not None:
+            bias = synthesis["aiContext"]["directionBias"]
+            if abs(bias) > 0.2:
+                signals.disclosureGrowthAdj = bias * 3.0
+                signals.disclosureConfidence = synthesis["confidence"]
+    except (ImportError, TypeError, KeyError):
+        pass
 
 
 # ======================================

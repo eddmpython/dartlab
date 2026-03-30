@@ -220,18 +220,22 @@ def compute_salary_vs_revenue(
     if rev_map is None:
         rev_map = scan_revenue_growth()
 
+    _CAP = 500.0  # +-500% 초과 성장률은 의미 없음 (전기 매출 ~0 등)
     rows = []
     for code in sal_map:
         if code not in rev_map:
             continue
         sg = sal_map[code]["급여성장률"]
         rg = rev_map[code]
-        burden = sg - rg
+        # 극단값 클램핑 — 전기 매출/급여가 극소일 때 수만% 발생 방지
+        sg_c = max(-_CAP, min(_CAP, sg))
+        rg_c = max(-_CAP, min(_CAP, rg))
+        burden = sg_c - rg_c
         rows.append(
             {
                 "종목코드": code,
-                "급여성장률": sg,
-                "매출성장률": rg,
+                "급여성장률": round(sg_c, 1),
+                "매출성장률": round(rg_c, 1),
                 "급여매출괴리": round(burden, 1),
                 "급여>매출": burden > 0,
             }

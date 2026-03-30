@@ -199,7 +199,7 @@ class TestRatioQuality:
     def test_ratio_result_has_headline_signal(self):
         from types import SimpleNamespace
 
-        from dartlab.providers.dart.company import _ratioResultHasHeadlineSignal, _shouldFallbackToAnnualRatios
+        from dartlab.providers.dart._finance_helpers import _ratioResultHasHeadlineSignal, _shouldFallbackToAnnualRatios
 
         assert _ratioResultHasHeadlineSignal(None) is False
         assert (
@@ -271,7 +271,7 @@ class TestRatioQuality:
 
     def test_ratio_template_fields_by_financial_industry(self):
         from dartlab.core.sector.types import IndustryGroup
-        from dartlab.providers.dart.company import _RATIO_TEMPLATE_FIELDS, _ratioTemplateKeyForIndustryGroup
+        from dartlab.providers.dart._finance_helpers import _RATIO_TEMPLATE_FIELDS, _ratioTemplateKeyForIndustryGroup
 
         assert _ratioTemplateKeyForIndustryGroup(IndustryGroup.BANK) == "bank"
         assert _ratioTemplateKeyForIndustryGroup(IndustryGroup.INSURANCE) == "insurance"
@@ -283,7 +283,7 @@ class TestRatioQuality:
         assert "roe" in _RATIO_TEMPLATE_FIELDS["insurance"]
 
     def test_ratio_series_to_dataframe_can_apply_field_template(self):
-        from dartlab.providers.dart.company import _ratioSeriesToDataFrame
+        from dartlab.providers.dart._finance_helpers import _ratioSeriesToDataFrame
 
         series = {
             "RATIO": {
