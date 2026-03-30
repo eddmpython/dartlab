@@ -154,7 +154,9 @@ def renderMarkdown(review) -> str:
                         # --- 행 (separator) 과 타입 행 (str, i64, f64 등) 제거
                         inner = l.replace("│", "").replace("┆", "").strip()
                         tokens = inner.split()
-                        if tokens and all(t in ("---", "str", "i64", "f64", "i32", "u32", "bool", "date", "null") for t in tokens):
+                        if tokens and all(
+                            t in ("---", "str", "i64", "f64", "i32", "u32", "bool", "date", "null") for t in tokens
+                        ):
                             continue
                         cleaned.append(l)
                     parts.append("\n".join(cleaned))

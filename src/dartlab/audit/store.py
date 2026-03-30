@@ -106,8 +106,18 @@ class AuditStore:
                (stockCode, corpName, sector, runDate, engineVersion,
                 totalCalcs, okCalcs, coverageRate, durationSec, status)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (stockCode, corpName, sector, runDate, engineVersion,
-             totalCalcs, okCalcs, coverageRate, durationSec, status),
+            (
+                stockCode,
+                corpName,
+                sector,
+                runDate,
+                engineVersion,
+                totalCalcs,
+                okCalcs,
+                coverageRate,
+                durationSec,
+                status,
+            ),
         )
         conn.commit()
         return cursor.lastrowid  # type: ignore[return-value]
@@ -282,17 +292,14 @@ class AuditStore:
         combined = pl.concat(dfs)
 
         return (
-            combined
-            .group_by("axis", "blockKey")
+            combined.group_by("axis", "blockKey")
             .agg(
                 pl.col("status").count().alias("total"),
                 (pl.col("status") == "ok").sum().alias("ok"),
                 (pl.col("status") == "none").sum().alias("none"),
                 (pl.col("status") == "error").sum().alias("error"),
             )
-            .with_columns(
-                (pl.col("ok") / pl.col("total") * 100).round(1).alias("coveragePct")
-            )
+            .with_columns((pl.col("ok") / pl.col("total") * 100).round(1).alias("coveragePct"))
             .sort("axis", "blockKey")
         )
 

@@ -47,7 +47,9 @@ def _getRatios(company):
         return None
 
 
-def _selectDocsRevenue(company, *, basePeriod: str | None = None) -> tuple[dict[str, dict[str, float]], list[str]] | None:
+def _selectDocsRevenue(
+    company, *, basePeriod: str | None = None
+) -> tuple[dict[str, dict[str, float]], list[str]] | None:
     """productService/salesOrder에서 부문별 매출 시계열을 추출.
 
     fallback 체인: productService → salesOrder.
@@ -63,7 +65,9 @@ def _selectDocsRevenue(company, *, basePeriod: str | None = None) -> tuple[dict[
     return None
 
 
-def _parseDocsRevenueResult(result, *, basePeriod: str | None = None) -> tuple[dict[str, dict[str, float]], list[str]] | None:
+def _parseDocsRevenueResult(
+    result, *, basePeriod: str | None = None
+) -> tuple[dict[str, dict[str, float]], list[str]] | None:
     """docs select 결과에서 부문별 매출 시계열 파싱."""
     df = result.df
     if df.is_empty():
@@ -622,9 +626,7 @@ def _getDocsRevenueVals(company) -> list[float]:
     return vals
 
 
-def _calcCompositionHistory(
-    segData: dict[str, dict[str, float]], yCols: list[str]
-) -> list[dict] | None:
+def _calcCompositionHistory(segData: dict[str, dict[str, float]], yCols: list[str]) -> list[dict] | None:
     """연도별 부문 비중 변화. [{year, shares: {seg: pct}}, ...]."""
     history = []
     for yc in yCols:
@@ -694,9 +696,7 @@ def _calcBreakdownHistoryFromDocs(company, *, basePeriod: str | None = None) -> 
                 shares[name] = v
                 total += v
         if total > 0 and shares:
-            history.append(
-                {"year": yc, "shares": {k: v / total * 100 for k, v in shares.items()}}
-            )
+            history.append({"year": yc, "shares": {k: v / total * 100 for k, v in shares.items()}})
 
     return history if len(history) >= 2 else None
 

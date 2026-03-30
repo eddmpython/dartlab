@@ -47,14 +47,17 @@ def _handleAsk(msg: dict[str, Any]) -> None:
     if company:
         try:
             from dartlab import Company
+
             c = Company(company)
         except (ValueError, OSError):
             # 검색으로 재시도
             try:
                 from dartlab.core.resolve import searchCompany
+
                 results = searchCompany(company)
                 if results:
                     from dartlab import Company as C2
+
                     c = C2(results[0].get("stockCode", results[0].get("corp_code", "")))
             except Exception:
                 pass
@@ -83,13 +86,15 @@ def _handleStatus(_msg: dict[str, Any]) -> None:
         from dartlab.core.ai.profile import get_profile_manager
 
         profile = get_profile_manager().load()
-        _emit({
-            "event": "status",
-            "data": {
-                "provider": profile.default_provider or "none",
-                "ready": True,
-            },
-        })
+        _emit(
+            {
+                "event": "status",
+                "data": {
+                    "provider": profile.default_provider or "none",
+                    "ready": True,
+                },
+            }
+        )
     except Exception as exc:
         _emit({"event": "status", "data": {"provider": "none", "ready": False, "error": str(exc)}})
 
@@ -97,6 +102,7 @@ def _handleStatus(_msg: dict[str, Any]) -> None:
 def run() -> None:
     """stdio REPL 루프. stdin EOF 또는 exit 메시지로 종료."""
     import dartlab
+
     dartlab.verbose = False  # suppress print() logs that would corrupt JSON protocol
 
     # ready 신호
@@ -128,6 +134,7 @@ def run() -> None:
 def _getVersion() -> str:
     try:
         import dartlab
+
         return dartlab.__version__
     except Exception:
         return "unknown"

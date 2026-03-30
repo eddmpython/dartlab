@@ -128,6 +128,7 @@ class CodexCodingBackend(CodingBackend):
 # LocalPythonBackend -- subprocess 기반 안전 실행
 # ══════════════════════════════════════
 
+
 def _validateCode(code: str) -> list[str]:
     """구문 검증만 수행. 제한 없음 — 로컬 도구이므로 자유 실행."""
     try:
@@ -274,14 +275,10 @@ def _classifyError(stderr: str, stdout: str) -> str:
         hint = "\n힌트: 모듈을 찾을 수 없습니다. dartlab 내장 API만 사용 가능합니다."
     elif "AttributeError" in stderr or "NameError" in stderr:
         hint = (
-            "\n힌트: API 이름이 틀렸을 수 있습니다."
-            " `dartlab.capabilities(search='키워드')`로 정확한 API를 검색하세요."
+            "\n힌트: API 이름이 틀렸을 수 있습니다. `dartlab.capabilities(search='키워드')`로 정확한 API를 검색하세요."
         )
     elif "TypeError" in stderr:
-        hint = (
-            "\n힌트: 함수 파라미터가 맞지 않습니다."
-            " `help(함수명)`으로 시그니처를 확인하세요."
-        )
+        hint = "\n힌트: 함수 파라미터가 맞지 않습니다. `help(함수명)`으로 시그니처를 확인하세요."
     elif "KeyError" in stderr or "ColumnNotFoundError" in stderr:
         hint = "\n힌트: 컬럼/키가 없습니다. 먼저 print()로 구조를 확인한 뒤 정확한 이름을 사용하세요."
 
@@ -307,7 +304,12 @@ def _stripDuplicateImport(code: str, module: str) -> str:
     # import dartlab 단독 문(from dartlab ... 은 유지)만 제거
     linesToRemove: set[int] = set()
     for node in tree.body:
-        if isinstance(node, ast.Import) and len(node.names) == 1 and node.names[0].name == module and node.names[0].asname is None:
+        if (
+            isinstance(node, ast.Import)
+            and len(node.names) == 1
+            and node.names[0].name == module
+            and node.names[0].asname is None
+        ):
             linesToRemove.add(node.lineno)
     if not linesToRemove:
         return code

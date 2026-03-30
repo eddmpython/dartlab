@@ -48,6 +48,7 @@ def _getCompany(stockCode: str) -> Any:
             return obj
         del _cache[stockCode]
     from dartlab import Company
+
     _log.info("Company('%s') loading...", stockCode)
     c = Company(stockCode)
     if len(_cache) >= _CACHE_MAX:
@@ -161,14 +162,17 @@ _TOOLS: list[dict] = [
         "params": {"query": {"type": "string", "description": "검색어"}},
         "required": ["query"],
     },
-
     # ── 재무 데이터 (깊이가 필요할 때) ──
     {
         "name": "companyFinancials",
         "description": "재무제표 원본 조회. IS(손익), BS(재무상태), CF(현금흐름), CIS(포괄손익), SCE(자본변동) 중 선택.",
         "params": {
             "stockCode": _STOCK,
-            "statement": {"type": "string", "description": "IS / BS / CF / CIS / SCE", "enum": ["IS", "BS", "CF", "CIS", "SCE"]},
+            "statement": {
+                "type": "string",
+                "description": "IS / BS / CF / CIS / SCE",
+                "enum": ["IS", "BS", "CF", "CIS", "SCE"],
+            },
         },
         "required": ["stockCode", "statement"],
     },
@@ -191,7 +195,6 @@ _TOOLS: list[dict] = [
         },
         "required": ["stockCode"],
     },
-
     # ── 전망/가치평가 ──
     {
         "name": "companyValuation",
@@ -205,7 +208,6 @@ _TOOLS: list[dict] = [
         "params": {"stockCode": _STOCK},
         "required": ["stockCode"],
     },
-
     # ── 공시 원문/비교 ──
     {
         "name": "companyShow",
@@ -231,7 +233,6 @@ _TOOLS: list[dict] = [
         },
         "required": ["stockCode"],
     },
-
     # ── 거버넌스/감사 ──
     {
         "name": "companyGovernance",
@@ -245,7 +246,6 @@ _TOOLS: list[dict] = [
         "params": {"stockCode": _STOCK},
         "required": ["stockCode"],
     },
-
     # ── 기본 정보 ──
     {
         "name": "companyProfile",
@@ -259,7 +259,6 @@ _TOOLS: list[dict] = [
         "params": {"stockCode": _STOCK},
         "required": ["stockCode"],
     },
-
     # ── 시장 전체 ──
     {
         "name": "marketScan",
@@ -271,7 +270,6 @@ _TOOLS: list[dict] = [
         "params": {"axis": {"type": "string", "description": "분석 축"}},
         "required": ["axis"],
     },
-
     # ── 보고서 (사용자가 명시적으로 요청할 때만) ──
     {
         "name": "companyReview",
@@ -295,6 +293,7 @@ _TOOLS: list[dict] = [
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 도구 실행
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 
 def _executeTool(name: str, args: dict) -> str:
     """MCP 도구 실행."""
@@ -351,7 +350,8 @@ def _executeTool(name: str, args: dict) -> str:
             if hasattr(p, "__dict__"):
                 return json.dumps(
                     {k: str(v)[:500] for k, v in p.__dict__.items() if not k.startswith("_")},
-                    ensure_ascii=False, indent=2,
+                    ensure_ascii=False,
+                    indent=2,
                 )
             return str(p)
         if name == "companySections":
@@ -370,6 +370,7 @@ def _executeTool(name: str, args: dict) -> str:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # MCP 서버 생성
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 
 def create_server():
     """MCP 서버 인스턴스 생성."""
@@ -414,12 +415,14 @@ def create_server():
             ),
         ]
         for code in _cache:
-            resources.append(Resource(
-                uri=f"dartlab://company/{code}/topics",
-                name=f"{code} topics",
-                description=f"{code} 조회 가능 토픽",
-                mimeType="application/json",
-            ))
+            resources.append(
+                Resource(
+                    uri=f"dartlab://company/{code}/topics",
+                    name=f"{code} topics",
+                    description=f"{code} 조회 가능 토픽",
+                    mimeType="application/json",
+                )
+            )
         return resources
 
     @app.read_resource()
@@ -427,21 +430,30 @@ def create_server():
         uri_str = str(uri)
         if uri_str == "dartlab://info":
             import dartlab
-            return [ReadResourceContents(
-                content=json.dumps({
-                    "version": getattr(dartlab, "__version__", "unknown"),
-                    "tools": len(_TOOLS),
-                    "cached": list(_cache.keys()),
-                }, ensure_ascii=False, indent=2),
-                mime_type="application/json",
-            )]
+
+            return [
+                ReadResourceContents(
+                    content=json.dumps(
+                        {
+                            "version": getattr(dartlab, "__version__", "unknown"),
+                            "tools": len(_TOOLS),
+                            "cached": list(_cache.keys()),
+                        },
+                        ensure_ascii=False,
+                        indent=2,
+                    ),
+                    mime_type="application/json",
+                )
+            ]
         if uri_str.startswith("dartlab://company/"):
             parts = uri_str.replace("dartlab://company/", "").split("/", 1)
             if len(parts) == 2 and parts[1] == "topics":
-                return [ReadResourceContents(
-                    content=json.dumps(_getCompany(parts[0]).topics, ensure_ascii=False, indent=2),
-                    mime_type="application/json",
-                )]
+                return [
+                    ReadResourceContents(
+                        content=json.dumps(_getCompany(parts[0]).topics, ensure_ascii=False, indent=2),
+                        mime_type="application/json",
+                    )
+                ]
         return [ReadResourceContents(content="Unknown resource", mime_type="text/plain")]
 
     return app
@@ -450,6 +462,7 @@ def create_server():
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 설치 헬퍼 -- dartlab mcp --install
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 
 def installMcpConfig(targetDir: str | None = None) -> str:
     """프로젝트에 .mcp.json을 자동 생성한다.
@@ -486,9 +499,11 @@ def installMcpConfig(targetDir: str | None = None) -> str:
 # 엔트리포인트
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+
 def run_stdio():
     """stdio 모드로 MCP 서버 실행."""
     import asyncio
+
     try:
         from mcp.server.stdio import stdio_server
     except ImportError as exc:

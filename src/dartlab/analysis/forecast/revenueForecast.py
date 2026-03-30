@@ -43,6 +43,7 @@ from dartlab.core.finance.extract import (
     getLatest,
     getTTM,
 )
+
 log = logging.getLogger(__name__)
 
 # ROIC 기반 성장 소스 가중치 (시계열에서 할당)
@@ -832,11 +833,7 @@ def forecastRevenue(
         deficit = _TS_FLOOR - weights["timeseries"]
         weights["timeseries"] = _TS_FLOOR
         # 부족분을 다른 v3 소스에서 비례 차감
-        v3Keys = [
-            k
-            for k in ("segments", "backlog")
-            if k in weights and weights[k] > 0
-        ]
+        v3Keys = [k for k in ("segments", "backlog") if k in weights and weights[k] > 0]
         if v3Keys:
             totalV3 = sum(weights[k] for k in v3Keys)
             for k in v3Keys:
@@ -850,11 +847,7 @@ def forecastRevenue(
     if "timeseries" in weights and weights["timeseries"] < _TS_FLOOR:
         deficit = _TS_FLOOR - weights["timeseries"]
         weights["timeseries"] = _TS_FLOOR
-        v3Keys2 = [
-            k
-            for k in ("segments", "backlog")
-            if k in weights and weights[k] > 0
-        ]
+        v3Keys2 = [k for k in ("segments", "backlog") if k in weights and weights[k] > 0]
         if v3Keys2:
             totalV3_2 = sum(weights[k] for k in v3Keys2)
             if totalV3_2 > 0:

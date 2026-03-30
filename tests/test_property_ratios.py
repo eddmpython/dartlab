@@ -49,8 +49,10 @@ class TestSafeDivProperties:
         """분모가 None이면 항상 None."""
         assert _safeDiv(num, None) is None
 
-    @given(num=st.floats(min_value=1, max_value=1e12, allow_nan=False, allow_infinity=False),
-           den=st.floats(min_value=1, max_value=1e12, allow_nan=False, allow_infinity=False))
+    @given(
+        num=st.floats(min_value=1, max_value=1e12, allow_nan=False, allow_infinity=False),
+        den=st.floats(min_value=1, max_value=1e12, allow_nan=False, allow_infinity=False),
+    )
     @settings(max_examples=200)
     def test_positiveInputsGivePositiveResult(self, num, den):
         """양수/양수는 항상 양수 결과."""
@@ -69,8 +71,10 @@ class TestSafePctProperties:
         result = _safePct(num, den)
         assert result is None or isinstance(result, float)
 
-    @given(num=st.floats(min_value=1, max_value=1e12, allow_nan=False, allow_infinity=False),
-           den=st.floats(min_value=1, max_value=1e12, allow_nan=False, allow_infinity=False))
+    @given(
+        num=st.floats(min_value=1, max_value=1e12, allow_nan=False, allow_infinity=False),
+        den=st.floats(min_value=1, max_value=1e12, allow_nan=False, allow_infinity=False),
+    )
     @settings(max_examples=200)
     def test_resultIsRoundedHundredTimesDiv(self, num, den):
         """_safePct는 round(_safeDiv * 100, 2)."""

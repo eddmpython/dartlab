@@ -39,6 +39,7 @@ async def fetch(
     ownClient = False
     if client is None:
         from .http import GatherHttpClient
+
         client = GatherHttpClient()
         ownClient = True
 

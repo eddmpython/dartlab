@@ -45,8 +45,16 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
     # ── 1부: 사업구조 ──
     # import는 해당 블록이 필요할 때만 (그룹 단위)
     if keys is None or keys & {
-        "profile", "segmentComposition", "segmentTrend", "region", "product",
-        "growth", "concentration", "revenueQuality", "growthContribution", "revenueFlags",
+        "profile",
+        "segmentComposition",
+        "segmentTrend",
+        "region",
+        "product",
+        "growth",
+        "concentration",
+        "revenueQuality",
+        "growthContribution",
+        "revenueFlags",
     }:
         from dartlab.analysis.financial.revenue import (
             calcBreakdown,
@@ -74,13 +82,19 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         if _need("profile"):
             b["profile"] = _safe(lambda: profileBlock(calcCompanyProfile(company, basePeriod=basePeriod)))
         if _need("segmentComposition"):
-            b["segmentComposition"] = _safe(lambda: segmentCompositionBlock(calcSegmentComposition(company, basePeriod=basePeriod)))
+            b["segmentComposition"] = _safe(
+                lambda: segmentCompositionBlock(calcSegmentComposition(company, basePeriod=basePeriod))
+            )
         if _need("segmentTrend"):
             b["segmentTrend"] = _safe(lambda: segmentTrendBlock(calcSegmentTrend(company, basePeriod=basePeriod)))
         if _need("region"):
-            b["region"] = _safe(lambda: breakdownBlock(calcBreakdown(company, "region", basePeriod=basePeriod), "region"))
+            b["region"] = _safe(
+                lambda: breakdownBlock(calcBreakdown(company, "region", basePeriod=basePeriod), "region")
+            )
         if _need("product"):
-            b["product"] = _safe(lambda: breakdownBlock(calcBreakdown(company, "product", basePeriod=basePeriod), "product"))
+            b["product"] = _safe(
+                lambda: breakdownBlock(calcBreakdown(company, "product", basePeriod=basePeriod), "product")
+            )
         if _need("growth"):
             b["growth"] = _safe(lambda: revenueGrowthBlock(calcRevenueGrowth(company, basePeriod=basePeriod)))
         if _need("concentration"):
@@ -88,13 +102,22 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         if _need("revenueQuality"):
             b["revenueQuality"] = _safe(lambda: revenueQualityBlock(calcRevenueQuality(company, basePeriod=basePeriod)))
         if _need("growthContribution"):
-            b["growthContribution"] = _safe(lambda: growthContributionBlock(calcGrowthContribution(company, basePeriod=basePeriod)))
+            b["growthContribution"] = _safe(
+                lambda: growthContributionBlock(calcGrowthContribution(company, basePeriod=basePeriod))
+            )
         if _need("revenueFlags"):
             b["revenueFlags"] = _safe(lambda: revenueFlagsBlock(calcFlags(company, basePeriod=basePeriod)))
 
     if keys is None or keys & {
-        "fundingSources", "capitalOverview", "capitalTimeline", "debtTimeline",
-        "interestBurden", "liquidity", "cashFlowStructure", "distressIndicators", "capitalFlags",
+        "fundingSources",
+        "capitalOverview",
+        "capitalTimeline",
+        "debtTimeline",
+        "interestBurden",
+        "liquidity",
+        "cashFlowStructure",
+        "distressIndicators",
+        "capitalFlags",
     }:
         from dartlab.analysis.financial.capital import (
             calcCapitalFlags,
@@ -122,9 +145,13 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         if _need("fundingSources"):
             b["fundingSources"] = _safe(lambda: fundingSourcesBlock(calcFundingSources(company, basePeriod=basePeriod)))
         if _need("capitalOverview"):
-            b["capitalOverview"] = _safe(lambda: capitalOverviewBlock(calcCapitalOverview(company, basePeriod=basePeriod)))
+            b["capitalOverview"] = _safe(
+                lambda: capitalOverviewBlock(calcCapitalOverview(company, basePeriod=basePeriod))
+            )
         if _need("capitalTimeline"):
-            b["capitalTimeline"] = _safe(lambda: capitalTimelineBlock(calcCapitalTimeline(company, basePeriod=basePeriod)))
+            b["capitalTimeline"] = _safe(
+                lambda: capitalTimelineBlock(calcCapitalTimeline(company, basePeriod=basePeriod))
+            )
         if _need("debtTimeline"):
             b["debtTimeline"] = _safe(lambda: debtTimelineBlock(calcDebtTimeline(company, basePeriod=basePeriod)))
         if _need("interestBurden"):
@@ -134,7 +161,9 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         if _need("cashFlowStructure"):
             b["cashFlowStructure"] = _safe(lambda: cashFlowBlock(calcCashFlowStructure(company, basePeriod=basePeriod)))
         if _need("distressIndicators"):
-            b["distressIndicators"] = _safe(lambda: distressBlock(calcDistressIndicators(company, basePeriod=basePeriod)))
+            b["distressIndicators"] = _safe(
+                lambda: distressBlock(calcDistressIndicators(company, basePeriod=basePeriod))
+            )
         if _need("capitalFlags"):
             b["capitalFlags"] = _safe(lambda: capitalFlagsBlock(calcCapitalFlags(company, basePeriod=basePeriod)))
 
@@ -174,7 +203,9 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         )
 
         if _need("cashFlowOverview"):
-            b["cashFlowOverview"] = _safe(lambda: cashFlowOverviewBlock(calcCashFlowOverview(company, basePeriod=basePeriod)))
+            b["cashFlowOverview"] = _safe(
+                lambda: cashFlowOverviewBlock(calcCashFlowOverview(company, basePeriod=basePeriod))
+            )
         if _need("cashQuality"):
             b["cashQuality"] = _safe(lambda: cashQualityBlock(calcCashQuality(company, basePeriod=basePeriod)))
         if _need("cashFlowFlags"):
@@ -202,7 +233,9 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         if _need("dupont"):
             b["dupont"] = _safe(lambda: dupontBlock(calcDupont(company, basePeriod=basePeriod)))
         if _need("profitabilityFlags"):
-            b["profitabilityFlags"] = _safe(lambda: profitabilityFlagsBlock(calcProfitabilityFlags(company, basePeriod=basePeriod)))
+            b["profitabilityFlags"] = _safe(
+                lambda: profitabilityFlagsBlock(calcProfitabilityFlags(company, basePeriod=basePeriod))
+            )
 
     if keys is None or keys & {"growthTrend", "growthQuality", "growthFlags"}:
         from dartlab.analysis.financial.growthAnalysis import (
@@ -263,7 +296,9 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         if _need("cccTrend"):
             b["cccTrend"] = _safe(lambda: cccTrendBlock(calcCccTrend(company, basePeriod=basePeriod)))
         if _need("efficiencyFlags"):
-            b["efficiencyFlags"] = _safe(lambda: efficiencyFlagsBlock(calcEfficiencyFlags(company, basePeriod=basePeriod)))
+            b["efficiencyFlags"] = _safe(
+                lambda: efficiencyFlagsBlock(calcEfficiencyFlags(company, basePeriod=basePeriod))
+            )
 
     if keys is None or keys & {"scorecard", "piotroski", "summaryFlags"}:
         from dartlab.analysis.financial.scorecard import (
@@ -300,13 +335,19 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         )
 
         if _need("accrualAnalysis"):
-            b["accrualAnalysis"] = _safe(lambda: accrualAnalysisBlock(calcAccrualAnalysis(company, basePeriod=basePeriod)))
+            b["accrualAnalysis"] = _safe(
+                lambda: accrualAnalysisBlock(calcAccrualAnalysis(company, basePeriod=basePeriod))
+            )
         if _need("earningsPersistence"):
-            b["earningsPersistence"] = _safe(lambda: earningsPersistenceBlock(calcEarningsPersistence(company, basePeriod=basePeriod)))
+            b["earningsPersistence"] = _safe(
+                lambda: earningsPersistenceBlock(calcEarningsPersistence(company, basePeriod=basePeriod))
+            )
         if _need("beneishMScore"):
             b["beneishMScore"] = _safe(lambda: beneishMScoreBlock(calcBeneishTimeline(company, basePeriod=basePeriod)))
         if _need("earningsQualityFlags"):
-            b["earningsQualityFlags"] = _safe(lambda: earningsQualityFlagsBlock(calcEarningsQualityFlags(company, basePeriod=basePeriod)))
+            b["earningsQualityFlags"] = _safe(
+                lambda: earningsQualityFlagsBlock(calcEarningsQualityFlags(company, basePeriod=basePeriod))
+            )
 
     if keys is None or keys & {"costBreakdown", "operatingLeverage", "breakevenEstimate", "costStructureFlags"}:
         from dartlab.analysis.financial.costStructure import (
@@ -325,14 +366,24 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         if _need("costBreakdown"):
             b["costBreakdown"] = _safe(lambda: costBreakdownBlock(calcCostBreakdown(company, basePeriod=basePeriod)))
         if _need("operatingLeverage"):
-            b["operatingLeverage"] = _safe(lambda: operatingLeverageBlock(calcOperatingLeverage(company, basePeriod=basePeriod)))
+            b["operatingLeverage"] = _safe(
+                lambda: operatingLeverageBlock(calcOperatingLeverage(company, basePeriod=basePeriod))
+            )
         if _need("breakevenEstimate"):
-            b["breakevenEstimate"] = _safe(lambda: breakevenEstimateBlock(calcBreakevenEstimate(company, basePeriod=basePeriod)))
+            b["breakevenEstimate"] = _safe(
+                lambda: breakevenEstimateBlock(calcBreakevenEstimate(company, basePeriod=basePeriod))
+            )
         if _need("costStructureFlags"):
-            b["costStructureFlags"] = _safe(lambda: costStructureFlagsBlock(calcCostStructureFlags(company, basePeriod=basePeriod)))
+            b["costStructureFlags"] = _safe(
+                lambda: costStructureFlagsBlock(calcCostStructureFlags(company, basePeriod=basePeriod))
+            )
 
     if keys is None or keys & {
-        "dividendPolicy", "shareholderReturn", "reinvestment", "fcfUsage", "capitalAllocationFlags",
+        "dividendPolicy",
+        "shareholderReturn",
+        "reinvestment",
+        "fcfUsage",
+        "capitalAllocationFlags",
     }:
         from dartlab.analysis.financial.capitalAllocation import (
             calcCapitalAllocationFlags,
@@ -352,13 +403,17 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         if _need("dividendPolicy"):
             b["dividendPolicy"] = _safe(lambda: dividendPolicyBlock(calcDividendPolicy(company, basePeriod=basePeriod)))
         if _need("shareholderReturn"):
-            b["shareholderReturn"] = _safe(lambda: shareholderReturnBlock(calcShareholderReturn(company, basePeriod=basePeriod)))
+            b["shareholderReturn"] = _safe(
+                lambda: shareholderReturnBlock(calcShareholderReturn(company, basePeriod=basePeriod))
+            )
         if _need("reinvestment"):
             b["reinvestment"] = _safe(lambda: reinvestmentBlock(calcReinvestment(company, basePeriod=basePeriod)))
         if _need("fcfUsage"):
             b["fcfUsage"] = _safe(lambda: fcfUsageBlock(calcFcfUsage(company, basePeriod=basePeriod)))
         if _need("capitalAllocationFlags"):
-            b["capitalAllocationFlags"] = _safe(lambda: capitalAllocationFlagsBlock(calcCapitalAllocationFlags(company, basePeriod=basePeriod)))
+            b["capitalAllocationFlags"] = _safe(
+                lambda: capitalAllocationFlagsBlock(calcCapitalAllocationFlags(company, basePeriod=basePeriod))
+            )
 
     if keys is None or keys & {"roicTimeline", "investmentIntensity", "evaTimeline", "investmentFlags"}:
         from dartlab.analysis.financial.investmentAnalysis import (
@@ -377,15 +432,23 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         if _need("roicTimeline"):
             b["roicTimeline"] = _safe(lambda: roicTimelineBlock(calcRoicTimeline(company, basePeriod=basePeriod)))
         if _need("investmentIntensity"):
-            b["investmentIntensity"] = _safe(lambda: investmentIntensityBlock(calcInvestmentIntensity(company, basePeriod=basePeriod)))
+            b["investmentIntensity"] = _safe(
+                lambda: investmentIntensityBlock(calcInvestmentIntensity(company, basePeriod=basePeriod))
+            )
         if _need("evaTimeline"):
             b["evaTimeline"] = _safe(lambda: evaTimelineBlock(calcEvaTimeline(company, basePeriod=basePeriod)))
         if _need("investmentFlags"):
-            b["investmentFlags"] = _safe(lambda: investmentFlagsBlock(calcInvestmentFlags(company, basePeriod=basePeriod)))
+            b["investmentFlags"] = _safe(
+                lambda: investmentFlagsBlock(calcInvestmentFlags(company, basePeriod=basePeriod))
+            )
 
     if keys is None or keys & {
-        "isCfDivergence", "isBsDivergence", "anomalyScore",
-        "effectiveTaxRate", "deferredTax", "crossStatementFlags",
+        "isCfDivergence",
+        "isBsDivergence",
+        "anomalyScore",
+        "effectiveTaxRate",
+        "deferredTax",
+        "crossStatementFlags",
     }:
         from dartlab.analysis.financial.crossStatement import (
             calcAnomalyScore,
@@ -414,18 +477,30 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         if _need("anomalyScore"):
             b["anomalyScore"] = _safe(lambda: anomalyScoreBlock(calcAnomalyScore(company, basePeriod=basePeriod)))
         if _need("effectiveTaxRate"):
-            b["effectiveTaxRate"] = _safe(lambda: effectiveTaxRateBlock(calcEffectiveTaxRate(company, basePeriod=basePeriod)))
+            b["effectiveTaxRate"] = _safe(
+                lambda: effectiveTaxRateBlock(calcEffectiveTaxRate(company, basePeriod=basePeriod))
+            )
         if _need("deferredTax"):
             b["deferredTax"] = _safe(lambda: deferredTaxBlock(calcDeferredTax(company, basePeriod=basePeriod)))
         if _need("crossStatementFlags"):
             b["crossStatementFlags"] = _safe(
-                lambda: crossStatementFlagsBlock(calcCrossStatementFlags(company, basePeriod=basePeriod) + calcTaxFlags(company, basePeriod=basePeriod))
+                lambda: crossStatementFlagsBlock(
+                    calcCrossStatementFlags(company, basePeriod=basePeriod)
+                    + calcTaxFlags(company, basePeriod=basePeriod)
+                )
             )
 
     # ── 4부: 가치평가 ──
     if keys is None or keys & {
-        "dcfValuation", "ddmValuation", "relativeValuation", "residualIncome",
-        "priceTarget", "reverseImplied", "sensitivity", "valuationSynthesis", "valuationFlags",
+        "dcfValuation",
+        "ddmValuation",
+        "relativeValuation",
+        "residualIncome",
+        "priceTarget",
+        "reverseImplied",
+        "sensitivity",
+        "valuationSynthesis",
+        "valuationFlags",
     }:
         from dartlab.analysis.financial.valuation import (
             calcDcf,
@@ -469,7 +544,9 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         if _need("sensitivity"):
             b["sensitivity"] = _safe(lambda: sensitivityBlock(calcSensitivity(company, basePeriod=basePeriod)))
         if _need("valuationSynthesis"):
-            b["valuationSynthesis"] = _safe(lambda: valuationSynthesisBlock(calcValuationSynthesis(company, basePeriod=basePeriod)))
+            b["valuationSynthesis"] = _safe(
+                lambda: valuationSynthesisBlock(calcValuationSynthesis(company, basePeriod=basePeriod))
+            )
         if _need("valuationFlags"):
             b["valuationFlags"] = _safe(lambda: valuationFlagsBlock(calcValuationFlags(company, basePeriod=basePeriod)))
 
@@ -491,14 +568,23 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         if _need("ownershipTrend"):
             b["ownershipTrend"] = _safe(lambda: ownershipTrendBlock(calcOwnershipTrend(company, basePeriod=basePeriod)))
         if _need("boardComposition"):
-            b["boardComposition"] = _safe(lambda: boardCompositionBlock(calcBoardComposition(company, basePeriod=basePeriod)))
+            b["boardComposition"] = _safe(
+                lambda: boardCompositionBlock(calcBoardComposition(company, basePeriod=basePeriod))
+            )
         if _need("auditOpinionTrend"):
-            b["auditOpinionTrend"] = _safe(lambda: auditOpinionTrendBlock(calcAuditOpinionTrend(company, basePeriod=basePeriod)))
+            b["auditOpinionTrend"] = _safe(
+                lambda: auditOpinionTrendBlock(calcAuditOpinionTrend(company, basePeriod=basePeriod))
+            )
         if _need("governanceFlags"):
-            b["governanceFlags"] = _safe(lambda: governanceFlagsBlock(calcGovernanceFlags(company, basePeriod=basePeriod)))
+            b["governanceFlags"] = _safe(
+                lambda: governanceFlagsBlock(calcGovernanceFlags(company, basePeriod=basePeriod))
+            )
 
     if keys is None or keys & {
-        "disclosureChangeSummary", "keyTopicChanges", "changeIntensity", "disclosureDeltaFlags",
+        "disclosureChangeSummary",
+        "keyTopicChanges",
+        "changeIntensity",
+        "disclosureDeltaFlags",
     }:
         from dartlab.analysis.financial.disclosureDelta import (
             calcChangeIntensity,
@@ -518,11 +604,17 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
                 lambda: disclosureChangeSummaryBlock(calcDisclosureChangeSummary(company, basePeriod=basePeriod))
             )
         if _need("keyTopicChanges"):
-            b["keyTopicChanges"] = _safe(lambda: keyTopicChangesBlock(calcKeyTopicChanges(company, basePeriod=basePeriod)))
+            b["keyTopicChanges"] = _safe(
+                lambda: keyTopicChangesBlock(calcKeyTopicChanges(company, basePeriod=basePeriod))
+            )
         if _need("changeIntensity"):
-            b["changeIntensity"] = _safe(lambda: changeIntensityBlock(calcChangeIntensity(company, basePeriod=basePeriod)))
+            b["changeIntensity"] = _safe(
+                lambda: changeIntensityBlock(calcChangeIntensity(company, basePeriod=basePeriod))
+            )
         if _need("disclosureDeltaFlags"):
-            b["disclosureDeltaFlags"] = _safe(lambda: disclosureDeltaFlagsBlock(calcDisclosureDeltaFlags(company, basePeriod=basePeriod)))
+            b["disclosureDeltaFlags"] = _safe(
+                lambda: disclosureDeltaFlagsBlock(calcDisclosureDeltaFlags(company, basePeriod=basePeriod))
+            )
 
     if keys is None or keys & {"peerRanking", "riskReturnPosition", "peerBenchmarkFlags"}:
         from dartlab.analysis.financial.peerBenchmark import (
@@ -539,14 +631,23 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         if _need("peerRanking"):
             b["peerRanking"] = _safe(lambda: peerRankingBlock(calcPeerRanking(company, basePeriod=basePeriod)))
         if _need("riskReturnPosition"):
-            b["riskReturnPosition"] = _safe(lambda: riskReturnPositionBlock(calcRiskReturnPosition(company, basePeriod=basePeriod)))
+            b["riskReturnPosition"] = _safe(
+                lambda: riskReturnPositionBlock(calcRiskReturnPosition(company, basePeriod=basePeriod))
+            )
         if _need("peerBenchmarkFlags"):
-            b["peerBenchmarkFlags"] = _safe(lambda: peerBenchmarkFlagsBlock(calcPeerBenchmarkFlags(company, basePeriod=basePeriod)))
+            b["peerBenchmarkFlags"] = _safe(
+                lambda: peerBenchmarkFlagsBlock(calcPeerBenchmarkFlags(company, basePeriod=basePeriod))
+            )
 
     # ── 6부: 전망분석 ──
     if keys is None or keys & {
-        "revenueForecast", "segmentForecast", "proFormaHighlights",
-        "scenarioImpact", "forecastMethodology", "historicalRatios", "forecastFlags",
+        "revenueForecast",
+        "segmentForecast",
+        "proFormaHighlights",
+        "scenarioImpact",
+        "forecastMethodology",
+        "historicalRatios",
+        "forecastFlags",
     }:
         from dartlab.analysis.financial.forecastCalcs import (
             calcForecastFlags,
@@ -568,17 +669,27 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         )
 
         if _need("revenueForecast"):
-            b["revenueForecast"] = _safe(lambda: revenueForecastBlock(calcRevenueForecast(company, basePeriod=basePeriod)))
+            b["revenueForecast"] = _safe(
+                lambda: revenueForecastBlock(calcRevenueForecast(company, basePeriod=basePeriod))
+            )
         if _need("segmentForecast"):
-            b["segmentForecast"] = _safe(lambda: segmentForecastBlock(calcSegmentForecast(company, basePeriod=basePeriod)))
+            b["segmentForecast"] = _safe(
+                lambda: segmentForecastBlock(calcSegmentForecast(company, basePeriod=basePeriod))
+            )
         if _need("proFormaHighlights"):
-            b["proFormaHighlights"] = _safe(lambda: proFormaHighlightsBlock(calcProFormaHighlights(company, basePeriod=basePeriod)))
+            b["proFormaHighlights"] = _safe(
+                lambda: proFormaHighlightsBlock(calcProFormaHighlights(company, basePeriod=basePeriod))
+            )
         if _need("scenarioImpact"):
             b["scenarioImpact"] = _safe(lambda: scenarioImpactBlock(calcScenarioImpact(company, basePeriod=basePeriod)))
         if _need("forecastMethodology"):
-            b["forecastMethodology"] = _safe(lambda: forecastMethodologyBlock(calcForecastMethodology(company, basePeriod=basePeriod)))
+            b["forecastMethodology"] = _safe(
+                lambda: forecastMethodologyBlock(calcForecastMethodology(company, basePeriod=basePeriod))
+            )
         if _need("historicalRatios"):
-            b["historicalRatios"] = _safe(lambda: historicalRatiosBlock(calcHistoricalRatios(company, basePeriod=basePeriod)))
+            b["historicalRatios"] = _safe(
+                lambda: historicalRatiosBlock(calcHistoricalRatios(company, basePeriod=basePeriod))
+            )
         if _need("forecastFlags"):
             b["forecastFlags"] = _safe(lambda: forecastFlagsBlock(calcForecastFlags(company, basePeriod=basePeriod)))
 

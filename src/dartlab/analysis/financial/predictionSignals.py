@@ -138,17 +138,19 @@ def calcEarningsMomentum(company, *, basePeriod: str | None = None) -> dict | No
         turnover = _safe(rev, ta) if ta != 0 else None
         leverage = _safe(ta, te) if te != 0 else None
 
-        history.append({
-            "period": col,
-            "netIncome": ni,
-            "ocf": ocf,
-            "accrual": accrual,
-            "sloanAccrualRatio": _safe(accrual, ta) if ta > 0 else None,
-            "ocfToNi": _safe(ocf, ni) if ni != 0 else None,
-            "margin": margin,
-            "turnover": turnover,
-            "leverage": leverage,
-        })
+        history.append(
+            {
+                "period": col,
+                "netIncome": ni,
+                "ocf": ocf,
+                "accrual": accrual,
+                "sloanAccrualRatio": _safe(accrual, ta) if ta > 0 else None,
+                "ocfToNi": _safe(ocf, ni) if ni != 0 else None,
+                "margin": margin,
+                "turnover": turnover,
+                "leverage": leverage,
+            }
+        )
 
     if len(history) < 3:
         return None
@@ -375,22 +377,29 @@ def calcStructuralBreak(company, *, basePeriod: str | None = None) -> dict | Non
 
     revVals = [_get(revRow, c) for c in reversed(yCols)]
     oiVals = [_get(oiRow, c) for c in reversed(yCols)]
-    marginVals = [_safe(oi, rev) * 100 if rev != 0 and _safe(oi, rev) is not None else None
-                  for rev, oi in zip(revVals, oiVals)]
+    marginVals = [
+        _safe(oi, rev) * 100 if rev != 0 and _safe(oi, rev) is not None else None for rev, oi in zip(revVals, oiVals)
+    ]
 
-    for name, vals in [("revenue", revVals), ("operatingIncome", oiVals),
-                       ("operatingMargin", marginVals), ("roe", roeVals)]:
+    for name, vals in [
+        ("revenue", revVals),
+        ("operatingIncome", oiVals),
+        ("operatingMargin", marginVals),
+        ("roe", roeVals),
+    ]:
         clean = [v for v in vals if v is not None]
         if len(clean) < 6:
-            metrics.append({
-                "name": name,
-                "hasBreak": False,
-                "breakYear": None,
-                "preBreakGrowth": None,
-                "postBreakGrowth": None,
-                "trendReliability": "low",
-                "nObservations": len(clean),
-            })
+            metrics.append(
+                {
+                    "name": name,
+                    "hasBreak": False,
+                    "breakYear": None,
+                    "preBreakGrowth": None,
+                    "postBreakGrowth": None,
+                    "trendReliability": "low",
+                    "nObservations": len(clean),
+                }
+            )
             continue
 
         breakIdx = detectStructuralBreak(clean)
@@ -406,28 +415,32 @@ def calcStructuralBreak(company, *, basePeriod: str | None = None) -> dict | Non
             reversedCols = list(reversed(yCols))
             breakYear = reversedCols[breakIdx] if breakIdx < len(reversedCols) else None
 
-            metrics.append({
-                "name": name,
-                "hasBreak": True,
-                "breakYear": breakYear,
-                "preBreakGrowth": round(preGrowth, 2) if preGrowth is not None else None,
-                "postBreakGrowth": round(postGrowth, 2) if postGrowth is not None else None,
-                "trendReliability": "low",
-                "nObservations": len(clean),
-            })
+            metrics.append(
+                {
+                    "name": name,
+                    "hasBreak": True,
+                    "breakYear": breakYear,
+                    "preBreakGrowth": round(preGrowth, 2) if preGrowth is not None else None,
+                    "postBreakGrowth": round(postGrowth, 2) if postGrowth is not None else None,
+                    "trendReliability": "low",
+                    "nObservations": len(clean),
+                }
+            )
         else:
             # 변화점 없음 — 추세 일관
             _, _, r2 = ols(list(range(len(clean))), clean)
             reliability = "high" if r2 > 0.7 else ("medium" if r2 > 0.4 else "low")
-            metrics.append({
-                "name": name,
-                "hasBreak": False,
-                "breakYear": None,
-                "preBreakGrowth": None,
-                "postBreakGrowth": None,
-                "trendReliability": reliability,
-                "nObservations": len(clean),
-            })
+            metrics.append(
+                {
+                    "name": name,
+                    "hasBreak": False,
+                    "breakYear": None,
+                    "preBreakGrowth": None,
+                    "postBreakGrowth": None,
+                    "trendReliability": reliability,
+                    "nObservations": len(clean),
+                }
+            )
 
     # 전체 안정성 판단
     nBreaks = sum(1 for m in metrics if m["hasBreak"])
@@ -490,8 +503,8 @@ def calcMacroSensitivity(company, *, basePeriod: str | None = None) -> dict | No
     elasticity = getElasticity(sectorKey)
 
     # 민감도 분류
-    fxExposure = "high" if abs(elasticity.revenueToFx) >= 0.5 else (
-        "moderate" if abs(elasticity.revenueToFx) >= 0.2 else "low"
+    fxExposure = (
+        "high" if abs(elasticity.revenueToFx) >= 0.5 else ("moderate" if abs(elasticity.revenueToFx) >= 0.2 else "low")
     )
     commodityExposure = "high" if sectorKey in _COMMODITY_SECTORS else "low"
     rateSensitivity = "high" if (sectorKey in _RATE_SENSITIVE_SECTORS or elasticity.nimToRate > 0) else "low"
@@ -504,13 +517,23 @@ def calcMacroSensitivity(company, *, basePeriod: str | None = None) -> dict | No
     # 금리 민감 섹터 추가 지표
     if rateSensitivity == "high":
         primaryDrivers = [
-            {"indicator": "BASE_RATE", "source": "ECOS", "direction": "direct", "description": "기준금리 → NIM 직접 영향"},
+            {
+                "indicator": "BASE_RATE",
+                "source": "ECOS",
+                "direction": "direct",
+                "description": "기준금리 → NIM 직접 영향",
+            },
         ] + primaryDrivers
 
     # FX 민감 섹터 추가 지표
     if fxExposure == "high":
         secondaryDrivers.append(
-            {"indicator": "KRW_USD", "source": "ECOS", "direction": "positive_for_export", "description": "원화 약세 → 수출 유리"}
+            {
+                "indicator": "KRW_USD",
+                "source": "ECOS",
+                "direction": "positive_for_export",
+                "description": "원화 약세 → 수출 유리",
+            }
         )
 
     # 관련 지표명 목록 (AI가 gather.macro()로 조회할 때 사용)
@@ -614,10 +637,20 @@ def calcDisclosureDelta(company, *, basePeriod: str | None = None) -> dict | Non
 
 
 _DIRECTION_SCORES = {
-    "up": 1.0, "accelerating": 1.0, "bullish": 1.0, "positive": 0.5,
-    "flat": 0.0, "stable": 0.0, "neutral": 0.0,
-    "down": -1.0, "decelerating": -0.5, "bearish": -1.0, "negative": -0.5,
-    "reversing": 0.0, "transitioning": -0.2, "volatile": -0.5,
+    "up": 1.0,
+    "accelerating": 1.0,
+    "bullish": 1.0,
+    "positive": 0.5,
+    "flat": 0.0,
+    "stable": 0.0,
+    "neutral": 0.0,
+    "down": -1.0,
+    "decelerating": -0.5,
+    "bearish": -1.0,
+    "negative": -0.5,
+    "reversing": 0.0,
+    "transitioning": -0.2,
+    "volatile": -0.5,
 }
 
 

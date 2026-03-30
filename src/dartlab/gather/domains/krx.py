@@ -71,14 +71,16 @@ async def fetchIndustryPeers(industryCode: str, client: GatherHttpClient) -> lis
             code = s.get("itemCode", "")
             if not code:
                 continue
-            result.append({
-                "stockCode": code,
-                "stockName": s.get("stockName", ""),
-                "closePrice": _cleanNumber(s.get("closePrice", "")),
-                "marketCap": _cleanNumber(s.get("marketValue", "")),
-                "fluctuationsRatio": _cleanFloat(s.get("fluctuationsRatio", "")),
-                "market": "KOSPI" if s.get("sosok") == "0" else "KOSDAQ",
-            })
+            result.append(
+                {
+                    "stockCode": code,
+                    "stockName": s.get("stockName", ""),
+                    "closePrice": _cleanNumber(s.get("closePrice", "")),
+                    "marketCap": _cleanNumber(s.get("marketValue", "")),
+                    "fluctuationsRatio": _cleanFloat(s.get("fluctuationsRatio", "")),
+                    "market": "KOSPI" if s.get("sosok") == "0" else "KOSDAQ",
+                }
+            )
         return result
     except (SourceUnavailableError, KeyError, ValueError, TypeError) as exc:
         log.warning("fetchIndustryPeers 실패 (%s): %s", industryCode, exc)

@@ -13,20 +13,33 @@ from dartlab.scan._helpers import _ensureScanData
 _REVENUE_IDS = {"Revenue", "revenue", "ifrs-full_Revenue", "dart_Revenue"}
 _REVENUE_NMS = {"매출액", "수익(매출액)", "영업수익"}
 
-_OP_IDS = {"ProfitLossFromOperatingActivities", "operatingIncome",
-           "ifrs-full_ProfitLossFromOperatingActivities", "dart_OperatingIncomeLoss"}
+_OP_IDS = {
+    "ProfitLossFromOperatingActivities",
+    "operatingIncome",
+    "ifrs-full_ProfitLossFromOperatingActivities",
+    "dart_OperatingIncomeLoss",
+}
 _OP_NMS = {"영업이익", "영업이익(손실)"}
 
-_NI_IDS = {"ProfitLoss", "netIncome", "ifrs-full_ProfitLoss", "dart_ProfitLoss",
-           "ProfitLossAttributableToOwnersOfParent"}
+_NI_IDS = {
+    "ProfitLoss",
+    "netIncome",
+    "ifrs-full_ProfitLoss",
+    "dart_ProfitLoss",
+    "ProfitLossAttributableToOwnersOfParent",
+}
 _NI_NMS = {"당기순이익", "당기순이익(손실)"}
 
 _TA_IDS = {"Assets", "totalAssets", "ifrs-full_Assets", "dart_Assets"}
 _TA_NMS = {"자산총계", "자산 총계"}
 
-_EQ_IDS = {"Equity", "equity", "ifrs-full_Equity",
-           "EquityAttributableToOwnersOfParent",
-           "ifrs-full_EquityAttributableToOwnersOfParent"}
+_EQ_IDS = {
+    "Equity",
+    "equity",
+    "ifrs-full_Equity",
+    "EquityAttributableToOwnersOfParent",
+    "ifrs-full_EquityAttributableToOwnersOfParent",
+}
 _EQ_NMS = {"자본총계", "자본 총계", "지배기업 소유주지분"}
 
 
@@ -176,15 +189,17 @@ def _computeProfitability(target: pl.DataFrame, scCol: str) -> pl.DataFrame:
             and abs(netMargin) > 50
         )
 
-        rows.append({
-            "stockCode": code,
-            "opMargin": opMargin,
-            "netMargin": netMargin,
-            "roe": roe,
-            "roa": roa,
-            "grade": _gradeProfitability(opMargin, roe),
-            "nonRecurring": hasNonRecurring,
-        })
+        rows.append(
+            {
+                "stockCode": code,
+                "opMargin": opMargin,
+                "netMargin": netMargin,
+                "roe": roe,
+                "roa": roa,
+                "grade": _gradeProfitability(opMargin, roe),
+                "nonRecurring": hasNonRecurring,
+            }
+        )
 
     if not rows:
         return pl.DataFrame()

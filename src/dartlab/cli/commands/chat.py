@@ -61,9 +61,11 @@ def configure_parser(subparsers) -> None:
     def _handler(args):
         if getattr(args, "stdio", False):
             from dartlab.cli.stdio import run
+
             run()
         else:
             from dartlab.cli.tui import run as tuiRun
+
             tuiRun(args)
 
     parser.set_defaults(handler=_handler)

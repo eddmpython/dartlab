@@ -34,7 +34,7 @@ _AP_IDS = {"TradeAndOtherCurrentPayables", "ifrs-full_TradeAndOtherCurrentPayabl
 _AP_NMS = {"매입채무"}
 
 _MIN_REVENUE = 1e8  # 매출 1억 미만 제외
-_CCC_CAP = 3000.0   # CCC +-3000일 초과 클램핑
+_CCC_CAP = 3000.0  # CCC +-3000일 초과 클램핑
 
 
 def _gradeEfficiency(ccc: float | None) -> str:
@@ -92,17 +92,19 @@ def scanEfficiency(*, verbose: bool = True) -> pl.DataFrame:
             rawCcc = invDays + arDays - (apDays or 0)
             ccc = max(-_CCC_CAP, min(_CCC_CAP, rawCcc))
 
-        rows.append({
-            "stockCode": code,
-            "assetTurnover": assetTurnover,
-            "invTurnover": invTurnover,
-            "arTurnover": arTurnover,
-            "ppeTurnover": ppeTurnover,
-            "invDays": invDays,
-            "arDays": arDays,
-            "ccc": ccc,
-            "grade": _gradeEfficiency(ccc),
-        })
+        rows.append(
+            {
+                "stockCode": code,
+                "assetTurnover": assetTurnover,
+                "invTurnover": invTurnover,
+                "arTurnover": arTurnover,
+                "ppeTurnover": ppeTurnover,
+                "invDays": invDays,
+                "arDays": arDays,
+                "ccc": ccc,
+                "grade": _gradeEfficiency(ccc),
+            }
+        )
 
     if verbose:
         print(f"효율성 스캔 완료: {len(rows)}종목")

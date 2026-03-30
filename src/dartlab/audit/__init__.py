@@ -81,7 +81,10 @@ def runAudit(
     runner = AuditRunner(store)
     try:
         return runner.auditBatch(
-            codes, resume=resume, runDate=runDate, onProgress=onProgress,
+            codes,
+            resume=resume,
+            runDate=runDate,
+            onProgress=onProgress,
         )
     finally:
         store.close()

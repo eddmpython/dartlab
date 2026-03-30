@@ -7,7 +7,13 @@ select()로 BS/IS/CF 원본 계정을 가져와서
 
 from __future__ import annotations
 
-from dartlab.analysis.financial._helpers import MAX_RATIO_YEARS, annualColsFromPeriods as _annualColsFromPeriods, getRatios, toDict, toDictBySnakeId
+from dartlab.analysis.financial._helpers import (
+    MAX_RATIO_YEARS,
+    annualColsFromPeriods as _annualColsFromPeriods,
+    getRatios,
+    toDict,
+    toDictBySnakeId,
+)
 
 _MAX_YEARS = MAX_RATIO_YEARS
 

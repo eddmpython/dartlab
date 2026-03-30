@@ -562,9 +562,7 @@ class Gather:
         cached = self._cache.get_typed(cache_key, "insider")
         if cached is not None:
             return cached  # type: ignore[return-value]
-        result = run_async(
-            _insider.fetchInsiderTrading(stock_code, market=market, client=self._client)
-        )
+        result = run_async(_insider.fetchInsiderTrading(stock_code, market=market, client=self._client))
         if result:
             self._cache.put_typed(cache_key, "insider", result)
         return result
@@ -588,9 +586,7 @@ class Gather:
         cached = self._cache.get_typed(cache_key, "major_holder")
         if cached is not None:
             return cached  # type: ignore[return-value]
-        result = run_async(
-            _insider.fetchMajorShareholders(stock_code, market=market, client=self._client)
-        )
+        result = run_async(_insider.fetchMajorShareholders(stock_code, market=market, client=self._client))
         if result:
             self._cache.put_typed(cache_key, "major_holder", result)
         return result
@@ -617,9 +613,7 @@ class Gather:
         cached = self._cache.get_typed(cache_key, "ownership")
         if cached is not None:
             return cached  # type: ignore[return-value]
-        result = run_async(
-            _ownership.fetch(stock_code, market=market, client=self._client)
-        )
+        result = run_async(_ownership.fetch(stock_code, market=market, client=self._client))
         if result:
             self._cache.put_typed(cache_key, "ownership", result)
         return result
@@ -873,24 +867,22 @@ class Gather:
         domainTasks = [self._fetch_domain_async(name, stock_code, market) for name in domains]
         newsTask = _news._fetchAsync(stock_code, market=market, days=7, client=self._client)
         sectorTask = _sector.fetch(stock_code, market=market, client=self._client)
-        insiderTask = _insider.fetchInsiderTrading(
-            stock_code, market=market, client=self._client
-        )
+        insiderTask = _insider.fetchInsiderTrading(stock_code, market=market, client=self._client)
 
         try:
             allResults = await asyncio.wait_for(
                 asyncio.gather(
-                    *domainTasks, newsTask, sectorTask, insiderTask,
+                    *domainTasks,
+                    newsTask,
+                    sectorTask,
+                    insiderTask,
                     return_exceptions=True,
                 ),
                 timeout=10.0,
             )
         except asyncio.TimeoutError:
             log.warning("collect 10초 타임아웃 — 부분 결과 사용")
-            allResults = (
-                [GatherResult(domain=d, error="timeout") for d in domains]
-                + [[], None, []]
-            )
+            allResults = [GatherResult(domain=d, error="timeout") for d in domains] + [[], None, []]
 
         nDomains = len(domains)
         domainResults = allResults[:nDomains]

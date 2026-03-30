@@ -45,7 +45,11 @@ class TestGetTTMProperties:
         assert getTTM({"IS": {}}, "IS", "sales") is None
         assert getTTM({"IS": {"sales": []}}, "IS", "sales") is None
 
-    @given(vals=st.lists(st.floats(min_value=0, max_value=1e12, allow_nan=False, allow_infinity=False), min_size=4, max_size=20))
+    @given(
+        vals=st.lists(
+            st.floats(min_value=0, max_value=1e12, allow_nan=False, allow_infinity=False), min_size=4, max_size=20
+        )
+    )
     @settings(max_examples=200)
     def test_allPositiveFourOrMoreGivesResult(self, vals):
         """4개 이상의 양수값이면 반드시 결과를 반환."""
@@ -53,7 +57,11 @@ class TestGetTTMProperties:
         assert result is not None
         assert result >= 0
 
-    @given(vals=st.lists(st.floats(min_value=1, max_value=1e12, allow_nan=False, allow_infinity=False), min_size=4, max_size=4))
+    @given(
+        vals=st.lists(
+            st.floats(min_value=1, max_value=1e12, allow_nan=False, allow_infinity=False), min_size=4, max_size=4
+        )
+    )
     @settings(max_examples=100)
     def test_exactFourValuesSumsAll(self, vals):
         """정확히 4개 값이면 합계와 동일."""
@@ -88,14 +96,22 @@ class TestGetLatestProperties:
         result = getLatest(_makeSeries("BS", "totalAssets", vals), "BS", "totalAssets")
         assert result is None or isinstance(result, (int, float))
 
-    @given(vals=st.lists(st.floats(min_value=-1e15, max_value=1e15, allow_nan=False, allow_infinity=False), min_size=1, max_size=20))
+    @given(
+        vals=st.lists(
+            st.floats(min_value=-1e15, max_value=1e15, allow_nan=False, allow_infinity=False), min_size=1, max_size=20
+        )
+    )
     @settings(max_examples=200)
     def test_nonEmptyListAlwaysReturnsValue(self, vals):
         """non-null 값이 하나라도 있으면 반드시 결과 반환."""
         result = getLatest(_makeSeries("BS", "totalAssets", vals), "BS", "totalAssets")
         assert result is not None
 
-    @given(vals=st.lists(st.floats(min_value=-1e15, max_value=1e15, allow_nan=False, allow_infinity=False), min_size=1, max_size=20))
+    @given(
+        vals=st.lists(
+            st.floats(min_value=-1e15, max_value=1e15, allow_nan=False, allow_infinity=False), min_size=1, max_size=20
+        )
+    )
     @settings(max_examples=200)
     def test_resultIsFromInputValues(self, vals):
         """반환값은 입력 리스트에 존재하는 값."""
@@ -136,7 +152,11 @@ class TestGetAnnualValuesProperties:
 class TestRevenueGrowth3YProperties:
     """getRevenueGrowth3Y의 property-based 불변조건."""
 
-    @given(vals=st.lists(st.floats(min_value=1, max_value=1e12, allow_nan=False, allow_infinity=False), min_size=4, max_size=20))
+    @given(
+        vals=st.lists(
+            st.floats(min_value=1, max_value=1e12, allow_nan=False, allow_infinity=False), min_size=4, max_size=20
+        )
+    )
     @settings(max_examples=200)
     def test_allPositiveGivesFiniteResult(self, vals):
         """4개 이상의 양수값이면 유한한 결과."""

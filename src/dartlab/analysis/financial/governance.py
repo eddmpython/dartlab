@@ -33,10 +33,14 @@ def calcOwnershipTrend(company, *, basePeriod: str | None = None) -> dict | None
 
     holders = result.latestHolders[:10] if result.latestHolders else []
 
-    return {
-        "history": history,
-        "latestHolders": holders,
-    } if history else None
+    return (
+        {
+            "history": history,
+            "latestHolders": holders,
+        }
+        if history
+        else None
+    )
 
 
 # ── 이사회 구성 ──
@@ -89,17 +93,15 @@ def calcAuditOpinionTrend(company, *, basePeriod: str | None = None) -> dict | N
         opinion = opinions[i] if i < len(opinions) else None
         auditor = auditors[i] if i < len(auditors) else None
         prevAuditor = auditors[i - 1] if i > 0 and (i - 1) < len(auditors) else None
-        auditorChanged = (
-            auditor is not None
-            and prevAuditor is not None
-            and auditor != prevAuditor
+        auditorChanged = auditor is not None and prevAuditor is not None and auditor != prevAuditor
+        history.append(
+            {
+                "year": y,
+                "opinion": opinion,
+                "auditor": auditor,
+                "auditorChanged": auditorChanged,
+            }
         )
-        history.append({
-            "year": y,
-            "opinion": opinion,
-            "auditor": auditor,
-            "auditorChanged": auditorChanged,
-        })
 
     return {"history": history} if history else None
 

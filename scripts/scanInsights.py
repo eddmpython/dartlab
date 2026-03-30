@@ -33,13 +33,15 @@ def main():
             continue
         dr = d.row(0, named=True)
         cr = ca.row(0, named=True)
-        debtDividendList.append({
-            "stockCode": c,
-            "debtRatio": dr["부채비율"],
-            "icr": dr["ICR"],
-            "dps": cr["DPS"],
-            "dividendYield": cr["배당수익률"],
-        })
+        debtDividendList.append(
+            {
+                "stockCode": c,
+                "debtRatio": dr["부채비율"],
+                "icr": dr["ICR"],
+                "dps": cr["DPS"],
+                "dividendYield": cr["배당수익률"],
+            }
+        )
     debtDividendList.sort(key=lambda x: x.get("debtRatio") or 0, reverse=True)
 
     # 2. 비경상 이익 의심 (수익성 양호+ + 이익의 질 나쁨)
@@ -55,14 +57,16 @@ def main():
             continue
         pr = p.row(0, named=True)
         qr = q.row(0, named=True)
-        nonRecurringList.append({
-            "stockCode": c,
-            "opMargin": pr["opMargin"],
-            "netMargin": pr["netMargin"],
-            "roe": pr["roe"],
-            "accrualRatio": qr["accrualRatio"],
-            "cfToNi": qr["cfToNi"],
-        })
+        nonRecurringList.append(
+            {
+                "stockCode": c,
+                "opMargin": pr["opMargin"],
+                "netMargin": pr["netMargin"],
+                "roe": pr["roe"],
+                "accrualRatio": qr["accrualRatio"],
+                "cfToNi": qr["cfToNi"],
+            }
+        )
 
     # 3. 레버리지 성장 (고성장 + 부채 고위험)
     growthHigh = set(growth.filter(pl.col("grade") == "고성장")["stockCode"].to_list())
@@ -76,13 +80,15 @@ def main():
             continue
         gr = g.row(0, named=True)
         dr = d.row(0, named=True)
-        leverageGrowthList.append({
-            "stockCode": c,
-            "revenueCagr": gr["revenueCagr"],
-            "growthPattern": gr["pattern"],
-            "debtRatio": dr["부채비율"],
-            "icr": dr["ICR"],
-        })
+        leverageGrowthList.append(
+            {
+                "stockCode": c,
+                "revenueCagr": gr["revenueCagr"],
+                "growthPattern": gr["pattern"],
+                "debtRatio": dr["부채비율"],
+                "icr": dr["ICR"],
+            }
+        )
     leverageGrowthList.sort(key=lambda x: x.get("debtRatio") or 0, reverse=True)
 
     # 4. 형식적 지배구조 (governance A + 현금위기/외부의존)
@@ -98,48 +104,56 @@ def main():
             continue
         gr = g.row(0, named=True)
         cr = cff.row(0, named=True)
-        formalGovList.append({
-            "stockCode": c,
-            "govScore": gr["총점"],
-            "cfPattern": cr["pattern"],
-            "ocf": cr["ocf"],
-            "fcf": cr["fcf"],
-        })
+        formalGovList.append(
+            {
+                "stockCode": c,
+                "govScore": gr["총점"],
+                "cfPattern": cr["pattern"],
+                "ocf": cr["ocf"],
+                "fcf": cr["fcf"],
+            }
+        )
 
     # 5. 감사 고위험
     auditRiskDf = audit.filter(pl.col("riskLevel").is_in(["고위험", "주의"]))
     auditRiskList = []
     for row in auditRiskDf.iter_rows(named=True):
-        auditRiskList.append({
-            "stockCode": row["stockCode"],
-            "opinion": row["opinion"],
-            "auditor": row["auditor"],
-            "auditorChanged": row["auditorChanged"],
-            "riskLevel": row["riskLevel"],
-        })
+        auditRiskList.append(
+            {
+                "stockCode": row["stockCode"],
+                "opinion": row["opinion"],
+                "auditor": row["auditor"],
+                "auditorChanged": row["auditorChanged"],
+                "riskLevel": row["riskLevel"],
+            }
+        )
 
     # 6. 경영권 위험
     insiderRiskDf = insider.filter(pl.col("stability").is_in(["경고", "위험"]))
     insiderRiskList = []
     for row in insiderRiskDf.iter_rows(named=True):
-        insiderRiskList.append({
-            "stockCode": row["stockCode"],
-            "holderPct": row["holderPct"],
-            "holderChange": row["holderChange"],
-            "treasuryShares": row["treasuryShares"],
-            "stability": row["stability"],
-        })
+        insiderRiskList.append(
+            {
+                "stockCode": row["stockCode"],
+                "holderPct": row["holderPct"],
+                "holderChange": row["holderChange"],
+                "treasuryShares": row["treasuryShares"],
+                "stability": row["stability"],
+            }
+        )
     insiderRiskList.sort(key=lambda x: x.get("holderPct") or 999)
 
     # 7. 유동성 위험
     liqRiskDf = liq.filter(pl.col("grade") == "위험")
     liqRiskList = []
     for row in liqRiskDf.iter_rows(named=True):
-        liqRiskList.append({
-            "stockCode": row["stockCode"],
-            "currentRatio": row["currentRatio"],
-            "quickRatio": row["quickRatio"],
-        })
+        liqRiskList.append(
+            {
+                "stockCode": row["stockCode"],
+                "currentRatio": row["currentRatio"],
+                "quickRatio": row["quickRatio"],
+            }
+        )
     liqRiskList.sort(key=lambda x: x.get("currentRatio") or 999)
 
     # 8. 현금 부자 (현금축적형 + 수익성 우수)
@@ -155,13 +169,15 @@ def main():
             continue
         pr = p.row(0, named=True)
         cr = cff.row(0, named=True)
-        cashRichList.append({
-            "stockCode": c,
-            "opMargin": pr["opMargin"],
-            "roe": pr["roe"],
-            "ocf": cr["ocf"],
-            "fcf": cr["fcf"],
-        })
+        cashRichList.append(
+            {
+                "stockCode": c,
+                "opMargin": pr["opMargin"],
+                "roe": pr["roe"],
+                "ocf": cr["ocf"],
+                "fcf": cr["fcf"],
+            }
+        )
 
     # 9. 균형 우등생 (수익성 우수 + 이익의 질 우수 + 부채 안전 + 성장)
     profExcSet = set(prof.filter(pl.col("grade") == "우수")["stockCode"].to_list())
@@ -182,15 +198,17 @@ def main():
         gr = g.row(0, named=True)
         dr = d.row(0, named=True)
         qr = q.row(0, named=True)
-        balancedList.append({
-            "stockCode": c,
-            "opMargin": pr["opMargin"],
-            "roe": pr["roe"],
-            "revenueCagr": gr["revenueCagr"],
-            "debtRatio": dr["부채비율"],
-            "icr": dr["ICR"],
-            "accrualRatio": qr["accrualRatio"],
-        })
+        balancedList.append(
+            {
+                "stockCode": c,
+                "opMargin": pr["opMargin"],
+                "roe": pr["roe"],
+                "revenueCagr": gr["revenueCagr"],
+                "debtRatio": dr["부채비율"],
+                "icr": dr["ICR"],
+                "accrualRatio": qr["accrualRatio"],
+            }
+        )
     balancedList.sort(key=lambda x: x.get("roe") or 0, reverse=True)
 
     result = {

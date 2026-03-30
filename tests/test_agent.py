@@ -24,7 +24,7 @@ class TestCodeBlockExtraction:
 
     def test_multiple_blocks(self):
         """복수 코드블록 추출."""
-        text = '```python\na = 1\n```\n설명\n```python\nb = 2\n```'
+        text = "```python\na = 1\n```\n설명\n```python\nb = 2\n```"
         blocks = _extractCodeBlocks(text)
         assert len(blocks) == 2
 

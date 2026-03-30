@@ -104,9 +104,7 @@ def _mockCompanyWithReport():
         ],
     )
 
-    company.report.executive = MockExecutiveResult(
-        totalCount=10, registeredCount=5, outsideCount=4
-    )
+    company.report.executive = MockExecutiveResult(totalCount=10, registeredCount=5, outsideCount=4)
 
     company.report.audit = MockAuditResult()
 
@@ -283,14 +281,27 @@ class TestPeerBenchmark:
 
         mockResult = {
             "rankings": [
-                {"ratioName": "roe", "label": "ROE", "value": 15.0, "percentile": 75.0, "rank": 250, "total": 1000, "period": "2024"},
+                {
+                    "ratioName": "roe",
+                    "label": "ROE",
+                    "value": 15.0,
+                    "percentile": 75.0,
+                    "rank": 250,
+                    "total": 1000,
+                    "period": "2024",
+                },
             ]
         }
         with patch(
             "dartlab.analysis.financial.peerBenchmark._calcPercentile",
             side_effect=lambda sc, rn, lb: {
-                "ratioName": rn, "label": lb, "value": 15.0, "percentile": 75.0,
-                "rank": 250, "total": 1000, "period": "2024",
+                "ratioName": rn,
+                "label": lb,
+                "value": 15.0,
+                "percentile": 75.0,
+                "rank": 250,
+                "total": 1000,
+                "period": "2024",
             },
         ):
             result = calcPeerRanking(company)
@@ -303,12 +314,15 @@ class TestPeerBenchmark:
         company = MagicMock()
         company.stockCode = "005930"
 
-        with patch(
-            "dartlab.analysis.financial.peerBenchmark.calcPeerRanking",
-            return_value=None,
-        ), patch(
-            "dartlab.analysis.financial.peerBenchmark._getLatestValue",
-            side_effect=lambda sc, rn: (15.0, 75.0) if rn == "roe" else (80.0, 30.0),
+        with (
+            patch(
+                "dartlab.analysis.financial.peerBenchmark.calcPeerRanking",
+                return_value=None,
+            ),
+            patch(
+                "dartlab.analysis.financial.peerBenchmark._getLatestValue",
+                side_effect=lambda sc, rn: (15.0, 75.0) if rn == "roe" else (80.0, 30.0),
+            ),
         ):
             result = calcRiskReturnPosition(company)
         assert result is not None
@@ -321,12 +335,15 @@ class TestPeerBenchmark:
         company = MagicMock()
         company.stockCode = "005930"
 
-        with patch(
-            "dartlab.analysis.financial.peerBenchmark.calcPeerRanking",
-            return_value=None,
-        ), patch(
-            "dartlab.analysis.financial.peerBenchmark._getLatestValue",
-            side_effect=lambda sc, rn: (3.0, 20.0) if rn == "roe" else (300.0, 80.0),
+        with (
+            patch(
+                "dartlab.analysis.financial.peerBenchmark.calcPeerRanking",
+                return_value=None,
+            ),
+            patch(
+                "dartlab.analysis.financial.peerBenchmark._getLatestValue",
+                side_effect=lambda sc, rn: (3.0, 20.0) if rn == "roe" else (300.0, 80.0),
+            ),
         ):
             result = calcRiskReturnPosition(company)
         assert result is not None
@@ -341,10 +358,34 @@ class TestPeerBenchmark:
         # ROE top 5%, 부채비율 top 5%
         def mockPercentile(sc, rn, lb):
             if rn == "roe":
-                return {"ratioName": rn, "label": "ROE", "value": 25.0, "percentile": 95.0, "rank": 50, "total": 1000, "period": "2024"}
+                return {
+                    "ratioName": rn,
+                    "label": "ROE",
+                    "value": 25.0,
+                    "percentile": 95.0,
+                    "rank": 50,
+                    "total": 1000,
+                    "period": "2024",
+                }
             if rn == "debtRatio":
-                return {"ratioName": rn, "label": "부채비율", "value": 400.0, "percentile": 95.0, "rank": 50, "total": 1000, "period": "2024"}
-            return {"ratioName": rn, "label": lb, "value": 10.0, "percentile": 50.0, "rank": 500, "total": 1000, "period": "2024"}
+                return {
+                    "ratioName": rn,
+                    "label": "부채비율",
+                    "value": 400.0,
+                    "percentile": 95.0,
+                    "rank": 50,
+                    "total": 1000,
+                    "period": "2024",
+                }
+            return {
+                "ratioName": rn,
+                "label": lb,
+                "value": 10.0,
+                "percentile": 50.0,
+                "rank": 500,
+                "total": 1000,
+                "period": "2024",
+            }
 
         with patch(
             "dartlab.analysis.financial.peerBenchmark._calcPercentile",
@@ -367,22 +408,26 @@ class TestPeerBenchmark:
 class TestAxisRegistry:
     def test_registry_has_20_axes(self):
         from dartlab.analysis.financial import _AXIS_REGISTRY
+
         assert len(_AXIS_REGISTRY) == 20
 
     def test_new_axes_in_registry(self):
         from dartlab.analysis.financial import _AXIS_REGISTRY
+
         assert "지배구조" in _AXIS_REGISTRY
         assert "공시변화" in _AXIS_REGISTRY
         assert "비교분석" in _AXIS_REGISTRY
 
     def test_aliases(self):
         from dartlab.analysis.financial import _ALIASES
+
         assert _ALIASES["governance"] == "지배구조"
         assert _ALIASES["disclosureDelta"] == "공시변화"
         assert _ALIASES["peerBenchmark"] == "비교분석"
 
     def test_resolve_axis(self):
         from dartlab.analysis.financial import _resolveAxis
+
         assert _resolveAxis("governance") == "지배구조"
         assert _resolveAxis("지배구조") == "지배구조"
         assert _resolveAxis("disclosureDelta") == "공시변화"
@@ -392,10 +437,12 @@ class TestAxisRegistry:
 class TestCatalog:
     def test_sections_count(self):
         from dartlab.review.catalog import SECTIONS
+
         assert len(SECTIONS) == 19
 
     def test_new_sections_exist(self):
         from dartlab.review.catalog import SECTIONS
+
         keys = [s.key for s in SECTIONS]
         assert "지배구조" in keys
         assert "공시변화" in keys
@@ -403,11 +450,20 @@ class TestCatalog:
 
     def test_new_blocks_exist(self):
         from dartlab.review.catalog import listBlocks
+
         blocks = listBlocks()
         blockKeys = {b.key for b in blocks}
         expected = {
-            "ownershipTrend", "boardComposition", "auditOpinionTrend", "governanceFlags",
-            "disclosureChangeSummary", "keyTopicChanges", "changeIntensity", "disclosureDeltaFlags",
-            "peerRanking", "riskReturnPosition", "peerBenchmarkFlags",
+            "ownershipTrend",
+            "boardComposition",
+            "auditOpinionTrend",
+            "governanceFlags",
+            "disclosureChangeSummary",
+            "keyTopicChanges",
+            "changeIntensity",
+            "disclosureDeltaFlags",
+            "peerRanking",
+            "riskReturnPosition",
+            "peerBenchmarkFlags",
         }
         assert expected.issubset(blockKeys)

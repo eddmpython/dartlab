@@ -255,11 +255,14 @@ def _streamWithCodeExecution(
         prevCode = code
 
         # 진행 이벤트
-        yield AnalysisEvent("code_round", {
-            "round": _round + 1,
-            "maxRounds": maxRounds,
-            "status": "executing",
-        })
+        yield AnalysisEvent(
+            "code_round",
+            {
+                "round": _round + 1,
+                "maxRounds": maxRounds,
+                "status": "executing",
+            },
+        )
 
         try:
             result = _executeCodeBlock(code, stockCode=stockCode)
@@ -353,11 +356,19 @@ dartlab.scan("축")                    # 시장 전체
 dartlab.scan("축", "005930")          # 특정 종목 포함 순위
 유효 축: governance, workforce, capital, debt, cashflow, audit, insider,
         quality, liquidity, growth, profitability, digest, network
-scan 결과는 이미 전 종목 집계된 DataFrame이다. 개별 Company를 다시 로드하지 마라 — 느리고 불필요하다.
-컬럼 구조가 불확실하면 print(df.columns, df.head(3))로 먼저 확인하라.
-scan 축마다 키 컬럼명이 다를 수 있다(stockCode vs 종목코드) — join 전에 확인.
-깊이 있는 분석이 필요한 종목만 1~2개 골라서 Company를 만들어라.
-업종별 비교는 대표 종목 5~8개를 직접 지정하라. scan 여러 개를 join하면 타임아웃된다.
+
+특수 축 — 전종목 시계열 (특정 지표 추이 비교에 가장 강력):
+dartlab.scan("account", "매출액")              # 전종목 매출액 분기 시계열
+dartlab.scan("account", "매출액", annual=True) # 전종목 매출액 연간 시계열
+dartlab.scan("account", "영업이익")            # 전종목 영업이익 시계열
+dartlab.scan("ratio", "roe")                   # 전종목 ROE 시계열
+dartlab.scan("ratio", "부채비율")              # 전종목 부채비율 시계열
+
+주의:
+- scan 결과는 이미 집계된 DataFrame. 개별 Company를 다시 로드하지 마라.
+- 컬럼 불확실하면 print(df.columns, df.head(3))로 먼저 확인.
+- 축마다 키 컬럼명이 다를 수 있다(stockCode vs 종목코드) — join 전 확인.
+- 업종별 비교는 대표 5~8개 직접 지정. scan 여러 개 join 금지(타임아웃).
 
 ### gather — 외부 시장 데이터
 c.gather("price")       # 주가
@@ -411,6 +422,7 @@ dartlab.capabilities(search="키워드")
 - 한국어 질문에는 한국어로 답변.
 - 코드로 확인되지 않은 수치를 인용하지 마라.
 - 에러 발생 시: 에러를 읽고 원인을 진단한 뒤 수정. 같은 코드를 반복하지 마라.
+- 실행 시간 제한은 60초다. scan 다수 호출이나 전시장 join은 피하라. review 2~3개 + scan 1개 정도가 적정.
 - 코드블록은 하나만 작성하라. 여러 블록으로 나누면 변수가 공유되지 않는다.
 """
 
@@ -534,7 +546,9 @@ def analyze(
             import json
 
             try:
-                _logFile.write(json.dumps({"kind": event.kind, "data": event.data}, ensure_ascii=False, default=str) + "\n")
+                _logFile.write(
+                    json.dumps({"kind": event.kind, "data": event.data}, ensure_ascii=False, default=str) + "\n"
+                )
                 _logFile.flush()
             except (OSError, TypeError):
                 pass

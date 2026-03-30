@@ -13,12 +13,28 @@ pytestmark = pytest.mark.unit
 # ── 테스트 데이터 ──
 
 _PERIODS = [
-    "2020Q1", "2020Q2", "2020Q3", "2020Q4",
-    "2021Q1", "2021Q2", "2021Q3", "2021Q4",
-    "2022Q1", "2022Q2", "2022Q3", "2022Q4",
-    "2023Q1", "2023Q2", "2023Q3", "2023Q4",
-    "2024Q1", "2024Q2", "2024Q3", "2024Q4",
-    "2025Q1", "2025Q2",
+    "2020Q1",
+    "2020Q2",
+    "2020Q3",
+    "2020Q4",
+    "2021Q1",
+    "2021Q2",
+    "2021Q3",
+    "2021Q4",
+    "2022Q1",
+    "2022Q2",
+    "2022Q3",
+    "2022Q4",
+    "2023Q1",
+    "2023Q2",
+    "2023Q3",
+    "2023Q4",
+    "2024Q1",
+    "2024Q2",
+    "2024Q3",
+    "2024Q4",
+    "2025Q1",
+    "2025Q2",
 ]
 
 
@@ -76,6 +92,7 @@ class TestAnnualColsFromPeriods:
 
 # ── quarterlyColsFromPeriods ──
 
+
 class TestQuarterlyColsFromPeriods:
     def test_no_basePeriod(self):
         result = quarterlyColsFromPeriods(_PERIODS, basePeriod=None, maxQuarters=8)
@@ -96,6 +113,7 @@ class TestQuarterlyColsFromPeriods:
 
 
 # ── PeriodRange ──
+
 
 class TestPeriodRange:
     def test_frozen(self):

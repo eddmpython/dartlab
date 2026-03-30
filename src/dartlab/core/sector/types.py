@@ -114,6 +114,7 @@ class SectorParams:
 
 # ── 시장 파라미터 (Damodaran 기반 중앙 관리) ──
 
+
 @dataclass(frozen=True)
 class MarketParams:
     """국가별 시장 파라미터 -- Rf, ERP, 기본세율 등."""

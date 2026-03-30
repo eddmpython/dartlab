@@ -8,7 +8,9 @@ from dartlab.scan._helpers import parse_num, scan_parquets
 
 
 def _classifyPattern(
-    dps0: float | None, dps1: float | None, dps2: float | None,
+    dps0: float | None,
+    dps1: float | None,
+    dps2: float | None,
 ) -> str:
     """3개년 DPS → 패턴 분류.
 
@@ -74,16 +76,10 @@ def scanDividendTrend(*, verbose: bool = True) -> pl.DataFrame:
         print(f"배당 추이 스캔: {raw.shape[0]}행 로드")
 
     # 보통주 + 주당 현금배당금 + Q4 우선
-    dpsRows = raw.filter(
-        (pl.col("se") == "주당 현금배당금(원)")
-        & (pl.col("stock_knd") == "보통주")
-    )
+    dpsRows = raw.filter((pl.col("se") == "주당 현금배당금(원)") & (pl.col("stock_knd") == "보통주"))
 
     # 배당수익률
-    yieldRows = raw.filter(
-        (pl.col("se") == "현금배당수익률(%)")
-        & (pl.col("stock_knd") == "보통주")
-    )
+    yieldRows = raw.filter((pl.col("se") == "현금배당수익률(%)") & (pl.col("stock_knd") == "보통주"))
 
     # 배당성향 (연결 우선)
     payoutRows = raw.filter(pl.col("se") == "(연결)현금배당성향(%)")
@@ -134,9 +130,7 @@ def scanDividendTrend(*, verbose: bool = True) -> pl.DataFrame:
 
         # 배당수익률
         yieldVal = None
-        yieldSub = yieldRows.filter(
-            (pl.col("stockCode") == code) & (pl.col("year") == latestYear)
-        )
+        yieldSub = yieldRows.filter((pl.col("stockCode") == code) & (pl.col("year") == latestYear))
         if not yieldSub.is_empty():
             yq4 = yieldSub.filter(pl.col("quarter") == "4분기")
             yBest = yq4 if not yq4.is_empty() else yieldSub
@@ -144,9 +138,7 @@ def scanDividendTrend(*, verbose: bool = True) -> pl.DataFrame:
 
         # 배당성향
         payoutVal = None
-        payoutSub = payoutRows.filter(
-            (pl.col("stockCode") == code) & (pl.col("year") == latestYear)
-        )
+        payoutSub = payoutRows.filter((pl.col("stockCode") == code) & (pl.col("year") == latestYear))
         if not payoutSub.is_empty():
             pq4 = payoutSub.filter(pl.col("quarter") == "4분기")
             pBest = pq4 if not pq4.is_empty() else payoutSub
@@ -159,17 +151,19 @@ def scanDividendTrend(*, verbose: bool = True) -> pl.DataFrame:
 
         pattern = _classifyPattern(dps0, dps1, dps2)
 
-        rows.append({
-            "stockCode": code,
-            "dpsCurrent": dps0,
-            "dpsPrev": dps1,
-            "dpsPrev2": dps2,
-            "dpsGrowth": dpsGrowth,
-            "payoutRatio": payoutVal,
-            "yieldCurrent": yieldVal,
-            "pattern": pattern,
-            "grade": _gradeDividend(pattern, dpsGrowth),
-        })
+        rows.append(
+            {
+                "stockCode": code,
+                "dpsCurrent": dps0,
+                "dpsPrev": dps1,
+                "dpsPrev2": dps2,
+                "dpsGrowth": dpsGrowth,
+                "payoutRatio": payoutVal,
+                "yieldCurrent": yieldVal,
+                "pattern": pattern,
+                "grade": _gradeDividend(pattern, dpsGrowth),
+            }
+        )
 
     if verbose:
         print(f"배당 추이 스캔 완료: {len(rows)}종목")

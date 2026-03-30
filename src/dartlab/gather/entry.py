@@ -200,29 +200,48 @@ class GatherEntry:
             result = g.sector(target, market=market)
             if result is None:
                 return pl.DataFrame()
-            return pl.DataFrame([{
-                "sectorCode": result.sectorCode,
-                "sectorName": result.sectorName,
-                "industryCode": result.industryCode,
-                "industryName": result.industryName,
-                "market": result.market,
-            }])
+            return pl.DataFrame(
+                [
+                    {
+                        "sectorCode": result.sectorCode,
+                        "sectorName": result.sectorName,
+                        "industryCode": result.industryCode,
+                        "industryName": result.industryName,
+                        "market": result.market,
+                    }
+                ]
+            )
         if axis == "insider":
             trades = g.insiderTrading(target, market=market)
             if not trades:
                 return pl.DataFrame()
-            return pl.DataFrame([{
-                "date": t.date, "name": t.name, "position": t.position,
-                "tradeType": t.tradeType, "changeShares": t.changeShares,
-            } for t in trades])
+            return pl.DataFrame(
+                [
+                    {
+                        "date": t.date,
+                        "name": t.name,
+                        "position": t.position,
+                        "tradeType": t.tradeType,
+                        "changeShares": t.changeShares,
+                    }
+                    for t in trades
+                ]
+            )
         if axis == "ownership":
             owners = g.ownership(target, market=market)
             if not owners:
                 return pl.DataFrame()
-            return pl.DataFrame([{
-                "holderName": o.holderName, "ratio": o.ratio,
-                "shares": o.shares, "value": o.value,
-            } for o in owners])
+            return pl.DataFrame(
+                [
+                    {
+                        "holderName": o.holderName,
+                        "ratio": o.ratio,
+                        "shares": o.shares,
+                        "value": o.value,
+                    }
+                    for o in owners
+                ]
+            )
         if axis == "peers":
             peers = g.industryPeers(target, market=market)
             if not peers:

@@ -18,12 +18,46 @@ if TYPE_CHECKING:
 
 _HANGUL_RE = re.compile(r"[가-힣]+")
 _ALPHA_RE = re.compile(r"[a-zA-Z]{2,}")
-_STOP_WORDS = frozenset({
-    "이", "가", "을", "를", "의", "에", "는", "은", "로", "와", "과",
-    "해", "해줘", "해주세요", "하고", "하는", "있는", "없는", "대한",
-    "좀", "어떻게", "뭐", "무엇", "어떤", "알려", "분석",
-    "the", "a", "an", "is", "are", "of", "in", "to", "for", "and",
-})
+_STOP_WORDS = frozenset(
+    {
+        "이",
+        "가",
+        "을",
+        "를",
+        "의",
+        "에",
+        "는",
+        "은",
+        "로",
+        "와",
+        "과",
+        "해",
+        "해줘",
+        "해주세요",
+        "하고",
+        "하는",
+        "있는",
+        "없는",
+        "대한",
+        "좀",
+        "어떻게",
+        "뭐",
+        "무엇",
+        "어떤",
+        "알려",
+        "분석",
+        "the",
+        "a",
+        "an",
+        "is",
+        "are",
+        "of",
+        "in",
+        "to",
+        "for",
+        "and",
+    }
+)
 
 
 def _tokenize(text: str) -> list[str]:
@@ -81,9 +115,7 @@ def _buildIndex() -> None:
             inverted.setdefault(t, []).append((idx, 2.0))
 
         # summary + aicontext (가중치 1.5x)
-        highText = " ".join(
-            filter(None, [entry.get("summary", ""), entry.get("aicontext", "")])
-        )
+        highText = " ".join(filter(None, [entry.get("summary", ""), entry.get("aicontext", "")]))
         for t in _tokenize(highText):
             tokenSet.add(t)
             inverted.setdefault(t, []).append((idx, 1.5))

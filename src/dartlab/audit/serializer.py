@@ -36,10 +36,7 @@ def serializeValue(value: Any) -> Any:
 def _serializeDataFrame(df: pl.DataFrame) -> list[dict[str, Any]]:
     """Polars DataFrame -> list of dicts."""
     rows = df.to_dicts()
-    return [
-        {k: serializeValue(v) for k, v in row.items()}
-        for row in rows
-    ]
+    return [{k: serializeValue(v) for k, v in row.items()} for row in rows]
 
 
 def toJsonStr(value: Any) -> str:

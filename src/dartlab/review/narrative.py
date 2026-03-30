@@ -598,9 +598,7 @@ _DETECTORS: list[tuple] = [
 ]
 
 
-def detectThreads(
-    company, blockMap, sections: set[str] | None = None
-) -> list[NarrativeThread]:
+def detectThreads(company, blockMap, sections: set[str] | None = None) -> list[NarrativeThread]:
     """7가지 인과 패턴을 감지하여 NarrativeThread 리스트 반환.
 
     sections가 지정되면 관련 섹션이 겹치는 detector만 실행.

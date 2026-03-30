@@ -2147,11 +2147,13 @@ def ownershipTrendBlock(data: dict) -> list:
     if holders:
         hRows = []
         for h in holders[:5]:
-            hRows.append({
-                "성명": h.get("name", ""),
-                "관계": h.get("relate", ""),
-                "지분율(%)": h.get("ratio"),
-            })
+            hRows.append(
+                {
+                    "성명": h.get("name", ""),
+                    "관계": h.get("relate", ""),
+                    "지분율(%)": h.get("ratio"),
+                }
+            )
         blocks.append(TableBlock("최근 주요 주주", pl.DataFrame(hRows)))
 
     return blocks
@@ -2277,10 +2279,7 @@ def changeIntensityBlock(data: dict) -> list:
     topByDelta = data.get("topByDelta", [])
     if not topByDelta:
         return []
-    rows = [
-        {"topic": t["topic"], "변화량(bytes)": t["totalDeltaBytes"]}
-        for t in topByDelta[:5]
-    ]
+    rows = [{"topic": t["topic"], "변화량(bytes)": t["totalDeltaBytes"]} for t in topByDelta[:5]]
     return [
         HeadingBlock(
             _meta("changeIntensity").label,
@@ -2491,13 +2490,15 @@ def proFormaHighlightsBlock(data: dict) -> list:
     # 전망 테이블
     rows = []
     for yr in years:
-        rows.append({
-            "연차": f"+{yr['yearOffset']}년",
-            "매출": _fmtEstimate(yr.get("revenue"), cur),
-            "영업이익": _fmtEstimate(yr.get("operatingIncome"), cur),
-            "순이익": _fmtEstimate(yr.get("netIncome"), cur),
-            "FCF": _fmtEstimate(yr.get("fcf"), cur),
-        })
+        rows.append(
+            {
+                "연차": f"+{yr['yearOffset']}년",
+                "매출": _fmtEstimate(yr.get("revenue"), cur),
+                "영업이익": _fmtEstimate(yr.get("operatingIncome"), cur),
+                "순이익": _fmtEstimate(yr.get("netIncome"), cur),
+                "FCF": _fmtEstimate(yr.get("fcf"), cur),
+            }
+        )
     blocks.append(TableBlock("[추정] Pro-Forma IS 요약", pl.DataFrame(rows)))
 
     for w in data.get("warnings", []):
@@ -2523,11 +2524,13 @@ def scenarioImpactBlock(data: dict) -> list:
 
     rows = []
     for name, sc in scenarios.items():
-        rows.append({
-            "시나리오": sc.get("label", name),
-            "매출변화": f"{sc.get('revenueChangePct', 0):+.1f}%",
-            "마진변화": f"{sc.get('marginChangeBps', 0):+.0f}bps",
-        })
+        rows.append(
+            {
+                "시나리오": sc.get("label", name),
+                "매출변화": f"{sc.get('revenueChangePct', 0):+.1f}%",
+                "마진변화": f"{sc.get('marginChangeBps', 0):+.0f}bps",
+            }
+        )
     blocks.append(TableBlock("[추정] 매크로 시나리오 영향", pl.DataFrame(rows)))
     return blocks
 

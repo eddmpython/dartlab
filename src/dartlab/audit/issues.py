@@ -46,24 +46,28 @@ def detectIssues(
         rate = ok / total
         if rate < coverageThreshold:
             severity = "critical" if rate == 0 else "warning"
-            issues.append({
-                "category": "quality",
-                "severity": severity,
-                "axis": axis,
-                "blockKey": "",
-                "description": f"{axis} coverage {rate:.0%} ({ok}/{total})",
-            })
+            issues.append(
+                {
+                    "category": "quality",
+                    "severity": severity,
+                    "axis": axis,
+                    "blockKey": "",
+                    "description": f"{axis} coverage {rate:.0%} ({ok}/{total})",
+                }
+            )
 
     # ── 전체 error 비율 ──
     totalRows = len(rows)
     errorRows = sum(1 for r in rows if r.get("status") == "error")
     if totalRows > 0 and errorRows / totalRows > 0.2:
-        issues.append({
-            "category": "calcError",
-            "severity": "critical",
-            "axis": "",
-            "blockKey": "",
-            "description": f"전체 error 비율 {errorRows}/{totalRows} ({errorRows/totalRows:.0%})",
-        })
+        issues.append(
+            {
+                "category": "calcError",
+                "severity": "critical",
+                "axis": "",
+                "blockKey": "",
+                "description": f"전체 error 비율 {errorRows}/{totalRows} ({errorRows / totalRows:.0%})",
+            }
+        )
 
     return issues

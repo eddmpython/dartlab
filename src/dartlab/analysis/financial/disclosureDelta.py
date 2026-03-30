@@ -32,21 +32,27 @@ def calcDisclosureChangeSummary(company, *, basePeriod: str | None = None) -> di
     for s in topChanged:
         if s.changedCount == 0:
             continue
-        top.append({
-            "topic": s.topic,
-            "chapter": s.chapter,
-            "totalPeriods": s.totalPeriods,
-            "changedCount": s.changedCount,
-            "changeRate": round(s.changeRate, 3),
-        })
+        top.append(
+            {
+                "topic": s.topic,
+                "chapter": s.chapter,
+                "totalPeriods": s.totalPeriods,
+                "changedCount": s.changedCount,
+                "changeRate": round(s.changeRate, 3),
+            }
+        )
 
-    return {
-        "totalChanges": totalChanges,
-        "totalTopics": totalTopics,
-        "changedTopics": changedTopics,
-        "unchangedTopics": totalTopics - changedTopics,
-        "topChanged": top,
-    } if top else None
+    return (
+        {
+            "totalChanges": totalChanges,
+            "totalTopics": totalTopics,
+            "changedTopics": changedTopics,
+            "unchangedTopics": totalTopics - changedTopics,
+            "topChanged": top,
+        }
+        if top
+        else None
+    )
 
 
 # ── 핵심 공시 변화 추적 ──
@@ -88,14 +94,16 @@ def calcKeyTopicChanges(company, *, basePeriod: str | None = None) -> dict | Non
         s = summaryMap.get(topic)
         if s is None:
             continue
-        results.append({
-            "topic": topic,
-            "chapter": s.chapter,
-            "totalPeriods": s.totalPeriods,
-            "changedCount": s.changedCount,
-            "stableCount": s.stableCount,
-            "changeRate": round(s.changeRate, 3),
-        })
+        results.append(
+            {
+                "topic": topic,
+                "chapter": s.chapter,
+                "totalPeriods": s.totalPeriods,
+                "changedCount": s.changedCount,
+                "stableCount": s.stableCount,
+                "changeRate": round(s.changeRate, 3),
+            }
+        )
 
     return {"keyTopics": results} if results else None
 
@@ -128,10 +136,7 @@ def calcChangeIntensity(company, *, basePeriod: str | None = None) -> dict | Non
     ranked = sorted(topicDelta.items(), key=lambda x: x[1], reverse=True)[:10]
 
     return {
-        "topByDelta": [
-            {"topic": topic, "totalDeltaBytes": delta}
-            for topic, delta in ranked
-        ],
+        "topByDelta": [{"topic": topic, "totalDeltaBytes": delta} for topic, delta in ranked],
         "totalDeltaBytes": sum(topicDelta.values()),
     }
 
@@ -169,9 +174,7 @@ def calcDisclosureDeltaFlags(company, *, basePeriod: str | None = None) -> list[
     if topChanged:
         top = topChanged[0]
         if top["changeRate"] >= 0.8:
-            flags.append(
-                (f"최다 변화 topic: {top['topic']} (변화율 {top['changeRate']:.0%})", "warning")
-            )
+            flags.append((f"최다 변화 topic: {top['topic']} (변화율 {top['changeRate']:.0%})", "warning"))
 
     # 회계정책 변경 감지
     if keyChanges and keyChanges["keyTopics"]:
@@ -203,6 +206,7 @@ def _safeDiffResult(company):
         docsSections = company.docs.sections
         if docsSections is not None:
             from dartlab.core.docs.diff import sectionsDiff
+
             result = sectionsDiff(docsSections)
     except (AttributeError, ValueError, KeyError, TypeError, ImportError):
         pass

@@ -273,7 +273,9 @@ def dcfValuation(
             lossRatio = 1 - len(positiveOcfs) / max(len(allOcfs), 1) if allOcfs else 0
             discount = 0.5 if lossRatio >= 0.5 else 0.7
             fcfCurrent = midOcf * discount
-            warnings.append(f"FCF 음수 → mid-cycle 영업CF × {discount*100:.0f}%로 대체 (적자비율 {lossRatio*100:.0f}%)")
+            warnings.append(
+                f"FCF 음수 → mid-cycle 영업CF × {discount * 100:.0f}%로 대체 (적자비율 {lossRatio * 100:.0f}%)"
+            )
         else:
             ocf = getTTM(series, "CF", "operating_cashflow")
             if ocf is not None and ocf > 0:
@@ -296,23 +298,23 @@ def dcfValuation(
                 if latestRev and normalMargin > 0:
                     normalOi = latestRev * normalMargin
                     fcfCurrent = normalOi * 0.65  # 세후 × (1 - 재투자율 추정)
-                    warnings.append(f"Normalized earnings: 정상 OPM {normalMargin*100:.1f}% × 현재 매출 → FCF proxy")
+                    warnings.append(f"Normalized earnings: 정상 OPM {normalMargin * 100:.1f}% × 현재 매출 → FCF proxy")
 
     if fcfCurrent is None or fcfCurrent <= 0:
         return DCFResult(
-                fcfHistorical=fcfHist,
-                fcfProjections=[],
-                terminalValue=0,
-                enterpriseValue=0,
-                equityValue=0,
-                perShareValue=None,
-                discountRate=wacc,
-                growthRateInitial=0,
-                terminalGrowth=tg,
-                marginOfSafety=None,
-                warnings=["FCF 및 영업CF 데이터 부족으로 DCF 적용 불가"],
-                currency=currency,
-            )
+            fcfHistorical=fcfHist,
+            fcfProjections=[],
+            terminalValue=0,
+            enterpriseValue=0,
+            equityValue=0,
+            perShareValue=None,
+            discountRate=wacc,
+            growthRateInitial=0,
+            terminalGrowth=tg,
+            marginOfSafety=None,
+            warnings=["FCF 및 영업CF 데이터 부족으로 DCF 적용 불가"],
+            currency=currency,
+        )
 
     # ── 성장률 추정 ──
     # 3Y CAGR 상한 15% (30%는 사이클 호황 왜곡 유발)
@@ -372,7 +374,7 @@ def dcfValuation(
                 for yr in range(1, projectionYears + 1):
                     blend = (yr - 1) / max(projectionYears - 1, 1)
                     g = initialGrowth * (1 - blend) + tg * blend
-                    projEbitda *= (1 + g / 100)
+                    projEbitda *= 1 + g / 100
                 exitTv = projEbitda * exitMult
                 pvExitTv = exitTv / (1 + wacc / 100) ** projectionYears
                 exitEv = pvFcfs + pvExitTv
@@ -851,7 +853,14 @@ def fullValuation(
     discountRate: Optional[float] = None,
 ) -> ValuationSummary:
     """DCF + DDM + 상대가치 종합 밸류에이션."""
-    dcf = dcfValuation(series, shares=shares, sectorParams=sectorParams, currentPrice=currentPrice, currency=currency, discountRate=discountRate)
+    dcf = dcfValuation(
+        series,
+        shares=shares,
+        sectorParams=sectorParams,
+        currentPrice=currentPrice,
+        currency=currency,
+        discountRate=discountRate,
+    )
     ddm = ddmValuation(series, shares=shares, sectorParams=sectorParams, currentPrice=currentPrice)
     ddm.currency = currency
     rel = relativeValuation(

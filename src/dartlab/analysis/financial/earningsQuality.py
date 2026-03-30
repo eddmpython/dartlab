@@ -100,7 +100,9 @@ def calcAccrualAnalysis(company, *, basePeriod: str | None = None) -> dict | Non
                 "totalAssets": ta,
                 "sloanAccrualRatio": _safe(accrual, ta) if ta > 0 else None,
                 "accrualToRevenue": _safe(accrual, rev) * 100 if rev > 0 and _safe(accrual, rev) is not None else None,
-                "ocfToNi": (lambda r: r if abs(r) <= 1000 else None)(_safe(ocf, ni) * 100) if ni != 0 and _safe(ocf, ni) is not None else None,
+                "ocfToNi": (lambda r: r if abs(r) <= 1000 else None)(_safe(ocf, ni) * 100)
+                if ni != 0 and _safe(ocf, ni) is not None
+                else None,
             }
         )
 

@@ -16,9 +16,20 @@ logger = logging.getLogger("dartlab.audit")
 # ── 15축 목록 (analysis/__init__.py와 동기) ──
 
 ALL_AXES: tuple[str, ...] = (
-    "수익구조", "자금조달", "자산구조", "현금흐름",
-    "수익성", "성장성", "안정성", "효율성", "종합평가",
-    "이익품질", "비용구조", "자본배분", "투자효율", "재무정합성",
+    "수익구조",
+    "자금조달",
+    "자산구조",
+    "현금흐름",
+    "수익성",
+    "성장성",
+    "안정성",
+    "효율성",
+    "종합평가",
+    "이익품질",
+    "비용구조",
+    "자본배분",
+    "투자효율",
+    "재무정합성",
     "가치평가",
 )
 
@@ -72,6 +83,7 @@ class AuditRunner:
         engineVersion = ""
         try:
             from dartlab import __version__
+
             engineVersion = __version__
         except ImportError:
             pass
@@ -86,41 +98,49 @@ class AuditRunner:
                 result = c.analysis(axis)
             except (TypeError, ValueError, KeyError, AttributeError, ArithmeticError) as e:
                 result = None
-                issues.append({
-                    "category": "calcError",
-                    "severity": "critical",
-                    "axis": axis,
-                    "blockKey": "",
-                    "description": f"analysis('{axis}') 실행 실패: {e}",
-                })
+                issues.append(
+                    {
+                        "category": "calcError",
+                        "severity": "critical",
+                        "axis": axis,
+                        "blockKey": "",
+                        "description": f"analysis('{axis}') 실행 실패: {e}",
+                    }
+                )
 
             if isinstance(result, dict):
                 for blockKey, val in result.items():
                     dMs = int((time.time() - axisT0) * 1000)
                     ser = serializeCalcResult(blockKey, val)
-                    rows.append({
-                        "axis": axis,
-                        "blockKey": ser["blockKey"],
-                        "status": ser["status"],
-                        "resultJson": ser["resultJson"],
-                        "durationMs": dMs,
-                    })
-                    if ser["status"] == "none":
-                        issues.append({
-                            "category": "dataMissing",
-                            "severity": "warning",
+                    rows.append(
+                        {
                             "axis": axis,
-                            "blockKey": blockKey,
-                            "description": f"{axis}/{blockKey} 결과 None",
-                        })
+                            "blockKey": ser["blockKey"],
+                            "status": ser["status"],
+                            "resultJson": ser["resultJson"],
+                            "durationMs": dMs,
+                        }
+                    )
+                    if ser["status"] == "none":
+                        issues.append(
+                            {
+                                "category": "dataMissing",
+                                "severity": "warning",
+                                "axis": axis,
+                                "blockKey": blockKey,
+                                "description": f"{axis}/{blockKey} 결과 None",
+                            }
+                        )
             elif result is None:
-                rows.append({
-                    "axis": axis,
-                    "blockKey": "",
-                    "status": "error",
-                    "resultJson": "null",
-                    "durationMs": int((time.time() - axisT0) * 1000),
-                })
+                rows.append(
+                    {
+                        "axis": axis,
+                        "blockKey": "",
+                        "status": "error",
+                        "resultJson": "null",
+                        "durationMs": int((time.time() - axisT0) * 1000),
+                    }
+                )
 
         # ── 2. insights ──
         try:
@@ -129,92 +149,110 @@ class AuditRunner:
                 for attr in ("grades", "anomalies", "profile", "summary"):
                     val = _safeGetAttr(insights, attr)
                     ser = serializeCalcResult(attr, val)
-                    rows.append({
-                        "axis": "insights",
-                        "blockKey": ser["blockKey"],
-                        "status": ser["status"],
-                        "resultJson": ser["resultJson"],
-                        "durationMs": 0,
-                    })
+                    rows.append(
+                        {
+                            "axis": "insights",
+                            "blockKey": ser["blockKey"],
+                            "status": ser["status"],
+                            "resultJson": ser["resultJson"],
+                            "durationMs": 0,
+                        }
+                    )
             else:
-                rows.append({
+                rows.append(
+                    {
+                        "axis": "insights",
+                        "blockKey": "",
+                        "status": "none",
+                        "resultJson": "null",
+                        "durationMs": 0,
+                    }
+                )
+        except (TypeError, ValueError, KeyError, AttributeError) as e:
+            issues.append(
+                {
+                    "category": "calcError",
+                    "severity": "warning",
                     "axis": "insights",
                     "blockKey": "",
-                    "status": "none",
-                    "resultJson": "null",
-                    "durationMs": 0,
-                })
-        except (TypeError, ValueError, KeyError, AttributeError) as e:
-            issues.append({
-                "category": "calcError",
-                "severity": "warning",
-                "axis": "insights",
-                "blockKey": "",
-                "description": f"insights 실패: {e}",
-            })
+                    "description": f"insights 실패: {e}",
+                }
+            )
 
         # ── 3. valuation() (별도 호출 — analysis 가치평가 축과 별개로 통합 결과) ──
         try:
             valResult = c.valuation()
             if valResult is not None:
                 ser = serializeCalcResult("valuationResult", valResult)
-                rows.append({
+                rows.append(
+                    {
+                        "axis": "valuation",
+                        "blockKey": "valuationResult",
+                        "status": ser["status"],
+                        "resultJson": ser["resultJson"],
+                        "durationMs": 0,
+                    }
+                )
+        except (TypeError, ValueError, KeyError, AttributeError) as e:
+            issues.append(
+                {
+                    "category": "calcError",
+                    "severity": "warning",
                     "axis": "valuation",
                     "blockKey": "valuationResult",
-                    "status": ser["status"],
-                    "resultJson": ser["resultJson"],
-                    "durationMs": 0,
-                })
-        except (TypeError, ValueError, KeyError, AttributeError) as e:
-            issues.append({
-                "category": "calcError",
-                "severity": "warning",
-                "axis": "valuation",
-                "blockKey": "valuationResult",
-                "description": f"valuation() 실패: {e}",
-            })
+                    "description": f"valuation() 실패: {e}",
+                }
+            )
 
         # ── 4. forecast() ──
         try:
             fcResult = c.forecast()
             if fcResult is not None:
                 ser = serializeCalcResult("forecastResult", fcResult)
-                rows.append({
+                rows.append(
+                    {
+                        "axis": "forecast",
+                        "blockKey": "forecastResult",
+                        "status": ser["status"],
+                        "resultJson": ser["resultJson"],
+                        "durationMs": 0,
+                    }
+                )
+        except (TypeError, ValueError, KeyError, AttributeError) as e:
+            issues.append(
+                {
+                    "category": "calcError",
+                    "severity": "warning",
                     "axis": "forecast",
                     "blockKey": "forecastResult",
-                    "status": ser["status"],
-                    "resultJson": ser["resultJson"],
-                    "durationMs": 0,
-                })
-        except (TypeError, ValueError, KeyError, AttributeError) as e:
-            issues.append({
-                "category": "calcError",
-                "severity": "warning",
-                "axis": "forecast",
-                "blockKey": "forecastResult",
-                "description": f"forecast() 실패: {e}",
-            })
+                    "description": f"forecast() 실패: {e}",
+                }
+            )
 
         # ── 5. ratios ──
         try:
             ratios = c.ratios
             if ratios is not None:
                 ser = serializeCalcResult("ratioTable", ratios)
-                rows.append({
+                rows.append(
+                    {
+                        "axis": "ratios",
+                        "blockKey": "ratioTable",
+                        "status": ser["status"],
+                        "resultJson": ser["resultJson"],
+                        "durationMs": 0,
+                    }
+                )
+        except (TypeError, ValueError, KeyError, AttributeError) as e:
+            issues.append(
+                {
+                    "category": "calcError",
+                    "severity": "warning",
                     "axis": "ratios",
                     "blockKey": "ratioTable",
-                    "status": ser["status"],
-                    "resultJson": ser["resultJson"],
-                    "durationMs": 0,
-                })
-        except (TypeError, ValueError, KeyError, AttributeError) as e:
-            issues.append({
-                "category": "calcError",
-                "severity": "warning",
-                "axis": "ratios",
-                "blockKey": "ratioTable",
-                "description": f"ratios 실패: {e}",
-            })
+                    "description": f"ratios 실패: {e}",
+                }
+            )
 
         # ── 6. review ──
         reviewJson = ""
@@ -223,13 +261,15 @@ class AuditRunner:
             if review is not None:
                 reviewJson = review.toJson()
         except (TypeError, ValueError, KeyError, AttributeError) as e:
-            issues.append({
-                "category": "calcError",
-                "severity": "warning",
-                "axis": "review",
-                "blockKey": "",
-                "description": f"review() 실패: {e}",
-            })
+            issues.append(
+                {
+                    "category": "calcError",
+                    "severity": "warning",
+                    "axis": "review",
+                    "blockKey": "",
+                    "description": f"review() 실패: {e}",
+                }
+            )
 
         # ── 집계 ──
         totalCalcs = len(rows)
@@ -264,7 +304,10 @@ class AuditRunner:
 
         logger.info(
             "[audit] %s 완료 — %d/%d ok (%.1fs)",
-            stockCode, okCalcs, totalCalcs, durationSec,
+            stockCode,
+            okCalcs,
+            totalCalcs,
+            durationSec,
         )
 
         # ── 메모리 해제 (필수) ──
@@ -303,6 +346,7 @@ class AuditRunner:
 
         if codes is None:
             from dartlab.gather.listing import getKindList
+
             kindDf = getKindList()
             codes = kindDf["종목코드"].to_list()
 
@@ -319,17 +363,19 @@ class AuditRunner:
                 results.append(result)
             except (OSError, RuntimeError, ValueError) as e:
                 logger.error("[audit] %s 치명적 오류: %s", stockCode, e)
-                results.append({
-                    "stockCode": stockCode,
-                    "corpName": "",
-                    "runId": -1,
-                    "totalCalcs": 0,
-                    "okCalcs": 0,
-                    "coverageRate": 0.0,
-                    "durationSec": 0.0,
-                    "issueCount": 0,
-                    "error": str(e),
-                })
+                results.append(
+                    {
+                        "stockCode": stockCode,
+                        "corpName": "",
+                        "runId": -1,
+                        "totalCalcs": 0,
+                        "okCalcs": 0,
+                        "coverageRate": 0.0,
+                        "durationSec": 0.0,
+                        "issueCount": 0,
+                        "error": str(e),
+                    }
+                )
                 gc.collect()
 
             if onProgress:

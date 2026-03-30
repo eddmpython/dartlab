@@ -308,11 +308,11 @@ def _monte_carlo_price_distribution(
     # 상관행렬: growth-margin 동조, wacc-growth 역상관
     # [growth, margin, wacc, capex, tax]
     corr = [
-        [1.0,  0.4, -0.3,  0.2,  0.0],   # growth
-        [0.4,  1.0, -0.2,  0.0,  0.0],   # margin (경기 좋으면 마진도 개선)
-        [-0.3, -0.2, 1.0,  0.0,  0.1],   # wacc (금리 상승 시 성장 둔화)
-        [0.2,  0.0,  0.0,  1.0,  0.0],   # capex
-        [0.0,  0.0,  0.1,  0.0,  1.0],   # tax
+        [1.0, 0.4, -0.3, 0.2, 0.0],  # growth
+        [0.4, 1.0, -0.2, 0.0, 0.0],  # margin (경기 좋으면 마진도 개선)
+        [-0.3, -0.2, 1.0, 0.0, 0.1],  # wacc (금리 상승 시 성장 둔화)
+        [0.2, 0.0, 0.0, 1.0, 0.0],  # capex
+        [0.0, 0.0, 0.1, 0.0, 1.0],  # tax
     ]
     chol = _choleskyDecompose(corr)
 

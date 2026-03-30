@@ -103,6 +103,7 @@ def _buildMd(qEntry: dict, answer: str, meta: dict) -> str:
 
 # ── 메인 실행 ──
 
+
 def runAudit(filterId: str | None = None) -> None:
     """AI audit 실행."""
     questions = _loadQuestions(filterId)
@@ -134,11 +135,14 @@ def runAudit(filterId: str | None = None) -> None:
         # ask 실행
         t0 = time.monotonic()
         try:
-            answer = dartlab.ask(
-                question,
-                company=company,
-                stream=False,
-            ) or ""
+            answer = (
+                dartlab.ask(
+                    question,
+                    company=company,
+                    stream=False,
+                )
+                or ""
+            )
         except Exception as e:
             answer = f"[ask 실행 실패] {e}"
         elapsed = time.monotonic() - t0
@@ -180,7 +184,7 @@ def runAudit(filterId: str | None = None) -> None:
         results.append(logEntry)
 
     # 요약
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(f"AI Audit 완료 — {len(results)}건 실행")
     for r in results:
         errTag = " [ERR]" if r["hasError"] else ""

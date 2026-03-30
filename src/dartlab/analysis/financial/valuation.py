@@ -170,7 +170,10 @@ def calcDcf(company: Any, *, basePeriod: str | None = None) -> dict | None:
     from dartlab.core.finance.proforma import compute_company_wacc
 
     wacc, _ = compute_company_wacc(
-        series, sector_params=sp, market_cap=marketCap, currency=currency,
+        series,
+        sector_params=sp,
+        market_cap=marketCap,
+        currency=currency,
     )
 
     result = dcfValuation(
@@ -236,9 +239,7 @@ def calcDdm(company: Any, *, basePeriod: str | None = None) -> dict | None:
             hist = divPolicy["history"]
             minDiv = shares * 100 if shares and shares > 0 else 1e9
             annualDivs = [
-                h["dividendsPaid"]
-                for h in reversed(hist)
-                if h.get("dividendsPaid") and h["dividendsPaid"] > minDiv
+                h["dividendsPaid"] for h in reversed(hist) if h.get("dividendsPaid") and h["dividendsPaid"] > minDiv
             ]
 
     result = ddmValuation(
@@ -371,7 +372,9 @@ def calcNavValuation(company: Any) -> dict | None:
             if snapshot and snapshot.market_cap and snapshot.market_cap > 0:
                 subValue = snapshot.market_cap * ratio / 100
                 totalSubValue += subValue
-                subDetails.append({"code": subCode, "ratio": ratio, "marketCap": snapshot.market_cap, "value": subValue})
+                subDetails.append(
+                    {"code": subCode, "ratio": ratio, "marketCap": snapshot.market_cap, "value": subValue}
+                )
         except (ImportError, OSError, RuntimeError, AttributeError):
             pass
 
@@ -436,6 +439,7 @@ def calcPriceTarget(company: Any, *, basePeriod: str | None = None) -> dict | No
         if fallbackValue:
             # DDM/RIM 기반 시나리오 생성 (±10%, ±20% 변동)
             from dartlab.analysis.valuation.pricetarget import ScenarioPriceTarget
+
             fallbackScenarios = [
                 ScenarioPriceTarget("baseline", 0.55, None, 0, 0, fallbackValue, 0, 0, None),
                 ScenarioPriceTarget("rate_hike", 0.20, None, 0, 0, fallbackValue * 0.9, 0, 0, None),
@@ -446,6 +450,7 @@ def calcPriceTarget(company: Any, *, basePeriod: str | None = None) -> dict | No
             up = ((wt / currentPrice - 1) * 100) if currentPrice and currentPrice > 0 else None
             sig = "buy" if up and up > 10 else ("sell" if up and up < -10 else "hold")
             from dartlab.analysis.valuation.pricetarget import PriceTargetResult
+
             result = PriceTargetResult(
                 scenarios=fallbackScenarios,
                 weighted_target=wt,
@@ -587,15 +592,31 @@ def _classifyCompanyType(company: Any, series: dict) -> tuple[str, dict[str, flo
 
     # ── 사이클 업종 사전 판별 (섹터 기반 — CAGR/CV보다 우선) ──
     _cyclicalIg = {
-        "SEMICONDUCTOR", "CHEMICAL", "METALS", "SHIPBUILDING",
-        "TRANSPORTATION", "OIL_GAS", "ENERGY_EQUIP", "CONSTRUCTION_MATERIALS",
-        "CAPITAL_GOODS", "AUTO", "DISPLAY", "AIRLINE",
+        "SEMICONDUCTOR",
+        "CHEMICAL",
+        "METALS",
+        "SHIPBUILDING",
+        "TRANSPORTATION",
+        "OIL_GAS",
+        "ENERGY_EQUIP",
+        "CONSTRUCTION_MATERIALS",
+        "CAPITAL_GOODS",
+        "AUTO",
+        "DISPLAY",
+        "AIRLINE",
     }
     # NI CV가 높아도 사이클 기업이 아닌 업종 → cyclical 제외
     _stableIg = {
-        "TELECOM", "UTILITIES", "GAS_UTILITY", "ELECTRIC",
-        "SOFTWARE", "IT_SERVICE", "INTERNET", "MEDIA_ENTERTAINMENT",
-        "MEDIA", "GAME",
+        "TELECOM",
+        "UTILITIES",
+        "GAS_UTILITY",
+        "ELECTRIC",
+        "SOFTWARE",
+        "IT_SERVICE",
+        "INTERNET",
+        "MEDIA_ENTERTAINMENT",
+        "MEDIA",
+        "GAME",
     }
 
     isCyclicalSector = igStr.upper() in _cyclicalIg
@@ -631,7 +652,7 @@ def _classifyCompanyType(company: Any, series: dict) -> tuple[str, dict[str, flo
             mean = sum(validNi) / len(validNi)
             if mean > 0:
                 var = sum((v - mean) ** 2 for v in validNi) / len(validNi)
-                cv = (var ** 0.5) / mean
+                cv = (var**0.5) / mean
                 if cv > 0.5:
                     return "cyclical", {"DCF": 0.25, "DDM": 0.10, "상대가치": 0.40, "RIM": 0.25}
 
@@ -668,7 +689,10 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
     betaCalc = _fetchBeta(stockCode, currency) if stockCode else None
 
     wacc, _waccDetail = compute_company_wacc(
-        series, sector_params=sp, market_cap=marketCap, currency=currency,
+        series,
+        sector_params=sp,
+        market_cap=marketCap,
+        currency=currency,
         beta_override=betaCalc,
     )
 
@@ -698,7 +722,9 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
     if ddmValue and _inRange(ddmValue):
         estimates.append({"method": "DDM", "value": ddmValue, "weight": weights.get("DDM", 0)})
     if result.relative and result.relative.consensusValue and _inRange(result.relative.consensusValue):
-        estimates.append({"method": "상대가치", "value": result.relative.consensusValue, "weight": weights.get("상대가치", 0)})
+        estimates.append(
+            {"method": "상대가치", "value": result.relative.consensusValue, "weight": weights.get("상대가치", 0)}
+        )
 
     # RIM 결과도 합성에 포함
     beta = sp.beta if sp else None
@@ -725,7 +751,9 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
             targetPbr = 3.0
             forwardPbrValue = forwardBps * targetPbr
             if _inRange(forwardPbrValue):
-                estimates.append({"method": "Forward PBR", "value": forwardPbrValue, "weight": weights.get("상대가치", 0.45)})
+                estimates.append(
+                    {"method": "Forward PBR", "value": forwardPbrValue, "weight": weights.get("상대가치", 0.45)}
+                )
 
     # NAV — 지주사만 (자회사 시총 합산 기반)
     if companyType == "holding":
@@ -762,7 +790,7 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
         vals = [e["value"] for e in estimates]
         maxVal, minVal = max(vals), min(vals)
         if minVal > 0 and maxVal / minVal > 10:
-            warnings.append(f"모델 간 극단 괴리 ({maxVal/minVal:.0f}배) — 합성 신뢰도 낮음")
+            warnings.append(f"모델 간 극단 괴리 ({maxVal / minVal:.0f}배) — 합성 신뢰도 낮음")
 
     return {
         "fairValueRange": result.fairValueRange,

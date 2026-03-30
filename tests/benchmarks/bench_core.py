@@ -29,8 +29,28 @@ _SERIES_20Q = {
 
 _SERIES_SPARSE = {
     "IS": {
-        "sales": [None, 1e9, None, 2e9, None, 3e9, None, 4e9, None, 5e9,
-                  None, 6e9, None, 7e9, None, 8e9, None, 9e9, None, 10e9],
+        "sales": [
+            None,
+            1e9,
+            None,
+            2e9,
+            None,
+            3e9,
+            None,
+            4e9,
+            None,
+            5e9,
+            None,
+            6e9,
+            None,
+            7e9,
+            None,
+            8e9,
+            None,
+            9e9,
+            None,
+            10e9,
+        ],
     },
     "BS": {
         "totalAssets": [None] * 10 + [float(i * 1e9) for i in range(1, 11)],
@@ -39,6 +59,7 @@ _SERIES_SPARSE = {
 
 
 # ── getTTM 벤치마크 ──
+
 
 def test_getTTM_20q(benchmark):
     """getTTM: 20분기 연속 데이터."""
@@ -57,6 +78,7 @@ def test_getTTM_annualize(benchmark):
 
 # ── getLatest 벤치마크 ──
 
+
 def test_getLatest_20q(benchmark):
     """getLatest: 20분기 연속 데이터."""
     benchmark(getLatest, _SERIES_20Q, "BS", "totalAssets")
@@ -69,12 +91,14 @@ def test_getLatest_sparse(benchmark):
 
 # ── getRevenueGrowth3Y 벤치마크 ──
 
+
 def test_revenueGrowth3Y(benchmark):
     """getRevenueGrowth3Y: 20분기 데이터."""
     benchmark(getRevenueGrowth3Y, _SERIES_20Q)
 
 
 # ── safeDiv 벤치마크 ──
+
 
 def test_safeDiv_normal(benchmark):
     """_safeDiv: 정상 입력."""

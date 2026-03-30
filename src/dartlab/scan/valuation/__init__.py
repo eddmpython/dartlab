@@ -105,15 +105,17 @@ def scanValuation(*, verbose: bool = True) -> pl.DataFrame:
         rev = revMap.get(code)
         psr = round(mc / rev, 2) if rev and rev > 0 and mc > 0 else None
 
-        rows.append({
-            "stockCode": code,
-            "marketCap": round(mc),
-            "per": per,
-            "pbr": pbr,
-            "psr": psr,
-            "dividendYield": dy,
-            "grade": _gradeValuation(pbr),
-        })
+        rows.append(
+            {
+                "stockCode": code,
+                "marketCap": round(mc),
+                "per": per,
+                "pbr": pbr,
+                "psr": psr,
+                "dividendYield": dy,
+                "grade": _gradeValuation(pbr),
+            }
+        )
 
     if verbose:
         print(f"밸류에이션 스캔 완료: {len(rows)}종목")

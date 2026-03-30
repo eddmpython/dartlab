@@ -1035,6 +1035,7 @@ class TestChatUtils:
         assert "dividend" in text
         assert "primarySource" in text
 
+
 class TestCompanyCache:
     def test_put_and_get(self):
         from dartlab.server.cache import CompanyCache

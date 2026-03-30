@@ -58,9 +58,7 @@ def buildTimeseriesFromFixture(stockCode: str):
 
 # ── fixture parquet 목록 ──
 
+
 def availableFixtureStocks(category: str = "finance") -> list[str]:
     """해당 카테고리의 fixture parquet이 있는 종목코드 목록."""
-    return sorted(
-        p.stem.split(".")[0]
-        for p in FIXTURE_DIR.glob(f"*.{category}.parquet")
-    )
+    return sorted(p.stem.split(".")[0] for p in FIXTURE_DIR.glob(f"*.{category}.parquet"))

@@ -173,14 +173,16 @@ def calcSegmentForecast(company: Any, *, basePeriod: str | None = None) -> dict 
 
     segments = []
     for seg in result.segmentForecasts:
-        segments.append({
-            "name": seg.name,
-            "projected": seg.projected,
-            "growthRates": seg.growthRates,
-            "method": seg.method,
-            "shareOfRevenue": seg.shareOfRevenue,
-            "lifecycle": seg.lifecycle,
-        })
+        segments.append(
+            {
+                "name": seg.name,
+                "projected": seg.projected,
+                "growthRates": seg.growthRates,
+                "method": seg.method,
+                "shareOfRevenue": seg.shareOfRevenue,
+                "lifecycle": seg.lifecycle,
+            }
+        )
 
     return {
         "isEstimate": True,
@@ -223,14 +225,16 @@ def calcProFormaHighlights(company: Any, *, basePeriod: str | None = None) -> di
 
     years = []
     for p in pf.projections:
-        years.append({
-            "yearOffset": p.year_offset,
-            "revenue": p.revenue,
-            "operatingIncome": p.operating_income,
-            "netIncome": p.net_income,
-            "ebitda": p.ebitda,
-            "fcf": p.fcf,
-        })
+        years.append(
+            {
+                "yearOffset": p.year_offset,
+                "revenue": p.revenue,
+                "operatingIncome": p.operating_income,
+                "netIncome": p.net_income,
+                "ebitda": p.ebitda,
+                "fcf": p.fcf,
+            }
+        )
 
     return {
         "isEstimate": True,

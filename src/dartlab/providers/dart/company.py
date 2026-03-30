@@ -392,10 +392,7 @@ class Company:
                     report = selectReport(raw, year, reportKind="annual")
                     if report is None or report.is_empty():
                         continue
-                    scoped = (
-                        report.filter(pl.col("section_content").is_not_null())
-                        .sort("section_order")
-                    )
+                    scoped = report.filter(pl.col("section_content").is_not_null()).sort("section_order")
                     seen: set[str] = set()
                     for row in scoped.iter_rows(named=True):
                         rawTitle = str(row.get("section_title") or "").strip()
@@ -2232,9 +2229,7 @@ class Company:
 
     # ── docs multi-block select 지원 ──────────────────────────
 
-    def _buildDocsItemIndex(
-        self, topic: str
-    ) -> dict[str, list[tuple[int, pl.DataFrame]]]:
+    def _buildDocsItemIndex(self, topic: str) -> dict[str, list[tuple[int, pl.DataFrame]]]:
         """topic의 모든 테이블 블록을 수평화하고 항목명 역인덱스를 빌드."""
         from dartlab.core.show import normalizeItemKey
 
@@ -2772,7 +2767,16 @@ class Company:
             return None
         return result.to_dataframe()
 
-    def review(self, section: str | None = None, layout=None, helper: bool | None = None, *, preset: str | None = None, detail: bool | None = None, basePeriod: str | None = None):
+    def review(
+        self,
+        section: str | None = None,
+        layout=None,
+        helper: bool | None = None,
+        *,
+        preset: str | None = None,
+        detail: bool | None = None,
+        basePeriod: str | None = None,
+    ):
         """재무제표 구조화 보고서 — 14개 섹션 데이터 검토서.
 
         Capabilities:
@@ -2823,9 +2827,21 @@ class Company:
         """
         from dartlab.review.registry import buildReview
 
-        return buildReview(self, section=section, layout=layout, helper=helper, preset=preset, detail=detail, basePeriod=basePeriod)
+        return buildReview(
+            self, section=section, layout=layout, helper=helper, preset=preset, detail=detail, basePeriod=basePeriod
+        )
 
-    def reviewer(self, section: str | None = None, layout=None, helper: bool | None = None, guide: str | None = None, *, preset: str | None = None, detail: bool | None = None, basePeriod: str | None = None):
+    def reviewer(
+        self,
+        section: str | None = None,
+        layout=None,
+        helper: bool | None = None,
+        guide: str | None = None,
+        *,
+        preset: str | None = None,
+        detail: bool | None = None,
+        basePeriod: str | None = None,
+    ):
         """AI 분석 보고서 — review() + 섹션별 AI 종합의견.
 
         Capabilities:

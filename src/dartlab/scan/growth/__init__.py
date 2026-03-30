@@ -13,12 +13,21 @@ from dartlab.scan._helpers import _ensureScanData
 _REVENUE_IDS = {"Revenue", "revenue", "ifrs-full_Revenue", "dart_Revenue"}
 _REVENUE_NMS = {"매출액", "수익(매출액)", "영업수익"}
 
-_OP_IDS = {"ProfitLossFromOperatingActivities", "operatingIncome",
-           "ifrs-full_ProfitLossFromOperatingActivities", "dart_OperatingIncomeLoss"}
+_OP_IDS = {
+    "ProfitLossFromOperatingActivities",
+    "operatingIncome",
+    "ifrs-full_ProfitLossFromOperatingActivities",
+    "dart_OperatingIncomeLoss",
+}
 _OP_NMS = {"영업이익", "영업이익(손실)"}
 
-_NI_IDS = {"ProfitLoss", "netIncome", "ifrs-full_ProfitLoss", "dart_ProfitLoss",
-           "ProfitLossAttributableToOwnersOfParent"}
+_NI_IDS = {
+    "ProfitLoss",
+    "netIncome",
+    "ifrs-full_ProfitLoss",
+    "dart_ProfitLoss",
+    "ProfitLossAttributableToOwnersOfParent",
+}
 _NI_NMS = {"당기순이익", "당기순이익(손실)"}
 
 
@@ -209,16 +218,18 @@ def _computeGrowth(target: pl.DataFrame, scCol: str) -> pl.DataFrame:
         if revCagr is None and opCagr is None and niCagr is None:
             continue
 
-        rows.append({
-            "stockCode": code,
-            "revenue": round(revNow) if revNow else None,
-            "revenueCagr": revCagr,
-            "opIncomeCagr": opCagr,
-            "netIncomeCagr": niCagr,
-            "years": nYears,
-            "grade": _gradeGrowth(revCagr, opCagr),
-            "pattern": _classifyPattern(revCagr, opCagr, niCagr),
-        })
+        rows.append(
+            {
+                "stockCode": code,
+                "revenue": round(revNow) if revNow else None,
+                "revenueCagr": revCagr,
+                "opIncomeCagr": opCagr,
+                "netIncomeCagr": niCagr,
+                "years": nYears,
+                "grade": _gradeGrowth(revCagr, opCagr),
+                "pattern": _classifyPattern(revCagr, opCagr, niCagr),
+            }
+        )
 
     if not rows:
         return pl.DataFrame()

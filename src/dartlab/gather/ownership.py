@@ -30,11 +30,13 @@ async def fetch(
         foreignRatio = _cleanFloat(latest.get("foreignerHoldRatio", "0").replace("%", ""))
         result = []
         if foreignRatio > 0:
-            result.append(InstitutionOwnership(
-                holderName="외국인 합계",
-                ratio=foreignRatio,
-                source="naver",
-            ))
+            result.append(
+                InstitutionOwnership(
+                    holderName="외국인 합계",
+                    ratio=foreignRatio,
+                    source="naver",
+                )
+            )
         return result
     except (SourceUnavailableError, KeyError, ValueError, TypeError) as exc:
         log.debug("ownership KR 실패 (%s): %s", stockCode, exc)

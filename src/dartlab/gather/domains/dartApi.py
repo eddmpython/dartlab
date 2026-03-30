@@ -36,16 +36,18 @@ async def fetchInsiderTrading(stockCode: str) -> list[InsiderTrade]:
             return []
         result = []
         for row in df.iter_rows(named=True):
-            result.append(InsiderTrade(
-                date=str(row.get("rcept_dt", "")),
-                name=str(row.get("repror", row.get("nm", ""))),
-                position=str(row.get("ofcps", "")),
-                tradeType=str(row.get("sp_stock_lmp_cnt", "")),
-                changeShares=_safeInt(row.get("sp_stock_lmp_cnt", 0)),
-                afterShares=_safeInt(row.get("sp_stock_lmp_irds_cnt", 0)),
-                reason=str(row.get("ctr_motive", "")),
-                source="dart",
-            ))
+            result.append(
+                InsiderTrade(
+                    date=str(row.get("rcept_dt", "")),
+                    name=str(row.get("repror", row.get("nm", ""))),
+                    position=str(row.get("ofcps", "")),
+                    tradeType=str(row.get("sp_stock_lmp_cnt", "")),
+                    changeShares=_safeInt(row.get("sp_stock_lmp_cnt", 0)),
+                    afterShares=_safeInt(row.get("sp_stock_lmp_irds_cnt", 0)),
+                    reason=str(row.get("ctr_motive", "")),
+                    source="dart",
+                )
+            )
         return result
     except (ValueError, OSError, KeyError, TypeError) as exc:
         log.warning("DART executiveShares 실패 (%s): %s", stockCode, exc)
@@ -63,14 +65,16 @@ async def fetchMajorShareholders(stockCode: str) -> list[MajorHolder]:
             return []
         result = []
         for row in df.iter_rows(named=True):
-            result.append(MajorHolder(
-                holderName=str(row.get("report_nm", row.get("nm", ""))),
-                shares=_safeInt(row.get("stkqy", 0)),
-                ratio=_safeFloat(row.get("stkrt", 0)),
-                changeDate=str(row.get("rcept_dt", "")),
-                changeType=str(row.get("change_on", "")),
-                source="dart",
-            ))
+            result.append(
+                MajorHolder(
+                    holderName=str(row.get("report_nm", row.get("nm", ""))),
+                    shares=_safeInt(row.get("stkqy", 0)),
+                    ratio=_safeFloat(row.get("stkrt", 0)),
+                    changeDate=str(row.get("rcept_dt", "")),
+                    changeType=str(row.get("change_on", "")),
+                    source="dart",
+                )
+            )
         return result
     except (ValueError, OSError, KeyError, TypeError) as exc:
         log.warning("DART majorShareholders 실패 (%s): %s", stockCode, exc)
