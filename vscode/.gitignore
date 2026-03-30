@@ -2,3 +2,4 @@ node_modules/
 dist/
 *.vsix
 webview/node_modules/
+.vscode-test/
