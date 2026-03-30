@@ -118,4 +118,4 @@ class ChannelAdapter(ABC):
         """AI 분석을 실행하고 텍스트를 반환한다 (동기)."""
         from dartlab.ai.runtime.standalone import ask
 
-        return ask(company, question, stream=False)
+        return ask(question, company=company, stream=False)

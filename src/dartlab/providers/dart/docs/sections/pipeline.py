@@ -47,6 +47,65 @@ from dartlab.providers.dart.docs.sections.runtime import (
 )
 from dartlab.providers.dart.docs.sections.textStructure import parseTextStructureWithState
 
+# ── Phase 1 캐시: parquet 로드 + topic 매핑 결과 재사용 ──
+
+_preparedCache: dict[str, "_PreparedRows"] = {}
+_PREPARED_CACHE_MAX = 2  # OOM 방지: 최대 2종목
+
+
+class _PreparedRows:
+    """Phase 1 결과 — parquet 로드 + _reportRowsToTopicRows + teacherTopics."""
+
+    __slots__ = ("periodRows", "validPeriods", "teacherTopics")
+
+    def __init__(
+        self,
+        periodRows: dict[str, list[dict[str, object]]],
+        validPeriods: list[str],
+        teacherTopics: dict[str, str],
+    ):
+        self.periodRows = periodRows
+        self.validPeriods = validPeriods
+        self.teacherTopics = teacherTopics
+
+
+def _getPrepared(stockCode: str) -> _PreparedRows:
+    """Phase 1 결과를 캐싱하여 반환. 같은 종목 반복 호출 시 parquet 재로드 방지."""
+    if stockCode in _preparedCache:
+        return _preparedCache[stockCode]
+
+    periodRows: dict[str, list[dict[str, object]]] = {}
+    validPeriods: list[str] = []
+    latestAnnualRows: list[dict[str, object]] | None = None
+
+    for periodKey, reportKind, ccol, subset in iterPeriodSubsets(stockCode):
+        validPeriods.append(periodKey)
+        topicRows = _reportRowsToTopicRows(subset, ccol)
+        periodRows[periodKey] = topicRows
+        if reportKind == "annual" and latestAnnualRows is None:
+            latestAnnualRows = topicRows
+
+    teacherTopics = chapterTeacherTopics(latestAnnualRows or [])
+    validPeriods = sortPeriods(validPeriods)
+
+    prepared = _PreparedRows(periodRows, validPeriods, teacherTopics)
+
+    # LRU 방식: 최대치 초과 시 가장 오래된 항목 제거
+    if len(_preparedCache) >= _PREPARED_CACHE_MAX:
+        oldest = next(iter(_preparedCache))
+        del _preparedCache[oldest]
+    _preparedCache[stockCode] = prepared
+    return prepared
+
+
+def clearPreparedCache(stockCode: str | None = None) -> None:
+    """Phase 1 캐시 해제. stockCode=None이면 전체 해제."""
+    if stockCode is None:
+        _preparedCache.clear()
+    else:
+        _preparedCache.pop(stockCode, None)
+
+
 _RE_BUSINESS_UNIT_SEGMENT = re.compile(r".+(?:부문|총괄)$")
 _RE_BUSINESS_UNIT_SHORT = re.compile(r"^[A-Z][A-Z0-9&/-]{1,7}$")
 
@@ -571,20 +630,13 @@ def sections(stockCode: str, topics: set[str] | None = None) -> pl.DataFrame | N
     parentPathVariantsByKey: dict[tuple[str, str], set[str]] = {}
     semanticPathVariantsByKey: dict[tuple[str, str], set[str]] = {}
     semanticParentPathVariantsByKey: dict[tuple[str, str], set[str]] = {}
-    periodRows: dict[str, list[dict[str, object]]] = {}
-    validPeriods: list[str] = []
-    latestAnnualRows: list[dict[str, object]] | None = None
     suppressed = projectionSuppressedTopics()
 
-    for periodKey, reportKind, ccol, subset in iterPeriodSubsets(stockCode):
-        validPeriods.append(periodKey)
-        topicRows = _reportRowsToTopicRows(subset, ccol)
-        periodRows[periodKey] = topicRows
-        if reportKind == "annual" and latestAnnualRows is None:
-            latestAnnualRows = topicRows
-
-    teacherTopics = chapterTeacherTopics(latestAnnualRows or [])
-    validPeriods = sortPeriods(validPeriods)
+    prepared = _getPrepared(stockCode)
+    validPeriods = prepared.validPeriods
+    teacherTopics = prepared.teacherTopics
+    # periodRows는 pop으로 소비되므로 shallow copy (list 참조만 복사, row dict는 공유)
+    periodRows = dict(prepared.periodRows)
     latestPeriod = validPeriods[-1]
 
     def _representativePeriodRank(period: str | None) -> int:
@@ -689,8 +741,8 @@ def sections(stockCode: str, topics: set[str] | None = None) -> pl.DataFrame | N
                     "_repPeriod": periodKey,
                 }
 
-        # 매 10기간마다 GC — 중간 객체 해제
-        if _pIdx % 10 == 9:
+        # 전체 빌드만 주기적 GC — 부분 빌드는 데이터가 적어 불필요
+        if topics is None and _pIdx % 10 == 9:
             gc.collect()
 
     # 메모리 해제: periodRows는 pop으로 이미 소진, 빈 dict 정리
@@ -861,6 +913,7 @@ def sections(stockCode: str, topics: set[str] | None = None) -> pl.DataFrame | N
     del semanticPathVariantsByKey, semanticParentPathVariantsByKey
     del freqMetaByKey
 
-    gc.collect()
+    if topics is None:
+        gc.collect()
 
     return pl.DataFrame(dataColumns, schema=schema)

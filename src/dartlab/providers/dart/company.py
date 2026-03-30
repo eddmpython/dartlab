@@ -2189,7 +2189,12 @@ class Company:
         if cached is not None:
             return cached
 
-        sec = self.sections
+        # 전체 sections 캐시가 있으면 재사용, 없으면 해당 topic만 부분 빌드
+        if "_sections" in self._cache:
+            sec = self._cache["_sections"]
+        else:
+            docsSections = self.docs.sections
+            sec = docsSections.forTopics({topic}) if docsSections is not None else None
         if sec is None:
             self._cache[cacheKey] = {}
             return {}
@@ -2713,7 +2718,7 @@ class Company:
             return None
         return result.to_dataframe()
 
-    def review(self, section: str | None = None, layout=None, helper: bool | None = None):
+    def review(self, section: str | None = None, layout=None, helper: bool | None = None, *, basePeriod: str | None = None):
         """재무제표 구조화 보고서 — 14개 섹션 데이터 검토서.
 
         Capabilities:
@@ -2755,9 +2760,9 @@ class Company:
         """
         from dartlab.review.registry import buildReview
 
-        return buildReview(self, section=section, layout=layout, helper=helper)
+        return buildReview(self, section=section, layout=layout, helper=helper, basePeriod=basePeriod)
 
-    def reviewer(self, section: str | None = None, layout=None, helper: bool | None = None, guide: str | None = None):
+    def reviewer(self, section: str | None = None, layout=None, helper: bool | None = None, guide: str | None = None, *, basePeriod: str | None = None):
         """AI 분석 보고서 — review() + 섹션별 AI 종합의견.
 
         Capabilities:
@@ -2801,7 +2806,7 @@ class Company:
         """
         from dartlab.ai.reviewer import buildReviewWithAI
 
-        return buildReviewWithAI(self, section=section, layout=layout, helper=helper, guide=guide)
+        return buildReviewWithAI(self, section=section, layout=layout, helper=helper, guide=guide, basePeriod=basePeriod)
 
     def analysis(self, axis: str | None = None, **kwargs):
         """재무제표 완전 분석 — 14축, 단일 종목 심층.
@@ -4934,8 +4939,8 @@ class Company:
         from dartlab.ai.runtime.standalone import ask as _ask
 
         return _ask(
-            self,
             question,
+            company=self,
             include=include,
             exclude=exclude,
             provider=provider,

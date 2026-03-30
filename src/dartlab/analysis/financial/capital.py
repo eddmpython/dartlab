@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 _MAX_QUARTERS = 5
-_MAX_YEARS = 5
+_MAX_YEARS = 8
 
 
 # ── 유틸 ──
@@ -20,12 +20,11 @@ def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
     return toDict(selectResult)
 
 
-def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
-    """기간 목록에서 연도 컬럼만 추출."""
-    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
-    if cols:
-        return cols[:maxYears]
-    return sorted([c for c in periods if c.endswith("Q4")], reverse=True)[:maxYears]
+def _annualColsFromPeriods(periods: list[str], basePeriod: str | None, maxYears: int = _MAX_YEARS) -> list[str]:
+    """basePeriod 지원 연도 컬럼 추출."""
+    from dartlab.analysis.financial._helpers import annualColsFromPeriods
+
+    return annualColsFromPeriods(periods, basePeriod, maxYears)
 
 
 def _quarterlyCols(periods: list[str], maxQ: int = _MAX_QUARTERS) -> list[str]:
@@ -59,7 +58,7 @@ def _fmtAmt(value) -> str:
 # ── 계산 함수들 ──
 
 
-def calcFundingSources(company) -> dict | None:
+def calcFundingSources(company, *, basePeriod: str | None = None) -> dict | None:
     """조달원 분해 — 돈을 어디서 가져왔는가.
 
     4가지 원천: 내부유보, 외부(주주), 금융차입, 영업조달.
@@ -122,7 +121,7 @@ def calcFundingSources(company) -> dict | None:
     clRow = data.get("계약부채", {})
     diRow = data.get("선수수익", {})
 
-    yCols = _annualCols(allPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(allPeriods, basePeriod, _MAX_YEARS)
     if not yCols:
         yCols = _quarterlyCols(allPeriods, _MAX_YEARS)
     if not yCols:
@@ -228,7 +227,7 @@ def _latestAnnualVal(company, stmt: str, accountName: str) -> float | None:
     row = data.get(accountName)
     if row is None:
         return None
-    yCols = _annualCols(allPeriods, 1)
+    yCols = _annualColsFromPeriods(allPeriods, None, 1)
     if not yCols:
         return None
     return row.get(yCols[0])
@@ -256,7 +255,7 @@ def _calcImpliedBorrowingRate(company, finDebt: float) -> float | None:
     return ie / finDebt * 100
 
 
-def calcCapitalOverview(company) -> dict | None:
+def calcCapitalOverview(company, *, basePeriod: str | None = None) -> dict | None:
     """총자산/총부채/자기자본/순차입금 스냅샷.
 
     반환::
@@ -306,7 +305,7 @@ def calcCapitalOverview(company) -> dict | None:
     return {"metrics": metrics}
 
 
-def calcCapitalTimeline(company) -> dict | None:
+def calcCapitalTimeline(company, *, basePeriod: str | None = None) -> dict | None:
     """자본총계·이익잉여금 시계열.
 
     반환::
@@ -323,7 +322,7 @@ def calcCapitalTimeline(company) -> dict | None:
     retainedRow = data.get("이익잉여금")
 
     tables = []
-    yCols = _annualCols(allPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(allPeriods, basePeriod, _MAX_YEARS)
     if yCols:
         yearTable = _buildCapitalTable(equityRow, retainedRow, yCols)
         if yearTable:
@@ -372,7 +371,7 @@ def _buildCapitalTable(equityRow: dict, retainedRow: dict | None, cols: list[str
     return rows
 
 
-def calcDebtTimeline(company) -> dict | None:
+def calcDebtTimeline(company, *, basePeriod: str | None = None) -> dict | None:
     """부채총계·금융부채·영업부채 시계열.
 
     반환::
@@ -391,7 +390,7 @@ def calcDebtTimeline(company) -> dict | None:
     bondRow = data.get("사채")
 
     tables = []
-    yCols = _annualCols(allPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(allPeriods, basePeriod, _MAX_YEARS)
     if yCols:
         yearTable = _buildDebtTable(liabRow, stbRow, ltbRow, bondRow, yCols)
         if yearTable:
@@ -452,7 +451,7 @@ def _buildDebtTable(liabRow: dict, stbRow, ltbRow, bondRow, cols: list[str]) -> 
     return rows
 
 
-def calcInterestBurden(company) -> dict | None:
+def calcInterestBurden(company, *, basePeriod: str | None = None) -> dict | None:
     """이자보상배율·이자비용.
 
     반환::
@@ -487,7 +486,7 @@ def calcInterestBurden(company) -> dict | None:
     return {"metrics": metrics}
 
 
-def calcLiquidity(company) -> dict | None:
+def calcLiquidity(company, *, basePeriod: str | None = None) -> dict | None:
     """유동비율·당좌비율·현금비율·순운전자본.
 
     반환::
@@ -523,7 +522,7 @@ def calcLiquidity(company) -> dict | None:
     return {"metrics": metrics}
 
 
-def calcCashFlowStructure(company) -> dict | None:
+def calcCashFlowStructure(company, *, basePeriod: str | None = None) -> dict | None:
     """영업CF/투자CF/재무CF + FCF + CF 패턴.
 
     반환::
@@ -644,7 +643,7 @@ def _classifyCfPattern(ocf: str, icf: str, fcf: str) -> str | None:
     return patterns.get((ocf, icf, fcf))
 
 
-def calcDistressIndicators(company) -> dict | None:
+def calcDistressIndicators(company, *, basePeriod: str | None = None) -> dict | None:
     """Altman Z, Ohlson O, Piotroski F, Springate S.
 
     반환::
@@ -699,7 +698,7 @@ def calcDistressIndicators(company) -> dict | None:
     return {"metrics": metrics}
 
 
-def calcCapitalFlags(company) -> list[tuple[str, str]]:
+def calcCapitalFlags(company, *, basePeriod: str | None = None) -> list[tuple[str, str]]:
     """자금조달 관련 경고/기회 플래그. [(텍스트, "warning"|"opportunity"), ...]."""
     flags: list[tuple[str, str]] = []
 

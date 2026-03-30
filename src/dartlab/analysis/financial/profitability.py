@@ -8,17 +8,11 @@ from __future__ import annotations
 
 from dartlab.analysis.financial._helpers import (
     MAX_RATIO_YEARS,
+    annualColsFromPeriods as _annualColsFromPeriods,
     toDict,
 )
 
 _MAX_YEARS = MAX_RATIO_YEARS
-
-
-def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
-    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
-    if cols:
-        return cols[:maxYears]
-    return sorted([c for c in periods if c.endswith("Q4")], reverse=True)[:maxYears]
 
 
 def _yoy(cur, prev) -> float | None:
@@ -36,7 +30,7 @@ def _pctOf(part, total) -> float | None:
 # ── 이익 구조 시계열 ──
 
 
-def calcMarginTrend(company) -> dict | None:
+def calcMarginTrend(company, *, basePeriod: str | None = None) -> dict | None:
     """이익 구조 시계열 -- 매출에서 순이익까지 금액과 마진.
 
     IS에서 매출/매출원가/매출총이익/판관비/영업이익/당기순이익을 가져와서
@@ -58,7 +52,7 @@ def calcMarginTrend(company) -> dict | None:
     op = data.get("영업이익", {})
     ni = data.get("당기순이익", {})
 
-    yCols = _annualCols(periods, _MAX_YEARS + 1)
+    yCols = _annualColsFromPeriods(periods, basePeriod, _MAX_YEARS + 1)
     if len(yCols) < 2:
         return None
 
@@ -93,7 +87,7 @@ def calcMarginTrend(company) -> dict | None:
 # ── ROE 분해 (듀퐁 5요소) ──
 
 
-def calcReturnTrend(company) -> dict | None:
+def calcReturnTrend(company, *, basePeriod: str | None = None) -> dict | None:
     """ROE 구조 분해 -- 수익을 어떻게 만드는가.
 
     IS + BS에서 원본 계정을 가져와서 듀퐁 5요소를 직접 계산.
@@ -121,7 +115,7 @@ def calcReturnTrend(company) -> dict | None:
     ta = bsData.get("자산총계", {})
     eq = bsData.get("자본총계", {})
 
-    yCols = _annualCols(isPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(isPeriods, basePeriod, _MAX_YEARS)
     if not yCols:
         return None
 
@@ -170,7 +164,7 @@ calcDupont = calcReturnTrend
 # ── 마진 워터폴 ──
 
 
-def calcMarginWaterfall(company) -> dict | None:
+def calcMarginWaterfall(company, *, basePeriod: str | None = None) -> dict | None:
     """매출 -> 순이익 마진 워터폴 분해.
 
     각 단계에서 얼마나 줄어드는지를 금액 + 비율(%)로 보여준다.
@@ -206,7 +200,7 @@ def calcMarginWaterfall(company) -> dict | None:
     tax = data.get("법인세비용", {})
     ni = data.get("당기순이익", {})
 
-    yCols = _annualCols(periods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(periods, basePeriod, _MAX_YEARS)
     if not yCols:
         return None
 
@@ -300,11 +294,11 @@ def calcMarginWaterfall(company) -> dict | None:
 # ── 플래그 ──
 
 
-def calcProfitabilityFlags(company) -> list[str]:
+def calcProfitabilityFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """수익성 경고/기회 플래그."""
     flags: list[str] = []
 
-    trend = calcMarginTrend(company)
+    trend = calcMarginTrend(company, basePeriod=basePeriod)
     if trend and len(trend["history"]) >= 3:
         hist = trend["history"]
         # 영업이익률 3기 연속 하락
@@ -314,7 +308,7 @@ def calcProfitabilityFlags(company) -> list[str]:
         if oms[0] is not None and oms[0] < 0:
             flags.append(f"영업적자 ({oms[0]:.1f}%)")
 
-    ret = calcReturnTrend(company)
+    ret = calcReturnTrend(company, basePeriod=basePeriod)
     if ret and ret["history"]:
         h = ret["history"][0]
         roe = h.get("roe")

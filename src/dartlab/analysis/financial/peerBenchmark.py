@@ -25,7 +25,7 @@ _BENCHMARK_RATIOS = [
 # ── 핵심 비율 백분위 ──
 
 
-def calcPeerRanking(company) -> dict | None:
+def calcPeerRanking(company, *, basePeriod: str | None = None) -> dict | None:
     """핵심 재무비율 시장 내 백분위 순위.
 
     scan 데이터에서 최신 기간 기준 백분위(percentile)와
@@ -55,7 +55,7 @@ def calcPeerRanking(company) -> dict | None:
 # ── 수익성 vs 안정성 포지션 ──
 
 
-def calcRiskReturnPosition(company) -> dict | None:
+def calcRiskReturnPosition(company, *, basePeriod: str | None = None) -> dict | None:
     """수익-위험 매트릭스 포지션.
 
     ROE(수익) x 부채비율(위험)에서 시장 내 사분면 위치를 결정한다.
@@ -113,7 +113,7 @@ def calcRiskReturnPosition(company) -> dict | None:
 # ── 플래그 ──
 
 
-def calcPeerBenchmarkFlags(company) -> list[tuple[str, str]]:
+def calcPeerBenchmarkFlags(company, *, basePeriod: str | None = None) -> list[tuple[str, str]]:
     """비교분석 경고/기회 플래그."""
     flags: list[tuple[str, str]] = []
 

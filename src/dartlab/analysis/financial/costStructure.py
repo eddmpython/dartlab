@@ -5,7 +5,9 @@
 
 from __future__ import annotations
 
-_MAX_YEARS = 5
+from dartlab.analysis.financial._helpers import annualColsFromPeriods as _annualColsFromPeriods
+
+_MAX_YEARS = 8
 
 
 # ── 유틸 ──
@@ -15,13 +17,6 @@ def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
     from dartlab.analysis.financial._helpers import toDict
 
     return toDict(selectResult)
-
-
-def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
-    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
-    if cols:
-        return cols[:maxYears]
-    return sorted([c for c in periods if c.endswith("Q4")], reverse=True)[:maxYears]
 
 
 def _get(row: dict, col: str) -> float:
@@ -38,7 +33,7 @@ def _pct(part: float, total: float) -> float | None:
 # ── 비용 비중 분해 ──
 
 
-def calcCostBreakdown(company) -> dict | None:
+def calcCostBreakdown(company, *, basePeriod: str | None = None) -> dict | None:
     """매출원가율, 판관비율, 영업비용률 시계열.
 
     반환::
@@ -69,7 +64,7 @@ def calcCostBreakdown(company) -> dict | None:
     cogsRow = isData.get("매출원가", {})
     sgaRow = isData.get("판매비와관리비", {})
 
-    yCols = _annualCols(isPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(isPeriods, basePeriod, _MAX_YEARS)
     if not yCols:
         return None
 
@@ -97,7 +92,7 @@ def calcCostBreakdown(company) -> dict | None:
 # ── 영업레버리지 ──
 
 
-def calcOperatingLeverage(company) -> dict | None:
+def calcOperatingLeverage(company, *, basePeriod: str | None = None) -> dict | None:
     """영업레버리지(DOL) 시계열 — 매출 변동 대비 영업이익 민감도.
 
     반환::
@@ -127,7 +122,7 @@ def calcOperatingLeverage(company) -> dict | None:
     opRow = isData.get("영업이익", {})
     gpRow = isData.get("매출총이익", {})
 
-    yCols = _annualCols(isPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(isPeriods, basePeriod, _MAX_YEARS)
     if not yCols:
         return None
 
@@ -174,7 +169,7 @@ def calcOperatingLeverage(company) -> dict | None:
 # ── 손익분기점 추정 ──
 
 
-def calcBreakevenEstimate(company) -> dict | None:
+def calcBreakevenEstimate(company, *, basePeriod: str | None = None) -> dict | None:
     """BEP 추정 — 고정비/(1-변동비율) 기반 손익분기 매출.
 
     반환::
@@ -204,7 +199,7 @@ def calcBreakevenEstimate(company) -> dict | None:
     cogsRow = isData.get("매출원가", {})
     sgaRow = isData.get("판매비와관리비", {})
 
-    yCols = _annualCols(isPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(isPeriods, basePeriod, _MAX_YEARS)
     if not yCols:
         return None
 
@@ -243,7 +238,7 @@ def calcBreakevenEstimate(company) -> dict | None:
 # ── 원재료 비중 (docs 보강) ──
 
 
-def calcRawMaterialBreakdown(company) -> dict | None:
+def calcRawMaterialBreakdown(company, *, basePeriod: str | None = None) -> dict | None:
     """주요 원재료 품목별 매입액 비중 — rawMaterial docs 토픽 기반.
 
     부문/품목별 매입액 금액 행만 추출 (비중% 행 제외).
@@ -267,8 +262,8 @@ def calcRawMaterialBreakdown(company) -> dict | None:
     if not pCols:
         return None
 
-    # 최신 연도 컬럼 사용 (Q 없는 연도 우선, 없으면 최신 분기)
-    annuals = [c for c in pCols if "Q" not in c]
+    # 최신 연도 컬럼 사용 (basePeriod 이하, Q 없는 연도 우선)
+    annuals = _annualColsFromPeriods(pCols, basePeriod, 1)
     latestCol = annuals[0] if annuals else pCols[0]
 
     items = df["항목"].to_list()
@@ -318,11 +313,11 @@ def calcRawMaterialBreakdown(company) -> dict | None:
 # ── 플래그 ──
 
 
-def calcCostStructureFlags(company) -> list[str]:
+def calcCostStructureFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """비용 구조 경고 신호."""
     flags = []
 
-    breakdown = calcCostBreakdown(company)
+    breakdown = calcCostBreakdown(company, basePeriod=basePeriod)
     if breakdown and len(breakdown["history"]) >= 3:
         hist = breakdown["history"]
         # 매출원가율 3년 연속 상승
@@ -337,14 +332,14 @@ def calcCostStructureFlags(company) -> list[str]:
             if sgaRatios[0] > sgaRatios[1] > sgaRatios[2]:
                 flags.append(f"판관비율 3년 연속 상승 ({sgaRatios[2]:.1f}% -> {sgaRatios[0]:.1f}%)")
 
-    leverage = calcOperatingLeverage(company)
+    leverage = calcOperatingLeverage(company, basePeriod=basePeriod)
     if leverage and leverage["history"]:
         h0 = leverage["history"][0]
         dol = h0.get("dol")
         if dol is not None and dol > 3:
             flags.append(f"영업레버리지(DOL) {dol:.1f} — 매출 변동에 이익 민감")
 
-    bep = calcBreakevenEstimate(company)
+    bep = calcBreakevenEstimate(company, basePeriod=basePeriod)
     if bep and bep["history"]:
         h0 = bep["history"][0]
         mos = h0.get("marginOfSafety")

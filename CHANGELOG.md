@@ -5,6 +5,31 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.14] - 2026-03-30
+
+### Added
+
+- **basePeriod 기준점 파라미터**: 모든 analysis calc 함수(124개, 18개 파일)에 `basePeriod: str | None = None` keyword-only 파라미터 추가. `analysis("수익구조", c, basePeriod="2022Q4")` 형태로 과거 특정 시점 기준 분석 가능
+- **basePeriod 인프라 (`_helpers.py`)**: `PeriodRange` dataclass, `annualColsFromPeriods()`, `quarterlyColsFromPeriods()`, `resolveBasePeriod()` — 14개 파일에 중복되던 `_annualCols` 함수를 단일 통합 함수로 대체
+- **`_acceptsBasePeriod()` 안전 전달**: `inspect.signature` 기반 체크 + 캐싱으로, 마이그레이션 완료된 함수에만 basePeriod 전달. 미마이그레이션 함수에는 기존 호출 유지
+- **sections pipeline Phase 1 캐시**: `_PreparedRows` 캐시로 parquet 로드 + topic 매핑 결과 재사용. 동일 종목 반복 호출 시 I/O 제거 (최대 2종목 LRU)
+- **테스트 fixture 인프라**: `tests/fixtureHelper.py` + `scripts/generateFixtures.py` — heavy 테스트(bsIdentity, mappingBenchmark, regressionFinance)를 fixture 기반으로 전환, 9종목 finance.parquet 사전 생성
+- **basePeriod 단위 테스트 (`test_helpers_period.py`)**: annualColsFromPeriods 10개, quarterlyColsFromPeriods 4개, PeriodRange 1개 — 총 15개 테스트
+
+### Changed
+
+- **8기간 표준화**: 모든 analysis 테이블의 기본 기간 수를 5→8로 통일. `_MAX_YEARS`, `_MAX_RATIO_YEARS`, `maxYears`, `maxQuarters` 기본값 전부 8. review builders `_MAX_QUARTERS` 5→8. 연간 8개년, 분기 8분기 일관 출력
+- **analysis 단일 진입점 통합**: `Analysis.__call__`에 `basePeriod` 파라미터 추가 → `_run()`에서 `_acceptsBasePeriod(fn)` 체크 후 전달. 기존 호출 100% 하위호환
+- **review 소비 경로 관통**: `buildBlocks(company, keys, basePeriod=)` → `buildReview(company, basePeriod=)` → `Review.__call__(basePeriod=)` → `Company.review(basePeriod=)` → `buildReviewWithAI(basePeriod=)` 전 경로 basePeriod 관통
+- **review registry calc 호출 80+곳**: `calcXxx(company)` → `calcXxx(company, basePeriod=basePeriod)` 일괄 변경
+- **매출예측 엔진 v3→v4**: 실험 098 기반 — 매크로 GDP beta(기여도 0%), FX regex(29% 성공률), 주가내재 역산(순환논리), 횡단면 회귀(비활성), 공시 tone(미검증) 5개 소스 제거. 7-소스→4-소스 앙상블로 경량화
+- **AI 시스템 프롬프트 대폭 간소화**: `_ANALYSIS_WORKFLOW_GUIDE` 90줄 → `_SYSTEM_PROMPT` 25줄. `_detectAvailableModules()`, `_detectSector()` 등 사전 감지 로직 제거. 도구 우선순위 명시 (1차: review/scan/gather → 2차: Company 직접)
+- **ask() 호출 구조 정리**: `__init__.py` ask() 함수 — 중복 인자 나열 3곳 → `_call_kwargs` dict 1곳으로 통합
+
+### Fixed
+
+- **heavy 테스트 안정성**: bsIdentity, mappingBenchmark, regressionFinance — HF 다운로드 의존 → fixture parquet 기반으로 전환. CI 환경에서 네트워크 불안정으로 인한 실패 해소
+
 ## [0.7.13] - 2026-03-29
 
 ### Added

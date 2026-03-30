@@ -8,17 +8,11 @@ from __future__ import annotations
 
 from dartlab.analysis.financial._helpers import (
     MAX_RATIO_YEARS,
+    annualColsFromPeriods as _annualColsFromPeriods,
     toDict,
 )
 
 _MAX_YEARS = MAX_RATIO_YEARS
-
-
-def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
-    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
-    if cols:
-        return cols[:maxYears]
-    return sorted([c for c in periods if c.endswith("Q4")], reverse=True)[:maxYears]
 
 
 def _yoy(cur, prev) -> float | None:
@@ -40,7 +34,7 @@ def _cagr(values: list[float | None], periods: int) -> float | None:
 # ── 성장 추이 ──
 
 
-def calcGrowthTrend(company) -> dict | None:
+def calcGrowthTrend(company, *, basePeriod: str | None = None) -> dict | None:
     """성장 추이 -- 매출/영업이익/순이익/자산의 금액과 YoY.
 
     IS + BS에서 원본 금액을 가져와 규모감과 방향을 동시에 본다.
@@ -64,7 +58,7 @@ def calcGrowthTrend(company) -> dict | None:
     ni = isData.get("당기순이익", {})
     ta = bsData.get("자산총계", {})
 
-    yCols = _annualCols(isPeriods, _MAX_YEARS + 1)
+    yCols = _annualColsFromPeriods(isPeriods, _MAX_YEARS + 1, basePeriod=basePeriod)
     if len(yCols) < 2:
         return None
 
@@ -110,13 +104,13 @@ def calcGrowthTrend(company) -> dict | None:
 # ── 성장 품질 ──
 
 
-def calcGrowthQuality(company) -> dict | None:
+def calcGrowthQuality(company, *, basePeriod: str | None = None) -> dict | None:
     """성장 품질 -- 매출 성장이 이익으로 이어지는가.
 
     매출 vs 영업이익 성장률 괴리를 본다.
     매출만 크고 이익이 안 따라오면 외형 위주.
     """
-    trend = calcGrowthTrend(company)
+    trend = calcGrowthTrend(company, basePeriod=basePeriod)
     if trend is None or len(trend["history"]) < 2:
         return None
 
@@ -165,7 +159,7 @@ def calcGrowthQuality(company) -> dict | None:
 # ── SGR + 갭 ──
 
 
-def calcSustainableGrowthRate(company) -> dict | None:
+def calcSustainableGrowthRate(company, *, basePeriod: str | None = None) -> dict | None:
     """지속가능성장률(SGR) vs 실제 매출성장률 갭.
 
     SGR = ROE x (1 - 배당성향/100)
@@ -195,7 +189,7 @@ def calcSustainableGrowthRate(company) -> dict | None:
     cfParsed = toDictBySnakeId(cfResult)
     divRow = cfParsed[0].get("dividends_paid", {}) if cfParsed else {}
 
-    yCols = _annualCols(isPeriods, _MAX_YEARS + 1)
+    yCols = _annualColsFromPeriods(isPeriods, _MAX_YEARS + 1, basePeriod=basePeriod)
     if len(yCols) < 2:
         return None
 
@@ -243,11 +237,11 @@ def calcSustainableGrowthRate(company) -> dict | None:
 # ── 플래그 ──
 
 
-def calcGrowthFlags(company) -> list[str]:
+def calcGrowthFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """성장성 경고/기회 플래그."""
     flags: list[str] = []
 
-    trend = calcGrowthTrend(company)
+    trend = calcGrowthTrend(company, basePeriod=basePeriod)
     if trend is None:
         return flags
 

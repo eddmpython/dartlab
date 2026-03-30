@@ -66,7 +66,6 @@ def _buildCompanyDataBundle(company: Any):
     segmentRevenue = None
     salesDf = None
     orderDf = None
-    exportRatio = None
 
     try:
         segments = getattr(company, "segments", None)
@@ -83,11 +82,6 @@ def _buildCompanyDataBundle(company: Any):
     except (AttributeError, TypeError):
         pass
 
-    try:
-        exportRatio = getattr(company, "exportRatio", None)
-    except (AttributeError, TypeError):
-        pass
-
     if segmentRevenue is None and salesDf is None and orderDf is None:
         return None
 
@@ -95,7 +89,6 @@ def _buildCompanyDataBundle(company: Any):
         segmentRevenue=segmentRevenue,
         salesDf=salesDf,
         orderDf=orderDf,
-        exportRatio=exportRatio,
     )
 
 
@@ -128,7 +121,7 @@ def _runForecastRevenue(company: Any):
 # ── calc 함수 7개 ──
 
 
-def calcRevenueForecast(company: Any) -> dict | None:
+def calcRevenueForecast(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """7-소스 앙상블 3-시나리오 매출 전망."""
     result = _runForecastRevenue(company)
     if not result or not result.projected:
@@ -170,7 +163,7 @@ def calcRevenueForecast(company: Any) -> dict | None:
     return out
 
 
-def calcSegmentForecast(company: Any) -> dict | None:
+def calcSegmentForecast(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """세그먼트별 개별 매출 성장 전망."""
     result = _runForecastRevenue(company)
     if not result or not result.segmentForecasts:
@@ -196,7 +189,7 @@ def calcSegmentForecast(company: Any) -> dict | None:
     }
 
 
-def calcProFormaHighlights(company: Any) -> dict | None:
+def calcProFormaHighlights(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """Pro-Forma IS 주요 항목 전망."""
     result = _runForecastRevenue(company)
     if not result or not result.projected:
@@ -250,7 +243,7 @@ def calcProFormaHighlights(company: Any) -> dict | None:
     }
 
 
-def calcScenarioImpact(company: Any) -> dict | None:
+def calcScenarioImpact(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """매크로 시나리오별 매출/마진 영향."""
     series, _, sectorKey, _, currency = _getSeriesAndMeta(company)
     shares = _getShares(company)
@@ -288,7 +281,7 @@ def calcScenarioImpact(company: Any) -> dict | None:
     }
 
 
-def calcForecastMethodology(company: Any) -> dict | None:
+def calcForecastMethodology(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """예측 방법론 투명성 공개."""
     result = _runForecastRevenue(company)
     if not result:
@@ -305,7 +298,7 @@ def calcForecastMethodology(company: Any) -> dict | None:
     }
 
 
-def calcHistoricalRatios(company: Any) -> dict | None:
+def calcHistoricalRatios(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """Pro-Forma 기반 과거 구조 비율."""
     series, _, _, _, _ = _getSeriesAndMeta(company)
 
@@ -333,7 +326,7 @@ def calcHistoricalRatios(company: Any) -> dict | None:
     }
 
 
-def calcForecastFlags(company: Any) -> dict | None:
+def calcForecastFlags(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """매출전망 플래그."""
     result = _runForecastRevenue(company)
     if not result:
@@ -347,7 +340,7 @@ def calcForecastFlags(company: Any) -> dict | None:
 
     # 시계열 전용 (컨센서스/매크로 부재)
     if result.method == "timeseries_only":
-        flags.append(("TIMESERIES_ONLY", "시계열만 사용 -- 컨센서스/매크로 데이터 없음"))
+        flags.append(("TIMESERIES_ONLY", "시계열만 사용 -- 컨센서스 데이터 없음"))
 
     # 구조변화 감지
     if "structural_break" in result.aiContext:

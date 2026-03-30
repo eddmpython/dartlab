@@ -6,22 +6,18 @@ select()로 IS/BS/CF 원본 계정을 가져와서
 
 from __future__ import annotations
 
-from dartlab.analysis.financial._helpers import toDict
+from dartlab.analysis.financial._helpers import (
+    annualColsFromPeriods as _annualColsFromPeriods,
+    toDict,
+)
 
-_MAX_YEARS = 5
+_MAX_YEARS = 8
 
 
 def _toDictBySnakeId(selectResult) -> tuple[dict[str, dict], list[str]] | None:
     from dartlab.analysis.financial._helpers import toDictBySnakeId
 
     return toDictBySnakeId(selectResult)
-
-
-def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
-    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
-    if cols:
-        return cols[:maxYears]
-    return sorted([c for c in periods if c.endswith("Q4")], reverse=True)[:maxYears]
 
 
 def _get(row: dict, col: str) -> float:
@@ -69,7 +65,7 @@ def _estimateWacc(company) -> float | None:
 # ── ROIC (NOPAT / 투하자본) ──
 
 
-def calcRoicTimeline(company) -> dict | None:
+def calcRoicTimeline(company, *, basePeriod: str | None = None) -> dict | None:
     """ROIC 시계열 -- 투하자본 대비 실제 수익률.
 
     IS에서 영업이익 + 세율, BS에서 자본 + 차입금으로 직접 계산.
@@ -98,7 +94,7 @@ def calcRoicTimeline(company) -> dict | None:
     bondRow = bsData.get("사채", {})
     cashRow = bsData.get("현금및현금성자산", {})
 
-    yCols = _annualCols(isPeriods, _MAX_YEARS + 1)
+    yCols = _annualColsFromPeriods(isPeriods, maxYears=_MAX_YEARS + 1, basePeriod=basePeriod)
     if len(yCols) < 2:
         return None
 
@@ -157,7 +153,7 @@ def calcRoicTimeline(company) -> dict | None:
 # ── 투자 강도 ──
 
 
-def calcInvestmentIntensity(company) -> dict | None:
+def calcInvestmentIntensity(company, *, basePeriod: str | None = None) -> dict | None:
     """투자 강도 시계열 -- CAPEX/매출, 유무형 비율."""
     cfResult = company.select(
         "CF",
@@ -183,7 +179,7 @@ def calcInvestmentIntensity(company) -> dict | None:
     intRow = bsData.get("무형자산", {})
     taRow = bsData.get("자산총계", {})
 
-    yCols = _annualCols(isPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(isPeriods, maxYears=_MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -215,7 +211,7 @@ def calcInvestmentIntensity(company) -> dict | None:
 # ── NOPAT + 투하자본 ──
 
 
-def calcEvaTimeline(company) -> dict | None:
+def calcEvaTimeline(company, *, basePeriod: str | None = None) -> dict | None:
     """NOPAT + 투하자본 시계열.
 
     투하자본 = 자본총계 + 이자부차입금 - 현금 (ROIC와 동일 기준).
@@ -243,7 +239,7 @@ def calcEvaTimeline(company) -> dict | None:
     bondRow = bsData.get("사채", {})
     cashRow = bsData.get("현금및현금성자산", {})
 
-    yCols = _annualCols(isPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(isPeriods, maxYears=_MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -296,7 +292,7 @@ def calcEvaTimeline(company) -> dict | None:
 # ── 타법인 출자 현황 (docs) ──
 
 
-def calcInvestmentInOther(company) -> dict | None:
+def calcInvestmentInOther(company, *, basePeriod: str | None = None) -> dict | None:
     """investmentInOtherDetail docs 토픽에서 타법인 출자 총액 추출.
 
     반환::
@@ -359,11 +355,11 @@ def calcInvestmentInOther(company) -> dict | None:
 # ── 플래그 ──
 
 
-def calcInvestmentFlags(company) -> list[str]:
+def calcInvestmentFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """투자 분석 경고 신호."""
     flags = []
 
-    roic = calcRoicTimeline(company)
+    roic = calcRoicTimeline(company, basePeriod=basePeriod)
     if roic and len(roic["history"]) >= 3:
         hist = roic["history"]
         declining = all(h.get("roic") is not None and h["roic"] < 5 for h in hist[:3])
@@ -371,7 +367,7 @@ def calcInvestmentFlags(company) -> list[str]:
             latest = hist[0].get("roic")
             flags.append(f"ROIC {latest:.1f}% — 3년 연속 저수익 (자본비용 미회수 가능성)")
 
-    intensity = calcInvestmentIntensity(company)
+    intensity = calcInvestmentIntensity(company, basePeriod=basePeriod)
     if intensity and len(intensity["history"]) >= 2:
         hist = intensity["history"]
         h0 = hist[0]

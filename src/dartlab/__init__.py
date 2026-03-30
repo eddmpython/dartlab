@@ -773,46 +773,24 @@ def ask(
         print("  예: dartlab.ask('005930', '영업이익률 추세는?')\n")
         return None
 
-    if raw:
-        return _ask(
-            company,
-            question,
-            include=include,
-            exclude=exclude,
-            provider=provider,
-            model=model,
-            stream=stream,
-            reflect=reflect,
-            pattern=pattern,
-            **kwargs,
-        )
-
-    if not stream:
-        return _ask(
-            company,
-            question,
-            include=include,
-            exclude=exclude,
-            provider=provider,
-            model=model,
-            stream=False,
-            reflect=reflect,
-            pattern=pattern,
-            **kwargs,
-        )
-
-    gen = _ask(
-        company,
-        question,
+    _call_kwargs = dict(
+        company=company,
         include=include,
         exclude=exclude,
         provider=provider,
         model=model,
-        stream=True,
         reflect=reflect,
         pattern=pattern,
         **kwargs,
     )
+
+    if raw:
+        return _ask(question, stream=stream, **_call_kwargs)
+
+    if not stream:
+        return _ask(question, stream=False, **_call_kwargs)
+
+    gen = _ask(question, stream=True, **_call_kwargs)
     return _auto_stream(gen)
 
 

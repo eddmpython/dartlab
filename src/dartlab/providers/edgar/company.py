@@ -2239,8 +2239,8 @@ class Company:
         from dartlab.ai.runtime.standalone import ask as _ask
 
         return _ask(
-            self,
             question,
+            company=self,
             include=include,
             exclude=exclude,
             provider=provider,

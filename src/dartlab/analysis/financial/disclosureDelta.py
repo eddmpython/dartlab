@@ -9,7 +9,7 @@ from __future__ import annotations
 # ── 공시변화 종합 요약 ──
 
 
-def calcDisclosureChangeSummary(company) -> dict | None:
+def calcDisclosureChangeSummary(company, *, basePeriod: str | None = None) -> dict | None:
     """전체 topic 변화 요약 -- 변화량 상위 topic + 총 변화 건수.
 
     company.diff() DataFrame에서 changeRate 기준으로
@@ -62,7 +62,7 @@ _KEY_TOPICS = [
 ]
 
 
-def calcKeyTopicChanges(company) -> dict | None:
+def calcKeyTopicChanges(company, *, basePeriod: str | None = None) -> dict | None:
     """핵심 공시 topic 변화 추적.
 
     사업개요/리스크/회계정책/우발부채/특수관계자/사업부문 등
@@ -103,7 +103,7 @@ def calcKeyTopicChanges(company) -> dict | None:
 # ── 변화 크기 분석 ──
 
 
-def calcChangeIntensity(company) -> dict | None:
+def calcChangeIntensity(company, *, basePeriod: str | None = None) -> dict | None:
     """변화 크기(바이트) 분석 -- 어떤 topic이 얼마나 크게 바뀌었나.
 
     diff entries에서 바이트 변화량 기준 top topic을 추출한다.
@@ -139,7 +139,7 @@ def calcChangeIntensity(company) -> dict | None:
 # ── 플래그 ──
 
 
-def calcDisclosureDeltaFlags(company) -> list[tuple[str, str]]:
+def calcDisclosureDeltaFlags(company, *, basePeriod: str | None = None) -> list[tuple[str, str]]:
     """공시변화감지 경고/기회 플래그."""
     flags: list[tuple[str, str]] = []
 

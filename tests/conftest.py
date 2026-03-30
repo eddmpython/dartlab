@@ -82,6 +82,9 @@ _DATA_SKIP_REASONS = frozenset(
         "삼성전자 데이터 없음",
         "벤치마크 종목 finance 데이터 없음",
         "BS 항등식 검증 종목 finance 데이터 없음",
+        "벤치마크 종목 finance fixture 없음",
+        "BS 항등식 검증 종목 fixture 없음",
+        "삼성전자 finance fixture 없음",
     }
 )
 
@@ -103,6 +106,18 @@ def _isolated_dartlab_home(tmp_path, monkeypatch):
     home = tmp_path / "dartlab-home"
     home.mkdir(parents=True, exist_ok=True)
     monkeypatch.setenv("DARTLAB_HOME", str(Path(home)))
+
+
+@pytest.fixture(autouse=True)
+def _clear_sections_prepared_cache():
+    """sections pipeline Phase 1 캐시를 테스트마다 초기화."""
+    yield
+    try:
+        from dartlab.providers.dart.docs.sections.pipeline import clearPreparedCache
+
+        clearPreparedCache()
+    except ImportError:
+        pass
 
 
 @pytest.fixture(autouse=True)

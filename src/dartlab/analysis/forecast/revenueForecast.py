@@ -1,13 +1,18 @@
-"""매출액 예측 엔진 v3 — 7-소스 앙상블 + 세그먼트 Bottom-Up + 시나리오.
+"""매출액 예측 엔진 v4 — 4-소스 앙상블 + 세그먼트 Bottom-Up + 시나리오.
 
-7-소스 앙상블:
+4-소스 앙상블:
 1. 자체 시계열 (과거 매출 OLS/CAGR/평균회귀)
 2. 시장 컨센서스 (네이버/Yahoo 금융 애널리스트 매출 추정치)
-3. 매크로 조건부 (GDP β × 섹터 감응도, β>0.5 섹터)
-4. ROIC 기반 내재 성장 (Damodaran Value Driver: g = ROIC × Reinvestment Rate)
-5. 세그먼트 Bottom-Up (부문별 개별 예측 → 합산)
-6. 수주잔고 선행지표 (B/R ratio → 내재 성장률)
-7. 환율 민감도 (수출비율 × FX β)
+3. ROIC 기반 내재 성장 (Damodaran Value Driver: g = ROIC × Reinvestment Rate)
+4. 세그먼트 Bottom-Up (부문별 개별 예측 → 합산)
++ 수주잔고 선행지표 (B/R ratio → 내재 성장률, 전 종목 적용)
+
+v3→v4 변경 (실험 098 기반):
+- 매크로 GDP β 제거 (기여도 0%, 오히려 악화)
+- FX regex 제거 (29% 성공률)
+- 주가내재 역산 제거 (순환논리)
+- 횡단면 회귀 제거 (비활성)
+- 공시 tone 제거 (미검증)
 
 설계 원칙 (Engine-First, AI-Augmented):
 - 엔진이 재현 가능하고 투명한 기본 예측을 생성
@@ -38,32 +43,7 @@ from dartlab.core.finance.extract import (
     getLatest,
     getTTM,
 )
-from dartlab.core.finance.scenario import getElasticity
-
 log = logging.getLogger(__name__)
-
-# β > 0.5이고 R² 극저가 아닌 섹터만 매크로 조정 적용
-# simulation.py SECTOR_ELASTICITY에서 β ≥ 0.8인 섹터
-_MACRO_VALID_SECTORS = {
-    "반도체",
-    "자동차",
-    "화학",
-    "철강",
-    "건설",
-    "금융/증권",
-    "IT/소프트웨어",
-    "유통",
-    "섬유/의류",
-    "금융/은행",
-    "금융/보험",
-    "산업재",
-}
-# R² 극저 — β가 있어도 신호 대비 노이즈가 큼
-_MACRO_SKIP_SECTORS: set[str] = set()
-
-# β 크기별 매크로 가중치 (시계열에서 할당)
-_MACRO_WEIGHT_HIGH = 0.10  # β ≥ 1.2
-_MACRO_WEIGHT_MED = 0.05  # 0.8 ≤ β < 1.2
 
 # ROIC 기반 성장 소스 가중치 (시계열에서 할당)
 _ROIC_WEIGHT = 0.15
@@ -75,31 +55,12 @@ _ROIC_WEIGHT = 0.15
 
 
 @dataclass
-class MacroData:
-    """라이브 매크로 경제 데이터."""
-
-    gdpForecast: list[float] | None = None  # 연도별 GDP 성장률 (%)
-    cpiForecast: list[float] | None = None  # 연도별 CPI (%)
-    commodityIndexChange: float | None = None  # CRB 등 원자재 지수 YoY 변화(%)
-    oilPriceChange: float | None = None  # 유가 YoY 변화(%)
-    source: str = "default"  # "ecos" | "fred" | "default"
-
-
-# 원자재 민감 섹터 → commodity 조정 적용
-_COMMODITY_SECTORS = {"화학", "철강", "에너지", "정유", "석유화학", "비철금속"}
-_COMMODITY_BETA = 0.3  # commodity 지수 10% 변동 → 매출 3% 조정
-
-
-@dataclass
 class CompanyDataBundle:
     """L1(Company) → L0(forecast) 데이터 브릿지."""
 
     segmentRevenue: pl.DataFrame | None = None  # c.segments.revenue
     salesDf: pl.DataFrame | None = None  # c.salesOrder.salesDf
     orderDf: pl.DataFrame | None = None  # c.salesOrder.orderDf
-    exportRatio: float | None = None  # 수출비율 (0~1)
-    fxRate: float | None = None  # 현재 KRW/USD 환율
-    macroData: MacroData | None = None  # 라이브 매크로 데이터
 
 
 @dataclass
@@ -169,10 +130,6 @@ class RevenueForecastResult:
     aiOverlay: RevenueForecastAIOverlay | None = None
     forwardTestKey: str | None = None
     currency: str = "KRW"
-
-    # Phase 1: 회귀분석 확장 필드
-    marketImpliedGap: float | None = None  # 엔진예측 - 시장내재 (%, 양수=시장이 보수적)
-    investmentSignal: str | None = None  # "underpriced" | "overpriced" | "fair"
 
     DISCLAIMER: str = "본 분석은 투자 참고용이며 투자 권유가 아닙니다."
 
@@ -459,7 +416,6 @@ def _lifecycleWeightAdjustments(
 def _computeWeights(
     tsAvailable: bool,
     consensusItems: list[tuple[int, float, str]],
-    sectorKey: str | None,
     roicGrowth: float | None,
 ) -> dict[str, float]:
     """소스별 가중치 계산."""
@@ -481,96 +437,18 @@ def _computeWeights(
         weights["roic"] = roicShare
         weights["timeseries"] -= roicShare
 
-    # 매크로 β: 유효 섹터에서 시계열 할당
-    if sectorKey and sectorKey not in _MACRO_SKIP_SECTORS and "timeseries" in weights:
-        try:
-            beta = getElasticity(sectorKey).revenue_to_gdp
-        except AttributeError:
-            beta = 0
-
-        if beta >= 1.2 and sectorKey in _MACRO_VALID_SECTORS:
-            macroShare = min(_MACRO_WEIGHT_HIGH, weights["timeseries"])
-            weights["macro"] = macroShare
-            weights["timeseries"] -= macroShare
-        elif beta >= 0.8 and sectorKey in _MACRO_VALID_SECTORS:
-            macroShare = min(_MACRO_WEIGHT_MED, weights["timeseries"])
-            weights["macro"] = macroShare
-            weights["timeseries"] -= macroShare
-
     return weights
 
 
 # ══════════════════════════════════════
-# 매크로 조정
-# ══════════════════════════════════════
-
-
-def _macroAdjustment(
-    sectorKey: str,
-    horizon: int,
-    macroData: MacroData | None = None,
-) -> list[float]:
-    """GDP β + 원자재 감응도 기반 매출 성장률 조정치 (% 단위)."""
-    if sectorKey in _MACRO_SKIP_SECTORS:
-        return [0.0] * horizon
-
-    try:
-        elasticity = getElasticity(sectorKey)
-        beta = elasticity.revenue_to_gdp
-    except (ImportError, AttributeError, KeyError):
-        return [0.0] * horizon
-
-    if beta < 0.5:
-        return [0.0] * horizon
-
-    # GDP 전망: 라이브 → 하드코딩 fallback
-    defaultGdp = [1.5, 2.0, 2.2]
-    if macroData and macroData.gdpForecast:
-        gdpForecast = macroData.gdpForecast
-    else:
-        gdpForecast = defaultGdp
-
-    adjustments = []
-    for i in range(horizon):
-        gdp = gdpForecast[i] if i < len(gdpForecast) else gdpForecast[-1]
-        adj = beta * gdp / 100  # β × ΔGDP → 매출 성장률 조정
-        adjustments.append(adj * 100)  # % 단위로 변환
-
-    # 원자재 민감 섹터: commodity 지수 변동 반영
-    if sectorKey in _COMMODITY_SECTORS and macroData:
-        commodityChange = macroData.commodityIndexChange
-        oilChange = macroData.oilPriceChange
-        # 더 강한 시그널 사용 (commodity 지수 우선, 없으면 유가)
-        rawChange = commodityChange if commodityChange is not None else oilChange
-        if rawChange is not None:
-            # commodity 10% 변동 → 매출 _COMMODITY_BETA% 조정, 감쇠 적용
-            for i in range(len(adjustments)):
-                decay = 1.0 / (1 + i * 0.3)  # 시간 감쇠: 1년차 100%, 2년차 77%, 3년차 63%
-                commodityAdj = _COMMODITY_BETA * (rawChange / 10) * decay
-                adjustments[i] += commodityAdj
-
-    return adjustments
-
-
-# ══════════════════════════════════════
-# 세그먼트 Bottom-Up 예측 (Source 5)
+# 세그먼트 Bottom-Up 예측
 # ══════════════════════════════════════
 
 # 세그먼트 가중치: 시계열에서 할당
 _SEGMENT_WEIGHT = 0.25
 
-# 건설/조선/방산: 수주잔고 선행 시그널 가중치
+# 수주잔고 선행 시그널 가중치
 _BACKLOG_WEIGHT = 0.15
-_BACKLOG_SECTORS = {"건설", "조선", "방산", "건설/토목", "조선/기계"}
-
-# 주가 내재 매출 역산 가중치 (시계열에서 할당)
-_PRICE_IMPLIED_WEIGHT = 0.08
-
-# 횡단면 회귀 가중치 (시계열에서 할당)
-_CROSS_SECTION_WEIGHT = 0.0  # Gather 실데이터 연동 전까지 비활성
-
-# 공시 정성 신호 가중치
-_DISCLOSURE_WEIGHT = 0.05
 
 
 def _extractSegmentForecasts(
@@ -778,7 +656,9 @@ def _computeBacklogSignal(
         # 전환율: 역사적 평균 (매출/수주잔고)
         conversionRate = 1.0 / brRatio if brRatio > 0 else 0.0
 
-        isApplicable = bool(sectorKey and any(s in sectorKey for s in _BACKLOG_SECTORS))
+        # 건설/조선/방산: 수주잔고가 특히 강한 선행지표인 섹터 (정보 목적)
+        _strongSectors = {"건설", "조선", "방산", "건설/토목", "조선/기계"}
+        isApplicable = bool(sectorKey and any(s in sectorKey for s in _strongSectors))
 
         return BacklogSignal(
             backlogRevenueRatio=round(brRatio, 2),
@@ -866,40 +746,6 @@ def _buildScenarios(
 
 
 # ══════════════════════════════════════
-# FX 민감도 (Source 7)
-# ══════════════════════════════════════
-
-# 기준 환율 (5년 평균 근사)
-_FX_BASELINE = 1300.0  # KRW/USD 5년 평균 근사
-
-
-def _computeFxAdjustment(
-    exportRatio: float | None,
-    fxRate: float | None,
-    sectorKey: str | None,
-) -> float:
-    """수출비율 × 환율 편차 → 매출 성장률 조정 (%p)."""
-    if not exportRatio or exportRatio < 0.3 or not fxRate or fxRate <= 0:
-        return 0.0
-
-    # 환율 편차 (%)
-    fxDeviation = (fxRate - _FX_BASELINE) / _FX_BASELINE * 100
-
-    # 섹터별 환율 감응도 (기본 0.5)
-    fxBeta = 0.5
-    try:
-        elasticity = getElasticity(sectorKey or "")
-        if hasattr(elasticity, "revenue_to_fx") and elasticity.revenue_to_fx > 0:
-            fxBeta = elasticity.revenue_to_fx
-    except (ImportError, AttributeError, KeyError):
-        pass
-
-    # 조정: 수출비율 × β × (환율편차 / 10)
-    adj = exportRatio * fxBeta * (fxDeviation / 10)
-    return round(adj, 2)
-
-
-# ══════════════════════════════════════
 # 메인 예측 함수
 # ══════════════════════════════════════
 
@@ -912,9 +758,6 @@ def forecastRevenue(
     horizon: int = 3,
     companyData: CompanyDataBundle | None = None,
     currency: str = "KRW",
-    marketCap: float | None = None,
-    crossSectionGrowth: float | None = None,
-    disclosureGrowthAdj: float | None = None,
 ) -> RevenueForecastResult:
     """매출액 앙상블 예측."""
     warnings: list[str] = []
@@ -970,7 +813,7 @@ def forecastRevenue(
         )
 
     # ── 가중치 계산 ──
-    weights = _computeWeights(tsAvailable, consensusItems, sectorKey, roicGrowth)
+    weights = _computeWeights(tsAvailable, consensusItems, roicGrowth)
 
     # v3 소스 가중치 할당 (시계열에서 할당)
     if segGrowthRates and "timeseries" in weights:
@@ -978,46 +821,10 @@ def forecastRevenue(
         weights["segments"] = segShare
         weights["timeseries"] -= segShare
 
-    if backlogSignal and backlogSignal.sectorsApplicable and "timeseries" in weights:
+    if backlogSignal and "timeseries" in weights:
         blShare = min(_BACKLOG_WEIGHT, weights["timeseries"])
         weights["backlog"] = blShare
         weights["timeseries"] -= blShare
-
-    # ── Source 8: 주가 내재 매출 역산 ──
-    priceImpliedGrowth: float | None = None
-    priceImpliedResult = None
-    if marketCap and marketCap > 0 and "timeseries" in weights:
-        from dartlab.core.finance.priceImplied import reverseImpliedGrowth
-
-        priceImpliedResult = reverseImpliedGrowth(series, marketCap, horizon=horizon)
-        if priceImpliedResult and priceImpliedResult.impliedGrowthRate != 0.0:
-            priceImpliedGrowth = priceImpliedResult.impliedGrowthRate
-            piShare = min(_PRICE_IMPLIED_WEIGHT, weights["timeseries"])
-            weights["priceImplied"] = piShare
-            weights["timeseries"] -= piShare
-            assumptions.append(f"주가내재({piShare:.0%}): 시가총액 역산 내재성장률 {priceImpliedGrowth:.1f}%")
-
-    # ── Source 9: 횡단면 회귀 (Gather 실데이터 연동 전까지 비활성) ──
-    crossSectionG: float | None = crossSectionGrowth
-    if crossSectionG is not None and _CROSS_SECTION_WEIGHT > 0 and "timeseries" in weights:
-        csShare = min(_CROSS_SECTION_WEIGHT, weights["timeseries"])
-        weights["crossSection"] = csShare
-        weights["timeseries"] -= csShare
-        assumptions.append(f"횡단면회귀({csShare:.0%}): 전 상장사 cross-section 예측 {crossSectionG:.1f}%")
-
-    # ── Source 10: 공시 정성 신호 ──
-    disclosureAdj: float = 0.0
-    if (
-        disclosureGrowthAdj is not None
-        and disclosureGrowthAdj != 0.0
-        and _DISCLOSURE_WEIGHT > 0
-        and "timeseries" in weights
-    ):
-        dsShare = min(_DISCLOSURE_WEIGHT, weights["timeseries"])
-        weights["disclosure"] = dsShare
-        weights["timeseries"] -= dsShare
-        disclosureAdj = disclosureGrowthAdj
-        assumptions.append(f"공시신호({dsShare:.0%}): tone 기반 조정 {disclosureAdj:+.2f}%p")
 
     # 시계열 최소 보장: 과도 희석 방지 (최소 0.10)
     _TS_FLOOR = 0.10
@@ -1027,7 +834,7 @@ def forecastRevenue(
         # 부족분을 다른 v3 소스에서 비례 차감
         v3Keys = [
             k
-            for k in ("segments", "backlog", "priceImplied", "crossSection", "disclosure")
+            for k in ("segments", "backlog")
             if k in weights and weights[k] > 0
         ]
         if v3Keys:
@@ -1045,7 +852,7 @@ def forecastRevenue(
         weights["timeseries"] = _TS_FLOOR
         v3Keys2 = [
             k
-            for k in ("segments", "backlog", "priceImplied", "crossSection", "disclosure")
+            for k in ("segments", "backlog")
             if k in weights and weights[k] > 0
         ]
         if v3Keys2:
@@ -1054,27 +861,6 @@ def forecastRevenue(
                 for k in v3Keys2:
                     weights[k] -= deficit * (weights[k] / totalV3_2)
                     weights[k] = max(weights[k], 0.0)
-
-    # ── Source 3: 매크로 조정 ──
-    macroAdj = [0.0] * horizon
-    if "macro" in weights and sectorKey:
-        macroData = companyData.macroData if companyData else None
-        macroAdj = _macroAdjustment(sectorKey, horizon, macroData)
-        if any(abs(a) > 0.01 for a in macroAdj):
-            srcLabel = macroData.source if macroData else "default"
-            assumptions.append(f"매크로 β 조정: {sectorKey} GDP 감응도 적용 (source={srcLabel})")
-
-    # ── Source 7: FX 조정 (매크로에 합산) ──
-    fxAdj = 0.0
-    if companyData:
-        fxAdj = _computeFxAdjustment(
-            companyData.exportRatio,
-            companyData.fxRate,
-            sectorKey,
-        )
-        if abs(fxAdj) > 0.01:
-            macroAdj = [m + fxAdj for m in macroAdj]
-            assumptions.append(f"환율 조정: 수출비율 {(companyData.exportRatio or 0) * 100:.0f}%, FX {fxAdj:+.1f}%p")
 
     # ── 앙상블 ──
     projected: list[float] = []
@@ -1169,9 +955,6 @@ def forecastRevenue(
         # 컨센서스 성장률
         conG = conGrowthRates[yrOffset - 1] if yrOffset <= len(conGrowthRates) else None
 
-        # 매크로 조정
-        macroG = macroAdj[yrOffset - 1] if yrOffset <= len(macroAdj) else 0.0
-
         # 가중 성장률 계산
         blendedGrowth = 0.0
         if conG is not None and "consensus" in weights:
@@ -1181,10 +964,9 @@ def forecastRevenue(
             # 컨센서스 없는 연도 → 시계열이 컨센서스 몫도 흡수
             blendedGrowth += tsG * (weights.get("timeseries", 0) + weights.get("consensus", 0))
 
-        blendedGrowth += macroG * weights.get("macro", 0)
         blendedGrowth += roicG * weights.get("roic", 0)
 
-        # v3: 세그먼트 Bottom-Up 성장률
+        # 세그먼트 Bottom-Up 성장률
         if segGrowthRates and "segments" in weights:
             segG = (
                 segGrowthRates[yrOffset - 1]
@@ -1193,23 +975,11 @@ def forecastRevenue(
             )
             blendedGrowth += segG * weights.get("segments", 0)
 
-        # v3: 수주잔고 내재 성장률
+        # 수주잔고 내재 성장률
         if backlogSignal and "backlog" in weights:
             # 수주잔고 신호는 horizon 동안 감쇠
             decay = max(0.5, 1.0 - (yrOffset - 1) * 0.2)
             blendedGrowth += backlogSignal.impliedRevenueGrowth * decay * weights.get("backlog", 0)
-
-        # Source 8: 주가 내재 성장률
-        if priceImpliedGrowth is not None and "priceImplied" in weights:
-            blendedGrowth += priceImpliedGrowth * weights.get("priceImplied", 0)
-
-        # Source 9: 횡단면 회귀 성장률
-        if crossSectionG is not None and "crossSection" in weights:
-            blendedGrowth += crossSectionG * weights.get("crossSection", 0)
-
-        # Source 10: 공시 정성 신호 (성장률에 직접 조정)
-        if disclosureAdj != 0.0 and "disclosure" in weights:
-            blendedGrowth += disclosureAdj * weights.get("disclosure", 0)
 
         projVal = prevRevenue * (1 + blendedGrowth / 100)
         projected.append(projVal)
@@ -1286,8 +1056,6 @@ def forecastRevenue(
             elif src == "consensus":
                 nEst = len(consensusProj)
                 assumptions.append(f"컨센서스({w:.0%}): 네이버 금융 {nEst}개년 추정치")
-            elif src == "macro":
-                assumptions.append(f"매크로({w:.0%}): {sectorKey} GDP β 감응도")
             elif src == "roic":
                 assumptions.append(f"ROIC({w:.0%}): g=ROIC×재투자율={roicGrowthRate:.1f}%")
 
@@ -1355,21 +1123,6 @@ def forecastRevenue(
             "applicable": backlogSignal.sectorsApplicable,
         }
 
-    # ── 주가 내재 갭 + 투자 신호 ──
-    marketImpliedGap: float | None = None
-    investmentSignal: str | None = None
-    if priceImpliedResult and priceImpliedGrowth is not None and growthRates:
-        from dartlab.core.finance.priceImplied import computeGap
-
-        avgForecastG = sum(growthRates) / len(growthRates)
-        computeGap(priceImpliedResult, avgForecastG)
-        marketImpliedGap = priceImpliedResult.gapVsForecast
-        investmentSignal = priceImpliedResult.signal
-
-        if marketImpliedGap is not None:
-            aiContext["market_implied_gap"] = marketImpliedGap
-            aiContext["investment_signal"] = investmentSignal
-
     # Forward test 키 생성 (저장은 opt-in)
     ftKey = None
     if stockCode:
@@ -1397,8 +1150,6 @@ def forecastRevenue(
         backlogSignal=backlogSignal,
         forwardTestKey=ftKey,
         currency=currency,
-        marketImpliedGap=marketImpliedGap,
-        investmentSignal=investmentSignal,
     )
 
 

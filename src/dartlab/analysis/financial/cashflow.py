@@ -6,7 +6,7 @@ CF 3구간(영업/투자/재무) + FCF + 이익의 현금 뒷받침 + CF 패턴.
 
 from __future__ import annotations
 
-_MAX_YEARS = 5
+_MAX_YEARS = 8
 
 
 # ── 유틸 ──
@@ -19,12 +19,15 @@ def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
     return toDict(selectResult)
 
 
-def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
-    """연도 컬럼만 추출 (Q4 fallback)."""
-    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
-    if cols:
-        return cols[:maxYears]
-    return sorted([c for c in periods if c.endswith("Q4")], reverse=True)[:maxYears]
+def _annualColsFromPeriods(
+    periods: list[str],
+    maxYears: int = _MAX_YEARS,
+    basePeriod: str | None = None,
+) -> list[str]:
+    """연도 컬럼만 추출 (basePeriod 지원)."""
+    from dartlab.analysis.financial._helpers import annualColsFromPeriods
+
+    return annualColsFromPeriods(periods, maxYears=maxYears, basePeriod=basePeriod)
 
 
 def _get(row: dict, col: str) -> float:
@@ -65,7 +68,7 @@ def _classifyCfPattern(ocf: float, icf: float, fcf: float) -> str | None:
 # ── 메인: CF 3구간 + FCF ──
 
 
-def calcCashFlowOverview(company) -> dict | None:
+def calcCashFlowOverview(company, *, basePeriod: str | None = None) -> dict | None:
     """영업CF/투자CF/재무CF + FCF 시계열.
 
     반환::
@@ -103,7 +106,7 @@ def calcCashFlowOverview(company) -> dict | None:
     capexRow = data.get("유형자산의취득", {})
     intCapexRow = data.get("무형자산의취득", {})
 
-    yCols = _annualCols(allPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(allPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -135,7 +138,7 @@ def calcCashFlowOverview(company) -> dict | None:
 # ── 이익의 현금 뒷받침 ──
 
 
-def calcCashQuality(company) -> dict | None:
+def calcCashQuality(company, *, basePeriod: str | None = None) -> dict | None:
     """영업CF/순이익, 영업CF/매출 — 이익이 현금으로 뒷받침되는가.
 
     반환::
@@ -167,7 +170,7 @@ def calcCashQuality(company) -> dict | None:
     niRow = isData.get("당기순이익", {})
     revRow = isData.get("매출액", {})
 
-    yCols = _annualCols(cfPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -199,11 +202,11 @@ def calcCashQuality(company) -> dict | None:
 # ── CF 플래그 ──
 
 
-def calcCashFlowFlags(company) -> list[str]:
+def calcCashFlowFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """현금흐름 경고 신호."""
     flags = []
 
-    overview = calcCashFlowOverview(company)
+    overview = calcCashFlowOverview(company, basePeriod=basePeriod)
     if overview and overview["history"]:
         h0 = overview["history"][0]
 
@@ -227,7 +230,7 @@ def calcCashFlowFlags(company) -> list[str]:
             if ocfs[0] < ocfs[1] < ocfs[2]:
                 flags.append("영업CF 3년 연속 감소")
 
-    quality = calcCashQuality(company)
+    quality = calcCashQuality(company, basePeriod=basePeriod)
     if quality and quality["history"]:
         q0 = quality["history"][0]
 

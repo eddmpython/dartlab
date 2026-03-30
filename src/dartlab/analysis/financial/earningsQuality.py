@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import math
 
-_MAX_YEARS = 5
+_MAX_YEARS = 8
 
 
 # ── 유틸 ──
@@ -19,11 +19,12 @@ def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
     return toDict(selectResult)
 
 
-def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
-    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
-    if cols:
-        return cols[:maxYears]
-    return sorted([c for c in periods if c.endswith("Q4")], reverse=True)[:maxYears]
+def _annualColsFromPeriods(
+    periods: list[str], maxYears: int = _MAX_YEARS, *, basePeriod: str | None = None
+) -> list[str]:
+    from dartlab.analysis.financial._helpers import annualColsFromPeriods
+
+    return annualColsFromPeriods(periods, maxYears, basePeriod=basePeriod)
 
 
 def _get(row: dict, col: str) -> float:
@@ -40,7 +41,7 @@ def _safe(numerator: float, denominator: float) -> float | None:
 # ── 발생액 분석 ──
 
 
-def calcAccrualAnalysis(company) -> dict | None:
+def calcAccrualAnalysis(company, *, basePeriod: str | None = None) -> dict | None:
     """발생액(Accrual) 시계열 — 이익 중 현금이 아닌 비중.
 
     반환::
@@ -79,7 +80,7 @@ def calcAccrualAnalysis(company) -> dict | None:
     ocfRow = cfData.get("영업활동현금흐름", {})
     taRow = bsData.get("자산총계", {})
 
-    yCols = _annualCols(cfPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -109,7 +110,7 @@ def calcAccrualAnalysis(company) -> dict | None:
 # ── 이익 지속성 ──
 
 
-def calcEarningsPersistence(company) -> dict | None:
+def calcEarningsPersistence(company, *, basePeriod: str | None = None) -> dict | None:
     """이익 지속성 — 영업이익 vs 영업외손익, 변동성.
 
     반환::
@@ -139,7 +140,7 @@ def calcEarningsPersistence(company) -> dict | None:
     # 세전이익 fallback
     ptRow = isData.get("법인세차감전순이익", isData.get("세전이익", {}))
 
-    yCols = _annualCols(isPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(isPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -180,7 +181,7 @@ def calcEarningsPersistence(company) -> dict | None:
 # ── Beneish M-Score 시계열 ──
 
 
-def calcBeneishTimeline(company) -> dict | None:
+def calcBeneishTimeline(company, *, basePeriod: str | None = None) -> dict | None:
     """Beneish M-Score 시계열 — annual 데이터에서 직접 8변수 계산.
 
     8-Variable Model:
@@ -232,7 +233,7 @@ def calcBeneishTimeline(company) -> dict | None:
     tlRow = bsData.get("부채총계", {})
     ocfRow = cfData.get("operating_cashflow", {})
 
-    yCols = _annualCols(isPeriods, _MAX_YEARS + 1)  # 전년 대비 필요 → 1년 더
+    yCols = _annualColsFromPeriods(isPeriods, _MAX_YEARS + 1, basePeriod=basePeriod)  # 전년 대비 필요 → 1년 더
     if len(yCols) < 2:
         return None
 
@@ -317,11 +318,11 @@ def calcBeneishTimeline(company) -> dict | None:
 # ── 플래그 ──
 
 
-def calcEarningsQualityFlags(company) -> list[str]:
+def calcEarningsQualityFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """이익 품질 경고 신호."""
     flags = []
 
-    accrual = calcAccrualAnalysis(company)
+    accrual = calcAccrualAnalysis(company, basePeriod=basePeriod)
     if accrual and accrual["history"]:
         h0 = accrual["history"][0]
         sar = h0.get("sloanAccrualRatio")
@@ -331,7 +332,7 @@ def calcEarningsQualityFlags(company) -> list[str]:
         if ocfNi is not None and 0 < ocfNi < 40:
             flags.append(f"영업CF/순이익 {ocfNi:.0f}% — 이익 대비 현금 부족")
 
-    persistence = calcEarningsPersistence(company)
+    persistence = calcEarningsPersistence(company, basePeriod=basePeriod)
     if persistence:
         if persistence["history"]:
             h0 = persistence["history"][0]
@@ -349,7 +350,7 @@ def calcEarningsQualityFlags(company) -> list[str]:
         if cv is not None and cv > 0.5:
             flags.append(f"이익 변동계수 {cv:.2f} — 이익 변동성 높음")
 
-    beneish = calcBeneishTimeline(company)
+    beneish = calcBeneishTimeline(company, basePeriod=basePeriod)
     if beneish and beneish["history"]:
         h0 = beneish["history"][0]
         ms = h0.get("mScore")

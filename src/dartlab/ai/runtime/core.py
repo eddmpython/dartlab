@@ -16,12 +16,6 @@ import sqlite3
 from typing import Any, Generator
 
 from dartlab.ai.runtime.events import AnalysisEvent
-from dartlab.ai.runtime.post_processing import (
-    _detect_navigate_action,
-    _run_validation,
-    autoInjectArtifacts,
-    buildCorrectionPrompt,
-)
 
 # ── company=None 사전 종목 검색 ───────────────────────────
 
@@ -288,107 +282,55 @@ def _buildHistoryMessages(
     return build_history_messages(compressed)
 
 
-# ── 모듈/섹터 감지 ────────────────────────────────────────
+# ── 시스템 프롬프트 ───────────────────────────────────────
 
+_SYSTEM_PROMPT = """\
+당신은 dartlab 재무분석 플랫폼의 AI입니다.
+```python 코드블록을 작성하면 자동 실행되고 결과가 피드백됩니다.
 
-def _detectAvailableModules(company: Any) -> list[str]:
-    """Company에서 사용 가능한 데이터 모듈 감지."""
-    modules: list[str] = []
-    for name in ("BS", "IS", "CF", "CIS", "SCE"):
-        df = getattr(company, name, None)
-        if df is not None and hasattr(df, "__len__") and len(df) > 0:
-            modules.append(name)
-    if getattr(company, "ratios", None) is not None:
-        modules.append("ratios")
-    if getattr(company, "sections", None) is not None:
-        modules.append("sections")
-    if getattr(company, "insights", None) is not None:
-        modules.append("insights")
-    return modules
-
-
-def _detectSector(company: Any) -> str | None:
-    """Company의 섹터 분류."""
-    stockCode = getattr(company, "stockCode", getattr(company, "ticker", None))
-    if not stockCode:
-        return None
-    try:
-        from dartlab.core.sector import classify
-
-        info = classify(stockCode)
-        if info and hasattr(info, "sectorName"):
-            return info.sectorName
-        if isinstance(info, dict):
-            return info.get("sectorName")
-    except (ImportError, AttributeError, KeyError, TypeError, ValueError):
-        pass
-    return None
-
-
-# ── 분석 워크플로우 가이드 ────────────────────────────────
-
-_ANALYSIS_WORKFLOW_GUIDE = """\
-## dartlab — 기업 분석 플랫폼
-
-`import dartlab` 하나로 모든 기능 접근. ```python 코드블록은 자동 실행되고 결과가 피드백됩니다.
-
-### 핵심 원칙
-1. **질문을 먼저 이해하라.** 사용자가 원하는 게 주가인지, 재무분석인지, 비교인지 파악한다.
-2. **`dartlab.capabilities(search='키워드')`로 적절한 API를 찾는다.** 116개 API 중 질문에 맞는 것을 검색.
-3. **즉시 코드를 짜서 실행한다.** 되묻지 않는다. 합리적 기본값으로 먼저 실행하고 보여준다.
-4. **결과를 해석한다.** 숫자 나열이 아니라 추세/원인/시사점으로 해석한다.
-
-### 속도 참고
-- `c.insights` (1-3초), `dartlab.analysis("축", c)` (5초) — 빠르다
-- `c.review("섹션명")` (1초) — 특정 섹션만 빠르게
-- `c.review()` 전체 (30초+) — 필요할 때만
-
-### 분석 품질
-- c.ratios만 보고 끝내지 마라. 깊이를 더해라.
-- 이상치(anomalies)를 확인하라. 분석 방향을 바꾸는 신호다.
-- 한 축만 보지 말고 복수 축을 교차 검증하라.
-- 비율만 나열하지 말고 해석하라.
-
-### 코드 실행
+## 사용법
+- `import dartlab` 하나로 시작. 종목코드 하나면 모든 분석 가능.
+- API를 모르면 `dartlab.capabilities(search='키워드')`로 검색.
 - 결과는 `print()`로 출력. 실행 실패 시 에러를 읽고 수정 코드 재생성.
+
+## 도구 우선순위 — 1차부터 쓰고, 깊이가 필요하면 2차로
+**1차 (여기서 시작):**
+- 기업 분석 → `c.review("섹션명")` — 구조화된 보고서 (수익구조, 안정성, 성장성, 종합진단 등)
+- 기업간 비교 → `dartlab.scan("축", "종목코드")` — 동종업계 순위
+- 외부 데이터 → `dartlab.gather("종류", "종목코드")` — 주가, 컨센서스, 수급
+
+**2차 (깊이가 필요할 때):**
+- `c.analysis("축")` — 14축 상세 (waterfall, 듀퐁, Sloan 등)
+- `c.ratios`, `c.BS`, `c.IS`, `c.CF` — 원본 재무제표/비율
+- `c.sections`, `c.show("토픽")` — 공시 원문
+
+## 규칙
+- 되묻지 말고 즉시 코드를 실행하라. 합리적 기본값 사용.
+- 숫자 나열이 아니라 원인/추세/시사점을 해석하라.
+- 한국어 질문에는 한국어로 답변.
+- 코드로 확인되지 않은 수치를 인용하지 마라.
+"""
+
+_EDGAR_SUPPLEMENT = """
+## EDGAR (미국 기업)
+- US GAAP 적용. 통화 USD. report 네임스페이스 없음 (sections으로 접근).
+- topic 형식: `10-K::item1Business`, `10-K::item7MdnA`, `10-Q::partIItem2Mdna`
 """
 
 
 # ── 프롬프트 조립 ─────────────────────────────────────────
 
 
-def _buildSystemPrompt(
-    config_: Any,
-    company: Any | None,
-    question: str,
-    *,
-    report_mode: bool,
-    market: str,
-) -> str:
-    """시스템 프롬프트 조립 — 동적 모듈/섹터/질문유형 감지 + 분석 워크플로우."""
-    from dartlab.ai.conversation.prompts import _classify_question, build_system_prompt_parts
+def _buildSystemPrompt(config_: Any, *, market: str = "KR") -> str:
+    """시스템 프롬프트 조립 — CAPABILITIES + 사용설명서."""
+    custom = getattr(config_, "system_prompt", None)
+    if custom:
+        return custom
 
-    q_type = _classify_question(question)
-    included_modules = _detectAvailableModules(company) if company else []
-    sector = _detectSector(company) if company else None
-
-    static_part, dynamic_part = build_system_prompt_parts(
-        config_.system_prompt,
-        included_modules=included_modules,
-        sector=sector,
-        question_type=q_type,
-        compact=True,
-        report_mode=report_mode,
-        market=market,
-        allow_tools=True,
-        hasCompany=(company is not None),
-    )
-
-    parts = [static_part, _ANALYSIS_WORKFLOW_GUIDE]
-    if dynamic_part:
-        parts.append(dynamic_part)
-
-    return "\n\n".join(parts)
+    parts = [_SYSTEM_PROMPT]
+    if market == "US":
+        parts.append(_EDGAR_SUPPLEMENT)
+    return "\n".join(parts)
 
 
 # ── 통합 오케스트레이터 ──────────────────────────────────
@@ -503,39 +445,16 @@ def analyze(
                 model=model,
                 api_key=api_key,
                 base_url=base_url,
-                report_mode=report_mode,
                 history=history,
                 history_messages=history_messages,
                 conversation_meta=conversation_meta,
-                validate=validate,
                 emit_system_prompt=emit_system_prompt,
                 _full_response_parts=full_response_parts,
-                _done_payload=done_payload,
                 **kwargs,
             ):
                 yield _emit(ev)
         except Exception as e:
             yield _emit(AnalysisEvent("error", _enrich_with_guide(_classify_error(e))))
-
-        # ── 후처리: navigate ui_action ──
-        if detect_navigate and company is not None:
-            nav_event = _detect_navigate_action(company, question)
-            if nav_event:
-                yield _emit(nav_event)
-
-        # ── 후처리: validation ──
-        if validate and company is not None and full_response_parts:
-            val_event = _run_validation(company, full_response_parts)
-            if val_event:
-                yield _emit(val_event)
-
-        # ── 후처리: auto-artifact injection ──
-        if company is not None:
-            _q_type = done_payload.get("_q_type")
-            _tc_names = done_payload.pop("_tool_call_names", [])
-            done_payload.pop("_q_type", None)
-            for art_event in autoInjectArtifacts(company, _q_type, _tc_names):
-                yield _emit(art_event)
 
         # ── 후처리: plugin hints ──
         if question:
@@ -569,14 +488,11 @@ def _analyze_inner(
     model: str | None,
     api_key: str | None,
     base_url: str | None,
-    report_mode: bool,
     history: list | None,
     history_messages: list[dict] | None,
     conversation_meta: dict | None,
-    validate: bool,
     emit_system_prompt: bool,
     _full_response_parts: list[str],
-    _done_payload: dict[str, Any],
     **kwargs: Any,
 ) -> Generator[AnalysisEvent, None, None]:
     """analyze() 본체 — 3단계 순수 스트리밍."""
@@ -598,15 +514,9 @@ def _analyze_inner(
             meta.setdefault("dataDate", _dataDate)
     yield AnalysisEvent("meta", meta)
 
-    # ── 2. 시스템 프롬프트 조립 (CAPABILITIES 검색 기반) ──
+    # ── 2. 시스템 프롬프트 조립 ──
     company_market = getattr(company, "market", "KR") if company else "KR"
-    system_prompt = _buildSystemPrompt(
-        config_,
-        company,
-        question,
-        report_mode=report_mode,
-        market=company_market,
-    )
+    system_prompt = _buildSystemPrompt(config_, market=company_market)
 
     # company=None이면 종목명 사전 검색
     prefetchText = ""
@@ -659,43 +569,9 @@ def _analyze_inner(
 
     llm = create_provider(config_)
 
-    from dartlab.ai.conversation.prompts import _classify_question
-
-    q_type = _classify_question(question)
-    _done_payload["_q_type"] = q_type
-    _done_payload["_tool_call_names"] = []
-
     for chunk in _streamWithCodeExecution(llm, messages, stockCode=stock_id):
         _full_response_parts.append(chunk)
         yield AnalysisEvent("chunk", {"text": chunk})
-
-    # ── Self-Verification (correction) ──
-    if validate and company is not None and _full_response_parts:
-        correction_prompt = buildCorrectionPrompt(company, _full_response_parts)
-        if correction_prompt:
-            _done_payload["selfVerification"] = True
-            yield AnalysisEvent("correction", {"message": correction_prompt})
-
-            correction_messages = [
-                *messages,
-                {"role": "assistant", "content": "".join(_full_response_parts)},
-                {"role": "user", "content": correction_prompt},
-            ]
-            _full_response_parts.clear()
-            yield AnalysisEvent("chunk", {"text": "\n\n---\n*[수치 검증 후 수정된 답변]*\n\n"})
-            _full_response_parts.append("\n\n---\n*[수치 검증 후 수정된 답변]*\n\n")
-            for chunk in llm.stream(correction_messages):
-                _full_response_parts.append(chunk)
-                yield AnalysisEvent("chunk", {"text": chunk})
-
-    # ── Response meta 추출 ──
-    if company and _full_response_parts and "responseMeta" not in _done_payload:
-        from dartlab.ai.conversation.prompts import extract_response_meta
-
-        full_text = "".join(_full_response_parts)
-        response_meta = extract_response_meta(full_text)
-        if response_meta.get("grade") or response_meta.get("has_conclusion"):
-            _done_payload["responseMeta"] = response_meta
 
     # ── 분석 메모리 저장 ──
     if stock_id and _full_response_parts:
@@ -708,7 +584,7 @@ def _analyze_inner(
             _mem.saveAnalysis(
                 stockCode=stock_id,
                 question=question[:200],
-                questionType=q_type or "",
+                questionType="",
                 resultSummary=summarizeResponse(_fullText),
                 grade=extractGrade(_fullText),
             )

@@ -6,7 +6,7 @@ BS를 영업/비영업으로 재분류하여 자산 운영 구조를 본다.
 
 from __future__ import annotations
 
-_MAX_YEARS = 5
+_MAX_YEARS = 8
 _MAX_QUARTERS = 5
 
 
@@ -20,12 +20,13 @@ def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
     return toDict(selectResult)
 
 
-def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
-    """연도 컬럼만 추출."""
-    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
-    if cols:
-        return cols[:maxYears]
-    return sorted([c for c in periods if c.endswith("Q4")], reverse=True)[:maxYears]
+def _annualColsFromPeriods(
+    periods: list[str], maxYears: int = _MAX_YEARS, *, basePeriod: str | None = None
+) -> list[str]:
+    """연도 컬럼만 추출 (basePeriod 지원)."""
+    from dartlab.analysis.financial._helpers import annualColsFromPeriods
+
+    return annualColsFromPeriods(periods, maxYears, basePeriod=basePeriod)
 
 
 def _get(row: dict, col: str) -> float:
@@ -112,7 +113,7 @@ def _sumOp(data: dict, col: str, simpleKeys: list[str], fallbackPairs: list[list
 # ── 메인: 자산 구조 ──
 
 
-def calcAssetStructure(company) -> dict | None:
+def calcAssetStructure(company, *, basePeriod: str | None = None) -> dict | None:
     """자산을 영업/비영업으로 재분류 — 시계열.
 
     반환::
@@ -156,7 +157,7 @@ def calcAssetStructure(company) -> dict | None:
     if taRow is None:
         return None
 
-    yCols = _annualCols(allPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(allPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -286,7 +287,7 @@ def calcAssetStructure(company) -> dict | None:
 # ── 운전자본 ──
 
 
-def calcWorkingCapital(company) -> dict | None:
+def calcWorkingCapital(company, *, basePeriod: str | None = None) -> dict | None:
     """운전자본 상세 + CCC.
 
     반환::
@@ -319,7 +320,7 @@ def calcWorkingCapital(company) -> dict | None:
     revRow = isData.get("매출액", {})
     cogsRow = isData.get("매출원가", {})
 
-    yCols = _annualCols(bsPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(bsPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -372,7 +373,7 @@ def calcWorkingCapital(company) -> dict | None:
 # ── CAPEX 패턴 ──
 
 
-def calcCapexPattern(company) -> dict | None:
+def calcCapexPattern(company, *, basePeriod: str | None = None) -> dict | None:
     """CAPEX vs 감가상각 + 건설중인자산 추이.
 
     반환::
@@ -414,7 +415,7 @@ def calcCapexPattern(company) -> dict | None:
     intCapexRow = cfDict.get("무형자산의취득", {})
     depRow = isDict.get("감가상각비", {})
 
-    yCols = _annualCols(bsPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(bsPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -469,11 +470,11 @@ def calcCapexPattern(company) -> dict | None:
 # ── 자산 플래그 ──
 
 
-def calcAssetFlags(company) -> list[str]:
+def calcAssetFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """자산 구조 경고 신호."""
     flags = []
 
-    structure = calcAssetStructure(company)
+    structure = calcAssetStructure(company, basePeriod=basePeriod)
     if structure:
         lat = structure["latest"]
         if lat["nonOpAssetsPct"] >= 40:
@@ -488,7 +489,7 @@ def calcAssetFlags(company) -> list[str]:
             if invPct >= 20:
                 flags.append(f"재고자산 {invPct:.0f}% — 재고 비대화 주의")
 
-    wc = calcWorkingCapital(company)
+    wc = calcWorkingCapital(company, basePeriod=basePeriod)
     if wc and wc["latest"]["ccc"] is not None:
         ccc = wc["latest"]["ccc"]
         if ccc > 120:
@@ -496,7 +497,7 @@ def calcAssetFlags(company) -> list[str]:
         elif ccc < 0:
             flags.append(f"CCC {ccc:.0f}일 — 마이너스 CCC (선수금/매입채무 우위)")
 
-    capex = calcCapexPattern(company)
+    capex = calcCapexPattern(company, basePeriod=basePeriod)
     if capex and capex["latest"]["capexToDepRatio"] is not None:
         ratio = capex["latest"]["capexToDepRatio"]
         if ratio < 0.5 and ratio > 0:
@@ -506,7 +507,7 @@ def calcAssetFlags(company) -> list[str]:
 
     from dartlab.analysis.financial.efficiency import calcTurnoverTrend
 
-    turnover = calcTurnoverTrend(company)
+    turnover = calcTurnoverTrend(company, basePeriod=basePeriod)
     if turnover and turnover.get("totalAssetTurnover"):
         tat = turnover["totalAssetTurnover"]
         if len(tat) >= 2:

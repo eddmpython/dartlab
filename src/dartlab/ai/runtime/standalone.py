@@ -43,9 +43,9 @@ def _stream_chunks(events) -> Generator[str, None, None]:
 
 
 def ask(
-    company: Any,
     question: str,
     *,
+    company: Any | None = None,
     include: list[str] | None = None,
     exclude: list[str] | None = None,
     provider: str | None = None,
@@ -57,11 +57,11 @@ def ask(
     history: list[dict[str, str]] | None = None,
     **kwargs: Any,
 ) -> str | Generator[str, None, None]:
-    """LLM에게 기업에 대해 질문.
+    """AI에게 질문. Company 없이도 동작.
 
     Args:
-        company: Company 인스턴스 (DART 또는 EDGAR).
         question: 질문 텍스트 (한국어 또는 영어).
+        company: Company 인스턴스 (있으면 해당 기업 맥락 제공).
         include: 명시적으로 포함할 데이터.
         exclude: 제외할 데이터.
         provider: per-call provider override.

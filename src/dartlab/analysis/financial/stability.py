@@ -7,7 +7,7 @@ select()로 BS/IS/CF 원본 계정을 가져와서
 
 from __future__ import annotations
 
-from dartlab.analysis.financial._helpers import MAX_RATIO_YEARS, getRatios, toDict, toDictBySnakeId
+from dartlab.analysis.financial._helpers import MAX_RATIO_YEARS, annualColsFromPeriods as _annualColsFromPeriods, getRatios, toDict, toDictBySnakeId
 
 _MAX_YEARS = MAX_RATIO_YEARS
 
@@ -29,13 +29,6 @@ def _isHoldingOrFinancial(company) -> bool:
     return False
 
 
-def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
-    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
-    if cols:
-        return cols[:maxYears]
-    return sorted([c for c in periods if c.endswith("Q4")], reverse=True)[:maxYears]
-
-
 def _yoy(cur, prev) -> float | None:
     if cur is None or prev is None or prev == 0:
         return None
@@ -51,7 +44,7 @@ def _pctOf(part, total) -> float | None:
 # ── 레버리지 구조 시계열 ──
 
 
-def calcLeverageTrend(company) -> dict | None:
+def calcLeverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
     """레버리지 구조 시계열 -- 부채로 얼마나 버티는가.
 
     BS에서 부채/자본/자산 원본 금액을 가져와서
@@ -74,7 +67,7 @@ def calcLeverageTrend(company) -> dict | None:
     ltBorrow = data.get("장기차입금", {})
     bonds = data.get("사채", {})
 
-    yCols = _annualCols(periods, _MAX_YEARS + 1)
+    yCols = _annualColsFromPeriods(periods, basePeriod, _MAX_YEARS + 1)
     if len(yCols) < 2:
         return None
 
@@ -116,7 +109,7 @@ def calcLeverageTrend(company) -> dict | None:
 # ── 이자보상 시계열 ──
 
 
-def calcCoverageTrend(company) -> dict | None:
+def calcCoverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
     """이자보상배율 시계열 -- 이자를 갚을 능력이 있는가.
 
     IS 영업이익 / 이자비용으로 산출.
@@ -144,7 +137,7 @@ def calcCoverageTrend(company) -> dict | None:
     except (ValueError, KeyError, AttributeError):
         pass
 
-    yCols = _annualCols(periods, _MAX_YEARS + 1)
+    yCols = _annualColsFromPeriods(periods, basePeriod, _MAX_YEARS + 1)
     if len(yCols) < 2:
         return None
 
@@ -192,7 +185,7 @@ def calcCoverageTrend(company) -> dict | None:
 # ── 부실 판별 (Altman Z-Score) ──
 
 
-def calcDistressScore(company) -> dict | None:
+def calcDistressScore(company, *, basePeriod: str | None = None) -> dict | None:
     """Altman Z-Score 시계열 -- 부실 위험은 어디인가.
 
     BS/IS에서 원본 계정을 가져와 5개 변수를 직접 계산.
@@ -226,7 +219,7 @@ def calcDistressScore(company) -> dict | None:
     ratios = getRatios(company)
     marketCap = ratios.marketCap if ratios else None
 
-    yCols = _annualCols(bsPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(bsPeriods, basePeriod, _MAX_YEARS)
     if not yCols:
         return None
 
@@ -307,7 +300,7 @@ def calcDistressScore(company) -> dict | None:
 # ── 부실 앙상블 (기존 유지 -- getRatios 사용) ──
 
 
-def calcDistressEnsemble(company) -> dict | None:
+def calcDistressEnsemble(company, *, basePeriod: str | None = None) -> dict | None:
     """4개 부실예측 모델 앙상블 -- 다수결 투표.
 
     Altman Z-Score, Ohlson O-Score, Springate S-Score, Zmijewski X-Score
@@ -415,7 +408,7 @@ def calcDistressEnsemble(company) -> dict | None:
     }
 
 
-def calcDebtMaturity(company) -> dict | None:
+def calcDebtMaturity(company, *, basePeriod: str | None = None) -> dict | None:
     """부채 만기 구조 분석.
 
     단기/장기 차입금 비율, 차환 리스크 지표.
@@ -456,10 +449,9 @@ def calcDebtMaturity(company) -> dict | None:
     tlRow = data.get("부채총계", {})
 
     # 연도 컬럼만
-    annualPeriods = sorted([p for p in periods if "Q" not in p])
+    annualPeriods = _annualColsFromPeriods(periods, basePeriod, 5)
     if not annualPeriods:
-        annualPeriods = sorted([p for p in periods if p.endswith("Q4")])
-    annualPeriods = annualPeriods[-5:]
+        return None
 
     # OCF for 차환능력 평가
     cfResult = company.select("CF", ["영업활동현금흐름"])
@@ -468,7 +460,7 @@ def calcDebtMaturity(company) -> dict | None:
     ocfRow = cfData.get("영업활동현금흐름", {})
 
     history = []
-    for col in reversed(annualPeriods):
+    for col in annualPeriods:
         # 차입금: 업종별 계정 대응
         st = stRow.get(col) or 0
         lt = ltRow.get(col) or 0
@@ -522,12 +514,12 @@ def calcDebtMaturity(company) -> dict | None:
 # ── 플래그 ──
 
 
-def calcStabilityFlags(company) -> list[str]:
+def calcStabilityFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """안정성 경고/기회 플래그."""
     flags: list[str] = []
 
     # 레버리지
-    lev = calcLeverageTrend(company)
+    lev = calcLeverageTrend(company, basePeriod=basePeriod)
     if lev and lev["history"]:
         hist = lev["history"]
         h0 = hist[0]
@@ -546,7 +538,7 @@ def calcStabilityFlags(company) -> list[str]:
                 flags.append(f"부채 3기 연속 증가 (최근 +{yoy:.0f}%)" if yoy else "부채 3기 연속 증가")
 
     # 이자보상
-    cov = calcCoverageTrend(company)
+    cov = calcCoverageTrend(company, basePeriod=basePeriod)
     if cov and cov["history"]:
         h0 = cov["history"][0]
         ic = h0.get("interestCoverage")
@@ -570,7 +562,7 @@ def calcStabilityFlags(company) -> list[str]:
                 flags.append(f"이자보상배율 {ic:.1f}배 -- 이자 부담 과다")
 
     # Altman Z-Score (제조업 기반 모형 — 금융/지주사는 구조적 왜곡)
-    distress = calcDistressScore(company)
+    distress = calcDistressScore(company, basePeriod=basePeriod)
     if distress and distress.get("latestScore") is not None:
         z = distress["latestScore"]
         if z < 1.81:

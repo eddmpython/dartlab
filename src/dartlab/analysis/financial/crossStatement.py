@@ -5,7 +5,9 @@
 
 from __future__ import annotations
 
-_MAX_YEARS = 5
+from dartlab.analysis.financial._helpers import annualColsFromPeriods as _annualColsFromPeriods
+
+_MAX_YEARS = 8
 
 
 # ── 유틸 ──
@@ -15,13 +17,6 @@ def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
     from dartlab.analysis.financial._helpers import toDict
 
     return toDict(selectResult)
-
-
-def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
-    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
-    if cols:
-        return cols[:maxYears]
-    return sorted([c for c in periods if c.endswith("Q4")], reverse=True)[:maxYears]
 
 
 def _get(row: dict, col: str) -> float:
@@ -41,7 +36,7 @@ def _getFirst(data: dict, keys: list[str], col: str) -> float:
 # ── IS-CF 괴리 ──
 
 
-def calcIsCfDivergence(company) -> dict | None:
+def calcIsCfDivergence(company, *, basePeriod: str | None = None) -> dict | None:
     """IS-CF 괴리 시계열 — 순이익 vs 영업CF.
 
     반환::
@@ -75,7 +70,7 @@ def calcIsCfDivergence(company) -> dict | None:
     opRow = isData.get("영업이익", {})
     ocfRow = cfData.get("영업활동현금흐름", {})
 
-    yCols = _annualCols(cfPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(cfPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -119,7 +114,7 @@ def calcIsCfDivergence(company) -> dict | None:
 # ── IS-BS 괴리 ──
 
 
-def calcIsBsDivergence(company) -> dict | None:
+def calcIsBsDivergence(company, *, basePeriod: str | None = None) -> dict | None:
     """IS-BS 괴리 시계열 — 매출 성장 vs 매출채권/재고 성장.
 
     반환::
@@ -154,7 +149,7 @@ def calcIsBsDivergence(company) -> dict | None:
 
     _REC_KEYS = ["매출채권및기타채권"]
 
-    yCols = _annualCols(isPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(isPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -206,7 +201,7 @@ def calcIsBsDivergence(company) -> dict | None:
 # ── 종합 이상 점수 ──
 
 
-def calcAnomalyScore(company) -> dict | None:
+def calcAnomalyScore(company, *, basePeriod: str | None = None) -> dict | None:
     """종합 이상 점수 시계열 — 교차검증 결과 종합.
 
     반환::
@@ -222,8 +217,8 @@ def calcAnomalyScore(company) -> dict | None:
             ],
         }
     """
-    isCf = calcIsCfDivergence(company)
-    isBs = calcIsBsDivergence(company)
+    isCf = calcIsCfDivergence(company, basePeriod=basePeriod)
+    isBs = calcIsBsDivergence(company, basePeriod=basePeriod)
 
     if isCf is None:
         return None
@@ -231,8 +226,8 @@ def calcAnomalyScore(company) -> dict | None:
     # 발생액 정보 (earningsQuality에서 가져오기)
     from dartlab.analysis.financial.earningsQuality import calcAccrualAnalysis, calcBeneishTimeline
 
-    accrual = calcAccrualAnalysis(company)
-    beneish = calcBeneishTimeline(company)
+    accrual = calcAccrualAnalysis(company, basePeriod=basePeriod)
+    beneish = calcBeneishTimeline(company, basePeriod=basePeriod)
 
     # 기간별 데��터 매핑
     isCfMap = {h["period"]: h for h in isCf["history"]} if isCf else {}
@@ -306,11 +301,11 @@ def calcAnomalyScore(company) -> dict | None:
 # ── 플래그 ──
 
 
-def calcCrossStatementFlags(company) -> list[str]:
+def calcCrossStatementFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """교차검증 경고 신호."""
     flags = []
 
-    isCf = calcIsCfDivergence(company)
+    isCf = calcIsCfDivergence(company, basePeriod=basePeriod)
     if isCf and isCf["history"]:
         h0 = isCf["history"][0]
         div = h0.get("divergence")
@@ -318,7 +313,7 @@ def calcCrossStatementFlags(company) -> list[str]:
             suffix = " (일회성 영업외항목 왜곡)" if h0.get("nonRecurringDistortion") else ""
             flags.append(f"IS-CF 괴리 {div:.0f}% — 순이익 대비 현금흐름 극심한 차이{suffix}")
 
-    isBs = calcIsBsDivergence(company)
+    isBs = calcIsBsDivergence(company, basePeriod=basePeriod)
     if isBs and isBs["history"]:
         h0 = isBs["history"][0]
         recGap = h0.get("revRecGap")
@@ -328,7 +323,7 @@ def calcCrossStatementFlags(company) -> list[str]:
         if invGap is not None and invGap > 20:
             flags.append(f"재고 성장이 매출 성장보다 {invGap:.0f}%p 빠름 — 재고 적체 또는 부풀리기")
 
-    anomaly = calcAnomalyScore(company)
+    anomaly = calcAnomalyScore(company, basePeriod=basePeriod)
     if anomaly and anomaly["history"]:
         h0 = anomaly["history"][0]
         if h0["score"] > 70:

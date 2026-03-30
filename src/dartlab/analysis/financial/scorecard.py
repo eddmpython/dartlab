@@ -46,7 +46,7 @@ def _sectorRelativeScore(company, value: float, metric: str) -> int:
     return 0
 
 
-def calcScorecard(company) -> dict | None:
+def calcScorecard(company, *, basePeriod: str | None = None) -> dict | None:
     """8영역 등급 요약.
 
     기존 5영역(수익성/성장성/안정성/효율성/현금흐름)
@@ -69,17 +69,17 @@ def calcScorecard(company) -> dict | None:
         items.append({"area": "효율성", "grade": effGrade})
 
     # 이익품질
-    eqGrade = _calcEarningsQualityGrade(company)
+    eqGrade = _calcEarningsQualityGrade(company, basePeriod=basePeriod)
     if eqGrade:
         items.append({"area": "이익품질", "grade": eqGrade})
 
     # 투자효율
-    invGrade = _calcInvestmentGrade(company)
+    invGrade = _calcInvestmentGrade(company, basePeriod=basePeriod)
     if invGrade:
         items.append({"area": "투자효율", "grade": invGrade})
 
     # 재무정합성
-    csGrade = _calcCrossStatementGrade(company)
+    csGrade = _calcCrossStatementGrade(company, basePeriod=basePeriod)
     if csGrade:
         items.append({"area": "재무정합성", "grade": csGrade})
 
@@ -121,13 +121,13 @@ def _calcEfficiencyGrade(company) -> str | None:
     return ["F", "D", "C", "B", "A"][score]
 
 
-def _calcEarningsQualityGrade(company) -> str | None:
+def _calcEarningsQualityGrade(company, *, basePeriod: str | None = None) -> str | None:
     """이익품질 등급 — 발생액비율 + M-Score 기반."""
     try:
         from dartlab.analysis.financial.earningsQuality import calcAccrualAnalysis, calcBeneishTimeline
 
-        accrual = calcAccrualAnalysis(company)
-        beneish = calcBeneishTimeline(company)
+        accrual = calcAccrualAnalysis(company, basePeriod=basePeriod)
+        beneish = calcBeneishTimeline(company, basePeriod=basePeriod)
 
         score = 0  # 0~100 (높을수록 좋음)
         count = 0
@@ -185,12 +185,12 @@ def _calcEarningsQualityGrade(company) -> str | None:
         return None
 
 
-def _calcInvestmentGrade(company) -> str | None:
+def _calcInvestmentGrade(company, *, basePeriod: str | None = None) -> str | None:
     """투자효율 등급 -- ROIC 섹터 상대 등급."""
     try:
         from dartlab.analysis.financial.investmentAnalysis import calcRoicTimeline
 
-        result = calcRoicTimeline(company)
+        result = calcRoicTimeline(company, basePeriod=basePeriod)
         if result is None or not result["history"]:
             return None
 
@@ -207,12 +207,12 @@ def _calcInvestmentGrade(company) -> str | None:
         return None
 
 
-def _calcCrossStatementGrade(company) -> str | None:
+def _calcCrossStatementGrade(company, *, basePeriod: str | None = None) -> str | None:
     """재무정합성 등급 — anomalyScore 기반."""
     try:
         from dartlab.analysis.financial.crossStatement import calcAnomalyScore
 
-        result = calcAnomalyScore(company)
+        result = calcAnomalyScore(company, basePeriod=basePeriod)
         if result is None or not result["history"]:
             return None
 
@@ -233,7 +233,7 @@ def _calcCrossStatementGrade(company) -> str | None:
         return None
 
 
-def calcPiotroskiDetail(company) -> dict | None:
+def calcPiotroskiDetail(company, *, basePeriod: str | None = None) -> dict | None:
     """Piotroski F-Score 9개 항목 상세."""
     try:
         annual = company.annual
@@ -267,7 +267,7 @@ def calcPiotroskiDetail(company) -> dict | None:
     }
 
 
-def calcSummaryFlags(company) -> list[str]:
+def calcSummaryFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """전체 경고/기회 요약 -- 8영역 플래그 수집."""
     flags: list[str] = []
 
@@ -276,51 +276,51 @@ def calcSummaryFlags(company) -> list[str]:
     from dartlab.analysis.financial.profitability import calcProfitabilityFlags
     from dartlab.analysis.financial.stability import calcStabilityFlags
 
-    flags.extend(calcProfitabilityFlags(company))
-    flags.extend(calcGrowthFlags(company))
-    flags.extend(calcStabilityFlags(company))
-    flags.extend(calcEfficiencyFlags(company))
+    flags.extend(calcProfitabilityFlags(company, basePeriod=basePeriod))
+    flags.extend(calcGrowthFlags(company, basePeriod=basePeriod))
+    flags.extend(calcStabilityFlags(company, basePeriod=basePeriod))
+    flags.extend(calcEfficiencyFlags(company, basePeriod=basePeriod))
 
     # 새 영역 플래그
     try:
         from dartlab.analysis.financial.earningsQuality import calcEarningsQualityFlags
 
-        flags.extend(calcEarningsQualityFlags(company))
+        flags.extend(calcEarningsQualityFlags(company, basePeriod=basePeriod))
     except (ImportError, AttributeError, TypeError, ValueError):
         pass
 
     try:
         from dartlab.analysis.financial.investmentAnalysis import calcInvestmentFlags
 
-        flags.extend(calcInvestmentFlags(company))
+        flags.extend(calcInvestmentFlags(company, basePeriod=basePeriod))
     except (ImportError, AttributeError, TypeError, ValueError):
         pass
 
     try:
         from dartlab.analysis.financial.crossStatement import calcCrossStatementFlags
 
-        flags.extend(calcCrossStatementFlags(company))
+        flags.extend(calcCrossStatementFlags(company, basePeriod=basePeriod))
     except (ImportError, AttributeError, TypeError, ValueError):
         pass
 
     try:
         from dartlab.analysis.financial.costStructure import calcCostStructureFlags
 
-        flags.extend(calcCostStructureFlags(company))
+        flags.extend(calcCostStructureFlags(company, basePeriod=basePeriod))
     except (ImportError, AttributeError, TypeError, ValueError):
         pass
 
     try:
         from dartlab.analysis.financial.capitalAllocation import calcCapitalAllocationFlags
 
-        flags.extend(calcCapitalAllocationFlags(company))
+        flags.extend(calcCapitalAllocationFlags(company, basePeriod=basePeriod))
     except (ImportError, AttributeError, TypeError, ValueError):
         pass
 
     try:
         from dartlab.analysis.financial.taxAnalysis import calcTaxFlags
 
-        flags.extend(calcTaxFlags(company))
+        flags.extend(calcTaxFlags(company, basePeriod=basePeriod))
     except (ImportError, AttributeError, TypeError, ValueError):
         pass
 

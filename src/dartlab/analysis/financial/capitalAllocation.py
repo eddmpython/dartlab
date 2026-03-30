@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-_MAX_YEARS = 5
+_MAX_YEARS = 8
 
 
 # ── 유틸 ──
@@ -17,11 +17,15 @@ def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
     return toDictBySnakeId(selectResult)
 
 
-def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
-    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
-    if cols:
-        return cols[:maxYears]
-    return sorted([c for c in periods if c.endswith("Q4")], reverse=True)[:maxYears]
+def _annualColsFromPeriods(
+    periods: list[str],
+    maxYears: int = _MAX_YEARS,
+    *,
+    basePeriod: str | None = None,
+) -> list[str]:
+    from dartlab.analysis.financial._helpers import annualColsFromPeriods
+
+    return annualColsFromPeriods(periods, maxYears, basePeriod=basePeriod)
 
 
 def _get(row: dict, col: str) -> float:
@@ -38,7 +42,7 @@ def _pct(part: float, total: float) -> float | None:
 # ── 배당 정책 ──
 
 
-def calcDividendPolicy(company) -> dict | None:
+def calcDividendPolicy(company, *, basePeriod: str | None = None) -> dict | None:
     """배당 정책 시계열 — 배당성향, 배당금 추이, 연속 배당.
 
     반환::
@@ -71,7 +75,7 @@ def calcDividendPolicy(company) -> dict | None:
     divRow = cfData.get("dividends_paid", {})
     niRow = isData.get("net_profit", {})
 
-    yCols = _annualCols(cfPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -116,7 +120,7 @@ def calcDividendPolicy(company) -> dict | None:
 # ── 주주환원 ──
 
 
-def calcShareholderReturn(company) -> dict | None:
+def calcShareholderReturn(company, *, basePeriod: str | None = None) -> dict | None:
     """주주환��� 시계열 — 배당 + 자사주 매입 vs FCF.
 
     반환::
@@ -158,7 +162,7 @@ def calcShareholderReturn(company) -> dict | None:
     divRow = cfData.get("dividends_paid", {})
     tsRow = cfData.get("purchase_of_treasury_stock", {})
 
-    yCols = _annualCols(cfPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -191,7 +195,7 @@ def calcShareholderReturn(company) -> dict | None:
 # ── 재투자 ──
 
 
-def calcReinvestment(company) -> dict | None:
+def calcReinvestment(company, *, basePeriod: str | None = None) -> dict | None:
     """재투자 시계열 — 재투자율, CAPEX/매출.
 
     반환::
@@ -231,7 +235,7 @@ def calcReinvestment(company) -> dict | None:
     revRow = isData.get("sales", {})
     niRow = isData.get("net_profit", {})
 
-    yCols = _annualCols(cfPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -266,7 +270,7 @@ def calcReinvestment(company) -> dict | None:
 # ─�� FCF 사용처 분해 ──
 
 
-def calcFcfUsage(company) -> dict | None:
+def calcFcfUsage(company, *, basePeriod: str | None = None) -> dict | None:
     """FCF 사용처 분해 시계열 — 배당/부채상환/잔여.
 
     반환::
@@ -309,7 +313,7 @@ def calcFcfUsage(company) -> dict | None:
     repayRow2 = cfData.get("redemption_of_current_portion_of_longterm_borrowings", {})
     repayRow3 = cfData.get("repayment_of_bonds_and_longterm_borrowings", {})
 
-    yCols = _annualCols(cfPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -338,7 +342,7 @@ def calcFcfUsage(company) -> dict | None:
 # ── 배당 서술 보강 (docs) ──
 
 
-def calcDividendDocs(company) -> dict | None:
+def calcDividendDocs(company, *, basePeriod: str | None = None) -> dict | None:
     """docs dividend 토픽에서 배당성향, 배당수익률, 주당배당금 추출.
 
     반환::
@@ -402,7 +406,7 @@ def calcDividendDocs(company) -> dict | None:
 # ── 자사주 현황 (docs/report) ──
 
 
-def calcTreasuryStockStatus(company) -> dict | None:
+def calcTreasuryStockStatus(company, *, basePeriod: str | None = None) -> dict | None:
     """treasuryStock 토픽에서 자사주 취득/처분/소각 현황 추출.
 
     반환::
@@ -458,11 +462,11 @@ def calcTreasuryStockStatus(company) -> dict | None:
 # ── 플래그 ──
 
 
-def calcCapitalAllocationFlags(company) -> list[str]:
+def calcCapitalAllocationFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """자본배분 경고 신호."""
     flags = []
 
-    dividend = calcDividendPolicy(company)
+    dividend = calcDividendPolicy(company, basePeriod=basePeriod)
     if dividend and dividend["history"]:
         h0 = dividend["history"][0]
         pr = h0.get("payoutRatio")
@@ -476,14 +480,14 @@ def calcCapitalAllocationFlags(company) -> list[str]:
             if divs[0] < divs[1] < divs[2] and divs[2] > 0:
                 flags.append("배당금 3년 연속 감소")
 
-    shareholder = calcShareholderReturn(company)
+    shareholder = calcShareholderReturn(company, basePeriod=basePeriod)
     if shareholder and shareholder["history"]:
         h0 = shareholder["history"][0]
         rtf = h0.get("returnToFcf")
         if rtf is not None and rtf > 100:
             flags.append(f"주주환원/FCF {rtf:.0f}% — FCF 초과 환원")
 
-    reinvest = calcReinvestment(company)
+    reinvest = calcReinvestment(company, basePeriod=basePeriod)
     if reinvest and reinvest["history"]:
         h0 = reinvest["history"][0]
         cr = h0.get("capexToRevenue")

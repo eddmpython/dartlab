@@ -5,7 +5,9 @@
 
 from __future__ import annotations
 
-_MAX_YEARS = 5
+from dartlab.analysis.financial._helpers import annualColsFromPeriods as _annualColsFromPeriods
+
+_MAX_YEARS = 8
 
 
 # ── 유틸 ──
@@ -15,13 +17,6 @@ def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
     from dartlab.analysis.financial._helpers import toDict
 
     return toDict(selectResult)
-
-
-def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
-    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
-    if cols:
-        return cols[:maxYears]
-    return sorted([c for c in periods if c.endswith("Q4")], reverse=True)[:maxYears]
 
 
 def _get(row: dict, col: str) -> float:
@@ -38,7 +33,7 @@ def _pct(part: float, total: float) -> float | None:
 # ── 유효세율 ──
 
 
-def calcEffectiveTaxRate(company) -> dict | None:
+def calcEffectiveTaxRate(company, *, basePeriod: str | None = None) -> dict | None:
     """유효세율 시계열 — 법인세비용/세전이익.
 
     반환::
@@ -67,7 +62,7 @@ def calcEffectiveTaxRate(company) -> dict | None:
     taxRow = isData.get("법인세비용", {})
     ptRow = isData.get("법인세차감전순이익", isData.get("세전이익", {}))
 
-    yCols = _annualCols(isPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(isPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -102,7 +97,7 @@ def calcEffectiveTaxRate(company) -> dict | None:
 # ── 세금 현금화 ──
 
 
-def calcTaxCashConversion(company) -> dict | None:
+def calcTaxCashConversion(company, *, basePeriod: str | None = None) -> dict | None:
     """세금 현금화 시계열 — IS 법인세비용 vs CF 법인세납부.
 
     반환::
@@ -135,7 +130,7 @@ def calcTaxCashConversion(company) -> dict | None:
     cfData = cfParsed[0] if cfParsed else {}
     taxPaidRow = cfData.get("payments_of_income_taxes", {})
 
-    yCols = _annualCols(isPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(isPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -164,7 +159,7 @@ def calcTaxCashConversion(company) -> dict | None:
 # ── 이연법인세 ──
 
 
-def calcDeferredTax(company) -> dict | None:
+def calcDeferredTax(company, *, basePeriod: str | None = None) -> dict | None:
     """이연법인세 시계열 — 이연자산/부채 추세.
 
     반환::
@@ -192,7 +187,7 @@ def calcDeferredTax(company) -> dict | None:
     dtlRow = bsData.get("이연법인세부채", {})
     taRow = bsData.get("자산총계", {})
 
-    yCols = _annualCols(bsPeriods, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(bsPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -219,11 +214,11 @@ def calcDeferredTax(company) -> dict | None:
 # ── 플래그 ──
 
 
-def calcTaxFlags(company) -> list[str]:
+def calcTaxFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """세금 관련 경고 신호."""
     flags = []
 
-    etr = calcEffectiveTaxRate(company)
+    etr = calcEffectiveTaxRate(company, basePeriod=basePeriod)
     if etr and etr["history"]:
         h0 = etr["history"][0]
         rate = h0.get("effectiveTaxRate")
@@ -233,14 +228,14 @@ def calcTaxFlags(company) -> list[str]:
             elif rate > 35:
                 flags.append(f"유효세율 {rate:.1f}% — 고세율 (추가 세금 부담)")
 
-    cashConv = calcTaxCashConversion(company)
+    cashConv = calcTaxCashConversion(company, basePeriod=basePeriod)
     if cashConv and cashConv["history"]:
         h0 = cashConv["history"][0]
         tcr = h0.get("taxCashRatio")
         if tcr is not None and tcr > 150:
             flags.append(f"세금현금비율 {tcr:.0f}% — 법인세 과대 납부 (과거 이연분 정산)")
 
-    deferred = calcDeferredTax(company)
+    deferred = calcDeferredTax(company, basePeriod=basePeriod)
     if deferred and len(deferred["history"]) >= 2:
         hist = deferred["history"]
         dta0 = hist[0]["deferredTaxAsset"]

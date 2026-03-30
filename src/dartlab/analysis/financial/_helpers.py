@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 
 import polars as pl
 
@@ -37,7 +38,7 @@ def periodCols(df: pl.DataFrame) -> list[str]:
     return [c for c in df.columns if isPeriodColumn(c)]
 
 
-def annualCols(df: pl.DataFrame, maxYears: int = 5) -> list[str]:
+def annualCols(df: pl.DataFrame, maxYears: int = 8) -> list[str]:
     """연도 컬럼만 추출 (Q4 또는 연도)."""
     cols = periodCols(df)
     annual = [c for c in cols if "Q" not in c]
@@ -46,13 +47,13 @@ def annualCols(df: pl.DataFrame, maxYears: int = 5) -> list[str]:
     return [c for c in cols if c.endswith("Q4")][:maxYears]
 
 
-def quarterlyCols(df: pl.DataFrame, maxQuarters: int = 5) -> list[str]:
+def quarterlyCols(df: pl.DataFrame, maxQuarters: int = 8) -> list[str]:
     """분기 컬럼만 추출 (최신 먼저)."""
     cols = periodCols(df)
     return [c for c in cols if "Q" in c][:maxQuarters]
 
 
-MAX_RATIO_YEARS = 5
+MAX_RATIO_YEARS = 8
 
 
 def getRatioSeries(company) -> tuple[dict, list[str]] | None:
@@ -134,3 +135,90 @@ def toDictBySnakeId(selectResult, maxPeriods: int = 0) -> tuple[dict[str, dict],
         sid = str(row.get(idCol, ""))
         data[sid] = {c: row.get(c) for c in periods}
     return (data, periods) if data else None
+
+
+# ── basePeriod 인프라 ──
+
+_QUARTER_RE = re.compile(r"^(\d{4})Q([1-4])$")
+_YEAR_RE = re.compile(r"^(\d{4})$")
+
+
+@dataclass(frozen=True)
+class PeriodRange:
+    """basePeriod로부터 결정된 분석 기간 범위."""
+
+    basePeriod: str
+    annualCols: list[str]
+    quarterlyCols: list[str]
+
+
+def _periodSortKey(p: str) -> str:
+    """기간 문자열을 정렬 가능한 키로 변환. "2024" -> "2024Q5", "2024Q3" -> "2024Q3"."""
+    if "Q" not in p:
+        return p + "Q5"
+    return p
+
+
+def annualColsFromPeriods(
+    periods: list[str],
+    basePeriod: str | None = None,
+    maxYears: int = 8,
+) -> list[str]:
+    """기간 목록에서 연간 컬럼 추출 — basePeriod 이하만.
+
+    14개 파일의 _annualCols를 대체하는 통합 함수.
+    연도("2024") 우선, 없으면 Q4("2024Q4") fallback.
+    basePeriod=None이면 전체에서 최신 maxYears개.
+    basePeriod="2022Q4"이면 2022Q4 이하에서 maxYears개.
+    basePeriod="2022"이면 2022 이하 연도에서 maxYears개.
+    """
+    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
+    if not cols:
+        cols = sorted([c for c in periods if c.endswith("Q4")], reverse=True)
+    if basePeriod is not None:
+        limit = _periodSortKey(basePeriod)
+        cols = [c for c in cols if _periodSortKey(c) <= limit]
+    return cols[:maxYears]
+
+
+def quarterlyColsFromPeriods(
+    periods: list[str],
+    basePeriod: str | None = None,
+    maxQuarters: int = 8,
+) -> list[str]:
+    """기간 목록에서 분기 컬럼 추출 — basePeriod 이하만."""
+    qs = sorted([c for c in periods if "Q" in c], reverse=True)
+    if basePeriod is not None:
+        limit = _periodSortKey(basePeriod)
+        qs = [c for c in qs if _periodSortKey(c) <= limit]
+    return qs[:maxQuarters]
+
+
+def resolveBasePeriod(
+    company,
+    basePeriod: str | None = None,
+    maxYears: int = 8,
+    maxQuarters: int = 8,
+) -> PeriodRange:
+    """basePeriod를 Company의 실제 기간으로 해석.
+
+    basePeriod=None이면 최신 기간 자동 감지.
+    ratioSeries 캐시를 활용하여 속도 우선.
+    """
+    rs = getRatioSeries(company)
+    if rs is not None:
+        _, allPeriods = rs
+    else:
+        allPeriods = []
+
+    if basePeriod is None:
+        qs = sorted([p for p in allPeriods if "Q" in p], reverse=True)
+        resolved = qs[0] if qs else "9999Q4"
+    else:
+        resolved = basePeriod
+
+    return PeriodRange(
+        basePeriod=resolved,
+        annualCols=annualColsFromPeriods(allPeriods, resolved, maxYears),
+        quarterlyCols=quarterlyColsFromPeriods(allPeriods, resolved, maxQuarters),
+    )

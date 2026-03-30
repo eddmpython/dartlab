@@ -51,7 +51,7 @@ from dartlab.review.section import Section
 from dartlab.review.utils import fmtAmt, fmtAmtScale, isTerminal, unifyTableScale
 
 
-def blocks(company):
+def blocks(company, *, basePeriod: str | None = None):
     """블록 사전 -- 한글 label, 영문 key, tab-complete 모두 지원.
 
     Capabilities:
@@ -102,7 +102,7 @@ def blocks(company):
         b.growth                 # attribute (tab-complete)
         b                        # 카탈로그 테이블
     """
-    return buildBlocks(company)
+    return buildBlocks(company, basePeriod=basePeriod)
 
 
 def _flattenItems(items) -> list:

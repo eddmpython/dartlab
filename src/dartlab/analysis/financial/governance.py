@@ -11,7 +11,7 @@ from dartlab.analysis.financial._helpers import MAX_RATIO_YEARS
 # ── 최대주주 지분 시계열 ──
 
 
-def calcOwnershipTrend(company) -> dict | None:
+def calcOwnershipTrend(company, *, basePeriod: str | None = None) -> dict | None:
     """최대주주 지분율 시계열 + 최근 주주 구성.
 
     report.majorHolder에서 연도별 합산 지분율 추이와
@@ -42,7 +42,7 @@ def calcOwnershipTrend(company) -> dict | None:
 # ── 이사회 구성 ──
 
 
-def calcBoardComposition(company) -> dict | None:
+def calcBoardComposition(company, *, basePeriod: str | None = None) -> dict | None:
     """이사회 구성 -- 사외이사비율, 전체 임원 수.
 
     report.executive에서 최신 분기 기준 이사회 구성을 추출한다.
@@ -70,7 +70,7 @@ def calcBoardComposition(company) -> dict | None:
 # ── 감사의견 시계열 ──
 
 
-def calcAuditOpinionTrend(company) -> dict | None:
+def calcAuditOpinionTrend(company, *, basePeriod: str | None = None) -> dict | None:
     """감사의견 + 감사인 시계열.
 
     report.audit에서 연도별 감사의견과 감사인을 추출한다.
@@ -107,7 +107,7 @@ def calcAuditOpinionTrend(company) -> dict | None:
 # ── 플래그 ──
 
 
-def calcGovernanceFlags(company) -> list[tuple[str, str]]:
+def calcGovernanceFlags(company, *, basePeriod: str | None = None) -> list[tuple[str, str]]:
     """지배구조 경고/기회 플래그."""
     flags: list[tuple[str, str]] = []
 

@@ -7,16 +7,13 @@ select()로 IS/BS 원본 계정을 가져와서
 
 from __future__ import annotations
 
-from dartlab.analysis.financial._helpers import MAX_RATIO_YEARS, toDict
+from dartlab.analysis.financial._helpers import (
+    MAX_RATIO_YEARS,
+    annualColsFromPeriods as _annualColsFromPeriods,
+    toDict,
+)
 
 _MAX_YEARS = MAX_RATIO_YEARS
-
-
-def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
-    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
-    if cols:
-        return cols[:maxYears]
-    return sorted([c for c in periods if c.endswith("Q4")], reverse=True)[:maxYears]
 
 
 def _yoy(cur, prev) -> float | None:
@@ -40,7 +37,7 @@ def _days(revenue, balance) -> float | None:
 # ── 자산 회전 ──
 
 
-def calcTurnoverTrend(company) -> dict | None:
+def calcTurnoverTrend(company, *, basePeriod: str | None = None) -> dict | None:
     """자산 회전 시계열 -- 자산을 얼마나 효율적으로 쓰는가.
 
     IS(매출) + BS(자산/채권/재고)에서 원본 금액과 회전율을 동시에 본다.
@@ -66,7 +63,7 @@ def calcTurnoverTrend(company) -> dict | None:
     inv = bsData.get("재고자산", {})
     ap = bsData.get("매입채무", {}) or bsData.get("매입채무및기타채무", {})
 
-    yCols = _annualCols(isPeriods, _MAX_YEARS + 1)
+    yCols = _annualColsFromPeriods(isPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS + 1)
     if len(yCols) < 2:
         return None
 
@@ -122,11 +119,11 @@ calcCccTrend = calcTurnoverTrend
 # ── 플래그 ──
 
 
-def calcEfficiencyFlags(company) -> list[str]:
+def calcEfficiencyFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """효율성 경고/기회 플래그."""
     flags: list[str] = []
 
-    trend = calcTurnoverTrend(company)
+    trend = calcTurnoverTrend(company, basePeriod=basePeriod)
     if trend is None or len(trend["history"]) < 2:
         return flags
 

@@ -1,14 +1,14 @@
 """BS 항등식 검증 — total_assets ≈ total_liabilities + total_stockholders_equity.
 
-전 벤치마크 종목에서 재무상태표 항등식이 성립하는지 검증한다.
+fixture parquet 기반 — Company 전체 로드 없이 buildAnnual로 검증.
 허용 오차: 1% (비지배지분 등의 차이 허용).
 """
 
 import pytest
 
-pytestmark = pytest.mark.heavy
+from tests.fixtureHelper import availableFixtureStocks, buildAnnualFromFixture
 
-from tests.conftest import _has_data
+pytestmark = pytest.mark.integration
 
 BENCHMARK_STOCKS = [
     "005930",
@@ -24,13 +24,16 @@ BENCHMARK_STOCKS = [
 ]
 
 
-def _available_stocks():
-    return [code for code in BENCHMARK_STOCKS if _has_data(code, "finance")]
+def _availableStocks():
+    available = set(availableFixtureStocks("finance"))
+    return [code for code in BENCHMARK_STOCKS if code in available]
 
+
+_stocks = _availableStocks()
 
 requires_bs = pytest.mark.skipif(
-    len(_available_stocks()) == 0,
-    reason="BS 항등식 검증 종목 finance 데이터 없음",
+    len(_stocks) == 0,
+    reason="BS 항등식 검증 종목 fixture 없음",
 )
 
 
@@ -38,15 +41,12 @@ requires_bs = pytest.mark.skipif(
 class TestBSIdentity:
     def test_bs_identity_annual(self):
         """연간 BS: assets ≈ liabilities + equity (오차 1% 이내)."""
-        from dartlab import Company
-
         violations = []
-        for code in _available_stocks():
-            c = Company(code)
-            annual = getattr(c, "annual", None)
-            if annual is None:
+        for code in _stocks:
+            result = buildAnnualFromFixture(code)
+            if result is None:
                 continue
-            series, periods = annual
+            series, periods = result
             bs = series.get("BS", {})
             assets = bs.get("total_assets", [])
             liabilities = bs.get("total_liabilities", [])
@@ -81,16 +81,13 @@ class TestBSIdentity:
 
     def test_bs_identity_pass_rate(self):
         """BS 항등식 통과율 ≥ 95%."""
-        from dartlab import Company
-
         total = 0
         passed = 0
-        for code in _available_stocks():
-            c = Company(code)
-            annual = getattr(c, "annual", None)
-            if annual is None:
+        for code in _stocks:
+            result = buildAnnualFromFixture(code)
+            if result is None:
                 continue
-            series, periods = annual
+            series, periods = result
             bs = series.get("BS", {})
             assets = bs.get("total_assets", [])
             liabilities = bs.get("total_liabilities", [])
@@ -117,14 +114,11 @@ class TestBSIdentity:
 
     def test_assets_equals_liabilities_and_equity(self):
         """total_liabilities_and_equity가 있으면 total_assets와 정확히 일치해야 함."""
-        from dartlab import Company
-
-        for code in _available_stocks():
-            c = Company(code)
-            annual = getattr(c, "annual", None)
-            if annual is None:
+        for code in _stocks:
+            result = buildAnnualFromFixture(code)
+            if result is None:
                 continue
-            series, _ = annual
+            series, _ = result
             bs = series.get("BS", {})
             assets = bs.get("total_assets", [])
             lae = bs.get("total_liabilities_and_equity", [])
@@ -134,5 +128,5 @@ class TestBSIdentity:
 
             for a, le in zip(assets, lae):
                 if a is not None and le is not None and a != 0:
-                    diff_pct = abs(a - le) / abs(a) * 100
-                    assert diff_pct < 0.01, f"{code}: total_assets({a:,.0f}) != total_liabilities_and_equity({le:,.0f})"
+                    diffPct = abs(a - le) / abs(a) * 100
+                    assert diffPct < 0.01, f"{code}: total_assets({a:,.0f}) != total_liabilities_and_equity({le:,.0f})"

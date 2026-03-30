@@ -11,10 +11,13 @@
 
 from __future__ import annotations
 
-from dartlab.analysis.financial._helpers import parseNumStr as _parseNumStr
+from dartlab.analysis.financial._helpers import (
+    annualColsFromPeriods as _annualColsFromPeriods,
+    parseNumStr as _parseNumStr,
+)
 
 _MAX_SEGMENTS = 8
-_MAX_YEARS = 5
+_MAX_YEARS = 8
 
 _SECTOR_KR = {
     "ENERGY": "에너지",
@@ -44,13 +47,7 @@ def _getRatios(company):
         return None
 
 
-def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
-    """기간 컬럼에서 연간(Q4) 컬럼만 추출."""
-    q4 = sorted([c for c in periods if c.endswith("Q4")], reverse=True)
-    return q4[:maxYears]
-
-
-def _selectDocsRevenue(company) -> tuple[dict[str, dict[str, float]], list[str]] | None:
+def _selectDocsRevenue(company, *, basePeriod: str | None = None) -> tuple[dict[str, dict[str, float]], list[str]] | None:
     """productService/salesOrder에서 부문별 매출 시계열을 추출.
 
     fallback 체인: productService → salesOrder.
@@ -60,13 +57,13 @@ def _selectDocsRevenue(company) -> tuple[dict[str, dict[str, float]], list[str]]
         result = company.select(topic, ["매출액"])
         if result is None:
             continue
-        parsed = _parseDocsRevenueResult(result)
+        parsed = _parseDocsRevenueResult(result, basePeriod=basePeriod)
         if parsed is not None:
             return parsed
     return None
 
 
-def _parseDocsRevenueResult(result) -> tuple[dict[str, dict[str, float]], list[str]] | None:
+def _parseDocsRevenueResult(result, *, basePeriod: str | None = None) -> tuple[dict[str, dict[str, float]], list[str]] | None:
     """docs select 결과에서 부문별 매출 시계열 파싱."""
     df = result.df
     if df.is_empty():
@@ -74,7 +71,7 @@ def _parseDocsRevenueResult(result) -> tuple[dict[str, dict[str, float]], list[s
 
     itemCol = df.columns[0]
     pCols = [c for c in df.columns if c != itemCol]
-    yCols = _annualCols(pCols, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(pCols, basePeriod, _MAX_YEARS)
     if not yCols:
         return None
 
@@ -147,7 +144,7 @@ def _selectDocsSalesOrder(company, keyword: str | None = None):
 # ── 계산 함수들 ──
 
 
-def calcCompanyProfile(company) -> dict | None:
+def calcCompanyProfile(company, *, basePeriod: str | None = None) -> dict | None:
     """업종/주요제품 맥락. 반환: {"sector": str, "products": str} 또는 None."""
     parts: dict[str, str] = {}
 
@@ -177,7 +174,7 @@ def calcCompanyProfile(company) -> dict | None:
     return parts if parts else None
 
 
-def calcSegmentComposition(company) -> dict | None:
+def calcSegmentComposition(company, *, basePeriod: str | None = None) -> dict | None:
     """부문별 매출 구성 (최신 기간).
 
     반환::
@@ -191,7 +188,7 @@ def calcSegmentComposition(company) -> dict | None:
             "compositionHistory": [{"year": str, "shares": {seg: pct}}, ...] | None,
         }
     """
-    docsResult = _selectDocsRevenue(company)
+    docsResult = _selectDocsRevenue(company, basePeriod=basePeriod)
     if docsResult is None:
         return None
 
@@ -246,7 +243,7 @@ def calcSegmentComposition(company) -> dict | None:
     }
 
 
-def calcSegmentTrend(company) -> dict | None:
+def calcSegmentTrend(company, *, basePeriod: str | None = None) -> dict | None:
     """다년간 부문별 매출 추이 + YoY.
 
     반환::
@@ -256,7 +253,7 @@ def calcSegmentTrend(company) -> dict | None:
             "rows": [{"name": str, "values": {year: float}, "yoy": float|None}, ...],
         }
     """
-    docsResult = _selectDocsRevenue(company)
+    docsResult = _selectDocsRevenue(company, basePeriod=basePeriod)
     if docsResult is None:
         return None
 
@@ -286,7 +283,7 @@ def calcSegmentTrend(company) -> dict | None:
     return {"yearCols": yCols, "rows": rows[:_MAX_SEGMENTS]}
 
 
-def calcBreakdown(company, sub: str) -> dict | None:
+def calcBreakdown(company, sub: str, *, basePeriod: str | None = None) -> dict | None:
     """지역별/제품별 매출 비중 + 다년간 비중 변화.
 
     반환::
@@ -307,7 +304,7 @@ def calcBreakdown(company, sub: str) -> dict | None:
 
     itemCol = df.columns[0]
     periodCols = [c for c in df.columns if c != itemCol]
-    yCols = _annualCols(periodCols, 1)
+    yCols = _annualColsFromPeriods(periodCols, basePeriod, 1)
     if not yCols:
         return None
 
@@ -335,15 +332,14 @@ def calcBreakdown(company, sub: str) -> dict | None:
 
     result_dict: dict = {"items": items[:_MAX_SEGMENTS], "total": total}
 
-    # 다년간 비중 ��화
-    history = _calcBreakdownHistoryFromDocs(company)
+    history = _calcBreakdownHistoryFromDocs(company, basePeriod=basePeriod)
     if history:
         result_dict["breakdownHistory"] = history
 
     return result_dict
 
 
-def calcRevenueGrowth(company) -> dict | None:
+def calcRevenueGrowth(company, *, basePeriod: str | None = None) -> dict | None:
     """매출 성장 지표.
 
     반환::
@@ -372,7 +368,7 @@ def calcRevenueGrowth(company) -> dict | None:
     return {"yoy": yoy, "cagr3y": cagr, "quarterlySelect": quarterly}
 
 
-def calcConcentration(company) -> dict | None:
+def calcConcentration(company, *, basePeriod: str | None = None) -> dict | None:
     """매출 집중도.
 
     반환::
@@ -418,7 +414,7 @@ def calcConcentration(company) -> dict | None:
     }
 
 
-def calcRevenueQuality(company) -> dict | None:
+def calcRevenueQuality(company, *, basePeriod: str | None = None) -> dict | None:
     """매출 품질 — 현금 뒷받침과 마진 추세.
 
     반환::
@@ -481,7 +477,7 @@ def calcRevenueQuality(company) -> dict | None:
     }
 
 
-def calcGrowthContribution(company) -> dict | None:
+def calcGrowthContribution(company, *, basePeriod: str | None = None) -> dict | None:
     """부문별 성장 기여 분해 — 성장이 어디에서 왔는가.
 
     반환::
@@ -493,7 +489,7 @@ def calcGrowthContribution(company) -> dict | None:
             "period": str,
         }
     """
-    docsResult = _selectDocsRevenue(company)
+    docsResult = _selectDocsRevenue(company, basePeriod=basePeriod)
     if docsResult is None:
         return None
 
@@ -548,7 +544,7 @@ def calcGrowthContribution(company) -> dict | None:
     }
 
 
-def calcFlags(company) -> list[tuple[str, str]]:
+def calcFlags(company, *, basePeriod: str | None = None) -> list[tuple[str, str]]:
     """수익 관련 경고/기회 플래그. [(텍스트, "warning"|"opportunity"), ...]."""
     flags: list[tuple[str, str]] = []
 
@@ -652,7 +648,7 @@ def _calcHhiHistory(company) -> tuple[list[dict], str] | None:
     return hhiList, direction
 
 
-def _calcBreakdownHistoryFromDocs(company) -> list[dict] | None:
+def _calcBreakdownHistoryFromDocs(company, *, basePeriod: str | None = None) -> list[dict] | None:
     """salesOrder���서 다년간 비중 변화."""
     result = _selectDocsSalesOrder(company)
     if result is None:
@@ -664,7 +660,7 @@ def _calcBreakdownHistoryFromDocs(company) -> list[dict] | None:
 
     itemCol = df.columns[0]
     periodCols = [c for c in df.columns if c != itemCol]
-    yCols = _annualCols(periodCols, _MAX_YEARS)
+    yCols = _annualColsFromPeriods(periodCols, basePeriod, _MAX_YEARS)
     if len(yCols) < 2:
         return None
 
@@ -700,7 +696,7 @@ def _calcDomesticExportRatio(company) -> float | None:
 
     itemCol = df.columns[0]
     periodCols = [c for c in df.columns if c != itemCol]
-    yCols = _annualCols(periodCols, 1)
+    yCols = _annualColsFromPeriods(periodCols, None, 1)
     if not yCols:
         return None
 

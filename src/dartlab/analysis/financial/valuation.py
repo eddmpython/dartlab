@@ -156,7 +156,7 @@ def _getSectorParams(company: Any):
 # ── calc 함수 9개 ──
 
 
-def calcDcf(company: Any) -> dict | None:
+def calcDcf(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """DCF (현금흐름 할인) 밸류에이션."""
     from dartlab.core.finance.dcf import dcfValuation
 
@@ -192,7 +192,7 @@ def calcDcf(company: Any) -> dict | None:
     }
 
 
-def calcDdm(company: Any) -> dict | None:
+def calcDdm(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """DDM (배당 할인) 밸류에이션.
 
     calcDividendPolicy의 연간 배당 데이터를 우선 사용하여
@@ -208,7 +208,7 @@ def calcDdm(company: Any) -> dict | None:
 
     # calcDividendPolicy에서 연간 배당 추출 (정확한 연간 합산)
     annualDivs: list[float] | None = None
-    divPolicy = calcDividendPolicy(company)
+    divPolicy = calcDividendPolicy(company, basePeriod=basePeriod)
     if divPolicy and divPolicy.get("history"):
         hist = divPolicy["history"]
         # 의미 있는 배당만 추출 (주당 100원 미만 잡액 제거)
@@ -243,7 +243,7 @@ def calcDdm(company: Any) -> dict | None:
     }
 
 
-def calcRelativeValuation(company: Any) -> dict | None:
+def calcRelativeValuation(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """상대가치 (PER/PBR/EV-EBITDA/PSR/PEG) 밸류에이션."""
     from dartlab.core.finance.dcf import relativeValuation
 
@@ -272,7 +272,7 @@ def calcRelativeValuation(company: Any) -> dict | None:
     }
 
 
-def calcResidualIncome(company: Any) -> dict | None:
+def calcResidualIncome(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """RIM (잔여이익모델) 밸류에이션."""
     series, shares, currency = _getSeriesAndShares(company)
     sp = _getSectorParams(company)
@@ -303,7 +303,7 @@ def calcResidualIncome(company: Any) -> dict | None:
     }
 
 
-def calcPriceTarget(company: Any) -> dict | None:
+def calcPriceTarget(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """확률 가중 주가 목표가 (5 시나리오 + Monte Carlo)."""
     series, shares, currency = _getSeriesAndShares(company)
     price = _fetchPriceContext(company)
@@ -345,7 +345,7 @@ def calcPriceTarget(company: Any) -> dict | None:
     }
 
 
-def calcReverseImplied(company: Any) -> dict | None:
+def calcReverseImplied(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """역내재성장률 -- 시장이 내재하는 매출 성장률 역산."""
     from dartlab.core.finance.priceImplied import reverseImpliedGrowth
 
@@ -372,7 +372,7 @@ def calcReverseImplied(company: Any) -> dict | None:
     }
 
 
-def calcSensitivity(company: Any) -> dict | None:
+def calcSensitivity(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """WACC x 영구성장률 민감도 그리드."""
     from dartlab.core.finance.dcf import sensitivityAnalysis
 
@@ -471,7 +471,7 @@ def _classifyCompanyType(company: Any, series: dict) -> tuple[str, dict[str, flo
     return "general", {"DCF": 0.35, "DDM": 0.15, "상대가치": 0.25, "RIM": 0.25}
 
 
-def calcValuationSynthesis(company: Any) -> dict | None:
+def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """종합 밸류에이션 -- 기업 유형별 자동 모델 선택 + 가중 합성."""
     from dartlab.core.finance.dcf import fullValuation
 
@@ -525,7 +525,7 @@ def calcValuationSynthesis(company: Any) -> dict | None:
     # 역내재성장률 — 모든 모델 실패 시 시장 기대 역산으로 보충
     reverseImplied = None
     if not estimates or weightedFairValue is None:
-        ri = calcReverseImplied(company)
+        ri = calcReverseImplied(company, basePeriod=basePeriod)
         if ri:
             reverseImplied = {
                 "impliedGrowthRate": ri.get("impliedGrowthRate"),
@@ -545,11 +545,11 @@ def calcValuationSynthesis(company: Any) -> dict | None:
     }
 
 
-def calcValuationFlags(company: Any) -> list[dict]:
+def calcValuationFlags(company: Any, *, basePeriod: str | None = None) -> list[dict]:
     """가치평가 관련 플래그 집계."""
     flags: list[dict] = []
 
-    dcf = calcDcf(company)
+    dcf = calcDcf(company, basePeriod=basePeriod)
     if dcf:
         mos = dcf.get("marginOfSafety")
         if mos is not None:
@@ -558,11 +558,11 @@ def calcValuationFlags(company: Any) -> list[dict]:
             elif mos < -30:
                 flags.append({"signal": "warning", "label": f"DCF 안전마진 {mos:.0f}% -- 고평가 주의"})
 
-    ddm = calcDdm(company)
+    ddm = calcDdm(company, basePeriod=basePeriod)
     if ddm and ddm.get("modelUsed") == "N/A":
         flags.append({"signal": "info", "label": "DDM 적용 불가 (무배당/데이터 부족)"})
 
-    synthesis = calcValuationSynthesis(company)
+    synthesis = calcValuationSynthesis(company, basePeriod=basePeriod)
     if synthesis:
         verdict = synthesis.get("verdict", "")
         if verdict == "저평가":

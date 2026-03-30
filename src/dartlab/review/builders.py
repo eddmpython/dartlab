@@ -209,7 +209,7 @@ def revenueGrowthBlock(data: dict) -> list:
     return blocks
 
 
-_MAX_QUARTERS = 5
+_MAX_QUARTERS = 8
 
 
 def _quarterlyRevenueTable(selectResult) -> TableBlock | None:
