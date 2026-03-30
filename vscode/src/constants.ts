@@ -10,7 +10,8 @@ export const CMD = {
   settings: `${EXT_ID}.settings`,
   restart: `${EXT_ID}.restart`,
   showLogs: `${EXT_ID}.showLogs`,
+  newConversation: `${EXT_ID}.newConversation`,
+  focus: `${EXT_ID}.focus`,
 } as const;
 
 export const SIDEBAR_VIEW_ID = `${EXT_ID}.sidebar`;
-export const PANEL_VIEW_TYPE = "dartlab.chat";

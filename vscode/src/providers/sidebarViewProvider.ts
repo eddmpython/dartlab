@@ -79,23 +79,46 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
     const state = this.getState();
     const nonce = getNonce();
 
-    const sessionsHtml = state.conversations.length === 0
-      ? `<div class="empty">No conversations yet</div>`
-      : state.conversations.map(c => {
-          const isActive = c.id === state.activeConversationId;
-          const time = formatRelativeTime(c.updatedAt);
-          return `<button class="session${isActive ? " active" : ""}" data-id="${c.id}">
-            <span class="name">${escapeHtml(c.title)}</span>
-            <span class="meta">
-              <span class="time">${time}</span>
-              <span class="actions">
-                <span class="del" data-del="${c.id}" title="Delete">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l6 6M10 4l-6 6"/></svg>
+    let sessionsHtml: string;
+    if (state.conversations.length === 0) {
+      sessionsHtml = `<div class="empty">No conversations yet</div>`;
+    } else {
+      // Group by time (Claude Code style)
+      const now = Date.now();
+      const DAY = 86400000;
+      const groups: Record<string, StoredConversation[]> = {};
+      const groupOrder = ["Today", "Yesterday", "This Week", "Older"];
+      for (const c of state.conversations) {
+        const diff = now - c.updatedAt;
+        let group: string;
+        if (diff < DAY) group = "Today";
+        else if (diff < DAY * 2) group = "Yesterday";
+        else if (diff < DAY * 7) group = "This Week";
+        else group = "Older";
+        (groups[group] ??= []).push(c);
+      }
+      sessionsHtml = groupOrder
+        .filter(g => groups[g]?.length)
+        .map(g => {
+          const header = `<div class="group-header">${g}</div>`;
+          const items = groups[g].map(c => {
+            const isActive = c.id === state.activeConversationId;
+            const time = formatRelativeTime(c.updatedAt);
+            return `<button class="session${isActive ? " active" : ""}" data-id="${c.id}">
+              <span class="name">${escapeHtml(c.title)}</span>
+              <span class="meta">
+                <span class="time">${time}</span>
+                <span class="actions">
+                  <span class="del" data-del="${c.id}" title="Delete">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l6 6M10 4l-6 6"/></svg>
+                  </span>
                 </span>
               </span>
-            </span>
-          </button>`;
+            </button>`;
+          }).join("");
+          return header + items;
         }).join("");
+    }
 
     return `<!DOCTYPE html>
 <html><head>
@@ -132,6 +155,7 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
   .del { display: flex; align-items: center; cursor: pointer; padding: 2px; border-radius: 4px; color: var(--vscode-descriptionForeground); }
   .del:hover { color: var(--vscode-errorForeground); }
   .empty { padding: 20px 12px; text-align: center; color: var(--vscode-descriptionForeground); font-size: 12px; }
+  .group-header { padding: 6px 8px 2px; font-size: 11px; font-weight: 600; color: var(--vscode-descriptionForeground); text-transform: uppercase; letter-spacing: 0.03em; }
 </style>
 </head><body>
   <button class="new-btn" id="newBtn">

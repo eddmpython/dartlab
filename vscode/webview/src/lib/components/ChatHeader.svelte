@@ -2,9 +2,10 @@
   interface Props {
     serverState: string;
     providerLabel?: string;
+    modelLabel?: string;
   }
 
-  let { serverState, providerLabel = "" }: Props = $props();
+  let { serverState, providerLabel = "", modelLabel = "" }: Props = $props();
 </script>
 
 <div class="header">
@@ -27,7 +28,7 @@
   </div>
   <div class="header-right">
     {#if providerLabel}
-      <span class="provider-badge">{providerLabel}</span>
+      <span class="provider-badge">{providerLabel}{#if modelLabel} / {modelLabel}{/if}</span>
     {/if}
     <span class="mcp-badge">MCP</span>
   </div>

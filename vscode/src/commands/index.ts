@@ -2,7 +2,6 @@ import * as vscode from "vscode";
 import { CMD } from "../constants";
 import { StdioProxy } from "../bridge/stdioProxy";
 import { ChatPanelManager } from "../providers/chatPanelManager";
-import { detectPython } from "../server/pythonResolver";
 
 export function registerCommands(
   context: vscode.ExtensionContext,
@@ -11,11 +10,9 @@ export function registerCommands(
 ): void {
   context.subscriptions.push(
     vscode.commands.registerCommand(CMD.restart, async () => {
-      const python = await detectPython();
-      if (python) {
-        const ok = await stdioProxy.restart(python.path);
-        if (ok) vscode.window.showInformationMessage("DartLab restarted.");
-      }
+      const pythonPath = vscode.workspace.getConfiguration("dartlab").get<string>("pythonPath") || undefined;
+      const ok = await stdioProxy.restart(pythonPath);
+      if (ok) vscode.window.showInformationMessage("DartLab restarted.");
     }),
 
     vscode.commands.registerCommand(CMD.showLogs, () => {
@@ -28,6 +25,14 @@ export function registerCommands(
 
     vscode.commands.registerCommand(CMD.settings, async () => {
       await vscode.commands.executeCommand("workbench.action.openSettings", "dartlab");
+    }),
+
+    vscode.commands.registerCommand(CMD.newConversation, () => {
+      chatPanelManager.open();
+    }),
+
+    vscode.commands.registerCommand(CMD.focus, () => {
+      chatPanelManager.open();
     }),
   );
 }

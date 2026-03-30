@@ -62,7 +62,15 @@
       },
       {
         "command": "dartlab.showLogs",
-        "title": "DartLab: Show Server Logs"
+        "title": "DartLab: Show Logs"
+      },
+      {
+        "command": "dartlab.newConversation",
+        "title": "DartLab: New Conversation"
+      },
+      {
+        "command": "dartlab.focus",
+        "title": "DartLab: Focus Input"
       }
     ],
     "keybindings": [
@@ -70,6 +78,12 @@
         "command": "dartlab.open",
         "key": "ctrl+shift+d",
         "mac": "cmd+shift+d"
+      },
+      {
+        "command": "dartlab.newConversation",
+        "key": "ctrl+n",
+        "mac": "cmd+n",
+        "when": "dartlab.panelFocused"
       }
     ],
     "configuration": {
@@ -96,9 +110,12 @@
     "publish": "vsce publish"
   },
   "devDependencies": {
+    "@types/mocha": "^10.0.10",
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
+    "@vscode/test-electron": "^2.5.2",
     "esbuild": "^0.24.0",
+    "mocha": "^11.7.5",
     "typescript": "^5.7.0"
   }
 }

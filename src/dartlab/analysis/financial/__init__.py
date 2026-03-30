@@ -522,6 +522,24 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
                 "공시 변화 신호",
             ),
             _CalcEntry(
+                "calcInventoryDivergence",
+                "dartlab.analysis.financial.predictionSignals",
+                "inventoryDivergence",
+                "재고/매출채권 괴리",
+            ),
+            _CalcEntry(
+                "calcAnnouncementTiming",
+                "dartlab.analysis.financial.predictionSignals",
+                "announcementTiming",
+                "동종업계 공시 타이밍",
+            ),
+            _CalcEntry(
+                "calcSupplyChainSignal",
+                "dartlab.analysis.financial.predictionSignals",
+                "supplyChainSignal",
+                "공급망 모멘텀",
+            ),
+            _CalcEntry(
                 "calcPredictionSynthesis",
                 "dartlab.analysis.financial.predictionSignals",
                 "predictionSynthesis",

@@ -12,13 +12,16 @@ pytestmark = pytest.mark.unit
 
 def test_predictionSignals_import():
     from dartlab.analysis.financial.predictionSignals import (
+        calcAnnouncementTiming,
         calcDisclosureDelta,
         calcEarningsMomentum,
+        calcInventoryDivergence,
         calcMacroSensitivity,
         calcPeerPrediction,
         calcPredictionFlags,
         calcPredictionSynthesis,
         calcStructuralBreak,
+        calcSupplyChainSignal,
     )
 
     assert callable(calcEarningsMomentum)
@@ -26,6 +29,9 @@ def test_predictionSignals_import():
     assert callable(calcStructuralBreak)
     assert callable(calcMacroSensitivity)
     assert callable(calcDisclosureDelta)
+    assert callable(calcInventoryDivergence)
+    assert callable(calcAnnouncementTiming)
+    assert callable(calcSupplyChainSignal)
     assert callable(calcPredictionSynthesis)
     assert callable(calcPredictionFlags)
 
@@ -39,7 +45,7 @@ def test_axis_registered():
     assert "예측신호" in _AXIS_REGISTRY
     entry = _AXIS_REGISTRY["예측신호"]
     assert entry.partId == "6-2"
-    assert len(entry.calcs) == 7
+    assert len(entry.calcs) == 10
 
     # alias
     assert _ALIASES["prediction"] == "예측신호"
@@ -127,3 +133,90 @@ def test_contextSignals_fields():
     assert hasattr(signals, "disclosureChangeIntensity")
     assert hasattr(signals, "disclosureGrowthAdj")
     assert hasattr(signals, "disclosureConfidence")
+
+
+# ── Prediction Space ──
+
+
+def test_predictionSpace_import():
+    from dartlab.analysis.forecast.predictionSpace import (
+        AxisState,
+        PredictionSpace,
+        getPredictionSpace,
+    )
+
+    assert callable(getPredictionSpace)
+
+
+def test_axisState_dataclass():
+    from dartlab.analysis.forecast.predictionSpace import AxisState
+
+    ax = AxisState(name="test", label="테스트", level=0.5, direction="improving", momentum=0.3, confidence="high")
+    assert ax.level == 0.5
+    assert ax.direction == "improving"
+
+
+def test_predictionSpace_impactOn():
+    from dartlab.analysis.forecast.predictionSpace import AxisState, PredictionSpace
+
+    space = PredictionSpace(
+        axes={
+            "businessCycle": AxisState("businessCycle", "경기축", 0.5, "improving", 0.3, "high"),
+            "fxRate": AxisState("fxRate", "환율축", -0.3, "deteriorating", -0.2, "medium"),
+        },
+        timestamp="2026-03-30",
+        dataFreshness="fresh",
+    )
+    impact = space.impactOn("반도체")
+    assert "businessCycle" in impact
+    assert "fxRate" in impact
+    # 반도체: revenueToGdp=1.8, level=0.5 → 0.5*1.8*3.0=2.7
+    assert impact["businessCycle"] == pytest.approx(2.7, abs=0.1)
+
+
+def test_predictionSpace_summary():
+    from dartlab.analysis.forecast.predictionSpace import AxisState, PredictionSpace
+
+    space = PredictionSpace(
+        axes={"businessCycle": AxisState("businessCycle", "경기축", 0.5, "improving", 0.3, "high")},
+        timestamp="2026-03-30",
+        dataFreshness="fresh",
+    )
+    s = space.summary()
+    assert "axes" in s
+    assert s["axes"]["businessCycle"]["state"] == "expansion"
+    assert s["axes"]["businessCycle"]["level"] == 0.5
+
+
+def test_normalize_functions():
+    from dartlab.analysis.forecast.predictionSpace import (
+        _clamp,
+        _normalizeIndex,
+        _normalizeZscore,
+    )
+
+    assert _clamp(2.0) == 1.0
+    assert _clamp(-2.0) == -1.0
+    assert _clamp(0.5) == 0.5
+
+    # CLI=110 → (110-100)/20 = 0.5
+    assert _normalizeIndex([110]) == pytest.approx(0.5, abs=0.01)
+    # CLI=80 → (80-100)/20 = -1.0
+    assert _normalizeIndex([80]) == pytest.approx(-1.0, abs=0.01)
+
+    # zscore: 값이 부족하면 0
+    assert _normalizeZscore([1, 2, 3]) == 0.0
+
+
+def test_computeDirection():
+    from dartlab.analysis.forecast.predictionSpace import _computeDirection
+
+    # 상승 추세
+    direction, momentum = _computeDirection([100, 102, 105])
+    assert direction == "improving"
+    assert momentum > 0
+
+    # 하락 추세
+    direction, momentum = _computeDirection([105, 102, 100])
+    assert direction == "deteriorating"
+    assert momentum < 0

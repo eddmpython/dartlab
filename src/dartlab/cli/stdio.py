@@ -1,16 +1,21 @@
-"""`dartlab chat --stdio` -- JSON Lines 프로토콜로 VSCode extension과 통신.
+"""`dartlab chat --stdio` -- JSON Lines protocol for VSCode extension.
 
-stdin에서 JSON line을 읽고, core.analyze() 이벤트를 JSON line으로 stdout에 쓴다.
-Claude Code / Codex extension과 동일한 child process + stdio 패턴.
+stdin: JSON line requests
+stdout: JSON line events
+Claude Code / Codex pattern: child process spawn + stdio.
 
 Protocol:
-    -> stdin:  {"id":"1","type":"ask","question":"000660 실적","company":"000660"}
-    <- stdout: {"id":"1","event":"meta","data":{"company":"SK하이닉스","stockCode":"000660"}}
-    <- stdout: {"id":"1","event":"chunk","data":{"text":"..."}}
-    <- stdout: {"id":"1","event":"done","data":{}}
-    -> stdin:  {"type":"status"}
-    <- stdout: {"event":"status","data":{"provider":"oauth-codex","ready":true}}
-    -> stdin:  {"type":"exit"}
+    -> {"id":"1","type":"ask","question":"000660 실적","company":"000660"}
+    <- {"id":"1","event":"meta","data":{"company":"SK하이닉스","stockCode":"000660"}}
+    <- {"id":"1","event":"chunk","data":{"text":"..."}}
+    <- {"id":"1","event":"done","data":{}}
+    -> {"type":"status"}
+    <- {"event":"status","data":{"provider":"oauth-codex","model":"gpt-5.3","ready":true}}
+    -> {"type":"ping"}
+    <- {"event":"pong","data":{}}
+    -> {"type":"setProvider","provider":"gemini","model":"gemini-2.5-flash"}
+    <- {"event":"providerChanged","data":{"provider":"gemini","model":"gemini-2.5-flash"}}
+    -> {"type":"exit"}
 """
 
 from __future__ import annotations
@@ -19,49 +24,48 @@ import json
 import sys
 from typing import Any
 
+# Session state
+_sessionProvider: str | None = None
+_sessionModel: str | None = None
+
 
 def _emit(obj: dict[str, Any]) -> None:
-    """stdout에 JSON line 하나를 쓴다."""
+    """Write one JSON line to stdout."""
     sys.stdout.write(json.dumps(obj, ensure_ascii=False) + "\n")
     sys.stdout.flush()
 
 
 def _handleAsk(msg: dict[str, Any]) -> None:
-    """ask 메시지 처리 -- core.analyze() 이벤트를 JSON line으로 변환."""
+    """Process ask message -- stream core.analyze() events as JSON lines."""
     from dartlab.ai.runtime.core import analyze
 
     reqId = msg.get("id", "")
     question = msg.get("question", "")
     company = msg.get("company")
     history = msg.get("history")
-    provider = msg.get("provider")
-    model = msg.get("model")
+    provider = msg.get("provider") or _sessionProvider
+    model = msg.get("model") or _sessionModel
 
     if not question:
         _emit({"id": reqId, "event": "error", "data": {"error": "No question provided"}})
         return
 
-    # Company 해석
+    # Resolve company
     c = None
     if company:
         try:
             from dartlab import Company
-
             c = Company(company)
         except (ValueError, OSError):
-            # 검색으로 재시도
             try:
                 from dartlab.core.resolve import searchCompany
-
                 results = searchCompany(company)
                 if results:
                     from dartlab import Company as C2
-
                     c = C2(results[0].get("stockCode", results[0].get("corp_code", "")))
             except Exception:
                 pass
 
-    # kwargs 조립
     kwargs: dict[str, Any] = {}
     if provider:
         kwargs["provider"] = provider
@@ -70,41 +74,52 @@ def _handleAsk(msg: dict[str, Any]) -> None:
     if history:
         kwargs["history"] = history
 
+    emittedDone = False
     try:
         for event in analyze(c, question, **kwargs):
             _emit({"id": reqId, "event": event.kind, "data": event.data})
+            if event.kind == "done":
+                emittedDone = True
     except KeyboardInterrupt:
         _emit({"id": reqId, "event": "error", "data": {"error": "Interrupted"}})
     except Exception as exc:
         _emit({"id": reqId, "event": "error", "data": {"error": str(exc)}})
 
+    if not emittedDone:
+        _emit({"id": reqId, "event": "done", "data": {}})
+
 
 def _handleStatus(_msg: dict[str, Any]) -> None:
-    """provider 상태를 반환한다."""
+    """Return provider status."""
     try:
         from dartlab.core.ai.profile import get_profile_manager
-
         profile = get_profile_manager().load()
-        _emit(
-            {
-                "event": "status",
-                "data": {
-                    "provider": profile.default_provider or "none",
-                    "ready": True,
-                },
-            }
-        )
+        provider = _sessionProvider or profile.default_provider or "none"
+        model = _sessionModel or getattr(profile, "model", None) or ""
+        _emit({
+            "event": "status",
+            "data": {"provider": provider, "model": model, "ready": True},
+        })
     except Exception as exc:
-        _emit({"event": "status", "data": {"provider": "none", "ready": False, "error": str(exc)}})
+        _emit({"event": "status", "data": {"provider": "none", "model": "", "ready": False, "error": str(exc)}})
+
+
+def _handleSetProvider(msg: dict[str, Any]) -> None:
+    """Change provider/model for this session."""
+    global _sessionProvider, _sessionModel
+    _sessionProvider = msg.get("provider") or _sessionProvider
+    _sessionModel = msg.get("model") or _sessionModel
+    _emit({
+        "event": "providerChanged",
+        "data": {"provider": _sessionProvider, "model": _sessionModel},
+    })
 
 
 def run() -> None:
-    """stdio REPL 루프. stdin EOF 또는 exit 메시지로 종료."""
+    """stdio REPL loop. Exits on stdin EOF or exit message."""
     import dartlab
+    dartlab.verbose = False
 
-    dartlab.verbose = False  # suppress print() logs that would corrupt JSON protocol
-
-    # ready 신호
     _emit({"event": "ready", "data": {"version": _getVersion()}})
 
     for line in sys.stdin:
@@ -124,16 +139,19 @@ def run() -> None:
             _handleAsk(msg)
         elif msgType == "status":
             _handleStatus(msg)
+        elif msgType == "ping":
+            _emit({"event": "pong", "data": {}})
+        elif msgType == "setProvider":
+            _handleSetProvider(msg)
         elif msgType == "exit":
             break
         else:
-            _emit({"event": "error", "data": {"error": f"Unknown message type: {msgType}"}})
+            _emit({"event": "error", "data": {"error": f"Unknown type: {msgType}"}})
 
 
 def _getVersion() -> str:
     try:
         import dartlab
-
         return dartlab.__version__
     except Exception:
         return "unknown"

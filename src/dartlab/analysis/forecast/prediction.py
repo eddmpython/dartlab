@@ -170,6 +170,52 @@ def _enrichFromPredictionAxis(company, signals: ContextSignals) -> None:
     except (ImportError, TypeError, KeyError):
         pass
 
+    # Prediction Space — 6대 축 기반 시나리오 확률 조정
+    _enrichFromPredictionSpace(signals)
+
+
+def _enrichFromPredictionSpace(signals: ContextSignals) -> None:
+    """PredictionSpace 6대 축으로 시나리오 확률을 조정한다."""
+    try:
+        from dartlab.analysis.forecast.predictionSpace import getPredictionSpace
+
+        space = getPredictionSpace()
+        if space is None:
+            return
+
+        adj = signals.adjustments
+        reasons = signals.reasoning
+
+        # 경기축 수축 → adverse 확률 상승
+        bc = space.axes.get("businessCycle")
+        if bc and bc.level < -0.3:
+            delta = min(0.08, abs(bc.level) * 0.1)
+            adj["adverse"] = adj.get("adverse", 0.0) + delta
+            adj["baseline"] = adj.get("baseline", 0.0) - delta
+            reasons.append(f"경기축 수축 (level={bc.level:.2f}) -> adverse +{delta:.0%}p")
+
+        # 금리축 급등 → rate_hike 시나리오
+        ir = space.axes.get("interestRate")
+        if ir and ir.level > 0.3 and ir.direction == "improving":
+            adj["rate_hike"] = adj.get("rate_hike", 0.0) + 0.05
+            adj["baseline"] = adj.get("baseline", 0.0) - 0.03
+            reasons.append(f"금리축 상승 (level={ir.level:.2f}, {ir.direction}) -> rate_hike +5%p")
+
+        # 환율축 급변 (약세) → 수출기업 유리, 내수기업 불리
+        fx = space.axes.get("fxRate")
+        if fx and fx.level > 0.3:
+            adj["baseline"] = adj.get("baseline", 0.0) + 0.02
+            reasons.append(f"환율축 원화약세 (level={fx.level:.2f}) -> 수출기업 baseline +2%p")
+
+        # 심리축 악화 → 소비 위축
+        st = space.axes.get("sentiment")
+        if st and st.level < -0.3:
+            adj["adverse"] = adj.get("adverse", 0.0) + 0.03
+            reasons.append(f"심리축 위축 (level={st.level:.2f}) -> adverse +3%p")
+
+    except (ImportError, TypeError):
+        pass
+
 
 # ======================================
 # 확률 재가중

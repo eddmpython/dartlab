@@ -66,12 +66,13 @@ export class ChatWebviewBase {
         this.stdioProxy.cancelCurrent();
         break;
 
-      case "getProfile": {
-        this.stdioProxy.requestStatus((data) => {
-          postMessage({ type: "profile", payload: data });
-        });
+      case "setProvider":
+        this.stdioProxy.setProvider(
+          msg.payload.provider,
+          msg.payload.model,
+          (data) => postMessage({ type: "profile", payload: data }),
+        );
         break;
-      }
 
       case "syncConversations": {
         await this.globalState.update(STORAGE_KEY_CONVERSATIONS, msg.payload);

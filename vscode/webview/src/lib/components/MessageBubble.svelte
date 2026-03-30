@@ -3,8 +3,13 @@
   import { createIncrementalRenderer } from "../markdown/renderer";
   import { createStreamSplitter } from "../markdown/contentSplitter";
 
-  interface Props { message: Message; }
-  let { message }: Props = $props();
+  interface Props {
+    message: Message;
+    isLast?: boolean;
+    onregenerate?: () => void;
+    oncopy?: () => void;
+  }
+  let { message, isLast = false, onregenerate, oncopy }: Props = $props();
   const render = createIncrementalRenderer();
   const splitter = createStreamSplitter();
 
@@ -270,29 +275,54 @@
       <span class="cursor"></span>
     {/if}
 
-    <!-- Error with MCP fallback hint -->
+    <!-- Error with guide -->
     {#if message.error}
+      {@const lastError = message.toolEvents?.filter(e => e.type === "result").pop()}
+      {@const errorData = (() => {
+        const events = message.toolEvents ?? [];
+        const errEvt = events.find(e => (e as Record<string, unknown>).guide);
+        return errEvt as Record<string, unknown> | undefined;
+      })()}
       <div class="error-block">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" class="error-icon"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 4v5M8 11v1"/></svg>
-        <span>Error occurred</span>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3.5M8 10.5v.5"/></svg>
+        <span>Error</span>
       </div>
+      {#if message.text && message.text.includes("**Error:**")}
+        <div class="error-guide">
+          {@html render(message.text.split("**Error:**").pop()?.trim() ?? "")}
+        </div>
+      {/if}
       <div class="mcp-fallback">
-        <span class="mcp-fallback-label">MCP tools are still available --</span>
-        try asking in Claude Code or Copilot Chat with <code>@dartlab</code>
+        MCP tools available -- try <code>@dartlab</code> in Claude Code / Copilot Chat
       </div>
     {/if}
 
-    <!-- Completion footer -->
-    {#if !message.loading && message.text && message.duration}
+    <!-- Completion footer + action buttons -->
+    {#if !message.loading && message.text && !message.error}
       <div class="footer-meta">
-        <span class="footer-duration">{formatDuration(message.duration)}</span>
+        {#if message.duration}
+          <span class="footer-duration">{formatDuration(message.duration)}</span>
+        {/if}
         {#if message.contexts?.length}
           <span class="footer-sep">|</span>
           <span class="footer-modules">{message.contexts.length} modules</span>
         {/if}
         {#if message.toolEvents?.length}
           <span class="footer-sep">|</span>
-          <span class="footer-tools">{message.toolEvents.filter(e => e.type === "call").length} tool calls</span>
+          <span class="footer-tools">{message.toolEvents.filter(e => e.type === "call").length} tools</span>
+        {/if}
+
+        <span class="footer-spacer"></span>
+
+        {#if oncopy}
+          <button class="action-btn" onclick={oncopy} title="Copy response">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="8" height="8" rx="1.5"/><path d="M3 11V3h8"/></svg>
+          </button>
+        {/if}
+        {#if onregenerate}
+          <button class="action-btn" onclick={onregenerate} title="Regenerate">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 0110.9-3.5M14 8a6 6 0 01-10.9 3.5"/><path d="M14 2v4h-4M2 14v-4h4"/></svg>
+          </button>
         {/if}
       </div>
     {/if}
@@ -715,6 +745,38 @@
   }
   .footer-sep { opacity: 0.4; }
   .footer-duration { font-family: var(--vscode-editor-font-family, monospace); }
+  .footer-spacer { flex: 1; }
+
+  /* === Action buttons (copy/regenerate) === */
+  .action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--vscode-descriptionForeground);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .footer-meta:hover .action-btn { opacity: 0.7; }
+  .action-btn:hover { opacity: 1 !important; background: var(--vscode-toolbar-hoverBackground); }
+
+  /* === Error guide === */
+  .error-guide {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground);
+    padding: 6px 8px;
+    margin: 4px 0;
+    border-radius: var(--corner-radius-small);
+    background: var(--vscode-textCodeBlock-background);
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+  .error-guide :global(a) { color: var(--vscode-textLink-foreground); }
 
   /* === MCP fallback hint (on error) === */
   .mcp-fallback {

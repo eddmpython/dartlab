@@ -24,9 +24,14 @@
   let activeConversationId: string | null = $state(saved?.activeConversationId ?? null);
   let serverState = $state("starting");
   let providerLabel = $state("");
+  let modelLabel = $state("");
   let streaming = $state(false);
   let messagesEl: HTMLDivElement | undefined = $state();
   let currentHandler: ReturnType<typeof createSseHandler> | null = null;
+
+  // Scroll tracking
+  let showJumpToLatest = $state(false);
+  let followStream = $state(true);
 
   let messages = $derived(
     conversations.find(c => c.id === activeConversationId)?.messages ?? []
@@ -39,9 +44,26 @@
   }
 
   function scrollToBottom() {
+    if (!followStream) return;
     requestAnimationFrame(() => {
       if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
     });
+  }
+
+  function jumpToLatest() {
+    followStream = true;
+    showJumpToLatest = false;
+    requestAnimationFrame(() => {
+      if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
+    });
+  }
+
+  function handleScroll() {
+    if (!messagesEl) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesEl;
+    const nearBottom = scrollHeight - scrollTop - clientHeight < 96;
+    followStream = nearBottom;
+    showJumpToLatest = !nearBottom && messages.length > 3;
   }
 
   function getConv(): Conversation | undefined {
@@ -63,7 +85,6 @@
     return id;
   }
 
-  // Update messages by convId (avoids stale closure on conv object)
   function updateMessages(convId: string, msgs: Message[]) {
     const idx = conversations.findIndex(c => c.id === convId);
     if (idx < 0) return;
@@ -80,37 +101,19 @@
 
   function handleSubmit(text: string) {
     const convId = ensureConversation();
-
     const conv = conversations.find(c => c.id === convId)!;
     const msgs = [...conv.messages];
 
-    msgs.push({
-      id: createMessageId(),
-      role: "user",
-      text,
-      loading: false,
-      error: false,
-    });
-
-    msgs.push({
-      id: createMessageId(),
-      role: "assistant",
-      text: "",
-      loading: true,
-      error: false,
-      startedAt: Date.now(),
-    });
+    msgs.push({ id: createMessageId(), role: "user", text, loading: false, error: false });
+    msgs.push({ id: createMessageId(), role: "assistant", text: "", loading: true, error: false, startedAt: Date.now() });
 
     streaming = true;
+    followStream = true;
     updateMessages(convId, msgs);
     scrollToBottom();
 
-    const history = msgs
-      .slice(0, -2)
-      .filter(m => m.text)
-      .map(m => ({ role: m.role, text: m.text }));
+    const history = msgs.slice(0, -2).filter(m => m.text).map(m => ({ role: m.role, text: m.text }));
 
-    // Use convId in closures to avoid stale references
     currentHandler = createSseHandler(
       () => {
         const c = conversations.find(c => c.id === convId);
@@ -134,6 +137,27 @@
     client.ask(text, text, history);
   }
 
+  function handleRegenerate() {
+    if (streaming) return;
+    const conv = getConv();
+    if (!conv || conv.messages.length < 2) return;
+    // Find last user message
+    const lastUserIdx = [...conv.messages].reverse().findIndex(m => m.role === "user");
+    if (lastUserIdx < 0) return;
+    const lastUser = conv.messages[conv.messages.length - 1 - lastUserIdx];
+    // Remove last assistant message
+    const msgs = conv.messages.slice(0, conv.messages.length - 1 - lastUserIdx);
+    updateMessages(conv.id, msgs);
+    handleSubmit(lastUser.text);
+  }
+
+  function handleCopyResponse() {
+    const conv = getConv();
+    if (!conv) return;
+    const lastAssistant = [...conv.messages].reverse().find(m => m.role === "assistant" && m.text);
+    if (lastAssistant) navigator.clipboard.writeText(lastAssistant.text);
+  }
+
   function handleStop() {
     client.stopStream();
     streaming = false;
@@ -142,10 +166,7 @@
 
   function handleSlashCommand(cmd: string) {
     if (cmd === "new") {
-      if (!streaming) {
-        activeConversationId = null;
-        ensureConversation();
-      }
+      if (!streaming) { activeConversationId = null; ensureConversation(); }
     } else if (cmd === "clear") {
       if (activeConversationId) {
         conversations = conversations.filter(c => c.id !== activeConversationId);
@@ -156,11 +177,9 @@
       const convId = ensureConversation();
       const conv = conversations.find(c => c.id === convId)!;
       updateMessages(convId, [...conv.messages, {
-        id: createMessageId(),
-        role: "assistant",
+        id: createMessageId(), role: "assistant",
         text: "**Commands:** `/new` `/clear` `/help`\n\nType a stock code (005930) or company name.\nMCP tools available in Claude Code / Copilot Chat.",
-        loading: false,
-        error: false,
+        loading: false, error: false,
       }]);
     }
   }
@@ -194,6 +213,7 @@
       case "profile": {
         const p = m.payload as Record<string, unknown> | null;
         if (p?.provider) providerLabel = String(p.provider);
+        if (p?.model) modelLabel = String(p.model);
         break;
       }
       case "restoreConversations": {
@@ -210,7 +230,7 @@
         if (payload.id && !streaming) {
           activeConversationId = payload.id;
           persist();
-          scrollToBottom();
+          jumpToLatest();
         }
         break;
       }
@@ -221,7 +241,7 @@
 </script>
 
 <div class="chat-panel">
-  <ChatHeader {serverState} {providerLabel} />
+  <ChatHeader {serverState} {providerLabel} {modelLabel} />
 
   {#if messages.length === 0 && !streaming}
     {@const avatarSrc = document.getElementById("app")?.dataset.avatar ?? ""}
@@ -235,10 +255,24 @@
     </div>
   {/if}
 
-  <div class="messages" bind:this={messagesEl}>
-    {#each messages as message (message.id)}
-      <MessageBubble {message} />
-    {/each}
+  <div class="messages-wrap">
+    <div class="messages" bind:this={messagesEl} onscroll={handleScroll}>
+      {#each messages as message, i (message.id)}
+        <MessageBubble
+          {message}
+          isLast={i === messages.length - 1}
+          onregenerate={i === messages.length - 1 && !message.loading && message.role === "assistant" ? handleRegenerate : undefined}
+          oncopy={i === messages.length - 1 && !message.loading && message.role === "assistant" ? handleCopyResponse : undefined}
+        />
+      {/each}
+    </div>
+
+    {#if showJumpToLatest}
+      <button class="jump-btn" onclick={jumpToLatest}>
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12l-4-4h8z"/></svg>
+        Latest
+      </button>
+    {/if}
   </div>
 
   <ChatInput
@@ -289,10 +323,37 @@
     opacity: 0.6;
     margin: 0;
   }
-  .messages {
+  .messages-wrap {
     flex: 1;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .messages {
+    height: 100%;
     overflow-y: auto;
     padding: 12px 16px 40px;
     width: 100%;
+  }
+  .jump-btn {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 12px;
+    background: var(--vscode-editorWidget-background);
+    color: var(--vscode-foreground);
+    font-size: 11px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    z-index: 10;
+  }
+  .jump-btn:hover {
+    background: var(--vscode-list-hoverBackground);
   }
 </style>

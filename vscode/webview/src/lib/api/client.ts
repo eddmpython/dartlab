@@ -16,32 +16,12 @@ export function stopStream() {
   postMessage({ type: "stopStream" });
 }
 
-export function search(query: string) {
-  postMessage({ type: "search", payload: { query } });
-}
-
-export function getStatus() {
-  postMessage({ type: "getStatus" });
-}
-
-export function getProfile() {
-  postMessage({ type: "getProfile" });
-}
-
-export function getModels(provider: string) {
-  postMessage({ type: "getModels", payload: { provider } });
-}
-
-export function updateProfile(data: Record<string, unknown>) {
-  postMessage({ type: "updateProfile", payload: data });
-}
-
-export function updateSecret(provider: string, key: string, action: "set" | "delete") {
-  postMessage({ type: "updateSecret", payload: { provider, key, action } });
-}
-
 export function syncConversations(data: unknown) {
   postMessage({ type: "syncConversations", payload: data });
+}
+
+export function setProvider(provider: string, model?: string) {
+  postMessage({ type: "setProvider", payload: { provider, model } });
 }
 
 export function ready() {
