@@ -475,6 +475,12 @@ def _classifyCompanyType(company: Any, series: dict) -> tuple[str, dict[str, flo
 
     isCyclicalSector = igStr.upper() in _cyclicalIg
     isStableSector = igStr.upper() in _stableIg
+    # 수주잔고 기반 업종: DCF가 과거 적자를 외삽하므로 가중 축소, RIM/상대가치 우선
+    _backlogIg = {"SHIPBUILDING", "CONSTRUCTION", "CONSTRUCTION_MATERIALS"}
+    isBacklogSector = igStr.upper() in _backlogIg
+
+    if isBacklogSector:
+        return "backlog_cyclical", {"DCF": 0.15, "DDM": 0.05, "상대가치": 0.45, "RIM": 0.35}
 
     if isCyclicalSector:
         return "cyclical", {"DCF": 0.25, "DDM": 0.10, "상대가치": 0.40, "RIM": 0.25}
