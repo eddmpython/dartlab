@@ -228,7 +228,7 @@ def calcPeerPrediction(company, *, basePeriod: str | None = None) -> dict | None
 
     # 횡단면 모델 로드 시도
     try:
-        from dartlab.analysis.valuation.crossRegression import loadModel, loadPanelModel, FEATURES
+        from dartlab.analysis.valuation.crossRegression import loadModel, loadPanelModel
 
         csModel = loadModel()
         panelModel = loadPanelModel()

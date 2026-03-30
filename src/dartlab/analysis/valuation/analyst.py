@@ -189,30 +189,17 @@ __all__ = [
     "ForecastResult",
     "ScenarioResult",
     "SensitivityResult",
-    "forecastMetric",
-    "forecastAll",
-    "scenarioAnalysis",
-    "sensitivityAnalysis",
     # valuation
     "DCFResult",
     "DDMResult",
     "RelativeValuationResult",
     "ValuationSummary",
-    "dcfValuation",
-    "ddmValuation",
-    "fullValuation",
-    "relativeValuation",
     # simulation
     "SimulationResult",
     "MonteCarloResult",
     "StressTestResult",
-    "simulateScenario",
-    "simulateAllScenarios",
-    "monteCarloForecast",
-    "stressTest",
     # revenue forecast
     "RevenueForecastResult",
-    "forecastRevenue",
 ]
 
 

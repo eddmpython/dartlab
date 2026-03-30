@@ -6,6 +6,7 @@ from importlib.metadata import version as _pkg_version
 
 from dartlab import ai as llm
 from dartlab import config, core
+from dartlab.audit import queryAudit, runAudit  # noqa: F401 — 공개 API
 from dartlab.company import Company
 from dartlab.core.env import loadEnv as _loadEnv
 from dartlab.core.select import ChartResult, SelectResult
@@ -14,7 +15,6 @@ from dartlab.gather.listing import codeToName, fuzzySearch, getKindList, nameToC
 from dartlab.providers.dart.company import Company as _DartEngineCompany
 from dartlab.providers.dart.openapi.dart import OpenDart
 from dartlab.providers.edgar.openapi.edgar import OpenEdgar
-from dartlab.audit import queryAudit, runAudit
 from dartlab.review import Review
 
 # .env 자동 로드 — API 키 등 환경변수

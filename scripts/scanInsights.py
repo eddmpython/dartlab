@@ -235,7 +235,7 @@ def main():
         "balanced": balancedList,
     }
 
-    outPath = "data/audit/scan_insights_2026-03-30.json"
+    outPath = "data/dart/auditScan/scan_insights.json"
     with open(outPath, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
 

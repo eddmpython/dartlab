@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from dartlab.analysis.financial._helpers import MAX_RATIO_YEARS
 
-
 # ── 최대주주 지분 시계열 ──
 
 

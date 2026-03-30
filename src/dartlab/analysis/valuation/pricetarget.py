@@ -10,10 +10,15 @@ from __future__ import annotations
 import math
 import random
 from dataclasses import dataclass, field
-
 from typing import TYPE_CHECKING
 
+from dartlab.analysis.forecast.prediction import adjustProbabilities
 from dartlab.core.finance.extract import getLatest, getTTM
+from dartlab.core.finance.proforma import (
+    build_proforma,
+    compute_company_wacc,
+    extract_historical_ratios,
+)
 from dartlab.core.finance.scenario import (
     PRESET_SCENARIOS,
     MacroScenario,
@@ -21,14 +26,6 @@ from dartlab.core.finance.scenario import (
     getElasticity,
     getNoiseSigma,
 )
-
-from dartlab.core.finance.proforma import (
-    build_proforma,
-    compute_company_wacc,
-    extract_historical_ratios,
-)
-
-from dartlab.analysis.forecast.prediction import adjustProbabilities
 
 if TYPE_CHECKING:
     from dartlab.analysis.forecast.prediction import ContextSignals

@@ -5,13 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 
-from dartlab.core.finance.fmt import fmtBig, fmtPrice
 from dartlab.core.finance.extract import (
     getAnnualValues,
     getLatest,
     getRevenueGrowth3Y,
     getTTM,
 )
+from dartlab.core.finance.fmt import fmtBig, fmtPrice
 from dartlab.core.sector.types import SectorParams
 
 # ── 결과 타입 ──────────────────────────────────────────────

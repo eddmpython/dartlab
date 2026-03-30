@@ -528,8 +528,9 @@ def extract_historical_ratios(
 def _fetchBeta(stockCode: str, currency: str = "KRW") -> float | None:
     """1년 일별 수익률 vs 시장 지수 회귀로 Beta 산출. 캐시 적용."""
     try:
-        from dartlab.gather.http import run_async
         import httpx
+
+        from dartlab.gather.http import run_async
 
         async def _calc():
             async with httpx.AsyncClient(timeout=15) as client:

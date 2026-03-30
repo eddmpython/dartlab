@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import logging
 
-from dartlab.core.sector.types import Sector
 from dartlab.analysis.financial.research.types import SectorKpi, SectorKpis
+from dartlab.core.sector.types import Sector
 
 _log = logging.getLogger(__name__)
 

@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from dartlab.analysis.financial._helpers import (
     annualColsFromPeriods as _annualColsFromPeriods,
+)
+from dartlab.analysis.financial._helpers import (
     parseNumStr as _parseNumStr,
 )
 

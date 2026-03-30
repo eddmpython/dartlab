@@ -5,7 +5,6 @@ sections diff 인프라를 활용하여 기간간 공시 텍스트 변화를 정
 
 from __future__ import annotations
 
-
 # ── 공시변화 종합 요약 ──
 
 

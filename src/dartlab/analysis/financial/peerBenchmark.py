@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import polars as pl
 
-
 # 비교할 핵심 비율 목록 (scanRatio name → 표시 label)
 _BENCHMARK_RATIOS = [
     ("roe", "ROE"),

@@ -114,9 +114,9 @@ async def fetchIndustryList(client: GatherHttpClient) -> list[dict]:
 def _getKindSector(stockCode: str) -> str:
     """KIND listing에서 업종명 조회 (동기, 캐시)."""
     try:
-        from dartlab.gather.listing import getKindList
-
         import polars as pl
+
+        from dartlab.gather.listing import getKindList
 
         df = getKindList()
         match = df.filter(pl.col("종목코드") == stockCode)
@@ -130,9 +130,9 @@ def _getKindSector(stockCode: str) -> str:
 def _getKindMarket(stockCode: str) -> str:
     """KIND listing에서 시장구분 조회."""
     try:
-        from dartlab.gather.listing import getKindList
-
         import polars as pl
+
+        from dartlab.gather.listing import getKindList
 
         df = getKindList()
         match = df.filter(pl.col("종목코드") == stockCode)

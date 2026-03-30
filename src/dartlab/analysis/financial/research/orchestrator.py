@@ -8,7 +8,6 @@ from datetime import datetime, timezone
 from dartlab.analysis.financial.research.quality import calcCoverageScore
 from dartlab.analysis.financial.research.scoring import calcAllScores
 from dartlab.analysis.financial.research.thesis import classifyProfile, synthesizeThesis
-from dartlab.analysis.forecast.forecast import forecastMetric
 from dartlab.analysis.financial.research.types import (
     AnomalySection,
     CompanyOverview,
@@ -25,6 +24,7 @@ from dartlab.analysis.financial.research.types import (
     RiskSection,
     ValuationSection,
 )
+from dartlab.analysis.forecast.forecast import forecastMetric
 
 _log = logging.getLogger(__name__)
 
@@ -166,9 +166,9 @@ def generateResearch(
     # ── Phase 4: Narrative (v3 — 교차분석 서술) ──
     if aSeries and (wantAll or want & {"narrative", "thesis"}):
         try:
-            from dartlab.core.sector.params import getParams
             from dartlab.analysis.financial.insight.benchmark import getBenchmark
             from dartlab.analysis.financial.research.narrative import buildNarrative
+            from dartlab.core.sector.params import getParams
 
             sectorInfo = _safeGet(company, "sector")
             sectorEnum = getattr(sectorInfo, "sector", sectorInfo)

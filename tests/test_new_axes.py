@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-import pytest
-from unittest.mock import MagicMock, patch
 from dataclasses import dataclass
 from typing import Optional
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # ── Mock 데이터 구조 ──
 

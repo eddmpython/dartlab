@@ -9,7 +9,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-
 # ======================================================
 # Layer 1: 거시경제 시나리오
 # ======================================================

@@ -282,7 +282,7 @@ def _classifyError(stderr: str, stdout: str) -> str:
     elif "KeyError" in stderr or "ColumnNotFoundError" in stderr:
         hint = "\n힌트: 컬럼/키가 없습니다. 먼저 print()로 구조를 확인한 뒤 정확한 이름을 사용하세요."
 
-    parts = [f"[실행 오류]"]
+    parts = ["[실행 오류]"]
     if stderr:
         # traceback에서 마지막 에러 줄만 추출 (전체 traceback은 토큰 낭비)
         lines = stderr.strip().splitlines()

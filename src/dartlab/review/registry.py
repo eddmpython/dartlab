@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dartlab.review.layout import DEFAULT_LAYOUT, ReviewLayout
+from dartlab.review.layout import ReviewLayout
 from dartlab.review.section import Section
 from dartlab.review.templates import TEMPLATE_ORDER, TEMPLATES
 from dartlab.review.utils import isTerminal

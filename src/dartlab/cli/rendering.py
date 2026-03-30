@@ -12,7 +12,6 @@ from typing import Any
 # ---------------------------------------------------------------------------
 # Brand colors (terminal palette — see brand.py)
 # ---------------------------------------------------------------------------
-
 from dartlab.cli.brand import CLR, CLR_ACCENT, CLR_DANGER, CLR_MUTED, CLR_SUCCESS, CLR_WARN
 
 _CLR = CLR

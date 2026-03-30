@@ -8,7 +8,7 @@ import time
 from datetime import date
 from typing import Any
 
-from dartlab.audit.serializer import serializeCalcResult, toJsonStr
+from dartlab.audit.serializer import serializeCalcResult
 from dartlab.audit.store import AuditStore
 
 logger = logging.getLogger("dartlab.audit")

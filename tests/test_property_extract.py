@@ -4,10 +4,10 @@ Hypothesis로 무작위 시계열 입력에 대한 불변조건 검증.
 """
 
 import pytest
-from hypothesis import given, settings, assume
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from dartlab.core.finance.extract import getLatest, getTTM, getAnnualValues, getRevenueGrowth3Y
+from dartlab.core.finance.extract import getAnnualValues, getLatest, getRevenueGrowth3Y, getTTM
 
 pytestmark = pytest.mark.unit
 

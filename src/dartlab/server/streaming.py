@@ -29,7 +29,6 @@ import orjson
 
 from dartlab import Company
 
-from .cache import company_cache
 from .models import AskRequest
 
 

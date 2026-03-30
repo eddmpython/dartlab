@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from dartlab.core.finance.scenario import NOISE_CONFIG, getNoiseSigma
-
 # ======================================
 # 데이터 구조
 # ======================================

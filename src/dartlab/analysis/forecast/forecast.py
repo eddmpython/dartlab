@@ -5,17 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 
-from dartlab.core.sector.types import SectorParams
-from dartlab.core.finance.fmt import fmtBig, fmtPrice
 from dartlab.core.finance.extract import getAnnualValues
+from dartlab.core.finance.fmt import fmtBig, fmtPrice
 from dartlab.core.finance.ols import (
-    MultiOlsResult,
     _coefficientOfVariation,
     _detectStructuralBreak,
     _ols,
-    _olsMulti,
 )
-
+from dartlab.core.sector.types import SectorParams
 
 # ── 결과 타입 ──────────────────────────────────────────────
 

@@ -8,7 +8,7 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Static
 
-from dartlab.cli.brand import CLR, CLR_ACCENT, CLR_DIM, CLR_MUTED
+from dartlab.cli.brand import CLR, CLR_ACCENT, CLR_MUTED
 
 
 class _BrandLabel(Static):

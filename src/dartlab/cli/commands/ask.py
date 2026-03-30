@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 
 from dartlab.cli.brand import CLR, CLR_MUTED
-from dartlab.cli.constants import TOOL_LABELS, toolLabel, toolResultPreview
+from dartlab.cli.constants import toolLabel, toolResultPreview
 from dartlab.cli.context import PROVIDERS
 from dartlab.cli.services.errors import CLIError
 from dartlab.cli.services.providers import detect_provider

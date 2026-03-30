@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from .models import HistoryMessage
 
 OLLAMA_MODEL_GUIDE: list[dict[str, str]] = [

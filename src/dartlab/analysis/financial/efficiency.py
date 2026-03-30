@@ -9,8 +9,10 @@ from __future__ import annotations
 
 from dartlab.analysis.financial._helpers import (
     MAX_RATIO_YEARS,
-    annualColsFromPeriods as _annualColsFromPeriods,
     toDict,
+)
+from dartlab.analysis.financial._helpers import (
+    annualColsFromPeriods as _annualColsFromPeriods,
 )
 
 _MAX_YEARS = MAX_RATIO_YEARS

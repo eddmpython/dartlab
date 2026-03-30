@@ -15,27 +15,22 @@ import random
 from dataclasses import dataclass, field
 from typing import Optional
 
-from dartlab.core.sector.types import SectorParams
-from dartlab.core.finance.fmt import fmtBig, fmtPrice
 from dartlab.core.finance.extract import (
     getAnnualValues,
     getLatest,
     getTTM,
 )
+from dartlab.core.finance.fmt import fmtBig, fmtPrice
 from dartlab.core.finance.scenario import (
     BASELINE_FX,
     BASELINE_RATE,
     DEFAULT_ELASTICITY,
-    MacroScenario,
     PRESET_SCENARIOS,
-    PRESET_SCENARIOS_KR,
-    PRESET_SCENARIOS_US,
-    SECTOR_ELASTICITY,
+    MacroScenario,
     SectorElasticity,
     getElasticity,
-    getPresetScenarios,
 )
-
+from dartlab.core.sector.types import SectorParams
 
 # ══════════════════════════════════════
 # Layer 3: 기업 시뮬레이션

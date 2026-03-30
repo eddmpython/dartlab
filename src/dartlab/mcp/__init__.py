@@ -470,7 +470,6 @@ def installMcpConfig(targetDir: str | None = None) -> str:
     Returns:
         생성된 파일 경로.
     """
-    import os
     from pathlib import Path
 
     root = Path(targetDir) if targetDir else Path.cwd()

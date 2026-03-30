@@ -8,12 +8,6 @@ from dartlab.providers.dart.docs.sections._common import (
     reorderPeriodColumns,
     sortPeriods,
 )
-from dartlab.providers.dart.docs.sections.extractors import (
-    ParsedSubtopicTable,
-    TopicSubtables,
-    parseSubtopicTable,
-    topicSubtables,
-)
 from dartlab.providers.dart.docs.sections.analysis import (
     projectFreqRows,
     semanticCollisions,
@@ -23,6 +17,12 @@ from dartlab.providers.dart.docs.sections.analysis import (
     structureEvents,
     structureRegistry,
     structureSummary,
+)
+from dartlab.providers.dart.docs.sections.extractors import (
+    ParsedSubtopicTable,
+    TopicSubtables,
+    parseSubtopicTable,
+    topicSubtables,
 )
 from dartlab.providers.dart.docs.sections.pipeline import (
     sections,

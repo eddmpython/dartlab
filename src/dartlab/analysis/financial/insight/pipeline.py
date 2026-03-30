@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dartlab.core.sector.types import Sector
 from dartlab.analysis.financial.insight.anomaly import detectAuditRedFlags, runAnomalyDetection
 from dartlab.analysis.financial.insight.detector import detectFinancialSector
 from dartlab.analysis.financial.insight.distress import calcDistress
@@ -24,6 +23,7 @@ from dartlab.analysis.financial.insight.grading import (
 from dartlab.analysis.financial.insight.summary import classifyProfile, generateSummary
 from dartlab.analysis.financial.insight.types import AnalysisResult, Anomaly, AuditDataForAnomaly, MarketDataForDistress
 from dartlab.core.finance.ratios import calcRatios
+from dartlab.core.sector.types import Sector
 
 if TYPE_CHECKING:
     from dartlab.providers.dart.company import Company

@@ -13,16 +13,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+# ---------------------------------------------------------------------------
+# Brand colors (terminal palette — see brand.py)
+# ---------------------------------------------------------------------------
+from dartlab.cli.brand import CLR, CLR_ACCENT, CLR_DIM, CLR_MUTED, CLR_SUCCESS, CLR_WARN
 from dartlab.cli.context import PROVIDERS
 from dartlab.cli.services.errors import CLIError
 from dartlab.cli.services.providers import detect_provider
 from dartlab.cli.services.runtime import configure_dartlab
-
-# ---------------------------------------------------------------------------
-# Brand colors (terminal palette — see brand.py)
-# ---------------------------------------------------------------------------
-
-from dartlab.cli.brand import CLR, CLR_ACCENT, CLR_DIM, CLR_MUTED, CLR_SUCCESS, CLR_WARN
 
 _CLR = CLR
 _CLR_DIM = CLR_DIM
@@ -37,12 +35,23 @@ _CLR_WARN = CLR_WARN
 
 from dartlab.cli.constants import (
     COMMANDS as _COMMANDS,
+)
+from dartlab.cli.constants import (
     SKILL_COMMANDS as _SKILL_COMMANDS,
+)
+from dartlab.cli.constants import (
     SKILL_DEFAULT_QUESTIONS as _SKILL_DEFAULT_QUESTIONS,
+)
+from dartlab.cli.constants import (
     SLASH_WORDS as _SLASH_WORDS,
+)
+from dartlab.cli.constants import (
     SUGGESTIONS as _SUGGESTIONS,
-    TOOL_LABELS as _TOOL_LABELS,
+)
+from dartlab.cli.constants import (
     toolLabel as _toolLabel,
+)
+from dartlab.cli.constants import (
     toolResultPreview as _toolResultPreview,
 )
 

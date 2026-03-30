@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from dartlab import Company
-
 import re as _re
+
+from dartlab import Company
 
 
 def is_meta_question(q: str) -> bool:

@@ -40,7 +40,6 @@ from dartlab.gather.listing import (
     nameToCode,
     searchName,
 )
-
 from dartlab.providers.dart._docs_accessor import _DocsAccessor
 from dartlab.providers.dart._finance_accessor import _FinanceAccessor
 from dartlab.providers.dart._finance_helpers import (
@@ -57,11 +56,9 @@ from dartlab.providers.dart._finance_helpers import (
 )
 from dartlab.providers.dart._profile_accessor import _ProfileAccessor
 from dartlab.providers.dart._report_accessor import _ReportAccessor
-from dartlab.providers.dart._sections_source import _SectionsSource
 from dartlab.providers.dart._utils import (
     _checkDartDocsFreshness,
     _ensureAllData,
-    _ensureData,
     _import_and_call,
     _isPeriodColumn,
     _shapeString,

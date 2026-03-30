@@ -33,7 +33,6 @@ from dartlab.core.reportSelector import selectReport
 from dartlab.providers.dart.docs.sections._common import (
     REPORT_KINDS,
     detectContentCol,
-    periodOrderValue,
     sortPeriods,
 )
 from dartlab.providers.dart.docs.sections.chunker import parseMajorNum

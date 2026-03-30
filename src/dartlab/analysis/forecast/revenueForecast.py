@@ -37,12 +37,12 @@ if TYPE_CHECKING:
 from dartlab.analysis.forecast.forecast import (
     forecastMetric,
 )
-from dartlab.core.finance.fmt import fmtBig
 from dartlab.core.finance.extract import (
     getAnnualValues,
     getLatest,
     getTTM,
 )
+from dartlab.core.finance.fmt import fmtBig
 
 log = logging.getLogger(__name__)
 

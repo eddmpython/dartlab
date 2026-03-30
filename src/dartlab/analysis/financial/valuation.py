@@ -210,8 +210,8 @@ def calcDdm(company: Any, *, basePeriod: str | None = None) -> dict | None:
     calcDividendPolicy의 연간 배당 데이터를 우선 사용하여
     분기 CF 합산 오류를 방지한다.
     """
-    from dartlab.core.finance.dcf import ddmValuation
     from dartlab.analysis.financial.capitalAllocation import calcDividendPolicy
+    from dartlab.core.finance.dcf import ddmValuation
 
     series, shares, currency = _getSeriesAndShares(company)
     sp = _getSectorParams(company)
@@ -683,7 +683,7 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
     companyType, weights = _classifyCompanyType(company, series)
 
     # 개별 beta (수익률 회귀) + CAPM 기반 동적 WACC
-    from dartlab.core.finance.proforma import compute_company_wacc, _fetchBeta
+    from dartlab.core.finance.proforma import _fetchBeta, compute_company_wacc
 
     stockCode = getattr(company, "stockCode", "")
     betaCalc = _fetchBeta(stockCode, currency) if stockCode else None
@@ -734,7 +734,7 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
 
     # Forward BPS × Target PBR — 수주잔고 기반 업종 (조선/건설)
     if companyType == "backlog_cyclical":
-        from dartlab.core.finance.extract import getLatest, getAnnualValues, getRevenueGrowth3Y
+        from dartlab.core.finance.extract import getAnnualValues, getLatest, getRevenueGrowth3Y
 
         eq = getLatest(series, "BS", "total_equity")
         if eq and shares and shares > 0:

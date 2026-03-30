@@ -8,7 +8,7 @@ from textual.containers import Center, Vertical
 from textual.widget import Widget
 from textual.widgets import Static
 
-from dartlab.cli.brand import CLR, CLR_DIM
+from dartlab.cli.brand import CLR, CLR_ACCENT, CLR_DIM
 
 _LOGO = """\
 ██████╗  █████╗ ██████╗ ████████╗██╗      █████╗ ██████╗
