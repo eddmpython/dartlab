@@ -719,7 +719,6 @@ setup: AI provider 설정 (capabilities 확인 후 설정)
 | `debt` | 부채구조 | 사채만기, 부채비율, ICR, 위험등급 | stockCode 필터 | - | DataFrame |
 | `account` | 계정 | 전종목 단일 계정 시계열 (매출액, 영업이익 등) | snakeId | O | DataFrame |
 | `ratio` | 비율 | 전종목 단일 재무비율 시계열 (ROE, 부채비율 등) | ratioName | O | DataFrame |
-| `digest` | 다이제스트 | 시장 전체 공시 변화 다이제스트 | stockCode 필터 | - | DataFrame |
 | `network` | 네트워크 | 상장사 관계 네트워크 (출자/지분/계열) | stockCode 필터 | - | dict |
 | `cashflow` | 현금흐름 | OCF/ICF/FCF + 현금흐름 패턴 분류 (8종) | stockCode 필터 | - | DataFrame |
 | `audit` | 감사리스크 | 감사의견, 감사인변경, 특기사항, 감사독립성비율 | stockCode 필터 | - | DataFrame |
@@ -731,6 +730,7 @@ setup: AI provider 설정 (capabilities 확인 후 설정)
 | `efficiency` | 효율성 | 자산/재고/매출채권 회전율 + CCC(현금전환주기) + 등급 | stockCode 필터 | - | DataFrame |
 | `valuation` | 밸류에이션 | PER/PBR/PSR + 시가총액 + 등급 (네이버 실시간) | stockCode 필터 | - | DataFrame |
 | `dividendTrend` | 배당추이 | DPS 3개년 시계열 + 패턴 분류 (연속증가/안정/감소/시작/중단) | stockCode 필터 | - | DataFrame |
+| `screen` | 스크리닝 | 멀티팩터 스크리닝 (value/dividend/growth/risk/quality 프리셋) | target | - | DataFrame |
 
 **한글 별칭:**
 
@@ -739,7 +739,6 @@ setup: AI provider 설정 (capabilities 확인 후 설정)
 - `capital`: 주주환원, 배당
 - `cashflow`: 현금흐름, 현금
 - `debt`: 부채, 부채구조, 사채
-- `digest`: 다이제스트, 변화, 변동감지
 - `dividendTrend`: 배당추이, 배당시계열, 배당트렌드
 - `efficiency`: 효율성, 회전율
 - `governance`: 거버넌스, 지배구조
@@ -750,6 +749,7 @@ setup: AI provider 설정 (capabilities 확인 후 설정)
 - `profitability`: 수익성
 - `quality`: 이익의질, 이익의 질, 이익품질, 어닝퀄리티
 - `ratio`: 비율
+- `screen`: 스크리닝, 스크린, 필터
 - `valuation`: 밸류에이션, 밸류
 - `workforce`: 인력, 급여, 인력/급여
 

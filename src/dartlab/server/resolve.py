@@ -47,7 +47,21 @@ def has_analysis_intent(q: str) -> bool:
         "리스크",
         "위험",
     )
-    return any(p in q for p in _ANALYSIS_PATTERNS)
+    _EN_PATTERNS = (
+        "ROE",
+        "ROA",
+        "PER",
+        "PBR",
+        "EPS",
+        "BPS",
+        "EBITDA",
+        "FCF",
+        "DCF",
+    )
+    if any(p in q for p in _ANALYSIS_PATTERNS):
+        return True
+    qu = q.upper()
+    return any(p in qu for p in _EN_PATTERNS)
 
 
 def _is_pure_conversation(q: str) -> bool:

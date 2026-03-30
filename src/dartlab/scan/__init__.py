@@ -96,13 +96,6 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         listModule="dartlab.providers.dart.finance.scanAccount",
         listFn="scanRatioList",
     ),
-    "digest": _AxisEntry(
-        module="dartlab.scan.watch",
-        fn="scanDigest",
-        label="다이제스트",
-        description="시장 전체 공시 변화 다이제스트",
-        example='scan("digest")',
-    ),
     "network": _AxisEntry(
         module="dartlab.scan.network",
         fn="build_graph",
@@ -181,6 +174,15 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="DPS 3개년 시계열 + 패턴 분류 (연속증가/안정/감소/시작/중단)",
         example='scan("dividendTrend")',
     ),
+    "screen": _AxisEntry(
+        module="dartlab.scan.screen",
+        fn="scanScreen",
+        label="스크리닝",
+        description="멀티팩터 스크리닝 (value/dividend/growth/risk/quality 프리셋)",
+        example='scan("screen", "value")',
+        targetParam="target",
+        targetRequired=False,
+    ),
 }
 
 
@@ -209,10 +211,6 @@ _ALIASES: dict[str, str] = {
     # network
     "네트워크": "network",
     "관계": "network",
-    # digest
-    "다이제스트": "digest",
-    "변화": "digest",
-    "변동감지": "digest",
     # cashflow
     "현금흐름": "cashflow",
     "현금": "cashflow",
@@ -246,6 +244,10 @@ _ALIASES: dict[str, str] = {
     "배당추이": "dividendTrend",
     "배당시계열": "dividendTrend",
     "배당트렌드": "dividendTrend",
+    # screen
+    "스크리닝": "screen",
+    "스크린": "screen",
+    "필터": "screen",
 }
 
 
