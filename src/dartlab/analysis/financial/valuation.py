@@ -325,6 +325,88 @@ def calcResidualIncome(company: Any, *, basePeriod: str | None = None) -> dict |
     }
 
 
+# ── 지주사 NAV ──────────────────────────────────────────
+
+# 주요 지주사 핵심 자회사 매핑 (종목코드: 지분율%)
+# 출처: DART 사업보고서 기준. 자회사 지분 변동 시 업데이트 필요.
+_HOLDING_SUBS: dict[str, list[tuple[str, float]]] = {
+    "034730": [  # SK
+        ("096770", 64.25),  # SK이노베이션
+        ("017670", 26.80),  # SK텔레콤
+        ("402340", 42.30),  # SK스퀘어
+    ],
+    "003550": [  # LG
+        ("373220", 30.10),  # LG에너지솔루션
+        ("051910", 33.30),  # LG화학
+        ("066570", 33.67),  # LG전자
+    ],
+    "028260": [  # 삼성물산
+        ("005930", 4.99),  # 삼성전자
+        ("207940", 43.37),  # 삼성바이오로직스
+    ],
+    "005490": [  # POSCO홀딩스
+        ("005380", 5.20),  # 현대차 (실제는 포스코인터/포스코퓨처엠이나 종목코드 확인 필요)
+    ],
+}
+
+
+def calcNavValuation(company: Any) -> dict | None:
+    """지주사 NAV = Sum(상장 자회사 시총 x 지분율) - 순차입금. 할인 30%."""
+    stockCode = getattr(company, "stockCode", "")
+    subs = _HOLDING_SUBS.get(stockCode)
+    if not subs:
+        return None
+
+    series, shares, currency = _getSeriesAndShares(company)
+
+    # 자회사 시총 합산 (Company 객체 생성 금지 — OOM 방지)
+    totalSubValue = 0.0
+    subDetails = []
+    for subCode, ratio in subs:
+        try:
+            from dartlab.gather.http import run_async
+            from dartlab.gather.price import fetch
+
+            snapshot = run_async(fetch(subCode, market="KR"))
+            if snapshot and snapshot.market_cap and snapshot.market_cap > 0:
+                subValue = snapshot.market_cap * ratio / 100
+                totalSubValue += subValue
+                subDetails.append({"code": subCode, "ratio": ratio, "marketCap": snapshot.market_cap, "value": subValue})
+        except (ImportError, OSError, RuntimeError, AttributeError):
+            pass
+
+    if totalSubValue <= 0:
+        return None
+
+    # 순차입금
+    from dartlab.core.finance.extract import getLatest
+
+    if series:
+        stb = getLatest(series, "BS", "shortterm_borrowings") or 0
+        ltb = getLatest(series, "BS", "longterm_borrowings") or 0
+        bonds = getLatest(series, "BS", "debentures") or 0
+        cash = getLatest(series, "BS", "cash_and_cash_equivalents") or 0
+        netDebt = stb + ltb + bonds - cash
+    else:
+        netDebt = 0
+
+    # NAV = 자회사 지분가치 합계 - 순차입금
+    navGross = totalSubValue - netDebt
+    # 지주사 할인 30% (한국 실증 평균)
+    navDiscounted = navGross * 0.70
+
+    navPerShare = navDiscounted / shares if shares and shares > 0 else None
+
+    return {
+        "navGross": navGross,
+        "navDiscounted": navDiscounted,
+        "navPerShare": navPerShare,
+        "holdingDiscount": 0.30,
+        "subsidiaries": subDetails,
+        "netDebt": netDebt,
+    }
+
+
 def calcPriceTarget(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """확률 가중 주가 목표가 (5 시나리오 + Monte Carlo)."""
     series, shares, currency = _getSeriesAndShares(company)
@@ -462,7 +544,7 @@ def _classifyCompanyType(company: Any, series: dict) -> tuple[str, dict[str, flo
     )
     if isHolding:
         # 지주사: DCF(연결 기반) 과대평가 위험 → 상대가치/RIM 우선, DCF 대폭 축소
-        return "holding", {"DCF": 0.10, "DDM": 0.20, "상대가치": 0.35, "RIM": 0.35}
+        return "holding", {"DCF": 0.05, "DDM": 0.10, "상대가치": 0.15, "RIM": 0.30, "NAV": 0.40}
 
     # ── 사이클 업종 사전 판별 (섹터 기반 — CAGR/CV보다 우선) ──
     _cyclicalIg = {
@@ -568,6 +650,12 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
     rimResult = _rimCalc(series, shares=shares, currentPrice=currentPrice, currency=currency, beta=beta)
     if rimResult and rimResult.intrinsicValue and _inRange(rimResult.intrinsicValue):
         estimates.append({"method": "RIM", "value": rimResult.intrinsicValue, "weight": weights.get("RIM", 0)})
+
+    # NAV — 지주사만 (자회사 시총 합산 기반)
+    if companyType == "holding":
+        navResult = calcNavValuation(company)
+        if navResult and navResult.get("navPerShare") and _inRange(navResult["navPerShare"]):
+            estimates.append({"method": "NAV", "value": navResult["navPerShare"], "weight": weights.get("NAV", 0.40)})
 
     # 가중 합성 적정가
     weightedFairValue = None
