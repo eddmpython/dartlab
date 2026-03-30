@@ -32,10 +32,9 @@ def _runReview(args) -> int:
     """순수 데이터 검토서."""
     dartlab = configure_dartlab()
 
-    try:
-        company = dartlab.Company(args.company)
-    except (ValueError, OSError) as exc:
-        raise CLIError(str(exc)) from exc
+    from dartlab.guide.integration import cliCompany
+
+    company = cliCompany(args.company)
 
     from dartlab.review.registry import buildReview
 
@@ -47,10 +46,9 @@ def _runReviewer(args) -> int:
     """AI 종합의견 포함 보고서."""
     dartlab = configure_dartlab()
 
-    try:
-        company = dartlab.Company(args.company)
-    except (ValueError, OSError) as exc:
-        raise CLIError(str(exc)) from exc
+    from dartlab.guide.integration import cliCompany
+
+    company = cliCompany(args.company)
 
     from dartlab.review.registry import buildReview
 

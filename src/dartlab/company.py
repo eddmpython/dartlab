@@ -121,8 +121,13 @@ def Company(codeOrName: str) -> CompanyProtocol:
             continue
 
     cause = f" (원인: {firstError})" if firstError else ""
-    raise ValueError(
-        f"'{codeOrName}'을(를) 찾을 수 없습니다{cause}.\n"
-        f"  검색: dartlab.search('{codeOrName}')\n"
-        "  전체 목록: dartlab.listing()"
-    )
+    try:
+        from dartlab.guide.messaging import format as gfmt
+
+        raise ValueError(gfmt("error:no_data", stockCode=codeOrName))
+    except (ImportError, KeyError):
+        raise ValueError(
+            f"'{codeOrName}'을(를) 찾을 수 없습니다{cause}.\n"
+            f"  검색: dartlab.search('{codeOrName}')\n"
+            "  전체 목록: dartlab.listing()"
+        )

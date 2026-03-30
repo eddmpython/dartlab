@@ -52,10 +52,9 @@ def run(args) -> int:
     """topic/trace 인자에 따라 show/trace/topic 목록을 출력한다."""
     dartlab = configure_dartlab()
 
-    try:
-        company = dartlab.Company(args.company)
-    except (ValueError, OSError) as exc:
-        raise CLIError(str(exc)) from exc
+    from dartlab.guide.integration import cliCompany
+
+    company = cliCompany(args.company)
 
     from dartlab.cli.services.output import get_console
 

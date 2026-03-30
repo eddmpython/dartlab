@@ -127,7 +127,7 @@ def test_main_maps_unexpected_error_to_runtime_exit(_, capsys):
 
     captured = capsys.readouterr()
     assert result == EXIT_RUNTIME
-    assert "예상하지 못한 오류" in captured.err
+    assert "boom" in captured.err
 
 
 def test_version_flag_prints_version(capsys):

@@ -22,10 +22,9 @@ def run(args) -> int:
     dartlab = configure_dartlab()
     console = get_console()
 
-    try:
-        company = dartlab.Company(args.company)
-    except (ValueError, OSError) as exc:
-        raise CLIError(str(exc)) from exc
+    from dartlab.guide.integration import cliCompany
+
+    company = cliCompany(args.company)
 
     console.print(f"\n  [bold]{company.corpName}[/] ({company.stockCode})\n")
 
