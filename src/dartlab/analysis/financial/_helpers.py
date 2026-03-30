@@ -76,6 +76,21 @@ def buildTimeline(data: dict, field: str, years: list[str]) -> list[dict]:
     return [{"period": years[i], "value": vals[i]} for i in range(len(years) - n, len(years))]
 
 
+def mergeRows(primary: dict | None, fallback: dict | None) -> dict:
+    """두 행을 merge. primary의 값이 None이면 fallback 값 사용."""
+    if primary is None and fallback is None:
+        return {}
+    if primary is None:
+        return fallback or {}
+    if fallback is None:
+        return primary
+    merged = dict(primary)
+    for k, v in fallback.items():
+        if merged.get(k) is None and v is not None:
+            merged[k] = v
+    return merged
+
+
 def getRatios(company):
     """ratios 객체를 안전하게 가져온다."""
     try:

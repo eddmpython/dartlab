@@ -87,6 +87,7 @@ def calcFundingSources(company, *, basePeriod: str | None = None) -> dict | None
         "자산총계",
         "자본총계",
         "이익잉여금",
+        "미처분이익잉여금(결손금)",
         "자본금",
         "자본잉여금",
         "부채총계",
@@ -108,7 +109,9 @@ def calcFundingSources(company, *, basePeriod: str | None = None) -> dict | None
     if taRow is None:
         return None
 
-    reRow = data.get("이익잉여금", {})
+    from dartlab.analysis.financial._helpers import mergeRows
+
+    reRow = mergeRows(data.get("이익잉여금"), data.get("미처분이익잉여금(결손금)"))
     pcRow = data.get("자본금", {})
     csRow = data.get("자본잉여금", {})
     eqRow = data.get("자본총계", {})
@@ -312,14 +315,16 @@ def calcCapitalTimeline(company, *, basePeriod: str | None = None) -> dict | Non
 
         {"tables": [(label, rows, cols), ...]}
     """
-    result = company.select("BS", ["자본총계", "이익잉여금"])
+    result = company.select("BS", ["자본총계", "이익잉여금", "미처분이익잉여금(결손금)"])
     parsed = _toDict(result)
     if parsed is None or "자본총계" not in parsed[0]:
         return None
 
     data, allPeriods = parsed
+    from dartlab.analysis.financial._helpers import mergeRows
+
     equityRow = data["자본총계"]
-    retainedRow = data.get("이익잉여금")
+    retainedRow = mergeRows(data.get("이익잉여금"), data.get("미처분이익잉여금(결손금)"))
 
     tables = []
     yCols = _annualColsFromPeriods(allPeriods, basePeriod, _MAX_YEARS)
@@ -755,7 +760,7 @@ def calcCapitalFlags(company, *, basePeriod: str | None = None) -> list[tuple[st
         flags.append((f"Piotroski F 재무 약화 ({pf}/9)", "warning"))
 
     # 금융부채 비중 (BS에서 직접 계산)
-    flagResult = company.select("BS", ["부채총계", "단기차입금", "장기차입금", "사채", "자본총계", "이익잉여금"])
+    flagResult = company.select("BS", ["부채총계", "단기차입금", "장기차입금", "사채", "자본총계", "이익잉여금", "미처분이익잉여금(결손금)"])
     flagParsed = _toDict(flagResult)
     if flagParsed is not None and "부채총계" in flagParsed[0]:
         data = flagParsed[0]
@@ -768,7 +773,9 @@ def calcCapitalFlags(company, *, basePeriod: str | None = None) -> list[tuple[st
             flags.append((f"금융부채 비중 {finDebtPct:.0f}% — 이자 부담 부채 높음", "warning"))
 
         equityRow = data.get("자본총계")
-        retainedRow = data.get("이익잉여금")
+        from dartlab.analysis.financial._helpers import mergeRows
+
+        retainedRow = mergeRows(data.get("이익잉여금"), data.get("미처분이익잉여금(결손금)"))
         retainedPct = _calcRetainedPct(equityRow, retainedRow)
         if retainedPct is not None and retainedPct > 70:
             flags.append((f"내부유보 비중 {retainedPct:.0f}% — 자기 힘으로 성장", "opportunity"))

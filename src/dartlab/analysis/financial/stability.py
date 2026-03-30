@@ -203,7 +203,7 @@ def calcDistressScore(company, *, basePeriod: str | None = None) -> dict | None:
     """
     bsResult = company.select(
         "BS",
-        ["자산총계", "유동자산", "유동부채", "부채총계", "이익잉여금"],
+        ["자산총계", "유동자산", "유동부채", "부채총계", "이익잉여금", "미처분이익잉여금(결손금)"],
     )
     isResult = company.select("IS", ["영업이익", "매출액"])
 
@@ -219,7 +219,9 @@ def calcDistressScore(company, *, basePeriod: str | None = None) -> dict | None:
     caRow = bsData.get("유동자산", {})
     clRow = bsData.get("유동부채", {})
     tlRow = bsData.get("부채총계", {})
-    reRow = bsData.get("이익잉여금", {})
+    from dartlab.analysis.financial._helpers import mergeRows
+
+    reRow = mergeRows(bsData.get("이익잉여금"), bsData.get("미처분이익잉여금(결손금)"))
     opRow = isData.get("영업이익", {})
     revRow = isData.get("매출액", {})
 
