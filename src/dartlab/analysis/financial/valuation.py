@@ -557,12 +557,20 @@ def _classifyCompanyType(company: Any, series: dict) -> tuple[str, dict[str, flo
 
     isCyclicalSector = igStr.upper() in _cyclicalIg
     isStableSector = igStr.upper() in _stableIg
+
+    # 유틸리티: 규제기업으로 CAPEX 극대, FCF 만성 적자 → DCF 부적합, DDM/RIM 우선
+    if igStr.upper() in ("UTILITIES", "GAS_UTILITY", "ELECTRIC"):
+        return "utility", {"DCF": 0.10, "DDM": 0.35, "상대가치": 0.15, "RIM": 0.40}
     # 수주잔고 기반 업종: DCF가 과거 적자를 외삽하므로 가중 축소, RIM/상대가치 우선
     _backlogIg = {"SHIPBUILDING", "CONSTRUCTION", "CONSTRUCTION_MATERIALS"}
     isBacklogSector = igStr.upper() in _backlogIg
 
     if isBacklogSector:
         return "backlog_cyclical", {"DCF": 0.15, "DDM": 0.05, "상대가치": 0.45, "RIM": 0.35}
+
+    # 바이오/제약: FCF 적자 빈번, DCF 부적합. PSR/PBR 기반 상대가치 + RIM 우선
+    if igStr.upper() in ("PHARMA_BIO", "HEALTHCARE_EQUIP"):
+        return "pharma_bio", {"DCF": 0.10, "DDM": 0.05, "상대가치": 0.50, "RIM": 0.35}
 
     if isCyclicalSector:
         return "cyclical", {"DCF": 0.25, "DDM": 0.10, "상대가치": 0.40, "RIM": 0.25}
