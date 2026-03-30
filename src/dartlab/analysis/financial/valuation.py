@@ -426,7 +426,7 @@ def _classifyCompanyType(company: Any, series: dict) -> tuple[str, dict[str, flo
 
     # 지주사 판별: 업종명에 "지주" 포함, 또는 IndustryGroup이 HOLDING
     igVal = getattr(sector, "industryGroup", None) if sector else None
-    igStr = igVal.value if igVal and hasattr(igVal, "value") else str(igVal or "")
+    igStr = igVal.name if igVal and hasattr(igVal, "name") else str(igVal or "")
     corpName = getattr(company, "corpName", "")
     # 지주사: 업종/이름 + 한국 주요 지주사 직접 매칭
     _holdingCodes = {"034730", "003550", "028260", "005490"}  # SK, LG, 삼성물산, POSCO홀딩스
@@ -442,14 +442,29 @@ def _classifyCompanyType(company: Any, series: dict) -> tuple[str, dict[str, flo
         # 지주사: DCF(연결 기반) 과대평가 위험 → 상대가치/RIM 우선, DCF 대폭 축소
         return "holding", {"DCF": 0.10, "DDM": 0.20, "상대가치": 0.35, "RIM": 0.35}
 
-    # 성장주 판별: 매출 3Y CAGR > 15%
+    # ── 사이클 업종 사전 판별 (섹터 기반 — CAGR/CV보다 우선) ──
+    _cyclicalIg = {
+        "SEMICONDUCTOR", "CHEMICAL", "METALS", "SHIPBUILDING",
+        "TRANSPORTATION", "OIL_GAS", "ENERGY_EQUIP", "CONSTRUCTION_MATERIALS",
+        "CAPITAL_GOODS", "AUTO", "DISPLAY", "AIRLINE",
+    }
+    # 통신/유틸리티는 NI CV가 높아도 사업 특성상 안정 → cyclical 제외
+    _stableIg = {"TELECOM", "UTILITIES", "GAS_UTILITY", "ELECTRIC"}
+
+    isCyclicalSector = igStr.upper() in _cyclicalIg
+    isStableSector = igStr.upper() in _stableIg
+
+    if isCyclicalSector:
+        return "cyclical", {"DCF": 0.25, "DDM": 0.10, "상대가치": 0.40, "RIM": 0.25}
+
+    # 성장주 판별: 매출 3Y CAGR > 15% (사이클 업종은 위에서 이미 처리)
     revCagr = getRevenueGrowth3Y(series)
     if revCagr is not None and revCagr > 15:
         return "growth", {"DCF": 0.45, "DDM": 0.05, "상대가치": 0.25, "RIM": 0.25}
 
-    # 순환주 판별: 이익 변동성 높은 기업 (NI 표준편차/평균 > 0.5)
+    # 순환주 판별 (통계 기반): NI CV > 0.5이고 안정 업종이 아닌 경우
     niVals = getAnnualValues(series, "IS", "net_profit")
-    if niVals and len(niVals) >= 4:
+    if niVals and len(niVals) >= 4 and not isStableSector:
         validNi = [v for v in niVals[-5:] if v is not None and v > 0]
         if len(validNi) >= 3:
             mean = sum(validNi) / len(validNi)
@@ -457,7 +472,6 @@ def _classifyCompanyType(company: Any, series: dict) -> tuple[str, dict[str, flo
                 var = sum((v - mean) ** 2 for v in validNi) / len(validNi)
                 cv = (var ** 0.5) / mean
                 if cv > 0.5:
-                    # 순환주: Normalized earnings 기반 상대가치 우선
                     return "cyclical", {"DCF": 0.25, "DDM": 0.10, "상대가치": 0.40, "RIM": 0.25}
 
     # 배당주: 안정적 ��당 (DDM 가중 높임)
