@@ -668,6 +668,27 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
     if rimResult and rimResult.intrinsicValue and _inRange(rimResult.intrinsicValue):
         estimates.append({"method": "RIM", "value": rimResult.intrinsicValue, "weight": weights.get("RIM", 0)})
 
+    # Forward BPS × Target PBR — 수주잔고 기반 업종 (조선/건설)
+    if companyType == "backlog_cyclical":
+        from dartlab.core.finance.extract import getLatest, getAnnualValues, getRevenueGrowth3Y
+
+        eq = getLatest(series, "BS", "total_equity")
+        if eq and shares and shares > 0:
+            bps = eq / shares
+            revCagr = getRevenueGrowth3Y(series) or 0
+            # 2년 후 Forward BPS = 현재 BPS × (1 + ROE추정)^2
+            # ROE 추정: 최근 양수 ROE 또는 섹터 평균 8%
+            niVals = getAnnualValues(series, "IS", "net_profit")
+            recentNi = [v for v in (niVals[-3:] if niVals else []) if v is not None and v > 0]
+            roe = recentNi[-1] / eq * 100 if recentNi and eq and eq > 0 else 8.0
+            roe = min(max(roe, 3.0), 25.0)
+            forwardBps = bps * (1 + roe / 100) ** 2
+            # Target PBR: 조선 사이클 상단 2.0~4.0, 평균 3.0
+            targetPbr = 3.0
+            forwardPbrValue = forwardBps * targetPbr
+            if _inRange(forwardPbrValue):
+                estimates.append({"method": "Forward PBR", "value": forwardPbrValue, "weight": weights.get("상대가치", 0.45)})
+
     # NAV — 지주사만 (자회사 시총 합산 기반)
     if companyType == "holding":
         navResult = calcNavValuation(company)

@@ -277,6 +277,24 @@ def dcfValuation(
                 warnings.append("FCF 음수/미확인 → 영업CF × 70%로 대체 추정")
 
     if fcfCurrent is None or fcfCurrent <= 0:
+        # Normalized earnings fallback (Damodaran Ch.22):
+        # 과거 정상기 영업이익률 × 현재 매출 → 정상 영업이익 → FCF proxy
+        oiHist = getAnnualValues(series, "IS", "operating_profit")
+        revHist = getAnnualValues(series, "IS", "sales")
+        if oiHist and revHist:
+            margins = []
+            for oi, rev in zip(oiHist, revHist):
+                if oi is not None and rev is not None and rev > 0 and oi > 0:
+                    margins.append(oi / rev)
+            if margins:
+                normalMargin = sorted(margins)[len(margins) // 2]  # 중앙값
+                latestRev = next((v for v in reversed(revHist) if v is not None and v > 0), None)
+                if latestRev and normalMargin > 0:
+                    normalOi = latestRev * normalMargin
+                    fcfCurrent = normalOi * 0.65  # 세후 × (1 - 재투자율 추정)
+                    warnings.append(f"Normalized earnings: 정상 OPM {normalMargin*100:.1f}% × 현재 매출 → FCF proxy")
+
+    if fcfCurrent is None or fcfCurrent <= 0:
         return DCFResult(
                 fcfHistorical=fcfHist,
                 fcfProjections=[],
