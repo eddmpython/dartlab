@@ -198,7 +198,7 @@ The SEC API has rate limits, so the first load may take a moment. Subsequent loa
 
 To try DartLab without any local setup, run it in Colab:
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/getting-started/quickstart.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb)
 
 In a Colab cell:
 

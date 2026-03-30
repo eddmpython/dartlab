@@ -9,7 +9,7 @@ DartLab does three things: **Company**, **Scan**, **Ask**.
 ## Install
 
 ```bash
-pip install dartlab
+uv add dartlab
 ```
 
 ## 1. Company -- read any company
@@ -71,7 +71,7 @@ dartlab.scan("account", "매출액")       # revenue across all companies
 ## 8. Ask AI
 
 ```bash
-pip install "dartlab[llm]"
+uv add "dartlab[llm]"
 ```
 
 ```python
@@ -83,6 +83,6 @@ Requires a provider. Run `dartlab setup` for options (OpenAI, Ollama, ChatGPT OA
 ## Next
 
 - [Sections guide](./sections) -- how the company map works
-- [Notebooks](../tutorials/) -- interactive Colab and Marimo notebooks
+- [Notebooks](../tutorials/) -- Colab / Marimo 노트북
 - [API Reference](../api/overview)
 - [Installation details](./installation)

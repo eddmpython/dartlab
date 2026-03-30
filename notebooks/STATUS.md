@@ -4,18 +4,22 @@
 
 ```
 notebooks/
-├── colab/                  # Core notebooks (Colab)
-│   ├── 01_company.ipynb    # Company -- sections, show, trace, diff, finance, EDGAR
-│   ├── 02_scan.ipynb       # Scan -- scan() 13-axis market scan
-│   └── 03_ask.ipynb        # Ask -- AI analysis, streaming, chat
-├── marimo/                 # Core notebooks (Marimo / Molab)
+├── colab/                    # Core notebooks (Colab / Jupyter)
+│   ├── 01_company.ipynb      # Company -- sections, show, trace, diff, finance, EDGAR
+│   ├── 02_scan.ipynb         # Scan -- 13-axis market scan
+│   ├── 03_review.ipynb       # Review -- structured report + AI interpretation
+│   ├── 04_gather.ipynb       # Gather -- price, flow, macro, news
+│   ├── 05_analysis.ipynb     # Analysis -- 14-axis, insights, forecast, valuation
+│   └── 06_ask.ipynb          # Ask -- AI natural language analysis
+├── marimo/                   # Core notebooks (Marimo / Molab)
 │   ├── 01_company.py
 │   ├── 02_scan.py
-│   ├── 03_ask.py
-│   └── samples/            # Internal check/sample notebooks
-├── tutorials/              # Legacy Korean tutorials (kept for external link compatibility)
-├── showcase/               # Legacy English showcase (kept for external link compatibility)
-└── getting-started/        # Legacy quickstart
+│   ├── 03_review.py
+│   ├── 04_gather.py
+│   ├── 05_analysis.py
+│   ├── 06_ask.py
+│   └── samples/              # Internal check/sample notebooks
+└── STATUS.md
 ```
 
 ## Links
