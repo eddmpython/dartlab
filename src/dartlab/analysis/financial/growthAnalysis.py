@@ -58,7 +58,7 @@ def calcGrowthTrend(company, *, basePeriod: str | None = None) -> dict | None:
     ni = isData.get("당기순이익", {})
     ta = bsData.get("자산총계", {})
 
-    yCols = _annualColsFromPeriods(isPeriods, _MAX_YEARS + 1, basePeriod=basePeriod)
+    yCols = _annualColsFromPeriods(isPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS + 1)
     if len(yCols) < 2:
         return None
 
@@ -189,7 +189,7 @@ def calcSustainableGrowthRate(company, *, basePeriod: str | None = None) -> dict
     cfParsed = toDictBySnakeId(cfResult)
     divRow = cfParsed[0].get("dividends_paid", {}) if cfParsed else {}
 
-    yCols = _annualColsFromPeriods(isPeriods, _MAX_YEARS + 1, basePeriod=basePeriod)
+    yCols = _annualColsFromPeriods(isPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS + 1)
     if len(yCols) < 2:
         return None
 

@@ -259,7 +259,9 @@ def _renderDataFrame(console, block: TableBlock, indent: int = 6) -> None:
     for i, col in enumerate(df.columns):
         isFirstCol = i == 0
         justify = "left" if isFirstCol else "right"
-        table.add_column(col, justify=justify)
+        # Q4 fallback 컬럼 → 연도 라벨 (2025Q4 → 2025)
+        label = col[:-2] if isinstance(col, str) and col.endswith("Q4") else col
+        table.add_column(label, justify=justify)
 
     for row in df.iter_rows():
         table.add_row(*(str(v) if v is not None else "-" for v in row))

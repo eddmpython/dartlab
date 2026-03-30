@@ -137,7 +137,10 @@ def renderMarkdown(review) -> str:
                 rendered = False
                 if hasattr(block.df, "to_pandas"):
                     try:
-                        parts.append(block.df.to_pandas().to_markdown(index=False))
+                        pdf = block.df.to_pandas()
+                        # Q4 fallback 컬럼 → 연도 라벨로 치환 (2025Q4 → 2025)
+                        pdf.columns = [c[:-2] if isinstance(c, str) and c.endswith("Q4") else c for c in pdf.columns]
+                        parts.append(pdf.to_markdown(index=False))
                         rendered = True
                     except (ImportError, Exception):
                         pass

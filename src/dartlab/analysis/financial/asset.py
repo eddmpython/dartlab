@@ -26,7 +26,7 @@ def _annualColsFromPeriods(
     """연도 컬럼만 추출 (basePeriod 지원)."""
     from dartlab.analysis.financial._helpers import annualColsFromPeriods
 
-    return annualColsFromPeriods(periods, maxYears, basePeriod=basePeriod)
+    return annualColsFromPeriods(periods, basePeriod=basePeriod, maxYears=maxYears)
 
 
 def _get(row: dict, col: str) -> float:

@@ -57,13 +57,48 @@ def _getCompany(stockCode: str) -> Any:
     return c
 
 
-def _df(obj) -> str:
-    """DataFrame/객체를 문자열로."""
+def _fmt(obj) -> str:
+    """객체를 LLM이 읽기 좋은 텍스트로 변환."""
     if obj is None:
         return "데이터 없음"
     if hasattr(obj, "to_pandas"):
         return obj.to_pandas().to_string()
-    return str(obj)[:8000]
+    if isinstance(obj, dict):
+        return _fmtDict(obj)
+    if isinstance(obj, list):
+        return "\n".join(str(item) for item in obj)
+    return str(obj)
+
+
+def _fmtDict(d: dict, depth: int = 0) -> str:
+    """dict를 마크다운 텍스트로 변환. analysis 결과용."""
+    parts: list[str] = []
+    prefix = "#" * min(depth + 3, 5)  # ###, ####, #####
+    for key, val in d.items():
+        if val is None:
+            continue
+        if isinstance(val, dict):
+            parts.append(f"{prefix} {key}")
+            parts.append(_fmtDict(val, depth + 1))
+        elif hasattr(val, "to_pandas"):
+            parts.append(f"{prefix} {key}")
+            parts.append(val.to_pandas().to_string())
+        elif isinstance(val, list):
+            if val and isinstance(val[0], str):
+                parts.append(f"{prefix} {key}")
+                for item in val:
+                    parts.append(f"- {item}")
+            elif val and isinstance(val[0], dict):
+                parts.append(f"{prefix} {key}")
+                for item in val:
+                    parts.append(str(item))
+            else:
+                parts.append(f"**{key}**: {val}")
+        elif isinstance(val, (int, float)):
+            parts.append(f"- **{key}**: {val}")
+        else:
+            parts.append(f"- **{key}**: {val}")
+    return "\n".join(parts)
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -272,45 +307,41 @@ def _executeTool(name: str, args: dict) -> str:
             return c.review().toMarkdown()
 
         if name == "companyInsights":
-            return str(_getCompany(code).insights)[:8000]
-
+            return str(_getCompany(code).insights)
         if name == "searchCompany":
-            return _df(dartlab.search(args["query"]))
+            return _fmt(dartlab.search(args["query"]))
 
         if name == "companyFinancials":
-            return _df(getattr(_getCompany(code), args["statement"], None))
+            return _fmt(getattr(_getCompany(code), args["statement"], None))
 
         if name == "companyRatios":
-            return _df(_getCompany(code).ratios)
+            return _fmt(_getCompany(code).ratios)
 
         if name == "companyAnalysis":
             c = _getCompany(code)
             axis = args.get("axis")
-            return _df(c.analysis(axis) if axis else c.analysis())
+            return _fmt(c.analysis(axis) if axis else c.analysis())
 
         if name == "companyValuation":
-            return _df(_getCompany(code).valuation())
+            return _fmt(_getCompany(code).valuation())
 
         if name == "companyForecast":
-            return _df(_getCompany(code).forecast())
+            return _fmt(_getCompany(code).forecast())
 
         if name == "companyShow":
-            return str(_getCompany(code).show(args["topic"]))[:8000]
-
+            return str(_getCompany(code).show(args["topic"]))
         if name == "companyTopics":
             return json.dumps(_getCompany(code).topics, ensure_ascii=False, indent=2)
 
         if name == "companyDiff":
             c = _getCompany(code)
             topic = args.get("topic")
-            return str(c.diff(topic) if topic else c.diff())[:8000]
-
+            return str(c.diff(topic) if topic else c.diff())
         if name == "companyGovernance":
-            return _df(_getCompany(code).governance())
+            return _fmt(_getCompany(code).governance())
 
         if name == "companyAudit":
-            return str(_getCompany(code).audit())[:8000]
-
+            return str(_getCompany(code).audit())
         if name == "companyProfile":
             p = _getCompany(code).profile
             if hasattr(p, "__dict__"):
@@ -318,13 +349,12 @@ def _executeTool(name: str, args: dict) -> str:
                     {k: str(v)[:500] for k, v in p.__dict__.items() if not k.startswith("_")},
                     ensure_ascii=False, indent=2,
                 )
-            return str(p)[:8000]
-
+            return str(p)
         if name == "companySections":
-            return _df(_getCompany(code).sections)
+            return _fmt(_getCompany(code).sections)
 
         if name == "marketScan":
-            return _df(dartlab.scan(args["axis"]))
+            return _fmt(dartlab.scan(args["axis"]))
 
         return f"Unknown tool: {name}"
 

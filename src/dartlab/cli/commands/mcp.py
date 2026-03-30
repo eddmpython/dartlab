@@ -14,6 +14,11 @@ def configure_parser(subparsers) -> None:
         choices=["claude-desktop", "claude-code", "cursor"],
         help="지정한 클라이언트의 설정 예시를 출력합니다.",
     )
+    parser.add_argument(
+        "--install",
+        action="store_true",
+        help="현재 디렉토리에 .mcp.json을 자동 생성합니다.",
+    )
     parser.set_defaults(handler=_run)
 
 
@@ -76,9 +81,16 @@ def _print_config(client: str) -> None:
 
 
 def _run(args) -> None:
-    """설정 출력 또는 MCP stdio 서버를 시작한다."""
+    """설정 출력, 자동 설치, 또는 MCP stdio 서버를 시작한다."""
     if args.config:
         _print_config(args.config)
+        return
+
+    if args.install:
+        from dartlab.mcp import installMcpConfig
+
+        result = installMcpConfig()
+        print(result)
         return
 
     from dartlab.mcp import run_stdio

@@ -181,6 +181,21 @@ def annualColsFromPeriods(
     return cols[:maxYears]
 
 
+def annualLabel(period: str) -> str:
+    """연간 기간 표시용 라벨. Q4 fallback 컬럼의 접미사를 제거한다.
+
+    "2025Q4" -> "2025", "2025" -> "2025", "2025Q3" -> "2025Q3" (분기는 유지)
+    """
+    if period.endswith("Q4"):
+        return period[:-2]
+    return period
+
+
+def annualLabels(periods: list[str]) -> dict[str, str]:
+    """연간 기간 컬럼 → 표시 라벨 매핑. 테이블 렌더링에서 헤더 치환용."""
+    return {p: annualLabel(p) for p in periods}
+
+
 def quarterlyColsFromPeriods(
     periods: list[str],
     basePeriod: str | None = None,
