@@ -56,6 +56,41 @@ def _preserveUnmapped(label: str, prefix: str) -> str:
     return f"{prefix}_{safe or 'unknown'}"
 
 
+# ── 동의어 snakeId 기간별 gap 채우기 ──
+# 기업이 기간에 따라 같은 개념을 다른 계정명으로 제출하는 경우 대응.
+# 예: CJ ENM은 2025Q1까지 "매출액"(→sales), 2025Q2부터 "수익"(→revenue).
+_SNAKE_FILL_RULES: list[tuple[str, str, str]] = [
+    # (재무제표, primary, fallback) — primary가 null인 기간에 fallback 값 사용
+    ("IS", "sales", "revenue"),
+    ("IS", "sales", "net_sales"),
+    ("BS", "retained_earnings", "unappropriated_retained_earnings_deficit"),
+]
+
+
+def _fillSnakeIdGaps(
+    series: dict[str, dict[str, list[float | None]]],
+) -> None:
+    """동의어 snakeId 간 기간별 null을 채운다 (in-place)."""
+    for sjDiv, primary, fallback in _SNAKE_FILL_RULES:
+        stmt = series.get(sjDiv)
+        if stmt is None:
+            continue
+        pVals = stmt.get(primary)
+        fVals = stmt.get(fallback)
+        if pVals is None and fVals is None:
+            continue
+        if pVals is None:
+            # primary 자체가 없으면 fallback을 primary로 승격
+            stmt[primary] = list(fVals)
+            continue
+        if fVals is None:
+            continue
+        # 둘 다 있으면 primary의 null을 fallback으로 채움
+        for i in range(len(pVals)):
+            if pVals[i] is None and i < len(fVals) and fVals[i] is not None:
+                pVals[i] = fVals[i]
+
+
 def _loadAndNormalize(
     stockCode: str,
     fsDivPref: str = "CFS",
@@ -393,6 +428,7 @@ def _pivotToSeries(
         for acct, cnt in sorted(unmappedAccounts.items(), key=lambda x: -x[1])[:5]:
             _log.debug("  미매핑 상위: %s (%d회)", acct, cnt)
 
+    _fillSnakeIdGaps(result)
     sortSeries(result)
     return result
 
