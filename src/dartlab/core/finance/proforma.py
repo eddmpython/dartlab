@@ -521,6 +521,69 @@ def extract_historical_ratios(
 
 
 # ══════════════════════════════════════
+# 개별 Beta (주가 수익률 회귀)
+# ══════════════════════════════════════
+
+
+def _fetchBeta(stockCode: str, currency: str = "KRW") -> float | None:
+    """1년 일별 수익률 vs 시장 지수 회귀로 Beta 산출. 캐시 적용."""
+    try:
+        from dartlab.gather.http import run_async
+        import httpx
+
+        async def _calc():
+            async with httpx.AsyncClient(timeout=15) as client:
+                if currency == "KRW":
+                    from dartlab.gather.domains.naver import fetch_history
+
+                    stockHist = await fetch_history(stockCode, client, market="KR")
+                    marketHist = await fetch_history("KOSPI", client, market="KR")
+                else:
+                    return None
+
+                if len(stockHist) < 250 or len(marketHist) < 250:
+                    return None
+
+                # 최근 1년(약 250 거래일)만 사용
+                stockHist = stockHist[-260:]
+                marketHist = marketHist[-260:]
+
+                import polars as pl
+
+                sdf = pl.DataFrame(stockHist).select(
+                    pl.col("date").cast(pl.Date).alias("date"),
+                    pl.col("close").cast(pl.Float64).alias("sc"),
+                )
+                mdf = pl.DataFrame(marketHist).select(
+                    pl.col("date").cast(pl.Date).alias("date"),
+                    pl.col("close").cast(pl.Float64).alias("mc"),
+                )
+                joined = sdf.join(mdf, on="date", how="inner").sort("date")
+                if joined.height < 60:
+                    return None
+
+                joined = joined.with_columns(
+                    (pl.col("sc") / pl.col("sc").shift(1) - 1).alias("sr"),
+                    (pl.col("mc") / pl.col("mc").shift(1) - 1).alias("mr"),
+                ).drop_nulls()
+
+                if joined.height < 30:
+                    return None
+
+                sr = joined["sr"].to_numpy()
+                mr = joined["mr"].to_numpy()
+                cov = (sr * mr).mean() - sr.mean() * mr.mean()
+                var = mr.var()
+                if var is None or var == 0:
+                    return None
+                beta = float(cov / var)
+                return round(max(0.3, min(beta, 3.0)), 2)
+
+        return run_async(_calc())
+    except (ImportError, OSError, RuntimeError, AttributeError):
+        return None
+
+
 # 회사 고유 WACC
 # ══════════════════════════════════════
 
@@ -533,6 +596,7 @@ def compute_company_wacc(
     market_premium: float | None = None,
     market_cap: float | None = None,
     currency: str = "KRW",
+    beta_override: float | None = None,
 ) -> tuple[float, dict[str, float]]:
     """회사 고유 WACC 계산 (Damodaran CAPM 기반).
 
@@ -545,15 +609,17 @@ def compute_company_wacc(
     rf = risk_free_rate if risk_free_rate is not None else mkt.riskFreeRate
     erp = market_premium if market_premium is not None else mkt.totalErp
 
-    # beta: sectorParams 우선, 없으면 elasticity proxy, 최후 1.0
-    beta = 1.0
-    if sector_params and hasattr(sector_params, "beta") and sector_params.beta:
-        beta = sector_params.beta
-    elif sector_elasticity and hasattr(sector_elasticity, "revenueToGdp"):
-        beta = max(0.5, min(sector_elasticity.revenueToGdp, 2.5))
+    # beta: 1순위 외부 주입(수익률 회귀), 2순위 섹터 파라미터, 3순위 1.0
+    beta = beta_override
+    if beta is None:
+        if sector_params and hasattr(sector_params, "beta") and sector_params.beta:
+            beta = sector_params.beta
+        elif sector_elasticity and hasattr(sector_elasticity, "revenueToGdp"):
+            beta = max(0.5, min(sector_elasticity.revenueToGdp, 2.5))
+        else:
+            beta = 1.0
 
     # 시가총액 기반 beta 감쇠 — 대형주는 시장 대비 변동성이 낮음
-    # Damodaran: 소형주 프리미엄 역산. 시총 50조+ → beta × 0.8, 10조+ → × 0.9
     if market_cap and market_cap > 0:
         mcTrillion = market_cap / 1e12
         if mcTrillion > 50:

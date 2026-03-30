@@ -623,11 +623,15 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
 
     companyType, weights = _classifyCompanyType(company, series)
 
-    # CAPM 기반 동적 WACC (섹터 테이블 고정값 대체)
-    from dartlab.core.finance.proforma import compute_company_wacc
+    # 개별 beta (수익률 회귀) + CAPM 기반 동적 WACC
+    from dartlab.core.finance.proforma import compute_company_wacc, _fetchBeta
+
+    stockCode = getattr(company, "stockCode", "")
+    betaCalc = _fetchBeta(stockCode, currency) if stockCode else None
 
     wacc, _waccDetail = compute_company_wacc(
         series, sector_params=sp, market_cap=marketCap, currency=currency,
+        beta_override=betaCalc,
     )
 
     result = fullValuation(
