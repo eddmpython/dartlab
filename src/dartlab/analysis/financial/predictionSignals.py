@@ -583,6 +583,598 @@ def calcMacroSensitivity(company, *, basePeriod: str | None = None) -> dict | No
 
 
 # ══════════════════════════════════════
+# calc 4b: 거시-재무 동적 회귀
+# ══════════════════════════════════════
+
+
+def calcMacroRegression(company, *, basePeriod: str | None = None) -> dict | None:
+    """거시-재무 동적 회귀 — 기업별 거시 베타를 과거 데이터에서 학습.
+
+    정적 상수(scenario.py의 revenueToGdp=1.8 등) 대신,
+    실제 과거 매출/마진 성장률과 거시지표 변화율 간 OLS 회귀로
+    기업 고유의 동적 베타를 추정한다.
+
+    학술 근거:
+    - Fama-MacBeth 1973: 횡단면 회귀로 팩터 프리미엄 추정
+    - 시간차(lag) 효과: GDP t → 매출 t+1 (경기 전달 메커니즘)
+
+    반환:
+        dict with:
+        - betas: {gdp: float, rate: float, fx: float} — OLS 기울기 (기업별)
+        - staticBetas: {gdp: float, rate: float, fx: float} — 정적 탄성치 (비교용)
+        - lagEffects: {variable: {lag0: corr, lag1: corr}} — 시간차별 상관도
+        - rSquared: float — 설명력
+        - nObs: int — 관측치 수
+        - confidence: str — "high"/"medium"/"low"
+        - table: list[dict] — 연도별 매출 성장률 vs 거시 변화율 시계열 테이블
+    """
+    isResult = company.select("IS", ["매출액", "영업이익"])
+    isParsed = _toDict(isResult)
+    if isParsed is None:
+        return None
+    isData, isPeriods = isParsed
+    revRow = isData.get("매출액", {})
+    oiRow = isData.get("영업이익", {})
+
+    cols = _annualCols(isPeriods, basePeriod=basePeriod)
+    if len(cols) < 4:
+        return None
+
+    # 매출/영업이익 시계열 추출
+    revValues = [_get(revRow, c) or None for c in cols]
+    oiValues = [_get(oiRow, c) or None for c in cols]
+
+    # 매출 성장률 계산
+    revGrowth: list[float | None] = []
+    for i in range(len(revValues) - 1):
+        cur, prev = revValues[i], revValues[i + 1]
+        if cur is not None and prev is not None and prev != 0:
+            revGrowth.append((cur - prev) / abs(prev) * 100)
+        else:
+            revGrowth.append(None)
+
+    # 마진 시계열 계산
+    margins: list[float | None] = []
+    for r, o in zip(revValues, oiValues):
+        if r is not None and o is not None and r != 0:
+            margins.append(o / r * 100)
+        else:
+            margins.append(None)
+
+    marginChange: list[float | None] = []
+    for i in range(len(margins) - 1):
+        cur, prev = margins[i], margins[i + 1]
+        if cur is not None and prev is not None:
+            marginChange.append(cur - prev)  # bps
+        else:
+            marginChange.append(None)
+
+    # 거시 + 산업 지표 시계열 로드 (Parquet 캐시 우선)
+    stockCode = _getStockCode(company)
+    macroData = _loadMacroAligned(cols, stockCode=stockCode)
+    if macroData is None:
+        return None
+
+    # OLS 회귀: 매출 성장률 ~ GDP + 금리 + 환율 + 산업지표
+    betas, rSquared, nObs = _fitOLS(revGrowth, macroData, cols)
+    if betas is None:
+        return None
+
+    # 시간차(lag) 상관도 계산
+    lagEffects = _calcLagCorrelation(revGrowth, macroData, cols)
+
+    # 마진 회귀 (금리 → 마진 변화)
+    marginBetas, marginR2, _ = _fitOLS(marginChange, macroData, cols)
+
+    # 정적 탄성치 비교
+    from dartlab.core.finance.scenario import getElasticity
+
+    sectorKey = _getSectorKey(company)
+    staticEl = getElasticity(sectorKey)
+
+    confidence = "high" if nObs >= 8 and rSquared > 0.3 else ("medium" if nObs >= 5 else "low")
+
+    # 테이블 (연도별 시계열)
+    table = _buildMacroTable(cols, revGrowth, marginChange, macroData)
+
+    # 사용된 지표 정보
+    usedIndicators = macroData.get("_usedIndicators", {}) if isinstance(macroData.get("_usedIndicators"), dict) else {}
+
+    return {
+        "betas": betas,
+        "staticBetas": {
+            "gdp": staticEl.revenueToGdp,
+            "rate": staticEl.marginToGdp,
+            "fx": staticEl.revenueToFx,
+        },
+        "usedIndicators": usedIndicators,
+        "marginBetas": marginBetas,
+        "lagEffects": lagEffects,
+        "rSquared": round(rSquared, 4),
+        "marginR2": round(marginR2, 4) if marginR2 is not None else None,
+        "nObs": nObs,
+        "nVars": len(betas) if betas else 0,
+        "degreesOfFreedom": nObs - len(betas) - 1 if betas else 0,
+        "confidence": confidence,
+        "sectorKey": sectorKey,
+        "table": table,
+    }
+
+
+def _getFinanceSeries(company):
+    """Company에서 finance series dict 추출."""
+    try:
+        return company.finance._series if hasattr(company.finance, "_series") else None
+    except (AttributeError, TypeError):
+        return None
+
+
+def _loadMacroAligned(
+    periodCols: list[str],
+    stockCode: str | None = None,
+) -> dict[str, list[float | None]] | None:
+    """Parquet 캐시에서 거시+산업 지표를 로드하고 재무 기간에 맞춰 정렬.
+
+    stockCode가 주어지면 kindList 주요제품에서 산업 지표를 자동 매핑하여 추가.
+
+    Returns:
+        {"gdp": [...], "rate": [...], "fx": [...], "ind0": [...], "ind1": [...]}
+        또는 None (데이터 없음).
+    """
+    from dartlab.gather.macro import alignToFinancialPeriods, loadMacroParquet
+
+    # 산업 지표가 있으면 GDP 대신 사용 (변수 3개 유지 → 과적합 방지)
+    # gdp 슬롯: 산업지표 > IPI > GDP
+    gdpCandidates: list[tuple[str, str]] = []
+
+    if stockCode:
+        try:
+            from dartlab.core.finance.productIndicators import getProductIndicators
+
+            prodInds = getProductIndicators(stockCode)
+            if prodInds:
+                # 첫 번째 산업 지표를 gdp 슬롯에 사용
+                ind = prodInds[0]
+                gdpCandidates.append((ind["seriesId"], ind["source"]))
+        except (ImportError, KeyError):
+            pass
+
+    # 산업 지표 없으면 IPI/GDP fallback
+    gdpCandidates.extend([("IPI", "ecos"), ("GDP", "ecos"), ("GROWTH", "ecos")])
+
+    indicators: dict[str, list[tuple[str, str]]] = {
+        "gdp": gdpCandidates,
+        "rate": [("BASE_RATE", "ecos")],
+        "fx": [("USDKRW", "ecos")],
+    }
+    result: dict[str, list[float | None]] = {}
+    usedIndicators: dict[str, str] = {}  # key → 실제 사용된 시리즈 ID
+
+    for key, candidates in indicators.items():
+        loaded = False
+        for indicatorId, source in candidates:
+            df = loadMacroParquet(indicatorId, source=source)
+            if df is not None and not df.is_empty():
+                aligned = alignToFinancialPeriods(df, periodCols)
+                result[key] = aligned.get_column("value").to_list()
+                usedIndicators[key] = indicatorId
+                loaded = True
+                break
+        if not loaded:
+            result[key] = [None] * len(periodCols)
+
+    result["_usedIndicators"] = usedIndicators  # type: ignore[assignment]
+
+    # 최소 1개 지표에 데이터가 있어야 함
+    hasData = any(
+        any(v is not None for v in vals)
+        for k, vals in result.items()
+        if k != "_usedIndicators" and isinstance(vals, list)
+    )
+    return result if hasData else None
+
+
+def _fitOLS(
+    y: list[float | None],
+    macroData: dict[str, list[float | None]],
+    cols: list[str],
+) -> tuple[dict[str, float] | None, float | None, int]:
+    """OLS 회귀 — y ~ 거시변화율 + 산업지표변화율 (가변 변수).
+
+    macroData의 키가 회귀 변수명이 된다.
+    외부 의존성 없이 순수 Python으로 구현.
+
+    Returns:
+        (betas, r_squared, n_obs) 또는 (None, None, 0).
+    """
+    varNames = [k for k in macroData.keys() if k != "_usedIndicators" and isinstance(macroData[k], list)]
+
+    # 거시/산업 변화율 계산 (전년대비)
+    macroChanges: dict[str, list[float | None]] = {}
+    for key in varNames:
+        vals = macroData[key]
+        changes = []
+        for i in range(len(vals) - 1):
+            cur, prev = vals[i], vals[i + 1]
+            if cur is not None and prev is not None and prev != 0:
+                if key == "rate":
+                    changes.append(cur - prev)  # 금리는 절대 변화 (pp)
+                else:
+                    changes.append((cur - prev) / abs(prev) * 100)  # %
+            else:
+                changes.append(None)
+        macroChanges[key] = changes
+
+    # 유효 관측치만 추출 (기본 3개 gdp/rate/fx는 필수, 산업 지표는 optional)
+    baseVars = [v for v in varNames if v in ("gdp", "rate", "fx")]
+    indVars = [v for v in varNames if v.startswith("ind")]
+    n = min(len(y), *(len(macroChanges[v]) for v in baseVars if v in macroChanges))
+
+    validY: list[float] = []
+    validX: list[list[float]] = []
+    activeVars: list[str] = []  # 실제 사용된 변수
+
+    # 어떤 변수가 데이터가 있는지 먼저 결정
+    for v in baseVars + indVars:
+        if v in macroChanges and any(x is not None for x in macroChanges[v][:n]):
+            activeVars.append(v)
+
+    for i in range(n):
+        yVal = y[i]
+        if yVal is None:
+            continue
+        xVals = []
+        skip = False
+        for v in activeVars:
+            val = macroChanges[v][i] if i < len(macroChanges[v]) else None
+            if val is None:
+                skip = True
+                break
+            xVals.append(val)
+        if not skip:
+            validY.append(yVal)
+            validX.append(xVals)
+
+    if len(validY) < 3 or not activeVars:
+        return None, None, 0
+
+    # OLS: β = (X'X)^-1 X'y (절편 포함)
+    nObs = len(validY)
+    k = 1 + len(activeVars)  # 절편 + 변수 수
+
+    X = [[1.0] + row for row in validX]
+
+    XtX = [[sum(X[r][i] * X[r][j] for r in range(nObs)) for j in range(k)] for i in range(k)]
+    Xty = [sum(X[r][i] * validY[r] for r in range(nObs)) for i in range(k)]
+
+    inv = _invertMatrix(XtX)
+    if inv is None:
+        return None, None, 0
+
+    beta = [sum(inv[i][j] * Xty[j] for j in range(k)) for i in range(k)]
+
+    # R²
+    yMean = sum(validY) / nObs
+    ssTot = sum((y_ - yMean) ** 2 for y_ in validY)
+    yPred = [sum(X[r][j] * beta[j] for j in range(k)) for r in range(nObs)]
+    ssRes = sum((validY[r] - yPred[r]) ** 2 for r in range(nObs))
+    rSquared = 1 - ssRes / ssTot if ssTot > 0 else 0.0
+
+    betas = {activeVars[i]: round(beta[i + 1], 4) for i in range(len(activeVars))}
+
+    return betas, rSquared, nObs
+
+
+def _invertMatrix(m: list[list[float]]) -> list[list[float]] | None:
+    """4x4 행렬 가우스-조르단 역행렬."""
+    n = len(m)
+    aug = [row[:] + [1.0 if i == j else 0.0 for j in range(n)] for i, row in enumerate(m)]
+
+    for col in range(n):
+        # 피벗 선택
+        maxRow = max(range(col, n), key=lambda r: abs(aug[r][col]))
+        if abs(aug[maxRow][col]) < 1e-12:
+            return None  # 특이 행렬
+        aug[col], aug[maxRow] = aug[maxRow], aug[col]
+
+        pivot = aug[col][col]
+        aug[col] = [x / pivot for x in aug[col]]
+
+        for row in range(n):
+            if row != col:
+                factor = aug[row][col]
+                aug[row] = [aug[row][j] - factor * aug[col][j] for j in range(2 * n)]
+
+    return [row[n:] for row in aug]
+
+
+def _calcLagCorrelation(
+    y: list[float | None],
+    macroData: dict[str, list[float | None]],
+    cols: list[str],
+) -> dict[str, dict[str, float | None]]:
+    """시간차(lag) 상관도 — lag 0, 1, 2."""
+    result: dict[str, dict[str, float | None]] = {}
+
+    for key in [k for k in macroData if k != "_usedIndicators" and isinstance(macroData[k], list)]:
+        vals = macroData[key]
+        lagCorrs: dict[str, float | None] = {}
+        # 거시 변화율
+        changes = []
+        for i in range(len(vals) - 1):
+            cur, prev = vals[i], vals[i + 1]
+            if cur is not None and prev is not None and prev != 0:
+                if key == "rate":
+                    changes.append(cur - prev)
+                else:
+                    changes.append((cur - prev) / abs(prev) * 100)
+            else:
+                changes.append(None)
+
+        for lag in range(3):
+            corr = _pearsonCorrelation(y, changes, lag=lag)
+            lagCorrs[f"lag{lag}"] = round(corr, 4) if corr is not None else None
+
+        result[key] = lagCorrs
+
+    return result
+
+
+def _pearsonCorrelation(
+    y: list[float | None],
+    x: list[float | None],
+    *,
+    lag: int = 0,
+) -> float | None:
+    """피어슨 상관계수 (lag 적용)."""
+    pairs: list[tuple[float, float]] = []
+    for i in range(len(y)):
+        xi = i + lag
+        if xi < len(x):
+            yVal, xVal = y[i], x[xi]
+            if yVal is not None and xVal is not None:
+                pairs.append((yVal, xVal))
+
+    if len(pairs) < 3:
+        return None
+
+    yVals = [p[0] for p in pairs]
+    xVals = [p[1] for p in pairs]
+    yMean = sum(yVals) / len(yVals)
+    xMean = sum(xVals) / len(xVals)
+
+    cov = sum((y_ - yMean) * (x_ - xMean) for y_, x_ in pairs) / len(pairs)
+    yStd = math.sqrt(sum((y_ - yMean) ** 2 for y_ in yVals) / len(yVals))
+    xStd = math.sqrt(sum((x_ - xMean) ** 2 for x_ in xVals) / len(xVals))
+
+    if yStd < 1e-12 or xStd < 1e-12:
+        return None
+
+    return cov / (yStd * xStd)
+
+
+def _buildMacroTable(
+    cols: list[str],
+    revGrowth: list[float | None],
+    marginChange: list[float | None],
+    macroData: dict[str, list[float | None]],
+) -> list[dict]:
+    """연도별 매출 성장률 vs 거시 변화율 시계열 테이블."""
+    table = []
+    n = min(len(revGrowth), len(cols) - 1)
+
+    for i in range(n):
+        row: dict = {
+            "period": cols[i],
+            "revGrowthPct": round(revGrowth[i], 2) if revGrowth[i] is not None else None,
+            "marginChangeBps": round(marginChange[i], 1) if i < len(marginChange) and marginChange[i] is not None else None,
+        }
+        for key, vals in macroData.items():
+            if key == "_usedIndicators" or not isinstance(vals, list):
+                continue
+            row[f"{key}Value"] = round(vals[i], 2) if i < len(vals) and vals[i] is not None else None
+        table.append(row)
+
+    return table
+
+
+# ══════════════════════════════════════
+# calc 4c: 이벤트 충격 분석
+# ══════════════════════════════════════
+
+
+def calcEventImpact(company, *, basePeriod: str | None = None) -> dict | None:
+    """이벤트 충격 분석 — 공시 급변/지배구조 변화 시점 전후 재무 패턴.
+
+    과거에 공시 텍스트가 급변하거나 지배구조가 변한 시점을 식별하고,
+    해당 시점 전후 매출/마진 변화 패턴을 추출한다.
+
+    반환:
+        dict with:
+        - events: list[dict] — 감지된 이벤트 목록
+          - period: str — 이벤트 발생 기간
+          - type: str — "disclosureShock" / "governanceChange" / "structuralBreak"
+          - magnitude: float — 변화 크기
+          - preRevGrowth: float — 이벤트 전 매출 성장률 (%)
+          - postRevGrowth: float — 이벤트 후 매출 성장률 (%)
+          - preMargin: float — 이벤트 전 영업마진 (%)
+          - postMargin: float — 이벤트 후 영업마진 (%)
+          - recoveryYears: int | None — 회복까지 걸린 기간
+        - averageImpact: dict — 이벤트 유형별 평균 충격
+        - resilience: str — "high"/"medium"/"low" — 기업의 충격 회복력
+    """
+    isResult = company.select("IS", ["매출액", "영업이익"])
+    isParsed = _toDict(isResult)
+    if isParsed is None:
+        return None
+    isData, isPeriods = isParsed
+    revRow = isData.get("매출액", {})
+    oiRow = isData.get("영업이익", {})
+
+    cols = _annualCols(isPeriods, basePeriod=basePeriod)
+    if len(cols) < 4:
+        return None
+
+    revValues = [_get(revRow, c) or None for c in cols]
+    oiValues = [_get(oiRow, c) or None for c in cols]
+
+    # 매출 성장률 + 마진 계산
+    revGrowth = _calcGrowthRates(revValues)
+    margins = _calcMargins(revValues, oiValues)
+
+    events: list[dict] = []
+
+    # 1. 공시 텍스트 급변 감지 (disclosureDelta 활용)
+    try:
+        discDelta = calcDisclosureDelta(company, basePeriod=basePeriod)
+        if discDelta and discDelta.get("changeIntensity"):
+            intensity = discDelta["changeIntensity"]
+            if intensity.get("totalChangeBytes", 0) > 50000:
+                eventIdx = 0  # 최신 기간
+                events.append(_buildEvent(
+                    period=cols[eventIdx] if eventIdx < len(cols) else "unknown",
+                    eventType="disclosureShock",
+                    magnitude=intensity.get("totalChangeBytes", 0) / 10000,
+                    revGrowth=revGrowth,
+                    margins=margins,
+                    eventIdx=eventIdx,
+                ))
+    except (AttributeError, TypeError, KeyError):
+        pass
+
+    # 2. 구조변화점 감지 (structuralBreak 재활용)
+    try:
+        breakResult = calcStructuralBreak(company, basePeriod=basePeriod)
+        if breakResult:
+            for metric, detail in breakResult.get("metrics", {}).items():
+                if detail.get("breakDetected"):
+                    breakYear = detail.get("breakYear")
+                    if breakYear:
+                        eventIdx = _findPeriodIdx(cols, breakYear)
+                        if eventIdx is not None:
+                            events.append(_buildEvent(
+                                period=cols[eventIdx] if eventIdx < len(cols) else str(breakYear),
+                                eventType="structuralBreak",
+                                magnitude=abs(detail.get("postBreakGrowth", 0) - detail.get("preBreakGrowth", 0)),
+                                revGrowth=revGrowth,
+                                margins=margins,
+                                eventIdx=eventIdx,
+                            ))
+    except (AttributeError, TypeError, KeyError):
+        pass
+
+    # 3. 매출 급변 감지 (|성장률| > 30% = 충격)
+    for i, g in enumerate(revGrowth):
+        if g is not None and abs(g) > 30:
+            events.append(_buildEvent(
+                period=cols[i] if i < len(cols) else "unknown",
+                eventType="revenueShock",
+                magnitude=abs(g),
+                revGrowth=revGrowth,
+                margins=margins,
+                eventIdx=i,
+            ))
+
+    if not events:
+        return {
+            "events": [],
+            "averageImpact": {},
+            "resilience": "high",
+            "summary": "최근 5년간 유의미한 충격 이벤트 없음",
+        }
+
+    # 회복력 판단
+    recoveries = [e.get("recoveryYears") for e in events if e.get("recoveryYears") is not None]
+    avgRecovery = sum(recoveries) / len(recoveries) if recoveries else None
+    resilience = "high" if avgRecovery is not None and avgRecovery <= 1 else ("low" if avgRecovery and avgRecovery >= 3 else "medium")
+
+    # 유형별 평균 충격
+    typeImpacts: dict[str, list[float]] = {}
+    for e in events:
+        t = e["type"]
+        impact = (e.get("postRevGrowth") or 0) - (e.get("preRevGrowth") or 0)
+        typeImpacts.setdefault(t, []).append(impact)
+
+    averageImpact = {t: round(sum(v) / len(v), 2) for t, v in typeImpacts.items()}
+
+    return {
+        "events": events,
+        "averageImpact": averageImpact,
+        "resilience": resilience,
+        "avgRecoveryYears": round(avgRecovery, 1) if avgRecovery else None,
+    }
+
+
+def _calcGrowthRates(values: list[float | None]) -> list[float | None]:
+    """연간 성장률 계산."""
+    rates = []
+    for i in range(len(values) - 1):
+        cur, prev = values[i], values[i + 1]
+        if cur is not None and prev is not None and prev != 0:
+            rates.append((cur - prev) / abs(prev) * 100)
+        else:
+            rates.append(None)
+    return rates
+
+
+def _calcMargins(revValues: list, oiValues: list | None) -> list[float | None]:
+    """영업마진 시계열."""
+    if oiValues is None:
+        return [None] * len(revValues)
+    margins = []
+    for r, o in zip(revValues, oiValues):
+        if r is not None and o is not None and r != 0:
+            margins.append(o / r * 100)
+        else:
+            margins.append(None)
+    return margins
+
+
+def _buildEvent(
+    *,
+    period: str,
+    eventType: str,
+    magnitude: float,
+    revGrowth: list[float | None],
+    margins: list[float | None],
+    eventIdx: int,
+) -> dict:
+    """이벤트 전후 재무 패턴 추출."""
+    preRevGrowth = revGrowth[eventIdx + 1] if eventIdx + 1 < len(revGrowth) else None
+    postRevGrowth = revGrowth[eventIdx] if eventIdx < len(revGrowth) else None
+    preMargin = margins[eventIdx + 1] if eventIdx + 1 < len(margins) else None
+    postMargin = margins[eventIdx] if eventIdx < len(margins) else None
+
+    # 회복 시간: 이벤트 후 성장률이 양으로 돌아오는 기간
+    recoveryYears = None
+    if postRevGrowth is not None and postRevGrowth < 0:
+        for j in range(eventIdx - 1, -1, -1):
+            if j < len(revGrowth) and revGrowth[j] is not None and revGrowth[j] > 0:
+                recoveryYears = eventIdx - j
+                break
+
+    return {
+        "period": period,
+        "type": eventType,
+        "magnitude": round(magnitude, 2),
+        "preRevGrowth": round(preRevGrowth, 2) if preRevGrowth is not None else None,
+        "postRevGrowth": round(postRevGrowth, 2) if postRevGrowth is not None else None,
+        "preMargin": round(preMargin, 1) if preMargin is not None else None,
+        "postMargin": round(postMargin, 1) if postMargin is not None else None,
+        "recoveryYears": recoveryYears,
+    }
+
+
+def _findPeriodIdx(cols: list[str], year: int) -> int | None:
+    """연도로 기간 인덱스 찾기."""
+    yearStr = str(year)
+    for i, col in enumerate(cols):
+        if col.startswith(yearStr):
+            return i
+    return None
+
+
+# ══════════════════════════════════════
 # calc 5: 공시 변화 신호
 # ══════════════════════════════════════
 
@@ -1081,6 +1673,8 @@ def calcPredictionSynthesis(company, *, basePeriod: str | None = None) -> dict |
     peer = calcPeerPrediction(company, basePeriod=basePeriod)
     structural = calcStructuralBreak(company, basePeriod=basePeriod)
     macro = calcMacroSensitivity(company, basePeriod=basePeriod)
+    macroReg = calcMacroRegression(company, basePeriod=basePeriod)
+    eventImp = calcEventImpact(company, basePeriod=basePeriod)
     disclosure = calcDisclosureDelta(company, basePeriod=basePeriod)
     inventory = calcInventoryDivergence(company, basePeriod=basePeriod)
     timing = calcAnnouncementTiming(company, basePeriod=basePeriod)
@@ -1153,6 +1747,44 @@ def calcPredictionSynthesis(company, *, basePeriod: str | None = None) -> dict |
             "overallChange": disclosure["overallChangeRate"],
         }
         scores.append(discScore)
+
+    # 5b. 거시-재무 동적 회귀 신호
+    if macroReg is not None and macroReg.get("rSquared", 0) > 0.1:
+        # netMacroEffect가 있으면 사용, 없으면 betas에서 추정
+        netEffect = macro.get("netMacroEffect", 0) if macro else 0
+        macroRegScore = _clamp(netEffect / 10)  # ±10% → ±1.0
+        macroRegDir = "positive" if macroRegScore > 0.15 else ("negative" if macroRegScore < -0.15 else "neutral")
+        signals["macroRegression"] = {
+            "direction": macroRegDir,
+            "strength": abs(macroRegScore),
+            "rSquared": macroReg["rSquared"],
+            "confidence": macroReg["confidence"],
+            "nObs": macroReg["nObs"],
+        }
+        scores.append(macroRegScore)
+
+    # 5c. 이벤트 충격 신호
+    if eventImp is not None:
+        resilience = eventImp.get("resilience", "medium")
+        nEvents = len(eventImp.get("events", []))
+        if resilience == "low" and nEvents > 0:
+            eventScore = -0.5
+            eventDir = "negative"
+        elif resilience == "high":
+            eventScore = 0.2
+            eventDir = "positive"
+        else:
+            eventScore = 0.0
+            eventDir = "neutral"
+        signals["eventImpact"] = {
+            "direction": eventDir,
+            "strength": abs(eventScore),
+            "resilience": resilience,
+            "nEvents": nEvents,
+            "avgRecoveryYears": eventImp.get("avgRecoveryYears"),
+        }
+        if nEvents > 0:
+            scores.append(eventScore)
 
     # 6. 재고/매출채권 괴리 신호
     if inventory is not None:
@@ -1292,6 +1924,24 @@ def calcPredictionFlags(company, *, basePeriod: str | None = None) -> list[tuple
             flags.append(("PEER_BELOW", f"피어 대비 {peer['divergence']:+.1f}%p 하회 예측"))
         elif peer["divergence"] > 15:
             flags.append(("PEER_ABOVE", f"피어 대비 {peer['divergence']:+.1f}%p 상회 예측"))
+
+    # 거시-재무 회귀
+    macroReg = calcMacroRegression(company, basePeriod=basePeriod)
+    if macroReg:
+        if macroReg["rSquared"] > 0.3 and macroReg["confidence"] in ("high", "medium"):
+            betas = macroReg.get("betas", {})
+            for indicator, beta in betas.items():
+                if abs(beta) > 2.0:
+                    flags.append(("MACRO_HIGH_BETA", f"거시 베타 높음: {indicator} β={beta:+.1f}"))
+
+    # 이벤트 충격
+    eventImp = calcEventImpact(company, basePeriod=basePeriod)
+    if eventImp:
+        if eventImp.get("resilience") == "low":
+            flags.append(("LOW_RESILIENCE", f"충격 회복력 낮음 (평균 {eventImp.get('avgRecoveryYears', '?')}년)"))
+        nEvents = len(eventImp.get("events", []))
+        if nEvents >= 3:
+            flags.append(("FREQUENT_EVENTS", f"최근 충격 이벤트 {nEvents}건"))
 
     # 재고/매출채권 괴리
     inventory = calcInventoryDivergence(company, basePeriod=basePeriod)

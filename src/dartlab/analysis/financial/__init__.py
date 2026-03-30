@@ -516,6 +516,18 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
                 "거시경제 민감도",
             ),
             _CalcEntry(
+                "calcMacroRegression",
+                "dartlab.analysis.financial.predictionSignals",
+                "macroRegression",
+                "거시-재무 동적 회귀",
+            ),
+            _CalcEntry(
+                "calcEventImpact",
+                "dartlab.analysis.financial.predictionSignals",
+                "eventImpact",
+                "이벤트 충격 분석",
+            ),
+            _CalcEntry(
                 "calcDisclosureDelta",
                 "dartlab.analysis.financial.predictionSignals",
                 "disclosureDelta",
@@ -622,7 +634,7 @@ def _acceptsBasePeriod(fn) -> bool:
 
 
 class Analysis:
-    """재무제표 완전 분석 — 19축, 단일 종목 심층.
+    """재무제표 완전 분석 — 20축, 단일 종목 심층.
 
     Capabilities:
         Part 1 — 사업구조: 수익구조, 자금조달, 자산구조, 현금흐름

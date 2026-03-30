@@ -15,7 +15,9 @@ def test_predictionSignals_import():
         calcAnnouncementTiming,
         calcDisclosureDelta,
         calcEarningsMomentum,
+        calcEventImpact,
         calcInventoryDivergence,
+        calcMacroRegression,
         calcMacroSensitivity,
         calcPeerPrediction,
         calcPredictionFlags,
@@ -28,6 +30,8 @@ def test_predictionSignals_import():
     assert callable(calcPeerPrediction)
     assert callable(calcStructuralBreak)
     assert callable(calcMacroSensitivity)
+    assert callable(calcMacroRegression)
+    assert callable(calcEventImpact)
     assert callable(calcDisclosureDelta)
     assert callable(calcInventoryDivergence)
     assert callable(calcAnnouncementTiming)
@@ -45,7 +49,7 @@ def test_axis_registered():
     assert "예측신호" in _AXIS_REGISTRY
     entry = _AXIS_REGISTRY["예측신호"]
     assert entry.partId == "6-2"
-    assert len(entry.calcs) == 10
+    assert len(entry.calcs) == 12
 
     # alias
     assert _ALIASES["prediction"] == "예측신호"
