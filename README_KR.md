@@ -315,6 +315,18 @@ c.review("수익구조")     # 단일 섹션
 
 4개 출력 형식: `rich`(터미널), `html`, `markdown`, `json`.
 
+**샘플 보고서** (`c.review().toMarkdown()` 출력):
+
+| 기업 | 업종 | 특징 |
+|------|------|------|
+| [삼성전자](docs/samples/005930.md) | 반도체 | Mid-cycle FCF 정규화, 사이클 조정 DCF |
+| [SK하이닉스](docs/samples/000660.md) | 반도체 | HBM 구조적 성장 vs DRAM/NAND 사이클 |
+| [기아](docs/samples/000270.md) | 자동차 | EV 전환 투자 영향, 배당 정책 |
+| [한화오션](docs/samples/042660.md) | 조선 | 적자 턴어라운드, 수주잔고 기반 밸류에이션 괴리 |
+| [SK텔레콤](docs/samples/017670.md) | 통신 | 안정 배당주, 지주사 성격 자회사 구조 |
+
+각 보고서 하단에 **분석 한계** 섹션으로 모델 제약을 기록합니다.
+
 ### Reviewer — review + AI 해석
 
 review 위에 AI 종합의견을 올린다:
