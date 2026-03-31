@@ -1504,6 +1504,9 @@ class Company:
     def sections(self) -> pl.DataFrame | None:
         """sections — docs + finance + report 통합 지도.
 
+        ⚠️ 전체 docs + finance + report를 통합 로드한다. 메모리 소비가 크다.
+        특정 topic만 필요하면 show(topic)을 사용하라 (부분 빌드, 빠름).
+
         docs 수평화 위에 finance/report를 같은 topic 안에 끼워넣는다.
         - docs에 있는 topic (dividend 등) → docs 블록 뒤에 report 행 append
         - docs에 없는 topic (BS, auditContract 등) → 해당 chapter에 독립 삽입
@@ -1514,12 +1517,12 @@ class Company:
             - show(topic)/trace(topic)/diff() 의 근간 데이터
 
         AIContext:
-            - 회사 전체 지도 — 모든 분석의 출발점
-            - ask()/chat()에서 topic 탐색 컨텍스트
+            - 전체 지도가 필요할 때만 사용. 개별 topic은 show(topic) 추천
+            - 메모리 부하가 크므로 AI 코드에서 직접 접근 지양
 
         Guide:
             - "이 회사 전체 데이터 지도" → c.sections
-            - "어떤 topic이 있어?" → c.sections 또는 c.topics
+            - "어떤 topic이 있어?" → c.topics (경량)
 
         SeeAlso:
             - topics: sections 기반 topic 요약 (더 간결)

@@ -1,14 +1,22 @@
-"""전체 공시 원문 수집기 — 일자 단위 증분 수집.
+"""전체 공시 원문 수집기 — 2단계 증분 수집.
 
-날짜 단위로 전 종목 공시를 수집한다. 하루씩 점진적으로 확장.
-이미 수집된 날짜는 건너뛰고, 신규 날짜만 수집.
+Phase 1: 목록 수집 (collectMeta) — 일자별 API 1회, 매우 가볍다.
+Phase 2: 원문 수집 (fillContent) — 건당 API 1회, 키 소비 큼.
+
+목록을 먼저 전부 모은 뒤, 원문은 키 여유 있을 때 점진적으로 채운다.
 
 사용법::
 
-    from dartlab.providers.dart.openapi.allFilingsCollector import collectDay, collectRange
+    from dartlab.providers.dart.openapi.allFilingsCollector import (
+        collectMetaRange, fillContent, stats
+    )
 
-    collectDay("20260327")                    # 하루
-    collectRange("20260324", "20260327")       # 범위 (일자별 증분)
+    # Phase 1: 목록만 빠르게 (5년치도 키 1개로 가능)
+    collectMetaRange("20210401", "20260330")
+
+    # Phase 2: 원문 채우기 (일자별, 키 여유 있을 때)
+    fillContent("20260327")
+    fillContentAll()  # 미수집 원문 전체
 """
 
 from __future__ import annotations
@@ -34,6 +42,8 @@ from dartlab.providers.dart.openapi.zipCollector import (
 # ── 상수 ──
 
 _ALLFILINGS_DIR_KEY = "allFilings"
+_META_SUFFIX = "_meta"  # 목록만: 20260327_meta.parquet
+                        # 원문포함: 20260327.parquet
 
 # ── 내부 유틸 ──
 
@@ -114,31 +124,21 @@ def _collectOneDoc(client: DartClient, rceptNo: str) -> list[dict]:
     return [{"order": 0, "title": "(전문)", "content": text}]
 
 
-# ── 일자 단위 수집 ──
+# ═══════════════════════════════════════════
+# Phase 1: 목록 수집 (가볍다 — 일자당 API ~15회)
+# ═══════════════════════════════════════════
 
 
-def collectDay(
+def collectMetaDay(
     date: str,
     *,
     client: DartClient | None = None,
     corpClasses: list[str] | None = None,
     showProgress: bool = True,
 ) -> pl.DataFrame | None:
-    """하루치 전체 공시 수집 → 일자별 parquet 저장.
+    """하루치 공시 목록만 수집 → _meta.parquet 저장.
 
-    이미 수집된 날짜면 건너뛴다 (incremental).
-
-    Parameters
-    ----------
-    date : YYYYMMDD 형식.
-    client : DartClient. None이면 자동 생성.
-    corpClasses : 법인구분 필터 (기본 ["Y", "K"] = 유가+코스닥).
-    showProgress : 진행 표시.
-
-    Returns
-    -------
-    pl.DataFrame | None
-        수집된 데이터. 이미 수집됐거나 공시 없으면 None.
+    이미 목록이 있거나 원문까지 완료된 날짜는 건너뛴다.
     """
     if client is None:
         client = DartClient()
@@ -147,16 +147,20 @@ def collectDay(
         corpClasses = ["Y", "K"]
 
     outDir = _allFilingsDir()
-    parquetPath = outDir / f"{date}.parquet"
+    metaPath = outDir / f"{date}{_META_SUFFIX}.parquet"
+    fullPath = outDir / f"{date}.parquet"
 
-    # 이미 수집된 날짜 → 건너뜀
-    if parquetPath.exists():
+    # 원문까지 완료됐거나 목록이 있으면 건너뜀
+    if fullPath.exists():
         if showProgress:
-            existing = pl.read_parquet(parquetPath)
-            print(f"[{date}] 이미 수집됨 ({existing['rcept_no'].n_unique()}건)")
+            print(f"[{date}] 원문 수집 완료됨")
+        return None
+    if metaPath.exists():
+        if showProgress:
+            df = pl.read_parquet(metaPath)
+            print(f"[{date}] 목록 있음 ({df.height}건)")
         return None
 
-    # 목록 수집
     meta = listFilings(client, start=date, end=date, fetchAll=True)
     if meta.height == 0:
         if showProgress:
@@ -171,13 +175,104 @@ def collectDay(
             print(f"[{date}] 상장사 공시 없음")
         return None
 
-    total = meta.height
-    if showProgress:
-        print(f"[{date}] {total}건 수집 시작")
+    # 저장
+    tmpPath = metaPath.with_suffix(".parquet.tmp")
+    meta.write_parquet(tmpPath)
+    tmpPath.rename(metaPath)
 
-    # 원문 수집
+    if showProgress:
+        print(f"[{date}] 목록 {meta.height}건 저장")
+
+    return meta
+
+
+def collectMetaRange(
+    startDate: str,
+    endDate: str,
+    *,
+    client: DartClient | None = None,
+    corpClasses: list[str] | None = None,
+    showProgress: bool = True,
+) -> int:
+    """날짜 범위 목록 일괄 수집. 최신→과거 순. 매우 가볍다.
+
+    Returns
+    -------
+    int
+        수집된 날짜 수.
+    """
+    from datetime import datetime, timedelta
+
+    if client is None:
+        client = DartClient()
+
+    start = datetime.strptime(startDate, "%Y%m%d")
+    end = datetime.strptime(endDate, "%Y%m%d")
+
+    dates = []
+    current = end
+    while current >= start:
+        dates.append(current.strftime("%Y%m%d"))
+        current -= timedelta(days=1)
+
+    collected = 0
+    for i, date in enumerate(dates):
+        if showProgress and (i + 1) % 10 == 0:
+            print(f"--- 목록 진행: {i + 1}/{len(dates)} ---")
+        result = collectMetaDay(
+            date, client=client, corpClasses=corpClasses, showProgress=showProgress,
+        )
+        if result is not None:
+            collected += 1
+
+    if showProgress:
+        print(f"\n목록 수집 완료: {collected}일")
+
+    return collected
+
+
+# ═══════════════════════════════════════════
+# Phase 2: 원문 채우기 (무겁다 — 건당 API 1회)
+# ═══════════════════════════════════════════
+
+
+def fillContent(
+    date: str,
+    *,
+    client: DartClient | None = None,
+    showProgress: bool = True,
+) -> pl.DataFrame | None:
+    """하루치 목록의 원문을 채운다. _meta.parquet → .parquet 승격.
+
+    이미 원문이 있는 날짜는 건너뛴다.
+    """
+    if client is None:
+        client = DartClient()
+
+    outDir = _allFilingsDir()
+    metaPath = outDir / f"{date}{_META_SUFFIX}.parquet"
+    fullPath = outDir / f"{date}.parquet"
+
+    # 원문 완료 → 건너뜀
+    if fullPath.exists():
+        if showProgress:
+            print(f"[{date}] 원문 이미 완료")
+        return None
+
+    # 목록 없음
+    if not metaPath.exists():
+        if showProgress:
+            print(f"[{date}] 목록 없음 (먼저 collectMetaDay 실행)")
+        return None
+
+    meta = pl.read_parquet(metaPath)
+    total = meta.height
+
+    if showProgress:
+        print(f"[{date}] {total}건 원문 수집 시작")
+
     allRows: list[dict] = []
-    success = fail = empty = 0
+    success = empty = 0
 
     for idx, row in enumerate(meta.iter_rows(named=True)):
         rceptNo = row["rcept_no"]
@@ -225,78 +320,87 @@ def collectDay(
         pl.col("section_order").cast(pl.Int32),
     )
 
-    # 원자적 저장
-    tmpPath = parquetPath.with_suffix(".parquet.tmp")
+    # 원자적 저장 → .parquet (원문 완료)
+    tmpPath = fullPath.with_suffix(".parquet.tmp")
     df.write_parquet(tmpPath)
-    tmpPath.rename(parquetPath)
+    tmpPath.rename(fullPath)
+
+    # _meta 제거 (승격 완료)
+    if metaPath.exists():
+        metaPath.unlink()
 
     if showProgress:
-        print(f"[{date}] 완료: {success}건 성공, {empty}건 빈, {df.height}행, "
-              f"{parquetPath.stat().st_size / 1024 / 1024:.1f}MB")
+        print(f"[{date}] 완료: {success}건 성공, {empty}건 빈, "
+              f"{df.height}행, {fullPath.stat().st_size / 1024 / 1024:.1f}MB")
 
     return df
 
 
-def collectRange(
-    startDate: str,
-    endDate: str,
+def fillContentAll(
     *,
     client: DartClient | None = None,
-    corpClasses: list[str] | None = None,
     showProgress: bool = True,
-) -> list[str]:
-    """날짜 범위 증분 수집. 이미 수집된 날짜는 건너뛴다.
-
-    Parameters
-    ----------
-    startDate, endDate : YYYYMMDD. 최신→과거 순으로 수집.
-    client : DartClient.
-    showProgress : 진행 표시.
+) -> int:
+    """목록만 있는 날짜 전체의 원문을 채운다. 최신순.
 
     Returns
     -------
-    list[str]
-        수집 완료된 날짜 목록.
+    int
+        원문 수집 완료한 날짜 수.
     """
-    from datetime import datetime, timedelta
-
     if client is None:
         client = DartClient()
 
-    start = datetime.strptime(startDate, "%Y%m%d")
-    end = datetime.strptime(endDate, "%Y%m%d")
-
-    # 최신 → 과거 순서
-    dates = []
-    current = end
-    while current >= start:
-        dates.append(current.strftime("%Y%m%d"))
-        current -= timedelta(days=1)
-
-    collected: list[str] = []
-    for i, date in enumerate(dates):
+    pending = pendingDates()
+    if not pending:
         if showProgress:
-            print(f"\n=== [{i + 1}/{len(dates)}] ===")
-        result = collectDay(
-            date,
-            client=client,
-            corpClasses=corpClasses,
-            showProgress=showProgress,
-        )
-        if result is not None:
-            collected.append(date)
+            print("원문 미수집 날짜 없음")
+        return 0
 
     if showProgress:
-        print(f"\n총 {len(collected)}일 수집 완료")
+        print(f"원문 미수집 {len(pending)}일 처리 시작")
 
-    return collected
+    filled = 0
+    for i, date in enumerate(pending):
+        if showProgress:
+            print(f"\n=== [{i + 1}/{len(pending)}] ===")
+        try:
+            result = fillContent(date, client=client, showProgress=showProgress)
+            if result is not None:
+                filled += 1
+        except Exception as e:
+            if showProgress:
+                print(f"[{date}] 에러: {e}")
+            break  # API 한도 초과 등이면 중단
+
+    if showProgress:
+        print(f"\n원문 수집 완료: {filled}일")
+
+    return filled
+
+
+# ═══════════════════════════════════════════
+# 조회/통계
+# ═══════════════════════════════════════════
 
 
 def collectedDates() -> list[str]:
-    """수집 완료된 날짜 목록 (최신순)."""
+    """원문 수집 완료된 날짜 목록 (최신순)."""
     outDir = _allFilingsDir()
     dates = sorted(
-        [p.stem for p in outDir.glob("*.parquet") if len(p.stem) == 8 and p.stem.isdigit()],
+        [p.stem for p in outDir.glob("*.parquet")
+         if len(p.stem) == 8 and p.stem.isdigit()],
+        reverse=True,
+    )
+    return dates
+
+
+def pendingDates() -> list[str]:
+    """목록만 있고 원문 미수집인 날짜 목록 (최신순)."""
+    outDir = _allFilingsDir()
+    dates = sorted(
+        [p.stem.replace(_META_SUFFIX, "")
+         for p in outDir.glob(f"*{_META_SUFFIX}.parquet")],
         reverse=True,
     )
     return dates
@@ -311,9 +415,10 @@ def loadDay(date: str) -> pl.DataFrame | None:
 
 
 def loadAll() -> pl.DataFrame:
-    """수집된 전체 데이터 로드 (모든 일자 병합)."""
+    """원문 수집 완료된 전체 데이터 로드."""
     outDir = _allFilingsDir()
-    files = sorted(outDir.glob("*.parquet"))
+    files = sorted(f for f in outDir.glob("*.parquet")
+                   if _META_SUFFIX not in f.stem)
     if not files:
         return pl.DataFrame()
     return pl.scan_parquet(files).collect()
@@ -321,26 +426,34 @@ def loadAll() -> pl.DataFrame:
 
 def stats() -> dict:
     """수집 현황 통계."""
-    dates = collectedDates()
-    if not dates:
-        return {"days": 0, "filings": 0, "rows": 0, "sizeMb": 0}
+    completed = collectedDates()
+    pending = pendingDates()
 
     outDir = _allFilingsDir()
-    totalSize = sum((outDir / f"{d}.parquet").stat().st_size for d in dates)
-
-    # 첫/마지막 파일만 읽어서 건수 추정
+    totalSize = 0
     totalRows = 0
     totalFilings = 0
-    for d in dates:
-        df = pl.scan_parquet(outDir / f"{d}.parquet").select("rcept_no").collect()
+
+    for d in completed:
+        path = outDir / f"{d}.parquet"
+        totalSize += path.stat().st_size
+        df = pl.scan_parquet(path).select("rcept_no").collect()
         totalRows += df.height
         totalFilings += df["rcept_no"].n_unique()
 
+    pendingFilings = 0
+    for d in pending:
+        path = outDir / f"{d}{_META_SUFFIX}.parquet"
+        df = pl.scan_parquet(path).select("rcept_no").collect()
+        pendingFilings += df["rcept_no"].n_unique()
+
     return {
-        "days": len(dates),
-        "firstDate": dates[-1],
-        "lastDate": dates[0],
+        "completedDays": len(completed),
+        "pendingDays": len(pending),
         "filings": totalFilings,
+        "pendingFilings": pendingFilings,
         "rows": totalRows,
         "sizeMb": round(totalSize / 1024 / 1024, 1),
+        "firstDate": completed[-1] if completed else None,
+        "lastDate": completed[0] if completed else None,
     }
