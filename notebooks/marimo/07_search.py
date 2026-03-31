@@ -23,12 +23,6 @@ def _():
 
 @app.cell
 def _(dartlab):
-    dartlab.search("대표이사 변경", corp="005930", topK=5)
-    return
-
-
-@app.cell
-def _(dartlab):
     dartlab.search("회사가 돈을 빌렸다", topK=5)
     return
 

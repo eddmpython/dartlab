@@ -39,8 +39,8 @@
   - [데이터 -- 모든 게 준비되어 있다](#데이터--모든-게-준비되어-있다)
   - [Company -- 두 가지 문제](#company--두-가지-문제)
   - [Scan -- 시장 전체를 한 번에](#scan--시장-전체를-한-번에)
-  - [Analysis -- 숫자에서 스토리로](#analysis--숫자에서-스토리로)
   - [Gather -- 외부 시장 데이터](#gather--외부-시장-데이터)
+  - [Analysis -- 숫자에서 스토리로](#analysis--숫자에서-스토리로)
   - [Review -- analysis를 보고서로](#review--analysis를-보고서로)
   - [AI -- 적극적 분석가](#ai--적극적-분석가)
 - [EDGAR (미국)](#edgar-미국)
@@ -121,6 +121,17 @@ dartlab.ask("삼성전자 재무건전성 분석해줘")
 DartLab은 하나의 전제 위에 서 있다: **모든 기간은 비교 가능해야 하고, 모든 회사는 비교 가능해야 한다.** 이것 없이는 분석이 불가능하다 -- 양식을 비교하는 것이지 기업을 비교하는 게 아니다. DartLab의 모든 기능은 이 전제를 현실로 만들기 위해 존재한다.
 
 두 가지 엔진으로 원본 공시를 하나의 비교 가능한 맵으로 바꾼다.
+
+| 레이어 | 엔진 | 하는 일 | 진입점 |
+|--------|------|---------|--------|
+| Data | [Data](ops/data.md) | HuggingFace 사전 구축 데이터, 자동 다운로드 | `Company("005930")` |
+| L0/L1 | [Company](ops/company.md) | 섹션 수평화 + 계정 표준화 | `c.show()`, `c.select()` |
+| L1 | [Scan](ops/scan.md) | 전 종목 횡단 비교, 13축 | `dartlab.scan()` |
+| L1 | [Gather](ops/gather.md) | 외부 시장 데이터 (주가, 수급, 매크로, 뉴스) | `dartlab.gather()` |
+| L2 | [Analysis](ops/analysis.md) | 14축 스토리텔링 분석 (6막 구조) | `c.analysis()` |
+| L2 | [Review](ops/review.md) | 분석을 서사 보고서로 | `c.review()` |
+| L0 | [Search](ops/search.md) | 공시 시맨틱 검색 *(alpha)* | `dartlab.search()` |
+| L3 | [AI](ops/ai.md) | 적극적 분석가 — 코드 실행 + 해석 | `dartlab.ask()` |
 
 ### 데이터 -- 모든 게 준비되어 있다
 
@@ -236,6 +247,26 @@ dartlab.scan("cashflow")              # OCF/ICF/FCF + 8유형 패턴 분류
 
 새 축 추가 = 모듈 1개. 다른 코드 수정 불필요.
 
+### Gather -- 외부 시장 데이터
+
+> 설계: [ops/gather.md](ops/gather.md)
+
+Company와 Scan은 공시 데이터 -- 기업이 제출한 것 -- 를 다룬다. 하지만 투자자는 시장 데이터도 필요하다: 주가, 기관/외국인 수급, 거시지표, 뉴스. Gather가 공시와 시장 사이의 간극을 메운다.
+
+`gather()` 하나로 외부 시장 데이터를 수집한다 -- 전부 **Polars DataFrame**.
+
+```python
+dartlab.gather()                              # 가이드 -- 4축
+dartlab.gather("price", "005930")             # KR OHLCV 시계열 (기본 1년)
+dartlab.gather("price", "AAPL", market="US")  # US 주가
+dartlab.gather("flow", "005930")              # 외국인/기관 수급 (KR)
+dartlab.gather("macro")                       # KR 거시지표
+dartlab.gather("macro", "FEDFUNDS")           # 단일 지표 (자동 US 감지)
+dartlab.gather("news", "삼성전자")             # Google News RSS
+```
+
+Company 바인딩: `c.gather("price")` -- 종목코드 다시 안 넘겨도 된다.
+
 ### Analysis -- 숫자에서 스토리로
 
 > 설계: [ops/analysis.md](ops/analysis.md)
@@ -282,26 +313,6 @@ c.analysis("수익성")                   # 수익성 분석
 | 3-3 | 자본배분 | 번 돈을 어디에 쓰는가 | 5 |
 | 3-4 | 투자효율 | 투자가 가치를 만드는가 | 4 |
 | 3-5 | 재무정합성 | 재무제표가 서로 맞는가 | 5 |
-
-### Gather -- 외부 시장 데이터
-
-> 설계: [ops/gather.md](ops/gather.md)
-
-Company와 Scan은 공시 데이터 -- 기업이 제출한 것 -- 를 다룬다. 하지만 투자자는 시장 데이터도 필요하다: 주가, 기관/외국인 수급, 거시지표, 뉴스. Gather가 공시와 시장 사이의 간극을 메운다.
-
-`gather()` 하나로 외부 시장 데이터를 수집한다 -- 전부 **Polars DataFrame**.
-
-```python
-dartlab.gather()                              # 가이드 -- 4축
-dartlab.gather("price", "005930")             # KR OHLCV 시계열 (기본 1년)
-dartlab.gather("price", "AAPL", market="US")  # US 주가
-dartlab.gather("flow", "005930")              # 외국인/기관 수급 (KR)
-dartlab.gather("macro")                       # KR 거시지표
-dartlab.gather("macro", "FEDFUNDS")           # 단일 지표 (자동 US 감지)
-dartlab.gather("news", "삼성전자")             # Google News RSS
-```
-
-Company 바인딩: `c.gather("price")` -- 종목코드 다시 안 넘겨도 된다.
 
 ### Review -- analysis를 보고서로
 

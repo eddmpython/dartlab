@@ -50,6 +50,7 @@ def _patch_dartlab(monkeypatch, company=None):
     co = company or _mock_company()
     fake_mod.Company = MagicMock(return_value=co)  # type: ignore[attr-defined]
     fake_mod.search = MagicMock(return_value=None)  # type: ignore[attr-defined]
+    fake_mod.searchName = MagicMock(return_value=None)  # type: ignore[attr-defined]
 
     # status에서 dartlab.llm.status() 호출
     llm_mock = MagicMock()

@@ -39,8 +39,8 @@
   - [Data — Everything Is Ready](#data--everything-is-ready)
   - [Company — The Two Problems](#company--the-two-problems)
   - [Scan — The Whole Market in One Call](#scan--the-whole-market-in-one-call)
-  - [Analysis — From Numbers to Story](#analysis--from-numbers-to-story)
   - [Gather — External Market Data](#gather--external-market-data)
+  - [Analysis — From Numbers to Story](#analysis--from-numbers-to-story)
   - [Review — Analysis to Report](#review--analysis-to-report)
   - [AI — Your Active Analyst](#ai--your-active-analyst)
 - [EDGAR (US)](#edgar-us)
@@ -121,6 +121,17 @@ Not because they don't want to. Because the same information is named differentl
 DartLab is built on one premise: **every period must be comparable, and every company must be comparable.** Without this, no analysis is possible — you're comparing filing formats, not companies. Every feature in DartLab exists to make this premise real.
 
 Two engines turn raw filings into one comparable map.
+
+| Layer | Engine | What it does | Entry point |
+|-------|--------|--------------|-------------|
+| Data | [Data](ops/data.md) | Pre-built HuggingFace datasets, auto-download | `Company("005930")` |
+| L0/L1 | [Company](ops/company.md) | Sections horizontalization + account standardization | `c.show()`, `c.select()` |
+| L1 | [Scan](ops/scan.md) | Cross-company comparison across 13 axes | `dartlab.scan()` |
+| L1 | [Gather](ops/gather.md) | External market data (price, flow, macro, news) | `dartlab.gather()` |
+| L2 | [Analysis](ops/analysis.md) | 14-axis storytelling analysis (6-act structure) | `c.analysis()` |
+| L2 | [Review](ops/review.md) | Analysis to narrative report | `c.review()` |
+| L0 | [Search](ops/search.md) | Semantic filing search *(alpha)* | `dartlab.search()` |
+| L3 | [AI](ops/ai.md) | Active analyst — code execution + interpretation | `dartlab.ask()` |
 
 ### Data — Everything Is Ready
 
@@ -236,6 +247,26 @@ dartlab.scan("cashflow")              # OCF/ICF/FCF + 8-pattern classification
 
 Adding a new axis means one module — no other code changes needed.
 
+### Gather — External Market Data
+
+> Design: [ops/gather.md](ops/gather.md)
+
+Company and Scan work with disclosure data — what the company filed. But investors also need market data: stock prices, institutional flows, macro indicators, news. Gather bridges the gap between filings and the market.
+
+`gather()` collects external market data — all as **Polars DataFrames**.
+
+```python
+dartlab.gather()                              # guide -- 4 axes
+dartlab.gather("price", "005930")             # KR OHLCV timeseries (1-year default)
+dartlab.gather("price", "AAPL", market="US")  # US stock
+dartlab.gather("flow", "005930")              # foreign/institutional flow (KR)
+dartlab.gather("macro")                       # KR macro indicators
+dartlab.gather("macro", "FEDFUNDS")           # single indicator (auto-detects US)
+dartlab.gather("news", "삼성전자")             # Google News RSS
+```
+
+Company-bound: `c.gather("price")` — no need to pass the stock code again.
+
 ### Analysis — From Numbers to Story
 
 > Design: [ops/analysis.md](ops/analysis.md)
@@ -282,26 +313,6 @@ c.analysis("수익성")                   # profitability analysis
 | 3-3 | 자본배분 | Where does earned cash go | 5 |
 | 3-4 | 투자효율 | Does investment create value | 4 |
 | 3-5 | 재무정합성 | Do statements reconcile | 5 |
-
-### Gather — External Market Data
-
-> Design: [ops/gather.md](ops/gather.md)
-
-Company and Scan work with disclosure data — what the company filed. But investors also need market data: stock prices, institutional flows, macro indicators, news. Gather bridges the gap between filings and the market.
-
-`gather()` collects external market data — all as **Polars DataFrames**.
-
-```python
-dartlab.gather()                              # guide -- 4 axes
-dartlab.gather("price", "005930")             # KR OHLCV timeseries (1-year default)
-dartlab.gather("price", "AAPL", market="US")  # US stock
-dartlab.gather("flow", "005930")              # foreign/institutional flow (KR)
-dartlab.gather("macro")                       # KR macro indicators
-dartlab.gather("macro", "FEDFUNDS")           # single indicator (auto-detects US)
-dartlab.gather("news", "삼성전자")             # Google News RSS
-```
-
-Company-bound: `c.gather("price")` — no need to pass the stock code again.
 
 ### Review — Analysis to Report
 

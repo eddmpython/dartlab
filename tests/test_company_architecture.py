@@ -75,7 +75,6 @@ def test_public_docs_do_not_reference_legacy_company_names():
         "README.md",
         "docs/api/overview.md",
         "docs/getting-started/quickstart.md",
-        "docs/tutorials/01_quickstart.md",
         "docs/stability.md",
         "docs/changelog.md",
     ]

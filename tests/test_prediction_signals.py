@@ -49,7 +49,7 @@ def test_axis_registered():
     assert "예측신호" in _AXIS_REGISTRY
     entry = _AXIS_REGISTRY["예측신호"]
     assert entry.partId == "6-2"
-    assert len(entry.calcs) == 12
+    assert len(entry.calcs) == 15
 
     # alias
     assert _ALIASES["prediction"] == "예측신호"
