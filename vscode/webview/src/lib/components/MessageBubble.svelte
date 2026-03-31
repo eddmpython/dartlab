@@ -332,16 +332,22 @@
       <div class="content" onclick={copyCode}>{@html finalCommittedHtml}</div>
     {/if}
 
-    <!-- Draft content (still streaming, show as raw) -->
+    <!-- Draft content (still streaming) -->
     {#if split.draft}
-      <div class="draft" class:draft-code={split.draftType === "code"} class:draft-table={split.draftType === "table"}>
-        {#if split.draftType === "code"}
-          <span class="draft-label">Code block...</span>
-        {:else if split.draftType === "table"}
-          <span class="draft-label">Building table...</span>
-        {/if}
-        <pre class="draft-pre">{split.draft}</pre>
-      </div>
+      {#if split.draftType === "code"}
+        <!-- Claude Code style: hide code while writing, show spinner -->
+        <div class="code-writing">
+          <div class="tool-spinner-sm"></div>
+          <span>Python 코드 작성 중...</span>
+        </div>
+      {:else}
+        <div class="draft" class:draft-table={split.draftType === "table"}>
+          {#if split.draftType === "table"}
+            <span class="draft-label">테이블 생성 중...</span>
+          {/if}
+          <pre class="draft-pre">{split.draft}</pre>
+        </div>
+      {/if}
     {/if}
 
     <!-- Streaming cursor / code execution indicator -->
@@ -984,6 +990,20 @@
     margin: 0;
     white-space: pre-wrap;
     word-break: break-all;
+  }
+
+  /* Code writing spinner (hide code while streaming) */
+  .code-writing {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin: 6px 0;
+    border-radius: var(--corner-radius-medium);
+    background: var(--vscode-textCodeBlock-background);
+    border-left: 3px solid var(--dl-primary, #ea4647);
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground);
   }
 
   /* Inline code execution indicator */
