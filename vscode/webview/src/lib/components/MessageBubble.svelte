@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { Message } from "../api/sseHandler";
   import * as client from "../api/client";
-  import { postMessage } from "../vscode";
   import { createIncrementalRenderer } from "../markdown/renderer";
   import { createStreamSplitter } from "../markdown/contentSplitter";
 
@@ -387,14 +386,16 @@
               { id: "gemini", label: "Gemini (무료)" },
               { id: "groq", label: "Groq (무료)" },
               { id: "cerebras", label: "Cerebras (무료)" },
-              { id: "mistral", label: "Mistral (무료)" },
+              { id: "ollama", label: "Ollama (로컬)" },
             ] as p}
               <button class="switch-btn" onclick={() => {
-                postMessage({ type: "log", message: `switch-provider: ${p.id}` });
                 client.setProvider(p.id);
+                // 전환 후 자동 재시도
+                if (onregenerate) setTimeout(onregenerate, 500);
               }}>{p.label}</button>
             {/each}
           </div>
+          <p class="error-hint">API 키가 필요합니다. dartlab.setup("{message.errorAction === 'relogin' ? 'chatgpt' : 'gemini'}")으로 설정하세요.</p>
         </div>
       {:else if message.errorAction === "retry"}
         <div class="error-switch">
@@ -1128,6 +1129,12 @@
     background: var(--vscode-list-hoverBackground);
     border-color: var(--dl-primary);
     color: var(--dl-primary-light);
+  }
+  .error-hint {
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+    margin: 6px 0 0;
+    opacity: 0.7;
   }
 
 </style>
