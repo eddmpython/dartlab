@@ -13,6 +13,10 @@
   let showSlash = $state(false);
   let slashIdx = $state(0);
 
+  // Input history (↑↓ arrows)
+  let history: string[] = $state([]);
+  let historyIdx = $state(-1);
+
   const cmds = [
     { name: "model", label: "/model", desc: "Change AI model" },
     { name: "provider", label: "/provider", desc: "Change AI provider" },
@@ -39,6 +43,17 @@
     }
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
     if (e.key === "Escape" && streaming) { e.preventDefault(); onstop?.(); }
+    // Input history: ↑ previous, ↓ next
+    if (e.key === "ArrowUp" && !inputText.includes("\n") && history.length > 0) {
+      e.preventDefault();
+      if (historyIdx < history.length - 1) historyIdx++;
+      inputText = history[historyIdx];
+    }
+    if (e.key === "ArrowDown" && !inputText.includes("\n") && historyIdx >= 0) {
+      e.preventDefault();
+      historyIdx--;
+      inputText = historyIdx >= 0 ? history[historyIdx] : "";
+    }
   }
 
   function execSlash(c: typeof cmds[0]) { inputText = ""; showSlash = false; slashIdx = 0; oncommand?.(c.name); }
@@ -48,6 +63,8 @@
     if (!t || disabled) return;
     if (t.startsWith("/")) { const c = cmds.find(x => x.name === t.slice(1).toLowerCase()); if (c) { execSlash(c); return; } }
     onsubmit(t);
+    history = [t, ...history.slice(0, 49)]; // keep last 50
+    historyIdx = -1;
     inputText = "";
     if (textareaEl) textareaEl.style.height = "auto";
   }

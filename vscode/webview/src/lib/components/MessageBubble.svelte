@@ -124,6 +124,29 @@
     const s = ms / 1000;
     return s < 1 ? "<1s" : `${s.toFixed(1)}s`;
   }
+
+  const TOOL_LABELS: Record<string, string> = {
+    companyInsights: "인사이트",
+    companyFinancials: "재무제표",
+    companyRatios: "재무비율",
+    companyAnalysis: "분석",
+    companyValuation: "밸류에이션",
+    companyForecast: "전망",
+    companyReview: "보고서",
+    companyShow: "공시 원문",
+    companyDiff: "변경 비교",
+    companyGovernance: "지배구조",
+    companyAudit: "감사",
+    companyProfile: "프로필",
+    companySections: "섹션",
+    companyTopics: "토픽",
+    marketScan: "시장 스캔",
+    searchCompany: "검색",
+  };
+
+  function toolLabel(name: string): string {
+    return TOOL_LABELS[name] || name;
+  }
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -252,7 +275,7 @@
                   <div class="tool-spinner-sm"></div>
                 {/if}
               </span>
-              <span class="tool-name">{pair.call.name}</span>
+              <span class="tool-name">{toolLabel(pair.call.name as string)}</span>
               <span class="tool-args">{truncate(formatToolArg(pair.call.arguments), 60)}</span>
             </button>
             {#if !collapsedTools[i] && pair.result}
