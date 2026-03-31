@@ -320,6 +320,34 @@ c.reviewer()                                    # 전체 + AI
 c.reviewer(guide="반도체 사이클 관점에서 평가해줘")  # 도메인 특화
 ```
 
+### Search -- 공시를 의미로 검색 *(alpha)*
+
+상장사는 수천 건의 공시를 제출한다 — 유상증자, 소송, 대표이사 변경, 합병. DartLab은 공시 원문을 수집하고 제목이 아닌 **내용의 의미로 검색** 가능하게 만든다.
+
+```python
+import dartlab
+
+dartlab.search("유상증자 결정")                     # 전체 공시 시맨틱 검색
+dartlab.search("대표이사 변경", corp="005930")       # 종목 필터
+dartlab.search("전환사채 발행", start="20240101")    # 기간 필터
+```
+
+내부 동작: 일자별 공시 목록 → 원문 파싱 (99.4% 성공) → GPU 임베딩 ([ko-sroberta](https://huggingface.co/jhgan/ko-sroberta-multitask)) → LanceDB 벡터 인덱스. 검색 지연: **~58ms** (warm, GPU).
+
+2단계 수집 — 목록 먼저 (가볍다), 원문은 나중에 (건당 API 1회):
+
+```python
+from dartlab.core.search import collectMeta, fillContent, buildIndex  # 관리자용
+
+collectMeta("20210401", "20260330")    # 1단계: 공시 목록 (빠름)
+fillContent()                          # 2단계: 원문 채우기 (증분)
+buildIndex()                           # 3단계: 벡터 임베딩 (GPU)
+```
+
+모든 단계가 증분 — 이미 수집된 날짜, 원문, 벡터는 재실행 시 건너뛴다.
+
+> **상태:** alpha — 사전 빌드된 벡터 인덱스를 HuggingFace에서 제공 예정. `pip install dartlab[vector]` 필요.
+
 ### AI -- 자연어로 질문
 
 DartLab이 데이터를 구조화하고, 관련 컨텍스트(재무제표, 인사이트, 섹터 벤치마크)를 선택해서 LLM에 전달한다. AI는 엔진이 이미 계산한 것 위에서 *왜*를 설명하지, 숫자를 만들어내지 않는다.

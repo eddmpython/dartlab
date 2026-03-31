@@ -320,6 +320,34 @@ c.reviewer()                                    # full + AI
 c.reviewer(guide="Evaluate from semiconductor cycle perspective")
 ```
 
+### Search — Find Filings by Meaning *(alpha)*
+
+Listed companies file thousands of disclosures — capital raises, lawsuits, CEO changes, M&A. DartLab collects filing texts and makes them searchable by meaning, not just title.
+
+```python
+import dartlab
+
+dartlab.search("유상증자 결정")                     # semantic search across all filings
+dartlab.search("대표이사 변경", corp="005930")       # filter by company
+dartlab.search("전환사채 발행", start="20240101")    # filter by date
+```
+
+Behind the scenes: daily filing lists → full-text parsing (99.4% success) → GPU embedding ([ko-sroberta](https://huggingface.co/jhgan/ko-sroberta-multitask)) → LanceDB vector index. Search latency: **~58ms** (warm, GPU).
+
+Two-phase collection — metadata first (lightweight), then full text (one API call per filing):
+
+```python
+from dartlab.core.search import collectMeta, fillContent, buildIndex  # advanced
+
+collectMeta("20210401", "20260330")    # phase 1: filing list (fast)
+fillContent()                          # phase 2: full text (incremental)
+buildIndex()                           # phase 3: vector embedding (GPU)
+```
+
+All steps are incremental — already-collected dates, texts, and vectors are skipped on re-run.
+
+> **Status:** alpha — pre-built vector index available on HuggingFace. Requires `pip install dartlab[vector]`.
+
 ### AI — Ask in Natural Language
 
 DartLab structures the data, selects relevant context (financials, insights, sector benchmarks), and lets the LLM explain. The AI interprets what the engine already computed — it explains *why*, not *what*.

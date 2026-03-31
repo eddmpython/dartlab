@@ -1,0 +1,14 @@
+{
+    "model_type": "model2vec",
+    "architectures": [
+        "StaticModel"
+    ],
+    "tokenizer_name": "jhgan/ko-sroberta-multitask",
+    "apply_pca": 256,
+    "sif_coefficient": 0.0001,
+    "hidden_dim": 256,
+    "seq_length": 1000000,
+    "normalize": true,
+    "pooling": "mean",
+    "embedding_dtype": "float16"
+}
