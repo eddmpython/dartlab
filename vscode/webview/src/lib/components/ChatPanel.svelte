@@ -30,6 +30,20 @@
   let messagesEl: HTMLDivElement | undefined = $state();
   let currentHandler: ReturnType<typeof createSseHandler> | null = null;
 
+  // Watchlist (favorite stocks)
+  let watchlist: Array<{code: string; name: string}> = $state(
+    JSON.parse(localStorage.getItem("dartlab-watchlist") || "[]")
+  );
+  function addToWatchlist(code: string, name: string) {
+    if (watchlist.some(w => w.code === code)) return;
+    watchlist = [...watchlist, { code, name }];
+    localStorage.setItem("dartlab-watchlist", JSON.stringify(watchlist));
+  }
+  function removeFromWatchlist(code: string) {
+    watchlist = watchlist.filter(w => w.code !== code);
+    localStorage.setItem("dartlab-watchlist", JSON.stringify(watchlist));
+  }
+
   // Scroll tracking
   let showJumpToLatest = $state(false);
   let followStream = $state(true);
@@ -298,6 +312,19 @@
         </div>
       {:else}
         <p class="welcome-sub">예: 005930, 삼성전자, AAPL</p>
+        {#if watchlist.length > 0}
+          <div class="watchlist">
+            <span class="watchlist-label">관심종목</span>
+            <div class="watchlist-items">
+              {#each watchlist as w}
+                <button class="watchlist-btn" onclick={() => handleSubmit(`${w.code} 종합분석`)}>
+                  <span class="wl-name">{w.name}</span>
+                  <span class="wl-code">{w.code}</span>
+                </button>
+              {/each}
+            </div>
+          </div>
+        {/if}
       {/if}
     </div>
   {/if}
@@ -311,6 +338,8 @@
           onregenerate={i === messages.length - 1 && !message.loading && message.role === "assistant" ? handleRegenerate : undefined}
           oncopy={i === messages.length - 1 && !message.loading && message.role === "assistant" ? handleCopyResponse : undefined}
           onedit={!streaming && message.role === "user" ? (newText) => handleEditResend(i, newText) : undefined}
+          onaddwatch={message.role === "assistant" && message.meta?.stockCode ? addToWatchlist : undefined}
+          isWatched={!!message.meta?.stockCode && watchlist.some(w => w.code === String(message.meta?.stockCode))}
         />
       {/each}
     </div>
@@ -371,6 +400,38 @@
     opacity: 0.6;
     margin: 0;
   }
+  .watchlist {
+    margin-top: 12px;
+  }
+  .watchlist-label {
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .watchlist-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .watchlist-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--vscode-foreground);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .watchlist-btn:hover {
+    background: var(--vscode-list-hoverBackground);
+    border-color: var(--dl-primary);
+  }
+  .wl-name { font-weight: 500; }
+  .wl-code { font-size: 10px; color: var(--vscode-descriptionForeground); font-family: var(--vscode-editor-font-family); }
   .welcome-setup {
     margin-top: 12px;
     padding: 10px 16px;

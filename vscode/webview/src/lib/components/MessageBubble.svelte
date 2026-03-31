@@ -11,8 +11,10 @@
     onregenerate?: () => void;
     oncopy?: () => void;
     onedit?: (newText: string) => void;
+    onaddwatch?: (code: string, name: string) => void;
+    isWatched?: boolean;
   }
-  let { message, isLast = false, onregenerate, oncopy, onedit }: Props = $props();
+  let { message, isLast = false, onregenerate, oncopy, onedit, onaddwatch, isWatched = false }: Props = $props();
   let editing = $state(false);
   let editText = $state("");
   const render = createIncrementalRenderer();
@@ -184,6 +186,11 @@
       <div class="meta-badges">
         {#if meta.company}
           <span class="badge badge-company">{meta.company}</span>
+          {#if onaddwatch && meta.stockCode && !isWatched}
+            <button class="watch-btn" onclick={() => onaddwatch(String(meta.stockCode), String(meta.company))} title="관심종목 추가">☆</button>
+          {:else if isWatched}
+            <span class="watch-btn watched" title="관심종목">★</span>
+          {/if}
         {/if}
         {#if meta.market}
           <span class="badge">{meta.market}</span>
@@ -531,6 +538,17 @@
     background: var(--vscode-badge-background);
     color: var(--vscode-badge-foreground);
   }
+  .watch-btn {
+    border: none;
+    background: transparent;
+    color: var(--vscode-descriptionForeground);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 2px;
+    line-height: 1;
+  }
+  .watch-btn:hover { color: #fbbf24; }
+  .watch-btn.watched { color: #fbbf24; cursor: default; }
   .badge-company {
     background: color-mix(in srgb, var(--dl-primary) 15%, transparent);
     color: var(--dl-primary-light);
@@ -829,6 +847,33 @@
   }
   .content :global(tr:hover td) {
     background: var(--vscode-list-hoverBackground);
+  }
+  .content :global(.table-wrap) {
+    position: relative;
+    margin: 10px 0;
+  }
+  .content :global(.table-dl-btn) {
+    position: absolute;
+    top: -2px;
+    right: 4px;
+    padding: 1px 6px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 3px;
+    background: var(--vscode-editorWidget-background);
+    color: var(--vscode-descriptionForeground);
+    font-size: 10px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 2;
+  }
+  .content :global(.table-wrap:hover .table-dl-btn) {
+    opacity: 0.7;
+  }
+  .content :global(.table-dl-btn:hover) {
+    opacity: 1 !important;
+    border-color: var(--dl-primary);
+    color: var(--dl-primary-light);
   }
   .content :global(p) { margin: 8px 0; }
   .content :global(p:first-child) { margin-top: 0; }

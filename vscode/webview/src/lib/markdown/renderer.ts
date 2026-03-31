@@ -98,6 +98,15 @@ renderer.tablecell = function ({
   return `<${tag}${align}>${formatted}</${tag}>`;
 };
 
+// Wrap tables with download button
+let tableCounter = 0;
+renderer.table = function ({ header, rows }: { header: string; rows: string }) {
+  const id = `tbl-${++tableCounter}`;
+  return `<div class="table-wrap" data-table-id="${id}">
+<button class="table-dl-btn" onclick="(function(){var t=document.querySelector('[data-table-id=\\'${id}\\'] table');if(!t)return;var r=[],h=t.querySelectorAll('th');var hr=[];h.forEach(function(c){hr.push(c.textContent)});r.push(hr.join(','));t.querySelectorAll('tbody tr').forEach(function(tr){var row=[];tr.querySelectorAll('td').forEach(function(c){row.push(c.textContent.replace(/,/g,''))});r.push(row.join(','))});var b=new Blob([r.join('\\n')],{type:'text/csv'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='dartlab-table.csv';a.click()})()">CSV</button>
+<table><thead>${header}</thead><tbody>${rows}</tbody></table></div>`;
+};
+
 marked.use({ renderer });
 
 /** Render markdown to HTML with highlighting. */

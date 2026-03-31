@@ -109,7 +109,18 @@
     </div>
     <!-- exact Claude Code: .inputFooter_gGYT1w -->
     <div class="input-footer">
-      <div class="footer-left"></div>
+      <div class="footer-left">
+        {#if !streaming && !inputText}
+          {#each [
+            { label: "수익성", q: "수익성 분석" },
+            { label: "밸류에이션", q: "밸류에이션 분석" },
+            { label: "전망", q: "매출 전망 분석" },
+            { label: "비교", q: "동종업계 비교" },
+          ] as t}
+            <button class="tmpl-btn" onclick={() => { inputText = t.q; textareaEl?.focus(); }}>{t.label}</button>
+          {/each}
+        {/if}
+      </div>
       <!-- exact Claude Code: .sendButton_gGYT1w -->
       <button class="send-btn" class:streaming onclick={btnClick} disabled={disabled && !streaming} aria-label={streaming ? "Stop" : "Send"}>
         {#if streaming}
@@ -194,7 +205,27 @@
     min-width: 0;
     padding: 5px;
   }
-  .footer-left { flex: 1; }
+  .footer-left {
+    flex: 1;
+    display: flex;
+    gap: 3px;
+    overflow: hidden;
+  }
+  .tmpl-btn {
+    padding: 1px 6px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--vscode-descriptionForeground);
+    font-size: 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .tmpl-btn:hover {
+    border-color: var(--dl-primary);
+    color: var(--dl-primary-light);
+  }
 
   /* exact Claude Code: .sendButton_gGYT1w */
   .send-btn {
