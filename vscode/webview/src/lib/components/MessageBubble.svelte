@@ -785,11 +785,15 @@
     padding: 1px 4px;
     border-radius: 3px;
   }
+  /* Table -- clean, readable, scrollable */
   .content :global(table) {
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 6px;
     width: max-content;
     min-width: 100%;
-    margin: 8px 0;
+    margin: 10px 0;
     font-size: 12px;
     display: block;
     overflow-x: auto;
@@ -797,29 +801,33 @@
     overflow-y: auto;
   }
   .content :global(th), .content :global(td) {
-    border: 1px solid var(--vscode-panel-border);
-    padding: 6px 12px;
+    border-bottom: 1px solid var(--vscode-panel-border);
+    border-right: 1px solid color-mix(in srgb, var(--vscode-panel-border) 40%, transparent);
+    padding: 7px 14px;
     text-align: left;
     white-space: nowrap;
   }
+  .content :global(th:last-child), .content :global(td:last-child) {
+    border-right: none;
+  }
   .content :global(td) {
     font-family: var(--vscode-editor-font-family, monospace);
-    font-size: 11px;
+    font-size: 11.5px;
   }
   .content :global(th) {
     background: var(--vscode-editorGroupHeader-tabsBackground);
-    font-weight: 600;
+    font-weight: 700;
     font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.03em;
     position: sticky;
     top: 0;
     z-index: 1;
+    border-bottom: 2px solid var(--vscode-panel-border);
   }
-  .content :global(tr:nth-child(even)) {
-    background: color-mix(in srgb, var(--vscode-editorGroupHeader-tabsBackground) 30%, transparent);
+  .content :global(tr:nth-child(even) td) {
+    background: color-mix(in srgb, var(--vscode-editorGroupHeader-tabsBackground) 40%, transparent);
   }
-  .content :global(tr:hover) {
+  .content :global(tr:hover td) {
     background: var(--vscode-list-hoverBackground);
   }
   .content :global(p) { margin: 8px 0; }
