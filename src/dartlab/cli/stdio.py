@@ -15,6 +15,9 @@ Protocol:
     <- {"event":"pong","data":{}}
     -> {"type":"setProvider","provider":"gemini","model":"gemini-2.5-flash"}
     <- {"event":"providerChanged","data":{"provider":"gemini","model":"gemini-2.5-flash"}}
+    -> {"type":"listTemplates"}
+    <- {"event":"templates","data":{"templates":[{"name":"가치투자","description":"...","source":"builtin"}]}}
+    -> {"type":"ask","question":"분석","modules":["가치투자","리스크점검"]}
     -> {"type":"exit"}
 """
 
@@ -77,6 +80,22 @@ def _handleAsk(msg: dict[str, Any]) -> None:
     if history:
         kwargs["history"] = history
 
+    # 모듈 프롬프트
+    modules = msg.get("modules")  # list[str] | None
+    template = msg.get("template")  # str | None (하위호환)
+    if modules:
+        from dartlab.ai.patterns import get_modules
+
+        _tmplText = get_modules(modules)
+        if _tmplText:
+            kwargs["_templateText"] = _tmplText
+    elif template:
+        from dartlab.ai.patterns import get_template
+
+        _tmplText = get_template(template)
+        if _tmplText:
+            kwargs["_templateText"] = _tmplText
+
     emittedDone = False
     try:
         for event in analyze(c, question, **kwargs):
@@ -129,6 +148,17 @@ def _handleStatus(_msg: dict[str, Any]) -> None:
         )
 
 
+def _handleListTemplates(_msg: dict[str, Any]) -> None:
+    """Return available analysis templates/modules."""
+    try:
+        from dartlab.ai.patterns import list_templates
+
+        templates = list_templates()
+        _emit({"event": "templates", "data": {"templates": templates}})
+    except Exception as exc:
+        _emit({"event": "templates", "data": {"templates": [], "error": str(exc)}})
+
+
 def _handleSetProvider(msg: dict[str, Any]) -> None:
     """Change provider/model for this session."""
     global _sessionProvider, _sessionModel
@@ -171,6 +201,8 @@ def run() -> None:
             _emit({"event": "pong", "data": {}})
         elif msgType == "setProvider":
             _handleSetProvider(msg)
+        elif msgType == "listTemplates":
+            _handleListTemplates(msg)
         elif msgType == "exit":
             break
         else:

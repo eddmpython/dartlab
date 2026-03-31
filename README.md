@@ -355,31 +355,36 @@ c.reviewer(guide="Evaluate from semiconductor cycle perspective")
 
 > Design: [ops/search.md](ops/search.md)
 
-Listed companies file thousands of disclosures — capital raises, lawsuits, CEO changes, M&A. DartLab collects filing texts and makes them searchable by meaning, not just title.
+Listed companies file thousands of disclosures — capital raises, lawsuits, CEO changes, M&A. DartLab makes them searchable by meaning, not just title.
 
 ```python
 import dartlab
 
-dartlab.search("유상증자 결정")                     # semantic search across all filings
+dartlab.search("유상증자 결정")                     # find capital raise filings
 dartlab.search("대표이사 변경", corp="005930")       # filter by company
 dartlab.search("전환사채 발행", start="20240101")    # filter by date
+dartlab.search("회사가 돈을 빌렸다")                 # natural language works too
 ```
 
-Behind the scenes: daily filing lists → full-text parsing (99.4% success) → ngram index + synonym expansion. No model loading, no GPU required. Search latency: **~1ms**, precision **95%**.
+**No model, no GPU, no cold start.** Tested on 4 million documents:
 
-Two-phase collection — metadata first (lightweight), then full text (one API call per filing):
+| | Ngram+Synonym (DartLab) | Embedding (ko-sroberta) |
+|---|:---:|:---:|
+| **Precision@5** | **95%** | 83% |
+| **Search latency** | **138ms** | 58ms |
+| **Cold start** | **0ms** | 12,700ms |
+| **Dependencies** | **None (numpy only)** | PyTorch 2GB + GPU |
+
+**Why it works without embeddings:** DART filings use a standardized vocabulary — "유상증자결정", "대표이사변경", "정기주주총회결과" appear literally in `report_nm` and `section_title`. A stem ID inverted index (bigram/trigram → integer ID → CSR posting list) captures this structure directly. Synonym expansion bridges natural language ("돈을 빌렸다") to formal disclosure terms ("사채", "차입"). The result: better precision than neural embeddings, at 1/100th the cost.
+
+Pre-built index available on HuggingFace — download and search instantly:
 
 ```python
-from dartlab.core.search import collectMeta, fillContent, buildIndex  # advanced
-
-collectMeta("20210401", "20260330")    # phase 1: filing list (fast)
-fillContent()                          # phase 2: full text (incremental)
-buildIndex()                           # phase 3: vector embedding (GPU)
+from dartlab.core.search import pullIndex
+pullIndex()                            # ~320MB download, then instant search
 ```
 
-All steps are incremental — already-collected dates, texts, and vectors are skipped on re-run.
-
-> **Status:** alpha — pre-built vector index available on HuggingFace. Requires `pip install dartlab[vector]`.
+> **Status:** alpha — data coverage expanding. Index includes 2,500+ companies' annual reports + daily filings.
 
 ### AI — Your Active Analyst
 
@@ -387,7 +392,14 @@ All steps are incremental — already-collected dates, texts, and vectors are sk
 
 The AI in DartLab is not a passive narrator. It is an active analyst that uses dartlab as its toolkit — calling functions, writing code, running analysis, and building its own workflow to answer your question.
 
-When you ask a question, the AI writes and executes Python code using dartlab's full API. You see every line of code it runs and every result it produces. This means you don't just get answers — you learn how to analyze companies yourself. The AI can combine any dartlab function — `analysis()`, `scan()`, `gather()`, `review()` — in whatever sequence the question demands.
+When you ask a question, the AI writes and executes Python code using dartlab's full API. You see every line of code it runs and every result it produces. This means you don't just get answers — you learn how to analyze companies yourself. The AI can combine any dartlab function — `analysis()`, `scan()`, `gather()`, `review()`, `show()`, `notes` — in whatever sequence the question demands.
+
+**AI Analysis Capabilities:**
+- Selects the right axis/tool for each question (60+ questions validated, 95%+ first-try success)
+- Cross-validates financial data with real-time news (auto newsSearch when needed)
+- K-IFRS notes detail: inventory/borrowings/tangible assets broken down by item
+- Results displayed as clean markdown tables
+- Analysis cache sharing for fast responses (valuation 97% faster)
 
 ```python
 import dartlab
@@ -719,11 +731,14 @@ See [docs/stability.md](docs/stability.md).
 
 ## Contributing
 
-The project prefers **experiments before engine changes**. If you want to propose a parser or mapping change, validate it in `experiments/` first and bring the verified result back into the engine.
+**Contributors are very welcome.** Whether it's a bug report, a new analysis axis, a mapping fix, or a documentation improvement — every contribution makes dartlab better for everyone.
+
+The one rule: **experiment first, engine second.** Validate your idea in `experiments/` before changing the engine. This keeps the core stable while making it easy to try bold ideas.
 
 - **Experiment folder**: `experiments/XXX_camelCaseName/` — each file must be independently runnable with actual results in its docstring
-- **Data contributions** (e.g. `accountMappings.json`, `sectionMappings.json`): only accepted when backed by experiment evidence — no manual bulk edits
+- **Data contributions** (e.g. `accountMappings.json`, `sectionMappings.json`): accepted when backed by experiment evidence
 - Issues and PRs in Korean or English are both welcome
+- Not sure where to start? Open an issue — we'll help you find the right place
 
 ## License
 

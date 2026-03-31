@@ -700,6 +700,8 @@ def ask(
     raw: bool = False,
     reflect: bool = False,
     pattern: str | None = None,
+    template: str | None = None,
+    modules: list[str] | None = None,
     **kwargs,
 ):
     """LLM에게 기업에 대해 질문.
@@ -813,6 +815,8 @@ def ask(
         model=model,
         reflect=reflect,
         pattern=pattern,
+        template=template,
+        modules=modules,
         **kwargs,
     )
 
@@ -824,6 +828,31 @@ def ask(
 
     gen = _ask(question, stream=True, **_call_kwargs)
     return _auto_stream(gen)
+
+
+def templates(name: str | None = None):
+    """분석 템플릿 목록 또는 특정 템플릿 내용.
+
+    Example::
+
+        dartlab.templates()          # 전체 목록
+        dartlab.templates("가치투자") # 특정 템플릿 내용
+    """
+    from dartlab.ai import templates as _templates
+
+    return _templates(name)
+
+
+def saveTemplate(name: str, *, content: str | None = None, file: str | None = None):
+    """사용자 분석 템플릿 저장. ~/.dartlab/templates/{name}.md
+
+    Example::
+
+        dartlab.saveTemplate("my_style", content="## 내 기준\\n- ROE > 15%")
+    """
+    from dartlab.ai import saveTemplate as _save
+
+    return _save(name, content=content, file=file)
 
 
 def chat(

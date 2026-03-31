@@ -58,11 +58,41 @@ dartlab.chat("005930", "배당 추세를 분석하고 이상 징후를 찾아줘
 - `test_spec_integrity.py` — CI에서 spec-코드 불일치 검증
 - `/api/spec` 엔드포인트로 MCP/외부 클라이언트도 사용 가능
 
+## AI 분석 능력
+
+### 도구 선택 (60+ 질문 검증)
+- **개별 기업 분석**: review/analysis 축 정확 매칭 (1회 성공)
+- **시장 비교/순위**: scan 단일 축 + filter
+- **데이터 직접 조회**: show/select (배당, 매출 추이, 주석 등)
+- **주석 상세**: c.notes.xxx (재고/차입금/유형자산 등 12항목)
+- **실시간 이슈**: newsSearch + gather("news") 교차 검증
+- **웹서치 자발 사용**: 분석 부족 시 자동으로 newsSearch/webSearch 보충
+
+### 데이터 품질
+- **마크다운 테이블 출력**: Polars 유니코드 → GFM 마크다운 자동 변환
+- **원본 데이터 투명 제공**: 결과를 숨기지 않고 사용자에게 그대로 보여줌
+- **analysis notes enrichment**: 자산구조/비용구조에 주석 상세 포함
+
+### 성능
+- **calc 캐시 공유**: @memoized_calc 120개 함수. analysis↔review 중복 계산 제거
+  - 가치평가: 4초→0.09초 (97%↓), 매출전망: 1.5초→0.07초 (95%↓)
+- **review 최대 3개 제한**: 타임아웃(60초) 방지
+- **느린 축 회피**: 투자효율/가치평가/매출전망은 필요시만
+
+### 해석 품질
+- **축 정확 매칭**: "비용구조" → analysis("비용구조") (다른 축 조합 금지)
+- **scan 결과 AI 판단**: 하드코딩 필터 없이 기저효과/이상치를 해석으로 설명
+- **교차 검증**: 재무 + 뉴스, IS + CF + BS, notes + analysis 조합
+
 ## Audit
 
 - 저장: `data/dart/auditAi/`
-- 실제 기업에 ask/chat 실행 → 응답 품질 판단 → 프롬프트/도구 개선
+- AI audit = dartlab 최종 레이어 품질 검증
+- 모든 하위 엔진(Company, sections, notes, analysis, scan, gather) 문제가 여기서 표면화
+- 실행 → 분류(P/T/C/V) → 수정 → 재실행 → 기록
 
 ## 관련 코드
 
 - `src/dartlab/ai/` — providers, tools, runtime, memory, conversation
+- `src/dartlab/ai/runtime/core.py` — 시스템 프롬프트, 코드 실행, 마크다운 변환
+- `src/dartlab/analysis/financial/_memoize.py` — calc 캐시 데코레이터

@@ -29,7 +29,7 @@ def _(dartlab):
 
 @app.cell
 def _(dartlab):
-    dartlab.search("전환사채 발행", start="20260101", topK=5)
+    dartlab.search("자기주식", start="20260101", topK=5)
     return
 
 
