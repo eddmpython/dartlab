@@ -290,9 +290,17 @@
       </div>
     {/if}
 
-    <!-- Streaming cursor -->
+    <!-- Streaming cursor / code execution indicator -->
     {#if message.loading && message.text}
-      <span class="cursor"></span>
+      {@const lastRound = message.codeRounds?.[message.codeRounds.length - 1]}
+      {#if lastRound?.status === "executing"}
+        <div class="inline-exec">
+          <div class="tool-spinner-sm"></div>
+          <span>Python 실행 중 ({lastRound.round}/{lastRound.maxRounds})...</span>
+        </div>
+      {:else}
+        <span class="cursor"></span>
+      {/if}
     {/if}
 
     <!-- Error with guide + provider switch -->
@@ -645,9 +653,9 @@
     color: var(--vscode-descriptionForeground);
   }
 
-  /* === Content (rendered markdown) === */
+  /* === Content (rendered markdown -- polished) === */
   .content {
-    line-height: 1.5;
+    line-height: 1.6;
     word-break: break-word;
   }
   .content :global(pre) {
@@ -674,24 +682,59 @@
   }
   .content :global(th), .content :global(td) {
     border: 1px solid var(--vscode-panel-border);
-    padding: 4px 8px;
+    padding: 6px 10px;
     text-align: left;
   }
   .content :global(th) {
     background: var(--vscode-editorGroupHeader-tabsBackground);
     font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
   }
-  .content :global(p) { margin: 6px 0; }
+  .content :global(tr:nth-child(even)) {
+    background: color-mix(in srgb, var(--vscode-editorGroupHeader-tabsBackground) 30%, transparent);
+  }
+  .content :global(p) { margin: 8px 0; }
   .content :global(p:first-child) { margin-top: 0; }
   .content :global(ul), .content :global(ol) { padding-left: 20px; margin: 4px 0; }
-  .content :global(h1) { font-size: 1.3em; margin: 12px 0 6px; }
-  .content :global(h2) { font-size: 1.15em; margin: 12px 0 6px; }
-  .content :global(h3) { font-size: 1.05em; margin: 12px 0 6px; }
+  .content :global(h1) { font-size: 1.4em; margin: 16px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--vscode-panel-border); }
+  .content :global(h2) { font-size: 1.2em; margin: 14px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--vscode-panel-border); }
+  .content :global(h3) { font-size: 1.05em; margin: 12px 0 6px; font-weight: 600; }
   .content :global(blockquote) {
-    margin: 6px 0; padding: 4px 12px;
-    border-left: 3px solid var(--vscode-focusBorder);
+    margin: 8px 0; padding: 6px 14px;
+    border-left: 3px solid var(--dl-primary, #ea4647);
+    background: color-mix(in srgb, var(--vscode-textCodeBlock-background) 50%, transparent);
     color: var(--vscode-descriptionForeground);
+    border-radius: 0 4px 4px 0;
   }
+  .content :global(strong) { color: var(--vscode-foreground); }
+  .content :global(hr) { border: none; border-top: 1px solid var(--vscode-panel-border); margin: 12px 0; }
+
+  /* Code fold (details/summary) */
+  .content :global(.code-fold) {
+    margin: 8px 0;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: var(--corner-radius-medium);
+    overflow: hidden;
+  }
+  .content :global(.code-fold-summary) {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    background: var(--vscode-textCodeBlock-background);
+    cursor: pointer;
+    font-size: 12px;
+    user-select: none;
+    list-style: none;
+  }
+  .content :global(.code-fold-summary::-webkit-details-marker) { display: none; }
+  .content :global(.code-fold[open] .code-fold-icon) { transform: rotate(90deg); }
+  .content :global(.code-fold-icon) { transition: transform 0.15s; color: var(--vscode-descriptionForeground); }
+  .content :global(.code-fold-label) { font-weight: 600; color: var(--dl-primary-light, #f87171); font-family: var(--vscode-editor-font-family, monospace); }
+  .content :global(.code-fold-hint) { color: var(--vscode-descriptionForeground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .content :global(.code-fold pre) { margin: 0; border-radius: 0; border-left: none; }
   /* Number highlights */
   .content :global(.num-highlight) {
     color: var(--dl-accent, #fb923c);
@@ -761,6 +804,19 @@
     margin: 0;
     white-space: pre-wrap;
     word-break: break-all;
+  }
+
+  /* Inline code execution indicator */
+  .inline-exec {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    margin: 4px 0;
+    border-radius: var(--corner-radius-small);
+    background: var(--vscode-textCodeBlock-background);
+    font-size: 12px;
+    color: var(--dl-accent, #fb923c);
   }
 
   /* Streaming cursor */

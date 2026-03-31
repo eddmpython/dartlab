@@ -34,7 +34,14 @@ marked.setOptions({
 
 const renderer = new marked.Renderer();
 
-// Code blocks with highlight.js
+// Extract first meaningful line for code fold summary
+function codeSummary(text: string): string {
+  const lines = text.split("\n").filter((l) => l.trim() && !l.trim().startsWith("#"));
+  const first = lines[0] || text.split("\n")[0] || "";
+  return first.length > 60 ? first.slice(0, 57) + "..." : first;
+}
+
+// Code blocks -- collapsed by default (Claude Code style)
 renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
   let highlighted: string;
   if (lang && hljs.getLanguage(lang)) {
@@ -42,8 +49,25 @@ renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
   } else {
     highlighted = hljs.highlightAuto(text).value;
   }
-  return `<pre class="code-block"><code class="hljs language-${lang || "text"}">${highlighted}</code></pre>`;
+  const summary = codeSummary(text);
+  const label = lang === "python" ? "Python" : lang || "Code";
+  const lineCount = text.split("\n").length;
+
+  // Short code (≤3 lines) -- show inline
+  if (lineCount <= 3) {
+    return `<pre class="code-block"><code class="hljs language-${lang || "text"}">${highlighted}</code></pre>`;
+  }
+
+  // Long code -- collapsed
+  return `<details class="code-fold">
+<summary class="code-fold-summary"><span class="code-fold-icon">▸</span> <span class="code-fold-label">${label}</span> <span class="code-fold-hint">${escapeHtml(summary)}</span></summary>
+<pre class="code-block"><code class="hljs language-${lang || "text"}">${highlighted}</code></pre>
+</details>`;
 };
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
 
 // Table styling — right-align numbers
 renderer.tablecell = function ({
