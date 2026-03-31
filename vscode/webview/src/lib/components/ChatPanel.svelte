@@ -25,6 +25,7 @@
   let serverState = $state("starting");
   let providerLabel = $state("");
   let modelLabel = $state("");
+  let providers: Array<{id: string; label: string; freeTier: string}> = $state([]);
   let streaming = $state(false);
   let messagesEl: HTMLDivElement | undefined = $state();
   let currentHandler: ReturnType<typeof createSseHandler> | null = null;
@@ -221,6 +222,7 @@
         const p = m.payload as Record<string, unknown> | null;
         if (p?.provider) providerLabel = String(p.provider);
         if (p?.model) modelLabel = String(p.model);
+        if (Array.isArray(p?.providers)) providers = p.providers as typeof providers;
         break;
       }
       case "restoreConversations": {
@@ -248,7 +250,7 @@
 </script>
 
 <div class="chat-panel">
-  <ChatHeader {serverState} {providerLabel} {modelLabel} />
+  <ChatHeader {serverState} {providerLabel} {modelLabel} {providers} />
 
   {#if messages.length === 0 && !streaming}
     {@const avatarSrc = document.getElementById("app")?.dataset.avatar ?? ""}

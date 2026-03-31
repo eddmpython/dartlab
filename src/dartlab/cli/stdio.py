@@ -90,18 +90,31 @@ def _handleAsk(msg: dict[str, Any]) -> None:
 
 
 def _handleStatus(_msg: dict[str, Any]) -> None:
-    """Return provider status."""
+    """Return provider status with available providers list."""
     try:
         from dartlab.core.ai.profile import get_profile_manager
+        from dartlab.core.ai.providers import _PROVIDERS
+
         profile = get_profile_manager().load()
         provider = _sessionProvider or profile.default_provider or "none"
         model = _sessionModel or getattr(profile, "model", None) or ""
+
+        providers = []
+        for pid, spec in _PROVIDERS.items():
+            if not spec.public:
+                continue
+            providers.append({
+                "id": spec.id,
+                "label": spec.label,
+                "freeTier": spec.freeTierHint or "",
+            })
+
         _emit({
             "event": "status",
-            "data": {"provider": provider, "model": model, "ready": True},
+            "data": {"provider": provider, "model": model, "ready": True, "providers": providers},
         })
     except Exception as exc:
-        _emit({"event": "status", "data": {"provider": "none", "model": "", "ready": False, "error": str(exc)}})
+        _emit({"event": "status", "data": {"provider": "none", "model": "", "ready": False, "providers": [], "error": str(exc)}})
 
 
 def _handleSetProvider(msg: dict[str, Any]) -> None:
