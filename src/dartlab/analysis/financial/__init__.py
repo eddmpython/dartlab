@@ -120,6 +120,12 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
             ),
             _CalcEntry("calcCashQuality", "dartlab.analysis.financial.cashflow", "cashQuality", "이익의 현금 전환"),
             _CalcEntry("calcCashFlowFlags", "dartlab.analysis.financial.cashflow", "cashFlowFlags", "현금흐름 플래그"),
+            _CalcEntry(
+                "calcOcfDecomposition",
+                "dartlab.analysis.financial.cashflow",
+                "ocfDecomposition",
+                "영업CF 분해 (NI+감가+운전자본)",
+            ),
         ),
     ),
     "수익성": _AxisEntry(
@@ -141,6 +147,18 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
                 "profitabilityFlags",
                 "수익성 플래그",
             ),
+            _CalcEntry(
+                "calcPenmanDecomposition",
+                "dartlab.analysis.financial.profitability",
+                "penmanDecomposition",
+                "Penman 분해 (RNOA vs 레버리지)",
+            ),
+            _CalcEntry(
+                "calcRoicTree",
+                "dartlab.analysis.financial.profitability",
+                "roicTree",
+                "ROIC Tree (마진×회전 분해)",
+            ),
         ),
     ),
     "성장성": _AxisEntry(
@@ -158,6 +176,12 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
                 "지속가능성장률",
             ),
             _CalcEntry("calcGrowthFlags", "dartlab.analysis.financial.growthAnalysis", "growthFlags", "성장성 플래그"),
+            _CalcEntry(
+                "calcCagrComparison",
+                "dartlab.analysis.financial.growthAnalysis",
+                "cagrComparison",
+                "CAGR 비교 (구조적 변화 감지)",
+            ),
         ),
     ),
     "안정성": _AxisEntry(
@@ -224,6 +248,18 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
                 "dartlab.analysis.financial.earningsQuality",
                 "earningsQualityFlags",
                 "이익품질 플래그",
+            ),
+            _CalcEntry(
+                "calcRichardsonAccrual",
+                "dartlab.analysis.financial.earningsQuality",
+                "richardsonAccrual",
+                "Richardson 3계층 발생액",
+            ),
+            _CalcEntry(
+                "calcNonOperatingBreakdown",
+                "dartlab.analysis.financial.earningsQuality",
+                "nonOperatingBreakdown",
+                "영업외손익 분해",
             ),
         ),
     ),
@@ -336,6 +372,12 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
                 "calcEffectiveTaxRate", "dartlab.analysis.financial.taxAnalysis", "effectiveTaxRate", "유효세율"
             ),
             _CalcEntry("calcDeferredTax", "dartlab.analysis.financial.taxAnalysis", "deferredTax", "이연법인세"),
+            _CalcEntry(
+                "calcArticulationCheck",
+                "dartlab.analysis.financial.crossStatement",
+                "articulationCheck",
+                "BS-CF 정합성 검증",
+            ),
         ),
     ),
     # ── 4부: 가치평가 ──

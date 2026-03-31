@@ -94,15 +94,12 @@ def calcCostBreakdown(company, *, basePeriod: str | None = None) -> dict | None:
         return None
 
     # notes enrichment — 비용의 성격별 분류 (있으면)
+    from dartlab.analysis.financial._helpers import fetchNotesDetail
+
     result: dict[str, Any] = {"history": history}
-    notesAccessor = getattr(company, "_notesAccessor", None) or getattr(company, "notes", None)
-    if notesAccessor is not None:
-        try:
-            cbn = getattr(notesAccessor, "costByNature", None)
-            if cbn is not None and hasattr(cbn, "to_dicts"):
-                result["costByNature"] = cbn.to_dicts()
-        except (AttributeError, FileNotFoundError, ValueError, KeyError):
-            pass
+    notesDetail = fetchNotesDetail(company, ["costByNature"])
+    if notesDetail:
+        result["notesDetail"] = notesDetail
 
     return result
 

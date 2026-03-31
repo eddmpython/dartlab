@@ -53,6 +53,26 @@ def quarterlyCols(df: pl.DataFrame, maxQuarters: int = 8) -> list[str]:
     return [c for c in cols if "Q" in c][:maxQuarters]
 
 
+def fetchNotesDetail(company, noteKeys: list[str]) -> dict[str, list[dict]]:
+    """company.notes에서 noteKeys의 DataFrame을 dict 리스트로 반환.
+
+    실패 시 해당 키를 건너뜀 (안전). to_dicts()로 즉시 변환하여
+    DataFrame 참조를 해제.
+    """
+    result: dict[str, list[dict]] = {}
+    notesAccessor = getattr(company, "_notesAccessor", None) or getattr(company, "notes", None)
+    if notesAccessor is None:
+        return result
+    for key in noteKeys:
+        try:
+            df = getattr(notesAccessor, key, None)
+            if df is not None and hasattr(df, "to_dicts"):
+                result[key] = df.to_dicts()
+        except (AttributeError, FileNotFoundError, ValueError, KeyError):
+            pass
+    return result
+
+
 MAX_RATIO_YEARS = 8
 
 

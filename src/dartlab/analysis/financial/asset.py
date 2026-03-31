@@ -283,16 +283,9 @@ def calcAssetStructure(company, *, basePeriod: str | None = None) -> dict | None
         diagnosis = "비영업 우위 — 영업 자산보다 비영업 자산이 많음"
 
     # notes enrichment — 주석에서 상세 분해 데이터 추가 (있으면)
-    notesDetail: dict[str, Any] = {}
-    notesAccessor = getattr(company, "_notesAccessor", None) or getattr(company, "notes", None)
-    if notesAccessor is not None:
-        for noteKey in ("inventory", "tangibleAsset", "intangibleAsset"):
-            try:
-                df = getattr(notesAccessor, noteKey, None)
-                if df is not None and hasattr(df, "to_dicts"):
-                    notesDetail[noteKey] = df.to_dicts()
-            except (AttributeError, FileNotFoundError, ValueError, KeyError):
-                pass
+    from dartlab.analysis.financial._helpers import fetchNotesDetail
+
+    notesDetail = fetchNotesDetail(company, ["inventory", "tangibleAsset", "intangibleAsset"])
 
     result_dict: dict[str, Any] = {
         "latest": latest,

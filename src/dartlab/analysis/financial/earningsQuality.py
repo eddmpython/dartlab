@@ -109,7 +109,19 @@ def calcAccrualAnalysis(company, *, basePeriod: str | None = None) -> dict | Non
             }
         )
 
-    return {"history": history} if history else None
+    if not history:
+        return None
+
+    result: dict = {"history": history}
+
+    # notes enrichment — 매출채권 대손충당금 상세
+    from dartlab.analysis.financial._helpers import fetchNotesDetail
+
+    notesDetail = fetchNotesDetail(company, ["receivables"])
+    if notesDetail:
+        result["notesDetail"] = notesDetail
+
+    return result
 
 
 # ── 이익 지속성 ──
@@ -554,4 +566,16 @@ def calcNonOperatingBreakdown(company, *, basePeriod: str | None = None) -> dict
             }
         )
 
-    return {"history": history} if history else None
+    if not history:
+        return None
+
+    result: dict = {"history": history}
+
+    # notes enrichment — 관계기업 투자 상세
+    from dartlab.analysis.financial._helpers import fetchNotesDetail
+
+    notesDetail = fetchNotesDetail(company, ["affiliates"])
+    if notesDetail:
+        result["notesDetail"] = notesDetail
+
+    return result

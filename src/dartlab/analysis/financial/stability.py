@@ -113,7 +113,19 @@ def calcLeverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
             }
         )
 
-    return {"history": history} if history else None
+    if not history:
+        return None
+
+    result: dict = {"history": history}
+
+    # notes enrichment — 차입금 구성 + 리스부채
+    from dartlab.analysis.financial._helpers import fetchNotesDetail
+
+    notesDetail = fetchNotesDetail(company, ["borrowings", "lease"])
+    if notesDetail:
+        result["notesDetail"] = notesDetail
+
+    return result
 
 
 # ── 이자보상 시계열 ──
@@ -304,11 +316,20 @@ def calcDistressScore(company, *, basePeriod: str | None = None) -> dict | None:
         return None
 
     latest = history[0]
-    return {
+    result: dict = {
         "history": history,
         "latestScore": latest.get("zScore"),
         "zone": latest.get("zone") or "판별 불가",
     }
+
+    # notes enrichment — 충당부채 (위험/회색 구간일 때 의미)
+    from dartlab.analysis.financial._helpers import fetchNotesDetail
+
+    notesDetail = fetchNotesDetail(company, ["provisions"])
+    if notesDetail:
+        result["notesDetail"] = notesDetail
+
+    return result
 
 
 # ── 부실 앙상블 (기존 유지 -- getRatios 사용) ──

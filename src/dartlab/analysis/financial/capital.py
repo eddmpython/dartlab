@@ -220,6 +220,13 @@ def calcFundingSources(company, *, basePeriod: str | None = None) -> dict | None
                 f"금융차입 비중 {diff:.0f}pp 감소 ({history[-1]['period']}→{history[0]['period']})"
             )
 
+    # notes enrichment — 차입금 주석 (이자율, 만기, 담보 등)
+    from dartlab.analysis.financial._helpers import fetchNotesDetail
+
+    notesDetail = fetchNotesDetail(company, ["borrowings"])
+    if notesDetail:
+        result["notesDetail"] = notesDetail
+
     return result
 
 
