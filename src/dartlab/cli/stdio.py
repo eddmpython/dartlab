@@ -34,7 +34,12 @@ _sessionModel: str | None = None
 
 def _emit(obj: dict[str, Any]) -> None:
     """Write one JSON line to stdout."""
-    sys.stdout.write(json.dumps(obj, ensure_ascii=False) + "\n")
+    try:
+        line = json.dumps(obj, ensure_ascii=False)
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        # Surrogate 등 인코딩 문제 시 ensure_ascii=True로 fallback
+        line = json.dumps(obj, ensure_ascii=True)
+    sys.stdout.write(line + "\n")
     sys.stdout.flush()
 
 
@@ -181,7 +186,14 @@ def _handleSetProvider(msg: dict[str, Any]) -> None:
 
 def run() -> None:
     """stdio REPL loop. Exits on stdin EOF or exit message."""
+    import io
     import dartlab
+
+    # Force UTF-8 on Windows cp949 environments
+    if sys.stdout.encoding and sys.stdout.encoding.lower() not in ("utf-8", "utf8"):
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    if sys.stdin.encoding and sys.stdin.encoding.lower() not in ("utf-8", "utf8"):
+        sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding="utf-8", errors="replace")
 
     dartlab.verbose = False
 
