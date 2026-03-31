@@ -1,6 +1,6 @@
 [project]
 name = "dartlab"
-version = "0.7.15"
+version = "0.7.16"
 description = "DART 전자공시 + EDGAR 공시를 하나의 회사 맵으로 — Python 재무 분석 라이브러리"
 readme = "README.md"
 license = {file = "LICENSE"}

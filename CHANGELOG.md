@@ -5,6 +5,30 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.16] - 2026-03-31
+
+### Added
+
+- **시맨틱 검색 엔진(alpha)**: `dartlab.search("대표이사 변경")` — n-gram + vector hybrid 검색. core/search 모듈 신규, ngramIndex 전면 개선
+- **AI 프롬프트 패턴 3종**: growth, quick_check, value_investor 패턴 추가. 기존 패턴(financial, prediction, risk, valuation) 보강
+- **review 6막 구조 확장**: builders/templates 대폭 강화, registry 축-보고서 매핑 보강
+- **analysis predictionSignals 확장**: 예측 신호 12→15축 (consensusDirection, flowDirection, revenueDirection)
+- **ops/ 운영문서 체계**: DEV.md 전면 제거 → 루트 ops/에 엔진별 설계 문서 통합
+- **실험 105 시맨틱 맵**: 13개 실험 스크립트 (taxonomy~reportNmMapping)
+- **VSCode extension**: ChatInput/ChatPanel UX 개선, 메시지 프로토콜 확장
+
+### Changed
+
+- **analysis 6축 계산 개선**: asset, capital, costStructure, earningsQuality, stability 보강
+- **providers/dart**: allFilingsCollector 증분 수집/에러 복구 강화, notes 파싱 개선
+- **ai/runtime**: 패턴 매칭 로직 확장, standalone 안정화
+- **core**: vectorStore를 core/search로 이전, exogenousAxes/ols 강화
+
+### Removed
+
+- **DEV.md 28개 파일**: 모듈별 산재된 개발 메모 → ops/ 통합으로 대체
+- **core/vectorStore.py**: core/search/vectorStore.py로 이전
+
 ## [0.7.15] - 2026-03-30
 
 ### Added

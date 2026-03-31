@@ -370,8 +370,8 @@ CAPABILITIES: dict[str, dict] = {
     },
     "Company.review": {
         "aicontext": "reviewer()가 이 결과를 소비하여 AI 해석 생성\nask()에서 재무분석 컨텍스트로 활용",
-        "capabilities": "14개 섹션 전체 보고서 (수익구조~재무정합성)\n단일 섹션 지정 가능\n4개 출력 형식 (rich, html, markdown, json)\n섹션간 순환 서사 자동 감지\n프리셋 지원 (executive/audit/credit/growth/valuation)\ndetail=False로 요약만 표시\n레이아웃 커스텀",
-        "guide": '"재무 검토서 만들어줘" -> c.review()\n"수익구조 분석" -> c.review("수익구조")\n"감사용 리뷰" -> c.review(preset="audit")\n"요약만 보여줘" -> c.review(detail=False)\n"AI 의견 포함 보고서" -> c.reviewer() (review + AI 해석)',
+        "capabilities": "14개 섹션 전체 보고서 (수익구조~재무정합성)\n단일 섹션 지정 가능\n4개 출력 형식 (rich, html, markdown, json)\n섹션간 순환 서사 자동 감지\n프리셋 지원 (executive/audit/credit/growth/valuation)\n스토리 템플릿 (사이클/프랜차이즈/턴어라운드/성장/자본집약/지주/현금부자)\ndetail=False로 요약만 표시\n레이아웃 커스텀",
+        "guide": '"재무 검토서 만들어줘" -> c.review()\n"수익구조 분석" -> c.review("수익구조")\n"감사용 리뷰" -> c.review(preset="audit")\n"이 회사 스토리는?" -> c.review(template="auto")\n"요약만 보여줘" -> c.review(detail=False)\n"AI 의견 포함 보고서" -> c.reviewer() (review + AI 해석)',
         "kind": "method",
         "requires": "데이터: finance + report (자동 다운로드)",
         "seeAlso": "reviewer: review() + AI 섹션별 종합의견 (AI 해석 포함)\nanalysis: 14축 개별 분석 (review가 내부적으로 소비)\ninsights: 7영역 등급 + 이상치 요약",

@@ -116,6 +116,18 @@
         "keyword_only": "true"
       },
       {
+        "name": "template",
+        "type": "str | None",
+        "default": "None",
+        "keyword_only": "true"
+      },
+      {
+        "name": "modules",
+        "type": "list[str] | None",
+        "default": "None",
+        "keyword_only": "true"
+      },
+      {
         "name": "kwargs"
       }
     ],
@@ -1898,6 +1910,12 @@
         "keyword_only": "true"
       },
       {
+        "name": "template",
+        "type": "str | None",
+        "default": "None",
+        "keyword_only": "true"
+      },
+      {
         "name": "detail",
         "type": "bool | None",
         "default": "None",
@@ -1910,12 +1928,12 @@
         "keyword_only": "true"
       }
     ],
-    "args": "section: 섹션명 (\"수익구조\" 등). None이면 전체.\nlayout: ReviewLayout 커스텀. None이면 기본.\nhelper: True면 해석 힌트 텍스트 포함. None이면 자동.\npreset: 프리셋명 (\"executive\"/\"audit\"/\"credit\"/\"growth\"/\"valuation\"). None이면 전체.\ndetail: True면 전체 블록, False면 섹션 요약만. None이면 preset 기본값 또는 True.",
+    "args": "section: 섹션명 (\"수익구조\" 등). None이면 전체.\nlayout: ReviewLayout 커스텀. None이면 기본.\nhelper: True면 해석 힌트 텍스트 포함. None이면 자동.\npreset: 프리셋명 (\"executive\"/\"audit\"/\"credit\"/\"growth\"/\"valuation\"). None이면 전체.\ntemplate: 스토리 템플릿 (\"성장\"/\"자본집약\"/\"지주\" 등). \"auto\"면 자동 판별.\ndetail: True면 전체 블록, False면 섹션 요약만. None이면 preset 기본값 또는 True.",
     "returns": "Review — 구조화 보고서.",
-    "example": "c.review()                        # 전체 검토서\nc.review(\"수익구조\")                # 특정 섹션\nc.review(preset=\"audit\")          # 감사/회계 검토용\nc.review(preset=\"executive\")      # 경영진 요약\nc.review(detail=False)            # 전 섹션 요약만",
-    "capabilities": "14개 섹션 전체 보고서 (수익구조~재무정합성)\n단일 섹션 지정 가능\n4개 출력 형식 (rich, html, markdown, json)\n섹션간 순환 서사 자동 감지\n프리셋 지원 (executive/audit/credit/growth/valuation)\ndetail=False로 요약만 표시\n레이아웃 커스텀",
+    "example": "c.review()                        # 전체 검토서\nc.review(\"수익구조\")                # 특정 섹션\nc.review(preset=\"audit\")          # 감사/회계 검토용\nc.review(template=\"auto\")         # 스토리 자동 판별\nc.review(template=\"성장\")          # 성장 템플릿 적용\nc.review(detail=False)            # 전 섹션 요약만",
+    "capabilities": "14개 섹션 전체 보고서 (수익구조~재무정합성)\n단일 섹션 지정 가능\n4개 출력 형식 (rich, html, markdown, json)\n섹션간 순환 서사 자동 감지\n프리셋 지원 (executive/audit/credit/growth/valuation)\n스토리 템플릿 (사이클/프랜차이즈/턴어라운드/성장/자본집약/지주/현금부자)\ndetail=False로 요약만 표시\n레이아웃 커스텀",
     "requires": "데이터: finance + report (자동 다운로드)",
-    "guide": "\"재무 검토서 만들어줘\" -> c.review()\n\"수익구조 분석\" -> c.review(\"수익구조\")\n\"감사용 리뷰\" -> c.review(preset=\"audit\")\n\"요약만 보여줘\" -> c.review(detail=False)\n\"AI 의견 포함 보고서\" -> c.reviewer() (review + AI 해석)",
+    "guide": "\"재무 검토서 만들어줘\" -> c.review()\n\"수익구조 분석\" -> c.review(\"수익구조\")\n\"감사용 리뷰\" -> c.review(preset=\"audit\")\n\"이 회사 스토리는?\" -> c.review(template=\"auto\")\n\"요약만 보여줘\" -> c.review(detail=False)\n\"AI 의견 포함 보고서\" -> c.reviewer() (review + AI 해석)",
     "seealso": "reviewer: review() + AI 섹션별 종합의견 (AI 해석 포함)\nanalysis: 14축 개별 분석 (review가 내부적으로 소비)\ninsights: 7영역 등급 + 이상치 요약"
   },
   {

@@ -63,7 +63,7 @@ dartlab 전역 설정.
 
 LLM 기반 적극적 분석가. dartlab을 도구로 삼아 주체적으로 분석하고, 사용자의 분석 학습을 돕는다.
 
-### `dartlab.ask(args: str, *, include: list[str] | None = None, exclude: list[str] | None = None, provider: str | None = None, model: str | None = None, stream: bool = True, raw: bool = False, reflect: bool = False, pattern: str | None = None, kwargs)`
+### `dartlab.ask(args: str, *, include: list[str] | None = None, exclude: list[str] | None = None, provider: str | None = None, model: str | None = None, stream: bool = True, raw: bool = False, reflect: bool = False, pattern: str | None = None, template: str | None = None, modules: list[str] | None = None, kwargs)`
 
 LLM에게 기업에 대해 질문.
 
@@ -1235,7 +1235,7 @@ c = Company("005930")
 c.retrievalBlocks          # 전체 retrieval 블록
 ```
 
-### `review(section: str | None = None, layout = None, helper: bool | None = None, *, preset: str | None = None, detail: bool | None = None, basePeriod: str | None = None)`
+### `review(section: str | None = None, layout = None, helper: bool | None = None, *, preset: str | None = None, template: str | None = None, detail: bool | None = None, basePeriod: str | None = None)`
 
 재무제표 구조화 보고서 — 14개 섹션 데이터 검토서.
 
@@ -1245,13 +1245,15 @@ c.retrievalBlocks          # 전체 retrieval 블록
 - layout: ReviewLayout 커스텀. None이면 기본.
 - helper: True면 해석 힌트 텍스트 포함. None이면 자동.
 - preset: 프리셋명 ("executive"/"audit"/"credit"/"growth"/"valuation"). None이면 전체.
+- template: 스토리 템플릿 ("성장"/"자본집약"/"지주" 등). "auto"면 자동 판별.
 - detail: True면 전체 블록, False면 섹션 요약만. None이면 preset 기본값 또는 True.
 
 ```python
 c.review()                        # 전체 검토서
 c.review("수익구조")                # 특정 섹션
 c.review(preset="audit")          # 감사/회계 검토용
-c.review(preset="executive")      # 경영진 요약
+c.review(template="auto")         # 스토리 자동 판별
+c.review(template="성장")          # 성장 템플릿 적용
 c.review(detail=False)            # 전 섹션 요약만
 ```
 
