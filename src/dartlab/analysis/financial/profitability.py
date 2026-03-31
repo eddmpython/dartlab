@@ -13,6 +13,7 @@ from dartlab.analysis.financial._helpers import (
 from dartlab.analysis.financial._helpers import (
     annualColsFromPeriods as _annualColsFromPeriods,
 )
+from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = MAX_RATIO_YEARS
 
@@ -32,6 +33,7 @@ def _pctOf(part, total) -> float | None:
 # ── 이익 구조 시계열 ──
 
 
+@memoized_calc
 def calcMarginTrend(company, *, basePeriod: str | None = None) -> dict | None:
     """이익 구조 시계열 -- 매출에서 순이익까지 금액과 마진.
 
@@ -89,6 +91,7 @@ def calcMarginTrend(company, *, basePeriod: str | None = None) -> dict | None:
 # ── ROE 분해 (듀퐁 5요소) ──
 
 
+@memoized_calc
 def calcReturnTrend(company, *, basePeriod: str | None = None) -> dict | None:
     """ROE 구조 분해 -- 수익을 어떻게 만드는가.
 
@@ -166,6 +169,7 @@ calcDupont = calcReturnTrend
 # ── 마진 워터폴 ──
 
 
+@memoized_calc
 def calcMarginWaterfall(company, *, basePeriod: str | None = None) -> dict | None:
     """매출 -> 순이익 마진 워터폴 분해.
 
@@ -296,6 +300,7 @@ def calcMarginWaterfall(company, *, basePeriod: str | None = None) -> dict | Non
 # ── 플래그 ──
 
 
+@memoized_calc
 def calcProfitabilityFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """수익성 경고/기회 플래그."""
     flags: list[str] = []
@@ -333,6 +338,7 @@ def _get(row: dict, col: str) -> float:
     return v if v is not None else 0
 
 
+@memoized_calc
 def calcPenmanDecomposition(company, *, basePeriod: str | None = None) -> dict | None:
     """Penman 분해 -- ROE가 영업력인지 레버리지인지 분리.
 
@@ -464,4 +470,162 @@ def calcPenmanDecomposition(company, *, basePeriod: str | None = None) -> dict |
     if not history:
         return None
 
+    return {"history": history}
+
+
+# ── McKinsey ROIC Tree ──
+
+
+@memoized_calc
+def calcRoicTree(company, *, basePeriod: str | None = None) -> dict | None:
+    """McKinsey ROIC Tree — ROIC가 높은/낮은 이유를 원인까지 추적.
+
+    ROIC = Operating Margin × Capital Turnover
+    Operating Margin = 1 - (COGS/Rev) - (SGA/Rev) - Tax Rate
+    Capital Turnover = Revenue / Invested Capital
+      IC = Working Capital (AR+Inv-AP) + Fixed Capital (PPE+Intangible)
+
+    반환::
+
+        {
+            "history": [
+                {
+                    "period": str,
+                    "roic": float,
+                    "operatingMargin": float,
+                    "capitalTurnover": float,
+                    "grossMargin": float,
+                    "sgaRatio": float,
+                    "effectiveTaxRate": float,
+                    "wcTurnover": float,
+                    "fixedTurnover": float,
+                    "marginDriver": str,
+                    "turnoverDriver": str,
+                },
+                ...
+            ],
+        }
+
+    학술근거: Koller, Goedhart, Wessels - Valuation (McKinsey).
+    """
+    isResult = company.select(
+        "IS",
+        ["매출액", "매출원가", "판매비와관리비", "영업이익",
+         "법인세비용", "법인세차감전순이익"],
+    )
+    bsResult = company.select(
+        "BS",
+        ["매출채권및기타채권", "재고자산", "매입채무",
+         "유형자산", "무형자산",
+         "자본총계", "단기차입금", "장기차입금", "사채", "현금및현금성자산"],
+    )
+
+    isParsed = toDict(isResult)
+    bsParsed = toDict(bsResult)
+    if isParsed is None or bsParsed is None:
+        return None
+
+    isData, isPeriods = isParsed
+    bsData, _ = bsParsed
+
+    revRow = isData.get("매출액", {})
+    cogsRow = isData.get("매출원가", {})
+    sgaRow = isData.get("판매비와관리비", {})
+    opRow = isData.get("영업이익", {})
+    taxRow = isData.get("법인세비용", {})
+    ptRow = isData.get("법인세차감전순이익", {})
+
+    arRow = bsData.get("매출채권및기타채권", {})
+    invRow = bsData.get("재고자산", {})
+    apRow = bsData.get("매입채무", {})
+    ppeRow = bsData.get("유형자산", {})
+    intRow = bsData.get("무형자산", {})
+    eqRow = bsData.get("자본총계", {})
+    stRow = bsData.get("단기차입금", {})
+    ltRow = bsData.get("장기차입금", {})
+    bondRow = bsData.get("사채", {})
+    cashRow = bsData.get("현금및현금성자산", {})
+
+    yCols = _annualColsFromPeriods(isPeriods, basePeriod, _MAX_YEARS)
+    if not yCols:
+        return None
+
+    history = []
+    for col in yCols:
+        rev = _get(revRow, col)
+        if rev <= 0:
+            continue
+        cogs = _get(cogsRow, col)
+        sga = _get(sgaRow, col)
+        opIncome = _get(opRow, col)
+        taxExp = abs(_get(taxRow, col))
+        ptIncome = abs(_get(ptRow, col))
+
+        # Margin 분해
+        grossMargin = round((rev - cogs) / rev * 100, 2) if cogs else None
+        sgaRatio = round(sga / rev * 100, 2) if sga else None
+        opMargin = round(opIncome / rev * 100, 2)
+        effectiveTax = round(taxExp / ptIncome * 100, 2) if ptIncome > 0 else 25.0
+        effectiveTax = min(effectiveTax, 50.0)
+
+        # NOPAT
+        nopat = opIncome * (1 - effectiveTax / 100)
+
+        # Invested Capital
+        wc = _get(arRow, col) + _get(invRow, col) - _get(apRow, col)
+        fc = _get(ppeRow, col) + _get(intRow, col)
+        ic = wc + fc if (wc + fc) > 0 else None
+
+        # ROIC
+        roic = round(nopat / ic * 100, 2) if ic and ic > 0 else None
+
+        # Capital Turnover
+        capTurnover = round(rev / ic, 2) if ic and ic > 0 else None
+
+        # WC/Fixed Turnover
+        wcTurnover = round(rev / wc, 2) if wc > 0 else None
+        fixedTurnover = round(rev / fc, 2) if fc > 0 else None
+
+        # 마진 드라이버 판단
+        if grossMargin is not None and sgaRatio is not None:
+            if grossMargin > 40:
+                marginDriver = "높은 가격결정력 (매출총이익률 > 40%)"
+            elif sgaRatio and sgaRatio < 15:
+                marginDriver = "낮은 판관비 (SGA < 15%)"
+            elif opMargin > 15:
+                marginDriver = "고마진 사업모델"
+            elif opMargin < 5:
+                marginDriver = "박리다매 또는 원가 경쟁"
+            else:
+                marginDriver = "보통 수준"
+        else:
+            marginDriver = None
+
+        # 자본회전 드라이버 판단
+        if capTurnover is not None:
+            if capTurnover > 2:
+                turnoverDriver = "자산 경량 모델 (자본회전 > 2회)"
+            elif capTurnover < 0.5:
+                turnoverDriver = "자본 집약 (자본회전 < 0.5회)"
+            else:
+                turnoverDriver = "보통 수준"
+        else:
+            turnoverDriver = None
+
+        history.append({
+            "period": col,
+            "roic": roic,
+            "operatingMargin": opMargin,
+            "capitalTurnover": capTurnover,
+            "grossMargin": grossMargin,
+            "sgaRatio": sgaRatio,
+            "effectiveTaxRate": round(effectiveTax, 1),
+            "wcTurnover": wcTurnover,
+            "fixedTurnover": fixedTurnover,
+            "marginDriver": marginDriver,
+            "turnoverDriver": turnoverDriver,
+        })
+
+    if not history:
+        return None
     return {"history": history}
