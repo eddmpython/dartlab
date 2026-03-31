@@ -4,7 +4,7 @@
   import ChatHeader from "./ChatHeader.svelte";
   import { createMessageId, createSseHandler, type Message } from "../api/sseHandler";
   import * as client from "../api/client";
-  import { onMessage, getState, setState } from "../vscode";
+  import { onMessage, getState, setState, postMessage } from "../vscode";
 
   interface Conversation {
     id: string;
@@ -100,20 +100,21 @@
   }
 
   function handleSubmit(text: string) {
-    const convId = ensureConversation();
-    const conv = conversations.find(c => c.id === convId)!;
-    const msgs = [...conv.messages];
+    // Guard: prevent double submit
+    if (streaming) return;
+    streaming = true;
 
+    const convId = ensureConversation();
+    const conv = conversations.find(c => c.id === convId);
+    if (!conv) { streaming = false; return; }
+
+    const msgs = [...conv.messages];
     msgs.push({ id: createMessageId(), role: "user", text, loading: false, error: false });
     msgs.push({ id: createMessageId(), role: "assistant", text: "", loading: true, error: false, startedAt: Date.now() });
 
-    streaming = true;
-    followStream = true;
-    updateMessages(convId, msgs);
-    scrollToBottom();
-
     const history = msgs.slice(0, -2).filter(m => m.text).map(m => ({ role: m.role, text: m.text }));
 
+    // Set up handler BEFORE updating messages (which triggers re-render)
     currentHandler = createSseHandler(
       () => {
         const c = conversations.find(c => c.id === convId);
@@ -134,7 +135,13 @@
       },
     );
 
+    // Send ask BEFORE updating UI (so message goes out immediately)
     client.ask(text, text, history);
+
+    // Now update UI
+    followStream = true;
+    updateMessages(convId, msgs);
+    scrollToBottom();
   }
 
   function handleRegenerate() {

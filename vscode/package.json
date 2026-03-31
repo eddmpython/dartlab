@@ -106,7 +106,7 @@
     "dev": "node esbuild.mjs --watch",
     "build": "node esbuild.mjs --production",
     "test": "npx vitest run",
-    "verify": "node esbuild.mjs --production && cd webview && npx vite build && cd .. && npx vitest run",
+    "verify": "node esbuild.mjs --production && cd webview && npx vite build && cd .. && npx vitest run && npx tsc -p tsconfig.json && npx vscode-test",
     "lint": "eslint src/",
     "package": "vsce package",
     "publish": "vsce publish"
@@ -115,6 +115,7 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
+    "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
     "esbuild": "^0.24.0",
     "mocha": "^11.7.5",
