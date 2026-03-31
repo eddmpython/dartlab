@@ -298,6 +298,9 @@
               </span>
               <span class="tool-name">{toolLabel(pair.call.name as string)}</span>
               <span class="tool-args">{truncate(formatToolArg(pair.call.arguments), 60)}</span>
+              {#if pair.result && (pair.call as any)._ts && (pair.result as any)._ts}
+                <span class="tool-time">{(((pair.result as any)._ts - (pair.call as any)._ts) / 1000).toFixed(1)}s</span>
+              {/if}
             </button>
             {#if !collapsedTools[i] && pair.result}
               <div class="tool-result">
@@ -400,6 +403,13 @@
         {#if message.toolEvents?.length}
           <span class="footer-sep">|</span>
           <span class="footer-tools">{message.toolEvents.filter(e => e.type === "call").length} tools</span>
+        {/if}
+        {#if message.text}
+          {@const korean = (message.text.match(/[\uac00-\ud7af]/g) || []).length}
+          {@const rest = message.text.length - korean}
+          {@const tokens = Math.round(korean * 1.5 + rest / 3.5)}
+          <span class="footer-sep">|</span>
+          <span class="footer-tokens">~{tokens.toLocaleString()} tok</span>
         {/if}
 
         <span class="footer-spacer"></span>
@@ -708,6 +718,14 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .tool-time {
+    color: var(--vscode-descriptionForeground);
+    font-size: 10px;
+    opacity: 0.6;
+    margin-left: auto;
+    flex-shrink: 0;
+    font-family: var(--vscode-editor-font-family, monospace);
+  }
   .tool-result {
     border-left: 2px solid var(--vscode-panel-border);
     margin-left: 14px;
@@ -956,6 +974,7 @@
   }
   .footer-sep { opacity: 0.4; }
   .footer-duration { font-family: var(--vscode-editor-font-family, monospace); }
+  .footer-tokens { font-family: var(--vscode-editor-font-family, monospace); opacity: 0.6; }
   .footer-spacer { flex: 1; }
 
   /* === Action buttons (copy/regenerate) === */

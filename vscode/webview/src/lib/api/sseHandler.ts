@@ -79,7 +79,7 @@ export function createSseHandler(
         case "tool_call": {
           const msg = getMessage();
           const events = [...(msg.toolEvents ?? [])];
-          events.push({ type: "call", ...(d as Record<string, unknown>) } as Message["toolEvents"] extends (infer T)[] | undefined ? T : never);
+          events.push({ type: "call", _ts: Date.now(), ...(d as Record<string, unknown>) } as any);
           updateMessage({ toolEvents: events });
           break;
         }
@@ -87,7 +87,7 @@ export function createSseHandler(
         case "tool_result": {
           const msg = getMessage();
           const events = [...(msg.toolEvents ?? [])];
-          events.push({ type: "result", ...(d as Record<string, unknown>) } as Message["toolEvents"] extends (infer T)[] | undefined ? T : never);
+          events.push({ type: "result", _ts: Date.now(), ...(d as Record<string, unknown>) } as any);
           updateMessage({ toolEvents: events });
           break;
         }

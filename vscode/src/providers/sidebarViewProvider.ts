@@ -171,12 +171,21 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
   .del:hover { color: var(--vscode-errorForeground); }
   .empty { padding: 20px 12px; text-align: center; color: var(--vscode-descriptionForeground); font-size: 12px; }
   .group-header { padding: 6px 8px 2px; font-size: 11px; font-weight: 600; color: var(--vscode-descriptionForeground); text-transform: uppercase; letter-spacing: 0.03em; }
+  .search-input {
+    display: block; width: calc(100% - 16px); margin: 4px 8px; padding: 4px 8px;
+    border: 1px solid var(--vscode-input-border); border-radius: 4px;
+    background: var(--vscode-input-background); color: var(--vscode-input-foreground);
+    font: inherit; font-size: 12px; outline: none;
+  }
+  .search-input:focus { border-color: var(--vscode-focusBorder); }
+  .search-input::placeholder { color: var(--vscode-input-placeholderForeground); }
 </style>
 </head><body>
   <button class="new-btn" id="newBtn">
     <svg class="new-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>
-    New Session
+    새 대화
   </button>
+  <input class="search-input" id="searchInput" type="text" placeholder="검색..." />
   <div class="list">${sessionsHtml}</div>
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
@@ -198,6 +207,21 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         vscode.postMessage({ type: 'deleteSession', id: el.dataset.del });
+      });
+    });
+    // Search filter
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase();
+      document.querySelectorAll('.session').forEach(el => {
+        const name = el.querySelector('.name')?.textContent?.toLowerCase() || '';
+        el.style.display = name.includes(q) ? '' : 'none';
+      });
+      document.querySelectorAll('.group-header').forEach(el => {
+        const next = [];
+        let sib = el.nextElementSibling;
+        while (sib && sib.classList.contains('session')) { next.push(sib); sib = sib.nextElementSibling; }
+        const anyVisible = next.some(s => s.style.display !== 'none');
+        el.style.display = anyVisible ? '' : 'none';
       });
     });
   </script>
