@@ -165,6 +165,16 @@
     handleSubmit(lastUser.text);
   }
 
+  function handleEditResend(msgIndex: number, newText: string) {
+    if (streaming || !newText) return;
+    const conv = getConv();
+    if (!conv) return;
+    // Keep messages up to (not including) the edited message, then resubmit
+    const msgs = conv.messages.slice(0, msgIndex);
+    updateMessages(conv.id, msgs);
+    handleSubmit(newText);
+  }
+
   function handleCopyResponse() {
     const conv = getConv();
     if (!conv) return;
@@ -300,6 +310,7 @@
           isLast={i === messages.length - 1}
           onregenerate={i === messages.length - 1 && !message.loading && message.role === "assistant" ? handleRegenerate : undefined}
           oncopy={i === messages.length - 1 && !message.loading && message.role === "assistant" ? handleCopyResponse : undefined}
+          onedit={!streaming && message.role === "user" ? (newText) => handleEditResend(i, newText) : undefined}
         />
       {/each}
     </div>

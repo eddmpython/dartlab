@@ -10,8 +10,11 @@
     isLast?: boolean;
     onregenerate?: () => void;
     oncopy?: () => void;
+    onedit?: (newText: string) => void;
   }
-  let { message, isLast = false, onregenerate, oncopy }: Props = $props();
+  let { message, isLast = false, onregenerate, oncopy, onedit }: Props = $props();
+  let editing = $state(false);
+  let editText = $state("");
   const render = createIncrementalRenderer();
   const splitter = createStreamSplitter();
 
@@ -154,7 +157,25 @@
 <div class="msg" class:user={message.role === "user"}>
   {#if message.role === "user"}
     <div class="user-wrap">
-      <div class="user-text">{message.text}</div>
+      {#if editing}
+        <div class="user-edit">
+          <textarea class="edit-area" bind:value={editText} onkeydown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); editing = false; onedit?.(editText.trim()); }
+            if (e.key === "Escape") { editing = false; }
+          }}></textarea>
+          <div class="edit-actions">
+            <button class="edit-btn save" onclick={() => { editing = false; onedit?.(editText.trim()); }}>전송</button>
+            <button class="edit-btn cancel" onclick={() => { editing = false; }}>취소</button>
+          </div>
+        </div>
+      {:else}
+        <div class="user-text">{message.text}</div>
+        {#if onedit}
+          <button class="user-edit-btn" onclick={() => { editText = message.text; editing = true; }} title="편집">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11.5 1.5l3 3-9 9H2.5v-3z"/></svg>
+          </button>
+        {/if}
+      {/if}
     </div>
   {:else}
     <!-- Meta badge row -->
@@ -433,6 +454,55 @@
     max-width: 100%;
     padding: 4px 6px;
   }
+
+  /* === User message edit === */
+  .user-edit {
+    width: 100%;
+  }
+  .edit-area {
+    width: 100%;
+    min-height: 40px;
+    padding: 6px 8px;
+    border: 1px solid var(--dl-primary);
+    border-radius: var(--corner-radius-medium);
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    font: inherit;
+    resize: vertical;
+  }
+  .edit-actions {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .edit-btn {
+    padding: 2px 10px;
+    border: none;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .edit-btn.save { background: var(--dl-primary); color: #fff; }
+  .edit-btn.cancel { background: transparent; color: var(--vscode-descriptionForeground); border: 1px solid var(--vscode-panel-border); }
+  .user-edit-btn {
+    position: absolute;
+    top: 2px;
+    right: -20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--vscode-descriptionForeground);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .user-wrap:hover .user-edit-btn { opacity: 0.6; }
+  .user-edit-btn:hover { opacity: 1 !important; background: var(--vscode-toolbar-hoverBackground); }
 
   /* === Meta badges === */
   .meta-badges {
