@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { Message } from "../api/sseHandler";
+  import * as client from "../api/client";
+  import { postMessage } from "../vscode";
   import { createIncrementalRenderer } from "../markdown/renderer";
   import { createStreamSplitter } from "../markdown/contentSplitter";
 
@@ -275,26 +277,44 @@
       <span class="cursor"></span>
     {/if}
 
-    <!-- Error with guide -->
+    <!-- Error with guide + provider switch -->
     {#if message.error}
-      {@const lastError = message.toolEvents?.filter(e => e.type === "result").pop()}
-      {@const errorData = (() => {
-        const events = message.toolEvents ?? [];
-        const errEvt = events.find(e => (e as Record<string, unknown>).guide);
-        return errEvt as Record<string, unknown> | undefined;
-      })()}
       <div class="error-block">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3.5M8 10.5v.5"/></svg>
         <span>Error</span>
       </div>
+
       {#if message.text && message.text.includes("**Error:**")}
         <div class="error-guide">
           {@html render(message.text.split("**Error:**").pop()?.trim() ?? "")}
         </div>
       {/if}
-      <div class="mcp-fallback">
-        MCP tools available -- try <code>@dartlab</code> in Claude Code / Copilot Chat
-      </div>
+
+      {#if message.errorAction === "relogin" || message.errorAction === "config"}
+        <div class="error-switch">
+          <span class="error-switch-label">
+            {message.errorAction === "relogin" ? "인증 만료." : "API 키 필요."}
+            다른 provider를 선택하세요:
+          </span>
+          <div class="error-switch-btns">
+            {#each [
+              { id: "gemini", label: "Gemini (무료)" },
+              { id: "groq", label: "Groq (무료)" },
+              { id: "cerebras", label: "Cerebras (무료)" },
+              { id: "mistral", label: "Mistral (무료)" },
+            ] as p}
+              <button class="switch-btn" onclick={() => {
+                postMessage({ type: "log", message: `switch-provider: ${p.id}` });
+                client.setProvider(p.id);
+              }}>{p.label}</button>
+            {/each}
+          </div>
+        </div>
+      {:else if message.errorAction === "retry"}
+        <div class="error-switch">
+          <button class="switch-btn" onclick={onregenerate}>재시도</button>
+        </div>
+      {/if}
     {/if}
 
     <!-- Completion footer + action buttons -->
@@ -777,6 +797,39 @@
     white-space: pre-wrap;
   }
   .error-guide :global(a) { color: var(--vscode-textLink-foreground); }
+
+  /* === Error provider switch === */
+  .error-switch {
+    margin-top: 6px;
+    padding: 6px 8px;
+    border-radius: var(--corner-radius-small);
+    background: var(--vscode-textCodeBlock-background);
+  }
+  .error-switch-label {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .error-switch-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .switch-btn {
+    padding: 3px 10px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--vscode-foreground);
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .switch-btn:hover {
+    background: var(--vscode-list-hoverBackground);
+    border-color: var(--dl-primary);
+    color: var(--dl-primary-light);
+  }
 
   /* === MCP fallback hint (on error) === */
   .mcp-fallback {

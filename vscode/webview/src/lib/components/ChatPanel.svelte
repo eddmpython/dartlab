@@ -259,8 +259,23 @@
         <img src={avatarSrc} alt="DartLab" width="56" height="56" class="welcome-avatar" />
       {/if}
       <h2 class="welcome-title">DartLab</h2>
-      <p class="welcome-text">Type a stock code or company name to start.</p>
-      <p class="welcome-sub">MCP tools available in Claude Code / Copilot Chat.</p>
+      <p class="welcome-text">종목코드 또는 회사명을 입력하세요</p>
+      {#if !providerLabel || providerLabel === "none"}
+        <div class="welcome-setup">
+          <p class="welcome-setup-label">무료로 시작하기</p>
+          <div class="welcome-setup-btns">
+            {#each [
+              { id: "gemini", label: "Gemini" },
+              { id: "groq", label: "Groq" },
+              { id: "cerebras", label: "Cerebras" },
+            ] as p}
+              <button class="setup-btn" onclick={() => client.setProvider(p.id)}>{p.label}</button>
+            {/each}
+          </div>
+        </div>
+      {:else}
+        <p class="welcome-sub">예: 005930, 삼성전자, AAPL</p>
+      {/if}
     </div>
   {/if}
 
@@ -331,6 +346,35 @@
     color: var(--vscode-descriptionForeground);
     opacity: 0.6;
     margin: 0;
+  }
+  .welcome-setup {
+    margin-top: 12px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: var(--vscode-editorWidget-background);
+    border: 1px solid var(--vscode-panel-border);
+  }
+  .welcome-setup-label {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground);
+    margin: 0 0 8px;
+  }
+  .welcome-setup-btns {
+    display: flex;
+    gap: 6px;
+  }
+  .setup-btn {
+    padding: 5px 14px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--vscode-foreground);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .setup-btn:hover {
+    background: var(--vscode-list-hoverBackground);
+    border-color: var(--dl-primary);
   }
   .messages-wrap {
     flex: 1;

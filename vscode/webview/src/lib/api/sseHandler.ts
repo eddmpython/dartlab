@@ -12,6 +12,8 @@ export interface Message {
   toolEvents?: Array<{ type: string; name: string; arguments?: unknown; result?: unknown; [k: string]: unknown }>;
   systemPrompt?: string;
   userContent?: string;
+  errorAction?: string;
+  errorGuide?: string;
   duration?: number;
   startedAt?: number;
 }
@@ -103,12 +105,13 @@ export function createSseHandler(
           updateMessage({
             loading: false,
             error: true,
+            errorAction: (d as { action?: string }).action,
+            errorGuide: (d as { guide?: string }).guide,
             text:
               getMessage().text +
               "\n\n**Error:** " +
               ((d as { error?: string }).error ?? "Unknown error"),
           });
-          onDone();
           break;
       }
     },
