@@ -10,11 +10,16 @@ export function ask(
   question: string,
   company?: string,
   history?: Array<{ role: string; text: string }>,
+  modules?: string[],
 ) {
   postMessage(plain({
     type: "ask",
-    payload: { question, company, history },
+    payload: { question, company, history, modules },
   }));
+}
+
+export function listTemplates() {
+  postMessage({ type: "listTemplates" });
 }
 
 export function stopStream() {

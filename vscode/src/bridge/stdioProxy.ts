@@ -83,6 +83,7 @@ export class StdioProxy {
   private currentRequestId: string | null = null;
   private statusListeners: Array<(data: Record<string, unknown>) => void> = [];
   private providerListeners: Array<(data: Record<string, unknown>) => void> = [];
+  onTemplates?: (data: Record<string, unknown>) => void;
 
   // Auto-restart
   private restartCount = 0;
@@ -327,6 +328,7 @@ export class StdioProxy {
     if (event === "pong") { this._pongCallback?.(); this._pongCallback = null; return; }
     if (event === "status") { for (const fn of this.statusListeners) fn(data); this.statusListeners = []; return; }
     if (event === "providerChanged") { for (const fn of this.providerListeners) fn(data); this.providerListeners = []; return; }
+    if (event === "templates") { this.onTemplates?.(data); return; }
 
     if (this.currentCallbacks && (!id || id === this.currentRequestId)) {
       if (event === "done") {
@@ -353,12 +355,16 @@ export class StdioProxy {
     this.send({ type: "setProvider", provider, model });
   }
 
-  ask(question: string, company: string | undefined, history: unknown[] | undefined, callbacks: StdioCallbacks): void {
+  ask(question: string, company: string | undefined, history: unknown[] | undefined, callbacks: StdioCallbacks, modules?: string[]): void {
     if (this.currentCallbacks) { this.currentCallbacks.onError("Cancelled"); this.currentCallbacks.onDone(); }
     const id = Date.now().toString(36);
     this.currentRequestId = id;
     this.currentCallbacks = callbacks;
-    this.send({ id, type: "ask", question, company, history });
+    this.send({ id, type: "ask", question, company, history, modules });
+  }
+
+  listTemplates(): void {
+    this.send({ type: "listTemplates" });
   }
 
   cancelCurrent(): void {

@@ -46,6 +46,12 @@ export class ChatWebviewBase {
     this.stateListener = this.stdioProxy.onStateChange((state) => {
       postMessage({ type: "serverState", state });
     });
+
+    // templates 이벤트를 webview에 전달
+    this.stdioProxy.onTemplates = (data) => {
+      const templates = (data as Record<string, unknown>).templates || [];
+      postMessage({ type: "templates", payload: templates as any });
+    };
   }
 
   private log(msg: string): void {
@@ -71,7 +77,12 @@ export class ChatWebviewBase {
             onDone: () => postMessage({ type: "streamEnd" }),
             onError: (error) => postMessage({ type: "streamError", error }),
           },
+          msg.payload.modules,
         );
+        break;
+
+      case "listTemplates":
+        this.stdioProxy.listTemplates();
         break;
 
       case "stopStream":

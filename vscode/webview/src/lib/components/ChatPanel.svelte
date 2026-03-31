@@ -27,6 +27,7 @@
   let modelLabel = $state("");
   let providers: Array<{id: string; label: string; freeTier: string}> = $state([]);
   let streaming = $state(false);
+  let availableTemplates: Array<{ name: string; description: string; source: "builtin" | "user" }> = $state([]);
   let messagesEl: HTMLDivElement | undefined = $state();
   let currentHandler: ReturnType<typeof createSseHandler> | null = null;
 
@@ -120,7 +121,7 @@
     debouncedPersist();
   }
 
-  function handleSubmit(text: string) {
+  function handleSubmit(text: string, modules?: string[]) {
     // Guard: prevent double submit
     if (streaming) return;
     streaming = true;
@@ -157,7 +158,7 @@
     );
 
     // Send ask BEFORE updating UI (so message goes out immediately)
-    client.ask(text, text, history);
+    client.ask(text, text, history, modules);
 
     // Now update UI
     followStream = true;
@@ -280,10 +281,19 @@
         }
         break;
       }
+      case "templates": {
+        const payload = m.payload as Array<{ name: string; description: string; source: "builtin" | "user" }>;
+        if (Array.isArray(payload)) {
+          availableTemplates = payload;
+        }
+        break;
+      }
     }
   });
 
   client.ready();
+  // 시작 시 템플릿 목록 요청
+  client.listTemplates();
 </script>
 
 <div class="chat-panel">
@@ -355,6 +365,7 @@
   <ChatInput
     disabled={serverState !== "ready"}
     {streaming}
+    templates={availableTemplates}
     onsubmit={handleSubmit}
     onstop={handleStop}
     oncommand={handleSlashCommand}

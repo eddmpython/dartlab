@@ -1,17 +1,38 @@
 <script lang="ts">
+  interface TemplateInfo {
+    name: string;
+    description: string;
+    source: "builtin" | "user";
+  }
+
   interface Props {
     disabled?: boolean;
-    onsubmit: (text: string) => void;
+    onsubmit: (text: string, modules?: string[]) => void;
     onstop?: () => void;
     oncommand?: (cmd: string) => void;
     streaming?: boolean;
+    templates?: TemplateInfo[];
   }
 
-  let { disabled = false, onsubmit, onstop, oncommand, streaming = false }: Props = $props();
+  let { disabled = false, onsubmit, onstop, oncommand, streaming = false, templates = [] }: Props = $props();
   let inputText = $state("");
   let textareaEl: HTMLTextAreaElement | undefined = $state();
   let showSlash = $state(false);
   let slashIdx = $state(0);
+
+  // 모듈 선택 (multi-select, 최대 3개)
+  let selectedModules: string[] = $state(
+    JSON.parse(localStorage.getItem("dartlab-modules") || "[]")
+  );
+
+  function toggleModule(name: string) {
+    if (selectedModules.includes(name)) {
+      selectedModules = selectedModules.filter(m => m !== name);
+    } else if (selectedModules.length < 3) {
+      selectedModules = [...selectedModules, name];
+    }
+    localStorage.setItem("dartlab-modules", JSON.stringify(selectedModules));
+  }
 
   // Input history (↑↓ arrows)
   let history: string[] = $state([]);
@@ -62,7 +83,7 @@
     const t = inputText.trim();
     if (!t || disabled) return;
     if (t.startsWith("/")) { const c = cmds.find(x => x.name === t.slice(1).toLowerCase()); if (c) { execSlash(c); return; } }
-    onsubmit(t);
+    onsubmit(t, selectedModules.length ? selectedModules : undefined);
     history = [t, ...history.slice(0, 49)]; // keep last 50
     historyIdx = -1;
     inputText = "";
@@ -110,15 +131,25 @@
     <!-- exact Claude Code: .inputFooter_gGYT1w -->
     <div class="input-footer">
       <div class="footer-left">
-        {#if !streaming && !inputText}
-          {#each [
-            { label: "수익성", q: "수익성 분석" },
-            { label: "밸류에이션", q: "밸류에이션 분석" },
-            { label: "전망", q: "매출 전망 분석" },
-            { label: "비교", q: "동종업계 비교" },
-          ] as t}
-            <button class="tmpl-btn" onclick={() => { inputText = t.q; textareaEl?.focus(); }}>{t.label}</button>
+        {#if !streaming}
+          {#each templates as t}
+            <button
+              class="tmpl-btn"
+              class:selected={selectedModules.includes(t.name)}
+              onclick={() => toggleModule(t.name)}
+              title={t.description || t.name}
+            >{t.name}</button>
           {/each}
+          {#if templates.length === 0}
+            {#each [
+              { label: "수익성", q: "수익성 분석" },
+              { label: "밸류에이션", q: "밸류에이션 분석" },
+              { label: "전망", q: "매출 전망 분석" },
+              { label: "비교", q: "동종업계 비교" },
+            ] as t}
+              <button class="tmpl-btn" onclick={() => { inputText = t.q; textareaEl?.focus(); }}>{t.label}</button>
+            {/each}
+          {/if}
         {/if}
       </div>
       <!-- exact Claude Code: .sendButton_gGYT1w -->
@@ -225,6 +256,11 @@
   .tmpl-btn:hover {
     border-color: var(--dl-primary);
     color: var(--dl-primary-light);
+  }
+  .tmpl-btn.selected {
+    background: var(--dl-primary);
+    color: var(--vscode-editor-background);
+    border-color: var(--dl-primary);
   }
 
   /* exact Claude Code: .sendButton_gGYT1w */

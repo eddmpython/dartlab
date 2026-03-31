@@ -4,12 +4,20 @@ export type WebViewMessage =
   | { type: "stopStream" }
   | { type: "setProvider"; payload: { provider: string; model?: string } }
   | { type: "syncConversations"; payload: unknown }
+  | { type: "listTemplates" }
   | { type: "ready" };
 
 export interface AskPayload {
   question: string;
   company?: string;
   history?: HistoryMessage[];
+  modules?: string[];
+}
+
+export interface TemplateInfo {
+  name: string;
+  description: string;
+  source: "builtin" | "user";
 }
 
 export interface HistoryMessage {
@@ -26,4 +34,5 @@ export type ExtensionMessage =
   | { type: "serverState"; state: "starting" | "ready" | "error" | "stopped" }
   | { type: "restoreConversations"; payload: unknown }
   | { type: "selectConversation"; payload: { id: string } }
-  | { type: "newConversation" };
+  | { type: "newConversation" }
+  | { type: "templates"; payload: TemplateInfo[] };
