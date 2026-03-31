@@ -52,3 +52,4 @@ experiments/**/*.parquet
 experiments/055_edgarDocs/*.parquet
 experiments/055_edgarDocs/batch/
 crates/
+experiments/105_filingSemanticMap/docsStore/stemIndex.npz
