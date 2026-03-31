@@ -1,8 +1,0 @@
-{
-  "servers": {
-    "dartlab": {
-      "command": "uv",
-      "args": ["run", "python", "-X", "utf8", "-m", "dartlab.mcp"]
-    }
-  }
-}
