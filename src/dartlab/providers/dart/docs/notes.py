@@ -52,8 +52,18 @@ _KR_MAP: dict[str, str] = {v[1]: k for k, v in _REGISTRY.items()}
 class Notes:
     """K-IFRS 주석 데이터 통합 접근.
 
-    영문 속성 또는 한글 딕셔너리 키로 접근 가능.
-    접근 시 lazy 로딩 + 캐싱.
+    모든 항목은 Polars DataFrame | None을 반환한다.
+    영문 속성 또는 한글 딕셔너리 키로 접근 가능. lazy 로딩 + 캐싱.
+
+    반환 DataFrame 구조:
+        - notesDetail 기반 (inventory, borrowings 등): 항목 × 연도 (항목 열 + 2025, 2024, ... 열)
+        - tangibleAsset/affiliates: 카테고리 × 기초/기말 변동 (카테고리 열 + 연도_기초, 연도_기말, ... 열)
+        - segments: 부문 × 연도 (부문명 열 + 연도별 매출 열)
+        - costByNature: 비용항목 × 연도 시계열
+
+    show("financialNotes")와의 차이:
+        - notes: 파싱된 정규화 DataFrame. AI/코드 분석용 최적.
+        - show: 원문 마크다운. 사용자 원문 확인용.
     """
 
     def __init__(self, company: Any):

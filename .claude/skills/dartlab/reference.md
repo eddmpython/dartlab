@@ -5,7 +5,7 @@
 
 ---
 
-## Python API (50개)
+## Python API (49개)
 
 `import dartlab` 후 사용 가능한 공개 API.
 
@@ -18,11 +18,11 @@
 | `config` | module | dartlab 전역 설정. |
 | `core` | module | - |
 | `engines` | - | - |
-| `llm` | module | LLM 기반 기업분석 엔진. |
+| `llm` | module | LLM 기반 적극적 분석가. dartlab을 도구로 삼아 주체적으로 분석하고, 사용자의 분석 학습을 돕는다. |
 | `ask` | function | LLM에게 기업에 대해 질문. |
 | `chat` | function | 에이전트 모드: LLM이 도구를 선택하여 심화 분석. |
 | `setup` | function | AI provider 설정 안내 + 인터랙티브 설정. |
-| `search` | function | 종목 검색 (KR + US 통합). |
+| `search` | function | 공시 원문 검색. *(alpha)* |
 | `listing` | function | 전체 상장법인 목록. |
 | `collect` | function | 지정 종목 DART 데이터 수집 (OpenAPI). |
 | `collectAll` | function | 전체 상장종목 DART 데이터 일괄 수집. |
@@ -51,7 +51,7 @@
 | `getKindList` | function | KRX KIND 상장법인 전체 목록. |
 | `codeToName` | function | 종목코드 → 회사명. |
 | `nameToCode` | function | 회사명 → 종목코드. 정확히 일치하는 첫 번째 결과. |
-| `searchName` | function | 회사명 부분 검색. |
+| `searchName` | function | 종목명/코드로 종목 찾기 (KR + US). |
 | `fuzzySearch` | function | 한글 fuzzy 종목 검색 — 초성 매칭 + Levenshtein 거리. |
 | `chart` | - | (lazy import 미완) |
 | `table` | function | 테이블 가공 엔진 -- DataFrame 변환/포맷팅. |
@@ -60,7 +60,6 @@
 | `SelectResult` | class | select() 반환 객체 — DataFrame 위임 + 체이닝. |
 | `ChartResult` | class | chart() 반환 객체 — 시각화 + 렌더링. |
 | `capabilities` | function | dartlab 전체 기능 카탈로그 조회. |
-| `guide` | module | dartlab 안내 데스크 — 시스템 총괄 관리 엔진. |
 
 ### Python API 상세
 
@@ -145,16 +144,17 @@ chat: AI 대화 (setup 완료 후 사용)
 llm.configure: 프로그래밍 방식 provider 설정
 
 #### search
-**Capabilities:** 한글 입력 시 DART 종목 검색 (종목명, 종목코드)
-영문 입력 시 EDGAR 종목 검색 (ticker, 회사명)
-부분 일치, 초성 검색 지원 (KR)
-**Requires:** 데이터: listing (자동 다운로드)
-**AIContext:** 종목코드를 모를 때 사용. 결과에서 종목코드 확인 후 Company 생성.
-**Guide:** "삼성전자 종목코드 뭐야?" -> search("삼성전자")로 종목코드 확인
-"애플 티커?" -> search("AAPL")로 EDGAR 종목 검색
-API 키 불필요. listing 데이터만으로 동작.
-**SeeAlso:** Company: 종목코드 확인 후 Company 생성하여 상세 분석
-listing: 전체 상장법인 목록 조회
+**Capabilities:** 전체 공시 원문 검색 (수시공시 포함)
+자연어 동의어 확장 ("돈을 빌렸다" → 사채/차입/전환사채)
+종목/기간 필터 지원
+DART 공시 뷰어 링크 포함 (dartUrl 컬럼)
+**Requires:** 데이터: allFilings (수집 + buildIndex 필요)
+**AIContext:** 공시 내용을 자연어로 찾을 때 사용. 결과의 dartUrl로 원문 확인 가능.
+종목 찾기는 Company("삼성전자")를 사용.
+**Guide:** "유상증자 한 회사?" -> search("유상증자 결정")
+"삼성전자 최근 공시?" -> search("공시", corp="005930")
+**SeeAlso:** Company: 종목코드/회사명으로 Company 생성
+listing: 전체 상장법인 목록
 
 #### listing
 **Capabilities:** KR 전체 상장법인 목록 (KOSPI + KOSDAQ)
@@ -1455,10 +1455,10 @@ capital: 주주환원 분석 (배당/자사주)
 docs/finance/report 3-source 병합
 show(topic)/trace(topic)/diff() 의 근간 데이터
 **Requires:** 데이터: docs (필수), finance/report (선택, 자동 다운로드)
-**AIContext:** 회사 전체 지도 — 모든 분석의 출발점
-ask()/chat()에서 topic 탐색 컨텍스트
+**AIContext:** 전체 지도가 필요할 때만 사용. 개별 topic은 show(topic) 추천
+메모리 부하가 크므로 AI 코드에서 직접 접근 지양
 **Guide:** "이 회사 전체 데이터 지도" → c.sections
-"어떤 topic이 있어?" → c.sections 또는 c.topics
+"어떤 topic이 있어?" → c.topics (경량)
 **SeeAlso:** topics: sections 기반 topic 요약 (더 간결)
 show: 특정 topic 데이터 조회
 index: 전체 구조 메타데이터 목차

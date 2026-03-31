@@ -118,7 +118,9 @@ Nobody reads it.
 
 Not because they don't want to. Because the same information is named differently by every company, structured differently every year, and scattered across formats designed for regulators, not readers. The same "revenue" appears as `ifrs-full_Revenue`, `dart_Revenue`, `SalesRevenue`, or dozens of Korean variations.
 
-DartLab changes who can access this information. Two engines turn raw filings into one comparable map.
+DartLab is built on one premise: **every period must be comparable, and every company must be comparable.** Without this, no analysis is possible — you're comparing filing formats, not companies. Every feature in DartLab exists to make this premise real.
+
+Two engines turn raw filings into one comparable map.
 
 ### Data — Everything Is Ready
 
@@ -137,6 +139,8 @@ Why HuggingFace? Because raw DART filings are scattered across thousands of ZIP 
 The data pipeline has three layers: local cache (instant) → HuggingFace (auto-download, no key) → DART API (direct collection with your own key). Most users never leave the first two.
 
 ### Company — The Two Problems
+
+If every period and every company must be comparable, two obstacles stand in the way:
 
 **1. The same company says different things differently every year.**
 
@@ -193,6 +197,8 @@ c.review()                      # report -- structured full report
 
 ### Scan — The Whole Market in One Call
 
+If every company is comparable, the next question is natural: compare them.
+
 Company looks at one firm deeply. Scan looks at all firms horizontally. When you want to know "which companies have the highest ROE" or "who changed auditors this year," you need cross-sectional analysis across the entire market.
 
 `scan()` is the single entry point.
@@ -226,7 +232,9 @@ Adding a new axis means one module — no other code changes needed.
 
 ### Analysis — From Numbers to Story
 
-Raw financial statements are numbers. Knowing that revenue is 302 trillion KRW tells you nothing about whether this company is healthy, growing, or at risk. Analysis bridges this gap.
+Every company has a story. Revenue structure explains what it does; profitability reveals how well; cash flow shows whether earnings are real; stability tells if it can survive; capital allocation shows where the money goes; and the outlook connects past to future. These six acts form a causal chain — each act explains the next.
+
+Raw financial statements are numbers. Knowing that revenue is 302 trillion KRW tells you nothing about whether this company is healthy, growing, or at risk. Analysis bridges this gap — not with a dashboard of disconnected ratios, but with a narrative where each number earns its place in the story.
 
 `analysis()` transforms financial statements into structured, story-ready data. It is the middle layer between raw data and every consumer — Review (reports), AI (interpretation), and humans (direct reading). When analysis quality improves, all three benefit simultaneously.
 
@@ -287,7 +295,7 @@ Company-bound: `c.gather("price")` — no need to pass the stock code again.
 
 ### Review — Analysis to Report
 
-Analysis produces structured data. Review assembles it into a human-readable report. Each analysis axis becomes a report section with tables, flags, and narrative context.
+Analysis produces structured data. Review assembles it into a human-readable report that follows the six-act narrative — from "what does this company do" to "what is it worth." Each analysis axis becomes a report section with tables, flags, and narrative context, connected by causal transitions between acts.
 
 ```python
 c.review()              # all sections, full report
@@ -332,7 +340,7 @@ dartlab.search("대표이사 변경", corp="005930")       # filter by company
 dartlab.search("전환사채 발행", start="20240101")    # filter by date
 ```
 
-Behind the scenes: daily filing lists → full-text parsing (99.4% success) → GPU embedding ([ko-sroberta](https://huggingface.co/jhgan/ko-sroberta-multitask)) → LanceDB vector index. Search latency: **~58ms** (warm, GPU).
+Behind the scenes: daily filing lists → full-text parsing (99.4% success) → ngram index + synonym expansion. No model loading, no GPU required. Search latency: **~1ms**, precision **95%**.
 
 Two-phase collection — metadata first (lightweight), then full text (one API call per filing):
 
@@ -348,9 +356,11 @@ All steps are incremental — already-collected dates, texts, and vectors are sk
 
 > **Status:** alpha — pre-built vector index available on HuggingFace. Requires `pip install dartlab[vector]`.
 
-### AI — Ask in Natural Language
+### AI — Your Active Analyst
 
-DartLab structures the data, selects relevant context (financials, insights, sector benchmarks), and lets the LLM explain. The AI interprets what the engine already computed — it explains *why*, not *what*.
+The AI in DartLab is not a passive narrator. It is an active analyst that uses dartlab as its toolkit — calling functions, writing code, running analysis, and building its own workflow to answer your question.
+
+When you ask a question, the AI writes and executes Python code using dartlab's full API. You see every line of code it runs and every result it produces. This means you don't just get answers — you learn how to analyze companies yourself. The AI can combine any dartlab function — `analysis()`, `scan()`, `gather()`, `review()` — in whatever sequence the question demands.
 
 ```python
 import dartlab

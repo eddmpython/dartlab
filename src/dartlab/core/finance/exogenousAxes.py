@@ -19,7 +19,7 @@ Walk-forward 검증 결과:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 log = logging.getLogger(__name__)
 
@@ -115,7 +115,6 @@ _INDUSTRY_MAP: dict[str, list[ExogenousIndicator]] = {
     "기타 전기장비 제조업": [US_INDPRO, COPPER, CAPACITY],
     "일차전지 및 이차전지 제조업": [BATTERY_PPI, CHEM_PROD, COPPER],
     "측정, 시험, 항해, 제어 및 기타 정밀기기 제조업; 광학기기 제외": [US_INDPRO, DURABLE_ORDERS, BASE_RATE],
-
     # ── 자동차/기계 ──
     "자동차 신품 부품 제조업": [KR_AUTO_PPI, AUTO_SALES, METAL_PPI],
     "자동차용 엔진 및 자동차 제조업": [KR_AUTO_PPI, AUTO_SALES, CAPACITY],
@@ -124,14 +123,12 @@ _INDUSTRY_MAP: dict[str, list[ExogenousIndicator]] = {
     "선박 및 보트 건조업": [FREIGHT, METAL_PPI, OIL],
     "항공기, 우주선 및 부품 제조업": [DURABLE_ORDERS, ALUMINUM, OIL],
     "기타 운송장비 제조업": [AUTO_PROD, FREIGHT, METAL_PPI],
-
     # ── 화학/소재 ──
     "기초 화학물질 제조업": [KR_CHEM_PPI, KR_OIL_PPI, KR_EXPORT],
     "기타 화학제품 제조업": [KR_CHEM_PPI, KR_OIL_PPI, BASE_RATE],
     "플라스틱제품 제조업": [KR_PLASTIC_PPI, KR_OIL_PPI, CAPACITY],
     "합성고무 및 플라스틱 물질 제조업": [KR_CHEM_PPI, KR_OIL_PPI, KR_EXPORT],
     "비료, 농약 및 살균, 살충제 제조업": [KR_CHEM_PPI, WHEAT, KR_OIL_PPI],
-
     # ── 철강/금속 ──
     "1차 철강 제조업": [KR_STEEL_PPI, COPPER, CAPACITY],
     "1차 비철금속 제조업": [ALUMINUM, COPPER, METAL_PPI],
@@ -140,21 +137,18 @@ _INDUSTRY_MAP: dict[str, list[ExogenousIndicator]] = {
     "금속 열처리, 도금 및 기타 금속 가공업": [METAL_PPI, US_INDPRO, CAPACITY],
     "절삭가공 및 유사 처리업": [METAL_PPI, US_INDPRO, CAPACITY],
     "무기 및 총포탄 제조업": [METAL_PPI, DURABLE_ORDERS, BASE_RATE],
-
     # ── 석유/에너지 ──
     "석유 정제품 제조업": [OIL, CHEM_PROD, FREIGHT],
     "코크스, 연탄 및 석유정제품 제조업": [OIL, CHEM_PROD, US_INDPRO],
     "전기업": [BASE_RATE, IPI, OIL],
     "가스 제조 및 배관공급업": [OIL, BASE_RATE, IPI],
     "증기, 냉·온수 및 공기 조절 공급업": [OIL, BASE_RATE, IPI],
-
     # ── 의약/바이오 ──
     "의약품 제조업": [KR_PHARMA_PPI, BASE_RATE, IPI],
     "기초 의약물질 제조업": [KR_PHARMA_PPI, BASE_RATE, KR_CHEM_PPI],
     "의료용 기기 제조업": [KR_PHARMA_PPI, BASE_RATE, DURABLE_ORDERS],
     "의료용품 및 기타 의약 관련제품 제조업": [KR_PHARMA_PPI, BASE_RATE, IPI],
     "자연과학 및 공학 연구개발업": [KR_PHARMA_PPI, BASE_RATE, IPI],
-
     # ── 식품/음료 ──
     "기타 식품 제조업": [KR_FOOD_PPI, WHEAT, IPI],
     "곡물가공품, 전분 및 전분제품 제조업": [KR_FOOD_PPI, WHEAT, IPI],
@@ -166,7 +160,6 @@ _INDUSTRY_MAP: dict[str, list[ExogenousIndicator]] = {
     "비알코올음료 및 얼음 제조업": [KR_FOOD_PPI, IPI, BASE_RATE],
     "동물용 사료 및 조제식품 제조업": [WHEAT, KR_FOOD_PPI, KR_OIL_PPI],
     "과실, 채소 가공 및 저장 처리업": [KR_FOOD_PPI, WHEAT, IPI],
-
     # ── 섬유/의류 ──
     "봉제의복 제조업": [COTTON, IPI, BASE_RATE],
     "편조 의복 제조업": [COTTON, IPI, BASE_RATE],
@@ -175,7 +168,6 @@ _INDUSTRY_MAP: dict[str, list[ExogenousIndicator]] = {
     "섬유제품 염색, 정리 및 마무리 가공업": [COTTON, US_INDPRO, IPI],
     "가죽, 가방 및 유사 제품 제조업": [COTTON, IPI, BASE_RATE],
     "신발 및 신발 부분품 제조업": [COTTON, IPI, BASE_RATE],
-
     # ── 건설/부동산 ──
     "건물 건설업": [APT_PRICE, BASE_RATE, METAL_PPI],
     "토목 건설업": [IPI, BASE_RATE, METAL_PPI],
@@ -185,7 +177,6 @@ _INDUSTRY_MAP: dict[str, list[ExogenousIndicator]] = {
     "실내건축 및 건축마무리 공사업": [APT_PRICE, BASE_RATE, IPI],
     "시멘트, 석회, 플라스터 및 그 제품 제조업": [APT_PRICE, METAL_PPI, BASE_RATE],
     "부동산 임대 및 공급업": [APT_PRICE, BASE_RATE, IPI],
-
     # ── 금융 ──
     "기타 금융업": [BASE_RATE, HY_SPREAD, IPI],
     "금융 지원 서비스업": [BASE_RATE, HY_SPREAD, IPI],
@@ -193,21 +184,18 @@ _INDUSTRY_MAP: dict[str, list[ExogenousIndicator]] = {
     "투자기관": [BASE_RATE, HY_SPREAD, IPI],
     "보험업": [BASE_RATE, HY_SPREAD, APT_PRICE],
     "신탁업 및 집합투자업": [BASE_RATE, HY_SPREAD, IPI],
-
     # ── 소프트웨어/IT ──
     "소프트웨어 개발 및 공급업": [SVC_PROD, DURABLE_ORDERS, BASE_RATE],
     "컴퓨터 프로그래밍, 시스템 통합 및 관리업": [SVC_PROD, DURABLE_ORDERS, BASE_RATE],
     "자료처리, 호스팅, 포털 및 기타 인터넷 정보매개 서비스업": [SVC_PROD, BASE_RATE, IPI],
     "기타 정보 서비스업": [SVC_PROD, BASE_RATE, IPI],
     "전기 통신업": [SVC_PROD, BASE_RATE, IPI],
-
     # ── 미디어/엔터 ──
     "영화, 비디오물, 방송프로그램 제작 및 배급업": [SVC_PROD, BASE_RATE, IPI],
     "방송업": [SVC_PROD, BASE_RATE, IPI],
     "오디오물 출판 및 원판 녹음업": [SVC_PROD, BASE_RATE, IPI],
     "광고업": [SVC_PROD, BASE_RATE, IPI],
     "시장조사 및 여론조사업": [SVC_PROD, BASE_RATE, IPI],
-
     # ── 유통/도매 ──
     "기타 전문 도매업": [IPI, BASE_RATE, FREIGHT],
     "상품 종합 도매업": [IPI, BASE_RATE, FREIGHT],
@@ -216,40 +204,34 @@ _INDUSTRY_MAP: dict[str, list[ExogenousIndicator]] = {
     "종합 소매업": [IPI, BASE_RATE, CPI],
     "음·식료품 및 담배 소매업": [FOOD_PROD, IPI, BASE_RATE],
     "기타 생활용품 소매업": [IPI, BASE_RATE, CPI],
-
     # ── 운송/물류 ──
     "도로 화물 운송업": [FREIGHT, OIL, IPI],
     "수상 운송업": [FREIGHT, OIL, US_INDPRO],
     "항공 여객 운송업": [OIL, BASE_RATE, FREIGHT],
     "창고 및 운송관련 서비스업": [FREIGHT, OIL, IPI],
     "기타 여행보조 및 예약 서비스업": [SVC_PROD, BASE_RATE, OIL],
-
     # ── 제지/인쇄/목재 ──
     "펄프, 종이 및 판지 제조업": [OIL, US_INDPRO, IPI],
     "골판지, 종이 상자 및 종이용기 제조업": [OIL, US_INDPRO, IPI],
     "기타 종이 및 판지 제품 제조업": [OIL, US_INDPRO, IPI],
     "인쇄 및 인쇄관련 산업": [IPI, OIL, BASE_RATE],
     "목재 및 나무제품 제조업; 가구 제외": [APT_PRICE, OIL, IPI],
-
     # ── 고무/유리/세라믹 ──
     "고무제품 제조업": [OIL, AUTO_PROD, US_INDPRO],
     "유리 및 유리제품 제조업": [US_INDPRO, APT_PRICE, OIL],
     "기타 비금속 광물제품 제조업": [US_INDPRO, IPI, METAL_PPI],
     "도자기 및 기타 요업제품 제조업": [APT_PRICE, US_INDPRO, IPI],
-
     # ── 가구/생활 ──
     "가구 제조업": [APT_PRICE, BASE_RATE, IPI],
     "귀금속 및 장신구 제조업": [METAL_PPI, BASE_RATE, IPI],
     "그외 기타 제품 제조업": [US_INDPRO, IPI, BASE_RATE],
     "운동 및 경기용구 제조업": [IPI, BASE_RATE, SVC_PROD],
     "장난감 및 오락용품 제조업": [IPI, BASE_RATE, SVC_PROD],
-
     # ── 전문/과학/기술 서비스 ──
     "그외 기타 전문, 과학 및 기술 서비스업": [SVC_PROD, DURABLE_ORDERS, BASE_RATE],
     "경영 컨설팅 및 공공관계 서비스업": [SVC_PROD, BASE_RATE, IPI],
     "사진 처리업": [SVC_PROD, BASE_RATE, IPI],
     "전문 디자인업": [SVC_PROD, BASE_RATE, IPI],
-
     # ── 교육/서비스/기타 ──
     "교육 서비스업": [SVC_PROD, BASE_RATE, IPI],
     "사업시설 유지·관리 서비스업": [SVC_PROD, BASE_RATE, IPI],
@@ -257,11 +239,9 @@ _INDUSTRY_MAP: dict[str, list[ExogenousIndicator]] = {
     "인력 공급 및 고용알선업": [SVC_PROD, BASE_RATE, IPI],
     "숙박업": [SVC_PROD, OIL, BASE_RATE],
     "음식점 및 주점업": [FOOD_PROD, BASE_RATE, IPI],
-
     # ── 환경/폐기물 ──
     "폐기물 수집, 운반, 처리 및 원료 재생업": [IPI, OIL, BASE_RATE],
     "환경 정화 및 복원업": [IPI, BASE_RATE, OIL],
-
     # ── 추가 커버 (fallback 제거용) ──
     "사진장비 및 광학기기 제조업": [SEMI_PROD, DURABLE_ORDERS, BASE_RATE],
     "컴퓨터 및 주변장치 제조업": [SEMI_PROD, DURABLE_ORDERS, US_INDPRO],
@@ -287,8 +267,6 @@ _INDUSTRY_MAP: dict[str, list[ExogenousIndicator]] = {
     "사회복지 서비스업": [SVC_PROD, BASE_RATE, IPI],
     "의복 액세서리 제조업": [COTTON, IPI, BASE_RATE],
     "담배 제조업": [FOOD_PROD, IPI, BASE_RATE],
-    "기타 비금속 광물제품 제조업": [US_INDPRO, IPI, METAL_PPI],
-    "기타 생활용품 소매업": [IPI, BASE_RATE, CPI],
     "기타 전자부품 제조업": [SEMI_PROD, COPPER, CAPACITY],
     "기타 전문서비스업": [SVC_PROD, BASE_RATE, IPI],
     "천연 및 혼합 조제 조미료 제조업": [FOOD_PROD, WHEAT, IPI],
@@ -400,8 +378,7 @@ def getExogenousSummary(stockCode: str) -> dict:
         "industry": industry,
         "product": product[:80] if product else None,
         "indicators": [
-            {"seriesId": ind.seriesId, "source": ind.source, "label": ind.label, "axis": ind.axis}
-            for ind in indicators
+            {"seriesId": ind.seriesId, "source": ind.source, "label": ind.label, "axis": ind.axis} for ind in indicators
         ],
         "axes": list({ind.axis for ind in indicators}),
         "isFallback": indicators == _FALLBACK,
@@ -429,10 +406,7 @@ def _lookupFromProductIndex(stockCode: str) -> str | None:
                 _PRODUCT_INDEX_CACHE = {}
                 return None
             df = pl.read_parquet(path)
-            _PRODUCT_INDEX_CACHE = {
-                row["stockCode"]: row["product"]
-                for row in df.iter_rows(named=True)
-            }
+            _PRODUCT_INDEX_CACHE = {row["stockCode"]: row["product"] for row in df.iter_rows(named=True)}
         except (ImportError, KeyError):
             _PRODUCT_INDEX_CACHE = {}
             return None
@@ -456,17 +430,40 @@ def _lookupFromKindList(stockCode: str) -> tuple[str | None, str | None]:
 
 # ── 전체 지표 목록 (수집 스크립트용) ──
 
+
 def getAllIndicators() -> list[ExogenousIndicator]:
     """6축 전체 고유 지표 목록."""
     seen: set[str] = set()
     result: list[ExogenousIndicator] = []
     for ind in [
-        COPPER, ALUMINUM, OIL, METAL_PPI, WHEAT, COTTON,
-        SEMI_PROD, AUTO_PROD, CHEM_PROD, FOOD_PROD, US_INDPRO, SEMI_PPI, BATTERY_PPI, MFG_PPI,
-        AUTO_SALES, DURABLE_ORDERS, FREIGHT, CAPACITY,
-        BASE_RATE, HY_SPREAD, CORP_BOND,
-        IPI, SVC_PROD, APT_PRICE, CPI,
-        USDKRW, JPYKRW, CNYKRW,
+        COPPER,
+        ALUMINUM,
+        OIL,
+        METAL_PPI,
+        WHEAT,
+        COTTON,
+        SEMI_PROD,
+        AUTO_PROD,
+        CHEM_PROD,
+        FOOD_PROD,
+        US_INDPRO,
+        SEMI_PPI,
+        BATTERY_PPI,
+        MFG_PPI,
+        AUTO_SALES,
+        DURABLE_ORDERS,
+        FREIGHT,
+        CAPACITY,
+        BASE_RATE,
+        HY_SPREAD,
+        CORP_BOND,
+        IPI,
+        SVC_PROD,
+        APT_PRICE,
+        CPI,
+        USDKRW,
+        JPYKRW,
+        CNYKRW,
     ]:
         if ind.seriesId not in seen:
             seen.add(ind.seriesId)

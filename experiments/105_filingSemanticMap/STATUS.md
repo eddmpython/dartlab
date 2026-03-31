@@ -4,11 +4,12 @@
 
 | 방법 | precision@5 | cold start | 평균속도 | 의존성 |
 |------|:---:|:---:|:---:|------|
-| **BM25(substring)** | **71%** | **0ms** | **14ms** | 없음 (Polars) |
+| **Ngram+Synonym (008)** | **95%** | **0ms** | **1ms** | **없음** |
+| Trigram 단독 (007) | 88% | 0ms | 1ms | 없음 |
+| 임베딩(ko-sroberta) | 83% | 12,700ms | 58ms | PyTorch 2GB |
+| BM25(substring) | 71% | 0ms | 14ms | 없음 |
 | SemanticMap | 68% | 0ms | 25ms | 없음 |
 | Model2Vec(DART증류) | 67% | 265ms | 39ms | model2vec 24.7MB |
-| Hybrid(SM+M2V) | 60% | 265ms | 39ms | model2vec |
-| 임베딩(ko-sroberta) | **83%** | 12,700ms | 58ms | PyTorch 2GB |
 
 ## 핵심 발견
 
@@ -32,10 +33,11 @@
 
 ## 결론
 
-- **BM25 단독이 최선의 비임베딩 방법** — 71%, 0ms, 의존성 0
-- SemanticMap/Model2Vec은 BM25를 초과하지 못함
-- **임베딩과 15%p 차이는 의미 검색 능력**에서 발생
-- 실용적 선택: **BM25 기본 + 임베딩 옵션** (vector 의존성 있으면 83%, 없으면 71%)
+- **Ngram+Synonym이 모든 방법을 초과** — 95%, 0ms, 의존성 0
+- 핵심 발견: DART 공시는 정형 문서 → report_nm+section_title의 ngram이 의미를 충분히 표현
+- 동의어 확장이 자연어 → 공시 키워드 변환을 커버 (모델 불필요)
+- 임베딩(83%)을 12%p 초과하면서 cold start 0ms, 속도 1ms
+- **dartlab.search()의 기본 검색으로 채택 가능 — 벡터는 optional 보강으로만**
 
 ## 부산물
 

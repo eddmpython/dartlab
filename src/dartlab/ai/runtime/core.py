@@ -68,6 +68,77 @@ def _searchCompanyCodes(question: str) -> str:
     return header + "\n".join(results)
 
 
+# ── 외부 검색 Pre-Grounding ──────────────────────────────
+
+_SEARCH_TRIGGER_KEYWORDS = (
+    "최근",
+    "시장",
+    "이슈",
+    "동향",
+    "전망",
+    "뉴스",
+    "소식",
+    "올해",
+    "지금",
+    "현재",
+    "요즘",
+    "실적발표",
+    "규제",
+    "금리",
+    "환율",
+    "유가",
+    "반도체",
+    "AI",
+    "인공지능",
+    "트렌드",
+    "업황",
+    "산업",
+    "정책",
+)
+
+
+def _needsExternalSearch(question: str) -> bool:
+    """질문에 외부 검색이 필요한 키워드가 포함되어 있는지 판단."""
+    q = question.lower()
+    return any(kw.lower() in q for kw in _SEARCH_TRIGGER_KEYWORDS)
+
+
+def _preGroundSearch(
+    question: str,
+    stockCode: str | None = None,
+    corpName: str | None = None,
+) -> str:
+    """질문 기반 자동 검색 — 결과를 user 컨텍스트에 주입할 텍스트로 반환."""
+    try:
+        from dartlab.gather.search import formatResults, newsSearch, searchAvailable, webSearch
+    except ImportError:
+        return ""
+
+    avail = searchAvailable()
+    if not avail["any"]:
+        return ""
+
+    # 검색 쿼리 구성: 종목명이 있으면 포함
+    baseQuery = question[:100]
+    if corpName:
+        baseQuery = f"{corpName} {baseQuery}"
+
+    results = newsSearch(baseQuery, maxResults=5, days=7)
+    if not results:
+        results = webSearch(baseQuery, maxResults=5, days=7)
+
+    if not results:
+        return ""
+
+    formatted = formatResults(results, maxChars=2000)
+    return (
+        "## 관련 최신 정보 (자동 검색)\n"
+        "아래는 질문과 관련된 최신 검색 결과입니다. 참고하되, "
+        "출처(URL)를 인용하고, 검색 결과만으로 판단하지 마세요.\n\n"
+        f"{formatted}"
+    )
+
+
 # ── 데이터 신선도 추출 ────────────────────────────────────
 
 
@@ -330,14 +401,18 @@ def _buildHistoryMessages(
 # ── 시스템 프롬프트 ───────────────────────────────────────
 
 _SYSTEM_PROMPT = """\
-당신은 기업분석가이자 경제분석가입니다.
-dartlab 재무분석 플랫폼을 사용해 한국/미국 상장기업을 분석합니다.
+당신은 적극적 분석가입니다.
+dartlab 재무분석 플랫폼을 도구로 삼아 한국/미국 상장기업을 주체적으로 분석합니다.
 ```python 코드블록을 작성하면 자동 실행되고 결과가 피드백됩니다.
+사용자는 당신이 작성하는 코드를 보고 분석 방법을 배웁니다. 코드는 명확하고, 재사용 가능하게 작성하세요.
 
 ## 실행 환경
 코드 실행 시 아래가 이미 준비되어 있습니다. 다시 선언하지 마세요:
 - `dartlab` — dartlab 패키지
 - `pl` — polars (DataFrame 처리)
+- `webSearch(query)` — 웹 검색 (Tavily/DuckDuckGo 자동 선택, 30분 캐시)
+- `newsSearch(query)` — 뉴스 검색 (days=N으로 기간 제한 가능)
+- `formatResults(results)` — 검색 결과를 마크다운으로 포맷
 {env_block}
 
 ## 도구 선택 기준
@@ -396,6 +471,19 @@ c.gather("insider")     # 내부자 거래
 위 7개만 사용 가능. consensus 등 다른 축은 없다.
 gather 반환이 None일 수 있다 — 반드시 None 체크 후 사용.
 
+### 외부 검색 — 실시간 시장/뉴스/이슈 조회
+dartlab 재무데이터에 없는 실시간 정보(최근 뉴스, 시장 반응, 규제 변화, 업황)가 필요할 때 사용.
+results = webSearch("삼성전자 실적 2026")   # 웹 검색
+results = newsSearch("반도체 업황", days=7)  # 최근 7일 뉴스 검색
+print(formatResults(results))               # 마크다운 포맷으로 출력
+
+사용 기준:
+- "최근 뉴스", "시장 반응", "이슈", "동향", "전망" → newsSearch 우선
+- "~가 뭐야", "~란", 일반 지식/배경 질문 → webSearch
+- 특정 기업 재무 데이터 → gather/show/review 사용 (검색 X)
+- 검색 결과는 외부 출처이므로 반드시 출처(URL)를 함께 인용하라
+- 검색 결과만으로 판단하지 마라 — dartlab 재무데이터와 교차 검증하라
+
 ### show/select — 특정 데이터 직접 조회 (빠르고 가벼움)
 "~보여줘", "~추이", "~알려줘" 같은 직접 데이터 요청에는 show/select가 최적.
 show() → Polars DataFrame (재무 topic) 또는 블록 목차 DataFrame (docs topic).
@@ -444,6 +532,8 @@ dartlab.capabilities(search="키워드")
 ## 출력 원칙
 도구가 반환한 테이블/수치를 **사용자에게 그대로 보여준 뒤** 해석을 덧붙여라.
 데이터를 숨기거나 요약만 하지 마라 — 사용자는 원본 수치를 보고 싶어 한다.
+사용자가 같은 분석을 직접 재현할 수 있도록, 핵심 코드는 설명과 함께 제시하라.
+"이 회사의 수익성은 ~입니다"로 끝내지 말고, "c.analysis('수익성')으로 직접 확인할 수 있습니다"처럼 다음 단계를 안내하라.
 
 ## 해석 원칙
 숫자만 나열하지 마라. 반드시 원인과 맥락을 붙여라:
@@ -459,14 +549,16 @@ dartlab.capabilities(search="키워드")
 2. **근거 데이터** — 코드 실행 결과의 핵심 수치 인용
 3. **원인/맥락** — 왜 그런 수치가 나왔는지
 4. **시사점/리스크** — 앞으로 볼 포인트
+5. **재현 방법** — 사용자가 직접 같은 분석을 할 수 있는 코드나 다음 단계
 
 ## 규칙
-- Python으로 뭐든 할 수 있다 — 웹 검색(requests), 데이터 분석, 파일 처리, 어떤 라이브러리든 import 가능.
+- Python으로 뭐든 할 수 있다 — webSearch()/newsSearch()로 실시간 웹/뉴스 검색, 데이터 분석, 파일 처리, 어떤 라이브러리든 import 가능.
 - 코드 실행이 필요 없는 질문(인사, dartlab 설명)에만 코드 없이 답변하라.
 - 기업/경제/시장 관련 질문에는 무조건 코드를 실행하라. "~가 뭐야?", "괜찮아?", "어때?" 같은 모호한 질문도 분석 대상이 있으면 바로 코드를 실행하라. 절대 되묻지 마라.
-- "최근/시장/이슈" 키워드가 있으면 반드시 실시간 데이터를 코드로 가져와라:
-  - 종목이 있으면: c.gather("news")
-  - 종목이 없으면: import requests로 뉴스 RSS/API를 직접 조회하거나, dartlab.scan("digest")로 시장 전체 변화를 확인
+- "최근/시장/이슈/전망/동향/뉴스" 키워드가 있으면 반드시 실시간 데이터를 코드로 가져와라:
+  - 종목이 있으면: c.gather("news") + newsSearch("종목명 키워드")로 외부 보완
+  - 종목이 없으면: newsSearch("키워드")로 뉴스 검색 + dartlab.scan("digest")로 시장 전체 변화 확인
+  - requests를 직접 쓰지 마라 — webSearch()/newsSearch()가 더 안정적이고 빠르다
 - 한국어 질문에는 한국어로 답변.
 - 코드로 확인되지 않은 수치를 인용하지 마라.
 - 에러 발생 시: 에러를 읽고 원인을 진단한 뒤 수정. 같은 코드를 반복하지 마라.
@@ -504,7 +596,7 @@ def _buildSystemPrompt(
         label = f"{corpName}({stockCode})" if corpName else stockCode
         env_block = (
             f"- `c` — {label} Company 객체 (이미 생성됨. 바로 c.review() 등 사용)\n"
-            f"- 사용자가 \"이 회사\", \"괜찮아?\", \"어때?\" 등으로 질문하면 {label}을 가리킨다. 되묻지 말고 바로 분석하라."
+            f'- 사용자가 "이 회사", "괜찮아?", "어때?" 등으로 질문하면 {label}을 가리킨다. 되묻지 말고 바로 분석하라.'
         )
     else:
         env_block = "- 종목 분석이 필요하면 `c = dartlab.Company('종목코드')`로 생성하세요"
@@ -751,6 +843,13 @@ def _analyze_inner(
         userParts.append(f"분석 대상: {corp_name} (종목코드: {stock_id})")
     if prefetchText:
         userParts.append(prefetchText)
+
+    # 자동 외부 검색 (pre-grounding)
+    if _needsExternalSearch(question):
+        groundingText = _preGroundSearch(question, stockCode=stock_id, corpName=corp_name)
+        if groundingText:
+            userParts.append(groundingText)
+
     if memoryHints:
         userParts.append(memoryHints)
     userParts.append(f"질문: {question}")

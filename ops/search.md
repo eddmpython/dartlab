@@ -81,27 +81,31 @@ HF 배포: TurboQuant 압축 벡터 (6.6MB) ← 다운로드 부담 최소
 
 GPU 필요 → GitHub Actions 부적합 → 로컬 빌드 후 수동 push.
 
-## 검색 아키텍처 — 2계층 하이브리드
+## 검색 아키텍처 — Ngram+Synonym (모델 불필요)
 
-실험 105에서 5가지 방법론 비교 후 결정:
+실험 105에서 8가지 방법론 비교 후 결정:
 
 ```
-L1: LanceDB FTS (BM25) — 모델 불필요, 즉시 반환
-L2: 벡터 ANN — 백그라운드 모델 로딩 완료 후 의미 검색 보강
-합산: RRF (Reciprocal Rank Fusion)
+기본: Ngram+Synonym 역인덱스 — 모델 불필요, cold start 0ms, precision 95%
+보강: 벡터 ANN (optional) — vector 의존성 있을 때만
 ```
 
-첫 검색은 FTS로 즉시 반환하고, 모델 로딩이 완료되면 벡터 검색으로 자동 보강.
+report_nm + section_title에서 bigram/trigram 역인덱스를 구축하고,
+자연어 쿼리를 동의어 확장으로 공시 키워드로 변환하여 검색.
 
 ### 실험 105 결과 요약
 
-| 방법 | precision@5 | cold start |
-|------|:---:|:---:|
-| BM25(FTS) | 71% | 0ms |
-| SemanticMap | 68% | 0ms |
-| Model2Vec(DART증류) | 67% | 265ms |
-| **하이브리드(FTS+벡터)** | **~80%** | **190ms** |
-| 임베딩 단독(ko-sroberta) | 83% | 12,700ms |
+| 방법 | precision@5 | cold start | 속도 |
+|------|:---:|:---:|:---:|
+| **Ngram+Synonym** | **95%** | **0ms** | **1ms** |
+| Trigram 단독 | 88% | 0ms | 1ms |
+| 임베딩(ko-sroberta) | 83% | 12,700ms | 58ms |
+| BM25(FTS) | 71% | 0ms | 14ms |
+| SemanticMap | 68% | 0ms | 25ms |
+
+**Ngram+Synonym이 임베딩을 12%p 초과하면서 cold start 0ms, 의존성 0.**
+핵심: DART 공시는 정형 문서 → report_nm + section_title의 ngram이 의미를 표현.
+동의어 확장이 자연어 → 공시 키워드 변환을 커버.
 
 부산물: DART 공시 Taxonomy(15카테고리), 동반공시 PMI 그래프, DART 특화 Model2Vec 모델(24.7MB)
 

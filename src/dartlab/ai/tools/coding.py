@@ -349,6 +349,12 @@ class DartlabCodeExecutor(LocalPythonBackend):
             "pl.Config.set_tbl_width_chars(120)\n"
         )
         preamble += "Company = dartlab.Company\n"
+        preamble += (
+            "try:\n"
+            "    from dartlab.gather.search import webSearch, newsSearch, formatResults, searchAvailable\n"
+            "except ImportError:\n"
+            "    pass\n"
+        )
         if stockCode:
             preamble += f'c = Company("{stockCode}")\n'
             preamble += "company = c\n"

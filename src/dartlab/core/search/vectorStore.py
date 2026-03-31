@@ -75,10 +75,7 @@ def _loadModel():
     try:
         from sentence_transformers import SentenceTransformer
     except ImportError:
-        raise ImportError(
-            "sentence-transformers가 필요합니다.\n"
-            "  pip install dartlab[vector]"
-        )
+        raise ImportError("sentence-transformers가 필요합니다.\n  pip install dartlab[vector]")
 
     device = _detectDevice()
     _model = SentenceTransformer(_DEFAULT_MODEL, device=device)
@@ -94,10 +91,7 @@ def _openDb():
     try:
         import lancedb
     except ImportError:
-        raise ImportError(
-            "lancedb가 필요합니다.\n"
-            "  pip install dartlab[vector]"
-        )
+        raise ImportError("lancedb가 필요합니다.\n  pip install dartlab[vector]")
 
     _db = lancedb.connect(str(_indexDir()))
     return _db
@@ -194,18 +188,20 @@ def buildFromParquet(
             recId = f"{row['rcept_no']}_{row['section_order']}_{chunkIdx}"
             if recId in existingIds:
                 continue
-            records.append({
-                "id": recId,
-                "text": chunkText[:2000],
-                "full_text": chunkText,
-                "rcept_no": row["rcept_no"],
-                "corp_code": row.get("corp_code", ""),
-                "corp_name": row.get("corp_name", ""),
-                "stock_code": row.get("stock_code", ""),
-                "rcept_dt": row.get("rcept_dt", ""),
-                "report_nm": row.get("report_nm", ""),
-                "section_title": row.get("section_title", ""),
-            })
+            records.append(
+                {
+                    "id": recId,
+                    "text": chunkText[:2000],
+                    "full_text": chunkText,
+                    "rcept_no": row["rcept_no"],
+                    "corp_code": row.get("corp_code", ""),
+                    "corp_name": row.get("corp_name", ""),
+                    "stock_code": row.get("stock_code", ""),
+                    "rcept_dt": row.get("rcept_dt", ""),
+                    "report_nm": row.get("report_nm", ""),
+                    "section_title": row.get("section_title", ""),
+                }
+            )
 
     if not records:
         if showProgress:
@@ -251,8 +247,7 @@ def buildFromParquet(
 
     if showProgress:
         speed = len(texts) / elapsed if elapsed > 0 else 0
-        print(f"[vectorStore] 완료: {len(records)}개 벡터, "
-              f"{elapsed:.1f}초 ({speed:.0f} chunks/sec, {device})")
+        print(f"[vectorStore] 완료: {len(records)}개 벡터, {elapsed:.1f}초 ({speed:.0f} chunks/sec, {device})")
 
     return len(records)
 
@@ -387,9 +382,8 @@ def search(
     # DART 공시 뷰어 링크
     if "rcept_no" in result.columns:
         from dartlab.core.dataLoader import DART_VIEWER
-        result = result.with_columns(
-            (pl.lit(DART_VIEWER) + pl.col("rcept_no")).alias("dartUrl")
-        )
+
+        result = result.with_columns((pl.lit(DART_VIEWER) + pl.col("rcept_no")).alias("dartUrl"))
 
     return result.head(topK)
 
@@ -400,8 +394,17 @@ def _searchFts(table, query: str, topK: int = 20) -> pl.DataFrame | None:
         results = table.search(query, query_type="fts").limit(topK).to_pandas()
         if results.empty:
             return None
-        keepCols = ["rcept_no", "corp_name", "stock_code", "corp_code",
-                     "rcept_dt", "report_nm", "section_title", "text", "_score"]
+        keepCols = [
+            "rcept_no",
+            "corp_name",
+            "stock_code",
+            "corp_code",
+            "rcept_dt",
+            "report_nm",
+            "section_title",
+            "text",
+            "_score",
+        ]
         availCols = [c for c in keepCols if c in results.columns]
         df = pl.from_pandas(results[availCols])
         if "_score" in df.columns:
@@ -429,14 +432,25 @@ def _searchVector(table, query: str, *, corpCode=None, stockCode=None, topK: int
         if results.empty:
             return None
 
-        keepCols = ["_distance", "rcept_no", "corp_name", "stock_code", "corp_code",
-                     "rcept_dt", "report_nm", "section_title", "text"]
+        keepCols = [
+            "_distance",
+            "rcept_no",
+            "corp_name",
+            "stock_code",
+            "corp_code",
+            "rcept_dt",
+            "report_nm",
+            "section_title",
+            "text",
+        ]
         availCols = [c for c in keepCols if c in results.columns]
         df = pl.from_pandas(results[availCols])
         if "_distance" in df.columns:
-            df = df.rename({"_distance": "distance"}).with_columns(
-                (1 - pl.col("distance")).alias("vecScore")
-            ).drop("distance")
+            df = (
+                df.rename({"_distance": "distance"})
+                .with_columns((1 - pl.col("distance")).alias("vecScore"))
+                .drop("distance")
+            )
         return df
     except Exception:
         return None
@@ -497,16 +511,13 @@ def _mergeResults(ftsResult, vecResult, topK: int = 10) -> pl.DataFrame:
 
 def indexStats() -> dict:
     """벡터 인덱스 통계."""
-    import os
 
     indexPath = _indexDir()
     try:
         db = _openDb()
         table = db.open_table(_TABLE_NAME)
         count = table.count_rows()
-        totalSize = sum(
-            f.stat().st_size for f in indexPath.rglob("*") if f.is_file()
-        )
+        totalSize = sum(f.stat().st_size for f in indexPath.rglob("*") if f.is_file())
         return {
             "table": _TABLE_NAME,
             "vectors": count,
@@ -543,7 +554,7 @@ def pushToHub(*, token: str | None = None, bits: int = 4) -> str:
     from huggingface_hub import HfApi
     from turboquant_vectors import compress
 
-    from dartlab.core.dataConfig import HF_REPO, DATA_RELEASES
+    from dartlab.core.dataConfig import DATA_RELEASES, HF_REPO
 
     db = _openDb()
     table = db.open_table(_TABLE_NAME)
@@ -572,12 +583,13 @@ def pushToHub(*, token: str | None = None, bits: int = 4) -> str:
 
     # 설정 저장
     import json
+
     config = {"bits": bits, "dim": vectors.shape[1], "n_vectors": len(vectors)}
     (outDir / "config.json").write_text(json.dumps(config))
 
     origMb = vectors.nbytes / 1024 / 1024
     compMb = sum(f.stat().st_size for f in outDir.iterdir()) / 1024 / 1024
-    print(f"[pushToHub] {origMb:.1f}MB → {compMb:.1f}MB ({origMb/compMb:.0f}x 압축)")
+    print(f"[pushToHub] {origMb:.1f}MB → {compMb:.1f}MB ({origMb / compMb:.0f}x 압축)")
 
     # HF 업로드
     hfDir = DATA_RELEASES["vectorIndex"]["dir"]
@@ -611,7 +623,7 @@ def pullFromHub(*, token: str | None = None, force: bool = False) -> Path:
     from turboquant_vectors import decompress
     from turboquant_vectors.core import CompressedVectors
 
-    from dartlab.core.dataConfig import HF_REPO, DATA_RELEASES
+    from dartlab.core.dataConfig import DATA_RELEASES, HF_REPO
 
     # 이미 LanceDB 인덱스 있으면 건너뜀
     if not force:

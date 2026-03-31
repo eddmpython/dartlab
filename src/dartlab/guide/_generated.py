@@ -834,12 +834,12 @@ CAPABILITIES: dict[str, dict] = {
     },
     "search": {
         "aicontext": "공시 내용을 자연어로 찾을 때 사용. 결과의 dartUrl로 원문 확인 가능.\n종목 찾기는 Company(\"삼성전자\")를 사용.",
-        "capabilities": "전체 공시 원문 시맨틱 검색 (수시공시 포함)\n종목/기간 필터 지원\nDART 공시 뷰어 링크 포함 (dartUrl 컬럼)",
-        "guide": "\"유상증자 한 회사?\" -> search(\"유상증자 결정\")\n\"삼성전자 최근 공시?\" -> search(\"공시\", corp=\"005930\")\n인덱스 없으면 자동 다운로드 (~8MB, 3초)",
+        "capabilities": "전체 공시 원문 검색 (수시공시 포함)\n자연어 동의어 확장 (\"돈을 빌렸다\" → 사채/차입/전환사채)\n종목/기간 필터 지원\nDART 공시 뷰어 링크 포함 (dartUrl 컬럼)",
+        "guide": "\"유상증자 한 회사?\" -> search(\"유상증자 결정\")\n\"삼성전자 최근 공시?\" -> search(\"공시\", corp=\"005930\")",
         "kind": "function",
-        "requires": "데이터: vectorIndex (자동 다운로드)\n의존성: pip install dartlab[vector]",
+        "requires": "데이터: allFilings (수집 + buildIndex 필요)",
         "seeAlso": "Company: 종목코드/회사명으로 Company 생성\nlisting: 전체 상장법인 목록",
-        "summary": "공시 원문 시맨틱 검색. *(alpha)*"
+        "summary": "공시 원문 검색. *(alpha)*"
     },
     "searchName": {
         "kind": "function",

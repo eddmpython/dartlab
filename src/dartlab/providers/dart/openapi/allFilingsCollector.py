@@ -43,7 +43,7 @@ from dartlab.providers.dart.openapi.zipCollector import (
 
 _ALLFILINGS_DIR_KEY = "allFilings"
 _META_SUFFIX = "_meta"  # 목록만: 20260327_meta.parquet
-                        # 원문포함: 20260327.parquet
+# 원문포함: 20260327.parquet
 
 # ── 내부 유틸 ──
 
@@ -220,7 +220,10 @@ def collectMetaRange(
         if showProgress and (i + 1) % 10 == 0:
             print(f"--- 목록 진행: {i + 1}/{len(dates)} ---")
         result = collectMetaDay(
-            date, client=client, corpClasses=corpClasses, showProgress=showProgress,
+            date,
+            client=client,
+            corpClasses=corpClasses,
+            showProgress=showProgress,
         )
         if result is not None:
             collected += 1
@@ -281,7 +284,25 @@ def fillContent(
         if sections:
             success += 1
             for s in sections:
-                allRows.append({
+                allRows.append(
+                    {
+                        "corp_code": row["corp_code"],
+                        "corp_name": row["corp_name"],
+                        "stock_code": row.get("stock_code", ""),
+                        "corp_cls": row["corp_cls"],
+                        "rcept_dt": row["rcept_dt"],
+                        "rcept_no": rceptNo,
+                        "report_nm": row["report_nm"],
+                        "flr_nm": row.get("flr_nm", ""),
+                        "section_order": s["order"],
+                        "section_title": s["title"],
+                        "section_content": s["content"],
+                    }
+                )
+        else:
+            empty += 1
+            allRows.append(
+                {
                     "corp_code": row["corp_code"],
                     "corp_name": row["corp_name"],
                     "stock_code": row.get("stock_code", ""),
@@ -290,25 +311,11 @@ def fillContent(
                     "rcept_no": rceptNo,
                     "report_nm": row["report_nm"],
                     "flr_nm": row.get("flr_nm", ""),
-                    "section_order": s["order"],
-                    "section_title": s["title"],
-                    "section_content": s["content"],
-                })
-        else:
-            empty += 1
-            allRows.append({
-                "corp_code": row["corp_code"],
-                "corp_name": row["corp_name"],
-                "stock_code": row.get("stock_code", ""),
-                "corp_cls": row["corp_cls"],
-                "rcept_dt": row["rcept_dt"],
-                "rcept_no": rceptNo,
-                "report_nm": row["report_nm"],
-                "flr_nm": row.get("flr_nm", ""),
-                "section_order": 0,
-                "section_title": "",
-                "section_content": None,
-            })
+                    "section_order": 0,
+                    "section_title": "",
+                    "section_content": None,
+                }
+            )
 
         if showProgress and (idx + 1) % 100 == 0:
             print(f"  [{idx + 1}/{total}] 성공={success} 빈={empty}")
@@ -330,8 +337,10 @@ def fillContent(
         metaPath.unlink()
 
     if showProgress:
-        print(f"[{date}] 완료: {success}건 성공, {empty}건 빈, "
-              f"{df.height}행, {fullPath.stat().st_size / 1024 / 1024:.1f}MB")
+        print(
+            f"[{date}] 완료: {success}건 성공, {empty}건 빈, "
+            f"{df.height}행, {fullPath.stat().st_size / 1024 / 1024:.1f}MB"
+        )
 
     return df
 
@@ -388,8 +397,7 @@ def collectedDates() -> list[str]:
     """원문 수집 완료된 날짜 목록 (최신순)."""
     outDir = _allFilingsDir()
     dates = sorted(
-        [p.stem for p in outDir.glob("*.parquet")
-         if len(p.stem) == 8 and p.stem.isdigit()],
+        [p.stem for p in outDir.glob("*.parquet") if len(p.stem) == 8 and p.stem.isdigit()],
         reverse=True,
     )
     return dates
@@ -399,8 +407,7 @@ def pendingDates() -> list[str]:
     """목록만 있고 원문 미수집인 날짜 목록 (최신순)."""
     outDir = _allFilingsDir()
     dates = sorted(
-        [p.stem.replace(_META_SUFFIX, "")
-         for p in outDir.glob(f"*{_META_SUFFIX}.parquet")],
+        [p.stem.replace(_META_SUFFIX, "") for p in outDir.glob(f"*{_META_SUFFIX}.parquet")],
         reverse=True,
     )
     return dates
@@ -417,8 +424,7 @@ def loadDay(date: str) -> pl.DataFrame | None:
 def loadAll() -> pl.DataFrame:
     """원문 수집 완료된 전체 데이터 로드."""
     outDir = _allFilingsDir()
-    files = sorted(f for f in outDir.glob("*.parquet")
-                   if _META_SUFFIX not in f.stem)
+    files = sorted(f for f in outDir.glob("*.parquet") if _META_SUFFIX not in f.stem)
     if not files:
         return pl.DataFrame()
     return pl.scan_parquet(files).collect()

@@ -34,19 +34,19 @@ def search(
     end: str | None = None,
     topK: int = 10,
 ):
-    """공시 원문 시맨틱 검색. *(alpha)*
+    """공시 원문 검색. *(alpha)*
 
-    자연어로 공시 원문을 검색한다. 벡터 임베딩 기반.
-    인덱스가 없으면 HuggingFace에서 자동 다운로드.
+    Ngram+Synonym 기반 검색. 모델 불필요, cold start 0ms.
+    DART 공시 뷰어 링크(dartUrl) 포함.
 
     Capabilities:
-        - 전체 공시 원문 시맨틱 검색 (수시공시 포함)
+        - 전체 공시 원문 검색 (수시공시 포함)
+        - 자연어 동의어 확장 ("돈을 빌렸다" → 사채/차입/전환사채)
         - 종목/기간 필터 지원
         - DART 공시 뷰어 링크 포함 (dartUrl 컬럼)
 
     Requires:
-        데이터: vectorIndex (자동 다운로드)
-        의존성: pip install dartlab[vector]
+        데이터: allFilings (수집 + buildIndex 필요)
 
     AIContext:
         공시 내용을 자연어로 찾을 때 사용. 결과의 dartUrl로 원문 확인 가능.
@@ -55,7 +55,6 @@ def search(
     Guide:
         - "유상증자 한 회사?" -> search("유상증자 결정")
         - "삼성전자 최근 공시?" -> search("공시", corp="005930")
-        - 인덱스 없으면 자동 다운로드 (~8MB, 3초)
 
     SeeAlso:
         - Company: 종목코드/회사명으로 Company 생성
@@ -80,54 +79,9 @@ def search(
         dartlab.search("대표이사 변경", corp="005930")
         dartlab.search("전환사채", start="20240101", topK=5)
     """
-    try:
-        from dartlab.core.search.vectorStore import indexStats, pullFromHub
-        from dartlab.core.search.vectorStore import search as _vectorSearch
+    from dartlab.core.search import search as _search
 
-        stats = indexStats()
-        if stats["vectors"] == 0:
-            try:
-                pullFromHub()
-            except Exception:
-                import polars as _pl
-
-                return _pl.DataFrame()
-
-        corpCode = None
-        stockCode = None
-        if corp:
-            if len(corp) == 6 and corp.isdigit():
-                stockCode = corp
-            elif len(corp) == 8 and corp.isdigit():
-                corpCode = corp
-            else:
-                try:
-                    match = _DartEngineCompany.search(corp)
-                    if match is not None and match.height > 0:
-                        stockCode = match["stock_code"][0]
-                except Exception:
-                    pass
-
-        result = _vectorSearch(query, corpCode=corpCode, stockCode=stockCode, topK=topK)
-        if result is None or result.height == 0:
-            import polars as _pl
-
-            return _pl.DataFrame()
-
-        if start and "rcept_dt" in result.columns:
-            import polars as _pl
-
-            result = result.filter(_pl.col("rcept_dt") >= start)
-        if end and "rcept_dt" in result.columns:
-            import polars as _pl
-
-            result = result.filter(_pl.col("rcept_dt") <= end)
-
-        return result
-    except ImportError:
-        import polars as _pl
-
-        return _pl.DataFrame()
+    return _search(query, corp=corp, start=start, end=end, topK=topK)
 
 
 def searchName(keyword: str):

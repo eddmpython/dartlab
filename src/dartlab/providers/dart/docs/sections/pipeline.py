@@ -409,10 +409,15 @@ def _reportRowsToTopicRows(
     return emitted
 
 
+_NOTES_TOPICS = frozenset({"financialNotes", "consolidatedNotes"})
+
+
 def _expandStructuredRows(rows: list[dict[str, object]]) -> Iterator[dict[str, object]]:
     """rows를 text structure로 확장하여 yield한다. occurrence는 인라인 카운트."""
     headingStateByTopic: dict[str, list[dict[str, object]]] = {}
     occurrenceCount: dict[tuple[str, str], int] = {}
+    # 주석 topic의 table 블록에 직전 heading 시맨틱 키를 전파하기 위한 상태
+    lastHeadingKeyByTopic: dict[str, str] = {}
 
     hasProjection = False
     for row in rows:
@@ -450,7 +455,12 @@ def _expandStructuredRows(rows: list[dict[str, object]]) -> Iterator[dict[str, o
             baseRow["textSemanticPathKey"] = None
             baseRow["textSemanticParentPathKey"] = None
             baseRow["segmentOrder"] = 0
-            segmentKeyBase = f"table|sb:{sourceBlockOrder}"
+            # 주석 topic: 직전 heading의 시맨틱 키로 table 블록을 식별 (기간간 정렬)
+            lastKey = lastHeadingKeyByTopic.get(topic)
+            if topic in _NOTES_TOPICS and lastKey:
+                segmentKeyBase = f"table|sem:{lastKey}"
+            else:
+                segmentKeyBase = f"table|sb:{sourceBlockOrder}"
             baseRow["segmentKeyBase"] = segmentKeyBase
             baseRow["sortOrder"] = orderSeq * 1000
             occKey = (topic, segmentKeyBase)
@@ -469,6 +479,12 @@ def _expandStructuredRows(rows: list[dict[str, object]]) -> Iterator[dict[str, o
             initialHeadings=initialHeadings,
         )
         headingStateByTopic[topic] = finalHeadings
+        # 주석 topic: heading 시맨틱 키를 기억 (다음 table 블록에 전파)
+        if topic in _NOTES_TOPICS and finalHeadings:
+            lastLabel = str(finalHeadings[-1].get("label") or "")
+            lastSemKey = str(finalHeadings[-1].get("semanticKey") or finalHeadings[-1].get("key") or lastLabel)
+            if lastSemKey:
+                lastHeadingKeyByTopic[topic] = lastSemKey
         if not nodes:
             baseRow["textNodeType"] = "body"
             baseRow["textStructural"] = True

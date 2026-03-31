@@ -23,7 +23,7 @@
 | `ask` | function | LLM에게 기업에 대해 질문. |
 | `chat` | function | 에이전트 모드: LLM이 도구를 선택하여 심화 분석. |
 | `setup` | function | AI provider 설정 안내 + 인터랙티브 설정. |
-| `search` | function | 공시 원문 시맨틱 검색. *(alpha)* |
+| `search` | function | 공시 원문 검색. *(alpha)* |
 | `listing` | function | 전체 상장법인 목록. |
 | `collect` | function | 지정 종목 DART 데이터 수집 (OpenAPI). |
 | `collectAll` | function | 전체 상장종목 DART 데이터 일괄 수집. |
@@ -145,16 +145,15 @@ chat: AI 대화 (setup 완료 후 사용)
 llm.configure: 프로그래밍 방식 provider 설정
 
 #### search
-**Capabilities:** 전체 공시 원문 시맨틱 검색 (수시공시 포함)
+**Capabilities:** 전체 공시 원문 검색 (수시공시 포함)
+자연어 동의어 확장 ("돈을 빌렸다" → 사채/차입/전환사채)
 종목/기간 필터 지원
 DART 공시 뷰어 링크 포함 (dartUrl 컬럼)
-**Requires:** 데이터: vectorIndex (자동 다운로드)
-의존성: pip install dartlab[vector]
+**Requires:** 데이터: allFilings (수집 + buildIndex 필요)
 **AIContext:** 공시 내용을 자연어로 찾을 때 사용. 결과의 dartUrl로 원문 확인 가능.
 종목 찾기는 Company("삼성전자")를 사용.
 **Guide:** "유상증자 한 회사?" -> search("유상증자 결정")
 "삼성전자 최근 공시?" -> search("공시", corp="005930")
-인덱스 없으면 자동 다운로드 (~8MB, 3초)
 **SeeAlso:** Company: 종목코드/회사명으로 Company 생성
 listing: 전체 상장법인 목록
 

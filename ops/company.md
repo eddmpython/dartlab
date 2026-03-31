@@ -3,9 +3,18 @@
 Company는 dartlab의 facade. 종목코드 하나로 모든 데이터에 접근한다.
 dartlab의 모든 방향성은 Company에서 시작하고, Company로 돌아온다.
 
+## 근본 전제
+
+**모든 기간은 비교 가능해야 하고, 모든 회사는 비교 가능해야 한다.**
+
+이것이 dartlab의 근본 전제다. sections 사상(topic × period 수평화)과 계정 표준화(XBRL 정규화)는 이 전제를 현실로 만드는 두 엔진이다. scan이 가능한 것도, analysis가 의미 있는 것도, 이 비교 가능성이 확보되어 있기 때문이다.
+
+- 기간 비교 가능 → 같은 회사의 과거와 현재를 나란히 놓는다 (sections, diff)
+- 기업 비교 가능 → 다른 회사의 같은 지표를 나란히 놓는다 (scan, analysis)
+
 ## 핵심 철학
 
-- **기간 비교 + 기업 비교**가 모든 분석의 기반
+- 비교 가능성이 모든 분석의 기반
 - 완벽한 축을 세우는 게 모든 방향성
 - Company → Analysis → Review → Scan 순서로 계층이 쌓인다
 - 모든 개선은 **DART 먼저**, EDGAR는 DART 안정화 후 따라감

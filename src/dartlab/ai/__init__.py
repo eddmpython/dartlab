@@ -1,4 +1,4 @@
-"""LLM 기반 기업분석 엔진."""
+"""LLM 기반 적극적 분석가. dartlab을 도구로 삼아 주체적으로 분석하고, 사용자의 분석 학습을 돕는다."""
 
 from __future__ import annotations
 

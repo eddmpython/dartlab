@@ -201,7 +201,7 @@
   {
     "name": "search",
     "kind": "function",
-    "summary": "공시 원문 시맨틱 검색. *(alpha)*",
+    "summary": "공시 원문 검색. *(alpha)*",
     "group": "dartlab",
     "params": [
       {
@@ -236,9 +236,9 @@
     "args": "query: 검색어 (한국어). \"유상증자 결정\", \"대표이사 변경\" 등.\ncorp: 종목 필터 (종목코드 \"005930\" 또는 회사명 \"삼성전자\").\nstart: 시작일 (YYYYMMDD).\nend: 종료일 (YYYYMMDD).\ntopK: 반환 건수 (기본 10).",
     "returns": "pl.DataFrame — 검색 결과.\n컬럼: score, rcept_no, corp_name, rcept_dt, report_nm,\nsection_title, text, dartUrl",
     "example": "import dartlab\ndartlab.search(\"유상증자 결정\")\ndartlab.search(\"대표이사 변경\", corp=\"005930\")\ndartlab.search(\"전환사채\", start=\"20240101\", topK=5)",
-    "capabilities": "전체 공시 원문 시맨틱 검색 (수시공시 포함)\n종목/기간 필터 지원\nDART 공시 뷰어 링크 포함 (dartUrl 컬럼)",
-    "requires": "데이터: vectorIndex (자동 다운로드)\n의존성: pip install dartlab[vector]",
-    "guide": "\"유상증자 한 회사?\" -> search(\"유상증자 결정\")\n\"삼성전자 최근 공시?\" -> search(\"공시\", corp=\"005930\")\n인덱스 없으면 자동 다운로드 (~8MB, 3초)",
+    "capabilities": "전체 공시 원문 검색 (수시공시 포함)\n자연어 동의어 확장 (\"돈을 빌렸다\" → 사채/차입/전환사채)\n종목/기간 필터 지원\nDART 공시 뷰어 링크 포함 (dartUrl 컬럼)",
+    "requires": "데이터: allFilings (수집 + buildIndex 필요)",
+    "guide": "\"유상증자 한 회사?\" -> search(\"유상증자 결정\")\n\"삼성전자 최근 공시?\" -> search(\"공시\", corp=\"005930\")",
     "seealso": "Company: 종목코드/회사명으로 Company 생성\nlisting: 전체 상장법인 목록"
   },
   {

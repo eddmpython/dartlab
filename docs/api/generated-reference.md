@@ -142,7 +142,7 @@ dartlab.setup("ollama")      # Ollama 설치 안내
 
 ### `dartlab.search(query: str, *, corp: str | None = None, start: str | None = None, end: str | None = None, topK: int = 10)`
 
-공시 원문 시맨틱 검색. *(alpha)*
+공시 원문 검색. *(alpha)*
 
 **Args:**
 
