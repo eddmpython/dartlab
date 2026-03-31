@@ -426,6 +426,11 @@ def calcCapexPattern(company, *, basePeriod: str | None = None) -> dict | None:
     history = []
     latest = None
 
+    # 감가상각 이상치 필터용 중앙값 사전 계산
+    _rawDeps = [abs(_get(depRow, c)) for c in yCols]
+    _validDeps = [d for d in _rawDeps if d > 0]
+    _depMedian = sorted(_validDeps)[len(_validDeps) // 2] if _validDeps else 0
+
     for col in yCols:
         cip = _get(cipRow, col)
         ppe = _get(ppeRow, col)
@@ -433,6 +438,10 @@ def calcCapexPattern(company, *, basePeriod: str | None = None) -> dict | None:
         # CAPEX는 CF에서 음수로 나옴 → abs
         capex = abs(_get(capexRow, col)) + abs(_get(intCapexRow, col))
         dep = abs(_get(depRow, col))
+        # 이상치 필터: 중앙값 대비 100배 이상 차이나면 스케일 오류로 판단
+        if dep > 0 and _depMedian > 0:
+            if dep / _depMedian > 100 or _depMedian / dep > 100:
+                dep = 0  # 이상치 제거 → 아래 fallback으로 추정
         # 3순위 fallback: 감가상각 null이면 유형자산/10으로 추정
         if dep == 0 and ppe is not None and ppe > 0:
             dep = ppe / 10  # 평균 내용연수 10년 가정
@@ -501,8 +510,8 @@ def calcAssetFlags(company, *, basePeriod: str | None = None) -> list[str]:
         ccc = wc["latest"]["ccc"]
         if ccc > 120:
             flags.append(f"CCC {ccc:.0f}일 — 현금 회수 매우 느림")
-        elif ccc < 0:
-            flags.append(f"CCC {ccc:.0f}일 — 마이너스 CCC (선수금/매입채무 우위)")
+        # CCC < 0은 선수금/매입채무 우위로 운전자본 효율적 → 경고 아닌 정보
+        # efficiency.py의 "운전자본 유리 구조"로 충분
 
     capex = calcCapexPattern(company, basePeriod=basePeriod)
     if capex and capex["latest"]["capexToDepRatio"] is not None:

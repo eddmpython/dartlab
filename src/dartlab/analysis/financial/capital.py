@@ -754,6 +754,9 @@ def calcCapitalFlags(company, *, basePeriod: str | None = None) -> list[tuple[st
         if isNetCash:
             # 순현금이면 유동비율 낮아도 실질 유동성 위험 낮음 (IFRS16 리스부채 등)
             flags.append((f"유동비율 주의 ({cr:.0f}%) — 순현금이므로 실질 위험 낮음", "warning"))
+        elif ic is not None and ic > 5:
+            # 이자보상배율 양호하면 실질 유동성 위험 낮음
+            flags.append((f"유동비율 주의 ({cr:.0f}%) — 이자보상 {ic:.0f}배로 양호", "warning"))
         else:
             flags.append((f"유동성 위기 (유동비율 {cr:.0f}%)", "warning"))
 
