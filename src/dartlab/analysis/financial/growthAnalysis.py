@@ -268,3 +268,95 @@ def calcGrowthFlags(company, *, basePeriod: str | None = None) -> list[str]:
             flags.append(f"매출 성장({ry:.0f}%)에도 이익 감소({oy:.0f}%) -- 수익성 희석")
 
     return flags
+
+
+# ── 계정별 CAGR 비교 ──
+
+
+def _cagr(start: float, end: float, years: int) -> float | None:
+    """CAGR 계산. 시작/끝이 양수일 때만."""
+    if start <= 0 or end <= 0 or years <= 0:
+        return None
+    return round(((end / start) ** (1 / years) - 1) * 100, 2)
+
+
+def calcCagrComparison(company, *, basePeriod: str | None = None) -> dict | None:
+    """계정별 CAGR 비교 — 절대값 장기 추세로 구조적 변화 감지.
+
+    매출 CAGR vs 영업이익 CAGR → 마진 방향
+    자산 CAGR vs 매출 CAGR → 자산 효율 방향
+    부채 CAGR vs 자본 CAGR → 레버리지 방향
+
+    반환::
+
+        {
+            "comparisons": [
+                {"label": str, "item1": str, "cagr1": float,
+                 "item2": str, "cagr2": float, "gap": float, "signal": str},
+                ...
+            ],
+            "period": str,
+        }
+    """
+    isResult = company.select("IS", ["매출액", "영업이익"])
+    bsResult = company.select("BS", ["자산총계", "부채총계", "자본총계"])
+    cfResult = company.select("CF", ["유형자산의취득"])
+
+    isParsed = toDict(isResult)
+    bsParsed = toDict(bsResult)
+    cfParsed = toDict(cfResult)
+    if isParsed is None or bsParsed is None:
+        return None
+
+    isData, isPeriods = isParsed
+    bsData, _ = bsParsed
+    cfData = cfParsed[0] if cfParsed else {}
+
+    yCols = _annualColsFromPeriods(isPeriods, basePeriod, _MAX_YEARS + 1)
+    if len(yCols) < 3:
+        return None
+
+    def _v(row, col):
+        v = row.get(col) if row else None
+        return v if v is not None else 0
+
+    latest = yCols[0]
+    oldest = yCols[-1]
+    years = len(yCols) - 1
+
+    revRow = isData.get("매출액", {})
+    opRow = isData.get("영업이익", {})
+    taRow = bsData.get("자산총계", {})
+    tlRow = bsData.get("부채총계", {})
+    teRow = bsData.get("자본총계", {})
+    capexRow = cfData.get("유형자산의취득", {})
+
+    pairs = [
+        ("마진 방향", "매출", _v(revRow, oldest), _v(revRow, latest), "영업이익", _v(opRow, oldest), _v(opRow, latest)),
+        ("자산 효율", "자산", _v(taRow, oldest), _v(taRow, latest), "매출", _v(revRow, oldest), _v(revRow, latest)),
+        ("레버리지", "부채", _v(tlRow, oldest), _v(tlRow, latest), "자본", _v(teRow, oldest), _v(teRow, latest)),
+        ("투자 방향", "CAPEX", abs(_v(capexRow, oldest)), abs(_v(capexRow, latest)), "매출", _v(revRow, oldest), _v(revRow, latest)),
+    ]
+
+    comparisons = []
+    for label, name1, start1, end1, name2, start2, end2 in pairs:
+        c1 = _cagr(start1, end1, years)
+        c2 = _cagr(start2, end2, years)
+        if c1 is not None and c2 is not None:
+            gap = round(c1 - c2, 2)
+            if label == "마진 방향":
+                signal = "마진 확대" if gap <= 0 else "마진 압박"
+            elif label == "자산 효율":
+                signal = "효율 개선" if gap <= 0 else "효율 하락"
+            elif label == "레버리지":
+                signal = "디레버리징" if gap <= 0 else "레버리지 확대"
+            else:
+                signal = "투자 확대" if gap > 0 else "투자 축소"
+            comparisons.append({
+                "label": label, "item1": name1, "cagr1": c1,
+                "item2": name2, "cagr2": c2, "gap": gap, "signal": signal,
+            })
+
+    if not comparisons:
+        return None
+    return {"comparisons": comparisons, "period": f"{oldest} → {latest}"}
