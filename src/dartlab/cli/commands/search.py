@@ -18,7 +18,7 @@ def run(args) -> int:
     """키워드로 종목을 검색해 결과를 콘솔에 출력한다."""
     dartlab = configure_dartlab()
 
-    result = dartlab.search(args.keyword)
+    result = dartlab.searchName(args.keyword)
     if result is None:
         from dartlab.cli.services.output import get_console
 

@@ -29,7 +29,7 @@ router = APIRouter()
 def api_search(q: str = Query(..., min_length=1)):
     """종목 검색 — substring 우선, 결과 없으면 fuzzy(초성/Levenshtein) fallback."""
     try:
-        df = dartlab.search(q)
+        df = dartlab.searchName(q)
         rows = df.to_dicts() if len(df) > 0 else []
         fuzzy_used = False
 

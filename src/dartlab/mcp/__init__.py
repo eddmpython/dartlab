@@ -332,7 +332,7 @@ def _executeTool(name: str, args: dict) -> str:
         if name == "companyInsights":
             return str(_getCompany(code).insights)
         if name == "searchCompany":
-            return _fmt(dartlab.search(args["query"]))
+            return _fmt(dartlab.searchName(args["query"]))
 
         if name == "companyFinancials":
             return _fmt(getattr(_getCompany(code), args["statement"], None))

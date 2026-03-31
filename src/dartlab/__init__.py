@@ -26,47 +26,121 @@ except PackageNotFoundError:
     __version__ = "0.0.0"
 
 
-def search(keyword: str):
-    """종목 검색 (KR + US 통합).
+def search(
+    query: str,
+    *,
+    corp: str | None = None,
+    start: str | None = None,
+    end: str | None = None,
+    topK: int = 10,
+):
+    """공시 원문 시맨틱 검색. *(alpha)*
+
+    자연어로 공시 원문을 검색한다. 벡터 임베딩 기반.
+    인덱스가 없으면 HuggingFace에서 자동 다운로드.
 
     Capabilities:
-        - 한글 입력 시 DART 종목 검색 (종목명, 종목코드)
-        - 영문 입력 시 EDGAR 종목 검색 (ticker, 회사명)
-        - 부분 일치, 초성 검색 지원 (KR)
+        - 전체 공시 원문 시맨틱 검색 (수시공시 포함)
+        - 종목/기간 필터 지원
+        - DART 공시 뷰어 링크 포함 (dartUrl 컬럼)
 
     Requires:
-        데이터: listing (자동 다운로드)
+        데이터: vectorIndex (자동 다운로드)
+        의존성: pip install dartlab[vector]
 
     AIContext:
-        종목코드를 모를 때 사용. 결과에서 종목코드 확인 후 Company 생성.
+        공시 내용을 자연어로 찾을 때 사용. 결과의 dartUrl로 원문 확인 가능.
+        종목 찾기는 Company("삼성전자")를 사용.
 
     Guide:
-        - "삼성전자 종목코드 뭐야?" -> search("삼성전자")로 종목코드 확인
-        - "애플 티커?" -> search("AAPL")로 EDGAR 종목 검색
-        - API 키 불필요. listing 데이터만으로 동작.
+        - "유상증자 한 회사?" -> search("유상증자 결정")
+        - "삼성전자 최근 공시?" -> search("공시", corp="005930")
+        - 인덱스 없으면 자동 다운로드 (~8MB, 3초)
 
     SeeAlso:
-        - Company: 종목코드 확인 후 Company 생성하여 상세 분석
-        - listing: 전체 상장법인 목록 조회
+        - Company: 종목코드/회사명으로 Company 생성
+        - listing: 전체 상장법인 목록
 
     Args:
-        keyword: 종목명, 종목코드, 또는 ticker. 한글이면 KR, 영문이면 US 자동 감지.
+        query: 검색어 (한국어). "유상증자 결정", "대표이사 변경" 등.
+        corp: 종목 필터 (종목코드 "005930" 또는 회사명 "삼성전자").
+        start: 시작일 (YYYYMMDD).
+        end: 종료일 (YYYYMMDD).
+        topK: 반환 건수 (기본 10).
 
     Returns:
-        pl.DataFrame — 검색 결과 (code, name, market 등).
+        pl.DataFrame — 검색 결과.
+        컬럼: score, rcept_no, corp_name, rcept_dt, report_nm,
+        section_title, text, dartUrl
 
     Example::
 
         import dartlab
-        dartlab.search("삼성전자")
-        dartlab.search("AAPL")
+        dartlab.search("유상증자 결정")
+        dartlab.search("대표이사 변경", corp="005930")
+        dartlab.search("전환사채", start="20240101", topK=5)
+    """
+    try:
+        from dartlab.core.search.vectorStore import search as _vectorSearch, indexStats, pullFromHub
+
+        stats = indexStats()
+        if stats["vectors"] == 0:
+            try:
+                pullFromHub()
+            except Exception:
+                import polars as _pl
+                return _pl.DataFrame()
+
+        corpCode = None
+        stockCode = None
+        if corp:
+            if len(corp) == 6 and corp.isdigit():
+                stockCode = corp
+            elif len(corp) == 8 and corp.isdigit():
+                corpCode = corp
+            else:
+                try:
+                    match = _DartEngineCompany.search(corp)
+                    if match is not None and match.height > 0:
+                        stockCode = match["stock_code"][0]
+                except Exception:
+                    pass
+
+        result = _vectorSearch(query, corpCode=corpCode, stockCode=stockCode, topK=topK)
+        if result is None or result.height == 0:
+            import polars as _pl
+            return _pl.DataFrame()
+
+        if start and "rcept_dt" in result.columns:
+            result = result.filter(pl.col("rcept_dt") >= start)
+        if end and "rcept_dt" in result.columns:
+            result = result.filter(pl.col("rcept_dt") <= end)
+
+        return result
+    except ImportError:
+        import polars as _pl
+        return _pl.DataFrame()
+
+
+def searchName(keyword: str):
+    """종목명/코드로 종목 찾기 (KR + US).
+
+    Args:
+        keyword: 종목명, 종목코드, 또는 ticker.
+
+    Returns:
+        pl.DataFrame — 종목 검색 결과.
+
+    Example::
+
+        dartlab.searchName("삼성전자")
+        dartlab.searchName("AAPL")
     """
     if any("\uac00" <= ch <= "\ud7a3" for ch in keyword):
         return _DartEngineCompany.search(keyword)
     if keyword.isascii() and keyword.isalpha():
         try:
             from dartlab.providers.edgar.company import Company as _US
-
             return _US.search(keyword)
         except (ImportError, AttributeError, NotImplementedError):
             pass

@@ -168,11 +168,11 @@ _STRUCTURED: dict[str, _StructuredMsg] = {
         ],
         actions_with_key=[
             "DART API 키가 설정되어 있으므로 직접 수집이 가능합니다:\n  dartlab collect {stockCode}",
-            "종목 검색: dartlab.search('\uc0bc\uc131') 또는 dartlab.listing()",
+            "종목 검색: dartlab.searchName('\uc0bc\uc131') 또는 dartlab.listing()",
         ],
         actions_without_key=[
             "DART API 키를 설정하면 직접 수집할 수 있습니다:\n  dartlab setup dart-key\n  dartlab collect {stockCode}",
-            "종목 검색: dartlab.search('\uc0bc\uc131') 또는 dartlab.listing()",
+            "종목 검색: dartlab.searchName('\uc0bc\uc131') 또는 dartlab.listing()",
         ],
     ),
 }

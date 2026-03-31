@@ -448,7 +448,7 @@ def _loadCompany(state: _ChatState, identifier: str, console, *, quiet: bool = F
 
     if company is None:
         console.print(f"  [red]Company not found: {identifier}[/]")
-        console.print("  [dim]검색: dartlab.search('...') 또는 dartlab.listing()[/]")
+        console.print("  [dim]검색: dartlab.searchName('...') 또는 dartlab.listing()[/]")
         return False
 
     state.company = company

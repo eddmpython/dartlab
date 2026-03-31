@@ -93,7 +93,7 @@ def Company(codeOrName: str) -> CompanyProtocol:
         raise ValueError(
             "종목코드 또는 회사명을 입력해 주세요.\n"
             "  예: Company('삼성전자') 또는 Company('005930')\n"
-            "  검색: dartlab.search('삼성')"
+            "  검색: dartlab.searchName('삼성')"
         )
 
     # canHandle 체인: priority 순으로 시도
@@ -128,6 +128,6 @@ def Company(codeOrName: str) -> CompanyProtocol:
     except (ImportError, KeyError):
         raise ValueError(
             f"'{codeOrName}'을(를) 찾을 수 없습니다{cause}.\n"
-            f"  검색: dartlab.search('{codeOrName}')\n"
+            f"  검색: dartlab.searchName('{codeOrName}')\n"
             "  전체 목록: dartlab.listing()"
         )
