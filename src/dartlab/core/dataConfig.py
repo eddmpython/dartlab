@@ -42,6 +42,10 @@ DATA_RELEASES: dict[str, dict] = {
         "dir": "dart/vectorIndex",
         "label": "공시 시맨틱 검색 벡터 인덱스 (demo)",
     },
+    "stemIndex": {
+        "dir": "dart/stemIndex",
+        "label": "Ngram+Synonym 통합 검색 인덱스",
+    },
     "edinetDocs": {
         "dir": "edinet/docs",
         "label": "EDINET 공시 문서 데이터 (일본)",

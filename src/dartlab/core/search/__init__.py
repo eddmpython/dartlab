@@ -68,34 +68,16 @@ def _resolveCorp(corp: str | None) -> tuple[str | None, str | None]:
 # ── 인덱스 빌드 ──
 
 
-def buildIndex(parquetPaths: list[str] | None = None, **kwargs) -> int:
-    """Ngram 인덱스 빌드. parquet 경로 없으면 전체 수집 데이터 대상.
-
-    벡터 인덱스도 같이 빌드 (vector 의존성 있을 때만).
-    """
+def buildIndex(parquetPaths: list[str] | None = None, *, includeDocs: bool = False, **kwargs) -> int:
+    """Ngram 인덱스 빌드. allFilings + (선택) docs 통합."""
     from dartlab.core.search.ngramIndex import buildNgramIndex
 
-    # Ngram 인덱스 (항상)
-    count = buildNgramIndex(parquetPaths)
+    return buildNgramIndex(parquetPaths, includeDocs=includeDocs, **kwargs)
 
-    # 벡터 인덱스 (optional)
-    try:
-        from dartlab.core.search.vectorStore import buildFromParquet
 
-        if parquetPaths:
-            for p in parquetPaths:
-                buildFromParquet(p, **kwargs)
-        else:
-            from dartlab.providers.dart.openapi.allFilingsCollector import _META_SUFFIX, _allFilingsDir
-
-            outDir = _allFilingsDir()
-            files = sorted(f for f in outDir.glob("*.parquet") if _META_SUFFIX not in f.stem)
-            for f in files:
-                buildFromParquet(str(f), **kwargs)
-    except ImportError:
-        pass  # vector 의존성 없으면 건너뜀
-
-    return count
+def rebuildIndex(**kwargs) -> int:
+    """전체 인덱스 리빌드 — allFilings + docs 통합. (~220초)"""
+    return buildIndex(includeDocs=True, **kwargs)
 
 
 # ── 수집 편의 함수 ──
@@ -128,27 +110,20 @@ def stats() -> dict:
     from dartlab.providers.dart.openapi.allFilingsCollector import stats as collectorStats
 
     result = collectorStats()
-    result["ngram"] = ngramStats()
-
-    try:
-        from dartlab.core.search.vectorStore import indexStats
-
-        result["vector"] = indexStats()
-    except ImportError:
-        pass
+    result["stemIndex"] = ngramStats()
 
     return result
 
 
 def pushIndex(**kwargs) -> str:
-    """인덱스를 HuggingFace에 업로드."""
-    from dartlab.core.search.vectorStore import pushToHub
+    """stemIndex를 HuggingFace에 업로드."""
+    from dartlab.core.search.ngramIndex import pushStemIndex
 
-    return pushToHub(**kwargs)
+    return pushStemIndex(**kwargs)
 
 
 def pullIndex(**kwargs):
-    """HuggingFace에서 인덱스 다운로드."""
-    from dartlab.core.search.vectorStore import pullFromHub
+    """HuggingFace에서 stemIndex 다운로드."""
+    from dartlab.core.search.ngramIndex import pullStemIndex
 
-    return pullFromHub(**kwargs)
+    return pullStemIndex(**kwargs)
