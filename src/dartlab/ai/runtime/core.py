@@ -356,8 +356,14 @@ def _polarsTableToMarkdown(text: str) -> str:
                 continue
 
             if cells:
-                col_count = max(col_count, len(cells))
-                md_row = "| " + " | ".join(cells) + " |"
+                # "…" 또는 "..." 전용 셀 제거 (Polars 컬럼 생략 표시)
+                clean = [c for c in cells if c not in ("…", "...")]
+                if not clean:
+                    continue  # 생략 행 전체 스킵
+                # null → -
+                clean = [("-" if c == "null" else c) for c in clean]
+                col_count = max(col_count, len(clean))
+                md_row = "| " + " | ".join(clean) + " |"
                 result.append(md_row)
 
     return "\n".join(result)
@@ -505,7 +511,7 @@ dartlab 재무분석 플랫폼을 도구로 삼아 한국/미국 상장기업을
 사용자는 당신이 작성하는 코드를 보고 분석 방법을 배웁니다. 코드는 명확하고, 재사용 가능하게 작성하세요.
 
 ## 실행 환경
-코드 실행 시 아래가 이미 준비되어 있습니다. 다시 선언하지 마세요:
+코드 실행 시 아래가 이미 준비되어 있습니다. **import dartlab, import polars 금지. 아래를 다시 선언하지 마세요:**
 - `dartlab` — dartlab 패키지
 - `pl` — polars (DataFrame 처리)
 - `webSearch(query)` — 웹 검색 (Tavily/DuckDuckGo 자동 선택, 30분 캐시)
@@ -516,7 +522,15 @@ dartlab 재무분석 플랫폼을 도구로 삼아 한국/미국 상장기업을
 ## 도구 선택 기준
 - **개별 기업 분석**: analysis를 기본으로 사용하라. review는 요약이 필요할 때만.
   analysis()는 dict를 반환한다. **그냥 print(dict)하지 마라.** 핵심 수치를 뽑아서 마크다운 테이블로 정리해라.
-  예: `r = c.analysis("수익성"); hist = r["marginTrend"]["history"]` → period별 매출/마진을 테이블로.
+  예시:
+  ```python
+  r = c.analysis("수익성")
+  print("| 기간 | 매출(억) | 매출총이익률 | 영업이익률 | 순이익률 |")
+  print("| --- | --- | --- | --- | --- |")
+  for h in r["marginTrend"]["history"][:5]:
+      print(f'| {h["period"]} | {h["revenue"]/1e8:,.0f} | {h["grossMargin"]:.1f}% | {h["operatingMargin"]:.1f}% | {h["netMargin"]:.1f}% |')
+  ```
+  큰 숫자는 억 단위로 변환하라 (/ 1e8). null은 "-"로 표시.
   질문과 정확히 매칭되는 축을 호출하라. 다른 축을 조합하지 마라.
   c.IS/c.BS/c.CF 직접 파싱 금지.
 - **시장 비교/순위/필터**: scan. 횡단 질문에 사용.

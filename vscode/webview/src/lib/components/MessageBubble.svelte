@@ -338,7 +338,7 @@
         <!-- Claude Code style: hide code while writing, show spinner -->
         <div class="code-writing">
           <div class="tool-spinner-sm"></div>
-          <span>Python 코드 작성 중...</span>
+          <span>분석 준비 중...</span>
         </div>
       {:else}
         <div class="draft" class:draft-table={split.draftType === "table"}>

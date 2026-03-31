@@ -107,8 +107,15 @@ renderer.table = function (token: {
 }) {
   const id = `tbl-${++tableCounter}`;
 
+  // Filter out "..." columns (Polars truncation)
+  const skipCols = new Set<number>();
+  token.header.forEach((cell, i) => {
+    if (cell.text.trim() === "…" || cell.text.trim() === "...") skipCols.add(i);
+  });
+
   // Build header row
   const ths = token.header
+    .filter((_, i) => !skipCols.has(i))
     .map((cell) => `<th>${cell.text}</th>`)
     .join("");
   const headerHtml = `<tr>${ths}</tr>`;
@@ -117,11 +124,15 @@ renderer.table = function (token: {
   const rowsHtml = token.rows
     .map((row) => {
       const tds = row
-        .map((cell, i) => {
-          const plain = cell.text.replace(/<[^>]+>/g, "").trim();
+        .filter((_, i) => !skipCols.has(i))
+        .map((cell) => {
+          let val = cell.text.trim();
+          // null → -
+          if (val === "null" || val === "None") val = "-";
+          const plain = val.replace(/<[^>]+>/g, "").trim();
           const isNum = /^[+\-]?\d/.test(plain);
           const align = isNum ? ' style="text-align:right"' : "";
-          return `<td${align}>${formatNumber(cell.text)}</td>`;
+          return `<td${align}>${formatNumber(val)}</td>`;
         })
         .join("");
       return `<tr>${tds}</tr>`;
