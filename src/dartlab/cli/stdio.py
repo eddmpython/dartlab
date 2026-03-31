@@ -53,21 +53,28 @@ def _handleAsk(msg: dict[str, Any]) -> None:
         _emit({"id": reqId, "event": "error", "data": {"error": "No question provided"}})
         return
 
-    # Resolve company
+    # Resolve company -- from explicit field, or auto-detect from question
     c = None
-    if company:
-        try:
-            from dartlab import Company
+    company_hint = company or question
+    if company_hint:
+        # Try explicit company field first, then auto-detect from question
+        import re
 
-            c = Company(company)
-        except (ValueError, OSError):
+        code_match = re.search(r"\b(\d{6})\b", company_hint)
+        if code_match:
+            try:
+                from dartlab import Company
+                c = Company(code_match.group(1))
+            except (ValueError, OSError):
+                pass
+
+        if c is None and company:
+            # Try company name search (only if explicit company was given)
             try:
                 from dartlab.core.resolve import searchCompany
-
                 results = searchCompany(company)
                 if results:
                     from dartlab import Company as C2
-
                     c = C2(results[0].get("stockCode", results[0].get("corp_code", "")))
             except Exception:
                 pass

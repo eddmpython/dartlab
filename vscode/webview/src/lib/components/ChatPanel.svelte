@@ -158,7 +158,8 @@
     );
 
     // Send ask BEFORE updating UI (so message goes out immediately)
-    client.ask(text, text, history, modules);
+    // company는 보내지 않음 -- AI 엔진이 질문에서 종목을 자동 감지
+    client.ask(text, undefined, history, modules);
 
     // Now update UI
     followStream = true;
