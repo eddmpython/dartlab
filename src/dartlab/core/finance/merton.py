@@ -18,10 +18,18 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-try:
-    from scipy.stats import norm
-except ImportError:  # scipy는 optional — CI/경량 환경에서 없을 수 있음
-    norm = None  # type: ignore[assignment]
+_SQRT2 = math.sqrt(2.0)
+_INV_SQRT2PI = 1.0 / math.sqrt(2.0 * math.pi)
+
+
+def _norm_cdf(x: float) -> float:
+    """표준 정규 CDF — math.erf 기반 (scipy 불필요)."""
+    return 0.5 * (1.0 + math.erf(x / _SQRT2))
+
+
+def _norm_pdf(x: float) -> float:
+    """표준 정규 PDF."""
+    return _INV_SQRT2PI * math.exp(-0.5 * x * x)
 
 
 @dataclass(slots=True)
@@ -85,8 +93,7 @@ def solveMerton(
     Returns:
         MertonResult 또는 입력 부적절 시 None.
     """
-    if norm is None:
-        raise ImportError("scipy 필요: pip install scipy")
+    # norm.cdf/pdf → _norm_cdf/_norm_pdf (math.erf 기반, scipy 불필요)
 
     E = equityValue
     D = debtFaceValue
@@ -121,9 +128,9 @@ def solveMerton(
         d1 = (math.log(V / D) + (riskFreeRate + 0.5 * sigma_A**2) * maturity) / (sigma_A * sqrtT)
         d2 = d1 - sigma_A * sqrtT
 
-        Nd1 = norm.cdf(d1)
-        Nd2 = norm.cdf(d2)
-        nd1 = norm.pdf(d1)
+        Nd1 = _norm_cdf(d1)
+        Nd2 = _norm_cdf(d2)
+        nd1 = _norm_pdf(d1)
 
         # f1: E - V·N(d1) + D·e^(-rT)·N(d2) = 0
         f1 = E - V * Nd1 + D * expRT * Nd2
@@ -141,7 +148,7 @@ def solveMerton(
         # Actually compute full Jacobian
         J11 = -Nd1 - V * nd1 * dd1_dV + D * expRT * nd1 * dd2_dV  # nd1 = n(d1) ≈ n(d2) only at d1≈d2
         # Correct: n(d2) ≠ n(d1) in general
-        nd2 = norm.pdf(d2)
+        nd2 = _norm_pdf(d2)
         J11 = -Nd1 - V * nd1 * dd1_dV + D * expRT * nd2 * dd2_dV
 
         dd1_dsA = -(math.log(V / D) + (riskFreeRate - 0.5 * sigma_A**2) * maturity) / (sigma_A**2 * sqrtT)
@@ -183,7 +190,7 @@ def solveMerton(
             # 수렴
             d1_final = (math.log(V / D) + (riskFreeRate + 0.5 * sigma_A**2) * maturity) / (sigma_A * sqrtT)
             d2d = (math.log(V / D) + (riskFreeRate - 0.5 * sigma_A**2) * maturity) / (sigma_A * sqrtT)
-            pd_pct = norm.cdf(-d2d) * 100
+            pd_pct = _norm_cdf(-d2d) * 100
 
             return MertonResult(
                 assetValue=V,
@@ -202,7 +209,7 @@ def solveMerton(
     # 미수렴 — 마지막 값으로 D2D 계산
     if V > 0 and sigma_A > 0:
         d2d = (math.log(V / D) + (riskFreeRate - 0.5 * sigma_A**2) * maturity) / (sigma_A * sqrtT)
-        pd_pct = norm.cdf(-d2d) * 100
+        pd_pct = _norm_cdf(-d2d) * 100
     else:
         d2d = 0.0
         pd_pct = 100.0

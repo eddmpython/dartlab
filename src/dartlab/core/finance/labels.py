@@ -14,7 +14,7 @@ from pathlib import Path
 @lru_cache(maxsize=1)
 def _load_standard_accounts() -> dict[str, dict]:
     """DART mapperData/standardAccounts → {snakeId: {korName, code, level, sj}}."""
-    mapper_path = Path(__file__).resolve().parents[2] / "dart" / "finance" / "mapperData" / "accountMappings.json"
+    mapper_path = Path(__file__).resolve().parents[2] / "providers" / "dart" / "finance" / "mapperData" / "accountMappings.json"
     if not mapper_path.exists():
         return {}
     data = json.loads(mapper_path.read_text(encoding="utf-8"))
@@ -144,6 +144,29 @@ def get_account_labels(locale: str = "kr") -> dict[str, str]:
     if locale == "kr":
         return get_korean_labels()
     return get_english_labels()
+
+
+@lru_cache(maxsize=1)
+def get_reverse_korean_labels() -> dict[str, str]:
+    """한글 라벨 → snakeId 역조회. get_korean_labels()의 역방향.
+
+    동일 한글 라벨이 여러 snakeId에 매핑될 경우 첫 번째를 유지한다.
+    정규화된(소문자+공백제거) 키도 함께 등록하여 cascade 매칭에서 활용한다.
+    """
+    import re
+    import unicodedata
+
+    forward = get_korean_labels()
+    reverse: dict[str, str] = {}
+    for sid, kr in forward.items():
+        if kr not in reverse:
+            reverse[kr] = sid
+        # 정규화 키 (show.py normalizeItemKey와 동일 로직)
+        nk = unicodedata.normalize("NFKC", kr)
+        nk = re.sub(r"\s+", "", nk).lower()
+        if nk not in reverse:
+            reverse[nk] = sid
+    return reverse
 
 
 def resolve_label(snake_id: str, market: str = "KR") -> str:

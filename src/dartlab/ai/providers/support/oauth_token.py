@@ -61,9 +61,9 @@ def build_auth_url() -> tuple[str, str, str]:
 
 def exchange_code(code: str, verifier: str) -> dict[str, Any]:
     """Authorization code를 access_token으로 교환."""
-    import requests
+    import httpx
 
-    resp = requests.post(
+    resp = httpx.post(
         CHATGPT_TOKEN_URL,
         data={
             "grant_type": "authorization_code",
@@ -106,10 +106,10 @@ def refresh_access_token() -> dict[str, Any] | None:
     if not token_data or not token_data.get("refresh_token"):
         raise TokenRefreshError("no_token", "저장된 토큰이 없습니다. 재로그인이 필요합니다.")
 
-    import requests
+    import httpx
 
     try:
-        resp = requests.post(
+        resp = httpx.post(
             CHATGPT_TOKEN_URL,
             data={
                 "grant_type": "refresh_token",
@@ -119,9 +119,9 @@ def refresh_access_token() -> dict[str, Any] | None:
             headers={"Content-Type": "application/x-www-form-urlencoded"},
             timeout=15,
         )
-    except requests.ConnectionError:
+    except httpx.ConnectError:
         raise TokenRefreshError("network", "OpenAI 인증 서버에 연결할 수 없습니다.")
-    except requests.Timeout:
+    except httpx.TimeoutException:
         raise TokenRefreshError("network", "OpenAI 인증 서버 응답 시간 초과.")
 
     if resp.status_code == 200:

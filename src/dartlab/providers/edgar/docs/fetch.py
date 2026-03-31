@@ -14,10 +14,10 @@ import warnings
 from pathlib import Path
 from typing import Callable
 
+import httpx
 import polars as pl
-import requests
-from alive_progress import alive_bar
 from bs4 import BeautifulSoup, NavigableString, XMLParsedAsHTMLWarning
+from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TextColumn
 
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
@@ -53,6 +53,32 @@ FORTY_F_HEADINGS = {
     "CONSENT TO SERVICE OF PROCESS",
     "EXHIBIT INDEX",
 }
+
+def _make_progress(total: int, title: str, *, disable: bool = False):
+    """alive_bar 호환 (progress, bar) 쌍을 반환하는 헬퍼."""
+    p = Progress(
+        SpinnerColumn(),
+        TextColumn("[bold blue]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        disable=disable,
+    )
+    tid = p.add_task(title, total=total)
+
+    class _Bar:
+        @property
+        def title(self):
+            return ""
+
+        @title.setter
+        def title(self, v):
+            p.update(tid, description=v)
+
+        def __call__(self):
+            p.advance(tid)
+
+    return p, _Bar()
+
 
 ITEM_NAMES_10K = {
     "1": "Business",
@@ -179,14 +205,9 @@ def fetchEdgarDocs(
     rows: list[dict] = []
     skippedFilings: list[str] = []
     if showProgress:
-        with alive_bar(
-            len(filings),
-            title=f"EDGAR 원문 수집 | {ticker}",
-            bar="smooth",
-            spinner="dots_waves",
-            force_tty=True,
-        ) as bar:
-            _collectFilingRows(rows, filings, meta, ticker, bar, filingTimeout, skippedFilings)
+        _prog, _bar = _make_progress(len(filings), f"EDGAR 원문 수집 | {ticker}")
+        with _prog:
+            _collectFilingRows(rows, filings, meta, ticker, _bar, filingTimeout, skippedFilings)
     else:
         _collectFilingRows(rows, filings, meta, ticker, None, filingTimeout, skippedFilings)
 
@@ -310,7 +331,7 @@ def _collectFilingRows(
                     items = _split40FSections(filing, text)
                 else:
                     items = _splitItems(text, filing["formType"])
-        except (requests.RequestException, TimeoutError, ValueError, AttributeError, KeyError, TypeError):
+        except (httpx.HTTPError, TimeoutError, ValueError, AttributeError, KeyError, TypeError):
             skippedFilings.append(str(filing["accessionNumber"]))
             if bar is not None:
                 bar()
@@ -349,7 +370,7 @@ class _FilingTimeout:
 
     Unix: signal.SIGALRM 사용 (메인 스레드에서만 동작).
     Windows: threading.Timer 폴백 (메인 스레드 인터럽트 불가하므로
-    requests의 timeout 파라미터에 의존하되, 전체 작업 타임아웃은
+    httpx의 timeout 파라미터에 의존하되, 전체 작업 타임아웃은
     Timer로 _timedOut 플래그 설정).
     """
 
@@ -416,32 +437,27 @@ def downloadListedEdgarDocs(
     results: list[dict] = []
     successCount = 0
     failCount = 0
-    with alive_bar(
-        total,
-        title="EDGAR 배치 수집",
-        bar="smooth",
-        spinner="dots_waves",
-        force_tty=True,
-    ) as bar:
+    _prog, _bar = _make_progress(total, "EDGAR 배치 수집")
+    with _prog:
         for idx, ticker in enumerate(tickers, start=1):
-            bar.title = f"EDGAR 배치 | {ticker}"
+            _bar.title = f"EDGAR 배치 | {ticker}"
             outPath = docsDir / f"{ticker}.parquet"
             if skipExisting and outPath.exists():
                 results.append({"ticker": ticker, "status": "skipped", "reason": "exists"})
-                bar()
+                _bar()
                 continue
 
             try:
                 fetchEdgarDocs(ticker, outPath, sinceYear=sinceYear, showProgress=False)
                 results.append({"ticker": ticker, "status": "downloaded", "reason": None})
                 successCount += 1
-                bar.title = f"EDGAR 배치 | ✓ {ticker}"
-            except (OSError, ValueError, requests.RequestException) as e:
+                _bar.title = f"EDGAR 배치 | ✓ {ticker}"
+            except (OSError, ValueError, httpx.HTTPError) as e:
                 results.append({"ticker": ticker, "status": "failed", "reason": str(e)})
                 failCount += 1
-                bar.title = f"EDGAR 배치 | ✗ {ticker}"
+                _bar.title = f"EDGAR 배치 | ✗ {ticker}"
             finally:
-                bar()
+                _bar()
 
             if batchSize > 0 and idx < total and idx % batchSize == 0:
                 print()
@@ -523,7 +539,7 @@ def prepareEdgarCollectibleUniverse(
                 row["has_supported_regular_filing"] = bool(supportedForms)
                 row["last_checked"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
                 universeStatus = "supported" if supportedForms else "unsupported_regular_forms"
-            except requests.RequestException as exc:
+            except httpx.HTTPError as exc:
                 row["supported_regular_forms"] = None
                 row["has_supported_regular_filing"] = None
                 row["last_checked"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -684,13 +700,13 @@ def _downloadHtml(url: str, *, maxRetries: int = 3) -> str:
     for attempt in range(maxRetries):
         time.sleep(REQUEST_INTERVAL if attempt == 0 else REQUEST_INTERVAL * (2**attempt))
         try:
-            resp = requests.get(url, headers=HEADERS, timeout=60)
+            resp = httpx.get(url, headers=HEADERS, timeout=60, follow_redirects=True)
             resp.raise_for_status()
             return resp.text
-        except (requests.ConnectionError, requests.Timeout) as e:
+        except (httpx.ConnectError, httpx.TimeoutException) as e:
             lastErr = e
             continue
-    raise lastErr or requests.RequestException(f"failed after {maxRetries} retries: {url}")
+    raise lastErr or httpx.HTTPError(f"failed after {maxRetries} retries: {url}")
 
 
 def _submissionTextUrl(filing: dict) -> str:
@@ -710,7 +726,7 @@ def _filingIndexJsonUrl(filing: dict) -> str:
 
 def _listFilingHtmlDocuments(filing: dict) -> list[str]:
     time.sleep(REQUEST_INTERVAL)
-    resp = requests.get(_filingIndexJsonUrl(filing), headers=HEADERS, timeout=30)
+    resp = httpx.get(_filingIndexJsonUrl(filing), headers=HEADERS, timeout=30, follow_redirects=True)
     resp.raise_for_status()
     items = resp.json().get("directory", {}).get("item", [])
     names: list[str] = []
@@ -771,7 +787,7 @@ def _split40FSections(filing: dict, primaryText: str) -> list[dict]:
                 continue
             sections.append({"title": title, "content": text})
             seenTitles.add(title)
-    except requests.RequestException:
+    except httpx.HTTPError:
         pass
 
     if sections:

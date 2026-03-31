@@ -16,7 +16,9 @@
 | [ai.md](ai.md) | L3 | ai/ | 적극적 분석가, 5 provider |
 | [guide.md](guide.md) | 교차 | guide/ | 안내 데스크 + 교육 안내자, 4층위 |
 | [experiments.md](experiments.md) | — | experiments/ | 실험 규칙, 흡수 판단 |
+| [edgar.md](edgar.md) | L1 | providers/edgar/ | EDGAR 동기화 규칙, EXEMPT 관리, 데이터 소스 차이 |
 | [code.md](code.md) | — | 전체 | camelCase, 독스트링 9섹션, 릴리즈, Git |
+| [ui.md](ui.md) | — | ui/ + vscode/ | Svelte ↔ VSCode 패리티, 기능 대조표, 숨김 관리 |
 
 ## 레이어 아키텍처
 

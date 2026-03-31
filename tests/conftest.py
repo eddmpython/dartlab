@@ -51,6 +51,7 @@ SAMSUNG = "005930"
 HYUNDAI = "005380"
 SHINHAN = "055550"
 KAKAO = "035720"
+AAPL = "AAPL"
 
 # ── 메모리 안전 한계 (MB) ──
 # 이 값을 넘으면 pytest 자체를 안전 종료하여 OOM 방지
@@ -67,6 +68,7 @@ requires_finance = pytest.mark.skipif(not _has_data(SAMSUNG, "finance"), reason=
 requires_report = pytest.mark.skipif(not _has_data(SAMSUNG, "report"), reason="삼성전자 report 데이터 없음")
 requires_shinhan = pytest.mark.skipif(not _has_data(SHINHAN, "finance"), reason="신한지주 finance 데이터 없음")
 requires_kakao = pytest.mark.skipif(not _has_data(KAKAO, "finance"), reason="카카오 finance 데이터 없음")
+requires_edgar = pytest.mark.skipif(not _has_data(AAPL, "edgar"), reason="EDGAR finance 데이터 없음")
 
 
 _DATA_SKIP_REASONS = frozenset(
@@ -77,6 +79,7 @@ _DATA_SKIP_REASONS = frozenset(
         "삼성전자 report 데이터 없음",
         "신한지주 finance 데이터 없음",
         "카카오 finance 데이터 없음",
+        "EDGAR finance 데이터 없음",
         "EDGAR parquet 데이터 없음",
         "EDGAR tickers.parquet 없음",
         "삼성전자 데이터 없음",
@@ -155,6 +158,19 @@ def samsung():
     from dartlab import Company
 
     c = Company(SAMSUNG)
+    yield c
+    del c
+    gc.collect()
+
+
+@pytest.fixture(scope="module")
+def aapl():
+    """AAPL (Apple Inc.) EDGAR Company — 모듈 단위로 로드/해제."""
+    if not _has_data(AAPL, "edgar"):
+        pytest.skip("EDGAR finance 데이터 없음")
+    from dartlab import Company
+
+    c = Company(AAPL)
     yield c
     del c
     gc.collect()

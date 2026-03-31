@@ -1,0 +1,93 @@
+{
+  "date": "2026-04-01",
+  "total": 6631,
+  "momentum": {
+    "accuracy": 13.5,
+    "correct": 896
+  },
+  "ols": {
+    "accuracy": 47.2,
+    "correct": 3127,
+    "maeAvg": 61.09
+  },
+  "byDirection": {
+    "up": {
+      "count": 3331,
+      "momAcc": 16.8,
+      "olsAcc": 61.5,
+      "olsMae": 63.14
+    },
+    "down": {
+      "count": 3109,
+      "momAcc": 6.5,
+      "olsAcc": 34.4,
+      "olsMae": 61.53
+    },
+    "flat": {
+      "count": 191,
+      "momAcc": 71.7,
+      "olsAcc": 5.8,
+      "olsMae": 17.99
+    }
+  },
+  "byMetric": {
+    "revenue": {
+      "count": 3308,
+      "momAcc": 17.5,
+      "olsAcc": 50.3,
+      "olsMae": 27.26
+    },
+    "operatingIncome": {
+      "count": 3323,
+      "momAcc": 9.5,
+      "olsAcc": 44.0,
+      "olsMae": 94.76
+    }
+  },
+  "byLifecycle": {
+    "high_growth": {
+      "count": 570,
+      "momAcc": 54.2,
+      "olsAcc": 54.2,
+      "olsMae": 49.98
+    },
+    "mature": {
+      "count": 73,
+      "momAcc": 26.0,
+      "olsAcc": 35.6,
+      "olsMae": 16.84
+    },
+    "transition": {
+      "count": 1969,
+      "momAcc": 15.9,
+      "olsAcc": 47.0,
+      "olsMae": 51.72
+    },
+    "decline": {
+      "count": 439,
+      "momAcc": 37.4,
+      "olsAcc": 37.4,
+      "olsMae": 114.11
+    },
+    "unknown": {
+      "count": 3580,
+      "momAcc": 2.5,
+      "olsAcc": 47.5,
+      "olsMae": 62.4
+    }
+  },
+  "byYear": {
+    "2024": {
+      "count": 3260,
+      "momAcc": 24.8,
+      "olsAcc": 47.0,
+      "olsMae": 59.85
+    },
+    "2023": {
+      "count": 3371,
+      "momAcc": 2.6,
+      "olsAcc": 47.3,
+      "olsMae": 62.28
+    }
+  }
+}

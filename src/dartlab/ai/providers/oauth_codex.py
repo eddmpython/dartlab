@@ -17,7 +17,7 @@ import json
 import logging
 from typing import Generator
 
-import requests
+import httpx
 
 from dartlab.ai.providers.base import BaseProvider
 from dartlab.ai.providers.support import oauth_token as oauthToken
@@ -54,7 +54,7 @@ def _fetchRemoteModels(token: str) -> list[str] | None:
     if accountId:
         headers["chatgpt-account-id"] = accountId
     try:
-        resp = requests.get(url, headers=headers, timeout=10)
+        resp = httpx.get(url, headers=headers, timeout=10)
         if resp.status_code != 200:
             return None
         data = resp.json()
@@ -64,7 +64,7 @@ def _fetchRemoteModels(token: str) -> list[str] | None:
             if modelId:
                 models.append(modelId)
         return models if models else None
-    except (requests.RequestException, json.JSONDecodeError, ValueError):
+    except (httpx.HTTPError, json.JSONDecodeError, ValueError):
         return None
 
 
@@ -216,26 +216,29 @@ class OAuthCodexProvider(BaseProvider):
         url = f"{CODEX_API_BASE}{CODEX_RESPONSES_PATH}"
         headers = self._build_headers(token)
 
+        def _do_request(hdrs: dict[str, str]) -> httpx.Response:
+            if stream:
+                client = httpx.Client(timeout=90)
+                req = client.build_request("POST", url, headers=hdrs, json=body)
+                return client.send(req, stream=True)
+            return httpx.post(url, headers=hdrs, json=body, timeout=90)
+
         try:
-            resp = requests.post(
-                url,
-                headers=headers,
-                json=body,
-                stream=stream,
-                timeout=90,
-            )
-        except requests.ConnectionError:
+            resp = _do_request(headers)
+        except httpx.ConnectError:
             raise ChatGPTOAuthError(
                 "network",
                 "ChatGPT 서버에 연결할 수 없습니다. 네트워크를 확인하세요.",
             )
-        except requests.Timeout:
+        except httpx.TimeoutException:
             raise ChatGPTOAuthError(
                 "network",
                 "ChatGPT 서버 응답 시간이 초과되었습니다. 잠시 후 다시 시도하세요.",
             )
 
         if resp.status_code == 401:
+            if stream:
+                resp.close()
             try:
                 refreshed = oauthToken.refresh_access_token()
             except TokenRefreshError as e:
@@ -245,19 +248,13 @@ class OAuthCodexProvider(BaseProvider):
                 ) from e
             if refreshed:
                 headers = self._build_headers(refreshed["access_token"])
-                resp = requests.post(
-                    url,
-                    headers=headers,
-                    json=body,
-                    stream=stream,
-                    timeout=90,
-                )
+                resp = _do_request(headers)
 
         if resp.status_code != 200:
-            resp.encoding = "utf-8"
+            if stream:
+                resp.read()
             _raise_http_error(resp.status_code, resp.text[:500])
 
-        resp.encoding = "utf-8"
         return resp
 
     def _build_headers(self, token: str) -> dict[str, str]:
@@ -411,7 +408,7 @@ class OAuthCodexProvider(BaseProvider):
         yielded_final_message = False
         event_types_seen: set[str] = set()
 
-        for raw_line in resp.iter_lines(decode_unicode=True):
+        for raw_line in resp.iter_lines():
             if not raw_line:
                 continue
             line = raw_line if isinstance(raw_line, str) else raw_line.decode("utf-8")

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 from typing import Any
 
-import orjson
 from fastapi import APIRouter, HTTPException, Query, Request
 from sse_starlette.sse import EventSourceResponse
 
@@ -347,7 +347,7 @@ async def api_ai_profile_events(request: Request):
                 last_fingerprint = fingerprint
                 yield {
                     "event": "profile_changed",
-                    "data": orjson.dumps(payload).decode(),
+                    "data": json.dumps(payload, ensure_ascii=False),
                 }
             await asyncio.sleep(1.0)
 
@@ -622,23 +622,23 @@ async def api_ollama_pull(req: dict):
         raise HTTPException(400, "model name required")
 
     async def _stream_pull():
-        import requests
+        import httpx
 
         try:
-            with requests.post(
-                "http://localhost:11434/api/pull",
-                json={"model": model_name, "stream": True},
-                stream=True,
-                timeout=600,
-            ) as resp:
-                for line in resp.iter_lines():
-                    if line:
-                        yield {
-                            "event": "progress",
-                            "data": line.decode("utf-8"),
-                        }
+            with httpx.Client(timeout=600) as client:
+                with client.stream(
+                    "POST",
+                    "http://localhost:11434/api/pull",
+                    json={"model": model_name, "stream": True},
+                ) as resp:
+                    for line in resp.iter_lines():
+                        if line:
+                            yield {
+                                "event": "progress",
+                                "data": line,
+                            }
             yield {"event": "done", "data": "{}"}
         except _HANDLED_API_ERRORS as exc:
-            yield {"event": "error", "data": orjson.dumps({"error": _guideDetail(exc)}).decode()}
+            yield {"event": "error", "data": json.dumps({"error": _guideDetail(exc)}, ensure_ascii=False)}
 
     return EventSourceResponse(_stream_pull(), media_type="text/event-stream")

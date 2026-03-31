@@ -24,7 +24,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-import requests
+import httpx
 
 BASE_URL = "https://api.edinet-fsa.go.jp/api/v2"
 
@@ -71,7 +71,7 @@ class EdinetClient:
         self.minInterval = max(float(minInterval), 0.0)
         self.timeout = float(timeout)
         self.maxRetries = max(int(maxRetries), 1)
-        self._session = requests.Session()
+        self._session = httpx.Client(follow_redirects=True)
         self._lastRequestAt = 0.0
 
     def _wait(self) -> None:
@@ -86,7 +86,7 @@ class EdinetClient:
     def _headers(self) -> dict[str, str]:
         return {"Ocp-Apim-Subscription-Key": self.apiKey}
 
-    def _get(self, url: str, params: dict[str, Any] | None = None) -> requests.Response:
+    def _get(self, url: str, params: dict[str, Any] | None = None) -> httpx.Response:
         """공통 GET 요청 + 재시도."""
         lastErr: Exception | None = None
         for attempt in range(self.maxRetries):
@@ -101,13 +101,13 @@ class EdinetClient:
                 self._lastRequestAt = time.monotonic()
                 resp.raise_for_status()
                 return resp
-            except requests.HTTPError as exc:
+            except httpx.HTTPStatusError as exc:
                 lastErr = exc
-                status = exc.response.status_code if exc.response is not None else None
+                status = exc.response.status_code
                 if status not in (429, 500, 502, 503, 504) or attempt == self.maxRetries - 1:
                     raise EdinetApiError(f"EDINET API 요청 실패 ({status}): {url}") from exc
                 time.sleep(2**attempt)
-            except requests.RequestException as exc:
+            except httpx.HTTPError as exc:
                 lastErr = exc
                 if attempt == self.maxRetries - 1:
                     raise EdinetApiError(f"EDINET API 네트워크 오류: {url}") from exc

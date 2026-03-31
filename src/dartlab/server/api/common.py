@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re as _re
 from typing import Any
 
-import msgpack
-import orjson
 from fastapi import Request, Response
 
 from dartlab.core.ai import normalize_provider
@@ -94,7 +93,7 @@ def serialize_payload(payload: Any, *, max_rows: int = 200) -> dict[str, Any]:
 
 def compute_etag(data: Any) -> str:
     """데이터의 MD5 기반 ETag 해시를 계산한다."""
-    raw = orjson.dumps(data, option=orjson.OPT_SORT_KEYS)
+    raw = json.dumps(data, sort_keys=True, ensure_ascii=False).encode()
     return f'"{hashlib.md5(raw, usedforsecurity=False).hexdigest()[:16]}"'
 
 
@@ -106,7 +105,7 @@ def etag_response(
     max_age: int = 300,
     swr: int = 1800,
 ) -> dict[str, Any] | Response:
-    """ETag/Cache-Control 헤더를 설정하고 304 또는 msgpack 응답을 처리한다."""
+    """ETag/Cache-Control 헤더를 설정하고 304 응답을 처리한다."""
     etag = compute_etag(data)
     cache_control = f"private, max-age={max_age}, stale-while-revalidate={swr}"
 
@@ -116,14 +115,5 @@ def etag_response(
 
     response.headers["ETag"] = etag
     response.headers["Cache-Control"] = cache_control
-
-    accept = request.headers.get("accept", "")
-    if "application/msgpack" in accept:
-        packed = msgpack.packb(data, use_bin_type=True)
-        return Response(
-            content=packed,
-            media_type="application/msgpack",
-            headers={"ETag": etag, "Cache-Control": cache_control},
-        )
 
     return data

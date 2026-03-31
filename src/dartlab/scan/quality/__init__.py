@@ -118,6 +118,9 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
 
         accrualRatio = (ni - ocf) / abs(ta)
         cfToNi = ocf / ni if ni != 0 else None
+        # cfToNi 극단값 cap: ±20 초과는 의미 없음 (분모 극소)
+        if cfToNi is not None and abs(cfToNi) > 20:
+            cfToNi = None
 
         rows.append(
             {
@@ -180,6 +183,9 @@ def _scanPerFile() -> pl.DataFrame:
 
         accrualRatio = (ni - ocf) / abs(ta)
         cfToNi = ocf / ni if ni != 0 else None
+        # cfToNi 극단값 cap: ±20 초과는 의미 없음 (분모 극소)
+        if cfToNi is not None and abs(cfToNi) > 20:
+            cfToNi = None
 
         rows.append(
             {

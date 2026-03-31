@@ -585,7 +585,7 @@ def test_download_batch_classifies_failure_kinds():
     import importlib.util
     from pathlib import Path
 
-    import requests
+    import httpx
 
     root = Path(__file__).resolve().parents[1]
     scriptPath = root / "experiments" / "057_edgarSectionMap_fail" / "002_downloadFirst2000.py"
@@ -600,7 +600,7 @@ def test_download_batch_classifies_failure_kinds():
         module._classifyFailure("TLS CA certificate bundle", OSError("TLS CA certificate bundle")) == "legacy_env_error"
     )
     assert module._classifyFailure("timed out", TimeoutError("timed out")) == "fetch_timeout"
-    assert module._classifyFailure("network", requests.RequestException("network")) == "fetch_error"
+    assert module._classifyFailure("network", httpx.HTTPError("network")) == "fetch_error"
     assert module._classifyFailure("disk", OSError("disk")) == "storage_error"
 
 

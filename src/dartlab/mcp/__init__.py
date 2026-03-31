@@ -107,7 +107,12 @@ def _fmtDict(d: dict, depth: int = 0) -> str:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 _MCP_INSTRUCTIONS = """\
-dartlab은 한국 상장기업 전자공시(DART) 분석 도구입니다.
+dartlab은 한국 상장기업 전자공시(DART) 및 미국 SEC EDGAR 분석 도구입니다.
+
+## 지원 시장
+- **한국 (DART)**: 종목코드 6자리 (예: "005930") 또는 회사명 (예: "삼성전자")
+- **미국 (EDGAR)**: 티커 1-5자 (예: "AAPL") 또는 CIK 번호
+- searchCompany로 종목코드/티커를 검색할 수 있다.
 
 ## review vs analysis
 - companyReview: analysis 전체 축을 한번에 실행한 정리된 보고서. 사용자에게 보여줄 최종 보고서가 필요할 때만 사용.
@@ -134,7 +139,7 @@ dartlab은 한국 상장기업 전자공시(DART) 분석 도구입니다.
 
 ## 행동 규칙
 - 분석 요청 시 되묻지 말고 즉시 도구를 호출하라.
-- 현재 한국 DART 기업만 지원한다.
+- 한국 DART 기업과 미국 EDGAR 기업을 모두 지원한다.
 """
 
 

@@ -6,7 +6,7 @@ import logging
 import os
 import time
 
-import requests
+import httpx
 
 from .types import AuthenticationError, FredError, RateLimitError, SeriesNotFoundError
 
@@ -37,8 +37,7 @@ class FredClient:
                 "무료 발급: https://fred.stlouisfed.org/docs/api/api_key.html"
             )
         self._key_idx = 0
-        self._session = requests.Session()
-        self._session.headers["User-Agent"] = "dartlab-fred/1.0"
+        self._session = httpx.Client(headers={"User-Agent": "dartlab-fred/1.0"}, follow_redirects=True)
         # sliding window rate limiter
         self._timestamps: list[float] = []
 
@@ -60,7 +59,7 @@ class FredClient:
             self._rate_limit()
             try:
                 resp = self._session.get(url, params=params, timeout=30)
-            except requests.RequestException as exc:
+            except httpx.HTTPError as exc:
                 last_exc = exc
                 self._backoff(attempt)
                 continue

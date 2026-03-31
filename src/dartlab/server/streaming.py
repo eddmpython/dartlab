@@ -23,9 +23,8 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from dataclasses import dataclass
-
-import orjson
 
 from dartlab import Company
 
@@ -111,7 +110,7 @@ async def _build_kwargs(
 
 def _sse(event: str, data: dict) -> dict:
     """이벤트 → SSE dict 변환."""
-    return {"event": event, "data": orjson.dumps(data).decode()}
+    return {"event": event, "data": json.dumps(data, ensure_ascii=False)}
 
 
 async def _sync_gen_to_async(gen_fn, *args, **kwargs):

@@ -4,12 +4,21 @@ from __future__ import annotations
 
 
 def fmtAmt(value, unit: str = "won") -> str:
-    """금액을 조/억 단위로 포맷."""
+    """금액을 조/억 또는 B/M 단위로 포맷."""
     if value is None:
         return "-"
 
     absVal = abs(value)
     sign = "-" if value < 0 else ""
+
+    if unit == "usd":
+        if absVal >= 1_000_000_000:
+            return f"{sign}${absVal / 1_000_000_000:.1f}B"
+        if absVal >= 1_000_000:
+            return f"{sign}${absVal / 1_000_000:.0f}M"
+        if absVal >= 1_000:
+            return f"{sign}${absVal / 1_000:.0f}K"
+        return f"{sign}${absVal:,.0f}"
 
     if unit == "won":
         if absVal >= 1_0000_0000_0000:
@@ -31,7 +40,7 @@ def fmtAmt(value, unit: str = "won") -> str:
 
 
 def fmtAmtScale(value, scale: str) -> str:
-    """고정 스케일(조/억)로 금액 포맷."""
+    """고정 스케일(조/억/B/M)로 금액 포맷."""
     if value is None:
         return "-"
     sign = "-" if value < 0 else ""
@@ -40,6 +49,10 @@ def fmtAmtScale(value, scale: str) -> str:
         return f"{sign}{absVal:.1f}조"
     if scale == "억":
         return f"{sign}{absVal:.0f}억"
+    if scale == "B":
+        return f"{sign}${absVal:.1f}B"
+    if scale == "M":
+        return f"{sign}${absVal:.0f}M"
     return f"{sign}{absVal:,.0f}"
 
 
@@ -71,8 +84,18 @@ def unifyTableScale(
             if v is not None and isinstance(v, (int, float)):
                 maxVal = max(maxVal, abs(v))
 
-    # 원 → 조/억 변환 기준값 결정
-    if unit == "won":
+    # 원 → 조/억 또는 USD → B/M 변환 기준값 결정
+    if unit == "usd":
+        if maxVal >= 1_000_000_000:
+            scale = "B"
+            divisor = 1_000_000_000
+        elif maxVal >= 1_000_000:
+            scale = "M"
+            divisor = 1_000_000
+        else:
+            scale = ""
+            divisor = 1
+    elif unit == "won":
         if maxVal >= 1_0000_0000_0000:
             scale = "조"
             divisor = 1_0000_0000_0000

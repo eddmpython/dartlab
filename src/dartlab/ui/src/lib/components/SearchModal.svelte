@@ -27,7 +27,8 @@
 	const ACTIONS = [
 		{ id: "newChat", label: "새 대화", hint: "Ctrl+N", icon: Plus, group: "대화" },
 		{ id: "viewChat", label: "Chat 뷰로 전환", hint: "1", icon: MessageSquare, group: "탐색" },
-		{ id: "viewViewer", label: "Viewer 뷰로 전환", hint: "2", icon: BookOpen, group: "탐색" },
+		// TODO: Viewer — VSCode 확장에 동일 기능 추가 후 복원
+		// { id: "viewViewer", label: "Viewer 뷰로 전환", hint: "2", icon: BookOpen, group: "탐색" },
 		{ id: "openSettings", label: "설정 열기", hint: "", icon: Settings, group: "설정" },
 		{ id: "exportChat", label: "대화 내보내기", hint: "", icon: Download, group: "대화" },
 	];

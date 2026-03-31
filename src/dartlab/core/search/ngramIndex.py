@@ -22,9 +22,51 @@ from dartlab.core.dataConfig import DATA_RELEASES
 
 # ── 동의어 테이블 ──
 
-# content[:50] 인덱싱으로 동의어 하드코딩 불필요.
-# report_nm + section_title + content 앞 50자가 DART 공식 + 비공식 어휘를 모두 포함.
-_CONTENT_INDEX_CHARS = 50
+# report_nm + section_title만 인덱싱 — content 인덱싱은 노이즈 유발 (실험 014).
+_CONTENT_INDEX_CHARS = 0
+
+# L0 유형 라우팅 — 114개 정규화 유형에서만 적용하므로 노이즈 없음 (실험 015).
+_L0_INFORMAL = {
+    "사장": "대표이사 대표이사변경",
+    "경영진": "대표이사 대표이사변경",
+    "대표": "대표이사",
+    "빚": "사채",
+    "돈을 빌렸다": "사채 차입 자금",
+    "빌렸다": "사채 차입",
+    "망하다": "상장폐지 관리종목",
+    "망할": "상장폐지",
+    "파산": "회생 관리",
+    "팔았다": "처분 양도 매도",
+    "만들었다": "설립 출자",
+    "바뀌었다": "변경 선임 해임 대표이사변경",
+    "M&A": "합병 인수",
+    "IPO": "상장 공모",
+    "ESG": "지배구조",
+    "CB": "전환사채",
+    "CEO": "대표이사 대표이사변경",
+    "배당금": "배당 현금 현물배당결정",
+    "주가": "주가연계",
+    "공장": "사업장 시설",
+    "횡령": "제재 부정 소송",
+    "상장폐지": "상장폐지 관리종목 기타시장안내",
+    "워크아웃": "채권은행 관리절차",
+    # 줄임말
+    "유증": "유상증자 유상증자결정",
+    "사보": "사업보고서",
+    "대변": "대표이사변경",
+    "주담대": "담보 차입",
+    # 영어 약어
+    "BW": "신주인수권 신주인수권부사채",
+    "IR": "기업설명회",
+    "SPAC": "기업인수목적 합병",
+    # 비공식 표현
+    "부도": "관리종목 미지급 채권은행",
+    "사기": "횡령 제재 소송 부정",
+}
+
+# 유형 인덱스 캐시
+_typeIndex: dict | None = None
+_typeToDocIds: dict | None = None
 
 
 def _tokenize(text: str) -> list[str]:
@@ -282,6 +324,57 @@ def _loadIndex() -> tuple[dict, pl.DataFrame]:
     return _cachedIndex, _cachedMeta
 
 
+def _buildTypeIndex(meta: pl.DataFrame) -> tuple[dict, dict]:
+    """114개 정규화 유형의 ngram 인덱스 + docId 매핑 구축."""
+    global _typeIndex, _typeToDocIds
+
+    if _typeIndex is not None and _typeToDocIds is not None:
+        return _typeIndex, _typeToDocIds
+
+    import re
+
+    typeToDocIds: dict[str, list[int]] = defaultdict(list)
+    for docId, rn in enumerate(meta["report_nm"].to_list()):
+        norm = re.sub(r"^\[기재정정\]", "", rn).strip()
+        norm = re.sub(r"^\[첨부정정\]", "", norm).strip()
+        norm = re.sub(r"^\[첨부추가\]", "", norm).strip()
+        norm = re.sub(r"^\[발행조건확정\]", "", norm).strip()
+        norm = re.sub(r"\s*\(\d{4}\.\d{2}\)\s*$", "", norm).strip()
+        norm = re.sub(r"\s*\(.*?\)\s*$", "", norm).strip()
+        if norm:
+            typeToDocIds[norm].append(docId)
+
+    typeIndex = {nt: set(_tokenize(nt)) for nt in typeToDocIds}
+
+    _typeIndex = typeIndex
+    _typeToDocIds = typeToDocIds
+    return typeIndex, typeToDocIds
+
+
+def _matchTypes(query: str, typeIndex: dict, topK: int = 3) -> list[tuple[str, float]]:
+    """L0: 쿼리 → 가장 유사한 정규화 유형 매칭."""
+    expanded = query
+    for informal, formal in _L0_INFORMAL.items():
+        if informal in query:
+            expanded += " " + formal
+
+    qTokens = set(_tokenize(expanded))
+    if not qTokens:
+        return []
+
+    scores = []
+    for typeName, typeTokens in typeIndex.items():
+        inter = len(qTokens & typeTokens)
+        if inter == 0:
+            continue
+        union = len(qTokens | typeTokens)
+        score = (inter / union) * 0.5 + (inter / len(qTokens)) * 0.5
+        scores.append((typeName, score))
+
+    scores.sort(key=lambda x: x[1], reverse=True)
+    return scores[:topK]
+
+
 def searchNgram(
     query: str,
     *,
@@ -289,9 +382,11 @@ def searchNgram(
     stockCode: str | None = None,
     topK: int = 10,
 ) -> pl.DataFrame:
-    """stem ID 역인덱스 검색 — numpy bincount vectorized.
+    """계층적 검색 — L0 유형 라우팅 + BM25F bincount.
 
-    400만 문서에서 140ms. 모델 불필요, cold start 0ms.
+    L0: 114개 정규화 유형에서 쿼리 매칭 (비공식 변환 포함)
+    L1: BM25F bincount (전체 인덱스에서)
+    합산: L0 후보 문서에 가산점, L1 결과와 병합
     """
     index, meta = _loadIndex()
     if not index or meta.height == 0:
@@ -302,56 +397,37 @@ def searchNgram(
     docIds = index["docIds"]
     nDocs = meta.height
 
-    tokens = _tokenize(query)
-    if not tokens:
-        return pl.DataFrame()
-
-    queryStems = [stemToId[t] for t in tokens if t in stemToId]
-    if not queryStems:
-        return pl.DataFrame()
-
-    # numpy bincount — vectorized 집계
-    allMatched = []
-    for stemId in queryStems:
-        start = offsets[stemId]
-        end = offsets[stemId + 1]
-        if end > start:
-            allMatched.append(docIds[start:end])
-
-    if not allMatched:
-        return pl.DataFrame()
-
-    flat = np.concatenate(allMatched)
-    counts = np.bincount(flat, minlength=nDocs)
-
-    nTop = min(topK * 3, nDocs)
-    topIndices = np.argpartition(counts, -nTop)[-nTop:]
-    topIndices = topIndices[np.argsort(counts[topIndices])[::-1]]
-
     from dartlab.core.dataLoader import DART_VIEWER
 
+    # L0: 유형 매칭
+    typeIndex, typeToDocIds = _buildTypeIndex(meta)
+    matchedTypes = _matchTypes(query, typeIndex, topK=3)
+    l0DocIds = set()
+    for typeName, _ in matchedTypes:
+        l0DocIds.update(typeToDocIds[typeName])
+
+    # L0 먼저: 유형 매칭 문서를 먼저 삽입 (높은 점수)
     rows = []
     seen: set[str] = set()
-    for docId in topIndices:
-        matchCount = int(counts[docId])
-        if matchCount == 0:
-            break
-        if docId >= nDocs:
-            continue
-        row = meta.row(int(docId), named=True)
-        rcept = row["rcept_no"]
-        if rcept in seen:
-            continue
-        if corpCode and row.get("corp_code", "") != corpCode:
-            continue
-        if stockCode and row.get("stock_code", "") != stockCode:
-            continue
+    queryWords = [w for w in query.split() if len(w) >= 2]
 
-        seen.add(rcept)
-        rows.append(
-            {
-                "score": round(matchCount / len(queryStems), 4),
-                "rcept_no": rcept,
+    if matchedTypes:
+        for typeName, typeScore in matchedTypes:
+            for docId in typeToDocIds[typeName][:topK * 3]:
+                if docId >= nDocs:
+                    continue
+                row = meta.row(docId, named=True)
+                rcept = row["rcept_no"]
+                if rcept in seen:
+                    continue
+                if corpCode and row.get("corp_code", "") != corpCode:
+                    continue
+                if stockCode and row.get("stock_code", "") != stockCode:
+                    continue
+                seen.add(rcept)
+                rows.append({
+                    "score": round(10.0 * typeScore, 4),
+                    "rcept_no": rcept,
                 "corp_name": row.get("corp_name", ""),
                 "stock_code": row.get("stock_code", ""),
                 "rcept_dt": row.get("rcept_dt", ""),
@@ -359,16 +435,81 @@ def searchNgram(
                 "section_title": row.get("section_title", ""),
                 "text": row.get("text", ""),
                 "dartUrl": f"{DART_VIEWER}{rcept}",
-            }
-        )
+            })
 
-        if len(rows) >= topK:
-            break
+    # L1: BM25F bincount (전체 — L0에 없는 것만 추가)
+    tokens = _tokenize(query)
+    queryStems = [stemToId[t] for t in tokens if t in stemToId]
+
+    if queryStems:
+        allMatched = []
+        for stemId in queryStems:
+            start = offsets[stemId]
+            end = offsets[stemId + 1]
+            if end > start:
+                allMatched.append(docIds[start:end])
+
+        if allMatched:
+            flat = np.concatenate(allMatched)
+            counts = np.bincount(flat, minlength=nDocs)
+
+            nTop = min(topK * 5, nDocs)
+            topIndices = np.argpartition(counts, -nTop)[-nTop:]
+            topIndices = topIndices[np.argsort(counts[topIndices])[::-1]]
+
+            for docId in topIndices:
+                matchCount = int(counts[docId])
+                if matchCount == 0:
+                    break
+                if docId >= nDocs:
+                    continue
+                row = meta.row(int(docId), named=True)
+                rcept = row["rcept_no"]
+                if rcept in seen:
+                    continue
+                if corpCode and row.get("corp_code", "") != corpCode:
+                    continue
+                if stockCode and row.get("stock_code", "") != stockCode:
+                    continue
+
+                seen.add(rcept)
+
+                baseScore = matchCount / len(queryStems)
+                boost = 1.0
+                reportNm = row.get("report_nm", "")
+                sectionTitle = row.get("section_title", "")
+                for w in queryWords:
+                    if w in reportNm:
+                        boost += 5.0
+                    if w in sectionTitle:
+                        boost += 2.0
+
+                # L0 가산점: 유형 매칭된 문서면 강하게 부스트
+                if int(docId) in l0DocIds:
+                    boost += 10.0
+
+                rows.append({
+                    "score": round(baseScore * boost, 4),
+                    "rcept_no": rcept,
+                    "corp_name": row.get("corp_name", ""),
+                    "stock_code": row.get("stock_code", ""),
+                    "rcept_dt": row.get("rcept_dt", ""),
+                    "report_nm": reportNm,
+                    "section_title": sectionTitle,
+                    "text": row.get("text", ""),
+                    "dartUrl": f"{DART_VIEWER}{rcept}",
+                })
+
+                if len(rows) >= topK * 3:
+                    break
+
+    # (L0 문서는 이미 위에서 삽입됨)
 
     if not rows:
         return pl.DataFrame()
 
-    return pl.DataFrame(rows)
+    rows.sort(key=lambda x: x["score"], reverse=True)
+    return pl.DataFrame(rows[:topK])
 
 
 # ── 통계 ──

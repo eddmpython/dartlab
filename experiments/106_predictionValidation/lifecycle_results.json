@@ -1,0 +1,31 @@
+{
+  "date": "2026-04-01",
+  "trainPeriod": "2022→2023",
+  "testPeriod": "2023→2024",
+  "total": 870,
+  "accuracy": {
+    "mom": 50.5,
+    "antiMom": 42.4,
+    "trans": 52.0,
+    "metricTrans": 51.5,
+    "ols": 51.1,
+    "combined": 52.0
+  },
+  "transitionProb": {
+    "up": {
+      "up": 0.553,
+      "down": 0.415,
+      "flat": 0.032
+    },
+    "down": {
+      "up": 0.531,
+      "down": 0.44,
+      "flat": 0.029
+    },
+    "flat": {
+      "up": 0.529,
+      "down": 0.4,
+      "flat": 0.071
+    }
+  }
+}

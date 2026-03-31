@@ -3,7 +3,7 @@
 	3 Activity (Chat / Viewer / Dashboard) + 하단 설정/Room.
 -->
 <script>
-	import { MessageSquare, BookOpen, BarChart3, Settings, Users } from "lucide-svelte";
+	import { MessageSquare, Settings, Users } from "lucide-svelte";
 
 	let {
 		activeView = "chat",
@@ -23,8 +23,9 @@
 
 	const items = [
 		{ id: "chat", icon: MessageSquare, label: "Chat", key: "1" },
-		{ id: "viewer", icon: BookOpen, label: "Viewer", key: "2" },
-		{ id: "dashboard", icon: BarChart3, label: "Dashboard", key: "3" },
+		// TODO: Viewer/Dashboard — VSCode 확장에 동일 기능 추가 후 복원
+		// { id: "viewer", icon: BookOpen, label: "Viewer", key: "2" },
+		// { id: "dashboard", icon: BarChart3, label: "Dashboard", key: "3" },
 	];
 
 	let providerStatus = $derived(

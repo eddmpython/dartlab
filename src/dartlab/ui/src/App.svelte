@@ -427,8 +427,9 @@
 		const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable;
 		if (!isInput && !e.ctrlKey && !e.metaKey && !e.altKey) {
 			if (e.key === '1') { workspace.switchView('chat'); return; }
-			if (e.key === '2') { workspace.switchView('viewer'); return; }
-			if (e.key === '3') { workspace.switchView('dashboard'); return; }
+			// TODO: Viewer/Dashboard 단축키 — VSCode 확장에 동일 기능 추가 후 복원
+			// if (e.key === '2') { workspace.switchView('viewer'); return; }
+			// if (e.key === '3') { workspace.switchView('dashboard'); return; }
 		}
 	}
 </script>
@@ -796,8 +797,9 @@
 	onAction={(id) => {
 		if (id === "newChat") handleNewChat();
 		else if (id === "viewChat") workspace.switchView("chat");
-		else if (id === "viewViewer") workspace.switchView("viewer");
-		else if (id === "viewDashboard") workspace.switchView("dashboard");
+		// TODO: Viewer/Dashboard — VSCode 확장에 동일 기능 추가 후 복원
+		// else if (id === "viewViewer") workspace.switchView("viewer");
+		// else if (id === "viewDashboard") workspace.switchView("dashboard");
 		else if (id === "openSettings") ui.openSettings();
 		else if (id === "exportChat") handleExport();
 	}}

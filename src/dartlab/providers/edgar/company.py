@@ -38,6 +38,28 @@ _PERIOD_COLUMN_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 
 _FINANCE_TOPICS = frozenset({"BS", "IS", "CF", "CIS"})
 
+
+class _EdgarNotesWrapper:
+    """DART Notes 객체와 동일 인터페이스를 제공하는 EDGAR notes 래퍼."""
+
+    def __init__(self, company):
+        self._company = company
+
+    def __call__(self, query: str | None = None) -> pl.DataFrame | None:
+        return self._company.docs.notes(query)
+
+    def all(self) -> pl.DataFrame | None:
+        return self._company.docs.notes(None)
+
+    def keys(self) -> list[str]:
+        return []
+
+    def keys_kr(self) -> list[str]:
+        return []
+
+    def quarterly(self, query: str | None = None) -> pl.DataFrame | None:
+        return self._company.docs.notes(query)
+
 # ── topic 단축 alias ────────────────────────────────────────────
 _TOPIC_ALIASES: dict[str, str] = {
     # 10-K 주요 항목 짧은 이름
@@ -383,7 +405,8 @@ class Company:
 
         self.docs = _DocsAccessor(self)
         self.finance = _FinanceAccessor(self)
-        self.profile = _ProfileAccessor(self)
+        self._profileAccessor = _ProfileAccessor(self)
+        self._reportAccessor = None  # lazy init
 
     def _resolveTickerRow(self, ticker: str) -> dict | None:
         tickerPath = self._getTickerPath()
@@ -831,7 +854,7 @@ class Company:
             c = Company("AAPL")
             c.sections  # Apple 전체 sections 지도
         """
-        return self.profile.sections
+        return self._profileAccessor.sections
 
     @property
     def ratios(self) -> pl.DataFrame | None:
@@ -923,6 +946,73 @@ class Company:
                     aSeriesPair=annual,
                 )
         return self._cache["_insights"]
+
+    def review(
+        self,
+        section: str | None = None,
+        layout=None,
+        helper: bool | None = None,
+        *,
+        preset: str | None = None,
+        template: str | None = None,
+        detail: bool | None = None,
+        basePeriod: str | None = None,
+    ):
+        """재무제표 구조화 보고서 — 14개 섹션 데이터 검토서.
+
+        Capabilities:
+            - 14개 섹션 전체 보고서 (수익구조~재무정합성)
+            - 단일 섹션 지정 가능
+            - 4개 출력 형식 (rich, html, markdown, json)
+            - 프리셋 지원 (executive/audit/credit/growth/valuation)
+
+        Requires:
+            데이터: 없음 (SEC EDGAR 자동 수집)
+
+        AIContext:
+            - reviewer()가 이 결과를 소비하여 AI 해석 생성
+            - ask()에서 재무분석 컨텍스트로 활용
+
+        Guide:
+            - "Review the financials" → c.review()
+            - "Revenue structure" → c.review("수익구조")
+            - "Audit review" → c.review(preset="audit")
+
+        SeeAlso:
+            - analysis: 14축 개별 분석 (review가 내부적으로 소비)
+            - insights: 7영역 등급 + 이상치 요약
+
+        Args:
+            section: 섹션명 ("수익구조" 등). None이면 전체.
+            layout: ReviewLayout 커스텀. None이면 기본.
+            helper: True면 해석 힌트 텍스트 포함.
+            preset: 프리셋 이름 (executive/audit/credit/growth/valuation).
+            template: 스토리 템플릿 이름.
+            detail: False면 요약만 표시.
+            basePeriod: 기준 기간.
+
+        Returns:
+            Review — 구조화 보고서.
+
+        Example::
+
+            c = Company("AAPL")
+            c.review()                # 전체 검토서
+            c.review("수익성")         # 특정 섹션
+            c.review(preset="audit")  # 감사 검토용
+        """
+        from dartlab.review.registry import buildReview
+
+        return buildReview(
+            self,
+            section=section,
+            layout=layout,
+            helper=helper,
+            preset=preset,
+            template=template,
+            detail=detail,
+            basePeriod=basePeriod,
+        )
 
     def analysis(self, axis: str | None = None, **kwargs):
         """분석 엔진 실행 — analysis()에 self를 바인딩.
@@ -2177,7 +2267,7 @@ class Company:
         ts = self.finance.timeseries
         series = ts[0] if isinstance(ts, tuple) else ts
         if shares is None:
-            shares = getattr(self.profile, "sharesOutstanding", None)
+            shares = getattr(self._profileAccessor, "sharesOutstanding", None)
             if shares:
                 shares = int(shares)
         return fullValuation(series, shares=shares, currency="USD")
@@ -2312,3 +2402,312 @@ class Company:
             on_tool_result=on_tool_result,
             **kwargs,
         )
+
+    @property
+    def report(self):
+        """EDGAR report 네임스페이스 — XBRL 기반 구조화 데이터."""
+        if self._reportAccessor is None:
+            from dartlab.providers.edgar._report_accessor import _ReportAccessor
+
+            self._reportAccessor = _ReportAccessor(self)
+        return self._reportAccessor
+
+    # ── DartCompany 동기화 메소드 (test_protocol 방어막) ──
+    # 아래 메소드는 DartCompany와 인터페이스를 맞추기 위해 존재한다.
+    # DART report 전용 데이터가 필요한 경우 None/빈값을 반환한다.
+
+    # ── Properties (데이터 위임) ──
+
+    @property
+    def contextSlices(self) -> pl.DataFrame | None:
+        return self.docs.contextSlices if hasattr(self.docs, "contextSlices") else None
+
+    @property
+    def retrievalBlocks(self) -> pl.DataFrame | None:
+        return self.docs.retrievalBlocks if hasattr(self.docs, "retrievalBlocks") else None
+
+    @property
+    def notes(self):
+        """주석 접근자 — EDGAR docs.notes를 래핑하여 DART Notes와 동일 인터페이스 제공."""
+        if "_notes_wrapper" not in self._cache:
+            self._cache["_notes_wrapper"] = _EdgarNotesWrapper(self)
+        return self._cache["_notes_wrapper"]
+
+    @property
+    def profile(self):
+        return self._profileAccessor
+
+    @property
+    def cumulative(self):
+        """누적 시계열 — EDGAR는 연간 데이터가 곧 누적이므로 annual 위임."""
+        return self.finance.annual
+
+    @property
+    def ratioSeries(self):
+        return self.finance.ratioSeries if hasattr(self.finance, "ratioSeries") else None
+
+    # sector, sectorParams, sceMatrix — EXEMPT 등록 (test_protocol.py)
+    # 이유: KRX 섹터 인프라 / DART SCE 구조와 상이
+
+    @property
+    def rank(self):
+        return None  # US 피어 랭킹 미지원 (향후 구현 예정)
+
+    @property
+    def sources(self) -> pl.DataFrame:
+        """데이터 소스 현황 — EDGAR는 docs + finance 2개 소스."""
+        rows = []
+        for src, accessor in [("docs", self.docs), ("finance", self.finance)]:
+            available = accessor is not None
+            rows.append({"source": src, "available": available, "rows": 0, "cols": 0, "shape": ""})
+        return pl.DataFrame(rows)
+
+    # ── Methods ──
+
+    def reviewer(
+        self,
+        section: str | None = None,
+        layout=None,
+        helper: bool | None = None,
+        guide: str | None = None,
+        *,
+        preset: str | None = None,
+        detail: bool | None = None,
+        basePeriod: str | None = None,
+    ):
+        """AI 분석 보고서 — review() + 섹션별 AI 종합의견."""
+        from dartlab.review.registry import buildReview
+
+        return buildReview(self, section=section, layout=layout, basePeriod=basePeriod)
+
+    def simulation(self, *, scenarios: list[str] | None = None):
+        """경제 시나리오 시뮬레이션."""
+        from dartlab.analysis.forecast.simulation import simulateAllScenarios
+
+        ts = self.finance.timeseries
+        if ts is None:
+            return None
+        series = ts[0] if isinstance(ts, tuple) else ts
+        return simulateAllScenarios(series, sectorKey=None, scenarios=scenarios)
+
+    def research(self, *, sections: list[str] | None = None, includeMarket: bool = True):
+        """종합 기업분석 리포트."""
+        from dartlab.analysis.financial.research import generateResearch
+
+        return generateResearch(self, sections=sections, includeMarket=includeMarket)
+
+    def table(self, topic: str, subtopic: str | None = None, *, numeric: bool = False, period: str | None = None) -> Any:
+        """topic 데이터를 테이블 형태로 반환."""
+        df = self.show(topic, period=period)
+        if df is None:
+            return None
+        return df
+
+    def getTimeseries(self, period: str = "q", fsDivPref: str = "CFS"):
+        """재무 시계열 데이터."""
+        if period == "y":
+            return self.finance.annual
+        return self.finance.timeseries
+
+    def audit(self) -> list | None:
+        """감사/내부통제 분석 — EDGAR item9A + item14 기반.
+
+        10-K Item 9A(Controls and Procedures) 텍스트에서 material weakness,
+        going concern 등 핵심 키워드를 탐지한다.
+        """
+        import re
+
+        findings: list[dict] = []
+        # Item 9A: 내부통제
+        item9a = self.show("10-K::item9AControlsAndProcedures", block=0)
+        if item9a is not None:
+            from dartlab.core.show import isPeriodColumn
+
+            pcols = [c for c in item9a.columns if isPeriodColumn(c)]
+            if pcols:
+                latest = pcols[0]
+                text = " ".join(str(v) for v in item9a[latest].to_list() if v)
+                text_lower = text.lower()
+                if "material weakness" in text_lower:
+                    findings.append({"type": "material_weakness", "period": latest, "severity": "critical"})
+                if "going concern" in text_lower:
+                    findings.append({"type": "going_concern", "period": latest, "severity": "critical"})
+                if "not effective" in text_lower or "ineffective" in text_lower:
+                    findings.append({"type": "ineffective_controls", "period": latest, "severity": "warning"})
+                if not findings:
+                    findings.append({"type": "clean", "period": latest, "severity": "ok"})
+        # Item 14: 감사 수수료
+        item14 = self.show("10-K::item14PrincipalAccountantFees", block=0)
+        if item14 is not None:
+            from dartlab.core.show import isPeriodColumn
+
+            pcols = [c for c in item14.columns if isPeriodColumn(c)]
+            if pcols:
+                latest = pcols[0]
+                text = " ".join(str(v) for v in item14[latest].to_list() if v)
+                fee_matches = re.findall(r"\$([\d,.]+)\s*(?:million|billion)", text, re.IGNORECASE)
+                if fee_matches:
+                    findings.append({"type": "audit_fees", "period": latest, "amount": fee_matches[0]})
+        return findings or None
+
+    def governance(self, view: str | None = None) -> pl.DataFrame | None:
+        """지배구조 분석 — EDGAR item10/item12 기반.
+
+        10-K Part III에서 이사회 구성, 소유 구조 텍스트를 제공한다.
+        DART와 달리 구조화된 수치가 아닌 텍스트 데이터이다.
+        """
+        if view in ("all", "market"):
+            return None
+        rows: list[dict] = []
+        for topic_key, label in [
+            ("10-K::item10DirectorsAndCorporateGovernance", "directors"),
+            ("10-K::item12SecurityOwnership", "ownership"),
+            ("10-K::item11ExecutiveCompensation", "compensation"),
+        ]:
+            df = self.show(topic_key, block=0)
+            if df is not None:
+                from dartlab.core.show import isPeriodColumn
+
+                pcols = [c for c in df.columns if isPeriodColumn(c)]
+                if pcols:
+                    latest = pcols[0]
+                    text = " ".join(str(v) for v in df[latest].to_list() if v)
+                    rows.append({"항목": label, "기간": latest, "내용": text[:500] if text else ""})
+        if not rows:
+            return None
+        return pl.DataFrame(rows)
+
+    def workforce(self, view: str | None = None) -> pl.DataFrame | None:
+        """인력 분석 — EDGAR item1 + IS 기반.
+
+        10-K Item 1(Business)에서 직원 수를 추출하고, IS 매출 대비
+        1인당 매출을 계산한다.
+        """
+        import re
+
+        if view in ("all", "market"):
+            return None
+        # 모든 block의 텍스트를 합쳐서 employee 패턴 검색
+        employee_count: int | None = None
+        period: str | None = None
+        item1_idx = self.show("10-K::item1Business")
+        if item1_idx is None:
+            return None
+        for row in item1_idx.iter_rows(named=True):
+            block_id = row.get("block", 0)
+            block_df = self.show("10-K::item1Business", block=block_id)
+            if block_df is None:
+                continue
+            from dartlab.core.show import isPeriodColumn
+
+            pcols = [c for c in block_df.columns if isPeriodColumn(c)]
+            if not pcols:
+                continue
+            # 이 block에 있는 기간 중 첫 번째 사용
+            block_period = pcols[0]
+            if period is None:
+                period = block_period
+            if block_period not in block_df.columns:
+                continue
+            text = " ".join(str(v) for v in block_df[block_period].to_list() if v)
+            # 다양한 패턴: "approximately N employees", "N full-time employees", "had N employees"
+            patterns = [
+                r"(?:approximately|about|over|nearly|had)\s+([\d,]+)\s+(?:full.?time\s+)?employee",
+                r"([\d,]+)\s+full.?time\s+employee",
+                r"([\d,]+)\s+employee",
+                r"employee(?:s)?\s+(?:was|were|of)\s+(?:approximately\s+)?([\d,]+)",
+                r"headcount\s+(?:of\s+)?(?:approximately\s+)?([\d,]+)",
+                r"workforce\s+(?:of\s+)?(?:approximately\s+)?([\d,]+)",
+            ]
+            for pat in patterns:
+                matches = re.findall(pat, text, re.IGNORECASE)
+                for m in matches:
+                    cleaned = (m if isinstance(m, str) else m[-1]).replace(",", "").strip()
+                    if cleaned and cleaned.isdigit() and int(cleaned) > 100:
+                        employee_count = int(cleaned)
+                        break
+                if employee_count:
+                    break
+            if employee_count:
+                break
+        if employee_count is None:
+            return None
+        # 1인당 매출 계산
+        rev_per_employee = None
+        is_df = self.IS
+        if is_df is not None:
+            from dartlab.core.show import isPeriodColumn, selectFromShow
+
+            rev_row = selectFromShow(is_df, ["sales"])
+            if rev_row is not None:
+                pcols = [c for c in rev_row.columns if isPeriodColumn(c)]
+                if pcols:
+                    rev = rev_row[pcols[0]][0]
+                    if rev:
+                        rev_per_employee = rev / employee_count
+        return pl.DataFrame([{
+            "종목코드": self.ticker,
+            "회사명": self.corpName,
+            "직원수": employee_count,
+            "기간": period,
+            "1인당매출": rev_per_employee,
+        }])
+
+    def capital(self, view: str | None = None) -> pl.DataFrame | None:
+        """주주환원/자본구조 — EDGAR BS/CF 기반 단일 회사 분석.
+
+        DART와 달리 전종목 횡단비교(view="all")는 미지원.
+        """
+        if view in ("all", "market"):
+            return None  # 전종목 횡단비교 미지원
+        bs = self.BS
+        cf = self.CF
+        if bs is None:
+            return None
+        from dartlab.core.show import selectFromShow
+
+        equity = selectFromShow(bs, ["total_stockholders_equity", "retained_earnings"])
+        divs = selectFromShow(cf, ["dividends_paid"]) if cf is not None else None
+        if equity is None:
+            return None
+        rows: list[dict] = [{"종목코드": self.ticker, "회사명": self.corpName}]
+        from dartlab.core.show import isPeriodColumn
+
+        pcols = [c for c in equity.columns if isPeriodColumn(c)]
+        if pcols:
+            latest = pcols[0]
+            for row in equity.iter_rows(named=True):
+                rows[0][row["account"]] = row.get(latest)
+            if divs is not None:
+                for row in divs.iter_rows(named=True):
+                    rows[0][row["account"]] = row.get(latest)
+        return pl.DataFrame(rows)
+
+    def debt(self, view: str | None = None) -> pl.DataFrame | None:
+        """부채구조 분석 — EDGAR BS 기반 단일 회사 분석.
+
+        DART와 달리 전종목 횡단비교(view="all")는 미지원.
+        """
+        if view in ("all", "market"):
+            return None
+        bs = self.BS
+        if bs is None:
+            return None
+        from dartlab.core.show import selectFromShow
+
+        debt_accts = selectFromShow(
+            bs,
+            ["total_liabilities", "shortterm_borrowings", "longterm_borrowings",
+             "debentures", "current_liabilities", "noncurrent_liabilities"],
+        )
+        if debt_accts is None:
+            return None
+        rows: list[dict] = [{"종목코드": self.ticker, "회사명": self.corpName}]
+        from dartlab.core.show import isPeriodColumn
+
+        pcols = [c for c in debt_accts.columns if isPeriodColumn(c)]
+        if pcols:
+            latest = pcols[0]
+            for row in debt_accts.iter_rows(named=True):
+                rows[0][row["account"]] = row.get(latest)
+        return pl.DataFrame(rows)

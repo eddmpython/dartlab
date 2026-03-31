@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-import orjson
+import json
+
 from fastapi import HTTPException
 
 from dartlab import Company
@@ -53,7 +54,7 @@ async def stream_topic_summary(
     except AnalysisStreamError as e:
         yield {
             "event": "error",
-            "data": orjson.dumps({"error": e.message, "action": e.action, "detail": e.detail}).decode(),
+            "data": json.dumps({"error": e.message, "action": e.action, "detail": e.detail}, ensure_ascii=False),
         }
 
     yield {"event": "done", "data": "{}"}

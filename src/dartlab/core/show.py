@@ -48,18 +48,85 @@ def normalizeItemKey(name: str) -> str:
     return name.lower()
 
 
+_HAS_KOREAN_RE = re.compile(r"[\uac00-\ud7a3]")
+
+
+def _bridgeKoreanSnakeId(
+    df: pl.DataFrame,
+    mc: str,
+    indList: list[str],
+) -> pl.DataFrame | None:
+    """한국어 쿼리 ↔ snakeId 컬럼 간 자동 번역 매칭.
+
+    - 쿼리가 한국어이고 컬럼 값이 snakeId(영문) → 한국어→snakeId 역조회
+    - 쿼리가 snakeId이고 컬럼 값이 한국어 → snakeId→한국어 정조회
+    - 혼합 쿼리(한국어+snakeId)도 지원: 각 항목을 개별 번역
+    """
+    from dartlab.core.finance.labels import get_korean_labels, get_reverse_korean_labels
+
+    hasKoreanQuery = any(_HAS_KOREAN_RE.search(q) for q in indList)
+    hasNonKoreanQuery = any(not _HAS_KOREAN_RE.search(q) for q in indList)
+    sample = next((v for v in df[mc].to_list() if v is not None), None)
+    colIsKorean = bool(sample and _HAS_KOREAN_RE.search(str(sample)))
+
+    if hasKoreanQuery and not colIsKorean:
+        # 한국어 쿼리 → snakeId로 번역 + 이미 snakeId인 항목은 그대로 유지
+        rev = get_reverse_korean_labels()
+        translated: list[str] = []
+        for q in indList:
+            if _HAS_KOREAN_RE.search(q):
+                sid = rev.get(q) or rev.get(normalizeItemKey(q))
+                if sid:
+                    translated.append(sid)
+            else:
+                translated.append(q)  # 이미 snakeId
+        if translated:
+            hits = df.filter(pl.col(mc).is_in(translated))
+            if not hits.is_empty():
+                return hits
+
+    elif hasNonKoreanQuery and colIsKorean:
+        # snakeId 쿼리 → 한국어로 번역 + 이미 한국어인 항목은 그대로 유지
+        fwd = get_korean_labels()
+        translated = []
+        for q in indList:
+            if not _HAS_KOREAN_RE.search(q):
+                kr = fwd.get(q)
+                if kr:
+                    translated.append(kr)
+            else:
+                translated.append(q)  # 이미 한국어
+        if translated:
+            hits = df.filter(pl.col(mc).is_in(translated))
+            if not hits.is_empty():
+                return hits
+
+    return None
+
+
 def _cascadeFilterRows(
     df: pl.DataFrame,
     mc: str,
     indList: list[str],
 ) -> pl.DataFrame | None:
-    """4단계 cascade 매칭: exact → normalized → contains → fuzzy."""
+    """5단계 cascade 매칭: exact → korean↔snakeId bridge → normalized → contains → fuzzy."""
     # 1) exact match
     hits = df.filter(pl.col(mc).is_in(indList))
     if not hits.is_empty():
+        if hits.height >= len(indList):
+            return hits
+        # 일부만 exact 매칭 — bridge로 나머지 보충 시도
+        bridged = _bridgeKoreanSnakeId(df, mc, indList)
+        if bridged is not None and bridged.height > hits.height:
+            return bridged
         return hits
 
-    # 2) normalized exact
+    # 2) korean↔snakeId bridge — 한국어 쿼리×snakeId 컬럼 또는 snakeId 쿼리×한국어 컬럼
+    bridged = _bridgeKoreanSnakeId(df, mc, indList)
+    if bridged is not None:
+        return bridged
+
+    # 3) normalized exact
     colVals = df[mc].to_list()
     normMap: dict[str, list[int]] = {}
     for i, v in enumerate(colVals):
@@ -74,7 +141,7 @@ def _cascadeFilterRows(
     if matchedIdx:
         return df[sorted(set(matchedIdx))]
 
-    # 3) contains (substring 양방향)
+    # 4) contains (substring 양방향)
     matchedIdx = []
     for nq in normQueries:
         for nk, idxList in normMap.items():
@@ -83,7 +150,7 @@ def _cascadeFilterRows(
     if matchedIdx:
         return df[sorted(set(matchedIdx))]
 
-    # 4) fuzzy
+    # 5) fuzzy
     import difflib
 
     allNormKeys = list(normMap.keys())
@@ -112,6 +179,10 @@ def selectFromShow(
     # 행 필터 — indList (cascade 매칭)
     if indList is not None:
         metaCols = [c for c in result.columns if not isPeriodColumn(c)]
+        # 한국어 쿼리는 한국어 컬럼(계정명)에서 먼저 매칭 — snakeId bridge 오류 방지
+        if "계정명" in metaCols:
+            metaCols.remove("계정명")
+            metaCols.insert(0, "계정명")
         matched = None
         for mc in metaCols:
             matched = _cascadeFilterRows(result, mc, indList)

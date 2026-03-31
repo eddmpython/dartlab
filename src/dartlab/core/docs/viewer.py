@@ -51,7 +51,10 @@ def _autoComparePeriod(availablePeriods: list[str], basePeriod: str) -> str | No
 
 def _charDiffOps(fromText: str, toText: str) -> list[dict[str, str]]:
     """diff-match-patch 기반 글자 단위 diff → list[{type, text}]."""
-    import diff_match_patch as dmpModule
+    try:
+        import diff_match_patch as dmpModule
+    except ImportError:
+        return []
 
     dmp = dmpModule.diff_match_patch()
     dmp.Diff_Timeout = 0.05

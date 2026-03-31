@@ -175,7 +175,11 @@ def scan_pay_ratio() -> dict[str, float]:
     result: dict[str, float] = {}
     for code in pay_map:
         if code in sal_map and sal_map[code] > 0:
-            result[code] = pay_map[code] / sal_map[code]
+            ratio = pay_map[code] / sal_map[code]
+            # pay_ratio 극단값 cap: 500배 초과는 데이터 오류
+            if ratio > 500:
+                continue
+            result[code] = ratio
     return result
 
 

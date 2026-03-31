@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 import polars as pl
 
@@ -34,11 +35,11 @@ def scan_macroBeta(
         - gdpBeta, rateBeta, fxBeta
         - rSquared, nObs, confidence
     """
-    from dartlab.scan.builder import buildFinance
+    from dartlab.scan._helpers import _ensureScanData
 
-    # 전종목 매출 시계열 로드
+    # 전종목 매출 시계열 로드 (프리빌드 finance.parquet에서 추출)
     try:
-        revDf = buildFinance("revenue")
+        revDf = _loadRevenueSeries(_ensureScanData())
     except Exception as exc:
         log.warning("매출 시계열 로드 실패: %s", exc)
         return _emptyDf()
@@ -112,6 +113,63 @@ def scan_macroBeta(
 
     result = pl.DataFrame(rows).sort("gdpBeta", descending=True)
     return result
+
+
+def _loadRevenueSeries(scanDir: Path) -> pl.DataFrame | None:
+    """프리빌드 finance.parquet에서 종목별 매출 시계열 추출.
+
+    Returns:
+        DataFrame with columns: stockCode, companyName, sector, <yearA>, ...
+    """
+    from dartlab.scan._helpers import parse_num
+
+    scanPath = scanDir / "finance.parquet"
+    if not scanPath.exists():
+        return None
+
+    schema = pl.scan_parquet(str(scanPath)).collect_schema().names()
+    scCol = "stockCode" if "stockCode" in schema else "stock_code"
+
+    REVENUE_IDS = {"Revenue", "Revenues", "revenue", "revenues",
+                   "ifrs-full_Revenue", "dart_Revenue",
+                   "RevenueFromContractsWithCustomers"}
+    REVENUE_NMS = {"매출액", "수익(매출액)", "영업수익", "매출", "순영업수익"}
+
+    target = (
+        pl.scan_parquet(str(scanPath))
+        .filter(
+            pl.col("sj_div").is_in(["IS", "CIS"])
+            & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
+            & (pl.col("account_id").is_in(list(REVENUE_IDS)) | pl.col("account_nm").is_in(list(REVENUE_NMS)))
+        )
+        .collect()
+    )
+    if target.is_empty():
+        return None
+
+    # 연결 우선
+    cfs = target.filter(pl.col("fs_nm").str.contains("연결"))
+    if not cfs.is_empty():
+        target = cfs
+
+    # 종목-연도별 매출 pivot
+    rows: dict[str, dict] = {}
+    for row in target.iter_rows(named=True):
+        code = row.get(scCol, "")
+        year = row.get("bsns_year", "")
+        val = parse_num(row.get("thstrm_amount"))
+        if not code or not year or val is None:
+            continue
+        if code not in rows:
+            rows[code] = {"stockCode": code, "companyName": "", "sector": ""}
+        colName = f"{year}A"
+        if colName not in rows[code] or val > 0:
+            rows[code][colName] = val
+
+    if not rows:
+        return None
+
+    return pl.DataFrame(list(rows.values()))
 
 
 def _loadMacroForScan(periodCols: list[str]) -> dict[str, list[float | None]] | None:

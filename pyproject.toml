@@ -49,62 +49,38 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "alive-progress>=3.3.0,<4",
     "beautifulsoup4>=4.14.3,<5",
     "lxml>=6.0.2,<7",
-    "marimo>=0.20.4,<1",
+    "httpx>=0.28.1,<1",
+    "polars>=1.0.0,<2",
+    "rich>=14.3.3,<15",
+    "huggingface-hub>=0.20.0,<1",
     "openpyxl>=3.1.5,<4",
     "diff-match-patch>=20230430",
-    "httpx>=0.28.1,<1",
-    "orjson>=3.10.0,<4",
-    "polars>=1.0.0,<2",
-    "requests>=2.32.5,<3",
-    "prompt-toolkit>=3.0,<4",
-    "rich>=14.3.3,<15",
-    "textual>=2.0,<3",
     "plotly>=5.0.0,<6",
     "mcp[cli]>=1.0",
-    "huggingface-hub>=0.20.0,<1",
-    # LLM providers
-    "openai>=1.0.0,<3",
-    "google-genai>=1.0.0,<2",
-    "anthropic>=0.30.0,<2",
-    # charts
-    "networkx>=3.6.1,<4",
-    "scipy>=1.17.1,<2",
-    # ai server
-    "fastapi>=0.135.1,<1",
-    "msgpack>=1.1.0,<2",
-    "uvicorn[standard]>=0.30.0,<1",
-    "sse-starlette>=2.0.0,<3",
-    # display
-    "great-tables>=0.15.0,<1",
-    "itables>=2.0.0,<3",
-    # search
     "tavily-python>=0.5.0,<1",
     "duckduckgo-search>=7.0.0,<8",
+    # server
+    "fastapi>=0.135.1,<1",
+    "uvicorn[standard]>=0.30.0,<1",
+    "sse-starlette>=2.0.0,<3",
 ]
 
 [project.optional-dependencies]
-# 하위호환 alias — 이제 모두 기본 의존성
-llm = ["dartlab"]
-llm-anthropic = ["dartlab"]
-charts = ["dartlab"]
-ai = ["dartlab"]
-mcp = ["dartlab"]
-display = ["dartlab"]
-hf = ["dartlab"]
-search = ["dartlab"]
-ui = ["dartlab"]
-altair = [
-    "altair>=5.0.0,<6",
+# 무거운 것만 optional
+ai = [
+    "openai>=1.0.0,<3",
+    "google-genai>=1.0.0,<2",
+    "anthropic>=0.30.0,<2",
 ]
-channel = [
-    "pycloudflared>=0.3",
+tui = [
+    "textual>=2.0,<3",
+    "prompt-toolkit>=3.0,<4",
 ]
-channel-ngrok = [
-    "pyngrok>=7.0,<8",
-]
+altair = ["altair>=5.0.0,<6"]
+channel = ["pycloudflared>=0.3"]
+channel-ngrok = ["pyngrok>=7.0,<8"]
 channel-full = [
     "dartlab[channel,channel-ngrok]",
     "python-telegram-bot>=21.0,<22",
@@ -116,7 +92,12 @@ vector = [
     "lancedb>=0.15.0,<1",
     "turboquant-vectors>=0.3.0,<1",
 ]
-all = ["dartlab[channel-full,altair]"]
+all = ["dartlab[ai,tui,channel-full,altair]"]
+# 하위호환 alias
+llm = ["dartlab[ai]"]
+llm-anthropic = ["dartlab[ai]"]
+hf = ["dartlab"]
+ui = ["dartlab[tui]"]
 
 [project.scripts]
 dartlab = "dartlab.cli.main:main"

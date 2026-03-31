@@ -27,5 +27,5 @@ class TestOllamaProvider:
     def test_get_installed_models_returns_empty_on_bad_json(self):
         provider = OllamaProvider(LLMConfig(provider="ollama"))
 
-        with patch("requests.get", return_value=MagicMock(json=MagicMock(side_effect=ValueError("bad json")))):
+        with patch("httpx.get", return_value=MagicMock(json=MagicMock(side_effect=ValueError("bad json")))):
             assert provider.get_installed_models() == []

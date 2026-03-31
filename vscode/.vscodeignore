@@ -2,8 +2,13 @@ src/**
 webview/**
 webview-report/**
 node_modules/**
+.vscode/**
+.vscode-test/**
+.wdio-vscode-service/**
 .gitignore
 tsconfig.json
 esbuild.mjs
+vitest.config.ts
 **/*.ts
 **/*.map
+**/*.test.*

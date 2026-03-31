@@ -211,20 +211,16 @@ def _fetchSeries(
     title: str,
     extraParams: dict | None = None,
 ) -> pl.DataFrame:
-    """여러 기간 연속 조회 → concat + alive_progress."""
-    from alive_progress import alive_bar
+    """여러 기간 연속 조회 → concat + rich.progress."""
+    from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TextColumn
 
     frames: list[pl.DataFrame] = []
 
-    with alive_bar(
-        len(periods),
-        title=f"{title} | {corpName}",
-        bar="smooth",
-        spinner="dots_waves",
-        force_tty=True,
-    ) as bar:
+    progress = Progress(SpinnerColumn(), TextColumn("[bold blue]{task.description}"), BarColumn(), MofNCompleteColumn())
+    _task = progress.add_task(f"{title} | {corpName}", total=len(periods))
+    with progress:
         for bsnsYear, reprtCode in periods:
-            bar.title = f"{title} | {corpName} | {_periodLabel(bsnsYear, reprtCode)}"
+            progress.update(_task, description=f"{title} | {corpName} | {_periodLabel(bsnsYear, reprtCode)}")
 
             params: dict[str, str] = {
                 "corp_code": corpCode,
@@ -237,7 +233,7 @@ def _fetchSeries(
             df = client.getDf(f"{endpoint}.json", params)
             if df.height > 0:
                 frames.append(df)
-            bar()
+            progress.advance(_task)
 
     if not frames:
         return pl.DataFrame()
@@ -1006,7 +1002,7 @@ class DartCompany:
         >>> s.saveReport(2023, q=4)               # 2023 사업보고서만
         >>> s.saveReport(2020, categories=["배당","직원"])  # 일부만
         """
-        from alive_progress import alive_bar
+        from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TextColumn
 
         targets = categories or _PERIODIC_REPORT_CATEGORIES
         stockCode = self._resolveStockCode()
@@ -1014,15 +1010,11 @@ class DartCompany:
         corpName = self._dart._resolveCorpName(self._corp)
         frames: list[pl.DataFrame] = []
 
-        with alive_bar(
-            len(targets),
-            title=f"보고서 저장 | {corpName}",
-            bar="smooth",
-            spinner="dots_waves",
-            force_tty=True,
-        ) as bar:
+        _progress = Progress(SpinnerColumn(), TextColumn("[bold blue]{task.description}"), BarColumn(), MofNCompleteColumn())
+        _task = _progress.add_task(f"보고서 저장 | {corpName}", total=len(targets))
+        with _progress:
             for cat in targets:
-                bar.title = f"보고서 저장 | {corpName} | {cat}"
+                _progress.update(_task, description=f"보고서 저장 | {corpName} | {cat}")
                 try:
                     df = self.report(cat, start, end=end, q=q)
                     if df.height > 0:
@@ -1031,7 +1023,7 @@ class DartCompany:
                         frames.append(enriched)
                 except (ValueError, KeyError, RuntimeError, OSError):
                     pass
-                bar()
+                _progress.advance(_task)
 
         path = _dataPath("report", stockCode)
         if not frames:

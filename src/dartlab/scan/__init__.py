@@ -262,6 +262,32 @@ _ALIASES: dict[str, str] = {
 }
 
 
+def _edgarDispatch(axis: str, kwargs: dict) -> pl.DataFrame | None:
+    """EDGAR 전용 scan 축 디스패치. 구현 없으면 None 반환."""
+    # XBRL 기반 7축 — _edgar_helpers.scan_edgar_accounts 활용
+    _EDGAR_XBRL_AXES = {
+        "profitability", "growth", "quality", "liquidity",
+        "efficiency", "cashflow", "dividendTrend",
+        "capital", "debt",
+    }
+    if axis in _EDGAR_XBRL_AXES:
+        from dartlab.scan._edgar_scan import edgarScan
+
+        return edgarScan(axis, **kwargs)
+
+    # account/ratio — 기존 EDGAR scanAccount 사용
+    if axis == "account":
+        from dartlab.providers.edgar.finance.scanAccount import scanAccount
+
+        return scanAccount(kwargs.get("snakeId", "sales"), annual=kwargs.get("annual", False))
+    if axis == "ratio":
+        from dartlab.providers.edgar.finance.scanAccount import scanRatio
+
+        return scanRatio(kwargs.get("ratioName", "roe"), annual=kwargs.get("annual", False))
+
+    return None  # 아직 EDGAR 구현 없는 축
+
+
 def _resolveAxis(axis: str) -> str:
     """축 이름 또는 alias → 정규 축 이름."""
     if axis in _AXIS_REGISTRY:
@@ -396,6 +422,14 @@ class Scan:
         callKwargs: dict[str, Any] = dict(kwargs)
         if entry.targetParam and target is not None:
             callKwargs[entry.targetParam] = target
+
+        # EDGAR market 디스패치 — XBRL 기반 축은 EDGAR 전용 구현으로 분기
+        market = callKwargs.pop("market", None)
+        if market in ("edgar", "us", "US"):
+            result = _edgarDispatch(resolved, callKwargs)
+            if result is not None:
+                return result
+            # fallback: EDGAR 전용 구현 없으면 기본 함수 호출 (account/ratio 등)
 
         # lazy import + 호출
         mod = importlib.import_module(entry.module)

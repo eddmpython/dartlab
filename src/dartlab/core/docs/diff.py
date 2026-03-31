@@ -474,7 +474,10 @@ def charDiff(fromText: str, toText: str) -> list[CharPart]:
     Returns:
         CharPart 리스트 — kind("equal"|"insert"|"delete") + text.
     """
-    import diff_match_patch as dmp_module
+    try:
+        import diff_match_patch as dmp_module
+    except ImportError:
+        return None  # type: ignore[return-value]
 
     dmp = dmp_module.diff_match_patch()
     diffs = dmp.diff_main(fromText, toText)

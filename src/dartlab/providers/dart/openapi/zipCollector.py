@@ -310,20 +310,18 @@ class ZipDocsCollector:
             return 0
 
         # ZIP 수집
-        from alive_progress import alive_bar
+        from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TextColumn
 
         allSections: list[dict] = []
         failCount = 0
         total = newFilings.height
 
-        with alive_bar(
-            total,
-            title=f"docs 수집 | {self._corpName}",
-            bar="smooth",
-            spinner="dots_waves",
-            force_tty=True,
+        _progress = Progress(
+            SpinnerColumn(), TextColumn("[bold blue]{task.description}"), BarColumn(), MofNCompleteColumn(),
             disable=not showProgress,
-        ) as bar:
+        )
+        _task = _progress.add_task(f"docs 수집 | {self._corpName}", total=total)
+        with _progress:
             for rowIdx, row in enumerate(newFilings.iter_rows(named=True)):
                 rceptNo = row["rcept_no"]
                 rceptDt = row["rcept_dt"]
@@ -333,14 +331,14 @@ class ZipDocsCollector:
                 ym = re.search(r"\((\d{4})\.\d{2}\)", reportNm)
                 year = ym.group(1) if ym else rceptDt[:4]
 
-                bar.title = f"docs | {self._corpName} | {reportNm}"
+                _progress.update(_task, description=f"docs | {self._corpName} | {reportNm}")
                 if onProgress:
                     onProgress(f"docs {rowIdx + 1}/{total} {reportNm}")
 
                 sections = _collectOneZip(self._client, rceptNo)
                 if sections is None:
                     failCount += 1
-                    bar()
+                    _progress.advance(_task)
                     continue
 
                 for s in sections:
@@ -359,7 +357,7 @@ class ZipDocsCollector:
                             "section_content": s["content"],
                         }
                     )
-                bar()
+                _progress.advance(_task)
 
         if not allSections:
             return 0

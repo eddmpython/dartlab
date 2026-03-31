@@ -9,8 +9,8 @@ import time
 from html.parser import HTMLParser
 from pathlib import Path
 
+import httpx
 import polars as pl
-import requests
 
 log = logging.getLogger(__name__)
 
@@ -88,8 +88,8 @@ class _TableParser(HTMLParser):
 
 def _fetchKind() -> pl.DataFrame:
     try:
-        r = requests.post(KIND_URL, data=KIND_DATA, timeout=30)
-    except (requests.exceptions.SSLError, requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+        r = httpx.post(KIND_URL, data=KIND_DATA, timeout=30)
+    except (httpx.ConnectError, httpx.TimeoutException):
         return pl.DataFrame(schema={"종목코드": pl.Utf8, "회사명": pl.Utf8})
     html = r.content.decode("euc-kr", errors="replace")
 
@@ -394,13 +394,13 @@ def _fetchKrx() -> pl.DataFrame:
         "marketName": pl.Utf8,
     }
     try:
-        r = requests.post(
+        r = httpx.post(
             _KRX_URL,
             data=_KRX_DATA,
             headers=_KRX_HEADERS,
             timeout=30,
         )
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError) as exc:
+    except (httpx.TimeoutException, httpx.ConnectError) as exc:
         log.warning("KRX 상장법인 목록 수집 실패: %s", exc)
         return pl.DataFrame(schema=schema)
 

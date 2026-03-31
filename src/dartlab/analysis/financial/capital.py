@@ -42,12 +42,25 @@ def _getRatios(company):
         return None
 
 
+import contextvars
+
+_analysis_currency: contextvars.ContextVar[str] = contextvars.ContextVar("analysis_currency", default="KRW")
+
+
 def _fmtAmt(value) -> str:
-    """금액을 조/억 단위로 포맷 (순수 문자열, review import 없이)."""
+    """금액을 조/억 또는 B/M 단위로 포맷 (순수 문자열, review import 없이)."""
     if value is None:
         return "-"
     absVal = abs(value)
     sign = "-" if value < 0 else ""
+    if _analysis_currency.get() == "USD":
+        if absVal >= 1_000_000_000:
+            return f"{sign}${absVal / 1_000_000_000:.1f}B"
+        if absVal >= 1_000_000:
+            return f"{sign}${absVal / 1_000_000:.0f}M"
+        if absVal >= 1_000:
+            return f"{sign}${absVal / 1_000:.0f}K"
+        return f"{sign}${absVal:,.0f}"
     if absVal >= 1_0000_0000_0000:
         return f"{sign}{absVal / 1_0000_0000_0000:.1f}조"
     if absVal >= 1_0000_0000:

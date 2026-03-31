@@ -1,6 +1,6 @@
 """DART 공시문서 수집기 — eddmpython DartDocs.py 포팅.
 
-프록시 없이 requests 기반 동기 크롤링.
+프록시 없이 httpx 기반 동기 크롤링.
 DartClient를 재사용하여 API 키 관리를 openapi 체계에 통합.
 
 사용법::
@@ -29,8 +29,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+import httpx
 import polars as pl
-import requests
 from bs4 import BeautifulSoup
 
 from dartlab import config as _cfg
@@ -162,22 +162,21 @@ def _parseSubDocs(content: str, rcpNo: str) -> list[dict]:
     return []
 
 
-# ── requests 세션 ────────────────────────────────────
+# ── HTTP 세션 ────────────────────────────────────
 
 
-def _makeSession() -> requests.Session:
+def _makeSession() -> httpx.Client:
     """크롤링용 세션."""
-    s = requests.Session()
-    s.headers.update(
-        {
+    return httpx.Client(
+        headers={
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/131.0.0.0 Safari/537.36"
             ),
-        }
+        },
+        follow_redirects=True,
     )
-    return s
 
 
 # ── 수집기 클래스 ─────────────────────────────────────
@@ -285,7 +284,7 @@ class DocsCollector:
         minDelay: float = 5.0,
         maxDelay: float = 10.0,
     ) -> int:
-        """공시문서 수집 (동기 — requests 기반 순차 크롤링).
+        """공시문서 수집 (동기 — httpx 기반 순차 크롤링).
 
         Parameters
         ----------
@@ -321,7 +320,7 @@ class DocsCollector:
             filings["corp_name"].to_list() if "corp_name" in filings.columns else [self.corpName] * len(rceptNos)
         )
 
-        from alive_progress import alive_bar
+        from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TextColumn
 
         session = _makeSession()
 
@@ -329,15 +328,11 @@ class DocsCollector:
         allSubDocs: list[dict] = []
         failCount1 = 0
 
-        with alive_bar(
-            len(rceptNos),
-            title=f"[1/2] 목차 수집 | {self.corpName}",
-            bar="smooth",
-            spinner="dots_waves",
-            force_tty=True,
-        ) as bar:
+        _p1 = Progress(SpinnerColumn(), TextColumn("[bold blue]{task.description}"), BarColumn(), MofNCompleteColumn())
+        _t1 = _p1.add_task(f"[1/2] 목차 수집 | {self.corpName}", total=len(rceptNos))
+        with _p1:
             for i, rcpNo in enumerate(rceptNos):
-                bar.title = f"[1/2] 목차 | {reportNames[i]}"
+                _p1.update(_t1, description=f"[1/2] 목차 | {reportNames[i]}")
                 url = f"{_DART_MAIN_BASE}?rcpNo={rcpNo}"
                 try:
                     resp = session.get(url, timeout=_REQUEST_TIMEOUT)
@@ -348,12 +343,12 @@ class DocsCollector:
                         sd["report_type"] = reportNames[i]
                         sd["corp_name"] = corpNames[i]
                     allSubDocs.extend(subDocs)
-                    bar.title = f"[1/2] 목차 | {reportNames[i]} → {len(subDocs)}개"
-                except requests.RequestException:
+                    _p1.update(_t1, description=f"[1/2] 목차 | {reportNames[i]} → {len(subDocs)}개")
+                except httpx.HTTPError:
                     failCount1 += 1
-                    bar.title = f"[1/2] 목차 | {reportNames[i]} 실패"
+                    _p1.update(_t1, description=f"[1/2] 목차 | {reportNames[i]} 실패")
 
-                bar()
+                _p1.advance(_t1)
                 if i < len(rceptNos) - 1:
                     time.sleep(random.uniform(minDelay, maxDelay))
 
@@ -382,24 +377,20 @@ class DocsCollector:
             if sd["url"] not in urlToTitle:
                 urlToTitle[sd["url"]] = sd["title"]
 
-        with alive_bar(
-            len(uniqueUrls),
-            title=f"[2/2] HTML 수집 | {self.corpName} ({uniqueReports}건, {len(uniqueUrls)}섹션)",
-            bar="smooth",
-            spinner="dots_waves",
-            force_tty=True,
-        ) as bar:
+        _p2 = Progress(SpinnerColumn(), TextColumn("[bold blue]{task.description}"), BarColumn(), MofNCompleteColumn())
+        _t2 = _p2.add_task(f"[2/2] HTML 수집 | {self.corpName} ({uniqueReports}건, {len(uniqueUrls)}섹션)", total=len(uniqueUrls))
+        with _p2:
             for i, url in enumerate(uniqueUrls):
                 title = urlToTitle.get(url, "")
-                bar.title = f"[2/2] HTML | {title[:40]}" if title else "[2/2] HTML"
+                _p2.update(_t2, description=f"[2/2] HTML | {title[:40]}" if title else "[2/2] HTML")
                 try:
                     resp = session.get(url, timeout=_REQUEST_TIMEOUT)
                     resp.raise_for_status()
                     urlToHtml[url] = resp.text
-                except requests.RequestException:
+                except httpx.HTTPError:
                     failCount2 += 1
 
-                bar()
+                _p2.advance(_t2)
                 if i < len(uniqueUrls) - 1:
                     time.sleep(random.uniform(minDelay, maxDelay))
 

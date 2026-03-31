@@ -24,7 +24,7 @@ def _yoy(cur, prev) -> float | None:
     return round((cur - prev) / abs(prev) * 100, 2)
 
 
-def _cagr(values: list[float | None], periods: int) -> float | None:
+def _cagrFromList(values: list[float | None], periods: int) -> float | None:
     valid = [v for v in values if v is not None and v > 0]
     if len(valid) < 2 or periods < 1:
         return None
@@ -94,9 +94,9 @@ def calcGrowthTrend(company, *, basePeriod: str | None = None) -> dict | None:
         {
             "history": history,
             "cagr": {
-                "revenue": _cagr(revVals, n),
-                "operatingIncome": _cagr(opVals, n),
-                "netIncome": _cagr(niVals, n),
+                "revenue": _cagrFromList(revVals, n),
+                "operatingIncome": _cagrFromList(opVals, n),
+                "netIncome": _cagrFromList(niVals, n),
                 "periods": n,
             },
         }
@@ -132,7 +132,12 @@ def calcGrowthQuality(company, *, basePeriod: str | None = None) -> dict | None:
         elif niCagr is not None and niCagr < -5:
             quality = "이익 역성장"
         elif opCagr < revCagr * 0.5:
-            quality = "외형 위주"
+            # 최신 기 영업이익 YoY가 양수이면 "개선 중"으로 완화 (턴어라운드 기업 배려)
+            latestOpYoy = hist[0].get("operatingIncomeYoy") if hist else None
+            if latestOpYoy is not None and latestOpYoy > 10:
+                quality = "개선 중"
+            else:
+                quality = "외형 위주"
         elif opCagr > revCagr * 1.5 and opCagr > 0:
             quality = "내실 위주"
         elif revCagr > 0 and opCagr > 0:

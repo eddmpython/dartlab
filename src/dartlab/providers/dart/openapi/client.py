@@ -11,8 +11,8 @@ from __future__ import annotations
 import time
 from typing import Any
 
+import httpx
 import polars as pl
-import requests
 
 from dartlab.providers.dart.openapi.dartKey import resolveDartKeys
 
@@ -77,7 +77,7 @@ class DartClient:
         self._keyIndex = 0
         self._minInterval = 60.0 / requestsPerMinute
         self._lastRequestTime = 0.0
-        self._session = requests.Session()
+        self._session = httpx.Client(follow_redirects=True)
 
     @staticmethod
     def _resolveKeys(apiKey: str | None, apiKeys: list[str] | None) -> list[str]:

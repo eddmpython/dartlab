@@ -487,10 +487,10 @@ def _detectGrowthProfitability(company, blockMap) -> NarrativeThread | None:
     if revGrowth is None or revGrowth <= 3:
         return None
 
-    # 영업이익률 확대
+    # 영업이익률 확대 — 적자(음수)에서 적자 축소는 "확대"가 아님
     opm0 = op0 / rev0 * 100 if rev0 > 0 else None
     opm1 = op1 / rev1 * 100 if rev1 > 0 else None
-    if opm0 is None or opm1 is None or opm0 <= opm1:
+    if opm0 is None or opm1 is None or opm0 <= opm1 or opm0 < 0:
         return None
 
     # FCF 양수

@@ -263,7 +263,7 @@ def _quarterlyRevenueTable(selectResult) -> TableBlock | None:
     if not rows:
         return None
 
-    unified = unifyTableScale(rows, "", periodCols, unit="won")
+    unified = unifyTableScale(rows, "", periodCols, unit=_unitForCurrency())
     return TableBlock("분기별 매출", pl.DataFrame(unified))
 
 
@@ -458,12 +458,28 @@ def fundingSourcesBlock(data: dict) -> list:
     return blocks
 
 
+import contextvars
+
+_review_currency: contextvars.ContextVar[str] = contextvars.ContextVar("review_currency", default="KRW")
+
+
+def _unitForCurrency() -> str:
+    """현재 통화에 맞는 unifyTableScale unit 반환."""
+    return "usd" if _review_currency.get() == "USD" else "won"
+
+
 def _fmtAmtShort(value) -> str:
-    """금액 간략 포맷."""
+    """금액 간략 포맷 (KRW: 조/억, USD: B/M)."""
     if value is None or value == 0:
         return "-"
     absVal = abs(value)
     sign = "-" if value < 0 else ""
+    if _review_currency.get() == "USD":
+        if absVal >= 1_000_000_000:
+            return f"{sign}${absVal / 1_000_000_000:.1f}B"
+        if absVal >= 1_000_000:
+            return f"{sign}${absVal / 1_000_000:.0f}M"
+        return f"{sign}${absVal:,.0f}"
     if absVal >= 1_0000_0000_0000:
         return f"{sign}{absVal / 1_0000_0000_0000:.1f}조"
     if absVal >= 1_0000_0000:
@@ -504,7 +520,7 @@ def capitalTimelineBlock(data: dict) -> list:
     )
     for label, tableRows, cols in data.get("tables", []):
         if tableRows and cols:
-            unified = unifyTableScale(tableRows, "", cols, unit="won")
+            unified = unifyTableScale(tableRows, "", cols, unit=_unitForCurrency())
             blocks.append(TableBlock(label, pl.DataFrame(unified)))
     if len(blocks) <= 1:
         return []
@@ -525,7 +541,7 @@ def debtTimelineBlock(data: dict) -> list:
     )
     for label, tableRows, cols in data.get("tables", []):
         if tableRows and cols:
-            unified = unifyTableScale(tableRows, "", cols, unit="won")
+            unified = unifyTableScale(tableRows, "", cols, unit=_unitForCurrency())
             blocks.append(TableBlock(label, pl.DataFrame(unified)))
     if len(blocks) <= 1:
         return []
@@ -585,7 +601,7 @@ def cashFlowBlock(data: dict) -> list:
     tableRows = data.get("tableRows")
     cols = data.get("cols")
     if tableRows and cols:
-        unified = unifyTableScale(tableRows, "", cols, unit="won")
+        unified = unifyTableScale(tableRows, "", cols, unit=_unitForCurrency())
         blocks.append(TableBlock("", pl.DataFrame(unified)))
     pattern = data.get("pattern")
     if pattern:
@@ -2757,7 +2773,7 @@ def ocfDecompositionBlock(data: dict) -> list:
         )
 
     unified = unifyTableScale(
-        rows, "기간", ["순이익", "감가상각(추정)", "운전자본효과", "영업CF", "잔차"], unit="millions"
+        rows, "기간", ["순이익", "감가상각(추정)", "운전자본효과", "영업CF", "잔차"], unit="won"
     )
 
     blocks: list = []

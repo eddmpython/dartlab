@@ -22,8 +22,11 @@ def pivotDividend(stockCode: str, *, base_df: pl.DataFrame | None = None) -> Div
     if df is None:
         return None
 
-    common = df.filter(pl.col("stock_knd") == "보통주")
-    if common.is_empty():
+    if "stock_knd" in df.columns:
+        common = df.filter(pl.col("stock_knd") == "보통주")
+        if common.is_empty():
+            common = df
+    else:
         common = df
 
     years = sorted(common["year"].unique().to_list())
@@ -98,8 +101,11 @@ def pivotMajorHolder(stockCode: str, *, base_df: pl.DataFrame | None = None) -> 
     if df is None:
         return None
 
-    common = df.filter(pl.col("stock_knd") == "보통주")
-    if common.is_empty():
+    if "stock_knd" in df.columns:
+        common = df.filter(pl.col("stock_knd") == "보통주")
+        if common.is_empty():
+            common = df
+    else:
         common = df
 
     topRows = common.filter(pl.col("nm") == "계")

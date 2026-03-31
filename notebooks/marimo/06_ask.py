@@ -18,13 +18,17 @@ app = marimo.App(width="medium")
 def _():
     import dartlab
 
-    dartlab.setup()
     return (dartlab,)
 
 
 @app.cell
 def _(dartlab):
-    dartlab.ask("삼성전자 재무건전성 분석해줘")
+    dartlab.ask('최근 매출액이 많이 오른 기업들 상위 10개 뽑아줘')
+    return
+
+
+@app.cell
+def _():
     return
 
 

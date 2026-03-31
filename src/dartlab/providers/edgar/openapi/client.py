@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from typing import Any
 
-import requests
+import httpx
 
 DEFAULT_USER_AGENT = "DartLab eddmpython@gmail.com"
 DEFAULT_BASE_URL = "https://data.sec.gov"
@@ -38,7 +38,7 @@ class EdgarClient:
         self.minInterval = max(float(minInterval), 0.0)
         self.timeout = float(timeout)
         self.maxRetries = max(int(maxRetries), 1)
-        self._session = requests.Session()
+        self._session = httpx.Client(follow_redirects=True)
         self._lastRequestAt = 0.0
 
     @staticmethod
@@ -75,13 +75,13 @@ class EdgarClient:
                 if not isinstance(data, dict):
                     raise EdgarApiError(f"JSON object expected: {url}")
                 return data
-            except requests.HTTPError as exc:
+            except httpx.HTTPStatusError as exc:
                 lastErr = exc
-                status = exc.response.status_code if exc.response is not None else None
+                status = exc.response.status_code
                 if status not in (429, 500, 502, 503, 504) or attempt == self.maxRetries - 1:
                     raise EdgarApiError(f"SEC API 요청 실패 ({status}): {url}") from exc
                 time.sleep(2**attempt)
-            except requests.RequestException as exc:
+            except httpx.HTTPError as exc:
                 lastErr = exc
                 if attempt == self.maxRetries - 1:
                     raise EdgarApiError(f"SEC API 네트워크 오류: {url}") from exc

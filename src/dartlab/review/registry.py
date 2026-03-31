@@ -14,6 +14,17 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
     keys가 지정되면 해당 블록만 빌드한다 (선택적 빌드).
     keys=None이면 전체 블록을 빌드한다 (기존 동작).
     """
+    # builders와 analysis의 금액 포맷을 company.currency에 맞게 설정 (contextvars — 스레드 안전)
+    from dartlab.review.builders import _review_currency
+
+    _currency = getattr(company, "currency", "KRW")
+    _review_currency.set(_currency)
+    try:
+        from dartlab.analysis.financial.capital import _analysis_currency
+
+        _analysis_currency.set(_currency)
+    except ImportError:
+        pass
 
     def _safe(fn):
         try:

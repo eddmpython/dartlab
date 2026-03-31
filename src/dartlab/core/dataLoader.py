@@ -424,10 +424,11 @@ def buildIndex(category: str = "docs") -> pl.DataFrame:
             }
         )
 
-    from alive_progress import alive_bar
+    from rich.progress import Progress
 
     records = []
-    with alive_bar(len(files), title="종목 스캔") as bar:
+    with Progress() as progress:
+        _task = progress.add_task("종목 스캔", total=len(files))
         for f in files:
             df = _normalizeLoadedFrame(pl.read_parquet(str(f)), category)
             code = f.stem
@@ -445,7 +446,7 @@ def buildIndex(category: str = "docs") -> pl.DataFrame:
                     "nDocs": nDocs,
                 }
             )
-            bar()
+            progress.advance(_task)
 
     return pl.DataFrame(records)
 
@@ -649,18 +650,13 @@ def _incrementalUpdateEdgarDocs(
 
     emit("edgar:incremental_start", ticker=stockCode.upper(), newCount=len(newFilings))
 
-    from alive_progress import alive_bar
+    from dartlab.providers.edgar.docs.fetch import _make_progress
 
     rows: list[dict] = []
     skipped: list[str] = []
-    with alive_bar(
-        len(newFilings),
-        title=f"EDGAR 증분 | {stockCode.upper()}",
-        bar="smooth",
-        spinner="dots_waves",
-        force_tty=True,
-    ) as bar:
-        _collectFilingRows(rows, newFilings, meta, stockCode.upper(), bar, FILING_TIMEOUT_SECONDS, skipped)
+    _prog, _bar = _make_progress(len(newFilings), f"EDGAR 증분 | {stockCode.upper()}")
+    with _prog:
+        _collectFilingRows(rows, newFilings, meta, stockCode.upper(), _bar, FILING_TIMEOUT_SECONDS, skipped)
 
     if not rows:
         return

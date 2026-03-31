@@ -123,6 +123,8 @@ def toDict(selectResult, maxPeriods: int = 0) -> tuple[dict[str, dict], list[str
     """SelectResult → ({계정명: {period: val}}, periodCols).
 
     maxPeriods=0이면 전체 기간, >0이면 최신 N개만.
+    EDGAR DataFrame(account 컬럼 = snakeId)일 때 키를 한국어 라벨로 자동 변환하여
+    analysis 함수에서 data.get("매출액") 등이 양쪽 provider에서 동일하게 작동한다.
     """
     if selectResult is None:
         return None
@@ -138,10 +140,20 @@ def toDict(selectResult, maxPeriods: int = 0) -> tuple[dict[str, dict], list[str
     if labelCol is None:
         return None
 
+    # EDGAR bridge: snakeId 키 → 한국어 라벨 키로 변환 (analysis 함수 호환)
+    needsBridge = labelCol != "계정명" and "계정명" not in df.columns
+    krLabels: dict[str, str] | None = None
+    if needsBridge:
+        from dartlab.core.finance.labels import get_korean_labels
+
+        krLabels = get_korean_labels()
+
     data: dict[str, dict] = {}
     for row in df.iter_rows(named=True):
         label = str(row.get(labelCol, ""))
-        data[label] = {c: row.get(c) for c in periods}
+        # snakeId → 한국어 키 변환 (EDGAR)
+        key = krLabels.get(label, label) if krLabels else label
+        data[key] = {c: row.get(c) for c in periods}
     return (data, periods) if data else None
 
 

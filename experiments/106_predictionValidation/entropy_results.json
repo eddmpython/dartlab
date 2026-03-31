@@ -1,0 +1,40 @@
+{
+  "date": "2026-04-01",
+  "total": 936,
+  "accuracy": {
+    "ols": 48.5,
+    "base": 53.1,
+    "adaptive": 48.5,
+    "consensus": 53.1
+  },
+  "yearEntropy": {
+    "2023→2024": {
+      "entropy": 3.212,
+      "entropyNorm": 0.743,
+      "nObs": 938,
+      "upRate": 0.531,
+      "median": 2.6,
+      "mean": 8.8
+    },
+    "2022→2023": {
+      "entropy": 3.378,
+      "entropyNorm": 0.782,
+      "nObs": 3496,
+      "upRate": 0.538,
+      "median": 2.7,
+      "mean": 6.0
+    },
+    "2021→2022": {
+      "entropy": 3.444,
+      "entropyNorm": 0.797,
+      "nObs": 3656,
+      "upRate": 0.465,
+      "median": -1.5,
+      "mean": -2.0
+    }
+  },
+  "priorUsed": {
+    "Hnorm": 0.782,
+    "upRate": 0.538
+  }
+}

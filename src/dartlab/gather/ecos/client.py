@@ -6,7 +6,7 @@ import logging
 import os
 import time
 
-import requests
+import httpx
 
 from .types import AuthenticationError, EcosError, RateLimitError
 
@@ -37,8 +37,7 @@ class EcosClient:
                 "무료 발급: https://ecos.bok.or.kr/api/#/"
             )
         self._key = raw.strip()
-        self._session = requests.Session()
-        self._session.headers["User-Agent"] = "dartlab-ecos/1.0"
+        self._session = httpx.Client(headers={"User-Agent": "dartlab-ecos/1.0"}, follow_redirects=True)
         self._timestamps: list[float] = []
 
     def get(
@@ -79,7 +78,7 @@ class EcosClient:
             self._rateLimit()
             try:
                 resp = self._session.get(url, timeout=30)
-            except requests.RequestException as exc:
+            except httpx.HTTPError as exc:
                 last_exc = exc
                 self._backoff(attempt)
                 continue

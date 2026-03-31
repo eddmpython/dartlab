@@ -70,6 +70,15 @@ def scan_employee() -> dict[str, dict]:
             if male_avg and female_avg and male_avg > 0:
                 gender_gap = round((male_avg - female_avg) / male_avg * 100, 1)
             avg_tenure = tenure_wsum / tenure_emp if tenure_emp > 0 else None
+            # 근속 극단값 cap: 60년 초과는 데이터 파싱 오류
+            if avg_tenure is not None and avg_tenure > 60:
+                avg_tenure = None
+            # 평균급여 극단값 cap: 50억원(50만 만원) 초과는 데이터 오류
+            if avg_sal > 500_000:
+                avg_sal = None
+
+            if avg_sal is None:
+                continue
 
             result[code_val] = {
                 "직원수": total_emp,

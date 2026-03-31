@@ -21,6 +21,61 @@ log = logging.getLogger(__name__)
 
 _MAX_YEARS = 8
 
+# ── 업종별 모멘텀 사전확률 (walk-forward 실측, 200기업 4800건+) ──
+# 베이즈 사전확률: "전분기 방향 유지"가 맞을 확률. 업종마다 다르다.
+# 식품(88%) vs 반도체(66%) vs 영화(60%) — 모멘텀 지속성이 업종 특성.
+_INDUSTRY_PRIOR: dict[str, float] = {
+    # 85%+ (안정 성장 — 모멘텀 매우 강)
+    "동·식물성 유지 및 낙농제품 제조업": 0.886,
+    "금속 주조업": 0.882,
+    "섬유, 의복, 신발 및 가죽제품 소매업": 0.875,
+    "도로 화물 운송업": 0.871,
+    # 80~85%
+    "1차 비철금속 제조업": 0.829,
+    "음·식료품 및 담배 도매업": 0.824,
+    "컴퓨터 프로그래밍, 시스템 통합 및 관리업": 0.824,
+    "생활용품 도매업": 0.815,
+    "일반 교습 학원": 0.812,
+    "가정용 기기 제조업": 0.809,
+    "곡물가공품, 전분 및 전분제품 제조업": 0.800,
+    "유리 및 유리제품 제조업": 0.800,
+    # 76~80%
+    "상품 종합 도매업": 0.797,
+    "알코올음료 제조업": 0.795,
+    "사진장비 및 광학기기 제조업": 0.794,
+    "화학섬유 제조업": 0.785,
+    "기초 화학물질 제조업": 0.783,
+    "종합 소매업": 0.776,
+    "봉제의복 제조업": 0.771,
+    "구조용 금속제품, 탱크 및 증기발생기 제조업": 0.765,
+    # 73~76%
+    "1차 철강 제조업": 0.755,
+    "건물 건설업": 0.748,
+    "자동차 신품 부품 제조업": 0.747,
+    "자연과학 및 공학 연구개발업": 0.740,
+    "의약품 제조업": 0.734,
+    "기타 금속 가공제품 제조업": 0.732,
+    # 70~73%
+    "전자부품 제조업": 0.719,
+    "소프트웨어 개발 및 공급업": 0.716,
+    "의료용 기기 제조업": 0.713,
+    "기초 의약물질 제조업": 0.707,
+    "기타 전문 도매업": 0.701,
+    # 65~70%
+    "의료용품 및 기타 의약 관련제품 제조업": 0.689,
+    "전기 통신업": 0.677,
+    "선박 및 보트 건조업": 0.674,
+    "기타 화학제품 제조업": 0.667,
+    "반도체 제조업": 0.665,
+    "특수 목적용 기계 제조업": 0.653,
+    # 60% 미만 (모멘텀 약 — 예측 불확실)
+    "통신 및 방송 장비 제조업": 0.606,
+    "영화, 비디오물, 방송프로그램 제작 및 배급업": 0.596,
+    "일반 목적용 기계 제조업": 0.590,
+    "전동기, 발전기 및 전기 변환 · 공급 · 제어 장치 제조업": 0.579,
+}
+_DEFAULT_PRIOR = 0.721  # 전체 평균
+
 # ── 매크로 지표 매핑 (섹터별 관련 지표) ──
 
 _SECTOR_MACRO_MAP: dict[str, list[dict]] = {
@@ -1810,9 +1865,9 @@ def calcConsensusDirection(company, *, basePeriod: str | None = None) -> dict | 
         return None
 
     try:
-        import requests
+        import httpx
 
-        resp = requests.get(
+        resp = httpx.get(
             f"https://m.stock.naver.com/api/stock/{stockCode}/finance/annual",
             headers={"User-Agent": "dartlab/1.0"},
             timeout=10,
@@ -1890,9 +1945,9 @@ def calcFlowDirection(company, *, basePeriod: str | None = None) -> dict | None:
         return None
 
     try:
-        import requests
+        import httpx
 
-        resp = requests.get(
+        resp = httpx.get(
             f"https://m.stock.naver.com/api/stock/{stockCode}/integration",
             headers={"User-Agent": "dartlab/1.0"},
             timeout=10,
@@ -2013,9 +2068,16 @@ def calcRevenueDirection(company, *, basePeriod: str | None = None) -> dict | No
         if olsDirection is not None:
             olsAgree = (olsDirection == "up") == latest["positive"]
 
-    # 베이즈 사후확률 갱신 — 각 신호가 연속 값으로 확률을 갱신
-    # 사전확률: 모멘텀 방향 유지 72.1% (4825건 walk-forward 검증)
-    posterior = 0.721
+    # 베이즈 사후확률 갱신 — 업종별 사전확률에서 시작
+    # 슈퍼예측가 원리: 사전확률이 정확할수록 사후확률도 정확
+    sectorKey = _getSectorKey(company)
+    industry = None
+    try:
+        from dartlab.core.finance.exogenousAxes import _lookupFromKindList
+        industry, _ = _lookupFromKindList(_getStockCode(company) or "")
+    except (ImportError, TypeError):
+        pass
+    posterior = _INDUSTRY_PRIOR.get(industry or "", _DEFAULT_PRIOR)
 
     # 신호 1: streak (2연속 → 74.7%, 3연속 → 더 강함)
     if streak >= 3:
@@ -2067,6 +2129,7 @@ def calcRevenueDirection(company, *, basePeriod: str | None = None) -> dict | No
         "confirms": confirms,
         "probability": round(calibrated, 3),
         "rawPosterior": round(posterior, 3),
+        "industryPrior": round(_INDUSTRY_PRIOR.get(industry or "", _DEFAULT_PRIOR), 3),
         "confidence": confidence,
         "history": directions[:4],
     }

@@ -72,7 +72,7 @@ def detect_ollama() -> dict:
                     "gpu": {"available": bool, "name": str | None, "vram_mb": int | None},
             }
     """
-    import requests
+    import httpx
 
     result: dict = {
         "installed": False,
@@ -83,14 +83,14 @@ def detect_ollama() -> dict:
     }
 
     try:
-        resp = requests.get(f"{OLLAMA_DEFAULT_URL}/api/tags", timeout=2)
+        resp = httpx.get(f"{OLLAMA_DEFAULT_URL}/api/tags", timeout=2)
         if resp.status_code == 200:
             result["installed"] = True
             result["running"] = True
             data = resp.json()
             result["models"] = [m["name"] for m in data.get("models", [])]
             return result
-    except (requests.ConnectionError, requests.Timeout):
+    except (httpx.ConnectError, httpx.TimeoutException):
         pass
 
     if shutil.which("ollama"):

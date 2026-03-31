@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import time
 
-import orjson
 from fastapi import APIRouter, HTTPException, Request
 from sse_starlette.sse import EventSourceResponse
 
@@ -114,7 +114,7 @@ async def room_stream(request: Request):
                     msg = await asyncio.wait_for(member.queue.get(), timeout=30)
                     yield {
                         "event": msg["event"],
-                        "data": orjson.dumps(msg["data"]).decode(),
+                        "data": json.dumps(msg["data"], ensure_ascii=False),
                     }
                 except TimeoutError:
                     # keepalive — SSE comment
@@ -171,8 +171,8 @@ async def room_ask(req: RoomAskRequest, request: Request):
         async for sse_event in stream_ask(c, ask_req):
             event_name = sse_event.get("event", "chunk")
             try:
-                data = orjson.loads(sse_event.get("data", "{}"))
-            except (orjson.JSONDecodeError, ValueError):
+                data = json.loads(sse_event.get("data", "{}"))
+            except (json.JSONDecodeError, ValueError):
                 data = {"raw": sse_event.get("data", "")}
             await room.broadcast(event_name, data)
 

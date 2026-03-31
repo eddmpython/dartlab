@@ -90,20 +90,20 @@ class OllamaProvider(BaseProvider):
 
     def check_available(self) -> bool:
         """provider 사용 가능 여부 확인."""
-        import requests
+        import httpx
 
         try:
-            resp = requests.get(f"{OLLAMA_DEFAULT_URL}/api/tags", timeout=2)
+            resp = httpx.get(f"{OLLAMA_DEFAULT_URL}/api/tags", timeout=2)
             return resp.status_code == 200
-        except (requests.ConnectionError, requests.Timeout):
+        except (httpx.ConnectError, httpx.TimeoutException):
             return False
 
     def get_installed_models(self) -> list[str]:
         """설치된 모델 목록."""
-        import requests
+        import httpx
 
         try:
-            resp = requests.get(f"{OLLAMA_DEFAULT_URL}/api/tags", timeout=2)
+            resp = httpx.get(f"{OLLAMA_DEFAULT_URL}/api/tags", timeout=2)
             data = resp.json()
             names = []
             for m in data.get("models", []):
@@ -113,7 +113,7 @@ class OllamaProvider(BaseProvider):
                     name = name[:-7]
                 names.append(name)
             return names
-        except (requests.RequestException, AttributeError, KeyError, OSError, TypeError, ValueError):
+        except (httpx.HTTPError, AttributeError, KeyError, OSError, TypeError, ValueError):
             return []
 
     def preload(self, *, keepAliveMinutes: int = 30) -> bool:
@@ -126,12 +126,12 @@ class OllamaProvider(BaseProvider):
         Args:
             keepAliveMinutes: 모델 메모리 유지 시간(분). -1이면 무기한.
         """
-        import requests
+        import httpx
 
         options = _buildInferenceOptions()
         keepAlive = f"{keepAliveMinutes}m" if keepAliveMinutes > 0 else -1
         try:
-            resp = requests.post(
+            resp = httpx.post(
                 f"{OLLAMA_DEFAULT_URL}/api/generate",
                 json={
                     "model": self.resolved_model,
@@ -143,32 +143,32 @@ class OllamaProvider(BaseProvider):
                 timeout=120,
             )
             return resp.status_code == 200
-        except (requests.ConnectionError, requests.Timeout):
+        except (httpx.ConnectError, httpx.TimeoutException):
             return False
 
     def unload(self) -> bool:
         """모델을 메모리에서 즉시 해제."""
-        import requests
+        import httpx
 
         try:
-            resp = requests.post(
+            resp = httpx.post(
                 f"{OLLAMA_DEFAULT_URL}/api/generate",
                 json={"model": self.resolved_model, "prompt": "", "keep_alive": 0, "stream": False},
                 timeout=10,
             )
             return resp.status_code == 200
-        except (requests.ConnectionError, requests.Timeout):
+        except (httpx.ConnectError, httpx.TimeoutException):
             return False
 
     def serverVersion(self) -> str | None:
         """Ollama 서버 버전 조회."""
-        import requests
+        import httpx
 
         try:
-            resp = requests.get(f"{OLLAMA_DEFAULT_URL}/api/version", timeout=2)
+            resp = httpx.get(f"{OLLAMA_DEFAULT_URL}/api/version", timeout=2)
             if resp.status_code == 200:
                 return resp.json().get("version")
-        except (requests.RequestException, ValueError, KeyError, OSError):
+        except (httpx.HTTPError, ValueError, KeyError, OSError):
             pass
         return None
 

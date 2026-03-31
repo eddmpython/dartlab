@@ -170,8 +170,8 @@ def calcEarningsPersistence(company, *, basePeriod: str | None = None) -> dict |
         nonOp = ptIncome - opIncome
 
         nonOpRatio = None
-        if ptIncome != 0:
-            nonOpRatio = abs(nonOp) / abs(ptIncome) * 100
+        if opIncome > 0:
+            nonOpRatio = abs(nonOp) / opIncome * 100
 
         history.append(
             {

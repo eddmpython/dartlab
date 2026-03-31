@@ -187,6 +187,7 @@ def _handleSetProvider(msg: dict[str, Any]) -> None:
 def run() -> None:
     """stdio REPL loop. Exits on stdin EOF or exit message."""
     import io
+
     import dartlab
 
     # Force UTF-8 on Windows cp949 environments
