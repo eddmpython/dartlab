@@ -296,7 +296,11 @@ export class StdioProxy {
 
   private ping(): void {
     if (this._state !== "ready" || !this.proc?.stdin?.writable) return;
+    // Don't ping while a request is in progress (code execution can take 60s+)
+    if (this.currentCallbacks) return;
     const timeout = setTimeout(() => {
+      // Double-check: still no active request?
+      if (this.currentCallbacks) { clearTimeout(timeout); return; }
       this.output.appendLine("[DartLab] healthcheck timeout -- killing process");
       this.proc?.kill("SIGKILL");
     }, HEALTH_TIMEOUT_MS);
