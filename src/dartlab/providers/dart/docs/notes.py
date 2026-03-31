@@ -83,9 +83,10 @@ class Notes:
             raise KeyError(f"Notes에 '{key}' 항목이 없습니다. 지원: {list(_KR_MAP.keys())}")
         return self._get(eng)
 
-    def _get(self, name: str) -> pl.DataFrame | None:
-        if name in self._cache:
-            return self._cache[name]
+    def _get(self, name: str, period: str = "y") -> pl.DataFrame | None:
+        cacheKey = f"{name}:{period}"
+        if cacheKey in self._cache:
+            return self._cache[cacheKey]
 
         spec = _REGISTRY[name]
         module, krName, extractor = spec
@@ -93,11 +94,12 @@ class Notes:
         from dartlab import config
 
         if config.verbose:
-            print(f"  ▶ {self._company.corpName} · {krName}")
+            periodLabel = {"y": "", "q": " (분기)", "h": " (반기)"}.get(period, "")
+            print(f"  ▶ {self._company.corpName} · {krName}{periodLabel}")
 
         try:
             if module == "notesDetail":
-                result = self._company._call_notesDetail(krName)
+                result = self._company._call_notesDetail(krName, period=period)
             else:
                 result = self._company._call_module(module)
             df = extractor(result) if result else None
@@ -107,12 +109,27 @@ class Notes:
             logging.getLogger(__name__).debug("notes(%s) failed", name, exc_info=True)
             df = None
 
-        self._cache[name] = df
+        self._cache[cacheKey] = df
         return df
 
-    def all(self) -> dict[str, pl.DataFrame | None]:
+    def quarterly(self, name: str) -> pl.DataFrame | None:
+        """분기 주석 데이터 반환.
+
+        Example::
+
+            c.notes.quarterly("inventory")     # 분기별 재고자산
+            c.notes.quarterly("receivables")   # 분기별 매출채권
+
+        분기보고서(Q1/Q3) + 반기보고서 + 사업보고서 주석을 모두 파싱.
+        """
+        eng = _KR_MAP.get(name, name)
+        if eng not in _REGISTRY:
+            raise KeyError(f"Notes에 '{name}' 항목이 없습니다. 지원: {list(_REGISTRY.keys())}")
+        return self._get(eng, period="q")
+
+    def all(self, period: str = "y") -> dict[str, pl.DataFrame | None]:
         """모든 주석 항목을 dict로 반환."""
-        return {name: self._get(name) for name in _REGISTRY}
+        return {name: self._get(name, period=period) for name in _REGISTRY}
 
     def keys(self) -> list[str]:
         """지원하는 영문 속성명 목록."""

@@ -440,11 +440,16 @@ class Company:
         self._cache[cacheKey] = result
         return result
 
-    def _call_notesDetail(self, keyword: str) -> Any:
-        """notesDetail 호출 (키워드별 캐싱)."""
+    def _call_notesDetail(self, keyword: str, period: str = "y") -> Any:
+        """notesDetail 호출 (키워드 + 기간별 캐싱).
+
+        Args:
+            keyword: 주석 키워드 (예: "재고자산", "매출채권").
+            period: "y" (연간, 기본), "q" (분기 포함), "h" (반기 포함).
+        """
         if not self._hasDocs:
             return None
-        cacheKey = f"notesDetail:{keyword}"
+        cacheKey = f"notesDetail:{keyword}:{period}"
         if cacheKey in self._cache:
             return self._cache[cacheKey]
         result = _import_and_call(
@@ -452,6 +457,7 @@ class Company:
             "notesDetail",
             self.stockCode,
             keyword=keyword,
+            period=period,
         )
         self._cache[cacheKey] = result
         return result
@@ -2774,6 +2780,7 @@ class Company:
         helper: bool | None = None,
         *,
         preset: str | None = None,
+        template: str | None = None,
         detail: bool | None = None,
         basePeriod: str | None = None,
     ):
@@ -2785,6 +2792,7 @@ class Company:
             - 4개 출력 형식 (rich, html, markdown, json)
             - 섹션간 순환 서사 자동 감지
             - 프리셋 지원 (executive/audit/credit/growth/valuation)
+            - 스토리 템플릿 (사이클/프랜차이즈/턴어라운드/성장/자본집약/지주/현금부자)
             - detail=False로 요약만 표시
             - 레이아웃 커스텀
 
@@ -2797,6 +2805,7 @@ class Company:
             layout: ReviewLayout 커스텀. None이면 기본.
             helper: True면 해석 힌트 텍스트 포함. None이면 자동.
             preset: 프리셋명 ("executive"/"audit"/"credit"/"growth"/"valuation"). None이면 전체.
+            template: 스토리 템플릿 ("성장"/"자본집약"/"지주" 등). "auto"면 자동 판별.
             detail: True면 전체 블록, False면 섹션 요약만. None이면 preset 기본값 또는 True.
 
         Returns:
@@ -2810,13 +2819,15 @@ class Company:
             c.review()                        # 전체 검토서
             c.review("수익구조")                # 특정 섹션
             c.review(preset="audit")          # 감사/회계 검토용
-            c.review(preset="executive")      # 경영진 요약
+            c.review(template="auto")         # 스토리 자동 판별
+            c.review(template="성장")          # 성장 템플릿 적용
             c.review(detail=False)            # 전 섹션 요약만
 
         Guide:
             - "재무 검토서 만들어줘" -> c.review()
             - "수익구조 분석" -> c.review("수익구조")
             - "감사용 리뷰" -> c.review(preset="audit")
+            - "이 회사 스토리는?" -> c.review(template="auto")
             - "요약만 보여줘" -> c.review(detail=False)
             - "AI 의견 포함 보고서" -> c.reviewer() (review + AI 해석)
 
@@ -2828,7 +2839,14 @@ class Company:
         from dartlab.review.registry import buildReview
 
         return buildReview(
-            self, section=section, layout=layout, helper=helper, preset=preset, detail=detail, basePeriod=basePeriod
+            self,
+            section=section,
+            layout=layout,
+            helper=helper,
+            preset=preset,
+            template=template,
+            detail=detail,
+            basePeriod=basePeriod,
         )
 
     def reviewer(

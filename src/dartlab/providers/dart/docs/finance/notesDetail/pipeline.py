@@ -65,7 +65,6 @@ def notesDetail(
                 continue
 
             unit = detectUnit(section)
-            unitByYear[year] = unit
             if not allTables:
                 latestUnit = unit
 
@@ -82,8 +81,10 @@ def notesDetail(
                 )
 
             if periods:
-                allTables[year] = periods
-            break
+                # 분기 키: "2024Q1", "2024H1", "2024Q3", "2024" (연간)
+                periodKey = _makePeriodKey(year, kind)
+                allTables[periodKey] = periods
+                unitByYear[periodKey] = unit
 
     if not allTables:
         return None
@@ -98,6 +99,20 @@ def notesDetail(
         tables=allTables,
         tableDf=tableDf,
     )
+
+
+_KIND_SUFFIX = {
+    "annual": "",
+    "Q1": "Q1",
+    "semi": "H1",
+    "Q3": "Q3",
+}
+
+
+def _makePeriodKey(year: str, kind: str) -> str:
+    """연도 + 보고서 종류 → 기간 키."""
+    suffix = _KIND_SUFFIX.get(kind, "")
+    return f"{year}{suffix}" if suffix else year
 
 
 def _normalizeName(name: str) -> str:
