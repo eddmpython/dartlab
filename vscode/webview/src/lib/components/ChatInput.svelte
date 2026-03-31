@@ -38,6 +38,7 @@
       if (e.key === "Escape") { e.preventDefault(); showSlash = false; return; }
     }
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
+    if (e.key === "Escape" && streaming) { e.preventDefault(); onstop?.(); }
   }
 
   function execSlash(c: typeof cmds[0]) { inputText = ""; showSlash = false; slashIdx = 0; oncommand?.(c.name); }
