@@ -98,13 +98,39 @@ renderer.tablecell = function ({
   return `<${tag}${align}>${formatted}</${tag}>`;
 };
 
-// Wrap tables with download button
+// Wrap tables with download button (marked v15: token-based API)
 let tableCounter = 0;
-renderer.table = function ({ header, rows }: { header: string; rows: string }) {
+renderer.table = function (token: {
+  header: Array<{ text: string; align?: string | null }>;
+  rows: Array<Array<{ text: string }>>;
+  align: Array<string | null>;
+}) {
   const id = `tbl-${++tableCounter}`;
+
+  // Build header row
+  const ths = token.header
+    .map((cell) => `<th>${cell.text}</th>`)
+    .join("");
+  const headerHtml = `<tr>${ths}</tr>`;
+
+  // Build data rows
+  const rowsHtml = token.rows
+    .map((row) => {
+      const tds = row
+        .map((cell, i) => {
+          const plain = cell.text.replace(/<[^>]+>/g, "").trim();
+          const isNum = /^[+\-]?\d/.test(plain);
+          const align = isNum ? ' style="text-align:right"' : "";
+          return `<td${align}>${formatNumber(cell.text)}</td>`;
+        })
+        .join("");
+      return `<tr>${tds}</tr>`;
+    })
+    .join("");
+
   return `<div class="table-wrap" data-table-id="${id}">
 <button class="table-dl-btn" onclick="(function(){var t=document.querySelector('[data-table-id=\\'${id}\\'] table');if(!t)return;var r=[],h=t.querySelectorAll('th');var hr=[];h.forEach(function(c){hr.push(c.textContent)});r.push(hr.join(','));t.querySelectorAll('tbody tr').forEach(function(tr){var row=[];tr.querySelectorAll('td').forEach(function(c){row.push(c.textContent.replace(/,/g,''))});r.push(row.join(','))});var b=new Blob([r.join('\\n')],{type:'text/csv'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='dartlab-table.csv';a.click()})()">CSV</button>
-<table><thead>${header}</thead><tbody>${rows}</tbody></table></div>`;
+<table><thead>${headerHtml}</thead><tbody>${rowsHtml}</tbody></table></div>`;
 };
 
 marked.use({ renderer });
