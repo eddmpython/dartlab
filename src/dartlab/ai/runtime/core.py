@@ -291,6 +291,94 @@ def _executeCodeBlock(code: str, stockCode: str | None = None) -> str:
     return executor.execute(code, stockCode=stockCode, timeout=60)
 
 
+# ── Polars 유니코드 테이블 → GFM 마크다운 변환 ─────────
+
+_POLARS_TABLE_START = re.compile(r"^┌[─┬]+┐$", re.MULTILINE)
+_POLARS_TABLE_END = re.compile(r"^└[─┴]+┘$", re.MULTILINE)
+
+
+def _polarsTableToMarkdown(text: str) -> str:
+    """실행 결과 내 Polars 유니코드 테이블을 GFM 마크다운 테이블로 변환.
+
+    Polars 출력 구조:
+        ┌──────┬──────┐    ← 상단 경계
+        │ col1 ┆ col2 │    ← 헤더 행
+        │ ---  ┆ ---  │    ← 타입 힌트 (생략)
+        │ str  ┆ f64  │    ← 타입 행 (생략)
+        ╞══════╪══════╡    ← 헤더/데이터 구분선
+        │ val1 ┆ val2 │    ← 데이터 행
+        └──────┴──────┘    ← 하단 경계
+    """
+    if "┌" not in text:
+        return text
+
+    lines = text.split("\n")
+    result: list[str] = []
+    in_table = False
+    header_emitted = False
+    col_count = 0
+
+    for line in lines:
+        stripped = line.strip()
+
+        # 테이블 시작 경계
+        if stripped.startswith("┌") and stripped.endswith("┐"):
+            in_table = True
+            header_emitted = False
+            continue
+
+        # 테이블 끝 경계
+        if stripped.startswith("└") and stripped.endswith("┘"):
+            in_table = False
+            continue
+
+        if not in_table:
+            result.append(line)
+            continue
+
+        # 헤더/데이터 구분선 (╞══╪══╡)
+        if stripped.startswith("╞") or stripped.startswith("├"):
+            if not header_emitted and col_count > 0:
+                result.append("| " + " | ".join(["---"] * col_count) + " |")
+                header_emitted = True
+            continue
+
+        # 데이터 행 (│ 또는 ┆ 구분)
+        if "│" in stripped or "┆" in stripped:
+            # 분리: │ 와 ┆ 모두 셀 구분자로 처리
+            cells_raw = re.split(r"[│┆]", stripped)
+            cells = [c.strip() for c in cells_raw if c.strip() != ""]
+
+            # Polars 타입/구분 행 건너뛰기 (--- 또는 str/f64/i64 등)
+            if all(c in ("---", "str", "f64", "i64", "i32", "u32", "u64", "bool", "cat", "date", "datetime") for c in cells):
+                continue
+
+            if cells:
+                col_count = max(col_count, len(cells))
+                md_row = "| " + " | ".join(cells) + " |"
+                result.append(md_row)
+
+    return "\n".join(result)
+
+
+def _formatResultForUser(result: str) -> str:
+    """실행 결과를 사용자에게 보여줄 형식으로 변환.
+
+    - Polars 테이블 → 마크다운 테이블 (코드 블록 밖)
+    - 에러/Traceback → 코드 블록 유지
+    - shape 등 메타 정보 → 유지
+    """
+    isError = "실행 오류" in result or "Traceback" in result
+    if isError:
+        return f"\n\n```\n[실행 결과]\n{result}\n```\n\n"
+
+    if "┌" in result:
+        converted = _polarsTableToMarkdown(result)
+        return f"\n\n[실행 결과]\n\n{converted}\n\n"
+
+    return f"\n\n```\n[실행 결과]\n{result}\n```\n\n"
+
+
 _LOOP_SIMILARITY_THRESHOLD = 0.85
 
 
@@ -349,8 +437,8 @@ def _streamWithCodeExecution(
         except (OSError, RuntimeError, TimeoutError, ValueError) as exc:
             result = f"실행 오류: {exc}"
 
-        # 실행 결과 알림
-        yield f"\n\n```\n[실행 결과]\n{result}\n```\n\n"
+        # 실행 결과 알림 (사용자용: 마크다운 테이블 변환)
+        yield _formatResultForUser(result)
 
         # 결과를 대화에 추가하여 LLM이 해석하도록 재요청
         messages.append({"role": "assistant", "content": buffer})
@@ -416,9 +504,10 @@ dartlab 재무분석 플랫폼을 도구로 삼아 한국/미국 상장기업을
 {env_block}
 
 ## 도구 선택 기준
-- **개별 기업 분석**: 질문과 정확히 매칭되는 축의 review/analysis를 호출하라.
-  "비용구조" 질문 → c.review("비용구조"), "현금흐름" → c.review("현금흐름"). 다른 축을 조합하지 마라.
-  심층 데이터가 필요하면 analysis를 적극 활용하라 — review보다 빠르고 원본 dict를 준다.
+- **개별 기업 분석**: analysis를 기본으로 사용하라. review는 요약이 필요할 때만.
+  analysis("비용구조")는 원가율/판관비율/영업레버리지/손익분기점/비용성격별분류까지 한번에 준다.
+  analysis("자산구조")는 영업/비영업 분류 + 재고/유형/무형자산 주석 상세까지 포함.
+  질문과 정확히 매칭되는 축을 호출하라. 다른 축을 조합하지 마라.
   c.IS/c.BS/c.CF 직접 파싱 금지.
 - **시장 비교/순위/필터**: scan. 횡단 질문에 사용.
   결과를 먼저 출력하고, 이상치(inf, null, 기저효과)가 보이면 원인을 설명하라.
@@ -446,8 +535,9 @@ result = c.analysis("수익성")  # → dict. keys: marginTrend, returnTrend, du
 df = dartlab.scan("축")              # 시장 전체
 df = dartlab.scan("축", "005930")    # 특정 종목 포함 순위
 # 컬럼 구조를 먼저 확인: print(df.columns, df.head(3))
-유효 축: governance, workforce, capital, debt, cashflow, audit, insider,
-        quality, liquidity, growth, profitability, digest, network
+유효 축: account, audit, capital, cashflow, debt, dividendTrend, efficiency,
+        governance, growth, insider, liquidity, macroBeta, network,
+        profitability, quality, ratio, screen, valuation, workforce
 
 특수 축 — 전종목 시계열 (특정 지표 추이 비교에 가장 강력):
 dartlab.scan("account", "매출액")              # 전종목 매출액 분기 시계열
@@ -567,7 +657,10 @@ dartlab.capabilities(search="키워드")
 - 한국어 질문에는 한국어로 답변.
 - 코드로 확인되지 않은 수치를 인용하지 마라.
 - 에러 발생 시: 에러를 읽고 원인을 진단한 뒤 수정. 같은 코드를 반복하지 마라.
-- 실행 시간 제한은 60초다. 1회 코드에서 review는 최대 3개, scan은 1개까지만 호출하라.
+- 실행 시간 제한은 60초다. 1회 코드에서:
+  - dartlab 데이터를 먼저 뽑아라 (review/analysis/show/select). 웹검색은 그 다음.
+  - review는 최대 2개 + scan 1개 + newsSearch 1개 정도가 적정. 전부 한번에 넣지 마라.
+  - 첫 코드에서 재무 데이터를 충분히 뽑았으면, 웹검색은 2라운드로 분리해도 된다.
 - 코드블록은 하나만 작성하라. 여러 블록으로 나누면 변수가 공유되지 않는다.
 """
 
@@ -590,8 +683,13 @@ def _buildSystemPrompt(
     hasCompany: bool = False,
     stockCode: str | None = None,
     corpName: str | None = None,
+    templateText: str | None = None,
 ) -> str:
-    """시스템 프롬프트 조립 — 역할 + 실행환경 + 도구 상세 + 규칙."""
+    """시스템 프롬프트 조립 — 기본 + 환경 + 템플릿(사용자 주입).
+
+    templateText가 있으면 시스템 프롬프트 끝에 추가된다.
+    시스템 레벨로 주입되므로 AI가 규칙으로 인식한다.
+    """
     custom = getattr(config_, "system_prompt", None)
     if custom:
         return custom
@@ -611,6 +709,10 @@ def _buildSystemPrompt(
     parts = [prompt]
     if market == "US":
         parts.append(_EDGAR_SUPPLEMENT)
+
+    # 사용자 템플릿 주입 (시스템 프롬프트 레벨)
+    if templateText:
+        parts.append(f"\n## 사용자 분석 템플릿 (이 지시를 반드시 따르라)\n\n{templateText}")
 
     return "\n".join(parts)
 
@@ -656,6 +758,9 @@ def analyze(
     emit_system_prompt: bool = True,
     # 단축 경로
     not_found_msg: str | None = None,
+    # 템플릿
+    _templateName: str | None = None,
+    _templateText: str | None = None,
     # 추가 LLMConfig overrides
     **kwargs: Any,
 ) -> Generator[AnalysisEvent, None, None]:
@@ -734,6 +839,8 @@ def analyze(
                 conversation_meta=conversation_meta,
                 emit_system_prompt=emit_system_prompt,
                 _full_response_parts=full_response_parts,
+                _templateName=_templateName,
+                _templateText=_templateText,
                 **kwargs,
             ):
                 yield _emit(ev)
@@ -777,6 +884,8 @@ def _analyze_inner(
     conversation_meta: dict | None,
     emit_system_prompt: bool,
     _full_response_parts: list[str],
+    _templateName: str | None = None,
+    _templateText: str | None = None,
     **kwargs: Any,
 ) -> Generator[AnalysisEvent, None, None]:
     """analyze() 본체 — 3단계 순수 스트리밍."""
@@ -800,12 +909,19 @@ def _analyze_inner(
 
     # ── 2. 시스템 프롬프트 조립 ──
     company_market = getattr(company, "market", "KR") if company else "KR"
+    # 템플릿 텍스트: 직접 전달된 _templateText 우선, 없으면 _templateName으로 로드
+    if _templateText is None and _templateName:
+        from dartlab.ai.patterns import get_template
+
+        _templateText = get_template(_templateName)
+
     system_prompt = _buildSystemPrompt(
         config_,
         market=company_market,
         hasCompany=company is not None,
         stockCode=stock_id,
         corpName=corp_name,
+        templateText=_templateText,
     )
 
     # company=None이면 종목명 사전 검색

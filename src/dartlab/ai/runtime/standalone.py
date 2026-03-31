@@ -54,6 +54,8 @@ def ask(
     reflect: bool = False,
     report_mode: bool = False,
     pattern: str | None = None,
+    template: str | None = None,
+    modules: list[str] | None = None,
     history: list[dict[str, str]] | None = None,
     **kwargs: Any,
 ) -> str | Generator[str, None, None]:
@@ -69,27 +71,33 @@ def ask(
         stream: True면 제너레이터 반환 (chunk 단위).
         reflect: True면 답변 자체 검증 (1회 reflection).
         report_mode: True면 전문 분석보고서 모드 (7섹션 구조화).
-        pattern: 분석 패턴 이름 (financial, risk, valuation 등).
+        pattern: 분석 패턴 이름 (하위호환).
+        template: 분석 템플릿 이름 (단일 모듈, 하위호환).
+        modules: 분석 모듈 리스트 (복수 조합 가능, 최대 3개).
         history: 이전 대화 메시지 리스트 (대화 연속 모드).
         **kwargs: LLMConfig override.
 
     Returns:
         str (stream=False) 또는 Generator[str] (stream=True).
     """
-    # 패턴 적용 → 질문 앞에 패턴 프롬프트 삽입
-    effective_question = question
-    if pattern:
-        from dartlab.ai.patterns import get_pattern
+    # 모듈 → 시스템 프롬프트에 주입 (modules 우선 → template → pattern)
+    _templateText = None
+    if modules:
+        from dartlab.ai.patterns import get_modules
 
-        pattern_text = get_pattern(pattern)
-        if pattern_text:
-            effective_question = f"{pattern_text}\n\n---\n\n{question}"
+        _templateText = get_modules(modules)
+    else:
+        tmpl_name = template or pattern
+        if tmpl_name:
+            from dartlab.ai.patterns import get_template
+
+            _templateText = get_template(tmpl_name)
 
     from dartlab.ai.runtime.core import analyze
 
     events = analyze(
         company,
-        effective_question,
+        question,
         include=include,
         exclude=exclude,
         provider=provider,
@@ -98,6 +106,7 @@ def ask(
         reflect=reflect,
         report_mode=report_mode,
         history=history,
+        _templateText=_templateText,
         **kwargs,
     )
 

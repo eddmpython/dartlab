@@ -115,4 +115,42 @@ def status(provider: str | None = None, *, role: str | None = None) -> dict:
 
 from dartlab.ai.tools.plugin import get_plugin_registry, tool
 
-__all__ = ["configure", "get_config", "status", "LLMConfig", "LLMResponse", "tool", "get_plugin_registry"]
+
+def templates(name: str | None = None):
+    """분석 템플릿 목록 또는 특정 템플릿 내용 반환.
+
+    Args:
+        name: None이면 전체 목록, 지정하면 해당 템플릿 내용.
+
+    Returns:
+        list[dict] (목록) 또는 str (내용) 또는 None.
+    """
+    from dartlab.ai.patterns import get_template, list_templates
+
+    if name is None:
+        return list_templates()
+    return get_template(name)
+
+
+def saveTemplate(name: str, *, content: str | None = None, file: str | None = None):
+    """사용자 분석 템플릿 저장. ~/.dartlab/templates/{name}.md
+
+    Args:
+        name: 템플릿 이름.
+        content: 마크다운 내용.
+        file: 파일 경로 (content 대신).
+
+    Returns:
+        Path — 저장된 파일 경로.
+    """
+    from dartlab.ai.patterns import save_template
+
+    return save_template(name, content=content, file=file)
+
+
+__all__ = [
+    "configure", "get_config", "status",
+    "LLMConfig", "LLMResponse",
+    "tool", "get_plugin_registry",
+    "templates", "saveTemplate",
+]
