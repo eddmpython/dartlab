@@ -787,14 +787,24 @@
   }
   .content :global(table) {
     border-collapse: collapse;
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
     margin: 8px 0;
     font-size: 12px;
+    display: block;
+    overflow-x: auto;
+    max-height: 400px;
+    overflow-y: auto;
   }
   .content :global(th), .content :global(td) {
     border: 1px solid var(--vscode-panel-border);
-    padding: 6px 10px;
+    padding: 6px 12px;
     text-align: left;
+    white-space: nowrap;
+  }
+  .content :global(td) {
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 11px;
   }
   .content :global(th) {
     background: var(--vscode-editorGroupHeader-tabsBackground);
@@ -802,9 +812,15 @@
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.02em;
+    position: sticky;
+    top: 0;
+    z-index: 1;
   }
   .content :global(tr:nth-child(even)) {
     background: color-mix(in srgb, var(--vscode-editorGroupHeader-tabsBackground) 30%, transparent);
+  }
+  .content :global(tr:hover) {
+    background: var(--vscode-list-hoverBackground);
   }
   .content :global(p) { margin: 8px 0; }
   .content :global(p:first-child) { margin-top: 0; }

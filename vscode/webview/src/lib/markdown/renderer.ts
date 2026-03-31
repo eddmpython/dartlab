@@ -71,7 +71,16 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-// Table styling — right-align numbers
+// Format large numbers with commas for readability
+function formatNumber(s: string): string {
+  return s.replace(/(?<![.\d])(-?\d{5,})(?!\.\d)/g, (m) => {
+    const n = parseInt(m, 10);
+    if (isNaN(n)) return m;
+    return n.toLocaleString();
+  });
+}
+
+// Table styling — right-align numbers + format large numbers
 renderer.tablecell = function ({
   text,
   header,
@@ -81,9 +90,12 @@ renderer.tablecell = function ({
   align?: string | null;
 }) {
   const tag = header ? "th" : "td";
-  const isNumeric = /^[+\-]?\d/.test(text.replace(/<[^>]+>/g, "").trim());
+  const plain = text.replace(/<[^>]+>/g, "").trim();
+  const isNumeric = /^[+\-]?\d/.test(plain);
   const align = isNumeric && !header ? ' style="text-align:right"' : "";
-  return `<${tag}${align}>${text}</${tag}>`;
+  // Format large numbers in non-header cells
+  const formatted = !header ? formatNumber(text) : text;
+  return `<${tag}${align}>${formatted}</${tag}>`;
 };
 
 marked.use({ renderer });
