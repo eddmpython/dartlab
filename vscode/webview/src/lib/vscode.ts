@@ -1,38 +1,91 @@
-/** VSCode WebView API wrapper. */
+/** Bridge -- VSCode webview와 브라우저 모드 자동 감지. */
 
-interface VsCodeApi {
+interface Bridge {
   postMessage(msg: unknown): void;
-  getState(): unknown;
-  setState(state: unknown): void;
+  getState<T>(): T | undefined;
+  setState<T>(state: T): void;
+  onMessage(handler: (msg: unknown) => void): void;
 }
 
-// acquireVsCodeApi is injected by VSCode and can only be called once.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const vscode: VsCodeApi = (window as any).acquireVsCodeApi();
+const isVSCode = !!(window as any).__vscode || typeof (window as any).acquireVsCodeApi === "function";
+
+function createVSCodeBridge(): Bridge {
+  // Use pre-acquired API from inline script, or acquire fresh
+  const vscode = (window as any).__vscode || (window as any).acquireVsCodeApi();
+  return {
+    postMessage: (msg) => vscode.postMessage(msg),
+    getState: <T>() => vscode.getState() as T | undefined,
+    setState: <T>(state: T) => vscode.setState(state),
+    onMessage: (handler) => {
+      window.addEventListener("message", (e) => handler(e.data));
+    },
+  };
+}
+
+function createMockBridge(): Bridge {
+  console.log("[dartlab] Browser dev mode -- mock bridge active");
+  const handlers: Array<(msg: unknown) => void> = [];
+
+  function dispatch(msg: unknown) {
+    for (const h of handlers) h(msg);
+  }
+
+  return {
+    postMessage: (msg) => {
+      const m = msg as Record<string, unknown>;
+      console.log("[mock] →", m.type, msg);
+
+      if (m.type === "ready") {
+        setTimeout(() => {
+          dispatch({ type: "serverState", state: "ready" });
+          dispatch({ type: "profile", payload: { provider: "mock", model: "mock-dev", ready: true } });
+        }, 50);
+      } else if (m.type === "ask") {
+        const p = m.payload as Record<string, unknown>;
+        const q = (p?.question as string) || "";
+        // mock streaming response
+        setTimeout(() => dispatch({ type: "sseEvent", event: "meta", data: { company: "Mock기업", stockCode: "000000" } }), 100);
+        setTimeout(() => dispatch({ type: "sseEvent", event: "chunk", data: { text: `"${q}"에 대한 ` } }), 200);
+        setTimeout(() => dispatch({ type: "sseEvent", event: "chunk", data: { text: "mock 응답입니다. " } }), 300);
+        setTimeout(() => dispatch({ type: "sseEvent", event: "chunk", data: { text: "브라우저 dev 모드에서 정상 동작 중." } }), 400);
+        setTimeout(() => {
+          dispatch({ type: "sseEvent", event: "done", data: {} });
+          dispatch({ type: "streamEnd" });
+        }, 500);
+      } else if (m.type === "syncConversations") {
+        // persist to localStorage
+        try { localStorage.setItem("dartlab-convs", JSON.stringify(m.payload)); } catch {}
+      }
+    },
+    getState: <T>() => {
+      try {
+        const s = localStorage.getItem("dartlab-state");
+        return s ? (JSON.parse(s) as T) : undefined;
+      } catch { return undefined; }
+    },
+    setState: <T>(state: T) => {
+      try { localStorage.setItem("dartlab-state", JSON.stringify(state)); } catch {}
+    },
+    onMessage: (handler) => {
+      handlers.push(handler);
+    },
+  };
+}
+
+const bridge: Bridge = isVSCode ? createVSCodeBridge() : createMockBridge();
 
 export function postMessage(msg: unknown): void {
-  // Debug: also send log to extension host
-  const m = msg as Record<string, unknown>;
-  if (m.type !== "log") {
-    vscode.postMessage({ type: "log", message: `postMessage: type=${m.type}` });
-  }
-  vscode.postMessage(msg);
+  bridge.postMessage(msg);
 }
 
 export function getState<T>(): T | undefined {
-  return vscode.getState() as T | undefined;
+  return bridge.getState<T>();
 }
 
 export function setState<T>(state: T): void {
-  vscode.setState(state);
+  bridge.setState(state);
 }
 
-/** Listen for messages from Extension Host. */
 export function onMessage(handler: (msg: unknown) => void): void {
-  window.addEventListener("message", (e) => {
-    const m = e.data as Record<string, unknown>;
-    // Debug: log received messages
-    vscode.postMessage({ type: "log", message: `recv: type=${m.type} ${m.type === "serverState" ? `state=${m.state}` : ""}` });
-    handler(e.data);
-  });
+  bridge.onMessage(handler);
 }

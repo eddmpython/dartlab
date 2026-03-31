@@ -112,6 +112,7 @@
     "publish": "vsce publish"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
@@ -119,6 +120,7 @@
     "@vscode/test-electron": "^2.5.2",
     "esbuild": "^0.24.0",
     "mocha": "^11.7.5",
+    "playwright": "^1.58.2",
     "typescript": "^5.7.0",
     "vitest": "^4.1.2"
   }

@@ -28,8 +28,9 @@ export class ChatWebviewBase {
 
     webview.onDidReceiveMessage((msg: unknown) => {
       const m = msg as Record<string, unknown>;
-      // Debug: log all webview messages to output channel
-      if (m.type === "log") {
+      if (m.type === "__console__") {
+        this.log(`[webview:${m.level}] ${((m.args as string[]) || []).join(" ")}`);
+      } else if (m.type === "log") {
         this.log(`[webview] ${m.message}`);
       } else {
         this.log(`[webview→ext] type=${m.type}`);
@@ -134,6 +135,22 @@ export class ChatWebviewBase {
 <body>
   <noscript>JavaScript is required.</noscript>
   <div id="app" data-avatar="${avatarUri}"></div>
+  <script nonce="${nonce}">
+    (function(){
+      var vs=acquireVsCodeApi();
+      window.__vscode=vs;
+      var orig={log:console.log,warn:console.warn,error:console.error};
+      ['log','warn','error'].forEach(function(l){
+        console[l]=function(){
+          orig[l].apply(console,arguments);
+          try{vs.postMessage({type:'__console__',level:l,args:Array.from(arguments).map(function(a){try{return JSON.stringify(a)}catch(e){return String(a)}})})}catch(e){}
+        };
+      });
+      window.onerror=function(m,s,l,c,e){
+        vs.postMessage({type:'__console__',level:'error',args:[JSON.stringify({message:String(m),source:s,line:l,column:c,stack:e&&e.stack})]});
+      };
+    })();
+  </script>
   <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;
