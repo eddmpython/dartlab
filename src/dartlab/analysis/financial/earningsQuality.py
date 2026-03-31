@@ -460,3 +460,77 @@ def calcRichardsonAccrual(company, *, basePeriod: str | None = None) -> dict | N
         })
 
     return {"history": history} if history else None
+
+
+# ── 영업외손익 분해 ──
+
+
+def calcNonOperatingBreakdown(company, *, basePeriod: str | None = None) -> dict | None:
+    """영업외손익 항목별 분해 — 영업이익과 세전이익 사이의 갭.
+
+    금융이익/비용, 지분법손익, 기타수익/비용을 개별 추적.
+    영업외가 영업이익의 30% 이상이면 영업만으로 기업 판단 불가.
+
+    반환::
+
+        {
+            "history": [
+                {"period": str, "opIncome": float, "finIncome": float,
+                 "finCost": float, "netFinance": float, "associateIncome": float,
+                 "otherIncome": float, "otherExpense": float,
+                 "nonOpTotal": float, "nonOpRatio": float},
+                ...
+            ],
+        }
+    """
+    isResult = company.select(
+        "IS",
+        ["영업이익", "금융이익", "금융비용", "지분법관련손익",
+         "기타수익", "기타비용", "법인세차감전순이익"],
+    )
+
+    isParsed = _toDict(isResult)
+    if isParsed is None:
+        return None
+
+    isData, isPeriods = isParsed
+    opRow = isData.get("영업이익", {})
+    finIncRow = isData.get("금융이익", {})
+    finCostRow = isData.get("금융비용", {})
+    assocRow = isData.get("지분법관련손익", {})
+    otherIncRow = isData.get("기타수익", {})
+    otherExpRow = isData.get("기타비용", {})
+    ptRow = isData.get("법인세차감전순이익", {})
+
+    yCols = _annualColsFromPeriods(isPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    if not yCols:
+        return None
+
+    history = []
+    for col in yCols:
+        op = _get(opRow, col)
+        finInc = _get(finIncRow, col)
+        finCost = _get(finCostRow, col)
+        assoc = _get(assocRow, col)
+        otherInc = _get(otherIncRow, col)
+        otherExp = _get(otherExpRow, col)
+        pt = _get(ptRow, col)
+
+        netFinance = finInc - finCost
+        nonOpTotal = pt - op if op != 0 else None
+        nonOpRatio = round(abs(nonOpTotal) / abs(op) * 100, 1) if op != 0 and nonOpTotal is not None else None
+
+        history.append({
+            "period": col,
+            "opIncome": op,
+            "finIncome": finInc,
+            "finCost": finCost,
+            "netFinance": netFinance,
+            "associateIncome": assoc,
+            "otherIncome": otherInc,
+            "otherExpense": otherExp,
+            "nonOpTotal": nonOpTotal,
+            "nonOpRatio": nonOpRatio,
+        })
+
+    return {"history": history} if history else None

@@ -330,3 +330,109 @@ def calcCrossStatementFlags(company, *, basePeriod: str | None = None) -> list[s
             flags.append(f"종합 이상점수 {h0['score']:.0f} — 재무제표 신뢰성 주의")
 
     return flags
+
+
+# ── BS-CF Articulation Check ──
+
+
+def calcArticulationCheck(company, *, basePeriod: str | None = None) -> dict | None:
+    """BS-CF 정합성 검증 — 재무제표 3표가 수학적으로 연결되는지.
+
+    3가지 정합성:
+    1. PPE 정합: delta_PPE ≈ CAPEX - 감가상각 - 처분
+    2. 현금 정합: delta_Cash ≈ OCF + ICF + FCF
+    3. 자본 정합: delta_Equity ≈ NI - 배당 + OCI + 신주발행
+
+    오차가 크면 연결범위 변동, 환율 효과, 재분류 가능성.
+
+    반환::
+
+        {
+            "history": [
+                {"period": str, "ppeError": float, "cashError": float,
+                 "equityError": float, "maxErrorPct": float},
+                ...
+            ],
+        }
+
+    학술근거: Articulation of Financial Statements (FASB/IASB).
+    """
+    bsResult = company.select(
+        "BS",
+        ["유형자산", "현금및현금성자산", "자본총계"],
+    )
+    cfResult = company.select(
+        "CF",
+        ["영업활동현금흐름", "투자활동현금흐름", "재무활동현금흐름",
+         "유형자산의취득", "유형자산의처분"],
+    )
+    isResult = company.select("IS", ["당기순이익"])
+
+    bsParsed = _toDict(bsResult)
+    cfParsed = _toDict(cfResult)
+    isParsed = _toDict(isResult)
+    if bsParsed is None or cfParsed is None or isParsed is None:
+        return None
+
+    bsData, bsPeriods = bsParsed
+    cfData, _ = cfParsed
+    isData, _ = isParsed
+
+    ppeRow = bsData.get("유형자산", {})
+    cashRow = bsData.get("현금및현금성자산", {})
+    eqRow = bsData.get("자본총계", {})
+    ocfRow = cfData.get("영업활동현금흐름", {})
+    icfRow = cfData.get("투자활동현금흐름", {})
+    fcfRow = cfData.get("재무활동현금흐름", {})
+    capexRow = cfData.get("유형자산의취득", {})
+    dispRow = cfData.get("유형자산의처분", {})
+    niRow = isData.get("당기순이익", {})
+
+    yCols = _annualColsFromPeriods(bsPeriods, basePeriod, _MAX_YEARS + 1)
+    if len(yCols) < 2:
+        return None
+
+    history = []
+    for i in range(len(yCols) - 1):
+        col = yCols[i]
+        prevCol = yCols[i + 1]
+
+        # 1. PPE 정합
+        ppeCur = _get(ppeRow, col)
+        ppePrev = _get(ppeRow, prevCol)
+        capex = abs(_get(capexRow, col))
+        disp = abs(_get(dispRow, col))
+        # 감가상각은 추정 (유형자산/10)
+        depEst = ppePrev / 10 if ppePrev > 0 else 0
+        ppeExpected = ppePrev + capex - depEst - disp
+        ppeActual = ppeCur
+        ppeError = abs(ppeActual - ppeExpected) / ppePrev * 100 if ppePrev > 0 else None
+
+        # 2. 현금 정합
+        cashCur = _get(cashRow, col)
+        cashPrev = _get(cashRow, prevCol)
+        ocf = _get(ocfRow, col)
+        icf = _get(icfRow, col)
+        fcf = _get(fcfRow, col)
+        cashExpected = cashPrev + ocf + icf + fcf
+        cashError = abs(cashCur - cashExpected) / abs(cashPrev) * 100 if cashPrev != 0 else None
+
+        # 3. 자본 정합
+        eqCur = _get(eqRow, col)
+        eqPrev = _get(eqRow, prevCol)
+        ni = _get(niRow, col)
+        eqExpected = eqPrev + ni  # 배당/OCI 미포함이므로 대략적
+        eqError = abs(eqCur - eqExpected) / abs(eqPrev) * 100 if eqPrev != 0 else None
+
+        errors = [e for e in [ppeError, cashError, eqError] if e is not None]
+        maxErr = max(errors) if errors else None
+
+        history.append({
+            "period": col,
+            "ppeError": round(ppeError, 1) if ppeError is not None else None,
+            "cashError": round(cashError, 1) if cashError is not None else None,
+            "equityError": round(eqError, 1) if eqError is not None else None,
+            "maxErrorPct": round(maxErr, 1) if maxErr is not None else None,
+        })
+
+    return {"history": history} if history else None

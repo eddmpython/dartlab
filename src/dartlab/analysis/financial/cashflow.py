@@ -248,3 +248,92 @@ def calcCashFlowFlags(company, *, basePeriod: str | None = None) -> list[str]:
             flags.append(f"영업CF 마진 {margin:.1f}% — 매출 대비 현금 유출")
 
     return flags
+
+
+# ── 영업CF 내부 분해 (BS 변동 기반) ──
+
+
+def calcOcfDecomposition(company, *, basePeriod: str | None = None) -> dict | None:
+    """영업CF를 구성요소로 분해 — 현금흐름의 원천을 파악.
+
+    대부분 기업이 CF에 개별 조정항목을 안 쓰므로 BS 변동으로 간접 추정.
+
+    OCF ≈ 순이익 + 비현금비용(감가상각 추정) + 운전자본 변동
+    운전자본 변동 = -(delta_AR) - (delta_Inv) + (delta_AP)
+
+    반환::
+
+        {
+            "history": [
+                {"period": str, "ni": float, "ocf": float,
+                 "depEstimate": float, "wcEffect": float,
+                 "arChange": float, "invChange": float, "apChange": float,
+                 "residual": float},
+                ...
+            ],
+        }
+    """
+    isResult = company.select("IS", ["당기순이익"])
+    cfResult = company.select("CF", ["영업활동현금흐름"])
+    bsResult = company.select(
+        "BS",
+        ["매출채권및기타채권", "재고자산", "매입채무", "유형자산"],
+    )
+
+    isParsed = _toDict(isResult)
+    cfParsed = _toDict(cfResult)
+    bsParsed = _toDict(bsResult)
+    if isParsed is None or cfParsed is None or bsParsed is None:
+        return None
+
+    isData, _ = isParsed
+    cfData, cfPeriods = cfParsed
+    bsData, _ = bsParsed
+
+    niRow = isData.get("당기순이익", {})
+    ocfRow = cfData.get("영업활동현금흐름", {})
+    arRow = bsData.get("매출채권및기타채권", {})
+    invRow = bsData.get("재고자산", {})
+    apRow = bsData.get("매입채무", {})
+    ppeRow = bsData.get("유형자산", {})
+
+    from dartlab.analysis.financial._helpers import annualColsFromPeriods
+
+    yCols = annualColsFromPeriods(cfPeriods, basePeriod, 9)
+    if len(yCols) < 2:
+        return None
+
+    history = []
+    for i in range(len(yCols) - 1):
+        col = yCols[i]
+        prevCol = yCols[i + 1]
+
+        ni = _get(niRow, col)
+        ocf = _get(ocfRow, col)
+        ppe = _get(ppeRow, col)
+
+        # 감가상각 추정 (유형자산/10)
+        depEst = ppe / 10 if ppe > 0 else 0
+
+        # 운전자본 변동 (BS delta)
+        arChange = _get(arRow, col) - _get(arRow, prevCol)  # 증가=현금유출
+        invChange = _get(invRow, col) - _get(invRow, prevCol)
+        apChange = _get(apRow, col) - _get(apRow, prevCol)  # 증가=현금유입
+        wcEffect = -arChange - invChange + apChange
+
+        # 잔차 (설명 안 되는 부분: 영업외, 세금, 기타 조정)
+        residual = ocf - ni - depEst - wcEffect
+
+        history.append({
+            "period": col,
+            "ni": ni,
+            "ocf": ocf,
+            "depEstimate": round(depEst),
+            "wcEffect": round(wcEffect),
+            "arChange": round(arChange),
+            "invChange": round(invChange),
+            "apChange": round(apChange),
+            "residual": round(residual),
+        })
+
+    return {"history": history} if history else None
