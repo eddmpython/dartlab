@@ -114,7 +114,23 @@ def renderMarkdown(review) -> str:
 
     detailMode = getattr(review.layout, "detail", True)
 
+    # 6막 전환 경계 매핑 (섹션 key → 전환 key)
+    _ACT_BOUNDARIES = {
+        "수익성": "1→2",    # 1막 끝 → 2막 시작
+        "현금흐름": "2→3",  # 2막 끝 → 3막 시작
+        "자금조달": "3→4",  # 3막 끝 → 4막 시작
+        "자산구조": "4→5",  # 4막 끝 → 5막 시작
+        "가치평가": "5→6",  # 5막 끝 → 6막 시작
+    }
+
     for section in review.sections:
+        # 막 전환 인과 문장 삽입
+        transKey = _ACT_BOUNDARIES.get(section.key)
+        if transKey and hasattr(review, "actTransitions") and review.actTransitions:
+            trans = review.actTransitions.get(transKey)
+            if trans:
+                parts.append(f"\n> **{transKey}** {trans}\n")
+
         if not detailMode:
             parts.append(f"### {section.title}")
             if section.summary:

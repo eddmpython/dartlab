@@ -814,6 +814,11 @@ def buildReview(
                     sec.threads.append(thread)
         review.circulationSummary = buildCirculationSummary(threads) if threads else ""
 
+        # ── 6막 전환 인과 문장 ──
+        from dartlab.review.narrative import buildActTransitions
+
+        review.actTransitions = buildActTransitions(company, b)
+
         # ── 요약 카드 생성 ──
         from dartlab.review.summary import buildSectionSummary, buildSummaryCard
 

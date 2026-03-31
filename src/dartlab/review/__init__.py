@@ -179,6 +179,7 @@ class Review:
     layout: ReviewLayout = field(default_factory=ReviewLayout)
     aiNote: str | None = None  # AI 미설정 시 안내 메시지
     circulationSummary: str = ""  # 재무제표 순환 서사 요약
+    actTransitions: dict = field(default_factory=dict)  # 6막 전환 인과 문장
     summaryCard: SummaryCard | None = None  # 최상단 요약 카드
 
     def __init__(
