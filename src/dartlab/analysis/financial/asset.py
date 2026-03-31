@@ -447,6 +447,9 @@ def calcCapexPattern(company, *, basePeriod: str | None = None) -> dict | None:
             dep = ppe / 10  # 평균 내용연수 10년 가정
 
         ratio = capex / dep if dep > 0 else None
+        # CAPEX/감가상각 비율 상한: 10배 초과는 감가상각 추정 오류 가능성
+        if ratio is not None and ratio > 10:
+            ratio = None
         cipPct = _pct(cip, ta) if ta > 0 else 0
 
         entry = {
@@ -508,7 +511,9 @@ def calcAssetFlags(company, *, basePeriod: str | None = None) -> list[str]:
     wc = calcWorkingCapital(company, basePeriod=basePeriod)
     if wc and wc["latest"]["ccc"] is not None:
         ccc = wc["latest"]["ccc"]
-        if ccc > 120:
+        if ccc > 2000:
+            pass  # CCC > 2000일은 데이터 왜곡 가능성 → 경고 제외
+        elif ccc > 120:
             flags.append(f"CCC {ccc:.0f}일 — 현금 회수 매우 느림")
         # CCC < 0은 선수금/매입채무 우위로 운전자본 효율적 → 경고 아닌 정보
         # efficiency.py의 "운전자본 유리 구조"로 충분
