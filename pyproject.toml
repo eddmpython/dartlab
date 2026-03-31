@@ -114,6 +114,7 @@ channel-full = [
 vector = [
     "sentence-transformers>=3.0.0,<4",
     "lancedb>=0.15.0,<1",
+    "turboquant-vectors>=0.3.0,<1",
 ]
 all = ["dartlab[channel-full,altair]"]
 
