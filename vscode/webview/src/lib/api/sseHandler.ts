@@ -14,6 +14,7 @@ export interface Message {
   userContent?: string;
   errorAction?: string;
   errorGuide?: string;
+  codeRounds?: Array<{ round: number; maxRounds: number; status: string }>;
   duration?: number;
   startedAt?: number;
 }
@@ -88,6 +89,14 @@ export function createSseHandler(
           const events = [...(msg.toolEvents ?? [])];
           events.push({ type: "result", ...(d as Record<string, unknown>) } as Message["toolEvents"] extends (infer T)[] | undefined ? T : never);
           updateMessage({ toolEvents: events });
+          break;
+        }
+
+        case "code_round": {
+          const msg = getMessage();
+          const rounds = [...(msg.codeRounds ?? [])];
+          rounds.push(d as { round: number; maxRounds: number; status: string });
+          updateMessage({ codeRounds: rounds });
           break;
         }
 

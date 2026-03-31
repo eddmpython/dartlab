@@ -53,19 +53,13 @@ describe("DartLab webview in browser", () => {
     const textarea = await page.$("textarea");
     expect(textarea).not.toBeNull();
 
-    // Type text
-    await textarea!.fill("삼성전자 분석해줘");
-    // Press Enter
+    // Type text (basic question, not "분석" or "에러" to get standard mock response)
+    await textarea!.fill("안녕하세요");
     await page.keyboard.press("Enter");
-
-    // Wait for mock response to render
     await page.waitForTimeout(1000);
 
-    // Check that assistant message appeared
     const body = await page.textContent("body");
     console.log("[browser] after submit:", body?.slice(0, 500));
-
-    // Mock response should contain "mock 응답"
     expect(body).toContain("mock 응답");
   });
 
@@ -82,5 +76,33 @@ describe("DartLab webview in browser", () => {
     // Filter out known benign errors
     const real = errors.filter((e) => !e.includes("[vite]") && !e.includes("favicon"));
     expect(real).toEqual([]);
+  });
+
+  it("code_round scenario shows execution indicator", async () => {
+    await page.reload();
+    await page.waitForTimeout(500);
+    const textarea = await page.$("textarea");
+    await textarea!.fill("삼성전자 분석해줘");
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(1500);
+
+    const body = await page.textContent("body");
+    console.log("[browser] code_round:", body?.slice(0, 500));
+    // Should contain code round indicator text
+    expect(body).toContain("Python 실행");
+  });
+
+  it("error scenario shows provider switch buttons", async () => {
+    await page.reload();
+    await page.waitForTimeout(500);
+    const textarea = await page.$("textarea");
+    await textarea!.fill("에러 테스트");
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(1000);
+
+    const body = await page.textContent("body");
+    console.log("[browser] error:", body?.slice(0, 500));
+    // Should show provider switch buttons
+    expect(body).toContain("Gemini");
   });
 });

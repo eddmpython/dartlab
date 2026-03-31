@@ -86,6 +86,12 @@
     return id;
   }
 
+  let persistTimer: ReturnType<typeof setTimeout> | null = null;
+  function debouncedPersist() {
+    if (persistTimer) clearTimeout(persistTimer);
+    persistTimer = setTimeout(() => { persistTimer = null; persist(); }, 500);
+  }
+
   function updateMessages(convId: string, msgs: Message[]) {
     const idx = conversations.findIndex(c => c.id === convId);
     if (idx < 0) return;
@@ -97,7 +103,7 @@
       if (first) conv.title = first.text.slice(0, 40) + (first.text.length > 40 ? "..." : "");
     }
     conversations = [...conversations];
-    persist();
+    debouncedPersist();
   }
 
   function handleSubmit(text: string) {

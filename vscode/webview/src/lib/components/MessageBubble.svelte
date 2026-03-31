@@ -194,27 +194,45 @@
           <div class="spinner"></div>
           <span class="spinner-label">
             {#if loadingPhase === "thinking"}
-              Thinking...
+              분석 준비 중...
             {:else if loadingPhase === "analyzing"}
-              Analyzing {message.meta?.company ?? ""}...
+              {message.meta?.company ?? ""} 로드 중...
             {:else if loadingPhase === "snapshot"}
-              Loading key metrics...
+              핵심 수치 확인 중...
             {:else if loadingPhase === "context"}
-              Loading data modules ({message.contexts?.length ?? 0})...
+              데이터 로드 중 ({message.contexts?.length ?? 0}개)...
             {:else if loadingPhase === "tools"}
               {#if activeTool}
-                Running {activeTool.name}...
+                {activeTool.name} 실행 중...
               {:else}
-                Processing tools...
+                도구 처리 중...
               {/if}
             {:else}
-              Generating response...
+              응답 생성 중...
             {/if}
           </span>
           {#if elapsed > 0}
             <span class="elapsed">{elapsed}s</span>
           {/if}
         </div>
+      </div>
+    {/if}
+
+    <!-- Code execution rounds -->
+    {#if message.codeRounds?.length}
+      <div class="code-rounds">
+        {#each message.codeRounds as cr}
+          <div class="code-round" class:executing={cr.status === "executing"}>
+            {#if cr.status === "executing" && message.loading}
+              <div class="tool-spinner-sm"></div>
+            {:else}
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" class="tool-ok"><path d="M6.5 12L2 7.5l1.4-1.4L6.5 9.2l6.1-6.1L14 4.5z"/></svg>
+            {/if}
+            <span class="code-round-label">
+              Python 실행 {cr.round}/{cr.maxRounds}
+            </span>
+          </div>
+        {/each}
       </div>
     {/if}
 
@@ -506,6 +524,30 @@
     color: var(--vscode-descriptionForeground);
     opacity: 0.6;
     margin-left: auto;
+  }
+
+  /* === Code execution rounds === */
+  .code-rounds {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 4px 0;
+  }
+  .code-round {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: var(--corner-radius-small);
+    background: var(--vscode-textCodeBlock-background);
+    font-size: 12px;
+  }
+  .code-round.executing {
+    color: var(--dl-accent, #fb923c);
+  }
+  .code-round-label {
+    color: var(--vscode-descriptionForeground);
+    font-family: var(--vscode-editor-font-family, monospace);
   }
 
   /* === Tool events (Claude Code inline style) === */

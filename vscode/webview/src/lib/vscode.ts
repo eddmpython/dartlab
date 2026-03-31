@@ -43,7 +43,32 @@ function createMockBridge(): Bridge {
       } else if (m.type === "ask") {
         const p = m.payload as Record<string, unknown>;
         const q = (p?.question as string) || "";
-        // mock streaming response
+
+        // "에러" → error 시나리오
+        if (q.includes("에러")) {
+          setTimeout(() => dispatch({ type: "sseEvent", event: "meta", data: {} }), 100);
+          setTimeout(() => dispatch({ type: "sseEvent", event: "error", data: { error: "Mock 에러: 인증 만료", action: "relogin", guide: "dartlab.setup(\"gemini\")으로 재인증하세요." } }), 200);
+          setTimeout(() => {
+            dispatch({ type: "sseEvent", event: "done", data: {} });
+            dispatch({ type: "streamEnd" });
+          }, 300);
+          return;
+        }
+
+        // "분석" → code_round 시나리오
+        if (q.includes("분석")) {
+          setTimeout(() => dispatch({ type: "sseEvent", event: "meta", data: { company: "Mock삼성전자", stockCode: "005930" } }), 100);
+          setTimeout(() => dispatch({ type: "sseEvent", event: "chunk", data: { text: "```python\n# SK하이닉스 분석\nc.review()\n```\n" } }), 200);
+          setTimeout(() => dispatch({ type: "sseEvent", event: "code_round", data: { round: 1, maxRounds: 5, status: "executing" } }), 400);
+          setTimeout(() => dispatch({ type: "sseEvent", event: "chunk", data: { text: "\n분석 결과:\n- 매출액 증가\n- 영업이익률 개선" } }), 800);
+          setTimeout(() => {
+            dispatch({ type: "sseEvent", event: "done", data: {} });
+            dispatch({ type: "streamEnd" });
+          }, 1000);
+          return;
+        }
+
+        // 기본 mock 응답
         setTimeout(() => dispatch({ type: "sseEvent", event: "meta", data: { company: "Mock기업", stockCode: "000000" } }), 100);
         setTimeout(() => dispatch({ type: "sseEvent", event: "chunk", data: { text: `"${q}"에 대한 ` } }), 200);
         setTimeout(() => dispatch({ type: "sseEvent", event: "chunk", data: { text: "mock 응답입니다. " } }), 300);
