@@ -168,9 +168,31 @@ function polarsToMarkdown(text: string): string {
   return result.join("\n");
 }
 
+/** Fix mismatched markdown table separator columns. */
+function fixTableSeparators(text: string): string {
+  const lines = text.split("\n");
+  const result: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    // Separator row: | --- | --- | ...
+    if (/^\s*\|[\s\-:|]+\|\s*$/.test(line) && i > 0) {
+      // Count header columns from previous line
+      const headerCols = (lines[i - 1].match(/\|/g) || []).length - 1;
+      if (headerCols > 0) {
+        const sep = "| " + Array(headerCols).fill("---").join(" | ") + " |";
+        result.push(sep);
+        continue;
+      }
+    }
+    result.push(line);
+  }
+  return result.join("\n");
+}
+
 /** Render markdown to HTML with highlighting. */
 export function renderMarkdown(md: string): string {
-  const preprocessed = polarsToMarkdown(md);
+  let preprocessed = polarsToMarkdown(md);
+  preprocessed = fixTableSeparators(preprocessed);
   const html = marked.parse(preprocessed, { async: false }) as string;
   return highlightNumbers(html);
 }
