@@ -922,7 +922,7 @@ def _timelineTable(
     return cols
 
 
-_POSITIVE_KEYWORDS = ("안정", "건전", "양호", "우량", "순현금", "충분", "개선")
+_POSITIVE_KEYWORDS = ("안정", "건전", "양호", "우량", "순현금", "충분", "개선", "고성장")
 
 
 def _flagsBlock(flags: list[str]) -> list:
