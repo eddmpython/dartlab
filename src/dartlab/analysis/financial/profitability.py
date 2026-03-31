@@ -323,3 +323,145 @@ def calcProfitabilityFlags(company, *, basePeriod: str | None = None) -> list[st
                 flags.append(f"진성 고수익 (ROE {roe:.1f}%, 낮은 레버리지)")
 
     return flags
+
+
+# ── Penman RNOA + FLEV/SPREAD 분해 ──
+
+
+def _get(row: dict, col: str) -> float:
+    v = row.get(col)
+    return v if v is not None else 0
+
+
+def calcPenmanDecomposition(company, *, basePeriod: str | None = None) -> dict | None:
+    """Penman 분해 -- ROE가 영업력인지 레버리지인지 분리.
+
+    ROCE = RNOA + FLEV × SPREAD
+    RNOA = NOPAT / NOA  (순영업자산수익률)
+    FLEV = NFO / Equity  (금융레버리지)
+    NBC  = 순금융비용 / NFO  (순차입비용률)
+    SPREAD = RNOA - NBC  (초과수익률)
+    leverageEffect = FLEV × SPREAD  (레버리지 효과)
+
+    반환::
+
+        {
+            "history": [
+                {"period": str, "rnoa": float, "flev": float, "nbc": float,
+                 "spread": float, "leverageEffect": float, "roce": float},
+                ...
+            ],
+        }
+
+    Guide::
+
+        RNOA와 ROE를 비교하면 레버리지 효과를 알 수 있다.
+        RNOA > NBC이면 차입이 주주에게 유리 (양의 SPREAD).
+        RNOA < NBC이면 차입이 가치를 파괴.
+
+    SeeAlso::
+
+        - calcReturnTrend: 기존 5요소 DuPont
+        - calcRoicTimeline: ROIC 시계열
+
+    학술근거: Nissim & Penman (2001), Penman FSA&SV 5e.
+    """
+    isResult = company.select(
+        "IS", ["영업이익", "법인세비용", "법인세차감전순이익", "금융이익", "금융비용"]
+    )
+    bsResult = company.select(
+        "BS",
+        [
+            "자산총계", "자본총계",
+            "매출채권및기타채권", "재고자산", "유형자산", "무형자산",
+            "매입채무", "선수금", "계약부채",
+            "단기차입금", "장기차입금", "사채",
+            "현금및현금성자산",
+        ],
+    )
+
+    isParsed = toDict(isResult)
+    bsParsed = toDict(bsResult)
+    if isParsed is None or bsParsed is None:
+        return None
+
+    isData, isPeriods = isParsed
+    bsData, _ = bsParsed
+
+    opRow = isData.get("영업이익", {})
+    taxRow = isData.get("법인세비용", {})
+    ptRow = isData.get("법인세차감전순이익", {})
+    finIncRow = isData.get("금융이익", {})
+    finCostRow = isData.get("금융비용", {})
+
+    eqRow = bsData.get("자본총계", {})
+    recRow = bsData.get("매출채권및기타채권", {})
+    invRow = bsData.get("재고자산", {})
+    ppeRow = bsData.get("유형자산", {})
+    intRow = bsData.get("무형자산", {})
+    apRow = bsData.get("매입채무", {})
+    advRow = bsData.get("선수금", {})
+    contRow = bsData.get("계약부채", {})
+    stRow = bsData.get("단기차입금", {})
+    ltRow = bsData.get("장기차입금", {})
+    bondRow = bsData.get("사채", {})
+    cashRow = bsData.get("현금및현금성자산", {})
+
+    yCols = _annualColsFromPeriods(isPeriods, maxYears=_MAX_YEARS, basePeriod=basePeriod)
+    if len(yCols) < 2:
+        return None
+
+    history = []
+    for col in yCols:
+        # NOPAT = 영업이익 × (1 - 유효세율)
+        opIncome = _get(opRow, col)
+        taxExpense = abs(_get(taxRow, col))
+        ptIncome = abs(_get(ptRow, col))
+        effectiveTaxRate = taxExpense / ptIncome if ptIncome > 0 else 0.25
+        effectiveTaxRate = min(effectiveTaxRate, 0.5)
+        nopat = opIncome * (1 - effectiveTaxRate) if opIncome != 0 else None
+
+        # NOA = 영업자산 - 영업부채
+        opAssets = _get(recRow, col) + _get(invRow, col) + _get(ppeRow, col) + _get(intRow, col)
+        opLiab = _get(apRow, col) + _get(advRow, col) + _get(contRow, col)
+        noa = opAssets - opLiab if opAssets > 0 else None
+
+        # NFO = 금융부채 - 금융자산(현금)
+        finDebt = _get(stRow, col) + _get(ltRow, col) + _get(bondRow, col)
+        cash = _get(cashRow, col)
+        nfo = finDebt - cash
+
+        # 순금융비용
+        finInc = _get(finIncRow, col)
+        finCost = _get(finCostRow, col)
+        netFinCost = finCost - finInc  # 양수 = 순비용
+
+        equity = _get(eqRow, col)
+
+        # RNOA
+        rnoa = round(nopat / noa * 100, 2) if nopat is not None and noa and noa > 0 else None
+        # FLEV
+        flev = round(nfo / equity, 2) if equity > 0 else None
+        # NBC
+        nbc = round(netFinCost * (1 - effectiveTaxRate) / abs(nfo) * 100, 2) if nfo != 0 else None
+        # SPREAD
+        spread = round(rnoa - nbc, 2) if rnoa is not None and nbc is not None else None
+        # Leverage Effect
+        levEffect = round(flev * spread, 2) if flev is not None and spread is not None else None
+        # ROCE (검증: ≈ RNOA + leverageEffect)
+        roce = round(rnoa + levEffect, 2) if rnoa is not None and levEffect is not None else None
+
+        history.append({
+            "period": col,
+            "rnoa": rnoa,
+            "flev": flev,
+            "nbc": nbc,
+            "spread": spread,
+            "leverageEffect": levEffect,
+            "roce": roce,
+        })
+
+    if not history:
+        return None
+
+    return {"history": history}

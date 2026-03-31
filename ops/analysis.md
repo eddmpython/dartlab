@@ -78,23 +78,129 @@ dartlab은 투자자 관점을 채택 — "이 회사가 뭘로 돈을 버는가
 - fallback이 가치 없으면 제거 (None 반환이 나음)
 - 금융업(은행/증권/보험) IS/BS 구조 미지원 — 장기 과제
 
+## 재무제표 극한 활용 (갭 매트릭스)
+
+9개 학술/실무 방법론 조사 결과. 현재 구현 수준과 빠진 것.
+
+### 구현 수준 매트릭스
+
+| 방법론 | 구현율 | 핵심 갭 |
+|--------|--------|---------|
+| Penman Reformulated FS | 60% | RNOA, FLEV/SPREAD 분해 없음 |
+| Richardson 발생액 3계층 | 30% | BS 기반 WCACC/LTOACC/FINACC 분리 없음 |
+| Mohanram G-Score | 0% | 성장주 전용 스코어 부재 |
+| DuPont 확장 | 50% | RNOA 기반 분해, 업종 조정 없음 |
+| CF 품질 분석 | 40% | Core OCF 조정, Maintenance CAPEX 분리 없음 |
+| BS 자산 재분류 | 70% | NFO, 이연법인세 분류, 초과현금 분리 없음 |
+| SCE 활용 | 20% | OCI 분해, Dirty Surplus 없음 |
+| 세그먼트 심화 | 50% | 부문별 마진/ROIC, SOTP 밸류에이션 없음 |
+| 3표 교차 검증 | 50% | BS-CF 연결, Articulation Check 없음 |
+
+### 재무제표 직접 읽기 (비율 아닌 원본 활용) — 빠진 것
+
+| 영역 | 빠진 분석 | 데이터 위치 |
+|------|----------|-----------|
+| IS | 판관비 하위 분해 (인건비/광고/R&D/임차료) | sections 주석 |
+| IS | 영업외손익 분해 (이자/환차/지분법/처분) | IS finance_income/cost, 지분법손익 |
+| IS | 매출원가 분해 (원재료/노무/경비) | sections 제조원가명세서 |
+| CF | 영업CF 내부 분해 (비현금+운전자본 항목별) | CF 개별 조정항목 |
+| CF | 투자CF 상세 (금융자산/관계기업 개별) | CF |
+| BS | 부채 상세 (선수금/충당부채/리스부채 개별) | BS |
+| BS | 자본 항목 분해 (자본금/잉여금/OCI 개별) | BS + SCE |
+| 전체 | 계정별 CAGR 비교 (절대값 장기 추세) | IS/BS/CF 전체 |
+| 전체 | BS-CF 정합성 (PPE/현금/자본 Articulation) | BS + CF |
+
+### 구현 로드맵
+
+**Phase 1 — 즉시** (데이터 있음, 나누기만 추가):
+1. Penman RNOA + FLEV/SPREAD → `profitability.py`
+2. Richardson 3계층 발생액 → `earningsQuality.py`
+3. BS-CF Articulation Check → `crossStatement.py`
+
+**Phase 2 — 재무제표 직접 읽기** (select()로 접근 가능):
+4. 영업CF 내부 분해 → `cashflow.py`
+5. 영업외손익 분해 → `earningsQuality.py`
+6. 부채 상세 분해 → `stability.py`
+7. 절대값 CAGR 비교 → `growthAnalysis.py`
+
+**Phase 3 — 데이터 확장** (sections 파싱 연동 필요):
+8. 판관비/매출원가 하위 분해
+9. SCE 기반 OCI 분해
+10. 부문별 영업이익/마진
+11. Mohanram G-Score
+
+### 학술 근거
+
+- Penman: Nissim & Penman (2001), Penman FSA&SV 5e
+- Richardson: Richardson et al. (2005) — Accrual Reliability, Earnings Persistence
+- Mohanram: Mohanram (2005) — G-Score for Growth Stocks
+- Soliman: Soliman (2008) — Industry-Adjusted DuPont
+- CF 품질: Mulford & Comiskey (2005) — Creative Cash Flow Reporting
+
 ## forecast (예측)
 
-### 예측신호 6축
+### 매출 방향 예측엔진 (calcRevenueDirection)
+
+**방법론**: 모멘텀(전분기 방향 유지) + 영업이익률 확인 + OLS 확인
+
+```
+1. 기본: 전분기 YoY 매출 방향을 그대로 유지 (72.1%)
+2. 확인1: 영업이익률 > 0이면 신뢰도 상승 (76.1%) — API 불필요
+3. 확인2: OLS 외생변수와 일치하면 추가 상승 (77.7%)
+4. 2연속 같은 방향이면 74.7%
+```
+
+**검증 수치** (walk-forward, 과적합 불가):
+
+| 조건 | 정확도 | 관측치 | 커버리지 |
+|------|--------|--------|---------|
+| 모멘텀 단독 | 72.1% | 4825건 | 100% |
+| 2연속 모멘텀 | 74.7% | 360건 | 69% |
+| 모멘텀+영업이익률 일치 | 76.1% | 3660건 | 76% |
+| 모멘텀+OLS 일치 | 77.7% | 355건 | 68% |
+
+**신뢰도 체계**:
+- `very_high`: 3개 확인(마진+OLS+2연속) 모두 일치
+- `high`: 2개 확인
+- `medium`: 1개 이하
+
+**학술 근거**:
+- M4/M5 Competition: 단순 방법 > 복잡한 ML (100,000 시계열)
+- Sloan 1996: 이익 지속성 → 모멘텀의 이론적 기반
+- PEAD: 실적 방향 지속 효과
+
+**시도했지만 효과 없던 것**:
+- Logistic Regression (+0.8%p) — 모델 구조 변경 무의미
+- 한국 PPI 13개 추가 — 하락 (가격 < 생산량)
+- 11신호 다수결 앙상블 (61%) — static 신호 = 상수 바이어스
+- 후보 풀 확대 — 과적합 변수 선택
+- GDP — **영구 제외** (기업 매출의 직접 외생변수가 아님)
+
+### 외생변수 6축 (OLS 확인용)
 
 | 축 | 지표 예시 |
 |------|------|
 | 원자재 가격 | 구리, 알루미늄, 유가, 금속PPI, 밀, 면화 |
-| 산업생산 | 반도체, 자동차, 화학, 식품, INDPRO |
-| 실물수요 | 자동차판매, 내구재, 화물운송, 설비가동률 |
+| 산업생산 | 반도체, 자동차, 화학, 식품, INDPRO, 배터리PPI |
+| 실물수요 | 자동차판매, 내구재, 화물운송, 설비가동률, BSI |
 | 금융조건 | 금리, 하이일드 스프레드, 회사채 |
-| 내수경기 | IPI, 서비스업, BSI, 아파트가격 |
+| 내수경기 | IPI, 서비스업, BSI 내수/수출, 아파트가격 |
 | 환율 | 원/달러, 원/엔, 원/위안 |
 
-- 143개 업종 매핑, 95.5% 커버리지
-- 방향 정확도: 평균 66%, lag=1분기 선행 시 49%가 70%+
-- **GDP는 영구 제외** — 기업 매출의 직접 외생변수가 아님
-- 천장(62~66%)은 모델 구조로 못 뚫음 — 변수 차원 변경 필요
+- 143개 업종 매핑, 95.5% 커버리지, `exogenousAxes.py`
+- 적응형 변수 선택: 매핑 후보 + 범용 후보에서 상관도 상위 3개
+- `productIndex.parquet`: 2444종목 공시 제품 텍스트 (0.3MB)
+- OLS 단독은 62~66% 천장 — "확인자" 역할만 (독립 예측자 아님)
+
+### 추가 탐색 결과
+
+| 방향 | 결과 | 상태 |
+|------|------|------|
+| 횡단면 ML (Chen 2022) | 모멘텀+마진이 이미 76% → ML 추가 이득 불분명 | 장기 검토 |
+| 관세청 수출입 HS코드 | API 키 필요 | 보류 |
+| 공시 tone (키워드) | preview 200자 한계 | 보류 |
+| Google Trends | 한국 점유율 낮음 | 제외 |
+| 피어 선행 | Frankel 2025: spillover 약함 | 제외 |
 
 ### valuation (가치평가)
 

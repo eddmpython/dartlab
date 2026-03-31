@@ -360,3 +360,103 @@ def calcEarningsQualityFlags(company, *, basePeriod: str | None = None) -> list[
             flags.append(f"Beneish M-Score {ms:.2f} — 임계값 초과, 이익 조작 가능성")
 
     return flags
+
+
+# ── Richardson 3계층 발생액 분해 ──
+
+
+def calcRichardsonAccrual(company, *, basePeriod: str | None = None) -> dict | None:
+    """Richardson et al. (2005) 3계층 발생액 분해.
+
+    BS 변동 기반으로 발생액을 운전자본/비유동영업/금융으로 분리.
+    신뢰도가 낮은 LTOACC가 클수록 이익 지속성이 낮다.
+
+    WCACC  = (delta_CA - delta_Cash) - (delta_CL - delta_STD)  신뢰도 높음
+    LTOACC = delta_NCOA - delta_NCOL                            신뢰도 낮음
+    FINACC = delta_STI + delta_LTI - delta_LTD - delta_PSTK    중간
+
+    반환::
+
+        {
+            "history": [
+                {"period": str, "wcacc": float, "ltoacc": float, "finacc": float,
+                 "totalAccrual": float, "reliabilityScore": str},
+                ...
+            ],
+        }
+
+    학술근거: Richardson, Sloan, Soliman, Tuna (2005).
+    """
+    bsResult = company.select(
+        "BS",
+        [
+            "유동자산", "비유동자산", "유동부채", "비유동부채",
+            "현금및현금성자산", "단기차입금", "장기차입금", "사채",
+            "자산총계",
+        ],
+    )
+
+    bsParsed = _toDict(bsResult)
+    if bsParsed is None:
+        return None
+
+    bsData, bsPeriods = bsParsed
+    caRow = bsData.get("유동자산", {})
+    ncaRow = bsData.get("비유동자산", {})
+    clRow = bsData.get("유동부채", {})
+    nclRow = bsData.get("비유동부채", {})
+    cashRow = bsData.get("현금및현금성자산", {})
+    stRow = bsData.get("단기차입금", {})
+    ltRow = bsData.get("장기차입금", {})
+    bondRow = bsData.get("사채", {})
+    taRow = bsData.get("자산총계", {})
+
+    yCols = _annualColsFromPeriods(bsPeriods, _MAX_YEARS + 1, basePeriod=basePeriod)
+    if len(yCols) < 2:
+        return None
+
+    history = []
+    for i in range(len(yCols) - 1):
+        col = yCols[i]
+        prevCol = yCols[i + 1]
+
+        # 델타 계산
+        dCA = _get(caRow, col) - _get(caRow, prevCol)
+        dCash = _get(cashRow, col) - _get(cashRow, prevCol)
+        dCL = _get(clRow, col) - _get(clRow, prevCol)
+        dSTD = _get(stRow, col) - _get(stRow, prevCol)
+        dNCA = _get(ncaRow, col) - _get(ncaRow, prevCol)
+        dNCL = _get(nclRow, col) - _get(nclRow, prevCol)
+        dLTD = (_get(ltRow, col) + _get(bondRow, col)) - (_get(ltRow, prevCol) + _get(bondRow, prevCol))
+
+        # 3계층 분해
+        wcacc = (dCA - dCash) - (dCL - dSTD)
+        ltoacc = dNCA - dNCL
+        finacc = -dCash + dSTD + dLTD  # 금융자산 증가 - 금융부채 증가의 역
+
+        totalAccrual = wcacc + ltoacc + finacc
+        avgTA = (_get(taRow, col) + _get(taRow, prevCol)) / 2
+
+        # 정규화 (총자산 평균 대비)
+        wcaccNorm = round(wcacc / avgTA * 100, 2) if avgTA > 0 else None
+        ltoaccNorm = round(ltoacc / avgTA * 100, 2) if avgTA > 0 else None
+        finaccNorm = round(finacc / avgTA * 100, 2) if avgTA > 0 else None
+        totalNorm = round(totalAccrual / avgTA * 100, 2) if avgTA > 0 else None
+
+        # 신뢰도 판단: LTOACC 비중이 50% 이상이면 낮음
+        if totalAccrual != 0 and avgTA > 0:
+            ltoShare = abs(ltoacc) / (abs(wcacc) + abs(ltoacc) + abs(finacc)) if (abs(wcacc) + abs(ltoacc) + abs(finacc)) > 0 else 0
+            reliability = "low" if ltoShare > 0.5 else "high" if ltoShare < 0.2 else "medium"
+        else:
+            reliability = None
+
+        history.append({
+            "period": col,
+            "wcacc": wcaccNorm,
+            "ltoacc": ltoaccNorm,
+            "finacc": finaccNorm,
+            "totalAccrual": totalNorm,
+            "reliabilityScore": reliability,
+        })
+
+    return {"history": history} if history else None
