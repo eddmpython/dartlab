@@ -366,17 +366,25 @@ def _polarsTableToMarkdown(text: str) -> str:
 def _formatResultForUser(result: str) -> str:
     """실행 결과를 사용자에게 보여줄 형식으로 변환.
 
-    - Polars 테이블 → 마크다운 테이블 (코드 블록 밖)
+    - Polars 유니코드 테이블 → 마크다운 테이블 (코드 블록 밖)
+    - 마크다운 파이프 테이블이 포함된 결과 → 코드 블록 밖
     - 에러/Traceback → 코드 블록 유지
-    - shape 등 메타 정보 → 유지
+    - 그 외 plain text → 코드 블록
     """
     isError = "실행 오류" in result or "Traceback" in result
     if isError:
         return f"\n\n```\n[실행 결과]\n{result}\n```\n\n"
 
+    # Polars 유니코드 테이블 → 마크다운 변환
     if "┌" in result:
         converted = _polarsTableToMarkdown(result)
         return f"\n\n[실행 결과]\n\n{converted}\n\n"
+
+    # 이미 마크다운 파이프 테이블이 포함된 결과 → 코드블록으로 감싸지 않음
+    lines = result.split("\n")
+    hasTable = any(l.strip().startswith("|") and l.strip().endswith("|") for l in lines)
+    if hasTable:
+        return f"\n\n[실행 결과]\n\n{result}\n\n"
 
     return f"\n\n```\n[실행 결과]\n{result}\n```\n\n"
 
