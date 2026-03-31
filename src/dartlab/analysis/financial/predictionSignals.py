@@ -2105,7 +2105,7 @@ def _bayesUpdate(prior: float, evidence: float, damping: float = 0.3) -> float:
         return prior
     lr = evidence / (1 - evidence)
     # 감쇠: lr의 damping 거듭제곱
-    lr_damped = lr ** damping
+    lr_damped = lr**damping
     prior_odds = prior / (1 - prior)
     posterior_odds = prior_odds * lr_damped
     return posterior_odds / (1 + posterior_odds)

@@ -149,8 +149,13 @@ def saveTemplate(name: str, *, content: str | None = None, file: str | None = No
 
 
 __all__ = [
-    "configure", "get_config", "status",
-    "LLMConfig", "LLMResponse",
-    "tool", "get_plugin_registry",
-    "templates", "saveTemplate",
+    "configure",
+    "get_config",
+    "status",
+    "LLMConfig",
+    "LLMResponse",
+    "tool",
+    "get_plugin_registry",
+    "templates",
+    "saveTemplate",
 ]

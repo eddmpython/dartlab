@@ -656,7 +656,9 @@ def buildActTransitions(company, blockMap: dict) -> dict[str, str]:
         lastChar = niStr[-1]
         hasBatchim = ord(lastChar) >= 0xAC00 and (ord(lastChar) - 0xAC00) % 28 != 0
         josa = "이" if hasBatchim else "가"
-        transitions["2→3"] = f"순이익 {niStr}{josa} 영업CF {ocfStr}로 전환 ({ratio:.0f}%) — 이익이 현금으로 뒷받침되는가?"
+        transitions["2→3"] = (
+            f"순이익 {niStr}{josa} 영업CF {ocfStr}로 전환 ({ratio:.0f}%) — 이익이 현금으로 뒷받침되는가?"
+        )
 
     # 3막→4막: 현금 → 안정성
     fcf = getattr(ratios, "fcf", None) or getattr(ratios, "fcfTTM", None)

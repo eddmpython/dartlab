@@ -32,9 +32,9 @@ def _tokenize(text: str) -> list[str]:
     text = text.strip()
     tokens = set()
     if len(text) >= 2:
-        tokens.update(text[i: i + 2] for i in range(len(text) - 1))
+        tokens.update(text[i : i + 2] for i in range(len(text) - 1))
     if len(text) >= 3:
-        tokens.update(text[i: i + 3] for i in range(len(text) - 2))
+        tokens.update(text[i : i + 3] for i in range(len(text) - 2))
     return list(tokens)
 
 
@@ -86,6 +86,7 @@ def buildNgramIndex(
     # ── Phase 1: allFilings 로드 ──
     if parquetPaths is None:
         from dartlab.providers.dart.openapi.allFilingsCollector import _META_SUFFIX, _allFilingsDir
+
         outDir = _allFilingsDir()
         parquetPaths = sorted(str(f) for f in outDir.glob("*.parquet") if _META_SUFFIX not in f.stem)
 
@@ -121,17 +122,19 @@ def buildNgramIndex(
                         seenStems.add(stemId)
                         invertedIndex[stemId].append(globalDocId)
 
-                allMeta.append({
-                    "rcept_no": row["rcept_no"],
-                    "corp_code": row.get("corp_code", ""),
-                    "corp_name": row.get("corp_name", ""),
-                    "stock_code": row.get("stock_code", ""),
-                    "rcept_dt": row.get("rcept_dt", ""),
-                    "report_nm": row.get("report_nm", ""),
-                    "section_title": row.get("section_title", "") or "",
-                    "source": "allFilings",
-                    "text": (row.get("section_content", "") or "")[:2000],
-                })
+                allMeta.append(
+                    {
+                        "rcept_no": row["rcept_no"],
+                        "corp_code": row.get("corp_code", ""),
+                        "corp_name": row.get("corp_name", ""),
+                        "stock_code": row.get("stock_code", ""),
+                        "rcept_dt": row.get("rcept_dt", ""),
+                        "report_nm": row.get("report_nm", ""),
+                        "section_title": row.get("section_title", "") or "",
+                        "source": "allFilings",
+                        "text": (row.get("section_content", "") or "")[:2000],
+                    }
+                )
                 globalDocId += 1
 
         if showProgress:
@@ -146,14 +149,22 @@ def buildNgramIndex(
             print(f"[stemIndex] docs: {len(docsFiles)}종목 처리 시작")
 
         for batchStart in range(0, len(docsFiles), docsBatchSize):
-            batchFiles = docsFiles[batchStart: batchStart + docsBatchSize]
+            batchFiles = docsFiles[batchStart : batchStart + docsBatchSize]
             for f in batchFiles:
                 try:
-                    df = pl.read_parquet(f, columns=[
-                        "rcept_no", "corp_code", "corp_name", "stock_code",
-                        "report_type", "section_title", "section_order",
-                        "section_content",
-                    ])
+                    df = pl.read_parquet(
+                        f,
+                        columns=[
+                            "rcept_no",
+                            "corp_code",
+                            "corp_name",
+                            "stock_code",
+                            "report_type",
+                            "section_title",
+                            "section_order",
+                            "section_content",
+                        ],
+                    )
                 except Exception:
                     continue
 
@@ -179,23 +190,27 @@ def buildNgramIndex(
                             seenStems.add(stemId)
                             invertedIndex[stemId].append(globalDocId)
 
-                    allMeta.append({
-                        "rcept_no": row["rcept_no"],
-                        "corp_code": row.get("corp_code", ""),
-                        "corp_name": row.get("corp_name", ""),
-                        "stock_code": row.get("stock_code", ""),
-                        "rcept_dt": "",
-                        "report_nm": reportNm,
-                        "section_title": sectionTitle,
-                        "source": "docs",
-                        "text": "",
-                    })
+                    allMeta.append(
+                        {
+                            "rcept_no": row["rcept_no"],
+                            "corp_code": row.get("corp_code", ""),
+                            "corp_name": row.get("corp_name", ""),
+                            "stock_code": row.get("stock_code", ""),
+                            "rcept_dt": "",
+                            "report_nm": reportNm,
+                            "section_title": sectionTitle,
+                            "source": "docs",
+                            "text": "",
+                        }
+                    )
                     globalDocId += 1
 
             if showProgress and (batchStart + docsBatchSize) % (docsBatchSize * 5) == 0:
                 elapsed = time.time() - t0
-                print(f"  [{batchStart + len(batchFiles)}/{len(docsFiles)}] "
-                      f"{globalDocId:,}문서, {nextId:,} stems, {elapsed:.0f}초")
+                print(
+                    f"  [{batchStart + len(batchFiles)}/{len(docsFiles)}] "
+                    f"{globalDocId:,}문서, {nextId:,} stems, {elapsed:.0f}초"
+                )
 
     if globalDocId == 0:
         return 0
@@ -216,9 +231,7 @@ def buildNgramIndex(
         docIds=np.array(flatDocIds, dtype=np.int32),
     )
 
-    (outDir / "stemDict.json").write_text(
-        json.dumps(stemToId, ensure_ascii=False), encoding="utf-8"
-    )
+    (outDir / "stemDict.json").write_text(json.dumps(stemToId, ensure_ascii=False), encoding="utf-8")
 
     metaDf = pl.DataFrame(allMeta)
     metaDf.write_parquet(outDir / "meta.parquet")
@@ -234,8 +247,7 @@ def buildNgramIndex(
     elapsed = time.time() - t0
     npzMb = (outDir / "stemIndex.npz").stat().st_size / 1024 / 1024
     if showProgress:
-        print(f"[stemIndex] 완료: {globalDocId:,}문서, {nextId:,} stems, "
-              f"{npzMb:.1f}MB, {elapsed:.0f}초")
+        print(f"[stemIndex] 완료: {globalDocId:,}문서, {nextId:,} stems, {npzMb:.1f}MB, {elapsed:.0f}초")
 
     return globalDocId
 
@@ -336,17 +348,19 @@ def searchNgram(
             continue
 
         seen.add(rcept)
-        rows.append({
-            "score": round(matchCount / len(queryStems), 4),
-            "rcept_no": rcept,
-            "corp_name": row.get("corp_name", ""),
-            "stock_code": row.get("stock_code", ""),
-            "rcept_dt": row.get("rcept_dt", ""),
-            "report_nm": row.get("report_nm", ""),
-            "section_title": row.get("section_title", ""),
-            "text": row.get("text", ""),
-            "dartUrl": f"{DART_VIEWER}{rcept}",
-        })
+        rows.append(
+            {
+                "score": round(matchCount / len(queryStems), 4),
+                "rcept_no": rcept,
+                "corp_name": row.get("corp_name", ""),
+                "stock_code": row.get("stock_code", ""),
+                "rcept_dt": row.get("rcept_dt", ""),
+                "report_nm": row.get("report_nm", ""),
+                "section_title": row.get("section_title", ""),
+                "text": row.get("text", ""),
+                "dartUrl": f"{DART_VIEWER}{rcept}",
+            }
+        )
 
         if len(rows) >= topK:
             break
@@ -394,6 +408,7 @@ def ngramStats() -> dict:
 def pushStemIndex(*, token: str | None = None) -> str:
     """stemIndex를 HuggingFace에 업로드."""
     from huggingface_hub import HfApi
+
     from dartlab.core.dataConfig import HF_REPO
 
     outDir = _stemIndexDir()
@@ -415,6 +430,7 @@ def pushStemIndex(*, token: str | None = None) -> str:
 def pullStemIndex(*, token: str | None = None, force: bool = False) -> Path:
     """HuggingFace에서 stemIndex 다운로드 → 즉시 검색 가능."""
     from huggingface_hub import snapshot_download
+
     from dartlab.core.dataConfig import HF_REPO
 
     outDir = _stemIndexDir()

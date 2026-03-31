@@ -770,7 +770,8 @@ def buildReview(
     # ── 스토리 템플릿 판별 ──
     detectedTemplate: str | None = None
     if template is not None and preset is None:
-        from dartlab.review.templates import STORY_TEMPLATES, detectTemplate as _detect
+        from dartlab.review.templates import STORY_TEMPLATES
+        from dartlab.review.templates import detectTemplate as _detect
 
         if template == "auto":
             detectedTemplate = _detect(company)

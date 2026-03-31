@@ -689,7 +689,9 @@ def assetStructureBlock(data: dict) -> list:
         blocks.append(TextBlock(diagnosis, style="dim", indent="h2"))
 
     blocks.extend(
-        _notesDetailBlocks(data, {"inventory": "재고자산 상세", "tangibleAsset": "유형자산 변동", "intangibleAsset": "무형자산 상세"})
+        _notesDetailBlocks(
+            data, {"inventory": "재고자산 상세", "tangibleAsset": "유형자산 변동", "intangibleAsset": "무형자산 상세"}
+        )
     )
 
     return blocks
@@ -2754,7 +2756,9 @@ def ocfDecompositionBlock(data: dict) -> list:
             }
         )
 
-    unified = unifyTableScale(rows, "기간", ["순이익", "감가상각(추정)", "운전자본효과", "영업CF", "잔차"], unit="millions")
+    unified = unifyTableScale(
+        rows, "기간", ["순이익", "감가상각(추정)", "운전자본효과", "영업CF", "잔차"], unit="millions"
+    )
 
     blocks: list = []
     blocks.append(

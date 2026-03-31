@@ -1408,6 +1408,7 @@ sections: 구조화된 데이터 지도 (retrievalBlocks의 원본)
 4개 출력 형식 (rich, html, markdown, json)
 섹션간 순환 서사 자동 감지
 프리셋 지원 (executive/audit/credit/growth/valuation)
+스토리 템플릿 (사이클/프랜차이즈/턴어라운드/성장/자본집약/지주/현금부자)
 detail=False로 요약만 표시
 레이아웃 커스텀
 **Requires:** 데이터: finance + report (자동 다운로드)
@@ -1416,6 +1417,7 @@ ask()에서 재무분석 컨텍스트로 활용
 **Guide:** "재무 검토서 만들어줘" -> c.review()
 "수익구조 분석" -> c.review("수익구조")
 "감사용 리뷰" -> c.review(preset="audit")
+"이 회사 스토리는?" -> c.review(template="auto")
 "요약만 보여줘" -> c.review(detail=False)
 "AI 의견 포함 보고서" -> c.reviewer() (review + AI 해석)
 **SeeAlso:** reviewer: review() + AI 섹션별 종합의견 (AI 해석 포함)

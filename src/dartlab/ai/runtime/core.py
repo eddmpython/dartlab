@@ -350,7 +350,9 @@ def _polarsTableToMarkdown(text: str) -> str:
             cells = [c.strip() for c in cells_raw if c.strip() != ""]
 
             # Polars 타입/구분 행 건너뛰기 (--- 또는 str/f64/i64 등)
-            if all(c in ("---", "str", "f64", "i64", "i32", "u32", "u64", "bool", "cat", "date", "datetime") for c in cells):
+            if all(
+                c in ("---", "str", "f64", "i64", "i32", "u32", "u64", "bool", "cat", "date", "datetime") for c in cells
+            ):
                 continue
 
             if cells:

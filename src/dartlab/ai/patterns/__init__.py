@@ -82,10 +82,7 @@ def get_modules(names: list[str]) -> str | None:
         return None
     if len(texts) == 1:
         return texts[0]
-    preamble = (
-        "아래 분석 모듈이 활성화되어 있습니다. "
-        "모듈 간 지시가 충돌하면 먼저 나온 모듈을 우선하세요.\n"
-    )
+    preamble = "아래 분석 모듈이 활성화되어 있습니다. 모듈 간 지시가 충돌하면 먼저 나온 모듈을 우선하세요.\n"
     return preamble + "\n\n---\n\n".join(texts)
 
 
