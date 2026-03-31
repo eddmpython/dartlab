@@ -46,15 +46,26 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.options = { enableScripts: true };
     webviewView.webview.html = this.getHtml(webviewView.webview);
 
-    webviewView.webview.onDidReceiveMessage((msg: { type: string; id?: string }) => {
+    webviewView.webview.onDidReceiveMessage((msg: { type: string; id?: string; name?: string }) => {
       if (msg.type === "newSession") {
         this.onOpenCallback?.();
       } else if (msg.type === "openSession" && msg.id) {
         this.onOpenCallback?.(msg.id);
       } else if (msg.type === "deleteSession" && msg.id) {
         this.deleteSession(msg.id);
+      } else if (msg.type === "renameSession" && msg.id && msg.name) {
+        this.renameSession(msg.id, msg.name);
       }
     });
+  }
+
+  private renameSession(id: string, name: string): void {
+    const state = this.globalState.get(STORAGE_KEY_CONVERSATIONS) as StoredState | undefined;
+    if (!state) return;
+    const conv = state.conversations.find(c => c.id === id);
+    if (conv) conv.title = name;
+    this.globalState.update(STORAGE_KEY_CONVERSATIONS, state);
+    this.refresh();
   }
 
   private deleteSession(id: string): void {
@@ -109,6 +120,9 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
               <span class="meta">
                 <span class="time">${time}</span>
                 <span class="actions">
+                  <span class="ren" data-ren="${c.id}" title="Rename">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9.5 2.5l2 2-7 7H2.5v-2z"/></svg>
+                  </span>
                   <span class="del" data-del="${c.id}" title="Delete">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l6 6M10 4l-6 6"/></svg>
                   </span>
@@ -152,7 +166,8 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
   .actions { grid-area: 1/1; display: flex; gap: 2px; visibility: hidden; }
   .session:hover .time { visibility: hidden; }
   .session:hover .actions { visibility: visible; }
-  .del { display: flex; align-items: center; cursor: pointer; padding: 2px; border-radius: 4px; color: var(--vscode-descriptionForeground); }
+  .ren, .del { display: flex; align-items: center; cursor: pointer; padding: 2px; border-radius: 4px; color: var(--vscode-descriptionForeground); }
+  .ren:hover { color: var(--vscode-foreground); }
   .del:hover { color: var(--vscode-errorForeground); }
   .empty { padding: 20px 12px; text-align: center; color: var(--vscode-descriptionForeground); font-size: 12px; }
   .group-header { padding: 6px 8px 2px; font-size: 11px; font-weight: 600; color: var(--vscode-descriptionForeground); text-transform: uppercase; letter-spacing: 0.03em; }
@@ -168,8 +183,15 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
     document.getElementById('newBtn').addEventListener('click', () => vscode.postMessage({ type: 'newSession' }));
     document.querySelectorAll('.session').forEach(el => {
       el.addEventListener('click', (e) => {
-        if (e.target.closest('.del')) return;
+        if (e.target.closest('.del') || e.target.closest('.ren')) return;
         vscode.postMessage({ type: 'openSession', id: el.dataset.id });
+      });
+    });
+    document.querySelectorAll('.ren').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const name = prompt('세션 이름:');
+        if (name && name.trim()) vscode.postMessage({ type: 'renameSession', id: el.dataset.ren, name: name.trim() });
       });
     });
     document.querySelectorAll('.del').forEach(el => {
