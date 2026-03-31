@@ -243,6 +243,136 @@ def coefficientOfVariation(values: list[float]) -> float:
     return math.sqrt(variance) / abs(mean)
 
 
+# ══════════════════════════════════════
+# Logistic Regression (IRLS)
+# ══════════════════════════════════════
+
+
+@dataclass
+class LogisticResult:
+    """Logistic Regression 결과."""
+
+    coefficients: list[float]  # [intercept, b1, b2, ...]
+    accuracy: float  # in-sample 정확도 (%)
+    nObs: int
+    nFeatures: int
+    converged: bool
+
+
+def logisticRegression(
+    X: list[list[float]],
+    y: list[int],
+    *,
+    maxIter: int = 30,
+    tol: float = 1e-6,
+) -> LogisticResult | None:
+    """이진 분류 Logistic Regression — IRLS(가중 반복 최소자승).
+
+    순수 Python, 외부 의존성 없음.
+
+    Args:
+        X: 독립변수 행렬 (행=관측치, 열=변수). 절편은 자동 추가.
+        y: 종속변수 (0 또는 1).
+        maxIter: 최대 반복 횟수.
+        tol: 수렴 판정 기준.
+
+    Returns:
+        LogisticResult 또는 None (데이터 부족/비수렴).
+    """
+    n = len(y)
+    if n < 5 or len(X) != n:
+        return None
+
+    k0 = len(X[0]) if X else 0
+    if k0 == 0:
+        return None
+
+    # 절편 추가
+    Xa = [[1.0] + list(row) for row in X]
+    k = k0 + 1
+
+    if n <= k:
+        return None
+
+    # 초기 계수 = 0
+    beta = [0.0] * k
+    converged = False
+
+    for iteration in range(maxIter):
+        # sigmoid(X * beta)
+        mu = []
+        for row in Xa:
+            z = sum(row[j] * beta[j] for j in range(k))
+            z = max(-20, min(20, z))  # overflow 방지
+            p = 1.0 / (1.0 + math.exp(-z))
+            p = max(1e-10, min(1 - 1e-10, p))  # 0/1 방지
+            mu.append(p)
+
+        # 가중치 W = mu * (1 - mu)
+        W = [p * (1 - p) for p in mu]
+
+        # 작업 응답 z = X*beta + (y - mu) / W
+        zWork = []
+        for i in range(n):
+            if W[i] < 1e-12:
+                zWork.append(0.0)
+            else:
+                zWork.append(sum(Xa[i][j] * beta[j] for j in range(k)) + (y[i] - mu[i]) / W[i])
+
+        # 가중 OLS: (X'WX)^-1 X'Wz
+        xtwx = [[0.0] * k for _ in range(k)]
+        for r in range(n):
+            w = W[r]
+            for i in range(k):
+                for j in range(i, k):
+                    v = Xa[r][i] * Xa[r][j] * w
+                    xtwx[i][j] += v
+                    if i != j:
+                        xtwx[j][i] += v
+
+        xtwz = [0.0] * k
+        for r in range(n):
+            for j in range(k):
+                xtwz[j] += Xa[r][j] * W[r] * zWork[r]
+
+        inv = invertMatrix(xtwx)
+        if inv is None:
+            return None
+
+        newBeta = [sum(inv[i][j] * xtwz[j] for j in range(k)) for i in range(k)]
+
+        # 수렴 체크
+        diff = sum((newBeta[j] - beta[j]) ** 2 for j in range(k))
+        beta = newBeta
+        if diff < tol:
+            converged = True
+            break
+
+    # in-sample 정확도
+    correct = 0
+    for i in range(n):
+        z = sum(Xa[i][j] * beta[j] for j in range(k))
+        pred = 1 if z > 0 else 0
+        if pred == y[i]:
+            correct += 1
+
+    return LogisticResult(
+        coefficients=beta,
+        accuracy=correct / n * 100,
+        nObs=n,
+        nFeatures=k0,
+        converged=converged,
+    )
+
+
+def logisticPredict(X: list[float], beta: list[float]) -> tuple[int, float]:
+    """Logistic 단일 예측. Returns (direction, probability)."""
+    z = beta[0] + sum(X[j] * beta[j + 1] for j in range(len(X)))
+    z = max(-20, min(20, z))
+    prob = 1.0 / (1.0 + math.exp(-z))
+    return (1 if prob > 0.5 else 0), prob
+
+
 # 하위호환 alias (기존 코드에서 _ prefix로 사용)
 _ols = ols
 _olsMulti = olsMulti

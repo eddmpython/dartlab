@@ -46,7 +46,24 @@ METAL_PPI = ExogenousIndicator("WPU101", "fred", "금속PPI", "commodity")
 WHEAT = ExogenousIndicator("PWHEAMTUSDM", "fred", "밀", "commodity")
 COTTON = ExogenousIndicator("PCOTTINDUSDM", "fred", "면화", "commodity")
 
-# Axis 2: 산업생산
+# Axis 2: 산업 가격/생산 (한국 PPI 우선 + FRED 보조)
+# 한국 PPI = 한국 기업의 실제 판가/원가 → FRED 미국 지표보다 직접적
+KR_SEMI_PPI = ExogenousIndicator("PPI_SEMI", "ecos", "반도체PPI(한국)", "production")
+KR_DISPLAY_PPI = ExogenousIndicator("PPI_DISPLAY", "ecos", "디스플레이PPI", "production")
+KR_AUTO_PPI = ExogenousIndicator("PPI_AUTO", "ecos", "자동차PPI(한국)", "production")
+KR_PHARMA_PPI = ExogenousIndicator("PPI_PHARMA", "ecos", "의약품PPI", "production")
+KR_FOOD_PPI = ExogenousIndicator("PPI_FOOD", "ecos", "식료품PPI", "production")
+KR_STEEL_PPI = ExogenousIndicator("PPI_STEEL", "ecos", "철강PPI", "production")
+KR_CHEM_PPI = ExogenousIndicator("PPI_CHEM", "ecos", "기초화학PPI", "production")
+KR_OIL_PPI = ExogenousIndicator("PPI_OIL", "ecos", "석유제품PPI", "production")
+KR_ELEC_PPI = ExogenousIndicator("PPI_ELEC", "ecos", "전기장비PPI", "production")
+KR_MACHINE_PPI = ExogenousIndicator("PPI_MACHINE", "ecos", "기계장비PPI", "production")
+KR_PLASTIC_PPI = ExogenousIndicator("PPI_PLASTIC", "ecos", "플라스틱PPI", "production")
+KR_TEXTILE_PPI = ExogenousIndicator("PPI_TEXTILE", "ecos", "섬유의복PPI", "production")
+KR_MFG_PPI = ExogenousIndicator("PPI_MFG", "ecos", "공산품PPI", "production")
+KR_EXPORT = ExogenousIndicator("EXPORT", "ecos", "상품수출", "production")
+
+# FRED 보조 (한국 PPI에 없는 것)
 SEMI_PROD = ExogenousIndicator("IPG3344S", "fred", "반도체 생산", "production")
 AUTO_PROD = ExogenousIndicator("IPG3361T3S", "fred", "자동차 생산", "production")
 CHEM_PROD = ExogenousIndicator("IPG325S", "fred", "화학 생산", "production")
@@ -90,9 +107,9 @@ CNYKRW = ExogenousIndicator("CNYKRW", "ecos", "원/위안", "fx")
 # OLS는 3개만 쓰므로 최대 3개
 _INDUSTRY_MAP: dict[str, list[ExogenousIndicator]] = {
     # ── 반도체/전자 ──
-    "반도체 제조업": [SEMI_PROD, COPPER, BASE_RATE],
-    "전자부품 제조업": [SEMI_PROD, COPPER, CAPACITY],
-    "통신 및 방송 장비 제조업": [SEMI_PROD, DURABLE_ORDERS, BASE_RATE],
+    "반도체 제조업": [KR_SEMI_PPI, COPPER, BASE_RATE],
+    "전자부품 제조업": [KR_SEMI_PPI, COPPER, CAPACITY],
+    "통신 및 방송 장비 제조업": [KR_SEMI_PPI, DURABLE_ORDERS, BASE_RATE],
     "영상 및 음향기기 제조업": [SEMI_PROD, AUTO_SALES, BASE_RATE],
     "전동기, 발전기 및 전기 변환 · 공급 · 제어 장치 제조업": [US_INDPRO, COPPER, CAPACITY],
     "기타 전기장비 제조업": [US_INDPRO, COPPER, CAPACITY],
@@ -100,8 +117,8 @@ _INDUSTRY_MAP: dict[str, list[ExogenousIndicator]] = {
     "측정, 시험, 항해, 제어 및 기타 정밀기기 제조업; 광학기기 제외": [US_INDPRO, DURABLE_ORDERS, BASE_RATE],
 
     # ── 자동차/기계 ──
-    "자동차 신품 부품 제조업": [AUTO_PROD, AUTO_SALES, METAL_PPI],
-    "자동차용 엔진 및 자동차 제조업": [AUTO_PROD, AUTO_SALES, CAPACITY],
+    "자동차 신품 부품 제조업": [KR_AUTO_PPI, AUTO_SALES, METAL_PPI],
+    "자동차용 엔진 및 자동차 제조업": [KR_AUTO_PPI, AUTO_SALES, CAPACITY],
     "특수 목적용 기계 제조업": [US_INDPRO, DURABLE_ORDERS, CAPACITY],
     "일반 목적용 기계 제조업": [US_INDPRO, DURABLE_ORDERS, CAPACITY],
     "선박 및 보트 건조업": [FREIGHT, METAL_PPI, OIL],
@@ -109,14 +126,14 @@ _INDUSTRY_MAP: dict[str, list[ExogenousIndicator]] = {
     "기타 운송장비 제조업": [AUTO_PROD, FREIGHT, METAL_PPI],
 
     # ── 화학/소재 ──
-    "기초 화학물질 제조업": [CHEM_PROD, OIL, US_INDPRO],
-    "기타 화학제품 제조업": [CHEM_PROD, OIL, BASE_RATE],
-    "플라스틱제품 제조업": [CHEM_PROD, OIL, CAPACITY],
-    "합성고무 및 플라스틱 물질 제조업": [CHEM_PROD, OIL, US_INDPRO],
-    "비료, 농약 및 살균, 살충제 제조업": [CHEM_PROD, WHEAT, OIL],
+    "기초 화학물질 제조업": [KR_CHEM_PPI, KR_OIL_PPI, KR_EXPORT],
+    "기타 화학제품 제조업": [KR_CHEM_PPI, KR_OIL_PPI, BASE_RATE],
+    "플라스틱제품 제조업": [KR_PLASTIC_PPI, KR_OIL_PPI, CAPACITY],
+    "합성고무 및 플라스틱 물질 제조업": [KR_CHEM_PPI, KR_OIL_PPI, KR_EXPORT],
+    "비료, 농약 및 살균, 살충제 제조업": [KR_CHEM_PPI, WHEAT, KR_OIL_PPI],
 
     # ── 철강/금속 ──
-    "1차 철강 제조업": [METAL_PPI, COPPER, CAPACITY],
+    "1차 철강 제조업": [KR_STEEL_PPI, COPPER, CAPACITY],
     "1차 비철금속 제조업": [ALUMINUM, COPPER, METAL_PPI],
     "기타 금속 가공제품 제조업": [METAL_PPI, US_INDPRO, CAPACITY],
     "구조용 금속제품, 탱크 및 증기발생기 제조업": [METAL_PPI, US_INDPRO, CAPACITY],
@@ -132,23 +149,23 @@ _INDUSTRY_MAP: dict[str, list[ExogenousIndicator]] = {
     "증기, 냉·온수 및 공기 조절 공급업": [OIL, BASE_RATE, IPI],
 
     # ── 의약/바이오 ──
-    "의약품 제조업": [MFG_PPI, BASE_RATE, IPI],
-    "기초 의약물질 제조업": [MFG_PPI, BASE_RATE, CHEM_PROD],
-    "의료용 기기 제조업": [MFG_PPI, BASE_RATE, DURABLE_ORDERS],
-    "의료용품 및 기타 의약 관련제품 제조업": [MFG_PPI, BASE_RATE, IPI],
-    "자연과학 및 공학 연구개발업": [MFG_PPI, BASE_RATE, IPI],
+    "의약품 제조업": [KR_PHARMA_PPI, BASE_RATE, IPI],
+    "기초 의약물질 제조업": [KR_PHARMA_PPI, BASE_RATE, KR_CHEM_PPI],
+    "의료용 기기 제조업": [KR_PHARMA_PPI, BASE_RATE, DURABLE_ORDERS],
+    "의료용품 및 기타 의약 관련제품 제조업": [KR_PHARMA_PPI, BASE_RATE, IPI],
+    "자연과학 및 공학 연구개발업": [KR_PHARMA_PPI, BASE_RATE, IPI],
 
     # ── 식품/음료 ──
-    "기타 식품 제조업": [FOOD_PROD, WHEAT, IPI],
-    "곡물가공품, 전분 및 전분제품 제조업": [FOOD_PROD, WHEAT, IPI],
-    "낙농품 및 식용빙과류 제조업": [FOOD_PROD, WHEAT, IPI],
-    "조미료 및 식품 첨가물 제조업": [FOOD_PROD, WHEAT, IPI],
-    "도축, 육류 가공 및 저장 처리업": [FOOD_PROD, WHEAT, IPI],
-    "수산물 가공 및 저장 처리업": [FOOD_PROD, OIL, IPI],
-    "알코올음료 제조업": [FOOD_PROD, WHEAT, BASE_RATE],
-    "비알코올음료 및 얼음 제조업": [FOOD_PROD, IPI, BASE_RATE],
-    "동물용 사료 및 조제식품 제조업": [WHEAT, FOOD_PROD, OIL],
-    "과실, 채소 가공 및 저장 처리업": [FOOD_PROD, WHEAT, IPI],
+    "기타 식품 제조업": [KR_FOOD_PPI, WHEAT, IPI],
+    "곡물가공품, 전분 및 전분제품 제조업": [KR_FOOD_PPI, WHEAT, IPI],
+    "낙농품 및 식용빙과류 제조업": [KR_FOOD_PPI, WHEAT, IPI],
+    "조미료 및 식품 첨가물 제조업": [KR_FOOD_PPI, WHEAT, IPI],
+    "도축, 육류 가공 및 저장 처리업": [KR_FOOD_PPI, WHEAT, IPI],
+    "수산물 가공 및 저장 처리업": [KR_FOOD_PPI, KR_OIL_PPI, IPI],
+    "알코올음료 제조업": [KR_FOOD_PPI, WHEAT, BASE_RATE],
+    "비알코올음료 및 얼음 제조업": [KR_FOOD_PPI, IPI, BASE_RATE],
+    "동물용 사료 및 조제식품 제조업": [WHEAT, KR_FOOD_PPI, KR_OIL_PPI],
+    "과실, 채소 가공 및 저장 처리업": [KR_FOOD_PPI, WHEAT, IPI],
 
     # ── 섬유/의류 ──
     "봉제의복 제조업": [COTTON, IPI, BASE_RATE],
@@ -340,12 +357,14 @@ def getExogenousIndicators(
         product: 주요제품 텍스트 (직접 지정).
     """
     # stockCode에서 업종/제품 자동 조회
+    # productIndex(공시 원문) 우선, kindList fallback
     if stockCode and (industry is None or product is None):
-        _industry, _product = _lookupFromKindList(stockCode)
+        _product_idx = _lookupFromProductIndex(stockCode)
+        _industry, _product_kind = _lookupFromKindList(stockCode)
         if industry is None:
             industry = _industry
         if product is None:
-            product = _product
+            product = _product_idx or _product_kind  # productIndex 우선
 
     # 1. 주요제품 키워드 오버라이드
     if product:
@@ -387,6 +406,38 @@ def getExogenousSummary(stockCode: str) -> dict:
         "axes": list({ind.axis for ind in indicators}),
         "isFallback": indicators == _FALLBACK,
     }
+
+
+_PRODUCT_INDEX_CACHE: dict | None = None
+
+
+def _lookupFromProductIndex(stockCode: str) -> str | None:
+    """productIndex.parquet에서 공시 기반 제품 텍스트 조회.
+
+    changes.parquet의 '2. 주요 제품 및 서비스' 섹션 최신 preview.
+    kindList보다 구체적 (DRAM, NAND, 신라면 등 실제 제품명 포함).
+    """
+    global _PRODUCT_INDEX_CACHE
+    if _PRODUCT_INDEX_CACHE is None:
+        try:
+            from pathlib import Path
+
+            import polars as pl
+
+            path = Path(__file__).parent.parent.parent.parent.parent / "data" / "dart" / "scan" / "productIndex.parquet"
+            if not path.exists():
+                _PRODUCT_INDEX_CACHE = {}
+                return None
+            df = pl.read_parquet(path)
+            _PRODUCT_INDEX_CACHE = {
+                row["stockCode"]: row["product"]
+                for row in df.iter_rows(named=True)
+            }
+        except (ImportError, KeyError):
+            _PRODUCT_INDEX_CACHE = {}
+            return None
+
+    return _PRODUCT_INDEX_CACHE.get(stockCode)
 
 
 def _lookupFromKindList(stockCode: str) -> tuple[str | None, str | None]:

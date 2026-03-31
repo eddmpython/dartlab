@@ -91,7 +91,7 @@ def collect_candidates(query: str, *, strict: bool) -> list[dict[str, str]]:
     if len(query) < 2:
         return []
     try:
-        df = dartlab.search(query)
+        df = dartlab.searchName(query)
         if len(df) == 0:
             df = None
     except (ValueError, OSError):
@@ -154,7 +154,7 @@ def search_suggestions(question: str) -> list[dict[str, str]]:
                 queries.append(word[: -len(suffix)])
         for q in queries:
             try:
-                df = dartlab.search(q)
+                df = dartlab.searchName(q)
                 for row in df.head(3).to_dicts():
                     code = row.get("종목코드", row.get("stockCode", ""))
                     name = row.get("회사명", row.get("corpName", ""))

@@ -38,6 +38,10 @@ DATA_RELEASES: dict[str, dict] = {
         "dir": "dart/allFilings",
         "label": "DART 전체 공시 원문 데이터",
     },
+    "vectorIndex": {
+        "dir": "dart/vectorIndex",
+        "label": "공시 시맨틱 검색 벡터 인덱스 (demo)",
+    },
     "edinetDocs": {
         "dir": "edinet/docs",
         "label": "EDINET 공시 문서 데이터 (일본)",
