@@ -140,20 +140,27 @@ dartlab.setup("openai")      # OpenAI API 키 설정
 dartlab.setup("ollama")      # Ollama 설치 안내
 ```
 
-### `dartlab.search(keyword: str)`
+### `dartlab.search(query: str, *, corp: str | None = None, start: str | None = None, end: str | None = None, topK: int = 10)`
 
-종목 검색 (KR + US 통합).
+공시 원문 시맨틱 검색. *(alpha)*
 
 **Args:**
 
-- keyword: 종목명, 종목코드, 또는 ticker. 한글이면 KR, 영문이면 US 자동 감지.
+- query: 검색어 (한국어). "유상증자 결정", "대표이사 변경" 등.
+- corp: 종목 필터 (종목코드 "005930" 또는 회사명 "삼성전자").
+- start: 시작일 (YYYYMMDD).
+- end: 종료일 (YYYYMMDD).
+- topK: 반환 건수 (기본 10).
 
-**Returns:** pl.DataFrame — 검색 결과 (code, name, market 등).
+**Returns:** pl.DataFrame — 검색 결과.
+컬럼: score, rcept_no, corp_name, rcept_dt, report_nm,
+section_title, text, dartUrl
 
 ```python
 import dartlab
-dartlab.search("삼성전자")
-dartlab.search("AAPL")
+dartlab.search("유상증자 결정")
+dartlab.search("대표이사 변경", corp="005930")
+dartlab.search("전환사채", start="20240101", topK=5)
 ```
 
 ### `dartlab.listing(market: str | None = None)`
@@ -182,7 +189,7 @@ dartlab.listing("US")      # US 전체 (향후)
 - categories: 수집 카테고리 ["finance", "docs", "report"]. None이면 전체.
 - incremental: True면 증분 수집 (기본). False면 전체 재수집.
 
-**Returns:** dict — {종목코드: {카테고리: 수집 건수}}.
+**Returns:** dict — 종목코드별 카테고리별 수집 건수.
 
 ```python
 import dartlab
@@ -201,7 +208,7 @@ dartlab.collect("005930", "000660", categories=["finance"])  # 재무만
 - maxWorkers: 병렬 워커 수. None이면 키 수에 따라 자동.
 - incremental: True면 증분 수집. False면 전체 재수집.
 
-**Returns:** dict — {종목코드: {카테고리: 수집 건수}}.
+**Returns:** dict — 종목코드별 카테고리별 수집 건수.
 
 ```python
 import dartlab
@@ -589,15 +596,20 @@ KRX KIND 상장법인 전체 목록.
 
 회사명 → 종목코드. 정확히 일치하는 첫 번째 결과.
 
-### `dartlab.searchName(keyword: str) -> pl.DataFrame`
+### `dartlab.searchName(keyword: str)`
 
-회사명 부분 검색.
+종목명/코드로 종목 찾기 (KR + US).
 
 **Args:**
 
-- keyword: 검색 키워드 (예: "삼성", "반도체").
+- keyword: 종목명, 종목코드, 또는 ticker.
 
-**Returns:** 매칭된 종목 DataFrame (회사명, 종목코드, ...).
+**Returns:** pl.DataFrame — 종목 검색 결과.
+
+```python
+dartlab.searchName("삼성전자")
+dartlab.searchName("AAPL")
+```
 
 ### `dartlab.fuzzySearch(keyword: str, *, maxResults: int = 10) -> pl.DataFrame`
 
@@ -688,10 +700,6 @@ dartlab.capabilities("Company.analysis")     # Company.analysis 상세
 dartlab.capabilities("scan")                 # scan 상세
 dartlab.capabilities(search="재무건전성")     # 질문 기반 검색 → 상위 10개
 ```
-
-### `dartlab.guide`
-
-dartlab 안내 데스크 — 시스템 총괄 관리 엔진.
 
 ---
 

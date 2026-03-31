@@ -226,7 +226,7 @@ def collect(
         incremental: True면 증분 수집 (기본). False면 전체 재수집.
 
     Returns:
-        dict — {종목코드: {카테고리: 수집 건수}}.
+        dict — 종목코드별 카테고리별 수집 건수.
 
     Example::
 
@@ -273,7 +273,7 @@ def collectAll(
         incremental: True면 증분 수집. False면 전체 재수집.
 
     Returns:
-        dict — {종목코드: {카테고리: 수집 건수}}.
+        dict — 종목코드별 카테고리별 수집 건수.
 
     Example::
 
