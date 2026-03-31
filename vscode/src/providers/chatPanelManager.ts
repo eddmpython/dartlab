@@ -34,6 +34,8 @@ export class ChatPanelManager {
       this.panel.reveal();
       if (conversationId) {
         this.postMessage({ type: "selectConversation", payload: { id: conversationId } });
+      } else {
+        this.postMessage({ type: "newConversation" });
       }
       return;
     }

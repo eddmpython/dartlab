@@ -25,4 +25,5 @@ export type ExtensionMessage =
   | { type: "profile"; payload: unknown }
   | { type: "serverState"; state: "starting" | "ready" | "error" | "stopped" }
   | { type: "restoreConversations"; payload: unknown }
-  | { type: "selectConversation"; payload: { id: string } };
+  | { type: "selectConversation"; payload: { id: string } }
+  | { type: "newConversation" };

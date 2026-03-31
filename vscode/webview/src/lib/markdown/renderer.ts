@@ -53,12 +53,14 @@ renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
   const label = lang === "python" ? "Python" : lang || "Code";
   const lineCount = text.split("\n").length;
 
-  // Short code (≤3 lines) -- show inline
-  if (lineCount <= 3) {
+  // Only collapse Python code (AI-written). Results/output stay visible.
+  const shouldCollapse = lang === "python" && lineCount > 3;
+
+  if (!shouldCollapse) {
     return `<pre class="code-block"><code class="hljs language-${lang || "text"}">${highlighted}</code></pre>`;
   }
 
-  // Long code -- collapsed
+  // Python code -- collapsed by default
   return `<details class="code-fold">
 <summary class="code-fold-summary"><span class="code-fold-icon">▸</span> <span class="code-fold-label">${label}</span> <span class="code-fold-hint">${escapeHtml(summary)}</span></summary>
 <pre class="code-block"><code class="hljs language-${lang || "text"}">${highlighted}</code></pre>

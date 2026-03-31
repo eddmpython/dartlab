@@ -249,6 +249,13 @@
         }
         break;
       }
+      case "newConversation": {
+        if (!streaming) {
+          activeConversationId = null;
+          ensureConversation();
+        }
+        break;
+      }
     }
   });
 
