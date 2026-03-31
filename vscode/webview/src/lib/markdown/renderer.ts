@@ -109,9 +109,43 @@ renderer.table = function ({ header, rows }: { header: string; rows: string }) {
 
 marked.use({ renderer });
 
+/** Convert Polars unicode box tables (┌──┬──┐) to GFM markdown tables. */
+function polarsToMarkdown(text: string): string {
+  if (!text.includes("┌")) return text;
+  const lines = text.split("\n");
+  const result: string[] = [];
+  let inTable = false;
+  let headerEmitted = false;
+  let colCount = 0;
+
+  for (const line of lines) {
+    const s = line.trim();
+    if (s.startsWith("┌") && s.endsWith("┐")) { inTable = true; headerEmitted = false; continue; }
+    if (s.startsWith("└") && s.endsWith("┘")) { inTable = false; continue; }
+    if (!inTable) { result.push(line); continue; }
+    if (s.startsWith("╞") || s.startsWith("├")) {
+      if (!headerEmitted && colCount > 0) {
+        result.push("| " + Array(colCount).fill("---").join(" | ") + " |");
+        headerEmitted = true;
+      }
+      continue;
+    }
+    if (s.includes("│") || s.includes("┆")) {
+      const cells = s.split(/[│┆]/).map(c => c.trim()).filter(c => c);
+      if (cells.every(c => ["---", "str", "f64", "i64", "i32", "u32", "u64", "bool", "cat", "date", "datetime"].includes(c))) continue;
+      if (cells.length) {
+        colCount = Math.max(colCount, cells.length);
+        result.push("| " + cells.join(" | ") + " |");
+      }
+    }
+  }
+  return result.join("\n");
+}
+
 /** Render markdown to HTML with highlighting. */
 export function renderMarkdown(md: string): string {
-  const html = marked.parse(md, { async: false }) as string;
+  const preprocessed = polarsToMarkdown(md);
+  const html = marked.parse(preprocessed, { async: false }) as string;
   return highlightNumbers(html);
 }
 
