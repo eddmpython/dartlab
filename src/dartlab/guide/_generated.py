@@ -418,9 +418,9 @@ CAPABILITIES: dict[str, dict] = {
         "summary": "회사명 부분 검색 (KIND 목록 기준)."
     },
     "Company.sections": {
-        "aicontext": "회사 전체 지도 — 모든 분석의 출발점\nask()/chat()에서 topic 탐색 컨텍스트",
+        "aicontext": "전체 지도가 필요할 때만 사용. 개별 topic은 show(topic) 추천\n메모리 부하가 크므로 AI 코드에서 직접 접근 지양",
         "capabilities": "topic × period 수평화 통합 DataFrame\ndocs/finance/report 3-source 병합\nshow(topic)/trace(topic)/diff() 의 근간 데이터",
-        "guide": "\"이 회사 전체 데이터 지도\" → c.sections\n\"어떤 topic이 있어?\" → c.sections 또는 c.topics",
+        "guide": "\"이 회사 전체 데이터 지도\" → c.sections\n\"어떤 topic이 있어?\" → c.topics (경량)",
         "kind": "property",
         "requires": "데이터: docs (필수), finance/report (선택, 자동 다운로드)",
         "seeAlso": "topics: sections 기반 topic 요약 (더 간결)\nshow: 특정 topic 데이터 조회\nindex: 전체 구조 메타데이터 목차",
@@ -743,10 +743,6 @@ CAPABILITIES: dict[str, dict] = {
         "seeAlso": "network: 기업 간 지분 관계 시각화 (governance는 개별 기업 지표)\nscan: 전종목 횡단 비교 통합 인터페이스\nworkforce: 인력/급여 횡단 비교 (governance와 함께 ESG 분석)",
         "summary": "한국 상장사 전체 지배구조 스캔."
     },
-    "guide": {
-        "kind": "module",
-        "summary": "dartlab 안내 데스크 — 시스템 총괄 관리 엔진."
-    },
     "insights": {
         "aicontext": "기업의 재무 건전성을 7영역 등급으로 요약\n강점/약점 자동 식별로 분석 포커스 결정\n동종업계 백분위로 상대적 위치 즉시 파악",
         "capabilities": "수익성, 성장성, 안정성, 효율성, 현금흐름, 밸류에이션, 배당 — 7영역\n각 영역 A~F 등급 부여 + 근거 지표\n종합 등급 + 강점/약점 요약\n동종업계 백분위 위치",
@@ -767,7 +763,7 @@ CAPABILITIES: dict[str, dict] = {
     },
     "llm": {
         "kind": "module",
-        "summary": "LLM 기반 기업분석 엔진."
+        "summary": "LLM 기반 적극적 분석가. dartlab을 도구로 삼아 주체적으로 분석하고, 사용자의 분석 학습을 돕는다."
     },
     "nameToCode": {
         "kind": "function",
@@ -837,17 +833,17 @@ CAPABILITIES: dict[str, dict] = {
         "summary": "전종목 단일 재무비율 시계열."
     },
     "search": {
-        "aicontext": "종목코드를 모를 때 사용. 결과에서 종목코드 확인 후 Company 생성.",
-        "capabilities": "한글 입력 시 DART 종목 검색 (종목명, 종목코드)\n영문 입력 시 EDGAR 종목 검색 (ticker, 회사명)\n부분 일치, 초성 검색 지원 (KR)",
-        "guide": "\"삼성전자 종목코드 뭐야?\" -> search(\"삼성전자\")로 종목코드 확인\n\"애플 티커?\" -> search(\"AAPL\")로 EDGAR 종목 검색\nAPI 키 불필요. listing 데이터만으로 동작.",
+        "aicontext": "공시 내용을 자연어로 찾을 때 사용. 결과의 dartUrl로 원문 확인 가능.\n종목 찾기는 Company(\"삼성전자\")를 사용.",
+        "capabilities": "전체 공시 원문 시맨틱 검색 (수시공시 포함)\n종목/기간 필터 지원\nDART 공시 뷰어 링크 포함 (dartUrl 컬럼)",
+        "guide": "\"유상증자 한 회사?\" -> search(\"유상증자 결정\")\n\"삼성전자 최근 공시?\" -> search(\"공시\", corp=\"005930\")\n인덱스 없으면 자동 다운로드 (~8MB, 3초)",
         "kind": "function",
-        "requires": "데이터: listing (자동 다운로드)",
-        "seeAlso": "Company: 종목코드 확인 후 Company 생성하여 상세 분석\nlisting: 전체 상장법인 목록 조회",
-        "summary": "종목 검색 (KR + US 통합)."
+        "requires": "데이터: vectorIndex (자동 다운로드)\n의존성: pip install dartlab[vector]",
+        "seeAlso": "Company: 종목코드/회사명으로 Company 생성\nlisting: 전체 상장법인 목록",
+        "summary": "공시 원문 시맨틱 검색. *(alpha)*"
     },
     "searchName": {
         "kind": "function",
-        "summary": "회사명 부분 검색."
+        "summary": "종목명/코드로 종목 찾기 (KR + US)."
     },
     "setup": {
         "aicontext": "AI 분석 기능 사용 전 provider 설정 상태 확인\n미설정 provider 감지 시 setup() 안내로 연결\n설정 완료 여부를 프로그래밍 방식으로 체크 가능",

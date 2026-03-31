@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import logging
 import math
+
 from dartlab.analysis.financial._memoize import memoized_calc
 
 log = logging.getLogger(__name__)
@@ -1068,7 +1069,9 @@ def _buildMacroTable(
         row: dict = {
             "period": cols[i],
             "revGrowthPct": round(revGrowth[i], 2) if revGrowth[i] is not None else None,
-            "marginChangeBps": round(marginChange[i], 1) if i < len(marginChange) and marginChange[i] is not None else None,
+            "marginChangeBps": round(marginChange[i], 1)
+            if i < len(marginChange) and marginChange[i] is not None
+            else None,
         }
         for key, vals in macroData.items():
             if key == "_usedIndicators" or not isinstance(vals, list):
@@ -1133,14 +1136,16 @@ def calcEventImpact(company, *, basePeriod: str | None = None) -> dict | None:
             intensity = discDelta["changeIntensity"]
             if intensity.get("totalChangeBytes", 0) > 50000:
                 eventIdx = 0  # 최신 기간
-                events.append(_buildEvent(
-                    period=cols[eventIdx] if eventIdx < len(cols) else "unknown",
-                    eventType="disclosureShock",
-                    magnitude=intensity.get("totalChangeBytes", 0) / 10000,
-                    revGrowth=revGrowth,
-                    margins=margins,
-                    eventIdx=eventIdx,
-                ))
+                events.append(
+                    _buildEvent(
+                        period=cols[eventIdx] if eventIdx < len(cols) else "unknown",
+                        eventType="disclosureShock",
+                        magnitude=intensity.get("totalChangeBytes", 0) / 10000,
+                        revGrowth=revGrowth,
+                        margins=margins,
+                        eventIdx=eventIdx,
+                    )
+                )
     except (AttributeError, TypeError, KeyError):
         pass
 
@@ -1154,28 +1159,32 @@ def calcEventImpact(company, *, basePeriod: str | None = None) -> dict | None:
                     if breakYear:
                         eventIdx = _findPeriodIdx(cols, breakYear)
                         if eventIdx is not None:
-                            events.append(_buildEvent(
-                                period=cols[eventIdx] if eventIdx < len(cols) else str(breakYear),
-                                eventType="structuralBreak",
-                                magnitude=abs(detail.get("postBreakGrowth", 0) - detail.get("preBreakGrowth", 0)),
-                                revGrowth=revGrowth,
-                                margins=margins,
-                                eventIdx=eventIdx,
-                            ))
+                            events.append(
+                                _buildEvent(
+                                    period=cols[eventIdx] if eventIdx < len(cols) else str(breakYear),
+                                    eventType="structuralBreak",
+                                    magnitude=abs(detail.get("postBreakGrowth", 0) - detail.get("preBreakGrowth", 0)),
+                                    revGrowth=revGrowth,
+                                    margins=margins,
+                                    eventIdx=eventIdx,
+                                )
+                            )
     except (AttributeError, TypeError, KeyError):
         pass
 
     # 3. 매출 급변 감지 (|성장률| > 30% = 충격)
     for i, g in enumerate(revGrowth):
         if g is not None and abs(g) > 30:
-            events.append(_buildEvent(
-                period=cols[i] if i < len(cols) else "unknown",
-                eventType="revenueShock",
-                magnitude=abs(g),
-                revGrowth=revGrowth,
-                margins=margins,
-                eventIdx=i,
-            ))
+            events.append(
+                _buildEvent(
+                    period=cols[i] if i < len(cols) else "unknown",
+                    eventType="revenueShock",
+                    magnitude=abs(g),
+                    revGrowth=revGrowth,
+                    margins=margins,
+                    eventIdx=i,
+                )
+            )
 
     if not events:
         return {
@@ -1188,7 +1197,11 @@ def calcEventImpact(company, *, basePeriod: str | None = None) -> dict | None:
     # 회복력 판단
     recoveries = [e.get("recoveryYears") for e in events if e.get("recoveryYears") is not None]
     avgRecovery = sum(recoveries) / len(recoveries) if recoveries else None
-    resilience = "high" if avgRecovery is not None and avgRecovery <= 1 else ("low" if avgRecovery and avgRecovery >= 3 else "medium")
+    resilience = (
+        "high"
+        if avgRecovery is not None and avgRecovery <= 1
+        else ("low" if avgRecovery and avgRecovery >= 3 else "medium")
+    )
 
     # 유형별 평균 충격
     typeImpacts: dict[str, list[float]] = {}
@@ -1367,8 +1380,9 @@ def calcInventoryDivergence(company, *, basePeriod: str | None = None) -> dict |
     매출채권 증가율 > 매출 증가율 = 회수 악화.
     NOA 급증 = 이익 조작 가능성 (Oler 2024).
     """
-    bsResult = company.select("BS", ["재고자산", "매출채권및기타채권", "매출채권",
-                                      "매입채무및기타채무", "매입채무", "자산총계"])
+    bsResult = company.select(
+        "BS", ["재고자산", "매출채권및기타채권", "매출채권", "매입채무및기타채무", "매입채무", "자산총계"]
+    )
     isResult = company.select("IS", ["매출액", "매출원가"])
 
     bsParsed = _toDict(bsResult)
@@ -1430,19 +1444,21 @@ def calcInventoryDivergence(company, *, basePeriod: str | None = None) -> dict |
         # NOA = (자산 - 현금) - (부채 - 금융부채) ≈ 자산 - 매입채무 - 현금 (간이)
         noa = ta - ap if ta > 0 else None
 
-        history.append({
-            "period": col,
-            "inventory": inv,
-            "receivables": ar,
-            "revenue": rev,
-            "inventoryGrowth": round(invGrowth, 1) if invGrowth is not None else None,
-            "revenueGrowth": round(revGrowth, 1) if revGrowth is not None else None,
-            "divergence": round(divergence, 1) if divergence is not None else None,
-            "arDivergence": round(arDivergence, 1) if arDivergence is not None else None,
-            "dso": round(dso, 1) if dso is not None else None,
-            "dio": round(dio, 1) if dio is not None else None,
-            "noa": noa,
-        })
+        history.append(
+            {
+                "period": col,
+                "inventory": inv,
+                "receivables": ar,
+                "revenue": rev,
+                "inventoryGrowth": round(invGrowth, 1) if invGrowth is not None else None,
+                "revenueGrowth": round(revGrowth, 1) if revGrowth is not None else None,
+                "divergence": round(divergence, 1) if divergence is not None else None,
+                "arDivergence": round(arDivergence, 1) if arDivergence is not None else None,
+                "dso": round(dso, 1) if dso is not None else None,
+                "dio": round(dio, 1) if dio is not None else None,
+                "noa": noa,
+            }
+        )
 
     if not history:
         return None
@@ -1636,12 +1652,14 @@ def calcSupplyChainSignal(company, *, basePeriod: str | None = None) -> dict | N
         code = lc.get("code", "")
         growth = growthMap.get(code)
         if growth is not None:
-            enriched.append({
-                "code": code,
-                "name": lc.get("name", ""),
-                "relationship": lc.get("relationship", ""),
-                "revenueGrowth": round(growth, 1),
-            })
+            enriched.append(
+                {
+                    "code": code,
+                    "name": lc.get("name", ""),
+                    "relationship": lc.get("relationship", ""),
+                    "revenueGrowth": round(growth, 1),
+                }
+            )
 
     if not enriched:
         return None
@@ -1689,11 +1707,13 @@ def _getLinkedCompanies(company, stockCode: str) -> list[dict]:
             for row in investDf.iter_rows(named=True):
                 toCode = row.get("to_code", "")
                 if toCode and row.get("is_listed"):
-                    linked.append({
-                        "code": toCode,
-                        "name": row.get("to_name", ""),
-                        "relationship": "투자",
-                    })
+                    linked.append(
+                        {
+                            "code": toCode,
+                            "name": row.get("to_name", ""),
+                            "relationship": "투자",
+                        }
+                    )
     except (ImportError, ValueError, TypeError):
         pass
 
@@ -1704,11 +1724,13 @@ def _getLinkedCompanies(company, stockCode: str) -> list[dict]:
             for row in rpt.revenueTxDf.iter_rows(named=True):
                 entity = row.get("entity", "")
                 if entity and entity not in {lc["name"] for lc in linked}:
-                    linked.append({
-                        "code": "",
-                        "name": entity,
-                        "relationship": "거래",
-                    })
+                    linked.append(
+                        {
+                            "code": "",
+                            "name": entity,
+                            "relationship": "거래",
+                        }
+                    )
     except (AttributeError, TypeError):
         pass
 
@@ -2275,9 +2297,12 @@ def calcPredictionSynthesis(company, *, basePeriod: str | None = None) -> dict |
             "streak": revDir["streak"],
             "olsAgree": revDir.get("olsAgree"),
             "expectedAccuracy": (
-                77.7 if revDir.get("olsAgree") and revDir["streak"] >= 2
-                else 74.7 if revDir["streak"] >= 2
-                else 77.7 if revDir.get("olsAgree")
+                77.7
+                if revDir.get("olsAgree") and revDir["streak"] >= 2
+                else 74.7
+                if revDir["streak"] >= 2
+                else 77.7
+                if revDir.get("olsAgree")
                 else 71.3
             ),
         }

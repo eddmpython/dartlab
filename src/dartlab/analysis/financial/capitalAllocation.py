@@ -4,6 +4,7 @@
 """
 
 from __future__ import annotations
+
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8

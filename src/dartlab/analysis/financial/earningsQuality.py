@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import math
+
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
@@ -396,8 +397,14 @@ def calcRichardsonAccrual(company, *, basePeriod: str | None = None) -> dict | N
     bsResult = company.select(
         "BS",
         [
-            "유동자산", "비유동자산", "유동부채", "비유동부채",
-            "현금및현금성자산", "단기차입금", "장기차입금", "사채",
+            "유동자산",
+            "비유동자산",
+            "유동부채",
+            "비유동부채",
+            "현금및현금성자산",
+            "단기차입금",
+            "장기차입금",
+            "사채",
             "자산총계",
         ],
     )
@@ -451,19 +458,25 @@ def calcRichardsonAccrual(company, *, basePeriod: str | None = None) -> dict | N
 
         # 신뢰도 판단: LTOACC 비중이 50% 이상이면 낮음
         if totalAccrual != 0 and avgTA > 0:
-            ltoShare = abs(ltoacc) / (abs(wcacc) + abs(ltoacc) + abs(finacc)) if (abs(wcacc) + abs(ltoacc) + abs(finacc)) > 0 else 0
+            ltoShare = (
+                abs(ltoacc) / (abs(wcacc) + abs(ltoacc) + abs(finacc))
+                if (abs(wcacc) + abs(ltoacc) + abs(finacc)) > 0
+                else 0
+            )
             reliability = "low" if ltoShare > 0.5 else "high" if ltoShare < 0.2 else "medium"
         else:
             reliability = None
 
-        history.append({
-            "period": col,
-            "wcacc": wcaccNorm,
-            "ltoacc": ltoaccNorm,
-            "finacc": finaccNorm,
-            "totalAccrual": totalNorm,
-            "reliabilityScore": reliability,
-        })
+        history.append(
+            {
+                "period": col,
+                "wcacc": wcaccNorm,
+                "ltoacc": ltoaccNorm,
+                "finacc": finaccNorm,
+                "totalAccrual": totalNorm,
+                "reliabilityScore": reliability,
+            }
+        )
 
     return {"history": history} if history else None
 
@@ -492,8 +505,7 @@ def calcNonOperatingBreakdown(company, *, basePeriod: str | None = None) -> dict
     """
     isResult = company.select(
         "IS",
-        ["영업이익", "금융이익", "금융비용", "지분법관련손익",
-         "기타수익", "기타비용", "법인세차감전순이익"],
+        ["영업이익", "금융이익", "금융비용", "지분법관련손익", "기타수익", "기타비용", "법인세차감전순이익"],
     )
 
     isParsed = _toDict(isResult)
@@ -527,17 +539,19 @@ def calcNonOperatingBreakdown(company, *, basePeriod: str | None = None) -> dict
         nonOpTotal = pt - op if op != 0 else None
         nonOpRatio = round(abs(nonOpTotal) / abs(op) * 100, 1) if op != 0 and nonOpTotal is not None else None
 
-        history.append({
-            "period": col,
-            "opIncome": op,
-            "finIncome": finInc,
-            "finCost": finCost,
-            "netFinance": netFinance,
-            "associateIncome": assoc,
-            "otherIncome": otherInc,
-            "otherExpense": otherExp,
-            "nonOpTotal": nonOpTotal,
-            "nonOpRatio": nonOpRatio,
-        })
+        history.append(
+            {
+                "period": col,
+                "opIncome": op,
+                "finIncome": finInc,
+                "finCost": finCost,
+                "netFinance": netFinance,
+                "associateIncome": assoc,
+                "otherIncome": otherInc,
+                "otherExpense": otherExp,
+                "nonOpTotal": nonOpTotal,
+                "nonOpRatio": nonOpRatio,
+            }
+        )
 
     return {"history": history} if history else None

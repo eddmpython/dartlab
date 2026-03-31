@@ -5,6 +5,7 @@ BS를 영업/비영업으로 재분류하여 자산 운영 구조를 본다.
 """
 
 from __future__ import annotations
+
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8

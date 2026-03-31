@@ -12,7 +12,6 @@ import logging
 from typing import Any
 
 from dartlab.analysis.financial._memoize import memoized_calc
-
 from dartlab.analysis.valuation.pricetarget import compute_price_target
 from dartlab.analysis.valuation.residualIncome import calcResidualIncome as _rimCalc
 

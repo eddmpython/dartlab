@@ -5,6 +5,7 @@
 """
 
 from __future__ import annotations
+
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_QUARTERS = 5
@@ -779,7 +780,9 @@ def calcCapitalFlags(company, *, basePeriod: str | None = None) -> list[tuple[st
         flags.append((f"Piotroski F 재무 약화 ({pf}/9)", "warning"))
 
     # 금융부채 비중 (BS에서 직접 계산)
-    flagResult = company.select("BS", ["부채총계", "단기차입금", "장기차입금", "사채", "자본총계", "이익잉여금", "미처분이익잉여금(결손금)"])
+    flagResult = company.select(
+        "BS", ["부채총계", "단기차입금", "장기차입금", "사채", "자본총계", "이익잉여금", "미처분이익잉여금(결손금)"]
+    )
     flagParsed = _toDict(flagResult)
     if flagParsed is not None and "부채총계" in flagParsed[0]:
         data = flagParsed[0]

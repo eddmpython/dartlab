@@ -372,16 +372,22 @@ def calcPenmanDecomposition(company, *, basePeriod: str | None = None) -> dict |
 
     학술근거: Nissim & Penman (2001), Penman FSA&SV 5e.
     """
-    isResult = company.select(
-        "IS", ["영업이익", "법인세비용", "법인세차감전순이익", "금융이익", "금융비용"]
-    )
+    isResult = company.select("IS", ["영업이익", "법인세비용", "법인세차감전순이익", "금융이익", "금융비용"])
     bsResult = company.select(
         "BS",
         [
-            "자산총계", "자본총계",
-            "매출채권및기타채권", "재고자산", "유형자산", "무형자산",
-            "매입채무", "선수금", "계약부채",
-            "단기차입금", "장기차입금", "사채",
+            "자산총계",
+            "자본총계",
+            "매출채권및기타채권",
+            "재고자산",
+            "유형자산",
+            "무형자산",
+            "매입채무",
+            "선수금",
+            "계약부채",
+            "단기차입금",
+            "장기차입금",
+            "사채",
             "현금및현금성자산",
         ],
     )
@@ -457,15 +463,17 @@ def calcPenmanDecomposition(company, *, basePeriod: str | None = None) -> dict |
         # ROCE (검증: ≈ RNOA + leverageEffect)
         roce = round(rnoa + levEffect, 2) if rnoa is not None and levEffect is not None else None
 
-        history.append({
-            "period": col,
-            "rnoa": rnoa,
-            "flev": flev,
-            "nbc": nbc,
-            "spread": spread,
-            "leverageEffect": levEffect,
-            "roce": roce,
-        })
+        history.append(
+            {
+                "period": col,
+                "rnoa": rnoa,
+                "flev": flev,
+                "nbc": nbc,
+                "spread": spread,
+                "leverageEffect": levEffect,
+                "roce": roce,
+            }
+        )
 
     if not history:
         return None
@@ -510,14 +518,22 @@ def calcRoicTree(company, *, basePeriod: str | None = None) -> dict | None:
     """
     isResult = company.select(
         "IS",
-        ["매출액", "매출원가", "판매비와관리비", "영업이익",
-         "법인세비용", "법인세차감전순이익"],
+        ["매출액", "매출원가", "판매비와관리비", "영업이익", "법인세비용", "법인세차감전순이익"],
     )
     bsResult = company.select(
         "BS",
-        ["매출채권및기타채권", "재고자산", "매입채무",
-         "유형자산", "무형자산",
-         "자본총계", "단기차입금", "장기차입금", "사채", "현금및현금성자산"],
+        [
+            "매출채권및기타채권",
+            "재고자산",
+            "매입채무",
+            "유형자산",
+            "무형자산",
+            "자본총계",
+            "단기차입금",
+            "장기차입금",
+            "사채",
+            "현금및현금성자산",
+        ],
     )
 
     isParsed = toDict(isResult)
@@ -612,19 +628,21 @@ def calcRoicTree(company, *, basePeriod: str | None = None) -> dict | None:
         else:
             turnoverDriver = None
 
-        history.append({
-            "period": col,
-            "roic": roic,
-            "operatingMargin": opMargin,
-            "capitalTurnover": capTurnover,
-            "grossMargin": grossMargin,
-            "sgaRatio": sgaRatio,
-            "effectiveTaxRate": round(effectiveTax, 1),
-            "wcTurnover": wcTurnover,
-            "fixedTurnover": fixedTurnover,
-            "marginDriver": marginDriver,
-            "turnoverDriver": turnoverDriver,
-        })
+        history.append(
+            {
+                "period": col,
+                "roic": roic,
+                "operatingMargin": opMargin,
+                "capitalTurnover": capTurnover,
+                "grossMargin": grossMargin,
+                "sgaRatio": sgaRatio,
+                "effectiveTaxRate": round(effectiveTax, 1),
+                "wcTurnover": wcTurnover,
+                "fixedTurnover": fixedTurnover,
+                "marginDriver": marginDriver,
+                "turnoverDriver": turnoverDriver,
+            }
+        )
 
     if not history:
         return None

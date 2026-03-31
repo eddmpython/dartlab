@@ -61,7 +61,7 @@ dartlab 전역 설정.
 
 ### `dartlab.llm`
 
-LLM 기반 기업분석 엔진.
+LLM 기반 적극적 분석가. dartlab을 도구로 삼아 주체적으로 분석하고, 사용자의 분석 학습을 돕는다.
 
 ### `dartlab.ask(args: str, *, include: list[str] | None = None, exclude: list[str] | None = None, provider: str | None = None, model: str | None = None, stream: bool = True, raw: bool = False, reflect: bool = False, pattern: str | None = None, kwargs)`
 

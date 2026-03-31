@@ -12,7 +12,6 @@ import logging
 from typing import Any
 
 from dartlab.analysis.financial._memoize import memoized_calc
-
 from dartlab.analysis.financial.valuation import _IG_TO_SECTOR_KEY
 from dartlab.analysis.forecast.revenueForecast import CompanyDataBundle, forecastRevenue
 from dartlab.analysis.forecast.simulation import simulateAllScenarios

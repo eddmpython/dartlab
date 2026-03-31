@@ -11,7 +11,7 @@ from dartlab.company import Company
 from dartlab.core.env import loadEnv as _loadEnv
 from dartlab.core.select import ChartResult, SelectResult
 from dartlab.gather.fred import Fred
-from dartlab.gather.listing import codeToName, fuzzySearch, getKindList, nameToCode, searchName
+from dartlab.gather.listing import codeToName, fuzzySearch, getKindList, nameToCode
 from dartlab.providers.dart.company import Company as _DartEngineCompany
 from dartlab.providers.dart.openapi.dart import OpenDart
 from dartlab.providers.edgar.openapi.edgar import OpenEdgar
@@ -81,7 +81,8 @@ def search(
         dartlab.search("전환사채", start="20240101", topK=5)
     """
     try:
-        from dartlab.core.search.vectorStore import search as _vectorSearch, indexStats, pullFromHub
+        from dartlab.core.search.vectorStore import indexStats, pullFromHub
+        from dartlab.core.search.vectorStore import search as _vectorSearch
 
         stats = indexStats()
         if stats["vectors"] == 0:
@@ -89,6 +90,7 @@ def search(
                 pullFromHub()
             except Exception:
                 import polars as _pl
+
                 return _pl.DataFrame()
 
         corpCode = None
@@ -109,16 +111,22 @@ def search(
         result = _vectorSearch(query, corpCode=corpCode, stockCode=stockCode, topK=topK)
         if result is None or result.height == 0:
             import polars as _pl
+
             return _pl.DataFrame()
 
         if start and "rcept_dt" in result.columns:
-            result = result.filter(pl.col("rcept_dt") >= start)
+            import polars as _pl
+
+            result = result.filter(_pl.col("rcept_dt") >= start)
         if end and "rcept_dt" in result.columns:
-            result = result.filter(pl.col("rcept_dt") <= end)
+            import polars as _pl
+
+            result = result.filter(_pl.col("rcept_dt") <= end)
 
         return result
     except ImportError:
         import polars as _pl
+
         return _pl.DataFrame()
 
 
@@ -141,6 +149,7 @@ def searchName(keyword: str):
     if keyword.isascii() and keyword.isalpha():
         try:
             from dartlab.providers.edgar.company import Company as _US
+
             return _US.search(keyword)
         except (ImportError, AttributeError, NotImplementedError):
             pass
@@ -656,7 +665,6 @@ def setup(provider: str | None = None):
         dartlab.setup("ollama")      # Ollama 설치 안내
     """
     from dartlab.core.ai.guide import (
-        provider_guide,
         providers_status,
         resolve_alias,
     )
@@ -821,8 +829,7 @@ def ask(
         import warnings
 
         warnings.warn(
-            "dartlab.ask(stock, question) is deprecated. "
-            "Use dartlab.ask('삼성전자 분석해줘') instead.",
+            "dartlab.ask(stock, question) is deprecated. Use dartlab.ask('삼성전자 분석해줘') instead.",
             DeprecationWarning,
             stacklevel=2,
         )

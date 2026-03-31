@@ -5,6 +5,7 @@ CF 3구간(영업/투자/재무) + FCF + 이익의 현금 뒷받침 + CF 패턴.
 """
 
 from __future__ import annotations
+
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
@@ -329,16 +330,18 @@ def calcOcfDecomposition(company, *, basePeriod: str | None = None) -> dict | No
         # 잔차 (설명 안 되는 부분: 영업외, 세금, 기타 조정)
         residual = ocf - ni - depEst - wcEffect
 
-        history.append({
-            "period": col,
-            "ni": ni,
-            "ocf": ocf,
-            "depEstimate": round(depEst),
-            "wcEffect": round(wcEffect),
-            "arChange": round(arChange),
-            "invChange": round(invChange),
-            "apChange": round(apChange),
-            "residual": round(residual),
-        })
+        history.append(
+            {
+                "period": col,
+                "ni": ni,
+                "ocf": ocf,
+                "depEstimate": round(depEst),
+                "wcEffect": round(wcEffect),
+                "arChange": round(arChange),
+                "invChange": round(invChange),
+                "apChange": round(apChange),
+                "residual": round(residual),
+            }
+        )
 
     return {"history": history} if history else None

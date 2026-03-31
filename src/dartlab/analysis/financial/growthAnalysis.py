@@ -341,7 +341,15 @@ def calcCagrComparison(company, *, basePeriod: str | None = None) -> dict | None
         ("마진 방향", "매출", _v(revRow, oldest), _v(revRow, latest), "영업이익", _v(opRow, oldest), _v(opRow, latest)),
         ("자산 효율", "자산", _v(taRow, oldest), _v(taRow, latest), "매출", _v(revRow, oldest), _v(revRow, latest)),
         ("레버리지", "부채", _v(tlRow, oldest), _v(tlRow, latest), "자본", _v(teRow, oldest), _v(teRow, latest)),
-        ("투자 방향", "CAPEX", abs(_v(capexRow, oldest)), abs(_v(capexRow, latest)), "매출", _v(revRow, oldest), _v(revRow, latest)),
+        (
+            "투자 방향",
+            "CAPEX",
+            abs(_v(capexRow, oldest)),
+            abs(_v(capexRow, latest)),
+            "매출",
+            _v(revRow, oldest),
+            _v(revRow, latest),
+        ),
     ]
 
     comparisons = []
@@ -358,10 +366,17 @@ def calcCagrComparison(company, *, basePeriod: str | None = None) -> dict | None
                 signal = "디레버리징" if gap <= 0 else "레버리지 확대"
             else:
                 signal = "투자 확대" if gap > 0 else "투자 축소"
-            comparisons.append({
-                "label": label, "item1": name1, "cagr1": c1,
-                "item2": name2, "cagr2": c2, "gap": gap, "signal": signal,
-            })
+            comparisons.append(
+                {
+                    "label": label,
+                    "item1": name1,
+                    "cagr1": c1,
+                    "item2": name2,
+                    "cagr2": c2,
+                    "gap": gap,
+                    "signal": signal,
+                }
+            )
 
     if not comparisons:
         return None

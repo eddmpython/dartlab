@@ -1,6 +1,7 @@
 """2-5 종합 평가 -- 8영역 스코어카드, Piotroski, 종합 플래그."""
 
 from __future__ import annotations
+
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _GRADE_MAP = {

@@ -369,8 +369,7 @@ def calcArticulationCheck(company, *, basePeriod: str | None = None) -> dict | N
     )
     cfResult = company.select(
         "CF",
-        ["영업활동현금흐름", "투자활동현금흐름", "재무활동현금흐름",
-         "유형자산의취득", "유형자산의처분"],
+        ["영업활동현금흐름", "투자활동현금흐름", "재무활동현금흐름", "유형자산의취득", "유형자산의처분"],
     )
     isResult = company.select("IS", ["당기순이익"])
 
@@ -433,12 +432,14 @@ def calcArticulationCheck(company, *, basePeriod: str | None = None) -> dict | N
         errors = [e for e in [ppeError, cashError, eqError] if e is not None]
         maxErr = max(errors) if errors else None
 
-        history.append({
-            "period": col,
-            "ppeError": round(ppeError, 1) if ppeError is not None else None,
-            "cashError": round(cashError, 1) if cashError is not None else None,
-            "equityError": round(eqError, 1) if eqError is not None else None,
-            "maxErrorPct": round(maxErr, 1) if maxErr is not None else None,
-        })
+        history.append(
+            {
+                "period": col,
+                "ppeError": round(ppeError, 1) if ppeError is not None else None,
+                "cashError": round(cashError, 1) if cashError is not None else None,
+                "equityError": round(eqError, 1) if eqError is not None else None,
+                "maxErrorPct": round(maxErr, 1) if maxErr is not None else None,
+            }
+        )
 
     return {"history": history} if history else None

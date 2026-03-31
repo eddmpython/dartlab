@@ -7,6 +7,7 @@ scan 데이터에서 해당 종목의 백분위/순위를 계산하여
 from __future__ import annotations
 
 import polars as pl
+
 from dartlab.analysis.financial._memoize import memoized_calc
 
 # 비교할 핵심 비율 목록 (scanRatio name → 표시 label)
