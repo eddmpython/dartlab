@@ -4,19 +4,19 @@
 
 ## 진입점
 
-| 문서 | 엔진 | 핵심 |
-|------|------|------|
-| [company.md](company.md) | Company facade | sections 사상, 4 namespace, canHandle 라우팅, 편의성 3원칙 |
-| [analysis.md](analysis.md) | analysis/ | 14축 재무분석 + forecast + valuation, 예측신호 6축, audit 체계 |
-| [scan.md](scan.md) | scan/ | 13축 시장 횡단분석, 전 종목 품질 검증 |
-| [review.md](review.md) | review/ | 블록-템플릿 보고서 렌더링, 4 출력 형식 |
-| [search.md](search.md) | core/search/ | 전체 공시 시맨틱 검색, 2단계 수집, GPU 벡터 임베딩 |
-| [ai.md](ai.md) | ai/ | LLM 분석 엔진, 5 provider, CAPABILITIES-Driven |
-| [guide.md](guide.md) | guide/ | 안내 데스크, 교차 관심사, 4층위 체계 |
-| [data.md](data.md) | core/dataConfig, dataLoader | HF 데이터셋, 수집 파이프라인, 카테고리 관리 |
-| [gather.md](gather.md) | gather/ | 외부 시장 데이터 (주가/수급/매크로/뉴스) |
-| [experiments.md](experiments.md) | experiments/ | 실험 규칙, 진행 현황, 흡수 판단 |
-| [code.md](code.md) | 전체 | camelCase, 독스트링 9섹션, CAPABILITIES, 테스트, 릴리즈, Git |
+| 문서 | 레이어 | 엔진 | 한 줄 요약 |
+|------|--------|------|----------|
+| [company.md](company.md) | L0/L1 | Company facade | sections 사상, 4 namespace, canHandle 라우팅 |
+| [data.md](data.md) | L0 | core/dataConfig | HF 데이터셋, 수집 파이프라인, 카테고리 관리 |
+| [scan.md](scan.md) | L1 | scan/ | 13축 시장 횡단분석 |
+| [gather.md](gather.md) | L1 | gather/ | 외부 시장 데이터 (주가/수급/매크로/뉴스) |
+| [search.md](search.md) | L0 | core/search/ | 공시 시맨틱 검색 *(alpha)* |
+| [analysis.md](analysis.md) | L2 | analysis/ | 14축 스토리텔링 재무분석, 6막 구조 |
+| [review.md](review.md) | L2 | review/ | 블록-템플릿 보고서 렌더링, 4 출력 형식 |
+| [ai.md](ai.md) | L3 | ai/ | 적극적 분석가, 5 provider |
+| [guide.md](guide.md) | 교차 | guide/ | 안내 데스크 + 교육 안내자, 4층위 |
+| [experiments.md](experiments.md) | — | experiments/ | 실험 규칙, 흡수 판단 |
+| [code.md](code.md) | — | 전체 | camelCase, 독스트링 9섹션, 릴리즈, Git |
 
 ## 레이어 아키텍처
 

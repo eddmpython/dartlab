@@ -6,6 +6,14 @@ AI는 이 도구를 조합해 질문에 최적화된 분석 흐름을 스스로 
 실행 과정(코드 + 결과)을 사용자에게 투명하게 보여줘서
 사용자가 분석 방법 자체를 학습할 수 있게 돕는다.
 
+| 항목 | 내용 |
+|------|------|
+| 레이어 | L3 |
+| 진입점 | `dartlab.ask()`, `dartlab.chat()`, `c.reviewer()` |
+| 소비 | analysis, scan, gather, review, Company 전체 |
+| 생산 | 사용자에게 해석 + 재현 가능한 코드 제공 |
+| provider | gemini, groq, cerebras, mistral, openai, ollama |
+
 ## 설계 원칙
 
 - **AI가 분석의 전 과정을 주도** — 데이터 수집, 계산, 판단, 해석, 보고서까지 AI가 수행

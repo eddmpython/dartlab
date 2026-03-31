@@ -3,6 +3,14 @@
 회사는 스토리가 있다. 재무제표를 그 스토리의 구조화된 데이터로 변환한다.
 숫자의 나열이 아니라, 인과로 연결된 서사가 분석의 목표다.
 
+| 항목 | 내용 |
+|------|------|
+| 레이어 | L2 |
+| 진입점 | `dartlab.analysis()`, `c.analysis()` |
+| 소비 | Company(finance, docs, report), gather(price, macro) |
+| 생산 | review, ai가 analysis 결과를 소비 |
+| 축 | 14축, 6막 인과 구조 |
+
 Company → Analysis → Review → AI 순서로 계층이 쌓인다.
 analysis 품질이 올라가면 review와 AI 품질이 동시에 올라간다.
 

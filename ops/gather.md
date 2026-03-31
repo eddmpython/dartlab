@@ -2,6 +2,14 @@
 
 외부 시장 데이터 수집. 공시 데이터와 시장 데이터를 연결.
 
+| 항목 | 내용 |
+|------|------|
+| 레이어 | L1 |
+| 진입점 | `dartlab.gather()`, `c.gather()` |
+| 소비 | 외부 API (Naver, Yahoo, FRED, ECOS, Google News) |
+| 생산 | analysis가 gather 데이터를 소비 (주가, 매크로) |
+| 축 | 4축: price, flow, macro, news |
+
 ## 4축
 
 ```python

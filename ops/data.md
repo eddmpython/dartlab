@@ -2,6 +2,14 @@
 
 HuggingFace 데이터셋 관리, 수집 파이프라인, 카테고리 체계.
 
+| 항목 | 내용 |
+|------|------|
+| 레이어 | L0 (core/dataConfig, dataLoader) |
+| 진입점 | `Company("005930")` 시 자동 다운로드 |
+| 소비 | HuggingFace (`eddmpython/dartlab-data`), DART API |
+| 생산 | Company, providers 전체가 데이터를 소비 |
+| 카테고리 | docs, finance, report, scan, allFilings, vectorIndex, edgar |
+
 ## HuggingFace 데이터셋
 
 - **repo**: `eddmpython/dartlab-data`

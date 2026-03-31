@@ -2,6 +2,14 @@
 
 전 종목 횡단분석. `scan()` 단일 진입점으로 시장 전체를 한 번에.
 
+| 항목 | 내용 |
+|------|------|
+| 레이어 | L1 |
+| 진입점 | `dartlab.scan()`, `c.governance()` 등 |
+| 소비 | providers/(dart), core/finance, 프리빌드 parquet |
+| 생산 | ai가 시장 비교에 사용, analysis와 독립 |
+| 축 | 정식 6축 + account/ratio/digest 등 13축 |
+
 ## 단일 진입점
 
 - **`dartlab.scan()`** 하나로 모든 축에 접근한다

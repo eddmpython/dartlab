@@ -1,7 +1,15 @@
 # Review
 
-analysis 결과를 블록-템플릿으로 조립한 보고서.
+analysis 결과를 블록-템플릿으로 조립한 6막 서사 보고서.
 analysis 품질이 올라가면 review 품질도 올라간다.
+
+| 항목 | 내용 |
+|------|------|
+| 레이어 | L2 |
+| 진입점 | `c.review()`, `c.reviewer()` |
+| 소비 | analysis(14축 calc 결과) |
+| 생산 | ai(reviewer), 사용자(터미널/HTML/마크다운/JSON) |
+| 출력 | rich, html, markdown, json |
 
 ## 단일 진입점
 

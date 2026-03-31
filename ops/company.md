@@ -3,6 +3,14 @@
 Company는 dartlab의 facade. 종목코드 하나로 모든 데이터에 접근한다.
 dartlab의 모든 방향성은 Company에서 시작하고, Company로 돌아온다.
 
+| 항목 | 내용 |
+|------|------|
+| 레이어 | L0/L1 facade |
+| 진입점 | `dartlab.Company("005930")`, `c.show()`, `c.select()` |
+| 소비 | core/(protocols, finance, docs), providers/(dart, edgar) |
+| 생산 | scan, analysis, review, ai 모두 Company를 소비 |
+| 핵심 | sections 사상 (topic × period), 4 namespace, canHandle 라우팅 |
+
 ## 근본 전제
 
 **모든 기간은 비교 가능해야 하고, 모든 회사는 비교 가능해야 한다.**
@@ -114,6 +122,47 @@ c.market / c.currency             # 시장 정보
 
 **규칙**: show/select로 충분하면 c.sections에 접근하지 않는다.
 review() 전체 호출은 83초 → AI 코드 실행(60초 제한)에서 금지.
+
+## K-IFRS 주석(Notes) 접근
+
+재무제표 주석은 BS/IS 총액 이면의 **항목별 분해** 데이터다. 3가지 접근 경로가 있다.
+
+### 접근 경로 비교
+
+| 경로 | 결과 | 용도 |
+|------|------|------|
+| `c.notes.inventory` | 파싱된 DataFrame (항목 × 연도) | **AI/코드 분석용** — 정규화됨 |
+| `c.show("financialNotes", block, period="2025")` | 원문 마크다운 | **원문 확인용** — period 지정 필수 |
+| `c.analysis("자산구조").assetStructure.notesDetail` | enrichment dict | **분석 통합** — analysis에 포함 |
+
+### notes 지원 항목 (12개)
+
+| 영문 | 한글 | 반환 | 데이터 내용 |
+|------|------|------|------------|
+| inventory | 재고자산 | DataFrame | 상품/제품/원재료/미착품 분해 |
+| borrowings | 차입금 | DataFrame | 단기/장기 분해, 이자율 |
+| tangibleAsset | 유형자산 | DataFrame | 카테고리별 기초/기말 변동 |
+| intangibleAsset | 무형자산 | DataFrame | 영업권/개발비 등 |
+| receivables | 매출채권 | DataFrame | 대손충당금 포함 |
+| provisions | 충당부채 | DataFrame | 법적/보증/구조조정 |
+| eps | 주당이익 | DataFrame | 기본/희석 EPS 분해 |
+| segments | 부문정보 | DataFrame | 부문별 매출/이익 |
+| costByNature | 비용성격별분류 | DataFrame | 원재료/급여/감가상각 등 분해 |
+| lease | 리스 | DataFrame | 사용권자산/리스부채 |
+| affiliates | 관계기업 | DataFrame | 지분법 투자 변동 |
+| investmentProperty | 투자부동산 | DataFrame | 공정가치/장부가 |
+
+### analysis enrichment
+
+analysis 축에 notes 데이터가 자동 포함된다:
+- `analysis("자산구조")` → `assetStructure.notesDetail` 에 inventory/tangibleAsset/intangibleAsset
+- `analysis("비용구조")` → `costBreakdown.costByNature` 에 비용 성격별 분류
+
+### sections 주석 블록 정렬
+
+financialNotes/consolidatedNotes topic은 table 블록이 **직전 heading의 시맨틱 키를 상속**한다.
+→ "8. 재고자산" heading 다음의 table은 모든 기간에서 같은 block으로 그룹핑됨.
+→ period 없이 `show("financialNotes", blockNum)` 호출해도 기간간 섞이지 않음.
 
 ## 편의성 3원칙 (최우선)
 

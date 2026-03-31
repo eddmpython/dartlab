@@ -2,6 +2,14 @@
 
 dartlab 전체에 적용되는 코드 스타일, 독스트링, 테스트, 릴리즈 규칙.
 
+| 항목 | 내용 |
+|------|------|
+| 범위 | 전체 코드베이스 |
+| 네이밍 | camelCase (함수/변수/파일), snake_case는 하위호환 |
+| 독스트링 | 공개 API 함수는 9섹션 필수 |
+| 자동 생성 | CAPABILITIES.md, llms.txt, reference.md → `generateSpec.py` |
+| 릴리즈 | semver + GitHub Actions trusted publishing |
+
 ## 네이밍
 
 - 기존 코드의 네이밍 패턴을 따른다
