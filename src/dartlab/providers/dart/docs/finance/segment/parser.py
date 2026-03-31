@@ -228,6 +228,9 @@ def parseSegmentTables(text: str) -> list[SegmentTable]:
             cleanName = re.sub(r"\(\*\d*\)", "", name).strip()
             if not cleanName or cleanName.startswith("("):
                 continue
+            # 비율/비중 행은 금액이 아니므로 건너뜀
+            if re.search(r"비율|비중|%|점유율", cleanName):
+                continue
 
             if not hasData and pendingHeaders:
                 merged = mergeHeaders(pendingHeaders)
