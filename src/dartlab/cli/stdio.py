@@ -55,13 +55,16 @@ def _handleAsk(msg: dict[str, Any]) -> None:
     if company:
         try:
             from dartlab import Company
+
             c = Company(company)
         except (ValueError, OSError):
             try:
                 from dartlab.core.resolve import searchCompany
+
                 results = searchCompany(company)
                 if results:
                     from dartlab import Company as C2
+
                     c = C2(results[0].get("stockCode", results[0].get("corp_code", "")))
             except Exception:
                 pass
@@ -103,18 +106,27 @@ def _handleStatus(_msg: dict[str, Any]) -> None:
         for pid, spec in _PROVIDERS.items():
             if not spec.public:
                 continue
-            providers.append({
-                "id": spec.id,
-                "label": spec.label,
-                "freeTier": spec.freeTierHint or "",
-            })
+            providers.append(
+                {
+                    "id": spec.id,
+                    "label": spec.label,
+                    "freeTier": spec.freeTierHint or "",
+                }
+            )
 
-        _emit({
-            "event": "status",
-            "data": {"provider": provider, "model": model, "ready": True, "providers": providers},
-        })
+        _emit(
+            {
+                "event": "status",
+                "data": {"provider": provider, "model": model, "ready": True, "providers": providers},
+            }
+        )
     except Exception as exc:
-        _emit({"event": "status", "data": {"provider": "none", "model": "", "ready": False, "providers": [], "error": str(exc)}})
+        _emit(
+            {
+                "event": "status",
+                "data": {"provider": "none", "model": "", "ready": False, "providers": [], "error": str(exc)},
+            }
+        )
 
 
 def _handleSetProvider(msg: dict[str, Any]) -> None:
@@ -122,15 +134,18 @@ def _handleSetProvider(msg: dict[str, Any]) -> None:
     global _sessionProvider, _sessionModel
     _sessionProvider = msg.get("provider") or _sessionProvider
     _sessionModel = msg.get("model") or _sessionModel
-    _emit({
-        "event": "providerChanged",
-        "data": {"provider": _sessionProvider, "model": _sessionModel},
-    })
+    _emit(
+        {
+            "event": "providerChanged",
+            "data": {"provider": _sessionProvider, "model": _sessionModel},
+        }
+    )
 
 
 def run() -> None:
     """stdio REPL loop. Exits on stdin EOF or exit message."""
     import dartlab
+
     dartlab.verbose = False
 
     _emit({"event": "ready", "data": {"version": _getVersion()}})
@@ -165,6 +180,7 @@ def run() -> None:
 def _getVersion() -> str:
     try:
         import dartlab
+
         return dartlab.__version__
     except Exception:
         return "unknown"

@@ -17,15 +17,7 @@
     guide.checkReady("ai")
 """
 
-from dartlab.guide.desk import GuideDesk, getDesk
-from dartlab.guide.readiness import (
-    ReadinessIssue,
-    ReadinessResult,
-    ReadyStatus,
-    registerChecker,
-)
-from dartlab.guide.credentials import CredentialManager, CredentialStatus, EnvironmentSnapshot
-from dartlab.guide import hints
+from dartlab.guide import hints  # noqa: F401 — re-export
 from dartlab.guide.capabilities import (
     CapabilityChannel,
     CapabilityKind,
@@ -39,6 +31,14 @@ from dartlab.guide.capabilities import (
     get_capability_specs,
     get_default_capability_registry,
     register_tool_capability,
+)
+from dartlab.guide.credentials import CredentialManager, CredentialStatus, EnvironmentSnapshot
+from dartlab.guide.desk import GuideDesk, getDesk
+from dartlab.guide.readiness import (
+    ReadinessIssue,
+    ReadinessResult,
+    ReadyStatus,
+    registerChecker,
 )
 
 # 편의 싱글턴

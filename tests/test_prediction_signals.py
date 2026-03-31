@@ -144,8 +144,6 @@ def test_contextSignals_fields():
 
 def test_predictionSpace_import():
     from dartlab.analysis.forecast.predictionSpace import (
-        AxisState,
-        PredictionSpace,
         getPredictionSpace,
     )
 

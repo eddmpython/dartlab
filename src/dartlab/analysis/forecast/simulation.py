@@ -832,14 +832,16 @@ def backtestSimulation(
         # 오차
         error = abs(predictedChange - actualRevChange)
 
-        details.append({
-            "scenario": key,
-            "label": sc.label,
-            "predictedRevChange": round(predictedChange, 1),
-            "actualRevChange": round(actualRevChange, 1),
-            "error": round(error, 1),
-            "directionCorrect": directionCorrect,
-        })
+        details.append(
+            {
+                "scenario": key,
+                "label": sc.label,
+                "predictedRevChange": round(predictedChange, 1),
+                "actualRevChange": round(actualRevChange, 1),
+                "error": round(error, 1),
+                "directionCorrect": directionCorrect,
+            }
+        )
 
     if not details:
         return None

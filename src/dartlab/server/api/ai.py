@@ -35,10 +35,10 @@ from .common import (
     HANDLED_API_ERRORS as _HANDLED_API_ERRORS,
 )
 from .common import (
-    normalize_provider_name as _normalize_provider_name,
+    guideDetail as _guideDetail,
 )
 from .common import (
-    guideDetail as _guideDetail,
+    normalize_provider_name as _normalize_provider_name,
 )
 
 logger = logging.getLogger(__name__)

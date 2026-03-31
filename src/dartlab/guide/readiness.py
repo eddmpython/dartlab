@@ -66,9 +66,11 @@ def registerChecker(feature: str) -> Callable:
         def _checkGovernance(*, stockCode=None, **kw):
             ...
     """
+
     def decorator(fn: Callable[..., ReadinessResult]) -> Callable:
         _CHECKERS[feature] = fn
         return fn
+
     return decorator
 
 
@@ -82,9 +84,11 @@ def listFeatures() -> list[str]:
 
 # ── Helper ──
 
+
 def _lazyHasDartKey() -> bool:
     try:
         from dartlab.providers.dart.openapi.dartKey import hasDartApiKey
+
         return hasDartApiKey()
     except ImportError:
         return False
@@ -102,21 +106,26 @@ def _checkData(*, stockCode: str | None = None, category: str = "docs", **_kw: A
     issues: list[ReadinessIssue] = []
     try:
         from dartlab.core.dataLoader import _dataDir
+
         path = _dataDir(category) / f"{stockCode}.parquet"
         if not path.exists():
             hasKey = _lazyHasDartKey()
             fix = f"dartlab collect {stockCode}" if hasKey else "dartlab setup dart-key"
-            issues.append(ReadinessIssue(
-                kind="missing_data",
-                message=f"{stockCode} {category} 데이터 없음",
-                fixAction=fix,
-            ))
+            issues.append(
+                ReadinessIssue(
+                    kind="missing_data",
+                    message=f"{stockCode} {category} 데이터 없음",
+                    fixAction=fix,
+                )
+            )
     except (ImportError, KeyError, TypeError):
-        issues.append(ReadinessIssue(
-            kind="missing_data",
-            message=f"{stockCode} {category} 데이터 경로 확인 불가",
-            fixAction=f"dartlab collect {stockCode}",
-        ))
+        issues.append(
+            ReadinessIssue(
+                kind="missing_data",
+                message=f"{stockCode} {category} 데이터 경로 확인 불가",
+                fixAction=f"dartlab collect {stockCode}",
+            )
+        )
 
     return ReadinessResult(
         feature="data",
@@ -133,22 +142,27 @@ def _checkAi(*, provider: str | None = None, **_kw: Any) -> ReadinessResult:
 
     try:
         from dartlab.guide.detect import auto_detect_provider
+
         detected = auto_detect_provider()
         context["detected_provider"] = detected
         if detected is None:
             from dartlab.guide.hints import onKeyRequired
 
-            issues.append(ReadinessIssue(
-                kind="no_provider",
-                message="사용 가능한 AI provider가 없습니다",
-                fixAction=onKeyRequired("gemini").strip(),
-            ))
+            issues.append(
+                ReadinessIssue(
+                    kind="no_provider",
+                    message="사용 가능한 AI provider가 없습니다",
+                    fixAction=onKeyRequired("gemini").strip(),
+                )
+            )
     except ImportError:
-        issues.append(ReadinessIssue(
-            kind="no_provider",
-            message="AI 모듈을 로드할 수 없습니다",
-            fixAction="pip install dartlab[ai]",
-        ))
+        issues.append(
+            ReadinessIssue(
+                kind="no_provider",
+                message="AI 모듈을 로드할 수 없습니다",
+                fixAction="pip install dartlab[ai]",
+            )
+        )
 
     return ReadinessResult(
         feature="ai",
@@ -169,12 +183,14 @@ def _checkDartKey(**_kw: Any) -> ReadinessResult:
     return ReadinessResult(
         feature="dart_key",
         status=ReadyStatus.PARTIAL,
-        issues=[ReadinessIssue(
-            kind="missing_key",
-            message="DART API 키 미설정 (직접 수집 불가, 사전 데이터만 가능)",
-            fixAction=onKeyRequired("dart").strip(),
-            severity="warning",
-        )],
+        issues=[
+            ReadinessIssue(
+                kind="missing_key",
+                message="DART API 키 미설정 (직접 수집 불가, 사전 데이터만 가능)",
+                fixAction=onKeyRequired("dart").strip(),
+                severity="warning",
+            )
+        ],
     )
 
 
@@ -216,20 +232,25 @@ def _checkScan(**_kw: Any) -> ReadinessResult:
     issues: list[ReadinessIssue] = []
     try:
         from dartlab.core.dataLoader import _dataDir
+
         financeDir = _dataDir("finance")
         count = len(list(financeDir.glob("*.parquet"))) if financeDir.exists() else 0
         if count < 100:
-            issues.append(ReadinessIssue(
-                kind="insufficient_data",
-                message=f"scan은 전체 시장 데이터가 필요합니다 (현재 {count}종목)",
-                fixAction="dartlab.downloadAll('finance')",
-            ))
+            issues.append(
+                ReadinessIssue(
+                    kind="insufficient_data",
+                    message=f"scan은 전체 시장 데이터가 필요합니다 (현재 {count}종목)",
+                    fixAction="dartlab.downloadAll('finance')",
+                )
+            )
     except (ImportError, KeyError):
-        issues.append(ReadinessIssue(
-            kind="missing_data",
-            message="finance 데이터 디렉토리 확인 불가",
-            fixAction="dartlab.downloadAll('finance')",
-        ))
+        issues.append(
+            ReadinessIssue(
+                kind="missing_data",
+                message="finance 데이터 디렉토리 확인 불가",
+                fixAction="dartlab.downloadAll('finance')",
+            )
+        )
     return ReadinessResult(
         feature="scan",
         status=ReadyStatus.NOT_READY if issues else ReadyStatus.READY,

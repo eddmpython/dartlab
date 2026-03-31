@@ -38,11 +38,7 @@ def addChangeRate(df: pl.DataFrame, *, valueName: str = "value") -> pl.DataFrame
 
     result = df.sort("date").with_columns(
         (pl.col(valueName) - pl.col(valueName).shift(1)).alias("change"),
-        (
-            (pl.col(valueName) - pl.col(valueName).shift(1))
-            / pl.col(valueName).shift(1).abs()
-            * 100
-        ).alias("changePct"),
+        ((pl.col(valueName) - pl.col(valueName).shift(1)) / pl.col(valueName).shift(1).abs() * 100).alias("changePct"),
     )
 
     # YoY: 날짜 간격 추정으로 lag 결정
@@ -62,11 +58,9 @@ def addChangeRate(df: pl.DataFrame, *, valueName: str = "value") -> pl.DataFrame
 
         result = result.with_columns(
             (pl.col(valueName) - pl.col(valueName).shift(yoyLag)).alias("yoyChange"),
-            (
-                (pl.col(valueName) - pl.col(valueName).shift(yoyLag))
-                / pl.col(valueName).shift(yoyLag).abs()
-                * 100
-            ).alias("yoyChangePct"),
+            ((pl.col(valueName) - pl.col(valueName).shift(yoyLag)) / pl.col(valueName).shift(yoyLag).abs() * 100).alias(
+                "yoyChangePct"
+            ),
         )
 
     return result
@@ -92,12 +86,7 @@ def resampleToQuarterly(df: pl.DataFrame, *, valueName: str = "value", method: s
         "sum": pl.col(valueName).sum(),
     }[method]
 
-    return (
-        df.with_columns(pl.col("date").cast(pl.Date))
-        .group_by_dynamic("date", every="1q")
-        .agg(agg_expr)
-        .sort("date")
-    )
+    return df.with_columns(pl.col("date").cast(pl.Date)).group_by_dynamic("date", every="1q").agg(agg_expr).sort("date")
 
 
 def resampleToAnnual(df: pl.DataFrame, *, valueName: str = "value", method: str = "last") -> pl.DataFrame:
@@ -117,12 +106,7 @@ def resampleToAnnual(df: pl.DataFrame, *, valueName: str = "value", method: str 
         "sum": pl.col(valueName).sum(),
     }[method]
 
-    return (
-        df.with_columns(pl.col("date").cast(pl.Date))
-        .group_by_dynamic("date", every="1y")
-        .agg(agg_expr)
-        .sort("date")
-    )
+    return df.with_columns(pl.col("date").cast(pl.Date)).group_by_dynamic("date", every="1y").agg(agg_expr).sort("date")
 
 
 # ── Parquet 영구 캐시 ──

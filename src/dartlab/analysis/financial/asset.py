@@ -6,6 +6,8 @@ BS를 영업/비영업으로 재분류하여 자산 운영 구조를 본다.
 
 from __future__ import annotations
 
+from typing import Any
+
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
@@ -280,11 +282,27 @@ def calcAssetStructure(company, *, basePeriod: str | None = None) -> dict | None
     else:
         diagnosis = "비영업 우위 — 영업 자산보다 비영업 자산이 많음"
 
-    return {
+    # notes enrichment — 주석에서 상세 분해 데이터 추가 (있으면)
+    notesDetail: dict[str, Any] = {}
+    notesAccessor = getattr(company, "_notesAccessor", None) or getattr(company, "notes", None)
+    if notesAccessor is not None:
+        for noteKey in ("inventory", "tangibleAsset", "intangibleAsset"):
+            try:
+                df = getattr(notesAccessor, noteKey, None)
+                if df is not None and hasattr(df, "to_dicts"):
+                    notesDetail[noteKey] = df.to_dicts()
+            except (AttributeError, FileNotFoundError, ValueError, KeyError):
+                pass
+
+    result_dict: dict[str, Any] = {
         "latest": latest,
         "history": history,
         "diagnosis": diagnosis,
     }
+    if notesDetail:
+        result_dict["notesDetail"] = notesDetail
+
+    return result_dict
 
 
 # ── 운전자본 ──

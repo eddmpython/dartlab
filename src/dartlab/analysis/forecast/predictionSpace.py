@@ -181,7 +181,7 @@ def _normalizeZscore(values: list[float]) -> float:
         return 0.0
     mean = sum(values) / len(values)
     variance = sum((v - mean) ** 2 for v in values) / len(values)
-    std = variance ** 0.5
+    std = variance**0.5
     if std < 0.001:
         return 0.0
     return _clamp((values[-1] - mean) / std / 2)
@@ -333,8 +333,7 @@ def _fetchMacroData() -> dict[str, list[float]]:
     result: dict[str, list[float]] = {}
 
     # 필요한 지표 목록
-    krIndicators = ["CLI", "IPI", "MANUFACTURING", "BASE_RATE", "TREASURY_3Y",
-                     "USDKRW", "PPI", "CSI", "BSI", "M2"]
+    krIndicators = ["CLI", "IPI", "MANUFACTURING", "BASE_RATE", "TREASURY_3Y", "USDKRW", "PPI", "CSI", "BSI", "M2"]
 
     for ind in krIndicators:
         try:

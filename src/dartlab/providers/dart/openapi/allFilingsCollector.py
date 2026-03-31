@@ -22,7 +22,6 @@ Phase 2: 원문 수집 (fillContent) — 건당 API 1회, 키 소비 큼.
 from __future__ import annotations
 
 import io
-import time
 import zipfile
 from pathlib import Path
 
@@ -34,9 +33,9 @@ from dartlab.core.dataConfig import DATA_RELEASES
 from dartlab.providers.dart.openapi.client import DartClient
 from dartlab.providers.dart.openapi.disclosure import listFilings
 from dartlab.providers.dart.openapi.zipCollector import (
+    _RE_MULTI_NEWLINE,
     _collectOneZip,
     _tableToMarkdown,
-    _RE_MULTI_NEWLINE,
 )
 
 # ── 상수 ──

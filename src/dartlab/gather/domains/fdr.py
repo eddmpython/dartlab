@@ -57,10 +57,7 @@ async def fetch_history(
     cached = _loadCache(stock_code, market)
     if cached is not None:
         # 캐시 필터링
-        filtered = [
-            r for r in cached
-            if (not start or r["date"] >= start) and (not end or r["date"] <= end)
-        ]
+        filtered = [r for r in cached if (not start or r["date"] >= start) and (not end or r["date"] <= end)]
         if filtered:
             return filtered
 
@@ -76,14 +73,16 @@ async def fetch_history(
     rows: list[dict] = []
     for idx, row in df.iterrows():
         dateStr = idx.strftime("%Y-%m-%d") if hasattr(idx, "strftime") else str(idx)[:10]
-        rows.append({
-            "date": dateStr,
-            "open": float(row.get("Open", 0)),
-            "high": float(row.get("High", 0)),
-            "low": float(row.get("Low", 0)),
-            "close": float(row.get("Close", 0)),
-            "volume": int(row.get("Volume", 0)),
-        })
+        rows.append(
+            {
+                "date": dateStr,
+                "open": float(row.get("Open", 0)),
+                "high": float(row.get("High", 0)),
+                "low": float(row.get("Low", 0)),
+                "close": float(row.get("Close", 0)),
+                "volume": int(row.get("Volume", 0)),
+            }
+        )
 
     # Parquet 캐시 저장
     _saveCache(stock_code, market, rows)

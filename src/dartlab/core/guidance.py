@@ -3,8 +3,8 @@
 from dartlab.guide.messaging import (  # noqa: F401
     _SIMPLE,
     _STRUCTURED,
-    _StructuredMsg,
     _ctx,
+    _StructuredMsg,
     emit,
     format,
     progress,

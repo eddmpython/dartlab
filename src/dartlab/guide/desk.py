@@ -7,16 +7,16 @@ from __future__ import annotations
 
 from typing import Any
 
+from dartlab.guide.capabilities import build_capability_summary
+from dartlab.guide.credentials import CredentialManager, EnvironmentSnapshot
+from dartlab.guide.messaging import suggest
 from dartlab.guide.readiness import (
     ReadinessResult,
     ReadyStatus,
     getChecker,
     listFeatures,
 )
-from dartlab.guide.credentials import CredentialManager, EnvironmentSnapshot
-from dartlab.guide.search import searchCapabilities, formatSearchResults
-from dartlab.guide.capabilities import build_capability_summary, get_capability_specs
-from dartlab.guide.messaging import suggest
+from dartlab.guide.search import formatSearchResults, searchCapabilities
 
 
 class GuideDesk:
@@ -124,10 +124,7 @@ class GuideDesk:
         results = searchCapabilities(question, topK=15)
         capText = formatSearchResults(results) if results else "관련 기능을 찾지 못했습니다."
         env = self.envSnapshot()
-        available = [
-            pid for pid, cred in env.aiProviders.items()
-            if cred.configured
-        ]
+        available = [pid for pid, cred in env.aiProviders.items() if cred.configured]
         return {
             "capabilitiesText": capText,
             "availableProviders": available,
@@ -168,29 +165,27 @@ class GuideDesk:
         # ChatGPT OAuth 에러
         if errType == "ChatGPTOAuthError":
             if any(kw in errLow for kw in ("token", "expire", "login")):
-                return (
-                    "ChatGPT 인증이 만료되었습니다.\n"
-                    '  dartlab.setup("chatgpt")으로 다시 로그인하세요.'
-                )
+                return 'ChatGPT 인증이 만료되었습니다.\n  dartlab.setup("chatgpt")으로 다시 로그인하세요.'
             if any(kw in errLow for kw in ("rate", "limit")):
                 return "ChatGPT 요청 한도에 도달했습니다. 잠시 후 다시 시도해주세요."
-            return f"ChatGPT 연결 오류: {errStr}\n  dartlab.setup(\"chatgpt\")으로 재인증하세요."
+            return f'ChatGPT 연결 오류: {errStr}\n  dartlab.setup("chatgpt")으로 재인증하세요.'
 
         # OpenAI / API 키 에러
         if errType == "OpenAIError" or "api_key" in errLow or "apikey" in errLow:
-            return (
-                "AI 설정이 필요합니다.\n"
-                "  dartlab.setup()으로 API 키를 확인하거나 다른 provider를 선택하세요."
-            )
+            return "AI 설정이 필요합니다.\n  dartlab.setup()으로 API 키를 확인하거나 다른 provider를 선택하세요."
 
         # Gemini 에러
-        if errType in ("ServerError", "ClientError", "APIError") or "google" in errType.lower() or "genai" in errType.lower():
+        if (
+            errType in ("ServerError", "ClientError", "APIError")
+            or "google" in errType.lower()
+            or "genai" in errType.lower()
+        ):
             if "503" in errStr or "unavailable" in errLow or "high demand" in errLow:
                 return "Gemini 서버가 일시적으로 혼잡합니다. 잠시 후 다시 시도해주세요."
             if "429" in errStr or "rate" in errLow or "quota" in errLow or "resource_exhausted" in errLow:
                 return "Gemini 요청 한도에 도달했습니다. 잠시 후 다시 시도해주세요."
             if "401" in errStr or "403" in errStr or "unauthenticated" in errLow or "permission" in errLow:
-                return "Gemini API 키가 유효하지 않습니다.\n  dartlab.setup(\"gemini\")으로 키를 확인하세요."
+                return 'Gemini API 키가 유효하지 않습니다.\n  dartlab.setup("gemini")으로 키를 확인하세요.'
             if "400" in errStr or "invalid" in errLow:
                 return f"Gemini 요청 오류: {errStr}"
             return f"Gemini 연결 오류: {errStr}\n  잠시 후 다시 시도해주세요."

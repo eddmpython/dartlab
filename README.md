@@ -42,7 +42,7 @@
   - [Analysis — From Numbers to Story](#analysis--from-numbers-to-story)
   - [Gather — External Market Data](#gather--external-market-data)
   - [Review — Analysis to Report](#review--analysis-to-report)
-  - [AI — Ask in Natural Language](#ai--ask-in-natural-language)
+  - [AI — Your Active Analyst](#ai--your-active-analyst)
 - [EDGAR (US)](#edgar-us)
 - [MCP — AI Assistant Integration](#mcp--ai-assistant-integration)
 - [OpenAPI — Raw Public APIs](#openapi--raw-public-apis)
@@ -124,6 +124,8 @@ Two engines turn raw filings into one comparable map.
 
 ### Data — Everything Is Ready
 
+> Design: [ops/data.md](ops/data.md)
+
 All data is pre-built on [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data). `pip install dartlab` and `Company("005930")` — that's it. No API key, no manual download, no data pipeline to configure.
 
 Why HuggingFace? Because raw DART filings are scattered across thousands of ZIP files and XML fragments. Parsing, normalizing, and structuring all of this from scratch takes hours per company. DartLab pre-builds this entire pipeline and publishes the result so you never have to.
@@ -139,6 +141,8 @@ Why HuggingFace? Because raw DART filings are scattered across thousands of ZIP 
 The data pipeline has three layers: local cache (instant) → HuggingFace (auto-download, no key) → DART API (direct collection with your own key). Most users never leave the first two.
 
 ### Company — The Two Problems
+
+> Design: [ops/company.md](ops/company.md)
 
 If every period and every company must be comparable, two obstacles stand in the way:
 
@@ -197,6 +201,8 @@ c.review()                      # report -- structured full report
 
 ### Scan — The Whole Market in One Call
 
+> Design: [ops/scan.md](ops/scan.md)
+
 If every company is comparable, the next question is natural: compare them.
 
 Company looks at one firm deeply. Scan looks at all firms horizontally. When you want to know "which companies have the highest ROE" or "who changed auditors this year," you need cross-sectional analysis across the entire market.
@@ -231,6 +237,8 @@ dartlab.scan("cashflow")              # OCF/ICF/FCF + 8-pattern classification
 Adding a new axis means one module — no other code changes needed.
 
 ### Analysis — From Numbers to Story
+
+> Design: [ops/analysis.md](ops/analysis.md)
 
 Every company has a story. Revenue structure explains what it does; profitability reveals how well; cash flow shows whether earnings are real; stability tells if it can survive; capital allocation shows where the money goes; and the outlook connects past to future. These six acts form a causal chain — each act explains the next.
 
@@ -277,6 +285,8 @@ c.analysis("수익성")                   # profitability analysis
 
 ### Gather — External Market Data
 
+> Design: [ops/gather.md](ops/gather.md)
+
 Company and Scan work with disclosure data — what the company filed. But investors also need market data: stock prices, institutional flows, macro indicators, news. Gather bridges the gap between filings and the market.
 
 `gather()` collects external market data — all as **Polars DataFrames**.
@@ -294,6 +304,8 @@ dartlab.gather("news", "삼성전자")             # Google News RSS
 Company-bound: `c.gather("price")` — no need to pass the stock code again.
 
 ### Review — Analysis to Report
+
+> Design: [ops/review.md](ops/review.md)
 
 Analysis produces structured data. Review assembles it into a human-readable report that follows the six-act narrative — from "what does this company do" to "what is it worth." Each analysis axis becomes a report section with tables, flags, and narrative context, connected by causal transitions between acts.
 
@@ -330,6 +342,8 @@ c.reviewer(guide="Evaluate from semiconductor cycle perspective")
 
 ### Search — Find Filings by Meaning *(alpha)*
 
+> Design: [ops/search.md](ops/search.md)
+
 Listed companies file thousands of disclosures — capital raises, lawsuits, CEO changes, M&A. DartLab collects filing texts and makes them searchable by meaning, not just title.
 
 ```python
@@ -357,6 +371,8 @@ All steps are incremental — already-collected dates, texts, and vectors are sk
 > **Status:** alpha — pre-built vector index available on HuggingFace. Requires `pip install dartlab[vector]`.
 
 ### AI — Your Active Analyst
+
+> Design: [ops/ai.md](ops/ai.md)
 
 The AI in DartLab is not a passive narrator. It is an active analyst that uses dartlab as its toolkit — calling functions, writing code, running analysis, and building its own workflow to answer your question.
 
@@ -429,7 +445,7 @@ L1  providers/   Country-specific data (DART, EDGAR, EDINET)
     scan/        Market-wide cross-sectional analysis (13 axes)
 L2  analysis/    Financial analysis + forecast + valuation
     review/      Block-template report assembly
-L3  ai/          LLM-powered analysis (5 providers)
+L3  ai/          Active analyst — LLM with full API access (5 providers)
 ```
 
 Import direction is enforced by CI — no reverse dependencies allowed.

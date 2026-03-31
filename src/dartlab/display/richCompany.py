@@ -43,7 +43,7 @@ def renderCompany(company: Any) -> str:
 
     # guide 힌트 (데이터 보완, freshness 등)
     try:
-        from dartlab.guide.hints import onCompanyCreated, nextSteps
+        from dartlab.guide.hints import nextSteps, onCompanyCreated
 
         hints = onCompanyCreated(company)
         if hints:

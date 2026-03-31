@@ -8,7 +8,6 @@ calcMacroRegression에서 회귀 변수로 사용.
 from __future__ import annotations
 
 import logging
-import re
 
 log = logging.getLogger(__name__)
 
@@ -107,12 +106,14 @@ def getProductIndicators(stockCode: str) -> list[dict]:
                 for seriesId in mapping.get(source_key, []):
                     if seriesId not in seen:
                         seen.add(seriesId)
-                        matched.append({
-                            "seriesId": seriesId,
-                            "source": source_key,
-                            "label": mapping["label"],
-                            "matchedKeyword": keyword,
-                        })
+                        matched.append(
+                            {
+                                "seriesId": seriesId,
+                                "source": source_key,
+                                "label": mapping["label"],
+                                "matchedKeyword": keyword,
+                            }
+                        )
 
     return matched
 

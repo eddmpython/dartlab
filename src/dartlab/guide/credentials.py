@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
 
 @dataclass(frozen=True)
@@ -62,17 +61,17 @@ class CredentialManager:
         if name == "dart_api_key":
             return self._checkDartKey()
         aiStatuses = self._checkAiProviders()
-        return aiStatuses.get(name, CredentialStatus(
-            name=name, configured=False, source="none"
-        ))
+        return aiStatuses.get(name, CredentialStatus(name=name, configured=False, source="none"))
 
     def saveKey(self, name: str, value: str) -> None:
         """키 저장 — 적절한 백엔드에 위임."""
         if name == "dart_api_key":
             from dartlab.providers.dart.openapi.dartKey import saveDartKeyToDotenv
+
             saveDartKeyToDotenv(value)
             return
         from dartlab.guide.profile import get_profile_manager
+
         mgr = get_profile_manager()
         provider = name.replace("_api_key", "")
         mgr.save_api_key(provider, value)
@@ -80,11 +79,13 @@ class CredentialManager:
     def _checkDartKey(self) -> CredentialStatus:
         try:
             from dartlab.providers.dart.openapi.dartKey import getDartKeyStatus
+
             status = getDartKeyStatus()
             masked = None
             if status.configured:
                 try:
                     from dartlab.providers.dart.openapi.dartKey import resolveDartKeys
+
                     keys = resolveDartKeys()
                     if keys:
                         k = keys[0]
@@ -125,6 +126,7 @@ class CredentialManager:
                     )
                 elif spec.auth_kind == "oauth":
                     from dartlab.guide.providers import oauth_secret_name
+
                     configured = store.has(oauth_secret_name(pid))
                     results[pid] = CredentialStatus(
                         name=f"{pid}_oauth",
@@ -138,6 +140,7 @@ class CredentialManager:
     def _getDefaultProvider(self) -> str | None:
         try:
             from dartlab.guide.profile import get_profile_manager
+
             mgr = get_profile_manager()
             profile = mgr.load()
             return profile.default_provider

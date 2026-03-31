@@ -34,7 +34,6 @@ def scan_macroBeta(
         - gdpBeta, rateBeta, fxBeta
         - rSquared, nObs, confidence
     """
-    from dartlab.gather.macro import alignToFinancialPeriods, loadMacroParquet
     from dartlab.scan.builder import buildFinance
 
     # 전종목 매출 시계열 로드
@@ -94,17 +93,19 @@ def scan_macroBeta(
         nValid = sum(1 for g in revGrowth if g is not None)
         confidence = "high" if nValid >= 8 and (rSq or 0) > 0.3 else ("medium" if nValid >= 5 else "low")
 
-        rows.append({
-            "stockCode": code,
-            "companyName": name,
-            "sector": sector,
-            "gdpBeta": round(betas.get("gdp", 0), 3),
-            "rateBeta": round(betas.get("rate", 0), 3),
-            "fxBeta": round(betas.get("fx", 0), 3),
-            "rSquared": round(rSq or 0, 4),
-            "nObs": nValid,
-            "confidence": confidence,
-        })
+        rows.append(
+            {
+                "stockCode": code,
+                "companyName": name,
+                "sector": sector,
+                "gdpBeta": round(betas.get("gdp", 0), 3),
+                "rateBeta": round(betas.get("rate", 0), 3),
+                "fxBeta": round(betas.get("fx", 0), 3),
+                "rSquared": round(rSq or 0, 4),
+                "nObs": nValid,
+                "confidence": confidence,
+            }
+        )
 
     if not rows:
         return _emptyDf()

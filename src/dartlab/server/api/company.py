@@ -17,8 +17,8 @@ from ..services.company_api import (
 from .common import (
     HANDLED_API_ERRORS,
     etag_response,
-    normalize_provider_name,
     guideDetail,
+    normalize_provider_name,
     serialize_payload,
 )
 

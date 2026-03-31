@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from dartlab.analysis.financial._helpers import annualColsFromPeriods as _annualColsFromPeriods
 from dartlab.analysis.financial._memoize import memoized_calc
 
@@ -88,7 +90,21 @@ def calcCostBreakdown(company, *, basePeriod: str | None = None) -> dict | None:
             }
         )
 
-    return {"history": history} if history else None
+    if not history:
+        return None
+
+    # notes enrichment — 비용의 성격별 분류 (있으면)
+    result: dict[str, Any] = {"history": history}
+    notesAccessor = getattr(company, "_notesAccessor", None) or getattr(company, "notes", None)
+    if notesAccessor is not None:
+        try:
+            cbn = getattr(notesAccessor, "costByNature", None)
+            if cbn is not None and hasattr(cbn, "to_dicts"):
+                result["costByNature"] = cbn.to_dicts()
+        except (AttributeError, FileNotFoundError, ValueError, KeyError):
+            pass
+
+    return result
 
 
 # ── 영업레버리지 ──

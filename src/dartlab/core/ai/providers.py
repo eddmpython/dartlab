@@ -2,8 +2,8 @@
 
 from dartlab.guide.providers import *  # noqa: F401,F403
 from dartlab.guide.providers import (  # noqa: F401
-    ProviderSpec,
     _PROVIDERS,
+    ProviderSpec,
     api_key_secret_name,
     build_provider_catalog,
     cli_provider_choices,
