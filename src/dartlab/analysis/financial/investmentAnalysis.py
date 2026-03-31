@@ -12,6 +12,7 @@ from dartlab.analysis.financial._helpers import (
 from dartlab.analysis.financial._helpers import (
     toDict,
 )
+from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
 
@@ -84,6 +85,7 @@ def _estimateWacc(company) -> float | None:
 # ── ROIC (NOPAT / 투하자본) ──
 
 
+@memoized_calc
 def calcRoicTimeline(company, *, basePeriod: str | None = None) -> dict | None:
     """ROIC 시계열 -- 투하자본 대비 실제 수익률.
 
@@ -179,6 +181,7 @@ def calcRoicTimeline(company, *, basePeriod: str | None = None) -> dict | None:
 # ── 투자 강도 ──
 
 
+@memoized_calc
 def calcInvestmentIntensity(company, *, basePeriod: str | None = None) -> dict | None:
     """투자 강도 시계열 -- CAPEX/매출, 유무형 비율."""
     cfResult = company.select(
@@ -237,6 +240,7 @@ def calcInvestmentIntensity(company, *, basePeriod: str | None = None) -> dict |
 # ── NOPAT + 투하자본 ──
 
 
+@memoized_calc
 def calcEvaTimeline(company, *, basePeriod: str | None = None) -> dict | None:
     """NOPAT + 투하자본 시계열.
 
@@ -318,6 +322,7 @@ def calcEvaTimeline(company, *, basePeriod: str | None = None) -> dict | None:
 # ── 타법인 출자 현황 (docs) ──
 
 
+@memoized_calc
 def calcInvestmentInOther(company, *, basePeriod: str | None = None) -> dict | None:
     """investmentInOtherDetail docs 토픽에서 타법인 출자 총액 추출.
 
@@ -381,6 +386,7 @@ def calcInvestmentInOther(company, *, basePeriod: str | None = None) -> dict | N
 # ── 플래그 ──
 
 
+@memoized_calc
 def calcInvestmentFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """투자 분석 경고 신호."""
     flags = []

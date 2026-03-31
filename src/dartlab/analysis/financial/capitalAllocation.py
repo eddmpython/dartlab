@@ -4,6 +4,7 @@
 """
 
 from __future__ import annotations
+from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
 
@@ -42,6 +43,7 @@ def _pct(part: float, total: float) -> float | None:
 # ── 배당 정책 ──
 
 
+@memoized_calc
 def calcDividendPolicy(company, *, basePeriod: str | None = None) -> dict | None:
     """배당 정책 시계열 — 배당성향, 배당금 추이, 연속 배당.
 
@@ -120,6 +122,7 @@ def calcDividendPolicy(company, *, basePeriod: str | None = None) -> dict | None
 # ── 주주환원 ──
 
 
+@memoized_calc
 def calcShareholderReturn(company, *, basePeriod: str | None = None) -> dict | None:
     """주주환��� 시계열 — 배당 + 자사주 매입 vs FCF.
 
@@ -195,6 +198,7 @@ def calcShareholderReturn(company, *, basePeriod: str | None = None) -> dict | N
 # ── 재투자 ──
 
 
+@memoized_calc
 def calcReinvestment(company, *, basePeriod: str | None = None) -> dict | None:
     """재투자 시계열 — 재투자율, CAPEX/매출.
 
@@ -270,6 +274,7 @@ def calcReinvestment(company, *, basePeriod: str | None = None) -> dict | None:
 # ─�� FCF 사용처 분해 ──
 
 
+@memoized_calc
 def calcFcfUsage(company, *, basePeriod: str | None = None) -> dict | None:
     """FCF 사용처 분해 시계열 — 배당/부채상환/잔여.
 
@@ -342,6 +347,7 @@ def calcFcfUsage(company, *, basePeriod: str | None = None) -> dict | None:
 # ── 배당 서술 보강 (docs) ──
 
 
+@memoized_calc
 def calcDividendDocs(company, *, basePeriod: str | None = None) -> dict | None:
     """docs dividend 토픽에서 배당성향, 배당수익률, 주당배당금 추출.
 
@@ -406,6 +412,7 @@ def calcDividendDocs(company, *, basePeriod: str | None = None) -> dict | None:
 # ── 자사주 현황 (docs/report) ──
 
 
+@memoized_calc
 def calcTreasuryStockStatus(company, *, basePeriod: str | None = None) -> dict | None:
     """treasuryStock 토픽에서 자사주 취득/처분/소각 현황 추출.
 
@@ -462,6 +469,7 @@ def calcTreasuryStockStatus(company, *, basePeriod: str | None = None) -> dict |
 # ── 플래그 ──
 
 
+@memoized_calc
 def calcCapitalAllocationFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """자본배분 경고 신호."""
     flags = []

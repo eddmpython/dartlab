@@ -11,6 +11,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from dartlab.analysis.financial._memoize import memoized_calc
+
 from dartlab.analysis.valuation.pricetarget import compute_price_target
 from dartlab.analysis.valuation.residualIncome import calcResidualIncome as _rimCalc
 
@@ -157,6 +159,7 @@ def _getSectorParams(company: Any):
 # ── calc 함수 9개 ──
 
 
+@memoized_calc
 def calcDcf(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """DCF (현금흐름 할인) 밸류에이션."""
     from dartlab.core.finance.dcf import dcfValuation
@@ -204,6 +207,7 @@ def calcDcf(company: Any, *, basePeriod: str | None = None) -> dict | None:
     }
 
 
+@memoized_calc
 def calcDdm(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """DDM (배당 할인) 밸류에이션.
 
@@ -266,6 +270,7 @@ def calcDdm(company: Any, *, basePeriod: str | None = None) -> dict | None:
     }
 
 
+@memoized_calc
 def calcRelativeValuation(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """상대가치 (PER/PBR/EV-EBITDA/PSR/PEG) 밸류에이션."""
     from dartlab.core.finance.dcf import relativeValuation
@@ -295,6 +300,7 @@ def calcRelativeValuation(company: Any, *, basePeriod: str | None = None) -> dic
     }
 
 
+@memoized_calc
 def calcResidualIncome(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """RIM (잔여이익모델) 밸류에이션."""
     series, shares, currency = _getSeriesAndShares(company)
@@ -351,6 +357,7 @@ _HOLDING_SUBS: dict[str, list[tuple[str, float]]] = {
 }
 
 
+@memoized_calc
 def calcNavValuation(company: Any) -> dict | None:
     """지주사 NAV = Sum(상장 자회사 시총 x 지분율) - 순차입금. 할인 30%."""
     stockCode = getattr(company, "stockCode", "")
@@ -410,6 +417,7 @@ def calcNavValuation(company: Any) -> dict | None:
     }
 
 
+@memoized_calc
 def calcPriceTarget(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """확률 가중 주가 목표가 (5 시나리오 + Monte Carlo)."""
     series, shares, currency = _getSeriesAndShares(company)
@@ -492,6 +500,7 @@ def calcPriceTarget(company: Any, *, basePeriod: str | None = None) -> dict | No
     }
 
 
+@memoized_calc
 def calcReverseImplied(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """역내재성장률 -- 시장이 내재하는 매출 성장률 역산."""
     from dartlab.core.finance.priceImplied import reverseImpliedGrowth
@@ -519,6 +528,7 @@ def calcReverseImplied(company: Any, *, basePeriod: str | None = None) -> dict |
     }
 
 
+@memoized_calc
 def calcSensitivity(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """WACC x 영구성장률 민감도 그리드."""
     from dartlab.core.finance.dcf import sensitivityAnalysis
@@ -667,6 +677,7 @@ def _classifyCompanyType(company: Any, series: dict) -> tuple[str, dict[str, flo
     return "general", {"DCF": 0.35, "DDM": 0.15, "상대가치": 0.25, "RIM": 0.25}
 
 
+@memoized_calc
 def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """종합 밸류에이션 -- 기업 유형별 자동 모델 선택 + 가중 합성."""
     from dartlab.core.finance.dcf import fullValuation
@@ -806,6 +817,7 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
     }
 
 
+@memoized_calc
 def calcValuationFlags(company: Any, *, basePeriod: str | None = None) -> list[dict]:
     """가치평가 관련 플래그 집계."""
     flags: list[dict] = []

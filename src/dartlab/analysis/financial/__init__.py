@@ -552,6 +552,24 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
                 "공급망 모멘텀",
             ),
             _CalcEntry(
+                "calcConsensusDirection",
+                "dartlab.analysis.financial.predictionSignals",
+                "consensusDirection",
+                "컨센서스 매출 방향",
+            ),
+            _CalcEntry(
+                "calcFlowDirection",
+                "dartlab.analysis.financial.predictionSignals",
+                "flowDirection",
+                "수급 누적 방향",
+            ),
+            _CalcEntry(
+                "calcRevenueDirection",
+                "dartlab.analysis.financial.predictionSignals",
+                "revenueDirection",
+                "매출 모멘텀 방향",
+            ),
+            _CalcEntry(
                 "calcPredictionSynthesis",
                 "dartlab.analysis.financial.predictionSignals",
                 "predictionSynthesis",

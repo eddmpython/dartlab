@@ -11,6 +11,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from dartlab.analysis.financial._memoize import memoized_calc
+
 from dartlab.analysis.financial.valuation import _IG_TO_SECTOR_KEY
 from dartlab.analysis.forecast.revenueForecast import CompanyDataBundle, forecastRevenue
 from dartlab.analysis.forecast.simulation import simulateAllScenarios
@@ -121,6 +123,7 @@ def _runForecastRevenue(company: Any):
 # ── calc 함수 7개 ──
 
 
+@memoized_calc
 def calcRevenueForecast(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """7-소스 앙상블 3-시나리오 매출 전망."""
     result = _runForecastRevenue(company)
@@ -163,6 +166,7 @@ def calcRevenueForecast(company: Any, *, basePeriod: str | None = None) -> dict 
     return out
 
 
+@memoized_calc
 def calcSegmentForecast(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """세그먼트별 개별 매출 성장 전망."""
     result = _runForecastRevenue(company)
@@ -191,6 +195,7 @@ def calcSegmentForecast(company: Any, *, basePeriod: str | None = None) -> dict 
     }
 
 
+@memoized_calc
 def calcProFormaHighlights(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """Pro-Forma IS 주요 항목 전망."""
     result = _runForecastRevenue(company)
@@ -247,6 +252,7 @@ def calcProFormaHighlights(company: Any, *, basePeriod: str | None = None) -> di
     }
 
 
+@memoized_calc
 def calcScenarioImpact(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """매크로 시나리오별 매출/마진 영향."""
     series, _, sectorKey, _, currency = _getSeriesAndMeta(company)
@@ -285,6 +291,7 @@ def calcScenarioImpact(company: Any, *, basePeriod: str | None = None) -> dict |
     }
 
 
+@memoized_calc
 def calcForecastMethodology(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """예측 방법론 투명성 공개."""
     result = _runForecastRevenue(company)
@@ -302,6 +309,7 @@ def calcForecastMethodology(company: Any, *, basePeriod: str | None = None) -> d
     }
 
 
+@memoized_calc
 def calcHistoricalRatios(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """Pro-Forma 기반 과거 구조 비율."""
     series, _, _, _, _ = _getSeriesAndMeta(company)
@@ -330,6 +338,7 @@ def calcHistoricalRatios(company: Any, *, basePeriod: str | None = None) -> dict
     }
 
 
+@memoized_calc
 def calcForecastFlags(company: Any, *, basePeriod: str | None = None) -> dict | None:
     """매출전망 플래그."""
     result = _runForecastRevenue(company)

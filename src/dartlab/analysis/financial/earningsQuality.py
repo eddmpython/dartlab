@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import math
+from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
 
@@ -41,6 +42,7 @@ def _safe(numerator: float, denominator: float) -> float | None:
 # ── 발생액 분석 ──
 
 
+@memoized_calc
 def calcAccrualAnalysis(company, *, basePeriod: str | None = None) -> dict | None:
     """발생액(Accrual) 시계열 — 이익 중 현금이 아닌 비중.
 
@@ -112,6 +114,7 @@ def calcAccrualAnalysis(company, *, basePeriod: str | None = None) -> dict | Non
 # ── 이익 지속성 ──
 
 
+@memoized_calc
 def calcEarningsPersistence(company, *, basePeriod: str | None = None) -> dict | None:
     """이익 지속성 — 영업이익 vs 영업외손익, 변동성.
 
@@ -183,6 +186,7 @@ def calcEarningsPersistence(company, *, basePeriod: str | None = None) -> dict |
 # ── Beneish M-Score 시계열 ──
 
 
+@memoized_calc
 def calcBeneishTimeline(company, *, basePeriod: str | None = None) -> dict | None:
     """Beneish M-Score 시계열 — annual 데이터에서 직접 8변수 계산.
 
@@ -320,6 +324,7 @@ def calcBeneishTimeline(company, *, basePeriod: str | None = None) -> dict | Non
 # ── 플래그 ──
 
 
+@memoized_calc
 def calcEarningsQualityFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """이익 품질 경고 신호."""
     flags = []
@@ -365,6 +370,7 @@ def calcEarningsQualityFlags(company, *, basePeriod: str | None = None) -> list[
 # ── Richardson 3계층 발생액 분해 ──
 
 
+@memoized_calc
 def calcRichardsonAccrual(company, *, basePeriod: str | None = None) -> dict | None:
     """Richardson et al. (2005) 3계층 발생액 분해.
 
@@ -465,6 +471,7 @@ def calcRichardsonAccrual(company, *, basePeriod: str | None = None) -> dict | N
 # ── 영업외손익 분해 ──
 
 
+@memoized_calc
 def calcNonOperatingBreakdown(company, *, basePeriod: str | None = None) -> dict | None:
     """영업외손익 항목별 분해 — 영업이익과 세전이익 사이의 갭.
 

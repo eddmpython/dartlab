@@ -5,6 +5,7 @@
 """
 
 from __future__ import annotations
+from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_QUARTERS = 5
 _MAX_YEARS = 8
@@ -58,6 +59,7 @@ def _fmtAmt(value) -> str:
 # ── 계산 함수들 ──
 
 
+@memoized_calc
 def calcFundingSources(company, *, basePeriod: str | None = None) -> dict | None:
     """조달원 분해 — 돈을 어디서 가져왔는가.
 
@@ -258,6 +260,7 @@ def _calcImpliedBorrowingRate(company, finDebt: float) -> float | None:
     return ie / finDebt * 100
 
 
+@memoized_calc
 def calcCapitalOverview(company, *, basePeriod: str | None = None) -> dict | None:
     """총자산/총부채/자기자본/순차입금 스냅샷.
 
@@ -308,6 +311,7 @@ def calcCapitalOverview(company, *, basePeriod: str | None = None) -> dict | Non
     return {"metrics": metrics}
 
 
+@memoized_calc
 def calcCapitalTimeline(company, *, basePeriod: str | None = None) -> dict | None:
     """자본총계·이익잉여금 시계열.
 
@@ -376,6 +380,7 @@ def _buildCapitalTable(equityRow: dict, retainedRow: dict | None, cols: list[str
     return rows
 
 
+@memoized_calc
 def calcDebtTimeline(company, *, basePeriod: str | None = None) -> dict | None:
     """부채총계·금융부채·영업부채 시계열.
 
@@ -456,6 +461,7 @@ def _buildDebtTable(liabRow: dict, stbRow, ltbRow, bondRow, cols: list[str]) -> 
     return rows
 
 
+@memoized_calc
 def calcInterestBurden(company, *, basePeriod: str | None = None) -> dict | None:
     """이자보상배율·이자비용.
 
@@ -491,6 +497,7 @@ def calcInterestBurden(company, *, basePeriod: str | None = None) -> dict | None
     return {"metrics": metrics}
 
 
+@memoized_calc
 def calcLiquidity(company, *, basePeriod: str | None = None) -> dict | None:
     """유동비율·당좌비율·현금비율·순운전자본.
 
@@ -527,6 +534,7 @@ def calcLiquidity(company, *, basePeriod: str | None = None) -> dict | None:
     return {"metrics": metrics}
 
 
+@memoized_calc
 def calcCashFlowStructure(company, *, basePeriod: str | None = None) -> dict | None:
     """영업CF/투자CF/재무CF + FCF + CF 패턴.
 
@@ -665,6 +673,7 @@ def _isFinancialCompany(company) -> bool:
     return False
 
 
+@memoized_calc
 def calcDistressIndicators(company, *, basePeriod: str | None = None) -> dict | None:
     """Altman Z, Ohlson O, Piotroski F, Springate S.
 
@@ -723,6 +732,7 @@ def calcDistressIndicators(company, *, basePeriod: str | None = None) -> dict | 
     return {"metrics": metrics}
 
 
+@memoized_calc
 def calcCapitalFlags(company, *, basePeriod: str | None = None) -> list[tuple[str, str]]:
     """자금조달 관련 경고/기회 플래그. [(텍스트, "warning"|"opportunity"), ...]."""
     flags: list[tuple[str, str]] = []

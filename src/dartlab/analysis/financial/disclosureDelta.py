@@ -4,10 +4,12 @@ sections diff 인프라를 활용하여 기간간 공시 텍스트 변화를 정
 """
 
 from __future__ import annotations
+from dartlab.analysis.financial._memoize import memoized_calc
 
 # ── 공시변화 종합 요약 ──
 
 
+@memoized_calc
 def calcDisclosureChangeSummary(company, *, basePeriod: str | None = None) -> dict | None:
     """전체 topic 변화 요약 -- 변화량 상위 topic + 총 변화 건수.
 
@@ -67,6 +69,7 @@ _KEY_TOPICS = [
 ]
 
 
+@memoized_calc
 def calcKeyTopicChanges(company, *, basePeriod: str | None = None) -> dict | None:
     """핵심 공시 topic 변화 추적.
 
@@ -110,6 +113,7 @@ def calcKeyTopicChanges(company, *, basePeriod: str | None = None) -> dict | Non
 # ── 변화 크기 분석 ──
 
 
+@memoized_calc
 def calcChangeIntensity(company, *, basePeriod: str | None = None) -> dict | None:
     """변화 크기(바이트) 분석 -- 어떤 topic이 얼마나 크게 바뀌었나.
 
@@ -143,6 +147,7 @@ def calcChangeIntensity(company, *, basePeriod: str | None = None) -> dict | Non
 # ── 플래그 ──
 
 
+@memoized_calc
 def calcDisclosureDeltaFlags(company, *, basePeriod: str | None = None) -> list[tuple[str, str]]:
     """공시변화감지 경고/기회 플래그."""
     flags: list[tuple[str, str]] = []

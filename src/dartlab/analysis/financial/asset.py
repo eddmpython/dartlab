@@ -5,6 +5,7 @@ BS를 영업/비영업으로 재분류하여 자산 운영 구조를 본다.
 """
 
 from __future__ import annotations
+from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
 _MAX_QUARTERS = 5
@@ -113,6 +114,7 @@ def _sumOp(data: dict, col: str, simpleKeys: list[str], fallbackPairs: list[list
 # ── 메인: 자산 구조 ──
 
 
+@memoized_calc
 def calcAssetStructure(company, *, basePeriod: str | None = None) -> dict | None:
     """자산을 영업/비영업으로 재분류 — 시계열.
 
@@ -287,6 +289,7 @@ def calcAssetStructure(company, *, basePeriod: str | None = None) -> dict | None
 # ── 운전자본 ──
 
 
+@memoized_calc
 def calcWorkingCapital(company, *, basePeriod: str | None = None) -> dict | None:
     """운전자본 상세 + CCC.
 
@@ -373,6 +376,7 @@ def calcWorkingCapital(company, *, basePeriod: str | None = None) -> dict | None
 # ── CAPEX 패턴 ──
 
 
+@memoized_calc
 def calcCapexPattern(company, *, basePeriod: str | None = None) -> dict | None:
     """CAPEX vs 감가상각 + 건설중인자산 추이.
 
@@ -489,6 +493,7 @@ def calcCapexPattern(company, *, basePeriod: str | None = None) -> dict | None:
 # ── 자산 플래그 ──
 
 
+@memoized_calc
 def calcAssetFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """자산 구조 경고 신호."""
     flags = []

@@ -16,6 +16,7 @@ from dartlab.analysis.financial._helpers import (
 from dartlab.analysis.financial._helpers import (
     annualColsFromPeriods as _annualColsFromPeriods,
 )
+from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = MAX_RATIO_YEARS
 
@@ -52,6 +53,7 @@ def _pctOf(part, total) -> float | None:
 # ── 레버리지 구조 시계열 ──
 
 
+@memoized_calc
 def calcLeverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
     """레버리지 구조 시계열 -- 부채로 얼마나 버티는가.
 
@@ -117,6 +119,7 @@ def calcLeverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
 # ── 이자보상 시계열 ──
 
 
+@memoized_calc
 def calcCoverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
     """이자보상배율 시계열 -- 이자를 갚을 능력이 있는가.
 
@@ -193,6 +196,7 @@ def calcCoverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
 # ── 부실 판별 (Altman Z-Score) ──
 
 
+@memoized_calc
 def calcDistressScore(company, *, basePeriod: str | None = None) -> dict | None:
     """Altman Z-Score 시계열 -- 부실 위험은 어디인가.
 
@@ -310,6 +314,7 @@ def calcDistressScore(company, *, basePeriod: str | None = None) -> dict | None:
 # ── 부실 앙상블 (기존 유지 -- getRatios 사용) ──
 
 
+@memoized_calc
 def calcDistressEnsemble(company, *, basePeriod: str | None = None) -> dict | None:
     """4개 부실예측 모델 앙상블 -- 다수결 투표.
 
@@ -418,6 +423,7 @@ def calcDistressEnsemble(company, *, basePeriod: str | None = None) -> dict | No
     }
 
 
+@memoized_calc
 def calcDebtMaturity(company, *, basePeriod: str | None = None) -> dict | None:
     """부채 만기 구조 분석.
 
@@ -524,6 +530,7 @@ def calcDebtMaturity(company, *, basePeriod: str | None = None) -> dict | None:
 # ── 플래그 ──
 
 
+@memoized_calc
 def calcStabilityFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """안정성 경고/기회 플래그."""
     flags: list[str] = []

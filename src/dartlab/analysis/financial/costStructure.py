@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from dartlab.analysis.financial._helpers import annualColsFromPeriods as _annualColsFromPeriods
+from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
 
@@ -33,6 +34,7 @@ def _pct(part: float, total: float) -> float | None:
 # ── 비용 비중 분해 ──
 
 
+@memoized_calc
 def calcCostBreakdown(company, *, basePeriod: str | None = None) -> dict | None:
     """매출원가율, 판관비율, 영업비용률 시계열.
 
@@ -92,6 +94,7 @@ def calcCostBreakdown(company, *, basePeriod: str | None = None) -> dict | None:
 # ── 영업레버리지 ──
 
 
+@memoized_calc
 def calcOperatingLeverage(company, *, basePeriod: str | None = None) -> dict | None:
     """영업레버리지(DOL) 시계열 — 매출 변동 대비 영업이익 민감도.
 
@@ -169,6 +172,7 @@ def calcOperatingLeverage(company, *, basePeriod: str | None = None) -> dict | N
 # ── 손익분기점 추정 ──
 
 
+@memoized_calc
 def calcBreakevenEstimate(company, *, basePeriod: str | None = None) -> dict | None:
     """BEP 추정 — 고정비/(1-변동비율) 기반 손익분기 매출.
 
@@ -238,6 +242,7 @@ def calcBreakevenEstimate(company, *, basePeriod: str | None = None) -> dict | N
 # ── 원재료 비중 (docs 보강) ──
 
 
+@memoized_calc
 def calcRawMaterialBreakdown(company, *, basePeriod: str | None = None) -> dict | None:
     """주요 원재료 품목별 매입액 비중 — rawMaterial docs 토픽 기반.
 
@@ -313,6 +318,7 @@ def calcRawMaterialBreakdown(company, *, basePeriod: str | None = None) -> dict 
 # ── 플래그 ──
 
 
+@memoized_calc
 def calcCostStructureFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """비용 구조 경고 신호."""
     flags = []

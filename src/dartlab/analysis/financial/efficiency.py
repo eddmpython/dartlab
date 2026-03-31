@@ -14,6 +14,7 @@ from dartlab.analysis.financial._helpers import (
 from dartlab.analysis.financial._helpers import (
     annualColsFromPeriods as _annualColsFromPeriods,
 )
+from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = MAX_RATIO_YEARS
 
@@ -39,6 +40,7 @@ def _days(revenue, balance) -> float | None:
 # ── 자산 회전 ──
 
 
+@memoized_calc
 def calcTurnoverTrend(company, *, basePeriod: str | None = None) -> dict | None:
     """자산 회전 시계열 -- 자산을 얼마나 효율적으로 쓰는가.
 
@@ -121,6 +123,7 @@ calcCccTrend = calcTurnoverTrend
 # ── 플래그 ──
 
 
+@memoized_calc
 def calcEfficiencyFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """효율성 경고/기회 플래그."""
     flags: list[str] = []
