@@ -81,7 +81,6 @@
         </div>
       {/if}
     </div>
-    <span class="mcp-badge">MCP</span>
   </div>
 </div>
 
@@ -194,12 +193,4 @@
     color: #34d399;
   }
 
-  .mcp-badge {
-    font-size: 10px;
-    padding: 1px 5px;
-    border-radius: 3px;
-    background: color-mix(in srgb, #34d399 15%, transparent);
-    color: #34d399;
-    font-weight: 600;
-  }
 </style>

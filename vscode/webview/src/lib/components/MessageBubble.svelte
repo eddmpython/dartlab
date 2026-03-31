@@ -831,26 +831,4 @@
     color: var(--dl-primary-light);
   }
 
-  /* === MCP fallback hint (on error) === */
-  .mcp-fallback {
-    font-size: 11px;
-    color: var(--vscode-descriptionForeground);
-    margin-top: 4px;
-    padding: 4px 8px;
-    border-radius: var(--corner-radius-small);
-    background: var(--vscode-textCodeBlock-background);
-    line-height: 1.5;
-  }
-  .mcp-fallback-label {
-    color: #34d399;
-    font-weight: 600;
-  }
-  .mcp-fallback code {
-    font-family: var(--vscode-editor-font-family, monospace);
-    padding: 1px 4px;
-    border-radius: 3px;
-    background: var(--vscode-badge-background);
-    color: var(--dl-primary-light);
-    font-size: 11px;
-  }
 </style>
