@@ -109,6 +109,14 @@ def renderMarkdown(review) -> str:
         if cardLines:
             parts.append("\n".join(cardLines))
 
+    # 스토리 템플릿 표시
+    if getattr(review, "template", None):
+        from dartlab.review.templates import STORY_TEMPLATES
+
+        tmplInfo = STORY_TEMPLATES.get(review.template, {})
+        desc = tmplInfo.get("description", "")
+        parts.append(f"**스토리: {review.template}** — {desc}")
+
     if review.circulationSummary:
         parts.append(f"> **재무 순환 서사**\n> {review.circulationSummary.replace(chr(10), chr(10) + '> ')}")
 

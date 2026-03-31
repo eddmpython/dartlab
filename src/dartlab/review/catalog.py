@@ -96,15 +96,19 @@ _BLOCKS: list[BlockMeta] = [
     # ── 현금흐름 ──
     BlockMeta("cashFlowOverview", "현금흐름 종합", "현금흐름", "영업/투자/재무CF 패턴과 FCF"),
     BlockMeta("cashQuality", "이익의 현금 전환", "현금흐름", "영업CF/순이익, 영업CF 마진"),
+    BlockMeta("ocfDecomposition", "영업CF 분해", "현금흐름", "OCF = NI + 감가상각 + 운전자본 변동"),
     BlockMeta("cashFlowFlags", "현금흐름 플래그", "현금흐름", "현금 관련 경고/기회 신호"),
     # ── 수익성 ──
     BlockMeta("marginTrend", "마진 추이", "수익성", "매출총이익률, 영업이익률, 순이익률 시계열"),
     BlockMeta("returnTrend", "수익률 추이", "수익성", "ROE, ROA 시계열과 레버리지 분해"),
     BlockMeta("dupont", "듀퐁 분해", "수익성", "순이익률 x 자산회전율 x 재무레버리지"),
+    BlockMeta("penmanDecomposition", "Penman 분해", "수익성", "ROCE = RNOA + FLEV×SPREAD (영업력 vs 레버리지)"),
+    BlockMeta("roicTree", "ROIC Tree", "수익성", "ROIC = 마진×회전 분해 + 원인 추적"),
     BlockMeta("profitabilityFlags", "수익성 플래그", "수익성", "수익성 관련 경고/기회 신호"),
     # ── 성장성 ──
     BlockMeta("growthTrend", "성장률 추이", "성장성", "매출/영업이익/순이익 YoY 시계열"),
     BlockMeta("growthQuality", "성장 품질", "성장성", "외형 성장 vs 내실 성장 괴리, CAGR"),
+    BlockMeta("cagrComparison", "CAGR 비교", "성장성", "계정별 CAGR 교차비교 — 구조적 변화 감지"),
     BlockMeta("growthFlags", "성장성 플래그", "성장성", "성장성 관련 경고/기회 신호"),
     # ── 안정성 ──
     BlockMeta("leverageTrend", "레버리지 추이", "안정성", "부채비율, 차입금의존도 시계열"),
@@ -123,6 +127,8 @@ _BLOCKS: list[BlockMeta] = [
     BlockMeta("accrualAnalysis", "발생액 분석", "이익품질", "Sloan 발생액비율, 영업CF/순이익 시계열"),
     BlockMeta("earningsPersistence", "이익 지속성", "이익품질", "영업외손익 비중, 이익 변동성"),
     BlockMeta("beneishMScore", "Beneish M-Score", "이익품질", "이익 조작 가능성 8변수 모델"),
+    BlockMeta("richardsonAccrual", "Richardson 3계층 발생액", "이익품질", "WCACC/LTOACC/FINACC 분해 + 신뢰도"),
+    BlockMeta("nonOperatingBreakdown", "영업외손익 분해", "이익품질", "금융/지분법/기타 항목별 영업외 추적"),
     BlockMeta("earningsQualityFlags", "이익품질 플래그", "이익품질", "이익 품질 경고 신호"),
     # ── 3-2 비용구조 ──
     BlockMeta("costBreakdown", "비용 비중 분해", "비용구조", "매출원가율, 판관비율 시계열"),
@@ -146,6 +152,7 @@ _BLOCKS: list[BlockMeta] = [
     BlockMeta("anomalyScore", "이상 점수", "재무정합성", "교차검증 종합 이상 점수 0-100"),
     BlockMeta("effectiveTaxRate", "유효세율", "재무정합성", "유효세율, 법정세율 대비 갭"),
     BlockMeta("deferredTax", "이연법인세", "재무정합성", "이연법인세 자산/부채 추세"),
+    BlockMeta("articulationCheck", "BS-CF 정합성", "재무정합성", "PPE/현금/자본 3표 연결 검증"),
     BlockMeta("crossStatementFlags", "재무정합성 플래그", "재무정합성", "교차검증+세금 경고 신호"),
     # ── 4-1 가치평가 ──
     BlockMeta("dcfValuation", "DCF 밸류에이션", "가치평가", "현금흐름 할인 모델 적정가치"),

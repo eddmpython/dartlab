@@ -190,16 +190,18 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         if _need("assetFlags"):
             b["assetFlags"] = _safe(lambda: assetFlagsBlock(calcAssetFlags(company, basePeriod=basePeriod)))
 
-    if keys is None or keys & {"cashFlowOverview", "cashQuality", "cashFlowFlags"}:
+    if keys is None or keys & {"cashFlowOverview", "cashQuality", "ocfDecomposition", "cashFlowFlags"}:
         from dartlab.analysis.financial.cashflow import (
             calcCashFlowFlags,
             calcCashFlowOverview,
             calcCashQuality,
+            calcOcfDecomposition,
         )
         from dartlab.review.builders import (
             cashFlowFlagsBlock,
             cashFlowOverviewBlock,
             cashQualityBlock,
+            ocfDecompositionBlock,
         )
 
         if _need("cashFlowOverview"):
@@ -208,22 +210,37 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
             )
         if _need("cashQuality"):
             b["cashQuality"] = _safe(lambda: cashQualityBlock(calcCashQuality(company, basePeriod=basePeriod)))
+        if _need("ocfDecomposition"):
+            b["ocfDecomposition"] = _safe(
+                lambda: ocfDecompositionBlock(calcOcfDecomposition(company, basePeriod=basePeriod))
+            )
         if _need("cashFlowFlags"):
             b["cashFlowFlags"] = _safe(lambda: cashFlowFlagsBlock(calcCashFlowFlags(company, basePeriod=basePeriod)))
 
     # ── 2부: 재무비율 분석 ──
-    if keys is None or keys & {"marginTrend", "returnTrend", "dupont", "profitabilityFlags"}:
+    if keys is None or keys & {
+        "marginTrend",
+        "returnTrend",
+        "dupont",
+        "penmanDecomposition",
+        "roicTree",
+        "profitabilityFlags",
+    }:
         from dartlab.analysis.financial.profitability import (
             calcDupont,
             calcMarginTrend,
+            calcPenmanDecomposition,
             calcProfitabilityFlags,
             calcReturnTrend,
+            calcRoicTree,
         )
         from dartlab.review.builders import (
             dupontBlock,
             marginTrendBlock,
+            penmanDecompositionBlock,
             profitabilityFlagsBlock,
             returnTrendBlock,
+            roicTreeBlock,
         )
 
         if _need("marginTrend"):
@@ -232,18 +249,26 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
             b["returnTrend"] = _safe(lambda: returnTrendBlock(calcReturnTrend(company, basePeriod=basePeriod)))
         if _need("dupont"):
             b["dupont"] = _safe(lambda: dupontBlock(calcDupont(company, basePeriod=basePeriod)))
+        if _need("penmanDecomposition"):
+            b["penmanDecomposition"] = _safe(
+                lambda: penmanDecompositionBlock(calcPenmanDecomposition(company, basePeriod=basePeriod))
+            )
+        if _need("roicTree"):
+            b["roicTree"] = _safe(lambda: roicTreeBlock(calcRoicTree(company, basePeriod=basePeriod)))
         if _need("profitabilityFlags"):
             b["profitabilityFlags"] = _safe(
                 lambda: profitabilityFlagsBlock(calcProfitabilityFlags(company, basePeriod=basePeriod))
             )
 
-    if keys is None or keys & {"growthTrend", "growthQuality", "growthFlags"}:
+    if keys is None or keys & {"growthTrend", "growthQuality", "cagrComparison", "growthFlags"}:
         from dartlab.analysis.financial.growthAnalysis import (
+            calcCagrComparison,
             calcGrowthFlags,
             calcGrowthQuality,
             calcGrowthTrend,
         )
         from dartlab.review.builders import (
+            cagrComparisonBlock,
             growthFlagsBlock,
             growthQualityBlock,
             growthTrendBlock,
@@ -253,6 +278,8 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
             b["growthTrend"] = _safe(lambda: growthTrendBlock(calcGrowthTrend(company, basePeriod=basePeriod)))
         if _need("growthQuality"):
             b["growthQuality"] = _safe(lambda: growthQualityBlock(calcGrowthQuality(company, basePeriod=basePeriod)))
+        if _need("cagrComparison"):
+            b["cagrComparison"] = _safe(lambda: cagrComparisonBlock(calcCagrComparison(company, basePeriod=basePeriod)))
         if _need("growthFlags"):
             b["growthFlags"] = _safe(lambda: growthFlagsBlock(calcGrowthFlags(company, basePeriod=basePeriod)))
 
@@ -320,18 +347,29 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
             b["summaryFlags"] = _safe(lambda: summaryFlagsBlock(calcSummaryFlags(company, basePeriod=basePeriod)))
 
     # ── 3부: 심화 분석 ──
-    if keys is None or keys & {"accrualAnalysis", "earningsPersistence", "beneishMScore", "earningsQualityFlags"}:
+    if keys is None or keys & {
+        "accrualAnalysis",
+        "earningsPersistence",
+        "beneishMScore",
+        "richardsonAccrual",
+        "nonOperatingBreakdown",
+        "earningsQualityFlags",
+    }:
         from dartlab.analysis.financial.earningsQuality import (
             calcAccrualAnalysis,
             calcBeneishTimeline,
             calcEarningsPersistence,
             calcEarningsQualityFlags,
+            calcNonOperatingBreakdown,
+            calcRichardsonAccrual,
         )
         from dartlab.review.builders import (
             accrualAnalysisBlock,
             beneishMScoreBlock,
             earningsPersistenceBlock,
             earningsQualityFlagsBlock,
+            nonOperatingBreakdownBlock,
+            richardsonAccrualBlock,
         )
 
         if _need("accrualAnalysis"):
@@ -344,6 +382,14 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
             )
         if _need("beneishMScore"):
             b["beneishMScore"] = _safe(lambda: beneishMScoreBlock(calcBeneishTimeline(company, basePeriod=basePeriod)))
+        if _need("richardsonAccrual"):
+            b["richardsonAccrual"] = _safe(
+                lambda: richardsonAccrualBlock(calcRichardsonAccrual(company, basePeriod=basePeriod))
+            )
+        if _need("nonOperatingBreakdown"):
+            b["nonOperatingBreakdown"] = _safe(
+                lambda: nonOperatingBreakdownBlock(calcNonOperatingBreakdown(company, basePeriod=basePeriod))
+            )
         if _need("earningsQualityFlags"):
             b["earningsQualityFlags"] = _safe(
                 lambda: earningsQualityFlagsBlock(calcEarningsQualityFlags(company, basePeriod=basePeriod))
@@ -446,12 +492,14 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         "isCfDivergence",
         "isBsDivergence",
         "anomalyScore",
+        "articulationCheck",
         "effectiveTaxRate",
         "deferredTax",
         "crossStatementFlags",
     }:
         from dartlab.analysis.financial.crossStatement import (
             calcAnomalyScore,
+            calcArticulationCheck,
             calcCrossStatementFlags,
             calcIsBsDivergence,
             calcIsCfDivergence,
@@ -463,6 +511,7 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         )
         from dartlab.review.builders import (
             anomalyScoreBlock,
+            articulationCheckBlock,
             crossStatementFlagsBlock,
             deferredTaxBlock,
             effectiveTaxRateBlock,
@@ -476,6 +525,10 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
             b["isBsDivergence"] = _safe(lambda: isBsDivergenceBlock(calcIsBsDivergence(company, basePeriod=basePeriod)))
         if _need("anomalyScore"):
             b["anomalyScore"] = _safe(lambda: anomalyScoreBlock(calcAnomalyScore(company, basePeriod=basePeriod)))
+        if _need("articulationCheck"):
+            b["articulationCheck"] = _safe(
+                lambda: articulationCheckBlock(calcArticulationCheck(company, basePeriod=basePeriod))
+            )
         if _need("effectiveTaxRate"):
             b["effectiveTaxRate"] = _safe(
                 lambda: effectiveTaxRateBlock(calcEffectiveTaxRate(company, basePeriod=basePeriod))
@@ -705,6 +758,7 @@ def buildReview(
     helper: bool | None = None,
     *,
     preset: str | None = None,
+    template: str | None = None,
     detail: bool | None = None,
     basePeriod: str | None = None,
 ):
@@ -712,6 +766,16 @@ def buildReview(
     from dartlab.review import Review
 
     ly = layout or ReviewLayout()
+
+    # ── 스토리 템플릿 판별 ──
+    detectedTemplate: str | None = None
+    if template is not None and preset is None:
+        from dartlab.review.templates import STORY_TEMPLATES, detectTemplate as _detect
+
+        if template == "auto":
+            detectedTemplate = _detect(company)
+        elif template in STORY_TEMPLATES:
+            detectedTemplate = template
 
     # ── 프리셋 적용 ──
     if preset is not None:
@@ -734,6 +798,7 @@ def buildReview(
     stockCode = getattr(company, "stockCode", "")
 
     review = Review(stockCode=stockCode, corpName=corpName, layout=ly)
+    review.template = detectedTemplate
 
     useSpinner = isTerminal()
     if useSpinner:

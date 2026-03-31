@@ -652,7 +652,11 @@ def buildActTransitions(company, blockMap: dict) -> dict[str, str]:
         niStr = f"{ni / 1e12:.1f}조" if abs(ni) > 1e12 else f"{ni / 1e8:.0f}억"
         ocfStr = f"{ocf / 1e12:.1f}조" if abs(ocf) > 1e12 else f"{ocf / 1e8:.0f}억"
         ratio = ocf / ni * 100 if ni != 0 else 0
-        transitions["2→3"] = f"순이익 {niStr}이 영업CF {ocfStr}로 전환 ({ratio:.0f}%) — 이익이 현금으로 뒷받침되는가?"
+        # 한국어 조사: 받침 있으면 "이", 없으면 "가"
+        lastChar = niStr[-1]
+        hasBatchim = ord(lastChar) >= 0xAC00 and (ord(lastChar) - 0xAC00) % 28 != 0
+        josa = "이" if hasBatchim else "가"
+        transitions["2→3"] = f"순이익 {niStr}{josa} 영업CF {ocfStr}로 전환 ({ratio:.0f}%) — 이익이 현금으로 뒷받침되는가?"
 
     # 3막→4막: 현금 → 안정성
     fcf = getattr(ratios, "fcf", None) or getattr(ratios, "fcfTTM", None)

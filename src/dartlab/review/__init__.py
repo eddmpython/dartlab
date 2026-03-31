@@ -181,6 +181,7 @@ class Review:
     circulationSummary: str = ""  # 재무제표 순환 서사 요약
     actTransitions: dict = field(default_factory=dict)  # 6막 전환 인과 문장
     summaryCard: SummaryCard | None = None  # 최상단 요약 카드
+    template: str | None = None  # 스토리 템플릿 (사이클/성장/지주 등)
 
     def __init__(
         self,

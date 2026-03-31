@@ -345,3 +345,183 @@ def _buildTemplates() -> dict[str, dict]:
 
 TEMPLATES = _buildTemplates()
 TEMPLATE_ORDER = [s.key for s in SECTIONS]
+
+
+# ── 스토리 템플릿 — 기업 특성별 강조/축소 ──
+# 6막 순서는 불변. emphasize된 블록에 시각적 표시 + aiGuide 조정.
+
+STORY_TEMPLATES: dict[str, dict] = {
+    "사이클": {
+        "description": "업황 사이클이 전부 — 반도체/화학/조선 등",
+        "emphasize": {
+            "segmentComposition", "segmentTrend", "marginTrend",
+            "capexPattern", "workingCapital", "roicTree",
+        },
+    },
+    "프랜차이즈": {
+        "description": "안정 수익 + 현금 기계 — 프랜차이즈/구독 모델",
+        "emphasize": {
+            "marginTrend", "cashQuality", "ocfDecomposition",
+            "dividendPolicy", "shareholderReturn", "scorecard",
+        },
+    },
+    "턴어라운드": {
+        "description": "적자→흑자 전환 — 구조조정/사업 전환",
+        "emphasize": {
+            "marginTrend", "leverageTrend", "coverageTrend",
+            "distressScore", "cashFlowOverview", "growthTrend",
+        },
+    },
+    "성장": {
+        "description": "고성장 + 마진 확대 — 매출 CAGR 15% 이상",
+        "emphasize": {
+            "growthTrend", "cagrComparison", "roicTree",
+            "segmentTrend", "reinvestment", "revenueForecast",
+        },
+    },
+    "자본집약": {
+        "description": "설비 의존 + 감가상각 — 항공/전력/중공업",
+        "emphasize": {
+            "capexPattern", "ocfDecomposition", "assetStructure",
+            "turnoverTrend", "leverageTrend", "penmanDecomposition",
+        },
+    },
+    "지주": {
+        "description": "자회사 포트폴리오 — 영업외손익이 핵심",
+        "emphasize": {
+            "nonOperatingBreakdown", "ownershipTrend",
+            "investmentInOther", "dividendPolicy", "assetStructure",
+        },
+    },
+    "현금부자": {
+        "description": "현금 축적 + 배분 이슈",
+        "emphasize": {
+            "fundingSources", "penmanDecomposition", "dividendPolicy",
+            "shareholderReturn", "cashFlowOverview", "fcfUsage",
+        },
+    },
+}
+
+
+def detectTemplate(company) -> str | None:
+    """기업 재무 데이터에서 스토리 템플릿 자동 판별.
+
+    우선순위 순서로 검사. 먼저 매칭된 것이 주 템플릿.
+    복수 해당 가능하지만 하나만 반환.
+    """
+    try:
+        ratios = company.finance.ratios
+    except (AttributeError, ValueError):
+        return None
+
+    # 데이터 추출 (안전)
+    def _g(name, default=None):
+        return getattr(ratios, name, default)
+
+    opMargin = _g("operatingMargin")
+    debtRatio = _g("debtRatio")
+    ic = _g("interestCoverage")
+    netDebt = _g("netDebt")
+    cash = _g("cash")
+    totalAssets = _g("totalAssets")
+    roe = _g("roe")
+
+    # ratioSeries에서 시계열 추출
+    try:
+        rs = company.finance.ratioSeries
+        if rs:
+            data, periods = rs
+            opMargins = data.get("RATIO", {}).get("operatingMargin", [])
+        else:
+            opMargins = []
+    except (AttributeError, ValueError):
+        opMargins = []
+
+    # ── 1. 턴어라운드: 최근 시계열에서 적자→흑자 전환 ──
+    if len(opMargins) >= 3:
+        recent3 = opMargins[-3:]
+        hasNeg = any(m is not None and m < 0 for m in recent3[:-1])
+        lastPos = recent3[-1] is not None and recent3[-1] > 0
+        if hasNeg and lastPos:
+            return "턴어라운드"
+
+    # ── 2. 지주: 지분법손익/영업이익 > 30% 또는 영업외비율 > 80% (금융비용 제외) ──
+    try:
+        from dartlab.analysis.financial.earningsQuality import calcNonOperatingBreakdown
+
+        nob = calcNonOperatingBreakdown(company)
+        if nob:
+            latest = nob["history"][0] if nob.get("history") else None
+            if latest:
+                opInc = abs(latest.get("opIncome") or 1)
+                assocInc = abs(latest.get("associateIncome") or 0)
+                finCost = abs(latest.get("finCost") or 0)
+                nonOpTotal = abs(latest.get("nonOpTotal") or 0)
+                # 지분법손익이 영업이익의 30% 이상이면 지주
+                if opInc > 0 and assocInc / opInc > 0.30:
+                    return "지주"
+                # 금융손익을 제외한 영업외가 영업이익의 80% 이상이면 지주
+                finIncome = abs(latest.get("finIncome") or 0)
+                nonOpExFinance = nonOpTotal - finCost - finIncome
+                if opInc > 0 and nonOpExFinance > 0 and nonOpExFinance / opInc > 0.80:
+                    return "지주"
+    except (ImportError, KeyError, IndexError, TypeError):
+        pass
+
+    # ── 3. 성장: 매출 CAGR > 15% + 이익 변동성 낮음 (CV < 0.4) ──
+    # CV가 높으면 성장이 아니라 사이클 호황일 가능성
+    try:
+        from dartlab.analysis.financial.growthAnalysis import calcCagrComparison
+
+        cc = calcCagrComparison(company)
+        if cc:
+            for comp in cc.get("comparisons", []):
+                if comp.get("label") == "마진 방향" and comp.get("cagr1") is not None:
+                    if comp["cagr1"] > 15:
+                        # 이익 변동성이 높으면 사이클 호황이지 성장이 아님
+                        _isVolatile = False
+                        if len(opMargins) >= 4:
+                            _valid = [m for m in opMargins if m is not None]
+                            if len(_valid) >= 4:
+                                _avg = sum(_valid) / len(_valid)
+                                if _avg != 0:
+                                    _std = (sum((m - _avg) ** 2 for m in _valid) / len(_valid)) ** 0.5
+                                    _isVolatile = _std / abs(_avg) > 0.5
+                        if not _isVolatile:
+                            return "성장"
+    except (ImportError, KeyError, TypeError):
+        pass
+
+    # ── 4. 현금부자: 순현금 + 현금/자산 > 20% ──
+    if netDebt is not None and totalAssets and cash:
+        if netDebt < 0 and cash / totalAssets > 0.20:
+            return "현금부자"
+
+    # ── 5. 사이클: 이익 변동계수 > 0.4 (자본집약보다 앞 — 유형자산 높아도 CV 높으면 사이클) ──
+    if len(opMargins) >= 4:
+        valid = [m for m in opMargins if m is not None]
+        if len(valid) >= 4:
+            avg = sum(valid) / len(valid)
+            if avg != 0:
+                std = (sum((m - avg) ** 2 for m in valid) / len(valid)) ** 0.5
+                cv = std / abs(avg)
+                if cv > 0.4:
+                    return "사이클"
+
+    # ── 6. 자본집약: 유형자산/총자산 > 40% ──
+    ppe = _g("ppe") or _g("tangibleAssets")
+    if ppe and totalAssets and ppe / totalAssets > 0.40:
+        return "자본집약"
+
+    # ── 7. 프랜차이즈: 마진 변동계수 < 0.15 + 마진 > 10% ──
+    if len(opMargins) >= 4 and opMargin is not None and opMargin > 10:
+        valid = [m for m in opMargins if m is not None]
+        if len(valid) >= 4:
+            avg = sum(valid) / len(valid)
+            if avg > 0:
+                std = (sum((m - avg) ** 2 for m in valid) / len(valid)) ** 0.5
+                cv = std / abs(avg)
+                if cv < 0.15:
+                    return "프랜차이즈"
+
+    return None

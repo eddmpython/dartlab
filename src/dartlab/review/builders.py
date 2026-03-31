@@ -18,6 +18,30 @@ from dartlab.review.blocks import (
 from dartlab.review.catalog import getBlockMeta as _meta
 from dartlab.review.utils import unifyTableScale
 
+# ── notes enrichment 렌더링 ──
+
+
+def _notesDetailBlocks(data: dict, keyLabels: dict[str, str]) -> list:
+    """notesDetail enrichment → TextBlock + TableBlock 리스트.
+
+    calc 함수가 notesDetail 필드를 반환했을 때, 주석 테이블로 렌더링.
+    """
+    notesDetail = data.get("notesDetail")
+    if not notesDetail:
+        return []
+    blocks: list = []
+    for key, rows in notesDetail.items():
+        if not rows:
+            continue
+        label = keyLabels.get(key, key)
+        try:
+            blocks.append(TextBlock(f"▸ 주석: {label}", style="dim", indent="h2"))
+            blocks.append(TableBlock("", pl.DataFrame(rows)))
+        except (ValueError, TypeError):
+            pass
+    return blocks
+
+
 # ── 수익구조 (revenue) 빌더 ──
 
 
@@ -429,6 +453,8 @@ def fundingSourcesBlock(data: dict) -> list:
     if diagParts:
         blocks.append(TextBlock(" | ".join(diagParts), style="dim", indent="h2"))
 
+    blocks.extend(_notesDetailBlocks(data, {"borrowings": "차입금 상세"}))
+
     return blocks
 
 
@@ -661,6 +687,10 @@ def assetStructureBlock(data: dict) -> list:
     diagnosis = data.get("diagnosis")
     if diagnosis:
         blocks.append(TextBlock(diagnosis, style="dim", indent="h2"))
+
+    blocks.extend(
+        _notesDetailBlocks(data, {"inventory": "재고자산 상세", "tangibleAsset": "유형자산 변동", "intangibleAsset": "무형자산 상세"})
+    )
 
     return blocks
 
@@ -1120,7 +1150,7 @@ def leverageTrendBlock(data: dict) -> list:
     if cols is None:
         return []
 
-    return [
+    blocks: list = [
         HeadingBlock(
             _meta("leverageTrend").label,
             level=2,
@@ -1128,6 +1158,8 @@ def leverageTrendBlock(data: dict) -> list:
         ),
         TableBlock("레버리지 추이", pl.DataFrame(cols)),
     ]
+    blocks.extend(_notesDetailBlocks(data, {"borrowings": "차입금 구성", "lease": "리스부채"}))
+    return blocks
 
 
 def coverageTrendBlock(data: dict) -> list:
@@ -1182,6 +1214,11 @@ def distressScoreBlock(data: dict) -> list:
     )
     if cols is not None:
         blocks.append(TableBlock("Z-Score 추이", pl.DataFrame(cols)))
+
+    # 충당부채 주석은 위험/회색 구간일 때만 표시
+    zone = data.get("zone", "")
+    if zone in ("위험", "회색"):
+        blocks.extend(_notesDetailBlocks(data, {"provisions": "충당부채 상세"}))
 
     return blocks
 
@@ -1375,7 +1412,7 @@ def accrualAnalysisBlock(data: dict) -> list:
     )
     if cols is None:
         return []
-    return [
+    blocks: list = [
         HeadingBlock(
             _meta("accrualAnalysis").label,
             level=2,
@@ -1383,6 +1420,8 @@ def accrualAnalysisBlock(data: dict) -> list:
         ),
         TableBlock("발생액 추이", pl.DataFrame(cols)),
     ]
+    blocks.extend(_notesDetailBlocks(data, {"receivables": "매출채권 상세"}))
+    return blocks
 
 
 def earningsPersistenceBlock(data: dict) -> list:
@@ -1464,7 +1503,7 @@ def costBreakdownBlock(data: dict) -> list:
     )
     if cols is None:
         return []
-    return [
+    blocks: list = [
         HeadingBlock(
             _meta("costBreakdown").label,
             level=2,
@@ -1472,6 +1511,8 @@ def costBreakdownBlock(data: dict) -> list:
         ),
         TableBlock("비용 비중 추이", pl.DataFrame(cols)),
     ]
+    blocks.extend(_notesDetailBlocks(data, {"costByNature": "비용 성격별 분류"}))
+    return blocks
 
 
 def operatingLeverageBlock(data: dict) -> list:
@@ -2604,3 +2645,275 @@ def forecastFlagsBlock(data: dict) -> list:
         return []
     messages = [msg for _, msg in flags]
     return [FlagBlock(messages, kind="warning")]
+
+
+# ── Penman 분해 빌더 ──
+
+
+def penmanDecompositionBlock(data: dict) -> list:
+    """calcPenmanDecomposition → HeadingBlock + TableBlock."""
+    if not data:
+        return []
+    history = data.get("history", [])
+    if not history:
+        return []
+
+    rows = []
+    for h in history:
+        rows.append(
+            {
+                "기간": h["period"],
+                "RNOA": f"{h['rnoa']:.1f}%" if h.get("rnoa") is not None else "-",
+                "FLEV": f"{h['flev']:.2f}" if h.get("flev") is not None else "-",
+                "NBC": f"{h['nbc']:.1f}%" if h.get("nbc") is not None else "-",
+                "SPREAD": f"{h['spread']:.1f}%p" if h.get("spread") is not None else "-",
+                "레버리지효과": f"{h['leverageEffect']:.1f}%p" if h.get("leverageEffect") is not None else "-",
+                "ROCE": f"{h['roce']:.1f}%" if h.get("roce") is not None else "-",
+            }
+        )
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("penmanDecomposition").label,
+            level=2,
+            helper="RNOA > NBC이면 차입이 주주에게 유리 (양의 SPREAD)",
+        )
+    )
+    blocks.append(TableBlock("", pl.DataFrame(rows)))
+    return blocks
+
+
+# ── ROIC Tree 빌더 ──
+
+
+def roicTreeBlock(data: dict) -> list:
+    """calcRoicTree → HeadingBlock + TableBlock + TextBlock(driver)."""
+    if not data:
+        return []
+    history = data.get("history", [])
+    if not history:
+        return []
+
+    rows = []
+    for h in history:
+        rows.append(
+            {
+                "기간": h["period"],
+                "ROIC": f"{h['roic']:.1f}%" if h.get("roic") is not None else "-",
+                "영업마진": f"{h['operatingMargin']:.1f}%" if h.get("operatingMargin") is not None else "-",
+                "자본회전": f"{h['capitalTurnover']:.2f}x" if h.get("capitalTurnover") is not None else "-",
+                "매출총이익률": f"{h['grossMargin']:.1f}%" if h.get("grossMargin") is not None else "-",
+                "판관비율": f"{h['sgaRatio']:.1f}%" if h.get("sgaRatio") is not None else "-",
+            }
+        )
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("roicTree").label,
+            level=2,
+            helper="ROIC = 영업마진 × 자본회전. 어느 쪽이 ROIC를 결정하는가",
+        )
+    )
+    blocks.append(TableBlock("", pl.DataFrame(rows)))
+
+    latest = history[-1]
+    drivers = []
+    if latest.get("marginDriver"):
+        drivers.append(f"마진 드라이버: {latest['marginDriver']}")
+    if latest.get("turnoverDriver"):
+        drivers.append(f"회전 드라이버: {latest['turnoverDriver']}")
+    if drivers:
+        blocks.append(TextBlock(" | ".join(drivers), style="dim"))
+
+    return blocks
+
+
+# ── OCF 분해 빌더 ──
+
+
+def ocfDecompositionBlock(data: dict) -> list:
+    """calcOcfDecomposition → HeadingBlock + TableBlock."""
+    if not data:
+        return []
+    history = data.get("history", [])
+    if not history:
+        return []
+
+    rows = []
+    for h in history:
+        rows.append(
+            {
+                "기간": h["period"],
+                "순이익": h.get("ni"),
+                "감가상각(추정)": h.get("depEstimate"),
+                "운전자본효과": h.get("wcEffect"),
+                "영업CF": h.get("ocf"),
+                "잔차": h.get("residual"),
+            }
+        )
+
+    unified = unifyTableScale(rows, "기간", ["순이익", "감가상각(추정)", "운전자본효과", "영업CF", "잔차"], unit="millions")
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("ocfDecomposition").label,
+            level=2,
+            helper="OCF ≈ NI + 감가상각 + 운전자본. 잔차가 크면 비경상 항목",
+        )
+    )
+    blocks.append(TableBlock("", pl.DataFrame(unified)))
+    return blocks
+
+
+# ── Richardson 3계층 발생액 빌더 ──
+
+
+def richardsonAccrualBlock(data: dict) -> list:
+    """calcRichardsonAccrual → HeadingBlock + TableBlock."""
+    if not data:
+        return []
+    history = data.get("history", [])
+    if not history:
+        return []
+
+    rows = []
+    for h in history:
+        rows.append(
+            {
+                "기간": h["period"],
+                "WCACC": h.get("wcacc"),
+                "LTOACC": h.get("ltoacc"),
+                "FINACC": h.get("finacc"),
+                "총발생액": h.get("totalAccrual"),
+                "신뢰도": h.get("reliabilityScore", "-"),
+            }
+        )
+
+    valueCols = ["WCACC", "LTOACC", "FINACC", "총발생액"]
+    unified = unifyTableScale(rows, "기간", valueCols, unit="millions")
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("richardsonAccrual").label,
+            level=2,
+            helper="LTOACC 비중이 높을수록 이익 지속성 낮음 (신뢰도↓)",
+        )
+    )
+    blocks.append(TableBlock("", pl.DataFrame(unified)))
+    return blocks
+
+
+# ── 영업외손익 분해 빌더 ──
+
+
+def nonOperatingBreakdownBlock(data: dict) -> list:
+    """calcNonOperatingBreakdown → HeadingBlock + TableBlock."""
+    if not data:
+        return []
+    history = data.get("history", [])
+    if not history:
+        return []
+
+    rows = []
+    for h in history:
+        rows.append(
+            {
+                "기간": h["period"],
+                "영업이익": h.get("opIncome"),
+                "금융수익": h.get("finIncome"),
+                "금융비용": h.get("finCost"),
+                "지분법": h.get("associateIncome"),
+                "기타수익": h.get("otherIncome"),
+                "기타비용": h.get("otherExpense"),
+                "영업외비율": f"{h['nonOpRatio']:.0f}%" if h.get("nonOpRatio") is not None else "-",
+            }
+        )
+
+    valueCols = ["영업이익", "금융수익", "금융비용", "지분법", "기타수익", "기타비용"]
+    unified = unifyTableScale(rows, "기간", valueCols, unit="millions")
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("nonOperatingBreakdown").label,
+            level=2,
+            helper="영업외 > 30%이면 영업만으로 기업 판단 불가",
+        )
+    )
+    blocks.append(TableBlock("", pl.DataFrame(unified)))
+    blocks.extend(_notesDetailBlocks(data, {"affiliates": "관계기업 투자"}))
+    return blocks
+
+
+# ── CAGR 비교 빌더 ──
+
+
+def cagrComparisonBlock(data: dict) -> list:
+    """calcCagrComparison → HeadingBlock + TableBlock."""
+    if not data:
+        return []
+    comparisons = data.get("comparisons", [])
+    if not comparisons:
+        return []
+
+    rows = []
+    for c in comparisons:
+        rows.append(
+            {
+                "비교": c["label"],
+                c["item1"]: f"{c['cagr1']:+.1f}%" if c.get("cagr1") is not None else "-",
+                c["item2"]: f"{c['cagr2']:+.1f}%" if c.get("cagr2") is not None else "-",
+                "갭": f"{c['gap']:+.1f}%p" if c.get("gap") is not None else "-",
+                "시그널": c.get("signal", "-"),
+            }
+        )
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("cagrComparison").label,
+            level=2,
+            helper="매출 vs 이익 CAGR 갭 → 마진 방향, 자산 vs 매출 갭 → 효율 방향",
+        )
+    )
+    blocks.append(TableBlock("", pl.DataFrame(rows)))
+    return blocks
+
+
+# ── BS-CF 정합성 빌더 ──
+
+
+def articulationCheckBlock(data: dict) -> list:
+    """calcArticulationCheck → HeadingBlock + TableBlock."""
+    if not data:
+        return []
+    history = data.get("history", [])
+    if not history:
+        return []
+
+    rows = []
+    for h in history:
+        rows.append(
+            {
+                "기간": h["period"],
+                "PPE오차": f"{h['ppeError']:.1f}%" if h.get("ppeError") is not None else "-",
+                "현금오차": f"{h['cashError']:.1f}%" if h.get("cashError") is not None else "-",
+                "자본오차": f"{h['equityError']:.1f}%" if h.get("equityError") is not None else "-",
+                "최대오차": f"{h['maxErrorPct']:.1f}%" if h.get("maxErrorPct") is not None else "-",
+            }
+        )
+
+    blocks: list = []
+    blocks.append(
+        HeadingBlock(
+            _meta("articulationCheck").label,
+            level=2,
+            helper="오차 > 10%이면 연결범위 변동/환율효과/재분류 의심",
+        )
+    )
+    blocks.append(TableBlock("", pl.DataFrame(rows)))
+    return blocks
