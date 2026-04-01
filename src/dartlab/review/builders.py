@@ -3108,12 +3108,12 @@ def creditScoreBlock(data: dict) -> list:
     blocks.append(
         MetricBlock(
             [
-                {"label": "신용등급", "value": grade, "description": desc},
-                {"label": "종합 점수", "value": f"{score:.1f}/100", "description": "0=AAA, 100=D"},
-                {"label": "부도확률(1Y)", "value": f"{pd_est:.2f}%", "description": "KIS 실측 기반"},
-                {"label": "현금흐름등급", "value": ecr, "description": "eCR-1(최상)~eCR-6(최하)"},
-                {"label": "등급 전망", "value": outlook, "description": "5개년 추세 기반"},
-                {"label": "업종", "value": sector, "description": "업종별 차등 기준 적용"},
+                ("신용등급", f"{grade} ({desc})"),
+                ("종합 점수", f"{score:.1f}/100"),
+                ("부도확률(1Y)", f"{pd_est:.2f}%"),
+                ("현금흐름등급", ecr),
+                ("등급 전망", outlook),
+                ("업종", sector),
             ]
         )
     )
@@ -3220,7 +3220,7 @@ def creditPeerPositionBlock(data: dict) -> list:
     metricList = []
     for k, v in metrics.items():
         if v is not None:
-            metricList.append({"label": k, "value": f"{v:.1f}"})
+            metricList.append((k, f"{v:.1f}"))
     if metricList:
         blocks.append(MetricBlock(metricList))
     return blocks
