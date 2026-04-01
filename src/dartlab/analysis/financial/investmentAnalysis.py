@@ -6,21 +6,10 @@ select()로 IS/BS/CF 원본 계정을 가져와서
 
 from __future__ import annotations
 
-from dartlab.analysis.financial._helpers import (
-    annualColsFromPeriods as _annualColsFromPeriods,
-)
-from dartlab.analysis.financial._helpers import (
-    toDict,
-)
+from dartlab.analysis.financial._helpers import annualColsFromPeriods, toDict, toDictBySnakeId
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
-
-
-def _toDictBySnakeId(selectResult) -> tuple[dict[str, dict], list[str]] | None:
-    from dartlab.analysis.financial._helpers import toDictBySnakeId
-
-    return toDictBySnakeId(selectResult)
 
 
 def _get(row: dict, col: str) -> float:
@@ -115,7 +104,7 @@ def calcRoicTimeline(company, *, basePeriod: str | None = None) -> dict | None:
     bondRow = bsData.get("사채", {})
     cashRow = bsData.get("현금및현금성자산", {})
 
-    yCols = _annualColsFromPeriods(isPeriods, maxYears=_MAX_YEARS + 1, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(isPeriods, maxYears=_MAX_YEARS + 1, basePeriod=basePeriod)
     if len(yCols) < 2:
         return None
 
@@ -196,7 +185,7 @@ def calcInvestmentIntensity(company, *, basePeriod: str | None = None) -> dict |
     if isParsed is None or bsParsed is None:
         return None
 
-    cfParsed = _toDictBySnakeId(cfResult)
+    cfParsed = toDictBySnakeId(cfResult)
     cfData = cfParsed[0] if cfParsed else {}
     isData, isPeriods = isParsed
     bsData, _ = bsParsed
@@ -208,7 +197,7 @@ def calcInvestmentIntensity(company, *, basePeriod: str | None = None) -> dict |
     intRow = bsData.get("무형자산", {})
     taRow = bsData.get("자산총계", {})
 
-    yCols = _annualColsFromPeriods(isPeriods, maxYears=_MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(isPeriods, maxYears=_MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -269,7 +258,7 @@ def calcEvaTimeline(company, *, basePeriod: str | None = None) -> dict | None:
     bondRow = bsData.get("사채", {})
     cashRow = bsData.get("현금및현금성자산", {})
 
-    yCols = _annualColsFromPeriods(isPeriods, maxYears=_MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(isPeriods, maxYears=_MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 

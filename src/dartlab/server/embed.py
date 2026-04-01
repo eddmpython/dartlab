@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, PlainTextResponse
 
 router = APIRouter()
 
-_EMBED_PATH = Path(__file__).parent.parent / "ui" / "build" / "embed.js"
+_EMBED_PATH = Path(__file__).resolve().parents[3] / "ui" / "build" / "embed.js"
 
 
 @router.get("/embed.js")
@@ -20,7 +20,7 @@ def serve_embed():
     """위젯 JS 번들 — CORS 전체 허용, 1시간 캐시."""
     if not _EMBED_PATH.exists():
         return PlainTextResponse(
-            "console.warn('[DartLab] embed.js not built. Run: cd src/dartlab/ui && npm run build:widget');",
+            "console.warn('[DartLab] embed.js not built. Run: cd ui && npm run build:widget');",
             media_type="application/javascript",
             status_code=200,
         )

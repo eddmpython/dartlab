@@ -129,13 +129,9 @@ class CodexCodingBackend(CodingBackend):
 # ══════════════════════════════════════
 
 
-def _validateCode(code: str) -> list[str]:
-    """구문 검증만 수행. 제한 없음 — 로컬 도구이므로 자유 실행."""
-    try:
-        ast.parse(code)
-    except SyntaxError as e:
-        return [f"구문 오류: {e}"]
-    return []
+def _validateCode(code: str) -> None:
+    """구문 검증. SyntaxError 시 그대로 raise — 호출자가 처리."""
+    ast.parse(code)
 
 
 class LocalPythonBackend(CodingBackend):
@@ -188,12 +184,13 @@ class LocalPythonBackend(CodingBackend):
                 model="local",
             )
 
-        # 1. AST 안전성 검증
-        violations = _validateCode(code)
-        if violations:
+        # 1. AST 구문 검증
+        try:
+            _validateCode(code)
+        except SyntaxError as e:
             return CodingTaskResult(
                 backend=self.name,
-                answer="[보안 위반] 코드가 안전하지 않습니다:\n" + "\n".join(f"- {v}" for v in violations),
+                answer=f"[구문 오류] {e}",
                 sandbox=sandbox,
                 model="local",
             )
@@ -396,12 +393,13 @@ class DartlabCodeExecutor(LocalPythonBackend):
                 model="local",
             )
 
-        # AST 안전성 검증
-        violations = _validateCode(code)
-        if violations:
+        # AST 구문 검증
+        try:
+            _validateCode(code)
+        except SyntaxError as e:
             return CodingTaskResult(
                 backend=self.name,
-                answer="[보안 위반] 코드가 안전하지 않습니다:\n" + "\n".join(f"- {v}" for v in violations),
+                answer=f"[구문 오류] {e}",
                 sandbox=sandbox,
                 model="local",
             )

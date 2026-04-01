@@ -87,6 +87,7 @@ API 키 불필요. [HuggingFace](https://huggingface.co/datasets/eddmpython/dart
 | L2 | [Review](ops/review.md) | 분석을 서사 보고서로 | `c.review()` |
 | L0 | [Search](ops/search.md) | 공시 시맨틱 검색 *(alpha)* | `dartlab.search()` |
 | L3 | [AI](ops/ai.md) | 적극적 분석가 — 코드 실행 + 해석 | `dartlab.ask()` |
+| L4 | [UI](ops/ui.md) | Svelte SPA + VSCode 확장 | `dartlab share` |
 
 ### Company
 
@@ -188,6 +189,7 @@ L1  providers/   국가별 데이터 (DART, EDGAR, EDINET)
 L2  analysis/    재무 분석 + 전망 + 밸류에이션
     review/      블록-템플릿 보고서 조립
 L3  ai/          적극적 분석가 — 전체 API 접근 가능한 LLM
+L4  ui/          Svelte SPA (웹) + VSCode 확장
 ```
 
 import 방향은 CI 강제. 새 국가 추가 = provider 패키지 하나, core 수정 0줄.

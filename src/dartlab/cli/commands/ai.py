@@ -99,6 +99,6 @@ def _check_built_ui() -> bool:
     print("  개발 모드로 실행하세요:\n")
     print("    dartlab ai --dev\n")
     print("  또는 빌드 후 실행:")
-    print("    cd src/dartlab/ui && npm install && npm run build")
+    print("    cd ui && npm install && npm run build")
     print("    dartlab ai\n")
     return False

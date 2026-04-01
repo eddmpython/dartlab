@@ -87,15 +87,6 @@ def getRatioSeries(company) -> tuple[dict, list[str]] | None:
         return None
 
 
-def buildTimeline(data: dict, field: str, years: list[str]) -> list[dict]:
-    """시계열 데이터를 [{period, value}, ...] 형태로 변환."""
-    vals = data.get("RATIO", {}).get(field, [])
-    n = min(len(vals), len(years), MAX_RATIO_YEARS)
-    if n == 0:
-        return []
-    return [{"period": years[i], "value": vals[i]} for i in range(len(years) - n, len(years))]
-
-
 def mergeRows(primary: dict | None, fallback: dict | None) -> dict:
     """두 행을 merge. primary의 값이 None이면 fallback 값 사용."""
     if primary is None and fallback is None:

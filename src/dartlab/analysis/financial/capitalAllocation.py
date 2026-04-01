@@ -5,29 +5,13 @@
 
 from __future__ import annotations
 
+from dartlab.analysis.financial._helpers import annualColsFromPeriods, toDictBySnakeId
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
 
 
 # ── 유틸 ──
-
-
-def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
-    from dartlab.analysis.financial._helpers import toDictBySnakeId
-
-    return toDictBySnakeId(selectResult)
-
-
-def _annualColsFromPeriods(
-    periods: list[str],
-    maxYears: int = _MAX_YEARS,
-    *,
-    basePeriod: str | None = None,
-) -> list[str]:
-    from dartlab.analysis.financial._helpers import annualColsFromPeriods
-
-    return annualColsFromPeriods(periods, basePeriod=basePeriod, maxYears=maxYears)
 
 
 def _get(row: dict, col: str) -> float:
@@ -67,8 +51,8 @@ def calcDividendPolicy(company, *, basePeriod: str | None = None) -> dict | None
     cfResult = company.select("CF", ["dividends_paid"])
     isResult = company.select("IS", ["당기순이익"])
 
-    cfParsed = _toDict(cfResult)
-    isParsed = _toDict(isResult)
+    cfParsed = toDictBySnakeId(cfResult)
+    isParsed = toDictBySnakeId(isResult)
     if cfParsed is None or isParsed is None:
         return None
 
@@ -78,7 +62,7 @@ def calcDividendPolicy(company, *, basePeriod: str | None = None) -> dict | None
     divRow = cfData.get("dividends_paid", {})
     niRow = isData.get("net_profit", {})
 
-    yCols = _annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -154,7 +138,7 @@ def calcShareholderReturn(company, *, basePeriod: str | None = None) -> dict | N
         ],
     )
 
-    cfParsed = _toDict(cfResult)
+    cfParsed = toDictBySnakeId(cfResult)
     if cfParsed is None:
         return None
 
@@ -166,7 +150,7 @@ def calcShareholderReturn(company, *, basePeriod: str | None = None) -> dict | N
     divRow = cfData.get("dividends_paid", {})
     tsRow = cfData.get("purchase_of_treasury_stock", {})
 
-    yCols = _annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -225,8 +209,8 @@ def calcReinvestment(company, *, basePeriod: str | None = None) -> dict | None:
     )
     isResult = company.select("IS", ["영업이익", "매출액", "당기순이익"])
 
-    cfParsed = _toDict(cfResult)
-    isParsed = _toDict(isResult)
+    cfParsed = toDictBySnakeId(cfResult)
+    isParsed = toDictBySnakeId(isResult)
     if cfParsed is None or isParsed is None:
         return None
 
@@ -240,7 +224,7 @@ def calcReinvestment(company, *, basePeriod: str | None = None) -> dict | None:
     revRow = isData.get("sales", {})
     niRow = isData.get("net_profit", {})
 
-    yCols = _annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -306,7 +290,7 @@ def calcFcfUsage(company, *, basePeriod: str | None = None) -> dict | None:
             "repayment_of_bonds_and_longterm_borrowings",
         ],
     )
-    cfParsed = _toDict(cfResult)
+    cfParsed = toDictBySnakeId(cfResult)
     if cfParsed is None:
         return None
 
@@ -319,7 +303,7 @@ def calcFcfUsage(company, *, basePeriod: str | None = None) -> dict | None:
     repayRow2 = cfData.get("redemption_of_current_portion_of_longterm_borrowings", {})
     repayRow3 = cfData.get("repayment_of_bonds_and_longterm_borrowings", {})
 
-    yCols = _annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 

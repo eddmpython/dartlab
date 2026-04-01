@@ -64,8 +64,7 @@ def renderHtml(review) -> str:
                 )
         for block in section.blocks:
             if isinstance(block, HeadingBlock):
-                tag = "h3" if block.level == 1 else "h4"
-                parts.append(f"<{tag}>{block.title}</{tag}>")
+                parts.append(f"<{block.htmlTag}>{block.title}</{block.htmlTag}>")
             elif isinstance(block, TextBlock):
                 parts.append(f"<p>{block.text}</p>")
             elif isinstance(block, MetricBlock):
@@ -75,9 +74,8 @@ def renderHtml(review) -> str:
                 if hasattr(block.df, "_repr_html_"):
                     parts.append(block.df._repr_html_())
             elif isinstance(block, FlagBlock):
-                icon = "⚠" if block.kind == "warning" else "✦"
                 for f in block.flags:
-                    parts.append(f"<p>{icon} {f}</p>")
+                    parts.append(f"<p>{block.icon} {f}</p>")
             elif hasattr(block, "render"):
                 parts.append(block.render("html"))
 
@@ -150,8 +148,7 @@ def renderMarkdown(review) -> str:
                 parts.append(f"**{icon.get(t.severity, '')} {t.title}**")
         for block in section.blocks:
             if isinstance(block, HeadingBlock):
-                prefix = "###" if block.level == 1 else "####"
-                parts.append(f"{prefix} {block.title}")
+                parts.append(f"{block.markdownPrefix} {block.title}")
             elif isinstance(block, TextBlock):
                 parts.append(block.text)
             elif isinstance(block, MetricBlock):
@@ -185,9 +182,8 @@ def renderMarkdown(review) -> str:
                         cleaned.append(l)
                     parts.append("\n".join(cleaned))
             elif isinstance(block, FlagBlock):
-                icon = "⚠" if block.kind == "warning" else "✦"
                 for f in block.flags:
-                    parts.append(f"- {icon} {f}")
+                    parts.append(f"- {block.icon} {f}")
             elif hasattr(block, "render"):
                 parts.append(block.render("markdown"))
 

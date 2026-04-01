@@ -8,10 +8,8 @@ from __future__ import annotations
 
 from dartlab.analysis.financial._helpers import (
     MAX_RATIO_YEARS,
+    annualColsFromPeriods,
     toDict,
-)
-from dartlab.analysis.financial._helpers import (
-    annualColsFromPeriods as _annualColsFromPeriods,
 )
 from dartlab.analysis.financial._memoize import memoized_calc
 
@@ -56,7 +54,7 @@ def calcMarginTrend(company, *, basePeriod: str | None = None) -> dict | None:
     op = data.get("영업이익", {})
     ni = data.get("당기순이익", {})
 
-    yCols = _annualColsFromPeriods(periods, basePeriod, _MAX_YEARS + 1)
+    yCols = annualColsFromPeriods(periods, basePeriod, _MAX_YEARS + 1)
     if len(yCols) < 2:
         return None
 
@@ -120,7 +118,7 @@ def calcReturnTrend(company, *, basePeriod: str | None = None) -> dict | None:
     ta = bsData.get("자산총계", {})
     eq = bsData.get("자본총계", {})
 
-    yCols = _annualColsFromPeriods(isPeriods, basePeriod, _MAX_YEARS)
+    yCols = annualColsFromPeriods(isPeriods, basePeriod, _MAX_YEARS)
     if not yCols:
         return None
 
@@ -206,7 +204,7 @@ def calcMarginWaterfall(company, *, basePeriod: str | None = None) -> dict | Non
     tax = data.get("법인세비용", {})
     ni = data.get("당기순이익", {})
 
-    yCols = _annualColsFromPeriods(periods, basePeriod, _MAX_YEARS)
+    yCols = annualColsFromPeriods(periods, basePeriod, _MAX_YEARS)
     if not yCols:
         return None
 
@@ -419,7 +417,7 @@ def calcPenmanDecomposition(company, *, basePeriod: str | None = None) -> dict |
     bondRow = bsData.get("사채", {})
     cashRow = bsData.get("현금및현금성자산", {})
 
-    yCols = _annualColsFromPeriods(isPeriods, maxYears=_MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(isPeriods, maxYears=_MAX_YEARS, basePeriod=basePeriod)
     if len(yCols) < 2:
         return None
 
@@ -562,7 +560,7 @@ def calcRoicTree(company, *, basePeriod: str | None = None) -> dict | None:
     bondRow = bsData.get("사채", {})
     cashRow = bsData.get("현금및현금성자산", {})
 
-    yCols = _annualColsFromPeriods(isPeriods, basePeriod, _MAX_YEARS)
+    yCols = annualColsFromPeriods(isPeriods, basePeriod, _MAX_YEARS)
     if not yCols:
         return None
 

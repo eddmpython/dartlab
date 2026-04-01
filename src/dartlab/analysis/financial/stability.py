@@ -9,12 +9,10 @@ from __future__ import annotations
 
 from dartlab.analysis.financial._helpers import (
     MAX_RATIO_YEARS,
+    annualColsFromPeriods,
     getRatios,
     toDict,
     toDictBySnakeId,
-)
-from dartlab.analysis.financial._helpers import (
-    annualColsFromPeriods as _annualColsFromPeriods,
 )
 from dartlab.analysis.financial._memoize import memoized_calc
 
@@ -77,7 +75,7 @@ def calcLeverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
     ltBorrow = data.get("장기차입금", {})
     bonds = data.get("사채", {})
 
-    yCols = _annualColsFromPeriods(periods, basePeriod, _MAX_YEARS + 1)
+    yCols = annualColsFromPeriods(periods, basePeriod, _MAX_YEARS + 1)
     if len(yCols) < 2:
         return None
 
@@ -160,7 +158,7 @@ def calcCoverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
     except (ValueError, KeyError, AttributeError):
         pass
 
-    yCols = _annualColsFromPeriods(periods, basePeriod, _MAX_YEARS + 1)
+    yCols = annualColsFromPeriods(periods, basePeriod, _MAX_YEARS + 1)
     if len(yCols) < 2:
         return None
 
@@ -245,7 +243,7 @@ def calcDistressScore(company, *, basePeriod: str | None = None) -> dict | None:
     ratios = getRatios(company)
     marketCap = ratios.marketCap if ratios else None
 
-    yCols = _annualColsFromPeriods(bsPeriods, basePeriod, _MAX_YEARS)
+    yCols = annualColsFromPeriods(bsPeriods, basePeriod, _MAX_YEARS)
     if not yCols:
         return None
 
@@ -486,7 +484,7 @@ def calcDebtMaturity(company, *, basePeriod: str | None = None) -> dict | None:
     tlRow = data.get("부채총계", {})
 
     # 연도 컬럼만
-    annualPeriods = _annualColsFromPeriods(periods, basePeriod, 5)
+    annualPeriods = annualColsFromPeriods(periods, basePeriod, 5)
     if not annualPeriods:
         return None
 

@@ -125,11 +125,17 @@ def _screenQuality() -> pl.DataFrame:
 
 def _screenAll() -> pl.DataFrame:
     """전 프리셋 플래그 통합 — 종목별로 어떤 프리셋에 해당하는지."""
-    value = set(_screenValue()["종목코드"].to_list()) if not _screenValue().is_empty() else set()
-    dividend = set(_screenDividend()["종목코드"].to_list()) if not _screenDividend().is_empty() else set()
-    growth = set(_screenGrowth()["종목코드"].to_list()) if not _screenGrowth().is_empty() else set()
-    risk = set(_screenRisk()["종목코드"].to_list()) if not _screenRisk().is_empty() else set()
-    quality = set(_screenQuality()["종목코드"].to_list()) if not _screenQuality().is_empty() else set()
+    vDf = _screenValue()
+    dDf = _screenDividend()
+    gDf = _screenGrowth()
+    rDf = _screenRisk()
+    qDf = _screenQuality()
+
+    value = set(vDf["종목코드"].to_list()) if not vDf.is_empty() else set()
+    dividend = set(dDf["종목코드"].to_list()) if not dDf.is_empty() else set()
+    growth = set(gDf["종목코드"].to_list()) if not gDf.is_empty() else set()
+    risk = set(rDf["종목코드"].to_list()) if not rDf.is_empty() else set()
+    quality = set(qDf["종목코드"].to_list()) if not qDf.is_empty() else set()
 
     allCodes = value | dividend | growth | risk | quality
     rows: list[dict] = []

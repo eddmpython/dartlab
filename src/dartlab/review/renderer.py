@@ -204,10 +204,9 @@ def _renderSection(console, section: Section, ly: ReviewLayout) -> None:
         elif isinstance(block, FlagBlock):
             if prevBlockType is not None and not isinstance(prevBlockType, FlagBlock):
                 console.print()
-            icon = "⚠" if block.kind == "warning" else "✦"
             color = "yellow" if block.kind == "warning" else "green"
             for f in block.flags:
-                console.print(f"{body}[{color}]{icon} {f}[/]")
+                console.print(f"{body}[{color}]{block.icon} {f}[/]")
 
         elif hasattr(block, "render"):
             # SelectResult / ChartResult — render("rich") 위임

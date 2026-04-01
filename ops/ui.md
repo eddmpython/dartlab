@@ -1,4 +1,58 @@
-# UI 패리티 규칙 (Svelte ↔ VSCode 확장)
+# UI 엔진 (L4 표현 계층)
+
+> dartlab의 모든 시각 인터페이스를 관리한다.
+
+## 한 눈에 보기
+
+| 항목 | 설명 |
+|------|------|
+| **레이어** | L4 — 표현 (L3 AI 위) |
+| **Surface** | Svelte SPA (`ui/`) + VSCode 확장 (`vscode/`) |
+| **패리티 원칙** | VSCode 확장이 선행, Svelte가 따라감 |
+| **SPA 서빙** | `dartlab share` → FastAPI가 `ui/build/` 정적 서빙 |
+| **확장 배포** | VS Marketplace (독립 패키지) |
+| **공유 코드** | markdown renderer, SSE handler, contentSplitter (TS↔JS 분기) |
+
+## 디렉토리 구조
+
+```
+ui/                        ← Svelte SPA (루트 레벨)
+├── src/                   ← Svelte 컴포넌트 + 라이브러리
+├── widget/                ← 임베드 위젯 (IIFE 빌드)
+├── build/                 ← 빌드 출력 (gitignore)
+├── package.json
+├── vite.config.js
+└── vite.widget.config.js
+
+vscode/                    ← VSCode 확장 (루트 레벨, 독립 배포)
+├── src/                   ← TypeScript 확장 코드
+├── webview/               ← 사이드바 Svelte UI
+│   └── src/lib/           ← markdown/, api/, components/
+├── dist/                  ← 빌드 출력
+└── package.json           ← marketplace manifest
+```
+
+## 빌드
+
+```bash
+# Svelte SPA
+cd ui && npm install && npm run build
+
+# VSCode 확장
+cd vscode && npm install && npm run build
+
+# 위젯 (임베드용)
+cd ui && npm run build:widget
+```
+
+## 서버 연동
+
+`src/dartlab/server/web.py`가 `ui/build/`를 정적 서빙한다.
+- `/assets/*` → `ui/build/assets/`
+- 나머지 → `ui/build/index.html` (SPA fallback)
+- 환경변수 `DARTLAB_UI_DIR`로 빌드 경로 오버라이드 가능
+
+## 패리티 규칙
 
 > **원칙: Svelte UI는 VSCode 확장을 따라간다.**
 > VSCode 확장에 있는 기능은 Svelte에도 있어야 하고, VSCode에 없는 기능은 Svelte에서 숨긴다.

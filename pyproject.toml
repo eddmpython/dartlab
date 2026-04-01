@@ -1,6 +1,6 @@
 [project]
 name = "dartlab"
-version = "0.7.16"
+version = "0.8.0"
 description = "DART 전자공시 + EDGAR 공시를 하나의 회사 맵으로 — Python 재무 분석 라이브러리"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -168,7 +168,6 @@ markers = [
 [tool.coverage.run]
 source = ["dartlab"]
 omit = [
-    "src/dartlab/ui/*",
     "src/dartlab/engines/ai/providers/*",
     "src/dartlab/review/*",
 ]
@@ -189,7 +188,7 @@ typeCheckingMode = "basic"
 include = ["src/dartlab"]
 exclude = [
     "src/dartlab/engines/ai/providers/**",
-    "src/dartlab/ui/**",
+    "ui/**",
     "experiments/**",
 ]
 reportMissingTypeStubs = false

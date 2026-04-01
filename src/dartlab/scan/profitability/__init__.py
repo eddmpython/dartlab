@@ -6,7 +6,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.scan._helpers import _ensureScanData
+from dartlab.scan._helpers import _ensureScanData, extractAccount
 
 # ── 계정 매핑 ──
 
@@ -41,31 +41,6 @@ _EQ_IDS = {
     "ifrs-full_EquityAttributableToOwnersOfParent",
 }
 _EQ_NMS = {"자본총계", "자본 총계", "지배기업 소유주지분"}
-
-
-def _parseAmount(val) -> float | None:
-    """금액 → float."""
-    if val is None:
-        return None
-    s = str(val).replace(",", "").strip()
-    if not s or s == "-":
-        return None
-    try:
-        return float(s)
-    except ValueError:
-        return None
-
-
-def _extractAccount(sub: pl.DataFrame, ids: set, nms: set) -> float | None:
-    """DataFrame에서 특정 계정의 thstrm_amount 추출."""
-    for row in sub.iter_rows(named=True):
-        aid = row.get("account_id", "")
-        anm = row.get("account_nm", "")
-        if aid in ids or anm in nms:
-            val = _parseAmount(row.get("thstrm_amount"))
-            if val is not None:
-                return val
-    return None
 
 
 def _gradeProfitability(opMargin: float | None, roe: float | None) -> str:
@@ -167,11 +142,11 @@ def _computeProfitability(target: pl.DataFrame, scCol: str) -> pl.DataFrame:
     for code in latest[scCol].unique().to_list():
         sub = latest.filter(pl.col(scCol) == code)
 
-        rev = _extractAccount(sub, _REVENUE_IDS, _REVENUE_NMS)
-        op = _extractAccount(sub, _OP_IDS, _OP_NMS)
-        ni = _extractAccount(sub, _NI_IDS, _NI_NMS)
-        ta = _extractAccount(sub, _TA_IDS, _TA_NMS)
-        eq = _extractAccount(sub, _EQ_IDS, _EQ_NMS)
+        rev = extractAccount(sub, _REVENUE_IDS, _REVENUE_NMS)
+        op = extractAccount(sub, _OP_IDS, _OP_NMS)
+        ni = extractAccount(sub, _NI_IDS, _NI_NMS)
+        ta = extractAccount(sub, _TA_IDS, _TA_NMS)
+        eq = extractAccount(sub, _EQ_IDS, _EQ_NMS)
 
         opMargin = round(op / rev * 100, 1) if rev and rev != 0 and op is not None else None
         netMargin = round(ni / rev * 100, 1) if rev and rev != 0 and ni is not None else None

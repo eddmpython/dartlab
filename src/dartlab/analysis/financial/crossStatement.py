@@ -5,19 +5,13 @@
 
 from __future__ import annotations
 
-from dartlab.analysis.financial._helpers import annualColsFromPeriods as _annualColsFromPeriods
+from dartlab.analysis.financial._helpers import annualColsFromPeriods, toDict
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
 
 
 # ── 유틸 ──
-
-
-def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
-    from dartlab.analysis.financial._helpers import toDict
-
-    return toDict(selectResult)
 
 
 def _get(row: dict, col: str) -> float:
@@ -60,8 +54,8 @@ def calcIsCfDivergence(company, *, basePeriod: str | None = None) -> dict | None
     isResult = company.select("IS", ["당기순이익", "영업이익"])
     cfResult = company.select("CF", ["영업활동현금흐름"])
 
-    isParsed = _toDict(isResult)
-    cfParsed = _toDict(cfResult)
+    isParsed = toDict(isResult)
+    cfParsed = toDict(cfResult)
     if isParsed is None or cfParsed is None:
         return None
 
@@ -72,7 +66,7 @@ def calcIsCfDivergence(company, *, basePeriod: str | None = None) -> dict | None
     opRow = isData.get("영업이익", {})
     ocfRow = cfData.get("영업활동현금흐름", {})
 
-    yCols = _annualColsFromPeriods(cfPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
+    yCols = annualColsFromPeriods(cfPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -139,8 +133,8 @@ def calcIsBsDivergence(company, *, basePeriod: str | None = None) -> dict | None
     isResult = company.select("IS", ["매출액"])
     bsResult = company.select("BS", ["매출채권및기타채권", "재고자산"])
 
-    isParsed = _toDict(isResult)
-    bsParsed = _toDict(bsResult)
+    isParsed = toDict(isResult)
+    bsParsed = toDict(bsResult)
     if isParsed is None or bsParsed is None:
         return None
 
@@ -152,7 +146,7 @@ def calcIsBsDivergence(company, *, basePeriod: str | None = None) -> dict | None
 
     _REC_KEYS = ["매출채권및기타채권"]
 
-    yCols = _annualColsFromPeriods(isPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
+    yCols = annualColsFromPeriods(isPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -373,9 +367,9 @@ def calcArticulationCheck(company, *, basePeriod: str | None = None) -> dict | N
     )
     isResult = company.select("IS", ["당기순이익"])
 
-    bsParsed = _toDict(bsResult)
-    cfParsed = _toDict(cfResult)
-    isParsed = _toDict(isResult)
+    bsParsed = toDict(bsResult)
+    cfParsed = toDict(cfResult)
+    isParsed = toDict(isResult)
     if bsParsed is None or cfParsed is None or isParsed is None:
         return None
 
@@ -393,7 +387,7 @@ def calcArticulationCheck(company, *, basePeriod: str | None = None) -> dict | N
     dispRow = cfData.get("유형자산의처분", {})
     niRow = isData.get("당기순이익", {})
 
-    yCols = _annualColsFromPeriods(bsPeriods, basePeriod, _MAX_YEARS + 1)
+    yCols = annualColsFromPeriods(bsPeriods, basePeriod, _MAX_YEARS + 1)
     if len(yCols) < 2:
         return None
 

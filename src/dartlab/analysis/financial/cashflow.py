@@ -6,30 +6,13 @@ CF 3구간(영업/투자/재무) + FCF + 이익의 현금 뒷받침 + CF 패턴.
 
 from __future__ import annotations
 
+from dartlab.analysis.financial._helpers import annualColsFromPeriods, toDict
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
 
 
 # ── 유틸 ──
-
-
-def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
-    """SelectResult -> ({계정명: {period: val}}, periodCols)."""
-    from dartlab.analysis.financial._helpers import toDict
-
-    return toDict(selectResult)
-
-
-def _annualColsFromPeriods(
-    periods: list[str],
-    maxYears: int = _MAX_YEARS,
-    basePeriod: str | None = None,
-) -> list[str]:
-    """연도 컬럼만 추출 (basePeriod 지원)."""
-    from dartlab.analysis.financial._helpers import annualColsFromPeriods
-
-    return annualColsFromPeriods(periods, maxYears=maxYears, basePeriod=basePeriod)
 
 
 def _get(row: dict, col: str) -> float:
@@ -96,7 +79,7 @@ def calcCashFlowOverview(company, *, basePeriod: str | None = None) -> dict | No
         "무형자산의취득",
     ]
     result = company.select("CF", cfAccounts)
-    parsed = _toDict(result)
+    parsed = toDict(result)
     if parsed is None:
         return None
 
@@ -109,7 +92,7 @@ def calcCashFlowOverview(company, *, basePeriod: str | None = None) -> dict | No
     capexRow = data.get("유형자산의취득", {})
     intCapexRow = data.get("무형자산의취득", {})
 
-    yCols = _annualColsFromPeriods(allPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(allPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -162,8 +145,8 @@ def calcCashQuality(company, *, basePeriod: str | None = None) -> dict | None:
     cfResult = company.select("CF", ["영업활동현금흐름"])
     isResult = company.select("IS", ["당기순이익", "매출액"])
 
-    cfParsed = _toDict(cfResult)
-    isParsed = _toDict(isResult)
+    cfParsed = toDict(cfResult)
+    isParsed = toDict(isResult)
     if cfParsed is None or isParsed is None:
         return None
 
@@ -174,7 +157,7 @@ def calcCashQuality(company, *, basePeriod: str | None = None) -> dict | None:
     niRow = isData.get("당기순이익", {})
     revRow = isData.get("매출액", {})
 
-    yCols = _annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -286,9 +269,9 @@ def calcOcfDecomposition(company, *, basePeriod: str | None = None) -> dict | No
         ["매출채권및기타채권", "재고자산", "매입채무", "유형자산"],
     )
 
-    isParsed = _toDict(isResult)
-    cfParsed = _toDict(cfResult)
-    bsParsed = _toDict(bsResult)
+    isParsed = toDict(isResult)
+    cfParsed = toDict(cfResult)
+    bsParsed = toDict(bsResult)
     if isParsed is None or cfParsed is None or bsParsed is None:
         return None
 

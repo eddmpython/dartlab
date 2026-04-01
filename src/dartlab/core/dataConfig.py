@@ -38,10 +38,6 @@ DATA_RELEASES: dict[str, dict] = {
         "dir": "dart/allFilings",
         "label": "DART 전체 공시 원문 데이터",
     },
-    "vectorIndex": {  # legacy — stemIndex로 완전 전환. vectorStore.py 제거 후 삭제 예정
-        "dir": "dart/vectorIndex",
-        "label": "(legacy) 벡터 인덱스 — stemIndex 사용",
-    },
     "stemIndex": {
         "dir": "dart/stemIndex",
         "label": "Ngram+Synonym 통합 검색 인덱스",

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.scan._helpers import _ensureScanData
+from dartlab.scan._helpers import _ensureScanData, extractAccount
 
 # ── 계정 매핑 ──
 
@@ -29,31 +29,6 @@ _NI_IDS = {
     "ProfitLossAttributableToOwnersOfParent",
 }
 _NI_NMS = {"당기순이익", "당기순이익(손실)"}
-
-
-def _parseAmount(val) -> float | None:
-    """금액 → float."""
-    if val is None:
-        return None
-    s = str(val).replace(",", "").strip()
-    if not s or s == "-":
-        return None
-    try:
-        return float(s)
-    except ValueError:
-        return None
-
-
-def _extractAccount(sub: pl.DataFrame, ids: set, nms: set) -> float | None:
-    """DataFrame에서 특정 계정의 thstrm_amount 추출."""
-    for row in sub.iter_rows(named=True):
-        aid = row.get("account_id", "")
-        anm = row.get("account_nm", "")
-        if aid in ids or anm in nms:
-            val = _parseAmount(row.get("thstrm_amount"))
-            if val is not None:
-                return val
-    return None
 
 
 def _cagr(old: float, new: float, years: int) -> float | None:
@@ -204,12 +179,12 @@ def _computeGrowth(target: pl.DataFrame, scCol: str) -> pl.DataFrame:
         latSub = latest.filter(pl.col(scCol) == code)
         baseSub = base.filter(pl.col(scCol) == code)
 
-        revNow = _extractAccount(latSub, _REVENUE_IDS, _REVENUE_NMS)
-        revOld = _extractAccount(baseSub, _REVENUE_IDS, _REVENUE_NMS)
-        opNow = _extractAccount(latSub, _OP_IDS, _OP_NMS)
-        opOld = _extractAccount(baseSub, _OP_IDS, _OP_NMS)
-        niNow = _extractAccount(latSub, _NI_IDS, _NI_NMS)
-        niOld = _extractAccount(baseSub, _NI_IDS, _NI_NMS)
+        revNow = extractAccount(latSub, _REVENUE_IDS, _REVENUE_NMS)
+        revOld = extractAccount(baseSub, _REVENUE_IDS, _REVENUE_NMS)
+        opNow = extractAccount(latSub, _OP_IDS, _OP_NMS)
+        opOld = extractAccount(baseSub, _OP_IDS, _OP_NMS)
+        niNow = extractAccount(latSub, _NI_IDS, _NI_NMS)
+        niOld = extractAccount(baseSub, _NI_IDS, _NI_NMS)
 
         revCagr = _cagr(revOld, revNow, nYears) if revOld and revOld > 0 else None
         opCagr = _cagr(opOld, opNow, nYears) if opOld and opOld > 0 else None

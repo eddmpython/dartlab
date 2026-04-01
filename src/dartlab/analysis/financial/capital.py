@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from dartlab.analysis.financial._helpers import annualColsFromPeriods, toDict
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_QUARTERS = 5
@@ -13,20 +14,6 @@ _MAX_YEARS = 8
 
 
 # ── 유틸 ──
-
-
-def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
-    """SelectResult → ({계정명: {period: val}}, 전체 periodCols)."""
-    from dartlab.analysis.financial._helpers import toDict
-
-    return toDict(selectResult)
-
-
-def _annualColsFromPeriods(periods: list[str], basePeriod: str | None, maxYears: int = _MAX_YEARS) -> list[str]:
-    """basePeriod 지원 연도 컬럼 추출."""
-    from dartlab.analysis.financial._helpers import annualColsFromPeriods
-
-    return annualColsFromPeriods(periods, basePeriod, maxYears)
 
 
 def _quarterlyCols(periods: list[str], maxQ: int = _MAX_QUARTERS) -> list[str]:
@@ -116,7 +103,7 @@ def calcFundingSources(company, *, basePeriod: str | None = None) -> dict | None
         "선수수익",
     ]
     result = company.select("BS", accounts)
-    parsed = _toDict(result)
+    parsed = toDict(result)
     if parsed is None:
         return None
 
@@ -140,7 +127,7 @@ def calcFundingSources(company, *, basePeriod: str | None = None) -> dict | None
     clRow = data.get("계약부채", {})
     diRow = data.get("선수수익", {})
 
-    yCols = _annualColsFromPeriods(allPeriods, basePeriod, _MAX_YEARS)
+    yCols = annualColsFromPeriods(allPeriods, basePeriod, _MAX_YEARS)
     if not yCols:
         yCols = _quarterlyCols(allPeriods, _MAX_YEARS)
     if not yCols:
@@ -246,14 +233,14 @@ def calcFundingSources(company, *, basePeriod: str | None = None) -> dict | None
 def _latestAnnualVal(company, stmt: str, accountName: str) -> float | None:
     """select(stmt, [accountName])에서 최신 연도 값을 꺼낸다."""
     result = company.select(stmt, [accountName])
-    parsed = _toDict(result)
+    parsed = toDict(result)
     if parsed is None:
         return None
     data, allPeriods = parsed
     row = data.get(accountName)
     if row is None:
         return None
-    yCols = _annualColsFromPeriods(allPeriods, None, 1)
+    yCols = annualColsFromPeriods(allPeriods, None, 1)
     if not yCols:
         return None
     return row.get(yCols[0])
@@ -341,7 +328,7 @@ def calcCapitalTimeline(company, *, basePeriod: str | None = None) -> dict | Non
         {"tables": [(label, rows, cols), ...]}
     """
     result = company.select("BS", ["자본총계", "이익잉여금", "미처분이익잉여금(결손금)"])
-    parsed = _toDict(result)
+    parsed = toDict(result)
     if parsed is None or "자본총계" not in parsed[0]:
         return None
 
@@ -352,7 +339,7 @@ def calcCapitalTimeline(company, *, basePeriod: str | None = None) -> dict | Non
     retainedRow = mergeRows(data.get("이익잉여금"), data.get("미처분이익잉여금(결손금)"))
 
     tables = []
-    yCols = _annualColsFromPeriods(allPeriods, basePeriod, _MAX_YEARS)
+    yCols = annualColsFromPeriods(allPeriods, basePeriod, _MAX_YEARS)
     if yCols:
         yearTable = _buildCapitalTable(equityRow, retainedRow, yCols)
         if yearTable:
@@ -410,7 +397,7 @@ def calcDebtTimeline(company, *, basePeriod: str | None = None) -> dict | None:
         {"tables": [(label, rows, cols), ...]}
     """
     result = company.select("BS", ["부채총계", "단기차입금", "장기차입금", "사채"])
-    parsed = _toDict(result)
+    parsed = toDict(result)
     if parsed is None or "부채총계" not in parsed[0]:
         return None
 
@@ -421,7 +408,7 @@ def calcDebtTimeline(company, *, basePeriod: str | None = None) -> dict | None:
     bondRow = data.get("사채")
 
     tables = []
-    yCols = _annualColsFromPeriods(allPeriods, basePeriod, _MAX_YEARS)
+    yCols = annualColsFromPeriods(allPeriods, basePeriod, _MAX_YEARS)
     if yCols:
         yearTable = _buildDebtTable(liabRow, stbRow, ltbRow, bondRow, yCols)
         if yearTable:
@@ -572,7 +559,7 @@ def calcCashFlowStructure(company, *, basePeriod: str | None = None) -> dict | N
         "CF",
         ["영업활동현금흐름", "투자활동현금흐름", "재무활동으로인한현금흐름", "유형자산의취득"],
     )
-    parsed = _toDict(result)
+    parsed = toDict(result)
     if parsed is None:
         return None
 
@@ -803,7 +790,7 @@ def calcCapitalFlags(company, *, basePeriod: str | None = None) -> list[tuple[st
     flagResult = company.select(
         "BS", ["부채총계", "단기차입금", "장기차입금", "사채", "자본총계", "이익잉여금", "미처분이익잉여금(결손금)"]
     )
-    flagParsed = _toDict(flagResult)
+    flagParsed = toDict(flagResult)
     if flagParsed is not None and "부채총계" in flagParsed[0]:
         data = flagParsed[0]
         liabRow = data["부채총계"]

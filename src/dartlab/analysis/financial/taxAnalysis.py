@@ -5,19 +5,10 @@
 
 from __future__ import annotations
 
-from dartlab.analysis.financial._helpers import annualColsFromPeriods as _annualColsFromPeriods
+from dartlab.analysis.financial._helpers import annualColsFromPeriods, toDict
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
-
-
-# ── 유틸 ──
-
-
-def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
-    from dartlab.analysis.financial._helpers import toDict
-
-    return toDict(selectResult)
 
 
 def _get(row: dict, col: str) -> float:
@@ -56,7 +47,7 @@ def calcEffectiveTaxRate(company, *, basePeriod: str | None = None) -> dict | No
     """
     accounts = ["법인세비용", "법인세차감전순이익", "세전이익"]
     isResult = company.select("IS", accounts)
-    isParsed = _toDict(isResult)
+    isParsed = toDict(isResult)
     if isParsed is None:
         return None
 
@@ -64,7 +55,7 @@ def calcEffectiveTaxRate(company, *, basePeriod: str | None = None) -> dict | No
     taxRow = isData.get("법인세비용", {})
     ptRow = isData.get("법인세차감전순이익", isData.get("세전이익", {}))
 
-    yCols = _annualColsFromPeriods(isPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
+    yCols = annualColsFromPeriods(isPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -120,7 +111,7 @@ def calcTaxCashConversion(company, *, basePeriod: str | None = None) -> dict | N
     isResult = company.select("IS", ["법인세비용"])
     cfResult = company.select("CF", ["payments_of_income_taxes"])
 
-    isParsed = _toDict(isResult)
+    isParsed = toDict(isResult)
     if isParsed is None:
         return None
 
@@ -133,7 +124,7 @@ def calcTaxCashConversion(company, *, basePeriod: str | None = None) -> dict | N
     cfData = cfParsed[0] if cfParsed else {}
     taxPaidRow = cfData.get("payments_of_income_taxes", {})
 
-    yCols = _annualColsFromPeriods(isPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
+    yCols = annualColsFromPeriods(isPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -182,7 +173,7 @@ def calcDeferredTax(company, *, basePeriod: str | None = None) -> dict | None:
         }
     """
     bsResult = company.select("BS", ["이연법인세자산", "이연법인세부채", "자산총계"])
-    bsParsed = _toDict(bsResult)
+    bsParsed = toDict(bsResult)
     if bsParsed is None:
         return None
 
@@ -191,7 +182,7 @@ def calcDeferredTax(company, *, basePeriod: str | None = None) -> dict | None:
     dtlRow = bsData.get("이연법인세부채", {})
     taRow = bsData.get("자산총계", {})
 
-    yCols = _annualColsFromPeriods(bsPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
+    yCols = annualColsFromPeriods(bsPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 

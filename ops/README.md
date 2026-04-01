@@ -18,7 +18,7 @@
 | [experiments.md](experiments.md) | — | experiments/ | 실험 규칙, 흡수 판단 |
 | [edgar.md](edgar.md) | L1 | providers/edgar/ | EDGAR 동기화 규칙, EXEMPT 관리, 데이터 소스 차이 |
 | [code.md](code.md) | — | 전체 | camelCase, 독스트링 9섹션, 릴리즈, Git |
-| [ui.md](ui.md) | — | ui/ + vscode/ | Svelte ↔ VSCode 패리티, 기능 대조표, 숨김 관리 |
+| [ui.md](ui.md) | L4 | ui/ + vscode/ | Svelte SPA + VSCode 확장, 패리티 규칙, 빌드/배포 |
 
 ## 레이어 아키텍처
 
@@ -29,6 +29,7 @@ L1 (데이터)     providers/     DART, EDGAR, EDINET
                 scan/          13축 횡단분석
 L2 (분석)       analysis/      14축 + forecast + valuation
 L3 (AI)         ai/            LLM 대화형 분석
+L4 (표현)       ui/ + vscode/  Svelte SPA + VSCode 확장
 
 교차 관심사     guide/         안내 데스크 (모든 레이어에서 import 가능)
 ```

@@ -7,26 +7,13 @@ from __future__ import annotations
 
 import math
 
+from dartlab.analysis.financial._helpers import annualColsFromPeriods, toDict
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
 
 
 # ── 유틸 ──
-
-
-def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
-    from dartlab.analysis.financial._helpers import toDict
-
-    return toDict(selectResult)
-
-
-def _annualColsFromPeriods(
-    periods: list[str], maxYears: int = _MAX_YEARS, *, basePeriod: str | None = None
-) -> list[str]:
-    from dartlab.analysis.financial._helpers import annualColsFromPeriods
-
-    return annualColsFromPeriods(periods, basePeriod=basePeriod, maxYears=maxYears)
 
 
 def _get(row: dict, col: str) -> float:
@@ -68,9 +55,9 @@ def calcAccrualAnalysis(company, *, basePeriod: str | None = None) -> dict | Non
     cfResult = company.select("CF", ["영업활동현금흐름"])
     bsResult = company.select("BS", ["자산총계"])
 
-    isParsed = _toDict(isResult)
-    cfParsed = _toDict(cfResult)
-    bsParsed = _toDict(bsResult)
+    isParsed = toDict(isResult)
+    cfParsed = toDict(cfResult)
+    bsParsed = toDict(bsResult)
     if isParsed is None or cfParsed is None or bsParsed is None:
         return None
 
@@ -83,7 +70,7 @@ def calcAccrualAnalysis(company, *, basePeriod: str | None = None) -> dict | Non
     ocfRow = cfData.get("영업활동현금흐름", {})
     taRow = bsData.get("자산총계", {})
 
-    yCols = _annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -149,7 +136,7 @@ def calcEarningsPersistence(company, *, basePeriod: str | None = None) -> dict |
     """
     accounts = ["영업이익", "법인세차감전순이익", "세전이익"]
     isResult = company.select("IS", accounts)
-    isParsed = _toDict(isResult)
+    isParsed = toDict(isResult)
     if isParsed is None:
         return None
 
@@ -158,7 +145,7 @@ def calcEarningsPersistence(company, *, basePeriod: str | None = None) -> dict |
     # 세전이익 fallback
     ptRow = isData.get("법인세차감전순이익", isData.get("세전이익", {}))
 
-    yCols = _annualColsFromPeriods(isPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(isPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -230,8 +217,8 @@ def calcBeneishTimeline(company, *, basePeriod: str | None = None) -> dict | Non
     )
     cfResult = company.select("CF", ["operating_cashflow"])
 
-    isParsed = _toDict(isResult)
-    bsParsed = _toDict(bsResult)
+    isParsed = toDict(isResult)
+    bsParsed = toDict(bsResult)
     cfParsed = toDictBySnakeId(cfResult)
     if isParsed is None or bsParsed is None:
         return None
@@ -252,7 +239,7 @@ def calcBeneishTimeline(company, *, basePeriod: str | None = None) -> dict | Non
     tlRow = bsData.get("부채총계", {})
     ocfRow = cfData.get("operating_cashflow", {})
 
-    yCols = _annualColsFromPeriods(isPeriods, _MAX_YEARS + 1, basePeriod=basePeriod)  # 전년 대비 필요 → 1년 더
+    yCols = annualColsFromPeriods(isPeriods, _MAX_YEARS + 1, basePeriod=basePeriod)  # 전년 대비 필요 → 1년 더
     if len(yCols) < 2:
         return None
 
@@ -421,7 +408,7 @@ def calcRichardsonAccrual(company, *, basePeriod: str | None = None) -> dict | N
         ],
     )
 
-    bsParsed = _toDict(bsResult)
+    bsParsed = toDict(bsResult)
     if bsParsed is None:
         return None
 
@@ -436,7 +423,7 @@ def calcRichardsonAccrual(company, *, basePeriod: str | None = None) -> dict | N
     bondRow = bsData.get("사채", {})
     taRow = bsData.get("자산총계", {})
 
-    yCols = _annualColsFromPeriods(bsPeriods, _MAX_YEARS + 1, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(bsPeriods, _MAX_YEARS + 1, basePeriod=basePeriod)
     if len(yCols) < 2:
         return None
 
@@ -520,7 +507,7 @@ def calcNonOperatingBreakdown(company, *, basePeriod: str | None = None) -> dict
         ["영업이익", "금융이익", "금융비용", "지분법관련손익", "기타수익", "기타비용", "법인세차감전순이익"],
     )
 
-    isParsed = _toDict(isResult)
+    isParsed = toDict(isResult)
     if isParsed is None:
         return None
 
@@ -533,7 +520,7 @@ def calcNonOperatingBreakdown(company, *, basePeriod: str | None = None) -> dict
     otherExpRow = isData.get("기타비용", {})
     ptRow = isData.get("법인세차감전순이익", {})
 
-    yCols = _annualColsFromPeriods(isPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(isPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 

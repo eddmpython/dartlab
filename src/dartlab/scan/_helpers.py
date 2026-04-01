@@ -113,6 +113,20 @@ def parse_num(s) -> float | None:
         return None
 
 
+def extractAccount(
+    sub: pl.DataFrame, ids: set, nms: set, amtCol: str = "thstrm_amount"
+) -> float | None:
+    """DataFrame에서 account_id/account_nm 매칭 → 금액 추출."""
+    for row in sub.iter_rows(named=True):
+        aid = row.get("account_id", "")
+        anm = row.get("account_nm", "")
+        if aid in ids or anm in nms:
+            val = parse_num(row.get(amtCol))
+            if val is not None:
+                return val
+    return None
+
+
 def find_latest_year(raw: pl.DataFrame, check_col: str, min_count: int = 500) -> str | None:
     """check_col에 유효 데이터가 min_count 이상인 가장 최근 연도 반환."""
     years_desc = sorted(raw["year"].unique().to_list(), reverse=True)

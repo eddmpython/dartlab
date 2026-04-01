@@ -410,9 +410,7 @@ def _formatResultForUser(result: str) -> str:
     - 그 외 plain text → 코드 블록
     """
     # shape: (N, M) 메타 텍스트 제거
-    import re as _re
-
-    result = _re.sub(r"shape: \(\d+, \d+\)\s*\n?", "", result)
+    result = re.sub(r"shape: \(\d+, \d+\)\s*\n?", "", result)
 
     # Polars 유니코드 테이블이 있으면 먼저 변환 (에러+테이블 혼합 대응)
     if "┌" in result:
@@ -945,7 +943,7 @@ def analyze(
                 **kwargs,
             ):
                 yield _emit(ev)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — top-level error boundary for the entire AI pipeline (LLM network/auth/parse/provider errors are unpredictable)
             yield _emit(AnalysisEvent("error", _enrich_with_guide(_classify_error(e), error=e)))
 
         # ── 후처리: plugin hints ──

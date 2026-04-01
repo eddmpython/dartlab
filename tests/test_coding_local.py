@@ -13,20 +13,19 @@ from dartlab.ai.tools.coding import LocalPythonBackend, _validateCode
 
 def test_validateCode_safe():
     code = "import math\nprint(math.sqrt(16))"
-    assert _validateCode(code) == []
+    _validateCode(code)  # should not raise
 
 
 def test_validateCode_any_module_allowed():
     """제한 없음 — 어떤 모듈이든 import 가능."""
     code = "import os\nimport requests\nimport subprocess"
-    assert _validateCode(code) == []
+    _validateCode(code)  # should not raise
 
 
 def test_validateCode_syntax_error():
     code = "def foo(\n"
-    violations = _validateCode(code)
-    assert len(violations) == 1
-    assert "구문 오류" in violations[0]
+    with pytest.raises(SyntaxError):
+        _validateCode(code)
 
 
 # ══════════════════════════════════════

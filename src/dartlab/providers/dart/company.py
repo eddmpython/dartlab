@@ -1755,24 +1755,6 @@ class Company:
                 return "XI"
         return "XII"
 
-    def _boardTopics(self) -> list[str]:
-        cacheKey = "_boardTopics"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-
-        ordered = self._docsSectionTopics()
-        seen = set(ordered)
-
-        if self._hasFinanceParquet:
-            for ft in ("BS", "IS", "CIS", "CF", "SCE", "ratios"):
-                if ft in seen:
-                    continue
-                ordered.append(ft)
-                seen.add(ft)
-
-        self._cache[cacheKey] = ordered
-        return ordered
-
     def _topicLabel(self, topic: str) -> str:
         if topic == "CIS":
             return "포괄손익계산서"
@@ -1962,13 +1944,6 @@ class Company:
 
         # block=None → 전체 topic (text 원문 + table 수평화, blockOrder 순서)
         return self._applyPeriodFilter(topicFrame, period)
-
-    @staticmethod
-    def _stripUnitHeader(sub: list[str]) -> list[str] | None:
-        """단위행/기준일행이 헤더인 서브테이블 → 단위행 제거 + 나머지 반환."""
-        from dartlab.providers.dart._table_horizontalizer import stripUnitHeader
-
-        return stripUnitHeader(sub)
 
     def _horizontalizeTableBlock(
         self,

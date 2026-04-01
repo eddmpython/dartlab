@@ -69,6 +69,31 @@ _typeIndex: dict | None = None
 _typeToDocIds: dict | None = None
 
 
+def _normalizeReportName(col: pl.Expr) -> pl.Expr:
+    """report_nm 정규화 — [기재정정]/[첨부정정] 접두사 및 날짜 접미사 제거.
+
+    Parameters
+    ----------
+    col : pl.Expr
+        report_nm 컬럼 expression (예: ``pl.col("report_nm")``).
+
+    Returns
+    -------
+    pl.Expr
+        정규화된 report_nm expression.
+    """
+    return (
+        col
+        .str.replace(r"^\[기재정정\]", "", literal=False)
+        .str.replace(r"^\[첨부정정\]", "", literal=False)
+        .str.replace(r"^\[첨부추가\]", "", literal=False)
+        .str.replace(r"^\[발행조건확정\]", "", literal=False)
+        .str.replace(r"\s*\(\d{4}\.\d{2}\)\s*$", "", literal=False)
+        .str.replace(r"\s*\(.*?\)\s*$", "", literal=False)
+        .str.strip_chars()
+    )
+
+
 def _tokenize(text: str) -> list[str]:
     """bigram + trigram 추출 (중복 제거)."""
     text = text.strip()
@@ -143,8 +168,21 @@ def buildNgramIndex(
     if parquetPaths:
         for p in parquetPaths:
             try:
-                df = pl.read_parquet(p).filter(pl.col("section_content").is_not_null())
-            except Exception:
+                df = pl.read_parquet(
+                    p,
+                    columns=[
+                        "rcept_no",
+                        "corp_code",
+                        "corp_name",
+                        "stock_code",
+                        "rcept_dt",
+                        "report_nm",
+                        "section_title",
+                        "section_order",
+                        "section_content",
+                    ],
+                ).filter(pl.col("section_content").is_not_null())
+            except (pl.exceptions.PolarsError, OSError):
                 continue
 
             for row in df.iter_rows(named=True):
@@ -207,7 +245,7 @@ def buildNgramIndex(
                             "section_content",
                         ],
                     )
-                except Exception:
+                except (pl.exceptions.PolarsError, OSError):
                     continue
 
                 for row in df.iter_rows(named=True):
@@ -344,15 +382,7 @@ def _buildAndSaveTypeIndex(meta: pl.DataFrame, outDir: Path) -> None:
         meta.lazy()
         .with_row_index("_docId")
         .with_columns(
-            pl.col("report_nm")
-            .str.replace(r"^\[기재정정\]", "", literal=False)
-            .str.replace(r"^\[첨부정정\]", "", literal=False)
-            .str.replace(r"^\[첨부추가\]", "", literal=False)
-            .str.replace(r"^\[발행조건확정\]", "", literal=False)
-            .str.replace(r"\s*\(\d{4}\.\d{2}\)\s*$", "", literal=False)
-            .str.replace(r"\s*\(.*?\)\s*$", "", literal=False)
-            .str.strip_chars()
-            .alias("_norm")
+            _normalizeReportName(pl.col("report_nm")).alias("_norm")
         )
         .filter(pl.col("_norm") != "")
         .group_by("_norm")
@@ -390,15 +420,7 @@ def _buildTypeIndex(meta: pl.DataFrame) -> tuple[dict, dict]:
             meta.lazy()
             .with_row_index("_docId")
             .with_columns(
-                pl.col("report_nm")
-                .str.replace(r"^\[기재정정\]", "", literal=False)
-                .str.replace(r"^\[첨부정정\]", "", literal=False)
-                .str.replace(r"^\[첨부추가\]", "", literal=False)
-                .str.replace(r"^\[발행조건확정\]", "", literal=False)
-                .str.replace(r"\s*\(\d{4}\.\d{2}\)\s*$", "", literal=False)
-                .str.replace(r"\s*\(.*?\)\s*$", "", literal=False)
-                .str.strip_chars()
-                .alias("_norm")
+                _normalizeReportName(pl.col("report_nm")).alias("_norm")
             )
             .filter(pl.col("_norm") != "")
             .group_by("_norm")

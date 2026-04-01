@@ -6,7 +6,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.scan._helpers import _ensureScanData, parse_num
+from dartlab.scan._helpers import _ensureScanData, extractAccount, parse_num
 
 # ── 유동자산 ──
 
@@ -52,16 +52,7 @@ def _gradeLiquidity(currentRatio: float) -> str:
     return "위험"
 
 
-def _extractVal(sub: pl.DataFrame, ids: set, nms: set) -> float | None:
-    """DataFrame에서 특정 계정의 값 추출."""
-    for row in sub.iter_rows(named=True):
-        aid = row.get("account_id", "")
-        anm = row.get("account_nm", "")
-        if aid in ids or anm in nms:
-            val = parse_num(row.get("thstrm_amount"))
-            if val is not None:
-                return val
-    return None
+_extractVal = extractAccount  # backward compat alias
 
 
 def _scanFromMerged(scanPath: Path) -> pl.DataFrame:

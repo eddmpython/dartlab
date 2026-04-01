@@ -15,6 +15,7 @@ from __future__ import annotations
 import logging
 import math
 
+from dartlab.analysis.financial._helpers import annualColsFromPeriods, toDict
 from dartlab.analysis.financial._memoize import memoized_calc
 
 log = logging.getLogger(__name__)
@@ -104,18 +105,6 @@ _COMMODITY_SECTORS = {"화학", "철강", "에너지/자원", "Energy", "Materia
 # ── 공통 헬퍼 ──
 
 
-def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
-    from dartlab.analysis.financial._helpers import toDict
-
-    return toDict(selectResult)
-
-
-def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS, *, basePeriod: str | None = None) -> list[str]:
-    from dartlab.analysis.financial._helpers import annualColsFromPeriods
-
-    return annualColsFromPeriods(periods, basePeriod=basePeriod, maxYears=maxYears)
-
-
 def _get(row: dict, col: str) -> float:
     v = row.get(col) if row else None
     return v if v is not None else 0
@@ -160,9 +149,9 @@ def calcEarningsMomentum(company, *, basePeriod: str | None = None) -> dict | No
     cfResult = company.select("CF", ["영업활동현금흐름"])
     bsResult = company.select("BS", ["자산총계", "자본총계"])
 
-    isParsed = _toDict(isResult)
-    cfParsed = _toDict(cfResult)
-    bsParsed = _toDict(bsResult)
+    isParsed = toDict(isResult)
+    cfParsed = toDict(cfResult)
+    bsParsed = toDict(bsResult)
     if isParsed is None or cfParsed is None or bsParsed is None:
         return None
 
@@ -177,7 +166,7 @@ def calcEarningsMomentum(company, *, basePeriod: str | None = None) -> dict | No
     taRow = bsData.get("자산총계", {})
     teRow = bsData.get("자본총계", {})
 
-    yCols = _annualCols(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if len(yCols) < 3:
         return None
 
@@ -395,12 +384,12 @@ def _extractPeerFeatures(company) -> dict[str, float] | None:
 def _getHistoricalRevenueGrowth(company, *, basePeriod: str | None = None) -> float | None:
     """최근 매출 성장률 (%) 계산."""
     isResult = company.select("IS", ["매출액"])
-    parsed = _toDict(isResult)
+    parsed = toDict(isResult)
     if parsed is None:
         return None
     data, periods = parsed
     revRow = data.get("매출액", {})
-    yCols = _annualCols(periods, 3, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(periods, 3, basePeriod=basePeriod)
     if len(yCols) < 2:
         return None
     cur = _get(revRow, yCols[0])
@@ -424,14 +413,14 @@ def calcStructuralBreak(company, *, basePeriod: str | None = None) -> dict | Non
     from dartlab.core.finance.ols import detectStructuralBreak, ols
 
     isResult = company.select("IS", ["매출액", "영업이익"])
-    isParsed = _toDict(isResult)
+    isParsed = toDict(isResult)
     if isParsed is None:
         return None
     isData, isPeriods = isParsed
 
     revRow = isData.get("매출액", {})
     oiRow = isData.get("영업이익", {})
-    yCols = _annualCols(isPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(isPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if len(yCols) < 6:
         return None
 
@@ -671,7 +660,7 @@ def calcMacroRegression(company, *, basePeriod: str | None = None) -> dict | Non
         - table: list[dict] — 연도별 매출 성장률 vs 거시 변화율 시계열 테이블
     """
     isResult = company.select("IS", ["매출액", "영업이익"])
-    isParsed = _toDict(isResult)
+    isParsed = toDict(isResult)
     if isParsed is None:
         return None
     isData, isPeriods = isParsed
@@ -1164,14 +1153,14 @@ def calcEventImpact(company, *, basePeriod: str | None = None) -> dict | None:
         - resilience: str — "high"/"medium"/"low" — 기업의 충격 회복력
     """
     isResult = company.select("IS", ["매출액", "영업이익"])
-    isParsed = _toDict(isResult)
+    isParsed = toDict(isResult)
     if isParsed is None:
         return None
     isData, isPeriods = isParsed
     revRow = isData.get("매출액", {})
     oiRow = isData.get("영업이익", {})
 
-    cols = _annualCols(isPeriods, basePeriod=basePeriod)
+    cols = annualColsFromPeriods(isPeriods, basePeriod=basePeriod)
     if len(cols) < 4:
         return None
 
@@ -1440,8 +1429,8 @@ def calcInventoryDivergence(company, *, basePeriod: str | None = None) -> dict |
     )
     isResult = company.select("IS", ["매출액", "매출원가"])
 
-    bsParsed = _toDict(bsResult)
-    isParsed = _toDict(isResult)
+    bsParsed = toDict(bsResult)
+    isParsed = toDict(isResult)
     if bsParsed is None or isParsed is None:
         return None
 
@@ -1455,7 +1444,7 @@ def calcInventoryDivergence(company, *, basePeriod: str | None = None) -> dict |
     revRow = isData.get("매출액", {})
     cogsRow = isData.get("매출원가", {})
 
-    yCols = _annualCols(bsPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(bsPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if len(yCols) < 3:
         return None
 
@@ -2010,7 +1999,7 @@ def calcRevenueDirection(company, *, basePeriod: str | None = None) -> dict | No
     학술 근거: M4/M5 Competition — 단순 방법이 최강.
     """
     isResult = company.select("IS", ["매출액", "영업이익"])
-    isParsed = _toDict(isResult)
+    isParsed = toDict(isResult)
     if isParsed is None:
         return None
     isData, isPeriods = isParsed

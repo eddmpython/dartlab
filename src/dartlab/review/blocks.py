@@ -22,6 +22,16 @@ class HeadingBlock:
     level: int = 1
     helper: str = ""  # 이 소제목에서 봐야 할 것
 
+    @property
+    def htmlTag(self) -> str:
+        """HTML 태그명 (h3 또는 h4)."""
+        return "h3" if self.level == 1 else "h4"
+
+    @property
+    def markdownPrefix(self) -> str:
+        """마크다운 heading prefix (### 또는 ####)."""
+        return "###" if self.level == 1 else "####"
+
 
 @dataclass
 class TableBlock:
@@ -38,6 +48,11 @@ class FlagBlock:
 
     flags: list[str]
     kind: str = "warning"  # warning | opportunity
+
+    @property
+    def icon(self) -> str:
+        """플래그 아이콘 (warning=⚠, opportunity=✦)."""
+        return "\u26a0" if self.kind == "warning" else "\u2726"
 
 
 @dataclass

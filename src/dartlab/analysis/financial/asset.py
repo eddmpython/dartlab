@@ -8,29 +8,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from dartlab.analysis.financial._helpers import annualColsFromPeriods, toDict
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
 _MAX_QUARTERS = 5
-
-
-# ── 유틸 ──
-
-
-def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
-    """SelectResult → ({계정명: {period: val}}, periodCols)."""
-    from dartlab.analysis.financial._helpers import toDict
-
-    return toDict(selectResult)
-
-
-def _annualColsFromPeriods(
-    periods: list[str], maxYears: int = _MAX_YEARS, *, basePeriod: str | None = None
-) -> list[str]:
-    """연도 컬럼만 추출 (basePeriod 지원)."""
-    from dartlab.analysis.financial._helpers import annualColsFromPeriods
-
-    return annualColsFromPeriods(periods, basePeriod=basePeriod, maxYears=maxYears)
 
 
 def _get(row: dict, col: str) -> float:
@@ -153,7 +135,7 @@ def calcAssetStructure(company, *, basePeriod: str | None = None) -> dict | None
         + _OP_LIAB_SIMPLE
     )
     result = company.select("BS", allAccounts)
-    parsed = _toDict(result)
+    parsed = toDict(result)
     if parsed is None:
         return None
 
@@ -162,7 +144,7 @@ def calcAssetStructure(company, *, basePeriod: str | None = None) -> dict | None
     if taRow is None:
         return None
 
-    yCols = _annualColsFromPeriods(allPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(allPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -323,8 +305,8 @@ def calcWorkingCapital(company, *, basePeriod: str | None = None) -> dict | None
 
     bsResult = company.select("BS", bsAccounts)
     isResult = company.select("IS", isAccounts)
-    bsParsed = _toDict(bsResult)
-    isParsed = _toDict(isResult)
+    bsParsed = toDict(bsResult)
+    isParsed = toDict(isResult)
     if bsParsed is None or isParsed is None:
         return None
 
@@ -335,7 +317,7 @@ def calcWorkingCapital(company, *, basePeriod: str | None = None) -> dict | None
     revRow = isData.get("매출액", {})
     cogsRow = isData.get("매출원가", {})
 
-    yCols = _annualColsFromPeriods(bsPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(bsPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -413,13 +395,13 @@ def calcCapexPattern(company, *, basePeriod: str | None = None) -> dict | None:
     bsResult = company.select("BS", bsAccounts)
     isResult = company.select("IS", isAccounts)
 
-    bsParsed = _toDict(bsResult)
+    bsParsed = toDict(bsResult)
     if bsParsed is None:
         return None
 
     bsData, bsPeriods = bsParsed
-    cfData = _toDict(cfResult)
-    isData = _toDict(isResult)
+    cfData = toDict(cfResult)
+    isData = toDict(isResult)
 
     cfDict = cfData[0] if cfData else {}
     isDict = isData[0] if isData else {}
@@ -435,7 +417,7 @@ def calcCapexPattern(company, *, basePeriod: str | None = None) -> dict | None:
     # 3순위: 업종별 추정 (유형자산 / 추정내용연수 10년)
     depRow = isDict.get("감가상각비") or cfDict.get("감가상각비") or {}
 
-    yCols = _annualColsFromPeriods(bsPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(bsPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -524,7 +506,7 @@ def calcInvestmentPropertyTrend(company, *, basePeriod: str | None = None) -> di
         }
     """
     bsResult = company.select("BS", ["자산총계", "투자부동산"])
-    parsed = _toDict(bsResult)
+    parsed = toDict(bsResult)
     if parsed is None:
         return None
 
@@ -536,7 +518,7 @@ def calcInvestmentPropertyTrend(company, *, basePeriod: str | None = None) -> di
     if not ipRow or all(v is None or v == 0 for v in ipRow.values()):
         return None
 
-    yCols = _annualColsFromPeriods(allPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(allPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -608,7 +590,7 @@ def calcIntangibleAssetDetail(company, *, basePeriod: str | None = None) -> dict
 
     # notes 없으면 BS에서 기본 분해
     bsResult = company.select("BS", ["무형자산", "영업권", "자산총계"])
-    bsParsed = _toDict(bsResult)
+    bsParsed = toDict(bsResult)
     if bsParsed is None:
         return None
 
@@ -617,7 +599,7 @@ def calcIntangibleAssetDetail(company, *, basePeriod: str | None = None) -> dict
     gwRow = bsData.get("영업권", {})
     taRow = bsData.get("자산총계", {})
 
-    yCols = _annualColsFromPeriods(bsPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(bsPeriods, _MAX_YEARS, basePeriod=basePeriod)
     if not yCols:
         return None
 

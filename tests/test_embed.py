@@ -38,7 +38,7 @@ class TestEmbedRoute:
         from dartlab.server.embed import _EMBED_PATH, serve_embed
 
         if not _EMBED_PATH.exists():
-            pytest.skip("embed.js not built — run: cd src/dartlab/ui && npm run build:widget")
+            pytest.skip("embed.js not built — run: cd ui && npm run build:widget")
 
         response = serve_embed()
         # FileResponse 확인
@@ -73,27 +73,27 @@ class TestEmbedSecurity:
 
 class TestWidgetSource:
     def test_widget_directory_exists(self):
-        widget_dir = Path(__file__).parent.parent / "src" / "dartlab" / "ui" / "widget"
+        widget_dir = Path(__file__).parent.parent / "ui" / "widget"
         assert widget_dir.exists()
 
     def test_embed_entry_exists(self):
-        embed = Path(__file__).parent.parent / "src" / "dartlab" / "ui" / "widget" / "embed.js"
+        embed = Path(__file__).parent.parent / "ui" / "widget" / "embed.js"
         assert embed.exists()
 
     def test_snapshot_component_exists(self):
-        snap = Path(__file__).parent.parent / "src" / "dartlab" / "ui" / "widget" / "Snapshot.svelte"
+        snap = Path(__file__).parent.parent / "ui" / "widget" / "Snapshot.svelte"
         assert snap.exists()
 
     def test_api_client_exists(self):
-        api = Path(__file__).parent.parent / "src" / "dartlab" / "ui" / "widget" / "api.js"
+        api = Path(__file__).parent.parent / "ui" / "widget" / "api.js"
         assert api.exists()
 
     def test_theme_exists(self):
-        theme = Path(__file__).parent.parent / "src" / "dartlab" / "ui" / "widget" / "theme.js"
+        theme = Path(__file__).parent.parent / "ui" / "widget" / "theme.js"
         assert theme.exists()
 
     def test_vite_widget_config_exists(self):
-        config = Path(__file__).parent.parent / "src" / "dartlab" / "ui" / "vite.widget.config.js"
+        config = Path(__file__).parent.parent / "ui" / "vite.widget.config.js"
         assert config.exists()
 
 
@@ -104,14 +104,14 @@ class TestWidgetSource:
 
 class TestWidgetBuild:
     def test_embed_js_built(self):
-        embed = Path(__file__).parent.parent / "src" / "dartlab" / "ui" / "build" / "embed.js"
+        embed = Path(__file__).parent.parent / "ui" / "build" / "embed.js"
         if not embed.exists():
             pytest.skip("embed.js not built")
         assert embed.stat().st_size > 0
 
     def test_embed_js_size_under_50kb(self):
         """빌드된 embed.js가 50KB 미만인지 확인 (gzip 전)."""
-        embed = Path(__file__).parent.parent / "src" / "dartlab" / "ui" / "build" / "embed.js"
+        embed = Path(__file__).parent.parent / "ui" / "build" / "embed.js"
         if not embed.exists():
             pytest.skip("embed.js not built")
         size_kb = embed.stat().st_size / 1024

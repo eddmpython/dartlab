@@ -7,19 +7,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from dartlab.analysis.financial._helpers import annualColsFromPeriods as _annualColsFromPeriods
+from dartlab.analysis.financial._helpers import annualColsFromPeriods, toDict
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
 
 
 # ── 유틸 ──
-
-
-def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
-    from dartlab.analysis.financial._helpers import toDict
-
-    return toDict(selectResult)
 
 
 def _get(row: dict, col: str) -> float:
@@ -59,7 +53,7 @@ def calcCostBreakdown(company, *, basePeriod: str | None = None) -> dict | None:
     """
     accounts = ["매출액", "매출원가", "판매비와관리비"]
     isResult = company.select("IS", accounts)
-    isParsed = _toDict(isResult)
+    isParsed = toDict(isResult)
     if isParsed is None:
         return None
 
@@ -68,7 +62,7 @@ def calcCostBreakdown(company, *, basePeriod: str | None = None) -> dict | None:
     cogsRow = isData.get("매출원가", {})
     sgaRow = isData.get("판매비와관리비", {})
 
-    yCols = _annualColsFromPeriods(isPeriods, basePeriod, _MAX_YEARS)
+    yCols = annualColsFromPeriods(isPeriods, basePeriod, _MAX_YEARS)
     if not yCols:
         return None
 
@@ -129,7 +123,7 @@ def calcOperatingLeverage(company, *, basePeriod: str | None = None) -> dict | N
     """
     accounts = ["매출액", "영업이익", "매출총이익"]
     isResult = company.select("IS", accounts)
-    isParsed = _toDict(isResult)
+    isParsed = toDict(isResult)
     if isParsed is None:
         return None
 
@@ -138,7 +132,7 @@ def calcOperatingLeverage(company, *, basePeriod: str | None = None) -> dict | N
     opRow = isData.get("영업이익", {})
     gpRow = isData.get("매출총이익", {})
 
-    yCols = _annualColsFromPeriods(isPeriods, basePeriod, _MAX_YEARS)
+    yCols = annualColsFromPeriods(isPeriods, basePeriod, _MAX_YEARS)
     if not yCols:
         return None
 
@@ -207,7 +201,7 @@ def calcBreakevenEstimate(company, *, basePeriod: str | None = None) -> dict | N
     """
     accounts = ["매출액", "매출원가", "판매비와관리비"]
     isResult = company.select("IS", accounts)
-    isParsed = _toDict(isResult)
+    isParsed = toDict(isResult)
     if isParsed is None:
         return None
 
@@ -216,7 +210,7 @@ def calcBreakevenEstimate(company, *, basePeriod: str | None = None) -> dict | N
     cogsRow = isData.get("매출원가", {})
     sgaRow = isData.get("판매비와관리비", {})
 
-    yCols = _annualColsFromPeriods(isPeriods, basePeriod, _MAX_YEARS)
+    yCols = annualColsFromPeriods(isPeriods, basePeriod, _MAX_YEARS)
     if not yCols:
         return None
 
@@ -437,7 +431,7 @@ def calcRawMaterialBreakdown(company, *, basePeriod: str | None = None) -> dict 
         return None
 
     # 최신 연도 컬럼 사용 (basePeriod 이하, Q 없는 연도 우선)
-    annuals = _annualColsFromPeriods(pCols, basePeriod, 1)
+    annuals = annualColsFromPeriods(pCols, basePeriod, 1)
     latestCol = annuals[0] if annuals else pCols[0]
 
     items = df["항목"].to_list()

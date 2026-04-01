@@ -35,6 +35,11 @@ _backup/
 # Node modules (all locations)
 node_modules/
 
+# UI build artifacts
+ui/build/
+ui/node_modules/
+ui/.svelte-kit/
+
 # Landing page build artifacts
 landing/build/
 landing/.svelte-kit/
