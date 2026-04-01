@@ -65,6 +65,37 @@ def _getSector(company):
     return None
 
 
+def _isHolding(company) -> bool:
+    """지주사 여부."""
+    try:
+        name = getattr(company, "corpName", "") or ""
+        if any(k in name for k in ("지주", "홀딩스", "Holdings")):
+            return True
+    except (AttributeError, ImportError):
+        pass
+    return False
+
+
+def _getSectorEnum(name: str):
+    """Sector enum 값을 이름으로 조회."""
+    try:
+        from dartlab.core.sector.types import Sector
+        return getattr(Sector, name, None)
+    except ImportError:
+        return None
+
+
+def _getIndustryGroup(company):
+    """company.sector에서 IndustryGroup enum 추출."""
+    try:
+        si = getattr(company, "sector", None)
+        if si is not None:
+            return si.industryGroup
+    except (AttributeError, ImportError):
+        pass
+    return None
+
+
 def _isFinancial(company) -> bool:
     """금융업 여부."""
     try:
@@ -76,6 +107,121 @@ def _isFinancial(company) -> bool:
     except (AttributeError, ImportError):
         pass
     return False
+
+
+def _isCaptiveFinance(company, totalBorrowing: float, ebitda: float | None) -> bool:
+    """캡티브 금융 복합기업 감지.
+
+    비금융업인데 Debt/EBITDA > 15이고 차입금의존도 > 25%이면
+    금융자회사 연결 효과로 판단. 현대차/삼성/SK 등.
+    """
+    if _isFinancial(company):
+        return False
+    if ebitda is None or ebitda <= 0 or totalBorrowing <= 0:
+        return False
+    debtEbitda = totalBorrowing / ebitda
+    return debtEbitda > 15
+
+
+def _calcBusinessRisk(company, metrics: dict) -> dict | None:
+    """사업위험 정량화 — 매출 안정성 + 이익 안정성 + 규모.
+
+    신평사의 사업위험 중 정량화 가능한 부분:
+    - 매출 변동성 (CV) → 낮을수록 안정
+    - 이익 변동성 (CV) → 낮을수록 안정
+    - 매출 규모 (절대값) → 클수록 안정
+    - 영업이익률 수준 → 높을수록 강한 경쟁력
+    """
+    history = metrics.get("history", [])
+    if len(history) < 3:
+        return None
+
+    stabilityMetrics = metrics.get("stabilityMetrics", {})
+    revenueCV = stabilityMetrics.get("revenueCV")
+    opMarginCV = stabilityMetrics.get("operatingMarginCV")
+
+    # 매출 규모 (최신, 조 단위 환산)
+    latestRevenue = None
+    try:
+        ratios = getRatios(company)
+        if ratios and ratios.revenueTTM:
+            latestRevenue = ratios.revenueTTM
+    except (AttributeError, ValueError):
+        pass
+
+    # 평균 영업이익률
+    margins = []
+    for h in history:
+        ocfSales = h.get("ocfToSales")
+        if ocfSales is not None:
+            margins.append(ocfSales)
+
+    avgMargin = sum(margins) / len(margins) if margins else None
+
+    # 사업위험 점수 산출 (0-100, 높을수록 위험)
+    scores = []
+
+    # 매출 안정성 (CV 기반)
+    if revenueCV is not None:
+        if revenueCV < 5:
+            scores.append(("매출안정성", 0.0))
+        elif revenueCV < 15:
+            scores.append(("매출안정성", (revenueCV - 5) * 2))
+        elif revenueCV < 30:
+            scores.append(("매출안정성", 20 + (revenueCV - 15) * 2))
+        else:
+            scores.append(("매출안정성", min(60, 50 + (revenueCV - 30))))
+
+    # 이익 안정성
+    if opMarginCV is not None:
+        if opMarginCV < 10:
+            scores.append(("이익안정성", 0.0))
+        elif opMarginCV < 30:
+            scores.append(("이익안정성", (opMarginCV - 10) * 1.5))
+        elif opMarginCV < 60:
+            scores.append(("이익안정성", 30 + (opMarginCV - 30)))
+        else:
+            scores.append(("이익안정성", min(60, 60)))
+
+    # 규모 (매출 기준)
+    if latestRevenue is not None:
+        revTril = latestRevenue / 1e12  # 조 단위
+        if revTril > 50:
+            scores.append(("규모", 0.0))
+        elif revTril > 10:
+            scores.append(("규모", 5.0))
+        elif revTril > 1:
+            scores.append(("규모", 15.0))
+        elif revTril > 0.1:
+            scores.append(("규모", 30.0))
+        else:
+            scores.append(("규모", 45.0))
+
+    # 영업이익률 수준
+    if avgMargin is not None:
+        if avgMargin > 20:
+            scores.append(("마진수준", 0.0))
+        elif avgMargin > 10:
+            scores.append(("마진수준", 5.0))
+        elif avgMargin > 5:
+            scores.append(("마진수준", 15.0))
+        elif avgMargin > 0:
+            scores.append(("마진수준", 30.0))
+        else:
+            scores.append(("마진수준", 50.0))
+
+    if not scores:
+        return None
+
+    from dartlab.core.finance.creditScorecard import axisScore
+
+    score = axisScore(scores)
+    return {
+        "score": score,
+        "metrics": scores,
+        "revenueCV": revenueCV,
+        "opMarginCV": opMarginCV,
+    }
 
 
 # ═══════════════════════════════════════════════════════════
@@ -343,8 +489,26 @@ def calcCreditScore(company, *, basePeriod: str | None = None) -> dict | None:
 
     latest = metrics["history"][0]  # 최신 기간
     sector = _getSector(company)
-    thresholds = getThresholds(sector)
+    industryGroup = _getIndustryGroup(company)
+    thresholds = getThresholds(sector, industryGroup)
     sectorLabel = getSectorLabel(sector)
+
+    # ── 캡티브 금융 복합기업 감지 ──
+    # 비금융업인데 금융자회사 연결로 차입금/부채 과대계상된 경우
+    # Debt/EBITDA, 차입금의존도 등 레버리지 지표를 완화 처리
+    isCaptive = _isCaptiveFinance(
+        company,
+        latest.get("totalBorrowing") or 0,
+        latest.get("ebitda"),
+    )
+
+    if isCaptive:
+        # 캡티브 금융: 부채 관련 지표를 유틸리티 기준으로 완화
+        from dartlab.core.finance.sectorThresholds import getThresholds as _getT
+        from dartlab.core.sector.types import Sector as _S
+
+        thresholds = _getT(_S.UTILITIES)
+        sectorLabel = f"{sectorLabel} (캡티브금융조정)"
 
     # ── 축 1: 채무상환능력 (35%) ──
     repayment_scores = [
@@ -372,10 +536,10 @@ def calcCreditScore(company, *, basePeriod: str | None = None) -> dict | None:
     liquidityScore = axisScore(liquidity_scores)
 
     # ── 축 4: 부실모델 앙상블 (15%) ──
+    # 연속 정규화: 이진 판정(0/70)이 아닌 선형 보간으로 과대평가 방지
     ratios = getRatios(company)
     distressScores: list[tuple[str, float | None]] = []
     if ratios is not None:
-        # 기존 ratios에서 이미 계산된 부실 모델 활용
         from dartlab.analysis.financial.insight.distress import (
             _normalizeOhlson,
             _normalizeZ,
@@ -388,16 +552,35 @@ def calcCreditScore(company, *, basePeriod: str | None = None) -> dict | None:
             distressScores.append(("Altman Z''", _normalizeZpp(ratios.altmanZppScore)))
         if ratios.altmanZScore is not None:
             distressScores.append(("Altman Z", _normalizeZ(ratios.altmanZScore)))
+        # Springate: 연속 정규화 (이전: 0/70 이진)
         if ratios.springateSScore is not None:
-            sNorm = 0.0 if ratios.springateSScore > 0.862 else 70.0
-            distressScores.append(("Springate S", sNorm))
+            s = ratios.springateSScore
+            if s > 1.5:
+                sNorm = 0.0
+            elif s > 0.862:
+                sNorm = (1 - (s - 0.862) / 0.638) * 30
+            elif s > 0.5:
+                sNorm = 30 + (1 - (s - 0.5) / 0.362) * 30
+            else:
+                sNorm = min(80, 60 + (0.5 - s) * 40)
+            distressScores.append(("Springate S", round(sNorm, 1)))
+        # Zmijewski: 연속 정규화 (이전: 0/70 이진)
         if ratios.zmijewskiXScore is not None:
-            zNorm = 0.0 if ratios.zmijewskiXScore < 0 else 70.0
-            distressScores.append(("Zmijewski X", zNorm))
+            x = ratios.zmijewskiXScore
+            if x < -3.0:
+                zNorm = 0.0
+            elif x < 0:
+                zNorm = (x + 3.0) / 3.0 * 25
+            elif x < 1.0:
+                zNorm = 25 + x * 25
+            else:
+                zNorm = min(80, 50 + (x - 1.0) * 15)
+            distressScores.append(("Zmijewski X", round(zNorm, 1)))
 
     distressScore = axisScore(distressScores) if distressScores else None
 
     # ── 축 5: 이익품질·추세 (10%) ──
+    # 신용등급 맥락: 이익품질은 보조 축이므로 점수 상한을 50으로 제한
     qualityScores: list[tuple[str, float | None]] = []
     if ratios is not None:
         from dartlab.analysis.financial.insight.distress import (
@@ -407,33 +590,113 @@ def calcCreditScore(company, *, basePeriod: str | None = None) -> dict | None:
         )
 
         if ratios.beneishMScore is not None:
-            qualityScores.append(("Beneish M", _normalizeBeneish(ratios.beneishMScore)))
+            # Beneish: 신용등급용 완화 (M < -2.22이면 0, 조작 구간만 경고)
+            m = ratios.beneishMScore
+            if m < -2.22:
+                bScore = 0.0
+            elif m < -1.78:
+                bScore = 20.0
+            else:
+                bScore = 45.0
+            qualityScores.append(("Beneish M", bScore))
         if ratios.sloanAccrualRatio is not None:
-            qualityScores.append(("Sloan Accrual", _normalizeSloan(ratios.sloanAccrualRatio)))
+            # Sloan: 완화 (|ratio| < 15%는 정상)
+            absR = abs(ratios.sloanAccrualRatio)
+            if absR > 25:
+                slScore = 45.0
+            elif absR > 15:
+                slScore = 20.0
+            else:
+                slScore = max(0, absR * 0.8)
+            qualityScores.append(("Sloan Accrual", round(slScore, 1)))
         if ratios.piotroskiFScore is not None:
-            qualityScores.append(("Piotroski F", _normalizeFScore(ratios.piotroskiFScore)))
+            # Piotroski: 완화 (F>=5이면 안전, F<=2만 경고)
+            f = ratios.piotroskiFScore
+            if f >= 7:
+                fScore = 0.0
+            elif f >= 5:
+                fScore = 10.0
+            elif f >= 3:
+                fScore = 25.0
+            else:
+                fScore = 45.0
+            qualityScores.append(("Piotroski F", fScore))
 
-    # 이익 변동성 (CV 기반)
+    # 이익 변동성 (CV 기반) — 완화
     stabilityMetrics = metrics.get("stabilityMetrics", {})
     opMarginCV = stabilityMetrics.get("operatingMarginCV")
     if opMarginCV is not None:
-        # CV 50% 이상 → 위험 70점, CV 10% 이하 → 안전 5점
-        cvScore = min(70, max(5, opMarginCV * 1.4))
+        # CV 80% 이상 → 45점, CV 20% 이하 → 0점 (이전: CV*1.4로 과대)
+        cvScore = min(45, max(0, (opMarginCV - 20) * 0.75))
         qualityScores.append(("이익변동성", round(cvScore, 2)))
 
     qualityScore = axisScore(qualityScores) if qualityScores else None
 
-    # ── 5축 가중평균 ──
+    # ── 축 6: 사업위험 (10%) ──
+    bizRisk = _calcBusinessRisk(company, metrics)
+    bizRiskScore = bizRisk["score"] if bizRisk else None
+
+    # ── 6축 가중평균 ──
+    # 업종별 가중치 조정:
+    # - 금융업: 레버리지/유동성 강화, 부실모델 축소 (은행 부채구조 왜곡)
+    # - 에너지/소재/자동차: 부실모델 축소 (사이클 업종 Z-Score 구조적 저평가)
+    # - 캡티브금융: 부실모델 대폭 축소
     isFinancialCo = _isFinancial(company)
+    isCyclical = sector in (
+        _getSectorEnum("ENERGY"), _getSectorEnum("MATERIALS"),
+    ) if sector else False
+    isHolding = _isHolding(company)
+
+    if isFinancialCo:
+        distressWeight, repayWeight, leverageWeight = 0.05, 0.30, 0.20
+    elif isCaptive:
+        distressWeight, repayWeight, leverageWeight = 0.05, 0.25, 0.15
+    elif isCyclical:
+        distressWeight, repayWeight, leverageWeight = 0.05, 0.30, 0.20
+    elif isHolding:
+        distressWeight, repayWeight, leverageWeight = 0.05, 0.25, 0.20
+    else:
+        distressWeight, repayWeight, leverageWeight = 0.10, 0.30, 0.20
+
+    bizWeight = max(0.10, 1.0 - repayWeight - leverageWeight - 0.15 - distressWeight - 0.10)
+
     axes = [
-        {"name": "채무상환능력", "score": repaymentScore, "weight": 0.30 if isFinancialCo else 0.35},
-        {"name": "레버리지", "score": leverageScore, "weight": 0.20 if isFinancialCo else 0.25},
-        {"name": "유동성·만기", "score": liquidityScore, "weight": 0.20 if isFinancialCo else 0.15},
-        {"name": "부실모델 앙상블", "score": distressScore, "weight": 0.20 if isFinancialCo else 0.15},
-        {"name": "이익품질·추세", "score": qualityScore, "weight": 0.10},
+        {"name": "채무상환능력", "score": repaymentScore, "weight": repayWeight},
+        {"name": "레버리지", "score": leverageScore, "weight": leverageWeight},
+        {"name": "유동성·만기", "score": liquidityScore, "weight": 0.15},
+        {"name": "부실모델 앙상블", "score": distressScore, "weight": distressWeight},
+        {"name": "이익품질", "score": qualityScore, "weight": 0.10},
+        {"name": "사업위험", "score": bizRiskScore, "weight": bizWeight},
     ]
 
-    overall = weightedScore(axes)
+    currentScore = weightedScore(axes)
+
+    # ── 시계열 안정성 보정 (3개년 가중 이동평균) ──
+    # 등급의 급변동을 방지: 최신 60% + 과거1 25% + 과거2 15%
+    historicalScores = []
+    for h in metrics["history"][1:3]:  # 과거 2개 기간
+        pScores = []
+        for metricKey, threshKey in [
+            ("ffoToDebt", "ffo_to_debt"),
+            ("debtToEbitda", "debt_to_ebitda"),
+            ("ebitdaInterestCoverage", "ebitda_interest_coverage"),
+            ("debtRatio", "debt_ratio"),
+            ("currentRatio", "current_ratio"),
+        ]:
+            s = scoreMetric(h.get(metricKey), thresholds[threshKey])
+            if s is not None:
+                pScores.append(s)
+        if pScores:
+            historicalScores.append(round(sum(pScores) / len(pScores), 2))
+
+    if len(historicalScores) >= 2:
+        overall = currentScore * 0.60 + historicalScores[0] * 0.25 + historicalScores[1] * 0.15
+    elif len(historicalScores) == 1:
+        overall = currentScore * 0.70 + historicalScores[0] * 0.30
+    else:
+        overall = currentScore
+
+    overall = round(overall, 2)
     grade, gradeDesc, pdEstimate = mapTo20Grade(overall)
 
     # ── 현금흐름등급 ──
@@ -480,12 +743,14 @@ def calcCreditScore(company, *, basePeriod: str | None = None) -> dict | None:
             ],
         }
 
+    bizRiskMetrics = bizRisk["metrics"] if bizRisk else []
     axesDetail = [
         _formatAxis("채무상환능력", repaymentScore, axes[0]["weight"], repayment_scores),
         _formatAxis("레버리지", leverageScore, axes[1]["weight"], leverage_scores),
         _formatAxis("유동성·만기", liquidityScore, axes[2]["weight"], liquidity_scores),
         _formatAxis("부실모델 앙상블", distressScore, axes[3]["weight"], distressScores),
-        _formatAxis("이익품질·추세", qualityScore, axes[4]["weight"], qualityScores),
+        _formatAxis("이익품질", qualityScore, axes[4]["weight"], qualityScores),
+        _formatAxis("사업위험", bizRiskScore, axes[5]["weight"], bizRiskMetrics),
     ]
 
     return {
@@ -498,6 +763,7 @@ def calcCreditScore(company, *, basePeriod: str | None = None) -> dict | None:
         "eCR": eCR,
         "outlook": outlook,
         "sector": sectorLabel,
+        "captiveFinance": isCaptive,
         "axes": axesDetail,
         "latestPeriod": latest.get("period"),
         "qualitativeSlots": {

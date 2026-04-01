@@ -13,7 +13,7 @@ KIS/KR/NICE + Moody's/S&P 공개 방법론을 종합하여
 
 from __future__ import annotations
 
-from dartlab.core.sector.types import Sector
+from dartlab.core.sector.types import IndustryGroup, Sector
 
 # ── 등급 구간 정의 ──
 #
@@ -179,8 +179,90 @@ _SECTOR_THRESHOLDS: dict[Sector, dict] = {
 }
 
 
-def getThresholds(sector: Sector | None) -> dict:
-    """업종별 기준표 반환. None이면 기본(제조업) 반환."""
+def _energyThresholds() -> dict:
+    """에너지 — 사이클 업종, 높은 부채/CAPEX 허용."""
+    base = _defaultThresholds()
+    base["debt_ratio"]["breakpoints"] = [
+        (0.0, 0), (40.0, 2), (80.0, 5), (120.0, 10),
+        (180.0, 18), (250.0, 30), (350.0, 48), (500.0, 68), (700.0, 85),
+    ]
+    base["debt_to_ebitda"]["breakpoints"] = [
+        (0.0, 0), (0.5, 3), (1.5, 8), (2.5, 15),
+        (3.5, 25), (5.0, 38), (7.0, 55), (10.0, 75), (15.0, 90),
+    ]
+    return base
+
+
+def _shipbuildingThresholds() -> dict:
+    """조선 — 극심한 사이클, 선수금 구조, 장기 프로젝트."""
+    base = _constructionThresholds()
+    # 부채비율 완화 (수주산업 특성)
+    base["debt_ratio"]["breakpoints"] = [
+        (0.0, 0), (50.0, 2), (100.0, 5), (200.0, 12),
+        (300.0, 22), (400.0, 38), (600.0, 58), (800.0, 78), (1000.0, 90),
+    ]
+    return base
+
+
+def _semiconductorThresholds() -> dict:
+    """반도체 — 극심한 사이클, 대규모 CAPEX, 현금흐름 변동."""
+    base = _itThresholds()
+    # CAPEX 사이클로 부채 일시 급증 허용
+    base["debt_to_ebitda"]["breakpoints"] = [
+        (0.0, 0), (0.5, 3), (1.0, 8), (2.0, 15),
+        (3.0, 25), (5.0, 40), (8.0, 60), (12.0, 80), (20.0, 92),
+    ]
+    base["net_debt_to_ebitda"]["breakpoints"] = [
+        (-5.0, 0), (0.0, 3), (1.0, 10), (2.0, 18),
+        (3.0, 28), (5.0, 42), (8.0, 62), (12.0, 80), (20.0, 92),
+    ]
+    return base
+
+
+def _autoThresholds() -> dict:
+    """자동차 — 캡티브 금융 연결, 높은 부채비율 정상."""
+    base = _defaultThresholds()
+    base["debt_ratio"]["breakpoints"] = [
+        (0.0, 0), (50.0, 2), (100.0, 5), (150.0, 10),
+        (200.0, 18), (300.0, 28), (400.0, 42), (600.0, 62), (800.0, 82),
+    ]
+    base["debt_to_ebitda"]["breakpoints"] = [
+        (0.0, 0), (1.0, 3), (2.0, 8), (3.0, 15),
+        (5.0, 25), (8.0, 40), (12.0, 58), (20.0, 78), (30.0, 90),
+    ]
+    base["borrowing_dependency"]["breakpoints"] = [
+        (0.0, 0), (10.0, 3), (20.0, 8), (30.0, 15),
+        (40.0, 25), (50.0, 38), (60.0, 52), (70.0, 68), (80.0, 82),
+    ]
+    return base
+
+
+# ── IndustryGroup별 override ──
+
+_INDUSTRY_THRESHOLDS: dict[IndustryGroup, dict] = {
+    IndustryGroup.CONSTRUCTION: _constructionThresholds(),
+    IndustryGroup.SHIPBUILDING: _shipbuildingThresholds(),
+    IndustryGroup.SEMICONDUCTOR: _semiconductorThresholds(),
+    IndustryGroup.AUTO: _autoThresholds(),
+    IndustryGroup.BANK: _financialsThresholds(),
+    IndustryGroup.INSURANCE: _financialsThresholds(),
+    IndustryGroup.DIVERSIFIED_FINANCIALS: _financialsThresholds(),
+    IndustryGroup.OIL_GAS: _energyThresholds(),
+    IndustryGroup.CHEMICAL: _energyThresholds(),
+    IndustryGroup.ELECTRIC: _utilitiesThresholds(),
+    IndustryGroup.GAS_UTILITY: _utilitiesThresholds(),
+}
+
+_SECTOR_THRESHOLDS[Sector.ENERGY] = _energyThresholds()
+
+
+def getThresholds(sector: Sector | None, industryGroup: IndustryGroup | None = None) -> dict:
+    """업종별 기준표 반환.
+
+    IndustryGroup override가 있으면 우선, 없으면 Sector 대분류 사용.
+    """
+    if industryGroup is not None and industryGroup in _INDUSTRY_THRESHOLDS:
+        return _INDUSTRY_THRESHOLDS[industryGroup]
     if sector is None:
         return _defaultThresholds()
     return _SECTOR_THRESHOLDS.get(sector, _defaultThresholds())
