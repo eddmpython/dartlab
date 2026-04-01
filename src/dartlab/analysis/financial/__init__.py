@@ -389,24 +389,18 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
             _CalcEntry(
                 "calcCreditMetrics", "dartlab.analysis.financial.creditRating", "creditMetrics", "신용평가 지표"
             ),
-            _CalcEntry(
-                "calcCreditScore", "dartlab.analysis.financial.creditRating", "creditScore", "신용등급 종합"
-            ),
+            _CalcEntry("calcCreditScore", "dartlab.analysis.financial.creditRating", "creditScore", "신용등급 종합"),
             _CalcEntry(
                 "calcCreditHistory", "dartlab.analysis.financial.creditRating", "creditHistory", "신용등급 시계열"
             ),
-            _CalcEntry(
-                "calcCashFlowGrade", "dartlab.analysis.financial.creditRating", "cashFlowGrade", "현금흐름등급"
-            ),
+            _CalcEntry("calcCashFlowGrade", "dartlab.analysis.financial.creditRating", "cashFlowGrade", "현금흐름등급"),
             _CalcEntry(
                 "calcCreditPeerPosition",
                 "dartlab.analysis.financial.creditRating",
                 "creditPeerPosition",
                 "업종 내 신용 순위",
             ),
-            _CalcEntry(
-                "calcCreditFlags", "dartlab.analysis.financial.creditRating", "creditFlags", "신용 플래그"
-            ),
+            _CalcEntry("calcCreditFlags", "dartlab.analysis.financial.creditRating", "creditFlags", "신용 플래그"),
         ),
     ),
     # ── 4부: 가치평가 ──

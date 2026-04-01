@@ -477,13 +477,14 @@ def _streamWithCodeExecution(
                 return
         prevCode = code
 
-        # 진행 이벤트
+        # 진행 이벤트 — 실행 시작
         yield AnalysisEvent(
             "code_round",
             {
                 "round": _round + 1,
                 "maxRounds": maxRounds,
                 "status": "executing",
+                "code": code,
             },
         )
 
@@ -492,8 +493,21 @@ def _streamWithCodeExecution(
         except (OSError, RuntimeError, TimeoutError, ValueError) as exc:
             result = f"실행 오류: {exc}"
 
+        # 진행 이벤트 — 실행 완료 (코드 + 결과 포함)
+        formatted = _formatResultForUser(result)
+        yield AnalysisEvent(
+            "code_round",
+            {
+                "round": _round + 1,
+                "maxRounds": maxRounds,
+                "status": "done",
+                "code": code,
+                "result": formatted,
+            },
+        )
+
         # 실행 결과 알림 (사용자용: 마크다운 테이블 변환 — 전체 표시)
-        yield _formatResultForUser(result)
+        yield formatted
 
         # 결과를 대화에 추가하여 LLM이 해석하도록 재요청
         messages.append({"role": "assistant", "content": buffer})

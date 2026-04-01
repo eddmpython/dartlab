@@ -1076,6 +1076,12 @@ class Company:
             return _analysis(axis, sub, company=self, **kwargs)
         return _analysis(axis, company=self, **kwargs)
 
+    def credit(self, axis: str | None = None, *, detail: bool = False, basePeriod: str | None = None):
+        """독립 신용평가 — dCR 20단계 등급."""
+        from dartlab.credit import creditCompany
+
+        return creditCompany(self, axis=axis, detail=detail, basePeriod=basePeriod)
+
     def gather(self, axis: str | None = None, **kwargs):
         """외부 시장 데이터 수집 — gather()에 self.ticker를 바인딩.
 

@@ -157,6 +157,7 @@ def gradeCategory(grade: str) -> str:
 
 # ── 현금흐름등급 (eCR) ──
 
+
 def cashFlowGrade(
     ocf_to_sales: float | None,
     fcf_positive: bool | None,
@@ -171,11 +172,7 @@ def cashFlowGrade(
         return "eCR-?"
 
     # eCR-1: 최상의 현금흐름
-    if (
-        ocf_to_sales > 15
-        and (fcf_positive is True)
-        and (ocf_to_debt is not None and ocf_to_debt > 30)
-    ):
+    if ocf_to_sales > 15 and (fcf_positive is True) and (ocf_to_debt is not None and ocf_to_debt > 30):
         return "eCR-1"
 
     # eCR-2: 우수
@@ -199,6 +196,7 @@ def cashFlowGrade(
 
 
 # ── 등급 전망 (Outlook) ──
+
 
 def creditOutlook(scoreHistory: list[float]) -> str:
     """5개년 종합점수 추세 → 안정적/긍정적/부정적.

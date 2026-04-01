@@ -36,6 +36,7 @@ def _isFinancial(company) -> bool:
         sector, _ = _getSectorInfo(company)
         if sector is not None:
             from dartlab.core.sector.types import Sector
+
             return sector == Sector.FINANCIALS
     except (AttributeError, ImportError):
         pass
@@ -58,6 +59,7 @@ def _isCyclical(sector) -> bool:
         return False
     try:
         from dartlab.core.sector.types import Sector
+
         return sector in (Sector.ENERGY, Sector.MATERIALS)
     except ImportError:
         return False
@@ -94,6 +96,7 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
     # 캡티브 금융이면 유틸리티 기준 적용
     if captive:
         from dartlab.core.sector.types import Sector
+
         thresholds = getThresholds(Sector.UTILITIES, None)
         sectorLabel = f"{getSectorLabel(sector)} (캡티브금융조정)"
     else:
@@ -185,7 +188,8 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         latest.get("fcf") is not None and (latest.get("fcf") or 0) > 0,
         latest.get("ocfToDebt"),
         all(h.get("ocf") is not None and (h.get("ocf") or 0) > 0 for h in metrics["history"][:3])
-        if len(metrics["history"]) >= 3 else None,
+        if len(metrics["history"]) >= 3
+        else None,
     )
 
     # ── Outlook ──

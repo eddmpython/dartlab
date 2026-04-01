@@ -3060,7 +3060,9 @@ def creditMetricsBlock(data: dict) -> list:
         rows.append(
             {
                 "기간": h["period"],
-                "EBITDA/이자": f"{h['ebitdaInterestCoverage']:.1f}x" if h.get("ebitdaInterestCoverage") is not None else "-",
+                "EBITDA/이자": f"{h['ebitdaInterestCoverage']:.1f}x"
+                if h.get("ebitdaInterestCoverage") is not None
+                else "-",
                 "Debt/EBITDA": f"{h['debtToEbitda']:.1f}x" if h.get("debtToEbitda") is not None else "-",
                 "FFO/Debt": f"{h['ffoToDebt']:.0f}%" if h.get("ffoToDebt") is not None else "-",
                 "부채비율": f"{h['debtRatio']:.0f}%" if h.get("debtRatio") is not None else "-",

@@ -156,7 +156,9 @@ _BLOCKS: list[BlockMeta] = [
     BlockMeta("articulationCheck", "BS-CF 정합성", "재무정합성", "PPE/현금/자본 3표 연결 검증"),
     BlockMeta("crossStatementFlags", "재무정합성 플래그", "재무정합성", "교차검증+세금 경고 신호"),
     # ── 3-6 신용평가 ──
-    BlockMeta("creditMetrics", "신용평가 지표", "신용평가", "16개 핵심 지표 시계열 (채무상환/레버리지/유동성/현금흐름)"),
+    BlockMeta(
+        "creditMetrics", "신용평가 지표", "신용평가", "16개 핵심 지표 시계열 (채무상환/레버리지/유동성/현금흐름)"
+    ),
     BlockMeta("creditScore", "신용등급 종합", "신용평가", "20단계 등급(AAA~D) + 5축 가중평균 + 업종 조정"),
     BlockMeta("creditHistory", "신용등급 시계열", "신용평가", "5개년 등급 변화 궤적"),
     BlockMeta("cashFlowGrade", "현금흐름등급", "신용평가", "eCR-1~6 현금흐름창출능력 별도 평가"),

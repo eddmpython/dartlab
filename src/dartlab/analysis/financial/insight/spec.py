@@ -124,11 +124,19 @@ CREDIT_RATING = {
     "label": "신용평가",
     "description": "제도권 수준 20단계 신용등급 (AAA~D, +/- 포함). 5축 가중평균 + 업종별 차등 기준.",
     "axes": [
-        {"name": "채무상환능력", "weight": "35%", "metrics": ["FFO/총차입금", "Debt/EBITDA", "FOCF/Debt", "EBITDA/이자비용"]},
+        {
+            "name": "채무상환능력",
+            "weight": "35%",
+            "metrics": ["FFO/총차입금", "Debt/EBITDA", "FOCF/Debt", "EBITDA/이자비용"],
+        },
         {"name": "레버리지", "weight": "25%", "metrics": ["부채비율", "차입금의존도", "순차입금/EBITDA"]},
         {"name": "유동성·만기", "weight": "15%", "metrics": ["유동비율", "현금비율", "단기차입금비중"]},
         {"name": "부실모델 앙상블", "weight": "15%", "metrics": ["Altman Z", "Ohlson O", "Zmijewski", "Springate"]},
-        {"name": "이익품질·추세", "weight": "10%", "metrics": ["Beneish M", "Sloan Accrual", "Piotroski F", "이익변동성"]},
+        {
+            "name": "이익품질·추세",
+            "weight": "10%",
+            "metrics": ["Beneish M", "Sloan Accrual", "Piotroski F", "이익변동성"],
+        },
     ],
     "grades": "AAA, AA+, AA, AA-, A+, A, A-, BBB+, BBB, BBB-, BB+, BB, BB-, B+, B, B-, CCC, CC, C, D",
     "cashFlowGrade": "eCR-1 ~ eCR-6 (현금흐름창출능력 별도 평가)",

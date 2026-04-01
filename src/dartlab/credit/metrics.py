@@ -63,22 +63,40 @@ def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
     notes/sections에서 추가 정보를 보강한다.
     """
     # ── 원본 데이터 수집 ──
-    bsResult = company.select("BS", [
-        "자산총계", "부채총계", "자본총계",
-        "유동자산", "유동부채", "비유동부채",
-        "현금및현금성자산", "단기차입금", "장기차입금", "사채",
-        "재고자산", "이익잉여금",
-    ])
+    bsResult = company.select(
+        "BS",
+        [
+            "자산총계",
+            "부채총계",
+            "자본총계",
+            "유동자산",
+            "유동부채",
+            "비유동부채",
+            "현금및현금성자산",
+            "단기차입금",
+            "장기차입금",
+            "사채",
+            "재고자산",
+            "이익잉여금",
+        ],
+    )
     bsParsed = _toDict(bsResult)
     if bsParsed is None:
         return None
     bsData, bsPeriods = bsParsed
 
-    isResult = company.select("IS", [
-        "매출액", "영업이익", "당기순이익",
-        "금융비용", "이자비용", "감가상각비",
-        "매출총이익",
-    ])
+    isResult = company.select(
+        "IS",
+        [
+            "매출액",
+            "영업이익",
+            "당기순이익",
+            "금융비용",
+            "이자비용",
+            "감가상각비",
+            "매출총이익",
+        ],
+    )
     isParsed = _toDict(isResult)
     if isParsed is None:
         return None
@@ -195,36 +213,38 @@ def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
         opMargins.append(opMargin)
         revenues.append(revenue)
 
-        history.append({
-            "period": col,
-            # 원본
-            "totalAssets": totalAssets,
-            "totalBorrowing": totalBorrowing if totalBorrowing > 0 else None,
-            "ebitda": ebitda,
-            "ffo": ffo,
-            "ocf": ocfVal,
-            "fcf": fcf,
-            "netDebt": netDebt,
-            "revenue": revenue,
-            "operatingIncome": opIncome,
-            # 축 1: 채무상환
-            "ffoToDebt": ffoToDebt,
-            "debtToEbitda": debtToEbitda,
-            "focfToDebt": focfToDebt,
-            "ebitdaInterestCoverage": ebitdaInterest,
-            # 축 2: 자본구조
-            "debtRatio": debtRatio,
-            "borrowingDependency": borrowingDep,
-            "netDebtToEbitda": netDebtEbitda,
-            # 축 3: 유동성
-            "currentRatio": currentRatio,
-            "cashRatio": cashRatio,
-            "shortTermDebtRatio": stDebtRatio,
-            # 축 4: 현금흐름
-            "ocfToSales": ocfToSales,
-            "fcfToSales": fcfToSales,
-            "ocfToDebt": ocfToDebt,
-        })
+        history.append(
+            {
+                "period": col,
+                # 원본
+                "totalAssets": totalAssets,
+                "totalBorrowing": totalBorrowing if totalBorrowing > 0 else None,
+                "ebitda": ebitda,
+                "ffo": ffo,
+                "ocf": ocfVal,
+                "fcf": fcf,
+                "netDebt": netDebt,
+                "revenue": revenue,
+                "operatingIncome": opIncome,
+                # 축 1: 채무상환
+                "ffoToDebt": ffoToDebt,
+                "debtToEbitda": debtToEbitda,
+                "focfToDebt": focfToDebt,
+                "ebitdaInterestCoverage": ebitdaInterest,
+                # 축 2: 자본구조
+                "debtRatio": debtRatio,
+                "borrowingDependency": borrowingDep,
+                "netDebtToEbitda": netDebtEbitda,
+                # 축 3: 유동성
+                "currentRatio": currentRatio,
+                "cashRatio": cashRatio,
+                "shortTermDebtRatio": stDebtRatio,
+                # 축 4: 현금흐름
+                "ocfToSales": ocfToSales,
+                "fcfToSales": fcfToSales,
+                "ocfToDebt": ocfToDebt,
+            }
+        )
 
     if not history:
         return None

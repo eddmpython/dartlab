@@ -2933,6 +2933,34 @@ class Company:
             return _analysis(axis, sub, company=self, **kwargs)
         return _analysis(axis, company=self, **kwargs)
 
+    def credit(self, axis: str | None = None, *, detail: bool = False, basePeriod: str | None = None):
+        """독립 신용평가 — dCR 20단계 등급.
+
+        dartlab 독립 신용평가 엔진(credit/)이 산출하는 dCR 등급.
+        7축 정량 스코어링 + 업종별 차등 + 시계열 안정화.
+
+        Args:
+            axis: 축 이름 ("채무상환", "자본구조" 등). None이면 등급 종합.
+            detail: True이면 7축 상세 + 지표 시계열 포함.
+            basePeriod: 분석 기준 기간. None이면 최신.
+
+        Returns:
+            dict | None: 등급 결과. axis 지정 시 해당 축만.
+
+        Example::
+
+            c.credit()              # → {"grade": "dCR-AA", "score": 6.6, ...}
+            c.credit("채무상환")     # → {"axis": "채무상환능력", "score": 2.7, ...}
+            c.credit(detail=True)   # → 7축 상세 + metricsHistory
+
+        SeeAlso:
+            - review("신용평가"): 보고서 형식으로 렌더링
+            - analysis("financial", "신용평가"): analysis 축으로 접근
+        """
+        from dartlab.credit import creditCompany
+
+        return creditCompany(self, axis=axis, detail=detail, basePeriod=basePeriod)
+
     def gather(self, axis: str | None = None, **kwargs):
         """외부 시장 데이터 수집 — 4축 (price/flow/macro/news).
 
