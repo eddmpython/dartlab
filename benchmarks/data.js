@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775029725047,
+  "lastUpdate": 1775030858522,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -348,6 +348,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.7251337434555377e-7",
             "extra": "mean: 674.4139755645554 nsec\nrounds: 198060"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "6514cd32efbaabd2e65c7d223822e4317a30024e",
+          "message": "refactor: altair 제거 + extras 3개로 축소\n\n- altairChart.py 삭제 + altair extras 제거\n- tavily extras 제거 (SDK 있는 사용자만 자동 동작)\n- channel 관련 extras 제거\n- 최종 extras: [server], [viz], [all] 3개만\n- base: core + ai(openai/gemini) + openpyxl + diff-match-patch",
+          "timestamp": "2026-04-01T17:06:47+09:00",
+          "tree_id": "af8e0d6569e143e5501fcf8b013eaf7bc5b19ae4",
+          "url": "https://github.com/eddmpython/dartlab/commit/6514cd32efbaabd2e65c7d223822e4317a30024e"
+        },
+        "date": 1775030857949,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 538668.14287016,
+            "unit": "iter/sec",
+            "range": "stddev: 4.989229378926532e-7",
+            "extra": "mean: 1.8564305560595198 usec\nrounds: 54994"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 675717.0311383978,
+            "unit": "iter/sec",
+            "range": "stddev: 4.76705806297913e-7",
+            "extra": "mean: 1.4799094205384677 usec\nrounds: 144238"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 533707.9242251798,
+            "unit": "iter/sec",
+            "range": "stddev: 8.444771074816417e-7",
+            "extra": "mean: 1.8736840031966326 usec\nrounds: 115248"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 655185.8880593366,
+            "unit": "iter/sec",
+            "range": "stddev: 6.385323912747566e-7",
+            "extra": "mean: 1.5262843999311466 usec\nrounds: 152602"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 909375.31178435,
+            "unit": "iter/sec",
+            "range": "stddev: 2.1743654939617583e-7",
+            "extra": "mean: 1.0996559803650585 usec\nrounds: 176026"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 271055.9024223658,
+            "unit": "iter/sec",
+            "range": "stddev: 6.886101022512106e-7",
+            "extra": "mean: 3.6892758691591827 usec\nrounds: 73234"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7195888.778925501,
+            "unit": "iter/sec",
+            "range": "stddev: 1.3622948174551781e-8",
+            "extra": "mean: 138.96824016078264 nsec\nrounds: 72643"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 9024428.326346414,
+            "unit": "iter/sec",
+            "range": "stddev: 1.5332930366257433e-8",
+            "extra": "mean: 110.8103431970915 nsec\nrounds: 87559"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1497117.64179396,
+            "unit": "iter/sec",
+            "range": "stddev: 2.8913985685091587e-7",
+            "extra": "mean: 667.9501811238588 nsec\nrounds: 158454"
           }
         ]
       }
