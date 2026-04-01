@@ -280,3 +280,40 @@ def _checkAsk(*, stockCode: str | None = None, **_kw: Any) -> ReadinessResult:
         issues.extend(dataResult.issues)
     status = ReadyStatus.NOT_READY if issues else ReadyStatus.READY
     return ReadinessResult(feature="ask", status=status, issues=issues)
+
+
+@registerChecker("server")
+def _checkServer(**_kw: Any) -> ReadinessResult:
+    """서버 모드 점검 — fastapi/uvicorn 설치 여부."""
+    issues: list[ReadinessIssue] = []
+    for pkg, label in [("fastapi", "FastAPI"), ("uvicorn", "Uvicorn")]:
+        try:
+            __import__(pkg)
+        except ImportError:
+            issues.append(
+                ReadinessIssue(
+                    kind=f"missing_{pkg}",
+                    message=f"{label} 미설치",
+                    fixAction="pip install dartlab[server]",
+                )
+            )
+    status = ReadyStatus.NOT_READY if issues else ReadyStatus.READY
+    return ReadinessResult(feature="server", status=status, issues=issues)
+
+
+@registerChecker("mcp")
+def _checkMcp(**_kw: Any) -> ReadinessResult:
+    """MCP 서버 점검 — mcp 패키지 설치 여부."""
+    issues: list[ReadinessIssue] = []
+    try:
+        import mcp  # noqa: F401
+    except ImportError:
+        issues.append(
+            ReadinessIssue(
+                kind="missing_mcp",
+                message="MCP 패키지 미설치",
+                fixAction="pip install dartlab[server]",
+            )
+        )
+    status = ReadyStatus.NOT_READY if issues else ReadyStatus.READY
+    return ReadinessResult(feature="mcp", status=status, issues=issues)

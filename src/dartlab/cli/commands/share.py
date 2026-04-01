@@ -399,6 +399,15 @@ def run(args) -> int:
         print(f"    터널={tunnel_backend}, TTL={_ttl_to_str(ttl)}, 포트={port}")
         print()
 
+    # --- 서버 의존성 확인 ---
+    try:
+        import fastapi  # noqa: F401
+        import uvicorn  # noqa: F401
+    except ImportError:
+        print("\n  [오류] 서버 패키지가 설치되지 않았습니다.")
+        print("  설치: pip install dartlab[server]\n")
+        return 1
+
     # --- 보안 환경변수 설정 ---
     os.environ["DARTLAB_TUNNEL"] = "1"
 

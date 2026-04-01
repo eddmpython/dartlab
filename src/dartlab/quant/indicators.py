@@ -2,11 +2,12 @@
 
 tradix에서 이식. 전체 가격 배열을 한 번에 처리하여 초고속 계산.
 
-지표 25개:
-    추세: vsma, vema, vmacd, vadx, vpsar, vsupertrend, vichimoku
-    모멘텀: vrsi, vstochastic, vroc, vmomentum, vwilliamsR, vcci, vcmo
-    변동성: vbollinger, vatr, vkeltner, vdonchian
-    거래량: vobv, vmfi, vforceIndex
+지표 45개:
+    추세: vsma, vema, vwma, vdema, vtema, vhma, vvwma, vmacd, vadx, vpsar, vsupertrend
+    모멘텀: vrsi, vstochastic, vstochasticRsi, vkdj, vroc, vmomentum, vwilliamsR, vcci, vcmo, vawesomeOscillator, vultimateOscillator
+    변동성: vbollinger, vbollingerPercentB, vbollingerWidth, vatr, vkeltner, vdonchian, vulcer
+    거래량: vobv, vmfi, vforceIndex, vadl, vchaikin, vemv, vnvi, vpvi, vpvt, vvwap, velderRay
+    특수: vtrix, vdpo, vpivotPoints, vlinearRegression, vzigzag
 
 사용법::
 
@@ -577,3 +578,424 @@ def vforceIndex(
     raw = np.zeros(n, dtype=np.float64)
     raw[1:] = (close[1:] - close[:-1]) * volume[1:]
     return vema(raw, period)
+
+
+# ── 이동평균 계열 확장 ──
+
+
+def vwma(close: NDArray[np.float64], period: int = 20) -> NDArray[np.float64]:
+    """Weighted Moving Average."""
+    n = len(close)
+    result = np.full(n, np.nan, dtype=np.float64)
+    weights = np.arange(1, period + 1, dtype=np.float64)
+    wsum = weights.sum()
+    for i in range(period - 1, n):
+        result[i] = np.dot(close[i - period + 1 : i + 1], weights) / wsum
+    return result
+
+
+def vdema(close: NDArray[np.float64], period: int = 20) -> NDArray[np.float64]:
+    """Double EMA."""
+    e1 = vema(close, period)
+    e2 = vema(e1[~np.isnan(e1)], period)
+    result = np.full(len(close), np.nan, dtype=np.float64)
+    valid = ~np.isnan(e1)
+    idx = np.where(valid)[0]
+    if len(e2) <= len(idx):
+        offset = len(idx) - len(e2)
+        for j in range(len(e2)):
+            i = idx[offset + j]
+            result[i] = 2 * e1[i] - e2[j]
+    return result
+
+
+def vtema(close: NDArray[np.float64], period: int = 20) -> NDArray[np.float64]:
+    """Triple EMA."""
+    e1 = vema(close, period)
+    v1 = e1[~np.isnan(e1)]
+    e2 = vema(v1, period) if len(v1) >= period else np.array([])
+    v2 = e2[~np.isnan(e2)]
+    e3 = vema(v2, period) if len(v2) >= period else np.array([])
+    result = np.full(len(close), np.nan, dtype=np.float64)
+    # TEMA = 3*EMA1 - 3*EMA2 + EMA3 at matching indices
+    idx1 = np.where(~np.isnan(e1))[0]
+    if len(e3) > 0 and len(e2) > 0:
+        off2 = len(idx1) - len(e2)
+        off3 = len(idx1) - len(e2) + len(e2) - len(e3)
+        for j in range(len(e3)):
+            i = idx1[off3 + j]
+            result[i] = 3 * e1[i] - 3 * e2[off2 + (off3 - off2) + j] + e3[j]
+    return result
+
+
+def vhma(close: NDArray[np.float64], period: int = 20) -> NDArray[np.float64]:
+    """Hull Moving Average."""
+    half = vwma(close, period // 2) if period // 2 > 0 else close.copy()
+    full = vwma(close, period)
+    diff = 2 * half - full
+    sqrt_p = max(int(np.sqrt(period)), 1)
+    valid = diff[~np.isnan(diff)]
+    if len(valid) < sqrt_p:
+        return np.full(len(close), np.nan, dtype=np.float64)
+    hma_valid = vwma(valid, sqrt_p)
+    result = np.full(len(close), np.nan, dtype=np.float64)
+    idx = np.where(~np.isnan(diff))[0]
+    offset = len(idx) - len(hma_valid)
+    for j in range(len(hma_valid)):
+        result[idx[offset + j]] = hma_valid[j]
+    return result
+
+
+def vvwma(
+    close: NDArray[np.float64], volume: NDArray[np.float64], period: int = 20,
+) -> NDArray[np.float64]:
+    """Volume Weighted Moving Average."""
+    n = len(close)
+    result = np.full(n, np.nan, dtype=np.float64)
+    for i in range(period - 1, n):
+        w = close[i - period + 1 : i + 1]
+        v = volume[i - period + 1 : i + 1]
+        vs = v.sum()
+        if vs > 0:
+            result[i] = np.dot(w, v) / vs
+    return result
+
+
+# ── 오실레이터 확장 ──
+
+
+def vvwap(
+    high: NDArray[np.float64], low: NDArray[np.float64],
+    close: NDArray[np.float64], volume: NDArray[np.float64],
+) -> NDArray[np.float64]:
+    """VWAP (Volume Weighted Average Price) — 누적."""
+    tp = (high + low + close) / 3
+    cumTPV = np.cumsum(tp * volume)
+    cumV = np.cumsum(volume)
+    result = np.where(cumV > 0, cumTPV / cumV, np.nan)
+    return result.astype(np.float64)
+
+
+def vstochasticRsi(
+    close: NDArray[np.float64], rsiPeriod: int = 14,
+    stochPeriod: int = 14, kPeriod: int = 3, dPeriod: int = 3,
+) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """Stochastic RSI (%K, %D)."""
+    rsi = vrsi(close, rsiPeriod)
+    n = len(close)
+    k = np.full(n, np.nan, dtype=np.float64)
+    for i in range(rsiPeriod + stochPeriod - 1, n):
+        window = rsi[i - stochPeriod + 1 : i + 1]
+        valid = window[~np.isnan(window)]
+        if len(valid) >= 2:
+            hh = np.max(valid)
+            ll = np.min(valid)
+            if hh != ll:
+                k[i] = 100 * (rsi[i] - ll) / (hh - ll)
+            else:
+                k[i] = 50
+    d = vsma(k, dPeriod)
+    return k, d
+
+
+def vkdj(
+    high: NDArray[np.float64], low: NDArray[np.float64],
+    close: NDArray[np.float64], period: int = 9, kSmooth: int = 3, dSmooth: int = 3,
+) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+    """KDJ Indicator (K, D, J)."""
+    rawK, _ = vstochastic(high, low, close, period, 1)
+    k = vsma(rawK, kSmooth)
+    d = vsma(k, dSmooth)
+    j = 3 * k - 2 * d
+    return k, d, j
+
+
+def vawesomeOscillator(
+    high: NDArray[np.float64], low: NDArray[np.float64],
+    fastPeriod: int = 5, slowPeriod: int = 34,
+) -> NDArray[np.float64]:
+    """Awesome Oscillator."""
+    midpoint = (high + low) / 2
+    return vsma(midpoint, fastPeriod) - vsma(midpoint, slowPeriod)
+
+
+def vultimateOscillator(
+    high: NDArray[np.float64], low: NDArray[np.float64],
+    close: NDArray[np.float64], short: int = 7, medium: int = 14, long: int = 28,
+) -> NDArray[np.float64]:
+    """Ultimate Oscillator."""
+    n = len(close)
+    bp = np.zeros(n, dtype=np.float64)
+    tr = np.zeros(n, dtype=np.float64)
+    bp[0] = close[0] - low[0]
+    tr[0] = high[0] - low[0]
+    for i in range(1, n):
+        bp[i] = close[i] - min(low[i], close[i - 1])
+        tr[i] = max(high[i], close[i - 1]) - min(low[i], close[i - 1])
+    result = np.full(n, np.nan, dtype=np.float64)
+    for i in range(long - 1, n):
+        s_tr = tr[i - short + 1 : i + 1].sum()
+        m_tr = tr[i - medium + 1 : i + 1].sum()
+        l_tr = tr[i - long + 1 : i + 1].sum()
+        if s_tr > 0 and m_tr > 0 and l_tr > 0:
+            a1 = bp[i - short + 1 : i + 1].sum() / s_tr
+            a2 = bp[i - medium + 1 : i + 1].sum() / m_tr
+            a3 = bp[i - long + 1 : i + 1].sum() / l_tr
+            result[i] = 100 * (4 * a1 + 2 * a2 + a3) / 7
+    return result
+
+
+# ── 변동성 확장 ──
+
+
+def vulcer(close: NDArray[np.float64], period: int = 14) -> NDArray[np.float64]:
+    """Ulcer Index — 하방 변동성."""
+    n = len(close)
+    result = np.full(n, np.nan, dtype=np.float64)
+    for i in range(period - 1, n):
+        window = close[i - period + 1 : i + 1]
+        peak = np.maximum.accumulate(window)
+        drawdown = ((window - peak) / peak * 100) ** 2
+        result[i] = np.sqrt(np.mean(drawdown))
+    return result
+
+
+def vbollingerPercentB(
+    close: NDArray[np.float64], period: int = 20, std: float = 2.0,
+) -> NDArray[np.float64]:
+    """Bollinger %B (0~1, 밴드 내 위치)."""
+    upper, _, lower = vbollinger(close, period, std)
+    rng = upper - lower
+    result = np.where(rng > 0, (close - lower) / rng, np.nan)
+    return result.astype(np.float64)
+
+
+def vbollingerWidth(
+    close: NDArray[np.float64], period: int = 20, std: float = 2.0,
+) -> NDArray[np.float64]:
+    """Bollinger Bandwidth (밴드 폭 / 중심)."""
+    upper, middle, lower = vbollinger(close, period, std)
+    result = np.where(middle > 0, (upper - lower) / middle, np.nan)
+    return result.astype(np.float64)
+
+
+# ── 거래량 확장 ──
+
+
+def vadl(close: NDArray[np.float64], high: NDArray[np.float64],
+         low: NDArray[np.float64], volume: NDArray[np.float64]) -> NDArray[np.float64]:
+    """Accumulation/Distribution Line."""
+    n = len(close)
+    adl = np.zeros(n, dtype=np.float64)
+    for i in range(n):
+        hl = high[i] - low[i]
+        if hl > 0:
+            mfm = ((close[i] - low[i]) - (high[i] - close[i])) / hl
+            adl[i] = (adl[i - 1] if i > 0 else 0) + mfm * volume[i]
+        else:
+            adl[i] = adl[i - 1] if i > 0 else 0
+    return adl
+
+
+def vchaikin(
+    close: NDArray[np.float64], high: NDArray[np.float64],
+    low: NDArray[np.float64], volume: NDArray[np.float64],
+    fastPeriod: int = 3, slowPeriod: int = 10,
+) -> NDArray[np.float64]:
+    """Chaikin Oscillator (ADL의 EMA 차이)."""
+    adl = vadl(close, high, low, volume)
+    return vema(adl, fastPeriod) - vema(adl, slowPeriod)
+
+
+def vemv(
+    high: NDArray[np.float64], low: NDArray[np.float64],
+    volume: NDArray[np.float64], period: int = 14,
+) -> NDArray[np.float64]:
+    """Ease of Movement (EMA smoothed)."""
+    n = len(high)
+    raw = np.zeros(n, dtype=np.float64)
+    for i in range(1, n):
+        hl = high[i] - low[i]
+        if hl > 0 and volume[i] > 0:
+            dm = ((high[i] + low[i]) / 2) - ((high[i - 1] + low[i - 1]) / 2)
+            box = volume[i] / hl
+            raw[i] = dm / box if box > 0 else 0
+    return vema(raw, period)
+
+
+def vnvi(close: NDArray[np.float64], volume: NDArray[np.float64]) -> NDArray[np.float64]:
+    """Negative Volume Index."""
+    n = len(close)
+    nvi = np.full(n, 1000.0, dtype=np.float64)
+    for i in range(1, n):
+        if volume[i] < volume[i - 1] and close[i - 1] > 0:
+            nvi[i] = nvi[i - 1] * (1 + (close[i] - close[i - 1]) / close[i - 1])
+        else:
+            nvi[i] = nvi[i - 1]
+    return nvi
+
+
+def vpvi(close: NDArray[np.float64], volume: NDArray[np.float64]) -> NDArray[np.float64]:
+    """Positive Volume Index."""
+    n = len(close)
+    pvi = np.full(n, 1000.0, dtype=np.float64)
+    for i in range(1, n):
+        if volume[i] > volume[i - 1] and close[i - 1] > 0:
+            pvi[i] = pvi[i - 1] * (1 + (close[i] - close[i - 1]) / close[i - 1])
+        else:
+            pvi[i] = pvi[i - 1]
+    return pvi
+
+
+def vpvt(close: NDArray[np.float64], volume: NDArray[np.float64]) -> NDArray[np.float64]:
+    """Price Volume Trend."""
+    n = len(close)
+    pvt = np.zeros(n, dtype=np.float64)
+    for i in range(1, n):
+        if close[i - 1] > 0:
+            pvt[i] = pvt[i - 1] + volume[i] * (close[i] - close[i - 1]) / close[i - 1]
+        else:
+            pvt[i] = pvt[i - 1]
+    return pvt
+
+
+# ── 특수 지표 ──
+
+
+def vtrix(
+    close: NDArray[np.float64], period: int = 15, signalPeriod: int = 9,
+) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """TRIX + Signal."""
+    e1 = vema(close, period)
+    v1 = e1[~np.isnan(e1)]
+    e2 = vema(v1, period) if len(v1) >= period else np.full(len(v1), np.nan)
+    v2 = e2[~np.isnan(e2)]
+    e3 = vema(v2, period) if len(v2) >= period else np.full(len(v2), np.nan)
+
+    n = len(close)
+    trix = np.full(n, np.nan, dtype=np.float64)
+    # TRIX = pct change of triple EMA
+    idx1 = np.where(~np.isnan(e1))[0]
+    if len(e3) > 1:
+        for j in range(1, len(e3)):
+            if e3[j - 1] != 0:
+                offset = len(idx1) - len(e2) + len(e2) - len(e3)
+                i = idx1[offset + j] if offset + j < len(idx1) else n - 1
+                trix[i] = (e3[j] - e3[j - 1]) / e3[j - 1] * 100
+
+    sig = vema(trix[~np.isnan(trix)], signalPeriod) if np.any(~np.isnan(trix)) else np.array([])
+    signal = np.full(n, np.nan, dtype=np.float64)
+    trix_idx = np.where(~np.isnan(trix))[0]
+    if len(sig) > 0 and len(trix_idx) > 0:
+        offset = len(trix_idx) - len(sig)
+        for j in range(len(sig)):
+            if offset + j < len(trix_idx):
+                signal[trix_idx[offset + j]] = sig[j]
+
+    return trix, signal
+
+
+def vdpo(close: NDArray[np.float64], period: int = 20) -> NDArray[np.float64]:
+    """Detrended Price Oscillator."""
+    sma = vsma(close, period)
+    shift = period // 2 + 1
+    n = len(close)
+    result = np.full(n, np.nan, dtype=np.float64)
+    for i in range(shift + period - 1, n):
+        if not np.isnan(sma[i - shift]):
+            result[i] = close[i] - sma[i - shift]
+    return result
+
+
+def vpivotPoints(
+    high: NDArray[np.float64], low: NDArray[np.float64], close: NDArray[np.float64],
+) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64],
+           NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+    """Pivot Points (PP, R1, R2, R3, S1, S2, S3). 전일 기준."""
+    n = len(close)
+    pp = np.full(n, np.nan, dtype=np.float64)
+    r1 = np.full(n, np.nan, dtype=np.float64)
+    r2 = np.full(n, np.nan, dtype=np.float64)
+    r3 = np.full(n, np.nan, dtype=np.float64)
+    s1 = np.full(n, np.nan, dtype=np.float64)
+    s2 = np.full(n, np.nan, dtype=np.float64)
+    s3 = np.full(n, np.nan, dtype=np.float64)
+    for i in range(1, n):
+        p = (high[i - 1] + low[i - 1] + close[i - 1]) / 3
+        pp[i] = p
+        r1[i] = 2 * p - low[i - 1]
+        s1[i] = 2 * p - high[i - 1]
+        r2[i] = p + (high[i - 1] - low[i - 1])
+        s2[i] = p - (high[i - 1] - low[i - 1])
+        r3[i] = high[i - 1] + 2 * (p - low[i - 1])
+        s3[i] = low[i - 1] - 2 * (high[i - 1] - p)
+    return pp, r1, r2, r3, s1, s2, s3
+
+
+def vlinearRegression(
+    close: NDArray[np.float64], period: int = 20,
+) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+    """Linear Regression (value, slope, r-squared)."""
+    n = len(close)
+    value = np.full(n, np.nan, dtype=np.float64)
+    slope = np.full(n, np.nan, dtype=np.float64)
+    rsq = np.full(n, np.nan, dtype=np.float64)
+    x = np.arange(period, dtype=np.float64)
+    xmean = x.mean()
+    xvar = np.sum((x - xmean) ** 2)
+    for i in range(period - 1, n):
+        y = close[i - period + 1 : i + 1]
+        ymean = y.mean()
+        cov = np.sum((x - xmean) * (y - ymean))
+        b = cov / xvar if xvar > 0 else 0
+        a = ymean - b * xmean
+        value[i] = a + b * (period - 1)
+        slope[i] = b
+        yhat = a + b * x
+        ss_res = np.sum((y - yhat) ** 2)
+        ss_tot = np.sum((y - ymean) ** 2)
+        rsq[i] = 1 - ss_res / ss_tot if ss_tot > 0 else 0
+    return value, slope, rsq
+
+
+def vzigzag(
+    close: NDArray[np.float64], threshold: float = 5.0,
+) -> NDArray[np.float64]:
+    """ZigZag (threshold % 이상 변화만 추적)."""
+    n = len(close)
+    result = np.full(n, np.nan, dtype=np.float64)
+    result[0] = close[0]
+    lastPivot = close[0]
+    lastIdx = 0
+    direction = 0  # 0=unknown, 1=up, -1=down
+    for i in range(1, n):
+        change = (close[i] - lastPivot) / lastPivot * 100 if lastPivot > 0 else 0
+        if direction == 0:
+            if abs(change) >= threshold:
+                direction = 1 if change > 0 else -1
+                result[i] = close[i]
+                lastPivot = close[i]
+                lastIdx = i
+        elif direction == 1:
+            if close[i] > lastPivot:
+                result[lastIdx] = np.nan
+                result[i] = close[i]
+                lastPivot = close[i]
+                lastIdx = i
+            elif change <= -threshold:
+                direction = -1
+                result[i] = close[i]
+                lastPivot = close[i]
+                lastIdx = i
+        else:
+            if close[i] < lastPivot:
+                result[lastIdx] = np.nan
+                result[i] = close[i]
+                lastPivot = close[i]
+                lastIdx = i
+            elif change >= threshold:
+                direction = 1
+                result[i] = close[i]
+                lastPivot = close[i]
+                lastIdx = i
+    return result
