@@ -708,7 +708,7 @@ setup: AI provider 설정 (capabilities 확인 후 설정)
 
 ---
 
-## Scan Axis (19개 축)
+## Scan Axis (20개 축)
 
 `dartlab.scan(axis, target)` 형태로 전종목 횡단분석.
 
@@ -733,6 +733,7 @@ setup: AI provider 설정 (capabilities 확인 후 설정)
 | `dividendTrend` | 배당추이 | DPS 3개년 시계열 + 패턴 분류 (연속증가/안정/감소/시작/중단) | stockCode 필터 | - | DataFrame |
 | `macroBeta` | 거시베타 | 전종목 GDP/금리/환율 베타 횡단면 (OLS 회귀). 사전 수집: Ecos().series('GDP', enrich=True) | stockCode 필터 | - | DataFrame |
 | `screen` | 스크리닝 | 멀티팩터 스크리닝 (value/dividend/growth/risk/quality 프리셋) | target | - | DataFrame |
+| `disclosureRisk` | 공시리스크 | 공시 변화 기반 선행 리스크 (우발부채, 감사변경, 계열변화, 사업전환) | stockCode 필터 | - | DataFrame |
 
 **한글 별칭:**
 
@@ -741,6 +742,7 @@ setup: AI provider 설정 (capabilities 확인 후 설정)
 - `capital`: 주주환원, 배당
 - `cashflow`: 현금흐름, 현금
 - `debt`: 부채, 부채구조, 사채
+- `disclosureRisk`: 공시리스크, 공시변화
 - `dividendTrend`: 배당추이, 배당시계열, 배당트렌드
 - `efficiency`: 효율성, 회전율
 - `governance`: 거버넌스, 지배구조
