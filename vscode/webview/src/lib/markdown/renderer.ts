@@ -120,19 +120,26 @@ renderer.table = function (token: {
     .join("");
   const headerHtml = `<tr>${ths}</tr>`;
 
+  // Detect code-like columns (종목코드/stockCode) -- don't format numbers in these
+  const codeColIndices = new Set<number>();
+  token.header.forEach((cell, i) => {
+    const h = cell.text.trim().toLowerCase();
+    if (h.includes("종목코드") || h.includes("stockcode") || h === "code") codeColIndices.add(i);
+  });
+
   // Build data rows
   const rowsHtml = token.rows
     .map((row) => {
       const tds = row
         .filter((_, i) => !skipCols.has(i))
-        .map((cell) => {
+        .map((cell, i) => {
           let val = cell.text.trim();
-          // null → -
           if (val === "null" || val === "None") val = "-";
           const plain = val.replace(/<[^>]+>/g, "").trim();
           const isNum = /^[+\-]?\d/.test(plain);
-          const align = isNum ? ' style="text-align:right"' : "";
-          return `<td${align}>${formatNumber(val)}</td>`;
+          const isCodeCol = codeColIndices.has(i);
+          const align = isNum && !isCodeCol ? ' style="text-align:right"' : "";
+          return `<td${align}>${isCodeCol ? val : formatNumber(val)}</td>`;
         })
         .join("");
       return `<tr>${tds}</tr>`;

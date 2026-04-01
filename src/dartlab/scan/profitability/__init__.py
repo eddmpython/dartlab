@@ -191,13 +191,13 @@ def _computeProfitability(target: pl.DataFrame, scCol: str) -> pl.DataFrame:
 
         rows.append(
             {
-                "stockCode": code,
-                "opMargin": opMargin,
-                "netMargin": netMargin,
-                "roe": roe,
-                "roa": roa,
-                "grade": _gradeProfitability(opMargin, roe),
-                "nonRecurring": hasNonRecurring,
+                "종목코드": code,
+                "영업이익률": opMargin,
+                "순이익률": netMargin,
+                "ROE": roe,
+                "ROA": roa,
+                "등급": _gradeProfitability(opMargin, roe),
+                "비경상": hasNonRecurring,
             }
         )
 
@@ -205,15 +205,35 @@ def _computeProfitability(target: pl.DataFrame, scCol: str) -> pl.DataFrame:
         return pl.DataFrame()
 
     schema = {
-        "stockCode": pl.Utf8,
-        "opMargin": pl.Float64,
-        "netMargin": pl.Float64,
-        "roe": pl.Float64,
-        "roa": pl.Float64,
-        "grade": pl.Utf8,
-        "nonRecurring": pl.Boolean,
+        "종목코드": pl.Utf8,
+        "영업이익률": pl.Float64,
+        "순이익률": pl.Float64,
+        "ROE": pl.Float64,
+        "ROA": pl.Float64,
+        "등급": pl.Utf8,
+        "비경상": pl.Boolean,
     }
-    return pl.DataFrame(rows, schema=schema)
+    df = pl.DataFrame(rows, schema=schema)
+
+    # 종목명 매핑 (listing에서)
+    try:
+        import dartlab
+
+        listing = dartlab.listing()
+        if listing is not None and "종목코드" in listing.columns:
+            name_col = next((c for c in ("종목명", "회사명", "corp_name") if c in listing.columns), None)
+            if name_col:
+                name_map = listing.select(["종목코드", name_col]).rename({name_col: "종목명"})
+                df = df.join(name_map, on="종목코드", how="left")
+                # 종목명을 종목코드 바로 뒤에 배치
+                cols = df.columns
+                if "종목명" in cols:
+                    ordered = ["종목코드", "종목명"] + [c for c in cols if c not in ("종목코드", "종목명")]
+                    df = df.select(ordered)
+    except Exception:
+        pass  # listing 실패해도 무시
+
+    return df
 
 
 __all__ = ["scanProfitability"]
