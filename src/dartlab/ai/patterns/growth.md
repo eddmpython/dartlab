@@ -25,7 +25,7 @@ description: 매출 모멘텀, 성장 지속성, 질적 성장 판단
 - 시계열 R², 컨센서스 방향, 구조변화 감지
 
 ### 4. 시장 내 위치
-- dartlab.scan("growth")로 전체 대비 성장 순위
+- dartlab.scan("financial", "growth")로 전체 대비 성장 순위
 - 동종업계 대비 성장률 프리미엄
 
 ### 5. 종합 판단

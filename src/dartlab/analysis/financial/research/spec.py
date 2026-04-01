@@ -56,7 +56,7 @@ def buildSpec() -> dict:
         "summary": {
             "sections": len(REPORT_SECTIONS),
             "quantModels": len(QUANT_MODELS),
-            "method": "dartlab.research('005930') 또는 c.research()",
+            "method": "c.analysis('research', '종합리포트') 또는 dartlab.analysis('research', '종합리포트', c)",
         },
         "detail": {
             "sections": REPORT_SECTIONS,

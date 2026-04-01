@@ -1026,11 +1026,12 @@ class Company:
             basePeriod=basePeriod,
         )
 
-    def analysis(self, axis: str | None = None, **kwargs):
+    def analysis(self, axis: str | None = None, sub: str | None = None, **kwargs):
         """분석 엔진 실행 — analysis()에 self를 바인딩.
 
         Capabilities:
-            - strategy/accounting/financial/forecast/valuation/risk/comparative/macro 8축
+            - 14축 재무분석 + forecast + valuation
+            - 2-level 호출: c.analysis("financial", "수익성"), c.analysis("valuation", "가치평가")
             - axis 없이 호출하면 사용 가능한 축 목록 반환
 
         Requires:
@@ -1040,17 +1041,19 @@ class Company:
             - ask()/chat()에서 심화 분석 패키지 선택 컨텍스트
 
         Guide:
-            - "재무 분석 해줘" → c.analysis("financial")
+            - "재무 분석 해줘" → c.analysis("financial", "수익성")
             - "어떤 분석이 가능해?" → c.analysis()로 축 목록 확인
+            - "가치평가 해줘" → c.analysis("valuation", "가치평가")
+            - "매출전망" → c.analysis("forecast", "매출전망")
 
         SeeAlso:
+            - review: 분석 결과를 보고서로 조합
             - insights: 재무 인사이트 (간편 요약)
-            - forecast: 매출 예측
-            - valuation: 밸류에이션
             - ask: AI 기반 해석
 
         Args:
-            axis: 분석 축 이름 (예: "financial", "valuation"). None이면 축 목록.
+            axis: 그룹 이름 ("financial", "valuation", "forecast") 또는 축 이름. None이면 가이드.
+            sub: 그룹 내 하위 축 이름 ("수익성", "가치평가", "매출전망" 등).
             **kwargs: 축별 추가 파라미터.
 
         Returns:
@@ -1059,15 +1062,19 @@ class Company:
         Example::
 
             c = Company("AAPL")
-            c.analysis()                  # 사용 가능한 축 목록
-            c.analysis("financial")       # 재무 분석 실행
+            c.analysis()                            # 사용 가능한 축 목록
+            c.analysis("financial", "profitability") # 수익성 분석
+            c.analysis("valuation", "가치평가")       # 가치평가
+            c.analysis("forecast", "매출전망")        # 매출전망
         """
         from dartlab.analysis.financial import Analysis
 
         _analysis = Analysis()
         if axis is None:
             return _analysis()
-        return _analysis(axis, self, **kwargs)
+        if sub is not None:
+            return _analysis(axis, sub, company=self, **kwargs)
+        return _analysis(axis, company=self, **kwargs)
 
     def gather(self, axis: str | None = None, **kwargs):
         """외부 시장 데이터 수집 — gather()에 self.ticker를 바인딩.

@@ -6,7 +6,7 @@
 
 c.analysis() -- 14-axis financial analysis.
 c.insights -- 7-area grades at a glance.
-c.forecast() / c.valuation() -- forward-looking estimates.
+c.analysis("valuation", "가치평가") / c.analysis("forecast", "매출전망") -- forward-looking estimates.
 """
 
 import marimo
@@ -57,13 +57,13 @@ def _(c):
 
 @app.cell
 def _(c):
-    c.forecast()
+    c.analysis("forecast", "매출전망")
     return
 
 
 @app.cell
 def _(c):
-    c.valuation()
+    c.analysis("valuation", "가치평가")
     return
 
 
@@ -81,8 +81,8 @@ def _(dartlab):
 
 
 @app.cell
-def _(dartlab):
-    dartlab.forecast("005930")
+def _(dartlab, c):
+    dartlab.analysis("forecast", "매출전망", company=c)
     return
 
 

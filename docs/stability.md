@@ -38,9 +38,8 @@ Changes include a deprecation period with a migration guide.
 | `engines.edgar.docs.contextSlices` | EDGAR context slicing for LLM windows |
 | `engines.edgar.finance` | SEC XBRL financial statements (BS/IS/CF) |
 | `engines.edgar.profile` | EDGAR docs + finance merge layer |
-| `dartlab.valuation()` | Multi-method valuation (DCF, DDM, relative) — KRW/USD auto-detect |
-| `dartlab.forecast()` | Revenue forecast (time-series, consensus, macro, ROIC) — KRW/USD auto-detect |
-| `dartlab.simulation()` | Scenario simulation with US/KR macro presets |
+| `c.analysis("valuation", "가치평가")` | Multi-method valuation (DCF, DDM, relative) — KRW/USD auto-detect |
+| `c.analysis("forecast", "매출전망")` | Revenue forecast (time-series, consensus, macro, ROIC) — KRW/USD auto-detect |
 
 ### Tier 2: Beta
 

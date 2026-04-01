@@ -795,12 +795,15 @@ BS: 재무상태표 (자본 잔액)
 **Capabilities:** 14축 분석: 수익구조, 자금조달, 자산구조, 현금흐름, 수익성, 성장성, 안정성, 효율성, 종합평가, 이익품질, 비용구조, 자본배분, 투자효율, 재무정합성
 축 없이 호출 시 14축 가이드 반환
 개별 축 분석 시 Company 바인딩 (self 자동 전달)
+2-level 호출: c.analysis("financial", "수익성"), c.analysis("valuation", "가치평가")
 **Requires:** 데이터: finance (자동 다운로드)
 **AIContext:** ask()/chat()에서 분석 결과를 컨텍스트로 주입
 review/reviewer가 내부적으로 analysis 결과를 소비
 **Guide:** "14축 분석 뭐가 있어?" → c.analysis() (가이드 반환)
 "수익구조 분석해줘" → c.analysis("financial", "수익구조")
 "안정성 분석" → c.analysis("financial", "안정성")
+"가치평가 해줘" → c.analysis("valuation", "가치평가")
+"매출전망" → c.analysis("forecast", "매출전망")
 **SeeAlso:** review: 14축 분석을 14개 섹션 보고서로 조합
 insights: 7영역 등급 요약 (analysis보다 요약적)
 ratios: 재무비율 시계열 (analysis의 입력 데이터)

@@ -13,7 +13,8 @@ from dartlab.audit.store import AuditStore
 
 logger = logging.getLogger("dartlab.audit")
 
-# ── 15축 목록 (analysis/__init__.py와 동기) ──
+# ── 14축 목록 (financial 그룹, analysis/__init__.py와 동기) ──
+# 가치평가/매출전망은 별도 그룹(valuation/forecast)으로 아래에서 개별 호출
 
 ALL_AXES: tuple[str, ...] = (
     "수익구조",
@@ -30,7 +31,6 @@ ALL_AXES: tuple[str, ...] = (
     "자본배분",
     "투자효율",
     "재무정합성",
-    "가치평가",
 )
 
 # ── 추가 분석 기능 (axis 외) ──
@@ -91,11 +91,11 @@ class AuditRunner:
         rows: list[dict[str, Any]] = []
         issues: list[dict[str, Any]] = []
 
-        # ── 1. 15축 analysis ──
+        # ── 1. 14축 financial analysis ──
         for axis in ALL_AXES:
             axisT0 = time.time()
             try:
-                result = c.analysis(axis)
+                result = c.analysis("financial", axis)
             except (TypeError, ValueError, KeyError, AttributeError, ArithmeticError) as e:
                 result = None
                 issues.append(
@@ -104,7 +104,7 @@ class AuditRunner:
                         "severity": "critical",
                         "axis": axis,
                         "blockKey": "",
-                        "description": f"analysis('{axis}') 실행 실패: {e}",
+                        "description": f"analysis('financial', '{axis}') 실행 실패: {e}",
                     }
                 )
 

@@ -2880,24 +2880,26 @@ class Company:
 
         return buildReview(self, section=section, layout=layout, basePeriod=basePeriod)
 
-    def analysis(self, axis: str | None = None, **kwargs):
+    def analysis(self, axis: str | None = None, sub: str | None = None, **kwargs):
         """재무제표 완전 분석 — 14축, 단일 종목 심층.
 
         Capabilities:
             - 14축 분석: 수익구조, 자금조달, 자산구조, 현금흐름, 수익성, 성장성, 안정성, 효율성, 종합평가, 이익품질, 비용구조, 자본배분, 투자효율, 재무정합성
             - 축 없이 호출 시 14축 가이드 반환
             - 개별 축 분석 시 Company 바인딩 (self 자동 전달)
+            - 2-level 호출: c.analysis("financial", "수익성"), c.analysis("valuation", "가치평가")
 
         AIContext:
             - ask()/chat()에서 분석 결과를 컨텍스트로 주입
             - review/reviewer가 내부적으로 analysis 결과를 소비
 
         Args:
-            axis: 분석 축 이름. None이면 14축 가이드 반환.
+            axis: 그룹 이름 ("financial", "valuation", "forecast") 또는 축 이름. None이면 가이드 반환.
+            sub: 그룹 내 하위 축 이름 ("수익성", "가치평가", "매출전망" 등).
             **kwargs: 축별 추가 옵션.
 
         Returns:
-            pl.DataFrame — 축별 분석 결과. axis=None이면 14축 가이드 DataFrame.
+            pl.DataFrame — 축별 분석 결과. axis=None이면 가이드 DataFrame.
 
         Requires:
             데이터: finance (자동 다운로드)
@@ -2905,13 +2907,17 @@ class Company:
         Example::
 
             c = Company("005930")
-            c.analysis()              # 14축 가이드
-            c.analysis("financial", "수익구조")     # 수익구조 분석
+            c.analysis()                            # 전체 가이드
+            c.analysis("financial", "수익구조")       # 수익구조 분석
+            c.analysis("valuation", "가치평가")       # 가치평가
+            c.analysis("forecast", "매출전망")        # 매출전망
 
         Guide:
             - "14축 분석 뭐가 있어?" → c.analysis() (가이드 반환)
             - "수익구조 분석해줘" → c.analysis("financial", "수익구조")
             - "안정성 분석" → c.analysis("financial", "안정성")
+            - "가치평가 해줘" → c.analysis("valuation", "가치평가")
+            - "매출전망" → c.analysis("forecast", "매출전망")
 
         SeeAlso:
             - review: 14축 분석을 14개 섹션 보고서로 조합
@@ -2923,7 +2929,9 @@ class Company:
         _analysis = Analysis()
         if axis is None:
             return _analysis()
-        return _analysis(axis, self, **kwargs)
+        if sub is not None:
+            return _analysis(axis, sub, company=self, **kwargs)
+        return _analysis(axis, company=self, **kwargs)
 
     def gather(self, axis: str | None = None, **kwargs):
         """외부 시장 데이터 수집 — 4축 (price/flow/macro/news).

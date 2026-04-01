@@ -61,8 +61,8 @@ CAPABILITIES: dict[str, dict] = {
     },
     "Company.analysis": {
         "aicontext": "ask()/chat()에서 분석 결과를 컨텍스트로 주입\nreview/reviewer가 내부적으로 analysis 결과를 소비",
-        "capabilities": "14축 분석: 수익구조, 자금조달, 자산구조, 현금흐름, 수익성, 성장성, 안정성, 효율성, 종합평가, 이익품질, 비용구조, 자본배분, 투자효율, 재무정합성\n축 없이 호출 시 14축 가이드 반환\n개별 축 분석 시 Company 바인딩 (self 자동 전달)",
-        "guide": '"14축 분석 뭐가 있어?" → c.analysis() (가이드 반환)\n"수익구조 분석해줘" → c.analysis("financial", "수익구조")\n"안정성 분석" → c.analysis("financial", "안정성")',
+        "capabilities": '14축 분석: 수익구조, 자금조달, 자산구조, 현금흐름, 수익성, 성장성, 안정성, 효율성, 종합평가, 이익품질, 비용구조, 자본배분, 투자효율, 재무정합성\n축 없이 호출 시 14축 가이드 반환\n개별 축 분석 시 Company 바인딩 (self 자동 전달)\n2-level 호출: c.analysis("financial", "수익성"), c.analysis("valuation", "가치평가")',
+        "guide": '"14축 분석 뭐가 있어?" → c.analysis() (가이드 반환)\n"수익구조 분석해줘" → c.analysis("financial", "수익구조")\n"안정성 분석" → c.analysis("financial", "안정성")\n"가치평가 해줘" → c.analysis("valuation", "가치평가")\n"매출전망" → c.analysis("forecast", "매출전망")',
         "kind": "method",
         "requires": "데이터: finance (자동 다운로드)",
         "seeAlso": "review: 14축 분석을 14개 섹션 보고서로 조합\ninsights: 7영역 등급 요약 (analysis보다 요약적)\nratios: 재무비율 시계열 (analysis의 입력 데이터)",
