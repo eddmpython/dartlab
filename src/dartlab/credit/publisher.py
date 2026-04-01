@@ -117,8 +117,55 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
         lines.append("| 구조 | 지주사 |")
     lines.append("")
 
-    # ── 2. 등급 근거 ──
-    lines.append("## 2. 등급 근거")
+    # ── 재무 하이라이트 ──
+    history = result.get("metricsHistory", [])
+    if history:
+        from dartlab.credit.narrative import _fmtTril
+
+        h0 = history[0]
+        h1 = history[1] if len(history) > 1 else {}
+
+        lines.append("## 2. 재무 하이라이트")
+        lines.append("")
+
+        rev0 = h0.get("revenue")
+        oi0 = h0.get("operatingIncome")
+        ebitda0 = h0.get("ebitda")
+        ocf0 = h0.get("ocf")
+        netDebt0 = h0.get("netDebt")
+
+        if rev0 is not None:
+            revPrev = h1.get("revenue")
+            yoy = ""
+            if revPrev and revPrev > 0:
+                chg = (rev0 - revPrev) / abs(revPrev) * 100
+                yoy = f" (전년비 {'+' if chg > 0 else ''}{chg:.0f}%)"
+            lines.append(f"- **매출**: {_fmtTril(rev0)}{yoy}")
+
+        if oi0 is not None:
+            oiPrev = h1.get("operatingIncome")
+            yoy = ""
+            if oiPrev and oiPrev != 0:
+                chg = (oi0 - oiPrev) / abs(oiPrev) * 100
+                yoy = f" (전년비 {'+' if chg > 0 else ''}{chg:.0f}%)"
+            lines.append(f"- **영업이익**: {_fmtTril(oi0)}{yoy}")
+
+        if ebitda0 is not None:
+            lines.append(f"- **EBITDA**: {_fmtTril(ebitda0)}")
+
+        if ocf0 is not None:
+            lines.append(f"- **영업현금흐름**: {_fmtTril(ocf0)}")
+
+        if netDebt0 is not None:
+            if netDebt0 <= 0:
+                lines.append("- **순차입금**: 순현금 포지션 (차입금 < 현금)")
+            else:
+                lines.append(f"- **순차입금**: {_fmtTril(netDebt0)}")
+
+        lines.append("")
+
+    # ── 3. 등급 근거 ──
+    lines.append("## 3. 등급 근거")
     lines.append("")
     lines.append(overallNarrative)
     lines.append("")
@@ -146,7 +193,7 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
         lines.append("")
 
     # ── 3. 7축 상세 분석 ──
-    lines.append("## 3. 7축 상세 분석")
+    lines.append("## 4. 7축 상세 분석")
     lines.append("")
 
     # 요약 테이블
@@ -195,10 +242,9 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
                 lines.append(f"| {m['name']} | {msStr} |")
             lines.append("")
 
-    # ── 4. 재무 요약 5개년 ──
-    history = result.get("metricsHistory", [])
+    # ── 5. 재무 요약 5개년 ──
     if history:
-        lines.append("## 4. 재무 요약 (5개년)")
+        lines.append("## 5. 재무 요약 (5개년)")
         lines.append("")
         cols = ["기간", "EBITDA/이자", "Debt/EBITDA", "부채비율", "유동비율", "OCF/매출"]
         lines.append("| " + " | ".join(cols) + " |")
@@ -216,7 +262,7 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
         lines.append("")
 
     # ── 5. 등급 전망 + 변경 트리거 ──
-    lines.append("## 5. 등급 전망")
+    lines.append("## 6. 등급 전망")
     lines.append("")
     lines.append(f"현재 전망: **{outlook}**")
     lines.append("")
@@ -254,7 +300,7 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
     lines.append("")
 
     # ── 7. 면책 + 방법론 ──
-    lines.append("## 7. 면책 + 방법론")
+    lines.append("## 8. 면책 + 방법론")
     lines.append("")
     lines.append(f"- dartlab 독립 신용평가(dCR) {version}")
     lines.append("- 공시 데이터 기반 정량 분석. 비공개 면담/정성 판단 미포함.")
