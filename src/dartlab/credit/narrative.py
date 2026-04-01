@@ -39,6 +39,19 @@ def _fmt(v, suffix="", decimals=1) -> str:
     return f"{v}{suffix}"
 
 
+def _fmtTril(v) -> str:
+    """금액을 조/억 단위로 변환."""
+    if v is None:
+        return "N/A"
+    absV = abs(v)
+    sign = "-" if v < 0 else ""
+    if absV >= 1e12:
+        return f"{sign}{absV / 1e12:.1f}조원"
+    if absV >= 1e8:
+        return f"{sign}{absV / 1e8:.0f}억원"
+    return f"{sign}{absV:,.0f}원"
+
+
 # ═══════════════════════════════════════════════════════════
 # 축별 서사 생성
 # ═══════════════════════════════════════════════════════════
@@ -49,14 +62,28 @@ def narrateRepayment(latest: dict, axisScore: float | None, sectorLabel: str) ->
     details = []
     sev = _severity(axisScore)
 
+    # 금액 맥락
+    ebitda = latest.get("ebitda")
+    totalBorrowing = latest.get("totalBorrowing")
+    revenue = latest.get("revenue")
+
+    if ebitda is not None and revenue is not None:
+        details.append(f"매출 {_fmtTril(revenue)} 기반 EBITDA {_fmtTril(ebitda)}를 창출한다.")
+
     icr = latest.get("ebitdaInterestCoverage")
     if icr is not None:
-        if icr > 50:
-            details.append(f"이자보상배율 {_fmt(icr)}배로 이자 지급에 어떤 우려도 없다.")
+        if icr >= 100:
+            # 이자비용이 극소 — "999배"보다 의미 있는 표현
+            if totalBorrowing:
+                details.append(
+                    f"총차입금 {_fmtTril(totalBorrowing)} 대비 이자 부담이 사실상 없어 무차입에 준하는 재무구조다."
+                )
+            else:
+                details.append("이자 부담이 사실상 없어 무차입에 준하는 재무구조다.")
         elif icr > 10:
             details.append(f"이자보상배율 {_fmt(icr)}배로 충분한 이자 지급 여력을 보유한다.")
         elif icr > 5:
-            details.append(f"이자보상배율 {_fmt(icr)}배로 채무상환에 양호한 여력이 있다.")
+            details.append(f"이자보상배율 {_fmt(icr)}배로 양호한 채무상환 여력이 있다.")
         elif icr > 2:
             details.append(f"이자보상배율 {_fmt(icr)}배로 이자 지급은 가능하나 여유는 제한적이다.")
         elif icr > 1:
