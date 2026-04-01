@@ -5,6 +5,41 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-04-01
+
+### Added
+
+- **UI 엔진 승격 (L4)**: `src/dartlab/ui/` → 루트 `ui/`로 이동. 아키텍처에서 L4 표현 계층으로 정식 승격
+- **scan `extractAccount()` 공통 함수**: 4개 축(profitability/growth/quality/liquidity)의 중복 계정추출 로직 통합
+
+### Changed
+
+- **7개 엔진 코드 감사**: scan, analysis, search, ai, review, company 전면 정리
+  - scan: `_screenAll()` 이중호출 제거 (성능 2배), 계정추출 4중복 → `_helpers.extractAccount` 통합
+  - analysis: 죽은 `buildTimeline()` 제거, 11개 calc 파일 lazy import 래퍼 → 직접 import (~400줄 삭제)
+  - ai: `_validateCode` 2중복 → 모듈 함수 통합, bare except 정리
+  - review: `FlagBlock.icon`, `HeadingBlock.htmlTag/markdownPrefix` 속성 추출 (렌더링 메타데이터 단일화)
+  - company: 죽은 `_boardTopics()`, `_stripUnitHeader()` 제거
+- **스펙 문서 정리**: generateSpec.py 출력 7개 → 4개 축소
+- **CI 안정화**: spec-sync를 non-blocking (continue-on-error) 전환
+- **성숙도 classifier**: `Production/Stable` → `Beta` (README 메시지와 일치)
+- **서버 UI 경로**: `server/web.py`, `embed.py` 경로를 루트 `ui/build/`로 변경
+
+### Removed
+
+- **vectorStore.py** (697줄): stemIndex로 완전 대체된 레거시 벡터 검색 모듈 삭제
+- **_generatedCatalog.py**: import 0곳인 죽은 코드
+- **api-reference.json** (131KB): 소비자 없는 자동생성 파일
+- **generated-reference.md** (43KB): CAPABILITIES.md로 대체
+- **STRUCTURE_MAP.md**: 소비자 없는 통계 문서
+- **dataConfig vectorIndex 항목**: 삭제된 vectorStore 참조 제거
+
+### Fixed
+
+- **growthAnalysis.py**: `hist` 변수 미정의 버그 수정 (undefined name)
+- **derived.py**: 미사용 `json` import 제거
+- **Benchmark CI**: gh-pages 브랜치 생성으로 벤치마크 저장소 이슈 해결
+
 ## [0.7.16] - 2026-03-31
 
 ### Added

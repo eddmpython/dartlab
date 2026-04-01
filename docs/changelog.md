@@ -9,6 +9,28 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-04-01
+
+### Added
+
+- **UI 엔진 승격 (L4)**: `src/dartlab/ui/` → 루트 `ui/`로 이동. L4 표현 계층으로 정식 승격
+- **scan `extractAccount()` 공통 함수**: 4개 축의 중복 계정추출 로직 통합
+
+### Changed
+
+- **7개 엔진 코드 감사**: ~4,100줄 삭제. scan 이중호출 제거, analysis lazy 래퍼 통합, ai _validateCode 통합, review 블록 속성 추출, company 죽은코드 제거
+- **스펙 문서 정리**: generateSpec 출력 7개 → 4개 축소
+- **CI 안정화**: spec-sync non-blocking 전환
+- **성숙도 classifier**: Production/Stable → Beta
+
+### Removed
+
+- vectorStore.py (697줄), _generatedCatalog.py, api-reference.json, generated-reference.md, STRUCTURE_MAP.md
+
+### Fixed
+
+- growthAnalysis.py `hist` 미정의 버그, Benchmark CI gh-pages 브랜치 생성
+
 ## [0.7.16] - 2026-03-31
 
 ### Added
