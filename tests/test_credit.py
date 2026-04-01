@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import pytest
 
-
 # ── metrics: _div, _cv, _calcSegmentHHI ──
 
 
