@@ -33,7 +33,8 @@ export async function activate(
         break;
       case "ready":
         statusBarItem.text = "$(check) DartLab";
-        statusBarItem.tooltip = "DartLab: Ready";
+        statusBarItem.tooltip = `DartLab: Ready (v${stdioProxy.currentVersion})`;
+        checkForUpdate(context, stdioProxy.currentVersion);
         break;
       case "error":
         statusBarItem.text = "$(warning) DartLab";
@@ -103,6 +104,41 @@ async function writeMcpEntry(
       uri,
       Buffer.from(JSON.stringify({ [key]: { dartlab: entry } }, null, 2), "utf8"),
     );
+  }
+}
+
+const LAST_UPDATE_CHECK_KEY = "dartlab.lastUpdateCheck";
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+async function checkForUpdate(context: vscode.ExtensionContext, currentVersion: string): Promise<void> {
+  if (!currentVersion || currentVersion === "unknown") return;
+
+  const lastCheck = context.globalState.get<number>(LAST_UPDATE_CHECK_KEY, 0);
+  if (Date.now() - lastCheck < ONE_DAY_MS) return;
+  await context.globalState.update(LAST_UPDATE_CHECK_KEY, Date.now());
+
+  try {
+    const resp = await fetch("https://pypi.org/pypi/dartlab/json");
+    if (!resp.ok) return;
+    const data = await resp.json() as { info: { version: string } };
+    const latest = data.info.version;
+    if (!latest || latest === currentVersion) return;
+
+    // 자동 업데이트: 백그라운드 터미널에서 uv pip install
+    const terminal = vscode.window.createTerminal({ name: "DartLab Update", hideFromUser: true });
+    terminal.sendText("uv pip install --upgrade dartlab && exit");
+    vscode.window.showInformationMessage(`dartlab ${latest}으로 업데이트 중... (현재 ${currentVersion})`);
+
+    // 업데이트 완료 후 dartlab 프로세스 재시작
+    const disposable = vscode.window.onDidCloseTerminal((t) => {
+      if (t === terminal) {
+        disposable.dispose();
+        stdioProxy.restart();
+        vscode.window.showInformationMessage(`dartlab ${latest} 업데이트 완료. 재시작됨.`);
+      }
+    });
+  } catch {
+    // 네트워크 에러 무시
   }
 }
 

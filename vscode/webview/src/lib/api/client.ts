@@ -37,3 +37,7 @@ export function setProvider(provider: string, model?: string) {
 export function ready() {
   postMessage({ type: "ready" });
 }
+
+export function openSettings() {
+  postMessage({ type: "openSettings" });
+}

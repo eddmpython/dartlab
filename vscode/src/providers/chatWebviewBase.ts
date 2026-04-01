@@ -89,6 +89,10 @@ export class ChatWebviewBase {
         this.stdioProxy.cancelCurrent();
         break;
 
+      case "openSettings":
+        vscode.commands.executeCommand("workbench.action.openSettings", "dartlab");
+        break;
+
       case "setProvider":
         this.stdioProxy.setProvider(
           msg.payload.provider,

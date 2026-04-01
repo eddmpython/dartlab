@@ -226,15 +226,35 @@
         persist();
       }
     } else if (cmd === "help") {
-      const convId = ensureConversation();
-      const conv = conversations.find(c => c.id === convId)!;
-      updateMessages(convId, [...conv.messages, {
-        id: createMessageId(), role: "assistant",
-        text: "**명령어:** `/new` 새 대화 · `/clear` 대화 삭제 · `/help` 도움말\n\n**단축키:**\n- `Enter` 전송 · `Shift+Enter` 줄바꿈\n- `Escape` 응답 중단\n- `Ctrl+Shift+D` 패널 열기\n\n종목코드(005930) 또는 회사명을 입력하세요.",
-        blocks: [{ type: "text" as const, text: "**명령어:** `/new` 새 대화 · `/clear` 대화 삭제 · `/help` 도움말\n\n**단축키:**\n- `Enter` 전송 · `Shift+Enter` 줄바꿈\n- `Escape` 응답 중단\n- `Ctrl+Shift+D` 패널 열기\n\n종목코드(005930) 또는 회사명을 입력하세요." }],
-        loading: false, error: false,
-      }]);
+      addSystemMessage("**명령어:** `/new` 새 대화 · `/clear` 대화 삭제 · `/provider` 프로바이더 · `/model` 모델 · `/settings` 설정 · `/help` 도움말\n\n**단축키:**\n- `Enter` 전송 · `Shift+Enter` 줄바꿈\n- `Escape` 응답 중단\n- `Ctrl+Shift+D` 패널 열기\n\n종목코드(005930) 또는 회사명을 입력하세요.");
+    } else if (cmd === "provider") {
+      // provider 목록을 대화에 표시
+      const lines = providers.length > 0
+        ? providers.map(p => `- **${p.label}**${p.id === providerLabel ? " ← 현재" : ""}${p.freeTier ? ` (${p.freeTier})` : ""}`).join("\n")
+        : "사용 가능한 provider가 없습니다. 헤더의 provider 버튼을 클릭하세요.";
+      addSystemMessage(`**현재:** ${providerLabel || "미설정"} / ${modelLabel || "기본"}\n\n**사용 가능한 Provider:**\n${lines}\n\n변경하려면 헤더 우측의 provider 버튼을 클릭하세요.`);
+    } else if (cmd === "model") {
+      addSystemMessage(`**현재 Provider:** ${providerLabel || "미설정"}\n**현재 Model:** ${modelLabel || "기본"}\n\n모델을 변경하려면 헤더 우측의 provider 버튼을 클릭하세요.`);
+    } else if (cmd === "settings") {
+      client.openSettings();
+    } else if (cmd === "resume") {
+      // 마지막 대화 이어서
+      if (conversations.length > 0 && !activeConversationId) {
+        activeConversationId = conversations[0].id;
+        persist();
+      }
     }
+  }
+
+  function addSystemMessage(text: string) {
+    const convId = ensureConversation();
+    const conv = conversations.find(c => c.id === convId)!;
+    updateMessages(convId, [...conv.messages, {
+      id: createMessageId(), role: "assistant",
+      text,
+      blocks: [{ type: "text" as const, text }],
+      loading: false, error: false,
+    }]);
   }
 
   onMessage((msg: unknown) => {

@@ -84,6 +84,7 @@ export class StdioProxy {
   private statusListeners: Array<(data: Record<string, unknown>) => void> = [];
   private providerListeners: Array<(data: Record<string, unknown>) => void> = [];
   onTemplates?: (data: Record<string, unknown>) => void;
+  currentVersion = "unknown";
 
   // Auto-restart
   private restartCount = 0;
@@ -231,6 +232,7 @@ export class StdioProxy {
         try {
           const msg = JSON.parse(line);
           if (msg.event === "ready") {
+            this.currentVersion = msg.data?.version ?? "unknown";
             this.rl?.removeListener("line", onLine);
             this.rl?.on("line", (l) => this.handleLine(l));
             resolve(true);

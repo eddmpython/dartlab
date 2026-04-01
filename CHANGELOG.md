@@ -5,6 +5,30 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] - 2026-04-02
+
+### Added
+
+- **credit 독립 엔진**: dartlab 독립 신용평가 체계 (dCR). 7축 가중 + 업종 세분화 + CHS 부도확률. `c.credit()` 진입점
+- **quant → analysis 축 통합**: `c.analysis("quant", "기술적분석")` — 25개 기술 지표 + 9개 매매 신호
+- **금융업 수익성 분석**: 은행/보험 이자수익 기반 marginTrend 지원 (KB금융 등)
+- **AI 종합분석 6막 서사**: 기업 전반 질문에 analysis 3축 자동 실행 + 인과 해석 구성
+- **AI quant+재무 교차 검증**: 기술적 지표와 재무분석 결합 투자 판단
+- **보고서 렌더링 개편**: 게이지바 + 문단서사 + 변화화살표
+
+### Changed
+
+- **analysis↔credit 상호의존 완전 제거**: 같은 L2지만 상호 import 0건. review가 블록식 조합
+- **AI 프롬프트 #26~#28**: 종합분석 섹션, quant 섹션, review 금지 + analysis 기반 서사 해석
+- **ops/ 문서 전면 정비**: analysis 14축 체계, credit 독립 명시, vectorStore/DDG 참조 제거
+- **VSCode 확장 개선**: oauth-codex provider 지원
+
+### Fixed
+
+- **금융업 marginTrend=None**: 은행 IS에 매출액 없는 문제 → 이자수익 기반 분기
+- **test_ai_no_build**: _check_built_ui → _checkBuiltUi camelCase 수정
+- **보고서 품질**: 지주사 모순/트리거 비현실/OCF 비정상 수정
+
 ## [0.8.1] - 2026-04-01
 
 ### Changed

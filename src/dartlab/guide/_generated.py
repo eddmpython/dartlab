@@ -124,6 +124,11 @@ CAPABILITIES: dict[str, dict] = {
         "seeAlso": "retrievalBlocks: 슬라이싱 전 전체 retrieval 블록\nask: contextSlices를 내부적으로 소비하는 AI 질문 인터페이스",
         "summary": "LLM 투입용 context slice DataFrame.",
     },
+    "Company.credit": {
+        "kind": "method",
+        "seeAlso": 'review("신용평가"): 보고서 형식으로 렌더링\nanalysis("financial", "신용평가"): analysis 축으로 접근',
+        "summary": "독립 신용평가 — dCR 20단계 등급.",
+    },
     "Company.cumulative": {
         "aicontext": "Q4 누적이 연간 실적 — 연중 진행률 파악에 활용",
         "capabilities": "IS/CF 계정별 분기 누적(YTD) 시계열\nQ1→Q2→Q3→Q4 누적 합산\nfinance XBRL 정규화 기반",

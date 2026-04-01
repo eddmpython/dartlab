@@ -9,6 +9,17 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] - 2026-04-02
+
+### Added
+- credit 독립 엔진 (dCR), quant→analysis 축 통합, 금융업 수익성, AI 6막 서사, 보고서 렌더링 개편
+
+### Changed
+- analysis↔credit 상호의존 제거, AI 프롬프트 #26~#28, ops/ 문서 전면 정비
+
+### Fixed
+- 금융업 marginTrend=None, 보고서 품질 수정
+
 ## [0.8.1] - 2026-04-01
 
 ### Changed

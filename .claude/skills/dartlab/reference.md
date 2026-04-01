@@ -564,7 +564,7 @@ us.market                    # "US"
 
 ### Company 메서드/프로퍼티
 
-DartCompany에서 동적 추출 (64개).
+DartCompany에서 동적 추출 (65개).
 
 | 이름 | 종류 | 설명 |
 |------|------|------|
@@ -582,6 +582,7 @@ DartCompany에서 동적 추출 (64개).
 | `chat` | method | 에이전트 모드: LLM이 도구를 선택하여 심화 분석. |
 | `codeName` | method | 종목코드 → 회사명 변환. |
 | `contextSlices` | property | LLM 투입용 context slice DataFrame. |
+| `credit` | method | 독립 신용평가 — dCR 20단계 등급. |
 | `cumulative` | property | 분기별 누적 시계열 (연결 기준). |
 | `currency` | property | 통화 코드 (DART 제공자는 항상 KRW). |
 | `debt` | method | 부채 구조 분석 (차입금, 부채비율, 만기 구조). |
