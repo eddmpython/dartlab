@@ -388,14 +388,20 @@
               { id: "cerebras", label: "Cerebras (무료)" },
               { id: "ollama", label: "Ollama (로컬)" },
             ] as p}
-              <button class="switch-btn" onclick={() => {
+              <button class="switch-btn" onclick={(e) => {
+                const btn = e.currentTarget as HTMLButtonElement;
+                btn.disabled = true;
+                btn.textContent = p.label + " ✓";
+                // 다른 버튼도 비활성화
+                btn.parentElement?.querySelectorAll(".switch-btn").forEach((b) => {
+                  if (b !== btn) (b as HTMLButtonElement).disabled = true;
+                });
                 client.setProvider(p.id);
-                // 전환 후 자동 재시도
-                if (onregenerate) setTimeout(onregenerate, 500);
+                if (onregenerate) setTimeout(onregenerate, 800);
               }}>{p.label}</button>
             {/each}
           </div>
-          <p class="error-hint">API 키가 필요합니다. dartlab.setup("{message.errorAction === 'relogin' ? 'chatgpt' : 'gemini'}")으로 설정하세요.</p>
+          <p class="error-hint">무료 provider는 API 키 설정이 필요합니다. Ollama는 로컬에서 바로 사용 가능.</p>
         </div>
       {:else if message.errorAction === "retry"}
         <div class="error-switch">
