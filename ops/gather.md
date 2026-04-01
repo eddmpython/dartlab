@@ -14,10 +14,20 @@
 
 ```python
 dartlab.gather("price", "005930")              # 주가 OHLCV
+dartlab.gather("price", "KOSPI")               # 코스피 지수 OHLCV (네이버)
+dartlab.gather("price", "코스닥")              # 코스닥 지수
 dartlab.gather("flow", "005930")               # 외국인/기관 수급
 dartlab.gather("macro")                        # 거시지표
 dartlab.gather("news", "삼성전자")              # 뉴스
 ```
+
+### 시장 지수 심볼
+
+| 심볼 | 별칭 | 소스 |
+|------|------|------|
+| KOSPI | 코스피 | 네이버 차트 API |
+| KOSDAQ | 코스닥 | 네이버 차트 API |
+| KPI200 | 코스피200 | 네이버 차트 API |
 
 Company-bound: `c.gather("price")` — 종목코드 재전달 불필요.
 

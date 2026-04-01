@@ -4,14 +4,14 @@ import sys
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
 
-from dartlab import ai as llm
-from dartlab import config, core
-from dartlab.audit import queryAudit, runAudit  # noqa: F401 — 공개 API
+from dartlab import ai as llm  # noqa: F401 — 하위호환
+from dartlab import config, core  # noqa: F401 — 하위호환
+from dartlab.audit import queryAudit, runAudit  # noqa: F401 — 하위호환
 from dartlab.company import Company
 from dartlab.core.env import loadEnv as _loadEnv
 from dartlab.core.select import ChartResult, SelectResult
 from dartlab.gather.fred import Fred
-from dartlab.gather.listing import codeToName, fuzzySearch, getKindList, nameToCode
+from dartlab.gather.listing import codeToName, fuzzySearch, getKindList, nameToCode  # noqa: F401
 from dartlab.providers.dart.company import Company as _DartEngineCompany
 from dartlab.providers.dart.openapi.dart import OpenDart
 from dartlab.providers.edgar.openapi.edgar import OpenEdgar
@@ -1600,9 +1600,6 @@ __all__ = [
     "OpenDart",
     "OpenEdgar",
     "config",
-    "core",
-    "engines",
-    "llm",
     "ask",
     "chat",
     "setup",
@@ -1615,32 +1612,11 @@ __all__ = [
     "analysis",
     "gather",
     "quant",
-    "network",
-    "audit",
-    "forecast",
-    "valuation",
-    "insights",
-    "simulation",
-    "governance",
-    "workforce",
-    "capital",
-    "debt",
-    "research",
-    "digest",
-    "scanAccount",
-    "scanRatio",
-    "plugins",
-    "reload_plugins",
     "verbose",
     "dataDir",
-    "getKindList",
     "codeToName",
     "nameToCode",
     "searchName",
-    "fuzzySearch",
-    "chart",
-    "table",
-    "text",
     "Review",
     "SelectResult",
     "ChartResult",

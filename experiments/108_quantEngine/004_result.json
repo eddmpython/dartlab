@@ -1,0 +1,44 @@
+{
+  "market": {
+    "KOSPI": {
+      "rsi": 49.87781242482478,
+      "macdHist": -57.625650975126064,
+      "aboveSma20": false,
+      "aboveSma60": true,
+      "verdict": "중립",
+      "score": 0
+    }
+  },
+  "stocks": {
+    "005930": {
+      "name": "삼성전자",
+      "stockRSI": 52.848741577011936,
+      "marketRSI": 49.87781242482478,
+      "relativeStrength": 3.0,
+      "beta": 1.246,
+      "alpha": 25.87,
+      "rSquared": 0.7498,
+      "nObs": 243
+    },
+    "035720": {
+      "name": "카카오",
+      "stockRSI": 42.27561717952069,
+      "marketRSI": 49.87781242482478,
+      "relativeStrength": -7.6,
+      "beta": 0.857,
+      "alpha": -45.97,
+      "rSquared": 0.2977,
+      "nObs": 243
+    },
+    "006400": {
+      "name": "삼성SDI",
+      "stockRSI": 59.72536762575767,
+      "marketRSI": 49.87781242482478,
+      "relativeStrength": 9.8,
+      "beta": 1.057,
+      "alpha": 11.17,
+      "rSquared": 0.3743,
+      "nObs": 243
+    }
+  }
+}

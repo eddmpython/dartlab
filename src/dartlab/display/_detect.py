@@ -21,5 +21,3 @@ def hasItables() -> bool:
         return True
     except ImportError:
         return False
-
-

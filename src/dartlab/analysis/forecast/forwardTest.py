@@ -28,6 +28,10 @@ class ForwardTestRecord:
     assumptions: list[str]  # 예측 가정
     actual: list[float | None] = field(default_factory=list)  # 실적 (나중에 채움)
     evaluation: dict | None = None  # 평가 결과
+    # v4: 방향 예측 캘리브레이션용
+    directionProbability: float | None = None  # 매출 방향 예측 확률 (0~1)
+    directionPredicted: str | None = None  # "up" | "down"
+    directionActual: str | None = None  # 사후 채움
 
 
 def generateKey(stockCode: str, horizon: int, version: str = "v3") -> str:
@@ -110,6 +114,10 @@ def evaluate(
         "evaluatedAt": datetime.now(timezone.utc).isoformat(),
     }
 
+    # 방향 실적 자동 설정 (캘리브레이션용)
+    if record.directionPredicted and len(actualRevenue) >= 2:
+        record.directionActual = "up" if actualRevenue[-1] > actualRevenue[0] else "down"
+
     # 기록 업데이트
     record.actual = actualRevenue[:n]
     record.evaluation = result
@@ -147,6 +155,37 @@ def _checkScenarioHit(
         return "unknown"
 
     return max(hits, key=hits.get)  # type: ignore[arg-type]
+
+
+def evaluateCalibration(
+    stockCodes: list[str] | None = None,
+) -> dict | None:  # CalibrationReport from calibrationMetrics
+    """저장된 forward test 전체의 캘리브레이션 평가.
+
+    모든 기록에서 directionProbability와 directionActual을 수집하여
+    Brier Score + reliability diagram 생성.
+    """
+    from dartlab.analysis.forecast.calibrationMetrics import generateCalibrationReport
+
+    if stockCodes is None:
+        # 모든 종목 파일 스캔
+        if not _FORWARD_TEST_DIR.exists():
+            return None
+        stockCodes = [f.stem for f in _FORWARD_TEST_DIR.glob("*.json")]
+
+    predictions: list[float] = []
+    outcomes: list[int] = []
+
+    for code in stockCodes:
+        for r in loadRecords(code):
+            if r.directionProbability is not None and r.directionActual is not None:
+                predictions.append(r.directionProbability)
+                outcomes.append(1 if r.directionActual == "up" else 0)
+
+    if len(predictions) < 5:
+        return None
+
+    return generateCalibrationReport(predictions, outcomes)
 
 
 def _loadRaw(filepath: Path) -> list[dict]:

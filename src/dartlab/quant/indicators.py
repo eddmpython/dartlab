@@ -647,7 +647,9 @@ def vhma(close: NDArray[np.float64], period: int = 20) -> NDArray[np.float64]:
 
 
 def vvwma(
-    close: NDArray[np.float64], volume: NDArray[np.float64], period: int = 20,
+    close: NDArray[np.float64],
+    volume: NDArray[np.float64],
+    period: int = 20,
 ) -> NDArray[np.float64]:
     """Volume Weighted Moving Average."""
     n = len(close)
@@ -665,8 +667,10 @@ def vvwma(
 
 
 def vvwap(
-    high: NDArray[np.float64], low: NDArray[np.float64],
-    close: NDArray[np.float64], volume: NDArray[np.float64],
+    high: NDArray[np.float64],
+    low: NDArray[np.float64],
+    close: NDArray[np.float64],
+    volume: NDArray[np.float64],
 ) -> NDArray[np.float64]:
     """VWAP (Volume Weighted Average Price) — 누적."""
     tp = (high + low + close) / 3
@@ -677,8 +681,11 @@ def vvwap(
 
 
 def vstochasticRsi(
-    close: NDArray[np.float64], rsiPeriod: int = 14,
-    stochPeriod: int = 14, kPeriod: int = 3, dPeriod: int = 3,
+    close: NDArray[np.float64],
+    rsiPeriod: int = 14,
+    stochPeriod: int = 14,
+    kPeriod: int = 3,
+    dPeriod: int = 3,
 ) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Stochastic RSI (%K, %D)."""
     rsi = vrsi(close, rsiPeriod)
@@ -699,8 +706,12 @@ def vstochasticRsi(
 
 
 def vkdj(
-    high: NDArray[np.float64], low: NDArray[np.float64],
-    close: NDArray[np.float64], period: int = 9, kSmooth: int = 3, dSmooth: int = 3,
+    high: NDArray[np.float64],
+    low: NDArray[np.float64],
+    close: NDArray[np.float64],
+    period: int = 9,
+    kSmooth: int = 3,
+    dSmooth: int = 3,
 ) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
     """KDJ Indicator (K, D, J)."""
     rawK, _ = vstochastic(high, low, close, period, 1)
@@ -711,8 +722,10 @@ def vkdj(
 
 
 def vawesomeOscillator(
-    high: NDArray[np.float64], low: NDArray[np.float64],
-    fastPeriod: int = 5, slowPeriod: int = 34,
+    high: NDArray[np.float64],
+    low: NDArray[np.float64],
+    fastPeriod: int = 5,
+    slowPeriod: int = 34,
 ) -> NDArray[np.float64]:
     """Awesome Oscillator."""
     midpoint = (high + low) / 2
@@ -720,8 +733,12 @@ def vawesomeOscillator(
 
 
 def vultimateOscillator(
-    high: NDArray[np.float64], low: NDArray[np.float64],
-    close: NDArray[np.float64], short: int = 7, medium: int = 14, long: int = 28,
+    high: NDArray[np.float64],
+    low: NDArray[np.float64],
+    close: NDArray[np.float64],
+    short: int = 7,
+    medium: int = 14,
+    long: int = 28,
 ) -> NDArray[np.float64]:
     """Ultimate Oscillator."""
     n = len(close)
@@ -761,7 +778,9 @@ def vulcer(close: NDArray[np.float64], period: int = 14) -> NDArray[np.float64]:
 
 
 def vbollingerPercentB(
-    close: NDArray[np.float64], period: int = 20, std: float = 2.0,
+    close: NDArray[np.float64],
+    period: int = 20,
+    std: float = 2.0,
 ) -> NDArray[np.float64]:
     """Bollinger %B (0~1, 밴드 내 위치)."""
     upper, _, lower = vbollinger(close, period, std)
@@ -771,7 +790,9 @@ def vbollingerPercentB(
 
 
 def vbollingerWidth(
-    close: NDArray[np.float64], period: int = 20, std: float = 2.0,
+    close: NDArray[np.float64],
+    period: int = 20,
+    std: float = 2.0,
 ) -> NDArray[np.float64]:
     """Bollinger Bandwidth (밴드 폭 / 중심)."""
     upper, middle, lower = vbollinger(close, period, std)
@@ -782,8 +803,9 @@ def vbollingerWidth(
 # ── 거래량 확장 ──
 
 
-def vadl(close: NDArray[np.float64], high: NDArray[np.float64],
-         low: NDArray[np.float64], volume: NDArray[np.float64]) -> NDArray[np.float64]:
+def vadl(
+    close: NDArray[np.float64], high: NDArray[np.float64], low: NDArray[np.float64], volume: NDArray[np.float64]
+) -> NDArray[np.float64]:
     """Accumulation/Distribution Line."""
     n = len(close)
     adl = np.zeros(n, dtype=np.float64)
@@ -798,9 +820,12 @@ def vadl(close: NDArray[np.float64], high: NDArray[np.float64],
 
 
 def vchaikin(
-    close: NDArray[np.float64], high: NDArray[np.float64],
-    low: NDArray[np.float64], volume: NDArray[np.float64],
-    fastPeriod: int = 3, slowPeriod: int = 10,
+    close: NDArray[np.float64],
+    high: NDArray[np.float64],
+    low: NDArray[np.float64],
+    volume: NDArray[np.float64],
+    fastPeriod: int = 3,
+    slowPeriod: int = 10,
 ) -> NDArray[np.float64]:
     """Chaikin Oscillator (ADL의 EMA 차이)."""
     adl = vadl(close, high, low, volume)
@@ -808,8 +833,10 @@ def vchaikin(
 
 
 def vemv(
-    high: NDArray[np.float64], low: NDArray[np.float64],
-    volume: NDArray[np.float64], period: int = 14,
+    high: NDArray[np.float64],
+    low: NDArray[np.float64],
+    volume: NDArray[np.float64],
+    period: int = 14,
 ) -> NDArray[np.float64]:
     """Ease of Movement (EMA smoothed)."""
     n = len(high)
@@ -863,7 +890,9 @@ def vpvt(close: NDArray[np.float64], volume: NDArray[np.float64]) -> NDArray[np.
 
 
 def vtrix(
-    close: NDArray[np.float64], period: int = 15, signalPeriod: int = 9,
+    close: NDArray[np.float64],
+    period: int = 15,
+    signalPeriod: int = 9,
 ) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
     """TRIX + Signal."""
     e1 = vema(close, period)
@@ -908,9 +937,18 @@ def vdpo(close: NDArray[np.float64], period: int = 20) -> NDArray[np.float64]:
 
 
 def vpivotPoints(
-    high: NDArray[np.float64], low: NDArray[np.float64], close: NDArray[np.float64],
-) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64],
-           NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+    high: NDArray[np.float64],
+    low: NDArray[np.float64],
+    close: NDArray[np.float64],
+) -> Tuple[
+    NDArray[np.float64],
+    NDArray[np.float64],
+    NDArray[np.float64],
+    NDArray[np.float64],
+    NDArray[np.float64],
+    NDArray[np.float64],
+    NDArray[np.float64],
+]:
     """Pivot Points (PP, R1, R2, R3, S1, S2, S3). 전일 기준."""
     n = len(close)
     pp = np.full(n, np.nan, dtype=np.float64)
@@ -933,7 +971,8 @@ def vpivotPoints(
 
 
 def vlinearRegression(
-    close: NDArray[np.float64], period: int = 20,
+    close: NDArray[np.float64],
+    period: int = 20,
 ) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
     """Linear Regression (value, slope, r-squared)."""
     n = len(close)
@@ -959,7 +998,8 @@ def vlinearRegression(
 
 
 def vzigzag(
-    close: NDArray[np.float64], threshold: float = 5.0,
+    close: NDArray[np.float64],
+    threshold: float = 5.0,
 ) -> NDArray[np.float64]:
     """ZigZag (threshold % 이상 변화만 추적)."""
     n = len(close)

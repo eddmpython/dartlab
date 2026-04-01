@@ -43,11 +43,24 @@ class TableBlock:
 
 
 @dataclass
+class EnrichedFlag:
+    """정밀도·기저율 등 진단 메타를 포함하는 구조화된 플래그."""
+
+    code: str  # "BENEISH_MANIPULATOR", "ALTMAN_DISTRESS" 등
+    message: str  # 사용자 표시 메시지
+    precision: float | None = None  # 모델 정밀도 (0~1)
+    baseRate: str = ""  # 모델 학습 표본 설명
+    reference: str = ""  # 학술 출처
+    sectorNote: str = ""  # 업종별 주의사항
+
+
+@dataclass
 class FlagBlock:
     """경고/기회 플래그 블록."""
 
     flags: list[str]
     kind: str = "warning"  # warning | opportunity
+    enrichedFlags: list[EnrichedFlag] | None = None  # 구조화된 플래그 (하위호환)
 
     @property
     def icon(self) -> str:

@@ -525,6 +525,12 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
             _CalcEntry(
                 "calcForecastFlags", "dartlab.analysis.financial.forecastCalcs", "forecastFlags", "매출전망 플래그"
             ),
+            _CalcEntry(
+                "calcScenarioSimulation",
+                "dartlab.analysis.financial.forecastCalcs",
+                "scenarioSimulation",
+                "시나리오 시뮬레이션",
+            ),
         ),
     ),
     "예측신호": _AxisEntry(
@@ -630,10 +636,46 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
 
 # ── Alias ──
 
+# ── 그룹 정의 — analysis("그룹", "하위") 2단계 호출 ──
+
+_GROUPS: dict[str, list[str]] = {
+    "financial": [
+        "수익구조",
+        "자금조달",
+        "자산구조",
+        "현금흐름",
+        "수익성",
+        "성장성",
+        "안정성",
+        "효율성",
+        "종합평가",
+        "이익품질",
+        "비용구조",
+        "자본배분",
+        "투자효율",
+        "재무정합성",
+    ],
+    "valuation": ["가치평가"],
+    "governance": ["지배구조", "공시변화", "비교분석"],
+    "forecast": ["매출전망", "예측신호"],
+}
+
+# 역매핑: 축 → 소속 그룹
+_AXIS_TO_GROUP: dict[str, str] = {}
+for _g, _axes in _GROUPS.items():
+    for _a in _axes:
+        _AXIS_TO_GROUP[_a] = _g
+
+# ── alias — 한글↔영문 양방향 ──
+
 _ALIASES: dict[str, str] = {
+    # 영문 → 한글 (축 이름)
     "revenue": "수익구조",
+    "revenueStructure": "수익구조",
     "capital": "자금조달",
+    "funding": "자금조달",
     "asset": "자산구조",
+    "assetStructure": "자산구조",
     "cashflow": "현금흐름",
     "profitability": "수익성",
     "growth": "성장성",
@@ -644,16 +686,26 @@ _ALIASES: dict[str, str] = {
     "costStructure": "비용구조",
     "capitalAllocation": "자본배분",
     "investment": "투자효율",
+    "investmentEfficiency": "투자효율",
     "crossStatement": "재무정합성",
+    "financialConsistency": "재무정합성",
     "valuation": "가치평가",
     "governance": "지배구조",
     "disclosureDelta": "공시변화",
+    "disclosureChange": "공시변화",
     "peerBenchmark": "비교분석",
+    "peerComparison": "비교분석",
     "forecast": "매출전망",
     "전망": "매출전망",
     "prediction": "예측신호",
     "predictionSignals": "예측신호",
     "전망신호": "예측신호",
+    # 그룹 alias (한글)
+    "재무": "financial",
+    "재무분석": "financial",
+    "가치": "valuation",
+    "지배": "governance",
+    "전망분석": "forecast",
 }
 
 
@@ -750,15 +802,46 @@ class Analysis:
     def __call__(
         self,
         axis: str | None = None,
-        company: Any | None = None,
+        sub: Any | None = None,
         *,
+        company: Any | None = None,
         basePeriod: str | None = None,
         **kwargs: Any,
     ) -> pl.DataFrame | dict:
-        """축(axis)별 단일 종목 재무분석."""
+        """엔진("축") 또는 엔진("그룹", "하위") 패턴.
+
+        2단계 호출::
+
+            c.analysis("financial", "수익성")   # 그룹 + 하위
+            c.analysis("valuation", "DCF")      # 그룹 + 하위
+
+        1단계 호출 (하위호환)::
+
+            c.analysis("수익성")                 # financial 기본 추론
+            c.analysis("수익성", company)        # 루트 호출 (기존 호환)
+        """
         if axis is None:
             return self._guide()
 
+        # sub가 Company 객체면 기존 호환: analysis("수익성", company)
+        if sub is not None and hasattr(sub, "stockCode"):
+            company = sub
+            sub = None
+
+        # 그룹 해석 — 직접 그룹명 또는 한글 그룹 alias
+        group = axis if axis in _GROUPS else _ALIASES.get(axis) if _ALIASES.get(axis) in _GROUPS else None
+
+        if group is not None:
+            # 2단계: analysis("financial", "수익성")
+            if sub is None:
+                return self._groupGuide(group)
+            resolved = _resolveAxis(sub)
+            entry = _AXIS_REGISTRY[resolved]
+            if company is None:
+                return self._listCalcs(resolved, entry)
+            return self._run(company, entry, basePeriod=basePeriod)
+
+        # 1단계 하위호환: analysis("수익성") → financial 기본 추론
         resolved = _resolveAxis(axis)
         entry = _AXIS_REGISTRY[resolved]
 
@@ -766,6 +849,18 @@ class Analysis:
             return self._listCalcs(resolved, entry)
 
         return self._run(company, entry, basePeriod=basePeriod)
+
+    def _groupGuide(self, group: str) -> pl.DataFrame:
+        """그룹 내 축 목록."""
+        axes = _GROUPS.get(group, [])
+        rows = []
+        for key in axes:
+            entry = _AXIS_REGISTRY.get(key)
+            if entry:
+                rows.append({"축": key, "파트": entry.partId, "설명": entry.description})
+        if not rows:
+            return pl.DataFrame()
+        return pl.DataFrame(rows)
 
     def _guide(self) -> pl.DataFrame:
         """15축 가이드."""

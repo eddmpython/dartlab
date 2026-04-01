@@ -12,6 +12,8 @@ Company = 기업 하나. Scan = 기업 밖 전부.
     dartlab.scan("ratio")                   # 가용 비율 목록
     dartlab.scan("ratio", "roe")            # 전종목 ROE
     dartlab.scan("account", "매출액")       # 전종목 매출액 시계열
+    dartlab.scan("financial")               # 재무 8축 가이드
+    dartlab.scan("financial", "수익성")      # 2-level: financial 그룹 내 수익성
 """
 
 from __future__ import annotations
@@ -388,6 +390,39 @@ def _edgarDispatch(axis: str, kwargs: dict) -> pl.DataFrame | None:
     return None  # 아직 EDGAR 구현 없는 축
 
 
+_SCAN_GROUPS: dict[str, list[str]] = {
+    "financial": [
+        "profitability",
+        "growth",
+        "efficiency",
+        "quality",
+        "liquidity",
+        "valuation",
+        "cashflow",
+        "dividendTrend",
+    ],
+}
+
+_GROUP_ALIASES: dict[str, str] = {
+    "재무": "financial",
+    "재무분석": "financial",
+}
+
+
+def _resolveGroup(name: str) -> str | None:
+    """그룹 이름 또는 alias → 정규 그룹 이름. 그룹이 아니면 None."""
+    if name in _SCAN_GROUPS:
+        return name
+    lower = name.lower()
+    if lower in _SCAN_GROUPS:
+        return lower
+    if name in _GROUP_ALIASES:
+        return _GROUP_ALIASES[name]
+    if lower in _GROUP_ALIASES:
+        return _GROUP_ALIASES[lower]
+    return None
+
+
 def _resolveAxis(axis: str) -> str:
     """축 이름 또는 alias → 정규 축 이름."""
     if axis in _AXIS_REGISTRY:
@@ -507,9 +542,33 @@ class Scan:
         target: str | None = None,
         **kwargs: Any,
     ) -> pl.DataFrame | Any:
-        """축(axis)별 전종목 횡단분석."""
+        """축(axis)별 전종목 횡단분석.
+
+        2-level 호출도 지원한다::
+
+            scan("financial")              # 재무 8축 가이드
+            scan("financial", "수익성")     # financial 그룹 내 수익성 축
+            scan("profitability")          # 기존 flat 호출도 그대로 동작
+        """
         if axis is None:
             return self._guide()
+
+        # ── 2-level: 그룹 호출 ──
+        group = _resolveGroup(axis)
+        if group is not None:
+            if target is None:
+                return self._financialGuide() if group == "financial" else self._guide()
+            # target을 그룹 내 축으로 resolve
+            try:
+                resolvedTarget = _resolveAxis(target)
+            except ValueError:
+                members = ", ".join(_SCAN_GROUPS[group])
+                raise ValueError(f"'{target}'은(는) '{group}' 그룹에 속하지 않습니다. 가용 축: {members}")
+            if resolvedTarget not in _SCAN_GROUPS[group]:
+                members = ", ".join(_SCAN_GROUPS[group])
+                raise ValueError(f"'{target}'은(는) '{group}' 그룹에 속하지 않습니다. 가용 축: {members}")
+            # 그룹 내 축이면 flat 호출로 위임 (나머지 kwargs 전달)
+            return self(resolvedTarget, **kwargs)
 
         resolved = _resolveAxis(axis)
         entry = _AXIS_REGISTRY[resolved]
@@ -570,6 +629,21 @@ class Scan:
             }
             for key, entry in _AXIS_REGISTRY.items()
         ]
+        return pl.DataFrame(rows)
+
+    def _financialGuide(self) -> pl.DataFrame:
+        """financial 그룹 8축 가이드."""
+        rows = []
+        for axisKey in _SCAN_GROUPS["financial"]:
+            entry = _AXIS_REGISTRY[axisKey]
+            rows.append(
+                {
+                    "axis": axisKey,
+                    "label": entry.label,
+                    "description": entry.description,
+                    "example": f'scan("financial", "{axisKey}")',
+                }
+            )
         return pl.DataFrame(rows)
 
     def _listForAxis(self, axis: str, entry: _AxisEntry) -> pl.DataFrame | list:

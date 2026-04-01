@@ -186,6 +186,7 @@ _BLOCKS: list[BlockMeta] = [
     BlockMeta("forecastMethodology", "예측 방법론", "매출전망", "소스 가중치, 가정, 데이터 품질"),
     BlockMeta("historicalRatios", "과거 구조 비율", "매출전망", "Pro-Forma 기반 과거 재무 비율"),
     BlockMeta("forecastFlags", "매출전망 플래그", "매출전망", "예측 관련 경고/제한 사항"),
+    BlockMeta("calibrationReport", "예측 정확도 검증", "매출전망", "과거 예측의 확률 캘리브레이션 (Brier Score)"),
 ]
 
 # ── 파생 인덱스 (자동 생성, 직접 수정 금지) ──

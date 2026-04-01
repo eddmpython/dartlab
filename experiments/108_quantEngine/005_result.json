@@ -1,0 +1,48 @@
+{
+  "riskFree": 3.5000000000000004,
+  "marketPremium": 6.5,
+  "stocks": {
+    "005930": {
+      "name": "삼성전자",
+      "dailyStd": 3.082,
+      "annualVol": 48.9,
+      "annualReturn": 133.6,
+      "beta": 1.246,
+      "capm": 11.6,
+      "waccRange": [
+        -3.1,
+        26.3
+      ],
+      "trend": "강세",
+      "trendScore": 2
+    },
+    "035720": {
+      "name": "카카오",
+      "dailyStd": 3.363,
+      "annualVol": 53.4,
+      "annualReturn": 28.1,
+      "beta": 0.857,
+      "capm": 9.1,
+      "waccRange": [
+        -6.9,
+        25.1
+      ],
+      "trend": "약세",
+      "trendScore": -2
+    },
+    "006400": {
+      "name": "삼성SDI",
+      "dailyStd": 3.702,
+      "annualVol": 58.8,
+      "annualReturn": 102.6,
+      "beta": 1.057,
+      "capm": 10.4,
+      "waccRange": [
+        -7.2,
+        28.0
+      ],
+      "trend": "강세",
+      "trendScore": 2
+    }
+  }
+}

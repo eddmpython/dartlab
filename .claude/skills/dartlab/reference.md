@@ -5,7 +5,7 @@
 
 ---
 
-## Python API (49개)
+## Python API (26개)
 
 `import dartlab` 후 사용 가능한 공개 API.
 
@@ -16,9 +16,6 @@
 | `OpenDart` | class | OpenDART API 통합 클라이언트. |
 | `OpenEdgar` | class | SEC public API facade. |
 | `config` | module | dartlab 전역 설정. |
-| `core` | module | - |
-| `engines` | - | - |
-| `llm` | module | LLM 기반 적극적 분석가. dartlab을 도구로 삼아 주체적으로 분석하고, 사용자의 분석 학습을 돕는다. |
 | `ask` | function | LLM에게 기업에 대해 질문. |
 | `chat` | function | 에이전트 모드: LLM이 도구를 선택하여 심화 분석. |
 | `setup` | function | AI provider 설정 안내 + 인터랙티브 설정. |
@@ -30,32 +27,12 @@
 | `scan` | function | 시장 전체 횡단분석 -- 15축, 전부 Polars DataFrame. |
 | `analysis` | function | 재무제표 완전 분석 — 20축, 단일 종목 심층. |
 | `gather` | function | 외부 시장 데이터 통합 수집 — 8축, 전부 Polars DataFrame. |
-| `network` | function | 한국 상장사 전체 관계 지도. |
-| `audit` | function | 감사 Red Flag 분석. |
-| `forecast` | function | 매출 앙상블 예측. |
-| `valuation` | function | 종합 밸류에이션 (DCF + DDM + 상대가치). |
-| `insights` | function | 7영역 등급 분석. |
-| `simulation` | function | 경제 시나리오 시뮬레이션. |
-| `governance` | function | 한국 상장사 전체 지배구조 스캔. |
-| `workforce` | function | 한국 상장사 전체 인력/급여 스캔. |
-| `capital` | function | 한국 상장사 전체 주주환원 스캔. |
-| `debt` | function | 한국 상장사 전체 부채 구조 스캔. |
-| `research` | function | 종합 기업분석 리포트. |
-| `digest` | function | 시장 전체 공시 변화 다이제스트. |
-| `scanAccount` | function | 전종목 단일 계정 시계열. |
-| `scanRatio` | function | 전종목 단일 재무비율 시계열. |
-| `plugins` | function | 로드된 플러그인 목록 반환. |
-| `reload_plugins` | function | 플러그인 재스캔 — pip install 후 재시작 없이 즉시 인식. |
+| `quant` | function | 기술적 분석 진입점 — scan/gather와 동일한 호출 패턴. |
 | `verbose` | module | bool(x) -> bool |
 | `dataDir` | module | str(object='') -> str |
-| `getKindList` | function | KRX KIND 상장법인 전체 목록. |
 | `codeToName` | function | 종목코드 → 회사명. |
 | `nameToCode` | function | 회사명 → 종목코드. 정확히 일치하는 첫 번째 결과. |
 | `searchName` | function | 종목명/코드로 종목 찾기 (KR + US). |
-| `fuzzySearch` | function | 한글 fuzzy 종목 검색 — 초성 매칭 + Levenshtein 거리. |
-| `chart` | - | (lazy import 미완) |
-| `table` | function | 테이블 가공 엔진 -- DataFrame 변환/포맷팅. |
-| `text` | module | 텍스트 분석 도구. |
 | `Review` | class | 분석 리뷰 — 14축 전략분석 결과를 구조화 보고서로 렌더링. |
 | `SelectResult` | class | select() 반환 객체 — DataFrame 위임 + 체이닝. |
 | `ChartResult` | class | chart() 반환 객체 — 시각화 + 렌더링. |
@@ -286,257 +263,6 @@ macro: API 키 — ECOS_API_KEY (KR) 또는 FRED_API_KEY (US)
 **SeeAlso:** scan: 재무 기반 전종목 횡단분석 (거버넌스, 현금흐름 등)
 Company: 개별 종목 공시/재무 데이터
 analysis: 14축 전략분석 (재무비율, 수익구조 등)
-
-#### network
-**Capabilities:** 상장사 간 지분 관계 네트워크 시각화
-브라우저에서 인터랙티브 그래프 표시
-노드(기업) + 엣지(지분 관계) 구조
-**Requires:** 데이터: docs (자동 다운로드)
-**AIContext:** 기업 간 지분 관계 파악에 사용
-그룹사 구조, 모자회사 관계 시각적 탐색
-nodes/edges 데이터로 프로그래밍 방식 관계 분석 가능
-**Guide:** "상장사 관계 보여줘" -> network().show()
-"기업 간 지분 관계 알려줘" -> network()로 네트워크 데이터 접근
-"그룹사 구조 시각화" -> network().show()로 브라우저 렌더링
-**SeeAlso:** governance: 개별 기업 지배구조 상세 (network는 전체 관계 지도)
-scan: 전종목 횡단 비교 (network는 관계 중심)
-
-#### audit
-**Capabilities:** 감사의견 추이 (최근 5년, 적정/한정/부적정/의견거절)
-감사인 변경 이력 + 변경 사유
-계속기업 불확실성 플래그
-핵심감사사항 (KAM) 추출
-내부회계관리제도 검토의견
-**Requires:** 데이터: docs + report (자동 다운로드)
-**AIContext:** 투자 의사결정 전 감사 리스크 사전 점검에 사용
-goingConcern 플래그로 계속기업 불확실성 즉시 감지
-감사인 변경 + 한정의견 조합으로 회계 신뢰도 평가
-**Guide:** "이 회사 감사의견 괜찮아?" -> audit("005930")
-"감사인 바뀐 적 있어?" -> audit()에서 auditorChanges 확인
-"계속기업 불확실성 있어?" -> audit()에서 goingConcern 확인
-**SeeAlso:** insights: 7영역 종합 등급 (audit는 감사 특화)
-research: 종합 리포트 (audit 결과 포함)
-governance: 지배구조 횡단 비교 (감사위원회 정보)
-
-#### forecast
-**Capabilities:** 매출 시계열 기반 앙상블 예측 (ARIMA + 선형 + 지수평활)
-업종 성장률 가중 보정
-신뢰구간 (80%, 95%) 제공
-최대 N년 전망 (기본 3년)
-**Requires:** 데이터: finance (자동 다운로드)
-**AIContext:** 매출 성장 전망 수치를 DCF/밸류에이션에 입력으로 활용
-신뢰구간으로 예측 불확실성 정량화
-업종 성장률 반영으로 단순 추세 외삽보다 현실적 전망
-**Guide:** "매출 전망 보여줘" -> forecast("005930")
-"5년 뒤 매출 예측" -> forecast("005930", horizon=5)
-"이 회사 성장할까?" -> forecast()로 매출 추세 확인
-**SeeAlso:** valuation: 밸류에이션 (forecast 결과를 DCF에 활용)
-simulation: 시나리오별 재무 영향 (forecast는 기본 전망)
-insights: 성장성 등급 (forecast는 미래 추정)
-
-#### valuation
-**Capabilities:** DCF (잉여현금흐름 할인 모형)
-DDM (배당할인 모형)
-상대가치 (PER/PBR/EV-EBITDA 동종업계 비교)
-적정주가 범위 산출
-**Requires:** 데이터: finance (자동 다운로드)
-**AIContext:** 적정주가 범위 산출로 투자 판단 근거 제공
-DCF/DDM/상대가치 3가지 관점의 교차 검증
-shares 자동 조회로 주당 가치 즉시 산출
-**Guide:** "적정 주가 얼마야?" -> valuation("005930")
-"이 회사 저평가야?" -> valuation()에서 summary 확인
-"DCF 해줘" -> valuation()에서 dcf 항목 조회
-**SeeAlso:** forecast: 매출 예측 (valuation의 DCF 입력에 활용)
-insights: 밸류에이션 등급 (valuation은 절대/상대 가치 상세)
-research: 종합 리포트 (valuation 결과 포함)
-
-#### insights
-**Capabilities:** 수익성, 성장성, 안정성, 효율성, 현금흐름, 밸류에이션, 배당 — 7영역
-각 영역 A~F 등급 부여 + 근거 지표
-종합 등급 + 강점/약점 요약
-동종업계 백분위 위치
-**Requires:** 데이터: finance (자동 다운로드)
-**AIContext:** 기업의 재무 건전성을 7영역 등급으로 요약
-강점/약점 자동 식별로 분석 포커스 결정
-동종업계 백분위로 상대적 위치 즉시 파악
-**Guide:** "이 회사 재무 어때?" -> insights("005930")
-"수익성 등급 알려줘" -> insights()에서 grades 조회
-"강점이 뭐야?" -> insights()에서 strengths 확인
-**SeeAlso:** audit: 감사 Red Flag 분석 (insights는 재무 등급)
-valuation: 밸류에이션 상세 (insights는 종합 등급)
-research: 종합 리포트 (insights 결과 포함)
-
-#### simulation
-**Capabilities:** 거시경제 시나리오별 재무 영향 시뮬레이션
-기본 시나리오: 금리 인상, 경기 침체, 원자재 급등, 환율 변동
-매출/영업이익/순이익 변동 추정
-업종별 민감도 차등 적용
-**Requires:** 데이터: finance (자동 다운로드)
-**AIContext:** 거시 변수 변동이 개별 기업 재무에 미치는 영향 정량화
-업종별 민감도 차등으로 현실적 스트레스 테스트
-복수 시나리오 동시 비교로 리스크 범위 파악
-**Guide:** "금리 오르면 이 회사 어떻게 돼?" -> simulation("005930")
-"경기 침체 시나리오" -> simulation()에서 해당 시나리오 확인
-"환율 영향 분석" -> simulation()으로 환율 변동 시나리오 조회
-**SeeAlso:** forecast: 매출 예측 (simulation은 시나리오별 변동)
-valuation: 밸류에이션 (시나리오별 적정가치 비교에 활용)
-research: 종합 리포트 (simulation 결과 포함)
-
-#### governance
-**Capabilities:** 전체 상장사 지배구조 횡단 비교
-최대주주 지분율, 사외이사 비율, 감사위원회 설치 여부
-지분 변동 추이, 특수관계인 거래
-**Requires:** 데이터: report (dartlab.downloadAll("report")로 사전 다운로드)
-**AIContext:** 전체 시장의 지배구조 리스크 스크리닝에 사용
-최대주주 지분율 극단값, 사외이사 미선임 기업 탐지
-governance 점수가 낮은 기업군 필터링 후 심화 분석 연계
-**Guide:** "지배구조 좋은 기업 찾아줘" -> governance()로 횡단 비교
-"최대주주 지분율 높은 기업?" -> governance() DataFrame 정렬
-"사외이사 비율 낮은 곳은?" -> governance() 결과 필터링
-**SeeAlso:** network: 기업 간 지분 관계 시각화 (governance는 개별 기업 지표)
-scan: 전종목 횡단 비교 통합 인터페이스
-workforce: 인력/급여 횡단 비교 (governance와 함께 ESG 분석)
-
-#### workforce
-**Capabilities:** 전체 상장사 임직원 현황 횡단 비교
-임직원 수, 평균 근속연수, 평균 급여, 성별 비율
-업종별/규모별 비교
-**Requires:** 데이터: report (dartlab.downloadAll("report")로 사전 다운로드)
-**AIContext:** 업종별 인력 효율성 비교에 사용
-평균급여 대비 매출/이익 생산성 분석 연계
-직원 수 증감 추이로 사업 확장/축소 신호 탐지
-**Guide:** "평균 급여 높은 기업?" -> workforce() DataFrame 정렬
-"직원 수 많은 기업 순위" -> workforce() 결과 필터링
-"인력 현황 비교해줘" -> workforce()로 횡단 비교
-**SeeAlso:** governance: 지배구조 횡단 비교 (workforce와 함께 ESG 분석)
-capital: 주주환원 횡단 비교 (인력 투자 vs 주주 환원 비교)
-scan: 전종목 횡단 비교 통합 인터페이스
-
-#### capital
-**Capabilities:** 전체 상장사 주주환원 정책 횡단 비교
-배당수익률, 배당성향, 자사주 매입/소각 이력
-유상증자/무상증자 이력
-**Requires:** 데이터: report (dartlab.downloadAll("report")로 사전 다운로드)
-**AIContext:** 배당주 스크리닝, 주주환원 정책 비교에 사용
-배당수익률/배당성향 조합으로 지속가능성 판단
-자사주 매입/소각 이력으로 주주 친화도 평가
-**Guide:** "배당 좋은 기업 찾아줘" -> capital() DataFrame 정렬
-"자사주 매입한 기업?" -> capital() 결과 필터링
-"주주환원 비교해줘" -> capital()로 횡단 비교
-**SeeAlso:** debt: 부채 구조 횡단 비교 (배당 여력과 부채 부담 동시 분석)
-workforce: 인력/급여 횡단 비교 (인력 투자 vs 주주 환원)
-insights: 개별 기업 배당 등급 분석 (capital은 전체 시장)
-
-#### debt
-**Capabilities:** 전체 상장사 부채 구조 횡단 비교
-부채비율, 차입금 의존도, 이자보상배율
-단기/장기 차입금 구성, 사채 발행 현황
-**Requires:** 데이터: report (dartlab.downloadAll("report")로 사전 다운로드)
-**AIContext:** 재무 안정성 리스크 스크리닝에 사용
-부채비율/이자보상배율 극단값으로 위험 기업 탐지
-단기/장기 차입 구조 분석으로 유동성 리스크 평가
-**Guide:** "부채비율 높은 기업?" -> debt() DataFrame 정렬
-"재무 안정적인 기업 찾아줘" -> debt() 결과 필터링
-"부채 구조 비교해줘" -> debt()로 횡단 비교
-**SeeAlso:** capital: 주주환원 횡단 비교 (부채 vs 배당 균형 분석)
-insights: 개별 기업 안정성 등급 (debt는 전체 시장)
-scan: 전종목 횡단 비교 통합 인터페이스
-
-#### research
-**Capabilities:** 재무분석 + 시장분석 통합 리포트
-섹션별 선택 생성 가능
-재무비율 추세, 동종업계 비교, 시장 포지션
-구조화된 마크다운 출력
-**Requires:** 데이터: finance + docs (자동 다운로드)
-**AIContext:** 재무 + 시장 + 공시 통합 리포트 자동 생성
-마크다운 구조로 LLM이 섹션별 참조 가능
-섹션 선택으로 특정 관점만 추출 가능
-**Guide:** "기업 분석 리포트 만들어줘" -> research("005930")
-"재무분석만 보고 싶어" -> research("005930", includeMarket=False)
-"종합 분석해줘" -> research()로 전체 리포트 생성
-**SeeAlso:** insights: 7영역 등급 (research는 서술형 리포트)
-ask: AI가 해석하는 분석 (research는 엔진 기반 구조화)
-forecast: 매출 예측 (research 리포트에 포함)
-
-#### digest
-**Capabilities:** 전체 상장사 공시 변화 중요도 순위
-섹터별 필터링
-텍스트 변화량 + 재무 변화 통합 스코어링
-DataFrame/마크다운/JSON 출력
-**Requires:** 데이터: docs (dartlab.downloadAll("docs")로 사전 다운로드)
-**AIContext:** 시장 전체에서 공시 변화가 큰 기업을 중요도 순으로 제공
-섹터별 필터링으로 관심 업종의 변화 포착
-마크다운/JSON 출력으로 LLM 컨텍스트에 직접 주입 가능
-**Guide:** "최근 공시 변화 큰 기업?" -> digest()
-"반도체 섹터 공시 변화" -> digest(sector="반도체")
-"시장 동향 요약해줘" -> digest(format="markdown")
-**SeeAlso:** scan: 전종목 횡단 비교 통합 (digest는 공시 변화 특화)
-Company.diff: 개별 기업 기간간 변화 (digest는 시장 전체)
-checkFreshness: 데이터 최신성 확인 (digest 전 갱신 여부 판단)
-
-#### scanAccount
-**Capabilities:** 전체 상장종목의 특정 계정 시계열 횡단 비교
-한글/영문 계정명 모두 지원 ("매출액" = "sales")
-DART(KR) + EDGAR(US) 양쪽 지원
-분기별/연간 선택, 연결/별도 선택
-**Requires:** 데이터: finance (dartlab.downloadAll("finance")로 사전 다운로드)
-**AIContext:** 전종목 동일 계정을 한 번에 비교하여 이상치/트렌드 탐지
-피벗 테이블 형태로 시계열 분석 즉시 가능
-KR/US 양쪽 시장 동일 인터페이스로 글로벌 비교
-**Guide:** "전종목 매출 비교" -> scan("account", "매출액")
-"전체 기업 자산 순위" -> scan("account", "total_assets") 후 정렬
-"미국 기업 매출 비교" -> scan("account", "sales", market="edgar")
-**SeeAlso:** scanRatio: 전종목 재무비율 횡단 비교 (scanAccount는 원시 계정)
-scan: 전종목 횡단 비교 통합 인터페이스
-Company.finance: 개별 기업 재무 상세
-
-#### scanRatio
-**Capabilities:** 전체 상장종목의 특정 재무비율 시계열 횡단 비교
-ROE, 영업이익률, 부채비율 등 주요 비율 지원
-DART(KR) + EDGAR(US) 양쪽 지원
-분기별/연간 선택
-**Requires:** 데이터: finance (dartlab.downloadAll("finance")로 사전 다운로드)
-**AIContext:** 전종목 동일 비율을 한 번에 비교하여 업종별 분포 파악
-ROE/영업이익률 등 핵심 비율의 시장 전체 추이 분석
-이상치 기업 탐지 및 피어 그룹 벤치마킹에 활용
-**Guide:** "전종목 ROE 비교" -> scan("ratio", "roe")
-"영업이익률 높은 기업 순위" -> scan("ratio", "operatingMargin") 후 정렬
-"미국 기업 ROE 비교" -> scan("ratio", "roe", market="edgar")
-**SeeAlso:** scanAccount: 전종목 원시 계정 횡단 비교 (scanRatio는 가공된 비율)
-scan: 전종목 횡단 비교 통합 인터페이스
-insights: 개별 기업 등급 (scanRatio는 시장 전체)
-
-#### plugins
-**Capabilities:** 설치된 dartlab 플러그인 자동 탐색
-플러그인 메타데이터 (이름, 버전, 제공 topic) 조회
-**Requires:** 없음
-**AIContext:** 확장 기능 탐색 시 설치된 플러그인 목록 확인
-플러그인이 제공하는 topic을 show()에서 사용 가능
-플러그인 유무에 따라 분석 범위 동적 결정
-**Guide:** "플러그인 뭐 있어?" -> plugins()
-"확장 기능 목록" -> plugins()로 설치된 플러그인 확인
-"ESG 플러그인 있어?" -> plugins()에서 검색
-**SeeAlso:** reload_plugins: 새 플러그인 설치 후 재스캔
-Company.show: 플러그인 topic 조회 (plugins가 제공한 topic 사용)
-
-#### reload_plugins
-**Capabilities:** 새로 설치한 플러그인 즉시 인식 (세션 재시작 불필요)
-entry_points 재스캔
-**Requires:** 없음
-**AIContext:** pip install 후 세션 재시작 없이 플러그인 즉시 활성화
-새로 인식된 topic이 Company.show()에서 바로 사용 가능
-**Guide:** "새 플러그인 설치했는데 안 보여" -> reload_plugins()
-"플러그인 재스캔" -> reload_plugins()
-**SeeAlso:** plugins: 현재 로드된 플러그인 확인 (reload 전후 비교)
-Company.show: 플러그인 topic 조회
-
-#### table
-**Capabilities:** yoy: 전년 동기 대비 변동률
-summary: 평균/CAGR/추세 요약
-pivot: 계정별 피벗 테이블
-format: 한국어 단위 포맷팅
-growth: 성장률 행렬
-ratio: 재무비율 계산
 
 #### Review
 **Capabilities:** buildReview(company): 템플릿 기반 전체 리뷰 자동 생성 (2부 14축)
@@ -838,7 +564,7 @@ us.market                    # "US"
 
 ### Company 메서드/프로퍼티
 
-DartCompany에서 동적 추출 (67개).
+DartCompany에서 동적 추출 (68개).
 
 | 이름 | 종류 | 설명 |
 |------|------|------|
@@ -877,6 +603,7 @@ DartCompany에서 동적 추출 (67개).
 | `notes` | property | K-IFRS 주석사항 접근자. |
 | `priority` | method | 낮을수록 먼저 시도. DART=10 (기본 provider). |
 | `profile` | property | docs spine + finance/report merge layer -- 통합 프로필 접근자. |
+| `quant` | method | 기술적 분석 (25개 지표 + 종합 판단). |
 | `rank` | property | 전체 시장 + 섹터 내 규모 순위 (매출/자산/성장률). |
 | `ratioSeries` | property | 재무비율 연도별 시계열 (IS/BS/CF와 동일한 dict 구조). |
 | `ratios` | property | 재무비율 시계열 (분류/항목 x 기간 DataFrame). |

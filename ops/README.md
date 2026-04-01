@@ -27,13 +27,43 @@
 L0 (인프라)     core/          protocols, finance, docs, registry, search
 L1 (데이터)     providers/     DART, EDGAR, EDINET
                 gather/        주가, 수급, 매크로, 뉴스
-                scan/          13축 횡단분석
-                quant/         기술적 분석 (25지표, 9신호)
-L2 (분석)       analysis/      14축 + forecast + valuation
-L3 (AI)         ai/            LLM 대화형 분석
+                scan/          시장 횡단분석 — scan("그룹", "축")
+                quant/         기술적 분석
+L2 (분석)       analysis/      재무+전망+가치평가 — analysis("그룹", "축")
+                review/        6막 서사 보고서
+L3 (AI)         ai/            적극적 분석가
 L4 (표현)       ui/ + vscode/  Svelte SPA + VSCode 확장
 
 교차 관심사     guide/         안내 데스크 (모든 레이어에서 import 가능)
+```
+
+## 엔진 호출 패턴
+
+모든 엔진이 동일 패턴: `엔진("그룹", "축")` 또는 `엔진("축")`.
+
+### analysis — 재무+전망+가치평가
+```python
+c.analysis("financial", "수익성")          # 그룹 + 하위
+c.analysis("financial", "profitability")  # 영문도 동일
+c.analysis("valuation")                   # 그룹 가이드
+c.analysis("forecast", "revenue")         # 전망
+c.analysis()                              # 전체 가이드
+```
+
+### scan — 시장 횡단분석
+```python
+dartlab.scan("financial", "profitability")  # 그룹 + 하위
+dartlab.scan("governance")                  # 단일 축
+dartlab.scan("screen", "value")             # 스크리닝 프리셋
+dartlab.scan("account", "매출액")            # 계정 시계열
+```
+
+### 한글/영문 둘 다 가능
+```python
+c.analysis("financial", "수익성")          # 한글
+c.analysis("financial", "profitability")  # 영문
+dartlab.scan("financial", "수익성")        # 한글
+dartlab.scan("financial", "profitability") # 영문
 ```
 
 ## 공통 규칙

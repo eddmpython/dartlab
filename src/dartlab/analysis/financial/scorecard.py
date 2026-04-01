@@ -294,14 +294,25 @@ def calcSummaryFlags(company, *, basePeriod: str | None = None) -> list[str]:
 
     flags.extend(calcProfitabilityFlags(company, basePeriod=basePeriod))
     flags.extend(calcGrowthFlags(company, basePeriod=basePeriod))
-    flags.extend(calcStabilityFlags(company, basePeriod=basePeriod))
+
+    # calcStabilityFlags, calcEarningsQualityFlags: dict 반환 → flags 키 추출
+    stabResult = calcStabilityFlags(company, basePeriod=basePeriod)
+    if isinstance(stabResult, dict):
+        flags.extend(stabResult.get("flags", []))
+    elif isinstance(stabResult, list):
+        flags.extend(stabResult)
+
     flags.extend(calcEfficiencyFlags(company, basePeriod=basePeriod))
 
     # 새 영역 플래그
     try:
         from dartlab.analysis.financial.earningsQuality import calcEarningsQualityFlags
 
-        flags.extend(calcEarningsQualityFlags(company, basePeriod=basePeriod))
+        eqResult = calcEarningsQualityFlags(company, basePeriod=basePeriod)
+        if isinstance(eqResult, dict):
+            flags.extend(eqResult.get("flags", []))
+        elif isinstance(eqResult, list):
+            flags.extend(eqResult)
     except (ImportError, AttributeError, TypeError, ValueError):
         pass
 

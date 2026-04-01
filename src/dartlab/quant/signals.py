@@ -93,8 +93,10 @@ def vbollingerSignal(close: NDArray[np.float64], period: int = 20, std: float = 
 
 
 def vbreakoutSignal(
-    high: NDArray[np.float64], low: NDArray[np.float64],
-    close: NDArray[np.float64], period: int = 20,
+    high: NDArray[np.float64],
+    low: NDArray[np.float64],
+    close: NDArray[np.float64],
+    period: int = 20,
 ) -> NDArray[np.int8]:
     """채널 돌파 (Turtle Trading). 상방(+1) / 하방(-1)."""
     n = len(close)
@@ -110,8 +112,11 @@ def vbreakoutSignal(
 
 
 def vTrendFilter(
-    close: NDArray[np.float64], sma: NDArray[np.float64],
-    adx: NDArray[np.float64], signals: NDArray[np.int8], adxThreshold: float = 25.0,
+    close: NDArray[np.float64],
+    sma: NDArray[np.float64],
+    adx: NDArray[np.float64],
+    signals: NDArray[np.int8],
+    adxThreshold: float = 25.0,
 ) -> NDArray[np.int8]:
     """ADX 추세 필터. 약한 추세 신호 제거."""
     n = len(close)

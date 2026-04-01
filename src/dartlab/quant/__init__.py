@@ -57,6 +57,15 @@ class Quant:
         if metric == "indicators":
             return enrichWithIndicators(ohlcv)
 
+        if metric == "beta":
+            from dartlab.quant.analyzer import _calcBeta, _fetchBenchmark
+
+            market = _fetchBenchmark()
+            if market is None or market.is_empty():
+                return {"error": "시장 지수 수집 실패"}
+            beta = _calcBeta(ohlcv, market)
+            return beta if beta else {"error": "베타 계산 불가 (데이터 부족)"}
+
         return technicalVerdict(ohlcv)
 
     def _fetchOHLCV(self, stockCode: str, **kwargs: Any) -> pl.DataFrame | None:
@@ -72,8 +81,9 @@ class Quant:
     def _guide(self) -> pl.DataFrame:
         """가이드 DataFrame."""
         rows = [
-            {"metric": "verdict", "description": "종합 판단 (강세/중립/약세) + RSI/SMA/BB 상태"},
-            {"metric": "indicators", "description": "25개 기술적 지표 전체 (OHLCV + 지표 DataFrame)"},
+            {"metric": "verdict", "description": "종합 판단 (강세/중립/약세) + RSI/SMA/BB + 상대강도 + 베타"},
+            {"metric": "indicators", "description": "45개 기술적 지표 전체 (OHLCV + 지표 DataFrame)"},
+            {"metric": "beta", "description": "실측 베타 + CAPM 기대수익률 (KOSPI 대비)"},
         ]
         return pl.DataFrame(rows)
 

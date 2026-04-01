@@ -84,6 +84,56 @@ _ALIASES: dict[str, str] = {
 }
 
 
+# 시장 지수 심볼 매핑 (네이버 차트 API 직접 수집)
+_INDEX_SYMBOLS: dict[str, str] = {
+    "KOSPI": "KOSPI",
+    "kospi": "KOSPI",
+    "코스피": "KOSPI",
+    "KOSDAQ": "KOSDAQ",
+    "kosdaq": "KOSDAQ",
+    "코스닥": "KOSDAQ",
+    "KPI200": "KPI200",
+    "kpi200": "KPI200",
+    "코스피200": "KPI200",
+}
+
+
+def _fetchNaverIndex(symbol: str, count: int = 500) -> pl.DataFrame:
+    """네이버 차트 API로 시장 지수 OHLCV 수집."""
+    import re
+
+    import httpx
+
+    url = f"https://fchart.stock.naver.com/sise.nhn?symbol={symbol}&timeframe=day&count={count}&requestType=0"
+    r = httpx.get(url, timeout=15)
+    items = re.findall(r'data="([^"]+)"', r.text)
+    if not items:
+        return pl.DataFrame()
+
+    rows = []
+    for item in items:
+        parts = item.split("|")
+        if len(parts) < 6:
+            continue
+        try:
+            rows.append(
+                {
+                    "date": f"{parts[0][:4]}-{parts[0][4:6]}-{parts[0][6:8]}",
+                    "open": float(parts[1]),
+                    "high": float(parts[2]),
+                    "low": float(parts[3]),
+                    "close": float(parts[4]),
+                    "volume": int(parts[5]),
+                }
+            )
+        except (ValueError, IndexError):
+            continue
+
+    if not rows:
+        return pl.DataFrame()
+    return pl.DataFrame(rows).with_columns(pl.col("date").str.to_date("%Y-%m-%d"))
+
+
 def _resolveAxis(axis: str) -> str:
     """축 이름/별칭 -> 정규 키."""
     lower = axis.lower()
@@ -184,6 +234,9 @@ class GatherEntry:
         end = kwargs.pop("end", None)
 
         if axis == "price":
+            # 시장 지수 심볼이면 네이버 차트 API 직접 수집
+            if target and target in _INDEX_SYMBOLS:
+                return _fetchNaverIndex(_INDEX_SYMBOLS[target])
             return g.price(target, market=market, start=start, end=end)
         if axis == "flow":
             return g.flow(target, market=market)

@@ -314,10 +314,18 @@ def calcDistressScore(company, *, basePeriod: str | None = None) -> dict | None:
         return None
 
     latest = history[0]
+    zModel = latest.get("zModel", "")
     result: dict = {
         "history": history,
         "latestScore": latest.get("zScore"),
         "zone": latest.get("zone") or "판별 불가",
+        "diagnosticMeta": {
+            "model": zModel,
+            "precision": 0.95 if zModel == "Z-Score" else 0.82,
+            "typeIError": 0.06 if zModel == "Z-Score" else 0.15,
+            "reference": "Altman(1968)" if zModel == "Z-Score" else "Altman(1995)",
+            "marketNote": "한국 시장: Altman et al.(2014) 신흥시장 Z'' 적용",
+        },
     }
 
     # notes enrichment — 충당부채 (위험/회색 구간일 때 의미)
@@ -550,9 +558,13 @@ def calcDebtMaturity(company, *, basePeriod: str | None = None) -> dict | None:
 
 
 @memoized_calc
-def calcStabilityFlags(company, *, basePeriod: str | None = None) -> list[str]:
-    """안정성 경고/기회 플래그."""
+def calcStabilityFlags(company, *, basePeriod: str | None = None) -> dict:
+    """안정성 경고/기회 플래그.
+
+    반환: {"flags": list[str], "enrichedFlags": list[dict]}
+    """
     flags: list[str] = []
+    enriched: list[dict] = []
 
     # 레버리지
     isFinancial = _isHoldingOrFinancial(company)
@@ -608,6 +620,18 @@ def calcStabilityFlags(company, *, basePeriod: str | None = None) -> list[str]:
         if distress and distress.get("latestScore") is not None:
             z = distress["latestScore"]
             if z < 1.81:
-                flags.append(f"Altman Z-Score {z:.2f} -- 부실 위험 구간")
+                msg = f"Altman Z-Score {z:.2f} -- 부실 위험 구간"
+                flags.append(msg)
+                meta = distress.get("diagnosticMeta", {})
+                enriched.append(
+                    {
+                        "code": "ALTMAN_DISTRESS",
+                        "message": msg,
+                        "precision": meta.get("precision"),
+                        "baseRate": meta.get("marketNote", ""),
+                        "reference": meta.get("reference", ""),
+                        "sectorNote": "금융업/지주회사 부채 구조 왜곡 — Z-Score 부적합" if isFinancial else "",
+                    }
+                )
 
-    return flags
+    return {"flags": flags, "enrichedFlags": enriched}

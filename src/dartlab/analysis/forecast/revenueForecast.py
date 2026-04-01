@@ -62,6 +62,7 @@ class CompanyDataBundle:
     segmentRevenue: pl.DataFrame | None = None  # c.segments.revenue
     salesDf: pl.DataFrame | None = None  # c.salesOrder.salesDf
     orderDf: pl.DataFrame | None = None  # c.salesOrder.orderDf
+    structuralBreak: dict | None = None  # calcStructuralBreak() 결과
 
 
 @dataclass
@@ -131,6 +132,10 @@ class RevenueForecastResult:
     aiOverlay: RevenueForecastAIOverlay | None = None
     forwardTestKey: str | None = None
     currency: str = "KRW"
+
+    # v4: 예측 불가능성 명시 (네이트 실버 — 예측할 수 없는 것을 예측하지 마라)
+    forecastable: bool = True
+    unforecastableReason: str = ""
 
     DISCLAIMER: str = "본 분석은 투자 참고용이며 투자 권유가 아닙니다."
 
@@ -418,8 +423,13 @@ def _computeWeights(
     tsAvailable: bool,
     consensusItems: list[tuple[int, float, str]],
     roicGrowth: float | None,
+    structuralBreak: dict | None = None,
 ) -> dict[str, float]:
-    """소스별 가중치 계산."""
+    """소스별 가중치 계산.
+
+    structuralBreak가 전달되면 구조변화 심각도에 따라
+    시계열 가중치를 삭감하고 컨센서스로 이전한다.
+    """
     weights: dict[str, float] = {}
 
     hasConsensusEst = any(src.endswith("_consensus") for _, _, src in consensusItems)
@@ -431,6 +441,20 @@ def _computeWeights(
         weights["consensus"] = 1.0
     else:
         weights["timeseries"] = 1.0
+
+    # 구조변화 감지 시 시계열 가중치 삭감
+    if structuralBreak and "timeseries" in weights:
+        revenueBreak = any(m.get("hasBreak") for m in structuralBreak.get("metrics", []) if m.get("name") == "revenue")
+        stability = structuralBreak.get("overallStability", "stable")
+
+        if revenueBreak or stability == "volatile":
+            # volatile(2+ breaks): 60% 삭감, transitioning(1 break): 40% 삭감
+            penalty = 0.6 if stability == "volatile" else 0.4
+            reduction = weights["timeseries"] * penalty
+            weights["timeseries"] -= reduction
+            if "consensus" in weights:
+                weights["consensus"] += reduction
+            # consensus 없으면 삭감만 (총 가중치 < 1.0 → 정규화에서 보정)
 
     # ROIC 소스: 시계열에서 할당
     if roicGrowth is not None and "timeseries" in weights:
@@ -692,6 +716,7 @@ def _buildScenarios(
     historical: list[Optional[float]],
     lifecycle: str,
     lastRevenue: float | None,
+    structuralBreak: dict | None = None,
 ) -> tuple[dict[str, list[float]], dict[str, list[float]], dict[str, float]]:
     """Base/Bull/Bear 3-시나리오 생성."""
     if not projected or not lastRevenue or lastRevenue <= 0:
@@ -741,7 +766,14 @@ def _buildScenarios(
         scenarios[label] = scProjected
         scenarioGrs[label] = scGrs
 
-    probabilities = {"base": 50.0, "bull": 25.0, "bear": 25.0}
+    # 구조변화 감지 시 시나리오 확률 조정 (하방 리스크 확대)
+    stability = structuralBreak.get("overallStability", "stable") if structuralBreak else "stable"
+    if stability == "volatile":
+        probabilities = {"base": 40.0, "bull": 20.0, "bear": 40.0}
+    elif stability == "transitioning":
+        probabilities = {"base": 45.0, "bull": 22.0, "bear": 33.0}
+    else:
+        probabilities = {"base": 50.0, "bull": 25.0, "bear": 25.0}
 
     return scenarios, scenarioGrs, probabilities
 
@@ -814,7 +846,8 @@ def forecastRevenue(
         )
 
     # ── 가중치 계산 ──
-    weights = _computeWeights(tsAvailable, consensusItems, roicGrowth)
+    _sb = companyData.structuralBreak if companyData else None
+    weights = _computeWeights(tsAvailable, consensusItems, roicGrowth, structuralBreak=_sb)
 
     # v3 소스 가중치 할당 (시계열에서 할당)
     if segGrowthRates and "timeseries" in weights:
@@ -1025,6 +1058,20 @@ def forecastRevenue(
         if confidence == "high":
             confidence = "medium"
 
+    # ── 예측 불가 판정 (2개 이상 조건 동시 충족 시 거부) ──
+    _unfConditions: list[str] = []
+    if confidence == "low" and lifecycle == "transition":
+        _unfConditions.append("전환기 기업 + 낮은 신뢰도")
+    if tsResult.rSquared < 0.1 and not consensusProj:
+        _unfConditions.append("시계열 R²<0.1 + 컨센서스 없음")
+    if _sb and _sb.get("overallStability") == "volatile" and confidence != "high":
+        _unfConditions.append("다중 구조변화 + 높지 않은 신뢰도")
+
+    _forecastable = len(_unfConditions) < 2
+    _unfReason = "; ".join(_unfConditions) if not _forecastable else ""
+    if not _forecastable:
+        warnings.append(f"예측 불가 판정: {_unfReason}")
+
     # ── 스키마 보장: sourceWeights 합이 1.0 ──
     wSum = sum(v for v in weights.values() if v > 0)
     if wSum > 0 and abs(wSum - 1.0) > 0.01:
@@ -1092,6 +1139,16 @@ def forecastRevenue(
     if not consensusProj:
         aiContext["uncertainty_flags"].append("컨센서스 데이터 없음")
 
+    # 구조변화 컨텍스트 (forecastCalcs.py dead code 활성화)
+    if _sb:
+        aiContext["structural_break"] = {
+            "stability": _sb.get("overallStability", "stable"),
+            "revenue_break": any(m.get("hasBreak") for m in _sb.get("metrics", []) if m.get("name") == "revenue"),
+            "n_breaks": sum(1 for m in _sb.get("metrics", []) if m.get("hasBreak")),
+        }
+        if _sb.get("overallStability") in ("volatile", "transitioning"):
+            aiContext["uncertainty_flags"].append(f"구조변화 감지 ({_sb['overallStability']}) — 과거 추세 신뢰도 제한")
+
     # ── v3: 3-시나리오 ──
     scenarios, scenarioGrs, scenarioProbs = _buildScenarios(
         projected,
@@ -1099,6 +1156,7 @@ def forecastRevenue(
         historical,
         lifecycle,
         lastRevenue,
+        structuralBreak=_sb,
     )
 
     # v3: 세그먼트/수주잔고 AI 컨텍스트
@@ -1143,6 +1201,8 @@ def forecastRevenue(
         backlogSignal=backlogSignal,
         forwardTestKey=ftKey,
         currency=currency,
+        forecastable=_forecastable,
+        unforecastableReason=_unfReason,
     )
 
 

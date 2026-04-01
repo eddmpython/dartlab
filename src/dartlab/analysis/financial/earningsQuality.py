@@ -318,16 +318,33 @@ def calcBeneishTimeline(company, *, basePeriod: str | None = None) -> dict | Non
 
         history.append({"period": col, "mScore": round(mScore, 4)})
 
-    return {"history": history, "threshold": -1.78} if history else None
+    if not history:
+        return None
+    return {
+        "history": history,
+        "threshold": -1.78,
+        "diagnosticMeta": {
+            "precision": 0.76,
+            "falsePositiveRate": 0.178,
+            "reference": "Beneish(1999), 8변수",
+            "sampleBase": "미국 제조업 1982-1992",
+            "krNote": "K-IFRS 환경 미검증 — 정밀도 과대추정 가능",
+        },
+    }
 
 
 # ── 플래그 ──
 
 
 @memoized_calc
-def calcEarningsQualityFlags(company, *, basePeriod: str | None = None) -> list[str]:
-    """이익 품질 경고 신호."""
-    flags = []
+def calcEarningsQualityFlags(company, *, basePeriod: str | None = None) -> dict:
+    """이익 품질 경고 신호.
+
+    반환: {"flags": list[str], "enrichedFlags": list[dict]}
+    enrichedFlags는 정밀도·기저율 등 진단 메타를 포함하는 구조화된 플래그.
+    """
+    flags: list[str] = []
+    enriched: list[dict] = []
 
     accrual = calcAccrualAnalysis(company, basePeriod=basePeriod)
     if accrual and accrual["history"]:
@@ -362,9 +379,21 @@ def calcEarningsQualityFlags(company, *, basePeriod: str | None = None) -> list[
         h0 = beneish["history"][0]
         ms = h0.get("mScore")
         if ms is not None and ms > -1.78:
-            flags.append(f"Beneish M-Score {ms:.2f} — 임계값 초과, 이익 조작 가능성")
+            msg = f"Beneish M-Score {ms:.2f} — 임계값 초과, 이익 조작 가능성"
+            flags.append(msg)
+            meta = beneish.get("diagnosticMeta", {})
+            enriched.append(
+                {
+                    "code": "BENEISH_MANIPULATOR",
+                    "message": msg,
+                    "precision": meta.get("precision"),
+                    "baseRate": meta.get("sampleBase", ""),
+                    "reference": meta.get("reference", ""),
+                    "sectorNote": meta.get("krNote", ""),
+                }
+            )
 
-    return flags
+    return {"flags": flags, "enrichedFlags": enriched}
 
 
 # ── Richardson 3계층 발생액 분해 ──

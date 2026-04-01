@@ -712,8 +712,10 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         "forecastMethodology",
         "historicalRatios",
         "forecastFlags",
+        "calibrationReport",
     }:
         from dartlab.analysis.financial.forecastCalcs import (
+            calcCalibrationReport,
             calcForecastFlags,
             calcForecastMethodology,
             calcHistoricalRatios,
@@ -723,6 +725,7 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
             calcSegmentForecast,
         )
         from dartlab.review.builders import (
+            calibrationReportBlock,
             forecastFlagsBlock,
             forecastMethodologyBlock,
             historicalRatiosBlock,
@@ -756,6 +759,10 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
             )
         if _need("forecastFlags"):
             b["forecastFlags"] = _safe(lambda: forecastFlagsBlock(calcForecastFlags(company, basePeriod=basePeriod)))
+        if _need("calibrationReport"):
+            b["calibrationReport"] = _safe(
+                lambda: calibrationReportBlock(calcCalibrationReport(company, basePeriod=basePeriod))
+            )
 
     from dartlab.review.blockMap import BlockMap
 

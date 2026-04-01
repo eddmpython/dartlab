@@ -2,53 +2,32 @@
 
 ## 목적
 
-tradix의 벡터화 기술적 지표(10개)와 신호 발생기(9개)를
-dartlab gather("price") OHLCV에 연결하여 L1 독립 quant 엔진으로 통합 가능한지 검증.
+tradix 벡터화 지표(45개) + 신호(9개)를 dartlab에 이식하고,
+시장 지수/기업 주가 기반 거시+기업 분석 파이프라인 구축.
 
 ## 실험 목록
 
 | 파일 | 상태 | 내용 | 핵심 결과 |
 |---|---|---|---|
-| 001_indicatorTest.py | 완료 | tradix 지표 → dartlab gather 연결 | 지표계산 6.5ms, 5종목 5.2초, 전원 정상 |
-| 002_analyzerProto.py | 완료 | 종합 기술적 판단 프로토타입 | RSI+SMA 기반 강세/중립/약세 분류 검증 |
-| 003_scanIntegration.py | 완료 | scan 횡단 통합 100종목 | 강세30/중립47/약세20, 재무교차 유효 |
+| 001_indicatorTest.py | 완료 | tradix 지표 → dartlab gather 연결 | 계산 6.5ms, 5종목 정상 |
+| 002_analyzerProto.py | 완료 | 종합 판단 프로토타입 | RSI+SMA → 강세/중립/약세 분류 |
+| 003_scanIntegration.py | 완료 | scan 횡단 100종목 | 재무양호+강세 11종목 발견 |
+| 004_marketIndex.py | 완료 | 시장 지수 수집 + 상대강도 | 네이버 KOSPI 0.1s, 베타 R²=0.75 |
+| 005_priceAnalysis.py | 완료 | 주가+재무 교차 | CAPM 기대수익 산출, macroBeta 대체 |
 
-## 실험 종합 결과
+## 흡수 완료
 
-### 성능
-- **지표 계산**: 6.5ms/종목 (병목 아님)
-- **주가 수집**: 1~3초/종목 (네이버+야후 fallback, 핵심 병목)
-- **100종목 일괄**: 273초 (rate limit 포함)
+- `src/dartlab/quant/` — L1 독립 엔진 (45지표, 9신호, analyzer)
+- `dartlab.quant("005930")` → 종합 판단
+- `Company.quant()` → Company 연결
+- EDGAR 동기화 테스트 PASSED
 
-### 기술적 판단
-- RSI 레벨(±2) + SMA20 추세(±1) + SMA60 추세(±1) = 점수 -4~+4
-- 강세: ≥2, 약세: ≤-2, 중립: 나머지
-- 100종목 분포: 강세 31%, 중립 48%, 약세 21% — 의미 있는 변별력
+## 추가 흡수 대기 (실험 004, 005 기반)
 
-### 재무 교차
-- **재무양호+강세 11종목** = 진짜 기회 (펀더멘털+모멘텀 정렬)
-- **재무위험+강세 12종목** = 가치 함정 (주가만 올라가는 위험)
-- **재무양호+약세 5종목** = 매수 기회? (실적 좋지만 주가 눌림)
-
-### 이식성
-- tradix indicators.py(362줄) + signals.py(300줄) = 순수 NumPy, 외부 의존성 0
-- dartlab에 독립 복사 이식 가능 확인
-
-## 아키텍처 확정
-
-```
-src/dartlab/quant/       ← L1 독립 엔진 (신규)
-├── __init__.py          # 공개 API
-├── indicators.py        # tradix 이식 (10개 지표)
-├── signals.py           # tradix 이식 (9개 신호)
-└── analyzer.py          # 종합 판단
-```
-
-## 흡수 접점 (16개, Phase 2)
-
-필수 11개 + 선택 4개 → 별도 승인 후 진행
+1. **gather 시장 지수 심볼**: `gather("price", "KOSPI")` — 네이버 KOSPI/KOSDAQ 직접 지원 확인
+2. **quant 상대강도 + 베타**: 종목 vs 시장 RSI 차이, OLS 실측 베타
+3. **CAPM → analysis/valuation 연결**: 실측 베타 → 기대수익률 → 할인율 파라미터
 
 ## 현황
 
-- 2026-04-01 실험 3건 모두 완료
-- 흡수 Phase 2 대기
+- 2026-04-01 실험 5건 모두 완료

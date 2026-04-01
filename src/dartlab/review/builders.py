@@ -992,6 +992,58 @@ def _flagsBlock(flags: list[str]) -> list:
     return result
 
 
+def _enrichedFlagsBlock(flags: list[str], enrichedFlags: list[dict] | None = None) -> list:
+    """플래그 + enrichedFlags → FlagBlock. 정밀도 메타 포함."""
+    if not flags:
+        return []
+    # EnrichedFlag 변환
+    efList = None
+    if enrichedFlags:
+        from dartlab.review.blocks import EnrichedFlag
+
+        efList = [
+            EnrichedFlag(
+                code=ef.get("code", ""),
+                message=ef.get("message", ""),
+                precision=ef.get("precision"),
+                baseRate=ef.get("baseRate", ""),
+                reference=ef.get("reference", ""),
+                sectorNote=ef.get("sectorNote", ""),
+            )
+            for ef in enrichedFlags
+        ]
+        # enrichedFlags의 메시지에 정밀도 주석 추가
+        efCodes = {ef.get("code") for ef in enrichedFlags}
+        augmented = []
+        for f in flags:
+            matched = next((ef for ef in enrichedFlags if ef.get("message") == f), None)
+            if matched and matched.get("precision") is not None:
+                p = matched["precision"]
+                ref = matched.get("reference", "")
+                note = matched.get("sectorNote", "")
+                suffix = f" (정밀도 {p:.0%}, {ref})"
+                if note:
+                    suffix += f" [{note}]"
+                augmented.append(f + suffix)
+            else:
+                augmented.append(f)
+        flags = augmented
+
+    warnings = []
+    opportunities = []
+    for f in flags:
+        if any(kw in f for kw in _POSITIVE_KEYWORDS):
+            opportunities.append(f)
+        else:
+            warnings.append(f)
+    result = []
+    if warnings:
+        result.append(FlagBlock(warnings, kind="warning", enrichedFlags=efList))
+    if opportunities:
+        result.append(FlagBlock(opportunities, kind="opportunity"))
+    return result
+
+
 # ── 2-1 수익성 ──
 
 
@@ -1241,8 +1293,11 @@ def distressScoreBlock(data: dict) -> list:
     return blocks
 
 
-def stabilityFlagsBlock(flags: list[str]) -> list:
+def stabilityFlagsBlock(data) -> list:
     """calcStabilityFlags 결과 → FlagBlock."""
+    if isinstance(data, dict):
+        return _enrichedFlagsBlock(data.get("flags", []), data.get("enrichedFlags"))
+    flags = data if isinstance(data, list) else []
     return _flagsBlock(flags)
 
 
@@ -1501,9 +1556,12 @@ def beneishMScoreBlock(data: dict) -> list:
     return blocks
 
 
-def earningsQualityFlagsBlock(flags: list[str]) -> list:
+def earningsQualityFlagsBlock(data) -> list:
     """calcEarningsQualityFlags 결과 → FlagBlock."""
-    return _flagsBlock(flags)
+    if isinstance(data, dict):
+        return _enrichedFlagsBlock(data.get("flags", []), data.get("enrichedFlags"))
+    # 하위호환: list[str] 직접 전달
+    return _flagsBlock(data if isinstance(data, list) else [])
 
 
 # ── 3-2 비용구조 ──
@@ -2438,6 +2496,19 @@ def revenueForecastBlock(data: dict) -> list:
     """calcRevenueForecast -> 시나리오 테이블 + 신뢰도."""
     if not data:
         return []
+
+    # 예측 불가 판정 시 경고만 표시
+    if not data.get("forecastable", True):
+        reason = data.get("unforecastableReason", "")
+        return [
+            HeadingBlock(
+                _meta("revenueForecast").label,
+                level=2,
+                helper="7-소스 앙상블 매출 예측 -- 모든 수치는 추정치",
+            ),
+            TextBlock(f"이 기업은 현재 정량 예측이 불가능합니다: {reason}"),
+        ]
+
     cur = data.get("currency", "KRW")
     blocks: list = [
         HeadingBlock(
@@ -2663,6 +2734,42 @@ def forecastFlagsBlock(data: dict) -> list:
         return []
     messages = [msg for _, msg in flags]
     return [FlagBlock(messages, kind="warning")]
+
+
+def calibrationReportBlock(data: dict) -> list:
+    """calcCalibrationReport -> Brier Score + bin 테이블."""
+    if not data:
+        return []
+    blocks: list = [
+        HeadingBlock(
+            _meta("calibrationReport").label,
+            level=2,
+            helper="과거 예측 확률의 실제 적중률 검증 (Brier Score)",
+        ),
+    ]
+    metrics = [
+        ("Brier Score", f"{data['brierScore']:.4f}"),
+        ("평가 건수", str(data.get("nRecords", 0))),
+    ]
+    blocks.append(MetricBlock(metrics))
+
+    bins = data.get("bins", [])
+    if bins:
+        import polars as pl
+
+        rows = [
+            {
+                "구간": f"{b['binLower']:.0%}~{b['binUpper']:.0%}",
+                "평균 예측": f"{b['meanPredicted']:.1%}",
+                "실제 적중": f"{b['meanActual']:.1%}",
+                "괴리": f"{b['gap']:.1%}",
+                "건수": str(b["count"]),
+            }
+            for b in bins
+        ]
+        blocks.append(TableBlock("확률 구간별 적중률", pl.DataFrame(rows)))
+
+    return blocks
 
 
 # ── Penman 분해 빌더 ──
