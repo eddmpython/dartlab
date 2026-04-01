@@ -27,7 +27,7 @@ jobs:
           pip install pytest pytest-asyncio pytest-cov hypothesis pytest-benchmark
 
       - name: Install package
-        run: pip install -e .[ai]
+        run: pip install -e .[all]
 
       - name: Run unit tests (no data dependency)
         run: pytest tests/ -v --tb=short -m "not requires_data and not heavy" --cov=dartlab --cov-report=term-missing --cov-report=html --cov-report=xml
