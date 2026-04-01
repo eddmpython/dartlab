@@ -1,0 +1,62 @@
+name: Data Prebuild
+
+# ──────────────────────────────────────────────────────────────
+# 수집 워크플로우 완료 후 자동 트리거.
+# scan 프리빌드(changes/finance/report) 생성 → HF 업로드.
+# ──────────────────────────────────────────────────────────────
+
+on:
+  workflow_run:
+    workflows: ["Data Sync", "Daily Data Sync"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prebuild-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --extra hf
+
+      - name: Restore finance cache
+        uses: actions/cache@v4
+        with:
+          path: data/dart/finance
+          key: dartlab-data-finance
+
+      - name: Restore report cache
+        uses: actions/cache@v4
+        with:
+          path: data/dart/report
+          key: dartlab-data-report
+
+      - name: Restore docs cache
+        uses: actions/cache@v4
+        with:
+          path: data/dart/docs
+          key: dartlab-data-docs
+
+      - name: Build scan prebuilds + upload
+        run: uv run python .github/scripts/prebuildData.py
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+
+      - name: Save scan cache
+        uses: actions/cache/save@v4
+        with:
+          path: data/dart/scan
+          key: dartlab-data-scan-${{ github.run_id }}

@@ -1,0 +1,154 @@
+name: Data Pipeline
+
+# ──────────────────────────────────────────────────────────────
+# 단일 진입점: 수집 → 프리빌드 → 업로드 → 감사
+# 수동 실행으로 전체 파이프라인을 한번에 돌리거나,
+# 개별 워크플로우 상태를 감사(audit)할 수 있다.
+# ──────────────────────────────────────────────────────────────
+
+on:
+  schedule:
+    - cron: '0 20 * * *'  # UTC 20:00 = KST 05:00, 일일 감사
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'audit (감사만) / full (수집+프리빌드+감사)'
+        default: 'audit'
+        type: choice
+        options: [audit, full]
+      sync_category:
+        description: '수집 카테고리 (full 모드, all이면 3개 순차)'
+        default: 'all'
+        type: choice
+        options: [all, finance, report, docs]
+
+permissions:
+  contents: write
+  issues: write
+  actions: read
+
+jobs:
+  # ── 1단계: DART 수집 (full 모드에서만) ─────────────────────
+  collect:
+    if: github.event.inputs.mode == 'full'
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        category: ${{ fromJSON(github.event.inputs.sync_category == 'all' && '["finance","report","docs"]' || format('["{0}"]', github.event.inputs.sync_category)) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --extra hf
+
+      - name: Restore data cache
+        uses: actions/cache@v4
+        with:
+          path: data/dart/${{ matrix.category }}
+          key: dartlab-data-${{ matrix.category }}
+
+      - name: Collect data (incremental)
+        run: uv run python .github/scripts/syncData.py
+        env:
+          DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          SYNC_CATEGORY: ${{ matrix.category }}
+          SYNC_MODE: all
+
+      - name: Save data cache
+        uses: actions/cache/save@v4
+        with:
+          path: data/dart/${{ matrix.category }}
+          key: dartlab-data-${{ matrix.category }}-${{ github.run_id }}
+
+      - name: Upload to HuggingFace
+        run: uv run python .github/scripts/uploadData.py --target hf
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SYNC_CATEGORY: ${{ matrix.category }}
+
+      - name: Upload to GitHub Releases
+        run: uv run python .github/scripts/uploadData.py --target gh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SYNC_CATEGORY: ${{ matrix.category }}
+
+  # ── 2단계: scan 프리빌드 + HF 업로드 (full 모드) ──────────
+  prebuild:
+    if: github.event.inputs.mode == 'full'
+    needs: collect
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --extra hf
+
+      - name: Restore finance cache
+        uses: actions/cache@v4
+        with:
+          path: data/dart/finance
+          key: dartlab-data-finance
+
+      - name: Restore report cache
+        uses: actions/cache@v4
+        with:
+          path: data/dart/report
+          key: dartlab-data-report
+
+      - name: Restore docs cache
+        uses: actions/cache@v4
+        with:
+          path: data/dart/docs
+          key: dartlab-data-docs
+
+      - name: Build scan prebuilds + upload
+        run: uv run python .github/scripts/prebuildData.py
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+
+      - name: Save scan cache
+        uses: actions/cache/save@v4
+        with:
+          path: data/dart/scan
+          key: dartlab-data-scan-${{ github.run_id }}
+
+  # ── 3단계: 전체 파이프라인 감사 (항상 실행) ────────────────
+  audit:
+    if: always()
+    needs: [collect, prebuild]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Pipeline health check
+        run: uv run python .github/scripts/monitorPipeline.py
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
