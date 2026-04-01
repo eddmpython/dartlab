@@ -294,7 +294,7 @@ See [docs/stability.md](docs/stability.md).
 
 The one rule: **experiment first, engine second.** Validate your idea in `experiments/` before changing the engine. This keeps the core stable while making it easy to try bold ideas.
 
-- **Experiment folder**: `experiments/XXX_camelCaseName/` — each file must be independently runnable with actual results in its docstring
+- **Experiment folder**: `experiments/XXX_name/` — each file must be independently runnable with actual results in its docstring
 - **Data contributions** (e.g. `accountMappings.json`, `sectionMappings.json`): accepted when backed by experiment evidence
 - Issues and PRs in Korean or English are both welcome
 - Not sure where to start? Open an issue — we'll help you find the right place

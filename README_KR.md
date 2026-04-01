@@ -294,7 +294,7 @@ e.filings("AAPL", forms=["10-K", "10-Q"])
 
 규칙 하나: **실험 먼저, 엔진은 그 다음.** 아이디어는 `experiments/`에서 검증한 뒤 엔진에 반영한다.
 
-- **실험 폴더**: `experiments/XXX_camelCaseName/` — 각 파일은 독립 실행 가능, docstring에 실제 결과 포함
+- **실험 폴더**: `experiments/XXX_name/` — 각 파일은 독립 실행 가능, docstring에 실제 결과 포함
 - **데이터 기여** (`accountMappings.json`, `sectionMappings.json` 등): 실험 증거가 있을 때 수용
 - 한국어/영어 이슈와 PR 모두 환영
 - 어디서 시작할지 모르겠다면 이슈를 열어주세요
