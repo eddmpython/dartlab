@@ -1,7 +1,8 @@
 """신용평가 보고서 생성 + GitHub 발간.
 
 narrative.py의 서사 + audit.py의 대조 결과를 조합하여
-신평사 수준의 마크다운 보고서를 생성하고 data/credit/reports/에 저장한다.
+신평사 수준의 마크다운 보고서를 생성하고 docs/credit/reports/에 저장한다.
+docs/credit/은 GitHub Pages 공개 대상.
 """
 
 from __future__ import annotations
@@ -10,7 +11,7 @@ import gc
 from datetime import datetime
 from pathlib import Path
 
-_REPORTS_DIR = Path("data/credit/reports")
+_REPORTS_DIR = Path("docs/credit/reports")
 
 
 def publishReport(stockCode: str, *, basePeriod: str | None = None) -> Path:
