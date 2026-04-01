@@ -6,7 +6,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.scan._helpers import _ensureScanData, extractAccount, parse_num
+from dartlab.scan._helpers import _ensureScanData, extractAccount
 
 # ── 순이익 ──
 

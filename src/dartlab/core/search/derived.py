@@ -10,7 +10,6 @@ stemIndex 빌드 시 함께 생성되는 파생물:
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import numpy as np

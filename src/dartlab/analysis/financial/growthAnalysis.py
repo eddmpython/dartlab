@@ -124,6 +124,7 @@ def calcGrowthQuality(company, *, basePeriod: str | None = None) -> dict | None:
     opCagr = cagr.get("operatingIncome")
 
     niCagr = cagr.get("netIncome")
+    hist = trend["history"]
 
     quality = "판단 불가"
     if revCagr is not None and opCagr is not None:

@@ -26,7 +26,6 @@ from dartlab.scan.builder import buildChanges, buildFinance, buildReport, buildS
 from dartlab.scan.payload import build_scan_payload, build_unified_payload  # noqa: F401
 from dartlab.scan.snapshot import buildScanSnapshot, getScanPosition  # noqa: F401
 
-
 # ── 한글 컬럼명 + 종목명 공통 변환 ──
 
 _COLUMN_RENAME = {
