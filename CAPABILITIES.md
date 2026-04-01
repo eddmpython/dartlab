@@ -1,12 +1,12 @@
 # dartlab Capabilities
 
-> v0.8.1 기준 자동 생성. 직접 수정 금지.  
+> v0.8.2 기준 자동 생성. 직접 수정 금지.  
 > `uv run python scripts/generateSpec.py`로 재생성.
 
 
 ---
 
-## Python API (26개)
+## Python API (27개)
 
 `import dartlab` 후 사용 가능한 공개 API.
 
@@ -28,6 +28,7 @@
 | `scan` | function | 시장 전체 횡단분석 -- 15축, 전부 Polars DataFrame. |
 | `analysis` | function | 재무제표 완전 분석 — 20축, 단일 종목 심층. |
 | `gather` | function | 외부 시장 데이터 통합 수집 — 8축, 전부 Polars DataFrame. |
+| `credit` | function | 신용등급 산출 단일 진입점. |
 | `quant` | function | 기술적 분석 진입점 — scan/gather와 동일한 호출 패턴. |
 | `verbose` | module | bool(x) -> bool |
 | `dataDir` | module | str(object='') -> str |

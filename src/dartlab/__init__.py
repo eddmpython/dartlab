@@ -835,6 +835,11 @@ class _Module(sys.modules[__name__].__class__):
             instance = Analysis()
             setattr(self, name, instance)
             return instance
+        if name == "credit":
+            from dartlab.credit import credit
+
+            setattr(self, name, credit)
+            return credit
         if name == "quant":
             from dartlab.quant import Quant
 
@@ -888,6 +893,7 @@ __all__ = [
     "scan",
     "analysis",
     "gather",
+    "credit",
     "quant",
     "verbose",
     "dataDir",
