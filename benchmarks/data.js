@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775046284788,
+  "lastUpdate": 1775048520896,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -1131,6 +1131,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 3.1412268349990127e-7",
             "extra": "mean: 713.2989467024244 nsec\nrounds: 163106"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "eac16fe03b9400a6b1a376463afa3e79436ecbc7",
+          "message": "feat: AI 종합분석 프롬프트 추가 — 기업 전반 질문에 analysis 3축 자동 실행",
+          "timestamp": "2026-04-01T22:01:08+09:00",
+          "tree_id": "542910edcffac42c9e2d967b4ca1f3855228f82e",
+          "url": "https://github.com/eddmpython/dartlab/commit/eac16fe03b9400a6b1a376463afa3e79436ecbc7"
+        },
+        "date": 1775048520087,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 535418.767654597,
+            "unit": "iter/sec",
+            "range": "stddev: 5.053238585145311e-7",
+            "extra": "mean: 1.8676969512677006 usec\nrounds: 54219"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 657329.8477685277,
+            "unit": "iter/sec",
+            "range": "stddev: 4.696070383187414e-7",
+            "extra": "mean: 1.5213062412953753 usec\nrounds: 129300"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 525336.5565597758,
+            "unit": "iter/sec",
+            "range": "stddev: 5.492069458579747e-7",
+            "extra": "mean: 1.9035416201541537 usec\nrounds: 132556"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 687160.3950816216,
+            "unit": "iter/sec",
+            "range": "stddev: 4.181341760640488e-7",
+            "extra": "mean: 1.4552643126081488 usec\nrounds: 183824"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 801518.5041112575,
+            "unit": "iter/sec",
+            "range": "stddev: 3.717834542731818e-7",
+            "extra": "mean: 1.247631832416425 usec\nrounds: 185220"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 272752.631605027,
+            "unit": "iter/sec",
+            "range": "stddev: 6.862759264203339e-7",
+            "extra": "mean: 3.66632576234168 usec\nrounds: 60274"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7291357.363166953,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2025964699607756e-8",
+            "extra": "mean: 137.14867482035694 nsec\nrounds: 73341"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8929216.72678852,
+            "unit": "iter/sec",
+            "range": "stddev: 1.530106162481306e-8",
+            "extra": "mean: 111.99190596414829 nsec\nrounds: 88732"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1490547.670015393,
+            "unit": "iter/sec",
+            "range": "stddev: 2.663969277322776e-7",
+            "extra": "mean: 670.8943431441363 nsec\nrounds: 163908"
           }
         ]
       }
