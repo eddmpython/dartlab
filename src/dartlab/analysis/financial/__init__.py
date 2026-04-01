@@ -380,6 +380,35 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
             ),
         ),
     ),
+    "신용평가": _AxisEntry(
+        section="신용평가",
+        partId="3-6",
+        description="이 회사의 신용등급은 어디인가",
+        example='analysis("financial", "신용평가")',
+        calcs=(
+            _CalcEntry(
+                "calcCreditMetrics", "dartlab.analysis.financial.creditRating", "creditMetrics", "신용평가 지표"
+            ),
+            _CalcEntry(
+                "calcCreditScore", "dartlab.analysis.financial.creditRating", "creditScore", "신용등급 종합"
+            ),
+            _CalcEntry(
+                "calcCreditHistory", "dartlab.analysis.financial.creditRating", "creditHistory", "신용등급 시계열"
+            ),
+            _CalcEntry(
+                "calcCashFlowGrade", "dartlab.analysis.financial.creditRating", "cashFlowGrade", "현금흐름등급"
+            ),
+            _CalcEntry(
+                "calcCreditPeerPosition",
+                "dartlab.analysis.financial.creditRating",
+                "creditPeerPosition",
+                "업종 내 신용 순위",
+            ),
+            _CalcEntry(
+                "calcCreditFlags", "dartlab.analysis.financial.creditRating", "creditFlags", "신용 플래그"
+            ),
+        ),
+    ),
     # ── 4부: 가치평가 ──
     "가치평가": _AxisEntry(
         section="가치평가",
@@ -654,6 +683,7 @@ _GROUPS: dict[str, list[str]] = {
         "자본배분",
         "투자효율",
         "재무정합성",
+        "신용평가",
     ],
     "valuation": ["가치평가"],
     "governance": ["지배구조", "공시변화", "비교분석"],
@@ -689,6 +719,9 @@ _ALIASES: dict[str, str] = {
     "investmentEfficiency": "투자효율",
     "crossStatement": "재무정합성",
     "financialConsistency": "재무정합성",
+    "creditRating": "신용평가",
+    "credit": "신용평가",
+    "신용": "신용평가",
     "valuation": "가치평가",
     "governance": "지배구조",
     "disclosureDelta": "공시변화",

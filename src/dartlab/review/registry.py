@@ -554,6 +554,47 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
                 )
             )
 
+    # ── 3-6: 신용평가 ──
+    if keys is None or keys & {
+        "creditMetrics",
+        "creditScore",
+        "creditHistory",
+        "cashFlowGrade",
+        "creditPeerPosition",
+        "creditFlags",
+    }:
+        from dartlab.analysis.financial.creditRating import (
+            calcCashFlowGrade,
+            calcCreditFlags,
+            calcCreditHistory,
+            calcCreditMetrics,
+            calcCreditPeerPosition,
+            calcCreditScore,
+        )
+        from dartlab.review.builders import (
+            cashFlowGradeBlock,
+            creditFlagsBlock,
+            creditHistoryBlock,
+            creditMetricsBlock,
+            creditPeerPositionBlock,
+            creditScoreBlock,
+        )
+
+        if _need("creditMetrics"):
+            b["creditMetrics"] = _safe(lambda: creditMetricsBlock(calcCreditMetrics(company, basePeriod=basePeriod)))
+        if _need("creditScore"):
+            b["creditScore"] = _safe(lambda: creditScoreBlock(calcCreditScore(company, basePeriod=basePeriod)))
+        if _need("creditHistory"):
+            b["creditHistory"] = _safe(lambda: creditHistoryBlock(calcCreditHistory(company, basePeriod=basePeriod)))
+        if _need("cashFlowGrade"):
+            b["cashFlowGrade"] = _safe(lambda: cashFlowGradeBlock(calcCashFlowGrade(company, basePeriod=basePeriod)))
+        if _need("creditPeerPosition"):
+            b["creditPeerPosition"] = _safe(
+                lambda: creditPeerPositionBlock(calcCreditPeerPosition(company, basePeriod=basePeriod))
+            )
+        if _need("creditFlags"):
+            b["creditFlags"] = _safe(lambda: creditFlagsBlock(calcCreditFlags(company, basePeriod=basePeriod)))
+
     # ── 4부: 가치평가 ──
     if keys is None or keys & {
         "dcfValuation",

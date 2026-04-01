@@ -47,11 +47,21 @@ _CREDIT_GRADE_TABLE: list[tuple[float, str, str]] = [
 
 
 def _mapCreditGrade(overall: float) -> tuple[str, str]:
-    """종합 점수 → (등급, 설명)."""
+    """종합 점수 → (등급, 설명). 기존 10단계."""
     for threshold, grade, desc in _CREDIT_GRADE_TABLE:
         if overall < threshold:
             return grade, desc
     return "D", "부도 수준"
+
+
+def _mapCreditGrade20(overall: float) -> tuple[str, str, float]:
+    """종합 점수 → (등급, 설명, PD%). 20단계 세분화.
+
+    creditScorecard.mapTo20Grade()의 래퍼.
+    """
+    from dartlab.core.finance.creditScorecard import mapTo20Grade
+
+    return mapTo20Grade(overall)
 
 
 # ── 개별 모델 해석 함수 ──

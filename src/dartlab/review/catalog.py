@@ -55,6 +55,7 @@ SECTIONS: list[SectionMeta] = [
     SectionMeta("자본배분", "5-4", "자본 배분 -- 번 돈을 어디에 쓰는가"),
     SectionMeta("재무정합성", "5-5", "재무 정합성 -- 재무제표가 서로 맞는가"),
     SectionMeta("종합평가", "5-6", "종합 평가 -- 재무 상태를 한마디로"),
+    SectionMeta("신용평가", "5-7", "신용평가 -- 이 회사의 신용등급은 어디인가"),
     # ── 제6막: 앞으로 어떻게 될 것인가 (전망 + 가치) ──
     SectionMeta("가치평가", "6", "가치평가 -- 이 회사의 적정 가치는 얼마인가"),
     SectionMeta("지배구조", "6-2", "지배구조 -- 이 회사의 주인은 누구이며 감시는 작동하는가"),
@@ -154,6 +155,13 @@ _BLOCKS: list[BlockMeta] = [
     BlockMeta("deferredTax", "이연법인세", "재무정합성", "이연법인세 자산/부채 추세"),
     BlockMeta("articulationCheck", "BS-CF 정합성", "재무정합성", "PPE/현금/자본 3표 연결 검증"),
     BlockMeta("crossStatementFlags", "재무정합성 플래그", "재무정합성", "교차검증+세금 경고 신호"),
+    # ── 3-6 신용평가 ──
+    BlockMeta("creditMetrics", "신용평가 지표", "신용평가", "16개 핵심 지표 시계열 (채무상환/레버리지/유동성/현금흐름)"),
+    BlockMeta("creditScore", "신용등급 종합", "신용평가", "20단계 등급(AAA~D) + 5축 가중평균 + 업종 조정"),
+    BlockMeta("creditHistory", "신용등급 시계열", "신용평가", "5개년 등급 변화 궤적"),
+    BlockMeta("cashFlowGrade", "현금흐름등급", "신용평가", "eCR-1~6 현금흐름창출능력 별도 평가"),
+    BlockMeta("creditPeerPosition", "업종 내 신용 순위", "신용평가", "동종업계 대비 핵심 지표 위치"),
+    BlockMeta("creditFlags", "신용 플래그", "신용평가", "신용 등급 하방/상방 신호"),
     # ── 4-1 가치평가 ──
     BlockMeta("dcfValuation", "DCF 밸류에이션", "가치평가", "현금흐름 할인 모델 적정가치"),
     BlockMeta("ddmValuation", "DDM 밸류에이션", "가치평가", "배당 할인 모델 적정가치"),

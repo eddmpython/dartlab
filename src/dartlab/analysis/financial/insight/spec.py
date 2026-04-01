@@ -120,20 +120,40 @@ DISTRESS_SCORECARD = {
 }
 
 
+CREDIT_RATING = {
+    "label": "신용평가",
+    "description": "제도권 수준 20단계 신용등급 (AAA~D, +/- 포함). 5축 가중평균 + 업종별 차등 기준.",
+    "axes": [
+        {"name": "채무상환능력", "weight": "35%", "metrics": ["FFO/총차입금", "Debt/EBITDA", "FOCF/Debt", "EBITDA/이자비용"]},
+        {"name": "레버리지", "weight": "25%", "metrics": ["부채비율", "차입금의존도", "순차입금/EBITDA"]},
+        {"name": "유동성·만기", "weight": "15%", "metrics": ["유동비율", "현금비율", "단기차입금비중"]},
+        {"name": "부실모델 앙상블", "weight": "15%", "metrics": ["Altman Z", "Ohlson O", "Zmijewski", "Springate"]},
+        {"name": "이익품질·추세", "weight": "10%", "metrics": ["Beneish M", "Sloan Accrual", "Piotroski F", "이익변동성"]},
+    ],
+    "grades": "AAA, AA+, AA, AA-, A+, A, A-, BBB+, BBB, BBB-, BB+, BB, BB-, B+, B, B-, CCC, CC, C, D",
+    "cashFlowGrade": "eCR-1 ~ eCR-6 (현금흐름창출능력 별도 평가)",
+    "outlook": "안정적/긍정적/부정적 (5개년 점수 추세 기반)",
+    "qualitativeSlots": "AI가 채울 수 있는 정성 조정 슬롯 4개 (시장지위/경쟁우위/경영진/계열지원)",
+    "methodology": "KIS/KR/NICE + Moody's/S&P 공개 방법론 종합, 업종별 11개 대분류 차등 기준표",
+}
+
+
 def buildSpec() -> dict:
     """insight 엔진 스펙 반환."""
     return {
         "name": "insight",
-        "description": "기업 분석 등급 (10영역 A~F) + 이상치 탐지 + 부실 예측 + 프로파일 분류",
+        "description": "기업 분석 등급 (10영역 A~F) + 이상치 탐지 + 부실 예측 + 신용평가 + 프로파일 분류",
         "summary": {
             "areas": list(AREAS.keys()),
             "grading": "A~F (6단계, 점수 기반)",
             "anomaly": f"룰 기반 {len(ANOMALY_DETECTORS)}개 탐지기",
             "distress": f"5축 부실 예측 스코어카드 ({len(DISTRESS_MODELS)}개 모델, Merton D2D 포함) + 신용등급 + 유동성 경보",
+            "creditRating": "20단계 신용등급 (AAA~D) + eCR + Outlook + AI 정성 슬롯",
             "profile": "classifyProfile (수비형/공격형/성장형/가치형 등)",
         },
         "detail": {area: meta for area, meta in AREAS.items()},
         "anomalyDetectors": ANOMALY_DETECTORS,
         "distressModels": DISTRESS_MODELS,
         "distressScorecard": DISTRESS_SCORECARD,
+        "creditRating": CREDIT_RATING,
     }
