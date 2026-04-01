@@ -68,7 +68,13 @@ def narrateRepayment(latest: dict, axisScore: float | None, sectorLabel: str) ->
     revenue = latest.get("revenue")
 
     if ebitda is not None and revenue is not None:
-        details.append(f"매출 {_fmtTril(revenue)} 기반 EBITDA {_fmtTril(ebitda)}을 창출한다.")
+        if ebitda > 0:
+            details.append(f"매출 {_fmtTril(revenue)} 기반 EBITDA {_fmtTril(ebitda)}을 창출한다.")
+        elif ebitda < 0:
+            details.append(
+                f"매출 {_fmtTril(revenue)} 대비 EBITDA {_fmtTril(ebitda)}로 본업에서 적자다. "
+                f"다만 이는 지주사/특수 구조에서는 배당수입 등 영업외 현금흐름으로 보완될 수 있다."
+            )
 
     icr = latest.get("ebitdaInterestCoverage")
     if icr is not None:
@@ -223,7 +229,13 @@ def narrateCashFlow(latest: dict, axisScore: float | None, metrics: dict) -> Axi
 
     os = latest.get("ocfToSales")
     if os is not None:
-        if os > 15:
+        if os > 100:
+            # 지주사 등: 매출 < OCF (배당수입/지분법이 OCF에 포함)
+            details.append(
+                f"OCF/매출 {_fmt(os, '%')}로 자체 매출 대비 현금흐름이 매우 크다. "
+                f"이는 자회사 배당수입 등 영업외 현금이 포함된 것으로 판단된다."
+            )
+        elif os > 15:
             details.append(f"OCF/매출 {_fmt(os, '%')}로 매출 대비 현금 창출력이 우수하다.")
         elif os > 5:
             details.append(f"OCF/매출 {_fmt(os, '%')}로 현금 창출이 양호하다.")
@@ -564,9 +576,12 @@ def narrateCausalChain(latest: dict, result: dict) -> str:
 
     매출 → 이익 → 현금 → 안정성 → 등급의 인과 체인.
     앞이 뒤의 원인이다.
+
+    지주사/영업적자 등 특수 케이스를 별도 처리한다.
     """
     parts = []
     grade = result.get("grade", "?")
+    isHolding = result.get("holding", False)
 
     rev = latest.get("revenue")
     oi = latest.get("operatingIncome")
@@ -574,25 +589,45 @@ def narrateCausalChain(latest: dict, result: dict) -> str:
     ocf = latest.get("ocf")
     netDebt = latest.get("netDebt")
     debtRatio = latest.get("debtRatio")
-    fcf = latest.get("fcf")
 
+    # 지주사 특수 경로: 매출이 작고 OCF가 배당/지분법 중심
+    if isHolding and rev and ocf and ocf > rev * 0.5:
+        parts.append(f"지주사로서 자체 매출 {_fmtTril(rev)}")
+        if ocf > 0:
+            parts.append(f"자회사 배당 등으로 OCF {_fmtTril(ocf)} 확보")
+        if netDebt is not None and netDebt <= 0:
+            parts.append("순현금 포지션으로 재무 안정성이 높다.")
+        elif debtRatio is not None:
+            parts.append(f"부채비율 {debtRatio:.0f}%.")
+        if parts:
+            chain = ", ".join(parts)
+            return f"인과 요약: {chain} 종합 {grade}."
+        return ""
+
+    # 일반 기업 경로
     # 1막→2막: 매출 → 이익
-    if rev and oi:
-        margin = oi / rev * 100
+    if rev and rev > 0:
         parts.append(f"매출 {_fmtTril(rev)}")
-        if margin > 15:
-            parts.append(f"영업이익률 {margin:.0f}%로 수익성이 높아")
-        elif margin > 5:
-            parts.append(f"영업이익률 {margin:.0f}%로")
-        else:
-            parts.append(f"영업이익률 {margin:.0f}%에 불과하여")
+        if oi is not None:
+            margin = oi / rev * 100
+            if oi < 0:
+                parts.append(f"영업적자(이익률 {margin:.0f}%)로 본업 수익성이 부진하나")
+            elif margin > 15:
+                parts.append(f"영업이익률 {margin:.0f}%로 수익성이 높아")
+            elif margin > 5:
+                parts.append(f"영업이익률 {margin:.0f}%로")
+            else:
+                parts.append(f"영업이익률 {margin:.0f}%에 불과하여")
 
     # 2막→3막: 이익 → 현금
-    if ebitda and ocf:
-        if ocf > ebitda:
-            parts.append(f"EBITDA {_fmtTril(ebitda)} 이상의 현금(OCF {_fmtTril(ocf)})을 창출하고")
+    if ocf is not None:
+        if ebitda is not None and ebitda > 0 and ocf > 0:
+            if ocf > ebitda:
+                parts.append(f"EBITDA {_fmtTril(ebitda)} 이상의 현금(OCF {_fmtTril(ocf)})을 창출하고")
+            else:
+                parts.append(f"OCF {_fmtTril(ocf)}를 창출하며")
         elif ocf > 0:
-            parts.append(f"OCF {_fmtTril(ocf)}를 창출하며")
+            parts.append(f"OCF {_fmtTril(ocf)}를 확보하고")
         else:
             parts.append("영업에서 현금이 유출되어")
 
@@ -600,9 +635,9 @@ def narrateCausalChain(latest: dict, result: dict) -> str:
     if netDebt is not None:
         if netDebt <= 0:
             parts.append("순현금 포지션을 유지한다.")
-        elif debtRatio and debtRatio < 100:
+        elif debtRatio is not None and debtRatio < 100:
             parts.append(f"부채비율 {debtRatio:.0f}%로 안정적이다.")
-        else:
+        elif debtRatio is not None:
             parts.append(f"부채비율 {debtRatio:.0f}%로 레버리지 부담이 있다.")
 
     # 결론

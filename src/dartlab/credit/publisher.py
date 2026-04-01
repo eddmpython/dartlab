@@ -325,23 +325,39 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
     lines.append(f"현재 전망: **{outlook}**")
     lines.append("")
 
-    # 상향/하향 트리거 자동 생성
+    # 상향/하향 트리거 자동 생성 — 현실적 조건만
     upTriggers = []
     downTriggers = []
     if history:
-        latest = history[0]
-        icr = latest.get("ebitdaInterestCoverage")
+        latestH = history[0]
+        icr = latestH.get("ebitdaInterestCoverage")
+        dr = latestH.get("debtRatio")
+        de = latestH.get("debtToEbitda")
+        oi = latestH.get("operatingIncome")
+
+        # 상향 트리거
         if icr is not None and icr < 5:
             upTriggers.append("이자보상배율이 5배 이상으로 개선")
-        dr = latest.get("debtRatio")
-        if dr is not None and dr > 150:
-            upTriggers.append(f"부채비율이 {dr:.0f}%에서 120% 이하로 축소")
-        if icr is not None and icr > 3 and icr < 100:
-            downTriggers.append(f"이자보상배율이 {icr:.1f}배에서 2배 이하로 악화")
+        if dr is not None and dr > 100:
+            upTriggers.append(f"부채비율이 현 {dr:.0f}%에서 80% 이하로 축소")
+        if de is not None and de > 3:
+            upTriggers.append(f"Debt/EBITDA가 현 {de:.1f}배에서 2배 이하로 개선")
+        if oi is not None and oi < 0:
+            upTriggers.append("영업이익 흑자 전환")
+
+        # 하향 트리거 — 현 수준의 1.5~2배 악화를 기준으로
+        if icr is not None and 3 < icr < 100:
+            downTriggers.append(f"이자보상배율이 현 {icr:.1f}배에서 2배 이하로 악화")
         elif icr is not None and icr >= 100:
-            downTriggers.append("대규모 차입 발생으로 이자보상배율이 5배 이하로 하락")
-        if dr is not None and dr < 250:
-            downTriggers.append(f"부채비율이 {dr:.0f}%에서 300% 이상으로 증가")
+            downTriggers.append("대규모 차입으로 이자보상배율이 5배 이하로 하락")
+
+        if dr is not None:
+            # 현 수준의 2배 또는 +50%p 중 현실적인 것
+            threshold = min(dr * 2, dr + 50) if dr > 30 else 100
+            downTriggers.append(f"부채비율이 현 {dr:.0f}%에서 {threshold:.0f}% 이상으로 증가")
+
+        if de is not None and de < 3:
+            downTriggers.append(f"Debt/EBITDA가 현 {de:.1f}배에서 5배 이상으로 악화")
 
     if upTriggers:
         lines.append("### 상향 트리거")
