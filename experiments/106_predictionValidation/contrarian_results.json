@@ -1,0 +1,121 @@
+{
+  "date": "2026-04-01",
+  "results": [
+    {
+      "period": "2021→2022 문서 → 2023 매출",
+      "n": 1668,
+      "baseUpRate": 48.3,
+      "baseDownRate": 47.4,
+      "H1": {
+        "description": "이전하락+축소우세 → 반등",
+        "n": 17,
+        "upRate": 41.2,
+        "pValue": 0.7222,
+        "significant": false
+      },
+      "H2": {
+        "description": "이전상승+확장우세 → 하락",
+        "n": 765,
+        "downRate": 44.4,
+        "pValue": 0.947,
+        "significant": false
+      },
+      "combos": {
+        "up+shrink": {
+          "n": 53,
+          "upRate": 47.2,
+          "downRate": 41.5,
+          "avgGrowth": -1.2
+        },
+        "up+neutral": {
+          "n": 461,
+          "upRate": 49.0,
+          "downRate": 46.4,
+          "avgGrowth": 1.3
+        },
+        "up+expand": {
+          "n": 765,
+          "upRate": 51.1,
+          "downRate": 44.4,
+          "avgGrowth": 3.3
+        },
+        "down+shrink": {
+          "n": 17,
+          "upRate": 41.2,
+          "downRate": 58.8,
+          "avgGrowth": -2.6
+        },
+        "down+neutral": {
+          "n": 134,
+          "upRate": 42.5,
+          "downRate": 53.7,
+          "avgGrowth": 2.0
+        },
+        "down+expand": {
+          "n": 198,
+          "upRate": 43.9,
+          "downRate": 54.5,
+          "avgGrowth": 0.6
+        }
+      }
+    },
+    {
+      "period": "2022→2023 문서 → 2024 매출",
+      "n": 1597,
+      "baseUpRate": 55.5,
+      "baseDownRate": 39.2,
+      "H1": {
+        "description": "이전하락+축소우세 → 반등",
+        "n": 49,
+        "upRate": 63.3,
+        "pValue": 0.1383,
+        "significant": false
+      },
+      "H2": {
+        "description": "이전상승+확장우세 → 하락",
+        "n": 462,
+        "downRate": 35.7,
+        "pValue": 0.9375,
+        "significant": false
+      },
+      "combos": {
+        "up+shrink": {
+          "n": 43,
+          "upRate": 60.5,
+          "downRate": 27.9,
+          "avgGrowth": 17.7
+        },
+        "up+neutral": {
+          "n": 289,
+          "upRate": 59.5,
+          "downRate": 34.9,
+          "avgGrowth": 5.7
+        },
+        "up+expand": {
+          "n": 462,
+          "upRate": 59.5,
+          "downRate": 35.7,
+          "avgGrowth": 4.8
+        },
+        "down+shrink": {
+          "n": 49,
+          "upRate": 63.3,
+          "downRate": 28.6,
+          "avgGrowth": 13.8
+        },
+        "down+neutral": {
+          "n": 270,
+          "upRate": 50.0,
+          "downRate": 44.8,
+          "avgGrowth": 4.8
+        },
+        "down+expand": {
+          "n": 417,
+          "upRate": 50.4,
+          "downRate": 45.3,
+          "avgGrowth": 4.3
+        }
+      }
+    }
+  ]
+}

@@ -278,6 +278,18 @@ def buildNgramIndex(
     metaDf = pl.DataFrame(allMeta)
     metaDf.write_parquet(outDir / "meta.parquet")
 
+    # 유형 인덱스 사전 빌드 (검색 시 _buildTypeIndex 생략)
+    _buildAndSaveTypeIndex(metaDf, outDir)
+
+    # 파생 지식 레이어 빌드 (companyProfile, eventTimeline, DNA)
+    from dartlab.core.search.derived import buildCompanyProfile, buildDna, buildEventTimeline
+
+    buildCompanyProfile(metaDf, outDir)
+    buildEventTimeline(metaDf, outDir)
+    buildDna(metaDf, outDir)
+    if showProgress:
+        print("[stemIndex] 파생 집계 빌드 완료 (companyProfile, eventTimeline, dna)")
+
     # 캐시 갱신
     _cachedIndex = {
         "stemToId": stemToId,
@@ -324,25 +336,76 @@ def _loadIndex() -> tuple[dict, pl.DataFrame]:
     return _cachedIndex, _cachedMeta
 
 
+def _buildAndSaveTypeIndex(meta: pl.DataFrame, outDir: Path) -> None:
+    """빌드 시점에 유형 인덱스를 생성하여 JSON으로 저장."""
+    global _typeIndex, _typeToDocIds
+
+    norm = (
+        meta.lazy()
+        .with_row_index("_docId")
+        .with_columns(
+            pl.col("report_nm")
+            .str.replace(r"^\[기재정정\]", "", literal=False)
+            .str.replace(r"^\[첨부정정\]", "", literal=False)
+            .str.replace(r"^\[첨부추가\]", "", literal=False)
+            .str.replace(r"^\[발행조건확정\]", "", literal=False)
+            .str.replace(r"\s*\(\d{4}\.\d{2}\)\s*$", "", literal=False)
+            .str.replace(r"\s*\(.*?\)\s*$", "", literal=False)
+            .str.strip_chars()
+            .alias("_norm")
+        )
+        .filter(pl.col("_norm") != "")
+        .group_by("_norm")
+        .agg(pl.col("_docId"))
+        .collect()
+    )
+
+    typeToDocIds: dict[str, list[int]] = {
+        row[0]: row[1] for row in norm.iter_rows()
+    }
+
+    (outDir / "typeIndex.json").write_text(
+        json.dumps(typeToDocIds, ensure_ascii=False), encoding="utf-8"
+    )
+
+    typeIndex = {nt: set(_tokenize(nt)) for nt in typeToDocIds}
+    _typeIndex = typeIndex
+    _typeToDocIds = typeToDocIds
+
+
 def _buildTypeIndex(meta: pl.DataFrame) -> tuple[dict, dict]:
-    """114개 정규화 유형의 ngram 인덱스 + docId 매핑 구축."""
+    """114개 정규화 유형 인덱스 로드 (사전 빌드 파일 우선, 없으면 런타임 빌드)."""
     global _typeIndex, _typeToDocIds
 
     if _typeIndex is not None and _typeToDocIds is not None:
         return _typeIndex, _typeToDocIds
 
-    import re
+    outDir = _stemIndexDir()
+    typeIndexPath = outDir / "typeIndex.json"
 
-    typeToDocIds: dict[str, list[int]] = defaultdict(list)
-    for docId, rn in enumerate(meta["report_nm"].to_list()):
-        norm = re.sub(r"^\[기재정정\]", "", rn).strip()
-        norm = re.sub(r"^\[첨부정정\]", "", norm).strip()
-        norm = re.sub(r"^\[첨부추가\]", "", norm).strip()
-        norm = re.sub(r"^\[발행조건확정\]", "", norm).strip()
-        norm = re.sub(r"\s*\(\d{4}\.\d{2}\)\s*$", "", norm).strip()
-        norm = re.sub(r"\s*\(.*?\)\s*$", "", norm).strip()
-        if norm:
-            typeToDocIds[norm].append(docId)
+    if typeIndexPath.exists():
+        typeToDocIds = json.loads(typeIndexPath.read_text(encoding="utf-8"))
+    else:
+        norm = (
+            meta.lazy()
+            .with_row_index("_docId")
+            .with_columns(
+                pl.col("report_nm")
+                .str.replace(r"^\[기재정정\]", "", literal=False)
+                .str.replace(r"^\[첨부정정\]", "", literal=False)
+                .str.replace(r"^\[첨부추가\]", "", literal=False)
+                .str.replace(r"^\[발행조건확정\]", "", literal=False)
+                .str.replace(r"\s*\(\d{4}\.\d{2}\)\s*$", "", literal=False)
+                .str.replace(r"\s*\(.*?\)\s*$", "", literal=False)
+                .str.strip_chars()
+                .alias("_norm")
+            )
+            .filter(pl.col("_norm") != "")
+            .group_by("_norm")
+            .agg(pl.col("_docId"))
+            .collect()
+        )
+        typeToDocIds = {row[0]: row[1] for row in norm.iter_rows()}
 
     typeIndex = {nt: set(_tokenize(nt)) for nt in typeToDocIds}
 
@@ -399,9 +462,12 @@ def searchNgram(
 
     from dartlab.core.dataLoader import DART_VIEWER
 
-    # L0: 유형 매칭
+    # L0: 유형 매칭 (임계값 0.2 — 약한 부분 매칭 차단)
+    _L0_MIN_SCORE = 0.2
     typeIndex, typeToDocIds = _buildTypeIndex(meta)
-    matchedTypes = _matchTypes(query, typeIndex, topK=3)
+    matchedTypes = [
+        (t, s) for t, s in _matchTypes(query, typeIndex, topK=3) if s >= _L0_MIN_SCORE
+    ]
     l0DocIds = set()
     for typeName, _ in matchedTypes:
         l0DocIds.update(typeToDocIds[typeName])
@@ -425,17 +491,24 @@ def searchNgram(
                 if stockCode and row.get("stock_code", "") != stockCode:
                     continue
                 seen.add(rcept)
+                reportNm = row.get("report_nm", "")
+                sectionTitle = row.get("section_title", "")
+                exactBoost = 1.0
+                if query in reportNm:
+                    exactBoost = 3.0
+                elif query in sectionTitle:
+                    exactBoost = 2.0
                 rows.append({
-                    "score": round(10.0 * typeScore, 4),
+                    "score": round(10.0 * typeScore * exactBoost, 4),
                     "rcept_no": rcept,
-                "corp_name": row.get("corp_name", ""),
-                "stock_code": row.get("stock_code", ""),
-                "rcept_dt": row.get("rcept_dt", ""),
-                "report_nm": row.get("report_nm", ""),
-                "section_title": row.get("section_title", ""),
-                "text": row.get("text", ""),
-                "dartUrl": f"{DART_VIEWER}{rcept}",
-            })
+                    "corp_name": row.get("corp_name", ""),
+                    "stock_code": row.get("stock_code", ""),
+                    "rcept_dt": row.get("rcept_dt", ""),
+                    "report_nm": reportNm,
+                    "section_title": sectionTitle,
+                    "text": row.get("text", ""),
+                    "dartUrl": f"{DART_VIEWER}{rcept}",
+                })
 
     # L1: BM25F bincount (전체 — L0에 없는 것만 추가)
     tokens = _tokenize(query)
@@ -478,11 +551,18 @@ def searchNgram(
                 boost = 1.0
                 reportNm = row.get("report_nm", "")
                 sectionTitle = row.get("section_title", "")
-                for w in queryWords:
-                    if w in reportNm:
-                        boost += 5.0
-                    if w in sectionTitle:
-                        boost += 2.0
+
+                # exact substring: 쿼리 원문이 그대로 포함되면 최강 부스트
+                if query in reportNm:
+                    boost += 20.0
+                elif query in sectionTitle:
+                    boost += 15.0
+                else:
+                    for w in queryWords:
+                        if w in reportNm:
+                            boost += 5.0
+                        if w in sectionTitle:
+                            boost += 2.0
 
                 # L0 가산점: 유형 매칭된 문서면 강하게 부스트
                 if int(docId) in l0DocIds:

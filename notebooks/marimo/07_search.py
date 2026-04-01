@@ -23,13 +23,7 @@ def _():
 
 @app.cell
 def _(dartlab):
-    dartlab.search("회사가 돈을 빌렸다", topK=5)
-    return
-
-
-@app.cell
-def _(dartlab):
-    dartlab.search("자기주식", start="20260101", topK=5)
+    dartlab.search("기술이전", topK=5)
     return
 
 

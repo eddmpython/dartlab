@@ -58,17 +58,24 @@ def _getCompany(stockCode: str) -> Any:
     return c
 
 
+_MCP_MAX_RESULT_CHARS = 12000  # MCP 도구 결과 상한 (외부 AI 컨텍스트 절약)
+
+
 def _fmt(obj) -> str:
-    """객체를 LLM이 읽기 좋은 텍스트로 변환."""
+    """객체를 LLM이 읽기 좋은 텍스트로 변환. 결과가 크면 잘라냄."""
     if obj is None:
         return "데이터 없음"
     if hasattr(obj, "to_pandas"):
-        return obj.to_pandas().to_string()
-    if isinstance(obj, dict):
-        return _fmtDict(obj)
-    if isinstance(obj, list):
-        return "\n".join(str(item) for item in obj)
-    return str(obj)
+        result = obj.to_pandas().to_string()
+    elif isinstance(obj, dict):
+        result = _fmtDict(obj)
+    elif isinstance(obj, list):
+        result = "\n".join(str(item) for item in obj)
+    else:
+        result = str(obj)
+    if len(result) > _MCP_MAX_RESULT_CHARS:
+        return result[:_MCP_MAX_RESULT_CHARS] + f"\n\n...(결과 잘림, 전체 {len(result)}자. 범위를 좁혀 재조회하세요)"
+    return result
 
 
 def _fmtDict(d: dict, depth: int = 0) -> str:

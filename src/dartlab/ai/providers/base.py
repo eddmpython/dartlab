@@ -54,6 +54,11 @@ class BaseProvider(ABC):
         """이 provider가 네이티브 tool calling을 지원하는지."""
         return False
 
+    @property
+    def supports_cache_control(self) -> bool:
+        """시스템 프롬프트 캐시 경계(cache_control)를 지원하는지."""
+        return False
+
     def complete_with_tools(
         self,
         messages: list[dict],

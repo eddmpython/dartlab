@@ -1,0 +1,36 @@
+{
+  "charterChange_vs_growth": {
+    "total": 266,
+    "stagnantPct": 40.2,
+    "marketStagnantPct": 62.1,
+    "enrichment": 0.65,
+    "gradeDist": {
+      "역성장": 31,
+      "성장": 17,
+      "고성장": 52,
+      "정체": 41,
+      "급감": 35
+    },
+    "verdict": "유효"
+  },
+  "mgmtChange_vs_profitability": {
+    "total": 296,
+    "lossPct": 51.7,
+    "marketLossPct": 61.4,
+    "enrichment": 0.84,
+    "gradeDist": {
+      "적자": 49,
+      "보통": 60,
+      "양호": 37,
+      "우수": 21,
+      "저수익": 104
+    },
+    "verdict": "미달"
+  },
+  "hrChange": {
+    "total": 211,
+    "increase": 70,
+    "decrease": 150,
+    "verdict": "참고"
+  }
+}

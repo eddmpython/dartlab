@@ -3,3 +3,4 @@ dist/
 *.vsix
 webview/node_modules/
 .vscode-test/
+.wdio-vscode-service/

@@ -1,0 +1,28 @@
+{
+  "chronicContingentDebt": {
+    "total": 2142,
+    "debtSafe": 768,
+    "debtSafePct": 35.9,
+    "debtDist": {
+      "주의": 955,
+      "안전": 498,
+      "고위험": 193,
+      "관찰": 270
+    },
+    "verdict": "유효"
+  },
+  "acceleratingChange": {
+    "total": 390,
+    "lossPct": 46.7,
+    "marketLossPct": 61.4,
+    "enrichment": 0.76,
+    "profDist": {
+      "우수": 37,
+      "양호": 50,
+      "적자": 60,
+      "보통": 78,
+      "저수익": 122
+    },
+    "verdict": "미달"
+  }
+}

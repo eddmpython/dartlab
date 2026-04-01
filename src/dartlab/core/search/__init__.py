@@ -127,3 +127,45 @@ def pullIndex(**kwargs):
     from dartlab.core.search.ngramIndex import pullStemIndex
 
     return pullStemIndex(**kwargs)
+
+
+# ── 파생 지식 API ──
+
+
+def profile(stockCode: str | None = None):
+    """기업별 공시 프로필 조회.
+
+    stockCode 지정 시 해당 기업의 공시 요약 dict 반환.
+    미지정 시 전체 DataFrame 반환.
+    """
+    from dartlab.core.search.derived import loadProfile
+
+    return loadProfile(stockCode)
+
+
+def pulse(topK: int = 10) -> pl.DataFrame:
+    """최근 월의 공시 유형별 건수 + 전월 대비 변화."""
+    from dartlab.core.search.derived import pulse as _pulse
+
+    return _pulse(topK=topK)
+
+
+def timeline(typeFilter: str | None = None, periodFilter: str | None = None) -> pl.DataFrame:
+    """유형×월 빈도 시계열 조회."""
+    from dartlab.core.search.derived import loadTimeline
+
+    return loadTimeline(typeFilter=typeFilter, periodFilter=periodFilter)
+
+
+def dna(stockCode: str) -> dict:
+    """기업의 Disclosure DNA (114차원 유형 빈도 벡터)."""
+    from dartlab.core.search.derived import dna as _dna
+
+    return _dna(stockCode)
+
+
+def similarCompanies(stockCode: str, topK: int = 5) -> pl.DataFrame:
+    """공시 패턴이 유사한 기업 탐색 (코사인 유사도)."""
+    from dartlab.core.search.derived import similarCompanies as _similar
+
+    return _similar(stockCode, topK=topK)

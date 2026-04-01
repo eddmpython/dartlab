@@ -356,6 +356,12 @@ class DartlabCodeExecutor(LocalPythonBackend):
             "except ImportError:\n"
             "    pass\n"
         )
+        preamble += (
+            "try:\n"
+            "    from dartlab.core.search import search as disclosureSearch\n"
+            "except ImportError:\n"
+            "    pass\n"
+        )
         if stockCode:
             preamble += f'c = Company("{stockCode}")\n'
             preamble += "company = c\n"

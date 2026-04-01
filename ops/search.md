@@ -16,6 +16,7 @@
 core/search/
 ├── __init__.py       # search(), buildIndex(), rebuildIndex()
 ├── ngramIndex.py     # stem ID 역인덱스 (CSR + bincount)
+├── derived.py        # 파생 집계 (보류 — 가치 미확정)
 ├── vectorStore.py    # 벡터 검색 (optional, 보강용)
 
 providers/dart/openapi/
@@ -255,11 +256,30 @@ L1 규칙은 report_nm 472개 유형을 분석하여 도출. 130개 DART 공식 
 1,460만 문장 코퍼스에서 CSR 구조의 효율성과 정확성을 검증했으며,
 비트맵/set/CSR 비교에서 CSR + bincount 조합이 최적임을 확인.
 
+## 파생 집계 레이어 (보류 — 가치 미확정)
+
+`buildNgramIndex()` 시 meta.parquet에서 group_by로 추출하는 파생 데이터.
+코드는 `core/search/derived.py`에 구현되어 있으나, **실제 가치가 검증되지 않아 현장 배치 보류.**
+
+| 파생물 | 내용 | 상태 |
+|--------|------|------|
+| companyProfile.parquet | 기업별 공시 건수/유형/속도 | 보류 — 유형 건수만으로 인사이트 부족 |
+| eventTimeline.parquet | 유형×월 빈도 시계열 | 보류 — "그래서 뭐?" 문제 |
+| dna.npz | 114차원 유형 빈도 벡터 | 보류 — 행동 peer 가치 미검증 |
+
+**보류 사유**: allFilings meta의 공시 유형 건수 집계만으로는 의미 있는 인사이트가 나오지 않는다. 진짜 가치는 공시 내용(section_content)에 있다. 전체 데이터 축적 + 실제 사용 사례에서 가치가 입증되면 배치 위치를 결정한다.
+
+**현장 배치 완료된 것**:
+- AI 시스템 프롬프트에 `dartlab.search()` 도구 설명 추가
+- AI sandbox에 `disclosureSearch()` 노출
+- AI prefetch에 `_preGroundDisclosure()` (companyProfile 기반 — 프로필 파일 있을 때만 동작)
+
 ## 관련 코드
 
 | 파일 | 역할 |
 |------|------|
 | `src/dartlab/core/search/ngramIndex.py` | stem ID 역인덱스 (빌드 + 검색 + HF push/pull) |
 | `src/dartlab/core/search/__init__.py` | 통합 진입점 (search, buildIndex, rebuildIndex) |
+| `src/dartlab/core/search/derived.py` | 파생 집계 (companyProfile, eventTimeline, dna) — 보류 |
 | `src/dartlab/core/search/vectorStore.py` | 벡터 검색 (optional 보강) |
 | `src/dartlab/providers/dart/openapi/allFilingsCollector.py` | 수시공시 수집기 |

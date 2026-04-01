@@ -1,0 +1,43 @@
+{
+  "period": "2024→2025",
+  "signalCount": 2489,
+  "crossValidation": {
+    "contingentDebt_vs_debt": {
+      "total": 1068,
+      "debtSafe": 384,
+      "debtSafePct": 36.0,
+      "verdict": "유효",
+      "interpretation": "우발부채 증가 1068종목 중 384개(36.0%)가 부채등급 안전/관찰 — 선행 지표"
+    },
+    "intensity_vs_profitability": {
+      "top100_lossPct": 48.0,
+      "market_lossPct": 61.4,
+      "enrichment": 0.78,
+      "verdict": "미달",
+      "interpretation": "공시 강도 상위 100의 적자/저수익 비율 48.0% vs 시장 61.4%"
+    },
+    "auditStruct_vs_audit": {
+      "total": 2061,
+      "auditSafe": 1256,
+      "auditSafePct": 60.9,
+      "verdict": "유효",
+      "interpretation": "감사 구조 변경 2061종목 중 1256개(60.9%)가 감사 안전 — 아직 미감지"
+    },
+    "bizPivot_vs_growth": {
+      "total": 424,
+      "gradeDistribution": {
+        "정체": 71,
+        "급감": 58,
+        "고성장": 98,
+        "성장": 30,
+        "역성장": 47
+      },
+      "interpretation": "사업 전환 424종목의 성장등급 분포"
+    },
+    "affiliateChange": {
+      "total": 185,
+      "verdict": "유효",
+      "interpretation": "계열/타법인 변화 185종목 — 기존 축에 없는 M&A 신호"
+    }
+  }
+}

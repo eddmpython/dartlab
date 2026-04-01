@@ -6,6 +6,8 @@ server/chat.py의 build_history_messages(), compress_history()에서 추출.
 
 from __future__ import annotations
 
+import re
+
 from ..types import HistoryItem
 
 _MAX_HISTORY_TURNS_DEFAULT = 10
@@ -27,12 +29,32 @@ def _dynamicMaxTurns(historyItems: list[HistoryItem]) -> int:
 
 
 def _compress_history_text(text: str) -> str:
-    """길어진 과거 대화를 앞뒤 핵심만 남기도록 압축."""
+    """길어진 과거 대화를 앞뒤 핵심만 남기도록 압축.
+
+    문장 경계(마침표, 줄바꿈)를 존중하여 의미 단위로 절단한다.
+    """
     if len(text) <= _MAX_HISTORY_MESSAGE_CHARS:
         return text
     head = int(_MAX_HISTORY_MESSAGE_CHARS * 0.65)
     tail = _MAX_HISTORY_MESSAGE_CHARS - head
-    return text[:head].rstrip() + "\n...\n" + text[-tail:].lstrip()
+
+    # 앞부분: head 근처의 마지막 문장 경계
+    head_text = text[:head]
+    for sep in ("\n", "다. ", ". ", "? ", "! "):
+        idx = head_text.rfind(sep)
+        if idx > head * 0.5:
+            head_text = head_text[: idx + len(sep)]
+            break
+
+    # 뒷부분: -tail 근처의 첫 문장 경계
+    tail_text = text[-tail:]
+    for sep in ("\n", "다. ", ". ", "? ", "! "):
+        idx = tail_text.find(sep)
+        if idx != -1 and idx < tail * 0.3:
+            tail_text = tail_text[idx + len(sep) :]
+            break
+
+    return head_text.rstrip() + "\n...\n" + tail_text.lstrip()
 
 
 def build_history_messages(history: list[HistoryItem] | None) -> list[dict[str, str]]:
@@ -81,11 +103,31 @@ def build_history_messages(history: list[HistoryItem] | None) -> list[dict[str, 
     return list(reversed(selected))
 
 
+_CODE_BLOCK_RE = re.compile(r"```[\s\S]*?```")
+_TABLE_ROW_RE = re.compile(r"^\|.*\|$", re.MULTILINE)
+_ANALYSIS_TAG_RE = re.compile(r"<analysis>[\s\S]*?</analysis>")
+_BLANK_LINES_RE = re.compile(r"\n{3,}")
+
+
+def _strip_non_essential(text: str) -> str:
+    """코드블록, 테이블, analysis 태그를 제거하여 핵심 해석만 남긴다."""
+    text = _CODE_BLOCK_RE.sub("", text)
+    text = _TABLE_ROW_RE.sub("", text)
+    text = _ANALYSIS_TAG_RE.sub("", text)
+    text = _BLANK_LINES_RE.sub("\n\n", text)
+    return text.strip()
+
+
 def compress_history(history: list[HistoryItem] | None) -> list[HistoryItem] | None:
     """멀티턴 히스토리 압축: 오래된 턴을 구조화된 요약으로 대체.
 
     5턴(10 메시지) 이상이면 가장 오래된 턴들을 1개 요약 메시지로 교체.
     최근 4턴(8 메시지)은 원본 유지.
+
+    Claude Code compaction 패턴 흡수:
+    - 비핵심 콘텐츠(코드블록/테이블) 제거 후 압축
+    - summarizeResponse()로 종합/결론 섹션 추출 시도
+    - 압축 후 "이어서 진행" 지시 추가
     """
     if not history or len(history) <= _COMPRESS_TURN_THRESHOLD * 2:
         return history
@@ -113,14 +155,23 @@ def compress_history(history: list[HistoryItem] | None) -> list[HistoryItem] | N
             brief = text[:80] + "..." if len(text) > 80 else text
             qa_pairs.append(f"- Q: {brief}")
         elif msg.role == "assistant":
-            sentences = text.split(".")
-            brief = ".".join(sentences[:2]).strip()
-            if brief and not brief.endswith("."):
-                brief += "."
-            if len(brief) > 150:
-                brief = brief[:150] + "..."
-            if brief:
-                qa_pairs.append(f"  A: {brief}")
+            cleaned = _strip_non_essential(text)
+            # summarizeResponse로 종합/결론 섹션 추출 시도
+            try:
+                from ..memory.summarizer import summarizeResponse
+
+                summary = summarizeResponse(cleaned, maxChars=150)
+            except ImportError:
+                summary = ""
+            if not summary:
+                sentences = cleaned.split(".")
+                summary = ".".join(sentences[:2]).strip()
+                if summary and not summary.endswith("."):
+                    summary += "."
+                if len(summary) > 150:
+                    summary = summary[:150] + "..."
+            if summary:
+                qa_pairs.append(f"  A: {summary}")
 
     if not qa_pairs:
         return history
@@ -133,6 +184,8 @@ def compress_history(history: list[HistoryItem] | None) -> list[HistoryItem] | N
         summary_lines.append(f"분석 주제: {', '.join(unique_topics)}")
     summary_lines.append("")
     summary_lines.extend(qa_pairs[-8:])
+    summary_lines.append("")
+    summary_lines.append("위 대화를 이어서 진행하라. 이미 논의된 내용을 반복하지 마라.")
 
     summary_text = "\n".join(summary_lines)
     summary_msg = HistoryItem(role="assistant", text=summary_text)

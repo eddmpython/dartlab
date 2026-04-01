@@ -1,0 +1,6 @@
+{
+  "date": "2026-04-01",
+  "total": 1693,
+  "test": "2022→2023 문서변화 → 2024 매출",
+  "dataSource": "changes.parquet (사전빌드, Company 미로드)"
+}

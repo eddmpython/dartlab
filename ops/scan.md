@@ -8,7 +8,7 @@
 | 진입점 | `dartlab.scan()`, `c.governance()` 등 |
 | 소비 | providers/(dart), core/finance, 프리빌드 parquet |
 | 생산 | ai가 시장 비교에 사용, analysis와 독립 |
-| 축 | 정식 6축 + account/ratio/digest 등 13축 |
+| 축 | 정식 7축 + account/ratio/digest 등 13축 |
 
 ## 단일 진입점
 
@@ -16,7 +16,7 @@
 - `c.governance()` 등은 scan 내부 view — 별도 전역 함수가 아니다
 - 새 축은 `scan/` 아래 모듈로 추가한다
 
-## 정식 6축
+## 정식 7축
 
 | 축 | 타입 | 소스 | 설명 |
 |------|------|------|------|
@@ -26,6 +26,7 @@
 | debt | company-bound | corporateBond, finance BS/IS | 부채 구조, ICR, 위험등급 |
 | network | market-level | docs sections | 관계 네트워크 |
 | signal | market-level | docs sections | 키워드 트렌드 |
+| disclosureRisk | market-level | changes.parquet | 공시 변화 선행 리스크 (우발부채, 키워드, 감사변경, 계열변화, 사업전환) |
 
 signal은 company-bound API로 연결하지 않는다 — `dartlab.signal()` market API로만 노출.
 
@@ -69,4 +70,5 @@ data/dart/scan/
 |------|------|
 | `src/dartlab/scan/` | 6축 모듈 |
 | `src/dartlab/scan/network/` | 관계 네트워크 |
+| `src/dartlab/scan/disclosureRisk/` | 공시 변화 리스크 (6시그널) |
 | `src/dartlab/core/finance/scanAccount.py` | 범용 계정/비율 전종목 조회 |

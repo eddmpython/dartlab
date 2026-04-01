@@ -72,6 +72,11 @@ class ClaudeProvider(BaseProvider):
         """네이티브 tool calling 지원 여부."""
         return True
 
+    @property
+    def supports_cache_control(self) -> bool:
+        """Anthropic 네이티브 모드에서 프롬프트 캐싱 지원."""
+        return not self._use_openai_compat
+
     def _get_client(self):
         if self._client is not None:
             return self._client

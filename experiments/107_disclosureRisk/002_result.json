@@ -1,0 +1,65 @@
+{
+  "횡령": {
+    "new": 21,
+    "auditSafe": 15,
+    "auditSafePct": 71.4,
+    "auditDist": {
+      "안전": 15,
+      "관찰": 6
+    },
+    "profLossPct": 66.7,
+    "verdict": "유효"
+  },
+  "배임": {
+    "new": 22,
+    "auditSafe": 15,
+    "auditSafePct": 68.2,
+    "auditDist": {
+      "관찰": 7,
+      "안전": 15
+    },
+    "profLossPct": 68.2,
+    "verdict": "유효"
+  },
+  "과징금": {
+    "new": 29,
+    "auditSafe": 19,
+    "auditSafePct": 65.5,
+    "auditDist": {
+      "안전": 19,
+      "관찰": 8,
+      "고위험": 1
+    },
+    "profLossPct": 48.3,
+    "verdict": "유효"
+  },
+  "손해배상": {
+    "new": 52,
+    "auditSafe": 30,
+    "auditSafePct": 57.7,
+    "auditDist": {
+      "관찰": 22,
+      "안전": 30
+    },
+    "profLossPct": 53.8,
+    "verdict": "유효"
+  },
+  "소송": {
+    "new": 151,
+    "auditSafe": 108,
+    "auditSafePct": 71.5,
+    "auditDist": {
+      "안전": 108,
+      "관찰": 36,
+      "고위험": 2
+    },
+    "profLossPct": 40.4,
+    "verdict": "유효"
+  },
+  "횡령+배임+과징금_합산": {
+    "new": 49,
+    "auditSafe": 33,
+    "auditSafePct": 67.3,
+    "verdict": "유효"
+  }
+}
