@@ -442,7 +442,7 @@ def _streamWithCodeExecution(
     messages: list[dict],
     stockCode: str | None,
     *,
-    maxRounds: int = 5,
+    maxRounds: int = 3,
 ) -> Generator[str | AnalysisEvent, None, None]:
     """LLM 스트리밍 + 코드블록 자동 감지/실행 루프.
 
@@ -567,6 +567,20 @@ dartlab 재무분석 플랫폼을 도구로 삼아 한국/미국 상장기업을
 {env_block}
 
 ## 도구 선택 기준
+
+### 종합 분석 ("이 기업에 대해 알고싶다", "분석해줘", "어때?")
+기업 전반을 묻는 종합 질문에는 analysis 3축을 순서대로 실행하라:
+```python
+c = dartlab.Company("005930")
+# 1라운드: 핵심 3축
+r1 = c.analysis("financial", "수익성")
+r2 = c.analysis("financial", "성장성")
+r3 = c.analysis("financial", "안정성")
+```
+3축 결과를 테이블로 정리한 뒤 종합 판단. 추가가 필요하면 2라운드에서 현금흐름/효율성 추가.
+review()는 사용하지 마라 — analysis가 더 빠르고 원본 데이터를 직접 준다.
+
+### 특정 축 분석 ("수익성", "배당", "부채")
 - **개별 기업 분석**: analysis를 기본으로 사용하라. review는 요약이 필요할 때만.
   analysis()는 dict를 반환한다. **그냥 print(dict)하지 마라.** 핵심 수치를 뽑아서 마크다운 테이블로 정리해라.
   예시:
