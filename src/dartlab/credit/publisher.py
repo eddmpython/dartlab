@@ -148,7 +148,16 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
         lines.append("| 구조 | 지주사 |")
     lines.append("")
 
-    # ── 재무 하이라이트 ──
+    # ── 2. 기업 개요 ──
+    narrativesDict = result.get("narratives", {})
+    profileNarr = narrativesDict.get("profile", "")
+    if profileNarr:
+        lines.append("## 2. 기업 개요")
+        lines.append("")
+        lines.append(profileNarr)
+        lines.append("")
+
+    # ── 3. 재무 하이라이트 ──
     history = result.get("metricsHistory", [])
     if history:
         from dartlab.credit.narrative import _fmtTril
@@ -156,7 +165,7 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
         h0 = history[0]
         h1 = history[1] if len(history) > 1 else {}
 
-        lines.append("## 2. 재무 하이라이트")
+        lines.append("## 3. 재무 하이라이트")
         lines.append("")
 
         rev0 = h0.get("revenue")
@@ -193,10 +202,20 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
             else:
                 lines.append(f"- **순차입금**: {_fmtTril(netDebt0)}")
 
+        # 추세 해석
+        trendNarr = narrativesDict.get("trend", "")
+        if trendNarr:
+            lines.append(f"- **추세**: {trendNarr}")
+
+        # 차입금 구성
+        borrowNarr = narrativesDict.get("borrowings", "")
+        if borrowNarr:
+            lines.append(f"- **차입금 구성**: {borrowNarr}")
+
         lines.append("")
 
-    # ── 3. 등급 근거 ──
-    lines.append("## 3. 등급 근거")
+    # ── 4. 등급 근거 ──
+    lines.append("## 4. 등급 근거")
     lines.append("")
     lines.append(overallNarrative)
     lines.append("")
@@ -224,7 +243,7 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
         lines.append("")
 
     # ── 3. 7축 상세 분석 ──
-    lines.append("## 4. 7축 상세 분석")
+    lines.append("## 5. 7축 상세 분석")
     lines.append("")
 
     # 요약 테이블
@@ -275,7 +294,7 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
 
     # ── 5. 재무 요약 5개년 ──
     if history:
-        lines.append("## 5. 재무 요약 (5개년)")
+        lines.append("## 6. 재무 요약 (5개년)")
         lines.append("")
         cols = ["기간", "EBITDA/이자", "Debt/EBITDA", "부채비율", "유동비율", "OCF/매출"]
         lines.append("| " + " | ".join(cols) + " |")
@@ -293,7 +312,7 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
         lines.append("")
 
     # ── 5. 등급 전망 + 변경 트리거 ──
-    lines.append("## 6. 등급 전망")
+    lines.append("## 7. 등급 전망")
     lines.append("")
     lines.append(f"현재 전망: **{outlook}**")
     lines.append("")
@@ -333,7 +352,7 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
     lines.append("")
 
     # ── 7. 면책 + 방법론 ──
-    lines.append("## 8. 면책 + 방법론")
+    lines.append("## 9. 면책 + 방법론")
     lines.append("")
     lines.append(f"- dartlab 독립 신용평가(dCR) {version}")
     lines.append("- 공시 데이터 기반 정량 분석. 비공개 면담/정성 판단 미포함.")

@@ -405,6 +405,134 @@ def buildNarratives(result: dict) -> list[AxisNarrative]:
     ]
 
 
+def narrateProfile(profile: dict | None, segments: dict | None, rank: dict | None) -> str:
+    """기업 개요 서사 — 이 회사가 뭘 하는 회사인가."""
+    parts = []
+
+    # 업종 + 주요제품
+    if profile:
+        sector = profile.get("sector", "")
+        products = profile.get("products", "")
+        if sector:
+            parts.append(sector.replace("섹터: ", ""))
+        if products:
+            parts.append(products.replace("주요제품: ", "주요 사업: "))
+
+    # 부문 구성
+    if segments and segments.get("segments"):
+        segs = segments["segments"]
+        total = segments.get("totalRevenue", 0)
+        if total > 0 and segs:
+            segParts = []
+            for s in segs[:3]:
+                name = s.get("name", "")
+                rev = s.get("revenue", 0)
+                share = rev / total * 100 if total > 0 else 0
+                if share > 5:
+                    margin = s.get("opMargin")
+                    marginStr = f"(영업이익률 {margin:.1f}%)" if margin is not None else ""
+                    segParts.append(f"{name} {share:.0f}%{marginStr}")
+            if segParts:
+                parts.append("부문 구성: " + ", ".join(segParts))
+
+    # 업종 내 순위
+    if rank:
+        sectorRank = rank.get("revenueRankInSector")
+        sectorTotal = rank.get("revenueSectorTotal")
+        sizeClass = rank.get("sizeClass", "")
+        if sectorRank and sectorTotal:
+            sizeKr = {"large": "대형", "mid": "중형", "small": "소형"}.get(sizeClass, "")
+            parts.append(f"업종 내 매출 {sectorRank}/{sectorTotal}위 ({sizeKr})")
+
+    return " | ".join(parts) if parts else ""
+
+
+def narrateTrend(history: list[dict]) -> str:
+    """전기 대비 추세 해석 — 핵심 지표의 개선/악화."""
+    if len(history) < 2:
+        return ""
+
+    h0, h1 = history[0], history[1]
+    parts = []
+
+    # 매출 전년비
+    rev0, rev1 = h0.get("revenue"), h1.get("revenue")
+    if rev0 and rev1 and rev1 != 0:
+        chg = (rev0 - rev1) / abs(rev1) * 100
+        direction = "증가" if chg > 0 else "감소"
+        parts.append(f"매출 전년비 {'+' if chg > 0 else ''}{chg:.0f}% {direction}")
+
+    # 영업이익 전년비
+    oi0, oi1 = h0.get("operatingIncome"), h1.get("operatingIncome")
+    if oi0 and oi1 and oi1 != 0:
+        chg = (oi0 - oi1) / abs(oi1) * 100
+        if abs(chg) > 30:
+            direction = "대폭 개선" if chg > 0 else "대폭 악화"
+            parts.append(f"영업이익 {'+' if chg > 0 else ''}{chg:.0f}% ({direction})")
+
+    # Debt/EBITDA 변화
+    de0, de1 = h0.get("debtToEbitda"), h1.get("debtToEbitda")
+    if de0 is not None and de1 is not None:
+        if de0 < de1:
+            parts.append(f"Debt/EBITDA {de1:.1f}→{de0:.1f}배로 개선")
+        elif de0 > de1 * 1.2:
+            parts.append(f"Debt/EBITDA {de1:.1f}→{de0:.1f}배로 악화")
+
+    # 부채비율 변화
+    dr0, dr1 = h0.get("debtRatio"), h1.get("debtRatio")
+    if dr0 is not None and dr1 is not None:
+        delta = dr0 - dr1
+        if abs(delta) > 5:
+            direction = "상승" if delta > 0 else "하락"
+            parts.append(f"부채비율 {dr1:.0f}%→{dr0:.0f}%로 {direction}")
+
+    if not parts:
+        return "전기 대비 핵심 지표 변동이 제한적이다."
+
+    return " ".join(parts) + "."
+
+
+def narrateBorrowings(borrowingsDetail: list[dict] | None, latest: dict | None) -> str:
+    """차입금 구성 분석 — 만기/종류별."""
+    if latest is None:
+        return ""
+
+    totalBorrowing = latest.get("totalBorrowing")
+    cashVal = latest.get("cash") if "cash" in (latest or {}) else None
+    # cash가 latest에 없으면 history에서 추출 시도
+    if cashVal is None:
+        # netDebt = totalBorrowing - cash → cash = totalBorrowing - netDebt
+        netDebt = latest.get("netDebt")
+        if totalBorrowing and netDebt is not None:
+            cashVal = totalBorrowing - netDebt
+
+    if not totalBorrowing or totalBorrowing <= 0:
+        return "차입금이 없거나 극소하여 부채 구성 분석이 불필요하다."
+
+    parts = []
+    parts.append(f"총차입금 {_fmtTril(totalBorrowing)}.")
+
+    # 단기/장기 비중
+    stRatio = latest.get("shortTermDebtRatio")
+    if stRatio is not None:
+        ltRatio = 100 - stRatio
+        stAmt = totalBorrowing * stRatio / 100
+        ltAmt = totalBorrowing * ltRatio / 100
+        parts.append(f"단기 {stRatio:.0f}%({_fmtTril(stAmt)}), 장기 {ltRatio:.0f}%({_fmtTril(ltAmt)}).")
+
+    # 현금 대비
+    if cashVal and cashVal > 0:
+        ratio = cashVal / totalBorrowing
+        if ratio > 2:
+            parts.append(f"현금 보유({_fmtTril(cashVal)})가 총차입금의 {ratio:.1f}배로 차환 위험이 매우 낮다.")
+        elif ratio > 1:
+            parts.append(f"현금({_fmtTril(cashVal)})이 총차입금을 상회하여 차환 여력이 있다.")
+        else:
+            parts.append(f"현금({_fmtTril(cashVal)})이 총차입금의 {ratio:.0%}로 차환 시 외부 조달이 필요할 수 있다.")
+
+    return " ".join(parts)
+
+
 def buildOverallNarrative(result: dict, narratives: list[AxisNarrative]) -> str:
     """등급 근거 종합 서사 — 강점/약점 구분."""
     grade = result.get("grade", "?")

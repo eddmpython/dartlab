@@ -280,6 +280,11 @@ def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
     # ── 감사의견 ──
     auditOpinion = _fetchAuditOpinion(company)
 
+    # ── 기업 프로필 + 부문 구성 + 업종 순위 ──
+    profile = _fetchProfile(company)
+    segmentComposition = _fetchSegmentComposition(company)
+    rank = _fetchRank(company)
+
     return {
         "history": history,
         "businessStability": {
@@ -295,12 +300,70 @@ def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
         "borrowingsDetail": borrowingsDetail,
         "provisionsDetail": provisionsDetail,
         "segmentsDetail": segmentsDetail,
+        "profile": profile,
+        "segmentComposition": segmentComposition,
+        "rank": rank,
     }
 
 
 # ═══════════════════════════════════════════════════════════
 # notes / sections / scan 데이터 수집
 # ═══════════════════════════════════════════════════════════
+
+
+def _fetchProfile(company) -> dict | None:
+    """기업 프로필 (업종, 주요제품) 수집."""
+    try:
+        from dartlab.analysis.financial.revenue import calcCompanyProfile
+
+        return calcCompanyProfile(company)
+    except (ImportError, AttributeError, ValueError):
+        return None
+
+
+def _fetchSegmentComposition(company) -> dict | None:
+    """부문별 매출/이익 구성 수집."""
+    try:
+        from dartlab.analysis.financial.revenue import calcSegmentComposition
+
+        result = calcSegmentComposition(company)
+        if result and result.get("segments"):
+            return result
+    except (ImportError, AttributeError, ValueError):
+        pass
+    return None
+
+
+def _fetchRank(company) -> dict | None:
+    """업종 내 순위 수집. scan 데이터 없으면 None (스냅샷 빌드 시도 안 함)."""
+    try:
+        from dartlab.scan.rank import _SNAPSHOT, _cacheDir
+
+        # 캐시된 스냅샷이 있을 때만 사용 (빌드 시도 X — 수분 소요)
+        if _SNAPSHOT is None:
+            cachePath = _cacheDir() / "rank_snapshot.parquet"
+            if not cachePath.exists():
+                return None
+
+        from dartlab.scan.rank import getRankOrBuild
+
+        stockCode = getattr(company, "stockCode", "")
+        if not stockCode:
+            return None
+        rank = getRankOrBuild(stockCode, verbose=False)
+        if rank is None:
+            return None
+        return {
+            "revenueRank": rank.revenueRank,
+            "revenueTotal": rank.revenueTotal,
+            "revenueRankInSector": rank.revenueRankInSector,
+            "revenueSectorTotal": rank.revenueSectorTotal,
+            "sizeClass": rank.sizeClass,
+            "sector": rank.sector,
+            "industryGroup": rank.industryGroup,
+        }
+    except (ImportError, AttributeError, ValueError, KeyError, OSError, TypeError):
+        return None
 
 
 def _fetchNotes(company, key: str) -> list[dict] | None:

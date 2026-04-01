@@ -233,12 +233,39 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         result["borrowingsDetail"] = metrics.get("borrowingsDetail")
         result["provisionsDetail"] = metrics.get("provisionsDetail")
 
+        # 신규: 프로필 + 부문 구성 + 순위
+        result["profile"] = metrics.get("profile")
+        result["segmentComposition"] = metrics.get("segmentComposition")
+        result["rank"] = metrics.get("rank")
+
         # 서사 생성 — AI가 소비할 로데이터 + 해석
-        from dartlab.credit.narrative import buildNarratives, buildOverallNarrative
+        from dartlab.credit.narrative import (
+            buildNarratives,
+            buildOverallNarrative,
+            narrateBorrowings,
+            narrateProfile,
+            narrateTrend,
+        )
 
         narratives = buildNarratives(result)
+
+        # 추가 서사
+        profileNarrative = narrateProfile(
+            metrics.get("profile"),
+            metrics.get("segmentComposition"),
+            metrics.get("rank"),
+        )
+        trendNarrative = narrateTrend(metrics["history"])
+        borrowingsNarrative = narrateBorrowings(
+            metrics.get("borrowingsDetail"),
+            metrics["history"][0] if metrics["history"] else None,
+        )
+
         result["narratives"] = {
             "overall": buildOverallNarrative(result, narratives),
+            "profile": profileNarrative,
+            "trend": trendNarrative,
+            "borrowings": borrowingsNarrative,
             "axes": [
                 {
                     "axis": n.axisName,
