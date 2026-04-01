@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775051872787,
+  "lastUpdate": 1775052200596,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -1566,6 +1566,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 3.13806836547482e-7",
             "extra": "mean: 699.9334138720208 nsec\nrounds: 167197"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "091643c26ee03dc2a829cc08448f3bedb48bbf7e",
+          "message": "style: ruff format credit/creditRating/scorecard/review",
+          "timestamp": "2026-04-01T23:02:31+09:00",
+          "tree_id": "a67df0a9a4939ed50eca1c744744c416fe99291f",
+          "url": "https://github.com/eddmpython/dartlab/commit/091643c26ee03dc2a829cc08448f3bedb48bbf7e"
+        },
+        "date": 1775052199918,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 538284.3884940146,
+            "unit": "iter/sec",
+            "range": "stddev: 5.154852421009303e-7",
+            "extra": "mean: 1.8577540448418917 usec\nrounds: 54514"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 656263.6952579968,
+            "unit": "iter/sec",
+            "range": "stddev: 6.279392502857991e-7",
+            "extra": "mean: 1.5237777241461914 usec\nrounds: 132574"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 535922.1881812145,
+            "unit": "iter/sec",
+            "range": "stddev: 5.766858261285017e-7",
+            "extra": "mean: 1.8659425230997606 usec\nrounds: 128469"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 657533.2493088031,
+            "unit": "iter/sec",
+            "range": "stddev: 7.957406386457597e-7",
+            "extra": "mean: 1.5208356399485454 usec\nrounds: 162576"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 925875.0532371249,
+            "unit": "iter/sec",
+            "range": "stddev: 1.7346101673375537e-7",
+            "extra": "mean: 1.0800593411645696 usec\nrounds: 174186"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 269975.79066463996,
+            "unit": "iter/sec",
+            "range": "stddev: 7.011983531778673e-7",
+            "extra": "mean: 3.704035823131214 usec\nrounds: 77436"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7509345.09145037,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2492585936556078e-8",
+            "extra": "mean: 133.1674051227892 nsec\nrounds: 73121"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8678110.123749489,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1493021759861073e-8",
+            "extra": "mean: 115.23246256846728 nsec\nrounds: 86491"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1466799.570730035,
+            "unit": "iter/sec",
+            "range": "stddev: 2.967511122589225e-7",
+            "extra": "mean: 681.7564035025549 nsec\nrounds: 174826"
           }
         ]
       }
