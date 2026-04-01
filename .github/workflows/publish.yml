@@ -31,7 +31,7 @@ jobs:
           pip install pytest pytest-asyncio hypothesis pytest-benchmark
 
       - name: Install package
-        run: pip install -e .[ai]
+        run: pip install -e .[all]
 
       - name: Run tests
         run: pytest tests/ -v --tb=short -m "not requires_data and not heavy"
