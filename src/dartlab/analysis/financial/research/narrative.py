@@ -2525,17 +2525,31 @@ def buildNarrative(
     ratios: object | None = None,
 ) -> NarrativeAnalysis | None:
     """15차원 교차분석 서술 생성 (IS/BS/CF 3표 연결)."""
-    # segments, costByNature 수집
+    # segments, costByNature 수집 (show → notes fallback)
     segDf = None
     costDf = None
     try:
         segDf = company.show("segments")  # type: ignore[union-attr]
     except (AttributeError, TypeError, KeyError, ValueError):
         pass
+    if segDf is None:
+        try:
+            notes = getattr(company, "notes", None)
+            if notes is not None:
+                segDf = notes.segments
+        except (AttributeError, TypeError, KeyError, ValueError):
+            pass
     try:
         costDf = company.show("costByNature")  # type: ignore[union-attr]
     except (AttributeError, TypeError, KeyError, ValueError):
         pass
+    if costDf is None:
+        try:
+            notes = getattr(company, "notes", None)
+            if notes is not None:
+                costDf = notes.costByNature
+        except (AttributeError, TypeError, KeyError, ValueError):
+            pass
 
     # Phase 4: 실전 사업분석 데이터 수집
     salesOrderDf = None

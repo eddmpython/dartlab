@@ -252,6 +252,162 @@ def calcBreakevenEstimate(company, *, basePeriod: str | None = None) -> dict | N
     return {"history": history} if history else None
 
 
+# ── 비용의 성격별 분류 분석 ──
+
+
+@memoized_calc
+def calcCostByNatureAnalysis(company, *, basePeriod: str | None = None) -> dict | None:
+    """비용의 성격별 분류(notes) — 인건비/원재료/감가상각 비중 추세.
+
+    K-IFRS 주석에서 비용의 성격별 분류를 추출하여,
+    원재료비·인건비·감가상각비 등 성격별 비중의 시계열 변화를 추적한다.
+    173개사 이상 데이터 보유 (금융/REIT/지주회사 미공시).
+
+    반환::
+
+        {
+            "categories": [
+                {
+                    "name": str,
+                    "history": [{"period": str, "amount": float, "ratio": float}, ...],
+                    "latestRatio": float,
+                    "direction": str,
+                },
+                ...
+            ],
+            "periods": [str, ...],
+            "insight": str | None,
+        }
+    """
+    from dartlab.analysis.financial._helpers import fetchNotesDetail, parseNumStr
+
+    notesData = fetchNotesDetail(company, ["costByNature"])
+    rawRows = notesData.get("costByNature")
+    if not rawRows:
+        return None
+
+    # costByNature: [{항목, 2024, 2023, ...}] (항목×연도 테이블)
+    # 기간 컬럼 추출
+    sampleRow = rawRows[0]
+    periodCols = sorted(
+        [k for k in sampleRow if k != "항목" and str(k).replace("-", "").isdigit()],
+        reverse=True,
+    )
+    if not periodCols:
+        return None
+
+    periodCols = periodCols[:_MAX_YEARS]
+
+    # 총비용 행 찾기 (합계/총계)
+    totalRow = None
+    detailRows = []
+    for row in rawRows:
+        item = str(row.get("항목", "")).strip()
+        if any(kw in item for kw in ("합계", "총계", "계")):
+            if totalRow is None:
+                totalRow = row
+        else:
+            detailRows.append(row)
+
+    if not detailRows:
+        return None
+
+    # 성격별 분류: 주요 비용 카테고리 매핑
+    _CATEGORY_KEYWORDS = {
+        "원재료": ["원재료", "재료비", "원자재"],
+        "상품매입": ["상품", "상품매입"],
+        "인건비": ["종업원급여", "급여", "인건비", "퇴직급여", "복리후생"],
+        "감가상각": ["감가상각", "상각비", "무형자산상각"],
+        "외주비": ["외주", "용역"],
+        "기타": [],
+    }
+
+    categories: dict[str, dict[str, float]] = {}  # {catName: {period: amount}}
+    for row in detailRows:
+        item = str(row.get("항목", "")).strip()
+        if not item:
+            continue
+
+        # 카테고리 매칭
+        matched = "기타"
+        for catName, keywords in _CATEGORY_KEYWORDS.items():
+            if any(kw in item for kw in keywords):
+                matched = catName
+                break
+
+        if matched not in categories:
+            categories[matched] = {}
+        for col in periodCols:
+            v = parseNumStr(row.get(col))
+            if v is not None:
+                categories[matched][col] = categories[matched].get(col, 0) + v
+
+    if not categories:
+        return None
+
+    # 총비용 계산 (totalRow 없으면 합산)
+    totals: dict[str, float] = {}
+    if totalRow:
+        for col in periodCols:
+            v = parseNumStr(totalRow.get(col))
+            if v is not None and v > 0:
+                totals[col] = v
+    if not totals:
+        for col in periodCols:
+            s = sum(cats.get(col, 0) for cats in categories.values())
+            if s > 0:
+                totals[col] = s
+
+    # 카테고리별 결과 생성
+    result_categories = []
+    for catName, vals in categories.items():
+        if not vals:
+            continue
+        history = []
+        for col in periodCols:
+            amt = vals.get(col, 0)
+            total = totals.get(col, 0)
+            ratio = round(amt / total * 100, 1) if total > 0 else 0
+            history.append({"period": col, "amount": amt, "ratio": ratio})
+
+        latestRatio = history[0]["ratio"] if history else 0
+        direction = None
+        ratios = [h["ratio"] for h in history if h["ratio"] > 0]
+        if len(ratios) >= 2:
+            diff = ratios[0] - ratios[-1]
+            if diff > 3:
+                direction = "비중 증가"
+            elif diff < -3:
+                direction = "비중 감소"
+            else:
+                direction = "안정"
+
+        result_categories.append({
+            "name": catName,
+            "history": history,
+            "latestRatio": latestRatio,
+            "direction": direction,
+        })
+
+    # 비중 기준 정렬 (기타 제외하고 큰 순)
+    result_categories.sort(key=lambda x: (x["name"] == "기타", -x["latestRatio"]))
+
+    # 인사이트 생성
+    insight = None
+    laborCat = next((c for c in result_categories if c["name"] == "인건비"), None)
+    materialCat = next((c for c in result_categories if c["name"] == "원재료"), None)
+    if laborCat and laborCat["direction"] == "비중 증가":
+        insight = f"인건비 비중 {laborCat['latestRatio']:.0f}%로 증가 추세 — 노동집약도 심화"
+    elif materialCat and materialCat["direction"] == "비중 증가":
+        insight = f"원재료비 비중 {materialCat['latestRatio']:.0f}%로 증가 — 원가 부담 확대"
+
+    return {
+        "categories": result_categories,
+        "periods": periodCols,
+        "insight": insight,
+    }
+
+
 # ── 원재료 비중 (docs 보강) ──
 
 

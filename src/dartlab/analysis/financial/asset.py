@@ -285,7 +285,7 @@ def calcAssetStructure(company, *, basePeriod: str | None = None) -> dict | None
     # notes enrichment — 주석에서 상세 분해 데이터 추가 (있으면)
     from dartlab.analysis.financial._helpers import fetchNotesDetail
 
-    notesDetail = fetchNotesDetail(company, ["inventory", "tangibleAsset", "intangibleAsset"])
+    notesDetail = fetchNotesDetail(company, ["inventory", "tangibleAsset", "intangibleAsset", "investmentProperty"])
 
     result_dict: dict[str, Any] = {
         "latest": latest,
@@ -500,6 +500,181 @@ def calcCapexPattern(company, *, basePeriod: str | None = None) -> dict | None:
     if latest is None:
         return None
     return {"latest": latest, "history": history}
+
+
+# ── 투자부동산 추세 ──
+
+
+@memoized_calc
+def calcInvestmentPropertyTrend(company, *, basePeriod: str | None = None) -> dict | None:
+    """투자부동산 비중 + 공정가치 변동 추세.
+
+    부동산 비중이 높은 기업(REIT, 건설사, 보험사)에서 자산 분석 정확도 향상.
+    notes.investmentProperty에서 항목별 시계열을 추출하여 총자산 대비 비중 추적.
+
+    반환::
+
+        {
+            "history": [
+                {"period": str, "totalAssets": float, "ipValue": float, "ipPct": float},
+                ...
+            ],
+            "trend": str | None,
+            "notesDetail": list[dict] | None,
+        }
+    """
+    bsResult = company.select("BS", ["자산총계", "투자부동산"])
+    parsed = _toDict(bsResult)
+    if parsed is None:
+        return None
+
+    data, allPeriods = parsed
+    taRow = data.get("자산총계", {})
+    ipRow = data.get("투자부동산", {})
+
+    # 투자부동산 계정이 아예 없거나 값이 전부 0이면 해당 없음
+    if not ipRow or all(v is None or v == 0 for v in ipRow.values()):
+        return None
+
+    yCols = _annualColsFromPeriods(allPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    if not yCols:
+        return None
+
+    history = []
+    for col in yCols:
+        ta = _get(taRow, col)
+        ip = _get(ipRow, col)
+        if ta <= 0:
+            continue
+        history.append({
+            "period": col,
+            "totalAssets": ta,
+            "ipValue": ip,
+            "ipPct": round(ip / ta * 100, 2) if ip > 0 else 0,
+        })
+
+    if not history:
+        return None
+
+    # 추세 판단
+    trend = None
+    pcts = [h["ipPct"] for h in history if h["ipPct"] > 0]
+    if len(pcts) >= 2:
+        diff = pcts[0] - pcts[-1]
+        if diff > 2:
+            trend = "비중 증가"
+        elif diff < -2:
+            trend = "비중 감소"
+        else:
+            trend = "안정"
+
+    result_dict: dict[str, Any] = {"history": history, "trend": trend}
+
+    # notes enrichment — 투자부동산 세부 항목 (공정가치, 취득/처분 등)
+    from dartlab.analysis.financial._helpers import fetchNotesDetail
+
+    notesData = fetchNotesDetail(company, ["investmentProperty"])
+    if notesData.get("investmentProperty"):
+        result_dict["notesDetail"] = notesData["investmentProperty"]
+
+    return result_dict
+
+
+# ── 무형자산 상세 ──
+
+
+@memoized_calc
+def calcIntangibleAssetDetail(company, *, basePeriod: str | None = None) -> dict | None:
+    """무형자산 상세 분해 — 영업권/R&D/기타 비중 + 상각 추세.
+
+    notes.intangibleAsset에서 항목별 시계열을 추출하여
+    영업권 비중, R&D 자산화 추세, 손상차손 리스크를 분석.
+    바이오/IT 등 IP 비중 높은 기업에서 이익품질 판단에 중요.
+
+    반환::
+
+        {
+            "items": [{"name": str, "latestValue": float, "pct": float}, ...],
+            "totalIntangible": float,
+            "goodwillPct": float | None,
+            "trend": str | None,
+            "notesDetail": list[dict] | None,
+        }
+    """
+    from dartlab.analysis.financial._helpers import fetchNotesDetail, parseNumStr
+
+    notesData = fetchNotesDetail(company, ["intangibleAsset"])
+    rawRows = notesData.get("intangibleAsset")
+
+    # notes 없으면 BS에서 기본 분해
+    bsResult = company.select("BS", ["무형자산", "영업권", "자산총계"])
+    bsParsed = _toDict(bsResult)
+    if bsParsed is None:
+        return None
+
+    bsData, bsPeriods = bsParsed
+    intRow = bsData.get("무형자산", {})
+    gwRow = bsData.get("영업권", {})
+    taRow = bsData.get("자산총계", {})
+
+    yCols = _annualColsFromPeriods(bsPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    if not yCols:
+        return None
+
+    latestCol = yCols[0]
+    totalInt = _get(intRow, latestCol) + _get(gwRow, latestCol)
+    ta = _get(taRow, latestCol)
+
+    if totalInt <= 0:
+        return None
+
+    # notes 상세가 있으면 항목별 분해
+    items = []
+    if rawRows:
+        for row in rawRows:
+            item = str(row.get("항목", "")).strip()
+            if not item or any(kw in item for kw in ("합계", "총계", "소계")):
+                continue
+            v = parseNumStr(row.get(str(latestCol)))
+            if v is not None and v > 0:
+                items.append({"name": item, "latestValue": v, "pct": round(v / totalInt * 100, 1) if totalInt > 0 else 0})
+        items.sort(key=lambda x: x["latestValue"], reverse=True)
+        items = items[:8]
+
+    # 영업권 비중
+    gw = _get(gwRow, latestCol)
+    goodwillPct = round(gw / totalInt * 100, 1) if totalInt > 0 and gw > 0 else None
+
+    # 총자산 대비 무형자산 비중 추세
+    trend = None
+    intPcts = []
+    for col in yCols:
+        intVal = _get(intRow, col) + _get(gwRow, col)
+        taVal = _get(taRow, col)
+        if taVal > 0 and intVal > 0:
+            intPcts.append(intVal / taVal * 100)
+    if len(intPcts) >= 2:
+        diff = intPcts[0] - intPcts[-1]
+        if diff > 2:
+            trend = "비중 증가"
+        elif diff < -2:
+            trend = "비중 감소"
+        else:
+            trend = "안정"
+
+    result_dict: dict[str, Any] = {
+        "items": items,
+        "totalIntangible": totalInt,
+        "totalAssets": ta,
+        "intangiblePct": round(totalInt / ta * 100, 1) if ta > 0 else 0,
+        "goodwillPct": goodwillPct,
+        "trend": trend,
+    }
+
+    if rawRows:
+        result_dict["notesDetail"] = rawRows
+
+    return result_dict
 
 
 # ── 자산 플래그 ──

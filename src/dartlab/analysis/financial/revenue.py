@@ -255,13 +255,22 @@ def calcSegmentComposition(company, *, basePeriod: str | None = None) -> dict | 
 
 @memoized_calc
 def calcSegmentTrend(company, *, basePeriod: str | None = None) -> dict | None:
-    """다년간 부문별 매출 추이 + YoY.
+    """다년간 부문별 매출 추이 + YoY + 영업이익률 추세.
 
     반환::
 
         {
             "yearCols": [str, ...],
-            "rows": [{"name": str, "values": {year: float}, "yoy": float|None}, ...],
+            "rows": [
+                {
+                    "name": str,
+                    "values": {year: float},
+                    "yoy": float|None,
+                    "opMargins": {year: float}|None,
+                    "opMarginDirection": str|None,
+                },
+                ...
+            ],
         }
     """
     docsResult = _selectDocsRevenue(company, basePeriod=basePeriod)
@@ -271,6 +280,9 @@ def calcSegmentTrend(company, *, basePeriod: str | None = None) -> dict | None:
     segData, yCols = docsResult
     if not yCols:
         return None
+
+    # 영업이익 시계열도 시도
+    opData = _selectDocsOpIncome(company, yCols)
 
     rows = []
     for segName, vals in segData.items():
@@ -285,7 +297,35 @@ def calcSegmentTrend(company, *, basePeriod: str | None = None) -> dict | None:
             if cur is not None and prev is not None and prev > 0:
                 yoy = (cur - prev) / prev * 100
 
-        rows.append({"name": segName, "values": positiveVals, "yoy": yoy})
+        # 부문별 영업이익률 시계열
+        opMargins = None
+        opMarginDirection = None
+        if opData and segName in opData:
+            opMargins = {}
+            for yc in yCols:
+                rev = vals.get(yc)
+                opInc = opData[segName].get(yc)
+                if rev and rev > 0 and opInc is not None:
+                    opMargins[yc] = opInc / rev * 100
+            if not opMargins:
+                opMargins = None
+            elif len(opMargins) >= 2:
+                marginVals = [opMargins[yc] for yc in yCols if yc in opMargins]
+                diff = marginVals[0] - marginVals[-1]
+                if diff > 3:
+                    opMarginDirection = "개선"
+                elif diff < -3:
+                    opMarginDirection = "악화"
+                else:
+                    opMarginDirection = "안정"
+
+        rows.append({
+            "name": segName,
+            "values": positiveVals,
+            "yoy": yoy,
+            "opMargins": opMargins,
+            "opMarginDirection": opMarginDirection,
+        })
 
     if not rows:
         return None

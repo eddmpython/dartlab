@@ -579,3 +579,99 @@ def calcNonOperatingBreakdown(company, *, basePeriod: str | None = None) -> dict
         result["notesDetail"] = notesDetail
 
     return result
+
+
+# ── EPS 희석 분석 ──
+
+
+@memoized_calc
+def calcDilutionTrend(company, *, basePeriod: str | None = None) -> dict | None:
+    """기본 EPS vs 희석 EPS 괴리율 시계열 — 스톡옵션/전환사채 희석 리스크.
+
+    notes.eps에서 기본주당이익과 희석주당이익을 추출하여
+    희석 괴리율(%)의 추세를 추적한다.
+    괴리율이 5% 이상이면 잠재 희석 리스크.
+
+    반환::
+
+        {
+            "history": [
+                {
+                    "period": str,
+                    "basicEps": float | None,
+                    "dilutedEps": float | None,
+                    "dilutionPct": float | None,
+                },
+                ...
+            ],
+            "latestDilution": float | None,
+            "trend": str | None,
+        }
+    """
+    from dartlab.analysis.financial._helpers import fetchNotesDetail
+
+    notesData = fetchNotesDetail(company, ["eps"])
+    epsDf = notesData.get("eps")
+    if not epsDf:
+        return None
+
+    # eps notes: [{항목, 2024, 2023, ...}]
+    basicRow = None
+    dilutedRow = None
+    for row in epsDf:
+        item = str(row.get("항목", "")).strip()
+        if "희석" in item:
+            dilutedRow = row
+        elif "기본" in item or "주당" in item:
+            if basicRow is None:
+                basicRow = row
+
+    if basicRow is None:
+        return None
+
+    # 기간 컬럼 추출
+    periodCols = [k for k in basicRow if k != "항목" and k.isdigit()]
+    periodCols.sort(reverse=True)
+    if not periodCols:
+        return None
+
+    from dartlab.analysis.financial._helpers import parseNumStr
+
+    history = []
+    for col in periodCols[:_MAX_YEARS]:
+        basic = parseNumStr(basicRow.get(col))
+        diluted = parseNumStr(dilutedRow.get(col)) if dilutedRow else None
+
+        dilutionPct = None
+        if basic is not None and diluted is not None and basic != 0:
+            dilutionPct = round((basic - diluted) / abs(basic) * 100, 2)
+
+        history.append({
+            "period": col,
+            "basicEps": basic,
+            "dilutedEps": diluted,
+            "dilutionPct": dilutionPct,
+        })
+
+    if not history:
+        return None
+
+    latestDilution = history[0]["dilutionPct"]
+
+    # 추세: 최근 vs 과거 비교
+    trend = None
+    dilutionVals = [h["dilutionPct"] for h in history if h["dilutionPct"] is not None]
+    if len(dilutionVals) >= 2:
+        diff = dilutionVals[0] - dilutionVals[-1]
+        if diff > 2:
+            trend = "희석 증가"
+        elif diff < -2:
+            trend = "희석 감소"
+        else:
+            trend = "안정"
+
+    return {
+        "history": history,
+        "latestDilution": latestDilution,
+        "trend": trend,
+    }
