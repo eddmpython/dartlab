@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775030858522,
+  "lastUpdate": 1775031408760,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -435,6 +435,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.8913985685091587e-7",
             "extra": "mean: 667.9501811238588 nsec\nrounds: 158454"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "3eb2014be91e0c49a2e5c768afab86c0ab24285c",
+          "message": "feat: guide server/mcp checker 추가 + optional 의존성 안내 강화\n\n- guide readiness: server, mcp checker 등록 (fastapi/uvicorn/mcp 미설치 안내)\n- dartlab share: 서버 패키지 미설치 시 pip install dartlab[server] 안내\n- MCP: 에러 메시지를 dartlab[server] extras 안내로 통일",
+          "timestamp": "2026-04-01T17:15:57+09:00",
+          "tree_id": "a0937ba6733625dabc55c8592ec359b3bd85a056",
+          "url": "https://github.com/eddmpython/dartlab/commit/3eb2014be91e0c49a2e5c768afab86c0ab24285c"
+        },
+        "date": 1775031408207,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 524291.5621860495,
+            "unit": "iter/sec",
+            "range": "stddev: 4.979637782145544e-7",
+            "extra": "mean: 1.907335673743193 usec\nrounds: 47570"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 629738.3891471458,
+            "unit": "iter/sec",
+            "range": "stddev: 4.5986926425425825e-7",
+            "extra": "mean: 1.5879609965565213 usec\nrounds: 124348"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 511222.57967832533,
+            "unit": "iter/sec",
+            "range": "stddev: 5.576034558115965e-7",
+            "extra": "mean: 1.9560951330225402 usec\nrounds: 123732"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 669210.198864572,
+            "unit": "iter/sec",
+            "range": "stddev: 3.8839875390285336e-7",
+            "extra": "mean: 1.4942988043168928 usec\nrounds: 148368"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 788500.4248976173,
+            "unit": "iter/sec",
+            "range": "stddev: 3.9756541183365386e-7",
+            "extra": "mean: 1.268230134599921 usec\nrounds: 36244"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 248224.7879927388,
+            "unit": "iter/sec",
+            "range": "stddev: 6.734625027126616e-7",
+            "extra": "mean: 4.028606522686415 usec\nrounds: 57584"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 6821633.752783422,
+            "unit": "iter/sec",
+            "range": "stddev: 1.377734064079437e-8",
+            "extra": "mean: 146.59244929295292 nsec\nrounds: 67101"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 7913149.210603265,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1389906229457248e-8",
+            "extra": "mean: 126.37193781965401 nsec\nrounds: 78996"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1488630.0953787747,
+            "unit": "iter/sec",
+            "range": "stddev: 2.627043459310693e-7",
+            "extra": "mean: 671.7585537900568 nsec\nrounds: 158731"
           }
         ]
       }
