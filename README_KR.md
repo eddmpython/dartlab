@@ -27,6 +27,8 @@
 <a href="https://huggingface.co/datasets/eddmpython/dartlab-data"><img src="https://img.shields.io/badge/Data-HuggingFace-ffd21e?style=for-the-badge&labelColor=050811&logo=huggingface&logoColor=white" alt="HuggingFace Data"></a>
 </p>
 
+<a href="https://www.youtube.com/shorts/vYQp4UrSLZE"><img src="https://img.youtube.com/vi/vYQp4UrSLZE/maxresdefault.jpg" alt="DartLab Demo" width="320"></a>
+
 </div>
 
 ## 문제
