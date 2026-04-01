@@ -14,6 +14,14 @@
 Company → Analysis → Review → AI 순서로 계층이 쌓인다.
 analysis 품질이 올라가면 review와 AI 품질이 동시에 올라간다.
 
+## 엔진 독립 규칙
+
+- **analysis는 credit을 참조하지 않는다.** 신용평가 지표가 필요하면 analysis 자체 체계로 만든다.
+- **credit도 analysis를 소비하지 않는다.** 재무 비율이 필요하면 Company(finance)에서 직접 가져온다.
+- **analysis와 credit은 같은 레이어(L2)에서 독립적으로 존재한다.** 서로의 결과를 import하지 않는다.
+- **review가 조합한다.** review에서 analysis 블록과 credit 블록을 성격별로 블록식으로 조합하여 보고서를 구성한다.
+- **import 방향**: Company(L0/L1) → analysis(L2), Company(L0/L1) → credit(L2). analysis ↛ credit, credit ↛ analysis.
+
 ## 재무제표 분석 스토리 — 6막 구조
 
 review 보고서는 이 6막 순서를 따른다. **앞 막이 뒷 막의 원인.**
