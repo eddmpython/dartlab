@@ -16,10 +16,26 @@ _AUDIT_DIR = _CREDIT_DATA_DIR / "audit"
 _EXTERNAL_GRADES_PATH = _CREDIT_DATA_DIR / "external_grades.json"
 
 _GRADE_ORDER = [
-    "AAA", "AA+", "AA", "AA-", "A+", "A", "A-",
-    "BBB+", "BBB", "BBB-",
-    "BB+", "BB", "BB-", "B+", "B", "B-",
-    "CCC", "CC", "C", "D",
+    "AAA",
+    "AA+",
+    "AA",
+    "AA-",
+    "A+",
+    "A",
+    "A-",
+    "BBB+",
+    "BBB",
+    "BBB-",
+    "BB+",
+    "BB",
+    "BB-",
+    "B+",
+    "B",
+    "B-",
+    "CCC",
+    "CC",
+    "C",
+    "D",
 ]
 _GRADE_IDX = {g: i for i, g in enumerate(_GRADE_ORDER)}
 
@@ -74,8 +90,11 @@ def auditCredit(
 
     if result is None:
         return CreditAuditResult(
-            stockCode=stockCode, corpName=corpName,
-            dcrGrade="N/A", dcrGradeRaw="N/A", dcrScore=0,
+            stockCode=stockCode,
+            corpName=corpName,
+            dcrGrade="N/A",
+            dcrGradeRaw="N/A",
+            dcrScore=0,
             auditDate=datetime.now().strftime("%Y-%m-%d"),
         )
 
@@ -117,8 +136,7 @@ def auditCredit(
                 # dartlab이 더 낮음
                 reasons = _findDisagreementReasons(result, "lower")
                 disagreements.append(
-                    f"{agency} {grade}등급 대비 dartlab {dcrGrade}는 {diff} notch 낮다. "
-                    f"정량 기준 {reasons}."
+                    f"{agency} {grade}등급 대비 dartlab {dcrGrade}는 {diff} notch 낮다. 정량 기준 {reasons}."
                 )
             else:
                 disagreements.append(
@@ -127,7 +145,9 @@ def auditCredit(
                 )
         else:
             # 큰 괴리
-            reasons = _findDisagreementReasons(result, "lower" if _GRADE_IDX.get(dcrRaw, 0) > _GRADE_IDX.get(grade, 0) else "higher")
+            reasons = _findDisagreementReasons(
+                result, "lower" if _GRADE_IDX.get(dcrRaw, 0) > _GRADE_IDX.get(grade, 0) else "higher"
+            )
             disagreements.append(
                 f"{agency} {grade}등급과 dartlab {dcrGrade}는 {diff} notch 차이로 큰 괴리가 있다. {reasons}."
             )
@@ -140,14 +160,11 @@ def auditCredit(
         )
     if holding:
         structuralNotes.append(
-            "지주사 구조 — 지분법손익 비중이 크고 자체 매출이 제한적이어서 "
-            "영업 지표의 해석에 주의가 필요하다."
+            "지주사 구조 — 지분법손익 비중이 크고 자체 매출이 제한적이어서 영업 지표의 해석에 주의가 필요하다."
         )
 
     if not extGrades:
-        structuralNotes.append(
-            "외부 신용등급 데이터 없음 — data/credit/external_grades.json에 등록 필요."
-        )
+        structuralNotes.append("외부 신용등급 데이터 없음 — data/credit/external_grades.json에 등록 필요.")
 
     return CreditAuditResult(
         stockCode=stockCode,
@@ -183,7 +200,7 @@ def _findDisagreementReasons(result: dict, direction: str) -> str:
 def auditToMarkdown(audit: CreditAuditResult) -> str:
     """audit 결과를 마크다운으로 변환."""
     lines = []
-    lines.append(f"## 신평사 등급 대조")
+    lines.append("## 신평사 등급 대조")
     lines.append("")
 
     if audit.externalGrades:
@@ -192,7 +209,7 @@ def auditToMarkdown(audit: CreditAuditResult) -> str:
         for agency, grade in audit.externalGrades.items():
             diff = audit.notchDifferences.get(agency, "?")
             lines.append(f"| {agency} | {grade} | {audit.dcrGrade} | {diff}n |")
-        lines.append(f"")
+        lines.append("")
         lines.append(f"평균 괴리: {audit.avgNotchDiff:.1f} notch")
         lines.append("")
 

@@ -30,7 +30,7 @@ def publishReportFromCompany(company, *, basePeriod: str | None = None) -> Path:
 
     result = evaluateCompany(company, detail=True, basePeriod=basePeriod)
     if result is None:
-        raise ValueError(f"등급 산출 실패: 데이터 부족")
+        raise ValueError("등급 산출 실패: 데이터 부족")
 
     corpName = getattr(company, "corpName", "") or ""
     stockCode = getattr(company, "stockCode", "") or ""
@@ -227,7 +227,7 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
         latest = history[0]
         icr = latest.get("ebitdaInterestCoverage")
         if icr is not None and icr < 5:
-            upTriggers.append(f"이자보상배율이 5배 이상으로 개선")
+            upTriggers.append("이자보상배율이 5배 이상으로 개선")
         dr = latest.get("debtRatio")
         if dr is not None and dr > 150:
             upTriggers.append(f"부채비율이 {dr:.0f}%에서 120% 이하로 축소")
