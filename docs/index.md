@@ -4,58 +4,50 @@ title: DartLab
 
 # DartLab
 
-DartLab is a Python library that turns disclosures into one company map.
-
-The core of DartLab is `sections`. It horizontalizes annual and quarterly report sections across the time axis first, then layers stronger sources like `finance` and `report` on top.
+종목코드 하나로 기업의 전체 이야기를 본다.
 
 ```python
 import dartlab
 
-c = dartlab.Company("005930")
+c = dartlab.Company("005930")           # 삼성전자
 
-c.sections
-c.show("overview")
-c.trace("BS")
+c.show("BS")                            # 재무상태표
+c.analysis("financial", "수익성")         # 14축 재무분석
+c.credit()                              # dCR 신용평가
+dartlab.scan("governance")               # 전종목 지배구조
+dartlab.ask("삼성전자 분석해줘")           # AI 분석가
 ```
 
-## How It Works
+## 엔진 체계
 
-- Start with a single `Company`
-- `sections` is the canonical company board
-- `show(topic)` opens the topic you need
-- `trace(topic)` reveals the selected source and provenance
+| 엔진 | 진입점 | 역할 |
+|------|--------|------|
+| [Company](api/company) | `Company("005930")` | 데이터 조회 (show/select/sections) |
+| [Financial Data](api/finance) | `c.BS`, `c.ratios` | 재무제표 + 비율 |
+| [Analysis](api/analysis) | `c.analysis()` | 14축 재무분석 + 6막 서사 |
+| [Credit](api/credit) | `c.credit()` | 독립 신용평가 (dCR 20단계) |
+| [Scan](api/scan) | `dartlab.scan()` | 전종목 횡단분석 |
+| [Gather](api/gather) | `c.gather()` | 외부 시장 데이터 |
+| [Review](api/review) | `c.review()` | 보고서 렌더링 |
+| [AI](api/ai) | `dartlab.ask()` | 적극적 분석가 |
 
-You don't need to memorize a list of parsers first. Instead, you view the entire company as one map and drill down into the topic you need.
+## 시작하기
 
-## Why sections Matters
+- [설치](getting-started/installation)
+- [빠른 시작](getting-started/quickstart)
+- [API 개요](api/overview)
 
-Disclosures are inherently vertical documents. Company overview, business description, financial matters, risk, and governance flow sequentially across time.
+## 신용평가 보고서
 
-DartLab transforms these vertical documents:
+dartlab 독립 신용평가(dCR) 보고서가 정기 발간된다.
 
-1. Identifies section boundaries
-2. Aligns matching structural units side by side across years/quarters
-3. Consumes `finance`, `report`, and `docs` source-aware on top
+- [삼성전자 dCR-AA](credit/reports/005930_삼성전자)
+- [SK하이닉스 dCR-AA+](credit/reports/000660_SK하이닉스)
+- [NAVER dCR-AA](credit/reports/035420_NAVER)
+- [LG dCR-AA](credit/reports/003550_LG)
 
-This structure enables:
+## 참고
 
-- Viewing the entire company structure at once
-- Comparing the same topic across multiple periods
-- AI interfaces consuming the same map directly
-
-## Company Structure
-
-- `c.sections`: public company board
-- `c.docs.sections`: pure docs horizontalization source
-- `c.finance`: authoritative numeric layer
-- `c.report`: authoritative structured disclosure layer
-- `c.profile`: merged company layer on top of docs spine
-
-The public workflow is `sections → show → trace`.
-
-## Get Started
-
-- [Quick Start](getting-started/quickstart)
-- [API Overview](api/overview)
-- [Stability Policy](stability)
-- [Changelog](changelog)
+- [안정성 정책](stability)
+- [변경 이력](changelog)
+- [CAPABILITIES.md](https://github.com/eddmpython/dartlab/blob/master/CAPABILITIES.md) — 전체 API 레퍼런스
