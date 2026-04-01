@@ -254,7 +254,7 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
     for i, n in enumerate(narratives):
         axData = axes[i] if i < len(axes) else {}
         w = axData.get("weight", 0)
-        lines.append(f"### 3.{i + 1} {n.axisName} ({w}%) — {n.severity}")
+        lines.append(f"### 4.{i + 1} {n.axisName} ({w}%) — {n.severity}")
         lines.append("")
         lines.append(n.summary)
         lines.append("")
@@ -283,7 +283,7 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
         for h in history[:5]:
             row = [
                 h.get("period", ""),
-                f"{h['ebitdaInterestCoverage']:.1f}x" if h.get("ebitdaInterestCoverage") is not None else "-",
+                "무차입" if h.get("ebitdaInterestCoverage") is not None and h["ebitdaInterestCoverage"] >= 100 else (f"{h['ebitdaInterestCoverage']:.1f}x" if h.get("ebitdaInterestCoverage") is not None else "-"),
                 f"{h['debtToEbitda']:.1f}x" if h.get("debtToEbitda") is not None else "-",
                 f"{h['debtRatio']:.0f}%" if h.get("debtRatio") is not None else "-",
                 f"{h['currentRatio']:.0f}%" if h.get("currentRatio") is not None else "-",
@@ -309,8 +309,10 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
         dr = latest.get("debtRatio")
         if dr is not None and dr > 150:
             upTriggers.append(f"부채비율이 {dr:.0f}%에서 120% 이하로 축소")
-        if icr is not None and icr > 3:
+        if icr is not None and icr > 3 and icr < 100:
             downTriggers.append(f"이자보상배율이 {icr:.1f}배에서 2배 이하로 악화")
+        elif icr is not None and icr >= 100:
+            downTriggers.append("대규모 차입 발생으로 이자보상배율이 5배 이하로 하락")
         if dr is not None and dr < 250:
             downTriggers.append(f"부채비율이 {dr:.0f}%에서 300% 이상으로 증가")
 

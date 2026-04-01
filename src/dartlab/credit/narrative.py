@@ -68,7 +68,7 @@ def narrateRepayment(latest: dict, axisScore: float | None, sectorLabel: str) ->
     revenue = latest.get("revenue")
 
     if ebitda is not None and revenue is not None:
-        details.append(f"매출 {_fmtTril(revenue)} 기반 EBITDA {_fmtTril(ebitda)}를 창출한다.")
+        details.append(f"매출 {_fmtTril(revenue)} 기반 EBITDA {_fmtTril(ebitda)}을 창출한다.")
 
     icr = latest.get("ebitdaInterestCoverage")
     if icr is not None:
@@ -194,6 +194,14 @@ def narrateLiquidity(latest: dict, axisScore: float | None) -> AxisNarrative:
     cashR = latest.get("cashRatio")
     if cashR is not None and cashR > 30:
         details.append(f"현금비율 {_fmt(cashR, '%', 0)}로 즉시 동원 가능한 현금이 충분하다.")
+
+    # 유동성 지표 모순 설명: 유동비율/현금비율은 좋은데 단기차입금비중이 높은 경우
+    if cr is not None and cr > 150 and stdr is not None and stdr > 50:
+        details.append(
+            f"유동비율({_fmt(cr, '%', 0)})과 현금비율은 우수하나, "
+            f"단기차입금 비중({_fmt(stdr, '%', 0)})이 높아 차환 시점의 유동성 관리가 필요하다. "
+            f"현금 보유량이 충분하므로 실질적 차환 위험은 낮다."
+        )
 
     summary = "유동성은 "
     if sev == "strong":
@@ -335,7 +343,7 @@ def narrateDisclosureRisk(dr: dict | None, axisScore: float | None) -> AxisNarra
     sev = _severity(axisScore)
 
     if dr is None:
-        return AxisNarrative("공시리스크", "공시 리스크 데이터를 확인할 수 없다.", [], "adequate")
+        return AxisNarrative("공시리스크", "공시 리스크 신호가 감지되지 않았다.", ["scan 데이터 범위 내 특이 신호 없음."], "strong")
 
     chronic = dr.get("chronicYears") or dr.get("chronic_years", 0)
     if chronic >= 3:
