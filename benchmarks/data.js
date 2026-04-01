@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775041914201,
+  "lastUpdate": 1775046284788,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -1044,6 +1044,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.619200206510959e-7",
             "extra": "mean: 685.615714016637 nsec\nrounds: 156446"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "2e08a17ecdaa901c51e8d8831c8d6a6dfbc0c624",
+          "message": "feat: 금융업(은행/보험) 수익성 분석 지원 — 이자수익 기반 marginTrend",
+          "timestamp": "2026-04-01T21:23:56+09:00",
+          "tree_id": "86d8b72142c5cebd922e3711baa39e1a234eb75d",
+          "url": "https://github.com/eddmpython/dartlab/commit/2e08a17ecdaa901c51e8d8831c8d6a6dfbc0c624"
+        },
+        "date": 1775046283873,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 523244.2297564609,
+            "unit": "iter/sec",
+            "range": "stddev: 5.338448537445675e-7",
+            "extra": "mean: 1.9111534215397665 usec\nrounds: 44922"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 637778.2939717931,
+            "unit": "iter/sec",
+            "range": "stddev: 5.308764284832097e-7",
+            "extra": "mean: 1.5679429818353565 usec\nrounds: 129450"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 510687.1225349824,
+            "unit": "iter/sec",
+            "range": "stddev: 6.888428307708519e-7",
+            "extra": "mean: 1.9581461052633051 usec\nrounds: 126183"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 659292.9538438648,
+            "unit": "iter/sec",
+            "range": "stddev: 4.29530614045486e-7",
+            "extra": "mean: 1.5167764105011536 usec\nrounds: 132381"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 793957.3221192278,
+            "unit": "iter/sec",
+            "range": "stddev: 3.8620353450451655e-7",
+            "extra": "mean: 1.2595135432856817 usec\nrounds: 191571"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 267552.19783440174,
+            "unit": "iter/sec",
+            "range": "stddev: 7.254175478549361e-7",
+            "extra": "mean: 3.7375884335621796 usec\nrounds: 76255"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7308962.92051586,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2342321179161812e-8",
+            "extra": "mean: 136.8183162064011 nsec\nrounds: 73180"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8654458.568808869,
+            "unit": "iter/sec",
+            "range": "stddev: 1.5179182537933252e-8",
+            "extra": "mean: 115.54737850430682 nsec\nrounds: 77616"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1401936.7400204255,
+            "unit": "iter/sec",
+            "range": "stddev: 3.1412268349990127e-7",
+            "extra": "mean: 713.2989467024244 nsec\nrounds: 163106"
           }
         ]
       }
