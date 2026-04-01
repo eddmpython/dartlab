@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775052200596,
+  "lastUpdate": 1775052507908,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -1653,6 +1653,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.967511122589225e-7",
             "extra": "mean: 681.7564035025549 nsec\nrounds: 174826"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "245ea57013104b651338f832ef2d1a0c2d7a974c",
+          "message": "refactor: AI 프롬프트 — review 금지, analysis 기반 6막 서사 해석 유도 (#28)",
+          "timestamp": "2026-04-01T23:07:32+09:00",
+          "tree_id": "9ccd7fd1afff9994aa7f0cf26aab5de680724235",
+          "url": "https://github.com/eddmpython/dartlab/commit/245ea57013104b651338f832ef2d1a0c2d7a974c"
+        },
+        "date": 1775052507454,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 535616.0616177594,
+            "unit": "iter/sec",
+            "range": "stddev: 5.210777848129696e-7",
+            "extra": "mean: 1.867008985838902 usec\nrounds: 54753"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 649083.3121944977,
+            "unit": "iter/sec",
+            "range": "stddev: 4.750380169914577e-7",
+            "extra": "mean: 1.5406342779312592 usec\nrounds: 27983"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 520375.96363884833,
+            "unit": "iter/sec",
+            "range": "stddev: 5.433579784531155e-7",
+            "extra": "mean: 1.921687529545505 usec\nrounds: 124767"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 675199.3801377225,
+            "unit": "iter/sec",
+            "range": "stddev: 3.9450820596315376e-7",
+            "extra": "mean: 1.4810440136897445 usec\nrounds: 194553"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 895471.7843693487,
+            "unit": "iter/sec",
+            "range": "stddev: 3.9709697773675965e-7",
+            "extra": "mean: 1.1167297702230419 usec\nrounds: 165810"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 266622.8796862255,
+            "unit": "iter/sec",
+            "range": "stddev: 7.407085195303101e-7",
+            "extra": "mean: 3.7506158555366578 usec\nrounds: 80691"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7225757.339353316,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2131737492455309e-8",
+            "extra": "mean: 138.39379777587396 nsec\nrounds: 71297"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8965752.464523312,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1122414112540807e-8",
+            "extra": "mean: 111.53553524446623 nsec\nrounds: 88567"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1421914.5241062944,
+            "unit": "iter/sec",
+            "range": "stddev: 5.030843043658204e-7",
+            "extra": "mean: 703.2771541795191 nsec\nrounds: 160979"
           }
         ]
       }
