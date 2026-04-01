@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775048520896,
+  "lastUpdate": 1775050521330,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -1218,6 +1218,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.663969277322776e-7",
             "extra": "mean: 670.8943431441363 nsec\nrounds: 163908"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "1825fee23337c4e289d0e39b53c5997fb3e3205c",
+          "message": "fix: VSCode 확장 SSE 안정성 + 새세션 버그 수정 + CI 배포\n\n- sseHandler: onDone 중복 호출 방지 (done 플래그)\n- sseHandler: code_round 이벤트 중복 표시 방지 (replace, not append)\n- stdioProxy: done 이벤트 ID 불일치 시에도 콜백 정리\n- MessageBubble: 중복 실행 표시 제거 (inline-exec → code-rounds 통합)\n- ChatPanel: 새세션 시 스크롤/상태 리셋 (startNewConversation)\n- chatPanelManager: 패널 새 생성 시 newConversation 메시지 전송\n- core.py: maxRounds 5→3 축소\n- vscode.yml: vsce-* 태그 자동 마켓플레이스 배포",
+          "timestamp": "2026-04-01T22:33:37+09:00",
+          "tree_id": "961ca1e128cbe1ee21c7206e33f19d25e201fab3",
+          "url": "https://github.com/eddmpython/dartlab/commit/1825fee23337c4e289d0e39b53c5997fb3e3205c"
+        },
+        "date": 1775050520841,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 522813.02042643545,
+            "unit": "iter/sec",
+            "range": "stddev: 4.7214161799751834e-7",
+            "extra": "mean: 1.9127297158443841 usec\nrounds: 52615"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 642561.5060826038,
+            "unit": "iter/sec",
+            "range": "stddev: 4.823525752492011e-7",
+            "extra": "mean: 1.5562712526875926 usec\nrounds: 140194"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 515474.97699326114,
+            "unit": "iter/sec",
+            "range": "stddev: 5.584811415116953e-7",
+            "extra": "mean: 1.9399583774811886 usec\nrounds: 124596"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 671636.3029485778,
+            "unit": "iter/sec",
+            "range": "stddev: 4.857234299357282e-7",
+            "extra": "mean: 1.4889010549457489 usec\nrounds: 179534"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 868698.19273509,
+            "unit": "iter/sec",
+            "range": "stddev: 2.011636512016665e-7",
+            "extra": "mean: 1.151147784538963 usec\nrounds: 188644"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 259454.98065967852,
+            "unit": "iter/sec",
+            "range": "stddev: 8.501583439269771e-7",
+            "extra": "mean: 3.85423319859748 usec\nrounds: 66810"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7116302.293936984,
+            "unit": "iter/sec",
+            "range": "stddev: 2.408719486672593e-8",
+            "extra": "mean: 140.52241721827778 nsec\nrounds: 193462"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8724637.236320434,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2117589006924512e-8",
+            "extra": "mean: 114.6179460433067 nsec\nrounds: 57528"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1452890.1616070936,
+            "unit": "iter/sec",
+            "range": "stddev: 2.68238633438253e-7",
+            "extra": "mean: 688.2832759317912 nsec\nrounds: 163106"
           }
         ]
       }
