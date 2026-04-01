@@ -343,6 +343,7 @@ class DartlabCodeExecutor(LocalPythonBackend):
         preamble = (
             "import dartlab\n"
             "import polars as pl\n"
+            "import re\n"
             "pl.Config.set_fmt_float('full')\n"
             "pl.Config.set_tbl_cols(8)\n"
             "pl.Config.set_tbl_rows(20)\n"
