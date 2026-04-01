@@ -49,19 +49,8 @@ def main(argv: list[str] | None = None) -> int:
 
     handler = getattr(args, "handler", None)
     if handler is None:
-        if sys.stdin.isatty():
-            from dartlab.cli.tui import run as tuiRun
-
-            args.company = None
-            args.provider = None
-            args.model = None
-            args.base_url = None
-            args.api_key = None
-            args.cont = False
-            handler = tuiRun
-        else:
-            parser.print_help()
-            return EXIT_OK
+        parser.print_help()
+        return EXIT_OK
 
     try:
         return int(handler(args) or EXIT_OK)

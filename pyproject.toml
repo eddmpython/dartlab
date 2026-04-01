@@ -74,10 +74,6 @@ ai = [
     "google-genai>=1.0.0,<2",
     "anthropic>=0.30.0,<2",
 ]
-tui = [
-    "textual>=2.0,<3",
-    "prompt-toolkit>=3.0,<4",
-]
 altair = ["altair>=5.0.0,<6"]
 channel = ["pycloudflared>=0.3"]
 channel-ngrok = ["pyngrok>=7.0,<8"]
@@ -87,17 +83,11 @@ channel-full = [
     "slack-bolt>=1.18,<2",
     "discord.py>=2.4,<3",
 ]
-vector = [
-    "sentence-transformers>=3.0.0,<4",
-    "lancedb>=0.15.0,<1",
-    "turboquant-vectors>=0.3.0,<1",
-]
-all = ["dartlab[ai,tui,channel-full,altair]"]
+all = ["dartlab[ai,channel-full,altair]"]
 # 하위호환 alias
 llm = ["dartlab[ai]"]
 llm-anthropic = ["dartlab[ai]"]
 hf = ["dartlab"]
-ui = ["dartlab[tui]"]
 
 [project.scripts]
 dartlab = "dartlab.cli.main:main"

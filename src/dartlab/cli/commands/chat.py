@@ -73,9 +73,8 @@ def configure_parser(subparsers) -> None:
 
             run()
         else:
-            from dartlab.cli.tui import run as tuiRun
-
-            tuiRun(args)
+            print("dartlab chat --stdio 모드만 지원합니다. VSCode 확장 또는 dartlab ask를 사용하세요.")
+            return
 
     parser.set_defaults(handler=_handler)
 
