@@ -80,9 +80,7 @@ def _updateTransition(fromGrade: str, toGrade: str) -> None:
         matrix[fromGrade] = {}
     matrix[fromGrade][toGrade] = matrix[fromGrade].get(toGrade, 0) + 1
 
-    _TRANSITION_PATH.write_text(
-        json.dumps(matrix, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    _TRANSITION_PATH.write_text(json.dumps(matrix, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def _loadTransition() -> dict:
@@ -114,7 +112,5 @@ def updateTransitionMatrix() -> dict:
             continue
 
     _ensureDir(_CREDIT_DATA_DIR)
-    _TRANSITION_PATH.write_text(
-        json.dumps(matrix, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    _TRANSITION_PATH.write_text(json.dumps(matrix, ensure_ascii=False, indent=2), encoding="utf-8")
     return matrix
