@@ -153,9 +153,12 @@ def _preGroundSearch(
     if corpName:
         baseQuery = f"{corpName} {baseQuery}"
 
-    results = newsSearch(baseQuery, maxResults=5, days=7)
-    if not results:
-        results = webSearch(baseQuery, maxResults=5, days=7)
+    try:
+        results = newsSearch(baseQuery, maxResults=5, days=7)
+        if not results:
+            results = webSearch(baseQuery, maxResults=5, days=7)
+    except (OSError, RuntimeError, TimeoutError, ValueError):
+        return ""
 
     if not results:
         return ""

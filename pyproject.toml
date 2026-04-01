@@ -49,31 +49,30 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
+    # core + ai — 분석까지 기본
     "beautifulsoup4>=4.14.3,<5",
     "lxml>=6.0.2,<7",
     "httpx>=0.28.1,<1",
     "polars>=1.0.0,<2",
     "rich>=14.3.3,<15",
     "huggingface-hub>=0.20.0,<1",
-    "openpyxl>=3.1.5,<4",
-    "diff-match-patch>=20230430",
-    "plotly>=5.0.0,<6",
-    "mcp[cli]>=1.0",
-    "tavily-python>=0.5.0,<1",
-    "duckduckgo-search>=7.0.0,<8",
-    # server
-    "fastapi>=0.135.1,<1",
-    "uvicorn[standard]>=0.30.0,<1",
-    "sse-starlette>=2.0.0,<3",
+    "openai>=1.0.0,<3",
+    "google-genai>=1.0.0,<2",
 ]
 
 [project.optional-dependencies]
 # 무거운 것만 optional
-ai = [
-    "openai>=1.0.0,<3",
-    "google-genai>=1.0.0,<2",
-    "anthropic>=0.30.0,<2",
+ai = ["anthropic>=0.30.0,<2"]
+server = [
+    "fastapi>=0.135.1,<1",
+    "uvicorn[standard]>=0.30.0,<1",
+    "sse-starlette>=2.0.0,<3",
 ]
+mcp = ["mcp[cli]>=1.0"]
+search = ["tavily-python>=0.5.0,<1"]
+export = ["openpyxl>=3.1.5,<4"]
+charts = ["plotly>=5.0.0,<6"]
+diff = ["diff-match-patch>=20230430"]
 altair = ["altair>=5.0.0,<6"]
 channel = ["pycloudflared>=0.3"]
 channel-ngrok = ["pyngrok>=7.0,<8"]
@@ -83,7 +82,7 @@ channel-full = [
     "slack-bolt>=1.18,<2",
     "discord.py>=2.4,<3",
 ]
-all = ["dartlab[ai,channel-full,altair]"]
+all = ["dartlab[ai,server,mcp,search,export,charts,diff,altair,channel-full]"]
 # 하위호환 alias
 llm = ["dartlab[ai]"]
 llm-anthropic = ["dartlab[ai]"]

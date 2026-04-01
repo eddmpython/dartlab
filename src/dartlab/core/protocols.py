@@ -129,6 +129,14 @@ class CompanyProtocol(Protocol):
         """웹 뷰어 실행."""
         ...
 
+    def quant(
+        self,
+        metric: str | None = None,
+        **kwargs: Any,
+    ) -> dict | pl.DataFrame | None:
+        """기술적 분석 (25개 지표 + 종합 판단)."""
+        ...
+
     def ask(
         self,
         question: str,

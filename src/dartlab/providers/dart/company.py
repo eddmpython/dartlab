@@ -4864,6 +4864,20 @@ class Company:
             aggs.append(pl.col(c).median().alias(f"{c}_중간값"))
         return df_with_market.group_by("시장").agg(aggs).sort("종목수", descending=True)
 
+    def quant(self, metric: str | None = None, **kwargs):
+        """기술적 분석 (25개 지표 + 종합 판단).
+
+        Args:
+            metric: "verdict" (종합 판단) | "indicators" (25개 지표 DataFrame) | None (=verdict).
+
+        Returns:
+            dict (verdict) 또는 DataFrame (indicators).
+        """
+        from dartlab.quant import Quant
+
+        q = Quant()
+        return q(self.stockCode, metric, **kwargs)
+
     def view(self, *, port: int = 8400) -> None:
         """브라우저에서 공시 뷰어를 엽니다.
 

@@ -24,7 +24,6 @@ def test_searchAvailable_returns_dict():
 
     avail = searchAvailable()
     assert "tavily" in avail
-    assert "duckduckgo" in avail
     assert "any" in avail
     assert isinstance(avail["any"], bool)
 
@@ -40,7 +39,7 @@ def test_formatResults_with_items():
 
     results = [
         SearchResult(title="Test", url="https://example.com", snippet="Hello", source="tavily", published="2026-01-01"),
-        SearchResult(title="Test2", url="https://example2.com", snippet="World", source="duckduckgo"),
+        SearchResult(title="Test2", url="https://example2.com", snippet="World", source="tavily"),
     ]
     md = formatResults(results)
     assert "Test" in md
@@ -63,7 +62,6 @@ def test_webSearch_returns_empty_when_no_backends(monkeypatch):
     from dartlab.gather import search
 
     monkeypatch.setattr(search, "_tavilyAvailable", lambda: False)
-    monkeypatch.setattr(search, "_ddgAvailable", lambda: False)
 
     results = search.webSearch("test query")
     assert results == []
@@ -75,15 +73,17 @@ def test_webSearch_uses_cache(monkeypatch):
 
     callCount = [0]
 
-    def fakeDdg(query, *, maxResults=8):
+    def fakeTavily(query, *, maxResults=8, days=None, topic="general"):
         callCount[0] += 1
-        return [SearchResult(title="cached", url="u", snippet="s", source="duckduckgo")]
+        return [SearchResult(title="cached", url="u", snippet="s", source="tavily")]
 
-    monkeypatch.setattr(search, "_tavilyAvailable", lambda: False)
-    monkeypatch.setattr(search, "_ddgAvailable", lambda: True)
-    monkeypatch.setattr(search, "_searchDdg", fakeDdg)
+    monkeypatch.setattr(search, "_tavilyAvailable", lambda: True)
+    monkeypatch.setattr(search, "_searchTavily", fakeTavily)
 
-    # 캐시 초기화
+    from dartlab.gather.resilience import circuit_breaker
+
+    circuit_breaker.record_success("tavily")
+
     search._cache.clear()
 
     r1 = search.webSearch("cache test")
@@ -97,7 +97,6 @@ def test_newsSearch_returns_empty_when_no_backends(monkeypatch):
     from dartlab.gather import search
 
     monkeypatch.setattr(search, "_tavilyAvailable", lambda: False)
-    monkeypatch.setattr(search, "_ddgAvailable", lambda: False)
 
     results = search.newsSearch("test query")
     assert results == []

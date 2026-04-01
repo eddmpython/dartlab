@@ -1,0 +1,112 @@
+{
+  "005930": {
+    "rsi": 52.8,
+    "aboveSma20": true,
+    "aboveSma60": true,
+    "bbPosition": 55.5,
+    "goldenRecent": 0,
+    "rsiSignalRecent": 0,
+    "macdSignalRecent": 0,
+    "score": 1.0,
+    "verdict": "중립"
+  },
+  "000660": {
+    "rsi": 47.5,
+    "aboveSma20": false,
+    "aboveSma60": true,
+    "bbPosition": 29.9,
+    "goldenRecent": 0,
+    "rsiSignalRecent": 0,
+    "macdSignalRecent": 0,
+    "score": 0.0,
+    "verdict": "중립"
+  },
+  "035720": {
+    "rsi": 42.3,
+    "aboveSma20": false,
+    "aboveSma60": false,
+    "bbPosition": 29.9,
+    "goldenRecent": 0,
+    "rsiSignalRecent": 1,
+    "macdSignalRecent": 0,
+    "score": -0.7,
+    "verdict": "중립"
+  },
+  "051910": {
+    "rsi": 48.6,
+    "aboveSma20": true,
+    "aboveSma60": false,
+    "bbPosition": 56.6,
+    "goldenRecent": 0,
+    "rsiSignalRecent": 0,
+    "macdSignalRecent": 0,
+    "score": 0.0,
+    "verdict": "중립"
+  },
+  "006400": {
+    "rsi": 59.7,
+    "aboveSma20": true,
+    "aboveSma60": true,
+    "bbPosition": 118.7,
+    "goldenRecent": 0,
+    "rsiSignalRecent": 0,
+    "macdSignalRecent": 1,
+    "score": 1.3,
+    "verdict": "중립"
+  },
+  "005380": {
+    "rsi": 47.5,
+    "aboveSma20": false,
+    "aboveSma60": true,
+    "bbPosition": 29.9,
+    "goldenRecent": 0,
+    "rsiSignalRecent": 0,
+    "macdSignalRecent": -1,
+    "score": -0.3,
+    "verdict": "중립"
+  },
+  "068270": {
+    "rsi": 48.6,
+    "aboveSma20": true,
+    "aboveSma60": false,
+    "bbPosition": 59.8,
+    "goldenRecent": -1,
+    "rsiSignalRecent": 0,
+    "macdSignalRecent": 1,
+    "score": -0.2,
+    "verdict": "중립"
+  },
+  "035420": {
+    "rsi": 40.2,
+    "aboveSma20": false,
+    "aboveSma60": false,
+    "bbPosition": 22.9,
+    "goldenRecent": -1,
+    "rsiSignalRecent": 1,
+    "macdSignalRecent": 0,
+    "score": -1.2,
+    "verdict": "중립"
+  },
+  "055550": {
+    "rsi": 51.8,
+    "aboveSma20": true,
+    "aboveSma60": true,
+    "bbPosition": 64.3,
+    "goldenRecent": 0,
+    "rsiSignalRecent": 0,
+    "macdSignalRecent": 0,
+    "score": 1.0,
+    "verdict": "중립"
+  },
+  "003670": {
+    "rsi": 52.0,
+    "aboveSma20": true,
+    "aboveSma60": true,
+    "bbPosition": 76.9,
+    "goldenRecent": -1,
+    "rsiSignalRecent": 0,
+    "macdSignalRecent": 1,
+    "score": 0.8,
+    "verdict": "중립"
+  }
+}

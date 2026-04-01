@@ -1,0 +1,43 @@
+{
+  "date": "2026-04-01",
+  "stockCode": "005930",
+  "scenario": "반도체 회복",
+  "revenueGrowth": 15.0,
+  "actualYoY": 16.2,
+  "judgments": [
+    {
+      "quarter": "2024Q1",
+      "actual_조": 71.9,
+      "base_조": 73.2,
+      "deviation": -1.7,
+      "path": "on_track",
+      "action": "보유"
+    },
+    {
+      "quarter": "2024Q2",
+      "actual_조": 74.1,
+      "base_조": 71.0,
+      "deviation": 4.4,
+      "path": "on_track",
+      "action": "보유"
+    },
+    {
+      "quarter": "2024Q3",
+      "actual_조": 79.1,
+      "base_조": 77.3,
+      "deviation": 2.3,
+      "path": "on_track",
+      "action": "보유"
+    },
+    {
+      "quarter": "2024Q4",
+      "actual_조": 75.8,
+      "base_조": 76.3,
+      "deviation": -0.7,
+      "path": "on_track",
+      "action": "보유"
+    }
+  ],
+  "finalPath": "on_track",
+  "finalAction": "보유"
+}

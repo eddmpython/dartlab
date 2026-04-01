@@ -1,0 +1,302 @@
+{
+  "date": "2026-04-01",
+  "nCompanies": 8,
+  "results": [
+    {
+      "code": "005930",
+      "name": "삼성전자",
+      "sector": "반도체",
+      "scenario": "반도체 회복",
+      "growth": 15.0,
+      "baseRevenue_조": 297.8,
+      "actualRevenue_조": 300.9,
+      "revDeviation": 1.0,
+      "baseOI_조": 46.1,
+      "actualOI_조": 32.7,
+      "oiDeviation": -29.0,
+      "judgments": [
+        {
+          "q": "Q1",
+          "revPath": "on_track",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q2",
+          "revPath": "on_track",
+          "oiPath": "on_track"
+        },
+        {
+          "q": "Q3",
+          "revPath": "on_track",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q4",
+          "revPath": "on_track",
+          "oiPath": "underperform_severe"
+        }
+      ],
+      "finalRevPath": "on_track",
+      "finalOiPath": "underperform_severe"
+    },
+    {
+      "code": "000660",
+      "name": "SK하이닉스",
+      "sector": "반도체",
+      "scenario": "HBM 수혜",
+      "growth": 30.0,
+      "baseRevenue_조": 42.6,
+      "actualRevenue_조": 66.2,
+      "revDeviation": 55.4,
+      "baseOI_조": 6.0,
+      "actualOI_조": 23.5,
+      "oiDeviation": 292.6,
+      "judgments": [
+        {
+          "q": "Q1",
+          "revPath": "outperform",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q2",
+          "revPath": "outperform",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q3",
+          "revPath": "outperform",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q4",
+          "revPath": "outperform",
+          "oiPath": "outperform"
+        }
+      ],
+      "finalRevPath": "outperform",
+      "finalOiPath": "outperform"
+    },
+    {
+      "code": "005380",
+      "name": "현대차",
+      "sector": "자동차",
+      "scenario": "글로벌 판매 호조",
+      "growth": 8.0,
+      "baseRevenue_조": 175.7,
+      "actualRevenue_조": 175.2,
+      "revDeviation": -0.3,
+      "baseOI_조": 11.6,
+      "actualOI_조": 14.2,
+      "oiDeviation": 22.5,
+      "judgments": [
+        {
+          "q": "Q1",
+          "revPath": "on_track",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q2",
+          "revPath": "on_track",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q3",
+          "revPath": "on_track",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q4",
+          "revPath": "on_track",
+          "oiPath": "underperform_severe"
+        }
+      ],
+      "finalRevPath": "on_track",
+      "finalOiPath": "underperform_severe"
+    },
+    {
+      "code": "035420",
+      "name": "NAVER",
+      "sector": "플랫폼",
+      "scenario": "AI 광고 성장",
+      "growth": 12.0,
+      "baseRevenue_조": 10.8,
+      "actualRevenue_조": 10.7,
+      "revDeviation": -0.9,
+      "baseOI_조": 0.9,
+      "actualOI_조": 2.0,
+      "oiDeviation": 119.5,
+      "judgments": [
+        {
+          "q": "Q1",
+          "revPath": "on_track",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q2",
+          "revPath": "on_track",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q3",
+          "revPath": "on_track",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q4",
+          "revPath": "on_track",
+          "oiPath": "outperform"
+        }
+      ],
+      "finalRevPath": "on_track",
+      "finalOiPath": "outperform"
+    },
+    {
+      "code": "068270",
+      "name": "셀트리온",
+      "sector": "바이오",
+      "scenario": "바이오시밀러 확대",
+      "growth": 20.0,
+      "baseRevenue_조": 2.6,
+      "actualRevenue_조": 3.6,
+      "revDeviation": 36.2,
+      "baseOI_조": 0.8,
+      "actualOI_조": 0.5,
+      "oiDeviation": -41.8,
+      "judgments": [
+        {
+          "q": "Q1",
+          "revPath": "outperform",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q2",
+          "revPath": "outperform",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q3",
+          "revPath": "outperform",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q4",
+          "revPath": "outperform",
+          "oiPath": "outperform"
+        }
+      ],
+      "finalRevPath": "outperform",
+      "finalOiPath": "outperform"
+    },
+    {
+      "code": "004020",
+      "name": "현대제철",
+      "sector": "철강",
+      "scenario": "건설 경기 둔화",
+      "growth": -5.0,
+      "baseRevenue_조": 24.6,
+      "actualRevenue_조": 23.2,
+      "revDeviation": -5.7,
+      "baseOI_조": 1.1,
+      "actualOI_조": 0.2,
+      "oiDeviation": -85.9,
+      "judgments": [
+        {
+          "q": "Q1",
+          "revPath": "on_track",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q2",
+          "revPath": "underperform_severe",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q3",
+          "revPath": "underperform_severe",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q4",
+          "revPath": "underperform_severe",
+          "oiPath": "underperform_severe"
+        }
+      ],
+      "finalRevPath": "underperform_severe",
+      "finalOiPath": "underperform_severe"
+    },
+    {
+      "code": "030200",
+      "name": "KT",
+      "sector": "통신",
+      "scenario": "안정 성장",
+      "growth": 3.0,
+      "baseRevenue_조": 27.2,
+      "actualRevenue_조": 26.4,
+      "revDeviation": -2.7,
+      "baseOI_조": 3.0,
+      "actualOI_조": 0.8,
+      "oiDeviation": -72.9,
+      "judgments": [
+        {
+          "q": "Q1",
+          "revPath": "on_track",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q2",
+          "revPath": "on_track",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q3",
+          "revPath": "on_track",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q4",
+          "revPath": "underperform_severe",
+          "oiPath": "underperform_severe"
+        }
+      ],
+      "finalRevPath": "underperform_severe",
+      "finalOiPath": "underperform_severe"
+    },
+    {
+      "code": "034730",
+      "name": "SK",
+      "sector": "지주",
+      "scenario": "자회사 실적 개선",
+      "growth": 10.0,
+      "baseRevenue_조": 144.3,
+      "actualRevenue_조": 125.1,
+      "revDeviation": -13.3,
+      "baseOI_조": 5.6,
+      "actualOI_조": 2.4,
+      "oiDeviation": -57.5,
+      "judgments": [
+        {
+          "q": "Q1",
+          "revPath": "on_track",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q2",
+          "revPath": "underperform_severe",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q3",
+          "revPath": "underperform_severe",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q4",
+          "revPath": "underperform_severe",
+          "oiPath": "underperform_severe"
+        }
+      ],
+      "finalRevPath": "underperform_severe",
+      "finalOiPath": "underperform_severe"
+    }
+  ]
+}

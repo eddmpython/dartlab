@@ -1,0 +1,52 @@
+{
+  "005930": {
+    "status": "OK",
+    "rows": 244,
+    "gatherSec": 1.68,
+    "calcMs": 11.07,
+    "totalSec": 1.69,
+    "lastRSI": 52.8,
+    "lastMACD": 297.0,
+    "bbPosition": 55.5
+  },
+  "000660": {
+    "status": "OK",
+    "rows": 244,
+    "gatherSec": 1.26,
+    "calcMs": 6.44,
+    "totalSec": 1.27,
+    "lastRSI": 47.5,
+    "lastMACD": -3820.1,
+    "bbPosition": 29.9
+  },
+  "035720": {
+    "status": "OK",
+    "rows": 244,
+    "gatherSec": 0.47,
+    "calcMs": 4.0,
+    "totalSec": 0.48,
+    "lastRSI": 42.3,
+    "lastMACD": -2236.6,
+    "bbPosition": 29.9
+  },
+  "051910": {
+    "status": "OK",
+    "rows": 244,
+    "gatherSec": 0.94,
+    "calcMs": 6.55,
+    "totalSec": 0.94,
+    "lastRSI": 48.6,
+    "lastMACD": -5343.9,
+    "bbPosition": 56.6
+  },
+  "006400": {
+    "status": "OK",
+    "rows": 244,
+    "gatherSec": 0.86,
+    "calcMs": 4.33,
+    "totalSec": 0.87,
+    "lastRSI": 59.7,
+    "lastMACD": 7329.3,
+    "bbPosition": 118.7
+  }
+}

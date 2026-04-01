@@ -1558,6 +1558,12 @@ class _Module(sys.modules[__name__].__class__):
             instance = Analysis()
             setattr(self, name, instance)
             return instance
+        if name == "quant":
+            from dartlab.quant import Quant
+
+            instance = Quant()
+            setattr(self, name, instance)
+            return instance
         if name == "chart":
             from dartlab.chart import Chart
 
@@ -1608,6 +1614,7 @@ __all__ = [
     "scan",
     "analysis",
     "gather",
+    "quant",
     "network",
     "audit",
     "forecast",
