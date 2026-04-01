@@ -277,26 +277,45 @@ v2.0 — NLP 텍스트 분석 도입 (사업보고서 정성 정량화)
 - 버전 변경 시 영향 받는 기업 수 + 등급 변동 통계 공개
 - 이전 버전으로도 재현 가능하도록 버전별 파라미터 보존
 
+## 보고서 구조 (7개 섹션)
+
+| 섹션 | 내용 |
+|------|------|
+| 1. 등급 요약 | 등급, 점수, PD, eCR, 전망, 업종 |
+| 2. 등급 근거 | 강점/약점/양호 — narrative.py 서사 |
+| 3. 7축 상세 | 축별 서사 + 지표 테이블 |
+| 4. 재무 요약 | 핵심 지표 5개년 시계열 |
+| 5. 등급 전망 | 상향/하향 트리거 자동 생성 |
+| 6. 신평사 대조 | 동의/비동의 + notch 차이 — audit.py |
+| 7. 면책 | 방법론 버전 + 면책 사항 |
+
+## 발간 규칙
+
+- **정기 발간**: 사업보고서 공시 후 2주 이내
+- **이벤트 발간**: 등급 변경 시 즉시
+- **정례 보고서**: 월 1회 전체 등급 변동 요약 (`data/credit/periodic/`)
+- **저장 경로**: `data/credit/reports/{종목코드}_{기업명}.md`
+- **발간 명령**: `publishReport("005930")` 또는 `publishBatch(["005930", "035420"])`
+
 ## 코드 구조
 
 ```
 src/dartlab/credit/
-├── __init__.py           # credit() 단일 진입점
+├── __init__.py           # credit() 단일 진입점 + 7축 select 체계
 ├── engine.py             # 등급 산출 메인 파이프라인
 ├── metrics.py            # 7축 정량 지표 산출 (오리지널)
-├── scorecard.py          # 점수→등급 매핑 + 업종 조정
-├── thresholds.py         # 업종별 기준표
-├── cashflow.py           # eCR 현금흐름등급
-├── adjustments.py        # 캡티브금융/지주사 구조 감지
-├── report.py             # 등급 보고서 생성 (md/json)
+├── narrative.py          # 7축 서사 생성 (조건부 해석 문장)
+├── publisher.py          # 보고서 7섹션 생성 + 파일 저장
 ├── audit.py              # 신평사 대조 + 동의/비동의
-├── history.py            # 등급 이력 관리 + 전이 매트릭스
-└── spec.py               # AI/MCP용 스펙
+├── history.py            # 등급 이력 JSON + 전이 매트릭스
+├── scorecard.py          # 점수→등급 매핑 (core 재수출)
+└── thresholds.py         # 업종별 기준표 (core 재수출)
 
-data/credit/              # 등급 데이터 (git 미추적)
-├── reports/              # 개별 기업 보고서
-├── history/              # 등급 이력
+data/credit/              # 등급 데이터 (git 추적)
+├── reports/              # 개별 기업 보고서 (마크다운)
+├── history/              # 등급 이력 (JSON)
 ├── audit/                # audit 기록
+├── external_grades.json  # 신평사 공개 등급 (수동 관리)
 ├── transition.json       # 전이 매트릭스
 └── periodic/             # 정례 보고서
 ```
