@@ -41,8 +41,11 @@ class TestCreateSimulation:
         from dartlab.analysis.forecast.scenarioSim import createSimulation
 
         sim = createSimulation(
-            samsung, "합산검증", revenueGrowth=15.0,
-            baseYear="2023", targetYear="2024",
+            samsung,
+            "합산검증",
+            revenueGrowth=15.0,
+            baseYear="2023",
+            targetYear="2024",
         )
         baseP = sim.proformaResults["base"].projections[0]
         qSum = sum(sim.quarterlyRevTargets["base"])
@@ -53,8 +56,11 @@ class TestCreateSimulation:
         from dartlab.analysis.forecast.scenarioSim import createSimulation
 
         sim = createSimulation(
-            samsung, "계절성", revenueGrowth=10.0,
-            baseYear="2023", targetYear="2024",
+            samsung,
+            "계절성",
+            revenueGrowth=10.0,
+            baseYear="2023",
+            targetYear="2024",
         )
         assert abs(sum(sim.revSeasonality) - 1.0) < 0.01
         assert abs(sum(sim.oiSeasonality) - 1.0) < 0.01
@@ -64,8 +70,11 @@ class TestCreateSimulation:
         from dartlab.analysis.forecast.scenarioSim import createSimulation
 
         sim = createSimulation(
-            samsung, "DCF검증", revenueGrowth=15.0,
-            baseYear="2023", targetYear="2024",
+            samsung,
+            "DCF검증",
+            revenueGrowth=15.0,
+            baseYear="2023",
+            targetYear="2024",
             shares=5969782550,
         )
         if sim.dcfPerShare:
@@ -77,8 +86,11 @@ class TestCreateSimulation:
         from dartlab.analysis.forecast.scenarioSim import createSimulation
 
         sim = createSimulation(
-            samsung, "수렴", revenueGrowth=20.0,
-            baseYear="2023", targetYear="2024",
+            samsung,
+            "수렴",
+            revenueGrowth=20.0,
+            baseYear="2023",
+            targetYear="2024",
         )
         assert len(sim.revenueGrowthPath) == 3
         # 수렴: [20, 14, 10]
@@ -92,8 +104,11 @@ class TestJudgeQuarter:
         from dartlab.analysis.forecast.scenarioSim import createSimulation, judgeQuarter
 
         sim = createSimulation(
-            samsung, "판정", revenueGrowth=15.0,
-            baseYear="2023", targetYear="2024",
+            samsung,
+            "판정",
+            revenueGrowth=15.0,
+            baseYear="2023",
+            targetYear="2024",
         )
         baseQ1 = sim.quarterlyRevTargets["base"][0]
         baseOIQ1 = sim.quarterlyOITargets["base"][0]
@@ -108,8 +123,11 @@ class TestJudgeQuarter:
         from dartlab.analysis.forecast.scenarioSim import createSimulation, judgeQuarter
 
         sim = createSimulation(
-            samsung, "상회", revenueGrowth=15.0,
-            baseYear="2023", targetYear="2024",
+            samsung,
+            "상회",
+            revenueGrowth=15.0,
+            baseYear="2023",
+            targetYear="2024",
         )
         bullQ1 = sim.quarterlyRevTargets["bull"][0]
         bullOIQ1 = sim.quarterlyOITargets["bull"][0]
@@ -121,8 +139,11 @@ class TestJudgeQuarter:
         from dartlab.analysis.forecast.scenarioSim import createSimulation, judgeQuarter
 
         sim = createSimulation(
-            samsung, "재예측", revenueGrowth=15.0,
-            baseYear="2023", targetYear="2024",
+            samsung,
+            "재예측",
+            revenueGrowth=15.0,
+            baseYear="2023",
+            targetYear="2024",
         )
         baseQ1 = sim.quarterlyRevTargets["base"][0]
         baseOIQ1 = sim.quarterlyOITargets["base"][0]
@@ -136,8 +157,11 @@ class TestJudgeQuarter:
         from dartlab.analysis.forecast.scenarioSim import createSimulation, judgeQuarter
 
         sim = createSimulation(
-            samsung, "연속하회", revenueGrowth=15.0,
-            baseYear="2023", targetYear="2024",
+            samsung,
+            "연속하회",
+            revenueGrowth=15.0,
+            baseYear="2023",
+            targetYear="2024",
         )
         bearQ = sim.quarterlyRevTargets.get("bear", [0] * 4)
         bearOI = sim.quarterlyOITargets.get("bear", [0] * 4)
