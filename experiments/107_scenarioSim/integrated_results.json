@@ -1,0 +1,385 @@
+{
+  "date": "2026-04-01",
+  "results": [
+    {
+      "code": "005930",
+      "name": "삼성전자",
+      "baseRev_조": 297.8,
+      "actualRev_조": 300.9,
+      "revDev": 1.0,
+      "baseOI_조": 34.2,
+      "actualOI_조": 32.7,
+      "oiDev": -4.4,
+      "judgments": [
+        {
+          "q": "Q1",
+          "revPath": "on_track",
+          "oiPath": "on_track"
+        },
+        {
+          "q": "Q2",
+          "revPath": "on_track",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q3",
+          "revPath": "on_track",
+          "oiPath": "underperform"
+        },
+        {
+          "q": "Q4",
+          "revPath": "on_track",
+          "oiPath": "underperform_severe"
+        }
+      ],
+      "reforecasts": [
+        {
+          "atQ": 1,
+          "revForecast": 296.5
+        },
+        {
+          "atQ": 2,
+          "revForecast": 299.6
+        },
+        {
+          "atQ": 3,
+          "revForecast": 301.4
+        }
+      ],
+      "dcf": {
+        "bull": 77422,
+        "base": 64132,
+        "bear": 53469
+      }
+    },
+    {
+      "code": "000660",
+      "name": "SK하이닉스",
+      "baseRev_조": 42.6,
+      "actualRev_조": 66.2,
+      "revDev": 55.4,
+      "baseOI_조": -1.6,
+      "actualOI_조": 23.5,
+      "oiDev": 1563.3,
+      "judgments": [
+        {
+          "q": "Q1",
+          "revPath": "outperform",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q2",
+          "revPath": "outperform",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q3",
+          "revPath": "outperform",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q4",
+          "revPath": "outperform",
+          "oiPath": "outperform"
+        }
+      ],
+      "reforecasts": [
+        {
+          "atQ": 1,
+          "revForecast": 46.1
+        },
+        {
+          "atQ": 2,
+          "revForecast": 51.6
+        },
+        {
+          "atQ": 3,
+          "revForecast": 57.9
+        }
+      ],
+      "dcf": {}
+    },
+    {
+      "code": "005380",
+      "name": "현대차",
+      "baseRev_조": 175.7,
+      "actualRev_조": 175.2,
+      "revDev": -0.3,
+      "baseOI_조": 12.5,
+      "actualOI_조": 14.2,
+      "oiDev": 14.3,
+      "judgments": [
+        {
+          "q": "Q1",
+          "revPath": "on_track",
+          "oiPath": "outperform_mild"
+        },
+        {
+          "q": "Q2",
+          "revPath": "on_track",
+          "oiPath": "outperform_mild"
+        },
+        {
+          "q": "Q3",
+          "revPath": "on_track",
+          "oiPath": "outperform_mild"
+        },
+        {
+          "q": "Q4",
+          "revPath": "on_track",
+          "oiPath": "underperform"
+        }
+      ],
+      "reforecasts": [
+        {
+          "atQ": 1,
+          "revForecast": 176.6
+        },
+        {
+          "atQ": 2,
+          "revForecast": 176.6
+        },
+        {
+          "atQ": 3,
+          "revForecast": 174.9
+        }
+      ],
+      "dcf": {}
+    },
+    {
+      "code": "035420",
+      "name": "NAVER",
+      "baseRev_조": 10.8,
+      "actualRev_조": 10.7,
+      "revDev": -0.9,
+      "baseOI_조": -0.7,
+      "actualOI_조": 2.0,
+      "oiDev": 373.8,
+      "judgments": [
+        {
+          "q": "Q1",
+          "revPath": "on_track",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q2",
+          "revPath": "on_track",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q3",
+          "revPath": "on_track",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q4",
+          "revPath": "on_track",
+          "oiPath": "outperform"
+        }
+      ],
+      "reforecasts": [
+        {
+          "atQ": 1,
+          "revForecast": 10.9
+        },
+        {
+          "atQ": 2,
+          "revForecast": 10.8
+        },
+        {
+          "atQ": 3,
+          "revForecast": 10.8
+        }
+      ],
+      "dcf": {}
+    },
+    {
+      "code": "068270",
+      "name": "셀트리온",
+      "baseRev_조": 2.6,
+      "actualRev_조": 3.6,
+      "revDev": 36.2,
+      "baseOI_조": 0.8,
+      "actualOI_조": 0.5,
+      "oiDev": -40.0,
+      "judgments": [
+        {
+          "q": "Q1",
+          "revPath": "outperform",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q2",
+          "revPath": "outperform",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q3",
+          "revPath": "outperform",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q4",
+          "revPath": "outperform",
+          "oiPath": "outperform"
+        }
+      ],
+      "reforecasts": [
+        {
+          "atQ": 1,
+          "revForecast": 2.7
+        },
+        {
+          "atQ": 2,
+          "revForecast": 2.9
+        },
+        {
+          "atQ": 3,
+          "revForecast": 3.1
+        }
+      ],
+      "dcf": {}
+    },
+    {
+      "code": "004020",
+      "name": "현대제철",
+      "baseRev_조": 24.6,
+      "actualRev_조": 23.2,
+      "revDev": -5.7,
+      "baseOI_조": 0.9,
+      "actualOI_조": 0.2,
+      "oiDev": -82.3,
+      "judgments": [
+        {
+          "q": "Q1",
+          "revPath": "on_track",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q2",
+          "revPath": "underperform_severe",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q3",
+          "revPath": "underperform_severe",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q4",
+          "revPath": "underperform_severe",
+          "oiPath": "underperform_severe"
+        }
+      ],
+      "reforecasts": [
+        {
+          "atQ": 1,
+          "revForecast": 24.7
+        },
+        {
+          "atQ": 2,
+          "revForecast": 24.2
+        },
+        {
+          "atQ": 3,
+          "revForecast": 23.7
+        }
+      ],
+      "dcf": {}
+    },
+    {
+      "code": "030200",
+      "name": "KT",
+      "baseRev_조": 27.2,
+      "actualRev_조": 26.4,
+      "revDev": -2.7,
+      "baseOI_조": -1.1,
+      "actualOI_조": 0.8,
+      "oiDev": 174.5,
+      "judgments": [
+        {
+          "q": "Q1",
+          "revPath": "on_track",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q2",
+          "revPath": "on_track",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q3",
+          "revPath": "on_track",
+          "oiPath": "outperform"
+        },
+        {
+          "q": "Q4",
+          "revPath": "underperform_severe",
+          "oiPath": "underperform_severe"
+        }
+      ],
+      "reforecasts": [
+        {
+          "atQ": 1,
+          "revForecast": 27.2
+        },
+        {
+          "atQ": 2,
+          "revForecast": 27.1
+        },
+        {
+          "atQ": 3,
+          "revForecast": 26.9
+        }
+      ],
+      "dcf": {}
+    },
+    {
+      "code": "034730",
+      "name": "SK",
+      "baseRev_조": 144.3,
+      "actualRev_조": 125.1,
+      "revDev": -13.3,
+      "baseOI_조": 5.3,
+      "actualOI_조": 2.4,
+      "oiDev": -55.1,
+      "judgments": [
+        {
+          "q": "Q1",
+          "revPath": "on_track",
+          "oiPath": "on_track"
+        },
+        {
+          "q": "Q2",
+          "revPath": "underperform_severe",
+          "oiPath": "underperform"
+        },
+        {
+          "q": "Q3",
+          "revPath": "underperform_severe",
+          "oiPath": "underperform_severe"
+        },
+        {
+          "q": "Q4",
+          "revPath": "underperform_severe",
+          "oiPath": "underperform_severe"
+        }
+      ],
+      "reforecasts": [
+        {
+          "atQ": 1,
+          "revForecast": 143.5
+        },
+        {
+          "atQ": 2,
+          "revForecast": 139.7
+        },
+        {
+          "atQ": 3,
+          "revForecast": 132.4
+        }
+      ],
+      "dcf": {}
+    }
+  ]
+}

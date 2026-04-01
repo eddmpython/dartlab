@@ -23,11 +23,3 @@ def hasItables() -> bool:
         return False
 
 
-def hasAltair() -> bool:
-    """altair 설치 여부 확인."""
-    try:
-        import altair  # noqa: F401
-
-        return True
-    except ImportError:
-        return False

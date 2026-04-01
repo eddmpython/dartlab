@@ -58,6 +58,8 @@ dependencies = [
     "huggingface-hub>=0.20.0,<1",
     "openai>=1.0.0,<3",
     "google-genai>=1.0.0,<2",
+    "openpyxl>=3.1.5,<4",
+    "diff-match-patch>=20230430",
 ]
 
 [project.optional-dependencies]
@@ -67,26 +69,10 @@ server = [
     "fastapi>=0.135.1,<1",
     "uvicorn[standard]>=0.30.0,<1",
     "sse-starlette>=2.0.0,<3",
+    "mcp[cli]>=1.0",
 ]
-mcp = ["mcp[cli]>=1.0"]
-search = ["tavily-python>=0.5.0,<1"]
-export = ["openpyxl>=3.1.5,<4"]
-charts = ["plotly>=5.0.0,<6"]
-diff = ["diff-match-patch>=20230430"]
-altair = ["altair>=5.0.0,<6"]
-channel = ["pycloudflared>=0.3"]
-channel-ngrok = ["pyngrok>=7.0,<8"]
-channel-full = [
-    "dartlab[channel,channel-ngrok]",
-    "python-telegram-bot>=21.0,<22",
-    "slack-bolt>=1.18,<2",
-    "discord.py>=2.4,<3",
-]
-all = ["dartlab[ai,server,mcp,search,export,charts,diff,altair,channel-full]"]
-# 하위호환 alias
-llm = ["dartlab[ai]"]
-llm-anthropic = ["dartlab[ai]"]
-hf = ["dartlab"]
+viz = ["plotly>=5.0.0,<6"]
+all = ["dartlab[ai,server,viz]"]
 
 [project.scripts]
 dartlab = "dartlab.cli.main:main"

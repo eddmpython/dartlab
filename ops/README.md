@@ -28,6 +28,7 @@ L0 (인프라)     core/          protocols, finance, docs, registry, search
 L1 (데이터)     providers/     DART, EDGAR, EDINET
                 gather/        주가, 수급, 매크로, 뉴스
                 scan/          13축 횡단분석
+                quant/         기술적 분석 (25지표, 9신호)
 L2 (분석)       analysis/      14축 + forecast + valuation
 L3 (AI)         ai/            LLM 대화형 분석
 L4 (표현)       ui/ + vscode/  Svelte SPA + VSCode 확장

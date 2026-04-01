@@ -1,8 +1,7 @@
-"""Rich + HTML + Altair 데이터 표시 도구."""
+"""Rich + HTML 데이터 표시 도구."""
 
 from __future__ import annotations
 
-from dartlab.display.altairChart import ratioChart, timeseriesChart
 from dartlab.display.notebook import htmlDistress, htmlFinance, htmlInsight, interactiveTable
 from dartlab.display.richCompany import renderCompany
 from dartlab.display.richFrame import renderFinance, show
@@ -15,7 +14,6 @@ __all__ = [
     "htmlFinance",
     "htmlInsight",
     "interactiveTable",
-    "ratioChart",
     "renderCompany",
     "renderFinance",
     "renderIndex",
@@ -24,5 +22,4 @@ __all__ = [
     "show",
     "showIndex",
     "showRatio",
-    "timeseriesChart",
 ]
