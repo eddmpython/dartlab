@@ -96,6 +96,25 @@ def publishAll(*, basePeriod: str | None = None) -> list[Path]:
     return publishBatch(codes, basePeriod=basePeriod)
 
 
+def _gauge(score: float | None, width: int = 10) -> str:
+    """점수를 시각적 게이지 바로 변환."""
+    if score is None:
+        return "░" * width
+    filled = max(0, min(width, int((100 - score) / 100 * width)))
+    return "█" * filled + "░" * (width - filled)
+
+
+def _trend(cur, prev) -> str:
+    """전기 대비 변화 방향 화살표."""
+    if cur is None or prev is None:
+        return ""
+    if cur < prev * 0.95:
+        return " ↓"
+    if cur > prev * 1.05:
+        return " ↑"
+    return " →"
+
+
 def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
     """마크다운 보고서 문자열 생성."""
     from dartlab.credit.audit import auditCredit, auditToMarkdown
@@ -252,50 +271,63 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
     lines.append("## 5. 7축 상세 분석")
     lines.append("")
 
-    # 요약 테이블
-    lines.append("| 축 | 점수 | 비중 | 판정 |")
-    lines.append("|------|------|------|------|")
+    # 요약 테이블 (게이지 바 포함)
     axes = result.get("axes", [])
+    lines.append("| 축 | 비중 | 판정 | 점수 |")
+    lines.append("|------|:---:|:---:|------|")
     for a in axes:
         s = a.get("score")
-        sStr = f"{s:.0f}" if s is not None else "-"
         w = a.get("weight", 0)
         if s is None:
-            j = "데이터 없음"
+            j, gauge = "-", _gauge(None)
         elif s < 10:
-            j = "우수"
+            j, gauge = "**우수**", _gauge(s)
         elif s < 25:
-            j = "양호"
+            j, gauge = "양호", _gauge(s)
         elif s < 40:
-            j = "보통"
+            j, gauge = "보통", _gauge(s)
         elif s < 60:
-            j = "주의"
+            j, gauge = "⚠ 주의", _gauge(s)
         else:
-            j = "위험"
-        lines.append(f"| {a['name']} | {sStr} | {w}% | {j} |")
+            j, gauge = "🔴 위험", _gauge(s)
+        sStr = f"{s:.0f}" if s is not None else "-"
+        lines.append(f"| {a['name']} | {w}% | {j} | {gauge} {sStr}/100 |")
     lines.append("")
 
-    # 축별 서사 + 지표
+    # 축별 서사 (문단 + 지표 테이블)
     for i, n in enumerate(narratives):
         axData = axes[i] if i < len(axes) else {}
         w = axData.get("weight", 0)
-        lines.append(f"### 4.{i + 1} {n.axisName} ({w}%) — {n.severity}")
+        s = axData.get("score")
+        sStr = f"{s:.0f}" if s is not None else "-"
+
+        lines.append(f"### 5.{i + 1} {n.axisName} ({w}%)")
         lines.append("")
-        lines.append(n.summary)
+        lines.append(f"**판정: {n.severityKr}** ({sStr}점/100)")
         lines.append("")
-        for d in n.details:
-            lines.append(f"- {d}")
+        # 문단 서사 (bullet이 아닌 연결된 텍스트)
+        lines.append(n.toParagraph())
         lines.append("")
 
-        # 지표 테이블
-        metrics = axData.get("metrics", [])
-        if metrics:
-            lines.append("| 지표 | 점수 |")
-            lines.append("|------|------|")
-            for m in metrics:
+        # 지표 테이블 (값 + 점수 + 판정)
+        metricsList = axData.get("metrics", [])
+        if metricsList:
+            lines.append("| 지표 | 점수 | 판정 |")
+            lines.append("|------|:---:|:---:|")
+            for m in metricsList:
                 ms = m.get("score")
                 msStr = f"{ms:.0f}" if ms is not None else "-"
-                lines.append(f"| {m['name']} | {msStr} |")
+                if ms is None:
+                    mj = "-"
+                elif ms < 10:
+                    mj = "우수"
+                elif ms < 30:
+                    mj = "양호"
+                elif ms < 50:
+                    mj = "보통"
+                else:
+                    mj = "주의"
+                lines.append(f"| {m['name']} | {msStr} | {mj} |")
             lines.append("")
 
     # ── 5. 재무 요약 5개년 ──
@@ -305,17 +337,29 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
         cols = ["기간", "EBITDA/이자", "Debt/EBITDA", "부채비율", "유동비율", "OCF/매출"]
         lines.append("| " + " | ".join(cols) + " |")
         lines.append("|" + "|".join(["------"] * len(cols)) + "|")
-        for h in history[:5]:
-            row = [
-                h.get("period", ""),
-                "무차입"
-                if h.get("ebitdaInterestCoverage") is not None and h["ebitdaInterestCoverage"] >= 100
-                else (f"{h['ebitdaInterestCoverage']:.1f}x" if h.get("ebitdaInterestCoverage") is not None else "-"),
-                f"{h['debtToEbitda']:.1f}x" if h.get("debtToEbitda") is not None else "-",
-                f"{h['debtRatio']:.0f}%" if h.get("debtRatio") is not None else "-",
-                f"{h['currentRatio']:.0f}%" if h.get("currentRatio") is not None else "-",
-                f"{h['ocfToSales']:.1f}%" if h.get("ocfToSales") is not None else "-",
-            ]
+        histSlice = history[:5]
+        for idx, h in enumerate(histSlice):
+            prevH = histSlice[idx + 1] if idx + 1 < len(histSlice) else None
+
+            icr = h.get("ebitdaInterestCoverage")
+            de = h.get("debtToEbitda")
+            dr = h.get("debtRatio")
+            cr_v = h.get("currentRatio")
+            ocfS = h.get("ocfToSales")
+
+            icrStr = "무차입" if icr is not None and icr >= 100 else (f"{icr:.1f}x" if icr is not None else "-")
+            deStr = f"{de:.1f}x" if de is not None else "-"
+            drStr = f"{dr:.0f}%" if dr is not None else "-"
+            crStr = f"{cr_v:.0f}%" if cr_v is not None else "-"
+            ocfStr = f"{ocfS:.1f}%" if ocfS is not None else "-"
+
+            # 변화 방향 화살표
+            if prevH:
+                deStr += _trend(de, prevH.get("debtToEbitda"))
+                drStr += _trend(dr, prevH.get("debtRatio"))
+                crStr += _trend(cr_v, prevH.get("currentRatio"))
+
+            row = [h.get("period", ""), icrStr, deStr, drStr, crStr, ocfStr]
             lines.append("| " + " | ".join(row) + " |")
         lines.append("")
 

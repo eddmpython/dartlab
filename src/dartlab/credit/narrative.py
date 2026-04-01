@@ -18,6 +18,20 @@ class AxisNarrative:
     details: list[str] = field(default_factory=list)
     severity: str = "adequate"  # strong | adequate | weak | critical
 
+    def toParagraph(self) -> str:
+        """details를 연결된 문단으로 조합."""
+        if not self.details:
+            return self.summary
+        # 첫 문장 + details를 자연스럽게 연결
+        sentences = [self.summary] + self.details
+        return " ".join(sentences)
+
+    @property
+    def severityKr(self) -> str:
+        return {"strong": "우수", "adequate": "양호", "weak": "주의", "critical": "위험"}.get(
+            self.severity, self.severity
+        )
+
 
 def _severity(score: float | None) -> str:
     if score is None:
