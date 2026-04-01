@@ -20,7 +20,6 @@ from dartlab.analysis.financial._helpers import (
     annualColsFromPeriods,
     fetchNotesDetail,
     getRatios,
-    getRatioSeries,
     toDict,
     toDictBySnakeId,
 )
@@ -583,11 +582,6 @@ def calcCreditScore(company, *, basePeriod: str | None = None) -> dict | None:
     # 신용등급 맥락: 이익품질은 보조 축이므로 점수 상한을 50으로 제한
     qualityScores: list[tuple[str, float | None]] = []
     if ratios is not None:
-        from dartlab.analysis.financial.insight.distress import (
-            _normalizeBeneish,
-            _normalizeFScore,
-            _normalizeSloan,
-        )
 
         if ratios.beneishMScore is not None:
             # Beneish: 신용등급용 완화 (M < -2.22이면 0, 조작 구간만 경고)

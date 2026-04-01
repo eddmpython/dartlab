@@ -24,8 +24,6 @@ ops/credit.md 참조.
 
 from __future__ import annotations
 
-from typing import Any
-
 
 def credit(stockCode: str, *, detail: bool = False, basePeriod: str | None = None) -> dict | None:
     """신용등급 산출 단일 진입점.

@@ -6,8 +6,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 
 def _div(a, b, pct: bool = False) -> float | None:
     """안전한 나눗셈. pct=True이면 ×100."""

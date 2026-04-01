@@ -35,8 +35,8 @@ def toMarkdown(result: dict, companyName: str = "") -> str:
     # ── 헤더 ──
     lines.append(f"# {companyName} 신용평가 보고서")
     lines.append("")
-    lines.append(f"| 항목 | 값 |")
-    lines.append(f"|------|------|")
+    lines.append("| 항목 | 값 |")
+    lines.append("|------|------|")
     lines.append(f"| **등급** | **{grade}** ({desc}) |")
     lines.append(f"| 카테고리 | {category} ({inv}) |")
     lines.append(f"| 종합 점수 | {score:.1f} / 100 |")
@@ -47,9 +47,9 @@ def toMarkdown(result: dict, companyName: str = "") -> str:
     lines.append(f"| 기준 기간 | {period} |")
     lines.append(f"| 방법론 | {version} |")
     if captive:
-        lines.append(f"| 구조 | 캡티브금융 복합기업 (유틸리티 기준 적용) |")
+        lines.append("| 구조 | 캡티브금융 복합기업 (유틸리티 기준 적용) |")
     if holding:
-        lines.append(f"| 구조 | 지주사 |")
+        lines.append("| 구조 | 지주사 |")
     lines.append("")
 
     # ── 7축 상세 ──
@@ -119,7 +119,7 @@ def toMarkdown(result: dict, companyName: str = "") -> str:
     lines.append("---")
     lines.append("")
     lines.append(f"*dartlab 독립 신용평가 ({version}). 공시 데이터 기반 정량 분석.*")
-    lines.append(f"*dCR 등급은 제도권 신용등급과 다를 수 있으며, 투자 권유가 아닙니다.*")
+    lines.append("*dCR 등급은 제도권 신용등급과 다를 수 있으며, 투자 권유가 아닙니다.*")
     lines.append(f"*생성일: {datetime.now().strftime('%Y-%m-%d')}*")
 
     return "\n".join(lines)

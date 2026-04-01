@@ -17,7 +17,7 @@ from dartlab.credit.scorecard import (
     scoreMetric,
     weightedScore,
 )
-from dartlab.credit.thresholds import getThresholds, getSectorLabel
+from dartlab.credit.thresholds import getSectorLabel, getThresholds
 
 
 def _getSectorInfo(company):
