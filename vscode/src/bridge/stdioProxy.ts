@@ -330,13 +330,14 @@ export class StdioProxy {
     if (event === "providerChanged") { for (const fn of this.providerListeners) fn(data); this.providerListeners = []; return; }
     if (event === "templates") { this.onTemplates?.(data); return; }
 
-    if (this.currentCallbacks && (!id || id === this.currentRequestId)) {
+    if (this.currentCallbacks) {
       if (event === "done") {
+        // Always honor done — even if id mismatches (prevent stuck state)
         this.currentCallbacks.onEvent(event, data);
         this.currentCallbacks.onDone();
         this.currentCallbacks = null;
         this.currentRequestId = null;
-      } else {
+      } else if (!id || id === this.currentRequestId) {
         this.currentCallbacks.onEvent(event, data);
       }
     }

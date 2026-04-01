@@ -204,9 +204,21 @@
     currentHandler = null;
   }
 
+  function startNewConversation() {
+    if (streaming) return;
+    activeConversationId = null;
+    ensureConversation();
+    followStream = true;
+    showJumpToLatest = false;
+    // Reset scroll so welcome screen shows from top
+    requestAnimationFrame(() => {
+      if (messagesEl) messagesEl.scrollTop = 0;
+    });
+  }
+
   function handleSlashCommand(cmd: string) {
     if (cmd === "new") {
-      if (!streaming) { activeConversationId = null; ensureConversation(); }
+      startNewConversation();
     } else if (cmd === "clear") {
       if (activeConversationId) {
         conversations = conversations.filter(c => c.id !== activeConversationId);
@@ -276,10 +288,7 @@
         break;
       }
       case "newConversation": {
-        if (!streaming) {
-          activeConversationId = null;
-          ensureConversation();
-        }
+        startNewConversation();
         break;
       }
       case "templates": {

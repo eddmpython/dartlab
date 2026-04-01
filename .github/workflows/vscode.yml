@@ -1,0 +1,49 @@
+name: Publish VSCode Extension
+
+on:
+  push:
+    tags:
+      - "vsce-*"
+
+jobs:
+  publish:
+    name: Build & Publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install extension dependencies
+        working-directory: vscode
+        run: npm ci
+
+      - name: Install webview dependencies
+        working-directory: vscode/webview
+        run: npm ci
+
+      - name: Build webview
+        working-directory: vscode/webview
+        run: npm run build
+
+      - name: Build extension
+        working-directory: vscode
+        run: npm run build
+
+      - name: Verify version matches tag
+        working-directory: vscode
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#vsce-}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Version mismatch: tag=$TAG_VERSION, package.json=$PKG_VERSION"
+            exit 1
+          fi
+
+      - name: Publish to Marketplace
+        working-directory: vscode
+        run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }}

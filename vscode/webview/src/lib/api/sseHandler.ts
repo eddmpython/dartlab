@@ -32,6 +32,13 @@ export function createSseHandler(
 ) {
   let chunkBuffer = "";
   let chunkRafId: number | null = null;
+  let done = false;
+
+  function callOnDone() {
+    if (done) return;
+    done = true;
+    onDone();
+  }
 
   function flushChunks() {
     chunkRafId = null;
@@ -95,7 +102,11 @@ export function createSseHandler(
         case "code_round": {
           const msg = getMessage();
           const rounds = [...(msg.codeRounds ?? [])];
-          rounds.push(d as { round: number; maxRounds: number; status: string });
+          const cr = d as { round: number; maxRounds: number; status: string };
+          // Replace existing round (prevent duplicates on reconnect)
+          const idx = rounds.findIndex(r => r.round === cr.round);
+          if (idx >= 0) rounds[idx] = cr;
+          else rounds.push(cr);
           updateMessage({ codeRounds: rounds });
           break;
         }
@@ -106,7 +117,7 @@ export function createSseHandler(
             loading: false,
             duration: Date.now() - (getMessage().startedAt ?? Date.now()),
           });
-          onDone();
+          callOnDone();
           break;
 
         case "error":
@@ -131,7 +142,7 @@ export function createSseHandler(
       if (msg.loading) {
         updateMessage({ loading: false });
       }
-      onDone();
+      callOnDone();
     },
 
     handleStreamError(error: string) {
@@ -141,7 +152,7 @@ export function createSseHandler(
         error: true,
         text: getMessage().text + "\n\n**Error:** " + error,
       });
-      onDone();
+      callOnDone();
     },
   };
 }

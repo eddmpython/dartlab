@@ -349,15 +349,10 @@
       {/if}
     {/if}
 
-    <!-- Streaming cursor / code execution indicator -->
+    <!-- Streaming cursor (code execution progress is shown in code-rounds above) -->
     {#if message.loading && message.text}
       {@const lastRound = message.codeRounds?.[message.codeRounds.length - 1]}
-      {#if lastRound?.status === "executing"}
-        <div class="inline-exec">
-          <div class="tool-spinner-sm"></div>
-          <span>Python 실행 중 ({lastRound.round}/{lastRound.maxRounds})...</span>
-        </div>
-      {:else}
+      {#if !lastRound || lastRound.status !== "executing"}
         <span class="cursor"></span>
       {/if}
     {/if}

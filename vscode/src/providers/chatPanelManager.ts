@@ -70,6 +70,11 @@ export class ChatPanelManager {
       setTimeout(() => {
         this.postMessage({ type: "selectConversation", payload: { id: conversationId } });
       }, 500);
+    } else {
+      // New conversation requested — send after webview initializes
+      setTimeout(() => {
+        this.postMessage({ type: "newConversation" });
+      }, 500);
     }
   }
 
