@@ -506,9 +506,7 @@ def _streamWithCodeExecution(
             },
         )
 
-        # 실행 결과 알림 (사용자용: 마크다운 테이블 변환 — 전체 표시)
-        yield formatted
-
+        # 실행 결과는 code_round 이벤트로만 전달 (본문 텍스트 중복 방지)
         # 결과를 대화에 추가하여 LLM이 해석하도록 재요청
         messages.append({"role": "assistant", "content": buffer})
 
@@ -623,6 +621,32 @@ r3 = c.analysis("financial", "안정성")
 - **시장 비교/순위/필터**: scan. 횡단 질문에 사용.
   결과를 먼저 출력하고, 이상치(inf, null, 기저효과)가 보이면 원인을 설명하라.
   하드코딩 필터(200% 제외 등)로 자르지 말고, 데이터를 보고 판단하라.
+
+### 신용평가 ("신용등급", "부채 안전한가", "신용도", "채무상환", "dCR")
+c.credit(detail=True) — 7축 신용등급 + 로데이터 + 서사를 한 번에 반환.
+analysis("안정성")과 다르다. credit은 7축 통합 등급이고, analysis는 개별 비율 추세다.
+
+```python
+cr = c.credit(detail=True)
+print(f"등급: {cr['grade']}, 점수: {cr['score']}/100")
+print(f"전망: {cr['outlook']}, PD: {cr['pdEstimate']}%")
+
+# 서사 (narrative.py 생성 — 축별 해석 문장)
+for n in cr['narratives']['axes']:
+    print(f"[{n['severity']}] {n['axis']}: {n['summary']}")
+    for d in n['details']:
+        print(f"  - {d}")
+
+# 원본 수치 (16개 지표 시계열)
+for h in cr['metricsHistory'][:3]:
+    print(f"{h['period']}: ICR={h['ebitdaInterestCoverage']}, D/E={h['debtRatio']}%")
+```
+
+신용평가 분석 시:
+1. c.credit(detail=True)로 로데이터 + 서사를 가져온다
+2. narratives의 서사를 바탕으로 **산업 맥락/인과관계/사이클 위치**를 네가 판단한다
+3. 필요시 analysis("financial", "안정성/자금조달")로 상세 보충한다
+4. 신평사 등급과 비교하되 **dartlab 독립 판단**을 제시한다
 
 ### review — 사용자가 "보고서" 형태를 명시적으로 요청할 때만
 rv = c.review("수익성")       # Review 객체 — 이미 완성된 보고서

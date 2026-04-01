@@ -55,14 +55,45 @@ def publishReportFromCompany(company, *, basePeriod: str | None = None) -> Path:
 def publishBatch(stockCodes: list[str], *, basePeriod: str | None = None) -> list[Path]:
     """복수 기업 보고서 순차 발간 (메모리 안전)."""
     paths = []
-    for code in stockCodes:
+    for i, code in enumerate(stockCodes):
         try:
             path = publishReport(code, basePeriod=basePeriod)
             paths.append(path)
-        except (ValueError, KeyError, TypeError) as e:
+            if (i + 1) % 10 == 0:
+                print(f"[credit] {i + 1}/{len(stockCodes)} 발간 완료")
+        except (ValueError, KeyError, TypeError, FileNotFoundError) as e:
             print(f"[credit] {code} 발간 실패: {e}")
         gc.collect()
+    print(f"[credit] 배치 완료: {len(paths)}/{len(stockCodes)} 성공")
     return paths
+
+
+def publishAll(*, basePeriod: str | None = None) -> list[Path]:
+    """한국 전 상장사 신용평가 보고서 배치 발간.
+
+    docs/credit/reports/에 종목별 마크다운 저장.
+    메모리 안전: 기업별 순차 처리 + gc.collect().
+    finance 데이터가 있는 종목만 발간.
+    """
+    try:
+        from dartlab.gather.listing import listing
+
+        df = listing()
+        if df is not None and hasattr(df, "to_series"):
+            codes = df["종목코드"].to_list() if "종목코드" in df.columns else []
+        elif df is not None and hasattr(df, "to_list"):
+            codes = df.to_list()
+        else:
+            codes = []
+    except (ImportError, AttributeError, ValueError):
+        codes = []
+
+    if not codes:
+        print("[credit] 종목 목록을 가져올 수 없습니다.")
+        return []
+
+    print(f"[credit] 전종목 발간 시작: {len(codes)}개사")
+    return publishBatch(codes, basePeriod=basePeriod)
 
 
 def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
