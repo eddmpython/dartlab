@@ -14,6 +14,7 @@
 | [search.md](search.md) | L0 | core/search/ | 공시 시맨틱 검색 *(alpha)* |
 | [analysis.md](analysis.md) | L2 | analysis/ | 14축 스토리텔링 재무분석, 6막 구조 |
 | [review.md](review.md) | L2 | review/ | 블록-템플릿 보고서 렌더링, 4 출력 형식 |
+| [credit.md](credit.md) | L2 | credit/ | 독립 신용평가 (dCR 20단계, 7축, 투명 공개) |
 | [ai.md](ai.md) | L3 | ai/ | 적극적 분석가, 5 provider |
 | [guide.md](guide.md) | 교차 | guide/ | 안내 데스크 + 교육 안내자, 4층위 |
 | [experiments.md](experiments.md) | — | experiments/ | 실험 규칙, 흡수 판단 |
