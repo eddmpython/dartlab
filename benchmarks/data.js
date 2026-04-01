@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775064185611,
+  "lastUpdate": 1775065141232,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -2697,6 +2697,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.6077806647005215e-7",
             "extra": "mean: 684.9801726681325 nsec\nrounds: 175717"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "fbf10c462cd0c6e9f36f066497036619ed5f5ec3",
+          "message": "feat: credit 독립 엔진 + quant 통합 + 금융업 지원 + AI 서사 해석 (v0.8.2)\n\nAdded:\n- credit 독립 엔진 (dCR) — 7축 가중, 업종 세분화, CHS 부도확률\n- quant → analysis(\"quant\") 축 통합\n- 금융업(은행/보험) 수익성 분석 — 이자수익 기반 marginTrend\n- AI 종합분석 6막 서사 + quant+재무 교차 검증\n- 보고서 렌더링 개편 — 게이지바, 문단서사, 변화화살표\n\nChanged:\n- analysis↔credit 상호의존 완전 제거\n- AI 프롬프트 #26~#28\n- ops/ 문서 전면 정비",
+          "timestamp": "2026-04-02T02:38:12+09:00",
+          "tree_id": "43a20104004cae20835803cc7e97b6835501d7ee",
+          "url": "https://github.com/eddmpython/dartlab/commit/fbf10c462cd0c6e9f36f066497036619ed5f5ec3"
+        },
+        "date": 1775065140611,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 522910.16333345755,
+            "unit": "iter/sec",
+            "range": "stddev: 4.994110642149733e-7",
+            "extra": "mean: 1.912374381146431 usec\nrounds: 56552"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 658767.6108174986,
+            "unit": "iter/sec",
+            "range": "stddev: 5.120542383145638e-7",
+            "extra": "mean: 1.5179859840999903 usec\nrounds: 182150"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 535511.6159821232,
+            "unit": "iter/sec",
+            "range": "stddev: 5.08407641642157e-7",
+            "extra": "mean: 1.867373125354171 usec\nrounds: 132891"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 678419.5444879094,
+            "unit": "iter/sec",
+            "range": "stddev: 4.171474933061321e-7",
+            "extra": "mean: 1.4740141378957894 usec\nrounds: 175132"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 888078.755048094,
+            "unit": "iter/sec",
+            "range": "stddev: 1.9024417168340516e-7",
+            "extra": "mean: 1.1260262609770963 usec\nrounds: 175439"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 269543.38363228366,
+            "unit": "iter/sec",
+            "range": "stddev: 6.573655966284916e-7",
+            "extra": "mean: 3.7099779134783715 usec\nrounds: 74661"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7254493.143825722,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2960575830544258e-8",
+            "extra": "mean: 137.84560549913775 nsec\nrounds: 72015"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8612032.133281963,
+            "unit": "iter/sec",
+            "range": "stddev: 1.0820441797873873e-8",
+            "extra": "mean: 116.11661272551586 nsec\nrounds: 86267"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1461412.158493196,
+            "unit": "iter/sec",
+            "range": "stddev: 2.9132966061024985e-7",
+            "extra": "mean: 684.2696594443695 nsec\nrounds: 183487"
           }
         ]
       }
