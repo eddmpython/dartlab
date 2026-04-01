@@ -1,0 +1,14 @@
+[
+  {
+    "date": "2026-04-01",
+    "grade": "dCR-AA",
+    "gradeRaw": "AA",
+    "score": 7.57,
+    "eCR": "eCR-1",
+    "outlook": "긍정적",
+    "methodologyVersion": "v1.0",
+    "period": "2025Q4",
+    "previousGrade": null,
+    "changed": false
+  }
+]
