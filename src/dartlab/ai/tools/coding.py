@@ -509,7 +509,29 @@ class DartlabCodeExecutor(LocalPythonBackend):
             except (ValueError, OverflowError):
                 return m.group(0)
 
+        # 과학 표기법 변환
         answer = re.sub(r"-?\d+\.?\d*[eE][+-]?\d+", _replaceScientific, answer)
+
+        # 일반 큰 숫자도 억/조 변환 (12자리 이상 정수 또는 .0으로 끝나는 float)
+        def _replaceLargeNumber(m: re.Match) -> str:
+            try:
+                raw = m.group(0)
+                # 소수점 이하가 의미 있으면 건드리지 않음 (비율/퍼센트)
+                if "." in raw and not raw.endswith(".0"):
+                    return raw
+                val = float(raw)
+                absVal = abs(val)
+                sign = "-" if val < 0 else ""
+                if absVal >= 1e12:
+                    return f"{sign}{absVal / 1e12:,.1f}조"
+                if absVal >= 1e8:
+                    return f"{sign}{absVal / 1e8:,.0f}억"
+                return raw
+            except (ValueError, OverflowError):
+                return m.group(0)
+
+        answer = re.sub(r"-?\d{9,}(?:\.0)?", _replaceLargeNumber, answer)
+
         if len(answer) > 8000:
             return answer[:8000] + "\n\n... (결과가 너무 깁니다. .head()/.filter()로 범위를 좁혀주세요)"
         return answer
