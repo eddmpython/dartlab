@@ -32,19 +32,19 @@ def _(c):
 
 @app.cell
 def _(c):
-    c.analysis("수익구조")
+    c.analysis("financial", "수익구조")
     return
 
 
 @app.cell
 def _(c):
-    c.analysis("현금흐름")
+    c.analysis("financial", "현금흐름")
     return
 
 
 @app.cell
 def _(c):
-    c.analysis("안정성")
+    c.analysis("financial", "안정성")
     return
 
 

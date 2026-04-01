@@ -44,7 +44,7 @@ CAPABILITIES: dict[str, dict] = {
     "Company.IS": {
         "aicontext": "ask()/chat()에서 수익성/매출 구조 분석 컨텍스트",
         "capabilities": "XBRL 정규화 손익계산서 (finance 우선)\ndocs 서술형 fallback\n최대 10년 분기별 시계열",
-        "guide": '"손익계산서 보여줘" → c.IS\n"매출/영업이익 추이" → c.IS 또는 c.select("IS", ["매출액", "영업이익"])\n"수익 구조 분석" → c.IS + c.analysis("수익구조")',
+        "guide": '"손익계산서 보여줘" → c.IS\n"매출/영업이익 추이" → c.IS 또는 c.select("IS", ["매출액", "영업이익"])\n"수익 구조 분석" → c.IS + c.analysis("financial", "수익구조")',
         "kind": "property",
         "requires": "데이터: finance 또는 docs (자동 다운로드)",
         "seeAlso": "BS: 재무상태표 (자산/부채 구조)\nCF: 현금흐름표 (실제 현금 기반)\nCIS: 포괄손익계산서 (기타포괄손익 포함)\nselect: 특정 계정 추출 + 시각화",
@@ -62,7 +62,7 @@ CAPABILITIES: dict[str, dict] = {
     "Company.analysis": {
         "aicontext": "ask()/chat()에서 분석 결과를 컨텍스트로 주입\nreview/reviewer가 내부적으로 analysis 결과를 소비",
         "capabilities": "14축 분석: 수익구조, 자금조달, 자산구조, 현금흐름, 수익성, 성장성, 안정성, 효율성, 종합평가, 이익품질, 비용구조, 자본배분, 투자효율, 재무정합성\n축 없이 호출 시 14축 가이드 반환\n개별 축 분석 시 Company 바인딩 (self 자동 전달)",
-        "guide": '"14축 분석 뭐가 있어?" → c.analysis() (가이드 반환)\n"수익구조 분석해줘" → c.analysis("수익구조")\n"안정성 분석" → c.analysis("안정성")',
+        "guide": '"14축 분석 뭐가 있어?" → c.analysis() (가이드 반환)\n"수익구조 분석해줘" → c.analysis("financial", "수익구조")\n"안정성 분석" → c.analysis("financial", "안정성")',
         "kind": "method",
         "requires": "데이터: finance (자동 다운로드)",
         "seeAlso": "review: 14축 분석을 14개 섹션 보고서로 조합\ninsights: 7영역 등급 요약 (analysis보다 요약적)\nratios: 재무비율 시계열 (analysis의 입력 데이터)",
@@ -173,15 +173,6 @@ CAPABILITIES: dict[str, dict] = {
         "requires": "데이터: docs (자동 다운로드)",
         "seeAlso": "disclosure: OpenDART API 기반 실시간 공시 목록 (로컬 보유가 아닌 전체)\nliveFilings: 최신 공시 실시간 조회\nupdate: 누락 공시 증분 수집",
         "summary": "공시 문서 목록 + DART 뷰어 링크.",
-    },
-    "Company.forecast": {
-        "aicontext": "매출 예측 결과를 valuation, simulation과 조합하여 종합 전망 생성\n신뢰구간으로 불확실성 정도 전달",
-        "capabilities": "선형회귀 + CAGR + 이동평균 앙상블\n섹터별 성장률 보정\n신뢰구간 (상한/하한) 제공",
-        "guide": '"매출 예측해줘" → c.forecast()\n"5년 예측" → c.forecast(horizon=5)\n"예측 신뢰구간" → result.upper, result.lower',
-        "kind": "method",
-        "requires": "데이터: finance (자동 다운로드)",
-        "seeAlso": "valuation: 예측 기반 적정가치 산출\nsimulation: 시나리오별 영향 추정\nannual: 예측의 입력 데이터 (과거 연도별 실적)",
-        "summary": "매출 앙상블 예측 (다중 모델 가중 평균).",
     },
     "Company.gather": {
         "aicontext": "ask()/chat()에서 주가/수급/거시 데이터를 컨텍스트로 주입\n기업 분석 시 시장 데이터 보충 자료로 활용",
@@ -350,15 +341,6 @@ CAPABILITIES: dict[str, dict] = {
         "seeAlso": "liveFilings: 최신 공시 목록에서 접수번호 확인\ndisclosure: 과거 공시 목록에서 접수번호 확인",
         "summary": "접수번호 또는 liveFilings row로 공시 원문을 읽는다.",
     },
-    "Company.research": {
-        "aicontext": "재무 + 시장 + 공시 통합 리포트 — ask()에서 종합 분석 컨텍스트\n섹션별 선택적 생성으로 필요한 부분만 딥다이브",
-        "capabilities": "재무 분석 (수익성, 성장, 안정성, 현금흐름)\n시장 포지션 + 섹터 비교\n공시 기반 정성 분석 (사업모델, 리스크)\n섹션별 선택적 생성",
-        "guide": '"종합 리서치 보고서" → c.research()\n"재무+리스크만 분석" → c.research(sections=["financial", "risk"])',
-        "kind": "method",
-        "requires": "데이터: finance + docs (자동 다운로드)",
-        "seeAlso": "review: 14섹션 구조화 보고서 (research보다 구조적)\ninsights: 7영역 등급 요약 (research보다 간결)\nanalysis: 14축 개별 분석",
-        "summary": "종합 기업분석 리포트 (재무 + 시장 + 공시 통합).",
-    },
     "Company.resolve": {"kind": "method", "summary": "종목코드 또는 회사명 → 종목코드 변환."},
     "Company.retrievalBlocks": {
         "aicontext": "ask()/chat()에서 원문 기반 답변 생성 시 소스로 사용\nretrieval 기반 컨텍스트 주입의 원천 데이터",
@@ -442,15 +424,6 @@ CAPABILITIES: dict[str, dict] = {
         "seeAlso": "select: show() 결과에서 특정 행/열 필터 + 차트\ntrace: 데이터 출처 추적\ntopics: 사용 가능한 topic 전체 목록\ndiff: 기간간 텍스트 변경 비교",
         "summary": "topic의 데이터를 반환.",
     },
-    "Company.simulation": {
-        "aicontext": "거시경제 충격 시나리오별 재무 영향 정량화\nask()에서 리스크 질문 시 시뮬레이션 결과 컨텍스트로 활용",
-        "capabilities": "기본 시나리오: 금리인상, 경기침체, 원화약세, 수요급감 등\n시나리오별 매출/영업이익/현금흐름 영향 추정\n섹터 민감도 반영",
-        "guide": '"금리인상 영향은?" → c.simulation(scenarios=["금리인상"])\n"경기침체 시 실적 전망" → c.simulation(scenarios=["경기침체"])\n"전체 시나리오 분석" → c.simulation()',
-        "kind": "method",
-        "requires": "데이터: finance (자동 다운로드)",
-        "seeAlso": "forecast: 기본 시나리오 매출 예측\nvaluation: 적정가치 산출\ngather: 거시경제 지표 수집 (macro 축)",
-        "summary": "경제 시나리오 시뮬레이션 (거시경제 충격 → 재무 영향).",
-    },
     "Company.sources": {
         "aicontext": "데이터 가용성 사전 점검 — 분석 가능 범위 판단의 기초",
         "capabilities": "3개 데이터 source(docs, finance, report) 존재 여부/규모 한눈에 확인\n각 source의 row/col 수와 shape 문자열 제공\n데이터 로드 전 가용성 사전 점검",
@@ -511,15 +484,6 @@ CAPABILITIES: dict[str, dict] = {
         "seeAlso": "filings: 현재 보유 공시 목록 확인\ndisclosure: OpenDART 전체 공시 조회",
         "summary": "누락된 최신 공시를 증분 수집.",
     },
-    "Company.valuation": {
-        "aicontext": 'DCF/DDM/상대가치 종합 적정가치 — 투자 판단의 핵심 출력\nask()에서 "적정가치" 질문 시 자동으로 이 결과 활용',
-        "capabilities": "DCF (현금흐름 할인) 모델\nDDM (배당 할인) 모델\n상대가치 (PER/PBR/EV-EBITDA) 비교\n모델별 적정가 + 종합 가중 평균",
-        "guide": '"적정가치 구해줘" → c.valuation()\n"DCF 밸류에이션" → c.valuation().dcf\n"PER 기준 가치" → c.valuation().relative',
-        "kind": "method",
-        "requires": "데이터: finance (자동 다운로드)",
-        "seeAlso": "forecast: 매출 예측 (valuation의 입력)\nsectorParams: 섹터별 할인율/멀티플 (valuation이 내부 사용)\nsimulation: 시나리오별 가치 변동 추정",
-        "summary": "종합 밸류에이션 (DCF + DDM + 상대가치).",
-    },
     "Company.view": {
         "aicontext": "시각적 탐색 인터페이스 — 사용자가 브라우저에서 직접 데이터 탐색",
         "capabilities": "로컬 서버 기반 공시 뷰어 실행\n브라우저에서 sections/index 탐색",
@@ -563,7 +527,7 @@ CAPABILITIES: dict[str, dict] = {
     "analysis": {
         "aicontext": "reviewer()가 analysis 결과를 소비하여 AI 해석 생성\nask()에서 재무분석 컨텍스트로 활용\n70개 calc* 함수의 개별 결과를 LLM에 주입 가능",
         "capabilities": "Part 1 — 사업구조: 수익구조, 자금조달, 자산구조, 현금흐름\nPart 2 — 핵심비율: 수익성, 성장성, 안정성, 효율성, 종합평가\nPart 3 — 심화분석: 이익품질, 비용구조, 자본배분, 투자효율, 재무정합성\nPart 4 — 가치평가: DCF, DDM, 상대가치, RIM, 목표주가, 역내재성장률, 민감도\nPart 5 — 비재무 심화: 지배구조, 공시변화감지, 비교분석\nPart 6 — 전망분석: 매출전망, 예측신호\n각 축은 Company를 받아 dict를 반환하는 순수 함수 집합\nreview()가 이 결과를 소비하여 구조화 보고서 생성",
-        "guide": '"이 회사 수익구조?" -> analysis("수익구조", company) — 매출원가율, 판관비율 등\n"재무 건전한가?" -> analysis("안정성", company) — 부채비율, 유동비율, ICR\n"이익이 진짜야?" -> analysis("이익품질", company) — 발생주의 비율, OCF/NI\n"적정가치?" -> analysis("가치평가", company) — DCF/DDM/상대/RIM/목표가\n"전체 종합?" -> analysis("종합평가", company) — 15축 통합 스코어\n15축 전부 보고 싶으면 review() 사용 권장',
+        "guide": '"이 회사 수익구조?" -> analysis("financial", "수익구조") — 매출원가율, 판관비율 등\n"재무 건전한가?" -> analysis("financial", "안정성") — 부채비율, 유동비율, ICR\n"이익이 진짜야?" -> analysis("financial", "이익품질") — 발생주의 비율, OCF/NI\n"적정가치?" -> analysis("valuation", "가치평가") — DCF/DDM/상대/RIM/목표가\n"전체 종합?" -> analysis("financial", "종합평가") — 15축 통합 스코어\n15축 전부 보고 싶으면 review() 사용 권장',
         "kind": "function",
         "requires": "데이터: finance (자동 다운로드)",
         "seeAlso": "review: analysis 결과를 구조화 보고서로 렌더링\nscan: 전종목 비교 (analysis는 단일 종목 심층)\nCompany.insights: 7영역 인사이트 등급 (빠른 요약)",

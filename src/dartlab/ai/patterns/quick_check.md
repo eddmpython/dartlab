@@ -10,12 +10,12 @@ description: 3분 안에 핵심만 파악하는 빠른 점검
 ## 분석 순서
 
 ### 1. 수익성 (30초)
-- c.analysis("수익성")에서 marginTrend만 확인
+- c.analysis("financial", "수익성")에서 marginTrend만 확인
 - 영업이익률 추세: 개선/악화/횡보?
 - ROE 수준: 10% 이상이면 양호
 
 ### 2. 안정성 (30초)
-- c.analysis("안정성")에서 부채비율 + 이자보상배율
+- c.analysis("financial", "안정성")에서 부채비율 + 이자보상배율
 - 부채비율 < 100%, 이자보상 > 3배이면 OK
 
 ### 3. 최근 뉴스 (60초)

@@ -10,22 +10,22 @@ description: 안전마진, FCF, 배당 중심 보수적 분석
 ## 분석 기준
 
 ### 1. 내재가치 vs 현재가
-- c.analysis("가치평가")로 DCF/DDM/상대가치 확인
+- c.analysis("valuation", "가치평가")로 DCF/DDM/상대가치 확인
 - 안전마진 30% 이상이면 매력적
 - 민감도(할인율/성장률 변동)를 반드시 확인
 
 ### 2. 현금흐름의 질
-- c.analysis("현금흐름")으로 FCF 추세 확인
+- c.analysis("financial", "현금흐름")으로 FCF 추세 확인
 - 영업CF/순이익 > 100%인지 (이익의 현금 전환)
 - FCF yield(FCF/시가총액) > 5%이면 매력적
 
 ### 3. 자본 배분
-- c.analysis("자본배분")으로 배당+자사주 확인
+- c.analysis("financial", "자본배분")으로 배당+자사주 확인
 - 배당지속성(몇 년 연속?)과 배당성향
 - 자사주 매입/소각 이력
 
 ### 4. 재무 안전판
-- c.analysis("안정성")으로 부채/이자보상/순현금 확인
+- c.analysis("financial", "안정성")으로 부채/이자보상/순현금 확인
 - c.notes.borrowings로 차입금 구조(단기/장기) 상세
 - Altman Z-Score > 3이면 안전
 

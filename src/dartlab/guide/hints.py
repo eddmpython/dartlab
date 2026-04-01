@@ -92,7 +92,7 @@ def onAnalysisRequested(axis: str | None = None) -> str | None:
         "  투자: 자본배분, 투자효율\n"
         "  외부: 지배구조, 공시변화, 비교분석\n"
         "  전망: 매출전망, 예측신호\n"
-        '  예시: c.analysis("수익구조")'
+        '  예시: c.analysis("financial", "수익구조")'
     )
 
 

@@ -5,6 +5,21 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2026-04-01
+
+### Changed
+
+- **엔진 호출방식 2단계 통일**: `analysis("financial", "수익성")`, `scan("financial", "profitability")` 패턴. 모든 엔진 동일
+- **accessor 패턴 추가**: `c.analysis.financial.profitability()`, `dartlab.scan.financial.growth()` — IDE 자동완성 지원
+- **한글/영문 양방향 alias**: `analysis("financial", "profitability")` = `analysis("financial", "수익성")`
+- **`__init__.py` 700줄 삭제**: 루트에 직접 노출하던 축 함수 14개 제거, 엔진 함수만 유지
+- **전체 문서/독스트링/AI 패턴/노트북** 신 패턴으로 일괄 변환 (20파일 70곳+)
+
+### Removed
+
+- **루트 축 함수**: `dartlab.governance()`, `dartlab.forecast()`, `dartlab.valuation()` 등 14개 — `dartlab.scan("축")` 또는 `c.analysis("그룹", "축")`으로 대체
+- **Company 편의 메서드**: `c.forecast()`, `c.valuation()`, `c.simulation()`, `c.research()` — `c.analysis("그룹", "축")`으로 대체
+
 ## [0.8.0] - 2026-04-01
 
 ### Added
@@ -94,7 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **basePeriod 기준점 파라미터**: 모든 analysis calc 함수(124개, 18개 파일)에 `basePeriod: str | None = None` keyword-only 파라미터 추가. `analysis("수익구조", c, basePeriod="2022Q4")` 형태로 과거 특정 시점 기준 분석 가능
+- **basePeriod 기준점 파라미터**: 모든 analysis calc 함수(124개, 18개 파일)에 `basePeriod: str | None = None` keyword-only 파라미터 추가. `analysis("financial", "수익구조", c, basePeriod="2022Q4")` 형태로 과거 특정 시점 기준 분석 가능
 - **basePeriod 인프라 (`_helpers.py`)**: `PeriodRange` dataclass, `annualColsFromPeriods()`, `quarterlyColsFromPeriods()`, `resolveBasePeriod()` — 14개 파일에 중복되던 `_annualCols` 함수를 단일 통합 함수로 대체
 - **`_acceptsBasePeriod()` 안전 전달**: `inspect.signature` 기반 체크 + 캐싱으로, 마이그레이션 완료된 함수에만 basePeriod 전달. 미마이그레이션 함수에는 기존 호출 유지
 - **sections pipeline Phase 1 캐시**: `_PreparedRows` 캐시로 parquet 로드 + topic 매핑 결과 재사용. 동일 종목 반복 호출 시 I/O 제거 (최대 2종목 LRU)

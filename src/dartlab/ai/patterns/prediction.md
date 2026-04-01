@@ -11,7 +11,7 @@ description: 이익 모멘텀, 구조변화, 거시경제 신호 종합 예측
 
 ### 1. 예측신호 수집
 ```python
-result = c.analysis("예측신호")
+result = c.analysis("forecast", "예측신호")
 ```
 위 명령으로 5개 신호를 수집하세요:
 - 이익 모멘텀 (Sloan 분해 + DuPont 추세)

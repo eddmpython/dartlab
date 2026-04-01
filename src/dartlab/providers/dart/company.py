@@ -1417,7 +1417,7 @@ class Company:
         Guide:
             - "손익계산서 보여줘" → c.IS
             - "매출/영업이익 추이" → c.IS 또는 c.select("IS", ["매출액", "영업이익"])
-            - "수익 구조 분석" → c.IS + c.analysis("수익구조")
+            - "수익 구조 분석" → c.IS + c.analysis("financial", "수익구조")
 
         SeeAlso:
             - BS: 재무상태표 (자산/부채 구조)
@@ -2906,12 +2906,12 @@ class Company:
 
             c = Company("005930")
             c.analysis()              # 14축 가이드
-            c.analysis("수익구조")     # 수익구조 분석
+            c.analysis("financial", "수익구조")     # 수익구조 분석
 
         Guide:
             - "14축 분석 뭐가 있어?" → c.analysis() (가이드 반환)
-            - "수익구조 분석해줘" → c.analysis("수익구조")
-            - "안정성 분석" → c.analysis("안정성")
+            - "수익구조 분석해줘" → c.analysis("financial", "수익구조")
+            - "안정성 분석" → c.analysis("financial", "안정성")
 
         SeeAlso:
             - review: 14축 분석을 14개 섹션 보고서로 조합
@@ -4209,200 +4209,6 @@ class Company:
         from dartlab.analysis.financial.insight.pipeline import analyzeAudit
 
         return analyzeAudit(self)
-
-    def forecast(self, *, horizon: int = 3):
-        """매출 앙상블 예측 (다중 모델 가중 평균).
-
-        Capabilities:
-            - 선형회귀 + CAGR + 이동평균 앙상블
-            - 섹터별 성장률 보정
-            - 신뢰구간 (상한/하한) 제공
-
-        Args:
-            horizon: 예측 기간 (연 단위, 기본 3년).
-
-        Returns:
-            ForecastResult — predicted, upper, lower, models, weights.
-
-        Requires:
-            데이터: finance (자동 다운로드)
-
-        Example::
-
-            c = Company("005930")
-            c.forecast()
-            c.forecast(horizon=5)
-
-        AIContext:
-            - 매출 예측 결과를 valuation, simulation과 조합하여 종합 전망 생성
-            - 신뢰구간으로 불확실성 정도 전달
-
-        Guide:
-            - "매출 예측해줘" → c.forecast()
-            - "5년 예측" → c.forecast(horizon=5)
-            - "예측 신뢰구간" → result.upper, result.lower
-
-        SeeAlso:
-            - valuation: 예측 기반 적정가치 산출
-            - simulation: 시나리오별 영향 추정
-            - annual: 예측의 입력 데이터 (과거 연도별 실적)
-        """
-        from dartlab.analysis.forecast.revenueForecast import forecastRevenue
-
-        ts = self.finance.timeseries
-        series = ts[0] if isinstance(ts, tuple) else ts
-        return forecastRevenue(
-            series,
-            stockCode=self.stockCode,
-            sectorKey=getattr(self, "sectorKey", None),
-            market="KR",
-            horizon=horizon,
-            currency="KRW",
-        )
-
-    def valuation(self, *, shares: int | None = None):
-        """종합 밸류에이션 (DCF + DDM + 상대가치).
-
-        Capabilities:
-            - DCF (현금흐름 할인) 모델
-            - DDM (배당 할인) 모델
-            - 상대가치 (PER/PBR/EV-EBITDA) 비교
-            - 모델별 적정가 + 종합 가중 평균
-
-        Args:
-            shares: 발행주식수 (None이면 profile에서 자동 조회).
-
-        Returns:
-            ValuationResult — dcf, ddm, relative, composite.
-
-        Requires:
-            데이터: finance (자동 다운로드)
-
-        Example::
-
-            c = Company("005930")
-            c.valuation()
-            c.valuation(shares=5_969_782_550)
-
-        AIContext:
-            - DCF/DDM/상대가치 종합 적정가치 — 투자 판단의 핵심 출력
-            - ask()에서 "적정가치" 질문 시 자동으로 이 결과 활용
-
-        Guide:
-            - "적정가치 구해줘" → c.valuation()
-            - "DCF 밸류에이션" → c.valuation().dcf
-            - "PER 기준 가치" → c.valuation().relative
-
-        SeeAlso:
-            - forecast: 매출 예측 (valuation의 입력)
-            - sectorParams: 섹터별 할인율/멀티플 (valuation이 내부 사용)
-            - simulation: 시나리오별 가치 변동 추정
-        """
-        from dartlab.analysis.valuation.valuation import fullValuation
-
-        ts = self.finance.timeseries
-        series = ts[0] if isinstance(ts, tuple) else ts
-        if shares is None:
-            shares = getattr(self.profile, "sharesOutstanding", None)
-            if shares:
-                shares = int(shares)
-        return fullValuation(series, shares=shares, currency="KRW")
-
-    def simulation(self, *, scenarios: list[str] | None = None):
-        """경제 시나리오 시뮬레이션 (거시경제 충격 → 재무 영향).
-
-        Capabilities:
-            - 기본 시나리오: 금리인상, 경기침체, 원화약세, 수요급감 등
-            - 시나리오별 매출/영업이익/현금흐름 영향 추정
-            - 섹터 민감도 반영
-
-        Args:
-            scenarios: 시뮬레이션할 시나리오 이름 리스트 (None이면 전체).
-
-        Returns:
-            dict — 시나리오별 영향 추정치. finance 없으면 None.
-
-        Requires:
-            데이터: finance (자동 다운로드)
-
-        Example::
-
-            c = Company("005930")
-            c.simulation()
-            c.simulation(scenarios=["금리인상", "경기침체"])
-
-        AIContext:
-            - 거시경제 충격 시나리오별 재무 영향 정량화
-            - ask()에서 리스크 질문 시 시뮬레이션 결과 컨텍스트로 활용
-
-        Guide:
-            - "금리인상 영향은?" → c.simulation(scenarios=["금리인상"])
-            - "경기침체 시 실적 전망" → c.simulation(scenarios=["경기침체"])
-            - "전체 시나리오 분석" → c.simulation()
-
-        SeeAlso:
-            - forecast: 기본 시나리오 매출 예측
-            - valuation: 적정가치 산출
-            - gather: 거시경제 지표 수집 (macro 축)
-        """
-        from dartlab.analysis.forecast.simulation import simulateAllScenarios
-
-        ts = self.finance.timeseries
-        if ts is None:
-            return None
-        series = ts[0] if isinstance(ts, tuple) else ts
-        return simulateAllScenarios(
-            series,
-            sectorKey=getattr(self, "sectorKey", None),
-            scenarios=scenarios,
-        )
-
-    def research(self, *, sections: list[str] | None = None, includeMarket: bool = True):
-        """종합 기업분석 리포트 (재무 + 시장 + 공시 통합).
-
-        Capabilities:
-            - 재무 분석 (수익성, 성장, 안정성, 현금흐름)
-            - 시장 포지션 + 섹터 비교
-            - 공시 기반 정성 분석 (사업모델, 리스크)
-            - 섹션별 선택적 생성
-
-        Args:
-            sections: 포함할 섹션 리스트 (None이면 전체).
-            includeMarket: 시장 데이터 포함 여부 (기본 True).
-
-        Returns:
-            ResearchReport — 섹션별 분석 결과 통합 객체.
-
-        Requires:
-            데이터: finance + docs (자동 다운로드)
-
-        Example::
-
-            c = Company("005930")
-            c.research()
-            c.research(sections=["financial", "risk"])
-
-        AIContext:
-            - 재무 + 시장 + 공시 통합 리포트 — ask()에서 종합 분석 컨텍스트
-            - 섹션별 선택적 생성으로 필요한 부분만 딥다이브
-
-        Guide:
-            - "종합 리서치 보고서" → c.research()
-            - "재무+리스크만 분석" → c.research(sections=["financial", "risk"])
-
-        SeeAlso:
-            - review: 14섹션 구조화 보고서 (research보다 구조적)
-            - insights: 7영역 등급 요약 (research보다 간결)
-            - analysis: 14축 개별 분석
-        """
-        cacheKey = "_research"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-        from dartlab.analysis.financial.research import generateResearch
-
-        result = generateResearch(self, sections=sections, includeMarket=includeMarket)
-        self._cache[cacheKey] = result
-        return result
 
     @property
     def market(self) -> str:

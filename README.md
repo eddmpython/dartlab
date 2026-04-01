@@ -137,8 +137,8 @@ dartlab.gather("news", "삼성전자")             # Google News RSS
 Revenue structure, profitability, growth, stability, cash flow, capital allocation — 14 axes that turn raw statements into a causal narrative. Each axis feeds into Review (reports), AI (interpretation), and humans (direct reading).
 
 ```python
-c.analysis("수익성")                   # profitability analysis
-c.analysis("현금흐름")                 # cash flow analysis
+c.analysis("financial", "수익성")       # profitability analysis
+c.analysis("financial", "현금흐름")    # cash flow analysis
 ```
 
 ### Review — Analysis to Report

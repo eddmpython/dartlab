@@ -137,8 +137,8 @@ dartlab.gather("news", "삼성전자")             # Google News RSS
 수익구조, 수익성, 성장성, 안정성, 현금흐름, 자본배분 — 14축이 원본 재무제표를 인과 서사로 가공한다.
 
 ```python
-c.analysis("수익성")                   # 수익성 분석
-c.analysis("현금흐름")                 # 현금흐름 분석
+c.analysis("financial", "수익성")       # 수익성 분석
+c.analysis("financial", "현금흐름")    # 현금흐름 분석
 ```
 
 ### Review — 분석을 보고서로

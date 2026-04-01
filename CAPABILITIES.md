@@ -227,11 +227,11 @@ review()가 이 결과를 소비하여 구조화 보고서 생성
 **AIContext:** reviewer()가 analysis 결과를 소비하여 AI 해석 생성
 ask()에서 재무분석 컨텍스트로 활용
 70개 calc* 함수의 개별 결과를 LLM에 주입 가능
-**Guide:** "이 회사 수익구조?" -> analysis("수익구조", company) — 매출원가율, 판관비율 등
-"재무 건전한가?" -> analysis("안정성", company) — 부채비율, 유동비율, ICR
-"이익이 진짜야?" -> analysis("이익품질", company) — 발생주의 비율, OCF/NI
-"적정가치?" -> analysis("가치평가", company) — DCF/DDM/상대/RIM/목표가
-"전체 종합?" -> analysis("종합평가", company) — 15축 통합 스코어
+**Guide:** "이 회사 수익구조?" -> analysis("financial", "수익구조") — 매출원가율, 판관비율 등
+"재무 건전한가?" -> analysis("financial", "안정성") — 부채비율, 유동비율, ICR
+"이익이 진짜야?" -> analysis("financial", "이익품질") — 발생주의 비율, OCF/NI
+"적정가치?" -> analysis("valuation", "가치평가") — DCF/DDM/상대/RIM/목표가
+"전체 종합?" -> analysis("financial", "종합평가") — 15축 통합 스코어
 15축 전부 보고 싶으면 review() 사용 권장
 **SeeAlso:** review: analysis 결과를 구조화 보고서로 렌더링
 scan: 전종목 비교 (analysis는 단일 종목 심층)
@@ -656,7 +656,7 @@ us.market                    # "US"
 
 ### Company 메서드/프로퍼티
 
-DartCompany에서 동적 추출 (68개).
+DartCompany에서 동적 추출 (64개).
 
 | 이름 | 종류 | 설명 |
 |------|------|------|
@@ -680,7 +680,6 @@ DartCompany에서 동적 추출 (68개).
 | `diff` | method | 기간간 텍스트 변경 비교. |
 | `disclosure` | method | OpenDART 전체 공시 목록 조회. |
 | `filings` | method | 공시 문서 목록 + DART 뷰어 링크. |
-| `forecast` | method | 매출 앙상블 예측 (다중 모델 가중 평균). |
 | `gather` | method | 외부 시장 데이터 수집 — 4축 (price/flow/macro/news). |
 | `getTimeseries` | method | Deprecated — use ``c.timeseries`` property instead. |
 | `governance` | method | 지배구조 분석 (이사회, 감사위원, 최대주주). |
@@ -703,7 +702,6 @@ DartCompany에서 동적 추출 (68개).
 | `rawFinance` | property | 재무제표 원본 parquet 전체 (가공 전). |
 | `rawReport` | property | 정기보고서 원본 parquet 전체 (가공 전). |
 | `readFiling` | method | 접수번호 또는 liveFilings row로 공시 원문을 읽는다. |
-| `research` | method | 종합 기업분석 리포트 (재무 + 시장 + 공시 통합). |
 | `resolve` | method | 종목코드 또는 회사명 → 종목코드 변환. |
 | `retrievalBlocks` | property | 원문 markdown 보존 retrieval block DataFrame. |
 | `review` | method | 재무제표 구조화 보고서 — 14개 섹션 데이터 검토서. |
@@ -715,7 +713,6 @@ DartCompany에서 동적 추출 (68개).
 | `sectorParams` | property | 현재 종목의 섹터별 밸류에이션 파라미터. |
 | `select` | method | show() 결과에서 행(indList) + 열(colList) 필터. |
 | `show` | method | topic의 데이터를 반환. |
-| `simulation` | method | 경제 시나리오 시뮬레이션 (거시경제 충격 → 재무 영향). |
 | `sources` | property | docs/finance/report 3개 source의 가용 현황 요약. |
 | `status` | method | 로컬에 보유한 전체 종목 인덱스. |
 | `table` | method | subtopic wide 셀의 markdown table을 구조화 DataFrame으로 파싱. |
@@ -724,7 +721,6 @@ DartCompany에서 동적 추출 (68개).
 | `topics` | property | topic별 요약 DataFrame -- 전체 데이터 지도. |
 | `trace` | method | topic 데이터의 출처(docs/finance/report)와 선택 근거 추적. |
 | `update` | method | 누락된 최신 공시를 증분 수집. |
-| `valuation` | method | 종합 밸류에이션 (DCF + DDM + 상대가치). |
 | `view` | method | 브라우저에서 공시 뷰어를 엽니다. |
 | `watch` | method | 공시 변화 감지 — 중요도 스코어링 기반 변화 요약. |
 | `workforce` | method | 인력/급여 분석 (직원수, 평균급여, 근속연수). |
@@ -777,7 +773,7 @@ docs 서술형 fallback
 **AIContext:** ask()/chat()에서 수익성/매출 구조 분석 컨텍스트
 **Guide:** "손익계산서 보여줘" → c.IS
 "매출/영업이익 추이" → c.IS 또는 c.select("IS", ["매출액", "영업이익"])
-"수익 구조 분석" → c.IS + c.analysis("수익구조")
+"수익 구조 분석" → c.IS + c.analysis("financial", "수익구조")
 **SeeAlso:** BS: 재무상태표 (자산/부채 구조)
 CF: 현금흐름표 (실제 현금 기반)
 CIS: 포괄손익계산서 (기타포괄손익 포함)
@@ -803,8 +799,8 @@ BS: 재무상태표 (자본 잔액)
 **AIContext:** ask()/chat()에서 분석 결과를 컨텍스트로 주입
 review/reviewer가 내부적으로 analysis 결과를 소비
 **Guide:** "14축 분석 뭐가 있어?" → c.analysis() (가이드 반환)
-"수익구조 분석해줘" → c.analysis("수익구조")
-"안정성 분석" → c.analysis("안정성")
+"수익구조 분석해줘" → c.analysis("financial", "수익구조")
+"안정성 분석" → c.analysis("financial", "안정성")
 **SeeAlso:** review: 14축 분석을 14개 섹션 보고서로 조합
 insights: 7영역 등급 요약 (analysis보다 요약적)
 ratios: 재무비율 시계열 (analysis의 입력 데이터)
@@ -958,20 +954,6 @@ DART 뷰어 링크 포함
 **SeeAlso:** disclosure: OpenDART API 기반 실시간 공시 목록 (로컬 보유가 아닌 전체)
 liveFilings: 최신 공시 실시간 조회
 update: 누락 공시 증분 수집
-
-#### Company.forecast
-**Capabilities:** 선형회귀 + CAGR + 이동평균 앙상블
-섹터별 성장률 보정
-신뢰구간 (상한/하한) 제공
-**Requires:** 데이터: finance (자동 다운로드)
-**AIContext:** 매출 예측 결과를 valuation, simulation과 조합하여 종합 전망 생성
-신뢰구간으로 불확실성 정도 전달
-**Guide:** "매출 예측해줘" → c.forecast()
-"5년 예측" → c.forecast(horizon=5)
-"예측 신뢰구간" → result.upper, result.lower
-**SeeAlso:** valuation: 예측 기반 적정가치 산출
-simulation: 시나리오별 영향 추정
-annual: 예측의 입력 데이터 (과거 연도별 실적)
 
 #### Company.gather
 **Capabilities:** price: OHLCV 주가 시계열 (KR Naver / US Yahoo)
@@ -1197,20 +1179,6 @@ sections=True로 구조화하면 특정 섹션만 선택적 분석 가능
 **SeeAlso:** liveFilings: 최신 공시 목록에서 접수번호 확인
 disclosure: 과거 공시 목록에서 접수번호 확인
 
-#### Company.research
-**Capabilities:** 재무 분석 (수익성, 성장, 안정성, 현금흐름)
-시장 포지션 + 섹터 비교
-공시 기반 정성 분석 (사업모델, 리스크)
-섹션별 선택적 생성
-**Requires:** 데이터: finance + docs (자동 다운로드)
-**AIContext:** 재무 + 시장 + 공시 통합 리포트 — ask()에서 종합 분석 컨텍스트
-섹션별 선택적 생성으로 필요한 부분만 딥다이브
-**Guide:** "종합 리서치 보고서" → c.research()
-"재무+리스크만 분석" → c.research(sections=["financial", "risk"])
-**SeeAlso:** review: 14섹션 구조화 보고서 (research보다 구조적)
-insights: 7영역 등급 요약 (research보다 간결)
-analysis: 14축 개별 분석
-
 #### Company.retrievalBlocks
 **Capabilities:** docs 원문을 markdown 형태 그대로 보존한 검색용 블록
 각 블록은 topic/subtopic/period 단위로 분할
@@ -1342,20 +1310,6 @@ trace: 데이터 출처 추적
 topics: 사용 가능한 topic 전체 목록
 diff: 기간간 텍스트 변경 비교
 
-#### Company.simulation
-**Capabilities:** 기본 시나리오: 금리인상, 경기침체, 원화약세, 수요급감 등
-시나리오별 매출/영업이익/현금흐름 영향 추정
-섹터 민감도 반영
-**Requires:** 데이터: finance (자동 다운로드)
-**AIContext:** 거시경제 충격 시나리오별 재무 영향 정량화
-ask()에서 리스크 질문 시 시뮬레이션 결과 컨텍스트로 활용
-**Guide:** "금리인상 영향은?" → c.simulation(scenarios=["금리인상"])
-"경기침체 시 실적 전망" → c.simulation(scenarios=["경기침체"])
-"전체 시나리오 분석" → c.simulation()
-**SeeAlso:** forecast: 기본 시나리오 매출 예측
-valuation: 적정가치 산출
-gather: 거시경제 지표 수집 (macro 축)
-
 #### Company.sources
 **Capabilities:** 3개 데이터 source(docs, finance, report) 존재 여부/규모 한눈에 확인
 각 source의 row/col 수와 shape 문자열 제공
@@ -1431,21 +1385,6 @@ sources: 3개 source 전체 가용 현황
 "데이터 업데이트" → c.update()로 증분 수집
 **SeeAlso:** filings: 현재 보유 공시 목록 확인
 disclosure: OpenDART 전체 공시 조회
-
-#### Company.valuation
-**Capabilities:** DCF (현금흐름 할인) 모델
-DDM (배당 할인) 모델
-상대가치 (PER/PBR/EV-EBITDA) 비교
-모델별 적정가 + 종합 가중 평균
-**Requires:** 데이터: finance (자동 다운로드)
-**AIContext:** DCF/DDM/상대가치 종합 적정가치 — 투자 판단의 핵심 출력
-ask()에서 "적정가치" 질문 시 자동으로 이 결과 활용
-**Guide:** "적정가치 구해줘" → c.valuation()
-"DCF 밸류에이션" → c.valuation().dcf
-"PER 기준 가치" → c.valuation().relative
-**SeeAlso:** forecast: 매출 예측 (valuation의 입력)
-sectorParams: 섹터별 할인율/멀티플 (valuation이 내부 사용)
-simulation: 시나리오별 가치 변동 추정
 
 #### Company.view
 **Capabilities:** 로컬 서버 기반 공시 뷰어 실행

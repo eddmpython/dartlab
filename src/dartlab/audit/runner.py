@@ -179,9 +179,9 @@ class AuditRunner:
                 }
             )
 
-        # ── 3. valuation() (별도 호출 — analysis 가치평가 축과 별개로 통합 결과) ──
+        # ── 3. valuation (analysis 가치평가 축) ──
         try:
-            valResult = c.valuation()
+            valResult = c.analysis("valuation", "가치평가")
             if valResult is not None:
                 ser = serializeCalcResult("valuationResult", valResult)
                 rows.append(
@@ -200,13 +200,13 @@ class AuditRunner:
                     "severity": "warning",
                     "axis": "valuation",
                     "blockKey": "valuationResult",
-                    "description": f"valuation() 실패: {e}",
+                    "description": f"analysis('valuation', '가치평가') 실패: {e}",
                 }
             )
 
-        # ── 4. forecast() ──
+        # ── 4. forecast (analysis 매출전망 축) ──
         try:
-            fcResult = c.forecast()
+            fcResult = c.analysis("forecast", "매출전망")
             if fcResult is not None:
                 ser = serializeCalcResult("forecastResult", fcResult)
                 rows.append(
@@ -225,7 +225,7 @@ class AuditRunner:
                     "severity": "warning",
                     "axis": "forecast",
                     "blockKey": "forecastResult",
-                    "description": f"forecast() 실패: {e}",
+                    "description": f"analysis('forecast', '매출전망') 실패: {e}",
                 }
             )
 

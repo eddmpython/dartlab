@@ -45,7 +45,7 @@ def analysis(axis: str, company: Company) -> dict:
 
     Examples
     --------
-    >>> c.analysis("수익구조")
+    >>> c.analysis("financial", "수익구조")
 
     Notes
     -----

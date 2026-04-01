@@ -2192,98 +2192,6 @@ class Company:
             return None
         return result.to_dataframe()
 
-    # ── analyst ──
-
-    def forecast(self, *, horizon: int = 3):
-        """매출 앙상블 예측 — 다중 모델 기반 매출 전망.
-
-        Capabilities:
-            - 복수 통계 모델 앙상블로 향후 N년 매출 예측
-            - 신뢰구간 포함 시나리오 제공
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
-
-        AIContext:
-            - ask()/chat()에서 매출 전망 시나리오 제시에 활용
-
-        Guide:
-            - "매출 전망이 어때?" → c.forecast()
-            - "5년 후 매출 예측" → c.forecast(horizon=5)
-
-        SeeAlso:
-            - valuation: 밸류에이션 (DCF에서 forecast 결과 활용)
-            - analysis: 분석 엔진
-            - IS: 손익계산서 원본
-
-        Args:
-            horizon: 예측 기간 연수 (기본 3년).
-
-        Returns:
-            ForecastResult — 예측값, 신뢰구간, 모델별 결과.
-
-        Example::
-
-            c = Company("AAPL")
-            c.forecast()              # 3년 매출 예측
-            c.forecast(horizon=5)     # 5년 매출 예측
-        """
-        from dartlab.analysis.forecast.revenueForecast import forecastRevenue
-
-        ts = self.finance.timeseries
-        series = ts[0] if isinstance(ts, tuple) else ts
-        return forecastRevenue(
-            series,
-            stockCode=self.ticker,
-            market="US",
-            horizon=horizon,
-            currency="USD",
-        )
-
-    def valuation(self, *, shares: int | None = None):
-        """종합 밸류에이션 — DCF + DDM + 상대가치 통합.
-
-        Capabilities:
-            - DCF, DDM, 상대가치 3가지 밸류에이션 모델 동시 실행
-            - 주당 적정가치 산출 (shares 지정 시)
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
-
-        AIContext:
-            - ask()/chat()에서 적정가치 판단 컨텍스트로 활용
-
-        Guide:
-            - "이 기업 적정가치가 얼마야?" → c.valuation()
-            - "주식수 직접 넣어서 계산" → c.valuation(shares=15_000_000_000)
-
-        SeeAlso:
-            - forecast: 매출 예측 (DCF 입력)
-            - analysis: 분석 엔진
-            - ratios: 재무비율 시계열
-
-        Args:
-            shares: 발행주식수. None이면 profile에서 자동 조회.
-
-        Returns:
-            ValuationResult — 모델별 적정가치, 요약.
-
-        Example::
-
-            c = Company("AAPL")
-            c.valuation()                      # 자동 shares 조회
-            c.valuation(shares=15_000_000_000)  # shares 직접 지정
-        """
-        from dartlab.analysis.valuation.valuation import fullValuation
-
-        ts = self.finance.timeseries
-        series = ts[0] if isinstance(ts, tuple) else ts
-        if shares is None:
-            shares = getattr(self._profileAccessor, "sharesOutstanding", None)
-            if shares:
-                shares = int(shares)
-        return fullValuation(series, shares=shares, currency="USD")
-
     # ── AI 분석 ──
 
     def ask(
@@ -2491,22 +2399,6 @@ class Company:
         from dartlab.review.registry import buildReview
 
         return buildReview(self, section=section, layout=layout, basePeriod=basePeriod)
-
-    def simulation(self, *, scenarios: list[str] | None = None):
-        """경제 시나리오 시뮬레이션."""
-        from dartlab.analysis.forecast.simulation import simulateAllScenarios
-
-        ts = self.finance.timeseries
-        if ts is None:
-            return None
-        series = ts[0] if isinstance(ts, tuple) else ts
-        return simulateAllScenarios(series, sectorKey=None, scenarios=scenarios)
-
-    def research(self, *, sections: list[str] | None = None, includeMarket: bool = True):
-        """종합 기업분석 리포트."""
-        from dartlab.analysis.financial.research import generateResearch
-
-        return generateResearch(self, sections=sections, includeMarket=includeMarket)
 
     def table(
         self, topic: str, subtopic: str | None = None, *, numeric: bool = False, period: str | None = None

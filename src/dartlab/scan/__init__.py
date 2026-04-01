@@ -657,12 +657,71 @@ class Scan:
             return result
         return pl.DataFrame({"info": [f"scan('{axis}', '<target>') 형태로 사용하세요."]})
 
+    def __getattr__(self, name):
+        """accessor 패턴: scan.governance(), scan.financial.profitability() 등."""
+        # 그룹 이름 확인 (financial 등)
+        group = _resolveGroup(name)
+        if group is not None:
+            return _ScanGroupAccessor(self, group)
+
+        # 직접 축 이름 확인 (governance, workforce 등)
+        try:
+            resolved = _resolveAxis(name)
+        except ValueError:
+            raise AttributeError(f"Scan에 '{name}' 속성이 없습니다")
+
+        def _bound_axis(target=None, **kwargs):
+            return self(resolved, target, **kwargs)
+
+        _bound_axis.__name__ = name
+        _bound_axis.__doc__ = f'scan("{resolved}")'
+        return _bound_axis
+
     def __repr__(self) -> str:
         lines = [f"Scan -- {len(_AXIS_REGISTRY)}축 시장 횡단분석"]
         for key, entry in _AXIS_REGISTRY.items():
             lines.append(f"  {key:12s} {entry.label} -- {entry.description}")
         lines.append("")
         lines.append("사용법: scan(), scan('축'), scan('축', '대상')")
+        return "\n".join(lines)
+
+
+class _ScanGroupAccessor:
+    """scan.financial 등 그룹 accessor."""
+
+    def __init__(self, scan_instance: Scan, group: str):
+        self._scan = scan_instance
+        self._group = group
+
+    def __call__(self, target=None, **kwargs):
+        """그룹 가이드 또는 그룹 내 축 실행."""
+        return self._scan(self._group, target, **kwargs)
+
+    def __getattr__(self, name):
+        """scan.financial.profitability() 패턴."""
+        try:
+            resolved = _resolveAxis(name)
+        except ValueError:
+            raise AttributeError(f"'{self._group}' 그룹에 '{name}' 축이 없습니다")
+
+        members = _SCAN_GROUPS.get(self._group, [])
+        if resolved not in members:
+            raise AttributeError(f"'{name}' 축은 '{self._group}' 그룹에 속하지 않습니다")
+
+        def _bound_axis(target=None, **kwargs):
+            return self._scan(resolved, target, **kwargs)
+
+        _bound_axis.__name__ = name
+        _bound_axis.__doc__ = f'scan("{resolved}")'
+        return _bound_axis
+
+    def __repr__(self) -> str:
+        members = _SCAN_GROUPS.get(self._group, [])
+        lines = [f"Scan.{self._group} -- {len(members)}축"]
+        for key in members:
+            entry = _AXIS_REGISTRY.get(key)
+            if entry:
+                lines.append(f"  {key:12s} {entry.label} -- {entry.description}")
         return "\n".join(lines)
 
 

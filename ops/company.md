@@ -118,7 +118,7 @@ c.market / c.currency             # 시장 정보
 | `c.review("수익성")` 첫 호출 | **25초** | 411MB | Company 초기화 포함 |
 | `c.review()` x3 추가 | **8초** | 367MB | 캐시 재사용 |
 | `c.review()` 전체 | **83초** | 424MB | ⚠ 타임아웃 위험 |
-| `c.analysis("수익성")` | **0.03초** | 357MB | review 이후 빠름 |
+| `c.analysis("financial", "수익성")` | **0.03초** | 357MB | review 이후 빠름 |
 
 **규칙**: show/select로 충분하면 c.sections에 접근하지 않는다.
 review() 전체 호출은 83초 → AI 코드 실행(60초 제한)에서 금지.
@@ -133,7 +133,7 @@ review() 전체 호출은 83초 → AI 코드 실행(60초 제한)에서 금지.
 |------|------|------|
 | `c.notes.inventory` | 파싱된 DataFrame (항목 × 연도) | **AI/코드 분석용** — 정규화됨 |
 | `c.show("financialNotes", block, period="2025")` | 원문 마크다운 | **원문 확인용** — period 지정 필수 |
-| `c.analysis("자산구조").assetStructure.notesDetail` | enrichment dict | **분석 통합** — analysis에 포함 |
+| `c.analysis("financial", "자산구조").assetStructure.notesDetail` | enrichment dict | **분석 통합** — analysis에 포함 |
 
 ### notes 지원 항목 (12개)
 
@@ -155,8 +155,8 @@ review() 전체 호출은 83초 → AI 코드 실행(60초 제한)에서 금지.
 ### analysis enrichment
 
 analysis 축에 notes 데이터가 자동 포함된다:
-- `analysis("자산구조")` → `assetStructure.notesDetail` 에 inventory/tangibleAsset/intangibleAsset
-- `analysis("비용구조")` → `costBreakdown.costByNature` 에 비용 성격별 분류
+- `analysis("financial", "자산구조")` → `assetStructure.notesDetail` 에 inventory/tangibleAsset/intangibleAsset
+- `analysis("financial", "비용구조")` → `costBreakdown.costByNature` 에 비용 성격별 분류
 
 ### sections 주석 블록 정렬
 

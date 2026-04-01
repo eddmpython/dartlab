@@ -66,7 +66,7 @@ class ContextSignals:
 def collectSignals(company, *, usePredictionAxis: bool = False) -> ContextSignals:
     """Company 객체에서 맥락 신호를 수집한다.
 
-    usePredictionAxis=True이면 analysis("예측신호") 결과를 추가로 소비하여
+    usePredictionAxis=True이면 analysis("forecast", "예측신호") 결과를 추가로 소비하여
     공시 tone, 변화 강도, 성장 조정치를 enrichment한다.
     """
     signals = ContextSignals()
@@ -143,7 +143,7 @@ def collectSignals(company, *, usePredictionAxis: bool = False) -> ContextSignal
 
 
 def _enrichFromPredictionAxis(company, signals: ContextSignals) -> None:
-    """analysis("예측신호") 결과로 ContextSignals를 보강한다."""
+    """analysis("forecast", "예측신호") 결과로 ContextSignals를 보강한다."""
     try:
         from dartlab.analysis.financial.predictionSignals import (
             calcDisclosureDelta,
