@@ -26,7 +26,7 @@ export const navigation: NavItem[] = [
 			{ title: 'Sector', href: '/docs/api/sector' },
 			{ title: 'Insight', href: '/docs/api/insight' },
 			{ title: 'Rank', href: '/docs/api/rank' },
-			{ title: 'Full Reference', href: '/docs/api/generated-reference' }
+			{ title: 'Full Reference', href: 'https://github.com/eddmpython/dartlab/blob/master/CAPABILITIES.md' }
 		]
 	},
 	{

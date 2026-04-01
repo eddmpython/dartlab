@@ -1646,7 +1646,6 @@ def main():
     capabilitiesPath = ROOT / "CAPABILITIES.md"
     llmsTxtPath = ROOT / "landing" / "static" / "llms.txt"
     skillRefPath = ROOT / ".claude" / "skills" / "dartlab" / "reference.md"
-    catalogPath = SRC / "dartlab" / "ai" / "conversation" / "_generatedCatalog.py"
     capabilitiesPyPath = SRC / "dartlab" / "guide" / "_generated.py"
 
     skillRefPath.parent.mkdir(parents=True, exist_ok=True)
@@ -1663,25 +1662,9 @@ def main():
     skillRefPath.write_text(skillRef, encoding="utf-8")
     print(f"  reference.md    ({len(skillRef):,} chars) -> {skillRefPath}")
 
-    catalog = _generateCatalog()
-    catalogPath.write_text(catalog, encoding="utf-8")
-    print(f"  _generatedCatalog.py ({len(catalog):,} chars) -> {catalogPath}")
-
     capabilitiesPy = _generateCapabilitiesPy()
     capabilitiesPyPath.write_text(capabilitiesPy, encoding="utf-8")
-    print(f"  _generatedCapabilities.py ({len(capabilitiesPy):,} chars) -> {capabilitiesPyPath}")
-
-    # API Reference (JSON for SvelteKit + MD for docs/)
-    apiRefJsonPath = ROOT / "landing" / "static" / "api-reference.json"
-    apiRefMdPath = ROOT / "docs" / "api" / "generated-reference.md"
-
-    apiRefJson = generateApiReferenceJson()
-    apiRefJsonPath.write_text(apiRefJson, encoding="utf-8")
-    print(f"  api-reference.json ({len(apiRefJson):,} chars) -> {apiRefJsonPath}")
-
-    apiRefMd = generateApiReferenceMd()
-    apiRefMdPath.write_text(apiRefMd, encoding="utf-8")
-    print(f"  generated-reference.md ({len(apiRefMd):,} chars) -> {apiRefMdPath}")
+    print(f"  _generated.py ({len(capabilitiesPy):,} chars) -> {capabilitiesPyPath}")
 
     print("\n  완료.")
 
