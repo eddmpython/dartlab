@@ -1,5 +1,5 @@
 <script>
-	import { Download, Sparkles } from "lucide-svelte";
+	import { Download } from "lucide-svelte";
 	import { summarizeDataReady } from "$lib/ai/dataReady.js";
 	import MessageBubble from "./MessageBubble.svelte";
 	import AutocompleteInput from "./AutocompleteInput.svelte";
@@ -31,11 +31,11 @@
 		suggestions = [],
 		dataReady = null,
 		suggestionLoading = false,
-		viewerContext = null,   // B2: {topic, topicLabel, period} from viewer
-		pendingBlockLabel = null,  // 뷰어에서 첨부된 블록 라벨
-		onClearBlock = null,       // 블록 첨부 해제 콜백
 		providerLabel = null,
 		modelLabel = null,
+		watchlist = [],
+		onAddWatch,
+		onRemoveWatch,
 	} = $props();
 
 	const DEFAULT_COMPANY_PROMPTS = [
@@ -221,6 +221,9 @@
 						onOpenEvidence={onOpenData ? bridgeEvidence(msg) : undefined}
 						{onOpenArtifact}
 						onEditResend={msg.role === "user" ? onEditResend : undefined}
+						{onAddWatch}
+						{onRemoveWatch}
+						isWatched={!!msg.meta?.stockCode && watchlist.some(w => w.code === msg.meta.stockCode)}
 					/>
 				{/each}
 				<div bind:this={streamAnchor} class="h-px w-full"></div>
@@ -291,32 +294,6 @@
 							</button>
 						{/each}
 					</div>
-				</div>
-			{/if}
-			<!-- B2: Viewer context badge -->
-			{#if viewerContext?.topic}
-				<div class="flex items-center gap-1.5 px-3 py-1 text-[10px] text-dl-text-dim">
-					<span class="px-1.5 py-0.5 rounded bg-dl-accent/10 text-dl-accent-light border border-dl-accent/20 font-mono">
-						{viewerContext.topicLabel || viewerContext.topic}{#if viewerContext.period}&nbsp;({viewerContext.period}){/if}
-					</span>
-					<span>보는 중 — AI가 이 섹션을 참조합니다</span>
-				</div>
-			{/if}
-			<!-- 블록 첨부 표시 -->
-			{#if pendingBlockLabel}
-				<div class="flex items-center gap-1.5 px-3 py-1 text-[10px]">
-					<span class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">
-						<Sparkles size={10} />
-						{pendingBlockLabel}
-					</span>
-					<span class="text-dl-text-dim">블록 데이터 첨부됨</span>
-					{#if onClearBlock}
-						<button
-							class="text-dl-text-dim/50 hover:text-dl-text-muted transition-colors"
-							onclick={onClearBlock}
-							title="첨부 해제"
-						>✕</button>
-					{/if}
 				</div>
 			{/if}
 			<AutocompleteInput

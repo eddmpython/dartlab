@@ -1,5 +1,5 @@
 <script>
-	import { Loader2, BookOpen } from "lucide-svelte";
+	import { Loader2, Star } from "lucide-svelte";
 	import { summarizeDataReady } from "$lib/ai/dataReady.js";
 	import AutocompleteInput from "./AutocompleteInput.svelte";
 
@@ -7,11 +7,12 @@
 		onSend,
 		inputText = $bindable(""),
 		onCompanySelect,
-		onOpenViewer,
 		selectedCompany = null,
 		suggestions = [],
 		dataReady = null,
 		suggestionLoading = false,
+		watchlist = [],
+		onWatchlistClick,
 	} = $props();
 
 	const STARTERS = [
@@ -50,15 +51,6 @@
 						{selectedCompany.market}
 					</span>
 				{/if}
-				{#if onOpenViewer}
-					<button
-						class="inline-flex items-center gap-1 rounded-full border border-dl-border/50 bg-dl-bg-card/50 px-3 py-1 text-[11px] text-dl-text transition-colors hover:border-dl-primary/30 hover:text-dl-primary-light"
-						onclick={() => onOpenViewer?.(selectedCompany)}
-					>
-						<BookOpen size={12} />
-						공시 뷰어 열기
-					</button>
-				{/if}
 			</div>
 			{#if dataReadyInfo}
 				<div class="mb-5 w-full max-w-[560px] rounded-2xl border px-4 py-3 text-left {dataReadyInfo.allReady ? 'border-emerald-500/20 bg-emerald-500/[0.06]' : 'border-amber-500/20 bg-amber-500/[0.06]'}">
@@ -69,6 +61,28 @@
 		{:else}
 			<h1 class="text-2xl font-bold text-dl-text mb-1.5">무엇을 분석할까요?</h1>
 			<p class="text-sm text-dl-text-muted mb-6">종목명, 질문, 무엇이든 입력하세요</p>
+
+			<!-- ── 관심종목 워치리스트 ── -->
+			{#if watchlist.length > 0}
+				<div class="mb-5 w-full max-w-[520px]">
+					<div class="mb-2 flex items-center justify-center gap-1.5">
+						<Star size={12} class="text-yellow-400 fill-yellow-400" />
+						<span class="text-[10px] font-semibold uppercase tracking-[0.18em] text-dl-text-dim">관심종목</span>
+					</div>
+					<div class="flex flex-wrap justify-center gap-2">
+						{#each watchlist as item}
+							<button
+								class="rounded-full border border-yellow-500/20 bg-yellow-500/5 px-3 py-1.5 text-[12px] text-dl-text-muted transition-colors hover:border-yellow-400/40 hover:text-yellow-300"
+								onclick={() => onWatchlistClick?.(item)}
+							>
+								<span class="font-medium">{item.name}</span>
+								<span class="text-dl-text-dim ml-1">{item.code}</span>
+							</button>
+						{/each}
+					</div>
+				</div>
+			{/if}
+
 			<div class="mb-6 max-w-[520px] rounded-2xl border border-dl-border/50 bg-dl-bg-card/50 px-4 py-3 text-left">
 				<div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-dl-text-dim">Evidence First</div>
 				<div class="mt-2 text-[13px] leading-relaxed text-dl-text-muted">

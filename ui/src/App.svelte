@@ -25,15 +25,10 @@
 	import { cn, createSwipeHandler } from "$lib/utils.js";
 	import { createConversationsStore } from "$lib/stores/conversations.svelte.js";
 	import { createWorkspaceStore } from "$lib/stores/workspace.svelte.js";
-	import { createViewerStore } from "$lib/stores/viewer.svelte.js";
 	import { createUiStore } from "$lib/stores/ui.svelte.js";
-	import { createRoomStore } from "$lib/stores/room.svelte.js";
 	import Sidebar from "$lib/components/Sidebar.svelte";
 	import EmptyState from "$lib/components/EmptyState.svelte";
 	import ChatArea from "$lib/components/ChatArea.svelte";
-	import RightPanel from "$lib/components/RightPanel.svelte";
-	// 동적 import — 코드 스플리팅
-	// DisclosureViewer, DashboardView, SettingsPanel은 사용자가 탭 전환/설정 열기 시 로드
 	import SearchModal from "$lib/components/SearchModal.svelte";
 	import DeleteDialog from "$lib/components/DeleteDialog.svelte";
 	import ToastNotification from "$lib/components/ToastNotification.svelte";
@@ -41,47 +36,40 @@
 	import {
 		Menu, PanelLeftClose, Coffee, Github, FileText, Search,
 		Loader2, Settings, AlertCircle,
-		MessageSquare, BookOpen, BarChart3, Users
 	} from "lucide-svelte";
-	import RoomBar from "$lib/components/room/RoomBar.svelte";
-	import RoomChat from "$lib/components/room/RoomChat.svelte";
-	import FloatingReactions from "$lib/components/room/FloatingReactions.svelte";
 
 	// ── Stores ──
 	const ui = createUiStore();
 	const store = createConversationsStore();
 	const workspace = createWorkspaceStore();
-	const viewerStore = createViewerStore();
-	const room = createRoomStore(ui);
 
-	// ── State (App-specific only) ──
+	// ── State ──
 	let inputText = $state("");
 	let isLoading = $state(false);
 	let currentStream = $state(null);
-	let pendingBlockData = $state(null);
 	let suggestedQuestions = $state([]);
 	let onboardingDataReady = $state(null);
 	let suggestionLoading = $state(false);
 	let showSearchModal = $state(false);
-	let showRoomChat = $state(false);
-	let showRoomJoin = $state(false);
 	let suggestRequestId = 0;
 	const suggestionCache = new Map();
 
-	// ── 리사이저블 패널 ──
+	// ── 워치리스트 ──
+	let watchlist = $state(JSON.parse(localStorage.getItem("dartlab-watchlist") || "[]"));
+	function persistWatchlist() { localStorage.setItem("dartlab-watchlist", JSON.stringify(watchlist)); }
+	function addToWatchlist(code, name) {
+		if (watchlist.some(w => w.code === code)) return;
+		watchlist = [...watchlist, { code, name }];
+		persistWatchlist();
+	}
+	function removeFromWatchlist(code) {
+		watchlist = watchlist.filter(w => w.code !== code);
+		persistWatchlist();
+	}
+	// ── 리사이저블 사이드바 ──
 	let sidebarWidth = $state(260);
-	let rightPanelPct = $state(null);  // null = 기본값 사용
-
 	function handleSidebarResize(delta) {
 		sidebarWidth = Math.max(180, Math.min(400, sidebarWidth + delta));
-	}
-
-	function handleRightPanelResize(delta) {
-		const total = window.innerWidth;
-		const currentPct = rightPanelPct ?? 50;
-		// delta가 음수면 패널 커짐 (왼쪽으로 드래그)
-		const newPct = Math.max(25, Math.min(85, currentPct - (delta / total) * 100));
-		rightPanelPct = newPct;
 	}
 
 	// ── 모바일 스와이프 ──
@@ -96,9 +84,6 @@
 	});
 
 	// ── Derived ──
-	let panelWidth = $derived(
-		rightPanelPct != null ? `${rightPanelPct}%` : "50%"
-	);
 	let activeMessages = $derived(store.active?.messages || []);
 	let hasConversation = $derived(store.active && store.active.messages.length > 0);
 	let noProviderAvailable = $derived(
@@ -111,29 +96,7 @@
 
 	// ── Init ──
 	let statusLoaded = false;
-	$effect(() => {
-		if (!statusLoaded) { statusLoaded = true; ui.loadStatus(); room.checkRoom(); }
-	});
-
-	// Room: 네비게이션 인바운드 (SSE → workspace)
-	$effect(() => {
-		const nav = room.navState;
-		if (!nav || !room.joined || room.isNavFromRemote === false) return;
-		if (nav.stockCode) {
-			handleCompanySelectForViewer({ stockCode: nav.stockCode, corpName: nav.stockCode });
-		}
-		if (nav.topic) {
-			workspace.setViewerTopic(nav.topic, nav.topicLabel || nav.topic);
-		}
-	});
-
-	// Room: 페이지 떠날 때 정리
-	$effect(() => {
-		if (!room.joined) return;
-		const onUnload = () => { room.leave(); };
-		window.addEventListener("beforeunload", onUnload);
-		return () => window.removeEventListener("beforeunload", onUnload);
-	});
+	$effect(() => { if (!statusLoaded) { statusLoaded = true; ui.loadStatus(); } });
 
 	$effect(() => {
 		ui.checkMobile();
@@ -212,12 +175,6 @@
 	}
 
 	// ── Chat actions ──
-	// 패널 모드 변경 시 커스텀 폭 리셋
-	$effect(() => {
-		workspace.panelMode;  // track
-		rightPanelPct = null;
-	});
-
 	function handleNewChat() {
 		store.createConversation();
 		workspace.resetChatContext();
@@ -289,25 +246,19 @@
 		const { history, lastAnalyzedCode } = buildConversationHistory(conv);
 		const companyHint = workspace.selectedCompany?.stockCode || lastAnalyzedCode || getLastAssistantStockCode(conv);
 
-		const viewContext = workspace.getViewContext();
-		if (pendingBlockData && viewContext) { viewContext.data = pendingBlockData; }
-		pendingBlockData = null;
-
 		const requestOptions = {
 			provider: chatProvider.provider,
 			role: ui.CHAT_ROLE,
 			model: chatProvider.model,
-			viewContext,
 		};
 		const handleStreamSettled = () => { isLoading = false; currentStream = null; };
 		const callbacks = createAskStreamCallbacks({
-			store, workspace, viewerStore, uiStore: ui, streamConvId,
-			handleViewerNavigate,
+			store, workspace, uiStore: ui, streamConvId,
 			showToast: (msg, type) => ui.showToast(msg, type),
 			appendRenderViews,
 			onStreamSettled: handleStreamSettled,
 			bumpScroll: null,
-			onCompanySelect: handleCompanySelectForViewer,
+			onCompanySelect: handleCompanySelect,
 		});
 
 		const stream = askStream(companyHint, question, requestOptions, callbacks, history);
@@ -326,7 +277,6 @@
 
 	function handleEditResend(newText) {
 		if (!newText || isLoading) return;
-		// 편집한 사용자 메시지 이후의 모든 메시지를 제거하고 재전송
 		sendMessage(newText);
 	}
 
@@ -362,55 +312,8 @@
 		ui.showToast("대화가 마크다운으로 내보내졌습니다", "success");
 	}
 
-	// ── Navigation ──
-	function handleCompanySelectForChat(company) {
+	function handleCompanySelect(company) {
 		workspace.selectCompany(company);
-		workspace.switchView("chat");
-		pendingBlockData = null;
-		if (room.joined) room.navigate({ stockCode: company.stockCode });
-	}
-
-	function handleCompanySelectForViewer(company) {
-		workspace.openViewer(company);
-		if (room.joined) room.navigate({ stockCode: company.stockCode });
-	}
-
-	function handleOpenData(data) { workspace.openData(data); }
-	function handleOpenEvidence(section, index = null) { workspace.openEvidence(section, index); }
-
-	function handleAskFromViewer(selectedText, blockData = null) {
-		workspace.switchView("chat");
-		const topicLabel = viewerStore.topicData?.topicLabel || "";
-		const prefix = topicLabel ? `[${topicLabel}] ` : "";
-		if (blockData) {
-			pendingBlockData = blockData;
-			inputText = `${prefix}이 블록을 분석해줘`;
-		} else {
-			pendingBlockData = null;
-			inputText = `${prefix}"${selectedText}" — 이 내용에 대해 설명해줘`;
-		}
-		requestAnimationFrame(() => {
-			const textarea = document.querySelector(".input-textarea");
-			if (textarea) textarea.focus();
-		});
-	}
-
-	async function handleViewerNavigate(data) {
-		if (data?.stockCode && workspace.selectedCompany?.stockCode !== data.stockCode) {
-			const nextCompany = {
-				...(workspace.selectedCompany || {}),
-				stockCode: data.stockCode,
-				corpName: data.company || workspace.selectedCompany?.corpName || data.stockCode,
-				company: data.company || workspace.selectedCompany?.company || data.stockCode,
-				market: workspace.selectedCompany?.market || "",
-			};
-			workspace.selectCompany(nextCompany);
-			await viewerStore.loadCompany?.(data.stockCode);
-		}
-		if (!data?.topic) return;
-		workspace.switchView("viewer");
-		await viewerStore.selectTopic?.(data.topic, data.chapter || null);
-		if (room.joined) room.navigate({ topic: data.topic });
 	}
 
 	// ── Keyboard shortcuts ──
@@ -421,16 +324,6 @@
 		if (e.key === 'Escape' && showSearchModal) { showSearchModal = false; }
 		else if (e.key === 'Escape' && ui.settingsOpen) { ui.settingsOpen = false; }
 		else if (e.key === 'Escape' && ui.deleteConfirmId) { ui.deleteConfirmId = null; }
-		else if (e.key === 'Escape' && workspace.panelOpen) { workspace.closePanel(); }
-
-		const tag = e.target?.tagName;
-		const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable;
-		if (!isInput && !e.ctrlKey && !e.metaKey && !e.altKey) {
-			if (e.key === '1') { workspace.switchView('chat'); return; }
-			// TODO: Viewer/Dashboard 단축키 — VSCode 확장에 동일 기능 추가 후 복원
-			// if (e.key === '2') { workspace.switchView('viewer'); return; }
-			// if (e.key === '3') { workspace.switchView('dashboard'); return; }
-		}
 	}
 </script>
 
@@ -442,66 +335,19 @@
 		<button class="sidebar-overlay" onclick={() => { ui.sidebarOpen = false; }} aria-label="사이드바 닫기"></button>
 	{/if}
 	<div class={ui.isMobile ? (ui.sidebarOpen ? "sidebar-mobile" : "hidden") : ""}>
-		{#if workspace.activeView === "viewer"}
-			<!-- Viewer sidebar: 최근 종목 -->
-			<aside class="surface-panel flex flex-col h-full bg-dl-bg-darker border-r border-dl-border transition-all duration-300 flex-shrink-0 overflow-hidden" style="{ui.sidebarOpen ? `width: ${sidebarWidth}px` : 'width: 52px'}">
-				{#if ui.sidebarOpen}
-					<div class="flex flex-col h-full" style="min-width: {sidebarWidth}px">
-						<div class="border-b border-dl-border/40 px-4 pt-4 pb-3">
-							<div class="flex items-center gap-2.5">
-								<img src="/avatar.png" alt="DartLab" class="w-8 h-8 rounded-full shadow-sm" />
-								<div>
-									<div class="text-sm font-semibold text-dl-text">공시뷰어</div>
-									<div class="text-[10px] text-dl-text-dim">Disclosure Viewer</div>
-								</div>
-							</div>
-						</div>
-						<div class="flex-1 overflow-y-auto px-2 py-2">
-							<div class="text-[10px] text-dl-text-dim uppercase tracking-widest font-semibold px-2 mb-2">최근 종목</div>
-							{#each workspace.recentCompanies || [] as company}
-								<button
-									class="w-full text-left px-3 py-2 rounded-lg text-[12px] transition-colors mb-0.5
-										{workspace.selectedCompany?.stockCode === company.stockCode
-											? 'bg-dl-accent/10 text-dl-accent-light border border-dl-accent/20'
-											: 'text-dl-text-muted hover:bg-white/5 hover:text-dl-text'}"
-									onclick={() => { handleCompanySelectForViewer(company); if (ui.isMobile) ui.sidebarOpen = false; }}
-								>
-									<div class="font-medium">{company.name}</div>
-									<div class="text-[10px] text-dl-text-dim">{company.stockCode}</div>
-								</button>
-							{:else}
-								<div class="px-3 py-4 text-[11px] text-dl-text-dim text-center">
-									아직 조회한 종목이 없습니다
-								</div>
-							{/each}
-						</div>
-						{#if ui.appVersion}
-							<div class="border-t border-dl-border/30 px-4 py-2 text-[10px] text-dl-text-dim/50">
-								v{ui.appVersion}
-							</div>
-						{/if}
-					</div>
-				{:else}
-					<div class="flex flex-col items-center py-4 gap-2">
-						<img src="/avatar.png" alt="DartLab" class="w-7 h-7 rounded-full opacity-60" />
-					</div>
-				{/if}
-			</aside>
-		{:else}
-			<Sidebar
-				conversations={store.conversations}
-				activeId={store.activeId}
-				open={ui.isMobile ? true : ui.sidebarOpen}
-				width={sidebarWidth}
-				version={ui.appVersion}
-				onNewChat={() => { handleNewChat(); if (ui.isMobile) ui.sidebarOpen = false; }}
-				onSelect={(id) => { handleSelectConversation(id); if (ui.isMobile) ui.sidebarOpen = false; }}
-				onDelete={handleDeleteConversation}
-				onDeleteAll={handleDeleteAllConversations}
-				onRename={(id, title) => { if (title) store.updateTitle(id, title); }}
-				onOpenSearch={() => { showSearchModal = true; }}
-			/>
-		{/if}
+		<Sidebar
+			conversations={store.conversations}
+			activeId={store.activeId}
+			open={ui.isMobile ? true : ui.sidebarOpen}
+			width={sidebarWidth}
+			version={ui.appVersion}
+			onNewChat={() => { handleNewChat(); if (ui.isMobile) ui.sidebarOpen = false; }}
+			onSelect={(id) => { handleSelectConversation(id); if (ui.isMobile) ui.sidebarOpen = false; }}
+			onDelete={handleDeleteConversation}
+			onDeleteAll={handleDeleteAllConversations}
+			onRename={(id, title) => { if (title) store.updateTitle(id, title); }}
+			onOpenSearch={() => { showSearchModal = true; }}
+		/>
 		{#if !ui.isMobile && ui.sidebarOpen}
 			<PanelResizer onResize={handleSidebarResize} />
 		{/if}
@@ -509,7 +355,7 @@
 
 	<!-- Main -->
 	<div class="relative flex flex-col flex-1 min-w-0 min-h-0 glow-bg">
-		<!-- Top-left: sidebar toggle + view tabs -->
+		<!-- Top-left: sidebar toggle -->
 		<div class="absolute top-2 left-3 z-20 pointer-events-auto flex items-center gap-1">
 			<button
 				class="p-1.5 rounded-lg text-dl-text-muted hover:text-dl-text hover:bg-white/5 transition-colors"
@@ -521,41 +367,9 @@
 					<Menu size={18} />
 				{/if}
 			</button>
-
-			<!-- View tabs (모바일은 하단 탭 바 사용) -->
-			<div class="items-center ml-2 rounded-lg bg-dl-bg-card/60 border border-dl-border/20 p-0.5 {ui.isMobile ? 'hidden' : 'flex'}">
-				<button
-					class="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] transition-colors {workspace.activeView === 'chat'
-						? 'text-dl-text bg-dl-surface-active font-medium'
-						: 'text-dl-text-dim hover:text-dl-text-muted'}"
-					onclick={() => workspace.switchView('chat')}
-				>
-					<MessageSquare size={12} />
-					<span>Chat</span>
-				</button>
-				<!-- TODO: Viewer/Dashboard 탭 — 완성 후 복원 -->
-				<!-- <button
-					class="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] transition-colors {workspace.activeView === 'viewer'
-						? 'text-dl-text bg-dl-surface-active font-medium'
-						: 'text-dl-text-dim hover:text-dl-text-muted'}"
-					onclick={() => workspace.switchView('viewer')}
-				>
-					<BookOpen size={12} />
-					<span>Viewer</span>
-				</button>
-				<button
-					class="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] transition-colors {workspace.activeView === 'dashboard'
-						? 'text-dl-text bg-dl-surface-active font-medium'
-						: 'text-dl-text-dim hover:text-dl-text-muted'}"
-					onclick={() => workspace.switchView('dashboard')}
-				>
-					<BarChart3 size={12} />
-					<span>Dashboard</span>
-				</button> -->
-			</div>
 		</div>
 
-		<!-- Top-right fixed controls -->
+		<!-- Top-right controls -->
 		<div class="absolute top-2 right-3 z-20 flex items-center gap-1 pointer-events-auto">
 			<button
 				class="p-1.5 rounded-lg text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5 transition-colors"
@@ -605,128 +419,46 @@
 			</button>
 		</div>
 
-		<!-- Room 참여 안내 (데스크톱, 미참여 시) -->
-		{#if !ui.isMobile && room.roomAvailable && !room.joined}
-			<button
-				class="flex items-center justify-center gap-2 h-7 bg-dl-accent/10 border-b border-dl-accent/20 text-xs text-dl-accent hover:bg-dl-accent/15 transition-colors"
-				onclick={() => { showRoomJoin = true; }}
-			>
-				<Users size={12} />
-				<span>협업 세션이 활성 중입니다 — 클릭하여 참여</span>
-			</button>
-		{/if}
-
-		<!-- Room Bar (데스크톱) -->
-		{#if !ui.isMobile && room.joined}
-			<RoomBar
-				{room}
-				onToggleChat={() => { showRoomChat = !showRoomChat; if (showRoomChat) room.markRoomViewed(); }}
-				onLeave={() => room.leave()}
-			/>
-		{/if}
-
-		<!-- Content -->
+		<!-- Content: Chat only -->
 		<div class="flex flex-1 min-h-0">
-			{#if workspace.activeView === "room" && room.joined}
-				<div class="min-w-0 flex-1">
-					<RoomChat {room} showMembers={true} />
-				</div>
-			{:else if workspace.activeView === "viewer"}
-				<div class="min-w-0 flex-1">
-					{#await import("$lib/components/DisclosureViewer.svelte") then { default: DisclosureViewer }}
-						<DisclosureViewer
-							viewer={viewerStore}
-							company={workspace.selectedCompany}
-							recentCompanies={workspace.recentCompanies}
-							onCompanySelect={handleCompanySelectForViewer}
-							onAskAI={handleAskFromViewer}
-							onTopicChange={(topic, label) => workspace.setViewerTopic(topic, label)}
-						/>
-					{/await}
-				</div>
-			{:else if workspace.activeView === "dashboard"}
-				<div class="min-w-0 flex-1">
-					{#await import("$lib/components/DashboardView.svelte") then { default: DashboardView }}
-						<DashboardView
-							company={workspace.selectedCompany}
-							recentCompanies={workspace.recentCompanies}
-							toc={viewerStore?.toc}
-							onCompanySelect={handleCompanySelectForViewer}
-							onNavigateTopic={(topic) => handleViewerNavigate({ topic })}
-							onAskAboutModule={(mod) => {
-								workspace.switchView("chat");
-								inputText = `${mod} 모듈에 대해 설명해줘`;
-							}}
-							onNotify={(msg, type) => ui.showToast(msg, type)}
-						onOpenSearch={() => { showSearchModal = true; }}
-						/>
-					{/await}
-				</div>
-			{:else}
-				<!-- Chat -->
-				<div class="min-w-0 flex-1 flex flex-col">
-					{#if hasConversation}
-						<ChatArea
-							messages={activeMessages}
-							{isLoading}
-							bind:inputText
-							selectedCompany={workspace.selectedCompany}
-							suggestions={suggestedQuestions}
-							dataReady={onboardingDataReady}
-							suggestionLoading={suggestionLoading}
-							viewerContext={workspace.viewerTopic ? { topic: workspace.viewerTopic, topicLabel: workspace.viewerTopicLabel, period: workspace.viewerPeriod } : null}
-							pendingBlockLabel={pendingBlockData ? (pendingBlockData.topicLabel || pendingBlockData.topic || "블록") : null}
-							onClearBlock={() => { pendingBlockData = null; }}
-							providerLabel={ui.providers[ui.activeProvider]?.label || ui.activeProvider || null}
-							modelLabel={ui.activeModel || null}
-							onSend={sendMessage}
-							onStop={stopStream}
-							onRegenerate={handleRegenerate}
-							onExport={handleExport}
-							onOpenData={handleOpenData}
-							onOpenEvidence={handleOpenEvidence}
-							onOpenArtifact={(view) => workspace.openArtifact(view)}
-							onEditResend={handleEditResend}
-							onCompanySelect={handleCompanySelectForChat}
-						/>
-					{:else}
-						<EmptyState
-							bind:inputText
-							selectedCompany={workspace.selectedCompany}
-							suggestions={suggestedQuestions}
-							dataReady={onboardingDataReady}
-							suggestionLoading={suggestionLoading}
-							onSend={sendMessage}
-							onCompanySelect={handleCompanySelectForChat}
-							onOpenViewer={handleCompanySelectForViewer}
-						/>
-					{/if}
-				</div>
-
-				{#if !ui.isMobile && workspace.panelOpen}
-					<PanelResizer onResize={handleRightPanelResize} />
-					<div
-						class="relative z-30 flex-shrink-0 transition-all duration-300"
-						style="width: {panelWidth}; min-width: 360px; max-width: 85vw;"
-					>
-						<RightPanel
-							mode={workspace.panelMode}
-							data={workspace.panelData}
-							onClose={() => workspace.closePanel()}
-							artifactHistory={workspace.artifactHistory}
-							artifactIndex={workspace.artifactIndex}
-							onNavigateArtifact={(idx) => workspace.navigateArtifact(idx)}
-						/>
-					</div>
+			<div class="min-w-0 flex-1 flex flex-col">
+				{#if hasConversation}
+					<ChatArea
+						messages={activeMessages}
+						{isLoading}
+						bind:inputText
+						selectedCompany={workspace.selectedCompany}
+						suggestions={suggestedQuestions}
+						dataReady={onboardingDataReady}
+						suggestionLoading={suggestionLoading}
+						providerLabel={ui.providers[ui.activeProvider]?.label || ui.activeProvider || null}
+						modelLabel={ui.activeModel || null}
+						onSend={sendMessage}
+						onStop={stopStream}
+						onRegenerate={handleRegenerate}
+						onExport={handleExport}
+						onEditResend={handleEditResend}
+						onCompanySelect={handleCompanySelect}
+						{watchlist}
+						onAddWatch={addToWatchlist}
+						onRemoveWatch={removeFromWatchlist}
+					/>
+				{:else}
+					<EmptyState
+						bind:inputText
+						selectedCompany={workspace.selectedCompany}
+						suggestions={suggestedQuestions}
+						dataReady={onboardingDataReady}
+						suggestionLoading={suggestionLoading}
+						onSend={sendMessage}
+						onCompanySelect={handleCompanySelect}
+						{watchlist}
+						onWatchlistClick={(item) => {
+							handleCompanySelect({ stockCode: item.code, corpName: item.name, company: item.name });
+						}}
+					/>
 				{/if}
-			{/if}
-
-			<!-- 데스크톱 Room Chat 사이드 패널 -->
-			{#if !ui.isMobile && showRoomChat && room.joined}
-				<div class="flex-shrink-0 w-72 border-l border-dl-border/30">
-					<RoomChat {room} showMembers={false} />
-				</div>
-			{/if}
+			</div>
 		</div>
 	</div>
 
@@ -734,45 +466,19 @@
 	{#if ui.isMobile}
 		<nav class="flex items-center justify-around h-12 border-t border-dl-border/30 bg-dl-bg-darker/95 backdrop-blur-sm flex-shrink-0 safe-area-bottom" aria-label="메인 탐색">
 			<button
-				class="flex flex-col items-center gap-0.5 flex-1 py-1.5 transition-colors {workspace.activeView === 'chat' ? 'text-dl-accent' : 'text-dl-text-dim'}"
-				onclick={() => workspace.switchView('chat')}
+				class="flex flex-col items-center gap-0.5 flex-1 py-1.5 transition-colors text-dl-text-dim"
+				onclick={() => ui.toggleSidebar()}
 			>
-				<MessageSquare size={18} />
-				<span class="text-[9px] font-medium">Chat</span>
-			</button>
-			<!-- TODO: Viewer/Dashboard 탭 — 완성 후 복원 -->
-			<!-- <button
-				class="flex flex-col items-center gap-0.5 flex-1 py-1.5 transition-colors {workspace.activeView === 'viewer' ? 'text-dl-accent' : 'text-dl-text-dim'}"
-				onclick={() => workspace.switchView('viewer')}
-			>
-				<BookOpen size={18} />
-				<span class="text-[9px] font-medium">Viewer</span>
+				<Menu size={18} />
+				<span class="text-[9px] font-medium">대화</span>
 			</button>
 			<button
-				class="flex flex-col items-center gap-0.5 flex-1 py-1.5 transition-colors {workspace.activeView === 'dashboard' ? 'text-dl-accent' : 'text-dl-text-dim'}"
-				onclick={() => workspace.switchView('dashboard')}
+				class="flex flex-col items-center gap-0.5 flex-1 py-1.5 transition-colors text-dl-text-dim"
+				onclick={() => { showSearchModal = true; }}
 			>
-				<BarChart3 size={18} />
-				<span class="text-[9px] font-medium">분석</span>
-			</button> -->
-			{#if room.roomAvailable || room.joined}
-				<button
-					class="flex flex-col items-center gap-0.5 flex-1 py-1.5 transition-colors relative
-						{workspace.activeView === 'room' ? 'text-dl-accent' : 'text-dl-text-dim'}"
-					onclick={() => {
-						if (!room.joined) { showRoomJoin = true; }
-						else { workspace.switchView('room'); room.markRoomViewed(); }
-					}}
-				>
-					<Users size={18} />
-					<span class="text-[9px] font-medium">Room</span>
-					{#if room.unreadCount > 0}
-						<span class="absolute top-0.5 right-1/4 w-3.5 h-3.5 rounded-full bg-dl-primary text-white text-[8px] flex items-center justify-center font-bold">
-							{room.unreadCount > 9 ? "9+" : room.unreadCount}
-						</span>
-					{/if}
-				</button>
-			{/if}
+				<Search size={18} />
+				<span class="text-[9px] font-medium">검색</span>
+			</button>
 			<button
 				class="flex flex-col items-center gap-0.5 flex-1 py-1.5 transition-colors text-dl-text-dim"
 				onclick={() => ui.openSettings()}
@@ -793,24 +499,12 @@
 <SearchModal
 	bind:open={showSearchModal}
 	recentCompanies={workspace.recentCompanies}
-	onSelect={handleCompanySelectForViewer}
+	onSelect={handleCompanySelect}
 	onAction={(id) => {
 		if (id === "newChat") handleNewChat();
-		else if (id === "viewChat") workspace.switchView("chat");
-		// TODO: Viewer/Dashboard — VSCode 확장에 동일 기능 추가 후 복원
-		// else if (id === "viewViewer") workspace.switchView("viewer");
-		// else if (id === "viewDashboard") workspace.switchView("dashboard");
 		else if (id === "openSettings") ui.openSettings();
 		else if (id === "exportChat") handleExport();
 	}}
 />
-{#if showRoomJoin && room.roomAvailable}
-	{#await import("$lib/components/room/RoomJoinDialog.svelte") then { default: RoomJoinDialog }}
-		<RoomJoinDialog {room} onClose={() => { showRoomJoin = false; }} />
-	{/await}
-{/if}
-{#if room.joined}
-	<FloatingReactions reactions={room.reactions} />
-{/if}
 <DeleteDialog {ui} onConfirm={confirmDelete} />
 <ToastNotification {ui} />

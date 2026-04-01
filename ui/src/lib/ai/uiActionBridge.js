@@ -33,22 +33,13 @@ export function collectViewsFromUiAction(action) {
  */
 export function applyUiActionSideEffect(
 	action,
-	{ workspace = null, viewerStore = null, uiStore = null, onNavigate = null, showToast = null, onCompanySelect = null } = {},
+	{ workspace = null, uiStore = null, showToast = null, onCompanySelect = null } = {},
 ) {
 	if (!action || typeof action !== "object") return;
 	const actionName = action.action || "";
 
-	if (actionName === "navigate") {
-		onNavigate?.(action);
-		return;
-	}
-
-	if (actionName === "update" || actionName === "highlight") {
-		if (action.target === "viewer.highlight" || (action.topic && action.keyword)) {
-			workspace?.switchView?.("viewer");
-			if (action.topic) onNavigate?.(action);
-			if (action.keyword) viewerStore?.setSearchHighlight?.(action.keyword);
-		}
+	// navigate / update / highlight — viewer 전용, 현재 비활성
+	if (actionName === "navigate" || actionName === "update" || actionName === "highlight") {
 		return;
 	}
 
@@ -57,7 +48,6 @@ export function applyUiActionSideEffect(
 		return;
 	}
 
-	// ── 새 액션: 레이아웃 제어 ──
 	if (actionName === "layout") {
 		if (!uiStore) return;
 		const target = action.target;
@@ -67,24 +57,15 @@ export function applyUiActionSideEffect(
 			if (value === "open") uiStore.sidebarOpen = true;
 			else if (value === "close") uiStore.sidebarOpen = false;
 			else uiStore.toggleSidebar();
-		} else if (target === "fullscreen") {
-			if (value === "open") uiStore.viewerFullscreen = true;
-			else if (value === "close") uiStore.viewerFullscreen = false;
-			else uiStore.viewerFullscreen = !uiStore.viewerFullscreen;
 		}
 		return;
 	}
 
-	// ── 새 액션: 뷰 전환 ──
+	// switch_view — chat-only, viewer/dashboard 무시
 	if (actionName === "switch_view") {
-		const target = action.target || action.view;
-		if (target && workspace?.switchView) {
-			workspace.switchView(target);
-		}
 		return;
 	}
 
-	// ── 새 액션: 종목 선택 ──
 	if (actionName === "select_company") {
 		const company = {
 			stockCode: action.stockCode,

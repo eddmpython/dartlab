@@ -32,8 +32,11 @@
 	import EvidenceModal from "./EvidenceModal.svelte";
 	import CitationPopover from "./CitationPopover.svelte";
 
-	import { Pencil, Send } from "lucide-svelte";
-	let { message, onRegenerate, onOpenEvidence, onOpenArtifact, onEditResend, staggerIndex = 0 } = $props();
+	import { Pencil, Send, ChevronRight, Star } from "lucide-svelte";
+	let {
+		message, onRegenerate, onOpenEvidence, onOpenArtifact, onEditResend, staggerIndex = 0,
+		onAddWatch, onRemoveWatch, isWatched = false,
+	} = $props();
 	let openModal = $state(null);
 	let modalType = $state("context");
 
@@ -182,6 +185,45 @@
 
 	let toolCallEvents = $derived((message.toolEvents || []).filter(e => e.type === "call"));
 	let toolResultEvents = $derived((message.toolEvents || []).filter(e => e.type === "result"));
+
+	// ── Tool 접기/펼치기 (Claude Code 스타일) ──
+	const TOOL_LABELS = {
+		companyInsights: "인사이트", companyFinancials: "재무제표", companyRatios: "재무비율",
+		companyAnalysis: "분석", companyValuation: "밸류에이션", companyForecast: "전망",
+		companyReview: "보고서", companyShow: "공시 원문", companyDiff: "변경 비교",
+		companyGovernance: "지배구조", companyAudit: "감사", companyProfile: "프로필",
+		companySections: "섹션", companyTopics: "토픽", marketScan: "시장 스캔",
+		searchCompany: "검색", list_live_filings: "실시간 공시", read_filing: "공시 원문",
+		list_filings: "공시 목록", show_topic: "토픽 조회", get_data: "데이터 조회",
+	};
+	function toolLabel(name) { return TOOL_LABELS[name] || name; }
+	function formatToolArg(args) {
+		if (!args) return "";
+		if (typeof args === "string") return args;
+		try {
+			const entries = Object.entries(args);
+			return entries.map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(", ");
+		} catch { return String(args); }
+	}
+	function truncateStr(s, max) { return s.length > max ? s.slice(0, max) + "..." : s; }
+
+	let toolPairs = $derived.by(() => {
+		const events = message.toolEvents ?? [];
+		const pairs = [];
+		for (const ev of events) {
+			if (ev.type === "call") pairs.push({ call: ev });
+			else if (ev.type === "result" && pairs.length > 0) {
+				const last = pairs[pairs.length - 1];
+				if (!last.result) last.result = ev;
+			}
+		}
+		return pairs;
+	});
+
+	let collapsedTools = $state({});
+	function toggleTool(idx) { collapsedTools = { ...collapsedTools, [idx]: !collapsedTools[idx] }; }
+
+	let collapsedCodeRounds = $state({});
 	const splitter = createStreamSplitter();
 	const incRenderer = createIncrementalRenderer();
 	let streamingContent = $derived.by(() => splitter.split(message.text || "", message.loading));
@@ -319,6 +361,66 @@
 				{onOpenEvidence}
 			/>
 
+			<!-- ── 워치리스트 별표 ── -->
+			{#if message.meta?.stockCode && (onAddWatch || onRemoveWatch)}
+				<div class="flex items-center gap-1 mb-1">
+					{#if isWatched}
+						<button
+							class="flex items-center gap-1 text-[11px] text-yellow-400 hover:text-yellow-300 transition-colors"
+							onclick={() => onRemoveWatch?.(message.meta.stockCode)}
+							title="관심종목 제거"
+						>
+							<Star size={12} class="fill-current" />
+							<span>관심종목</span>
+						</button>
+					{:else}
+						<button
+							class="flex items-center gap-1 text-[11px] text-dl-text-dim hover:text-yellow-400 transition-colors"
+							onclick={() => onAddWatch?.(message.meta.stockCode, companyName || message.meta.stockCode)}
+							title="관심종목 추가"
+						>
+							<Star size={12} />
+							<span>관심종목 추가</span>
+						</button>
+					{/if}
+				</div>
+			{/if}
+
+			<!-- ── Snapshot 카드 (인라인) ── -->
+			{#if message.snapshot}
+				<div class="mt-2 mb-3 p-3 rounded-lg border border-dl-border/30 bg-dl-bg-card/50">
+					{#if message.snapshot.items?.length}
+						<div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+							{#each message.snapshot.items as item}
+								<div class={cn(
+									"text-center p-2 rounded bg-dl-bg-darker/50",
+									item.status === "good" && "border-l-2 border-l-green-500",
+									item.status === "danger" && "border-l-2 border-l-red-500",
+									item.status === "caution" && "border-l-2 border-l-yellow-500",
+								)}>
+									<div class="text-[10px] text-dl-text-dim">{item.label}</div>
+									<div class="text-[13px] font-medium text-dl-text">{item.value}</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
+					{#if message.snapshot.grades && typeof message.snapshot.grades === "object"}
+						<div class="flex flex-wrap gap-1.5 mt-2">
+							{#each Object.entries(message.snapshot.grades) as [area, grade]}
+								<span class={cn(
+									"px-2 py-0.5 rounded-full text-[10px] font-medium",
+									grade === "A" ? "bg-green-500/15 text-green-400" :
+									grade === "B" ? "bg-blue-500/15 text-blue-400" :
+									grade === "C" ? "bg-yellow-500/15 text-yellow-400" :
+									grade === "D" ? "bg-orange-500/15 text-orange-400" :
+									"bg-red-500/15 text-red-400"
+								)}>{area} {grade}</span>
+							{/each}
+						</div>
+					{/if}
+				</div>
+			{/if}
+
 			<!-- ── 로딩: 진행 단계 표시 ── -->
 			{#if message.loading && !message.text}
 			<div class="animate-fadeIn">
@@ -391,6 +493,71 @@
 						</div>
 					{/if}
 				</div>
+
+				<!-- ── 코드 실행 라운드 (Claude Code 스타일) ── -->
+				{#if message.codeRounds?.length}
+					<div class="flex flex-col gap-1.5 mt-3 mb-2">
+						{#each message.codeRounds as cr, crIdx}
+							<div class="rounded-lg border border-dl-border/20 overflow-hidden">
+								<button
+									class="w-full flex items-center gap-1.5 px-3 py-2 text-[12px] hover:bg-white/3 transition-colors"
+									onclick={() => { collapsedCodeRounds = { ...collapsedCodeRounds, [crIdx]: !collapsedCodeRounds[crIdx] }; }}
+								>
+									<ChevronRight size={12} class="flex-shrink-0 transition-transform {collapsedCodeRounds[crIdx] ? '' : 'rotate-90'}" />
+									{#if cr.status === "executing" && message.loading}
+										<Loader2 size={12} class="animate-spin flex-shrink-0 text-dl-accent" />
+										<span class="text-dl-text-dim">Python 실행 중 {cr.round}/{cr.maxRounds}</span>
+									{:else}
+										<CheckCircle2 size={12} class="flex-shrink-0 text-dl-success/70" />
+										<span class="text-dl-text-muted">Python 실행 완료 {cr.round}/{cr.maxRounds}</span>
+									{/if}
+								</button>
+								{#if !collapsedCodeRounds[crIdx]}
+									{#if cr.code}
+										<div class="border-t border-dl-border/10 bg-dl-bg-darker/50">
+											<div class="px-3 py-1 text-[10px] text-dl-text-dim/60 font-mono uppercase tracking-wider">Code</div>
+											<pre class="px-3 pb-2 text-[12px] text-dl-text-muted whitespace-pre-wrap break-words font-mono leading-relaxed overflow-x-auto max-h-64 overflow-y-auto">{cr.code}</pre>
+										</div>
+									{/if}
+									{#if cr.result}
+										<div class="border-t border-dl-border/10 bg-dl-bg-darker/30">
+											<div class="px-3 py-1 text-[10px] text-dl-text-dim/60 font-mono uppercase tracking-wider">Result</div>
+											<div class="px-3 pb-2 text-[12px] text-dl-text-muted whitespace-pre-wrap break-words font-mono leading-relaxed overflow-x-auto max-h-80 overflow-y-auto">{@html renderMarkdown(cr.result)}</div>
+										</div>
+									{/if}
+								{/if}
+							</div>
+						{/each}
+					</div>
+				{/if}
+
+				<!-- ── Tool 접기/펼치기 (Claude Code 스타일) ── -->
+				{#if toolPairs.length > 0 && !message.loading}
+					<div class="mt-2 mb-2 space-y-0.5">
+						{#each toolPairs as pair, i}
+							<div class="rounded-lg border border-dl-border/20 overflow-hidden">
+								<button
+									class="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-dl-text-muted hover:bg-white/3 transition-colors"
+									onclick={() => toggleTool(i)}
+								>
+									<ChevronRight size={12} class="flex-shrink-0 transition-transform {collapsedTools[i] ? '' : 'rotate-90'}" />
+									{#if pair.result}
+										<CheckCircle2 size={12} class="flex-shrink-0 text-dl-success/70" />
+									{:else}
+										<Loader2 size={12} class="animate-spin flex-shrink-0" />
+									{/if}
+									<span class="font-medium">{toolLabel(pair.call.name)}</span>
+									<span class="text-dl-text-dim truncate flex-1 text-left">{truncateStr(formatToolArg(pair.call.arguments), 60)}</span>
+								</button>
+								{#if !collapsedTools[i] && pair.result}
+									<div class="px-3 py-2 border-t border-dl-border/10 bg-dl-bg-darker/30 max-h-48 overflow-y-auto">
+										<pre class="text-[10px] text-dl-text-dim whitespace-pre-wrap break-words font-mono">{truncateStr(typeof pair.result.result === "string" ? pair.result.result : JSON.stringify(pair.result.result, null, 2), 2000)}</pre>
+									</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				{/if}
 
 				{#if message.error && message.retryable && onRegenerate}
 					<button

@@ -67,10 +67,8 @@ export function buildConversationHistory(conv = null) {
 export function createAskStreamCallbacks({
 	store,
 	workspace,
-	viewerStore,
 	uiStore,
 	streamConvId,
-	handleViewerNavigate,
 	showToast,
 	appendRenderViews,
 	onStreamSettled,
@@ -80,9 +78,7 @@ export function createAskStreamCallbacks({
 	const isStale = () => store.activeId !== streamConvId;
 	const sideEffectContext = {
 		workspace,
-		viewerStore,
 		uiStore,
-		onNavigate: handleViewerNavigate,
 		showToast,
 		onCompanySelect,
 	};
@@ -164,6 +160,17 @@ export function createAskStreamCallbacks({
 				showToast?.("OpenDART API 키가 필요합니다. 설정 화면을 엽니다.", "warning", 5000);
 				uiStore?.openSettings?.("openDart");
 			}
+		},
+		onCodeRound(data) {
+			if (isStale()) return;
+			const last = getLastMessage(store);
+			const rounds = [...(last?.codeRounds ?? [])];
+			// Replace existing round (prevent duplicates on reconnect)
+			const idx = rounds.findIndex(r => r.round === data.round);
+			if (idx >= 0) rounds[idx] = data;
+			else rounds.push(data);
+			store.updateLastMessage({ codeRounds: rounds });
+			bumpScroll?.();
 		},
 		onChart(data) {
 			if (isStale()) return;

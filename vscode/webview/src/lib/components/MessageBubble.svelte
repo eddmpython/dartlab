@@ -87,6 +87,13 @@
     collapsedTools = { ...collapsedTools };
   }
 
+  // Collapse state for code rounds
+  let collapsedCodeRounds: Record<number, boolean> = $state({});
+  function toggleCodeRound(idx: number) {
+    collapsedCodeRounds[idx] = !collapsedCodeRounds[idx];
+    collapsedCodeRounds = { ...collapsedCodeRounds };
+  }
+
   // Copy code block
   function copyCode(e: MouseEvent) {
     const btn = (e.target as HTMLElement).closest(".copy-btn");
@@ -268,19 +275,37 @@
       </div>
     {/if}
 
-    <!-- Code execution rounds -->
+    <!-- Code execution rounds (Claude Code style: code + result collapsible) -->
     {#if message.codeRounds?.length}
       <div class="code-rounds">
-        {#each message.codeRounds as cr}
-          <div class="code-round" class:executing={cr.status === "executing"}>
-            {#if cr.status === "executing" && message.loading}
-              <div class="tool-spinner-sm"></div>
-            {:else}
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" class="tool-ok"><path d="M6.5 12L2 7.5l1.4-1.4L6.5 9.2l6.1-6.1L14 4.5z"/></svg>
+        {#each message.codeRounds as cr, crIdx}
+          <div class="code-round-block">
+            <button class="code-round-header" onclick={() => toggleCodeRound(crIdx)}>
+              <svg class="tool-chevron" class:open={!collapsedCodeRounds[crIdx]} width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M6 4l4 4-4 4"/>
+              </svg>
+              {#if cr.status === "executing" && message.loading}
+                <div class="tool-spinner-sm"></div>
+                <span>Python 실행 중 {cr.round}/{cr.maxRounds}</span>
+              {:else}
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" class="tool-ok"><path d="M6.5 12L2 7.5l1.4-1.4L6.5 9.2l6.1-6.1L14 4.5z"/></svg>
+                <span>Python 실행 완료 {cr.round}/{cr.maxRounds}</span>
+              {/if}
+            </button>
+            {#if !collapsedCodeRounds[crIdx]}
+              {#if cr.code}
+                <div class="code-round-section">
+                  <div class="code-round-section-label">Code</div>
+                  <pre class="code-round-pre">{cr.code}</pre>
+                </div>
+              {/if}
+              {#if cr.result}
+                <div class="code-round-section code-round-result">
+                  <div class="code-round-section-label">Result</div>
+                  <div class="code-round-pre">{@html render(cr.result)}</div>
+                </div>
+              {/if}
             {/if}
-            <span class="code-round-label">
-              Python 실행 {cr.round}/{cr.maxRounds}
-            </span>
           </div>
         {/each}
       </div>
@@ -667,24 +692,57 @@
   .code-rounds {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    margin: 4px 0;
+    gap: 4px;
+    margin: 8px 0;
   }
-  .code-round {
+  .code-round-block {
+    border: 1px solid var(--vscode-widget-border, rgba(128,128,128,0.2));
+    border-radius: var(--corner-radius-small);
+    overflow: hidden;
+  }
+  .code-round-header {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 6px;
-    border-radius: var(--corner-radius-small);
-    background: var(--vscode-textCodeBlock-background);
-    font-size: 12px;
-  }
-  .code-round.executing {
-    color: var(--dl-accent, #fb923c);
-  }
-  .code-round-label {
+    gap: 6px;
+    width: 100%;
+    padding: 6px 10px;
+    background: none;
+    border: none;
     color: var(--vscode-descriptionForeground);
+    font-size: 12px;
+    cursor: pointer;
     font-family: var(--vscode-editor-font-family, monospace);
+  }
+  .code-round-header:hover {
+    background: var(--vscode-list-hoverBackground);
+  }
+  .code-round-section {
+    border-top: 1px solid var(--vscode-widget-border, rgba(128,128,128,0.15));
+    background: var(--vscode-textCodeBlock-background);
+  }
+  .code-round-result {
+    background: var(--vscode-editor-background);
+  }
+  .code-round-section-label {
+    padding: 4px 10px 0;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--vscode-descriptionForeground);
+    opacity: 0.6;
+    font-family: var(--vscode-editor-font-family, monospace);
+  }
+  .code-round-pre {
+    padding: 4px 10px 8px;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--vscode-editor-font-family, monospace);
+    color: var(--vscode-editor-foreground);
+    max-height: 300px;
+    overflow-y: auto;
   }
 
   /* === Tool events (Claude Code inline style) === */

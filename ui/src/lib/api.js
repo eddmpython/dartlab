@@ -348,7 +348,7 @@ export async function ask(company, question, options = {}) {
  * @param {function} onError - error 이벤트 콜백
  * @param {function} onUiAction - ui_action 이벤트 콜백 (canonical action)
  */
-export function askStream(company, question, options = {}, { onMeta, onSnapshot, onContext, onSystemPrompt, onToolCall, onToolResult, onChart, onChunk, onDone, onError, onUiAction }, history = null) {
+export function askStream(company, question, options = {}, { onMeta, onSnapshot, onContext, onSystemPrompt, onToolCall, onToolResult, onCodeRound, onChart, onChunk, onDone, onError, onUiAction }, history = null) {
 	const body = { question, stream: true, ...options };
 	if (company) body.company = company;
 	if (history && history.length > 0) body.history = history;
@@ -396,6 +396,7 @@ export function askStream(company, question, options = {}, { onMeta, onSnapshot,
 							else if (currentEvent === "tool_call") onToolCall?.(parsed);
 							else if (currentEvent === "tool_result") onToolResult?.(parsed);
 							else if (currentEvent === "chunk") onChunk?.(parsed.text);
+							else if (currentEvent === "code_round") onCodeRound?.(parsed);
 							else if (currentEvent === "chart") onChart?.(parsed);
 							else if (currentEvent === "ui_action") onUiAction?.(parsed);
 							else if (currentEvent === "error") onError?.(parsed.error, parsed.action, parsed.detail);
