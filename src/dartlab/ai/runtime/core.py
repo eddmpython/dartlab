@@ -109,6 +109,30 @@ def _needsExternalSearch(question: str) -> bool:
     return any(kw.lower() in q for kw in _SEARCH_TRIGGER_KEYWORDS)
 
 
+def _preGroundDisclosure(stockCode: str | None = None) -> str:
+    """companyProfile에서 해당 종목의 공시 프로필을 추출하여 주입."""
+    if not stockCode:
+        return ""
+    try:
+        from dartlab.core.search.derived import loadProfile
+
+        row = loadProfile(stockCode)
+    except (ImportError, FileNotFoundError, OSError):
+        return ""
+    if row is None:
+        return ""
+
+    return (
+        '<external-data source="disclosure-brief">\n'
+        "## 공시 프로필 (자동 조회)\n"
+        f'- 총 공시: {row["total_filings"]}건 ({row["first_dt"]}~{row["last_dt"]})\n'
+        f'- 주요 유형: {row["top3_summary"]}\n'
+        f'- 공시 속도: {row["velocity_text"]}\n'
+        f'- 특이사항: {row["rare_text"]}\n'
+        "</external-data>"
+    )
+
+
 def _preGroundSearch(
     question: str,
     stockCode: str | None = None,
@@ -538,6 +562,7 @@ dartlab 재무분석 플랫폼을 도구로 삼아 한국/미국 상장기업을
 - `webSearch(query)` — 웹 검색 (Tavily/DuckDuckGo 자동 선택, 30분 캐시)
 - `newsSearch(query)` — 뉴스 검색 (days=N으로 기간 제한 가능)
 - `formatResults(results)` — 검색 결과를 마크다운으로 포맷
+- `dartlab.search(query)` — 400만 공시 원문 검색 (140ms). "유상증자", "대표이사 변경" 등 공시 이벤트 검색. corp="종목코드"로 종목 필터 가능.
 {env_block}
 
 ## 도구 선택 기준
@@ -1057,6 +1082,11 @@ def _analyze_inner(
         userParts.append(f"분석 대상: {corp_name} (종목코드: {stock_id})")
     if prefetchText:
         userParts.append(prefetchText)
+
+    # 공시 프로필 주입 (disclosure brief — companyProfile에서 ~300자)
+    disclosureBrief = _preGroundDisclosure(stockCode=stock_id)
+    if disclosureBrief:
+        userParts.append(disclosureBrief)
 
     # 자동 외부 검색 (pre-grounding)
     if _needsExternalSearch(question):

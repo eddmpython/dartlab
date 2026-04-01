@@ -26,6 +26,90 @@ from dartlab.scan.builder import buildChanges, buildFinance, buildReport, buildS
 from dartlab.scan.payload import build_scan_payload, build_unified_payload  # noqa: F401
 from dartlab.scan.snapshot import buildScanSnapshot, getScanPosition  # noqa: F401
 
+
+# ── 한글 컬럼명 + 종목명 공통 변환 ──
+
+_COLUMN_RENAME = {
+    "stockCode": "종목코드",
+    "opMargin": "영업이익률",
+    "netMargin": "순이익률",
+    "roe": "ROE",
+    "roa": "ROA",
+    "grade": "등급",
+    "nonRecurring": "비경상",
+    "revenueCagr": "매출CAGR",
+    "opIncomeCagr": "영업이익CAGR",
+    "netIncomeCagr": "순이익CAGR",
+    "pattern": "패턴",
+    "assetTurnover": "자산회전율",
+    "invTurnover": "재고회전율",
+    "arTurnover": "매출채권회전율",
+    "ppeTurnover": "유형자산회전율",
+    "invDays": "재고일수",
+    "arDays": "매출채권일수",
+    "ccc": "현금전환주기",
+    "marketCap": "시가총액",
+    "per": "PER",
+    "pbr": "PBR",
+    "psr": "PSR",
+    "dividendYield": "배당수익률",
+    "riskLevel": "위험등급",
+    "riskFlags": "위험플래그",
+    "riskCount": "위험수",
+    "presets": "프리셋",
+    "presetCount": "프리셋수",
+    "ocf": "영업CF",
+    "icf": "투자CF",
+    "finCf": "재무CF",
+    "accrualRatio": "발생액비율",
+    "cfToNi": "CF/NI",
+    "currentRatio": "유동비율",
+    "quickRatio": "당좌비율",
+    "holderPct": "최대주주지분",
+    "holderChange": "지분변동",
+    "treasuryShares": "자기주식",
+    "stability": "경영권안정성",
+    "opinion": "감사의견",
+    "auditor": "감사인",
+    "auditorChanged": "감사인변경",
+    "hasSpecialMatter": "특기사항",
+    "dpsGrowth": "DPS성장",
+}
+
+
+def _enrichWithKorean(df: pl.DataFrame) -> pl.DataFrame:
+    """영문 컬럼 → 한글 rename + 종목명 추가."""
+    # 종목명 매핑
+    if "stockCode" in df.columns:
+        try:
+            import dartlab as _dl
+
+            listing = _dl.listing()
+            if listing is not None:
+                name_col = next((c for c in ("종목명", "회사명") if c in listing.columns), None)
+                if name_col and "종목코드" in listing.columns:
+                    name_map = listing.select(["종목코드", name_col]).rename(
+                        {name_col: "_종목명", "종목코드": "stockCode"}
+                    )
+                    df = df.join(name_map, on="stockCode", how="left")
+        except Exception:
+            pass
+
+    # 한글 rename
+    renames = {k: v for k, v in _COLUMN_RENAME.items() if k in df.columns}
+    if renames:
+        df = df.rename(renames)
+
+    # 종목명 배치 (종목코드 바로 뒤)
+    if "_종목명" in df.columns:
+        df = df.rename({"_종목명": "종목명"})
+        cols = df.columns
+        if "종목코드" in cols:
+            ordered = ["종목코드", "종목명"] + [c for c in cols if c not in ("종목코드", "종목명")]
+            df = df.select(ordered)
+
+    return df
+
 # ── Axis Registry ────────────────────────────────────────
 
 
@@ -190,6 +274,13 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         targetParam="target",
         targetRequired=False,
     ),
+    "disclosureRisk": _AxisEntry(
+        module="dartlab.scan.disclosureRisk",
+        fn="scanDisclosureRisk",
+        label="공시리스크",
+        description="공시 변화 기반 선행 리스크 (우발부채, 감사변경, 계열변화, 사업전환)",
+        example='scan("disclosureRisk")',
+    ),
 }
 
 
@@ -259,6 +350,9 @@ _ALIASES: dict[str, str] = {
     "스크리닝": "screen",
     "스크린": "screen",
     "필터": "screen",
+    # disclosureRisk
+    "공시리스크": "disclosureRisk",
+    "공시변화": "disclosureRisk",
 }
 
 
@@ -452,6 +546,10 @@ class Scan:
             }
             hint = _MISSING_HINTS.get(resolved, f"'{target}'에 해당 데이터 없음")
             return pl.DataFrame({"info": [hint]})
+
+        # 최종 사용자 반환: 한글 컬럼 + 종목명
+        if isinstance(result, pl.DataFrame) and "stockCode" in result.columns:
+            result = _enrichWithKorean(result)
 
         return result
 

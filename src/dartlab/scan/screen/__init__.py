@@ -44,15 +44,15 @@ def _screenValue() -> pl.DataFrame:
     debt = _loadAxis("debt")
     val = _loadAxis("valuation")
 
-    goodProf = set(prof.filter(pl.col("grade").is_in(["우수", "양호", "보통"]))["stockCode"].to_list())
-    goodQual = set(qual.filter(pl.col("grade").is_in(["우수", "양호"]))["stockCode"].to_list())
+    goodProf = set(prof.filter(pl.col("등급").is_in(["우수", "양호", "보통"]))["종목코드"].to_list())
+    goodQual = set(qual.filter(pl.col("등급").is_in(["우수", "양호"]))["종목코드"].to_list())
     safeDbt = set(debt.filter(pl.col("위험등급").is_in(["안전", "관찰"]))["종목코드"].to_list())
     lowPbr = set(
-        val.filter((pl.col("pbr").is_not_null()) & (pl.col("pbr") > 0) & (pl.col("pbr") < 0.7))["stockCode"].to_list()
+        val.filter((pl.col("PBR").is_not_null()) & (pl.col("PBR") > 0) & (pl.col("PBR") < 0.7))["종목코드"].to_list()
     )
 
     codes = goodProf & goodQual & safeDbt & lowPbr
-    return val.filter(pl.col("stockCode").is_in(list(codes))).sort("pbr")
+    return val.filter(pl.col("종목코드").is_in(list(codes))).sort("PBR")
 
 
 def _screenDividend() -> pl.DataFrame:
@@ -60,11 +60,11 @@ def _screenDividend() -> pl.DataFrame:
     div = _loadAxis("dividendTrend")
     debt = _loadAxis("debt")
 
-    goodDiv = set(div.filter(pl.col("pattern").is_in(["연속증가", "안정", "증가"]))["stockCode"].to_list())
+    goodDiv = set(div.filter(pl.col("패턴").is_in(["연속증가", "안정", "증가"]))["종목코드"].to_list())
     safeDbt = set(debt.filter(pl.col("위험등급").is_in(["안전", "관찰"]))["종목코드"].to_list())
 
     codes = goodDiv & safeDbt
-    return div.filter(pl.col("stockCode").is_in(list(codes))).sort("dpsGrowth", descending=True, nulls_last=True)
+    return div.filter(pl.col("종목코드").is_in(list(codes))).sort("DPS성장", descending=True, nulls_last=True)
 
 
 def _screenGrowth() -> pl.DataFrame:
@@ -73,12 +73,12 @@ def _screenGrowth() -> pl.DataFrame:
     prof = _loadAxis("profitability")
     qual = _loadAxis("quality")
 
-    highGrowth = set(growth.filter(pl.col("grade").is_in(["고성장", "성장"]))["stockCode"].to_list())
-    goodProf = set(prof.filter(pl.col("grade").is_in(["우수", "양호"]))["stockCode"].to_list())
-    goodQual = set(qual.filter(pl.col("grade").is_in(["우수", "양호"]))["stockCode"].to_list())
+    highGrowth = set(growth.filter(pl.col("등급").is_in(["고성장", "성장"]))["종목코드"].to_list())
+    goodProf = set(prof.filter(pl.col("등급").is_in(["우수", "양호"]))["종목코드"].to_list())
+    goodQual = set(qual.filter(pl.col("등급").is_in(["우수", "양호"]))["종목코드"].to_list())
 
     codes = highGrowth & goodProf & goodQual
-    return growth.filter(pl.col("stockCode").is_in(list(codes))).sort("revenueCagr", descending=True, nulls_last=True)
+    return growth.filter(pl.col("종목코드").is_in(list(codes))).sort("매출CAGR", descending=True, nulls_last=True)
 
 
 def _screenRisk() -> pl.DataFrame:
@@ -88,8 +88,8 @@ def _screenRisk() -> pl.DataFrame:
     liq = _loadAxis("liquidity")
 
     debtRisk = set(debt.filter(pl.col("위험등급") == "고위험")["종목코드"].to_list())
-    auditRisk = set(audit.filter(pl.col("riskLevel").is_in(["고위험", "주의"]))["stockCode"].to_list())
-    liqRisk = set(liq.filter(pl.col("grade") == "위험")["stockCode"].to_list())
+    auditRisk = set(audit.filter(pl.col("위험등급").is_in(["고위험", "주의"]))["종목코드"].to_list())
+    liqRisk = set(liq.filter(pl.col("등급") == "위험")["종목코드"].to_list())
 
     allRisk = debtRisk | auditRisk | liqRisk
 
@@ -102,11 +102,11 @@ def _screenRisk() -> pl.DataFrame:
             flags.append("감사")
         if code in liqRisk:
             flags.append("유동성")
-        rows.append({"stockCode": code, "riskFlags": "+".join(flags), "riskCount": len(flags)})
+        rows.append({"종목코드": code, "위험플래그": "+".join(flags), "위험수": len(flags)})
 
     if not rows:
         return pl.DataFrame()
-    return pl.DataFrame(rows).sort("riskCount", descending=True)
+    return pl.DataFrame(rows).sort("위험수", descending=True)
 
 
 def _screenQuality() -> pl.DataFrame:
@@ -115,21 +115,21 @@ def _screenQuality() -> pl.DataFrame:
     qual = _loadAxis("quality")
     eff = _loadAxis("efficiency")
 
-    goodProf = set(prof.filter(pl.col("grade") == "우수")["stockCode"].to_list())
-    goodQual = set(qual.filter(pl.col("grade").is_in(["우수", "양호"]))["stockCode"].to_list())
-    goodEff = set(eff.filter(pl.col("grade").is_in(["우수", "양호"]))["stockCode"].to_list())
+    goodProf = set(prof.filter(pl.col("등급") == "우수")["종목코드"].to_list())
+    goodQual = set(qual.filter(pl.col("등급").is_in(["우수", "양호"]))["종목코드"].to_list())
+    goodEff = set(eff.filter(pl.col("등급").is_in(["우수", "양호"]))["종목코드"].to_list())
 
     codes = goodProf & goodQual & goodEff
-    return prof.filter(pl.col("stockCode").is_in(list(codes))).sort("roe", descending=True, nulls_last=True)
+    return prof.filter(pl.col("종목코드").is_in(list(codes))).sort("ROE", descending=True, nulls_last=True)
 
 
 def _screenAll() -> pl.DataFrame:
     """전 프리셋 플래그 통합 — 종목별로 어떤 프리셋에 해당하는지."""
-    value = set(_screenValue()["stockCode"].to_list()) if not _screenValue().is_empty() else set()
-    dividend = set(_screenDividend()["stockCode"].to_list()) if not _screenDividend().is_empty() else set()
-    growth = set(_screenGrowth()["stockCode"].to_list()) if not _screenGrowth().is_empty() else set()
-    risk = set(_screenRisk()["stockCode"].to_list()) if not _screenRisk().is_empty() else set()
-    quality = set(_screenQuality()["stockCode"].to_list()) if not _screenQuality().is_empty() else set()
+    value = set(_screenValue()["종목코드"].to_list()) if not _screenValue().is_empty() else set()
+    dividend = set(_screenDividend()["종목코드"].to_list()) if not _screenDividend().is_empty() else set()
+    growth = set(_screenGrowth()["종목코드"].to_list()) if not _screenGrowth().is_empty() else set()
+    risk = set(_screenRisk()["종목코드"].to_list()) if not _screenRisk().is_empty() else set()
+    quality = set(_screenQuality()["종목코드"].to_list()) if not _screenQuality().is_empty() else set()
 
     allCodes = value | dividend | growth | risk | quality
     rows: list[dict] = []
@@ -145,11 +145,11 @@ def _screenAll() -> pl.DataFrame:
             flags.append("quality")
         if code in risk:
             flags.append("risk")
-        rows.append({"stockCode": code, "presets": "+".join(flags), "presetCount": len(flags)})
+        rows.append({"종목코드": code, "프리셋": "+".join(flags), "프리셋수": len(flags)})
 
     if not rows:
         return pl.DataFrame()
-    return pl.DataFrame(rows).sort("presetCount", descending=True)
+    return pl.DataFrame(rows).sort("프리셋수", descending=True)
 
 
 _DISPATCH = {
