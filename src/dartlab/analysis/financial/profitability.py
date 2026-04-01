@@ -31,59 +31,98 @@ def _pctOf(part, total) -> float | None:
 # ── 이익 구조 시계열 ──
 
 
+def _isFinancialSector(company) -> bool:
+    """금융업(은행/보험/증권) 판별."""
+    try:
+        sector = getattr(company, "sector", None)
+        if sector is not None:
+            from dartlab.core.sector.types import Sector
+
+            if sector.sector == Sector.FINANCIALS:
+                return True
+    except (AttributeError, ImportError):
+        pass
+    return False
+
+
 @memoized_calc
 def calcMarginTrend(company, *, basePeriod: str | None = None) -> dict | None:
     """이익 구조 시계열 -- 매출에서 순이익까지 금액과 마진.
 
-    IS에서 매출/매출원가/매출총이익/판관비/영업이익/당기순이익을 가져와서
-    금액 + 매출 대비 비율 + YoY를 기간별로 보여준다.
+    일반 기업: 매출/매출원가/매출총이익/판관비/영업이익/당기순이익
+    금융업: 이자수익(revenue 대체)/금융이익/영업이익/당기순이익
     """
-    isResult = company.select(
-        "IS",
-        ["매출액", "매출원가", "매출총이익", "판매비와관리비", "영업이익", "당기순이익"],
-    )
+    isFinancial = _isFinancialSector(company)
+
+    if isFinancial:
+        isResult = company.select(
+            "IS",
+            ["이자수익", "금융이익", "영업이익", "당기순이익"],
+        )
+    else:
+        isResult = company.select(
+            "IS",
+            ["매출액", "매출원가", "매출총이익", "판매비와관리비", "영업이익", "당기순이익"],
+        )
+
     parsed = toDict(isResult)
     if parsed is None:
         return None
 
     data, periods = parsed
-    rev = data.get("매출액", {})
-    cogs = data.get("매출원가", {})
-    gp = data.get("매출총이익", {})
-    sga = data.get("판매비와관리비", {})
-    op = data.get("영업이익", {})
-    ni = data.get("당기순이익", {})
+
+    if isFinancial:
+        rev = data.get("이자수익", {})
+        op = data.get("영업이익", {})
+        ni = data.get("당기순이익", {})
+        finIncome = data.get("금융이익", {})
+    else:
+        rev = data.get("매출액", {})
+        op = data.get("영업이익", {})
+        ni = data.get("당기순이익", {})
+
+    cogs = data.get("매출원가", {}) if not isFinancial else {}
+    gp = data.get("매출총이익", {}) if not isFinancial else {}
+    sga = data.get("판매비와관리비", {}) if not isFinancial else {}
 
     yCols = annualColsFromPeriods(periods, basePeriod, _MAX_YEARS + 1)
     if len(yCols) < 2:
         return None
 
     history = []
-    for i, col in enumerate(yCols[:-1]):  # 최신부터, 마지막은 YoY 계산용
+    for i, col in enumerate(yCols):
         prevCol = yCols[i + 1] if i + 1 < len(yCols) else None
         r = rev.get(col)
         if r is None or r == 0:
             continue
 
-        history.append(
-            {
-                "period": col,
-                "revenue": r,
-                "revenueYoy": _yoy(r, rev.get(prevCol)) if prevCol else None,
-                "cogs": cogs.get(col),
-                "grossProfit": gp.get(col),
-                "grossMargin": _pctOf(gp.get(col), r),
-                "sga": sga.get(col),
-                "operatingIncome": op.get(col),
-                "operatingMargin": _pctOf(op.get(col), r),
-                "operatingIncomeYoy": _yoy(op.get(col), op.get(prevCol)) if prevCol else None,
-                "netIncome": ni.get(col),
-                "netMargin": _pctOf(ni.get(col), r),
-                "netIncomeYoy": _yoy(ni.get(col), ni.get(prevCol)) if prevCol else None,
-            }
-        )
+        row: dict = {
+            "period": col,
+            "revenue": r,
+            "revenueYoy": _yoy(r, rev.get(prevCol)) if prevCol else None,
+            "operatingIncome": op.get(col),
+            "operatingMargin": _pctOf(op.get(col), r),
+            "operatingIncomeYoy": _yoy(op.get(col), op.get(prevCol)) if prevCol else None,
+            "netIncome": ni.get(col),
+            "netMargin": _pctOf(ni.get(col), r),
+            "netIncomeYoy": _yoy(ni.get(col), ni.get(prevCol)) if prevCol else None,
+        }
 
-    return {"history": history} if history else None
+        if isFinancial:
+            row["revenueLabel"] = "이자수익"
+            row["financialIncome"] = finIncome.get(col)
+        else:
+            row["cogs"] = cogs.get(col)
+            row["grossProfit"] = gp.get(col)
+            row["grossMargin"] = _pctOf(gp.get(col), r)
+            row["sga"] = sga.get(col)
+
+        history.append(row)
+
+    result = {"history": history} if history else None
+    if result and isFinancial:
+        result["isFinancial"] = True
+    return result
 
 
 # ── ROE 분해 (듀퐁 5요소) ──

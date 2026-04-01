@@ -238,7 +238,7 @@ def test_plugin_list():
 def test_ai_no_build():
     from dartlab.cli.commands.ai import run
 
-    with patch("dartlab.cli.commands.ai._check_built_ui", return_value=False):
+    with patch("dartlab.cli.commands.ai._checkBuiltUi", return_value=False):
         rc = run(_ns(port=8000, host="127.0.0.1", dev=False))
     assert rc == 0
 
