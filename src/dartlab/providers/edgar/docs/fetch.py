@@ -54,6 +54,7 @@ FORTY_F_HEADINGS = {
     "EXHIBIT INDEX",
 }
 
+
 def _make_progress(total: int, title: str, *, disable: bool = False):
     """alive_bar 호환 (progress, bar) 쌍을 반환하는 헬퍼."""
     p = Progress(

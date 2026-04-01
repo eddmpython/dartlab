@@ -66,7 +66,7 @@ def _searchCompanyCodes(question: str) -> str:
 
     body = "\n".join(results)
     return (
-        "<external-data source=\"company-search\">\n"
+        '<external-data source="company-search">\n'
         "## 사전 종목코드 확인 결과\n"
         "아래 종목코드가 확인되었습니다. 코드 작성 시 이 코드를 사용하세요:\n"
         f"{body}\n"
@@ -125,10 +125,10 @@ def _preGroundDisclosure(stockCode: str | None = None) -> str:
     return (
         '<external-data source="disclosure-brief">\n'
         "## 공시 프로필 (자동 조회)\n"
-        f'- 총 공시: {row["total_filings"]}건 ({row["first_dt"]}~{row["last_dt"]})\n'
-        f'- 주요 유형: {row["top3_summary"]}\n'
-        f'- 공시 속도: {row["velocity_text"]}\n'
-        f'- 특이사항: {row["rare_text"]}\n'
+        f"- 총 공시: {row['total_filings']}건 ({row['first_dt']}~{row['last_dt']})\n"
+        f"- 주요 유형: {row['top3_summary']}\n"
+        f"- 공시 속도: {row['velocity_text']}\n"
+        f"- 특이사항: {row['rare_text']}\n"
         "</external-data>"
     )
 
@@ -162,7 +162,7 @@ def _preGroundSearch(
 
     formatted = formatResults(results, maxChars=2000)
     return (
-        "<external-data source=\"web-search\">\n"
+        '<external-data source="web-search">\n'
         "## 관련 최신 정보 (자동 검색)\n"
         "아래는 질문과 관련된 최신 검색 결과입니다. 참고하되, "
         "출처(URL)를 인용하고, 검색 결과만으로 판단하지 마세요.\n\n"

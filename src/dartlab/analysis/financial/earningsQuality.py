@@ -633,12 +633,14 @@ def calcDilutionTrend(company, *, basePeriod: str | None = None) -> dict | None:
         if basic is not None and diluted is not None and basic != 0:
             dilutionPct = round((basic - diluted) / abs(basic) * 100, 2)
 
-        history.append({
-            "period": col,
-            "basicEps": basic,
-            "dilutedEps": diluted,
-            "dilutionPct": dilutionPct,
-        })
+        history.append(
+            {
+                "period": col,
+                "basicEps": basic,
+                "dilutedEps": diluted,
+                "dilutionPct": dilutionPct,
+            }
+        )
 
     if not history:
         return None

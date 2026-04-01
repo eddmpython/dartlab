@@ -319,13 +319,15 @@ def calcSegmentTrend(company, *, basePeriod: str | None = None) -> dict | None:
                 else:
                     opMarginDirection = "안정"
 
-        rows.append({
-            "name": segName,
-            "values": positiveVals,
-            "yoy": yoy,
-            "opMargins": opMargins,
-            "opMarginDirection": opMarginDirection,
-        })
+        rows.append(
+            {
+                "name": segName,
+                "values": positiveVals,
+                "yoy": yoy,
+                "opMargins": opMargins,
+                "opMarginDirection": opMarginDirection,
+            }
+        )
 
     if not rows:
         return None

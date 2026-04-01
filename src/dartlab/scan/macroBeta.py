@@ -130,9 +130,15 @@ def _loadRevenueSeries(scanDir: Path) -> pl.DataFrame | None:
     schema = pl.scan_parquet(str(scanPath)).collect_schema().names()
     scCol = "stockCode" if "stockCode" in schema else "stock_code"
 
-    REVENUE_IDS = {"Revenue", "Revenues", "revenue", "revenues",
-                   "ifrs-full_Revenue", "dart_Revenue",
-                   "RevenueFromContractsWithCustomers"}
+    REVENUE_IDS = {
+        "Revenue",
+        "Revenues",
+        "revenue",
+        "revenues",
+        "ifrs-full_Revenue",
+        "dart_Revenue",
+        "RevenueFromContractsWithCustomers",
+    }
     REVENUE_NMS = {"매출액", "수익(매출액)", "영업수익", "매출", "순영업수익"}
 
     target = (

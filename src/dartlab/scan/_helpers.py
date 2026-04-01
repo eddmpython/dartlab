@@ -113,9 +113,7 @@ def parse_num(s) -> float | None:
         return None
 
 
-def extractAccount(
-    sub: pl.DataFrame, ids: set, nms: set, amtCol: str = "thstrm_amount"
-) -> float | None:
+def extractAccount(sub: pl.DataFrame, ids: set, nms: set, amtCol: str = "thstrm_amount") -> float | None:
     """DataFrame에서 account_id/account_nm 매칭 → 금액 추출."""
     for row in sub.iter_rows(named=True):
         aid = row.get("account_id", "")

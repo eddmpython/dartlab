@@ -376,12 +376,14 @@ def calcCostByNatureAnalysis(company, *, basePeriod: str | None = None) -> dict 
             else:
                 direction = "안정"
 
-        result_categories.append({
-            "name": catName,
-            "history": history,
-            "latestRatio": latestRatio,
-            "direction": direction,
-        })
+        result_categories.append(
+            {
+                "name": catName,
+                "history": history,
+                "latestRatio": latestRatio,
+                "direction": direction,
+            }
+        )
 
     # 비중 기준 정렬 (기타 제외하고 큰 순)
     result_categories.sort(key=lambda x: (x["name"] == "기타", -x["latestRatio"]))

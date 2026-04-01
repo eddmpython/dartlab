@@ -2772,9 +2772,7 @@ def ocfDecompositionBlock(data: dict) -> list:
             }
         )
 
-    unified = unifyTableScale(
-        rows, "기간", ["순이익", "감가상각(추정)", "운전자본효과", "영업CF", "잔차"], unit="won"
-    )
+    unified = unifyTableScale(rows, "기간", ["순이익", "감가상각(추정)", "운전자본효과", "영업CF", "잔차"], unit="won")
 
     blocks: list = []
     blocks.append(

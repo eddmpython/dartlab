@@ -378,7 +378,9 @@ class DocsCollector:
                 urlToTitle[sd["url"]] = sd["title"]
 
         _p2 = Progress(SpinnerColumn(), TextColumn("[bold blue]{task.description}"), BarColumn(), MofNCompleteColumn())
-        _t2 = _p2.add_task(f"[2/2] HTML 수집 | {self.corpName} ({uniqueReports}건, {len(uniqueUrls)}섹션)", total=len(uniqueUrls))
+        _t2 = _p2.add_task(
+            f"[2/2] HTML 수집 | {self.corpName} ({uniqueReports}건, {len(uniqueUrls)}섹션)", total=len(uniqueUrls)
+        )
         with _p2:
             for i, url in enumerate(uniqueUrls):
                 title = urlToTitle.get(url, "")

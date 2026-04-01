@@ -60,6 +60,7 @@ class _EdgarNotesWrapper:
     def quarterly(self, query: str | None = None) -> pl.DataFrame | None:
         return self._company.docs.notes(query)
 
+
 # ── topic 단축 alias ────────────────────────────────────────────
 _TOPIC_ALIASES: dict[str, str] = {
     # 10-K 주요 항목 짧은 이름
@@ -2496,7 +2497,9 @@ class Company:
 
         return generateResearch(self, sections=sections, includeMarket=includeMarket)
 
-    def table(self, topic: str, subtopic: str | None = None, *, numeric: bool = False, period: str | None = None) -> Any:
+    def table(
+        self, topic: str, subtopic: str | None = None, *, numeric: bool = False, period: str | None = None
+    ) -> Any:
         """topic 데이터를 테이블 형태로 반환."""
         df = self.show(topic, period=period)
         if df is None:
@@ -2645,13 +2648,17 @@ class Company:
                     rev = rev_row[pcols[0]][0]
                     if rev:
                         rev_per_employee = rev / employee_count
-        return pl.DataFrame([{
-            "종목코드": self.ticker,
-            "회사명": self.corpName,
-            "직원수": employee_count,
-            "기간": period,
-            "1인당매출": rev_per_employee,
-        }])
+        return pl.DataFrame(
+            [
+                {
+                    "종목코드": self.ticker,
+                    "회사명": self.corpName,
+                    "직원수": employee_count,
+                    "기간": period,
+                    "1인당매출": rev_per_employee,
+                }
+            ]
+        )
 
     def capital(self, view: str | None = None) -> pl.DataFrame | None:
         """주주환원/자본구조 — EDGAR BS/CF 기반 단일 회사 분석.
@@ -2697,8 +2704,14 @@ class Company:
 
         debt_accts = selectFromShow(
             bs,
-            ["total_liabilities", "shortterm_borrowings", "longterm_borrowings",
-             "debentures", "current_liabilities", "noncurrent_liabilities"],
+            [
+                "total_liabilities",
+                "shortterm_borrowings",
+                "longterm_borrowings",
+                "debentures",
+                "current_liabilities",
+                "noncurrent_liabilities",
+            ],
         )
         if debt_accts is None:
             return None

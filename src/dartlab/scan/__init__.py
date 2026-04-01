@@ -109,6 +109,7 @@ def _enrichWithKorean(df: pl.DataFrame) -> pl.DataFrame:
 
     return df
 
+
 # ── Axis Registry ────────────────────────────────────────
 
 
@@ -359,9 +360,15 @@ def _edgarDispatch(axis: str, kwargs: dict) -> pl.DataFrame | None:
     """EDGAR 전용 scan 축 디스패치. 구현 없으면 None 반환."""
     # XBRL 기반 7축 — _edgar_helpers.scan_edgar_accounts 활용
     _EDGAR_XBRL_AXES = {
-        "profitability", "growth", "quality", "liquidity",
-        "efficiency", "cashflow", "dividendTrend",
-        "capital", "debt",
+        "profitability",
+        "growth",
+        "quality",
+        "liquidity",
+        "efficiency",
+        "cashflow",
+        "dividendTrend",
+        "capital",
+        "debt",
     }
     if axis in _EDGAR_XBRL_AXES:
         from dartlab.scan._edgar_scan import edgarScan

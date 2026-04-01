@@ -25,19 +25,21 @@ _cachedDna: dict | None = None  # {"vectors": np.ndarray, "stockCodes": list[str
 
 # ── 희귀 이벤트 유형 (위기/특수 시그널) ──
 
-_RARE_TYPES = frozenset({
-    "관리종목지정",
-    "상장폐지",
-    "회생절차",
-    "감자",
-    "파산",
-    "횡령",
-    "부정",
-    "제재",
-    "소송",
-    "채권은행",
-    "자사주소각",
-})
+_RARE_TYPES = frozenset(
+    {
+        "관리종목지정",
+        "상장폐지",
+        "회생절차",
+        "감자",
+        "파산",
+        "횡령",
+        "부정",
+        "제재",
+        "소송",
+        "채권은행",
+        "자사주소각",
+    }
+)
 
 
 # ── companyProfile ──
@@ -47,19 +49,13 @@ def buildCompanyProfile(meta: pl.DataFrame, outDir: Path) -> pl.DataFrame:
     """meta.parquet에서 기업별 공시 프로필을 집계하여 저장."""
     global _cachedProfile
 
-    af = meta.filter(
-        (pl.col("source") == "allFilings") & (pl.col("stock_code") != "")
-    )
+    af = meta.filter((pl.col("source") == "allFilings") & (pl.col("stock_code") != ""))
 
     if af.height == 0:
         return pl.DataFrame()
 
     # 정규화된 유형별 건수
-    typeCounts = (
-        af.group_by("stock_code", "report_nm")
-        .len()
-        .sort("len", descending=True)
-    )
+    typeCounts = af.group_by("stock_code", "report_nm").len().sort("len", descending=True)
 
     # 기업별 집계
     profile = (
@@ -74,12 +70,9 @@ def buildCompanyProfile(meta: pl.DataFrame, outDir: Path) -> pl.DataFrame:
     )
 
     # top3 유형
-    top3 = (
-        typeCounts.group_by("stock_code")
-        .agg(
-            pl.col("report_nm").head(3).alias("top3_types"),
-            pl.col("len").head(3).alias("top3_counts"),
-        )
+    top3 = typeCounts.group_by("stock_code").agg(
+        pl.col("report_nm").head(3).alias("top3_types"),
+        pl.col("len").head(3).alias("top3_counts"),
     )
 
     # 연도별 건수
@@ -96,18 +89,12 @@ def buildCompanyProfile(meta: pl.DataFrame, outDir: Path) -> pl.DataFrame:
     )
 
     # 희귀 이벤트
-    rareFiltered = typeCounts.filter(
-        pl.col("report_nm").is_in(list(_RARE_TYPES))
-    )
-    rareAgg = (
-        rareFiltered.group_by("stock_code")
-        .agg(pl.col("report_nm").alias("rare_events"))
-    )
+    rareFiltered = typeCounts.filter(pl.col("report_nm").is_in(list(_RARE_TYPES)))
+    rareAgg = rareFiltered.group_by("stock_code").agg(pl.col("report_nm").alias("rare_events"))
 
     # 병합
     result = (
-        profile
-        .join(top3, on="stock_code", how="left")
+        profile.join(top3, on="stock_code", how="left")
         .join(yearly, on="stock_code", how="left")
         .join(rareAgg, on="stock_code", how="left")
     )
@@ -143,9 +130,7 @@ def loadProfile(stockCode: str | None = None) -> dict | pl.DataFrame:
     # 편의 필드 생성
     top3 = d.get("top3_types") or []
     top3c = d.get("top3_counts") or []
-    d["top3_summary"] = ", ".join(
-        f"{t}({c}건)" for t, c in zip(top3, top3c)
-    ) if top3 else "없음"
+    d["top3_summary"] = ", ".join(f"{t}({c}건)" for t, c in zip(top3, top3c)) if top3 else "없음"
 
     # velocity: 최근 연도 / 직전 연도
     years = d.get("yearly_years") or []
@@ -184,9 +169,7 @@ def buildEventTimeline(meta: pl.DataFrame, outDir: Path) -> pl.DataFrame:
     global _cachedTimeline
 
     af = meta.filter(
-        (pl.col("source") == "allFilings")
-        & (pl.col("rcept_dt") != "")
-        & (pl.col("rcept_dt").str.len_chars() >= 6)
+        (pl.col("source") == "allFilings") & (pl.col("rcept_dt") != "") & (pl.col("rcept_dt").str.len_chars() >= 6)
     )
 
     if af.height == 0:
@@ -257,14 +240,19 @@ def pulse(topK: int = 10) -> pl.DataFrame:
         pl.col("count").alias("previous"),
     )
 
-    merged = cur.join(prev, on="type_norm", how="left").with_columns(
-        pl.col("previous").fill_null(0),
-    ).with_columns(
-        pl.when(pl.col("previous") > 0)
-        .then(((pl.col("current") - pl.col("previous")) / pl.col("previous") * 100).round(1))
-        .otherwise(None)
-        .alias("change_pct")
-    ).sort("current", descending=True)
+    merged = (
+        cur.join(prev, on="type_norm", how="left")
+        .with_columns(
+            pl.col("previous").fill_null(0),
+        )
+        .with_columns(
+            pl.when(pl.col("previous") > 0)
+            .then(((pl.col("current") - pl.col("previous")) / pl.col("previous") * 100).round(1))
+            .otherwise(None)
+            .alias("change_pct")
+        )
+        .sort("current", descending=True)
+    )
 
     return merged.head(topK)
 
@@ -276,9 +264,7 @@ def buildDna(meta: pl.DataFrame, outDir: Path) -> dict:
     """114개 유형 빈도 분포를 기업별 114차원 벡터로 인코딩."""
     global _cachedDna
 
-    af = meta.filter(
-        (pl.col("source") == "allFilings") & (pl.col("stock_code") != "")
-    )
+    af = meta.filter((pl.col("source") == "allFilings") & (pl.col("stock_code") != ""))
 
     if af.height == 0:
         return {}
@@ -289,10 +275,7 @@ def buildDna(meta: pl.DataFrame, outDir: Path) -> dict:
     nTypes = len(allTypes)
 
     # 기업별 유형 건수
-    counts = (
-        af.group_by("stock_code", "report_nm")
-        .len()
-    )
+    counts = af.group_by("stock_code", "report_nm").len()
     totals = af.group_by("stock_code").len().rename({"len": "total"})
     counts = counts.join(totals, on="stock_code")
 
@@ -399,10 +382,12 @@ def similarCompanies(stockCode: str, topK: int = 5) -> pl.DataFrame:
     for i in topIndices:
         if sims[i] <= 0:
             break
-        rows.append({
-            "stock_code": data["stockCodes"][i],
-            "similarity": round(float(sims[i]), 4),
-        })
+        rows.append(
+            {
+                "stock_code": data["stockCodes"][i],
+                "similarity": round(float(sims[i]), 4),
+            }
+        )
 
     if not rows:
         return pl.DataFrame()

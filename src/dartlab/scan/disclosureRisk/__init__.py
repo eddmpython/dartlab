@@ -39,10 +39,7 @@ def _gradeRisk(activeCount: int, hasSevereKeyword: bool) -> str:
 def _calcChronicYears(fullDf: pl.DataFrame) -> pl.DataFrame:
     """전 기간 우발부채 연속 증가 연수 계산."""
     contingent_yearly = (
-        fullDf.filter(
-            pl.col("sectionTitle").str.contains("우발부채")
-            & (pl.col("sizeDelta") > 0)
-        )
+        fullDf.filter(pl.col("sectionTitle").str.contains("우발부채") & (pl.col("sizeDelta") > 0))
         .group_by(["stockCode", "toPeriod"])
         .agg(pl.col("sizeDelta").sum().alias("delta"))
     )
@@ -65,12 +62,8 @@ def _calcRiskKeyword(latest: pl.DataFrame, prev: pl.DataFrame) -> pl.DataFrame:
     prev_stocks: set[str] = set()
 
     for kw in _SEVERE_KEYWORDS:
-        now_stocks |= set(
-            latest.filter(pl.col("preview").str.contains(kw))["stockCode"].unique().to_list()
-        )
-        prev_stocks |= set(
-            prev.filter(pl.col("preview").str.contains(kw))["stockCode"].unique().to_list()
-        )
+        now_stocks |= set(latest.filter(pl.col("preview").str.contains(kw))["stockCode"].unique().to_list())
+        prev_stocks |= set(prev.filter(pl.col("preview").str.contains(kw))["stockCode"].unique().to_list())
 
     new_stocks = now_stocks - prev_stocks
     if not new_stocks:
@@ -104,16 +97,12 @@ def scanDisclosureRisk(*, verbose: bool = True) -> pl.DataFrame:
     # 최신 기간 자동 탐지
     latestTo = fullDf["toPeriod"].max()
     latestFrom = str(int(latestTo) - 1)
-    changes = fullDf.filter(
-        (pl.col("fromPeriod") == latestFrom) & (pl.col("toPeriod") == latestTo)
-    )
+    changes = fullDf.filter((pl.col("fromPeriod") == latestFrom) & (pl.col("toPeriod") == latestTo))
 
     # 이전 기간 (키워드 차분용)
     prevTo = latestFrom
     prevFrom = str(int(prevTo) - 1)
-    prevChanges = fullDf.filter(
-        (pl.col("fromPeriod") == prevFrom) & (pl.col("toPeriod") == prevTo)
-    )
+    prevChanges = fullDf.filter((pl.col("fromPeriod") == prevFrom) & (pl.col("toPeriod") == prevTo))
 
     if changes.is_empty():
         del fullDf
@@ -126,10 +115,7 @@ def scanDisclosureRisk(*, verbose: bool = True) -> pl.DataFrame:
 
     # 1. contingentDebt: 우발부채 섹션 sizeDelta > 0 합
     contingent = (
-        changes.filter(
-            pl.col("sectionTitle").str.contains("우발부채")
-            & (pl.col("sizeDelta") > 0)
-        )
+        changes.filter(pl.col("sectionTitle").str.contains("우발부채") & (pl.col("sizeDelta") > 0))
         .group_by("stockCode")
         .agg(pl.col("sizeDelta").sum().alias("contingentDebt"))
     )
@@ -165,10 +151,7 @@ def scanDisclosureRisk(*, verbose: bool = True) -> pl.DataFrame:
 
     # 6. bizPivot: 사업의 내용 |sizeDelta| > 5000
     bizPivot = (
-        changes.filter(
-            pl.col("sectionTitle").str.contains("사업의")
-            & (pl.col("sizeDelta").abs() > 5000)
-        )
+        changes.filter(pl.col("sectionTitle").str.contains("사업의") & (pl.col("sizeDelta").abs() > 5000))
         .group_by("stockCode")
         .agg(pl.col("sizeDelta").abs().max().alias("bizPivot"))
     )
@@ -177,14 +160,18 @@ def scanDisclosureRisk(*, verbose: bool = True) -> pl.DataFrame:
 
     # ── 병합 + 등급 ──
 
-    allCodes = pl.DataFrame({"stockCode": list(
-        set(contingent["stockCode"].to_list())
-        | set(chronic["stockCode"].to_list())
-        | set(keyword["stockCode"].to_list())
-        | set(auditStruct["stockCode"].to_list())
-        | set(affiliate["stockCode"].to_list())
-        | set(bizPivot["stockCode"].to_list())
-    )})
+    allCodes = pl.DataFrame(
+        {
+            "stockCode": list(
+                set(contingent["stockCode"].to_list())
+                | set(chronic["stockCode"].to_list())
+                | set(keyword["stockCode"].to_list())
+                | set(auditStruct["stockCode"].to_list())
+                | set(affiliate["stockCode"].to_list())
+                | set(bizPivot["stockCode"].to_list())
+            )
+        }
+    )
 
     result = allCodes
     for right in [contingent, chronic, keyword, auditStruct, affiliate, bizPivot]:

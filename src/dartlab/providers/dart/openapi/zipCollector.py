@@ -317,7 +317,10 @@ class ZipDocsCollector:
         total = newFilings.height
 
         _progress = Progress(
-            SpinnerColumn(), TextColumn("[bold blue]{task.description}"), BarColumn(), MofNCompleteColumn(),
+            SpinnerColumn(),
+            TextColumn("[bold blue]{task.description}"),
+            BarColumn(),
+            MofNCompleteColumn(),
             disable=not showProgress,
         )
         _task = _progress.add_task(f"docs 수집 | {self._corpName}", total=total)

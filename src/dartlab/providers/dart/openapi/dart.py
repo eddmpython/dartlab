@@ -1010,7 +1010,9 @@ class DartCompany:
         corpName = self._dart._resolveCorpName(self._corp)
         frames: list[pl.DataFrame] = []
 
-        _progress = Progress(SpinnerColumn(), TextColumn("[bold blue]{task.description}"), BarColumn(), MofNCompleteColumn())
+        _progress = Progress(
+            SpinnerColumn(), TextColumn("[bold blue]{task.description}"), BarColumn(), MofNCompleteColumn()
+        )
         _task = _progress.add_task(f"보고서 저장 | {corpName}", total=len(targets))
         with _progress:
             for cat in targets:

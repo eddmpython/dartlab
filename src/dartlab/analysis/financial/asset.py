@@ -528,12 +528,14 @@ def calcInvestmentPropertyTrend(company, *, basePeriod: str | None = None) -> di
         ip = _get(ipRow, col)
         if ta <= 0:
             continue
-        history.append({
-            "period": col,
-            "totalAssets": ta,
-            "ipValue": ip,
-            "ipPct": round(ip / ta * 100, 2) if ip > 0 else 0,
-        })
+        history.append(
+            {
+                "period": col,
+                "totalAssets": ta,
+                "ipValue": ip,
+                "ipPct": round(ip / ta * 100, 2) if ip > 0 else 0,
+            }
+        )
 
     if not history:
         return None
@@ -619,7 +621,9 @@ def calcIntangibleAssetDetail(company, *, basePeriod: str | None = None) -> dict
                 continue
             v = parseNumStr(row.get(str(latestCol)))
             if v is not None and v > 0:
-                items.append({"name": item, "latestValue": v, "pct": round(v / totalInt * 100, 1) if totalInt > 0 else 0})
+                items.append(
+                    {"name": item, "latestValue": v, "pct": round(v / totalInt * 100, 1) if totalInt > 0 else 0}
+                )
         items.sort(key=lambda x: x["latestValue"], reverse=True)
         items = items[:8]
 

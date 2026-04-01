@@ -42,15 +42,25 @@ def _scanProfitability(**_kw) -> pl.DataFrame:
         pct(pl.col("net_profit"), pl.col("total_assets")).alias("roa"),
     )
     result = result.with_columns(
-        pl.when(pl.max_horizontal("opMargin", "roe") >= 20).then(pl.lit("우수"))
-        .when(pl.max_horizontal("opMargin", "roe") >= 10).then(pl.lit("양호"))
-        .when(pl.max_horizontal("opMargin", "roe") >= 5).then(pl.lit("보통"))
-        .when(pl.max_horizontal("opMargin", "roe") >= 0).then(pl.lit("저수익"))
+        pl.when(pl.max_horizontal("opMargin", "roe") >= 20)
+        .then(pl.lit("우수"))
+        .when(pl.max_horizontal("opMargin", "roe") >= 10)
+        .then(pl.lit("양호"))
+        .when(pl.max_horizontal("opMargin", "roe") >= 5)
+        .then(pl.lit("보통"))
+        .when(pl.max_horizontal("opMargin", "roe") >= 0)
+        .then(pl.lit("저수익"))
         .otherwise(pl.lit("적자"))
         .alias("grade"),
     )
     return result.select(
-        "stockCode", "corpName", "opMargin", "netMargin", "roe", "roa", "grade",
+        "stockCode",
+        "corpName",
+        "opMargin",
+        "netMargin",
+        "roe",
+        "roa",
+        "grade",
     ).sort("roe", descending=True, nulls_last=True)
 
 
@@ -64,19 +74,30 @@ def _scanGrowth(**_kw) -> pl.DataFrame:
         return df
     result = df.with_columns(
         pct(pl.col("sales") - pl.col("sales_prev"), pl.col("sales_prev")).alias("revenueYoy"),
-        pct(pl.col("operating_profit") - pl.col("operating_profit_prev"), pl.col("operating_profit_prev")).alias("opYoy"),
+        pct(pl.col("operating_profit") - pl.col("operating_profit_prev"), pl.col("operating_profit_prev")).alias(
+            "opYoy"
+        ),
         pct(pl.col("net_profit") - pl.col("net_profit_prev"), pl.col("net_profit_prev")).alias("niYoy"),
     )
     result = result.with_columns(
-        pl.when(pl.col("revenueYoy") >= 20).then(pl.lit("고성장"))
-        .when(pl.col("revenueYoy") >= 5).then(pl.lit("성장"))
-        .when(pl.col("revenueYoy") >= -5).then(pl.lit("정체"))
-        .when(pl.col("revenueYoy") >= -20).then(pl.lit("역성장"))
+        pl.when(pl.col("revenueYoy") >= 20)
+        .then(pl.lit("고성장"))
+        .when(pl.col("revenueYoy") >= 5)
+        .then(pl.lit("성장"))
+        .when(pl.col("revenueYoy") >= -5)
+        .then(pl.lit("정체"))
+        .when(pl.col("revenueYoy") >= -20)
+        .then(pl.lit("역성장"))
         .otherwise(pl.lit("급감"))
         .alias("pattern"),
     )
     return result.select(
-        "stockCode", "corpName", "revenueYoy", "opYoy", "niYoy", "pattern",
+        "stockCode",
+        "corpName",
+        "revenueYoy",
+        "opYoy",
+        "niYoy",
+        "pattern",
     ).sort("revenueYoy", descending=True, nulls_last=True)
 
 
@@ -93,22 +114,32 @@ def _scanQuality(**_kw) -> pl.DataFrame:
         safe_div(
             pl.col("net_profit") - pl.col("operating_cashflow"),
             pl.col("total_assets"),
-        ).round(4).alias("accrualRatio"),
+        )
+        .round(4)
+        .alias("accrualRatio"),
     )
     # cfToNi 극단값 제거 (±20 초과 → None)
     result = result.with_columns(
         pl.when(pl.col("cfToNi").abs() > 20).then(None).otherwise(pl.col("cfToNi")).alias("cfToNi"),
     )
     result = result.with_columns(
-        pl.when((pl.col("cfToNi") >= 0.8) & (pl.col("accrualRatio").abs() < 0.05)).then(pl.lit("우수"))
-        .when((pl.col("cfToNi") >= 0.5) & (pl.col("accrualRatio").abs() < 0.10)).then(pl.lit("양호"))
-        .when(pl.col("cfToNi") >= 0).then(pl.lit("보통"))
-        .when(pl.col("cfToNi") < 0).then(pl.lit("주의"))
+        pl.when((pl.col("cfToNi") >= 0.8) & (pl.col("accrualRatio").abs() < 0.05))
+        .then(pl.lit("우수"))
+        .when((pl.col("cfToNi") >= 0.5) & (pl.col("accrualRatio").abs() < 0.10))
+        .then(pl.lit("양호"))
+        .when(pl.col("cfToNi") >= 0)
+        .then(pl.lit("보통"))
+        .when(pl.col("cfToNi") < 0)
+        .then(pl.lit("주의"))
         .otherwise(pl.lit("위험"))
         .alias("grade"),
     )
     return result.select(
-        "stockCode", "corpName", "cfToNi", "accrualRatio", "grade",
+        "stockCode",
+        "corpName",
+        "cfToNi",
+        "accrualRatio",
+        "grade",
     ).sort("cfToNi", descending=True, nulls_last=True)
 
 
@@ -128,15 +159,23 @@ def _scanLiquidity(**_kw) -> pl.DataFrame:
         ).alias("quickRatio"),
     )
     result = result.with_columns(
-        pl.when(pl.col("currentRatio") >= 200).then(pl.lit("우수"))
-        .when(pl.col("currentRatio") >= 150).then(pl.lit("양호"))
-        .when(pl.col("currentRatio") >= 100).then(pl.lit("보통"))
-        .when(pl.col("currentRatio") >= 50).then(pl.lit("주의"))
+        pl.when(pl.col("currentRatio") >= 200)
+        .then(pl.lit("우수"))
+        .when(pl.col("currentRatio") >= 150)
+        .then(pl.lit("양호"))
+        .when(pl.col("currentRatio") >= 100)
+        .then(pl.lit("보통"))
+        .when(pl.col("currentRatio") >= 50)
+        .then(pl.lit("주의"))
         .otherwise(pl.lit("위험"))
         .alias("grade"),
     )
     return result.select(
-        "stockCode", "corpName", "currentRatio", "quickRatio", "grade",
+        "stockCode",
+        "corpName",
+        "currentRatio",
+        "quickRatio",
+        "grade",
     ).sort("currentRatio", descending=True, nulls_last=True)
 
 
@@ -145,10 +184,15 @@ def _scanLiquidity(**_kw) -> pl.DataFrame:
 
 def _scanEfficiency(**_kw) -> pl.DataFrame:
     """효율성 — 자산회전율 + CCC."""
-    df = scan_edgar_accounts([
-        "sales", "total_assets", "inventories",
-        "trade_and_other_receivables", "trade_and_other_payables",
-    ])
+    df = scan_edgar_accounts(
+        [
+            "sales",
+            "total_assets",
+            "inventories",
+            "trade_and_other_receivables",
+            "trade_and_other_payables",
+        ]
+    )
     if df.is_empty():
         return df
     result = df.with_columns(
@@ -158,17 +202,26 @@ def _scanEfficiency(**_kw) -> pl.DataFrame:
             safe_div(pl.col("inventories").fill_null(0) * 365, pl.col("sales"))
             + safe_div(pl.col("trade_and_other_receivables").fill_null(0) * 365, pl.col("sales"))
             - safe_div(pl.col("trade_and_other_payables").fill_null(0) * 365, pl.col("sales"))
-        ).round(0).alias("ccc"),
+        )
+        .round(0)
+        .alias("ccc"),
     )
     result = result.with_columns(
-        pl.when(pl.col("assetTurnover") >= 1.5).then(pl.lit("우수"))
-        .when(pl.col("assetTurnover") >= 1.0).then(pl.lit("양호"))
-        .when(pl.col("assetTurnover") >= 0.5).then(pl.lit("보통"))
+        pl.when(pl.col("assetTurnover") >= 1.5)
+        .then(pl.lit("우수"))
+        .when(pl.col("assetTurnover") >= 1.0)
+        .then(pl.lit("양호"))
+        .when(pl.col("assetTurnover") >= 0.5)
+        .then(pl.lit("보통"))
         .otherwise(pl.lit("비효율"))
         .alias("grade"),
     )
     return result.select(
-        "stockCode", "corpName", "assetTurnover", "ccc", "grade",
+        "stockCode",
+        "corpName",
+        "assetTurnover",
+        "ccc",
+        "grade",
     ).sort("assetTurnover", descending=True, nulls_last=True)
 
 
@@ -177,10 +230,15 @@ def _scanEfficiency(**_kw) -> pl.DataFrame:
 
 def _scanCashflow(**_kw) -> pl.DataFrame:
     """현금흐름 — OCF/ICF/FCF + 패턴 분류."""
-    df = scan_edgar_accounts([
-        "operating_cashflow", "investing_cashflow", "financing_cash_flow",
-        "capex", "sales",
-    ])
+    df = scan_edgar_accounts(
+        [
+            "operating_cashflow",
+            "investing_cashflow",
+            "financing_cash_flow",
+            "capex",
+            "sales",
+        ]
+    )
     if df.is_empty():
         return df
     result = df.with_columns(
@@ -192,26 +250,38 @@ def _scanCashflow(**_kw) -> pl.DataFrame:
     # 현금흐름 패턴 분류 (OCF+/-, ICF+/-, FCF+/-)
     result = result.with_columns(
         pl.when(
-            (pl.col("operating_cashflow") > 0) & (pl.col("investing_cashflow") < 0) & (pl.col("financing_cash_flow") < 0)
-        ).then(pl.lit("성장투자형"))
+            (pl.col("operating_cashflow") > 0)
+            & (pl.col("investing_cashflow") < 0)
+            & (pl.col("financing_cash_flow") < 0)
+        )
+        .then(pl.lit("성장투자형"))
         .when(
-            (pl.col("operating_cashflow") > 0) & (pl.col("investing_cashflow") < 0) & (pl.col("financing_cash_flow") > 0)
-        ).then(pl.lit("공격성장형"))
+            (pl.col("operating_cashflow") > 0)
+            & (pl.col("investing_cashflow") < 0)
+            & (pl.col("financing_cash_flow") > 0)
+        )
+        .then(pl.lit("공격성장형"))
+        .when((pl.col("operating_cashflow") < 0) & (pl.col("financing_cash_flow") > 0))
+        .then(pl.lit("외부의존형"))
         .when(
-            (pl.col("operating_cashflow") < 0) & (pl.col("financing_cash_flow") > 0)
-        ).then(pl.lit("외부의존형"))
-        .when(
-            (pl.col("operating_cashflow") > 0) & (pl.col("investing_cashflow") > 0) & (pl.col("financing_cash_flow") < 0)
-        ).then(pl.lit("축소정리형"))
-        .when(
-            (pl.col("operating_cashflow") < 0) & (pl.col("investing_cashflow") > 0)
-        ).then(pl.lit("현금위기형"))
+            (pl.col("operating_cashflow") > 0)
+            & (pl.col("investing_cashflow") > 0)
+            & (pl.col("financing_cash_flow") < 0)
+        )
+        .then(pl.lit("축소정리형"))
+        .when((pl.col("operating_cashflow") < 0) & (pl.col("investing_cashflow") > 0))
+        .then(pl.lit("현금위기형"))
         .otherwise(pl.lit("기타"))
         .alias("pattern"),
     )
     return result.select(
-        "stockCode", "corpName", "operating_cashflow", "investing_cashflow",
-        "fcf", "ocfMargin", "pattern",
+        "stockCode",
+        "corpName",
+        "operating_cashflow",
+        "investing_cashflow",
+        "fcf",
+        "ocfMargin",
+        "pattern",
     ).sort("fcf", descending=True, nulls_last=True)
 
 
@@ -232,14 +302,21 @@ def _scanDividendTrend(**_kw) -> pl.DataFrame:
         pl.when(pl.col("payoutRatio").abs() > 200).then(None).otherwise(pl.col("payoutRatio")).alias("payoutRatio"),
     )
     result = result.with_columns(
-        pl.when(pl.col("dividendAmount").is_null() | (pl.col("dividendAmount") == 0)).then(pl.lit("무배당"))
-        .when(pl.col("payoutRatio").is_not_null() & (pl.col("payoutRatio") >= 30)).then(pl.lit("양호"))
-        .when(pl.col("payoutRatio").is_not_null() & (pl.col("payoutRatio") >= 10)).then(pl.lit("보통"))
+        pl.when(pl.col("dividendAmount").is_null() | (pl.col("dividendAmount") == 0))
+        .then(pl.lit("무배당"))
+        .when(pl.col("payoutRatio").is_not_null() & (pl.col("payoutRatio") >= 30))
+        .then(pl.lit("양호"))
+        .when(pl.col("payoutRatio").is_not_null() & (pl.col("payoutRatio") >= 10))
+        .then(pl.lit("보통"))
         .otherwise(pl.lit("주의"))
         .alias("grade"),
     )
     return result.select(
-        "stockCode", "corpName", "dividendAmount", "payoutRatio", "grade",
+        "stockCode",
+        "corpName",
+        "dividendAmount",
+        "payoutRatio",
+        "grade",
     ).sort("dividendAmount", descending=True, nulls_last=True)
 
 
@@ -262,15 +339,25 @@ def _scanCapital(**_kw) -> pl.DataFrame:
     )
     result = result.with_columns(
         pl.when(
-            (pl.col("dividendAmount") > 0) & (pl.col("treasury_stock").is_not_null()) & (pl.col("treasury_stock").abs() > 0)
-        ).then(pl.lit("적극환원"))
-        .when(pl.col("dividendAmount") > 0).then(pl.lit("환원형"))
-        .when(pl.col("treasury_stock").is_not_null() & (pl.col("treasury_stock").abs() > 0)).then(pl.lit("자사주"))
+            (pl.col("dividendAmount") > 0)
+            & (pl.col("treasury_stock").is_not_null())
+            & (pl.col("treasury_stock").abs() > 0)
+        )
+        .then(pl.lit("적극환원"))
+        .when(pl.col("dividendAmount") > 0)
+        .then(pl.lit("환원형"))
+        .when(pl.col("treasury_stock").is_not_null() & (pl.col("treasury_stock").abs() > 0))
+        .then(pl.lit("자사주"))
         .otherwise(pl.lit("중립"))
         .alias("classification"),
     )
     return result.select(
-        "stockCode", "corpName", "dividendAmount", "payoutRatio", "treasury_stock", "classification",
+        "stockCode",
+        "corpName",
+        "dividendAmount",
+        "payoutRatio",
+        "treasury_stock",
+        "classification",
     ).sort("dividendAmount", descending=True, nulls_last=True)
 
 
@@ -279,11 +366,16 @@ def _scanCapital(**_kw) -> pl.DataFrame:
 
 def _scanDebt(**_kw) -> pl.DataFrame:
     """부채구조 — 부채비율 + 차입금 구조."""
-    df = scan_edgar_accounts([
-        "total_liabilities", "total_stockholders_equity",
-        "shortterm_borrowings", "longterm_borrowings",
-        "operating_profit", "interest_expense",
-    ])
+    df = scan_edgar_accounts(
+        [
+            "total_liabilities",
+            "total_stockholders_equity",
+            "shortterm_borrowings",
+            "longterm_borrowings",
+            "operating_profit",
+            "interest_expense",
+        ]
+    )
     if df.is_empty():
         return df
     result = df.with_columns(
@@ -295,14 +387,22 @@ def _scanDebt(**_kw) -> pl.DataFrame:
         ).alias("shortTermRatio"),
     )
     result = result.with_columns(
-        pl.when(pl.col("debtRatio") < 100).then(pl.lit("안전"))
-        .when(pl.col("debtRatio") < 200).then(pl.lit("주의"))
-        .when(pl.col("debtRatio") < 400).then(pl.lit("관찰"))
+        pl.when(pl.col("debtRatio") < 100)
+        .then(pl.lit("안전"))
+        .when(pl.col("debtRatio") < 200)
+        .then(pl.lit("주의"))
+        .when(pl.col("debtRatio") < 400)
+        .then(pl.lit("관찰"))
         .otherwise(pl.lit("고위험"))
         .alias("riskLevel"),
     )
     return result.select(
-        "stockCode", "corpName", "debtRatio", "icr", "shortTermRatio", "riskLevel",
+        "stockCode",
+        "corpName",
+        "debtRatio",
+        "icr",
+        "shortTermRatio",
+        "riskLevel",
     ).sort("debtRatio", nulls_last=True)
 
 

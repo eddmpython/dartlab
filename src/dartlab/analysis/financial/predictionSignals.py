@@ -2063,6 +2063,7 @@ def calcRevenueDirection(company, *, basePeriod: str | None = None) -> dict | No
     industry = None
     try:
         from dartlab.core.finance.exogenousAxes import _lookupFromKindList
+
         industry, _ = _lookupFromKindList(_getStockCode(company) or "")
     except (ImportError, TypeError):
         pass

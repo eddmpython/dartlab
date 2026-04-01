@@ -14,7 +14,9 @@ from pathlib import Path
 @lru_cache(maxsize=1)
 def _load_standard_accounts() -> dict[str, dict]:
     """DART mapperData/standardAccounts → {snakeId: {korName, code, level, sj}}."""
-    mapper_path = Path(__file__).resolve().parents[2] / "providers" / "dart" / "finance" / "mapperData" / "accountMappings.json"
+    mapper_path = (
+        Path(__file__).resolve().parents[2] / "providers" / "dart" / "finance" / "mapperData" / "accountMappings.json"
+    )
     if not mapper_path.exists():
         return {}
     data = json.loads(mapper_path.read_text(encoding="utf-8"))

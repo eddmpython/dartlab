@@ -83,8 +83,7 @@ def _normalizeReportName(col: pl.Expr) -> pl.Expr:
         정규화된 report_nm expression.
     """
     return (
-        col
-        .str.replace(r"^\[기재정정\]", "", literal=False)
+        col.str.replace(r"^\[기재정정\]", "", literal=False)
         .str.replace(r"^\[첨부정정\]", "", literal=False)
         .str.replace(r"^\[첨부추가\]", "", literal=False)
         .str.replace(r"^\[발행조건확정\]", "", literal=False)
@@ -381,22 +380,16 @@ def _buildAndSaveTypeIndex(meta: pl.DataFrame, outDir: Path) -> None:
     norm = (
         meta.lazy()
         .with_row_index("_docId")
-        .with_columns(
-            _normalizeReportName(pl.col("report_nm")).alias("_norm")
-        )
+        .with_columns(_normalizeReportName(pl.col("report_nm")).alias("_norm"))
         .filter(pl.col("_norm") != "")
         .group_by("_norm")
         .agg(pl.col("_docId"))
         .collect()
     )
 
-    typeToDocIds: dict[str, list[int]] = {
-        row[0]: row[1] for row in norm.iter_rows()
-    }
+    typeToDocIds: dict[str, list[int]] = {row[0]: row[1] for row in norm.iter_rows()}
 
-    (outDir / "typeIndex.json").write_text(
-        json.dumps(typeToDocIds, ensure_ascii=False), encoding="utf-8"
-    )
+    (outDir / "typeIndex.json").write_text(json.dumps(typeToDocIds, ensure_ascii=False), encoding="utf-8")
 
     typeIndex = {nt: set(_tokenize(nt)) for nt in typeToDocIds}
     _typeIndex = typeIndex
@@ -419,9 +412,7 @@ def _buildTypeIndex(meta: pl.DataFrame) -> tuple[dict, dict]:
         norm = (
             meta.lazy()
             .with_row_index("_docId")
-            .with_columns(
-                _normalizeReportName(pl.col("report_nm")).alias("_norm")
-            )
+            .with_columns(_normalizeReportName(pl.col("report_nm")).alias("_norm"))
             .filter(pl.col("_norm") != "")
             .group_by("_norm")
             .agg(pl.col("_docId"))
@@ -487,9 +478,7 @@ def searchNgram(
     # L0: 유형 매칭 (임계값 0.2 — 약한 부분 매칭 차단)
     _L0_MIN_SCORE = 0.2
     typeIndex, typeToDocIds = _buildTypeIndex(meta)
-    matchedTypes = [
-        (t, s) for t, s in _matchTypes(query, typeIndex, topK=3) if s >= _L0_MIN_SCORE
-    ]
+    matchedTypes = [(t, s) for t, s in _matchTypes(query, typeIndex, topK=3) if s >= _L0_MIN_SCORE]
     l0DocIds = set()
     for typeName, _ in matchedTypes:
         l0DocIds.update(typeToDocIds[typeName])
@@ -501,7 +490,7 @@ def searchNgram(
 
     if matchedTypes:
         for typeName, typeScore in matchedTypes:
-            for docId in typeToDocIds[typeName][:topK * 3]:
+            for docId in typeToDocIds[typeName][: topK * 3]:
                 if docId >= nDocs:
                     continue
                 row = meta.row(docId, named=True)
@@ -520,17 +509,19 @@ def searchNgram(
                     exactBoost = 3.0
                 elif query in sectionTitle:
                     exactBoost = 2.0
-                rows.append({
-                    "score": round(10.0 * typeScore * exactBoost, 4),
-                    "rcept_no": rcept,
-                    "corp_name": row.get("corp_name", ""),
-                    "stock_code": row.get("stock_code", ""),
-                    "rcept_dt": row.get("rcept_dt", ""),
-                    "report_nm": reportNm,
-                    "section_title": sectionTitle,
-                    "text": row.get("text", ""),
-                    "dartUrl": f"{DART_VIEWER}{rcept}",
-                })
+                rows.append(
+                    {
+                        "score": round(10.0 * typeScore * exactBoost, 4),
+                        "rcept_no": rcept,
+                        "corp_name": row.get("corp_name", ""),
+                        "stock_code": row.get("stock_code", ""),
+                        "rcept_dt": row.get("rcept_dt", ""),
+                        "report_nm": reportNm,
+                        "section_title": sectionTitle,
+                        "text": row.get("text", ""),
+                        "dartUrl": f"{DART_VIEWER}{rcept}",
+                    }
+                )
 
     # L1: BM25F bincount (전체 — L0에 없는 것만 추가)
     tokens = _tokenize(query)
@@ -590,17 +581,19 @@ def searchNgram(
                 if int(docId) in l0DocIds:
                     boost += 10.0
 
-                rows.append({
-                    "score": round(baseScore * boost, 4),
-                    "rcept_no": rcept,
-                    "corp_name": row.get("corp_name", ""),
-                    "stock_code": row.get("stock_code", ""),
-                    "rcept_dt": row.get("rcept_dt", ""),
-                    "report_nm": reportNm,
-                    "section_title": sectionTitle,
-                    "text": row.get("text", ""),
-                    "dartUrl": f"{DART_VIEWER}{rcept}",
-                })
+                rows.append(
+                    {
+                        "score": round(baseScore * boost, 4),
+                        "rcept_no": rcept,
+                        "corp_name": row.get("corp_name", ""),
+                        "stock_code": row.get("stock_code", ""),
+                        "rcept_dt": row.get("rcept_dt", ""),
+                        "report_nm": reportNm,
+                        "section_title": sectionTitle,
+                        "text": row.get("text", ""),
+                        "dartUrl": f"{DART_VIEWER}{rcept}",
+                    }
+                )
 
                 if len(rows) >= topK * 3:
                     break
