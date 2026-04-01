@@ -380,29 +380,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
             ),
         ),
     ),
-    "신용평가": _AxisEntry(
-        section="신용평가",
-        partId="3-6",
-        description="이 회사의 신용등급은 어디인가",
-        example='analysis("financial", "신용평가")',
-        calcs=(
-            _CalcEntry(
-                "calcCreditMetrics", "dartlab.analysis.financial.creditRating", "creditMetrics", "신용평가 지표"
-            ),
-            _CalcEntry("calcCreditScore", "dartlab.analysis.financial.creditRating", "creditScore", "신용등급 종합"),
-            _CalcEntry(
-                "calcCreditHistory", "dartlab.analysis.financial.creditRating", "creditHistory", "신용등급 시계열"
-            ),
-            _CalcEntry("calcCashFlowGrade", "dartlab.analysis.financial.creditRating", "cashFlowGrade", "현금흐름등급"),
-            _CalcEntry(
-                "calcCreditPeerPosition",
-                "dartlab.analysis.financial.creditRating",
-                "creditPeerPosition",
-                "업종 내 신용 순위",
-            ),
-            _CalcEntry("calcCreditFlags", "dartlab.analysis.financial.creditRating", "creditFlags", "신용 플래그"),
-        ),
-    ),
+    # 신용평가는 독립 엔진 (c.credit()) — analysis 축에서 제거
     # ── 4부: 가치평가 ──
     "가치평가": _AxisEntry(
         section="가치평가",
@@ -654,6 +632,28 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
             ),
         ),
     ),
+    # ── 7부: 기술적 분석 ──
+    "기술적분석": _AxisEntry(
+        section="기술적분석",
+        partId="7-1",
+        description="주가 기술적 지표와 매매 신호로 타이밍을 판단한다",
+        example='analysis("quant", "기술적분석")',
+        calcs=(
+            _CalcEntry(
+                "calcTechnicalVerdict",
+                "dartlab.analysis.financial.quantCalcs",
+                "technicalVerdict",
+                "종합 판단 (강세/중립/약세)",
+            ),
+            _CalcEntry(
+                "calcTechnicalIndicators",
+                "dartlab.analysis.financial.quantCalcs",
+                "technicalIndicators",
+                "25개 기술적 지표",
+            ),
+            _CalcEntry("calcBeta", "dartlab.analysis.financial.quantCalcs", "beta", "시장 베타 + CAPM"),
+        ),
+    ),
 }
 
 
@@ -677,11 +677,11 @@ _GROUPS: dict[str, list[str]] = {
         "자본배분",
         "투자효율",
         "재무정합성",
-        "신용평가",
     ],
     "valuation": ["가치평가"],
     "governance": ["지배구조", "공시변화", "비교분석"],
     "forecast": ["매출전망", "예측신호"],
+    "quant": ["기술적분석"],
 }
 
 # 역매핑: 축 → 소속 그룹
@@ -713,9 +713,6 @@ _ALIASES: dict[str, str] = {
     "investmentEfficiency": "투자효율",
     "crossStatement": "재무정합성",
     "financialConsistency": "재무정합성",
-    "creditRating": "신용평가",
-    "credit": "신용평가",
-    "신용": "신용평가",
     "valuation": "가치평가",
     "governance": "지배구조",
     "disclosureDelta": "공시변화",
@@ -733,6 +730,9 @@ _ALIASES: dict[str, str] = {
     "가치": "valuation",
     "지배": "governance",
     "전망분석": "forecast",
+    "기술적": "quant",
+    "기술적분석": "quant",
+    "technical": "quant",
 }
 
 
