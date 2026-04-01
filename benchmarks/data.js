@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775036195212,
+  "lastUpdate": 1775038350483,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -609,6 +609,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.7132886964746723e-7",
             "extra": "mean: 686.7477804061756 nsec\nrounds: 171204"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "d95458fdc5999023615f6ec05d6f308d6a05e711",
+          "message": "refactor: 0.8 안정화 — 엔진 호출 완전 리팩토링 (v0.8.1)\n\nBreaking changes (하위호환 없음):\n- 루트 축 함수 14개 제거: governance(), forecast(), valuation() 등\n- Company 편의 메서드 4개 제거: c.forecast(), c.valuation() 등\n- __init__.py 700줄 삭제\n\n신규:\n- 2단계 호출 통일: analysis(\"financial\", \"수익성\"), scan(\"financial\", \"profitability\")\n- accessor 패턴: c.analysis.financial.profitability(), dartlab.scan.financial.growth()\n- 한글/영문 양방향 alias 완전 지원\n- 전체 문서/독스트링/AI 패턴/노트북 신 패턴 일괄 변환 (20파일 70곳+)",
+          "timestamp": "2026-04-01T19:11:39+09:00",
+          "tree_id": "fc71fea9ff89b680b2b789e71034524d8a0b7b05",
+          "url": "https://github.com/eddmpython/dartlab/commit/d95458fdc5999023615f6ec05d6f308d6a05e711"
+        },
+        "date": 1775038349501,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 540402.82514031,
+            "unit": "iter/sec",
+            "range": "stddev: 5.257282184572826e-7",
+            "extra": "mean: 1.850471451070524 usec\nrounds: 48268"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 650517.1539569579,
+            "unit": "iter/sec",
+            "range": "stddev: 5.079932314905105e-7",
+            "extra": "mean: 1.5372384785200701 usec\nrounds: 132188"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 514284.842014101,
+            "unit": "iter/sec",
+            "range": "stddev: 5.634992421296594e-7",
+            "extra": "mean: 1.9444477423905513 usec\nrounds: 116605"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 671873.3324003583,
+            "unit": "iter/sec",
+            "range": "stddev: 4.1883298727214775e-7",
+            "extra": "mean: 1.4883757871850112 usec\nrounds: 128304"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 786487.0385077678,
+            "unit": "iter/sec",
+            "range": "stddev: 4.6470697177221205e-7",
+            "extra": "mean: 1.271476770802655 usec\nrounds: 199641"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 267700.0109048105,
+            "unit": "iter/sec",
+            "range": "stddev: 7.794685429316539e-7",
+            "extra": "mean: 3.7355246890728844 usec\nrounds: 69950"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7282168.484606218,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2282005022765098e-8",
+            "extra": "mean: 137.32173350752606 nsec\nrounds: 58921"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8858816.202849528,
+            "unit": "iter/sec",
+            "range": "stddev: 2.2902557854603967e-8",
+            "extra": "mean: 112.88189946624469 nsec\nrounds: 89920"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1435858.1380587597,
+            "unit": "iter/sec",
+            "range": "stddev: 2.8343181736066246e-7",
+            "extra": "mean: 696.447631903227 nsec\nrounds: 168891"
           }
         ]
       }
