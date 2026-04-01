@@ -243,6 +243,7 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
             buildNarratives,
             buildOverallNarrative,
             narrateBorrowings,
+            narrateCausalChain,
             narrateProfile,
             narrateTrend,
         )
@@ -261,8 +262,15 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
             metrics["history"][0] if metrics["history"] else None,
         )
 
+        # 6막 인과 연결
+        causalChain = narrateCausalChain(
+            metrics["history"][0] if metrics["history"] else {},
+            result,
+        )
+
         result["narratives"] = {
             "overall": buildOverallNarrative(result, narratives),
+            "causalChain": causalChain,
             "profile": profileNarrative,
             "trend": trendNarrative,
             "borrowings": borrowingsNarrative,

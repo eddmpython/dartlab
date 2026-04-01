@@ -220,6 +220,12 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
     lines.append(overallNarrative)
     lines.append("")
 
+    # 6막 인과 연결
+    causalChain = narrativesDict.get("causalChain", "")
+    if causalChain:
+        lines.append(f"**{causalChain}**")
+        lines.append("")
+
     strengths = [n for n in narratives if n.severity == "strong"]
     weaknesses = [n for n in narratives if n.severity in ("weak", "critical")]
     adequates = [n for n in narratives if n.severity == "adequate"]

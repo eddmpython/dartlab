@@ -489,6 +489,30 @@ def narrateTrend(history: list[dict]) -> str:
     if not parts:
         return "전기 대비 핵심 지표 변동이 제한적이다."
 
+    # 3~5년 시계열 스토리 추가
+    if len(history) >= 4:
+        deList = [h.get("debtToEbitda") for h in history[:5]]
+        validDe = [(i, v) for i, v in enumerate(deList) if v is not None]
+        if len(validDe) >= 3:
+            values = [v for _, v in validDe]
+            peak = max(values)
+            trough = min(values)
+            peakIdx = values.index(peak)
+            troughIdx = values.index(trough)
+            periods = [h.get("period", "") for h in history[:5]]
+
+            if peak > trough * 2 and peakIdx > troughIdx:
+                # 악화 후 개선 (V자)
+                parts.append(
+                    f"Debt/EBITDA가 {periods[troughIdx]}년 {trough:.1f}배에서 "
+                    f"{periods[peakIdx]}년 {peak:.1f}배까지 악화 후 "
+                    f"{periods[0]}년 {values[0]:.1f}배로 회복."
+                )
+            elif all(values[i] >= values[i + 1] for i in range(len(values) - 1)):
+                parts.append(f"Debt/EBITDA가 {len(values)}개년 연속 개선 추세.")
+            elif all(values[i] <= values[i + 1] for i in range(len(values) - 1)):
+                parts.append(f"Debt/EBITDA가 {len(values)}개년 연속 악화 추세.")
+
     return " ".join(parts) + "."
 
 
@@ -531,6 +555,60 @@ def narrateBorrowings(borrowingsDetail: list[dict] | None, latest: dict | None) 
             parts.append(f"현금({_fmtTril(cashVal)})이 총차입금의 {ratio:.0%}로 차환 시 외부 조달이 필요할 수 있다.")
 
     return " ".join(parts)
+
+
+def narrateCausalChain(latest: dict, result: dict) -> str:
+    """6막 인과 연결 — dartlab 핵심 사상을 credit에 적용.
+
+    매출 → 이익 → 현금 → 안정성 → 등급의 인과 체인.
+    앞이 뒤의 원인이다.
+    """
+    parts = []
+    grade = result.get("grade", "?")
+
+    rev = latest.get("revenue")
+    oi = latest.get("operatingIncome")
+    ebitda = latest.get("ebitda")
+    ocf = latest.get("ocf")
+    netDebt = latest.get("netDebt")
+    debtRatio = latest.get("debtRatio")
+    fcf = latest.get("fcf")
+
+    # 1막→2막: 매출 → 이익
+    if rev and oi:
+        margin = oi / rev * 100
+        parts.append(f"매출 {_fmtTril(rev)}")
+        if margin > 15:
+            parts.append(f"영업이익률 {margin:.0f}%로 수익성이 높아")
+        elif margin > 5:
+            parts.append(f"영업이익률 {margin:.0f}%로")
+        else:
+            parts.append(f"영업이익률 {margin:.0f}%에 불과하여")
+
+    # 2막→3막: 이익 → 현금
+    if ebitda and ocf:
+        if ocf > ebitda:
+            parts.append(f"EBITDA {_fmtTril(ebitda)} 이상의 현금(OCF {_fmtTril(ocf)})을 창출하고")
+        elif ocf > 0:
+            parts.append(f"OCF {_fmtTril(ocf)}를 창출하며")
+        else:
+            parts.append("영업에서 현금이 유출되어")
+
+    # 3막→4막: 현금 → 안정성
+    if netDebt is not None:
+        if netDebt <= 0:
+            parts.append("순현금 포지션을 유지한다.")
+        elif debtRatio and debtRatio < 100:
+            parts.append(f"부채비율 {debtRatio:.0f}%로 안정적이다.")
+        else:
+            parts.append(f"부채비율 {debtRatio:.0f}%로 레버리지 부담이 있다.")
+
+    # 결론
+    if parts:
+        chain = " → ".join(parts[:2]) + ", " + " → ".join(parts[2:]) if len(parts) > 2 else " → ".join(parts)
+        return f"인과 요약: {chain} 종합 {grade}."
+
+    return ""
 
 
 def buildOverallNarrative(result: dict, narratives: list[AxisNarrative]) -> str:
