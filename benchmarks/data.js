@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775062502548,
+  "lastUpdate": 1775062603445,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -2436,6 +2436,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.57162318784094e-7",
             "extra": "mean: 683.7453669067304 nsec\nrounds: 186916"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "0f176507dd5b1958e7af51846b4fd5eeaaca2132",
+          "message": "docs: 엔진 독립 규칙 명시 — analysis↛credit, review가 블록식 조합",
+          "timestamp": "2026-04-02T01:55:55+09:00",
+          "tree_id": "dc7853e0b65c764f1c8dfabbe56c08001c6c282e",
+          "url": "https://github.com/eddmpython/dartlab/commit/0f176507dd5b1958e7af51846b4fd5eeaaca2132"
+        },
+        "date": 1775062602573,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 541075.1089062516,
+            "unit": "iter/sec",
+            "range": "stddev: 5.34286968916135e-7",
+            "extra": "mean: 1.8481722473270585 usec\nrounds: 57998"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 666359.4950557252,
+            "unit": "iter/sec",
+            "range": "stddev: 4.953022939691613e-7",
+            "extra": "mean: 1.5006914547175074 usec\nrounds: 116064"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 533000.2516882921,
+            "unit": "iter/sec",
+            "range": "stddev: 5.457646589211635e-7",
+            "extra": "mean: 1.8761717219316012 usec\nrounds: 114732"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 675743.848746438,
+            "unit": "iter/sec",
+            "range": "stddev: 4.148716490992543e-7",
+            "extra": "mean: 1.4798506887707294 usec\nrounds: 150558"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 818619.5626536291,
+            "unit": "iter/sec",
+            "range": "stddev: 4.0949933951989436e-7",
+            "extra": "mean: 1.2215686573118407 usec\nrounds: 189754"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 269566.51422414853,
+            "unit": "iter/sec",
+            "range": "stddev: 7.091231645719345e-7",
+            "extra": "mean: 3.709659572807642 usec\nrounds: 64986"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7246692.121289978,
+            "unit": "iter/sec",
+            "range": "stddev: 1.266458696934431e-8",
+            "extra": "mean: 137.99399550342574 nsec\nrounds: 73390"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8943780.123503389,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1686904264919507e-8",
+            "extra": "mean: 111.80954654420637 nsec\nrounds: 88013"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1447846.1225576475,
+            "unit": "iter/sec",
+            "range": "stddev: 3.059528318152818e-7",
+            "extra": "mean: 690.6811327667067 nsec\nrounds: 139199"
           }
         ]
       }
