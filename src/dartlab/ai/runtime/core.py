@@ -654,6 +654,15 @@ c.gather("ownership")   # 기관/외국인 지분율
 위 8개만 사용 가능. consensus 등 다른 축은 없다.
 gather 반환이 None일 수 있다 — 반드시 None 체크 후 사용.
 
+### quant — 기술적 분석 (주가 기반)
+c.quant()                        # RSI, ADX, SMA, BB, 종합 판단
+c.quant("indicators")            # 기술 지표 상세
+c.quant("signals")               # 매매 신호
+c.quant("beta")                  # 시장 베타
+투자 판단 질문에는 **analysis(재무) + quant(기술적)** 교차 검증하라:
+  재무 좋은데 기술적 과매수 → "펀더멘털은 좋지만 단기 조정 가능"
+  재무 나쁜데 기술적 반등 → "기술적 반등이지만 펀더멘털 리스크"
+
 ### 외부 검색 — 실시간 시장/뉴스/이슈 조회
 dartlab 재무데이터에 없는 실시간 정보(최근 뉴스, 시장 반응, 규제 변화, 업황)가 필요할 때 사용.
 results = webSearch("삼성전자 실적 2026")   # 웹 검색
