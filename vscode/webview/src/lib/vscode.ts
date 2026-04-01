@@ -55,16 +55,19 @@ function createMockBridge(): Bridge {
           return;
         }
 
-        // "분석" → code_round 시나리오
+        // "분석" → code_round 시나리오 (Claude Code 패턴 테스트)
         if (q.includes("분석")) {
-          setTimeout(() => dispatch({ type: "sseEvent", event: "meta", data: { company: "Mock삼성전자", stockCode: "005930" } }), 100);
-          setTimeout(() => dispatch({ type: "sseEvent", event: "chunk", data: { text: "```python\n# SK하이닉스 분석\nc.review()\n```\n" } }), 200);
-          setTimeout(() => dispatch({ type: "sseEvent", event: "code_round", data: { round: 1, maxRounds: 3, status: "executing" } }), 400);
-          setTimeout(() => dispatch({ type: "sseEvent", event: "chunk", data: { text: "\n분석 결과:\n- 매출액 증가\n- 영업이익률 개선" } }), 800);
+          setTimeout(() => dispatch({ type: "sseEvent", event: "meta", data: { company: "SK하이닉스", stockCode: "000660", market: "KOSPI" } }), 100);
+          setTimeout(() => dispatch({ type: "sseEvent", event: "snapshot", data: { items: [{ label: "시가총액", value: "180.5조", status: "good" }, { label: "PER", value: "8.2x", status: "good" }, { label: "부채비율", value: "72.3%", status: "caution" }], grades: { 수익성: "A", 안정성: "B", 성장성: "A" } } }), 150);
+          setTimeout(() => dispatch({ type: "sseEvent", event: "chunk", data: { text: "SK하이닉스의 재무 안정성을 분석하겠습니다.\n\n" } }), 200);
+          setTimeout(() => dispatch({ type: "sseEvent", event: "chunk", data: { text: "```python\nc = dartlab.Company(\"000660\")\nr = c.analysis(\"financial\", \"안정성\")\nprint(r)\n```\n" } }), 300);
+          setTimeout(() => dispatch({ type: "sseEvent", event: "code_round", data: { round: 1, maxRounds: 3, status: "executing", code: "c = dartlab.Company(\"000660\")\nr = c.analysis(\"financial\", \"안정성\")\nprint(r)" } }), 500);
+          setTimeout(() => dispatch({ type: "sseEvent", event: "code_round", data: { round: 1, maxRounds: 3, status: "done", code: "c = dartlab.Company(\"000660\")\nr = c.analysis(\"financial\", \"안정성\")\nprint(r)", result: "\n\n[실행 결과]\n\n| 지표 | 2022 | 2023 | 2024 |\n|------|------|------|------|\n| 부채비율 | 85.3% | 78.1% | 72.3% |\n| 유동비율 | 1.82 | 1.95 | 2.12 |\n| 이자보상배율 | 3.2x | 4.8x | 8.1x |\n\n" } }), 800);
+          setTimeout(() => dispatch({ type: "sseEvent", event: "chunk", data: { text: "\n## 종합 해석\n\n하이닉스는 **부채 구조가 개선**되고 있습니다:\n\n- 부채비율 85% → 72%로 꾸준히 하락\n- 유동비율 2.12로 단기 상환 여력 충분\n- 이자보상배율 8.1x로 이자 부담 매우 낮음\n\n**안정성 등급: B+** (양호)\n" } }), 1200);
           setTimeout(() => {
             dispatch({ type: "sseEvent", event: "done", data: {} });
             dispatch({ type: "streamEnd" });
-          }, 1000);
+          }, 1400);
           return;
         }
 

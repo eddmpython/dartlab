@@ -343,7 +343,9 @@ def narrateDisclosureRisk(dr: dict | None, axisScore: float | None) -> AxisNarra
     sev = _severity(axisScore)
 
     if dr is None:
-        return AxisNarrative("공시리스크", "공시 리스크 신호가 감지되지 않았다.", ["scan 데이터 범위 내 특이 신호 없음."], "strong")
+        return AxisNarrative(
+            "공시리스크", "공시 리스크 신호가 감지되지 않았다.", ["scan 데이터 범위 내 특이 신호 없음."], "strong"
+        )
 
     chronic = dr.get("chronicYears") or dr.get("chronic_years", 0)
     if chronic >= 3:

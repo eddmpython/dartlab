@@ -308,7 +308,9 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
         for h in history[:5]:
             row = [
                 h.get("period", ""),
-                "무차입" if h.get("ebitdaInterestCoverage") is not None and h["ebitdaInterestCoverage"] >= 100 else (f"{h['ebitdaInterestCoverage']:.1f}x" if h.get("ebitdaInterestCoverage") is not None else "-"),
+                "무차입"
+                if h.get("ebitdaInterestCoverage") is not None and h["ebitdaInterestCoverage"] >= 100
+                else (f"{h['ebitdaInterestCoverage']:.1f}x" if h.get("ebitdaInterestCoverage") is not None else "-"),
                 f"{h['debtToEbitda']:.1f}x" if h.get("debtToEbitda") is not None else "-",
                 f"{h['debtRatio']:.0f}%" if h.get("debtRatio") is not None else "-",
                 f"{h['currentRatio']:.0f}%" if h.get("currentRatio") is not None else "-",

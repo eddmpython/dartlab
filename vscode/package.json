@@ -1,7 +1,7 @@
 {
   "name": "dartlab",
   "displayName": "DartLab",
-  "description": "DART 전자공시 AI 기업분석",
+  "description": "DART 전자공시 & EDGAR AI 기업분석 — 종목코드 하나로 재무분석, 밸류에이션, 공시 검색",
   "version": "0.1.0",
   "publisher": "eddmpython",
   "license": "MIT",
@@ -24,6 +24,10 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/eddmpython/dartlab"
+  },
+  "homepage": "https://eddmpython.github.io/dartlab/",
+  "bugs": {
+    "url": "https://github.com/eddmpython/dartlab/issues"
   },
   "main": "./dist/extension.js",
   "activationEvents": [],

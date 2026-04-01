@@ -294,7 +294,7 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         if _need("growthFlags"):
             b["growthFlags"] = _safe(lambda: growthFlagsBlock(calcGrowthFlags(company, basePeriod=basePeriod)))
 
-    if keys is None or keys & {"leverageTrend", "coverageTrend", "distressScore", "stabilityFlags"}:
+    if keys is None or keys & {"leverageTrend", "coverageTrend", "distressScore", "stabilityFlags", "marketRisk"}:
         from dartlab.analysis.financial.stability import (
             calcCoverageTrend,
             calcDistressScore,
@@ -316,6 +316,11 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
             b["distressScore"] = _safe(lambda: distressScoreBlock(calcDistressScore(company, basePeriod=basePeriod)))
         if _need("stabilityFlags"):
             b["stabilityFlags"] = _safe(lambda: stabilityFlagsBlock(calcStabilityFlags(company, basePeriod=basePeriod)))
+        if _need("marketRisk"):
+            from dartlab.analysis.financial.technicalAnalysis import calcMarketRisk
+            from dartlab.review.builders import marketRiskBlock
+
+            b["marketRisk"] = _safe(lambda: marketRiskBlock(calcMarketRisk(company)))
 
     if keys is None or keys & {"turnoverTrend", "cccTrend", "efficiencyFlags"}:
         from dartlab.analysis.financial.efficiency import (
@@ -563,7 +568,7 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         "creditPeerPosition",
         "creditFlags",
     }:
-        from dartlab.analysis.financial.creditRating import (
+        from dartlab.credit.calcs import (
             calcCashFlowGrade,
             calcCreditFlags,
             calcCreditHistory,
@@ -804,6 +809,42 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
             b["calibrationReport"] = _safe(
                 lambda: calibrationReportBlock(calcCalibrationReport(company, basePeriod=basePeriod))
             )
+
+    # ── 시장분석 (quant 기술적 분석 → review 통합) ──
+    if keys is None or keys & {
+        "technicalVerdict",
+        "technicalSignals",
+        "marketBeta",
+        "fundamentalDivergence",
+        "marketAnalysisFlags",
+    }:
+        from dartlab.analysis.financial.technicalAnalysis import (
+            calcFundamentalDivergence,
+            calcMarketAnalysisFlags,
+            calcMarketBeta,
+            calcTechnicalSignals,
+            calcTechnicalVerdict,
+        )
+        from dartlab.review.builders import (
+            fundamentalDivergenceBlock,
+            marketAnalysisFlagsBlock,
+            marketBetaBlock,
+            technicalSignalsBlock,
+            technicalVerdictBlock,
+        )
+
+        if _need("technicalVerdict"):
+            b["technicalVerdict"] = _safe(lambda: technicalVerdictBlock(calcTechnicalVerdict(company)))
+        if _need("technicalSignals"):
+            b["technicalSignals"] = _safe(lambda: technicalSignalsBlock(calcTechnicalSignals(company)))
+        if _need("marketBeta"):
+            b["marketBeta"] = _safe(lambda: marketBetaBlock(calcMarketBeta(company)))
+        if _need("fundamentalDivergence"):
+            b["fundamentalDivergence"] = _safe(
+                lambda: fundamentalDivergenceBlock(calcFundamentalDivergence(company, basePeriod=basePeriod))
+            )
+        if _need("marketAnalysisFlags"):
+            b["marketAnalysisFlags"] = _safe(lambda: marketAnalysisFlagsBlock(calcMarketAnalysisFlags(company)))
 
     from dartlab.review.blockMap import BlockMap
 

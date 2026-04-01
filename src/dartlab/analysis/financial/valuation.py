@@ -802,6 +802,21 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
         if minVal > 0 and maxVal / minVal > 10:
             warnings.append(f"모델 간 극단 괴리 ({maxVal / minVal:.0f}배) — 합성 신뢰도 낮음")
 
+    # 기술적 분석 컨텍스트 (선택적 — quant 실패 시 무시)
+    technicalContext = None
+    try:
+        from dartlab.analysis.financial.technicalAnalysis import calcTechnicalVerdict
+
+        tv = calcTechnicalVerdict(company)
+        if tv and tv.get("verdict"):
+            technicalContext = {
+                "verdict": tv["verdict"],
+                "score": tv.get("score", 0),
+                "rsi": tv.get("rsi"),
+            }
+    except (ImportError, ValueError, TypeError, AttributeError):
+        pass
+
     return {
         "fairValueRange": result.fairValueRange,
         "verdict": result.verdict,
@@ -813,6 +828,7 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
         "currency": currency,
         "reverseImplied": reverseImplied,
         "warnings": warnings,
+        "technicalContext": technicalContext,
     }
 
 
@@ -841,5 +857,17 @@ def calcValuationFlags(company: Any, *, basePeriod: str | None = None) -> list[d
             flags.append({"signal": "opportunity", "label": "종합 판정: 저평가"})
         elif verdict == "고평가":
             flags.append({"signal": "warning", "label": "종합 판정: 고평가"})
+
+        # 기술적 분석 교차 플래그
+        tc = synthesis.get("technicalContext")
+        if tc and verdict:
+            techVerdict = tc.get("verdict", "")
+            rsi = tc.get("rsi", 50)
+            if verdict == "저평가" and techVerdict == "약세" and rsi <= 30:
+                flags.append({"signal": "opportunity", "label": "저평가 + 과매도(RSI 30↓) — 역발상 매수 기회 가능성"})
+            elif verdict == "고평가" and techVerdict == "강세" and rsi >= 70:
+                flags.append({"signal": "warning", "label": "고평가 + 과매수(RSI 70↑) — 과열 경고"})
+            elif verdict == "저평가" and techVerdict == "강세":
+                flags.append({"signal": "opportunity", "label": "저평가 + 기술적 강세 — 시장 재평가 진행 중"})
 
     return flags

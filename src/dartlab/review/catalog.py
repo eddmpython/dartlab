@@ -62,6 +62,7 @@ SECTIONS: list[SectionMeta] = [
     SectionMeta("공시변화", "6-3", "공시변화 -- 이 회사의 공시가 뭐가 달라졌는가"),
     SectionMeta("비교분석", "6-4", "비교분석 -- 이 회사는 시장에서 어디에 서 있는가"),
     SectionMeta("매출전망", "6-5", "매출 전망 -- 이 회사의 매출은 어디로 가는가"),
+    SectionMeta("시장분석", "6-6", "시장 분석 -- 시장은 이 회사를 어떻게 보는가"),
 ]
 
 # ── 블록 정의 (리스트 순서 = 렌더링 순서. 순서 변경은 여기서만.) ──
@@ -115,6 +116,7 @@ _BLOCKS: list[BlockMeta] = [
     BlockMeta("leverageTrend", "레버리지 추이", "안정성", "부채비율, 차입금의존도 시계열"),
     BlockMeta("coverageTrend", "이자보상 추이", "안정성", "이자보상배율 시계열"),
     BlockMeta("distressScore", "부실 판별", "안정성", "Altman Z-Score 시계열과 종합 등급"),
+    BlockMeta("marketRisk", "시장 리스크", "안정성", "베타, 변동성(ATR), 상대강도 — 시장 관점 리스크"),
     BlockMeta("stabilityFlags", "안정성 플래그", "안정성", "안정성 관련 경고/기회 신호"),
     # ── 효율성 ──
     BlockMeta("turnoverTrend", "회전율 추이", "효율성", "총자산/매출채권/재고 회전율 시계열"),
@@ -197,6 +199,12 @@ _BLOCKS: list[BlockMeta] = [
     BlockMeta("historicalRatios", "과거 구조 비율", "매출전망", "Pro-Forma 기반 과거 재무 비율"),
     BlockMeta("forecastFlags", "매출전망 플래그", "매출전망", "예측 관련 경고/제한 사항"),
     BlockMeta("calibrationReport", "예측 정확도 검증", "매출전망", "과거 예측의 확률 캘리브레이션 (Brier Score)"),
+    # ── 시장분석 ──
+    BlockMeta("technicalVerdict", "기술적 종합 판단", "시장분석", "강세/중립/약세 판정, RSI, ADX, SMA/BB 위치"),
+    BlockMeta("technicalSignals", "매매 신호", "시장분석", "골든크로스/RSI/MACD/볼린저 신호 최근 20일"),
+    BlockMeta("marketBeta", "시장 베타", "시장분석", "실측 베타, 알파, CAPM 기대수익률"),
+    BlockMeta("fundamentalDivergence", "재무-시장 괴리", "시장분석", "재무 스코어 vs 기술적 판단 교차검증"),
+    BlockMeta("marketAnalysisFlags", "시장분석 플래그", "시장분석", "기술적 신호 경고/기회"),
 ]
 
 # ── 파생 인덱스 (자동 생성, 직접 수정 금지) ──

@@ -30,18 +30,54 @@ def _cv(values: list) -> float | None:
 
 
 def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
-    """SelectResult → ({계정명: {period: val}}, periods)."""
+    """SelectResult → ({계정명: {period: val}}, periods).
+
+    analysis._helpers.toDict 와 동일 로직을 자체 구현.
+    cross-dependency 방지: credit ↛ analysis.
+    """
     if selectResult is None:
         return None
-    from dartlab.analysis.financial._helpers import toDict
 
-    return toDict(selectResult)
+    df = selectResult.df
+    from dartlab.core.show import isPeriodColumn
+
+    periods = sorted([c for c in df.columns if isPeriodColumn(c)], reverse=True)
+    if not periods:
+        return None
+
+    labelCol = "계정명" if "계정명" in df.columns else (df.columns[0] if df.columns else None)
+    if labelCol is None:
+        return None
+
+    # EDGAR bridge: snakeId → 한국어 라벨 (양 provider 호환)
+    needsBridge = labelCol != "계정명" and "계정명" not in df.columns
+    krLabels: dict[str, str] | None = None
+    if needsBridge:
+        from dartlab.core.finance.labels import get_korean_labels
+
+        krLabels = get_korean_labels()
+
+    data: dict[str, dict] = {}
+    for row in df.iter_rows(named=True):
+        label = str(row.get(labelCol, ""))
+        key = krLabels.get(label, label) if krLabels else label
+        data[key] = {c: row.get(c) for c in periods}
+    return (data, periods) if data else None
 
 
 def _annualCols(periods: list[str], basePeriod: str | None, maxYears: int = 8) -> list[str]:
-    from dartlab.analysis.financial._helpers import annualColsFromPeriods
+    """기간 목록에서 연간 컬럼 추출 — basePeriod 이하만.
 
-    return annualColsFromPeriods(periods, basePeriod, maxYears)
+    analysis._helpers.annualColsFromPeriods 와 동일 로직을 자체 구현.
+    cross-dependency 방지: credit ↛ analysis.
+    """
+    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
+    if not cols:
+        cols = sorted([c for c in periods if c.endswith("Q4")], reverse=True)
+    if basePeriod is not None:
+        limit = basePeriod + "Q5" if "Q" not in basePeriod else basePeriod
+        cols = [c for c in cols if (c + "Q5" if "Q" not in c else c) <= limit]
+    return cols[:maxYears]
 
 
 def _getRatios(company):
@@ -311,27 +347,97 @@ def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
 # ═══════════════════════════════════════════════════════════
 
 
-def _fetchProfile(company) -> dict | None:
-    """기업 프로필 (업종, 주요제품) 수집."""
-    try:
-        from dartlab.analysis.financial.revenue import calcCompanyProfile
+_SECTOR_KR = {
+    "ENERGY": "에너지",
+    "MATERIALS": "소재",
+    "INDUSTRIALS": "산업재",
+    "CONSUMER_DISC": "경기관련소비재",
+    "CONSUMER_STAPLES": "필수소비재",
+    "HEALTHCARE": "건강관리",
+    "FINANCIALS": "금융",
+    "IT": "IT",
+    "COMMUNICATION": "커뮤니케이션서비스",
+    "UTILITIES": "유틸리티",
+    "REAL_ESTATE": "부동산",
+}
 
-        return calcCompanyProfile(company)
-    except (ImportError, AttributeError, ValueError):
-        return None
+
+def _fetchProfile(company) -> dict | None:
+    """기업 프로필 (업종, 주요제품) 수집.
+
+    Company.sector + dartlab.listing() 직접 접근.
+    cross-dependency 방지: credit ↛ analysis.
+    """
+    parts: dict[str, str] = {}
+    try:
+        sectorInfo = company.sector
+        if sectorInfo:
+            sectorKr = _SECTOR_KR.get(sectorInfo.sector.name, sectorInfo.sector.name)
+            groupKr = sectorInfo.industryGroup.value
+            parts["sector"] = f"섹터: {sectorKr} > {groupKr}"
+    except (ValueError, KeyError, AttributeError):
+        pass
+
+    try:
+        import dartlab
+
+        listing = dartlab.listing()
+        stockCode = getattr(company, "stockCode", "")
+        if stockCode:
+            row = listing.filter(listing["종목코드"] == stockCode)
+            if not row.is_empty() and "주요제품" in row.columns:
+                products = row["주요제품"][0]
+                if products:
+                    parts["products"] = f"주요제품: {products}"
+    except (ImportError, ValueError, KeyError):
+        pass
+
+    return parts if parts else None
 
 
 def _fetchSegmentComposition(company) -> dict | None:
-    """부문별 매출/이익 구성 수집."""
-    try:
-        from dartlab.analysis.financial.revenue import calcSegmentComposition
+    """부문별 매출/이익 구성 수집.
 
-        result = calcSegmentComposition(company)
-        if result and result.get("segments"):
-            return result
-    except (ImportError, AttributeError, ValueError):
-        pass
-    return None
+    company.notes.segments 직접 접근.
+    cross-dependency 방지: credit ↛ analysis.
+    """
+    try:
+        accessor = getattr(company, "_notesAccessor", None) or getattr(company, "notes", None)
+        if accessor is None:
+            return None
+        df = getattr(accessor, "segments", None)
+        if df is None or not hasattr(df, "to_dicts"):
+            return None
+        rows = df.to_dicts()
+        if not rows:
+            return None
+
+        # segments DataFrame에서 부문별 매출 추출
+        segments = []
+        for row in rows:
+            name = None
+            revenue = None
+            for k, v in row.items():
+                if isinstance(v, str) and name is None:
+                    name = v
+                if isinstance(v, (int, float)) and v > 0:
+                    if any(term in str(k) for term in ["매출", "수익", "revenue"]):
+                        revenue = v
+                        break
+            if name and revenue and revenue > 0:
+                segments.append({"name": name, "revenue": revenue})
+
+        if not segments:
+            return None
+
+        segments.sort(key=lambda x: x["revenue"], reverse=True)
+        totalRev = sum(s["revenue"] for s in segments)
+        if totalRev == 0:
+            return None
+
+        return {"segments": segments, "totalRevenue": totalRev}
+    except (AttributeError, FileNotFoundError, ValueError, KeyError, TypeError):
+        return None
 
 
 def _fetchRank(company) -> dict | None:

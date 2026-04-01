@@ -48,7 +48,7 @@ Company-bound: `c.gather("price")` — 종목코드 재전달 불필요.
 | flow.py | 수급 시계열 |
 | macro.py | FRED/ECOS 거시지표, 변화율 계산, 리샘플링 |
 | news.py | 뉴스 검색 |
-| search.py | 웹 검색 (Tavily → DuckDuckGo fallback) |
+| search.py | 웹 검색 (Tavily API) |
 | consensus.py | 컨센서스 |
 | ownership.py | 주주 정보 |
 | listing.py | 종목 리스팅 + fuzzy search |

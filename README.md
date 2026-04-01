@@ -87,7 +87,7 @@ Two engines turn raw filings into one comparable map:
 | L2 | [Review](ops/review.md) | Analysis to narrative report | `c.review()` |
 | L0 | [Search](ops/search.md) | Semantic filing search *(alpha)* | `dartlab.search()` |
 | L3 | [AI](ops/ai.md) | Active analyst — code execution + interpretation | `dartlab.ask()` |
-| L4 | [UI](ops/ui.md) | Svelte SPA + VSCode extension | `dartlab share` |
+| L4 | UI | VSCode extension | `dartlab chat --stdio` |
 
 ### Company
 
@@ -189,7 +189,7 @@ L1  providers/   Country-specific data (DART, EDGAR, EDINET)
 L2  analysis/    Financial analysis + forecast + valuation
     review/      Block-template report assembly
 L3  ai/          Active analyst — LLM with full API access
-L4  ui/          Svelte SPA (web) + VSCode extension
+L4  vscode/      VSCode extension (dartlab chat --stdio)
 ```
 
 Import direction enforced by CI. Adding a new country means one provider package — zero core changes.

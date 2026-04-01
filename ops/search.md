@@ -17,8 +17,6 @@ core/search/
 ├── __init__.py       # search(), buildIndex(), rebuildIndex()
 ├── ngramIndex.py     # stem ID 역인덱스 (CSR + bincount)
 ├── derived.py        # 파생 집계 (보류 — 가치 미확정)
-├── vectorStore.py    # 벡터 검색 (optional, 보강용)
-
 providers/dart/openapi/
 ├── allFilingsCollector.py  # 수시공시 2단계 수집
 ```
@@ -281,5 +279,4 @@ L1 규칙은 report_nm 472개 유형을 분석하여 도출. 130개 DART 공식 
 | `src/dartlab/core/search/ngramIndex.py` | stem ID 역인덱스 (빌드 + 검색 + HF push/pull) |
 | `src/dartlab/core/search/__init__.py` | 통합 진입점 (search, buildIndex, rebuildIndex) |
 | `src/dartlab/core/search/derived.py` | 파생 집계 (companyProfile, eventTimeline, dna) — 보류 |
-| `src/dartlab/core/search/vectorStore.py` | 벡터 검색 (optional 보강) |
 | `src/dartlab/providers/dart/openapi/allFilingsCollector.py` | 수시공시 수집기 |

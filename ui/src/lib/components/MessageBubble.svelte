@@ -481,48 +481,54 @@
 						</div>
 					{/if}
 					{#if streamingContent.draft}
-						<div class={cn(
-							"message-live-tail",
-							streamingContent.draftType === "table" && "message-draft-table",
-							streamingContent.draftType === "code" && "message-draft-code"
-						)}>
-							<div class="message-live-label">
-								{streamingContent.draftType === "table" ? "표 구성 중" : streamingContent.draftType === "code" ? "코드 블록 생성 중" : "응답 작성 중"}
+						{#if streamingContent.draftType === "code"}
+							<!-- Claude Code 패턴: 코드 작성 중엔 스피너만 -->
+							<div class="flex items-center gap-2 py-2 px-1 text-[12px] text-dl-text-dim">
+								<Loader2 size={14} class="animate-spin flex-shrink-0" />
+								<span class="font-mono">코드 작성 중...</span>
 							</div>
-							<pre>{streamingContent.draft}</pre>
-						</div>
+						{:else}
+							<div class={cn(
+								"message-live-tail",
+								streamingContent.draftType === "table" && "message-draft-table",
+							)}>
+								<div class="message-live-label">
+									{streamingContent.draftType === "table" ? "표 구성 중" : "응답 작성 중"}
+								</div>
+								<pre>{streamingContent.draft}</pre>
+							</div>
+						{/if}
 					{/if}
 				</div>
 
-				<!-- ── 코드 실행 라운드 (Claude Code 스타일) ── -->
+				<!-- ── 코드 실행 라운드 (Claude Code 패턴: 기본 접힘, 한 줄 요약) ── -->
 				{#if message.codeRounds?.length}
-					<div class="flex flex-col gap-1.5 mt-3 mb-2">
+					<div class="flex flex-col gap-0.5 mt-2 mb-1">
 						{#each message.codeRounds as cr, crIdx}
-							<div class="rounded-lg border border-dl-border/20 overflow-hidden">
+							{@const isExpanded = collapsedCodeRounds[crIdx] === true}
+							<div class="rounded border border-dl-border/15 overflow-hidden bg-dl-bg-darker/20">
 								<button
-									class="w-full flex items-center gap-1.5 px-3 py-2 text-[12px] hover:bg-white/3 transition-colors"
-									onclick={() => { collapsedCodeRounds = { ...collapsedCodeRounds, [crIdx]: !collapsedCodeRounds[crIdx] }; }}
+									class="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] hover:bg-white/3 transition-colors"
+									onclick={() => { collapsedCodeRounds = { ...collapsedCodeRounds, [crIdx]: !isExpanded }; }}
 								>
-									<ChevronRight size={12} class="flex-shrink-0 transition-transform {collapsedCodeRounds[crIdx] ? '' : 'rotate-90'}" />
+									<ChevronRight size={11} class="flex-shrink-0 transition-transform duration-150 {isExpanded ? 'rotate-90' : ''} text-dl-text-dim/50" />
 									{#if cr.status === "executing" && message.loading}
 										<Loader2 size={12} class="animate-spin flex-shrink-0 text-dl-accent" />
-										<span class="text-dl-text-dim">Python 실행 중 {cr.round}/{cr.maxRounds}</span>
 									{:else}
 										<CheckCircle2 size={12} class="flex-shrink-0 text-dl-success/70" />
-										<span class="text-dl-text-muted">Python 실행 완료 {cr.round}/{cr.maxRounds}</span>
 									{/if}
+									<span class="font-mono font-bold text-[12px]">Python</span>
+									<span class="text-dl-text-dim/70 font-mono text-[12px] truncate flex-1 text-left">{cr.code?.split('\n').find(l => l.trim() && !l.trim().startsWith('#') && !l.trim().startsWith('import')) || cr.code?.split('\n')[0] || `실행 ${cr.round}/${cr.maxRounds}`}</span>
 								</button>
-								{#if !collapsedCodeRounds[crIdx]}
+								{#if isExpanded}
 									{#if cr.code}
-										<div class="border-t border-dl-border/10 bg-dl-bg-darker/50">
-											<div class="px-3 py-1 text-[10px] text-dl-text-dim/60 font-mono uppercase tracking-wider">Code</div>
-											<pre class="px-3 pb-2 text-[12px] text-dl-text-muted whitespace-pre-wrap break-words font-mono leading-relaxed overflow-x-auto max-h-64 overflow-y-auto">{cr.code}</pre>
+										<div class="border-t border-dl-border/10 bg-dl-bg-darker/40 px-3 py-2 max-h-64 overflow-y-auto">
+											<pre class="text-[12px] text-dl-text-muted whitespace-pre-wrap break-words font-mono leading-relaxed m-0">{cr.code}</pre>
 										</div>
 									{/if}
 									{#if cr.result}
-										<div class="border-t border-dl-border/10 bg-dl-bg-darker/30">
-											<div class="px-3 py-1 text-[10px] text-dl-text-dim/60 font-mono uppercase tracking-wider">Result</div>
-											<div class="px-3 pb-2 text-[12px] text-dl-text-muted whitespace-pre-wrap break-words font-mono leading-relaxed overflow-x-auto max-h-80 overflow-y-auto">{@html renderMarkdown(cr.result)}</div>
+										<div class="border-t border-dl-border/10 bg-dl-bg-darker/20 px-3 py-2 max-h-80 overflow-y-auto">
+											<div class="text-[12px] text-dl-text-muted font-mono leading-relaxed prose-dartlab">{@html renderMarkdown(cr.result)}</div>
 										</div>
 									{/if}
 								{/if}
@@ -531,27 +537,28 @@
 					</div>
 				{/if}
 
-				<!-- ── Tool 접기/펼치기 (Claude Code 스타일) ── -->
+				<!-- ── Tool 접기/펼치기 (Claude Code 패턴: 기본 접힘) ── -->
 				{#if toolPairs.length > 0 && !message.loading}
-					<div class="mt-2 mb-2 space-y-0.5">
+					<div class="flex flex-col gap-0.5 mt-1 mb-1">
 						{#each toolPairs as pair, i}
-							<div class="rounded-lg border border-dl-border/20 overflow-hidden">
+							{@const isToolExpanded = collapsedTools[i] === true}
+							<div class="rounded border border-dl-border/15 overflow-hidden bg-dl-bg-darker/20">
 								<button
-									class="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-dl-text-muted hover:bg-white/3 transition-colors"
+									class="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] hover:bg-white/3 transition-colors"
 									onclick={() => toggleTool(i)}
 								>
-									<ChevronRight size={12} class="flex-shrink-0 transition-transform {collapsedTools[i] ? '' : 'rotate-90'}" />
+									<ChevronRight size={11} class="flex-shrink-0 transition-transform duration-150 {isToolExpanded ? 'rotate-90' : ''} text-dl-text-dim/50" />
 									{#if pair.result}
 										<CheckCircle2 size={12} class="flex-shrink-0 text-dl-success/70" />
 									{:else}
 										<Loader2 size={12} class="animate-spin flex-shrink-0" />
 									{/if}
-									<span class="font-medium">{toolLabel(pair.call.name)}</span>
-									<span class="text-dl-text-dim truncate flex-1 text-left">{truncateStr(formatToolArg(pair.call.arguments), 60)}</span>
+									<span class="font-mono font-bold text-[12px]">{toolLabel(pair.call.name)}</span>
+									<span class="text-dl-text-dim/70 font-mono text-[12px] truncate flex-1 text-left">{truncateStr(formatToolArg(pair.call.arguments), 60)}</span>
 								</button>
-								{#if !collapsedTools[i] && pair.result}
+								{#if isToolExpanded && pair.result}
 									<div class="px-3 py-2 border-t border-dl-border/10 bg-dl-bg-darker/30 max-h-48 overflow-y-auto">
-										<pre class="text-[10px] text-dl-text-dim whitespace-pre-wrap break-words font-mono">{truncateStr(typeof pair.result.result === "string" ? pair.result.result : JSON.stringify(pair.result.result, null, 2), 2000)}</pre>
+										<pre class="text-[11px] text-dl-text-dim whitespace-pre-wrap break-words font-mono m-0">{truncateStr(typeof pair.result.result === "string" ? pair.result.result : JSON.stringify(pair.result.result, null, 2), 2000)}</pre>
 									</div>
 								{/if}
 							</div>

@@ -131,8 +131,8 @@
     if (!conv) { streaming = false; return; }
 
     const msgs = [...conv.messages];
-    msgs.push({ id: createMessageId(), role: "user", text, loading: false, error: false });
-    msgs.push({ id: createMessageId(), role: "assistant", text: "", loading: true, error: false, startedAt: Date.now() });
+    msgs.push({ id: createMessageId(), role: "user", text, loading: false, error: false, blocks: [] });
+    msgs.push({ id: createMessageId(), role: "assistant", text: "", blocks: [], loading: true, error: false, startedAt: Date.now() });
 
     const history = msgs.slice(0, -2).filter(m => m.text).map(m => ({ role: m.role, text: m.text }));
 
@@ -231,6 +231,7 @@
       updateMessages(convId, [...conv.messages, {
         id: createMessageId(), role: "assistant",
         text: "**명령어:** `/new` 새 대화 · `/clear` 대화 삭제 · `/help` 도움말\n\n**단축키:**\n- `Enter` 전송 · `Shift+Enter` 줄바꿈\n- `Escape` 응답 중단\n- `Ctrl+Shift+D` 패널 열기\n\n종목코드(005930) 또는 회사명을 입력하세요.",
+        blocks: [{ type: "text" as const, text: "**명령어:** `/new` 새 대화 · `/clear` 대화 삭제 · `/help` 도움말\n\n**단축키:**\n- `Enter` 전송 · `Shift+Enter` 줄바꿈\n- `Escape` 응답 중단\n- `Ctrl+Shift+D` 패널 열기\n\n종목코드(005930) 또는 회사명을 입력하세요." }],
         loading: false, error: false,
       }]);
     }

@@ -2,7 +2,6 @@
   import type { Message } from "../api/sseHandler";
   import * as client from "../api/client";
   import { createIncrementalRenderer } from "../markdown/renderer";
-  import { createStreamSplitter } from "../markdown/contentSplitter";
 
   interface Props {
     message: Message;
@@ -17,42 +16,8 @@
   let editing = $state(false);
   let editText = $state("");
   const render = createIncrementalRenderer();
-  const splitter = createStreamSplitter();
 
-  // Split streaming content into committed (safe HTML) and draft (raw pre)
-  let split = $derived.by(() => {
-    if (message.role !== "assistant" || !message.text) {
-      return { committed: "", draft: "", draftType: "none" as const };
-    }
-    return splitter.split(message.text, message.loading);
-  });
-
-  let committedHtml = $derived(split.committed ? render(split.committed) : "");
-
-  // Tool events: interleave call/result pairs
-  let toolPairs = $derived.by(() => {
-    const events = message.toolEvents ?? [];
-    const pairs: Array<{ call: Record<string, unknown>; result?: Record<string, unknown> }> = [];
-    for (const ev of events) {
-      if (ev.type === "call") {
-        pairs.push({ call: ev });
-      } else if (ev.type === "result" && pairs.length > 0) {
-        const last = pairs[pairs.length - 1];
-        if (!last.result) last.result = ev;
-      }
-    }
-    return pairs;
-  });
-
-  // Active tool (last call without result while loading)
-  let activeTool = $derived.by(() => {
-    if (!message.loading) return null;
-    const events = message.toolEvents ?? [];
-    if (events.length === 0) return null;
-    const last = events[events.length - 1];
-    if (last.type === "call") return last;
-    return null;
-  });
+  // blocks 기반 렌더링 — displayText/split/toolPairs 불필요 (Claude Code 패턴)
 
   // Loading phase
   let loadingPhase = $derived.by(() => {
@@ -80,18 +45,11 @@
     }
   });
 
-  // Collapse state for tool results
-  let collapsedTools: Record<number, boolean> = $state({});
-  function toggleTool(idx: number) {
-    collapsedTools[idx] = !collapsedTools[idx];
-    collapsedTools = { ...collapsedTools };
-  }
-
-  // Collapse state for code rounds
-  let collapsedCodeRounds: Record<number, boolean> = $state({});
-  function toggleCodeRound(idx: number) {
-    collapsedCodeRounds[idx] = !collapsedCodeRounds[idx];
-    collapsedCodeRounds = { ...collapsedCodeRounds };
+  // Block expand/collapse (기본 접힘 — Claude Code 패턴)
+  let expandedBlocks: Record<number, boolean> = $state({});
+  function toggleBlock(idx: number) {
+    expandedBlocks[idx] = !expandedBlocks[idx];
+    expandedBlocks = { ...expandedBlocks };
   }
 
   // Copy code block
@@ -113,7 +71,7 @@
     ).replace(/<\/pre>/g, '</pre></div>');
   }
 
-  let finalCommittedHtml = $derived(wrapCodeBlocks(committedHtml));
+  // finalCommittedHtml 삭제 — blocks 렌더링에서 직접 render() + wrapCodeBlocks() 호출
 
   function formatToolArg(args: unknown): string {
     if (!args) return "";
@@ -162,7 +120,7 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="msg" class:user={message.role === "user"}>
+<div class="msg" class:user={message.role === "user"} class:dot-success={!message.loading && !message.error && message.role === "assistant"} class:dot-failure={message.error} class:dot-progress={message.loading && message.role === "assistant"}>
   {#if message.role === "user"}
     <div class="user-wrap">
       {#if editing}
@@ -244,8 +202,8 @@
       </div>
     {/if}
 
-    <!-- Loading: step-by-step progress (Claude Code style spinner) -->
-    {#if message.loading && !message.text}
+    <!-- Loading spinner (아무 content가 없을 때) -->
+    {#if message.loading && (!message.blocks?.length || message.blocks.every(b => !b.text && b.type === "text"))}
       <div class="loading-block">
         <div class="spinner-row">
           <div class="spinner"></div>
@@ -258,12 +216,6 @@
               핵심 수치 확인 중...
             {:else if loadingPhase === "context"}
               데이터 로드 중 ({message.contexts?.length ?? 0}개)...
-            {:else if loadingPhase === "tools"}
-              {#if activeTool}
-                {activeTool.name} 실행 중...
-              {:else}
-                도구 처리 중...
-              {/if}
             {:else}
               응답 생성 중...
             {/if}
@@ -275,109 +227,100 @@
       </div>
     {/if}
 
-    <!-- Code execution rounds (Claude Code style: code + result collapsible) -->
-    {#if message.codeRounds?.length}
-      <div class="code-rounds">
-        {#each message.codeRounds as cr, crIdx}
-          <div class="code-round-block">
-            <button class="code-round-header" onclick={() => toggleCodeRound(crIdx)}>
-              <svg class="tool-chevron" class:open={!collapsedCodeRounds[crIdx]} width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M6 4l4 4-4 4"/>
-              </svg>
-              {#if cr.status === "executing" && message.loading}
-                <div class="tool-spinner-sm"></div>
-                <span>Python 실행 중 {cr.round}/{cr.maxRounds}</span>
-              {:else}
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" class="tool-ok"><path d="M6.5 12L2 7.5l1.4-1.4L6.5 9.2l6.1-6.1L14 4.5z"/></svg>
-                <span>Python 실행 완료 {cr.round}/{cr.maxRounds}</span>
-              {/if}
-            </button>
-            {#if !collapsedCodeRounds[crIdx]}
-              {#if cr.code}
-                <div class="code-round-section">
-                  <div class="code-round-section-label">Code</div>
-                  <pre class="code-round-pre">{cr.code}</pre>
+    <!-- ═══ Content Blocks 순회 렌더링 (Claude Code FO0 패턴) ═══ -->
+    <!-- Fallback: blocks가 없으면 기존 text 렌더링 -->
+    {#if (!message.blocks || message.blocks.length === 0) && message.text}
+      <div class="content" onclick={copyCode}>{@html wrapCodeBlocks(render(message.text))}</div>
+    {/if}
+    {#each message.blocks ?? [] as block, blockIdx}
+
+      <!-- TEXT BLOCK (code_round가 있으면 python 코드블록 제거) -->
+      {#if block.type === "text" && block.text}
+        {@const cleanText = block.text
+          .replace(/```python\s*\n[\s\S]*?```\s*\n*/g, "")
+          .replace(/```python\s*\n[\s\S]*$/g, "")
+          .replace(/\n*\[실행 결과\][\s\S]*?(?=\n##|\n\n[A-Za-z가-힣]|$)/g, "")
+          .trim()}
+        {#if cleanText}
+          <div class="content" onclick={copyCode}>{@html wrapCodeBlocks(render(cleanText))}</div>
+        {/if}
+      {/if}
+
+      <!-- CODE EXECUTION BLOCK (Claude Code tool_use 패턴) -->
+      {#if block.type === "code_execution"}
+        {@const expanded = expandedBlocks[blockIdx] === true}
+        {@const firstLine = block.code?.split('\n').find((l: string) => l.trim() && !l.trim().startsWith('#') && !l.trim().startsWith('import')) || block.code?.split('\n')[0] || ''}
+        <div class="tool-block">
+          <button class="tool-header" onclick={() => toggleBlock(blockIdx)}>
+            <svg class="tool-chevron" class:open={expanded} width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M6 4l4 4-4 4"/>
+            </svg>
+            {#if block.status === "executing"}
+              <div class="tool-spinner-sm"></div>
+            {:else}
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" class="tool-ok"><path d="M6.5 12L2 7.5l1.4-1.4L6.5 9.2l6.1-6.1L14 4.5z"/></svg>
+            {/if}
+            <span class="tool-args">{truncate(firstLine, 100)}</span>
+            {#if block.status === "done"}
+              <span class="tool-annotation">완료</span>
+            {/if}
+          </button>
+          {#if expanded}
+            <div class="tool-body">
+              {#if block.code}
+                <div class="tool-body-row">
+                  <div class="tool-body-label">IN</div>
+                  <div class="tool-body-content"><pre>{block.code}</pre></div>
                 </div>
               {/if}
-              {#if cr.result}
-                <div class="code-round-section code-round-result">
-                  <div class="code-round-section-label">Result</div>
-                  <div class="code-round-pre">{@html render(cr.result)}</div>
+              {#if block.result}
+                <div class="tool-body-row">
+                  <div class="tool-body-label">OUT</div>
+                  <div class="tool-body-content">{@html render(block.result)}</div>
                 </div>
               {/if}
-            {/if}
-          </div>
-        {/each}
-      </div>
-    {/if}
-
-    <!-- Tool events inline (Claude Code style) -->
-    {#if toolPairs.length > 0}
-      <div class="tool-section">
-        {#each toolPairs as pair, i}
-          <div class="tool-block">
-            <button class="tool-header" onclick={() => toggleTool(i)}>
-              <svg class="tool-chevron" class:open={!collapsedTools[i]} width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M6 4l4 4-4 4"/>
-              </svg>
-              <span class="tool-icon">
-                {#if pair.result}
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" class="tool-ok"><path d="M6.5 12L2 7.5l1.4-1.4L6.5 9.2l6.1-6.1L14 4.5z"/></svg>
-                {:else}
-                  <div class="tool-spinner-sm"></div>
-                {/if}
-              </span>
-              <span class="tool-name">{toolLabel(pair.call.name as string)}</span>
-              <span class="tool-args">{truncate(formatToolArg(pair.call.arguments), 60)}</span>
-              {#if pair.result && (pair.call as any)._ts && (pair.result as any)._ts}
-                <span class="tool-time">{(((pair.result as any)._ts - (pair.call as any)._ts) / 1000).toFixed(1)}s</span>
-              {/if}
-            </button>
-            {#if !collapsedTools[i] && pair.result}
-              <div class="tool-result">
-                <pre>{truncate(typeof pair.result.result === "string" ? pair.result.result : JSON.stringify(pair.result.result, null, 2), 2000)}</pre>
-              </div>
-            {/if}
-          </div>
-        {/each}
-      </div>
-    {/if}
-
-    <!-- Active tool spinner (no result yet, while also generating text) -->
-    {#if activeTool && message.text}
-      <div class="active-tool-row">
-        <div class="tool-spinner-sm"></div>
-        <span class="active-tool-label">Running {activeTool.name}...</span>
-      </div>
-    {/if}
-
-    <!-- Committed content (rendered markdown) -->
-    {#if split.committed}
-      <div class="content" onclick={copyCode}>{@html finalCommittedHtml}</div>
-    {/if}
-
-    <!-- Draft content (still streaming) -->
-    {#if split.draft}
-      {#if split.draftType === "code"}
-        <!-- Claude Code style: hide code while writing, show spinner -->
-        <div class="code-writing">
-          <div class="tool-spinner-sm"></div>
-          <span>분석 준비 중...</span>
-        </div>
-      {:else}
-        <div class="draft" class:draft-table={split.draftType === "table"}>
-          {#if split.draftType === "table"}
-            <span class="draft-label">테이블 생성 중...</span>
+            </div>
           {/if}
-          <pre class="draft-pre">{split.draft}</pre>
         </div>
       {/if}
-    {/if}
 
-    <!-- Streaming cursor (code execution progress is shown in code-rounds above) -->
-    {#if message.loading && message.text}
-      {@const lastRound = message.codeRounds?.[message.codeRounds.length - 1]}
-      {#if !lastRound || lastRound.status !== "executing"}
+      <!-- TOOL CALL BLOCK -->
+      {#if block.type === "tool_call"}
+        {@const expanded = expandedBlocks[blockIdx] === true}
+        <div class="tool-block">
+          <button class="tool-header" onclick={() => toggleBlock(blockIdx)}>
+            <svg class="tool-chevron" class:open={expanded} width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M6 4l4 4-4 4"/>
+            </svg>
+            {#if block.toolResult != null}
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" class="tool-ok"><path d="M6.5 12L2 7.5l1.4-1.4L6.5 9.2l6.1-6.1L14 4.5z"/></svg>
+            {:else}
+              <div class="tool-spinner-sm"></div>
+            {/if}
+            <span class="tool-name">{toolLabel(block.name ?? "")}</span>
+            <span class="tool-args">{truncate(formatToolArg(block.arguments), 60)}</span>
+          </button>
+          {#if expanded && block.toolResult != null}
+            <div class="tool-body">
+              <div class="tool-body-row">
+                <div class="tool-body-label">OUT</div>
+                <div class="tool-body-content"><pre>{truncate(typeof block.toolResult === "string" ? block.toolResult : JSON.stringify(block.toolResult, null, 2), 2000)}</pre></div>
+              </div>
+            </div>
+          {/if}
+        </div>
+      {/if}
+
+    {/each}
+
+    <!-- 스트리밍 커서 -->
+    {#if message.loading && message.blocks?.some(b => b.type === "text" && b.text)}
+      {@const lastBlock = message.blocks?.[message.blocks.length - 1]}
+      {#if lastBlock?.type === "text"}
+        <span class="cursor"></span>
+      {:else if lastBlock?.type === "code_execution" && lastBlock.status === "executing"}
+        <!-- 코드 실행 중 — 커서 안 보임 -->
+      {:else}
         <span class="cursor"></span>
       {/if}
     {/if}
@@ -470,7 +413,7 @@
 </div>
 
 <style>
-  /* === Message container === */
+  /* === Message container (Claude Code timeline 정밀 벤치마킹) === */
   .msg {
     color: var(--vscode-foreground);
     display: flex;
@@ -478,11 +421,45 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 0;
-    padding: 8px 0;
+    padding: 8px 0 8px 30px;
     width: 100%;
     max-width: 100%;
+    user-select: text;
   }
   .msg:first-child { padding-top: 0; }
+  .msg.user { padding-left: 0; }
+
+  /* Timeline dot (Claude Code 정확한 값: 7px, left:9px, top:15px) */
+  .msg:not(.user)::before {
+    content: "";
+    position: absolute;
+    background-color: var(--vscode-descriptionForeground);
+    z-index: 1;
+    border-radius: 50%;
+    width: 7px;
+    height: 7px;
+    top: 15px;
+    left: 9px;
+  }
+  .msg:not(.user).dot-success::before { background-color: #74c991; }
+  .msg:not(.user).dot-failure::before { background-color: #c74e39; }
+  /* Claude Code: 진행 중이면 dot 숨김 (opacity:0) */
+  .msg:not(.user).dot-progress::before { opacity: 0; }
+
+  /* Timeline 세로선 (Claude Code: 1px, left:12px) */
+  .msg:not(.user)::after {
+    content: "";
+    position: absolute;
+    background-color: var(--vscode-sideBarActivityBarTop-border, rgba(128,128,128,0.2));
+    width: 1px;
+    top: 0;
+    bottom: 0;
+    left: 12px;
+  }
+  /* 첫 번째 assistant: 세로선 top을 dot 아래부터 */
+  .msg:not(.user):first-of-type::after { top: 18px; }
+  /* 마지막 assistant: 세로선 bottom을 dot 위까지 */
+  .msg:not(.user):last-of-type::after { height: 18px; }
 
   /* === User message (Claude Code exact) === */
   .user-wrap {
@@ -688,28 +665,29 @@
     margin-left: auto;
   }
 
-  /* === Code execution rounds === */
+  /* === Code execution rounds (Claude Code .toolBody pattern) === */
   .code-rounds {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
     margin: 8px 0;
   }
   .code-round-block {
-    border: 1px solid var(--vscode-widget-border, rgba(128,128,128,0.2));
-    border-radius: var(--corner-radius-small);
+    border: 0.5px solid var(--vscode-widget-border, rgba(128,128,128,0.2));
+    border-radius: 5px;
     overflow: hidden;
+    background: var(--vscode-textCodeBlock-background);
   }
   .code-round-header {
     display: flex;
     align-items: center;
     gap: 6px;
     width: 100%;
-    padding: 6px 10px;
+    padding: 4px 8px;
     background: none;
     border: none;
-    color: var(--vscode-descriptionForeground);
-    font-size: 12px;
+    color: var(--vscode-foreground);
+    font-size: 13px;
     cursor: pointer;
     font-family: var(--vscode-editor-font-family, monospace);
   }
@@ -717,23 +695,14 @@
     background: var(--vscode-list-hoverBackground);
   }
   .code-round-section {
-    border-top: 1px solid var(--vscode-widget-border, rgba(128,128,128,0.15));
+    border-top: 0.5px solid var(--vscode-widget-border, rgba(128,128,128,0.15));
     background: var(--vscode-textCodeBlock-background);
   }
   .code-round-result {
     background: var(--vscode-editor-background);
   }
-  .code-round-section-label {
-    padding: 4px 10px 0;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--vscode-descriptionForeground);
-    opacity: 0.6;
-    font-family: var(--vscode-editor-font-family, monospace);
-  }
   .code-round-pre {
-    padding: 4px 10px 8px;
+    padding: 8px;
     margin: 0;
     font-size: 12px;
     line-height: 1.6;
@@ -744,30 +713,46 @@
     max-height: 300px;
     overflow-y: auto;
   }
+  .code-round-pre :global(table) {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 12px;
+  }
+  .code-round-pre :global(th),
+  .code-round-pre :global(td) {
+    padding: 4px 8px;
+    border: 0.5px solid var(--vscode-widget-border, rgba(128,128,128,0.2));
+    text-align: left;
+  }
+  .code-round-pre :global(th) {
+    background: var(--vscode-textCodeBlock-background);
+    font-weight: 600;
+  }
 
-  /* === Tool events (Claude Code inline style) === */
+  /* === Tool events (Claude Code .toolItem pattern) === */
   .tool-section {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    margin: 6px 0;
+    margin: 8px 0;
   }
   .tool-block {
-    border-radius: var(--corner-radius-small);
+    border: 0.5px solid var(--vscode-widget-border, rgba(128,128,128,0.2));
+    border-radius: 5px;
     overflow: hidden;
+    background: var(--vscode-textCodeBlock-background);
   }
   .tool-header {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     width: 100%;
-    padding: 3px 6px;
+    padding: 4px 8px;
     border: none;
-    border-radius: var(--corner-radius-small);
-    background: var(--vscode-textCodeBlock-background);
+    background: none;
     color: var(--vscode-foreground);
     font: inherit;
-    font-size: 12px;
+    font-size: 13px;
     cursor: pointer;
     text-align: left;
   }
@@ -788,7 +773,17 @@
     flex-shrink: 0;
   }
   .tool-ok {
-    color: #34d399;
+    color: #74c991;
+  }
+  /* Claude Code .toolAnnotation 패턴 */
+  .tool-annotation {
+    color: #74c991;
+    background-color: #74c99133;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-size: 11px;
+    margin-left: auto;
+    flex-shrink: 0;
   }
   .tool-name {
     font-weight: 600;
@@ -810,6 +805,65 @@
     flex-shrink: 0;
     font-family: var(--vscode-editor-font-family, monospace);
   }
+  /* Claude Code .toolBody 패턴 */
+  .tool-body {
+    border-top: 0.5px solid var(--vscode-widget-border, rgba(128,128,128,0.15));
+    display: grid;
+    grid-template-columns: max-content 1fr;
+  }
+  .tool-body-row {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: subgrid;
+    border-top: 0.5px solid var(--vscode-widget-border, rgba(128,128,128,0.1));
+    padding: 4px;
+  }
+  .tool-body-row:first-child {
+    border-top: none;
+  }
+  .tool-body-label {
+    grid-column: 1;
+    color: var(--vscode-descriptionForeground);
+    opacity: 0.5;
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 0.85em;
+    padding: 4px 8px 4px 4px;
+    text-align: left;
+  }
+  .tool-body-content {
+    grid-column: 2;
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 0.85em;
+    color: var(--vscode-editor-foreground);
+  }
+  .tool-body-content pre {
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .tool-body-content :global(table) {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 12px;
+  }
+  .tool-body-content :global(th),
+  .tool-body-content :global(td) {
+    padding: 4px 8px;
+    border: 0.5px solid var(--vscode-widget-border, rgba(128,128,128,0.2));
+    text-align: left;
+  }
+  .tool-body-content :global(th) {
+    background: var(--vscode-textCodeBlock-background);
+    font-weight: 600;
+  }
+
   .tool-result {
     border-left: 2px solid var(--vscode-panel-border);
     margin-left: 14px;

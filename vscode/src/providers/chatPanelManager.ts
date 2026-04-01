@@ -57,7 +57,7 @@ export class ChatPanelManager {
     this.base.setup(this.panel.webview, (msg) => this.postMessage(msg));
 
     this.panel.iconPath = vscode.Uri.joinPath(
-      this.context.extensionUri, "resources", "icon.svg",
+      this.context.extensionUri, "resources", "icon.png",
     );
 
     this.panel.onDidDispose(() => {

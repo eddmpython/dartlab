@@ -3243,3 +3243,220 @@ def creditFlagsBlock(data: dict) -> list:
     if opportunities:
         blocks.append(FlagBlock(opportunities, kind="opportunity"))
     return blocks
+
+
+# ── 시장분석 (technicalAnalysis) 빌더 ──
+
+
+def technicalVerdictBlock(data: dict) -> list:
+    """calcTechnicalVerdict 결과 → 기술적 종합 판단."""
+    if not data:
+        return []
+
+    verdict = data.get("verdict", "")
+    score = data.get("score", 0)
+    rsi = data.get("rsi")
+    adx = data.get("adx")
+    above20 = data.get("aboveSma20")
+    above60 = data.get("aboveSma60")
+    bbPos = data.get("bbPosition")
+
+    metrics = [("종합 판단", f"{verdict} (score {score:+d})")]
+    if rsi is not None:
+        rsiLabel = "과매수" if rsi >= 70 else "과매도" if rsi <= 30 else "중립"
+        metrics.append(("RSI (14)", f"{rsi:.1f} ({rsiLabel})"))
+    if adx is not None:
+        adxLabel = "강한 추세" if adx >= 25 else "추세 약함"
+        metrics.append(("ADX (14)", f"{adx:.1f} ({adxLabel})"))
+    if above20 is not None:
+        metrics.append(("SMA 20일", "위" if above20 else "아래"))
+    if above60 is not None:
+        metrics.append(("SMA 60일", "위" if above60 else "아래"))
+    if bbPos is not None:
+        metrics.append(("BB 위치", f"{bbPos:.0f}%"))
+
+    return [
+        HeadingBlock(
+            _meta("technicalVerdict").label,
+            level=2,
+            helper="RSI 30 이하 과매도, 70 이상 과매수. ADX 25 이상이면 강한 추세",
+        ),
+        MetricBlock(metrics),
+    ]
+
+
+def technicalSignalsBlock(data: dict) -> list:
+    """calcTechnicalSignals 결과 → 최근 매매 신호."""
+    if not data:
+        return []
+
+    summary = data.get("signalSummary", {})
+    bullish = summary.get("bullish", 0)
+    bearish = summary.get("bearish", 0)
+
+    blocks: list = [
+        HeadingBlock(
+            _meta("technicalSignals").label,
+            level=2,
+            helper="최근 20거래일 기준 매매 신호 집계",
+        ),
+        MetricBlock(
+            [
+                ("매수 신호", f"{bullish}건"),
+                ("매도 신호", f"{bearish}건"),
+            ]
+        ),
+    ]
+
+    # 신호별 상세
+    signals = data.get("signals", {})
+    signalNames = {
+        "goldenCross": "골든/데드크로스",
+        "rsiSignal": "RSI 신호",
+        "macdSignal": "MACD 신호",
+        "bollingerSignal": "볼린저 신호",
+    }
+    sigMetrics = []
+    for key, label in signalNames.items():
+        val = signals.get(key, 0)
+        if val > 0:
+            sigMetrics.append((label, f"매수 {val}건"))
+        elif val < 0:
+            sigMetrics.append((label, f"매도 {abs(val)}건"))
+    if sigMetrics:
+        blocks.append(MetricBlock(sigMetrics))
+
+    # 최근 이벤트 테이블
+    events = data.get("recentEvents", [])
+    if events:
+        eventNames = {
+            "goldenCross": "골든/데드크로스",
+            "rsiSignal": "RSI",
+            "macdSignal": "MACD",
+            "bollingerSignal": "볼린저",
+        }
+        rows = {
+            "날짜": [e.get("date", "") for e in events],
+            "신호": [eventNames.get(e.get("type", ""), e.get("type", "")) for e in events],
+            "방향": [e.get("direction", "") for e in events],
+        }
+        blocks.append(TableBlock("최근 신호 이벤트", pl.DataFrame(rows)))
+
+    return blocks
+
+
+def marketBetaBlock(data: dict) -> list:
+    """calcMarketBeta 결과 → 시장 베타 + CAPM."""
+    if not data:
+        return []
+
+    metrics = []
+    beta = data.get("value")
+    if beta is not None:
+        metrics.append(("베타 (β)", f"{beta:.3f}"))
+    alpha = data.get("alpha")
+    if alpha is not None:
+        metrics.append(("연간 알파", f"{alpha:+.2f}%"))
+    r2 = data.get("rSquared")
+    if r2 is not None:
+        metrics.append(("R²", f"{r2:.4f}"))
+    capm = data.get("capm")
+    if capm is not None:
+        metrics.append(("CAPM 기대수익률", f"{capm:.1f}%"))
+    rs = data.get("relativeStrength")
+    if rs is not None:
+        rsLabel = "상대 강세" if rs > 0 else "상대 약세"
+        metrics.append(("상대강도 (RSI 차이)", f"{rs:+.1f} ({rsLabel})"))
+
+    if not metrics:
+        return []
+
+    blocks: list = [
+        HeadingBlock(
+            _meta("marketBeta").label,
+            level=2,
+            helper="β < 1 시장보다 안정, β > 1 시장보다 변동 큼. α > 0이면 시장 초과 수익",
+        ),
+        MetricBlock(metrics),
+    ]
+
+    interp = data.get("interpretation")
+    if interp:
+        blocks.append(TextBlock(interp, style="dim", indent="h2"))
+
+    return blocks
+
+
+def fundamentalDivergenceBlock(data: dict) -> list:
+    """calcFundamentalDivergence 결과 → 재무-시장 괴리 진단."""
+    if not data:
+        return []
+
+    metrics = []
+    fg = data.get("financialGrade")
+    tv = data.get("technicalVerdict")
+    div = data.get("divergence")
+
+    if fg:
+        metrics.append(("재무 등급", fg))
+    if tv:
+        ts = data.get("technicalScore", 0)
+        metrics.append(("기술적 판단", f"{tv} (score {ts:+d})"))
+    if div:
+        metrics.append(("교차검증", div))
+
+    if not metrics:
+        return []
+
+    blocks: list = [
+        HeadingBlock(
+            _meta("fundamentalDivergence").label,
+            level=2,
+            helper="재무 분석과 시장 반응이 일치하면 신뢰도 ↑, 괴리하면 원인 분석 필요",
+        ),
+        MetricBlock(metrics),
+    ]
+
+    diagnosis = data.get("diagnosis")
+    if diagnosis:
+        blocks.append(TextBlock(diagnosis, indent="h2"))
+
+    return blocks
+
+
+def marketRiskBlock(data: dict) -> list:
+    """calcMarketRisk 결과 → 안정성 섹션에 배치되는 시장 리스크."""
+    if not data:
+        return []
+
+    metrics = []
+    beta = data.get("beta")
+    if beta is not None:
+        metrics.append(("시장 베타", f"{beta:.3f}"))
+    atrPct = data.get("atrPercent")
+    volGrade = data.get("volatilityGrade")
+    if atrPct is not None:
+        metrics.append(("일일 변동성 (ATR%)", f"{atrPct:.1f}%"))
+    if volGrade:
+        metrics.append(("변동성 등급", volGrade))
+    rs = data.get("relativeStrength")
+    if rs is not None:
+        metrics.append(("시장 대비 상대강도", f"{rs:+.1f}"))
+
+    if not metrics:
+        return []
+
+    return [
+        HeadingBlock(
+            _meta("marketRisk").label,
+            level=2,
+            helper="β > 1.5 고위험, ATR% > 5% 고변동. 상대강도 양수면 시장보다 강함",
+        ),
+        MetricBlock(metrics),
+    ]
+
+
+def marketAnalysisFlagsBlock(data) -> list:
+    """calcMarketAnalysisFlags 결과 → FlagBlock."""
+    flags = data if isinstance(data, list) else []
+    return _flagsBlock(flags)
