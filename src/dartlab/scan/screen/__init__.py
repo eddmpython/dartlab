@@ -160,12 +160,99 @@ def _screenAll() -> pl.DataFrame:
     return pl.DataFrame(rows).sort("프리셋수", descending=True)
 
 
+def _screenCycleRecovery() -> pl.DataFrame:
+    """경기 회복 수혜: 경기민감(high beta) + 이익 양호 + 저PBR.
+
+    실험 109-02: 회복기에 high cyclicality > defensive +51%p.
+    macroBeta에서 GDP beta > 1.0 종목 = 경기민감.
+    """
+    try:
+        macro = _loadAxis("macroBeta")
+    except Exception:
+        macro = pl.DataFrame()
+
+    prof = _loadAxis("profitability")
+    val = _loadAxis("valuation")
+    debt = _loadAxis("debt")
+
+    goodProf = set(prof.filter(pl.col("등급").is_in(["우수", "양호", "보통"]))["종목코드"].to_list())
+    safeDbt = set(debt.filter(pl.col("위험등급").is_in(["안전", "관찰"]))["종목코드"].to_list())
+
+    # macroBeta에서 경기민감 종목 (gdpBeta > 1.0)
+    if not macro.is_empty() and "gdpBeta" in macro.columns:
+        highBeta = set(macro.filter(pl.col("gdpBeta") > 1.0)["stockCode"].to_list())
+    else:
+        # macroBeta 데이터 없으면 profitability 전체로 fallback
+        highBeta = goodProf
+
+    # 저PBR
+    lowPbr = set()
+    if not val.is_empty() and "pbr" in val.columns:
+        lowPbr = set(val.filter(pl.col("pbr") < 1.0)["종목코드"].to_list())
+    elif not val.is_empty() and "PBR" in val.columns:
+        lowPbr = set(val.filter(pl.col("PBR") < 1.0)["종목코드"].to_list())
+
+    # 교집합 (저PBR이 있으면 포함, 없으면 경기민감+이익만)
+    codes = highBeta & goodProf & safeDbt
+    if lowPbr:
+        codes = codes & lowPbr
+
+    if not codes:
+        return pl.DataFrame({"종목코드": [], "프리셋": []})
+    return pl.DataFrame({"종목코드": sorted(codes), "프리셋": ["cycle_recovery"] * len(codes)})
+
+
+def _screenCycleDefensive() -> pl.DataFrame:
+    """경기 방어: 저베타(defensive) + 안정 재무 + 배당.
+
+    실험 109-02: 둔화기에 defensive > high -7.4%p.
+    macroBeta에서 GDP beta < 0.5 종목 = 방어주.
+    """
+    try:
+        macro = _loadAxis("macroBeta")
+    except Exception:
+        macro = pl.DataFrame()
+
+    debt = _loadAxis("debt")
+    div_df = _loadAxis("dividend")
+
+    safeDbt = set(debt.filter(pl.col("위험등급").is_in(["안전", "관찰"]))["종목코드"].to_list())
+
+    # 배당 안정 종목
+    goodDiv = set()
+    if not div_df.is_empty():
+        for col in ["분류", "유형"]:
+            if col in div_df.columns:
+                goodDiv = set(
+                    div_df.filter(pl.col(col).is_in(["연속증가", "안정", "환원형"]))["종목코드"].to_list()
+                )
+                break
+        if not goodDiv:
+            goodDiv = set(div_df["종목코드"].to_list())
+
+    # 저베타 (defensive)
+    if not macro.is_empty() and "gdpBeta" in macro.columns:
+        lowBeta = set(macro.filter(pl.col("gdpBeta") < 0.5)["stockCode"].to_list())
+    else:
+        lowBeta = safeDbt  # fallback
+
+    codes = lowBeta & safeDbt
+    if goodDiv:
+        codes = codes & goodDiv
+
+    if not codes:
+        return pl.DataFrame({"종목코드": [], "프리셋": []})
+    return pl.DataFrame({"종목코드": sorted(codes), "프리셋": ["cycle_defensive"] * len(codes)})
+
+
 _DISPATCH = {
     "value": _screenValue,
     "dividend": _screenDividend,
     "growth": _screenGrowth,
     "risk": _screenRisk,
     "quality": _screenQuality,
+    "cycle_recovery": _screenCycleRecovery,
+    "cycle_defensive": _screenCycleDefensive,
     "all": _screenAll,
 }
 

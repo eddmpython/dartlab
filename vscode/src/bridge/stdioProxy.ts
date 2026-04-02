@@ -32,6 +32,11 @@ interface SpawnCandidate {
   label: string;
 }
 
+interface FailedAttempt {
+  label: string;
+  reason: string;
+}
+
 export function buildCandidates(pythonPath?: string): SpawnCandidate[] {
   const candidates: SpawnCandidate[] = [];
 
@@ -111,10 +116,15 @@ export class StdioProxy {
     for (const fn of this.listeners) fn(s);
   }
 
+  // Diagnostic tracking
+  private failedAttempts: FailedAttempt[] = [];
+  currentDiag: Record<string, unknown> = {};
+
   /** Start dartlab chat --stdio, trying multiple spawn candidates. */
   async start(pythonPath?: string): Promise<boolean> {
     if (this.disposed) return false;
     this.lastPythonPath = pythonPath;
+    this.failedAttempts = [];
     this.setState("starting");
 
     // If we have a previously working candidate, try it first
@@ -134,13 +144,103 @@ export class StdioProxy {
       }
     }
 
-    // All candidates failed
+    // All candidates failed — build diagnostic message
     this.setState("error");
-    vscode.window.showErrorMessage(
-      "DartLab: Could not start. Install dartlab: pip install dartlab",
-      "Show Logs",
-    ).then((c) => { if (c) this.showLogs(); });
+    this.output.appendLine("");
+    this.output.appendLine("=== DartLab 시작 실패 진단 ===");
+    for (const attempt of this.failedAttempts) {
+      this.output.appendLine(`  ${attempt.label}: ${attempt.reason}`);
+    }
+    this.output.appendLine("");
+    this.output.appendLine("해결 방법:");
+    this.output.appendLine("  1. dartlab 설치: pip install dartlab (또는 uv pip install dartlab)");
+    this.output.appendLine("  2. Python 3.12 이상 필요");
+    this.output.appendLine("  3. 설정 > dartlab.pythonPath에 Python 경로 직접 지정 가능");
+    this.output.appendLine("========================");
+
+    const failureType = this.classifyPrimaryFailure();
+    const primaryReason = this.diagnosePrimaryFailureMessage(failureType);
+
+    if (failureType === "not_installed" || failureType === "upgrade_needed") {
+      // 자동 설치/업그레이드 제안
+      const action = failureType === "not_installed" ? "자동 설치" : "자동 업그레이드";
+      vscode.window.showErrorMessage(
+        `DartLab 시작 실패: ${primaryReason}`,
+        action, "로그 보기",
+      ).then((c) => {
+        if (c === action) this.autoInstallAndRestart(failureType === "upgrade_needed");
+        else if (c === "로그 보기") this.showLogs();
+      });
+    } else if (failureType === "no_python") {
+      vscode.window.showErrorMessage(
+        `DartLab 시작 실패: ${primaryReason}`,
+        "Python 설치", "로그 보기",
+      ).then((c) => {
+        if (c === "Python 설치") vscode.env.openExternal(vscode.Uri.parse("https://www.python.org/downloads/"));
+        else if (c === "로그 보기") this.showLogs();
+      });
+    } else {
+      vscode.window.showErrorMessage(
+        `DartLab 시작 실패: ${primaryReason}`,
+        "로그 보기",
+      ).then((c) => { if (c) this.showLogs(); });
+    }
     return false;
+  }
+
+  /** Auto-install dartlab and restart server. */
+  private autoInstallAndRestart(upgrade: boolean): void {
+    const installCmd = this.pickInstallCommand(upgrade);
+    this.output.appendLine(`[DartLab] 자동 설치 시작: ${installCmd}`);
+    this.setState("starting");
+
+    const terminal = vscode.window.createTerminal({ name: "DartLab Install", hideFromUser: false });
+    terminal.show();
+    terminal.sendText(`${installCmd} && exit`);
+
+    const disposable = vscode.window.onDidCloseTerminal((t) => {
+      if (t !== terminal) return;
+      disposable.dispose();
+      this.output.appendLine("[DartLab] 설치 완료 — 재시작 시도");
+      this.restartCount = 0;
+      this.lastWorkingCandidate = undefined;
+      this.start(this.lastPythonPath);
+    });
+  }
+
+  /** Choose install command based on what's available. */
+  private pickInstallCommand(upgrade: boolean): string {
+    const flag = upgrade ? " --upgrade" : "";
+    // uv가 후보에서 ENOENT가 아니었으면 uv 사용
+    const uvFailed = this.failedAttempts.find(a => a.label.startsWith("uv "));
+    if (uvFailed && !uvFailed.reason.includes("찾을 수 없음")) {
+      return `uv pip install${flag} dartlab`;
+    }
+    // python이 있으면 pip 사용
+    const pyFailed = this.failedAttempts.find(a => a.label.startsWith("python "));
+    if (pyFailed && !pyFailed.reason.includes("찾을 수 없음")) {
+      return `python -m pip install${flag} dartlab`;
+    }
+    // fallback
+    return `pip install${flag} dartlab`;
+  }
+
+  /** Classify the primary failure type. */
+  private classifyPrimaryFailure(): "not_installed" | "upgrade_needed" | "no_python" | "unknown" {
+    const reasons = this.failedAttempts.map(a => a.reason);
+    if (reasons.some(r => r.includes("미설치"))) return "not_installed";
+    if (reasons.some(r => r.includes("업그레이드"))) return "upgrade_needed";
+    if (reasons.every(r => r.includes("찾을 수 없음"))) return "no_python";
+    return "unknown";
+  }
+
+  private diagnosePrimaryFailureMessage(type: string): string {
+    switch (type) {
+      case "not_installed": return "dartlab 패키지 미설치";
+      case "upgrade_needed": return "dartlab 업그레이드 필요";
+      case "no_python": return "Python을 찾을 수 없음 — Python 3.12+ 설치 필요";
+      default: return "dartlab 서버를 시작할 수 없음 — 로그를 확인하세요";
+    }
   }
 
   /** Try spawning a single candidate. Returns true if ready signal received. */
@@ -167,7 +267,9 @@ export class StdioProxy {
         ...(cwd ? { cwd } : {}),
       });
     } catch (err) {
-      this.output.appendLine(`[DartLab] spawn failed: ${err instanceof Error ? err.message : err}`);
+      const msg = err instanceof Error ? err.message : String(err);
+      this.output.appendLine(`[DartLab] spawn failed: ${msg}`);
+      this.failedAttempts.push({ label: candidate.label, reason: this.classifyError(msg, "") });
       return false;
     }
 
@@ -215,14 +317,29 @@ export class StdioProxy {
       return true;
     }
 
-    // Failed -- clean up
-    this.output.appendLine(`[DartLab] failed: ${candidate.label} (stderr: ${this.stderrBuffer.trim().split("\n").pop() ?? ""})`);
+    // Failed -- clean up and record diagnosis
+    const lastStderr = this.stderrBuffer.trim();
+    this.output.appendLine(`[DartLab] failed: ${candidate.label} (stderr: ${lastStderr.split("\n").pop() ?? ""})`);
+    this.failedAttempts.push({ label: candidate.label, reason: this.classifyError("", lastStderr) });
     if (!exited) {
       try { this.proc?.kill("SIGKILL"); } catch { /* ignore */ }
     }
     this.proc = null;
     if (this.rl) { this.rl.close(); this.rl = null; }
     return false;
+  }
+
+  /** Classify spawn failure into a Korean diagnostic reason. */
+  private classifyError(spawnError: string, stderr: string): string {
+    const combined = spawnError + " " + stderr;
+    if (combined.includes("ENOENT")) return "명령어를 찾을 수 없음 (Python/uv 미설치)";
+    if (combined.includes("No module named dartlab.__main__")) return "dartlab 업그레이드 필요 — pip install -U dartlab";
+    if (combined.includes("No module named dartlab")) return "dartlab 패키지 미설치";
+    if (combined.includes("No module named")) return `모듈 없음: ${combined.match(/No module named (\S+)/)?.[1] ?? ""}`;
+    if (combined.includes("SyntaxError")) return "Python 버전 불일치 (3.12+ 필요)";
+    if (combined.includes("Permission")) return "권한 오류";
+    if (!spawnError && !stderr.trim()) return "응답 대기 시간 초과 (30초)";
+    return stderr.trim().split("\n").pop()?.slice(0, 120) ?? "알 수 없는 오류";
   }
 
   private waitForReady(): Promise<boolean> {
@@ -232,7 +349,10 @@ export class StdioProxy {
         try {
           const msg = JSON.parse(line);
           if (msg.event === "ready") {
-            this.currentVersion = msg.data?.version ?? "unknown";
+            const d = msg.data ?? {};
+            this.currentVersion = d.version ?? "unknown";
+            this.currentDiag = d;
+            this.output.appendLine(`[DartLab] 진단: Python ${d.python ?? "?"}, provider=${d.aiProvider ?? "?"}, dartKey=${d.dartKey ?? "?"}`);
             this.rl?.removeListener("line", onLine);
             this.rl?.on("line", (l) => this.handleLine(l));
             resolve(true);

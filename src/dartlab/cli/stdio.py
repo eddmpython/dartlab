@@ -201,7 +201,7 @@ def run() -> None:
 
     dartlab.verbose = False
 
-    _emit({"event": "ready", "data": {"version": _getVersion()}})
+    _emit({"event": "ready", "data": _buildReadyDiag()})
 
     for line in sys.stdin:
         line = line.strip()
@@ -239,3 +239,29 @@ def _getVersion() -> str:
         return dartlab.__version__
     except Exception:
         return "unknown"
+
+
+def _buildReadyDiag() -> dict[str, Any]:
+    """시작 시 기본 진단 정보 — VSCode 확장에서 상태 표시용."""
+    diag: dict[str, Any] = {"version": _getVersion()}
+    diag["python"] = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    try:
+        from dartlab.core.ai.profile import get_profile_manager
+
+        profile = get_profile_manager().load()
+        diag["aiProvider"] = profile.default_provider or "none"
+    except Exception:
+        diag["aiProvider"] = "none"
+    try:
+        from dartlab import config
+
+        diag["dataDir"] = str(config.dataDir)
+    except Exception:
+        pass
+    try:
+        import os
+
+        diag["dartKey"] = bool(os.environ.get("DART_API_KEY") or os.environ.get("DART_API_KEYS"))
+    except Exception:
+        diag["dartKey"] = False
+    return diag

@@ -92,14 +92,18 @@
 					<div class="dl-docs-mobile-section">
 						<span class="dl-docs-mobile-section-title">{section.title}</span>
 						{#each section.items ?? [] as item}
-							<a
-								href="{base}{item.href}"
-								class="dl-docs-mobile-link"
-								class:active={currentPath === item.href || currentPath === item.href + '/'}
-								onclick={() => mobileNavOpen = false}
-							>
-								{item.title}
-							</a>
+							{#if item.external}
+								<a href={item.href} class="dl-docs-mobile-link" target="_blank" rel="noopener" onclick={() => mobileNavOpen = false}>{item.title}</a>
+							{:else}
+								<a
+									href="{base}{item.href}"
+									class="dl-docs-mobile-link"
+									class:active={currentPath === item.href || currentPath === item.href + '/'}
+									onclick={() => mobileNavOpen = false}
+								>
+									{item.title}
+								</a>
+							{/if}
 						{/each}
 					</div>
 				{/each}
@@ -138,13 +142,17 @@
 								{#if expandedSections.has(section.href) && section.items}
 									<div class="dl-sidebar-items">
 										{#each section.items as item}
-											<a
-												href="{base}{item.href}"
-												class="dl-sidebar-item"
-												class:active={currentPath === item.href || currentPath === item.href + '/'}
-											>
-												{item.title}
-											</a>
+											{#if item.external}
+												<a href={item.href} class="dl-sidebar-item" target="_blank" rel="noopener">{item.title}</a>
+											{:else}
+												<a
+													href="{base}{item.href}"
+													class="dl-sidebar-item"
+													class:active={currentPath === item.href || currentPath === item.href + '/'}
+												>
+													{item.title}
+												</a>
+											{/if}
 										{/each}
 									</div>
 								{/if}

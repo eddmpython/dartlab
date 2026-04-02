@@ -1,6 +1,7 @@
 export interface NavItem {
 	title: string;
 	href: string;
+	external?: boolean;
 	items?: NavItem[];
 }
 
@@ -29,11 +30,7 @@ export const navigation: NavItem[] = [
 			{ title: 'AI', href: '/docs/api/ai' },
 			{ title: 'Advanced', href: '/docs/api/advanced' },
 			{ title: 'MCP', href: '/docs/api/mcp' },
-			{
-				title: 'Full Reference',
-				href: 'https://github.com/eddmpython/dartlab/blob/master/CAPABILITIES.md',
-				external: true
-			}
+			{ title: 'Export', href: '/docs/api/export' }
 		]
 	},
 	{

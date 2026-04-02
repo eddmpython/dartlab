@@ -27,8 +27,8 @@
 | `scan` | function | 시장 전체 횡단분석 -- 15축, 전부 Polars DataFrame. |
 | `analysis` | function | 재무제표 완전 분석 — 20축, 단일 종목 심층. |
 | `gather` | function | 외부 시장 데이터 통합 수집 — 8축, 전부 Polars DataFrame. |
+| `quant` | function | 주가 기술적 분석 독립 엔진. |
 | `credit` | function | 신용등급 산출 단일 진입점. |
-| `quant` | function | 기술적 분석 진입점 — scan/gather와 동일한 호출 패턴. |
 | `verbose` | module | bool(x) -> bool |
 | `dataDir` | module | str(object='') -> str |
 | `codeToName` | function | 종목코드 → 회사명. |
@@ -604,7 +604,7 @@ DartCompany에서 동적 추출 (65개).
 | `notes` | property | K-IFRS 주석사항 접근자. |
 | `priority` | method | 낮을수록 먼저 시도. DART=10 (기본 provider). |
 | `profile` | property | docs spine + finance/report merge layer -- 통합 프로필 접근자. |
-| `quant` | method | 기술적 분석 (25개 지표 + 종합 판단). |
+| `quant` | method | 주가 기술적 분석. |
 | `rank` | property | 전체 시장 + 섹터 내 규모 순위 (매출/자산/성장률). |
 | `ratioSeries` | property | 재무비율 연도별 시계열 (IS/BS/CF와 동일한 dict 구조). |
 | `ratios` | property | 재무비율 시계열 (분류/항목 x 기간 DataFrame). |
@@ -1008,6 +1008,14 @@ profile.show(topic)으로 merge된 결과 조회
 "merge된 sections" → c.profile.sections
 **SeeAlso:** sections: profile.sections의 단축 접근
 show: profile 기반 topic 데이터 조회
+
+#### Company.quant
+**Capabilities:** 종합 판단 (강세/중립/약세) + RSI/SMA/BB
+25개 기술적 지표 DataFrame
+최근 매매 신호 이벤트
+시장 베타 + CAPM + 해석
+재무-기술적 괴리 진단
+기술적 경고/기회 플래그
 
 #### Company.rank
 **Capabilities:** 전체 시장 내 매출/자산 순위

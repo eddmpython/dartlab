@@ -282,7 +282,11 @@ CAPABILITIES: dict[str, dict] = {
         "seeAlso": "sections: profile.sections의 단축 접근\nshow: profile 기반 topic 데이터 조회",
         "summary": "docs spine + finance/report merge layer -- 통합 프로필 접근자.",
     },
-    "Company.quant": {"kind": "method", "summary": "기술적 분석 (25개 지표 + 종합 판단)."},
+    "Company.quant": {
+        "capabilities": "종합 판단 (강세/중립/약세) + RSI/SMA/BB\n25개 기술적 지표 DataFrame\n최근 매매 신호 이벤트\n시장 베타 + CAPM + 해석\n재무-기술적 괴리 진단\n기술적 경고/기회 플래그",
+        "kind": "method",
+        "summary": "주가 기술적 분석.",
+    },
     "Company.rank": {
         "aicontext": "시장/섹터 내 상대 위치 파악 — 피어 비교 분석의 기초\nsizeClass로 대형/중형/소형주 분류",
         "capabilities": "전체 시장 내 매출/자산 순위\n섹터 내 상대 순위\n매출 성장률 기반 규모 분류 (large/mid/small)",
@@ -613,7 +617,7 @@ CAPABILITIES: dict[str, dict] = {
         "summary": "전체 상장법인 목록.",
     },
     "nameToCode": {"kind": "function", "summary": "회사명 → 종목코드. 정확히 일치하는 첫 번째 결과."},
-    "quant": {"kind": "function", "summary": "기술적 분석 진입점 — scan/gather와 동일한 호출 패턴."},
+    "quant": {"kind": "function", "summary": "주가 기술적 분석 독립 엔진."},
     "scan": {
         "aicontext": "시장 전체 비교/순위 질문에 사용. 개별 종목 분석은 Company 메서드 사용.",
         "capabilities": "governance: 최대주주 지분, 사외이사, 감사위원회 종합 등급\nworkforce: 임직원 수, 평균급여, 근속연수\ncapital: 배당수익률, 배당성향, 자사주\ndebt: 사채만기, 부채비율, ICR, 위험등급\naccount: 전종목 단일 계정 시계열 (매출액, 영업이익 등)\nratio: 전종목 단일 재무비율 시계열 (ROE, 부채비율 등)\ncashflow: OCF/ICF/FCF + 현금흐름 패턴 분류\naudit: 감사의견, 감사인변경, 특기사항, 감사독립성\ninsider: 최대주주 지분변동, 자기주식, 경영권 안정성\nquality: Accrual Ratio + CF/NI -- 이익의 현금 뒷받침\nliquidity: 유동비율 + 당좌비율 -- 단기 지급능력\ngrowth: 매출/영업이익/순이익 CAGR + 성장 패턴 분류\nprofitability: 영업이익률/순이익률/ROE/ROA + 등급\ndigest: 시장 전체 공시 변화 다이제스트\nnetwork: 상장사 관계 네트워크 (출자/지분/계열)",

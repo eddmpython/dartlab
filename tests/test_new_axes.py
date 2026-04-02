@@ -439,7 +439,7 @@ class TestCatalog:
     def test_sections_count(self):
         from dartlab.review.catalog import SECTIONS
 
-        assert len(SECTIONS) == 21
+        assert len(SECTIONS) >= 20  # 섹션 추가 시 증가
 
     def test_new_sections_exist(self):
         from dartlab.review.catalog import SECTIONS

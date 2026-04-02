@@ -53,6 +53,19 @@ AREAS = {
         "description": "전 영역 기회 플래그 종합",
         "metrics": [],
     },
+    "macro": {
+        "label": "매크로 환경",
+        "description": "경제 사이클(침체/회복/확장/둔화) 판별 + 5대 자산 신호(금리/환율/금/VIX) + 업종 민감도",
+        "metrics": [
+            "cycle_phase",
+            "hy_spread",
+            "term_spread",
+            "vix",
+            "sector_cyclicality",
+            "macro_sensitivity_r2",
+            "valuation_band_percentile",
+        ],
+    },
 }
 
 ANOMALY_DETECTORS = [

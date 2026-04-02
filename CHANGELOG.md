@@ -5,6 +5,25 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.3] - 2026-04-02
+
+### Changed
+
+- **quant 독립 엔진 격상**: analysis 축에서 분리 → `c.quant()`, `dartlab.quant()` 독립 진입점 복원
+- **quant 코드 통합**: analysis/quantCalcs.py, technicalAnalysis.py 삭제 → quant/extended.py로 로직 통합
+- **quant 신규 metric**: `c.quant("divergence")` 재무-기술적 괴리, `c.quant("flags")` 기술적 플래그
+- **credit healthScore**: `cr["healthScore"]` 추가 (100-score, 높을수록 건전)
+- **viz AI 연동**: 도메인 차트(revenue/cashflow/profitability) sandbox import + 프롬프트 유도
+- **README 전면 정비**: credit/viz/extras/아키텍처/안정성 v0.8.2 반영
+- **AI 프롬프트 #29-#30**: credit score 의미 명시, viz 도메인 차트 우선 안내
+- **문서 체계 점검**: ops/ 전체, import 방향, 엔진 일관성 전수조사 통과
+
+### Removed
+
+- `c.analysis("quant", "기술적분석")` — `c.quant()`로 대체
+- `analysis/financial/quantCalcs.py` — quant 엔진으로 통합
+- `analysis/financial/technicalAnalysis.py` — quant/extended.py로 이동
+
 ## [0.8.2] - 2026-04-02
 
 ### Added

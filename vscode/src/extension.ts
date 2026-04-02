@@ -31,11 +31,15 @@ export async function activate(
         statusBarItem.text = "$(loading~spin) DartLab";
         statusBarItem.tooltip = "DartLab: Starting...";
         break;
-      case "ready":
+      case "ready": {
         statusBarItem.text = "$(check) DartLab";
-        statusBarItem.tooltip = `DartLab: Ready (v${stdioProxy.currentVersion})`;
+        const diag = stdioProxy.currentDiag;
+        const pyVer = diag.python ? `, Python ${diag.python}` : "";
+        const prov = diag.aiProvider && diag.aiProvider !== "none" ? `, ${diag.aiProvider}` : "";
+        statusBarItem.tooltip = `DartLab: Ready (v${stdioProxy.currentVersion}${pyVer}${prov})`;
         checkForUpdate(context, stdioProxy.currentVersion);
         break;
+      }
       case "error":
         statusBarItem.text = "$(warning) DartLab";
         statusBarItem.tooltip = "DartLab: Error";
@@ -62,10 +66,21 @@ export async function activate(
     // pythonPath 설정이 있으면 그걸 쓰고, 없으면 uv run (undefined)
     const pythonPath = vscode.workspace.getConfiguration("dartlab").get<string>("pythonPath") || undefined;
     const ready = await stdioProxy.start(pythonPath);
-    if (!ready) {
-      vscode.window
-        .showErrorMessage("DartLab failed to start. Check logs.", "Show Logs")
-        .then((c) => { if (c) stdioProxy.showLogs(); });
+    if (ready) {
+      // 첫 실행 시 provider 미설정이면 안내
+      const shownKey = "dartlab.providerGuideShown";
+      if (!context.globalState.get<boolean>(shownKey)) {
+        const diag = stdioProxy.currentDiag;
+        if (!diag.aiProvider || diag.aiProvider === "none") {
+          context.globalState.update(shownKey, true);
+          vscode.window.showInformationMessage(
+            "DartLab 시작됨. AI 분석을 사용하려면 provider를 설정하세요. (Gemini, Groq 등 무료 옵션 제공)",
+            "설정 열기",
+          ).then((c) => {
+            if (c) vscode.commands.executeCommand(`${EXT_ID}.settings`);
+          });
+        }
+      }
     }
   }
 }

@@ -3460,3 +3460,100 @@ def marketAnalysisFlagsBlock(data) -> list:
     """calcMarketAnalysisFlags 결과 → FlagBlock."""
     flags = data if isinstance(data, list) else []
     return _flagsBlock(flags)
+
+
+# ── 매크로 블록 ──
+
+
+def macroEnvironmentBlock(data: dict) -> list:
+    """calcMacroEnvironment 결과 → 경제 사이클 + 기업 포지션."""
+    if not data:
+        return []
+
+    phase_label = data.get("phaseLabel", "미정")
+    confidence = data.get("confidence", "low")
+    position_label = data.get("positionLabel", "중립")
+    cyclicality = data.get("cyclicality", "moderate")
+    signals = data.get("signals", [])
+
+    metrics = [
+        ("경제 국면", f"{phase_label} ({confidence})"),
+        ("업종 경기민감도", cyclicality),
+        ("현재 포지션", position_label),
+    ]
+
+    blocks: list = [
+        HeadingBlock(
+            _meta("macroEnvironment").label,
+            level=2,
+            helper="경제 사이클 4국면(침체/회복/확장/둔화) 판별 + 업종별 투자 전략",
+        ),
+        MetricBlock(metrics),
+    ]
+
+    if signals:
+        blocks.append(TextBlock("판별 근거: " + " | ".join(signals[:4])))
+
+    implication = data.get("implication")
+    if implication:
+        blocks.append(TextBlock(f"시사점: {implication}"))
+
+    return blocks
+
+
+def assetSignalsBlock(data: dict) -> list:
+    """calcAssetSignals 결과 → 5대 자산 해석."""
+    if not data:
+        return []
+
+    assets = data.get("assets", [])
+    if not assets:
+        return []
+
+    blocks: list = [
+        HeadingBlock(
+            _meta("assetSignals").label,
+            level=2,
+            helper="금리·환율·금·VIX 현재 상태와 해석",
+        ),
+    ]
+
+    for a in assets:
+        line = f"{a['label']}: {a['interpretation']}"
+        relevance = a.get("companyRelevance")
+        if relevance:
+            line += f" → {relevance}"
+        blocks.append(TextBlock(line))
+
+    return blocks
+
+
+def valuationBandBlock(data: dict) -> list:
+    """calcValuationBand 결과 → PER/PBR 밴드."""
+    if not data:
+        return []
+
+    bands = data.get("bands", {})
+    overall = data.get("overallZone", "적정")
+
+    if not bands:
+        return []
+
+    metrics = []
+    for key, band in bands.items():
+        m = band["metric"]
+        metrics.append((f"{m} 현재", f"{band['current']:.1f}x"))
+        metrics.append((f"{m} 평균", f"{band['mean']:.1f}x (±{band['std']:.1f})"))
+        metrics.append((f"{m} 백분위", f"{band['percentile']:.0f}%"))
+        metrics.append((f"{m} 판정", band["zoneLabel"]))
+
+    metrics.append(("종합", overall))
+
+    return [
+        HeadingBlock(
+            _meta("valuationBand").label,
+            level=2,
+            helper="과거 PER/PBR 정규분포에서 현재 위치. -1σ 이하=저평가, +1σ 이상=고평가",
+        ),
+        MetricBlock(metrics),
+    ]

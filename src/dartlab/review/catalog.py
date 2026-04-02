@@ -63,6 +63,7 @@ SECTIONS: list[SectionMeta] = [
     SectionMeta("비교분석", "6-4", "비교분석 -- 이 회사는 시장에서 어디에 서 있는가"),
     SectionMeta("매출전망", "6-5", "매출 전망 -- 이 회사의 매출은 어디로 가는가"),
     SectionMeta("시장분석", "6-6", "시장 분석 -- 시장은 이 회사를 어떻게 보는가"),
+    SectionMeta("매크로", "6-7", "매크로 환경 -- 경제 사이클이 이 회사에 어떤 의미인가"),
 ]
 
 # ── 블록 정의 (리스트 순서 = 렌더링 순서. 순서 변경은 여기서만.) ──
@@ -205,6 +206,10 @@ _BLOCKS: list[BlockMeta] = [
     BlockMeta("marketBeta", "시장 베타", "시장분석", "실측 베타, 알파, CAPM 기대수익률"),
     BlockMeta("fundamentalDivergence", "재무-시장 괴리", "시장분석", "재무 스코어 vs 기술적 판단 교차검증"),
     BlockMeta("marketAnalysisFlags", "시장분석 플래그", "시장분석", "기술적 신호 경고/기회"),
+    # ── 매크로 ──
+    BlockMeta("macroEnvironment", "경제 사이클", "매크로", "현재 경제 국면(침체/회복/확장/둔화) + 기업 포지션"),
+    BlockMeta("assetSignals", "자산 신호", "매크로", "금리·환율·금·VIX 현재 상태와 기업 연관성"),
+    BlockMeta("valuationBand", "밸류에이션 밴드", "매크로", "PER/PBR 과거 정규분포 대비 현재 위치"),
 ]
 
 # ── 파생 인덱스 (자동 생성, 직접 수정 금지) ──

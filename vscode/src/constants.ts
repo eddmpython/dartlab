@@ -12,6 +12,7 @@ export const CMD = {
   showLogs: `${EXT_ID}.showLogs`,
   newConversation: `${EXT_ID}.newConversation`,
   focus: `${EXT_ID}.focus`,
+  diagnostics: `${EXT_ID}.diagnostics`,
 } as const;
 
 export const SIDEBAR_VIEW_ID = `${EXT_ID}.sidebar`;

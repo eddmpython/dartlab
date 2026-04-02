@@ -846,6 +846,28 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         if _need("marketAnalysisFlags"):
             b["marketAnalysisFlags"] = _safe(lambda: marketAnalysisFlagsBlock(calcMarketAnalysisFlags(company)))
 
+    # ── 매크로 ──
+    if keys is None or keys & {"macroEnvironment", "assetSignals", "valuationBand"}:
+        from dartlab.analysis.financial.macroExposure import (
+            calcAssetSignals,
+            calcMacroEnvironment,
+            calcValuationBand,
+        )
+        from dartlab.review.builders import (
+            assetSignalsBlock,
+            macroEnvironmentBlock,
+            valuationBandBlock,
+        )
+
+        if _need("macroEnvironment"):
+            b["macroEnvironment"] = _safe(
+                lambda: macroEnvironmentBlock(calcMacroEnvironment(company, basePeriod=basePeriod))
+            )
+        if _need("assetSignals"):
+            b["assetSignals"] = _safe(lambda: assetSignalsBlock(calcAssetSignals(company, basePeriod=basePeriod)))
+        if _need("valuationBand"):
+            b["valuationBand"] = _safe(lambda: valuationBandBlock(calcValuationBand(company, basePeriod=basePeriod)))
+
     from dartlab.review.blockMap import BlockMap
 
     return BlockMap(b)

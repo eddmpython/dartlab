@@ -9,6 +9,16 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.3] - 2026-04-02
+
+### Changed
+- quant 독립 엔진 격상 (analysis에서 분리, c.quant() 복원, divergence/flags 신규)
+- credit healthScore, viz AI 연동, README 전면 정비, 프롬프트 #29-#30
+
+### Removed
+- c.analysis("quant") — c.quant()로 대체
+- analysis/quantCalcs.py, technicalAnalysis.py — quant 엔진으로 통합
+
 ## [0.8.2] - 2026-04-02
 
 ### Added

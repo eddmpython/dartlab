@@ -346,6 +346,12 @@
         </div>
       {/if}
 
+      {#if message.errorGuide}
+        <div class="error-guide-detail">
+          {@html render(message.errorGuide)}
+        </div>
+      {/if}
+
       {#if message.errorAction === "relogin" || message.errorAction === "config"}
         <div class="error-switch">
           <span class="error-switch-label">
@@ -1218,6 +1224,25 @@
     white-space: pre-wrap;
   }
   .error-guide :global(a) { color: var(--vscode-textLink-foreground); }
+
+  .error-guide-detail {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground);
+    padding: 8px 10px;
+    margin: 4px 0;
+    border-radius: var(--corner-radius-small);
+    background: var(--vscode-inputValidation-infoBackground, rgba(0, 100, 200, 0.08));
+    border-left: 2px solid var(--vscode-textLink-foreground);
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+  .error-guide-detail :global(a) { color: var(--vscode-textLink-foreground); }
+  .error-guide-detail :global(code) {
+    background: var(--vscode-textCodeBlock-background);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 11px;
+  }
 
   /* === Error provider switch === */
   .error-switch {
