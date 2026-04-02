@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775149660518,
+  "lastUpdate": 1775149711953,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -6699,6 +6699,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 3.3722914742172345e-7",
             "extra": "mean: 667.9896918207561 nsec\nrounds: 149881"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "69dc72cabd66420d7316d7d0aa1d0b0e2d413275",
+          "message": "fix: 노트북 전수조사 — c.insights 제거 + corpName→종목명 + 독스트링 정비\n\n- 05_analysis.py/ipynb: c.insights → c.analysis(\"financial\", \"종합평가\")\n- 05_analysis.ipynb: dartlab.insights() → dartlab.analysis() 루트 호출\n- marketScan.py: corpName → 종목명 (scan 일관성 반영)\n- 05_analysis.py 독스트링: 2단계 호출 패턴으로 통일",
+          "timestamp": "2026-04-03T02:07:36+09:00",
+          "tree_id": "fa0079274856709617eba4bd73b042dd8b23572a",
+          "url": "https://github.com/eddmpython/dartlab/commit/69dc72cabd66420d7316d7d0aa1d0b0e2d413275"
+        },
+        "date": 1775149711268,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 531701.962013206,
+            "unit": "iter/sec",
+            "range": "stddev: 4.794388558962309e-7",
+            "extra": "mean: 1.880752886849725 usec\nrounds: 76900"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 659746.8854667832,
+            "unit": "iter/sec",
+            "range": "stddev: 4.5493642908722696e-7",
+            "extra": "mean: 1.5157328090946296 usec\nrounds: 146371"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 520476.6691066613,
+            "unit": "iter/sec",
+            "range": "stddev: 6.844466071409608e-7",
+            "extra": "mean: 1.9213157079958758 usec\nrounds: 133085"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 675490.1866353184,
+            "unit": "iter/sec",
+            "range": "stddev: 5.083952099296674e-7",
+            "extra": "mean: 1.4804064067623188 usec\nrounds: 189394"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 893670.1899496666,
+            "unit": "iter/sec",
+            "range": "stddev: 1.5281278559282753e-7",
+            "extra": "mean: 1.118981041603639 usec\nrounds: 179857"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 266232.3972542607,
+            "unit": "iter/sec",
+            "range": "stddev: 7.937013557644989e-7",
+            "extra": "mean: 3.7561168750058878 usec\nrounds: 76723"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7269651.83037303,
+            "unit": "iter/sec",
+            "range": "stddev: 1.5097101311652606e-8",
+            "extra": "mean: 137.55816968041597 nsec\nrounds: 74823"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8684936.07760524,
+            "unit": "iter/sec",
+            "range": "stddev: 1.0461344314358109e-8",
+            "extra": "mean: 115.14189523842035 nsec\nrounds: 87551"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1448620.5263062923,
+            "unit": "iter/sec",
+            "range": "stddev: 2.881003353820918e-7",
+            "extra": "mean: 690.3119083572634 nsec\nrounds: 161525"
           }
         ]
       }
