@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775149977477,
+  "lastUpdate": 1775150852271,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -6873,6 +6873,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 3.011521653564712e-7",
             "extra": "mean: 684.0339389093893 nsec\nrounds: 195351"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "5caa941460d0541c73ddebe33510b0eaea4c7ce6",
+          "message": "feat(vscode): OAuth 즉시 로그인 + 에러 메시지 CLI 안내 제거\n\n- OAuth provider 선택 시 바로 브라우저 로그인 시작 (callback 서버 + PKCE)\n- _sanitizeErrorForUi: dartlab.setup(...) 문구 제거, switchProvider 플래그\n- oauthStart/oauthResult 이벤트 체인 (stdio → stdioProxy → webview)\n- setProvider에서 auth_kind별 분기: api_key → InputBox, oauth → 브라우저",
+          "timestamp": "2026-04-03T02:26:33+09:00",
+          "tree_id": "24b8e5c13e1e789e9b62cd941a4142ced652ccd3",
+          "url": "https://github.com/eddmpython/dartlab/commit/5caa941460d0541c73ddebe33510b0eaea4c7ce6"
+        },
+        "date": 1775150851759,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 541071.1596313517,
+            "unit": "iter/sec",
+            "range": "stddev: 4.836917202394619e-7",
+            "extra": "mean: 1.8481857371243562 usec\nrounds: 55024"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 516480.81107490044,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000010259915054230256",
+            "extra": "mean: 1.9361803547334098 usec\nrounds: 118400"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 520025.38005997543,
+            "unit": "iter/sec",
+            "range": "stddev: 6.551057462662132e-7",
+            "extra": "mean: 1.922983066489309 usec\nrounds: 97381"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 675770.543911553,
+            "unit": "iter/sec",
+            "range": "stddev: 3.822268664885459e-7",
+            "extra": "mean: 1.4797922297881088 usec\nrounds: 138812"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 899204.9230119506,
+            "unit": "iter/sec",
+            "range": "stddev: 1.526919837974885e-7",
+            "extra": "mean: 1.1120935555495284 usec\nrounds: 177905"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 266493.3029830237,
+            "unit": "iter/sec",
+            "range": "stddev: 7.079681922079018e-7",
+            "extra": "mean: 3.752439512762175 usec\nrounds: 62228"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7322487.446153167,
+            "unit": "iter/sec",
+            "range": "stddev: 1.3286239922772321e-8",
+            "extra": "mean: 136.565614806939 nsec\nrounds: 73828"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8757037.355042059,
+            "unit": "iter/sec",
+            "range": "stddev: 1.0468943927050096e-8",
+            "extra": "mean: 114.1938716778715 nsec\nrounds: 88574"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1460695.3125185738,
+            "unit": "iter/sec",
+            "range": "stddev: 2.483418439386114e-7",
+            "extra": "mean: 684.6054693471772 nsec\nrounds: 179180"
           }
         ]
       }
