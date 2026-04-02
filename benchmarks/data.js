@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775152333755,
+  "lastUpdate": 1775152599616,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -7395,6 +7395,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 3.8065210838226e-7",
             "extra": "mean: 712.5138290929523 nsec\nrounds: 169751"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "0b9158ebf072d307ab3094ea510aacc9088f9af8",
+          "message": "fix(vscode): setProvider 테스트 수정 + CHANGELOG 0.1.8 작성\n\n- setProvider 테스트: needCredential 응답도 허용\n- CHANGELOG: v0.1.0 이후 전체 변경사항 기록",
+          "timestamp": "2026-04-03T02:55:08+09:00",
+          "tree_id": "549e10253034e5f65130ddcb0c3b6d8ecd4167cd",
+          "url": "https://github.com/eddmpython/dartlab/commit/0b9158ebf072d307ab3094ea510aacc9088f9af8"
+        },
+        "date": 1775152599137,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 536008.9175138279,
+            "unit": "iter/sec",
+            "range": "stddev: 4.838962418151484e-7",
+            "extra": "mean: 1.865640602843519 usec\nrounds: 50031"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 653299.0365982256,
+            "unit": "iter/sec",
+            "range": "stddev: 4.4995267509576363e-7",
+            "extra": "mean: 1.5306925986100806 usec\nrounds: 127976"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 529418.0868699994,
+            "unit": "iter/sec",
+            "range": "stddev: 5.618813576137729e-7",
+            "extra": "mean: 1.8888663323010983 usec\nrounds: 122625"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 666870.8984815081,
+            "unit": "iter/sec",
+            "range": "stddev: 3.9381035434093014e-7",
+            "extra": "mean: 1.4995406191468847 usec\nrounds: 180506"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 801647.1157932375,
+            "unit": "iter/sec",
+            "range": "stddev: 3.5690972863885613e-7",
+            "extra": "mean: 1.2474316694952372 usec\nrounds: 194591"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 265009.09912248555,
+            "unit": "iter/sec",
+            "range": "stddev: 6.471267363857422e-7",
+            "extra": "mean: 3.773455339123304 usec\nrounds: 25772"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7268423.407879475,
+            "unit": "iter/sec",
+            "range": "stddev: 1.5505473022627493e-8",
+            "extra": "mean: 137.58141812651292 nsec\nrounds: 74267"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8180757.329472631,
+            "unit": "iter/sec",
+            "range": "stddev: 3.5185698699245164e-8",
+            "extra": "mean: 122.23807157771597 nsec\nrounds: 197239"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1463104.5390811902,
+            "unit": "iter/sec",
+            "range": "stddev: 2.93658826449632e-7",
+            "extra": "mean: 683.4781611900311 nsec\nrounds: 165783"
           }
         ]
       }
