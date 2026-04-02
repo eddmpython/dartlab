@@ -272,15 +272,101 @@ def forecastMetric(
     )
 
 
+def _marginLinkedForecast(
+    revResult: ForecastResult,
+    series: dict,
+    metric: str,
+    horizon: int,
+) -> ForecastResult | None:
+    """매출 전망 × 마진 추세 → 영업이익/순이익 파생 예측.
+
+    단순 OLS보다 정확: 매출 방향 예측(72~78%)을 이익에 전파.
+    """
+    if not revResult.projected or revResult.confidence == "low":
+        return None
+
+    target = FORECAST_TARGETS.get(metric)
+    if target is None:
+        return None
+    sjDiv, snakeId, label = target
+
+    # 과거 마진 계산
+    revVals = getAnnualValues(series, "IS", "sales")
+    if not any(v is not None for v in revVals):
+        revVals = getAnnualValues(series, "IS", "revenue")
+    metricVals = getAnnualValues(series, sjDiv, snakeId)
+    for fb in _FALLBACKS.get(snakeId, []):
+        if not any(v is not None for v in metricVals):
+            metricVals = getAnnualValues(series, sjDiv, fb)
+
+    margins = []
+    for r, m in zip(revVals, metricVals):
+        if r and m and r != 0:
+            margins.append(m / r)
+
+    if len(margins) < 2:
+        return None
+
+    # 최근 3년 마진 가중평균 (최신에 가중)
+    recent = margins[-3:] if len(margins) >= 3 else margins
+    weights = list(range(1, len(recent) + 1))
+    wSum = sum(w * m for w, m in zip(weights, recent))
+    avgMargin = wSum / sum(weights)
+
+    # 매출 전망 × 마진 → 이익 전망
+    projected = [rev * avgMargin for rev in revResult.projected]
+    validHist = [v for v in metricVals if v is not None]
+    lastVal = validHist[-1] if validHist else 0
+    growthRate = ((projected[-1] / lastVal) ** (1 / horizon) - 1) * 100 if lastVal and lastVal > 0 else 0
+
+    return ForecastResult(
+        metric=metric,
+        metricLabel=label,
+        historical=metricVals,
+        projected=projected,
+        horizon=horizon,
+        method=f"매출전망×마진({avgMargin:.1%})",
+        confidence=revResult.confidence,
+        rSquared=revResult.rSquared,
+        growthRate=round(growthRate, 1),
+        assumptions=[
+            f"매출 전망 연동 (마진 {avgMargin:.1%} 적용)",
+            f"최근 {len(recent)}년 가중평균 마진 사용",
+        ],
+        currency=revResult.currency,
+    )
+
+
 def forecastAll(
     series: dict,
     horizon: int = 3,
     sectorParams: Optional[SectorParams] = None,
 ) -> dict[str, ForecastResult]:
-    """모든 주요 메트릭 예측."""
-    return {
-        key: forecastMetric(series, metric=key, horizon=horizon, sectorParams=sectorParams) for key in FORECAST_TARGETS
-    }
+    """모든 주요 메트릭 예측.
+
+    매출은 정교한 앙상블, 영업이익/순이익은 매출×마진 연동.
+    마진 연동 실패 시 단순 시계열 OLS fallback.
+    """
+    results: dict[str, ForecastResult] = {}
+
+    # 매출 먼저
+    revResult = forecastMetric(series, metric="revenue", horizon=horizon, sectorParams=sectorParams)
+    results["revenue"] = revResult
+
+    # 영업이익/순이익: 매출×마진 연동 우선, fallback OLS
+    for key in ("operating_income", "net_income"):
+        linked = _marginLinkedForecast(revResult, series, key, horizon)
+        if linked is not None:
+            results[key] = linked
+        else:
+            results[key] = forecastMetric(series, metric=key, horizon=horizon, sectorParams=sectorParams)
+
+    # OCF는 단독 예측
+    results["operating_cashflow"] = forecastMetric(
+        series, metric="operating_cashflow", horizon=horizon, sectorParams=sectorParams
+    )
+
+    return results
 
 
 # ── 시나리오 분석 ──────────────────────────────────────────

@@ -29,6 +29,7 @@ class MemoryRecord:
     resultSummary: str
     timestamp: float
     grade: str | None = None
+    keyMetrics: str = ""
 
 
 class AnalysisMemory:
@@ -64,6 +65,14 @@ class AnalysisMemory:
         self._conn = conn
         return conn
 
+    def _ensureKeyMetricsColumn(self, conn: sqlite3.Connection) -> None:
+        """keyMetrics 컬럼이 없으면 추가 (기존 DB 마이그레이션)."""
+        try:
+            conn.execute("SELECT keyMetrics FROM analysis LIMIT 1")
+        except sqlite3.OperationalError:
+            conn.execute("ALTER TABLE analysis ADD COLUMN keyMetrics TEXT DEFAULT ''")
+            conn.commit()
+
     def saveAnalysis(
         self,
         stockCode: str,
@@ -71,14 +80,20 @@ class AnalysisMemory:
         questionType: str = "",
         resultSummary: str = "",
         grade: str | None = None,
+        keyMetrics: str = "",
     ) -> None:
-        """분석 결과 저장."""
+        """분석 결과 저장.
+
+        keyMetrics: 핵심 수치 구조화 문자열 (예: "ROE=12.3%|영업이익률=8.9%|등급=dCR-AA+")
+        """
         conn = self._ensureDb()
+        self._ensureKeyMetricsColumn(conn)
         summary = resultSummary[:_MAX_SUMMARY_CHARS] if resultSummary else ""
+        metrics = keyMetrics[:500] if keyMetrics else ""
         conn.execute(
-            "INSERT INTO analysis (stockCode, question, questionType, resultSummary, grade, timestamp) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            (stockCode, question[:200], questionType, summary, grade or "", time.time()),
+            "INSERT INTO analysis (stockCode, question, questionType, resultSummary, grade, keyMetrics, timestamp) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (stockCode, question[:200], questionType, summary, grade or "", metrics, time.time()),
         )
         conn.commit()
         self._enforceSizeLimit(conn)
@@ -91,9 +106,10 @@ class AnalysisMemory:
     ) -> list[MemoryRecord]:
         """종목별 최근 분석 기록 조회 (시간 감쇠 적용)."""
         conn = self._ensureDb()
+        self._ensureKeyMetricsColumn(conn)
         cutoff = time.time() - (decayDays * 86400)
         rows = conn.execute(
-            "SELECT stockCode, question, questionType, resultSummary, timestamp, grade "
+            "SELECT stockCode, question, questionType, resultSummary, timestamp, grade, keyMetrics "
             "FROM analysis WHERE stockCode = ? AND timestamp > ? "
             "ORDER BY timestamp DESC LIMIT ?",
             (stockCode, cutoff, limit),
@@ -106,12 +122,16 @@ class AnalysisMemory:
                 resultSummary=r[3],
                 timestamp=r[4],
                 grade=r[5] or None,
+                keyMetrics=r[6] or "",
             )
             for r in rows
         ]
 
     def toPromptContext(self, stockCode: str) -> str:
-        """이전 분석 기록을 프롬프트용 텍스트로 변환."""
+        """이전 분석 기록을 프롬프트용 텍스트로 변환.
+
+        keyMetrics가 있으면 핵심 수치를 포함하여 멀티턴 참조 가능.
+        """
         records = self.recallForStock(stockCode)
         if not records:
             return ""
@@ -122,7 +142,9 @@ class AnalysisMemory:
             dt = datetime.datetime.fromtimestamp(r.timestamp).strftime("%Y-%m-%d")
             grade_str = f" [등급: {r.grade}]" if r.grade else ""
             lines.append(f"- **{dt}** ({r.questionType}){grade_str}: {r.question}")
-            if r.resultSummary:
+            if r.keyMetrics:
+                lines.append(f"  📊 {r.keyMetrics}")
+            elif r.resultSummary:
                 lines.append(f"  → {r.resultSummary[:200]}")
         return "\n".join(lines)
 

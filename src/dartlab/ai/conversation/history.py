@@ -28,15 +28,39 @@ def _dynamicMaxTurns(historyItems: list[HistoryItem]) -> int:
     return _MAX_HISTORY_TURNS_DEFAULT
 
 
+_METRIC_LINE_RE = re.compile(
+    r"^\s*\|.*\|.*\|",  # 마크다운 테이블 행
+    re.MULTILINE,
+)
+_GRADE_RE = re.compile(r"dCR-[A-D][A-D+\-]*|건전도\s*[\d.]+|ROE\s*=?\s*[\d.]+%|영업이익률\s*[\d.]+%")
+
+
+def _extractKeyLines(text: str) -> str:
+    """텍스트에서 핵심 수치 행(테이블, 등급)을 추출. 압축 시 보존용."""
+    lines = []
+    for match in _GRADE_RE.finditer(text):
+        lines.append(match.group())
+    # 마크다운 테이블의 헤더+첫 2행만 보존
+    tableLines = _METRIC_LINE_RE.findall(text)
+    if len(tableLines) >= 3:
+        lines.extend(tableLines[:3])
+    return " | ".join(lines[:5]) if lines else ""
+
+
 def _compress_history_text(text: str) -> str:
     """길어진 과거 대화를 앞뒤 핵심만 남기도록 압축.
 
     문장 경계(마침표, 줄바꿈)를 존중하여 의미 단위로 절단한다.
+    핵심 수치(등급, ROE, 테이블)는 압축에서 보존한다.
     """
     if len(text) <= _MAX_HISTORY_MESSAGE_CHARS:
         return text
-    head = int(_MAX_HISTORY_MESSAGE_CHARS * 0.65)
-    tail = _MAX_HISTORY_MESSAGE_CHARS - head
+
+    # 핵심 수치 추출 (압축 후 끝에 추가)
+    keyLines = _extractKeyLines(text)
+
+    head = int(_MAX_HISTORY_MESSAGE_CHARS * 0.6)
+    tail = _MAX_HISTORY_MESSAGE_CHARS - head - len(keyLines) - 20
 
     # 앞부분: head 근처의 마지막 문장 경계
     head_text = text[:head]
@@ -47,14 +71,17 @@ def _compress_history_text(text: str) -> str:
             break
 
     # 뒷부분: -tail 근처의 첫 문장 경계
-    tail_text = text[-tail:]
+    tail_text = text[-max(tail, 200):]
     for sep in ("\n", "다. ", ". ", "? ", "! "):
         idx = tail_text.find(sep)
-        if idx != -1 and idx < tail * 0.3:
+        if idx != -1 and idx < len(tail_text) * 0.3:
             tail_text = tail_text[idx + len(sep) :]
             break
 
-    return head_text.rstrip() + "\n...\n" + tail_text.lstrip()
+    compressed = head_text.rstrip() + "\n...\n" + tail_text.lstrip()
+    if keyLines:
+        compressed += f"\n[핵심 수치: {keyLines}]"
+    return compressed
 
 
 def build_history_messages(history: list[HistoryItem] | None) -> list[dict[str, str]]:
