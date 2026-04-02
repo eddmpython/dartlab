@@ -4627,7 +4627,8 @@ class Company:
             return self._scanMarketSummary(df)
         # 기본: 이 회사 행
         code = self.stockCode
-        row = df.filter(pl.col("종목코드") == code)
+        codeCol = "종목코드" if "종목코드" in df.columns else "stockCode"
+        row = df.filter(pl.col(codeCol) == code)
         return row if not row.is_empty() else None
 
     def _scanMarketSummary(self, df: pl.DataFrame) -> pl.DataFrame:
@@ -4636,8 +4637,9 @@ class Company:
 
         _, _, _, listing_meta = load_listing()
         code_to_market = {code: meta.get("market", "") for code, meta in listing_meta.items()}
+        codeCol = "종목코드" if "종목코드" in df.columns else "stockCode"
         df_with_market = df.with_columns(
-            pl.col("종목코드")
+            pl.col(codeCol)
             .replace_strict(code_to_market, default="미분류")
             .replace("", "미분류")
             .fill_null("미분류")

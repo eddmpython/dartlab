@@ -1,6 +1,6 @@
 # Topic Roadmap
 
-46편, 3개 카테고리. 2026-04-02 최종.
+46편 + 신용등급 보고서, 4개 카테고리. 2026-04-03 최종.
 
 ## 카테고리
 
@@ -65,9 +65,17 @@
 | 02 | asset-structure-how-to-read |
 | 03 | cashflow-how-to-read |
 
+### 04 신용등급 보고서 (프로그래매틱, publisher.py 관리)
+
+자동 생성 카테고리. `blog/04-credit-reports/_registry.json`으로 번호/slug 관리.
+`publishReport("005930")` → 블로그 포스트 자동 생성.
+
+현재 발간: 삼성전자, SK하이닉스, NAVER, LG (4개사)
+
 ## 정리 이력
 
 128편 → 47편 → 44편 → 45편
 - 84편 삭제 (과잉 세분화, 템플릿 복사, 제품 설명서, dartlab 광고)
-- 7개 → 3개 카테고리
+- 7개 → 3개 카테고리 → 4개 카테고리 (04-credit-reports 추가)
 - 전역 순번 → 카테고리별 번호
+- credit 보고서: docs/credit/reports/ → blog/04-credit-reports/ 이관 (2026-04-03)

@@ -344,7 +344,7 @@ publisher.py의 정적 서사는 AI가 없을 때의 baseline.
 - **정기 발간**: 사업보고서 공시 후 2주 이내
 - **이벤트 발간**: 등급 변경 시 즉시
 - **정례 보고서**: 월 1회 전체 등급 변동 요약 (`data/credit/periodic/`)
-- **저장 경로**: `docs/credit/reports/{종목코드}_{기업명}.md`
+- **저장 경로**: `blog/04-credit-reports/{순번}-{slug}/index.md` (블로그 카테고리)
 - **발간 명령**: `publishReport("005930")` 또는 `publishBatch(["005930", "035420"])`
 
 ## 코드 구조
@@ -361,8 +361,9 @@ src/dartlab/credit/
 ├── scorecard.py          # 점수→등급 매핑 (core 재수출)
 └── thresholds.py         # 업종별 기준표 (core 재수출)
 
-docs/credit/              # 공개 발간 (git 추적, GitHub Pages)
-├── reports/              # 개별 기업 보고서 (마크다운)
+blog/04-credit-reports/   # 공개 발간 (블로그 카테고리, GitHub Pages)
+├── _registry.json        # 종목코드→순번/slug 매핑
+├── {순번}-{slug}/index.md  # 개별 기업 보고서 (마크다운 + frontmatter)
 │
 data/credit/              # 내부 데이터 (git 미추적)
 ├── history/              # 등급 이력 (JSON)

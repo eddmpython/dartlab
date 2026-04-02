@@ -31,6 +31,11 @@
     <priority>0.75</priority>
   </url>
   <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/category/credit-reports</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
     <loc>https://eddmpython.github.io/dartlab/blog/series/dart-foundations</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
@@ -121,6 +126,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://eddmpython.github.io/dartlab/docs/api/export</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://eddmpython.github.io/dartlab/docs/api/finance</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -152,26 +162,6 @@
   </url>
   <url>
     <loc>https://eddmpython.github.io/dartlab/docs/changelog</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://eddmpython.github.io/dartlab/docs/credit/reports/SK하이닉스</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://eddmpython.github.io/dartlab/docs/credit/reports/LG</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://eddmpython.github.io/dartlab/docs/credit/reports/삼성전자</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://eddmpython.github.io/dartlab/docs/credit/reports/NAVER</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -500,6 +490,18 @@
     <lastmod>2026-03-26</lastmod>
   </url>
   <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/scan-market-finance</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-04-02</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/company-one-stock-code</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-04-02</lastmod>
+  </url>
+  <url>
     <loc>https://eddmpython.github.io/dartlab/blog/revenue-structure-how-to-read</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -516,5 +518,29 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <lastmod>2026-03-27</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/005930-samsung</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-04-03</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/000660-sk-hynix</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-04-03</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/035420-naver</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-04-03</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/003550-lg</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-04-03</lastmod>
   </url>
 </urlset>

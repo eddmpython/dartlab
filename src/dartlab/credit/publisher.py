@@ -1,17 +1,19 @@
-"""신용평가 보고서 생성 + GitHub 발간.
+"""신용평가 보고서 생성 + 블로그 발간.
 
 narrative.py의 서사 + audit.py의 대조 결과를 조합하여
-신평사 수준의 마크다운 보고서를 생성하고 docs/credit/reports/에 저장한다.
-docs/credit/은 GitHub Pages 공개 대상.
+신평사 수준의 마크다운 보고서를 생성하고 blog/04-credit-reports/에 저장한다.
+블로그 카테고리로 GitHub Pages 공개.
 """
 
 from __future__ import annotations
 
 import gc
+import json
 from datetime import datetime
 from pathlib import Path
 
-_REPORTS_DIR = Path("docs/credit/reports")
+_BLOG_DIR = Path("blog/04-credit-reports")
+_REGISTRY_PATH = _BLOG_DIR / "_registry.json"
 
 
 def publishReport(stockCode: str, *, basePeriod: str | None = None) -> Path:
@@ -26,7 +28,7 @@ def publishReport(stockCode: str, *, basePeriod: str | None = None) -> Path:
 
 
 def publishReportFromCompany(company, *, basePeriod: str | None = None) -> Path:
-    """Company 객체로 보고서 생성 + 저장."""
+    """Company 객체로 보고서 생성 + 블로그 포스트 저장."""
     from dartlab.credit.engine import evaluateCompany
 
     result = evaluateCompany(company, detail=True, basePeriod=basePeriod)
@@ -38,9 +40,11 @@ def publishReportFromCompany(company, *, basePeriod: str | None = None) -> Path:
 
     md = generateReportMarkdown(corpName, stockCode, result)
 
-    # 저장
-    _REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    path = _REPORTS_DIR / f"{stockCode}.md"
+    # 블로그 포스트로 저장
+    order, slug = _resolveSlug(stockCode, corpName)
+    postDir = _BLOG_DIR / f"{order:02d}-{slug}"
+    postDir.mkdir(parents=True, exist_ok=True)
+    path = postDir / "index.md"
     path.write_text(md, encoding="utf-8")
 
     # 등급 이력 기록
@@ -70,9 +74,12 @@ def publishBatch(stockCodes: list[str], *, basePeriod: str | None = None) -> lis
 def publishAll(*, basePeriod: str | None = None) -> list[Path]:
     """한국 전 상장사 신용평가 보고서 배치 발간.
 
-    docs/credit/reports/에 종목별 마크다운 저장.
+    blog/04-credit-reports/에 종목별 블로그 포스트 저장.
     메모리 안전: 기업별 순차 처리 + gc.collect().
     finance 데이터가 있는 종목만 발간.
+
+    주의: 2700+ 포스트는 SvelteKit 빌드 시간에 영향.
+    당분간 수동 선택 발간(publishBatch) 권장.
     """
     try:
         from dartlab.gather.listing import listing
@@ -93,6 +100,88 @@ def publishAll(*, basePeriod: str | None = None) -> list[Path]:
 
     print(f"[credit] 전종목 발간 시작: {len(codes)}개사")
     return publishBatch(codes, basePeriod=basePeriod)
+
+
+def _loadRegistry() -> dict:
+    """블로그 레지스트리 로드."""
+    if _REGISTRY_PATH.exists():
+        return json.loads(_REGISTRY_PATH.read_text(encoding="utf-8"))
+    return {}
+
+
+def _saveRegistry(registry: dict) -> None:
+    """블로그 레지스트리 저장."""
+    _REGISTRY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _REGISTRY_PATH.write_text(
+        json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
+# 주요 종목 영문 slug 매핑 (URL 인코딩 방지)
+_SLUG_MAP: dict[str, str] = {
+    "005930": "005930-samsung",
+    "000660": "000660-sk-hynix",
+    "035420": "035420-naver",
+    "003550": "003550-lg",
+    "005380": "005380-hyundai-motor",
+    "010950": "010950-s-oil",
+    "105560": "105560-kb-financial",
+    "000720": "000720-hyundai-engineering",
+    "003230": "003230-samyang-foods",
+    "068270": "068270-celltrion",
+    "015760": "015760-kepco",
+    "000270": "000270-kia",
+    "055550": "055550-shinhan",
+    "051910": "051910-lg-chem",
+    "006400": "006400-samsung-sdi",
+    "066570": "066570-lg-electronics",
+    "028260": "028260-samsung-c-and-t",
+    "034730": "034730-sk",
+    "036570": "036570-ncsoft",
+    "017670": "017670-sk-telecom",
+}
+
+
+def _resolveSlug(stockCode: str, corpName: str) -> tuple[int, str]:
+    """종목코드에 대한 블로그 순서번호와 slug 반환."""
+    registry = _loadRegistry()
+
+    if stockCode in registry:
+        entry = registry[stockCode]
+        return entry["order"], entry["slug"]
+
+    # 새 종목: slug 결정
+    slug = _SLUG_MAP.get(stockCode, f"{stockCode}-credit")
+    order = max((v["order"] for v in registry.values()), default=0) + 1
+
+    registry[stockCode] = {"order": order, "slug": slug}
+    _saveRegistry(registry)
+    return order, slug
+
+
+def _generateFrontmatter(corpName: str, stockCode: str, result: dict) -> str:
+    """블로그 포스트 frontmatter 생성."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    grade = result.get("grade", "?")
+    desc = result.get("gradeDescription", "")
+
+    # description에 따옴표 이스케이프
+    descText = (
+        f"{corpName} 독립 신용등급 {grade} ({desc}). "
+        "공시 데이터 기반 정량 분석 등급 근거, 재무 하이라이트, 등급 전망."
+    )
+
+    return "\n".join([
+        "---",
+        f"title: \"{corpName} ({stockCode}) 신용등급 보고서\"",
+        f"date: {today}",
+        f"description: \"{descText}\"",
+        "category: credit-reports",
+        "thumbnail: /avatar-chart.png",
+        "---",
+        "",
+    ])
 
 
 def _gauge(score: float | None, width: int = 10) -> str:
@@ -143,8 +232,10 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
 
     lines = []
 
-    # ── 1. 제목 + 등급 요약 ──
-    lines.append(f"# {corpName} ({stockCode}) 신용등급 보고서")
+    # ── frontmatter (블로그 포스트) ──
+    lines.append(_generateFrontmatter(corpName, stockCode, result))
+
+    # ── 1. 등급 요약 ──
     lines.append(f"> **{grade}** | {desc} | {today} | 방법론 {version}")
     lines.append("")
 
@@ -216,7 +307,7 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
 
         if netDebt0 is not None:
             if netDebt0 <= 0:
-                lines.append("- **순차입금**: 순현금 포지션 (차입금 < 현금)")
+                lines.append("- **순차입금**: 순현금 포지션 (현금이 차입금 초과)")
             else:
                 lines.append(f"- **순차입금**: {_fmtTril(netDebt0)}")
 
@@ -289,8 +380,8 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
             j, gauge = "⚠ 주의", _gauge(s)
         else:
             j, gauge = "🔴 위험", _gauge(s)
-        sStr = f"{s:.0f}" if s is not None else "-"
-        lines.append(f"| {a['name']} | {w}% | {j} | {gauge} {sStr}/100 |")
+        sStr = f"{s:.0f}/100" if s is not None else "평가 불가"
+        lines.append(f"| {a['name']} | {w}% | {j} | {gauge} {sStr} |")
     lines.append("")
 
     # 축별 서사 (문단 + 지표 테이블)
@@ -298,11 +389,12 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
         axData = axes[i] if i < len(axes) else {}
         w = axData.get("weight", 0)
         s = axData.get("score")
-        sStr = f"{s:.0f}" if s is not None else "-"
-
         lines.append(f"### 5.{i + 1} {n.axisName} ({w}%)")
         lines.append("")
-        lines.append(f"**판정: {n.severityKr}** ({sStr}점/100)")
+        if s is not None:
+            lines.append(f"**판정: {n.severityKr}** ({s:.0f}점/100)")
+        else:
+            lines.append(f"**판정: {n.severityKr}** (평가 불가)")
         lines.append("")
         # 문단 서사 (bullet이 아닌 연결된 텍스트)
         lines.append(n.toParagraph())
@@ -424,7 +516,7 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
     lines.append(f"- dartlab 독립 신용평가(dCR) {version}")
     lines.append("- 공시 데이터 기반 정량 분석. 비공개 면담/정성 판단 미포함.")
     lines.append("- dCR 등급은 제도권 신용등급과 다를 수 있으며, 투자 권유가 아닙니다.")
-    lines.append("- 방법론 상세: [ops/credit.md](../../ops/credit.md)")
+    lines.append("- 방법론 상세: [ops/credit.md](https://github.com/eddmpython/dartlab/blob/master/ops/credit.md)")
     lines.append(f"- 발행일: {today}")
     lines.append("")
 

@@ -75,11 +75,11 @@ dartlab.ask("삼성전자 신용평가 분석해줘")
 ```python
 from dartlab.credit.publisher import publishReport
 
-publishReport("005930")             # docs/credit/reports/에 저장
+publishReport("005930")             # blog/04-credit-reports/에 저장
 publishBatch(["005930", "000660"])   # 배치 발간
 ```
 
-발간 보고서: `docs/credit/reports/{종목코드}_{기업명}.md`
+발간 보고서: `blog/04-credit-reports/{순번}-{slug}/index.md` (블로그 카테고리)
 
 ## 업종별 차등
 

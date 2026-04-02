@@ -34,6 +34,18 @@ export const categoryDefinitions = [
 			'DartLab 실전기업분석 카테고리. 수익 구조, 비용 구조, 현금흐름, 부문별 이익률, 집중도 분석을 실제 기업 데이터로 정리합니다.',
 		brandMessage:
 			'DartLab은 재무제표 숫자 나열이 아니라, 이 회사가 무엇으로 돈을 벌고 구조가 얼마나 튼튼한지 판단하는 분석 흐름을 만듭니다.'
+	},
+	{
+		id: 'credit-reports',
+		slug: 'credit-reports',
+		folder: '04-credit-reports',
+		label: '신용등급 보고서',
+		description: 'dartlab 독립 신용평가(dCR) 엔진이 산출한 기업별 신용등급 보고서입니다.',
+		seoTitle: '신용등급 보고서 | dartlab 독립 신용평가(dCR)',
+		seoDescription:
+			'dartlab dCR 신용등급 보고서. 공시 데이터 기반 정량 분석으로 산출한 독립 신용등급, 등급 근거, 재무 하이라이트, 등급 전망을 제공합니다.',
+		brandMessage:
+			'DartLab은 공시 데이터만으로 재현 가능한 독립 신용등급을 산출합니다.'
 	}
 ] as const;
 

@@ -36,13 +36,7 @@ export const navigation: NavItem[] = [
 	},
 	{
 		title: 'Credit Reports',
-		href: '/docs/credit/reports',
-		items: [
-			{ title: 'Samsung Electronics (dCR-AA)', href: '/docs/credit/reports/005930' },
-			{ title: 'SK hynix (dCR-AA+)', href: '/docs/credit/reports/000660' },
-			{ title: 'NAVER (dCR-AA)', href: '/docs/credit/reports/035420' },
-			{ title: 'LG (dCR-AA)', href: '/docs/credit/reports/003550' }
-		]
+		href: '/blog/category/credit-reports'
 	},
 	{
 		title: 'Notebooks',

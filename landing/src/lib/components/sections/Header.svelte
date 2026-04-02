@@ -22,7 +22,7 @@
 
 	const navLinks = [
 		{ label: 'Docs', href: `${base}/docs/` },
-		{ label: 'Credit Reports', href: `${base}/docs/credit/reports` },
+		{ label: 'Credit Reports', href: `${base}/blog/category/credit-reports` },
 		{ label: 'Blog', href: `${base}/blog/` },
 		{ label: 'Changelog', href: `${base}/docs/changelog` }
 	];
