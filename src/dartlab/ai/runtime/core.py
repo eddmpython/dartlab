@@ -611,6 +611,18 @@ emit_diagram("mermaid", "graph LR\\n  매출-->영업이익-->순이익-->FCF", 
 **차트 생성 시점**: 추세 비교, 구성 분석, 시계열 변화를 설명할 때 적극 활용하라.
 **차트 타입 선택**: 추세=line/combo, 구성=pie/stacked bar, 비교=bar, 흐름=waterfall, 등급=radar.
 
+**도메인 차트 (Company → Plotly 자동 생성, 1줄):**
+```python
+from dartlab.viz import revenue, cashflow, profitability_chart, dividend_chart, balance_sheet_chart
+revenue(c)                    # 매출·영업이익·순이익 추이 combo
+cashflow(c)                   # OCF/ICF/FCF 패턴
+profitability_chart(c)        # 마진율 추이
+dividend_chart(c)             # 배당 추이
+balance_sheet_chart(c)        # BS 구성
+```
+수동 emit_chart보다 **도메인 차트를 먼저 사용하라** — 자동으로 데이터를 추출하고 적절한 형태로 그린다.
+수동 emit_chart는 커스텀 차트가 필요할 때만.
+
 ## 도구 선택 기준
 
 ### 종합 분석 ("이 기업에 대해 알고싶다", "분석해줘", "어때?")

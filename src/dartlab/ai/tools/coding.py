@@ -356,6 +356,10 @@ class DartlabCodeExecutor(LocalPythonBackend):
         preamble += (
             "try:\n    from dartlab.core.search import search as disclosureSearch\nexcept ImportError:\n    pass\n"
         )
+        preamble += "from dartlab.viz import emit_chart, emit_diagram\n"
+        preamble += (
+            "from dartlab.viz import revenue, cashflow, profitability_chart, dividend_chart, balance_sheet_chart\n"
+        )
         if stockCode:
             preamble += f'c = Company("{stockCode}")\n'
             preamble += "company = c\n"
