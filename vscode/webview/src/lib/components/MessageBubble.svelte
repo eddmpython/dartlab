@@ -2,6 +2,7 @@
   import type { Message } from "../api/sseHandler";
   import * as client from "../api/client";
   import { createIncrementalRenderer } from "../markdown/renderer";
+  import ChartRenderer from "../chart/ChartRenderer.svelte";
 
   interface Props {
     message: Message;
@@ -281,6 +282,13 @@
               {/if}
             </div>
           {/if}
+        </div>
+      {/if}
+
+      <!-- CHART BLOCK -->
+      {#if block.type === "chart" && block.spec}
+        <div class="chart-block">
+          <ChartRenderer spec={block.spec} />
         </div>
       {/if}
 

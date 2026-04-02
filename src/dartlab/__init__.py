@@ -846,12 +846,17 @@ class _Module(sys.modules[__name__].__class__):
             instance = Quant()
             setattr(self, name, instance)
             return instance
-        if name == "chart":
-            from dartlab.chart import Chart
+        if name == "viz":
+            import dartlab.viz as _viz
 
-            instance = Chart()
-            setattr(self, name, instance)
-            return instance
+            setattr(self, name, _viz)
+            return _viz
+        if name == "chart":
+            # 하위호환: dartlab.chart → dartlab.viz
+            import dartlab.viz as _viz
+
+            setattr(self, name, _viz)
+            return _viz
         if name == "table":
             from dartlab.table import Table
 

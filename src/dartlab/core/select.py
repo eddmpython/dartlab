@@ -20,16 +20,7 @@ import polars as pl
 
 _PERIOD_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 
-_COLORS = [
-    "#ea4647",
-    "#fb923c",
-    "#3b82f6",
-    "#22c55e",
-    "#8b5cf6",
-    "#06b6d4",
-    "#f59e0b",
-    "#ec4899",
-]
+from dartlab.viz.palette import COLORS as _COLORS
 
 
 def _isPeriod(name: str) -> bool:
@@ -393,51 +384,10 @@ class ChartResult:
         """Plotly HTML."""
         if not self._select.isNumeric:
             return self._select.render("html")
-        fig = self._toPlotly()
+        from dartlab.viz.plotly import from_spec
+
+        fig = from_spec(self.spec)
         return fig.to_html(include_plotlyjs="cdn", full_html=False)
-
-    def _toPlotly(self) -> Any:
-        """ChartSpec → Plotly Figure."""
-        import plotly.graph_objects as go
-
-        s = self.spec
-        fig = go.Figure()
-
-        for sr in s.get("series", []):
-            traceType = sr.get("type", "bar")
-            if traceType == "bar":
-                fig.add_trace(
-                    go.Bar(
-                        x=s["categories"],
-                        y=sr["data"],
-                        name=sr["name"],
-                        marker_color=sr.get("color"),
-                    )
-                )
-            else:
-                fig.add_trace(
-                    go.Scatter(
-                        x=s["categories"],
-                        y=sr["data"],
-                        mode="lines+markers",
-                        name=sr["name"],
-                        line=dict(color=sr.get("color"), width=2),
-                        marker=dict(size=6),
-                    )
-                )
-
-        fig.update_layout(
-            title=s.get("title", ""),
-            font_family="Pretendard, -apple-system, sans-serif",
-            plot_bgcolor="white",
-            paper_bgcolor="white",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            margin=dict(l=60, r=20, t=60, b=40),
-            hovermode="x unified",
-        )
-        fig.update_xaxes(showgrid=True, gridcolor="#f0f0f0")
-        fig.update_yaxes(showgrid=True, gridcolor="#f0f0f0")
-        return fig
 
     def toJson(self) -> str:
         """ChartSpec JSON."""

@@ -9,6 +9,7 @@ from typing import Any
 def renderHtml(review) -> str:
     """HTML 렌더링."""
     from dartlab.review.blocks import (
+        ChartBlock,
         FlagBlock,
         HeadingBlock,
         MetricBlock,
@@ -73,6 +74,13 @@ def renderHtml(review) -> str:
             elif isinstance(block, TableBlock):
                 if hasattr(block.df, "_repr_html_"):
                     parts.append(block.df._repr_html_())
+            elif isinstance(block, ChartBlock):
+                spec_json = json.dumps(block.spec, ensure_ascii=False, default=str)
+                title = block.spec.get("title", "") if isinstance(block.spec, dict) else ""
+                parts.append(
+                    f"<div class='dl-chart' data-spec='{spec_json}'>"
+                    f"<p style='color:#888;font-size:0.85em'>[chart: {title}]</p></div>"
+                )
             elif isinstance(block, FlagBlock):
                 for f in block.flags:
                     parts.append(f"<p>{block.icon} {f}</p>")
@@ -85,6 +93,7 @@ def renderHtml(review) -> str:
 def renderMarkdown(review) -> str:
     """마크다운 렌더링."""
     from dartlab.review.blocks import (
+        ChartBlock,
         FlagBlock,
         HeadingBlock,
         MetricBlock,
@@ -181,6 +190,9 @@ def renderMarkdown(review) -> str:
                             continue
                         cleaned.append(l)
                     parts.append("\n".join(cleaned))
+            elif isinstance(block, ChartBlock):
+                title = block.spec.get("title", "차트") if isinstance(block.spec, dict) else "차트"
+                parts.append(f"*[chart: {title}]*")
             elif isinstance(block, FlagBlock):
                 for f in block.flags:
                     parts.append(f"- {block.icon} {f}")
@@ -193,6 +205,7 @@ def renderMarkdown(review) -> str:
 def renderJson(review) -> str:
     """JSON 렌더링."""
     from dartlab.review.blocks import (
+        ChartBlock,
         FlagBlock,
         HeadingBlock,
         MetricBlock,
@@ -228,6 +241,8 @@ def renderJson(review) -> str:
             elif isinstance(block, TableBlock):
                 if hasattr(block.df, "to_dicts"):
                     items.append({"type": "table", "label": block.label, "data": block.df.to_dicts()})
+            elif isinstance(block, ChartBlock):
+                items.append({"type": "chart", "spec": block.spec, "caption": block.caption})
             elif isinstance(block, FlagBlock):
                 items.append({"type": "flags", "kind": block.kind, "flags": block.flags})
             elif hasattr(block, "toJson"):

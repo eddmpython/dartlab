@@ -75,4 +75,16 @@ class MetricBlock:
     metrics: list[tuple[str, str]]  # [(라벨, 값), ...]
 
 
-Block = TextBlock | HeadingBlock | TableBlock | FlagBlock | MetricBlock
+@dataclass
+class ChartBlock:
+    """차트 시각화 블록.
+
+    spec은 ChartSpec JSON dict (VizSpec 호환).
+    Svelte ChartRenderer가 직접 소비하는 형식.
+    """
+
+    spec: dict
+    caption: str = ""
+
+
+Block = TextBlock | HeadingBlock | TableBlock | FlagBlock | MetricBlock | ChartBlock

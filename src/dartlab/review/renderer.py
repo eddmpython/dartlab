@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dartlab.review.blocks import (
+    ChartBlock,
     FlagBlock,
     HeadingBlock,
     MetricBlock,
@@ -200,6 +201,10 @@ def _renderSection(console, section: Section, ly: ReviewLayout) -> None:
         elif isinstance(block, TableBlock):
             console.print()
             _renderDataFrame(console, block, indent=ly.indentBody)
+
+        elif isinstance(block, ChartBlock):
+            title = block.spec.get("title", "차트") if isinstance(block.spec, dict) else "차트"
+            console.print(f"{body}[dim][chart: {title}][/]")
 
         elif isinstance(block, FlagBlock):
             if prevBlockType is not None and not isinstance(prevBlockType, FlagBlock):

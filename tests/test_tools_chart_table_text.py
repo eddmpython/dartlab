@@ -1,4 +1,4 @@
-"""tools/ 패키지 테스트 — chart, table, text 모듈."""
+"""tools/ + viz 패키지 테스트 — table, text, viz 모듈."""
 
 from __future__ import annotations
 
@@ -7,7 +7,8 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from dartlab.tools import chart, table, text
+from dartlab.tools import table, text
+from dartlab import viz
 
 # ── table ──
 
@@ -125,26 +126,30 @@ def test_section_diff():
     assert "개요" in result["unchanged"]
 
 
-# ── chart (spec 생성, plotly 불필요) ──
+# ── viz (spec 생성, plotly 불필요) ──
 
 
-def test_chart_spec_generators_registered():
-    assert "revenue_trend" in chart._SPEC_GENERATORS
-    assert "insight_radar" in chart._SPEC_GENERATORS
-    assert len(chart._SPEC_GENERATORS) == 8
+def test_viz_spec_generators_registered():
+    assert "revenue_trend" in viz.SPEC_GENERATORS
+    assert "insight_radar" in viz.SPEC_GENERATORS
+    assert len(viz.SPEC_GENERATORS) == 8
 
 
 def test_auto_chart_callable():
-    assert callable(chart.auto_chart)
-    assert callable(chart.chart_from_spec)
+    assert callable(viz.auto_chart)
+    assert callable(viz.chart_from_spec)
 
 
 def test_safe_val():
-    assert chart._safe_val(None) == 0.0
-    assert chart._safe_val(42) == 42.0
-    assert chart._safe_val("abc") == 0.0
+    from dartlab.viz.generators import _safe_val
+
+    assert _safe_val(None) == 0.0
+    assert _safe_val(42) == 42.0
+    assert _safe_val("abc") == 0.0
 
 
 def test_hex_to_rgba():
-    assert "rgba" in chart._hex_to_rgba("#ea4647", 0.3)
-    assert "234" in chart._hex_to_rgba("#ea4647", 0.3)
+    from dartlab.viz.plotly import _hex_to_rgba
+
+    assert "rgba" in _hex_to_rgba("#ea4647", 0.3)
+    assert "234" in _hex_to_rgba("#ea4647", 0.3)

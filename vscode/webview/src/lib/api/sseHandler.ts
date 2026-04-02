@@ -1,7 +1,7 @@
 /** SSE event handler — content blocks 구조 (Claude Code 패턴 벤치마킹) */
 
 export interface ContentBlock {
-  type: "text" | "code_execution" | "tool_call";
+  type: "text" | "code_execution" | "tool_call" | "chart";
   // text
   text?: string;
   // code_execution
@@ -14,6 +14,8 @@ export interface ContentBlock {
   name?: string;
   arguments?: unknown;
   toolResult?: unknown;
+  // chart
+  spec?: unknown;
   _ts?: number;
   _resultTs?: number;
 }
@@ -178,6 +180,17 @@ export function createSseHandler(
           if (idx >= 0) rounds[idx] = cr;
           else rounds.push(cr);
           updateMessage({ blocks, codeRounds: rounds });
+          break;
+        }
+
+        case "chart": {
+          const msg = getMessage();
+          const blocks = [...(msg.blocks ?? [])];
+          const charts = (d as { charts?: unknown[] }).charts ?? [];
+          for (const spec of charts) {
+            blocks.push({ type: "chart", spec, _ts: Date.now() });
+          }
+          updateMessage({ blocks });
           break;
         }
 
