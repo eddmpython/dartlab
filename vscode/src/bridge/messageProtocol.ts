@@ -3,6 +3,9 @@ export type WebViewMessage =
   | { type: "ask"; payload: AskPayload }
   | { type: "stopStream" }
   | { type: "setProvider"; payload: { provider: string; model?: string } }
+  | { type: "requestCredential"; payload: { provider: string; signupUrl?: string } }
+  | { type: "openExternal"; payload: { url: string } }
+  | { type: "openSettings" }
   | { type: "syncConversations"; payload: unknown }
   | { type: "listTemplates" }
   | { type: "ready" };
@@ -35,4 +38,5 @@ export type ExtensionMessage =
   | { type: "restoreConversations"; payload: unknown }
   | { type: "selectConversation"; payload: { id: string } }
   | { type: "newConversation" }
-  | { type: "templates"; payload: TemplateInfo[] };
+  | { type: "templates"; payload: TemplateInfo[] }
+  | { type: "needCredential"; payload: { provider: string; signupUrl?: string; label?: string } };

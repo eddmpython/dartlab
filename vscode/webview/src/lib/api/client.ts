@@ -41,3 +41,11 @@ export function ready() {
 export function openSettings() {
   postMessage({ type: "openSettings" });
 }
+
+export function requestCredential(provider: string, signupUrl?: string) {
+  postMessage({ type: "requestCredential", payload: { provider, signupUrl } });
+}
+
+export function openExternal(url: string) {
+  postMessage({ type: "openExternal", payload: { url } });
+}

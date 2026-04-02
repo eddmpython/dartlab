@@ -25,7 +25,7 @@
   let serverState = $state("starting");
   let providerLabel = $state("");
   let modelLabel = $state("");
-  let providers: Array<{id: string; label: string; freeTier: string}> = $state([]);
+  let providers: Array<{id: string; label: string; description?: string; freeTier: string; authKind?: string; signupUrl?: string}> = $state([]);
   let streaming = $state(false);
   let availableTemplates: Array<{ name: string; description: string; source: "builtin" | "user" }> = $state([]);
   let messagesEl: HTMLDivElement | undefined = $state();
@@ -319,6 +319,13 @@
         }
         break;
       }
+      case "needCredential": {
+        const nc = m.payload as { provider: string; signupUrl?: string };
+        if (nc?.provider) {
+          client.requestCredential(nc.provider, nc.signupUrl);
+        }
+        break;
+      }
     }
   });
 
@@ -332,26 +339,42 @@
 
   {#if messages.length === 0 && !streaming}
     {@const avatarSrc = document.getElementById("app")?.dataset.avatar ?? ""}
+    {@const noProvider = !providerLabel || providerLabel === "none"}
     <div class="welcome">
       {#if avatarSrc}
         <img src={avatarSrc} alt="DartLab" width="56" height="56" class="welcome-avatar" />
       {/if}
       <h2 class="welcome-title">DartLab</h2>
-      <p class="welcome-text">종목코드 또는 회사명을 입력하세요</p>
-      {#if !providerLabel || providerLabel === "none"}
-        <div class="welcome-setup">
-          <p class="welcome-setup-label">무료로 시작하기</p>
-          <div class="welcome-setup-btns">
-            {#each [
-              { id: "gemini", label: "Gemini" },
-              { id: "groq", label: "Groq" },
-              { id: "cerebras", label: "Cerebras" },
-            ] as p}
-              <button class="setup-btn" onclick={() => client.setProvider(p.id)}>{p.label}</button>
-            {/each}
-          </div>
+
+      {#if noProvider}
+        <p class="welcome-text">프로바이더를 연결하세요</p>
+        <div class="provider-cards">
+          {#each providers as p}
+            <div class="provider-card">
+              <div class="provider-card-header">
+                <span class="provider-card-name">{p.label}</span>
+              </div>
+              <p class="provider-card-desc">{p.description || ""}</p>
+              <div class="provider-card-actions">
+                {#if p.authKind === "api_key"}
+                  {#if p.signupUrl}
+                    <button class="provider-action-btn secondary" onclick={() => client.openExternal(p.signupUrl!)}>키 발급</button>
+                  {/if}
+                  <button class="provider-action-btn primary" onclick={() => client.requestCredential(p.id, p.signupUrl)}>연결</button>
+                {:else if p.authKind === "oauth"}
+                  <button class="provider-action-btn primary" onclick={() => client.setProvider(p.id)}>로그인</button>
+                {:else}
+                  <button class="provider-action-btn primary" onclick={() => client.setProvider(p.id)}>연결</button>
+                {/if}
+              </div>
+            </div>
+          {/each}
+          {#if providers.length === 0}
+            <p class="welcome-sub">서버 시작 중...</p>
+          {/if}
         </div>
       {:else}
+        <p class="welcome-text">종목코드 또는 회사명을 입력하세요</p>
         <p class="welcome-sub">예: 005930, 삼성전자, AAPL</p>
         {#if watchlist.length > 0}
           <div class="watchlist">
@@ -394,7 +417,7 @@
   </div>
 
   <ChatInput
-    disabled={serverState !== "ready"}
+    disabled={false}
     {streaming}
     templates={availableTemplates}
     onsubmit={handleSubmit}
@@ -474,34 +497,62 @@
   }
   .wl-name { font-weight: 500; }
   .wl-code { font-size: 10px; color: var(--vscode-descriptionForeground); font-family: var(--vscode-editor-font-family); }
-  .welcome-setup {
+  /* Provider cards */
+  .provider-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     margin-top: 12px;
-    padding: 10px 16px;
+    width: 100%;
+    max-width: 320px;
+  }
+  .provider-card {
+    padding: 10px 14px;
     border-radius: 8px;
     background: var(--vscode-editorWidget-background);
     border: 1px solid var(--vscode-panel-border);
+    text-align: left;
   }
-  .welcome-setup-label {
-    font-size: 12px;
+  .provider-card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .provider-card-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--vscode-foreground);
+  }
+  .provider-card-desc {
+    font-size: 11px;
     color: var(--vscode-descriptionForeground);
-    margin: 0 0 8px;
+    margin: 4px 0 8px;
   }
-  .welcome-setup-btns {
+  .provider-card-actions {
     display: flex;
     gap: 6px;
   }
-  .setup-btn {
-    padding: 5px 14px;
+  .provider-action-btn {
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
     border: 1px solid var(--vscode-panel-border);
-    border-radius: 6px;
+  }
+  .provider-action-btn.primary {
+    background: var(--dl-primary, #ea4647);
+    color: #fff;
+    border-color: transparent;
+  }
+  .provider-action-btn.primary:hover {
+    opacity: 0.85;
+  }
+  .provider-action-btn.secondary {
     background: transparent;
     color: var(--vscode-foreground);
-    font-size: 12px;
-    cursor: pointer;
   }
-  .setup-btn:hover {
+  .provider-action-btn.secondary:hover {
     background: var(--vscode-list-hoverBackground);
-    border-color: var(--dl-primary);
   }
   .messages-wrap {
     flex: 1;

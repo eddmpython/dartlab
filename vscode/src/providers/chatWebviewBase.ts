@@ -97,8 +97,53 @@ export class ChatWebviewBase {
         this.stdioProxy.setProvider(
           msg.payload.provider,
           msg.payload.model,
-          (data) => postMessage({ type: "profile", payload: data }),
+          undefined,
+          (data) => {
+            if (data._needCredential) {
+              // 키가 필요한데 없음 → webview에 needCredential 전달
+              postMessage({
+                type: "needCredential",
+                payload: {
+                  provider: data.provider as string,
+                  signupUrl: data.signupUrl as string | undefined,
+                  label: data.label as string | undefined,
+                },
+              });
+            } else {
+              postMessage({ type: "profile", payload: data });
+            }
+          },
         );
+        break;
+
+      case "requestCredential": {
+        const { provider, signupUrl } = msg.payload;
+        // 먼저 키 발급 페이지 열기
+        if (signupUrl) {
+          vscode.env.openExternal(vscode.Uri.parse(signupUrl));
+        }
+        // API 키 입력 다이얼로그
+        const apiKey = await vscode.window.showInputBox({
+          title: `${provider} API Key`,
+          prompt: signupUrl
+            ? `위 브라우저에서 키를 발급받고 여기에 붙여넣으세요`
+            : `${provider} API 키를 입력하세요`,
+          password: true,
+          ignoreFocusOut: true,
+        });
+        if (apiKey) {
+          this.stdioProxy.setProvider(
+            provider,
+            undefined,
+            apiKey,
+            (data) => postMessage({ type: "profile", payload: data }),
+          );
+        }
+        break;
+      }
+
+      case "openExternal":
+        vscode.env.openExternal(vscode.Uri.parse(msg.payload.url));
         break;
 
       case "syncConversations": {

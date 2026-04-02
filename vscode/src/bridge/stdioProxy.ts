@@ -196,7 +196,9 @@ export class StdioProxy {
 
     const terminal = vscode.window.createTerminal({ name: "DartLab Install", hideFromUser: false });
     terminal.show();
-    terminal.sendText(`${installCmd} && exit`);
+    // PowerShell 5.x는 && 미지원 → ; 사용
+    const sep = process.platform === "win32" ? " ; " : " && ";
+    terminal.sendText(`${installCmd}${sep}exit`);
 
     const disposable = vscode.window.onDidCloseTerminal((t) => {
       if (t !== terminal) return;
@@ -450,6 +452,7 @@ export class StdioProxy {
     if (event === "pong") { this._pongCallback?.(); this._pongCallback = null; return; }
     if (event === "status") { for (const fn of this.statusListeners) fn(data); this.statusListeners = []; return; }
     if (event === "providerChanged") { for (const fn of this.providerListeners) fn(data); this.providerListeners = []; return; }
+    if (event === "needCredential") { for (const fn of this.providerListeners) fn({ ...data, _needCredential: true }); this.providerListeners = []; return; }
     if (event === "templates") { this.onTemplates?.(data); return; }
 
     if (this.currentCallbacks) {
@@ -473,9 +476,11 @@ export class StdioProxy {
     setTimeout(() => { this.statusListeners = this.statusListeners.filter(l => l !== callback); }, 5000);
   }
 
-  setProvider(provider: string, model?: string, callback?: (data: Record<string, unknown>) => void): void {
+  setProvider(provider: string, model?: string, apiKey?: string, callback?: (data: Record<string, unknown>) => void): void {
     if (callback) this.providerListeners.push(callback);
-    this.send({ type: "setProvider", provider, model });
+    const msg: Record<string, unknown> = { type: "setProvider", provider, model };
+    if (apiKey) msg.apiKey = apiKey;
+    this.send(msg);
   }
 
   ask(question: string, company: string | undefined, history: unknown[] | undefined, callbacks: StdioCallbacks, modules?: string[]): void {

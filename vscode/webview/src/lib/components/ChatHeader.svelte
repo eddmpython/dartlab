@@ -1,11 +1,13 @@
 <script lang="ts">
-  import { postMessage } from "../vscode";
   import * as client from "../api/client";
 
   interface ProviderInfo {
     id: string;
     label: string;
+    description?: string;
     freeTier: string;
+    authKind?: string;
+    signupUrl?: string;
   }
 
   interface Props {
@@ -18,8 +20,12 @@
   let { serverState, providerLabel = "", modelLabel = "", providers = [] }: Props = $props();
   let showDropdown = $state(false);
 
-  function selectProvider(id: string) {
-    client.setProvider(id);
+  function selectProvider(p: ProviderInfo) {
+    if (p.authKind === "api_key") {
+      client.requestCredential(p.id, p.signupUrl);
+    } else {
+      client.setProvider(p.id);
+    }
     showDropdown = false;
   }
 
@@ -57,12 +63,14 @@
   </div>
   <div class="header-right">
     <div class="provider-area">
-      {#if providerLabel}
-        <button class="provider-btn" onclick={toggleDropdown}>
+      <button class="provider-btn" onclick={toggleDropdown}>
+        {#if providerLabel && providerLabel !== "none"}
           {providerLabel}{#if modelLabel} / {modelLabel}{/if}
-          <svg class="chevron" class:open={showDropdown} width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M4 6l4 4 4-4"/></svg>
-        </button>
-      {/if}
+        {:else}
+          프로바이더 선택
+        {/if}
+        <svg class="chevron" class:open={showDropdown} width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M4 6l4 4 4-4"/></svg>
+      </button>
 
       {#if showDropdown && providers.length > 0}
         <div class="dropdown">
@@ -70,7 +78,7 @@
             <button
               class="dropdown-item"
               class:active={p.id === providerLabel}
-              onclick={() => selectProvider(p.id)}
+              onclick={() => selectProvider(p)}
             >
               <span class="item-label">{p.label}</span>
               {#if p.freeTier}

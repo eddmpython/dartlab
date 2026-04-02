@@ -144,7 +144,10 @@ def _handleStatus(_msg: dict[str, Any]) -> None:
                 {
                     "id": spec.id,
                     "label": spec.label,
+                    "description": spec.description,
                     "freeTier": spec.freeTierHint or "",
+                    "authKind": spec.auth_kind,
+                    "signupUrl": spec.signupUrl or "",
                 }
             )
 
@@ -175,9 +178,48 @@ def _handleListTemplates(_msg: dict[str, Any]) -> None:
 
 
 def _handleSetProvider(msg: dict[str, Any]) -> None:
-    """Change provider/model for this session."""
+    """Change provider/model for this session. Optionally save API key."""
     global _sessionProvider, _sessionModel
-    _sessionProvider = msg.get("provider") or _sessionProvider
+    provider = msg.get("provider")
+    apiKey = msg.get("apiKey")
+
+    # API 키가 왔으면 저장
+    if provider and apiKey:
+        try:
+            from dartlab.guide.credentials import CredentialManager
+
+            CredentialManager().saveKey(f"{provider}_api_key", apiKey)
+        except Exception as exc:
+            _emit({"event": "error", "data": {"error": f"키 저장 실패: {exc}"}})
+            return
+
+    # 키가 필요한데 없으면 needCredential 이벤트
+    if provider and not apiKey:
+        try:
+            from dartlab.guide.providers import get_provider_spec
+
+            spec = get_provider_spec(provider)
+            if spec and spec.auth_kind == "api_key":
+                from dartlab.guide.credentials import CredentialManager
+
+                cred = CredentialManager().getCredential(f"{provider}_api_key")
+                if not cred.configured:
+                    _emit(
+                        {
+                            "event": "needCredential",
+                            "data": {
+                                "provider": provider,
+                                "signupUrl": spec.signupUrl,
+                                "envKey": spec.env_key,
+                                "label": spec.label,
+                            },
+                        }
+                    )
+                    return
+        except Exception:
+            pass
+
+    _sessionProvider = provider or _sessionProvider
     _sessionModel = msg.get("model") or _sessionModel
     _emit(
         {
