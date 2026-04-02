@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <title>K-IFRS 주석 — 총액 이면의 분해</title>
+  <desc>재무제표 총액만으로는 안 보이는 것을 c.notes로 분해한다</desc>
+
+  <defs>
+    <linearGradient id="bg130e" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="720" fill="url(#bg130e)" rx="16"/>
+
+  <text x="600" y="45" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="24" font-weight="700">c.notes — 총액 이면의 분해</text>
+  <text x="600" y="72" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">"재고자산 1조"가 상품인지 원재료인지, 주석을 봐야 안다</text>
+
+  <!-- 왼쪽: 재무제표 총액 -->
+  <rect x="40" y="100" width="350" height="580" rx="14" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
+  <text x="215" y="138" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="17" font-weight="700">재무제표 = 총액만</text>
+
+  <rect x="65" y="165" width="300" height="55" rx="10" fill="#1a1020" stroke="#7f1d1d" stroke-width="1"/>
+  <text x="215" y="190" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="14">재고자산  1.2조</text>
+  <text x="215" y="210" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="10">뭔 재고인지 모른다</text>
+
+  <rect x="65" y="235" width="300" height="55" rx="10" fill="#1a1020" stroke="#7f1d1d" stroke-width="1"/>
+  <text x="215" y="260" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="14">차입금  8.3조</text>
+  <text x="215" y="280" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="10">단기/장기 구분 안 됨</text>
+
+  <rect x="65" y="305" width="300" height="55" rx="10" fill="#1a1020" stroke="#7f1d1d" stroke-width="1"/>
+  <text x="215" y="330" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="14">유형자산  120조</text>
+  <text x="215" y="350" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="10">토지/건물/기계 구분 안 됨</text>
+
+  <rect x="65" y="375" width="300" height="55" rx="10" fill="#1a1020" stroke="#7f1d1d" stroke-width="1"/>
+  <text x="215" y="400" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="14">매출  300조</text>
+  <text x="215" y="420" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="10">부문별 구성 안 보임</text>
+
+  <rect x="65" y="445" width="300" height="55" rx="10" fill="#1a1020" stroke="#7f1d1d" stroke-width="1"/>
+  <text x="215" y="470" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="14">매출원가  200조</text>
+  <text x="215" y="490" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="10">원재료/인건비/감가상각 구분 안 됨</text>
+
+  <text x="215" y="550" text-anchor="middle" fill="#ef4444" font-family="system-ui, sans-serif" font-size="13" font-weight="600">숫자만 있고, 구성이 없다</text>
+  <text x="215" y="575" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">c.BS, c.IS만으로는</text>
+  <text x="215" y="595" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">기업의 속을 볼 수 없다</text>
+
+  <!-- 화살표 -->
+  <text x="430" y="350" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="28">→</text>
+
+  <!-- 오른쪽: notes 분해 -->
+  <rect x="480" y="100" width="680" height="580" rx="14" fill="#1e293b" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="820" y="138" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="17" font-weight="700">c.notes = 항목별 분해</text>
+
+  <!-- inventory -->
+  <rect x="505" y="165" width="310" height="115" rx="10" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="660" y="188" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="12" font-weight="600">c.notes.inventory</text>
+  <text x="530" y="212" fill="#e2e8f0" font-family="monospace" font-size="10">상품         2,100억</text>
+  <text x="530" y="230" fill="#e2e8f0" font-family="monospace" font-size="10">제품         4,300억</text>
+  <text x="530" y="248" fill="#e2e8f0" font-family="monospace" font-size="10">원재료       3,800억</text>
+  <text x="530" y="266" fill="#e2e8f0" font-family="monospace" font-size="10">미착품       1,800억</text>
+
+  <!-- borrowings -->
+  <rect x="830" y="165" width="310" height="115" rx="10" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="985" y="188" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="12" font-weight="600">c.notes.borrowings</text>
+  <text x="855" y="212" fill="#e2e8f0" font-family="monospace" font-size="10">단기차입금    2.1조 (2.5%)</text>
+  <text x="855" y="230" fill="#e2e8f0" font-family="monospace" font-size="10">유동성장기    1.8조 (3.1%)</text>
+  <text x="855" y="248" fill="#e2e8f0" font-family="monospace" font-size="10">장기차입금    3.2조 (3.8%)</text>
+  <text x="855" y="266" fill="#e2e8f0" font-family="monospace" font-size="10">사채          1.2조 (4.2%)</text>
+
+  <!-- tangibleAsset -->
+  <rect x="505" y="295" width="310" height="115" rx="10" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="660" y="318" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="12" font-weight="600">c.notes.tangibleAsset</text>
+  <text x="530" y="342" fill="#e2e8f0" font-family="monospace" font-size="10">토지         30조</text>
+  <text x="530" y="360" fill="#e2e8f0" font-family="monospace" font-size="10">건물         25조</text>
+  <text x="530" y="378" fill="#e2e8f0" font-family="monospace" font-size="10">기계장치     50조</text>
+  <text x="530" y="396" fill="#e2e8f0" font-family="monospace" font-size="10">건설중자산   15조</text>
+
+  <!-- segments -->
+  <rect x="830" y="295" width="310" height="115" rx="10" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="985" y="318" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="12" font-weight="600">c.notes.segments</text>
+  <text x="855" y="342" fill="#e2e8f0" font-family="monospace" font-size="10">DX사업부      155조 (51%)</text>
+  <text x="855" y="360" fill="#e2e8f0" font-family="monospace" font-size="10">DS사업부       82조 (27%)</text>
+  <text x="855" y="378" fill="#e2e8f0" font-family="monospace" font-size="10">SDC            36조 (12%)</text>
+  <text x="855" y="396" fill="#e2e8f0" font-family="monospace" font-size="10">Harman         13조  (4%)</text>
+
+  <!-- costByNature -->
+  <rect x="505" y="425" width="310" height="95" rx="10" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="660" y="448" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="12" font-weight="600">c.notes.costByNature</text>
+  <text x="530" y="472" fill="#e2e8f0" font-family="monospace" font-size="10">원재료비     120조</text>
+  <text x="530" y="490" fill="#e2e8f0" font-family="monospace" font-size="10">급여          35조</text>
+  <text x="530" y="508" fill="#e2e8f0" font-family="monospace" font-size="10">감가상각      22조</text>
+
+  <!-- receivables -->
+  <rect x="830" y="425" width="310" height="95" rx="10" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="985" y="448" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="12" font-weight="600">c.notes.receivables</text>
+  <text x="855" y="472" fill="#e2e8f0" font-family="monospace" font-size="10">매출채권      42조</text>
+  <text x="855" y="490" fill="#e2e8f0" font-family="monospace" font-size="10">대손충당금    -1.2조</text>
+  <text x="855" y="508" fill="#e2e8f0" font-family="monospace" font-size="10">순매출채권    40.8조</text>
+
+  <!-- 하단 -->
+  <text x="820" y="560" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">한글로도 접근 가능</text>
+  <rect x="600" y="575" width="440" height="32" rx="8" fill="#0f172a"/>
+  <text x="820" y="596" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="12">c.notes["재고자산"]  =  c.notes.inventory</text>
+
+  <text x="820" y="635" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">뭐가 있는지 모르겠으면:</text>
+  <rect x="690" y="647" width="260" height="28" rx="6" fill="#0f172a"/>
+  <text x="820" y="666" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="12">c.notes.keys()</text>
+</svg>

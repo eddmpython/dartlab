@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <title>show와 select — 전체를 보거나, 원하는 행만 뽑거나</title>
+  <desc>c.show()로 전체 topic 조회, c.select()로 행/열 필터 + 차트</desc>
+
+  <defs>
+    <linearGradient id="bg130c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <marker id="arr130" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4ade80"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="720" fill="url(#bg130c)" rx="16"/>
+
+  <text x="600" y="45" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="24" font-weight="700">show와 select — 두 가지 경로</text>
+  <text x="600" y="72" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">전체를 보거나, 원하는 행만 뽑거나. 둘 다 해당 topic만 부분 빌드해서 빠르다.</text>
+
+  <!-- show 경로 -->
+  <rect x="40" y="100" width="540" height="570" rx="16" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+  <text x="310" y="140" text-anchor="middle" fill="#c084fc" font-family="system-ui, sans-serif" font-size="20" font-weight="700">c.show(topic)</text>
+  <text x="310" y="168" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">해당 topic의 전체 데이터를 꺼낸다</text>
+
+  <rect x="65" y="190" width="490" height="40" rx="8" fill="#0f172a" stroke="#7e22ce" stroke-width="1"/>
+  <text x="310" y="216" text-anchor="middle" fill="#d8b4fe" font-family="monospace" font-size="13">c.show("IS")                     # 손익계산서 전체</text>
+
+  <rect x="65" y="242" width="490" height="40" rx="8" fill="#0f172a" stroke="#7e22ce" stroke-width="1"/>
+  <text x="310" y="268" text-anchor="middle" fill="#d8b4fe" font-family="monospace" font-size="13">c.show("dividend")               # 배당 정보</text>
+
+  <rect x="65" y="294" width="490" height="40" rx="8" fill="#0f172a" stroke="#7e22ce" stroke-width="1"/>
+  <text x="310" y="320" text-anchor="middle" fill="#d8b4fe" font-family="monospace" font-size="13">c.show("businessOverview")       # 사업 개요</text>
+
+  <rect x="65" y="346" width="490" height="40" rx="8" fill="#0f172a" stroke="#7e22ce" stroke-width="1"/>
+  <text x="310" y="372" text-anchor="middle" fill="#d8b4fe" font-family="monospace" font-size="13">c.show("IS", period="2023")      # 기간 필터</text>
+
+  <rect x="65" y="398" width="490" height="40" rx="8" fill="#0f172a" stroke="#7e22ce" stroke-width="1"/>
+  <text x="310" y="424" text-anchor="middle" fill="#d8b4fe" font-family="monospace" font-size="13">c.show("IS", period=["2022","2023"])  # 비교</text>
+
+  <text x="310" y="478" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">뭐가 있는지 모르겠으면?</text>
+  <rect x="120" y="495" width="380" height="40" rx="8" fill="#14532d" stroke="#166534" stroke-width="1"/>
+  <text x="310" y="521" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="14">c.topics   # 전체 데이터 지도</text>
+
+  <text x="310" y="570" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">topic, source(docs/finance/report),</text>
+  <text x="310" y="590" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">기간 범위, 블록 수가 한눈에 보인다</text>
+
+  <text x="310" y="640" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">show()는 해당 topic만 부분 빌드 → 0.65초</text>
+  <text x="310" y="658" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">sections 전체 로드(19초)와 다르다</text>
+
+  <!-- select 경로 -->
+  <rect x="620" y="100" width="540" height="570" rx="16" fill="#1e293b" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="890" y="140" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="20" font-weight="700">c.select(topic, rows)</text>
+  <text x="890" y="168" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">필요한 행만 뽑고, 차트까지 한번에</text>
+
+  <rect x="645" y="190" width="490" height="40" rx="8" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="890" y="216" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="13">c.select("IS", ["매출액", "영업이익"])</text>
+
+  <rect x="645" y="242" width="490" height="40" rx="8" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="890" y="268" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="13">c.select("BS", ["자산총계", "부채총계"])</text>
+
+  <rect x="645" y="294" width="490" height="40" rx="8" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="890" y="320" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="13">c.select("ratios", ["ROE"]).chart()</text>
+
+  <rect x="645" y="346" width="490" height="40" rx="8" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="890" y="372" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="13">c.select("IS", ["매출액"]).chart()</text>
+
+  <!-- .chart() 강조 -->
+  <rect x="700" y="415" width="380" height="90" rx="12" fill="#14532d" stroke="#4ade80" stroke-width="1"/>
+  <text x="890" y="445" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="14" font-weight="600">.chart() — 뒤에 붙이면 차트가 나온다</text>
+  <text x="890" y="472" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">select 결과에 .chart()를 체이닝하면</text>
+  <text x="890" y="492" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">시계열 차트가 자동 렌더링된다</text>
+
+  <text x="890" y="545" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">한글/영문 양방향</text>
+  <text x="890" y="575" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">select("IS", ["매출액"]) = select("IS", ["sales"])</text>
+  <text x="890" y="598" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">미국 기업에서 한글로 조회해도 자동 변환</text>
+
+  <text x="890" y="640" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">select()는 show() 캐시 위에서 동작 → 0.01초</text>
+  <text x="890" y="658" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">AI가 데이터를 조회할 때도 이 경로를 쓴다</text>
+</svg>

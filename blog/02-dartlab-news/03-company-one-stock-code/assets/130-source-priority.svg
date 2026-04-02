@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <title>Company 데이터 소스 — finance, docs, report 우선순위</title>
+  <desc>하나의 topic에 여러 소스가 있을 때, finance > report > docs 순서로 선택된다</desc>
+
+  <defs>
+    <linearGradient id="bg130d" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <marker id="arr130d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4ade80"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="720" fill="url(#bg130d)" rx="16"/>
+
+  <text x="600" y="45" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="24" font-weight="700">이 숫자가 어디서 왔는지 — 데이터 소스와 우선순위</text>
+  <text x="600" y="72" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">같은 topic이라도 소스가 다르다. c.trace()로 출처를 항상 확인할 수 있다.</text>
+
+  <!-- 소스 우선순위 -->
+  <text x="600" y="115" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="16" font-weight="600">우선순위: 숫자 → 정형 → 서술</text>
+
+  <!-- finance -->
+  <rect x="60" y="140" width="340" height="250" rx="14" fill="#1e293b" stroke="#3b82f6" stroke-width="2"/>
+  <rect x="60" y="140" width="340" height="44" rx="14" fill="#1e3a5f"/>
+  <text x="140" y="168" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="18" font-weight="700">1순위</text>
+  <text x="260" y="168" fill="#93c5fd" font-family="system-ui, sans-serif" font-size="16" font-weight="600">finance</text>
+
+  <text x="85" y="210" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="13" font-weight="600">XBRL 재무제표 (숫자)</text>
+  <text x="85" y="235" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">IS, BS, CF, CIS — 기계가 읽을 수 있는 정형 데이터</text>
+  <text x="85" y="260" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">DART가 제공하는 가장 정확한 숫자</text>
+
+  <rect x="85" y="280" width="290" height="32" rx="6" fill="#0f172a"/>
+  <text x="230" y="301" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">c.trace("BS") → "finance"</text>
+
+  <rect x="85" y="322" width="290" height="32" rx="6" fill="#0f172a"/>
+  <text x="230" y="343" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">c.trace("IS") → "finance"</text>
+
+  <!-- report -->
+  <rect x="430" y="140" width="340" height="250" rx="14" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+  <rect x="430" y="140" width="340" height="44" rx="14" fill="#2e1a4a"/>
+  <text x="510" y="168" fill="#c084fc" font-family="system-ui, sans-serif" font-size="18" font-weight="700">2순위</text>
+  <text x="630" y="168" fill="#d8b4fe" font-family="system-ui, sans-serif" font-size="16" font-weight="600">report</text>
+
+  <text x="455" y="210" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="13" font-weight="600">정기보고서 구조화 데이터</text>
+  <text x="455" y="235" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">배당, 임원, 직원, 자사주, 감사 등</text>
+  <text x="455" y="260" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">DART API가 테이블로 제공하는 정형 데이터</text>
+
+  <rect x="455" y="280" width="290" height="32" rx="6" fill="#0f172a"/>
+  <text x="600" y="301" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">c.trace("dividend") → "report"</text>
+
+  <rect x="455" y="322" width="290" height="32" rx="6" fill="#0f172a"/>
+  <text x="600" y="343" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">c.trace("employee") → "report"</text>
+
+  <!-- docs -->
+  <rect x="800" y="140" width="340" height="250" rx="14" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+  <rect x="800" y="140" width="340" height="44" rx="14" fill="#3b2a10"/>
+  <text x="880" y="168" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="18" font-weight="700">3순위</text>
+  <text x="1000" y="168" fill="#fde68a" font-family="system-ui, sans-serif" font-size="16" font-weight="600">docs</text>
+
+  <text x="825" y="210" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="13" font-weight="600">사업보고서 원문 (텍스트)</text>
+  <text x="825" y="235" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">사업 개요, 경영진단, 위험 요인 등</text>
+  <text x="825" y="260" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">HTML을 파싱해서 sections으로 정리</text>
+
+  <rect x="825" y="280" width="290" height="32" rx="6" fill="#0f172a"/>
+  <text x="970" y="301" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">c.trace("businessOverview") → "docs"</text>
+
+  <rect x="825" y="322" width="290" height="32" rx="6" fill="#0f172a"/>
+  <text x="970" y="343" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">c.trace("mdna") → "docs"</text>
+
+  <!-- 우선순위 화살표 -->
+  <line x1="400" y1="265" x2="430" y2="265" stroke="#4ade80" stroke-width="2" marker-end="url(#arr130d)"/>
+  <line x1="770" y1="265" x2="800" y2="265" stroke="#4ade80" stroke-width="2" marker-end="url(#arr130d)"/>
+
+  <!-- 하단: 규칙 설명 -->
+  <rect x="100" y="420" width="1000" height="120" rx="14" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="600" y="455" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="16" font-weight="600">왜 이런 우선순위인가</text>
+
+  <text x="130" y="490" fill="#93c5fd" font-family="system-ui, sans-serif" font-size="12">finance (숫자)</text>
+  <text x="280" y="490" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">— XBRL 표준으로 기계가 읽은 숫자. 가장 정확하다.</text>
+
+  <text x="130" y="512" fill="#d8b4fe" font-family="system-ui, sans-serif" font-size="12">report (정형)</text>
+  <text x="280" y="512" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">— API가 테이블로 주는 정형 데이터. 숫자와 텍스트 중간.</text>
+
+  <text x="130" y="534" fill="#fde68a" font-family="system-ui, sans-serif" font-size="12">docs (서술)</text>
+  <text x="280" y="534" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">— 사업보고서 HTML 원문. 사람이 읽는 텍스트. finance가 없을 때 fallback.</text>
+
+  <!-- 하단: 핵심 -->
+  <rect x="200" y="570" width="800" height="120" rx="14" fill="#14532d" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="600" y="605" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="15" font-weight="700">없으면 None — 추정값을 만들지 않는다</text>
+  <text x="600" y="635" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">데이터가 없으면 None을 반환한다. 억지로 채우지 않는다. 사용자가 판단한다.</text>
+  <text x="600" y="665" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="12">숫자는 원본 그대로. 출처는 항상 추적 가능. 이것이 dartlab의 신뢰성 원칙이다.</text>
+</svg>

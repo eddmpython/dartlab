@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <title>종목코드 하나로 열리는 것들</title>
+  <desc>dartlab.Company("005930") 하나로 접근 가능한 데이터: 재무제표, 비율, 공시 원문, 주석, 변경 이력</desc>
+
+  <defs>
+    <linearGradient id="bg130a" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="720" fill="url(#bg130a)" rx="16"/>
+
+  <!-- 중앙: 종목코드 -->
+  <rect x="430" y="30" width="340" height="80" rx="16" fill="#14532d" stroke="#4ade80" stroke-width="2"/>
+  <text x="600" y="62" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="18" font-weight="700">dartlab.Company("005930")</text>
+  <text x="600" y="96" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">종목코드 하나가 진입점</text>
+
+  <!-- 연결선 -->
+  <line x1="600" y1="110" x2="200" y2="175" stroke="#334155" stroke-width="1.5"/>
+  <line x1="600" y1="110" x2="600" y2="175" stroke="#334155" stroke-width="1.5"/>
+  <line x1="600" y1="110" x2="1000" y2="175" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- 카드 1: 재무제표 -->
+  <rect x="40" y="175" width="330" height="230" rx="14" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="205" y="210" text-anchor="middle" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="17" font-weight="700">재무제표 + 비율</text>
+
+  <rect x="60" y="230" width="130" height="36" rx="8" fill="#0f172a" stroke="#1e40af" stroke-width="1"/>
+  <text x="125" y="254" text-anchor="middle" fill="#93c5fd" font-family="monospace" font-size="12">c.IS</text>
+
+  <rect x="200" y="230" width="130" height="36" rx="8" fill="#0f172a" stroke="#1e40af" stroke-width="1"/>
+  <text x="265" y="254" text-anchor="middle" fill="#93c5fd" font-family="monospace" font-size="12">c.BS</text>
+
+  <rect x="60" y="278" width="130" height="36" rx="8" fill="#0f172a" stroke="#1e40af" stroke-width="1"/>
+  <text x="125" y="302" text-anchor="middle" fill="#93c5fd" font-family="monospace" font-size="12">c.CF</text>
+
+  <rect x="200" y="278" width="130" height="36" rx="8" fill="#0f172a" stroke="#1e40af" stroke-width="1"/>
+  <text x="265" y="302" text-anchor="middle" fill="#93c5fd" font-family="monospace" font-size="12">c.ratios</text>
+
+  <text x="205" y="345" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">IS/BS/CF/CIS + 비율 50개</text>
+  <text x="205" y="365" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">분기별 시계열, 자동 계산</text>
+  <text x="205" y="385" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="10">c.select("IS", ["매출액"]).chart()</text>
+
+  <!-- 카드 2: 공시 원문 -->
+  <rect x="435" y="175" width="330" height="230" rx="14" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+  <text x="600" y="210" text-anchor="middle" fill="#c084fc" font-family="system-ui, sans-serif" font-size="17" font-weight="700">공시 원문 + 변경 이력</text>
+
+  <rect x="455" y="230" width="290" height="36" rx="8" fill="#0f172a" stroke="#7e22ce" stroke-width="1"/>
+  <text x="600" y="254" text-anchor="middle" fill="#d8b4fe" font-family="monospace" font-size="12">c.show("businessOverview")</text>
+
+  <rect x="455" y="278" width="290" height="36" rx="8" fill="#0f172a" stroke="#7e22ce" stroke-width="1"/>
+  <text x="600" y="302" text-anchor="middle" fill="#d8b4fe" font-family="monospace" font-size="12">c.diff("businessOverview")</text>
+
+  <text x="600" y="345" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">사업 개요, 배당, 임원, 주주 등 120+ topic</text>
+  <text x="600" y="365" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">기간간 텍스트 변경 자동 감지</text>
+  <text x="600" y="385" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="10">c.topics로 전체 지도 확인</text>
+
+  <!-- 카드 3: 주석 -->
+  <rect x="830" y="175" width="330" height="230" rx="14" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="995" y="210" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="17" font-weight="700">K-IFRS 주석</text>
+
+  <rect x="850" y="230" width="290" height="36" rx="8" fill="#0f172a" stroke="#b45309" stroke-width="1"/>
+  <text x="995" y="254" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="12">c.notes.inventory</text>
+
+  <rect x="850" y="278" width="290" height="36" rx="8" fill="#0f172a" stroke="#b45309" stroke-width="1"/>
+  <text x="995" y="302" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="12">c.notes.borrowings</text>
+
+  <text x="995" y="345" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">재고, 차입금, 유형자산, 부문정보 등</text>
+  <text x="995" y="365" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">총액 이면의 항목별 분해</text>
+  <text x="995" y="385" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="10">c.notes["재고자산"] — 한글도 OK</text>
+
+  <!-- 하단: 핵심 원칙 -->
+  <rect x="100" y="440" width="1000" height="110" rx="14" fill="#0f172a" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="600" y="478" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="18" font-weight="700">종목코드 하나면 끝난다</text>
+  <text x="600" y="508" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">추가 import 없다. API 키 없다. import dartlab → Company("005930") → 점(.)을 찍으면 전부 나온다.</text>
+  <text x="600" y="535" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="12">한국 종목코드(005930) · 미국 티커(AAPL) — 같은 방식, 같은 API</text>
+
+  <!-- 하단: 출처 추적 -->
+  <rect x="100" y="580" width="480" height="110" rx="14" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+  <text x="340" y="612" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">출처 추적</text>
+  <text x="340" y="638" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">숫자가 어디서 왔는지 항상 확인 가능</text>
+  <rect x="180" y="652" width="320" height="28" rx="6" fill="#0f172a"/>
+  <text x="340" y="671" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">c.trace("BS") → "finance" (XBRL)</text>
+
+  <!-- 하단: sections -->
+  <rect x="620" y="580" width="480" height="110" rx="14" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+  <text x="860" y="612" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">sections — 전체 지도</text>
+  <text x="860" y="638" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">topic × period로 사업보고서 전체를 정리</text>
+  <rect x="700" y="652" width="320" height="28" rx="6" fill="#0f172a"/>
+  <text x="860" y="671" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">c.sections — 모든 기간 비교 가능</text>
+</svg>

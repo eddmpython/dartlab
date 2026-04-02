@@ -12,6 +12,7 @@
 
 ## 최근 완료 (2026-04-02)
 
+- 130: dartlab.Company — 종목코드 하나면 끝난다 (dartlab-news #3, SVG 5개)
 - 129: dartlab.scan — 2,700개 종목의 재무 데이터를 한 줄로 꺼낸다 (dartlab-news #2, SVG 5개)
 - 123-rewrite: dartlab-easy-start uv 설명 보강 (Astral/Rust 설명, pip 비교, uv run 확장)
 

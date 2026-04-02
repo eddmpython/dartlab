@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <title>재무제표 3줄 — IS, BS, CF</title>
+  <desc>c.IS, c.BS, c.CF 각각의 구조와 반환 형태</desc>
+
+  <defs>
+    <linearGradient id="bg130b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="720" fill="url(#bg130b)" rx="16"/>
+
+  <text x="600" y="45" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="24" font-weight="700">재무제표 3줄이면 전부 — c.IS, c.BS, c.CF</text>
+  <text x="600" y="72" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">계정명 × 기간 테이블. 분기별 시계열. 자동 정규화.</text>
+
+  <!-- IS -->
+  <rect x="40" y="100" width="360" height="290" rx="14" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+  <rect x="40" y="100" width="360" height="44" rx="14" fill="#1e3a5f"/>
+  <text x="220" y="128" text-anchor="middle" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="17" font-weight="700">c.IS — 손익계산서</text>
+
+  <text x="65" y="172" fill="#93c5fd" font-family="monospace" font-size="11">매출액          74.06조  74.06조</text>
+  <text x="65" y="196" fill="#93c5fd" font-family="monospace" font-size="11">매출원가        49.93조  49.93조</text>
+  <text x="65" y="220" fill="#93c5fd" font-family="monospace" font-size="11">매출총이익      24.13조  24.13조</text>
+  <text x="65" y="244" fill="#4ade80" font-family="monospace" font-size="11" font-weight="600">영업이익        10.44조   8.17조</text>
+  <text x="65" y="268" fill="#93c5fd" font-family="monospace" font-size="11">당기순이익       7.73조  10.10조</text>
+
+  <text x="220" y="320" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">얼마 벌고, 얼마 남겼나</text>
+  <rect x="100" y="338" width="240" height="32" rx="8" fill="#0f172a"/>
+  <text x="220" y="360" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">c.select("IS", ["매출액"]).chart()</text>
+
+  <!-- BS -->
+  <rect x="420" y="100" width="360" height="290" rx="14" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+  <rect x="420" y="100" width="360" height="44" rx="14" fill="#2e1a4a"/>
+  <text x="600" y="128" text-anchor="middle" fill="#c084fc" font-family="system-ui, sans-serif" font-size="17" font-weight="700">c.BS — 재무상태표</text>
+
+  <text x="445" y="172" fill="#d8b4fe" font-family="monospace" font-size="11">자산총계       455.2조  448.7조</text>
+  <text x="445" y="196" fill="#d8b4fe" font-family="monospace" font-size="11">유동자산       196.2조  200.1조</text>
+  <text x="445" y="220" fill="#d8b4fe" font-family="monospace" font-size="11">비유동자산     259.0조  248.6조</text>
+  <text x="445" y="244" fill="#fca5a5" font-family="monospace" font-size="11">부채총계       102.8조  106.3조</text>
+  <text x="445" y="268" fill="#4ade80" font-family="monospace" font-size="11" font-weight="600">자본총계       352.4조  342.4조</text>
+
+  <text x="600" y="320" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">뭘 갖고 있고, 빚은 얼마인가</text>
+  <rect x="480" y="338" width="240" height="32" rx="8" fill="#0f172a"/>
+  <text x="600" y="360" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">c.select("BS", ["자본총계"]).chart()</text>
+
+  <!-- CF -->
+  <rect x="800" y="100" width="360" height="290" rx="14" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+  <rect x="800" y="100" width="360" height="44" rx="14" fill="#3b2a10"/>
+  <text x="980" y="128" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="17" font-weight="700">c.CF — 현금흐름표</text>
+
+  <text x="825" y="172" fill="#fde68a" font-family="monospace" font-size="11">영업활동CF      21.3조   28.8조</text>
+  <text x="825" y="196" fill="#fde68a" font-family="monospace" font-size="11">투자활동CF     -13.4조  -53.2조</text>
+  <text x="825" y="220" fill="#fde68a" font-family="monospace" font-size="11">재무활동CF      -3.8조    4.1조</text>
+  <text x="825" y="244" fill="#4ade80" font-family="monospace" font-size="11" font-weight="600">FCF              7.9조  -24.4조</text>
+  <text x="825" y="268" fill="#fde68a" font-family="monospace" font-size="11">기말현금        28.5조   24.6조</text>
+
+  <text x="980" y="320" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">현금이 실제로 얼마나 들어오고 나갔나</text>
+  <rect x="860" y="338" width="240" height="32" rx="8" fill="#0f172a"/>
+  <text x="980" y="360" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">c.select("CF", ["영업활동CF"]).chart()</text>
+
+  <!-- 하단: ratios -->
+  <rect x="200" y="420" width="800" height="140" rx="14" fill="#1e293b" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="600" y="455" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="17" font-weight="700">c.ratios — 비율 자동 계산</text>
+  <text x="600" y="480" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">IS + BS + CF에서 수익성, 안정성, 성장성, 효율성, 밸류에이션 비율을 자동 계산</text>
+
+  <rect x="240" y="498" width="120" height="28" rx="6" fill="#0a1a10"/>
+  <text x="300" y="517" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">ROE 8.69%</text>
+  <rect x="375" y="498" width="140" height="28" rx="6" fill="#0a1a10"/>
+  <text x="445" y="517" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">부채비율 29.2%</text>
+  <rect x="530" y="498" width="160" height="28" rx="6" fill="#0a1a10"/>
+  <text x="610" y="517" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">영업이익률 14.1%</text>
+  <rect x="705" y="498" width="130" height="28" rx="6" fill="#0a1a10"/>
+  <text x="770" y="517" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">PBR 1.24</text>
+  <rect x="850" y="498" width="120" height="28" rx="6" fill="#0a1a10"/>
+  <text x="910" y="517" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">PER 14.3</text>
+
+  <text x="600" y="548" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="11">c.select("ratios", ["ROE", "ROA"]).chart()  →  비율 추이 차트</text>
+
+  <!-- 하단: 포괄 + 자본변동 -->
+  <rect x="200" y="590" width="380" height="100" rx="12" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="390" y="620" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="13" font-weight="600">추가 재무제표</text>
+  <rect x="230" y="638" width="130" height="28" rx="6" fill="#1e293b"/>
+  <text x="295" y="657" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="11">c.CIS 포괄손익</text>
+  <rect x="375" y="638" width="170" height="28" rx="6" fill="#1e293b"/>
+  <text x="460" y="657" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="11">c.SCE 자본변동표</text>
+
+  <rect x="620" y="590" width="380" height="100" rx="12" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="810" y="620" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="13" font-weight="600">시계열 (프로그래밍용)</text>
+  <rect x="650" y="638" width="140" height="28" rx="6" fill="#1e293b"/>
+  <text x="720" y="657" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="11">c.timeseries</text>
+  <rect x="805" y="638" width="160" height="28" rx="6" fill="#1e293b"/>
+  <text x="885" y="657" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="11">c.annual / c.cum</text>
+</svg>
