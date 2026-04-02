@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775154959243,
+  "lastUpdate": 1775172098997,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -7743,6 +7743,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.838641836972577e-7",
             "extra": "mean: 668.0621351549308 nsec\nrounds: 175408"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "b19dddce98f2fcda0c13c21a837ec98a3f65f945",
+          "message": "feat: OAuth 수동 토큰 입력 (방화벽 환경용)\n\n- stdio oauthPasteToken 프로토콜: 토큰 JSON 받아서 저장\n- VSCode: OAuth 카드에 \"토큰 입력\" 버튼, InputBox로 토큰 붙여넣기\n- 다른 PC에서 발급한 토큰으로 방화벽 환경에서도 ChatGPT 사용 가능",
+          "timestamp": "2026-04-03T08:20:41+09:00",
+          "tree_id": "ee107e26904bd38b8f947939bc1019e34d6de0f9",
+          "url": "https://github.com/eddmpython/dartlab/commit/b19dddce98f2fcda0c13c21a837ec98a3f65f945"
+        },
+        "date": 1775172098362,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 530341.3817569272,
+            "unit": "iter/sec",
+            "range": "stddev: 5.104266543822321e-7",
+            "extra": "mean: 1.8855779209368442 usec\nrounds: 50455"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 621848.2318685653,
+            "unit": "iter/sec",
+            "range": "stddev: 6.421704637547027e-7",
+            "extra": "mean: 1.608109420839137 usec\nrounds: 114247"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 508048.5335850049,
+            "unit": "iter/sec",
+            "range": "stddev: 6.473003401253765e-7",
+            "extra": "mean: 1.968315886955874 usec\nrounds: 136036"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 668761.1117794553,
+            "unit": "iter/sec",
+            "range": "stddev: 3.9766713175757786e-7",
+            "extra": "mean: 1.495302257242764 usec\nrounds: 149032"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 830272.6071488656,
+            "unit": "iter/sec",
+            "range": "stddev: 3.5481207282311807e-7",
+            "extra": "mean: 1.2044236933625618 usec\nrounds: 196156"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 256370.60098224756,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001184595763590817",
+            "extra": "mean: 3.9006032523567136 usec\nrounds: 72255"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 6819209.962169257,
+            "unit": "iter/sec",
+            "range": "stddev: 4.6950146749933465e-8",
+            "extra": "mean: 146.64455348166024 nsec\nrounds: 197707"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8143516.244375473,
+            "unit": "iter/sec",
+            "range": "stddev: 1.3004440347500349e-8",
+            "extra": "mean: 122.7970780669438 nsec\nrounds: 78010"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1481075.4086791393,
+            "unit": "iter/sec",
+            "range": "stddev: 2.4718932449261437e-7",
+            "extra": "mean: 675.1850676474504 nsec\nrounds: 149032"
           }
         ]
       }
