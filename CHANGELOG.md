@@ -5,6 +5,28 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.5] - 2026-04-03
+
+### Added
+
+- **VSCode 프로바이더 연결 플로우**: provider 선택 시 바로 연결 시작 (API 키 InputBox, OAuth 브라우저 로그인)
+- **VSCode OAuth 로그인**: ChatGPT 선택 시 PKCE 브라우저 로그인 + callback 자동 처리
+- **stdio needCredential/oauthStart 프로토콜**: extension ↔ Python 백엔드 간 인증 흐름
+
+### Changed
+
+- **VSCode 웰컴 화면**: 프로바이더 설정 카드로 재구성 (키 발급 + 연결 버튼)
+- **입력창 항상 활성**: 서버 상태와 무관하게 입력 가능
+- **자동설치**: Windows PowerShell 5.x 호환 (`;` 구분자)
+- **에러 메시지**: UI에서 `dartlab.setup(...)` CLI 안내 제거, provider 변경 유도
+- **provider label**: "무료" 표현 전체 제거
+
+### Fixed
+
+- **provider 인증 에러 무시**: `except Exception: pass` → ImportError만 무시, 나머지는 사용자에게 표시
+- **fixture integration 테스트**: CI DARTLAB_DATA_DIR 연동, 62개 테스트 추가
+- **노트북 정합성**: c.insights 잔존 참조, corpName→종목명 전수 수정
+
 ## [0.8.4] - 2026-04-02
 
 ### Added

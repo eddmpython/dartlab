@@ -9,6 +9,20 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.5] - 2026-04-03
+
+### Added
+- VSCode 프로바이더 연결 플로우 (API 키 InputBox, OAuth 브라우저 로그인)
+- stdio needCredential/oauthStart 프로토콜
+
+### Changed
+- VSCode 웰컴 화면 프로바이더 카드, 입력창 항상 활성, PowerShell 호환
+- 에러 메시지에서 CLI 안내 제거, provider label "무료" 제거
+
+### Fixed
+- provider 인증 에러 무시 → 사용자에게 표시
+- fixture integration 테스트 62개 + 노트북 정합성
+
 ## [0.8.4] - 2026-04-02
 
 ### Added
