@@ -144,7 +144,7 @@ def calcAssetStructure(company, *, basePeriod: str | None = None) -> dict | None
     if taRow is None:
         return None
 
-    yCols = annualColsFromPeriods(allPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(allPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -317,7 +317,7 @@ def calcWorkingCapital(company, *, basePeriod: str | None = None) -> dict | None
     revRow = isData.get("매출액", {})
     cogsRow = isData.get("매출원가", {})
 
-    yCols = annualColsFromPeriods(bsPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(bsPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -417,7 +417,7 @@ def calcCapexPattern(company, *, basePeriod: str | None = None) -> dict | None:
     # 3순위: 업종별 추정 (유형자산 / 추정내용연수 10년)
     depRow = isDict.get("감가상각비") or cfDict.get("감가상각비") or {}
 
-    yCols = annualColsFromPeriods(bsPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(bsPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -518,7 +518,7 @@ def calcInvestmentPropertyTrend(company, *, basePeriod: str | None = None) -> di
     if not ipRow or all(v is None or v == 0 for v in ipRow.values()):
         return None
 
-    yCols = annualColsFromPeriods(allPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(allPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -601,7 +601,7 @@ def calcIntangibleAssetDetail(company, *, basePeriod: str | None = None) -> dict
     gwRow = bsData.get("영업권", {})
     taRow = bsData.get("자산총계", {})
 
-    yCols = annualColsFromPeriods(bsPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(bsPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 

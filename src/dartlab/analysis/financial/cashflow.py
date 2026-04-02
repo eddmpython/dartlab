@@ -92,7 +92,7 @@ def calcCashFlowOverview(company, *, basePeriod: str | None = None) -> dict | No
     capexRow = data.get("유형자산의취득", {})
     intCapexRow = data.get("무형자산의취득", {})
 
-    yCols = annualColsFromPeriods(allPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(allPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -157,7 +157,7 @@ def calcCashQuality(company, *, basePeriod: str | None = None) -> dict | None:
     niRow = isData.get("당기순이익", {})
     revRow = isData.get("매출액", {})
 
-    yCols = annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(cfPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 

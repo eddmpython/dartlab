@@ -166,7 +166,7 @@ def calcEarningsMomentum(company, *, basePeriod: str | None = None) -> dict | No
     taRow = bsData.get("자산총계", {})
     teRow = bsData.get("자본총계", {})
 
-    yCols = annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(cfPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if len(yCols) < 3:
         return None
 
@@ -420,7 +420,7 @@ def calcStructuralBreak(company, *, basePeriod: str | None = None) -> dict | Non
 
     revRow = isData.get("매출액", {})
     oiRow = isData.get("영업이익", {})
-    yCols = annualColsFromPeriods(isPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(isPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if len(yCols) < 6:
         return None
 
@@ -1444,7 +1444,7 @@ def calcInventoryDivergence(company, *, basePeriod: str | None = None) -> dict |
     revRow = isData.get("매출액", {})
     cogsRow = isData.get("매출원가", {})
 
-    yCols = annualColsFromPeriods(bsPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(bsPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if len(yCols) < 3:
         return None
 

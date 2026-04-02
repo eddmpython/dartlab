@@ -230,15 +230,6 @@ def empty_company():
 # ── 버그 표기 ──
 # cashflow.py, earningsQuality.py, capitalAllocation.py, asset.py의 일부 함수는
 # annualColsFromPeriods(periods, _MAX_YEARS, basePeriod=basePeriod) 형태로 호출하여
-# basePeriod 인자가 중복 전달된다 (positional + keyword).
-# 이 함수들은 basePeriod=None (기본값)으로 호출 시 TypeError가 발생한다.
-# 해당 테스트는 xfail로 표기하여 버그 수정 후 자동으로 통과되도록 한다.
-
-_ANNUALCOLS_BUG = pytest.mark.xfail(
-    raises=TypeError,
-    reason="annualColsFromPeriods() got multiple values for argument 'basePeriod'",
-    strict=False,
-)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -247,7 +238,6 @@ _ANNUALCOLS_BUG = pytest.mark.xfail(
 
 
 class TestCalcCashFlowOverview:
-    @_ANNUALCOLS_BUG
     def test_returns_history(self, company):
         from dartlab.analysis.financial.cashflow import calcCashFlowOverview
 
@@ -256,7 +246,6 @@ class TestCalcCashFlowOverview:
         assert "history" in result
         assert len(result["history"]) >= 2
 
-    @_ANNUALCOLS_BUG
     def test_history_fields(self, company):
         from dartlab.analysis.financial.cashflow import calcCashFlowOverview
 
@@ -269,7 +258,6 @@ class TestCalcCashFlowOverview:
         assert "capex" in h0
         assert "pattern" in h0
 
-    @_ANNUALCOLS_BUG
     def test_ocf_value(self, company):
         from dartlab.analysis.financial.cashflow import calcCashFlowOverview
 
@@ -279,7 +267,6 @@ class TestCalcCashFlowOverview:
         assert h0["capex"] == 9_000
         assert h0["fcf"] == 19_000
 
-    @_ANNUALCOLS_BUG
     def test_pattern_classification(self, company):
         from dartlab.analysis.financial.cashflow import calcCashFlowOverview
 
@@ -288,7 +275,6 @@ class TestCalcCashFlowOverview:
         assert h0["pattern"] is not None
         assert "성숙형" in h0["pattern"]
 
-    @_ANNUALCOLS_BUG
     def test_none_when_no_cf(self, empty_company):
         from dartlab.analysis.financial.cashflow import calcCashFlowOverview
 
@@ -297,7 +283,6 @@ class TestCalcCashFlowOverview:
 
 
 class TestCalcCashQuality:
-    @_ANNUALCOLS_BUG
     def test_returns_history(self, company):
         from dartlab.analysis.financial.cashflow import calcCashQuality
 
@@ -305,7 +290,6 @@ class TestCalcCashQuality:
         assert result is not None
         assert "history" in result
 
-    @_ANNUALCOLS_BUG
     def test_ocf_to_ni(self, company):
         from dartlab.analysis.financial.cashflow import calcCashQuality
 
@@ -314,15 +298,13 @@ class TestCalcCashQuality:
         assert h0["ocfToNi"] is not None
         assert h0["ocfToNi"] > 100
 
-    @_ANNUALCOLS_BUG
     def test_ocf_margin(self, company):
         from dartlab.analysis.financial.cashflow import calcCashQuality
 
         result = calcCashQuality(company)
         h0 = result["history"][0]
-        assert h0["ocfMargin"] == 28.0
+        assert h0["ocfMargin"] == pytest.approx(28.0, rel=1e-6)
 
-    @_ANNUALCOLS_BUG
     def test_none_when_empty(self, empty_company):
         from dartlab.analysis.financial.cashflow import calcCashQuality
 
@@ -331,21 +313,18 @@ class TestCalcCashQuality:
 
 
 class TestCalcCashFlowFlags:
-    @_ANNUALCOLS_BUG
     def test_returns_list(self, company):
         from dartlab.analysis.financial.cashflow import calcCashFlowFlags
 
         result = calcCashFlowFlags(company)
         assert isinstance(result, list)
 
-    @_ANNUALCOLS_BUG
     def test_healthy_company_few_flags(self, company):
         from dartlab.analysis.financial.cashflow import calcCashFlowFlags
 
         result = calcCashFlowFlags(company)
         assert all(isinstance(f, str) for f in result)
 
-    @_ANNUALCOLS_BUG
     def test_negative_ocf_triggers_flag(self):
         from dartlab.analysis.financial.cashflow import calcCashFlowFlags
 
@@ -368,7 +347,6 @@ class TestCalcCashFlowFlags:
 
 
 class TestCalcAccrualAnalysis:
-    @_ANNUALCOLS_BUG
     def test_returns_history(self, company):
         from dartlab.analysis.financial.earningsQuality import calcAccrualAnalysis
 
@@ -376,7 +354,6 @@ class TestCalcAccrualAnalysis:
         assert result is not None
         assert "history" in result
 
-    @_ANNUALCOLS_BUG
     def test_history_fields(self, company):
         from dartlab.analysis.financial.earningsQuality import calcAccrualAnalysis
 
@@ -387,7 +364,6 @@ class TestCalcAccrualAnalysis:
         assert "sloanAccrualRatio" in h0
         assert "ocfToNi" in h0
 
-    @_ANNUALCOLS_BUG
     def test_sloan_ratio(self, company):
         from dartlab.analysis.financial.earningsQuality import calcAccrualAnalysis
 
@@ -396,7 +372,6 @@ class TestCalcAccrualAnalysis:
         assert h0["sloanAccrualRatio"] is not None
         assert h0["sloanAccrualRatio"] < 0
 
-    @_ANNUALCOLS_BUG
     def test_none_when_empty(self, empty_company):
         from dartlab.analysis.financial.earningsQuality import calcAccrualAnalysis
 
@@ -405,7 +380,6 @@ class TestCalcAccrualAnalysis:
 
 
 class TestCalcEarningsPersistence:
-    @_ANNUALCOLS_BUG
     def test_returns_history_and_volatility(self, company):
         from dartlab.analysis.financial.earningsQuality import calcEarningsPersistence
 
@@ -414,7 +388,6 @@ class TestCalcEarningsPersistence:
         assert "history" in result
         assert "earningsVolatility" in result
 
-    @_ANNUALCOLS_BUG
     def test_non_operating_income(self, company):
         from dartlab.analysis.financial.earningsQuality import calcEarningsPersistence
 
@@ -423,7 +396,6 @@ class TestCalcEarningsPersistence:
         assert h0["nonOperatingIncome"] == -2_000
         assert h0["nonOpRatio"] is not None
 
-    @_ANNUALCOLS_BUG
     def test_earnings_volatility_calculated(self, company):
         from dartlab.analysis.financial.earningsQuality import calcEarningsPersistence
 
@@ -431,7 +403,6 @@ class TestCalcEarningsPersistence:
         assert result["earningsVolatility"] is not None
         assert result["earningsVolatility"] > 0
 
-    @_ANNUALCOLS_BUG
     def test_none_when_no_is(self, empty_company):
         from dartlab.analysis.financial.earningsQuality import calcEarningsPersistence
 
@@ -440,7 +411,6 @@ class TestCalcEarningsPersistence:
 
 
 class TestCalcEarningsQualityFlags:
-    @_ANNUALCOLS_BUG
     def test_returns_dict_with_flags(self, company):
         from dartlab.analysis.financial.earningsQuality import calcEarningsQualityFlags
 
@@ -551,7 +521,6 @@ class TestCalcCostStructureFlags:
 
 
 class TestCalcDividendPolicy:
-    @_ANNUALCOLS_BUG
     def test_returns_history_and_consecutive(self, company):
         from dartlab.analysis.financial.capitalAllocation import calcDividendPolicy
 
@@ -560,7 +529,6 @@ class TestCalcDividendPolicy:
         assert "history" in result
         assert "consecutiveYears" in result
 
-    @_ANNUALCOLS_BUG
     def test_dividend_paid_abs(self, company):
         from dartlab.analysis.financial.capitalAllocation import calcDividendPolicy
 
@@ -568,7 +536,6 @@ class TestCalcDividendPolicy:
         h0 = result["history"][0]
         assert h0["dividendsPaid"] == 3_000
 
-    @_ANNUALCOLS_BUG
     def test_consecutive_years(self, company):
         from dartlab.analysis.financial.capitalAllocation import calcDividendPolicy
 
@@ -577,7 +544,6 @@ class TestCalcDividendPolicy:
 
 
 class TestCalcShareholderReturn:
-    @_ANNUALCOLS_BUG
     def test_returns_history(self, company):
         from dartlab.analysis.financial.capitalAllocation import calcShareholderReturn
 
@@ -585,7 +551,6 @@ class TestCalcShareholderReturn:
         assert result is not None
         assert "history" in result
 
-    @_ANNUALCOLS_BUG
     def test_total_return(self, company):
         from dartlab.analysis.financial.capitalAllocation import calcShareholderReturn
 
@@ -595,7 +560,6 @@ class TestCalcShareholderReturn:
 
 
 class TestCalcReinvestment:
-    @_ANNUALCOLS_BUG
     def test_returns_history(self, company):
         from dartlab.analysis.financial.capitalAllocation import calcReinvestment
 
@@ -603,7 +567,6 @@ class TestCalcReinvestment:
         assert result is not None
         assert "history" in result
 
-    @_ANNUALCOLS_BUG
     def test_capex_to_revenue(self, company):
         from dartlab.analysis.financial.capitalAllocation import calcReinvestment
 
@@ -613,7 +576,6 @@ class TestCalcReinvestment:
 
 
 class TestCalcFcfUsage:
-    @_ANNUALCOLS_BUG
     def test_returns_history(self, company):
         from dartlab.analysis.financial.capitalAllocation import calcFcfUsage
 
@@ -621,7 +583,6 @@ class TestCalcFcfUsage:
         assert result is not None
         assert "history" in result
 
-    @_ANNUALCOLS_BUG
     def test_residual_calculation(self, company):
         from dartlab.analysis.financial.capitalAllocation import calcFcfUsage
 
@@ -634,7 +595,6 @@ class TestCalcFcfUsage:
 
 
 class TestCalcCapitalAllocationFlags:
-    @_ANNUALCOLS_BUG
     def test_returns_list(self, company):
         from dartlab.analysis.financial.capitalAllocation import calcCapitalAllocationFlags
 
@@ -725,7 +685,6 @@ class TestCalcEvaTimeline:
 
 
 class TestCalcAssetStructure:
-    @_ANNUALCOLS_BUG
     def test_returns_latest_and_history(self, company):
         from dartlab.analysis.financial.asset import calcAssetStructure
 
@@ -735,7 +694,6 @@ class TestCalcAssetStructure:
         assert "history" in result
         assert "diagnosis" in result
 
-    @_ANNUALCOLS_BUG
     def test_latest_fields(self, company):
         from dartlab.analysis.financial.asset import calcAssetStructure
 
@@ -747,7 +705,6 @@ class TestCalcAssetStructure:
         assert "opAssetsPct" in lat
         assert "noa" in lat
 
-    @_ANNUALCOLS_BUG
     def test_none_when_empty(self, empty_company):
         from dartlab.analysis.financial.asset import calcAssetStructure
 
@@ -756,7 +713,6 @@ class TestCalcAssetStructure:
 
 
 class TestCalcWorkingCapital:
-    @_ANNUALCOLS_BUG
     def test_returns_latest_and_history(self, company):
         from dartlab.analysis.financial.asset import calcWorkingCapital
 
@@ -765,7 +721,6 @@ class TestCalcWorkingCapital:
         assert "latest" in result
         assert "history" in result
 
-    @_ANNUALCOLS_BUG
     def test_ccc_calculated(self, company):
         from dartlab.analysis.financial.asset import calcWorkingCapital
 
@@ -776,7 +731,6 @@ class TestCalcWorkingCapital:
         assert "inventoryDays" in lat
         assert "payableDays" in lat
 
-    @_ANNUALCOLS_BUG
     def test_none_when_empty(self, empty_company):
         from dartlab.analysis.financial.asset import calcWorkingCapital
 
@@ -785,7 +739,6 @@ class TestCalcWorkingCapital:
 
 
 class TestCalcCapexPattern:
-    @_ANNUALCOLS_BUG
     def test_returns_latest_and_history(self, company):
         from dartlab.analysis.financial.asset import calcCapexPattern
 
@@ -794,7 +747,6 @@ class TestCalcCapexPattern:
         assert "latest" in result
         assert "history" in result
 
-    @_ANNUALCOLS_BUG
     def test_investment_type(self, company):
         from dartlab.analysis.financial.asset import calcCapexPattern
 
@@ -804,7 +756,6 @@ class TestCalcCapexPattern:
         assert "capex" in lat
         assert "depreciation" in lat
 
-    @_ANNUALCOLS_BUG
     def test_none_when_empty(self, empty_company):
         from dartlab.analysis.financial.asset import calcCapexPattern
 
@@ -875,7 +826,7 @@ class TestCalcIsBsDivergence:
 
 
 class TestCalcAnomalyScore:
-    @_ANNUALCOLS_BUG  # depends on calcAccrualAnalysis which has the bug
+    # depends on calcAccrualAnalysis which has the bug
     def test_returns_history(self, company):
         from dartlab.analysis.financial.crossStatement import calcAnomalyScore
 
@@ -883,7 +834,7 @@ class TestCalcAnomalyScore:
         assert result is not None
         assert "history" in result
 
-    @_ANNUALCOLS_BUG  # depends on calcAccrualAnalysis which has the bug
+    # depends on calcAccrualAnalysis which has the bug
     def test_score_bounded(self, company):
         from dartlab.analysis.financial.crossStatement import calcAnomalyScore
 
@@ -919,7 +870,7 @@ class TestCalcArticulationCheck:
 
 
 class TestCalcCrossStatementFlags:
-    @_ANNUALCOLS_BUG  # depends on calcAnomalyScore → calcAccrualAnalysis
+    # depends on calcAnomalyScore → calcAccrualAnalysis
     def test_returns_list(self, company):
         from dartlab.analysis.financial.crossStatement import calcCrossStatementFlags
 

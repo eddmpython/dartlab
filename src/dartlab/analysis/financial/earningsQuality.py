@@ -70,7 +70,7 @@ def calcAccrualAnalysis(company, *, basePeriod: str | None = None) -> dict | Non
     ocfRow = cfData.get("영업활동현금흐름", {})
     taRow = bsData.get("자산총계", {})
 
-    yCols = annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(cfPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -145,7 +145,7 @@ def calcEarningsPersistence(company, *, basePeriod: str | None = None) -> dict |
     # 세전이익 fallback
     ptRow = isData.get("법인세차감전순이익", isData.get("세전이익", {}))
 
-    yCols = annualColsFromPeriods(isPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(isPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -239,7 +239,7 @@ def calcBeneishTimeline(company, *, basePeriod: str | None = None) -> dict | Non
     tlRow = bsData.get("부채총계", {})
     ocfRow = cfData.get("operating_cashflow", {})
 
-    yCols = annualColsFromPeriods(isPeriods, _MAX_YEARS + 1, basePeriod=basePeriod)  # 전년 대비 필요 → 1년 더
+    yCols = annualColsFromPeriods(isPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS + 1)  # 전년 대비 필요 → 1년 더
     if len(yCols) < 2:
         return None
 
@@ -452,7 +452,7 @@ def calcRichardsonAccrual(company, *, basePeriod: str | None = None) -> dict | N
     bondRow = bsData.get("사채", {})
     taRow = bsData.get("자산총계", {})
 
-    yCols = annualColsFromPeriods(bsPeriods, _MAX_YEARS + 1, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(bsPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS + 1)
     if len(yCols) < 2:
         return None
 
@@ -549,7 +549,7 @@ def calcNonOperatingBreakdown(company, *, basePeriod: str | None = None) -> dict
     otherExpRow = isData.get("기타비용", {})
     ptRow = isData.get("법인세차감전순이익", {})
 
-    yCols = annualColsFromPeriods(isPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(isPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 

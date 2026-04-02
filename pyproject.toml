@@ -60,6 +60,7 @@ dependencies = [
     "google-genai>=1.0.0,<2",
     "openpyxl>=3.1.5,<4",
     "diff-match-patch>=20230430",
+    "marimo>=0.22.0",
 ]
 
 [project.optional-dependencies]

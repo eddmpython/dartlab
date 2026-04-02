@@ -62,7 +62,7 @@ def calcDividendPolicy(company, *, basePeriod: str | None = None) -> dict | None
     divRow = cfData.get("dividends_paid", {})
     niRow = isData.get("net_profit", {})
 
-    yCols = annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(cfPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -150,7 +150,7 @@ def calcShareholderReturn(company, *, basePeriod: str | None = None) -> dict | N
     divRow = cfData.get("dividends_paid", {})
     tsRow = cfData.get("purchase_of_treasury_stock", {})
 
-    yCols = annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(cfPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -224,7 +224,7 @@ def calcReinvestment(company, *, basePeriod: str | None = None) -> dict | None:
     revRow = isData.get("sales", {})
     niRow = isData.get("net_profit", {})
 
-    yCols = annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(cfPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
@@ -303,7 +303,7 @@ def calcFcfUsage(company, *, basePeriod: str | None = None) -> dict | None:
     repayRow2 = cfData.get("redemption_of_current_portion_of_longterm_borrowings", {})
     repayRow3 = cfData.get("repayment_of_bonds_and_longterm_borrowings", {})
 
-    yCols = annualColsFromPeriods(cfPeriods, _MAX_YEARS, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(cfPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
