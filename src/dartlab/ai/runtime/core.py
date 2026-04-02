@@ -577,7 +577,7 @@ _SYSTEM_PROMPT = """\
 이미 준비됨 — **import 금지, 재선언 금지:**
 - `dartlab`, `pl` (polars)
 - `webSearch(query)`, `newsSearch(query, days=N)`, `formatResults(results)`
-- `dartlab.search(query, corp="종목코드")` — 공시 원문 검색
+- `dartlab.search(query, corp="종목코드")` — 공시 원문 검색 → Polars DataFrame 반환
 - `emit_chart(spec)`, `emit_diagram(type, source)` — 차트/다이어그램
 {env_block}
 
