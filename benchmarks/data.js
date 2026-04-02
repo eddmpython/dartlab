@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775116965993,
+  "lastUpdate": 1775117496058,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -5481,6 +5481,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 4.48960695088778e-7",
             "extra": "mean: 698.861774394341 nsec\nrounds: 157431"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "623a7ef143d3894b3c7f18495784c8acc9532a45",
+          "message": "fix: scan 글 마무리를 AI 질문 섹션으로 교체 + 다음글 예고 금지 규칙\n\n- \"다음 단계\" 섹션 제거 → \"AI에게 물어보면 된다\" 섹션으로 교체\n  - dartlab ask 예시 3개 (ROE+부채, 거버넌스+배당, 성장+현금흐름)\n  - 코드 vs 질문 양쪽 경로 안내\n- BLOG_STRUCTURE.md에 \"다음 글 예고/미래 글 링크 금지\" 규칙 추가",
+          "timestamp": "2026-04-02T17:10:38+09:00",
+          "tree_id": "c785569b8fbf56b017f24af45fb310716e18ab62",
+          "url": "https://github.com/eddmpython/dartlab/commit/623a7ef143d3894b3c7f18495784c8acc9532a45"
+        },
+        "date": 1775117495573,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 543359.4223173187,
+            "unit": "iter/sec",
+            "range": "stddev: 4.89486000872325e-7",
+            "extra": "mean: 1.8404024277985296 usec\nrounds: 56266"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 657513.1951605239,
+            "unit": "iter/sec",
+            "range": "stddev: 4.46949567604332e-7",
+            "extra": "mean: 1.520882025425911 usec\nrounds: 133995"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 514325.0640054258,
+            "unit": "iter/sec",
+            "range": "stddev: 4.848910763564351e-7",
+            "extra": "mean: 1.9442956798804787 usec\nrounds: 129116"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 683859.7370142422,
+            "unit": "iter/sec",
+            "range": "stddev: 3.84116996434371e-7",
+            "extra": "mean: 1.4622881650644302 usec\nrounds: 177905"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 891964.5887075007,
+            "unit": "iter/sec",
+            "range": "stddev: 1.5184264111296488e-7",
+            "extra": "mean: 1.1211207402852703 usec\nrounds: 174795"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 273844.5936175746,
+            "unit": "iter/sec",
+            "range": "stddev: 6.366090820208889e-7",
+            "extra": "mean: 3.651706198722715 usec\nrounds: 74935"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7332153.967544597,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1045143458302573e-8",
+            "extra": "mean: 136.3855702466763 nsec\nrounds: 74047"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 9049897.408368694,
+            "unit": "iter/sec",
+            "range": "stddev: 1.02019418531694e-8",
+            "extra": "mean: 110.49849019009562 nsec\nrounds: 88488"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1450412.8917430108,
+            "unit": "iter/sec",
+            "range": "stddev: 2.8144791333319525e-7",
+            "extra": "mean: 689.4588469896084 nsec\nrounds: 157704"
           }
         ]
       }
