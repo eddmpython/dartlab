@@ -72,10 +72,11 @@ def calcMarginTrend(company, *, basePeriod: str | None = None) -> dict | None:
     data, periods = parsed
 
     if isFinancial:
-        rev = data.get("이자수익", {})
+        # 금융업: 금융이익을 revenue 대체 (이자수익은 일부일 뿐)
+        rev = data.get("금융이익", {}) or data.get("이자수익", {})
         op = data.get("영업이익", {})
         ni = data.get("당기순이익", {})
-        finIncome = data.get("금융이익", {})
+        finIncome = data.get("이자수익", {})
     else:
         rev = data.get("매출액", {})
         op = data.get("영업이익", {})
