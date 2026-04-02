@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775115702166,
+  "lastUpdate": 1775115998547,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -5307,6 +5307,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.8005428651371485e-7",
             "extra": "mean: 684.5860129432605 nsec\nrounds: 170329"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "2596d104377816928e210b073eaf3cbf7df1bed9",
+          "message": "fix: annualColsFromPeriods 인자 순서 버그 전수 수정 (8개 파일 23곳)\n\nasset.py, capitalAllocation.py, cashflow.py, earningsQuality.py,\npredictionSignals.py, profitability.py — _MAX_YEARS가 positional로 basePeriod에\n들어가던 버그. 전부 maxYears= 키워드로 변경.\n\nxfail 36개 → 0개 (전부 통과)",
+          "timestamp": "2026-04-02T16:45:40+09:00",
+          "tree_id": "88a1b7e2f511ae40217419aab2c488d60634da83",
+          "url": "https://github.com/eddmpython/dartlab/commit/2596d104377816928e210b073eaf3cbf7df1bed9"
+        },
+        "date": 1775115997488,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 543559.3755967094,
+            "unit": "iter/sec",
+            "range": "stddev: 5.348056553695842e-7",
+            "extra": "mean: 1.8397254189613022 usec\nrounds: 52866"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 658004.4220482511,
+            "unit": "iter/sec",
+            "range": "stddev: 5.800970474795093e-7",
+            "extra": "mean: 1.5197466255426935 usec\nrounds: 112537"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 525860.6261972483,
+            "unit": "iter/sec",
+            "range": "stddev: 5.689432587080344e-7",
+            "extra": "mean: 1.9016445616616746 usec\nrounds: 97097"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 675992.5460038454,
+            "unit": "iter/sec",
+            "range": "stddev: 4.588497399852178e-7",
+            "extra": "mean: 1.4793062525785772 usec\nrounds: 130634"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 805212.6453335108,
+            "unit": "iter/sec",
+            "range": "stddev: 4.208953101982671e-7",
+            "extra": "mean: 1.241907967783852 usec\nrounds: 168039"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 268377.2457336557,
+            "unit": "iter/sec",
+            "range": "stddev: 6.981778615069128e-7",
+            "extra": "mean: 3.7260983034024613 usec\nrounds: 62419"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7283197.675092686,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1990342106720899e-8",
+            "extra": "mean: 137.30232853899219 nsec\nrounds: 73282"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8896699.78771718,
+            "unit": "iter/sec",
+            "range": "stddev: 2.086581161060366e-8",
+            "extra": "mean: 112.40123010339227 nsec\nrounds: 78530"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1460905.7755248835,
+            "unit": "iter/sec",
+            "range": "stddev: 2.6210704293093127e-7",
+            "extra": "mean: 684.506842777532 nsec\nrounds: 174490"
           }
         ]
       }
