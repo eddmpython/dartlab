@@ -326,6 +326,17 @@
         }
         break;
       }
+      case "oauthStart": {
+        addSystemMessage("브라우저에서 ChatGPT 로그인 페이지가 열렸습니다. 로그인을 완료하세요.");
+        break;
+      }
+      case "oauthResult": {
+        const oa = m.payload as { success: boolean; error?: string };
+        if (!oa?.success) {
+          addSystemMessage(`OAuth 인증 실패: ${oa?.error || "알 수 없는 오류"}`);
+        }
+        break;
+      }
     }
   });
 

@@ -89,6 +89,7 @@ export class StdioProxy {
   private statusListeners: Array<(data: Record<string, unknown>) => void> = [];
   private providerListeners: Array<(data: Record<string, unknown>) => void> = [];
   onTemplates?: (data: Record<string, unknown>) => void;
+  onOAuthResult?: (data: Record<string, unknown>) => void;
   currentVersion = "unknown";
 
   // Auto-restart
@@ -453,6 +454,8 @@ export class StdioProxy {
     if (event === "status") { for (const fn of this.statusListeners) fn(data); this.statusListeners = []; return; }
     if (event === "providerChanged") { for (const fn of this.providerListeners) fn(data); this.providerListeners = []; return; }
     if (event === "needCredential") { for (const fn of this.providerListeners) fn({ ...data, _needCredential: true }); this.providerListeners = []; return; }
+    if (event === "oauthStart") { for (const fn of this.providerListeners) fn({ ...data, _oauthStart: true }); this.providerListeners = []; return; }
+    if (event === "oauthResult") { this.onOAuthResult?.(data); return; }
     if (event === "templates") { this.onTemplates?.(data); return; }
 
     if (this.currentCallbacks) {

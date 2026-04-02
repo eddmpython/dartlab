@@ -52,6 +52,15 @@ export class ChatWebviewBase {
       const templates = (data as Record<string, unknown>).templates || [];
       postMessage({ type: "templates", payload: templates as any });
     };
+
+    // OAuth 결과를 webview에 전달
+    this.stdioProxy.onOAuthResult = (data) => {
+      if (data.success === false) {
+        postMessage({ type: "oauthResult", payload: { success: false, error: data.error as string } });
+      } else {
+        // providerChanged가 대신 옴 — 여기선 처리 불필요
+      }
+    };
   }
 
   private log(msg: string): void {
@@ -100,7 +109,6 @@ export class ChatWebviewBase {
           undefined,
           (data) => {
             if (data._needCredential) {
-              // 키가 필요한데 없음 → webview에 needCredential 전달
               postMessage({
                 type: "needCredential",
                 payload: {
@@ -109,6 +117,13 @@ export class ChatWebviewBase {
                   label: data.label as string | undefined,
                 },
               });
+            } else if (data._oauthStart) {
+              // OAuth → 브라우저에서 로그인 페이지 열기
+              const authUrl = data.authUrl as string;
+              if (authUrl) {
+                vscode.env.openExternal(vscode.Uri.parse(authUrl));
+              }
+              postMessage({ type: "oauthStart", payload: { provider: data.provider } });
             } else {
               postMessage({ type: "profile", payload: data });
             }

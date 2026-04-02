@@ -24,8 +24,11 @@ Protocol:
 from __future__ import annotations
 
 import json
+import re
 import sys
 from typing import Any
+
+_CLI_SETUP_PATTERN = re.compile(r"\n?\s*dartlab\.setup\([^)]*\)[^\n]*", re.IGNORECASE)
 
 # Session state
 _sessionProvider: str | None = None
@@ -114,7 +117,10 @@ def _handleAsk(msg: dict[str, Any]) -> None:
     emittedDone = False
     try:
         for event in analyze(c, question, **kwargs):
-            _emit({"id": reqId, "event": event.kind, "data": event.data})
+            if event.kind == "error" and isinstance(event.data, dict):
+                _emit({"id": reqId, "event": "error", "data": _sanitizeErrorForUi(event.data)})
+            else:
+                _emit({"id": reqId, "event": event.kind, "data": event.data})
             if event.kind == "done":
                 emittedDone = True
     except KeyboardInterrupt:
@@ -193,29 +199,35 @@ def _handleSetProvider(msg: dict[str, Any]) -> None:
             _emit({"event": "error", "data": {"error": f"키 저장 실패: {exc}"}})
             return
 
-    # 키가 필요한데 없으면 needCredential 이벤트
+    # provider 인증 확인
     if provider and not apiKey:
         try:
             from dartlab.guide.providers import get_provider_spec
 
             spec = get_provider_spec(provider)
-            if spec and spec.auth_kind == "api_key":
-                from dartlab.guide.credentials import CredentialManager
-
-                cred = CredentialManager().getCredential(f"{provider}_api_key")
-                if not cred.configured:
-                    _emit(
-                        {
-                            "event": "needCredential",
-                            "data": {
-                                "provider": provider,
-                                "signupUrl": spec.signupUrl,
-                                "envKey": spec.env_key,
-                                "label": spec.label,
-                            },
-                        }
-                    )
+            if spec:
+                # OAuth provider → 바로 로그인 시작
+                if spec.auth_kind == "oauth":
+                    _handleOAuthLogin({"provider": provider})
                     return
+                # API 키 provider → 키 없으면 needCredential
+                if spec.auth_kind == "api_key":
+                    from dartlab.guide.credentials import CredentialManager
+
+                    cred = CredentialManager().getCredential(f"{provider}_api_key")
+                    if not cred.configured:
+                        _emit(
+                            {
+                                "event": "needCredential",
+                                "data": {
+                                    "provider": provider,
+                                    "signupUrl": spec.signupUrl,
+                                    "envKey": spec.env_key,
+                                    "label": spec.label,
+                                },
+                            }
+                        )
+                        return
         except Exception:
             pass
 
@@ -227,6 +239,107 @@ def _handleSetProvider(msg: dict[str, Any]) -> None:
             "data": {"provider": _sessionProvider, "model": _sessionModel},
         }
     )
+
+
+def _sanitizeErrorForUi(data: dict[str, Any]) -> dict[str, Any]:
+    """에러 데이터에서 CLI 전용 안내(dartlab.setup(...))를 제거."""
+    result = dict(data)
+    for key in ("error", "guide"):
+        if key in result and isinstance(result[key], str):
+            result[key] = _CLI_SETUP_PATTERN.sub("", result[key]).strip()
+    action = result.get("action", "")
+    if action in ("relogin", "config", "login"):
+        result["switchProvider"] = True
+    return result
+
+
+def _handleOAuthLogin(msg: dict[str, Any]) -> None:
+    """OAuth 브라우저 로그인. callback 서버 + auth URL emit."""
+    import threading
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    from urllib.parse import parse_qs, urlparse
+
+    provider = msg.get("provider", "oauth-codex")
+    try:
+        from dartlab.ai.providers.support.oauth_token import (
+            OAUTH_REDIRECT_PORT,
+            build_auth_url,
+            exchange_code,
+        )
+    except ImportError:
+        _emit({"event": "oauthResult", "data": {"success": False, "error": "OAuth 모듈 없음"}})
+        return
+
+    auth_url, verifier, state = build_auth_url()
+    result: dict[str, Any] = {"done": False, "error": None}
+
+    class _Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            parsed = urlparse(self.path)
+            if parsed.path != "/auth/callback":
+                self.send_response(404)
+                self.end_headers()
+                return
+            params = parse_qs(parsed.query)
+            code = (params.get("code") or [None])[0]
+            cb_state = (params.get("state") or [None])[0]
+            error = (params.get("error") or [None])[0]
+            if error:
+                result["error"] = error
+            elif cb_state != state:
+                result["error"] = "state_mismatch"
+            elif not code:
+                result["error"] = "no_code"
+            else:
+                try:
+                    exchange_code(code, verifier)
+                except (ConnectionError, OSError, RuntimeError, ValueError) as exc:
+                    result["error"] = str(exc)
+            result["done"] = True
+            title = "인증 실패" if result["error"] else "인증 성공"
+            body = result["error"] or "DartLab 인증 완료. 이 창을 닫으세요."
+            markup = (
+                f"<!DOCTYPE html><html><head><meta charset='utf-8'><title>{title}</title>"
+                "<style>body{font-family:system-ui;display:flex;align-items:center;"
+                "justify-content:center;min-height:100vh;margin:0;background:#050811;color:#e5e5e5}"
+                "</style></head><body>"
+                f"<div><h1>{title}</h1><p>{body}</p></div>"
+                "<script>setTimeout(()=>window.close(),3000)</script>"
+                "</body></html>"
+            )
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(markup.encode("utf-8"))
+
+        def log_message(self, *_args):
+            pass
+
+    server = HTTPServer(("127.0.0.1", OAUTH_REDIRECT_PORT), _Handler)
+    server.timeout = 120
+
+    def _serve():
+        server.handle_request()
+        server.server_close()
+
+    thread = threading.Thread(target=_serve, daemon=True)
+    thread.start()
+
+    # auth URL을 extension에 보내서 브라우저 열기
+    _emit({"event": "oauthStart", "data": {"authUrl": auth_url, "provider": provider}})
+
+    def _wait():
+        thread.join(timeout=120)
+        global _sessionProvider
+        if result.get("error"):
+            _emit({"event": "oauthResult", "data": {"success": False, "error": result["error"]}})
+        elif result["done"]:
+            _sessionProvider = provider
+            _emit({"event": "providerChanged", "data": {"provider": provider, "model": ""}})
+        else:
+            _emit({"event": "oauthResult", "data": {"success": False, "error": "시간 초과 (120초)"}})
+
+    threading.Thread(target=_wait, daemon=True).start()
 
 
 def run() -> None:
@@ -266,6 +379,8 @@ def run() -> None:
             _emit({"event": "pong", "data": {}})
         elif msgType == "setProvider":
             _handleSetProvider(msg)
+        elif msgType == "oauthLogin":
+            _handleOAuthLogin(msg)
         elif msgType == "listTemplates":
             _handleListTemplates(msg)
         elif msgType == "exit":

@@ -39,4 +39,6 @@ export type ExtensionMessage =
   | { type: "selectConversation"; payload: { id: string } }
   | { type: "newConversation" }
   | { type: "templates"; payload: TemplateInfo[] }
-  | { type: "needCredential"; payload: { provider: string; signupUrl?: string; label?: string } };
+  | { type: "needCredential"; payload: { provider: string; signupUrl?: string; label?: string } }
+  | { type: "oauthStart"; payload: { provider: string } }
+  | { type: "oauthResult"; payload: { success: boolean; error?: string } };
