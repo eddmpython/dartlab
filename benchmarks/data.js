@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775151701301,
+  "lastUpdate": 1775151933354,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -7134,6 +7134,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.729707851491765e-7",
             "extra": "mean: 684.6332485816155 nsec\nrounds: 159694"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "eb3636b319235b3fd0fe05e598ce4f8a6aa92d88",
+          "message": "fix(vscode): provider 인증 에러 무시 방지 + 에러 표시\n\n- except Exception: pass → ImportError만 무시, 나머지는 에러 emit\n- provider 확인 실패 시 사용자에게 에러 메시지 표시",
+          "timestamp": "2026-04-03T02:44:32+09:00",
+          "tree_id": "e8c262a5c8cad62e884a0cc16ce2b0a557493b0a",
+          "url": "https://github.com/eddmpython/dartlab/commit/eb3636b319235b3fd0fe05e598ce4f8a6aa92d88"
+        },
+        "date": 1775151932576,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 538613.64309865,
+            "unit": "iter/sec",
+            "range": "stddev: 5.468045165067019e-7",
+            "extra": "mean: 1.8566183995024512 usec\nrounds: 53121"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 653457.5168703751,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001792872975928843",
+            "extra": "mean: 1.5303213662447894 usec\nrounds: 141583"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 521970.23337071546,
+            "unit": "iter/sec",
+            "range": "stddev: 5.057560421929693e-7",
+            "extra": "mean: 1.915818060241333 usec\nrounds: 117440"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 686965.9601782188,
+            "unit": "iter/sec",
+            "range": "stddev: 4.0357759200305696e-7",
+            "extra": "mean: 1.4556762022685537 usec\nrounds: 155208"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 807320.248074634,
+            "unit": "iter/sec",
+            "range": "stddev: 3.706612272793135e-7",
+            "extra": "mean: 1.2386658236119867 usec\nrounds: 189394"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 271902.37469864276,
+            "unit": "iter/sec",
+            "range": "stddev: 6.7491249722769e-7",
+            "extra": "mean: 3.6777906081487104 usec\nrounds: 64396"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7446781.954981742,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2702266418668183e-8",
+            "extra": "mean: 134.28619315636342 nsec\nrounds: 73557"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8996826.563531155,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1993445464912029e-8",
+            "extra": "mean: 111.15030315839623 nsec\nrounds: 77979"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1456339.3719414824,
+            "unit": "iter/sec",
+            "range": "stddev: 2.808902215732851e-7",
+            "extra": "mean: 686.6531381808863 nsec\nrounds: 153799"
           }
         ]
       }
