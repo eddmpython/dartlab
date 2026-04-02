@@ -50,8 +50,8 @@ def _(c):
 
 @app.cell
 def _(c):
-    # 7-area grades
-    c.insights
+    # 종합평가
+    c.analysis("financial", "종합평가")
     return
 
 
@@ -75,8 +75,8 @@ def _(c):
 
 @app.cell
 def _(dartlab):
-    # root functions -- no Company needed
-    dartlab.insights("005930")
+    # root analysis call
+    dartlab.analysis("financial", "종합평가", company=dartlab.Company("005930"))
     return
 
 

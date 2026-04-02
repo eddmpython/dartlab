@@ -11,7 +11,7 @@ c.reviewer() adds AI interpretation on top.
 
 import marimo
 
-__generated_with = "0.21.1"
+__generated_with = "0.22.0"
 app = marimo.App(width="medium")
 
 
@@ -29,13 +29,6 @@ def _():
 
     mo.md("## Review -- structured report from analysis")
     return (mo,)
-
-
-@app.cell
-def _(c):
-    # full review -- all 14 sections
-    c.review()
-    return
 
 
 @app.cell

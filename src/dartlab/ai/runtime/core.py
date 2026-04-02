@@ -830,7 +830,6 @@ c.ratios                   # 재무비율 (Polars DataFrame)
 c.analysis("forecast", "매출전망")   # 매출 방향 예측 (확률, 신뢰도, 신호 분해)
 c.analysis("valuation", "가치평가")  # DCF/DDM/상대가치 적정주가 산출
 c.diff()                   # 기간간 공시 텍스트 변화 비교
-c.insights                 # 등급 카드 (재무건강 종합 요약)
 c.filings()                # 공시 목록
 
 ### notes — K-IFRS 주석 상세 (재고/차입금/유형자산 등 분해 데이터)

@@ -126,7 +126,7 @@ def _(c):
 
 @app.cell
 def _(c):
-    c.insights
+    c.analysis("financial", "종합평가")
     return
 
 

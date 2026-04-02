@@ -931,53 +931,7 @@ class Company:
             df = df.select(metaCols + periodCols)
         return df
 
-    @property
-    def insights(self):
-        """재무 인사이트 분석 결과 — 자동 등급/해설 (lazy 계산).
-
-        Capabilities:
-            - 수익성/안정성/성장성/효율성/현금흐름 5대 영역 자동 등급
-            - 각 영역별 핵심 지표 해설 텍스트
-
-        Requires:
-            데이터: 없음 (SEC EDGAR 자동 수집)
-
-        AIContext:
-            - ask()/chat()에서 재무 건전성 요약 컨텍스트
-
-        Guide:
-            - "재무 상태가 어때?" → c.insights로 자동 등급 확인
-            - "재무 건전성 요약" → c.insights
-
-        SeeAlso:
-            - ratios: 재무비율 시계열 원본
-            - analysis: 분석 엔진 (insights보다 심화)
-            - ask: AI 기반 해석
-
-        Returns:
-            AnalysisResult — 영역별 등급/해설 객체 또는 None.
-
-        Example::
-
-            c = Company("AAPL")
-            c.insights  # Apple 재무 인사이트
-        """
-        if "_insights" not in self._cache:
-            from dartlab.analysis.financial.insight.pipeline import analyze
-
-            ts = self.timeseries
-            annual = self.annual
-            if ts is None or annual is None:
-                return None  # 캐시하지 않음 — 다음 호출에서 재시도
-            else:
-                self._cache["_insights"] = analyze(
-                    self.cik,
-                    company=self,
-                    corpName=self.corpName,
-                    qSeriesPair=ts,
-                    aSeriesPair=annual,
-                )
-        return self._cache["_insights"]
+    # insights는 analysis 내부 — c.analysis("financial", "종합평가")로 접근
 
     def review(
         self,

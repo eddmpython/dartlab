@@ -4148,61 +4148,7 @@ class Company:
         self._cache[cacheKey] = result
         return result
 
-    # ── 인사이트 분석 ──
-
-    @property
-    def insights(self):
-        """종합 인사이트 분석 (7영역 등급 + 이상치 + 요약).
-
-        Capabilities:
-            - 7영역 등급 평가 (실적, 수익성, 성장, 안정성, 현금흐름, 효율, 밸류에이션)
-            - 이상치 자동 탐지 (급변, 임계 초과)
-            - 텍스트 요약 + 투자 프로파일 분류
-
-        Returns:
-            AnalysisResult 또는 finance 데이터 없으면 None.
-
-        Requires:
-            데이터: finance (자동 다운로드)
-
-        Example::
-
-            c = Company("005930")
-            c.insights.grades()       # {'performance': 'A', ...}
-            c.insights.summary        # "삼성전자는 실적, 재무건전성 등..."
-            c.insights.anomalies      # [Anomaly(...), ...]
-            c.insights.profile        # "premium"
-
-        AIContext:
-            - ask()/chat()에서 재무 건전성 종합 판단의 핵심 데이터
-            - 7영역 등급 + 이상치 + 투자 프로파일을 컨텍스트로 주입
-
-        Guide:
-            - "이 회사 재무 등급은?" → c.insights.grades()
-            - "이상 징후 있어?" → c.insights.anomalies
-            - "투자 프로파일" → c.insights.profile
-
-        SeeAlso:
-            - analysis: 14축 개별 상세 분석 (insights보다 세밀)
-            - review: 14섹션 보고서 (insights를 내부적으로 참조)
-            - ratios: 재무비율 시계열 (insights의 입력 데이터)
-        """
-        if not self._hasFinance:
-            self._hintOnce("insights", "insights", "finance")
-            return None
-        cacheKey = "_insights"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
-        from dartlab.analysis.financial.insight import analyze
-
-        result = analyze(
-            self.stockCode,
-            company=self,
-            qSeriesPair=self.timeseries,
-            aSeriesPair=self.annual,
-        )
-        self._cache[cacheKey] = result
-        return result
+    # insights는 analysis 내부 — c.analysis("financial", "종합평가")로 접근
 
     def audit(self):
         """감사 리스크 종합 분석.

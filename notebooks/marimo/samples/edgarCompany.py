@@ -96,8 +96,8 @@ def _(c):
 
 @app.cell
 def _(c):
-    # 인사이트 등급 (7영역)
-    c.insights
+    # 종합평가
+    c.analysis("financial", "종합평가")
     return
 
 
