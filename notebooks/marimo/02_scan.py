@@ -23,14 +23,7 @@ def _():
 
 @app.cell
 def _(dartlab):
-    # find a company by name
-    dartlab.search("삼성전자")
-    return
-
-
-@app.cell
-def _(dartlab):
-    # full listing of all available companies
+    # 상장사 목록 — scan의 대상 유니버스
     dartlab.listing()
     return
 
