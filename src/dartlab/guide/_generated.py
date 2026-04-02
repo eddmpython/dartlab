@@ -207,15 +207,6 @@ CAPABILITIES: dict[str, dict] = {
         "seeAlso": "topics: topic 단위 요약 (index보다 간결)\nsections: 전체 sections 지도 (index의 원본)\nprofile: 통합 프로필 접근자",
         "summary": "현재 공개 Company 구조 인덱스 DataFrame -- 전체 데이터 목차.",
     },
-    "Company.insights": {
-        "aicontext": "ask()/chat()에서 재무 건전성 종합 판단의 핵심 데이터\n7영역 등급 + 이상치 + 투자 프로파일을 컨텍스트로 주입",
-        "capabilities": "7영역 등급 평가 (실적, 수익성, 성장, 안정성, 현금흐름, 효율, 밸류에이션)\n이상치 자동 탐지 (급변, 임계 초과)\n텍스트 요약 + 투자 프로파일 분류",
-        "guide": '"이 회사 재무 등급은?" → c.insights.grades()\n"이상 징후 있어?" → c.insights.anomalies\n"투자 프로파일" → c.insights.profile',
-        "kind": "property",
-        "requires": "데이터: finance (자동 다운로드)",
-        "seeAlso": "analysis: 14축 개별 상세 분석 (insights보다 세밀)\nreview: 14섹션 보고서 (insights를 내부적으로 참조)\nratios: 재무비율 시계열 (insights의 입력 데이터)",
-        "summary": "종합 인사이트 분석 (7영역 등급 + 이상치 + 요약).",
-    },
     "Company.keywordTrend": {
         "aicontext": "공시 텍스트의 키워드 빈도 변화로 전략 방향 전환 감지\nAI, ESG, 탄소중립 등 트렌드 키워드 모니터링",
         "capabilities": "공시 텍스트에서 키워드 빈도 추이 분석\n54개 내장 키워드 세트 (AI, ESG, 탄소중립 등)\ntopic별 x 기간별 빈도 매트릭스\n복수 키워드 동시 검색",

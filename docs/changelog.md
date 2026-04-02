@@ -9,6 +9,18 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.4] - 2026-04-02
+
+### Added
+- ops/architecture.md 청사진 + ops/testing.md 테스트 체계
+- 테스트 1,148개 추가 (843→1,991), numpy 의존성
+
+### Changed
+- scan 데이터 일관성 통일, c.insights 제거
+
+### Fixed
+- annualColsFromPeriods 인자 순서 버그 (8파일 23곳)
+
 ## [0.8.3] - 2026-04-02
 
 ### Changed

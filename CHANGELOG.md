@@ -5,6 +5,25 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.4] - 2026-04-02
+
+### Added
+
+- **ops/architecture.md**: 전체 청사진 — 레이어, 엔진, 규칙, 데이터 출력, 신규 기능 체크리스트
+- **ops/testing.md**: 테스트 체계 — 마커, 커버리지 목표, CI 규칙
+- **테스트 1,148개 추가**: 843→1,991 passed (20개 신규 테스트 파일, 9개 엔진 전체 커버)
+- **numpy** base 의존성 추가 (quant 엔진 필수)
+
+### Changed
+
+- **scan 데이터 일관성 통일**: 전 축 종목코드+종목명 첫 2컬럼 (governance/debt/capital/workforce/account/ratio 수정)
+- **c.insights 제거**: analysis("financial", "종합평가")로 통합 — 엔진 내부 기능 Company 직접 노출 금지
+
+### Fixed
+
+- **annualColsFromPeriods 인자 순서 버그**: 8개 파일 23곳에서 _MAX_YEARS가 basePeriod로 잘못 전달
+- **CI --benchmark-disable**: 테스트 타임아웃 방지
+
 ## [0.8.3] - 2026-04-02
 
 ### Changed

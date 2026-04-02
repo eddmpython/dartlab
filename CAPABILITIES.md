@@ -1,6 +1,6 @@
 # dartlab Capabilities
 
-> v0.8.2 기준 자동 생성. 직접 수정 금지.  
+> v0.8.3 기준 자동 생성. 직접 수정 금지.  
 > `uv run python scripts/generateSpec.py`로 재생성.
 
 
@@ -657,7 +657,7 @@ us.market                    # "US"
 
 ### Company 메서드/프로퍼티
 
-DartCompany에서 동적 추출 (65개).
+DartCompany에서 동적 추출 (64개).
 
 | 이름 | 종류 | 설명 |
 |------|------|------|
@@ -686,7 +686,6 @@ DartCompany에서 동적 추출 (65개).
 | `getTimeseries` | method | Deprecated — use ``c.timeseries`` property instead. |
 | `governance` | method | 지배구조 분석 (이사회, 감사위원, 최대주주). |
 | `index` | property | 현재 공개 Company 구조 인덱스 DataFrame -- 전체 데이터 목차. |
-| `insights` | property | 종합 인사이트 분석 (7영역 등급 + 이상치 + 요약). |
 | `keywordTrend` | method | 공시 텍스트 키워드 빈도 추이 (topic x period x keyword). |
 | `listing` | method | KRX 전체 상장법인 목록 (KIND 기준). |
 | `liveFilings` | method | OpenDART 기준 실시간 공시 목록 조회. |
@@ -1003,20 +1002,6 @@ ask()에서 어떤 데이터를 참조할지 결정하는 기초 정보
 **SeeAlso:** topics: topic 단위 요약 (index보다 간결)
 sections: 전체 sections 지도 (index의 원본)
 profile: 통합 프로필 접근자
-
-#### Company.insights
-**Capabilities:** 7영역 등급 평가 (실적, 수익성, 성장, 안정성, 현금흐름, 효율, 밸류에이션)
-이상치 자동 탐지 (급변, 임계 초과)
-텍스트 요약 + 투자 프로파일 분류
-**Requires:** 데이터: finance (자동 다운로드)
-**AIContext:** ask()/chat()에서 재무 건전성 종합 판단의 핵심 데이터
-7영역 등급 + 이상치 + 투자 프로파일을 컨텍스트로 주입
-**Guide:** "이 회사 재무 등급은?" → c.insights.grades()
-"이상 징후 있어?" → c.insights.anomalies
-"투자 프로파일" → c.insights.profile
-**SeeAlso:** analysis: 14축 개별 상세 분석 (insights보다 세밀)
-review: 14섹션 보고서 (insights를 내부적으로 참조)
-ratios: 재무비율 시계열 (insights의 입력 데이터)
 
 #### Company.keywordTrend
 **Capabilities:** 공시 텍스트에서 키워드 빈도 추이 분석
