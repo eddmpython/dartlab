@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775149237441,
+  "lastUpdate": 1775149660518,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -6612,6 +6612,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 3.091345322022033e-7",
             "extra": "mean: 707.0662951407654 nsec\nrounds: 166890"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "ec5a3420f25ccbc5115fe8bb71e9c15c96c82602",
+          "message": "feat(vscode): 프로바이더 연결 플로우 전면 개선 + 입력창 항상 활성\n\n- 웰컴 화면: 프로바이더 카드 (키 발급/연결 버튼)\n- 프로바이더 선택 시 API 키 입력 InputBox 자동 오픈\n- 키 없으면 needCredential 이벤트로 signupUrl 브라우저 + 키 입력\n- 헤더 드롭다운: 미설정 시에도 표시\n- 입력창 항상 활성화\n- 자동설치: PowerShell 5.x 호환\n- status API에 description/authKind/signupUrl 포함",
+          "timestamp": "2026-04-03T02:06:37+09:00",
+          "tree_id": "74801a75f8e8b1dc3061c4939e78b65612450985",
+          "url": "https://github.com/eddmpython/dartlab/commit/ec5a3420f25ccbc5115fe8bb71e9c15c96c82602"
+        },
+        "date": 1775149659484,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 537711.458641293,
+            "unit": "iter/sec",
+            "range": "stddev: 5.22114465672444e-7",
+            "extra": "mean: 1.8597334758809736 usec\nrounds: 50033"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 662493.9636392841,
+            "unit": "iter/sec",
+            "range": "stddev: 4.7321548514561823e-7",
+            "extra": "mean: 1.5094477155787063 usec\nrounds: 120686"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 524670.8799359626,
+            "unit": "iter/sec",
+            "range": "stddev: 5.368464568316572e-7",
+            "extra": "mean: 1.905956740198832 usec\nrounds: 110657"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 662041.9664224652,
+            "unit": "iter/sec",
+            "range": "stddev: 4.476200252220187e-7",
+            "extra": "mean: 1.5104782637931378 usec\nrounds: 133441"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 814018.4430710827,
+            "unit": "iter/sec",
+            "range": "stddev: 3.693753898912215e-7",
+            "extra": "mean: 1.2284733945673965 usec\nrounds: 174795"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 267482.4987710657,
+            "unit": "iter/sec",
+            "range": "stddev: 7.976227082733584e-7",
+            "extra": "mean: 3.738562353030376 usec\nrounds: 54873"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7394253.900895306,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2940556618801884e-8",
+            "extra": "mean: 135.2401490945447 nsec\nrounds: 74047"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8972939.087496828,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2268996574251781e-8",
+            "extra": "mean: 111.44620399724222 nsec\nrounds: 89207"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1497029.0892877034,
+            "unit": "iter/sec",
+            "range": "stddev: 3.3722914742172345e-7",
+            "extra": "mean: 667.9896918207561 nsec\nrounds: 149881"
           }
         ]
       }
