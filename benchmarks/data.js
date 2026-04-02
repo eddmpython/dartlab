@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775152599616,
+  "lastUpdate": 1775153277136,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -7482,6 +7482,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.93658826449632e-7",
             "extra": "mean: 683.4781611900311 nsec\nrounds: 165783"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "57fb910cede49a311feae22fec80710ab52764ec",
+          "message": "release: v0.8.5 — VSCode 프로바이더 연결 플로우 + OAuth 로그인\n\n- provider 선택 시 바로 연결 (API키 InputBox, OAuth 브라우저 로그인)\n- stdio needCredential/oauthStart 프로토콜\n- 에러 메시지 CLI 안내 제거, 무료 표현 제거\n- fixture integration 테스트 62개",
+          "timestamp": "2026-04-03T03:07:01+09:00",
+          "tree_id": "8205c4ccc6b814575c8cf1d53fd0c8d393224a0e",
+          "url": "https://github.com/eddmpython/dartlab/commit/57fb910cede49a311feae22fec80710ab52764ec"
+        },
+        "date": 1775153276101,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 583585.7531445358,
+            "unit": "iter/sec",
+            "range": "stddev: 3.0998969731313347e-7",
+            "extra": "mean: 1.7135442299811106 usec\nrounds: 55381"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 711889.4599132551,
+            "unit": "iter/sec",
+            "range": "stddev: 3.093706131621979e-7",
+            "extra": "mean: 1.4047124677500515 usec\nrounds: 127617"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 581694.8839186901,
+            "unit": "iter/sec",
+            "range": "stddev: 3.899937765064758e-7",
+            "extra": "mean: 1.7191143117218493 usec\nrounds: 119804"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 776650.5355709648,
+            "unit": "iter/sec",
+            "range": "stddev: 2.429567367358911e-7",
+            "extra": "mean: 1.2875803906641703 usec\nrounds: 151081"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 907931.7393927574,
+            "unit": "iter/sec",
+            "range": "stddev: 2.392731103812327e-7",
+            "extra": "mean: 1.1014043860486908 usec\nrounds: 181621"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 300759.13636093814,
+            "unit": "iter/sec",
+            "range": "stddev: 4.083579295163995e-7",
+            "extra": "mean: 3.324919775005304 usec\nrounds: 69517"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 8509733.298633171,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1701830459323355e-8",
+            "extra": "mean: 117.51249597453536 nsec\nrounds: 83230"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 9887689.580622643,
+            "unit": "iter/sec",
+            "range": "stddev: 8.214744272380074e-9",
+            "extra": "mean: 101.13586109739383 nsec\nrounds: 97248"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1516232.9551368442,
+            "unit": "iter/sec",
+            "range": "stddev: 1.6975745008610592e-7",
+            "extra": "mean: 659.5292607327265 nsec\nrounds: 167477"
           }
         ]
       }
