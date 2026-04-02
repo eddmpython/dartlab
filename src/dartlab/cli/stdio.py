@@ -228,8 +228,10 @@ def _handleSetProvider(msg: dict[str, Any]) -> None:
                             }
                         )
                         return
-        except Exception:
+        except ImportError:
             pass
+        except Exception as exc:
+            _emit({"event": "error", "data": {"error": f"provider 확인 실패: {exc}"}})
 
     _sessionProvider = provider or _sessionProvider
     _sessionModel = msg.get("model") or _sessionModel
