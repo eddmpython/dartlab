@@ -389,7 +389,7 @@ def _getHistoricalRevenueGrowth(company, *, basePeriod: str | None = None) -> fl
         return None
     data, periods = parsed
     revRow = data.get("매출액", {})
-    yCols = annualColsFromPeriods(periods, 3, basePeriod=basePeriod)
+    yCols = annualColsFromPeriods(periods, basePeriod=basePeriod, maxYears=3)
     if len(yCols) < 2:
         return None
     cur = _get(revRow, yCols[0])
