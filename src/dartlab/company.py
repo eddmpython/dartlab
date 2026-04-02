@@ -42,7 +42,7 @@ def Company(codeOrName: str) -> CompanyProtocol:
         - 핵심 인터페이스: show(topic) / index / trace(topic) / diff()
         - namespace: docs (원문) / finance (숫자) / report (정형공시) / profile (merge)
         - 바로가기: BS/IS/CF/CIS, ratios, ratioSeries, timeseries
-        - 메타: sections, topics, filings(), insights, market, currency
+        - 메타: sections, topics, filings(), market, currency
 
     Requires:
         DART: 사전 다운로드 데이터 (dartlab.downloadAll() 또는 자동 다운로드).
@@ -58,7 +58,7 @@ def Company(codeOrName: str) -> CompanyProtocol:
         - "어떤 데이터 있어?" -> c.index 또는 c.topics
         - "출처 추적" -> c.trace("revenue")
         - "기간 변화" -> c.diff()
-        - "인사이트 등급" -> c.insights
+        - "종합평가" -> c.analysis("financial", "종합평가")
         - "리뷰 보고서" -> c.review()
         - "Apple 분석" -> Company("AAPL") (자동 EDGAR 라우팅)
 
@@ -83,7 +83,7 @@ def Company(codeOrName: str) -> CompanyProtocol:
 
         c.IS                              # 손익계산서
         c.show("businessOverview")        # 사업 개요
-        c.insights                        # 7영역 인사이트
+        c.analysis("financial", "종합평가") # 재무 종합평가
         c.review()                        # 분석 보고서
     """
     _discover()
