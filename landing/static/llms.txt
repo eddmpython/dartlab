@@ -1,156 +1,97 @@
-# DartLab — DART + EDGAR Disclosure Analysis Python Library
+# DartLab — DART 전자공시 분석 Python 라이브러리
 
-> Turn Korean DART and US SEC EDGAR filings into one structured company map.
-> 한국 DART 전자공시와 미국 SEC EDGAR 공시를 하나의 회사 맵으로 바꾸는 Python 라이브러리.
+> One company map from electronic disclosure filings — DART (Korea) + EDGAR (US).
+> DART 전자공시와 EDGAR 공시를 하나의 회사 맵으로 바꾸는 Python 라이브러리.
 
-DartLab parses corporate disclosure filings — annual reports, 10-K, 10-Q — into structured,
-comparable data. Financial statements (BS/IS/CF), 47 financial ratios, 7-area insight grades,
-narrative text, and structured reports are all accessible with a single stock code.
-Covers 2,700+ Korean listed companies and 970+ US companies.
+DartLab은 한국 DART 전자공시와 미국 SEC EDGAR 공시 문서를 하나의 회사 맵으로 바꾸는 Python 라이브러리다.
+sections(topic × period 수평화)가 뼈대이고, 그 위에 재무제표(BS/IS/CF), 47개 재무비율, 7영역 인사이트 등급이 올라간다.
+2,700개 이상의 한국 상장기업과 970개 이상의 미국 기업을 종목코드 하나로 분석할 수 있다.
+AI 크롤러와 답변 엔진을 위해 각 페이지의 markdown mirror도 함께 제공한다.
 
-## Install
+## Keywords
+전자공시, DART, EDGAR, 사업보고서, 재무제표, 공시분석, financial statements, annual report, 10-K, XBRL, Python, dartlab
 
-```bash
-pip install dartlab
-# or
-uv add dartlab
-```
+## Docs
+설치, quickstart, API reference, 튜토리얼. DartLab을 실제 코드와 데이터 흐름으로 사용하는 문서.
 
-## Quick Start
+- [About DartLab](https://eddmpython.github.io/dartlab/docs/about) — What DartLab builds, what data it handles, and who maintains it. | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/about.md
+- [Advanced](https://eddmpython.github.io/dartlab/docs/api/advanced) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/api/advanced.md
+- [AI](https://eddmpython.github.io/dartlab/docs/api/ai) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/api/ai.md
+- [Analysis](https://eddmpython.github.io/dartlab/docs/api/analysis) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/api/analysis.md
+- [Company](https://eddmpython.github.io/dartlab/docs/api/company) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/api/company.md
+- [Credit Rating](https://eddmpython.github.io/dartlab/docs/api/credit) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/api/credit.md
+- [Financial Data](https://eddmpython.github.io/dartlab/docs/api/finance) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/api/finance.md
+- [Gather](https://eddmpython.github.io/dartlab/docs/api/gather) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/api/gather.md
+- [MCP](https://eddmpython.github.io/dartlab/docs/api/mcp) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/api/mcp.md
+- [API Overview](https://eddmpython.github.io/dartlab/docs/api/overview) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/api/overview.md
+- [Review](https://eddmpython.github.io/dartlab/docs/api/review) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/api/review.md
+- [Scan](https://eddmpython.github.io/dartlab/docs/api/scan) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/api/scan.md
+- [Changelog](https://eddmpython.github.io/dartlab/docs/changelog) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/changelog.md
+- [SK하이닉스 Credit Report](https://eddmpython.github.io/dartlab/docs/credit/reports/SK하이닉스) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/credit/reports/SK하이닉스.md
+- [LG Credit Report](https://eddmpython.github.io/dartlab/docs/credit/reports/LG) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/credit/reports/LG.md
+- [삼성전자 Credit Report](https://eddmpython.github.io/dartlab/docs/credit/reports/삼성전자) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/credit/reports/삼성전자.md
+- [NAVER Credit Report](https://eddmpython.github.io/dartlab/docs/credit/reports/NAVER) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/credit/reports/NAVER.md
+- [CLI Maintenance](https://eddmpython.github.io/dartlab/docs/getting-started/cli-maintenance) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/getting-started/cli-maintenance.md
+- [Installation](https://eddmpython.github.io/dartlab/docs/getting-started/installation) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/getting-started/installation.md
+- [Quick Start](https://eddmpython.github.io/dartlab/docs/getting-started/quickstart) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/getting-started/quickstart.md
+- [Sections — Company Map](https://eddmpython.github.io/dartlab/docs/getting-started/sections) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/getting-started/sections.md
+- [samples/000270.md](https://eddmpython.github.io/dartlab/docs/samples/000270) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/samples/000270.md
+- [samples/000660.md](https://eddmpython.github.io/dartlab/docs/samples/000660) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/samples/000660.md
+- [samples/004020.md](https://eddmpython.github.io/dartlab/docs/samples/004020) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/samples/004020.md
+- [samples/005930.md](https://eddmpython.github.io/dartlab/docs/samples/005930) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/samples/005930.md
+- [samples/017670.md](https://eddmpython.github.io/dartlab/docs/samples/017670) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/samples/017670.md
+- [samples/034730.md](https://eddmpython.github.io/dartlab/docs/samples/034730) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/samples/034730.md
+- [samples/036570.md](https://eddmpython.github.io/dartlab/docs/samples/036570) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/samples/036570.md
+- [samples/042660.md](https://eddmpython.github.io/dartlab/docs/samples/042660) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/samples/042660.md
+- [samples/051910.md](https://eddmpython.github.io/dartlab/docs/samples/051910) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/samples/051910.md
+- [samples/055550.md](https://eddmpython.github.io/dartlab/docs/samples/055550) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/samples/055550.md
+- [samples/090430.md](https://eddmpython.github.io/dartlab/docs/samples/090430) | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/samples/090430.md
+- [API Stability Policy](https://eddmpython.github.io/dartlab/docs/stability) — dartlab API stability tiers and change policy | Markdown: https://eddmpython.github.io/dartlab/markdown/docs/stability.md
 
-```python
-import dartlab
+## Blog
+DART, EDGAR, 사업보고서 읽기, 재무 해석, 데이터 자동화에 관한 장문 가이드.
 
-# Korean company (DART)
-c = dartlab.Company("005930")       # Samsung Electronics
-c.index                              # company structure index
-c.show("BS")                         # balance sheet
-c.show("executiveCompensation")      # topic payload
-c.trace("dividend")                  # source provenance
-c.ratios                             # 47 financial ratios
-c.insights                           # 7-area A~F grades
-
-# US company (EDGAR)
-us = dartlab.Company("AAPL")         # Apple Inc.
-us.BS                                # balance sheet
-us.ratios                            # financial ratios
-us.sections                          # 10-K sections map
-```
-
-## Key Features
-
-- **Sections-first architecture**: Every company becomes a topic x period DataFrame
-- **Dual market**: DART (Korea) + EDGAR (US) with identical interface
-- **One stock code**: `dartlab.Company('005930')` or `dartlab.Company('AAPL')`
-- **Financial statements**: BS, IS, CF, CIS, SCE — XBRL-normalized, quarterly standalone
-- **47 financial ratios**: ROE, ROA, operating margin, debt ratio, PER, PBR, FCF, etc.
-- **7-area insight grades**: Performance, profitability, stability, cash flow, governance, risk, opportunity
-- **AI analysis**: `dartlab ask '삼성전자 분석해줘'` — natural language company analysis
-- **MCP server**: Expose company data as MCP tools for Claude Desktop, ChatGPT, Cursor
-- **329 topics per company**: From dividend policy to segment breakdown
-
-## Data Modules
-
-### 시계열 재무제표
-
-- **annual.IS** (손익계산서(연도별)): 연도별 손익계산서 시계열. 매출액, 영업이익, 순이익 등 전체 계정.
-- **annual.BS** (재무상태표(연도별)): 연도별 재무상태표 시계열. 자산, 부채, 자본 전체 계정.
-- **annual.CF** (현금흐름표(연도별)): 연도별 현금흐름표 시계열. 영업/투자/재무활동 현금흐름.
-- **timeseries.IS** (손익계산서(분기별)): 분기별 손익계산서 standalone 시계열.
-- **timeseries.BS** (재무상태표(분기별)): 분기별 재무상태표 시점잔액 시계열.
-- **timeseries.CF** (현금흐름표(분기별)): 분기별 현금흐름표 standalone 시계열.
-
-### 공시 파싱 모듈
-
-- **BS** (재무상태표): K-IFRS 연결 재무상태표. finance XBRL 정규화(snakeId) 기반, 회사간 비교 가능. finance 없으면 docs fallback.
-- **IS** (손익계산서): K-IFRS 연결 손익계산서. finance XBRL 정규화 기반. 매출액, 영업이익, 순이익 등 전체 계정 포함.
-- **CF** (현금흐름표): K-IFRS 연결 현금흐름표. finance XBRL 정규화 기반. 영업/투자/재무활동 현금흐름.
-- **fsSummary** (요약재무정보): DART 공시 요약재무정보. 다년간 주요 재무지표 비교.
-- **segments** (부문정보): 사업부문별 매출·이익 데이터. 부문간 수익성 비교 가능.
-- **tangibleAsset** (유형자산): 유형자산 변동표. 취득/처분/감가상각 내역.
-- **costByNature** (비용성격별분류): 비용을 성격별로 분류한 시계열. 원재료비, 인건비, 감가상각비 등.
-- **dividend** (배당): 배당 시계열. 연도별 DPS, 배당총액, 배당성향, 배당수익률.
-- **majorHolder** (최대주주): 최대주주 지분율 시계열. 지분 변동은 경영권 안정성의 핵심 지표.
-- **employee** (직원현황): 직원 수, 평균 근속연수, 평균 연봉 시계열.
-- **subsidiary** (자회사투자): 종속회사 투자 시계열. 지분율, 장부가액 변동.
-- **bond** (채무증권): 사채, CP 등 채무증권 발행·상환 시계열.
-- **shareCapital** (주식현황): 발행주식수, 자기주식, 유통주식수 시계열.
-- **executive** (임원현황): 등기임원 구성 시계열. 사내이사/사외이사/비상무이사 구분.
-- **executivePay** (임원보수): 임원 유형별 보수 시계열. 등기이사/사외이사/감사 구분.
-- **audit** (감사의견): 외부감사인의 감사의견과 감사보수 시계열. 적정 외 의견은 중대 위험 신호.
-- **boardOfDirectors** (이사회): 이사회 구성 및 활동 시계열. 개최횟수, 출석률 포함.
-- **capitalChange** (자본변동): 자본금 변동 시계열. 보통주/우선주 주식수·액면 변동.
-- **contingentLiability** (우발부채): 채무보증, 소송 현황. 잠재적 재무 리스크 지표.
-- **internalControl** (내부통제): 내부회계관리제도 감사의견 시계열.
-- **relatedPartyTx** (관계자거래): 대주주 등과의 매출·매입 거래 시계열. 이전가격 리스크 확인.
-- **rnd** (R&D): 연구개발비용 시계열. 기술 투자 강도 판단.
-- **sanction** (제재현황): 행정제재, 과징금, 영업정지 등 규제 조치 이력.
-- **affiliateGroup** (계열사): 기업집단 소속 계열회사 현황. 상장/비상장 구분.
-- **fundraising** (증자감자): 유상증자, 무상증자, 감자 이력.
-- **productService** (주요제품): 주요 제품/서비스별 매출액과 비중.
-- **salesOrder** (매출수주): 매출실적 및 수주 현황.
-- **riskDerivative** (위험관리): 환율·이자율·상품가격 리스크 관리. 파생상품 보유 현황.
-- **articlesOfIncorporation** (정관): 정관 변경 이력. 사업목적 추가·변경으로 신사업 진출 파악.
-- **otherFinance** (기타재무): 대손충당금, 재고자산 관련 기타 재무 데이터.
-- **companyHistory** (연혁): 회사 주요 연혁 이벤트 목록.
-- **shareholderMeeting** (주주총회): 주주총회 안건 및 의결 결과.
-- **auditSystem** (감사제도): 감사위원회 구성 및 활동 현황.
-- **affiliate** (관계기업투자): 관계기업/공동기업 투자 변동 시계열. 지분법손익, 기초/기말 장부가 포함.
-- **investmentInOther** (타법인출자): 타법인 출자 현황. 투자목적, 지분율, 장부가 등.
-- **companyOverviewDetail** (회사개요): 설립일, 상장일, 대표이사, 주소, 주요사업 등 기본 정보.
-- **holderOverview** (주주현황): 5% 이상 주주, 소액주주 현황, 의결권 현황. majorHolder보다 상세한 주주 구성.
-
-### 서술형 공시
-
-- **business** (사업의내용): 사업보고서 '사업의 내용' 서술. 사업 구조와 현황 파악.
-- **companyOverview** (회사개요정량): 공시 기반 회사 정량 개요 데이터.
-- **mdna** (MD&A): 이사의 경영진단 및 분석의견. 경영진 시각의 실적 평가와 전망.
-- **rawMaterial** (원재료설비): 원재료 매입, 유형자산 현황, 시설투자 데이터.
-- **sections** (사업보고서섹션): 사업보고서 전체 섹션 텍스트를 topic(행) × period(열) DataFrame으로 구조화. leaf title 기준 수평 비교 가능. 연간+분기+반기 전 기간 포함.
-
-### K-IFRS 주석
-
-- **notes.receivables** (매출채권): K-IFRS 매출채권 주석. 채권 잔액 및 대손충당금 내역.
-- **notes.inventory** (재고자산): K-IFRS 재고자산 주석. 원재료/재공품/제품 내역별 금액.
-- **notes.tangibleAsset** (유형자산(주석)): K-IFRS 유형자산 변동 주석. 토지, 건물, 기계 등 항목별 변동.
-- **notes.intangibleAsset** (무형자산): K-IFRS 무형자산 주석. 영업권, 개발비 등 항목별 변동.
-- **notes.investmentProperty** (투자부동산): K-IFRS 투자부동산 주석. 공정가치 및 변동 내역.
-- **notes.affiliates** (관계기업(주석)): K-IFRS 관계기업 투자 주석. 지분법 적용 내역.
-- **notes.borrowings** (차입금): K-IFRS 차입금 주석. 단기/장기 차입 잔액 및 이자율.
-- **notes.provisions** (충당부채): K-IFRS 충당부채 주석. 판매보증, 소송, 복구 등.
-- **notes.eps** (주당이익): K-IFRS 주당이익 주석. 기본/희석 EPS 계산 내역.
-- **notes.lease** (리스): K-IFRS 리스 주석. 사용권자산, 리스부채 내역.
-- **notes.segments** (부문정보(주석)): K-IFRS 부문정보 주석. 사업부문별 상세 데이터.
-- **notes.costByNature** (비용의성격별분류(주석)): K-IFRS 비용의 성격별 분류 주석.
-
-### 원본 데이터
-
-- **rawDocs** (공시 원본): 공시 문서 원본 parquet. 가공 전 전체 테이블과 텍스트.
-- **rawFinance** (XBRL 원본): XBRL 재무제표 원본 parquet. 매핑/정규화 전 원본 데이터.
-- **rawReport** (보고서 원본): 정기보고서 API 원본 parquet. 파싱 전 원본 데이터.
-
-### 분석 엔진
-
-- **ratios** (재무비율): financeEngine이 자동계산한 수익성·안정성·밸류에이션 비율.
-- **insight** (인사이트): 7영역 A~F 등급 분석 (실적, 수익성, 건전성, 현금흐름, 지배구조, 리스크, 기회).
-- **sector** (섹터분류): WICS 11대 섹터 분류. 대분류/중분류 + 섹터별 파라미터.
-- **rank** (시장순위): 전체 시장 및 섹터 내 매출/자산/성장률 순위.
-- **keywordTrend** (키워드 트렌드): 공시 텍스트 키워드 빈도 추이 (topic × period × keyword). 54개 내장 키워드 또는 사용자 지정.
-- **news** (뉴스): 최근 뉴스 수집 (KR: Google News 한국어, US: Google News 영어). 날짜/제목/출처/URL.
-
-## Analysis Engines
-
-- **Sector classification**: WICS 11 sectors (override -> keyword -> KSIC 3-stage)
-- **Insight grades**: 7-area A~F grades (performance, profitability, stability, cash flow, governance, risk, opportunity)
-- **Market rank**: Revenue/assets/growth ranking — overall + within sector
-- **Financial ratios**: ROE, ROA, operating margin, debt ratio, PER, PBR, FCF — auto-calculated
-- **Supply chain**: Disclosed supplier/customer relationship mapping
-- **ESG**: ESG disclosure extraction and scoring
-- **Event study**: Abnormal return around disclosure dates
-
-## Links
-
-- Documentation: https://eddmpython.github.io/dartlab/docs/
-- GitHub: https://github.com/eddmpython/dartlab
-- PyPI: https://pypi.org/project/dartlab/
-- Demo: https://huggingface.co/spaces/eddmpython/dartlab
+- [DART의 모든 것](https://eddmpython.github.io/dartlab/blog/everything-about-dart) — DART 전자공시시스템이란 무엇인가 — 운영 주체, 공시 종류, 사업보고서 전체 구조, 각 섹션에서 얻을 수 있는 정보, K-IFRS 재무제표, 주석 40개 항목, Open API의 한계, 그리고 자동화의 필요성까지 한 번에 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/everything-about-dart.md
+- [EDGAR의 모든 것](https://eddmpython.github.io/dartlab/blog/everything-about-edgar) — SEC EDGAR는 미국 자본시장의 핵심 인프라다. 10-K, 10-Q, 8-K, 20-F, 6-K, 13F가 각각 무엇을 담고 왜 중요한지, 제출 시한은 어떻게 다르고 데이터는 어떻게 공개되는지, 그리고 한국 투자자가 DART와 무엇을 다르게 읽어야 하는지 깊이 있게 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/everything-about-edgar.md
+- [Risk Factors와 MD&A를 같이 읽는 법](https://eddmpython.github.io/dartlab/blog/risk-factors-and-mdna) — Risk Factors와 MD&A를 따로 읽으면 리스크는 과장되고 설명은 낙관적으로 보이기 쉽다. 같은 이슈를 두 섹션에서 교차검증해 진짜 신호와 반복 문구를 구분하는 방법을 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/risk-factors-and-mdna.md
+- [사업보고서 텍스트, 이렇게 읽는다](https://eddmpython.github.io/dartlab/blog/reading-business-reports) — 사업보고서는 다 읽는 문서가 아니다. 감사의견, 투자자 보호, 사업의 내용, MD&A, 지배구조를 어떤 순서로 보면 되는지 초보자 기준으로 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/reading-business-reports.md
+- [사업보고서 II. 사업의 내용, 이 섹션이 투자 판단을 바꾼다](https://eddmpython.github.io/dartlab/blog/business-section-changes-judgment) — 재무제표는 결과를 보여주지만 원인은 잘 보여주지 않는다. 사업보고서 II. 사업의 내용은 매출과 이익이 왜 변했는지, 그 변화가 지속 가능한지 판단하는 핵심 단서다. 시장 구조, 경쟁 강도, 고객 집중도, 원가 압력, 신사업 진행 상황까지 실전 관점으로 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/business-section-changes-judgment.md
+- [공시에서 신규사업 계획은 어디까지 믿어야 하나](https://eddmpython.github.io/dartlab/blog/how-far-to-trust-new-business-plans) — 신규사업 계획은 가장 많이 과신되는 문장이다. 계획 자체보다 CAPEX, 인허가, 인력, 고객, 자금조달, 후속 공시가 실제로 붙는지 확인하는 순서를 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/how-far-to-trust-new-business-plans.md
+- [사업보고서에서 감사보고서와 KAM 읽는 법](https://eddmpython.github.io/dartlab/blog/audit-report-and-kam) — 감사보고서를 적정의견 여부만 확인하는 문서로 보면 절반만 읽는 것이다. 핵심감사사항(KAM), 계속기업, 회계추정 민감도, 내부통제 신호를 어떻게 읽어야 하는지 사업보고서와 함께 실전 관점으로 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/audit-report-and-kam.md
+- [감사의견이 적정이어도 불안한 회사는 어떤 패턴을 보이나](https://eddmpython.github.io/dartlab/blog/clean-audit-opinion-but-still-risky) — 감사의견 적정은 안전 판정이 아니다. KAM, 계속기업 관련 문구, 정정공시 반복, 우발부채, 현금흐름 약화가 같이 보이면 해석은 달라진다. 어디를 먼저 묶어 봐야 하는지 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/clean-audit-opinion-but-still-risky.md
+- [내부회계관리제도와 감사위원회 활동은 어디서 위험 신호가 보이나](https://eddmpython.github.io/dartlab/blog/internal-controls-and-audit-committee) — 내부회계관리제도와 감사위원회 활동은 형식 문구처럼 보이기 쉽지만, 실제로는 통제 약점과 반복 리스크가 먼저 새는 구간이다. 어디를 먼저 읽어야 하는지 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/internal-controls-and-audit-committee.md
+- [감사 전 재무제표 정정과 재감사는 어디서 위험 신호가 보이나](https://eddmpython.github.io/dartlab/blog/restatement-before-audit-and-reaudit-signals) — 재무제표 정정이 있었다고 해서 모두 같은 의미는 아니다. 감사 전 정정, 반복 정정, 재감사, 주석 보강, 감사보고서 문구 변화가 어떤 순서로 무거워지는지 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/restatement-before-audit-and-reaudit-signals.md
+- [감사보수와 비감사보수는 어디가 신호인가](https://eddmpython.github.io/dartlab/blog/audit-fees-and-non-audit-fees) — 감사보수는 낮다고 무조건 좋지 않고, 높아졌다고 자동으로 나쁜 것도 아니다. 중요한 것은 감사 시간과 복잡도 대비 수준, 비감사보수 비중, 같은 감사인이 무엇을 얼마나 같이 맡는지, 감사위원회와 정정공시까지 어떻게 이어지는지다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/audit-fees-and-non-audit-fees.md
+- [최대주주와 특수관계인은 어떻게 읽어야 하나](https://eddmpython.github.io/dartlab/blog/major-shareholder-and-related-parties) — 최대주주 지분율만 보고 회사를 이해했다고 생각하면 부족하다. 특수관계인, 우호지분, 지분 변동을 함께 봐야 실제 지배력과 위험 신호가 보인다. 초보자도 바로 읽을 수 있게 쉽게 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/major-shareholder-and-related-parties.md
+- [임원 보수 공시는 무엇을 말해주나](https://eddmpython.github.io/dartlab/blog/executive-pay-disclosure) — 임원 보수 공시는 많은 돈을 받았는지보다 어떻게 받는지가 더 중요하다. 급여, 상여, 주식기준보상, 성과연동 구조를 초보자도 이해할 수 있게 쉽게 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/executive-pay-disclosure.md
+- [주주환원 정책은 말과 숫자 중 무엇을 봐야 하나](https://eddmpython.github.io/dartlab/blog/shareholder-return-what-matters) — 배당 확대, 자사주 매입, 소각 같은 주주환원 정책은 발표보다 실행이 중요하다. 초보자도 쉽게 이해할 수 있게 주주환원을 볼 때 정말 중요한 숫자가 무엇인지 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/shareholder-return-what-matters.md
+- [지배구조가 위험한 회사는 어떤 패턴을 보이나](https://eddmpython.github.io/dartlab/blog/governance-red-flags) — 지배구조는 전문용어처럼 보이지만 초보자도 위험 신호를 읽을 수 있다. 내부거래 의존, 이사회 형식화, 오너 의존, 복잡한 관계회사 구조처럼 경계해야 할 패턴을 쉽게 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/governance-red-flags.md
+- [주주총회소집공고에서 꼭 봐야 할 것은 무엇인가](https://eddmpython.github.io/dartlab/blog/how-to-read-agm-notice) — 주주총회소집공고는 행사 일정 안내문처럼 보이지만 실제로는 중요한 안건이 모이는 문서다. 이사 선임, 보수한도, 정관변경, 주식보상 안건을 초보자도 쉽게 읽을 수 있게 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/how-to-read-agm-notice.md
+- [건설업 사업보고서는 어디부터 읽어야 하나](https://eddmpython.github.io/dartlab/blog/construction-company-filings) — 건설업은 같은 재무제표라도 읽는 순서가 다르다. 수주잔고, 진행률, 미청구공사, 공사손실충당부채, 영업현금흐름을 어떤 순서로 붙여 봐야 하는지 업종 맥락에서 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/construction-company-filings.md
+- [바이오·제약 공시는 어디가 과열 신호인가](https://eddmpython.github.io/dartlab/blog/biotech-company-filings) — 바이오·제약은 같은 재무제표라도 읽는 기준이 완전히 다르다. 파이프라인, 개발비 자산화, 마일스톤, 임상 실패, 영업현금흐름을 어떤 순서로 붙여 봐야 하는지 업종 맥락에서 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/biotech-company-filings.md
+- [금융업 사업보고서는 무엇이 다른가](https://eddmpython.github.io/dartlab/blog/financial-company-filings) — 금융업은 같은 재무제표라도 구조 자체가 다르다. 이자마진, 대손충당금, 자기자본비율, 유가증권 포트폴리오, 보험부채를 어떤 순서로 붙여 봐야 하는지 업종 맥락에서 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/financial-company-filings.md
+- [삼성전자 vs TSMC — 설비투자와 감가상각은 어떻게 다른가](https://eddmpython.github.io/dartlab/blog/samsung-vs-tsmc-capex-and-depreciation) — 같은 반도체 장치산업인데 삼성전자와 TSMC는 CAPEX 규모, 감가상각 정책, 가동률 공시, 회계 기준까지 다르다. DART와 EDGAR 공시를 나란히 놓고 설비투자 구조의 차이를 실전 비교한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/samsung-vs-tsmc-capex-and-depreciation.md
+- [현대차 vs Toyota — 재고와 매출채권 구조는 왜 다른가](https://eddmpython.github.io/dartlab/blog/hyundai-vs-toyota-inventory-and-receivables) — 같은 완성차 업종인데 현대차와 Toyota는 재고 구성, 매출채권 회전율, 금융채권 처리, 회계 기준까지 다르다. DART와 EDGAR 공시를 나란히 놓고 운전자본 구조의 차이를 실전 비교한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/hyundai-vs-toyota-inventory-and-receivables.md
+- [셀트리온 vs Amgen — 연구개발비와 무형자산은 어디가 다른가](https://eddmpython.github.io/dartlab/blog/celltrion-vs-amgen-rnd-and-intangibles) — 같은 바이오·제약 업종인데 셀트리온과 Amgen은 R&D 비용 처리, 무형자산 인식, 파이프라인 공시 방식까지 다르다. DART와 EDGAR 공시를 나란히 놓고 연구개발 투자의 회계적 차이를 실전 비교한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/celltrion-vs-amgen-rnd-and-intangibles.md
+- [재무제표, 숫자만 보면 안 되는 이유](https://eddmpython.github.io/dartlab/blog/beyond-the-numbers) — 영업이익 30% 성장, PER 10배 — 이 숫자만 보고 투자를 결정하는가? 같은 숫자 뒤에 전혀 다른 이야기가 숨어 있다. 감사의견, 주석, 지배구조, 공시 텍스트까지 봐야 비로소 완전한 그림이 나온다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/beyond-the-numbers.md
+- [매출은 느는데 왜 위험할 수 있나](https://eddmpython.github.io/dartlab/blog/why-rising-sales-can-still-be-risky) — 매출이 늘면 좋은 회사처럼 보이지만 실제로는 그렇지 않을 수 있다. 매출채권, 재고, 마진, 영업현금흐름을 함께 읽어 성장의 질을 판단하는 가장 기본적인 프레임을 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/why-rising-sales-can-still-be-risky.md
+- [개발비·무형자산은 어디서 과열 신호가 보이나](https://eddmpython.github.io/dartlab/blog/development-costs-and-intangibles) — 개발비와 무형자산은 성장 서사를 숫자로 포장하기 쉬운 구간이다. 비용 처리와 자산화, 상각, 손상, 영업현금흐름을 어떤 순서로 붙여 봐야 하는지 실전 기준으로 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/development-costs-and-intangibles.md
+- [리스부채와 차입 만기 구조는 어디서 먼저 터지나](https://eddmpython.github.io/dartlab/blog/lease-liabilities-and-debt-maturity) — 리스부채와 차입금은 총액보다 만기와 현금 대응력이 더 중요하다. 사용권자산, 리스부채, 단기차입금, 차입 만기표를 어떤 순서로 붙여 봐야 하는지 실전 기준으로 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/lease-liabilities-and-debt-maturity.md
+- [관계기업·공동기업투자는 본업 숫자를 어떻게 흐리나](https://eddmpython.github.io/dartlab/blog/associates-joint-ventures-and-equity-method) — 관계기업·공동기업투자와 지분법손익은 본업과 비본업의 경계를 흐리기 쉽다. 투자주식 장부가, 지분법손익, 배당 현금 유입을 어떤 순서로 분리해 봐야 하는지 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/associates-joint-ventures-and-equity-method.md
+- [환율 손익과 파생상품은 본업을 어떻게 왜곡하나](https://eddmpython.github.io/dartlab/blog/foreign-exchange-gains-and-derivatives) — 환율 손익과 파생상품 평가손익은 순이익을 크게 흔들지만 본업 경쟁력과 같은 속도로 움직이지 않을 때가 많다. 통화 노출, 헤지 목적, 현금흐름, 반복성을 어떤 순서로 분리해 봐야 하는지 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/foreign-exchange-gains-and-derivatives.md
+- [판관비가 매출보다 빨리 불어날 때 무엇을 먼저 봐야 하나](https://eddmpython.github.io/dartlab/blog/sga-growth-vs-sales) — 매출은 늘는데 판관비가 더 빨리 불어나면 성장의 질은 달라진다. 인건비, 광고선전비, 지급수수료, 개발·영업 확장 비용을 어떤 순서로 분리해 봐야 하는지 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/sga-growth-vs-sales.md
+- [세그먼트 공시는 어디서 읽고 무엇을 비교해야 하나](https://eddmpython.github.io/dartlab/blog/segment-reporting-interpretation) — IFRS 8 영업부문 공시를 사업보고서와 주석에서 찾아서 부문별 수익성, 자산 배분, 내부거래를 비교하는 실전 가이드. 부문 통합·분리 변경과 경영진 재량의 함정까지 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/segment-reporting-interpretation.md
+- [IFRS 18로 손익계산서가 바뀌면 투자자는 무엇을 다시 봐야 하나](https://eddmpython.github.io/dartlab/blog/ifrs18-income-statement-changes) — IFRS 18이 손익계산서 구조를 영업·투자·재무로 바꾸면 영업이익 정의가 달라진다. 기존 PER과 마진 비교가 깨지는 이유와 투자자가 전환기에 확인해야 할 것을 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/ifrs18-income-statement-changes.md
+- [사업보고서에서 생산능력·가동률·CAPEX 읽는 법](https://eddmpython.github.io/dartlab/blog/capacity-utilization-capex) — 사업보고서에서 생산능력, 가동률, CAPEX, 설비투자를 어떻게 읽어야 하는지 깊이 있게 정리한다. 생산능력 표, 가동률 구간, 건설중인자산, 현금흐름표, 유형자산 주석을 연결해 기업의 병목과 성장의 질을 판단하는 실전 기준. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/capacity-utilization-capex.md
+- [매출채권과 대손충당금 읽는 법](https://eddmpython.github.io/dartlab/blog/receivables-and-allowance) — 매출채권 증가를 성장의 증거로만 보면 위험하다. 매출채권 회전, aging, 영업현금흐름, 대손충당금 가정을 함께 읽어 이익의 질과 회수 위험을 판단하는 방법을 실전 기준으로 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/receivables-and-allowance.md
+- [영업현금흐름이 순이익을 부정할 때](https://eddmpython.github.io/dartlab/blog/operating-cash-flow-vs-net-income) | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/operating-cash-flow-vs-net-income.md
+- [자기주식·제3자배정·최대주주 변경은 누구에게 유리한가](https://eddmpython.github.io/dartlab/blog/treasury-stock-third-party-allotment-and-major-shareholder-change) | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/treasury-stock-third-party-allotment-and-major-shareholder-change.md
+- [OpenDART로 주요사항보고서 읽는 법](https://eddmpython.github.io/dartlab/blog/opendart-material-events) — OpenDART 주요사항보고서 API를 이용해 어떤 이벤트를 구조적으로 모니터링할 수 있는지 정리한다. 자산 양수도, 타법인 주식 취득, 유상증자, 전환사채, 소송, 공급계약 같은 사건을 API와 원문 공시를 연결해 읽는 실전 흐름을 설명한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/opendart-material-events.md
+- [XBRL 재무제표 원문과 주석 다운로드 파이프라인](https://eddmpython.github.io/dartlab/blog/opendart-xbrl-notes-pipeline) — OpenDART에서 재무제표를 제대로 수집하려면 JSON API만 보면 안 된다. corp_code, 접수번호, 공시서류원본파일, XBRL 원문, 주석 일괄다운로드를 어떤 순서로 연결해야 하는지 실전 파이프라인 기준으로 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/opendart-xbrl-notes-pipeline.md
+- [corp_code부터 filing 원문까지 DART 수집 파이프라인 설계](https://eddmpython.github.io/dartlab/blog/corp-code-to-filing-pipeline) — OpenDART 수집기는 endpoint 몇 개를 호출한다고 끝나지 않는다. corp_code, 공시검색, 접수번호(rcept_no), 원문 파일, 정정공시를 어떤 순서로 묶어야 안정적인 DART 수집 파이프라인이 되는지 실전 기준으로 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/corp-code-to-filing-pipeline.md
+- [수집한 재무 데이터를 어떻게 자동으로 검증하나](https://eddmpython.github.io/dartlab/blog/data-quality-validation) — 수천 종목의 재무제표 데이터를 수집한 뒤, 매핑 오류·누락·이상치를 자동으로 잡아내는 검증 파이프라인을 설계한다. BS 항등식, 시계열 연속성, 업종별 기대값 검증까지 실전 전략을 다룬다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/data-quality-validation.md
+- [한국 DART와 미국 EDGAR 데이터를 하나의 구조로 합치려면](https://eddmpython.github.io/dartlab/blog/dart-edgar-unified-structure) — K-IFRS 기반 DART와 US-GAAP 기반 EDGAR의 재무 데이터를 하나의 통합 스키마로 정규화하는 설계를 다룬다. 계정 매핑, 통화 변환, 회계 기준 차이, sections 수평화까지 실전 통합 구조를 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/dart-edgar-unified-structure.md
+- [정말 쉬운 dartlab 사용법 — uv 설치부터 첫 분석까지](https://eddmpython.github.io/dartlab/blog/dartlab-easy-start) — Python을 한 번도 써본 적 없어도 dartlab으로 전자공시 분석을 시작할 수 있다. uv 설치부터 종목코드 하나로 재무제표를 꺼내는 데까지, 진짜 처음부터 안내한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/dartlab-easy-start.md
+- [이 회사는 무엇으로 돈을 버는가 — 수익 구조 읽기](https://eddmpython.github.io/dartlab/blog/revenue-structure-how-to-read) — 기업 분석의 출발점은 '얼마 버는가'가 아니라 '무엇으로 버는가'다. 부문별 매출·이익 구성, 매출 성장 분석, 집중도를 읽어 수익 구조의 강도를 판단하는 프레임워크를 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/revenue-structure-how-to-read.md
+- [자산 구조 분석 — BS를 영업/비영업으로 재분류하면 보이는 것들](https://eddmpython.github.io/dartlab/blog/asset-structure-how-to-read) — 대차대조표를 유동/비유동이 아니라 영업/비영업으로 나누면 사업의 실체가 드러난다. NOA, CCC, CAPEX 패턴, 자산회전율까지 — 조달한 돈이 어디에 묶여 있는지 읽는 프레임워크를 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/asset-structure-how-to-read.md
+- [현금흐름 분석 — 손익계산서 이익과 현금흐름표 현금은 왜 다른가](https://eddmpython.github.io/dartlab/blog/cashflow-how-to-read) — 손익계산서에서 이익이 나도 현금이 없을 수 있다. 현금흐름 3구간, 6가지 CF 패턴, FCF, 영업CF/순이익 비율까지 — 실제로 현금이 어떻게 흘렀는지 읽는 프레임워크를 정리한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/cashflow-how-to-read.md

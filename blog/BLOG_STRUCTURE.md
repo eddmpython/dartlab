@@ -1,226 +1,74 @@
 # Blog Structure
 
-이 블로그는 `카테고리 폴더 -> 포스트 폴더 -> index.md + assets/` 구조로 관리한다.
+`카테고리 폴더 → 번호-slug 폴더 → index.md + assets/` 구조.
 
-운영 목표는 두 가지다.
+## 컨셉
 
-- 검색을 타고 들어온 사람이 `바로 답을 얻고 다음 글로 이동`하게 만든다.
-- AI 검색/요약 환경에서도 `문장 자체로 의미가 서는 본문`을 만든다.
+**공시 원문을 직접 읽고 판단하는 실전 교재**
 
-즉 글은 단순히 많이 쓰는 것보다, `질문 하나에 정확히 답하는 허브`처럼 운영한다.
+- 각 글은 독자가 "아, 이걸 이렇게 봐야 하는구나" 하는 순간이 있어야 함
+- dartlab 없이도 가치 있는 글이어야 함
+- 템플릿 복사가 아니라 각 주제에 맞는 고유한 구조
 
 ## 카테고리
 
-- `01-reading-disclosures`: 공시 읽기 — DART, EDGAR, 사업보고서, 감사, 지배구조, 업종별, 한미 비교
-- `02-financial-interpretation`: 재무 해석 — 숫자 뒤 맥락, CAPEX, 운전자본, 자금조달 이벤트
-- `03-data-automation`: 데이터 자동화 — 파이썬, 데이터 수집, 파이프라인
-- `04-dartlab-news`: DartLab 소식 — 설치, 기능 소개, 업데이트 (사용자 직접 관리)
-- `05-corporate-analysis`: 실전기업분석 — 분석 프레임워크 + 실전 적용 (사용자 직접 관리)
-
-카테고리 번호는 고정한다. 중간에 새 카테고리가 필요하면 기존 번호를 바꾸지 말고 새 번호를 추가한다.
+- `01-reading-disclosures`: 공시 읽기 — DART, EDGAR, 사업보고서, 감사, 재무제표, 지배구조, 파이프라인
+- `02-dartlab-news`: DartLab 소식 (사용자 직접 관리)
+- `03-corporate-analysis`: 실전기업분석 (사용자 직접 관리)
 
 ## 번호 체계
 
-- 카테고리 번호는 분류용이다.
-- 포스트 번호는 블로그 전체 전역 순번을 유지한다.
-- 시리즈 순서는 `seriesOrder`로 따로 관리한다.
-
-예시:
+- **카테고리별 순번**: 각 카테고리 내에서 01부터 시작
+- URL에는 번호가 노출되지 않음 (slug 기반: `/blog/audit-report-and-kam`)
+- 번호는 순수하게 파일 정렬용
 
 ```text
 blog/
-  02-financial-interpretation/
-    010-capacity-utilization-capex/
+  01-reading-disclosures/
+    07-audit-report-and-kam/
       index.md
       assets/
 ```
 
-## URL 규칙
-
-- 공개 URL에는 카테고리 폴더가 들어가지 않는다.
-- `blog/02-financial-interpretation/010-capacity-utilization-capex/index.md`
-- URL은 `/blog/capacity-utilization-capex`
-
-## Frontmatter 규칙
-
-모든 포스트는 아래 메타를 가진다.
+## Frontmatter
 
 ```yaml
 title: 글 제목
 date: YYYY-MM-DD
 description: 1문장 설명
-category: reading-disclosures | financial-interpretation | data-automation | dartlab-news | corporate-analysis
+category: reading-disclosures | dartlab-news | corporate-analysis
 series: 시리즈 id
 seriesOrder: 숫자
 thumbnail: /avatar-*.png
-cardPreview: /blog/assets/*.png | /blog/assets/*.jpg | /blog/assets/*.webp
 ```
 
-- `thumbnail`: 카드 좌측 메타 영역에 쓰는 아바타형 대표 이미지
-- `cardPreview`: 우측 정사각형 썸네일 슬롯에 쓰는 카드 전용 프리뷰 이미지
-- `cardPreview`를 생략하면 본문에서 첫 번째로 등장하는 SVG를 우측 썸네일로 자동 사용한다
-- 본문 SVG가 없을 때만 `thumbnail`을 fallback으로 사용한다
+## 시리즈
 
-## 사람 도움 중심 원칙
-
-- 제목은 검색형 질문 또는 실전 판단 문장으로 쓴다.
-- 첫 2문단 안에 `질문에 대한 직접 답`을 넣는다.
-- 각 글은 `핵심 질문 1개`만 중심축으로 잡는다.
-- 입문 글은 `무엇부터 할지`, 판단 글은 `좋은 경우 vs 위험한 경우`, 파이프라인 글은 `어떤 레이어를 어떤 순서로 붙이는지`가 바로 보여야 한다.
-- 본문 안의 문맥형 내부 링크를 최소 3개 둔다.
-- 기존 글과 이어질 때는 `선행 글`, `같이 보면 좋은 글`, `다음 단계 글` 역할이 겹치지 않게 둔다.
-
-## AI 검색 노출 원칙
-
-- AI 전용 문장을 쓰지 않는다. 사람이 읽어도 바로 이해되는 문장을 우선한다.
-- 똑같은 템플릿을 모든 글에 복제하지 않는다. 같은 시리즈라도 각 글이 다른 질문에 답해야 한다.
-- FAQ와 체크리스트는 `있는 게 기본`이 아니라 `필요할 때만 강하게` 쓴다.
-- 한 문단 안에서 정의, 판단 기준, 다음 행동이 같이 드러나게 쓴다.
-- SVG는 장식이 아니라 텍스트를 보강하는 `정보 자산`이어야 한다.
-
-## 포스트 설계 규칙
-
-- `고정 템플릿 금지`: 모든 글을 `자주 틀리는 해석 4가지 -> 10분 체크리스트 -> FAQ -> 정리`로 끝내지 않는다.
-- 글마다 아래 4개 구조 중 하나를 분명히 선택한다.
-
-### 1. 입문형
-
-- 예: `DART에서 어디부터 눌러야 하나`
-- 필요한 것:
-  - 첫 클릭 순서
-  - 용어 정의
-  - 가장 쉬운 실전 흐름
-
-### 2. 판단형
-
-- 예: `좋은 재고 vs 위험한 재고`
-- 필요한 것:
-  - 좋은 경우 / 위험한 경우 비교
-  - 판단 기준 표
-  - 놓치기 쉬운 반례
-
-### 3. 파이프라인형
-
-- 예: `corp_code -> rcept_no -> 원문 파일`
-- 필요한 것:
-  - 레이어 정의
-  - 실패 패턴
-  - 최소 구현 예제
-
-### 4. 비교형
-
-- 예: `DART vs EDGAR`, `10-K vs 20-F`
-- 필요한 것:
-  - 같은 점 / 다른 점
-  - 언제 무엇을 먼저 볼지
-  - 후속 문서 연결
-
-## H2 풀 (5-pool system)
-
-글의 성격에 따라 5개 풀 중 하나를 배정하고, 풀별로 다른 H2 세트를 사용한다. 모든 글에 동일한 H2 골격을 복제하지 않는다.
-
-### 풀 A: 진단형 (경고 신호 감지/해석)
-
-- `어떤 숫자 조합이 먼저 경고하나`
-- `신호가 강해지는 순서`
-- `위험도를 나누는 기준`
-- `다음 분기에 다시 확인할 숫자`
-- `실전 점검 체크리스트`
-- `자주 묻는 질문`
-- `공식 출처와 근거`
-- `핵심 정리`
-
-### 풀 B: 비교형 (좋은 구조 vs 위험한 구조)
-
-- `같은 항목인데 해석이 갈리는 이유`
-- `건강한 구조 vs 위험한 구조`
-- `업종과 맥락에 따라 달라지는 기준`
-- `비교 체크리스트`
-- `FAQ`
-- `출처`
-- `한 줄 정리`
-
-### 풀 C: 메커니즘형 (구조/왜곡 설명)
-
-- `구조가 작동하는 순서`
-- `어디에서 왜곡이 생기나`
-- `왜곡을 걸러내는 숫자 조합`
-- `놓치기 쉬운 예외`
-- `빠른 점검 체크리스트`
-- `자주 묻는 질문`
-- `참고 자료`
-- `핵심 구조 요약`
-
-### 풀 D: 추적형 (기간 비교/후속 추적)
-
-- `최초 문서에서 잡아야 할 것`
-- `후속 문서에서 바뀌는 것과 안 바뀌는 것`
-- `기간 비교에서 놓치기 쉬운 변화`
-- `추적 체크리스트`
-- `자주 묻는 질문`
-- `관련 공식 자료`
-- `추적 포인트 요약`
-
-### 풀 E: 협상형 (권리/조건/이해관계)
-
-- `어떤 조건이 협상력을 결정하나`
-- `발행자 시각 vs 투자자 시각`
-- `조건이 바뀔 때 무엇이 움직이나`
-- `후속 이벤트에서 다시 확인할 것`
-- `실전 체크리스트`
-- `FAQ`
-- `관련 공시 출처`
-- `조건별 핵심 요약`
-
-### 풀 배정 기준
-
-- 경고 신호 감지/해석 → 풀 A
-- 좋은 구조 vs 위험한 구조 비교 → 풀 B
-- 구조/왜곡 메커니즘 설명 → 풀 C
-- 기간 비교/후속 추적 → 풀 D
-- 권리/조건/이해관계 협상 → 풀 E
-- 각 글의 핵심 질문이 어느 풀에 가장 가까운지로 결정한다.
-- 풀 안에서도 topic-specific H2는 자유롭게 추가한다.
-
-## 시리즈 정의
-
-시리즈는 `주제 묶음`이 아니라 `독자 약속`이다. 이름만 보고도 무엇을 배우는지 보여야 한다.
-
-| 시리즈 id | 사용자에게 보이는 이름 | 약속 |
+| 시리즈 id | 라벨 | 약속 |
 | --- | --- | --- |
-| `dart-foundations` | DART 첫걸음 | 초보자가 DART에서 길을 잃지 않게 만든다 |
-| `edgar-reading` | EDGAR 실전 입문 | 한국 투자자도 EDGAR form과 Risk Factors를 빠르게 읽게 만든다 |
-| `report-reading-foundations` | 사업보고서 실전 읽기 | 사업보고서 텍스트를 실제 판단 순서로 읽게 만든다 |
-| `audit-and-governance-reading` | 감사와 경고 신호 | 감사보고서, 적정 의견 아래 위험, 내부회계, 정정·재감사에서 리스크를 읽게 만든다 |
-| `ownership-and-governance-reading` | 대주주·보수·주주환원 | 소유와 통제, 보상 구조, 지배구조 위험을 같이 읽게 만든다 |
-| `industry-reading` | 업종별 공시 읽기 | 건설, 바이오, 금융 등 업종별 공시 읽기 순서와 핵심 체크포인트를 보여준다 |
-| `global-comparison` | 한미 공시 비교 실전 | 같은 산업의 한국·미국 기업을 DART/EDGAR 공시로 나란히 비교한다 |
-| `financial-context` | 숫자 뒤 맥락 읽기 | 숫자만 보면 놓치는 해석을 잡아준다 |
-| `capital-and-earnings` | 자본·이익의 질 | CAPEX, 운전자본, 현금흐름, 자금조달 구조의 질을 읽게 만든다 |
-| `data-automation` | 공시 데이터 파이프라인 | 공시를 실제 수집 구조로 연결하게 만든다 |
-| `corporate-analysis` | 실전기업분석 | 수익 구조부터 투자 효율까지 기업 전체를 읽는 분석 프레임워크를 정리한다 |
-| `dartlab-news` | DartLab 소식 | dartlab 설치, 업데이트, 사용 팁, 새 기능을 안내한다 |
+| `dart-foundations` | DART 첫걸음 | DART에서 길을 잃지 않게 |
+| `edgar-reading` | EDGAR 실전 입문 | EDGAR form과 Risk Factors를 빠르게 |
+| `report-reading-foundations` | 사업보고서 실전 읽기 | 텍스트를 판단 순서로 |
+| `audit-and-governance` | 감사와 경고 신호 | 감사보고서에서 리스크를 |
+| `ownership-and-governance` | 대주주·보수·주주환원 | 소유와 통제를 같이 |
+| `industry-reading` | 업종별 공시 읽기 | 업종별 체크포인트 |
+| `global-comparison` | 한미 공시 비교 | DART vs EDGAR 나란히 |
+| `financial-context` | 숫자 뒤 맥락 읽기 | 숫자만 보면 놓치는 해석 |
+| `capital-and-earnings` | 자본·이익의 질 | CAPEX, 운전자본, 현금흐름 |
+| `data-pipeline` | 공시 데이터 파이프라인 | 수집 구조 설계 |
+| `corporate-analysis` | 실전기업분석 | 기업 전체 분석 프레임워크 |
+| `dartlab-news` | DartLab 소식 | 설치, 기능, 업데이트 |
 
-새 시리즈를 만들 때는 먼저 이 문서와 `landing/src/lib/blog/posts.ts`를 같이 갱신한다.
+## 글 작성 원칙
 
-## 운영 문서
+- 제목은 검색형 질문 또는 실전 판단 문장
+- 첫 2문단에 질문에 대한 직접 답
+- 각 글은 핵심 질문 1개만 중심축
+- 고정 템플릿 금지 — 글마다 주제에 맞는 고유한 H2 구조
+- SVG는 장식이 아니라 정보 자산
+- 본문 내부 링크 최소 3개
 
-- `BLOG_STRUCTURE.md`: 카테고리, 번호, URL, frontmatter 규칙
-- `ASSET_POLICY.md`: 자산 위치, 파일명, SVG 기준
-- `TOPIC_ROADMAP.md`: 다음 글 후보, 시리즈 우선순위, 리라이트 우선순위, 공식 출처
+## 검수
 
-## 검수 규칙
-
-- 새 글 또는 대규모 리라이트 전에는 `uv run python -X utf8 scripts/auditBlog.py`로 블로그 감사를 돌린다.
-- 짧은 글, SVG 부족, XML 깨진 SVG, 내부 링크 부족, 헤딩 템플릿 반복을 같이 본다.
-- 운영 문서와 실제 시리즈 라벨이 어긋나면 `posts.ts`를 기준으로 맞춘다.
-
-## 새 글 추가 절차
-
-1. 카테고리를 정한다.
-2. 전체 포스트 번호를 하나 예약한다.
-3. `카테고리/NNN-slug/index.md`를 만든다.
-4. 자산은 해당 포스트 폴더의 `assets/`에 둔다.
-5. frontmatter에 `category`, `series`, `seriesOrder`를 채운다.
-6. 본문에서는 자산을 `./assets/파일명.svg`로 참조한다.
-7. `landing` 빌드로 slug, 메타, 자산 복사를 확인한다.
+- `posts.ts`가 단일 진실의 원천
+- 운영 문서와 실제 시리즈가 어긋나면 `posts.ts` 기준으로 맞춤

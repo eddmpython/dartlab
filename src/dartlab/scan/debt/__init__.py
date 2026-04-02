@@ -54,7 +54,7 @@ def scan_debt(*, verbose: bool = True) -> pl.DataFrame:
 
         results.append(
             {
-                "종목코드": code,
+                "stockCode": code,
                 "사채잔액": b.get("사채잔액"),
                 "단기잔액": b.get("단기잔액"),
                 "단기비중": short_ratio,

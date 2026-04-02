@@ -1,57 +1,71 @@
 # Topic Roadmap
 
-65편 체계. 2026-04-02 재편.
+44편, 3개 카테고리. 2026-04-02 최종.
 
-128편 → 65편 정리 완료. 7개 카테고리 → 5개. 과잉 세분화 제거, 허브 중심 구조.
+## 카테고리
 
-## 카테고리별 현황
+### 01 공시 읽기 (40편)
 
-### 01 공시 읽기 (22편)
+| # | slug | 시리즈 |
+|---|------|--------|
+| 01 | everything-about-dart | dart-foundations |
+| 02 | everything-about-edgar | edgar-reading |
+| 03 | risk-factors-and-mdna | edgar-reading |
+| 04 | reading-business-reports | report-reading-foundations |
+| 05 | business-section-changes-judgment | report-reading-foundations |
+| 06 | how-far-to-trust-new-business-plans | report-reading-foundations |
+| 07 | audit-report-and-kam | audit-and-governance |
+| 08 | clean-audit-opinion-but-still-risky | audit-and-governance |
+| 09 | internal-controls-and-audit-committee | audit-and-governance |
+| 10 | restatement-before-audit-and-reaudit-signals | audit-and-governance |
+| 11 | audit-fees-and-non-audit-fees | audit-and-governance |
+| 12 | major-shareholder-and-related-parties | ownership-and-governance |
+| 13 | executive-pay-disclosure | ownership-and-governance |
+| 14 | shareholder-return-what-matters | ownership-and-governance |
+| 15 | governance-red-flags | ownership-and-governance |
+| 16 | how-to-read-agm-notice | ownership-and-governance |
+| 17 | construction-company-filings | industry-reading |
+| 18 | biotech-company-filings | industry-reading |
+| 19 | financial-company-filings | industry-reading |
+| 20 | samsung-vs-tsmc-capex-and-depreciation | global-comparison |
+| 21 | hyundai-vs-toyota-inventory-and-receivables | global-comparison |
+| 22 | celltrion-vs-amgen-rnd-and-intangibles | global-comparison |
+| 23 | beyond-the-numbers | financial-context |
+| 24 | why-rising-sales-can-still-be-risky | financial-context |
+| 25 | development-costs-and-intangibles | financial-context |
+| 26 | lease-liabilities-and-debt-maturity | financial-context |
+| 27 | associates-joint-ventures-and-equity-method | financial-context |
+| 28 | foreign-exchange-gains-and-derivatives | financial-context |
+| 29 | sga-growth-vs-sales | financial-context |
+| 30 | segment-reporting-interpretation | financial-context |
+| 31 | ifrs18-income-statement-changes | financial-context |
+| 32 | capacity-utilization-capex | capital-and-earnings |
+| 33 | receivables-and-allowance | capital-and-earnings |
+| 34 | operating-cash-flow-vs-net-income | capital-and-earnings |
+| 35 | treasury-stock-third-party-allotment... | capital-and-earnings |
+| 36 | opendart-material-events | data-pipeline |
+| 37 | opendart-xbrl-notes-pipeline | data-pipeline |
+| 38 | corp-code-to-filing-pipeline | data-pipeline |
+| 39 | data-quality-validation | data-pipeline |
+| 40 | dart-edgar-unified-structure | data-pipeline |
 
-| 시리즈 | 편수 | 글 번호 |
-|--------|------|---------|
-| dart-foundations | 1 | 001 |
-| edgar-reading | 2 | 006, 029 |
-| report-reading-foundations | 3 | 004, 008, 042 |
-| audit-and-governance-reading | 5 | 014, 040, 044, 060, 064 |
-| ownership-and-governance-reading | 5 | 022, 023, 024, 025, 026 |
-| industry-reading | 3 | 101, 102, 103 |
-| global-comparison | 3 | 110, 111, 112 |
+### 02 DartLab 소식 (1편, 사용자 관리)
 
-### 02 재무 해석 (22편)
+| # | slug |
+|---|------|
+| 01 | dartlab-easy-start |
 
-| 시리즈 | 편수 | 글 번호 |
-|--------|------|---------|
-| financial-context | 13 | 003, 018, 045, 047, 048, 050, 051, 054, 055, 058, 062, 114, 115 |
-| capital-and-earnings | 9 | 010, 015, 035, 076, 032, 037, 052, 057, 061 |
+### 03 실전기업분석 (3편, 사용자 관리)
 
-### 03 데이터 자동화 (8편)
+| # | slug |
+|---|------|
+| 01 | revenue-structure-how-to-read |
+| 02 | asset-structure-how-to-read |
+| 03 | cashflow-how-to-read |
 
-| 시리즈 | 편수 | 글 번호 |
-|--------|------|---------|
-| data-automation | 8 | 005, 016, 028, 031, 099, 100, 108, 109 |
+## 정리 이력
 
-### 04 DartLab 소식 (8편, 사용자 관리)
-
-| 시리즈 | 편수 | 글 번호 |
-|--------|------|---------|
-| dartlab-news | 8 | 123, 116, 117, 118, 119, 120, 121, 122 |
-
-### 05 실전기업분석 (5편, 사용자 관리)
-
-| 시리즈 | 편수 | 글 번호 |
-|--------|------|---------|
-| corporate-analysis | 5 | 124, 125, 126, 127, 128 |
-
-## 삭제된 글 (63편)
-
-허브 글에 핵심 내용 흡수 후 삭제. 삭제 번호:
-
-002, 007, 009, 011, 012, 013, 017, 019, 020, 021, 027, 030, 033, 034, 036, 038, 039, 041, 043, 046, 049, 053, 056, 059, 063, 065, 066, 067, 068, 069, 070, 071, 072, 073, 074, 075, 077, 078, 079, 080, 081, 082, 083, 084, 085, 086, 087, 088, 089, 090, 091, 092, 093, 094, 095, 096, 097, 098, 104, 105, 106, 107, 113
-
-## 향후 방향
-
-- **dartlab-news**: 사용자가 직접 기능/업데이트 글 추가
-- **실전기업분석**: 사용자가 analysis 엔진으로 방법론 구축 후 글 추가
-- **허브 글 보강**: 삭제된 글의 핵심 내용을 남은 허브 글에 섹션으로 통합하는 작업 (후속)
-- 새 글 번호는 129부터 시작
+128편 → 47편 → 44편
+- 84편 삭제 (과잉 세분화, 템플릿 복사, 제품 설명서, dartlab 광고)
+- 7개 → 3개 카테고리
+- 전역 순번 → 카테고리별 번호

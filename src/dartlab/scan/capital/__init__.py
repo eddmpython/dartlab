@@ -70,7 +70,7 @@ def scan_capital(*, verbose: bool = True) -> pl.DataFrame:
 
         results.append(
             {
-                "종목코드": code,
+                "stockCode": code,
                 "배당여부": has_dividend,
                 "DPS": d.get("DPS", 0.0),
                 "배당수익률": d.get("배당수익률", 0.0),

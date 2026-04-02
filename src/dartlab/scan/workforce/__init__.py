@@ -47,7 +47,7 @@ def scan_workforce(*, verbose: bool = True) -> pl.DataFrame:
     growth_df = compute_salary_vs_revenue(sal_map, rev_map)
     growth_dict: dict[str, dict] = {}
     for row in growth_df.iter_rows(named=True):
-        growth_dict[row["종목코드"]] = row
+        growth_dict[row["stockCode"]] = row
     _log(f"  → {len(growth_dict)}종목")
 
     _log("4/5 고액 보수...")
@@ -66,7 +66,7 @@ def scan_workforce(*, verbose: bool = True) -> pl.DataFrame:
 
         results.append(
             {
-                "종목코드": code,
+                "stockCode": code,
                 "직원수": emp.get("직원수"),
                 "평균급여_만원": emp.get("평균급여_만원"),
                 "남녀격차": emp.get("남녀격차"),
@@ -81,7 +81,7 @@ def scan_workforce(*, verbose: bool = True) -> pl.DataFrame:
         )
 
     schema = {
-        "종목코드": pl.Utf8,
+        "stockCode": pl.Utf8,
         "직원수": pl.Float64,
         "평균급여_만원": pl.Float64,
         "남녀격차": pl.Float64,

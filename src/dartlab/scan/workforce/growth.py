@@ -233,7 +233,7 @@ def compute_salary_vs_revenue(
         burden = sg_c - rg_c
         rows.append(
             {
-                "종목코드": code,
+                "stockCode": code,
                 "급여성장률": round(sg_c, 1),
                 "매출성장률": round(rg_c, 1),
                 "급여매출괴리": round(burden, 1),

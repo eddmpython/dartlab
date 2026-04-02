@@ -12,33 +12,9 @@ export const categoryDefinitions = [
 			'DartLab은 공시를 검색 결과가 아니라 판단의 중심으로 읽습니다. 사업보고서, 감사 문구, 지배구조, 위험 신호를 실제 투자 해석으로 연결합니다.'
 	},
 	{
-		id: 'financial-interpretation',
-		slug: 'financial-interpretation',
-		folder: '02-financial-interpretation',
-		label: '재무 해석',
-		description: '재무제표 숫자 뒤 맥락, 이익의 질, 자금조달 이벤트를 투자 판단 관점에서 풉니다.',
-		seoTitle: '재무 해석 | 주석, 현금흐름, 이익의 질, 자금조달 읽는 법',
-		seoDescription:
-			'DartLab 재무 해석 카테고리. CAPEX, 운전자본, 현금흐름, 유상증자, CB, RCPS, 메자닌까지 숫자 뒤 구조를 읽는 심화 글을 모았습니다.',
-		brandMessage:
-			'DartLab은 재무제표 숫자만 보지 않습니다. 주석, 현금흐름, 운전자본, 자금조달 구조를 함께 읽어 이익의 질을 해석합니다.'
-	},
-	{
-		id: 'data-automation',
-		slug: 'data-automation',
-		folder: '03-data-automation',
-		label: '데이터 자동화',
-		description: '공시 데이터를 수집하고 분석 파이프라인으로 연결하는 방법입니다.',
-		seoTitle: '데이터 자동화 | OpenDART와 EDGAR 파이프라인',
-		seoDescription:
-			'DartLab 데이터 자동화 카테고리. OpenDART, EDGAR, XBRL, corp_code, 원문 공시를 실제 수집 파이프라인으로 연결하는 글을 모았습니다.',
-		brandMessage:
-			'DartLab은 공시를 손으로만 읽지 않습니다. OpenDART와 EDGAR 데이터를 파이프라인으로 묶어 반복 가능한 분석 구조를 만듭니다.'
-	},
-	{
 		id: 'dartlab-news',
 		slug: 'dartlab-news',
-		folder: '04-dartlab-news',
+		folder: '02-dartlab-news',
 		label: 'DartLab 소식',
 		description: 'dartlab 설치, 업데이트, 사용 팁, 새 기능 소개를 다룹니다.',
 		seoTitle: 'DartLab 소식 | 설치, 업데이트, 사용 팁',
@@ -50,7 +26,7 @@ export const categoryDefinitions = [
 	{
 		id: 'corporate-analysis',
 		slug: 'corporate-analysis',
-		folder: '05-corporate-analysis',
+		folder: '03-corporate-analysis',
 		label: '실전기업분석',
 		description: '수익 구조, 자금 구조, 투자 효율까지 기업 전체를 읽는 분석 프레임워크입니다.',
 		seoTitle: '실전기업분석 | 수익 구조부터 투자 효율까지',
@@ -89,16 +65,16 @@ export const seriesDefinitions = {
 		seoDescription: 'DartLab 사업보고서 실전 읽기 시리즈. 사업의 내용, 신규사업 계획, 텍스트 변화 신호를 실제 판단 흐름으로 연결합니다.',
 		brandMessage: 'DartLab은 사업보고서를 숫자의 주변부가 아니라, 투자 판단의 방향을 먼저 바꾸는 본문으로 봅니다.'
 	},
-	'audit-and-governance-reading': {
-		id: 'audit-and-governance-reading',
+	'audit-and-governance': {
+		id: 'audit-and-governance',
 		label: '감사와 경고 신호',
 		description: '감사보고서, KAM, 적정 의견 아래 위험 신호, 내부회계·감사위원회, 정정·재감사, 감사보수를 읽는 시리즈입니다.',
 		seoTitle: '감사와 경고 신호 | 감사보고서, 비적정 의견, 우발부채 읽는 법',
 		seoDescription: 'DartLab 감사와 경고 신호 시리즈. 감사보고서, KAM, 적정 의견 아래 위험 신호, 내부회계, 감사위원회, 정정·재감사 신호, 감사보수를 해석하는 글을 모았습니다.',
 		brandMessage: 'DartLab은 감사의견 한 줄보다, 그 뒤에서 실제로 무엇을 걱정하고 있는지를 보여주는 문구를 더 중요하게 봅니다.'
 	},
-	'ownership-and-governance-reading': {
-		id: 'ownership-and-governance-reading',
+	'ownership-and-governance': {
+		id: 'ownership-and-governance',
 		label: '대주주·보수·주주환원',
 		description: '대주주, 특수관계인, 임원 보수, 주주환원, 주총 안건, 지배구조 위험을 실제 판단 기준으로 읽는 시리즈입니다.',
 		seoTitle: '대주주·보수·주주환원 | 오너십과 지배구조 읽는 법',
@@ -137,12 +113,12 @@ export const seriesDefinitions = {
 		seoDescription: 'DartLab 자본·이익의 질 시리즈. CAPEX, 매출채권, 재고, 수주잔고, 유상증자, CB, RCPS, 메자닌까지 자본과 이익의 질을 해석합니다.',
 		brandMessage: 'DartLab은 이익의 크기보다, 그 이익이 진짜인지, 자금조달 구조가 건강한지를 더 중요하게 봅니다.'
 	},
-	'data-automation': {
-		id: 'data-automation',
+	'data-pipeline': {
+		id: 'data-pipeline',
 		label: '공시 데이터 파이프라인',
-		description: 'OpenDART, corp_code, 공시 원문, XBRL을 실제 수집기 구조로 연결하는 시리즈입니다.',
+		description: 'OpenDART, corp_code, XBRL을 실제 수집기 구조로 연결하는 시리즈입니다.',
 		seoTitle: '공시 데이터 파이프라인 | OpenDART와 공시 수집 설계',
-		seoDescription: 'DartLab 공시 데이터 파이프라인 시리즈. OpenDART, corp_code, 주요사항보고서, XBRL, 원문 데이터를 실제 수집 구조로 연결합니다.',
+		seoDescription: 'DartLab 공시 데이터 파이프라인 시리즈. OpenDART, corp_code, XBRL, 원문 데이터를 실제 수집 구조로 연결합니다.',
 		brandMessage: 'DartLab은 공시를 읽는 법을 넘어서, 반복 가능한 수집기와 분석 파이프라인으로 연결하는 방법까지 다룹니다.'
 	},
 	'corporate-analysis': {

@@ -104,7 +104,7 @@ def _screenRisk() -> pl.DataFrame:
             flags.append("감사")
         if code in liqRisk:
             flags.append("유동성")
-        rows.append({"종목코드": code, "위험플래그": "+".join(flags), "위험수": len(flags)})
+        rows.append({"stockCode": code, "위험플래그": "+".join(flags), "위험수": len(flags)})
 
     if not rows:
         return pl.DataFrame()
@@ -153,7 +153,7 @@ def _screenAll() -> pl.DataFrame:
             flags.append("quality")
         if code in risk:
             flags.append("risk")
-        rows.append({"종목코드": code, "프리셋": "+".join(flags), "프리셋수": len(flags)})
+        rows.append({"stockCode": code, "프리셋": "+".join(flags), "프리셋수": len(flags)})
 
     if not rows:
         return pl.DataFrame()
@@ -180,7 +180,7 @@ def _screenCycleRecovery() -> pl.DataFrame:
 
     # macroBeta에서 경기민감 종목 (gdpBeta > 1.0)
     if not macro.is_empty() and "gdpBeta" in macro.columns:
-        highBeta = set(macro.filter(pl.col("gdpBeta") > 1.0)["stockCode"].to_list())
+        highBeta = set(macro.filter(pl.col("gdpBeta") > 1.0)["종목코드"].to_list())
     else:
         # macroBeta 데이터 없으면 profitability 전체로 fallback
         highBeta = goodProf
@@ -198,8 +198,8 @@ def _screenCycleRecovery() -> pl.DataFrame:
         codes = codes & lowPbr
 
     if not codes:
-        return pl.DataFrame({"종목코드": [], "프리셋": []})
-    return pl.DataFrame({"종목코드": sorted(codes), "프리셋": ["cycle_recovery"] * len(codes)})
+        return pl.DataFrame({"stockCode": [], "프리셋": []})
+    return pl.DataFrame({"stockCode": sorted(codes), "프리셋": ["cycle_recovery"] * len(codes)})
 
 
 def _screenCycleDefensive() -> pl.DataFrame:
@@ -230,7 +230,7 @@ def _screenCycleDefensive() -> pl.DataFrame:
 
     # 저베타 (defensive)
     if not macro.is_empty() and "gdpBeta" in macro.columns:
-        lowBeta = set(macro.filter(pl.col("gdpBeta") < 0.5)["stockCode"].to_list())
+        lowBeta = set(macro.filter(pl.col("gdpBeta") < 0.5)["종목코드"].to_list())
     else:
         lowBeta = safeDbt  # fallback
 
@@ -239,8 +239,8 @@ def _screenCycleDefensive() -> pl.DataFrame:
         codes = codes & goodDiv
 
     if not codes:
-        return pl.DataFrame({"종목코드": [], "프리셋": []})
-    return pl.DataFrame({"종목코드": sorted(codes), "프리셋": ["cycle_defensive"] * len(codes)})
+        return pl.DataFrame({"stockCode": [], "프리셋": []})
+    return pl.DataFrame({"stockCode": sorted(codes), "프리셋": ["cycle_defensive"] * len(codes)})
 
 
 _DISPATCH = {

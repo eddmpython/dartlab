@@ -21,6 +21,9 @@
 | [edgar.md](edgar.md) | L1 | providers/edgar/ | EDGAR 동기화 규칙, EXEMPT 관리, 데이터 소스 차이 |
 | [code.md](code.md) | — | 전체 | camelCase, 독스트링 9섹션, 릴리즈, Git |
 | [ui.md](ui.md) | L4 | ui/ + vscode/ | Svelte SPA + VSCode 확장, 패리티 규칙, 빌드/배포 |
+| [viz.md](viz.md) | 교차 | viz/ | 차트 + 다이어그램 시각화 엔진 |
+| **[architecture.md](architecture.md)** | **—** | **전체** | **전체 청사진 — 레이어, 엔진, 규칙, 데이터 출력** |
+| **[testing.md](testing.md)** | **—** | **전체** | **테스트 체계 — 마커, 커버리지 90% 목표, CI** |
 
 ## 레이어 아키텍처
 

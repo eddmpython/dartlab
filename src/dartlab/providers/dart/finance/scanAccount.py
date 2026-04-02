@@ -27,22 +27,6 @@ from dartlab.providers.dart.finance.mapper import (
 _log = logging.getLogger(__name__)
 
 
-def _joinCorpName(df: pl.DataFrame) -> pl.DataFrame:
-    """stockCode에 회사명(corpName) 컬럼 추가."""
-    try:
-        from dartlab.gather.listing import getKindList
-
-        kindDf = getKindList().select(
-            pl.col("종목코드").alias("stockCode"),
-            pl.col("회사명").alias("corpName"),
-        )
-        yearCols = [c for c in df.columns if c != "stockCode"]
-        return df.join(kindDf, on="stockCode", how="left").select(["stockCode", "corpName"] + yearCols)
-    except (ImportError, OSError, pl.exceptions.PolarsError):
-        _log.debug("kindList 매핑 실패 — corpName 없이 반환")
-        return df
-
-
 _SCAN_COLS = [
     "sj_div",
     "fs_div",
@@ -402,8 +386,8 @@ def scanAccount(
         annual: True면 연간 (기본 False=분기별 standalone).
 
     Returns:
-        stockCode | corpName | 2025Q4 | 2025Q3 | ... (분기, 기본)
-        stockCode | corpName | 2025 | 2024 | ... (연간)
+        stockCode | 2025Q4 | 2025Q3 | ... (분기, 기본)
+        stockCode | 2025 | 2024 | ... (연간)
     """
     from dartlab.core.dataLoader import _dataDir
 
@@ -480,9 +464,6 @@ def scanAccount(
     # 최신 먼저 역순 정렬
     periodCols = list(reversed(periodCols))
     result = result.select(["stockCode"] + periodCols)
-
-    # 회사명 매핑 (kindList)
-    result = _joinCorpName(result)
 
     _log.info(
         "scanAccount('%s'): %d종목 × %d기간",
@@ -573,7 +554,7 @@ def scanRatio(
         annual: True면 연간 (기본 False=분기별).
 
     Returns:
-        stockCode | corpName | 기간컬럼들...
+        stockCode | 기간컬럼들...
     """
     if ratioName not in _RATIO_DEFS:
         available = ", ".join(sorted(_RATIO_DEFS))
@@ -619,9 +600,9 @@ def _calcSimpleRatio(defn: dict, fsPref: str, *, annual: bool = False) -> pl.Dat
     numer = scanAccount(defn["numer"], fsPref=fsPref, annual=annual)
     denom = scanAccount(defn["denom"], fsPref=fsPref, annual=annual)
 
-    # corpName 제외하고 연도 컬럼만 추출
-    numerYears = [c for c in numer.columns if c not in ("stockCode", "corpName")]
-    denomYears = [c for c in denom.columns if c not in ("stockCode", "corpName")]
+    # 기간 컬럼만 추출
+    numerYears = [c for c in numer.columns if c != "stockCode"]
+    denomYears = [c for c in denom.columns if c != "stockCode"]
     commonYears = sorted(set(numerYears) & set(denomYears), reverse=True)
 
     if not commonYears:
@@ -646,15 +627,14 @@ def _calcSimpleRatio(defn: dict, fsPref: str, *, annual: bool = False) -> pl.Dat
         )
         resultExprs.append(expr)
 
-    result = joined.select(resultExprs)
-    return _joinCorpName(result)
+    return joined.select(resultExprs)
 
 
 def _calcYoyRatio(defn: dict, fsPref: str, *, annual: bool = False) -> pl.DataFrame:
     """YoY 성장률 계산."""
     base = scanAccount(defn["base"], fsPref=fsPref, annual=annual)
     # base는 이미 최신 먼저 — YoY 계산은 오름차순 필요
-    yearCols = sorted(c for c in base.columns if c not in ("stockCode", "corpName"))
+    yearCols = sorted(c for c in base.columns if c != "stockCode")
 
     if len(yearCols) < 2:
         return pl.DataFrame({"stockCode": []})
@@ -675,5 +655,4 @@ def _calcYoyRatio(defn: dict, fsPref: str, *, annual: bool = False) -> pl.DataFr
 
     # 최신 먼저 역순으로 컬럼 재배치
     yoyCols = [yearCols[i] for i in range(1, len(yearCols))]
-    result = base.select(resultExprs).select(["stockCode"] + list(reversed(yoyCols)))
-    return _joinCorpName(result)
+    return base.select(resultExprs).select(["stockCode"] + list(reversed(yoyCols)))

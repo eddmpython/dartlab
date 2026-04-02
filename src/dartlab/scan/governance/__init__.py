@@ -81,7 +81,7 @@ def scan_governance(*, verbose: bool = True) -> pl.DataFrame:
 
         results.append(
             {
-                "종목코드": code,
+                "stockCode": code,
                 "지분율": round(ownership, 1) if ownership is not None else None,
                 "사외이사비율": round(outside_ratio, 1) if outside_ratio is not None else None,
                 "중도사임": resign,
