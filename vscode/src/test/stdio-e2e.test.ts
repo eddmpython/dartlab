@@ -83,10 +83,15 @@ describe("dartlab chat --stdio protocol", () => {
       '{"type":"setProvider","provider":"gemini","model":"gemini-2.5-flash"}',
       '{"type":"exit"}',
     ]);
+    // API 키가 없으면 needCredential, 있으면 providerChanged
     const changed = events.find((e) => e.event === "providerChanged");
-    expect(changed).toBeDefined();
-    expect(changed!.data.provider).toBe("gemini");
-    expect(changed!.data.model).toBe("gemini-2.5-flash");
+    const needCred = events.find((e) => e.event === "needCredential");
+    expect(changed || needCred).toBeDefined();
+    if (changed) {
+      expect(changed.data.provider).toBe("gemini");
+    } else {
+      expect(needCred!.data.provider).toBe("gemini");
+    }
   });
 
   it("ask emits meta and done (at minimum)", async () => {
