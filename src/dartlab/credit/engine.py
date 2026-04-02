@@ -204,6 +204,7 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         "gradeCategory": gradeCategory(grade),
         "investmentGrade": isInvestmentGrade(grade),
         "score": overall,
+        "healthScore": round(100 - overall, 2),
         "currentScore": currentScore,
         "pdEstimate": pdEstimate,
         "eCR": eCR,

@@ -493,6 +493,13 @@ def _streamWithCodeExecution(
         except (OSError, RuntimeError, TimeoutError, ValueError) as exc:
             result = f"실행 오류: {exc}"
 
+        # VizSpec 마커 추출 → CHART 이벤트 emit
+        from dartlab.viz.extract import extract_viz_specs
+
+        result, viz_specs = extract_viz_specs(result)
+        for vspec in viz_specs:
+            yield AnalysisEvent("chart", {"charts": [vspec]})
+
         # 진행 이벤트 — 실행 완료 (코드 + 결과 포함)
         formatted = _formatResultForUser(result)
         yield AnalysisEvent(
@@ -576,7 +583,33 @@ dartlab 재무분석 플랫폼을 도구로 삼아 한국/미국 상장기업을
 - `newsSearch(query)` — 뉴스 검색 (days=N으로 기간 제한 가능)
 - `formatResults(results)` — 검색 결과를 마크다운으로 포맷
 - `dartlab.search(query)` — 400만 공시 원문 검색 (140ms). "유상증자", "대표이사 변경" 등 공시 이벤트 검색. corp="종목코드"로 종목 필터 가능.
+- `emit_chart(spec)` — 인터랙티브 차트 출력 (클라이언트에서 렌더링)
+- `emit_diagram(type, source)` — 다이어그램 출력 (mermaid 등)
 {env_block}
+
+## 시각화
+분석 결과를 시각화하려면 `emit_chart()`를 사용하라. 클라이언트에서 인터랙티브 차트로 렌더링된다.
+**숫자 테이블과 차트를 함께 제공하라** — 사용자가 패턴을 빠르게 파악할 수 있다.
+
+```python
+# 차트 출력 예시
+emit_chart({{
+    "chartType": "combo",          # combo|bar|line|radar|waterfall|heatmap|pie
+    "title": "삼성전자 손익 추이",
+    "series": [
+        {{"name": "매출액", "data": [200, 220, 260], "color": "#3b82f6", "type": "bar"}},
+        {{"name": "영업이익", "data": [40, 50, 60], "color": "#ea4647", "type": "line"}},
+    ],
+    "categories": ["2022", "2023", "2024"],
+    "options": {{"unit": "조원"}},
+}})
+
+# 관계도/흐름도 출력
+emit_diagram("mermaid", "graph LR\\n  매출-->영업이익-->순이익-->FCF", title="이익 흐름")
+```
+
+**차트 생성 시점**: 추세 비교, 구성 분석, 시계열 변화를 설명할 때 적극 활용하라.
+**차트 타입 선택**: 추세=line/combo, 구성=pie/stacked bar, 비교=bar, 흐름=waterfall, 등급=radar.
 
 ## 도구 선택 기준
 
@@ -626,10 +659,13 @@ r3 = c.analysis("financial", "안정성")
 c.credit(detail=True) — 7축 신용등급 + 로데이터 + 서사를 한 번에 반환.
 analysis("안정성")과 다르다. credit은 7축 통합 등급이고, analysis는 개별 비율 추세다.
 
+⚠ credit score는 **위험도** 스케일: 0=위험 없음(최우량), 100=최위험.
+사용자에게 보여줄 때는 `healthScore`(100-score)를 쓰면 직관적: "건전도 93/100".
+
 ```python
 cr = c.credit(detail=True)
-print(f"등급: {cr['grade']}, 점수: {cr['score']}/100")
-print(f"전망: {cr['outlook']}, PD: {cr['pdEstimate']}%")
+print(f"등급: {cr['grade']}, 건전도: {cr['healthScore']}/100")
+print(f"전망: {cr['outlook']}, 부도확률: {cr['pdEstimate']}%")
 
 # 서사 (narrative.py 생성 — 축별 해석 문장)
 for n in cr['narratives']['axes']:
@@ -748,6 +784,7 @@ c.quant("beta")                  # 시장 베타
 투자 판단 질문에는 **analysis(재무) + quant(기술적)** 교차 검증하라:
   재무 좋은데 기술적 과매수 → "펀더멘털은 좋지만 단기 조정 가능"
   재무 나쁜데 기술적 반등 → "기술적 반등이지만 펀더멘털 리스크"
+analysis("quant", "기술적분석")도 사용 가능 — 재무-기술적 괴리 진단(divergence)까지 포함.
 
 ### 외부 검색 — 실시간 시장/뉴스/이슈 조회
 dartlab 재무데이터에 없는 실시간 정보(최근 뉴스, 시장 반응, 규제 변화, 업황)가 필요할 때 사용.
