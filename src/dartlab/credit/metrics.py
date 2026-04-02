@@ -80,6 +80,30 @@ def _annualCols(periods: list[str], basePeriod: str | None, maxYears: int = 8) -
     return cols[:maxYears]
 
 
+def _isQuarterlyFallback(cols: list[str]) -> bool:
+    """Q4 fallback 컬럼인지 판별."""
+    return bool(cols) and "Q" in cols[0]
+
+
+def _ttmSum(flowData: dict, qCol: str, allPeriods: list[str]) -> float | None:
+    """Q4 컬럼 기준 최근 4분기 합산(TTM).
+
+    qCol이 "2025Q4"이면 2025Q4+Q3+Q2+Q1 합산.
+    분기 데이터가 부족하면 가용 분기만 연환산.
+    """
+    year = qCol[:4]
+    quarters = [f"{year}Q{q}" for q in (4, 3, 2, 1)]
+    vals = [flowData.get(q) for q in quarters if q in allPeriods]
+    valid = [v for v in vals if v is not None]
+    if not valid:
+        return None
+    if len(valid) >= 3:
+        # 3~4분기 있으면 4분기로 연환산
+        return sum(valid) / len(valid) * 4
+    # 2분기 이하면 단순 합산 (부정확하지만 0보다 나음)
+    return sum(valid) / len(valid) * 4
+
+
 def _getRatios(company):
     try:
         return company.finance.ratios
@@ -148,6 +172,10 @@ def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
     if len(yCols) < 2:
         return None
 
+    # Q4 fallback 감지 — IS/CF 플로우 변수에 TTM 합산 필요
+    _quarterlyMode = _isQuarterlyFallback(yCols)
+    _allPeriods = set(bsPeriods)
+
     # 행 추출
     ta = bsData.get("자산총계", {})
     tl = bsData.get("부채총계", {})
@@ -195,17 +223,25 @@ def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
         bondsVal = bonds.get(col) or 0
         totalBorrowing = stBorrow + ltBorrow + bondsVal
 
-        revenue = rev.get(col)
-        opIncome = oi.get(col)
-        netIncome = ni.get(col)
-        depreciation = dep.get(col)
-        ocfVal = ocf.get(col)
-        capexVal = capex.get(col)
+        # IS/CF 플로우 변수: Q4 fallback이면 TTM 합산
+        if _quarterlyMode:
+            revenue = _ttmSum(rev, col, _allPeriods)
+            opIncome = _ttmSum(oi, col, _allPeriods)
+            netIncome = _ttmSum(ni, col, _allPeriods)
+            depreciation = _ttmSum(dep, col, _allPeriods)
+            ocfVal = _ttmSum(ocf, col, _allPeriods)
+            capexVal = _ttmSum(capex, col, _allPeriods)
+            ie = _ttmSum(intCost, col, _allPeriods) or _ttmSum(finCost, col, _allPeriods)
+        else:
+            revenue = rev.get(col)
+            opIncome = oi.get(col)
+            netIncome = ni.get(col)
+            depreciation = dep.get(col)
+            ocfVal = ocf.get(col)
+            capexVal = capex.get(col)
+            ie = intCost.get(col) or finCost.get(col)
         if capexVal is not None:
             capexVal = abs(capexVal)
-
-        # 이자비용 (우선순위: IS이자비용 → IS금융비용)
-        ie = intCost.get(col) or finCost.get(col)
 
         # EBITDA
         ebitda = (opIncome + (depreciation or 0)) if opIncome is not None else None
