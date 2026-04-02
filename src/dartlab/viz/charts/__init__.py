@@ -25,6 +25,26 @@ from dartlab.viz.palette import COLORS
 _PERIOD_COL_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 
 
+def _auto_emit(company: Any, generator_name: str) -> None:
+    """AI 런타임에서 도메인 차트 호출 시 VizSpec 마커를 자동 emit.
+
+    Jupyter에서는 stdout에 HTML 주석이 찍히지만 사용자에게 보이지 않는다.
+    VSCode/CLI AI 런타임에서는 마커가 캡처되어 인터랙티브 차트로 렌더링된다.
+    """
+    try:
+        from dartlab.viz import emit_chart
+        from dartlab.viz import generators as gen
+
+        fn = getattr(gen, generator_name, None)
+        if fn is None:
+            return
+        spec = fn(company)
+        if spec:
+            emit_chart(spec)
+    except (ImportError, AttributeError, KeyError, OSError, TypeError, ValueError):
+        pass
+
+
 def _ensure_plotly():
     """Lazy import with clear error."""
     try:
@@ -293,6 +313,7 @@ def revenue(company: Any, *, n_years: int = 5) -> Any:
     )
     fig.update_yaxes(title_text="(%)", secondary_y=True)
     _apply_theme(fig)
+    _auto_emit(company, "spec_revenue_trend")
     return fig
 
 
@@ -323,6 +344,7 @@ def cashflow(company: Any, *, n_years: int = 5) -> Any:
         yaxis_title="(백만원)",
     )
     _apply_theme(fig)
+    _auto_emit(company, "spec_cashflow_waterfall")
     return fig
 
 
@@ -375,6 +397,7 @@ def dividend(company: Any) -> Any:
     fig.update_yaxes(title_text="DPS (원)", secondary_y=False)
     fig.update_yaxes(title_text="(%)", secondary_y=True)
     _apply_theme(fig)
+    _auto_emit(company, "spec_dividend")
     return fig
 
 
@@ -403,6 +426,7 @@ def balance_sheet(company: Any, *, n_years: int = 5) -> Any:
         yaxis_title="(백만원)",
     )
     _apply_theme(fig)
+    _auto_emit(company, "spec_balance_sheet")
     return fig
 
 
@@ -443,6 +467,7 @@ def profitability(company: Any, *, n_years: int = 5) -> Any:
         yaxis_title="(%)",
     )
     _apply_theme(fig)
+    _auto_emit(company, "spec_profitability")
     return fig
 
 

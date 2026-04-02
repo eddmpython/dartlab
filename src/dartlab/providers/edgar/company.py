@@ -547,16 +547,7 @@ class Company:
         """
         return "USD"
 
-    def quant(self, metric: str | None = None, **kwargs):
-        """기술적 분석 (25개 지표 + 종합 판단).
-
-        Args:
-            metric: "verdict" | "indicators" | None (=verdict).
-        """
-        from dartlab.quant import Quant
-
-        q = Quant()
-        return q(self.stockCode, metric, **kwargs)
+    # quant는 analysis 축 — c.analysis("quant", "기술적분석")으로 접근
 
     def view(self, *, port: int = 8400) -> None:
         """브라우저에서 공시 뷰어를 열어 sections/index를 시각화.

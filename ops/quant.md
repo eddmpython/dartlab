@@ -1,26 +1,24 @@
-# Quant
+# Quant (analysis 축)
 
-주가 기술적 분석 엔진. gather("price") OHLCV를 소비하여 보조지표와 신호를 계산.
+주가 기술적 분석. gather("price") OHLCV를 소비하여 보조지표와 신호를 계산.
+**analysis 엔진의 "quant" 그룹 축**으로 접근한다. 독립 엔진이 아님.
 
 | 항목 | 내용 |
 |------|------|
-| 레이어 | L1 |
-| 진입점 | `dartlab.quant()`, `c.quant()` |
+| 레이어 | L2 (analysis 하위) |
+| 진입점 | `c.analysis("quant", "기술적분석")` |
 | 소비 | gather/price (OHLCV), NumPy |
-| 생산 | 25개 지표, 9개 신호, 종합 판단 |
+| 생산 | 25개 지표, 9개 신호, 종합 판단, 재무-기술적 괴리 진단 |
 | 원본 | tradix 벡터화 엔진에서 이식 |
 
 ## 사용법
 
 ```python
 import dartlab
-
-dartlab.quant("005930")                # 종합 판단 (강세/중립/약세)
-dartlab.quant("005930", "indicators")  # 25개 지표 DataFrame
-
 c = dartlab.Company("005930")
-c.quant()                              # Company 연결
-c.quant("indicators")                  # 지표 DataFrame
+
+c.analysis("quant", "기술적분석")      # 종합 판단 + 재무 괴리 진단
+c.analysis("quant")                    # quant 그룹 가이드
 ```
 
 ## 지표 25개
@@ -90,8 +88,8 @@ RSI 레벨(±2) + SMA20 추세(±1) + SMA60 추세(±1) = 점수 -4 ~ +4
 ## 상대강도 + 베타
 
 ```python
-dartlab.quant("005930")            # verdict에 relativeStrength, beta 포함
-dartlab.quant("005930", "beta")    # 베타 + CAPM 상세
+c.analysis("quant", "기술적분석")            # verdict에 relativeStrength, beta 포함
+c.analysis("quant", "기술적분석")  # beta는 결과 dict에 포함    # 베타 + CAPM 상세
 ```
 
 ### 상대강도 (Relative Strength)
