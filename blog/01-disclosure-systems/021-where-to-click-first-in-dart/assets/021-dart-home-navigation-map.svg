@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
-  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
-  <text x="48" y="62" fill="#f8fafc" font-size="24" font-weight="700" font-family="Inter,system-ui,sans-serif">DART First Map</text>
-  <rect x="78" y="140" width="180" height="82" rx="16" fill="#111827" stroke="#334155"/><text x="119" y="186" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Search company</text>
-  <rect x="310" y="140" width="180" height="82" rx="16" fill="#111827" stroke="#334155"/><text x="354" y="186" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Periodic report</text>
-  <rect x="542" y="140" width="180" height="82" rx="16" fill="#111827" stroke="#334155"/><text x="582" y="186" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Event filing</text>
-  <path d="M258 181H310M490 181H542" stroke="#ea4647" stroke-width="3"/>
-</svg>

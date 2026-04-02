@@ -840,7 +840,12 @@ class _Module(sys.modules[__name__].__class__):
 
             setattr(self, name, credit)
             return credit
-        # quant는 analysis 축 — c.analysis("quant", "기술적분석")으로 접근
+        if name == "quant":
+            from dartlab.quant import Quant
+
+            instance = Quant()
+            setattr(self, name, instance)
+            return instance
         if name == "viz":
             import dartlab.viz as _viz
 
@@ -893,6 +898,7 @@ __all__ = [
     "scan",
     "analysis",
     "gather",
+    "quant",
     "credit",
     "verbose",
     "dataDir",

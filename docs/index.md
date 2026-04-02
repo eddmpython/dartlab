@@ -50,4 +50,4 @@ dartlab 독립 신용평가(dCR) 보고서가 정기 발간된다.
 
 - [안정성 정책](stability)
 - [변경 이력](changelog)
-- [CAPABILITIES.md](https://github.com/eddmpython/dartlab/blob/master/CAPABILITIES.md) — 전체 API 레퍼런스
+- CAPABILITIES.md (GitHub 저장소 루트) — 전체 API 레퍼런스

@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
-  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
-  <text x="48" y="62" fill="#f8fafc" font-size="24" font-weight="700" font-family="Inter,system-ui,sans-serif">Conflict Signals</text>
-  <rect x="170" y="120" width="420" height="220" rx="18" fill="#111827" stroke="#334155"/>
-  <path d="M380 120V340M170 230H590" stroke="#334155"/>
-  <text x="236" y="154" fill="#86efac" font-size="13" font-weight="700" font-family="Inter,system-ui,sans-serif">Words + Numbers align</text>
-  <text x="420" y="154" fill="#f87171" font-size="13" font-weight="700" font-family="Inter,system-ui,sans-serif">Words lead, numbers weak</text>
-  <text x="420" y="302" fill="#fbbf24" font-size="13" font-weight="700" font-family="Inter,system-ui,sans-serif">Numbers warn first</text>
-</svg>

@@ -31,7 +31,8 @@ export const navigation: NavItem[] = [
 			{ title: 'MCP', href: '/docs/api/mcp' },
 			{
 				title: 'Full Reference',
-				href: 'https://github.com/eddmpython/dartlab/blob/master/CAPABILITIES.md'
+				href: 'https://github.com/eddmpython/dartlab/blob/master/CAPABILITIES.md',
+				external: true
 			}
 		]
 	},

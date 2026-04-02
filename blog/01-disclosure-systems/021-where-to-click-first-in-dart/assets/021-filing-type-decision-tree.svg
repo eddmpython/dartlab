@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
-  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
-  <text x="48" y="62" fill="#f8fafc" font-size="24" font-weight="700" font-family="Inter,system-ui,sans-serif">Filing Decision Tree</text>
-  <rect x="306" y="90" width="188" height="68" rx="16" fill="#111827" stroke="#334155"/><text x="365" y="130" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">What do you need?</text>
-  <rect x="106" y="232" width="180" height="76" rx="16" fill="#111827" stroke="#334155"/><text x="143" y="276" fill="#86efac" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Structure</text>
-  <rect x="514" y="232" width="180" height="76" rx="16" fill="#111827" stroke="#334155"/><text x="560" y="276" fill="#fbbf24" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Event</text>
-  <path d="M400 158V206M400 206L196 232M400 206L604 232" stroke="#ea4647" stroke-width="3"/>
-</svg>

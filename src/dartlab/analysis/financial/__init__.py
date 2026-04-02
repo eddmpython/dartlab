@@ -632,26 +632,61 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
             ),
         ),
     ),
-    # ── 7부: 기술적 분석 ──
-    "기술적분석": _AxisEntry(
-        section="기술적분석",
-        partId="7-1",
-        description="주가 기술적 지표와 매매 신호로 타이밍을 판단한다",
-        example='analysis("quant", "기술적분석")',
+    # ── 6부: 매크로 ──
+    "매크로환경": _AxisEntry(
+        section="매크로환경",
+        partId="6-1",
+        description="지금 경제는 어떤 국면이고 이 회사에 어떤 의미인가",
+        example='analysis("macro", "매크로환경")',
         calcs=(
             _CalcEntry(
-                "calcTechnicalVerdict",
-                "dartlab.analysis.financial.quantCalcs",
-                "technicalVerdict",
-                "종합 판단 (강세/중립/약세)",
+                "calcMacroEnvironment",
+                "dartlab.analysis.financial.macroExposure",
+                "macroEnvironment",
+                "경제 사이클 + 기업 포지션",
             ),
+        ),
+    ),
+    "매크로민감도": _AxisEntry(
+        section="매크로민감도",
+        partId="6-2",
+        description="이 회사의 매출은 어떤 매크로 변수에 민감한가",
+        example='analysis("macro", "매크로민감도")',
+        calcs=(
             _CalcEntry(
-                "calcTechnicalIndicators",
-                "dartlab.analysis.financial.quantCalcs",
-                "technicalIndicators",
-                "25개 기술적 지표",
+                "calcMacroSensitivity",
+                "dartlab.analysis.financial.macroExposure",
+                "macroSensitivity",
+                "외생변수 회귀 + 매출 방향",
             ),
-            _CalcEntry("calcBeta", "dartlab.analysis.financial.quantCalcs", "beta", "시장 베타 + CAPM"),
+        ),
+    ),
+    "자산신호": _AxisEntry(
+        section="자산신호",
+        partId="6-3",
+        description="금리·환율·금·VIX가 이 회사에 어떤 신호를 보내는가",
+        example='analysis("macro", "자산신호")',
+        calcs=(
+            _CalcEntry(
+                "calcAssetSignals",
+                "dartlab.analysis.financial.macroExposure",
+                "assetSignals",
+                "5대 자산 해석 + 기업 연관성",
+            ),
+        ),
+    ),
+    "밸류에이션밴드": _AxisEntry(
+        section="밸류에이션밴드",
+        partId="6-4",
+        description="PER/PBR이 과거 대비 어디에 있는가",
+        example='analysis("macro", "밸류에이션밴드")',
+        calcs=(
+            _CalcEntry(
+                "calcValuationBand",
+                "dartlab.analysis.financial.macroExposure",
+                "valuationBand",
+                "멀티플 정규분포 밴드",
+            ),
         ),
     ),
 }
@@ -681,7 +716,7 @@ _GROUPS: dict[str, list[str]] = {
     "valuation": ["가치평가"],
     "governance": ["지배구조", "공시변화", "비교분석"],
     "forecast": ["매출전망", "예측신호"],
-    "quant": ["기술적분석"],
+    "macro": ["매크로환경", "매크로민감도", "자산신호", "밸류에이션밴드"],
 }
 
 # 역매핑: 축 → 소속 그룹
@@ -724,15 +759,23 @@ _ALIASES: dict[str, str] = {
     "prediction": "예측신호",
     "predictionSignals": "예측신호",
     "전망신호": "예측신호",
+    # macro 그룹
+    "macroEnvironment": "매크로환경",
+    "macroSensitivity": "매크로민감도",
+    "assetSignals": "자산신호",
+    "valuationBand": "밸류에이션밴드",
+    "경제환경": "매크로환경",
+    "경제사이클": "매크로환경",
+    "민감도": "매크로민감도",
+    "멀티플밴드": "밸류에이션밴드",
     # 그룹 alias (한글)
     "재무": "financial",
     "재무분석": "financial",
     "가치": "valuation",
     "지배": "governance",
     "전망분석": "forecast",
-    "기술적": "quant",
-    "기술적분석": "quant",
-    "technical": "quant",
+    "매크로": "macro",
+    "매크로분석": "macro",
 }
 
 

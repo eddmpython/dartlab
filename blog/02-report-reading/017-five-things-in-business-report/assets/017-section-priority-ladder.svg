@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
-  <rect width="800" height="430" rx="28" fill="#050811"/>
-  <rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
-  <text x="48" y="62" fill="#f8fafc" font-family="Inter,system-ui,sans-serif" font-size="24" font-weight="700">Section Priority Ladder</text>
-  <text x="48" y="86" fill="#94a3b8" font-family="Inter,system-ui,sans-serif" font-size="12">Not every section deserves equal time on the first read.</text>
-  <rect x="150" y="292" width="500" height="44" rx="12" fill="#111827" stroke="#334155"/><text x="344" y="320" fill="#86efac" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">High: Business / Risk / Notes</text>
-  <rect x="190" y="230" width="420" height="44" rx="12" fill="#111827" stroke="#334155"/><text x="331" y="258" fill="#fbbf24" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Mid: Overview / Governance</text>
-  <rect x="235" y="168" width="330" height="44" rx="12" fill="#111827" stroke="#334155"/><text x="339" y="196" fill="#fda4a4" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">Final check: Audit</text>
-</svg>

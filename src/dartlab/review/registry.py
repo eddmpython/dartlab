@@ -317,7 +317,7 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         if _need("stabilityFlags"):
             b["stabilityFlags"] = _safe(lambda: stabilityFlagsBlock(calcStabilityFlags(company, basePeriod=basePeriod)))
         if _need("marketRisk"):
-            from dartlab.analysis.financial.technicalAnalysis import calcMarketRisk
+            from dartlab.quant.extended import calcMarketRisk
             from dartlab.review.builders import marketRiskBlock
 
             b["marketRisk"] = _safe(lambda: marketRiskBlock(calcMarketRisk(company)))
@@ -818,7 +818,7 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
         "fundamentalDivergence",
         "marketAnalysisFlags",
     }:
-        from dartlab.analysis.financial.technicalAnalysis import (
+        from dartlab.quant.extended import (
             calcFundamentalDivergence,
             calcMarketAnalysisFlags,
             calcMarketBeta,

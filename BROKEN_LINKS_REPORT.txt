@@ -1,0 +1,464 @@
+DARTLAB BROKEN INTERNAL LINKS REPORT
+==================================================
+
+Total deleted slugs referenced: 34
+Total files with broken links: 42
+
+==================================================
+
+GROUPED BY DELETED SLUG:
+
+convertible-bond-and-bw-disclosure:
+  - 01-reading-disclosures/042-how-far-to-trust-new-business-plans
+  - 01-reading-disclosures/102-biotech-company-filings
+  - 02-financial-interpretation/037-treasury-stock-third-party-allotment-and-major-shareholder-change
+  - 02-financial-interpretation/045-development-costs-and-intangibles
+  - 02-financial-interpretation/047-lease-liabilities-and-debt-maturity
+  - 02-financial-interpretation/051-foreign-exchange-gains-and-derivatives
+  - 02-financial-interpretation/052-preferred-stock-and-rcps-disclosure
+  - 02-financial-interpretation/057-exchangeable-bond-disclosure
+  - 02-financial-interpretation/061-mezzanine-protections-and-refixing
+  (referenced in 9 files)
+
+when-numbers-matter-more-than-ceo-words:
+  - 01-reading-disclosures/004-reading-business-reports
+  - 01-reading-disclosures/014-audit-report-and-kam
+  - 01-reading-disclosures/022-major-shareholder-and-related-parties
+  - 01-reading-disclosures/029-risk-factors-and-mdna
+  - 01-reading-disclosures/042-how-far-to-trust-new-business-plans
+  - 02-financial-interpretation/015-receivables-and-allowance
+  - 02-financial-interpretation/018-why-rising-sales-can-still-be-risky
+  - 02-financial-interpretation/035-operating-cash-flow-vs-net-income
+  - 02-financial-interpretation/045-development-costs-and-intangibles
+  - 02-financial-interpretation/050-non-operating-income-vs-core-earnings
+  (referenced in 10 files)
+
+guarantees-collateral-and-commitments:
+  - 01-reading-disclosures/044-internal-controls-and-audit-committee
+  - 01-reading-disclosures/060-restatement-before-audit-and-reaudit-signals
+  - 01-reading-disclosures/101-construction-company-filings
+  - 01-reading-disclosures/103-financial-company-filings
+  (referenced in 4 files)
+
+depreciation-after-capex:
+  - 01-reading-disclosures/102-biotech-company-filings
+  - 01-reading-disclosures/110-samsung-vs-tsmc-capex-and-depreciation
+  - 02-financial-interpretation/018-why-rising-sales-can-still-be-risky
+  - 02-financial-interpretation/032-rights-offering-disclosure
+  - 02-financial-interpretation/045-development-costs-and-intangibles
+  - 02-financial-interpretation/047-lease-liabilities-and-debt-maturity
+  - 02-financial-interpretation/058-deferred-tax-and-tax-expense-distortion
+  (referenced in 7 files)
+
+where-to-click-first-in-dart:
+  - 01-reading-disclosures/004-reading-business-reports
+  - 01-reading-disclosures/022-major-shareholder-and-related-parties
+  - 01-reading-disclosures/023-executive-pay-disclosure
+  - 01-reading-disclosures/024-shareholder-return-what-matters
+  - 01-reading-disclosures/026-how-to-read-agm-notice
+  - 02-financial-interpretation/032-rights-offering-disclosure
+  (referenced in 6 files)
+
+construction-in-progress:
+  - 01-reading-disclosures/004-reading-business-reports
+  - 01-reading-disclosures/014-audit-report-and-kam
+  - 01-reading-disclosures/024-shareholder-return-what-matters
+  - 01-reading-disclosures/110-samsung-vs-tsmc-capex-and-depreciation
+  - 02-financial-interpretation/045-development-costs-and-intangibles
+  - 02-financial-interpretation/047-lease-liabilities-and-debt-maturity
+  (referenced in 6 files)
+
+inventory-and-write-downs:
+  - 01-reading-disclosures/029-risk-factors-and-mdna
+  - 01-reading-disclosures/040-clean-audit-opinion-but-still-risky
+  - 01-reading-disclosures/111-hyundai-vs-toyota-inventory-and-receivables
+  - 02-financial-interpretation/015-receivables-and-allowance
+  - 02-financial-interpretation/018-why-rising-sales-can-still-be-risky
+  - 02-financial-interpretation/035-operating-cash-flow-vs-net-income
+  - 02-financial-interpretation/076-order-backlog-vs-cash-flow
+  (referenced in 7 files)
+
+capital-reduction-and-reverse-split-disclosure:
+  - 01-reading-disclosures/064-audit-fees-and-non-audit-fees
+  - 02-financial-interpretation/047-lease-liabilities-and-debt-maturity
+  - 02-financial-interpretation/052-preferred-stock-and-rcps-disclosure
+  - 02-financial-interpretation/057-exchangeable-bond-disclosure
+  - 02-financial-interpretation/061-mezzanine-protections-and-refixing
+  (referenced in 5 files)
+
+opendart-review:
+  - 01-reading-disclosures/001-everything-about-dart
+  - 02-financial-interpretation/032-rights-offering-disclosure
+  - 03-data-automation/005-python-financial-analysis
+  - 03-data-automation/016-opendart-material-events
+  - 03-data-automation/028-opendart-xbrl-notes-pipeline
+  - 03-data-automation/031-corp-code-to-filing-pipeline
+  (referenced in 6 files)
+
+xbrl-parsing-and-account-mapping:
+  - 01-reading-disclosures/110-samsung-vs-tsmc-capex-and-depreciation
+  - 03-data-automation/005-python-financial-analysis
+  - 03-data-automation/108-data-quality-validation
+  - 03-data-automation/109-dart-edgar-unified-structure
+  - 04-dartlab-news/118-dartlab-finance-ratios-one-line
+  (referenced in 5 files)
+
+dart-amendment-filing-pipeline:
+  - 01-reading-disclosures/040-clean-audit-opinion-but-still-risky
+  - 01-reading-disclosures/044-internal-controls-and-audit-committee
+  - 01-reading-disclosures/060-restatement-before-audit-and-reaudit-signals
+  - 03-data-automation/108-data-quality-validation
+  (referenced in 4 files)
+
+going-concern-uncertainty-signals:
+  - 01-reading-disclosures/060-restatement-before-audit-and-reaudit-signals
+  - 01-reading-disclosures/064-audit-fees-and-non-audit-fees
+  - 01-reading-disclosures/102-biotech-company-filings
+  (referenced in 3 files)
+
+revenue-recognition-timing-signals:
+  - 01-reading-disclosures/101-construction-company-filings
+  - 01-reading-disclosures/102-biotech-company-filings
+  - 02-financial-interpretation/076-order-backlog-vs-cash-flow
+  (referenced in 3 files)
+
+share-pledge-and-margin-call-risk:
+  - 02-financial-interpretation/052-preferred-stock-and-rcps-disclosure
+  - 02-financial-interpretation/057-exchangeable-bond-disclosure
+  - 02-financial-interpretation/061-mezzanine-protections-and-refixing
+  (referenced in 3 files)
+
+five-things-in-business-report:
+  - 01-reading-disclosures/004-reading-business-reports
+  - 01-reading-disclosures/014-audit-report-and-kam
+  - 01-reading-disclosures/029-risk-factors-and-mdna
+  (referenced in 3 files)
+
+contingent-liabilities-and-litigation:
+  - 01-reading-disclosures/040-clean-audit-opinion-but-still-risky
+  - 01-reading-disclosures/044-internal-controls-and-audit-committee
+  - 01-reading-disclosures/060-restatement-before-audit-and-reaudit-signals
+  (referenced in 3 files)
+
+share-based-compensation-and-stock-options:
+  - 02-financial-interpretation/052-preferred-stock-and-rcps-disclosure
+  - 02-financial-interpretation/057-exchangeable-bond-disclosure
+  (referenced in 2 files)
+
+advance-payments-and-contract-liabilities:
+  - 02-financial-interpretation/055-receivables-factoring-and-securitization
+  - 02-financial-interpretation/076-order-backlog-vs-cash-flow
+  (referenced in 2 files)
+
+bulk-download-and-rate-limit:
+  - 03-data-automation/016-opendart-material-events
+  - 03-data-automation/108-data-quality-validation
+  - 03-data-automation/109-dart-edgar-unified-structure
+  (referenced in 3 files)
+
+good-vs-risky-ownership:
+  - 01-reading-disclosures/025-governance-red-flags
+  (referenced in 1 files)
+
+good-vs-risky-business-reports:
+  - 01-reading-disclosures/029-risk-factors-and-mdna
+  - 01-reading-disclosures/042-how-far-to-trust-new-business-plans
+  (referenced in 2 files)
+
+debt-covenant-breach-and-acceleration-risk:
+  - 01-reading-disclosures/060-restatement-before-audit-and-reaudit-signals
+  - 01-reading-disclosures/103-financial-company-filings
+  (referenced in 2 files)
+
+unbilled-construction-vs-deferred-revenue:
+  - 01-reading-disclosures/101-construction-company-filings
+  - 03-data-automation/108-data-quality-validation
+  (referenced in 2 files)
+
+construction-loss-provision-signals:
+  - 01-reading-disclosures/101-construction-company-filings
+  - 03-data-automation/108-data-quality-validation
+  (referenced in 2 files)
+
+supply-chain-finance-and-payables:
+  - 02-financial-interpretation/076-order-backlog-vs-cash-flow
+  (referenced in 1 files)
+
+progress-rate-vs-contract-asset-turnover:
+  - 01-reading-disclosures/101-construction-company-filings
+  (referenced in 1 files)
+
+advances-down-and-construction-receivables-up:
+  - 01-reading-disclosures/101-construction-company-filings
+  (referenced in 1 files)
+
+additional-costs-and-construction-receivables:
+  - 01-reading-disclosures/101-construction-company-filings
+  (referenced in 1 files)
+
+capital-impairment-and-watchlist-signals:
+  - 01-reading-disclosures/102-biotech-company-filings
+  - 01-reading-disclosures/103-financial-company-filings
+  (referenced in 2 files)
+
+inventory-write-downs-and-low-price-bidding:
+  - 02-financial-interpretation/076-order-backlog-vs-cash-flow
+  (referenced in 1 files)
+
+holding-company-filings:
+  - 02-financial-interpretation/114-segment-reporting-interpretation
+  (referenced in 1 files)
+
+merger-and-spin-off-disclosure:
+  - 01-reading-disclosures/064-audit-fees-and-non-audit-fees
+  (referenced in 1 files)
+
+tangible-asset-impairment-and-slowdown:
+  - 01-reading-disclosures/110-samsung-vs-tsmc-capex-and-depreciation
+  (referenced in 1 files)
+
+8k-item-map:
+  - 03-data-automation/016-opendart-material-events
+  (referenced in 1 files)
+
+
+==================================================
+
+GROUPED BY FILE:
+
+01-reading-disclosures/001-everything-about-dart:
+  - /opendart-review
+  (1 broken links)
+
+01-reading-disclosures/004-reading-business-reports:
+  - /construction-in-progress
+  - /five-things-in-business-report
+  - /when-numbers-matter-more-than-ceo-words
+  - /where-to-click-first-in-dart
+  (4 broken links)
+
+01-reading-disclosures/014-audit-report-and-kam:
+  - /construction-in-progress
+  - /five-things-in-business-report
+  - /when-numbers-matter-more-than-ceo-words
+  (3 broken links)
+
+01-reading-disclosures/022-major-shareholder-and-related-parties:
+  - /when-numbers-matter-more-than-ceo-words
+  - /where-to-click-first-in-dart
+  (2 broken links)
+
+01-reading-disclosures/023-executive-pay-disclosure:
+  - /where-to-click-first-in-dart
+  (1 broken links)
+
+01-reading-disclosures/024-shareholder-return-what-matters:
+  - /construction-in-progress
+  - /where-to-click-first-in-dart
+  (2 broken links)
+
+01-reading-disclosures/025-governance-red-flags:
+  - /good-vs-risky-ownership
+  (1 broken links)
+
+01-reading-disclosures/026-how-to-read-agm-notice:
+  - /where-to-click-first-in-dart
+  (1 broken links)
+
+01-reading-disclosures/029-risk-factors-and-mdna:
+  - /five-things-in-business-report
+  - /good-vs-risky-business-reports
+  - /inventory-and-write-downs
+  - /when-numbers-matter-more-than-ceo-words
+  (4 broken links)
+
+01-reading-disclosures/040-clean-audit-opinion-but-still-risky:
+  - /contingent-liabilities-and-litigation
+  - /dart-amendment-filing-pipeline
+  - /inventory-and-write-downs
+  (3 broken links)
+
+01-reading-disclosures/042-how-far-to-trust-new-business-plans:
+  - /convertible-bond-and-bw-disclosure
+  - /good-vs-risky-business-reports
+  - /when-numbers-matter-more-than-ceo-words
+  (3 broken links)
+
+01-reading-disclosures/044-internal-controls-and-audit-committee:
+  - /contingent-liabilities-and-litigation
+  - /dart-amendment-filing-pipeline
+  - /guarantees-collateral-and-commitments
+  (3 broken links)
+
+01-reading-disclosures/060-restatement-before-audit-and-reaudit-signals:
+  - /contingent-liabilities-and-litigation
+  - /dart-amendment-filing-pipeline
+  - /debt-covenant-breach-and-acceleration-risk
+  - /going-concern-uncertainty-signals
+  - /guarantees-collateral-and-commitments
+  (5 broken links)
+
+01-reading-disclosures/064-audit-fees-and-non-audit-fees:
+  - /capital-reduction-and-reverse-split-disclosure
+  - /going-concern-uncertainty-signals
+  - /merger-and-spin-off-disclosure
+  (3 broken links)
+
+01-reading-disclosures/101-construction-company-filings:
+  - /additional-costs-and-construction-receivables
+  - /advances-down-and-construction-receivables-up
+  - /construction-loss-provision-signals
+  - /guarantees-collateral-and-commitments
+  - /progress-rate-vs-contract-asset-turnover
+  - /revenue-recognition-timing-signals
+  - /unbilled-construction-vs-deferred-revenue
+  (7 broken links)
+
+01-reading-disclosures/102-biotech-company-filings:
+  - /capital-impairment-and-watchlist-signals
+  - /convertible-bond-and-bw-disclosure
+  - /depreciation-after-capex
+  - /going-concern-uncertainty-signals
+  - /revenue-recognition-timing-signals
+  (5 broken links)
+
+01-reading-disclosures/103-financial-company-filings:
+  - /capital-impairment-and-watchlist-signals
+  - /debt-covenant-breach-and-acceleration-risk
+  - /guarantees-collateral-and-commitments
+  (3 broken links)
+
+01-reading-disclosures/110-samsung-vs-tsmc-capex-and-depreciation:
+  - /construction-in-progress
+  - /depreciation-after-capex
+  - /tangible-asset-impairment-and-slowdown
+  - /xbrl-parsing-and-account-mapping
+  (4 broken links)
+
+01-reading-disclosures/111-hyundai-vs-toyota-inventory-and-receivables:
+  - /inventory-and-write-downs
+  (1 broken links)
+
+02-financial-interpretation/015-receivables-and-allowance:
+  - /inventory-and-write-downs
+  - /when-numbers-matter-more-than-ceo-words
+  (2 broken links)
+
+02-financial-interpretation/018-why-rising-sales-can-still-be-risky:
+  - /depreciation-after-capex
+  - /inventory-and-write-downs
+  - /when-numbers-matter-more-than-ceo-words
+  (3 broken links)
+
+02-financial-interpretation/032-rights-offering-disclosure:
+  - /depreciation-after-capex
+  - /opendart-review
+  - /where-to-click-first-in-dart
+  (3 broken links)
+
+02-financial-interpretation/035-operating-cash-flow-vs-net-income:
+  - /inventory-and-write-downs
+  - /when-numbers-matter-more-than-ceo-words
+  (2 broken links)
+
+02-financial-interpretation/037-treasury-stock-third-party-allotment-and-major-shareholder-change:
+  - /convertible-bond-and-bw-disclosure
+  (1 broken links)
+
+02-financial-interpretation/045-development-costs-and-intangibles:
+  - /construction-in-progress
+  - /convertible-bond-and-bw-disclosure
+  - /depreciation-after-capex
+  - /when-numbers-matter-more-than-ceo-words
+  (4 broken links)
+
+02-financial-interpretation/047-lease-liabilities-and-debt-maturity:
+  - /capital-reduction-and-reverse-split-disclosure
+  - /construction-in-progress
+  - /convertible-bond-and-bw-disclosure
+  - /depreciation-after-capex
+  (4 broken links)
+
+02-financial-interpretation/050-non-operating-income-vs-core-earnings:
+  - /when-numbers-matter-more-than-ceo-words
+  (1 broken links)
+
+02-financial-interpretation/051-foreign-exchange-gains-and-derivatives:
+  - /convertible-bond-and-bw-disclosure
+  (1 broken links)
+
+02-financial-interpretation/052-preferred-stock-and-rcps-disclosure:
+  - /capital-reduction-and-reverse-split-disclosure
+  - /convertible-bond-and-bw-disclosure
+  - /share-based-compensation-and-stock-options
+  - /share-pledge-and-margin-call-risk
+  (4 broken links)
+
+02-financial-interpretation/055-receivables-factoring-and-securitization:
+  - /advance-payments-and-contract-liabilities
+  (1 broken links)
+
+02-financial-interpretation/057-exchangeable-bond-disclosure:
+  - /capital-reduction-and-reverse-split-disclosure
+  - /convertible-bond-and-bw-disclosure
+  - /share-based-compensation-and-stock-options
+  - /share-pledge-and-margin-call-risk
+  (4 broken links)
+
+02-financial-interpretation/058-deferred-tax-and-tax-expense-distortion:
+  - /depreciation-after-capex
+  (1 broken links)
+
+02-financial-interpretation/061-mezzanine-protections-and-refixing:
+  - /capital-reduction-and-reverse-split-disclosure
+  - /convertible-bond-and-bw-disclosure
+  - /share-pledge-and-margin-call-risk
+  (3 broken links)
+
+02-financial-interpretation/076-order-backlog-vs-cash-flow:
+  - /advance-payments-and-contract-liabilities
+  - /inventory-and-write-downs
+  - /inventory-write-downs-and-low-price-bidding
+  - /revenue-recognition-timing-signals
+  - /supply-chain-finance-and-payables
+  (5 broken links)
+
+02-financial-interpretation/114-segment-reporting-interpretation:
+  - /holding-company-filings
+  (1 broken links)
+
+03-data-automation/005-python-financial-analysis:
+  - /opendart-review
+  - /xbrl-parsing-and-account-mapping
+  (2 broken links)
+
+03-data-automation/016-opendart-material-events:
+  - /8k-item-map
+  - /bulk-download-and-rate-limit
+  - /opendart-review
+  (3 broken links)
+
+03-data-automation/028-opendart-xbrl-notes-pipeline:
+  - /opendart-review
+  (1 broken links)
+
+03-data-automation/031-corp-code-to-filing-pipeline:
+  - /opendart-review
+  (1 broken links)
+
+03-data-automation/108-data-quality-validation:
+  - /bulk-download-and-rate-limit
+  - /construction-loss-provision-signals
+  - /dart-amendment-filing-pipeline
+  - /unbilled-construction-vs-deferred-revenue
+  - /xbrl-parsing-and-account-mapping
+  (5 broken links)
+
+03-data-automation/109-dart-edgar-unified-structure:
+  - /bulk-download-and-rate-limit
+  - /xbrl-parsing-and-account-mapping
+  (2 broken links)
+
+04-dartlab-news/118-dartlab-finance-ratios-one-line:
+  - /xbrl-parsing-and-account-mapping
+  (1 broken links)

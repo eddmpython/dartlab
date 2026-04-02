@@ -805,7 +805,7 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
     # 기술적 분석 컨텍스트 (선택적 — quant 실패 시 무시)
     technicalContext = None
     try:
-        from dartlab.analysis.financial.technicalAnalysis import calcTechnicalVerdict
+        from dartlab.quant.extended import calcTechnicalVerdict
 
         tv = calcTechnicalVerdict(company)
         if tv and tv.get("verdict"):

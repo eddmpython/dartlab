@@ -29,14 +29,38 @@ from __future__ import annotations
 
 import json
 
-# ── 팔레트 ──
-from dartlab.viz.palette import COLORS  # noqa: F401
+from dartlab.viz.charts import (
+    balance_sheet as balance_sheet_chart,
+)
 
-# ── VizSpec ──
-from dartlab.viz.spec import VizSpec  # noqa: F401
+# ── DataFrame → Plotly Figure (Jupyter) ──
+from dartlab.viz.charts import (  # noqa: F401
+    balance_sheet_composition,
+    bar,
+    cashflow,
+    cashflow_pattern,
+    dividend_analysis,
+    line,
+    pie,
+    profitability_ratios,
+    revenue,
+    # 하위호환 alias
+    revenue_trend,
+    waterfall,
+)
+from dartlab.viz.charts import (
+    dividend as dividend_chart,
+)
+from dartlab.viz.charts import (
+    profitability as profitability_chart,
+)
+
+# ── AI stdout 마커 추출 ──
+from dartlab.viz.extract import extract_viz_specs  # noqa: F401
 
 # ── Company → ChartSpec 생성기 ──
 from dartlab.viz.generators import (  # noqa: F401
+    SPEC_GENERATORS,
     auto_chart,
     spec_balance_sheet,
     spec_cashflow_waterfall,
@@ -46,34 +70,16 @@ from dartlab.viz.generators import (  # noqa: F401
     spec_profitability,
     spec_ratio_sparklines,
     spec_revenue_trend,
-    SPEC_GENERATORS,
 )
 
-# ── DataFrame → Plotly Figure (Jupyter) ──
-from dartlab.viz.charts import (  # noqa: F401
-    line,
-    bar,
-    pie,
-    waterfall,
-    revenue,
-    cashflow,
-    dividend as dividend_chart,
-    balance_sheet as balance_sheet_chart,
-    profitability as profitability_chart,
-    # 하위호환 alias
-    revenue_trend,
-    cashflow_pattern,
-    dividend_analysis,
-    balance_sheet_composition,
-    profitability_ratios,
-)
+# ── 팔레트 ──
+from dartlab.viz.palette import COLORS  # noqa: F401
 
 # ── ChartSpec → Plotly Figure 변환 ──
 from dartlab.viz.plotly import from_spec as chart_from_spec  # noqa: F401
 
-# ── AI stdout 마커 추출 ──
-from dartlab.viz.extract import extract_viz_specs  # noqa: F401
-
+# ── VizSpec ──
+from dartlab.viz.spec import VizSpec  # noqa: F401
 
 # ══════════════════════════════════════
 # AI 코드용 emit 함수

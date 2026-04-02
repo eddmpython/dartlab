@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
-  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
-  <text x="48" y="62" fill="#f8fafc" font-size="24" font-weight="700" font-family="Inter,system-ui,sans-serif">Trust-Building Anatomy</text>
-  <rect x="82" y="166" width="130" height="72" rx="14" fill="#111827" stroke="#334155"/><text x="118" y="208" fill="#f8fafc" font-size="13" font-weight="700" font-family="Inter,system-ui,sans-serif">Business</text>
-  <rect x="252" y="166" width="130" height="72" rx="14" fill="#111827" stroke="#334155"/><text x="295" y="208" fill="#f8fafc" font-size="13" font-weight="700" font-family="Inter,system-ui,sans-serif">Risk</text>
-  <rect x="422" y="166" width="130" height="72" rx="14" fill="#111827" stroke="#334155"/><text x="455" y="208" fill="#f8fafc" font-size="13" font-weight="700" font-family="Inter,system-ui,sans-serif">Notes</text>
-  <rect x="592" y="166" width="130" height="72" rx="14" fill="#111827" stroke="#334155"/><text x="624" y="208" fill="#f8fafc" font-size="13" font-weight="700" font-family="Inter,system-ui,sans-serif">Audit</text>
-  <path d="M212 202H252M382 202H422M552 202H592" stroke="#ea4647" stroke-width="3"/>
-</svg>

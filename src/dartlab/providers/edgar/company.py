@@ -547,7 +547,36 @@ class Company:
         """
         return "USD"
 
-    # quant는 analysis 축 — c.analysis("quant", "기술적분석")으로 접근
+    def quant(self, metric=None, **kwargs):
+        """주가 기술적 분석.
+
+        Capabilities:
+            - 종합 판단 (강세/중립/약세) + RSI/SMA/BB
+            - 25개 기술적 지표 DataFrame
+            - 최근 매매 신호 이벤트
+            - 시장 베타 + CAPM + 해석
+            - 재무-기술적 괴리 진단
+            - 기술적 경고/기회 플래그
+
+        Args:
+            metric: "indicators", "signals", "beta", "divergence", "flags".
+                    None이면 종합 판단(verdict).
+            **kwargs: gather("price")에 전달할 추가 인자.
+
+        Returns:
+            dict, list, 또는 pl.DataFrame — metric에 따른 분석 결과.
+
+        Example::
+
+            c = Company("AAPL")
+            c.quant()                # 종합 판단
+            c.quant("indicators")    # 25개 지표
+            c.quant("beta")          # 시장 베타
+        """
+        from dartlab.quant import Quant
+
+        q = Quant()
+        return q(self.stockCode, metric, **kwargs)
 
     def view(self, *, port: int = 8400) -> None:
         """브라우저에서 공시 뷰어를 열어 sections/index를 시각화.

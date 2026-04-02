@@ -10,7 +10,7 @@
 | [data.md](data.md) | L0 | core/dataConfig | HF 데이터셋, 수집 파이프라인, 카테고리 관리 |
 | [scan.md](scan.md) | L1 | scan/ | 13축 시장 횡단분석 |
 | [gather.md](gather.md) | L1 | gather/ | 외부 시장 데이터 (주가/수급/매크로/뉴스) |
-| [quant.md](quant.md) | L2 | analysis/quant 축 | 기술적 분석 — analysis("quant") 그룹 |
+| [quant.md](quant.md) | L1 | quant/ | 기술적 분석 독립 엔진 — c.quant(), dartlab.quant() |
 | [search.md](search.md) | L0 | core/search/ | 공시 시맨틱 검색 *(alpha)* |
 | [analysis.md](analysis.md) | L2 | analysis/ | 14축 스토리텔링 재무분석, 6막 구조 |
 | [review.md](review.md) | L2 | review/ | 블록-템플릿 보고서 렌더링, 4 출력 형식 |

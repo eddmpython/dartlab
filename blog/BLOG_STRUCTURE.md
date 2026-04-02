@@ -11,13 +11,11 @@
 
 ## 카테고리
 
-- `01-disclosure-systems`: DART, EDGAR, form 체계, 원문 접근
-- `02-report-reading`: 사업보고서 읽기, 서술 섹션 해석, 통합 읽기
-- `03-financial-interpretation`: 생산능력, 건설중인자산, 감가상각, 주석 해석
-- `04-data-automation`: 파이썬, 데이터 수집, 자동화 파이프라인
-- `05-global-comparison`: 같은 산업 한국/미국 기업 공시 비교
-- `06-dartlab-news`: dartlab 설치, 업데이트, 사용 팁, 새 기능 소개
-- `07-corporate-analysis`: 실전기업분석 — 수익 구조, 자금 구조, 투자 효율까지 기업 전체를 읽는 분석
+- `01-reading-disclosures`: 공시 읽기 — DART, EDGAR, 사업보고서, 감사, 지배구조, 업종별, 한미 비교
+- `02-financial-interpretation`: 재무 해석 — 숫자 뒤 맥락, CAPEX, 운전자본, 자금조달 이벤트
+- `03-data-automation`: 데이터 자동화 — 파이썬, 데이터 수집, 파이프라인
+- `04-dartlab-news`: DartLab 소식 — 설치, 기능 소개, 업데이트 (사용자 직접 관리)
+- `05-corporate-analysis`: 실전기업분석 — 분석 프레임워크 + 실전 적용 (사용자 직접 관리)
 
 카테고리 번호는 고정한다. 중간에 새 카테고리가 필요하면 기존 번호를 바꾸지 말고 새 번호를 추가한다.
 
@@ -31,8 +29,8 @@
 
 ```text
 blog/
-  03-financial-interpretation/
-    012-depreciation-after-capex/
+  02-financial-interpretation/
+    010-capacity-utilization-capex/
       index.md
       assets/
 ```
@@ -40,8 +38,8 @@ blog/
 ## URL 규칙
 
 - 공개 URL에는 카테고리 폴더가 들어가지 않는다.
-- `blog/03-financial-interpretation/012-depreciation-after-capex/index.md`
-- URL은 `/blog/depreciation-after-capex`
+- `blog/02-financial-interpretation/010-capacity-utilization-capex/index.md`
+- URL은 `/blog/capacity-utilization-capex`
 
 ## Frontmatter 규칙
 
@@ -51,7 +49,7 @@ blog/
 title: 글 제목
 date: YYYY-MM-DD
 description: 1문장 설명
-category: disclosure-systems | report-reading | financial-interpretation | data-automation | global-comparison | corporate-analysis
+category: reading-disclosures | financial-interpretation | data-automation | dartlab-news | corporate-analysis
 series: 시리즈 id
 seriesOrder: 숫자
 thumbnail: /avatar-*.png
@@ -191,17 +189,15 @@ cardPreview: /blog/assets/*.png | /blog/assets/*.jpg | /blog/assets/*.webp
 | 시리즈 id | 사용자에게 보이는 이름 | 약속 |
 | --- | --- | --- |
 | `dart-foundations` | DART 첫걸음 | 초보자가 DART에서 길을 잃지 않게 만든다 |
-| `edgar-reading` | EDGAR 실전 입문 | 한국 투자자도 EDGAR form 구조를 빠르게 익히게 만든다 |
+| `edgar-reading` | EDGAR 실전 입문 | 한국 투자자도 EDGAR form과 Risk Factors를 빠르게 읽게 만든다 |
 | `report-reading-foundations` | 사업보고서 실전 읽기 | 사업보고서 텍스트를 실제 판단 순서로 읽게 만든다 |
-| `audit-and-governance-reading` | 감사와 경고 신호 | 감사보고서, KAM, 우발부채, 소송에서 리스크를 읽게 만든다 |
-| `ownership-and-governance-reading` | 대주주·보수·주주환원 | 소유와 통제, 보상 구조를 같이 읽게 만든다 |
-| `fixed-cost-and-capex` | 설비투자와 고정비 | CAPEX 이후 비용 구조까지 읽게 만든다 |
-| `financial-context` | 숫자 뒤 맥락 읽기 | 숫자만 보면 놓치는 해석을 잡아준다 |
-| `working-capital-and-earnings-quality` | 재고·채권·이익의 질 | 성장의 질과 회수 구조를 읽게 만든다 |
-| `data-automation` | 공시 데이터 파이프라인 | 공시를 실제 수집 구조로 연결하게 만든다 |
-| `industry-reading` | 업종별 공시 읽기 | 업종마다 다른 공시 읽기 순서와 핵심 체크포인트를 보여준다 |
-| `corporate-actions-and-financing` | 이벤트·자금조달 공시 | 희석, 자금조달, 지배력 변화를 읽게 만든다 |
+| `audit-and-governance-reading` | 감사와 경고 신호 | 감사보고서, 적정 의견 아래 위험, 내부회계, 정정·재감사에서 리스크를 읽게 만든다 |
+| `ownership-and-governance-reading` | 대주주·보수·주주환원 | 소유와 통제, 보상 구조, 지배구조 위험을 같이 읽게 만든다 |
+| `industry-reading` | 업종별 공시 읽기 | 건설, 바이오, 금융 등 업종별 공시 읽기 순서와 핵심 체크포인트를 보여준다 |
 | `global-comparison` | 한미 공시 비교 실전 | 같은 산업의 한국·미국 기업을 DART/EDGAR 공시로 나란히 비교한다 |
+| `financial-context` | 숫자 뒤 맥락 읽기 | 숫자만 보면 놓치는 해석을 잡아준다 |
+| `capital-and-earnings` | 자본·이익의 질 | CAPEX, 운전자본, 현금흐름, 자금조달 구조의 질을 읽게 만든다 |
+| `data-automation` | 공시 데이터 파이프라인 | 공시를 실제 수집 구조로 연결하게 만든다 |
 | `corporate-analysis` | 실전기업분석 | 수익 구조부터 투자 효율까지 기업 전체를 읽는 분석 프레임워크를 정리한다 |
 | `dartlab-news` | DartLab 소식 | dartlab 설치, 업데이트, 사용 팁, 새 기능을 안내한다 |
 
@@ -212,7 +208,6 @@ cardPreview: /blog/assets/*.png | /blog/assets/*.jpg | /blog/assets/*.webp
 - `BLOG_STRUCTURE.md`: 카테고리, 번호, URL, frontmatter 규칙
 - `ASSET_POLICY.md`: 자산 위치, 파일명, SVG 기준
 - `TOPIC_ROADMAP.md`: 다음 글 후보, 시리즈 우선순위, 리라이트 우선순위, 공식 출처
-- `blog/_reference/WRITING_QUEUE.md`: 다음 작성/리라이트 배치
 
 ## 검수 규칙
 

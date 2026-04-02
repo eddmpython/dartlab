@@ -787,9 +787,14 @@ c.gather("ownership")   # 기관/외국인 지분율
 위 8개만 사용 가능. consensus 등 다른 축은 없다.
 gather 반환이 None일 수 있다 — 반드시 None 체크 후 사용.
 
-### quant — 기술적 분석 (analysis 축)
-c.analysis("quant", "기술적분석")    # RSI, ADX, SMA, BB, 종합 판단 + 재무 괴리 진단
-투자 판단 질문에는 **analysis(재무) + analysis(quant)** 교차 검증하라:
+### quant — 기술적 분석 (독립 엔진)
+c.quant()                        # 종합 판단 (강세/중립/약세)
+c.quant("indicators")            # 25개 지표 DataFrame
+c.quant("signals")               # 최근 매매 신호
+c.quant("beta")                  # 시장 베타 + CAPM
+c.quant("divergence")            # 재무-기술적 괴리 진단
+c.quant("flags")                 # 경고/기회 플래그
+투자 판단 질문에는 **analysis(재무) + quant(기술적)** 교차 검증하라:
   재무 좋은데 기술적 과매수 → "펀더멘털은 좋지만 단기 조정 가능"
   재무 나쁜데 기술적 반등 → "기술적 반등이지만 펀더멘털 리스크"
 

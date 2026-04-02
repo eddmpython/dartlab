@@ -72,7 +72,9 @@ def _apply_theme(fig) -> None:
 def _auto_numeric_cols(df: pl.DataFrame, exclude: list[str] | None = None) -> list[str]:
     """숫자 컬럼 자동 감지."""
     exclude_set = set(exclude or [])
-    return [c for c in df.columns if c not in exclude_set and df[c].dtype in (pl.Float64, pl.Float32, pl.Int64, pl.Int32)]
+    return [
+        c for c in df.columns if c not in exclude_set and df[c].dtype in (pl.Float64, pl.Float32, pl.Int64, pl.Int32)
+    ]
 
 
 # ── 범용 차트 ──

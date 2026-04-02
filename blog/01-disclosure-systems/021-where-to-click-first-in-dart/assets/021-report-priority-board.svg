@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" fill="none">
-  <rect width="800" height="430" rx="28" fill="#050811"/><rect x="24" y="24" width="752" height="382" rx="24" fill="#0f1219" stroke="#1e2433"/>
-  <text x="48" y="62" fill="#f8fafc" font-size="24" font-weight="700" font-family="Inter,system-ui,sans-serif">Priority Board</text>
-  <rect x="120" y="108" width="560" height="64" rx="14" fill="#111827" stroke="#334155"/><text x="321" y="148" fill="#86efac" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">1. Business report</text>
-  <rect x="150" y="192" width="500" height="56" rx="14" fill="#111827" stroke="#334155"/><text x="328" y="226" fill="#fbbf24" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">2. Event filing</text>
-  <rect x="182" y="268" width="436" height="56" rx="14" fill="#111827" stroke="#334155"/><text x="325" y="302" fill="#fda4a4" font-size="14" font-weight="700" font-family="Inter,system-ui,sans-serif">3. Audit / Correction</text>
-</svg>

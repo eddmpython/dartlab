@@ -1,12 +1,11 @@
-# Quant (analysis 축)
+# Quant
 
-주가 기술적 분석. gather("price") OHLCV를 소비하여 보조지표와 신호를 계산.
-**analysis 엔진의 "quant" 그룹 축**으로 접근한다. 독립 엔진이 아님.
+주가 기술적 분석 독립 엔진. gather("price") OHLCV를 소비하여 보조지표, 신호, 종합 판단을 계산.
 
 | 항목 | 내용 |
 |------|------|
-| 레이어 | L2 (analysis 하위) |
-| 진입점 | `c.analysis("quant", "기술적분석")` |
+| 레이어 | L1 |
+| 진입점 | `dartlab.quant("005930")`, `c.quant()` |
 | 소비 | gather/price (OHLCV), NumPy |
 | 생산 | 25개 지표, 9개 신호, 종합 판단, 재무-기술적 괴리 진단 |
 | 원본 | tradix 벡터화 엔진에서 이식 |
@@ -17,8 +16,14 @@
 import dartlab
 c = dartlab.Company("005930")
 
-c.analysis("quant", "기술적분석")      # 종합 판단 + 재무 괴리 진단
-c.analysis("quant")                    # quant 그룹 가이드
+c.quant()                    # 종합 판단 (강세/중립/약세)
+c.quant("indicators")        # 25개 지표 DataFrame
+c.quant("signals")           # 최근 매매 신호
+c.quant("beta")              # 시장 베타 + CAPM
+c.quant("divergence")        # 재무-기술적 괴리 진단
+c.quant("flags")             # 경고/기회 플래그
+
+dartlab.quant("005930")      # 루트 호출
 ```
 
 ## 지표 25개
