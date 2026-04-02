@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775121896999,
+  "lastUpdate": 1775129009759,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -6177,6 +6177,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.733422601058512e-7",
             "extra": "mean: 689.5632431411236 nsec\nrounds: 160721"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "a752b8d991e598ba32d5cafda03ed9aeafadd788",
+          "message": "test: integration 테스트 28개 + colab credit 노트북\n\n- test_analysis_integration.py: 24축 전체 실행 (9 tests)\n- test_review_integration.py: buildBlocks 전체 파이프라인 (9 tests)\n- test_credit_integration.py: evaluateCompany end-to-end (10 tests)\n- notebooks/colab/08_credit.ipynb: credit 노트북 신규",
+          "timestamp": "2026-04-02T20:22:30+09:00",
+          "tree_id": "ea97b1e87249a19f4a6f6e15d321c4509b9182bc",
+          "url": "https://github.com/eddmpython/dartlab/commit/a752b8d991e598ba32d5cafda03ed9aeafadd788"
+        },
+        "date": 1775129008822,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 540093.7701276502,
+            "unit": "iter/sec",
+            "range": "stddev: 4.733781370430938e-7",
+            "extra": "mean: 1.851530336599979 usec\nrounds: 55082"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 659894.0745121582,
+            "unit": "iter/sec",
+            "range": "stddev: 5.018190744385674e-7",
+            "extra": "mean: 1.5153947256448288 usec\nrounds: 119977"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 527759.4638028701,
+            "unit": "iter/sec",
+            "range": "stddev: 5.055242791050103e-7",
+            "extra": "mean: 1.894802592064028 usec\nrounds: 123840"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 659139.6892495592,
+            "unit": "iter/sec",
+            "range": "stddev: 4.1971588550733886e-7",
+            "extra": "mean: 1.5171290946514167 usec\nrounds: 138046"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 908630.813471878,
+            "unit": "iter/sec",
+            "range": "stddev: 1.6169096927230294e-7",
+            "extra": "mean: 1.100556997598398 usec\nrounds: 173581"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 267829.8988893482,
+            "unit": "iter/sec",
+            "range": "stddev: 6.991227932445038e-7",
+            "extra": "mean: 3.733713092327836 usec\nrounds: 71706"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7342817.320327028,
+            "unit": "iter/sec",
+            "range": "stddev: 1.250196819435879e-8",
+            "extra": "mean: 136.18750901397382 nsec\nrounds: 73497"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8973702.34341097,
+            "unit": "iter/sec",
+            "range": "stddev: 1.197282888529411e-8",
+            "extra": "mean: 111.43672496940572 nsec\nrounds: 88332"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1458223.1571693586,
+            "unit": "iter/sec",
+            "range": "stddev: 2.8505709446458966e-7",
+            "extra": "mean: 685.7660949104373 nsec\nrounds: 160206"
           }
         ]
       }
