@@ -150,6 +150,290 @@ def _memory_guard_per_test():
 # ⚠ session scope는 메모리 크래시 원인이므로 사용 금지 (2026-03-21)
 
 
+# ══════════════════════════════════════════════════════════════
+# MockCompany — 데이터 없이 unit 테스트 가능한 가짜 Company
+# ══════════════════════════════════════════════════════════════
+
+
+def _make_synthetic_df(
+    stmt: str,
+    accounts: list[str],
+    periods: list[str] | None = None,
+    *,
+    base_value: float = 1_000_000,
+) -> "pl.DataFrame":
+    """합성 재무 DataFrame 생성. period 컬럼은 실제 형식."""
+    import polars as _pl
+
+    if periods is None:
+        periods = ["2024Q4", "2023Q4", "2022Q4", "2021Q4", "2020Q4"]
+
+    rows: list[dict] = []
+    for i, acct in enumerate(accounts):
+        row: dict = {"계정명": acct}
+        for j, p in enumerate(periods):
+            # 각 계정/기간마다 약간 다른 값
+            val = base_value * (len(accounts) - i) * (1 + 0.05 * j)
+            row[p] = round(val, 0)
+        rows.append(row)
+    return _pl.DataFrame(rows)
+
+
+_IS_ACCOUNTS = [
+    "매출액",
+    "매출원가",
+    "매출총이익",
+    "판매비와관리비",
+    "영업이익",
+    "당기순이익",
+    "법인세비용",
+    "이자비용",
+    "감가상각비",
+]
+
+_BS_ACCOUNTS = [
+    "자산총계",
+    "부채총계",
+    "자본총계",
+    "유동자산",
+    "유동부채",
+    "비유동자산",
+    "현금및현금성자산",
+    "재고자산",
+    "매출채권",
+    "매입채무",
+    "유형자산",
+]
+
+_CF_ACCOUNTS = [
+    "영업활동으로인한현금흐름",
+    "투자활동으로인한현금흐름",
+    "재무활동으로인한현금흐름",
+]
+
+# 분기 포함 기간 목록 (select → toDict → annualColsFromPeriods 호환)
+_QUARTERLY_PERIODS = [
+    "2024Q4",
+    "2024Q3",
+    "2024Q2",
+    "2024Q1",
+    "2023Q4",
+    "2023Q3",
+    "2023Q2",
+    "2023Q1",
+    "2022Q4",
+    "2022Q3",
+    "2022Q2",
+    "2022Q1",
+    "2021Q4",
+    "2020Q4",
+]
+
+
+class _MockNotesAccessor:
+    """notes.inventory 등 전부 None 반환."""
+
+    def __getattr__(self, name: str):
+        return None
+
+
+class _MockDocsAccessor:
+    """docs.diff() 등 None 반환."""
+
+    def diff(self):
+        return None
+
+
+class _MockFinanceAccessor:
+    """finance.ratios / ratioSeries 기본 반환."""
+
+    @property
+    def ratios(self):
+        return None
+
+    @property
+    def ratioSeries(self):
+        return None
+
+
+class _MockSelectResult:
+    """SelectResult 호환 mock — .df 프로퍼티 제공."""
+
+    def __init__(self, df: "pl.DataFrame", topic: str = ""):
+        self._df = df
+        self._topic = topic
+
+    @property
+    def df(self) -> "pl.DataFrame":
+        return self._df
+
+    @property
+    def topic(self) -> str:
+        return self._topic
+
+    def __getattr__(self, name: str):
+        return getattr(self._df, name)
+
+
+class MockCompany:
+    """데이터 없이 unit 테스트 가능한 경량 Company mock.
+
+    실제 Company 인터페이스의 핵심 메서드를 제공:
+    - stockCode, corpName, market, currency
+    - IS, BS, CF, annual, cumulative
+    - select(stmt, accounts) → MockSelectResult
+    - show(topic), topicSummaries(), insights
+    - notes, sector, gather(axis)
+    - _cache (memoized_calc 호환)
+    """
+
+    def __init__(
+        self,
+        stockCode: str = "005930",
+        corpName: str = "삼성전자",
+        market: str = "KOSPI",
+        currency: str = "KRW",
+    ):
+        self.stockCode = stockCode
+        self.corpName = corpName
+        self.market = market
+        self.currency = currency
+        self.notes = _MockNotesAccessor()
+        self.docs = _MockDocsAccessor()
+        self.finance = _MockFinanceAccessor()
+        self._cache: dict = {}
+
+        # 합성 DataFrame 미리 생성
+        self._is_df = _make_synthetic_df("IS", _IS_ACCOUNTS, _QUARTERLY_PERIODS, base_value=1_000_000)
+        self._bs_df = _make_synthetic_df("BS", _BS_ACCOUNTS, _QUARTERLY_PERIODS, base_value=5_000_000)
+        self._cf_df = _make_synthetic_df("CF", _CF_ACCOUNTS, _QUARTERLY_PERIODS, base_value=500_000)
+
+    @property
+    def IS(self):
+        return self._is_df
+
+    @property
+    def BS(self):
+        return self._bs_df
+
+    @property
+    def CF(self):
+        return self._cf_df
+
+    @property
+    def annual(self):
+        return self._is_df
+
+    @property
+    def cumulative(self):
+        return self._is_df
+
+    @property
+    def sector(self):
+        return None
+
+    @property
+    def insights(self):
+        return {"overall": "B+", "profitability": "A"}
+
+    def select(self, stmt: str, accounts: list[str] | str | None = None, colList=None):
+        """재무제표 계정 필터 — MockSelectResult 반환."""
+        if isinstance(accounts, str):
+            accounts = [accounts]
+
+        mapping = {"IS": self._is_df, "BS": self._bs_df, "CF": self._cf_df}
+        df = mapping.get(stmt)
+        if df is None:
+            return None
+
+        if accounts is not None:
+            import polars as _pl
+
+            mask = _pl.col("계정명").is_in(accounts)
+            filtered = df.filter(mask)
+            if filtered.height == 0:
+                # 찾지 못한 계정은 0으로 채운 행 생성
+                period_cols = [c for c in df.columns if c != "계정명"]
+                rows = []
+                for acct in accounts:
+                    row = {"계정명": acct}
+                    for p in period_cols:
+                        row[p] = 0.0
+                    rows.append(row)
+                filtered = _pl.DataFrame(rows)
+            return _MockSelectResult(filtered, stmt)
+        return _MockSelectResult(df, stmt)
+
+    def show(self, topic: str, block=None, *, period=None, raw=False):
+        """topic 데이터 반환 — IS/BS/CF는 합성 DataFrame."""
+        mapping = {"IS": self._is_df, "BS": self._bs_df, "CF": self._cf_df}
+        return mapping.get(topic)
+
+    def topicSummaries(self):
+        return {"IS": "손익계산서 요약", "BS": "재무상태표 요약", "CF": "현금흐름표 요약"}
+
+    def gather(self, axis: str, *args, **kwargs):
+        if axis == "price":
+            import polars as _pl
+
+            return _pl.DataFrame(
+                {
+                    "date": ["2024-12-30", "2024-12-27", "2024-12-26"],
+                    "close": [72000, 71500, 71800],
+                    "volume": [10000000, 9500000, 11000000],
+                }
+            )
+        return None
+
+    def trace(self, topic: str, period: str | None = None):
+        return {"topic": topic, "source": "mock", "period": period}
+
+    def diff(self):
+        return None
+
+    def filings(self, **kwargs):
+        return []
+
+    @staticmethod
+    def listing(**kwargs):
+        import polars as _pl
+
+        return _pl.DataFrame({"종목코드": ["005930"], "회사명": ["삼성전자"]})
+
+    @staticmethod
+    def search(keyword: str):
+        import polars as _pl
+
+        return _pl.DataFrame({"종목코드": ["005930"], "회사명": ["삼성전자"]})
+
+
+@pytest.fixture
+def mock_company():
+    """데이터 없이 unit 테스트 가능한 MockCompany fixture."""
+    return MockCompany()
+
+
+@pytest.fixture
+def empty_mock_company():
+    """모든 select가 None을 반환하는 빈 MockCompany."""
+
+    class EmptyMockCompany(MockCompany):
+        def select(self, stmt, accounts=None, colList=None):
+            return None
+
+        def show(self, topic, block=None, *, period=None, raw=False):
+            return None
+
+        @property
+        def sector(self):
+            return None
+
+        def gather(self, axis, *args, **kwargs):
+            return None
+
+    return EmptyMockCompany(stockCode="999999", corpName="빈회사")
+
+
 @pytest.fixture(scope="module")
 def samsung():
     """삼성전자 Company — 모듈 단위로 로드/해제."""
