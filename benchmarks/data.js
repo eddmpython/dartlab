@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775106564402,
+  "lastUpdate": 1775107123645,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -4263,6 +4263,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.7773077295511174e-7",
             "extra": "mean: 691.2430603312392 nsec\nrounds: 161499"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "04a123e6c77d2dc9edf35bf676c5c6e0c8cafbae",
+          "message": "fix: CI test에 --benchmark-disable 추가 (타임아웃 방지)",
+          "timestamp": "2026-04-02T14:18:01+09:00",
+          "tree_id": "f4396e7b709732f9327ec6c4edbbc1fea1c202c1",
+          "url": "https://github.com/eddmpython/dartlab/commit/04a123e6c77d2dc9edf35bf676c5c6e0c8cafbae"
+        },
+        "date": 1775107123246,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 537101.9597592166,
+            "unit": "iter/sec",
+            "range": "stddev: 5.588731622366357e-7",
+            "extra": "mean: 1.8618438861185704 usec\nrounds: 47081"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 660127.6768324699,
+            "unit": "iter/sec",
+            "range": "stddev: 4.97388403186725e-7",
+            "extra": "mean: 1.5148584661657571 usec\nrounds: 116050"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 521024.82393322466,
+            "unit": "iter/sec",
+            "range": "stddev: 5.383621221480567e-7",
+            "extra": "mean: 1.9192943484937708 usec\nrounds: 101441"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 674299.8007705206,
+            "unit": "iter/sec",
+            "range": "stddev: 4.1432202215675144e-7",
+            "extra": "mean: 1.4830198657293132 usec\nrounds: 108378"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 809786.2305953412,
+            "unit": "iter/sec",
+            "range": "stddev: 3.9528988164831143e-7",
+            "extra": "mean: 1.2348938055723877 usec\nrounds: 124611"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 268093.0924101929,
+            "unit": "iter/sec",
+            "range": "stddev: 7.505560133351874e-7",
+            "extra": "mean: 3.7300476152140507 usec\nrounds: 61346"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7423850.882855935,
+            "unit": "iter/sec",
+            "range": "stddev: 1.3628780625290404e-8",
+            "extra": "mean: 134.7009814420333 nsec\nrounds: 73606"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8940037.531856354,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1570119350161469e-8",
+            "extra": "mean: 111.85635367152143 nsec\nrounds: 64772"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1472425.9666279366,
+            "unit": "iter/sec",
+            "range": "stddev: 2.822998470588522e-7",
+            "extra": "mean: 679.1512936233672 nsec\nrounds: 153093"
           }
         ]
       }
