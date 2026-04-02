@@ -223,9 +223,7 @@ def _screenCycleDefensive() -> pl.DataFrame:
     if not div_df.is_empty():
         for col in ["분류", "유형"]:
             if col in div_df.columns:
-                goodDiv = set(
-                    div_df.filter(pl.col(col).is_in(["연속증가", "안정", "환원형"]))["종목코드"].to_list()
-                )
+                goodDiv = set(div_df.filter(pl.col(col).is_in(["연속증가", "안정", "환원형"]))["종목코드"].to_list())
                 break
         if not goodDiv:
             goodDiv = set(div_df["종목코드"].to_list())
