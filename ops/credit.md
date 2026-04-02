@@ -9,7 +9,7 @@ dartlab은 공시 데이터만으로 재현 가능한 독립 신용평가를 수
 | 레이어 | L2 (analysis/scan/notes/gather 소비) |
 | 진입점 | `dartlab.credit("005930")`, `c.credit()` |
 | 소비 | Company 전체 (finance, notes, docs, report), scan, gather — analysis와 독립 |
-| 생산 | 신용등급 보고서, 등급 이력, audit 결과, 정례 보고서 |
+| 생산 | 신용분석 보고서, 등급 이력, audit 결과, 정례 보고서 |
 | 핵심 | 재현 가능성 + 투명성 + 지속 발전 |
 
 ## 사상 — 왜 독립 신용평가인가

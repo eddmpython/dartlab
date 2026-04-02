@@ -39,11 +39,11 @@ export const categoryDefinitions = [
 		id: 'credit-reports',
 		slug: 'credit-reports',
 		folder: '04-credit-reports',
-		label: '신용등급 보고서',
-		description: 'dartlab 독립 신용평가(dCR) 엔진이 산출한 기업별 신용등급 보고서입니다.',
-		seoTitle: '신용등급 보고서 | dartlab 독립 신용평가(dCR)',
+		label: '신용분석 보고서',
+		description: 'dartlab 독립 신용평가(dCR) 엔진이 산출한 기업별 신용분석 보고서입니다.',
+		seoTitle: '신용분석 보고서 | dartlab 독립 신용평가(dCR)',
 		seoDescription:
-			'dartlab dCR 신용등급 보고서. 공시 데이터 기반 정량 분석으로 산출한 독립 신용등급, 등급 근거, 재무 하이라이트, 등급 전망을 제공합니다.',
+			'dartlab dCR 신용분석 보고서. 공시 데이터 기반 정량 분석으로 산출한 독립 신용등급, 등급 근거, 재무 하이라이트, 등급 전망을 제공합니다.',
 		brandMessage:
 			'DartLab은 공시 데이터만으로 재현 가능한 독립 신용등급을 산출합니다.'
 	}

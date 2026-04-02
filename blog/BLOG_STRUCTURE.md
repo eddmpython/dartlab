@@ -15,7 +15,7 @@
 - `01-reading-disclosures`: 공시 읽기 — DART, EDGAR, 사업보고서, 감사, 재무제표, 지배구조, 파이프라인
 - `02-dartlab-news`: DartLab 소식 (사용자 직접 관리)
 - `03-corporate-analysis`: 실전기업분석 (사용자 직접 관리)
-- `04-credit-reports`: 신용등급 보고서 (**프로그래매틱 생성**, `publisher.py`가 관리, `_registry.json`으로 번호/slug 매핑)
+- `04-credit-reports`: 신용분석 보고서 (**프로그래매틱 생성**, `publisher.py`가 관리, `_registry.json`으로 번호/slug 매핑)
 
 ## 번호 체계
 

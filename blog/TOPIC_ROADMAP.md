@@ -1,6 +1,6 @@
 # Topic Roadmap
 
-46편 + 신용등급 보고서, 4개 카테고리. 2026-04-03 최종.
+46편 + 신용분석 보고서, 4개 카테고리. 2026-04-03 최종.
 
 ## 카테고리
 
@@ -65,7 +65,7 @@
 | 02 | asset-structure-how-to-read |
 | 03 | cashflow-how-to-read |
 
-### 04 신용등급 보고서 (프로그래매틱, publisher.py 관리)
+### 04 신용분석 보고서 (프로그래매틱, publisher.py 관리)
 
 자동 생성 카테고리. `blog/04-credit-reports/_registry.json`으로 번호/slug 관리.
 `publishReport("005930")` → 블로그 포스트 자동 생성.

@@ -1,4 +1,4 @@
-"""신용평가 보고서 생성 + 블로그 발간.
+"""신용분석 보고서 생성 + 블로그 발간.
 
 narrative.py의 서사 + audit.py의 대조 결과를 조합하여
 신평사 수준의 마크다운 보고서를 생성하고 blog/04-credit-reports/에 저장한다.
@@ -72,7 +72,7 @@ def publishBatch(stockCodes: list[str], *, basePeriod: str | None = None) -> lis
 
 
 def publishAll(*, basePeriod: str | None = None) -> list[Path]:
-    """한국 전 상장사 신용평가 보고서 배치 발간.
+    """한국 전 상장사 신용분석 보고서 배치 발간.
 
     blog/04-credit-reports/에 종목별 블로그 포스트 저장.
     메모리 안전: 기업별 순차 처리 + gc.collect().
@@ -174,7 +174,7 @@ def _generateFrontmatter(corpName: str, stockCode: str, result: dict) -> str:
     return "\n".join(
         [
             "---",
-            f'title: "{corpName} ({stockCode}) 신용평가 보고서"',
+            f'title: "{corpName} ({stockCode}) 신용분석 보고서"',
             f"date: {today}",
             f'description: "{descText}"',
             "category: credit-reports",
@@ -202,6 +202,63 @@ def _trend(cur, prev) -> str:
     if cur > prev * 1.05:
         return " ↑"
     return " →"
+
+
+def _generateAIAnalysis(corpName: str, stockCode: str, result: dict, narratives, overallNarrative: str) -> str | None:
+    """AI로 신용분석 종합 해석 생성. 실패 시 None."""
+    try:
+        from dartlab.ai.runtime.standalone import ask
+    except ImportError:
+        return None
+
+    grade = result.get("grade", "?")
+    healthScore = 100 - result.get("score", 50)
+    history = result.get("metricsHistory", [])
+    sector = result.get("sector", "")
+
+    axesSummary = "\n".join(
+        f"- [{n.severity}] {n.axisName}: {n.summary}" for n in narratives
+    )
+    histLines = []
+    for h in history[:3]:
+        icr = h.get("ebitdaInterestCoverage")
+        icrStr = "무차입" if icr is not None and icr >= 100 else (f"{icr:.1f}" if icr is not None else "-")
+        de = h.get("debtToEbitda")
+        dr = h.get("debtRatio")
+        histLines.append(
+            f"{h.get('period', '')}: ICR={icrStr}, "
+            f"D/EBITDA={f'{de:.1f}' if de is not None else '-'}, "
+            f"부채비율={f'{dr:.0f}%' if dr is not None else '-'}"
+        )
+    histSummary = "\n".join(histLines)
+
+    prompt = (
+        f"{corpName}({stockCode}, {sector}) 신용등급 {grade}, 건전도 {healthScore}/100.\n\n"
+        f"기계 생성 요약:\n{overallNarrative}\n\n"
+        f"7축 분석:\n{axesSummary}\n\n"
+        f"최근 지표:\n{histSummary}\n\n"
+        "위 분석을 바탕으로 이 기업의 신용건전성을 3~4문단으로 전문적으로 해석해줘.\n"
+        "- 기존 서사를 복사하지 말고 네 판단으로 다시 써라\n"
+        "- 산업 맥락과 경쟁 위치를 반영\n"
+        "- 인과 체인: 매출→이익→현금→안정성→등급 흐름으로\n"
+        "- 핵심 강점 2개, 핵심 리스크 1~2개 부각\n"
+        "- 마크다운 헤딩(#, ##) 사용하지 마라. 본문 문단만 써라\n"
+        "- 코드(python, print 등) 절대 쓰지 마라. 순수 텍스트만\n"
+        "- 불릿(-) 사용 가능하지만 본문 문단 위주로\n"
+    )
+
+    try:
+        raw = ask(prompt, stream=False)
+        if not isinstance(raw, str):
+            return None
+        # AI 출력에서 코드블록 제거 (```...``` 사이)
+        import re
+        cleaned = re.sub(r"```[\s\S]*?```", "", raw).strip()
+        # print() 등 코드 라인 제거
+        lines_out = [ln for ln in cleaned.split("\n") if not ln.strip().startswith(("print(", "import ", "from ", ">>>"))]
+        return "\n".join(lines_out).strip() or None
+    except (ImportError, ValueError, KeyError, TypeError, RuntimeError, OSError):
+        return None
 
 
 def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
@@ -327,7 +384,13 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
     # ── 4. 등급 근거 ──
     lines.append("## 4. 등급 근거")
     lines.append("")
-    lines.append(overallNarrative)
+
+    # AI 분석 (선택적 — provider 설정 시만 동작, 실패 시 기계 서사 fallback)
+    aiAnalysis = _generateAIAnalysis(corpName, stockCode, result, narratives, overallNarrative)
+    if aiAnalysis:
+        lines.append(aiAnalysis)
+    else:
+        lines.append(overallNarrative)
     lines.append("")
 
     # 6막 인과 연결
@@ -514,7 +577,7 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
     # ── 7. 면책 + 방법론 ──
     lines.append("## 9. 면책 + 방법론")
     lines.append("")
-    lines.append(f"- dartlab 독립 신용평가(dCR) {version}")
+    lines.append(f"- dartlab 독립 신용분석(dCR) {version}")
     lines.append("- 공시 데이터 기반 정량 분석. 비공개 면담/정성 판단 미포함.")
     lines.append("- dCR 등급은 제도권 신용등급과 다를 수 있으며, 투자 권유가 아닙니다.")
     lines.append("- 방법론 상세: [ops/credit.md](https://github.com/eddmpython/dartlab/blob/master/ops/credit.md)")

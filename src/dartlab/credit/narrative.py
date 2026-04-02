@@ -60,9 +60,9 @@ def _fmtTril(v) -> str:
     absV = abs(v)
     sign = "-" if v < 0 else ""
     if absV >= 1e12:
-        return f"{sign}{absV / 1e12:.1f}조원"
+        return f"{sign}{absV / 1e12:,.1f}조원"
     if absV >= 1e8:
-        return f"{sign}{absV / 1e8:.0f}억원"
+        return f"{sign}{absV / 1e8:,.0f}억원"
     return f"{sign}{absV:,.0f}원"
 
 
