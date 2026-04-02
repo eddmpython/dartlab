@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <title>데이터 흐름 — DART XBRL에서 사용자 DataFrame까지</title>
+  <desc>XBRL 원문 → AccountMapper 정규화 → finance.parquet → Polars lazy scan → 결과</desc>
+
+  <defs>
+    <linearGradient id="bg129d" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <marker id="arrow129" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4ade80"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="720" fill="url(#bg129d)" rx="16"/>
+
+  <text x="600" y="45" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="24" font-weight="700">3초의 비밀 — 데이터가 사용자에게 도달하기까지</text>
+  <text x="600" y="72" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">무거운 작업은 CI가 미리 해둔다. 사용자는 결과만 읽는다.</text>
+
+  <!-- Phase 1: DART XBRL 원문 -->
+  <rect x="40" y="115" width="200" height="200" rx="14" fill="#1e293b" stroke="#64748b" stroke-width="1.5"/>
+  <text x="140" y="150" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="15" font-weight="700">DART XBRL</text>
+  <text x="140" y="172" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">2,744개 종목</text>
+
+  <rect x="58" y="190" width="164" height="28" rx="6" fill="#0f172a"/>
+  <text x="140" y="209" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="10">ifrs-full_Revenue</text>
+  <rect x="58" y="224" width="164" height="28" rx="6" fill="#0f172a"/>
+  <text x="140" y="243" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="10">dart_매출액</text>
+  <rect x="58" y="258" width="164" height="28" rx="6" fill="#0f172a"/>
+  <text x="140" y="277" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="10">RevFromContracts...</text>
+
+  <text x="140" y="305" text-anchor="middle" fill="#ef4444" font-family="system-ui, sans-serif" font-size="11">같은 매출액, 다른 태그명</text>
+
+  <!-- 화살표 1 -->
+  <line x1="250" y1="215" x2="310" y2="215" stroke="#4ade80" stroke-width="2" marker-end="url(#arrow129)"/>
+
+  <!-- Phase 2: AccountMapper -->
+  <rect x="320" y="115" width="220" height="200" rx="14" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+  <text x="430" y="150" text-anchor="middle" fill="#c084fc" font-family="system-ui, sans-serif" font-size="15" font-weight="700">AccountMapper</text>
+  <text x="430" y="172" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">XBRL 정규화 엔진</text>
+
+  <rect x="338" y="190" width="184" height="28" rx="6" fill="#0f172a"/>
+  <text x="430" y="209" text-anchor="middle" fill="#d8b4fe" font-family="system-ui, sans-serif" font-size="10">195개 한글 동의어</text>
+  <rect x="338" y="224" width="184" height="28" rx="6" fill="#0f172a"/>
+  <text x="430" y="243" text-anchor="middle" fill="#d8b4fe" font-family="system-ui, sans-serif" font-size="10">89개 영문 동의어</text>
+  <rect x="338" y="258" width="184" height="28" rx="6" fill="#0f172a"/>
+  <text x="430" y="277" text-anchor="middle" fill="#d8b4fe" font-family="system-ui, sans-serif" font-size="10">accountMappings.json</text>
+
+  <text x="430" y="305" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="11">→ 모두 "sales" 하나로 통합</text>
+
+  <!-- 화살표 2 -->
+  <line x1="550" y1="215" x2="610" y2="215" stroke="#4ade80" stroke-width="2" marker-end="url(#arrow129)"/>
+
+  <!-- Phase 3: finance.parquet -->
+  <rect x="620" y="115" width="220" height="200" rx="14" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="730" y="145" text-anchor="middle" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="15" font-weight="700">finance.parquet</text>
+  <text x="730" y="167" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">프리빌드 합산 파일</text>
+
+  <rect x="638" y="185" width="184" height="28" rx="6" fill="#0f172a"/>
+  <text x="730" y="204" text-anchor="middle" fill="#93c5fd" font-family="system-ui, sans-serif" font-size="11">197MB (전 종목 5년치)</text>
+  <rect x="638" y="219" width="184" height="28" rx="6" fill="#0f172a"/>
+  <text x="730" y="238" text-anchor="middle" fill="#93c5fd" font-family="system-ui, sans-serif" font-size="11">IS + BS + CF + CIS</text>
+  <rect x="638" y="253" width="184" height="28" rx="6" fill="#0f172a"/>
+  <text x="730" y="272" text-anchor="middle" fill="#93c5fd" font-family="system-ui, sans-serif" font-size="11">HuggingFace 배포</text>
+
+  <text x="730" y="305" text-anchor="middle" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="11">GitHub Actions 매주 자동 빌드</text>
+
+  <!-- 화살표 3 -->
+  <line x1="850" y1="215" x2="910" y2="215" stroke="#4ade80" stroke-width="2" marker-end="url(#arrow129)"/>
+
+  <!-- Phase 4: Polars lazy scan -->
+  <rect x="920" y="115" width="240" height="200" rx="14" fill="#1e293b" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="1040" y="150" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="15" font-weight="700">Polars Lazy Scan</text>
+  <text x="1040" y="172" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">Rust I/O 푸시다운</text>
+
+  <rect x="938" y="190" width="204" height="28" rx="6" fill="#0a1a10"/>
+  <text x="1040" y="209" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="10">필요한 행만 디스크에서 읽기</text>
+  <rect x="938" y="224" width="204" height="28" rx="6" fill="#0a1a10"/>
+  <text x="1040" y="243" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="10">필터를 I/O 단계에 밀어넣기</text>
+  <rect x="938" y="258" width="204" height="28" rx="6" fill="#0a1a10"/>
+  <text x="1040" y="277" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="10">메모리: 197MB 전체 X → 일부만</text>
+
+  <text x="1040" y="305" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="11" font-weight="600">결과: 2,744행 DataFrame</text>
+
+  <!-- 하단: 사용자 경험 -->
+  <rect x="200" y="380" width="800" height="160" rx="16" fill="#14532d" stroke="#4ade80" stroke-width="1.5" opacity="0.9"/>
+  <text x="600" y="415" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="18" font-weight="700">사용자가 보는 것</text>
+
+  <rect x="240" y="435" width="720" height="42" rx="8" fill="#0f172a"/>
+  <text x="600" y="462" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="14">dartlab.scan("account", "매출액")  →  DataFrame (2,744 rows × 6 cols)  →  3초</text>
+
+  <text x="600" y="520" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">XBRL 정규화, parquet 합산, Polars 최적화 — 전부 뒤에서 일어난다. 사용자는 결과만 받는다.</text>
+
+  <!-- 하단: Fallback 설명 -->
+  <rect x="100" y="570" width="1000" height="120" rx="14" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+  <text x="600" y="600" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">프리빌드 파일이 없으면?</text>
+
+  <rect x="130" y="615" width="290" height="55" rx="8" fill="#0f172a"/>
+  <text x="275" y="638" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11" font-weight="600">1차: HuggingFace 자동 다운로드</text>
+  <text x="275" y="658" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="10">197MB, 1회만 받으면 캐시</text>
+
+  <text x="450" y="643" fill="#475569" font-family="system-ui, sans-serif" font-size="16">→</text>
+
+  <rect x="470" y="615" width="290" height="55" rx="8" fill="#0f172a"/>
+  <text x="615" y="638" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11" font-weight="600">2차: 개별 parquet 병렬 처리</text>
+  <text x="615" y="658" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="10">ThreadPool 8개, 수 분 소요</text>
+
+  <text x="790" y="643" fill="#475569" font-family="system-ui, sans-serif" font-size="16">→</text>
+
+  <rect x="810" y="615" width="260" height="55" rx="8" fill="#0f172a"/>
+  <text x="940" y="638" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11" font-weight="600">결과: 동일한 DataFrame</text>
+  <text x="940" y="658" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="10">사용자 코드 변경 없음</text>
+</svg>

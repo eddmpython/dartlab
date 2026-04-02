@@ -10,6 +10,11 @@
 - 공식 문서 확인, 시리즈 연결, 내부 링크 계획까지 끝나야 작성 시작 상태로 본다.
 - 상세 집필 메모와 공식 출처 팩은 `028-031-writing-pack.md`를 기준으로 본다.
 
+## 최근 완료 (2026-04-02)
+
+- 129: dartlab.scan — 2,700개 종목의 재무 데이터를 한 줄로 꺼낸다 (dartlab-news #2, SVG 5개)
+- 123-rewrite: dartlab-easy-start uv 설명 보강 (Astral/Rust 설명, pip 비교, uv run 확장)
+
 ## 최근 완료 (2026-03-27)
 
 - 128: 현금흐름 분석 — 손익계산서 이익과 현금흐름표 현금은 왜 다른가 (corporate-analysis #5 프레임워크, SVG 5개)

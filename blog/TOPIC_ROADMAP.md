@@ -1,6 +1,6 @@
 # Topic Roadmap
 
-44편, 3개 카테고리. 2026-04-02 최종.
+45편, 3개 카테고리. 2026-04-02 최종.
 
 ## 카테고리
 
@@ -49,11 +49,12 @@
 | 39 | data-quality-validation | data-pipeline |
 | 40 | dart-edgar-unified-structure | data-pipeline |
 
-### 02 DartLab 소식 (1편, 사용자 관리)
+### 02 DartLab 소식 (2편, 사용자 관리)
 
 | # | slug |
 |---|------|
 | 01 | dartlab-easy-start |
+| 02 | scan-market-finance |
 
 ### 03 실전기업분석 (3편, 사용자 관리)
 
@@ -65,7 +66,7 @@
 
 ## 정리 이력
 
-128편 → 47편 → 44편
+128편 → 47편 → 44편 → 45편
 - 84편 삭제 (과잉 세분화, 템플릿 복사, 제품 설명서, dartlab 광고)
 - 7개 → 3개 카테고리
 - 전역 순번 → 카테고리별 번호

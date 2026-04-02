@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 720">
+  <title>scan을 써야 할 때 — 시나리오별 축 선택 가이드</title>
+  <desc>목적에 따라 어떤 scan 축을 쓰는지 체크리스트</desc>
+
+  <defs>
+    <linearGradient id="bg129e" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1080" height="720" fill="url(#bg129e)" rx="16"/>
+
+  <text x="540" y="45" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="24" font-weight="700">이런 걸 하고 싶다면 — scan 축 선택 가이드</text>
+  <text x="540" y="72" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">목적에 따라 어떤 축을 쓰는지 한눈에</text>
+
+  <!-- 시나리오 1 -->
+  <rect x="35" y="100" width="490" height="125" rx="12" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="55" y="130" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="15" font-weight="700">특정 계정을 전 종목에서 비교하고 싶다</text>
+  <text x="55" y="155" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">"매출액 상위 종목은?", "영업이익 추이가 가장 좋은 곳은?"</text>
+  <rect x="55" y="170" width="180" height="32" rx="8" fill="#0f172a" stroke="#1e40af" stroke-width="1"/>
+  <text x="145" y="191" text-anchor="middle" fill="#93c5fd" font-family="monospace" font-size="12">scan("account", ...)</text>
+  <rect x="245" y="170" width="160" height="32" rx="8" fill="#0f172a" stroke="#1e40af" stroke-width="1"/>
+  <text x="325" y="191" text-anchor="middle" fill="#93c5fd" font-family="monospace" font-size="12">scan("ratio", ...)</text>
+
+  <!-- 시나리오 2 -->
+  <rect x="555" y="100" width="490" height="125" rx="12" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+  <text x="575" y="130" fill="#c084fc" font-family="system-ui, sans-serif" font-size="15" font-weight="700">수익성/성장성/유동성을 한눈에 보고 싶다</text>
+  <text x="575" y="155" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">"전 종목 중 ROE 높고 부채 낮은 곳은?", "재무 건전한 종목은?"</text>
+  <rect x="575" y="170" width="200" height="32" rx="8" fill="#0f172a" stroke="#7e22ce" stroke-width="1"/>
+  <text x="675" y="191" text-anchor="middle" fill="#d8b4fe" font-family="monospace" font-size="12">scan("financial")</text>
+  <rect x="785" y="170" width="240" height="32" rx="8" fill="#0f172a" stroke="#7e22ce" stroke-width="1"/>
+  <text x="905" y="191" text-anchor="middle" fill="#d8b4fe" font-family="monospace" font-size="12">scan("financial", "수익성")</text>
+
+  <!-- 시나리오 3 -->
+  <rect x="35" y="245" width="490" height="125" rx="12" fill="#1e293b" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="55" y="275" fill="#4ade80" font-family="system-ui, sans-serif" font-size="15" font-weight="700">거버넌스/주주환원이 좋은 종목을 찾고 싶다</text>
+  <text x="55" y="300" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">"지배구조 A등급은?", "배당 연속 증가 종목은?", "감사 리스크는?"</text>
+  <rect x="55" y="315" width="155" height="32" rx="8" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="132" y="336" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">governance</text>
+  <rect x="220" y="315" width="100" height="32" rx="8" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="270" y="336" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">capital</text>
+  <rect x="330" y="315" width="80" height="32" rx="8" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="370" y="336" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">audit</text>
+  <rect x="420" y="315" width="80" height="32" rx="8" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="460" y="336" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="11">insider</text>
+
+  <!-- 시나리오 4 -->
+  <rect x="555" y="245" width="490" height="125" rx="12" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="575" y="275" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="15" font-weight="700">멀티팩터 스크리닝을 돌리고 싶다</text>
+  <text x="575" y="300" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">"가치주 프리셋", "배당주 프리셋", "성장+품질 교차 필터"</text>
+  <rect x="575" y="315" width="200" height="32" rx="8" fill="#0f172a" stroke="#b45309" stroke-width="1"/>
+  <text x="675" y="336" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="12">scan("screen", "value")</text>
+  <rect x="785" y="315" width="240" height="32" rx="8" fill="#0f172a" stroke="#b45309" stroke-width="1"/>
+  <text x="905" y="336" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="12">scan("screen", "dividend")</text>
+
+  <!-- 시나리오 5 -->
+  <rect x="35" y="390" width="490" height="125" rx="12" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
+  <text x="55" y="420" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="15" font-weight="700">리스크 종목을 사전에 감지하고 싶다</text>
+  <text x="55" y="445" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">"공시 변화로 리스크 선행 감지", "부채 위험등급 D/E 종목"</text>
+  <rect x="55" y="460" width="180" height="32" rx="8" fill="#1a1020" stroke="#991b1b" stroke-width="1"/>
+  <text x="145" y="481" text-anchor="middle" fill="#fca5a5" font-family="monospace" font-size="11">disclosureRisk</text>
+  <rect x="245" y="460" width="80" height="32" rx="8" fill="#1a1020" stroke="#991b1b" stroke-width="1"/>
+  <text x="285" y="481" text-anchor="middle" fill="#fca5a5" font-family="monospace" font-size="11">debt</text>
+  <rect x="335" y="460" width="110" height="32" rx="8" fill="#1a1020" stroke="#991b1b" stroke-width="1"/>
+  <text x="390" y="481" text-anchor="middle" fill="#fca5a5" font-family="monospace" font-size="11">quality</text>
+
+  <!-- 시나리오 6 -->
+  <rect x="555" y="390" width="490" height="125" rx="12" fill="#1e293b" stroke="#06b6d4" stroke-width="1.5"/>
+  <text x="575" y="420" fill="#22d3ee" font-family="system-ui, sans-serif" font-size="15" font-weight="700">현금흐름과 배당의 질을 검증하고 싶다</text>
+  <text x="575" y="445" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">"영업CF가 이익보다 큰 종목", "배당 패턴이 안정적인 곳"</text>
+  <rect x="575" y="460" width="130" height="32" rx="8" fill="#0f172a" stroke="#0891b2" stroke-width="1"/>
+  <text x="640" y="481" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="11">cashflow</text>
+  <rect x="715" y="460" width="170" height="32" rx="8" fill="#0f172a" stroke="#0891b2" stroke-width="1"/>
+  <text x="800" y="481" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="11">dividendTrend</text>
+  <rect x="895" y="460" width="110" height="32" rx="8" fill="#0f172a" stroke="#0891b2" stroke-width="1"/>
+  <text x="950" y="481" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="11">quality</text>
+
+  <!-- 하단 팁 -->
+  <rect x="150" y="545" width="780" height="145" rx="14" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="540" y="578" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="15" font-weight="600">시작점이 모르겠으면</text>
+
+  <rect x="180" y="595" width="300" height="38" rx="8" fill="#14532d"/>
+  <text x="330" y="620" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="13">dartlab.scan()</text>
+
+  <text x="510" y="620" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">→</text>
+
+  <rect x="540" y="595" width="360" height="38" rx="8" fill="#1e293b"/>
+  <text x="720" y="620" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="12">19개 축 목록 + 사용법 + 코드 예시 안내</text>
+
+  <text x="540" y="672" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">모든 축은 한글/영문 양방향 호출 가능 — scan("수익성") = scan("profitability")</text>
+</svg>

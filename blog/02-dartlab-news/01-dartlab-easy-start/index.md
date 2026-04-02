@@ -35,11 +35,33 @@ keywords:
 
 ![왜 pip 대신 uv인가 — 같은 일을 더 빠르고 안전하게](./assets/123-uv-why.svg)
 
+### uv가 뭔가, 왜 pip 대신 쓰나
+
+원래 Python을 쓰려면 이런 과정이 필요하다:
+
+1. python.org에서 Python 다운로드 → 설치
+2. `python -m venv .venv` → 가상환경 만들기
+3. `.venv\Scripts\activate` → 가상환경 활성화
+4. `pip install dartlab` → 패키지 설치
+
+4단계, 하나라도 빠뜨리거나 순서가 틀리면 에러가 난다. 가상환경이 뭔지 모르는 초보자에게는 여기서 이미 포기 지점이다.
+
+**uv는 이 전부를 한 도구로 대체한다.** [Astral](https://astral.sh)이라는 회사가 Rust로 만든 차세대 Python 패키지 관리자다. Python 린터 [ruff](https://github.com/astral-sh/ruff)를 만든 같은 팀이다. uv 하나만 설치하면:
+
+- **Python 자체를 설치**해준다 (`uv python install 3.12`)
+- **가상환경을 자동으로 만들고 관리**한다 (사용자가 activate를 직접 할 필요 없다)
+- **패키지를 설치**한다 (`uv add dartlab`)
+- **실행할 때도 올바른 환경에서 자동 실행**한다 (`uv run python main.py`)
+
+속도도 차원이 다르다. pip로 dartlab을 설치하면 의존성 해결에 30초 이상 걸리는데, **uv는 1~2초**면 끝난다. Rust로 의존성 해결 엔진을 처음부터 새로 만들었기 때문이다.
+
+> dartlab은 v0.8부터 공식 문서 전체를 pip에서 uv로 전환했다. 초보자가 가상환경을 몰라도 되고, CI 파이프라인 속도가 10배 이상 빨라지고, `uv.lock` 파일로 어떤 컴퓨터에서든 똑같은 환경이 재현되기 때문이다.
+
 ---
 
 ## 1단계: uv 설치 (1분)
 
-> **uv가 뭔가요?** — 원래 Python(파이썬)이라는 프로그래밍 언어를 쓰려면 python.org에서 다운로드하고, pip라는 걸로 패키지를 설치하고, 가상환경을 만들고... 복잡한 과정이 필요하다. **uv는 이 모든 걸 한 방에 해주는 도구**다. uv 하나만 설치하면 Python도 dartlab도 자동으로 깔린다.
+> **요약: pip으로 하면?** — (1) Python 다운로드 (2) 설치 (3) venv 생성 (4) activate (5) pip install — 5단계. 하나라도 틀리면 에러. **uv로 하면?** — (1) uv 설치 (2) `uv add dartlab` — **끝.** Python도 venv도 자동이다.
 
 터미널을 열고, 본인 컴퓨터에 맞는 명령어 **하나만** 복사해서 붙여넣는다.
 
@@ -155,6 +177,8 @@ uv run python main.py
 ```
 
 > **왜 `uv run`을 앞에 붙이나요?** — `uv run`을 붙여야 방금 설치한 dartlab을 Python이 찾을 수 있다. `uv run` 없이 `python main.py`만 치면 "dartlab이 없다"는 에러가 날 수 있다. **항상 `uv run`을 앞에 붙인다고 기억하면 된다.**
+>
+> `uv run`이 뒤에서 하는 일: (1) 프로젝트의 `.venv`를 자동으로 활성화하고 (2) `uv.lock`에 기록된 정확한 버전의 패키지 환경에서 실행한다. 이 덕분에 **"내 컴퓨터에서는 되는데 다른 컴퓨터에서는 안 된다"는 문제가 사라진다.** dartlab의 CI/CD 파이프라인도 동일하게 `uv run` 기반으로 동작한다.
 
 ### 처음 실행할 때는 기다린다
 

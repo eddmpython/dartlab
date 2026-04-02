@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820">
+  <title>기존 방식과 dartlab.scan 비교</title>
+  <desc>HTS, 네이버증권, OpenDART API, dartlab.scan 4가지 방식의 소요시간/종목수/시계열/자동화 비교</desc>
+
+  <defs>
+    <linearGradient id="bg129b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="820" fill="url(#bg129b)" rx="16"/>
+
+  <text x="600" y="50" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="24" font-weight="700">전 종목 재무 데이터를 뽑는 4가지 방법</text>
+  <text x="600" y="78" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">같은 목표, 완전히 다른 경험</text>
+
+  <!-- 헤더 행 -->
+  <rect x="40" y="105" width="200" height="50" rx="8" fill="#1e293b"/>
+  <text x="140" y="135" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13" font-weight="600">비교 항목</text>
+
+  <rect x="250" y="105" width="210" height="50" rx="8" fill="#1e293b" stroke="#ef4444" stroke-width="1"/>
+  <text x="355" y="135" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="13" font-weight="600">증권사 HTS</text>
+
+  <rect x="470" y="105" width="210" height="50" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="1"/>
+  <text x="575" y="135" text-anchor="middle" fill="#fde68a" font-family="system-ui, sans-serif" font-size="13" font-weight="600">네이버 증권</text>
+
+  <rect x="690" y="105" width="210" height="50" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="1"/>
+  <text x="795" y="135" text-anchor="middle" fill="#fde68a" font-family="system-ui, sans-serif" font-size="13" font-weight="600">OpenDART 직접 호출</text>
+
+  <rect x="910" y="105" width="250" height="50" rx="8" fill="#1e293b" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="1035" y="135" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="13" font-weight="700">dartlab.scan</text>
+
+  <!-- 행 1: 전 종목 매출액 소요시간 -->
+  <rect x="40" y="170" width="200" height="110" rx="8" fill="#0f172a"/>
+  <text x="140" y="210" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="13" font-weight="600">전 종목 매출액</text>
+  <text x="140" y="235" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">소요 시간</text>
+
+  <rect x="250" y="170" width="210" height="110" rx="8" fill="#1a1020"/>
+  <text x="355" y="210" text-anchor="middle" fill="#ef4444" font-family="system-ui, sans-serif" font-size="22" font-weight="700">수일</text>
+  <text x="355" y="240" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">종목 하나씩 클릭</text>
+  <text x="355" y="260" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">2,700회 수작업</text>
+
+  <rect x="470" y="170" width="210" height="110" rx="8" fill="#1a1a10"/>
+  <text x="575" y="210" text-anchor="middle" fill="#f59e0b" font-family="system-ui, sans-serif" font-size="22" font-weight="700">불가능</text>
+  <text x="575" y="240" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">스크리너에 매출액</text>
+  <text x="575" y="260" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">시계열 없음</text>
+
+  <rect x="690" y="170" width="210" height="110" rx="8" fill="#1a1a10"/>
+  <text x="795" y="210" text-anchor="middle" fill="#f59e0b" font-family="system-ui, sans-serif" font-size="22" font-weight="700">수 시간</text>
+  <text x="795" y="240" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">2,700회 API 호출</text>
+  <text x="795" y="260" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">rate limit + 정규화</text>
+
+  <rect x="910" y="170" width="250" height="110" rx="8" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="1035" y="210" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="22" font-weight="700">3초</text>
+  <text x="1035" y="240" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="11">프리빌드 parquet</text>
+  <text x="1035" y="260" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="11">한 줄 코드</text>
+
+  <!-- 행 2: 계정 선택 자유도 -->
+  <rect x="40" y="295" width="200" height="110" rx="8" fill="#0f172a"/>
+  <text x="140" y="335" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="13" font-weight="600">계정 선택</text>
+  <text x="140" y="360" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">자유도</text>
+
+  <rect x="250" y="295" width="210" height="110" rx="8" fill="#1a1020"/>
+  <text x="355" y="335" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="16" font-weight="600">고정 항목</text>
+  <text x="355" y="365" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">HTS가 정한 항목만</text>
+  <text x="355" y="385" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">사용자 정의 불가</text>
+
+  <rect x="470" y="295" width="210" height="110" rx="8" fill="#1a1a10"/>
+  <text x="575" y="335" text-anchor="middle" fill="#fde68a" font-family="system-ui, sans-serif" font-size="16" font-weight="600">제한적</text>
+  <text x="575" y="365" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">스크리너 필터 항목만</text>
+  <text x="575" y="385" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">주석/세부계정 불가</text>
+
+  <rect x="690" y="295" width="210" height="110" rx="8" fill="#1a1a10"/>
+  <text x="795" y="335" text-anchor="middle" fill="#fde68a" font-family="system-ui, sans-serif" font-size="16" font-weight="600">이론상 무제한</text>
+  <text x="795" y="365" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">하지만 계정명 불일치</text>
+  <text x="795" y="385" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">기업마다 태그 다름</text>
+
+  <rect x="910" y="295" width="250" height="110" rx="8" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="1035" y="335" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="16" font-weight="700">자유 선택</text>
+  <text x="1035" y="365" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="11">IS/BS/CF 모든 계정</text>
+  <text x="1035" y="385" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="11">195개 동의어 자동 매핑</text>
+
+  <!-- 행 3: 시계열 깊이 -->
+  <rect x="40" y="420" width="200" height="110" rx="8" fill="#0f172a"/>
+  <text x="140" y="460" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="13" font-weight="600">시계열 깊이</text>
+  <text x="140" y="485" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">비교 가능 기간</text>
+
+  <rect x="250" y="420" width="210" height="110" rx="8" fill="#1a1020"/>
+  <text x="355" y="460" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="16" font-weight="600">3~5년</text>
+  <text x="355" y="490" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">HTS마다 다름</text>
+
+  <rect x="470" y="420" width="210" height="110" rx="8" fill="#1a1a10"/>
+  <text x="575" y="460" text-anchor="middle" fill="#fde68a" font-family="system-ui, sans-serif" font-size="16" font-weight="600">3~4년</text>
+  <text x="575" y="490" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">연간만, 분기 제한적</text>
+
+  <rect x="690" y="420" width="210" height="110" rx="8" fill="#1a1a10"/>
+  <text x="795" y="460" text-anchor="middle" fill="#fde68a" font-family="system-ui, sans-serif" font-size="16" font-weight="600">5년+</text>
+  <text x="795" y="490" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">수작업 정규화 필요</text>
+
+  <rect x="910" y="420" width="250" height="110" rx="8" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="1035" y="460" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="16" font-weight="700">5년 × 분기별</text>
+  <text x="1035" y="490" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="11">연간 + 분기 standalone</text>
+
+  <!-- 행 4: 자동화/반복성 -->
+  <rect x="40" y="545" width="200" height="110" rx="8" fill="#0f172a"/>
+  <text x="140" y="585" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="13" font-weight="600">자동화/반복</text>
+  <text x="140" y="610" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">매 분기 업데이트</text>
+
+  <rect x="250" y="545" width="210" height="110" rx="8" fill="#1a1020"/>
+  <text x="355" y="585" text-anchor="middle" fill="#ef4444" font-family="system-ui, sans-serif" font-size="16" font-weight="600">불가능</text>
+  <text x="355" y="615" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">매번 수작업 반복</text>
+
+  <rect x="470" y="545" width="210" height="110" rx="8" fill="#1a1a10"/>
+  <text x="575" y="585" text-anchor="middle" fill="#f59e0b" font-family="system-ui, sans-serif" font-size="16" font-weight="600">불가능</text>
+  <text x="575" y="615" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">API 미제공</text>
+
+  <rect x="690" y="545" width="210" height="110" rx="8" fill="#1a1a10"/>
+  <text x="795" y="585" text-anchor="middle" fill="#fde68a" font-family="system-ui, sans-serif" font-size="16" font-weight="600">가능하지만</text>
+  <text x="795" y="615" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">코드 수백줄 직접 작성</text>
+
+  <rect x="910" y="545" width="250" height="110" rx="8" fill="#0a1a10" stroke="#166534" stroke-width="1"/>
+  <text x="1035" y="585" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="16" font-weight="700">같은 코드 재실행</text>
+  <text x="1035" y="615" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="11">데이터 자동 최신화</text>
+
+  <!-- 하단 핵심 메시지 -->
+  <rect x="350" y="685" width="500" height="50" rx="14" fill="#14532d" stroke="#4ade80" stroke-width="1"/>
+  <text x="600" y="716" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="15" font-weight="700">시장 전체를 한 줄 코드로, 3초 만에, 매 분기 자동으로</text>
+
+  <!-- 행 구분선 -->
+  <line x1="40" y1="165" x2="1160" y2="165" stroke="#334155" stroke-width="0.5"/>
+  <line x1="40" y1="290" x2="1160" y2="290" stroke="#334155" stroke-width="0.5"/>
+  <line x1="40" y1="415" x2="1160" y2="415" stroke="#334155" stroke-width="0.5"/>
+  <line x1="40" y1="540" x2="1160" y2="540" stroke="#334155" stroke-width="0.5"/>
+  <line x1="40" y1="665" x2="1160" y2="665" stroke="#334155" stroke-width="0.5"/>
+</svg>

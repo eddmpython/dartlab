@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+  <title>종목 하나씩 vs 시장 전체 — dartlab.scan이 바꾸는 것</title>
+  <desc>기존 방식(HTS에서 클릭 반복)과 dartlab.scan(한 줄로 2,700종목) 비교</desc>
+
+  <defs>
+    <linearGradient id="bg129a" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="720" fill="url(#bg129a)" rx="16"/>
+
+  <text x="600" y="50" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="26" font-weight="700">종목 하나씩 vs 시장 전체</text>
+  <text x="600" y="78" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">dartlab.scan이 바꾸는 것</text>
+
+  <!-- 왼쪽: 기존 방식 -->
+  <rect x="40" y="105" width="530" height="570" rx="16" fill="#1e293b" stroke="#ef4444" stroke-width="1.5" opacity="0.85"/>
+  <text x="305" y="145" text-anchor="middle" fill="#ef4444" font-family="system-ui, sans-serif" font-size="20" font-weight="700">기존 방식</text>
+  <text x="305" y="170" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">종목을 하나씩, 수작업으로</text>
+
+  <!-- 기존 단계들 -->
+  <rect x="65" y="195" width="480" height="48" rx="10" fill="#1a1020" stroke="#7f1d1d" stroke-width="1"/>
+  <circle cx="90" cy="219" r="12" fill="#7f1d1d"/>
+  <text x="90" y="224" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="12" font-weight="700">1</text>
+  <text x="115" y="224" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="14">HTS에서 삼성전자 검색 → 재무제표 탭 클릭</text>
+
+  <text x="305" y="268" text-anchor="middle" fill="#475569" font-family="system-ui, sans-serif" font-size="20">↓</text>
+
+  <rect x="65" y="280" width="480" height="48" rx="10" fill="#1a1020" stroke="#7f1d1d" stroke-width="1"/>
+  <circle cx="90" cy="304" r="12" fill="#7f1d1d"/>
+  <text x="90" y="309" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="12" font-weight="700">2</text>
+  <text x="115" y="309" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="14">매출액 확인 → 메모 또는 엑셀에 기록</text>
+
+  <text x="305" y="353" text-anchor="middle" fill="#475569" font-family="system-ui, sans-serif" font-size="20">↓</text>
+
+  <rect x="65" y="365" width="480" height="48" rx="10" fill="#1a1020" stroke="#7f1d1d" stroke-width="1"/>
+  <circle cx="90" cy="389" r="12" fill="#7f1d1d"/>
+  <text x="90" y="394" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="12" font-weight="700">3</text>
+  <text x="115" y="394" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="14">다른 종목 검색 → 같은 과정 반복...</text>
+
+  <text x="305" y="438" text-anchor="middle" fill="#475569" font-family="system-ui, sans-serif" font-size="20">↓</text>
+
+  <rect x="65" y="450" width="480" height="48" rx="10" fill="#1a1020" stroke="#991b1b" stroke-width="1.5"/>
+  <text x="305" y="479" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="14" font-weight="600">× 2,700번 반복 = 수 시간 ~ 수일</text>
+
+  <rect x="130" y="530" width="350" height="50" rx="12" fill="#0f172a" stroke="#7f1d1d" stroke-width="1"/>
+  <text x="305" y="551" text-anchor="middle" fill="#ef4444" font-family="system-ui, sans-serif" font-size="13" font-weight="600">매 분기 다시 해야 한다</text>
+  <text x="305" y="570" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">시계열 비교? 계정 통일? 자동화 불가능</text>
+
+  <!-- 오른쪽: dartlab.scan -->
+  <rect x="630" y="105" width="530" height="570" rx="16" fill="#1e293b" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="895" y="145" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="20" font-weight="700">dartlab.scan</text>
+  <text x="895" y="170" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">시장 전체를 한 줄로</text>
+
+  <!-- 코드 한 줄 -->
+  <rect x="660" y="200" width="470" height="60" rx="12" fill="#0a1a10" stroke="#166534" stroke-width="1.5"/>
+  <text x="895" y="237" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="16" font-weight="600">dartlab.scan("account", "매출액")</text>
+
+  <!-- 결과 테이블 -->
+  <text x="895" y="295" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">↓  3초 후</text>
+
+  <rect x="660" y="310" width="470" height="220" rx="12" fill="#0f172a" stroke="#166534" stroke-width="1"/>
+
+  <!-- 테이블 헤더 -->
+  <rect x="660" y="310" width="470" height="32" rx="12" fill="#14532d" opacity="0.5"/>
+  <text x="705" y="332" fill="#86efac" font-family="monospace" font-size="11" font-weight="600">종목코드</text>
+  <text x="790" y="332" fill="#86efac" font-family="monospace" font-size="11" font-weight="600">종목명</text>
+  <text x="880" y="332" fill="#86efac" font-family="monospace" font-size="11" font-weight="600">2025</text>
+  <text x="950" y="332" fill="#86efac" font-family="monospace" font-size="11" font-weight="600">2024</text>
+  <text x="1020" y="332" fill="#86efac" font-family="monospace" font-size="11" font-weight="600">2023</text>
+  <text x="1090" y="332" fill="#86efac" font-family="monospace" font-size="11" font-weight="600">2022</text>
+
+  <!-- 테이블 데이터 -->
+  <text x="705" y="365" fill="#e2e8f0" font-family="monospace" font-size="11">005930</text>
+  <text x="790" y="365" fill="#e2e8f0" font-family="monospace" font-size="11">삼성전자</text>
+  <text x="880" y="365" fill="#e2e8f0" font-family="monospace" font-size="11">300.9조</text>
+  <text x="950" y="365" fill="#e2e8f0" font-family="monospace" font-size="11">258.9조</text>
+  <text x="1020" y="365" fill="#e2e8f0" font-family="monospace" font-size="11">258.9조</text>
+  <text x="1090" y="365" fill="#e2e8f0" font-family="monospace" font-size="11">302.2조</text>
+
+  <text x="705" y="395" fill="#e2e8f0" font-family="monospace" font-size="11">000660</text>
+  <text x="790" y="395" fill="#e2e8f0" font-family="monospace" font-size="11">SK하이닉스</text>
+  <text x="880" y="395" fill="#e2e8f0" font-family="monospace" font-size="11">66.2조</text>
+  <text x="950" y="395" fill="#e2e8f0" font-family="monospace" font-size="11">66.2조</text>
+  <text x="1020" y="395" fill="#e2e8f0" font-family="monospace" font-size="11">32.8조</text>
+  <text x="1090" y="395" fill="#e2e8f0" font-family="monospace" font-size="11">44.6조</text>
+
+  <text x="705" y="425" fill="#e2e8f0" font-family="monospace" font-size="11">035420</text>
+  <text x="790" y="425" fill="#e2e8f0" font-family="monospace" font-size="11">NAVER</text>
+  <text x="880" y="425" fill="#e2e8f0" font-family="monospace" font-size="11">10.6조</text>
+  <text x="950" y="425" fill="#e2e8f0" font-family="monospace" font-size="11">10.3조</text>
+  <text x="1020" y="425" fill="#e2e8f0" font-family="monospace" font-size="11">9.7조</text>
+  <text x="1090" y="425" fill="#e2e8f0" font-family="monospace" font-size="11">8.2조</text>
+
+  <text x="895" y="465" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="12">... 2,744개 종목 전체 ...</text>
+
+  <rect x="660" y="490" width="470" height="36" rx="0" fill="#14532d" opacity="0.3"/>
+  <text x="895" y="514" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="13" font-weight="600">2,744행 × 5개 연도 = 3초</text>
+
+  <!-- 핵심 메시지 -->
+  <rect x="700" y="555" width="390" height="85" rx="14" fill="#0a1a10" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="895" y="585" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="14" font-weight="700">코드 한 줄. 계정명 하나. 시장 전체.</text>
+  <text x="895" y="610" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="12">매 분기 같은 코드 실행 → 자동 최신화</text>
+  <text x="895" y="630" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">한글/영문 양방향 — "매출액" = "sales"</text>
+</svg>
