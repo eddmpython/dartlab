@@ -2,7 +2,7 @@
   "name": "dartlab",
   "displayName": "DartLab",
   "description": "DART 전자공시 & EDGAR AI 기업분석 — 종목코드 하나로 재무분석, 밸류에이션, 공시 검색",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "publisher": "eddmpython",
   "license": "MIT",
   "engines": {

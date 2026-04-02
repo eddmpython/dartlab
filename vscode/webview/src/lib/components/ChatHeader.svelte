@@ -81,8 +81,8 @@
               onclick={() => selectProvider(p)}
             >
               <span class="item-label">{p.label}</span>
-              {#if p.freeTier}
-                <span class="item-free">{p.freeTier}</span>
+              {#if p.description}
+                <span class="item-desc">{p.description}</span>
               {/if}
             </button>
           {/each}
@@ -196,9 +196,9 @@
   .item-label {
     font-weight: 500;
   }
-  .item-free {
+  .item-desc {
     font-size: 10px;
-    color: #34d399;
+    color: var(--vscode-descriptionForeground);
   }
 
 </style>

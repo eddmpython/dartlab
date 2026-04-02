@@ -360,9 +360,9 @@
           </span>
           <div class="error-switch-btns">
             {#each [
-              { id: "gemini", label: "Gemini (무료)" },
-              { id: "groq", label: "Groq (무료)" },
-              { id: "cerebras", label: "Cerebras (무료)" },
+              { id: "gemini", label: "Gemini" },
+              { id: "groq", label: "Groq" },
+              { id: "cerebras", label: "Cerebras" },
               { id: "ollama", label: "Ollama (로컬)" },
             ] as p}
               <button class="switch-btn" onclick={(e) => {
@@ -378,7 +378,7 @@
               }}>{p.label}</button>
             {/each}
           </div>
-          <p class="error-hint">무료 provider는 API 키 설정이 필요합니다. Ollama는 로컬에서 바로 사용 가능.</p>
+          <p class="error-hint">API 키 설정이 필요합니다. Ollama는 로컬에서 바로 사용 가능.</p>
         </div>
       {:else if message.errorAction === "retry"}
         <div class="error-switch">

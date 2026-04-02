@@ -27,6 +27,7 @@
   let modelLabel = $state("");
   let providers: Array<{id: string; label: string; description?: string; freeTier: string; authKind?: string; signupUrl?: string}> = $state([]);
   let streaming = $state(false);
+  let waitingOAuth = $state(false);
   let availableTemplates: Array<{ name: string; description: string; source: "builtin" | "user" }> = $state([]);
   let messagesEl: HTMLDivElement | undefined = $state();
   let currentHandler: ReturnType<typeof createSseHandler> | null = null;
@@ -230,7 +231,7 @@
     } else if (cmd === "provider") {
       // provider 목록을 대화에 표시
       const lines = providers.length > 0
-        ? providers.map(p => `- **${p.label}**${p.id === providerLabel ? " ← 현재" : ""}${p.freeTier ? ` (${p.freeTier})` : ""}`).join("\n")
+        ? providers.map(p => `- **${p.label}**${p.id === providerLabel ? " ← 현재" : ""}`).join("\n")
         : "사용 가능한 provider가 없습니다. 헤더의 provider 버튼을 클릭하세요.";
       addSystemMessage(`**현재:** ${providerLabel || "미설정"} / ${modelLabel || "기본"}\n\n**사용 가능한 Provider:**\n${lines}\n\n변경하려면 헤더 우측의 provider 버튼을 클릭하세요.`);
     } else if (cmd === "model") {
@@ -285,9 +286,19 @@
         break;
       case "profile": {
         const p = m.payload as Record<string, unknown> | null;
+        const prevProvider = providerLabel;
         if (p?.provider) providerLabel = String(p.provider);
         if (p?.model) modelLabel = String(p.model);
         if (Array.isArray(p?.providers)) providers = p.providers as typeof providers;
+        // OAuth 대기 중 provider가 바뀌면 → 인증 완료
+        if (waitingOAuth && p?.provider && p.provider !== "none") {
+          waitingOAuth = false;
+          addSystemMessage(`${providerLabel} 연결 완료. 종목코드 또는 회사명을 입력하세요.`);
+        }
+        // API 키로 새 provider 연결 완료
+        else if (!waitingOAuth && p?.provider && p.provider !== "none" && prevProvider !== providerLabel && (!prevProvider || prevProvider === "none")) {
+          addSystemMessage(`${providerLabel} 연결 완료. 종목코드 또는 회사명을 입력하세요.`);
+        }
         break;
       }
       case "restoreConversations": {
@@ -327,11 +338,13 @@
         break;
       }
       case "oauthStart": {
+        waitingOAuth = true;
         addSystemMessage("브라우저에서 ChatGPT 로그인 페이지가 열렸습니다. 로그인을 완료하세요.");
         break;
       }
       case "oauthResult": {
         const oa = m.payload as { success: boolean; error?: string };
+        waitingOAuth = false;
         if (!oa?.success) {
           addSystemMessage(`OAuth 인증 실패: ${oa?.error || "알 수 없는 오류"}`);
         }
