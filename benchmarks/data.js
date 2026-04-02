@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775096270153,
+  "lastUpdate": 1775096847583,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -3567,6 +3567,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.9750579101682525e-7",
             "extra": "mean: 683.7307847355272 nsec\nrounds: 161239"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "538602eb352702d7be2669d2fd484aff28494942",
+          "message": "feat: credit 노트북 + 메모리 정리 + 랜딩 404 수정\n\n- notebooks/marimo/08_credit.py: credit 엔진 노트북 (등급/서사/시계열/비교)\n- docs/credit/reports: 파일명에 회사명 추가 (005930_삼성전자.md) → 404 해결\n- landing Header: Credit Reports 네비게이션 링크 추가\n- memory/behavior.md: 운영규칙 중복 제거 → MEMORY.md 참조로 통합",
+          "timestamp": "2026-04-02T11:26:41+09:00",
+          "tree_id": "6566eeb206d4932c5c41da0b6fb8c42146ac3abb",
+          "url": "https://github.com/eddmpython/dartlab/commit/538602eb352702d7be2669d2fd484aff28494942"
+        },
+        "date": 1775096847140,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 540518.665755467,
+            "unit": "iter/sec",
+            "range": "stddev: 4.7352993587308615e-7",
+            "extra": "mean: 1.8500748694817588 usec\nrounds: 55176"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 656276.81114856,
+            "unit": "iter/sec",
+            "range": "stddev: 5.000777463038595e-7",
+            "extra": "mean: 1.5237472709875042 usec\nrounds: 111396"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 520586.59742982633,
+            "unit": "iter/sec",
+            "range": "stddev: 5.393873859261708e-7",
+            "extra": "mean: 1.9209099983308682 usec\nrounds: 118120"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 669287.2443520683,
+            "unit": "iter/sec",
+            "range": "stddev: 4.202010627372216e-7",
+            "extra": "mean: 1.4941267870241457 usec\nrounds: 144865"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 802331.6819409635,
+            "unit": "iter/sec",
+            "range": "stddev: 4.135836651616144e-7",
+            "extra": "mean: 1.2463673347422184 usec\nrounds: 172385"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 268854.95811985957,
+            "unit": "iter/sec",
+            "range": "stddev: 6.630432493599125e-7",
+            "extra": "mean: 3.71947762091925 usec\nrounds: 61084"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7345781.847947229,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1911871352047789e-8",
+            "extra": "mean: 136.13254799820237 nsec\nrounds: 73336"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 9021629.859484233,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1249725233427343e-8",
+            "extra": "mean: 110.84471604082968 nsec\nrounds: 91316"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1453651.6283384305,
+            "unit": "iter/sec",
+            "range": "stddev: 4.187504891261013e-7",
+            "extra": "mean: 687.9227323145034 nsec\nrounds: 134157"
           }
         ]
       }
