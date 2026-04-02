@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775112924885,
+  "lastUpdate": 1775114224237,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -4872,6 +4872,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.653948270076637e-7",
             "extra": "mean: 679.9763151693639 nsec\nrounds: 178891"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "7325c2177d364b185247f44a3e3564c6a46b53b9",
+          "message": "blog: scan 소개 글 추가 + easy-start uv 설명 보강\n\n- 신규: dartlab-news #02 \"2,700개 종목의 재무 데이터를 한 줄로 꺼낸다\"\n  - scan 19개 축, 프리빌드 parquet, XBRL 정규화, 실전 시나리오 4개\n  - SVG 5개 (hero-map, before-after, axes-overview, pipeline, checklist)\n- 보강: dartlab-news #01 uv 설명 확장\n  - Astral/Rust 배경, pip 4단계 vs uv 2단계, 속도 비교, uv run 상세\n- 운영문서: TOPIC_ROADMAP, WRITING_QUEUE 갱신",
+          "timestamp": "2026-04-02T16:16:07+09:00",
+          "tree_id": "52474bddb993ad5cd4aa7cac9a5904cb000e2531",
+          "url": "https://github.com/eddmpython/dartlab/commit/7325c2177d364b185247f44a3e3564c6a46b53b9"
+        },
+        "date": 1775114223776,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 530010.9151628828,
+            "unit": "iter/sec",
+            "range": "stddev: 5.125244129581032e-7",
+            "extra": "mean: 1.886753595806004 usec\nrounds: 53952"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 660471.0631169386,
+            "unit": "iter/sec",
+            "range": "stddev: 6.066756229204741e-7",
+            "extra": "mean: 1.5140708743252642 usec\nrounds: 109927"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 524304.199622833,
+            "unit": "iter/sec",
+            "range": "stddev: 5.856526505256214e-7",
+            "extra": "mean: 1.9072897007488527 usec\nrounds: 107435"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 674864.4307367409,
+            "unit": "iter/sec",
+            "range": "stddev: 3.992439920122046e-7",
+            "extra": "mean: 1.4817790869616771 usec\nrounds: 112284"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 813467.9650249414,
+            "unit": "iter/sec",
+            "range": "stddev: 3.7610349914719355e-7",
+            "extra": "mean: 1.2293047089682745 usec\nrounds: 136166"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 269035.2827995184,
+            "unit": "iter/sec",
+            "range": "stddev: 6.657190334255304e-7",
+            "extra": "mean: 3.7169845887655826 usec\nrounds: 57166"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7422726.065781833,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2275452528881455e-8",
+            "extra": "mean: 134.7213936143918 nsec\nrounds: 72538"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8921967.81280083,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1052825886995234e-8",
+            "extra": "mean: 112.08289706730906 nsec\nrounds: 84589"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1444244.8985457853,
+            "unit": "iter/sec",
+            "range": "stddev: 3.0882741590552315e-7",
+            "extra": "mean: 692.4033458639204 nsec\nrounds: 155715"
           }
         ]
       }
