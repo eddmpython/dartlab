@@ -4,6 +4,7 @@ const modules = import.meta.glob(
 	[
 		'@docs/getting-started/*.md',
 		'@docs/api/*.md',
+		'@docs/credit/reports/*.md',
 		'@docs/tutorials/*.md',
 		'@docs/changelog.md',
 		'@docs/stability.md',
@@ -17,6 +18,7 @@ const rawModules = import.meta.glob(
 	[
 		'@docs/getting-started/*.md',
 		'@docs/api/*.md',
+		'@docs/credit/reports/*.md',
 		'@docs/tutorials/*.md',
 		'@docs/changelog.md',
 		'@docs/stability.md',
