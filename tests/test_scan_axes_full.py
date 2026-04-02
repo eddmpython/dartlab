@@ -185,9 +185,9 @@ class TestFindLatestYear:
     def test_skips_sparse_year(self):
         from dartlab.scan._helpers import find_latest_year
 
-        rows = [{"year": "2023", "value": None} for _ in range(600)]
-        rows += [{"year": "2022", "value": str(i)} for i in range(600)]
-        df = pl.DataFrame(rows)
+        rows_2023 = [{"year": "2023", "value": ""} for _ in range(600)]
+        rows_2022 = [{"year": "2022", "value": str(i)} for i in range(600)]
+        df = pl.DataFrame(rows_2023 + rows_2022)
         assert find_latest_year(df, "value", min_count=500) == "2022"
 
     def test_returns_none_if_no_year_qualifies(self):
