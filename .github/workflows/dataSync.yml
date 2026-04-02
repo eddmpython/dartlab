@@ -39,7 +39,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv sync --extra hf
+        run: uv sync
 
       # 기존 데이터 캐시 (두 번째 실행부터 clone 생략)
       - name: Restore data cache

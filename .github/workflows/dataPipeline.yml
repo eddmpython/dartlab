@@ -48,7 +48,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv sync --extra hf
+        run: uv sync
 
       - name: Restore data cache
         uses: actions/cache@v4
@@ -98,7 +98,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv sync --extra hf
+        run: uv sync
 
       - name: Restore finance cache
         uses: actions/cache@v4
