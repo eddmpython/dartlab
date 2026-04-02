@@ -30,7 +30,7 @@ def _():
 @app.cell
 def _(df):
     # 삼성전자 매출 확인
-    df.filter(pl.col("corpName").str.contains("삼성전자"))
+    df.filter(pl.col("종목명").str.contains("삼성전자"))
     return
 
 

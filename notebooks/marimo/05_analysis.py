@@ -4,9 +4,9 @@
 # ///
 """DartLab -- Analysis.
 
-c.analysis() -- 14-axis financial analysis.
-c.insights -- 7-area grades at a glance.
-c.analysis("valuation", "가치평가") / c.analysis("forecast", "매출전망") -- forward-looking estimates.
+c.analysis("financial", "축") -- financial analysis (14 axes).
+c.analysis("valuation", "가치평가") -- valuation (DCF/DDM/relative).
+c.analysis("forecast", "매출전망") -- revenue forecasting.
 """
 
 import marimo
