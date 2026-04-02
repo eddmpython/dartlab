@@ -74,7 +74,7 @@ export async function activate(
         if (!diag.aiProvider || diag.aiProvider === "none") {
           context.globalState.update(shownKey, true);
           vscode.window.showInformationMessage(
-            "DartLab 시작됨. AI 분석을 사용하려면 provider를 설정하세요. (Gemini, Groq 등 무료 옵션 제공)",
+            "DartLab 시작됨. AI 분석을 사용하려면 provider를 설정하세요.",
             "설정 열기",
           ).then((c) => {
             if (c) vscode.commands.executeCommand(`${EXT_ID}.settings`);

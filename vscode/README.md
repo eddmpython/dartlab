@@ -19,16 +19,17 @@ AI-powered financial analysis for Korean (DART) and US (EDGAR) public companies,
 
 ### AI Provider
 
-무료 Provider 포함, 원하는 AI를 선택할 수 있습니다:
+원하는 AI를 선택할 수 있습니다:
 
-| Provider | 비용 | 비고 |
-|----------|------|------|
-| Gemini | 무료 | Gemini 2.5 Pro/Flash |
-| Groq | 무료 | LLaMA 3.3 70B |
-| Cerebras | 무료 | LLaMA 3.3 70B |
-| Mistral | 무료 | Mistral Small |
-| OpenAI | 유료 | GPT-4o |
-| Ollama | 무료 | 로컬 실행 |
+| Provider | 비고 |
+|----------|------|
+| Gemini | Gemini 2.5 Pro/Flash |
+| Groq | LLaMA 3.3 70B |
+| Cerebras | LLaMA 3.3 70B |
+| Mistral | Mistral Small |
+| OpenAI | GPT-4o |
+| ChatGPT | OAuth 로그인 (구독 계정) |
+| Ollama | 로컬 실행 |
 
 ### 채팅 인터페이스
 
@@ -52,7 +53,7 @@ DartLab은 MCP 서버로 자동 등록되어, Claude Code · GitHub Copilot 등 
    ```
 2. VS Code에서 **DartLab** 확장 설치
 3. Activity Bar의 DartLab 아이콘 클릭 (또는 `Ctrl+Shift+D`)
-4. AI Provider 선택 (무료 옵션 있음)
+4. AI Provider 선택
 5. 종목코드 또는 질문 입력 → 분석 시작
 
 **요구사항:** Python 3.12+

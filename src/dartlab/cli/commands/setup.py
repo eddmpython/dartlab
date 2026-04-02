@@ -32,15 +32,15 @@ def run(args) -> int:
     if args.provider is None:
         print("\n[ 데이터 수집 ]\n")
         print("  dartlab setup dart-key     DART OpenAPI 키 설정 (공시 데이터 직접 수집)\n")
-        print("[ AI 분석 — 무료 API 키 ]\n")
-        print("  dartlab setup gemini       Google Gemini — 무료, Gemini 2.5 Pro/Flash")
-        print("  dartlab setup groq         Groq — 무료, 초고속 LLaMA 3.3 70B")
-        print("  dartlab setup cerebras     Cerebras — 무료, 1M tokens/day 영구")
-        print("  dartlab setup mistral      Mistral AI — 무료, 1B tokens/month\n")
+        print("[ AI 분석 — API 키 ]\n")
+        print("  dartlab setup gemini       Google Gemini — Gemini 2.5 Pro/Flash")
+        print("  dartlab setup groq         Groq — 초고속 LLaMA 3.3 70B")
+        print("  dartlab setup cerebras     Cerebras — LLaMA 3.3 70B")
+        print("  dartlab setup mistral      Mistral AI — 다양한 모델\n")
         print("[ AI 분석 — 기타 ]\n")
         print("  dartlab setup oauth-codex  ChatGPT 구독 계정 — 브라우저 OAuth")
         print("  dartlab setup openai       OpenAI API — GPT-4o 등 (API 키 필요)")
-        print("  dartlab setup ollama       로컬 LLM (무료, 오프라인)")
+        print("  dartlab setup ollama       로컬 LLM (오프라인)")
         print("  dartlab setup codex        Codex CLI — 코딩 에이전트용")
         print("  dartlab setup custom       OpenAI 호환 API — vLLM, Together 등\n")
         return 0
@@ -275,7 +275,7 @@ def _setup_codex(info: dict) -> None:
 
 
 def _setup_ollama() -> None:
-    print("\n[ Ollama 설정 — 로컬 LLM (무료) ]\n")
+    print("\n[ Ollama 설정 — 로컬 LLM ]\n")
 
     print("  1. 설치")
     print("     https://ollama.com/download\n")

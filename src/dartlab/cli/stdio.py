@@ -151,7 +151,6 @@ def _handleStatus(_msg: dict[str, Any]) -> None:
                     "id": spec.id,
                     "label": spec.label,
                     "description": spec.description,
-                    "freeTier": spec.freeTierHint or "",
                     "authKind": spec.auth_kind,
                     "signupUrl": spec.signupUrl or "",
                 }
