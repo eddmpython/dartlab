@@ -352,6 +352,20 @@ def calcProfitabilityFlags(company, *, basePeriod: str | None = None) -> list[st
         if oms[0] is not None and oms[0] < 0:
             flags.append(f"영업적자 ({oms[0]:.1f}%)")
 
+    # 마진 괴리 감지 — 순이익률 vs 영업이익률
+    if trend and trend["history"]:
+        latest = trend["history"][0]
+        nm = latest.get("netMargin")
+        om = latest.get("operatingMargin")
+        if nm is not None and om is not None and om > 0:
+            ratio = nm / om
+            if ratio > 2.0:
+                flags.append(f"순이익률({nm:.1f}%)이 영업이익률({om:.1f}%)의 {ratio:.1f}배 — 대규모 비영업이익 존재")
+            elif 0 < ratio < 0.3:
+                flags.append(f"순이익률이 영업이익률의 {ratio:.1f}배 — 대규모 비영업손실")
+        if om is not None and abs(om) > 100:
+            flags.append(f"영업이익률 {om:.1f}% — 데이터 이상 가능")
+
     ret = calcReturnTrend(company, basePeriod=basePeriod)
     if ret and ret["history"]:
         h = ret["history"][0]
