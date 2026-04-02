@@ -59,7 +59,7 @@ def _():
 @app.cell
 def _(roe):
     # 최근 분기 ROE 상위 20개
-    latest = [c for c in roe.columns if c not in ("stockCode", "corpName")][0]
+    latest = [c for c in roe.columns if c not in ("종목코드", "종목명")][0]
     roe.filter(pl.col(latest).is_not_null()).sort(latest, descending=True).head(20)
     return
 

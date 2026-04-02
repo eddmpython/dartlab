@@ -10,7 +10,7 @@ Interactive [Marimo](https://marimo.io/) notebooks. Run locally or open in [Mola
 | **02_scan.py** | Scan -- scan() 13-axis market scan, 2,700+ companies |
 | **03_review.py** | Review -- structured report + AI interpretation |
 | **04_gather.py** | Gather -- price, flow, macro, news |
-| **05_analysis.py** | Analysis -- 14-axis analysis, insights, forecast, valuation |
+| **05_analysis.py** | Analysis -- financial, valuation, forecast |
 | **06_ask.py** | Ask -- natural language analysis with LLM |
 
 ## Run locally

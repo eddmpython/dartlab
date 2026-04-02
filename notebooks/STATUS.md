@@ -9,7 +9,7 @@ notebooks/
 │   ├── 02_scan.ipynb         # Scan -- 13-axis market scan
 │   ├── 03_review.ipynb       # Review -- structured report + AI interpretation
 │   ├── 04_gather.ipynb       # Gather -- price, flow, macro, news
-│   ├── 05_analysis.ipynb     # Analysis -- 14-axis, insights, forecast, valuation
+│   ├── 05_analysis.ipynb     # Analysis -- financial, valuation, forecast
 │   └── 06_ask.ipynb          # Ask -- AI natural language analysis
 ├── marimo/                   # Core notebooks (Marimo / Molab)
 │   ├── 01_company.py
