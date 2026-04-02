@@ -45,6 +45,11 @@ DartLab is built on one premise: **every period must be comparable, and every co
 
 ```bash
 uv add dartlab
+
+pip install dartlab              # core + AI (openai, gemini included)
+pip install dartlab[server]      # + web server (FastAPI, MCP)
+pip install dartlab[viz]         # + charts (Plotly)
+pip install dartlab[all]         # everything
 ```
 
 ```python
@@ -85,8 +90,9 @@ Two engines turn raw filings into one comparable map:
 | L0/L1 | [Company](ops/company.md) | Sections horizontalization + account standardization | `c.show()`, `c.select()` |
 | L1 | [Scan](ops/scan.md) | Cross-company comparison across 13 axes | `dartlab.scan()` |
 | L1 | [Gather](ops/gather.md) | External market data (price, flow, macro, news) | `dartlab.gather()` |
-| L2 | [Analysis](ops/analysis.md) | 14-axis storytelling analysis (6-act structure) | `c.analysis()` |
-| L2 | [Review](ops/review.md) | Analysis to narrative report | `c.review()` |
+| L2 | [Analysis](ops/analysis.md) | 14-axis financial + valuation + forecast + quant | `c.analysis("financial", "수익성")` |
+| L2 | [Credit](ops/credit.md) | Independent credit rating (dCR 20-grade) | `c.credit()` |
+| L2 | [Review](ops/review.md) | Block composition (analysis + credit) | `c.review()` |
 | L0 | [Search](ops/search.md) | Semantic filing search *(alpha)* | `dartlab.search()` |
 | L3 | [AI](ops/ai.md) | Active analyst — code execution + interpretation | `dartlab.ask()` |
 | L4 | UI | VSCode extension | `dartlab chat --stdio` |
@@ -141,6 +147,26 @@ Revenue structure, profitability, growth, stability, cash flow, capital allocati
 ```python
 c.analysis("financial", "수익성")       # profitability analysis
 c.analysis("financial", "현금흐름")    # cash flow analysis
+
+c.credit()                                  # dCR-AA, healthScore 93/100
+c.credit(detail=True)                       # 7-axis narrative + metrics
+```
+
+### Credit
+
+> Design: [ops/credit.md](ops/credit.md)
+
+Independent credit rating engine. 7-axis weighted scoring with sector-specific thresholds, CHS default probability, and narrative generation.
+
+```python
+cr = c.credit()
+print(cr["grade"])          # dCR-AA
+print(cr["healthScore"])    # 93.36 (0-100, higher is better)
+print(cr["pdEstimate"])     # 0.02% default probability
+
+cr = c.credit(detail=True)  # includes 7-axis narrative
+for n in cr["narratives"]["axes"]:
+    print(f"[{n['severity']}] {n['axis']}: {n['summary']}")
 ```
 
 ### Review — Analysis to Report
@@ -179,7 +205,7 @@ dartlab.ask("Analyze Samsung Electronics financial health")
 dartlab.ask("Samsung analysis", provider="gemini")  # free providers available
 ```
 
-Providers: `gemini` (free), `groq` (free), `oauth-codex` (ChatGPT subscription), `openai`, `ollama` (local), and more. Auto-fallback across providers when rate-limited.
+Providers: `gemini` (free), `groq` (free), `cerebras` (free), `oauth-codex` (ChatGPT subscription), `openai`, `ollama` (local), and more. Auto-fallback across providers when rate-limited.
 
 ### Architecture
 
@@ -187,10 +213,11 @@ Providers: `gemini` (free), `groq` (free), `oauth-codex` (ChatGPT subscription),
 L0  core/        Protocols, finance utils, docs utils, registry
 L1  providers/   Country-specific data (DART, EDGAR, EDINET)
     gather/      External market data (Naver, Yahoo, FRED)
-    scan/        Market-wide cross-sectional analysis (13 axes)
-L2  analysis/    Financial analysis + forecast + valuation
-    review/      Block-template report assembly
-L3  ai/          Active analyst — LLM with full API access
+    scan/        Market-wide analysis — scan("group", "axis")
+L2  analysis/    Financial + forecast + valuation + quant — analysis("group", "axis")
+    credit/      Independent credit rating — c.credit()
+    review/      Block composition (analysis + credit)
+L3  ai/          Active analyst — dartlab.ask()
 L4  vscode/      VSCode extension (dartlab chat --stdio)
 ```
 
@@ -285,8 +312,8 @@ Pipeline: local cache (instant) → HuggingFace (auto-download) → DART API (wi
 | Tier | Scope |
 |------|-------|
 | **Stable** | DART Company (sections, show, trace, diff, BS/IS/CF, CIS, index, filings, profile), EDGAR Company core, valuation, forecast, simulation |
-| **Beta** | EDGAR power-user (SCE, notes, freq, coverage), insights, distress, ratios, timeseries, network, governance, workforce, capital, debt, chart/table/text tools, ask/chat, OpenDart, OpenEdgar, Server API, MCP |
-| **Experimental** | AI tool calling, export |
+| **Beta** | EDGAR power-user (SCE, notes, freq, coverage), credit, insights, distress, ratios, timeseries, network, governance, workforce, capital, debt, chart/table/text tools, ask/chat, OpenDart, OpenEdgar, Server API, MCP |
+| **Experimental** | AI tool calling, export, viz (charts) |
 
 See [docs/stability.md](docs/stability.md).
 
