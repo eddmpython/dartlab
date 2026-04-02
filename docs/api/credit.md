@@ -1,5 +1,5 @@
 ---
-title: Credit (신용평가)
+title: Credit Rating
 ---
 
 # Credit — dartlab 독립 신용평가 (dCR)

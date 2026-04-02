@@ -1,5 +1,5 @@
 ---
-title: 고급 기능
+title: Advanced
 ---
 
 # 고급 기능

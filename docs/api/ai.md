@@ -1,5 +1,5 @@
 ---
-title: AI (분석가)
+title: AI
 ---
 
 # AI — 적극적 분석가

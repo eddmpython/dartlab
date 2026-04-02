@@ -1,5 +1,5 @@
 ---
-title: Scan (횡단분석)
+title: Scan
 ---
 
 # Scan — 전종목 횡단분석

@@ -1,5 +1,5 @@
 ---
-title: Analysis (재무분석)
+title: Analysis
 ---
 
 # Analysis — 14축 재무분석

@@ -1,5 +1,5 @@
 ---
-title: API 개요
+title: API Overview
 ---
 
 # API 개요
@@ -49,16 +49,16 @@ dartlab.ask("삼성전자 재무 분석해줘")   # AI 분석가
 
 | 엔진 | 진입점 | 용도 | 상세 |
 |------|--------|------|------|
-| [Company](company) | `Company("005930")` | 데이터 조회 | show/select/sections/notes |
-| [Financial Data](finance) | `c.BS`, `c.ratios` | 재무제표 + 비율 | BS/IS/CF/ratios/timeseries |
-| [Analysis](analysis) | `c.analysis()` | 14축 재무분석 | 수익성/성장성/안정성 등 |
-| [Credit](credit) | `c.credit()` | 독립 신용평가 | dCR 20단계 + 7축 |
-| [Scan](scan) | `dartlab.scan()` | 시장 횡단분석 | 전종목 비교 15축 |
-| [Gather](gather) | `c.gather()` | 외부 시장 데이터 | 주가/수급/매크로/뉴스 |
-| [Review](review) | `c.review()` | 보고서 렌더링 | 마크다운/HTML/JSON |
-| [AI](ai) | `dartlab.ask()` | AI 분석가 | 6개 provider |
-| [Advanced](advanced) | `c.insights` 등 | 등급/순위/섹터 | insight/rank/sector |
-| [MCP](mcp) | `dartlab mcp` | AI 연동 | Claude/Cursor 등 |
+| [Company](company) | `Company("005930")` | Data access | show/select/sections/notes |
+| [Financial Data](finance) | `c.BS`, `c.ratios` | Financial statements | BS/IS/CF/ratios/timeseries |
+| [Scan](scan) | `dartlab.scan()` | Market-wide analysis | 15-axis cross-sectional |
+| [Gather](gather) | `c.gather()` | External data | price/flow/macro/news |
+| [Analysis](analysis) | `c.analysis()` | Deep analysis | 14-axis financial + forecast |
+| [Credit Rating](credit) | `c.credit()` | Credit rating | dCR 20-grade + 7-axis |
+| [Review](review) | `c.review()` | Report rendering | markdown/HTML/JSON |
+| [AI](ai) | `dartlab.ask()` | AI analyst | 6 providers |
+| [Advanced](advanced) | `c.insights` | Grades/rank/sector | insight/rank/quant |
+| [MCP](mcp) | `dartlab mcp` | AI integration | Claude/Cursor |
 
 ## Python API 목록
 

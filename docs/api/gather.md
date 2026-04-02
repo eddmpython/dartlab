@@ -1,5 +1,5 @@
 ---
-title: Gather (시장 데이터)
+title: Gather
 ---
 
 # Gather — 외부 시장 데이터

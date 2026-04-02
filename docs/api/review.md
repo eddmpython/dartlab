@@ -1,5 +1,5 @@
 ---
-title: Review (보고서)
+title: Review
 ---
 
 # Review — 보고서 렌더링

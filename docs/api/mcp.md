@@ -1,5 +1,5 @@
 ---
-title: MCP 서버
+title: MCP
 ---
 
 # MCP 서버

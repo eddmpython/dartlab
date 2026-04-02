@@ -1,5 +1,5 @@
 ---
-title: 재무 데이터
+title: Financial Data
 ---
 
 # 재무 데이터
