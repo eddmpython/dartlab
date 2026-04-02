@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775115618295,
+  "lastUpdate": 1775115702166,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -5220,6 +5220,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 1.486351207143011e-7",
             "extra": "mean: 656.1363896225557 nsec\nrounds: 148699"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "40b180341dae518b92b253d30d71d76f2fdd660d",
+          "message": "fix: scan 블로그 3초→1초 수정 + 축 갯수 숫자 포장 제거\n\n- 전체 \"3초\" → \"1초\" (본문 + SVG 4개)\n- \"19개 축\", \"10축\", \"6축\", \"3축\" 등 갯수 언급 전부 제거\n- H2/H3 제목에서 갯수 빼고 기능 직접 서술\n- BLOG_STRUCTURE.md에 \"축/단계/등급 갯수 강조 금지\" 규칙 추가",
+          "timestamp": "2026-04-02T16:40:52+09:00",
+          "tree_id": "16f997b700738dc4cbf68d0b34ecef8d0308c27f",
+          "url": "https://github.com/eddmpython/dartlab/commit/40b180341dae518b92b253d30d71d76f2fdd660d"
+        },
+        "date": 1775115701702,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 471264.52040311135,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000010063107484875264",
+            "extra": "mean: 2.121950532462358 usec\nrounds: 56906"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 658829.0581634949,
+            "unit": "iter/sec",
+            "range": "stddev: 4.319068369476242e-7",
+            "extra": "mean: 1.5178444053265183 usec\nrounds: 148302"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 523958.018046702,
+            "unit": "iter/sec",
+            "range": "stddev: 5.662465406923386e-7",
+            "extra": "mean: 1.908549856204065 usec\nrounds: 139782"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 667844.7107404257,
+            "unit": "iter/sec",
+            "range": "stddev: 4.2915736239454977e-7",
+            "extra": "mean: 1.4973540763560444 usec\nrounds: 137476"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 811043.0900106946,
+            "unit": "iter/sec",
+            "range": "stddev: 3.780195558718784e-7",
+            "extra": "mean: 1.2329801120515236 usec\nrounds: 169751"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 268503.5640868963,
+            "unit": "iter/sec",
+            "range": "stddev: 6.60159819838419e-7",
+            "extra": "mean: 3.724345348638903 usec\nrounds: 71603"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7331512.598338573,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2500376566380806e-8",
+            "extra": "mean: 136.39750141418492 nsec\nrounds: 72485"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8973349.209171291,
+            "unit": "iter/sec",
+            "range": "stddev: 1.0975115054852108e-8",
+            "extra": "mean: 111.44111041370606 nsec\nrounds: 84446"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1460736.826480972,
+            "unit": "iter/sec",
+            "range": "stddev: 2.8005428651371485e-7",
+            "extra": "mean: 684.5860129432605 nsec\nrounds: 170329"
           }
         ]
       }
