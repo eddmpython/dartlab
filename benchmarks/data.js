@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775117496058,
+  "lastUpdate": 1775117629382,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -5568,6 +5568,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.8144791333319525e-7",
             "extra": "mean: 689.4588469896084 nsec\nrounds: 157704"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "6228ca3925c2565c225a885f5b212032906216bb",
+          "message": "fix: AI 섹션에 scan 내부 호출 흐름 구체적으로 보여줌\n\n- \"AI에게 물어보면 된다\" → \"코드를 안 짜도 된다 — AI에게 물어보면 scan이 돌아간다\"\n- AI가 질문을 받으면 뒤에서 scan 축을 조합하는 과정을 단계별로 설명\n- 질문별로 어떤 scan 축이 호출되는지 매핑 (governance+dividendTrend 등)",
+          "timestamp": "2026-04-02T17:12:56+09:00",
+          "tree_id": "2e4c19c96dfaad830e1f727d1274dc4e9adc2f64",
+          "url": "https://github.com/eddmpython/dartlab/commit/6228ca3925c2565c225a885f5b212032906216bb"
+        },
+        "date": 1775117628954,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 543161.0817077582,
+            "unit": "iter/sec",
+            "range": "stddev: 4.628014502053384e-7",
+            "extra": "mean: 1.841074468840606 usec\nrounds: 56010"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 654077.6149333678,
+            "unit": "iter/sec",
+            "range": "stddev: 4.992531527309697e-7",
+            "extra": "mean: 1.528870545587884 usec\nrounds: 132031"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 526343.651714835,
+            "unit": "iter/sec",
+            "range": "stddev: 5.931984254095464e-7",
+            "extra": "mean: 1.8998994226338362 usec\nrounds: 109806"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 672700.2073619638,
+            "unit": "iter/sec",
+            "range": "stddev: 3.914564310638942e-7",
+            "extra": "mean: 1.4865462936626153 usec\nrounds: 151241"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 810799.4161570768,
+            "unit": "iter/sec",
+            "range": "stddev: 3.6637187389032505e-7",
+            "extra": "mean: 1.2333506661113198 usec\nrounds: 157928"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 268061.3008787644,
+            "unit": "iter/sec",
+            "range": "stddev: 7.749895538569164e-7",
+            "extra": "mean: 3.7304899913630876 usec\nrounds: 63695"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7270389.383301299,
+            "unit": "iter/sec",
+            "range": "stddev: 1.7351100459918915e-8",
+            "extra": "mean: 137.5442149352839 nsec\nrounds: 61237"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8820896.09439358,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2748273280693847e-8",
+            "extra": "mean: 113.36716692939893 nsec\nrounds: 87474"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1455630.1217245234,
+            "unit": "iter/sec",
+            "range": "stddev: 2.6329008141995793e-7",
+            "extra": "mean: 686.9877072997593 nsec\nrounds: 179212"
           }
         ]
       }
