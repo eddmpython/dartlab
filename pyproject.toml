@@ -157,7 +157,7 @@ exclude_lines = [
     "if __name__",
     "raise NotImplementedError",
 ]
-fail_under = 25
+fail_under = 30
 
 [tool.pyright]
 pythonVersion = "3.12"
