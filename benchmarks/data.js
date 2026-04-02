@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775150852271,
+  "lastUpdate": 1775151249448,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -6960,6 +6960,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.483418439386114e-7",
             "extra": "mean: 684.6054693471772 nsec\nrounds: 179180"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "00e0224b6c8e0466e17a890fbf611ef412096015",
+          "message": "fix(vscode): 무료 표현 제거 + 연결 완료 안내 메시지\n\n- provider 목록에서 (무료) 표현 전부 제거\n- OAuth/API키 연결 완료 시 \"연결 완료\" 메시지 표시\n- freeTier → description 표시로 변경",
+          "timestamp": "2026-04-03T02:33:16+09:00",
+          "tree_id": "a7cf661e560da4fbcf60e815f5795ecee991b78e",
+          "url": "https://github.com/eddmpython/dartlab/commit/00e0224b6c8e0466e17a890fbf611ef412096015"
+        },
+        "date": 1775151249005,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 546952.2659181923,
+            "unit": "iter/sec",
+            "range": "stddev: 4.6394606418982473e-7",
+            "extra": "mean: 1.82831311306711 usec\nrounds: 39235"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 657821.1302438137,
+            "unit": "iter/sec",
+            "range": "stddev: 4.878085061580365e-7",
+            "extra": "mean: 1.5201700797135562 usec\nrounds: 95420"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 526155.4103020101,
+            "unit": "iter/sec",
+            "range": "stddev: 5.803782202218434e-7",
+            "extra": "mean: 1.9005791452871421 usec\nrounds: 96247"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 671698.5492583462,
+            "unit": "iter/sec",
+            "range": "stddev: 3.8004603597992943e-7",
+            "extra": "mean: 1.4887630784734414 usec\nrounds: 132909"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 788853.4232376267,
+            "unit": "iter/sec",
+            "range": "stddev: 4.083669091051323e-7",
+            "extra": "mean: 1.2676626234260118 usec\nrounds: 175101"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 267027.25887198676,
+            "unit": "iter/sec",
+            "range": "stddev: 6.800436853981223e-7",
+            "extra": "mean: 3.7449360197319828 usec\nrounds: 57627"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7028419.972868128,
+            "unit": "iter/sec",
+            "range": "stddev: 2.3145503285484998e-8",
+            "extra": "mean: 142.27948868455624 nsec\nrounds: 199641"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8644234.171383763,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1578963123603019e-8",
+            "extra": "mean: 115.684047906805 nsec\nrounds: 50641"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1478698.1341788648,
+            "unit": "iter/sec",
+            "range": "stddev: 3.033554363844952e-7",
+            "extra": "mean: 676.2705496719312 nsec\nrounds: 135428"
           }
         ]
       }
