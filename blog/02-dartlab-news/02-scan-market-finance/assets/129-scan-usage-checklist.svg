@@ -86,7 +86,7 @@
   <text x="510" y="620" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">→</text>
 
   <rect x="540" y="595" width="360" height="38" rx="8" fill="#1e293b"/>
-  <text x="720" y="620" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="12">19개 축 목록 + 사용법 + 코드 예시 안내</text>
+  <text x="720" y="620" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="12">축 목록 + 사용법 + 코드 예시 안내</text>
 
   <text x="540" y="672" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">모든 축은 한글/영문 양방향 호출 가능 — scan("수익성") = scan("profitability")</text>
 </svg>

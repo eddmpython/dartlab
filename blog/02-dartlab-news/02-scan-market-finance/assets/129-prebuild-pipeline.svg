@@ -14,7 +14,7 @@
 
   <rect width="1200" height="720" fill="url(#bg129d)" rx="16"/>
 
-  <text x="600" y="45" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="24" font-weight="700">3초의 비밀 — 데이터가 사용자에게 도달하기까지</text>
+  <text x="600" y="45" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="24" font-weight="700">1초의 비밀 — 데이터가 사용자에게 도달하기까지</text>
   <text x="600" y="72" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">무거운 작업은 CI가 미리 해둔다. 사용자는 결과만 읽는다.</text>
 
   <!-- Phase 1: DART XBRL 원문 -->
@@ -87,7 +87,7 @@
   <text x="600" y="415" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="18" font-weight="700">사용자가 보는 것</text>
 
   <rect x="240" y="435" width="720" height="42" rx="8" fill="#0f172a"/>
-  <text x="600" y="462" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="14">dartlab.scan("account", "매출액")  →  DataFrame (2,744 rows × 6 cols)  →  3초</text>
+  <text x="600" y="462" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="14">dartlab.scan("account", "매출액")  →  DataFrame (2,744 rows × 6 cols)  →  1초</text>
 
   <text x="600" y="520" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">XBRL 정규화, parquet 합산, Polars 최적화 — 전부 뒤에서 일어난다. 사용자는 결과만 받는다.</text>
 

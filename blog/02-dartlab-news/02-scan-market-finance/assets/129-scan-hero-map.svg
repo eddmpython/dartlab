@@ -58,7 +58,7 @@
   <text x="895" y="237" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="16" font-weight="600">dartlab.scan("account", "매출액")</text>
 
   <!-- 결과 테이블 -->
-  <text x="895" y="295" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">↓  3초 후</text>
+  <text x="895" y="295" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">↓  1초 후</text>
 
   <rect x="660" y="310" width="470" height="220" rx="12" fill="#0f172a" stroke="#166534" stroke-width="1"/>
 
@@ -96,7 +96,7 @@
   <text x="895" y="465" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="12">... 2,744개 종목 전체 ...</text>
 
   <rect x="660" y="490" width="470" height="36" rx="0" fill="#14532d" opacity="0.3"/>
-  <text x="895" y="514" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="13" font-weight="600">2,744행 × 5개 연도 = 3초</text>
+  <text x="895" y="514" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="13" font-weight="600">2,744행 × 5개 연도 = 1초</text>
 
   <!-- 핵심 메시지 -->
   <rect x="700" y="555" width="390" height="85" rx="14" fill="#0a1a10" stroke="#4ade80" stroke-width="1.5"/>

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
-  <title>dartlab.scan 19개 축 — 재무 수치, 비재무 구조, 시장 관계</title>
-  <desc>scan의 19개 분석 축을 3개 그룹으로 분류한 맵</desc>
+  <title>dartlab.scan — 계정부터 거버넌스까지 시장 전체를 읽는다</title>
+  <desc>scan이 다루는 것: 재무 수치, 비재무 구조, 시장 관계</desc>
 
   <defs>
     <linearGradient id="bg129c" x1="0" y1="0" x2="0" y2="1">
@@ -11,12 +11,12 @@
 
   <rect width="1200" height="720" fill="url(#bg129c)" rx="16"/>
 
-  <text x="600" y="45" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="24" font-weight="700">dartlab.scan — 19개 축으로 시장을 읽는다</text>
+  <text x="600" y="45" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="24" font-weight="700">dartlab.scan — 계정부터 거버넌스까지 시장을 읽는다</text>
   <text x="600" y="72" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">모든 축은 한글/영문 양방향 호출 가능</text>
 
-  <!-- 그룹 1: 재무 수치 (10축) -->
+  <!-- 그룹 1: 재무 수치 -->
   <rect x="30" y="95" width="750" height="290" rx="14" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
-  <text x="55" y="125" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="18" font-weight="700">재무 수치 (10축)</text>
+  <text x="55" y="125" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="18" font-weight="700">재무 수치</text>
   <text x="55" y="148" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">재무제표에서 뽑을 수 있는 모든 것 — scan("financial")로 8축 일괄 가이드</text>
 
   <!-- 축 카드들 -->
@@ -60,9 +60,9 @@
   <text x="307" y="315" text-anchor="middle" fill="#93c5fd" font-family="monospace" font-size="11" font-weight="600">dividendTrend</text>
   <text x="307" y="335" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">DPS 추이 + 패턴</text>
 
-  <!-- 그룹 2: 비재무 구조 (6축) -->
+  <!-- 그룹 2: 비재무 구조 -->
   <rect x="30" y="400" width="545" height="290" rx="14" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
-  <text x="55" y="430" fill="#c084fc" font-family="system-ui, sans-serif" font-size="18" font-weight="700">비재무 구조 (6축)</text>
+  <text x="55" y="430" fill="#c084fc" font-family="system-ui, sans-serif" font-size="18" font-weight="700">비재무 구조</text>
   <text x="55" y="453" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">숫자 뒤에 있는 구조 — 지배구조, 인력, 주주환원</text>
 
   <rect x="50" y="470" width="240" height="52" rx="8" fill="#0f172a" stroke="#7e22ce" stroke-width="1"/>
@@ -89,9 +89,9 @@
   <text x="420" y="620" text-anchor="middle" fill="#d8b4fe" font-family="monospace" font-size="11" font-weight="600">audit</text>
   <text x="420" y="640" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">감사의견, 감사인변경</text>
 
-  <!-- 그룹 3: 시장 관계 (3축) -->
+  <!-- 그룹 3: 시장 관계 -->
   <rect x="600" y="400" width="570" height="290" rx="14" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
-  <text x="625" y="430" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="18" font-weight="700">시장 관계 (3축 + 1)</text>
+  <text x="625" y="430" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="18" font-weight="700">시장 관계</text>
   <text x="625" y="453" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">기업 간 관계와 시장 수준 신호</text>
 
   <rect x="620" y="470" width="260" height="52" rx="8" fill="#0f172a" stroke="#b45309" stroke-width="1"/>
