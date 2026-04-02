@@ -46,6 +46,18 @@ export const categoryDefinitions = [
 			'dartlab dCR 신용분석 보고서. 공시 데이터 기반 정량 분석으로 산출한 독립 신용등급, 등급 근거, 재무 하이라이트, 등급 전망을 제공합니다.',
 		brandMessage:
 			'DartLab은 공시 데이터만으로 재현 가능한 독립 신용등급을 산출합니다.'
+	},
+	{
+		id: 'company-reports',
+		slug: 'company-reports',
+		folder: '05-company-reports',
+		label: '기업분석 보고서',
+		description: '6막 재무 서사 기반 기업별 종합 분석 보고서입니다.',
+		seoTitle: '기업분석 보고서 | 6막 재무 서사',
+		seoDescription:
+			'dartlab 기업분석 보고서. 사업이해→수익성→현금전환→안정성→자본배분→전망의 6막 인과 구조로 기업을 분석합니다.',
+		brandMessage:
+			'DartLab은 숫자 나열이 아니라, 기업의 스토리를 6막 인과 구조로 전달합니다.'
 	}
 ] as const;
 
@@ -148,6 +160,14 @@ export const seriesDefinitions = {
 		seoTitle: 'DartLab 소식 | 설치부터 활용까지',
 		seoDescription: 'DartLab 소식 시리즈. dartlab 설치 방법, 초보자 가이드, 새 기능 소개, 업데이트 내역을 다룹니다.',
 		brandMessage: 'DartLab은 전자공시 분석을 누구나 시작할 수 있도록, 설치부터 실전 활용까지 쉽게 안내합니다.'
+	},
+	'company-reports': {
+		id: 'company-reports',
+		label: '기업분석 보고서',
+		description: '6막 재무 서사 기반 기업별 종합 분석 보고서입니다.',
+		seoTitle: '기업분석 보고서 | 6막 재무 서사',
+		seoDescription: 'dartlab 기업분석 보고서. 사업이해→수익성→현금전환→안정성→자본배분→전망의 6막 인과 구조로 기업을 분석합니다.',
+		brandMessage: 'DartLab은 숫자 나열이 아니라, 기업의 스토리를 6막 인과 구조로 전달합니다.'
 	}
 } as const;
 

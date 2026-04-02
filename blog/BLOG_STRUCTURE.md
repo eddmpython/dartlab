@@ -16,6 +16,7 @@
 - `02-dartlab-news`: DartLab 소식 (사용자 직접 관리)
 - `03-corporate-analysis`: 실전기업분석 (사용자 직접 관리)
 - `04-credit-reports`: 신용분석 보고서 (**프로그래매틱 생성**, `publisher.py`가 관리, `_registry.json`으로 번호/slug 매핑)
+- `05-company-reports`: 기업분석 보고서 — 6막 재무 서사 기반 기업별 분석. audit 완료 후 발간.
 
 ## 번호 체계
 
