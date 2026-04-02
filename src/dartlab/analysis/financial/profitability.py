@@ -366,21 +366,14 @@ def calcProfitabilityFlags(company, *, basePeriod: str | None = None) -> list[st
                 # 영업이익 > 금융이익은 구조적으로 정상.
                 # 순이익률 << 영업이익률은 금융비용/충당금 때문.
                 if ratio > 3.0:
-                    flags.append(
-                        f"순이익률({nm:.1f}%)이 영업이익률({om:.1f}%)의 {ratio:.1f}배"
-                        " — 비영업이익 확인 필요"
-                    )
+                    flags.append(f"순이익률({nm:.1f}%)이 영업이익률({om:.1f}%)의 {ratio:.1f}배 — 비영업이익 확인 필요")
             else:
                 if ratio > 2.0:
                     flags.append(
-                        f"순이익률({nm:.1f}%)이 영업이익률({om:.1f}%)의 {ratio:.1f}배"
-                        " — 대규모 비영업이익 존재"
+                        f"순이익률({nm:.1f}%)이 영업이익률({om:.1f}%)의 {ratio:.1f}배 — 대규모 비영업이익 존재"
                     )
                 elif 0 < ratio < 0.3:
-                    flags.append(
-                        f"순이익률이 영업이익률의 {ratio:.1f}배"
-                        " — 대규모 비영업손실"
-                    )
+                    flags.append(f"순이익률이 영업이익률의 {ratio:.1f}배 — 대규모 비영업손실")
         if om is not None and abs(om) > 100:
             if isFinancial:
                 flags.append(

@@ -168,20 +168,21 @@ def _generateFrontmatter(corpName: str, stockCode: str, result: dict) -> str:
 
     # description에 따옴표 이스케이프
     descText = (
-        f"{corpName} 독립 신용등급 {grade} ({desc}). "
-        "공시 데이터 기반 정량 분석 등급 근거, 재무 하이라이트, 등급 전망."
+        f"{corpName} 독립 신용등급 {grade} ({desc}). 공시 데이터 기반 정량 분석 등급 근거, 재무 하이라이트, 등급 전망."
     )
 
-    return "\n".join([
-        "---",
-        f"title: \"{corpName} ({stockCode}) 신용등급 보고서\"",
-        f"date: {today}",
-        f"description: \"{descText}\"",
-        "category: credit-reports",
-        "thumbnail: /avatar-chart.png",
-        "---",
-        "",
-    ])
+    return "\n".join(
+        [
+            "---",
+            f'title: "{corpName} ({stockCode}) 신용평가 보고서"',
+            f"date: {today}",
+            f'description: "{descText}"',
+            "category: credit-reports",
+            "thumbnail: /avatar-chart.png",
+            "---",
+            "",
+        ]
+    )
 
 
 def _gauge(score: float | None, width: int = 10) -> str:
