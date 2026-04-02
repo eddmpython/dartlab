@@ -171,7 +171,7 @@ class TestServerEndpoints:
         """루트 경로 — SPA 또는 리다이렉트."""
         resp = self.client.get("/")
         # SPA가 빌드되어 있으면 200, 아니면 다른 코드 → 어쨌든 크래시 아님
-        assert resp.status_code in (200, 301, 302, 307, 404)
+        assert resp.status_code in (200, 301, 302, 307, 404, 503)  # 503 = UI 미빌드
 
     def test_security_headers(self):
         """보안 헤더가 모든 응답에 포함."""
@@ -183,7 +183,7 @@ class TestServerEndpoints:
     def test_nonexistent_api(self):
         """없는 엔드포인트 → 404 또는 SPA fallback."""
         resp = self.client.get("/api/nonexistent12345")
-        assert resp.status_code in (404, 200)
+        assert resp.status_code in (404, 200, 503)  # 503 = SPA fallback 미빌드
 
     def test_search_empty(self):
         """검색 쿼리 없이 호출 → 422 (validation error)."""

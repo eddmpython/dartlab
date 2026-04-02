@@ -29,7 +29,7 @@ class TestReadiness:
         assert result.ok is True
 
     def test_not_ready_is_not_ok(self):
-        from dartlab.guide.readiness import ReadinessResult, ReadinessIssue, ReadyStatus
+        from dartlab.guide.readiness import ReadinessIssue, ReadinessResult, ReadyStatus
 
         issue = ReadinessIssue(
             kind="missing_data",

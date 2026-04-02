@@ -1,3 +1,4 @@
+# ruff: noqa: F821
 """공통 픽스처 — 데이터가 없으면 skip.
 
 데이터 경로는 dartlab 패키지의 config.dataDir 기준.
@@ -45,6 +46,13 @@ def pytest_configure(config):
             "  권장: bash scripts/test-lock.sh tests/ -m unit -v",
             stacklevel=1,
         )
+
+
+@pytest.fixture(autouse=True)
+def _no_stdin_prompt(monkeypatch):
+    """테스트에서 API 키 stdin prompt 방지."""
+    monkeypatch.setenv("ECOS_API_KEY", "test_dummy")
+    monkeypatch.setenv("FRED_API_KEY", "test_dummy")
 
 
 SAMSUNG = "005930"
