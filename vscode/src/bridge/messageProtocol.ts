@@ -5,6 +5,7 @@ export type WebViewMessage =
   | { type: "setProvider"; payload: { provider: string; model?: string } }
   | { type: "requestCredential"; payload: { provider: string; signupUrl?: string } }
   | { type: "openExternal"; payload: { url: string } }
+  | { type: "pasteOAuthToken"; payload: { provider: string } }
   | { type: "openSettings" }
   | { type: "syncConversations"; payload: unknown }
   | { type: "listTemplates" }

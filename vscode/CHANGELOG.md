@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.0] - 2026-04-03
+
+### Added
+
+- OAuth token paste: paste token JSON from another PC for firewall environments
+
 ## [0.1.8] - 2026-04-03
 
 ### Added

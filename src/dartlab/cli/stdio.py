@@ -242,6 +242,32 @@ def _handleSetProvider(msg: dict[str, Any]) -> None:
     )
 
 
+def _handleOAuthPasteToken(msg: dict[str, Any]) -> None:
+    """수동 OAuth 토큰 입력 (방화벽 환경용). ~/.dartlab/oauth_token.json 내용을 받아 저장."""
+    global _sessionProvider
+    tokenJson = msg.get("tokenJson", "")
+    provider = msg.get("provider", "oauth-codex")
+    if not tokenJson:
+        _emit({"event": "error", "data": {"error": "토큰이 비어있습니다."}})
+        return
+    try:
+        data = json.loads(tokenJson)
+    except json.JSONDecodeError:
+        _emit({"event": "error", "data": {"error": "유효한 JSON이 아닙니다."}})
+        return
+    if not isinstance(data, dict) or "access_token" not in data:
+        _emit({"event": "error", "data": {"error": "access_token이 없습니다."}})
+        return
+    try:
+        from dartlab.ai.providers.support.oauth_token import _save_token
+
+        _save_token(data)
+        _sessionProvider = provider
+        _emit({"event": "providerChanged", "data": {"provider": provider, "model": ""}})
+    except Exception as exc:
+        _emit({"event": "error", "data": {"error": f"토큰 저장 실패: {exc}"}})
+
+
 def _sanitizeErrorForUi(data: dict[str, Any]) -> dict[str, Any]:
     """에러 데이터에서 CLI 전용 안내(dartlab.setup(...))를 제거."""
     result = dict(data)
@@ -382,6 +408,8 @@ def run() -> None:
             _handleSetProvider(msg)
         elif msgType == "oauthLogin":
             _handleOAuthLogin(msg)
+        elif msgType == "oauthPasteToken":
+            _handleOAuthPasteToken(msg)
         elif msgType == "listTemplates":
             _handleListTemplates(msg)
         elif msgType == "exit":

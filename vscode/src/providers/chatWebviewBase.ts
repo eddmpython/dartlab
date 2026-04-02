@@ -161,6 +161,22 @@ export class ChatWebviewBase {
         vscode.env.openExternal(vscode.Uri.parse(msg.payload.url));
         break;
 
+      case "pasteOAuthToken": {
+        const tokenJson = await vscode.window.showInputBox({
+          title: "OAuth 토큰 입력",
+          prompt: "다른 PC의 ~/.dartlab/oauth_token.json 내용을 붙여넣으세요",
+          ignoreFocusOut: true,
+        });
+        if (tokenJson) {
+          this.stdioProxy.oauthPasteToken(
+            msg.payload.provider,
+            tokenJson,
+            (data) => postMessage({ type: "profile", payload: data }),
+          );
+        }
+        break;
+      }
+
       case "syncConversations": {
         await this.globalState.update(STORAGE_KEY_CONVERSATIONS, msg.payload);
         this.onHistoryChanged?.();

@@ -49,3 +49,7 @@ export function requestCredential(provider: string, signupUrl?: string) {
 export function openExternal(url: string) {
   postMessage({ type: "openExternal", payload: { url } });
 }
+
+export function pasteOAuthToken(provider: string) {
+  postMessage({ type: "pasteOAuthToken", payload: { provider } });
+}

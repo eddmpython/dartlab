@@ -387,6 +387,7 @@
                   <button class="provider-action-btn primary" onclick={() => client.requestCredential(p.id, p.signupUrl)}>연결</button>
                 {:else if p.authKind === "oauth"}
                   <button class="provider-action-btn primary" onclick={() => client.setProvider(p.id)}>로그인</button>
+                  <button class="provider-action-btn secondary" onclick={() => client.pasteOAuthToken(p.id)}>토큰 입력</button>
                 {:else}
                   <button class="provider-action-btn primary" onclick={() => client.setProvider(p.id)}>연결</button>
                 {/if}
