@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775089917743,
+  "lastUpdate": 1775091757654,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -2958,6 +2958,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.1571003336540435e-7",
             "extra": "mean: 675.5335608103153 nsec\nrounds: 126904"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "dd8d6ff17ee02d0af542cfa01437bc3f7ccbec33",
+          "message": "fix: 보고서 파일명 영문화 + 사이드바 영어 통일\n\n- 보고서 파일명: 005930_삼성전자.md → 005930.md (URL 인코딩 404 해결)\n- publisher.py: 파일명에서 한글 기업명 제거\n- navigation.ts: 전체 영어 통일 (한글 카테고리명 제거)\n- index.md: 보고서 링크 영문화",
+          "timestamp": "2026-04-02T10:01:52+09:00",
+          "tree_id": "3ae2677b1c51f3b415b10878e8b875d50b7aaac1",
+          "url": "https://github.com/eddmpython/dartlab/commit/dd8d6ff17ee02d0af542cfa01437bc3f7ccbec33"
+        },
+        "date": 1775091757240,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 534483.9855623122,
+            "unit": "iter/sec",
+            "range": "stddev: 4.6519080240435685e-7",
+            "extra": "mean: 1.8709634470112972 usec\nrounds: 57232"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 651326.6299397667,
+            "unit": "iter/sec",
+            "range": "stddev: 5.440354610583717e-7",
+            "extra": "mean: 1.535327981434565 usec\nrounds: 119833"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 532660.5493852901,
+            "unit": "iter/sec",
+            "range": "stddev: 5.359761433898563e-7",
+            "extra": "mean: 1.877368243535281 usec\nrounds: 105843"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 667282.5463164499,
+            "unit": "iter/sec",
+            "range": "stddev: 3.985108365138856e-7",
+            "extra": "mean: 1.498615549770072 usec\nrounds: 148105"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 801298.9719060193,
+            "unit": "iter/sec",
+            "range": "stddev: 4.758697794765678e-7",
+            "extra": "mean: 1.2479736466169904 usec\nrounds: 114065"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 266463.4277028581,
+            "unit": "iter/sec",
+            "range": "stddev: 7.231643937125142e-7",
+            "extra": "mean: 3.752860227840092 usec\nrounds: 74879"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7329711.207112552,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2520342159785874e-8",
+            "extra": "mean: 136.43102323453445 nsec\nrounds: 74157"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8715338.527666762,
+            "unit": "iter/sec",
+            "range": "stddev: 1.862589062580987e-8",
+            "extra": "mean: 114.74023605916271 nsec\nrounds: 88410"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1459655.2589140085,
+            "unit": "iter/sec",
+            "range": "stddev: 2.752863052206264e-7",
+            "extra": "mean: 685.0932738350873 nsec\nrounds: 160463"
           }
         ]
       }
