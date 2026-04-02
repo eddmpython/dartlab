@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775119574342,
+  "lastUpdate": 1775120046888,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -5742,6 +5742,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 4.170052346519754e-7",
             "extra": "mean: 684.0920306131363 nsec\nrounds: 193088"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "9dbd3e65eacf2c026d78832e95e6875591f4f591",
+          "message": "blog: Company 소개 글 추가 — 종목코드 하나면 끝난다\n\n- 신규: dartlab-news #03 \"종목코드 하나면 끝난다 — dartlab.Company\"\n  - IS/BS/CF, ratios, show/select, diff, notes, trace, sections\n  - AI가 Company를 도구로 쓰는 흐름 (ask → Company 내부 호출)\n  - SVG 5개 (hero-map, financial-statements, show-select, source-priority, notes)\n- 운영문서: TOPIC_ROADMAP 46편, WRITING_QUEUE 130번 추가",
+          "timestamp": "2026-04-02T17:53:07+09:00",
+          "tree_id": "230424249ce62497421932d7b8e6945374a61cc1",
+          "url": "https://github.com/eddmpython/dartlab/commit/9dbd3e65eacf2c026d78832e95e6875591f4f591"
+        },
+        "date": 1775120046389,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 528126.3045325284,
+            "unit": "iter/sec",
+            "range": "stddev: 5.376395225160564e-7",
+            "extra": "mean: 1.893486447120166 usec\nrounds: 57036"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 633853.1856062581,
+            "unit": "iter/sec",
+            "range": "stddev: 4.5120982057354963e-7",
+            "extra": "mean: 1.577652400758285 usec\nrounds: 130311"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 517068.62663986033,
+            "unit": "iter/sec",
+            "range": "stddev: 5.115535816001406e-7",
+            "extra": "mean: 1.9339792601582508 usec\nrounds: 122325"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 656276.3338402782,
+            "unit": "iter/sec",
+            "range": "stddev: 4.6368002077328274e-7",
+            "extra": "mean: 1.5237483792054214 usec\nrounds: 151470"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 781620.2957641403,
+            "unit": "iter/sec",
+            "range": "stddev: 3.4907565794170484e-7",
+            "extra": "mean: 1.2793935948430863 usec\nrounds: 192345"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 259049.21599392206,
+            "unit": "iter/sec",
+            "range": "stddev: 6.360482560036009e-7",
+            "extra": "mean: 3.8602703203064803 usec\nrounds: 70742"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 6794850.017135779,
+            "unit": "iter/sec",
+            "range": "stddev: 2.3254496112849105e-8",
+            "extra": "mean: 147.17028300523523 nsec\nrounds: 198847"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8470133.613844886,
+            "unit": "iter/sec",
+            "range": "stddev: 1.0933392723721395e-8",
+            "extra": "mean: 118.06189200669118 nsec\nrounds: 84524"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1419262.8603246822,
+            "unit": "iter/sec",
+            "range": "stddev: 2.6990053719911626e-7",
+            "extra": "mean: 704.5911141303535 nsec\nrounds: 175132"
           }
         ]
       }
