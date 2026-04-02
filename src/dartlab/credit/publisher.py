@@ -40,8 +40,7 @@ def publishReportFromCompany(company, *, basePeriod: str | None = None) -> Path:
 
     # 저장
     _REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    safeName = corpName.replace("/", "_").replace("\\", "_")
-    path = _REPORTS_DIR / f"{stockCode}_{safeName}.md"
+    path = _REPORTS_DIR / f"{stockCode}.md"
     path.write_text(md, encoding="utf-8")
 
     # 등급 이력 기록

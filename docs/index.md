@@ -41,10 +41,10 @@ dartlab.ask("삼성전자 분석해줘")           # AI 분석가
 
 dartlab 독립 신용평가(dCR) 보고서가 정기 발간된다.
 
-- [삼성전자 dCR-AA](credit/reports/005930_삼성전자)
-- [SK하이닉스 dCR-AA+](credit/reports/000660_SK하이닉스)
-- [NAVER dCR-AA](credit/reports/035420_NAVER)
-- [LG dCR-AA](credit/reports/003550_LG)
+- [Samsung Electronics — dCR-AA](credit/reports/005930)
+- [SK hynix — dCR-AA+](credit/reports/000660)
+- [NAVER — dCR-AA](credit/reports/035420)
+- [LG — dCR-AA](credit/reports/003550)
 
 ## 참고
 

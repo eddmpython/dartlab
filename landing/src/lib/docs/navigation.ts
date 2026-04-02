@@ -11,23 +11,23 @@ export const navigation: NavItem[] = [
 		items: [
 			{ title: 'Installation', href: '/docs/getting-started/installation' },
 			{ title: 'Quick Start', href: '/docs/getting-started/quickstart' },
-			{ title: 'Sections — 회사 맵', href: '/docs/getting-started/sections' }
+			{ title: 'Sections', href: '/docs/getting-started/sections' }
 		]
 	},
 	{
 		title: 'API Reference',
 		href: '/docs/api',
 		items: [
-			{ title: '개요', href: '/docs/api/overview' },
+			{ title: 'Overview', href: '/docs/api/overview' },
 			{ title: 'Company', href: '/docs/api/company' },
-			{ title: '재무 데이터', href: '/docs/api/finance' },
-			{ title: 'Analysis — 재무분석', href: '/docs/api/analysis' },
-			{ title: 'Credit — 신용평가', href: '/docs/api/credit' },
-			{ title: 'Scan — 횡단분석', href: '/docs/api/scan' },
-			{ title: 'Gather — 시장 데이터', href: '/docs/api/gather' },
-			{ title: 'Review — 보고서', href: '/docs/api/review' },
-			{ title: 'AI — 분석가', href: '/docs/api/ai' },
-			{ title: '고급 기능', href: '/docs/api/advanced' },
+			{ title: 'Financial Data', href: '/docs/api/finance' },
+			{ title: 'Analysis', href: '/docs/api/analysis' },
+			{ title: 'Credit Rating', href: '/docs/api/credit' },
+			{ title: 'Scan', href: '/docs/api/scan' },
+			{ title: 'Gather', href: '/docs/api/gather' },
+			{ title: 'Review', href: '/docs/api/review' },
+			{ title: 'AI', href: '/docs/api/ai' },
+			{ title: 'Advanced', href: '/docs/api/advanced' },
 			{ title: 'MCP', href: '/docs/api/mcp' },
 			{
 				title: 'Full Reference',
@@ -39,10 +39,10 @@ export const navigation: NavItem[] = [
 		title: 'Credit Reports',
 		href: '/docs/credit/reports',
 		items: [
-			{ title: '삼성전자 dCR-AA', href: '/docs/credit/reports/005930_삼성전자' },
-			{ title: 'SK하이닉스 dCR-AA+', href: '/docs/credit/reports/000660_SK하이닉스' },
-			{ title: 'NAVER dCR-AA', href: '/docs/credit/reports/035420_NAVER' },
-			{ title: 'LG dCR-AA', href: '/docs/credit/reports/003550_LG' }
+			{ title: 'Samsung Electronics (dCR-AA)', href: '/docs/credit/reports/005930' },
+			{ title: 'SK hynix (dCR-AA+)', href: '/docs/credit/reports/000660' },
+			{ title: 'NAVER (dCR-AA)', href: '/docs/credit/reports/035420' },
+			{ title: 'LG (dCR-AA)', href: '/docs/credit/reports/003550' }
 		]
 	},
 	{
