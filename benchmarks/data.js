@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775151933354,
+  "lastUpdate": 1775152036557,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -7221,6 +7221,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.808902215732851e-7",
             "extra": "mean: 686.6531381808863 nsec\nrounds: 153799"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "4106fc064800f91b809fabc9f346d9a8251fc620",
+          "message": "feat: 데이터 품질 감사 — 마진 괴리 플래그 + 프롬프트 #31\n\n엔진:\n- profitabilityFlags에 마진 괴리 감지 추가 (순이익률 > 2× 영업이익률 → 비영업이익 경고)\n- 영업이익률 > 100% 이상치 감지\n\n프롬프트 #31:\n- 데이터 품질 점검 섹션 추가 (분석 전 필수)\n- analysis 결과 구조 안내 (marginTrend vs returnTrend vs ROIC 분리)\n- \"marginTrend에서 ROE를 찾지 마라 — returnTrend를 써라\"\n\n검증: 삼성전자 2022Q4 순이익률 33.8% vs 영업이익률 6.1% → 플래그 정상 작동\n데이터 확인: 연간 합산 302조/55.6조 → 공시와 일치, Q4 비영업이익 19.5조는 실제 현상",
+          "timestamp": "2026-04-03T02:46:04+09:00",
+          "tree_id": "1c0709259a72c7fc6dace7d4151d55635f253afe",
+          "url": "https://github.com/eddmpython/dartlab/commit/4106fc064800f91b809fabc9f346d9a8251fc620"
+        },
+        "date": 1775152035596,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 529108.9099770932,
+            "unit": "iter/sec",
+            "range": "stddev: 4.886168862063219e-7",
+            "extra": "mean: 1.889970063145021 usec\nrounds: 51241"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 663353.4284717871,
+            "unit": "iter/sec",
+            "range": "stddev: 4.805046510780596e-7",
+            "extra": "mean: 1.5074920202097528 usec\nrounds: 112284"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 524109.8383054983,
+            "unit": "iter/sec",
+            "range": "stddev: 5.545298608984484e-7",
+            "extra": "mean: 1.9079970016077243 usec\nrounds: 116064"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 676331.4530709723,
+            "unit": "iter/sec",
+            "range": "stddev: 4.2330723711878555e-7",
+            "extra": "mean: 1.4785649779547705 usec\nrounds: 174490"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 901375.6633275838,
+            "unit": "iter/sec",
+            "range": "stddev: 1.712107053214916e-7",
+            "extra": "mean: 1.1094153533148734 usec\nrounds: 174490"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 270398.21020700736,
+            "unit": "iter/sec",
+            "range": "stddev: 6.898163455606884e-7",
+            "extra": "mean: 3.6982493309938524 usec\nrounds: 66899"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7245923.904518515,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2103441290217247e-8",
+            "extra": "mean: 138.0086257014659 nsec\nrounds: 72015"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8806375.039660566,
+            "unit": "iter/sec",
+            "range": "stddev: 1.122824713339856e-8",
+            "extra": "mean: 113.55410092079659 nsec\nrounds: 89119"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1462250.3738798413,
+            "unit": "iter/sec",
+            "range": "stddev: 2.554247135261325e-7",
+            "extra": "mean: 683.8774110528446 nsec\nrounds: 157184"
           }
         ]
       }
