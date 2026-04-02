@@ -12,7 +12,8 @@ export const navigation: NavItem[] = [
 		items: [
 			{ title: 'Installation', href: '/docs/getting-started/installation' },
 			{ title: 'Quick Start', href: '/docs/getting-started/quickstart' },
-			{ title: 'Sections', href: '/docs/getting-started/sections' }
+			{ title: 'Sections', href: '/docs/getting-started/sections' },
+			{ title: 'CLI', href: '/docs/getting-started/cli-maintenance' }
 		]
 	},
 	{

@@ -29,8 +29,10 @@ jobs:
       - name: Install package
         run: pip install -e .[all]
 
-      - name: Run unit tests (no data dependency)
-        run: pytest tests/ -v --tb=short -m "not requires_data and not heavy" --benchmark-disable --cov=dartlab --cov-report=term-missing --cov-report=html --cov-report=xml
+      - name: Run tests (fixture data available)
+        env:
+          DARTLAB_DATA_DIR: ${{ github.workspace }}/tests/fixtures
+        run: pytest tests/ -v --tb=short -m "not heavy" --benchmark-disable --cov=dartlab --cov-report=term-missing --cov-report=html --cov-report=xml
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.12'
