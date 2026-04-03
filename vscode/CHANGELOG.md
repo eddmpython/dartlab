@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1] - 2026-04-03
+
+### Added
+
+- OAuth manual code paste: copy callback URL from browser address bar in firewall environments
+- Auth URL displayed in chat when browser doesn't open automatically
+
 ## [0.2.0] - 2026-04-03
 
 ### Added

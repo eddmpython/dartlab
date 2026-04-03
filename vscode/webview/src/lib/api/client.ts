@@ -53,3 +53,7 @@ export function openExternal(url: string) {
 export function pasteOAuthToken(provider: string) {
   postMessage({ type: "pasteOAuthToken", payload: { provider } });
 }
+
+export function pasteOAuthCode() {
+  postMessage({ type: "pasteOAuthCode" });
+}

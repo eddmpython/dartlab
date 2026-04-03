@@ -5,6 +5,7 @@ export type WebViewMessage =
   | { type: "setProvider"; payload: { provider: string; model?: string } }
   | { type: "requestCredential"; payload: { provider: string; signupUrl?: string } }
   | { type: "openExternal"; payload: { url: string } }
+  | { type: "pasteOAuthCode" }
   | { type: "pasteOAuthToken"; payload: { provider: string } }
   | { type: "openSettings" }
   | { type: "syncConversations"; payload: unknown }
@@ -41,5 +42,5 @@ export type ExtensionMessage =
   | { type: "newConversation" }
   | { type: "templates"; payload: TemplateInfo[] }
   | { type: "needCredential"; payload: { provider: string; signupUrl?: string; label?: string } }
-  | { type: "oauthStart"; payload: { provider: string } }
+  | { type: "oauthStart"; payload: { provider: string; authUrl?: string } }
   | { type: "oauthResult"; payload: { success: boolean; error?: string } };

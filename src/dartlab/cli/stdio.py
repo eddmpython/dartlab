@@ -268,6 +268,46 @@ def _handleOAuthPasteToken(msg: dict[str, Any]) -> None:
         _emit({"event": "error", "data": {"error": f"토큰 저장 실패: {exc}"}})
 
 
+def _handleOAuthPasteCode(msg: dict[str, Any]) -> None:
+    """방화벽 환경: 사용자가 callback URL 또는 code를 붙여넣음."""
+    from urllib.parse import parse_qs, urlparse
+
+    global _sessionProvider
+    raw = msg.get("codeOrUrl", "").strip()
+    verifier = msg.get("verifier", "")
+    expected_state = msg.get("state", "")
+    provider = msg.get("provider", "oauth-codex")
+
+    if not raw:
+        _emit({"event": "error", "data": {"error": "코드가 비어있습니다."}})
+        return
+    if not verifier:
+        _emit({"event": "error", "data": {"error": "verifier가 없습니다. 로그인을 다시 시작하세요."}})
+        return
+
+    # URL이면 code/state 추출
+    code = raw
+    if raw.startswith("http"):
+        params = parse_qs(urlparse(raw).query)
+        code = (params.get("code") or [None])[0]  # type: ignore[assignment]
+        pasted_state = (params.get("state") or [None])[0]
+        if not code:
+            _emit({"event": "error", "data": {"error": "URL에서 code를 찾을 수 없습니다."}})
+            return
+        if expected_state and pasted_state != expected_state:
+            _emit({"event": "error", "data": {"error": "state 불일치 (보안 검증 실패). 로그인을 다시 시작하세요."}})
+            return
+
+    try:
+        from dartlab.ai.providers.support.oauth_token import exchange_code
+
+        exchange_code(code, verifier)
+        _sessionProvider = provider
+        _emit({"event": "providerChanged", "data": {"provider": provider, "model": ""}})
+    except Exception as exc:
+        _emit({"event": "error", "data": {"error": f"토큰 교환 실패: {exc}"}})
+
+
 def _sanitizeErrorForUi(data: dict[str, Any]) -> dict[str, Any]:
     """에러 데이터에서 CLI 전용 안내(dartlab.setup(...))를 제거."""
     result = dict(data)
@@ -352,8 +392,13 @@ def _handleOAuthLogin(msg: dict[str, Any]) -> None:
     thread = threading.Thread(target=_serve, daemon=True)
     thread.start()
 
-    # auth URL을 extension에 보내서 브라우저 열기
-    _emit({"event": "oauthStart", "data": {"authUrl": auth_url, "provider": provider}})
+    # auth URL + verifier/state를 extension에 보냄
+    _emit({"event": "oauthStart", "data": {
+        "authUrl": auth_url,
+        "provider": provider,
+        "verifier": verifier,
+        "state": state,
+    }})
 
     def _wait():
         thread.join(timeout=120)
@@ -410,6 +455,8 @@ def run() -> None:
             _handleOAuthLogin(msg)
         elif msgType == "oauthPasteToken":
             _handleOAuthPasteToken(msg)
+        elif msgType == "oauthPasteCode":
+            _handleOAuthPasteCode(msg)
         elif msgType == "listTemplates":
             _handleListTemplates(msg)
         elif msgType == "exit":

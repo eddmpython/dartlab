@@ -339,7 +339,9 @@
       }
       case "oauthStart": {
         waitingOAuth = true;
-        addSystemMessage("브라우저에서 ChatGPT 로그인 페이지가 열렸습니다. 로그인을 완료하세요.");
+        const oaPayload = m.payload as { provider: string; authUrl?: string };
+        const urlLine = oaPayload.authUrl ? `\n\n브라우저가 안 열리면: ${oaPayload.authUrl}` : "";
+        addSystemMessage(`브라우저에서 ChatGPT 로그인 페이지가 열렸습니다. 로그인을 완료하세요.${urlLine}\n\n방화벽 환경이면 로그인 후 주소창 URL을 복사하세요.`);
         break;
       }
       case "oauthResult": {
@@ -387,6 +389,7 @@
                   <button class="provider-action-btn primary" onclick={() => client.requestCredential(p.id, p.signupUrl)}>연결</button>
                 {:else if p.authKind === "oauth"}
                   <button class="provider-action-btn primary" onclick={() => client.setProvider(p.id)}>로그인</button>
+                  <button class="provider-action-btn secondary" onclick={() => client.pasteOAuthCode()}>코드 붙여넣기</button>
                   <button class="provider-action-btn secondary" onclick={() => client.pasteOAuthToken(p.id)}>토큰 입력</button>
                 {:else}
                   <button class="provider-action-btn primary" onclick={() => client.setProvider(p.id)}>연결</button>

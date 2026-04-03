@@ -499,6 +499,11 @@ export class StdioProxy {
     this.send({ type: "oauthPasteToken", provider, tokenJson });
   }
 
+  oauthPasteCode(provider: string, codeOrUrl: string, verifier: string, state: string, callback?: (data: Record<string, unknown>) => void): void {
+    if (callback) this.providerListeners.push(callback);
+    this.send({ type: "oauthPasteCode", provider, codeOrUrl, verifier, state });
+  }
+
   listTemplates(): void {
     this.send({ type: "listTemplates" });
   }

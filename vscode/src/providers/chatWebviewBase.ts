@@ -6,6 +6,7 @@ import { STORAGE_KEY_CONVERSATIONS } from "../constants";
 /** Shared logic for sidebar and editor-tab webview panels. */
 export class ChatWebviewBase {
   private stateListener?: vscode.Disposable;
+  private pendingOAuth?: { provider: string; verifier: string; state: string };
 
   constructor(
     readonly extensionUri: vscode.Uri,
@@ -118,12 +119,20 @@ export class ChatWebviewBase {
                 },
               });
             } else if (data._oauthStart) {
-              // OAuth → 브라우저에서 로그인 페이지 열기
+              // OAuth → 브라우저 열기 + verifier/state 보관
               const authUrl = data.authUrl as string;
               if (authUrl) {
                 vscode.env.openExternal(vscode.Uri.parse(authUrl));
               }
-              postMessage({ type: "oauthStart", payload: { provider: data.provider } });
+              this.pendingOAuth = {
+                provider: data.provider as string,
+                verifier: data.verifier as string,
+                state: data.state as string,
+              };
+              postMessage({ type: "oauthStart", payload: {
+                provider: data.provider,
+                authUrl,
+              } });
             } else {
               postMessage({ type: "profile", payload: data });
             }
@@ -160,6 +169,40 @@ export class ChatWebviewBase {
       case "openExternal":
         vscode.env.openExternal(vscode.Uri.parse(msg.payload.url));
         break;
+
+      case "pasteOAuthCode": {
+        if (!this.pendingOAuth) {
+          // pendingOAuth가 없으면 InputBox로 직접 받기
+          const codeOrUrl = await vscode.window.showInputBox({
+            title: "OAuth 코드 입력",
+            prompt: "브라우저 주소창의 URL 전체를 붙여넣으세요",
+            ignoreFocusOut: true,
+          });
+          if (codeOrUrl) {
+            // verifier 없이는 교환 불가 → 에러
+            postMessage({ type: "oauthResult", payload: { success: false, error: "로그인을 다시 시작하세요 (verifier 없음)" } });
+          }
+          break;
+        }
+        const codeOrUrl = await vscode.window.showInputBox({
+          title: "OAuth 코드 입력",
+          prompt: "브라우저 주소창의 URL 전체를 붙여넣으세요 (http://localhost:1455/auth/callback?code=...)",
+          ignoreFocusOut: true,
+        });
+        if (codeOrUrl) {
+          this.stdioProxy.oauthPasteCode(
+            this.pendingOAuth.provider,
+            codeOrUrl,
+            this.pendingOAuth.verifier,
+            this.pendingOAuth.state,
+            (data) => {
+              this.pendingOAuth = undefined;
+              postMessage({ type: "profile", payload: data });
+            },
+          );
+        }
+        break;
+      }
 
       case "pasteOAuthToken": {
         const tokenJson = await vscode.window.showInputBox({

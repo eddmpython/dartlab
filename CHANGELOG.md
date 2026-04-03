@@ -5,6 +5,13 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.7] - 2026-04-03
+
+### Added
+
+- **OAuth 코드 수동 입력**: 방화벽 환경에서 브라우저 주소창 URL을 복사해서 붙여넣기로 인증
+- **OAuth 로그인 시 auth URL 화면 표시**: 브라우저가 안 열릴 때 링크 직접 클릭 가능
+
 ## [0.8.6] - 2026-04-03
 
 ### Added
