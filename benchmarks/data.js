@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775177635314,
+  "lastUpdate": 1775177701035,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -8004,6 +8004,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.635643763920657e-7",
             "extra": "mean: 681.303021220275 nsec\nrounds: 170097"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "e5afa97d45b93168234d791a3c29d761a32a105d",
+          "message": "feat: OAuth 코드 수동 입력 + auth URL 화면 표시\n\n- 방화벽 환경: 로그인 후 브라우저 주소창 URL 복사 → 붙여넣기로 인증\n- oauthStart에 verifier/state/authUrl 포함, extension host가 보관\n- oauthPasteCode 프로토콜: code + verifier로 토큰 교환\n- 채팅에 auth URL 링크 표시 (브라우저 미오픈 시 직접 클릭)",
+          "timestamp": "2026-04-03T09:54:01+09:00",
+          "tree_id": "595f1f2d90c624e7fc17cf9e64f7e71cf4deb50a",
+          "url": "https://github.com/eddmpython/dartlab/commit/e5afa97d45b93168234d791a3c29d761a32a105d"
+        },
+        "date": 1775177700032,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 581374.7514217285,
+            "unit": "iter/sec",
+            "range": "stddev: 3.399133208555893e-7",
+            "extra": "mean: 1.720060937552827 usec\nrounds: 49641"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 707371.3265907703,
+            "unit": "iter/sec",
+            "range": "stddev: 3.0481252176637786e-7",
+            "extra": "mean: 1.4136846694360312 usec\nrounds: 130073"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 575490.5197779965,
+            "unit": "iter/sec",
+            "range": "stddev: 7.33475594420881e-7",
+            "extra": "mean: 1.737648085646596 usec\nrounds: 102596"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 756461.4435328955,
+            "unit": "iter/sec",
+            "range": "stddev: 2.3242308071136563e-7",
+            "extra": "mean: 1.3219444408557142 usec\nrounds: 139257"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 987198.2119237095,
+            "unit": "iter/sec",
+            "range": "stddev: 1.179188131321973e-7",
+            "extra": "mean: 1.0129677990920833 usec\nrounds: 191535"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 277415.63240254985,
+            "unit": "iter/sec",
+            "range": "stddev: 8.941418915686093e-7",
+            "extra": "mean: 3.604699530951193 usec\nrounds: 72480"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 8508723.725596141,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1498710053079422e-8",
+            "extra": "mean: 117.52643901126753 nsec\nrounds: 81834"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 9869337.183494234,
+            "unit": "iter/sec",
+            "range": "stddev: 7.795472088025487e-9",
+            "extra": "mean: 101.32392696770243 nsec\nrounds: 83935"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1539583.8591078522,
+            "unit": "iter/sec",
+            "range": "stddev: 1.423030295197867e-7",
+            "extra": "mean: 649.5261651934136 nsec\nrounds: 154155"
           }
         ]
       }
