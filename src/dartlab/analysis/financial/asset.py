@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from dartlab.analysis.financial._helpers import annualColsFromPeriods, toDict
+from dartlab.analysis.financial._helpers import annualColsFromPeriods, getFlowValue, isQuarterlyFallback, toDict
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
@@ -321,6 +321,13 @@ def calcWorkingCapital(company, *, basePeriod: str | None = None) -> dict | None
     if not yCols:
         return None
 
+    _qMode = isQuarterlyFallback(yCols)
+    _allP = set(bsPeriods)
+
+    def _getFlow(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode, _allP)
+        return v if v is not None else 0
+
     history = []
     latest = None
 
@@ -328,8 +335,8 @@ def calcWorkingCapital(company, *, basePeriod: str | None = None) -> dict | None
         rec = _getFirst(bsData, _WC_REC_KEYS, col)
         inv = _get(invRow, col)
         pay = _getFirst(bsData, _WC_PAY_KEYS, col)
-        rev = _get(revRow, col)
-        cogs = _get(cogsRow, col)
+        rev = _getFlow(revRow, col)
+        cogs = _getFlow(cogsRow, col)
         wc = rec + inv - pay
 
         # 회전일수
@@ -421,11 +428,18 @@ def calcCapexPattern(company, *, basePeriod: str | None = None) -> dict | None:
     if not yCols:
         return None
 
+    _qMode2 = isQuarterlyFallback(yCols)
+    _allP2 = set(bsPeriods)
+
+    def _getFlow2(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode2, _allP2)
+        return v if v is not None else 0
+
     history = []
     latest = None
 
     # 감가상각 이상치 필터용 중앙값 사전 계산
-    _rawDeps = [abs(_get(depRow, c)) for c in yCols]
+    _rawDeps = [abs(_getFlow2(depRow, c)) for c in yCols]
     _validDeps = [d for d in _rawDeps if d > 0]
     _depMedian = sorted(_validDeps)[len(_validDeps) // 2] if _validDeps else 0
 
@@ -434,8 +448,8 @@ def calcCapexPattern(company, *, basePeriod: str | None = None) -> dict | None:
         ppe = _get(ppeRow, col)
         ta = _get(taRow, col)
         # CAPEX는 CF에서 음수로 나옴 → abs
-        capex = abs(_get(capexRow, col)) + abs(_get(intCapexRow, col))
-        dep = abs(_get(depRow, col))
+        capex = abs(_getFlow2(capexRow, col)) + abs(_getFlow2(intCapexRow, col))
+        dep = abs(_getFlow2(depRow, col))
         # 이상치 필터: 중앙값 대비 100배 이상 차이나면 스케일 오류로 판단
         if dep > 0 and _depMedian > 0:
             if dep / _depMedian > 100 or _depMedian / dep > 100:

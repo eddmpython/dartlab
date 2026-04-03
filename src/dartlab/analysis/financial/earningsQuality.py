@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import math
 
-from dartlab.analysis.financial._helpers import annualColsFromPeriods, toDict
+from dartlab.analysis.financial._helpers import annualColsFromPeriods, getFlowValue, isQuarterlyFallback, toDict
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
@@ -74,12 +74,19 @@ def calcAccrualAnalysis(company, *, basePeriod: str | None = None) -> dict | Non
     if not yCols:
         return None
 
+    _qMode = isQuarterlyFallback(yCols)
+    _allP = set(cfPeriods)
+
+    def _getF(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode, _allP)
+        return v if v is not None else 0
+
     history = []
     for col in yCols:
-        ni = _get(niRow, col)
-        ocf = _get(ocfRow, col)
+        ni = _getF(niRow, col)
+        ocf = _getF(ocfRow, col)
         ta = _get(taRow, col)
-        rev = _get(revRow, col)
+        rev = _getF(revRow, col)
         accrual = ni - ocf
 
         history.append(
@@ -149,11 +156,18 @@ def calcEarningsPersistence(company, *, basePeriod: str | None = None) -> dict |
     if not yCols:
         return None
 
+    _qMode2 = isQuarterlyFallback(yCols)
+    _allP2 = set(isPeriods)
+
+    def _getF2(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode2, _allP2)
+        return v if v is not None else 0
+
     history = []
     opValues = []
     for col in yCols:
-        opIncome = _get(opRow, col)
-        ptIncome = _get(ptRow, col)
+        opIncome = _getF2(opRow, col)
+        ptIncome = _getF2(ptRow, col)
         nonOp = ptIncome - opIncome
 
         nonOpRatio = None
@@ -243,18 +257,25 @@ def calcBeneishTimeline(company, *, basePeriod: str | None = None) -> dict | Non
     if len(yCols) < 2:
         return None
 
+    _qMode3 = isQuarterlyFallback(yCols)
+    _allP3 = set(isPeriods)
+
+    def _getF3(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode3, _allP3)
+        return v if v is not None else 0
+
     history = []
     for i in range(len(yCols) - 1):
         col = yCols[i]  # 당기
         prevCol = yCols[i + 1]  # 전기
 
-        rev = _get(revRow, col)
-        prevRev = _get(revRow, prevCol)
-        cogs = _get(cogsRow, col)
-        prevCogs = _get(cogsRow, prevCol)
-        sga = _get(sgaRow, col)
-        prevSga = _get(sgaRow, prevCol)
-        ni = _get(niRow, col)
+        rev = _getF3(revRow, col)
+        prevRev = _getF3(revRow, prevCol)
+        cogs = _getF3(cogsRow, col)
+        prevCogs = _getF3(cogsRow, prevCol)
+        sga = _getF3(sgaRow, col)
+        prevSga = _getF3(sgaRow, prevCol)
+        ni = _getF3(niRow, col)
         rec = _get(recRow, col)
         prevRec = _get(recRow, prevCol)
         ca = _get(caRow, col)
@@ -267,7 +288,7 @@ def calcBeneishTimeline(company, *, basePeriod: str | None = None) -> dict | Non
         prevCl = _get(clRow, prevCol)
         tl = _get(tlRow, col)
         prevTl = _get(tlRow, prevCol)
-        ocf = _get(ocfRow, col)
+        ocf = _getF3(ocfRow, col)
 
         # 분모가 0이면 계산 불가
         if prevRev <= 0 or rev <= 0 or prevTa <= 0 or ta <= 0:
@@ -553,15 +574,22 @@ def calcNonOperatingBreakdown(company, *, basePeriod: str | None = None) -> dict
     if not yCols:
         return None
 
+    _qMode4 = isQuarterlyFallback(yCols)
+    _allP4 = set(isPeriods)
+
+    def _getF4(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode4, _allP4)
+        return v if v is not None else 0
+
     history = []
     for col in yCols:
-        op = _get(opRow, col)
-        finInc = _get(finIncRow, col)
-        finCost = _get(finCostRow, col)
-        assoc = _get(assocRow, col)
-        otherInc = _get(otherIncRow, col)
-        otherExp = _get(otherExpRow, col)
-        pt = _get(ptRow, col)
+        op = _getF4(opRow, col)
+        finInc = _getF4(finIncRow, col)
+        finCost = _getF4(finCostRow, col)
+        assoc = _getF4(assocRow, col)
+        otherInc = _getF4(otherIncRow, col)
+        otherExp = _getF4(otherExpRow, col)
+        pt = _getF4(ptRow, col)
 
         netFinance = finInc - finCost
         nonOpTotal = pt - op if op != 0 else None

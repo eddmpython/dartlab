@@ -9,6 +9,8 @@ from __future__ import annotations
 from dartlab.analysis.financial._helpers import (
     MAX_RATIO_YEARS,
     annualColsFromPeriods,
+    getFlowValue,
+    isQuarterlyFallback,
     toDict,
 )
 from dartlab.analysis.financial._memoize import memoized_calc
@@ -90,33 +92,42 @@ def calcMarginTrend(company, *, basePeriod: str | None = None) -> dict | None:
     if len(yCols) < 2:
         return None
 
+    _qMode = isQuarterlyFallback(yCols)
+    _allP = set(periods)
+
     history = []
     for i, col in enumerate(yCols):
         prevCol = yCols[i + 1] if i + 1 < len(yCols) else None
-        r = rev.get(col)
+        r = getFlowValue(rev, col, _qMode, _allP)
         if r is None or r == 0:
             continue
+
+        _op = getFlowValue(op, col, _qMode, _allP)
+        _ni = getFlowValue(ni, col, _qMode, _allP)
+        _opPrev = getFlowValue(op, prevCol, _qMode, _allP) if prevCol else None
+        _niPrev = getFlowValue(ni, prevCol, _qMode, _allP) if prevCol else None
+        _rPrev = getFlowValue(rev, prevCol, _qMode, _allP) if prevCol else None
 
         row: dict = {
             "period": col,
             "revenue": r,
-            "revenueYoy": _yoy(r, rev.get(prevCol)) if prevCol else None,
-            "operatingIncome": op.get(col),
-            "operatingMargin": _pctOf(op.get(col), r),
-            "operatingIncomeYoy": _yoy(op.get(col), op.get(prevCol)) if prevCol else None,
-            "netIncome": ni.get(col),
-            "netMargin": _pctOf(ni.get(col), r),
-            "netIncomeYoy": _yoy(ni.get(col), ni.get(prevCol)) if prevCol else None,
+            "revenueYoy": _yoy(r, _rPrev) if prevCol else None,
+            "operatingIncome": _op,
+            "operatingMargin": _pctOf(_op, r),
+            "operatingIncomeYoy": _yoy(_op, _opPrev) if prevCol else None,
+            "netIncome": _ni,
+            "netMargin": _pctOf(_ni, r),
+            "netIncomeYoy": _yoy(_ni, _niPrev) if prevCol else None,
         }
 
         if isFinancial:
             row["revenueLabel"] = "금융이익"
-            row["financialIncome"] = finIncome.get(col)
+            row["financialIncome"] = getFlowValue(finIncome, col, _qMode, _allP)
         else:
-            row["cogs"] = cogs.get(col)
-            row["grossProfit"] = gp.get(col)
-            row["grossMargin"] = _pctOf(gp.get(col), r)
-            row["sga"] = sga.get(col)
+            row["cogs"] = getFlowValue(cogs, col, _qMode, _allP)
+            row["grossProfit"] = getFlowValue(gp, col, _qMode, _allP)
+            row["grossMargin"] = _pctOf(getFlowValue(gp, col, _qMode, _allP), r)
+            row["sga"] = getFlowValue(sga, col, _qMode, _allP)
 
         history.append(row)
 
@@ -162,12 +173,15 @@ def calcReturnTrend(company, *, basePeriod: str | None = None) -> dict | None:
     if not yCols:
         return None
 
+    _qMode = isQuarterlyFallback(yCols)
+    _allP = set(isPeriods)
+
     history = []
     for col in yCols:
-        r = rev.get(col)
-        o = opIncome.get(col)
-        p = pbt.get(col)
-        n = niRow.get(col)
+        r = getFlowValue(rev, col, _qMode, _allP)
+        o = getFlowValue(opIncome, col, _qMode, _allP)
+        p = getFlowValue(pbt, col, _qMode, _allP)
+        n = getFlowValue(niRow, col, _qMode, _allP)
         a = ta.get(col)
         e = eq.get(col)
 
@@ -248,6 +262,9 @@ def calcMarginWaterfall(company, *, basePeriod: str | None = None) -> dict | Non
     if not yCols:
         return None
 
+    _qMode = isQuarterlyFallback(yCols)
+    _allP = set(periods)
+
     def _pct(val, r):
         if val is None or r is None or r == 0:
             return None
@@ -255,14 +272,14 @@ def calcMarginWaterfall(company, *, basePeriod: str | None = None) -> dict | Non
 
     history = []
     for col in yCols:
-        r = rev.get(col)
+        r = getFlowValue(rev, col, _qMode, _allP)
         if r is None or r == 0:
             continue
 
         steps = [{"label": "매출", "amount": r, "pct": 100.0, "cumPct": 100.0}]
 
-        cogsV = cogs.get(col)
-        gpV = gp.get(col)
+        cogsV = getFlowValue(cogs, col, _qMode, _allP)
+        gpV = getFlowValue(gp, col, _qMode, _allP)
         if cogsV is not None:
             steps.append(
                 {
@@ -275,8 +292,8 @@ def calcMarginWaterfall(company, *, basePeriod: str | None = None) -> dict | Non
         if gpV is not None:
             steps.append({"label": "매출총이익", "amount": gpV, "pct": _pct(gpV, r), "cumPct": _pct(gpV, r)})
 
-        sgaV = sgaRow.get(col)
-        opV = opRow.get(col)
+        sgaV = getFlowValue(sgaRow, col, _qMode, _allP)
+        opV = getFlowValue(opRow, col, _qMode, _allP)
         if sgaV is not None:
             steps.append(
                 {
@@ -289,8 +306,8 @@ def calcMarginWaterfall(company, *, basePeriod: str | None = None) -> dict | Non
         if opV is not None:
             steps.append({"label": "영업이익", "amount": opV, "pct": _pct(opV, r), "cumPct": _pct(opV, r)})
 
-        fcV = finCost.get(col)
-        fiV = finInc.get(col)
+        fcV = getFlowValue(finCost, col, _qMode, _allP)
+        fiV = getFlowValue(finInc, col, _qMode, _allP)
         opPct = _pct(opV, r) or 0
         if fcV is not None:
             steps.append(
@@ -311,11 +328,11 @@ def calcMarginWaterfall(company, *, basePeriod: str | None = None) -> dict | Non
                 }
             )
 
-        pbtV = pbt.get(col)
+        pbtV = getFlowValue(pbt, col, _qMode, _allP)
         if pbtV is not None:
             steps.append({"label": "세전이익", "amount": pbtV, "pct": _pct(pbtV, r), "cumPct": _pct(pbtV, r)})
 
-        taxV = tax.get(col)
+        taxV = getFlowValue(tax, col, _qMode, _allP)
         if taxV is not None:
             steps.append(
                 {
@@ -326,7 +343,7 @@ def calcMarginWaterfall(company, *, basePeriod: str | None = None) -> dict | Non
                 }
             )
 
-        niV = ni.get(col)
+        niV = getFlowValue(ni, col, _qMode, _allP)
         if niV is not None:
             steps.append({"label": "순이익", "amount": niV, "pct": _pct(niV, r), "cumPct": _pct(niV, r)})
 
@@ -499,12 +516,19 @@ def calcPenmanDecomposition(company, *, basePeriod: str | None = None) -> dict |
     if len(yCols) < 2:
         return None
 
+    _qMode = isQuarterlyFallback(yCols)
+    _allP = set(isPeriods)
+
+    def _getF(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode, _allP)
+        return v if v is not None else 0
+
     history = []
     for col in yCols:
         # NOPAT = 영업이익 × (1 - 유효세율)
-        opIncome = _get(opRow, col)
-        taxExpense = abs(_get(taxRow, col))
-        ptIncome = abs(_get(ptRow, col))
+        opIncome = _getF(opRow, col)
+        taxExpense = abs(_getF(taxRow, col))
+        ptIncome = abs(_getF(ptRow, col))
         effectiveTaxRate = taxExpense / ptIncome if ptIncome > 0 else 0.25
         effectiveTaxRate = min(effectiveTaxRate, 0.5)
         nopat = opIncome * (1 - effectiveTaxRate) if opIncome != 0 else None
@@ -520,8 +544,8 @@ def calcPenmanDecomposition(company, *, basePeriod: str | None = None) -> dict |
         nfo = finDebt - cash
 
         # 순금융비용
-        finInc = _get(finIncRow, col)
-        finCost = _get(finCostRow, col)
+        finInc = _getF(finIncRow, col)
+        finCost = _getF(finCostRow, col)
         netFinCost = finCost - finInc  # 양수 = 순비용
 
         equity = _get(eqRow, col)
@@ -642,16 +666,23 @@ def calcRoicTree(company, *, basePeriod: str | None = None) -> dict | None:
     if not yCols:
         return None
 
+    _qMode = isQuarterlyFallback(yCols)
+    _allP = set(isPeriods)
+
+    def _getF(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode, _allP)
+        return v if v is not None else 0
+
     history = []
     for col in yCols:
-        rev = _get(revRow, col)
+        rev = _getF(revRow, col)
         if rev <= 0:
             continue
-        cogs = _get(cogsRow, col)
-        sga = _get(sgaRow, col)
-        opIncome = _get(opRow, col)
-        taxExp = abs(_get(taxRow, col))
-        ptIncome = abs(_get(ptRow, col))
+        cogs = _getF(cogsRow, col)
+        sga = _getF(sgaRow, col)
+        opIncome = _getF(opRow, col)
+        taxExp = abs(_getF(taxRow, col))
+        ptIncome = abs(_getF(ptRow, col))
 
         # Margin 분해
         grossMargin = round((rev - cogs) / rev * 100, 2) if cogs else None

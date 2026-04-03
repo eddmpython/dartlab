@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from dartlab.analysis.financial._helpers import annualColsFromPeriods, toDictBySnakeId
+from dartlab.analysis.financial._helpers import annualColsFromPeriods, getFlowValue, isQuarterlyFallback, toDictBySnakeId
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
@@ -66,13 +66,20 @@ def calcDividendPolicy(company, *, basePeriod: str | None = None) -> dict | None
     if not yCols:
         return None
 
+    _qMode = isQuarterlyFallback(yCols)
+    _allP = set(cfPeriods)
+
+    def _getF(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode, _allP)
+        return v if v is not None else 0
+
     history = []
     consecutiveYears = 0
     countingConsecutive = True
 
     for i, col in enumerate(yCols):
-        divPaid = abs(_get(divRow, col))  # CF에서 음수로 나옴
-        ni = _get(niRow, col)
+        divPaid = abs(_getF(divRow, col))  # CF에서 음수로 나옴
+        ni = _getF(niRow, col)
 
         payoutRatio = _pct(divPaid, ni) if ni > 0 else None
 
@@ -80,7 +87,7 @@ def calcDividendPolicy(company, *, basePeriod: str | None = None) -> dict | None
         dividendGrowth = None
         if i + 1 < len(yCols):
             prevCol = yCols[i + 1]
-            prevDiv = abs(_get(divRow, prevCol))
+            prevDiv = abs(_getF(divRow, prevCol))
             if prevDiv > 0:
                 dividendGrowth = round((divPaid - prevDiv) / prevDiv * 100, 2)
 
@@ -154,14 +161,21 @@ def calcShareholderReturn(company, *, basePeriod: str | None = None) -> dict | N
     if not yCols:
         return None
 
+    _qMode2 = isQuarterlyFallback(yCols)
+    _allP2 = set(cfPeriods)
+
+    def _getF2(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode2, _allP2)
+        return v if v is not None else 0
+
     history = []
     for col in yCols:
-        divPaid = abs(_get(divRow, col))
-        ocf = _get(ocfRow, col)
-        capex = abs(_get(capexRow, col)) + abs(_get(intCapexRow, col))
+        divPaid = abs(_getF2(divRow, col))
+        ocf = _getF2(ocfRow, col)
+        capex = abs(_getF2(capexRow, col)) + abs(_getF2(intCapexRow, col))
         fcf = ocf - capex
 
-        tsPurchase = abs(_get(tsRow, col))
+        tsPurchase = abs(_getF2(tsRow, col))
 
         totalReturn = divPaid + tsPurchase
         returnToFcf = _pct(totalReturn, fcf) if fcf > 0 else None
@@ -228,13 +242,20 @@ def calcReinvestment(company, *, basePeriod: str | None = None) -> dict | None:
     if not yCols:
         return None
 
+    _qMode3 = isQuarterlyFallback(yCols)
+    _allP3 = set(cfPeriods)
+
+    def _getF3(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode3, _allP3)
+        return v if v is not None else 0
+
     history = []
     for col in yCols:
-        capex = abs(_get(capexRow, col)) + abs(_get(intCapexRow, col))
-        opIncome = _get(opRow, col)
-        rev = _get(revRow, col)
-        ni = _get(niRow, col)
-        divPaid = abs(_get(divRow, col))
+        capex = abs(_getF3(capexRow, col)) + abs(_getF3(intCapexRow, col))
+        opIncome = _getF3(opRow, col)
+        rev = _getF3(revRow, col)
+        ni = _getF3(niRow, col)
+        divPaid = abs(_getF3(divRow, col))
 
         # 유보율 = 1 - 배당성향
         retentionRate = None
@@ -307,13 +328,20 @@ def calcFcfUsage(company, *, basePeriod: str | None = None) -> dict | None:
     if not yCols:
         return None
 
+    _qMode4 = isQuarterlyFallback(yCols)
+    _allP4 = set(cfPeriods)
+
+    def _getF4(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode4, _allP4)
+        return v if v is not None else 0
+
     history = []
     for col in yCols:
-        ocf = _get(ocfRow, col)
-        capex = abs(_get(capexRow, col)) + abs(_get(intCapexRow, col))
+        ocf = _getF4(ocfRow, col)
+        capex = abs(_getF4(capexRow, col)) + abs(_getF4(intCapexRow, col))
         fcf = ocf - capex
-        divPaid = abs(_get(divRow, col))
-        debtRepaid = abs(_get(repayRow1, col)) + abs(_get(repayRow2, col)) + abs(_get(repayRow3, col))
+        divPaid = abs(_getF4(divRow, col))
+        debtRepaid = abs(_getF4(repayRow1, col)) + abs(_getF4(repayRow2, col)) + abs(_getF4(repayRow3, col))
         residual = fcf - divPaid - debtRepaid
 
         history.append(

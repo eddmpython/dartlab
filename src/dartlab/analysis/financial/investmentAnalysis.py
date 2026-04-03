@@ -6,7 +6,7 @@ select()로 IS/BS/CF 원본 계정을 가져와서
 
 from __future__ import annotations
 
-from dartlab.analysis.financial._helpers import annualColsFromPeriods, toDict, toDictBySnakeId
+from dartlab.analysis.financial._helpers import annualColsFromPeriods, getFlowValue, isQuarterlyFallback, toDict, toDictBySnakeId
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
@@ -108,12 +108,19 @@ def calcRoicTimeline(company, *, basePeriod: str | None = None) -> dict | None:
     if len(yCols) < 2:
         return None
 
+    _qMode = isQuarterlyFallback(yCols)
+    _allP = set(isPeriods)
+
+    def _getF(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode, _allP)
+        return v if v is not None else 0
+
     history = []
     for i, col in enumerate(yCols[:-1]):
         prevCol = yCols[i + 1] if i + 1 < len(yCols) else None
-        opIncome = _get(opRow, col)
-        taxExpense = _get(taxRow, col)
-        ptIncome = _get(ptRow, col)
+        opIncome = _getF(opRow, col)
+        taxExpense = _getF(taxRow, col)
+        ptIncome = _getF(ptRow, col)
 
         # 유효세율
         effectiveTaxRate = abs(taxExpense) / abs(ptIncome) if ptIncome != 0 else 0.25
@@ -201,10 +208,17 @@ def calcInvestmentIntensity(company, *, basePeriod: str | None = None) -> dict |
     if not yCols:
         return None
 
+    _qMode2 = isQuarterlyFallback(yCols)
+    _allP2 = set(isPeriods)
+
+    def _getF2(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode2, _allP2)
+        return v if v is not None else 0
+
     history = []
     for col in yCols:
-        capex = abs(_get(capexRow, col)) + abs(_get(intCapexRow, col))
-        rev = _get(revRow, col)
+        capex = abs(_getF2(capexRow, col)) + abs(_getF2(intCapexRow, col))
+        rev = _getF2(revRow, col)
         ppe = _get(ppeRow, col)
         intangible = _get(intRow, col)
         ta = _get(taRow, col)
@@ -262,11 +276,18 @@ def calcEvaTimeline(company, *, basePeriod: str | None = None) -> dict | None:
     if not yCols:
         return None
 
+    _qMode3 = isQuarterlyFallback(yCols)
+    _allP3 = set(isPeriods)
+
+    def _getF3(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode3, _allP3)
+        return v if v is not None else 0
+
     history = []
     for col in yCols:
-        opIncome = _get(opRow, col)
-        taxExpense = _get(taxRow, col)
-        ptIncome = _get(ptRow, col)
+        opIncome = _getF3(opRow, col)
+        taxExpense = _getF3(taxRow, col)
+        ptIncome = _getF3(ptRow, col)
 
         # 유효세율
         effectiveTaxRate = abs(taxExpense) / abs(ptIncome) if ptIncome != 0 else 0.25

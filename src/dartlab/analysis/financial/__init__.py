@@ -789,7 +789,10 @@ def _resolveAxis(axis: str) -> str:
     if lower in _ALIASES:
         return _ALIASES[lower]
     available = ", ".join(sorted(_AXIS_REGISTRY))
-    raise ValueError(f"알 수 없는 분석 축: '{axis}'. 가용 축: {available}")
+    raise ValueError(
+        f"알 수 없는 분석 축: '{axis}'. 가용 축: {available}\n"
+        f"  사용법: c.analysis() 로 전체 축 가이드를 확인하세요."
+    )
 
 
 # ── basePeriod 지원 여부 검사 (캐싱) ──

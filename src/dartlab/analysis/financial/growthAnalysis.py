@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from dartlab.analysis.financial._helpers import (
     MAX_RATIO_YEARS,
+    getFlowValue,
+    isQuarterlyFallback,
     toDict,
 )
 from dartlab.analysis.financial._helpers import (
@@ -66,28 +68,38 @@ def calcGrowthTrend(company, *, basePeriod: str | None = None) -> dict | None:
     if len(yCols) < 2:
         return None
 
+    _qMode = isQuarterlyFallback(yCols)
+    _allP = set(isPeriods)
+
     history = []
     for i, col in enumerate(yCols[:-1]):
         prevCol = yCols[i + 1] if i + 1 < len(yCols) else None
 
+        _r = getFlowValue(rev, col, _qMode, _allP)
+        _o = getFlowValue(op, col, _qMode, _allP)
+        _n = getFlowValue(ni, col, _qMode, _allP)
+        _rP = getFlowValue(rev, prevCol, _qMode, _allP) if prevCol else None
+        _oP = getFlowValue(op, prevCol, _qMode, _allP) if prevCol else None
+        _nP = getFlowValue(ni, prevCol, _qMode, _allP) if prevCol else None
+
         history.append(
             {
                 "period": col,
-                "revenue": rev.get(col),
-                "revenueYoy": _yoy(rev.get(col), rev.get(prevCol)) if prevCol else None,
-                "operatingIncome": op.get(col),
-                "operatingIncomeYoy": _yoy(op.get(col), op.get(prevCol)) if prevCol else None,
-                "netIncome": ni.get(col),
-                "netIncomeYoy": _yoy(ni.get(col), ni.get(prevCol)) if prevCol else None,
+                "revenue": _r,
+                "revenueYoy": _yoy(_r, _rP) if prevCol else None,
+                "operatingIncome": _o,
+                "operatingIncomeYoy": _yoy(_o, _oP) if prevCol else None,
+                "netIncome": _n,
+                "netIncomeYoy": _yoy(_n, _nP) if prevCol else None,
                 "totalAssets": ta.get(col),
                 "totalAssetsYoy": _yoy(ta.get(col), ta.get(prevCol)) if prevCol else None,
             }
         )
 
     # CAGR
-    revVals = [rev.get(c) for c in reversed(yCols)]
-    opVals = [op.get(c) for c in reversed(yCols)]
-    niVals = [ni.get(c) for c in reversed(yCols)]
+    revVals = [getFlowValue(rev, c, _qMode, _allP) for c in reversed(yCols)]
+    opVals = [getFlowValue(op, c, _qMode, _allP) for c in reversed(yCols)]
+    niVals = [getFlowValue(ni, c, _qMode, _allP) for c in reversed(yCols)]
     n = len(yCols) - 1
 
     return (
@@ -205,13 +217,16 @@ def calcSustainableGrowthRate(company, *, basePeriod: str | None = None) -> dict
     if len(yCols) < 2:
         return None
 
+    _qMode2 = isQuarterlyFallback(yCols)
+    _allP2 = set(isPeriods)
+
     history = []
     for i, col in enumerate(yCols[:-1]):
         prevCol = yCols[i + 1] if i + 1 < len(yCols) else None
-        niVal = ni.get(col)
+        niVal = getFlowValue(ni, col, _qMode2, _allP2)
         eqVal = eq.get(col)
-        revVal = rev.get(col)
-        revPrev = rev.get(prevCol) if prevCol else None
+        revVal = getFlowValue(rev, col, _qMode2, _allP2)
+        revPrev = getFlowValue(rev, prevCol, _qMode2, _allP2) if prevCol else None
 
         roe = round(niVal / eqVal * 100, 2) if niVal is not None and eqVal and eqVal != 0 else None
         actualGrowth = _yoy(revVal, revPrev)
@@ -328,8 +343,15 @@ def calcCagrComparison(company, *, basePeriod: str | None = None) -> dict | None
     if len(yCols) < 3:
         return None
 
+    _qMode3 = isQuarterlyFallback(yCols)
+    _allP3 = set(isPeriods)
+
     def _v(row, col):
         v = row.get(col) if row else None
+        return v if v is not None else 0
+
+    def _vF(row, col):
+        v = getFlowValue(row, col, _qMode3, _allP3)
         return v if v is not None else 0
 
     latest = yCols[0]
@@ -344,17 +366,17 @@ def calcCagrComparison(company, *, basePeriod: str | None = None) -> dict | None
     capexRow = cfData.get("유형자산의취득", {})
 
     pairs = [
-        ("마진 방향", "매출", _v(revRow, oldest), _v(revRow, latest), "영업이익", _v(opRow, oldest), _v(opRow, latest)),
-        ("자산 효율", "자산", _v(taRow, oldest), _v(taRow, latest), "매출", _v(revRow, oldest), _v(revRow, latest)),
+        ("마진 방향", "매출", _vF(revRow, oldest), _vF(revRow, latest), "영업이익", _vF(opRow, oldest), _vF(opRow, latest)),
+        ("자산 효율", "자산", _v(taRow, oldest), _v(taRow, latest), "매출", _vF(revRow, oldest), _vF(revRow, latest)),
         ("레버리지", "부채", _v(tlRow, oldest), _v(tlRow, latest), "자본", _v(teRow, oldest), _v(teRow, latest)),
         (
             "투자 방향",
             "CAPEX",
-            abs(_v(capexRow, oldest)),
-            abs(_v(capexRow, latest)),
+            abs(_vF(capexRow, oldest)),
+            abs(_vF(capexRow, latest)),
             "매출",
-            _v(revRow, oldest),
-            _v(revRow, latest),
+            _vF(revRow, oldest),
+            _vF(revRow, latest),
         ),
     ]
 

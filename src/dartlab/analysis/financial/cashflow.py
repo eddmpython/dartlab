@@ -6,7 +6,7 @@ CF 3구간(영업/투자/재무) + FCF + 이익의 현금 뒷받침 + CF 패턴.
 
 from __future__ import annotations
 
-from dartlab.analysis.financial._helpers import annualColsFromPeriods, toDict
+from dartlab.analysis.financial._helpers import annualColsFromPeriods, getFlowValue, isQuarterlyFallback, toDict
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
@@ -96,13 +96,20 @@ def calcCashFlowOverview(company, *, basePeriod: str | None = None) -> dict | No
     if not yCols:
         return None
 
+    _qMode = isQuarterlyFallback(yCols)
+    _allP = set(allPeriods)
+
+    def _getF(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode, _allP)
+        return v if v is not None else 0
+
     history = []
     for col in yCols:
-        ocf = _get(ocfRow, col)
-        icf = _get(icfRow, col)
-        fin = _get(finRow, col)
+        ocf = _getF(ocfRow, col)
+        icf = _getF(icfRow, col)
+        fin = _getF(finRow, col)
         # CAPEX: CF에서 음수로 나옴 -> abs
-        capex = abs(_get(capexRow, col)) + abs(_get(intCapexRow, col))
+        capex = abs(_getF(capexRow, col)) + abs(_getF(intCapexRow, col))
         fcf = ocf - capex
 
         entry = {
@@ -161,11 +168,18 @@ def calcCashQuality(company, *, basePeriod: str | None = None) -> dict | None:
     if not yCols:
         return None
 
+    _qMode2 = isQuarterlyFallback(yCols)
+    _allP2 = set(cfPeriods)
+
+    def _getF2(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode2, _allP2)
+        return v if v is not None else 0
+
     history = []
     for col in yCols:
-        ocf = _get(ocfRow, col)
-        ni = _get(niRow, col)
-        rev = _get(revRow, col)
+        ocf = _getF2(ocfRow, col)
+        ni = _getF2(niRow, col)
+        rev = _getF2(revRow, col)
 
         ocfToNi = ocf / ni * 100 if ni != 0 else None
         # 극단값 클램핑: ±1000% 초과는 "의미 없는 비율" → None
@@ -292,13 +306,20 @@ def calcOcfDecomposition(company, *, basePeriod: str | None = None) -> dict | No
     if len(yCols) < 2:
         return None
 
+    _qMode3 = isQuarterlyFallback(yCols)
+    _allP3 = set(cfPeriods)
+
+    def _getF3(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode3, _allP3)
+        return v if v is not None else 0
+
     history = []
     for i in range(len(yCols) - 1):
         col = yCols[i]
         prevCol = yCols[i + 1]
 
-        ni = _get(niRow, col)
-        ocf = _get(ocfRow, col)
+        ni = _getF3(niRow, col)
+        ocf = _getF3(ocfRow, col)
         ppe = _get(ppeRow, col)
 
         # 감가상각 추정 (유형자산/10)

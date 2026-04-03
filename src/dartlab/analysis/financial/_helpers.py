@@ -229,6 +229,43 @@ def annualLabel(period: str) -> str:
     return period
 
 
+# ── TTM (Trailing Twelve Months) 헬퍼 ──────────────────
+
+
+def isQuarterlyFallback(cols: list[str]) -> bool:
+    """annualColsFromPeriods 결과가 Q4 fallback인지 판별."""
+    return bool(cols) and "Q" in cols[0]
+
+
+def ttmSum(flowData: dict, qCol: str, allPeriods: set) -> float | None:
+    """Q4 컬럼 기준 최근 4분기 합산(TTM).
+
+    qCol이 "2025Q4"이면 2025Q4+Q3+Q2+Q1 합산.
+    3분기 이상 있으면 4분기로 연환산. 2분기 이하면 None.
+    """
+    if "Q" not in qCol:
+        return flowData.get(qCol)
+    year = qCol[:4]
+    quarters = [f"{year}Q{q}" for q in (4, 3, 2, 1)]
+    vals = [flowData.get(q) for q in quarters if q in allPeriods]
+    valid = [v for v in vals if v is not None]
+    if len(valid) < 3:
+        return None
+    return sum(valid) / len(valid) * 4
+
+
+def getFlowValue(
+    flowData: dict,
+    col: str,
+    quarterlyMode: bool,
+    allPeriods: set,
+) -> float | None:
+    """플로우 변수 값 추출. quarterlyMode면 TTM 환산, 아니면 직접 반환."""
+    if quarterlyMode:
+        return ttmSum(flowData, col, allPeriods)
+    return flowData.get(col)
+
+
 def annualLabels(periods: list[str]) -> dict[str, str]:
     """연간 기간 컬럼 → 표시 라벨 매핑. 테이블 렌더링에서 헤더 치환용."""
     return {p: annualLabel(p) for p in periods}

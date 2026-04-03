@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from dartlab.analysis.financial._helpers import annualColsFromPeriods, toDict
+from dartlab.analysis.financial._helpers import annualColsFromPeriods, getFlowValue, isQuarterlyFallback, toDict
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
@@ -70,11 +70,18 @@ def calcIsCfDivergence(company, *, basePeriod: str | None = None) -> dict | None
     if not yCols:
         return None
 
+    _qMode = isQuarterlyFallback(yCols)
+    _allP = set(cfPeriods)
+
+    def _getF(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode, _allP)
+        return v if v is not None else 0
+
     history = []
     for col in yCols:
-        ni = _get(niRow, col)
-        ocf = _get(ocfRow, col)
-        opIncome = _get(opRow, col)
+        ni = _getF(niRow, col)
+        ocf = _getF(ocfRow, col)
+        opIncome = _getF(opRow, col)
 
         divergence = None
         direction = None
@@ -150,9 +157,16 @@ def calcIsBsDivergence(company, *, basePeriod: str | None = None) -> dict | None
     if not yCols:
         return None
 
+    _qMode2 = isQuarterlyFallback(yCols)
+    _allP2 = set(isPeriods)
+
+    def _getF2(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode2, _allP2)
+        return v if v is not None else 0
+
     history = []
     for i, col in enumerate(yCols):
-        rev = _get(revRow, col)
+        rev = _getF2(revRow, col)
         rec = _getFirst(bsData, _REC_KEYS, col)
         inv = _get(invRow, col)
 
@@ -162,7 +176,7 @@ def calcIsBsDivergence(company, *, basePeriod: str | None = None) -> dict | None
 
         if i + 1 < len(yCols):
             prevCol = yCols[i + 1]
-            prevRev = _get(revRow, prevCol)
+            prevRev = _getF2(revRow, prevCol)
             prevRec = _getFirst(bsData, _REC_KEYS, prevCol)
             prevInv = _get(invRow, prevCol)
 
@@ -391,6 +405,13 @@ def calcArticulationCheck(company, *, basePeriod: str | None = None) -> dict | N
     if len(yCols) < 2:
         return None
 
+    _qMode3 = isQuarterlyFallback(yCols)
+    _allP3 = set(bsPeriods)
+
+    def _getF3(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode3, _allP3)
+        return v if v is not None else 0
+
     history = []
     for i in range(len(yCols) - 1):
         col = yCols[i]
@@ -399,8 +420,8 @@ def calcArticulationCheck(company, *, basePeriod: str | None = None) -> dict | N
         # 1. PPE 정합
         ppeCur = _get(ppeRow, col)
         ppePrev = _get(ppeRow, prevCol)
-        capex = abs(_get(capexRow, col))
-        disp = abs(_get(dispRow, col))
+        capex = abs(_getF3(capexRow, col))
+        disp = abs(_getF3(dispRow, col))
         # 감가상각은 추정 (유형자산/10)
         depEst = ppePrev / 10 if ppePrev > 0 else 0
         ppeExpected = ppePrev + capex - depEst - disp
@@ -410,16 +431,16 @@ def calcArticulationCheck(company, *, basePeriod: str | None = None) -> dict | N
         # 2. 현금 정합
         cashCur = _get(cashRow, col)
         cashPrev = _get(cashRow, prevCol)
-        ocf = _get(ocfRow, col)
-        icf = _get(icfRow, col)
-        fcf = _get(fcfRow, col)
+        ocf = _getF3(ocfRow, col)
+        icf = _getF3(icfRow, col)
+        fcf = _getF3(fcfRow, col)
         cashExpected = cashPrev + ocf + icf + fcf
         cashError = abs(cashCur - cashExpected) / abs(cashPrev) * 100 if cashPrev != 0 else None
 
         # 3. 자본 정합
         eqCur = _get(eqRow, col)
         eqPrev = _get(eqRow, prevCol)
-        ni = _get(niRow, col)
+        ni = _getF3(niRow, col)
         eqExpected = eqPrev + ni  # 배당/OCI 미포함이므로 대략적
         eqError = abs(eqCur - eqExpected) / abs(eqPrev) * 100 if eqPrev != 0 else None
 

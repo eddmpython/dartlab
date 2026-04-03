@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from dartlab.analysis.financial._helpers import annualColsFromPeriods, toDict
+from dartlab.analysis.financial._helpers import annualColsFromPeriods, getFlowValue, isQuarterlyFallback, toDict
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
@@ -66,11 +66,18 @@ def calcCostBreakdown(company, *, basePeriod: str | None = None) -> dict | None:
     if not yCols:
         return None
 
+    _qMode = isQuarterlyFallback(yCols)
+    _allP = set(isPeriods)
+
+    def _getF(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode, _allP)
+        return v if v is not None else 0
+
     history = []
     for col in yCols:
-        rev = _get(revRow, col)
-        cogs = _get(cogsRow, col)
-        sga = _get(sgaRow, col)
+        rev = _getF(revRow, col)
+        cogs = _getF(cogsRow, col)
+        sga = _getF(sgaRow, col)
 
         history.append(
             {
@@ -136,19 +143,26 @@ def calcOperatingLeverage(company, *, basePeriod: str | None = None) -> dict | N
     if not yCols:
         return None
 
+    _qMode2 = isQuarterlyFallback(yCols)
+    _allP2 = set(isPeriods)
+
+    def _getF2(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode2, _allP2)
+        return v if v is not None else 0
+
     history = []
     for i, col in enumerate(yCols):
-        rev = _get(revRow, col)
-        opIncome = _get(opRow, col)
-        gp = _get(gpRow, col)
+        rev = _getF2(revRow, col)
+        opIncome = _getF2(opRow, col)
+        gp = _getF2(gpRow, col)
 
         # DOL = 영업이익 변화율 / 매출 변화율 (전년 대비)
         # 양쪽 다 양수일 때만 의미 있음 (부호 전환 시 DOL 해석 불가)
         dol = None
         if i + 1 < len(yCols):
             prevCol = yCols[i + 1]
-            prevRev = _get(revRow, prevCol)
-            prevOp = _get(opRow, prevCol)
+            prevRev = _getF2(revRow, prevCol)
+            prevOp = _getF2(opRow, prevCol)
             if prevRev > 0 and prevOp > 0 and opIncome > 0:
                 revChange = (rev - prevRev) / prevRev
                 opChange = (opIncome - prevOp) / prevOp
@@ -214,11 +228,18 @@ def calcBreakevenEstimate(company, *, basePeriod: str | None = None) -> dict | N
     if not yCols:
         return None
 
+    _qMode3 = isQuarterlyFallback(yCols)
+    _allP3 = set(isPeriods)
+
+    def _getF3(row: dict, col: str) -> float:
+        v = getFlowValue(row, col, _qMode3, _allP3)
+        return v if v is not None else 0
+
     history = []
     for col in yCols:
-        rev = _get(revRow, col)
-        cogs = _get(cogsRow, col)
-        sga = _get(sgaRow, col)
+        rev = _getF3(revRow, col)
+        cogs = _getF3(cogsRow, col)
+        sga = _getF3(sgaRow, col)
 
         # 단순화: 변동비 = 매출원가, 고정비 = 판관비
         variableCostRatio = cogs / rev if rev > 0 else None
