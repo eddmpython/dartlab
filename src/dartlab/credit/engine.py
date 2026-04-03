@@ -124,23 +124,33 @@ def _calcCHSAdjustment(company, baseScore: float) -> dict | None:
             return None
 
         latestPrice = closes[-1]
-        # 시가총액 추정 (shares 없으면 간이 계산)
-        shares = getattr(company, "shares", None)
-        if shares is None:
-            # 자본/주가로 추정
+        if latestPrice <= 0:
+            return None
+
+        # 주식수 추정: EPS 역산 (가장 신뢰)
+        shares = None
+        try:
+            epsData = company.select("IS", ["기본주당이익", "당기순이익"])
+            if epsData is not None:
+                from dartlab.analysis.financial._helpers import toDict as _td
+                epsParsed = _td(epsData)
+                if epsParsed:
+                    epsDict, epsPeriods = epsParsed
+                    eps = (epsDict.get("기본주당이익", {}) or {}).get(epsPeriods[0] if epsPeriods else "")
+                    niForEps = (epsDict.get("당기순이익", {}) or {}).get(epsPeriods[0] if epsPeriods else "")
+                    if eps and abs(eps) > 0 and niForEps:
+                        shares = abs(niForEps / eps)
+        except (TypeError, ValueError, KeyError, AttributeError, ZeroDivisionError):
+            pass
+
+        # fallback: 자본/주가
+        if not shares:
             eq = ta - tl if ta and tl else None
             shares = eq / latestPrice if eq and latestPrice > 0 else None
-        if not shares:
+        if not shares or shares <= 0:
             return None
 
         marketCap = shares * latestPrice
-        mta = ta - (tl or 0) + marketCap  # Market Total Assets
-
-        # CHS 변수
-        import math
-        nimta = (ni or 0) / mta if mta > 0 else 0
-        tlmta = (tl or 0) / mta if mta > 0 else 0
-        cashmta = (cash or 0) / mta if mta > 0 else 0
 
         # 변동성 (연환산 일별 수익률 표준편차)
         returns = [(closes[i] - closes[i-1]) / closes[i-1] for i in range(1, len(closes)) if closes[i-1] != 0]
@@ -150,15 +160,17 @@ def _calcCHSAdjustment(company, baseScore: float) -> dict | None:
         var_r = sum((r - mean_r)**2 for r in returns) / len(returns)
         sigma = (var_r ** 0.5) * (252 ** 0.5)
 
-        rsize = math.log(marketCap / 1e15) if marketCap > 0 else 0  # 시장 대비 상대 크기
-        exret = (closes[-1] / closes[0] - 1) if closes[0] != 0 else 0  # 기간 수익률
-        mb = marketCap / (ta - tl) if (ta - tl) > 0 else 1.0
-        price_log = min(math.log(max(latestPrice, 1)), math.log(15))
+        exret = (closes[-1] / closes[0] - 1) if closes[0] != 0 else 0
 
         chsResult = calcCHS(
-            nimta=nimta, tlmta=tlmta, cashmta=cashmta,
-            sigma=sigma, rsize=rsize, exret=exret,
-            mb=mb, price=price_log,
+            netIncome=ni,
+            totalLiabilities=tl,
+            cash=cash,
+            totalAssets=ta,
+            marketCap=marketCap,
+            equityVolatility=sigma,
+            excessReturn=exret,
+            stockPrice=latestPrice,
         )
 
         if chsResult is None:
