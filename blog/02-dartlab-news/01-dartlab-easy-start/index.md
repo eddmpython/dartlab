@@ -15,6 +15,12 @@ keywords:
   - 파이썬 초보자
 ---
 
+<script>
+import YouTube from '$lib/components/YouTube.svelte';
+</script>
+
+<YouTube id="rPOqtmTZxEA" shorts title="dartlab uv 설치 안내" />
+
 **이 글을 끝까지 따라하면**, 삼성전자의 재무제표가 내 컴퓨터 화면에 출력된다. 프로그래밍 경험이 전혀 없어도 된다. 총 3단계, 5분이면 끝난다.
 
 ![dartlab 설치 3단계 — uv 설치부터 첫 실행까지](./assets/123-install-flow.svg)
