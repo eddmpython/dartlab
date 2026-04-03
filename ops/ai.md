@@ -10,7 +10,7 @@ AI는 이 도구를 조합해 질문에 최적화된 분석 흐름을 스스로 
 |------|------|
 | 레이어 | L3 |
 | 진입점 | `dartlab.ask()`, `dartlab.chat()`, `c.reviewer()` |
-| 소비 | analysis, scan, gather, review, Company 전체 |
+| 소비 | analysis, macro, scan, gather, review, Company 전체 |
 | 생산 | 사용자에게 해석 + 재현 가능한 코드 제공 |
 | provider | gemini, groq, cerebras, mistral, openai, ollama |
 
@@ -62,6 +62,7 @@ dartlab.chat("005930", "배당 추세를 분석하고 이상 징후를 찾아줘
 
 ### 도구 선택 (60+ 질문 검증)
 - **개별 기업 분석**: review/analysis 축 정확 매칭 (1회 성공)
+- **매크로 환경 질문**: `dartlab.macro("축")` — 시장 레벨 매크로 해석 (Company 불필요)
 - **시장 비교/순위**: scan 단일 축 + filter
 - **데이터 직접 조회**: show/select (배당, 매출 추이, 주석 등)
 - **주석 상세**: c.notes.xxx (재고/차입금/유형자산 등 12항목)

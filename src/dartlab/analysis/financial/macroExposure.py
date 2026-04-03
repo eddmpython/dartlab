@@ -1,8 +1,7 @@
-"""6부 매크로 분석 — 경제 사이클, 매크로 민감도, 자산 신호, 밸류에이션 밴드.
+"""6부 매크로 분석 — 기업-매크로 연결 (매크로 민감도, 밸류에이션 밴드).
 
-탑다운(매크로→섹터→종목)과 바텀업(기업→매크로 민감도) 양방향 연결.
-gather(L1)에서 수집한 매크로 데이터를 core/macroCycle(L0) 해석 함수로 판별하고,
-Company의 업종 특성과 연결한다.
+기업 매출과 외생변수의 관계, 기업 멀티플 밴드 등 Company가 필수인 분석.
+시장 자체 매크로 분석(사이클, 자산해석 등)은 독립 엔진 dartlab.macro()가 담당.
 """
 
 from __future__ import annotations
@@ -81,82 +80,7 @@ def _getYoYChange(df, col: str = "value"):
 
 
 # ══════════════════════════════════════
-# 축 1: 매크로환경
-# ══════════════════════════════════════
-
-
-@memoized_calc
-def calcMacroEnvironment(company, *, basePeriod: str | None = None) -> dict | None:
-    """현재 경제 사이클 판별 + 이 기업의 포지션.
-
-    gather.macro()로 핵심 신호 수집 → classifyCycle()로 4국면 판별 →
-    company 업종의 cyclicality와 매칭하여 현재 사이클에서의 위치를 판정.
-    """
-    from dartlab.core.finance.macroCycle import classifyCycle
-    from dartlab.core.finance.scenario import getElasticity
-
-    g = _getGather()
-    if g is None:
-        return None
-
-    # 핵심 신호 지표 수집
-    hy_df = _loadMacroIndicator(g, "BAMLH0A0HYM2", "fred")
-    ts_df = _loadMacroIndicator(g, "T10Y2Y", "fred")
-    vix_df = _loadMacroIndicator(g, "VIXCLS", "fred")
-    cli_df = _loadMacroIndicator(g, "CLI", "ecos")
-
-    hy_spread = _getLatestValue(hy_df)
-    if hy_spread is not None:
-        hy_spread *= 100  # % → bp
-
-    indicators = {
-        "hy_spread": hy_spread,
-        "hy_spread_3m_change": _getMonthlyChange(hy_df, 3),
-        "term_spread": _getLatestValue(ts_df),
-        "vix": _getLatestValue(vix_df),
-        "cli_mom": _getMonthlyChange(cli_df, 1),
-    }
-
-    # HY 3m change도 bp 변환
-    if indicators["hy_spread_3m_change"] is not None:
-        indicators["hy_spread_3m_change"] *= 100
-
-    cycle = classifyCycle(indicators)
-
-    # 기업 업종 → SectorElasticity → cyclicality
-    sectorKey = None
-    try:
-        sector = getattr(company, "sector", None)
-        if sector is not None:
-            sectorKey = getattr(sector, "sectorKey", None) or getattr(sector, "name", None)
-    except AttributeError:
-        pass
-
-    elasticity = getElasticity(sectorKey)
-    position = cycle.sectorStrategy.get(elasticity.cyclicality, "neutral")
-
-    position_labels = {
-        "overweight": "비중확대",
-        "neutral": "중립",
-        "underweight": "비중축소",
-    }
-
-    return {
-        "phase": cycle.phase,
-        "phaseLabel": cycle.label,
-        "confidence": cycle.confidence,
-        "signals": list(cycle.signals),
-        "sectorKey": sectorKey,
-        "cyclicality": elasticity.cyclicality,
-        "position": position,
-        "positionLabel": position_labels.get(position, position),
-        "implication": (f"{cycle.label}기 — {elasticity.cyclicality} 업종 → {position_labels.get(position, position)}"),
-        "sectorStrategy": cycle.sectorStrategy,
-    }
-
-
-# ══════════════════════════════════════
-# 축 2: 매크로민감도
+# 매크로민감도 — 기업 매출 vs 외생변수
 # ══════════════════════════════════════
 
 
@@ -332,79 +256,7 @@ def calcMacroSensitivity(company, *, basePeriod: str | None = None) -> dict | No
 
 
 # ══════════════════════════════════════
-# 축 3: 자산신호
-# ══════════════════════════════════════
-
-
-@memoized_calc
-def calcAssetSignals(company, *, basePeriod: str | None = None) -> dict | None:
-    """5대 자산 해석 + 기업 업종 연관성."""
-    from dartlab.core.finance.macroCycle import interpretAssets
-    from dartlab.core.finance.scenario import getElasticity
-
-    g = _getGather()
-    if g is None:
-        return None
-
-    # 지표 수집
-    short_rate_df = _loadMacroIndicator(g, "DGS2", "fred")
-    long_rate_df = _loadMacroIndicator(g, "DGS10", "fred")
-    fx_df = _loadMacroIndicator(g, "USDKRW", "ecos")
-    vix_df = _loadMacroIndicator(g, "VIXCLS", "fred")
-
-    indicators = {
-        "short_rate": _getLatestValue(short_rate_df),
-        "short_rate_change": _getMonthlyChange(short_rate_df, 3),
-        "long_rate": _getLatestValue(long_rate_df),
-        "long_rate_change": _getMonthlyChange(long_rate_df, 3),
-        "fx_usdkrw": _getLatestValue(fx_df),
-        "fx_change_pct": _getYoYChange(fx_df) if fx_df is not None else None,
-        "vix": _getLatestValue(vix_df),
-        "vix_change": _getMonthlyChange(vix_df, 1),
-    }
-
-    assets = interpretAssets(indicators)
-
-    # 기업 업종 연관성
-    sectorKey = None
-    try:
-        sector = getattr(company, "sector", None)
-        if sector is not None:
-            sectorKey = getattr(sector, "sectorKey", None) or getattr(sector, "name", None)
-    except AttributeError:
-        pass
-
-    elasticity = getElasticity(sectorKey)
-
-    # 업종 특성에 따라 관련 자산 강조
-    relevance = {}
-    if elasticity.revenueToFx > 0.3:
-        relevance["fx"] = f"수출 비중 높음 — 환율 민감도 {elasticity.revenueToFx:.1f}"
-    if elasticity.nimToRate > 0:
-        relevance["shortRate"] = f"금리 민감 — NIM 감응도 {elasticity.nimToRate}bp"
-    if elasticity.cyclicality == "high":
-        relevance["vix"] = "경기민감 업종 — VIX 상승 시 주가 하락 압력"
-
-    return {
-        "assets": [
-            {
-                "asset": a.asset,
-                "label": a.label,
-                "level": a.level,
-                "change": a.change,
-                "interpretation": a.interpretation,
-                "implication": a.implication,
-                "companyRelevance": relevance.get(a.asset),
-            }
-            for a in assets
-        ],
-        "sectorKey": sectorKey,
-        "cyclicality": elasticity.cyclicality,
-    }
-
-
-# ══════════════════════════════════════
-# 축 4: 밸류에이션밴드
+# 밸류에이션밴드 — 기업 PER/PBR 정규분포 밴드
 # ══════════════════════════════════════
 
 

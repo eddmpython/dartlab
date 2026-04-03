@@ -36,6 +36,11 @@
     <priority>0.75</priority>
   </url>
   <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/category/company-reports</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
     <loc>https://eddmpython.github.io/dartlab/blog/series/dart-foundations</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
@@ -92,6 +97,11 @@
   </url>
   <url>
     <loc>https://eddmpython.github.io/dartlab/blog/series/corporate-analysis</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.72</priority>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/series/company-reports</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
   </url>
@@ -539,6 +549,24 @@
   </url>
   <url>
     <loc>https://eddmpython.github.io/dartlab/blog/003550-lg</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-04-03</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/051910-lg-chem</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-04-03</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/033780-ktng</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-04-03</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/003490-korean-air</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <lastmod>2026-04-03</lastmod>

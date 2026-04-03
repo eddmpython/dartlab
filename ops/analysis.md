@@ -16,11 +16,11 @@ analysis 품질이 올라가면 review와 AI 품질이 동시에 올라간다.
 
 ## 엔진 독립 규칙
 
-- **analysis는 credit을 참조하지 않는다.** 신용평가 지표가 필요하면 analysis 자체 체계로 만든다.
-- **credit도 analysis를 소비하지 않는다.** 재무 비율이 필요하면 Company(finance)에서 직접 가져온다.
-- **analysis와 credit은 같은 레이어(L2)에서 독립적으로 존재한다.** 서로의 결과를 import하지 않는다.
+- **analysis ↛ credit, credit ↛ analysis** — 같은 L2지만 상호 import 금지
+- **macro ↛ analysis, analysis ↛ macro** — 같은 L2지만 상호 import 금지. 시장 레벨 매크로 해석은 `dartlab.macro()` 엔진이 담당 (→ ops/macro.md)
+- 각 엔진이 데이터 필요하면 Company/core(L0/L1)에서 직접 가져온다
 - **review가 조합한다.** review에서 analysis 블록과 credit 블록을 성격별로 블록식으로 조합하여 보고서를 구성한다.
-- **import 방향**: Company(L0/L1) → analysis(L2), Company(L0/L1) → credit(L2). analysis ↛ credit, credit ↛ analysis.
+- **import 방향**: Company(L0/L1) → analysis(L2), Company(L0/L1) → credit(L2), gather(L1) → macro(L2).
 
 ## 재무제표 분석 스토리 — 6막 구조
 
@@ -186,34 +186,16 @@ audit 파일 구조도 확장:
 | 3-4 | 투자효율 | 투자 가치 | 4 | investmentEfficiency.py |
 | 3-5 | 재무정합성 | 재무제표 일치 | 5 | financialConsistency.py |
 
-### macro 그룹 (4축) — 탑다운-바텀업 양방향 연결
+### macro 그룹 (2축) — Company-bound 매크로 연결
 
-경제 사이클, 매크로 민감도, 자산 신호, 밸류에이션 밴드.
-gather(L1) 매크로 데이터를 core/macroCycle(L0) 해석 함수로 판별하고, Company 업종 특성과 연결.
+기업에 종속된 매크로 분석. 시장 레벨 매크로 해석(사이클, 자산신호)은 독립 macro 엔진(`dartlab.macro()`)으로 이동했다. → ops/macro.md
 
 | Part | 축 | 설명 | calc 파일 |
 |------|------|------|-----------|
-| 6-1 | 매크로환경 | 경제 사이클 판별 + 기업 포지션 | macroExposure.py |
 | 6-2 | 매크로민감도 | 외생변수 6축 회귀 + 매출 방향 | macroExposure.py |
-| 6-3 | 자산신호 | 5대 자산(금리/환율/금/VIX) 해석 + 기업 연관 | macroExposure.py |
 | 6-4 | 밸류에이션밴드 | PER/PBR 정규분포 밴드 현재 위치 | macroExposure.py |
 
-**3-레이어 구조:**
-```
-L0  core/finance/macroCycle.py     ← 순수 함수: classifyCycle, interpretAssets, calcMultipleBand, rateOutlook
-L0  core/finance/scenario.py       ← 기존: SectorElasticity.cyclicality → CYCLE_SECTOR_MAP 연결
-L0  core/finance/exogenousAxes.py  ← 기존: 6축 28지표, 업종 최적 3지표 선택
-L1  gather/                        ← 기존: macro() FRED/ECOS 수집 + Parquet 캐시
-L2  analysis/financial/macroExposure.py ← 4개 calc 함수 (Company-bound)
-```
-
-**탑다운 경로:** classifyCycle() → CYCLE_SECTOR_MAP → 이 사이클에서 유리한 업종
-**바텀업 경로:** Company → exogenousAxes → 매출 × 외생변수 회귀 → 현재 매크로에서 이 기업 방향
-
-**실험 109 검증 결과:**
-- 사이클 판별: COVID-19 침체 당월 high confidence 감지
-- 섹터 전략: 회복기 high > defensive +51%p, 둔화기 defensive > high -7.4%p
-- 외생변수: 삼성전자 업종최적(구리) R²=0.487 > 범용(금리) R²=0.294
+**바텀업 경로:** Company → exogenousAxes → 매출 x 외생변수 회귀 → 현재 매크로에서 이 기업 방향
 
 ## 6대 설계 규칙
 

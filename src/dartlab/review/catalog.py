@@ -206,9 +206,7 @@ _BLOCKS: list[BlockMeta] = [
     BlockMeta("marketBeta", "시장 베타", "시장분석", "실측 베타, 알파, CAPM 기대수익률"),
     BlockMeta("fundamentalDivergence", "재무-시장 괴리", "시장분석", "재무 스코어 vs 기술적 판단 교차검증"),
     BlockMeta("marketAnalysisFlags", "시장분석 플래그", "시장분석", "기술적 신호 경고/기회"),
-    # ── 매크로 ──
-    BlockMeta("macroEnvironment", "경제 사이클", "매크로", "현재 경제 국면(침체/회복/확장/둔화) + 기업 포지션"),
-    BlockMeta("assetSignals", "자산 신호", "매크로", "금리·환율·금·VIX 현재 상태와 기업 연관성"),
+    # ── 매크로 (기업-매크로 연결만 — 시장 분석은 dartlab.macro()) ──
     BlockMeta("valuationBand", "밸류에이션 밴드", "매크로", "PER/PBR 과거 정규분포 대비 현재 위치"),
 ]
 

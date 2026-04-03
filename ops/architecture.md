@@ -11,6 +11,7 @@ L1 (데이터)     providers/     DART, EDGAR, EDINET
                 scan/          시장 횡단분석
                 quant/         기술적 분석 (순수 NumPy 계산)
 L2 (분석)       analysis/      재무 + 전망 + 가치평가
+                macro/         시장 레벨 매크로 분석 (Company 불필요)
                 credit/        독립 신용평가
                 review/        블록식 조합 보고서 (analysis + credit)
 L3 (AI)         ai/            적극적 분석가
@@ -28,6 +29,7 @@ L4 (표현)       vscode/        VSCode 확장
 - gather/, scan/, quant/는 core/만 import
 - analysis/, credit/는 core/ + L1만 import
 - **analysis ↛ credit, credit ↛ analysis** — 같은 L2지만 상호 import 금지
+- **macro ↛ analysis, analysis ↛ macro** — 같은 L2지만 상호 import 금지
 - review만 analysis + credit 양쪽 소비
 - ai/는 모든 하위 레이어 소비 가능
 - guide/는 교차 관심사 — 모든 레이어에서 import 가능 (lazy import)
@@ -41,6 +43,7 @@ L4 (표현)       vscode/        VSCode 확장
 | gather | L1 | `c.gather("축")` | 외부 시장 데이터 수집 |
 | quant | L1 | `c.quant()`, `dartlab.quant()` | 기술적 분석 |
 | analysis | L2 | `c.analysis("그룹", "축")` | 재무 심층분석 |
+| macro | L2 | `dartlab.macro("축")` | 시장 레벨 매크로 분석 |
 | credit | L2 | `c.credit()` | 독립 신용평가 |
 | review | L2 | `c.review()` | 블록식 조합 보고서 |
 | search | L0 | `dartlab.search("키워드")` | 공시 원문 검색 |
@@ -65,6 +68,10 @@ dartlab.scan("governance")
 c.quant()                    # 종합 판단
 c.quant("indicators")        # 지표
 c.quant("divergence")        # 재무-기술적 괴리
+
+# macro — 1단계 (시장 레벨, Company 불필요)
+dartlab.macro("사이클")              # 경제 사이클
+dartlab.macro("금리", market="KR")   # 한국 금리
 
 # credit — 단일
 c.credit()

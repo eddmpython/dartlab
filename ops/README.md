@@ -12,7 +12,8 @@
 | [gather.md](gather.md) | L1 | gather/ | 외부 시장 데이터 (주가/수급/매크로/뉴스) |
 | [quant.md](quant.md) | L1 | quant/ | 기술적 분석 독립 엔진 — c.quant(), dartlab.quant() |
 | [search.md](search.md) | L0 | core/search/ | 공시 시맨틱 검색 *(alpha)* |
-| [analysis.md](analysis.md) | L2 | analysis/ | 14축 스토리텔링 재무분석, 6막 구조 |
+| [analysis.md](analysis.md) | L2 | analysis/ | 재무 심층분석 + 전망 + 가치평가, 6막 인과 구조 |
+| [macro.md](macro.md) | L2 | macro/ | 시장 레벨 매크로 분석 — Company 불필요 |
 | [review.md](review.md) | L2 | review/ | 블록-템플릿 보고서 렌더링, 4 출력 형식 |
 | [credit.md](credit.md) | L2 | credit/ | 독립 신용평가 (dCR 20단계, 7축, 투명 공개) |
 | [ai.md](ai.md) | L3 | ai/ | 적극적 분석가, 5 provider |
@@ -33,7 +34,8 @@ L0 (인프라)     core/          protocols, finance, docs, registry, search
 L1 (데이터)     providers/     DART, EDGAR, EDINET
                 gather/        주가, 수급, 매크로, 뉴스
                 scan/          시장 횡단분석 — scan("그룹", "축")
-L2 (분석)       analysis/      재무+전망+가치평가+기술적 — analysis("그룹", "축")
+L2 (분석)       analysis/      재무+전망+가치평가 — analysis("그룹", "축")
+                macro/         시장 레벨 매크로 분석 — dartlab.macro("축")
                 credit/        독립 신용평가 엔진 — c.credit()
                 review/        블록식 조합 보고서 (analysis + credit 블록)
 L3 (AI)         ai/            적극적 분석가
@@ -45,6 +47,7 @@ L4 (표현)       ui/ + vscode/  Svelte SPA + VSCode 확장
 ## 엔진 독립 규칙
 
 - **analysis ↛ credit, credit ↛ analysis** — 같은 L2지만 서로 참조하지 않는다
+- **macro ↛ analysis, analysis ↛ macro** — 같은 L2지만 서로 참조하지 않는다
 - analysis가 신용 지표 필요하면 자체 체계로 만든다. credit도 재무비율 필요하면 Company(finance)에서 직접 가져온다
 - **review가 조합한다** — analysis 블록과 credit 블록을 성격별로 블록식으로 조합하여 보고서 구성
 

@@ -43,6 +43,8 @@ CATALOG: dict[str, list[CatalogEntry]] = {
         CatalogEntry("T10Y2Y", "장단기 스프레드", "rates", "Daily", "Percent", "10년-2년 국채 수익률 스프레드"),
         CatalogEntry("T10Y3M", "10Y-3M 스프레드", "rates", "Daily", "Percent", "10년 국채-3개월 국채 스프레드"),
         CatalogEntry("BAMLH0A0HYM2", "하이일드 스프레드", "rates", "Daily", "Percent", "ICE BofA 하이일드 OAS"),
+        CatalogEntry("BAMLC0A0CM", "IG 스프레드", "rates", "Daily", "Percent", "ICE BofA 투자등급 OAS"),
+        CatalogEntry("DFII10", "실질금리 10년", "rates", "Daily", "Percent", "10년 TIPS 실질금리"),
     ],
     "employment": [
         CatalogEntry("UNRATE", "실업률", "employment", "Monthly", "Percent", "미국 실업률 (U-3)"),

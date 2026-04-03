@@ -632,24 +632,10 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
             ),
         ),
     ),
-    # ── 6부: 매크로 ──
-    "매크로환경": _AxisEntry(
-        section="매크로환경",
-        partId="6-1",
-        description="지금 경제는 어떤 국면이고 이 회사에 어떤 의미인가",
-        example='analysis("macro", "매크로환경")',
-        calcs=(
-            _CalcEntry(
-                "calcMacroEnvironment",
-                "dartlab.analysis.financial.macroExposure",
-                "macroEnvironment",
-                "경제 사이클 + 기업 포지션",
-            ),
-        ),
-    ),
+    # ── 6부: 매크로 (기업-매크로 연결만 — 시장 자체 분석은 dartlab.macro() 엔진) ──
     "매크로민감도": _AxisEntry(
         section="매크로민감도",
-        partId="6-2",
+        partId="6-1",
         description="이 회사의 매출은 어떤 매크로 변수에 민감한가",
         example='analysis("macro", "매크로민감도")',
         calcs=(
@@ -661,23 +647,9 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
             ),
         ),
     ),
-    "자산신호": _AxisEntry(
-        section="자산신호",
-        partId="6-3",
-        description="금리·환율·금·VIX가 이 회사에 어떤 신호를 보내는가",
-        example='analysis("macro", "자산신호")',
-        calcs=(
-            _CalcEntry(
-                "calcAssetSignals",
-                "dartlab.analysis.financial.macroExposure",
-                "assetSignals",
-                "5대 자산 해석 + 기업 연관성",
-            ),
-        ),
-    ),
     "밸류에이션밴드": _AxisEntry(
         section="밸류에이션밴드",
-        partId="6-4",
+        partId="6-2",
         description="PER/PBR이 과거 대비 어디에 있는가",
         example='analysis("macro", "밸류에이션밴드")',
         calcs=(
@@ -716,7 +688,7 @@ _GROUPS: dict[str, list[str]] = {
     "valuation": ["가치평가"],
     "governance": ["지배구조", "공시변화", "비교분석"],
     "forecast": ["매출전망", "예측신호"],
-    "macro": ["매크로환경", "매크로민감도", "자산신호", "밸류에이션밴드"],
+    "macro": ["매크로민감도", "밸류에이션밴드"],
 }
 
 # 역매핑: 축 → 소속 그룹
@@ -759,13 +731,9 @@ _ALIASES: dict[str, str] = {
     "prediction": "예측신호",
     "predictionSignals": "예측신호",
     "전망신호": "예측신호",
-    # macro 그룹
-    "macroEnvironment": "매크로환경",
+    # macro 그룹 (기업-매크로 연결만 — 시장 분석은 dartlab.macro())
     "macroSensitivity": "매크로민감도",
-    "assetSignals": "자산신호",
     "valuationBand": "밸류에이션밴드",
-    "경제환경": "매크로환경",
-    "경제사이클": "매크로환경",
     "민감도": "매크로민감도",
     "멀티플밴드": "밸류에이션밴드",
     # 그룹 alias (한글)

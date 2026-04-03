@@ -596,10 +596,12 @@ revenue(c)  # 도메인 차트를 먼저 사용 — 1줄로 자동 생성
 | 기업 분석/수익성/부채 등 | **analysis** | `c.analysis("financial", "수익성")` → dict |
 | 신용등급/건전도 | **credit** | `c.credit(detail=True)` → dict |
 | 시장비교/순위/TOP N | **scan** | `dartlab.scan("profitability")` → DataFrame |
-| 주가/수급/뉴스/매크로 | **gather** | `c.gather("price")` → DataFrame |
+| 경제사이클/금리방향/시장심리 | **macro** | `dartlab.macro("사이클")` → dict (Company 불필요) |
+| 주가/수급/뉴스 | **gather** | `c.gather("price")` → DataFrame |
 | 기술적분석/매매신호 | **quant** | `c.quant()` → 종합 판단 |
 | 특정 계정 조회 | **show/select** | `c.select("IS", ["매출액"])` → DataFrame |
 | 보고서 형태 요청 | **review** | `c.review("수익성").toMarkdown()` |
+| 공시 원문 검색 | **search** | `dartlab.search("유상증자", corp="005930")` → DataFrame |
 | 실시간 뉴스/이슈 | **검색** | `newsSearch("키워드")` |
 | 모르겠으면 | **capabilities** | `dartlab.capabilities(search="키워드")` |
 
@@ -607,7 +609,9 @@ revenue(c)  # 도메인 차트를 먼저 사용 — 1줄로 자동 생성
 - **analysis가 기본 도구.** dict 반환 → 핵심 수치를 마크다운 테이블로 정리. print(dict) 금지.
 - **review()/reviewer() 호출 금지** — 네가 분석가. analysis로 가져와서 직접 해석.
 - **scan은 횡단 비교용.** `print(df.head(3))`으로 컬럼 확인 후 사용. join 금지(타임아웃).
-- **gather는 None 가능** — 반드시 None 체크. 축: price/flow/news/macro/peers/sector/insider/ownership.
+- **gather는 None 가능** — 반드시 None 체크. 축: price/flow/news/peers/sector/insider/ownership.
+- **macro는 독립 엔진** — `dartlab.macro("사이클"|"금리"|"자산"|"심리"|"유동성"|"종합")`. Company 불필요. market="US"|"KR". 반환 dict → `print(result.keys())`로 키 확인 후 사용.
+- **search는 corp 없이도 전체 검색 가능** — `dartlab.search("대표이사 변경")` → 전 상장사 공시 검색.
 - **c.sections 접근 금지** (409MB). show(topic)으로 개별 조회.
 - **구조 모르면** print(result.keys()) 또는 capabilities(search=).
 

@@ -7,7 +7,7 @@
 | 레이어 | L1 |
 | 진입점 | `dartlab.gather()`, `c.gather()` |
 | 소비 | 외부 API (Naver, Yahoo, FRED, ECOS, Google News) |
-| 생산 | analysis가 gather 데이터를 소비 (주가, 매크로) |
+| 생산 | analysis, macro가 gather 데이터를 소비 (주가, 매크로) |
 | 축 | 4축: price, flow, macro, news |
 
 ## 4축
@@ -53,6 +53,13 @@ Company-bound: `c.gather("price")` — 종목코드 재전달 불필요.
 | ownership.py | 주주 정보 |
 | listing.py | 종목 리스팅 + fuzzy search |
 | resilience.py | Circuit breaker |
+
+## 소비 경로
+
+gather 매크로 데이터를 두 엔진이 소비한다:
+
+- **macro(L2)**: `dartlab.macro()` — 시장 레벨 매크로 해석 (사이클/금리/자산/심리/유동성). Company 불필요. → ops/macro.md
+- **analysis(L2)**: `c.analysis("financial", "매크로민감도")` — 기업별 외생변수 회귀. Company-bound.
 
 ## 외생변수 체계 (analysis 연동)
 

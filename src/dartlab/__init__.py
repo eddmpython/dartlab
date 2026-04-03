@@ -846,6 +846,12 @@ class _Module(sys.modules[__name__].__class__):
             instance = Quant()
             setattr(self, name, instance)
             return instance
+        if name == "macro":
+            from dartlab.macro import Macro
+
+            instance = Macro()
+            setattr(self, name, instance)
+            return instance
         if name == "viz":
             import dartlab.viz as _viz
 
@@ -900,6 +906,7 @@ __all__ = [
     "gather",
     "quant",
     "credit",
+    "macro",
     "verbose",
     "dataDir",
     "codeToName",
