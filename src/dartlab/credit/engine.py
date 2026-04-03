@@ -277,38 +277,17 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         captive = _isCaptiveByOFS(company, latest.get("totalBorrowing") or 0)
     cyclical = _isCyclical(sector)
 
-    # 자본집약 자동 감지 (CAPEX/자산 > 5% 또는 D/EBITDA > 5)
-    capexRatio = None
-    capex = latest.get("fcf") is not None and latest.get("ocf") is not None
-    if latest.get("totalAssets") and latest.get("totalAssets") > 0:
-        capexVal = abs((latest.get("ocf") or 0) - (latest.get("fcf") or 0))
-        capexRatio = capexVal / latest["totalAssets"] * 100
-    capitalIntensive = (capexRatio is not None and capexRatio > 5) or (latest.get("debtToEbitda") or 0) > 8
+    # 기준표 선택 (캡티브 > 지주 > 업종별 > 기본)
+    if captive:
+        from dartlab.core.finance.sectorThresholds import _airlineThresholds
 
-    # 기준표 선택 (우선순위: 유틸리티 > 캡티브 > 지주 > 자본집약 > 업종별 > 기본)
-    from dartlab.core.finance.sectorThresholds import _airlineThresholds, _holdingThresholds
-    from dartlab.core.sector.types import Sector
-
-    if sector == Sector.UTILITIES:
-        # #3 유틸리티 섹터 최우선 (한전 — 공기업, capitalIntensive보다 우선)
-        thresholds = getThresholds(sector, industryGroup)
-        sectorLabel = getSectorLabel(sector)
-    elif captive:
         thresholds = _airlineThresholds()
         sectorLabel = f"{getSectorLabel(sector)} (캡티브금융조정)"
     elif holding:
+        from dartlab.core.finance.sectorThresholds import _holdingThresholds
+
         thresholds = _holdingThresholds()
         sectorLabel = f"{getSectorLabel(sector)} (지주사조정)"
-    elif capitalIntensive:
-        # #2 자본집약: D/EBITDA + 부채비율 + 유동비율 완화
-        base = getThresholds(sector, industryGroup)
-        capThresh = _airlineThresholds()
-        base["debt_to_ebitda"] = capThresh["debt_to_ebitda"]
-        base["debt_ratio"] = capThresh["debt_ratio"]
-        base["net_debt_to_ebitda"] = capThresh["net_debt_to_ebitda"]
-        base["current_ratio"] = capThresh.get("current_ratio", base["current_ratio"])  # #2 유동 완화
-        thresholds = base
-        sectorLabel = f"{getSectorLabel(sector)} (자본집약조정)"
     else:
         thresholds = getThresholds(sector, industryGroup)
         sectorLabel = getSectorLabel(sector)
@@ -330,8 +309,8 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
     ]
     axis2 = axisScore(axis2_scores)
 
-    # ── 별도재무제표 블렌딩 (#1+#5: 지주/캡티브/자본집약 모두) ──
-    _needsOFS = holding or captive or capitalIntensive
+    # ── 별도재무제표 블렌딩 (지주/캡티브만) ──
+    _needsOFS = holding or captive
     sepMetrics = None
     if _needsOFS and axis1 is not None:
         from dartlab.credit.metrics import calcSeparateMetrics
