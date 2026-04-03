@@ -93,12 +93,17 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
     )
     cyclical = _isCyclical(sector)
 
-    # 캡티브 금융이면 유틸리티 기준 적용
+    # 지주사/캡티브 금융이면 특화 기준 적용
     if captive:
         from dartlab.core.sector.types import Sector
 
         thresholds = getThresholds(Sector.UTILITIES, None)
         sectorLabel = f"{getSectorLabel(sector)} (캡티브금융조정)"
+    elif holding:
+        from dartlab.core.finance.sectorThresholds import _holdingThresholds
+
+        thresholds = _holdingThresholds()
+        sectorLabel = f"{getSectorLabel(sector)} (지주사조정)"
     else:
         thresholds = getThresholds(sector, industryGroup)
         sectorLabel = getSectorLabel(sector)

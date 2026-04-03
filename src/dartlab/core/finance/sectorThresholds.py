@@ -403,6 +403,72 @@ def _autoThresholds() -> dict:
     return base
 
 
+def _airlineThresholds() -> dict:
+    """항공/해운 — IFRS16 리스 부채, 높은 감가상각, 탑승률 민감."""
+    base = _defaultThresholds()
+    base["debt_ratio"]["breakpoints"] = [
+        (0.0, 0), (50.0, 2), (100.0, 5), (150.0, 10),
+        (200.0, 15), (300.0, 25), (400.0, 38),
+        (500.0, 55), (700.0, 75),
+    ]
+    base["debt_to_ebitda"]["breakpoints"] = [
+        (0.0, 0), (1.0, 3), (2.0, 8), (3.0, 15),
+        (4.0, 22), (5.0, 32), (7.0, 48),
+        (10.0, 65), (15.0, 85),
+    ]
+    base["net_debt_to_ebitda"]["breakpoints"] = [
+        (0.0, 0), (1.0, 5), (2.0, 10), (3.0, 18),
+        (5.0, 30), (7.0, 48), (10.0, 68), (15.0, 88),
+    ]
+    base["borrowing_dependency"]["breakpoints"] = [
+        (0.0, 0), (10.0, 3), (20.0, 8), (30.0, 15),
+        (40.0, 28), (50.0, 42), (60.0, 62), (70.0, 80),
+    ]
+    return base
+
+
+def _holdingThresholds() -> dict:
+    """지주사 — 지분법 자산/손익, 연결 부채 과대. 비영업자산 비중 높음."""
+    base = _defaultThresholds()
+    base["debt_ratio"]["breakpoints"] = [
+        (0.0, 0), (50.0, 2), (100.0, 5), (150.0, 10),
+        (200.0, 18), (300.0, 28), (400.0, 42),
+        (600.0, 62), (800.0, 80),
+    ]
+    base["debt_to_ebitda"]["breakpoints"] = [
+        (0.0, 0), (1.0, 3), (2.0, 8), (3.0, 15),
+        (5.0, 25), (8.0, 40), (12.0, 58),
+        (18.0, 75), (25.0, 90),
+    ]
+    base["net_debt_to_ebitda"]["breakpoints"] = [
+        (0.0, 0), (1.0, 5), (3.0, 12), (5.0, 22),
+        (8.0, 35), (12.0, 52), (18.0, 72), (25.0, 88),
+    ]
+    return base
+
+
+def _metalsThresholds() -> dict:
+    """비철금속/광업 — CAPEX 사이클, 원자재 가격 민감."""
+    base = _energyThresholds()
+    base["debt_to_ebitda"]["breakpoints"] = [
+        (0.0, 0), (0.5, 3), (1.5, 8), (2.5, 15),
+        (4.0, 25), (6.0, 40), (8.0, 58),
+        (12.0, 75), (18.0, 90),
+    ]
+    return base
+
+
+def _telecomThresholds() -> dict:
+    """통신 — 높은 설비투자, 안정 현금흐름, 규제 산업."""
+    base = _utilitiesThresholds()
+    base["debt_to_ebitda"]["breakpoints"] = [
+        (0.0, 0), (0.5, 2), (1.0, 5), (1.5, 10),
+        (2.0, 15), (3.0, 25), (4.0, 38),
+        (6.0, 55), (8.0, 75),
+    ]
+    return base
+
+
 # ── IndustryGroup별 override ──
 
 _INDUSTRY_THRESHOLDS: dict[IndustryGroup, dict] = {
@@ -417,6 +483,9 @@ _INDUSTRY_THRESHOLDS: dict[IndustryGroup, dict] = {
     IndustryGroup.CHEMICAL: _energyThresholds(),
     IndustryGroup.ELECTRIC: _utilitiesThresholds(),
     IndustryGroup.GAS_UTILITY: _utilitiesThresholds(),
+    IndustryGroup.AEROSPACE_DEFENSE: _airlineThresholds(),
+    IndustryGroup.METALS: _metalsThresholds(),
+    IndustryGroup.TELECOM: _telecomThresholds(),
 }
 
 _SECTOR_THRESHOLDS[Sector.ENERGY] = _energyThresholds()
