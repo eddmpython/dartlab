@@ -193,10 +193,19 @@ def _calcCHSAdjustment(company, baseScore: float) -> dict | None:
         else:
             chsScore = 80  # B 이하
 
-        # ±2 notch 범위 = score ±6 정도 (1 notch ≈ 3점)
+        # PD 기반 비대칭 조정 — 안전 기업 상향, 위험 기업 하향
         diff = chsScore - baseScore
-        maxAdj = 6.0  # ±2 notch
-        adj = max(min(diff * 0.15, 3.0), -3.0)  # 15% 반영, 최대 ±1 notch(≈3점)
+        if chsPd <= 0.001:  # 극안전 (AAA급 PD)
+            adj = max(-5.0, diff * 0.3)
+        elif chsPd <= 0.01:  # 투자적격 확실 — 상향만 허용
+            adj = max(-3.0, min(0, diff * 0.2))
+        elif chsPd > 0.10:  # 부실 신호 — 하향만
+            adj = min(5.0, max(0, diff * 0.2))
+        else:  # 중간 대역
+            adj = max(min(diff * 0.15, 3.0), -3.0)
+        # 안전장치: BB 이하(score>40)이면 CHS 상향 제한
+        if baseScore > 40:
+            adj = max(adj, -3.0)
 
         return {
             "adjustedScore": round(baseScore + adj, 2),
@@ -262,8 +271,8 @@ def _calcNotchAdjustment(
 
     총 ±5 notch cap. score 15 이하(AA 이상)에는 미적용 (퇴행 방지).
     """
-    # 이미 우량인 기업은 조정 불필요 (퇴행 방지)
-    if score <= 15:
+    # AA 이상(score<=10)은 조정 불필요 (퇴행 방지)
+    if score <= 10:
         return {"totalNotch": 0, "reasons": []}
 
     notches: list[tuple[int, str]] = []
@@ -300,9 +309,12 @@ def _calcNotchAdjustment(
 
     # 총 notch 합산 (상한 5)
     totalNotch = min(sum(n for n, _ in notches), 5)
-    # 음수 notch(하향)는 없으므로 상향만
-    reasons = [r for _, r in notches]
 
+    # A 범위(10 < score <= 19): 과보정 방지, 최대 2 notch
+    if score <= 19:
+        totalNotch = min(totalNotch, 2)
+
+    reasons = [r for _, r in notches]
     return {"totalNotch": totalNotch, "reasons": reasons}
 
 
@@ -410,7 +422,11 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
             ]
             sep1 = axisScore(sep_axis1_scores)
             if sep1 is not None and axis1 is not None:
-                axis1 = round(axis1 * 0.5 + sep1 * 0.5, 2)
+                # 동적 블렌딩: 별도가 10점+ 양호하면 별도 비중 65%
+                if sep1 < axis1 - 10:
+                    axis1 = round(axis1 * 0.35 + sep1 * 0.65, 2)
+                else:
+                    axis1 = round(axis1 * 0.5 + sep1 * 0.5, 2)
 
             # 축2: 별도 부채비율 블렌딩
             sep_axis2_scores = [
@@ -422,7 +438,15 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
             ]
             sep2 = axisScore(sep_axis2_scores)
             if sep2 is not None and axis2 is not None:
-                axis2 = round(axis2 * 0.5 + sep2 * 0.5, 2)
+                if sep2 < axis2 - 10:
+                    axis2 = round(axis2 * 0.35 + sep2 * 0.65, 2)
+                else:
+                    axis2 = round(axis2 * 0.5 + sep2 * 0.5, 2)
+
+    # ── Phase 4: 캡티브/지주/사이클 축1 압축 (20 초과분 40% 감쇄) ──
+    if (captive or holding or cyclical) and axis1 is not None and axis1 > 20:
+        excess = axis1 - 20
+        axis1 = round(20 + excess * 0.6, 2)
 
     # ── 축 3: 유동성 ──
     axis3_scores = [
