@@ -72,7 +72,10 @@ def _filterAxis(result: dict, axis: str) -> dict | None:
     resolved = _resolveAxis(axis)
     if resolved is None:
         available = ", ".join(sorted(_CREDIT_AXES))
-        raise ValueError(f"알 수 없는 신용평가 축: '{axis}'. 가용 축: {available}")
+        raise ValueError(
+            f"알 수 없는 신용평가 축: '{axis}'. 가용 축: {available}\n"
+            f"  사용법: c.credit() 으로 전체 신용평가 결과를 확인하세요."
+        )
 
     fullName = _CREDIT_AXES[resolved]
     for a in result.get("axes", []):

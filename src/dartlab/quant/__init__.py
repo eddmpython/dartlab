@@ -23,6 +23,9 @@ from dartlab.quant.analyzer import enrichWithIndicators, technicalVerdict
 __all__ = ["Quant", "enrichWithIndicators", "technicalVerdict"]
 
 
+_VALID_METRICS = {"indicators", "signals", "beta", "divergence", "flags"}
+
+
 class Quant:
     """주가 기술적 분석 독립 엔진.
 
@@ -44,6 +47,12 @@ class Quant:
         """
         if stockCode is None:
             return self._guide()
+        if metric is not None and metric not in _VALID_METRICS:
+            available = ", ".join(sorted(_VALID_METRICS))
+            raise ValueError(
+                f"알 수 없는 quant metric: '{metric}'. 가용: {available}\n"
+                f"  사용법: dartlab.quant() 로 가이드를 확인하세요."
+            )
 
         ohlcv = self._fetchOHLCV(stockCode, **kwargs)
         if ohlcv is None or ohlcv.is_empty():

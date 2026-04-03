@@ -317,3 +317,45 @@ def _checkMcp(**_kw: Any) -> ReadinessResult:
         )
     status = ReadyStatus.NOT_READY if issues else ReadyStatus.READY
     return ReadinessResult(feature="mcp", status=status, issues=issues)
+
+
+@registerChecker("credit")
+def _checkCredit(*, stockCode: str | None = None, **_kw: Any) -> ReadinessResult:
+    """신용평가 점검 — finance 데이터 필요."""
+    financeResult = _checkFinance(stockCode=stockCode)
+    return ReadinessResult(
+        feature="credit",
+        status=financeResult.status,
+        issues=list(financeResult.issues),
+    )
+
+
+@registerChecker("quant")
+def _checkQuant(**_kw: Any) -> ReadinessResult:
+    """기술적 분석 점검 — 주가 데이터(네트워크) 필요."""
+    return ReadinessResult(feature="quant", status=ReadyStatus.READY)
+
+
+@registerChecker("gather")
+def _checkGather(*, axis: str | None = None, **_kw: Any) -> ReadinessResult:
+    """외부 데이터 수집 점검."""
+    issues: list[ReadinessIssue] = []
+    if axis == "macro":
+        import os
+
+        if not os.environ.get("ECOS_API_KEY") and not os.environ.get("FRED_API_KEY"):
+            from dartlab.guide.hints import onKeyRequired
+
+            issues.append(
+                ReadinessIssue(
+                    kind="missing_key",
+                    message="매크로 데이터 수집에 ECOS 또는 FRED API 키가 필요합니다",
+                    fixAction=onKeyRequired("ecos").strip(),
+                    severity="warning",
+                )
+            )
+    return ReadinessResult(
+        feature="gather",
+        status=ReadyStatus.PARTIAL if issues else ReadyStatus.READY,
+        issues=issues,
+    )
