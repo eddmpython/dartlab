@@ -44,8 +44,154 @@ def _isFinancial(company) -> bool:
 
 
 def _isHolding(company) -> bool:
+    """지주사 판별 — 이름 + 재무 구조 복합 기준.
+
+    1. 이름에 "지주"/"홀딩스"/"Holdings" 포함
+    2. 관계기업투자자산/총자산 > 40% (재무 구조 기반)
+    """
     name = getattr(company, "corpName", "") or ""
-    return any(k in name for k in ("지주", "홀딩스", "Holdings"))
+    if any(k in name for k in ("지주", "홀딩스", "Holdings")):
+        return True
+    # 재무 구조 기반: 관계기업 투자자산 비중
+    try:
+        bs = company.select("BS", ["종속기업,관계기업및공동기업투자", "관계기업등지분관련투자자산", "자산총계"])
+        if bs is not None and len(bs) > 0:
+            from dartlab.analysis.financial._helpers import toDict
+            parsed = toDict(bs)
+            if parsed:
+                data, periods = parsed
+                invest = data.get("종속기업,관계기업및공동기업투자", {}) or data.get("관계기업등지분관련투자자산", {})
+                ta = data.get("자산총계", {})
+                # 최신 기간
+                for p in sorted(periods, reverse=True):
+                    inv_val = invest.get(p)
+                    ta_val = ta.get(p)
+                    if inv_val and ta_val and ta_val > 0:
+                        ratio = inv_val / ta_val
+                        if ratio > 0.4:
+                            return True
+                        break
+    except (TypeError, ValueError, KeyError, AttributeError):
+        pass
+    return False
+
+
+def _calcCHSAdjustment(company, baseScore: float) -> dict | None:
+    """CHS 부도확률 모델로 기본 점수를 ±2 notch 범위 보정.
+
+    주가 데이터 없으면 None (보정 스킵).
+    """
+    try:
+        from dartlab.core.finance.chsModel import calcCHS
+
+        priceData = company.gather("price") if hasattr(company, "gather") else None
+        if priceData is None or len(priceData) < 20:
+            return None
+
+        bs = company.select("BS", ["자산총계", "부채총계", "현금및현금성자산"])
+        is_ = company.select("IS", ["당기순이익"])
+        from dartlab.analysis.financial._helpers import toDict
+        bsParsed = toDict(bs)
+        isParsed = toDict(is_)
+        if not bsParsed or not isParsed:
+            return None
+
+        bsData, periods = bsParsed
+        isData, _ = isParsed
+
+        # 최신 기간
+        p = sorted(periods, reverse=True)[0] if periods else None
+        if not p:
+            return None
+
+        ta = (bsData.get("자산총계", {}) or {}).get(p)
+        tl = (bsData.get("부채총계", {}) or {}).get(p)
+        cash = (bsData.get("현금및현금성자산", {}) or {}).get(p)
+        ni = (isData.get("당기순이익", {}) or {}).get(p)
+
+        if not all(v is not None and v != 0 for v in [ta, tl]):
+            return None
+
+        # 주가 데이터에서 시가총액, 변동성, 수익률 추출
+        import polars as pl
+        prices = priceData.sort("date") if "date" in priceData.columns else priceData
+        closeCol = "close" if "close" in prices.columns else "종가"
+        if closeCol not in prices.columns:
+            return None
+
+        closes = prices[closeCol].drop_nulls().to_list()
+        if len(closes) < 20:
+            return None
+
+        latestPrice = closes[-1]
+        # 시가총액 추정 (shares 없으면 간이 계산)
+        shares = getattr(company, "shares", None)
+        if shares is None:
+            # 자본/주가로 추정
+            eq = ta - tl if ta and tl else None
+            shares = eq / latestPrice if eq and latestPrice > 0 else None
+        if not shares:
+            return None
+
+        marketCap = shares * latestPrice
+        mta = ta - (tl or 0) + marketCap  # Market Total Assets
+
+        # CHS 변수
+        import math
+        nimta = (ni or 0) / mta if mta > 0 else 0
+        tlmta = (tl or 0) / mta if mta > 0 else 0
+        cashmta = (cash or 0) / mta if mta > 0 else 0
+
+        # 변동성 (연환산 일별 수익률 표준편차)
+        returns = [(closes[i] - closes[i-1]) / closes[i-1] for i in range(1, len(closes)) if closes[i-1] != 0]
+        if len(returns) < 10:
+            return None
+        mean_r = sum(returns) / len(returns)
+        var_r = sum((r - mean_r)**2 for r in returns) / len(returns)
+        sigma = (var_r ** 0.5) * (252 ** 0.5)
+
+        rsize = math.log(marketCap / 1e15) if marketCap > 0 else 0  # 시장 대비 상대 크기
+        exret = (closes[-1] / closes[0] - 1) if closes[0] != 0 else 0  # 기간 수익률
+        mb = marketCap / (ta - tl) if (ta - tl) > 0 else 1.0
+        price_log = min(math.log(max(latestPrice, 1)), math.log(15))
+
+        chsResult = calcCHS(
+            nimta=nimta, tlmta=tlmta, cashmta=cashmta,
+            sigma=sigma, rsize=rsize, exret=exret,
+            mb=mb, price=price_log,
+        )
+
+        if chsResult is None:
+            return None
+
+        # CHS PD → 점수 매핑 (0-100 스케일)
+        chsPd = chsResult.probability
+        if chsPd <= 0.001:
+            chsScore = 3  # AAA 급
+        elif chsPd <= 0.01:
+            chsScore = 10  # AA 급
+        elif chsPd <= 0.05:
+            chsScore = 25  # A 급
+        elif chsPd <= 0.1:
+            chsScore = 40  # BBB 급
+        elif chsPd <= 0.3:
+            chsScore = 60  # BB 급
+        else:
+            chsScore = 80  # B 이하
+
+        # ±2 notch 범위 = score ±6 정도 (1 notch ≈ 3점)
+        diff = chsScore - baseScore
+        maxAdj = 6.0  # ±2 notch
+        adj = max(min(diff * 0.3, maxAdj), -maxAdj)  # 30% 반영, 최대 ±6
+
+        return {
+            "adjustedScore": round(baseScore + adj, 2),
+            "chsScore": chsScore,
+            "chsPd": chsPd,
+            "adjustment": round(adj, 2),
+        }
+    except (ImportError, TypeError, ValueError, KeyError, AttributeError, ZeroDivisionError):
+        return None
 
 
 def _isCaptiveFinance(totalBorrowing: float, ebitda: float | None, isFinancial: bool) -> bool:
@@ -185,6 +331,11 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         overall = currentScore
     overall = round(overall, 2)
 
+    # ── CHS 부도확률 보정 (±2 notch) ──
+    chsResult = _calcCHSAdjustment(company, overall)
+    if chsResult is not None:
+        overall = chsResult["adjustedScore"]
+
     grade, gradeDesc, pdEstimate = mapTo20Grade(overall)
 
     # ── eCR ──
@@ -218,7 +369,8 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         "captiveFinance": captive,
         "holding": holding,
         "latestPeriod": latest.get("period"),
-        "methodologyVersion": "v1.0",
+        "chsAdjustment": chsResult,
+        "methodologyVersion": "v2.0",
         "axes": [
             {
                 "name": a["name"],
