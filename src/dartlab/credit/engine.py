@@ -68,7 +68,7 @@ def _isHolding(company) -> bool:
                     ta_val = ta.get(p)
                     if inv_val and ta_val and ta_val > 0:
                         ratio = inv_val / ta_val
-                        if ratio > 0.4:
+                        if ratio > 0.5:
                             return True
                         break
     except (TypeError, ValueError, KeyError, AttributeError):
@@ -223,14 +223,25 @@ def evaluate(stockCode: str, *, detail: bool = False, basePeriod: str | None = N
 
 
 def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = None) -> dict | None:
-    """Company 객체로 신용등급 산출."""
+    """Company 객체로 신용등급 산출.
+
+    기업 유형에 따라 3-Track 분기:
+    - Track A: 일반기업 (기존 7축)
+    - Track B: 금융업 (5축 전용)
+    - Track C: 지주사 (7축 + 가중치 차별화)
+    """
+    sector, industryGroup = _getSectorInfo(company)
+    isFinancialCo = _isFinancial(company)
+
+    # ── Track B: 금융업 전용 평가 ──
+    if isFinancialCo:
+        return _evaluateFinancial(company, detail=detail, basePeriod=basePeriod, sector=sector)
+
     metrics = calcAllMetrics(company, basePeriod=basePeriod)
     if metrics is None or not metrics.get("history"):
         return None
 
     latest = metrics["history"][0]
-    sector, industryGroup = _getSectorInfo(company)
-    isFinancialCo = _isFinancial(company)
     holding = _isHolding(company)
     captive = _isCaptiveFinance(
         latest.get("totalBorrowing") or 0,
@@ -300,12 +311,12 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
     axis7 = axisScore(axis7_scores)
 
     # ── 가중평균 ──
-    if isFinancialCo:
-        w = [0.25, 0.20, 0.15, 0.15, 0.10, 0.10, 0.05]
-    elif captive or cyclical:
+    # isFinancialCo는 이미 Track B로 분기됨 (여기 도달 안 함)
+    if captive or cyclical:
         w = [0.30, 0.15, 0.15, 0.15, 0.10, 0.10, 0.05]
     elif holding:
-        w = [0.25, 0.20, 0.15, 0.15, 0.10, 0.10, 0.05]
+        # 지주사: 채무상환능력↓ 자본구조↑ 사업안정성↑ (연결 D/EBITDA 왜곡 보정)
+        w = [0.15, 0.25, 0.15, 0.15, 0.15, 0.10, 0.05]
     else:
         w = [0.25, 0.20, 0.15, 0.15, 0.10, 0.10, 0.05]
 
@@ -625,3 +636,150 @@ def _calcHistoricalScores(metrics: dict, thresholds: dict) -> list[float]:
         if pScores:
             scores.append(round(sum(pScores) / len(pScores), 2))
     return scores
+
+
+# ═══════════════════════════════════════════════════════════
+# Track B: 금융업 전용 평가
+# ═══════════════════════════════════════════════════════════
+
+
+def _evaluateFinancial(
+    company,
+    *,
+    detail: bool = False,
+    basePeriod: str | None = None,
+    sector=None,
+) -> dict | None:
+    """금융업(은행/보험/증권) 전용 5축 평가.
+
+    D/EBITDA, FFO/Debt를 사용하지 않고
+    자본비율, ROA, NIM, 충당금 비율로 평가.
+    """
+    from dartlab.credit.metrics import calcFinancialMetrics
+
+    metrics = calcFinancialMetrics(company, basePeriod=basePeriod)
+    if metrics is None or not metrics.get("history"):
+        return None
+
+    from dartlab.core.finance.sectorThresholds import financialTrackBThresholds
+
+    thresholds = financialTrackBThresholds()
+    latest = metrics["history"][0]
+
+    # ── 축1: 자본적정성 ──
+    ax1 = [
+        ("자기자본비율", scoreMetric(latest.get("equityRatio"), thresholds["equity_ratio"])),
+    ]
+    s1 = axisScore(ax1)
+
+    # ── 축2: 수익성 ──
+    ax2 = [
+        ("ROA", scoreMetric(latest.get("roa"), thresholds["roa"])),
+        ("NIM대리", scoreMetric(latest.get("nimProxy"), thresholds["nim_proxy"])),
+    ]
+    s2 = axisScore(ax2)
+
+    # ── 축3: 자산건전성 ──
+    ax3 = [
+        ("충당금비율", scoreMetric(latest.get("provisionRatio"), thresholds["provision_ratio"])),
+    ]
+    s3 = axisScore(ax3)
+
+    # ── 축4: 유동성 ──
+    ax4 = [
+        ("현금/자산", scoreMetric(latest.get("cashToAsset"), thresholds["cash_to_asset"])),
+        ("유동비율", scoreMetric(latest.get("currentRatio"), thresholds["current_ratio"])),
+    ]
+    s4 = axisScore(ax4)
+
+    # ── 축5: 사업안정성 ──
+    biz = metrics.get("businessStability", {})
+    ax5 = []
+    revCV = biz.get("revenueCV")
+    if revCV is not None:
+        ax5.append(("영업안정성", min(revCV, 100)))
+    totalAssets = biz.get("totalAssets")
+    if totalAssets and totalAssets > 50e12:
+        ax5.append(("규모", 0.0))  # 대형 금융지주 = 최소 위험
+    elif totalAssets and totalAssets > 10e12:
+        ax5.append(("규모", 15.0))
+    else:
+        ax5.append(("규모", 35.0))
+    s5 = axisScore(ax5) if ax5 else 25.0
+
+    # ── 가중평균 ──
+    w = [0.25, 0.25, 0.20, 0.15, 0.15]
+    axes = [
+        {"name": "자본적정성", "score": s1, "weight": w[0], "metrics": ax1},
+        {"name": "수익성", "score": s2, "weight": w[1], "metrics": ax2},
+        {"name": "자산건전성", "score": s3, "weight": w[2], "metrics": ax3},
+        {"name": "유동성", "score": s4, "weight": w[3], "metrics": ax4},
+        {"name": "사업안정성", "score": s5, "weight": w[4], "metrics": ax5},
+    ]
+
+    currentScore = weightedScore([{"score": a["score"], "weight": a["weight"]} for a in axes])
+
+    # 시계열 안정화 (간이 — 과거 ROA/자본비율 추세)
+    historicalScores = []
+    for h in metrics["history"][1:3]:
+        scores = []
+        er = scoreMetric(h.get("equityRatio"), thresholds["equity_ratio"])
+        roa = scoreMetric(h.get("roa"), thresholds["roa"])
+        if er is not None:
+            scores.append(er)
+        if roa is not None:
+            scores.append(roa)
+        if scores:
+            historicalScores.append(sum(scores) / len(scores))
+
+    if len(historicalScores) >= 2:
+        overall = currentScore * 0.60 + historicalScores[0] * 0.25 + historicalScores[1] * 0.15
+    elif len(historicalScores) == 1:
+        overall = currentScore * 0.70 + historicalScores[0] * 0.30
+    else:
+        overall = currentScore
+    overall = round(overall, 2)
+
+    # CHS 보정
+    chsResult = _calcCHSAdjustment(company, overall)
+    if chsResult is not None:
+        overall = chsResult["adjustedScore"]
+
+    grade, gradeDesc, pdEstimate = mapTo20Grade(overall)
+
+    sectorLabel = f"{getSectorLabel(sector)} (Track B 금융전용)"
+
+    result = {
+        "grade": f"dCR-{grade}",
+        "gradeRaw": grade,
+        "gradeDescription": gradeDesc,
+        "gradeCategory": gradeCategory(grade),
+        "investmentGrade": isInvestmentGrade(grade),
+        "score": overall,
+        "healthScore": round(100 - overall, 2),
+        "currentScore": currentScore,
+        "pdEstimate": pdEstimate,
+        "eCR": None,
+        "outlook": creditOutlook([currentScore] + historicalScores),
+        "sector": sectorLabel,
+        "captiveFinance": False,
+        "holding": False,
+        "latestPeriod": latest.get("period"),
+        "chsAdjustment": chsResult,
+        "methodologyVersion": "v2.0-TrackB",
+        "axes": [
+            {
+                "name": a["name"],
+                "score": a["score"],
+                "weight": round(a["weight"] * 100),
+                "metrics": [{"name": n, "score": s} for n, s in a["metrics"] if s is not None],
+            }
+            for a in axes
+        ],
+    }
+
+    if detail:
+        result["metricsHistory"] = metrics["history"]
+        result["businessStability"] = metrics.get("businessStability")
+
+    return result

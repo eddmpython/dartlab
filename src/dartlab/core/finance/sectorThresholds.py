@@ -458,6 +458,59 @@ def _metalsThresholds() -> dict:
     return base
 
 
+def financialTrackBThresholds() -> dict:
+    """금융업 Track B 전용 기준표.
+
+    D/EBITDA, FFO/Debt를 사용하지 않음.
+    자기자본비율, ROA, NIM, 충당금 비율이 핵심.
+    은행: 자기자본비율 7~15%, ROA 0.3~1.5%, NIM 1~3%.
+    """
+    return {
+        "equity_ratio": {
+            "lower_is_better": False,
+            "breakpoints": [
+                (15.0, 0), (12.0, 5), (10.0, 12), (8.0, 22),
+                (7.0, 35), (6.0, 50), (5.0, 68), (4.0, 85),
+            ],
+        },
+        "roa": {
+            "lower_is_better": False,
+            "breakpoints": [
+                (1.5, 0), (1.0, 8), (0.7, 18), (0.5, 30),
+                (0.3, 45), (0.1, 62), (0.0, 80), (-0.5, 95),
+            ],
+        },
+        "nim_proxy": {
+            "lower_is_better": False,
+            "breakpoints": [
+                (3.0, 0), (2.5, 5), (2.0, 12), (1.5, 22),
+                (1.0, 38), (0.5, 58), (0.0, 80),
+            ],
+        },
+        "provision_ratio": {
+            "lower_is_better": True,
+            "breakpoints": [
+                (0.0, 0), (0.1, 5), (0.3, 12), (0.5, 25),
+                (1.0, 42), (2.0, 65), (3.0, 85),
+            ],
+        },
+        "cash_to_asset": {
+            "lower_is_better": False,
+            "breakpoints": [
+                (20.0, 0), (15.0, 8), (10.0, 18), (5.0, 35),
+                (3.0, 52), (1.0, 72), (0.0, 90),
+            ],
+        },
+        "current_ratio": {
+            "lower_is_better": False,
+            "breakpoints": [
+                (200.0, 0), (150.0, 10), (120.0, 20), (100.0, 35),
+                (80.0, 52), (60.0, 68), (40.0, 85),
+            ],
+        },
+    }
+
+
 def _telecomThresholds() -> dict:
     """통신 — 높은 설비투자, 안정 현금흐름, 규제 산업."""
     base = _utilitiesThresholds()

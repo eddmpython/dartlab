@@ -594,3 +594,140 @@ def _fetchAuditOpinion(company) -> str | None:
     except (AttributeError, ValueError, KeyError, TypeError):
         pass
     return None
+
+
+# ═══════════════════════════════════════════════════════════
+# Track B: 금융업 전용 지표 산출
+# ═══════════════════════════════════════════════════════════
+
+
+def calcFinancialMetrics(company, *, basePeriod: str | None = None) -> dict | None:
+    """금융업(은행/보험/증권) 전용 5축 지표 산출.
+
+    일반기업용 D/EBITDA, FFO/Debt 대신
+    자본비율, ROA, NIM 대리, 충당금 비율 등 금융업 핵심 지표 사용.
+    """
+    bsResult = company.select(
+        "BS",
+        ["자산총계", "부채총계", "자본총계", "유동자산", "유동부채", "현금및현금성자산"],
+    )
+    bsParsed = _toDict(bsResult)
+    if bsParsed is None:
+        return None
+    bsData, bsPeriods = bsParsed
+
+    isResult = company.select(
+        "IS",
+        ["이자수익", "금융이익", "금융비용", "4.금융비용", "당기순이익", "대손상각비", "영업이익"],
+    )
+    isParsed = _toDict(isResult)
+    if isParsed is None:
+        return None
+    isData, _ = isParsed
+
+    cfResult = company.select("CF", ["영업활동현금흐름", "4.금융비용", "금융비용"])
+    cfParsed = _toDict(cfResult)
+    cfData = cfParsed[0] if cfParsed else {}
+
+    yCols = _annualCols(bsPeriods, basePeriod, 9)
+    if len(yCols) < 2:
+        return None
+
+    _qMode = _isQuarterlyFallback(yCols)
+    _allP = set(bsPeriods)
+
+    intIncome = isData.get("이자수익", {}) or isData.get("금융이익", {})
+    intExpense = isData.get("금융비용", {}) or isData.get("4.금융비용", {})
+    ni = isData.get("당기순이익", {})
+    provision = isData.get("대손상각비", {})
+    oi = isData.get("영업이익", {})
+    ta = bsData.get("자산총계", {})
+    eq = bsData.get("자본총계", {})
+    cash = bsData.get("현금및현금성자산", {})
+    ca = bsData.get("유동자산", {})
+    cl = bsData.get("유동부채", {})
+    ocf = cfData.get("영업활동현금흐름", {})
+    cfFinCost = cfData.get("4.금융비용", {}) or cfData.get("금융비용", {})
+
+    history = []
+    roaList = []
+    revList = []
+
+    for col in yCols[:-1]:
+        totalAssets = ta.get(col)
+        equity = eq.get(col)
+        cashVal = cash.get(col)
+        curAssets = ca.get(col)
+        curLiab = cl.get(col)
+
+        if _qMode:
+            intInc = _ttmSum(intIncome, col, _allP)
+            intExp = _ttmSum(intExpense, col, _allP) or _ttmSum(cfFinCost, col, _allP)
+            netIncome = _ttmSum(ni, col, _allP)
+            provCharge = _ttmSum(provision, col, _allP)
+            opIncome = _ttmSum(oi, col, _allP)
+            ocfVal = _ttmSum(ocf, col, _allP)
+        else:
+            intInc = intIncome.get(col)
+            intExp = intExpense.get(col) or cfFinCost.get(col)
+            netIncome = ni.get(col)
+            provCharge = provision.get(col)
+            opIncome = oi.get(col)
+            ocfVal = ocf.get(col)
+
+        if totalAssets is None or totalAssets == 0:
+            continue
+
+        # 축1: 자본적정성
+        equityRatio = _div(equity, totalAssets, pct=True)
+
+        # 축2: 수익성
+        roa = _div(netIncome, totalAssets, pct=True)
+        nim = None
+        if intInc is not None and intExp is not None:
+            nim = round((intInc - abs(intExp)) / totalAssets * 100, 2)
+
+        # 축3: 자산건전성
+        provRatio = _div(abs(provCharge) if provCharge else None, totalAssets, pct=True)
+
+        # 축4: 유동성
+        cashToAsset = _div(cashVal, totalAssets, pct=True)
+        currentRatio = _div(curAssets, curLiab, pct=True) if curLiab and curLiab > 0 else None
+
+        roaList.append(roa)
+        revList.append(opIncome)
+
+        history.append({
+            "period": col,
+            "totalAssets": totalAssets,
+            "equity": equity,
+            "netIncome": netIncome,
+            "operatingIncome": opIncome,
+            "ocf": ocfVal,
+            # 축1
+            "equityRatio": equityRatio,
+            # 축2
+            "roa": roa,
+            "nimProxy": nim,
+            # 축3
+            "provisionRatio": provRatio,
+            # 축4
+            "cashToAsset": cashToAsset,
+            "currentRatio": currentRatio,
+        })
+
+    if not history:
+        return None
+
+    # 축5: 사업안정성 (기존 로직 재사용)
+    bizStability = {
+        "revenueCV": _cv([r for r in revList if r is not None]),
+        "roaCV": _cv([r for r in roaList if r is not None]),
+        "totalAssets": history[0].get("totalAssets"),
+    }
+
+    return {
+        "history": history,
+        "businessStability": bizStability,
+        "track": "B",
+    }
