@@ -636,7 +636,8 @@ def calcFinancialMetrics(company, *, basePeriod: str | None = None) -> dict | No
     _qMode = _isQuarterlyFallback(yCols)
     _allP = set(bsPeriods)
 
-    intIncome = isData.get("이자수익", {}) or isData.get("금융이익", {})
+    # 금융업: 금융이익(순영업수익)을 우선. 이자수익은 부수 항목일 수 있음
+    intIncome = isData.get("금융이익", {}) or isData.get("이자수익", {})
     intExpense = isData.get("금융비용", {}) or isData.get("4.금융비용", {})
     ni = isData.get("당기순이익", {})
     provision = isData.get("대손상각비", {})
@@ -683,9 +684,8 @@ def calcFinancialMetrics(company, *, basePeriod: str | None = None) -> dict | No
 
         # 축2: 수익성
         roa = _div(netIncome, totalAssets, pct=True)
-        nim = None
-        if intInc is not None and intExp is not None:
-            nim = round((intInc - abs(intExp)) / totalAssets * 100, 2)
+        # NIM 대리: 이자수익/자산 (금융비용 차감 방식은 계정 불일치로 불안정)
+        nim = _div(intInc, totalAssets, pct=True) if intInc else None
 
         # 축3: 자산건전성
         provRatio = _div(abs(provCharge) if provCharge else None, totalAssets, pct=True)
