@@ -162,7 +162,7 @@ def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
         return None
     isData, _ = isParsed
 
-    cfResult = company.select("CF", ["영업활동현금흐름", "유형자산의취득"])
+    cfResult = company.select("CF", ["영업활동현금흐름", "유형자산의취득", "4.금융비용", "금융비용"])
     cfParsed = _toDict(cfResult)
     cfData: dict = {}
     if cfParsed is not None:
@@ -199,6 +199,8 @@ def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
 
     ocf = cfData.get("영업활동현금흐름", {})
     capex = cfData.get("유형자산의취득", {})
+    # CF 이자비용 fallback (IS에 이자비용/금융비용이 없는 기업용)
+    cfFinCost = cfData.get("4.금융비용", {}) or cfData.get("금융비용", {})
 
     # ── notes 데이터 수집 ──
     borrowingsDetail = _fetchNotes(company, "borrowings")
@@ -231,7 +233,11 @@ def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
             depreciation = _ttmSum(dep, col, _allPeriods)
             ocfVal = _ttmSum(ocf, col, _allPeriods)
             capexVal = _ttmSum(capex, col, _allPeriods)
-            ie = _ttmSum(intCost, col, _allPeriods) or _ttmSum(finCost, col, _allPeriods)
+            ie = (
+                _ttmSum(intCost, col, _allPeriods)
+                or _ttmSum(finCost, col, _allPeriods)
+                or _ttmSum(cfFinCost, col, _allPeriods)
+            )
         else:
             revenue = rev.get(col)
             opIncome = oi.get(col)
@@ -239,7 +245,7 @@ def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
             depreciation = dep.get(col)
             ocfVal = ocf.get(col)
             capexVal = capex.get(col)
-            ie = intCost.get(col) or finCost.get(col)
+            ie = intCost.get(col) or finCost.get(col) or cfFinCost.get(col)
         if capexVal is not None:
             capexVal = abs(capexVal)
 
