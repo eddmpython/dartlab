@@ -552,7 +552,7 @@ _INDUSTRY_THRESHOLDS: dict[IndustryGroup, dict] = {
     IndustryGroup.INSURANCE: _financialsThresholds(),
     IndustryGroup.DIVERSIFIED_FINANCIALS: _financialsThresholds(),
     IndustryGroup.OIL_GAS: _energyThresholds(),
-    IndustryGroup.CHEMICAL: _energyThresholds(),
+    IndustryGroup.CHEMICAL: _semiconductorThresholds(),  # 화학/배터리 = 반도체급 CAPEX 사이클
     IndustryGroup.ELECTRIC: _utilitiesThresholds(),
     IndustryGroup.GAS_UTILITY: _utilitiesThresholds(),
     IndustryGroup.AEROSPACE_DEFENSE: _airlineThresholds(),
