@@ -19,6 +19,11 @@ on:
 permissions:
   contents: write
 
+# 동시 실행 방지
+concurrency:
+  group: data-sync-${{ github.event_name }}
+  cancel-in-progress: true
+
 jobs:
   collect-and-upload:
     runs-on: ubuntu-latest
