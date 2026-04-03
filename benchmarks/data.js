@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775174953066,
+  "lastUpdate": 1775177635314,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -7917,6 +7917,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.5657678863715987e-7",
             "extra": "mean: 725.361929178818 nsec\nrounds: 162576"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "c95d4e69332e2acb517626c28385641a7fbdd486",
+          "message": "fix: Daily Data Sync 타임아웃 근본 해결 — job 분할 + docs 직접 수집\n\n근본 원인: syncRecent.py가 88개 종목의 docs를 수집할 때\nbatchCollect._collectDocs가 종목마다 2016년부터 전체 공시를\n재조회한 후 새 것만 필터. 이미 발견한 rcept_no를 버리고\n재발견하는 구조 → 90분 타임아웃 초과.\n\n변경:\n- dataSyncDaily.yml: 단일 job → 병렬 2 job (sync-data 45분, sync-docs 150분)\n- concurrency group 추가 (중복 실행 방지)\n- syncRecent.py: SYNC_CATEGORIES 환경변수로 카테고리 분리 실행\n- docs 전용 모드: _collectDocsDirect() — listing API 재조회 없이\n  이미 발견한 rcept_no의 ZIP만 직접 다운로드\n- 건당 120초 타임아웃으로 한 종목이 전체를 블록하지 않음\n- dataSync.yml에도 concurrency 추가\n\nCloses #12",
+          "timestamp": "2026-04-03T09:52:24+09:00",
+          "tree_id": "3d6a8d64dd551ede8ec67f59dfd03ed5ba466c9c",
+          "url": "https://github.com/eddmpython/dartlab/commit/c95d4e69332e2acb517626c28385641a7fbdd486"
+        },
+        "date": 1775177634797,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 527329.9909194638,
+            "unit": "iter/sec",
+            "range": "stddev: 4.957407912122807e-7",
+            "extra": "mean: 1.8963457744104004 usec\nrounds: 47638"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 635225.2332718166,
+            "unit": "iter/sec",
+            "range": "stddev: 4.441755282602219e-7",
+            "extra": "mean: 1.5742447680318994 usec\nrounds: 109614"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 516581.2071042187,
+            "unit": "iter/sec",
+            "range": "stddev: 5.006157289498949e-7",
+            "extra": "mean: 1.9358040638095706 usec\nrounds: 125597"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 654106.3919415904,
+            "unit": "iter/sec",
+            "range": "stddev: 3.860627513440467e-7",
+            "extra": "mean: 1.52880328386899 usec\nrounds: 158228"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 796591.6717645577,
+            "unit": "iter/sec",
+            "range": "stddev: 3.400415297380952e-7",
+            "extra": "mean: 1.255348298815208 usec\nrounds: 186986"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 250545.7804766831,
+            "unit": "iter/sec",
+            "range": "stddev: 6.353538589702605e-7",
+            "extra": "mean: 3.991286534929549 usec\nrounds: 68065"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7219157.458590785,
+            "unit": "iter/sec",
+            "range": "stddev: 1.3428380606202323e-8",
+            "extra": "mean: 138.52031982070176 nsec\nrounds: 69195"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8714733.769408392,
+            "unit": "iter/sec",
+            "range": "stddev: 1.6505488155270312e-8",
+            "extra": "mean: 114.74819844873885 nsec\nrounds: 80464"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1467775.6722829584,
+            "unit": "iter/sec",
+            "range": "stddev: 2.635643763920657e-7",
+            "extra": "mean: 681.303021220275 nsec\nrounds: 170097"
           }
         ]
       }
