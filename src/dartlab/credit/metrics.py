@@ -597,6 +597,70 @@ def _fetchAuditOpinion(company) -> str | None:
 
 
 # ═══════════════════════════════════════════════════════════
+# 별도재무제표(OFS) 보조 지표 — 지주사/캡티브 금융 보정용
+# ═══════════════════════════════════════════════════════════
+
+
+def calcSeparateMetrics(company) -> dict | None:
+    """별도재무제표 기반 보조 지표.
+
+    연결(CFS) 대비 별도(OFS)의 부채/차입금/EBITDA를 산출.
+    지주사/캡티브 금융에서 연결 D/EBITDA 왜곡을 보정하는 데 사용.
+    """
+    try:
+        ofs = company._getFinanceBuild("y", "OFS")
+    except (AttributeError, TypeError, FileNotFoundError):
+        return None
+    if ofs is None:
+        return None
+
+    series, periods = ofs
+    if not periods:
+        return None
+
+    bs = series.get("BS", {})
+    is_ = series.get("IS", {})
+    idx = -1  # 최신 기간
+
+    def _val(data: dict, key: str) -> float | None:
+        vals = data.get(key)
+        if vals is None or not isinstance(vals, list):
+            return None
+        return vals[idx] if abs(idx) <= len(vals) else None
+
+    ta = _val(bs, "total_assets")
+    tl = _val(bs, "total_liabilities")
+    eq = _val(bs, "total_stockholders_equity")
+    stb = _val(bs, "shortterm_borrowings") or 0
+    ltb = _val(bs, "longterm_borrowings") or 0
+    bonds = _val(bs, "bonds_payable") or _val(bs, "debentures") or 0
+    cash = _val(bs, "cash_and_cash_equivalents") or 0
+    oi = _val(is_, "operating_profit") or _val(is_, "sales") and 0  # fallback
+    dep = _val(is_, "depreciation") or _val(is_, "depreciation_and_amortisation") or 0
+
+    if ta is None or ta == 0:
+        return None
+
+    totalBorrowing = stb + ltb + bonds
+    ebitda = (oi or 0) + dep
+    netDebt = totalBorrowing - cash if totalBorrowing > 0 else 0
+
+    result = {
+        "period": periods[idx] if abs(idx) <= len(periods) else None,
+        "totalAssets": ta,
+        "totalBorrowing": totalBorrowing,
+        "ebitda": ebitda,
+        "netDebt": netDebt,
+        # 별도 지표
+        "separateDebtRatio": _div(tl, eq, pct=True) if eq and eq > 0 else None,
+        "separateDebtToEbitda": _div(totalBorrowing, ebitda) if ebitda and ebitda > 0 else None,
+        "separateNetDebtToEbitda": _div(netDebt, ebitda) if ebitda and ebitda > 0 else None,
+        "separateBorrowingDep": _div(totalBorrowing, ta, pct=True) if ta > 0 else None,
+    }
+    return result
+
+
+# ═══════════════════════════════════════════════════════════
 # Track B: 금융업 전용 지표 산출
 # ═══════════════════════════════════════════════════════════
 

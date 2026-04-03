@@ -195,9 +195,33 @@ def _calcCHSAdjustment(company, baseScore: float) -> dict | None:
 
 
 def _isCaptiveFinance(totalBorrowing: float, ebitda: float | None, isFinancial: bool) -> bool:
+    """캡티브 금융 감지 — D/EBITDA > 15."""
     if isFinancial or ebitda is None or ebitda <= 0 or totalBorrowing <= 0:
         return False
     return totalBorrowing / ebitda > 15
+
+
+def _isCaptiveByOFS(company, consolidatedBorrowing: float) -> bool:
+    """별도재무제표 기반 캡티브 금융 감지.
+
+    연결 차입금 / 별도 차입금 > 10이면 캡티브 금융자회사 존재.
+    """
+    if consolidatedBorrowing <= 0:
+        return False
+    try:
+        from dartlab.credit.metrics import calcSeparateMetrics
+
+        sep = calcSeparateMetrics(company)
+        if sep is None:
+            return False
+        sepBorrowing = sep.get("totalBorrowing", 0) or 0
+        if sepBorrowing <= 0:
+            # 별도 차입금 0이면 전부 자회사 차입금
+            return consolidatedBorrowing > 1e12  # 1조 이상이면 의미 있음
+        ratio = consolidatedBorrowing / sepBorrowing
+        return ratio > 10
+    except (ImportError, TypeError, ValueError, AttributeError):
+        return False
 
 
 def _isCyclical(sector) -> bool:
@@ -248,6 +272,9 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         latest.get("ebitda"),
         isFinancialCo,
     )
+    # OFS 기반 캡티브 보강 (D/EBITDA < 15이어도 연결/별도 차입금 비율로 감지)
+    if not captive and not isFinancialCo:
+        captive = _isCaptiveByOFS(company, latest.get("totalBorrowing") or 0)
     cyclical = _isCyclical(sector)
 
     # 지주사/캡티브 금융이면 특화 기준 적용
@@ -281,6 +308,29 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         ("순차입금/EBITDA", scoreMetric(latest.get("netDebtToEbitda"), thresholds["net_debt_to_ebitda"])),
     ]
     axis2 = axisScore(axis2_scores)
+
+    # ── 별도재무제표 블렌딩 (지주사/캡티브) ──
+    if (holding or captive) and axis1 is not None and axis2 is not None:
+        from dartlab.credit.metrics import calcSeparateMetrics
+
+        sepMetrics = calcSeparateMetrics(company)
+        if sepMetrics is not None:
+            # 별도 기준 축1/축2 재계산
+            sep_axis1_scores = [
+                ("별도D/EBITDA", scoreMetric(sepMetrics.get("separateDebtToEbitda"), thresholds["debt_to_ebitda"])),
+            ]
+            sep_axis2_scores = [
+                ("별도부채비율", scoreMetric(sepMetrics.get("separateDebtRatio"), thresholds["debt_ratio"])),
+                ("별도차입금의존도", scoreMetric(sepMetrics.get("separateBorrowingDep"), thresholds["borrowing_dependency"])),
+            ]
+            sep1 = axisScore(sep_axis1_scores)
+            sep2 = axisScore(sep_axis2_scores)
+
+            # 연결 70% + 별도 30% 블렌딩
+            if sep1 is not None:
+                axis1 = round(axis1 * 0.7 + sep1 * 0.3, 2)
+            if sep2 is not None:
+                axis2 = round(axis2 * 0.7 + sep2 * 0.3, 2)
 
     # ── 축 3: 유동성 ──
     axis3_scores = [
