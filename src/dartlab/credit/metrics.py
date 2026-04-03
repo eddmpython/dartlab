@@ -620,6 +620,7 @@ def calcSeparateMetrics(company) -> dict | None:
 
     bs = series.get("BS", {})
     is_ = series.get("IS", {})
+    cf = series.get("CF", {})
     idx = -1  # 최신 기간
 
     def _val(data: dict, key: str) -> float | None:
@@ -635,15 +636,19 @@ def calcSeparateMetrics(company) -> dict | None:
     ltb = _val(bs, "longterm_borrowings") or 0
     bonds = _val(bs, "bonds_payable") or _val(bs, "debentures") or 0
     cash = _val(bs, "cash_and_cash_equivalents") or 0
-    oi = _val(is_, "operating_profit") or _val(is_, "sales") and 0  # fallback
+    oi = _val(is_, "operating_profit") or 0
+    rev = _val(is_, "sales") or _val(is_, "revenue") or 0
     dep = _val(is_, "depreciation") or _val(is_, "depreciation_and_amortisation") or 0
+    ocfVal = _val(cf, "operating_cashflow") or _val(cf, "cash_flows_from_operating_activities") or 0
+    capexVal = abs(_val(cf, "purchase_of_property_plant_and_equipment") or 0)
 
     if ta is None or ta == 0:
         return None
 
     totalBorrowing = stb + ltb + bonds
-    ebitda = (oi or 0) + dep
+    ebitda = oi + dep
     netDebt = totalBorrowing - cash if totalBorrowing > 0 else 0
+    fcfVal = ocfVal - capexVal if ocfVal else None
 
     result = {
         "period": periods[idx] if abs(idx) <= len(periods) else None,
@@ -651,11 +656,16 @@ def calcSeparateMetrics(company) -> dict | None:
         "totalBorrowing": totalBorrowing,
         "ebitda": ebitda,
         "netDebt": netDebt,
+        "revenue": rev,
+        "ocf": ocfVal,
+        "fcf": fcfVal,
         # 별도 지표
         "separateDebtRatio": _div(tl, eq, pct=True) if eq and eq > 0 else None,
         "separateDebtToEbitda": _div(totalBorrowing, ebitda) if ebitda and ebitda > 0 else None,
         "separateNetDebtToEbitda": _div(netDebt, ebitda) if ebitda and ebitda > 0 else None,
         "separateBorrowingDep": _div(totalBorrowing, ta, pct=True) if ta > 0 else None,
+        "separateOcfToSales": _div(ocfVal, rev, pct=True) if rev and rev > 0 else None,
+        "separateOcfToDebt": _div(ocfVal, totalBorrowing, pct=True) if totalBorrowing > 0 else None,
     }
     return result
 

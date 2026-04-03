@@ -285,27 +285,28 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         capexRatio = capexVal / latest["totalAssets"] * 100
     capitalIntensive = (capexRatio is not None and capexRatio > 5) or (latest.get("debtToEbitda") or 0) > 8
 
-    # 지주사/캡티브 금융이면 특화 기준 적용
-    if captive:
-        from dartlab.core.finance.sectorThresholds import _airlineThresholds
+    # 기준표 선택 (우선순위: 유틸리티 > 캡티브 > 지주 > 자본집약 > 업종별 > 기본)
+    from dartlab.core.finance.sectorThresholds import _airlineThresholds, _holdingThresholds
+    from dartlab.core.sector.types import Sector
 
-        thresholds = _airlineThresholds()  # 항공(자본집약) 기준 — 유틸보다 현실적
+    if sector == Sector.UTILITIES:
+        # #3 유틸리티 섹터 최우선 (한전 — 공기업, capitalIntensive보다 우선)
+        thresholds = getThresholds(sector, industryGroup)
+        sectorLabel = getSectorLabel(sector)
+    elif captive:
+        thresholds = _airlineThresholds()
         sectorLabel = f"{getSectorLabel(sector)} (캡티브금융조정)"
     elif holding:
-        from dartlab.core.finance.sectorThresholds import _holdingThresholds
-
         thresholds = _holdingThresholds()
         sectorLabel = f"{getSectorLabel(sector)} (지주사조정)"
-    elif capitalIntensive and not cyclical:
-        # 자본집약 but 에너지/소재가 아닌 기업 (삼성SDI, 한전 등)
-        from dartlab.core.finance.sectorThresholds import _airlineThresholds
-
+    elif capitalIntensive:
+        # #2 자본집약: D/EBITDA + 부채비율 + 유동비율 완화
         base = getThresholds(sector, industryGroup)
         capThresh = _airlineThresholds()
-        # D/EBITDA와 부채비율만 완화, 나머지는 기존 유지
         base["debt_to_ebitda"] = capThresh["debt_to_ebitda"]
         base["debt_ratio"] = capThresh["debt_ratio"]
         base["net_debt_to_ebitda"] = capThresh["net_debt_to_ebitda"]
+        base["current_ratio"] = capThresh.get("current_ratio", base["current_ratio"])  # #2 유동 완화
         thresholds = base
         sectorLabel = f"{getSectorLabel(sector)} (자본집약조정)"
     else:
@@ -329,27 +330,29 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
     ]
     axis2 = axisScore(axis2_scores)
 
-    # ── 별도재무제표 블렌딩 (지주사/캡티브) ──
-    if (holding or captive) and axis1 is not None and axis2 is not None:
+    # ── 별도재무제표 블렌딩 (#1+#5: 지주/캡티브/자본집약 모두) ──
+    _needsOFS = holding or captive or capitalIntensive
+    sepMetrics = None
+    if _needsOFS and axis1 is not None:
         from dartlab.credit.metrics import calcSeparateMetrics
 
         sepMetrics = calcSeparateMetrics(company)
         if sepMetrics is not None:
-            # 별도 기준 축1/축2 재계산
+            # 축1: 별도 D/EBITDA 블렌딩
             sep_axis1_scores = [
                 ("별도D/EBITDA", scoreMetric(sepMetrics.get("separateDebtToEbitda"), thresholds["debt_to_ebitda"])),
             ]
+            sep1 = axisScore(sep_axis1_scores)
+            if sep1 is not None and axis1 is not None:
+                axis1 = round(axis1 * 0.5 + sep1 * 0.5, 2)
+
+            # 축2: 별도 부채비율 블렌딩
             sep_axis2_scores = [
                 ("별도부채비율", scoreMetric(sepMetrics.get("separateDebtRatio"), thresholds["debt_ratio"])),
                 ("별도차입금의존도", scoreMetric(sepMetrics.get("separateBorrowingDep"), thresholds["borrowing_dependency"])),
             ]
-            sep1 = axisScore(sep_axis1_scores)
             sep2 = axisScore(sep_axis2_scores)
-
-            # 연결 50% + 별도 50% 블렌딩 (별도가 모회사 본체 재무)
-            if sep1 is not None:
-                axis1 = round(axis1 * 0.5 + sep1 * 0.5, 2)
-            if sep2 is not None:
+            if sep2 is not None and axis2 is not None:
                 axis2 = round(axis2 * 0.5 + sep2 * 0.5, 2)
 
     # ── 축 3: 유동성 ──
@@ -363,6 +366,15 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
     # ── 축 4: 현금흐름 ──
     axis4_scores = _scoreCashFlow(latest, metrics)
     axis4 = axisScore(axis4_scores)
+
+    # #1: 축4에도 별도 OCF 블렌딩 (캡티브/지주/자본집약)
+    if _needsOFS and sepMetrics is not None and axis4 is not None:
+        sepOcfScore = scoreMetric(sepMetrics.get("separateOcfToSales"), thresholds.get("ocf_to_sales", thresholds.get("cash_ratio", {})))
+        sepOcfDebt = scoreMetric(sepMetrics.get("separateOcfToDebt"), thresholds.get("focf_to_debt", {}))
+        sepCfScores = [(s, 1) for s in [sepOcfScore, sepOcfDebt] if s is not None]
+        if sepCfScores:
+            sepAxis4 = sum(s for s, _ in sepCfScores) / len(sepCfScores)
+            axis4 = round(axis4 * 0.5 + sepAxis4 * 0.5, 2)
 
     # ── 축 5: 사업 안정성 ──
     biz = metrics.get("businessStability", {})
@@ -754,6 +766,8 @@ def _evaluateFinancial(
         ("충당금비율", scoreMetric(latest.get("provisionRatio"), thresholds["provision_ratio"])),
     ]
     s3 = axisScore(ax3)
+    if s3 is None:
+        s3 = 25.0  # #4: 데이터 없으면 중립 (0=최우량도 100=최위험도 아님)
 
     # ── 축4: 유동성 ──
     ax4 = [
@@ -761,6 +775,8 @@ def _evaluateFinancial(
         ("유동비율", scoreMetric(latest.get("currentRatio"), thresholds["current_ratio"])),
     ]
     s4 = axisScore(ax4)
+    if s4 is None:
+        s4 = 25.0  # #4: 유동성도 데이터 없으면 중립
 
     # ── 축5: 사업안정성 ──
     biz = metrics.get("businessStability", {})
