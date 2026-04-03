@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775251261614,
+  "lastUpdate": 1775254281752,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -8700,6 +8700,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 3.005239170791357e-7",
             "extra": "mean: 690.8577304008522 nsec\nrounds: 151241"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "1e934e9189bdb4327617e100a99f1542b421ea01",
+          "message": "feat: credit v4 — notch 문턱10 + CHS PD비대칭 + OFS동적 + 축1압축\n\nPhase 1: Notch 문턱 15→10, A범위 sub-cap 2.\nPhase 2: CHS PD<0.001 -5점, PD<0.01 상향만, PD>0.1 하향만.\nPhase 3: OFS 별도가 10점+ 양호하면 35:65.\nPhase 4: captive/holding/cyclical 축1 20초과 40% 압축.",
+          "timestamp": "2026-04-04T07:04:08+09:00",
+          "tree_id": "b8ee825777170a53ad70b1409aea9c3d61251fa8",
+          "url": "https://github.com/eddmpython/dartlab/commit/1e934e9189bdb4327617e100a99f1542b421ea01"
+        },
+        "date": 1775254281304,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 541650.4207965188,
+            "unit": "iter/sec",
+            "range": "stddev: 4.576864801291731e-7",
+            "extra": "mean: 1.8462092183542655 usec\nrounds: 58991"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 650168.6467149155,
+            "unit": "iter/sec",
+            "range": "stddev: 5.777304435635166e-7",
+            "extra": "mean: 1.5380624781780314 usec\nrounds: 157431"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 515038.7737692007,
+            "unit": "iter/sec",
+            "range": "stddev: 5.142147901169372e-7",
+            "extra": "mean: 1.941601391836414 usec\nrounds: 134355"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 719556.696033644,
+            "unit": "iter/sec",
+            "range": "stddev: 3.2032681518931387e-7",
+            "extra": "mean: 1.3897445545461833 usec\nrounds: 178222"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 895439.8156661675,
+            "unit": "iter/sec",
+            "range": "stddev: 1.5881788417162086e-7",
+            "extra": "mean: 1.116769639348731 usec\nrounds: 174186"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 265926.405782523,
+            "unit": "iter/sec",
+            "range": "stddev: 6.584082408006705e-7",
+            "extra": "mean: 3.7604388968345215 usec\nrounds: 74767"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7299573.587053359,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2752706339015179e-8",
+            "extra": "mean: 136.9943035814607 nsec\nrounds: 73878"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8724079.580839438,
+            "unit": "iter/sec",
+            "range": "stddev: 1.0857270090002678e-8",
+            "extra": "mean: 114.625272584203 nsec\nrounds: 87551"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1443942.665506349,
+            "unit": "iter/sec",
+            "range": "stddev: 2.7806687771361483e-7",
+            "extra": "mean: 692.5482734796323 nsec\nrounds: 103649"
           }
         ]
       }
