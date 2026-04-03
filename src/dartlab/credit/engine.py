@@ -293,10 +293,15 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         sectorLabel = getSectorLabel(sector)
 
     # ── 축 1: 채무상환능력 ──
+    # FOCF/Debt: FCF가 음수(CAPEX > OCF)면 구조적으로 나쁜 값 → 스킵
+    focfScore = scoreMetric(latest.get("focfToDebt"), thresholds["focf_to_debt"])
+    if latest.get("fcf") is not None and (latest.get("fcf") or 0) < 0:
+        focfScore = None  # FCF 음수 기업은 FOCF/Debt 무의미 — 다른 지표로 평가
+
     axis1_scores = [
         ("FFO/총차입금", scoreMetric(latest.get("ffoToDebt"), thresholds["ffo_to_debt"])),
         ("Debt/EBITDA", scoreMetric(latest.get("debtToEbitda"), thresholds["debt_to_ebitda"])),
-        ("FOCF/Debt", scoreMetric(latest.get("focfToDebt"), thresholds["focf_to_debt"])),
+        ("FOCF/Debt", focfScore),
         ("EBITDA/이자비용", scoreMetric(latest.get("ebitdaInterestCoverage"), thresholds["ebitda_interest_coverage"])),
     ]
     axis1 = axisScore(axis1_scores)
