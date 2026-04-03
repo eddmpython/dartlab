@@ -78,9 +78,7 @@ def analyze_sentiment(*, market: str = "US", **kwargs) -> dict:
     sp_ratio = data.get("sp500_vs_ma125")
     hy = data.get("hy_spread")
     if vix is not None and sp_ratio is not None and hy is not None:
-        fg = calcFearGreedProxy(
-            vix, sp_ratio, hy, data.get("gold_equity_ratio")
-        )
+        fg = calcFearGreedProxy(vix, sp_ratio, hy, data.get("gold_equity_ratio"))
         result["fearGreed"] = {
             "score": fg.score,
             "zone": fg.zone,
@@ -108,6 +106,7 @@ def analyze_sentiment(*, market: str = "US", **kwargs) -> dict:
     ts: dict = {}
     try:
         from dartlab.gather import getDefaultGather
+
         g = getDefaultGather()
         for label, sid in [("vix", "VIXCLS"), ("sp500", "SP500"), ("hy_spread", "BAMLH0A0HYM2")]:
             ts[label] = recent_timeseries(g.macro(sid))

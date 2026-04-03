@@ -71,7 +71,7 @@ def _compress_history_text(text: str) -> str:
             break
 
     # 뒷부분: -tail 근처의 첫 문장 경계
-    tail_text = text[-max(tail, 200):]
+    tail_text = text[-max(tail, 200) :]
     for sep in ("\n", "다. ", ". ", "? ", "! "):
         idx = tail_text.find(sep)
         if idx != -1 and idx < len(tail_text) * 0.3:

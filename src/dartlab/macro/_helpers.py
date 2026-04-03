@@ -23,7 +23,10 @@ def recent_timeseries(df, months: int = 6, value_col: str = "value") -> list[dic
         vals = filtered.get_column(value_col).to_list()
 
         return [
-            {"date": str(d)[:10] if hasattr(d, "isoformat") else str(d)[:10], "value": float(v) if v is not None else None}
+            {
+                "date": str(d)[:10] if hasattr(d, "isoformat") else str(d)[:10],
+                "value": float(v) if v is not None else None,
+            }
             for d, v in zip(dates, vals)
             if v is not None
         ]

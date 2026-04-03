@@ -216,9 +216,7 @@ def _generateAIAnalysis(corpName: str, stockCode: str, result: dict, narratives,
     history = result.get("metricsHistory", [])
     sector = result.get("sector", "")
 
-    axesSummary = "\n".join(
-        f"- [{n.severity}] {n.axisName}: {n.summary}" for n in narratives
-    )
+    axesSummary = "\n".join(f"- [{n.severity}] {n.axisName}: {n.summary}" for n in narratives)
     histLines = []
     for h in history[:3]:
         icr = h.get("ebitdaInterestCoverage")
@@ -253,9 +251,12 @@ def _generateAIAnalysis(corpName: str, stockCode: str, result: dict, narratives,
             return None
         # AI 출력에서 코드블록 제거 (```...``` 사이)
         import re
+
         cleaned = re.sub(r"```[\s\S]*?```", "", raw).strip()
         # print() 등 코드 라인 제거
-        lines_out = [ln for ln in cleaned.split("\n") if not ln.strip().startswith(("print(", "import ", "from ", ">>>"))]
+        lines_out = [
+            ln for ln in cleaned.split("\n") if not ln.strip().startswith(("print(", "import ", "from ", ">>>"))
+        ]
         return "\n".join(lines_out).strip() or None
     except (ImportError, ValueError, KeyError, TypeError, RuntimeError, OSError):
         return None

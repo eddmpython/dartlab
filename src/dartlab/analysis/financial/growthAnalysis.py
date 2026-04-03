@@ -366,7 +366,15 @@ def calcCagrComparison(company, *, basePeriod: str | None = None) -> dict | None
     capexRow = cfData.get("유형자산의취득", {})
 
     pairs = [
-        ("마진 방향", "매출", _vF(revRow, oldest), _vF(revRow, latest), "영업이익", _vF(opRow, oldest), _vF(opRow, latest)),
+        (
+            "마진 방향",
+            "매출",
+            _vF(revRow, oldest),
+            _vF(revRow, latest),
+            "영업이익",
+            _vF(opRow, oldest),
+            _vF(opRow, latest),
+        ),
         ("자산 효율", "자산", _v(taRow, oldest), _v(taRow, latest), "매출", _vF(revRow, oldest), _vF(revRow, latest)),
         ("레버리지", "부채", _v(tlRow, oldest), _v(tlRow, latest), "자본", _v(teRow, oldest), _v(teRow, latest)),
         (

@@ -105,6 +105,7 @@ def analyze_liquidity(*, market: str = "US", **kwargs) -> dict:
     ts: dict = {}
     try:
         from dartlab.gather import getDefaultGather
+
         g = getDefaultGather()
         for label, sid in [("m2", "M2SL"), ("hy_spread", "BAMLH0A0HYM2"), ("ig_spread", "BAMLC0A0CM")]:
             ts[label] = recent_timeseries(g.macro(sid))

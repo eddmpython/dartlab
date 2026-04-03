@@ -92,11 +92,16 @@ def analyze_assets(*, market: str = "US", **kwargs) -> dict:
     # 기본 5대 자산 해석 — DKW 분해 + 금리차 교차 해석 포함
     asset_input: dict[str, float | None] = {}
     for k in (
-        "short_rate", "short_rate_change",
-        "long_rate", "long_rate_change",
-        "fx_usdkrw", "fx_change_pct",
-        "gold", "gold_yoy",
-        "vix", "vix_change",
+        "short_rate",
+        "short_rate_change",
+        "long_rate",
+        "long_rate_change",
+        "fx_usdkrw",
+        "fx_change_pct",
+        "gold",
+        "gold_yoy",
+        "vix",
+        "vix_change",
     ):
         if k in data:
             asset_input[k] = data[k]
@@ -107,6 +112,7 @@ def analyze_assets(*, market: str = "US", **kwargs) -> dict:
     # BEI 변화 (T10YIE 3개월 변화)
     try:
         from dartlab.gather import getDefaultGather
+
         bei_df = getDefaultGather().macro("T10YIE")
         if bei_df is not None and len(bei_df) > 0:
             vals = bei_df.get_column("value").drop_nulls()
@@ -119,6 +125,7 @@ def analyze_assets(*, market: str = "US", **kwargs) -> dict:
     if market.upper() == "KR":
         try:
             from dartlab.gather import getDefaultGather
+
             g = getDefaultGather()
             us2y = g.macro("DGS2")
             kr_rate = g.macro("기준금리")

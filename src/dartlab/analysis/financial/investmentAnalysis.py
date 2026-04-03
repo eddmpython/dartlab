@@ -6,7 +6,13 @@ select()로 IS/BS/CF 원본 계정을 가져와서
 
 from __future__ import annotations
 
-from dartlab.analysis.financial._helpers import annualColsFromPeriods, getFlowValue, isQuarterlyFallback, toDict, toDictBySnakeId
+from dartlab.analysis.financial._helpers import (
+    annualColsFromPeriods,
+    getFlowValue,
+    isQuarterlyFallback,
+    toDict,
+    toDictBySnakeId,
+)
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8

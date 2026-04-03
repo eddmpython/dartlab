@@ -2110,8 +2110,7 @@ class Company:
             import warnings
 
             warnings.warn(
-                f"'{topic}' topic을 찾을 수 없습니다. "
-                f"전체 목록은 c.topics 또는 c.index로 확인하세요.",
+                f"'{topic}' topic을 찾을 수 없습니다. 전체 목록은 c.topics 또는 c.index로 확인하세요.",
                 stacklevel=2,
             )
             return None
@@ -2137,8 +2136,7 @@ class Company:
                 )
             else:
                 warnings.warn(
-                    f"'{topic}' topic을 찾을 수 없습니다. "
-                    f"전체 목록은 c.topics 또는 c.index로 확인하세요.",
+                    f"'{topic}' topic을 찾을 수 없습니다. 전체 목록은 c.topics 또는 c.index로 확인하세요.",
                     stacklevel=2,
                 )
             return None

@@ -108,7 +108,10 @@ def analyze_rates(*, market: str = "US", **kwargs) -> dict:
     # DKW 근사 분해 (US만)
     if market.upper() == "US" and dgs10 and data.get("t10yie") and data.get("dfii10"):
         decomp = decomposeLongRate(
-            dgs10, data["t10yie"], data["dfii10"], ff  # type: ignore[arg-type]
+            dgs10,
+            data["t10yie"],
+            data["dfii10"],
+            ff,  # type: ignore[arg-type]
         )
         result["decomposition"] = {
             "nominal": decomp.nominal,
@@ -154,8 +157,15 @@ def analyze_rates(*, market: str = "US", **kwargs) -> dict:
     ts: dict = {}
     try:
         from dartlab.gather import getDefaultGather
+
         g = getDefaultGather()
-        for label, sid in [("fed_funds", "FEDFUNDS"), ("dgs2", "DGS2"), ("dgs10", "DGS10"), ("bei", "T10YIE"), ("cpi", "CPIAUCSL")]:
+        for label, sid in [
+            ("fed_funds", "FEDFUNDS"),
+            ("dgs2", "DGS2"),
+            ("dgs10", "DGS10"),
+            ("bei", "T10YIE"),
+            ("cpi", "CPIAUCSL"),
+        ]:
             ts[label] = recent_timeseries(g.macro(sid))
     except Exception:
         pass

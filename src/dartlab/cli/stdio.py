@@ -393,12 +393,17 @@ def _handleOAuthLogin(msg: dict[str, Any]) -> None:
     thread.start()
 
     # auth URL + verifier/state를 extension에 보냄
-    _emit({"event": "oauthStart", "data": {
-        "authUrl": auth_url,
-        "provider": provider,
-        "verifier": verifier,
-        "state": state,
-    }})
+    _emit(
+        {
+            "event": "oauthStart",
+            "data": {
+                "authUrl": auth_url,
+                "provider": provider,
+                "verifier": verifier,
+                "state": state,
+            },
+        }
+    )
 
     def _wait():
         thread.join(timeout=120)

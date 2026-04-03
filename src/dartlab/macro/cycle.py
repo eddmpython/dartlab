@@ -24,9 +24,7 @@ def _fetch_indicators(market: str) -> dict[str, float | None]:
                 if len(vals) > 0:
                     indicators["hy_spread"] = float(vals[-1]) * 100  # % → bps
                     if len(vals) >= 63:  # ~3개월
-                        indicators["hy_spread_3m_change"] = (
-                            float(vals[-1]) - float(vals[-63])
-                        ) * 100
+                        indicators["hy_spread_3m_change"] = (float(vals[-1]) - float(vals[-63])) * 100
         except Exception:
             pass
 
@@ -145,6 +143,7 @@ def analyze_cycle(*, market: str = "US", **kwargs) -> dict:
     ts: dict = {}
     try:
         from dartlab.gather import getDefaultGather
+
         g = getDefaultGather()
         for label, sid in [("hy_spread", "BAMLH0A0HYM2"), ("vix", "VIXCLS"), ("term_spread", "T10Y2Y")]:
             ts[label] = recent_timeseries(g.macro(sid))

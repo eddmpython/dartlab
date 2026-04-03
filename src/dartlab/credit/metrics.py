@@ -771,24 +771,26 @@ def calcFinancialMetrics(company, *, basePeriod: str | None = None) -> dict | No
         roaList.append(roa)
         revList.append(opIncome)
 
-        history.append({
-            "period": col,
-            "totalAssets": totalAssets,
-            "equity": equity,
-            "netIncome": netIncome,
-            "operatingIncome": opIncome,
-            "ocf": ocfVal,
-            # 축1
-            "equityRatio": equityRatio,
-            # 축2
-            "roa": roa,
-            "nimProxy": nim,
-            # 축3
-            "provisionRatio": provRatio,
-            # 축4
-            "cashToAsset": cashToAsset,
-            "currentRatio": currentRatio,
-        })
+        history.append(
+            {
+                "period": col,
+                "totalAssets": totalAssets,
+                "equity": equity,
+                "netIncome": netIncome,
+                "operatingIncome": opIncome,
+                "ocf": ocfVal,
+                # 축1
+                "equityRatio": equityRatio,
+                # 축2
+                "roa": roa,
+                "nimProxy": nim,
+                # 축3
+                "provisionRatio": provRatio,
+                # 축4
+                "cashToAsset": cashToAsset,
+                "currentRatio": currentRatio,
+            }
+        )
 
     if not history:
         return None

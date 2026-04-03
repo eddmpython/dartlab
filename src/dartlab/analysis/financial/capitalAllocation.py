@@ -5,7 +5,12 @@
 
 from __future__ import annotations
 
-from dartlab.analysis.financial._helpers import annualColsFromPeriods, getFlowValue, isQuarterlyFallback, toDictBySnakeId
+from dartlab.analysis.financial._helpers import (
+    annualColsFromPeriods,
+    getFlowValue,
+    isQuarterlyFallback,
+    toDictBySnakeId,
+)
 from dartlab.analysis.financial._memoize import memoized_calc
 
 _MAX_YEARS = 8
