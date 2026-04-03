@@ -36,6 +36,8 @@
 		watchlist = [],
 		onAddWatch,
 		onRemoveWatch,
+		onCommand,
+		selectedModules = $bindable([]),
 	} = $props();
 
 	const DEFAULT_COMPANY_PROMPTS = [
@@ -202,7 +204,7 @@
 <!-- shared contract marker: onOpenEvidence={onOpenEvidence} -->
 <div class="relative flex flex-col h-full min-h-0">
 	<div class="flex-1 overflow-y-auto min-h-0" bind:this={chatContainer} onscroll={onScroll} role="log" aria-live="polite" aria-label="대화 내용">
-		<div class="chat-stream-shell max-w-[760px] mx-auto px-5 pt-12 pb-10 space-y-8">
+		<div class="chat-stream-shell max-w-[760px] mx-auto px-5 pt-8 pb-6 space-y-1">
 				{#if hasMore}
 					<div bind:this={loadMoreSentinel} class="flex justify-center py-3">
 						<button
@@ -298,14 +300,16 @@
 			{/if}
 			<AutocompleteInput
 				bind:inputText
+				bind:selectedModules
 				{isLoading}
 				enableCompanyAutocomplete={false}
 				{providerLabel}
 				{modelLabel}
-				placeholder="메시지를 입력하세요..."
+				placeholder="메시지를 입력하세요... ( / 로 명령어)"
 				onSend={onSend}
 				onStop={onStop}
 				{onCompanySelect}
+				{onCommand}
 			/>
 		</div>
 	</div>

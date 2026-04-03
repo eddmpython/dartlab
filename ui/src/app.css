@@ -348,32 +348,53 @@ button, a, input, textarea {
 	font-size: 0.85em;
 }
 .prose-dartlab pre code { background: none; padding: 0; color: var(--color-dl-text-muted); }
+/* ── Table wrapper (scrollable) ── */
+.prose-dartlab .table-wrap {
+	overflow-x: auto;
+	overflow-y: auto;
+	max-height: 420px;
+	margin: 0.8em 0;
+	border: 1px solid rgba(148, 163, 184, 0.15);
+	border-radius: 8px;
+}
 .prose-dartlab table {
-	border-collapse: separate; width: 100%; margin: 1em 0; font-size: 0.85em;
-	border: 1px solid rgba(148, 163, 184, 0.08); border-radius: 12px;
-	overflow: hidden;
-	background: rgba(15, 18, 25, 0.5);
-	box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+	border-collapse: separate;
+	border-spacing: 0;
+	width: max-content;
+	min-width: 100%;
+	font-size: 0.82em;
+	background: rgba(15, 18, 25, 0.6);
 }
 .prose-dartlab th {
-	text-align: left; padding: 0.6rem 0.8rem;
-	border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-	background: rgba(148, 163, 184, 0.06);
-	color: var(--color-dl-text-muted); font-weight: 500; font-size: 0.8rem;
-	white-space: nowrap; letter-spacing: 0.02em;
+	text-align: left;
+	padding: 0.55rem 0.75rem;
+	border-bottom: 2px solid rgba(148, 163, 184, 0.18);
+	background: rgba(148, 163, 184, 0.10);
+	color: var(--color-dl-text);
+	font-weight: 700;
+	font-size: 0.78rem;
+	white-space: nowrap;
+	letter-spacing: 0.03em;
+	position: sticky;
+	top: 0;
+	z-index: 1;
 }
 .prose-dartlab td {
-	padding: 0.5rem 0.8rem;
-	border-bottom: 1px solid rgba(148, 163, 184, 0.06);
+	padding: 0.45rem 0.75rem;
+	border-bottom: 1px solid rgba(148, 163, 184, 0.08);
 	color: var(--color-dl-text-muted);
 }
 .prose-dartlab td.num {
-	text-align: right; font-variant-numeric: tabular-nums;
-	font-family: var(--font-mono); font-size: 0.85em;
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+	font-family: var(--font-mono);
+	font-size: 0.88em;
+	color: var(--color-dl-text);
 }
-.prose-dartlab thead { position: sticky; top: 0; }
+.prose-dartlab thead { position: sticky; top: 0; z-index: 1; }
 .prose-dartlab tbody tr { transition: background-color var(--motion-fast); }
-.prose-dartlab tbody tr:hover td { background: rgba(148, 163, 184, 0.055); }
+.prose-dartlab tbody tr:nth-child(even) td { background: rgba(148, 163, 184, 0.03); }
+.prose-dartlab tbody tr:hover td { background: rgba(148, 163, 184, 0.08); }
 .prose-dartlab tbody tr:last-child td { border-bottom: none; }
 .prose-dartlab strong { font-weight: 600; color: var(--color-dl-text); }
 .prose-dartlab blockquote {
@@ -426,11 +447,61 @@ button, a, input, textarea {
 .code-block-wrap:hover .code-copy-btn { opacity: 1; }
 .code-copy-btn:hover { color: var(--color-dl-text); background: rgba(30, 36, 51, 0.9); }
 
+/* ── Code fold (Python >3줄 자동 접기) ── */
+.code-fold {
+	margin: 0.6em 0;
+	border: 1px solid rgba(148, 163, 184, 0.12);
+	border-radius: 8px;
+	overflow: hidden;
+}
+.code-fold-summary {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	background: rgba(13, 17, 23, 0.8);
+	cursor: pointer;
+	font-size: 12px;
+	user-select: none;
+	list-style: none;
+	color: var(--color-dl-text-dim);
+	transition: background var(--motion-fast);
+}
+.code-fold-summary:hover { background: rgba(13, 17, 23, 0.95); }
+.code-fold-summary::-webkit-details-marker { display: none; }
+.code-fold-icon {
+	display: flex;
+	align-items: center;
+	transition: transform 0.15s;
+	color: var(--color-dl-text-dim);
+}
+.code-fold[open] .code-fold-icon { transform: rotate(90deg); }
+.code-fold-label {
+	font-weight: 600;
+	font-family: var(--font-mono);
+	color: var(--color-dl-primary-light);
+	text-transform: uppercase;
+	font-size: 11px;
+	letter-spacing: 0.05em;
+}
+.code-fold-hint {
+	color: var(--color-dl-text-dim);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-family: var(--font-mono);
+	font-size: 11px;
+	opacity: 0.7;
+	flex: 1;
+}
+.code-fold .code-block-wrap { margin: 0; }
+.code-fold .code-block-wrap pre { border-radius: 0; border: none; margin: 0; }
+
 /* ── Number highlight ── */
 .num-highlight {
-	color: var(--color-dl-accent-light);
+	color: var(--color-dl-accent);
 	font-variant-numeric: tabular-nums;
-	font-weight: 500;
+	font-weight: 600;
 }
 
 /* ── Source citation references ── */
@@ -475,6 +546,49 @@ button, a, input, textarea {
 	background: linear-gradient(90deg, rgba(148,163,184,0.05) 25%, rgba(148,163,184,0.10) 50%, rgba(148,163,184,0.05) 75%);
 	background-size: 800px 100%;
 	animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ── Message timeline (Claude Code 스타일) ── */
+.msg-timeline {
+	position: relative;
+	padding: 6px 0 6px 30px;
+}
+.msg-timeline::before {
+	content: "";
+	position: absolute;
+	border-radius: 50%;
+	width: 7px;
+	height: 7px;
+	top: 13px;
+	left: 9px;
+	background-color: var(--color-dl-text-dim);
+	z-index: 1;
+}
+.msg-timeline.tl-success::before { background-color: var(--color-dl-success); }
+.msg-timeline.tl-error::before { background-color: var(--color-dl-primary); }
+.msg-timeline.tl-loading::before {
+	background-color: var(--color-dl-accent);
+	animation: tl-pulse 1.5s ease-in-out infinite;
+}
+@keyframes tl-pulse {
+	0%, 100% { opacity: 0.4; }
+	50% { opacity: 1; }
+}
+.msg-timeline::after {
+	content: "";
+	position: absolute;
+	width: 1px;
+	top: 0;
+	bottom: 0;
+	left: 12px;
+	background-color: rgba(148, 163, 184, 0.12);
+}
+.msg-timeline:first-child::after { top: 18px; }
+.msg-timeline:last-child::after { height: 18px; }
+
+/* User message — no timeline */
+.msg-user {
+	padding: 6px 0;
 }
 
 /* ── Stagger animation ── */

@@ -13,6 +13,7 @@
 		suggestionLoading = false,
 		watchlist = [],
 		onWatchlistClick,
+		onCommand,
 	} = $props();
 
 	const STARTERS = [
@@ -34,15 +35,15 @@
 
 <div class="flex-1 flex flex-col items-center justify-center px-5">
 	<div class="w-full max-w-[640px] flex flex-col items-center">
-		<div class="relative mb-8">
-			<div class="absolute inset-0 rounded-full blur-2xl opacity-40" style="background: radial-gradient(circle, rgba(234,70,71,0.6) 0%, rgba(251,146,60,0.3) 50%, transparent 70%); transform: scale(2.5);"></div>
-			<img src="/avatar.png" alt="DartLab" class="relative w-16 h-16 rounded-full" />
+		<div class="relative mb-6">
+			<div class="absolute inset-0 rounded-full blur-2xl opacity-30" style="background: radial-gradient(circle, rgba(234,70,71,0.5) 0%, rgba(251,146,60,0.2) 50%, transparent 70%); transform: scale(1.8);"></div>
+			<img src="/avatar.png" alt="DartLab" class="relative w-14 h-14 rounded-full" />
 		</div>
 
 		{#if selectedCompany?.stockCode}
-			<h1 class="text-2xl font-bold text-dl-text mb-1.5">{selectedCompany.corpName || selectedCompany.company || selectedCompany.stockCode}</h1>
-			<p class="text-sm text-dl-text-muted mb-4">종목이 선택되었습니다. 바로 질문하거나 추천 질문으로 시작할 수 있습니다.</p>
-			<div class="mb-4 flex flex-wrap items-center justify-center gap-2">
+			<h1 class="text-xl font-bold text-dl-text mb-1">{selectedCompany.corpName || selectedCompany.company || selectedCompany.stockCode}</h1>
+			<p class="text-[13px] text-dl-text-muted mb-3">종목이 선택되었습니다. 바로 질문하거나 추천 질문으로 시작하세요.</p>
+			<div class="mb-3 flex flex-wrap items-center justify-center gap-2">
 				<span class="rounded-full border border-dl-accent/20 bg-dl-accent/10 px-3 py-1 text-[11px] font-medium text-dl-accent-light">
 					{selectedCompany.stockCode}
 				</span>
@@ -53,26 +54,26 @@
 				{/if}
 			</div>
 			{#if dataReadyInfo}
-				<div class="mb-5 w-full max-w-[560px] rounded-2xl border px-4 py-3 text-left {dataReadyInfo.allReady ? 'border-emerald-500/20 bg-emerald-500/[0.06]' : 'border-amber-500/20 bg-amber-500/[0.06]'}">
-					<div class="text-[11px] font-semibold uppercase tracking-[0.18em] {dataReadyInfo.allReady ? 'text-emerald-400' : 'text-amber-300'}">{dataReadyInfo.label}</div>
-					<div class="mt-2 text-[13px] leading-relaxed text-dl-text-muted">{dataReadyInfo.summary}</div>
+				<div class="mb-4 w-full max-w-[560px] rounded-xl border px-3 py-2.5 text-left {dataReadyInfo.allReady ? 'border-emerald-500/20 bg-emerald-500/[0.06]' : 'border-amber-500/20 bg-amber-500/[0.06]'}">
+					<div class="text-[10px] font-semibold uppercase tracking-[0.18em] {dataReadyInfo.allReady ? 'text-emerald-400' : 'text-amber-300'}">{dataReadyInfo.label}</div>
+					<div class="mt-1.5 text-[12px] leading-relaxed text-dl-text-muted">{dataReadyInfo.summary}</div>
 				</div>
 			{/if}
 		{:else}
-			<h1 class="text-2xl font-bold text-dl-text mb-1.5">무엇을 분석할까요?</h1>
-			<p class="text-sm text-dl-text-muted mb-6">종목명, 질문, 무엇이든 입력하세요</p>
+			<h1 class="text-xl font-bold text-dl-text mb-1">무엇을 분석할까요?</h1>
+			<p class="text-[13px] text-dl-text-muted mb-5">종목명이나 질문을 입력하세요</p>
 
 			<!-- ── 관심종목 워치리스트 ── -->
 			{#if watchlist.length > 0}
-				<div class="mb-5 w-full max-w-[520px]">
-					<div class="mb-2 flex items-center justify-center gap-1.5">
-						<Star size={12} class="text-yellow-400 fill-yellow-400" />
-						<span class="text-[10px] font-semibold uppercase tracking-[0.18em] text-dl-text-dim">관심종목</span>
+				<div class="mb-4 w-full max-w-[520px]">
+					<div class="mb-1.5 flex items-center justify-center gap-1.5">
+						<Star size={11} class="text-yellow-400 fill-yellow-400" />
+						<span class="text-[9px] font-semibold uppercase tracking-[0.18em] text-dl-text-dim">관심종목</span>
 					</div>
-					<div class="flex flex-wrap justify-center gap-2">
+					<div class="flex flex-wrap justify-center gap-1.5">
 						{#each watchlist as item}
 							<button
-								class="rounded-full border border-yellow-500/20 bg-yellow-500/5 px-3 py-1.5 text-[12px] text-dl-text-muted transition-colors hover:border-yellow-400/40 hover:text-yellow-300"
+								class="rounded-full border border-yellow-500/20 bg-yellow-500/5 px-2.5 py-1 text-[11px] text-dl-text-muted transition-colors hover:border-yellow-400/40 hover:text-yellow-300"
 								onclick={() => onWatchlistClick?.(item)}
 							>
 								<span class="font-medium">{item.name}</span>
@@ -83,11 +84,10 @@
 				</div>
 			{/if}
 
-			<div class="mb-6 max-w-[520px] rounded-2xl border border-dl-border/50 bg-dl-bg-card/50 px-4 py-3 text-left">
-				<div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-dl-text-dim">Evidence First</div>
-				<div class="mt-2 text-[13px] leading-relaxed text-dl-text-muted">
-					DartLab은 재무 수치와 서술 텍스트를 함께 읽고, 표준화된 계정과 원문 근거를 같은 흐름에서 확인하도록 설계되어 있습니다.
-					DART와 EDGAR를 포함한 40개 모듈 이상의 기능 범위를 먼저 물어본 뒤 바로 탐색을 시작할 수 있습니다.
+			<div class="mb-5 max-w-[520px] rounded-xl border border-dl-border/40 bg-dl-bg-card/40 px-3.5 py-2.5 text-left">
+				<div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-dl-text-dim">Evidence First</div>
+				<div class="mt-1.5 text-[12px] leading-relaxed text-dl-text-muted">
+					재무 수치와 원문 근거를 동시에 확인합니다. DART/EDGAR 40개+ 모듈을 AI가 자동으로 조합합니다.
 				</div>
 			</div>
 		{/if}
@@ -100,25 +100,39 @@
 				placeholder={selectedCompany?.stockCode ? "예: 최근 공시에서 중요한 변화만 요약해줘" : "삼성전자 재무 건전성을 분석해줘..."}
 				{onSend}
 				{onCompanySelect}
+				{onCommand}
 			/>
+			<!-- 단축키 힌트 -->
+			<div class="flex items-center justify-center gap-3 mt-2 text-[10px] text-dl-text-dim/40">
+				<span class="flex items-center gap-1">
+					<kbd class="px-1 py-0.5 rounded border border-dl-border/30 bg-dl-bg-card/50 text-[9px] font-mono">Ctrl</kbd>
+					<span>+</span>
+					<kbd class="px-1 py-0.5 rounded border border-dl-border/30 bg-dl-bg-card/50 text-[9px] font-mono">K</kbd>
+					<span class="ml-0.5">검색</span>
+				</span>
+				<span class="flex items-center gap-1">
+					<kbd class="px-1 py-0.5 rounded border border-dl-border/30 bg-dl-bg-card/50 text-[9px] font-mono">/</kbd>
+					<span class="ml-0.5">명령어</span>
+				</span>
+			</div>
 		</div>
 
-		<div class="mt-5 w-full">
-			<div class="mb-2 flex items-center justify-center gap-2">
-				<div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-dl-text-dim">
+		<div class="mt-4 w-full">
+			<div class="mb-1.5 flex items-center justify-center gap-2">
+				<div class="text-[9px] font-semibold uppercase tracking-[0.18em] text-dl-text-dim">
 					{selectedCompany?.stockCode ? "추천 질문" : "바로 시작"}
 				</div>
 				{#if suggestionLoading && selectedCompany?.stockCode}
-					<span class="inline-flex items-center gap-1 text-[11px] text-dl-text-dim">
-						<Loader2 size={11} class="animate-spin" />
-						추천 질문 준비 중
+					<span class="inline-flex items-center gap-1 text-[10px] text-dl-text-dim">
+						<Loader2 size={10} class="animate-spin" />
+						준비 중
 					</span>
 				{/if}
 			</div>
-			<div class="flex w-full flex-wrap justify-center gap-2">
+			<div class="flex w-full flex-wrap justify-center gap-1.5">
 				{#each promptChips as prompt}
 					<button
-						class="rounded-full border border-dl-border/60 bg-dl-bg-card/40 px-3 py-1.5 text-[12px] text-dl-text-muted transition-colors hover:border-dl-primary/30 hover:text-dl-primary-light"
+						class="rounded-full border border-dl-border/50 bg-dl-bg-card/30 px-2.5 py-1 text-[11px] text-dl-text-muted transition-colors hover:border-dl-primary/30 hover:text-dl-primary-light"
 						onclick={() => onSend?.(prompt)}
 					>
 						{prompt}

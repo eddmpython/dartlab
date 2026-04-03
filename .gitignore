@@ -41,6 +41,7 @@ node_modules/
 # UI build artifacts
 ui/build/
 ui/node_modules/
+ui/screenshots/
 ui/.svelte-kit/
 
 # Landing page build artifacts

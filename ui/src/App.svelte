@@ -22,7 +22,7 @@
 		getLastAssistantStockCode,
 	} from "$lib/ai/chatStream.js";
 	import { normalizeProvider } from "$lib/ai/providerProfile.js";
-	import { cn, createSwipeHandler } from "$lib/utils.js";
+	import { createSwipeHandler } from "$lib/utils.js";
 	import { createConversationsStore } from "$lib/stores/conversations.svelte.js";
 	import { createWorkspaceStore } from "$lib/stores/workspace.svelte.js";
 	import { createUiStore } from "$lib/stores/ui.svelte.js";
@@ -35,8 +35,8 @@
 	import PanelResizer from "$lib/components/PanelResizer.svelte";
 	import {
 		Menu, PanelLeftClose, Coffee, Github, FileText, Search,
-		Loader2, Settings, AlertCircle,
 	} from "lucide-svelte";
+	import ProviderDropdown from "$lib/components/ProviderDropdown.svelte";
 
 	// ── Stores ──
 	const ui = createUiStore();
@@ -53,6 +53,22 @@
 	let showSearchModal = $state(false);
 	let suggestRequestId = 0;
 	const suggestionCache = new Map();
+
+	// ── 모듈 선택 ──
+	let selectedModules = $state(JSON.parse(localStorage.getItem("dartlab-modules") || "[]"));
+
+	// ── 슬래시 명령어 ──
+	function handleSlashCommand(cmd) {
+		if (cmd === "new") handleNewChat();
+		else if (cmd === "clear") {
+			if (store.active) {
+				store.active.messages = [];
+				store.flush();
+			}
+		}
+		else if (cmd === "provider" || cmd === "settings") ui.openSettings(cmd === "provider" ? "providers" : undefined);
+		else if (cmd === "help") ui.showToast("Ctrl+K: 검색 / Ctrl+N: 새 대화 / /provider: 프로바이더 전환", "info", 5000);
+	}
 
 	// ── 워치리스트 ──
 	let watchlist = $state(JSON.parse(localStorage.getItem("dartlab-watchlist") || "[]"));
@@ -86,13 +102,7 @@
 	// ── Derived ──
 	let activeMessages = $derived(store.active?.messages || []);
 	let hasConversation = $derived(store.active && store.active.messages.length > 0);
-	let noProviderAvailable = $derived(
-		!ui.statusLoading && (
-			!ui.activeProvider
-			|| !ui.providers[ui.activeProvider]?.available
-			|| !ui.providerSupportsRole(ui.activeProvider, ui.CHAT_ROLE)
-		)
-	);
+	// provider 유효성은 ProviderDropdown과 sendMessage에서 개별 판단
 
 	// ── Init ──
 	let statusLoaded = false;
@@ -390,33 +400,7 @@
 				class="p-1.5 rounded-lg text-[#ffdd00]/60 hover:text-[#ffdd00] hover:bg-white/5 transition-colors" title="Buy me a coffee">
 				<Coffee size={14} />
 			</a>
-			<button
-				class={cn(
-					"flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] transition-colors",
-					ui.statusLoading
-						? "text-dl-text-dim"
-						: noProviderAvailable
-							? "text-dl-primary-light bg-dl-primary/10 hover:bg-dl-primary/15"
-							: "text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5"
-				)}
-				onclick={() => ui.openSettings()}
-			>
-				{#if ui.statusLoading}
-					<Loader2 size={12} class="animate-spin" />
-					<span>확인 중...</span>
-				{:else if noProviderAvailable}
-					<AlertCircle size={12} />
-					<span>설정 필요</span>
-				{:else}
-					<span class="w-1.5 h-1.5 rounded-full bg-dl-success"></span>
-					<span>{ui.providers[ui.activeProvider]?.label || ui.activeProvider}</span>
-					{#if ui.activeModel}
-						<span class="text-dl-text-dim">/</span>
-						<span class="max-w-[80px] truncate">{ui.activeModel}</span>
-					{/if}
-				{/if}
-				<Settings size={12} />
-			</button>
+			<ProviderDropdown {ui} onOpenSettings={() => ui.openSettings()} />
 		</div>
 
 		<!-- Content: Chat only -->
@@ -442,6 +426,8 @@
 						{watchlist}
 						onAddWatch={addToWatchlist}
 						onRemoveWatch={removeFromWatchlist}
+						onCommand={handleSlashCommand}
+						bind:selectedModules
 					/>
 				{:else}
 					<EmptyState
@@ -456,6 +442,7 @@
 						onWatchlistClick={(item) => {
 							handleCompanySelect({ stockCode: item.code, corpName: item.name, company: item.name });
 						}}
+						onCommand={handleSlashCommand}
 					/>
 				{/if}
 			</div>

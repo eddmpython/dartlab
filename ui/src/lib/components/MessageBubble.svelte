@@ -21,7 +21,7 @@
 	import { summarizeDataReady } from "$lib/ai/dataReady.js";
 	import {
 		Database, Eye, Wrench, Loader2, Brain, FileText,
-		RefreshCw, CheckCircle2, Clock,
+		RefreshCw, CheckCircle2,
 	} from "lucide-svelte";
 	import { renderMarkdown } from "$lib/markdown.js";
 	import { estimateTokens, formatTokens } from "$lib/chat/tokenEstimator.js";
@@ -106,12 +106,6 @@
 	);
 	let dataReadyInfo = $derived(summarizeDataReady(message.meta?.dataReady || message.dataReady));
 
-	let hasTransparencyData = $derived(
-		message.systemPrompt || message.userContent ||
-		message.contexts?.length > 0 || message.meta?.includedModules ||
-		message.toolEvents?.length > 0
-	);
-
 	let dataYearRange = $derived.by(() => {
 		const raw = message.meta?.dataYearRange;
 		if (!raw) return null;
@@ -130,6 +124,13 @@
 		return total;
 	});
 	let outputTokens = $derived(estimateTokens(message.text));
+
+	let tlStatus = $derived.by(() => {
+		if (message.loading) return "tl-loading";
+		if (message.error) return "tl-error";
+		if (message.text) return "tl-success";
+		return "";
+	});
 
 	let contentEl = $state();
 	const ICON_COPY = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
@@ -293,11 +294,8 @@
 </script>
 
 {#if message.role === "user"}
-	<div class="flex items-start gap-3 animate-message-enter group/user {staggerIndex > 0 ? 'animate-stagger-in' : ''}" style={staggerIndex > 0 ? `--stagger-index: ${staggerIndex}` : ''}>
-		<div class="w-7 h-7 rounded-full bg-dl-bg-card-hover border border-dl-border flex items-center justify-center text-[10px] font-semibold text-dl-text-muted flex-shrink-0 mt-0.5">
-			You
-		</div>
-		<div class="flex-1 pt-0.5 min-w-0">
+	<div class="msg-user animate-message-enter group/user {staggerIndex > 0 ? 'animate-stagger-in' : ''}" style={staggerIndex > 0 ? `--stagger-index: ${staggerIndex}` : ''}>
+		<div class="flex-1 min-w-0">
 			{#if isEditing}
 				<div class="flex flex-col gap-2">
 					<textarea
@@ -326,8 +324,7 @@
 					</div>
 				</div>
 			{:else}
-				<div class="flex items-start gap-2">
-					<p class="text-[15px] text-dl-text leading-relaxed flex-1">{message.text}</p>
+				<div class="flex items-start gap-2 justify-end">
 					{#if onEditResend}
 						<button
 							class="p-1 rounded text-dl-text-dim opacity-0 group-hover/user:opacity-60 hover:!opacity-100 hover:text-dl-text transition-all flex-shrink-0 mt-0.5"
@@ -337,14 +334,16 @@
 							<Pencil size={12} />
 						</button>
 					{/if}
+					<div class="inline-block px-3 py-1.5 rounded-lg border border-dl-border/40 bg-dl-bg-card/60 text-[14px] text-dl-text leading-relaxed max-w-[85%]">
+						{message.text}
+					</div>
 				</div>
 			{/if}
 		</div>
 	</div>
 {:else}
-	<div class="flex items-start gap-3 animate-message-enter {staggerIndex > 0 ? 'animate-stagger-in' : ''}" style={staggerIndex > 0 ? `--stagger-index: ${staggerIndex}` : ''}>
-		<img src="/avatar.png" alt="DartLab" class="w-7 h-7 rounded-full flex-shrink-0 mt-0.5" />
-		<div class="message-shell flex-1 pt-0.5 min-w-0 relative">
+	<div class="msg-timeline {tlStatus} animate-message-enter {staggerIndex > 0 ? 'animate-stagger-in' : ''}" style={staggerIndex > 0 ? `--stagger-index: ${staggerIndex}` : ''}>
+		<div class="message-shell flex-1 min-w-0 relative">
 
 			<TransparencyBadges
 				{message}
@@ -603,54 +602,55 @@
 					</div>
 				{/if}
 
-				<!-- ── 하단 메타 (응답 완료 후) ── -->
-				{#if !message.loading && (message.duration || hasTransparencyData || onRegenerate)}
-					<div class="flex flex-wrap items-center gap-2 mt-3 pt-2 border-t border-dl-border/20">
+				<!-- ── 하단 메타 (Claude Code 스타일: 왼쪽 메타 · 오른쪽 액션) ── -->
+				{#if !message.loading && (message.duration || message.text || onRegenerate)}
+					<div class="flex items-center gap-1.5 mt-2 pt-1.5 text-[10px] text-dl-text-dim/70">
+						<!-- 왼쪽: 메타 정보 -->
 						{#if message.duration}
-							<span class="flex items-center gap-1 text-[10px] text-dl-text-dim">
-								<Clock size={10} />
-								{message.duration}초
-							</span>
+							<span>{message.duration}초</span>
 						{/if}
-
+						{#if toolCallEvents.length > 0}
+							{#if message.duration}<span>·</span>{/if}
+							<span>{toolCallEvents.length} tools</span>
+						{/if}
 						{#if inputTokens > 0 || outputTokens > 0}
-							<span class="flex items-center gap-1.5 text-[10px] text-dl-text-dim font-mono" title="추정 토큰 (입력 ↑ / 출력 ↓)">
-								{#if inputTokens > 0}
-									<span class="text-dl-accent/60">↑{formatTokens(inputTokens)}</span>
-								{/if}
-								{#if outputTokens > 0}
-									<span class="text-dl-success/60">↓{formatTokens(outputTokens)}</span>
-								{/if}
-							</span>
+							<span>·</span>
+							<span class="font-mono">~{formatTokens(inputTokens + outputTokens)} tok</span>
 						{/if}
 
+						<!-- 투명성 버튼 -->
+						{#if message.systemPrompt}
+							<span>·</span>
+							<button class="hover:text-dl-text-muted transition-colors" onclick={openSystemPromptModal} title="시스템 프롬프트">
+								<Brain size={10} />
+							</button>
+						{/if}
+						{#if message.userContent}
+							<button class="hover:text-dl-text-muted transition-colors" onclick={openUserContentModal} title="LLM 입력 전문">
+								<FileText size={10} />
+							</button>
+						{/if}
+
+						<!-- 오른쪽: 액션 -->
+						<span class="flex-1"></span>
+						{#if message.text}
+							<button
+								class="hover:text-dl-text-muted transition-colors"
+								onclick={() => {
+									navigator.clipboard.writeText(message.text);
+								}}
+								title="응답 복사"
+							>
+								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+							</button>
+						{/if}
 						{#if onRegenerate}
 							<button
-								class="flex items-center gap-1 px-2 py-0.5 rounded-full border border-dl-border/40 text-[10px] text-dl-text-dim hover:text-dl-primary-light hover:border-dl-primary/30 transition-all"
+								class="hover:text-dl-text-muted transition-colors"
 								onclick={() => onRegenerate?.()}
+								title="재생성"
 							>
-								<RefreshCw size={10} />
-								재생성
-							</button>
-						{/if}
-
-						{#if message.systemPrompt}
-							<button
-								class="flex items-center gap-1 px-2 py-0.5 rounded-full border border-dl-border/40 text-[10px] text-dl-text-dim hover:text-dl-primary-light hover:border-dl-primary/30 transition-all"
-								onclick={openSystemPromptModal}
-							>
-								<Brain size={10} />
-								시스템 프롬프트
-							</button>
-						{/if}
-
-						{#if message.userContent}
-							<button
-								class="flex items-center gap-1 px-2 py-0.5 rounded-full border border-dl-border/40 text-[10px] text-dl-text-dim hover:text-dl-accent hover:border-dl-accent/30 transition-all"
-								onclick={openUserContentModal}
-							>
-								<FileText size={10} />
-								LLM 입력 ({message.userContent.length.toLocaleString()}자 · ~{formatTokens(estimateTokens(message.userContent))}tok)
+								<RefreshCw size={12} />
 							</button>
 						{/if}
 					</div>
