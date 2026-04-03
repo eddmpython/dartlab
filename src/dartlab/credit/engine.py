@@ -224,6 +224,68 @@ def _isCaptiveByOFS(company, consolidatedBorrowing: float) -> bool:
         return False
 
 
+_PUBLIC_CORPS = {"한국전력", "한국가스공사", "한국수력원자력", "한국도로공사", "한국토지주택공사"}
+
+
+def _calcNotchAdjustment(
+    company, grade: str, score: float, latest: dict, metrics: dict,
+    holding: bool, captive: bool, sepMetrics: dict | None,
+) -> dict:
+    """v3 Notch Adjustment — 기업 특성 기반 등급 보정.
+
+    정량 점수만으로는 반영 불가능한 요소를 notch 단위로 보정:
+    - 기업 규모/시장 지위
+    - 공기업/규제 보호
+    - 캡티브 금융 별도 부채 양호
+    - 지주사 별도 부채 양호
+    - CAPEX 집약 OCF 양수
+
+    총 ±5 notch cap. score 15 이하(AA 이상)에는 미적용 (퇴행 방지).
+    """
+    # 이미 우량인 기업은 조정 불필요 (퇴행 방지)
+    if score <= 15:
+        return {"totalNotch": 0, "reasons": []}
+
+    notches: list[tuple[int, str]] = []
+    corpName = getattr(company, "corpName", "") or ""
+
+    # 1. 기업 규모 (매출 기준)
+    revenue = latest.get("revenue") or 0
+    if revenue > 50e12:  # 50조+
+        notches.append((2, f"대형기업 (매출 {revenue/1e12:.0f}조)"))
+    elif revenue > 10e12:  # 10조+
+        notches.append((1, f"중대형기업 (매출 {revenue/1e12:.0f}조)"))
+
+    # 2. 공기업/정부 보호
+    if any(k in corpName for k in _PUBLIC_CORPS) or "한국전력" in corpName:
+        notches.append((3, "공기업 (정부 보증/규제 보호)"))
+
+    # 3. 캡티브 금융 — 별도 D/EBITDA가 양호하면 상향
+    if captive and sepMetrics:
+        sepDE = sepMetrics.get("separateDebtToEbitda")
+        if sepDE is not None and sepDE < 3:
+            notches.append((2, f"캡티브금융 별도 D/EBITDA {sepDE:.1f}x (양호)"))
+
+    # 4. 지주사 — 별도 부채비율이 양호하면 상향
+    if holding and sepMetrics:
+        sepDR = sepMetrics.get("separateDebtRatio")
+        if sepDR is not None and sepDR < 100:
+            notches.append((2, f"지주사 별도 부채비율 {sepDR:.0f}% (양호)"))
+
+    # 5. CAPEX 집약 but OCF 양수 (투자 중이지만 현금은 도는 기업)
+    ocf = latest.get("ocf") or 0
+    fcf = latest.get("fcf") or 0
+    if ocf > 0 and fcf < 0 and abs(fcf) > 0:  # OCF+, FCF- = CAPEX 집약
+        notches.append((1, "CAPEX집약 OCF양수 (투자 사이클)"))
+
+    # 총 notch 합산 (상한 5)
+    totalNotch = min(sum(n for n, _ in notches), 5)
+    # 음수 notch(하향)는 없으므로 상향만
+    reasons = [r for _, r in notches]
+
+    return {"totalNotch": totalNotch, "reasons": reasons}
+
+
 def _isCyclical(sector) -> bool:
     if sector is None:
         return False
@@ -415,6 +477,20 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
 
     grade, gradeDesc, pdEstimate = mapTo20Grade(overall)
 
+    # ── v3 Notch Adjustment (기업 특성 기반 등급 보정) ──
+    notchAdj = _calcNotchAdjustment(
+        company, grade, overall, latest, metrics, holding, captive, sepMetrics,
+    )
+    if notchAdj["totalNotch"] != 0:
+        from dartlab.core.finance.creditScorecard import notchGrade as _notchGrade
+
+        grade = _notchGrade(grade, notchAdj["totalNotch"])
+        # 보정 후 등급에 맞는 PD 재계산
+        from dartlab.core.finance.creditScorecard import estimatePD
+
+        pdEstimate = estimatePD(grade)
+        gradeDesc = gradeCategory(grade) + " (notch 조정)"
+
     # ── eCR ──
     eCR = cashFlowGrade(
         latest.get("ocfToSales"),
@@ -447,7 +523,8 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         "holding": holding,
         "latestPeriod": latest.get("period"),
         "chsAdjustment": chsResult,
-        "methodologyVersion": "v2.0",
+        "notchAdjustment": notchAdj if notchAdj["totalNotch"] != 0 else None,
+        "methodologyVersion": "v3.0",
         "axes": [
             {
                 "name": a["name"],
