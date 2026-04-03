@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775177701035,
+  "lastUpdate": 1775177826654,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -8091,6 +8091,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 1.423030295197867e-7",
             "extra": "mean: 649.5261651934136 nsec\nrounds: 154155"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "88ca7ae7c8acdb178fb29117a7cf7e50d7d5151b",
+          "message": "fix: API 한도 초과 시 키 로테이션 + graceful exit\n\n- _discoverNewFilings: 여러 키 순서대로 시도, 전부 020이면 빈 결과 반환\n- 한도 초과 시 crash 대신 \"수집 불가, 다음 실행까지 대기\" 출력 후 정상 종료\n- changed_*.txt 빈 파일 생성 → 후속 upload step 안전 skip",
+          "timestamp": "2026-04-03T09:56:05+09:00",
+          "tree_id": "64d21d718b86ebe9130ca103779baad9b0b6d989",
+          "url": "https://github.com/eddmpython/dartlab/commit/88ca7ae7c8acdb178fb29117a7cf7e50d7d5151b"
+        },
+        "date": 1775177826204,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 529660.6907306269,
+            "unit": "iter/sec",
+            "range": "stddev: 4.951005376688972e-7",
+            "extra": "mean: 1.8880011628210045 usec\nrounds: 53320"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 643101.2652215032,
+            "unit": "iter/sec",
+            "range": "stddev: 4.4561140344001804e-7",
+            "extra": "mean: 1.5549650639476977 usec\nrounds: 127633"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 523932.61149639933,
+            "unit": "iter/sec",
+            "range": "stddev: 5.229802291789697e-7",
+            "extra": "mean: 1.9086424056405054 usec\nrounds: 114065"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 676005.8542875608,
+            "unit": "iter/sec",
+            "range": "stddev: 3.8198798655202873e-7",
+            "extra": "mean: 1.4792771300093177 usec\nrounds: 139025"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 800641.6029784369,
+            "unit": "iter/sec",
+            "range": "stddev: 4.0855968114934505e-7",
+            "extra": "mean: 1.2489982987143529 usec\nrounds: 160463"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 267860.99715738994,
+            "unit": "iter/sec",
+            "range": "stddev: 6.466929194714988e-7",
+            "extra": "mean: 3.7332796137259927 usec\nrounds: 69267"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7409305.4733662605,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1266194170315216e-8",
+            "extra": "mean: 134.96541660951 nsec\nrounds: 73234"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8987243.220392257,
+            "unit": "iter/sec",
+            "range": "stddev: 1.0234313346854825e-8",
+            "extra": "mean: 111.26882576527778 nsec\nrounds: 88645"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1443548.341442392,
+            "unit": "iter/sec",
+            "range": "stddev: 2.590216238164405e-7",
+            "extra": "mean: 692.7374520764585 nsec\nrounds: 175408"
           }
         ]
       }
