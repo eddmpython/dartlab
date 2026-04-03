@@ -277,17 +277,37 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         captive = _isCaptiveByOFS(company, latest.get("totalBorrowing") or 0)
     cyclical = _isCyclical(sector)
 
+    # 자본집약 자동 감지 (CAPEX/자산 > 5% 또는 D/EBITDA > 5)
+    capexRatio = None
+    capex = latest.get("fcf") is not None and latest.get("ocf") is not None
+    if latest.get("totalAssets") and latest.get("totalAssets") > 0:
+        capexVal = abs((latest.get("ocf") or 0) - (latest.get("fcf") or 0))
+        capexRatio = capexVal / latest["totalAssets"] * 100
+    capitalIntensive = (capexRatio is not None and capexRatio > 5) or (latest.get("debtToEbitda") or 0) > 8
+
     # 지주사/캡티브 금융이면 특화 기준 적용
     if captive:
-        from dartlab.core.sector.types import Sector
+        from dartlab.core.finance.sectorThresholds import _airlineThresholds
 
-        thresholds = getThresholds(Sector.UTILITIES, None)
+        thresholds = _airlineThresholds()  # 항공(자본집약) 기준 — 유틸보다 현실적
         sectorLabel = f"{getSectorLabel(sector)} (캡티브금융조정)"
     elif holding:
         from dartlab.core.finance.sectorThresholds import _holdingThresholds
 
         thresholds = _holdingThresholds()
         sectorLabel = f"{getSectorLabel(sector)} (지주사조정)"
+    elif capitalIntensive and not cyclical:
+        # 자본집약 but 에너지/소재가 아닌 기업 (삼성SDI, 한전 등)
+        from dartlab.core.finance.sectorThresholds import _airlineThresholds
+
+        base = getThresholds(sector, industryGroup)
+        capThresh = _airlineThresholds()
+        # D/EBITDA와 부채비율만 완화, 나머지는 기존 유지
+        base["debt_to_ebitda"] = capThresh["debt_to_ebitda"]
+        base["debt_ratio"] = capThresh["debt_ratio"]
+        base["net_debt_to_ebitda"] = capThresh["net_debt_to_ebitda"]
+        thresholds = base
+        sectorLabel = f"{getSectorLabel(sector)} (자본집약조정)"
     else:
         thresholds = getThresholds(sector, industryGroup)
         sectorLabel = getSectorLabel(sector)

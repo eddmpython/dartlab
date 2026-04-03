@@ -673,7 +673,7 @@ def calcFinancialMetrics(company, *, basePeriod: str | None = None) -> dict | No
     """
     bsResult = company.select(
         "BS",
-        ["자산총계", "부채총계", "자본총계", "유동자산", "유동부채", "현금및현금성자산"],
+        ["자산총계", "부채총계", "자본총계", "유동자산", "유동부채", "현금및현금성자산", "현금및예치금"],
     )
     bsParsed = _toDict(bsResult)
     if bsParsed is None:
@@ -708,7 +708,7 @@ def calcFinancialMetrics(company, *, basePeriod: str | None = None) -> dict | No
     oi = isData.get("영업이익", {})
     ta = bsData.get("자산총계", {})
     eq = bsData.get("자본총계", {})
-    cash = bsData.get("현금및현금성자산", {})
+    cash = bsData.get("현금및현금성자산", {}) or bsData.get("현금및예치금", {})
     ca = bsData.get("유동자산", {})
     cl = bsData.get("유동부채", {})
     ocf = cfData.get("영업활동현금흐름", {})
