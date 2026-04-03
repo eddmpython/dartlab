@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775177826654,
+  "lastUpdate": 1775179935898,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -8178,6 +8178,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.590216238164405e-7",
             "extra": "mean: 692.7374520764585 nsec\nrounds: 175408"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "97847d1c07d44ccccfb6c7ae80487659c64f79ce",
+          "message": "feat: HF→로컬 자동 동기화 개선 + 문서 현행화\n\nTTL 체계 단축:\n- DART ETag TTL 72h → 24h (CI가 매일 HF 업데이트하므로)\n- L2 폴백 TTL 90일 → 30일\n- collect 수집 데이터도 7일 후 HF 최신본 확인 (etag 없는 파일)\n- 네트워크 오류 시 etag touch로 재시도 쓰로틀링\n\n파이프라인 안정화:\n- syncRecent.py 세마포어 6→4 (API 한도 소진 속도 조절)\n\n문서 동기화:\n- ops/data.md: dataSyncDaily 2 병렬 job, concurrency, 키 로테이션,\n  3-Layer Freshness TTL 값 갱신, refresh 파라미터 문서화\n- quickstart.md: Data freshness 섹션 추가 (자동 갱신, 오프라인 모드)",
+          "timestamp": "2026-04-03T10:31:14+09:00",
+          "tree_id": "d413e2b1e5a903c1f5b6e7a5b9e17bb54ab0166d",
+          "url": "https://github.com/eddmpython/dartlab/commit/97847d1c07d44ccccfb6c7ae80487659c64f79ce"
+        },
+        "date": 1775179935237,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 520300.8028503234,
+            "unit": "iter/sec",
+            "range": "stddev: 8.713332233095846e-7",
+            "extra": "mean: 1.9219651296361218 usec\nrounds: 47777"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 611368.000009798,
+            "unit": "iter/sec",
+            "range": "stddev: 8.165788807840527e-7",
+            "extra": "mean: 1.6356760576019251 usec\nrounds: 110816"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 513853.6942900302,
+            "unit": "iter/sec",
+            "range": "stddev: 5.422743471034817e-7",
+            "extra": "mean: 1.9460792266593654 usec\nrounds: 111932"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 684340.5991074722,
+            "unit": "iter/sec",
+            "range": "stddev: 4.1733822662497826e-7",
+            "extra": "mean: 1.461260666551445 usec\nrounds: 156986"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 914832.0704446186,
+            "unit": "iter/sec",
+            "range": "stddev: 1.569566942008083e-7",
+            "extra": "mean: 1.093096790445911 usec\nrounds: 170678"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 251941.3733765341,
+            "unit": "iter/sec",
+            "range": "stddev: 6.622334576817035e-7",
+            "extra": "mean: 3.969177378839915 usec\nrounds: 68909"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7119852.135525084,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2780057752142631e-8",
+            "extra": "mean: 140.45235504406313 nsec\nrounds: 68814"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8056533.160568688,
+            "unit": "iter/sec",
+            "range": "stddev: 3.954767485459147e-8",
+            "extra": "mean: 124.12286774841658 nsec\nrounds: 78933"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1476099.5395730417,
+            "unit": "iter/sec",
+            "range": "stddev: 3.071841384797568e-7",
+            "extra": "mean: 677.4610879488843 nsec\nrounds: 179276"
           }
         ]
       }
