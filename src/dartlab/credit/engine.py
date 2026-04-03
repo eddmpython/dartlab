@@ -194,7 +194,7 @@ def _calcCHSAdjustment(company, baseScore: float) -> dict | None:
         # ±2 notch 범위 = score ±6 정도 (1 notch ≈ 3점)
         diff = chsScore - baseScore
         maxAdj = 6.0  # ±2 notch
-        adj = max(min(diff * 0.3, maxAdj), -maxAdj)  # 30% 반영, 최대 ±6
+        adj = max(min(diff * 0.15, 3.0), -3.0)  # 15% 반영, 최대 ±1 notch(≈3점)
 
         return {
             "adjustedScore": round(baseScore + adj, 2),
