@@ -5,6 +5,33 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.8] - 2026-04-04
+
+### Added
+
+- **credit v3 Notch Adjustment**: 기업 특성(규모/공기업/캡티브/지주/CAPEX) 기반 등급 보정. 30개사 60% 적중.
+- **credit Track B 금융업**: 은행/보험/증권 전용 5축 (자본적정성/수익성/자산건전성/유동성/사업안정성). 신한지주 AA+ 정확 일치.
+- **CHS 부도확률 모델 연동**: 주가 기반 ±1 notch 시장 보정. EPS 역산 shares 추정.
+- **별도재무제표(OFS) 블렌딩**: 캡티브 금융/지주사에서 연결 50% + 별도 50% 블렌딩. 현대차 별도 차입금 1.9조 vs 연결 58조 자동 감지.
+- **analysis 14축 TTM 환산**: 연간 컬럼 없는 기업(금융지주/일부 대기업) 분기→연환산. KB금융 ROE 0.09%→8.41%.
+- **macro 엔진**: 5축(사이클/금리/자산/심리/유동성) 시장 레벨 매크로 분석. Company 불필요.
+- **forecast 이익 연동**: 영업이익/순이익을 매출전망×마진추세로 연동 예측.
+- **AI 멀티턴 메모리**: keyMetrics 구조화 수치 저장. 3턴 이후 이전 분석 수치 참조 가능.
+- **company-reports 블로그**: 6막 재무 서사 기반 기업분석 보고서 카테고리 (LG화학/KT&G/대한항공).
+
+### Changed
+
+- **시스템 프롬프트 69% 압축**: 333→110줄. 도구 나열→라우팅 테이블 전환. 상한 150줄/5,000자.
+- **credit 업종 기준표 10개**: 반도체/비철/항공/지주/통신 D/EBITDA 완화, 유틸 유동비율 완화.
+- **금융업 현금및예치금 fallback**: 금융지주 BS 구조 대응.
+
+### Fixed
+
+- **금융업 revenue 정의**: 이자수익→금융이익 우선 (KB금융 영업이익률 2363%→135.8%).
+- **이자비용 CF fallback**: IS에 이자비용 없는 기업도 ICR 계산 (대한항공 None→1.38).
+- **FCF 음수 FOCF/Debt 스킵**: CAPEX 집약 기업 축1 과대평가 방지.
+- **consensus stale cache**: 전 소스 실패 시 24시간 이전 캐시 반환.
+
 ## [0.8.7] - 2026-04-03
 
 ### Added

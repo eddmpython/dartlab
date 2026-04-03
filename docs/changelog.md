@@ -9,6 +9,31 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.8] - 2026-04-04
+
+### Added
+
+- credit v3 Notch Adjustment (규모/공기업/캡티브/지주 등급 보정)
+- credit Track B 금융업 5축 전용 모델
+- CHS 부도확률 모델 연동 (주가 기반 시장 보정)
+- 별도재무제표(OFS) 블렌딩 (캡티브/지주 차입금 보정)
+- analysis 14축 TTM 환산 (분기→연환산)
+- macro 엔진 5축 (사이클/금리/자산/심리/유동성)
+- forecast 영업이익/순이익 매출×마진 연동 예측
+- AI 멀티턴 keyMetrics 메모리
+- company-reports 블로그 카테고리
+
+### Changed
+
+- 시스템 프롬프트 69% 압축 (333→110줄)
+- credit 업종 기준표 10개 재보정
+
+### Fixed
+
+- 금융업 revenue 정의 (이자수익→금융이익)
+- 이자비용 CF fallback
+- FCF 음수 FOCF/Debt 스킵
+
 ## [0.8.7] - 2026-04-03
 
 ### Added
