@@ -96,7 +96,7 @@ def _discoverNewFilings(
         (targetCodes, codeToFilings)
         codeToFilings: {stockCode: [{rcept_no, rcept_dt, report_nm, corp_code, corp_name}, ...]}
     """
-    from dartlab.providers.dart.openapi.client import DartClient
+    from dartlab.providers.dart.openapi.client import DartApiError, DartClient
     from dartlab.providers.dart.openapi.disclosure import listFilings
     from dartlab.core.dataConfig import DATA_RELEASES
 
@@ -105,16 +105,31 @@ def _discoverNewFilings(
     end = datetime.now()
     start = end - timedelta(days=lookbackDays)
 
-    client = DartClient(apiKey=keys.split(",")[0].strip())
+    # 키 로테이션: 여러 키가 있으면 순서대로 시도
+    keyList = [k.strip() for k in keys.split(",") if k.strip()]
+    filings = None
 
-    filings = listFilings(
-        client,
-        corp=None,
-        start=start.strftime("%Y%m%d"),
-        end=end.strftime("%Y%m%d"),
-        filingType="A",
-        fetchAll=True,
-    )
+    for apiKey in keyList:
+        try:
+            client = DartClient(apiKey=apiKey)
+            filings = listFilings(
+                client,
+                corp=None,
+                start=start.strftime("%Y%m%d"),
+                end=end.strftime("%Y%m%d"),
+                filingType="A",
+                fetchAll=True,
+            )
+            break  # 성공
+        except DartApiError as e:
+            if "020" in str(e):
+                print(f"[syncRecent] API 한도 초과 (키 {apiKey[:8]}...), 다음 키 시도")
+                continue
+            raise
+
+    if filings is None:
+        print("[syncRecent] 모든 API 키 한도 초과 → 수집 불가, 다음 실행까지 대기")
+        return set(), {}
 
     if filings.height == 0:
         print("[syncRecent] 최근 정기공시 없음")
@@ -186,8 +201,8 @@ async def _collectDocsDirect(
     docsDir = Path(dataDir) / DATA_RELEASES["docs"]["dir"]
     docsDir.mkdir(parents=True, exist_ok=True)
 
-    apiKey = keys.split(",")[0].strip()
-    client = AsyncDartClient(apiKey)
+    keyList = [k.strip() for k in keys.split(",") if k.strip()]
+    client = AsyncDartClient(keyList[0])
 
     # 모든 filing을 flat list로 변환
     allJobs: list[tuple[str, dict]] = []
