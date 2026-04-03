@@ -484,7 +484,8 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
     if notchAdj["totalNotch"] != 0:
         from dartlab.core.finance.creditScorecard import notchGrade as _notchGrade
 
-        grade = _notchGrade(grade, notchAdj["totalNotch"])
+        # notchGrade: +면 idx 증가(하향). 상향하려면 -notch
+        grade = _notchGrade(grade, -notchAdj["totalNotch"])
         # 보정 후 등급에 맞는 PD 재계산
         from dartlab.core.finance.creditScorecard import estimatePD
 
