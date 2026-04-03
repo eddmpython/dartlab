@@ -326,11 +326,11 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
             sep1 = axisScore(sep_axis1_scores)
             sep2 = axisScore(sep_axis2_scores)
 
-            # 연결 70% + 별도 30% 블렌딩
+            # 연결 50% + 별도 50% 블렌딩 (별도가 모회사 본체 재무)
             if sep1 is not None:
-                axis1 = round(axis1 * 0.7 + sep1 * 0.3, 2)
+                axis1 = round(axis1 * 0.5 + sep1 * 0.5, 2)
             if sep2 is not None:
-                axis2 = round(axis2 * 0.7 + sep2 * 0.3, 2)
+                axis2 = round(axis2 * 0.5 + sep2 * 0.5, 2)
 
     # ── 축 3: 유동성 ──
     axis3_scores = [
