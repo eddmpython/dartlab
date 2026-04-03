@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775222957442,
+  "lastUpdate": 1775223772135,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -8439,6 +8439,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 3.566155075957426e-7",
             "extra": "mean: 702.7302662654095 nsec\nrounds: 164718"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "1522b95031e2af0045cd6db0fd4ff6fe23c012b3",
+          "message": "fix: CHS 보정 강도 축소 — 30%/±6→15%/±3 (주가 급락 과보정 방지)",
+          "timestamp": "2026-04-03T22:41:47+09:00",
+          "tree_id": "ffed58cc3acb2687feb9512af940ed70e1d97d3a",
+          "url": "https://github.com/eddmpython/dartlab/commit/1522b95031e2af0045cd6db0fd4ff6fe23c012b3"
+        },
+        "date": 1775223771323,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 536126.2898376249,
+            "unit": "iter/sec",
+            "range": "stddev: 5.55198522133759e-7",
+            "extra": "mean: 1.8652321644269063 usec\nrounds: 57007"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 653445.3107643005,
+            "unit": "iter/sec",
+            "range": "stddev: 4.808556967428726e-7",
+            "extra": "mean: 1.5303499520569714 usec\nrounds: 132381"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 533408.9432545202,
+            "unit": "iter/sec",
+            "range": "stddev: 5.500062316820888e-7",
+            "extra": "mean: 1.8747342215498668 usec\nrounds: 123840"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 665557.581462788,
+            "unit": "iter/sec",
+            "range": "stddev: 4.139837345531802e-7",
+            "extra": "mean: 1.5024996001129785 usec\nrounds: 153799"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 897432.1798657915,
+            "unit": "iter/sec",
+            "range": "stddev: 1.610405172605182e-7",
+            "extra": "mean: 1.1142903301612688 usec\nrounds: 173581"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 260281.16995987293,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000014742534506377003",
+            "extra": "mean: 3.841999020344684 usec\nrounds: 69411"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7263433.442254369,
+            "unit": "iter/sec",
+            "range": "stddev: 1.6245342613882414e-8",
+            "extra": "mean: 137.6759363116884 nsec\nrounds: 72855"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8899757.444984278,
+            "unit": "iter/sec",
+            "range": "stddev: 3.412901729144695e-8",
+            "extra": "mean: 112.36261282194603 nsec\nrounds: 88724"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1442584.146795619,
+            "unit": "iter/sec",
+            "range": "stddev: 2.9791967703503985e-7",
+            "extra": "mean: 693.2004640570037 nsec\nrounds: 175408"
           }
         ]
       }
