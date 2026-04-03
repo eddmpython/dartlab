@@ -29,7 +29,7 @@ _DOWNLOAD_TIMEOUT = 30
 _MAX_RETRIES = 3
 _EDGAR_UNIVERSE_TTL_HOURS = 24
 _EDGAR_DOCS_FRESHNESS_TTL_HOURS = 24
-_DART_FRESHNESS_TTL_HOURS = 72
+_DART_FRESHNESS_TTL_HOURS = 24
 _SEC_HEADERS = {"User-Agent": "DartLab eddmpython@gmail.com"}
 _LISTED_EXCHANGES = {"Nasdaq", "NYSE", "CBOE"}
 
@@ -136,7 +136,12 @@ def _shouldRefreshDart(path: Path, refresh: str) -> bool:
     # auto: TTL 기반 — etag 파일의 mtime이 TTL보다 오래됐으면 체크
     etagPath = path.with_suffix(".parquet.etag")
     if not etagPath.exists():
-        return False  # etag 없으면 HF에서 받은 게 아님 (collect로 수집)
+        # collect로 수집한 데이터도 7일 후 HF 최신본 확인
+        try:
+            age = time.time() - path.stat().st_mtime
+            return age > _DART_FRESHNESS_TTL_HOURS * 3600 * 7
+        except OSError:
+            return False
     try:
         age = time.time() - etagPath.stat().st_mtime
         return age > _DART_FRESHNESS_TTL_HOURS * 3600
@@ -147,6 +152,12 @@ def _shouldRefreshDart(path: Path, refresh: str) -> bool:
 def _refreshFromHf(stockCode: str, path: Path, category: str) -> None:
     """ETag 비교 후 HF가 최신이면 다운로드로 갱신. 실패 시 기존 파일 유지."""
     stale = _checkRemoteFreshness(stockCode, path, category)
+    if stale is None:
+        # 네트워크 오류 — etag mtime만 갱신하여 다음 TTL까지 재시도 방지
+        etagPath = path.with_suffix(".parquet.etag")
+        if etagPath.exists():
+            etagPath.touch()
+        return
     if stale is not True:
         return
     from dartlab.core.guidance import emit

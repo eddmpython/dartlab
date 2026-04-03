@@ -215,7 +215,7 @@ async def _collectDocsDirect(
     failCount = [0]
     stockSections: dict[str, list[dict]] = {}  # stockCode → sections
 
-    sem = asyncio.Semaphore(6)  # 동시 6개 다운로드
+    sem = asyncio.Semaphore(4)  # 동시 4개 다운로드 (API 한도 소진 속도 조절)
 
     async def _fetchOne(stockCode: str, row: dict) -> None:
         if client.exhausted:

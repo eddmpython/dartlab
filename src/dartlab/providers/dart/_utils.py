@@ -13,7 +13,7 @@ import polars as pl
 
 _PERIOD_COLUMN_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 
-_DART_FRESHNESS_TTL_DAYS = 90
+_DART_FRESHNESS_TTL_DAYS = 30
 
 
 def _isPeriodColumn(name: str) -> bool:

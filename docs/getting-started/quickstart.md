@@ -22,6 +22,13 @@ c = dartlab.Company("005930")  # Samsung Electronics
 
 Data is downloaded automatically on first use. No setup needed.
 
+### Data freshness
+
+- **첫 사용**: HuggingFace에서 자동 다운로드 (종목당 수 MB)
+- **이후**: 24시간마다 HF 업데이트 자동 확인 (HTTP HEAD, 비용 거의 0)
+- **대량 다운로드**: `dartlab.downloadAll("finance")` — 전체 종목 일괄 (`pip install dartlab[hf]`)
+- **오프라인**: `dartlab.loadData("005930", refresh="local_only")` — 네트워크 체크 생략
+
 ## 2. See the whole company
 
 ```python
