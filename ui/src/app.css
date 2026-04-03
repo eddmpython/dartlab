@@ -47,6 +47,20 @@
 	--font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
 }
 
+/* ── VSCode webview theme mapping ── */
+[data-vscode] {
+	--color-dl-bg-dark: var(--vscode-editor-background, #050811);
+	--color-dl-bg-darker: var(--vscode-sideBar-background, #030509);
+	--color-dl-bg-card: var(--vscode-editorGroupHeader-tabsBackground, #0f1219);
+	--color-dl-bg-card-hover: var(--vscode-list-hoverBackground, #1a1f2b);
+	--color-dl-text: var(--vscode-foreground, #f1f5f9);
+	--color-dl-text-muted: var(--vscode-descriptionForeground, #94a3b8);
+	--color-dl-text-dim: var(--vscode-disabledForeground, #64748b);
+	--color-dl-border: var(--vscode-panel-border, #1e2433);
+	font-family: var(--vscode-font-family, var(--font-sans));
+	font-size: var(--vscode-font-size, 13px);
+}
+
 /* ── Light theme override ── */
 [data-theme="light"] {
 	--color-dl-bg-dark: #f8fafc;
@@ -446,6 +460,126 @@ button, a, input, textarea {
 }
 .code-block-wrap:hover .code-copy-btn { opacity: 1; }
 .code-copy-btn:hover { color: var(--color-dl-text); background: rgba(30, 36, 51, 0.9); }
+
+/* ── Tool block (Claude Code 패턴: 코드실행/도구호출 IN/OUT 그리드) ── */
+.tool-block {
+	border: 0.5px solid rgba(148, 163, 184, 0.15);
+	border-radius: 5px;
+	overflow: hidden;
+	background: rgba(13, 17, 23, 0.6);
+}
+.tool-header {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	width: 100%;
+	padding: 5px 10px;
+	border: none;
+	background: none;
+	color: var(--color-dl-text);
+	font: inherit;
+	font-size: 13px;
+	cursor: pointer;
+	text-align: left;
+	transition: background var(--motion-fast);
+}
+.tool-header:hover { background: rgba(148, 163, 184, 0.06); }
+.tool-chevron {
+	flex-shrink: 0;
+	transition: transform 0.15s;
+	color: var(--color-dl-text-dim);
+}
+.tool-chevron.open { transform: rotate(90deg); }
+.tool-ok { color: var(--color-dl-success); flex-shrink: 0; }
+.tool-annotation {
+	color: var(--color-dl-success);
+	background-color: rgba(52, 211, 153, 0.15);
+	border-radius: 3px;
+	padding: 2px 6px;
+	font-size: 11px;
+	margin-left: auto;
+	flex-shrink: 0;
+}
+.tool-name {
+	font-weight: 600;
+	font-family: var(--font-mono);
+	color: var(--color-dl-primary-light);
+	font-size: 12px;
+}
+.tool-args {
+	color: var(--color-dl-text-dim);
+	font-size: 11px;
+	font-family: var(--font-mono);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	flex: 1;
+}
+.tool-body {
+	border-top: 0.5px solid rgba(148, 163, 184, 0.12);
+	display: grid;
+	grid-template-columns: max-content 1fr;
+}
+.tool-body-row {
+	grid-column: 1 / -1;
+	display: grid;
+	grid-template-columns: subgrid;
+	border-top: 0.5px solid rgba(148, 163, 184, 0.08);
+	padding: 4px;
+}
+.tool-body-row:first-child { border-top: none; }
+.tool-body-label {
+	grid-column: 1;
+	color: var(--color-dl-text-dim);
+	opacity: 0.5;
+	font-family: var(--font-mono);
+	font-size: 0.82em;
+	padding: 4px 8px 4px 4px;
+	text-align: left;
+}
+.tool-body-content {
+	grid-column: 2;
+	white-space: pre-wrap;
+	word-break: break-word;
+	padding: 4px;
+	max-height: 240px;
+	overflow-y: auto;
+	font-family: var(--font-mono);
+	font-size: 0.82em;
+	color: var(--color-dl-text-muted);
+}
+.tool-body-content pre {
+	margin: 0;
+	font-family: inherit;
+	font-size: inherit;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+.tool-body-content table {
+	border-collapse: collapse;
+	width: 100%;
+	font-size: 12px;
+}
+.tool-body-content th,
+.tool-body-content td {
+	padding: 4px 8px;
+	border: 0.5px solid rgba(148, 163, 184, 0.15);
+	text-align: left;
+}
+.tool-body-content th {
+	background: rgba(148, 163, 184, 0.08);
+	font-weight: 600;
+}
+.tool-spinner-sm {
+	width: 10px;
+	height: 10px;
+	border: 1.5px solid var(--color-dl-text-dim);
+	border-top-color: var(--color-dl-primary);
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+	flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Code fold (Python >3줄 자동 접기) ── */
 .code-fold {

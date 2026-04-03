@@ -37,6 +37,7 @@
 		Menu, PanelLeftClose, Coffee, Github, FileText, Search,
 	} from "lucide-svelte";
 	import ProviderDropdown from "$lib/components/ProviderDropdown.svelte";
+	import { isVSCode } from "$lib/api/transport.js";
 
 	// ── Stores ──
 	const ui = createUiStore();
@@ -340,44 +341,48 @@
 <svelte:window onkeydown={handleGlobalKeydown} />
 
 <div class="flex h-screen bg-dl-bg-dark overflow-hidden">
-	<!-- Sidebar -->
-	{#if ui.isMobile && ui.sidebarOpen}
-		<button class="sidebar-overlay" onclick={() => { ui.sidebarOpen = false; }} aria-label="사이드바 닫기"></button>
-	{/if}
-	<div class={ui.isMobile ? (ui.sidebarOpen ? "sidebar-mobile" : "hidden") : ""}>
-		<Sidebar
-			conversations={store.conversations}
-			activeId={store.activeId}
-			open={ui.isMobile ? true : ui.sidebarOpen}
-			width={sidebarWidth}
-			version={ui.appVersion}
-			onNewChat={() => { handleNewChat(); if (ui.isMobile) ui.sidebarOpen = false; }}
-			onSelect={(id) => { handleSelectConversation(id); if (ui.isMobile) ui.sidebarOpen = false; }}
-			onDelete={handleDeleteConversation}
-			onDeleteAll={handleDeleteAllConversations}
-			onRename={(id, title) => { if (title) store.updateTitle(id, title); }}
-			onOpenSearch={() => { showSearchModal = true; }}
-		/>
-		{#if !ui.isMobile && ui.sidebarOpen}
-			<PanelResizer onResize={handleSidebarResize} />
+	<!-- Sidebar (브라우저에서만 — VSCode는 확장 사이드바 사용) -->
+	{#if !isVSCode}
+		{#if ui.isMobile && ui.sidebarOpen}
+			<button class="sidebar-overlay" onclick={() => { ui.sidebarOpen = false; }} aria-label="사이드바 닫기"></button>
 		{/if}
-	</div>
+		<div class={ui.isMobile ? (ui.sidebarOpen ? "sidebar-mobile" : "hidden") : ""}>
+			<Sidebar
+				conversations={store.conversations}
+				activeId={store.activeId}
+				open={ui.isMobile ? true : ui.sidebarOpen}
+				width={sidebarWidth}
+				version={ui.appVersion}
+				onNewChat={() => { handleNewChat(); if (ui.isMobile) ui.sidebarOpen = false; }}
+				onSelect={(id) => { handleSelectConversation(id); if (ui.isMobile) ui.sidebarOpen = false; }}
+				onDelete={handleDeleteConversation}
+				onDeleteAll={handleDeleteAllConversations}
+				onRename={(id, title) => { if (title) store.updateTitle(id, title); }}
+				onOpenSearch={() => { showSearchModal = true; }}
+			/>
+			{#if !ui.isMobile && ui.sidebarOpen}
+				<PanelResizer onResize={handleSidebarResize} />
+			{/if}
+		</div>
+	{/if}
 
 	<!-- Main -->
 	<div class="relative flex flex-col flex-1 min-w-0 min-h-0 glow-bg">
-		<!-- Top-left: sidebar toggle -->
-		<div class="absolute top-2 left-3 z-20 pointer-events-auto flex items-center gap-1">
-			<button
-				class="p-1.5 rounded-lg text-dl-text-muted hover:text-dl-text hover:bg-white/5 transition-colors"
-				onclick={() => ui.toggleSidebar()}
-			>
-				{#if ui.sidebarOpen}
-					<PanelLeftClose size={18} />
-				{:else}
-					<Menu size={18} />
-				{/if}
-			</button>
-		</div>
+		<!-- Top-left: sidebar toggle (브라우저에서만) -->
+		{#if !isVSCode}
+			<div class="absolute top-2 left-3 z-20 pointer-events-auto flex items-center gap-1">
+				<button
+					class="p-1.5 rounded-lg text-dl-text-muted hover:text-dl-text hover:bg-white/5 transition-colors"
+					onclick={() => ui.toggleSidebar()}
+				>
+					{#if ui.sidebarOpen}
+						<PanelLeftClose size={18} />
+					{:else}
+						<Menu size={18} />
+					{/if}
+				</button>
+			</div>
+		{/if}
 
 		<!-- Top-right controls -->
 		<div class="absolute top-2 right-3 z-20 flex items-center gap-1 pointer-events-auto">
@@ -388,18 +393,20 @@
 			>
 				<Search size={14} />
 			</button>
-			<a href="https://eddmpython.github.io/dartlab/" target="_blank" rel="noopener noreferrer"
-				class="p-1.5 rounded-lg text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5 transition-colors" title="Documentation">
-				<FileText size={14} />
-			</a>
-			<a href="https://github.com/eddmpython/dartlab" target="_blank" rel="noopener noreferrer"
-				class="p-1.5 rounded-lg text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5 transition-colors" title="GitHub">
-				<Github size={14} />
-			</a>
-			<a href="https://buymeacoffee.com/eddmpython" target="_blank" rel="noopener noreferrer"
-				class="p-1.5 rounded-lg text-[#ffdd00]/60 hover:text-[#ffdd00] hover:bg-white/5 transition-colors" title="Buy me a coffee">
-				<Coffee size={14} />
-			</a>
+			{#if !isVSCode}
+				<a href="https://eddmpython.github.io/dartlab/" target="_blank" rel="noopener noreferrer"
+					class="p-1.5 rounded-lg text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5 transition-colors" title="Documentation">
+					<FileText size={14} />
+				</a>
+				<a href="https://github.com/eddmpython/dartlab" target="_blank" rel="noopener noreferrer"
+					class="p-1.5 rounded-lg text-dl-text-dim hover:text-dl-text-muted hover:bg-white/5 transition-colors" title="GitHub">
+					<Github size={14} />
+				</a>
+				<a href="https://buymeacoffee.com/eddmpython" target="_blank" rel="noopener noreferrer"
+					class="p-1.5 rounded-lg text-[#ffdd00]/60 hover:text-[#ffdd00] hover:bg-white/5 transition-colors" title="Buy me a coffee">
+					<Coffee size={14} />
+				</a>
+			{/if}
 			<ProviderDropdown {ui} onOpenSettings={() => ui.openSettings()} />
 		</div>
 
@@ -449,8 +456,8 @@
 		</div>
 	</div>
 
-	<!-- 모바일 하단 탭 바 -->
-	{#if ui.isMobile}
+	<!-- 모바일 하단 탭 바 (브라우저에서만) -->
+	{#if ui.isMobile && !isVSCode}
 		<nav class="flex items-center justify-around h-12 border-t border-dl-border/30 bg-dl-bg-darker/95 backdrop-blur-sm flex-shrink-0 safe-area-bottom" aria-label="메인 탐색">
 			<button
 				class="flex flex-col items-center gap-0.5 flex-1 py-1.5 transition-colors text-dl-text-dim"

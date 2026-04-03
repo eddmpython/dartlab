@@ -32,9 +32,12 @@ const MOCK_CONVERSATION = {
 				},
 				toolEvents: [
 					{ type: "call", name: "companyFinancials", arguments: { stockCode: "005930", years: "2021-2024" } },
-					{ type: "result", name: "companyFinancials", result: "재무제표 로드 완료" },
+					{ type: "result", name: "companyFinancials", result: "| 항목 | 2022 | 2023 | 2024 |\n|------|------|------|------|\n| 매출액 | 302조 | 259조 | 301조 |\n| 영업이익 | 43.4조 | 6.6조 | 32.7조 |" },
 					{ type: "call", name: "companyRatios", arguments: { stockCode: "005930" } },
-					{ type: "result", name: "companyRatios", result: "비율 분석 완료" },
+					{ type: "result", name: "companyRatios", result: "비율 분석 완료: ROE 8.2%, PER 12.4x, PBR 1.1x" },
+				],
+				codeRounds: [
+					{ round: 1, maxRounds: 3, status: "done", code: "c = dartlab.Company('005930')\nr = c.analysis('financial', '안정성')\nprint(r)", result: "| 지표 | 2022 | 2023 | 2024 |\n|------|------|------|------|\n| 부채비율 | 35.2% | 32.1% | 29.8% |\n| 유동비율 | 245% | 258% | 271% |\n| 이자보상배율 | 8.5x | 12.3x | 15.1x |" },
 				],
 			},
 			{ role: "user", text: "현금흐름도 같이 점검해줘" },

@@ -1,7 +1,11 @@
 /**
  * DartLab API 클라이언트
+ * 브라우저: HTTP/SSE 직접 통신
+ * VSCode webview: postMessage 브릿지 (Extension Host 경유)
  */
 import { BASE, fetchPack } from "./api/http.js";
+import { isVSCode } from "./api/transport.js";
+import { askStreamVSCode } from "./api/vscodeTransport.js";
 
 export {
 	codexLogout,
@@ -349,6 +353,13 @@ export async function ask(company, question, options = {}) {
  * @param {function} onUiAction - ui_action 이벤트 콜백 (canonical action)
  */
 export function askStream(company, question, options = {}, { onMeta, onSnapshot, onContext, onSystemPrompt, onToolCall, onToolResult, onCodeRound, onChart, onChunk, onDone, onError, onUiAction }, history = null) {
+	// VSCode 환경: postMessage 브릿지 사용
+	if (isVSCode) {
+		return askStreamVSCode(company, question, options,
+			{ onMeta, onSnapshot, onContext, onSystemPrompt, onToolCall, onToolResult, onCodeRound, onChart, onChunk, onDone, onError, onUiAction },
+			history);
+	}
+
 	const body = { question, stream: true, ...options };
 	if (company) body.company = company;
 	if (history && history.length > 0) body.history = history;

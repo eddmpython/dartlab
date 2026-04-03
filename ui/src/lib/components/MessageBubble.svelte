@@ -32,7 +32,7 @@
 	import EvidenceModal from "./EvidenceModal.svelte";
 	import CitationPopover from "./CitationPopover.svelte";
 
-	import { Pencil, Send, ChevronRight, Star } from "lucide-svelte";
+	import { Pencil, Send, Star } from "lucide-svelte";
 	let {
 		message, onRegenerate, onOpenEvidence, onOpenArtifact, onEditResend, staggerIndex = 0,
 		onAddWatch, onRemoveWatch, isWatched = false,
@@ -462,9 +462,12 @@
 				</div>
 			{:else}
 				{#if message.loading}
-					<div class="message-section-slot flex items-center gap-2 mb-2 text-[11px] text-dl-text-dim">
-						<Loader2 size={12} class="animate-spin flex-shrink-0" />
-						<span>{loadingPhase}</span>
+					<div class="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg bg-dl-bg-darker/30 border border-dl-border/10 text-[11px] text-dl-text-dim">
+						<Loader2 size={12} class="animate-spin flex-shrink-0 text-dl-accent" />
+						<span class="flex-1">{loadingPhase}</span>
+						{#if elapsed > 0}
+							<span class="font-mono text-[10px] text-dl-text-dim/50">{elapsed}초</span>
+						{/if}
 					</div>
 				{/if}
 				<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -500,64 +503,68 @@
 					{/if}
 				</div>
 
-				<!-- ── 코드 실행 라운드 (Claude Code 패턴: 기본 접힘, 한 줄 요약) ── -->
+				<!-- ── 코드 실행 (Claude Code tool-block 패턴: IN/OUT 그리드) ── -->
 				{#if message.codeRounds?.length}
-					<div class="flex flex-col gap-0.5 mt-2 mb-1">
+					<div class="flex flex-col gap-1 mt-2 mb-1">
 						{#each message.codeRounds as cr, crIdx}
 							{@const isExpanded = collapsedCodeRounds[crIdx] === true}
-							<div class="rounded border border-dl-border/15 overflow-hidden bg-dl-bg-darker/20">
-								<button
-									class="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] hover:bg-white/3 transition-colors"
-									onclick={() => { collapsedCodeRounds = { ...collapsedCodeRounds, [crIdx]: !isExpanded }; }}
-								>
-									<ChevronRight size={11} class="flex-shrink-0 transition-transform duration-150 {isExpanded ? 'rotate-90' : ''} text-dl-text-dim/50" />
+							{@const firstLine = cr.code?.split('\n').find(l => l.trim() && !l.trim().startsWith('#') && !l.trim().startsWith('import')) || cr.code?.split('\n')[0] || ''}
+							<div class="tool-block">
+								<button class="tool-header" onclick={() => { collapsedCodeRounds = { ...collapsedCodeRounds, [crIdx]: !isExpanded }; }}>
+									<svg class="tool-chevron" class:open={isExpanded} width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg>
 									{#if cr.status === "executing" && message.loading}
-										<Loader2 size={12} class="animate-spin flex-shrink-0 text-dl-accent" />
+										<div class="tool-spinner-sm"></div>
 									{:else}
-										<CheckCircle2 size={12} class="flex-shrink-0 text-dl-success/70" />
+										<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" class="tool-ok"><path d="M6.5 12L2 7.5l1.4-1.4L6.5 9.2l6.1-6.1L14 4.5z"/></svg>
 									{/if}
-									<span class="font-mono font-bold text-[12px]">Python</span>
-									<span class="text-dl-text-dim/70 font-mono text-[12px] truncate flex-1 text-left">{cr.code?.split('\n').find(l => l.trim() && !l.trim().startsWith('#') && !l.trim().startsWith('import')) || cr.code?.split('\n')[0] || `실행 ${cr.round}/${cr.maxRounds}`}</span>
+									<span class="tool-args">{truncateStr(firstLine, 100)}</span>
+									{#if cr.status === "done"}
+										<span class="tool-annotation">완료</span>
+									{/if}
 								</button>
 								{#if isExpanded}
-									{#if cr.code}
-										<div class="border-t border-dl-border/10 bg-dl-bg-darker/40 px-3 py-2 max-h-64 overflow-y-auto">
-											<pre class="text-[12px] text-dl-text-muted whitespace-pre-wrap break-words font-mono leading-relaxed m-0">{cr.code}</pre>
-										</div>
-									{/if}
-									{#if cr.result}
-										<div class="border-t border-dl-border/10 bg-dl-bg-darker/20 px-3 py-2 max-h-80 overflow-y-auto">
-											<div class="text-[12px] text-dl-text-muted font-mono leading-relaxed prose-dartlab">{@html renderMarkdown(cr.result)}</div>
-										</div>
-									{/if}
+									<div class="tool-body">
+										{#if cr.code}
+											<div class="tool-body-row">
+												<div class="tool-body-label">IN</div>
+												<div class="tool-body-content"><pre>{cr.code}</pre></div>
+											</div>
+										{/if}
+										{#if cr.result}
+											<div class="tool-body-row">
+												<div class="tool-body-label">OUT</div>
+												<div class="tool-body-content prose-dartlab">{@html renderMarkdown(cr.result)}</div>
+											</div>
+										{/if}
+									</div>
 								{/if}
 							</div>
 						{/each}
 					</div>
 				{/if}
 
-				<!-- ── Tool 접기/펼치기 (Claude Code 패턴: 기본 접힘) ── -->
-				{#if toolPairs.length > 0 && !message.loading}
-					<div class="flex flex-col gap-0.5 mt-1 mb-1">
+				<!-- ── Tool 호출 (Claude Code tool-block 패턴: 로딩 중에도 표시) ── -->
+				{#if toolPairs.length > 0}
+					<div class="flex flex-col gap-1 mt-1 mb-1">
 						{#each toolPairs as pair, i}
 							{@const isToolExpanded = collapsedTools[i] === true}
-							<div class="rounded border border-dl-border/15 overflow-hidden bg-dl-bg-darker/20">
-								<button
-									class="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] hover:bg-white/3 transition-colors"
-									onclick={() => toggleTool(i)}
-								>
-									<ChevronRight size={11} class="flex-shrink-0 transition-transform duration-150 {isToolExpanded ? 'rotate-90' : ''} text-dl-text-dim/50" />
+							<div class="tool-block">
+								<button class="tool-header" onclick={() => toggleTool(i)}>
+									<svg class="tool-chevron" class:open={isToolExpanded} width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg>
 									{#if pair.result}
-										<CheckCircle2 size={12} class="flex-shrink-0 text-dl-success/70" />
+										<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" class="tool-ok"><path d="M6.5 12L2 7.5l1.4-1.4L6.5 9.2l6.1-6.1L14 4.5z"/></svg>
 									{:else}
-										<Loader2 size={12} class="animate-spin flex-shrink-0" />
+										<div class="tool-spinner-sm"></div>
 									{/if}
-									<span class="font-mono font-bold text-[12px]">{toolLabel(pair.call.name)}</span>
-									<span class="text-dl-text-dim/70 font-mono text-[12px] truncate flex-1 text-left">{truncateStr(formatToolArg(pair.call.arguments), 60)}</span>
+									<span class="tool-name">{toolLabel(pair.call.name)}</span>
+									<span class="tool-args">{truncateStr(formatToolArg(pair.call.arguments), 60)}</span>
 								</button>
 								{#if isToolExpanded && pair.result}
-									<div class="px-3 py-2 border-t border-dl-border/10 bg-dl-bg-darker/30 max-h-48 overflow-y-auto">
-										<pre class="text-[11px] text-dl-text-dim whitespace-pre-wrap break-words font-mono m-0">{truncateStr(typeof pair.result.result === "string" ? pair.result.result : JSON.stringify(pair.result.result, null, 2), 2000)}</pre>
+									<div class="tool-body">
+										<div class="tool-body-row">
+											<div class="tool-body-label">OUT</div>
+											<div class="tool-body-content prose-dartlab">{@html renderMarkdown(typeof pair.result.result === "string" ? pair.result.result : JSON.stringify(pair.result.result, null, 2))}</div>
+										</div>
 									</div>
 								{/if}
 							</div>
