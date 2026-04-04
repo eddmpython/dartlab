@@ -442,34 +442,54 @@ def _fetchSegmentComposition(company) -> dict | None:
 
     company.notes.segments 직접 접근.
     cross-dependency 방지: credit ↛ analysis.
+    최신 연도 컬럼 하나만 사용하여 연도별 부문명 변경(IM→DX 등) 중복 방지.
     """
     try:
         accessor = getattr(company, "_notesAccessor", None) or getattr(company, "notes", None)
         if accessor is None:
             return None
         df = getattr(accessor, "segments", None)
-        if df is None or not hasattr(df, "to_dicts"):
-            return None
-        rows = df.to_dicts()
-        if not rows:
+        if df is None or not hasattr(df, "columns"):
             return None
 
-        # segments DataFrame: 부문 × 연도 (컬럼이 "2025","2024" 등)
-        # 첫 번째 문자열 컬럼이 부문명, 첫 번째 숫자 컬럼(최신 연도)이 매출
+        # DataFrame 구조: 부문(str), 2025(f64), 2024(f64), ...
+        # 최신 연도 컬럼 하나만 사용하여 중복 방지
+        yearCols = sorted(
+            [c for c in df.columns if c.isdigit() and len(c) == 4],
+            reverse=True,
+        )
+        if not yearCols:
+            return None
+        latestYear = yearCols[0]
+
+        # 부문명 컬럼: 첫 번째 문자열 타입 컬럼
+        nameCol = None
+        for c in df.columns:
+            if c == "부문" or c == "항목":
+                nameCol = c
+                break
+        if nameCol is None:
+            # fallback: 숫자가 아닌 첫 번째 컬럼
+            for c in df.columns:
+                if not c.isdigit():
+                    nameCol = c
+                    break
+        if nameCol is None:
+            return None
+
         segments = []
-        for row in rows:
-            name = None
-            revenue = None
-            for k, v in row.items():
-                if isinstance(v, str) and name is None:
-                    name = v.strip()
-                elif isinstance(v, (int, float)) and v > 0 and revenue is None:
-                    revenue = v  # 최신 연도의 값
+        for row in df.iter_rows(named=True):
+            name = row.get(nameCol)
+            revenue = row.get(latestYear)
+            if not isinstance(name, str) or not name.strip():
+                continue
+            name = name.strip()
+            if not isinstance(revenue, (int, float)) or revenue <= 0:
+                continue
             # "합계", "조정", "내부" 행 제외
-            if name and revenue and revenue > 0:
-                if any(skip in name for skip in ("합계", "조정", "내부거래", "상계")):
-                    continue
-                segments.append({"name": name, "revenue": revenue})
+            if any(skip in name for skip in ("합계", "조정", "내부거래", "상계")):
+                continue
+            segments.append({"name": name, "revenue": revenue})
 
         if not segments:
             return None

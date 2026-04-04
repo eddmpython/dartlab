@@ -9,11 +9,11 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-# UI 빌드 디렉토리: 환경변수 우선, 없으면 프로젝트 루트/ui/build
+# UI 빌드 디렉토리: 환경변수 우선, 없으면 프로젝트 루트/ui/web/build
 _UI_DIR = (
     Path(os.environ["DARTLAB_UI_DIR"])
     if os.environ.get("DARTLAB_UI_DIR")
-    else Path(__file__).resolve().parents[3] / "ui" / "build"
+    else Path(__file__).resolve().parents[3] / "ui" / "web" / "build"
 )
 
 

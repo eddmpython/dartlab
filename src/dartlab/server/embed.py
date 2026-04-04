@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, PlainTextResponse
 
 router = APIRouter()
 
-_EMBED_PATH = Path(__file__).resolve().parents[3] / "ui" / "build" / "embed.js"
+_EMBED_PATH = Path(__file__).resolve().parents[3] / "ui" / "web" / "build" / "embed.js"
 
 
 @router.get("/embed.js")

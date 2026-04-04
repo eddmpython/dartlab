@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2] - 2026-04-04
+
+### Changed
+
+- Extension relocated from `vscode/` to `ui/vscode/` (webview under `ui/vscode/webview/`)
+- Shared chart/api/markdown code extracted to `ui/shared/`
+
 ## [0.2.1] - 2026-04-03
 
 ### Added

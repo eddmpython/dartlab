@@ -5,6 +5,24 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.9] - 2026-04-04
+
+### Changed
+
+- **UI 구조 전면 재편**: `vscode/` + `ui/` → `ui/vscode/`, `ui/web/`, `ui/shared/` 통합. 확장 본체와 webview가 `ui/vscode/` 한 곳에.
+- **shared 코드 분리**: chart, api, markdown 렌더러를 `ui/shared/`로 추출. web/vscode 중복 제거.
+- **macro 엔진 확장**: 위기감지/재고사이클/교역조건/수익률곡선/기업실적 집계 모듈 추가.
+- **EDGAR report 14 apiType**: auditOpinion, executive, majorHolder 등 SEC XBRL 기반 구조화 추출.
+- **FRED catalog 14그룹**: commodities, yieldcurve, flowoffunds 등 7개 그룹 추가.
+
+### Fixed
+
+- **CI 워크플로우 경로**: `vscode/webview` → `ui/vscode/webview` 일괄 수정.
+- **서버 SPA 경로**: `ui/build` → `ui/web/build` 수정 (web.py, embed.py).
+- **품질 게이트 baseline**: macro 확장에 따른 E/F 함수 수, vulture 수 반영.
+- **test_embed**: widget 미구현 상태에서 skip 처리.
+- **test_fred**: FRED catalog 그룹 수 7→14 반영.
+
 ## [0.8.8] - 2026-04-04
 
 ### Added
