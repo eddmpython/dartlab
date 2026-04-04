@@ -16,18 +16,18 @@ _BLOG_DIR = Path("blog/04-credit-reports")
 _REGISTRY_PATH = _BLOG_DIR / "_registry.json"
 
 
-def publishReport(stockCode: str, *, basePeriod: str | None = None) -> Path:
+def publishReport(stockCode: str, *, basePeriod: str | None = None, useAI: bool = False) -> Path:
     """보고서 생성 + 저장. 반환: 저장된 파일 경로."""
     from dartlab import Company
 
     company = Company(stockCode)
-    path = publishReportFromCompany(company, basePeriod=basePeriod)
+    path = publishReportFromCompany(company, basePeriod=basePeriod, useAI=useAI)
     del company
     gc.collect()
     return path
 
 
-def publishReportFromCompany(company, *, basePeriod: str | None = None) -> Path:
+def publishReportFromCompany(company, *, basePeriod: str | None = None, useAI: bool = False) -> Path:
     """Company 객체로 보고서 생성 + 블로그 포스트 저장."""
     from dartlab.credit.engine import evaluateCompany
 
@@ -38,7 +38,7 @@ def publishReportFromCompany(company, *, basePeriod: str | None = None) -> Path:
     corpName = getattr(company, "corpName", "") or ""
     stockCode = getattr(company, "stockCode", "") or ""
 
-    md = generateReportMarkdown(corpName, stockCode, result)
+    md = generateReportMarkdown(corpName, stockCode, result, useAI=useAI)
 
     # 블로그 포스트로 저장
     order, slug = _resolveSlug(stockCode, corpName)
@@ -339,6 +339,65 @@ def _renderExecutiveSummary(
     return lines
 
 
+def _renderFinancialHighlights(result: dict, sectionNum: int) -> list[str]:
+    """핵심 재무 지표 6개 + YoY."""
+    hist = result.get("metricsHistory") or []
+    if not hist:
+        return []
+    latest = hist[0]
+    prev = hist[1] if len(hist) > 1 else {}
+
+    lines = [f"## {sectionNum}. 재무 하이라이트", ""]
+    lines.append("| 지표 | 값 | 전년비 |")
+    lines.append("|------|-----:|------:|")
+
+    # 매출
+    rev = latest.get("revenue")
+    prevRev = prev.get("revenue")
+    if rev:
+        yoy = f"{(rev / prevRev - 1) * 100:+.1f}%" if prevRev and prevRev > 0 else "-"
+        lines.append(f"| 매출 | {_fmtTril(rev)} | {yoy} |")
+    else:
+        lines.append("| 매출 | - | - |")
+
+    # 영업이익
+    oi = latest.get("operatingIncome")
+    prevOi = prev.get("operatingIncome")
+    if oi is not None:
+        yoyOi = f"{(oi / prevOi - 1) * 100:+.1f}%" if prevOi and prevOi > 0 else "-"
+        lines.append(f"| 영업이익 | {_fmtTril(oi)} | {yoyOi} |")
+    else:
+        lines.append("| 영업이익 | - | - |")
+
+    # EBITDA
+    ebitda = latest.get("ebitda")
+    lines.append(f"| EBITDA | {_fmtTril(ebitda)} | - |" if ebitda else "| EBITDA | - | - |")
+
+    # OCF
+    ocf = latest.get("ocf")
+    lines.append(f"| 영업현금흐름 | {_fmtTril(ocf)} | - |" if ocf else "| 영업현금흐름 | - | - |")
+
+    # 순차입금
+    nd = latest.get("netDebt")
+    if nd is not None:
+        ndStr = "순현금" if nd <= 0 else _fmtTril(nd)
+    else:
+        ndStr = "-"
+    lines.append(f"| 순차입금 | {ndStr} | - |")
+
+    # D/EBITDA
+    de = latest.get("debtToEbitda")
+    prevDe = prev.get("debtToEbitda")
+    if de is not None:
+        trend = "↓개선" if prevDe is not None and de < prevDe else "↑악화" if prevDe is not None and de > prevDe else "-"
+        lines.append(f"| Debt/EBITDA | {de:.1f}x | {trend} |")
+    else:
+        lines.append("| Debt/EBITDA | - | - |")
+
+    lines.append("")
+    return lines
+
+
 def _renderCompanyOverview(
     profile: dict | None,
     rank: dict | None,
@@ -403,14 +462,21 @@ def _renderCompanyOverview(
     return lines
 
 
-def _renderSegmentTable(segComp: dict | None, mainNum: int = 3) -> list[str]:
-    """부문별 매출 비중 GFM 테이블. 중복 부문명 제거."""
+def _renderSegmentTable(segComp: dict | None, mainNum: int = 3, result: dict | None = None) -> list[str]:
+    """부문별 매출 비중 GFM 테이블. IS 매출로 금액 역산, 중복 부문명 제거."""
     if segComp is None:
         return []
     segments = segComp.get("segments", [])
     totalRev = segComp.get("totalRevenue")
     if not segments or not totalRev:
         return []
+
+    # IS 총매출로 금액 역산 (metricsHistory 우선)
+    isRevenue: float | None = None
+    if result:
+        hist = result.get("metricsHistory") or []
+        if hist:
+            isRevenue = hist[0].get("revenue")
 
     # 중복 부문명 제거 (최신 값 우선)
     seen: dict[str, float] = {}
@@ -430,11 +496,16 @@ def _renderSegmentTable(segComp: dict | None, mainNum: int = 3) -> list[str]:
     lines: list[str] = []
     lines.append(f"### {mainNum}.2 부문별 매출 구성")
     lines.append("")
-    lines.append("| 부문 | 비중 |")
-    lines.append("|------|-----:|")
+    lines.append("| 부문 | 매출 | 비중 |")
+    lines.append("|------|-----:|-----:|")
     for name, rev in items:
         pct = rev / total * 100
-        lines.append(f"| {name} | {pct:.1f}% |")
+        # IS 매출 × 비중으로 금액 역산
+        if isRevenue:
+            amount = isRevenue * pct / 100
+            lines.append(f"| {name} | {_fmtTril(amount)} | {pct:.1f}% |")
+        else:
+            lines.append(f"| {name} | - | {pct:.1f}% |")
     lines.append("")
     return lines
 
@@ -460,6 +531,36 @@ def _renderHHI(businessStability: dict | None, mainNum: int = 3) -> list[str]:
         lines.append("- 해석: 중간 집중도. 복수 사업부가 존재하나 특정 부문 비중이 높다.")
     else:
         lines.append("- 해석: 낮은 집중도. 사업 다각화가 잘 되어 있어 부문별 리스크가 분산된다.")
+    lines.append("")
+    return lines
+
+
+def _renderCausalDiagram(result: dict) -> list[str]:
+    """인과 흐름도 Mermaid — 매출→이익률→OCF→부채→등급."""
+    hist = result.get("metricsHistory") or [{}]
+    latest = hist[0]
+    rev = latest.get("revenue")
+    oi = latest.get("operatingIncome")
+    ocf = latest.get("ocf")
+    nd = latest.get("netDebt")
+    grade = result.get("grade", "")
+
+    # 데이터 부족하면 스킵
+    if rev is None and ocf is None:
+        return []
+
+    revStr = _fmtTril(rev) if rev else "?"
+    oiMargin = f"{oi / rev * 100:.0f}%" if oi is not None and rev and rev > 0 else "?"
+    ocfStr = _fmtTril(ocf) if ocf else "?"
+    ndStr = "순현금" if nd is not None and nd <= 0 else _fmtTril(nd) if nd else "?"
+
+    lines = ["", "```mermaid"]
+    lines.append("graph LR")
+    lines.append(f"    A[매출 {revStr}] --> B[영업이익률 {oiMargin}]")
+    lines.append(f"    B --> C[OCF {ocfStr}]")
+    lines.append(f"    C --> D[{ndStr}]")
+    lines.append(f"    D --> E[{grade}]")
+    lines.append("```")
     lines.append("")
     return lines
 
@@ -519,6 +620,7 @@ def generateReportMarkdown(
     *,
     auditResult=None,
     aiAnalysis: str | None = None,
+    useAI: bool = False,
 ) -> str:
     """마크다운 보고서 문자열 생성.
 
@@ -599,6 +701,13 @@ def generateReportMarkdown(
         _secCounter[0] = esNum
         lines.extend(esLines)
 
+    # ── 재무 하이라이트 (Executive Summary 직후) ──
+    fhNum = _secCounter[0] + 1
+    fhLines = _renderFinancialHighlights(result, sectionNum=fhNum)
+    if fhLines:
+        _secCounter[0] = fhNum
+        lines.extend(fhLines)
+
     # ── 사업 분석 ──
     profile = result.get("profile")
     rank = result.get("rank")
@@ -607,7 +716,7 @@ def generateReportMarkdown(
 
     bizNum = _secCounter[0] + 1  # 사업 분석 섹션 번호 예약
     overviewLines = _renderCompanyOverview(profile, rank, segComp, sector, result=result, mainNum=bizNum)
-    segmentLines = _renderSegmentTable(segComp, mainNum=bizNum)
+    segmentLines = _renderSegmentTable(segComp, mainNum=bizNum, result=result)
     hhiLines = _renderHHI(bizStab, mainNum=bizNum)
 
     if overviewLines or segmentLines or hhiLines:
@@ -621,15 +730,17 @@ def generateReportMarkdown(
     lines.append(_sec("등급 근거 상세"))
     lines.append("")
 
-    # AI 분석 (외부 전달 우선 → 자체 생성 시도 → 기계 서사 fallback)
+    # AI 분석 (useAI=True일 때만 AI 호출, 기본은 기계 서사)
     if aiAnalysis:
         lines.append(aiAnalysis)
-    else:
+    elif useAI:
         generatedAi = _generateAIAnalysis(corpName, stockCode, result, narratives, overallNarrative)
         if generatedAi:
             lines.append(generatedAi)
         else:
             lines.append(overallNarrative)
+    else:
+        lines.append(overallNarrative)
     lines.append("")
 
     # 6막 인과 연결
@@ -659,6 +770,11 @@ def generateReportMarkdown(
         for n in adequates:
             lines.append(f"- **{n.axisName}**: {n.summary}")
         lines.append("")
+
+    # ── 인과 흐름도 (등급 근거 섹션 끝) ──
+    causalDiagram = _renderCausalDiagram(result)
+    if causalDiagram:
+        lines.extend(causalDiagram)
 
     # ── 재무 분석 (7축/5축 상세) ──
     finNum = _secCounter[0] + 1

@@ -663,22 +663,78 @@ def narrateCausalChain(latest: dict, result: dict) -> str:
 
 
 def buildOverallNarrative(result: dict, narratives: list[AxisNarrative]) -> str:
-    """등급 근거 종합 서사 — 강점/약점 구분."""
+    """등급 근거 종합 서사 — 인과 체인 통합.
+
+    기존 "핵심 강점은 X, Y이다" → 인과 연결 문장으로 교체.
+    narrateCausalChain()의 흐름을 overall에 녹여서,
+    매출→이익→현금→안정성→등급의 인과가 한 문단에 드러난다.
+    """
     grade = result.get("grade", "?")
     score = result.get("score", 0)
 
     strengths = [n for n in narratives if n.severity == "strong"]
     weaknesses = [n for n in narratives if n.severity in ("weak", "critical")]
 
-    parts = [f"종합 신용등급 {grade} (점수 {score:.1f}/100)."]
+    # 인과 체인 데이터 추출
+    latest = {}
+    metricsHistory = result.get("metricsHistory", [])
+    if metricsHistory:
+        latest = metricsHistory[0]
 
+    rev = latest.get("revenue")
+    oi = latest.get("operatingIncome")
+    ocf = latest.get("ocf")
+    netDebt = latest.get("netDebt")
+    debtRatio = latest.get("debtRatio")
+
+    parts: list[str] = []
+
+    # 인과 체인 기반 도입문 구성
+    chainParts: list[str] = []
+    if rev and rev > 0:
+        chainParts.append(f"매출 {_fmtTril(rev)} 규모")
+    if oi is not None and rev and rev > 0:
+        margin = oi / rev * 100
+        if oi > 0:
+            chainParts.append(f"영업이익률 {margin:.0f}%의 수익 기반")
+        else:
+            chainParts.append(f"영업적자(이익률 {margin:.0f}%)의 수익 부진")
+    if ocf is not None and ocf > 0:
+        chainParts.append(f"OCF {_fmtTril(ocf)}의 현금창출력")
+    if netDebt is not None:
+        if netDebt <= 0:
+            chainParts.append("부채 부담 없는 순현금 구조")
+        elif debtRatio is not None and debtRatio < 100:
+            chainParts.append(f"부채비율 {debtRatio:.0f}%의 안정적 자본구조")
+        elif debtRatio is not None:
+            chainParts.append(f"부채비율 {debtRatio:.0f}%의 레버리지 부담")
+
+    if chainParts and len(chainParts) >= 2:
+        # 인과 연결 문장: "A에서 출발하는 B이 C를 유지하게 하고, ... 등급을 뒷받침한다"
+        intro = f"{grade}는 "
+        if len(chainParts) >= 3:
+            intro += f"[{chainParts[0]}]에서 출발하는 [{chainParts[1]}]이 [{chainParts[2]}]를 유지하게 하고, "
+            if len(chainParts) >= 4:
+                intro += f"[{chainParts[3]}]가 "
+            intro += f"등급을 뒷받침하는 구조를 반영한다."
+        else:
+            intro += f"[{chainParts[0]}]에서 비롯된 [{chainParts[1]}]이 등급을 뒷받침한다."
+        parts.append(intro)
+    else:
+        # 데이터 부족 시 기본 문장
+        parts.append(f"종합 신용등급 {grade} (점수 {score:.1f}/100).")
+
+    # 강점/약점 등급 방어/압력 요인
     if strengths:
-        names = ", ".join(n.axisName for n in strengths)
-        parts.append(f"핵심 강점은 {names}이다.")
+        sNames = ", ".join(n.axisName for n in strengths)
+        if weaknesses:
+            parts.append(f"핵심 강점인 {sNames}이 업황 변동 시에도 등급을 방어하는 완충 역할을 한다.")
+        else:
+            parts.append(f"핵심 강점인 {sNames}이 등급의 안정적 기반이다.")
 
     if weaknesses:
-        names = ", ".join(n.axisName for n in weaknesses)
-        parts.append(f"주요 약점은 {names}으로 등급 하방 압력 요인이다.")
+        wNames = ", ".join(n.axisName for n in weaknesses)
+        parts.append(f"다만 {wNames}은 등급 하방 압력 요인으로 모니터링이 필요하다.")
 
     if result.get("captiveFinance"):
         parts.append("캡티브 금융 복합기업으로 연결 재무제표의 구조적 왜곡이 존재한다.")
