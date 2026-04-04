@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775274469344,
+  "lastUpdate": 1775274801924,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -9657,6 +9657,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.7511691701278086e-7",
             "extra": "mean: 655.0094197277687 nsec\nrounds: 141724"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "8ac3f0654277372e466438d9fab5f58ca9cf5c6e",
+          "message": "fix: 부문별 매출 테이블 완성 — segments 파싱 수정 + 중복 제거\n\nmetrics.py: segments DataFrame 연도 컬럼 구조 인식 (기존: '매출' 키워드 검색 실패).\npublisher.py: 중복 부문명 제거 + 비중만 표시 (금액 단위 불일치 우회).\n삼성전자: DX 34.6%, IM 21.3%, DS 18.4% 등 7개 부문.",
+          "timestamp": "2026-04-04T12:52:18+09:00",
+          "tree_id": "e7fa9345800bfe3c6b4f3ff0ed0559d3313eed0c",
+          "url": "https://github.com/eddmpython/dartlab/commit/8ac3f0654277372e466438d9fab5f58ca9cf5c6e"
+        },
+        "date": 1775274801400,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 534189.833575145,
+            "unit": "iter/sec",
+            "range": "stddev: 5.049749287885463e-7",
+            "extra": "mean: 1.8719936942778397 usec\nrounds: 56139"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 646831.0010312265,
+            "unit": "iter/sec",
+            "range": "stddev: 6.702641632059852e-7",
+            "extra": "mean: 1.5459988751400677 usec\nrounds: 124456"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 533577.4723407782,
+            "unit": "iter/sec",
+            "range": "stddev: 5.425542201865735e-7",
+            "extra": "mean: 1.8741420915186862 usec\nrounds: 126503"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 399506.9100977379,
+            "unit": "iter/sec",
+            "range": "stddev: 5.282251293870217e-7",
+            "extra": "mean: 2.5030856156038794 usec\nrounds: 141563"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 884154.6296513606,
+            "unit": "iter/sec",
+            "range": "stddev: 1.6864181767261394e-7",
+            "extra": "mean: 1.131023880284741 usec\nrounds: 173281"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 269132.495709021,
+            "unit": "iter/sec",
+            "range": "stddev: 6.565741781310245e-7",
+            "extra": "mean: 3.7156419828290588 usec\nrounds: 68790"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7289092.775053163,
+            "unit": "iter/sec",
+            "range": "stddev: 1.6921545330746684e-8",
+            "extra": "mean: 137.19128441093363 nsec\nrounds: 73341"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8853866.545451501,
+            "unit": "iter/sec",
+            "range": "stddev: 1.575206148632615e-8",
+            "extra": "mean: 112.94500485934365 nsec\nrounds: 88488"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1455686.9580565267,
+            "unit": "iter/sec",
+            "range": "stddev: 3.0090194131112547e-7",
+            "extra": "mean: 686.9608843202733 nsec\nrounds: 164691"
           }
         ]
       }
