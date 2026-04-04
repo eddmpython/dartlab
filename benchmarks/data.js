@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775268283728,
+  "lastUpdate": 1775268409457,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -9222,6 +9222,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.737424264317009e-7",
             "extra": "mean: 688.1713999839528 nsec\nrounds: 156937"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "edf635e7198eebdbd88cc8e2d4cd0c25053f06ca",
+          "message": "fix: Track B에 Notch+divergence 추가 + CHS 현금및예치금 fallback\n\nTrack B 금융업에 Notch Adjustment 누락 수정.\nCHS BS select에 현금및예치금 fallback (금융지주).\nKB금융 CHS None→동작(PD 0.86%).",
+          "timestamp": "2026-04-04T11:05:40+09:00",
+          "tree_id": "3751c344ef98881539ac7f0a9862d07ddb1e9902",
+          "url": "https://github.com/eddmpython/dartlab/commit/edf635e7198eebdbd88cc8e2d4cd0c25053f06ca"
+        },
+        "date": 1775268408388,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 534008.1919334071,
+            "unit": "iter/sec",
+            "range": "stddev: 4.862815697695599e-7",
+            "extra": "mean: 1.8726304485694178 usec\nrounds: 50564"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 651875.0955042711,
+            "unit": "iter/sec",
+            "range": "stddev: 4.6867082133394834e-7",
+            "extra": "mean: 1.5340362086182013 usec\nrounds: 121877"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 523158.30937918526,
+            "unit": "iter/sec",
+            "range": "stddev: 5.738473891178633e-7",
+            "extra": "mean: 1.9114672978943357 usec\nrounds: 119977"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 650790.1789807567,
+            "unit": "iter/sec",
+            "range": "stddev: 4.5133676875597234e-7",
+            "extra": "mean: 1.536593563176019 usec\nrounds: 127796"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 798917.9062591866,
+            "unit": "iter/sec",
+            "range": "stddev: 4.1877066476528406e-7",
+            "extra": "mean: 1.2516930615341322 usec\nrounds: 159185"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 267054.4673230943,
+            "unit": "iter/sec",
+            "range": "stddev: 7.364599035901946e-7",
+            "extra": "mean: 3.7445544724408437 usec\nrounds: 58167"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7338822.073407057,
+            "unit": "iter/sec",
+            "range": "stddev: 1.3163418568277492e-8",
+            "extra": "mean: 136.26164934882374 nsec\nrounds: 73720"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8823020.786324712,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1772263996383044e-8",
+            "extra": "mean: 113.33986672115239 nsec\nrounds: 78107"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1455063.899739045,
+            "unit": "iter/sec",
+            "range": "stddev: 3.1047327213728356e-7",
+            "extra": "mean: 687.2550409499835 nsec\nrounds: 156716"
           }
         ]
       }
