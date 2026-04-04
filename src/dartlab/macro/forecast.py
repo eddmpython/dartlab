@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from dartlab.core.finance.regimeSwitching import clevelandProbit, conferenceBoardLEI, hamiltonRegime
 from dartlab.core.finance.nowcast import gdpNowcast
+from dartlab.core.finance.regimeSwitching import clevelandProbit, conferenceBoardLEI, hamiltonRegime, sahmRule
 
 
 def _fetch_forecast_data(market: str) -> dict[str, float | list | None]:
@@ -82,7 +82,7 @@ def _pct_change(current: float | None, prev: float | None) -> float | None:
     return ((current - prev) / abs(prev)) * 100
 
 
-def analyze_forecast(*, market: str = "US", **kwargs) -> dict:
+def analyze_forecast(*, market: str = "US", as_of: str | None = None, overrides: dict | None = None, **kwargs) -> dict:
     """경제 예측 종합 분석.
 
     Returns:
@@ -198,6 +198,28 @@ def analyze_forecast(*, market: str = "US", **kwargs) -> dict:
                 kr_forecast["growthLabel"] = "안정"
 
         result["lei"] = kr_forecast if kr_forecast else None
+
+    # ── Sahm Rule ──
+    result["sahmRule"] = None
+    if market.upper() == "US":
+        try:
+            from dartlab.gather import getDefaultGather as _gs
+
+            gs = _gs()
+            ur_df = gs.macro("UNRATE")
+            if ur_df is not None and len(ur_df) > 0:
+                ur_vals = ur_df.get_column("value").drop_nulls().to_list()
+                if len(ur_vals) >= 15:
+                    sr = sahmRule([float(v) for v in ur_vals])
+                    result["sahmRule"] = {
+                        "value": sr.value,
+                        "triggered": sr.triggered,
+                        "zone": sr.zone,
+                        "zoneLabel": sr.zoneLabel,
+                        "description": sr.description,
+                    }
+        except Exception:
+            pass
 
     # ── Hamilton Regime Switching ──
     # GDP 성장률 시계열이 있으면 확률적 국면 판별

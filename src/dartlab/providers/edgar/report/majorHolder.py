@@ -11,55 +11,34 @@ if TYPE_CHECKING:
 
 
 def extractMajorHolder(company: "Company") -> pl.DataFrame | None:
-    """주요 주주 정보 추출.
+    """주요 주주 정보 추출."""
+    from dartlab.providers.edgar.report import loadXbrlTags
 
-    XBRL: CommonStockSharesOutstanding, EntityPublicFloat
-    10-K Item 12: Security Ownership 텍스트 (향후)
-    """
-    from dartlab.providers.edgar.report import edgarFinancePath
-
-    cik = getattr(company, "cik", None)
-    if not cik:
+    df = loadXbrlTags(
+        company,
+        "(?i)CommonStockSharesOutstanding|EntityPublicFloat|"
+        "SharesOutstanding|EntityCommonStockSharesOutstanding",
+        forms=["10-K", "10-Q", "20-F"],
+    )
+    if df is None:
         return None
 
-    path = edgarFinancePath(cik)
-    if not path.exists():
-        return None
+    records: list[dict] = []
+    for fy in df["fy"].unique().drop_nulls().sort().to_list():
+        fyRows = df.filter(pl.col("fy") == fy).sort("filed", descending=True)
+        record: dict = {"period": str(fy)}
 
-    try:
-        df = (
-            pl.scan_parquet(path)
-            .filter(
-                pl.col("tag").str.contains(
-                    "(?i)CommonStockSharesOutstanding|EntityPublicFloat|"
-                    "SharesOutstanding|EntityCommonStockSharesOutstanding"
-                )
-                & pl.col("form").is_in(["10-K", "10-Q", "20-F"])
-            )
-            .collect()
-        )
+        for row in fyRows.iter_rows(named=True):
+            tag = str(row.get("tag") or "").lower()
+            val = row.get("val")
+            if val is None:
+                continue
+            if "sharesoutstanding" in tag:
+                record.setdefault("sharesOutstanding", val)
+            elif "publicfloat" in tag:
+                record.setdefault("publicFloat", val)
 
-        if df.is_empty():
-            return None
+        if len(record) > 1:
+            records.append(record)
 
-        records: list[dict] = []
-        for fy in df["fy"].unique().drop_nulls().sort().to_list():
-            fyRows = df.filter(pl.col("fy") == fy).sort("filed", descending=True)
-            record: dict = {"period": str(fy)}
-
-            for row in fyRows.iter_rows(named=True):
-                tag = str(row.get("tag") or "").lower()
-                val = row.get("val")
-                if val is None:
-                    continue
-                if "sharesoutstanding" in tag:
-                    record.setdefault("sharesOutstanding", val)
-                elif "publicfloat" in tag:
-                    record.setdefault("publicFloat", val)
-
-            if len(record) > 1:
-                records.append(record)
-
-        return pl.DataFrame(records) if records else None
-    except (pl.exceptions.ComputeError, OSError):
-        return None
+    return pl.DataFrame(records) if records else None

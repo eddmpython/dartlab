@@ -5,6 +5,21 @@ All notable changes to DartLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-04-04
+
+### Changed
+
+- **SNAKEID_ALIASES 통합**: `labels.py`(L0)에 42개 alias dict 통합. `mapper.py`의 `EDGAR_TO_DART_ALIASES`는 L0 참조로 전환. 중복 제거.
+- **EDGAR report extractor 리팩토링**: `loadXbrlTags()` 공용 헬퍼 추출. XBRL 기반 7개 extractor에서 CIK/path/parquet 보일러플레이트 제거.
+- **macro 엔진 11축 확장**: 기존 5축(사이클/금리/자산/심리/유동성)에 예측/위기/재고/기업집계/교역/종합 6축 추가. 축별 기여도 추적.
+- **전략 신호 강도/신뢰도**: `StrategySignal`에 `strength`(0.0~1.0) + `confidence`(high/medium/low) 필드 추가. 40개 전략 전수 반영.
+- **macro spec 구조화**: 각 축 메타데이터를 label/description/when/key_output 구조로 확장. 내부 방법론(Hamilton RS, Kalman DFM, Nelson-Siegel) 명시.
+- **edgarBuilder targetAccounts 순서 수정**: 정의 전 참조 버그 해결.
+
+### Fixed
+
+- **credit history 데이터 갱신**: 삼성전자/SK하이닉스/LG화학/NAVER 4개사 평가 이력 추가.
+
 ## [0.8.9] - 2026-04-04
 
 ### Changed

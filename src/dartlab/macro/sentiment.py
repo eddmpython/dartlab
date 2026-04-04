@@ -64,7 +64,7 @@ def _fetch_sentiment_data(market: str) -> dict[str, float | None]:
     return data
 
 
-def analyze_sentiment(*, market: str = "US", **kwargs) -> dict:
+def analyze_sentiment(*, market: str = "US", as_of: str | None = None, overrides: dict | None = None, **kwargs) -> dict:
     """시장 심리 종합 분석.
 
     Returns:

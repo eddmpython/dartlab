@@ -12,58 +12,40 @@ if TYPE_CHECKING:
 
 def extractInvestedCompany(company: "Company") -> pl.DataFrame | None:
     """타법인 출자/투자 시계열 추출."""
-    from dartlab.providers.edgar.report import edgarFinancePath
+    from dartlab.providers.edgar.report import loadXbrlTags
 
-    cik = getattr(company, "cik", None)
-    if not cik:
+    df = loadXbrlTags(
+        company,
+        "(?i)EquityMethodInvestment|InvestmentsInAffiliates|"
+        "LongTermInvestments|AvailableForSaleSecurities|"
+        "HeldToMaturitySecurities|MarketableSecurities",
+        unitFilter="(?i)USD",
+    )
+    if df is None:
         return None
 
-    path = edgarFinancePath(cik)
-    if not path.exists():
-        return None
+    records: list[dict] = []
+    for fy in df["fy"].unique().drop_nulls().sort().to_list():
+        fyRows = df.filter(pl.col("fy") == fy).sort("filed", descending=True)
+        record: dict = {"period": str(fy)}
 
-    try:
-        df = (
-            pl.scan_parquet(path)
-            .filter(
-                pl.col("tag").str.contains(
-                    "(?i)EquityMethodInvestment|InvestmentsInAffiliates|"
-                    "LongTermInvestments|AvailableForSaleSecurities|"
-                    "HeldToMaturitySecurities|MarketableSecurities"
-                )
-                & pl.col("form").is_in(["10-K", "20-F"])
-                & pl.col("unit").str.contains("(?i)USD")
-            )
-            .collect()
-        )
+        for row in fyRows.iter_rows(named=True):
+            tag = str(row.get("tag") or "").lower()
+            val = row.get("val")
+            if val is None:
+                continue
+            if "equitymethod" in tag:
+                record.setdefault("equityMethodInvestments", val)
+            elif "availableforsale" in tag:
+                record.setdefault("availableForSale", val)
+            elif "heldtomaturity" in tag:
+                record.setdefault("heldToMaturity", val)
+            elif "marketable" in tag:
+                record.setdefault("marketableSecurities", val)
+            elif "longterminvestment" in tag:
+                record.setdefault("longTermInvestments", val)
 
-        if df.is_empty():
-            return None
+        if len(record) > 1:
+            records.append(record)
 
-        records: list[dict] = []
-        for fy in df["fy"].unique().drop_nulls().sort().to_list():
-            fyRows = df.filter(pl.col("fy") == fy).sort("filed", descending=True)
-            record: dict = {"period": str(fy)}
-
-            for row in fyRows.iter_rows(named=True):
-                tag = str(row.get("tag") or "").lower()
-                val = row.get("val")
-                if val is None:
-                    continue
-                if "equitymethod" in tag:
-                    record.setdefault("equityMethodInvestments", val)
-                elif "availableforsale" in tag:
-                    record.setdefault("availableForSale", val)
-                elif "heldtomaturity" in tag:
-                    record.setdefault("heldToMaturity", val)
-                elif "marketable" in tag:
-                    record.setdefault("marketableSecurities", val)
-                elif "longterminvestment" in tag:
-                    record.setdefault("longTermInvestments", val)
-
-            if len(record) > 1:
-                records.append(record)
-
-        return pl.DataFrame(records) if records else None
-    except (pl.exceptions.ComputeError, OSError):
-        return None
+    return pl.DataFrame(records) if records else None

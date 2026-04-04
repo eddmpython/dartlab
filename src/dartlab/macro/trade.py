@@ -89,7 +89,7 @@ def _fetch_trade_data(market: str) -> dict[str, float | list | None]:
     return data
 
 
-def analyze_trade(*, market: str = "US", **kwargs) -> dict:
+def analyze_trade(*, market: str = "US", as_of: str | None = None, overrides: dict | None = None, **kwargs) -> dict:
     """교역 종합 분석.
 
     Returns:

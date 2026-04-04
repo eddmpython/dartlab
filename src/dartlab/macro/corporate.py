@@ -43,7 +43,7 @@ def _load_scan_finance(market: str) -> pl.DataFrame | None:
         return None
 
 
-def analyze_corporate(*, market: str = "KR", **kwargs) -> dict:
+def analyze_corporate(*, market: str = "KR", as_of: str | None = None, overrides: dict | None = None, **kwargs) -> dict:
     """기업집계 매크로 분석.
 
     Returns:

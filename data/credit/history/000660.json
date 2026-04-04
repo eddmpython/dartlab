@@ -70,5 +70,29 @@
     "period": "2025Q4",
     "previousGrade": "dCR-AA+",
     "changed": false
+  },
+  {
+    "date": "2026-04-04",
+    "grade": "dCR-AA+",
+    "gradeRaw": "AA+",
+    "score": 4.55,
+    "eCR": "eCR-3",
+    "outlook": "긍정적",
+    "methodologyVersion": "v4.0",
+    "period": "2025Q4",
+    "previousGrade": "dCR-AA+",
+    "changed": false
+  },
+  {
+    "date": "2026-04-04",
+    "grade": "dCR-AA+",
+    "gradeRaw": "AA+",
+    "score": 4.55,
+    "eCR": "eCR-3",
+    "outlook": "긍정적",
+    "methodologyVersion": "v4.0",
+    "period": "2025Q4",
+    "previousGrade": "dCR-AA+",
+    "changed": false
   }
 ]

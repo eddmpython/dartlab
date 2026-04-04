@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dartlab.core.finance.macroCycle import (
     classifyVixRegime,
+    copperGoldRatio,
     interpretAssets,
     interpretGoldDrivers,
 )
@@ -80,7 +81,7 @@ def _fetch_asset_data(market: str) -> dict[str, float | None]:
     return data
 
 
-def analyze_assets(*, market: str = "US", **kwargs) -> dict:
+def analyze_assets(*, market: str = "US", as_of: str | None = None, overrides: dict | None = None, **kwargs) -> dict:
     """5대 자산 종합 해석.
 
     Returns:
@@ -181,5 +182,33 @@ def analyze_assets(*, market: str = "US", **kwargs) -> dict:
         }
     else:
         result["vixRegime"] = None
+
+    # Copper/Gold Ratio
+    result["copperGold"] = None
+    try:
+        from dartlab.gather import getDefaultGather
+
+        g = getDefaultGather()
+        cu_df = g.macro("PCOPPUSDM")
+        gold_df = g.macro("GOLDAMGBD228NLBM")
+        if cu_df is not None and gold_df is not None:
+            cu_vals = cu_df.get_column("value").drop_nulls()
+            au_vals = gold_df.get_column("value").drop_nulls()
+            if len(cu_vals) > 1 and len(au_vals) > 1:
+                cg = copperGoldRatio(
+                    float(cu_vals[-1]),
+                    float(au_vals[-1]),
+                    float(cu_vals[-2]) if len(cu_vals) > 1 else None,
+                    float(au_vals[-2]) if len(au_vals) > 1 else None,
+                )
+                result["copperGold"] = {
+                    "ratio": cg.ratio,
+                    "direction": cg.direction,
+                    "directionLabel": cg.directionLabel,
+                    "implication": cg.implication,
+                    "description": cg.description,
+                }
+    except Exception:
+        pass
 
     return result

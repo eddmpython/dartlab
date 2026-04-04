@@ -55,9 +55,11 @@ EXEMPT에 **등록하면 안 되는** 경우:
 
 ## EDGAR alias 확장 (select bridge)
 
-`show.py::_expandEdgarAliases()` — DART snakeId를 EDGAR snakeId로 확장:
+`core/finance/labels.py::SNAKEID_ALIASES` — DART ↔ EDGAR snakeId 통합 alias dict (L0):
 - `cash_flows_from_financing` → `cash_flows_from_financing_activities`
 - `capex` → `purchase_of_property_plant_and_equipment`
+- `revenue` → `sales`, `net_income` → `net_profit` 등 44개
+- `show.py::_expandEdgarAliases()` 와 `mapper.py::EDGAR_TO_DART_ALIASES` 모두 이 dict 사용
 - analysis calc 함수에서 한국어 계정명 사용 → bridge → alias 확장 → EDGAR 매칭
 
 `_quarterlyCols()` / `quarterlyColsFromPeriods()` — EDGAR 연간 데이터 fallback:

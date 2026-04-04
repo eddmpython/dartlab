@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from dartlab.core.finance.macroCycle import decomposeLongRate, rateOutlook
+from dartlab.core.finance.macroCycle import decomposeLongRate, rateOutlook, realRateRegime
 from dartlab.core.finance.sentiment import (
     estimateRateExpectation,
     interpretEmployment,
     interpretInflation,
 )
+from dartlab.core.finance.yieldCurve import nelsonSiegel
 
 
 def _fetch_rate_data(market: str) -> dict[str, float | None]:
@@ -67,7 +68,7 @@ def _fetch_rate_data(market: str) -> dict[str, float | None]:
     return data
 
 
-def analyze_rates(*, market: str = "US", **kwargs) -> dict:
+def analyze_rates(*, market: str = "US", as_of: str | None = None, overrides: dict | None = None, **kwargs) -> dict:
     """금리 종합 분석.
 
     Returns:
@@ -150,6 +151,56 @@ def analyze_rates(*, market: str = "US", **kwargs) -> dict:
         }
     else:
         result["inflation"] = None
+
+    # ── Nelson-Siegel 수익률곡선 분해 (US만) ──
+    result["yieldCurve"] = None
+    if market.upper() == "US":
+        try:
+            from dartlab.gather import getDefaultGather
+
+            g_ns = getDefaultGather()
+            maturities = [1, 2, 3, 5, 7, 10, 20, 30]
+            series_ids = ["DGS1", "DGS2", "DGS3", "DGS5", "DGS7", "DGS10", "DGS20", "DGS30"]
+            yields_list = []
+            valid_mats = []
+            for mat, sid in zip(maturities, series_ids):
+                df = g_ns.macro(sid)
+                if df is not None and len(df) > 0:
+                    vals = df.get_column("value").drop_nulls()
+                    if len(vals) > 0:
+                        yields_list.append(float(vals[-1]))
+                        valid_mats.append(mat)
+            if len(valid_mats) >= 4:
+                ns = nelsonSiegel(valid_mats, yields_list)
+                result["yieldCurve"] = {
+                    "beta0": ns.beta0,
+                    "beta1": ns.beta1,
+                    "beta2": ns.beta2,
+                    "lambda": ns.lamb,
+                    "rmse": ns.rmse,
+                    "interpretation": ns.interpretation,
+                    "description": ns.description,
+                }
+        except Exception:
+            pass
+
+    # ── BEI/실질금리 4분면 (US만) ──
+    result["realRateRegime"] = None
+    if market.upper() == "US":
+        try:
+            dfii10 = data.get("dfii10")
+            bei = data.get("t10yie")
+            if dfii10 is not None and bei is not None:
+                rr = realRateRegime(dfii10, bei)
+                result["realRateRegime"] = {
+                    "realRate": rr.realRate,
+                    "bei": rr.bei,
+                    "regime": rr.regime,
+                    "regimeLabel": rr.regimeLabel,
+                    "description": rr.description,
+                }
+        except Exception:
+            pass
 
     # 시계열
     from dartlab.macro._helpers import recent_timeseries

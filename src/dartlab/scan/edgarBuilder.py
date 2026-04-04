@@ -41,9 +41,6 @@ def buildEdgarFinance(*, sinceYear: int = 2021, verbose: bool = False) -> Path:
     if verbose:
         print(f"[edgarBuilder] {len(parquets)} CIK parquets → scan/finance.parquet")
 
-    # snakeId → XBRL 태그 역조회 테이블 (사전 빌드, map_elements 회피)
-    snakeIdToTags = _buildReverseTagMap(targetAccounts)
-
     # 주요 계정
     targetAccounts = [
         "sales",
@@ -69,6 +66,9 @@ def buildEdgarFinance(*, sinceYear: int = 2021, verbose: bool = False) -> Path:
         "longterm_borrowings",
         "depreciation_amortization",
     ]
+
+    # snakeId → XBRL 태그 역조회 테이블 (사전 빌드, map_elements 회피)
+    snakeIdToTags = _buildReverseTagMap(targetAccounts)
 
     batchFiles: list[Path] = []
     records: list[dict] = []

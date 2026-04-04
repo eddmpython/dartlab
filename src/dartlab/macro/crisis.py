@@ -10,7 +10,11 @@ from __future__ import annotations
 
 from dartlab.core.finance.crisisDetector import (
     creditToGDPGap,
+    fisherDebtDeflation,
     ghsCrisisScore,
+    kooBalanceSheetRecession,
+    krHousingFinancialStress,
+    minskyPhase,
     recessionDashboard,
 )
 from dartlab.core.finance.liquidity import capexPressure
@@ -119,10 +123,58 @@ def _fetch_crisis_data(market: str) -> dict[str, float | list | None]:
         except Exception:
             pass
 
+        # 한국 아파트가격 YoY (부동산 스트레스)
+        try:
+            apt_df = g.macro("APT_PRICE")
+            if apt_df is not None and len(apt_df) > 0:
+                vals = apt_df.get_column("value").drop_nulls().to_list()
+                if vals and len(vals) > 12:
+                    data["apt_yoy"] = ((float(vals[-1]) / float(vals[-13])) - 1) * 100
+        except Exception:
+            pass
+
+    # ── Koo BSR 데이터 (US) ──
+    if market.upper() == "US":
+        for label, sid in [
+            ("private_saving", "W987RC1Q027SBEA"),
+            ("private_investment", "GPDI"),
+            ("gdp_level", "GDP"),
+            ("fed_funds", "FEDFUNDS"),
+        ]:
+            try:
+                df = g.macro(sid)
+                if df is not None and len(df) > 0:
+                    vals = df.get_column("value").drop_nulls()
+                    if len(vals) > 0:
+                        data[label] = float(vals[-1])
+            except Exception:
+                pass
+
+        # Fisher: DSR, NPL
+        for label, sid in [("dsr", "TDSP"), ("npl", "DRSFRMACBS")]:
+            try:
+                df = g.macro(sid)
+                if df is not None and len(df) > 0:
+                    vals = df.get_column("value").drop_nulls()
+                    if len(vals) > 0:
+                        data[label] = float(vals[-1])
+            except Exception:
+                pass
+
+        # CPI YoY for Fisher
+        try:
+            cpi_df = g.macro("CPIAUCSL")
+            if cpi_df is not None and len(cpi_df) > 0:
+                vals = cpi_df.get_column("value").drop_nulls().to_list()
+                if vals and len(vals) > 12:
+                    data["us_cpi_yoy"] = ((float(vals[-1]) / float(vals[-13])) - 1) * 100
+        except Exception:
+            pass
+
     return data
 
 
-def analyze_crisis(*, market: str = "US", **kwargs) -> dict:
+def analyze_crisis(*, market: str = "US", as_of: str | None = None, overrides: dict | None = None, **kwargs) -> dict:
     """위기 감지 종합 분석.
 
     Returns:
@@ -238,6 +290,85 @@ def analyze_crisis(*, market: str = "US", **kwargs) -> dict:
         "historicalMatch": dashboard.historicalMatch,
         "description": dashboard.description,
     }
+
+    # ── Minsky 5단계 ──
+    result["minskyPhase"] = None
+    try:
+        dxy_chg_val = None
+        if dxy_current is not None and data.get("dxy_3m_ago") is not None:
+            d3m = data["dxy_3m_ago"]
+            if d3m > 0:
+                dxy_chg_val = ((dxy_current / d3m) - 1) * 100
+        mk = minskyPhase(
+            creditGap=credit_gap_val,
+            assetReturn3y=data.get("sp500_3y_return"),
+            hySpread=hy_current,
+            vix=vix,
+            dxyChange=dxy_chg_val,
+        )
+        result["minskyPhase"] = {
+            "phase": mk.phase,
+            "phaseLabel": mk.phaseLabel,
+            "confidence": mk.confidence,
+            "signals": mk.signals,
+            "description": mk.description,
+        }
+    except Exception:
+        pass
+
+    # ── Koo Balance Sheet Recession (US) ──
+    result["kooRecession"] = None
+    if market.upper() == "US":
+        try:
+            saving = data.get("private_saving")
+            investment = data.get("private_investment")
+            gdp_level = data.get("gdp_level")
+            ff = data.get("fed_funds")
+            if saving is not None and investment is not None and gdp_level is not None and ff is not None:
+                koo = kooBalanceSheetRecession(saving, investment, gdp_level, ff)
+                result["kooRecession"] = {
+                    "privateSurplus": koo.privateSurplus,
+                    "policyRate": koo.policyRate,
+                    "isBSR": koo.isBSR,
+                    "description": koo.description,
+                }
+        except Exception:
+            pass
+
+    # ── Fisher Debt-Deflation (US) ──
+    result["fisherDeflation"] = None
+    if market.upper() == "US":
+        try:
+            dsr = data.get("dsr")
+            us_cpi = data.get("us_cpi_yoy")
+            npl = data.get("npl")
+            if dsr is not None and us_cpi is not None:
+                fisher = fisherDebtDeflation(dsr, us_cpi, npl)
+                result["fisherDeflation"] = {
+                    "dsr": fisher.dsr,
+                    "nplRate": fisher.nplRate,
+                    "cpiYoy": fisher.cpiYoy,
+                    "risk": fisher.risk,
+                    "riskLabel": fisher.riskLabel,
+                    "description": fisher.description,
+                }
+        except Exception:
+            pass
+
+    # ── KR 부동산-금융 스트레스 ──
+    if market.upper() == "KR":
+        try:
+            apt_yoy = data.get("apt_yoy")
+            if apt_yoy is not None:
+                hs = krHousingFinancialStress(apt_yoy)
+                result["krHousingStress"] = {
+                    "housePriceYoy": hs.housePriceYoy,
+                    "stress": hs.stress,
+                    "stressLabel": hs.stressLabel,
+                    "description": hs.description,
+                }
+        except Exception:
+            pass
 
     # 한국 신용위험 ↔ CPI (전략 35)
     if market.upper() == "KR":

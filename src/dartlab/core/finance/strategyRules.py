@@ -17,7 +17,20 @@ class StrategySignal:
     name: str  # 전략 이름
     active: bool | None  # True=활성, False=비활성, None=판별불가
     direction: str  # "bullish" | "bearish" | "neutral" | "na"
+    strength: float  # 0.0~1.0 (신호 강도)
+    confidence: str  # "high" | "medium" | "low"
     description: str  # 현재 상황 해석
+
+
+def _sig(
+    id: int, name: str, active: bool | None, direction: str, description: str,
+    *, strength: float = 0.5, confidence: str = "medium",
+) -> StrategySignal:
+    """전략 신호 생성 헬퍼."""
+    if active is None or active is False:
+        strength = 0.0
+        confidence = "low"
+    return StrategySignal(id, name, active, direction, round(strength, 2), confidence, description)
 
 
 def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
@@ -48,21 +61,20 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     # 전략 1: 금리 추이는 전기비 성장률에 의해 결정된다
     rp = forecast.get("recessionProb") or {}
     rate_dir = (rates.get("outlook") or {}).get("direction")
-    results.append(
-        StrategySignal(
-            1,
-            "금리 = 전기비 성장률 결정",
-            active=rate_dir is not None,
-            direction="bearish" if rate_dir == "hike" else ("bullish" if rate_dir == "cut" else "neutral"),
-            description=f"금리방향: {rate_dir or '판별불가'}, 침체확률: {rp.get('probability', '?')}",
-        )
-    )
+    prob_val = rp.get("probability", 0.5)
+    results.append(_sig(1, "금리 = 전기비 성장률 결정",
+        active=rate_dir is not None,
+        direction="bearish" if rate_dir == "hike" else ("bullish" if rate_dir == "cut" else "neutral"),
+        description=f"금리방향: {rate_dir or '판별불가'}, 침체확률: {prob_val}",
+        strength=min(1.0, abs(prob_val - 0.5) * 2) if isinstance(prob_val, (int, float)) else 0.5,
+        confidence="high" if rate_dir in ("cut", "hike") else "low",
+    ))
 
     # 전략 2: 주가지수 ≈ 명목GDP
     nowcast = forecast.get("nowcast") or {}
     nc_active = nowcast.get("gdpEstimate") is not None
     results.append(
-        StrategySignal(
+        _sig(
             2,
             "주가 ≈ 명목GDP",
             active=nc_active,
@@ -78,7 +90,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     # 전략 3: GDP 상대강도 → 환율
     rs = trade.get("leadingRelativeStrength") or {}
     results.append(
-        StrategySignal(
+        _sig(
             3,
             "GDP 상대강도 → 환율",
             active=rs.get("fxDirection") is not None,
@@ -94,7 +106,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     # 전략 4: 금리 = 미래 인플레 베팅
     inf = rates.get("inflation") or {}
     results.append(
-        StrategySignal(
+        _sig(
             4,
             "금리 = 미래 인플레 베팅",
             active=inf.get("state") is not None,
@@ -110,7 +122,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     # 전략 5: 한국주가 ≈ 미국소비
     usc = trade.get("usConsumptionLink") or {}
     results.append(
-        StrategySignal(
+        _sig(
             5,
             "한국주가 ≈ 미국소비",
             active=usc.get("usRetailYoy") is not None,
@@ -126,7 +138,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     # 전략 6~9: 사이클 관련
     phase = cycle.get("phase", "")
     results.append(
-        StrategySignal(
+        _sig(
             6,
             "실물투자 → 경기변동",
             active=phase != "",
@@ -137,7 +149,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
 
     ip = inventory.get("inventoryPhase") or {}
     results.append(
-        StrategySignal(
+        _sig(
             7,
             "재고흐름 → 서프라이즈",
             active=ip.get("phase") is not None,
@@ -146,7 +158,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
         )
     )
     results.append(
-        StrategySignal(
+        _sig(
             8,
             "재고순환 → 주가예측",
             active=ip.get("phase") is not None,
@@ -155,7 +167,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
         )
     )
     results.append(
-        StrategySignal(
+        _sig(
             9,
             "침체탈출 = 정부지출",
             active=phase == "recovery",
@@ -167,7 +179,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     # 전략 10: 한국주가 = 수출기업
     ep = trade.get("exportProfit") or {}
     results.append(
-        StrategySignal(
+        _sig(
             10,
             "한국주가 = 수출기업",
             active=ep.get("signal") is not None,
@@ -183,7 +195,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     # 전략 11-12: 교역조건
     tot = trade.get("termsOfTrade") or {}
     results.append(
-        StrategySignal(
+        _sig(
             11,
             "교역조건 = 최선행",
             active=tot.get("direction") is not None,
@@ -198,7 +210,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
 
     tp = trade.get("totProxy") or {}
     results.append(
-        StrategySignal(
+        _sig(
             12,
             "ToT대용치 = 환율-유가",
             active=tp.get("value") is not None,
@@ -214,7 +226,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     # 전략 13: ISM 바로미터
     ism_alloc = inventory.get("ismAllocation") or {}
     results.append(
-        StrategySignal(
+        _sig(
             13,
             "ISM = 자산배분 바로미터",
             active=ism_alloc.get("stance") is not None,
@@ -229,7 +241,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
 
     # 전략 14: 양국 선행지수 → 환율
     results.append(
-        StrategySignal(
+        _sig(
             14,
             "양국 선행지수 → 환율",
             active=rs.get("fxDirection") is not None,
@@ -242,7 +254,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     lei = forecast.get("lei") or {}
     lag_m = lei.get("lagMomentum")
     results.append(
-        StrategySignal(
+        _sig(
             15,
             "후행상승 + 120일선 반등",
             active=lag_m is not None and lag_m > 0,
@@ -253,7 +265,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
 
     # 전략 16: 전기비성장률 = 선행+후행
     results.append(
-        StrategySignal(
+        _sig(
             16,
             "전기비성장률 = 선행+후행",
             active=lei.get("signal") is not None or lei.get("growthSignal") is not None,
@@ -269,7 +281,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     # 전략 17: 고용지표
     emp = rates.get("employment") or {}
     results.append(
-        StrategySignal(
+        _sig(
             17,
             "고용지표 주목",
             active=emp.get("state") is not None,
@@ -290,7 +302,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     if fx_yoy is not None and oil_yoy is not None:
         inf_pressure = fx_yoy * 0.06 + oil_yoy * 0.03
         results.append(
-            StrategySignal(
+            _sig(
                 18,
                 "한국물가 = 환율+유가",
                 active=True,
@@ -300,14 +312,14 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
         )
     else:
         results.append(
-            StrategySignal(
+            _sig(
                 18, "한국물가 = 환율+유가", active=False, direction="neutral", description="환율/유가 데이터 없음"
             )
         )
 
     # 전략 19-22: 금리/통화정책
     results.append(
-        StrategySignal(
+        _sig(
             19,
             "통화정책 = 투자 마일스톤",
             active=rate_dir is not None,
@@ -320,7 +332,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     expect = rates.get("expectation") or {}
     spread_2y = expect.get("spread2yFf")
     results.append(
-        StrategySignal(
+        _sig(
             20,
             "금리정책 전후 장단기차",
             active=spread_2y is not None,
@@ -339,7 +351,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
         s.get("direction") == "up" for s in asset_signals if isinstance(s, dict) and s.get("asset") == "equity"
     )
     results.append(
-        StrategySignal(
+        _sig(
             21,
             "금리↔주가 역학관계",
             active=rate_dir is not None,
@@ -349,7 +361,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     )
 
     results.append(
-        StrategySignal(
+        _sig(
             22,
             "물가과열 → 긴축 → 선행하락",
             active=inf.get("state") is not None,
@@ -363,7 +375,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     dxy_chg = dsh.get("dxyChange3m")
 
     results.append(
-        StrategySignal(
+        _sig(
             23,
             "달러하락 → 신흥국",
             active=dxy_chg is not None,
@@ -374,7 +386,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
         )
     )
     results.append(
-        StrategySignal(
+        _sig(
             24,
             "달러강세 → 미국국채",
             active=dxy_chg is not None,
@@ -389,7 +401,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     gold_drivers = assets.get("goldDrivers") or {}
     dollar_eff = gold_drivers.get("dollarEffect")
     results.append(
-        StrategySignal(
+        _sig(
             25,
             "달러↔금 대체",
             active=dollar_eff is not None,
@@ -405,7 +417,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     # 전략 26: EM 물가 → 달러
     kr_inf_state = inf.get("state", "")
     results.append(
-        StrategySignal(
+        _sig(
             26,
             "신흥국 물가 → 달러상승",
             active=kr_inf_state != "",
@@ -417,7 +429,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     # 전략 27: 원/달러 하락 → 내수주
     usdkrw_proxy = tot_comps.get("fxYoy")
     results.append(
-        StrategySignal(
+        _sig(
             27,
             "원/달러 하락 → 내수주",
             active=usdkrw_proxy is not None,
@@ -430,7 +442,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
 
     # 전략 28: 금리상승 = 경기회복 전제
     results.append(
-        StrategySignal(
+        _sig(
             28,
             "금리상승 = 경기회복 전제",
             active=rate_dir is not None and phase != "",
@@ -441,7 +453,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
 
     # 전략 29: 한국금리 = 내수
     results.append(
-        StrategySignal(
+        _sig(
             29,
             "한국금리 = 내수반영",
             active=phase != "",
@@ -457,7 +469,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     # 전략 30: 장단기차 → CLI 선행
     cli_mom = lei.get("cliMomentum")
     results.append(
-        StrategySignal(
+        _sig(
             30,
             "장단기차 → CLI 선행",
             active=spread_2y is not None,
@@ -472,7 +484,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
 
     # 전략 31: ToT → 수출이익
     results.append(
-        StrategySignal(
+        _sig(
             31,
             "ToT대용치 → 수출이익",
             active=ep.get("signal") is not None,
@@ -488,7 +500,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     # 전략 32: 신용스프레드 → 설비투자
     cp = crisis.get("capexPressure") or {}
     results.append(
-        StrategySignal(
+        _sig(
             32,
             "신용스프레드 = 설비투자 압력",
             active=cp.get("pressure") is not None,
@@ -505,7 +517,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     inv_phase = ip.get("phase", "")
     capex_pr = cp.get("pressure", "")
     results.append(
-        StrategySignal(
+        _sig(
             33,
             "공급과잉 → 도산",
             active=inv_phase == "active_destock" or capex_pr == "tightening",
@@ -517,7 +529,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     # 전략 34: ISM<55 → 인상종결
     ism_bar = inventory.get("ismBarometer") or {}
     results.append(
-        StrategySignal(
+        _sig(
             34,
             "ISM<55 → 인상종결",
             active=ism_bar.get("rateImplication") == "hike_end",
@@ -529,7 +541,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     # 전략 35: 국내신용위험 ↔ CPI
     kr_cr = crisis.get("krCreditRisk") or {}
     results.append(
-        StrategySignal(
+        _sig(
             35,
             "국내신용위험 ↔ CPI",
             active=kr_cr.get("cpiYoy") is not None,
@@ -543,7 +555,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     copper_gold = assets.get("copperGold") or {}
     cg_impl = copper_gold.get("implication")
     results.append(
-        StrategySignal(
+        _sig(
             36,
             "중국 통화 → 원자재",
             active=cg_impl is not None,
@@ -554,7 +566,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
 
     # 전략 37: 산업생산+물가 → 금리
     results.append(
-        StrategySignal(
+        _sig(
             37,
             "산업생산+물가 → 금리",
             active=inf.get("state") is not None and phase != "",
@@ -569,7 +581,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
 
     # 전략 38: 금융위험 → 달러상승
     results.append(
-        StrategySignal(
+        _sig(
             38,
             "금융위험 → 달러상승",
             active=dsh.get("status") is not None,
@@ -581,7 +593,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
     # 전략 39: 은행대출 → 금리 — 유동성 환경으로 프록시
     liq_regime = liquidity.get("regime", "")
     results.append(
-        StrategySignal(
+        _sig(
             39,
             "은행대출 → 금리상승",
             active=liq_regime != "",
@@ -592,7 +604,7 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
 
     # 전략 40: 금융업주가 ← 장단기차
     results.append(
-        StrategySignal(
+        _sig(
             40,
             "금융업주가 ← 장단기차",
             active=spread_2y is not None,

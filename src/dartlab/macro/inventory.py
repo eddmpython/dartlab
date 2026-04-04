@@ -60,7 +60,7 @@ def _fetch_ism_data(market: str) -> dict[str, float | None]:
     return data
 
 
-def analyze_inventory(*, market: str = "US", **kwargs) -> dict:
+def analyze_inventory(*, market: str = "US", as_of: str | None = None, overrides: dict | None = None, **kwargs) -> dict:
     """재고순환 종합 분석.
 
     Returns:

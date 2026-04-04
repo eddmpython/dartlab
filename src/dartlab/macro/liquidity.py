@@ -76,7 +76,7 @@ def _fetch_liquidity_data(market: str) -> dict[str, float | None]:
     return data
 
 
-def analyze_liquidity(*, market: str = "US", **kwargs) -> dict:
+def analyze_liquidity(*, market: str = "US", as_of: str | None = None, overrides: dict | None = None, **kwargs) -> dict:
     """유동성 환경 종합 분석.
 
     Returns:
@@ -98,6 +98,64 @@ def analyze_liquidity(*, market: str = "US", **kwargs) -> dict:
         "score": regime.score,
         "signals": list(regime.signals),
     }
+
+    # ── NFCI + 자체 FCI ──
+    result["nfci"] = None
+    result["fci"] = None
+    try:
+        from dartlab.gather import getDefaultGather
+
+        g = getDefaultGather()
+
+        # NFCI 직접 소비 (US)
+        if market.upper() == "US":
+            nfci_df = g.macro("NFCI")
+            if nfci_df is not None and len(nfci_df) > 0:
+                vals = nfci_df.get_column("value").drop_nulls()
+                if len(vals) > 0:
+                    nfci_val = float(vals[-1])
+                    result["nfci"] = {
+                        "value": round(nfci_val, 3),
+                        "regime": "tight" if nfci_val > 0 else "loose",
+                        "regimeLabel": "긴축" if nfci_val > 0 else "완화",
+                        "description": f"NFCI {nfci_val:+.3f} — {'긴축' if nfci_val > 0 else '완화'} (평균=0)",
+                    }
+
+        # 자체 FCI (US + KR)
+        from dartlab.core.finance.fci import calcFCI
+
+        fci_vars: dict[str, list[float]] = {}
+        if market.upper() == "US":
+            sid_map = {
+                "policy_rate": "FEDFUNDS",
+                "long_rate": "DGS10",
+                "credit_spread": "BAMLH0A0HYM2",
+                "equity": "SP500",
+                "fx": "DTWEXBGS",
+            }
+        else:
+            sid_map = {
+                "policy_rate": "BASE_RATE",
+                "long_rate": "TREASURY_3Y",
+                "credit_spread": "CORP_BOND_3Y",
+                "fx": "USDKRW",
+            }
+        for key, sid in sid_map.items():
+            df = g.macro(sid)
+            if df is not None and len(df) > 0:
+                vals = df.get_column("value").drop_nulls().to_list()
+                fci_vars[key] = [float(v) for v in vals]
+        if len(fci_vars) >= 3:
+            fci_result = calcFCI(fci_vars, market=market)
+            result["fci"] = {
+                "value": fci_result.value,
+                "regime": fci_result.regime,
+                "regimeLabel": fci_result.regimeLabel,
+                "components": fci_result.components,
+                "description": fci_result.description,
+            }
+    except Exception:
+        pass
 
     # 시계열
     from dartlab.macro._helpers import recent_timeseries

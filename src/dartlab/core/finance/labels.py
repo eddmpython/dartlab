@@ -185,6 +185,7 @@ def resolve_label(snake_id: str, market: str = "KR") -> str:
 # ── DART ↔ EDGAR snakeId alias (L0에 배치 — import 방향 준수) ──
 
 SNAKEID_ALIASES: dict[str, str] = {
+    # ── 현금흐름 ──
     "operating_cash_flow": "operating_cashflow",
     "investing_cash_flow": "investing_cashflow",
     "financing_cash_flow": "cash_flows_from_financing_activities",
@@ -192,18 +193,44 @@ SNAKEID_ALIASES: dict[str, str] = {
     "cash_flows_from_operating": "operating_cashflow",
     "cash_flows_from_investing": "investing_cashflow",
     "financing_cashflow": "cash_flows_from_financing_activities",
-    "cost_of_revenue": "cost_of_sales",
-    "inventory": "inventories",
-    "property_plant_equipment": "tangible_assets",
-    "income_before_tax": "profit_before_tax",
-    "short_term_debt": "shortterm_borrowings",
-    "long_term_debt": "longterm_borrowings",
-    "accounts_receivable": "trade_and_other_receivables",
-    "cash_and_equivalents": "cash_and_cash_equivalents",
+    # ── 손익 ──
     "revenue": "sales",
     "operating_income": "operating_profit",
     "net_income": "net_profit",
-    "capex": "purchase_of_property_plant_and_equipment",
-    "accounts_payable": "trade_and_other_payables",
+    "cost_of_revenue": "cost_of_sales",
+    "income_before_tax": "profit_before_tax",
+    "income_tax_expense": "income_taxes",
     "interest_expense": "finance_costs",
+    "finance_cost": "finance_costs",
+    "interest_income": "finance_income",
+    "selling_general_admin": "selling_and_administrative_expenses",
+    "basic_eps": "basic_earnings_per_share",
+    "diluted_eps": "diluted_earnings_per_share",
+    # ── 자산 ──
+    "inventory": "inventories",
+    "property_plant_equipment": "tangible_assets",
+    "ppe": "tangible_assets",
+    "accounts_receivable": "trade_and_other_receivables",
+    "trade_receivables": "trade_and_other_receivables",
+    "cash_and_equivalents": "cash_and_cash_equivalents",
+    "noncurrent_assets": "noncurrent_assets",
+    "non_current_assets": "noncurrent_assets",
+    # ── 부채 ──
+    "short_term_debt": "shortterm_borrowings",
+    "long_term_debt": "longterm_borrowings",
+    "short_term_borrowings": "shortterm_borrowings",
+    "long_term_borrowings": "longterm_borrowings",
+    "accounts_payable": "trade_and_other_payables",
+    "bonds": "debentures",
+    "noncurrent_liabilities": "noncurrent_liabilities",
+    "non_current_liabilities": "noncurrent_liabilities",
+    # ── 자본 ──
+    "total_equity": "owners_of_parent_equity",
+    "equity_including_nci": "total_stockholders_equity",
+    "equity_nci": "noncontrolling_interests_equity",
+    "noncontrolling_interest": "noncontrolling_interests_equity",
+    "other_equity_components": "other_equity",
+    "issued_capital": "paidin_capital",
+    # ── 투자 ──
+    "capex": "purchase_of_property_plant_and_equipment",
 }

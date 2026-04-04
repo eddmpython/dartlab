@@ -8,11 +8,20 @@ from dartlab.core.finance.macroCycle import (
 )
 
 
-def _fetch_indicators(market: str) -> dict[str, float | None]:
+def _fetch_indicators(market: str, as_of: str | None = None) -> dict[str, float | None]:
     """gather에서 사이클 판별에 필요한 지표 수집."""
     from dartlab.gather import getDefaultGather
 
     g = getDefaultGather()
+    if as_of:
+        from dartlab.macro._helpers import apply_as_of
+
+        _orig_macro = g.macro
+
+        def _filtered_macro(sid):
+            return apply_as_of(_orig_macro(sid), as_of)
+
+        g.macro = _filtered_macro  # type: ignore
     indicators: dict[str, float | None] = {}
 
     if market.upper() == "US":
@@ -108,13 +117,21 @@ def _fetch_indicators(market: str) -> dict[str, float | None]:
     return indicators
 
 
-def analyze_cycle(*, market: str = "US", **kwargs) -> dict:
+def analyze_cycle(*, market: str = "US", as_of: str | None = None, overrides: dict | None = None, **kwargs) -> dict:
     """경제 사이클 분석.
+
+    Args:
+        as_of: 백테스트 날짜 (YYYY-MM-DD). 이 날짜까지의 데이터만 사용.
+        overrides: 시나리오 오버라이드. 지표값을 직접 지정.
 
     Returns:
         dict: phase, transition, indicators 등
     """
-    indicators = _fetch_indicators(market)
+    indicators = _fetch_indicators(market, as_of=as_of)
+    if overrides:
+        from dartlab.macro._helpers import apply_overrides
+
+        indicators = apply_overrides(indicators, overrides)
     cycle = classifyCycle(indicators)
     transition = detectTransitionSequence(cycle.phase, indicators)
 
