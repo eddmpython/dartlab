@@ -262,8 +262,224 @@ def _generateAIAnalysis(corpName: str, stockCode: str, result: dict, narratives,
         return None
 
 
-def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
-    """마크다운 보고서 문자열 생성."""
+def _fmtTril(value: float | None) -> str:
+    """금액을 조/억 단위로 포맷."""
+    if value is None:
+        return "N/A"
+    absV = abs(value)
+    sign = "-" if value < 0 else ""
+    if absV >= 1e12:
+        return f"{sign}{absV / 1e12:.1f}조"
+    if absV >= 1e8:
+        return f"{sign}{absV / 1e8:,.0f}억"
+    return f"{sign}{absV:,.0f}"
+
+
+def _renderHealthBar(healthScore: float) -> str:
+    """건전도 ASCII 바."""
+    barLen = 20
+    filled = int(max(0.0, min(100.0, healthScore)) / 100 * barLen)
+    return f"건전도: [{'█' * filled}{'░' * (barLen - filled)}] {healthScore:.0f}/100"
+
+
+def _renderExecutiveSummary(narrativesDict: dict, result: dict) -> list[str]:
+    """2~3문단 핵심 요약. narratives["overall"] + causalChain."""
+    lines: list[str] = []
+    overall = narrativesDict.get("overall", "")
+    causal = narrativesDict.get("causalChain", "")
+    if not overall and not causal:
+        return lines
+
+    lines.append("## 2. Executive Summary")
+    lines.append("")
+    if overall:
+        lines.append(overall)
+        lines.append("")
+    if causal:
+        lines.append(f"**인과 연결**: {causal}")
+        lines.append("")
+    return lines
+
+
+def _renderCompanyOverview(
+    profile: dict | None,
+    rank: dict | None,
+    segComp: dict | None,
+    sector: str,
+) -> list[str]:
+    """기업 개요 multi-line."""
+    lines: list[str] = []
+    parts: list[str] = []
+
+    # 업종/섹터
+    if profile:
+        sectorText = profile.get("sector", "")
+        if sectorText:
+            parts.append(sectorText)
+        products = profile.get("products", "")
+        if products:
+            parts.append(products)
+    if not parts and sector:
+        parts.append(f"업종: {sector}")
+
+    # 매출 규모 + 업종 내 순위
+    if rank:
+        revRankSector = rank.get("revenueRankInSector")
+        revSectorTotal = rank.get("revenueSectorTotal")
+        sizeClass = rank.get("sizeClass", "")
+        indGroup = rank.get("industryGroup", "")
+
+        rankParts: list[str] = []
+        if sizeClass:
+            rankParts.append(f"규모: {sizeClass}")
+        if indGroup:
+            rankParts.append(f"업종그룹: {indGroup}")
+        if revRankSector is not None and revSectorTotal is not None:
+            rankParts.append(f"업종 내 매출 순위: {revRankSector}/{revSectorTotal}위")
+        elif revRankSector is not None:
+            rankParts.append(f"업종 내 매출 순위: {revRankSector}위")
+        if rankParts:
+            parts.append(", ".join(rankParts))
+
+    # 최신 매출 규모
+    if segComp:
+        totalRev = segComp.get("totalRevenue")
+        if totalRev is not None:
+            parts.append(f"총 매출: {_fmtTril(totalRev)}")
+
+    if not parts:
+        return lines
+
+    lines.append("### 3.1 기업 개요")
+    lines.append("")
+    for p in parts:
+        lines.append(f"- {p}")
+    lines.append("")
+    return lines
+
+
+def _renderSegmentTable(segComp: dict | None) -> list[str]:
+    """부문별 GFM 테이블."""
+    if segComp is None:
+        return []
+    segments = segComp.get("segments", [])
+    totalRev = segComp.get("totalRevenue")
+    if not segments or not totalRev:
+        return []
+
+    lines: list[str] = []
+    lines.append("### 3.2 부문별 매출 구성")
+    lines.append("")
+    lines.append("| 부문 | 매출 | 비중 |")
+    lines.append("|------|-----:|-----:|")
+    for seg in segments:
+        name = seg.get("name", "")
+        rev = seg.get("revenue", 0)
+        pct = rev / totalRev * 100 if totalRev else 0
+        lines.append(f"| {name} | {_fmtTril(rev)} | {pct:.1f}% |")
+    lines.append(f"| **합계** | **{_fmtTril(totalRev)}** | **100%** |")
+    lines.append("")
+    return lines
+
+
+def _renderHHI(businessStability: dict | None) -> list[str]:
+    """매출 집중도 HHI + 해석."""
+    if businessStability is None:
+        return []
+    hhi = businessStability.get("segmentHHI")
+    if hhi is None:
+        return []
+
+    lines: list[str] = []
+    lines.append("### 3.3 매출 집중도")
+    lines.append("")
+    lines.append(f"- HHI (허핀달-허쉬만 지수): **{hhi:,.0f}**")
+
+    if hhi >= 8000:
+        lines.append("- 해석: 매출이 단일 부문에 극도로 집중. 해당 부문의 업황 변동이 실적을 직접 좌우한다.")
+    elif hhi >= 5000:
+        lines.append("- 해석: 높은 집중도. 주력 부문 의존도가 크며 사업 다각화가 제한적이다.")
+    elif hhi >= 2500:
+        lines.append("- 해석: 중간 집중도. 복수 사업부가 존재하나 특정 부문 비중이 높다.")
+    else:
+        lines.append("- 해석: 낮은 집중도. 사업 다각화가 잘 되어 있어 부문별 리스크가 분산된다.")
+    lines.append("")
+    return lines
+
+
+def _renderPeerComparison(result: dict) -> list[str]:
+    """동종업계 정보 (rank 데이터 기반). scan 호출 없이 result["rank"]만 사용."""
+    rank = result.get("rank")
+    if rank is None:
+        return []
+
+    lines: list[str] = []
+    lines.append("## 7. 피어 비교")
+    lines.append("")
+
+    revRank = rank.get("revenueRank")
+    revTotal = rank.get("revenueTotal")
+    revRankSector = rank.get("revenueRankInSector")
+    revSectorTotal = rank.get("revenueSectorTotal")
+    sizeClass = rank.get("sizeClass", "")
+    indGroup = rank.get("industryGroup", "")
+    sector = rank.get("sector", "")
+
+    lines.append("| 항목 | 값 |")
+    lines.append("|------|------|")
+    if sector:
+        lines.append(f"| 섹터 | {sector} |")
+    if indGroup:
+        lines.append(f"| 업종그룹 | {indGroup} |")
+    if sizeClass:
+        lines.append(f"| 규모 분류 | {sizeClass} |")
+    if revRank is not None and revTotal is not None:
+        lines.append(f"| 전체 매출 순위 | {revRank} / {revTotal} |")
+    if revRankSector is not None and revSectorTotal is not None:
+        lines.append(f"| 업종 내 매출 순위 | {revRankSector} / {revSectorTotal} |")
+    lines.append("")
+
+    # 순위 해석
+    if revRankSector is not None and revSectorTotal is not None and revSectorTotal > 0:
+        percentile = revRankSector / revSectorTotal * 100
+        if percentile <= 10:
+            lines.append(f"업종 내 상위 {percentile:.0f}%에 위치하며, 시장 지배적 지위를 보유한다.")
+        elif percentile <= 25:
+            lines.append(f"업종 내 상위 {percentile:.0f}%로, 주요 플레이어에 해당한다.")
+        elif percentile <= 50:
+            lines.append(f"업종 내 상위 {percentile:.0f}%로, 중위권에 위치한다.")
+        else:
+            lines.append(f"업종 내 상위 {percentile:.0f}%로, 소형/후발 기업에 해당한다.")
+        lines.append("")
+
+    return lines
+
+
+def generateReportMarkdown(
+    corpName: str,
+    stockCode: str,
+    result: dict,
+    *,
+    auditResult=None,
+    aiAnalysis: str | None = None,
+) -> str:
+    """마크다운 보고서 문자열 생성.
+
+    13섹션 구조:
+    1. 등급 요약 + 건전도 바
+    2. Executive Summary
+    3. 사업 분석 (개요, 부문별 매출, 집중도)
+    4. 등급 근거 상세
+    5. 재무 분석 (7축/5축 상세)
+    6. 5개년 재무 시계열
+    7. 피어 비교
+    8. 등급 전망 + 트리거
+    9. 신평사 등급 대조
+    10. 등급 괴리 분석
+    11. Notch Adjustment 상세
+    12. 별도재무제표 비교
+    13. 면책 + 방법론
+    """
     from dartlab.credit.audit import auditCredit, auditToMarkdown
     from dartlab.credit.narrative import buildNarratives, buildOverallNarrative
 
@@ -271,12 +487,14 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
     narratives = buildNarratives(result)
     overallNarrative = buildOverallNarrative(result, narratives)
 
-    # audit 생성
-    auditResult = auditCredit(stockCode, corpName, result)
+    # audit 생성 (외부 전달 우선)
+    if auditResult is None:
+        auditResult = auditCredit(stockCode, corpName, result)
 
     grade = result.get("grade", "?")
     desc = result.get("gradeDescription", "")
     score = result.get("score", 0)
+    healthScore = max(0.0, 100.0 - score)
     pd = result.get("pdEstimate", 0)
     ecr = result.get("eCR", "?")
     outlook = result.get("outlook", "N/A")
@@ -288,8 +506,10 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
     captive = result.get("captiveFinance", False)
     holding = result.get("holding", False)
     today = datetime.now().strftime("%Y-%m-%d")
+    narrativesDict = result.get("narratives", {})
+    history = result.get("metricsHistory", [])
 
-    lines = []
+    lines: list[str] = []
 
     # ── frontmatter (블로그 포스트) ──
     lines.append(_generateFrontmatter(corpName, stockCode, result))
@@ -316,82 +536,43 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
         lines.append("| 구조 | 지주사 |")
     lines.append("")
 
-    # ── 2. 기업 개요 ──
-    narrativesDict = result.get("narratives", {})
-    profileNarr = narrativesDict.get("profile", "")
-    if profileNarr:
-        lines.append("## 2. 기업 개요")
-        lines.append("")
-        lines.append(profileNarr)
-        lines.append("")
-
-    # ── 3. 재무 하이라이트 ──
-    history = result.get("metricsHistory", [])
-    if history:
-        from dartlab.credit.narrative import _fmtTril
-
-        h0 = history[0]
-        h1 = history[1] if len(history) > 1 else {}
-
-        lines.append("## 3. 재무 하이라이트")
-        lines.append("")
-
-        rev0 = h0.get("revenue")
-        oi0 = h0.get("operatingIncome")
-        ebitda0 = h0.get("ebitda")
-        ocf0 = h0.get("ocf")
-        netDebt0 = h0.get("netDebt")
-
-        if rev0 is not None:
-            revPrev = h1.get("revenue")
-            yoy = ""
-            if revPrev and revPrev > 0:
-                chg = (rev0 - revPrev) / abs(revPrev) * 100
-                yoy = f" (전년비 {'+' if chg > 0 else ''}{chg:.0f}%)"
-            lines.append(f"- **매출**: {_fmtTril(rev0)}{yoy}")
-
-        if oi0 is not None:
-            oiPrev = h1.get("operatingIncome")
-            yoy = ""
-            if oiPrev and oiPrev != 0:
-                chg = (oi0 - oiPrev) / abs(oiPrev) * 100
-                yoy = f" (전년비 {'+' if chg > 0 else ''}{chg:.0f}%)"
-            lines.append(f"- **영업이익**: {_fmtTril(oi0)}{yoy}")
-
-        if ebitda0 is not None:
-            lines.append(f"- **EBITDA**: {_fmtTril(ebitda0)}")
-
-        if ocf0 is not None:
-            lines.append(f"- **영업현금흐름**: {_fmtTril(ocf0)}")
-
-        if netDebt0 is not None:
-            if netDebt0 <= 0:
-                lines.append("- **순차입금**: 순현금 포지션 (현금이 차입금 초과)")
-            else:
-                lines.append(f"- **순차입금**: {_fmtTril(netDebt0)}")
-
-        # 추세 해석
-        trendNarr = narrativesDict.get("trend", "")
-        if trendNarr:
-            lines.append(f"- **추세**: {trendNarr}")
-
-        # 차입금 구성
-        borrowNarr = narrativesDict.get("borrowings", "")
-        if borrowNarr:
-            lines.append(f"- **차입금 구성**: {borrowNarr}")
-
-        lines.append("")
-
-    # ── 4. 등급 근거 ──
-    lines.append("## 4. 등급 근거")
+    # 건전도 바
+    lines.append(f"```\n{_renderHealthBar(healthScore)}\n```")
     lines.append("")
 
-    # AI 분석 (선택적 — provider 설정 시만 동작, 실패 시 기계 서사 fallback)
-    aiAnalysis = _generateAIAnalysis(corpName, stockCode, result, narratives, overallNarrative)
+    # ── 2. Executive Summary ──
+    lines.extend(_renderExecutiveSummary(narrativesDict, result))
+
+    # ── 3. 사업 분석 ──
+    profile = result.get("profile")
+    rank = result.get("rank")
+    segComp = result.get("segmentComposition")
+    bizStab = result.get("businessStability")
+
+    overviewLines = _renderCompanyOverview(profile, rank, segComp, sector)
+    segmentLines = _renderSegmentTable(segComp)
+    hhiLines = _renderHHI(bizStab)
+
+    if overviewLines or segmentLines or hhiLines:
+        lines.append("## 3. 사업 분석")
+        lines.append("")
+        lines.extend(overviewLines)
+        lines.extend(segmentLines)
+        lines.extend(hhiLines)
+
+    # ── 4. 등급 근거 상세 ──
+    lines.append("## 4. 등급 근거 상세")
+    lines.append("")
+
+    # AI 분석 (외부 전달 우선 → 자체 생성 시도 → 기계 서사 fallback)
     if aiAnalysis:
         lines.append(aiAnalysis)
     else:
-        lines.append(overallNarrative)
+        generatedAi = _generateAIAnalysis(corpName, stockCode, result, narratives, overallNarrative)
+        if generatedAi:
+            lines.append(generatedAi)
+        else:
+            lines.append(overallNarrative)
     lines.append("")
 
     # 6막 인과 연결
@@ -422,8 +603,8 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
             lines.append(f"- **{n.axisName}**: {n.summary}")
         lines.append("")
 
-    # ── 3. 7축 상세 분석 ──
-    lines.append("## 5. 7축 상세 분석")
+    # ── 5. 재무 분석 (7축/5축 상세) ──
+    lines.append("## 5. 재무 분석")
     lines.append("")
 
     # 요약 테이블 (게이지 바 포함)
@@ -442,9 +623,9 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
         elif s < 40:
             j, gauge = "보통", _gauge(s)
         elif s < 60:
-            j, gauge = "⚠ 주의", _gauge(s)
+            j, gauge = "주의", _gauge(s)
         else:
-            j, gauge = "🔴 위험", _gauge(s)
+            j, gauge = "위험", _gauge(s)
         sStr = f"{s:.0f}/100" if s is not None else "평가 불가"
         lines.append(f"| {a['name']} | {w}% | {j} | {gauge} {sStr} |")
     lines.append("")
@@ -486,23 +667,27 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
                 lines.append(f"| {m['name']} | {msStr} | {mj} |")
             lines.append("")
 
-    # ── 5. 재무 요약 5개년 ──
+    # ── 6. 5개년 재무 시계열 ──
     if history:
-        lines.append("## 6. 재무 요약 (5개년)")
+        lines.append("## 6. 5개년 재무 시계열")
         lines.append("")
-        cols = ["기간", "EBITDA/이자", "Debt/EBITDA", "부채비율", "유동비율", "OCF/매출"]
+        cols = ["기간", "매출", "영업이익", "EBITDA/이자", "Debt/EBITDA", "부채비율", "유동비율", "OCF/매출"]
         lines.append("| " + " | ".join(cols) + " |")
         lines.append("|" + "|".join(["------"] * len(cols)) + "|")
         histSlice = history[:5]
         for idx, h in enumerate(histSlice):
             prevH = histSlice[idx + 1] if idx + 1 < len(histSlice) else None
 
+            rev = h.get("revenue")
+            oi = h.get("operatingIncome")
             icr = h.get("ebitdaInterestCoverage")
             de = h.get("debtToEbitda")
             dr = h.get("debtRatio")
             cr_v = h.get("currentRatio")
             ocfS = h.get("ocfToSales")
 
+            revStr = _fmtTril(rev) if rev is not None else "-"
+            oiStr = _fmtTril(oi) if oi is not None else "-"
             icrStr = "무차입" if icr is not None and icr >= 100 else (f"{icr:.1f}x" if icr is not None else "-")
             deStr = f"{de:.1f}x" if de is not None else "-"
             drStr = f"{dr:.0f}%" if dr is not None else "-"
@@ -515,19 +700,22 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
                 drStr += _trend(dr, prevH.get("debtRatio"))
                 crStr += _trend(cr_v, prevH.get("currentRatio"))
 
-            row = [h.get("period", ""), icrStr, deStr, drStr, crStr, ocfStr]
+            row = [h.get("period", ""), revStr, oiStr, icrStr, deStr, drStr, crStr, ocfStr]
             lines.append("| " + " | ".join(row) + " |")
         lines.append("")
 
-    # ── 5. 등급 전망 + 변경 트리거 ──
-    lines.append("## 7. 등급 전망")
+    # ── 7. 피어 비교 ──
+    lines.extend(_renderPeerComparison(result))
+
+    # ── 8. 등급 전망 + 트리거 ──
+    lines.append("## 8. 등급 전망")
     lines.append("")
     lines.append(f"현재 전망: **{outlook}**")
     lines.append("")
 
     # 상향/하향 트리거 자동 생성 — 현실적 조건만
-    upTriggers = []
-    downTriggers = []
+    upTriggers: list[str] = []
+    downTriggers: list[str] = []
     if history:
         latestH = history[0]
         icr = latestH.get("ebitdaInterestCoverage")
@@ -571,14 +759,30 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
             lines.append(f"- {t}")
         lines.append("")
 
-    # ── 6. 신평사 등급 대조 ──
-    lines.append(auditToMarkdown(auditResult))
+    # ── 9. 신평사 등급 대조 ──
+    lines.append(auditToMarkdown(auditResult, sectionNum=9))
     lines.append("")
 
-    # ── 7. 등급 괴리 분석 ──
+    # ── 10. 등급 괴리 분석 ──
     divExpl = result.get("divergenceExplanation", [])
-    if divExpl:
-        lines.append("## 9. 등급 괴리 분석")
+    matchExpl = result.get("matchExplanation", [])
+    if divExpl or matchExpl:
+        lines.append("## 10. 등급 괴리 분석")
+        lines.append("")
+        if divExpl:
+            lines.append("dartlab dCR 등급이 외부 신평사 등급과 다를 수 있는 이유:")
+            lines.append("")
+            for d in divExpl:
+                lines.append(f"- {d}")
+            lines.append("")
+        if matchExpl:
+            lines.append("dCR 등급과 외부 등급이 일치하는 이유:")
+            lines.append("")
+            for m in matchExpl:
+                lines.append(f"- {m}")
+            lines.append("")
+    elif divExpl:
+        lines.append("## 10. 등급 괴리 분석")
         lines.append("")
         lines.append("dartlab dCR 등급이 외부 신평사 등급과 다를 수 있는 이유:")
         lines.append("")
@@ -586,10 +790,10 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
             lines.append(f"- {d}")
         lines.append("")
 
-    # ── 8. Notch Adjustment 상세 ──
+    # ── 11. Notch Adjustment 상세 ──
     notchAdj = result.get("notchAdjustment")
     if notchAdj and notchAdj.get("totalNotch", 0) > 0:
-        lines.append("## 10. Notch Adjustment 상세")
+        lines.append("## 11. Notch Adjustment 상세")
         lines.append("")
         lines.append(f"총 조정: **-{notchAdj['totalNotch']} notch (상향)**")
         lines.append("")
@@ -598,30 +802,37 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
             lines.append(f"- {r}")
         lines.append("")
 
-    # ── 9. 별도재무제표 비교 ──
+    # ── 12. 별도재무제표 비교 ──
     sepMetrics = result.get("separateMetrics")
     if sepMetrics:
-        lines.append("## 11. 별도재무제표 비교")
+        lines.append("## 12. 별도재무제표 비교")
         lines.append("")
-        lines.append("연결 재무제표에 자회사 부채가 포함되어 왜곡될 수 있으므로, 별도(모회사) 재무를 함께 확인합니다.")
+        lines.append(
+            "연결 재무제표에 자회사 부채가 포함되어 왜곡될 수 있으므로, "
+            "별도(모회사) 재무를 함께 확인합니다."
+        )
         lines.append("")
-        latest = result.get("metricsHistory", [{}])[0] if result.get("metricsHistory") else {}
+        latest = history[0] if history else {}
         lines.append("| 지표 | 연결 | 별도 |")
         lines.append("| --- | ---: | ---: |")
         conDE = latest.get("debtToEbitda")
         sepDE = sepMetrics.get("separateDebtToEbitda")
         conDR = latest.get("debtRatio")
         sepDR = sepMetrics.get("separateDebtRatio")
-        lines.append(f"| D/EBITDA | {conDE:.1f}x | {sepDE:.1f}x |" if conDE and sepDE else "| D/EBITDA | - | - |")
-        lines.append(f"| 부채비율 | {conDR:.0f}% | {sepDR:.0f}% |" if conDR and sepDR else "| 부채비율 | - | - |")
+        lines.append(
+            f"| D/EBITDA | {conDE:.1f}x | {sepDE:.1f}x |" if conDE and sepDE else "| D/EBITDA | - | - |"
+        )
+        lines.append(
+            f"| 부채비율 | {conDR:.0f}% | {sepDR:.0f}% |" if conDR and sepDR else "| 부채비율 | - | - |"
+        )
         conBorrow = latest.get("totalBorrowing")
         sepBorrow = sepMetrics.get("totalBorrowing")
         if conBorrow and sepBorrow:
-            lines.append(f"| 총차입금 | {conBorrow/1e12:.1f}조 | {sepBorrow/1e12:.1f}조 |")
+            lines.append(f"| 총차입금 | {_fmtTril(conBorrow)} | {_fmtTril(sepBorrow)} |")
         lines.append("")
 
-    # ── 10. 면책 + 방법론 ──
-    lines.append("## 12. 면책 + 방법론")
+    # ── 13. 면책 + 방법론 ──
+    lines.append("## 13. 면책 + 방법론")
     lines.append("")
     lines.append(f"- dartlab 독립 신용분석(dCR) {version}")
     lines.append("- 공시 데이터 기반 정량 분석. 비공개 면담/정성 판단 미포함.")

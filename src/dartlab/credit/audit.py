@@ -197,10 +197,15 @@ def _findDisagreementReasons(result: dict, direction: str) -> str:
         return f"{best['name']} 축 점수 {best.get('score', 0):.0f}점이 정량 강점"
 
 
-def auditToMarkdown(audit: CreditAuditResult) -> str:
-    """audit 결과를 마크다운으로 변환."""
+def auditToMarkdown(audit: CreditAuditResult, *, sectionNum: int = 8) -> str:
+    """audit 결과를 마크다운으로 변환.
+
+    Args:
+        audit: 신용평가 audit 결과.
+        sectionNum: 보고서 내 섹션 번호 (기본 8).
+    """
     lines = []
-    lines.append("## 신평사 등급 대조")
+    lines.append(f"## {sectionNum}. 신평사 등급 대조")
     lines.append("")
 
     if audit.externalGrades:
