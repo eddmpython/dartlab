@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775267615605,
+  "lastUpdate": 1775268283728,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -9135,6 +9135,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.775324834112835e-7",
             "extra": "mean: 686.3467332733292 nsec\nrounds: 194553"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "882393d38122a0b4c0f2f647a97879982d9627d5",
+          "message": "fix: EDGAR 데이터 싱크 근본 원인 6건 수정\n\n1. vertical_relaxed → 스키마 정합 concat (증분 업데이트 시 컬럼 불일치로 데이터 오염)\n2. batch.py ticker-level asyncio Lock (동시 쓰기 경합으로 데이터 유실)\n3. freshness.py 컬럼 존재 검증 (filing_date 없는 parquet에서 silent fail → 반복 재수집)\n4. asyncClient 이벤트 루프별 세마포어 (루프 간 공유로 교착 상태)\n5. batch.py 예외 logging 추가 (silent failure로 원인 추적 불가)\n6. deploy.py 카테고리 사전 검증 (DATA_RELEASES 매핑 미스매치)",
+          "timestamp": "2026-04-04T11:03:35+09:00",
+          "tree_id": "a4a3514f72841739ed676a324ec1006b8cb30922",
+          "url": "https://github.com/eddmpython/dartlab/commit/882393d38122a0b4c0f2f647a97879982d9627d5"
+        },
+        "date": 1775268283110,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 491121.26570511167,
+            "unit": "iter/sec",
+            "range": "stddev: 5.368760092598912e-7",
+            "extra": "mean: 2.0361569938623654 usec\nrounds: 57429"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 601930.3611194476,
+            "unit": "iter/sec",
+            "range": "stddev: 4.874116728274703e-7",
+            "extra": "mean: 1.6613217484830594 usec\nrounds: 122459"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 510348.063724583,
+            "unit": "iter/sec",
+            "range": "stddev: 5.550994668999403e-7",
+            "extra": "mean: 1.959447034445231 usec\nrounds: 107551"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 588209.7300621204,
+            "unit": "iter/sec",
+            "range": "stddev: 4.315265443223412e-7",
+            "extra": "mean: 1.7000738833313602 usec\nrounds: 148545"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 735857.8947312891,
+            "unit": "iter/sec",
+            "range": "stddev: 3.738892547935528e-7",
+            "extra": "mean: 1.3589580368165606 usec\nrounds: 162023"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 257094.5282768964,
+            "unit": "iter/sec",
+            "range": "stddev: 7.180228908580126e-7",
+            "extra": "mean: 3.889619925800125 usec\nrounds: 68976"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7362190.947373957,
+            "unit": "iter/sec",
+            "range": "stddev: 1.3393658378904826e-8",
+            "extra": "mean: 135.82913118501676 nsec\nrounds: 73606"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8552745.972368507,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1144827415600409e-8",
+            "extra": "mean: 116.92151307085653 nsec\nrounds: 86949"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1453126.3577988255,
+            "unit": "iter/sec",
+            "range": "stddev: 2.737424264317009e-7",
+            "extra": "mean: 688.1713999839528 nsec\nrounds: 156937"
           }
         ]
       }
