@@ -454,19 +454,21 @@ def _fetchSegmentComposition(company) -> dict | None:
         if not rows:
             return None
 
-        # segments DataFrame에서 부문별 매출 추출
+        # segments DataFrame: 부문 × 연도 (컬럼이 "2025","2024" 등)
+        # 첫 번째 문자열 컬럼이 부문명, 첫 번째 숫자 컬럼(최신 연도)이 매출
         segments = []
         for row in rows:
             name = None
             revenue = None
             for k, v in row.items():
                 if isinstance(v, str) and name is None:
-                    name = v
-                if isinstance(v, (int, float)) and v > 0:
-                    if any(term in str(k) for term in ["매출", "수익", "revenue"]):
-                        revenue = v
-                        break
+                    name = v.strip()
+                elif isinstance(v, (int, float)) and v > 0 and revenue is None:
+                    revenue = v  # 최신 연도의 값
+            # "합계", "조정", "내부" 행 제외
             if name and revenue and revenue > 0:
+                if any(skip in name for skip in ("합계", "조정", "내부거래", "상계")):
+                    continue
                 segments.append({"name": name, "revenue": revenue})
 
         if not segments:

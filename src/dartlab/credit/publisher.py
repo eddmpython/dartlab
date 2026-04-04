@@ -359,7 +359,7 @@ def _renderCompanyOverview(
 
 
 def _renderSegmentTable(segComp: dict | None) -> list[str]:
-    """부문별 GFM 테이블."""
+    """부문별 매출 비중 GFM 테이블. 중복 부문명 제거."""
     if segComp is None:
         return []
     segments = segComp.get("segments", [])
@@ -367,17 +367,29 @@ def _renderSegmentTable(segComp: dict | None) -> list[str]:
     if not segments or not totalRev:
         return []
 
+    # 중복 부문명 제거 (최신 값 우선)
+    seen: dict[str, float] = {}
+    for seg in segments:
+        name = seg.get("name", "").replace(" 부문", "").strip()
+        rev = seg.get("revenue", 0)
+        if name and rev > 0 and name not in seen:
+            seen[name] = rev
+
+    if not seen:
+        return []
+
+    # 비중 기준 내림차순
+    total = sum(seen.values())
+    items = sorted(seen.items(), key=lambda x: -x[1])
+
     lines: list[str] = []
     lines.append("### 3.2 부문별 매출 구성")
     lines.append("")
-    lines.append("| 부문 | 매출 | 비중 |")
-    lines.append("|------|-----:|-----:|")
-    for seg in segments:
-        name = seg.get("name", "")
-        rev = seg.get("revenue", 0)
-        pct = rev / totalRev * 100 if totalRev else 0
-        lines.append(f"| {name} | {_fmtTril(rev)} | {pct:.1f}% |")
-    lines.append(f"| **합계** | **{_fmtTril(totalRev)}** | **100%** |")
+    lines.append("| 부문 | 비중 |")
+    lines.append("|------|-----:|")
+    for name, rev in items:
+        pct = rev / total * 100
+        lines.append(f"| {name} | {pct:.1f}% |")
     lines.append("")
     return lines
 
