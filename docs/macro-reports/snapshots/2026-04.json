@@ -8834,8 +8834,8 @@
   },
   "strategies": {
     "total": 40,
-    "active": 23,
-    "bullish": 8,
+    "active": 22,
+    "bullish": 7,
     "bearish": 1,
     "signals": [
       {
@@ -8850,11 +8850,11 @@
       {
         "id": 2,
         "name": "주가 ≈ 명목GDP",
-        "active": true,
-        "direction": "bullish",
-        "strength": 0.5,
-        "confidence": "medium",
-        "description": "GDP nowcast 6891.41% (팩터 -1.959, 신뢰도 high)"
+        "active": false,
+        "direction": "neutral",
+        "strength": 0.0,
+        "confidence": "low",
+        "description": "GDP nowcast 대기"
       },
       {
         "id": 3,
