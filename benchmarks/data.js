@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775284511113,
+  "lastUpdate": 1775286349312,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -10353,6 +10353,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.956801746174329e-7",
             "extra": "mean: 682.333831402825 nsec\nrounds: 159949"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "d841e3d9377d362b918ce1b194d5e2bd66f8704b",
+          "message": "fix: UI 경로 잔여 참조 수정 + CHANGELOG v0.8.9 / vsce-0.2.2 작성\n\n- ops/ui.md: 디렉토리 구조/빌드 명령 ui/web, ui/vscode로 갱신\n- server/web.py: ui/build → ui/web/build\n- server/embed.py: ui/build → ui/web/build\n- CHANGELOG.md, docs/changelog.md: v0.8.9 항목 추가\n- ui/vscode/CHANGELOG.md: v0.2.2 항목 추가\n- credit: segments 중복 방지 + Executive Summary 개선",
+          "timestamp": "2026-04-04T16:04:44+09:00",
+          "tree_id": "7b9c477c5408744534c7b1a3b75be84318e21ba7",
+          "url": "https://github.com/eddmpython/dartlab/commit/d841e3d9377d362b918ce1b194d5e2bd66f8704b"
+        },
+        "date": 1775286348193,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 533214.8415641739,
+            "unit": "iter/sec",
+            "range": "stddev: 4.868047739470664e-7",
+            "extra": "mean: 1.8754166651973194 usec\nrounds: 57101"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 684563.4923303263,
+            "unit": "iter/sec",
+            "range": "stddev: 5.284540827616614e-7",
+            "extra": "mean: 1.4607848814664284 usec\nrounds: 154036"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 533036.1859126615,
+            "unit": "iter/sec",
+            "range": "stddev: 5.249522182605552e-7",
+            "extra": "mean: 1.876045241258444 usec\nrounds: 132556"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 694774.4724196213,
+            "unit": "iter/sec",
+            "range": "stddev: 4.029746103919002e-7",
+            "extra": "mean: 1.439315979064977 usec\nrounds: 181819"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 821708.9623348471,
+            "unit": "iter/sec",
+            "range": "stddev: 3.852417040083477e-7",
+            "extra": "mean: 1.216975895161892 usec\nrounds: 196890"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 266329.88756639964,
+            "unit": "iter/sec",
+            "range": "stddev: 6.74928392132725e-7",
+            "extra": "mean: 3.754741944802145 usec\nrounds: 76255"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7186210.943175339,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1693035210431367e-8",
+            "extra": "mean: 139.15539188975362 nsec\nrounds: 72967"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8596523.60139941,
+            "unit": "iter/sec",
+            "range": "stddev: 1.106506226885401e-8",
+            "extra": "mean: 116.32609254247986 nsec\nrounds: 85237"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1465558.921387785,
+            "unit": "iter/sec",
+            "range": "stddev: 2.775782288280473e-7",
+            "extra": "mean: 682.3335352856832 nsec\nrounds: 178254"
           }
         ]
       }
