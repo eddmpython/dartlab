@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775311107372,
+  "lastUpdate": 1775316103382,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -11919,6 +11919,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.887854096794554e-7",
             "extra": "mean: 681.914811602352 nsec\nrounds: 149410"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "5618c67eb705bc3fbe8cb68ef2a4631fb15bb71d",
+          "message": "feat: 보고서 텍스트 정성 분석 5종 추가 — 사업보고서 인용 + 차입금 + 감사 + diff + 업종\n\n1. 사업보고서 발췌: topicSummaries()에서 핵심 사업 설명 인용 (인용 블록).\n2. 차입금 구성: borrowingsDetail에서 단기/장기/사채 테이블 (데이터 있을 때).\n3. 감사의견 강화: 연속 적정 횟수 표시.\n4. 전기 대비 변화: diff()로 핵심 변화 3개 추출 (섹션 8.5).\n5. 업종 내 위치: rank에서 매출 순위 1문장.\n삼성전자: 사업보고서 원문 '글로벌 전자 기업' 인용 확인.",
+          "timestamp": "2026-04-05T00:20:39+09:00",
+          "tree_id": "406316bcd43ab69742c18c44ba2a7f20cb4d0de9",
+          "url": "https://github.com/eddmpython/dartlab/commit/5618c67eb705bc3fbe8cb68ef2a4631fb15bb71d"
+        },
+        "date": 1775316102128,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 566819.2558533953,
+            "unit": "iter/sec",
+            "range": "stddev: 2.9499405840642417e-7",
+            "extra": "mean: 1.764230819036685 usec\nrounds: 53973"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 672699.1445651266,
+            "unit": "iter/sec",
+            "range": "stddev: 3.5103194479731306e-7",
+            "extra": "mean: 1.4865486422559084 usec\nrounds: 111025"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 550032.791980263,
+            "unit": "iter/sec",
+            "range": "stddev: 4.727163817953862e-7",
+            "extra": "mean: 1.8180734214040888 usec\nrounds: 114299"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 724425.2456099797,
+            "unit": "iter/sec",
+            "range": "stddev: 2.669854931646962e-7",
+            "extra": "mean: 1.3804046808970345 usec\nrounds: 147667"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 839484.7940709081,
+            "unit": "iter/sec",
+            "range": "stddev: 1.9741667012590578e-7",
+            "extra": "mean: 1.1912068057251002 usec\nrounds: 180996"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 295752.58884892595,
+            "unit": "iter/sec",
+            "range": "stddev: 4.018057836819948e-7",
+            "extra": "mean: 3.3812045530759915 usec\nrounds: 71160"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 8497450.952523373,
+            "unit": "iter/sec",
+            "range": "stddev: 7.769967255035013e-9",
+            "extra": "mean: 117.68235034096237 nsec\nrounds: 77610"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 9668205.968923472,
+            "unit": "iter/sec",
+            "range": "stddev: 1.5108103066835954e-8",
+            "extra": "mean: 103.4318055711992 nsec\nrounds: 87230"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1544411.6877711734,
+            "unit": "iter/sec",
+            "range": "stddev: 1.6216915218636689e-7",
+            "extra": "mean: 647.4957473568176 nsec\nrounds: 168011"
           }
         ]
       }
