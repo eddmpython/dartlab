@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775286450286,
+  "lastUpdate": 1775286648519,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -10614,6 +10614,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 3.259501885220816e-7",
             "extra": "mean: 698.3069019992779 nsec\nrounds: 157679"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "f4f4870d87ac6b403be2f6a5ab2b9173dde57074",
+          "message": "publish: 4개사 보고서 최종 퀄리티 — hook+부문+조사+번호+괴리 완성\n\n삼성전자: DX 53%/DS 34%/SDC 9%/Harman 4%. 매출 333.6조.\nSK하이닉스: 매출 97.1조. 단일 사업 구조.\nNAVER: 핀테크 45%/클라우드 31%/콘텐츠 24%. 매출 12.0조.\nLG: 지주사. 매출 6,154억. 건전도 94/100.",
+          "timestamp": "2026-04-04T16:09:30+09:00",
+          "tree_id": "c004a0ce0f159c3a68f4b462478d5e889200dabb",
+          "url": "https://github.com/eddmpython/dartlab/commit/f4f4870d87ac6b403be2f6a5ab2b9173dde57074"
+        },
+        "date": 1775286647370,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 465918.4294132004,
+            "unit": "iter/sec",
+            "range": "stddev: 5.531596963515229e-7",
+            "extra": "mean: 2.1462984438272747 usec\nrounds: 52757"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 662665.2750895283,
+            "unit": "iter/sec",
+            "range": "stddev: 5.209951716058162e-7",
+            "extra": "mean: 1.5090574949244122 usec\nrounds: 109314"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 523015.37496054015,
+            "unit": "iter/sec",
+            "range": "stddev: 5.520484459554914e-7",
+            "extra": "mean: 1.9119896811359451 usec\nrounds: 117842"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 663902.8156227306,
+            "unit": "iter/sec",
+            "range": "stddev: 4.23022128663578e-7",
+            "extra": "mean: 1.5062445533718896 usec\nrounds: 144447"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 812896.9120028806,
+            "unit": "iter/sec",
+            "range": "stddev: 3.7810826008778107e-7",
+            "extra": "mean: 1.2301682848519129 usec\nrounds: 186220"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 268244.46522314963,
+            "unit": "iter/sec",
+            "range": "stddev: 6.481053809459049e-7",
+            "extra": "mean: 3.7279427151203697 usec\nrounds: 65794"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7446014.953259169,
+            "unit": "iter/sec",
+            "range": "stddev: 2.7912199101221932e-8",
+            "extra": "mean: 134.30002575569546 nsec\nrounds: 73769"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8687445.189955963,
+            "unit": "iter/sec",
+            "range": "stddev: 1.4404087717908666e-8",
+            "extra": "mean: 115.10863989751043 nsec\nrounds: 86942"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1462962.2125844723,
+            "unit": "iter/sec",
+            "range": "stddev: 3.028135847160082e-7",
+            "extra": "mean: 683.5446543991028 nsec\nrounds: 123840"
           }
         ]
       }
