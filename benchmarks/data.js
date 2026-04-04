@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775264870773,
+  "lastUpdate": 1775265590575,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -8961,6 +8961,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.796218375235372e-7",
             "extra": "mean: 687.7857934190672 nsec\nrounds: 172385"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "280b03bca608678e35526eaa75672ffe2e2210a0",
+          "message": "fix: Track B 자산건전성 fallback 규모 기반 — 대형 금융지주 12점, 중형 20점\n\n금융지주 자산건전성 데이터 없을 때 자산규모로 추정:\n100조+ → 12점(양호), 10조+ → 20점, 소형 → 25점(중립).",
+          "timestamp": "2026-04-04T10:17:12+09:00",
+          "tree_id": "20ab981b14b941ce345c47b9572173a2b452ac28",
+          "url": "https://github.com/eddmpython/dartlab/commit/280b03bca608678e35526eaa75672ffe2e2210a0"
+        },
+        "date": 1775265589426,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 582119.2284254202,
+            "unit": "iter/sec",
+            "range": "stddev: 3.0354012255499007e-7",
+            "extra": "mean: 1.7178611376657482 usec\nrounds: 58576"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 717308.5653113885,
+            "unit": "iter/sec",
+            "range": "stddev: 3.1356995730990545e-7",
+            "extra": "mean: 1.3941001799774877 usec\nrounds: 122250"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 584020.2724264538,
+            "unit": "iter/sec",
+            "range": "stddev: 2.998941195970424e-7",
+            "extra": "mean: 1.712269329017052 usec\nrounds: 126455"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 763219.4642554712,
+            "unit": "iter/sec",
+            "range": "stddev: 2.320693726825884e-7",
+            "extra": "mean: 1.3102391210312105 usec\nrounds: 150083"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 898481.8236953836,
+            "unit": "iter/sec",
+            "range": "stddev: 2.544567166934938e-7",
+            "extra": "mean: 1.1129885698600783 usec\nrounds: 190549"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 296256.2565322525,
+            "unit": "iter/sec",
+            "range": "stddev: 3.879919078117553e-7",
+            "extra": "mean: 3.3754561395773703 usec\nrounds: 69402"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 8376171.787053662,
+            "unit": "iter/sec",
+            "range": "stddev: 2.2606018171128746e-8",
+            "extra": "mean: 119.3862811583706 nsec\nrounds: 75701"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 9735626.46772143,
+            "unit": "iter/sec",
+            "range": "stddev: 1.611754850746848e-8",
+            "extra": "mean: 102.7155266603038 nsec\nrounds: 84020"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1519486.3443255045,
+            "unit": "iter/sec",
+            "range": "stddev: 1.547423654505424e-7",
+            "extra": "mean: 658.117135263823 nsec\nrounds: 172177"
           }
         ]
       }
