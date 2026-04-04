@@ -568,6 +568,79 @@ def _renderCausalDiagram(result: dict) -> list[str]:
     return lines
 
 
+def _collectRiskDiagnosis(result: dict) -> dict:
+    """리스크 진단 데이터 수집. 메모리 안전 — Company 추가 로드 없음."""
+    diagnosis: dict = {}
+
+    # 감사의견 (result에 이미 있음)
+    diagnosis["auditOpinion"] = result.get("auditOpinion")
+
+    # 공시 리스크 (result에 이미 있음)
+    discRisk = result.get("disclosureRisk")
+    if isinstance(discRisk, dict):
+        diagnosis["contingentDebt"] = discRisk.get("chronicYears")
+        diagnosis["riskKeywords"] = discRisk.get("keywords", [])
+        diagnosis["auditChanges"] = discRisk.get("auditChanges")
+        diagnosis["affiliateChanges"] = discRisk.get("affiliateChanges")
+
+    return diagnosis
+
+
+def _renderRiskDiagnosis(diagnosis: dict, mainNum: int) -> list[str]:
+    """리스크 진단 4개 하위 섹션."""
+    lines: list[str] = []
+
+    # 8.1 감사 리스크
+    audit = diagnosis.get("auditOpinion")
+    lines.append(f"### {mainNum}.1 감사 리스크")
+    lines.append("")
+    if audit:
+        lines.append(f"- 감사의견: **{audit}**")
+        if audit != "적정":
+            lines.append(f"  - ⚠️ {audit} 의견 — 재무제표 신뢰도 주의")
+        else:
+            lines.append("  - 적정 의견으로 재무제표 신뢰도 양호")
+    else:
+        lines.append("- 감사의견: 데이터 없음")
+    lines.append("")
+
+    # 8.2 우발부채
+    contingent = diagnosis.get("contingentDebt")
+    lines.append(f"### {mainNum}.2 우발부채")
+    lines.append("")
+    if contingent and contingent > 0:
+        lines.append(f"- 우발부채 만성화: **{contingent}년 연속** 감지")
+    else:
+        lines.append("- 우발부채 만성화 신호 없음")
+    lines.append("")
+
+    # 8.3 리스크 키워드
+    keywords = diagnosis.get("riskKeywords") or []
+    lines.append(f"### {mainNum}.3 공시 리스크 키워드")
+    lines.append("")
+    if keywords:
+        for kw in keywords[:5]:  # 최대 5개
+            lines.append(f"- ⚠️ {kw}")
+    else:
+        lines.append("- 리스크 키워드(횡령/배임/과징금 등) 감지 없음")
+    lines.append("")
+
+    # 8.4 감사인/계열 변경
+    auditChanges = diagnosis.get("auditChanges")
+    affiliateChanges = diagnosis.get("affiliateChanges")
+    lines.append(f"### {mainNum}.4 구조 변화")
+    lines.append("")
+    if auditChanges:
+        lines.append(f"- 감사인 변경 감지: {auditChanges}")
+    if affiliateChanges:
+        lines.append(f"- 계열 구조 변화 감지: {affiliateChanges}")
+    if not auditChanges and not affiliateChanges:
+        lines.append("- 감사인/계열 구조 변화 없음")
+    lines.append("")
+
+    return lines
+
+
 def _renderPeerComparison(result: dict, sectionNum: int = 7) -> list[str]:
     """동종업계 정보 (rank 데이터 기반). scan 호출 없이 result["rank"]만 사용."""
     rank = result.get("rank")
@@ -677,6 +750,15 @@ def generateReportMarkdown(
 
     # ── frontmatter (블로그 포스트) ──
     lines.append(_generateFrontmatter(corpName, stockCode, result))
+
+    # ── 면책 (인용 블록) ──
+    lines.append(
+        f"> ⚠️ **면책**: 본 보고서는 dartlab dCR {version} 방법론에 따라 "
+        "공시 데이터만으로 작성되었습니다. 제도권 신용등급과 다를 수 있으며, "
+        "투자 권유가 아닙니다. "
+        "[방법론](https://github.com/eddmpython/dartlab/blob/master/ops/credit.md)"
+    )
+    lines.append("")
 
     # ── 등급 요약 ──
     lines.append(f"> **{grade}** | {desc} | {today} | 방법론 {version}")
@@ -906,6 +988,13 @@ def generateReportMarkdown(
             lines.append("| " + " | ".join(row) + " |")
         lines.append("")
 
+    # ── 리스크 진단 ──
+    riskDiag = _collectRiskDiagnosis(result)
+    lines.append(_sec("리스크 진단"))
+    lines.append("")
+    riskLines = _renderRiskDiagnosis(riskDiag, _secCounter[0])
+    lines.extend(riskLines)
+
     # ── 피어 비교 (빈 섹션이면 건너뜀) ──
     peerLines = _renderPeerComparison(result, sectionNum=_secCounter[0] + 1)
     if peerLines:
@@ -1041,12 +1130,10 @@ def generateReportMarkdown(
             lines.append(f"| 총차입금 | {_fmtTril(conBorrow)} | {_fmtTril(sepBorrow)} |")
         lines.append("")
 
-    # ── 면책 + 방법론 ──
-    lines.append(_sec("면책 + 방법론"))
+    # ── 방법론 참조 ──
+    lines.append(_sec("방법론 참조"))
     lines.append("")
     lines.append(f"- dartlab 독립 신용분석(dCR) {version}")
-    lines.append("- 공시 데이터 기반 정량 분석. 비공개 면담/정성 판단 미포함.")
-    lines.append("- dCR 등급은 제도권 신용등급과 다를 수 있으며, 투자 권유가 아닙니다.")
     lines.append("- 방법론 상세: [ops/credit.md](https://github.com/eddmpython/dartlab/blob/master/ops/credit.md)")
     lines.append(f"- 발행일: {today}")
     lines.append("")
