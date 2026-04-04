@@ -71,7 +71,14 @@ def _fmtTril(v) -> str:
 # ═══════════════════════════════════════════════════════════
 
 
-def narrateRepayment(latest: dict, axisScore: float | None, sectorLabel: str) -> AxisNarrative:
+def narrateRepayment(
+    latest: dict,
+    axisScore: float | None,
+    sectorLabel: str,
+    *,
+    captive: bool = False,
+    separateMetrics: dict | None = None,
+) -> AxisNarrative:
     """축 1: 채무상환능력."""
     details = []
     sev = _severity(axisScore)
@@ -133,6 +140,12 @@ def narrateRepayment(latest: dict, axisScore: float | None, sectorLabel: str) ->
         elif ffo > 0:
             details.append(f"FFO/총차입금 {_fmt(ffo, '%', 0)}로 부채상환 능력이 취약하다.")
 
+    # 캡티브 맥락: 별도 기준 D/EBITDA 참고
+    if captive and separateMetrics:
+        sepDE = separateMetrics.get("separateDebtToEbitda")
+        if sepDE is not None:
+            details.append(f"참고: 별도 기준 D/EBITDA는 {sepDE:.1f}x로, 연결 대비 크게 양호하다.")
+
     summary = f"채무상환능력은 {sectorLabel} 업종 기준 "
     if sev == "strong":
         summary += "매우 우수하다."
@@ -146,7 +159,13 @@ def narrateRepayment(latest: dict, axisScore: float | None, sectorLabel: str) ->
     return AxisNarrative("채무상환능력", summary, details, sev)
 
 
-def narrateCapitalStructure(latest: dict, axisScore: float | None) -> AxisNarrative:
+def narrateCapitalStructure(
+    latest: dict,
+    axisScore: float | None,
+    *,
+    captive: bool = False,
+    separateMetrics: dict | None = None,
+) -> AxisNarrative:
     """축 2: 자본구조."""
     details = []
     sev = _severity(axisScore)
@@ -177,6 +196,16 @@ def narrateCapitalStructure(latest: dict, axisScore: float | None) -> AxisNarrat
             details.append("순차입금이 마이너스(순현금 포지션)로 실질적 부채 부담이 없다.")
         elif nde < 2:
             details.append(f"순차입금/EBITDA {_fmt(nde)}배로 실질 부채 부담이 낮다.")
+
+    # 캡티브 맥락: 별도 기준 부채비율 참고
+    if captive and separateMetrics:
+        sepDR = separateMetrics.get("separateDebtRatio")
+        if sepDR is not None:
+            details.append(
+                f"참고: 별도 재무 기준 부채비율은 {sepDR:.0f}%로, "
+                f"연결({dr:.0f}%) 대비 크게 낮다. "
+                "이는 금융자회사 차입금이 연결에 포함되기 때문이다."
+            )
 
     summary = "자본구조는 "
     if sev == "strong":
@@ -236,7 +265,13 @@ def narrateLiquidity(latest: dict, axisScore: float | None) -> AxisNarrative:
     return AxisNarrative("유동성", summary, details, sev)
 
 
-def narrateCashFlow(latest: dict, axisScore: float | None, metrics: dict) -> AxisNarrative:
+def narrateCashFlow(
+    latest: dict,
+    axisScore: float | None,
+    metrics: dict,
+    *,
+    captive: bool = False,
+) -> AxisNarrative:
     """축 4: 현금흐름."""
     details = []
     sev = _severity(axisScore)
@@ -271,6 +306,15 @@ def narrateCashFlow(latest: dict, axisScore: float | None, metrics: dict) -> Axi
         ocfs = [h.get("ocf") for h in history[:3]]
         if all(o is not None and o > 0 for o in ocfs):
             details.append("영업현금흐름이 3기 연속 양수로 안정적이다.")
+
+    # 캡티브 맥락: OCF 음수는 금융자회사 대출 유출 포함 가능
+    if captive:
+        ocfVal = latest.get("ocf")
+        if ocfVal is not None and ocfVal < 0:
+            details.append(
+                "참고: OCF가 음수인 것은 연결 기준으로 금융자회사의 대출 원금 유출이 포함되기 때문이다. "
+                "제조 모회사 단독으로는 OCF가 정상 범위일 수 있다."
+            )
 
     summary = "현금흐름 창출 능력은 "
     if sev == "strong":
@@ -325,7 +369,13 @@ def narrateBusinessStability(biz: dict, axisScore: float | None) -> AxisNarrativ
     return AxisNarrative("사업안정성", summary, details, sev)
 
 
-def narrateReliability(rel: dict, auditOpinion: str | None, axisScore: float | None) -> AxisNarrative:
+def narrateReliability(
+    rel: dict,
+    auditOpinion: str | None,
+    axisScore: float | None,
+    *,
+    captive: bool = False,
+) -> AxisNarrative:
     """축 6: 재무 신뢰성."""
     details = []
     sev = _severity(axisScore)
@@ -343,6 +393,11 @@ def narrateReliability(rel: dict, auditOpinion: str | None, axisScore: float | N
             details.append(f"Piotroski F-Score {f}/9로 재무 펀더멘탈이 강건하다.")
         elif f <= 3:
             details.append(f"Piotroski F-Score {f}/9로 재무 펀더멘탈이 취약하다.")
+            if captive:
+                details.append(
+                    "다만, 캡티브 금융 연결 효과로 OCF/유동비율 등이 왜곡되어 "
+                    "F-Score가 실제 모회사 체력보다 낮게 산출될 수 있다."
+                )
 
     if auditOpinion:
         if "적정" in auditOpinion and "부적정" not in auditOpinion and "한정" not in auditOpinion:
@@ -402,8 +457,24 @@ def narrateDisclosureRisk(dr: dict | None, axisScore: float | None) -> AxisNarra
 # ═══════════════════════════════════════════════════════════
 
 
-def buildNarratives(result: dict) -> list[AxisNarrative]:
-    """engine.py evaluateCompany 결과에서 7축 전체 서사 생성."""
+def buildNarratives(
+    result: dict,
+    *,
+    captive: bool = False,
+    holding: bool = False,
+    separateMetrics: dict | None = None,
+) -> list[AxisNarrative]:
+    """engine.py evaluateCompany 결과에서 7축 전체 서사 생성.
+
+    Parameters
+    ----------
+    captive : bool
+        캡티브 금융 복합기업 여부. True이면 연결 재무 왜곡 맥락 문장을 추가한다.
+    holding : bool
+        지주사 여부. (현재 축별 서사에서 직접 사용하지 않으나 향후 확장용.)
+    separateMetrics : dict | None
+        별도 재무제표 지표. captive일 때 연결/별도 대비 참고 문장에 사용한다.
+    """
     axes = result.get("axes", [])
     latest = {}
     metricsHistory = result.get("metricsHistory", [])
@@ -423,12 +494,21 @@ def buildNarratives(result: dict) -> list[AxisNarrative]:
         return None
 
     return [
-        narrateRepayment(latest, _axisScore("채무상환능력"), sector),
-        narrateCapitalStructure(latest, _axisScore("자본구조")),
+        narrateRepayment(
+            latest, _axisScore("채무상환능력"), sector,
+            captive=captive, separateMetrics=separateMetrics,
+        ),
+        narrateCapitalStructure(
+            latest, _axisScore("자본구조"),
+            captive=captive, separateMetrics=separateMetrics,
+        ),
         narrateLiquidity(latest, _axisScore("유동성")),
-        narrateCashFlow(latest, _axisScore("현금흐름"), {"history": metricsHistory}),
+        narrateCashFlow(
+            latest, _axisScore("현금흐름"), {"history": metricsHistory},
+            captive=captive,
+        ),
         narrateBusinessStability(biz or {}, _axisScore("사업안정성")),
-        narrateReliability(rel or {}, audit, _axisScore("재무신뢰성")),
+        narrateReliability(rel or {}, audit, _axisScore("재무신뢰성"), captive=captive),
         narrateDisclosureRisk(dr, _axisScore("공시리스크")),
     ]
 
@@ -662,7 +742,14 @@ def narrateCausalChain(latest: dict, result: dict) -> str:
     return ""
 
 
-def buildOverallNarrative(result: dict, narratives: list[AxisNarrative]) -> str:
+def buildOverallNarrative(
+    result: dict,
+    narratives: list[AxisNarrative],
+    *,
+    captive: bool = False,
+    holding: bool = False,
+    separateMetrics: dict | None = None,
+) -> str:
     """등급 근거 종합 서사 — 인과 체인 통합.
 
     기존 "핵심 강점은 X, Y이다" → 인과 연결 문장으로 교체.

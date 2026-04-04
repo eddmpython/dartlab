@@ -724,7 +724,12 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
             narrateTrend,
         )
 
-        narratives = buildNarratives(result)
+        narratives = buildNarratives(
+            result,
+            captive=captive,
+            holding=holding,
+            separateMetrics=sepMetrics,
+        )
 
         # 추가 서사
         profileNarrative = narrateProfile(
@@ -745,7 +750,10 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         )
 
         result["narratives"] = {
-            "overall": buildOverallNarrative(result, narratives),
+            "overall": buildOverallNarrative(
+                result, narratives,
+                captive=captive, holding=holding, separateMetrics=sepMetrics,
+            ),
             "causalChain": causalChain,
             "profile": profileNarrative,
             "trend": trendNarrative,

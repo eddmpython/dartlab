@@ -331,7 +331,10 @@ def _renderExecutiveSummary(
         lines.append("")
 
     if overall:
-        lines.append(overall)
+        # Executive Summary는 overall의 첫 2문장만 — 전문은 등급 근거 섹션에서 출력
+        sentences = overall.split(". ")
+        brief = ". ".join(sentences[:2]) + "." if len(sentences) > 2 else overall
+        lines.append(brief)
         lines.append("")
     if causal:
         lines.append(f"**인과 연결**: {causal}")
@@ -630,9 +633,16 @@ def generateReportMarkdown(
     from dartlab.credit.audit import auditCredit, auditToMarkdown
     from dartlab.credit.narrative import buildNarratives, buildOverallNarrative
 
-    # 서사 생성
-    narratives = buildNarratives(result)
-    overallNarrative = buildOverallNarrative(result, narratives)
+    # 서사 생성 — captive/holding/separateMetrics 전달
+    _captive = result.get("captiveFinance", False)
+    _holding = result.get("holding", False)
+    _sepMetrics = result.get("separateMetrics")
+    narratives = buildNarratives(
+        result, captive=_captive, holding=_holding, separateMetrics=_sepMetrics,
+    )
+    overallNarrative = buildOverallNarrative(
+        result, narratives, captive=_captive, holding=_holding, separateMetrics=_sepMetrics,
+    )
 
     # audit 생성 (외부 전달 우선)
     if auditResult is None:
@@ -769,6 +779,23 @@ def generateReportMarkdown(
         lines.append("### 양호")
         for n in adequates:
             lines.append(f"- **{n.axisName}**: {n.summary}")
+        lines.append("")
+
+    # Notch 조정 → 서사 반영 (정량 점수와 최종 등급 간 괴리 설명)
+    notchAdj = result.get("notchAdjustment")
+    if notchAdj and notchAdj.get("totalNotch", 0) > 0:
+        from dartlab.core.finance.creditScorecard import mapTo20Grade
+
+        rawGrade, _, _ = mapTo20Grade(result.get("score", 0))
+        lines.append(
+            f"**등급 조정**: 정량 평가 기준 dCR-{rawGrade} 수준이나, "
+            f"다음의 정성 대리 신호를 반영하여 **-{notchAdj['totalNotch']} notch 상향** 조정했다:"
+        )
+        for reason in notchAdj.get("reasons", []):
+            lines.append(f"- {reason}")
+        lines.append(
+            "이는 제도권 신평사가 시장 지위, 그룹 지원 등 정성 요소로 등급을 조정하는 것과 유사한 접근이다."
+        )
         lines.append("")
 
     # ── 인과 흐름도 (등급 근거 섹션 끝) ──
