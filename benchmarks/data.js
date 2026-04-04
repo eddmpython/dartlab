@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775310585038,
+  "lastUpdate": 1775310902135,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -11745,6 +11745,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.628937050093784e-7",
             "extra": "mean: 703.3969074683483 nsec\nrounds: 166918"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "693763494e44c6b6a3ff07e5f6eaf6ce88bc1dc4",
+          "message": "publish: 16개사 보고서 재발간 — 워터폴 기여도 + PD 근거 반영",
+          "timestamp": "2026-04-04T22:53:56+09:00",
+          "tree_id": "8812bfaed569ff7c2bc25adced6196d609eb85ca",
+          "url": "https://github.com/eddmpython/dartlab/commit/693763494e44c6b6a3ff07e5f6eaf6ce88bc1dc4"
+        },
+        "date": 1775310901599,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 487494.2862374767,
+            "unit": "iter/sec",
+            "range": "stddev: 5.343035411393599e-7",
+            "extra": "mean: 2.0513060936941168 usec\nrounds: 54663"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 617500.7114740133,
+            "unit": "iter/sec",
+            "range": "stddev: 5.403270216888312e-7",
+            "extra": "mean: 1.619431332496665 usec\nrounds: 125882"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 462040.9442041043,
+            "unit": "iter/sec",
+            "range": "stddev: 5.595209118735194e-7",
+            "extra": "mean: 2.1643103550542806 usec\nrounds: 107551"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 608345.6485413503,
+            "unit": "iter/sec",
+            "range": "stddev: 4.5286968572757883e-7",
+            "extra": "mean: 1.643802339011928 usec\nrounds: 130481"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 739085.4803549076,
+            "unit": "iter/sec",
+            "range": "stddev: 3.8585744272928465e-7",
+            "extra": "mean: 1.3530234683000426 usec\nrounds: 151907"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 248490.97591994665,
+            "unit": "iter/sec",
+            "range": "stddev: 7.210626304388938e-7",
+            "extra": "mean: 4.024291008145736 usec\nrounds: 62579"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7187368.262800408,
+            "unit": "iter/sec",
+            "range": "stddev: 1.4378838640808162e-8",
+            "extra": "mean: 139.13298490292897 nsec\nrounds: 70344"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8153281.220372824,
+            "unit": "iter/sec",
+            "range": "stddev: 1.199708766778119e-8",
+            "extra": "mean: 122.65000715310454 nsec\nrounds: 81084"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1415772.2756166444,
+            "unit": "iter/sec",
+            "range": "stddev: 2.838175188160698e-7",
+            "extra": "mean: 706.3282826077708 nsec\nrounds: 127308"
           }
         ]
       }
