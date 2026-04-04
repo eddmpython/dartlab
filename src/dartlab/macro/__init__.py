@@ -221,6 +221,18 @@ class Macro:
         axes = ", ".join(e.label for e in _AXIS_REGISTRY.values())
         return f"Macro({axes})"
 
+    def report(self, *, market: str = "US", as_of: str | None = None, fmt: str | None = "rich"):
+        """경제분석 보고서 생성 — 3막 서사 체계.
+
+        Args:
+            market: "US" | "KR"
+            as_of: 백테스트 날짜
+            fmt: "rich" | "html" | "markdown" | "json" | None(Review 객체)
+        """
+        from dartlab.macro.report import macroReport
+
+        return macroReport(market=market, as_of=as_of, fmt=fmt)
+
     # accessor 패턴: macro.cycle, macro.rates ...
     def __getattr__(self, name: str) -> Any:
         if name.startswith("_"):

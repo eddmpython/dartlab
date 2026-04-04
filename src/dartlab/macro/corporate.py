@@ -6,6 +6,10 @@ Bloomberg/FactSet 유료 서비스에서나 가능한 기능을 dartlab scan 데
 
 from __future__ import annotations
 
+import logging
+
+log = logging.getLogger(__name__)
+
 import os
 
 import polars as pl
@@ -17,9 +21,16 @@ from dartlab.core.finance.corporateAggregate import (
 )
 
 
+_SCAN_CACHE: dict[str, pl.DataFrame] = {}
+
+
 def _load_scan_finance(market: str) -> pl.DataFrame | None:
-    """scan/finance.parquet 로드."""
-    if market.upper() == "KR":
+    """scan/finance.parquet 로드. 모듈 레벨 캐시로 반복 호출 최적화."""
+    key = market.upper()
+    if key in _SCAN_CACHE:
+        return _SCAN_CACHE[key]
+
+    if key == "KR":
         paths = [
             os.path.join("data", "dart", "scan", "finance.parquet"),
             os.path.join(os.path.expanduser("~"), ".dartlab", "data", "dart", "scan", "finance.parquet"),
@@ -32,14 +43,18 @@ def _load_scan_finance(market: str) -> pl.DataFrame | None:
 
     for p in paths:
         if os.path.exists(p):
-            return pl.read_parquet(p)
+            df = pl.read_parquet(p)
+            _SCAN_CACHE[key] = df
+            return df
 
-    # HF 자동 다운로드 시도
     try:
         from dartlab.core.dataLoader import loadScanFinance
 
-        return loadScanFinance(market=market)
-    except Exception:
+        df = loadScanFinance(market=market)
+        if df is not None:
+            _SCAN_CACHE[key] = df
+        return df
+    except (ImportError, KeyError, ValueError, TypeError, OSError):
         return None
 
 
@@ -71,7 +86,7 @@ def analyze_corporate(*, market: str = "KR", as_of: str | None = None, overrides
             "companyCount": ec.companyCount,
             "description": ec.description,
         }
-    except Exception:
+    except (KeyError, ValueError, TypeError, OSError):
         result["earningsCycle"] = None
 
     # Ponzi 비율
@@ -85,7 +100,7 @@ def analyze_corporate(*, market: str = "KR", as_of: str | None = None, overrides
             "trendLabel": pr.trendLabel,
             "description": pr.description,
         }
-    except Exception:
+    except (KeyError, ValueError, TypeError, OSError):
         result["ponziRatio"] = None
 
     # 레버리지 사이클
@@ -99,7 +114,7 @@ def analyze_corporate(*, market: str = "KR", as_of: str | None = None, overrides
             "trendLabel": lc.trendLabel,
             "description": lc.description,
         }
-    except Exception:
+    except (KeyError, ValueError, TypeError, OSError):
         result["leverageCycle"] = None
 
     return result

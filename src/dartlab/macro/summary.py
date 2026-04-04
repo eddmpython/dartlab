@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import logging
+
+log = logging.getLogger(__name__)
+
 
 def analyze_summary(*, market: str = "US", as_of: str | None = None, overrides: dict | None = None, **kwargs) -> dict:
     """매크로 전체 종합 판정.
@@ -37,7 +41,7 @@ def analyze_summary(*, market: str = "US", as_of: str | None = None, overrides: 
         from dartlab.macro.forecast import analyze_forecast
 
         forecast_result = analyze_forecast(**_ax)
-    except Exception:
+    except (KeyError, ValueError, TypeError, AttributeError):
         pass
 
     try:
@@ -53,21 +57,21 @@ def analyze_summary(*, market: str = "US", as_of: str | None = None, overrides: 
             if lei and isinstance(lei, dict) and "signal" in lei:
                 crisis_kwargs["leiSignal"] = lei.get("signal")
         crisis_result = analyze_crisis(**_ax, **crisis_kwargs)
-    except Exception:
+    except (KeyError, ValueError, TypeError, AttributeError):
         pass
 
     try:
         from dartlab.macro.inventory import analyze_inventory
 
         inventory_result = analyze_inventory(**_ax)
-    except Exception:
+    except (KeyError, ValueError, TypeError, AttributeError):
         pass
 
     try:
         from dartlab.macro.trade import analyze_trade
 
         trade_result = analyze_trade(**_ax)
-    except Exception:
+    except (KeyError, ValueError, TypeError, AttributeError):
         pass
 
     corporate_result = None
@@ -75,7 +79,7 @@ def analyze_summary(*, market: str = "US", as_of: str | None = None, overrides: 
         from dartlab.macro.corporate import analyze_corporate
 
         corporate_result = analyze_corporate(**_ax)
-    except Exception:
+    except (KeyError, ValueError, TypeError, AttributeError):
         pass
 
     # 종합 판정 스코어 (-4 ~ +4, 양수=우호적)
@@ -259,7 +263,7 @@ def analyze_summary(*, market: str = "US", as_of: str | None = None, overrides: 
             "regime": alloc.regime,
             "rationale": alloc.rationale,
         }
-    except Exception:
+    except (KeyError, ValueError, TypeError, AttributeError):
         pass
 
     # ── 40개 투자전략 대시보드 ──
@@ -301,7 +305,7 @@ def analyze_summary(*, market: str = "US", as_of: str | None = None, overrides: 
                 for s in signals
             ],
         }
-    except Exception:
+    except (KeyError, ValueError, TypeError, AttributeError):
         pass
 
     return {

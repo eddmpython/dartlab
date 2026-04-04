@@ -196,20 +196,24 @@ def analyze_forecast(*, market: str = "US", as_of: str | None = None, overrides:
     gdp_id = "A191RL1Q225SBEA" if market.upper() == "US" else "GROWTH"
     gdp_vals = fetch_series_list(g, gdp_id)
     if gdp_vals and len(gdp_vals) >= 20:
-        hr = hamiltonRegime(gdp_vals, maxIter=100)
-        result["hamiltonRegime"] = {
-            "currentRegime": hr.regimeLabels[hr.currentRegime],
-            "currentProb": hr.currentProb,
-            "params": hr.params,
-            "converged": hr.converged,
-            "iterations": hr.iterations,
-            "contractionProb": round(float(hr.smoothedProbs[-1, 1]), 4),
-            "description": (
-                f"Hamilton RS: {hr.regimeLabels[hr.currentRegime]} "
-                f"({hr.currentProb:.1%}), "
-                f"침체확률 {hr.smoothedProbs[-1, 1]:.1%}"
-            ),
-        }
+        try:
+            hr = hamiltonRegime(gdp_vals, maxIter=50)
+            result["hamiltonRegime"] = {
+                "currentRegime": hr.regimeLabels[hr.currentRegime],
+                "currentProb": hr.currentProb,
+                "params": hr.params,
+                "converged": hr.converged,
+                "iterations": hr.iterations,
+                "contractionProb": round(float(hr.smoothedProbs[-1, 1]), 4),
+                "description": (
+                    f"Hamilton RS: {hr.regimeLabels[hr.currentRegime]} "
+                    f"({hr.currentProb:.1%}), "
+                    f"침체확률 {hr.smoothedProbs[-1, 1]:.1%}"
+                ),
+            }
+        except (ValueError, RuntimeError, np.linalg.LinAlgError) as e:
+            import logging
+            logging.getLogger(__name__).warning("Hamilton RS 실패: %s", e)
 
     # ── GDP Nowcasting (DFM) ──
     result["nowcast"] = None

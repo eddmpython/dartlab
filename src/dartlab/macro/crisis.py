@@ -8,6 +8,10 @@
 
 from __future__ import annotations
 
+import logging
+
+log = logging.getLogger(__name__)
+
 from dartlab.core.finance.crisisDetector import (
     creditToGDPGap,
     fisherDebtDeflation,
@@ -139,7 +143,7 @@ def analyze_crisis(*, market: str = "US", as_of: str | None = None, overrides: d
     # 설비투자 압력 (전략 32)
     hy_series = data.get("hy_series")
     hy_current = data.get("hy_current")
-    if hy_current is not None and hy_series and len(hy_series) > 60:
+    if hy_current is not None and isinstance(hy_series, list) and len(hy_series) > 60:
         hy_3m_ago = hy_series[-60]
         hy_change = hy_current - hy_3m_ago
         capex = capexPressure(hy_current, hy_change)
@@ -224,7 +228,7 @@ def analyze_crisis(*, market: str = "US", as_of: str | None = None, overrides: d
             "signals": mk.signals,
             "description": mk.description,
         }
-    except Exception:
+    except (KeyError, ValueError, TypeError, AttributeError):
         pass
 
     # ── Koo Balance Sheet Recession (US) ──
@@ -243,7 +247,7 @@ def analyze_crisis(*, market: str = "US", as_of: str | None = None, overrides: d
                     "isBSR": koo.isBSR,
                     "description": koo.description,
                 }
-        except Exception:
+        except (KeyError, ValueError, TypeError, AttributeError):
             pass
 
     # ── Fisher Debt-Deflation (US) ──
@@ -263,7 +267,7 @@ def analyze_crisis(*, market: str = "US", as_of: str | None = None, overrides: d
                     "riskLabel": fisher.riskLabel,
                     "description": fisher.description,
                 }
-        except Exception:
+        except (KeyError, ValueError, TypeError, AttributeError):
             pass
 
     # ── KR 부동산-금융 스트레스 ──
@@ -278,7 +282,7 @@ def analyze_crisis(*, market: str = "US", as_of: str | None = None, overrides: d
                     "stressLabel": hs.stressLabel,
                     "description": hs.description,
                 }
-        except Exception:
+        except (KeyError, ValueError, TypeError, AttributeError):
             pass
 
     # 한국 신용위험 ↔ CPI (전략 35)

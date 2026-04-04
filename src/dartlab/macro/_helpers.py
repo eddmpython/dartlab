@@ -82,7 +82,7 @@ def fetch_latest(g, series_id: str) -> float | None:
             vals = df.get_column("value").drop_nulls()
             if len(vals) > 0:
                 return float(vals[-1])
-    except (KeyError, ValueError, TypeError, AttributeError) as e:
+    except Exception as e:
         log.debug("fetch_latest(%s) 실패: %s", series_id, e)
     return None
 
@@ -97,7 +97,7 @@ def fetch_latest_with_prev(g, series_id: str) -> tuple[float | None, float | Non
                 return float(vals[-1]), float(vals[-2])
             if len(vals) == 1:
                 return float(vals[-1]), None
-    except (KeyError, ValueError, TypeError, AttributeError) as e:
+    except Exception as e:
         log.debug("fetch_latest_with_prev(%s) 실패: %s", series_id, e)
     return None, None
 
@@ -110,7 +110,7 @@ def fetch_series_list(g, series_id: str) -> list[float] | None:
             vals = df.get_column("value").drop_nulls().to_list()
             if vals:
                 return [float(v) for v in vals]
-    except (KeyError, ValueError, TypeError, AttributeError) as e:
+    except Exception as e:
         log.debug("fetch_series_list(%s) 실패: %s", series_id, e)
     return None
 
@@ -126,7 +126,7 @@ def fetch_yoy(g, series_id: str) -> float | None:
                 prev = float(vals[-13])
                 if prev != 0:
                     return ((current - prev) / abs(prev)) * 100
-    except (KeyError, ValueError, TypeError, AttributeError) as e:
+    except Exception as e:
         log.debug("fetch_yoy(%s) 실패: %s", series_id, e)
     return None
 
@@ -142,7 +142,7 @@ def fetch_change_pct(g, series_id: str, lookback: int = 63) -> float | None:
                 old = float(vals[-lookback])
                 if old != 0:
                     return ((current - old) / abs(old)) * 100
-    except (KeyError, ValueError, TypeError, AttributeError) as e:
+    except Exception as e:
         log.debug("fetch_change_pct(%s) 실패: %s", series_id, e)
     return None
 
@@ -160,7 +160,7 @@ def fetch_with_history(g, series_id: str) -> dict[str, float | None]:
                     result["prev"] = float(vals[-2])
                 if len(vals) > 6:
                     result["6m"] = float(vals[-7])
-    except (KeyError, ValueError, TypeError, AttributeError) as e:
+    except Exception as e:
         log.debug("fetch_with_history(%s) 실패: %s", series_id, e)
     return result
 

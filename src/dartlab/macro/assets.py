@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import logging
+
+log = logging.getLogger(__name__)
+
 from dartlab.core.finance.macroCycle import (
     classifyVixRegime,
     copperGoldRatio,
@@ -73,7 +77,7 @@ def analyze_assets(*, market: str = "US", as_of: str | None = None, overrides: d
             vals = bei_df.get_column("value").drop_nulls()
             if len(vals) >= 63:
                 asset_input["bei_change"] = float(vals[-1]) - float(vals[-63])
-    except Exception:
+    except (KeyError, ValueError, TypeError, AttributeError):
         pass
 
     # 금리차-환율 교차 해석용: US 2Y - KR 기준금리
@@ -93,7 +97,7 @@ def analyze_assets(*, market: str = "US", as_of: str | None = None, overrides: d
                     if len(us_vals) >= 63 and len(kr_vals) >= 2:
                         diff_old = float(us_vals[-63]) - float(kr_vals[-2])
                         asset_input["rate_diff_change"] = diff_now - diff_old
-        except Exception:
+        except (KeyError, ValueError, TypeError, AttributeError):
             pass
 
     signals = interpretAssets(asset_input)
@@ -162,7 +166,7 @@ def analyze_assets(*, market: str = "US", as_of: str | None = None, overrides: d
                     "implication": cg.implication,
                     "description": cg.description,
                 }
-    except Exception:
+    except (KeyError, ValueError, TypeError, AttributeError):
         pass
 
     return result
