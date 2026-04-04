@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775306540075,
+  "lastUpdate": 1775307455384,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -11397,6 +11397,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.5448158130564104e-7",
             "extra": "mean: 688.9660748492814 nsec\nrounds: 178540"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "cd7281e020f0f8718a65b9d9b7a5a47e7f5c7195",
+          "message": "feat: 면책 보고서 시작 이동 + 섹션8 리스크 진단 (감사/우발부채/키워드/구조변화)\n\n면책: 등급 요약 전 인용블록. 맨 끝은 '방법론 참조'만.\n리스크 진단: 4개 하위 섹션 (감사리스크/우발부채/공시키워드/구조변화).\n메모리 안전: result 내 기존 데이터만 사용, Company 추가 로드 없음.\n리스크 없어도 '없음' 표시 — 부재가 곧 정보.",
+          "timestamp": "2026-04-04T21:56:29+09:00",
+          "tree_id": "e533ee15babcc1f4709086436c0988761a23392e",
+          "url": "https://github.com/eddmpython/dartlab/commit/cd7281e020f0f8718a65b9d9b7a5a47e7f5c7195"
+        },
+        "date": 1775307454903,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 534796.9222334145,
+            "unit": "iter/sec",
+            "range": "stddev: 4.816018295767161e-7",
+            "extra": "mean: 1.8698686518684666 usec\nrounds: 57694"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 647605.7869299117,
+            "unit": "iter/sec",
+            "range": "stddev: 4.981742732989064e-7",
+            "extra": "mean: 1.5441492651581676 usec\nrounds: 132891"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 519952.04993469745,
+            "unit": "iter/sec",
+            "range": "stddev: 5.143111776964046e-7",
+            "extra": "mean: 1.9232542695534969 usec\nrounds: 115527"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 677869.8462113597,
+            "unit": "iter/sec",
+            "range": "stddev: 3.892327891625826e-7",
+            "extra": "mean: 1.4752094455728308 usec\nrounds: 162023"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 806651.3144595169,
+            "unit": "iter/sec",
+            "range": "stddev: 3.6149821571412033e-7",
+            "extra": "mean: 1.2396930149057441 usec\nrounds: 196117"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 272762.16461668717,
+            "unit": "iter/sec",
+            "range": "stddev: 6.250070007159312e-7",
+            "extra": "mean: 3.666197624605673 usec\nrounds: 73503"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7253614.072848443,
+            "unit": "iter/sec",
+            "range": "stddev: 1.171406208133356e-8",
+            "extra": "mean: 137.86231111235656 nsec\nrounds: 73774"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8864471.990377754,
+            "unit": "iter/sec",
+            "range": "stddev: 1.0184812268557187e-8",
+            "extra": "mean: 112.8098775748273 nsec\nrounds: 87482"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1460404.3335051811,
+            "unit": "iter/sec",
+            "range": "stddev: 2.646200870752171e-7",
+            "extra": "mean: 684.7418739164212 nsec\nrounds: 169177"
           }
         ]
       }
