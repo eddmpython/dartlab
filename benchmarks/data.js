@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775271474115,
+  "lastUpdate": 1775271890794,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -9483,6 +9483,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.462270549021371e-7",
             "extra": "mean: 687.4701584125587 nsec\nrounds: 169177"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "fc71155a460dd3be637d0bb7e6bedd14076d20d2",
+          "message": "publish: 신용분석 보고서 4개사 v4.0 재발간\n\n삼성전자 dCR-AA+(?확일치!), SK하이닉스 dCR-AA+, NAVER dCR-AA(정확일치), LG dCR-AA.\n12섹션 구조 + 괴리분석(섹션9) + notch상세(섹션10) + 별도재무(섹션11).\n방법론 v1.0→v4.0 업데이트.",
+          "timestamp": "2026-04-04T12:03:45+09:00",
+          "tree_id": "56dc088b195cd0a0c1ca90ff434e15d7dc96f664",
+          "url": "https://github.com/eddmpython/dartlab/commit/fc71155a460dd3be637d0bb7e6bedd14076d20d2"
+        },
+        "date": 1775271889550,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 545944.9066273555,
+            "unit": "iter/sec",
+            "range": "stddev: 4.80670781643949e-7",
+            "extra": "mean: 1.8316866553030557 usec\nrounds: 52013"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 661912.8380553451,
+            "unit": "iter/sec",
+            "range": "stddev: 4.657283991862933e-7",
+            "extra": "mean: 1.5107729333939677 usec\nrounds: 144865"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 530251.2009641981,
+            "unit": "iter/sec",
+            "range": "stddev: 5.718266203787971e-7",
+            "extra": "mean: 1.8858986046266755 usec\nrounds: 120686"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 686664.2948597915,
+            "unit": "iter/sec",
+            "range": "stddev: 3.9389266742942604e-7",
+            "extra": "mean: 1.4563157098538055 usec\nrounds: 181160"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 922613.2067381116,
+            "unit": "iter/sec",
+            "range": "stddev: 1.6037600191146027e-7",
+            "extra": "mean: 1.0838778295137228 usec\nrounds: 176992"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 270225.82366919756,
+            "unit": "iter/sec",
+            "range": "stddev: 7.986027094239882e-7",
+            "extra": "mean: 3.7006085740501633 usec\nrounds: 77256"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7335782.17075253,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1602553399080976e-8",
+            "extra": "mean: 136.31811533158114 nsec\nrounds: 73180"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8873923.136003535,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2117168162217949e-8",
+            "extra": "mean: 112.689729747914 nsec\nrounds: 88732"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1453906.6504725819,
+            "unit": "iter/sec",
+            "range": "stddev: 2.6717258136492643e-7",
+            "extra": "mean: 687.8020673988644 nsec\nrounds: 170649"
           }
         ]
       }
