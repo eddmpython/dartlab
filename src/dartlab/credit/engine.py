@@ -281,7 +281,7 @@ def _calcNotchAdjustment(
     # 1. 기업 규모 (매출 기준)
     revenue = latest.get("revenue") or 0
     if revenue > 50e12:  # 50조+
-        notches.append((2, f"대형기업 (매출 {revenue / 1e12:.0f}조)"))
+        notches.append((3, f"대형기업 (매출 {revenue / 1e12:.0f}조)"))
     elif revenue > 10e12:  # 10조+
         notches.append((1, f"중대형기업 (매출 {revenue / 1e12:.0f}조)"))
 
@@ -328,7 +328,7 @@ def _calcNotchAdjustment(
                     latestClose = priceData[closeCol].drop_nulls().to_list()[-1]
                     mktCap = shares * latestClose
                     if mktCap > 30e12:  # 시가총액 30조+ (TOP ~30)
-                        notches.append((2, f"시가총액 {mktCap / 1e12:.0f}조 (시장 지위)"))
+                        notches.append((3, f"시가총액 {mktCap / 1e12:.0f}조 (시장 지위)"))
                     elif mktCap > 10e12:  # 10조+
                         notches.append((1, f"시가총액 {mktCap / 1e12:.0f}조"))
     except (TypeError, ValueError, KeyError, AttributeError, IndexError, ZeroDivisionError):
@@ -345,9 +345,9 @@ def _calcNotchAdjustment(
     # 총 notch 합산 (상한 7 — 정성 대리 3개 추가)
     totalNotch = min(sum(n for n, _ in notches), 7)
 
-    # A 범위(10 < score <= 19): 과보정 방지, 최대 3 notch
+    # A 범위(10 < score <= 19): 과보정 방지, 최대 4 notch
     if score <= 19:
-        totalNotch = min(totalNotch, 3)
+        totalNotch = min(totalNotch, 4)
 
     reasons = [r for _, r in notches]
     return {"totalNotch": totalNotch, "reasons": reasons}
@@ -947,9 +947,9 @@ def _evaluateFinancial(
     s5 = axisScore(ax5) if ax5 else 25.0
 
     # ── 가중평균 ──
-    # 금융지주: 자본적정성(30) > 수익성(30) > 사업안정성(20) > 자산건전성(15) > 유동성(5)
-    # 유동성↓: 은행은 중앙은행 보증 + 예수금 유동성. 현금/자산 비율이 의미 제한적.
-    w = [0.30, 0.30, 0.15, 0.05, 0.20]
+    # 금융지주: 자본 35% + 수익 35% + 자산건전 15% + 사업안정 15% + 유동 0%
+    # 유동성 완전 제거: 은행 현금/자산 비율은 무의미 (예수금 유동성, 중앙은행 보증)
+    w = [0.35, 0.35, 0.15, 0.00, 0.15]
     axes = [
         {"name": "자본적정성", "score": s1, "weight": w[0], "metrics": ax1},
         {"name": "수익성", "score": s2, "weight": w[1], "metrics": ax2},
