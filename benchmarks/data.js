@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775306001759,
+  "lastUpdate": 1775306540075,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -11310,6 +11310,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.762882536685439e-7",
             "extra": "mean: 686.0024856568217 nsec\nrounds: 147646"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "9bbca08c4ede1950f92932373fa193c4ed7bb4f3",
+          "message": "publish: 16개사 보고서 재발간 — 엔진 시스템화 후 동일 품질 확인\n\n리팩토링(_CONFIG+규칙분리+공통함수) 후 16/16 동일 등급.\n서사 일관성(캡티브맥락/Notch설명/F-Score) 반영.\n13섹션 + 재무하이라이트 + mermaid + 부문테이블.",
+          "timestamp": "2026-04-04T21:41:09+09:00",
+          "tree_id": "23ddcf7dd503542bb271d802ccb5fad4dc33e5b0",
+          "url": "https://github.com/eddmpython/dartlab/commit/9bbca08c4ede1950f92932373fa193c4ed7bb4f3"
+        },
+        "date": 1775306539312,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 529441.6984806838,
+            "unit": "iter/sec",
+            "range": "stddev: 4.850152175464353e-7",
+            "extra": "mean: 1.8887820941751605 usec\nrounds: 55267"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 648224.8652981583,
+            "unit": "iter/sec",
+            "range": "stddev: 4.4257898233485134e-7",
+            "extra": "mean: 1.5426745463397777 usec\nrounds: 133085"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 517790.06797997997,
+            "unit": "iter/sec",
+            "range": "stddev: 5.372233891575864e-7",
+            "extra": "mean: 1.9312846302773508 usec\nrounds: 117289"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 666176.078685193,
+            "unit": "iter/sec",
+            "range": "stddev: 4.438428755014541e-7",
+            "extra": "mean: 1.5011046358399163 usec\nrounds: 179212"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 779171.1179666648,
+            "unit": "iter/sec",
+            "range": "stddev: 4.2416689403103436e-7",
+            "extra": "mean: 1.283415127872826 usec\nrounds: 190840"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 266398.4255606054,
+            "unit": "iter/sec",
+            "range": "stddev: 6.866343122298278e-7",
+            "extra": "mean: 3.753775938786473 usec\nrounds: 67852"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7210217.753068352,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1845736084012443e-8",
+            "extra": "mean: 138.69206648779004 nsec\nrounds: 72224"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8841490.699797392,
+            "unit": "iter/sec",
+            "range": "stddev: 1.015637126427213e-8",
+            "extra": "mean: 113.10309923448948 nsec\nrounds: 86573"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1451450.2767335249,
+            "unit": "iter/sec",
+            "range": "stddev: 2.5448158130564104e-7",
+            "extra": "mean: 688.9660748492814 nsec\nrounds: 178540"
           }
         ]
       }
