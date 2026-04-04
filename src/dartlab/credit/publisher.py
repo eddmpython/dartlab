@@ -38,6 +38,10 @@ def publishReportFromCompany(company, *, basePeriod: str | None = None, useAI: b
     corpName = getattr(company, "corpName", "") or ""
     stockCode = getattr(company, "stockCode", "") or ""
 
+    # 정성 분석용 데이터 주입 (Company 호출은 publisher에서만)
+    result["_businessSummary"] = _fetchBusinessSummary(company)
+    result["_keyChanges"] = _fetchKeyChanges(company)
+
     md = generateReportMarkdown(corpName, stockCode, result, useAI=useAI)
 
     # 블로그 포스트로 저장
@@ -260,6 +264,124 @@ def _generateAIAnalysis(corpName: str, stockCode: str, result: dict, narratives,
         return "\n".join(lines_out).strip() or None
     except (ImportError, ValueError, KeyError, TypeError, RuntimeError, OSError):
         return None
+
+
+def _fetchBusinessSummary(company) -> str | None:
+    """사업보고서에서 핵심 사업 설명 추출."""
+    try:
+        summaries = company.topicSummaries()
+        if not summaries:
+            return None
+        for key in summaries:
+            kl = key.lower() if isinstance(key, str) else str(key).lower()
+            if any(k in kl for k in ("사업의내용", "사업의개요", "사업개황", "회사의개황", "business")):
+                text = summaries[key]
+                return text[:500] if text else None
+        # fallback: 값이 가장 긴 topic
+        longest = max(summaries.items(), key=lambda x: len(x[1]) if x[1] else 0)
+        return longest[1][:500] if longest[1] else None
+    except (AttributeError, TypeError, ValueError):
+        return None
+
+
+def _fetchKeyChanges(company) -> list[str]:
+    """전기 대비 핵심 변화 추출. 타임아웃 방지."""
+    try:
+        diff = company.diff()
+        if diff is None:
+            return []
+        if hasattr(diff, "to_dicts"):
+            rows = diff.to_dicts()
+            changes: list[str] = []
+            for r in rows[:3]:
+                topic = r.get("topic", "")
+                summary = r.get("summary", r.get("changeRatio", ""))
+                if topic:
+                    label = f"**{topic}**: {summary}" if summary else f"**{topic}**: 전기 대비 변화 감지"
+                    changes.append(label)
+            return changes
+        return []
+    except (TypeError, ValueError, AttributeError, TimeoutError, OSError):
+        return []
+
+
+def _renderBusinessSummary(result: dict) -> list[str]:
+    """사업보고서 발췌 인용 블록."""
+    text = result.get("_businessSummary")
+    if not text:
+        return []
+    # 300자 이상이면 잘라서 "..."
+    display = text[:300] + "..." if len(text) > 300 else text
+    return ["", f"> **사업보고서 발췌**: \"{display}\"", ""]
+
+
+def _renderBorrowingStructure(result: dict, mainNum: int) -> list[str]:
+    """차입금 구성 (단기/장기/사채) 테이블."""
+    bd = result.get("borrowingsDetail")
+    if not bd:
+        return []
+
+    lines: list[str] = [f"### {mainNum} 차입금 구성", ""]
+
+    # DataFrame → list[dict]
+    if hasattr(bd, "to_dicts"):
+        rows = bd.to_dicts()
+    elif isinstance(bd, list):
+        rows = bd
+    elif isinstance(bd, dict):
+        rows = [bd]
+    else:
+        return []
+
+    if not rows:
+        return []
+
+    # 항목별 최신 값 추출
+    lines.append("| 구분 | 금액 | 비중 |")
+    lines.append("|------|-----:|-----:|")
+
+    total = 0.0
+    items: list[tuple[str, float]] = []
+    for row in rows:
+        name = row.get("name", row.get("구분", ""))
+        amount = row.get("amount", row.get("금액", row.get("value", 0)))
+        if isinstance(amount, (int, float)) and amount > 0 and name:
+            items.append((str(name), float(amount)))
+            total += float(amount)
+
+    if not items:
+        return []
+
+    for name, amount in items:
+        pct = amount / total * 100 if total > 0 else 0
+        lines.append(f"| {name} | {_fmtTril(amount)} | {pct:.1f}% |")
+    lines.append("")
+    return lines
+
+
+def _renderKeyChanges(result: dict, mainNum: int) -> list[str]:
+    """전기 대비 주요 변화."""
+    changes = result.get("_keyChanges")
+    if not changes:
+        return []
+    lines: list[str] = [f"### {mainNum} 전기 대비 주요 변화", ""]
+    for c in changes:
+        lines.append(f"- {c}")
+    lines.append("")
+    return lines
+
+
+def _renderSectorPosition(result: dict) -> str | None:
+    """업종 내 위치 1문장."""
+    rank = result.get("rank")
+    if not rank:
+        return None
+    revRank = rank.get("revenueRankInSector")
+    totalInSector = rank.get("revenueSectorTotal")
+    sector = rank.get("sectorLabel", rank.get("sector", ""))
+    if revRank and totalInSector:
+        return f"{sector} 업종 내 매출 {revRank}위/{totalInSector}개사."
+    return None
 
 
 def _fmtTril(value: float | None) -> str:
@@ -613,6 +735,19 @@ def _collectRiskDiagnosis(result: dict) -> dict:
     # 감사의견 (result에 이미 있음)
     diagnosis["auditOpinion"] = result.get("auditOpinion")
 
+    # 연속 적정 의견 횟수 산출
+    auditHistory = result.get("auditOpinionHistory")
+    if isinstance(auditHistory, list) and auditHistory:
+        consecutive = 0
+        for opinion in auditHistory:
+            if opinion == "적정":
+                consecutive += 1
+            else:
+                break
+        diagnosis["consecutiveCleanYears"] = consecutive if consecutive > 0 else None
+    else:
+        diagnosis["consecutiveCleanYears"] = None
+
     # 공시 리스크 (result에 이미 있음)
     discRisk = result.get("disclosureRisk")
     if isinstance(discRisk, dict):
@@ -630,6 +765,7 @@ def _renderRiskDiagnosis(diagnosis: dict, mainNum: int) -> list[str]:
 
     # 8.1 감사 리스크
     audit = diagnosis.get("auditOpinion")
+    consecutiveClean = diagnosis.get("consecutiveCleanYears")
     lines.append(f"### {mainNum}.1 감사 리스크")
     lines.append("")
     if audit:
@@ -637,7 +773,10 @@ def _renderRiskDiagnosis(diagnosis: dict, mainNum: int) -> list[str]:
         if audit != "적정":
             lines.append(f"  - ⚠️ {audit} 의견 — 재무제표 신뢰도 주의")
         else:
-            lines.append("  - 적정 의견으로 재무제표 신뢰도 양호")
+            if consecutiveClean and consecutiveClean > 1:
+                lines.append(f"  - 적정 의견 **{consecutiveClean}기 연속** 유지, 재무제표 신뢰도 양호")
+            else:
+                lines.append("  - 적정 의견으로 재무제표 신뢰도 양호")
     else:
         lines.append("- 감사의견: 데이터 없음")
     lines.append("")
@@ -849,16 +988,25 @@ def generateReportMarkdown(
     segmentLines = _renderSegmentTable(segComp, mainNum=bizNum, result=result)
     hhiLines = _renderHHI(bizStab, mainNum=bizNum)
 
-    if overviewLines or segmentLines or hhiLines:
+    bizSummaryLines = _renderBusinessSummary(result)
+
+    if overviewLines or segmentLines or hhiLines or bizSummaryLines:
         lines.append(_sec("사업 분석"))
         lines.append("")
         lines.extend(overviewLines)
+        lines.extend(bizSummaryLines)
         lines.extend(segmentLines)
         lines.extend(hhiLines)
 
     # ── 등급 근거 상세 ──
     lines.append(_sec("등급 근거 상세"))
     lines.append("")
+
+    # 업종 내 위치 1문장 (등급 근거 서사 앞에 삽입)
+    sectorPos = _renderSectorPosition(result)
+    if sectorPos:
+        lines.append(sectorPos)
+        lines.append("")
 
     # AI 분석 (useAI=True일 때만 AI 호출, 기본은 기계 서사)
     if aiAnalysis:
@@ -961,6 +1109,11 @@ def generateReportMarkdown(
 
     # 축별 서사 (문단 + 지표 테이블)
     finSec = _secCounter[0]
+
+    # 차입금 구성 테이블 (축별 서사 앞에 삽입)
+    borrowLines = _renderBorrowingStructure(result, mainNum=f"{finSec}.*")
+    if borrowLines:
+        lines.extend(borrowLines)
     for i, n in enumerate(narratives):
         axData = axes[i] if i < len(axes) else {}
         w = axData.get("weight", 0)
@@ -1040,6 +1193,11 @@ def generateReportMarkdown(
     lines.append("")
     riskLines = _renderRiskDiagnosis(riskDiag, _secCounter[0])
     lines.extend(riskLines)
+
+    # 전기 대비 주요 변화 (리스크 진단 하위 섹션)
+    keyChangeLines = _renderKeyChanges(result, mainNum=f"{_secCounter[0]}.5")
+    if keyChangeLines:
+        lines.extend(keyChangeLines)
 
     # ── 피어 비교 (빈 섹션이면 건너뜀) ──
     peerLines = _renderPeerComparison(result, sectionNum=_secCounter[0] + 1)
