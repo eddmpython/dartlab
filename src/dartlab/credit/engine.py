@@ -345,10 +345,17 @@ def _calcNotchAdjustment(
         if allPositive:
             notches.append((1, f"연속 {histLen}기 영업흑자 (경영 안정성)"))
 
-    # 총 notch 합산 (상한 7 — 정성 대리 3개 추가)
-    totalNotch = min(sum(n for n, _ in notches), 7)
+    # 총 notch 합산 — 규모별 cap 차등 (과대평가 방지)
+    rawNotch = sum(n for n, _ in notches)
+    if revenue > 10e12:
+        sizeCap = 7  # 대형 (매출 10조+)
+    elif revenue > 1e12:
+        sizeCap = 4  # 중형 (1~10조)
+    else:
+        sizeCap = 2  # 소형 (<1조)
+    totalNotch = min(rawNotch, sizeCap)
 
-    # A 범위(10 < score <= 19): 과보정 방지, 최대 4 notch
+    # A 범위(10 < score <= 19): ���보정 방지, 최대 4 notch
     if score <= 19:
         totalNotch = min(totalNotch, 4)
 
@@ -695,10 +702,11 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         result["borrowingsDetail"] = metrics.get("borrowingsDetail")
         result["provisionsDetail"] = metrics.get("provisionsDetail")
 
-        # 신규: 프로필 + 부문 구성 + 순위
+        # 신규: 프로필 + 부문 구성 + 순위 + 별도재무
         result["profile"] = metrics.get("profile")
         result["segmentComposition"] = metrics.get("segmentComposition")
         result["rank"] = metrics.get("rank")
+        result["separateMetrics"] = sepMetrics
 
         # 서사 생성 — AI가 소비할 로데이터 + 해석
         from dartlab.credit.narrative import (

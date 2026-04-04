@@ -575,8 +575,53 @@ def generateReportMarkdown(corpName: str, stockCode: str, result: dict) -> str:
     lines.append(auditToMarkdown(auditResult))
     lines.append("")
 
-    # ── 7. 면책 + 방법론 ──
-    lines.append("## 9. 면책 + 방법론")
+    # ── 7. 등급 괴리 분석 ──
+    divExpl = result.get("divergenceExplanation", [])
+    if divExpl:
+        lines.append("## 9. 등급 괴리 분석")
+        lines.append("")
+        lines.append("dartlab dCR 등급이 외부 신평사 등급과 다를 수 있는 이유:")
+        lines.append("")
+        for d in divExpl:
+            lines.append(f"- {d}")
+        lines.append("")
+
+    # ── 8. Notch Adjustment 상세 ──
+    notchAdj = result.get("notchAdjustment")
+    if notchAdj and notchAdj.get("totalNotch", 0) > 0:
+        lines.append("## 10. Notch Adjustment 상세")
+        lines.append("")
+        lines.append(f"총 조정: **-{notchAdj['totalNotch']} notch (상향)**")
+        lines.append("")
+        lines.append("적용 규칙:")
+        for r in notchAdj.get("reasons", []):
+            lines.append(f"- {r}")
+        lines.append("")
+
+    # ── 9. 별도재무제표 비교 ──
+    sepMetrics = result.get("separateMetrics")
+    if sepMetrics:
+        lines.append("## 11. 별도재무제표 비교")
+        lines.append("")
+        lines.append("연결 재무제표에 자회사 부채가 포함되어 왜곡될 수 있으므로, 별도(모회사) 재무를 함께 확인합니다.")
+        lines.append("")
+        latest = result.get("metricsHistory", [{}])[0] if result.get("metricsHistory") else {}
+        lines.append("| 지표 | 연결 | 별도 |")
+        lines.append("| --- | ---: | ---: |")
+        conDE = latest.get("debtToEbitda")
+        sepDE = sepMetrics.get("separateDebtToEbitda")
+        conDR = latest.get("debtRatio")
+        sepDR = sepMetrics.get("separateDebtRatio")
+        lines.append(f"| D/EBITDA | {conDE:.1f}x | {sepDE:.1f}x |" if conDE and sepDE else "| D/EBITDA | - | - |")
+        lines.append(f"| 부채비율 | {conDR:.0f}% | {sepDR:.0f}% |" if conDR and sepDR else "| 부채비율 | - | - |")
+        conBorrow = latest.get("totalBorrowing")
+        sepBorrow = sepMetrics.get("totalBorrowing")
+        if conBorrow and sepBorrow:
+            lines.append(f"| 총차입금 | {conBorrow/1e12:.1f}조 | {sepBorrow/1e12:.1f}조 |")
+        lines.append("")
+
+    # ── 10. 면책 + 방법론 ──
+    lines.append("## 12. 면책 + 방법론")
     lines.append("")
     lines.append(f"- dartlab 독립 신용분석(dCR) {version}")
     lines.append("- 공시 데이터 기반 정량 분석. 비공개 면담/정성 판단 미포함.")
