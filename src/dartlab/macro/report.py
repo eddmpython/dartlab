@@ -23,7 +23,7 @@ from .mbuilders import (
     build_phase_blocks,
 )
 from .mcatalog import SECTIONS
-from .narrative import generate_act_transition, generate_circulation_summary, generate_so_what
+from .narrative import generate_act_transition, generate_circulation_summary, generate_so_what, narrate_overall_story
 
 
 def _detect_template(summary: dict) -> str:
@@ -122,7 +122,7 @@ def macroReport(
         stockCode="MACRO",
         corpName=f"{market} 경제",
         sections=sections,
-        circulationSummary=generate_circulation_summary(summary, template),
+        circulationSummary=narrate_overall_story(summary) or generate_circulation_summary(summary, template),
     )
 
     if fmt is None:

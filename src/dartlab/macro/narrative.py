@@ -400,3 +400,109 @@ def generate_so_what(summary: dict) -> str:
 def generate_rates_narrative(rates: dict) -> str:
     """금리 환경 서사."""
     return _narrate_rates(rates)
+
+
+# ══════════════════════════════════════
+# 전파 경로 체인 (BIS/Goldman 스타일)
+# ══════════════════════════════════════
+
+
+def narrate_transmission_chain(summary: dict) -> str:
+    """데이터에서 활성화된 전파 경로를 자동 감지하고 서사로 변환.
+
+    Goldman: "driven by → contributing to → resulting in"
+    BIS: "달러 강세 → EM 부채 부담 → EM 긴축 → EM 성장 둔화"
+    """
+    parts = []
+    rates = summary.get("rates") or {}
+    liquidity = summary.get("liquidity") or {}
+    crisis = summary.get("crisis") or {}
+    corporate = summary.get("corporate") or {}
+
+    outlook = (rates.get("outlook") or {}).get("direction", "")
+    fci = (liquidity.get("fci") or {}).get("value")
+    hy = (crisis.get("capexPressure") or {}).get("spreadLevel")
+    ponzi = ((corporate.get("ponziRatio") or {}).get("currentRatio"))
+    cg = (crisis.get("creditGap") or {}).get("gap")
+
+    # 통화 긴축 전파 경로
+    if outlook == "hike" and fci is not None and fci > 0:
+        chain = "금리 인상이 금융환경을 긴축적으로 만들고 있다 (FCI {fci:+.2f})".format(fci=fci)
+        if hy is not None and hy > 400:
+            chain += f", 이는 신용스프레드 확대(HY {hy:.0f}bp)로 전파되어 기업 자금조달 비용을 높이고 있다"
+        if ponzi is not None and ponzi > 0.25:
+            chain += f". 이미 Ponzi비율이 {ponzi:.1%}인 상황에서 이 긴축은 기업 부도율을 높일 수 있다"
+        parts.append(chain + ".")
+
+    # 신용 팽창 전파 경로
+    elif cg is not None and cg > 5:
+        chain = f"신용이 추세 대비 {cg:+.1f}%p 팽창하고 있다"
+        if fci is not None and fci < -0.3:
+            chain += f". 금융환경이 완화적(FCI {fci:+.2f})이라 신용 확장을 억제하지 못하고 있다"
+        if ponzi is not None and ponzi > 0.25:
+            chain += f". 이와 동시에 기업 Ponzi비율이 {ponzi:.1%}로 취약성이 누적되고 있다"
+        parts.append(chain + " — BIS 경기대응완충자본 발동 검토 수준이다.")
+
+    # 완화적 환경 전파 경로
+    elif fci is not None and fci < -0.5 and outlook in ("cut", "hold"):
+        chain = f"금융환경이 완화적(FCI {fci:+.2f})이며 금리는 {outlook} 기조이다"
+        chain += ". 이 환경은 위험자산에 우호적이지만"
+        if ponzi is not None and ponzi > 0.3:
+            chain += f", 기업 레벨에서 Ponzi비율 {ponzi:.1%}가 경고하듯 과열 징후를 경계해야 한다"
+        else:
+            chain += ", 과열로 이어질 가능성도 주시해야 한다"
+        parts.append(chain + ".")
+
+    return " ".join(parts)
+
+
+def narrate_overall_story(summary: dict) -> str:
+    """보고서 전체를 관통하는 종합 서사 — 순환 서사보다 깊은 해석.
+
+    Goldman 스타일: 결론 → 핵심 근거 3개 → 리스크 1개 → 시사점
+    """
+    parts = []
+
+    # 결론
+    overall = summary.get("overallLabel", "")
+    score = summary.get("score", 0)
+    cycle = (summary.get("cycle") or {}).get("phaseLabel", "")
+    if overall and cycle:
+        parts.append(f"종합 판단: {overall}({score:+.1f}). 경제는 {cycle} 국면이다.")
+
+    # 핵심 근거 — contributions에서 상위 3개
+    contributions = summary.get("contributions") or {}
+    if contributions:
+        top3 = sorted(contributions.items(), key=lambda x: -abs(x[1]))[:3]
+        reasons = []
+        for axis, contrib in top3:
+            if contrib > 0:
+                reasons.append(f"{axis} 우호({contrib:+.1f})")
+            else:
+                reasons.append(f"{axis} 비우호({contrib:+.1f})")
+        parts.append("이 판단의 핵심 근거는 " + ", ".join(reasons) + "이다.")
+
+    # 전파 경로
+    chain = narrate_transmission_chain(summary)
+    if chain:
+        parts.append(chain)
+
+    # 리스크
+    crisis = summary.get("crisis") or {}
+    minsky = crisis.get("minskyPhase") or {}
+    if minsky.get("phase") in ("overtrading", "discredit"):
+        parts.append(f"다만 Minsky {minsky.get('phaseLabel', '')} 국면이 감지되어 구조적 리스크가 존재한다.")
+
+    forecast = summary.get("forecast") or {}
+    rp = forecast.get("recessionProb") or {}
+    prob = _safe(rp.get("probability"), "probability")
+    if prob is not None and prob > 0.25:
+        parts.append(f"침체확률이 {prob * 100:.0f}%로 저위험은 아니다.")
+
+    # 시사점
+    allocation = summary.get("allocation") or {}
+    eq = allocation.get("equity", 0)
+    if eq > 0:
+        parts.append(f"현 환경에서 주식 {eq}% / 채권 {allocation.get('bond', 0)}% / 금 {allocation.get('gold', 0)}% / 현금 {allocation.get('cash', 0)}% 배분이 적절하다.")
+
+    return " ".join(parts)
