@@ -3,15 +3,34 @@
 from __future__ import annotations
 
 
-def generate_circulation_summary(summary: dict) -> str:
-    """순환 서사 요약 — 보고서 첫 단락."""
+def generate_circulation_summary(summary: dict, template: str = "normal") -> str:
+    """순환 서사 요약 — 보고서 첫 단락. 템플릿에 따라 강조 달라짐."""
     parts = []
 
-    # 국면
-    cycle = summary.get("cycle") or {}
-    phase = cycle.get("phaseLabel")
-    if phase:
-        parts.append(f"현재 경제는 {phase} 국면에 있다.")
+    if template == "crisis":
+        crisis = summary.get("crisis") or {}
+        minsky = crisis.get("minskyPhase") or {}
+        cg = crisis.get("creditGap") or {}
+        parts.append(f"경제는 위기 국면에 진입하고 있다.")
+        if minsky.get("phaseLabel"):
+            parts.append(f"Minsky {minsky['phaseLabel']}.")
+        if cg.get("gap"):
+            parts.append(f"Credit-to-GDP gap {cg['gap']:+.1f}%p.")
+    elif template == "kr":
+        trade = summary.get("trade") or {}
+        tot = trade.get("termsOfTrade") or {}
+        corporate = summary.get("corporate") or {}
+        pr = corporate.get("ponziRatio") or {}
+        parts.append("한국 경제 분석.")
+        if tot.get("directionLabel"):
+            parts.append(f"교역조건 {tot['directionLabel']}.")
+        if pr.get("currentRatio") is not None:
+            parts.append(f"Ponzi비율 {pr['currentRatio']:.1%}.")
+    else:
+        cycle = summary.get("cycle") or {}
+        phase = cycle.get("phaseLabel")
+        if phase:
+            parts.append(f"현재 경제는 {phase} 국면에 있다.")
 
     # 침체확률
     forecast = summary.get("forecast") or {}
