@@ -920,7 +920,9 @@ def _evaluateFinancial(
     ]
     s3 = axisScore(ax3)
     if s3 is None:
-        s3 = 25.0  # #4: 데이터 없으면 중립 (0=최우량도 100=최위험도 아님)
+        # 자산건전성 데이터 없을 때: 대형 금융지주는 양호 추정, 소형은 중립
+        ta = latest.get("totalAssets") or 0
+        s3 = 12.0 if ta > 100e12 else 20.0 if ta > 10e12 else 25.0
 
     # ── 축4: 유동성 ──
     ax4 = [
