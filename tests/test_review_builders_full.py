@@ -87,10 +87,11 @@ class TestMarginTrendBlock:
             ]
         }
         blocks = marginTrendBlock(data)
-        assert len(blocks) == 2
+        assert len(blocks) >= 2
         assert isinstance(blocks[0], block_types["HeadingBlock"])
-        assert isinstance(blocks[1], block_types["TableBlock"])
         assert blocks[0].level == 2
+        # TextBlock(해석 문장)이 삽입될 수 있음 — 마지막이 TableBlock
+        assert isinstance(blocks[-1], block_types["TableBlock"])
 
     def test_single_period_still_works(self, block_types):
         from dartlab.review.builders import marginTrendBlock
@@ -185,7 +186,7 @@ class TestLeverageTrendBlock:
         blocks = leverageTrendBlock(data)
         assert len(blocks) >= 2
         assert isinstance(blocks[0], block_types["HeadingBlock"])
-        assert isinstance(blocks[1], block_types["TableBlock"])
+        assert any(isinstance(b, block_types["TableBlock"]) for b in blocks)
 
 
 # ── 6. cashFlowOverviewBlock ──
@@ -746,7 +747,7 @@ class TestAdditionalBuilders:
         blocks = concentrationBlock(data)
         assert len(blocks) >= 2
         assert isinstance(blocks[0], block_types["HeadingBlock"])
-        assert isinstance(blocks[1], block_types["MetricBlock"])
+        assert any(isinstance(b, block_types["MetricBlock"]) for b in blocks)
 
     def test_concentrationBlock_with_history(self, block_types):
         from dartlab.review.builders import concentrationBlock
@@ -988,9 +989,9 @@ class TestRevenueGrowthBlock:
         blocks = revenueGrowthBlock(data)
         assert len(blocks) >= 2
         assert isinstance(blocks[0], block_types["HeadingBlock"])
-        metric = blocks[1]
-        assert isinstance(metric, block_types["MetricBlock"])
-        labels = [m[0] for m in metric.metrics]
+        metricBlocks = [b for b in blocks if isinstance(b, block_types["MetricBlock"])]
+        assert metricBlocks
+        labels = [m[0] for m in metricBlocks[0].metrics]
         assert "매출 YoY" in labels
         assert "3Y CAGR" in labels
 

@@ -404,6 +404,20 @@ STORY_TEMPLATES: dict[str, dict] = {
             "technicalSignals",
             "marketBeta",
         },
+        "keyQuestions": [
+            "현재 사이클 어디에 있는가 (정점/저점/회복/하강)?",
+            "이 사이클의 진폭은 어느 정도인가?",
+            "다운턴에서 현금흐름이 버티는가?",
+            "CAPEX 사이클이 업황과 얼마나 동조하는가?",
+        ],
+        "actFocus": {
+            "1": "부문별 매출 변동 진폭 + 재고 사이클",
+            "2": "마진 변동계수 + 고정비/변동비 구조 — 업황 호전기 확대 폭과 하락기 방어력",
+            "3": "다운턴 시 FCF 방어력 — 감가상각이 현금 버퍼 역할을 하는가",
+            "5": "CAPEX 타이밍 — 사이클 저점에서 투자하는가, 아니면 호황기에 과잉 투자하는가",
+        },
+        "industryContext": "반도체/화학/조선은 3-5년 사이클. 재고일수와 가동률이 선행지표.",
+        "peerAxes": ["operatingMargin", "capexToRevenue", "inventoryDays"],
     },
     "프랜차이즈": {
         "description": "안정 수익 + 현금 기계 — 프랜차이즈/구독 모델",
@@ -415,6 +429,19 @@ STORY_TEMPLATES: dict[str, dict] = {
             "shareholderReturn",
             "scorecard",
         },
+        "keyQuestions": [
+            "마진 안정성이 어느 수준인가 (변동계수)?",
+            "현금 전환이 확실한가 (OCF/NI > 100%)?",
+            "배당/환원 여력이 충분한가?",
+            "성장 없이 가치를 유지할 수 있는 구조인가?",
+        ],
+        "actFocus": {
+            "2": "마진 안정성 — 변동계수가 낮고 원가 전가가 가능한 구조",
+            "3": "현금 기계 — OCF/NI 100% 이상, CCC 마이너스 또는 안정",
+            "5": "배당 지속성 — 연속 배당, 성향, FCF 대비 환원 여력",
+        },
+        "industryContext": "프랜차이즈/구독 모델은 전환비용이 높아 매출 안정성이 본질적 강점.",
+        "peerAxes": ["operatingMargin", "dividendYield", "cashConversionCycle"],
     },
     "턴어라운드": {
         "description": "적자→흑자 전환 — 구조조정/사업 전환",
@@ -428,6 +455,20 @@ STORY_TEMPLATES: dict[str, dict] = {
             "fundamentalDivergence",
             "technicalVerdict",
         },
+        "keyQuestions": [
+            "흑자 전환이 구조적인가, 일시적인가?",
+            "부채를 감당할 수 있는 수준인가?",
+            "영업CF가 양수로 돌아섰는가?",
+            "시장은 턴어라운드를 인정하는가 (재무-시장 괴리)?",
+        ],
+        "actFocus": {
+            "2": "마진 전환점 — 적자에서 흑자로 전환한 원인과 지속 가능성",
+            "3": "현금 회복 — 영업CF 양수 전환 여부, 운전자본 정상화",
+            "4": "부채 감내력 — 이자보상배율, Altman Z, 차환 리스크",
+            "6": "시장 인식 — 재무 개선 vs 주가 반응 괴리",
+        },
+        "industryContext": "턴어라운드는 1-2년 내 재악화 위험이 높다. 구조적 원인 제거 확인이 핵심.",
+        "peerAxes": ["operatingMargin", "debtRatio", "interestCoverage"],
     },
     "성장": {
         "description": "고성장 + 마진 확대 — 매출 CAGR 15% 이상",
@@ -439,6 +480,20 @@ STORY_TEMPLATES: dict[str, dict] = {
             "reinvestment",
             "revenueForecast",
         },
+        "keyQuestions": [
+            "성장이 수익성을 동반하는가 (마진 확대)?",
+            "성장의 원천은 무엇인가 (부문/지역/제품)?",
+            "재투자가 가치를 창출하는가 (ROIC > WACC)?",
+            "이 성장률이 지속 가능한가?",
+        ],
+        "actFocus": {
+            "1": "성장 원천 분해 — 어느 부문/지역이 성장을 견인하는가",
+            "2": "수익성 동반 성장 — 매출 성장과 마진 확대가 함께 가는가",
+            "5": "재투자 효율 — CAPEX/R&D가 ROIC로 돌아오는가",
+            "6": "성장 지속성 — 컨센서스, 매출 전망, PEG",
+        },
+        "industryContext": "고성장주는 CAGR > 15%지만, 변동성이 높으면 사이클 호황과 구분해야 한다.",
+        "peerAxes": ["revenueGrowthYoY", "operatingMargin", "roic"],
     },
     "자본집약": {
         "description": "설비 의존 + 감가상각 — 항공/전력/중공업",
@@ -450,6 +505,20 @@ STORY_TEMPLATES: dict[str, dict] = {
             "leverageTrend",
             "penmanDecomposition",
         },
+        "keyQuestions": [
+            "감가상각 대비 CAPEX 수준이 적정한가?",
+            "자산회전율이 개선되고 있는가?",
+            "영업CF에서 감가상각의 현금 버퍼가 충분한가?",
+            "부채를 자산 가치가 뒷받침하는가?",
+        ],
+        "actFocus": {
+            "1": "자산 규모와 구성 — 유형자산 비중, 건설중인자산, 노후도",
+            "3": "감가상각 현금 효과 — OCF = NI + 감가상각, 감가상각이 현금 버퍼",
+            "4": "부채 구조 — 자산 담보, 장기 차입, 이자보상",
+            "5": "CAPEX 사이클 — 유지투자 vs 확장투자, CAPEX/감가상각 비율",
+        },
+        "industryContext": "항공/전력/중공업은 CAPEX가 수년간 회수. 자산회전율과 감가상각 커버가 핵심.",
+        "peerAxes": ["capexToRevenue", "assetTurnover", "debtRatio"],
     },
     "지주": {
         "description": "자회사 포트폴리오 — 영업외손익이 핵심",
@@ -460,6 +529,20 @@ STORY_TEMPLATES: dict[str, dict] = {
             "dividendPolicy",
             "assetStructure",
         },
+        "keyQuestions": [
+            "지분법손익이 전체 이익에서 차지하는 비중은?",
+            "자회사 포트폴리오가 건전한가?",
+            "연결 vs 별도 재무제표 괴리가 큰가?",
+            "지주 할인이 정당화되는 수준인가?",
+        ],
+        "actFocus": {
+            "1": "사업 포트폴리오 — 자회사 구성, 지분율, 핵심 자회사 실적",
+            "2": "영업외손익 분해 — 지분법/배당/처분 등 비영업 이익 원천",
+            "5": "자본배분 — 자회사 배당 수취 vs 주주 환원, 자체 투자",
+            "6": "지주 할인/프리미엄 — NAV 대비 시가총액, 할인율 추이",
+        },
+        "industryContext": "지주사는 연결 재무제표가 자회사를 합산. 별도 재무제표로 지주 본체를 분리해서 봐야 한다.",
+        "peerAxes": ["nonOperatingRatio", "dividendYield", "pbr"],
     },
     "현금부자": {
         "description": "현금 축적 + 배분 이슈",
@@ -471,6 +554,19 @@ STORY_TEMPLATES: dict[str, dict] = {
             "cashFlowOverview",
             "fcfUsage",
         },
+        "keyQuestions": [
+            "현금을 왜 쌓고 있는가 (전략적 vs 비효율)?",
+            "주주환원 여력 대비 실제 환원 수준은?",
+            "순현금 상태에서 FLEV가 마이너스인가?",
+            "현금 축적이 ROE를 희석하고 있는가?",
+        ],
+        "actFocus": {
+            "2": "Penman FLEV — 순현금이 ROE를 희석하는 구조인지 확인",
+            "3": "FCF 추이 — 매년 양의 FCF가 현금을 쌓는 원천",
+            "5": "배분 정책 — 배당성향, 자사주, FCF 대비 환원율, 잔여 현금 누적",
+        },
+        "industryContext": "순현금 기업은 안전하지만, 현금이 과도하면 ROE가 희석되고 자본 효율이 떨어진다.",
+        "peerAxes": ["cashToAssets", "dividendPayout", "roe"],
     },
 }
 

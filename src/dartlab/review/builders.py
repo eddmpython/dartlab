@@ -18,6 +18,18 @@ from dartlab.review.blocks import (
 from dartlab.review.catalog import getBlockMeta as _meta
 from dartlab.review.utils import unifyTableScale
 
+from dartlab.review.narrate import (
+    narrateCashFlow,
+    narrateCashQuality,
+    narrateConcentration,
+    narrateDistress,
+    narrateGrowth,
+    narrateLeverage,
+    narrateMargin,
+    narrateROIC,
+    narrateValuation,
+)
+
 # ── notes enrichment 렌더링 ──
 
 
@@ -223,6 +235,11 @@ def revenueGrowthBlock(data: dict) -> list:
             helper="YoY vs 3Y CAGR 방향이 다르면 추세 전환 의심",
         )
     )
+
+    narration = narrateGrowth(yoy, cagr)
+    if narration:
+        blocks.append(TextBlock(narration))
+
     if metrics:
         blocks.append(MetricBlock(metrics))
     if qTable is not None:
@@ -286,6 +303,11 @@ def concentrationBlock(data: dict) -> list:
             helper="HHI > 5000 고집중, > 2500 중간 집중",
         )
     )
+
+    narration = narrateConcentration(data)
+    if narration:
+        blocks.append(TextBlock(narration))
+
     blocks.append(MetricBlock(metrics))
 
     # HHI 시계열
@@ -872,6 +894,10 @@ def cashFlowOverviewBlock(data: dict) -> list:
         )
     )
 
+    narration = narrateCashFlow(data, fmtAmt=_fmtAmtShort)
+    if narration:
+        blocks.append(TextBlock(narration))
+
     rows = ["영업CF", "투자CF", "재무CF", "CAPEX", "FCF"]
     cols = {"": rows}
     for h in history:
@@ -912,6 +938,10 @@ def cashQualityBlock(data: dict) -> list:
             helper="영업CF/순이익 > 100%이면 이익이 현금으로 회수됨",
         )
     )
+
+    narration = narrateCashQuality(data)
+    if narration:
+        blocks.append(TextBlock(narration))
 
     rows = ["영업CF", "당기순이익", "영업CF/순이익", "영업CF 마진"]
     cols = {"": rows}
@@ -1063,14 +1093,20 @@ def marginTrendBlock(data: dict) -> list:
     if cols is None:
         return []
 
-    return [
+    blocks: list = [
         HeadingBlock(
             _meta("marginTrend").label,
             level=2,
             helper="매출총이익률 안정 + 영업이익률 상승 = 원가 통제 + 판관비 효율",
         ),
-        TableBlock("마진 추이", pl.DataFrame(cols)),
     ]
+
+    narration = narrateMargin(data)
+    if narration:
+        blocks.append(TextBlock(narration))
+
+    blocks.append(TableBlock("마진 추이", pl.DataFrame(cols)))
+    return blocks
 
 
 def returnTrendBlock(data: dict) -> list:
@@ -1226,8 +1262,13 @@ def leverageTrendBlock(data: dict) -> list:
             level=2,
             helper="부채비율 200% 이상 위험, 50% 이하 매우 안정",
         ),
-        TableBlock("레버리지 추이", pl.DataFrame(cols)),
     ]
+
+    narration = narrateLeverage(data)
+    if narration:
+        blocks.append(TextBlock(narration))
+
+    blocks.append(TableBlock("레버리지 추이", pl.DataFrame(cols)))
     blocks.extend(_notesDetailBlocks(data, {"borrowings": "차입금 구성", "lease": "리스부채"}))
     return blocks
 
@@ -1267,6 +1308,10 @@ def distressScoreBlock(data: dict) -> list:
             helper="Z > 2.99 안전, 1.81~2.99 회색, < 1.81 위험",
         )
     )
+
+    narration = narrateDistress(data)
+    if narration:
+        blocks.append(TextBlock(narration))
 
     metrics = []
     latest = data.get("latestScore")
@@ -1764,14 +1809,18 @@ def roicTimelineBlock(data: dict) -> list:
     )
     if cols is None:
         return []
-    return [
+    blocks: list = [
         HeadingBlock(
             _meta("roicTimeline").label,
             level=2,
             helper="Spread > 0 = 가치 창출, < 0 = 가치 파괴",
         ),
-        TableBlock("ROIC vs WACC 추이", pl.DataFrame(cols)),
     ]
+    narration = narrateROIC(data)
+    if narration:
+        blocks.append(TextBlock(narration))
+    blocks.append(TableBlock("ROIC vs WACC 추이", pl.DataFrame(cols)))
+    return blocks
 
 
 def investmentIntensityBlock(data: dict) -> list:
@@ -2205,6 +2254,10 @@ def valuationSynthesisBlock(data: dict) -> list:
             helper="DCF + DDM + 상대가치 종합 -- 모델 간 범위와 판정",
         ),
     ]
+
+    narration = narrateValuation(data)
+    if narration:
+        blocks.append(TextBlock(narration))
 
     fvr = data.get("fairValueRange")
     metrics: list[tuple[str, str]] = []

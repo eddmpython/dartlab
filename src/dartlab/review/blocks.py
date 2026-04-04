@@ -12,6 +12,7 @@ class TextBlock:
     text: str
     style: str = ""
     indent: str = "body"  # "body" (6칸) | "h2" (3칸)
+    emphasized: bool = False
 
 
 @dataclass
@@ -21,6 +22,7 @@ class HeadingBlock:
     title: str
     level: int = 1
     helper: str = ""  # 이 소제목에서 봐야 할 것
+    emphasized: bool = False
 
     @property
     def htmlTag(self) -> str:
@@ -40,6 +42,7 @@ class TableBlock:
     label: str
     df: object  # pl.DataFrame
     caption: str = ""
+    emphasized: bool = False
 
 
 @dataclass
@@ -61,6 +64,7 @@ class FlagBlock:
     flags: list[str]
     kind: str = "warning"  # warning | opportunity
     enrichedFlags: list[EnrichedFlag] | None = None  # 구조화된 플래그 (하위호환)
+    emphasized: bool = False
 
     @property
     def icon(self) -> str:
@@ -73,6 +77,7 @@ class MetricBlock:
     """핵심 지표 블록 (라벨: 값 형태)."""
 
     metrics: list[tuple[str, str]]  # [(라벨, 값), ...]
+    emphasized: bool = False
 
 
 @dataclass
@@ -85,6 +90,7 @@ class ChartBlock:
 
     spec: dict
     caption: str = ""
+    emphasized: bool = False
 
 
 Block = TextBlock | HeadingBlock | TableBlock | FlagBlock | MetricBlock | ChartBlock

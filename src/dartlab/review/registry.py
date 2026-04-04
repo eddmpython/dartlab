@@ -885,6 +885,7 @@ def buildReview(
 
     # ── 스토리 템플릿 판별 ──
     detectedTemplate: str | None = None
+    emphasizedKeys: set[str] = set()
     if template is not None and preset is None:
         from dartlab.review.templates import STORY_TEMPLATES
         from dartlab.review.templates import detectTemplate as _detect
@@ -893,6 +894,9 @@ def buildReview(
             detectedTemplate = _detect(company)
         elif template in STORY_TEMPLATES:
             detectedTemplate = template
+
+        if detectedTemplate and detectedTemplate in STORY_TEMPLATES:
+            emphasizedKeys = STORY_TEMPLATES[detectedTemplate].get("emphasize", set())
 
     # ── 프리셋 적용 ──
     if preset is not None:
@@ -966,6 +970,10 @@ def buildReview(
             for blockKey in tmpl["keys"]:
                 blockList = b.get(blockKey)
                 if blockList:
+                    if blockKey in emphasizedKeys:
+                        for blk in blockList:
+                            if hasattr(blk, "emphasized"):
+                                blk.emphasized = True
                     sectionBlocks.extend(blockList)
 
             if sectionBlocks:
