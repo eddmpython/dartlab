@@ -72,7 +72,12 @@ def evaluateStrategies(macroData: dict) -> list[StrategySignal]:
 
     # 전략 2: 주가지수 ≈ 명목GDP
     nowcast = forecast.get("nowcast") or {}
-    nc_active = nowcast.get("gdpEstimate") is not None
+    gdp_est = nowcast.get("gdpEstimate")
+    # 이상값 검증: GDP 추정이 -10~20% 범위 밖이면 무효
+    if gdp_est is not None and not (-10 <= gdp_est <= 20):
+        gdp_est = None
+        nowcast = {}
+    nc_active = gdp_est is not None
     results.append(
         _sig(
             2,

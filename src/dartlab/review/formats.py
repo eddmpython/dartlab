@@ -226,6 +226,13 @@ def renderMarkdown(review) -> str:
         if mainAct:
             currentAct = mainAct
 
+        # 6막에 매핑되지 않는 섹션(macro 보고서 등)은 section.title을 직접 표시
+        if mainAct and mainAct not in _ACT_HEADERS and mainAct not in renderedActs:
+            renderedActs.add(mainAct)
+            parts.append(f"\n---\n\n# {section.title}\n")
+            if section.helper:
+                parts.append(f"> {section.helper}")
+
         if mainAct and mainAct in _ACT_HEADERS and mainAct not in renderedActs:
             renderedActs.add(mainAct)
             actTitle, actQuestion = _ACT_HEADERS[mainAct]
