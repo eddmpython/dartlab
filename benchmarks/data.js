@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775286648519,
+  "lastUpdate": 1775288309761,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -10701,6 +10701,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 3.028135847160082e-7",
             "extra": "mean: 683.5446543991028 nsec\nrounds: 123840"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "ad79ea50ec48327afcb7852642ead857b95716e7",
+          "message": "feat: 보고서 발행 수준 달성 — 재무하이라이트+인과서사+mermaid+AI선택\n\n1. 재무 하이라이트 박스: 매출/영업이익/EBITDA/OCF/순차입금/D/EBITDA + YoY.\n2. Executive Summary 인과: '매출→이익률→OCF→순현금→등급' 자동 서술.\n3. 부문 테이블: 금액(IS매출×비중) + 비중 3열.\n4. Mermaid 인과도: graph LR 매출→이익률→OCF→부채→등급.\n5. AI 선택적: useAI=False 기본 (재현 가능한 기계 서사).",
+          "timestamp": "2026-04-04T16:37:24+09:00",
+          "tree_id": "ea4e214c6df957891b882538626b60e967ce8041",
+          "url": "https://github.com/eddmpython/dartlab/commit/ad79ea50ec48327afcb7852642ead857b95716e7"
+        },
+        "date": 1775288308661,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 533987.4772343,
+            "unit": "iter/sec",
+            "range": "stddev: 4.984566766641714e-7",
+            "extra": "mean: 1.8727030925506623 usec\nrounds: 56297"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 664484.6464825387,
+            "unit": "iter/sec",
+            "range": "stddev: 4.6623086727371974e-7",
+            "extra": "mean: 1.504925667272401 usec\nrounds: 134880"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 529906.3784969071,
+            "unit": "iter/sec",
+            "range": "stddev: 5.253290109164593e-7",
+            "extra": "mean: 1.8871258029324456 usec\nrounds: 112398"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 670033.0316555985,
+            "unit": "iter/sec",
+            "range": "stddev: 4.1756396857294403e-7",
+            "extra": "mean: 1.49246373351039 usec\nrounds: 168351"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 813698.1770455213,
+            "unit": "iter/sec",
+            "range": "stddev: 3.767104887994727e-7",
+            "extra": "mean: 1.2289569132757887 usec\nrounds: 158680"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 270424.3575322169,
+            "unit": "iter/sec",
+            "range": "stddev: 7.237774772346408e-7",
+            "extra": "mean: 3.6978917473470023 usec\nrounds: 62271"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7326623.618118825,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2446314221098536e-8",
+            "extra": "mean: 136.48851805721102 nsec\nrounds: 73073"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8796981.381806664,
+            "unit": "iter/sec",
+            "range": "stddev: 1.149136755544007e-8",
+            "extra": "mean: 113.67535710239584 nsec\nrounds: 88098"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1448256.8529550042,
+            "unit": "iter/sec",
+            "range": "stddev: 2.774547575207991e-7",
+            "extra": "mean: 690.4852533303144 nsec\nrounds: 158680"
           }
         ]
       }
