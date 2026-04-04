@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775304094216,
+  "lastUpdate": 1775306001759,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -11223,6 +11223,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 8.561410836960565e-7",
             "extra": "mean: 719.2511349528078 nsec\nrounds: 166086"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "7a64ec37b0fe3ee7ca8f8a47970ee36390d5a0db",
+          "message": "fix: Shiki mermaid fallback — 미지원 언어를 text로 처리",
+          "timestamp": "2026-04-04T21:32:23+09:00",
+          "tree_id": "50adbbda16449b98824ee86a329aa708b3be9747",
+          "url": "https://github.com/eddmpython/dartlab/commit/7a64ec37b0fe3ee7ca8f8a47970ee36390d5a0db"
+        },
+        "date": 1775306001312,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 538133.6910479554,
+            "unit": "iter/sec",
+            "range": "stddev: 5.144855639070091e-7",
+            "extra": "mean: 1.8582742850621587 usec\nrounds: 57134"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 653265.8494149642,
+            "unit": "iter/sec",
+            "range": "stddev: 4.634572221221414e-7",
+            "extra": "mean: 1.5307703607888814 usec\nrounds: 138256"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 520060.9571448715,
+            "unit": "iter/sec",
+            "range": "stddev: 5.275120899957203e-7",
+            "extra": "mean: 1.9228515162722235 usec\nrounds: 127812"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 690005.0710590074,
+            "unit": "iter/sec",
+            "range": "stddev: 3.728545459185339e-7",
+            "extra": "mean: 1.4492647111494672 usec\nrounds: 184129"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 819131.92480838,
+            "unit": "iter/sec",
+            "range": "stddev: 3.600232584650653e-7",
+            "extra": "mean: 1.220804573370682 usec\nrounds: 198847"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 267993.4271654472,
+            "unit": "iter/sec",
+            "range": "stddev: 6.957373433018006e-7",
+            "extra": "mean: 3.7314347988939467 usec\nrounds: 77376"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7249319.466034254,
+            "unit": "iter/sec",
+            "range": "stddev: 1.8452116612807717e-8",
+            "extra": "mean: 137.94398283664697 nsec\nrounds: 199243"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8431598.102787888,
+            "unit": "iter/sec",
+            "range": "stddev: 2.9696389099871344e-8",
+            "extra": "mean: 118.60147836853757 nsec\nrounds: 88645"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1457720.66560741,
+            "unit": "iter/sec",
+            "range": "stddev: 2.762882536685439e-7",
+            "extra": "mean: 686.0024856568217 nsec\nrounds: 147646"
           }
         ]
       }
