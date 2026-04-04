@@ -89,7 +89,7 @@ def _calcCHSAdjustment(company, baseScore: float) -> dict | None:
         if priceData is None or len(priceData) < 20:
             return None
 
-        bs = company.select("BS", ["자산총계", "부채총계", "현금및현금성자산"])
+        bs = company.select("BS", ["자산총계", "부채총계", "현금및현금성자산", "현금및예치금"])
         is_ = company.select("IS", ["당기순이익"])
         from dartlab.analysis.financial._helpers import toDict
 
@@ -108,7 +108,7 @@ def _calcCHSAdjustment(company, baseScore: float) -> dict | None:
 
         ta = (bsData.get("자산총계", {}) or {}).get(p)
         tl = (bsData.get("부채총계", {}) or {}).get(p)
-        cash = (bsData.get("현금및현금성자산", {}) or {}).get(p)
+        cash = (bsData.get("현금및현금성자산", {}) or bsData.get("현금및예치금", {}) or {}).get(p)
         ni = (isData.get("당기순이익", {}) or {}).get(p)
 
         if not all(v is not None and v != 0 for v in [ta, tl]):
@@ -1048,6 +1048,18 @@ def _evaluateFinancial(
 
     grade, gradeDesc, pdEstimate = mapTo20Grade(overall)
 
+    # ── Track B에도 Notch Adjustment 적용 ──
+    notchAdj = _calcNotchAdjustment(
+        company, grade, overall, latest, metrics, False, False, None,
+    )
+    if notchAdj["totalNotch"] != 0:
+        from dartlab.core.finance.creditScorecard import notchGrade as _notchGrade
+        from dartlab.core.finance.creditScorecard import estimatePD
+
+        grade = _notchGrade(grade, -notchAdj["totalNotch"])
+        pdEstimate = estimatePD(grade)
+        gradeDesc = gradeCategory(grade) + " (notch 조정)"
+
     sectorLabel = f"{getSectorLabel(sector)} (Track B 금융전용)"
 
     result = {
@@ -1067,7 +1079,11 @@ def _evaluateFinancial(
         "holding": False,
         "latestPeriod": latest.get("period"),
         "chsAdjustment": chsResult,
-        "methodologyVersion": "v2.0-TrackB",
+        "notchAdjustment": notchAdj if notchAdj["totalNotch"] != 0 else None,
+        "divergenceExplanation": _explainDivergence(
+            grade, overall, axes, latest, chsResult, False, False,
+        ),
+        "methodologyVersion": "v4.0-TrackB",
         "axes": [
             {
                 "name": a["name"],
