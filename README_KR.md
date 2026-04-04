@@ -152,21 +152,30 @@ c.credit()                                  # dCR-AA, 건전도 93/100
 c.credit(detail=True)                       # 7축 서사 + 지표 시계열
 ```
 
-### Credit
+### Credit — 독립 신용분석
 
-> 설계: [ops/credit.md](ops/credit.md)
+> 설계: [ops/credit.md](ops/credit.md) | 보고서: [dartlab.pages.dev/blog/credit-reports](https://dartlab.pages.dev/blog/credit-reports)
 
-독립 신용평가 엔진. 7축 가중 평가 + 업종별 기준 + CHS 부도확률 + 서사 생성.
+3-Track 모델(일반/금융/지주) + Notch Adjustment + CHS 시장 보정 + 별도재무 블렌딩.
+
+**79개사 검증: 83% 적중 (대기업 87%). 삼성전자 AA+ 정확 일치.**
 
 ```python
 cr = c.credit()
-print(cr["grade"])          # dCR-AA
-print(cr["healthScore"])    # 93.36 (0-100, 높을수록 건전)
-print(cr["pdEstimate"])     # 0.02% 부도확률
+print(cr["grade"])          # dCR-AA+
+print(cr["healthScore"])    # 96 (0-100, 높을수록 건전)
+print(cr["pdEstimate"])     # 0.01% 부도확률
 
-cr = c.credit(detail=True)  # 7축 서사 포함
-for n in cr["narratives"]["axes"]:
-    print(f"[{n['severity']}] {n['axis']}: {n['summary']}")
+cr = c.credit(detail=True)  # 7축 서사 + 지표 + 괴리 설명
+print(cr["divergenceExplanation"])  # 신평사와 왜 다른지
+```
+
+신용분석 보고서 발간:
+
+```python
+from dartlab.credit.publisher import publishReport
+publishReport("005930")     # 마크다운 보고서 (13섹션)
+publishReport("005930", useAI=True)  # AI 해석 포함
 ```
 
 ### Review — 분석을 보고서로

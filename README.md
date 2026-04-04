@@ -152,21 +152,30 @@ c.credit()                                  # dCR-AA, healthScore 93/100
 c.credit(detail=True)                       # 7-axis narrative + metrics
 ```
 
-### Credit
+### Credit — Independent Credit Rating
 
-> Design: [ops/credit.md](ops/credit.md)
+> Design: [ops/credit.md](ops/credit.md) | Reports: [dartlab.pages.dev/blog/credit-reports](https://dartlab.pages.dev/blog/credit-reports)
 
-Independent credit rating engine. 7-axis weighted scoring with sector-specific thresholds, CHS default probability, and narrative generation.
+Independent credit analysis with 3-Track model (general/financial/holding), Notch Adjustment, CHS market correction, and separate financial statement blending.
+
+**79-company validation: 83% accuracy (large-cap 87%). Samsung AA+ exact match.**
 
 ```python
 cr = c.credit()
-print(cr["grade"])          # dCR-AA
-print(cr["healthScore"])    # 93.36 (0-100, higher is better)
-print(cr["pdEstimate"])     # 0.02% default probability
+print(cr["grade"])          # dCR-AA+
+print(cr["healthScore"])    # 96 (0-100, higher is better)
+print(cr["pdEstimate"])     # 0.01% default probability
 
-cr = c.credit(detail=True)  # includes 7-axis narrative
-for n in cr["narratives"]["axes"]:
-    print(f"[{n['severity']}] {n['axis']}: {n['summary']}")
+cr = c.credit(detail=True)  # 7-axis narrative + metrics + divergence explanation
+print(cr["divergenceExplanation"])  # why it differs from agencies
+```
+
+Publish credit reports:
+
+```python
+from dartlab.credit.publisher import publishReport
+publishReport("005930")     # generates markdown report (13-section)
+publishReport("005930", useAI=True)  # with AI-enhanced analysis
 ```
 
 ### Review — Analysis to Report

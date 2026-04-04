@@ -352,18 +352,73 @@ v2.0 — NLP 텍스트 분석 도입 (사업보고서 정성 정량화)
 **금융 한계 (1개)**: KB금융 — AAA는 "시스템적 중요 은행" 정성. 정량만으로 AAA 불가.
 **주가 일시 (1개)**: SKT — CHS 주가 급락 보정으로 하향됐다가 보호 규칙으로 복원.
 
-## AI 연동
+## 사용법
 
-credit은 AI 엔진의 **도구**다. AI가 c.credit(detail=True)를 호출하면:
+### 등급 조회
+
+```python
+import dartlab
+
+# 종목코드로 등급 조회
+cr = dartlab.credit("005930")
+print(cr["grade"])       # dCR-AA+
+print(cr["healthScore"]) # 96.0
+
+# Company 객체에서
+c = dartlab.Company("005930")
+cr = c.credit()
+cr = c.credit(detail=True)  # 7축 상세 + 서사 + 시계열
+```
+
+### 보고서 발간
+
+```python
+from dartlab.credit.publisher import publishReport
+
+# 단일 기업 보고서 발간 (기계 서사, 재현 가능)
+publishReport("005930")
+
+# AI 해석 포함 발간
+publishReport("005930", useAI=True)
+
+# 배치 발간
+from dartlab.credit.publisher import publishBatch
+publishBatch(["005930", "000660", "035420"])
+```
+
+보고서는 `blog/04-credit-reports/{순번}-{slug}/index.md`에 생성.
+SvelteKit mdsvex가 자동 렌더링 → GitHub Pages 공개.
+
+### 보고서 구성 (v5.0, 최대 13섹션)
+
+| # | 섹션 | 핵심 |
+|---|------|------|
+| 1 | 등급 요약 | 건전도 바 + 8개 핵심 지표 |
+| 2 | Executive Summary | hook 문장 + 인과 체인 서사 |
+| 3 | 재무 하이라이트 | 6개 지표 + YoY (매출/영업이익/EBITDA/OCF/순차입금/D/EBITDA) |
+| 4 | 사업 분석 | 기업 개요 + 부문별 매출 테이블 + HHI |
+| 5 | 등급 근거 상세 | 인과 서사 + Mermaid 흐름도 + 강점/약점 |
+| 6 | 재무 분석 | 7축/5축 게이지 + 서사 + 지표 |
+| 7 | 5개년 재무 시계열 | 매출/영업이익/D/EBITDA/부채비율/유동비율/OCF 추세 |
+| 8+ | 등급 전망 | 상향/하향 트리거 |
+| | 신평사 대조 | 동의/비동의 + notch 차이 |
+| | 등급 괴리 분석 | "왜 다른지" 자동 설명 |
+| | Notch 상세 | 적용된 규칙 (해당 시) |
+| | 별도재무 비교 | 연결 vs 별도 (해당 시) |
+| | 면책 + 방법론 | v5.0 + 면책 |
+
+빈 섹션은 자동 스킵, 번호 연속.
+
+### AI 연동
+
+credit은 AI 엔진의 **도구**다. AI가 `c.credit(detail=True)`를 호출하면:
 - 로데이터 (7축 점수 + 16개 지표 시계열)
-- 서사 5종 (종합, 프로필, 추세, 차입금, 7축별)
-- 등급 (dCR-AA)
-를 한 번에 받는다.
+- 서사 (종합 인과 + 축별 + 프로필 + 추세)
+- 등급 (dCR-XX) + healthScore + divergenceExplanation
+을 한 번에 받는다.
 
-AI는 이 위에 **산업 맥락** (반도체 사이클, HBM 수요 등)과 **인과관계** 판단을 추가한다.
-publisher.py의 정적 서사는 AI가 없을 때의 baseline.
-
-시스템 프롬프트(ai/runtime/core.py)에 신용평가 도구 사용법이 등록되어 있다.
+시스템 프롬프트(ai/runtime/core.py)에 신용분석 도구 사용법이 등록되어 있다.
+AI는 `useAI=True`일 때만 호출되며, 기본은 재현 가능한 기계 서사.
 
 ## 개선 이력
 
