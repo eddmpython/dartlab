@@ -17,6 +17,7 @@
 - `03-corporate-analysis`: 실전기업분석 (사용자 직접 관리)
 - `04-credit-reports`: 신용분석 보고서 (**프로그래매틱 생성**, `publisher.py`가 관리, `_registry.json`으로 번호/slug 매핑)
 - `05-company-reports`: 기업분석 보고서 — 6막 재무 서사 기반 기업별 분석. audit 완료 후 발간.
+- `06-macro-reports`: 경제분석 보고서 — (**매월 자동 발간**, GitHub Actions `macroReport.yml`이 관리. 3막 서사: 국면진단→인과역추적→전망리스크)
 
 ## 번호 체계
 
@@ -38,7 +39,7 @@ blog/
 title: 글 제목
 date: YYYY-MM-DD
 description: 1문장 설명
-category: reading-disclosures | dartlab-news | corporate-analysis | credit-reports
+category: reading-disclosures | dartlab-news | corporate-analysis | credit-reports | company-reports | macro-reports
 series: 시리즈 id
 seriesOrder: 숫자
 thumbnail: /avatar-*.png

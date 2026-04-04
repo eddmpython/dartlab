@@ -1,0 +1,69 @@
+name: Monthly Macro Report
+
+on:
+  schedule:
+    - cron: '0 0 1 * *'  # UTC 00:00, 매월 1일 = KST 09:00
+  workflow_dispatch:
+    inputs:
+      market:
+        description: '시장 (US/KR/both)'
+        default: 'both'
+        type: string
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: macro-report
+  cancel-in-progress: false
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Generate macro report
+        id: report
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          ECOS_API_KEY: ${{ secrets.ECOS_API_KEY }}
+        run: uv run python -X utf8 scripts/publish_macro_report.py
+
+      - name: Commit report
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/macro-reports/ blog/06-macro-reports/
+          git diff --staged --quiet || git commit -m "docs: macro report $(date +%Y-%m)"
+          git push
+
+      - name: Create issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date().toISOString().slice(0, 7);
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Macro Report ${date} 발간 실패`,
+              body: `## 매크로 경제분석 보고서 자동 발간 실패\n\n` +
+                    `- **날짜**: ${date}\n` +
+                    `- **워크플로우**: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\n` +
+                    `로그를 확인하고 수동 재실행하거나 원인을 파악해주세요.\n\n` +
+                    `\`\`\`\nworkflow_dispatch로 수동 실행: Actions → Monthly Macro Report → Run workflow\n\`\`\``,
+              labels: ['macro', 'automated', 'bug']
+            });

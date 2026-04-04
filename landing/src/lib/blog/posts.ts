@@ -58,6 +58,18 @@ export const categoryDefinitions = [
 			'dartlab 기업분석 보고서. 사업이해→수익성→현금전환→안정성→자본배분→전망의 6막 인과 구조로 기업을 분석합니다.',
 		brandMessage:
 			'DartLab은 숫자 나열이 아니라, 기업의 스토리를 6막 인과 구조로 전달합니다.'
+	},
+	{
+		id: 'macro-reports',
+		slug: 'macro-reports',
+		folder: '06-macro-reports',
+		label: '경제분석 보고서',
+		description: '매월 자동 발간되는 매크로 경제분석 보고서입니다. 11축 분석 + 40개 투자전략.',
+		seoTitle: '경제분석 보고서 | dartlab 매크로 엔진',
+		seoDescription:
+			'dartlab 경제분석 보고서. 사이클→금리→위기→전망의 3막 서사 구조로 경제를 분석합니다. Hamilton RS, Kalman DFM, Nelson-Siegel, BIS Credit-to-GDP gap 등 12개 방법론.',
+		brandMessage:
+			'DartLab은 종목코드 없이 경제 전체를 분석합니다. 매월 자동 발간.'
 	}
 ] as const;
 
