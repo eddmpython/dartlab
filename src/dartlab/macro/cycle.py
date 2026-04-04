@@ -2,136 +2,55 @@
 
 from __future__ import annotations
 
-from dartlab.core.finance.macroCycle import (
-    classifyCycle,
-    detectTransitionSequence,
+from dartlab.core.finance.macroCycle import classifyCycle, detectTransitionSequence
+from dartlab.macro._helpers import (
+    apply_overrides,
+    collect_timeseries,
+    fetch_change_pct,
+    fetch_latest,
+    fetch_yoy,
+    get_gather,
 )
 
 
 def _fetch_indicators(market: str, as_of: str | None = None) -> dict[str, float | None]:
     """gather에서 사이클 판별에 필요한 지표 수집."""
-    from dartlab.gather import getDefaultGather
-
-    g = getDefaultGather()
-    if as_of:
-        from dartlab.macro._helpers import apply_as_of
-
-        _orig_macro = g.macro
-
-        def _filtered_macro(sid):
-            return apply_as_of(_orig_macro(sid), as_of)
-
-        g.macro = _filtered_macro  # type: ignore
+    g = get_gather(as_of)
     indicators: dict[str, float | None] = {}
 
     if market.upper() == "US":
-        # HY 스프레드
-        try:
-            hy_df = g.macro("BAMLH0A0HYM2")
-            if hy_df is not None and len(hy_df) > 0:
-                vals = hy_df.get_column("value").drop_nulls()
-                if len(vals) > 0:
-                    indicators["hy_spread"] = float(vals[-1]) * 100  # % → bps
-                    if len(vals) >= 63:  # ~3개월
-                        indicators["hy_spread_3m_change"] = (float(vals[-1]) - float(vals[-63])) * 100
-        except Exception:
-            pass
+        hy = fetch_latest(g, "BAMLH0A0HYM2")
+        if hy is not None:
+            indicators["hy_spread"] = hy * 100
+        hy_chg = fetch_change_pct(g, "BAMLH0A0HYM2", 63)
+        if hy_chg is not None:
+            indicators["hy_spread_3m_change"] = hy_chg
 
-        # 장단기 스프레드 (10Y-2Y)
-        try:
-            ts_df = g.macro("T10Y2Y")
-            if ts_df is not None and len(ts_df) > 0:
-                vals = ts_df.get_column("value").drop_nulls()
-                if len(vals) > 0:
-                    indicators["term_spread"] = float(vals[-1])
-        except Exception:
-            pass
-
-        # VIX
-        try:
-            vix_df = g.macro("VIXCLS")
-            if vix_df is not None and len(vix_df) > 0:
-                vals = vix_df.get_column("value").drop_nulls()
-                if len(vals) > 0:
-                    indicators["vix"] = float(vals[-1])
-        except Exception:
-            pass
-
-        # 금 YoY (GOLDAMGBD228NLBM)
-        try:
-            gold_df = g.macro("GOLDAMGBD228NLBM")
-            if gold_df is not None and len(gold_df) > 0:
-                vals = gold_df.get_column("value").drop_nulls()
-                if len(vals) >= 252:  # ~1년
-                    current = float(vals[-1])
-                    year_ago = float(vals[-252])
-                    if year_ago > 0:
-                        indicators["gold_yoy"] = (current / year_ago - 1) * 100
-        except Exception:
-            pass
-
-        # BEI (기대인플레이션)
-        try:
-            bei_df = g.macro("T10YIE")
-            if bei_df is not None and len(bei_df) > 0:
-                vals = bei_df.get_column("value").drop_nulls()
-                if len(vals) > 0:
-                    indicators["bei_10y"] = float(vals[-1])
-        except Exception:
-            pass
-
-        # CPI YoY
-        try:
-            cpi_df = g.macro("CPIAUCSL")
-            if cpi_df is not None and len(cpi_df) > 0:
-                vals = cpi_df.get_column("value").drop_nulls()
-                if len(vals) >= 12:
-                    current = float(vals[-1])
-                    year_ago = float(vals[-12])
-                    if year_ago > 0:
-                        indicators["cpi_yoy"] = (current / year_ago - 1) * 100
-        except Exception:
-            pass
+        indicators["term_spread"] = fetch_latest(g, "T10Y2Y")
+        indicators["vix"] = fetch_latest(g, "VIXCLS")
+        indicators["gold_yoy"] = fetch_yoy(g, "GOLDAMGBD228NLBM")
+        indicators["bei_10y"] = fetch_latest(g, "T10YIE")
+        indicators["cpi_yoy"] = fetch_yoy(g, "CPIAUCSL")
 
     elif market.upper() == "KR":
-        # 한국은 CLI(경기선행지수)를 주요 신호로 사용
-        try:
-            cli_df = g.macro("CLI")
-            if cli_df is not None and len(cli_df) > 0:
-                vals = cli_df.get_column("value").drop_nulls()
-                if len(vals) >= 2:
-                    indicators["cli_mom"] = float(vals[-1]) - float(vals[-2])
-        except Exception:
-            pass
+        from dartlab.macro._helpers import fetch_latest_with_prev
 
-        # 원/달러 환율 변화 (위험회피 proxy)
-        try:
-            fx_df = g.macro("USDKRW")
-            if fx_df is not None and len(fx_df) > 0:
-                vals = fx_df.get_column("value").drop_nulls()
-                if len(vals) > 0:
-                    indicators["vix"] = None  # KR에는 VIX 직접 없음
-        except Exception:
-            pass
+        cli, cli_prev = fetch_latest_with_prev(g, "CLI")
+        if cli is not None and cli_prev is not None:
+            indicators["cli_mom"] = cli - cli_prev
 
-    return indicators
+    # None 값 제거 (classifyCycle은 키 존재 여부로 판단)
+    return {k: v for k, v in indicators.items() if v is not None}
 
 
-def analyze_cycle(*, market: str = "US", as_of: str | None = None, overrides: dict | None = None, **kwargs) -> dict:
-    """경제 사이클 분석.
-
-    Args:
-        as_of: 백테스트 날짜 (YYYY-MM-DD). 이 날짜까지의 데이터만 사용.
-        overrides: 시나리오 오버라이드. 지표값을 직접 지정.
-
-    Returns:
-        dict: phase, transition, indicators 등
-    """
+def analyze_cycle(
+    *, market: str = "US", as_of: str | None = None, overrides: dict | None = None, **kwargs
+) -> dict:
+    """경제 사이클 분석."""
     indicators = _fetch_indicators(market, as_of=as_of)
     if overrides:
-        from dartlab.macro._helpers import apply_overrides
-
         indicators = apply_overrides(indicators, overrides)
+
     cycle = classifyCycle(indicators)
     transition = detectTransitionSequence(cycle.phase, indicators)
 
@@ -154,18 +73,11 @@ def analyze_cycle(*, market: str = "US", as_of: str | None = None, overrides: di
             "pending": list(transition.pending),
         }
 
-    # 시계열: gather DataFrame에서 최근 6개월분 포함
-    from dartlab.macro._helpers import recent_timeseries
-
-    ts: dict = {}
-    try:
-        from dartlab.gather import getDefaultGather
-
-        g = getDefaultGather()
-        for label, sid in [("hy_spread", "BAMLH0A0HYM2"), ("vix", "VIXCLS"), ("term_spread", "T10Y2Y")]:
-            ts[label] = recent_timeseries(g.macro(sid))
-    except Exception:
-        pass
-    result["timeseries"] = ts
+    g = get_gather(as_of)
+    result["timeseries"] = collect_timeseries(g, {
+        "hy_spread": "BAMLH0A0HYM2",
+        "vix": "VIXCLS",
+        "term_spread": "T10Y2Y",
+    })
 
     return result

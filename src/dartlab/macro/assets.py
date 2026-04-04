@@ -10,75 +10,26 @@ from dartlab.core.finance.macroCycle import (
 )
 
 
-def _fetch_asset_data(market: str) -> dict[str, float | None]:
+def _fetch_asset_data(market: str, as_of: str | None = None) -> dict[str, float | None]:
     """gather에서 5대 자산 지표 수집."""
-    from dartlab.gather import getDefaultGather
+    from dartlab.macro._helpers import fetch_change_pct, fetch_latest, fetch_yoy, get_gather
 
-    g = getDefaultGather()
+    g = get_gather(as_of)
     data: dict[str, float | None] = {}
 
-    # US 자산 (글로벌 기준)
-    series_pairs = [
-        ("short_rate", "DGS2"),
-        ("long_rate", "DGS10"),
-        ("vix", "VIXCLS"),
-        ("dfii10", "DFII10"),
-    ]
-    for key, series_id in series_pairs:
-        try:
-            df = g.macro(series_id)
-            if df is not None and len(df) > 0:
-                vals = df.get_column("value").drop_nulls()
-                if len(vals) > 0:
-                    data[key] = float(vals[-1])
-                    # 변화율 (3개월 ≈ 63 거래일)
-                    if len(vals) >= 63:
-                        data[f"{key}_change"] = float(vals[-1]) - float(vals[-63])
-        except Exception:
-            pass
+    for key, sid in [("short_rate", "DGS2"), ("long_rate", "DGS10"), ("vix", "VIXCLS"), ("dfii10", "DFII10")]:
+        data[key] = fetch_latest(g, sid)
+        data[f"{key}_change"] = fetch_change_pct(g, sid, 63)
 
-    # 환율
     fx_id = "USDKRW" if market.upper() == "KR" else "DTWEXBGS"
-    try:
-        fx_df = g.macro(fx_id)
-        if fx_df is not None and len(fx_df) > 0:
-            vals = fx_df.get_column("value").drop_nulls()
-            if len(vals) > 0:
-                data["fx_usdkrw"] = float(vals[-1])
-                if len(vals) >= 63:
-                    old = float(vals[-63])
-                    if old > 0:
-                        data["fx_change_pct"] = (float(vals[-1]) / old - 1) * 100
-    except Exception:
-        pass
+    data["fx_usdkrw"] = fetch_latest(g, fx_id)
+    data["fx_change_pct"] = fetch_change_pct(g, fx_id, 63)
 
-    # 금
-    try:
-        gold_df = g.macro("GOLDAMGBD228NLBM")
-        if gold_df is not None and len(gold_df) > 0:
-            vals = gold_df.get_column("value").drop_nulls()
-            if len(vals) > 0:
-                data["gold"] = float(vals[-1])
-                if len(vals) >= 252:
-                    year_ago = float(vals[-252])
-                    if year_ago > 0:
-                        data["gold_yoy"] = (float(vals[-1]) / year_ago - 1) * 100
-    except Exception:
-        pass
+    data["gold"] = fetch_latest(g, "GOLDAMGBD228NLBM")
+    data["gold_yoy"] = fetch_yoy(g, "GOLDAMGBD228NLBM")
+    data["dxy_change_pct"] = fetch_change_pct(g, "DTWEXBGS", 63)
 
-    # 달러인덱스 변화율
-    try:
-        dxy_df = g.macro("DTWEXBGS")
-        if dxy_df is not None and len(dxy_df) > 0:
-            vals = dxy_df.get_column("value").drop_nulls()
-            if len(vals) >= 63:
-                old = float(vals[-63])
-                if old > 0:
-                    data["dxy_change_pct"] = (float(vals[-1]) / old - 1) * 100
-    except Exception:
-        pass
-
-    return data
+    return {k: v for k, v in data.items() if v is not None}
 
 
 def analyze_assets(*, market: str = "US", as_of: str | None = None, overrides: dict | None = None, **kwargs) -> dict:
@@ -87,7 +38,10 @@ def analyze_assets(*, market: str = "US", as_of: str | None = None, overrides: d
     Returns:
         dict: assets (기본 해석), goldDrivers, vixRegime
     """
-    data = _fetch_asset_data(market)
+    data = _fetch_asset_data(market, as_of=as_of)
+    if overrides:
+        from dartlab.macro._helpers import apply_overrides
+        data = apply_overrides(data, overrides)
     result: dict = {"market": market.upper()}
 
     # 기본 5대 자산 해석 — DKW 분해 + 금리차 교차 해석 포함

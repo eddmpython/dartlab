@@ -101,7 +101,7 @@ def analysis(axis: str, company: Company) -> dict:
 
 ## 릴리즈
 
-- semver 준수 (구조 변경 = minor, 패치 = patch)
+- **끝자리(patch)만 올린다** — minor/major는 사용자 지시 시에만
 - GitHub Actions trusted publishing
 - 절차: `pyproject.toml` 버전 → 커밋 → `git tag vX.Y.Z && git push origin vX.Y.Z`
 - CHANGELOG.md + docs/changelog.md 동시 업데이트 (상세하게 — GitHub Release 노트로 사용)

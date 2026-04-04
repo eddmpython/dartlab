@@ -20,158 +20,66 @@ from dartlab.core.finance.crisisDetector import (
 from dartlab.core.finance.liquidity import capexPressure
 
 
-def _fetch_crisis_data(market: str) -> dict[str, float | list | None]:
+def _fetch_crisis_data(market: str, as_of: str | None = None) -> dict[str, float | list | None]:
     """gather에서 위기 감지 지표 수집."""
-    from dartlab.gather import getDefaultGather
+    from dartlab.macro._helpers import fetch_change_pct, fetch_latest, fetch_series_list, fetch_yoy, get_gather
 
-    g = getDefaultGather()
+    g = get_gather(as_of)
     data: dict[str, float | list | None] = {}
 
     if market.upper() == "US":
-        # HY 스프레드 (시계열)
-        try:
-            hy_df = g.macro("BAMLH0A0HYM2")
-            if hy_df is not None and len(hy_df) > 0:
-                vals = hy_df.get_column("value").drop_nulls().to_list()
-                if vals:
-                    data["hy_series"] = [float(v) * 100 for v in vals]  # % → bps
-                    data["hy_current"] = float(vals[-1]) * 100
-        except Exception:
-            pass
+        # HY 시계열 (bps 변환)
+        hy_list = fetch_series_list(g, "BAMLH0A0HYM2")
+        if hy_list:
+            data["hy_series"] = [v * 100 for v in hy_list]
+            data["hy_current"] = hy_list[-1] * 100
 
-        # S&P500 (3년 수익률)
-        try:
-            sp_df = g.macro("SP500")
-            if sp_df is not None and len(sp_df) > 0:
-                vals = sp_df.get_column("value").drop_nulls().to_list()
-                if vals and len(vals) > 750:  # ~3년 일간
-                    current = float(vals[-1])
-                    three_y_ago = float(vals[-750])
-                    if three_y_ago > 0:
-                        data["sp500_3y_return"] = ((current / three_y_ago) - 1) * 100
-        except Exception:
-            pass
+        # S&P500 3년 수익률
+        sp_list = fetch_series_list(g, "SP500")
+        if sp_list and len(sp_list) > 750:
+            if sp_list[-750] > 0:
+                data["sp500_3y_return"] = ((sp_list[-1] / sp_list[-750]) - 1) * 100
 
-        # VIX
-        try:
-            vix_df = g.macro("VIXCLS")
-            if vix_df is not None and len(vix_df) > 0:
-                vals = vix_df.get_column("value").drop_nulls()
-                if len(vals) > 0:
-                    data["vix"] = float(vals[-1])
-        except Exception:
-            pass
+        data["vix"] = fetch_latest(g, "VIXCLS")
 
-        # 달러인덱스 (위기 시 상승 — 전략 38)
-        try:
-            dxy_df = g.macro("DTWEXBGS")
-            if dxy_df is not None and len(dxy_df) > 0:
-                vals = dxy_df.get_column("value").drop_nulls().to_list()
-                if vals and len(vals) > 60:
-                    data["dxy_current"] = float(vals[-1])
-                    data["dxy_3m_ago"] = float(vals[-60])
-        except Exception:
-            pass
+        # 달러인덱스
+        dxy_list = fetch_series_list(g, "DTWEXBGS")
+        if dxy_list and len(dxy_list) > 60:
+            data["dxy_current"] = dxy_list[-1]
+            data["dxy_3m_ago"] = dxy_list[-60]
 
-        # Credit-to-GDP (TCMDO / GDP)
-        try:
-            credit_df = g.macro("TCMDO")
-            gdp_df = g.macro("GDP")
-            if credit_df is not None and gdp_df is not None:
-                c_vals = credit_df.get_column("value").drop_nulls().to_list()
-                g_vals = gdp_df.get_column("value").drop_nulls().to_list()
-                if c_vals and g_vals:
-                    # 두 시리즈 길이 맞추기 (분기)
-                    min_len = min(len(c_vals), len(g_vals))
-                    ratios = []
-                    for i in range(min_len):
-                        gdp_val = float(g_vals[i])
-                        if gdp_val > 0:
-                            ratios.append(float(c_vals[i]) / gdp_val * 100)
-                    if ratios:
-                        data["credit_gdp_series"] = ratios
-        except Exception:
-            pass
+        # Credit-to-GDP
+        credit_list = fetch_series_list(g, "TCMDO")
+        gdp_list = fetch_series_list(g, "GDP")
+        if credit_list and gdp_list:
+            min_len = min(len(credit_list), len(gdp_list))
+            ratios = [credit_list[i] / gdp_list[i] * 100 for i in range(min_len) if gdp_list[i] > 0]
+            if ratios:
+                data["credit_gdp_series"] = ratios
 
     elif market.upper() == "KR":
-        # 한국 총국내신용/GDP
-        try:
-            credit_df = g.macro("CREDIT_TOTAL")
-            gdp_df = g.macro("GDP")
-            if credit_df is not None and gdp_df is not None:
-                c_vals = credit_df.get_column("value").drop_nulls().to_list()
-                g_vals = gdp_df.get_column("value").drop_nulls().to_list()
-                if c_vals and g_vals:
-                    min_len = min(len(c_vals), len(g_vals))
-                    ratios = []
-                    for i in range(min_len):
-                        gdp_val = float(g_vals[i])
-                        if gdp_val > 0:
-                            ratios.append(float(c_vals[i]) / gdp_val * 100)
-                    if ratios:
-                        data["credit_gdp_series"] = ratios
-        except Exception:
-            pass
+        credit_list = fetch_series_list(g, "CREDIT_TOTAL")
+        gdp_list = fetch_series_list(g, "GDP")
+        if credit_list and gdp_list:
+            min_len = min(len(credit_list), len(gdp_list))
+            ratios = [credit_list[i] / gdp_list[i] * 100 for i in range(min_len) if gdp_list[i] > 0]
+            if ratios:
+                data["credit_gdp_series"] = ratios
 
-        # 한국 CPI (전략 35: 신용위험 ↔ CPI)
-        try:
-            cpi_df = g.macro("CPI")
-            if cpi_df is not None and len(cpi_df) > 0:
-                vals = cpi_df.get_column("value").drop_nulls().to_list()
-                if vals and len(vals) > 12:
-                    data["cpi_yoy"] = ((float(vals[-1]) / float(vals[-13])) - 1) * 100
-        except Exception:
-            pass
+        data["cpi_yoy"] = fetch_yoy(g, "CPI")
+        data["apt_yoy"] = fetch_yoy(g, "APT_PRICE")
 
-        # 한국 아파트가격 YoY (부동산 스트레스)
-        try:
-            apt_df = g.macro("APT_PRICE")
-            if apt_df is not None and len(apt_df) > 0:
-                vals = apt_df.get_column("value").drop_nulls().to_list()
-                if vals and len(vals) > 12:
-                    data["apt_yoy"] = ((float(vals[-1]) / float(vals[-13])) - 1) * 100
-        except Exception:
-            pass
-
-    # ── Koo BSR 데이터 (US) ──
+    # Koo BSR (US)
     if market.upper() == "US":
         for label, sid in [
-            ("private_saving", "W987RC1Q027SBEA"),
-            ("private_investment", "GPDI"),
-            ("gdp_level", "GDP"),
-            ("fed_funds", "FEDFUNDS"),
+            ("private_saving", "W987RC1Q027SBEA"), ("private_investment", "GPDI"),
+            ("gdp_level", "GDP"), ("fed_funds", "FEDFUNDS"),
+            ("dsr", "TDSP"), ("npl", "DRSFRMACBS"),
         ]:
-            try:
-                df = g.macro(sid)
-                if df is not None and len(df) > 0:
-                    vals = df.get_column("value").drop_nulls()
-                    if len(vals) > 0:
-                        data[label] = float(vals[-1])
-            except Exception:
-                pass
+            data[label] = fetch_latest(g, sid)
+        data["us_cpi_yoy"] = fetch_yoy(g, "CPIAUCSL")
 
-        # Fisher: DSR, NPL
-        for label, sid in [("dsr", "TDSP"), ("npl", "DRSFRMACBS")]:
-            try:
-                df = g.macro(sid)
-                if df is not None and len(df) > 0:
-                    vals = df.get_column("value").drop_nulls()
-                    if len(vals) > 0:
-                        data[label] = float(vals[-1])
-            except Exception:
-                pass
-
-        # CPI YoY for Fisher
-        try:
-            cpi_df = g.macro("CPIAUCSL")
-            if cpi_df is not None and len(cpi_df) > 0:
-                vals = cpi_df.get_column("value").drop_nulls().to_list()
-                if vals and len(vals) > 12:
-                    data["us_cpi_yoy"] = ((float(vals[-1]) / float(vals[-13])) - 1) * 100
-        except Exception:
-            pass
-
-    return data
+    return {k: v for k, v in data.items() if v is not None}
 
 
 def analyze_crisis(*, market: str = "US", as_of: str | None = None, overrides: dict | None = None, **kwargs) -> dict:
@@ -181,7 +89,10 @@ def analyze_crisis(*, market: str = "US", as_of: str | None = None, overrides: d
         dict: creditGap, ghsScore, capexPressure, recessionDashboard,
               dollarSafeHaven, timeseries
     """
-    data = _fetch_crisis_data(market)
+    data = _fetch_crisis_data(market, as_of=as_of)
+    if overrides:
+        from dartlab.macro._helpers import apply_overrides
+        data = apply_overrides(data, overrides)
     result: dict = {"market": market.upper()}
 
     # Credit-to-GDP Gap
@@ -385,18 +296,9 @@ def analyze_crisis(*, market: str = "US", as_of: str | None = None, overrides: d
                 "signal": cr_signal,
             }
 
-    # 시계열
-    from dartlab.macro._helpers import recent_timeseries
+    from dartlab.macro._helpers import collect_timeseries, get_gather
 
-    ts: dict = {}
-    try:
-        from dartlab.gather import getDefaultGather
-
-        g = getDefaultGather()
-        for label, sid in [("hy_spread", "BAMLH0A0HYM2"), ("vix", "VIXCLS"), ("dxy", "DTWEXBGS")]:
-            ts[label] = recent_timeseries(g.macro(sid))
-    except Exception:
-        pass
-    result["timeseries"] = ts
+    g_ts = get_gather(as_of)
+    result["timeseries"] = collect_timeseries(g_ts, {"hy_spread": "BAMLH0A0HYM2", "vix": "VIXCLS", "dxy": "DTWEXBGS"})
 
     return result

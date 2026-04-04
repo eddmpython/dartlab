@@ -36,55 +36,31 @@ def _mom(series: list[float]) -> float | None:
     return series[-1] - series[-2]
 
 
-def _fetch_trade_data(market: str) -> dict[str, float | list | None]:
+def _fetch_trade_data(market: str, as_of: str | None = None) -> dict[str, float | list | None]:
     """gather에서 교역/환율/유가 지표 수집."""
-    from dartlab.gather import getDefaultGather
+    from dartlab.macro._helpers import fetch_latest_with_prev, fetch_series_list, get_gather
 
-    g = getDefaultGather()
+    g = get_gather(as_of)
     data: dict[str, float | list | None] = {}
 
     if market.upper() == "KR":
-        # 교역조건: 수출/수입 물가지수
         for label, sid in [
-            ("export_price", "EXPORT_PRICE"),
-            ("import_price", "IMPORT_PRICE"),
-            ("export_vol", "EXPORT"),
-            ("usdkrw", "USDKRW"),
-            ("cli", "CLI"),
+            ("export_price", "EXPORT_PRICE"), ("import_price", "IMPORT_PRICE"),
+            ("export_vol", "EXPORT"), ("usdkrw", "USDKRW"), ("cli", "CLI"),
         ]:
-            try:
-                df = g.macro(sid)
-                if df is not None and len(df) > 0:
-                    vals = df.get_column("value").drop_nulls().to_list()
-                    if vals:
-                        data[f"{label}_series"] = [float(v) for v in vals]
-                        data[label] = float(vals[-1])
-                        if len(vals) > 1:
-                            data[f"{label}_prev"] = float(vals[-2])
-            except Exception:
-                pass
+            series = fetch_series_list(g, sid)
+            if series:
+                data[f"{label}_series"] = series
+                data[label] = series[-1]
+                if len(series) > 1:
+                    data[f"{label}_prev"] = series[-2]
 
-    # 공통: 유가
-    try:
-        oil_df = g.macro("DCOILWTICO")
-        if oil_df is not None and len(oil_df) > 0:
-            vals = oil_df.get_column("value").drop_nulls().to_list()
-            if vals:
-                data["oil_series"] = [float(v) for v in vals]
-                data["oil"] = float(vals[-1])
-    except Exception:
-        pass
+    data["oil_series"] = fetch_series_list(g, "DCOILWTICO")
+    oil_list = data.get("oil_series")
+    if oil_list:
+        data["oil"] = oil_list[-1]
 
-    # US: 소매판매 (한국 주가와 상관 — 전략 5)
-    if market.upper() == "US" or market.upper() == "KR":
-        try:
-            retail_df = g.macro("RSAFS")
-            if retail_df is not None and len(retail_df) > 0:
-                vals = retail_df.get_column("value").drop_nulls().to_list()
-                if vals:
-                    data["us_retail_series"] = [float(v) for v in vals]
-        except Exception:
-            pass
+    data["us_retail_series"] = fetch_series_list(g, "RSAFS")
 
     return data
 
@@ -96,7 +72,10 @@ def analyze_trade(*, market: str = "US", as_of: str | None = None, overrides: di
         dict: termsOfTrade, totProxy, exportProfit, leadingRelativeStrength,
               usConsumptionLink, timeseries
     """
-    data = _fetch_trade_data(market)
+    data = _fetch_trade_data(market, as_of=as_of)
+    if overrides:
+        from dartlab.macro._helpers import apply_overrides
+        data = apply_overrides(data, overrides)
     result: dict = {"market": market.upper()}
 
     if market.upper() == "KR":
@@ -206,25 +185,12 @@ def analyze_trade(*, market: str = "US", as_of: str | None = None, overrides: di
         result["leadingRelativeStrength"] = None
         result["usConsumptionLink"] = None
 
-    # 시계열
-    from dartlab.macro._helpers import recent_timeseries
+    from dartlab.macro._helpers import collect_timeseries, get_gather
 
-    ts: dict = {}
-    try:
-        from dartlab.gather import getDefaultGather
-
-        g = getDefaultGather()
-        if market.upper() == "KR":
-            for label, sid in [
-                ("export_price", "EXPORT_PRICE"),
-                ("import_price", "IMPORT_PRICE"),
-                ("usdkrw", "USDKRW"),
-                ("export", "EXPORT"),
-            ]:
-                ts[label] = recent_timeseries(g.macro(sid))
-        ts["oil"] = recent_timeseries(g.macro("DCOILWTICO"))
-    except Exception:
-        pass
-    result["timeseries"] = ts
+    g_ts = get_gather(as_of)
+    ts_map = {"oil": "DCOILWTICO"}
+    if market.upper() == "KR":
+        ts_map.update({"export_price": "EXPORT_PRICE", "import_price": "IMPORT_PRICE", "usdkrw": "USDKRW", "export": "EXPORT"})
+    result["timeseries"] = collect_timeseries(g_ts, ts_map)
 
     return result

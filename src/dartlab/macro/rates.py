@@ -1,4 +1,4 @@
-"""매크로 금리 분석 — 금리 방향 + 고용/물가 + DKW 근사."""
+"""매크로 금리 분석 — 금리 방향 + 고용/물가 + DKW + Nelson-Siegel."""
 
 from __future__ import annotations
 
@@ -9,217 +9,125 @@ from dartlab.core.finance.sentiment import (
     interpretInflation,
 )
 from dartlab.core.finance.yieldCurve import nelsonSiegel
+from dartlab.macro._helpers import (
+    apply_overrides,
+    collect_timeseries,
+    fetch_latest,
+    fetch_yoy,
+    get_gather,
+)
 
 
-def _fetch_rate_data(market: str) -> dict[str, float | None]:
+def _fetch_rate_data(market: str, as_of: str | None = None) -> dict[str, float | None]:
     """gather에서 금리 관련 지표 수집."""
-    from dartlab.gather import getDefaultGather
-
-    g = getDefaultGather()
+    g = get_gather(as_of)
     data: dict[str, float | None] = {}
 
     if market.upper() == "US":
-        # 최신값 그대로 쓰는 시리즈 (금리/실업률 = 이미 % 단위)
-        direct_series = {
-            "fed_funds": "FEDFUNDS",
-            "dgs2": "DGS2",
-            "dgs10": "DGS10",
-            "dfii10": "DFII10",
-            "t10yie": "T10YIE",
-            "unrate": "UNRATE",
-            "t5yie": "T5YIE",
-        }
-        for key, series_id in direct_series.items():
-            try:
-                df = g.macro(series_id)
-                if df is not None and len(df) > 0:
-                    vals = df.get_column("value").drop_nulls()
-                    if len(vals) > 0:
-                        data[key] = float(vals[-1])
-            except Exception:
-                pass
+        for key, sid in [
+            ("fed_funds", "FEDFUNDS"), ("dgs2", "DGS2"), ("dgs10", "DGS10"),
+            ("dfii10", "DFII10"), ("t10yie", "T10YIE"), ("unrate", "UNRATE"), ("t5yie", "T5YIE"),
+        ]:
+            data[key] = fetch_latest(g, sid)
 
-        # YoY 변화율로 변환이 필요한 시리즈 (CPI는 인덱스값이므로)
-        for key, series_id in [("cpi_yoy", "CPIAUCSL"), ("core_cpi", "CPILFESL")]:
-            try:
-                df = g.macro(series_id)
-                if df is not None and len(df) > 0:
-                    vals = df.get_column("value").drop_nulls()
-                    if len(vals) >= 12:
-                        current = float(vals[-1])
-                        year_ago = float(vals[-12])
-                        if year_ago > 0:
-                            data[key] = (current / year_ago - 1) * 100
-            except Exception:
-                pass
+        data["cpi_yoy"] = fetch_yoy(g, "CPIAUCSL")
+        data["core_cpi"] = fetch_yoy(g, "CPILFESL")
 
     elif market.upper() == "KR":
-        # 한국 금리 데이터 (ECOS)
-        for key, series_id in [("base_rate", "기준금리"), ("cpi_yoy", "CPI")]:
-            try:
-                df = g.macro(series_id)
-                if df is not None and len(df) > 0:
-                    vals = df.get_column("value").drop_nulls()
-                    if len(vals) > 0:
-                        data[key] = float(vals[-1])
-            except Exception:
-                pass
+        data["base_rate"] = fetch_latest(g, "BASE_RATE")
+        data["cpi_yoy"] = fetch_yoy(g, "CPI")
 
-    return data
+    return {k: v for k, v in data.items() if v is not None}
 
 
-def analyze_rates(*, market: str = "US", as_of: str | None = None, overrides: dict | None = None, **kwargs) -> dict:
-    """금리 종합 분석.
-
-    Returns:
-        dict: rateOutlook, rateExpectation, rateDecomposition, employment, inflation
-    """
-    data = _fetch_rate_data(market)
+def analyze_rates(
+    *, market: str = "US", as_of: str | None = None, overrides: dict | None = None, **kwargs
+) -> dict:
+    """금리 종합 분석."""
+    data = _fetch_rate_data(market, as_of=as_of)
+    if overrides:
+        data = apply_overrides(data, overrides)
     result: dict = {"market": market.upper()}
 
     # 금리 방향 전망
     outlook_input: dict[str, float | None] = {}
-    if "fed_funds" in data:
-        outlook_input["fed_funds"] = data["fed_funds"]
-    if "base_rate" in data:
-        outlook_input["base_rate"] = data["base_rate"]
-    if "cpi_yoy" in data:
-        outlook_input["cpi_yoy"] = data["cpi_yoy"]
-    if "core_cpi" in data:
-        outlook_input["core_cpi_yoy"] = data["core_cpi"]
-    if "unrate" in data:
-        outlook_input["unemployment"] = data["unrate"]
-
+    for src, dst in [("fed_funds", "fed_funds"), ("base_rate", "base_rate"),
+                     ("cpi_yoy", "cpi_yoy"), ("core_cpi", "core_cpi_yoy"), ("unrate", "unemployment")]:
+        if src in data:
+            outlook_input[dst] = data[src]
     result["outlook"] = rateOutlook(outlook_input)
 
-    # FedWatch 근사 (2Y-FF 스프레드)
+    # FedWatch 근사
     ff = data.get("fed_funds") or data.get("base_rate")
     dgs2 = data.get("dgs2")
     dgs10 = data.get("dgs10")
     if ff is not None and dgs2 is not None:
+        exp = estimateRateExpectation(ff, dgs2, dgs10)
         result["expectation"] = {
-            "spread2yFf": estimateRateExpectation(ff, dgs2, dgs10).spread2yFf,
-            "direction": estimateRateExpectation(ff, dgs2, dgs10).direction,
-            "directionLabel": estimateRateExpectation(ff, dgs2, dgs10).directionLabel,
-            "strength": estimateRateExpectation(ff, dgs2, dgs10).strength,
+            "spread2yFf": exp.spread2yFf, "direction": exp.direction,
+            "directionLabel": exp.directionLabel, "strength": exp.strength,
         }
     else:
         result["expectation"] = None
 
-    # DKW 근사 분해 (US만)
+    # DKW 분해 (US만)
+    result["decomposition"] = None
     if market.upper() == "US" and dgs10 and data.get("t10yie") and data.get("dfii10"):
-        decomp = decomposeLongRate(
-            dgs10,
-            data["t10yie"],
-            data["dfii10"],
-            ff,  # type: ignore[arg-type]
-        )
+        decomp = decomposeLongRate(dgs10, data["t10yie"], data["dfii10"], ff)
         result["decomposition"] = {
-            "nominal": decomp.nominal,
-            "expectedInflation": decomp.expectedInflation,
-            "realRate": decomp.realRate,
-            "termPremium": decomp.termPremium,
+            "nominal": decomp.nominal, "expectedInflation": decomp.expectedInflation,
+            "realRate": decomp.realRate, "termPremium": decomp.termPremium,
         }
-    else:
-        result["decomposition"] = None
 
     # 고용 해석
     unrate = data.get("unrate")
     if unrate is not None:
         emp = interpretEmployment(unrate)
-        result["employment"] = {
-            "state": emp.state,
-            "stateLabel": emp.stateLabel,
-            "reasoning": list(emp.reasoning),
-        }
+        result["employment"] = {"state": emp.state, "stateLabel": emp.stateLabel, "reasoning": list(emp.reasoning)}
     else:
         result["employment"] = None
 
     # 물가 해석
     cpi = data.get("cpi_yoy")
     if cpi is not None:
-        inf = interpretInflation(
-            cpi,
-            data.get("core_cpi"),
-            data.get("t5yie"),
-            data.get("t10yie"),
-        )
-        result["inflation"] = {
-            "state": inf.state,
-            "stateLabel": inf.stateLabel,
-            "reasoning": list(inf.reasoning),
-        }
+        inf = interpretInflation(cpi, data.get("core_cpi"), data.get("t5yie"), data.get("t10yie"))
+        result["inflation"] = {"state": inf.state, "stateLabel": inf.stateLabel, "reasoning": list(inf.reasoning)}
     else:
         result["inflation"] = None
 
-    # ── Nelson-Siegel 수익률곡선 분해 (US만) ──
+    # Nelson-Siegel 수익률곡선 분해 (US만)
     result["yieldCurve"] = None
     if market.upper() == "US":
-        try:
-            from dartlab.gather import getDefaultGather
+        g = get_gather(as_of)
+        maturities = [1, 2, 3, 5, 7, 10, 20, 30]
+        series_ids = ["DGS1", "DGS2", "DGS3", "DGS5", "DGS7", "DGS10", "DGS20", "DGS30"]
+        yields_list, valid_mats = [], []
+        for mat, sid in zip(maturities, series_ids):
+            val = fetch_latest(g, sid)
+            if val is not None:
+                yields_list.append(val)
+                valid_mats.append(mat)
+        if len(valid_mats) >= 4:
+            ns = nelsonSiegel(valid_mats, yields_list)
+            result["yieldCurve"] = {
+                "beta0": ns.beta0, "beta1": ns.beta1, "beta2": ns.beta2,
+                "lambda": ns.lamb, "rmse": ns.rmse,
+                "interpretation": ns.interpretation, "description": ns.description,
+            }
 
-            g_ns = getDefaultGather()
-            maturities = [1, 2, 3, 5, 7, 10, 20, 30]
-            series_ids = ["DGS1", "DGS2", "DGS3", "DGS5", "DGS7", "DGS10", "DGS20", "DGS30"]
-            yields_list = []
-            valid_mats = []
-            for mat, sid in zip(maturities, series_ids):
-                df = g_ns.macro(sid)
-                if df is not None and len(df) > 0:
-                    vals = df.get_column("value").drop_nulls()
-                    if len(vals) > 0:
-                        yields_list.append(float(vals[-1]))
-                        valid_mats.append(mat)
-            if len(valid_mats) >= 4:
-                ns = nelsonSiegel(valid_mats, yields_list)
-                result["yieldCurve"] = {
-                    "beta0": ns.beta0,
-                    "beta1": ns.beta1,
-                    "beta2": ns.beta2,
-                    "lambda": ns.lamb,
-                    "rmse": ns.rmse,
-                    "interpretation": ns.interpretation,
-                    "description": ns.description,
-                }
-        except Exception:
-            pass
-
-    # ── BEI/실질금리 4분면 (US만) ──
+    # BEI/실질금리 4분면 (US만)
     result["realRateRegime"] = None
-    if market.upper() == "US":
-        try:
-            dfii10 = data.get("dfii10")
-            bei = data.get("t10yie")
-            if dfii10 is not None and bei is not None:
-                rr = realRateRegime(dfii10, bei)
-                result["realRateRegime"] = {
-                    "realRate": rr.realRate,
-                    "bei": rr.bei,
-                    "regime": rr.regime,
-                    "regimeLabel": rr.regimeLabel,
-                    "description": rr.description,
-                }
-        except Exception:
-            pass
+    if market.upper() == "US" and data.get("dfii10") is not None and data.get("t10yie") is not None:
+        rr = realRateRegime(data["dfii10"], data["t10yie"])
+        result["realRateRegime"] = {
+            "realRate": rr.realRate, "bei": rr.bei, "regime": rr.regime,
+            "regimeLabel": rr.regimeLabel, "description": rr.description,
+        }
 
     # 시계열
-    from dartlab.macro._helpers import recent_timeseries
-
-    ts: dict = {}
-    try:
-        from dartlab.gather import getDefaultGather
-
-        g = getDefaultGather()
-        for label, sid in [
-            ("fed_funds", "FEDFUNDS"),
-            ("dgs2", "DGS2"),
-            ("dgs10", "DGS10"),
-            ("bei", "T10YIE"),
-            ("cpi", "CPIAUCSL"),
-        ]:
-            ts[label] = recent_timeseries(g.macro(sid))
-    except Exception:
-        pass
-    result["timeseries"] = ts
+    g = get_gather(as_of)
+    result["timeseries"] = collect_timeseries(g, {
+        "fed_funds": "FEDFUNDS", "dgs2": "DGS2", "dgs10": "DGS10", "bei": "T10YIE", "cpi": "CPIAUCSL",
+    })
 
     return result

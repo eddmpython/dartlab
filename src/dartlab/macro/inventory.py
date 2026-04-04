@@ -12,50 +12,30 @@ from dartlab.core.finance.inventoryCycle import classifyInventoryPhase, ismBarom
 from dartlab.core.finance.sentiment import ismAssetAllocation
 
 
-def _fetch_ism_data(market: str) -> dict[str, float | None]:
+def _fetch_ism_data(market: str, as_of: str | None = None) -> dict[str, float | None]:
     """gather에서 ISM/재고 지표 수집."""
-    from dartlab.gather import getDefaultGather
+    from dartlab.macro._helpers import fetch_latest_with_prev, get_gather
 
-    g = getDefaultGather()
+    g = get_gather(as_of)
     data: dict[str, float | None] = {}
 
     if market.upper() == "US":
-        # ISM PMI
         for label, sid in [
-            ("ism_pmi", "NAPM"),
-            ("ism_new_orders", "NAPMNOI"),
-            ("ism_inventories", "NAPMII"),
-            ("new_orders", "NEWORDER"),
-            ("inventories", "BUSINV"),
+            ("ism_pmi", "NAPM"), ("ism_new_orders", "NAPMNOI"), ("ism_inventories", "NAPMII"),
+            ("new_orders", "NEWORDER"), ("inventories", "BUSINV"),
         ]:
-            try:
-                df = g.macro(sid)
-                if df is not None and len(df) > 0:
-                    vals = df.get_column("value").drop_nulls()
-                    if len(vals) > 0:
-                        data[label] = float(vals[-1])
-                        # 이전 기간 값도 저장 (모멘텀용)
-                        if len(vals) > 1:
-                            data[f"{label}_prev"] = float(vals[-2])
-            except Exception:
-                pass
+            val, prev = fetch_latest_with_prev(g, sid)
+            if val is not None:
+                data[label] = val
+            if prev is not None:
+                data[f"{label}_prev"] = prev
     else:
-        # KR: 광공업생산(출하 프록시) + BSI(재고판단 프록시)
-        # ECOS에서 출하/재고지수 직접 미제공(KOSIS 전용)
-        for label, sid in [
-            ("manufacturing", "MANUFACTURING"),  # 광공업생산 = 출하 프록시
-            ("bsi", "BSI_ALL"),  # BSI 전산업 = 재고판단 프록시 (50 기준)
-        ]:
-            try:
-                df = g.macro(sid)
-                if df is not None and len(df) > 0:
-                    vals = df.get_column("value").drop_nulls()
-                    if len(vals) > 0:
-                        data[label] = float(vals[-1])
-                        if len(vals) > 1:
-                            data[f"{label}_prev"] = float(vals[-2])
-            except Exception:
-                pass
+        for label, sid in [("manufacturing", "MANUFACTURING"), ("bsi", "BSI_ALL")]:
+            val, prev = fetch_latest_with_prev(g, sid)
+            if val is not None:
+                data[label] = val
+            if prev is not None:
+                data[f"{label}_prev"] = prev
 
     return data
 
@@ -66,7 +46,10 @@ def analyze_inventory(*, market: str = "US", as_of: str | None = None, overrides
     Returns:
         dict: inventoryPhase, ismBarometer, ismAllocation, timeseries
     """
-    data = _fetch_ism_data(market)
+    data = _fetch_ism_data(market, as_of=as_of)
+    if overrides:
+        from dartlab.macro._helpers import apply_overrides
+        data = apply_overrides(data, overrides)
     result: dict = {"market": market.upper()}
 
     if market.upper() == "US":
@@ -173,22 +156,12 @@ def analyze_inventory(*, market: str = "US", as_of: str | None = None, overrides
         result["ismBarometer"] = None
         result["ismAllocation"] = None
 
-    # 시계열
-    from dartlab.macro._helpers import recent_timeseries
+    from dartlab.macro._helpers import collect_timeseries, get_gather
 
-    ts: dict = {}
-    try:
-        from dartlab.gather import getDefaultGather
-
-        g = getDefaultGather()
-        if market.upper() == "US":
-            for label, sid in [("ism_pmi", "NAPM"), ("new_orders", "NAPMNOI"), ("inventories", "NAPMII")]:
-                ts[label] = recent_timeseries(g.macro(sid))
-        else:
-            for label, sid in [("manufacturing", "MANUFACTURING"), ("bsi", "BSI_ALL")]:
-                ts[label] = recent_timeseries(g.macro(sid))
-    except Exception:
-        pass
-    result["timeseries"] = ts
+    g = get_gather(as_of)
+    if market.upper() == "US":
+        result["timeseries"] = collect_timeseries(g, {"ism_pmi": "NAPM", "new_orders": "NAPMNOI", "inventories": "NAPMII"})
+    else:
+        result["timeseries"] = collect_timeseries(g, {"manufacturing": "MANUFACTURING", "bsi": "BSI_ALL"})
 
     return result

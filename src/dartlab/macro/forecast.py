@@ -16,61 +16,36 @@ from dartlab.core.finance.nowcast import gdpNowcast
 from dartlab.core.finance.regimeSwitching import clevelandProbit, conferenceBoardLEI, hamiltonRegime, sahmRule
 
 
-def _fetch_forecast_data(market: str) -> dict[str, float | list | None]:
+def _fetch_forecast_data(market: str, as_of: str | None = None) -> dict[str, float | list | None]:
     """gather에서 LEI 구성요소 + 프로빗 입력 수집."""
-    from dartlab.gather import getDefaultGather
+    from dartlab.macro._helpers import fetch_with_history, get_gather
 
-    g = getDefaultGather()
+    g = get_gather(as_of)
     data: dict[str, float | list | None] = {}
 
     if market.upper() == "US":
-        # T10Y3M (프로빗 입력)
         for label, sid in [
-            ("t10y3m", "T10Y3M"),
-            ("awhman", "AWHMAN"),
-            ("icsa", "ICSA"),
-            ("acogno", "ACOGNO"),
-            ("napmnoi", "NAPMNOI"),
-            ("acdgno", "ACDGNO"),
-            ("permit", "PERMIT"),
-            ("sp500", "SP500"),
-            ("m2real", "M2REAL"),
-            ("umcsent", "UMCSENT"),
-            ("fedfunds", "FEDFUNDS"),
-            ("dgs10", "DGS10"),
+            ("t10y3m", "T10Y3M"), ("awhman", "AWHMAN"), ("icsa", "ICSA"), ("acogno", "ACOGNO"),
+            ("napmnoi", "NAPMNOI"), ("acdgno", "ACDGNO"), ("permit", "PERMIT"), ("sp500", "SP500"),
+            ("m2real", "M2REAL"), ("umcsent", "UMCSENT"), ("fedfunds", "FEDFUNDS"), ("dgs10", "DGS10"),
         ]:
-            try:
-                df = g.macro(sid)
-                if df is not None and len(df) > 0:
-                    vals = df.get_column("value").drop_nulls().to_list()
-                    if vals:
-                        data[label] = float(vals[-1])
-                        if len(vals) > 1:
-                            data[f"{label}_prev"] = float(vals[-2])
-                        if len(vals) > 6:
-                            data[f"{label}_6m"] = float(vals[-7])
-            except Exception:
-                pass
+            hist = fetch_with_history(g, sid)
+            if "current" in hist:
+                data[label] = hist["current"]
+            if "prev" in hist:
+                data[f"{label}_prev"] = hist["prev"]
+            if "6m" in hist:
+                data[f"{label}_6m"] = hist["6m"]
 
     elif market.upper() == "KR":
-        # 한국: CLI + CCI + 후행
-        for label, sid in [
-            ("cli", "CLI"),
-            ("cci", "CCI"),
-            ("cli_lag", "CLI_LAG"),
-        ]:
-            try:
-                df = g.macro(sid)
-                if df is not None and len(df) > 0:
-                    vals = df.get_column("value").drop_nulls().to_list()
-                    if vals:
-                        data[label] = float(vals[-1])
-                        if len(vals) > 1:
-                            data[f"{label}_prev"] = float(vals[-2])
-                        if len(vals) > 6:
-                            data[f"{label}_6m"] = float(vals[-7])
-            except Exception:
-                pass
+        for label, sid in [("cli", "CLI"), ("cci", "CCI"), ("cli_lag", "CLI_LAG")]:
+            hist = fetch_with_history(g, sid)
+            if "current" in hist:
+                data[label] = hist["current"]
+            if "prev" in hist:
+                data[f"{label}_prev"] = hist["prev"]
+            if "6m" in hist:
+                data[f"{label}_6m"] = hist["6m"]
 
     return data
 
@@ -88,7 +63,10 @@ def analyze_forecast(*, market: str = "US", as_of: str | None = None, overrides:
     Returns:
         dict: recessionProb, lei, growthMomentum, timeseries
     """
-    data = _fetch_forecast_data(market)
+    data = _fetch_forecast_data(market, as_of=as_of)
+    if overrides:
+        from dartlab.macro._helpers import apply_overrides
+        data = apply_overrides(data, overrides)
     result: dict = {"market": market.upper()}
 
     if market.upper() == "US":
@@ -200,107 +178,60 @@ def analyze_forecast(*, market: str = "US", as_of: str | None = None, overrides:
         result["lei"] = kr_forecast if kr_forecast else None
 
     # ── Sahm Rule ──
+    from dartlab.macro._helpers import collect_timeseries, fetch_series_list, get_gather
+
+    g = get_gather(as_of)
     result["sahmRule"] = None
     if market.upper() == "US":
-        try:
-            from dartlab.gather import getDefaultGather as _gs
-
-            gs = _gs()
-            ur_df = gs.macro("UNRATE")
-            if ur_df is not None and len(ur_df) > 0:
-                ur_vals = ur_df.get_column("value").drop_nulls().to_list()
-                if len(ur_vals) >= 15:
-                    sr = sahmRule([float(v) for v in ur_vals])
-                    result["sahmRule"] = {
-                        "value": sr.value,
-                        "triggered": sr.triggered,
-                        "zone": sr.zone,
-                        "zoneLabel": sr.zoneLabel,
-                        "description": sr.description,
-                    }
-        except Exception:
-            pass
+        ur_vals = fetch_series_list(g, "UNRATE")
+        if ur_vals and len(ur_vals) >= 15:
+            sr = sahmRule(ur_vals)
+            result["sahmRule"] = {
+                "value": sr.value, "triggered": sr.triggered,
+                "zone": sr.zone, "zoneLabel": sr.zoneLabel, "description": sr.description,
+            }
 
     # ── Hamilton Regime Switching ──
-    # GDP 성장률 시계열이 있으면 확률적 국면 판별
     result["hamiltonRegime"] = None
-    try:
-        from dartlab.gather import getDefaultGather as _g2
-
-        g2 = _g2()
-        gdp_id = "A191RL1Q225SBEA" if market.upper() == "US" else "GROWTH"
-        gdp_df = g2.macro(gdp_id)
-        if gdp_df is not None and len(gdp_df) > 0:
-            gdp_vals = gdp_df.get_column("value").drop_nulls().to_list()
-            if len(gdp_vals) >= 20:
-                hr = hamiltonRegime([float(v) for v in gdp_vals], maxIter=100)
-                result["hamiltonRegime"] = {
-                    "currentRegime": hr.regimeLabels[hr.currentRegime],
-                    "currentProb": hr.currentProb,
-                    "params": hr.params,
-                    "converged": hr.converged,
-                    "iterations": hr.iterations,
-                    "contractionProb": round(float(hr.smoothedProbs[-1, 1]), 4),
-                    "description": (
-                        f"Hamilton RS: {hr.regimeLabels[hr.currentRegime]} "
-                        f"({hr.currentProb:.1%}), "
-                        f"침체확률 {hr.smoothedProbs[-1, 1]:.1%}"
-                    ),
-                }
-    except Exception:
-        pass
+    gdp_id = "A191RL1Q225SBEA" if market.upper() == "US" else "GROWTH"
+    gdp_vals = fetch_series_list(g, gdp_id)
+    if gdp_vals and len(gdp_vals) >= 20:
+        hr = hamiltonRegime(gdp_vals, maxIter=100)
+        result["hamiltonRegime"] = {
+            "currentRegime": hr.regimeLabels[hr.currentRegime],
+            "currentProb": hr.currentProb,
+            "params": hr.params,
+            "converged": hr.converged,
+            "iterations": hr.iterations,
+            "contractionProb": round(float(hr.smoothedProbs[-1, 1]), 4),
+            "description": (
+                f"Hamilton RS: {hr.regimeLabels[hr.currentRegime]} "
+                f"({hr.currentProb:.1%}), "
+                f"침체확률 {hr.smoothedProbs[-1, 1]:.1%}"
+            ),
+        }
 
     # ── GDP Nowcasting (DFM) ──
-    # 여러 거시지표의 공통 팩터로 GDP 실시간 추정
     result["nowcast"] = None
     if market.upper() == "US":
-        try:
-            from dartlab.gather import getDefaultGather as _g3
-
-            g3 = _g3()
-            # Nowcast 입력: 핵심 월간 지표 + GDP(분기)
-            indicator_ids = ["INDPRO", "PAYEMS", "RSAFS", "ICSA", "PERMIT", "SP500"]
-            series_list = []
-            min_len = 999
-            for sid in indicator_ids:
-                df = g3.macro(sid)
-                if df is not None and len(df) > 0:
-                    vals = df.get_column("value").drop_nulls().to_list()
-                    series_list.append([float(v) for v in vals])
-                    min_len = min(min_len, len(vals))
-                else:
-                    series_list.append(None)
-
-            # 최소 공통 길이로 정렬
-            if min_len >= 30 and all(s is not None for s in series_list):
-                indicators_arr = np.column_stack([s[-min_len:] for s in series_list])
+        indicator_ids = ["INDPRO", "PAYEMS", "RSAFS", "ICSA", "PERMIT", "SP500"]
+        series_list = [fetch_series_list(g, sid) for sid in indicator_ids]
+        valid = [s for s in series_list if s is not None]
+        if len(valid) == len(indicator_ids):
+            min_len = min(len(s) for s in valid)
+            if min_len >= 30:
+                indicators_arr = np.column_stack([s[-min_len:] for s in valid])
                 nc = gdpNowcast(indicators_arr, nFactors=1, arOrder=1, maxIter=30)
                 result["nowcast"] = {
-                    "gdpEstimate": nc.gdpEstimate,
-                    "confidence": nc.confidence,
-                    "factorCurrent": nc.factorCurrent,
-                    "converged": nc.converged,
+                    "gdpEstimate": nc.gdpEstimate, "confidence": nc.confidence,
+                    "factorCurrent": nc.factorCurrent, "converged": nc.converged,
                     "description": nc.description,
                 }
-        except Exception:
-            pass
 
     # 시계열
-    from dartlab.macro._helpers import recent_timeseries
-
-    ts: dict = {}
-    try:
-        from dartlab.gather import getDefaultGather
-
-        g = getDefaultGather()
-        if market.upper() == "US":
-            for label, sid in [("t10y3m", "T10Y3M"), ("sp500", "SP500"), ("permit", "PERMIT")]:
-                ts[label] = recent_timeseries(g.macro(sid))
-        else:
-            for label, sid in [("cli", "CLI"), ("cci", "CCI")]:
-                ts[label] = recent_timeseries(g.macro(sid))
-    except Exception:
-        pass
-    result["timeseries"] = ts
+    if market.upper() == "US":
+        result["timeseries"] = collect_timeseries(g, {"t10y3m": "T10Y3M", "sp500": "SP500", "permit": "PERMIT"})
+    else:
+        result["timeseries"] = collect_timeseries(g, {"cli": "CLI", "cci": "CCI"})
 
     return result
