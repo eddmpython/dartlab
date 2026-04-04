@@ -206,6 +206,9 @@ def _calcCHSAdjustment(company, baseScore: float) -> dict | None:
         # 안전장치: BB 이하(score>40)이면 CHS 상향 제한
         if baseScore > 40:
             adj = max(adj, -3.0)
+        # 안전장치: AA 이상(score<10)이면 CHS 하향 최대 +1점 (우량 기업 보호)
+        if baseScore < 10 and adj > 0:
+            adj = min(adj, 1.0)
 
         return {
             "adjustedScore": round(baseScore + adj, 2),
@@ -351,6 +354,58 @@ def _calcNotchAdjustment(
 
     reasons = [r for _, r in notches]
     return {"totalNotch": totalNotch, "reasons": reasons}
+
+
+def _explainDivergence(
+    grade: str,
+    score: float,
+    axes: list,
+    latest: dict,
+    chsResult: dict | None,
+    captive: bool,
+    holding: bool,
+) -> list[str]:
+    """등급 결정 근거 + 신평사 등급과의 괴리 원인 자동 설명."""
+    explanations: list[str] = []
+
+    # 1. 가장 나쁜 축 식별
+    validAxes = [a for a in axes if a.get("score") is not None]
+    if validAxes:
+        worst = max(validAxes, key=lambda a: a["score"])
+        if worst["score"] > 30:
+            explanations.append(f"{worst['name']} 축이 {worst['score']:.0f}점으로 등급 하방 압력")
+
+    # 2. FCF 음수 = 투자 사이클
+    fcf = latest.get("fcf")
+    ocf = latest.get("ocf")
+    if fcf is not None and fcf < 0:
+        if ocf is not None and ocf > 0:
+            explanations.append("FCF 음수(OCF 양수) — 대규모 투자(CAPEX) 사이클 중. 투자와 부실을 정량으로 구분 불가")
+        else:
+            explanations.append("FCF·OCF 모두 음수 — 현금흐름 악화 신호")
+
+    # 3. CHS 하향 영향
+    if chsResult and chsResult.get("adjustment", 0) > 1:
+        explanations.append(
+            f"주가 기반 CHS 모델이 +{chsResult['adjustment']:.1f}점 하향 (PD {chsResult['chsPd']:.2%}). "
+            "최근 주가 하락이 반영된 결과"
+        )
+
+    # 4. D/EBITDA 자본집약
+    de = latest.get("debtToEbitda") or 0
+    if de > 10:
+        explanations.append(f"D/EBITDA {de:.1f}x — 자본집약 업종 구조적 특성 (CAPEX/리스 부채)")
+
+    # 5. 캡티브/지주 연결 왜곡
+    if captive:
+        explanations.append("캡티브 금융자회사 연결 — 연결 차입금에 금융자회사 대출 원금 포함")
+    if holding:
+        explanations.append("지주사 연결 구조 — 자회사 부채가 연결 레버리지에 반영")
+
+    # 6. 정량 한계 안내
+    explanations.append("dartlab dCR은 공시 정량 데이터 기반. 시장 지위, 경영진, 그룹 지원 등 정성 요소는 미반영")
+
+    return explanations
 
 
 def _isCyclical(sector) -> bool:
@@ -616,7 +671,10 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         "latestPeriod": latest.get("period"),
         "chsAdjustment": chsResult,
         "notchAdjustment": notchAdj if notchAdj["totalNotch"] != 0 else None,
-        "methodologyVersion": "v3.0",
+        "divergenceExplanation": _explainDivergence(
+            grade, overall, axes, latest, chsResult, captive, holding,
+        ),
+        "methodologyVersion": "v4.0",
         "axes": [
             {
                 "name": a["name"],
