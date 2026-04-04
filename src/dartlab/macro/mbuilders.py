@@ -26,6 +26,15 @@ from .charts import (
     spec_recession_prob,
     spec_trade_tot,
 )
+from .narrative import (
+    _narrate_corporate,
+    _narrate_crisis,
+    _narrate_cycle,
+    _narrate_fci,
+    _narrate_rates,
+    _narrate_trade,
+    detect_conflicts,
+)
 
 
 # ══════════════════════════════════════
@@ -71,10 +80,12 @@ def build_dashboard_blocks(summary: dict) -> list:
     if tot.get("directionLabel"):
         signals.append(("교역", tot["directionLabel"]))
 
-    # Nowcast (있으면)
+    # Nowcast (이상값 검증)
+    from .narrative import _safe
     nc = forecast.get("nowcast") or {}
-    if nc.get("gdpEstimate") is not None:
-        signals.append(("GDP추정", f"{nc['gdpEstimate']:.1f}%"))
+    nc_est = _safe(nc.get("gdpEstimate"), "gdpEstimate")
+    if nc_est is not None:
+        signals.append(("GDP추정", f"{nc_est:.1f}%"))
 
     blocks.append(MetricBlock(signals))
 
@@ -83,6 +94,12 @@ def build_dashboard_blocks(summary: dict) -> list:
     if contributions:
         parts = sorted(contributions.items(), key=lambda x: -abs(x[1]))
         blocks.append(TextBlock("기여도: " + ", ".join(f"{k} {v:+.1f}" for k, v in parts)))
+
+    # FCI 서사
+    fci_data = liq.get("fci") or {}
+    fci_text = _narrate_fci(fci_data)
+    if fci_text:
+        blocks.append(TextBlock(fci_text))
 
     # FCI 차트
     fci_chart = spec_fci_timeline(liq)
@@ -108,13 +125,16 @@ def build_phase_blocks(summary: dict) -> list:
 
     # ── 사이클 ──
     blocks.append(HeadingBlock("경제 사이클", level=2))
+
+    # 서사 먼저
+    cycle_text = _narrate_cycle(cycle)
+    if cycle_text:
+        blocks.append(TextBlock(cycle_text))
+
     blocks.append(MetricBlock([
         ("국면", cycle.get("phaseLabel", "—")),
         ("신뢰도", str(cycle.get("confidence", "—"))),
     ]))
-    signals = cycle.get("signals") or []
-    if signals:
-        blocks.append(TextBlock("근거: " + " / ".join(signals[:4])))
 
     sector = cycle.get("sectorStrategy")
     if sector:
@@ -131,6 +151,11 @@ def build_phase_blocks(summary: dict) -> list:
 
     # ── 금리 ──
     blocks.append(HeadingBlock("금리 환경", level=2))
+
+    rates_text = _narrate_rates(rates)
+    if rates_text:
+        blocks.append(TextBlock(rates_text))
+
     outlook = rates.get("outlook") or {}
     expect = rates.get("expectation") or {}
     rate_m = [("방향", outlook.get("direction", "—"))]
@@ -285,6 +310,11 @@ def build_causation_blocks(summary: dict) -> list:
     liquidity = summary.get("liquidity") or {}
     corporate = summary.get("corporate") or {}
 
+    # ── 위기 프레임워크 서사 ──
+    crisis_text = _narrate_crisis(crisis)
+    if crisis_text:
+        blocks.append(TextBlock(crisis_text))
+
     # ── 신용 환경 ──
     blocks.append(HeadingBlock("신용 환경", level=2))
 
@@ -393,6 +423,10 @@ def build_causation_blocks(summary: dict) -> list:
     if ec or pr or lc:
         blocks.append(HeadingBlock("기업 실태 (바텀업)", level=2))
 
+        corp_text = _narrate_corporate(corporate)
+        if corp_text:
+            blocks.append(TextBlock(corp_text))
+
         if ec:
             blocks.append(MetricBlock([
                 ("이익사이클", ec.get("currentLabel", "—")),
@@ -476,12 +510,15 @@ def build_outlook_blocks(summary: dict) -> list:
             lei_m.append(("6M 연율", f"{lei['mom6m']:+.2f}%"))
         blocks.append(MetricBlock(lei_m))
 
-    # Nowcast
+    # Nowcast (이상값 검증)
     if nc:
-        blocks.append(MetricBlock([
-            ("GDP Nowcast", f"{nc.get('gdpEstimate', 0):.2f}%"),
-            ("신뢰도", nc.get("confidence", "—")),
-        ]))
+        from .narrative import _safe
+        gdp_est = _safe(nc.get("gdpEstimate"), "gdpEstimate")
+        if gdp_est is not None:
+            blocks.append(MetricBlock([
+                ("GDP Nowcast", f"{gdp_est:.2f}%"),
+                ("신뢰도", nc.get("confidence", "—")),
+            ]))
 
     # 침체확률 차트
     rc_chart = spec_recession_prob(forecast)
@@ -496,7 +533,18 @@ def build_outlook_blocks(summary: dict) -> list:
             ("종합", f"{dashboard.get('composite', 0) * 100:.1f}% ({dashboard.get('zoneLabel', '')})"),
         ] + [(k, f"{v * 100:.1f}%") for k, v in dash_comps.items()]))
 
+    # ── 교차 분석: 모순/확인 ──
+    conflicts = detect_conflicts(summary)
+    if conflicts:
+        blocks.append(HeadingBlock("신호 교차 분석", level=2))
+        for c in conflicts:
+            blocks.append(TextBlock(c))
+
     # ── 교역 전망 (KR) ──
+    trade_text = _narrate_trade(trade)
+    if trade_text:
+        blocks.append(TextBlock(trade_text))
+
     tot = trade.get("termsOfTrade")
     if tot:
         blocks.append(HeadingBlock("교역 전망", level=2))
