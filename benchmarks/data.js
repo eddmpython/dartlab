@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775264146724,
+  "lastUpdate": 1775264870773,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -8874,6 +8874,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 1.4061742093542386e-7",
             "extra": "mean: 642.4585288577713 nsec\nrounds: 150671"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "ca04b718570e818eb8ec5a50b3a62da0108fe001",
+          "message": "feat: 금융 유동0% + 매출/시총 notch 강화 + A범위 cap 3→4\n\nTrack B 유동성 가중치 5→0% (은행 현금/자산 무의미).\n매출 50조+ notch 2→3, 시총 30조+ notch 2→3.\nA범위 sub-cap 3→4 (대기업 추가 1 notch 확보).",
+          "timestamp": "2026-04-04T10:06:52+09:00",
+          "tree_id": "f85eb8bd530475aeb2e595456b429a065221064f",
+          "url": "https://github.com/eddmpython/dartlab/commit/ca04b718570e818eb8ec5a50b3a62da0108fe001"
+        },
+        "date": 1775264869715,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 533591.3359194624,
+            "unit": "iter/sec",
+            "range": "stddev: 5.190203343833278e-7",
+            "extra": "mean: 1.8740933982311418 usec\nrounds: 68042"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 666075.8889599664,
+            "unit": "iter/sec",
+            "range": "stddev: 5.282503391893207e-7",
+            "extra": "mean: 1.5013304288216078 usec\nrounds: 163079"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 459552.5541273089,
+            "unit": "iter/sec",
+            "range": "stddev: 9.418694078131082e-7",
+            "extra": "mean: 2.1760296858734725 usec\nrounds: 142593"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 614813.4884490323,
+            "unit": "iter/sec",
+            "range": "stddev: 8.231246468147171e-7",
+            "extra": "mean: 1.6265095330336097 usec\nrounds: 130651"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 767183.3235497389,
+            "unit": "iter/sec",
+            "range": "stddev: 6.85074599894918e-7",
+            "extra": "mean: 1.3034694176784551 usec\nrounds: 156937"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 263558.96876543754,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001115040997100971",
+            "extra": "mean: 3.794217304325473 usec\nrounds: 67486"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7335870.136679389,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2487943460019713e-8",
+            "extra": "mean: 136.316480713037 nsec\nrounds: 74427"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8774807.55025009,
+            "unit": "iter/sec",
+            "range": "stddev: 1.0848166261488212e-8",
+            "extra": "mean: 113.96261334204407 nsec\nrounds: 84589"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1453941.0519500233,
+            "unit": "iter/sec",
+            "range": "stddev: 2.796218375235372e-7",
+            "extra": "mean: 687.7857934190672 nsec\nrounds: 172385"
           }
         ]
       }
