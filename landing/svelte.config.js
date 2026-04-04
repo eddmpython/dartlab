@@ -32,8 +32,10 @@ const config = {
 			rehypePlugins: [rehypeBaseUrl],
 			highlight: {
 				highlighter: (code, lang) => {
+					const supported = highlighter.getLoadedLanguages();
+					const safeLang = supported.includes(lang) ? lang : 'text';
 					const html = highlighter.codeToHtml(code, {
-						lang: lang || 'text',
+						lang: safeLang,
 						theme: 'github-dark'
 					});
 					return `{@html \`${html.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`}`;
