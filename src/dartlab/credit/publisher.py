@@ -275,6 +275,44 @@ def _fmtTril(value: float | None) -> str:
     return f"{sign}{absV:,.0f}"
 
 
+def _renderContributionWaterfall(axes: list, overallScore: float, grade: str) -> list[str]:
+    """축별 등급 기여도 워터폴 테이블."""
+    if not axes:
+        return []
+    lines = ["### 등급 결정 요인 분해", ""]
+    lines.append("| 축 | 점수 | 가중치 | 기여도 | 비고 |")
+    lines.append("|------|-----:|------:|------:|------|")
+
+    maxContrib = max((a.get("contribution", 0) for a in axes), default=0)
+
+    for a in axes:
+        score = a.get("score")
+        if score is None:
+            continue
+        weight = a.get("weight", 0)
+        contrib = a.get("contribution", 0)
+        name = a.get("name", "")
+
+        # 비고: 점수 수준 판정 + 최대 기여자 표시
+        if score <= 10:
+            note = "우수"
+        elif score <= 20:
+            note = "양호"
+        elif score <= 35:
+            note = "보통"
+        else:
+            note = "주의"
+
+        if contrib == maxContrib and contrib > 1:
+            note += " ← 등급 하방 압력"
+
+        lines.append(f"| {name} | {score:.0f} | {weight}% | {contrib:.1f}점 | {note} |")
+
+    lines.append(f"| **합계** | | | **{overallScore:.1f}점** | **→ {grade}** |")
+    lines.append("")
+    return lines
+
+
 def _renderHealthBar(healthScore: float) -> str:
     """건전도 ASCII 바."""
     barLen = 20
@@ -840,6 +878,14 @@ def generateReportMarkdown(
     if causalChain:
         lines.append(f"**{causalChain}**")
         lines.append("")
+
+    # 등급 결정 요인 분해 워터폴 테이블
+    waterfallLines = _renderContributionWaterfall(
+        result.get("axes", []),
+        result.get("score", 0),
+        result.get("grade", ""),
+    )
+    lines.extend(waterfallLines)
 
     strengths = [n for n in narratives if n.severity == "strong"]
     weaknesses = [n for n in narratives if n.severity in ("weak", "critical")]

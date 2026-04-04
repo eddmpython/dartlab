@@ -766,6 +766,12 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         {"name": "공시리스크", "score": axis7, "weight": w[6], "metrics": axis7_scores},
     ]
 
+    # 축별 등급 기여도 계산
+    for a in axes:
+        score = a.get("score") or 0
+        weight = a.get("weight", 0)
+        a["contribution"] = round(score * weight, 2)
+
     currentScore = weightedScore([{"score": a["score"], "weight": a["weight"]} for a in axes])
 
     # ── 시계열 안정화 (3개년 가중이동평균) ──
@@ -817,6 +823,7 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
                 "name": a["name"],
                 "score": a["score"],
                 "weight": round(a["weight"] * 100),
+                "contribution": a.get("contribution", 0),
                 "metrics": [{"name": n, "score": s} for n, s in a["metrics"] if s is not None],
             }
             for a in axes
@@ -1162,6 +1169,12 @@ def _evaluateFinancial(
         {"name": "사업안정성", "score": s5, "weight": w[4], "metrics": ax5},
     ]
 
+    # 축별 등급 기여도 계산
+    for a in axes:
+        score = a.get("score") or 0
+        weight = a.get("weight", 0)
+        a["contribution"] = round(score * weight, 2)
+
     currentScore = weightedScore([{"score": a["score"], "weight": a["weight"]} for a in axes])
 
     # 시계열 안정화 (간이 — 과거 ROA/자본비율 추세)
@@ -1211,6 +1224,7 @@ def _evaluateFinancial(
                 "name": a["name"],
                 "score": a["score"],
                 "weight": round(a["weight"] * 100),
+                "contribution": a.get("contribution", 0),
                 "metrics": [{"name": n, "score": s} for n, s in a["metrics"] if s is not None],
             }
             for a in axes
