@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775290421322,
+  "lastUpdate": 1775291814977,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -10962,6 +10962,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 4.176376537085051e-7",
             "extra": "mean: 729.7100776421465 nsec\nrounds: 173612"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "f6f0e7eecb2c5ffddf18ce706a404c90b3746282",
+          "message": "feat: 보고서 서사 일관성 4건 수정 — 캡티브 맥락 + Notch 설명 + F-Score + 중복 해소\n\nnarrative.py: buildNarratives에 captive/holding/separateMetrics 전달.\n축별 서사에 캡티브 맥락 자동 삽입 (별도 부채비율/D/EBITDA/OCF 왜곡).\npublisher.py: Executive Summary 요약화(첫 2문장), 등급 근거 전문.\nNotch 조정: '정량 BBB+ → -6 notch → AA+' 연결 설명 자동 생성.\nF-Score: 캡티브 연결 왜곡 가능성 명시.",
+          "timestamp": "2026-04-04T17:35:48+09:00",
+          "tree_id": "2185b4f6e47a7bd015541ca7ee9e3b8fd95880d8",
+          "url": "https://github.com/eddmpython/dartlab/commit/f6f0e7eecb2c5ffddf18ce706a404c90b3746282"
+        },
+        "date": 1775291814461,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 537745.6300751186,
+            "unit": "iter/sec",
+            "range": "stddev: 5.114673440129174e-7",
+            "extra": "mean: 1.8596152977762148 usec\nrounds: 57564"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 675843.7220142852,
+            "unit": "iter/sec",
+            "range": "stddev: 4.7614251399572454e-7",
+            "extra": "mean: 1.4796320028239653 usec\nrounds: 121433"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 528247.3584175862,
+            "unit": "iter/sec",
+            "range": "stddev: 5.318185155593835e-7",
+            "extra": "mean: 1.8930525331836823 usec\nrounds: 115527"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 690842.0021411254,
+            "unit": "iter/sec",
+            "range": "stddev: 3.996533741270363e-7",
+            "extra": "mean: 1.44750897730697 usec\nrounds: 148987"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 819053.5007602803,
+            "unit": "iter/sec",
+            "range": "stddev: 3.973464028197781e-7",
+            "extra": "mean: 1.2209214649247668 usec\nrounds: 194932"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 268350.730160191,
+            "unit": "iter/sec",
+            "range": "stddev: 9.309814910510701e-7",
+            "extra": "mean: 3.726466476923888 usec\nrounds: 50234"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7376433.64376996,
+            "unit": "iter/sec",
+            "range": "stddev: 1.3089383662198396e-8",
+            "extra": "mean: 135.56686717362217 nsec\nrounds: 72749"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8824502.740285821,
+            "unit": "iter/sec",
+            "range": "stddev: 2.463722750195702e-8",
+            "extra": "mean: 113.32083284815327 nsec\nrounds: 85970"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1461677.2980974528,
+            "unit": "iter/sec",
+            "range": "stddev: 2.62098316432069e-7",
+            "extra": "mean: 684.1455369811238 nsec\nrounds: 180181"
           }
         ]
       }
