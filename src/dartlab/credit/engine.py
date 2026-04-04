@@ -19,6 +19,68 @@ from dartlab.credit.scorecard import (
 )
 from dartlab.credit.thresholds import getSectorLabel, getThresholds
 
+# ═══════════════════════════════════════════════════════════
+# 설정 — 모든 매직 넘버를 여기서 관리
+# ═══════════════════════════════════════════════════════════
+
+_CONFIG = {
+    # Notch Adjustment
+    "notch_gate_score": 10,
+    "notch_a_range_score": 19,
+    "notch_a_range_cap": 4,
+    "notch_cap_large": 7,
+    "notch_cap_medium": 4,
+    "notch_cap_small": 2,
+    "revenue_large": 10e12,
+    "revenue_mega": 50e12,
+    "mktcap_top30": 30e12,
+    "mktcap_top100": 10e12,
+    "public_corps": {"한국전력", "한국가스공사", "한국수력원자력", "한국도로공사", "한국토지주택공사"},
+    "holding_keywords": ("지주", "홀딩스", "Holdings"),
+    "holding_investment_ratio": 0.5,
+    # CHS
+    "chs_safe_max_down": 1.0,
+    "chs_weak_max_up": -3.0,
+    # 시계열 안정화
+    "ts_weights": (0.60, 0.25, 0.15),
+    # 축1 압축
+    "axis1_compress_threshold": 20,
+    "axis1_compress_ratio": 0.6,
+    # OFS 블렌딩
+    "ofs_advantage_threshold": 10,
+    "ofs_strong_weight": 0.65,
+    "ofs_default_weight": 0.50,
+}
+
+_WEIGHTS = {
+    "default": [0.25, 0.20, 0.15, 0.15, 0.10, 0.10, 0.05],
+    "captive": [0.30, 0.15, 0.15, 0.15, 0.10, 0.10, 0.05],
+    "holding": [0.15, 0.25, 0.15, 0.15, 0.15, 0.10, 0.05],
+    "financial": [0.35, 0.35, 0.15, 0.00, 0.15],
+}
+
+_CHS_PD_BRACKETS = [
+    (0.001, 3),   # AAA 급
+    (0.01, 10),   # AA 급
+    (0.05, 25),   # A 급
+    (0.1, 40),    # BBB 급
+    (0.3, 60),    # BB 급
+    (1.0, 80),    # B 이하
+]
+
+
+def _chsPdToScore(pd: float) -> int:
+    """CHS 부도확률 → 0-100 스코어 매핑."""
+    for threshold, score in _CHS_PD_BRACKETS:
+        if pd <= threshold:
+            return score
+    return 80
+
+
+# ═══════════════════════════════════════════════════════════
+# 유틸리티
+# ═══════════════════════════════════════════════════════════
+
 
 def _getSectorInfo(company):
     """company.sector에서 (Sector, IndustryGroup) 추출."""
@@ -47,10 +109,10 @@ def _isHolding(company) -> bool:
     """지주사 판별 — 이름 + 재무 구조 복합 기준.
 
     1. 이름에 "지주"/"홀딩스"/"Holdings" 포함
-    2. 관계기업투자자산/총자산 > 40% (재무 구조 기반)
+    2. 관계기업투자자산/총자산 > holding_investment_ratio (재무 구조 기반)
     """
     name = getattr(company, "corpName", "") or ""
-    if any(k in name for k in ("지주", "홀딩스", "Holdings")):
+    if any(k in name for k in _CONFIG["holding_keywords"]):
         return True
     # 재무 구조 기반: 관계기업 투자자산 비중
     try:
@@ -69,12 +131,58 @@ def _isHolding(company) -> bool:
                     ta_val = ta.get(p)
                     if inv_val and ta_val and ta_val > 0:
                         ratio = inv_val / ta_val
-                        if ratio > 0.5:
+                        if ratio > _CONFIG["holding_investment_ratio"]:
                             return True
                         break
     except (TypeError, ValueError, KeyError, AttributeError):
         pass
     return False
+
+
+def _isCyclical(sector) -> bool:
+    if sector is None:
+        return False
+    try:
+        from dartlab.core.sector.types import Sector
+
+        return sector in (Sector.ENERGY, Sector.MATERIALS)
+    except ImportError:
+        return False
+
+
+def _isCaptiveFinance(totalBorrowing: float, ebitda: float | None, isFinancial: bool) -> bool:
+    """캡티브 금융 감지 — D/EBITDA > 15."""
+    if isFinancial or ebitda is None or ebitda <= 0 or totalBorrowing <= 0:
+        return False
+    return totalBorrowing / ebitda > 15
+
+
+def _isCaptiveByOFS(company, consolidatedBorrowing: float) -> bool:
+    """별도재무제표 기반 캡티브 금융 감지.
+
+    연결 차입금 / 별도 차입금 > 10이면 캡티브 금융자회사 존재.
+    """
+    if consolidatedBorrowing <= 0:
+        return False
+    try:
+        from dartlab.credit.metrics import calcSeparateMetrics
+
+        sep = calcSeparateMetrics(company)
+        if sep is None:
+            return False
+        sepBorrowing = sep.get("totalBorrowing", 0) or 0
+        if sepBorrowing <= 0:
+            # 별도 차입금 0이면 전부 자회사 차입금
+            return consolidatedBorrowing > 1e12  # 1조 이상이면 의미 있음
+        ratio = consolidatedBorrowing / sepBorrowing
+        return ratio > 10
+    except (ImportError, TypeError, ValueError, AttributeError):
+        return False
+
+
+# ═══════════════════════════════════════════════════════════
+# CHS 부도확률 보정
+# ═══════════════════════════════════════════════════════════
 
 
 def _calcCHSAdjustment(company, baseScore: float) -> dict | None:
@@ -180,18 +288,7 @@ def _calcCHSAdjustment(company, baseScore: float) -> dict | None:
 
         # CHS PD → 점수 매핑 (0-100 스케일)
         chsPd = chsResult.probability
-        if chsPd <= 0.001:
-            chsScore = 3  # AAA 급
-        elif chsPd <= 0.01:
-            chsScore = 10  # AA 급
-        elif chsPd <= 0.05:
-            chsScore = 25  # A 급
-        elif chsPd <= 0.1:
-            chsScore = 40  # BBB 급
-        elif chsPd <= 0.3:
-            chsScore = 60  # BB 급
-        else:
-            chsScore = 80  # B 이하
+        chsScore = _chsPdToScore(chsPd)
 
         # PD 기반 비대칭 조정 — 안전 기업 상향, 위험 기업 하향
         diff = chsScore - baseScore
@@ -208,7 +305,7 @@ def _calcCHSAdjustment(company, baseScore: float) -> dict | None:
             adj = max(adj, -3.0)
         # 안전장치: AA 이상(score<10)이면 CHS 하향 최대 +1점 (우량 기업 보호)
         if baseScore < 10 and adj > 0:
-            adj = min(adj, 1.0)
+            adj = min(adj, _CONFIG["chs_safe_max_down"])
 
         return {
             "adjustedScore": round(baseScore + adj, 2),
@@ -220,37 +317,106 @@ def _calcCHSAdjustment(company, baseScore: float) -> dict | None:
         return None
 
 
-def _isCaptiveFinance(totalBorrowing: float, ebitda: float | None, isFinancial: bool) -> bool:
-    """캡티브 금융 감지 — D/EBITDA > 15."""
-    if isFinancial or ebitda is None or ebitda <= 0 or totalBorrowing <= 0:
-        return False
-    return totalBorrowing / ebitda > 15
+# ═══════════════════════════════════════════════════════════
+# Notch Adjustment — 개별 규칙
+# ═══════════════════════════════════════════════════════════
 
 
-def _isCaptiveByOFS(company, consolidatedBorrowing: float) -> bool:
-    """별도재무제표 기반 캡티브 금융 감지.
+def _notchForRevenue(latest, **_) -> list[tuple[int, str]]:
+    """규칙 1: 기업 규모 (매출 기준)."""
+    revenue = latest.get("revenue") or 0
+    if revenue > _CONFIG["revenue_mega"]:
+        return [(3, f"대형기업 (매출 {revenue / 1e12:.0f}조)")]
+    if revenue > _CONFIG["revenue_large"]:
+        return [(1, f"중대형기업 (매출 {revenue / 1e12:.0f}조)")]
+    return []
 
-    연결 차입금 / 별도 차입금 > 10이면 캡티브 금융자회사 존재.
-    """
-    if consolidatedBorrowing <= 0:
-        return False
+
+def _notchForPublicCorp(company, **_) -> list[tuple[int, str]]:
+    """규칙 2: 공기업/정부 보호."""
+    corpName = getattr(company, "corpName", "") or ""
+    if any(k in corpName for k in _CONFIG["public_corps"]) or "한국전력" in corpName:
+        return [(3, "공기업 (정부 보증/규제 보호)")]
+    return []
+
+
+def _notchForCaptive(captive, sepMetrics, **_) -> list[tuple[int, str]]:
+    """규칙 3: 캡티브 금융 — 별도 D/EBITDA가 양호하면 상향."""
+    if captive and sepMetrics:
+        sepDE = sepMetrics.get("separateDebtToEbitda")
+        if sepDE is not None and sepDE < 3:
+            return [(2, f"캡티브금융 별도 D/EBITDA {sepDE:.1f}x (양호)")]
+    return []
+
+
+def _notchForHolding(holding, sepMetrics, **_) -> list[tuple[int, str]]:
+    """규칙 4: 지주사 — 별도 부채비율이 양호하면 상향."""
+    if holding and sepMetrics:
+        sepDR = sepMetrics.get("separateDebtRatio")
+        if sepDR is not None and sepDR < 100:
+            return [(2, f"지주사 별도 부채비율 {sepDR:.0f}% (양호)")]
+    return []
+
+
+def _notchForCapex(latest, **_) -> list[tuple[int, str]]:
+    """규칙 5: CAPEX 집약 but OCF 양수."""
+    ocf = latest.get("ocf") or 0
+    fcf = latest.get("fcf") or 0
+    if ocf > 0 and fcf < 0 and abs(fcf) > 0:  # OCF+, FCF- = CAPEX 집약
+        return [(1, "CAPEX집약 OCF양수 (투자 사이클)")]
+    return []
+
+
+def _notchForMarketCap(company, **_) -> list[tuple[int, str]]:
+    """규칙 6: 시가총액 상위 = 시장이 인정한 시장 지위."""
     try:
-        from dartlab.credit.metrics import calcSeparateMetrics
+        priceData = company.gather("price") if hasattr(company, "gather") else None
+        if priceData is None or len(priceData) == 0:
+            return []
+        epsResult = company.select("IS", ["기본주당이익", "당기순이익"])
+        from dartlab.analysis.financial._helpers import toDict as _tdNotch
 
-        sep = calcSeparateMetrics(company)
-        if sep is None:
-            return False
-        sepBorrowing = sep.get("totalBorrowing", 0) or 0
-        if sepBorrowing <= 0:
-            # 별도 차입금 0이면 전부 자회사 차입금
-            return consolidatedBorrowing > 1e12  # 1조 이상이면 의미 있음
-        ratio = consolidatedBorrowing / sepBorrowing
-        return ratio > 10
-    except (ImportError, TypeError, ValueError, AttributeError):
-        return False
+        epsParsed = _tdNotch(epsResult)
+        if not epsParsed:
+            return []
+        ed, ep = epsParsed
+        eps = (ed.get("기본주당이익", {}) or {}).get(ep[0] if ep else "")
+        niE = (ed.get("당기순이익", {}) or {}).get(ep[0] if ep else "")
+        closeCol = "close" if "close" in priceData.columns else "종가"
+        if not (eps and abs(eps) > 0 and niE and closeCol in priceData.columns):
+            return []
+        shares = abs(niE / eps)
+        latestClose = priceData[closeCol].drop_nulls().to_list()[-1]
+        mktCap = shares * latestClose
+        if mktCap > _CONFIG["mktcap_top30"]:
+            return [(3, f"시가총액 {mktCap / 1e12:.0f}조 (시장 지위)")]
+        if mktCap > _CONFIG["mktcap_top100"]:
+            return [(1, f"시가총액 {mktCap / 1e12:.0f}조")]
+    except (TypeError, ValueError, KeyError, AttributeError, IndexError, ZeroDivisionError):
+        pass
+    return []
 
 
-_PUBLIC_CORPS = {"한국전력", "한국가스공사", "한국수력원자력", "한국도로공사", "한국토지주택공사"}
+def _notchForConsecutiveProfit(metrics, **_) -> list[tuple[int, str]]:
+    """규칙 7: 장기 상장 + 연속 흑자 = 경영 역량 대리."""
+    histLen = len(metrics.get("history", []))
+    if histLen >= 5:
+        niHistory = [h.get("operatingIncome") for h in metrics["history"][:5]]
+        allPositive = all(v is not None and v > 0 for v in niHistory)
+        if allPositive:
+            return [(1, f"연속 {histLen}기 영업흑자 (경영 안정성)")]
+    return []
+
+
+_NOTCH_RULES = [
+    _notchForRevenue,
+    _notchForPublicCorp,
+    _notchForCaptive,
+    _notchForHolding,
+    _notchForCapex,
+    _notchForMarketCap,
+    _notchForConsecutiveProfit,
+]
 
 
 def _calcNotchAdjustment(
@@ -272,95 +438,44 @@ def _calcNotchAdjustment(
     - 지주사 별도 부채 양호
     - CAPEX 집약 OCF 양수
 
-    총 ±5 notch cap. score 15 이하(AA 이상)에는 미적용 (퇴행 방지).
+    총 ±5 notch cap. score notch_gate_score 이하에는 미적용 (퇴행 방지).
     """
-    # AA 이상(score<=10)은 조정 불필요 (퇴행 방지)
-    if score <= 10:
+    if score <= _CONFIG["notch_gate_score"]:
         return {"totalNotch": 0, "reasons": []}
 
+    ctx = dict(
+        company=company,
+        latest=latest,
+        metrics=metrics,
+        holding=holding,
+        captive=captive,
+        sepMetrics=sepMetrics,
+    )
     notches: list[tuple[int, str]] = []
-    corpName = getattr(company, "corpName", "") or ""
-
-    # 1. 기업 규모 (매출 기준)
-    revenue = latest.get("revenue") or 0
-    if revenue > 50e12:  # 50조+
-        notches.append((3, f"대형기업 (매출 {revenue / 1e12:.0f}조)"))
-    elif revenue > 10e12:  # 10조+
-        notches.append((1, f"중대형기업 (매출 {revenue / 1e12:.0f}조)"))
-
-    # 2. 공기업/정부 보호
-    if any(k in corpName for k in _PUBLIC_CORPS) or "한국전력" in corpName:
-        notches.append((3, "공기업 (정부 보증/규제 보호)"))
-
-    # 3. 캡티브 금융 — 별도 D/EBITDA가 양호하면 상향
-    if captive and sepMetrics:
-        sepDE = sepMetrics.get("separateDebtToEbitda")
-        if sepDE is not None and sepDE < 3:
-            notches.append((2, f"캡티브금융 별도 D/EBITDA {sepDE:.1f}x (양호)"))
-
-    # 4. 지주사 — 별도 부채비율이 양호하면 상향
-    if holding and sepMetrics:
-        sepDR = sepMetrics.get("separateDebtRatio")
-        if sepDR is not None and sepDR < 100:
-            notches.append((2, f"지주사 별도 부채비율 {sepDR:.0f}% (양호)"))
-
-    # 5. CAPEX 집약 but OCF 양수 (투자 중이지만 현금은 도는 기업)
-    ocf = latest.get("ocf") or 0
-    fcf = latest.get("fcf") or 0
-    if ocf > 0 and fcf < 0 and abs(fcf) > 0:  # OCF+, FCF- = CAPEX 집약
-        notches.append((1, "CAPEX집약 OCF양수 (투자 사이클)"))
-
-    # ── 정성 대리 신호 (정량 데이터에서 추출) ──
-
-    # 6. 시가총액 TOP 50 = 시장이 인정한 시장 지위/암묵적 지원
-    try:
-        priceData = company.gather("price") if hasattr(company, "gather") else None
-        if priceData is not None and len(priceData) > 0:
-            # EPS 역산 shares
-            epsResult = company.select("IS", ["기본주당이익", "당기순이익"])
-            from dartlab.analysis.financial._helpers import toDict as _tdNotch
-
-            epsParsed = _tdNotch(epsResult)
-            if epsParsed:
-                ed, ep = epsParsed
-                eps = (ed.get("기본주당이익", {}) or {}).get(ep[0] if ep else "")
-                niE = (ed.get("당기순이익", {}) or {}).get(ep[0] if ep else "")
-                closeCol = "close" if "close" in priceData.columns else "종가"
-                if eps and abs(eps) > 0 and niE and closeCol in priceData.columns:
-                    shares = abs(niE / eps)
-                    latestClose = priceData[closeCol].drop_nulls().to_list()[-1]
-                    mktCap = shares * latestClose
-                    if mktCap > 30e12:  # 시가총액 30조+ (TOP ~30)
-                        notches.append((3, f"시가총액 {mktCap / 1e12:.0f}조 (시장 지위)"))
-                    elif mktCap > 10e12:  # 10조+
-                        notches.append((1, f"시가총액 {mktCap / 1e12:.0f}조"))
-    except (TypeError, ValueError, KeyError, AttributeError, IndexError, ZeroDivisionError):
-        pass
-
-    # 7. 장기 상장 + 연속 흑자 = 경영 역량 대리
-    histLen = len(metrics.get("history", []))
-    if histLen >= 5:
-        niHistory = [h.get("operatingIncome") for h in metrics["history"][:5]]
-        allPositive = all(v is not None and v > 0 for v in niHistory)
-        if allPositive:
-            notches.append((1, f"연속 {histLen}기 영업흑자 (경영 안정성)"))
+    for rule in _NOTCH_RULES:
+        notches.extend(rule(**ctx))
 
     # 총 notch 합산 — 규모별 cap 차등 (과대평가 방지)
-    rawNotch = sum(n for n, _ in notches)
-    if revenue > 10e12:
-        sizeCap = 7  # 대형 (매출 10조+)
+    revenue = latest.get("revenue") or 0
+    if revenue > _CONFIG["revenue_large"]:
+        sizeCap = _CONFIG["notch_cap_large"]
     elif revenue > 1e12:
-        sizeCap = 4  # 중형 (1~10조)
+        sizeCap = _CONFIG["notch_cap_medium"]
     else:
-        sizeCap = 2  # 소형 (<1조)
-    totalNotch = min(rawNotch, sizeCap)
+        sizeCap = _CONFIG["notch_cap_small"]
 
-    # A 범위(10 < score <= 19): ���보정 방지, 최대 4 notch
-    if score <= 19:
-        totalNotch = min(totalNotch, 4)
+    totalNotch = min(sum(n for n, _ in notches), sizeCap)
 
-    reasons = [r for _, r in notches]
-    return {"totalNotch": totalNotch, "reasons": reasons}
+    # A 범위: 과보정 방지
+    if score <= _CONFIG["notch_a_range_score"]:
+        totalNotch = min(totalNotch, _CONFIG["notch_a_range_cap"])
+
+    return {"totalNotch": totalNotch, "reasons": [r for _, r in notches]}
+
+
+# ═══════════════════════════════════════════════════════════
+# 괴리 설명 + 공통 후처리
+# ═══════════════════════════════════════════════════════════
 
 
 def _explainDivergence(
@@ -415,17 +530,73 @@ def _explainDivergence(
     return explanations
 
 
-def _isCyclical(sector) -> bool:
-    if sector is None:
-        return False
-    try:
-        from dartlab.core.sector.types import Sector
+def _applyPostAdjustments(company, overall, latest, metrics, axes, captive, holding, sepMetrics):
+    """CHS + Notch + divergence — Track A/B 공통 후처리."""
+    from dartlab.core.finance.creditScorecard import estimatePD
+    from dartlab.core.finance.creditScorecard import notchGrade as _notchGrade
 
-        return sector in (Sector.ENERGY, Sector.MATERIALS)
-    except ImportError:
-        return False
+    # CHS 보정
+    chsResult = _calcCHSAdjustment(company, overall)
+    if chsResult is not None:
+        overall = chsResult["adjustedScore"]
+
+    grade, gradeDesc, pdEstimate = mapTo20Grade(overall)
+
+    # Notch Adjustment
+    notchAdj = _calcNotchAdjustment(
+        company, grade, overall, latest, metrics, holding, captive, sepMetrics,
+    )
+    if notchAdj["totalNotch"] != 0:
+        grade = _notchGrade(grade, -notchAdj["totalNotch"])
+        pdEstimate = estimatePD(grade)
+        gradeDesc = gradeCategory(grade) + " (notch 조정)"
+
+    # divergence
+    divExpl = _explainDivergence(grade, overall, axes, latest, chsResult, captive, holding)
+
+    return grade, gradeDesc, pdEstimate, overall, chsResult, notchAdj, divExpl
 
 
+# ═══════════════════════════════════════════════════════════
+# 시계열 안정화
+# ═══════════════════════════════════════════════════════════
+
+
+def _applyTimeSeriesSmoothing(currentScore: float, historicalScores: list[float]) -> float:
+    """3개년 가중이동평균 — _CONFIG["ts_weights"] 사용."""
+    w = _CONFIG["ts_weights"]
+    if len(historicalScores) >= 2:
+        overall = currentScore * w[0] + historicalScores[0] * w[1] + historicalScores[1] * w[2]
+    elif len(historicalScores) == 1:
+        # 2개년: 현재 70%, 과거 30%
+        overall = currentScore * 0.70 + historicalScores[0] * 0.30
+    else:
+        overall = currentScore
+    return round(overall, 2)
+
+
+# ═══════════════════════════════════════════════════════════
+# OFS 블렌딩 (지주/캡티브)
+# ═══════════════════════════════════════════════════════════
+
+
+def _blendOFS(consolidated: float | None, separate: float | None) -> float | None:
+    """연결/별도 축 점수를 동적 블렌딩.
+
+    별도가 consolidated보다 ofs_advantage_threshold점+ 양호하면 별도 비중 상향.
+    """
+    if consolidated is None or separate is None:
+        return consolidated
+    adv = _CONFIG["ofs_advantage_threshold"]
+    if separate < consolidated - adv:
+        w_sep = _CONFIG["ofs_strong_weight"]
+    else:
+        w_sep = _CONFIG["ofs_default_weight"]
+    return round(consolidated * (1 - w_sep) + separate * w_sep, 2)
+
+
+# ═══════════════════════════════════════════════════════════
+# 메인 진입점
 # ═══════════════════════════════════════════════════════════
 
 
@@ -518,12 +689,7 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
                 ("별도D/EBITDA", scoreMetric(sepMetrics.get("separateDebtToEbitda"), thresholds["debt_to_ebitda"])),
             ]
             sep1 = axisScore(sep_axis1_scores)
-            if sep1 is not None and axis1 is not None:
-                # 동적 블렌딩: 별도가 10점+ 양호하면 별도 비중 65%
-                if sep1 < axis1 - 10:
-                    axis1 = round(axis1 * 0.35 + sep1 * 0.65, 2)
-                else:
-                    axis1 = round(axis1 * 0.5 + sep1 * 0.5, 2)
+            axis1 = _blendOFS(axis1, sep1)
 
             # 축2: 별도 부채비율 블렌딩
             sep_axis2_scores = [
@@ -534,16 +700,14 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
                 ),
             ]
             sep2 = axisScore(sep_axis2_scores)
-            if sep2 is not None and axis2 is not None:
-                if sep2 < axis2 - 10:
-                    axis2 = round(axis2 * 0.35 + sep2 * 0.65, 2)
-                else:
-                    axis2 = round(axis2 * 0.5 + sep2 * 0.5, 2)
+            axis2 = _blendOFS(axis2, sep2)
 
-    # ── Phase 4: 캡티브/지주/사이클 축1 압축 (20 초과분 40% 감쇄) ──
-    if (captive or holding or cyclical) and axis1 is not None and axis1 > 20:
-        excess = axis1 - 20
-        axis1 = round(20 + excess * 0.6, 2)
+    # ── Phase 4: 캡티브/지주/사이클 축1 압축 (threshold 초과분 감쇄) ──
+    compThresh = _CONFIG["axis1_compress_threshold"]
+    compRatio = _CONFIG["axis1_compress_ratio"]
+    if (captive or holding or cyclical) and axis1 is not None and axis1 > compThresh:
+        excess = axis1 - compThresh
+        axis1 = round(compThresh + excess * compRatio, 2)
 
     # ── 축 3: 유동성 ──
     axis3_scores = [
@@ -585,14 +749,12 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
     axis7 = axisScore(axis7_scores)
 
     # ── 가중평균 ──
-    # isFinancialCo는 이미 Track B로 분기됨 (여기 도달 안 함)
     if captive or cyclical:
-        w = [0.30, 0.15, 0.15, 0.15, 0.10, 0.10, 0.05]
+        w = _WEIGHTS["captive"]
     elif holding:
-        # 지주사: 채무상환능력↓ 자본구조↑ 사업안정성↑ (연결 D/EBITDA 왜곡 보정)
-        w = [0.15, 0.25, 0.15, 0.15, 0.15, 0.10, 0.05]
+        w = _WEIGHTS["holding"]
     else:
-        w = [0.25, 0.20, 0.15, 0.15, 0.10, 0.10, 0.05]
+        w = _WEIGHTS["default"]
 
     axes = [
         {"name": "채무상환능력", "score": axis1, "weight": w[0], "metrics": axis1_scores},
@@ -608,42 +770,12 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
 
     # ── 시계열 안정화 (3개년 가중이동평균) ──
     historicalScores = _calcHistoricalScores(metrics, thresholds)
-    if len(historicalScores) >= 2:
-        overall = currentScore * 0.60 + historicalScores[0] * 0.25 + historicalScores[1] * 0.15
-    elif len(historicalScores) == 1:
-        overall = currentScore * 0.70 + historicalScores[0] * 0.30
-    else:
-        overall = currentScore
-    overall = round(overall, 2)
+    overall = _applyTimeSeriesSmoothing(currentScore, historicalScores)
 
-    # ── CHS 부도확률 보정 (±2 notch) ──
-    chsResult = _calcCHSAdjustment(company, overall)
-    if chsResult is not None:
-        overall = chsResult["adjustedScore"]
-
-    grade, gradeDesc, pdEstimate = mapTo20Grade(overall)
-
-    # ── v3 Notch Adjustment (기업 특성 기반 등급 보정) ──
-    notchAdj = _calcNotchAdjustment(
-        company,
-        grade,
-        overall,
-        latest,
-        metrics,
-        holding,
-        captive,
-        sepMetrics,
+    # ── CHS + Notch + divergence 공통 후처리 ──
+    grade, gradeDesc, pdEstimate, overall, chsResult, notchAdj, divExpl = _applyPostAdjustments(
+        company, overall, latest, metrics, axes, captive, holding, sepMetrics,
     )
-    if notchAdj["totalNotch"] != 0:
-        from dartlab.core.finance.creditScorecard import notchGrade as _notchGrade
-
-        # notchGrade: +면 idx 증가(하향). 상향하려면 -notch
-        grade = _notchGrade(grade, -notchAdj["totalNotch"])
-        # 보정 후 등급에 맞는 PD 재계산
-        from dartlab.core.finance.creditScorecard import estimatePD
-
-        pdEstimate = estimatePD(grade)
-        gradeDesc = gradeCategory(grade) + " (notch 조정)"
 
     # ── eCR ──
     eCR = cashFlowGrade(
@@ -678,15 +810,7 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         "latestPeriod": latest.get("period"),
         "chsAdjustment": chsResult,
         "notchAdjustment": notchAdj if notchAdj["totalNotch"] != 0 else None,
-        "divergenceExplanation": _explainDivergence(
-            grade,
-            overall,
-            axes,
-            latest,
-            chsResult,
-            captive,
-            holding,
-        ),
+        "divergenceExplanation": divExpl,
         "methodologyVersion": "v4.0",
         "axes": [
             {
@@ -1029,9 +1153,7 @@ def _evaluateFinancial(
     s5 = axisScore(ax5) if ax5 else 25.0
 
     # ── 가중평균 ──
-    # 금융지주: 자본 35% + 수익 35% + 자산건전 15% + 사업안정 15% + 유동 0%
-    # 유동성 완전 제거: 은행 현금/자산 비율은 무의미 (예수금 유동성, 중앙은행 보증)
-    w = [0.35, 0.35, 0.15, 0.00, 0.15]
+    w = _WEIGHTS["financial"]
     axes = [
         {"name": "자본적정성", "score": s1, "weight": w[0], "metrics": ax1},
         {"name": "수익성", "score": s2, "weight": w[1], "metrics": ax2},
@@ -1055,39 +1177,12 @@ def _evaluateFinancial(
         if scores:
             historicalScores.append(sum(scores) / len(scores))
 
-    if len(historicalScores) >= 2:
-        overall = currentScore * 0.60 + historicalScores[0] * 0.25 + historicalScores[1] * 0.15
-    elif len(historicalScores) == 1:
-        overall = currentScore * 0.70 + historicalScores[0] * 0.30
-    else:
-        overall = currentScore
-    overall = round(overall, 2)
+    overall = _applyTimeSeriesSmoothing(currentScore, historicalScores)
 
-    # CHS 보정
-    chsResult = _calcCHSAdjustment(company, overall)
-    if chsResult is not None:
-        overall = chsResult["adjustedScore"]
-
-    grade, gradeDesc, pdEstimate = mapTo20Grade(overall)
-
-    # ── Track B에도 Notch Adjustment 적용 ──
-    notchAdj = _calcNotchAdjustment(
-        company,
-        grade,
-        overall,
-        latest,
-        metrics,
-        False,
-        False,
-        None,
+    # ── CHS + Notch + divergence 공통 후처리 ──
+    grade, gradeDesc, pdEstimate, overall, chsResult, notchAdj, divExpl = _applyPostAdjustments(
+        company, overall, latest, metrics, axes, False, False, None,
     )
-    if notchAdj["totalNotch"] != 0:
-        from dartlab.core.finance.creditScorecard import notchGrade as _notchGrade
-        from dartlab.core.finance.creditScorecard import estimatePD
-
-        grade = _notchGrade(grade, -notchAdj["totalNotch"])
-        pdEstimate = estimatePD(grade)
-        gradeDesc = gradeCategory(grade) + " (notch 조정)"
 
     sectorLabel = f"{getSectorLabel(sector)} (Track B 금융전용)"
 
@@ -1109,15 +1204,7 @@ def _evaluateFinancial(
         "latestPeriod": latest.get("period"),
         "chsAdjustment": chsResult,
         "notchAdjustment": notchAdj if notchAdj["totalNotch"] != 0 else None,
-        "divergenceExplanation": _explainDivergence(
-            grade,
-            overall,
-            axes,
-            latest,
-            chsResult,
-            False,
-            False,
-        ),
+        "divergenceExplanation": divExpl,
         "methodologyVersion": "v4.0-TrackB",
         "axes": [
             {
