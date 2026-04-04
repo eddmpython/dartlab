@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775276110241,
+  "lastUpdate": 1775280085286,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -9918,6 +9918,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.877197451761476e-7",
             "extra": "mean: 683.4825463011484 nsec\nrounds: 165810"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "cca6371d89ebab056556bce4b6a253e9df0284d9",
+          "message": "fix: CI 테스트 수정 — widget skip + FRED 그룹 수 14개 반영\n\n- test_embed.py: ui/widget 미구현 상태에서 skip 처리\n- test_fred.py: FRED catalog 7→14 그룹 확장 반영",
+          "timestamp": "2026-04-04T14:20:15+09:00",
+          "tree_id": "dc443172e055567665be9b2e327f5e7738528650",
+          "url": "https://github.com/eddmpython/dartlab/commit/cca6371d89ebab056556bce4b6a253e9df0284d9"
+        },
+        "date": 1775280084794,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 525616.0228263675,
+            "unit": "iter/sec",
+            "range": "stddev: 4.707209817957906e-7",
+            "extra": "mean: 1.9025295207378805 usec\nrounds: 55605"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 654642.3070226081,
+            "unit": "iter/sec",
+            "range": "stddev: 4.7089448101389246e-7",
+            "extra": "mean: 1.5275517473780762 usec\nrounds: 119977"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 518055.8071606594,
+            "unit": "iter/sec",
+            "range": "stddev: 5.022999473810521e-7",
+            "extra": "mean: 1.9302939686763907 usec\nrounds: 122775"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 668065.6121169955,
+            "unit": "iter/sec",
+            "range": "stddev: 3.8939502029778356e-7",
+            "extra": "mean: 1.49685896394391 usec\nrounds: 132732"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 889204.6430527109,
+            "unit": "iter/sec",
+            "range": "stddev: 1.5320285323358728e-7",
+            "extra": "mean: 1.1246005155426537 usec\nrounds: 174186"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 261657.20763709708,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000014515182446766354",
+            "extra": "mean: 3.821794205596432 usec\nrounds: 67169"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7451810.489974386,
+            "unit": "iter/sec",
+            "range": "stddev: 1.492255008619537e-8",
+            "extra": "mean: 134.19557587319122 nsec\nrounds: 74157"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8953222.048724689,
+            "unit": "iter/sec",
+            "range": "stddev: 1.061309668494349e-8",
+            "extra": "mean: 111.69163397912617 nsec\nrounds: 88410"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1460345.327063674,
+            "unit": "iter/sec",
+            "range": "stddev: 3.1316801662544076e-7",
+            "extra": "mean: 684.7695414691444 nsec\nrounds: 163908"
           }
         ]
       }
