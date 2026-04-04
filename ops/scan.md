@@ -1,14 +1,14 @@
 # Scan
 
-전 종목 횡단분석. `scan()` 단일 진입점으로 시장 전체를 한 번에.
+전 종목 횡단분석. `scan()` 단일 진입점으로 시장 전체를 한 번에. DART + EDGAR 양쪽 지원.
 
 | 항목 | 내용 |
 |------|------|
 | 레이어 | L1 |
 | 진입점 | `dartlab.scan()`, `c.governance()` 등 |
-| 소비 | providers/(dart), core/finance, 프리빌드 parquet |
+| 소비 | providers/(dart, edgar), core/finance, 프리빌드 parquet |
 | 생산 | ai가 시장 비교에 사용, analysis와 독립 |
-| 축 | 정식 7축 + account/ratio/digest 등 13축 |
+| 축 | DART 정식 7축 + account/ratio 등 13축, EDGAR 11축 |
 
 ## 단일 진입점
 
@@ -57,18 +57,68 @@ data/dart/scan/
 - 사용자: `downloadAll("scan")` (271MB) → 즉시 횡단 분석
 - scan 파일 없으면 HF 자동 다운로드 시도, 실패 시 종목별 순회 fallback
 
+## EDGAR scan (11축)
+
+EDGAR scan은 XBRL companyfacts 기반. DART scan과 동일 인터페이스.
+
+```python
+from dartlab.scan._edgar_scan import edgarScan
+df = edgarScan("profitability")   # 전종목 수익성
+df = edgarScan("valuation")       # 밸류에이션
+```
+
+### EDGAR scan 축
+
+| 축 | 지표 | 종목 수 | 상태 |
+|---|------|--------|------|
+| profitability | opMargin, netMargin, ROE, ROA | ~6,600 | ✅ |
+| growth | revenueYoY, opYoY, niYoY | ~5,600 | ✅ |
+| quality | cfToNi, accrualRatio | ~8,300 | ✅ |
+| liquidity | currentRatio, quickRatio | ~4,800 | ✅ |
+| efficiency | assetTurnover, CCC | ~6,100 | ✅ |
+| cashflow | OCF/ICF/FCF, 패턴 분류 | ~5,700 | ✅ |
+| dividendTrend | payoutRatio, 패턴 | ~4,000 | ✅ |
+| capital | 배당+자사주, 분류 | ~4,800 | ✅ |
+| debt | debtRatio, ICR, 위험등급 | ~7,300 | ✅ |
+| valuation | EBITDA, equityMultiplier, ROE | ~16,500 | ✅ |
+| audit | AuditFees, NonAuditFees | 가변 | ✅ |
+
+### EDGAR scan 프리빌드
+
+```
+data/edgar/scan/
+└── finance.parquet    # 전종목 연간 BS/IS/CF 주요 22계정
+```
+
+- 빌드: `dartlab collect --tier sp500 --scan` 또는 `buildEdgarScan(sinceYear=2021)`
+- 배치 200개 단위 + 중간 파일 병합 (메모리 안전)
+- DART scan 프리빌드와 동일 패턴
+
+### DART vs EDGAR scan 갭
+
+| 축 | DART | EDGAR | 사유 |
+|---|------|-------|------|
+| governance | ✅ 5축 100점 | — | DEF 14A proxy 파싱 필요 |
+| workforce | ✅ | — | SEC 구조화 데이터 없음 (10-K 텍스트 제한적) |
+| network | ✅ | — | SEC에 출자/계열 관계 구조화 데이터 없음 |
+| signal | ✅ | — | DART 공시 키워드 트렌드 전용 |
+| disclosureRisk | ✅ | — | DART changes.parquet 전용 |
+
 ## 설계 원칙
 
 - scanner는 Company를 import하지 않는다 (역의존 방지)
 - Company에서 scan 데이터는 `_ensure*()` 경유로 접근
 - 스코어링/분류 로직 변경은 실험 검증 후 반영
-- DART에 집중, EDGAR는 배제
 
 ## 관련 코드
 
 | 경로 | 역할 |
 |------|------|
-| `src/dartlab/scan/` | 6축 모듈 |
-| `src/dartlab/scan/network/` | 관계 네트워크 |
-| `src/dartlab/scan/disclosureRisk/` | 공시 변화 리스크 (6시그널) |
+| `src/dartlab/scan/` | DART 축 모듈 |
+| `src/dartlab/scan/_edgar_scan.py` | EDGAR 11축 scan 디스패치 |
+| `src/dartlab/scan/_edgar_helpers.py` | EDGAR scan 공용 헬퍼 |
+| `src/dartlab/scan/edgarBuilder.py` | EDGAR scan 프리빌드 |
+| `src/dartlab/scan/network/` | 관계 네트워크 (DART 전용) |
+| `src/dartlab/scan/disclosureRisk/` | 공시 변화 리스크 (DART 전용) |
 | `src/dartlab/core/finance/scanAccount.py` | 범용 계정/비율 전종목 조회 |
+| `src/dartlab/providers/edgar/finance/scanAccount.py` | EDGAR 계정 스캔 |

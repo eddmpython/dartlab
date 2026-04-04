@@ -104,3 +104,55 @@ def classifyLiquidityRegime(
         score=round(score, 1),
         signals=tuple(signals),
     )
+
+
+# ══════════════════════════════════════
+# 설비투자 압력 (투자전략 32)
+# ══════════════════════════════════════
+
+
+@dataclass(frozen=True)
+class CapexPressure:
+    """신용스프레드 기반 설비투자 압력."""
+
+    pressure: str  # "easing" | "neutral" | "tightening"
+    pressureLabel: str  # "완화" | "중립" | "긴축"
+    spreadLevel: float  # HY 스프레드 (bps)
+    spreadChange: float  # 변화 (bps)
+    description: str
+
+
+def capexPressure(hySpread: float, hySpreadChange: float) -> CapexPressure:
+    """신용스프레드 → 설비투자 압력.
+
+    투자전략 32: 신용스프레드는 곧 설비투자 조정압력이다.
+    HY 스프레드 상승 → 기업 자금조달 비용 증가 → 설비투자 축소.
+
+    Args:
+        hySpread: HY 스프레드 (bps)
+        hySpreadChange: HY 스프레드 3개월 변화 (bps)
+    """
+    if hySpreadChange > 100 or hySpread > 500:
+        return CapexPressure(
+            pressure="tightening",
+            pressureLabel="긴축",
+            spreadLevel=round(hySpread, 0),
+            spreadChange=round(hySpreadChange, 0),
+            description=f"HY 스프레드 {hySpread:.0f}bp ({hySpreadChange:+.0f}bp) — 설비투자 축소 압력 강화",
+        )
+    elif hySpreadChange < -50 or hySpread < 350:
+        return CapexPressure(
+            pressure="easing",
+            pressureLabel="완화",
+            spreadLevel=round(hySpread, 0),
+            spreadChange=round(hySpreadChange, 0),
+            description=f"HY 스프레드 {hySpread:.0f}bp ({hySpreadChange:+.0f}bp) — 설비투자 환경 개선",
+        )
+    else:
+        return CapexPressure(
+            pressure="neutral",
+            pressureLabel="중립",
+            spreadLevel=round(hySpread, 0),
+            spreadChange=round(hySpreadChange, 0),
+            description=f"HY 스프레드 {hySpread:.0f}bp ({hySpreadChange:+.0f}bp) — 설비투자 중립",
+        )

@@ -3,15 +3,21 @@
 DART report가 OpenDART API 28 apiType으로 접근하듯,
 EDGAR report는 XBRL facts + 10-K sections에서 구조화 데이터를 추출한다.
 
-현재 지원 apiType:
-- dividend: 배당 (CF dividends_paid + IS basic_eps + DPS)
-- treasuryStock: 자사주 (XBRL treasury_stock)
-- stockTotal: 발행주식총수 (XBRL shares_outstanding)
-
-향후 확장:
-- employee: 직원 현황 (10-K Item 1 텍스트 파싱)
-- auditOpinion: 감사의견 (10-K Item 9A)
-- corporateBond: 사채 (10-K notes)
+지원 apiType (14개):
+- dividend: 배당
+- treasuryStock: 자사주
+- stockTotal: 발행주식총수
+- employee: 직원 현황 (XBRL + 10-K Item 1 regex)
+- auditOpinion: 감사의견 + 감사비용
+- corporateBond: 사채/부채 구조
+- executive: 임원 현황 (10-K Item 10 파싱)
+- majorHolder: 주요 주주 (XBRL shares)
+- executivePay: 임원 보수 (stock compensation)
+- capitalChange: 증자/감자 (주식 발행/소각)
+- outsideDirector: 사외이사 (10-K Item 10 텍스트)
+- minorityHolder: 비지배지분 (XBRL NoncontrollingInterest)
+- investedCompany: 타법인 출자 (XBRL 투자 태그)
+- debtSecurities: 채무증권 (CP/단기사채/AFS/HTM)
 """
 
 from __future__ import annotations
@@ -47,13 +53,16 @@ class _ReportAccessor:
         return available
 
     def extract(self, apiType: str) -> pl.DataFrame | None:
-        """apiType별 데이터 추출."""
+        """apiType별 데이터 추출. 개별 extractor 실패 시 None 반환."""
         if apiType in self._cache:
             return self._cache[apiType]
         fn = _SUPPORTED.get(apiType)
         if fn is None:
             return None
-        result = fn(self._company)
+        try:
+            result = fn(self._company)
+        except (ValueError, KeyError, TypeError, AttributeError, OSError, pl.exceptions.ComputeError):
+            result = None
         self._cache[apiType] = result
         return result
 
@@ -124,10 +133,79 @@ def _extractStockTotal(company: "Company") -> pl.DataFrame | None:
     return pl.DataFrame([{"sharesOutstanding": shares}])
 
 
+# ── 신규 extractor wrapper ──
+
+
+def _extractEmployee(company: "Company") -> pl.DataFrame | None:
+    from dartlab.providers.edgar.report.employee import extractEmployee
+    return extractEmployee(company)
+
+
+def _extractAuditOpinion(company: "Company") -> pl.DataFrame | None:
+    from dartlab.providers.edgar.report.auditOpinion import extractAuditOpinion
+    return extractAuditOpinion(company)
+
+
+def _extractCorporateBond(company: "Company") -> pl.DataFrame | None:
+    from dartlab.providers.edgar.report.corporateBond import extractCorporateBond
+    return extractCorporateBond(company)
+
+
+def _extractExecutive(company: "Company") -> pl.DataFrame | None:
+    from dartlab.providers.edgar.report.executive import extractExecutive
+    return extractExecutive(company)
+
+
+def _extractMajorHolder(company: "Company") -> pl.DataFrame | None:
+    from dartlab.providers.edgar.report.majorHolder import extractMajorHolder
+    return extractMajorHolder(company)
+
+
+def _extractExecutivePay(company: "Company") -> pl.DataFrame | None:
+    from dartlab.providers.edgar.report.executivePay import extractExecutivePay
+    return extractExecutivePay(company)
+
+
+def _extractCapitalChange(company: "Company") -> pl.DataFrame | None:
+    from dartlab.providers.edgar.report.capitalChange import extractCapitalChange
+    return extractCapitalChange(company)
+
+
+def _extractOutsideDirector(company: "Company") -> pl.DataFrame | None:
+    from dartlab.providers.edgar.report.outsideDirector import extractOutsideDirector
+    return extractOutsideDirector(company)
+
+
+def _extractMinorityHolder(company: "Company") -> pl.DataFrame | None:
+    from dartlab.providers.edgar.report.minorityHolder import extractMinorityHolder
+    return extractMinorityHolder(company)
+
+
+def _extractInvestedCompany(company: "Company") -> pl.DataFrame | None:
+    from dartlab.providers.edgar.report.investedCompany import extractInvestedCompany
+    return extractInvestedCompany(company)
+
+
+def _extractDebtSecurities(company: "Company") -> pl.DataFrame | None:
+    from dartlab.providers.edgar.report.debtSecurities import extractDebtSecurities
+    return extractDebtSecurities(company)
+
+
 # ── 지원 apiType 매핑 ──
 
 _SUPPORTED: dict[str, Any] = {
     "dividend": _extractDividend,
     "treasuryStock": _extractTreasuryStock,
     "stockTotal": _extractStockTotal,
+    "employee": _extractEmployee,
+    "auditOpinion": _extractAuditOpinion,
+    "corporateBond": _extractCorporateBond,
+    "executive": _extractExecutive,
+    "majorHolder": _extractMajorHolder,
+    "executivePay": _extractExecutivePay,
+    "capitalChange": _extractCapitalChange,
+    "outsideDirector": _extractOutsideDirector,
+    "minorityHolder": _extractMinorityHolder,
+    "investedCompany": _extractInvestedCompany,
+    "debtSecurities": _extractDebtSecurities,
 }

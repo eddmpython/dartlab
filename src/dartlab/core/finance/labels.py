@@ -180,3 +180,30 @@ def resolve_label(snake_id: str, market: str = "KR") -> str:
     if market != "KR":
         return _snake_to_title(snake_id)
     return snake_id
+
+
+# ── DART ↔ EDGAR snakeId alias (L0에 배치 — import 방향 준수) ──
+
+SNAKEID_ALIASES: dict[str, str] = {
+    "operating_cash_flow": "operating_cashflow",
+    "investing_cash_flow": "investing_cashflow",
+    "financing_cash_flow": "cash_flows_from_financing_activities",
+    "cash_flows_from_financing": "cash_flows_from_financing_activities",
+    "cash_flows_from_operating": "operating_cashflow",
+    "cash_flows_from_investing": "investing_cashflow",
+    "financing_cashflow": "cash_flows_from_financing_activities",
+    "cost_of_revenue": "cost_of_sales",
+    "inventory": "inventories",
+    "property_plant_equipment": "tangible_assets",
+    "income_before_tax": "profit_before_tax",
+    "short_term_debt": "shortterm_borrowings",
+    "long_term_debt": "longterm_borrowings",
+    "accounts_receivable": "trade_and_other_receivables",
+    "cash_and_equivalents": "cash_and_cash_equivalents",
+    "revenue": "sales",
+    "operating_income": "operating_profit",
+    "net_income": "net_profit",
+    "capex": "purchase_of_property_plant_and_equipment",
+    "accounts_payable": "trade_and_other_payables",
+    "interest_expense": "finance_costs",
+}

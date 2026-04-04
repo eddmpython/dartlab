@@ -1,7 +1,7 @@
 """DartLab 컬러 팔레트 — 단일 원천.
 
 Python 측 모든 시각화가 이 모듈에서 색상을 가져온다.
-JS 측: ``ui/src/lib/chart/colors.js`` (동일 값, 주석으로 교차 참조).
+JS 측: ``ui/shared/chart/colors.ts`` (동일 값, 주석으로 교차 참조).
 """
 
 from __future__ import annotations

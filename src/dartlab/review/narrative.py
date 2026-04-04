@@ -638,40 +638,38 @@ def buildActTransitions(company, blockMap: dict) -> dict[str, str]:
     except (AttributeError, ValueError):
         return transitions
 
+    from dartlab.review.builders import _fmtAmtShort
+
     # 1막→2막: 매출 구조 → 수익성
     rev = getattr(ratios, "revenueTTM", None)
     opMargin = getattr(ratios, "operatingMargin", None) or getattr(ratios, "operatingMarginTTM", None)
     if rev and opMargin is not None:
-        revStr = f"{rev / 1e12:.1f}조" if rev > 1e12 else f"{rev / 1e8:.0f}억"
+        revStr = _fmtAmtShort(rev)
         transitions["1→2"] = f"매출 {revStr}에서 영업이익률 {opMargin:.1f}% — 이 마진의 원천은?"
 
     # 2막→3막: 수익성 → 현금 전환
     ni = getattr(ratios, "netIncomeTTM", None)
     ocf = getattr(ratios, "operatingCashflowTTM", None)
     if ni and ocf:
-        niStr = f"{ni / 1e12:.1f}조" if abs(ni) > 1e12 else f"{ni / 1e8:.0f}억"
-        ocfStr = f"{ocf / 1e12:.1f}조" if abs(ocf) > 1e12 else f"{ocf / 1e8:.0f}억"
+        niStr = _fmtAmtShort(ni)
+        ocfStr = _fmtAmtShort(ocf)
         ratio = ocf / ni * 100 if ni != 0 else 0
-        # 한국어 조사: 받침 있으면 "이", 없으면 "가"
-        lastChar = niStr[-1]
-        hasBatchim = ord(lastChar) >= 0xAC00 and (ord(lastChar) - 0xAC00) % 28 != 0
-        josa = "이" if hasBatchim else "가"
         transitions["2→3"] = (
-            f"순이익 {niStr}{josa} 영업CF {ocfStr}로 전환 ({ratio:.0f}%) — 이익이 현금으로 뒷받침되는가?"
+            f"순이익 {niStr} → 영업CF {ocfStr} ({ratio:.0f}%) — 이익이 현금으로 뒷받침되는가?"
         )
 
     # 3막→4막: 현금 → 안정성
     fcf = getattr(ratios, "fcf", None) or getattr(ratios, "fcfTTM", None)
     ic = getattr(ratios, "interestCoverage", None)
     if fcf is not None and ic is not None:
-        fcfStr = f"{fcf / 1e12:.1f}조" if abs(fcf) > 1e12 else f"{fcf / 1e8:.0f}억"
+        fcfStr = _fmtAmtShort(fcf)
         transitions["3→4"] = f"FCF {fcfStr}, 이자보상 {ic:.1f}배 — 이 현금으로 부채를 감당할 수 있는가?"
 
     # 4막→5막: 안정성 → 자본배분
     nd = getattr(ratios, "netDebt", None)
     dr = getattr(ratios, "debtRatio", None)
     if nd is not None and dr is not None:
-        status = "순현금" if nd < 0 else f"순차입금 {nd / 1e12:.1f}조"
+        status = "순현금" if nd < 0 else f"순차입금 {_fmtAmtShort(nd)}"
         transitions["4→5"] = f"{status}, 부채비율 {dr:.0f}% — 안전한 자본 안에서 어떻게 배분하는가?"
 
     # 5막→6막: 자본배분 → 전망/가치

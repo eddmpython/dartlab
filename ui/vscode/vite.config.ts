@@ -3,8 +3,13 @@ import { svelte } from "@sveltejs/vite-plugin-svelte";
 
 export default defineConfig({
   plugins: [svelte()],
+  resolve: {
+    alias: {
+      "$shared": new URL("../shared", import.meta.url).pathname,
+    },
+  },
   build: {
-    outDir: "../dist/webview",
+    outDir: "../../vscode/dist/webview",
     emptyOutDir: true,
     rollupOptions: {
       input: "src/main.ts",

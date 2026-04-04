@@ -73,6 +73,27 @@ b                    # 섹션별 카탈로그 테이블
 **라벨 변경**: catalog.py label만 변경. 끝. 전부 자동 반영.
 **순서 변경**: catalog.py _BLOCKS 위치만 이동. 끝.
 
+## DART/EDGAR 통합 동작
+
+review는 Company-bound — DART/EDGAR 자동 분기.
+
+### 통화 포맷
+- `company.currency` → `_REVIEW_CURRENCY` contextvars 자동 설정
+- KRW: 조/억 포맷 (예: "매출 39.2조원")
+- USD: $B/$M 포맷 (예: "Revenue $394.3B")
+- `review/registry.py::buildBlocks()`에서 자동 적용
+
+### EDGAR review 동작
+
+```python
+c = Company("AAPL")
+c.review()               # 전체 6막 보고서 (USD 포맷)
+c.review("수익구조")      # 단일 섹션
+c.reviewer()             # review + AI 종합의견
+```
+
+6막 서사 구조, 블록 카탈로그, 4개 출력 형식 전부 EDGAR에서 동일 동작.
+
 ## 품질 검증
 
 - 빈 섹션, 중복 표시, 극단값 비율(수만%), 맥락 없는 경고 체크

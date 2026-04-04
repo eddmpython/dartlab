@@ -197,6 +197,40 @@ audit 파일 구조도 확장:
 
 **바텀업 경로:** Company → exogenousAxes → 매출 x 외생변수 회귀 → 현재 매크로에서 이 기업 방향
 
+## DART/EDGAR 통합 동작
+
+14축 analysis는 DART/EDGAR 양쪽에서 동일하게 동작한다.
+
+### 통화 분기
+- `company.currency`에서 KRW/USD 자동 감지
+- analysis 금액 포맷: KRW → 조/억, USD → $B/$M
+- `contextvars` 기반 — 스레드 안전, 자동 복원
+
+### 계정 브릿지
+- `_bridgeKoreanSnakeId()`: `c.select("IS", ["매출액"])` → EDGAR에서 `sales` row 반환
+- `toDict()`: EDGAR snakeId 키를 한국어 키로 변환 → `data.get("매출액")` DART/EDGAR 양쪽 동작
+- analysis calc 함수 내부에서 한국어 계정명 사용 → EDGAR에서도 자동 변환
+
+### EDGAR 지원 현황 (실측 검증 2026-04-04)
+
+| 영역 | 지원 | 비고 |
+|------|------|------|
+| financial 14축 | ✅ **10축 완전 동일** | 4축에 DART report 전용 서브키 None (허용) |
+| forecast (매출 방향) | ✅ | 업종 매핑은 KR 특화 (US fallback 있음) |
+| valuation (DCF/DDM) | ✅ | Yahoo price 연동 |
+| notes enrichment | ✅ | XBRL 수치 태그 기반 |
+
+### EDGAR 허용된 None (SEC 구조 한계)
+
+| 축 | None 서브키 | 원인 |
+|---|---|---|
+| 수익구조 | segment 4개 | DART docs `productService` 전용 |
+| 비용구조 | rawMaterialBreakdown | DART report `rawMaterial` 전용 |
+| 자본배분 | treasuryStockStatus | DART report `treasuryStock` 전용 |
+| 투자효율 | investmentInOther | DART report `investedCompany` 전용 |
+
+이 4건은 SEC 공시 구조의 근본적 차이. 상세: `ops/edgar.md` "구조적 한계" 섹션.
+
 ## 6대 설계 규칙
 
 1. **각 calc 함수는 독립적** — 다른 calc 함수를 호출하지 않는다

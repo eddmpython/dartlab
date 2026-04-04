@@ -28,7 +28,18 @@ def search(
     """공시 원문 검색 — Ngram+Synonym 기본, 벡터 보강.
 
     모델 불필요. cold start 0ms.
+    DART 공시 전용 — EDGAR(US) 공시 검색은 SEC EDGAR Full-Text Search 이용.
     """
+    # EDGAR ticker 감지 → 안내 메시지
+    if corp and not str(corp).isdigit() and len(corp) <= 6:
+        return pl.DataFrame({
+            "info": [
+                f"'{corp}'은 US ticker입니다. dartlab.search()는 DART(한국) 공시 전용입니다.",
+                "SEC EDGAR 공시 검색: https://efts.sec.gov/LATEST/search-index?q=...",
+                "또는 Company('AAPL').docs.sections로 10-K/10-Q 섹션을 조회하세요.",
+            ]
+        })
+
     corpCode, stockCode = _resolveCorp(corp)
 
     # Ngram 검색 (기본 — 모델 불필요)

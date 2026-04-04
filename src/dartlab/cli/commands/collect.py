@@ -139,7 +139,12 @@ def configure_parser(subparsers) -> None:
         "--tier",
         type=str,
         default=None,
-        help="EDGAR 배치 tier (sp500)",
+        help="EDGAR 배치 tier (all/nasdaq/nyse/sp500)",
+    )
+    parser.add_argument(
+        "--deploy",
+        action="store_true",
+        help="수집 후 HuggingFace에 업로드 (EDGAR)",
     )
     parser.set_defaults(handler=run)
 
@@ -153,6 +158,18 @@ def run(args) -> int:
     source = _detectSource(args)
 
     if source == "edgar":
+        # EDGAR scan 프리빌드
+        if getattr(args, "scan", None):
+            return _runEdgarScan(console, args)
+        # EDGAR freshness 체크
+        if getattr(args, "check", False):
+            return _runEdgarCheck(console, args)
+        if getattr(args, "incremental", False):
+            return _runEdgarIncremental(console, args)
+        if getattr(args, "stats", False):
+            return _runEdgarStats(console, args)
+        if getattr(args, "uncollected", False):
+            return _runEdgarUncollected(console, args)
         return _runEdgar(console, args)
 
     # --- scan 프리빌드 ---
@@ -199,15 +216,21 @@ def _printHelp(console) -> None:
     console.print("  dartlab collect --stats             수집 현황")
     console.print()
     console.print("  [bold]scan 프리빌드[/]:")
-    console.print("  dartlab collect --scan              전종목 횡단분석 프리빌드 (changes+finance+report)")
+    console.print("  dartlab collect --scan              DART 전종목 횡단분석 프리빌드")
     console.print("  dartlab collect --scan changes      changes만 프리빌드")
     console.print("  dartlab collect --scan finance      finance만 프리빌드")
     console.print("  dartlab collect --scan report       report만 프리빌드")
+    console.print("  dartlab collect --tier sp500 --scan EDGAR scan 프리빌드")
     console.print()
     console.print("  [bold]EDGAR[/] (ticker = 영문 → 자동 감지):")
-    console.print("  dartlab collect AAPL MSFT           지정 ticker 수집")
-    console.print("  dartlab collect --tier sp500        S&P 500 전체 수집")
-    console.print("  dartlab collect --tier sp500 --limit 10  10개만 테스트")
+    console.print("  dartlab collect AAPL MSFT                   지정 ticker (finance+docs)")
+    console.print("  dartlab collect AAPL -c finance              finance만 수집")
+    console.print("  dartlab collect --tier sp500                 S&P 500 전체")
+    console.print("  dartlab collect --tier all                   Nasdaq+NYSE 전체")
+    console.print("  dartlab collect --tier nasdaq -c finance     Nasdaq finance만")
+    console.print("  dartlab collect --tier sp500 --limit 10      10개만 테스트")
+    console.print("  dartlab collect --batch --tier all            전체 배치")
+    console.print("  dartlab collect --batch --tier all --mode new 미수집만")
 
 
 # ── scan 프리빌드 ──────────────────────────────────────
@@ -241,67 +264,232 @@ def _runScan(console, args) -> int:
 
 
 def _runEdgar(console, args) -> int:
-    """EDGAR docs 수집."""
-    from dartlab.core.dataLoader import _dataDir
-    from dartlab.providers.edgar.docs.fetch import fetchEdgarDocs
+    """EDGAR 데이터 수집 — 배치 병렬 + 카테고리 선택."""
+    from dartlab.providers.edgar.openapi.batch import (
+        batchCollectEdgar,
+        batchCollectEdgarAll,
+    )
 
-    outDir = _dataDir("edgarDocs")
-    outDir.mkdir(parents=True, exist_ok=True)
+    # 카테고리 파싱
+    cats = [c.strip() for c in args.categories.split(",")] if args.categories else ["finance", "docs"]
+
+    # 카테고리 검증
+    validCats = {"finance", "docs"}
+    invalidCats = [c for c in cats if c not in validCats]
+    if invalidCats:
+        console.print(f"[red]유효하지 않은 EDGAR 카테고리: {invalidCats}. 지원: {sorted(validCats)}[/]")
+        return 1
+    catLabel = ", ".join(cats)
+
+    # tier 검증
+    validTiers = {"all", "nasdaq", "nyse", "sp500"}
+    if args.tier and args.tier not in validTiers:
+        console.print(f"[red]유효하지 않은 tier: '{args.tier}'. 지원: {sorted(validTiers)}[/]")
+        return 1
 
     tickers: list[str] = []
 
     if args.codes:
         tickers = [c.upper() for c in args.codes]
     elif args.tier:
-        tickers = _loadEdgarTickers(args.tier)
-        if tickers is None:
+        loaded = _loadEdgarTickers(args.tier)
+        if loaded is None:
             console.print(f"[red]tier '{args.tier}'에 해당하는 ticker 없음[/]")
             return 1
+        tickers = loaded
     else:
-        console.print("[bold]dartlab collect[/] — EDGAR docs 수집\n")
-        console.print("  dartlab collect AAPL MSFT           지정 ticker")
-        console.print("  dartlab collect --tier sp500        S&P 500 전체")
-        console.print("  dartlab collect --tier sp500 --limit 10  10개만")
+        console.print("[bold]dartlab collect[/] — EDGAR 데이터 수집\n")
+        console.print("  dartlab collect AAPL MSFT                   지정 ticker")
+        console.print("  dartlab collect AAPL -c finance              finance만")
+        console.print("  dartlab collect --tier sp500                 S&P 500 전체")
+        console.print("  dartlab collect --tier all                   Nasdaq+NYSE 전체")
+        console.print("  dartlab collect --tier sp500 -c finance      S&P 500 finance만")
+        console.print("  dartlab collect --tier sp500 --limit 10      10개만 테스트")
+        console.print("  dartlab collect --batch --tier all            전체 배치")
+        console.print("  dartlab collect --batch --tier all --mode new 미수집만")
         return 1
 
     if args.limit and len(tickers) > args.limit:
         tickers = tickers[: args.limit]
 
-    # 이미 수집된 ticker 스킵
-    existing = {f.stem for f in outDir.glob("*.parquet")}
-    targets = [t for t in tickers if t not in existing]
-    skippedCount = len(tickers) - len(targets)
-
-    console.print(f"[bold]EDGAR docs 수집[/]: {len(targets)}개 ticker (스킵 {skippedCount}개)\n")
-
-    if not targets:
-        console.print("[green]모든 ticker가 이미 수집되었습니다.[/]")
+    # --batch + --tier → batchCollectEdgarAll
+    if getattr(args, "batch", False) and getattr(args, "tier", None):
+        mode = getattr(args, "mode", "all")
+        console.print(f"[bold]EDGAR 배치 수집[/]: tier={args.tier}, mode={mode}, {catLabel}\n")
+        results = batchCollectEdgarAll(
+            tier=args.tier,
+            categories=cats,
+            mode=mode,
+        )
+        total = len(results)
+        success = sum(1 for v in results.values() if any(cnt > 0 for cnt in v.values()))
+        console.print(f"\n[bold green]완료[/]: 수집 {success} / 총 {total}")
         return 0
 
-    succeeded = 0
-    failed = 0
-    failedTickers: list[str] = []
+    console.print(f"[bold]EDGAR 수집[/]: {len(tickers)}개 ticker | {catLabel}\n")
 
-    for i, ticker in enumerate(targets, 1):
-        outPath = outDir / f"{ticker}.parquet"
-        console.print(f"  [{i}/{len(targets)}] {ticker} ... ", end="")
-        try:
-            fetchEdgarDocs(ticker, outPath, showProgress=True)
-            succeeded += 1
-            console.print("[green]OK[/]")
-        except (ValueError, KeyError, RuntimeError, OSError, TimeoutError, AttributeError) as e:
-            failed += 1
-            failedTickers.append(ticker)
-            console.print(f"[red]실패: {e}[/]")
+    results = batchCollectEdgar(
+        tickers,
+        categories=cats,
+        incremental=True,
+    )
 
-    console.print(f"\n[bold green]완료[/]: 성공 {succeeded} / 실패 {failed} / 스킵 {skippedCount}")
-    if failedTickers:
-        console.print(f"실패 목록: {', '.join(failedTickers[:20])}")
+    total = len(results)
+    success = sum(1 for v in results.values() if any(cnt > 0 for cnt in v.values()))
+    skipped = sum(1 for v in results.values() if all(cnt == 0 for cnt in v.values()))
+    console.print(f"\n[bold green]완료[/]: 수집 {success} / 스킵 {skipped} / 총 {total}")
+
+    # --deploy: HuggingFace 업로드
+    if getattr(args, "deploy", False):
+        from dartlab.providers.edgar.openapi.deploy import deployEdgarToHF
+
+        console.print("\n[bold]HuggingFace 업로드 시작[/]...\n")
+        deployResult = deployEdgarToHF(categories=cats)
+        for cat, count in deployResult.items():
+            console.print(f"  {cat}: {count}개 업로드")
+
+    return 0
+
+
+def _runEdgarScan(console, args) -> int:
+    """EDGAR scan 프리빌드."""
+    from dartlab.scan.edgarBuilder import buildEdgarScan
+
+    sinceYear = getattr(args, "since_year", 2021)
+    console.print(f"[bold]EDGAR scan 프리빌드[/] sinceYear={sinceYear}\n")
+    path = buildEdgarScan(sinceYear=sinceYear, verbose=True)
+    console.print(f"\n[bold green]완료[/]: {path}")
+    return 0
+
+
+def _runEdgarCheck(console, args) -> int:
+    """EDGAR freshness 체크."""
+    from dartlab.providers.edgar.openapi.freshness import checkEdgarFreshness
+
+    tickers = []
+    if args.codes:
+        tickers = [c.upper() for c in args.codes]
+    elif args.tier:
+        loaded = _loadEdgarTickers(args.tier)
+        tickers = (loaded or [])[:args.limit or 20]
+
+    if not tickers:
+        console.print("[red]체크할 ticker를 지정하세요.[/]")
+        return 1
+
+    for t in tickers:
+        result = checkEdgarFreshness(t, forceCheck=True)
+        if result.docsMissing:
+            console.print(f"  ⚠ {t} docs — 미수집")
+        elif result.missingCount > 0:
+            console.print(f"  ⚠ {t} docs — 새 filing {result.missingCount}건")
+        else:
+            console.print(f"  ✓ {t} docs — 최신 상태")
+
+        if result.financeMissing:
+            console.print(f"  ⚠ {t} finance — 미수집")
+        else:
+            console.print(f"  ✓ {t} finance — 최신 상태")
+    return 0
+
+
+def _runEdgarIncremental(console, args) -> int:
+    """EDGAR 증분 수집."""
+    from dartlab.providers.edgar.openapi.freshness import (
+        checkEdgarFreshness,
+        collectEdgarMissing,
+    )
+
+    cats = [c.strip() for c in args.categories.split(",")] if args.categories else None
+
+    tickers = []
+    if args.codes:
+        tickers = [c.upper() for c in args.codes]
+    elif args.tier:
+        loaded = _loadEdgarTickers(args.tier)
+        tickers = (loaded or [])[:args.limit or 50]
+
+    if not tickers:
+        console.print("[red]수집할 ticker를 지정하세요.[/]")
+        return 1
+
+    for t in tickers:
+        result = checkEdgarFreshness(t, forceCheck=True)
+        if result.isFresh:
+            console.print(f"  ✓ {t} — 최신 상태")
+        else:
+            console.print(f"  ⚠ {t} — 수집 중...")
+            counts = collectEdgarMissing(t, categories=cats)
+            summary = ", ".join(f"{k}:{v}" for k, v in counts.items() if v > 0)
+            console.print(f"  ✓ {t} ({summary or '변경 없음'})")
+    return 0
+
+
+def _runEdgarStats(console, args) -> int:
+    """EDGAR 수집 현황 통계."""
+    import polars as pl
+
+    from dartlab.providers.edgar.openapi.freshness import scanEdgarMarketFreshness
+
+    tier = getattr(args, "tier", None) or "sp500"
+    console.print(f"[bold]EDGAR 수집 현황[/] (tier={tier})\n")
+
+    df = scanEdgarMarketFreshness(tier=tier)
+    if df.is_empty():
+        console.print("[yellow]유니버스가 비어 있습니다.[/]")
+        return 0
+
+    total = df.height
+    complete = df.filter(pl.col("status") == "complete").height
+    partial = df.filter(pl.col("status") == "partial").height
+    missing = df.filter(pl.col("status") == "missing").height
+    hasDocs = df.filter(pl.col("hasDocs")).height
+    hasFinance = df.filter(pl.col("hasFinance")).height
+
+    console.print(f"  전체: {total}")
+    console.print(f"  완전 수집 (docs+finance): {complete}")
+    console.print(f"  부분 수집: {partial}")
+    console.print(f"  미수집: {missing}")
+    console.print(f"  docs 보유: {hasDocs}")
+    console.print(f"  finance 보유: {hasFinance}")
+    return 0
+
+
+def _runEdgarUncollected(console, args) -> int:
+    """EDGAR 미수집 ticker 목록."""
+    from dartlab.providers.edgar.openapi.freshness import scanEdgarMarketFreshness
+
+    tier = getattr(args, "tier", None) or "sp500"
+    limit = args.limit or 20
+
+    df = scanEdgarMarketFreshness(tier=tier)
+    uncollected = df.filter(pl.col("status") != "complete")
+
+    showing = min(limit, uncollected.height)
+    console.print(f"[bold]EDGAR 미수집[/]: {uncollected.height}개 (tier={tier}, 상위 {showing}개)\n")
+
+    for row in uncollected.head(limit).iter_rows(named=True):
+        parts = []
+        if not row["hasDocs"]:
+            parts.append("docs")
+        if not row["hasFinance"]:
+            parts.append("finance")
+        console.print(f"  {row['ticker']:<8} 미수집: {', '.join(parts)}")
     return 0
 
 
 def _loadEdgarTickers(tier: str) -> list[str] | None:
-    """edgarTickers.json에서 tier별 ticker 목록."""
+    """tier별 EDGAR ticker 목록 — SEC 동적 유니버스 우선, 정적 JSON fallback."""
+    try:
+        from dartlab.core.dataLoader import loadEdgarTargetUniverse
+
+        df = loadEdgarTargetUniverse(tier)
+        if df.height > 0:
+            return df["ticker"].to_list()
+    except (ImportError, OSError, ValueError):
+        pass
+
+    # fallback: 정적 JSON
     import json
     from pathlib import Path
 

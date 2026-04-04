@@ -83,6 +83,27 @@ function createMockBridge(): Bridge {
       } else if (m.type === "syncConversations") {
         // persist to localStorage
         try { localStorage.setItem("dartlab-convs", JSON.stringify(m.payload)); } catch {}
+      } else if (m.type === "listTemplates") {
+        setTimeout(() => dispatch({ type: "templates", payload: [
+          { name: "financial", description: "재무 분석", source: "builtin" },
+          { name: "valuation", description: "밸류에이션", source: "builtin" },
+        ]}), 50);
+      } else if (m.type === "stopStream") {
+        console.log("[mock] stream stopped");
+      } else if (m.type === "setProvider") {
+        const p = m.payload as Record<string, unknown>;
+        setTimeout(() => dispatch({ type: "profile", payload: { provider: p.provider, model: "mock-model", providers: [] } }), 50);
+      } else if (m.type === "requestCredential") {
+        const p = m.payload as Record<string, unknown>;
+        console.log("[mock] credential requested for", p.provider);
+        setTimeout(() => dispatch({ type: "profile", payload: { provider: p.provider, model: "mock-model" } }), 200);
+      } else if (m.type === "openExternal") {
+        const p = m.payload as Record<string, unknown>;
+        console.log("[mock] openExternal:", p.url);
+      } else if (m.type === "openSettings") {
+        console.log("[mock] openSettings");
+      } else if (m.type === "pasteOAuthToken" || m.type === "pasteOAuthCode") {
+        console.log("[mock]", m.type);
       }
     },
     getState: <T>() => {

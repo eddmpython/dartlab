@@ -54,6 +54,48 @@ def pct(num: pl.Expr, den: pl.Expr) -> pl.Expr:
     return (safe_div(num, den) * 100).round(2)
 
 
+def scan_edgar_raw_tags(tags: list[str], *, annual: bool = True) -> pl.DataFrame:
+    """XBRL 태그명으로 직접 ��종목 스캔 (snakeId 매핑 없이).
+
+    Returns: stockCode | corpName | {tag1} | {tag2} | ...
+    """
+    from dartlab.providers.edgar.report import edgarFinancePath
+
+    edgarDir = edgarFinancePath("_").parent
+    if not edgarDir.exists():
+        return pl.DataFrame()
+
+    records = []
+    for fp in edgarDir.glob("*.parquet"):
+        cik = fp.stem
+        try:
+            df = pl.scan_parquet(fp).filter(
+                pl.col("tag").is_in(tags)
+                & pl.col("form").is_in(["10-K", "20-F"])
+            ).select("tag", "val", "fy", "entityName").collect()
+
+            if df.is_empty():
+                continue
+
+            # 최신 연도
+            latestFy = df["fy"].max()
+            latest = df.filter(pl.col("fy") == latestFy)
+
+            record = {
+                "stockCode": cik,
+                "corpName": latest["entityName"][0] if latest.height > 0 else "",
+            }
+            for tag in tags:
+                tagRows = latest.filter(pl.col("tag") == tag)
+                record[tag] = tagRows["val"][0] if tagRows.height > 0 else None
+
+            records.append(record)
+        except (pl.exceptions.ComputeError, OSError):
+            continue
+
+    return pl.DataFrame(records) if records else pl.DataFrame()
+
+
 def grade_by_value(val: pl.Expr, thresholds: list[tuple[float, str]], default: str = "해당없음") -> pl.Expr:
     """값 기반 등급 분류. thresholds는 (상한, 등급) 리스트 (오름차순)."""
     expr = val

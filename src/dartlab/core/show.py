@@ -81,7 +81,9 @@ def _bridgeKoreanSnakeId(
             else:
                 translated.append(q)  # 이미 snakeId
         if translated:
-            hits = df.filter(pl.col(mc).is_in(translated))
+            # EDGAR alias도 바로 확장 포함 (부분 매칭 방지)
+            edgarExpanded = _expandEdgarAliases(translated)
+            hits = df.filter(pl.col(mc).is_in(edgarExpanded))
             if not hits.is_empty():
                 return hits
 
@@ -102,6 +104,22 @@ def _bridgeKoreanSnakeId(
                 return hits
 
     return None
+
+
+def _expandEdgarAliases(snakeIds: list[str]) -> list[str]:
+    """DART snakeId를 EDGAR snakeId alias로도 확장.
+
+    SNAKEID_ALIASES: {dartSnakeId: edgarSnakeId}
+    예: cash_flows_from_financing → cash_flows_from_financing_activities
+    """
+    from dartlab.core.finance.labels import SNAKEID_ALIASES
+
+    expanded = list(snakeIds)
+    for sid in snakeIds:
+        edgarSid = SNAKEID_ALIASES.get(sid)
+        if edgarSid and edgarSid not in expanded:
+            expanded.append(edgarSid)
+    return expanded
 
 
 def _cascadeFilterRows(

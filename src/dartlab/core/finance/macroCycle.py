@@ -815,3 +815,95 @@ def classifyVixRegime(vix: float) -> VixRegime:
     if vix >= 15:
         return VixRegime(vix, "normal", "정상", 0)
     return VixRegime(vix, "complacent", "낙관", 0)
+
+
+# ══════════════════════════════════════
+# Copper/Gold Ratio (경기 선행)
+# ══════════════════════════════════════
+
+
+@dataclass(frozen=True)
+class CopperGoldSignal:
+    """구리/금 비율 경기 선행 신호."""
+
+    ratio: float
+    direction: str  # "rising" | "stable" | "falling"
+    directionLabel: str  # "상승" | "안정" | "하락"
+    implication: str  # "expansion" | "neutral" | "contraction"
+    description: str
+
+
+def copperGoldRatio(
+    copper: float,
+    gold: float,
+    prevCopper: float | None = None,
+    prevGold: float | None = None,
+) -> CopperGoldSignal:
+    """Copper/Gold Ratio → 경기 선행.
+
+    구리 = 산업수요, 금 = 안전자산. 비율 상승 = 경기 낙관.
+    10Y 국채 수익률과 강한 상관.
+    """
+    if gold <= 0:
+        return CopperGoldSignal(0, "stable", "판별불가", "neutral", "금 가격 데이터 없음")
+
+    ratio = copper / gold
+    prev_ratio = (prevCopper / prevGold) if prevCopper and prevGold and prevGold > 0 else None
+
+    if prev_ratio is not None:
+        change_pct = ((ratio - prev_ratio) / prev_ratio) * 100
+    else:
+        change_pct = 0.0
+
+    if change_pct > 3:
+        return CopperGoldSignal(round(ratio, 4), "rising", "상승", "expansion",
+                                f"Cu/Au {ratio:.4f} ({change_pct:+.1f}%) — 산업수요 확대, 경기 낙관")
+    elif change_pct < -3:
+        return CopperGoldSignal(round(ratio, 4), "falling", "하락", "contraction",
+                                f"Cu/Au {ratio:.4f} ({change_pct:+.1f}%) — 안전자산 선호, 경기 비관")
+    else:
+        return CopperGoldSignal(round(ratio, 4), "stable", "안정", "neutral",
+                                f"Cu/Au {ratio:.4f} ({change_pct:+.1f}%) — 안정")
+
+
+# ══════════════════════════════════════
+# BEI / Real Rate 분해
+# ══════════════════════════════════════
+
+
+@dataclass(frozen=True)
+class RealRateRegimeResult:
+    """실질금리 + 기대인플레이션 분해 결과."""
+
+    realRate: float  # TIPS 실질금리 (%)
+    bei: float  # Breakeven Inflation (%)
+    regime: str  # "tightening" | "reflation" | "goldilocks" | "deflation"
+    regimeLabel: str  # "긴축" | "리플레이션" | "골디락스" | "디플레"
+    description: str
+
+
+def realRateRegime(realRate: float, bei: float) -> RealRateRegimeResult:
+    """실질금리 + BEI → 금융환경 4분면.
+
+    | | BEI 상승 | BEI 하락 |
+    |실질금리 상승| 긴축 | 디플레 위험 |
+    |실질금리 하락| 리플레이션 | 골디락스 |
+
+    (방향 판별은 호출자가 전기 대비 제공)
+    여기서는 수준 기반으로 판별.
+    """
+    if realRate > 2.0 and bei < 2.0:
+        return RealRateRegimeResult(round(realRate, 2), round(bei, 2), "deflation", "디플레위험",
+                                    f"실질금리 {realRate:.2f}% 높음 + BEI {bei:.2f}% 낮음 — 디플레이션 위험")
+    elif realRate > 1.5 and bei > 2.5:
+        return RealRateRegimeResult(round(realRate, 2), round(bei, 2), "tightening", "긴축",
+                                    f"실질금리 {realRate:.2f}% + BEI {bei:.2f}% 동반 상승 — 금융 긴축")
+    elif realRate < 0.5 and bei > 2.5:
+        return RealRateRegimeResult(round(realRate, 2), round(bei, 2), "reflation", "리플레이션",
+                                    f"실질금리 {realRate:.2f}% 낮음 + BEI {bei:.2f}% 높음 — 리플레이션")
+    elif realRate < 1.0 and bei < 2.0:
+        return RealRateRegimeResult(round(realRate, 2), round(bei, 2), "goldilocks", "골디락스",
+                                    f"실질금리 {realRate:.2f}% + BEI {bei:.2f}% 모두 안정 — 골디락스")
+    else:
+        return RealRateRegimeResult(round(realRate, 2), round(bei, 2), "neutral", "중립",
+                                    f"실질금리 {realRate:.2f}%, BEI {bei:.2f}% — 뚜렷한 방향 없음")

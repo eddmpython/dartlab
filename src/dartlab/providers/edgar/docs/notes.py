@@ -107,6 +107,46 @@ def notes(
     return result
 
 
+def notesByCategory(
+    cik: str,
+    category: str | None = None,
+    *,
+    edgarDir: Path | None = None,
+) -> pl.DataFrame | None | dict[str, pl.DataFrame]:
+    """카테고리별 구조화된 Notes DataFrame.
+
+    DART의 c.notes.inventory / c.notes.borrowings 등에 대응.
+
+    Args:
+        cik: SEC CIK 번호.
+        category: 카테고리명 (None이면 사용 가능한 카테고리 목록 반환).
+
+    Returns:
+        category 지정 시: 피벗된 DataFrame (tag × year).
+        category=None: 데이터 있는 카테고리 dict.
+    """
+    from dartlab.providers.edgar.docs.notesParsers import (
+        availableCategories,
+        extractNoteCategory,
+    )
+
+    if category is not None:
+        return extractNoteCategory(cik, category, edgarDir=edgarDir)
+
+    # 배치 스캔 (1번 parquet 로드로 12카테고리 추출)
+    from dartlab.providers.edgar.docs.notesParsers import extractAllNoteCategories
+
+    return extractAllNoteCategories(cik, edgarDir=edgarDir) or None
+
+
+def noteCategories(cik: str, *, edgarDir: Path | None = None) -> list[str]:
+    """이 기업에서 데이터가 있는 notes 카테고리 목록."""
+    from dartlab.providers.edgar.docs.notesParsers import extractAllNoteCategories
+
+    allCats = extractAllNoteCategories(cik, edgarDir=edgarDir)
+    return list(allCats.keys())
+
+
 def _tagToLabel(tag: str) -> str:
     """TextBlock 태그명 → 읽기 쉬운 label. 'AccountingPoliciesTextBlock' → 'Accounting Policies'."""
     import re

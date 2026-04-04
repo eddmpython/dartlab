@@ -44,9 +44,25 @@ class _DocsAccessor:
         return self._company._cache[key]
 
     def notes(self, query: str | None = None) -> pl.DataFrame | None:
+        """XBRL TextBlock 주석 검색 (원본). query=None이면 전체 목록."""
         from dartlab.providers.edgar.docs.notes import notes
 
         return notes(self._company.cik, query)
+
+    def notesByCategory(self, category: str | None = None):
+        """카테고리별 구조화 Notes. DART c.notes.inventory 등에 대응.
+
+        category=None이면 데이터 있는 카테고리 dict 반환.
+        """
+        from dartlab.providers.edgar.docs.notes import notesByCategory
+
+        return notesByCategory(self._company.cik, category)
+
+    def noteCategories(self) -> list[str]:
+        """이 기업에서 데이터가 있는 notes 카테고리 목록."""
+        from dartlab.providers.edgar.docs.notes import noteCategories
+
+        return noteCategories(self._company.cik)
 
     def freq(self) -> pl.DataFrame | None:
         key = "_docs_freq"

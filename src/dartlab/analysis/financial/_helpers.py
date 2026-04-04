@@ -278,6 +278,9 @@ def quarterlyColsFromPeriods(
 ) -> list[str]:
     """기간 목록에서 분기 컬럼 추출 — basePeriod 이하만."""
     qs = sorted([c for c in periods if "Q" in c], reverse=True)
+    if not qs:
+        # EDGAR fallback: 연간 데이터 (2024, 2023, ...)
+        qs = sorted([c for c in periods if c.isdigit() and len(c) == 4], reverse=True)
     if basePeriod is not None:
         limit = _periodSortKey(basePeriod)
         qs = [c for c in qs if _periodSortKey(c) <= limit]

@@ -40,7 +40,10 @@ node_modules/
 
 # UI build artifacts
 ui/build/
+ui/web/build/
 ui/node_modules/
+ui/web/node_modules/
+ui/vscode/node_modules/
 ui/screenshots/
 ui/.svelte-kit/
 

@@ -40,22 +40,47 @@ _FINANCE_TOPICS = frozenset({"BS", "IS", "CF", "CIS"})
 
 
 class _EdgarNotesWrapper:
-    """DART Notes 객체와 동일 인터페이스를 제공하는 EDGAR notes 래퍼."""
+    """DART Notes 객체와 동일 인터페이스를 제공하는 EDGAR notes 래퍼.
+
+    c.notes("inventory") → 카테고리별 구조화 DataFrame
+    c.notes.inventory → 동일
+    c.notes.keys() → 데이터 있는 카테고리 목록
+    c.notes() → TextBlock 원본 검색 (query=None이면 전체)
+    """
 
     def __init__(self, company):
         self._company = company
 
     def __call__(self, query: str | None = None) -> pl.DataFrame | None:
+        # 카테고리명이면 구조화 Notes 반환
+        from dartlab.providers.edgar.docs.notesParsers import availableCategories
+
+        if query and query in availableCategories():
+            return self._company.docs.notesByCategory(query)
+        # 그 외는 TextBlock 원본 검색
         return self._company.docs.notes(query)
+
+    def __getattr__(self, name: str) -> pl.DataFrame | None:
+        if name.startswith("_"):
+            raise AttributeError(name)
+        from dartlab.providers.edgar.docs.notesParsers import availableCategories
+
+        if name in availableCategories():
+            return self._company.docs.notesByCategory(name)
+        raise AttributeError(f"EDGAR notes에 '{name}' 카테고리 없음. 지원: {availableCategories()}")
 
     def all(self) -> pl.DataFrame | None:
         return self._company.docs.notes(None)
 
     def keys(self) -> list[str]:
-        return []
+        """데이터가 있는 카테고리 목록."""
+        return self._company.docs.noteCategories()
 
     def keys_kr(self) -> list[str]:
-        return []
+        """한국어 카테고리 목록."""
+        from dartlab.providers.edgar.docs.notesParsers import CATEGORY_LABELS
+
+        return [CATEGORY_LABELS.get(k, k) for k in self.keys()]
 
     def quarterly(self, query: str | None = None) -> pl.DataFrame | None:
         return self._company.docs.notes(query)

@@ -16,8 +16,7 @@ from dartlab.providers.edgar.openapi.client import (
     EdgarApiError,
 )
 
-# 전체 워커 공유 세마포어 — 동시 요청 8개 제한
-# 이벤트 루프별로 세마포어를 생성해야 함 (루프 간 공유 불가)
+# 이벤트 루프별 세마포어 (루프 간 공유 불가)
 _LOOP_SEMAPHORES: dict[int, asyncio.Semaphore] = {}
 
 
@@ -27,7 +26,6 @@ def _getSemaphore() -> asyncio.Semaphore:
     loopId = id(loop)
     if loopId not in _LOOP_SEMAPHORES:
         _LOOP_SEMAPHORES[loopId] = asyncio.Semaphore(8)
-        # 이전 루프의 세마포어 정리 (메모리 누수 방지)
         stale = [k for k in _LOOP_SEMAPHORES if k != loopId]
         for k in stale:
             del _LOOP_SEMAPHORES[k]
@@ -71,8 +69,8 @@ class AsyncEdgarClient:
             await asyncio.sleep(self._minInterval - elapsed)
         self._lastRequest = asyncio.get_event_loop().time()
 
-    async def getJson(self, url: str) -> dict[str, Any]:
-        """URL에서 JSON 반환. 429/5xx 시 재시도."""
+    async def _requestWithRetry(self, url: str, *, timeout: float | None = None) -> httpx.Response:
+        """공용 재시도 로직. 429/5xx 시 exponential backoff."""
         sem = _getSemaphore()
         lastErr: Exception | None = None
 
@@ -80,7 +78,10 @@ class AsyncEdgarClient:
             async with sem:
                 await self._throttle()
                 try:
-                    resp = await self._client.get(url, headers=self.headers)
+                    kwargs: dict[str, Any] = {"headers": self.headers}
+                    if timeout is not None:
+                        kwargs["timeout"] = timeout
+                    resp = await self._client.get(url, **kwargs)
                     self._lastRequest = asyncio.get_event_loop().time()
 
                     if resp.status_code == 429:
@@ -89,10 +90,7 @@ class AsyncEdgarClient:
                         continue
 
                     resp.raise_for_status()
-                    data = resp.json()
-                    if not isinstance(data, dict):
-                        raise EdgarApiError(f"JSON object expected: {url}")
-                    return data
+                    return resp
 
                 except httpx.HTTPStatusError as exc:
                     lastErr = exc
@@ -111,42 +109,18 @@ class AsyncEdgarClient:
 
         raise EdgarApiError(f"SEC API 요청 실패 (재시도 초과): {url}") from lastErr
 
+    async def getJson(self, url: str) -> dict[str, Any]:
+        """URL에서 JSON 반환."""
+        resp = await self._requestWithRetry(url)
+        data = resp.json()
+        if not isinstance(data, dict):
+            raise EdgarApiError(f"JSON object expected: {url}")
+        return data
+
     async def getBytes(self, url: str) -> bytes:
         """URL에서 바이너리 반환."""
-        sem = _getSemaphore()
-        lastErr: Exception | None = None
-
-        for attempt in range(self._maxRetries):
-            async with sem:
-                await self._throttle()
-                try:
-                    resp = await self._client.get(url, headers=self.headers, timeout=60)
-                    self._lastRequest = asyncio.get_event_loop().time()
-
-                    if resp.status_code == 429:
-                        self.exhausted = True
-                        await asyncio.sleep(2**attempt)
-                        continue
-
-                    resp.raise_for_status()
-                    return resp.content
-
-                except httpx.HTTPStatusError as exc:
-                    lastErr = exc
-                    status = exc.response.status_code
-                    if status in (429, 500, 502, 503, 504) and attempt < self._maxRetries - 1:
-                        await asyncio.sleep(2**attempt)
-                        continue
-                    raise EdgarApiError(f"SEC API ({status}): {url}") from exc
-
-                except httpx.HTTPError as exc:
-                    lastErr = exc
-                    if attempt < self._maxRetries - 1:
-                        await asyncio.sleep(2**attempt)
-                        continue
-                    raise EdgarApiError(f"SEC API 네트워크 오류: {url}") from exc
-
-        raise EdgarApiError(f"SEC API 바이너리 요청 실패: {url}") from lastErr
+        resp = await self._requestWithRetry(url, timeout=60)
+        return resp.content
 
     async def close(self) -> None:
         """HTTP 클라이언트 연결을 닫는다."""

@@ -17,8 +17,12 @@ _MAX_YEARS = 8
 
 
 def _quarterlyCols(periods: list[str], maxQ: int = _MAX_QUARTERS) -> list[str]:
-    """기간 목록에서 분기 컬럼만 추출."""
-    return sorted([c for c in periods if "Q" in c], reverse=True)[:maxQ]
+    """기간 목록에서 분기 컬럼 추출. 분기가 없으면 연간 컬럼 fallback (EDGAR 호환)."""
+    quarterly = sorted([c for c in periods if "Q" in c], reverse=True)[:maxQ]
+    if quarterly:
+        return quarterly
+    # EDGAR fallback: 연간 데이터 (2024, 2023, ...)
+    return sorted([c for c in periods if c.isdigit() and len(c) == 4], reverse=True)[:maxQ]
 
 
 def _getRatios(company):

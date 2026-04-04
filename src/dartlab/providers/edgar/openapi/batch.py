@@ -330,6 +330,8 @@ def batchCollectEdgar(
         finally:
             for c in clients:
                 await c.close()
+            # ticker lock 정리 (메모리 누수 방지)
+            _TICKER_LOCKS.clear()
 
         remaining = queue.qsize()
         if remaining > 0:

@@ -83,6 +83,55 @@ CATALOG: dict[str, list[CatalogEntry]] = {
         CatalogEntry("MORTGAGE15US", "15년 모기지", "housing", "Weekly", "Percent", "15년 고정 모기지 금리"),
         CatalogEntry("EXHOSLUSM495S", "기존주택판매", "housing", "Monthly", "Number of Units", "기존 주택 판매건수"),
     ],
+    "ism": [
+        CatalogEntry("NAPM", "ISM PMI", "ism", "Monthly", "Index", "ISM 제조업 PMI (구 NAPM)"),
+        CatalogEntry("NAPMNOI", "ISM 신규수주", "ism", "Monthly", "Index", "ISM 제조업 신규수주 지수"),
+        CatalogEntry("NAPMII", "ISM 재고", "ism", "Monthly", "Index", "ISM 제조업 재고 지수"),
+        CatalogEntry("NEWORDER", "제조업 신규수주", "ism", "Monthly", "Millions of Dollars", "제조업 신규수주"),
+        CatalogEntry("BUSINV", "총사업재고", "ism", "Monthly", "Millions of Dollars", "총 사업 재고"),
+        CatalogEntry("AMTMNO", "제조업 총수주", "ism", "Monthly", "Millions of Dollars", "제조업 총 신규수주"),
+    ],
+    "lei": [
+        CatalogEntry("AWHMAN", "제조업 주당근로시간", "lei", "Monthly", "Hours", "제조업 평균 주당 근로시간"),
+        CatalogEntry("ACOGNO", "소비재 신규수주", "lei", "Monthly", "Millions of Dollars", "비국방 소비재 신규수주"),
+        CatalogEntry(
+            "ACDGNO", "비국방자본재 신규수주", "lei", "Monthly", "Millions of Dollars", "비국방 자본재 신규수주 (항공기 제외)"
+        ),
+        CatalogEntry("M2REAL", "실질 M2", "lei", "Monthly", "Billions of 1982-84 Dollars", "실질 M2 통화량"),
+        CatalogEntry(
+            "A191RL1Q225SBEA", "실질GDP 성장률", "lei", "Quarterly", "Percent", "실질 GDP 성장률 (QoQ SAAR)"
+        ),
+    ],
+    "credit": [
+        CatalogEntry(
+            "TCMDO", "총신용시장부채", "credit", "Quarterly", "Billions of Dollars", "비금융부문 총 신용시장 부채"
+        ),
+        CatalogEntry("GFDEBTN", "연방정부 부채", "credit", "Quarterly", "Millions of Dollars", "연방정부 총 공공부채"),
+        CatalogEntry("TDSP", "부채서비스비율", "credit", "Quarterly", "Percent", "가계 부채 서비스 비율"),
+        CatalogEntry(
+            "DRSFRMACBS", "부실대출비율", "credit", "Quarterly", "Percent", "상업은행 부실대출 비율"
+        ),
+    ],
+    "conditions": [
+        CatalogEntry("NFCI", "시카고Fed NFCI", "conditions", "Weekly", "Index", "시카고Fed 금융상태지수"),
+        CatalogEntry("ANFCI", "조정 NFCI", "conditions", "Weekly", "Index", "시카고Fed 조정 금융상태지수"),
+        CatalogEntry("WEI", "주간경제지수", "conditions", "Weekly", "Percent", "NY Fed 주간 경제지수 (GDP 성장률 스케일)"),
+        CatalogEntry("SAHMREALTIME", "Sahm Rule", "conditions", "Monthly", "Percentage Points", "Sahm 실시간 침체지표"),
+    ],
+    "commodities": [
+        CatalogEntry("PCOPPUSDM", "구리 가격", "commodities", "Monthly", "U.S. Dollars per Metric Ton", "구리 가격 (월간)"),
+    ],
+    "yieldcurve": [
+        CatalogEntry("DGS1", "국채 1년", "yieldcurve", "Daily", "Percent", "미국 1년 국채 수익률"),
+        CatalogEntry("DGS3", "국채 3년", "yieldcurve", "Daily", "Percent", "미국 3년 국채 수익률"),
+        CatalogEntry("DGS5", "국채 5년", "yieldcurve", "Daily", "Percent", "미국 5년 국채 수익률"),
+        CatalogEntry("DGS7", "국채 7년", "yieldcurve", "Daily", "Percent", "미국 7년 국채 수익률"),
+        CatalogEntry("DGS20", "국채 20년", "yieldcurve", "Daily", "Percent", "미국 20년 국채 수익률"),
+    ],
+    "flowoffunds": [
+        CatalogEntry("W987RC1Q027SBEA", "민간 저축", "flowoffunds", "Quarterly", "Billions of Dollars", "민간 부문 총저축"),
+        CatalogEntry("GPDI", "민간 총투자", "flowoffunds", "Quarterly", "Billions of Dollars", "민간 국내총투자"),
+    ],
     "money": [
         CatalogEntry("M2SL", "M2 통화량", "money", "Monthly", "Billions of Dollars", "M2 통화공급"),
         CatalogEntry("BOGMBASE", "본원통화", "money", "Biweekly", "Billions of Dollars", "본원통화 (Monetary Base)"),

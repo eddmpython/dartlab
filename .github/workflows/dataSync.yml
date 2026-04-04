@@ -65,7 +65,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: data/dart/${{ matrix.category }}
-          key: dartlab-data-${{ matrix.category }}-${{ github.run_id }}
+          key: dartlab-data-${{ matrix.category }}
 
       - name: Upload to HuggingFace
         run: uv run python .github/scripts/uploadData.py --target hf

@@ -406,6 +406,57 @@ def _scanDebt(**_kw) -> pl.DataFrame:
     ).sort("debtRatio", nulls_last=True)
 
 
+# ── valuation ──
+
+
+def _scanValuation(**_kw) -> pl.DataFrame:
+    """밸류에이션 — PER/PBR/EV/EBITDA. Yahoo 주가 데이터 필요."""
+    df = scan_edgar_accounts(
+        ["net_profit", "total_stockholders_equity", "total_assets", "total_liabilities",
+         "cash_and_cash_equivalents", "operating_profit", "depreciation_amortization"],
+    )
+    if df.is_empty():
+        return df
+
+    # shares outstanding 추가
+    result = df.with_columns(
+        (pl.col("operating_profit").fill_null(0) + pl.col("depreciation_amortization").fill_null(0)).alias("ebitda"),
+    )
+
+    # PER/PBR은 시가총액 필요 — 현재는 기본 재무비율만 제공
+    result = result.with_columns(
+        safe_div(pl.col("total_assets"), pl.col("total_stockholders_equity")).round(2).alias("equityMultiplier"),
+        pct(pl.col("net_profit"), pl.col("total_stockholders_equity")).alias("roe"),
+    )
+
+    return result.select(
+        "stockCode", "corpName", "ebitda", "equityMultiplier", "roe",
+    ).sort("ebitda", descending=True, nulls_last=True)
+
+
+# ── audit ──
+
+
+def _scanAudit(**_kw) -> pl.DataFrame:
+    """감사 — XBRL AuditFees/NonAuditFees."""
+    df = scan_edgar_accounts(
+        ["sales"],  # 기본 계정으로 종목 목록 획득
+    )
+    if df.is_empty():
+        return df
+
+    # XBRL 감사비용 태그 직접 스캔
+    from dartlab.scan._edgar_helpers import scan_edgar_raw_tags
+
+    auditDf = scan_edgar_raw_tags(
+        ["AuditFees", "NonAuditServicesFees", "AllOtherFees", "TaxFees"],
+    )
+    if auditDf.is_empty():
+        return auditDf
+
+    return auditDf.sort("AuditFees", descending=True, nulls_last=True)
+
+
 _DISPATCH = {
     "profitability": _scanProfitability,
     "growth": _scanGrowth,
@@ -416,4 +467,6 @@ _DISPATCH = {
     "dividendTrend": _scanDividendTrend,
     "capital": _scanCapital,
     "debt": _scanDebt,
+    "valuation": _scanValuation,
+    "audit": _scanAudit,
 }

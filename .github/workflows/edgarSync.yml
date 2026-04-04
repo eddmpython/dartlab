@@ -2,30 +2,37 @@ name: EDGAR Data Sync
 
 on:
   schedule:
-    - cron: '0 8 * * 0'  # 주 1회 일요일 UTC 08:00
+    - cron: '0 3 * * 0'  # 일요일 UTC 03:00 (KST 12:00)
   workflow_dispatch:
     inputs:
       tier:
-        description: 'ticker tier (sp500)'
+        description: 'ticker tier (sp500/nasdaq/nyse/all)'
         default: 'sp500'
         type: string
-      batch_offset:
-        description: '시작 오프셋 (이어서 수집)'
+      categories:
+        description: '카테고리 (finance,docs)'
+        default: 'finance,docs'
+        type: string
+      mode:
+        description: '수집 모드 (new=미수집만/all=전체 증분)'
+        default: 'new'
+        type: string
+      limit:
+        description: '최대 ticker 수 (0=무제한)'
         default: '0'
         type: string
 
 permissions:
   contents: write
 
-jobs:
-  collect-edgar-docs:
-    runs-on: ubuntu-latest
-    timeout-minutes: 300
+concurrency:
+  group: edgar-data-sync
+  cancel-in-progress: false
 
-    strategy:
-      fail-fast: false
-      matrix:
-        batch: [0, 1, 2, 3, 4]
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
 
     steps:
       - uses: actions/checkout@v4
@@ -37,33 +44,83 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --extra hf
 
-      # 기존 데이터 캐시 (두 번째 실행부터 clone 생략)
-      - name: Restore data cache
+      - name: Restore EDGAR finance cache
+        uses: actions/cache@v4
+        with:
+          path: data/edgar/finance
+          key: dartlab-edgar-finance
+          restore-keys: dartlab-edgar-finance
+
+      - name: Restore EDGAR docs cache
         uses: actions/cache@v4
         with:
           path: data/edgar/docs
           key: dartlab-edgar-docs
+          restore-keys: dartlab-edgar-docs
 
-      - name: Collect EDGAR docs (batch ${{ matrix.batch }})
+      - name: Collect EDGAR data
         run: |
-          OFFSET=$(( ${{ matrix.batch }} * 100 + ${BASE_OFFSET:-0} ))
-          EDGAR_BATCH_OFFSET=$OFFSET uv run python .github/scripts/syncEdgarDocs.py
+          TIER="${{ github.event.inputs.tier || 'sp500' }}"
+          CATS="${{ github.event.inputs.categories || 'finance,docs' }}"
+          MODE="${{ github.event.inputs.mode || 'new' }}"
+          LIMIT="${{ github.event.inputs.limit || '0' }}"
+
+          CMD="uv run python -X utf8 -m dartlab collect --tier ${TIER} -c ${CATS} --mode ${MODE}"
+          if [ "${LIMIT}" != "0" ]; then
+            CMD="${CMD} --limit ${LIMIT}"
+          fi
+
+          echo "Running: ${CMD}"
+          ${CMD}
         env:
-          EDGAR_TIER: ${{ github.event.inputs.tier || 'sp500' }}
-          BASE_OFFSET: ${{ github.event.inputs.batch_offset || '0' }}
-          EDGAR_BATCH_SIZE: '100'
+          DARTLAB_DATA_DIR: ${{ github.workspace }}/data
 
-      # 수집 후 캐시 갱신
-      - name: Save data cache
-        uses: actions/cache/save@v4
-        with:
-          path: data/edgar/docs
-          key: dartlab-edgar-docs-${{ github.run_id }}-${{ matrix.batch }}
+      - name: Build EDGAR scan prebuild
+        run: |
+          uv run python -X utf8 -c "
+          from dartlab.scan.edgarBuilder import buildEdgarFinance
+          buildEdgarFinance(sinceYear=2021, verbose=True)
+          "
+        env:
+          DARTLAB_DATA_DIR: ${{ github.workspace }}/data
 
-      - name: Upload to HuggingFace
-        run: uv run python .github/scripts/uploadData.py --target hf
+      - name: Deploy to HuggingFace
+        run: |
+          uv run python -X utf8 -c "
+          import os
+          os.environ.setdefault('DARTLAB_DATA_DIR', '${{ github.workspace }}/data')
+          from dartlab.providers.edgar.openapi.deploy import deployEdgarToHF
+          cats = '${{ github.event.inputs.categories || 'finance,docs' }}'.split(',')
+          cats.append('scan')
+          result = deployEdgarToHF(categories=cats)
+          print(result)
+          "
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          SYNC_CATEGORY: edgarDocs
+
+      - name: Save EDGAR finance cache
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: data/edgar/finance
+          key: dartlab-edgar-finance
+
+      - name: Save EDGAR docs cache
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: data/edgar/docs
+          key: dartlab-edgar-docs
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## EDGAR Data Sync" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 항목 | 값 |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Tier | ${{ github.event.inputs.tier || 'sp500' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Categories | ${{ github.event.inputs.categories || 'finance,docs' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Mode | ${{ github.event.inputs.mode || 'new' }} |" >> $GITHUB_STEP_SUMMARY

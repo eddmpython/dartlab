@@ -436,6 +436,69 @@ _INDICATORS: dict[str, dict] = {
         "unit": "2020=100",
         "desc": "생산자물가 공산품 전체",
     },
+    # 교역조건 (수출/수입 물가)
+    "EXPORT_PRICE": {
+        "table": "403Y001",
+        "item": "*AA",
+        "label": "수출물가지수",
+        "group": "무역",
+        "freq": "M",
+        "unit": "2020=100",
+        "desc": "수출물가지수 총지수",
+    },
+    "IMPORT_PRICE": {
+        "table": "403Y002",
+        "item": "*AA",
+        "label": "수입물가지수",
+        "group": "무역",
+        "freq": "M",
+        "unit": "2020=100",
+        "desc": "수입물가지수 총지수",
+    },
+    # 재고순환 프록시 (ECOS에서 출하/재고지수 직접 미제공 — 통계청 KOSIS 전용)
+    # 광공업생산 모멘텀 + BSI로 재고순환 대용
+    # MANUFACTURING(AB00)은 이미 등록 → 출하 프록시
+    # BSI_ALL(99988)은 이미 등록 → 재고판단 프록시
+    # 설비투자
+    "FACILITY_INV": {
+        "table": "901Y066",
+        "item": "A00",
+        "label": "설비투자지수",
+        "group": "산업/생산",
+        "freq": "M",
+        "unit": "2020=100",
+        "desc": "설비투자지수 (원지수)",
+    },
+    # 신용 (Credit-to-GDP)
+    "CREDIT_TOTAL": {
+        "table": "104Y016",
+        "item": "BBGA11",
+        "label": "총국내신용",
+        "group": "통화/금융",
+        "freq": "M",
+        "unit": "십억원",
+        "desc": "예금은행 + 비은행 총국내신용",
+    },
+    # 소비자기대지수 (선행 심리)
+    "CSI_FUTURE": {
+        "table": "513Y001",
+        "item": "FME",
+        "label": "소비자기대지수",
+        "group": "경기/심리",
+        "freq": "M",
+        "unit": "지수",
+        "desc": "소비자기대지수(향후 경기전망)",
+    },
+    # 경기후행지수
+    "CLI_LAG": {
+        "table": "901Y067",
+        "item": "I16G",
+        "label": "경기후행지수",
+        "group": "경기/심리",
+        "freq": "M",
+        "unit": "2020=100",
+        "desc": "경기후행지수 순환변동치",
+    },
     # 경상수지 (수출 기업 매출과 직접 연결)
     "EXPORT": {
         "table": "301Y013",

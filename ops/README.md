@@ -19,7 +19,7 @@
 | [ai.md](ai.md) | L3 | ai/ | 적극적 분석가, 5 provider |
 | [guide.md](guide.md) | 교차 | guide/ | 안내 데스크 + 교육 안내자, 4층위 |
 | [experiments.md](experiments.md) | — | experiments/ | 실험 규칙, 흡수 판단 |
-| [edgar.md](edgar.md) | L1 | providers/edgar/ | EDGAR 동기화 규칙, EXEMPT 관리, 데이터 소스 차이 |
+| [edgar.md](edgar.md) | L1 | providers/edgar/ | EDGAR 동기화 규칙, EXEMPT 관리 (데이터/분석 동작은 각 엔진 문서에 통합) |
 | [code.md](code.md) | — | 전체 | camelCase, 독스트링 9섹션, 릴리즈, Git |
 | [vscode.md](vscode.md) | L4 | vscode/ | VSCode 확장 — 프로바이더 연결, stdio 프로토콜, 배포 |
 | [ui.md](ui.md) | L4 | ui/ | Svelte SPA — 패리티 규칙 (VSCode 선행) |
@@ -86,5 +86,5 @@ dartlab.scan("financial", "profitability") # 영문
 - **진입점**: 종목코드 하나면 끝. `import dartlab` 하나로 모든 기능 접근
 - **README 동기화**: 기능 변경 시 영문+한국어 동시 반영
 - **노트북 감사**: 노트북 코드는 실행 확인 후에만 커밋
-- **DART 먼저**: 모든 개선은 DART 우선, EDGAR는 안정화 후 따라감
+- **DART/EDGAR 동시**: 모든 개선은 DART/EDGAR 양쪽 반영 (protocol 테스트 강제)
 - **import 방향**: L0 ← L1 ← L2 ← L3 (CI 검증)

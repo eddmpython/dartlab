@@ -23,7 +23,7 @@ def memoized_calc(fn: Callable[..., Any]) -> Callable[..., Any]:
 
     - key: ``_{함수명}:{basePeriod}``
     - Company._cache(BoundedCache)가 없으면 캐시 없이 실행.
-    - 결과가 None이어도 캐시한다 (재계산 방지).
+    - 결과가 None이면 캐시하지 않는다 (데이�� 갱신 후 재시도 허용).
     """
 
     import inspect
@@ -43,7 +43,8 @@ def memoized_calc(fn: Callable[..., Any]) -> Callable[..., Any]:
         else:
             result = fn(company)
 
-        if cache is not None:
+        # None은 캐시하지 않음 — 데이터 갱신 후 재계산 허용
+        if cache is not None and result is not None:
             cache[key] = result
 
         return result

@@ -50,13 +50,45 @@ jobs:
           path: data/dart/docs
           key: dartlab-data-docs
 
-      - name: Build scan prebuilds + upload
+      - name: Build DART scan prebuilds + upload
         run: uv run python .github/scripts/prebuildData.py
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
-      - name: Save scan cache
+      - name: Restore EDGAR finance cache
+        uses: actions/cache@v4
+        with:
+          path: data/edgar/finance
+          key: dartlab-edgar-finance
+          restore-keys: dartlab-edgar-finance
+
+      - name: Build EDGAR scan prebuild
+        run: |
+          uv run python -X utf8 -c "
+          import os
+          os.environ.setdefault('DARTLAB_DATA_DIR', '${{ github.workspace }}/data')
+          from dartlab.scan.edgarBuilder import buildEdgarFinance
+          try:
+              buildEdgarFinance(sinceYear=2021, verbose=True)
+          except FileNotFoundError as e:
+              print(f'[prebuild] EDGAR finance 데이터 없음, 스킵: {e}')
+          "
+
+      - name: Upload EDGAR scan to HuggingFace
+        if: hashFiles('data/edgar/scan/finance.parquet') != ''
+        run: |
+          uv run python -X utf8 -c "
+          import os
+          os.environ.setdefault('DARTLAB_DATA_DIR', '${{ github.workspace }}/data')
+          from dartlab.providers.edgar.openapi.deploy import deployEdgarToHF
+          result = deployEdgarToHF(categories=['scan'])
+          print(result)
+          "
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+
+      - name: Save DART scan cache
         uses: actions/cache/save@v4
         with:
           path: data/dart/scan
-          key: dartlab-data-scan-${{ github.run_id }}
+          key: dartlab-data-scan

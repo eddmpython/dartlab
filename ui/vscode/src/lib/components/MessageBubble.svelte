@@ -205,11 +205,17 @@
 
     <!-- Loading spinner (아무 content가 없을 때) -->
     {#if message.loading && (!message.blocks?.length || message.blocks.every(b => !b.text && b.type === "text"))}
+      {@const lastTool = [...(message.blocks ?? [])].reverse().find(b => b.type === "tool_call" && !b.toolResult)}
+      {@const lastCode = [...(message.blocks ?? [])].reverse().find(b => b.type === "code_execution" && b.status === "executing")}
       <div class="loading-block">
         <div class="spinner-row">
           <div class="spinner"></div>
           <span class="spinner-label">
-            {#if loadingPhase === "thinking"}
+            {#if lastCode}
+              코드 실행 중 (라운드 {lastCode.round ?? "?"}/{lastCode.maxRounds ?? "?"})...
+            {:else if lastTool?.name}
+              {toolLabel(lastTool.name)} 호출 중...
+            {:else if loadingPhase === "thinking"}
               분석 준비 중...
             {:else if loadingPhase === "analyzing"}
               {message.meta?.company ?? ""} 로드 중...
@@ -295,18 +301,25 @@
       <!-- TOOL CALL BLOCK -->
       {#if block.type === "tool_call"}
         {@const expanded = expandedBlocks[blockIdx] === true}
+        {@const isError = block.toolResult != null && typeof block.toolResult === "string" && (block.toolResult as string).toLowerCase().includes("error")}
+        {@const toolDuration = block._ts && block._resultTs ? block._resultTs - block._ts : 0}
         <div class="tool-block">
           <button class="tool-header" onclick={() => toggleBlock(blockIdx)}>
             <svg class="tool-chevron" class:open={expanded} width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
               <path d="M6 4l4 4-4 4"/>
             </svg>
-            {#if block.toolResult != null}
+            {#if block.toolResult != null && isError}
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" class="tool-err"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm3.5 9.1L10.1 11.5 8 9.4l-2.1 2.1-1.4-1.4L6.6 8 4.5 5.9l1.4-1.4L8 6.6l2.1-2.1 1.4 1.4L9.4 8l2.1 2.1z"/></svg>
+            {:else if block.toolResult != null}
               <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" class="tool-ok"><path d="M6.5 12L2 7.5l1.4-1.4L6.5 9.2l6.1-6.1L14 4.5z"/></svg>
             {:else}
               <div class="tool-spinner-sm"></div>
             {/if}
             <span class="tool-name">{toolLabel(block.name ?? "")}</span>
             <span class="tool-args">{truncate(formatToolArg(block.arguments), 60)}</span>
+            {#if toolDuration > 0}
+              <span class="tool-time">{(toolDuration / 1000).toFixed(1)}s</span>
+            {/if}
           </button>
           {#if expanded && block.toolResult != null}
             <div class="tool-body">
@@ -457,8 +470,8 @@
   }
   .msg:not(.user).dot-success::before { background-color: #74c991; }
   .msg:not(.user).dot-failure::before { background-color: #c74e39; }
-  /* Claude Code: 진행 중이면 dot 숨김 (opacity:0) */
-  .msg:not(.user).dot-progress::before { opacity: 0; }
+  /* Claude Code: 진행 중이면 dot blink (opacity 0↔1) */
+  .msg:not(.user).dot-progress::before { animation: blink 1s linear infinite; }
 
   /* Timeline 세로선 (Claude Code: 1px, left:12px) */
   .msg:not(.user)::after {
@@ -479,7 +492,7 @@
   .user-wrap {
     display: inline-block;
     position: relative;
-    margin: 4px 0;
+    margin: 4px 24px 4px 0;
   }
   .user-wrap:first-child { margin-top: 0; }
   .user-text {
@@ -679,70 +692,6 @@
     margin-left: auto;
   }
 
-  /* === Code execution rounds (Claude Code .toolBody pattern) === */
-  .code-rounds {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin: 8px 0;
-  }
-  .code-round-block {
-    border: 0.5px solid var(--vscode-widget-border, rgba(128,128,128,0.2));
-    border-radius: 5px;
-    overflow: hidden;
-    background: var(--vscode-textCodeBlock-background);
-  }
-  .code-round-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    width: 100%;
-    padding: 4px 8px;
-    background: none;
-    border: none;
-    color: var(--vscode-foreground);
-    font-size: 13px;
-    cursor: pointer;
-    font-family: var(--vscode-editor-font-family, monospace);
-  }
-  .code-round-header:hover {
-    background: var(--vscode-list-hoverBackground);
-  }
-  .code-round-section {
-    border-top: 0.5px solid var(--vscode-widget-border, rgba(128,128,128,0.15));
-    background: var(--vscode-textCodeBlock-background);
-  }
-  .code-round-result {
-    background: var(--vscode-editor-background);
-  }
-  .code-round-pre {
-    padding: 8px;
-    margin: 0;
-    font-size: 12px;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    word-break: break-word;
-    font-family: var(--vscode-editor-font-family, monospace);
-    color: var(--vscode-editor-foreground);
-    max-height: 300px;
-    overflow-y: auto;
-  }
-  .code-round-pre :global(table) {
-    border-collapse: collapse;
-    width: 100%;
-    font-size: 12px;
-  }
-  .code-round-pre :global(th),
-  .code-round-pre :global(td) {
-    padding: 4px 8px;
-    border: 0.5px solid var(--vscode-widget-border, rgba(128,128,128,0.2));
-    text-align: left;
-  }
-  .code-round-pre :global(th) {
-    background: var(--vscode-textCodeBlock-background);
-    font-weight: 600;
-  }
-
   /* === Tool events (Claude Code .toolItem pattern) === */
   .tool-section {
     display: flex;
@@ -788,6 +737,9 @@
   }
   .tool-ok {
     color: #74c991;
+  }
+  .tool-err {
+    color: #c74e39;
   }
   /* Claude Code .toolAnnotation 패턴 */
   .tool-annotation {
@@ -851,6 +803,7 @@
     padding: 4px;
     max-height: 200px;
     overflow-y: auto;
+    overflow-x: auto;
     font-family: var(--vscode-editor-font-family, monospace);
     font-size: 0.85em;
     color: var(--vscode-editor-foreground);
@@ -878,21 +831,6 @@
     font-weight: 600;
   }
 
-  .tool-result {
-    border-left: 2px solid var(--vscode-panel-border);
-    margin-left: 14px;
-    padding: 4px 8px;
-  }
-  .tool-result pre {
-    font-family: var(--vscode-editor-font-family, monospace);
-    font-size: 11px;
-    color: var(--vscode-descriptionForeground);
-    white-space: pre-wrap;
-    word-break: break-all;
-    margin: 0;
-    max-height: 200px;
-    overflow-y: auto;
-  }
   .tool-spinner-sm {
     width: 10px;
     height: 10px;

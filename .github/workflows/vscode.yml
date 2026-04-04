@@ -23,11 +23,11 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Install webview dependencies
-        working-directory: vscode/webview
+        working-directory: ui/vscode
         run: npm ci
 
       - name: Build webview
-        working-directory: vscode/webview
+        working-directory: ui/vscode
         run: npm run build
 
       - name: Build extension

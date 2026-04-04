@@ -45,7 +45,15 @@ def buildBlocks(company, keys: set[str] | None = None, *, basePeriod: str | None
             RuntimeError,
             IndexError,
             _polarsErr,
-        ):
+        ) as exc:
+            import logging
+
+            logging.getLogger("dartlab.review").debug(
+                "review block build 실패: %s — %s: %s",
+                getattr(fn, "__name__", "?"),
+                type(exc).__name__,
+                exc,
+            )
             return []
 
     def _need(key: str) -> bool:

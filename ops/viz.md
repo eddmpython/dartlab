@@ -64,7 +64,7 @@ AI 코드 실행 → emit_chart() → stdout 마커 → extract_viz_specs() → 
 
 ## 컬러 팔레트
 
-8색. Python `viz/palette.py` + JS `ui/src/lib/chart/colors.js` 동일 값 유지.
+8색. Python `viz/palette.py` + JS `ui/shared/chart/colors.ts` 동일 값 유지.
 
 ## 관련 코드
 
@@ -78,5 +78,4 @@ AI 코드 실행 → emit_chart() → stdout 마커 → extract_viz_specs() → 
 | `src/dartlab/viz/generators.py` | Company → ChartSpec 8종 |
 | `src/dartlab/viz/charts/` | DataFrame → Plotly Figure (line, bar, pie, waterfall, revenue, ...) |
 | `src/dartlab/review/blocks.py` | ChartBlock 타입 |
-| `ui/src/lib/chart/` | Svelte SVG 차트 컴포넌트 (source of truth) |
-| `vscode/webview/src/lib/chart/` | VSCode webview용 차트 컴포넌트 (ui/ 동기화) |
+| `ui/shared/chart/` | Svelte SVG 차트 컴포넌트 (source of truth, web/vscode 공유) |

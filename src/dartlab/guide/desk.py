@@ -37,6 +37,9 @@ class GuideDesk:
 
     # ── 1. 준비 상태 점검 ──
 
+    # EDGAR에서 미지원 또는 제한적인 feature
+    _EDGAR_LIMITED_FEATURES = {"governance", "workforce", "network", "signal", "disclosureRisk"}
+
     def checkReady(self, feature: str, **kwargs: Any) -> ReadinessResult:
         """기능 준비 상태 점검.
 
@@ -47,6 +50,15 @@ class GuideDesk:
         Returns:
             ReadinessResult — status, issues, guideText() 포함.
         """
+        # EDGAR market 감지 — 미지원 feature 사전 안내
+        stockCode = kwargs.get("stockCode", "")
+        if stockCode and not str(stockCode).isdigit() and feature in self._EDGAR_LIMITED_FEATURES:
+            return ReadinessResult(
+                feature=feature,
+                status=ReadyStatus.PARTIAL,
+                issues=[f"US(EDGAR) 기업에서 '{feature}'은 현재 미지원 또는 제한적입니다."],
+            )
+
         checker = getChecker(feature)
         if checker is None:
             return ReadinessResult(

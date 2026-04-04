@@ -13,32 +13,40 @@
 ## 4축
 
 ```python
+# DART (한국)
 dartlab.gather("price", "005930")              # 주가 OHLCV
-dartlab.gather("price", "KOSPI")               # 코스피 지수 OHLCV (네이버)
-dartlab.gather("price", "코스닥")              # 코스닥 지수
+dartlab.gather("price", "KOSPI")               # 코스피 지수
 dartlab.gather("flow", "005930")               # 외국인/기관 수급
-dartlab.gather("macro")                        # 거시지표
+dartlab.gather("macro")                        # 거시지표 (ECOS + FRED)
 dartlab.gather("news", "삼성전자")              # 뉴스
+
+# EDGAR (미국) — Company-bound 시 market="US" 자동 전달
+c = Company("AAPL")
+c.gather("price")                             # Yahoo/FMP
+c.gather("macro")                             # FRED
+c.gather("news")                              # Google News RSS
 ```
 
 ### 시장 지수 심볼
 
-| 심볼 | 별칭 | 소스 |
-|------|------|------|
-| KOSPI | 코스피 | 네이버 차트 API |
-| KOSDAQ | 코스닥 | 네이버 차트 API |
-| KPI200 | 코스피200 | 네이버 차트 API |
+| 심볼 | 별칭 | 소스 | 시장 |
+|------|------|------|------|
+| KOSPI | 코스피 | 네이버 차트 API | KR |
+| KOSDAQ | 코스닥 | 네이버 차트 API | KR |
+| KPI200 | 코스피200 | 네이버 차트 API | KR |
 
-Company-bound: `c.gather("price")` — 종목코드 재전달 불필요.
+Company-bound: `c.gather("price")` — 종목코드/market 재전달 불필요. EdgarCompany는 `market="US"` 자동 전달.
 
 ## 데이터 소스
 
-| 축 | 소스 | 캐시 |
-|------|------|------|
-| price | Naver/Yahoo/FDR | 메모리 TTL |
-| flow | Naver/KRX | 메모리 TTL |
-| macro | FRED/ECOS | Parquet + 30분 TTL |
-| news | Google News RSS | GatherCache |
+| 축 | KR 소스 | US 소스 | 캐시 |
+|------|---------|---------|------|
+| price | Naver → Yahoo fallback | Yahoo → FMP fallback | 메모리 TTL |
+| flow | Naver/KRX | — (KR 전용) | 메모리 TTL |
+| macro | ECOS + FRED | FRED | Parquet + 30분 TTL |
+| news | Google News RSS | Google News RSS | GatherCache |
+
+**flow는 KR 전용**: 외국인/기관 수급 데이터는 KRX에서만 제공. EDGAR ticker에서 `c.gather("flow")`는 None 반환.
 
 ## 주요 모듈
 

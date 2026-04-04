@@ -11,10 +11,11 @@ export function ask(
   company?: string,
   history?: Array<{ role: string; text: string }>,
   modules?: string[],
+  mode?: string,
 ) {
   postMessage(plain({
     type: "ask",
-    payload: { question, company, history, modules },
+    payload: { question, company, history, modules, mode },
   }));
 }
 

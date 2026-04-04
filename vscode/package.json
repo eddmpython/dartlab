@@ -2,7 +2,7 @@
   "name": "dartlab",
   "displayName": "DartLab",
   "description": "DART 전자공시 & EDGAR AI 기업분석 — 종목코드 하나로 재무분석, 밸류에이션, 공시 검색",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "eddmpython",
   "license": "MIT",
   "engines": {
@@ -114,7 +114,7 @@
     "dev": "node esbuild.mjs --watch",
     "build": "node esbuild.mjs --production",
     "test": "npx vitest run",
-    "verify": "node esbuild.mjs --production && cd webview && npx vite build && cd .. && npx vitest run && npx tsc -p tsconfig.json && npx vscode-test",
+    "verify": "node esbuild.mjs --production && cd ../ui/vscode && npx vite build && cd ../../vscode && npx vitest run && npx tsc -p tsconfig.json && npx vscode-test",
     "lint": "eslint src/",
     "package": "vsce package",
     "publish": "vsce publish"

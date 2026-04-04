@@ -2,6 +2,7 @@
   import MessageBubble from "./MessageBubble.svelte";
   import ChatInput from "./ChatInput.svelte";
   import ChatHeader from "./ChatHeader.svelte";
+  import StatusLine from "./StatusLine.svelte";
   import { createMessageId, createSseHandler, type Message } from "../api/sseHandler";
   import * as client from "../api/client";
   import { onMessage, getState, setState, postMessage } from "../vscode";
@@ -31,6 +32,8 @@
   let availableTemplates: Array<{ name: string; description: string; source: "builtin" | "user" }> = $state([]);
   let messagesEl: HTMLDivElement | undefined = $state();
   let currentHandler: ReturnType<typeof createSseHandler> | null = null;
+  let analysisMode: "ask" | "analysis" | "review" = $state("ask");
+  let visibleLimit = $state(200);
 
   // Watchlist (favorite stocks)
   let watchlist: Array<{code: string; name: string}> = $state(
@@ -53,6 +56,39 @@
   let messages = $derived(
     conversations.find(c => c.id === activeConversationId)?.messages ?? []
   );
+
+  // Context usage estimate (chars → tokens ≈ /3.5, model context ≈ 128K)
+  let contextPercent = $derived.by(() => {
+    const totalChars = messages.reduce((s, m) => s + (m.text?.length ?? 0), 0);
+    const estTokens = totalChars / 3.5;
+    const contextWindow = 128000;
+    return Math.min(Math.round((estTokens / contextWindow) * 100), 100);
+  });
+
+  let estimatedTokens = $derived.by(() => {
+    const totalChars = messages.reduce((s, m) => s + (m.text?.length ?? 0), 0);
+    const korean = messages.reduce((s, m) => s + ((m.text ?? "").match(/[\uac00-\ud7af]/g) || []).length, 0);
+    const rest = totalChars - korean;
+    return Math.round(korean * 1.5 + rest / 3.5);
+  });
+
+  // Streaming elapsed timer
+  let statusElapsed = $state(0);
+  let statusTimer: ReturnType<typeof setInterval> | undefined;
+  $effect(() => {
+    if (streaming) {
+      const last = messages[messages.length - 1];
+      const start = last?.startedAt ?? Date.now();
+      statusElapsed = Math.floor((Date.now() - start) / 1000);
+      statusTimer = setInterval(() => {
+        statusElapsed = Math.floor((Date.now() - start) / 1000);
+      }, 1000);
+      return () => { if (statusTimer) clearInterval(statusTimer); };
+    } else {
+      statusElapsed = 0;
+      if (statusTimer) clearInterval(statusTimer);
+    }
+  });
 
   function persist() {
     const state: PanelState = { conversations, activeConversationId };
@@ -122,7 +158,7 @@
     debouncedPersist();
   }
 
-  function handleSubmit(text: string, modules?: string[]) {
+  function handleSubmit(text: string, modules?: string[], mode?: string) {
     // Guard: prevent double submit
     if (streaming) return;
     streaming = true;
@@ -160,7 +196,7 @@
 
     // Send ask BEFORE updating UI (so message goes out immediately)
     // company는 보내지 않음 -- AI 엔진이 질문에서 종목을 자동 감지
-    client.ask(text, undefined, history, modules);
+    client.ask(text, undefined, history, modules, mode);
 
     // Now update UI
     followStream = true;
@@ -208,6 +244,7 @@
   function startNewConversation() {
     if (streaming) return;
     activeConversationId = null;
+    visibleLimit = 200;
     ensureConversation();
     followStream = true;
     showJumpToLatest = false;
@@ -314,6 +351,7 @@
         const payload = m.payload as { id: string };
         if (payload.id && !streaming) {
           activeConversationId = payload.id;
+          visibleLimit = 200;
           persist();
           jumpToLatest();
         }
@@ -361,7 +399,38 @@
 </script>
 
 <div class="chat-panel">
-  <ChatHeader {serverState} {providerLabel} {modelLabel} {providers} />
+  <ChatHeader
+    {serverState}
+    {providerLabel}
+    {modelLabel}
+    {providers}
+    conversations={conversations.map(c => ({
+      id: c.id,
+      title: c.title,
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+      messageCount: c.messages.length,
+    }))}
+    {activeConversationId}
+    onSelectConversation={(id) => { if (!streaming) { activeConversationId = id; visibleLimit = 200; persist(); jumpToLatest(); } }}
+    onNewConversation={startNewConversation}
+    onDeleteConversation={(id) => {
+      if (streaming) return;
+      conversations = conversations.filter(c => c.id !== id);
+      if (activeConversationId === id) {
+        activeConversationId = conversations[0]?.id ?? null;
+      }
+      persist();
+    }}
+    onRenameConversation={(id, title) => {
+      const conv = conversations.find(c => c.id === id);
+      if (conv) {
+        conv.title = title;
+        conversations = [...conversations];
+        persist();
+      }
+    }}
+  />
 
   {#if messages.length === 0 && !streaming}
     {@const avatarSrc = document.getElementById("app")?.dataset.avatar ?? ""}
@@ -423,13 +492,19 @@
 
   <div class="messages-wrap">
     <div class="messages" bind:this={messagesEl} onscroll={handleScroll}>
-      {#each messages as message, i (message.id)}
+      {#if messages.length > visibleLimit}
+        <button class="load-older-btn" onclick={() => { visibleLimit = Math.min(visibleLimit + 50, messages.length); }}>
+          older messages ({messages.length - visibleLimit})
+        </button>
+      {/if}
+      {#each messages.slice(Math.max(0, messages.length - visibleLimit)) as message, i (message.id)}
+        {@const realIdx = Math.max(0, messages.length - visibleLimit) + i}
         <MessageBubble
           {message}
-          isLast={i === messages.length - 1}
-          onregenerate={i === messages.length - 1 && !message.loading && message.role === "assistant" ? handleRegenerate : undefined}
-          oncopy={i === messages.length - 1 && !message.loading && message.role === "assistant" ? handleCopyResponse : undefined}
-          onedit={!streaming && message.role === "user" ? (newText) => handleEditResend(i, newText) : undefined}
+          isLast={realIdx === messages.length - 1}
+          onregenerate={realIdx === messages.length - 1 && !message.loading && message.role === "assistant" ? handleRegenerate : undefined}
+          oncopy={realIdx === messages.length - 1 && !message.loading && message.role === "assistant" ? handleCopyResponse : undefined}
+          onedit={!streaming && message.role === "user" ? (newText) => handleEditResend(realIdx, newText) : undefined}
           onaddwatch={message.role === "assistant" && message.meta?.stockCode ? addToWatchlist : undefined}
           isWatched={!!message.meta?.stockCode && watchlist.some(w => w.code === String(message.meta?.stockCode))}
         />
@@ -444,13 +519,27 @@
     {/if}
   </div>
 
-  <ChatInput
-    disabled={false}
+  <div class="input-float">
+    <ChatInput
+      disabled={false}
+      {streaming}
+      templates={availableTemplates}
+      {analysisMode}
+      onModeChange={(m) => { analysisMode = m; }}
+      {watchlist}
+      onsubmit={handleSubmit}
+      onstop={handleStop}
+      oncommand={handleSlashCommand}
+    />
+  </div>
+
+  <StatusLine
+    {providerLabel}
+    {modelLabel}
+    contextPercent={contextPercent}
     {streaming}
-    templates={availableTemplates}
-    onsubmit={handleSubmit}
-    onstop={handleStop}
-    oncommand={handleSlashCommand}
+    elapsed={statusElapsed}
+    tokenEstimate={estimatedTokens}
   />
 </div>
 
@@ -461,6 +550,7 @@
     height: 100vh;
     width: 100%;
     overflow: hidden;
+    position: relative;
   }
   .welcome {
     display: flex;
@@ -591,7 +681,7 @@
   .messages {
     height: 100%;
     overflow-y: auto;
-    padding: 12px 16px 40px;
+    padding: 20px 20px 120px;
     width: 100%;
   }
   .jump-btn {
@@ -614,5 +704,44 @@
   }
   .jump-btn:hover {
     background: var(--vscode-list-hoverBackground);
+  }
+
+  .load-older-btn {
+    display: block;
+    margin: 0 auto 12px;
+    padding: 4px 12px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 12px;
+    background: var(--vscode-editorWidget-background);
+    color: var(--vscode-descriptionForeground);
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .load-older-btn:hover {
+    background: var(--vscode-list-hoverBackground);
+  }
+
+  /* Claude Code: 150px gradient — on chat-panel level, above messages, below floating input */
+  .chat-panel::before {
+    content: "";
+    position: absolute;
+    bottom: 22px; /* above StatusLine (22px) */
+    left: 0;
+    right: 0;
+    height: 150px;
+    background: linear-gradient(to bottom, transparent, var(--vscode-editor-background));
+    pointer-events: none;
+    z-index: 15; /* above messages (0), below input-float (20) */
+  }
+
+  /* Claude Code: input floats above messages (absolute bottom:16px) */
+  .input-float {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    z-index: 20;
+    max-width: 680px;
+    margin: 0 auto;
   }
 </style>

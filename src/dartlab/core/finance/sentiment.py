@@ -297,3 +297,113 @@ def interpretInflation(
         state, label = "cold", "디플레우려"
 
     return InflationSignal(state=state, stateLabel=label, reasoning=tuple(reasons))
+
+
+# ══════════════════════════════════════
+# ISM 자산배분 (투자전략 13)
+# ══════════════════════════════════════
+
+
+@dataclass(frozen=True)
+class ISMAllocationSignal:
+    """ISM 기반 글로벌 자산배분 신호."""
+
+    ism: float
+    stance: str  # "risk_on" | "neutral" | "risk_off"
+    stanceLabel: str  # "위험자산 선호" | "중립" | "안전자산 선호"
+    equityWeight: str  # "overweight" | "neutral" | "underweight"
+    bondWeight: str  # "underweight" | "neutral" | "overweight"
+    description: str
+
+
+def ismAssetAllocation(ism: float) -> ISMAllocationSignal:
+    """ISM PMI → 글로벌 자산배분 신호.
+
+    투자전략 13: ISM지수가 세계 자산배분의 바로미터다.
+    """
+    if ism >= 55:
+        return ISMAllocationSignal(
+            ism=round(ism, 1),
+            stance="risk_on",
+            stanceLabel="위험자산 선호",
+            equityWeight="overweight",
+            bondWeight="underweight",
+            description=f"ISM {ism:.1f} ≥ 55 — 글로벌 위험자산 비중확대, 채권 축소",
+        )
+    elif ism >= 50:
+        return ISMAllocationSignal(
+            ism=round(ism, 1),
+            stance="neutral",
+            stanceLabel="중립",
+            equityWeight="neutral",
+            bondWeight="neutral",
+            description=f"ISM {ism:.1f} (50-55) — 자산배분 중립, 방향 전환 주시",
+        )
+    else:
+        return ISMAllocationSignal(
+            ism=round(ism, 1),
+            stance="risk_off",
+            stanceLabel="안전자산 선호",
+            equityWeight="underweight",
+            bondWeight="overweight",
+            description=f"ISM {ism:.1f} < 50 — 안전자산 선호, 주식 비중축소",
+        )
+
+
+# ══════════════════════════════════════
+# 한국 물가 모델 (투자전략 18)
+# ══════════════════════════════════════
+
+
+@dataclass(frozen=True)
+class KRInflationEstimate:
+    """한국 물가 방향 추정."""
+
+    fxEffect: float  # 환율 효과 (%)
+    oilEffect: float  # 유가 효과 (%)
+    combined: float  # 합산 물가 압력
+    direction: str  # "upward" | "stable" | "downward"
+    directionLabel: str  # "상승" | "안정" | "하락"
+    description: str
+
+
+def krInflationModel(fxYoy: float, oilYoy: float) -> KRInflationEstimate:
+    """한국 물가 = 환율 + 유가 모델.
+
+    투자전략 18: 우리나라 물가 흐름은 환율과 유가에 좌우된다.
+    원/달러 상승(원화약세) → 수입물가 상승 → CPI 상승.
+    유가 상승 → 에너지/운송비 상승 → CPI 상승.
+
+    Args:
+        fxYoy: USDKRW 전년대비 변화율 (%)
+        oilYoy: WTI 유가 전년대비 변화율 (%)
+
+    Returns:
+        KRInflationEstimate: 물가 방향
+    """
+    # 실증적 pass-through 계수 (한국은행 연구: 환율 0.05~0.08, 유가 0.02~0.04)
+    fx_effect = fxYoy * 0.06
+    oil_effect = oilYoy * 0.03
+    combined = fx_effect + oil_effect
+
+    if combined > 0.5:
+        direction = "upward"
+        direction_label = "상승"
+        desc = f"환율({fxYoy:+.1f}%) + 유가({oilYoy:+.1f}%) → 물가 상승 압력 {combined:+.1f}%p"
+    elif combined < -0.5:
+        direction = "downward"
+        direction_label = "하락"
+        desc = f"환율({fxYoy:+.1f}%) + 유가({oilYoy:+.1f}%) → 물가 하락 압력 {combined:+.1f}%p"
+    else:
+        direction = "stable"
+        direction_label = "안정"
+        desc = f"환율({fxYoy:+.1f}%) + 유가({oilYoy:+.1f}%) → 물가 안정 {combined:+.1f}%p"
+
+    return KRInflationEstimate(
+        fxEffect=round(fx_effect, 2),
+        oilEffect=round(oil_effect, 2),
+        combined=round(combined, 2),
+        direction=direction,
+        directionLabel=direction_label,
+        description=desc,
+    )

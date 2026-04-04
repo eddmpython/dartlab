@@ -13,10 +13,10 @@ on:
 permissions:
   contents: write
 
-# 동시 실행 방지 — 이전 실행이 끝나지 않았으면 취소
+# 동시 실행 방지 — 이전 실행이 끝나지 않았으면 대기 (cancel하지 않음)
 concurrency:
   group: daily-data-sync
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   # ── Job 1: finance + report (빠름, ~15분) ──
@@ -103,13 +103,13 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: data/dart/finance
-          key: dartlab-data-finance-${{ github.run_id }}
+          key: dartlab-data-finance
 
       - name: Save report cache
         uses: actions/cache/save@v4
         with:
           path: data/dart/report
-          key: dartlab-data-report-${{ github.run_id }}
+          key: dartlab-data-report
 
   # ── Job 2: docs (느림, 별도 타임아웃) ──
   sync-docs:
@@ -167,4 +167,4 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: data/dart/docs
-          key: dartlab-data-docs-${{ github.run_id }}
+          key: dartlab-data-docs

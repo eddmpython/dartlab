@@ -104,7 +104,7 @@ extension이 dartlab 프로세스를 찾는 순서:
 ```bash
 cd vscode && npm run verify    # esbuild → vite → vitest → tsc → vscode-test
 cd vscode && npm run build     # extension만
-cd vscode/webview && npm run build  # webview만
+cd ui/vscode && npm run build  # webview만
 ```
 
 ## 에러 메시지 원칙
@@ -123,7 +123,7 @@ Claude Code, Copilot 등에서 `@dartlab` 도구를 바로 사용 가능.
 | 경로 | 역할 |
 |------|------|
 | `vscode/src/` | TypeScript extension |
-| `vscode/webview/src/` | Svelte webview |
+| `ui/vscode/src/` | Svelte webview |
 | `src/dartlab/cli/stdio.py` | Python backend 프로토콜 |
 | `src/dartlab/guide/providers.py` | provider 카탈로그 |
 | `src/dartlab/guide/credentials.py` | 자격증명 관리 |
