@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775286395096,
+  "lastUpdate": 1775286450286,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -10527,6 +10527,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.695754284096504e-7",
             "extra": "mean: 682.2468933284813 nsec\nrounds: 178891"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "04a9f94fbed6b1aa17a54c82523120320577ebe1",
+          "message": "fix: 보고서 5결함 수정 — 매출333.6조 + 부문DX/DS/SDC/Harman + 조사처리 + 번호연속 + 괴리강화\n\n매출: segComp→IS metricsHistory 실제 매출. '13억'→'333.6조'.\n부문: 최신 연도 자동 선택(2개+ 유효 데이터). DX 53%, DS 34%, SDC 9%, Harman 4%.\n조사: 종성 판별 '은/는' 자동. '삼성전자은(는)'→'삼성전자는'.\n번호: _sec() 카운터로 1~N 연속. 빈 섹션 자동 스킵.\n괴리: 0 notch 시 '일치' 이유 + 강점 3개 표시.",
+          "timestamp": "2026-04-04T16:06:28+09:00",
+          "tree_id": "0e89f74881842e5eab183ae0c6585f4d5c153d53",
+          "url": "https://github.com/eddmpython/dartlab/commit/04a9f94fbed6b1aa17a54c82523120320577ebe1"
+        },
+        "date": 1775286449833,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 533034.7647442853,
+            "unit": "iter/sec",
+            "range": "stddev: 5.482269052298638e-7",
+            "extra": "mean: 1.8760502431388948 usec\nrounds: 55729"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 656322.3640914243,
+            "unit": "iter/sec",
+            "range": "stddev: 4.766027309465888e-7",
+            "extra": "mean: 1.523641513243791 usec\nrounds: 123840"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 521387.76553250384,
+            "unit": "iter/sec",
+            "range": "stddev: 5.695329627515206e-7",
+            "extra": "mean: 1.9179583145352095 usec\nrounds: 126519"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 667380.1041878319,
+            "unit": "iter/sec",
+            "range": "stddev: 4.4320492747886524e-7",
+            "extra": "mean: 1.498396481592675 usec\nrounds: 188324"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 802810.3742226132,
+            "unit": "iter/sec",
+            "range": "stddev: 3.6237479804503576e-7",
+            "extra": "mean: 1.2456241624534707 usec\nrounds: 193424"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 267732.29175929574,
+            "unit": "iter/sec",
+            "range": "stddev: 6.428910276229014e-7",
+            "extra": "mean: 3.7350742916698607 usec\nrounds: 68083"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7297549.210417098,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2194948980649783e-8",
+            "extra": "mean: 137.03230648619962 nsec\nrounds: 73341"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8725944.485586934,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2459060979573867e-8",
+            "extra": "mean: 114.6007749249091 nsec\nrounds: 87944"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1432035.1082553586,
+            "unit": "iter/sec",
+            "range": "stddev: 3.259501885220816e-7",
+            "extra": "mean: 698.3069019992779 nsec\nrounds: 157679"
           }
         ]
       }
