@@ -307,7 +307,18 @@ def _renderExecutiveSummary(
         revenue = histList[0].get("revenue")
     sector = result.get("sector", "")
 
-    hook = f"{corpName}은(는)" if corpName else ""
+    # 한국어 조사: 종성 유무 판별 (은/는)
+    def _josa(name: str) -> str:
+        if not name:
+            return ""
+        last = name[-1]
+        if "가" <= last <= "힣":
+            code = ord(last) - 0xAC00
+            return "은" if code % 28 != 0 else "는"
+        # 영문/숫자로 끝나면 "은"
+        return "은"
+
+    hook = f"{corpName}{_josa(corpName)}" if corpName else ""
     if revenue:
         hook += f" 매출 {_fmtTril(revenue)} 규모의"
     if sector:
@@ -315,7 +326,7 @@ def _renderExecutiveSummary(
         hook += f" {sectorClean} 기업으로,"
     if grade:
         hook += f" **{grade}** (건전도 {healthScore:.0f}/100) 등급이다."
-    if hook and hook != f"{corpName}은(는)":
+    if hook and hook != f"{corpName}{_josa(corpName)}":
         lines.append(hook)
         lines.append("")
 
