@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775320338033,
+  "lastUpdate": 1775325198468,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -12180,6 +12180,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 3.078129041461548e-7",
             "extra": "mean: 698.7876403745396 nsec\nrounds: 156202"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "3328be6c1e03330a86564d340f14d5957ea61e7e",
+          "message": "publish: 기업분석 보고서 4건 — LG화학, KT&G, 대한항공, 삼성전자",
+          "timestamp": "2026-04-05T02:51:40+09:00",
+          "tree_id": "bc116fc90e7fbcd0a79f8a3be4cfc020d0d32435",
+          "url": "https://github.com/eddmpython/dartlab/commit/3328be6c1e03330a86564d340f14d5957ea61e7e"
+        },
+        "date": 1775325197335,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 532570.1230001781,
+            "unit": "iter/sec",
+            "range": "stddev: 5.046889280429172e-7",
+            "extra": "mean: 1.8776870064858397 usec\nrounds: 53065"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 655229.6017910115,
+            "unit": "iter/sec",
+            "range": "stddev: 6.199090187223665e-7",
+            "extra": "mean: 1.5261825736605754 usec\nrounds: 114195"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 521380.7519606018,
+            "unit": "iter/sec",
+            "range": "stddev: 5.151033029559661e-7",
+            "extra": "mean: 1.917984114756053 usec\nrounds: 127162"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 674546.6056041948,
+            "unit": "iter/sec",
+            "range": "stddev: 4.0105779154625933e-7",
+            "extra": "mean: 1.4824772546357934 usec\nrounds: 144447"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 806164.0954319306,
+            "unit": "iter/sec",
+            "range": "stddev: 3.63612858160658e-7",
+            "extra": "mean: 1.2404422445336207 usec\nrounds: 184502"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 264827.8134671309,
+            "unit": "iter/sec",
+            "range": "stddev: 6.863310281878342e-7",
+            "extra": "mean: 3.776038426281517 usec\nrounds: 67532"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7444473.70133076,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1725606082954152e-8",
+            "extra": "mean: 134.32783029661883 nsec\nrounds: 74047"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8830693.722069943,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2446655569324616e-8",
+            "extra": "mean: 113.24138640441905 nsec\nrounds: 87781"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1431357.2104768415,
+            "unit": "iter/sec",
+            "range": "stddev: 2.762100078324125e-7",
+            "extra": "mean: 698.6376235648826 nsec\nrounds: 170069"
           }
         ]
       }
