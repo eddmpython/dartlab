@@ -606,19 +606,53 @@ def _fetchAuditOpinion(company) -> str | None:
     try:
         from dartlab.scan.governance.scorer import _extractAuditOpinion
 
-        return _extractAuditOpinion(company)
+        result = _extractAuditOpinion(company)
+        if result:
+            return result
     except (ImportError, AttributeError):
         pass
 
-    # fallback: scan governance에서
+    # fallback 1: scan governance에서
     try:
         gov = getattr(company, "governance", None)
         if gov is not None and callable(gov):
-            result = gov()
-            if result is not None and hasattr(result, "to_dicts"):
-                rows = result.to_dicts()
+            govResult = gov()
+            if govResult is not None and hasattr(govResult, "to_dicts"):
+                rows = govResult.to_dicts()
                 if rows:
-                    return rows[0].get("auditOpinion")
+                    opinion = rows[0].get("auditOpinion") or rows[0].get("감사의견")
+                    if opinion:
+                        return opinion
+    except (AttributeError, ValueError, KeyError, TypeError):
+        pass
+
+    # fallback 2: docs 원문에서 감사의견 직접 파싱
+    try:
+        show = getattr(company, "show", None)
+        if show is None:
+            return None
+        idx = show("audit")
+        if idx is None or not hasattr(idx, "to_dicts"):
+            return None
+        blocks = idx.to_dicts()
+        for b in blocks:
+            blk = b.get("block")
+            data = show("audit", block=blk, period="latest")
+            if data is None:
+                continue
+            if hasattr(data, "to_dicts"):
+                for row in data.to_dicts():
+                    for v in row.values():
+                        if not isinstance(v, str):
+                            continue
+                        if "부적정" in v:
+                            return "부적정"
+                        if "의견거절" in v:
+                            return "의견거절"
+                        if "한정" in v and "한정" not in ("한정되지", "한정하지"):
+                            return "한정"
+                        if "적정" in v and "부적정" not in v and "한정" not in v:
+                            return "적정"
     except (AttributeError, ValueError, KeyError, TypeError):
         pass
     return None

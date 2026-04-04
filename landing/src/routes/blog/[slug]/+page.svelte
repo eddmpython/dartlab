@@ -413,6 +413,8 @@
 	.not-found a { color: #ea4647; text-decoration: none; }
 
 	.blog-post-layout {
+		--content-max-width: 860px;
+		--toc-width: 200px;
 		position: relative;
 		max-width: calc(var(--content-max-width) + var(--toc-width) + 2rem);
 		margin: 0 auto;

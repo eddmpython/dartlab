@@ -285,22 +285,76 @@ def _fetchBusinessSummary(company) -> str | None:
 
 
 def _fetchKeyChanges(company) -> list[str]:
-    """전기 대비 핵심 변화 추출. 타임아웃 방지."""
+    """전기 대비 핵심 변화 추출. topic별 변화율 집계 → 상위 3개."""
     try:
         diff = company.diff()
         if diff is None:
             return []
-        if hasattr(diff, "to_dicts"):
-            rows = diff.to_dicts()
-            changes: list[str] = []
-            for r in rows[:3]:
-                topic = r.get("topic", "")
-                summary = r.get("summary", r.get("changeRatio", ""))
-                if topic:
-                    label = f"**{topic}**: {summary}" if summary else f"**{topic}**: 전기 대비 변화 감지"
-                    changes.append(label)
-            return changes
-        return []
+        if not hasattr(diff, "to_dicts"):
+            return []
+        rows = diff.to_dicts()
+        if not rows:
+            return []
+
+        # topic별 변화 집계 (changeRate > 0인 블록만)
+        # 재무제표/주석 topic은 숫자 변화라 의미 없으므로 제외
+        _SKIP_TOPICS = {
+            "fsSummary", "financialNotes", "consolidatedNotes",
+            "consolidatedStatements", "separateStatements",
+            "financialStatements",
+        }
+        topic_changes: dict[str, list[float]] = {}
+        for r in rows:
+            topic = r.get("topic", "")
+            rate = r.get("changeRate", 0)
+            if not topic or topic in _SKIP_TOPICS or not isinstance(rate, (int, float)):
+                continue
+            if rate > 0:
+                topic_changes.setdefault(topic, []).append(rate)
+
+        if not topic_changes:
+            return []
+
+        # 평균 변화율 상위 3개 topic
+        ranked = sorted(
+            topic_changes.items(),
+            key=lambda x: sum(x[1]) / len(x[1]),
+            reverse=True,
+        )
+
+        _TOPIC_KR = {
+            "companyOverview": "회사개요",
+            "businessOverview": "사업개요",
+            "productService": "제품·서비스",
+            "internalControl": "내부통제",
+            "subsidiaryDetail": "종속회사",
+            "boardOfDirectors": "이사회",
+            "employee": "직원현황",
+            "investorProtection": "투자자보호",
+            "mdna": "경영진분석",
+            "stockDetail": "주식현황",
+            "audit": "감사",
+            "auditSystem": "감사체계",
+            "riskManagement": "위험관리",
+            "disclosureChanges": "공시변경사항",
+            "affiliateGroupDetail": "계열사현황",
+            "executivePay": "임원보수",
+            "majorHolder": "주요주주",
+            "capitalChange": "자본변동",
+        }
+        changes: list[str] = []
+        for topic, rates in ranked[:3]:
+            avgRate = sum(rates) / len(rates)
+            blockCount = len(rates)
+            topicLabel = _TOPIC_KR.get(topic, topic)
+            if avgRate > 0.5:
+                intensity = "대폭 변화"
+            elif avgRate > 0.2:
+                intensity = "상당한 변화"
+            else:
+                intensity = "일부 변화"
+            changes.append(f"**{topicLabel}**: 전기 대비 {intensity} (변화 블록 {blockCount}개)")
+        return changes
     except (TypeError, ValueError, AttributeError, TimeoutError, OSError):
         return []
 
@@ -321,8 +375,6 @@ def _renderBorrowingStructure(result: dict, mainNum: int) -> list[str]:
     if not bd:
         return []
 
-    lines: list[str] = [f"### {mainNum} 차입금 구성", ""]
-
     # DataFrame → list[dict]
     if hasattr(bd, "to_dicts"):
         rows = bd.to_dicts()
@@ -336,25 +388,48 @@ def _renderBorrowingStructure(result: dict, mainNum: int) -> list[str]:
     if not rows:
         return []
 
-    # 항목별 최신 값 추출
-    lines.append("| 구분 | 금액 | 비중 |")
-    lines.append("|------|-----:|-----:|")
+    # notes.borrowings 구조: {항목: str, 2025: float, 2024: float, ...}
+    # 최신 연도 컬럼에서 금액 추출 (비금액/소액/비관련 행 제외)
+    # notes 데이터는 백만원 단위 → ×1,000,000으로 원 단위 변환
+    _EXCLUDE = {
+        "연이자율", "차입금에대한기술", "이자율", "만기일", "통화", "리스료", "리스",
+        "합계", "소계", "차감", "가산", "유동부채", "비유동부채",
+    }
+    _UNIT = 1_000_000  # 백만원 → 원
+    yearCols = sorted(
+        [k for k in rows[0] if k not in ("항목", "name", "구분") and isinstance(k, (str, int))],
+        key=lambda x: str(x),
+        reverse=True,
+    )
 
-    total = 0.0
     items: list[tuple[str, float]] = []
+    total = 0.0
     for row in rows:
-        name = row.get("name", row.get("구분", ""))
-        amount = row.get("amount", row.get("금액", row.get("value", 0)))
-        if isinstance(amount, (int, float)) and amount > 0 and name:
-            items.append((str(name), float(amount)))
-            total += float(amount)
+        name = row.get("항목", row.get("name", row.get("구분", "")))
+        if not name or any(exc in str(name) for exc in _EXCLUDE):
+            continue
+        # 최신 non-null 값 추출
+        amount = None
+        for yc in yearCols:
+            v = row.get(yc)
+            if isinstance(v, (int, float)) and v > 0:
+                amount = float(v) * _UNIT
+                break
+        if amount is not None and amount > 1_000_000_000:  # 10억 미만 소액 제외
+            items.append((str(name), amount))
+            total += amount
 
     if not items:
         return []
 
+    lines: list[str] = [f"### {mainNum} 차입금 구성", ""]
+    lines.append("| 구분 | 금액 | 비중 |")
+    lines.append("|------|-----:|-----:|")
     for name, amount in items:
         pct = amount / total * 100 if total > 0 else 0
         lines.append(f"| {name} | {_fmtTril(amount)} | {pct:.1f}% |")
+    if total > 0:
+        lines.append(f"| **합계** | **{_fmtTril(total)}** | **100%** |")
     lines.append("")
     return lines
 
@@ -733,18 +808,20 @@ def _collectRiskDiagnosis(result: dict) -> dict:
     diagnosis: dict = {}
 
     # 감사의견 (result에 이미 있음)
-    diagnosis["auditOpinion"] = result.get("auditOpinion")
+    audit = result.get("auditOpinion")
+    diagnosis["auditOpinion"] = audit
 
     # 연속 적정 의견 횟수 산출
-    auditHistory = result.get("auditOpinionHistory")
-    if isinstance(auditHistory, list) and auditHistory:
-        consecutive = 0
-        for opinion in auditHistory:
-            if opinion == "적정":
-                consecutive += 1
-            else:
-                break
-        diagnosis["consecutiveCleanYears"] = consecutive if consecutive > 0 else None
+    # auditOpinion이 "적정"이면 metricsHistory 연도 수를 연속 적정으로 근사
+    # (한국 상장사 99%+ 연속 적정, 비적정이면 auditOpinion 자체가 비적정)
+    if audit and "적정" in audit and "부적정" not in audit and "한정" not in audit:
+        history = result.get("metricsHistory", [])
+        # Q4(연간결산) 또는 연도만 카운트 — DART period는 2025Q4, 2024Q4, ... 형태
+        annualCount = sum(
+            1 for h in history
+            if str(h.get("period", "")).endswith("Q4") or "Q" not in str(h.get("period", ""))
+        )
+        diagnosis["consecutiveCleanYears"] = annualCount if annualCount > 0 else None
     else:
         diagnosis["consecutiveCleanYears"] = None
 
@@ -769,8 +846,9 @@ def _renderRiskDiagnosis(diagnosis: dict, mainNum: int) -> list[str]:
     lines.append(f"### {mainNum}.1 감사 리스크")
     lines.append("")
     if audit:
-        lines.append(f"- 감사의견: **{audit}**")
-        if audit != "적정":
+        isClean = "적정" in audit and "부적정" not in audit and "한정" not in audit
+        lines.append(f"- 감사의견: **{'적정' if isClean else audit}**")
+        if not isClean:
             lines.append(f"  - ⚠️ {audit} 의견 — 재무제표 신뢰도 주의")
         else:
             if consecutiveClean and consecutiveClean > 1:
