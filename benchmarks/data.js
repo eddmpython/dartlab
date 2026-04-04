@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775268409457,
+  "lastUpdate": 1775271293127,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -9309,6 +9309,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 3.1047327213728356e-7",
             "extra": "mean: 687.2550409499835 nsec\nrounds: 156716"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "0febbc615e44795723462b17d704137294971047",
+          "message": "feat: credit v5 WS-A+B — notch 규모별 cap + 보고서 12섹션\n\nWS-A: 매출 기반 notch cap (대형7/중형4/소형2). 과대평가 수정.\nWS-B: 보고서 섹션 9~11 추가 (괴리분석/notch상세/별도재무비교).\nengine.py: separateMetrics를 result에 포함.",
+          "timestamp": "2026-04-04T11:53:55+09:00",
+          "tree_id": "8d82418639f73f041a408c4ccfdee94b2def8836",
+          "url": "https://github.com/eddmpython/dartlab/commit/0febbc615e44795723462b17d704137294971047"
+        },
+        "date": 1775271292645,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 532034.1729533382,
+            "unit": "iter/sec",
+            "range": "stddev: 4.873160423612389e-7",
+            "extra": "mean: 1.8795785136299965 usec\nrounds: 53634"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 648699.9731116028,
+            "unit": "iter/sec",
+            "range": "stddev: 4.7243339799594387e-7",
+            "extra": "mean: 1.5415446916134823 usec\nrounds: 145497"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 519257.36140286055,
+            "unit": "iter/sec",
+            "range": "stddev: 5.736610777574474e-7",
+            "extra": "mean: 1.9258272955405635 usec\nrounds: 117565"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 671987.670027836,
+            "unit": "iter/sec",
+            "range": "stddev: 4.162214825981967e-7",
+            "extra": "mean: 1.4881225424248878 usec\nrounds: 163372"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 889221.2629718522,
+            "unit": "iter/sec",
+            "range": "stddev: 1.6573389538854233e-7",
+            "extra": "mean: 1.124579496286353 usec\nrounds: 163346"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 258299.824787295,
+            "unit": "iter/sec",
+            "range": "stddev: 7.139377631331197e-7",
+            "extra": "mean: 3.871469912236607 usec\nrounds: 68134"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 6919581.755557025,
+            "unit": "iter/sec",
+            "range": "stddev: 3.444194870784791e-8",
+            "extra": "mean: 144.51740514474207 nsec\nrounds: 69896"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8357617.584346261,
+            "unit": "iter/sec",
+            "range": "stddev: 1.8594849504921363e-8",
+            "extra": "mean: 119.65132286897054 nsec\nrounds: 82631"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1435907.3877053785,
+            "unit": "iter/sec",
+            "range": "stddev: 3.022158806578985e-7",
+            "extra": "mean: 696.4237447082356 nsec\nrounds: 173883"
           }
         ]
       }
