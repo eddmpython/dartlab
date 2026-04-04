@@ -27,7 +27,7 @@
 <a href="https://huggingface.co/datasets/eddmpython/dartlab-data"><img src="https://img.shields.io/badge/Data-HuggingFace-ffd21e?style=for-the-badge&labelColor=050811&logo=huggingface&logoColor=white" alt="HuggingFace Data"></a>
 </p>
 
-<a href="https://www.youtube.com/shorts/vYQp4UrSLZE"><img src="https://img.youtube.com/vi/vYQp4UrSLZE/maxresdefault.jpg" alt="DartLab Demo" width="320"></a>
+<a href="https://www.youtube.com/shorts/97lYLWMWzvA"><img src="https://img.youtube.com/vi/97lYLWMWzvA/maxresdefault.jpg" alt="DartLab Demo" width="320"></a>
 
 </div>
 
@@ -90,6 +90,7 @@ Two engines turn raw filings into one comparable map:
 | L0/L1 | [Company](ops/company.md) | Sections horizontalization + account standardization | `c.show()`, `c.select()` |
 | L1 | [Scan](ops/scan.md) | Cross-company comparison across 13 axes | `dartlab.scan()` |
 | L1 | [Gather](ops/gather.md) | External market data (price, flow, macro, news) | `dartlab.gather()` |
+| L2 | [Macro](ops/macro.md) | Market-level macro analysis — 11 axes, no Company needed | `dartlab.macro("사이클")` |
 | L2 | [Analysis](ops/analysis.md) | 14-axis financial + valuation + forecast + quant | `c.analysis("financial", "수익성")` |
 | L2 | [Credit](ops/credit.md) | Independent credit rating (dCR 20-grade) | `c.credit()` |
 | L2 | [Review](ops/review.md) | Block composition (analysis + credit) | `c.review()` |
@@ -158,7 +159,7 @@ c.credit(detail=True)                       # 7-axis narrative + metrics
 
 Independent credit analysis with 3-Track model (general/financial/holding), Notch Adjustment, CHS market correction, and separate financial statement blending.
 
-**79-company validation: 83% accuracy (large-cap 87%). Samsung AA+ exact match.**
+**79-company validation: large-cap 87% (26/30), mid-cap 82% (41/50), full sample 70% (55/79, re-measurement pending after v5.0 overvaluation fix). Samsung AA+ exact match.** See [methodology](docs/methodology.md) for validation details.
 
 ```python
 cr = c.credit()
@@ -195,7 +196,7 @@ c.reviewer()            # report + AI interpretation
 
 > Design: [ops/search.md](ops/search.md)
 
-No model, no GPU, no cold start. 95% precision on 4M documents — better than neural embeddings at 1/100th the cost.
+No model, no GPU, no cold start. 95% precision on 4M documents — better than neural embeddings at 1/100th the cost. See [methodology](docs/methodology.md) for benchmark details.
 
 ```python
 dartlab.search("유상증자 결정")                     # find capital raise filings
@@ -207,7 +208,7 @@ dartlab.search("회사가 돈을 빌렸다")                 # natural language 
 
 > Design: [ops/ai.md](ops/ai.md)
 
-The AI writes and executes Python code using dartlab's full API. You see every line of code it runs. 60+ questions validated, 95%+ first-try success.
+The AI writes and executes Python code using dartlab's full API. You see every line of code it runs. 60+ questions validated, 95%+ first-try success. See [methodology](docs/methodology.md) for validation scope and limits.
 
 ```python
 dartlab.ask("Analyze Samsung Electronics financial health")
@@ -245,6 +246,31 @@ c.BS                                    c.BS
 c.ratios                                c.ratios
 c.diff("businessOverview")              c.diff("10-K::item7Mdna")
 ```
+
+## Macro — Economy Without a Ticker
+
+> Design: [ops/macro.md](ops/macro.md)
+
+No Company needed. Read the economy with `import dartlab`.
+
+```python
+dartlab.macro("사이클")          # Business cycle — 4 phases
+dartlab.macro("금리")            # Rates + Nelson-Siegel yield curve
+dartlab.macro("예측")            # LEI + Cleveland Fed probit + Hamilton RS + GDP Nowcast
+dartlab.macro("위기")            # Credit-to-GDP gap + Minsky + Koo + Fisher
+dartlab.macro("기업집계")        # Bottom-up: earnings cycle, Ponzi ratio, leverage
+dartlab.macro("종합")            # All 10 axes + 40 strategies + portfolio allocation
+
+# Scenario
+dartlab.macro("사이클", overrides={"hy_spread": 600})
+
+# Backtest
+dartlab.macro("금리", as_of="2022-01-01")
+```
+
+11 axes (cycle / rates / assets / sentiment / liquidity / forecast / crisis / inventory / corporate / trade / summary), 12 methods (Hamilton EM, Kalman DFM, Nelson-Siegel, Cleveland Fed probit, Sahm Rule, BIS Credit-to-GDP, GHS, Minsky, Koo, Fisher, Cu/Au, FCI), 40 investment strategies with strength/confidence — all implemented in **numpy only** (zero statsmodels/scipy).
+
+Backtest result (2000-2024, FRED): Cleveland Fed probit detected **3/3 US recessions** with 2-16 month lead time, recall 90% at threshold 0.20.
 
 ## MCP — AI Assistant Integration
 
