@@ -98,7 +98,7 @@ class TestCatalog:
         assert "markets" in groups
         assert "housing" in groups
         assert "money" in groups
-        assert len(groups) == 7
+        assert len(groups) == 14
 
     def test_all_ids_nonempty(self):
         from dartlab.gather.fred.catalog import get_all_ids
