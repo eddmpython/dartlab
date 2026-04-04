@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775283594622,
+  "lastUpdate": 1775284511113,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -10266,6 +10266,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.514759599210287e-7",
             "extra": "mean: 653.240393178535 nsec\nrounds: 133369"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "e11be6f45c8a2f5e20648994cdb9b5b68df0a8b0",
+          "message": "refactor: 루트 vscode/ → ui/vscode/ 통합 (확장 본체 + webview)\n\n- vscode/ 전체를 ui/vscode/로 이동\n- webview 소스는 ui/vscode/webview/에 위치\n- CI vscode.yml, ops/vscode.md, .gitignore 경로 일괄 업데이트\n- vite.config.ts 빌드 출력: ../dist/webview (같은 패키지 내)\n- 빌드 검증 완료 (extension + webview)",
+          "timestamp": "2026-04-04T15:34:00+09:00",
+          "tree_id": "1ac1f4d624455ae03dc5acdd71ea29b0687f59bd",
+          "url": "https://github.com/eddmpython/dartlab/commit/e11be6f45c8a2f5e20648994cdb9b5b68df0a8b0"
+        },
+        "date": 1775284510674,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 532992.8089858505,
+            "unit": "iter/sec",
+            "range": "stddev: 4.860304254529766e-7",
+            "extra": "mean: 1.8761979207613422 usec\nrounds: 53577"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 642824.2619258877,
+            "unit": "iter/sec",
+            "range": "stddev: 4.5021656984794315e-7",
+            "extra": "mean: 1.5556351233601882 usec\nrounds: 139998"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 512424.9948878357,
+            "unit": "iter/sec",
+            "range": "stddev: 5.090108734009136e-7",
+            "extra": "mean: 1.9515051177760936 usec\nrounds: 132381"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 681601.3978154814,
+            "unit": "iter/sec",
+            "range": "stddev: 3.9111943408516623e-7",
+            "extra": "mean: 1.4671331414591866 usec\nrounds: 178254"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 889323.6194257328,
+            "unit": "iter/sec",
+            "range": "stddev: 1.7429802112804665e-7",
+            "extra": "mean: 1.1244500631229548 usec\nrounds: 172682"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 271789.4976570668,
+            "unit": "iter/sec",
+            "range": "stddev: 6.65252568074854e-7",
+            "extra": "mean: 3.6793180333324 usec\nrounds: 73769"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7296828.020617588,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2102830586937399e-8",
+            "extra": "mean: 137.0458502207322 nsec\nrounds: 51369"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8882457.988854872,
+            "unit": "iter/sec",
+            "range": "stddev: 1.7287602816963497e-8",
+            "extra": "mean: 112.58145000570052 nsec\nrounds: 89510"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1465558.2853690227,
+            "unit": "iter/sec",
+            "range": "stddev: 2.956801746174329e-7",
+            "extra": "mean: 682.333831402825 nsec\nrounds: 159949"
           }
         ]
       }
