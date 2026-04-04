@@ -505,6 +505,54 @@ def loadEdgarListedUniverse(*, forceUpdate: bool = False) -> pl.DataFrame:
     return pl.read_parquet(path)
 
 
+def loadEdgarTargetUniverse(tier: str = "all") -> pl.DataFrame:
+    """tier별 EDGAR 상장사 목록 반환.
+
+    Parameters
+    ----------
+    tier : str
+        "all" — Nasdaq + NYSE + CBOE (OTC 제외)
+        "nasdaq" — Nasdaq만
+        "nyse" — NYSE만
+        "sp500" — S&P 500 구성 종목 (정적 목록 교차)
+
+    Returns
+    -------
+    pl.DataFrame
+        cik, ticker, title, exchange 컬럼.
+    """
+    universe = loadEdgarListedUniverse()
+    listed = universe.filter(pl.col("is_exchange_listed"))
+
+    if tier == "all":
+        return listed
+    if tier == "nasdaq":
+        return listed.filter(pl.col("exchange") == "Nasdaq")
+    if tier == "nyse":
+        return listed.filter(pl.col("exchange") == "NYSE")
+    if tier == "sp500":
+        sp500 = _loadSp500Tickers()
+        if sp500 is not None:
+            return listed.filter(pl.col("ticker").is_in(sp500))
+        return listed
+    return listed
+
+
+def _loadSp500Tickers() -> list[str] | None:
+    """정적 S&P 500 ticker 목록 로드 (edgarTickers.json fallback)."""
+    import json as _json
+
+    candidates = [
+        Path(__file__).resolve().parents[3] / ".github" / "data" / "edgarTickers.json",
+    ]
+    for fp in candidates:
+        if fp.exists():
+            data = _json.loads(fp.read_text(encoding="utf-8"))
+            tickers = data.get("sp500", [])
+            return tickers if tickers else None
+    return None
+
+
 def extractCorpName(df: pl.DataFrame) -> str | None:
     """DataFrame에서 기업명 추출."""
     for col in ("corp_name", "company_name"):
@@ -672,7 +720,25 @@ def _incrementalUpdateEdgarDocs(
     if not rows:
         return
     newDf = pl.DataFrame(rows)
-    merged = pl.concat([currentDf, newDf], how="vertical_relaxed")
+
+    # 스키마 정합: currentDf 컬럼 기준으로 newDf 정렬 + 누락 컬럼 NULL 추가
+    for col in currentDf.columns:
+        if col not in newDf.columns:
+            newDf = newDf.with_columns(pl.lit(None).cast(currentDf.schema[col]).alias(col))
+    for col in newDf.columns:
+        if col not in currentDf.columns:
+            currentDf = currentDf.with_columns(pl.lit(None).cast(newDf.schema[col]).alias(col))
+    # 타입 통일
+    for col in currentDf.columns:
+        if col in newDf.columns and currentDf.schema[col] != newDf.schema[col]:
+            try:
+                newDf = newDf.with_columns(pl.col(col).cast(currentDf.schema[col]))
+            except pl.exceptions.ComputeError:
+                newDf = newDf.with_columns(pl.col(col).cast(pl.Utf8))
+                currentDf = currentDf.with_columns(pl.col(col).cast(pl.Utf8))
+    # 컬럼 순서 맞추기
+    newDf = newDf.select(currentDf.columns)
+    merged = pl.concat([currentDf, newDf], how="vertical")
     merged.write_parquet(path)
     emit("edgar:incremental_done", ticker=stockCode.upper(), newRows=len(rows))
 
