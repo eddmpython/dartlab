@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775274953076,
+  "lastUpdate": 1775276110241,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -9831,6 +9831,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.920188275158247e-7",
             "extra": "mean: 684.8960793332039 nsec\nrounds: 156937"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "26d22e0b007b1feb549bba0010c3d733df663feb",
+          "message": "refactor: UI 구조 재편 + macro 엔진 확장 + EDGAR 강화\n\n- vscode/webview → ui/vscode, ui/ → ui/web, ui/shared 공유 코드 분리\n- CI 워크플로우/문서 경로 일괄 업데이트 (.github/workflows/vscode.yml, ops/)\n- .gitignore에 ui/web/build, ui/vscode/node_modules 추가\n- macro 엔진: 사이클/유동성/심리/자산신호 + 위기감지/재고/교역 확장\n- EDGAR: report 14 apiType, notes 파서 강화, scan 프리빌드 개선\n- credit: 보고서 13섹션 구조화 + 이력 데이터 업데이트\n- analysis: memoize/revenue/capital 개선, search 인덱스 업데이트\n- v0.8.9 / vsce-0.2.2",
+          "timestamp": "2026-04-04T13:13:45+09:00",
+          "tree_id": "9f55e9946f3b3cc6e2345cc2d1e0b0cbf075be22",
+          "url": "https://github.com/eddmpython/dartlab/commit/26d22e0b007b1feb549bba0010c3d733df663feb"
+        },
+        "date": 1775276109111,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 537731.5652374721,
+            "unit": "iter/sec",
+            "range": "stddev: 5.248961576240669e-7",
+            "extra": "mean: 1.8596639376347228 usec\nrounds: 53377"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 663809.9180559322,
+            "unit": "iter/sec",
+            "range": "stddev: 4.705696816425367e-7",
+            "extra": "mean: 1.5064553463266281 usec\nrounds: 127470"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 525870.0285876582,
+            "unit": "iter/sec",
+            "range": "stddev: 5.888713098368411e-7",
+            "extra": "mean: 1.901610560856119 usec\nrounds: 102586"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 675334.9656736281,
+            "unit": "iter/sec",
+            "range": "stddev: 4.929666752692968e-7",
+            "extra": "mean: 1.4807466676962702 usec\nrounds: 126040"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 808673.0961473365,
+            "unit": "iter/sec",
+            "range": "stddev: 4.092309838193978e-7",
+            "extra": "mean: 1.2365936306823846 usec\nrounds: 148744"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 271708.5930429675,
+            "unit": "iter/sec",
+            "range": "stddev: 7.593692066693473e-7",
+            "extra": "mean: 3.6804135960538495 usec\nrounds: 59841"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7224135.573347682,
+            "unit": "iter/sec",
+            "range": "stddev: 1.2328367785698553e-8",
+            "extra": "mean: 138.4248661790545 nsec\nrounds: 70542"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8556080.776134912,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1962352341663985e-8",
+            "extra": "mean: 116.87594193702036 nsec\nrounds: 83599"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1463095.152044148,
+            "unit": "iter/sec",
+            "range": "stddev: 2.877197451761476e-7",
+            "extra": "mean: 683.4825463011484 nsec\nrounds: 165810"
           }
         ]
       }
