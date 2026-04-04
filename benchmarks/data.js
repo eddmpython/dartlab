@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775271890794,
+  "lastUpdate": 1775274469344,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -9570,6 +9570,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.6717258136492643e-7",
             "extra": "mean: 687.8020673988644 nsec\nrounds: 170649"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "b31682b87868f64200afdbd5c3afd4e76d9d364a",
+          "message": "feat: credit 보고서 전문화 — 13섹션 구조 + Executive Summary + 건전도 바\n\npublisher.py 전면 재작성: 9섹션→13섹션.\nNEW: Executive Summary (인과 요약), 사업 분석 3.1~3.3, 건전도 ASCII 바.\nNEW: 부문별 매출 테이블, HHI 집중도, 피어 비교 (graceful).\n8개 헬퍼 함수. audit.py sectionNum 파라미터.\n삼성전자 재발간: dCR-AA+(정확일치), 건전도 96/100.",
+          "timestamp": "2026-04-04T12:46:22+09:00",
+          "tree_id": "f8c492fe876b9778b80e7f57096ebefca028e126",
+          "url": "https://github.com/eddmpython/dartlab/commit/b31682b87868f64200afdbd5c3afd4e76d9d364a"
+        },
+        "date": 1775274468669,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 601259.7629067982,
+            "unit": "iter/sec",
+            "range": "stddev: 3.6587143842176e-7",
+            "extra": "mean: 1.6631746570990995 usec\nrounds: 51478"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 706285.3296788882,
+            "unit": "iter/sec",
+            "range": "stddev: 3.058771969463214e-7",
+            "extra": "mean: 1.415858376181548 usec\nrounds: 112008"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 594471.4214382919,
+            "unit": "iter/sec",
+            "range": "stddev: 3.6076312781190784e-7",
+            "extra": "mean: 1.682166650804766 usec\nrounds: 94581"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 728259.3634705488,
+            "unit": "iter/sec",
+            "range": "stddev: 3.4000093391148434e-7",
+            "extra": "mean: 1.373137168102392 usec\nrounds: 111870"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 889182.5175907597,
+            "unit": "iter/sec",
+            "range": "stddev: 2.346800809101818e-7",
+            "extra": "mean: 1.1246284988930062 usec\nrounds: 159873"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 295128.4581452981,
+            "unit": "iter/sec",
+            "range": "stddev: 3.9967295024109807e-7",
+            "extra": "mean: 3.3883550447299746 usec\nrounds: 67169"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 8526627.05386078,
+            "unit": "iter/sec",
+            "range": "stddev: 8.178660215560431e-9",
+            "extra": "mean: 117.27966916850303 nsec\nrounds: 84998"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 9849342.126668315,
+            "unit": "iter/sec",
+            "range": "stddev: 8.287655207443172e-9",
+            "extra": "mean: 101.52962371896656 nsec\nrounds: 95248"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1526695.6014397691,
+            "unit": "iter/sec",
+            "range": "stddev: 2.7511691701278086e-7",
+            "extra": "mean: 655.0094197277687 nsec\nrounds: 141724"
           }
         ]
       }
