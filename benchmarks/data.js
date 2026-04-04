@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775288309761,
+  "lastUpdate": 1775290070790,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -10788,6 +10788,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.774547575207991e-7",
             "extra": "mean: 690.4852533303144 nsec\nrounds: 158680"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "970331fd7df53e690c10d8c766908309247a8fc9",
+          "message": "docs: credit 사용법 + README 신용분석 섹션 업데이트\n\nops/credit.md: 사용법 섹션 추가 (등급 조회, 보고서 발간, 13섹션 구성).\nREADME.md/KR: Credit 섹션 v5 수준 (3-Track, 83%, AA+ 정확일치, publishReport).\n보고서 링크: dartlab.pages.dev/blog/credit-reports.",
+          "timestamp": "2026-04-04T17:06:39+09:00",
+          "tree_id": "a5f8cb0b59826b9100453f277e53d70594fe9be2",
+          "url": "https://github.com/eddmpython/dartlab/commit/970331fd7df53e690c10d8c766908309247a8fc9"
+        },
+        "date": 1775290069609,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 526574.3472826235,
+            "unit": "iter/sec",
+            "range": "stddev: 4.860275405895596e-7",
+            "extra": "mean: 1.8990670646234102 usec\nrounds: 53605"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 652048.9621870866,
+            "unit": "iter/sec",
+            "range": "stddev: 4.98619372726577e-7",
+            "extra": "mean: 1.5336271629753455 usec\nrounds: 128123"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 528099.9051253828,
+            "unit": "iter/sec",
+            "range": "stddev: 5.388958847744543e-7",
+            "extra": "mean: 1.893581101406518 usec\nrounds: 117014"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 643976.9468177394,
+            "unit": "iter/sec",
+            "range": "stddev: 4.837708836033064e-7",
+            "extra": "mean: 1.552850618242742 usec\nrounds: 180832"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 861352.0939444408,
+            "unit": "iter/sec",
+            "range": "stddev: 1.828706753518523e-7",
+            "extra": "mean: 1.1609654252079895 usec\nrounds: 198020"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 267165.13554285496,
+            "unit": "iter/sec",
+            "range": "stddev: 7.861945257579028e-7",
+            "extra": "mean: 3.7430033599559764 usec\nrounds: 70537"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7480110.434616512,
+            "unit": "iter/sec",
+            "range": "stddev: 1.5139739561795927e-8",
+            "extra": "mean: 133.68786580639136 nsec\nrounds: 74042"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8816880.501221936,
+            "unit": "iter/sec",
+            "range": "stddev: 1.8954564886153058e-8",
+            "extra": "mean: 113.41879929771187 nsec\nrounds: 86566"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1431611.4262065336,
+            "unit": "iter/sec",
+            "range": "stddev: 2.8824951782538517e-7",
+            "extra": "mean: 698.5135642915255 nsec\nrounds: 173581"
           }
         ]
       }
