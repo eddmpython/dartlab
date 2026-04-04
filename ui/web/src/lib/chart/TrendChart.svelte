@@ -11,7 +11,7 @@
 
   // ── 반응형: ResizeObserver로 컨테이너 크기 추적 ──
   let containerEl = $state(null);
-  let containerWidth = $state(480);
+  let containerWidth = $state(720);
 
   $effect(() => {
     if (!containerEl) return;

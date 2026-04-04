@@ -374,8 +374,7 @@ button, a, input, textarea {
 .prose-dartlab table {
 	border-collapse: separate;
 	border-spacing: 0;
-	width: max-content;
-	min-width: 100%;
+	width: 100%;
 	font-size: 0.82em;
 	background: rgba(15, 18, 25, 0.6);
 }

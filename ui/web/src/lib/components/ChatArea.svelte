@@ -204,7 +204,7 @@
 <!-- shared contract marker: onOpenEvidence={onOpenEvidence} -->
 <div class="relative flex flex-col h-full min-h-0">
 	<div class="flex-1 overflow-y-auto min-h-0" bind:this={chatContainer} onscroll={onScroll} role="log" aria-live="polite" aria-label="대화 내용">
-		<div class="chat-stream-shell max-w-[760px] mx-auto px-5 pt-8 pb-6 space-y-1">
+		<div class="chat-stream-shell max-w-[960px] mx-auto px-5 pt-8 pb-6 space-y-1">
 				{#if hasMore}
 					<div bind:this={loadMoreSentinel} class="flex justify-center py-3">
 						<button
