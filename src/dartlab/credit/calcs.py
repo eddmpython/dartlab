@@ -4,7 +4,7 @@ credit/ 독립 엔진이 계산의 단일 진실(source of truth)이다.
 이 모듈은 review가 소비할 수 있는 calc 인터페이스를 제공하는 thin wrapper.
 
 직접 접근: dartlab.credit("005930") 또는 c.credit()
-review 경유: c.review("신용평가")
+review 경유: c.review("신용분석")
 
 cross-dependency 방지: analysis ↛ credit, credit ↛ analysis.
 이전에는 analysis/financial/creditRating.py에 있었으나
@@ -66,7 +66,7 @@ def _evaluate(company, basePeriod=None):
 
 @_memoized_calc
 def calcCreditMetrics(company, *, basePeriod: str | None = None) -> dict | None:
-    """신용평가 핵심 지표 시계열."""
+    """신용분석 핵심 지표 시계열."""
     result = _evaluate(company, basePeriod)
     if result is None:
         return None

@@ -42,7 +42,7 @@ _GRADE_IDX = {g: i for i, g in enumerate(_GRADE_ORDER)}
 
 @dataclass
 class CreditAuditResult:
-    """신용평가 audit 결과."""
+    """신용분석 audit 결과."""
 
     stockCode: str
     corpName: str
@@ -201,7 +201,7 @@ def auditToMarkdown(audit: CreditAuditResult, *, sectionNum: int = 8) -> str:
     """audit 결과를 마크다운으로 변환.
 
     Args:
-        audit: 신용평가 audit 결과.
+        audit: 신용분석 audit 결과.
         sectionNum: 보고서 내 섹션 번호 (기본 8).
     """
     lines = []
@@ -245,7 +245,7 @@ def saveAudit(audit: CreditAuditResult) -> Path:
     name = audit.corpName or audit.stockCode
     path = _AUDIT_DIR / f"{audit.stockCode}_{name}.md"
 
-    content = f"# {name} ({audit.stockCode}) 신용평가 Audit\n\n"
+    content = f"# {name} ({audit.stockCode}) 신용분석 Audit\n\n"
     content += f"- dartlab 등급: {audit.dcrGrade} (점수 {audit.dcrScore:.1f})\n"
     content += f"- audit 일자: {audit.auditDate}\n\n"
     content += auditToMarkdown(audit)

@@ -1,4 +1,4 @@
-"""dartlab 독립 신용평가 엔진 (dCR).
+"""dartlab 독립 신용분석 엔진 (dCR).
 
 공시 데이터만으로 재현 가능한 독립 신용등급을 산출한다.
 7축 정량 스코어링 + 업종별 차등 + 시계열 안정화 → dCR-AAA ~ dCR-D.
@@ -18,8 +18,8 @@
     c.credit(detail=True)                   # 7축 상세 + 지표 시계열
 
     # review 경유 보고서
-    c.review("신용평가")                     # 신용평가 전문 보고서
-    c.review("신용평가").toMarkdown()         # 마크다운 출력
+    c.review("신용분석")                     # 신용분석 전문 보고서
+    c.review("신용분석").toMarkdown()         # 마크다운 출력
 
 ops/credit.md 참조.
 """
@@ -73,8 +73,8 @@ def _filterAxis(result: dict, axis: str) -> dict | None:
     if resolved is None:
         available = ", ".join(sorted(_CREDIT_AXES))
         raise ValueError(
-            f"알 수 없는 신용평가 축: '{axis}'. 가용 축: {available}\n"
-            f"  사용법: c.credit() 으로 전체 신용평가 결과를 확인하세요."
+            f"알 수 없는 신용분석 축: '{axis}'. 가용 축: {available}\n"
+            f"  사용법: c.credit() 으로 전체 신용분석 결과를 확인하세요."
         )
 
     fullName = _CREDIT_AXES[resolved]
