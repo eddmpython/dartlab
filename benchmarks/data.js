@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775254281752,
+  "lastUpdate": 1775264146724,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -8787,6 +8787,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.7806687771361483e-7",
             "extra": "mean: 692.5482734796323 nsec\nrounds: 103649"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "2b57af29bd3fec715a0e71afe1ba4a638caf7bc1",
+          "message": "feat: 정성 대리 신호 3개 — 시가총액 시장지위 + 연속 흑자 + notch cap 5→7\n\n시가총액 30조+ (+2), 10조+ (+1): 시장이 인정한 지위/암묵적 지원.\n연속 5기 영업흑자 (+1): 경영 역량 대리.\n총 notch cap 5→7. A범위 sub-cap 2→3 (POSCO 악화 방지).",
+          "timestamp": "2026-04-04T09:47:27+09:00",
+          "tree_id": "42c324620b856f4d5e855c9368f4f120c5c53418",
+          "url": "https://github.com/eddmpython/dartlab/commit/2b57af29bd3fec715a0e71afe1ba4a638caf7bc1"
+        },
+        "date": 1775264146109,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 577440.1724562531,
+            "unit": "iter/sec",
+            "range": "stddev: 2.963036566113102e-7",
+            "extra": "mean: 1.7317811397608642 usec\nrounds: 56447"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 695330.9170658508,
+            "unit": "iter/sec",
+            "range": "stddev: 3.11015163626761e-7",
+            "extra": "mean: 1.438164153867612 usec\nrounds: 137761"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 567767.9453080017,
+            "unit": "iter/sec",
+            "range": "stddev: 3.369970838014683e-7",
+            "extra": "mean: 1.7612829471334839 usec\nrounds: 110632"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 720319.3477260382,
+            "unit": "iter/sec",
+            "range": "stddev: 3.2135026815261217e-7",
+            "extra": "mean: 1.3882731362927847 usec\nrounds: 160257"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 980570.4661330692,
+            "unit": "iter/sec",
+            "range": "stddev: 9.430191540694395e-8",
+            "extra": "mean: 1.0198145207692744 usec\nrounds: 184095"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 299301.3652526446,
+            "unit": "iter/sec",
+            "range": "stddev: 3.5949103434284833e-7",
+            "extra": "mean: 3.3411140612602472 usec\nrounds: 72391"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 8485970.031598851,
+            "unit": "iter/sec",
+            "range": "stddev: 1.3414128833435107e-8",
+            "extra": "mean: 117.84156628839627 nsec\nrounds: 82488"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 9885332.906585885,
+            "unit": "iter/sec",
+            "range": "stddev: 7.009042531921105e-9",
+            "extra": "mean: 101.1599719958619 nsec\nrounds: 86768"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1556520.7014652023,
+            "unit": "iter/sec",
+            "range": "stddev: 1.4061742093542386e-7",
+            "extra": "mean: 642.4585288577713 nsec\nrounds: 150671"
           }
         ]
       }
