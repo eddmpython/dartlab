@@ -307,12 +307,47 @@ def _calcNotchAdjustment(
     if ocf > 0 and fcf < 0 and abs(fcf) > 0:  # OCF+, FCF- = CAPEX 집약
         notches.append((1, "CAPEX집약 OCF양수 (투자 사이클)"))
 
-    # 총 notch 합산 (상한 5)
-    totalNotch = min(sum(n for n, _ in notches), 5)
+    # ── 정성 대리 신호 (정량 데이터에서 추출) ──
 
-    # A 범위(10 < score <= 19): 과보정 방지, 최대 2 notch
+    # 6. 시가총액 TOP 50 = 시장이 인정한 시장 지위/암묵적 지원
+    try:
+        priceData = company.gather("price") if hasattr(company, "gather") else None
+        if priceData is not None and len(priceData) > 0:
+            # EPS 역산 shares
+            epsResult = company.select("IS", ["기본주당이익", "당기순이익"])
+            from dartlab.analysis.financial._helpers import toDict as _tdNotch
+
+            epsParsed = _tdNotch(epsResult)
+            if epsParsed:
+                ed, ep = epsParsed
+                eps = (ed.get("기본주당이익", {}) or {}).get(ep[0] if ep else "")
+                niE = (ed.get("당기순이익", {}) or {}).get(ep[0] if ep else "")
+                closeCol = "close" if "close" in priceData.columns else "종가"
+                if eps and abs(eps) > 0 and niE and closeCol in priceData.columns:
+                    shares = abs(niE / eps)
+                    latestClose = priceData[closeCol].drop_nulls().to_list()[-1]
+                    mktCap = shares * latestClose
+                    if mktCap > 30e12:  # 시가총액 30조+ (TOP ~30)
+                        notches.append((2, f"시가총액 {mktCap / 1e12:.0f}조 (시장 지위)"))
+                    elif mktCap > 10e12:  # 10조+
+                        notches.append((1, f"시가총액 {mktCap / 1e12:.0f}조"))
+    except (TypeError, ValueError, KeyError, AttributeError, IndexError, ZeroDivisionError):
+        pass
+
+    # 7. 장기 상장 + 연속 흑자 = 경영 역량 대리
+    histLen = len(metrics.get("history", []))
+    if histLen >= 5:
+        niHistory = [h.get("operatingIncome") for h in metrics["history"][:5]]
+        allPositive = all(v is not None and v > 0 for v in niHistory)
+        if allPositive:
+            notches.append((1, f"연속 {histLen}기 영업흑자 (경영 안정성)"))
+
+    # 총 notch 합산 (상한 7 — 정성 대리 3개 추가)
+    totalNotch = min(sum(n for n, _ in notches), 7)
+
+    # A 범위(10 < score <= 19): 과보정 방지, 최대 3 notch
     if score <= 19:
-        totalNotch = min(totalNotch, 2)
+        totalNotch = min(totalNotch, 3)
 
     reasons = [r for _, r in notches]
     return {"totalNotch": totalNotch, "reasons": reasons}
