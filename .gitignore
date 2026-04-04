@@ -44,6 +44,10 @@ ui/web/build/
 ui/node_modules/
 ui/web/node_modules/
 ui/vscode/node_modules/
+ui/vscode/dist/
+ui/vscode/webview/node_modules/
+ui/vscode/*.vsix
+ui/vscode/webview/.vite/
 ui/screenshots/
 ui/.svelte-kit/
 

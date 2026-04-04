@@ -5,11 +5,11 @@ export default defineConfig({
   plugins: [svelte()],
   resolve: {
     alias: {
-      "$shared": new URL("../shared", import.meta.url).pathname,
+      "$shared": new URL("../../shared", import.meta.url).pathname,
     },
   },
   build: {
-    outDir: "../../vscode/dist/webview",
+    outDir: "../dist/webview",
     emptyOutDir: true,
     rollupOptions: {
       input: "src/main.ts",

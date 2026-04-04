@@ -1,7 +1,7 @@
 /**
  * Browser E2E test -- webview를 브라우저에서 직접 열고 동작 확인.
  * Vite dev server가 떠있어야 한다 (port 5199).
- * `cd ui/vscode && npx vite --port 5199 &` 후 실행.
+ * `cd ui/vscode/webview && npx vite --port 5199 &` 후 실행.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { chromium, Browser, Page } from "playwright";

@@ -1,15 +1,18 @@
 {
   "compilerOptions": {
+    "module": "commonjs",
     "target": "ES2022",
-    "module": "ES2022",
-    "moduleResolution": "bundler",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022"],
+    "outDir": "dist",
+    "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "verbatimModuleSyntax": true
+    "declaration": false,
+    "sourceMap": true
   },
-  "include": ["src/**/*", "src/**/*.svelte"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "webview", "src/test/e2e"]
 }

@@ -19,23 +19,23 @@ jobs:
           node-version: "20"
 
       - name: Install extension dependencies
-        working-directory: vscode
+        working-directory: ui/vscode
         run: npm ci --legacy-peer-deps
 
       - name: Install webview dependencies
-        working-directory: ui/vscode
+        working-directory: ui/vscode/webview
         run: npm ci
 
       - name: Build webview
-        working-directory: ui/vscode
+        working-directory: ui/vscode/webview
         run: npm run build
 
       - name: Build extension
-        working-directory: vscode
+        working-directory: ui/vscode
         run: npm run build
 
       - name: Verify version matches tag
-        working-directory: vscode
+        working-directory: ui/vscode
         run: |
           TAG_VERSION="${GITHUB_REF_NAME#vsce-}"
           PKG_VERSION=$(node -p "require('./package.json').version")
@@ -45,5 +45,5 @@ jobs:
           fi
 
       - name: Publish to Marketplace
-        working-directory: vscode
+        working-directory: ui/vscode
         run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }}
