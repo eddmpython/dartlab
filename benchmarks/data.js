@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775265590575,
+  "lastUpdate": 1775267615605,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -9048,6 +9048,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 1.547423654505424e-7",
             "extra": "mean: 658.117135263823 nsec\nrounds: 172177"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "39ab106f92cbe371be126fff59ecbc08fb5332ae",
+          "message": "feat: 괴리 설명 자동 생성 + CHS 우량기업 하향 보호 + Track B 자산건전 규모 기반\n\n_explainDivergence: 축별 병목/FCF음수/CHS하향/D/EBITDA/정량한계 자동 설명.\nCHS: baseScore<10(AA이상)이면 하향 max +1점 (SKT 주가 급락 보호).\nTrack B: 자산건전성 fallback 규모 기반 (100조+ → 12점).",
+          "timestamp": "2026-04-04T10:52:32+09:00",
+          "tree_id": "ffac2ab325cc258a98252c865ec9538bf1135dd8",
+          "url": "https://github.com/eddmpython/dartlab/commit/39ab106f92cbe371be126fff59ecbc08fb5332ae"
+        },
+        "date": 1775267614995,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 510837.77376166213,
+            "unit": "iter/sec",
+            "range": "stddev: 7.405948311792699e-7",
+            "extra": "mean: 1.957568628169934 usec\nrounds: 53462"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 673669.5336950638,
+            "unit": "iter/sec",
+            "range": "stddev: 4.95022731920772e-7",
+            "extra": "mean: 1.4844073391816017 usec\nrounds: 140588"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 534992.9606344969,
+            "unit": "iter/sec",
+            "range": "stddev: 5.639470677005444e-7",
+            "extra": "mean: 1.869183472646087 usec\nrounds: 125392"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 683052.5293387492,
+            "unit": "iter/sec",
+            "range": "stddev: 3.991441816912549e-7",
+            "extra": "mean: 1.4640162462586617 usec\nrounds: 168039"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 909378.2082689047,
+            "unit": "iter/sec",
+            "range": "stddev: 1.6649187504338966e-7",
+            "extra": "mean: 1.0996524778217451 usec\nrounds: 173883"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 269864.8969654418,
+            "unit": "iter/sec",
+            "range": "stddev: 7.110020747514544e-7",
+            "extra": "mean: 3.7055578967280702 usec\nrounds: 74322"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7229638.307439052,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1954733579840561e-8",
+            "extra": "mean: 138.31950610461854 nsec\nrounds: 67079"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8876258.901098853,
+            "unit": "iter/sec",
+            "range": "stddev: 1.0929258386932e-8",
+            "extra": "mean: 112.66007573035111 nsec\nrounds: 78040"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1456989.523692775,
+            "unit": "iter/sec",
+            "range": "stddev: 2.775324834112835e-7",
+            "extra": "mean: 686.3467332733292 nsec\nrounds: 194553"
           }
         ]
       }
