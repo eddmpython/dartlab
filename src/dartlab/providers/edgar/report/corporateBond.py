@@ -40,10 +40,14 @@ def extractCorporateBond(company: "Company") -> pl.DataFrame | None:
     try:
         # 태그 패턴으로 필터
         tagPattern = "|".join(f"(?i){t}" for t in _DEBT_TAGS[:5])
-        df = pl.scan_parquet(path).filter(
-            pl.col("tag").str.contains(f"(?i)LongTermDebt|ShortTermBorrow|CommercialPaper|DebtInstrument")
-            & pl.col("form").is_in(["10-K", "10-Q", "20-F"])
-        ).collect()
+        df = (
+            pl.scan_parquet(path)
+            .filter(
+                pl.col("tag").str.contains(f"(?i)LongTermDebt|ShortTermBorrow|CommercialPaper|DebtInstrument")
+                & pl.col("form").is_in(["10-K", "10-Q", "20-F"])
+            )
+            .collect()
+        )
 
         if df.is_empty():
             return None

@@ -75,7 +75,7 @@ def _one_sided_hp_trend(series: list[float], lamb: float = 400_000.0) -> list[fl
     # 완전한 HP는 행렬 풀이가 필요하지만, 단측 근사로 EMA 기반 구현
     # BIS WP 878: one-sided HP ≈ EMA with appropriate smoothing
     # alpha = 1 / (1 + sqrt(lambda))  (근사)
-    alpha = 1.0 / (1.0 + (lamb ** 0.5))
+    alpha = 1.0 / (1.0 + (lamb**0.5))
     trend = [series[0]]
     for i in range(1, n):
         trend.append(alpha * series[i] + (1 - alpha) * trend[-1])
@@ -208,7 +208,7 @@ def ghsCrisisScore(
 
     desc = (
         f"GHS 점수 {score}/100 (신용 {creditGrowth3y:+.1f}%p, 자산 {assetPriceGrowth3y:+.0f}%) "
-        f"→ 3년 내 위기 확률 {crisis_prob*100:.0f}%"
+        f"→ 3년 내 위기 확률 {crisis_prob * 100:.0f}%"
     )
 
     return GHSResult(
@@ -329,7 +329,7 @@ def recessionDashboard(
     elif composite > 0.3 and hySpread is not None and hySpread > 600:
         historical = "resembles_2020"  # 급성 충격형
 
-    desc = f"침체 확률 종합 {composite*100:.1f}% ({zone_label})"
+    desc = f"침체 확률 종합 {composite * 100:.1f}% ({zone_label})"
     if historical != "normal":
         year = historical.split("_")[1]
         desc += f" — {year}년 패턴과 유사"
@@ -428,8 +428,11 @@ def minskyPhase(
     best_score = scores[best]
 
     labels = {
-        "displacement": "이전", "boom": "호황", "overtrading": "과열",
-        "discredit": "공황", "revulsion": "전염",
+        "displacement": "이전",
+        "boom": "호황",
+        "overtrading": "과열",
+        "discredit": "공황",
+        "revulsion": "전염",
     }
 
     if best_score >= 4:
@@ -486,8 +489,10 @@ def kooBalanceSheetRecession(
     is_bsr = surplus > 3.0 and policyRate < 2.0
 
     if is_bsr:
-        desc = (f"민간 금융 잉여 GDP의 {surplus:.1f}% + 정책금리 {policyRate:.2f}% "
-                f"— 대차대조표 침체: 민간이 차입 대신 부채 상환 중. 재정 확대 필수")
+        desc = (
+            f"민간 금융 잉여 GDP의 {surplus:.1f}% + 정책금리 {policyRate:.2f}% "
+            f"— 대차대조표 침체: 민간이 차입 대신 부채 상환 중. 재정 확대 필수"
+        )
     elif surplus > 3.0:
         desc = f"민간 잉여 {surplus:.1f}% 높으나 금리 {policyRate:.2f}% — 부분적 BSR 징후"
     else:
@@ -553,7 +558,9 @@ def fisherDebtDeflation(
         risk, risk_label = "low", "낮음"
         desc = f"DSR {dsr:.1f}% + CPI {cpiYoy:.1f}% — 정상"
 
-    return FisherDeflationResult(round(dsr, 1), round(nplRate, 1) if nplRate else None, round(cpiYoy, 1), risk, risk_label, desc)
+    return FisherDeflationResult(
+        round(dsr, 1), round(nplRate, 1) if nplRate else None, round(cpiYoy, 1), risk, risk_label, desc
+    )
 
 
 # ══════════════════════════════════════
@@ -593,11 +600,26 @@ def krHousingFinancialStress(
             score += 1
 
     if score >= 3:
-        return KRHousingStressResult(round(housePriceYoy, 1), round(householdDebtYoy, 1) if householdDebtYoy else None,
-                                     "high", "높음", f"주택가격 {housePriceYoy:+.1f}% + 가계부채 위험")
+        return KRHousingStressResult(
+            round(housePriceYoy, 1),
+            round(householdDebtYoy, 1) if householdDebtYoy else None,
+            "high",
+            "높음",
+            f"주택가격 {housePriceYoy:+.1f}% + 가계부채 위험",
+        )
     elif score >= 1:
-        return KRHousingStressResult(round(housePriceYoy, 1), round(householdDebtYoy, 1) if householdDebtYoy else None,
-                                     "moderate", "보통", f"주택가격 {housePriceYoy:+.1f}% — 경계 필요")
+        return KRHousingStressResult(
+            round(housePriceYoy, 1),
+            round(householdDebtYoy, 1) if householdDebtYoy else None,
+            "moderate",
+            "보통",
+            f"주택가격 {housePriceYoy:+.1f}% — 경계 필요",
+        )
     else:
-        return KRHousingStressResult(round(housePriceYoy, 1), round(householdDebtYoy, 1) if householdDebtYoy else None,
-                                     "low", "낮음", f"주택가격 {housePriceYoy:+.1f}% — 안정")
+        return KRHousingStressResult(
+            round(housePriceYoy, 1),
+            round(householdDebtYoy, 1) if householdDebtYoy else None,
+            "low",
+            "낮음",
+            f"주택가격 {housePriceYoy:+.1f}% — 안정",
+        )

@@ -23,14 +23,18 @@ def extractCapitalChange(company: "Company") -> pl.DataFrame | None:
         return None
 
     try:
-        df = pl.scan_parquet(path).filter(
-            pl.col("tag").str.contains(
-                "(?i)CommonStockSharesIssued|StockIssuedDuringPeriod|"
-                "StockRepurchas|TreasuryStockSharesAcquired|"
-                "StockRepurchaseProgramAuthorizedAmount"
+        df = (
+            pl.scan_parquet(path)
+            .filter(
+                pl.col("tag").str.contains(
+                    "(?i)CommonStockSharesIssued|StockIssuedDuringPeriod|"
+                    "StockRepurchas|TreasuryStockSharesAcquired|"
+                    "StockRepurchaseProgramAuthorizedAmount"
+                )
+                & pl.col("form").is_in(["10-K", "20-F"])
             )
-            & pl.col("form").is_in(["10-K", "20-F"])
-        ).collect()
+            .collect()
+        )
 
         if df.is_empty():
             return None

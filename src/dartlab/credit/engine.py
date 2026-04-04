@@ -679,7 +679,13 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         "chsAdjustment": chsResult,
         "notchAdjustment": notchAdj if notchAdj["totalNotch"] != 0 else None,
         "divergenceExplanation": _explainDivergence(
-            grade, overall, axes, latest, chsResult, captive, holding,
+            grade,
+            overall,
+            axes,
+            latest,
+            chsResult,
+            captive,
+            holding,
         ),
         "methodologyVersion": "v4.0",
         "axes": [
@@ -1058,7 +1064,14 @@ def _evaluateFinancial(
 
     # ── Track B에도 Notch Adjustment 적용 ──
     notchAdj = _calcNotchAdjustment(
-        company, grade, overall, latest, metrics, False, False, None,
+        company,
+        grade,
+        overall,
+        latest,
+        metrics,
+        False,
+        False,
+        None,
     )
     if notchAdj["totalNotch"] != 0:
         from dartlab.core.finance.creditScorecard import notchGrade as _notchGrade
@@ -1089,7 +1102,13 @@ def _evaluateFinancial(
         "chsAdjustment": chsResult,
         "notchAdjustment": notchAdj if notchAdj["totalNotch"] != 0 else None,
         "divergenceExplanation": _explainDivergence(
-            grade, overall, axes, latest, chsResult, False, False,
+            grade,
+            overall,
+            axes,
+            latest,
+            chsResult,
+            False,
+            False,
         ),
         "methodologyVersion": "v4.0-TrackB",
         "axes": [

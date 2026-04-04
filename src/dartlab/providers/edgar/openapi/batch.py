@@ -263,13 +263,17 @@ async def _workerLoop(
             try:
                 if cat == "finance":
                     count = await _collectEdgarFinance(
-                        ticker, cik, client,
+                        ticker,
+                        cik,
+                        client,
                         incremental=incremental,
                         onPeriod=_periodCb,
                     )
                 elif cat == "docs":
                     count = await _collectEdgarDocs(
-                        ticker, cik, client,
+                        ticker,
+                        cik,
+                        client,
                         incremental=incremental,
                         onPeriod=_periodCb,
                     )
@@ -321,8 +325,7 @@ def batchCollectEdgar(
         try:
             workers = [
                 asyncio.create_task(
-                    _workerLoop(i, c, queue, cats, results, tickerMap,
-                                incremental, completeFn, statusFn, periodFn)
+                    _workerLoop(i, c, queue, cats, results, tickerMap, incremental, completeFn, statusFn, periodFn)
                 )
                 for i, c in enumerate(clients)
             ]
@@ -336,6 +339,7 @@ def batchCollectEdgar(
         remaining = queue.qsize()
         if remaining > 0:
             from dartlab.core.guidance import emit
+
             emit("edgar:collect_exhausted")
 
         return results

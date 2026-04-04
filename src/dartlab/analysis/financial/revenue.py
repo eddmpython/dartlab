@@ -99,14 +99,19 @@ def _selectEdgarSegmentRevenue(
             return None
 
         # segment revenue 관련 태그 검색
-        df = pl.scan_parquet(path).filter(
-            pl.col("tag").str.contains(
-                "(?i)RevenueFromContractWithCustomer|SegmentReportingInformationRevenue|"
-                "SalesRevenueNet|RevenueFromExternalCustomers"
+        df = (
+            pl.scan_parquet(path)
+            .filter(
+                pl.col("tag").str.contains(
+                    "(?i)RevenueFromContractWithCustomer|SegmentReportingInformationRevenue|"
+                    "SalesRevenueNet|RevenueFromExternalCustomers"
+                )
+                & pl.col("form").is_in(["10-K", "20-F"])
+                & pl.col("unit").str.contains("(?i)USD")
             )
-            & pl.col("form").is_in(["10-K", "20-F"])
-            & pl.col("unit").str.contains("(?i)USD")
-        ).select("tag", "label", "fy", "val", "filed").collect()
+            .select("tag", "label", "fy", "val", "filed")
+            .collect()
+        )
 
         if df.is_empty():
             return None
@@ -148,10 +153,7 @@ def _selectEdgarSegmentRevenue(
         # 다른 연도도 채우기
         for segName in segData:
             for y in years[1:_MAX_YEARS]:
-                yRows = df.filter(
-                    (pl.col("fy") == y)
-                    & pl.col("label").str.contains(segName.split(" ")[0])
-                )
+                yRows = df.filter((pl.col("fy") == y) & pl.col("label").str.contains(segName.split(" ")[0]))
                 if yRows.height > 0:
                     segData[segName][str(y)] = yRows["val"][0]
 
@@ -274,9 +276,19 @@ def calcCompanyProfile(company, *, basePeriod: str | None = None) -> dict | None
 
                 item1 = sections.filter(pl.col("topic").str.contains("(?i)item1Business"))
                 if not item1.is_empty():
-                    pCols = [c for c in item1.columns if c not in (
-                        "topic", "blockType", "blockOrder", "textNodeType", "textLevel", "textPath",
-                    )]
+                    pCols = [
+                        c
+                        for c in item1.columns
+                        if c
+                        not in (
+                            "topic",
+                            "blockType",
+                            "blockOrder",
+                            "textNodeType",
+                            "textLevel",
+                            "textPath",
+                        )
+                    ]
                     if pCols:
                         latestText = item1[pCols[-1]].drop_nulls().to_list()
                         if latestText:

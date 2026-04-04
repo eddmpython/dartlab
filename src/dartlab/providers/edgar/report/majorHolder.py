@@ -27,13 +27,17 @@ def extractMajorHolder(company: "Company") -> pl.DataFrame | None:
         return None
 
     try:
-        df = pl.scan_parquet(path).filter(
-            pl.col("tag").str.contains(
-                "(?i)CommonStockSharesOutstanding|EntityPublicFloat|"
-                "SharesOutstanding|EntityCommonStockSharesOutstanding"
+        df = (
+            pl.scan_parquet(path)
+            .filter(
+                pl.col("tag").str.contains(
+                    "(?i)CommonStockSharesOutstanding|EntityPublicFloat|"
+                    "SharesOutstanding|EntityCommonStockSharesOutstanding"
+                )
+                & pl.col("form").is_in(["10-K", "10-Q", "20-F"])
             )
-            & pl.col("form").is_in(["10-K", "10-Q", "20-F"])
-        ).collect()
+            .collect()
+        )
 
         if df.is_empty():
             return None

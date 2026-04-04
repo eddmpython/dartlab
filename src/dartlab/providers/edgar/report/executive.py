@@ -29,23 +29,28 @@ def extractExecutive(company: "Company") -> pl.DataFrame | None:
         return None
 
     # Item 10 Directors & Officers 섹션
-    item10 = sections.filter(
-        pl.col("topic").str.contains("(?i)item10|executiveOfficers|directors")
-    )
+    item10 = sections.filter(pl.col("topic").str.contains("(?i)item10|executiveOfficers|directors"))
     if item10.is_empty():
         # Item 1에 Executive Officers 포함된 경우도 있음
-        item10 = sections.filter(
-            pl.col("topic").str.contains("(?i)item1Business")
-        )
+        item10 = sections.filter(pl.col("topic").str.contains("(?i)item1Business"))
 
     if item10.is_empty():
         return None
 
     # 가장 최신 기간
-    periodCols = [c for c in item10.columns if c not in (
-        "topic", "blockType", "blockOrder", "textNodeType",
-        "textLevel", "textPath",
-    )]
+    periodCols = [
+        c
+        for c in item10.columns
+        if c
+        not in (
+            "topic",
+            "blockType",
+            "blockOrder",
+            "textNodeType",
+            "textLevel",
+            "textPath",
+        )
+    ]
     if not periodCols:
         return None
 
@@ -57,10 +62,7 @@ def extractExecutive(company: "Company") -> pl.DataFrame | None:
     if not officers:
         return None
 
-    return pl.DataFrame([
-        {"name": name, "title": title, "period": latestPeriod}
-        for name, title in officers
-    ])
+    return pl.DataFrame([{"name": name, "title": title, "period": latestPeriod} for name, title in officers])
 
 
 def _parseOfficers(text: str) -> list[tuple[str, str]]:

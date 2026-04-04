@@ -30,16 +30,23 @@ def extractOutsideDirector(company: "Company") -> pl.DataFrame | None:
     if sections is None or sections.is_empty():
         return None
 
-    item10 = sections.filter(
-        pl.col("topic").str.contains("(?i)item10|directors|corporateGovernance")
-    )
+    item10 = sections.filter(pl.col("topic").str.contains("(?i)item10|directors|corporateGovernance"))
     if item10.is_empty():
         return None
 
-    periodCols = [c for c in item10.columns if c not in (
-        "topic", "blockType", "blockOrder", "textNodeType",
-        "textLevel", "textPath",
-    )]
+    periodCols = [
+        c
+        for c in item10.columns
+        if c
+        not in (
+            "topic",
+            "blockType",
+            "blockOrder",
+            "textNodeType",
+            "textLevel",
+            "textPath",
+        )
+    ]
     if not periodCols:
         return None
 
@@ -54,9 +61,13 @@ def extractOutsideDirector(company: "Company") -> pl.DataFrame | None:
     if independentCount == 0 and totalBoard == 0:
         return None
 
-    return pl.DataFrame([{
-        "period": latestPeriod,
-        "independentDirectors": independentCount if independentCount > 0 else None,
-        "totalBoardMentions": totalBoard if totalBoard > 0 else None,
-        "source": "10-K_text",
-    }])
+    return pl.DataFrame(
+        [
+            {
+                "period": latestPeriod,
+                "independentDirectors": independentCount if independentCount > 0 else None,
+                "totalBoardMentions": totalBoard if totalBoard > 0 else None,
+                "source": "10-K_text",
+            }
+        ]
+    )

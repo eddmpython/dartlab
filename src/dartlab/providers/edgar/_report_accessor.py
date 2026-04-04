@@ -138,56 +138,67 @@ def _extractStockTotal(company: "Company") -> pl.DataFrame | None:
 
 def _extractEmployee(company: "Company") -> pl.DataFrame | None:
     from dartlab.providers.edgar.report.employee import extractEmployee
+
     return extractEmployee(company)
 
 
 def _extractAuditOpinion(company: "Company") -> pl.DataFrame | None:
     from dartlab.providers.edgar.report.auditOpinion import extractAuditOpinion
+
     return extractAuditOpinion(company)
 
 
 def _extractCorporateBond(company: "Company") -> pl.DataFrame | None:
     from dartlab.providers.edgar.report.corporateBond import extractCorporateBond
+
     return extractCorporateBond(company)
 
 
 def _extractExecutive(company: "Company") -> pl.DataFrame | None:
     from dartlab.providers.edgar.report.executive import extractExecutive
+
     return extractExecutive(company)
 
 
 def _extractMajorHolder(company: "Company") -> pl.DataFrame | None:
     from dartlab.providers.edgar.report.majorHolder import extractMajorHolder
+
     return extractMajorHolder(company)
 
 
 def _extractExecutivePay(company: "Company") -> pl.DataFrame | None:
     from dartlab.providers.edgar.report.executivePay import extractExecutivePay
+
     return extractExecutivePay(company)
 
 
 def _extractCapitalChange(company: "Company") -> pl.DataFrame | None:
     from dartlab.providers.edgar.report.capitalChange import extractCapitalChange
+
     return extractCapitalChange(company)
 
 
 def _extractOutsideDirector(company: "Company") -> pl.DataFrame | None:
     from dartlab.providers.edgar.report.outsideDirector import extractOutsideDirector
+
     return extractOutsideDirector(company)
 
 
 def _extractMinorityHolder(company: "Company") -> pl.DataFrame | None:
     from dartlab.providers.edgar.report.minorityHolder import extractMinorityHolder
+
     return extractMinorityHolder(company)
 
 
 def _extractInvestedCompany(company: "Company") -> pl.DataFrame | None:
     from dartlab.providers.edgar.report.investedCompany import extractInvestedCompany
+
     return extractInvestedCompany(company)
 
 
 def _extractDebtSecurities(company: "Company") -> pl.DataFrame | None:
     from dartlab.providers.edgar.report.debtSecurities import extractDebtSecurities
+
     return extractDebtSecurities(company)
 
 

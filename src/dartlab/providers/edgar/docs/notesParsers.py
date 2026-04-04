@@ -146,6 +146,7 @@ def extractAllNoteCategories(
     """한 번의 parquet 로드로 모든 카테고리를 추출. 12번 I/O → 1번."""
     if edgarDir is None:
         from dartlab.providers.edgar.report import edgarFinancePath
+
         edgarDir = edgarFinancePath("_").parent
 
     path = edgarDir / f"{cik}.parquet"
@@ -161,11 +162,16 @@ def extractAllNoteCategories(
             for t in tags:
                 tagToCat[t] = cat
 
-        df = pl.scan_parquet(path).filter(
-            pl.col("tag").is_in(allTags)
-            & pl.col("unit").str.contains("(?i)USD|shares|pure")
-            & pl.col("form").is_in(["10-K", "20-F"])
-        ).select("tag", "label", "fy", "val", "filed").collect()
+        df = (
+            pl.scan_parquet(path)
+            .filter(
+                pl.col("tag").is_in(allTags)
+                & pl.col("unit").str.contains("(?i)USD|shares|pure")
+                & pl.col("form").is_in(["10-K", "20-F"])
+            )
+            .select("tag", "label", "fy", "val", "filed")
+            .collect()
+        )
 
         if df.is_empty():
             return {}
@@ -204,6 +210,7 @@ def extractNoteCategory(
 
     if edgarDir is None:
         from dartlab.providers.edgar.report import edgarFinancePath
+
         edgarDir = edgarFinancePath("_").parent  # finance 디렉토리
 
     path = edgarDir / f"{cik}.parquet"
@@ -213,11 +220,16 @@ def extractNoteCategory(
     tagList = _CATEGORY_TAGS[category]
 
     try:
-        df = pl.scan_parquet(path).filter(
-            pl.col("tag").is_in(tagList)
-            & pl.col("unit").str.contains("(?i)USD|shares|pure")
-            & pl.col("form").is_in(["10-K", "20-F"])
-        ).select("tag", "label", "fy", "val", "filed").collect()
+        df = (
+            pl.scan_parquet(path)
+            .filter(
+                pl.col("tag").is_in(tagList)
+                & pl.col("unit").str.contains("(?i)USD|shares|pure")
+                & pl.col("form").is_in(["10-K", "20-F"])
+            )
+            .select("tag", "label", "fy", "val", "filed")
+            .collect()
+        )
 
         if df.is_empty():
             return None

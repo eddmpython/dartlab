@@ -371,7 +371,7 @@ def _runEdgarCheck(console, args) -> int:
         tickers = [c.upper() for c in args.codes]
     elif args.tier:
         loaded = _loadEdgarTickers(args.tier)
-        tickers = (loaded or [])[:args.limit or 20]
+        tickers = (loaded or [])[: args.limit or 20]
 
     if not tickers:
         console.print("[red]체크할 ticker를 지정하세요.[/]")
@@ -407,7 +407,7 @@ def _runEdgarIncremental(console, args) -> int:
         tickers = [c.upper() for c in args.codes]
     elif args.tier:
         loaded = _loadEdgarTickers(args.tier)
-        tickers = (loaded or [])[:args.limit or 50]
+        tickers = (loaded or [])[: args.limit or 50]
 
     if not tickers:
         console.print("[red]수집할 ticker를 지정하세요.[/]")

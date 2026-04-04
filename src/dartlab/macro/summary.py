@@ -135,10 +135,10 @@ def analyze_summary(*, market: str = "US", **kwargs) -> dict:
             prob = rp["probability"]
             if prob > 0.4:
                 score -= 0.5
-                reasons.append(f"침체확률 {prob*100:.0f}% — 경계")
+                reasons.append(f"침체확률 {prob * 100:.0f}% — 경계")
             elif prob < 0.15:
                 score += 0.3
-                reasons.append(f"침체확률 {prob*100:.0f}% — 낮음")
+                reasons.append(f"침체확률 {prob * 100:.0f}% — 낮음")
 
         lei = forecast_result.get("lei")
         if lei and isinstance(lei, dict):

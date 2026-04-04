@@ -819,10 +819,7 @@ def generateReportMarkdown(
     if sepMetrics:
         lines.append("## 12. 별도재무제표 비교")
         lines.append("")
-        lines.append(
-            "연결 재무제표에 자회사 부채가 포함되어 왜곡될 수 있으므로, "
-            "별도(모회사) 재무를 함께 확인합니다."
-        )
+        lines.append("연결 재무제표에 자회사 부채가 포함되어 왜곡될 수 있으므로, 별도(모회사) 재무를 함께 확인합니다.")
         lines.append("")
         latest = history[0] if history else {}
         lines.append("| 지표 | 연결 | 별도 |")
@@ -831,12 +828,8 @@ def generateReportMarkdown(
         sepDE = sepMetrics.get("separateDebtToEbitda")
         conDR = latest.get("debtRatio")
         sepDR = sepMetrics.get("separateDebtRatio")
-        lines.append(
-            f"| D/EBITDA | {conDE:.1f}x | {sepDE:.1f}x |" if conDE and sepDE else "| D/EBITDA | - | - |"
-        )
-        lines.append(
-            f"| 부채비율 | {conDR:.0f}% | {sepDR:.0f}% |" if conDR and sepDR else "| 부채비율 | - | - |"
-        )
+        lines.append(f"| D/EBITDA | {conDE:.1f}x | {sepDE:.1f}x |" if conDE and sepDE else "| D/EBITDA | - | - |")
+        lines.append(f"| 부채비율 | {conDR:.0f}% | {sepDR:.0f}% |" if conDR and sepDR else "| 부채비율 | - | - |")
         conBorrow = latest.get("totalBorrowing")
         sepBorrow = sepMetrics.get("totalBorrowing")
         if conBorrow and sepBorrow:

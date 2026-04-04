@@ -85,7 +85,7 @@ def clevelandProbit(spread10y3m: float) -> RecessionProb:
     else:
         zone, zone_label = "high", "높음"
 
-    desc = f"12개월 내 침체 확률 {prob*100:.1f}% (10Y-3M 스프레드 {spread10y3m:+.2f}%p)"
+    desc = f"12개월 내 침체 확률 {prob * 100:.1f}% (10Y-3M 스프레드 {spread10y3m:+.2f}%p)"
 
     return RecessionProb(
         probability=round(prob, 4),
@@ -161,9 +161,7 @@ def conferenceBoardLEI(
         )
 
     # 부분 구성요소일 때 비례 조정
-    total_weight = sum(
-        w for k, w in _LEI_WEIGHTS.items() if components.get(k) is not None
-    )
+    total_weight = sum(w for k, w in _LEI_WEIGHTS.items() if components.get(k) is not None)
     if total_weight > 0:
         level = weighted_sum / total_weight * 100  # 정규화
     else:
@@ -230,8 +228,7 @@ def sahmRule(unemploymentSeries: list[float]) -> SahmResult:
     ma3_current = sum(unemploymentSeries[-3:]) / 3
     # 12개월 내 3개월 MA 최저점
     ma3_min = min(
-        sum(unemploymentSeries[i : i + 3]) / 3
-        for i in range(len(unemploymentSeries) - 15, len(unemploymentSeries) - 2)
+        sum(unemploymentSeries[i : i + 3]) / 3 for i in range(len(unemploymentSeries) - 15, len(unemploymentSeries) - 2)
     )
 
     sahm = ma3_current - ma3_min
@@ -324,10 +321,12 @@ def _hamilton_filter(
         # 조건부 밀도
         resid0 = y[t] - mu[0] - (phi * y[t - 1] if t > 0 else 0.0)
         resid1 = y[t] - mu[1] - (phi * y[t - 1] if t > 0 else 0.0)
-        eta = np.array([
-            _gaussian_density(y[t], mu[0] + (phi * y[t - 1] if t > 0 else 0.0), sigma[0]),
-            _gaussian_density(y[t], mu[1] + (phi * y[t - 1] if t > 0 else 0.0), sigma[1]),
-        ])
+        eta = np.array(
+            [
+                _gaussian_density(y[t], mu[0] + (phi * y[t - 1] if t > 0 else 0.0), sigma[0]),
+                _gaussian_density(y[t], mu[1] + (phi * y[t - 1] if t > 0 else 0.0), sigma[1]),
+            ]
+        )
 
         # 주변 우도
         f_yt = xi_pred @ eta

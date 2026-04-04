@@ -71,14 +71,21 @@ def extractEmployee(company: "Company") -> pl.DataFrame | None:
         sections = company.docs.sections
         if sections is not None and not sections.is_empty():
             # Item 1 Business 섹션 찾기
-            item1Topics = sections.filter(
-                pl.col("topic").str.contains("(?i)item1Business|item1$")
-            )
+            item1Topics = sections.filter(pl.col("topic").str.contains("(?i)item1Business|item1$"))
             if item1Topics.height > 0:
-                periodCols = [c for c in item1Topics.columns if c not in (
-                    "topic", "blockType", "blockOrder", "textNodeType",
-                    "textLevel", "textPath",
-                )]
+                periodCols = [
+                    c
+                    for c in item1Topics.columns
+                    if c
+                    not in (
+                        "topic",
+                        "blockType",
+                        "blockOrder",
+                        "textNodeType",
+                        "textLevel",
+                        "textPath",
+                    )
+                ]
                 for pcol in periodCols:
                     texts = item1Topics[pcol].drop_nulls().to_list()
                     fullText = " ".join(str(t) for t in texts)
@@ -102,10 +109,12 @@ def _getEmployeeFacts(company: "Company") -> list[dict]:
         return []
 
     try:
-        df = pl.scan_parquet(path).filter(
-            pl.col("tag").str.contains("(?i)NumberOfEmployees")
-            & pl.col("form").is_in(["10-K", "20-F"])
-        ).select("fy", "val", "filed").collect()
+        df = (
+            pl.scan_parquet(path)
+            .filter(pl.col("tag").str.contains("(?i)NumberOfEmployees") & pl.col("form").is_in(["10-K", "20-F"]))
+            .select("fy", "val", "filed")
+            .collect()
+        )
 
         if df.is_empty():
             return []
@@ -117,11 +126,13 @@ def _getEmployeeFacts(company: "Company") -> list[dict]:
             fy = row.get("fy")
             val = row.get("val")
             if fy is not None and val is not None:
-                records.append({
-                    "period": str(fy),
-                    "employeeCount": int(val),
-                    "source": "XBRL",
-                })
+                records.append(
+                    {
+                        "period": str(fy),
+                        "employeeCount": int(val),
+                        "source": "XBRL",
+                    }
+                )
         return records
     except (pl.exceptions.ComputeError, OSError):
         return []

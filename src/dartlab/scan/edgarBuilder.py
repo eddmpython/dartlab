@@ -46,14 +46,27 @@ def buildEdgarFinance(*, sinceYear: int = 2021, verbose: bool = False) -> Path:
 
     # 주요 계정
     targetAccounts = [
-        "sales", "operating_profit", "net_profit",
-        "total_assets", "current_assets", "total_liabilities", "current_liabilities",
-        "total_stockholders_equity", "operating_cashflow", "investing_cashflow",
-        "financing_cash_flow", "capex", "dividends_paid",
-        "cash_and_cash_equivalents", "inventories",
-        "trade_and_other_receivables", "trade_and_other_payables",
-        "interest_expense", "treasury_stock",
-        "shortterm_borrowings", "longterm_borrowings",
+        "sales",
+        "operating_profit",
+        "net_profit",
+        "total_assets",
+        "current_assets",
+        "total_liabilities",
+        "current_liabilities",
+        "total_stockholders_equity",
+        "operating_cashflow",
+        "investing_cashflow",
+        "financing_cash_flow",
+        "capex",
+        "dividends_paid",
+        "cash_and_cash_equivalents",
+        "inventories",
+        "trade_and_other_receivables",
+        "trade_and_other_payables",
+        "interest_expense",
+        "treasury_stock",
+        "shortterm_borrowings",
+        "longterm_borrowings",
         "depreciation_amortization",
     ]
 
@@ -68,10 +81,7 @@ def buildEdgarFinance(*, sinceYear: int = 2021, verbose: bool = False) -> Path:
                 continue
 
             # 10-K만, sinceYear 이후
-            annual = df.filter(
-                (pl.col("form") == "10-K")
-                & (pl.col("fy") >= sinceYear)
-            )
+            annual = df.filter((pl.col("form") == "10-K") & (pl.col("fy") >= sinceYear))
             if annual.is_empty():
                 continue
 
@@ -154,10 +164,8 @@ def _buildReverseTagMap(snakeIds: list[str]) -> dict[str, list[str]]:
 
 def _guessStmt(snakeId: str) -> str:
     """snakeId로 재무제표 유형 추정."""
-    if snakeId in ("sales", "operating_profit", "net_profit", "interest_expense",
-                    "depreciation_amortization"):
+    if snakeId in ("sales", "operating_profit", "net_profit", "interest_expense", "depreciation_amortization"):
         return "IS"
-    if snakeId in ("operating_cashflow", "investing_cashflow", "financing_cash_flow",
-                    "capex", "dividends_paid"):
+    if snakeId in ("operating_cashflow", "investing_cashflow", "financing_cash_flow", "capex", "dividends_paid"):
         return "CF"
     return "BS"

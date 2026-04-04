@@ -654,9 +654,7 @@ def buildActTransitions(company, blockMap: dict) -> dict[str, str]:
         niStr = _fmtAmtShort(ni)
         ocfStr = _fmtAmtShort(ocf)
         ratio = ocf / ni * 100 if ni != 0 else 0
-        transitions["2→3"] = (
-            f"순이익 {niStr} → 영업CF {ocfStr} ({ratio:.0f}%) — 이익이 현금으로 뒷받침되는가?"
-        )
+        transitions["2→3"] = f"순이익 {niStr} → 영업CF {ocfStr} ({ratio:.0f}%) — 이익이 현금으로 뒷받침되는가?"
 
     # 3막→4막: 현금 → 안정성
     fcf = getattr(ratios, "fcf", None) or getattr(ratios, "fcfTTM", None)

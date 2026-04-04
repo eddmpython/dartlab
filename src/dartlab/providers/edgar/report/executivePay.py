@@ -27,14 +27,18 @@ def extractExecutivePay(company: "Company") -> pl.DataFrame | None:
         return None
 
     try:
-        df = pl.scan_parquet(path).filter(
-            pl.col("tag").str.contains(
-                "(?i)ShareBasedCompensation|StockBasedCompensation|"
-                "AllocatedShareBasedCompensationExpense|"
-                "DefinedBenefitPlanNetPeriodicBenefitCost"
+        df = (
+            pl.scan_parquet(path)
+            .filter(
+                pl.col("tag").str.contains(
+                    "(?i)ShareBasedCompensation|StockBasedCompensation|"
+                    "AllocatedShareBasedCompensationExpense|"
+                    "DefinedBenefitPlanNetPeriodicBenefitCost"
+                )
+                & pl.col("form").is_in(["10-K", "20-F"])
             )
-            & pl.col("form").is_in(["10-K", "20-F"])
-        ).collect()
+            .collect()
+        )
 
         if df.is_empty():
             return None

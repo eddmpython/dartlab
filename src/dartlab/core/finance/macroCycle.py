@@ -856,14 +856,25 @@ def copperGoldRatio(
         change_pct = 0.0
 
     if change_pct > 3:
-        return CopperGoldSignal(round(ratio, 4), "rising", "상승", "expansion",
-                                f"Cu/Au {ratio:.4f} ({change_pct:+.1f}%) — 산업수요 확대, 경기 낙관")
+        return CopperGoldSignal(
+            round(ratio, 4),
+            "rising",
+            "상승",
+            "expansion",
+            f"Cu/Au {ratio:.4f} ({change_pct:+.1f}%) — 산업수요 확대, 경기 낙관",
+        )
     elif change_pct < -3:
-        return CopperGoldSignal(round(ratio, 4), "falling", "하락", "contraction",
-                                f"Cu/Au {ratio:.4f} ({change_pct:+.1f}%) — 안전자산 선호, 경기 비관")
+        return CopperGoldSignal(
+            round(ratio, 4),
+            "falling",
+            "하락",
+            "contraction",
+            f"Cu/Au {ratio:.4f} ({change_pct:+.1f}%) — 안전자산 선호, 경기 비관",
+        )
     else:
-        return CopperGoldSignal(round(ratio, 4), "stable", "안정", "neutral",
-                                f"Cu/Au {ratio:.4f} ({change_pct:+.1f}%) — 안정")
+        return CopperGoldSignal(
+            round(ratio, 4), "stable", "안정", "neutral", f"Cu/Au {ratio:.4f} ({change_pct:+.1f}%) — 안정"
+        )
 
 
 # ══════════════════════════════════════
@@ -893,17 +904,42 @@ def realRateRegime(realRate: float, bei: float) -> RealRateRegimeResult:
     여기서는 수준 기반으로 판별.
     """
     if realRate > 2.0 and bei < 2.0:
-        return RealRateRegimeResult(round(realRate, 2), round(bei, 2), "deflation", "디플레위험",
-                                    f"실질금리 {realRate:.2f}% 높음 + BEI {bei:.2f}% 낮음 — 디플레이션 위험")
+        return RealRateRegimeResult(
+            round(realRate, 2),
+            round(bei, 2),
+            "deflation",
+            "디플레위험",
+            f"실질금리 {realRate:.2f}% 높음 + BEI {bei:.2f}% 낮음 — 디플레이션 위험",
+        )
     elif realRate > 1.5 and bei > 2.5:
-        return RealRateRegimeResult(round(realRate, 2), round(bei, 2), "tightening", "긴축",
-                                    f"실질금리 {realRate:.2f}% + BEI {bei:.2f}% 동반 상승 — 금융 긴축")
+        return RealRateRegimeResult(
+            round(realRate, 2),
+            round(bei, 2),
+            "tightening",
+            "긴축",
+            f"실질금리 {realRate:.2f}% + BEI {bei:.2f}% 동반 상승 — 금융 긴축",
+        )
     elif realRate < 0.5 and bei > 2.5:
-        return RealRateRegimeResult(round(realRate, 2), round(bei, 2), "reflation", "리플레이션",
-                                    f"실질금리 {realRate:.2f}% 낮음 + BEI {bei:.2f}% 높음 — 리플레이션")
+        return RealRateRegimeResult(
+            round(realRate, 2),
+            round(bei, 2),
+            "reflation",
+            "리플레이션",
+            f"실질금리 {realRate:.2f}% 낮음 + BEI {bei:.2f}% 높음 — 리플레이션",
+        )
     elif realRate < 1.0 and bei < 2.0:
-        return RealRateRegimeResult(round(realRate, 2), round(bei, 2), "goldilocks", "골디락스",
-                                    f"실질금리 {realRate:.2f}% + BEI {bei:.2f}% 모두 안정 — 골디락스")
+        return RealRateRegimeResult(
+            round(realRate, 2),
+            round(bei, 2),
+            "goldilocks",
+            "골디락스",
+            f"실질금리 {realRate:.2f}% + BEI {bei:.2f}% 모두 안정 — 골디락스",
+        )
     else:
-        return RealRateRegimeResult(round(realRate, 2), round(bei, 2), "neutral", "중립",
-                                    f"실질금리 {realRate:.2f}%, BEI {bei:.2f}% — 뚜렷한 방향 없음")
+        return RealRateRegimeResult(
+            round(realRate, 2),
+            round(bei, 2),
+            "neutral",
+            "중립",
+            f"실질금리 {realRate:.2f}%, BEI {bei:.2f}% — 뚜렷한 방향 없음",
+        )

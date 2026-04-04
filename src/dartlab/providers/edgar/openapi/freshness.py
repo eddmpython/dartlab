@@ -232,13 +232,15 @@ def scanEdgarMarketFreshness(
         hasDocs = docsPath.exists()
         hasFinance = financePath is not None and financePath.exists()
 
-        records.append({
-            "ticker": t,
-            "cik": cik or "",
-            "hasDocs": hasDocs,
-            "hasFinance": hasFinance,
-            "status": "complete" if hasDocs and hasFinance else "partial" if hasDocs or hasFinance else "missing",
-        })
+        records.append(
+            {
+                "ticker": t,
+                "cik": cik or "",
+                "hasDocs": hasDocs,
+                "hasFinance": hasFinance,
+                "status": "complete" if hasDocs and hasFinance else "partial" if hasDocs or hasFinance else "missing",
+            }
+        )
 
     return pl.DataFrame(records) if records else pl.DataFrame()
 

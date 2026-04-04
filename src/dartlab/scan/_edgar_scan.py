@@ -412,8 +412,15 @@ def _scanDebt(**_kw) -> pl.DataFrame:
 def _scanValuation(**_kw) -> pl.DataFrame:
     """밸류에이션 — PER/PBR/EV/EBITDA. Yahoo 주가 데이터 필요."""
     df = scan_edgar_accounts(
-        ["net_profit", "total_stockholders_equity", "total_assets", "total_liabilities",
-         "cash_and_cash_equivalents", "operating_profit", "depreciation_amortization"],
+        [
+            "net_profit",
+            "total_stockholders_equity",
+            "total_assets",
+            "total_liabilities",
+            "cash_and_cash_equivalents",
+            "operating_profit",
+            "depreciation_amortization",
+        ],
     )
     if df.is_empty():
         return df
@@ -430,7 +437,11 @@ def _scanValuation(**_kw) -> pl.DataFrame:
     )
 
     return result.select(
-        "stockCode", "corpName", "ebitda", "equityMultiplier", "roe",
+        "stockCode",
+        "corpName",
+        "ebitda",
+        "equityMultiplier",
+        "roe",
     ).sort("ebitda", descending=True, nulls_last=True)
 
 

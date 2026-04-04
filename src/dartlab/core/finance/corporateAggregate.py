@@ -70,9 +70,7 @@ _INTEREST_EXPENSE_PATTERNS = ["이자비용", "금융비용", "금융원가"]
 
 def _extract_annual_consolidated(df: pl.DataFrame) -> pl.DataFrame:
     """연결재무제표 + 4분기(연간) 데이터만 추출."""
-    return df.filter(
-        (pl.col("fs_nm") == "연결재무제표") & (pl.col("reprt_nm") == "4분기")
-    )
+    return df.filter((pl.col("fs_nm") == "연결재무제표") & (pl.col("reprt_nm") == "4분기"))
 
 
 def _sum_account(
@@ -81,14 +79,10 @@ def _sum_account(
     account_names: set[str],
 ) -> pl.DataFrame:
     """특정 계정의 기간별 합계."""
-    filtered = annual.filter(
-        (pl.col("sj_div") == sj_div)
-        & (pl.col("account_nm").is_in(account_names))
-    )
+    filtered = annual.filter((pl.col("sj_div") == sj_div) & (pl.col("account_nm").is_in(account_names)))
     # thstrm_amount가 당기 금액
     return (
-        filtered
-        .group_by("bsns_year")
+        filtered.group_by("bsns_year")
         .agg(
             pl.col("thstrm_amount").cast(pl.Float64, strict=False).sum().alias("total"),
             pl.col("stockCode").n_unique().alias("count"),
@@ -104,23 +98,19 @@ def _median_ratio(
     sj_div: str = "BS",
 ) -> pl.DataFrame:
     """특정 비율의 기간별 중간값."""
-    numer = annual.filter(
-        (pl.col("sj_div") == sj_div) & (pl.col("account_nm").is_in(numer_names))
-    ).select("bsns_year", "stockCode", pl.col("thstrm_amount").cast(pl.Float64, strict=False).alias("numer"))
+    numer = annual.filter((pl.col("sj_div") == sj_div) & (pl.col("account_nm").is_in(numer_names))).select(
+        "bsns_year", "stockCode", pl.col("thstrm_amount").cast(pl.Float64, strict=False).alias("numer")
+    )
 
-    denom = annual.filter(
-        (pl.col("sj_div") == sj_div) & (pl.col("account_nm").is_in(denom_names))
-    ).select("bsns_year", "stockCode", pl.col("thstrm_amount").cast(pl.Float64, strict=False).alias("denom"))
+    denom = annual.filter((pl.col("sj_div") == sj_div) & (pl.col("account_nm").is_in(denom_names))).select(
+        "bsns_year", "stockCode", pl.col("thstrm_amount").cast(pl.Float64, strict=False).alias("denom")
+    )
 
     joined = numer.join(denom, on=["bsns_year", "stockCode"], how="inner")
     joined = joined.filter(pl.col("denom").abs() > 0)
     joined = joined.with_columns((pl.col("numer") / pl.col("denom") * 100).alias("ratio"))
 
-    return (
-        joined.group_by("bsns_year")
-        .agg(pl.col("ratio").median().alias("median_ratio"))
-        .sort("bsns_year")
-    )
+    return joined.group_by("bsns_year").agg(pl.col("ratio").median().alias("median_ratio")).sort("bsns_year")
 
 
 # ══════════════════════════════════════
@@ -168,7 +158,9 @@ def aggregateEarningsCycle(financeDf: pl.DataFrame) -> EarningsCycleResult:
         currentDirection=direction,
         currentLabel=label,
         companyCount=counts[-1] if counts else 0,
-        description=f"전종목 영업이익 {label} (YoY {last_yoy:+.1f}%, {counts[-1] if counts else 0}개사)" if last_yoy else "데이터 부족",
+        description=f"전종목 영업이익 {label} (YoY {last_yoy:+.1f}%, {counts[-1] if counts else 0}개사)"
+        if last_yoy
+        else "데이터 부족",
     )
 
 
@@ -181,14 +173,13 @@ def ponziRatio(financeDf: pl.DataFrame) -> PonziRatioResult:
     annual = _extract_annual_consolidated(financeDf)
 
     # 영업이익
-    op = annual.filter(
-        (pl.col("sj_div") == "IS") & (pl.col("account_nm").is_in(_OP_INCOME_NAMES))
-    ).select("bsns_year", "stockCode", pl.col("thstrm_amount").cast(pl.Float64, strict=False).alias("op_income"))
+    op = annual.filter((pl.col("sj_div") == "IS") & (pl.col("account_nm").is_in(_OP_INCOME_NAMES))).select(
+        "bsns_year", "stockCode", pl.col("thstrm_amount").cast(pl.Float64, strict=False).alias("op_income")
+    )
 
     # 이자비용 — account_nm에 "이자비용" 또는 "금융비용" 포함
     interest = annual.filter(
-        (pl.col("sj_div") == "IS")
-        & pl.col("account_nm").str.contains("이자비용|금융비용|금융원가")
+        (pl.col("sj_div") == "IS") & pl.col("account_nm").str.contains("이자비용|금융비용|금융원가")
     ).select("bsns_year", "stockCode", pl.col("thstrm_amount").cast(pl.Float64, strict=False).abs().alias("interest"))
 
     # 종목별 ICR

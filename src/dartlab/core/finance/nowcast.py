@@ -238,7 +238,7 @@ def gdpNowcast(
         Q_val = float(np.var(residuals)) + 1e-6
     else:
         # 일반 VAR(p)
-        X_lag = np.column_stack([f_init[p - 1 - i: T - 1 - i] for i in range(p)])  # (T-p) × rp
+        X_lag = np.column_stack([f_init[p - 1 - i : T - 1 - i] for i in range(p)])  # (T-p) × rp
         Y_cur = f_init[p:]  # (T-p) × r
         try:
             beta = np.linalg.lstsq(X_lag, Y_cur, rcond=None)[0]  # rp × r
@@ -255,7 +255,7 @@ def gdpNowcast(
     else:
         A_comp[:r, :] = A_coef if isinstance(A_coef, np.ndarray) else np.array([[A_coef]])
         if rp > r:
-            A_comp[r:, :rp - r] = np.eye(rp - r)  # companion identity
+            A_comp[r:, : rp - r] = np.eye(rp - r)  # companion identity
 
     H = np.zeros((n, rp))
     H[:, :r] = Lambda
@@ -277,9 +277,7 @@ def gdpNowcast(
 
     for iteration in range(maxIter):
         # ── E-step ──
-        a_pred, a_filt, P_pred, P_filt, log_lik = _kalman_filter(
-            y_std, A_comp, H, Q_full, R_diag, a0, P0
-        )
+        a_pred, a_filt, P_pred, P_filt, log_lik = _kalman_filter(y_std, A_comp, H, Q_full, R_diag, a0, P0)
         a_smooth, P_smooth = _kalman_smoother(a_pred, a_filt, P_pred, P_filt, A_comp)
 
         if abs(log_lik - prev_ll) < tol:
@@ -355,9 +353,7 @@ def gdpNowcast(
         H[:, :r] = Lambda
 
     # 최종 필터
-    a_pred, a_filt, P_pred, P_filt, log_lik = _kalman_filter(
-        y_std, A_comp, H, Q_full, R_diag, a0, P0
-    )
+    a_pred, a_filt, P_pred, P_filt, log_lik = _kalman_filter(y_std, A_comp, H, Q_full, R_diag, a0, P0)
     a_smooth, P_smooth = _kalman_smoother(a_pred, a_filt, P_pred, P_filt, A_comp)
 
     # 팩터 추출

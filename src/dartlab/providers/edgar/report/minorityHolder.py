@@ -23,14 +23,18 @@ def extractMinorityHolder(company: "Company") -> pl.DataFrame | None:
         return None
 
     try:
-        df = pl.scan_parquet(path).filter(
-            pl.col("tag").str.contains(
-                "(?i)MinorityInterest|NoncontrollingInterest|"
-                "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"
+        df = (
+            pl.scan_parquet(path)
+            .filter(
+                pl.col("tag").str.contains(
+                    "(?i)MinorityInterest|NoncontrollingInterest|"
+                    "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"
+                )
+                & pl.col("form").is_in(["10-K", "20-F"])
+                & pl.col("unit").str.contains("(?i)USD")
             )
-            & pl.col("form").is_in(["10-K", "20-F"])
-            & pl.col("unit").str.contains("(?i)USD")
-        ).collect()
+            .collect()
+        )
 
         if df.is_empty():
             return None

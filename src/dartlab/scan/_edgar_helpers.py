@@ -69,10 +69,12 @@ def scan_edgar_raw_tags(tags: list[str], *, annual: bool = True) -> pl.DataFrame
     for fp in edgarDir.glob("*.parquet"):
         cik = fp.stem
         try:
-            df = pl.scan_parquet(fp).filter(
-                pl.col("tag").is_in(tags)
-                & pl.col("form").is_in(["10-K", "20-F"])
-            ).select("tag", "val", "fy", "entityName").collect()
+            df = (
+                pl.scan_parquet(fp)
+                .filter(pl.col("tag").is_in(tags) & pl.col("form").is_in(["10-K", "20-F"]))
+                .select("tag", "val", "fy", "entityName")
+                .collect()
+            )
 
             if df.is_empty():
                 continue
