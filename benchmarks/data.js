@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775310902135,
+  "lastUpdate": 1775311107372,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -11832,6 +11832,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.838175188160698e-7",
             "extra": "mean: 706.3282826077708 nsec\nrounds: 127308"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "eee12f464f37ec0e3a03ff20d12141a2cb32f0fa",
+          "message": "rename: 신용평가→신용분석 — credit 전체 용어 통일\n\nmemory/credit.md 명칭 원칙: '신용평가'는 제도권 전용 규제 용어.\ndartlab은 '신용분석'으로 통일. engine/metrics/narrative/audit/calcs/__init__/ops 전체.",
+          "timestamp": "2026-04-04T22:57:14+09:00",
+          "tree_id": "a95a61ec95b3669001685ec79231a95ad016df57",
+          "url": "https://github.com/eddmpython/dartlab/commit/eee12f464f37ec0e3a03ff20d12141a2cb32f0fa"
+        },
+        "date": 1775311106702,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 536748.1143510618,
+            "unit": "iter/sec",
+            "range": "stddev: 5.104913461214189e-7",
+            "extra": "mean: 1.8630712866295176 usec\nrounds: 56364"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 630064.648521648,
+            "unit": "iter/sec",
+            "range": "stddev: 5.066700463350852e-7",
+            "extra": "mean: 1.587138720362029 usec\nrounds: 125079"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 526388.009764457,
+            "unit": "iter/sec",
+            "range": "stddev: 5.768153691038202e-7",
+            "extra": "mean: 1.899739320520371 usec\nrounds: 113676"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 668358.0676665809,
+            "unit": "iter/sec",
+            "range": "stddev: 4.906991471039002e-7",
+            "extra": "mean: 1.496203978641675 usec\nrounds: 166086"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 811924.6324615539,
+            "unit": "iter/sec",
+            "range": "stddev: 3.89497312989451e-7",
+            "extra": "mean: 1.2316414110608376 usec\nrounds: 191205"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 271289.1495007316,
+            "unit": "iter/sec",
+            "range": "stddev: 7.612875392658256e-7",
+            "extra": "mean: 3.6861039294802436 usec\nrounds: 17127"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7406518.687299864,
+            "unit": "iter/sec",
+            "range": "stddev: 1.278942037519606e-8",
+            "extra": "mean: 135.01619886745496 nsec\nrounds: 73828"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8994022.10570316,
+            "unit": "iter/sec",
+            "range": "stddev: 2.362167360499729e-8",
+            "extra": "mean: 111.18496132735702 nsec\nrounds: 83522"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1466458.8347189832,
+            "unit": "iter/sec",
+            "range": "stddev: 2.887854096794554e-7",
+            "extra": "mean: 681.914811602352 nsec\nrounds: 149410"
           }
         ]
       }
