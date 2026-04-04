@@ -1,6 +1,66 @@
 {
-  "005930": {"order": 1, "slug": "005930-samsung"},
-  "000660": {"order": 2, "slug": "000660-sk-hynix"},
-  "035420": {"order": 3, "slug": "035420-naver"},
-  "003550": {"order": 4, "slug": "003550-lg"}
+  "005930": {
+    "order": 1,
+    "slug": "005930-samsung"
+  },
+  "000660": {
+    "order": 2,
+    "slug": "000660-sk-hynix"
+  },
+  "035420": {
+    "order": 3,
+    "slug": "035420-naver"
+  },
+  "003550": {
+    "order": 4,
+    "slug": "003550-lg"
+  },
+  "005380": {
+    "order": 5,
+    "slug": "005380-hyundai-motor"
+  },
+  "000270": {
+    "order": 6,
+    "slug": "000270-kia"
+  },
+  "051910": {
+    "order": 7,
+    "slug": "051910-lg-chem"
+  },
+  "068270": {
+    "order": 8,
+    "slug": "068270-celltrion"
+  },
+  "015760": {
+    "order": 9,
+    "slug": "015760-kepco"
+  },
+  "017670": {
+    "order": 10,
+    "slug": "017670-sk-telecom"
+  },
+  "030200": {
+    "order": 11,
+    "slug": "030200-credit"
+  },
+  "066570": {
+    "order": 12,
+    "slug": "066570-lg-electronics"
+  },
+  "033780": {
+    "order": 13,
+    "slug": "033780-credit"
+  },
+  "009150": {
+    "order": 14,
+    "slug": "009150-credit"
+  },
+  "018260": {
+    "order": 15,
+    "slug": "018260-credit"
+  },
+  "096770": {
+    "order": 16,
+    "slug": "096770-credit"
+  }
 }
