@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775385328477,
+  "lastUpdate": 1775388461681,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -12441,6 +12441,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 3.070653465041369e-7",
             "extra": "mean: 686.253448460592 nsec\nrounds: 165509"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "bcff9001cfbbeaac765e5428dde5d3c5bde5e94a",
+          "message": "fix: SegmentTable 중복 컬럼명 ShapeError (#17)\n\n연결/개별 재무제표 부문이 같은 이름으로 반복될 때\nPolars DataFrame 생성 시 중복 컬럼 거부 → ShapeError.\n중복 컬럼명에 접미사(_2, _3...) 부여하여 해결.",
+          "timestamp": "2026-04-05T20:26:36+09:00",
+          "tree_id": "d684370c28106b8d2c67ecc73ee5af790afcad02",
+          "url": "https://github.com/eddmpython/dartlab/commit/bcff9001cfbbeaac765e5428dde5d3c5bde5e94a"
+        },
+        "date": 1775388460500,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 535511.020321414,
+            "unit": "iter/sec",
+            "range": "stddev: 5.128997648250051e-7",
+            "extra": "mean: 1.8673752024744505 usec\nrounds: 51852"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 642581.6575457612,
+            "unit": "iter/sec",
+            "range": "stddev: 5.453936599102827e-7",
+            "extra": "mean: 1.5562224477731617 usec\nrounds: 124627"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 533718.888111266,
+            "unit": "iter/sec",
+            "range": "stddev: 5.186077425023268e-7",
+            "extra": "mean: 1.8736455131629648 usec\nrounds: 127796"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 690771.261116303,
+            "unit": "iter/sec",
+            "range": "stddev: 4.161182964859022e-7",
+            "extra": "mean: 1.447657214899149 usec\nrounds: 182117"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 909325.4336860955,
+            "unit": "iter/sec",
+            "range": "stddev: 1.502621008591755e-7",
+            "extra": "mean: 1.0997162984283202 usec\nrounds: 176336"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 268302.59252802876,
+            "unit": "iter/sec",
+            "range": "stddev: 6.309339655550061e-7",
+            "extra": "mean: 3.7271350626085846 usec\nrounds: 78223"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7190550.516185579,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1449639739172237e-8",
+            "extra": "mean: 139.0714101443344 nsec\nrounds: 72333"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8608983.582961429,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1950797570799114e-8",
+            "extra": "mean: 116.15773109141033 nsec\nrounds: 86416"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1456016.6120033266,
+            "unit": "iter/sec",
+            "range": "stddev: 2.475326149766867e-7",
+            "extra": "mean: 686.8053508154035 nsec\nrounds: 159975"
           }
         ]
       }
