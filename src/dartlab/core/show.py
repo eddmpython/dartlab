@@ -87,6 +87,47 @@ def _bridgeKoreanSnakeId(
             if not hits.is_empty():
                 return hits
 
+    elif hasKoreanQuery and colIsKorean:
+        # 한국어 쿼리 + 한국어 컬럼 — 동의어 확장 (회사마다 계정명이 다름)
+        # 경로: 한국어 → snakeId → alias 확장 → 한국어 역변환 → 컬럼 매칭
+        rev = get_reverse_korean_labels()
+        fwd = get_korean_labels()
+        synonyms: list[str] = list(indList)  # 원본 유지
+        for q in indList:
+            sid = rev.get(q) or rev.get(normalizeItemKey(q))
+            if sid:
+                # alias 확장 (pretax_income → profit_before_tax 등)
+                expanded = _expandEdgarAliases([sid])
+                for esid in expanded:
+                    kr = fwd.get(esid)
+                    if kr and kr not in synonyms:
+                        synonyms.append(kr)
+        # 동의어 + snakeId 양쪽에서 매칭한 결과를 합산
+        matchedRows: set[int] = set()
+
+        # (a) 계정명 동의어 매칭
+        if len(synonyms) > len(indList):
+            colVals = df[mc].to_list()
+            for i, val in enumerate(colVals):
+                if val in synonyms:
+                    matchedRows.add(i)
+
+        # (b) snakeId 컬럼 직접 매칭
+        if "snakeId" in df.columns and mc != "snakeId":
+            snakeIds: list[str] = []
+            for q in indList:
+                sid = rev.get(q) or rev.get(normalizeItemKey(q))
+                if sid:
+                    snakeIds.extend(_expandEdgarAliases([sid]))
+            if snakeIds:
+                sidVals = df["snakeId"].to_list()
+                for i, val in enumerate(sidVals):
+                    if val in snakeIds:
+                        matchedRows.add(i)
+
+        if matchedRows:
+            return df[sorted(matchedRows)]
+
     elif hasNonKoreanQuery and colIsKorean:
         # snakeId 쿼리 → 한국어로 번역 + 이미 한국어인 항목은 그대로 유지
         fwd = get_korean_labels()
@@ -127,22 +168,30 @@ def _cascadeFilterRows(
     mc: str,
     indList: list[str],
 ) -> pl.DataFrame | None:
-    """5단계 cascade 매칭: exact → korean↔snakeId bridge → normalized → contains → fuzzy."""
-    # 1) exact match
-    hits = df.filter(pl.col(mc).is_in(indList))
-    if not hits.is_empty():
-        if hits.height >= len(indList):
-            return hits
-        # 일부만 exact 매칭 — bridge로 나머지 보충 시도
-        bridged = _bridgeKoreanSnakeId(df, mc, indList)
-        if bridged is not None and bridged.height > hits.height:
-            return bridged
-        return hits
+    """5단계 cascade 매칭: exact → bridge → normalized → contains → fuzzy.
 
-    # 2) korean↔snakeId bridge — 한국어 쿼리×snakeId 컬럼 또는 snakeId 쿼리×한국어 컬럼
+    각 단계에서 **모든 항목**을 찾아야 반환. 일부만 매칭되면 다음 단계에서 보충.
+    """
+    target = len(indList)
+    collected: set[int] = set()  # 매칭된 행 인덱스 누적
+
+    # 1) exact match
+    for i, val in enumerate(df[mc].to_list()):
+        if val in indList:
+            collected.add(i)
+    if len(collected) >= target:
+        return df[sorted(collected)]
+
+    # 2) korean↔snakeId bridge
     bridged = _bridgeKoreanSnakeId(df, mc, indList)
     if bridged is not None:
-        return bridged
+        # bridge 결과의 행 인덱스를 collected에 합산
+        bridgeVals = set(bridged[mc].to_list())
+        for i, val in enumerate(df[mc].to_list()):
+            if val in bridgeVals:
+                collected.add(i)
+    if len(collected) >= target:
+        return df[sorted(collected)]
 
     # 3) normalized exact
     colVals = df[mc].to_list()
@@ -152,33 +201,37 @@ def _cascadeFilterRows(
             normMap.setdefault(normalizeItemKey(str(v)), []).append(i)
 
     normQueries = [normalizeItemKey(q) for q in indList]
-    matchedIdx: list[int] = []
     for nq in normQueries:
         if nq in normMap:
-            matchedIdx.extend(normMap[nq])
-    if matchedIdx:
-        return df[sorted(set(matchedIdx))]
+            collected.update(normMap[nq])
+    if len(collected) >= target:
+        return df[sorted(collected)]
 
-    # 4) contains (substring 양방향)
-    matchedIdx = []
+    # 4) contains — 긴 쿼리가 짧은 컬럼값을 포함할 때 안전장치
     for nq in normQueries:
+        best_key: str | None = None
+        best_len = 0
         for nk, idxList in normMap.items():
             if nq in nk or nk in nq:
-                matchedIdx.extend(idxList)
-    if matchedIdx:
-        return df[sorted(set(matchedIdx))]
+                # 여러 후보 중 가장 긴 매칭을 선택 (짧은 부분매칭 방지)
+                if len(nk) > best_len:
+                    best_key = nk
+                    best_len = len(nk)
+        if best_key is not None:
+            collected.update(normMap[best_key])
+    if collected:
+        return df[sorted(collected)]
 
     # 5) fuzzy
     import difflib
 
     allNormKeys = list(normMap.keys())
-    matchedIdx = []
     for nq in normQueries:
-        close = difflib.get_close_matches(nq, allNormKeys, n=3, cutoff=0.7)
+        close = difflib.get_close_matches(nq, allNormKeys, n=1, cutoff=0.7)
         for ck in close:
-            matchedIdx.extend(normMap[ck])
-    if matchedIdx:
-        return df[sorted(set(matchedIdx))]
+            collected.update(normMap[ck])
+    if collected:
+        return df[sorted(collected)]
 
     return None
 

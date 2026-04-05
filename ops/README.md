@@ -26,6 +26,7 @@
 | [viz.md](viz.md) | 교차 | viz/ | 차트 + 다이어그램 시각화 엔진 |
 | **[architecture.md](architecture.md)** | **—** | **전체** | **전체 청사진 — 레이어, 엔진, 규칙, 데이터 출력** |
 | **[testing.md](testing.md)** | **—** | **전체** | **테스트 체계 — 마커, 커버리지 90% 목표, CI** |
+| **[issues.md](issues.md)** | **—** | **전체** | **이슈 관리 — GitHub Issue + 테스트 + 커밋 연결 체계** |
 
 ## 레이어 아키텍처
 

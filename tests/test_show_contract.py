@@ -99,3 +99,59 @@ class TestPerformanceRegression:
         start = time.perf_counter()
         c.show("BS")
         assert time.perf_counter() - start < 5.0
+
+
+@requires_samsung
+class TestSelectRegression:
+    """select() 회귀 테스트 — GitHub Issue #14, #15."""
+
+    def test_select_pretax_not_confused_with_tax(self):
+        """Regression for #15: 법인세비용차감전순이익 → profit_before_tax."""
+        from dartlab import Company
+
+        c = Company("014580")
+        r = c.select("IS", ["법인세비용차감전순이익"])
+        assert r is not None and len(r) >= 1
+        sid = r[0, "snakeId"]
+        assert sid in ("profit_before_tax", "pretax_income"), (
+            f"법인세비용차감전순이익 → {sid} (income_taxes면 #15 재발)"
+        )
+
+    def test_select_shortname_pretax(self):
+        """Regression for #15: 줄임말 세전순이익도 profit_before_tax."""
+        from dartlab import Company
+
+        c = Company("014580")
+        r = c.select("IS", ["세전순이익"])
+        assert r is not None and len(r) >= 1
+        sid = r[0, "snakeId"]
+        assert sid in ("profit_before_tax", "pretax_income"), (
+            f"세전순이익 → {sid}"
+        )
+
+    def test_select_multiple_pretax_and_tax(self):
+        """Regression for #14: 복합 조회 시 세전순이익 + 법인세비용 2건 반환."""
+        from dartlab import Company
+
+        c = Company("014580")
+        r = c.select("IS", ["세전순이익", "법인세비용"])
+        assert r is not None, "결과가 None"
+        assert len(r) == 2, f"2행 기대, {len(r)}행 반환 (#14 재발)"
+        sids = set(r["snakeId"].to_list())
+        assert "income_taxes" in sids, "법인세비용 누락"
+
+    def test_select_basic_accounts_unchanged(self):
+        """기본 계정 매칭이 깨지지 않았는지 검증."""
+        from dartlab import Company
+
+        c = Company(SAMSUNG)
+        for name, expected_sid in [
+            ("매출액", "sales"),
+            ("영업이익", "operating_profit"),
+            ("당기순이익", "net_profit"),
+        ]:
+            r = c.select("IS", [name])
+            assert r is not None and len(r) >= 1, f"{name} 매칭 실패"
+            assert r[0, "snakeId"] == expected_sid, (
+                f"{name} → {r[0, 'snakeId']} (기대: {expected_sid})"
+            )

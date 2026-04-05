@@ -26,6 +26,8 @@ def _load_standard_accounts() -> dict[str, dict]:
 # standardAccounts에 없지만 AI 컨텍스트에서 자주 쓰는 snakeId 보충 매핑
 _KR_SUPPLEMENTS: dict[str, str] = {
     "pretax_income": "법인세비용차감전순이익",
+    "profit_before_tax": "법인세비용차감전순이익",
+    "income_before_income_taxes_expenses": "법인세비용차감전순이익",
     "income_tax_expense": "법인세비용",
     "net_income": "당기순이익",
     "net_income_controlling": "지배기업귀속순이익",
@@ -148,12 +150,30 @@ def get_account_labels(locale: str = "kr") -> dict[str, str]:
     return get_english_labels()
 
 
+# 사용자가 자주 쓰는 줄임말/변형 → 정규 snakeId 매핑
+# DART 회사마다 계정명이 다르므로 (법인세비용차감전순이익 vs 법인세차감전순이익)
+# 사용자 입력을 snakeId로 통일하여 정확한 매칭을 보장한다.
+_KR_SYNONYMS: dict[str, str] = {
+    "세전순이익": "profit_before_tax",
+    "세전이익": "profit_before_tax",
+    "법인세차감전순이익": "profit_before_tax",
+    "법인세차감전이익": "profit_before_tax",
+    "세전계속사업이익": "pretax_profit_from_continuing_operations",
+    "법인세": "income_taxes",
+    "순이익": "net_profit",
+    "순손익": "net_profit",
+    "총매출": "sales",
+    "총매출액": "sales",
+}
+
+
 @lru_cache(maxsize=1)
 def get_reverse_korean_labels() -> dict[str, str]:
     """한글 라벨 → snakeId 역조회. get_korean_labels()의 역방향.
 
     동일 한글 라벨이 여러 snakeId에 매핑될 경우 첫 번째를 유지한다.
     정규화된(소문자+공백제거) 키도 함께 등록하여 cascade 매칭에서 활용한다.
+    _KR_SYNONYMS: 사용자 줄임말/변형도 등록.
     """
     import re
     import unicodedata
@@ -168,6 +188,10 @@ def get_reverse_korean_labels() -> dict[str, str]:
         nk = re.sub(r"\s+", "", nk).lower()
         if nk not in reverse:
             reverse[nk] = sid
+    # 사용자 줄임말 등록 (기존 키가 없을 때만)
+    for synonym, sid in _KR_SYNONYMS.items():
+        if synonym not in reverse:
+            reverse[synonym] = sid
     return reverse
 
 
@@ -199,6 +223,7 @@ SNAKEID_ALIASES: dict[str, str] = {
     "net_income": "net_profit",
     "cost_of_revenue": "cost_of_sales",
     "income_before_tax": "profit_before_tax",
+    "pretax_income": "profit_before_tax",
     "income_tax_expense": "income_taxes",
     "interest_expense": "finance_costs",
     "finance_cost": "finance_costs",

@@ -250,7 +250,7 @@ def _ratioSeriesToDataFrame(
                 continue
             row = {
                 "분류": _RATIO_CATEGORY_LABELS.get(category, category),
-                "항목": _RATIO_FIELD_LABELS.get(fieldName, fieldName),
+                "계정명": _RATIO_FIELD_LABELS.get(fieldName, fieldName),
                 "_field": fieldName,
             }
             for idx, year in enumerate(years):
