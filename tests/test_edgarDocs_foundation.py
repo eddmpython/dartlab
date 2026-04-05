@@ -1288,11 +1288,12 @@ class TestEdgarCompanyInterface:
         # ratios는 블록 1개 → auto unwrap으로 바로 데이터 반환 (DART 정합)
         df = c.show("ratios")
         assert isinstance(df, pl.DataFrame)
-        assert "category" in df.columns
+        assert "분류" in df.columns
+        assert "계정명" in df.columns
         # block=0 명시도 동일 결과
         df2 = c.show("ratios", 0)
         assert isinstance(df2, pl.DataFrame)
-        assert "category" in df2.columns
+        assert "분류" in df2.columns
 
     def test_show_docs_topic_returns_dataframe(self):
         from dartlab.providers.edgar.company import Company

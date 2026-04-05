@@ -354,8 +354,8 @@ def _ratioSeriesToDataFrame(
             if not values or not any(v is not None for v in values):
                 continue
             row: dict[str, Any] = {
-                "category": _RATIO_CATEGORY_LABELS.get(category, category),
-                "metric": _RATIO_FIELD_LABELS.get(fieldName, fieldName),
+                "분류": _RATIO_CATEGORY_LABELS.get(category, category),
+                "계정명": _RATIO_FIELD_LABELS.get(fieldName, fieldName),
                 "_field": fieldName,
             }
             for idx, year in enumerate(years):
@@ -2599,10 +2599,10 @@ class Company:
         if pcols:
             latest = pcols[0]
             for row in equity.iter_rows(named=True):
-                rows[0][row["account"]] = row.get(latest)
+                rows[0][row["snakeId"]] = row.get(latest)
             if divs is not None:
                 for row in divs.iter_rows(named=True):
-                    rows[0][row["account"]] = row.get(latest)
+                    rows[0][row["snakeId"]] = row.get(latest)
         return pl.DataFrame(rows)
 
     def debt(self, view: str | None = None) -> pl.DataFrame | None:
@@ -2637,5 +2637,5 @@ class Company:
         if pcols:
             latest = pcols[0]
             for row in debt_accts.iter_rows(named=True):
-                rows[0][row["account"]] = row.get(latest)
+                rows[0][row["snakeId"]] = row.get(latest)
         return pl.DataFrame(rows)

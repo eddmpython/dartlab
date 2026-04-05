@@ -48,9 +48,15 @@ class _FinanceAccessor:
             self._company._cache[cacheKey] = None
             return None
 
+        from dartlab.core.finance.labels import get_korean_labels
+
+        krLabels = get_korean_labels()
         rows = []
         for snakeId, values in stmtData.items():
-            row: dict[str, Any] = {"account": snakeId}
+            row: dict[str, Any] = {
+                "snakeId": snakeId,
+                "계정명": krLabels.get(snakeId, snakeId),
+            }
             for i, year in enumerate(years):
                 row[str(year)] = values[i] if i < len(values) else None
             rows.append(row)
@@ -61,8 +67,8 @@ class _FinanceAccessor:
 
         result = pl.DataFrame(rows)
         # 기간 컬럼 역순 정렬
-        periodCols = [c for c in result.columns if c != "account"]
-        result = result.select(["account"] + periodCols[::-1])
+        periodCols = [c for c in result.columns if c not in ("snakeId", "계정명")]
+        result = result.select(["snakeId", "계정명"] + periodCols[::-1])
         self._company._cache[cacheKey] = result
         return result
 
