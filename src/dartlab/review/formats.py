@@ -92,6 +92,8 @@ def renderHtml(review) -> str:
 
 def _polarsToMarkdown(df) -> str:
     """Polars DataFrame을 마크다운 테이블로 변환 (박스 아트 제거)."""
+    from dartlab.review.utils import fmtAmt
+
     try:
         cols = df.columns
         header = "| " + " | ".join(str(c) for c in cols) + " |"
@@ -103,15 +105,7 @@ def _polarsToMarkdown(df) -> str:
                 if v is None:
                     cells.append("-")
                 elif isinstance(v, float):
-                    # 과학 표기법 방지 — 큰 수는 조/억으로
-                    if abs(v) >= 1e12:
-                        cells.append(f"{v / 1e12:.1f}조")
-                    elif abs(v) >= 1e8:
-                        cells.append(f"{v / 1e8:.0f}억")
-                    elif abs(v) >= 1e4:
-                        cells.append(f"{v:,.0f}")
-                    else:
-                        cells.append(f"{v:,.2f}" if v != int(v) else f"{int(v):,}")
+                    cells.append(fmtAmt(v))
                 else:
                     cells.append(str(v))
             rows.append("| " + " | ".join(cells) + " |")
@@ -131,15 +125,9 @@ def renderMarkdown(review) -> str:
         TextBlock,
     )
 
-    # ── 6막 헤더 매핑 (partId 주번호 → 막 제목 + 핵심 질문) ──
-    _ACT_HEADERS: dict[str, tuple[str, str]] = {
-        "1": ("제1막: 이 회사는 뭘 하는가", "매출의 원천은 무엇이고 얼마나 빨리 성장하는가?"),
-        "2": ("제2막: 얼마나 잘 하는가", "번 돈이 얼마나 남고, 왜 그만큼 남는가?"),
-        "3": ("제3막: 현금이 실제로 도는가", "이익이 현금으로 전환되는가? 이익이 진짜인가?"),
-        "4": ("제4막: 자본 구조는 안전한가", "부채를 감당할 수 있는가?"),
-        "5": ("제5막: 번 돈을 어떻게 쓰는가", "자산, 배당, 재투자 — 가치를 만드는 배분인가?"),
-        "6": ("제6막: 앞으로 어떻게 될 것인가", "적정 가치는 얼마이고, 어떤 리스크가 있는가?"),
-    }
+    from dartlab.review.catalog import ACT_HEADERS
+
+    _ACT_HEADERS = ACT_HEADERS
 
     # ── 6막 전환 경계 매핑 (섹션 key → 전환 key) ──
     _ACT_BOUNDARIES: dict[str, str] = {
@@ -176,9 +164,17 @@ def renderMarkdown(review) -> str:
             parts.append("\n".join(cardLines))
 
     # ── 스토리 템플릿 표시 ──
+    allTemplates = getattr(review, "templates", []) or []
     if templateName:
-        desc = tmplInfo.get("description", "") if tmplInfo else ""
-        parts.append(f"**스토리: {templateName}** — {desc}")
+        if len(allTemplates) > 1:
+            descs = []
+            for t in allTemplates:
+                ti = STORY_TEMPLATES.get(t, {})
+                descs.append(f"{t}")
+            parts.append(f"**스토리: {' + '.join(descs)}**")
+        else:
+            desc = tmplInfo.get("description", "") if tmplInfo else ""
+            parts.append(f"**스토리: {templateName}** — {desc}")
 
         # 핵심 질문 표시
         keyQuestions = tmplInfo.get("keyQuestions", []) if tmplInfo else []
@@ -192,14 +188,10 @@ def renderMarkdown(review) -> str:
 
     detailMode = getattr(review.layout, "detail", True)
 
-    # 막 결론 상태 초기화
-    from dartlab.review.narrate import resetActSummaryState
-
-    resetActSummaryState()
-
-    # 이미 렌더링된 막 번호 + thread title 추적
+    # 이미 렌더링된 막 번호 + thread title + 막 결론 thread 추적
     renderedActs: set[str] = set()
     renderedThreads: set[str] = set()
+    actSummaryUsedIds: set[str] = set()
     # 막별 섹션 수집 (막 결론용)
     currentAct: str = ""
     currentActSections: list = []
@@ -218,7 +210,7 @@ def renderMarkdown(review) -> str:
         if mainAct and mainAct != currentAct and currentAct and currentActSections:
             from dartlab.review.narrate import buildActSummary
 
-            actSummary = buildActSummary(currentAct, currentActSections, allThreads)
+            actSummary = buildActSummary(currentAct, currentActSections, allThreads, actSummaryUsedIds)
             if actSummary:
                 parts.append(f"\n{actSummary}\n")
             currentActSections = []
@@ -306,7 +298,7 @@ def renderMarkdown(review) -> str:
     if currentAct and currentActSections:
         from dartlab.review.narrate import buildActSummary
 
-        actSummary = buildActSummary(currentAct, currentActSections, allThreads)
+        actSummary = buildActSummary(currentAct, currentActSections, allThreads, actSummaryUsedIds)
         if actSummary:
             parts.append(f"\n{actSummary}\n")
 
