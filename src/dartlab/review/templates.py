@@ -571,125 +571,168 @@ STORY_TEMPLATES: dict[str, dict] = {
 }
 
 
-def detectTemplate(company) -> str | None:
-    """기업 재무 데이터에서 스토리 템플릿 자동 판별.
+def detectTemplates(company) -> list[str]:
+    """기업 재무 데이터에서 해당하는 스토리 템플릿 전부 반환.
 
-    우선순위 순서로 검사. 먼저 매칭된 것이 주 템플릿.
-    복수 해당 가능하지만 하나만 반환.
+    예: ["사이클", "자본집약"], ["지주", "현금부자"]
+    우선순위 순서로 정렬 (첫 번째가 주 템플릿).
     """
+    results: list[str] = []
+    for name, check in _TEMPLATE_CHECKS:
+        try:
+            if check(company):
+                results.append(name)
+        except (AttributeError, ValueError, TypeError, KeyError, IndexError):
+            continue
+    return results
+
+
+def detectTemplate(company) -> str | None:
+    """기업 재무 데이터에서 스토리 템플릿 자동 판별. 첫 매칭 반환."""
+    results = detectTemplates(company)
+    return results[0] if results else None
+
+
+# ── 복수 매칭용 독립 체크 함수 ──
+
+
+def _extractCommon(company):
+    """공통 데이터 추출 (체크 함수 공용)."""
     try:
         ratios = company.finance.ratios
     except (AttributeError, ValueError):
         return None
 
-    # 데이터 추출 (안전)
     def _g(name, default=None):
         return getattr(ratios, name, default)
 
-    opMargin = _g("operatingMargin")
-    debtRatio = _g("debtRatio")
-    ic = _g("interestCoverage")
-    netDebt = _g("netDebt")
-    cash = _g("cash")
-    totalAssets = _g("totalAssets")
-    roe = _g("roe")
-
-    # ratioSeries에서 시계열 추출
     try:
         rs = company.finance.ratioSeries
         if rs:
-            data, periods = rs
+            data, _ = rs
             opMargins = data.get("RATIO", {}).get("operatingMargin", [])
         else:
             opMargins = []
     except (AttributeError, ValueError):
         opMargins = []
 
-    # ── 1. 턴어라운드: 최근 시계열에서 적자→흑자 전환 ──
-    if len(opMargins) >= 3:
-        recent3 = opMargins[-3:]
-        hasNeg = any(m is not None and m < 0 for m in recent3[:-1])
-        lastPos = recent3[-1] is not None and recent3[-1] > 0
-        if hasNeg and lastPos:
-            return "턴어라운드"
+    return {
+        "ratios": ratios,
+        "opMargin": _g("operatingMargin"),
+        "netDebt": _g("netDebt"),
+        "cash": _g("cash"),
+        "totalAssets": _g("totalAssets"),
+        "ppe": _g("ppe") or _g("tangibleAssets"),
+        "opMargins": opMargins,
+    }
 
-    # ── 2. 지주: 지분법손익/영업이익 > 30% 또는 영업외비율 > 80% (금융비용 제외) ──
-    try:
-        from dartlab.analysis.financial.earningsQuality import calcNonOperatingBreakdown
 
-        nob = calcNonOperatingBreakdown(company)
-        if nob:
-            latest = nob["history"][0] if nob.get("history") else None
-            if latest:
-                opInc = abs(latest.get("opIncome") or 1)
-                assocInc = abs(latest.get("associateIncome") or 0)
-                finCost = abs(latest.get("finCost") or 0)
-                nonOpTotal = abs(latest.get("nonOpTotal") or 0)
-                # 지분법손익이 영업이익의 30% 이상이면 지주
-                if opInc > 0 and assocInc / opInc > 0.30:
-                    return "지주"
-                # 금융손익을 제외한 영업외가 영업이익의 80% 이상이면 지주
-                finIncome = abs(latest.get("finIncome") or 0)
-                nonOpExFinance = nonOpTotal - finCost - finIncome
-                if opInc > 0 and nonOpExFinance > 0 and nonOpExFinance / opInc > 0.80:
-                    return "지주"
-    except (ImportError, KeyError, IndexError, TypeError):
-        pass
+def _cv(values: list, min_count: int = 4) -> float | None:
+    """변동계수(CV) 계산. None 제거 후 min_count 미만이면 None."""
+    valid = [m for m in values if m is not None]
+    if len(valid) < min_count:
+        return None
+    avg = sum(valid) / len(valid)
+    if avg == 0:
+        return None
+    std = (sum((m - avg) ** 2 for m in valid) / len(valid)) ** 0.5
+    return std / abs(avg)
 
-    # ── 3. 성장: 매출 CAGR > 15% + 이익 변동성 낮음 (CV < 0.4) ──
-    # CV가 높으면 성장이 아니라 사이클 호황일 가능성
-    try:
-        from dartlab.analysis.financial.growthAnalysis import calcCagrComparison
 
-        cc = calcCagrComparison(company)
-        if cc:
-            for comp in cc.get("comparisons", []):
-                if comp.get("label") == "마진 방향" and comp.get("cagr1") is not None:
-                    if comp["cagr1"] > 15:
-                        # 이익 변동성이 높으면 사이클 호황이지 성장이 아님
-                        _isVolatile = False
-                        if len(opMargins) >= 4:
-                            _valid = [m for m in opMargins if m is not None]
-                            if len(_valid) >= 4:
-                                _avg = sum(_valid) / len(_valid)
-                                if _avg != 0:
-                                    _std = (sum((m - _avg) ** 2 for m in _valid) / len(_valid)) ** 0.5
-                                    _isVolatile = _std / abs(_avg) > 0.5
-                        if not _isVolatile:
-                            return "성장"
-    except (ImportError, KeyError, TypeError):
-        pass
+def _checkTurnaround(company) -> bool:
+    ctx = _extractCommon(company)
+    if not ctx:
+        return False
+    opMargins = ctx["opMargins"]
+    if len(opMargins) < 3:
+        return False
+    recent3 = opMargins[-3:]
+    hasNeg = any(m is not None and m < 0 for m in recent3[:-1])
+    lastPos = recent3[-1] is not None and recent3[-1] > 0
+    return hasNeg and lastPos
 
-    # ── 4. 현금부자: 순현금 + 현금/자산 > 20% ──
-    if netDebt is not None and totalAssets and cash:
-        if netDebt < 0 and cash / totalAssets > 0.20:
-            return "현금부자"
 
-    # ── 5. 사이클: 이익 변동계수 > 0.4 (자본집약보다 앞 — 유형자산 높아도 CV 높으면 사이클) ──
-    if len(opMargins) >= 4:
-        valid = [m for m in opMargins if m is not None]
-        if len(valid) >= 4:
-            avg = sum(valid) / len(valid)
-            if avg != 0:
-                std = (sum((m - avg) ** 2 for m in valid) / len(valid)) ** 0.5
-                cv = std / abs(avg)
-                if cv > 0.4:
-                    return "사이클"
+def _checkHolding(company) -> bool:
+    from dartlab.analysis.financial.earningsQuality import calcNonOperatingBreakdown
 
-    # ── 6. 자본집약: 유형자산/총자산 > 40% ──
-    ppe = _g("ppe") or _g("tangibleAssets")
-    if ppe and totalAssets and ppe / totalAssets > 0.40:
-        return "자본집약"
+    nob = calcNonOperatingBreakdown(company)
+    if not nob:
+        return False
+    latest = nob["history"][0] if nob.get("history") else None
+    if not latest:
+        return False
+    opInc = abs(latest.get("opIncome") or 1)
+    assocInc = abs(latest.get("associateIncome") or 0)
+    if opInc > 0 and assocInc / opInc > 0.30:
+        return True
+    finCost = abs(latest.get("finCost") or 0)
+    finIncome = abs(latest.get("finIncome") or 0)
+    nonOpTotal = abs(latest.get("nonOpTotal") or 0)
+    nonOpExFinance = nonOpTotal - finCost - finIncome
+    return opInc > 0 and nonOpExFinance > 0 and nonOpExFinance / opInc > 0.80
 
-    # ── 7. 프랜차이즈: 마진 변동계수 < 0.15 + 마진 > 10% ──
-    if len(opMargins) >= 4 and opMargin is not None and opMargin > 10:
-        valid = [m for m in opMargins if m is not None]
-        if len(valid) >= 4:
-            avg = sum(valid) / len(valid)
-            if avg > 0:
-                std = (sum((m - avg) ** 2 for m in valid) / len(valid)) ** 0.5
-                cv = std / abs(avg)
-                if cv < 0.15:
-                    return "프랜차이즈"
 
-    return None
+def _checkGrowth(company) -> bool:
+    ctx = _extractCommon(company)
+    if not ctx:
+        return False
+    from dartlab.analysis.financial.growthAnalysis import calcCagrComparison
+
+    cc = calcCagrComparison(company)
+    if not cc:
+        return False
+    for comp in cc.get("comparisons", []):
+        if comp.get("label") == "마진 방향" and comp.get("cagr1") is not None:
+            if comp["cagr1"] > 15:
+                cv = _cv(ctx["opMargins"])
+                if cv is not None and cv > 0.5:
+                    return False
+                return True
+    return False
+
+
+def _checkCashRich(company) -> bool:
+    ctx = _extractCommon(company)
+    if not ctx:
+        return False
+    nd, ta, cash = ctx["netDebt"], ctx["totalAssets"], ctx["cash"]
+    return nd is not None and ta and cash and nd < 0 and cash / ta > 0.20
+
+
+def _checkCyclical(company) -> bool:
+    ctx = _extractCommon(company)
+    if not ctx:
+        return False
+    cv = _cv(ctx["opMargins"])
+    return cv is not None and cv > 0.4
+
+
+def _checkCapitalIntensive(company) -> bool:
+    ctx = _extractCommon(company)
+    if not ctx:
+        return False
+    ppe, ta = ctx["ppe"], ctx["totalAssets"]
+    return ppe is not None and ta and ppe / ta > 0.40
+
+
+def _checkFranchise(company) -> bool:
+    ctx = _extractCommon(company)
+    if not ctx:
+        return False
+    opMargin = ctx["opMargin"]
+    if opMargin is None or opMargin <= 10:
+        return False
+    cv = _cv(ctx["opMargins"])
+    return cv is not None and cv < 0.15
+
+
+# 우선순위 순서
+_TEMPLATE_CHECKS: list[tuple[str, object]] = [
+    ("턴어라운드", _checkTurnaround),
+    ("지주", _checkHolding),
+    ("성장", _checkGrowth),
+    ("현금부자", _checkCashRich),
+    ("사이클", _checkCyclical),
+    ("자본집약", _checkCapitalIntensive),
+    ("프랜차이즈", _checkFranchise),
+]

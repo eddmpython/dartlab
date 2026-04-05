@@ -892,11 +892,24 @@ def buildReview(
 
         if template == "auto":
             detectedTemplate = _detect(company)
+            # 복수 매칭도 수집
+            from dartlab.review.templates import detectTemplates as _detectMulti
+
+            try:
+                detectedTemplates = _detectMulti(company)
+            except (AttributeError, ValueError, TypeError):
+                detectedTemplates = []
         elif template in STORY_TEMPLATES:
             detectedTemplate = template
+            detectedTemplates = [template]
+        else:
+            detectedTemplates = []
 
         if detectedTemplate and detectedTemplate in STORY_TEMPLATES:
-            emphasizedKeys = STORY_TEMPLATES[detectedTemplate].get("emphasize", set())
+            # 주 템플릿의 emphasize + 보조 템플릿의 emphasize 합산
+            for tmplName in detectedTemplates:
+                if tmplName in STORY_TEMPLATES:
+                    emphasizedKeys |= STORY_TEMPLATES[tmplName].get("emphasize", set())
 
     # ── 프리셋 적용 ──
     if preset is not None:
@@ -920,6 +933,7 @@ def buildReview(
 
     review = Review(stockCode=stockCode, corpName=corpName, layout=ly)
     review.template = detectedTemplate
+    review.templates = detectedTemplates if detectedTemplates else ([detectedTemplate] if detectedTemplate else [])
 
     useSpinner = isTerminal()
     if useSpinner:
