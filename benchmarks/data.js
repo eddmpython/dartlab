@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775355145117,
+  "lastUpdate": 1775385328477,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -12354,6 +12354,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.8844071991623704e-7",
             "extra": "mean: 685.9051827567844 nsec\nrounds: 158178"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "f91e1051c390ae3c2c02f6e9a7cb474e95fefe7f",
+          "message": "fix: select 계정명 매칭 오류 3건 수정 (#14, #15, #16)\n\n#15: 법인세비용차감전순이익 → income_taxes로 잘못 매핑\n  - 한국어↔한국어 동의어 bridge 추가 (회사별 계정명 차이 흡수)\n  - contains 단계에서 가장 긴 매칭 우선 (prefix 오매칭 방지)\n  - _KR_SYNONYMS 동의어 테이블 + SNAKEID_ALIASES 갭 보완\n\n#14: 복합 조회 시 일부 항목 누락\n  - cascade를 인덱스 누적 방식으로 재설계\n  - bridge 동의어+snakeId 매칭 결과 합산\n\n#16: ratios \"항목\" vs select \"계정명\" 컬럼명 불일치\n  - ratios 라벨 컬럼 \"항목\" → \"계정명\" 통일\n\nregression 테스트 4건 추가 (test_show_contract.py)\n이슈 관리 체계 문서 추가 (ops/issues.md)",
+          "timestamp": "2026-04-05T19:34:18+09:00",
+          "tree_id": "197aa7b5f00c670e45317786f717b65e5797d4d0",
+          "url": "https://github.com/eddmpython/dartlab/commit/f91e1051c390ae3c2c02f6e9a7cb474e95fefe7f"
+        },
+        "date": 1775385327931,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 522002.81389035657,
+            "unit": "iter/sec",
+            "range": "stddev: 4.685404221918875e-7",
+            "extra": "mean: 1.9156984855067154 usec\nrounds: 52757"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 661139.942001622,
+            "unit": "iter/sec",
+            "range": "stddev: 4.729221437817054e-7",
+            "extra": "mean: 1.5125390805651047 usec\nrounds: 141784"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 531448.5390621439,
+            "unit": "iter/sec",
+            "range": "stddev: 5.190661984785596e-7",
+            "extra": "mean: 1.881649729933808 usec\nrounds: 133103"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 684922.8842650807,
+            "unit": "iter/sec",
+            "range": "stddev: 3.8173017591986954e-7",
+            "extra": "mean: 1.460018380131941 usec\nrounds: 172088"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 889874.5204997456,
+            "unit": "iter/sec",
+            "range": "stddev: 3.1905582718641216e-7",
+            "extra": "mean: 1.1237539416663025 usec\nrounds: 175408"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 261662.85814147355,
+            "unit": "iter/sec",
+            "range": "stddev: 6.689000588657666e-7",
+            "extra": "mean: 3.821711675484829 usec\nrounds: 71860"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7281755.512301623,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1796984208167435e-8",
+            "extra": "mean: 137.32952147468066 nsec\nrounds: 72807"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8824893.997972758,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1373782330299866e-8",
+            "extra": "mean: 113.31580869183455 nsec\nrounds: 85830"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1457187.5773348843,
+            "unit": "iter/sec",
+            "range": "stddev: 3.070653465041369e-7",
+            "extra": "mean: 686.253448460592 nsec\nrounds: 165509"
           }
         ]
       }
