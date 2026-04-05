@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775388461681,
+  "lastUpdate": 1775389101898,
   "repoUrl": "https://github.com/eddmpython/dartlab",
   "entries": {
     "Benchmark": [
@@ -12528,6 +12528,93 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.475326149766867e-7",
             "extra": "mean: 686.8053508154035 nsec\nrounds: 159975"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "committer": {
+            "email": "206024502+eddmpython@users.noreply.github.com",
+            "name": "eddmpython",
+            "username": "eddmpython"
+          },
+          "distinct": true,
+          "id": "c470b2eb12e600e77d13e5d9dc388223bed84595",
+          "message": "fix: EDGAR 컬럼명 DART 통일 — account→snakeId, category→분류, metric→계정명\n\nDART와 EDGAR Company가 동일한 컬럼 구조를 반환하도록 통일.\n- EDGAR IS/BS/CF: account → snakeId + 계정명 컬럼 추가\n- EDGAR ratios: category → 분류, metric → 계정명\n- 테스트 업데이트 (test_show_ratios_returns_data)",
+          "timestamp": "2026-04-05T20:37:19+09:00",
+          "tree_id": "44ddf74fd735254ca8e0ce9c076459981d36d571",
+          "url": "https://github.com/eddmpython/dartlab/commit/c470b2eb12e600e77d13e5d9dc388223bed84595"
+        },
+        "date": 1775389101311,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_20q",
+            "value": 541364.8127021801,
+            "unit": "iter/sec",
+            "range": "stddev: 4.7460363801964623e-7",
+            "extra": "mean: 1.8471832238386132 usec\nrounds: 61051"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_sparse",
+            "value": 654918.7794466853,
+            "unit": "iter/sec",
+            "range": "stddev: 5.394355938099104e-7",
+            "extra": "mean: 1.5269068949967506 usec\nrounds: 122625"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getTTM_annualize",
+            "value": 522942.22045978403,
+            "unit": "iter/sec",
+            "range": "stddev: 8.335077374124959e-7",
+            "extra": "mean: 1.9122571497875516 usec\nrounds: 103115"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_20q",
+            "value": 683498.5454231204,
+            "unit": "iter/sec",
+            "range": "stddev: 4.988353026968492e-7",
+            "extra": "mean: 1.463060904366591 usec\nrounds: 152370"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_getLatest_sparse",
+            "value": 819841.6081341322,
+            "unit": "iter/sec",
+            "range": "stddev: 3.9082191758211415e-7",
+            "extra": "mean: 1.2197478025979775 usec\nrounds: 197278"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_revenueGrowth3Y",
+            "value": 268813.68284397706,
+            "unit": "iter/sec",
+            "range": "stddev: 7.026791378962289e-7",
+            "extra": "mean: 3.7200487319702877 usec\nrounds: 66322"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_normal",
+            "value": 7014125.91434785,
+            "unit": "iter/sec",
+            "range": "stddev: 5.12404504218515e-8",
+            "extra": "mean: 142.56943947276952 nsec\nrounds: 72967"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safeDiv_zeroDenom",
+            "value": 8876513.418639341,
+            "unit": "iter/sec",
+            "range": "stddev: 1.1703523293268548e-8",
+            "extra": "mean: 112.65684541186526 nsec\nrounds: 87704"
+          },
+          {
+            "name": "tests/benchmarks/bench_core.py::test_safePct_normal",
+            "value": 1461337.1891134626,
+            "unit": "iter/sec",
+            "range": "stddev: 3.0145558406888927e-7",
+            "extra": "mean: 684.3047637805356 nsec\nrounds: 166086"
           }
         ]
       }
