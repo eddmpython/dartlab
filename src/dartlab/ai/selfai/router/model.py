@@ -92,23 +92,59 @@ class _OllamaEngine(_InferenceEngine):
     def generate(self, prompt: str, max_tokens: int = 256) -> str:
         import urllib.request
 
+        # chat API + think:false (qwen3 thinking mode 비활성화)
         payload = json.dumps(
             {
                 "model": self._model,
-                "prompt": prompt,
+                "messages": [
+                    {"role": "system", "content": "JSON으로만 응답하라. 설명 없이 JSON만."},
+                    {"role": "user", "content": prompt},
+                ],
                 "stream": False,
+                "think": False,
                 "options": {"temperature": 0.1, "num_predict": max_tokens},
             }
         ).encode()
 
         req = urllib.request.Request(
-            "http://localhost:11434/api/generate",
+            "http://localhost:11434/api/chat",
             data=payload,
             headers={"Content-Type": "application/json"},
         )
         with urllib.request.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read())
-            return data.get("response", "")
+            return data.get("message", {}).get("content", "")
+
+
+class _TransformersEngine(_InferenceEngine):
+    """HuggingFace Transformers 기반 추론 — 학습된 safetensors 직접 로드."""
+
+    def __init__(self, model_dir: Path):
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+
+        self._tokenizer = AutoTokenizer.from_pretrained(str(model_dir))
+        self._model = AutoModelForCausalLM.from_pretrained(
+            str(model_dir),
+            torch_dtype="auto",
+            device_map="auto",
+        )
+        self._model.eval()
+        log.info("Transformers 라우터 모델 로드 완료: %s", model_dir)
+
+    def generate(self, prompt: str, max_tokens: int = 256) -> str:
+        import torch
+
+        inputs = self._tokenizer(prompt, return_tensors="pt").to(self._model.device)
+        with torch.no_grad():
+            outputs = self._model.generate(
+                **inputs,
+                max_new_tokens=max_tokens,
+                temperature=0.1,
+                do_sample=True,
+                pad_token_id=self._tokenizer.pad_token_id or self._tokenizer.eos_token_id,
+            )
+        new_tokens = outputs[0][inputs["input_ids"].shape[1] :]
+        return self._tokenizer.decode(new_tokens, skip_special_tokens=True)
 
 
 def _loadEngine() -> _InferenceEngine:
@@ -117,7 +153,17 @@ def _loadEngine() -> _InferenceEngine:
     if _engine is not None:
         return _engine
 
-    # 1. ExLlamaV2 — 모델 디렉토리에 config.json 있으면
+    # 0. Transformers — 학습된 safetensors 모델 있으면 (Phase 3)
+    if _ROUTER_MODEL.exists() and (_ROUTER_MODEL / "config.json").exists() and (_ROUTER_MODEL / "model.safetensors").exists():
+        try:
+            _engine = _TransformersEngine(_ROUTER_MODEL)
+            return _engine
+        except ImportError:
+            log.debug("transformers 미설치")
+        except (OSError, RuntimeError) as e:
+            log.warning("Transformers 로드 실패: %s", e)
+
+    # 1. ExLlamaV2 — EXL2 모델 있으면
     exl_dir = _ROUTER_MODEL
     if exl_dir.exists() and (exl_dir / "config.json").exists():
         try:
@@ -168,16 +214,39 @@ def infer_route(question: str, stock_code: str | None = None) -> "RouteResult | 
     prompt = "".join(parts)
     raw = engine.generate(prompt, max_tokens=256)
 
-    # JSON 파싱
-    try:
-        # JSON 블록 추출
-        json_match = raw.strip()
-        if "{" in json_match:
-            json_match = json_match[json_match.index("{") :]
-            if "}" in json_match:
-                json_match = json_match[: json_match.rindex("}") + 1]
-        data = json.loads(json_match)
-    except (json.JSONDecodeError, ValueError):
+    # JSON 파싱 — 응답에서 첫 번째 유효한 JSON 객체 추출
+    import re as _re
+
+    data = None
+    # 모든 {...} 후보를 찾아서 파싱 시도
+    for m in _re.finditer(r"\{[^{}]*\}", raw):
+        try:
+            candidate = json.loads(m.group())
+            if "tool" in candidate:
+                data = candidate
+                break
+        except json.JSONDecodeError:
+            continue
+
+    if data is None:
+        # 중첩 JSON 시도
+        try:
+            start = raw.index("{")
+            depth = 0
+            for i, ch in enumerate(raw[start:], start):
+                if ch == "{":
+                    depth += 1
+                elif ch == "}":
+                    depth -= 1
+                    if depth == 0:
+                        candidate = json.loads(raw[start : i + 1])
+                        if "tool" in candidate:
+                            data = candidate
+                        break
+        except (ValueError, json.JSONDecodeError):
+            pass
+
+    if data is None:
         log.warning("라우터 JSON 파싱 실패: %s", raw[:200])
         return None
 

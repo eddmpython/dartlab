@@ -32,7 +32,7 @@ dartlab의 AI가 외부 LLM 의존에서 벗어나 자체 금융분석 전문 AI
 |-------|------|------|------|
 | 1 | 3일 | Reflexion + Error Pattern DB | **완료** |
 | 2 | 1주 | Skill Library + Output Validator + Few-Shot | **완료** |
-| 3 | 1개월 | 초소형 도구 라우터 + ExLlamaV2 고속 추론 | **구현 중** |
+| 3 | 1개월 | 초소형 도구 라우터 + Ollama qwen3:1.7b | **동작 중** (16/16=100%) |
 | 4 | 3개월 | MoE-LoRA + Task Arithmetic | 대기 |
 | 5 | 6개월~ | Agent0 자율 진화 + Curriculum | 대기 |
 

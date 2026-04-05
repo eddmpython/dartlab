@@ -51,6 +51,12 @@ _RULES: list[tuple[re.Pattern, str, str | None, str | None, bool, float]] = [
     (re.compile(r"배당.*많|배당.*높|배당.*순위|배당.*찾", re.I), "scan", None, "capital", False, 0.90),
     (re.compile(r"부채.*위험|부채.*높|debt.*risk|위험.*회사", re.I), "scan", None, "debt", False, 0.90),
     (re.compile(r"지배구조.*좋|governance.*좋", re.I), "scan", None, "governance", False, 0.90),
+    # macro — analysis보다 먼저 매칭 ("금리 방향"이 forecast "방향"보다 우선)
+    (re.compile(r"경제.*사이클|사이클|cycle", re.I), "macro", None, "사이클", False, 0.95),
+    (re.compile(r"금리|기준금리|interest.*rate", re.I), "macro", None, "금리", False, 0.95),
+    (re.compile(r"시장.*심리|VIX|공포|탐욕", re.I), "macro", None, "심리", False, 0.90),
+    (re.compile(r"유동성|liquidity|M2", re.I), "macro", None, "유동성", False, 0.90),
+    (re.compile(r"매크로|macro|경기|침체|recession", re.I), "macro", None, "종합", False, 0.90),
     # analysis 축 직접 매칭 (높은 신뢰도)
     (re.compile(r"수익성|마진|이익률|영업이익|ROE|ROA", re.I), "analysis", "financial", "수익성", True, 0.95),
     (re.compile(r"성장성|성장률|매출.*증가|CAGR", re.I), "analysis", "financial", "성장성", True, 0.95),
@@ -73,11 +79,7 @@ _RULES: list[tuple[re.Pattern, str, str | None, str | None, bool, float]] = [
     (re.compile(r"신용|등급|credit|dCR|건전도", re.I), "credit", None, None, True, 0.95),
     # (scan은 위에서 analysis보다 먼저 매칭됨)
     (re.compile(r"지배구조|governance", re.I), "scan", None, "governance", False, 0.90),
-    # macro
-    (re.compile(r"경제.*사이클|사이클|cycle", re.I), "macro", None, "사이클", False, 0.95),
-    (re.compile(r"금리.*방향|금리.*전망|interest.*rate", re.I), "macro", None, "금리", False, 0.95),
-    (re.compile(r"시장.*심리|VIX|공포|탐욕", re.I), "macro", None, "심리", False, 0.90),
-    (re.compile(r"유동성|liquidity|M2", re.I), "macro", None, "유동성", False, 0.90),
+    # (macro는 위에서 analysis보다 먼저 매칭됨)
     # gather
     (re.compile(r"주가.*추이|차트|stock.*price", re.I), "gather", None, "price", True, 0.90),
     (re.compile(r"수급|외국인|기관|매매", re.I), "gather", None, "flow", True, 0.90),
@@ -90,7 +92,7 @@ _RULES: list[tuple[re.Pattern, str, str | None, str | None, bool, float]] = [
     # show/select
     (re.compile(r"재무제표|BS|IS|CF|재고자산|주석|notes", re.I), "show", None, None, True, 0.80),
     # 종합 분석 (마지막 — 다른 규칙에 안 걸리면)
-    (re.compile(r"분석.*해|어때|괜찮|종합|전반", re.I), "analysis", "financial", "종합", True, 0.75),
+    (re.compile(r"분석.*해|어때|괜찮|종합|전반|투자.*해도|사도.*될|살만", re.I), "analysis", "financial", "종합", True, 0.75),
     # 비교
     (re.compile(r"(랑|와|과|하고|vs).*비교", re.I), "analysis", "financial", "비교", True, 0.70),
 ]
@@ -99,6 +101,16 @@ _RULES: list[tuple[re.Pattern, str, str | None, str | None, bool, float]] = [
 def _code_for_route(r: RouteResult, stock_code: str | None = None) -> str:
     """라우팅 결과에 맞는 코드 템플릿 생성."""
     sc = stock_code or "{stockCode}"
+
+    if r.tool == "analysis" and r.axis == "비교":
+        return (
+            f'c1 = dartlab.Company("{sc}")\n'
+            f'c2 = dartlab.Company("비교대상종목코드")\n'
+            f'r1 = c1.analysis("financial", "수익성")\n'
+            f'r2 = c2.analysis("financial", "수익성")\n'
+            f'print("회사1:", r1["marginTrend"]["history"][0])\n'
+            f'print("회사2:", r2["marginTrend"]["history"][0])'
+        )
 
     if r.tool == "analysis" and r.axis == "종합":
         return (
@@ -184,7 +196,7 @@ def route(
     # 1. 규칙 기반 시도
     result = _rule_route(question)
 
-    if result and result.confidence >= 0.85:
+    if result and result.confidence >= 0.70:
         result.code = _code_for_route(result, stock_code)
         return result
 
