@@ -21,16 +21,31 @@ class SegmentTable:
     aligned: bool
 
     def toDataFrame(self) -> pl.DataFrame:
-        """테이블 → DataFrame (행=항목명, 열=부문/지역/제품)."""
+        """테이블 → DataFrame (행=항목명, 열=부문/지역/제품).
+
+        중복 컬럼명(연결/개별 반복) 처리: 접미사(_2, _3...) 부여.
+        """
         import polars as pl
 
         nCols = min(len(self.columns), min(len(v) for v in self.rows.values()) if self.rows else 0)
         if nCols == 0:
             return pl.DataFrame()
 
-        data: dict[str, list] = {"계정명": []}
+        # 중복 컬럼명에 접미사 부여
+        uniqueCols: list[str] = []
+        seen: dict[str, int] = {}
         for i in range(nCols):
-            data[self.columns[i]] = []
+            name = self.columns[i]
+            if name in seen:
+                seen[name] += 1
+                uniqueCols.append(f"{name}_{seen[name]}")
+            else:
+                seen[name] = 1
+                uniqueCols.append(name)
+
+        data: dict[str, list] = {"계정명": []}
+        for col in uniqueCols:
+            data[col] = []
 
         for name in self.order:
             vals = self.rows.get(name)
@@ -38,7 +53,7 @@ class SegmentTable:
                 continue
             data["계정명"].append(name)
             for i in range(nCols):
-                data[self.columns[i]].append(vals[i] if i < len(vals) else None)
+                data[uniqueCols[i]].append(vals[i] if i < len(vals) else None)
 
         return pl.DataFrame(data)
 
