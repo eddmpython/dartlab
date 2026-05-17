@@ -408,7 +408,7 @@ _SPECS: dict[str, ToolSpec] = {
                 "answer": {"type": "string"},
                 "refs": {
                     "type": "array",
-                    "items": {"type": "object"},
+                    "items": {"type": "object", "additionalProperties": True},
                     "description": "지금까지 모은 refs. 빈 list 도 허용.",
                 },
             },
@@ -434,7 +434,7 @@ _SPECS: dict[str, ToolSpec] = {
                             "name": {"type": "string"},
                             "description": {"type": "string"},
                             "type": {"type": "string"},
-                            "enum": {"type": "array"},
+                            "enum": {"type": "array", "items": {"type": "string"}},
                             "required": {"type": "boolean"},
                         },
                         "required": ["name"],
