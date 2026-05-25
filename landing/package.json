@@ -21,7 +21,7 @@
 		"@tailwindcss/vite": "^4.2.1",
 		"@types/d3-force": "^3.0.10",
 		"@types/d3-scale": "^4.0.9",
-		"@types/node": "^25.6.0",
+		"@types/node": "^25.9.1",
 		"mdsvex": "^0.12.6",
 		"shiki": "^4.0.1",
 		"svelte": "^5.51.0",
