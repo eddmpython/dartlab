@@ -46,7 +46,7 @@ jobs:
           - gate: sections-precision
             timeout: 15
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -54,7 +54,7 @@ jobs:
         run: python -X utf8 tests/run.py gate ${{ matrix.gate }}
       - name: Upload artifact
         if: ${{ always() && matrix.artifact_name }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.artifact_path }}
@@ -92,7 +92,7 @@ jobs:
           - test_search.py
           - test_topLevelApi.py
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
