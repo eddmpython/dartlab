@@ -42,10 +42,10 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - name: Set up Python
         run: uv python install 3.12
@@ -101,7 +101,7 @@ jobs:
     timeout-minutes: 180
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # 전 종목 panel(~11GB) seed 를 위한 디스크 확보 — 기본 러너 / 파티션 ~14GB 한계 회피.
       - name: Free disk space
@@ -110,7 +110,7 @@ jobs:
           df -h /
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - name: Set up Python
         run: uv python install 3.12

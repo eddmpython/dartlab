@@ -33,10 +33,10 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - name: Set up Python
         run: uv python install 3.12
@@ -115,7 +115,7 @@ jobs:
       # ── 결과 artifact 보존 (4 주 카운터 추적용) ──
       - name: Upload parity.json artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: edgar-parity-${{ github.run_id }}
           path: |

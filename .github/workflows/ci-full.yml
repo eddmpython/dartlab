@@ -42,7 +42,7 @@ jobs:
             artifact_name: product-smoke-wheel-release
             artifact_path: product-smoke-wheel-release.json
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python || '3.12' }}
@@ -55,14 +55,14 @@ jobs:
             ${{ matrix.python && format('--python {0}', matrix.python) || '' }}
       - name: Upload coverage to Codecov
         if: ${{ matrix.gate == 'test-full' && matrix.python == '3.12' }}
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
         with:
           files: coverage.xml
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload artifact
         if: ${{ always() && matrix.artifact_name }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.artifact_path }}
@@ -75,7 +75,7 @@ jobs:
       tests: ${{ steps.plan.outputs.tests }}
       hasAny: ${{ steps.plan.outputs.hasAny }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: actions/setup-python@v6
@@ -88,7 +88,7 @@ jobs:
         run: python -X utf8 tests/run.py gate realdata-plan
       - name: Upload realdata scan prebuild
         if: ${{ steps.plan.outputs.hasAny == 'true' }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: realdata-scan-prebuild
           path: tests/fixtures/dart/scan/
@@ -104,13 +104,13 @@ jobs:
       matrix:
         test_file: ${{ fromJson(needs.realdata-plan.outputs.tests) }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: "pip"
       - name: Download realdata scan prebuild
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: realdata-scan-prebuild
           path: tests/fixtures/dart/scan/

@@ -44,7 +44,7 @@ jobs:
           - gate: eval-full
             timeout: 30
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -52,7 +52,7 @@ jobs:
         run: python -X utf8 tests/run.py gate ${{ matrix.gate }}
       - name: Upload artifact
         if: ${{ always() && matrix.artifact_name }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.artifact_path }}
@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -77,7 +77,7 @@ jobs:
           pip install -e .
           python -X utf8 .github/scripts/ops/prepareRealdataScanCache.py
       - name: Upload realdata scan prebuild
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: realdata-scan-prebuild
           path: tests/fixtures/dart/scan/
@@ -116,13 +116,13 @@ jobs:
           - test_search.py
           - test_topLevelApi.py
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: "pip"
       - name: Download realdata scan prebuild
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: realdata-scan-prebuild
           path: tests/fixtures/dart/scan/

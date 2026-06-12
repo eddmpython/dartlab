@@ -30,7 +30,7 @@ jobs:
     timeout-minutes: 180  # 3시간 (panel 다운로드 + 빌드)
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # allFilings(1.3GB)+panel(16GB) → 기본 러너 디스크(~14GB) 압박. 선제 확보.
       - name: Free disk space
@@ -39,7 +39,7 @@ jobs:
           df -h /
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - name: Set up Python
         run: uv python install 3.12
