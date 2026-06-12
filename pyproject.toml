@@ -66,12 +66,12 @@ dependencies = [
     "numpy>=1.26.0,<3; sys_platform != 'emscripten'",
     "numpy; sys_platform == 'emscripten'",
     # parquet fallback / pyodide bridge. pyodide 는 빌트인.
-    "pyarrow>=17,<21; sys_platform != 'emscripten'",
+    "pyarrow>=17,<25; sys_platform != 'emscripten'",
     "pyarrow; sys_platform == 'emscripten'",
     # network
     "httpx>=0.28.1,<1; sys_platform != 'emscripten'",
     "httpx; sys_platform == 'emscripten'",
-    "huggingface-hub>=0.20.0,<1; sys_platform != 'emscripten'",
+    "huggingface-hub>=0.20.0,<2; sys_platform != 'emscripten'",
     "rich>=14.3.3,<15; sys_platform != 'emscripten'",
     "rich; sys_platform == 'emscripten'",
     # ai providers (pyodide 불필요)
@@ -79,12 +79,12 @@ dependencies = [
     # server (pyodide 불필요)
     "fastapi>=0.135.1,<1; sys_platform != 'emscripten'",
     "uvicorn[standard]>=0.30.0,<1; sys_platform != 'emscripten'",
-    "sse-starlette>=2.0.0,<3; sys_platform != 'emscripten'",
+    "sse-starlette>=2.0.0,<4; sys_platform != 'emscripten'",
     "mcp[cli]>=1.0,<1.27.3; sys_platform != 'emscripten'",  # 1.27.1 Linux wheel 의 mcp.server namespace 회귀 — CI Fast 차단 (2026-05-17)
     "qrcode>=7.0,<9; sys_platform != 'emscripten'",
     "PyYAML>=6.0.0,<7; sys_platform != 'emscripten'",
     # viz
-    "plotly>=5.0.0,<6; sys_platform != 'emscripten'",
+    "plotly>=5.0.0,<7; sys_platform != 'emscripten'",
     "marimo>=0.23.6",
 ]
 
