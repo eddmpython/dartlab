@@ -80,7 +80,7 @@ dependencies = [
     "fastapi>=0.135.1,<1; sys_platform != 'emscripten'",
     "uvicorn[standard]>=0.30.0,<1; sys_platform != 'emscripten'",
     "sse-starlette>=2.0.0,<3; sys_platform != 'emscripten'",
-    "mcp[cli]>=1.0,<1.27.1; sys_platform != 'emscripten'",  # 1.27.1 Linux wheel 의 mcp.server namespace 회귀 — CI Fast 차단 (2026-05-17)
+    "mcp[cli]>=1.0,<1.27.3; sys_platform != 'emscripten'",  # 1.27.1 Linux wheel 의 mcp.server namespace 회귀 — CI Fast 차단 (2026-05-17)
     "qrcode>=7.0,<9; sys_platform != 'emscripten'",
     "PyYAML>=6.0.0,<7; sys_platform != 'emscripten'",
     # viz
