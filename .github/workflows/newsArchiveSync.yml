@@ -103,7 +103,7 @@ jobs:
             --upload
       - name: Upload public news search catalog evidence
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: search-catalog-newsPublic-${{ github.job }}-${{ github.run_id }}
           path: data/dart/searchCatalog/newsPublic/**

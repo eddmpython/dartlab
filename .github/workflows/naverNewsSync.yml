@@ -52,10 +52,10 @@ jobs:
     timeout-minutes: 90  # 전체 상장사(~2,800) 네이버 fanout + GDELT DOC 질의(전 종목) — 옛 30 으론 부족
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - name: Set up Python
         run: uv python install 3.12

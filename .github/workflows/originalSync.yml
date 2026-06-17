@@ -112,7 +112,7 @@ jobs:
             --upload
       - name: Upload DART panel search catalog evidence
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: search-catalog-dartPanel-${{ github.job }}-${{ github.run_id }}
           path: data/dart/searchCatalog/dartPanel/**
@@ -197,7 +197,7 @@ jobs:
             --upload
       - name: Upload allFilings search catalog evidence
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: search-catalog-allFilings-${{ github.job }}-${{ github.run_id }}
           path: data/dart/searchCatalog/allFilings/**
@@ -259,7 +259,7 @@ jobs:
             --upload
       - name: Upload allFilings search catalog evidence
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: search-catalog-allFilings-${{ github.job }}-${{ github.run_id }}
           path: data/dart/searchCatalog/allFilings/**
@@ -318,7 +318,7 @@ jobs:
             --upload
       - name: Upload EDGAR panel search catalog evidence
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: search-catalog-edgarPanel-${{ github.job }}-${{ github.run_id }}
           path: data/dart/searchCatalog/edgarPanel/**
