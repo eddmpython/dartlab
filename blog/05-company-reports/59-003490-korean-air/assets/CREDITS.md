@@ -1,3 +1,4 @@
-# 썸네일 배경 출처 (CC0 / Public Domain — Wikimedia Commons · Openverse)
+# 이미지 출처 (CC0 / Public Domain — Wikimedia Commons · Openverse)
 
+- **059-kal-boeing-takeoff.webp** — WSI airport runway 2025 / BulbazaurREX / CC0 / [airport runway aerial view] / https://commons.wikimedia.org/wiki/File:WSI_airport_runway_2025.jpg (기존 합성 이미지의 깨진 'KOREAAIR AIR' 로고를 CC0 실사 활주로로 교체)
 - **cc0-thumbnail-bg.webp** — Evening sun is shining at the brick facades of office building on the university campus Roeterseiland in the Roeterstraat, free photos of modern glass architecture in Amsterdam city; free photo by Fons Heijnsbroek, late Summer 2012 / Fons Heijnsbroek / CC0 / [modern office building glass facade] / https://commons.wikimedia.org/wiki/File:Evening_sun_is_shining_at_the_brick_facades_of_office_building_on_the_university_campus_Roeterseiland_in_the_Roeterstraat,_free_photos_of_modern_glass_architecture_in_Amsterdam_city;_free_photo_by_Fons_Heijnsbroek,_late_Summer_2012.tif

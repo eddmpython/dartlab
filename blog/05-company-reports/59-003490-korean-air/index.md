@@ -133,7 +133,7 @@ carousel:
 
 ![대한항공 아시아나 합병 11년 타임라인 — 2013 통합 논의 → 2024.12.11 완료](./assets/059-ma-timeline.svg)
 
-![대한항공 보잉 747-8i가 인천공항을 이륙하는 순간 — 한국 FSC 단독 지위의 상징](./assets/059-kal-boeing-takeoff.webp)
+![활주로 항공뷰 — 아시아나를 흡수한 통합 대한항공이 출발선에 선 한국 FSC 단독 체제 (CC0 실사)](./assets/059-kal-boeing-takeoff.webp)
 
 ---
 
