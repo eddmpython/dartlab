@@ -66,7 +66,7 @@
 	}
 
 	// 사진 모드 — 편집 카드=monochrome+강한 하단 그라데이션(기존 SNS editorial), 텍스트=풀, 차트=dim.
-	const CHART_KINDS = new Set(['kpis', 'line', 'bars', 'share', 'table', 'finChart']);
+	const CHART_KINDS = new Set(['kpis', 'line', 'bars', 'share', 'composition', 'table', 'finChart']);
 	const EDITORIAL_KINDS = new Set(['editorial', 'editorialBeat', 'editorialStat']);
 	const photoMode = $derived(
 		card.kind === 'cover'
@@ -187,6 +187,7 @@
 	// 비중 차트 세그먼트 색 — 캐러셀 팔레트(로즈+그레이)만. 초록/앰버/보라/시안 금지.
 	const SHARE_C = ['var(--dl-accent)', 'var(--dl-accent-light)', '#d8e2f0', '#9aa7c0', '#6b7794', '#c0cad8', '#7f8aa3'];
 	const shareColor = (i: number) => SHARE_C[i % SHARE_C.length];
+	const fmtPct = (p: number | null | undefined): string => (p == null ? '·' : p.toFixed(1));
 
 	// 재무카드 제목 아래 "무엇을 보나" 한 줄 — 터미널 CARD_GUIDE.what(일반 가이드, 회사 판단·환각 0).
 	// what = "[차트요소 구문]. [무엇을보나 문장]." 꼴 → 범례에 이미 있는 차트요소 구문(끝에 마침표라 거슬림)은
@@ -286,6 +287,37 @@
 						<div class="shRow"><span class="shY">{row.year}</span><span class="shBar">{#each row.segs as s (s.key)}<span class="shSeg" style="width:{s.pct}%;background:{shareColor(card.legend.findIndex((l) => l.key === s.key))}" title="{s.label} {s.pct}%"></span>{/each}</span></div>
 					{/each}
 					<div class="shLeg">{#each card.legend as l, i (l.key)}<span class="shLi"><i style="background:{shareColor(i)}"></i>{l.label}</span>{/each}</div>
+				</div>
+			{:else if card.kind === 'composition'}
+				{@const tp = card.periods.slice(-4)}
+				{@const off = card.periods.length - tp.length}
+				<div class="comp">
+					<p class="compMeta">당기 <b>{wonLabel(card.latestTotal)}</b> · {card.latestPeriod}</p>
+					<!-- 시간축 100% 세로 스택 — 분기별 컬럼(왼→오 과거→당기). 색 = 카테고리(범례·표와 SSOT). -->
+					<div class="compTs" role="img" aria-label="{card.heading} 구성 추이">
+						{#each card.periods as p, j (j)}
+							<div class="compCol">
+								<div class="compBar">
+									{#each card.categories as cat, i (cat)}
+										{#if (card.shares[j]?.[i] ?? 0) > 0.05}<i style="height:{card.shares[j][i]}%;background:{shareColor(i)}" title="{cat} {fmtPct(card.shares[j][i])}%"></i>{/if}
+									{/each}
+								</div>
+								<span class="compLbl" class:cur={j === card.periods.length - 1}>{p}</span>
+							</div>
+						{/each}
+					</div>
+					<table class="cT compT">
+						<thead><tr><th>구성</th>{#each tp as q (q)}<th class="num">{q}</th>{/each}<th class="num">당기</th></tr></thead>
+						<tbody>
+							{#each card.categories as cat, i (cat)}
+								<tr>
+									<td class="compName"><i class="compDot" style="background:{shareColor(i)}"></i>{cat}</td>
+									{#each tp as _q, k (k)}<td class="num">{fmtPct(card.shares[off + k]?.[i])}</td>{/each}
+									<td class="num">{card.amounts[i] == null ? '–' : wonLabel(card.amounts[i] as number)}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
 				</div>
 			{:else if card.kind === 'table'}
 				<div class="tWrap">
@@ -927,5 +959,75 @@
 		color: #94a3b8;
 		font-size: clamp(14px, 3cqw, 24px);
 		text-align: left;
+	}
+	/* 주석 구성 — 시간축 100% 세로 스택 컬럼 + 구성표(터미널 NotesDashboardDialog 동형, 카드 규격). */
+	.comp {
+		display: flex;
+		flex-direction: column;
+		gap: 0.6em;
+		min-height: 0;
+	}
+	.compMeta {
+		margin: 0;
+		font-size: clamp(11px, 2.4cqw, 16px);
+		color: #94a3b8;
+	}
+	.compMeta b {
+		color: #f1f5f9;
+		font-weight: 800;
+	}
+	.compTs {
+		display: flex;
+		align-items: flex-end;
+		gap: clamp(3px, 1cqw, 7px);
+		height: clamp(110px, 30cqw, 220px);
+	}
+	.compCol {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		height: 100%;
+		min-width: 0;
+	}
+	.compBar {
+		flex: 1;
+		width: 64%;
+		max-width: 30px;
+		display: flex;
+		flex-direction: column;
+		border-radius: 3px;
+		overflow: hidden;
+		background: rgba(255, 255, 255, 0.06);
+	}
+	.compBar i {
+		display: block;
+		width: 100%;
+		min-height: 1px;
+	}
+	.compLbl {
+		font-family: Menlo, Consolas, monospace;
+		font-size: clamp(8px, 2cqw, 12px);
+		color: #94a3b8;
+		padding-top: 0.35em;
+		white-space: nowrap;
+	}
+	.compLbl.cur {
+		color: #f1f5f9;
+		font-weight: 700;
+	}
+	.compName {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 30cqw;
+	}
+	.compDot {
+		display: inline-block;
+		width: 0.7em;
+		height: 0.7em;
+		border-radius: 2px;
+		margin-right: 0.4em;
+		vertical-align: middle;
 	}
 </style>

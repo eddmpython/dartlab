@@ -44,20 +44,34 @@ function niceCat(n: string): string {
 }
 const shortPeriod = (p: string): string => p.replace(/^20/, '');
 
-/** 주석 구성(`rt.report.noteSeries` 의 segment/cost) → 100% 적층 share 카드. 단일부문/미공시(null·빈)면
- *  null 반환 → 조건부 skip(데이터 있을 때만 카드 = 핵심만 정체성). 신규 숫자 합성 0(shares 그대로). */
-export function compositionToShare(
+/** 주석 구성(`rt.report.noteSeries` 의 segment/cost) → 시간축 100% 세로 스택 + 구성표 카드(터미널 동형).
+ *  단일부문/미공시(null·빈·전부 잔여)면 null → 조건부 skip(데이터 있을 때만 = 핵심만 정체성). 신규 숫자 합성 0.
+ *  카테고리는 최신 비중 desc 정렬 + 잔여(<0.05%, 태그 변경 사족) 제거 — 색 index 가 적층·표·범례 SSOT. */
+export function compositionToCard(
 	series: CompositionSeries | null | undefined,
 	heading: string,
 	sub: string
 ): CarouselCard | null {
 	if (!series?.points?.length || !series.categories.length) return null;
-	const legend = series.categories.map((c) => ({ label: niceCat(c), key: c }));
-	const rows = series.points.slice(-SHARE_PERIODS).map((p) => ({
-		year: shortPeriod(p.period),
-		segs: series.categories.map((c, i) => ({ label: niceCat(c), pct: p.shares[i] ?? 0, key: c }))
-	}));
-	return { kind: 'share', heading, sub, chapter: CH_BIZ, rows, legend };
+	const pts = series.points.slice(-SHARE_PERIODS);
+	const last = pts[pts.length - 1]!;
+	const order = series.categories
+		.map((_, i) => i)
+		.filter((i) => (last.shares[i] ?? 0) > 0.05)
+		.sort((a, b) => (last.shares[b] ?? 0) - (last.shares[a] ?? 0));
+	if (!order.length) return null;
+	return {
+		kind: 'composition',
+		heading,
+		sub,
+		chapter: CH_BIZ,
+		categories: order.map((i) => niceCat(series.categories[i])),
+		periods: pts.map((p) => shortPeriod(p.period)),
+		shares: pts.map((p) => order.map((i) => p.shares[i] ?? 0)),
+		amounts: order.map((i) => ((last.shares[i] ?? 0) / 100) * last.total),
+		latestTotal: last.total,
+		latestPeriod: shortPeriod(last.period)
+	};
 }
 
 /** 덱 카드 → 챕터 점프 앵커(각 distinct chapter 의 첫 카드 index). 캡션 패널 섹션 네비용 —
@@ -174,8 +188,8 @@ export function projectReport(
 	// 사업·운영 깊은 카드 — 주석 구성(부문별매출·비용성격별)을 수익성 관점에만 주입(맥락 적합·5덱 비대화 방지).
 	// rt.report.noteSeries 직독(별도 bake 0). 단일부문/미공시면 compositionToShare 가 null → 조건부 skip(핵심만).
 	if (model.perspectiveKey === 'earningsPower' && opts.noteSeries) {
-		const seg = compositionToShare(opts.noteSeries.segment, '부문별 매출', '어디서 버나');
-		const cost = compositionToShare(opts.noteSeries.cost, '비용 체질', '돈을 뭐에 쓰나');
+		const seg = compositionToCard(opts.noteSeries.segment, '부문별 매출', '어디서 버나');
+		const cost = compositionToCard(opts.noteSeries.cost, '비용 체질', '돈을 뭐에 쓰나');
 		if (seg) cards.push(seg);
 		if (cost) cards.push(cost);
 	}

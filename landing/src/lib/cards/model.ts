@@ -59,6 +59,16 @@ export type CarouselCard =
 			rows: { year: string; segs: { label: string; pct: number; key: string }[] }[];
 			legend: { label: string; key: string }[];
 	  })
+	// 주석 구성(부문별매출·비용성격별) — 시간축 100% 세로 스택 컬럼 + 구성 테이블(터미널 NotesDashboardDialog 동형).
+	| (CardHead & {
+			kind: 'composition';
+			categories: string[]; // 정제 표시명 — 색(index)·범례·적층·표행 순서 SSOT (최신 비중 desc)
+			periods: string[]; // 짧은 기간 라벨(세로 스택 x축 + 표 헤더) — 최근 N
+			shares: number[][]; // [기간][카테고리] 비중%(0~100) — 적층 높이 + 표 셀
+			amounts: (number | null)[]; // [카테고리] 최신 기간 금액(원) — 표 '당기' 열
+			latestTotal: number; // 최신 기간 합계(원)
+			latestPeriod: string; // 최신 기간 라벨(헤더 우측)
+	  })
 	| (CardHead & { kind: 'table'; cols: string[]; data: Record<string, string>[]; unit?: string })
 	| (CardHead & { kind: 'finChart'; stockCode: string; cardKey?: string }) // MiniFinChart 백본(finance.bundle) — cardKey=관점 카드 선택(없으면 cards[0])
 	| (CardHead & { kind: 'closing'; thesis: string })

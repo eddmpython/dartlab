@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import type { ReportModel, ReportBlock, ReportSection } from '$lib/report/model';
 import type { NoteSeriesBundle, CompositionSeries } from '@dartlab/ui-contracts';
 import type { CarouselCard } from './model';
-import { projectBlock, projectReport, projectResult, compositionToShare, chapterAnchors } from './project';
+import { projectBlock, projectReport, projectResult, compositionToCard, chapterAnchors } from './project';
 
 function model(overrides: Partial<ReportModel> = {}): ReportModel {
 	return {
@@ -169,32 +169,36 @@ function comp(cats: string[]): CompositionSeries {
 	};
 }
 
-describe('주석 구성 깊은 카드(compositionToShare) — 조건부·신규합성 0', () => {
-	it('categories→legend, points(최근 6)→rows(shortPeriod), chapter=사업·운영', () => {
-		const card = compositionToShare(comp(['반도체', '디스플레이']), '부문별 매출', '어디서 버나');
-		expect(card?.kind).toBe('share');
-		if (card?.kind !== 'share') throw new Error('share 아님');
+describe('주석 구성 깊은 카드(compositionToCard) — 세로 스택+표·조건부·신규합성 0', () => {
+	it('categories(최신 desc)·periods(최근6·shortPeriod)·shares·amounts, chapter=사업·운영', () => {
+		const card = compositionToCard(comp(['반도체', '디스플레이']), '부문별 매출', '어디서 버나');
+		expect(card?.kind).toBe('composition');
+		if (card?.kind !== 'composition') throw new Error('composition 아님');
 		expect(card.heading).toBe('부문별 매출');
 		expect(card.sub).toBe('어디서 버나');
 		expect(card.chapter).toBe('사업·운영');
-		expect(card.legend.map((l) => l.key)).toEqual(['반도체', '디스플레이']);
-		expect(card.rows.length).toBe(2);
-		expect(card.rows[0].year).toBe('24Q4'); // shortPeriod(20 제거)
-		expect(card.rows[0].segs[0].pct).toBe(60); // shares 그대로(신규합성 0)
+		expect(card.categories).toEqual(['반도체', '디스플레이']); // 최신(55>45) 비중 desc
+		expect(card.periods).toEqual(['24Q4', '25Q1']); // shortPeriod(20 제거)
+		expect(card.shares[0][0]).toBe(60); // 기간0·카테고리0 비중 그대로(신규합성 0)
+		expect(card.amounts[0]).toBeCloseTo((55 / 100) * 1100); // 최신 금액 = 비중×당기합
+		expect(card.latestPeriod).toBe('25Q1');
 	});
-	it('null·빈 series → null(단일부문/미공시 = 조건부 skip, 핵심만)', () => {
-		expect(compositionToShare(null, 'x', 'y')).toBeNull();
-		expect(compositionToShare({ categories: [], points: [] }, 'x', 'y')).toBeNull();
-		expect(compositionToShare({ categories: ['a'], points: [] }, 'x', 'y')).toBeNull();
+	it('null·빈·전부 잔여 → null(단일부문/미공시 = 조건부 skip, 핵심만)', () => {
+		expect(compositionToCard(null, 'x', 'y')).toBeNull();
+		expect(compositionToCard({ categories: [], points: [] }, 'x', 'y')).toBeNull();
+		expect(compositionToCard({ categories: ['a'], points: [] }, 'x', 'y')).toBeNull();
+		// 최신 비중이 전부 0(잔여)이면 null
+		expect(compositionToCard({ categories: ['a', 'b'], points: [{ period: '2025Q1', year: '2025', quarter: '1분기', total: 0, shares: [0, 0] }] }, 'x', 'y')).toBeNull();
 	});
 	it('7기간+ → 최근 6컷만(카드 밀도)', () => {
 		const many: CompositionSeries = {
 			categories: ['a', 'b'],
 			points: Array.from({ length: 8 }, (_, i) => ({ period: `2024Q${i}`, year: '2024', quarter: '4분기', total: 100, shares: [50, 50] }))
 		};
-		const card = compositionToShare(many, 'x', 'y');
-		if (card?.kind !== 'share') throw new Error('share 아님');
-		expect(card.rows.length).toBe(6);
+		const card = compositionToCard(many, 'x', 'y');
+		if (card?.kind !== 'composition') throw new Error('composition 아님');
+		expect(card.periods.length).toBe(6);
+		expect(card.shares.length).toBe(6);
 	});
 });
 
@@ -211,21 +215,21 @@ describe('챕터 점프 앵커(chapterAnchors) — 섹션 네비', () => {
 });
 
 describe('projectReport — 깊은 카드 주입 + 챕터 태깅', () => {
-	it('수익성 + noteSeries → 부문/비용 share 2장(finChart 뒤)', () => {
+	it('수익성 + noteSeries → 부문/비용 composition 2장(finChart 뒤)', () => {
 		const ns: NoteSeriesBundle = { segment: comp(['반도체', 'DX']), cost: comp(['원재료', '인건비']) };
 		const deck = projectReport(model(), { noteSeries: ns });
-		const shares = deck.cards.filter((c) => c.kind === 'share');
-		expect(shares.map((c) => c.heading)).toEqual(['부문별 매출', '비용 체질']);
+		const comps = deck.cards.filter((c) => c.kind === 'composition');
+		expect(comps.map((c) => c.heading)).toEqual(['부문별 매출', '비용 체질']);
 	});
 	it('segment 만 있으면 1장(cost null → 조건부 skip)', () => {
 		const ns: NoteSeriesBundle = { segment: comp(['a', 'b']), cost: null };
 		const deck = projectReport(model(), { noteSeries: ns });
-		expect(deck.cards.filter((c) => c.kind === 'share').map((c) => c.heading)).toEqual(['부문별 매출']);
+		expect(deck.cards.filter((c) => c.kind === 'composition').map((c) => c.heading)).toEqual(['부문별 매출']);
 	});
 	it('비-수익성 관점에는 미주입(5덱 비대화 방지)', () => {
 		const ns: NoteSeriesBundle = { segment: comp(['a', 'b']), cost: comp(['c', 'd']) };
 		const deck = projectReport(model({ perspectiveKey: 'liquidity', perspectiveLabel: '재무안정성' }), { noteSeries: ns });
-		expect(deck.cards.some((c) => c.kind === 'share')).toBe(false);
+		expect(deck.cards.some((c) => c.kind === 'composition')).toBe(false);
 	});
 	it('cover/kpis/finChart 챕터 태깅 — 네비 앵커 4종 성립', () => {
 		const ns: NoteSeriesBundle = { segment: comp(['a', 'b']), cost: null };
