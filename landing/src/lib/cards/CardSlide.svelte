@@ -4,7 +4,7 @@
 	// 재현 — 새로 짓지 않음. 차트는 $lib/report/render 순수 SVG(klinecharts·백테스트 0), finChart 만 MiniFinChart.
 	import type { DartLabRuntime, FinCard } from '@dartlab/ui-contracts';
 	import { MiniFinChart, CARD_GUIDE } from '@dartlab/ui-surfaces/terminal';
-	import { pickKrwUnit } from '@dartlab/ui-format/krw';
+	import { pickKrwUnit, fmtKrw } from '@dartlab/ui-format/krw';
 	import { CARD, CARD_SERIES, accentParts, stripDots } from './theme';
 	import { cellTone, verdictTone, TXT_COLS, lineGeo, wonLabel } from '$lib/report/render';
 	import type { CarouselCard } from './model';
@@ -292,7 +292,7 @@
 				{@const tp = card.periods.slice(-4)}
 				{@const off = card.periods.length - tp.length}
 				<div class="comp">
-					<p class="compMeta">당기 <b>{wonLabel(card.latestTotal)}</b> · {card.latestPeriod}</p>
+					<p class="compMeta">당기 <b>{fmtKrw(card.latestTotal)}</b> · {card.latestPeriod}</p>
 					<!-- 시간축 100% 세로 스택 — 분기별 컬럼(왼→오 과거→당기). 색 = 카테고리(범례·표와 SSOT). -->
 					<div class="compTs" role="img" aria-label="{card.heading} 구성 추이">
 						{#each card.periods as p, j (j)}
@@ -313,7 +313,7 @@
 								<tr>
 									<td class="compName"><i class="compDot" style="background:{shareColor(i)}"></i>{cat}</td>
 									{#each tp as _q, k (k)}<td class="num">{fmtPct(card.shares[off + k]?.[i])}</td>{/each}
-									<td class="num">{card.amounts[i] == null ? '–' : wonLabel(card.amounts[i] as number)}</td>
+									<td class="num">{fmtKrw(card.amounts[i])}</td>
 								</tr>
 							{/each}
 						</tbody>
