@@ -77,15 +77,15 @@
 
   <rect x="543" y="260" width="115" height="130" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
   <text x="600" y="295" text-anchor="middle" font-size="13" font-weight="700" fill="#f59e0b">무형자산</text>
-  <text x="600" y="315" text-anchor="middle" font-size="11" fill="#94a3b8">게임 IP·</text>
+  <text x="600" y="315" text-anchor="middle" font-size="11" fill="#94a3b8">신약·</text>
   <text x="600" y="335" text-anchor="middle" font-size="11" fill="#94a3b8">개발비가</text>
   <text x="600" y="355" text-anchor="middle" font-size="11" fill="#94a3b8">자산의 핵심</text>
 
   <rect x="666" y="260" width="115" height="130" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-  <text x="723" y="295" text-anchor="middle" font-size="13" font-weight="700" fill="#22c55e">신작 출시</text>
+  <text x="723" y="295" text-anchor="middle" font-size="13" font-weight="700" fill="#22c55e">자회사 연결</text>
   <text x="723" y="315" text-anchor="middle" font-size="11" fill="#94a3b8">2025 매출</text>
   <text x="723" y="335" text-anchor="middle" font-size="11" fill="#94a3b8">274억은</text>
-  <text x="723" y="355" text-anchor="middle" font-size="11" fill="#94a3b8">신작 효과?</text>
+  <text x="723" y="355" text-anchor="middle" font-size="11" fill="#94a3b8">연결 효과?</text>
 
   <!-- 우측: 자본 감소 경고 -->
   <rect x="810" y="110" width="350" height="280" rx="12" fill="#1e293b" stroke="#ef4444" stroke-width="1"/>
@@ -124,7 +124,7 @@
   <text x="360" y="490" font-size="12" fill="#f1f5f9">유일한 흑자 2018 → 7년 적자의 시작</text>
 
   <text x="330" y="520" font-size="12" font-weight="700" fill="#fbbf24">2막</text>
-  <text x="360" y="520" font-size="12" fill="#f1f5f9">매출 424→73억 — 주력 게임이 꺼졌다</text>
+  <text x="360" y="520" font-size="12" fill="#f1f5f9">매출 424→73억 — 코로나 기대·라이선스가 꺼졌다</text>
 
   <text x="330" y="550" font-size="12" font-weight="700" fill="#fbbf24">3막</text>
   <text x="360" y="550" font-size="12" fill="#f1f5f9">적자인데 왜 안 죽나 — 유상증자와 자본 구조</text>

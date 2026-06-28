@@ -19,7 +19,7 @@
 
   <!-- 스택 바 -->
   <rect x="80" y="200" width="440" height="60" rx="8" fill="#3b82f6" opacity="0.7"/>
-  <text x="300" y="235" text-anchor="middle" font-size="14" font-weight="700" fill="#f1f5f9">무형자산 + 개발비 — 게임 IP의 장부가치</text>
+  <text x="300" y="235" text-anchor="middle" font-size="14" font-weight="700" fill="#f1f5f9">무형자산 + 개발비 — 신약 파이프라인의 장부가치</text>
   <text x="500" y="220" text-anchor="end" font-size="12" fill="#94a3b8">(추정 30~50%)</text>
 
   <rect x="80" y="270" width="300" height="50" rx="8" fill="#22c55e" opacity="0.6"/>
@@ -35,8 +35,8 @@
   <!-- 핵심 지적 -->
   <rect x="80" y="470" width="440" height="120" rx="8" fill="#0a0e1a" stroke="#ef4444" stroke-width="1"/>
   <text x="300" y="500" text-anchor="middle" font-size="14" font-weight="700" fill="#ef4444">개발비 자산화의 위험</text>
-  <text x="100" y="530" font-size="12" fill="#f1f5f9">게임 개발에 쓴 돈을 비용이 아닌 자산으로 장부에 쌓는다.</text>
-  <text x="100" y="550" font-size="12" fill="#f1f5f9">출시 성공 → 매출로 회수. 출시 실패 → 일괄 상각 = 대규모 손실.</text>
+  <text x="100" y="530" font-size="12" fill="#f1f5f9">신약 임상에 쓴 돈을 비용이 아닌 자산으로 장부에 쌓는다.</text>
+  <text x="100" y="550" font-size="12" fill="#f1f5f9">허가·시판 성공 → 매출로 회수. 임상 실패 → 일괄 상각 = 대규모 손실.</text>
   <text x="100" y="575" font-size="12" fill="#f59e0b">2023~2024 적자 500+억의 일부가 이 상각일 가능성.</text>
 
   <!-- 우측: 자산회전율 비교 -->
@@ -47,15 +47,15 @@
   <rect x="780" y="168" width="24" height="18" rx="3" fill="#ef4444"/>
   <text x="812" y="182" font-size="13" font-weight="700" fill="#ef4444">0.12회</text>
 
-  <text x="620" y="215" font-size="12" fill="#64748b">크래프톤</text>
+  <text x="620" y="215" font-size="12" fill="#64748b">자산효율 높은 기업</text>
   <rect x="780" y="203" width="130" height="18" rx="3" fill="#22c55e" opacity="0.7"/>
   <text x="918" y="217" font-size="13" fill="#22c55e">0.65회</text>
 
-  <text x="620" y="250" font-size="12" fill="#64748b">카카오</text>
+  <text x="620" y="250" font-size="12" fill="#64748b">플랫폼 기업</text>
   <rect x="780" y="238" width="58" height="18" rx="3" fill="#3b82f6" opacity="0.7"/>
   <text x="846" y="252" font-size="13" fill="#3b82f6">0.29회</text>
 
-  <text x="620" y="285" font-size="12" fill="#64748b">네이버</text>
+  <text x="620" y="285" font-size="12" fill="#64748b">성장 기업</text>
   <rect x="780" y="273" width="80" height="18" rx="3" fill="#3b82f6" opacity="0.7"/>
   <text x="868" y="287" font-size="13" fill="#3b82f6">0.40회</text>
 
@@ -67,7 +67,7 @@
 
   <!-- 우측 하단: 개발비 사이클 -->
   <rect x="600" y="400" width="560" height="300" rx="12" fill="#1e293b" stroke="#fbbf24" stroke-width="1"/>
-  <text x="880" y="440" text-anchor="middle" font-size="18" font-weight="700" fill="#fbbf24">게임사 개발비 사이클</text>
+  <text x="880" y="440" text-anchor="middle" font-size="18" font-weight="700" fill="#fbbf24">신약 개발비 사이클</text>
 
   <!-- 흐름도 -->
   <rect x="640" y="470" width="140" height="50" rx="8" fill="#3b82f6" opacity="0.5"/>
@@ -91,7 +91,7 @@
 
   <!-- 하단 설명 -->
   <text x="880" y="570" text-anchor="middle" font-size="14" fill="#f1f5f9">CG인바이츠의 자산 2,241억 중 상당 부분이</text>
-  <text x="880" y="595" text-anchor="middle" font-size="14" fill="#f1f5f9">"아직 출시 안 한 게임"의 개발비일 가능성</text>
+  <text x="880" y="595" text-anchor="middle" font-size="14" fill="#f1f5f9">"아직 허가 전 신약"의 개발비일 가능성</text>
   <text x="880" y="630" text-anchor="middle" font-size="13" fill="#f59e0b">이 자산이 매출로 전환되지 않으면</text>
   <text x="880" y="655" text-anchor="middle" font-size="13" fill="#ef4444">상각 → 자본 급감 → 자본잠식 가속</text>
 

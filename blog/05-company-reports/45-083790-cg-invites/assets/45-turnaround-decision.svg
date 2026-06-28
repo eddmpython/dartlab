@@ -21,18 +21,18 @@
   <!-- Q1 -->
   <rect x="340" y="200" width="400" height="55" rx="10" fill="#1e293b" stroke="#3b82f6" stroke-width="2"/>
   <text x="540" y="225" text-anchor="middle" font-size="14" font-weight="700" fill="#3b82f6">Q1. 매출의 원천은 무엇인가?</text>
-  <text x="540" y="245" text-anchor="middle" font-size="12" fill="#94a3b8">신작 1개 집중? 복수 IP? 퍼블리싱 수수료?</text>
+  <text x="540" y="245" text-anchor="middle" font-size="12" fill="#94a3b8">본업 신약? 자회사 연결? 일회성 기술료?</text>
 
   <!-- 분기 -->
   <line x1="440" y1="255" x2="240" y2="310" stroke="#ef4444" stroke-width="1.5"/>
   <line x1="640" y1="255" x2="840" y2="310" stroke="#22c55e" stroke-width="1.5"/>
 
   <rect x="120" y="310" width="240" height="50" rx="8" fill="#ef4444" opacity="0.2" stroke="#ef4444" stroke-width="1"/>
-  <text x="240" y="330" text-anchor="middle" font-size="12" font-weight="700" fill="#ef4444">신작 1개에 90%+ 집중</text>
-  <text x="240" y="350" text-anchor="middle" font-size="11" fill="#94a3b8">→ 고위험: 해당 게임 흥행 실패 시 재추락</text>
+  <text x="240" y="330" text-anchor="middle" font-size="12" font-weight="700" fill="#ef4444">자회사 연결·일회성에 집중</text>
+  <text x="240" y="350" text-anchor="middle" font-size="11" fill="#94a3b8">→ 고위험: 본업 신약 부진 시 재추락</text>
 
   <rect x="720" y="310" width="240" height="50" rx="8" fill="#22c55e" opacity="0.2" stroke="#22c55e" stroke-width="1"/>
-  <text x="840" y="330" text-anchor="middle" font-size="12" font-weight="700" fill="#22c55e">복수 IP + 퍼블리싱 분산</text>
+  <text x="840" y="330" text-anchor="middle" font-size="12" font-weight="700" fill="#22c55e">본업 신약 + 자회사 동반 성장</text>
   <text x="840" y="350" text-anchor="middle" font-size="11" fill="#94a3b8">→ 구조적 전환 신호</text>
 
   <!-- Q2 -->

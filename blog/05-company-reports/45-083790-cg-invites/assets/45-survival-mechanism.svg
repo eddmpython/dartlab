@@ -67,31 +67,31 @@
 
   <!-- 하단: 비교 매트릭스 -->
   <rect x="50" y="460" width="540" height="340" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-  <text x="320" y="500" text-anchor="middle" font-size="18" font-weight="700" fill="#f1f5f9">적자 게임사 생존 패턴 비교</text>
+  <text x="320" y="500" text-anchor="middle" font-size="18" font-weight="700" fill="#f1f5f9">적자 바이오벤처 생존 패턴 비교</text>
 
   <!-- 헤더 -->
   <line x1="70" y1="520" x2="570" y2="520" stroke="#334155" stroke-width="1"/>
   <text x="120" y="540" text-anchor="middle" font-size="12" font-weight="700" fill="#64748b">항목</text>
   <text x="280" y="540" text-anchor="middle" font-size="12" font-weight="700" fill="#fbbf24">CG인바이츠</text>
-  <text x="440" y="540" text-anchor="middle" font-size="12" font-weight="700" fill="#22c55e">크래프톤(비교)</text>
+  <text x="440" y="540" text-anchor="middle" font-size="12" font-weight="700" fill="#22c55e">흑자 제약·바이오(비교)</text>
 
   <line x1="70" y1="555" x2="570" y2="555" stroke="#334155" stroke-width="1"/>
 
   <text x="120" y="580" text-anchor="middle" font-size="12" fill="#94a3b8">매출(2025)</text>
   <text x="280" y="580" text-anchor="middle" font-size="12" fill="#ef4444">274억</text>
-  <text x="440" y="580" text-anchor="middle" font-size="12" fill="#22c55e">2.8조</text>
+  <text x="440" y="580" text-anchor="middle" font-size="12" fill="#22c55e">조 단위</text>
 
   <text x="120" y="610" text-anchor="middle" font-size="12" fill="#94a3b8">OPM</text>
   <text x="280" y="610" text-anchor="middle" font-size="12" fill="#ef4444">-87%</text>
-  <text x="440" y="610" text-anchor="middle" font-size="12" fill="#22c55e">35%+</text>
+  <text x="440" y="610" text-anchor="middle" font-size="12" fill="#22c55e">두 자릿수+</text>
 
   <text x="120" y="640" text-anchor="middle" font-size="12" fill="#94a3b8">신용등급</text>
   <text x="280" y="640" text-anchor="middle" font-size="12" fill="#ef4444">BB (투기)</text>
   <text x="440" y="640" text-anchor="middle" font-size="12" fill="#22c55e">AA (안정)</text>
 
   <text x="120" y="670" text-anchor="middle" font-size="12" fill="#94a3b8">사업모델</text>
-  <text x="280" y="670" text-anchor="middle" font-size="12" fill="#f59e0b">신작 의존</text>
-  <text x="440" y="670" text-anchor="middle" font-size="12" fill="#22c55e">배그 장수 IP</text>
+  <text x="280" y="670" text-anchor="middle" font-size="12" fill="#f59e0b">신약 R&D 의존</text>
+  <text x="440" y="670" text-anchor="middle" font-size="12" fill="#22c55e">시판 신약·CDMO 캐시카우</text>
 
   <text x="120" y="700" text-anchor="middle" font-size="12" fill="#94a3b8">현금흐름</text>
   <text x="280" y="700" text-anchor="middle" font-size="12" fill="#ef4444">유상증자 의존</text>
@@ -99,25 +99,25 @@
 
   <text x="120" y="730" text-anchor="middle" font-size="12" fill="#94a3b8">핵심 리스크</text>
   <text x="280" y="730" text-anchor="middle" font-size="12" fill="#ef4444">자본잠식 경계</text>
-  <text x="440" y="730" text-anchor="middle" font-size="12" fill="#f59e0b">배그 의존 집중</text>
+  <text x="440" y="730" text-anchor="middle" font-size="12" fill="#f59e0b">성장 투자 부담</text>
 
-  <text x="320" y="775" text-anchor="middle" font-size="11" fill="#64748b">같은 게임업, 완전히 다른 재무 구조. 차이는 "장수 IP" 유무.</text>
+  <text x="320" y="775" text-anchor="middle" font-size="11" fill="#64748b">같은 바이오, 완전히 다른 재무 구조. 차이는 "캐시카우(시판 신약)" 유무.</text>
 
   <!-- 우측: 핵심 메시지 -->
   <rect x="620" y="460" width="530" height="340" rx="12" fill="#1e293b" stroke="#fbbf24" stroke-width="1"/>
-  <text x="885" y="500" text-anchor="middle" font-size="18" font-weight="700" fill="#fbbf24">적자 게임사가 사는 법</text>
+  <text x="885" y="500" text-anchor="middle" font-size="18" font-weight="700" fill="#fbbf24">적자 바이오벤처가 사는 법</text>
 
   <text x="650" y="540" font-size="14" fill="#f1f5f9">1. 유상증자로 자본 수혈</text>
   <text x="670" y="565" font-size="12" fill="#94a3b8">→ 기존 주주 지분 희석 = 주가 하락 압력</text>
 
   <text x="650" y="600" font-size="14" fill="#f1f5f9">2. 개발비 자산화</text>
   <text x="670" y="625" font-size="12" fill="#94a3b8">→ 비용을 자산으로 쌓아 적자 폭 축소</text>
-  <text x="670" y="645" font-size="12" fill="#94a3b8">→ 게임 출시 실패 시 일괄 상각 = 시한폭탄</text>
+  <text x="670" y="645" font-size="12" fill="#94a3b8">→ 임상 실패 시 일괄 상각 = 시한폭탄</text>
 
-  <text x="650" y="680" font-size="14" fill="#f1f5f9">3. 신작 매출로 적자 감축</text>
+  <text x="650" y="680" font-size="14" fill="#f1f5f9">3. 신약·자회사 매출로 적자 감축</text>
   <text x="670" y="705" font-size="12" fill="#94a3b8">→ 2025 매출 274억 = 1년치 적자 238억과 비슷</text>
   <text x="670" y="725" font-size="12" fill="#94a3b8">→ BEP 달성하려면 매출 400억+ 필요</text>
 
-  <text x="650" y="760" font-size="14" font-weight="700" fill="#ef4444">결론: 신작이 실패하면 자본잠식 직행</text>
+  <text x="650" y="760" font-size="14" font-weight="700" fill="#ef4444">결론: 본업 매출이 꺼지면 자본잠식 직행</text>
   <text x="670" y="785" font-size="12" fill="#64748b">현 자본 1,187억 ÷ 연 순손실 125억 ≈ 9.5년 여유</text>
 </svg>
