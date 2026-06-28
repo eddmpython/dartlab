@@ -6,7 +6,7 @@
 	import type { DartLabRuntime, StmtKind } from '@dartlab/ui-contracts';
 	import { KR_INDEX_PRESETS } from '@dartlab/ui-contracts';
 	import { DOWNLOAD_CATALOG } from '@dartlab/ui-runtime/data/catalog/downloadCatalog';
-	import { hfUrl, readParquetRows } from '@dartlab/ui-runtime/data/parquet/hfRange';
+	import { readParquetRows } from '@dartlab/ui-runtime/data/parquet/hfRange';
 	import { objectsToWorkbook, downloadBlob, downloadCsv, type ObjectSheet } from '../../downloadExport';
 	import type { Lang } from '../lib/types';
 
@@ -19,7 +19,6 @@
 	let { runtime, code, corpName, lang }: Props = $props();
 
 	const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-	const DATASET_URL = 'https://huggingface.co/datasets/eddmpython/dartlab-data';
 	const en = $derived(lang === 'en');
 	const isUs = $derived(!/^\d{6}$/.test(code));
 	const termsUrl = $derived(
@@ -46,12 +45,12 @@
 		)
 	);
 
-	// scan 프리빌드 — 전종목 횡단 파일(scan.listTableSources 단계-8 미배선이라 알려진 파일 직독).
-	// big=long-form 전종목(수백만 행) → 브라우저 변환 string 한도 초과라 parquet 링크로만.
+	// scan 프리빌드 — 전종목 횡단 파일. valuation 은 작아(2.5천행) Excel/CSV, finance-lite·changes 는 180만행이라
+	// Excel 한도(104만) 초과 → CSV 만(parquet 안 줌 — 일반인용). csvOnly=Excel 버튼 숨김.
 	const SCAN_FILES = $derived([
-		{ path: 'dart/scan/valuation.parquet', label: en ? 'Valuation (PER·PBR·cap)' : '밸류에이션 (PER·PBR·시총)', big: false },
-		{ path: 'dart/scan/finance-lite.parquet', label: en ? 'Finance-lite (ratios)' : '재무 라이트 (비율)', big: true },
-		{ path: 'dart/scan/changes.parquet', label: en ? 'Disclosure changes (1Y)' : '공시 변경 (1Y)', big: true }
+		{ path: 'dart/scan/valuation.parquet', label: en ? 'Valuation (PER·PBR·cap)' : '밸류에이션 (PER·PBR·시총)', csvOnly: false },
+		{ path: 'dart/scan/finance-lite.parquet', label: en ? 'Finance-lite (all · 1.8M rows)' : '재무 라이트 (전종목·180만행)', csvOnly: true },
+		{ path: 'dart/scan/changes.parquet', label: en ? 'Disclosure changes (all · 1.8M)' : '공시 변경 (전종목·180만행)', csvOnly: true }
 	]);
 
 	let open = $state(false);
@@ -174,12 +173,11 @@
 	const dlScan = (file: { path: string; label: string }, fmt: 'xlsx' | 'csv') =>
 		run(`scan:${file.path}:${fmt}`, async () => {
 			const { rows } = await readParquetRows(file.path);
-			emit(`scan_${file.label}`, rows, fmt);
+			emit(file.label, rows, fmt, clean(file.label)); // 전종목 — 회사명 접두 없이
 		});
 
-	// 시장·거시 전역 데이터 — 회사 무관(헤더라 상시 노출). 단일 파일은 Excel/CSV 직변환(행수 ≤104만 안전 실측),
-	// 다파일(지수별·월별)·대형(연 16MB)은 HF 폴더 브라우즈. krx/indices·krx/prices·edgar/meta 는 HF 미발행이라 제외.
-	const TREE = 'https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main';
+	// 시장·거시 전역 데이터 — 회사 무관(헤더라 상시 노출). 모두 Excel/CSV 직변환(행수 ≤104만 안전 실측).
+	// krx/indices·krx/prices·edgar/meta 는 HF 미발행이라 제외.
 	const MARKET_FILES = $derived([
 		{ path: 'macro/fred/observations.parquet', label: en ? 'FRED macro series' : 'FRED 거시 시계열' },
 		{ path: 'macro/ecos/observations.parquet', label: en ? 'ECOS (BOK) macro' : 'ECOS 한은 거시' },
@@ -268,22 +266,18 @@
 			<div class="dpDiv">{en ? 'cross-section prebuild (all companies)' : '전종목 프리빌드 (전체)'}</div>
 			{#each SCAN_FILES as s (s.path)}
 				<div class="dsRow">
-					<span class="dsLabel">{s.label}<span class="dsDir">{s.path}</span></span>
-					{#if s.big}
-						<span class="dsBtns"><a class="dsBtn" href={hfUrl(s.path)} download>parquet</a></span>
-					{:else}
-						<span class="dsBtns">
-							<button class="dsBtn" onclick={() => dlScan(s, 'xlsx')} disabled={!!busy}>{busy === `scan:${s.path}:xlsx` ? '…' : 'Excel'}</button>
-							<button class="dsBtn" onclick={() => dlScan(s, 'csv')} disabled={!!busy}>{busy === `scan:${s.path}:csv` ? '…' : 'CSV'}</button>
-						</span>
-					{/if}
+					<span class="dsLabel">{s.label}<span class="dsDir">{s.path.replace('.parquet', '')}</span></span>
+					<span class="dsBtns">
+						{#if !s.csvOnly}<button class="dsBtn" onclick={() => dlScan(s, 'xlsx')} disabled={!!busy}>{busy === `scan:${s.path}:xlsx` ? '…' : 'Excel'}</button>{/if}
+						<button class="dsBtn" onclick={() => dlScan(s, 'csv')} disabled={!!busy}>{busy === `scan:${s.path}:csv` ? '…' : 'CSV'}</button>
+					</span>
 				</div>
 			{/each}
 
 			<div class="dpDiv">{en ? 'market & macro (global)' : '시장·거시 (전역)'}</div>
 			{#each MARKET_FILES as m (m.path)}
 				<div class="dsRow">
-					<span class="dsLabel">{m.label}<span class="dsDir">{m.path}</span></span>
+					<span class="dsLabel">{m.label}<span class="dsDir">{m.path.replace('.parquet', '')}</span></span>
 					<span class="dsBtns">
 						<button class="dsBtn" onclick={() => dlMarket(m, 'xlsx')} disabled={!!busy}>{busy === `mkt:${m.path}:xlsx` ? '…' : 'Excel'}</button>
 						<button class="dsBtn" onclick={() => dlMarket(m, 'csv')} disabled={!!busy}>{busy === `mkt:${m.path}:csv` ? '…' : 'CSV'}</button>
@@ -308,17 +302,10 @@
 				<span class="dsLabel">{en ? 'All-stock daily prices (latest yr)' : '전종목 일별시세 (최근연도)'}<span class="dsDir">gov/prices/date · 67만행</span></span>
 				<span class="dsBtns">
 					<button class="dsBtn" onclick={() => dlPricesYear('csv')} disabled={!!busy}>{busy === 'pxy:csv' ? '…' : 'CSV'}</button>
-					<a class="dsBtn" href={`${TREE}/gov/prices/date`} target="_blank" rel="noreferrer">{en ? 'all ↗' : '전체 ↗'}</a>
 				</span>
 			</div>
 
 			{#if err}<div class="dsErr">⚠ {err}</div>{/if}
-
-			<div class="dpDiv">{en ? 'raw (parquet)' : '원본 (parquet)'}</div>
-			{#each parquetSets as d (d.dir)}
-				<a class="dpRaw" href={hfUrl(`${d.dir}/${code}.parquet`)} download>{LABELS[d.dir]} <span class="dpExt">.parquet</span></a>
-			{/each}
-			<a class="dpRaw dpDs" href={DATASET_URL} target="_blank" rel="noreferrer">{en ? 'Full dataset (all companies) ↗' : '전체 데이터셋 (모든 회사) ↗'}</a>
 
 			<div class="dpPolicy">
 				<div>
@@ -427,29 +414,6 @@
 		font-size: 11px;
 		color: #fca5a5;
 		padding: 3px 2px;
-	}
-	.dpRaw {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 4px 6px;
-		border-radius: 4px;
-		color: #94a3b8;
-		font-size: 11px;
-		text-decoration: none;
-	}
-	.dpRaw:hover {
-		color: var(--amber, #f59e0b);
-		background: rgba(245, 158, 11, 0.05);
-	}
-	.dpDs {
-		color: #cbd5e1;
-		margin-top: 2px;
-	}
-	.dpExt {
-		font-size: 10px;
-		color: #64748b;
-		font-family: ui-monospace, monospace;
 	}
 	.dpPolicy {
 		display: flex;
