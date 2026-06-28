@@ -87,10 +87,42 @@
 		}
 	}
 
+	// 일반인용 컬럼 정리 — pick: 내부 엔진 컬럼(atocId·xbrlMatchScore 등) 제거하고 사용자 컬럼만. ko: raw 소스
+	// 코드(BAS_DD·CLSPRC_IDX 등)를 한글로. 원본(dart/finance·edgar/financeStmt)은 비포함 → raw 유지(시계열이 가공본).
+	const COL_SPEC: Record<string, { pick?: string[]; ko?: Record<string, string> }> = {
+		'dart/panel': {
+			pick: ['corp', 'period', 'rceptNo', 'chapter', 'sectionPath', 'sectionLeaf', 'contentRaw'],
+			ko: { corp: '회사', period: '기간', rceptNo: '접수번호', chapter: '장', sectionPath: '섹션경로', sectionLeaf: '항목', contentRaw: '내용' }
+		},
+		'edgar/panel': {
+			pick: ['corp', 'period', 'rceptNo', 'chapter', 'sectionPath', 'sectionLeaf', 'contentRaw'],
+			ko: { corp: '회사', period: '기간', rceptNo: '접수번호', chapter: '장', sectionPath: '섹션경로', sectionLeaf: '항목', contentRaw: '내용' }
+		},
+		'gov/indices/index': {
+			ko: { BAS_DD: '기준일', IDX_CLSS: '지수분류', IDX_NM: '지수명', CLSPRC_IDX: '종가', CMPPREVDD_IDX: '전일대비', FLUC_RT: '등락률(%)', OPNPRC_IDX: '시가', HGPRC_IDX: '고가', LWPRC_IDX: '저가', ACC_TRDVOL: '거래량', ACC_TRDVAL: '거래대금', MKTCAP: '시가총액', MARKET_GROUP: '시장' }
+		},
+		'gov/prices/company': {
+			ko: { date: '날짜', name: '종목명', market: '시장', open: '시가', high: '고가', low: '저가', close: '종가', priceChange: '전일대비', fluctuationRate: '등락률(%)', volume: '거래량', tradedValue: '거래대금', marketCap: '시가총액', listedShares: '상장주식수', stockCode: '종목코드' }
+		},
+		'edgar/prices/company': {
+			ko: { date: '날짜', open: '시가', high: '고가', low: '저가', close: '종가', volume: '거래량' }
+		}
+	};
+	function reshape(rows: Record<string, unknown>[], dir: string): Record<string, unknown>[] {
+		const spec = COL_SPEC[dir];
+		if (!spec || !rows.length) return rows;
+		const cols = (spec.pick ?? Object.keys(rows[0])).filter((c) => c in rows[0]);
+		return rows.map((r) => {
+			const o: Record<string, unknown> = {};
+			for (const c of cols) o[spec.ko?.[c] ?? c] = r[c];
+			return o;
+		});
+	}
+
 	const dlParquet = (dir: string, fmt: 'xlsx' | 'csv') =>
 		run(`${dir}:${fmt}`, async () => {
 			const { rows } = await readParquetRows(`${dir}/${code}.parquet`);
-			emit(LABELS[dir] ?? dir, rows, fmt);
+			emit(LABELS[dir] ?? dir, reshape(rows, dir), fmt);
 		});
 
 	// 재무제표 시계열 — 가공된 IS/BS/CF(+비율) 를 계정×기간으로, 시트 분할.
@@ -175,13 +207,10 @@
 	}
 	// 시장지수 — KR 프리셋 5종 per-index(전이력) concat.
 	const dlIndices = (fmt: 'xlsx' | 'csv') =>
-		run(`idx:${fmt}`, async () =>
-			emit(
-				en ? 'Market indices' : '시장지수',
-				await readShards(KR_INDEX_PRESETS.map((p) => `gov/indices/index/${indexKey(p.market, p.name)}.parquet`)),
-				fmt,
-				en ? 'market_indices' : '시장지수'
-			));
+		run(`idx:${fmt}`, async () => {
+			const rows = await readShards(KR_INDEX_PRESETS.map((p) => `gov/indices/index/${indexKey(p.market, p.name)}.parquet`));
+			emit(en ? 'Market indices' : '시장지수', reshape(rows, 'gov/indices/index'), fmt, en ? 'market_indices' : '시장지수');
+		});
 	// 증권사 리서치 — 201901~현재월 probe(월 sparse·인덱스 없음), 존재분 concat.
 	const dlBrokerage = (fmt: 'xlsx' | 'csv') =>
 		run(`brk:${fmt}`, async () => {

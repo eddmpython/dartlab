@@ -175,10 +175,11 @@ export interface ObjectSheet {
 	rows: Record<string, unknown>[];
 }
 
-// 식별자 컬럼 — 숫자로 보여도 텍스트 강제(005930·14자리 접수번호가 숫자로 뭉개지지 않게).
-const ID_COL_RE = /(_no$|_cd$|code$|_id$|isin|ticker$|cik|accession|rcept|stock_?code|corp_?code|isu_cd)/i;
+// 식별자 컬럼 — 숫자로 보여도 텍스트 강제(005930·14자리 접수번호가 숫자로 뭉개지지 않게). 한글 라벨(종목코드·
+// 접수번호·…코드)도 포함 — 일반인용 export 가 컬럼을 한글로 rename 해도 식별자 보존되게.
+const ID_COL_RE = /(_no$|_cd$|code$|_id$|isin|ticker$|cik|accession|rcept|stock_?code|corp_?code|isu_cd|코드$|접수번호)/i;
 // 날짜류 컬럼명 — 값이 6자리 YYYYMM·4자리 연도라 숫자로 보여도 텍스트 강제(date 202401 → 숫자 202401 방지).
-const DATE_COL_RE = /(^date$|date$|_date$|^period$|^yyyymm$|^ym$|^month$|^quarter$|^year$|일자|날짜|기간|연월)/i;
+const DATE_COL_RE = /(^date$|date$|_date$|^period$|^yyyymm$|^ym$|^month$|^quarter$|^year$|일자|날짜|기간|연월|기준일)/i;
 // 날짜 문자열 — 8자리 YYYYMMDD 또는 구분자 날짜 → 텍스트.
 const DATE_VAL_RE = /^(19|20)\d{6}$|^\d{4}[-./]\d{1,2}[-./]\d{1,2}/;
 
