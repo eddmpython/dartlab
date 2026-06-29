@@ -1,42 +1,41 @@
 name: "SK하이닉스"
 stockCode: "000660"
 corpName: "SK하이닉스"
-title: "SK하이닉스는 HBM 가격보다 고객 로드맵을 봅니다"
+title: "SK하이닉스는 고대역폭 메모리 가격보다 고객 로드맵을 봅니다"
 date: 2026-06-28
 sector: semiconductor
 caption: |
   SK하이닉스는 지금 숫자만 봐도 좋은 기업처럼 보입니다.
-  하지만 이 회사를 볼 때 핵심은 HBM 가격이 얼마나 올랐는지 하나가 아닙니다.
+  하지만 이 회사를 볼 때 핵심은 고대역폭 메모리 가격이 얼마나 올랐는지 하나가 아닙니다.
 
-  AI 서버 고객의 다음 플랫폼에 얼마나 깊게 들어가 있는지 봐야 합니다.
+  인공지능 서버 고객의 다음 플랫폼에 얼마나 깊게 들어가 있는지 봐야 합니다.
   메모리 회사의 힘은 샘플, 고객 인증, 양산, 장기 공급이 끊기지 않을 때 더 강해집니다.
 
-  2026년 6월 NVIDIA와의 다년 파트너십, 12단 HBM4E 샘플 출하는 같은 방향을 가리킵니다.
+  2026년 6월 NVIDIA와의 다년 파트너십, 12단 차세대 고대역폭 메모리 샘플 출하는 같은 방향을 가리킵니다.
   단기 실적보다 더 중요한 질문은 로드맵 잠금입니다.
 
-  다음 체크포인트는 간단합니다.
-  HBM4E 고객 인증이 지연 없이 양산으로 넘어가는가.
-  증설이 수율, 열, 현금흐름을 해치지 않고 공급으로 바뀌는가.
+  그래서 판단은 양산 전환에서 갈립니다.
+  고객 인증이 지연 없이 양산으로 넘어가고, 증설이 수율과 현금흐름을 해치지 않을 때 로드맵 잠금은 숫자로 남습니다.
 explainers:
-  - term: "HBM"
-    body: "High Bandwidth Memory의 약자입니다. AI GPU 옆에 붙어 대량 데이터를 빠르게 주고받는 고부가 D램입니다."
+  - term: "고대역폭 메모리"
+    body: "인공지능 가속기 옆에 붙어 대량 데이터를 빠르게 주고받는 고부가 D램입니다."
   - term: "고객 인증"
     body: "샘플을 고객사가 실제 플랫폼에서 검증하는 단계입니다. 좋은 샘플도 인증과 양산 전환이 늦어지면 매출 인식이 밀릴 수 있습니다."
-  - term: "MR-MUF"
-    body: "여러 D램 칩을 쌓은 뒤 칩 사이를 보호재로 채우는 패키징 기술입니다. 열과 안정성이 HBM 경쟁력의 일부가 됩니다."
+  - term: "보호재 충전 패키징"
+    body: "여러 D램 칩을 쌓은 뒤 칩 사이를 보호재로 채우는 패키징 기술입니다. 열과 안정성이 고대역폭 메모리 경쟁력의 일부가 됩니다."
 relatedNews:
   - title: "NVIDIA and South Korea Government, Companies To Build AI Factories"
     source: "NVIDIA"
     date: "2026-06-07"
     url: "https://blogs.nvidia.com/blog/korea-ecosystem-2026/"
     track: "official"
-    description: "NVIDIA와 SK그룹/SK하이닉스의 AI·메모리 협력 방향을 확인하는 공식 발표입니다."
+    description: "NVIDIA와 SK그룹/SK하이닉스의 인공지능·메모리 협력 방향을 확인하는 공식 발표입니다."
   - title: "SK hynix Ships Samples of 12-Layer Next-Gen HBM4E"
     source: "SK hynix"
     date: "2026-06-17"
     url: "https://www.prnewswire.com/news-releases/sk-hynix-ships-samples-of-12-layer-next-gen-hbm4e-302803714.html"
     track: "official"
-    description: "12단 HBM4E 샘플 출하, 16Gbps 속도, 전력효율·방열 개선 근거입니다."
+    description: "12단 차세대 고대역폭 메모리 샘플 출하, 기가비트/초 단위 속도, 전력효율·방열 개선 근거입니다."
   - title: "\"More HBM!\"의 의미…K반도체, 설계부터 참여 '슈퍼을' 도약"
     source: "newsis.com"
     date: "2026-06-13"
@@ -48,30 +47,30 @@ relatedNews:
     date: "2026-06-13"
     url: "http://www.joseilbo.com/news/news_read.php?uid=569986&class=78&grp="
     track: "naver"
-    description: "네이버 보관 뉴스 기준. AI 서버 메모리 수요가 HBM 밖으로 확장되는 흐름을 함께 봅니다."
-pinnedComment: "투자 권유 아님. 출처: NVIDIA AI factories 발표(2026.6.7), SK hynix 12-layer HBM4E 샘플 출하 발표(2026.6.17), 네이버 보관 뉴스. 샘플 출하는 곧바로 매출을 뜻하지 않으며 고객 인증과 양산 전환을 확인해야 합니다."
+    description: "네이버 보관 뉴스 기준. 인공지능 서버 메모리 수요가 고대역폭 메모리 밖으로 확장되는 흐름을 함께 봅니다."
+pinnedComment: "투자 권유 아님. 출처: NVIDIA 인공지능 공장 발표(2026.6.7), SK hynix 12단 차세대 고대역폭 메모리 샘플 출하 발표(2026.6.17), 네이버 보관 뉴스. 샘플 출하는 곧바로 매출을 뜻하지 않으며 고객 인증과 양산 전환을 확인해야 합니다."
 slides:
   - layout: editorial
     date: "2026. 06. 28"
     line: "좋은 메모리는 가격보다 [[로드맵]]에 박힙니다"
-    sub: "SK하이닉스는 HBM 가격보다 고객의 다음 AI 플랫폼에 얼마나 깊게 들어가는지를 봅니다."
+    sub: "SK하이닉스는 고대역폭 메모리 가격보다 고객의 다음 인공지능 플랫폼에 얼마나 깊게 들어가는지를 봅니다."
     image: scene-01-cover-hook
   - layout: editorialBeat
     kicker: "첫 신호"
     line: "NVIDIA와 [[다년 파트너십]]"
-    sub: "단기 수주보다 중요한 것은 차세대 AI 인프라 로드맵을 같이 짜는 위치입니다."
+    sub: "단기 수주보다 중요한 것은 차세대 인공지능 인프라 로드맵을 같이 짜는 위치입니다."
     image: scene-02-narrative-turn
   - layout: editorialStat
-    kicker: "HBM4E 샘플"
+    kicker: "차세대 샘플"
     bigNumber: "12"
     unit: "단"
-    context: "SK하이닉스는 2026년 6월 12단 HBM4E 샘플을 주요 고객에게 출하했다고 밝혔습니다."
+    context: "SK하이닉스는 2026년 6월 12단 차세대 고대역폭 메모리 샘플을 주요 고객에게 출하했다고 밝혔습니다."
     image: scene-03-number-evidence
   - layout: editorialStat
     kicker: "성능 신호"
     bigNumber: "16"
-    unit: "Gbps"
-    context: "회사 발표 기준 최대 동작 속도는 핀당 16Gbps입니다. 전력 효율도 20% 이상 개선됐다고 설명했습니다."
+    unit: "기가비트/초"
+    context: "회사 발표 기준 최대 동작 속도는 핀당 16기가비트/초입니다. 전력 효율도 20% 이상 개선됐다고 설명했습니다."
     image: scene-04-number-evidence
   - layout: editorialBeat
     kicker: "진짜 병목"
@@ -79,7 +78,7 @@ slides:
     sub: "고성능 메모리는 빠른 속도만큼 방열, 패키징, 고객 인증이 실적의 속도를 정합니다."
     image: scene-05-narrative-turn
   - layout: editorialBeat
-    kicker: "다음 질문"
+    kicker: "결론"
     line: "증설보다 [[양산 전환]]을 봅니다"
     sub: "좋은 기업이라는 판단은 샘플이 고객 인증과 공급으로 이어질 때 더 단단해집니다."
     image: scene-06-closing-checkpoint

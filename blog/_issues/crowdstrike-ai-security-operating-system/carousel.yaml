@@ -16,9 +16,8 @@ caption: |
   새로 붙은 연간 반복 매출은 2억5580만달러, 잉여현금흐름은 4억6850만달러였습니다.
   또 구독 고객 중 6개 이상 모듈을 쓰는 비중은 51%라고 회사가 밝혔습니다.
 
-  다음 체크포인트는 단순합니다.
-  인공지능 보안 수요가 실제 모듈 확장으로 이어지는가.
-  사고 이후 신뢰 회복과 유지율이 숫자로 확인되는가.
+  그래서 판단은 모듈 확장과 유지율로 이어집니다.
+  인공지능 보안 수요가 실제 구독 증가로 남고, 사고 이후 신뢰 회복이 숫자로 확인될 때 플랫폼 서사는 더 단단해집니다.
 keyMetrics:
   - label: "매출 (2026년 4월 30일 종료 분기)"
     value: "13억8563만달러"
@@ -60,7 +59,7 @@ relatedNews:
     url: "https://www.crowdstrike.com/en-us/platform/charlotte-ai/charlotte-ai-agentworks/"
     track: "official"
     description: "인공지능 에이전트 기반 보안 관제 자동화 제품 맥락을 확인하는 공식 제품 설명입니다."
-pinnedComment: "투자 권유 아님. 출처: CrowdStrike 2026년 4월 30일 종료 분기 실적 발표(2026.6.3), Charlotte AI AgentWorks 공식 발표(2026.3.25). 연간 반복 매출과 잉여현금흐름은 회사 발표 기준이며, 보안 수요가 곧바로 장기 수익률을 보장하지 않습니다."
+pinnedComment: "투자 권유 아님. 출처: CrowdStrike 2026년 4월 30일 종료 분기 실적 발표(2026.6.3), Charlotte AgentWorks 공식 발표(2026.3.25). 연간 반복 매출과 잉여현금흐름은 회사 발표 기준이며, 보안 수요가 곧바로 장기 수익률을 보장하지 않습니다."
 slides:
   - layout: editorial
     date: "2026. 06. 29"
@@ -91,7 +90,7 @@ slides:
     context: "회사 발표 기준 구독 고객 중 6개 이상 모듈을 쓰는 비중입니다. 좋은 보안 플랫폼은 제품 수가 아니라 묶이는 깊이로 확인됩니다."
     image: scene-05-number-evidence
   - layout: editorialBeat
-    kicker: "다음 질문"
+    kicker: "결론"
     line: "인공지능 보안이 [[유지율과 현금흐름]]으로 남는가"
     sub: "좋은 기업이라는 판단은 인공지능 서사가 아니라 모듈 확장, 신뢰 회복, 잉여현금흐름으로 닫혀야 합니다."
     image: scene-06-closing-checkpoint

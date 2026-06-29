@@ -62,6 +62,8 @@ def test_build_company_plan_clamps_to_min_five_images(tmp_path: Path) -> None:
     assert plan["target"]["assetRoot"] == "sns/assets/999999"
     assert plan["planning"]["narrativeContract"]["spine"] == "훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문"
     assert "체크리스트" in " ".join(plan["planning"]["narrativeContract"]["rules"])
+    assert "전문용어" in " ".join(plan["planning"]["plainLanguageContract"]["rules"])
+    assert plan["planning"]["plainLanguageContract"]["preferredRewrites"]["AI"] == "인공지능"
     assert len(plan["imagePlan"]) == 5
     assert all("/cards" in row["prompt"] for row in plan["imagePlan"])
     assert all("Asset key:" in row["prompt"] for row in plan["imagePlan"])
@@ -84,6 +86,26 @@ def test_plan_validation_requires_narrative_contract(tmp_path: Path) -> None:
     planned["planning"].pop("narrativeContract")
     errors = cp.validate_plan(planned, require_passed=False)
     assert any("planning.narrativeContract" in err for err in errors)
+
+
+def test_plan_validation_requires_plain_language_contract(tmp_path: Path) -> None:
+    post = _write_post(tmp_path / "blog", "01-999999-test", slides=_TWO_SLIDES)
+    planned = cp.build_company_post_plan(post, count=6)
+    planned["planning"].pop("plainLanguageContract")
+    errors = cp.validate_plan(planned, require_passed=False)
+    assert any("planning.plainLanguageContract" in err for err in errors)
+
+
+def test_contract_readability_blocks_jargon_and_checklist() -> None:
+    contract = {
+        "caption": "다음 체크포인트는 AI 수요입니다.",
+        "slides": [{"layout": "editorialBeat", "kicker": "다음 질문", "line": "HBM이 좋아집니다"}],
+        "explainers": [{"term": "HBM", "body": "High Bandwidth Memory의 약자입니다."}],
+    }
+    errors = cp.validate_contract_readability("x", contract)
+    assert any("체크리스트식 문구" in err for err in errors)
+    assert any("어려운 약어 사용" in err and "AI" in err for err in errors)
+    assert any("약자 설명형 문장" in err for err in errors)
 
 
 def test_contract_plan_gate_finds_plan_by_slug(tmp_path: Path) -> None:

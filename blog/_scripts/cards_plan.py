@@ -38,6 +38,33 @@ NARRATIVE_RULES = (
     "서로 끊긴 체크리스트, '다음에는 이것을 본다'식 나열, 새 항목만 덧붙이는 끝맺음은 실패다.",
     "마지막 장은 새 정보를 추가하는 장이 아니라 앞선 주장과 근거를 종합해 독자가 남길 판단 질문으로 닫는다.",
 )
+PLAIN_LANGUAGE_RULES = (
+    "카드 문장은 독자가 소리 내어 읽어도 자연스러운 한국어 문장이어야 한다.",
+    "전문용어와 약어를 앞세우지 말고 쉬운 말로 먼저 설명한다.",
+    "꼭 필요한 산업 용어는 짧은 설명에 풀어 쓰되, 슬라이드 본문은 가능한 쉬운 말로 쓴다.",
+    "브랜드명과 공식 제품명은 허용하지만, 의미를 설명하지 않은 약어는 실패다.",
+)
+JARGON_REPLACEMENTS = {
+    "AI": "인공지능",
+    "ARR": "연간 반복 매출",
+    "EDR": "단말 보안 대응",
+    "SOC": "보안 관제",
+    "FCF": "잉여현금흐름",
+    "ID": "계정",
+    "CDMO": "위탁개발생산",
+    "HBM": "고대역폭 메모리",
+    "HBM4E": "차세대 고대역폭 메모리",
+    "GPU": "그래픽처리장치",
+    "MR-MUF": "보호재 충전 패키징",
+    "Gbps": "기가비트/초",
+}
+CHECKLIST_PHRASES = (
+    "다음 체크포인트",
+    "다음 질문",
+    "체크포인트는",
+    "다음에 이것",
+    "다음에는 이것",
+)
 
 
 def rel(path: Path) -> str:
@@ -123,6 +150,13 @@ def narrative_contract() -> dict[str, Any]:
     return {
         "spine": "훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문",
         "rules": list(NARRATIVE_RULES),
+    }
+
+
+def plain_language_contract() -> dict[str, Any]:
+    return {
+        "rules": list(PLAIN_LANGUAGE_RULES),
+        "preferredRewrites": dict(JARGON_REPLACEMENTS),
     }
 
 
@@ -226,7 +260,7 @@ def review_gate(status: str = "planned") -> dict[str, Any]:
         "requiredRounds": [
             {
                 "id": "writerPanel",
-                "purpose": "훅 강도, 서사 스파인, 앞장-다음장 연결, 블로그 산문과 카드 흐름의 일치 여부를 본다. 체크리스트식 나열이면 실패다.",
+                "purpose": "훅 강도, 서사 스파인, 앞장-다음장 연결, 쉬운 말, 블로그 산문과 카드 흐름의 일치 여부를 본다. 체크리스트식 나열이면 실패다.",
                 "status": "todo",
             },
             {
@@ -241,7 +275,7 @@ def review_gate(status: str = "planned") -> dict[str, Any]:
             },
             {
                 "id": "readerFit",
-                "purpose": "처음 보는 독자가 첫 장부터 마지막 장까지 끊기지 않고 읽으며 관전 포인트를 이해하는지 본다.",
+                "purpose": "처음 보는 독자가 첫 장부터 마지막 장까지 끊기지 않고 자연스럽게 읽으며 관전 포인트를 이해하는지 본다. 어려운 약어가 남으면 실패다.",
                 "status": "todo",
             },
             {
@@ -282,6 +316,7 @@ def build_company_post_plan(post_dir: Path, *, count: int | None = None) -> dict
             "audienceQuestion": f"{corp_name} 이야기를 /cards에서 넘길 때 첫 장에서 무엇을 궁금해해야 하나?",
             "blogAndCardsTogether": True,
             "narrativeContract": narrative_contract(),
+            "plainLanguageContract": plain_language_contract(),
             "bodyPreview": " ".join(body.strip().split())[:360],
         },
         "carousel": {
@@ -365,6 +400,7 @@ def build_issue_plan(issue_dir: Path, *, count: int | None = None) -> dict[str, 
             "audienceQuestion": f"{title} 이슈를 /cards에서 볼 때 마지막에 무엇을 확인해야 하나?",
             "blogAndCardsTogether": False,
             "narrativeContract": narrative_contract(),
+            "plainLanguageContract": plain_language_contract(),
             "bodyPreview": "",
         },
         "carousel": {
@@ -422,6 +458,18 @@ def validate_plan(plan: dict[str, Any], *, require_passed: bool = True, require_
         missing_rules = [rule for rule in NARRATIVE_RULES if rule not in rule_texts]
         if missing_rules:
             errors.append(f"{slug}: planning.narrativeContract 필수 규칙 누락 {len(missing_rules)}건")
+    plain = planning.get("plainLanguageContract")
+    if not isinstance(plain, dict):
+        errors.append(f"{slug}: planning.plainLanguageContract 누락")
+    else:
+        rules = plain.get("rules")
+        if not isinstance(rules, list):
+            errors.append(f"{slug}: planning.plainLanguageContract.rules 는 리스트여야 함")
+            rules = []
+        rule_texts = {str(rule).strip() for rule in rules}
+        missing_rules = [rule for rule in PLAIN_LANGUAGE_RULES if rule not in rule_texts]
+        if missing_rules:
+            errors.append(f"{slug}: planning.plainLanguageContract 필수 규칙 누락 {len(missing_rules)}건")
     image_plan = plan.get("imagePlan")
     if not isinstance(image_plan, list):
         errors.append(f"{slug}: imagePlan 은 리스트여야 함")
@@ -455,6 +503,59 @@ def validate_plan(plan: dict[str, Any], *, require_passed: bool = True, require_
         not_passed = [str(r.get("id")) for r in rounds if isinstance(r, dict) and r.get("status") != "passed"]
         if not_passed:
             errors.append(f"{slug}: review round 미통과: {', '.join(not_passed)}")
+    return errors
+
+
+def _term_in_text(text: str, term: str) -> bool:
+    flags = re.IGNORECASE if term.isascii() else 0
+    if re.search(r"^[A-Za-z0-9-]+$", term):
+        return re.search(rf"(?<![A-Za-z0-9]){re.escape(term)}(?![A-Za-z0-9])", text, flags=flags) is not None
+    return term in text
+
+
+def _contract_reading_texts(contract: dict[str, Any]) -> list[tuple[str, str]]:
+    out: list[tuple[str, str]] = []
+    title = str(contract.get("title") or "").strip()
+    if title:
+        out.append(("title", title))
+    for key in ("caption", "pinnedComment"):
+        value = str(contract.get(key) or "").strip()
+        if value:
+            out.append((key, value))
+    for idx, slide in enumerate(contract.get("slides", []), start=1):
+        if not isinstance(slide, dict):
+            continue
+        for key in ("kicker", "line", "sub", "context", "unit"):
+            value = str(slide.get(key) or "").strip()
+            if value:
+                out.append((f"slide[{idx}].{key}", value))
+    for idx, item in enumerate(contract.get("explainers", []), start=1):
+        if not isinstance(item, dict):
+            continue
+        for key in ("term", "body"):
+            value = str(item.get(key) or "").strip()
+            if value:
+                out.append((f"explainers[{idx}].{key}", value))
+    for idx, item in enumerate(contract.get("relatedNews", []), start=1):
+        if not isinstance(item, dict):
+            continue
+        value = str(item.get("description") or "").strip()
+        if value:
+            out.append((f"relatedNews[{idx}].description", value))
+    return out
+
+
+def validate_contract_readability(slug: str, contract: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    for loc, text in _contract_reading_texts(contract):
+        for phrase in CHECKLIST_PHRASES:
+            if phrase in text:
+                errors.append(f"{slug}: {loc} 체크리스트식 문구 금지: {phrase!r}")
+        if "약자입니다" in text:
+            errors.append(f"{slug}: {loc} 약자 설명형 문장 금지 — 쉬운 뜻부터 써야 함")
+        for term, replacement in JARGON_REPLACEMENTS.items():
+            if _term_in_text(text, term):
+                errors.append(f"{slug}: {loc} 어려운 약어 사용: {term!r} -> {replacement!r}")
     return errors
 
 
@@ -499,8 +600,10 @@ def validate_contract_plan_gate(
             continue
         stats["plans"] += 1
         plan_errors = validate_plan_file(plan_path, require_passed=require_passed, require_assets=require_assets)
-        if plan_errors:
+        copy_errors = validate_contract_readability(slug, contract)
+        if plan_errors or copy_errors:
             errors.extend(f"{rel(plan_path)}: {err}" for err in plan_errors)
+            errors.extend(copy_errors)
         else:
             stats["passed"] += 1
     return errors, stats
