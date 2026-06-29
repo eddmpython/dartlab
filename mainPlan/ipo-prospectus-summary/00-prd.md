@@ -2,7 +2,7 @@
 
 > 출처: GitHub Discussion #70 (zias7039, 2026-06-26) "증권신고서 기반 IPO 수요예측 핵심 데이터 요약".
 > 기획 방식: 실측(probe1~4) + 전문 에이전트 4인 아키텍처 토론(입장→토론→종합→적대비판→최종) + 5렌즈 우수성 평가(운영·UI/UX·엔진혁신·속도·프로덕트).
-> 상태: **기획 확정·미착수**. 우수성 평가 반영 개정본(v2). 운영자 결정 5건 대기. order-flow-scan·professional-report-engine 동급 활성.
+> 상태: **개념확립 착수·진행(2026-06-29)** — `tests/_attempts/ipo/`. P0 판별기 ✅(오분류 0, ground-truth 3조건 정정). P1 섹션앵커링 🟡(5/6 구조앵커, 발행사 간 안정성 잔여). P2 카테고리1+항등식 ✅(검증·복구 실증), 2~6 잔여. 우수성 평가 반영 개정본(v2). 운영자 결정 6건 대기. order-flow-scan·professional-report-engine 동급 활성.
 > ★이름 정정: "수요예측 요약"→**"공모 신고서 분석"**. 수요예측 *결과변수*(기관 경쟁률·의무보유확약·확정공모가 밴드내 위치)는 사후공시라 본 트랙의 6카테고리(사전 신고서)에 없음 → **카테고리7 후속트랙**으로 분리(§0.1).
 
 ---
@@ -33,6 +33,11 @@
 토론 1차는 "초판 67건"을 IPO 모집단으로 가정했으나, **이는 `corpClass="Y"/"K"`(이미 상장된 시장) 필터 결과 = 전부 유상증자/DR**(SK하이닉스 DR·계양전기 주주배정). **진짜 신규상장 IPO는 상장 전이라 `corp_cls="E"(기타)`에 있고, `corp_cls=E`의 21건(스팩 1 + 일반 20)은 전부 `stock_code` 빈값**이었다.
 
 → **기계 ground-truth 확정**: `corp_cls=="E" AND stock_code==""` = 신규상장 IPO. `corp_cls∈{Y,K}`(stock_code 보유) = 유상증자/DR. **사람 라벨도, KRX 상장마스터 조인도 불필요.** 적대비판이 P0의 가장 약한 고리로 지목한 "판별 게이트 분모 미정"이 이 실측으로 해소됨. (이게 우수성 평가에서 **유일하게 "증명된 진짜 혁신"**으로 인정된 항목.)
+
+### ★ 정정 1-b — ground-truth 는 *3조건*: '지분증권' subtype 누락 시 과대 (개념확립 실측, 2026-06-29, `tests/_attempts/ipo/`)
+위 2조건(`corp_cls=E + sc=''`)만으로는 **과대(over-broad)**. 6개월(2026-01~06) corp_cls=E 증권신고서 826건의 subtype 분포 = 집합투자증권(펀드) 433 · 채무증권 184 · 유동화증권(ABS) 141 · **지분증권 43** · 투자계약증권 16 · 분할·증권예탁 9 → 2조건만 쓰면 **783건이 펀드·채권·유동화로 오분류**. probe4 의 "21건"은 실은 *지분증권 필터 후* 숫자였는데 본 §1 line 35 한 줄 규칙에서 그 필터가 누락됐다.
+- **정정된 ground-truth (3조건, 오분류 0):** `report_nm 첫 괄호 subtype=="지분증권" AND corp_cls=="E" AND stock_code==""`. subtype 은 *첫 괄호*로 판정(단순 substring 은 `증권신고서(집합투자증권-회사형)(...(지분증권))` 펀드명 오매칭 — 누수 2건 발견·정정 후 0). 스팩은 `corp_name`(report_nm 아님) "기업인수목적|스팩". prospectus(파싱 대상) vs notice(효력발생안내·정정신고서제출요구) 분리.
+- **P0 게이트 PASS(실측):** 지분증권 43 전수 → IPO 43 · 상장사 유상증자 320 · 경계 0 · subtype 오분류 0. 6개월 고유 발행사 12곳, 스팩 3건 정상 태깅. *판별 혁신은 여전히 유효 — 단 3조건 형태로.*
 
 ### ★ 정정 2 — buildReportModel emitter는 이미 존재 (우수성 평가 fatal-flaw, 직접 검증 완료)
 v1 PRD는 "Python `buildReportModel` emitter 미존재(TS만, P1a만 완료)"를 D3·P4 블로커로 반복 전제했으나 **거짓**. 직접 검증: `src/dartlab/story/report.py:161 buildReportModel(company, perspective, *, basePeriod)` 가 `044daf6dd "P2 buildReportModel emitter — Story→계약 ReportModel(thesis-led)"` 로 실재, `ce678311c "P2 thesis 빌더 격상"` 까지 진행. professional-report-engine은 **P2 진행 중**(P1a만 아님). v1 작성 시점이 emitter 커밋 직전이라 첫 토론의 Glob이 0건이었던 것.
@@ -94,16 +99,18 @@ v1 PRD는 "Python `buildReportModel` emitter 미존재(TS만, P1a만 완료)"를
 
 ## 4. Phasing (졸업게이트 정량지표)
 
-**P0 — IPO 판별기 (providers, _attempts/ipo). garbage-in 0번 게이트.**
-- deliverable: `securitiesRegistration.classifyIpo()` — **1차 신호 = `corp_cls=="E" AND stock_code==""`**(실측 확정, 사람 라벨 불필요), 보조 = 신주인수권증서/주주배정 부재·신탁조항(스팩)·corp_cls 변화이력(이전상장). 스팩 별도 태그.
-- 게이트: corp_cls 기계 ground-truth 대비 — corp_cls E 21건 전수 IPO 판정·Y/K 67건 전수 비-IPO에서 **오분류 0**(SK하이닉스·계양전기 자동 비-IPO). 경계(코넥스→코스닥 이전상장·재상장)만 운영자 소수 라벨.
+**P0 — IPO 판별기 (providers, _attempts/ipo). garbage-in 0번 게이트. ✅ 개념확립 완료(2026-06-29).**
+- deliverable: `securitiesRegistration.classifyIpo()` — **ground-truth = 3조건 `지분증권 subtype(첫 괄호) AND corp_cls=="E" AND stock_code==""`**(정정 1-b, 2조건은 과대). 스팩=`corp_name` 매칭, prospectus/notice 분리. (보조 신호 신주인수권증서·신탁조항·corp_cls 변화이력은 niceToHave, 3조건만으로 6개월 오분류 0이라 현 불필요.)
+- 게이트 **PASS(실측)**: 지분증권 43 전수 → IPO 43 · 상장사 유상증자 320 · 경계 0 · subtype 오분류 0. → `tests/_attempts/ipo/probe.py`.
 
-**P1 — 6섹션 경계 앵커링 (providers, _attempts/ipo).**
-- deliverable: 섹션 앵커 검출기. ★**텍스트 변형 매칭 금지, dart4.xsd 노드 경로/role 구조 앵커링**(평가 niceToHave, feedback_xml_native_truth 정합) — "공모개요"vs"공모의 개요" 정규식 누적이 아니라 XML 구조로. 발행사 수 비례 비대화 방지·발행공시 일반화 보장.
-- 게이트: IPO 통과분에서 6섹션 앵커 검출률≥0.95, 섹션밖 노이즈(정관조문) 혼입 0. ★앵커 사전 엔트리 수 추적(비대화=덕지덕지 신호). dart4.xsd 섹션구조 발행사 간 안정성은 P1 선행 실측(가설 미검증 — 불안정 시 조기 노출이 정직한 결론).
+**P1 — 6섹션 경계 앵커링 (providers, _attempts/ipo). 🟡 5/6 개념확립(2026-06-29), 발행사 간 안정성 잔여.**
+- deliverable: 섹션 앵커 검출기. ★**텍스트 변형 매칭 금지, dart4.xsd `<TITLE>` 구조 앵커링**(feedback_xml_native_truth 정합). **실측(기도산업 2.36M자·1028표·67 TITLE)**: 6카테고리 중 5개가 `<TITLE>` 에 직접 앵커(공모개요·공모방법·공모가격결정[밸류]·재무에관한사항·핵심투자위험/투자위험요소). `<TITLE>` 바이트 위치로 정밀 슬라이스. → `tests/_attempts/ipo/p1_structure.py`.
+- 잔여: ① **유통가능물량은 독립 TITLE 없음 → `2. 공모방법` 하위표(표 단위 탐지 필요)**. ② **발행사 간 `<TITLE>` 구조 안정성 미검증(1건만)** — 다수 발행사 실측 필요(불안정 시 조기 노출이 정직한 결론).
 
-**P2 — 카테고리별 파서 (providers, _attempts/ipo).**
-- deliverable: `securitiesRegistration.parseIpoProspectus()` + **폼 고정성 실측 docstring** + README. ★출력 dict에 `sectionAnchor/tableIdx/cellPath` 좌표 보존(D3 deep-link용, 파싱 시 이미 알므로 저비용). ★**채널 일반화 negative probe**: 증권신고서(채무증권) 1건을 같은 6섹션 앵커링에 통과시켜 어느 섹션이 깨지나 측정 → IPO 전용 휴리스틱인가 발행공시 클래스 메커니즘인가 조기 판정.
+**P2 — 카테고리별 파서 (providers, _attempts/ipo). 🟡 카테고리1 개념확립(2026-06-29), 2~6 잔여.**
+- ★**인프라 발견(실측)**: 공통 `flattenTableCells`/`parseHtmlTable` 가드 `"<table" not in html` 가 **대소문자 구분** → dart4.xsd 대문자 `<TABLE>` 을 파싱 전에 거른다(셀 0). **SSOT 경유 = `providers/dart/parse/dartXmlNormalize.normalizeDartXml`**(대문자→소문자 HTML, `<TE>/<TU>` dialect, 정부 메타 제거, 브라우저 패리티·골든픽스처) → 정상 추출. **졸업 시 결정**: 가드 case-insensitive 개선(공유 L1, 광범위 이득) vs normalizeDartXml 강제.
+- ★**카테고리1 항등식 게이트 실증(기도산업)**: `normalizeDartXml→cellGrid` 컬럼정렬로 공모가밴드 24,800~28,400·모집총액 42.16B·청약 08.11~12·납입 08.14 추출. **공모가×주식수≈총액 항등식이 원문 콤마오타(`1,7000,000`→17M, 10× 오류) 자동 검출(rawQtyOk=False) + 복구(주식수=총액/가액=1,700,000, 밴드최고 cross-check 48.28B 정확 일치)**. → `tests/_attempts/ipo/parser.py`. flat regex 평문 추출 전부 실패 확인.
+- deliverable(잔여): `parseIpoProspectus()` 카테고리 2~6 + **폼 고정성 실측 docstring** + 출력 dict 좌표 보존(`sectionAnchor/tableIdx/cellPath`, D3 deep-link). ★**채널 일반화 negative probe**: 증권신고서(채무증권) 1건을 같은 앵커링에 통과 → IPO 전용 휴리스틱인가 발행공시 클래스 메커니즘인가 조기 판정.
 - ★**게이트 = 카테고리별 내적 항등식 프레임워크(평가 mustFix#4 — truth proxy 격상)**. self-redundancy를 단일 트릭에서 검증 프레임워크로:
   - 카테고리1: 공모가×주식수 ≈ 예상시총 (닫힘 확실).
   - 카테고리4(유통): Σ유통가능 + Σ보호예수 ≈ 총발행주식수 (합산 항등식, 닫힘 확실).
