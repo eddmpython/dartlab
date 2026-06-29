@@ -1,0 +1,197 @@
+{
+  "version": 1,
+  "generatedAt": "2026-06-29T16:12:30.050960+00:00",
+  "target": {
+    "kind": "issue",
+    "slug": "samyang-buldak-margin",
+    "stockCode": "003230",
+    "corpName": "삼양식품",
+    "title": "라면을 팔아 영업이익률 25%를 남깁니다",
+    "postPath": "blog/_issues/samyang-buldak-margin/carousel.yaml",
+    "assetRoot": "blog/_issues/samyang-buldak-margin/assets",
+    "planPath": "blog/_issues/samyang-buldak-margin/cards.plan.json"
+  },
+  "planning": {
+    "blogThesis": "삼양식품은 농심보다 라면을 적게 팔았습니다. 그런데 같은 분기 영업이익은 2.6배였습니다.",
+    "cardThesis": "삼양식품은 농심보다 라면을 적게 팔았습니다. 그런데 같은 분기 영업이익은 2.6배였습니다.",
+    "audienceQuestion": "라면을 팔아 영업이익률 25%를 남깁니다 이슈를 /cards에서 볼 때 마지막에 무엇을 확인해야 하나?",
+    "blogAndCardsTogether": false,
+    "narrativeContract": {
+      "spine": "훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문",
+      "rules": [
+        "한 주제 안에서 훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문으로 이어진다.",
+        "각 슬라이드는 앞장의 주장이나 숫자를 받아 다음 장으로 넘겨야 한다.",
+        "서로 끊긴 체크리스트, '다음에는 이것을 본다'식 나열, 새 항목만 덧붙이는 끝맺음은 실패다.",
+        "마지막 장은 새 정보를 추가하는 장이 아니라 앞선 주장과 근거를 종합해 독자가 남길 판단 질문으로 닫는다."
+      ]
+    },
+    "plainLanguageContract": {
+      "rules": [
+        "카드 문장은 독자가 소리 내어 읽어도 자연스러운 한국어 문장이어야 한다.",
+        "전문용어와 약어를 앞세우지 말고 쉬운 말로 먼저 설명한다.",
+        "꼭 필요한 산업 용어는 짧은 설명에 풀어 쓰되, 슬라이드 본문은 가능한 쉬운 말로 쓴다.",
+        "브랜드명과 공식 제품명은 허용하지만, 의미를 설명하지 않은 약어는 실패다."
+      ],
+      "preferredRewrites": {
+        "AI": "인공지능",
+        "ARR": "연간 반복 매출",
+        "EDR": "단말 보안 대응",
+        "SOC": "보안 관제",
+        "FCF": "잉여현금흐름",
+        "ID": "계정",
+        "CDMO": "위탁개발생산",
+        "HBM": "고대역폭 메모리",
+        "HBM4E": "차세대 고대역폭 메모리",
+        "GPU": "그래픽처리장치",
+        "MR-MUF": "보호재 충전 패키징",
+        "Gbps": "기가비트/초"
+      }
+    },
+    "bodyPreview": ""
+  },
+  "carousel": {
+    "slideCount": 6,
+    "layouts": [
+      "editorial",
+      "editorialStat",
+      "editorialBeat",
+      "editorialStat",
+      "editorialBeat",
+      "editorialBeat"
+    ]
+  },
+  "imagePlan": [
+    {
+      "order": 1,
+      "assetKey": "scene-01-cover-hook",
+      "slideRefs": [
+        1
+      ],
+      "role": "cover-hook",
+      "scene": "story-specific opening scene for 삼양식품, making the article angle '라면을 팔아 100원 중 25원이 남습니다' visible through a concrete asset, place, or operation",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "sourced",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/samyang-buldak-margin/assets/scene-01-cover-hook.webp\nAsset key: scene-01-cover-hook\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 삼양식품 (003230).\nStory title: 라면을 팔아 영업이익률 25%를 남깁니다.\nCarousel role: cover-hook.\nImage subject: story-specific opening scene for 삼양식품, making the article angle '라면을 팔아 100원 중 25원이 남습니다' visible through a concrete asset, place, or operation.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 2,
+      "assetKey": "scene-02-number-evidence",
+      "slideRefs": [
+        2
+      ],
+      "role": "number-evidence",
+      "scene": "real-world 삼양식품 operation or evidence scene behind the number '삼양식품의 영업이익률입니다. 본업에서 남는 비율이죠. 매출 7,144억원에 영업이익 1,771억원, 라면 회사에서는 나오기 힘든 숫자입니다.', using physical production, facility, customer, or supply-chain context instead of charts",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "sourced",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/samyang-buldak-margin/assets/scene-02-number-evidence.webp\nAsset key: scene-02-number-evidence\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 삼양식품 (003230).\nStory title: 라면을 팔아 영업이익률 25%를 남깁니다.\nCarousel role: number-evidence.\nImage subject: real-world 삼양식품 operation or evidence scene behind the number '삼양식품의 영업이익률입니다. 본업에서 남는 비율이죠. 매출 7,144억원에 영업이익 1,771억원, 라면 회사에서는 나오기 힘든 숫자입니다.', using physical production, facility, customer, or supply-chain context instead of charts.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 3,
+      "assetKey": "scene-03-narrative-turn",
+      "slideRefs": [
+        3
+      ],
+      "role": "narrative-turn",
+      "scene": "editorial business-news scene tied to 삼양식품, showing the turning point '덜 팔고, 더 법니다' through physical work, demand, location, or operations",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "sourced",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/samyang-buldak-margin/assets/scene-03-narrative-turn.webp\nAsset key: scene-03-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 삼양식품 (003230).\nStory title: 라면을 팔아 영업이익률 25%를 남깁니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 삼양식품, showing the turning point '덜 팔고, 더 법니다' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 4,
+      "assetKey": "scene-04-number-evidence",
+      "slideRefs": [
+        4
+      ],
+      "role": "number-evidence",
+      "scene": "real-world 삼양식품 operation or evidence scene behind the number '2025년 전사 매출의 약 78%가 라면·과자 부문 해외 매출이었습니다. 그 해외를 끌고 간 건 사실상 불닭볶음면 하나였습니다.', using physical production, facility, customer, or supply-chain context instead of charts",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "sourced",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/samyang-buldak-margin/assets/scene-04-number-evidence.webp\nAsset key: scene-04-number-evidence\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 삼양식품 (003230).\nStory title: 라면을 팔아 영업이익률 25%를 남깁니다.\nCarousel role: number-evidence.\nImage subject: real-world 삼양식품 operation or evidence scene behind the number '2025년 전사 매출의 약 78%가 라면·과자 부문 해외 매출이었습니다. 그 해외를 끌고 간 건 사실상 불닭볶음면 하나였습니다.', using physical production, facility, customer, or supply-chain context instead of charts.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 5,
+      "assetKey": "scene-05-narrative-turn",
+      "slideRefs": [
+        5
+      ],
+      "role": "narrative-turn",
+      "scene": "editorial business-news scene tied to 삼양식품, showing the turning point '한 제품, 한 방향에 기댑니다' through physical work, demand, location, or operations",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "sourced",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/samyang-buldak-margin/assets/scene-05-narrative-turn.webp\nAsset key: scene-05-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 삼양식품 (003230).\nStory title: 라면을 팔아 영업이익률 25%를 남깁니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 삼양식품, showing the turning point '한 제품, 한 방향에 기댑니다' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 6,
+      "assetKey": "scene-06-closing-checkpoint",
+      "slideRefs": [
+        6
+      ],
+      "role": "closing-checkpoint",
+      "scene": "quiet final-check scene tied to 삼양식품 for the reader to verify '두 번째 불닭은 아직 없습니다', such as documents, equipment, facility context, or customer workflow",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "sourced",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/samyang-buldak-margin/assets/scene-06-closing-checkpoint.webp\nAsset key: scene-06-closing-checkpoint\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 삼양식품 (003230).\nStory title: 라면을 팔아 영업이익률 25%를 남깁니다.\nCarousel role: closing-checkpoint.\nImage subject: quiet final-check scene tied to 삼양식품 for the reader to verify '두 번째 불닭은 아직 없습니다', such as documents, equipment, facility context, or customer workflow.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    }
+  ],
+  "imagegen": {
+    "tool": "CC0/PD stock (Wikimedia Commons · Openverse)",
+    "generationRule": "발간 카드 규칙에 따라 생성형(image_gen·FLUX)이 아니라 출처가 깨끗한 CC0/Public-Domain 실사로만 수급했다. blog/_scripts/fetch_cc0_images.py 헬퍼로 검색→다운로드→webp 저장 후 한 장씩 눈검수했고, 회사명·시설·핵심 피사체(매운 라면·식품 생산라인·라면 진열대·컨테이너 항만·말린 고추) 기준으로 오매치를 걸러냈다. 출처는 assets/CREDITS.md.",
+    "checkCommand": "uv run python -X utf8 blog/_scripts/audit_carousel_images.py",
+    "publishCommands": [
+      "uv run python -X utf8 blog/_scripts/build_carousel_contracts.py"
+    ]
+  },
+  "reviewGate": {
+    "status": "passed",
+    "requiredRounds": [
+      {
+        "id": "writerPanel",
+        "purpose": "훅 강도, 서사 스파인, 앞장-다음장 연결, 쉬운 말, 블로그 산문과 카드 흐름의 일치 여부를 본다. 체크리스트식 나열이면 실패다.",
+        "status": "passed"
+      },
+      {
+        "id": "honestyEvidence",
+        "purpose": "슬라이드 숫자와 주장 근거가 블로그 본문/검증표에 있는지 본다.",
+        "status": "passed"
+      },
+      {
+        "id": "imageFit",
+        "purpose": "5~10장 이미지가 그 글의 회사·사건·장소에 맞는 서로 다른 의미 장면인지, 가짜 공식 로고·텍스트·도식이 없는지 본다.",
+        "status": "passed"
+      },
+      {
+        "id": "readerFit",
+        "purpose": "처음 보는 독자가 첫 장부터 마지막 장까지 끊기지 않고 자연스럽게 읽으며 관전 포인트를 이해하는지 본다. 어려운 약어가 남으면 실패다.",
+        "status": "passed"
+      },
+      {
+        "id": "reevaluation",
+        "purpose": "수정 후 같은 패널이 다시 보고 발행 가능 여부를 닫는다.",
+        "status": "passed"
+      }
+    ],
+    "decisionLog": [
+      {
+        "round": "writerPanel",
+        "decision": "주제는 식품(라면)으로 확정해 직전 3편(바이오·반도체·보안)과 섹터를 분리했다. 훅·차별성 심판이 1차 결론(\"실력이 된다\")을 직전 3편의 \"더 단단해집니다\"와 같은 구조라고 격파해 6번째 슬라이드를 \"두 번째 불닭은 아직 없습니다 — 한 분기 기록인지 체질인지는 다음 한 봉지가 답한다\"는 열린 질문으로 바꿨다. 표지도 격언형이 아니라 \"라면을 팔아 100원 중 25원이 남는다\"는 즉물적 환산 훅으로 잡았다. 서사 심판 지적에 따라 S3->S4 사이 \"비결은 해외\" 다리를 카드로 끌어올리고, 가운뎃점 나열을 동사로 풀어 소리 내어 읽히게 고쳤다."
+      },
+      {
+        "round": "honestyEvidence",
+        "decision": "모든 수치는 dartlab 공시 직독(filing_direct)과 그로부터의 산출만 사용했다. 삼양식품 2026Q1 매출 7,144억·영업이익 1,771억·영업이익률 24.8%·순이익 1,445억, 농심 2026Q1 매출 9,340억·영업이익 674억·영업이익률 7.2%는 같은 분기 연결 손익이다. 정직성 심판 지적을 반영해 (1) 24.8%는 영업이익률(본업에서 남는 비율)임을 명시하고 순이익·세전이익과 섞지 않았으며, (2) 해외 비중은 \"전사 매출 대비 라면·과자 부문 해외매출(2025년 1조 8,239억) 약 78%\"로 분모를 정직하게 표기했고, (3) 농심 비교는 \"매출은 농심이 크지만 본업에서 남긴 돈은 삼양 2.6배\"로 매출과 마진을 분리하고 농심 7%대는 내수 중심 구조의 정상 수준임을 면책에 적었다. 투자권유 표현은 없다."
+      },
+      {
+        "round": "imageFit",
+        "decision": "발간 카드 규칙대로 생성형 대신 CC0/PD 실사만 수급해 6장을 한 장씩 눈검수했다. 매운 라면 그릇(표지)·식품 생산 라인·라면 진열대·컨테이너 항만(수출)·말린 빨간 고추(매운맛)·조리된 라면으로 서로 다른 의미 장면을 담았다. 1차 수급에서 컨테이너 안 차량(브랜드 로고 노출)과 식별 인물·워터마크가 섞인 두 장을 적발해 재수급으로 교체했다. 가짜 공식 로고·읽히는 주장·평면 도식은 없다. 출처는 CREDITS.md."
+      },
+      {
+        "round": "readerFit",
+        "decision": "처음 보는 독자가 표지(라면인데 25%)와 마지막 장(두 번째 불닭이 없다)만 봐도 관전 포인트를 잡도록 했다. 약어를 쓰지 않았고 영업이익률은 explainers로 풀었다. 발행 게이트의 약어·체크리스트 문구 검사(validate_contract_readability) 통과를 확인했다."
+      },
+      {
+        "round": "reevaluation",
+        "decision": "세 심판의 수정(결론 교체·S4 집중도 재정의·매출/마진 분리·해외 분모 정직화·이미지 2장 교체)을 모두 반영한 뒤 다시 검토했다. build_carousel_contracts.py --dry-run 의 레이아웃 가드와 기획/토론 게이트 기준으로 발행 가능하다. 공개 발행(hfMedia)과 landing push 는 운영자 눈검수·승인 후 진행한다."
+      }
+    ]
+  }
+}
