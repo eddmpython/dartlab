@@ -12,7 +12,7 @@ caption: |
   그래서 CrowdStrike를 볼 때 핵심은 "좋은 보안주인가"보다 더 좁습니다.
   Falcon이 고객의 보안 운영체제처럼 더 많은 모듈을 묶고 있는지 봐야 합니다.
 
-  FY2027 1분기 기준 ARR은 55억1000만달러였습니다.
+  회계연도 2027년 1분기, 즉 2026년 4월 30일에 끝난 분기 기준 ARR은 55억1000만달러였습니다.
   순신규 ARR은 2억5600만달러, free cash flow는 4억6800만달러였습니다.
   또 구독 고객 중 6개 이상 모듈을 쓰는 비중은 51%라고 회사가 밝혔습니다.
 
@@ -28,13 +28,15 @@ explainers:
     body: "Annual Recurring Revenue의 약자입니다. 구독형 소프트웨어 회사가 반복적으로 기대할 수 있는 연간 매출 규모를 보는 지표입니다."
   - term: "Agentic SOC"
     body: "보안 분석가가 하던 경보 분류, 조사, 대응 일부를 AI 에이전트가 보조하거나 자동화하는 운영 모델입니다."
+  - term: "회계연도"
+    body: "기업이 실적을 끊어 보는 1년 기준입니다. CrowdStrike의 회계연도 2027년 1분기는 달력상 2026년 4월 30일에 끝난 분기입니다."
 relatedNews:
   - title: "CrowdStrike Reports First Quarter Fiscal Year 2027 Financial Results"
     source: "CrowdStrike"
     date: "2026-06-03"
     url: "https://ir.crowdstrike.com/news-releases/news-release-details/crowdstrike-reports-first-quarter-fiscal-year-2027-financial"
     track: "official"
-    description: "ARR, 순신규 ARR, free cash flow, 모듈 채택률의 공식 근거입니다."
+    description: "2026년 4월 30일 종료 분기의 ARR, 순신규 ARR, free cash flow, 모듈 채택률 공식 근거입니다."
   - title: "CrowdStrike Launches Charlotte AI AgentWorks Ecosystem"
     source: "CrowdStrike"
     date: "2026-03-25"
@@ -47,7 +49,7 @@ relatedNews:
     url: "https://www.crowdstrike.com/en-us/platform/charlotte-ai/charlotte-ai-agentworks/"
     track: "official"
     description: "AI 에이전트 기반 SOC 자동화 제품 맥락을 확인하는 공식 제품 설명입니다."
-pinnedComment: "투자 권유 아님. 출처: CrowdStrike FY2027 1분기 실적 발표(2026.6.3), Charlotte AI AgentWorks 공식 발표(2026.3.25). ARR과 free cash flow는 회사 발표 기준이며, 보안 수요가 곧바로 장기 수익률을 보장하지 않습니다."
+pinnedComment: "투자 권유 아님. 출처: CrowdStrike 2026년 4월 30일 종료 분기 실적 발표(2026.6.3), Charlotte AI AgentWorks 공식 발표(2026.3.25). ARR과 free cash flow는 회사 발표 기준이며, 보안 수요가 곧바로 장기 수익률을 보장하지 않습니다."
 slides:
   - layout: editorial
     date: "2026. 06. 29"
@@ -58,7 +60,7 @@ slides:
     kicker: "구독 기반"
     bigNumber: "5.51"
     unit: "B$"
-    context: "FY2027 1분기 ARR은 55억1000만달러였습니다. 반복 매출 규모가 플랫폼 채택의 첫 온도계입니다."
+    context: "2026년 4월 30일 종료 분기 기준 ARR은 55억1000만달러였습니다. 반복 매출 규모가 플랫폼 채택의 첫 온도계입니다."
     image: scene-02-number-evidence
   - layout: editorialStat
     kicker: "새로 붙은 반복매출"
