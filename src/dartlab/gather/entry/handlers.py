@@ -422,7 +422,7 @@ def handleFlowMany(
     parallelRaw = kwargs.pop("parallel", None)
     parallel = min(len(targets), 4) if parallelRaw is None else max(1, int(parallelRaw) or 1)
 
-    async def _fetchOne(stockCode: str, semaphore: asyncio.Semaphore) -> pl.DataFrame:
+    async def _fetchOne(stockCode: str, semaphore: asyncio.Semaphore, bar: Any) -> pl.DataFrame:
         async with semaphore:
             raw = await flowSource.fetch(
                 stockCode,
@@ -438,6 +438,7 @@ def handleFlowMany(
                 full=bool(full),
                 proxy=proxy,
             )
+        bar.update(item=stockCode, advance=1)  # 종목 단위 진행 (SSOT core.progress)
         if not raw:
             return pl.DataFrame()
         df = pl.DataFrame(raw).with_columns(pl.lit(stockCode).alias("stockCode"))
@@ -446,8 +447,11 @@ def handleFlowMany(
         return df.select(["stockCode", *[col for col in df.columns if col != "stockCode"]])
 
     async def _runMany() -> pl.DataFrame:
+        from dartlab.core.progress import progressBar
+
         semaphore = asyncio.Semaphore(parallel)
-        frames = await asyncio.gather(*(_fetchOne(stockCode, semaphore) for stockCode in targets))
+        with progressBar(len(targets), desc="수급 수집", detailed=True) as bar:
+            frames = await asyncio.gather(*(_fetchOne(stockCode, semaphore, bar) for stockCode in targets))
         frames = [frame for frame in frames if not frame.is_empty()]
         if not frames:
             return pl.DataFrame()
