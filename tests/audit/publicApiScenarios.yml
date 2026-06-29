@@ -57,6 +57,7 @@ public_api:
     - governance
     - growth
     - insider
+    - ipo
     - liquidity
     - macroBeta
     - network
@@ -204,6 +205,10 @@ scenarios:
     suites: [nightly]
     budget: scan.axis.default
     covers: [scan.axis.insider]
+  scan.axis.ipo:
+    suites: [nightly]
+    budget: scan.axis.default
+    covers: [scan.axis.ipo]
   scan.axis.liquidity:
     suites: [nightly]
     budget: scan.axis.default

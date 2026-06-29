@@ -214,6 +214,13 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="전 상장사 신규수주 flow (book-to-bill, 모멘텀, 계약상대 집중도) — 단일판매·공급계약 선행지표",
         example='scan("orders")',
     ),
+    "ipo": _AxisEntry(
+        module="dartlab.scan.ipo",
+        fn="scanIpo",
+        label="신규상장",
+        description="최근 신규상장 IPO 발굴 (증권신고서 지분증권) — 공모가밴드·청약일·적용 PER·할인율·항등식 검증",
+        example='scan("ipo")',
+    ),
 }
 
 
@@ -295,6 +302,11 @@ _ALIASES: dict[str, str] = {
     "수주": "orders",
     "수주현황": "orders",
     "공급계약": "orders",
+    # ipo
+    "신규상장": "ipo",
+    "공모": "ipo",
+    "아이피오": "ipo",
+    "증권신고서": "ipo",
 }
 
 
