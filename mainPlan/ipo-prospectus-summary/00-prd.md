@@ -2,7 +2,7 @@
 
 > 출처: GitHub Discussion #70 (zias7039, 2026-06-26) "증권신고서 기반 IPO 수요예측 핵심 데이터 요약".
 > 기획 방식: 실측(probe1~4) + 전문 에이전트 4인 아키텍처 토론(입장→토론→종합→적대비판→최종) + 5렌즈 우수성 평가(운영·UI/UX·엔진혁신·속도·프로덕트).
-> 상태: **개념확립 완료(2026-06-29~30, 발행사 7곳 교차)** — `tests/_attempts/ipo/`. P0 판별기 ✅(3조건·오분류 0). P1 섹션앵커 ✅(FULL 7곳 100%, 채무증권 negative=발행공시 클래스 공통). P2 ✅ cat1·2·3·5·6 일반화+항등식: **cat3 밸류 이중 항등식 6/6 real IPO EXACT(하드케이스 돌파)**·cat5 자산=부채+자본 6/6·cat4 Σ배정 5/5·cat1 공모가×주식수 복구 7/7. 잔여=cat4 보호예수 워터폴·확정공모가 트랙. 우수성 평가 반영 개정본(v2). 운영자 결정 6건 대기. order-flow-scan·professional-report-engine 동급 활성.
+> 상태: **본진 졸업 완료(2026-06-30)** — 개념확립(`tests/_attempts/ipo/`)을 src 본진 배치: `providers/dart/securitiesRegistration.py`(classifyIpo+parseIpoProspectus, a8b4c23b7) + `scan/ipo.py`(`dartlab.scan("ipo")`, a5bdfda35). unit 15·9섹션 docstring·architecture l0-l15 green. **라이브 검증**: scan("ipo") 최근 20일 8개사 발굴·파싱(캐시 미보유 신규 발행사도 항등식 검증). 답글 초안 `DISCUSSION_REPLY_DRAFT.md`(게시 운영자 승인 대기). 잔여: cat4 보호예수 워터폴·확정공모가 트랙·story narrative 리포트(report-engine arc)·landing /report ipo(UI). 운영자 결정 6건 일부 자체 기본값으로 진행.
 > ★이름 정정: "수요예측 요약"→**"공모 신고서 분석"**. 수요예측 *결과변수*(기관 경쟁률·의무보유확약·확정공모가 밴드내 위치)는 사후공시라 본 트랙의 6카테고리(사전 신고서)에 없음 → **카테고리7 후속트랙**으로 분리(§0.1).
 
 ---
