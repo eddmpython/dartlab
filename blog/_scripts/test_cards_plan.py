@@ -60,6 +60,8 @@ def test_build_company_plan_clamps_to_min_five_images(tmp_path: Path) -> None:
     plan = cp.build_company_post_plan(post)
     assert plan["target"]["slug"] == "999999-test"
     assert plan["target"]["assetRoot"] == "sns/assets/999999"
+    assert plan["planning"]["narrativeContract"]["spine"] == "훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문"
+    assert "체크리스트" in " ".join(plan["planning"]["narrativeContract"]["rules"])
     assert len(plan["imagePlan"]) == 5
     assert all("/cards" in row["prompt"] for row in plan["imagePlan"])
     assert all("Asset key:" in row["prompt"] for row in plan["imagePlan"])
@@ -74,6 +76,14 @@ def test_plan_validation_requires_passed_review(tmp_path: Path) -> None:
     errors = cp.validate_plan(planned, require_passed=True)
     assert any("reviewGate.status" in err for err in errors)
     assert cp.validate_plan(_mark_passed(planned), require_passed=True) == []
+
+
+def test_plan_validation_requires_narrative_contract(tmp_path: Path) -> None:
+    post = _write_post(tmp_path / "blog", "01-999999-test", slides=_TWO_SLIDES)
+    planned = cp.build_company_post_plan(post, count=6)
+    planned["planning"].pop("narrativeContract")
+    errors = cp.validate_plan(planned, require_passed=False)
+    assert any("planning.narrativeContract" in err for err in errors)
 
 
 def test_contract_plan_gate_finds_plan_by_slug(tmp_path: Path) -> None:

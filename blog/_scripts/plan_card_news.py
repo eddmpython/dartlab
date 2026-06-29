@@ -45,6 +45,7 @@ def write_plan(plan: dict, path: Path) -> None:
     path.write_text(json.dumps(plan, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {rel(path)}")
     print(f"imagePlan={len(plan.get('imagePlan', []))} reviewGate={plan.get('reviewGate', {}).get('status')}")
+    print("먼저 planning.narrativeContract 기준으로 슬라이드가 한 문장처럼 이어지는지 닫는다.")
     print("다음: imagePlan[].prompt 를 image_gen 으로 한 장씩 생성하고, imagegen.extractCommand 로 저장한다.")
 
 

@@ -32,6 +32,12 @@ REQUIRED_REVIEW_ROUNDS = (
     "readerFit",
     "reevaluation",
 )
+NARRATIVE_RULES = (
+    "한 주제 안에서 훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문으로 이어진다.",
+    "각 슬라이드는 앞장의 주장이나 숫자를 받아 다음 장으로 넘겨야 한다.",
+    "서로 끊긴 체크리스트, '다음에는 이것을 본다'식 나열, 새 항목만 덧붙이는 끝맺음은 실패다.",
+    "마지막 장은 새 정보를 추가하는 장이 아니라 앞선 주장과 근거를 종합해 독자가 남길 판단 질문으로 닫는다.",
+)
 
 
 def rel(path: Path) -> str:
@@ -111,6 +117,13 @@ def scene_role(order: int, count: int, slide: dict[str, Any] | None) -> str:
     if slide and slide.get("layout") == "editorialBeat":
         return "narrative-turn"
     return "business-context"
+
+
+def narrative_contract() -> dict[str, Any]:
+    return {
+        "spine": "훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문",
+        "rules": list(NARRATIVE_RULES),
+    }
 
 
 def scene_for(role: str, topic: str, corp_name: str, slide: dict[str, Any] | None) -> str:
@@ -213,7 +226,7 @@ def review_gate(status: str = "planned") -> dict[str, Any]:
         "requiredRounds": [
             {
                 "id": "writerPanel",
-                "purpose": "훅 강도, 서사 스파인, 블로그 산문과 카드 흐름의 일치 여부를 본다.",
+                "purpose": "훅 강도, 서사 스파인, 앞장-다음장 연결, 블로그 산문과 카드 흐름의 일치 여부를 본다. 체크리스트식 나열이면 실패다.",
                 "status": "todo",
             },
             {
@@ -228,7 +241,7 @@ def review_gate(status: str = "planned") -> dict[str, Any]:
             },
             {
                 "id": "readerFit",
-                "purpose": "처음 보는 독자가 첫 장과 마지막 장만 봐도 관전 포인트를 이해하는지 본다.",
+                "purpose": "처음 보는 독자가 첫 장부터 마지막 장까지 끊기지 않고 읽으며 관전 포인트를 이해하는지 본다.",
                 "status": "todo",
             },
             {
@@ -268,6 +281,7 @@ def build_company_post_plan(post_dir: Path, *, count: int | None = None) -> dict
             "cardThesis": str(carousel.get("caption") or title).strip().splitlines()[0],
             "audienceQuestion": f"{corp_name} 이야기를 /cards에서 넘길 때 첫 장에서 무엇을 궁금해해야 하나?",
             "blogAndCardsTogether": True,
+            "narrativeContract": narrative_contract(),
             "bodyPreview": " ".join(body.strip().split())[:360],
         },
         "carousel": {
@@ -350,6 +364,7 @@ def build_issue_plan(issue_dir: Path, *, count: int | None = None) -> dict[str, 
             "cardThesis": str(data.get("caption") or title).strip().splitlines()[0],
             "audienceQuestion": f"{title} 이슈를 /cards에서 볼 때 마지막에 무엇을 확인해야 하나?",
             "blogAndCardsTogether": False,
+            "narrativeContract": narrative_contract(),
             "bodyPreview": "",
         },
         "carousel": {
@@ -395,6 +410,18 @@ def validate_plan(plan: dict[str, Any], *, require_passed: bool = True, require_
     for field in ("blogThesis", "cardThesis", "audienceQuestion"):
         if not str(planning.get(field, "")).strip():
             errors.append(f"{slug}: planning.{field} 누락")
+    narrative = planning.get("narrativeContract")
+    if not isinstance(narrative, dict):
+        errors.append(f"{slug}: planning.narrativeContract 누락")
+    else:
+        rules = narrative.get("rules")
+        if not isinstance(rules, list):
+            errors.append(f"{slug}: planning.narrativeContract.rules 는 리스트여야 함")
+            rules = []
+        rule_texts = {str(rule).strip() for rule in rules}
+        missing_rules = [rule for rule in NARRATIVE_RULES if rule not in rule_texts]
+        if missing_rules:
+            errors.append(f"{slug}: planning.narrativeContract 필수 규칙 누락 {len(missing_rules)}건")
     image_plan = plan.get("imagePlan")
     if not isinstance(image_plan, list):
         errors.append(f"{slug}: imagePlan 은 리스트여야 함")
