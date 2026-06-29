@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import logging
 import re
-import sys
 
 import polars as pl
 
@@ -167,33 +166,11 @@ async def fetchThemeStocks(client: GatherHttpClient, themeNo: int, *, limit: int
     return rows if limit is None else rows[:limit]
 
 
-def _themeProgress():
-    """수집 진행바 — 터미널/Jupyter 는 SSOT getProgress(rich), 마리모는 force_terminal 로 라이브.
-
-    마리모(stdout=marimo._messaging.streams)는 TTY·IPython 둘 다 아니라 rich 가 라이브를
-    억제하지만, force_terminal=True 면 ANSI 프레임을 emit 하고 마리모가 이를 렌더한다(실측 확인).
-    """
-    if type(sys.stdout).__module__.startswith("marimo"):
-        from rich.console import Console
-        from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeRemainingColumn
-
-        return Progress(
-            TextColumn("[cyan]{task.description}"),
-            BarColumn(),
-            MofNCompleteColumn(),
-            TimeRemainingColumn(),
-            console=Console(force_terminal=True),
-        )
-    from dartlab.core.logger import getProgress
-
-    return getProgress()
-
-
 async def _crawlThemes(client: GatherHttpClient, selected: list[tuple[int, str]], *, progress: bool) -> list[dict]:
-    """선택 테마들의 편입종목 순회 수집 — 다중 테마(>1)면 SSOT rich 진행바.
+    """선택 테마들의 편입종목 순회 수집 — 다중 테마(>1)면 SSOT core.progress 진행바.
 
-    진행바는 ``core.logger.getProgress`` (rich) 재사용 — 터미널·Jupyter 는 라이브,
-    마리모는 force_terminal 로 라이브 ANSI (둘 다 실측 확인). 단일/리스트는 바 없음.
+    진행 표시는 ``dartlab.core.progress`` (rich 기반, 환경 자동 감지) 재사용 —
+    터미널/Jupyter/마리모 라이브, CI/파이프/테스트 무음. detailed 로 현재 테마명 표시.
     """
     total = len(selected)
     records: list[dict] = []
@@ -202,12 +179,14 @@ async def _crawlThemes(client: GatherHttpClient, selected: list[tuple[int, str]]
             for stock in await fetchThemeStocks(client, no):
                 records.append({"themeNo": no, "themeName": name, **stock})
         return records
-    with _themeProgress() as prog:
-        task = prog.add_task("테마 수집", total=total)
+    from dartlab.core.progress import progressBar
+
+    with progressBar(total, desc="테마 수집", detailed=True) as bar:
         for no, name in selected:
+            bar.update(item=name)
             for stock in await fetchThemeStocks(client, no):
                 records.append({"themeNo": no, "themeName": name, **stock})
-            prog.advance(task)
+            bar.advance()
     return records
 
 

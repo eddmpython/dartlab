@@ -130,23 +130,6 @@ def test_collectTheme_all():
     assert df.height == 3
 
 
-def test_themeProgress_marimoForcesTerminal():
-    """마리모 stdout 모듈 감지 시 force_terminal console (라이브 ANSI). 그 외엔 SSOT getProgress."""
-    import sys
-
-    class _MarimoStream:
-        pass
-
-    _MarimoStream.__module__ = "marimo._messaging.streams"
-    orig = sys.stdout
-    sys.stdout = _MarimoStream()
-    try:
-        prog = naverTheme._themeProgress()
-    finally:
-        sys.stdout = orig
-    assert prog.console.is_terminal is True
-
-
 def test_collectTheme_noMatchEmpty():
     """매칭 0 (예: 6자리 종목코드) → 빈 DataFrame, 스키마 유지, 크래시 없음."""
     client = _FakeClient(_LIST_HTML, {})
