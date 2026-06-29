@@ -156,13 +156,46 @@ AXIS_REGISTRY: dict[str, GatherAxisEntry] = {
     "naverTheme": GatherAxisEntry(
         label="네이버 테마 분류 (KR, 로컬 개인용)",
         description=(
-            "네이버 금융 테마 분류 (KR). 기본(target 없음)은 전 테마(약 280)를 개별 수집해 하나의 "
-            "long DataFrame(themeNo/themeName/stockCode/stockName/reason)으로 결합. 'list'=테마 목록만, "
-            "테마명/번호=해당 테마만 필터. 출처를 이름에 명시(naverTheme) — 다른 테마 소스 확장 여지. "
-            "⚠ 네이버 편집저작물 — 로컬 개인 분석은 무방하나 재배포·공개"
-            "(HF 적재·서비스 배포·제3자 공개)는 DB권(저작권법 제4장)·저작권 문제 발생 가능."
+            "네이버 금융 테마 분류 (KR). 기본(target 없음)은 전 테마(약 266)를 개별 수집해 하나의 "
+            "long DataFrame(groupNo/groupName/stockCode/stockName/reason+collectedAt)으로 결합 + "
+            "7일 신선도 로컬 저장. 'list'=테마 목록, 테마명/번호=해당만. maxAgeDays·refresh kwarg. "
+            "⚠ 네이버 편집저작물 — 로컬 개인 분석은 무방하나 재배포·공개는 DB권(저작권법 제4장)·저작권 문제 가능."
         ),
         example='gather("naverTheme") / gather("naverTheme", "list") / gather("naverTheme", "2차전지")',
+        targetRequired=False,
+        targetType="keyword",
+    ),
+    "naverIndustry": GatherAxisEntry(
+        label="네이버 업종 분류 (KR, 로컬 개인용)",
+        description=(
+            "네이버 금융 업종(upjong) 분류 (KR). 테마와 동일 sise_group 구조 — 기본은 전 업종(약 79)을 "
+            "개별 수집해 long DataFrame(groupNo/groupName/stockCode/stockName/reason+collectedAt) 결합 + "
+            "7일 신선도 저장. 'list'=업종 목록, 업종명/번호=해당만. 업종은 편입사유(reason) 없음. "
+            "⚠ 네이버 편집저작물 — 로컬 개인용, 재배포·공개는 DB권·저작권 문제 가능."
+        ),
+        example='gather("naverIndustry") / gather("naverIndustry", "list") / gather("naverIndustry", "반도체")',
+        targetRequired=False,
+        targetType="keyword",
+    ),
+    "naverEtf": GatherAxisEntry(
+        label="네이버 ETF 목록 (KR, 로컬 개인용)",
+        description=(
+            "네이버 금융 ETF 상품 목록 + 현재가 스냅샷 (약 1142). 단일 JSON 호출이라 저장 없이 라이브 "
+            "(장중 가격 신선). code/name/price/changeRate/nav/marketCap 등. target=종목명 contains 필터. "
+            "⚠ 네이버 데이터 — 로컬 개인용, 재배포·공개는 DB권·저작권 문제 가능."
+        ),
+        example='gather("naverEtf") / gather("naverEtf", "KODEX")',
+        targetRequired=False,
+        targetType="keyword",
+    ),
+    "naverEtn": GatherAxisEntry(
+        label="네이버 ETN 목록 (KR, 로컬 개인용)",
+        description=(
+            "네이버 금융 ETN 상품 목록 + 현재가 스냅샷 (약 377). 단일 JSON 호출이라 저장 없이 라이브. "
+            "code/name/price/changeRate/marketCap 등. target=종목명 contains 필터. "
+            "⚠ 네이버 데이터 — 로컬 개인용, 재배포·공개는 DB권·저작권 문제 가능."
+        ),
+        example='gather("naverEtn") / gather("naverEtn", "원유")',
         targetRequired=False,
         targetType="keyword",
     ),
@@ -209,6 +242,9 @@ API_KEY_INFO: dict[str, str] = {
     "narrative": "불필요 (Phase A/D HF + 로컬 archive)",
     "research": "불필요 (명시 6자리코드 무키, 제목→회사명 fallback 시 DART_API_KEY 로 커버리지↑)",
     "naverTheme": "불필요 (네이버 직독·로컬 개인용 — 재배포 금지)",
+    "naverIndustry": "불필요 (네이버 직독·로컬 개인용 — 재배포 금지)",
+    "naverEtf": "불필요 (네이버 직독·로컬 개인용 — 재배포 금지)",
+    "naverEtn": "불필요 (네이버 직독·로컬 개인용 — 재배포 금지)",
     "dartDoc": "불필요 (viewer 무인증 단건 fetch)",
     "calendar": "DART_API_KEY (Company.disclosure 사용)",
 }
@@ -225,6 +261,9 @@ AXIS_ALIASES: dict[str, str] = {
     "피어": "peers",
     "동종업종": "peers",
     "네이버테마": "naverTheme",
+    "네이버업종": "naverIndustry",
+    "네이버ETF": "naverEtf",
+    "네이버ETN": "naverEtn",
     "일정": "calendar",
     "캘린더": "calendar",
     "내러티브": "narrative",

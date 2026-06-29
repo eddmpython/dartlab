@@ -18,7 +18,7 @@ g = dartlab.gather.getDefaultGather()  # Form B — 축이 아닌 고급 수집�
 g.dividends("005930"); g.collect("005930")
 ```
 
-- **Form A** (`dartlab.gather(axis, target, **kwargs)`) — 공개 12 축 + 베타 2 축(hidden). 축 정본 = `entry/dispatch.py` 의 `AXIS_REGISTRY`.
+- **Form A** (`dartlab.gather(axis, target, **kwargs)`) — 공개 13 축 + 베타 2 축(hidden). 축 정본 = `entry/dispatch.py` 의 `AXIS_REGISTRY`.
 - **Form B** (`getDefaultGather()` → `Gather`) — dividends/splits/majorShareholders/collect 등 축 미등록 수집기.
 
 ## 모듈 지도 (실제 레이아웃)
@@ -27,7 +27,7 @@ g.dividends("005930"); g.collect("005930")
 |------|------|
 | `entry/` | `dartlab.gather()` 콜러블 — `GatherEntry`(main) · `AXIS_REGISTRY`/dispatch · axis `handlers` |
 | `engine.py` + `mixins/` | `Gather` 클래스 (Form B). mixin = price · info · news · macro · collect · context |
-| `sources/` | L1 fetcher — `price.py` · `flow.py` · `news.py`(+ `naverNews`·`newsIo`·`newsSchema`·`newsSources`) · `history.py` · `insider.py` · `ownership.py` · `sector.py` · `naverTheme.py`(로컬용) · `gdelt.py` · `reader.py` · `search.py` |
+| `sources/` | L1 fetcher — `price.py` · `flow.py` · `news.py`(+ `naverNews`·`newsIo`·`newsSchema`·`newsSources`) · `history.py` · `insider.py` · `ownership.py` · `sector.py` · `naverGroups/`(테마·업종 `groups`, ETF/ETN `products` — 로컬용) · `gdelt.py` · `reader.py` · `search.py` |
 | `domains/` | provider 도메인 — `fdr` · `fmp` · `krx` · `naver` · `naverGlobal` · `yahooChart` · `fallback` |
 | `transforms/` | 수집 후 가공 — `adjustPrice`(수정주가) · `indicatorDispatch`(기술지표) · `corporateAction` · `pit` · `macro` |
 | `original/` | DART 정기+비정기 document.xml zip 원본 백업 (gather 자체포함, `data/original/` 로컬, HF 미공개) |
@@ -66,7 +66,7 @@ dartlab.gather.writeEnvExample()                 # .env.example 생성 (레지�
 
 ## 법적 고지 (데이터 출처)
 
-네이버 등 외부 사이트에서 **라이브 직독**하는 축(`price`·`flow`·`ownership`·`sector`·`peers`·`naverTheme`)은
+네이버 등 외부 사이트에서 **라이브 직독**하는 축(`price`·`flow`·`ownership`·`sector`·`peers`·`naverTheme`·`naverIndustry`)은
 dartlab 이 데이터를 호스팅·재배포하지 않고 호출 시점에 원본에서 직접 당겨온다 (라이브러리 클라이언트).
 
 - **로컬 개인 사용까지는 문제되지 않는다** — 본인 컴퓨터에서 분석 용도로 라이브 수집해 쓰는 것은 무방하다.

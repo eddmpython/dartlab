@@ -1180,6 +1180,19 @@ def handleDartDoc(
     return _fetchDartDoc(target)
 
 
+def _handleNaverGroup(g: Any, groupKey: str, target: str | None, **kwargs: Any) -> pl.DataFrame:
+    """네이버 그룹(테마/업종) 공통 dispatch — naverGroups.groups.collectGroup 위임."""
+    from ..infra.http import runAsync
+    from ..sources.naverGroups import groups
+
+    progress = bool(kwargs.pop("progress", True))
+    maxAgeDays = float(kwargs.pop("maxAgeDays", 7.0))
+    refresh = bool(kwargs.pop("refresh", False))
+    return runAsync(
+        groups.collectGroup(g._client, groupKey, target, progress=progress, maxAgeDays=maxAgeDays, refresh=refresh)
+    )
+
+
 def handleNaverTheme(
     g: Any,
     target: str | None,
@@ -1192,11 +1205,11 @@ def handleNaverTheme(
 ) -> pl.DataFrame:
     """naverTheme axis dispatch — 네이버 금융 테마 분류 (KR, 로컬 개인용).
 
-    Capabilities: target 분기(None/all=전수 결합·list=목록·테마명/번호=필터) → naverTheme.collectTheme.
+    Capabilities: target 분기(None/all=전수 결합·list=목록·테마명/번호=필터) → groups.collectGroup("theme").
     AIContext: gather("naverTheme", ...) 본체 — 네이버 편집저작물 라이브 직독, 재배포 금지(README 고지).
-    Guide: 출처를 이름에 명시(다른 테마 소스 확장 여지). 매칭 0 이면 빈 DataFrame (크래시 없음).
+    Guide: 출처를 이름에 명시(naverGroups 패키지·다른 테마 소스 확장 여지). 매칭 0 이면 빈 DataFrame.
     When: GatherEntry._run("naverTheme", target, ...) lookup 시.
-    How: runAsync(naverTheme.collectTheme(g._client, target)) — 소스가 파싱·크롤·DataFrame 책임.
+    How: _handleNaverGroup(g, "theme", target) → groups.collectGroup.
 
     Args:
         g: Gather 싱글턴 — ``g._client`` 공통 HTTP client 재사용(proxy scope 상속).
@@ -1206,7 +1219,7 @@ def handleNaverTheme(
             refresh (강제 재크롤, 기본 False). 그 외 무시.
 
     Returns:
-        pl.DataFrame — target "list": themeNo/themeName/url, 그 외: themeNo/themeName/stockCode/stockName/reason.
+        pl.DataFrame — "list": groupNo/groupName/url, 그 외: groupNo/groupName/stockCode/stockName/reason.
 
     Raises:
         없음 — 빈/실패 결과는 빈 DataFrame.
@@ -1220,14 +1233,142 @@ def handleNaverTheme(
 
     See Also:
         main.GatherEntry._run : dispatch caller.
-        sources.naverTheme.collectTheme : 본 handler 가 호출하는 backend.
+        sources.naverGroups.groups.collectGroup : 본 handler 가 호출하는 backend.
+    """
+    return _handleNaverGroup(g, "theme", target, **kwargs)
+
+
+def handleNaverIndustry(
+    g: Any,
+    target: str | None,
+    *,
+    market: str,  # noqa: ARG001 — KR 전용
+    start: str | None,  # noqa: ARG001
+    end: str | None,  # noqa: ARG001
+    marketExplicit: bool,  # noqa: ARG001
+    **kwargs: Any,
+) -> pl.DataFrame:
+    """naverIndustry axis dispatch — 네이버 금융 업종(upjong) 분류 (KR, 로컬 개인용).
+
+    Capabilities: target 분기(None/all=전수 결합·list=목록·업종명/번호=필터) → groups.collectGroup("industry").
+    AIContext: gather("naverIndustry", ...) 본체 — 테마와 동일 sise_group 구조(편입사유는 없음).
+    Guide: 업종은 편입사유(reason) 없이 편입종목만. 매칭 0 이면 빈 DataFrame.
+    When: GatherEntry._run("naverIndustry", target, ...) lookup 시.
+    How: _handleNaverGroup(g, "industry", target) → groups.collectGroup.
+
+    Args:
+        g: Gather 싱글턴 — ``g._client`` 공통 HTTP client 재사용.
+        target: None/"all"=전수 결합 · "list"=목록 · 업종명/번호=해당 업종만.
+        market/start/end/marketExplicit: 무시 (KR 네이버 전용).
+        **kwargs: progress (기본 True) · maxAgeDays (전수 저장 신선도, 기본 7) · refresh (기본 False).
+
+    Returns:
+        pl.DataFrame — "list": groupNo/groupName/url, 그 외: groupNo/groupName/stockCode/stockName/reason.
+
+    Raises:
+        없음 — 빈/실패 결과는 빈 DataFrame.
+
+    Example::
+
+        df = handleNaverIndustry(g, "list", market="KR", start=None, end=None, marketExplicit=False)
+
+    Requires:
+        Gather 인스턴스 + 네트워크 (finance.naver.com 무인증). 산출물 재배포 금지(DB권/저작권).
+
+    See Also:
+        main.GatherEntry._run : dispatch caller.
+        sources.naverGroups.groups.collectGroup : 본 handler 가 호출하는 backend.
+    """
+    return _handleNaverGroup(g, "industry", target, **kwargs)
+
+
+def handleNaverEtf(
+    g: Any,
+    target: str | None,
+    *,
+    market: str,  # noqa: ARG001 — KR 전용
+    start: str | None,  # noqa: ARG001
+    end: str | None,  # noqa: ARG001
+    marketExplicit: bool,  # noqa: ARG001
+    **kwargs: Any,  # noqa: ARG001
+) -> pl.DataFrame:
+    """naverEtf axis dispatch — 네이버 ETF 상품 목록 + 현재가 스냅샷 (KR, 로컬 개인용).
+
+    Capabilities: 단일 JSON 호출 → 약 1142 ETF (code/name/price/changeRate/nav/marketCap...). target=종목명 필터.
+    AIContext: gather("naverEtf", ...) 본체 — 그룹과 달리 단일 호출·장중 가격 라이브(저장 없음).
+    Guide: target 있으면 종목명 contains. ETF 가격은 장중 변동이라 매 호출 신선.
+    When: GatherEntry._run("naverEtf", target, ...) lookup 시.
+    How: runAsync(products.collectEtf(g._client, target)).
+
+    Args:
+        g: Gather 싱글턴.
+        target: 종목명 부분 일치 필터 (None=전체).
+        market/start/end/marketExplicit/**kwargs: 무시.
+
+    Returns:
+        pl.DataFrame — code/name/price/changeRate/nav/return3m/volume/amount/marketCap/tabCode.
+
+    Raises:
+        없음 — 빈/실패는 빈 DataFrame.
+
+    Example::
+
+        df = handleNaverEtf(g, "KODEX", market="KR", start=None, end=None, marketExplicit=False)
+
+    Requires:
+        Gather 인스턴스 + 네트워크 (finance.naver.com 무인증). 산출물 재배포 금지(DB권/저작권).
+
+    See Also:
+        main.GatherEntry._run : dispatch caller.
+        sources.naverGroups.products.collectEtf : 본 handler 가 호출하는 backend.
     """
     from ..infra.http import runAsync
-    from ..sources import naverTheme
+    from ..sources.naverGroups import products
 
-    progress = bool(kwargs.pop("progress", True))
-    maxAgeDays = float(kwargs.pop("maxAgeDays", 7.0))
-    refresh = bool(kwargs.pop("refresh", False))
-    return runAsync(
-        naverTheme.collectTheme(g._client, target, progress=progress, maxAgeDays=maxAgeDays, refresh=refresh)
-    )
+    return runAsync(products.collectEtf(g._client, target))
+
+
+def handleNaverEtn(
+    g: Any,
+    target: str | None,
+    *,
+    market: str,  # noqa: ARG001 — KR 전용
+    start: str | None,  # noqa: ARG001
+    end: str | None,  # noqa: ARG001
+    marketExplicit: bool,  # noqa: ARG001
+    **kwargs: Any,  # noqa: ARG001
+) -> pl.DataFrame:
+    """naverEtn axis dispatch — 네이버 ETN 상품 목록 + 현재가 스냅샷 (KR, 로컬 개인용).
+
+    Capabilities: 단일 JSON 호출 → 약 377 ETN (code/name/price/changeRate/marketCap...). target=종목명 필터.
+    AIContext: gather("naverEtn", ...) 본체 — 단일 호출·장중 가격 라이브(저장 없음).
+    Guide: target 있으면 종목명 contains. ETN 가격은 장중 변동이라 매 호출 신선.
+    When: GatherEntry._run("naverEtn", target, ...) lookup 시.
+    How: runAsync(products.collectEtn(g._client, target)).
+
+    Args:
+        g: Gather 싱글턴.
+        target: 종목명 부분 일치 필터 (None=전체).
+        market/start/end/marketExplicit/**kwargs: 무시.
+
+    Returns:
+        pl.DataFrame — code/name/price/changeRate/volume/amount/marketCap/listedShares/prevClose/high/low.
+
+    Raises:
+        없음 — 빈/실패는 빈 DataFrame.
+
+    Example::
+
+        df = handleNaverEtn(g, "원유", market="KR", start=None, end=None, marketExplicit=False)
+
+    Requires:
+        Gather 인스턴스 + 네트워크 (finance.naver.com 무인증). 산출물 재배포 금지(DB권/저작권).
+
+    See Also:
+        main.GatherEntry._run : dispatch caller.
+        sources.naverGroups.products.collectEtn : 본 handler 가 호출하는 backend.
+    """
+    from ..infra.http import runAsync
+    from ..sources.naverGroups import products
+
+    return runAsync(products.collectEtn(g._client, target))
