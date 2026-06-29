@@ -31,13 +31,13 @@ from .handlers import (
     handleKrxIndex,
     handleMacro,
     handleNarrative,
+    handleNaverTheme,
     handleNews,
     handleOwnership,
     handlePeers,
     handlePrice,
     handleResearch,
     handleSector,
-    handleTheme,
 )
 
 # axis → handler dispatch 테이블 (G+ P-Q2.2). 새 axis 추가 시:
@@ -57,7 +57,7 @@ _AXIS_DISPATCH: dict[str, Any] = {
     "krxIndex": handleKrxIndex,
     "narrative": handleNarrative,
     "research": handleResearch,
-    "theme": handleTheme,
+    "naverTheme": handleNaverTheme,
     "calendar": handleCalendar,
     "dartDoc": handleDartDoc,
 }

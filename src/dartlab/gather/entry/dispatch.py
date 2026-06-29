@@ -153,15 +153,16 @@ AXIS_REGISTRY: dict[str, GatherAxisEntry] = {
         targetRequired=False,
         targetType="keyword",
     ),
-    "theme": GatherAxisEntry(
-        label="테마 분류 (KR, 로컬 개인용)",
+    "naverTheme": GatherAxisEntry(
+        label="네이버 테마 분류 (KR, 로컬 개인용)",
         description=(
             "네이버 금융 테마 분류 (KR). 기본(target 없음)은 전 테마(약 280)를 개별 수집해 하나의 "
             "long DataFrame(themeNo/themeName/stockCode/stockName/reason)으로 결합. 'list'=테마 목록만, "
-            "테마명/번호=해당 테마만 필터. ⚠ 네이버 편집저작물 — 로컬 개인 분석은 무방하나 재배포·공개"
+            "테마명/번호=해당 테마만 필터. 출처를 이름에 명시(naverTheme) — 다른 테마 소스 확장 여지. "
+            "⚠ 네이버 편집저작물 — 로컬 개인 분석은 무방하나 재배포·공개"
             "(HF 적재·서비스 배포·제3자 공개)는 DB권(저작권법 제4장)·저작권 문제 발생 가능."
         ),
-        example='gather("theme") / gather("theme", "list") / gather("theme", "2차전지")',
+        example='gather("naverTheme") / gather("naverTheme", "list") / gather("naverTheme", "2차전지")',
         targetRequired=False,
         targetType="keyword",
     ),
@@ -207,7 +208,7 @@ API_KEY_INFO: dict[str, str] = {
     "krxIndex": "불필요 (기본 HF SSOT, apiKey 명시 시 KRX idx OpenAPI 직접 호출)",
     "narrative": "불필요 (Phase A/D HF + 로컬 archive)",
     "research": "불필요 (명시 6자리코드 무키, 제목→회사명 fallback 시 DART_API_KEY 로 커버리지↑)",
-    "theme": "불필요 (네이버 직독·로컬 개인용 — 재배포 금지)",
+    "naverTheme": "불필요 (네이버 직독·로컬 개인용 — 재배포 금지)",
     "dartDoc": "불필요 (viewer 무인증 단건 fetch)",
     "calendar": "DART_API_KEY (Company.disclosure 사용)",
 }
@@ -223,7 +224,7 @@ AXIS_ALIASES: dict[str, str] = {
     "지분": "ownership",
     "피어": "peers",
     "동종업종": "peers",
-    "테마": "theme",
+    "네이버테마": "naverTheme",
     "일정": "calendar",
     "캘린더": "calendar",
     "내러티브": "narrative",

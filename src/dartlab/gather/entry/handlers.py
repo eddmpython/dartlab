@@ -1180,7 +1180,7 @@ def handleDartDoc(
     return _fetchDartDoc(target)
 
 
-def handleTheme(
+def handleNaverTheme(
     g: Any,
     target: str | None,
     *,
@@ -1190,29 +1190,29 @@ def handleTheme(
     marketExplicit: bool,  # noqa: ARG001
     **kwargs: Any,
 ) -> pl.DataFrame:
-    """theme axis dispatch — 네이버 금융 테마 분류 (KR, 로컬 개인용).
+    """naverTheme axis dispatch — 네이버 금융 테마 분류 (KR, 로컬 개인용).
 
-    Capabilities: target 분기(None=리스트·숫자/테마명=편입종목·"all"=전체 long) → naverTheme.collectTheme.
-    AIContext: gather("theme", ...) 본체 — 네이버 편집저작물 라이브 직독, 재배포 금지(README 고지).
-    Guide: 로컬 개인 분석용. 매칭 테마 없으면 빈 DataFrame (크래시 없음).
-    When: GatherEntry._run("theme", target, ...) lookup 시.
+    Capabilities: target 분기(None/all=전수 결합·list=목록·테마명/번호=필터) → naverTheme.collectTheme.
+    AIContext: gather("naverTheme", ...) 본체 — 네이버 편집저작물 라이브 직독, 재배포 금지(README 고지).
+    Guide: 출처를 이름에 명시(다른 테마 소스 확장 여지). 매칭 0 이면 빈 DataFrame (크래시 없음).
+    When: GatherEntry._run("naverTheme", target, ...) lookup 시.
     How: runAsync(naverTheme.collectTheme(g._client, target)) — 소스가 파싱·크롤·DataFrame 책임.
 
     Args:
         g: Gather 싱글턴 — ``g._client`` 공통 HTTP client 재사용(proxy scope 상속).
-        target: None=전체 테마 리스트 · 테마명/번호=편입종목 · "all"=전 테마 long 테이블.
+        target: None/"all"=전수 결합 · "list"=목록 · 테마명/번호=해당 테마만.
         market/start/end/marketExplicit: 무시 (KR 네이버 전용).
         **kwargs: progress (다중 테마 크롤 rich 진행바, 기본 True). 그 외 무시.
 
     Returns:
-        pl.DataFrame — target None: themeNo/themeName/url, 그 외: themeNo/themeName/stockCode/stockName/reason.
+        pl.DataFrame — target "list": themeNo/themeName/url, 그 외: themeNo/themeName/stockCode/stockName/reason.
 
     Raises:
         없음 — 빈/실패 결과는 빈 DataFrame.
 
     Example::
 
-        df = handleTheme(g, "2차전지", market="KR", start=None, end=None, marketExplicit=False)
+        df = handleNaverTheme(g, "2차전지", market="KR", start=None, end=None, marketExplicit=False)
 
     Requires:
         Gather 인스턴스 + 네트워크 (finance.naver.com 무인증). 산출물 재배포 금지(DB권/저작권).
