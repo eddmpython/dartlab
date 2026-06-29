@@ -27,7 +27,7 @@
 <a href="https://github.com/eddmpython/dartlab-desktop/releases/latest/download/DartLab.exe"><img src="https://img.shields.io/badge/Desktop-Windows-38bdf8?style=for-the-badge&labelColor=050811&logo=windows&logoColor=white" alt="Desktop Download"></a>
 </p>
 
-<a href="https://www.youtube.com/watch?v=-Y3kY1zs62I"><img src="https://img.youtube.com/vi/-Y3kY1zs62I/maxresdefault.jpg" alt="DartLab — 공시를 비교 가능한 데이터로" width="900"></a>
+<a href="https://www.youtube.com/watch?v=-Y3kY1zs62I"><img src="https://img.youtube.com/vi/-Y3kY1zs62I/maxresdefault.jpg" alt="DartLab: 공시를 비교 가능한 데이터로" width="900"></a>
 
 <p>
 <a href="https://eddmpython.github.io/dartlab/viewer"><img src=".github/assets/btn-viewer.svg" alt="공시 뷰어 바로가기" height="52"></a>
@@ -37,7 +37,7 @@
 
 </div>
 
-## 터미널 — 블룸버그식에 도전하다
+## 터미널: 블룸버그식에 도전하다
 
 <div align="center">
 
@@ -96,10 +96,10 @@ dartlab.ask("삼성전자 재무건전성 분석해줘")
 
 AI 경로의 장점:
 
-- **분석 흐름을 직접 설계** — 질문에 맞춰 공시, 재무제표, 신용, 매크로, peer 비교 도구를 조합한다.
-- **숫자 검산 가능** — 답변 속 숫자와 표는 실행 결과 ref에 연결된다.
-- **공시 본문은 데이터로만 처리** — DART/EDGAR/웹 본문 안의 지시는 따르지 않고 분석 근거로만 쓴다.
-- **외부 LLM 연동 가능** — MCP로 Claude Code, Codex CLI, Cursor 같은 도구에서 같은 표면을 호출한다.
+- **분석 흐름을 직접 설계**: 질문에 맞춰 공시, 재무제표, 신용, 매크로, peer 비교 도구를 조합한다.
+- **숫자 검산 가능**: 답변 속 숫자와 표는 실행 결과 ref에 연결된다.
+- **공시 본문은 데이터로만 처리**: DART/EDGAR/웹 본문 안의 지시는 따르지 않고 분석 근거로만 쓴다.
+- **외부 LLM 연동 가능**: MCP로 Claude Code, Codex CLI, Cursor 같은 도구에서 같은 표면을 호출한다.
 
 ```bash
 claude mcp add dartlab -- dartlab mcp
@@ -140,10 +140,10 @@ us.panel("IS")
 
 Python 경로의 장점:
 
-- **API 키 없이 시작** — 사전 구축 데이터는 HuggingFace에서 자동 다운로드하고 로컬에 캐시한다.
-- **기간 비교가 기본** — 공시 본문과 재무제표를 기간 축으로 맞춘다.
-- **한국과 미국을 같은 인터페이스로 조회** — DART와 EDGAR의 차이는 provider가 흡수한다.
-- **엔진 결과를 재사용 가능** — analysis, credit, macro, quant, industry, story 결과를 코드에서 직접 다룬다.
+- **API 키 없이 시작**: 사전 구축 데이터는 HuggingFace에서 자동 다운로드하고 로컬에 캐시한다.
+- **기간 비교가 기본**: 공시 본문과 재무제표를 기간 축으로 맞춘다.
+- **한국과 미국을 같은 인터페이스로 조회**: DART와 EDGAR의 차이는 provider가 흡수한다.
+- **엔진 결과를 재사용 가능**: analysis, credit, macro, quant, industry, story 결과를 코드에서 직접 다룬다.
 
 ## CLI 로 사용
 
@@ -161,9 +161,9 @@ dartlab mcp                          # MCP 서버 진입 (외부 LLM 도구 등�
 
 CLI 경로의 장점:
 
-- **API 키 없이 단발 호출** — HuggingFace 캐시 자동 사용
-- **셸 파이프라인 친화** — `dartlab show ... --json | jq ...` 식으로 합성
-- **MCP 서버 진입점 동일** — `dartlab mcp` 한 명령으로 외부 어시스턴트 도구 노출
+- **API 키 없이 단발 호출**: HuggingFace 캐시 자동 사용
+- **셸 파이프라인 친화**: `dartlab show ... --json | jq ...` 식으로 합성
+- **MCP 서버 진입점 동일**: `dartlab mcp` 한 명령으로 외부 어시스턴트 도구 노출
 
 > CLI 명령 전체 목록 + 옵션은 `dartlab --help` 또는 Skill OS (`src/dartlab/skills/specs/operation/code.md`) 참조.
 
@@ -184,27 +184,27 @@ c.panel()                           # 모든 항목, 모든 기간, 나란히 �
 # 재무상태표              v       v       v       v
 ```
 
-> 텍스트와 숫자의 시계열 수평화 — 전 기간 비교 가능성의 핵심
+> 텍스트와 숫자의 시계열 수평화: 전 기간 비교 가능성의 핵심
 >
-> <img src=".github/assets/panel-grid.webp" alt="c.panel() 출력 예시 — 삼성전자 공시 항목 × 기간 전체 격자" width="720">
+> <img src=".github/assets/panel-grid.webp" alt="c.panel() 출력 예시: 삼성전자 공시 항목 × 기간 전체 격자" width="720">
 
 ```python
 c.panel("IS")                       # 손익계산서 — finance 정규화 (분기 기본)
 c.panel("IS", freq="year")          # freq로 연간 합산
 ```
 
-> finance 정규화 — XBRL 표준계정(snakeId) + 한글 항목명, 원 단위 정밀 숫자
+> finance 정규화: XBRL 표준계정(snakeId) + 한글 항목명, 원 단위 정밀 숫자
 >
-> <img src=".github/assets/panel-is-finance.webp" alt="c.panel('IS', freq='year') — 삼성전자 연간 손익계산서 (finance 정규화)" width="720">
+> <img src=".github/assets/panel-is-finance.webp" alt="c.panel('IS', freq='year'): 삼성전자 연간 손익계산서 (finance 정규화)" width="720">
 
 ```python
 c.panel("is", freq="year")          # native 손익 — 사업보고서 항목 그대로 (2013~)
 c.panel("ratios")                   # native 재무비율, 5표 항목으로 계산
 ```
 
-> 소문자=native — 사업보고서 항목 그대로, XBRL 이전까지 닿는 깊은 history (2013~)
+> 소문자=native: 사업보고서 항목 그대로, XBRL 이전까지 닿는 깊은 history (2013~)
 >
-> <img src=".github/assets/panel-is-native.webp" alt="c.panel('is', freq='year') — 삼성전자 연간 손익계산서 (native, 사업보고서 항목 그대로)" width="720">
+> <img src=".github/assets/panel-is-native.webp" alt="c.panel('is', freq='year'): 삼성전자 연간 손익계산서 (native, 사업보고서 항목 그대로)" width="720">
 
 ```python
 c.panel("사업")                      # 사업 개요 등 공시 본문 행 검색
@@ -215,7 +215,7 @@ c.filings()                         # 모든 보고서 — DART 뷰어로 바로
 
 > 사업보고서부터 분기보고서까지, dartUrl로 원문 즉시 확인
 >
-> <img src=".github/assets/panel-filings.webp" alt="c.filings() — 삼성전자 보고서 목록 + DART 뷰어 링크" width="720">
+> <img src=".github/assets/panel-filings.webp" alt="c.filings(): 삼성전자 보고서 목록 + DART 뷰어 링크" width="720">
 
 ```python
 # 같은 인터페이스, 다른 나라
@@ -234,9 +234,9 @@ API 키 불필요. [HuggingFace](https://huggingface.co/datasets/eddmpython/dart
 
 Company가 종목코드 하나로 데이터를 준비하면, 세 겹이 분석한다.
 
-1. **분석 엔진** — 숫자를 만든다. 마진 추이, 현금흐름 패턴, 부도 확률, 업종 비교, 매크로 사이클. 해석하지 않는다. 숫자와 근거만 제공한다.
-2. **story (L3 조합기)** — 분석엔진 X. L2 5 분석엔진 끼리의 import 순환을 막기 위해, story 가 단독으로 다중 결합 책임을 짊어진다. 엔진 데이터를 블록 단위로 조합하여 11가지 보고서 타입 × 7가지 기업유형 템플릿. 해석은 제공하지 않는다 — 다양한 관점의 근거를 체계적으로 배치한다.
-3. **AI** — 엔진을 직접 쓰고 판단한다. 결과를 의심하고, 원본으로 검증하고, 이상하면 가정을 바꿔서 재계산한다. dartlab을 대표하는 적극적 분석가.
+1. **분석 엔진**: 숫자를 만든다. 마진 추이, 현금흐름 패턴, 부도 확률, 업종 비교, 매크로 사이클. 해석하지 않는다. 숫자와 근거만 제공한다.
+2. **story (L3 조합기)**: 분석엔진 X. L2 5 분석엔진 끼리의 import 순환을 막기 위해, story 가 단독으로 다중 결합 책임을 짊어진다. 엔진 데이터를 블록 단위로 조합하여 11가지 보고서 타입 × 7가지 기업유형 템플릿. 해석은 제공하지 않는다. 다양한 관점의 근거를 체계적으로 배치한다.
+3. **AI**: 엔진을 직접 쓰고 판단한다. 결과를 의심하고, 원본으로 검증하고, 이상하면 가정을 바꿔서 재계산한다. dartlab을 대표하는 적극적 분석가.
 
 ## DartLab은 무엇인가
 
@@ -249,18 +249,18 @@ Company가 종목코드 하나로 데이터를 준비하면, 세 겹이 분석�
 | 레이어 | 엔진 | 하는 일 | 진입점 | 노트북 |
 |--------|------|---------|--------|--------|
 | Data | [Data](https://eddmpython.github.io/dartlab/skills/engines.data) | HuggingFace 사전 구축, 자동 다운로드 | `Company("005930")` | — |
-| L1 | [Company](https://eddmpython.github.io/dartlab/skills/engines.company) | provider facade — 공시 + 재무제표 + 정형 데이터를 종목코드 하나로 통합 | `c.panel()` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py) |
+| L1 | [Company](https://eddmpython.github.io/dartlab/skills/engines.company) | provider facade: 공시 + 재무제표 + 정형 데이터를 종목코드 하나로 통합 | `c.panel()` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py) |
 | L1 | [Gather](https://eddmpython.github.io/dartlab/skills/engines.gather) | 외부 시장 데이터 (주가/수급/매크로/뉴스) | `dartlab.gather()` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_gather.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/02_gather.py) |
 | L1.5 | [Scan](https://eddmpython.github.io/dartlab/skills/engines.scan) | 전 종목 사전 빌드 (거버넌스/비율/현금흐름 등 parquet) | `dartlab.scan()` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_scan.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/03_scan.py) |
 | L2 | [Analysis](https://eddmpython.github.io/dartlab/skills/engines.analysis) | 재무 심층 분석 (수익성/안정성/현금흐름) + 가치평가 + 전망 | `c.analysis("financial", "수익성")` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/05_analysis.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/05_analysis.py) |
 | L2 | [Quant](https://eddmpython.github.io/dartlab/skills/engines.quant) | 가격 기반 정량 신호 (기술/리스크/팩터/백테스트) | `c.quant()` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/04_quant.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/04_quant.py) |
 | L2 | [Credit](https://eddmpython.github.io/dartlab/skills/engines.credit) | 독립 신용평가 (dCR 등급, 부도확률, 건전도) | `c.credit("등급")` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/07_credit.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/07_credit.py) |
 | L2 | [Macro](https://eddmpython.github.io/dartlab/skills/engines.macro) | 시장 레벨 매크로 (사이클/금리/유동성/심리/자산 + 시나리오 110) | `dartlab.macro("사이클")` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/06_macro.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/06_macro.py) |
-| L2 | [Industry](https://eddmpython.github.io/dartlab/skills/engines.industry) | 산업 매퍼 — 전 상장사 × 공정·역할·스트림 + 공급망 엣지 (산업지도 `/map`) | `c.industry()`, `dartlab.industry("semiconductor")` | — |
-| L3 | [Story](https://eddmpython.github.io/dartlab/skills/engines.story) | 조합기 (분석엔진 X) — L2 5엔진 (analysis · credit · macro · quant · industry) + L1.5 scan 블록 조합. 순환참조 방지 책임자. 11 타입 × 7 템플릿 (해석 안 함) | `c.story("수익성")` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/08_story.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/08_story.py) |
+| L2 | [Industry](https://eddmpython.github.io/dartlab/skills/engines.industry) | 산업 매퍼: 전 상장사 × 공정·역할·스트림 + 공급망 엣지 (산업지도 `/map`) | `c.industry()`, `dartlab.industry("semiconductor")` | — |
+| L3 | [Story](https://eddmpython.github.io/dartlab/skills/engines.story) | 조합기 (분석엔진 X): L2 5엔진 (analysis · credit · macro · quant · industry) + L1.5 scan 블록 조합. 순환참조 방지 책임자. 11 타입 × 7 템플릿 (해석 안 함) | `c.story("수익성")` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/08_story.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/08_story.py) |
 | L4 | [AI/Skills](https://eddmpython.github.io/dartlab/skills) | skills 검색 + DartLab 실행 + ref 검산을 쓰는 분석 작업대 (사람도 L4) | `dartlab.ask()` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/09_ai.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/09_ai.py) |
-| L4 | [Channel](https://eddmpython.github.io/dartlab/skills) | 외부 공유 — `dartlab channel` 한 줄로 폰에서 PC dartlab 사용 | `dartlab channel` | — |
-| core | [Search](https://eddmpython.github.io/dartlab/skills/engines.search) | 공시 시맨틱 검색 *(beta — 인덱스 신선도 부족)* | `dartlab.search()` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/10_search.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/10_search.py) |
+| L4 | [Channel](https://eddmpython.github.io/dartlab/skills) | 외부 공유: `dartlab channel` 한 줄로 폰에서 PC dartlab 사용 | `dartlab channel` | — |
+| core | [Search](https://eddmpython.github.io/dartlab/skills/engines.search) | 공시 시맨틱 검색 *(beta: 인덱스 신선도 부족)* | `dartlab.search()` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/10_search.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/10_search.py) |
 | facade | [Listing](https://eddmpython.github.io/dartlab/skills/engines.gather) | 종목/공시/topic 카탈로그 API | `dartlab.listing()` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/11_listing.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/11_listing.py) |
 | viz | [Viz](https://eddmpython.github.io/dartlab/skills/engines.viz) | 차트/다이어그램 (`emit_chart`) | `emit_chart({...})` | — |
 
@@ -270,7 +270,7 @@ Company가 종목코드 하나로 데이터를 준비하면, 세 겹이 분석�
 
 > 설계: [engines.company](https://eddmpython.github.io/dartlab/skills)
 
-세 가지 데이터 소스 — docs(전문 공시), finance(XBRL 재무제표), report(DART API 정형 데이터) — 를 하나의 객체로 통합. [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data)에서 자동 다운로드, 설정 불필요.
+세 가지 데이터 소스(docs=전문 공시, finance=XBRL 재무제표, report=DART API 정형 데이터)를 하나의 객체로 통합. [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data)에서 자동 다운로드, 설정 불필요.
 
 ```python
 c = dartlab.Company("005930")
@@ -282,7 +282,7 @@ c.panel("ratios")               # native 재무비율 -- 5표 항목으로 계�
 c.panel("매출")                  # 항목명 행 검색 (raw 공시)
 ```
 
-**주석(Notes)** — BS/IS 총액 이면의 항목별 분해. `c.panel("topic")`으로 재무제표와 같은 패턴으로 접근. DART(K-IFRS HTML 파싱)와 EDGAR(US-GAAP XBRL 태그) 동일 인터페이스.
+**주석(Notes)**: BS/IS 총액 이면의 항목별 분해. `c.panel("topic")`으로 재무제표와 같은 패턴으로 접근. DART(K-IFRS HTML 파싱)와 EDGAR(US-GAAP XBRL 태그) 동일 인터페이스.
 
 | `c.panel(...)` | 내용 | DART | EDGAR |
 |---------------|------|:----:|:-----:|
@@ -301,7 +301,7 @@ c.panel("매출")                  # 항목명 행 검색 (raw 공시)
 
 > [![marimo](https://marimo.io/shield.svg)](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py) [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb)
 
-### Scan — 전 종목 횡단 비교
+### Scan: 전 종목 횡단 비교
 
 > 설계: [engines.scan](https://eddmpython.github.io/dartlab/skills)
 
@@ -313,15 +313,15 @@ dartlab.scan("ratio", "roe")          # 전종목 ROE
 dartlab.scan("account", "매출액")      # 전종목 매출액 시계열
 ```
 
-> 2,500+ 종목의 매출액을 한 번에 — 분기별 시계열로 즉시 비교
+> 2,500+ 종목의 매출액을 한 번에: 분기별 시계열로 즉시 비교
 >
-> <img src=".github/assets/scan-account.webp" alt="dartlab.scan('account', '매출액') — 전종목 매출액 횡단 비교" width="720">
+> <img src=".github/assets/scan-account.webp" alt="dartlab.scan('account', '매출액'): 전종목 매출액 횡단 비교" width="720">
 
-### Compare — 회사 간 N사 비교
+### Compare: 회사 간 N사 비교
 
 > 설계: [engines.panel](https://eddmpython.github.io/dartlab/skills/engines.panel)
 
-`Company.panel`이 한 회사를 항목×기간으로 수평화한다면, `dartlab.compare`는 **2~6개 회사**를 같은 토픽·시점 격자로 정렬한다. `scan`처럼 단어 하나로 부르는 톱레벨 verb — 회사 간 비교의 공식 표면이다.
+`Company.panel`이 한 회사를 항목×기간으로 수평화한다면, `dartlab.compare`는 **2~6개 회사**를 같은 토픽·시점 격자로 정렬한다. `scan`처럼 단어 하나로 부르는 톱레벨 verb: 회사 간 비교의 공식 표면이다.
 
 ```python
 import dartlab
@@ -336,16 +336,16 @@ dartlab.compare(["005930", "000660"], topic="is", freq="year")
 dartlab.compare(["005930", "000660"], topic="유형자산", period=["2025Q4", "2024Q4"])
 ```
 
-- **label-drift 자동 해소** — 같은 항목이 회사마다 다른 절 번호(삼성 "7. 유형자산" ↔ SK "11. 유형자산")여도 한 행에 정렬한다.
-- **확신 오정렬 차단** — 연결↔별도(scope)·표↔서술(leafType)이 다르면 같은 행에 병치하지 않는다.
-- **결손은 NaN 유지** — 0 채움·forward-fill 없이 빈 칸을 그대로 둔다(honest-gap, 추세 왜곡 방지).
-- **시장 경계** — KO↔US 혼합은 막는다. US(EDGAR)는 현재 row 비교만, 재무 셀 비교는 DART(원 환산)만 열려 있다.
+- **label-drift 자동 해소**: 같은 항목이 회사마다 다른 절 번호(삼성 "7. 유형자산" ↔ SK "11. 유형자산")여도 한 행에 정렬한다.
+- **확신 오정렬 차단**: 연결↔별도(scope)·표↔서술(leafType)이 다르면 같은 행에 병치하지 않는다.
+- **결손은 NaN 유지**: 0 채움·forward-fill 없이 빈 칸을 그대로 둔다(honest-gap, 추세 왜곡 방지).
+- **시장 경계**: KO↔US 혼합은 막는다. US(EDGAR)는 현재 row 비교만, 재무 셀 비교는 DART(원 환산)만 열려 있다.
 
-### Gather — 외부 시장 데이터
+### Gather: 외부 시장 데이터
 
 > 설계: [engines.gather](https://eddmpython.github.io/dartlab/skills)
 
-주가, 수급, 거시지표, 뉴스 — Polars DataFrame으로.
+주가, 수급, 거시지표, 뉴스를 Polars DataFrame으로.
 
 ```python
 dartlab.gather("price", "005930")             # KR OHLCV
@@ -354,7 +354,7 @@ dartlab.gather("macro", "FEDFUNDS")           # 자동 US 감지
 dartlab.gather("news", "삼성전자")             # Google News RSS
 ```
 
-**대량 데이터 batch 순회** — 인사이더 거래·지분·뉴스를 generator 로 분할 yield (메모리 안전, 전 종목 스캔용):
+**대량 데이터 batch 순회**: 인사이더 거래·지분·뉴스를 generator 로 분할 yield (메모리 안전, 전 종목 스캔용):
 
 ```python
 from dartlab.gather.accessors import DefaultFinanceAccessor
@@ -367,7 +367,7 @@ for batch in a.iterNews("삼성전자", days=30, batchSize=100):
 
 `getDefaultGather()` 싱글턴은 thread-safe (멀티스레드 환경 단일 인스턴스 보장). 캐시 통계·source fallback 신호는 `getCacheStatsSnapshot()` · `DARTLAB_TELEMETRY=stdout` 으로 추적.
 
-### Analysis — 재무 인과 분석
+### Analysis: 재무 인과 분석
 
 > 설계: [engines.analysis](https://eddmpython.github.io/dartlab/skills)
 
@@ -382,7 +382,7 @@ c.credit("등급")                             # dCR-AA, 건전도 93/100
 c.credit("등급", detail=True)                # 등급 + 서사 + 지표 시계열
 ```
 
-### Credit — 독립 신용분석
+### Credit: 독립 신용분석
 
 > 설계: [engines.credit](https://eddmpython.github.io/dartlab/skills) | 보고서: [eddmpython.github.io/dartlab/blog/credit-reports](https://eddmpython.github.io/dartlab/blog/credit-reports)
 
@@ -409,7 +409,7 @@ from dartlab.story.publisher import publishReport
 publishReport("005930")               # 6막 보고서 (credit narrative + audit 포함)
 ```
 
-### Macro — 종목코드 없이 경제를 읽다
+### Macro: 종목코드 없이 경제를 읽다
 
 > 설계: [engines.macro](https://eddmpython.github.io/dartlab/skills)
 
@@ -426,7 +426,7 @@ dartlab.macro("종합")            # 매크로 종합 + 투자전략 + 포트폴
 
 백테스트 실증 (2000-2024, FRED): Cleveland Fed 프로빗이 **미국 3/3 침체를 2-16개월 전에 사전 감지**, recall 90%.
 
-### Story — 분석을 보고서로
+### Story: 분석을 보고서로
 
 > 설계: [engines.story](https://eddmpython.github.io/dartlab/skills)
 
@@ -437,9 +437,9 @@ c.story()              # 전체 보고서
 dartlab.ask()            # 보고서 + AI 종합의견
 ```
 
-> 삼성전자 보고서 미리보기: *"매출 +23.8% 성장, 영업이익률 8.6%→21.4% 반등. FCF 양수 전환, ROIC > WACC — 재투자가 가치를 창출하는 구간."*
+> 삼성전자 보고서 미리보기: *"매출 +23.8% 성장, 영업이익률 8.6%→21.4% 반등. FCF 양수 전환, ROIC > WACC, 재투자가 가치를 창출하는 구간."*
 
-### 이야기꾼 — 숫자가 아니라 이야기다
+### 이야기꾼: 숫자가 아니라 이야기다
 
 > 설계: [engines.story](https://eddmpython.github.io/dartlab/skills) · 시리즈: [기업이야기](https://eddmpython.github.io/dartlab/blog/series/company-reports)
 
@@ -471,13 +471,13 @@ publishReport("068270")    # 셀트리온 — 6막 기업이야기 자동 발간
 [셀트리온 이야기 보기](https://www.youtube.com/watch?v=d7RUQIlimVM) · [DartLab 30초 데모](https://www.youtube.com/shorts/97lYLWMWzvA) · [유튜브 채널](https://www.youtube.com/@eddmpython)
 </div>
 
-### Search — 공시·뉴스를 의미로 검색
+### Search: 공시·뉴스를 의미로 검색
 
 > 설계: [engines.search](https://eddmpython.github.io/dartlab/skills)
 
 HuggingFace current search artifact 를 자동 사용한다. `Search Index Delta` 와 `Data Prebuild` 가 source manifest 기준으로 증분 반영하며, source별 최신성은 결과의 `dataAsOf`/`sourceRef` 로 확인한다. 당일 미러 전 단일 종목 공시 확인은 `Company.disclosure` / `Company.liveFilings` 를 함께 사용한다.
 
-모델 없음, GPU 없음, cold start 없음. 400만 문서 95% 정밀도 — 임베딩보다 정확, 1/100 비용. 벤치마크 상세는 [methodology](https://eddmpython.github.io/dartlab/skills/operation.methodology) 참조.
+모델 없음, GPU 없음, cold start 없음. 400만 문서 95% 정밀도: 임베딩보다 정확, 1/100 비용. 벤치마크 상세는 [methodology](https://eddmpython.github.io/dartlab/skills/operation.methodology) 참조.
 
 ```python
 dartlab.search("유상증자 결정")                     # 유상증자 공시 찾기
@@ -485,7 +485,7 @@ dartlab.search("대표이사 변경", corp="005930")       # 종목 필터
 dartlab.search("회사가 돈을 빌렸다")                 # 자연어도 동작
 ```
 
-### AI — skills 기반 분석 작업대
+### AI: skills 기반 분석 작업대
 
 > 설계: [operation.opsAsSkills](https://eddmpython.github.io/dartlab/skills) · 루프 개요: [상단 통합 아키텍처](#통합-아키텍처--전문-금융-ai-플랫폼)
 
@@ -496,7 +496,7 @@ dartlab.ask("삼성전자 분석", provider="gemini")  # 무료 provider 사용 
 
 Provider: `gemini`(무료), `groq`(무료), `cerebras`(무료), `oauth-codex`(ChatGPT 구독), `openai`, `ollama`(로컬) 등. Rate limit 시 자동 대체.
 
-### Channel — 외부에서 내 PC dartlab 접근
+### Channel: 외부에서 내 PC dartlab 접근
 
 > 설계: [runtime.channel](https://eddmpython.github.io/dartlab/skills)
 
@@ -528,7 +528,7 @@ c.panel("ratios")                       c.panel("ratios")
 c.panel("매출")                          c.panel("revenue")
 ```
 
-## MCP — AI 어시스턴트 연동
+## MCP: AI 어시스턴트 연동
 
 > 루프·도구 표면 개요: [상단 통합 아키텍처](#통합-아키텍처--전문-금융-ai-플랫폼)
 
@@ -593,7 +593,7 @@ codex mcp add dartlab -- dartlab mcp
 }
 ```
 
-HuggingFace Spaces 호스팅. DART API 키 불필요. **Claude Desktop 데스크톱 앱은 stdio 만 받으므로 이 URL 방식을 reject 합니다** — 위 stdio 경로를 사용하세요.
+HuggingFace Spaces 호스팅. DART API 키 불필요. **Claude Desktop 데스크톱 앱은 stdio 만 받으므로 이 URL 방식을 reject 합니다**. 위 stdio 경로를 사용하세요.
 
 ### 도구 표면
 
@@ -601,7 +601,7 @@ HuggingFace Spaces 호스팅. DART API 키 불필요. **Claude Desktop 데스크
 
 | 도구 | 역할 |
 |------|------|
-| **ask** | dartlab chat-native 루프 — LLM 자율 도구 호출 + Ref 검산 일괄 |
+| **ask** | dartlab chat-native 루프: LLM 자율 도구 호출 + Ref 검산 일괄 |
 | **ReadSkill** | 공식 Skill OS 검색 + frontmatter + 본문 preview |
 | **ReadCapability** | dartlab 공개 API/docstring 검색 |
 | **RunPython** | dartlab + Polars 코드 실행 → executionRef/valueRef/tableRef |
@@ -612,7 +612,7 @@ HuggingFace Spaces 호스팅. DART API 키 불필요. **Claude Desktop 데스크
 | **GroundingCheck** | 숫자·날짜·출처 grounding 검산 |
 | **RequestUserInput** | MCP elicit 지원 클라이언트에서 사용자 입력 요청 |
 
-> 옛 33 generated 도구 (`companyAnalysis`/`companyStory`/`marketScan` 등) 는 0.10 부터 폐기 — 모두 `RunPython` 안에서 `dartlab.Company / dartlab.scan / dartlab.macro` 직접 호출. 마이그레이션은 [CHANGELOG](https://github.com/eddmpython/dartlab/releases) 참조.
+> 옛 33 generated 도구 (`companyAnalysis`/`companyStory`/`marketScan` 등) 는 0.10 부터 폐기: 모두 `RunPython` 안에서 `dartlab.Company / dartlab.scan / dartlab.macro` 직접 호출. 마이그레이션은 [CHANGELOG](https://github.com/eddmpython/dartlab/releases) 참조.
 
 ## Skill OS 와 Skill Market
 
@@ -633,21 +633,21 @@ DartLab 에는 두 가지 스킬 층이 있습니다.
 
 Discussion 운영은 `아이디어 → Caller Audit → executionPlan 초안 → 예시 입력/기대 출력 → 운영자 확정 → accepted snapshot` 순서입니다. 댓글이 추가되면 기존 snapshot 은 유지되고 새 댓글은 pending revision 으로만 표시됩니다. 다시 토론해서 운영자가 확정하면 `items/{id}.json` 이 vN+1 로 갱신됩니다.
 
-## dartlab-lite — 브라우저·엑셀에서 설치 없이 (Pyodide)
+## dartlab-lite: 브라우저·엑셀에서 설치 없이 (Pyodide)
 
-> 상세: [블로그 — 엑셀·브라우저·노트북에서 설치 없이 dartlab 쓰기 (Pyodide)](https://eddmpython.github.io/dartlab/blog/pyodide-dartlab-lite)
+> 상세: [블로그: 엑셀·브라우저·노트북에서 설치 없이 dartlab 쓰기 (Pyodide)](https://eddmpython.github.io/dartlab/blog/pyodide-dartlab-lite)
 
 [Pyodide](https://pyodide.org/)가 CPython을 WebAssembly로 포팅한 덕에 **파이썬이 설치되지 않은 환경**에서도 dartlab이 그대로 돈다. 같은 API, 같은 데이터.
 
 **지원 환경**: [xlwings Lite](https://lite.xlwings.org/) (Excel) · [Anaconda Code](https://www.anaconda.com/products/code-for-excel) (Excel) · [JupyterLite](https://jupyterlite.readthedocs.io/) · Google Colab WASM 런타임 · marimo (pyodide) · 순수 HTML 임베드.
 
-**[👉 웹 엑셀에서 바로 열어보기 — OneDrive 공유 워크북](https://1drv.ms/x/c/4e17617bfea66347/IQB9zW91TaD4TJvHM8LRQTh4ARj0gHMapx4LVhCCSbBz92Q?e=HQ4E7d)** — xlwings Lite + dartlab 세팅 완료. 버튼만 누르면 시트에 재무제표가 찍힌다.
+**[👉 웹 엑셀에서 바로 열어보기: OneDrive 공유 워크북](https://1drv.ms/x/c/4e17617bfea66347/IQB9zW91TaD4TJvHM8LRQTh4ARj0gHMapx4LVhCCSbBz92Q?e=HQ4E7d)**: xlwings Lite + dartlab 세팅 완료. 버튼만 누르면 시트에 재무제표가 찍힌다.
 
-### 두 가지 사용 방식 — script형 vs func형
+### 두 가지 사용 방식: script형 vs func형
 
 xlwings Lite는 두 데코레이터를 제공한다. **`@script`는 버튼형(명령형)**, **`@func`는 수식형(선언형)**. dartlab은 둘 다 지원하며, **함수형이 dartlab을 엑셀답게 쓰는 방법**이다.
 
-**1. `@script` — 사이드바 버튼 → 시트에 채우기**
+**1. `@script`: 사이드바 버튼 → 시트에 채우기**
 
 ```python
 import dartlab
@@ -663,9 +663,9 @@ def finance(book: xw.Book):
     sheet["A3"].value = data
 ```
 
-<img src=".github/assets/xlwings-lite-script.webp" alt="xlwings Lite — @script 모드, 버튼 누르면 시트에 IS가 채워진다" width="720">
+<img src=".github/assets/xlwings-lite-script.webp" alt="xlwings Lite: @script 모드, 버튼 누르면 시트에 IS가 채워진다" width="720">
 
-**2. `@func` — 엑셀 셀에 수식처럼 `=GETFINANCE("005930")`**
+**2. `@func`: 엑셀 셀에 수식처럼 `=GETFINANCE("005930")`**
 
 ```python
 @func
@@ -676,7 +676,7 @@ def getFinance(code: str):
     return data
 ```
 
-<img src=".github/assets/xlwings-lite-func.webp" alt="xlwings Lite — @func 모드, 셀에 =GETFINANCE(\"005930\")만 쳐도 5분기 IS가 자동 스필" width="720">
+<img src=".github/assets/xlwings-lite-func.webp" alt="xlwings Lite: @func 모드, 셀에 =GETFINANCE(\"005930\")만 쳐도 5분기 IS가 자동 스필" width="720">
 
 VLOOKUP과 나란히 **`=GETFINANCE`가 엑셀 네이티브 함수**로 동작한다. 종목코드를 바꾸면 셀 재계산으로 전부 갱신된다.
 
@@ -695,7 +695,7 @@ c = dartlab.Company("005930")
 c.panel("IS")
 ```
 
-또는 xlwings Lite 사이드바의 `requirements.txt`에 `dartlab` 한 줄 — 그것만으로 끝. **로컬 파이썬 0줄, uv 0줄, venv 0줄.**
+또는 xlwings Lite 사이드바의 `requirements.txt`에 `dartlab` 한 줄. 그것만으로 끝. **로컬 파이썬 0줄, uv 0줄, venv 0줄.**
 
 ### 제약 (브라우저 런타임의 한계)
 
@@ -706,9 +706,9 @@ c.panel("IS")
 | `dartlab.scan()` | ❌ | 사전 빌드 parquet 271MB (브라우저 비현실적) |
 | `dartlab.gather()` | ❌ | Naver·Yahoo·Google News CORS 차단 |
 
-스레드 없음 · MEMFS 휘발 · CORS 미허용 API 불가 — 이 세 제약이 근본이다. 상세와 빌드 파이프라인은 [pyodide/README.md](pyodide/README.md), 설치 5단계 스크린샷은 [블로그 글](https://eddmpython.github.io/dartlab/blog/pyodide-dartlab-lite)을 본다.
+스레드 없음 · MEMFS 휘발 · CORS 미허용 API 불가: 이 세 제약이 근본이다. 상세와 빌드 파이프라인은 [pyodide/README.md](pyodide/README.md), 설치 5단계 스크린샷은 [블로그 글](https://eddmpython.github.io/dartlab/blog/pyodide-dartlab-lite)을 본다.
 
-## OpenAPI — 원본 공공 API
+## OpenAPI: 원본 공공 API
 
 ```python
 from dartlab import OpenDart, OpenEdgar
@@ -725,7 +725,7 @@ e.filings("AAPL", forms=["10-K", "10-Q"])
 
 ## 데이터
 
-모든 데이터는 [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data)에 사전 구축 — 자동 다운로드. EDGAR는 SEC API 직접 수집. 사용자는 데이터 카테고리를 보고 새 Skill Market 아이디어의 입력으로 삼을 수 있다.
+모든 데이터는 [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data)에 사전 구축: 자동 다운로드. EDGAR는 SEC API 직접 수집. 사용자는 데이터 카테고리를 보고 새 Skill Market 아이디어의 입력으로 삼을 수 있다.
 
 | 카테고리 | 포함 데이터 | 대표 사용 |
 |---|---|---|
@@ -743,7 +743,7 @@ e.filings("AAPL", forms=["10-K", "10-Q"])
 
 **노트북 (Colab):** [Company](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) · [Gather](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_gather.ipynb) · [Scan](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_scan.ipynb) · [Quant](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/04_quant.ipynb) · [Analysis](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/05_analysis.ipynb) · [Macro](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/06_macro.ipynb) · [Credit](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/07_credit.ipynb) · [Story](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/08_story.ipynb) · [AI](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/09_ai.ipynb)
 
-**노트북 (marimo):** [전체 목록](notebooks/marimo/README.md) — `import` 반복 없는 단일 진입, 셀마다 주석 설명, 마크다운 셀 미사용
+**노트북 (marimo):** [전체 목록](notebooks/marimo/README.md): `import` 반복 없는 단일 진입, 셀마다 주석 설명, 마크다운 셀 미사용
 
 ## 문서
 
@@ -763,18 +763,18 @@ e.filings("AAPL", forms=["10-K", "10-Q"])
 
 ## 설계 선택
 
-다른 재무 라이브러리와 다른 의식적 결정 — 사용자가 설치 후 마주칠 차이를 미리 명시한다.
+다른 재무 라이브러리와 다른 의식적 결정: 사용자가 설치 후 마주칠 차이를 미리 명시한다.
 
 | 결정 | 의미 | 이유 |
 |---|---|---|
-| **단일 base install — `[extras]` 분리 없음** | `pip install dartlab` 한 번에 분석·서버·MCP·viz·AI provider 가 함께 들어온다 | 분석 도구에 "이것도 설치하세요" 가 누적되면 첫 사용까지 마찰이 늘어난다. 단일 진입 SSOT 가 우선. wheel 크기·cold start 비용은 PEP 562 lazy load 와 pyodide 분기로 흡수한다. |
+| **단일 base install: `[extras]` 분리 없음** | `pip install dartlab` 한 번에 분석·서버·MCP·viz·AI provider 가 함께 들어온다 | 분석 도구에 "이것도 설치하세요" 가 누적되면 첫 사용까지 마찰이 늘어난다. 단일 진입 SSOT 가 우선. wheel 크기·cold start 비용은 PEP 562 lazy load 와 pyodide 분기로 흡수한다. |
 | **사전 구축 데이터, API 키 0 으로 시작** | `Company("005930")` 호출 시 HuggingFace 에서 자동 다운로드 → 로컬 캐시. DART API 키는 *재수집* 만 필요 | "키 만들고 환경변수 세팅" 단계를 1순위 사용 경로에서 제거. 키 발급은 `dartlab collect` 같은 raw 재수집 흐름에서만 등장. |
 | **공시 본문은 데이터, 지시 아님** | 외부 본문은 직렬화 시 `[EXTERNAL CONTENT START — untrusted ...]` 마커로 자동 감쌈 | DART/EDGAR/뉴스 본문 안의 "이전 지시 무시" 같은 패턴이 AI 동작을 바꾸지 못하도록 직렬화 단에서 강제. 마커 안 숫자·날짜·고유명사는 1차 출처 재검증 후 인용. |
 | **AI 엔진 = chat-native + LLM 자율 tool calling** | `BRIEF/WORK/CRITIQUE/COMPOSE/GATE/HARVEST` 식 고정 노드 그래프 없음. 본체는 `ai/agent.py`, 능력은 `ai/tools/` | 0.7.15 에서 15,420 줄 삭제로 회귀 차단. graph 식 강박은 verify 강제·workbench 본체화 회귀를 부르고 LLM 자율성을 잠근다. |
 | **L0~L4 단방향 import (4 형제 cross 금지)** | core ← gather/providers ← scan/frame/synth/reference ← analysis 5종 ← story ← ai/mcp | `import-linter` + `dartlabGuard.py strict --scope l0-l15` 가 PR 게이트. 외부 기여자가 어디에 코드를 더할지 한 그림으로 판단 가능. |
 | **테스트 직렬화 강제 (Polars OOM 가드)** | `pytest -v` 전체 호출 금지. `tests/test-lock.sh tests/ -m "<marker>"` 경유 | Company 1개 ≈ 200~500 MB Rust 힙은 `gc.collect()` 회수 불가. CI 와 로컬을 같은 lock wrapper 명령으로 통일. |
 | **메시지 한국어 우선, API 영어** | `Company`, `pastInsight`, `analysis` 등 symbol 은 영어. CLI 에러·진행 메시지는 한국어 | classifier 에 `Natural Language :: Korean / English` 둘 다 선언. PyPI 영어 사용자 대상 영문 진입은 [README_EN.md](README_EN.md) 와 영문 docstring 으로 별도 트랙. |
-| **단일 SSOT — Skill OS** | 외부 LLM·사용자가 `capabilities()` 한 줄로 304 specs 카탈로그 질의 | 코드·문서·계약을 같은 파일 (`src/dartlab/skills/specs/**`) 로 운영. README ↔ docs ↔ 코드 drift 를 SSOT 한 곳에서 방지. |
+| **단일 SSOT: Skill OS** | 외부 LLM·사용자가 `capabilities()` 한 줄로 304 specs 카탈로그 질의 | 코드·문서·계약을 같은 파일 (`src/dartlab/skills/specs/**`) 로 운영. README ↔ docs ↔ 코드 drift 를 SSOT 한 곳에서 방지. |
 | **부채 시계열 공개** | `uv run python -X utf8 src/dartlab/skills/measureProgress.py` 로 baseline · docstring backlog · pytest marker 분포 3 축 추세 측정. master push 마다 [`_progress/measureHistory.jsonl`](src/dartlab/skills/_progress/measureHistory.jsonl) 한 줄 적재 | "신규 회귀 0" 가드 외에 *상환* 도 정량으로 본다. 외부 기여자가 "부채를 줄이고 있는가" 를 시계열 한 파일에서 확인 가능. |
 
 ### 30초 안에 첫 결과
@@ -789,7 +789,7 @@ c = dartlab.Company("005930")   # HuggingFace 자동 다운로드 (최초 ~수�
 c.panel("IS")                   # 손익계산서, 분기 기본
 ```
 
-세 줄 — API 키 0, 환경변수 0. 영문 사용자는 [README_EN.md](README_EN.md), 다른 진입 경로 (CLI · AI · MCP) 는 위 ["두 가지 시작점"](#두-가지-시작점) 참조.
+세 줄: API 키 0, 환경변수 0. 영문 사용자는 [README_EN.md](README_EN.md), 다른 진입 경로 (CLI · AI · MCP) 는 위 ["두 가지 시작점"](#두-가지-시작점) 참조.
 
 ## 기여
 
@@ -799,4 +799,4 @@ c.panel("IS")                   # 손익계산서, 분기 기본
 
 ## 라이선스
 
-[Apache License 2.0](LICENSE) — 자유롭게 사용하되, [NOTICE](NOTICE) 파일의 출처 표기를 포함해주세요.
+[Apache License 2.0](LICENSE). 자유롭게 사용하되, [NOTICE](NOTICE) 파일의 출처 표기를 포함해주세요.
