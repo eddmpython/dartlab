@@ -10,7 +10,7 @@ GitHub Discussion #70 — IPO 공모 신고서 분석(증권신고서 지분증�
 ## 실측 핵심
 - 데이터 풍부(단일 XML, dart4.xsd `<TITLE>` 구조앵커). 테이블 구조파싱 필요(flat regex 실패).
 - ★ **ground-truth = 3조건 `지분증권 subtype + corp_cls=="E" + stock_code==""`**(개념확립 정정 2026-06-29). 2조건(`E+sc=''`)만은 과대 — corp_cls=E 826건 중 783건이 펀드·채권·유동화. 정정 후 지분증권 43 전수 오분류 0. corp_cls Y/K는 상장사 유상증자. (판별 혁신 유효 — 3조건 형태.)
-- 개념확립 진행: P0 ✅ · P1 🟡(5/6) · P2 카테고리1+항등식 ✅(검증·복구) — 상세 `tests/_attempts/ipo/README.md`, 정정 `00-prd.md §1 정정 1-b`.
+- 개념확립 완료(발행사 7곳 교차): P0 ✅ · P1 ✅(FULL 7곳 100%, 채무증권 negative=발행공시 클래스 공통) · P2 ✅ cat1·2·5·6 일반화+항등식(자산=부채+자본 6/6 EXACT) — cat3 비교PER·cat4 보호예수=하드케이스 잔여. 상세 `tests/_attempts/ipo/README.md`, 정정 `00-prd.md §1 정정 1-b`.
 
 ## 우수성 평가 (v1→v2)
 - 스코어카드: 엔진혁신 66 · 속도성능 61 · 프로덕트시장 61 · UI/UX 52(최약) · 운영(평가 누락).
