@@ -40,7 +40,9 @@ https://{host}/v1/{dir}/{id}.{csv|tsv}?cols=&tail=&head=&freq=
 - `cols` 투영이 진짜 메모리 탈출구다 — panel 본문(`contentRaw`) 제외 시 927→80MB(실측). 큰 파일도
   컬럼만 고르면 어디서나 라이브.
 
-env(`MAX_DECODE_BYTES`·`MAX_DECODE_ROWS`·`DECODE_EXPANSION`·`CELL_CAP`)로 호스트별 한 줄 조절.
+예산 추정 = 텍스트 payload(컬럼 압축해제×`DECODE_EXPANSION`) + 셀 객체 오버헤드(행수×컬럼수×`CELL_OBJ`)
+두 항 — 전자가 panel(텍스트 거대), 후자가 fred(행 多 작음)를 잡는다. env(`MAX_DECODE_BYTES`·`MAX_DECODE_ROWS`·
+`DECODE_EXPANSION`·`CELL_OBJ`·`CELL_CAP`)로 호스트별 한 줄 조절.
 
 ## 보안
 
@@ -79,9 +81,20 @@ env(03-tier2-live-worker §origins). env 미설정 = Tier2 비활성(UI 가 Tier
 `IMPORTDATA` 는 ~5만셀/호출 한계 → 워커 `CELL_CAP`(기본 45,000)이 미지정 호출을 자동 tail+헤더 신호
 (`X-DartLab-Capped`)로 절단. 본문 주석행 0(IMPORTDATA 오염 회피).
 
+## macro 시계열 — {id}=seriesId (단일 시리즈)
+
+`macro/fred·ecos·customs` 는 per-series 파일이 아니라 `observations.parquet` **단일 파일**(seriesId 컬럼으로
+전 시리즈 1파일)이다. 사용자는 한 시리즈를 원하므로 워커가 `{id}=seriesId` 로 보고 observations 를 읽어
+그 시리즈만 필터해 돌려준다(날짜샤드의 decode-후-prune OOM 과 달리 어차피 1파일이라 안전):
+
+```
+=IMPORTDATA("https://{host}/v1/macro/fred/DGS10.csv?cols=date,value")     # 10년물 금리 한 시리즈
+GET /v1/macro/fred/manifest.csv                                            # 어떤 seriesId 가 있는지 카탈로그
+```
+
+전 시리즈를 디코드해 필터하므로 fred(33만행 ~210MB)는 ~1GB 호스트에서 라이브(CF 예산이면 413).
+없는 seriesId = 404 + manifest 힌트.
+
 ## 알려진 follow-up
 
-- `macro/fred·ecos·customs` 는 `observations.parquet` **단일 벌크**(전 시리즈 한 파일)라 `/v1/.../observations`
-  가 전 시리즈를 준다. 단일 시리즈 슬라이스는 `series=` 행 필터 결정 필요 — 날짜샤드(decode-후-prune
-  OOM)와 달리 어차피 한 파일이라 post-decode 필터가 안전(spec killList 의 근거가 여기엔 안 걸림). 운영자 결정.
 - 날짜샤드(`gov/prices/date` 등)·벌크(`krx/prices` 등)는 413 → Tier1. CF 한도 통과 시 후속(spec Phase 5).

@@ -30,6 +30,23 @@ const ID_RE = /^[\p{L}\p{N}._-]+$/u;
 const validId = (id) => ID_RE.test(id) && !id.includes('..');
 const FREQS = new Set(['d', 'w', 'm', 'q', 'y']);
 
+// macro 벌크 레이아웃 — fred/ecos/customs 는 per-series 파일이 아니라 observations.parquet 단일 파일
+// (seriesId 컬럼으로 전 시리즈 1파일). 사용자는 한 시리즈(예 FRED DGS10)를 원하므로 {id}=seriesId 로
+// 보고 observations 를 읽어 그 시리즈만 필터한다. 날짜샤드(decode 후 prune=326MB OOM)와 달리 어차피
+// 1파일이라 post-decode 필터가 안전 — spec killList 의 근거가 여기엔 안 걸림. {id}='manifest' 는 시리즈
+// 카탈로그(manifest.parquet) 직읽기로 어떤 seriesId 가 있는지 탐색.
+const BULK_OBS = new Map([
+	['macro/fred', 'seriesId'],
+	['macro/ecos', 'seriesId'],
+	['macro/customs', 'seriesId']
+]);
+function resolvePhysical(dir, id) {
+	const idCol = BULK_OBS.get(dir);
+	if (!idCol) return { stem: id, seriesFilter: null };
+	if (id === 'manifest') return { stem: 'manifest', seriesFilter: null };
+	return { stem: 'observations', seriesFilter: { col: idCol, value: id } };
+}
+
 const CORS = {
 	'Access-Control-Allow-Origin': '*', // public 데이터 — Sheets/Excel 임의 origin fetch
 	'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
@@ -124,10 +141,18 @@ function serialize(rows, cols, ext) {
 function detectDateCol(cols) {
 	return cols.find((c) => /(^date$|날짜|기준일|^month$|pub_?date|기간)/i.test(c)) || null;
 }
+// 날짜값 → YYYYMMDD 숫자열. parquet DATE 논리타입은 hyparquet 가 Date 객체로 주는데(FRED 등)
+// String(Date)='Mon Jun 22 2026…' 라 day 가 앞에 와 digits 가 깨진다 → cell() 과 동일하게 ISO 정규화.
+// 'YYYYMMDD'·'YYYY-MM-DD' 문자열(gov·brokerage)은 그대로 숫자만 추출.
+function dateDigits(v) {
+	if (v instanceof Date) return v.toISOString().slice(0, 10).replace(/-/g, '');
+	return String(v ?? '').replace(/[^0-9]/g, '');
+}
+
 function downsample(rows, dateCol, freq) {
 	const bucket = new Map();
 	for (const r of rows) {
-		const digits = String(r[dateCol] ?? '').replace(/[^0-9]/g, '');
+		const digits = dateDigits(r[dateCol]);
 		if (digits.length < 4) continue;
 		const y = digits.slice(0, 4);
 		const mo = digits.slice(4, 6) || '01';
@@ -165,7 +190,9 @@ function catalog() {
 			label: e.label,
 			shardKind: e.shardKind,
 			tier2: isTier2(e.shardKind),
-			examplePath: isTier2(e.shardKind) ? `/v1/${e.dir}/{id}.tsv` : null
+			examplePath: isTier2(e.shardKind) ? `/v1/${e.dir}/{id}.tsv` : null,
+			// macro 벌크 observations: {id}=seriesId, manifest 로 시리즈 카탈로그 탐색
+			...(BULK_OBS.has(e.dir) ? { idMeaning: 'seriesId', catalogPath: `/v1/${e.dir}/manifest.csv` } : {})
 		}))
 	};
 }
@@ -175,7 +202,8 @@ export default {
 		const baseFetch = (env && env.FETCH) || globalThis.fetch;
 		const UPSTREAM = ((env && env.UPSTREAM) || UPSTREAM_DEFAULT).replace(/\/+$/, '');
 		const MAX_DECODE_BYTES = num(env && env.MAX_DECODE_BYTES, 700 * 1024 * 1024); // 실제 RSS 예산
-		const DECODE_EXPANSION = num(env && env.DECODE_EXPANSION, 6); // uncompressed parquet → JS 객체 RSS 팽창(실측 panel 155MB×6≈927MB)
+		const DECODE_EXPANSION = num(env && env.DECODE_EXPANSION, 6); // 텍스트 payload 팽창(실측 panel 155MB×6≈927MB)
+		const CELL_OBJ = num(env && env.CELL_OBJ, 120); // 디코드 셀당 JS 객체 오버헤드 — many-small-rows(fred 33만행) 가드
 		const MAX_DECODE_ROWS = num(env && env.MAX_DECODE_ROWS, 2_000_000);
 		const CELL_CAP = num(env && env.CELL_CAP, 45_000);
 		const indexLink = { Link: '</v1/>; rel="index"' };
@@ -201,7 +229,8 @@ export default {
 			const entry = ALLOW.get(sd.dir);
 			if (!entry) return json({ error: 'not found' }, 404, indexLink); // private·미존재 동일(누설 0)
 			if (!validId(sd.id)) return json({ error: 'invalid id' }, 400, indexLink);
-			const fileUrl = `${UPSTREAM}/${sd.dir}/${sd.id}.parquet`;
+			const physS = resolvePhysical(sd.dir, sd.id);
+			const fileUrl = `${UPSTREAM}/${sd.dir}/${physS.stem}.parquet`;
 			const probe = await probeSize(fileUrl, baseFetch);
 			if (probe.status === 404) return json({ error: 'not found' }, 404, indexLink);
 			if (probe.status >= 500) return json({ error: 'upstream error', status: probe.status }, 502, indexLink);
@@ -211,7 +240,16 @@ export default {
 				const schema = parquetSchema(meta);
 				const columns = schema.children.map((c) => ({ name: c.element.name, type: c.element.type || c.element.converted_type || 'unknown' }));
 				return json(
-					{ dir: sd.dir, id: sd.id, size: probe.size, rows: Number(meta.num_rows), rowGroups: meta.row_groups?.length ?? 0, columns, tier2: isTier2(entry.shardKind) },
+					{
+						dir: sd.dir,
+						id: sd.id,
+						size: probe.size,
+						rows: Number(meta.num_rows),
+						rowGroups: meta.row_groups?.length ?? 0,
+						columns,
+						tier2: isTier2(entry.shardKind),
+						...(physS.seriesFilter ? { layout: 'bulk-observations', seriesColumn: physS.seriesFilter.col, note: 'rows = all series; this id selects one series within observations' } : {})
+					},
 					200,
 					{ ...cacheH, ...indexLink }
 				);
@@ -253,7 +291,9 @@ export default {
 		if (tailParam != null && headParam != null) return json({ error: 'head and tail are mutually exclusive' }, 400, indexLink);
 		if (freqParam && !FREQS.has(freqParam)) return json({ error: `invalid freq '${freqParam}'`, allowed: [...FREQS] }, 400, indexLink);
 
-		const fileUrl = `${UPSTREAM}/${dd.dir}/${dd.id}.parquet`;
+		// 물리 파일·시리즈 필터 해소 (macro 벌크 observations: {id}=seriesId, manifest=카탈로그)
+		const phys = resolvePhysical(dd.dir, dd.id);
+		const fileUrl = `${UPSTREAM}/${dd.dir}/${phys.stem}.parquet`;
 		const probe = await probeSize(fileUrl, baseFetch);
 		if (probe.status === 404) return json({ error: 'not found' }, 404, indexLink);
 		if (probe.status >= 500) return json({ error: 'upstream error', status: probe.status }, 502, indexLink);
@@ -274,11 +314,15 @@ export default {
 				cols = want;
 			}
 
-			// 메모리 예산 가드 (디코드 전) — 선택 컬럼 압축해제 합 × 팽창계수(JS RSS 추정)가 예산 초과면
-			// 413(+cols 안내). cols 투영이 진짜 탈출구(panel 본문 제외 시 추정 급감, 실측). 카테고리 분기 0.
-			const estBytes = decodeBytesEstimate(meta, cols);
-			const estRss = estBytes * DECODE_EXPANSION;
-			if ((estBytes > 0 && estRss > MAX_DECODE_BYTES) || totalRows > MAX_DECODE_ROWS) {
+			// 읽을 컬럼 — 시리즈 필터 시 idCol 을 반드시 포함(출력에서 빠져도 필터엔 필요)
+			const readCols = phys.seriesFilter && !cols.includes(phys.seriesFilter.col) ? [...cols, phys.seriesFilter.col] : cols;
+
+			// 메모리 예산 가드 (디코드 전) — 텍스트 payload(압축해제×팽창) + 셀당 객체 오버헤드(행수×컬럼수×CELL_OBJ).
+			// 두 항이 panel(텍스트 거대)·fred(행 多 작음) 양쪽을 잡는다. cols 투영이 양 항 모두 줄이는 탈출구(실측).
+			// 초과면 413(+cols 안내). 카테고리 분기 0 — 전부 footer 메타데이터에서 도출.
+			const estBytes = decodeBytesEstimate(meta, readCols);
+			const estRss = estBytes * DECODE_EXPANSION + totalRows * readCols.length * CELL_OBJ;
+			if (estRss > MAX_DECODE_BYTES || totalRows > MAX_DECODE_ROWS) {
 				return json(
 					{
 						error: 'estimated decode exceeds this host memory budget',
@@ -294,27 +338,40 @@ export default {
 				);
 			}
 
-			// head/tail → rowStart/rowEnd (진짜 행 슬라이스)
-			let rowStart, rowEnd;
 			const tailN = tailParam != null ? num(tailParam, 0) : 0;
 			const headN = headParam != null ? num(headParam, 0) : 0;
-			if (tailN > 0) { rowStart = Math.max(0, totalRows - tailN); rowEnd = totalRows; }
-			else if (headN > 0) { rowStart = 0; rowEnd = Math.min(totalRows, headN); }
+			// freq 는 전 구간 다운샘플 후 tail/head 슬라이스해야 의미가 맞다(tail 먼저면 마지막 N 일만 버킷팅).
+			// date 컬럼은 출력 cols 에 있어야 함(없으면 400).
+			const freqDateCol = freqParam ? detectDateCol(cols) : null;
+			if (freqParam && !freqDateCol) return json({ error: `freq=${freqParam} requires a date column in the projection`, available_columns: allCols, hint: 'add the date column to ?cols= or drop ?freq=' }, 400, indexLink);
 
-			let rows = await parquetReadObjects({ file, compressors, columns: cols, rowStart, rowEnd });
-
-			// freq 다운샘플
-			let downsampled = false;
-			if (freqParam) {
-				const dateCol = detectDateCol(cols);
-				if (!dateCol) return json({ error: `freq=${freqParam} requires a date column in the projection`, available_columns: allCols, hint: 'add the date column to ?cols= or drop ?freq=' }, 400, indexLink);
-				rows = downsample(rows, dateCol, freqParam);
-				downsampled = true;
+			let rows;
+			let seriesTotal; // X-DartLab-Total-Rows — 시리즈/파일의 원본(다운샘플·슬라이스 전) 행수
+			// parquet 레벨 슬라이스(진짜 prune)는 단일파일 + freq 없음일 때만. 시리즈 필터·freq 는 전량 디코드 필요.
+			if (!phys.seriesFilter && !freqParam) {
+				let rowStart, rowEnd;
+				if (tailN > 0) { rowStart = Math.max(0, totalRows - tailN); rowEnd = totalRows; }
+				else if (headN > 0) { rowStart = 0; rowEnd = Math.min(totalRows, headN); }
+				rows = await parquetReadObjects({ file, compressors, columns: cols, rowStart, rowEnd });
+				seriesTotal = totalRows;
+			} else {
+				const all = await parquetReadObjects({ file, compressors, columns: readCols });
+				if (phys.seriesFilter) {
+					const col = phys.seriesFilter.col, val = phys.seriesFilter.value;
+					rows = all.filter((r) => String(r[col]) === val);
+					if (!rows.length) return json({ error: 'not found', hint: `unknown series id; GET /v1/${dd.dir}/manifest.csv for the catalog` }, 404, indexLink);
+				} else {
+					rows = all;
+				}
+				seriesTotal = rows.length;
+				if (freqParam) rows = downsample(rows, freqDateCol, freqParam); // 전 구간 다운샘플 먼저
+				if (tailN > 0) rows = rows.slice(Math.max(0, rows.length - tailN)); // 그다음 슬라이스
+				else if (headN > 0) rows = rows.slice(0, headN);
 			}
 
 			// 셀cap — 미지정(head/tail/freq 없음) + cols×rows 초과 시 최근행 우선 자동 tail + 헤더 신호
 			let capped = false;
-			const explicitSlice = tailN > 0 || headN > 0 || downsampled;
+			const explicitSlice = tailN > 0 || headN > 0 || !!freqParam;
 			const cellsBefore = rows.length * cols.length;
 			if (!explicitSlice && cellsBefore > CELL_CAP) {
 				const keep = Math.max(1, Math.floor(CELL_CAP / cols.length));
@@ -328,7 +385,7 @@ export default {
 				'Content-Disposition': contentDisposition(dd.id, ext),
 				...cacheH,
 				...indexLink,
-				'X-DartLab-Total-Rows': String(totalRows),
+				'X-DartLab-Total-Rows': String(seriesTotal),
 				'X-DartLab-Cells-Returned': String(rows.length * cols.length)
 			};
 			if (capped) {
