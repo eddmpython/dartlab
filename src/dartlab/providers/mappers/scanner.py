@@ -67,24 +67,137 @@ def _hasForeignInName(name: str) -> bool:
     return bool(_FOREIGN_NAME_PATTERNS.search(name))
 
 
-def scanNotes(stockCode: str) -> dict[str, dict[str, Any]]:
-    """단일 종목의 notes 구조 패턴 추출.
+# 노트 제목 행 정규화 — "8. 재고자산 (연결)" → "재고자산" (번호·scope 접미 strip, 태그 제거).
+_NOTE_NUM_RE = re.compile(r"^\s*\d+[.)]\s*")
+_NOTE_SCOPE_RE = re.compile(r"\s*\((?:연결|별도)\)\s*$")
+_PERIOD_COL_RE = re.compile(r"^\d{4}Q[1-4]$")
+
+
+def _noteTitleFromContent(content: str | None) -> str:
+    """노트 leaf content 의 제목(번호·scope·태그 strip). 비제목(표·산문)이면 "".
 
     Args:
-        stockCode: 종목코드.
+        content: panel 노트 행 content (raw XML 또는 plain).
 
     Returns:
-        {항목명: {"type", "category", "foreignCurrency", "count", "years": set[str]}}.
-        import/데이터 실패 시 빈 dict.
+        정규화 제목 (예 "재고자산", "영업부문") 또는 "" (제목 아님).
+
+    Example:
+        >>> _noteTitleFromContent("<P>8. 재고자산 (연결)</P>")
+        '재고자산'
+        >>> _noteTitleFromContent("<TABLE>취득원가 ...</TABLE>")
+        ''
+    """
+    if not content:
+        return ""
+    s = re.sub(r"<[^>]+>", " ", str(content))
+    s = re.sub(r"\s+", " ", s).strip()
+    if not s or len(s) > 40 or any(ch.isdigit() for ch in s[-8:]):
+        return ""  # 제목 행은 짧고 끝이 숫자가 아님 (표·산문 배제)
+    s = _NOTE_SCOPE_RE.sub("", _NOTE_NUM_RE.sub("", s)).strip()
+    return s[:24] if 1 < len(s) <= 30 else ""
+
+
+def scanNotes(stockCode: str) -> dict[str, dict[str, Any]]:
+    """단일 종목의 notes 구조 패턴 추출 — panel SSOT(NT_ 행 contentRaw) 직독.
+
+    Panel(code) 을 1회 read 해 NT_ 표 행을 ``cellsFromContent`` 로 분해, 라인아이템(label)을
+    수집·분류한다. category = 노트 제목(content 제목행 discover), canonicalKey = NT_ 코드,
+    noteShape = axisPath 멤버 유무로 composition/lineitem. 최근 연간(Q4) 5기간 + 연결만.
+
+    Args:
+        stockCode: 종목코드 (KR 6자리).
+
+    Returns:
+        {항목명: {"type", "category", "canonicalKey", "noteShape", "foreignCurrency",
+        "count", "years": set[str]}}. import/데이터 실패 시 빈 dict.
 
     Example:
         >>> scanNotes("005930")  # doctest: +SKIP
-        {'재고자산': {'type': 'amount', 'category': '재고자산', ...}}
+        {'재고자산': {'type': 'amount', 'category': '재고자산', 'canonicalKey': 'NT_D826380', ...}}
 
     Raises:
-        없음 — import/데이터 로드 실패는 빈 dict 로 흡수한다.
+        없음 — import/데이터 로드 실패(파일·메모리)는 빈 dict 로 흡수한다.
     """
-    return {}
+    try:
+        import polars as pl
+
+        from dartlab.providers.dart.panel import Panel
+        from dartlab.providers.dart.panel.build.cell import cellsFromContent
+    except ImportError:
+        return {}
+
+    try:
+        p = Panel(stockCode)
+    except (FileNotFoundError, OSError, ValueError, MemoryError):
+        return {}
+    if p is None or getattr(p, "height", 0) == 0:
+        return {}
+
+    nt = p.filter(pl.col("disclosureKey").fill_null("").str.starts_with("NT_"))
+    if nt.is_empty():
+        return {}
+
+    periodCols = [c for c in nt.columns if _PERIOD_COL_RE.match(c)]
+    annual = (
+        sorted((c for c in periodCols if c.endswith("Q4")), reverse=True)[:5] or sorted(periodCols, reverse=True)[:5]
+    )
+    if not annual:
+        return {}
+
+    # 노트가족(disclosureKey)별 제목 — content 제목행 discover (sectionLeaf 는 일반명뿐).
+    titles: dict[str, str] = {}
+    for r in nt.iter_rows(named=True):
+        dk = r.get("disclosureKey")
+        if not dk or dk in titles:
+            continue
+        for c in annual:
+            t = _noteTitleFromContent(r.get(c))
+            if t:
+                titles[dk] = t
+                break
+
+    items: dict[str, dict[str, Any]] = {}
+    rcptDefault = ""
+    for r in nt.filter(pl.col("leafType") == "table").iter_rows(named=True):
+        if (r.get("scope") or "consolidated") != "consolidated":
+            continue
+        dk = r.get("disclosureKey") or ""
+        category = titles.get(dk, dk)
+        rcept = r.get("rceptNo") or rcptDefault
+        for c in annual:
+            content = r.get(c)
+            if not content:
+                continue
+            year = c[:4]
+            try:
+                cells = list(
+                    cellsFromContent(content, statement=dk, scope="consolidated", period=c, code=stockCode, rcept=rcept)
+                )
+            except (ValueError, TypeError, KeyError):
+                continue
+            if not cells:
+                continue
+            hasAxis = any((cell.get("axisPath") or "") not in ("", "ConsolidatedMember") for cell in cells)
+            shape = "composition" if hasAxis else "lineitem"
+            for cell in cells:
+                name = normalizeName(str(cell.get("label") or ""))
+                if not name:
+                    continue
+                entry = items.get(name)
+                if entry is None:
+                    entry = items[name] = {
+                        "type": _classifyType(name, [str(cell.get("valueRaw") or "")]),
+                        "category": category,
+                        "canonicalKey": dk,
+                        "noteShape": shape,
+                        "foreignCurrency": _hasForeignInName(name),
+                        "count": 0,
+                        "years": set(),
+                    }
+                entry["count"] += 1
+                entry["years"].add(year)
+    return items
 
 
 def discoverAliases(
