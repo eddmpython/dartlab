@@ -2,7 +2,7 @@
 
 > 출처: GitHub Discussion #70 (zias7039, 2026-06-26) "증권신고서 기반 IPO 수요예측 핵심 데이터 요약".
 > 기획 방식: 실측(probe1~4) + 전문 에이전트 4인 아키텍처 토론(입장→토론→종합→적대비판→최종) + 5렌즈 우수성 평가(운영·UI/UX·엔진혁신·속도·프로덕트).
-> 상태: **개념확립 완료(2026-06-29, 발행사 7곳 교차)** — `tests/_attempts/ipo/`. P0 판별기 ✅(3조건·오분류 0). P1 섹션앵커 ✅(FULL 7곳 100%, 채무증권 negative=발행공시 클래스 공통). P2 ✅ cat1·2·5·6 일반화+항등식(자산=부채+자본 6/6 EXACT·Σ배정=모집주식수 5/5·공모가×주식수 복구 7/7), cat3 비교PER·cat4 보호예수 워터폴=하드케이스 잔여. 우수성 평가 반영 개정본(v2). 운영자 결정 6건 대기. order-flow-scan·professional-report-engine 동급 활성.
+> 상태: **개념확립 완료(2026-06-29~30, 발행사 7곳 교차)** — `tests/_attempts/ipo/`. P0 판별기 ✅(3조건·오분류 0). P1 섹션앵커 ✅(FULL 7곳 100%, 채무증권 negative=발행공시 클래스 공통). P2 ✅ cat1·2·3·5·6 일반화+항등식: **cat3 밸류 이중 항등식 6/6 real IPO EXACT(하드케이스 돌파)**·cat5 자산=부채+자본 6/6·cat4 Σ배정 5/5·cat1 공모가×주식수 복구 7/7. 잔여=cat4 보호예수 워터폴·확정공모가 트랙. 우수성 평가 반영 개정본(v2). 운영자 결정 6건 대기. order-flow-scan·professional-report-engine 동급 활성.
 > ★이름 정정: "수요예측 요약"→**"공모 신고서 분석"**. 수요예측 *결과변수*(기관 경쟁률·의무보유확약·확정공모가 밴드내 위치)는 사후공시라 본 트랙의 6카테고리(사전 신고서)에 없음 → **카테고리7 후속트랙**으로 분리(§0.1).
 
 ---
@@ -111,8 +111,9 @@ v1 PRD는 "Python `buildReportModel` emitter 미존재(TS만, P1a만 완료)"를
 
 **P2 — 카테고리별 파서 (providers, _attempts/ipo). 🟢 cat1·2·5·6 일반화(2026-06-29, 7곳), cat3·4 하드케이스 잔여.**
 - ★**인프라 발견(실측)**: 공통 `flattenTableCells`/`parseHtmlTable` 가드 `"<table" not in html` 가 **대소문자 구분** → dart4.xsd 대문자 `<TABLE>` 을 파싱 전에 거른다(셀 0). **SSOT 경유 = `providers/dart/parse/dartXmlNormalize.normalizeDartXml`**(대문자→소문자 HTML, `<TE>/<TU>` dialect, 정부 메타 제거, 브라우저 패리티·골든픽스처) → 정상 추출. **졸업 시 결정**: 가드 case-insensitive 개선(공유 L1, 광범위 이득) vs normalizeDartXml 강제.
-- ★**카테고리별 항등식 일반화(발행사 7곳)**: cat1 공모(공모가×주식수≈총액) **7/7** — 원문 콤마오타(`1,7000,000`→17M) 자동 검출+복구(1,700,000, 밴드최고 cross-check 정확). cat2 일정 **7/7**. cat5 재무 **자산=부채+자본 6/6 real IPO EXACT**. cat4 배정 **Σ배정=모집주식수 5/5 EXACT**. cat6 위험섹션 **7/7**. → `tests/_attempts/ipo/comprehensive.py`. flat regex 평문 추출 전부 실패 확인.
-- deliverable(잔여 하드케이스): ① **cat3 비교기업 PER 값 추출**(다중표 5~8개 검출되나 "적용 PER" 라벨충돌 값파싱 미구현) ② **cat4 상장후 유통가능+보호예수 워터폴**(별 하위표). + 출력 dict 좌표 보존(`sectionAnchor/tableIdx/cellPath`, D3 deep-link) + **폼 고정성 실측 docstring**.
+- ★**카테고리별 항등식 일반화(발행사 7곳)**: cat1 공모(공모가×주식수≈총액) **7/7** — 원문 콤마오타(`1,7000,000`→17M) 자동 검출+복구. cat2 일정 **7/7**. **cat3 밸류 이중 항등식 6/6 real IPO EXACT(하드케이스 돌파)**. cat4 배정 **Σ배정=모집주식수 5/5 EXACT**. cat5 재무 **자산=부채+자본 6/6 real IPO EXACT**. cat6 위험섹션 **7/7**. → `tests/_attempts/ipo/comprehensive.py`. flat regex 평문 추출 전부 실패 확인.
+- ★**cat3 하드케이스 돌파(정정)**: PRD가 "적용 PER 다중표 충돌"로 예고한 최약 카테고리 해결. ①위치 정정 — 비교PER·평가가액·할인율은 `3.공모가격결정`(수요예측 절차뿐) 아니라 **`IV.인수인의 의견`** 단일 평가 summary 표(발행사 공통, 전부 PER). ②이중 항등식 `①순이익×②PER÷③주식수≈주당평가액` + `주당평가액×(1−할인율)≈공모가밴드` 6/6 EXACT(오차<0.02%). ③함정: '적용산식' 행 (①)(②)(③) 오매칭→col1 정확매칭, 발행사별 열수 변동(5/6열)→값셀=우측 숫자셀+스케일 행감지. 발행사 적용 PER 좌표화(10~47x)=D3 "고저평가 좌표화" 실현.
+- deliverable(잔여): ① **cat4 상장후 유통가능+보호예수 워터폴**(별 하위표) ② **확정공모가 트랙**(`[발행조건확정]` CORRECTION doc) + 출력 dict 좌표 보존(`sectionAnchor/tableIdx/cellPath`, D3 deep-link) + **폼 고정성 docstring**.
 - ★**게이트 = 카테고리별 내적 항등식 프레임워크(평가 mustFix#4 — truth proxy 격상)**. self-redundancy를 단일 트릭에서 검증 프레임워크로:
   - 카테고리1: 공모가×주식수 ≈ 예상시총 (닫힘 확실).
   - 카테고리4(유통): Σ유통가능 + Σ보호예수 ≈ 총발행주식수 (합산 항등식, 닫힘 확실).
