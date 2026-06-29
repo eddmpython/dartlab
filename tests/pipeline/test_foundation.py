@@ -128,3 +128,28 @@ def test_hf_retry_env_caps_wait_and_attempts(monkeypatch) -> None:
         retryHfCall(alwaysTransient)
     assert calls["n"] == 2
     assert sleeps == [3]
+
+
+def test_hf_retry_502_bad_gateway(monkeypatch) -> None:
+    """502 Bad Gateway 도 transient 재시도 — HF /tree 페이지네이션 게이트웨이 오류(백필 bake 회귀 가드)."""
+    from huggingface_hub.errors import HfHubHTTPError
+
+    import dartlab.core.hfRetry as hr
+    from dartlab.core.hfRetry import retryHfCall
+
+    class _Resp:
+        status_code = 502
+        headers: dict = {}
+        request = None
+
+    monkeypatch.setattr(hr.time, "sleep", lambda *_: None)
+    calls = {"n": 0}
+
+    def flaky502():
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise HfHubHTTPError("502 Bad Gateway", response=_Resp())  # type: ignore[arg-type]
+        return "ok"
+
+    assert retryHfCall(flaky502) == "ok"
+    assert calls["n"] == 2

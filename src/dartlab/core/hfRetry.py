@@ -23,7 +23,7 @@ import re
 import time
 from typing import Any, Callable
 
-_RETRYABLE_STATUS = {429, 503, 504}
+_RETRYABLE_STATUS = {429, 502, 503, 504}  # 502 Bad Gateway 포함 — HF /tree 페이지네이션 등 게이트웨이 transient
 _BACKOFF_SECONDS_FALLBACK = (60, 300, 900, 1200)  # 60s + 5m + 15m + 20m = 41m
 _MAX_SINGLE_WAIT = 1800  # 한 번 backoff 최대 30분
 _RETRY_MIN_RE = re.compile(r"retry this action in (\d+)\s*minutes?", re.IGNORECASE)
