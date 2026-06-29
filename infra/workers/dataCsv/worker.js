@@ -4,14 +4,13 @@
 // dartlab 공동작업대(HF parquet SSOT)를 **런타임 소스로 라이브** 사용. CSV 사본을 HF 에 굽지 않는다
 // (no-build, SSOT 직독). mainPlan/data-download-center 01·03·04 계약 구현.
 //
-// ── 호스트 메모리 (실측 게이트) ───────────────────────────────────────────────────────────
+// ── 호스트 = Cloudflare Worker (PRD 03·05·06). 메모리 실측 게이트 ──────────────────────────
 // 디코드 메모리는 parquet 압축해제 비용. 실측: gov/prices/company 70MB · dart/finance 119MB ·
-// macro/fred 210MB · dart/panel 927MB(본문 contentRaw). CF Workers 는 128MB 고정(전 플랜)이라 큰
-// 파일을 못 올린다. → 본 워커는 footer 의 컬럼별 total_uncompressed_size 합으로 **디코드 전에**
-// 예산(MAX_DECODE_BYTES)을 검사해 초과면 413(+`cols` 투영 안내). cols 투영이 진짜 탈출구다
-// (panel 본문 제외 시 927→83MB, 실측). 예산은 호스트별 env 한 줄: CF=~90MB(작은 파일만 라이브),
-// ~1GB 서버리스(Vercel/Netlify 함수)=~700MB(전 카탈로그 라이브). 코드는 호스트 무관 — 같은 핸들러가
-// node(dev.mjs)·CF·서버리스 함수에서 동일 동작.
+// macro/fred(observations) 210MB · dart/panel 927MB(본문 contentRaw). CF Workers 는 128MB 고정이라
+// 큰 파일은 못 올린다 → footer 의 컬럼별 total_uncompressed_size 합으로 **디코드 전에** 예산
+// (MAX_DECODE_BYTES)을 검사해 초과면 **413→Tier1**(PRD killList 패턴, 날짜샤드와 동일). cols 투영이
+// 탈출구(panel 본문 제외 927→80MB, 실측). 남은 게이트 = PRD openDecision #2 CF CPU 플랜(무료 10ms vs
+// 유료) — CF 배포 후 실측해 운영자 보고(PRD 05 §3). 코드는 호스트 무관(node dev.mjs 로 로컬 증명).
 //
 // 보안: allowlist.js(public·flat·표형 dir) 단일 게이트. private 6종은 same-repo 라 코드 게이트가
 // 유일 방어. {id} 정규식으로 경로주입·절대URL passthrough 차단. hfProxy 의 무게이트 /hf 복제 금지.

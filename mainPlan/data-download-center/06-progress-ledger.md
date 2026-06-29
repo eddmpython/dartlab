@@ -39,19 +39,20 @@
 - [ ] **Phase 0 — 스캐폴드**: `DATA_RELEASES` → 노출 화이트리스트 빌드타임 emit 상수 + drift 가드 테스트(`tests/audit/csvWorkerAllowlist`). 변환 전 SSOT 게이트부터.
 - [ ] **Phase 1 — Tier1 다운로드(MVP 척추)**: `lab/data-center` 프로토타입, `requestParquetRows` 직독 → `buildWorkbook`/`csvExport` 재사용, 링크빌더 UX. 백엔드 0.
 - [ ] **Phase 2 — 졸업**: 스크린샷 눈검수 후 `/data` 승격, 운영자 명시 push 승인.
-- [x] **Phase 3 — Tier2 워커 (코드·로컬증명 완료, 무료 배포 준비)**: `infra/workers/dataCsv` 구현 — `/v1/{dir}/{id}.{csv|tsv}?cols=&tail=&head=&freq=` + `/v1/`카탈로그 + `schema.json` + allowlist 게이트(allowlist.js) + footer 예산 가드 + 셀cap 헤더 + 에러모델(400/404/405/413/502). 로컬 node 로 13 케이스 end-to-end PASS(BOM·en-US숫자·honest-gap·한글 stem·413 dateShard·404 private 누설0·400+available·HEAD). **실측 결론(배포 호스트 게이트)**: 디코드 RSS = gov/prices/company 70MB · dart/finance 119MB · macro/fred 210MB · **dart/panel 927MB**(본문). footer `total_uncompressed_size`×6 ≈ 실측 RSS(panel 추정 932MB vs 측정 927MB 일치). **CF Workers 128MB(전 플랜 고정)는 큰 파일 불가** → 작은 회사파일만 라이브. 전 카탈로그 라이브 = **~1GB 서버리스 함수**(같은 핸들러). `cols` 투영이 메모리 탈출구(panel 본문 제외 927→80MB). `tail`/`head` 는 단일 row-group 이라 메모리 안 줄임(슬라이스만). → 미결정 #1 호스트·#2 플랜 = ~1GB 서버리스 권장. drift 가드 `test_worker_allowlist_in_sync` 추가.
+- [x] **Phase 3 — Tier2 워커 (코드·로컬증명 완료, 무료 배포 준비)**: `infra/workers/dataCsv` 구현 — `/v1/{dir}/{id}.{csv|tsv}?cols=&tail=&head=&freq=` + `/v1/`카탈로그 + `schema.json` + allowlist 게이트(allowlist.js) + footer 예산 가드 + 셀cap 헤더 + 에러모델(400/404/405/413/502). 로컬 node 로 13 케이스 end-to-end PASS(BOM·en-US숫자·honest-gap·한글 stem·413 dateShard·404 private 누설0·400+available·HEAD). **실측 결론(배포 호스트 게이트)**: 디코드 RSS = gov/prices/company 70MB · dart/finance 119MB · macro/fred 210MB · **dart/panel 927MB**(본문). footer `total_uncompressed_size`×6 ≈ 실측 RSS(panel 추정 932MB vs 측정 927MB 일치). **호스트 = CF Worker(PRD)**. CF 128MB 메모리상: 회사 flat 파일(prices 70MB·indices·brokerage·finance 119MB) 라이브, fred observations 210MB·panel-full 927MB 는 **413→Tier1**(killList 패턴). `cols` 투영이 탈출구(panel 본문 제외 927→80MB). `tail`/`head` 는 단일 row-group 이라 메모리 안 줄임(슬라이스만). 남은 게이트 = openDecision #2 CF CPU(무료 10ms vs 유료) = 배포 후 실측·운영자 보고(05 §3). drift 가드 `test_worker_allowlist_in_sync` 추가. (⚠ 옛 기재 '~1GB 서버리스/Vercel' 은 PRD 이탈 — 철회, CF 로 재정렬.)
 - [ ] **Phase 4 — 배선**: `csvWorker` origin 등록 + `VITE_DARTLAB_CSV_PROXY` env. (워커 변환·셀cap·카탈로그·schema 는 Phase 3 완료 — 남은 건 호스트 배포 + UI origin 배선뿐.)
 - [ ] **Phase 5 — 후속(MVP 외)**: 날짜샤드 Tier2(CF 한도 통과 시)·`freq` OHLCV-aware 집계·`/v1/{dir}/index.json` HF tree 열거·passthrough 격상 검토.
 
-## 6. 열린 질문 (해소됨 — 유료 결심 없음)
+## 6. 열린 질문 (운영자 결정)
 
-- ~~CF Worker 유료 플랜~~ **기각: 유료 불필요.** 무료 1GB 서버리스(Vercel/Netlify Hobby, 메모리 1024MB)가 전 카탈로그를 $0 로 라이브. CF(128MB)는 회사파일만 — 새 계정 0 으로 시작용. 둘 다 무료, `worker.js` 동일.
-- **CELL_CAP** = 45,000 확정(실측). **Tier2 대상** = isTier2(company/series) 전부(우선순위 분기 없음). **macro 단일시리즈** = `{id}=seriesId` 로 구현 완료(observations 필터, `series=` 별 파라미터 불필요).
-- 남은 운영자 항목 = `/data-center`→`/data` 졸업 push 승인(UI 눈검수)뿐.
+1. **워커 도메인/라우트** — 전용 워커(`infra/workers/dataCsv`, 게이트 격리) 구현됨. placeholder=`*.workers.dev`.
+2. **CF Worker CPU 플랜** (PRD 핵심 게이트) — 메모리는 실측 확정(회사파일 128MB 안, 큰 파일 413→Tier1). 남은 건 **CPU**: 무료(10ms) vs 유료(50ms~30s). parquet 디코드 CPU 가 무료 10ms 안에 드는지 = **CF 배포 후 실측 → 운영자 보고**(05 §3). 운영자 "유료 안 함" 이면 무료 10ms 에 드는 작은 회사파일만 라이브, 못 들면 Tier1 전용.
+3. **CELL_CAP** = 45,000 확정. **Tier2 대상** = isTier2(company/series). **macro 단일시리즈** = `{id}=seriesId` 구현했으나 observations 전량 디코드(210MB)라 CF 128MB 초과 → CF 에선 413. 라이브하려면 observations 시리즈별 분할(sync 측 build 변경=PRD-gap, 별도 토론·승인).
+4. **`/data-center` → `/data` 졸업** — 스크린샷 눈검수 + 운영자 명시 push 승인.
 
 ## 7. NEXT
 
-**Phase 3 완료(`infra/workers/dataCsv` 구현+로컬증명, 회사파일·macro 단일시리즈·지수·브로커리지 전부 라이브).** 배포는 **무료** — Vercel Hobby(`api/[...path].js`+`vercel.json`, 1GB) 면 전 카탈로그, CF(`wrangler.toml`) 면 회사파일. → Phase 4 UI origin 배선(`csvWorker`+`VITE_DARTLAB_CSV_PROXY`).
+**Phase 3 워커 구현+로컬 메모리 실측 완료(`infra/workers/dataCsv`, CF Worker).** 남은 PRD 게이트 = **CF 배포 후 CPU 실측 → 운영자 보고**(05 §3, openDecision #2). 회사 flat 파일(prices·finance·indices·brokerage)은 메모리상 CF 라이브 가능, fred observations·panel-full 은 413→Tier1. → CF 배포 → CPU 보고 → Phase 4 UI origin 배선(`csvWorker`+`VITE_DARTLAB_CSV_PROXY`).
 
 ## 8. 화해 상태
 

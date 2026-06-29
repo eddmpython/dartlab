@@ -20,29 +20,28 @@ https://{host}/v1/{dir}/{id}.{csv|tsv}?cols=&tail=&head=&freq=
 파라미터: `cols`(컬럼 투영·출력순서) · `tail`(최근 N행) · `head`(최초 N행, tail 과 배타) ·
 `freq`(다운샘플 d\|w\|m\|q\|y, last-of-period). 확장자가 포맷 단일 결정(`.csv`=Sheets, `.tsv`=Excel 한국 로케일).
 
-## 호스트 메모리 — 전 카탈로그는 무료 1GB 서버리스에서 ($0)
+## 호스트 = Cloudflare Worker — 메모리 실측 게이트 (PRD 05 §3)
 
-디코드 메모리 = parquet 압축해제 비용. 본 워커는 footer 의 컬럼별 `total_uncompressed_size` 합 ×
-팽창계수로 **디코드 전에** 예산(`MAX_DECODE_BYTES`)을 검사해 초과면 413(+`cols` 안내)한다. 실측:
+호스트는 CF Worker(PRD 03·05·06). 디코드 메모리 = parquet 압축해제 비용. 본 워커는 footer 의 컬럼별
+`total_uncompressed_size` 합 × 팽창계수로 **디코드 전에** 예산(`MAX_DECODE_BYTES`)을 검사해 초과면
+413(+`cols` 안내) — CF 128MB 에 안 드는 파일은 PRD killList 패턴대로 **413→Tier1**. 실측 RSS:
 
-| 데이터셋 | 전량 디코드 RSS | CF Workers 128MB(무료) | Vercel/Netlify Hobby 1GB(무료) |
-|---|---|---|---|
-| `gov/prices/company/{code}` (4천행) | ~70MB | ✅ | ✅ |
-| `dart/finance/{code}` (1.3만행) | ~119MB | ⚠ | ✅ |
-| `macro/fred/{seriesId}` (observations 33만행) | ~210MB | ❌ | ✅ |
-| `dart/panel/{code}` (본문 포함) | ~927MB | ❌ | ❌(→`cols` 투영) |
-| `dart/panel/{code}?cols=`(본문 제외) | ~30~80MB | ⚠ | ✅ |
+| 데이터셋 | 전량 디코드 RSS | CF 128MB 메모리 |
+|---|---|---|
+| `gov/prices/company/{code}` (4천행) | ~70MB | ✅ |
+| `gov/indices/index/{name}`·`research/brokerage/{YYYYMM}` | ~수MB | ✅ |
+| `dart/finance/{code}` (1.3만행) | ~119MB | ⚠ 아슬 |
+| `macro/fred/{seriesId}` (observations 33만행 전량 디코드) | ~210MB | ❌ → 413 |
+| `dart/panel/{code}` (본문 포함) | ~927MB | ❌ → 413 |
+| `dart/panel/{code}?cols=`(본문 제외) | ~30~80MB | ✅ (cols 투영) |
 
-- **전 카탈로그 라이브 = 무료다.** Vercel Hobby·Netlify 무료 함수는 메모리 **1024MB**라 fred·panel(cols)
-  포함 전부 $0 로 라이브. 유료 결심 불필요 — `api/[...path].js`+`vercel.json` 으로 `vercel` 한 줄 배포.
-- CF Workers(역시 무료, 기존 인프라)는 128MB 고정이라 **회사파일만** 라이브(fred·panel-full 은 413→Tier1).
-  새 계정 없이 시작하려면 이쪽. 같은 `worker.js` 핸들러 — 호스트만 다르다.
-- `cols` 투영이 진짜 메모리 탈출구다 — panel 본문(`contentRaw`) 제외 시 927→80MB(실측). 큰 파일도
-  컬럼만 고르면 어디서나 라이브.
+- `cols` 투영이 메모리 탈출구 — panel 본문(`contentRaw`) 제외 시 927→80MB(실측).
+- **남은 게이트 = PRD openDecision #2 (CF CPU 플랜)**. 무료 CF=10ms CPU·유료=50ms~30s. parquet 디코드
+  CPU 가 무료 10ms 안에 드는지는 **CF 배포 후 실측 → 운영자 보고**(PRD 05 §3). 메모리는 위 표대로 확정.
 
 예산 추정 = 텍스트 payload(컬럼 압축해제×`DECODE_EXPANSION`) + 셀 객체 오버헤드(행수×컬럼수×`CELL_OBJ`)
 두 항 — 전자가 panel(텍스트 거대), 후자가 fred(행 多 작음)를 잡는다. env(`MAX_DECODE_BYTES`·`MAX_DECODE_ROWS`·
-`DECODE_EXPANSION`·`CELL_OBJ`·`CELL_CAP`)로 호스트별 한 줄 조절.
+`DECODE_EXPANSION`·`CELL_OBJ`·`CELL_CAP`)로 한 줄 조절.
 
 ## 보안
 
@@ -61,18 +60,15 @@ curl "http://localhost:8787/v1/gov/prices/company/005930.csv?cols=date,close&tai
 
 node 는 메모리가 충분해 전 카탈로그를 디코드한다(배포 호스트 메모리만 위 표대로 다름).
 
-## 배포 — 둘 다 무료
+## 배포 — Cloudflare Worker (PRD 03·05·06)
 
 ```bash
-# A. 전 카탈로그 라이브 (권장) — Vercel Hobby 무료 1GB. api/[...path].js + vercel.json 포함.
-vercel          # 또는 vercel --prod. Root Directory = infra/workers/dataCsv. 메모리 1024MB·60s 자동.
-
-# B. 회사파일만 라이브 — 기존 무료 CF Workers(새 계정 0)
-npm run deploy  # wrangler deploy. fred·panel-full 은 413→Tier1.
+npm run deploy   # wrangler deploy → *.workers.dev. CF 무료 128MB. 큰 파일은 413→Tier1.
 ```
 
-배포 후 UI 배선: `ui/.../data/origins/registry.ts` 에 `csvWorker` origin 등록 + `VITE_DARTLAB_CSV_PROXY`
-env(03-tier2-live-worker §origins). env 미설정 = Tier2 비활성(UI 가 Tier1 만 노출, dev 무중단).
+배포 후 CF CPU 실측(무료 10ms vs 유료 플랜) → 운영자 보고(PRD 05 §3). UI 배선:
+`ui/.../data/origins/registry.ts` 에 `csvWorker` origin 등록 + `VITE_DARTLAB_CSV_PROXY` env
+(03-tier2-live-worker §origins). env 미설정 = Tier2 비활성(UI 가 Tier1 만 노출, dev 무중단).
 
 ## 스프레드시트 사용
 
@@ -96,8 +92,9 @@ env(03-tier2-live-worker §origins). env 미설정 = Tier2 비활성(UI 가 Tier
 GET /v1/macro/fred/manifest.csv                                            # 어떤 seriesId 가 있는지 카탈로그
 ```
 
-전 시리즈를 디코드해 필터하므로 fred(33만행 ~210MB)는 ~1GB 호스트에서 라이브(CF 예산이면 413).
-없는 seriesId = 404 + manifest 힌트.
+⚠ 단, observations 전량(fred 33만행 ~210MB)을 디코드해 필터하므로 **CF 128MB 메모리에 안 든다 → CF 에선
+413→Tier1**. macro 단일시리즈를 라이브로 풀려면 observations 를 시리즈별 파일로 쪼개는 sync 측 재구성
+(build 변경, 별도 토론·승인)이 필요 — PRD-gap. 현재는 회사 flat 파일이 CF 라이브의 핵심. 없는 seriesId = 404.
 
 ## 알려진 follow-up
 
