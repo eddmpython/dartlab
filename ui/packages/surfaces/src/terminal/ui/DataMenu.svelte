@@ -72,14 +72,16 @@
 
 	// 일반인용 컬럼 정리 — pick: 내부 엔진 컬럼(atocId·xbrlMatchScore 등) 제거. ko: raw 소스 코드(BAS_DD 등)→한글.
 	// 원본(dart/finance·edgar/financeStmt)은 비포함 → raw 유지(시계열이 가공본).
-	const COL_SPEC: Record<string, { pick?: string[]; ko?: Record<string, string> }> = {
+	const COL_SPEC: Record<string, { pick?: string[]; ko?: Record<string, string>; trunc?: Record<string, number> }> = {
 		'dart/panel': {
 			pick: ['corp', 'period', 'rceptNo', 'chapter', 'sectionPath', 'sectionLeaf', 'contentRaw'],
-			ko: { corp: '회사', period: '기간', rceptNo: '접수번호', chapter: '장', sectionPath: '섹션경로', sectionLeaf: '항목', contentRaw: '내용' }
+			ko: { corp: '회사', period: '기간', rceptNo: '접수번호', chapter: '장', sectionPath: '섹션경로', sectionLeaf: '항목', contentRaw: '내용(발췌)' },
+			trunc: { contentRaw: 200 } // 본문 전체는 셀당 수KB → 파일 수백MB·엑셀 무용. 200자 발췌(전문은 DART 접수번호로)
 		},
 		'edgar/panel': {
 			pick: ['corp', 'period', 'rceptNo', 'chapter', 'sectionPath', 'sectionLeaf', 'contentRaw'],
-			ko: { corp: '회사', period: '기간', rceptNo: '접수번호', chapter: '장', sectionPath: '섹션경로', sectionLeaf: '항목', contentRaw: '내용' }
+			ko: { corp: '회사', period: '기간', rceptNo: '접수번호', chapter: '장', sectionPath: '섹션경로', sectionLeaf: '항목', contentRaw: '내용(발췌)' },
+			trunc: { contentRaw: 200 }
 		},
 		'gov/indices/index': {
 			ko: { BAS_DD: '기준일', IDX_CLSS: '지수분류', IDX_NM: '지수명', CLSPRC_IDX: '종가', CMPPREVDD_IDX: '전일대비', FLUC_RT: '등락률(%)', OPNPRC_IDX: '시가', HGPRC_IDX: '고가', LWPRC_IDX: '저가', ACC_TRDVOL: '거래량', ACC_TRDVAL: '거래대금', MKTCAP: '시가총액', MARKET_GROUP: '시장' }
@@ -97,7 +99,12 @@
 		const cols = (spec.pick ?? Object.keys(rows[0])).filter((c) => c in rows[0]);
 		return rows.map((r) => {
 			const o: Record<string, unknown> = {};
-			for (const c of cols) o[spec.ko?.[c] ?? c] = r[c];
+			for (const c of cols) {
+				let v = r[c];
+				const lim = spec.trunc?.[c];
+				if (lim && typeof v === 'string' && v.length > lim) v = v.slice(0, lim) + '…';
+				o[spec.ko?.[c] ?? c] = v;
+			}
 			return o;
 		});
 	}
@@ -227,17 +234,23 @@
 		sel = allSel ? new Set() : new Set(combinable);
 	}
 
+	const EXCEL_MAX = 1_000_000; // 엑셀 시트 행 한도(1,048,575) 이하로 분할 → 각 파일이 엑셀에서 열린다.
 	function zipCsvs(sheets: ObjectSheet[]): Uint8Array {
 		const zip = new ZipStore();
 		const te = new TextEncoder();
 		const used = new Set<string>();
-		for (const s of sheets) {
-			let base = clean(s.label) || 'sheet';
+		const add = (label: string, cols: string[], rows: Record<string, unknown>[]) => {
+			let base = clean(label) || 'sheet';
 			let nm = base;
 			let n = 2;
 			while (used.has(nm)) nm = `${base}_${n++}`;
 			used.add(nm);
-			zip.addEntry(`${nm}.csv`, te.encode(toCsv(s.columns, s.rows)));
+			zip.addEntry(`${nm}.csv`, te.encode(toCsv(cols, rows)));
+		};
+		for (const s of sheets) {
+			if (s.rows.length > EXCEL_MAX)
+				for (let i = 0, part = 1; i < s.rows.length; i += EXCEL_MAX, part += 1) add(`${s.label}_${part}`, s.columns, s.rows.slice(i, i + EXCEL_MAX));
+			else add(s.label, s.columns, s.rows);
 		}
 		return zip.finalize();
 	}
@@ -255,8 +268,8 @@
 			}
 			const name = src.bare ? clean(src.label) : stem(src.label);
 			if (fmt === 'xlsx') downloadBlob(objectsToWorkbook(sheets), `${name}.xlsx`, XLSX_MIME);
-			else if (sheets.length === 1) downloadCsv(name, sheets[0].columns, sheets[0].rows);
-			else downloadBlob(zipCsvs(sheets), `${name}.zip`, 'application/zip');
+			else if (sheets.length === 1 && sheets[0].rows.length <= EXCEL_MAX) downloadCsv(name, sheets[0].columns, sheets[0].rows);
+			else downloadBlob(zipCsvs(sheets), `${name}.zip`, 'application/zip'); // 180만행 → 104만행 이하로 분할
 		} catch (e) {
 			err = e instanceof Error ? e.message : String(e);
 		} finally {
@@ -318,8 +331,8 @@
 				{#each byGroup('scan') as s (s.key)}
 					{#if s.bulk}
 						<div class="dsRow">
-							<span class="dsLabel dsLabelPad">{s.label}<span class="dsDir">{s.desc} · {en ? 'too big to bundle' : '대용량·개별'}</span></span>
-							<button class="dsBtn" onclick={() => dlOne(s, 'csv')} disabled={!!busy}>{busy === s.key ? '…' : 'CSV'}</button>
+							<span class="dsLabel dsLabelPad">{s.label}<span class="dsDir">{s.desc} · {en ? 'split CSV zip (Excel-openable)' : '엑셀로 열리게 분할 zip'}</span></span>
+							<button class="dsBtn" onclick={() => dlOne(s, 'csv')} disabled={!!busy}>{busy === s.key ? '…' : (en ? 'CSV zip' : 'CSV 분할')}</button>
 						</div>
 					{:else}
 						<label class="dsRow rowSel">

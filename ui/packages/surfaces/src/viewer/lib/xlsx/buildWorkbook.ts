@@ -244,9 +244,22 @@ function objectSheetToPart(name: string, input: ObjectSheet): SheetPart {
  * 객체 행 시트들 → 타입 보존 `.xlsx` 바이트. buildWorkbook(텍스트 격자, coerce)과 달리 parquet/포트
  * 네이티브 타입을 그대로 — 숫자는 숫자, 식별자·날짜 문자열은 텍스트. 시트 분할(다중 ObjectSheet) 지원.
  */
+// 엑셀 시트 행 한도(1,048,576, 헤더 포함) 초과분은 invalid 워크북이 된다 → "label (N)" 로 분할.
+const XLSX_ROW_LIMIT = 1_048_575;
+function splitOversized(sheets: ObjectSheet[]): ObjectSheet[] {
+	const out: ObjectSheet[] = [];
+	for (const s of sheets) {
+		if (s.rows.length > XLSX_ROW_LIMIT)
+			for (let i = 0, part = 1; i < s.rows.length; i += XLSX_ROW_LIMIT, part += 1)
+				out.push({ label: `${s.label} (${part})`, columns: s.columns, rows: s.rows.slice(i, i + XLSX_ROW_LIMIT) });
+		else out.push(s);
+	}
+	return out;
+}
+
 export function objectsToWorkbook(sheets: ObjectSheet[]): Uint8Array {
 	const used = new Set<string>();
-	const parts: SheetPart[] = sheets.map((s, i) => objectSheetToPart(sheetName(s.label, used, i), s));
+	const parts: SheetPart[] = splitOversized(sheets).map((s, i) => objectSheetToPart(sheetName(s.label, used, i), s));
 	const ooxml = emitOoxmlParts(parts);
 	const zip = new ZipStore();
 	const te = new TextEncoder();
