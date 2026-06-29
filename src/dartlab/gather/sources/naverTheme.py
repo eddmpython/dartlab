@@ -166,7 +166,47 @@ async def fetchThemeStocks(client: GatherHttpClient, themeNo: int, *, limit: int
     return rows if limit is None else rows[:limit]
 
 
-async def collectTheme(client: GatherHttpClient, target: str | None) -> pl.DataFrame:
+def _makeProgressBar(total: int):
+    """rich.Progress 진행바 (prog, taskId) — 비-TTY/rich 미설치면 None (조용)."""
+    try:
+        from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeRemainingColumn
+
+        from dartlab.core.logger import getConsole
+
+        console = getConsole()
+        if not console.is_terminal:
+            return None
+        prog = Progress(
+            TextColumn("[cyan]테마 수집"),
+            BarColumn(),
+            MofNCompleteColumn(),
+            TimeRemainingColumn(),
+            console=console,
+            transient=True,
+        )
+        prog.start()
+        return prog, prog.add_task("themes", total=total)
+    except ImportError:
+        return None
+
+
+async def _crawlThemes(client: GatherHttpClient, selected: list[tuple[int, str]], *, progress: bool) -> list[dict]:
+    """선택 테마들의 편입종목 순회 수집 — 다중 테마(>1)면 rich 진행바(TTY 한정)."""
+    bar = _makeProgressBar(len(selected)) if progress and len(selected) > 1 else None
+    records: list[dict] = []
+    try:
+        for no, name in selected:
+            for stock in await fetchThemeStocks(client, no):
+                records.append({"themeNo": no, "themeName": name, **stock})
+            if bar is not None:
+                bar[0].update(bar[1], advance=1)
+    finally:
+        if bar is not None:
+            bar[0].stop()
+    return records
+
+
+async def collectTheme(client: GatherHttpClient, target: str | None, *, progress: bool = True) -> pl.DataFrame:
     """테마 축 수집 오케스트레이터 — target 분기로 리스트/단일/전체를 DataFrame 으로.
 
     Capabilities:
@@ -177,13 +217,14 @@ async def collectTheme(client: GatherHttpClient, target: str | None) -> pl.DataF
         - 매칭 0 : 빈 DataFrame (스키마 유지, 크래시 없음).
 
     AIContext: gather('theme', ...) handler 의 backend — target 의미 분기 단일 진입점.
-    Guide: target 없음=리스트가 기본. 'all' 은 약 280 상세 크롤이라 무겁다.
+    Guide: target 없음=리스트가 기본. 'all' 은 약 280 상세 크롤이라 무거워 진행바를 띄운다.
     When: handleTheme 가 runAsync 로 호출.
-    How: target 분기 → fetchThemeList(이름매핑) → 선택 테마 fetchThemeStocks → records → DataFrame.
+    How: target 분기 → fetchThemeList(이름매핑) → _crawlThemes(선택 테마 fetchThemeStocks) → DataFrame.
 
     Args:
-        client: GatherHttpClient (rate limit 자체 처리 — 별도 sleep 불요).
+        client: GatherHttpClient (rate limit·jitter 자체 처리 — 별도 sleep 불요).
         target: None | "all" | 테마명 | themeNo 문자열.
+        progress: 다중 테마 크롤 시 rich 진행바 표시 (TTY 한정, 기본 True).
 
     Returns:
         pl.DataFrame — target None 이면 _LIST_SCHEMA, 그 외 _STOCKS_SCHEMA.
@@ -195,7 +236,7 @@ async def collectTheme(client: GatherHttpClient, target: str | None) -> pl.DataF
 
         await collectTheme(client, None)      # 전체 테마 리스트
         await collectTheme(client, "2차전지")  # 매칭 테마 편입종목
-        await collectTheme(client, "all")     # 전 테마 long 테이블
+        await collectTheme(client, "all")     # 전 테마 long 테이블 (+ 진행바)
 
     Requires:
         네트워크 (finance.naver.com 무인증). 산출물 재배포 금지(DB권/저작권).
@@ -226,8 +267,5 @@ async def collectTheme(client: GatherHttpClient, target: str | None) -> pl.DataF
         log.info("gather('theme', %r): 매칭 테마 없음 — 빈 결과", target)
         return pl.DataFrame(schema=_STOCKS_SCHEMA)
 
-    records: list[dict] = []
-    for no, name in selected:
-        for stock in await fetchThemeStocks(client, no):
-            records.append({"themeNo": no, "themeName": name, **stock})
+    records = await _crawlThemes(client, selected, progress=progress)
     return pl.DataFrame(records, schema=_STOCKS_SCHEMA)

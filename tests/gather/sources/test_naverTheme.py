@@ -116,7 +116,7 @@ def test_collectTheme_byNumber():
 def test_collectTheme_all():
     """'all' → 전 테마 편입종목 concat."""
     client = _FakeClient(_LIST_HTML, {523: _DETAIL_523, 449: _DETAIL_449})
-    df = runAsync(naverTheme.collectTheme(client, "all"))
+    df = runAsync(naverTheme.collectTheme(client, "all", progress=False))
     assert set(df["themeNo"].to_list()) == {523, 449}
     assert df.height == 3
 
@@ -128,3 +128,8 @@ def test_collectTheme_noMatchEmpty():
     assert df.is_empty()
     assert df.columns == ["themeNo", "themeName", "stockCode", "stockName", "reason"]
     assert df.schema["themeNo"] == pl.Int64
+
+
+def test_makeProgressBar_noneOnNonTty():
+    """비-TTY 환경(테스트/파이프)에선 진행바 None — 출력 오염 없음."""
+    assert naverTheme._makeProgressBar(10) is None
