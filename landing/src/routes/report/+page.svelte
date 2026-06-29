@@ -186,7 +186,7 @@
   <title>기업분석보고서 · {model?.corpName ?? data.sym} | dartlab</title>
   <meta
     name="description"
-    content={`${model?.corpName ?? '상장사'} 기업분석보고서 — 수익성·재무안정성·주주환원·시장평가·지배구조 5관점.`}
+    content={`${model?.corpName ?? '상장사'} 기업분석보고서: 수익성·재무안정성·주주환원·시장평가·지배구조 5관점.`}
   />
 </svelte:head>
 
@@ -266,9 +266,9 @@
       </article>
     {:else if status === 'skipped'}
       <article class="sheet skip">
-        <h1>데이터 부족 — 보고서 미생성</h1>
+        <h1>데이터 부족: 보고서 미생성</h1>
         <p class="skipReason">종목 {data.sym}: {skipReason}</p>
-        <p class="muted">약한 발행보다 정직한 스킵 — dartlab 은 데이터가 빈약한 회사의 보고서를 만들지 않습니다.</p>
+        <p class="muted">약한 발행보다 정직한 스킵. dartlab 은 데이터가 빈약한 회사의 보고서를 만들지 않습니다.</p>
       </article>
     {:else if model?.pending}
       <article class="sheet pending">
@@ -288,7 +288,7 @@
       <article class="sheet perspSheet">
         <!-- ── 표지 (관점마다 표지로 시작 — 인쇄 시 관점별 섹션 구분) ── -->
         <header class="cover">
-          <div class="coverKicker">기업분석보고서 <span class="kSep">·</span> {m.perspectiveLabel}{#if m.perspectiveKey === perspectiveKey}<span class="perspInfoWrap"><button class="perspInfo" onclick={(e) => { e.stopPropagation(); perspTipOpen = !perspTipOpen; }} aria-label="이 관점이 답하는 질문" title="관점 설명">!</button>{#if perspTipOpen}<span class="perspTip" role="tooltip"><b>{mPersp.label}</b> — {mPersp.question}{#if mPersp.focusQuestions.length}<span class="perspTipQs">{#each mPersp.focusQuestions as fq}<span>{fq}</span>{/each}</span>{/if}</span>{/if}</span>{/if}</div>
+          <div class="coverKicker">기업분석보고서 <span class="kSep">·</span> {m.perspectiveLabel}{#if m.perspectiveKey === perspectiveKey}<span class="perspInfoWrap"><button class="perspInfo" onclick={(e) => { e.stopPropagation(); perspTipOpen = !perspTipOpen; }} aria-label="이 관점이 답하는 질문" title="관점 설명">!</button>{#if perspTipOpen}<span class="perspTip" role="tooltip"><b>{mPersp.label}</b> · {mPersp.question}{#if mPersp.focusQuestions.length}<span class="perspTipQs">{#each mPersp.focusQuestions as fq}<span>{fq}</span>{/each}</span>{/if}</span>{/if}</span>{/if}</div>
           <h1 class="coverTitle">{m.corpName}<span class="code">{m.stockCode}</span></h1>
           <dl class="coverFacts">
             {#if m.industry}<div class="fact"><dt>업종</dt><dd>{m.industry}</dd></div>{/if}
@@ -334,7 +334,7 @@
           </section>
         {/if}
 
-        <div class="printPerspective">관점: {m.perspectiveLabel} — {mPersp.question}</div>
+        <div class="printPerspective">관점: {m.perspectiveLabel} · {mPersp.question}</div>
 
         <!-- ── 요약 (Executive Summary) — 산문 리드 + 요약 지표표 (카드 폐기, 문서형) ── -->
         <section class="block summary">
@@ -357,7 +357,7 @@
             <h2 class="blockTitle">주요 관찰 <span class="subNote">관점별 측정 요지{#if !allAnalysis} · 출처 병기{/if}</span></h2>
             <ul class="obsList">
               {#each m.keyFindings as kf}
-                <li><b class="obsKey">{kf.key}</b> — {clean(kf.finding)}{#if !allAnalysis} <span class="obsSrc">({engineLabel[kf.sourceEngine] ?? kf.sourceEngine})</span>{/if}</li>
+                <li><b class="obsKey">{kf.key}</b> · {clean(kf.finding)}{#if !allAnalysis} <span class="obsSrc">({engineLabel[kf.sourceEngine] ?? kf.sourceEngine})</span>{/if}</li>
               {/each}
             </ul>
           </section>
@@ -387,7 +387,7 @@
                   {#if t.sub}<div class="secSub">{t.sub}</div>{/if}
                 </div>
                 {#if !allAnalysis}<span class="chip srcBadge src-{sec.sourceEngine}">{engineLabel[sec.sourceEngine] ?? sec.sourceEngine}</span>{/if}
-                <a class="secSrc" href={`${base}/viewer/company/${m.stockCode}`} target="_blank" rel="noopener" title="이 수치의 원천 — 공시뷰어에서 원본 사업·분기보고서 확인">원공시↗</a>
+                <a class="secSrc" href={`${base}/viewer/company/${m.stockCode}`} target="_blank" rel="noopener" title="이 수치의 원천: 공시뷰어에서 원본 사업·분기보고서 확인">원공시↗</a>
               </div>
               {#each sec.blocks as b}
                 {#if b.type === 'heading'}
@@ -488,12 +488,12 @@
             {/each}
           </div>
           <div class="evNote">{m.provenance.note}</div>
-          <a class="evSource" href={`${base}/viewer/company/${m.stockCode}`} target="_blank" rel="noopener">원본 공시 직접 확인 — {m.corpName} 공시뷰어에서 사업·분기보고서 원문 열기 ↗</a>
+          <a class="evSource" href={`${base}/viewer/company/${m.stockCode}`} target="_blank" rel="noopener">원본 공시 직접 확인: {m.corpName} 공시뷰어에서 사업·분기보고서 원문 열기 ↗</a>
         </section>
 
         <!-- ── 푸터 / 서명 ── -->
         <footer class="rptFooter">
-          {#if m.assumptionsNote}<div class="assump">가정·한계 — {m.assumptionsNote}</div>{/if}
+          {#if m.assumptionsNote}<div class="assump">가정·한계: {m.assumptionsNote}</div>{/if}
           <div class="freezeNote">※ 본 출력본(인쇄/PDF)은 <b>데이터 기준 {m.asOf} 시점의 스냅샷</b>입니다. 이후 원천 데이터가 갱신되면 동일 보고서라도 수치가 달라질 수 있습니다.</div>
           <div class="footSign">
             <span class="signMain">{m.corpName} 기업분석보고서</span>

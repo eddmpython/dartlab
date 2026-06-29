@@ -2,9 +2,15 @@
 // 단위테스트 가능하고 두 소비자가 같은 렌더 언어를 공유한다. report/+page.svelte 인라인에서 추출
 // (명명함수 → 기계적 동치, vitest 가 중립색·verdict 합성 0 을 고정). 새 합성·LLM·신규 숫자 없음.
 
-/** 마크다운 강조(**) 제거 — 표/카드 셀의 굵게 토큰 평탄화. */
+/** 마크다운 강조(**) 제거 + em/en 대시 제거(절 구분은 쉼표로). 표/카드/리포트 prose 공용 정리. */
 export function clean(t: unknown): string {
-	return String(t ?? '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*\*/g, '');
+	return String(t ?? '')
+		.replace(/\*\*(.+?)\*\*/g, '$1')
+		.replace(/\*\*/g, '')
+		.replace(/\s*[—–]\s*/g, ', ') // em/en 대시 제거 → 쉼표(절 구분)
+		.replace(/\s*,\s*,/g, ',') // 중복 쉼표 정리
+		.replace(/\s{2,}/g, ' ')
+		.replace(/^[\s,]+|[\s,]+$/g, ''); // 앞뒤 잔여 쉼표·공백
 }
 
 export const engineLabel: Record<string, string> = {
