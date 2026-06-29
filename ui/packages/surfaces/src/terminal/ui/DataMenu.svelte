@@ -233,137 +233,190 @@
 		});
 </script>
 
+<svelte:window onkeydown={(e) => { if (open && e.key === 'Escape') open = false; }} />
 <div class="dataDl">
 	<button class={'hdrLink' + (open ? ' on' : '')} onclick={() => (open = !open)} title={en ? 'Download all data for this company' : '이 회사 전체 데이터 다운로드'}>
 		{en ? 'Data' : '데이터'}
 	</button>
-	{#if open}
-		<button class="dlBackdrop" aria-label="close" onclick={() => (open = false)}></button>
-		<div class="dlPop">
-			<div class="dpH">{corpName || code}</div>
+</div>
+{#if open}
+	<button class="dlgBackdrop" aria-label={en ? 'close' : '닫기'} onclick={() => (open = false)}></button>
+	<div class="dlg" role="dialog" aria-modal="true" aria-label={en ? 'Data download' : '데이터 다운로드'}>
+		<div class="dlgHead">
+			<span class="dlgTitle">{corpName || code} <span class="dlgSub">{en ? 'data download' : '데이터 다운로드'}</span></span>
+			<button class="dlgClose" aria-label={en ? 'close' : '닫기'} onclick={() => (open = false)}>✕</button>
+		</div>
 
-			<div class="dsRow">
-				<span class="dsLabel">{en ? 'Financials — time series' : '재무제표 — 시계열'}<span class="dsDir">IS·BS·CF{en ? ' (sheets)' : ' (시트 분할)'}</span></span>
-				<span class="dsBtns"><button class="dsBtn" onclick={dlFinanceTs} disabled={!!busy}>{busy === 'finTs' ? '…' : 'Excel'}</button></span>
-			</div>
-			{#each parquetSets as d (d.dir)}
+		<div class="dlgBody">
+			<div class="dlgCol">
+				<div class="dpDiv">{en ? 'this company' : '이 회사'}</div>
 				<div class="dsRow">
-					<span class="dsLabel">{LABELS[d.dir]}<span class="dsDir">{d.dir}</span></span>
+					<span class="dsLabel">{en ? 'Financials — time series' : '재무제표 — 시계열'}<span class="dsDir">IS·BS·CF{en ? ' (sheets)' : ' (시트 분할)'}</span></span>
+					<span class="dsBtns"><button class="dsBtn" onclick={dlFinanceTs} disabled={!!busy}>{busy === 'finTs' ? '…' : 'Excel'}</button></span>
+				</div>
+				{#each parquetSets as d (d.dir)}
+					<div class="dsRow">
+						<span class="dsLabel">{LABELS[d.dir]}<span class="dsDir">{d.dir}</span></span>
+						<span class="dsBtns">
+							<button class="dsBtn" onclick={() => dlParquet(d.dir, 'xlsx')} disabled={!!busy}>{busy === `${d.dir}:xlsx` ? '…' : 'Excel'}</button>
+							<button class="dsBtn" onclick={() => dlParquet(d.dir, 'csv')} disabled={!!busy}>{busy === `${d.dir}:csv` ? '…' : 'CSV'}</button>
+						</span>
+					</div>
+				{/each}
+				<div class="dsRow">
+					<span class="dsLabel">{en ? 'Filings list' : '공시 리스트'}<span class="dsDir">{en ? 'regular + events' : '정기 + 수시'}</span></span>
 					<span class="dsBtns">
-						<button class="dsBtn" onclick={() => dlParquet(d.dir, 'xlsx')} disabled={!!busy}>{busy === `${d.dir}:xlsx` ? '…' : 'Excel'}</button>
-						<button class="dsBtn" onclick={() => dlParquet(d.dir, 'csv')} disabled={!!busy}>{busy === `${d.dir}:csv` ? '…' : 'CSV'}</button>
+						<button class="dsBtn" onclick={() => dlFilings('xlsx')} disabled={!!busy}>{busy === 'filings:xlsx' ? '…' : 'Excel'}</button>
+						<button class="dsBtn" onclick={() => dlFilings('csv')} disabled={!!busy}>{busy === 'filings:csv' ? '…' : 'CSV'}</button>
 					</span>
 				</div>
-			{/each}
-			<div class="dsRow">
-				<span class="dsLabel">{en ? 'Filings list' : '공시 리스트'}<span class="dsDir">{en ? 'regular + events' : '정기 + 수시'}</span></span>
-				<span class="dsBtns">
-					<button class="dsBtn" onclick={() => dlFilings('xlsx')} disabled={!!busy}>{busy === 'filings:xlsx' ? '…' : 'Excel'}</button>
-					<button class="dsBtn" onclick={() => dlFilings('csv')} disabled={!!busy}>{busy === 'filings:csv' ? '…' : 'CSV'}</button>
-				</span>
+
+				<div class="dpDiv">{en ? 'cross-section prebuild (all)' : '전종목 프리빌드'}</div>
+				{#each SCAN_FILES as s (s.path)}
+					<div class="dsRow">
+						<span class="dsLabel">{s.label}<span class="dsDir">{s.path.replace('.parquet', '')}</span></span>
+						<span class="dsBtns">
+							{#if !s.csvOnly}<button class="dsBtn" onclick={() => dlScan(s, 'xlsx')} disabled={!!busy}>{busy === `scan:${s.path}:xlsx` ? '…' : 'Excel'}</button>{/if}
+							<button class="dsBtn" onclick={() => dlScan(s, 'csv')} disabled={!!busy}>{busy === `scan:${s.path}:csv` ? '…' : 'CSV'}</button>
+						</span>
+					</div>
+				{/each}
 			</div>
 
-			<div class="dpDiv">{en ? 'cross-section prebuild (all companies)' : '전종목 프리빌드 (전체)'}</div>
-			{#each SCAN_FILES as s (s.path)}
+			<div class="dlgCol">
+				<div class="dpDiv">{en ? 'market & macro (global)' : '시장·거시 (전역)'}</div>
+				{#each MARKET_FILES as m (m.path)}
+					<div class="dsRow">
+						<span class="dsLabel">{m.label}<span class="dsDir">{m.path.replace('.parquet', '')}</span></span>
+						<span class="dsBtns">
+							<button class="dsBtn" onclick={() => dlMarket(m, 'xlsx')} disabled={!!busy}>{busy === `mkt:${m.path}:xlsx` ? '…' : 'Excel'}</button>
+							<button class="dsBtn" onclick={() => dlMarket(m, 'csv')} disabled={!!busy}>{busy === `mkt:${m.path}:csv` ? '…' : 'CSV'}</button>
+						</span>
+					</div>
+				{/each}
 				<div class="dsRow">
-					<span class="dsLabel">{s.label}<span class="dsDir">{s.path.replace('.parquet', '')}</span></span>
+					<span class="dsLabel">{en ? 'Market indices (KOSPI·KOSDAQ…)' : '시장지수 (KOSPI·KOSDAQ 등)'}<span class="dsDir">gov/indices/index</span></span>
 					<span class="dsBtns">
-						{#if !s.csvOnly}<button class="dsBtn" onclick={() => dlScan(s, 'xlsx')} disabled={!!busy}>{busy === `scan:${s.path}:xlsx` ? '…' : 'Excel'}</button>{/if}
-						<button class="dsBtn" onclick={() => dlScan(s, 'csv')} disabled={!!busy}>{busy === `scan:${s.path}:csv` ? '…' : 'CSV'}</button>
+						<button class="dsBtn" onclick={() => dlIndices('xlsx')} disabled={!!busy}>{busy === 'idx:xlsx' ? '…' : 'Excel'}</button>
+						<button class="dsBtn" onclick={() => dlIndices('csv')} disabled={!!busy}>{busy === 'idx:csv' ? '…' : 'CSV'}</button>
 					</span>
 				</div>
-			{/each}
-
-			<div class="dpDiv">{en ? 'market & macro (global)' : '시장·거시 (전역)'}</div>
-			{#each MARKET_FILES as m (m.path)}
 				<div class="dsRow">
-					<span class="dsLabel">{m.label}<span class="dsDir">{m.path.replace('.parquet', '')}</span></span>
+					<span class="dsLabel">{en ? 'Brokerage research (monthly)' : '증권사 리서치 (월별)'}<span class="dsDir">research/brokerage</span></span>
 					<span class="dsBtns">
-						<button class="dsBtn" onclick={() => dlMarket(m, 'xlsx')} disabled={!!busy}>{busy === `mkt:${m.path}:xlsx` ? '…' : 'Excel'}</button>
-						<button class="dsBtn" onclick={() => dlMarket(m, 'csv')} disabled={!!busy}>{busy === `mkt:${m.path}:csv` ? '…' : 'CSV'}</button>
+						<button class="dsBtn" onclick={() => dlBrokerage('xlsx')} disabled={!!busy}>{busy === 'brk:xlsx' ? '…' : 'Excel'}</button>
+						<button class="dsBtn" onclick={() => dlBrokerage('csv')} disabled={!!busy}>{busy === 'brk:csv' ? '…' : 'CSV'}</button>
 					</span>
 				</div>
-			{/each}
-			<div class="dsRow">
-				<span class="dsLabel">{en ? 'Market indices (KOSPI·KOSDAQ…)' : '시장지수 (KOSPI·KOSDAQ 등)'}<span class="dsDir">gov/indices/index</span></span>
-				<span class="dsBtns">
-					<button class="dsBtn" onclick={() => dlIndices('xlsx')} disabled={!!busy}>{busy === 'idx:xlsx' ? '…' : 'Excel'}</button>
-					<button class="dsBtn" onclick={() => dlIndices('csv')} disabled={!!busy}>{busy === 'idx:csv' ? '…' : 'CSV'}</button>
-				</span>
-			</div>
-			<div class="dsRow">
-				<span class="dsLabel">{en ? 'Brokerage research (monthly)' : '증권사 리서치 (월별)'}<span class="dsDir">research/brokerage</span></span>
-				<span class="dsBtns">
-					<button class="dsBtn" onclick={() => dlBrokerage('xlsx')} disabled={!!busy}>{busy === 'brk:xlsx' ? '…' : 'Excel'}</button>
-					<button class="dsBtn" onclick={() => dlBrokerage('csv')} disabled={!!busy}>{busy === 'brk:csv' ? '…' : 'CSV'}</button>
-				</span>
-			</div>
-			<div class="dsRow">
-				<span class="dsLabel">{en ? 'All-stock daily prices (latest yr)' : '전종목 일별시세 (최근연도)'}<span class="dsDir">gov/prices/date · 67만행</span></span>
-				<span class="dsBtns">
-					<button class="dsBtn" onclick={() => dlPricesYear('csv')} disabled={!!busy}>{busy === 'pxy:csv' ? '…' : 'CSV'}</button>
-				</span>
-			</div>
-
-			{#if err}<div class="dsErr">⚠ {err}</div>{/if}
-
-			<div class="dpPolicy">
-				<div>
-					{en ? 'Source' : '원자료'} <b>{isUs ? 'SEC EDGAR' : 'DART'}</b> · {en ? 'processed by' : '가공'} <b>dartlab</b> · HuggingFace.
+				<div class="dsRow">
+					<span class="dsLabel">{en ? 'All-stock daily prices (latest yr)' : '전종목 일별시세 (최근연도)'}<span class="dsDir">gov/prices/date · 67만행</span></span>
+					<span class="dsBtns">
+						<button class="dsBtn" onclick={() => dlPricesYear('csv')} disabled={!!busy}>{busy === 'pxy:csv' ? '…' : 'CSV'}</button>
+					</span>
 				</div>
-				<div>
-					{isUs ? (en ? 'U.S. gov work (public domain)' : '미국 정부 저작물(퍼블릭 도메인)') : (en ? 'Public data' : '공공데이터')}
-					— {en ? 'free to use & redistribute' : '영리·비영리 자유 이용·재배포 가능'}.
-				</div>
-				<div class="dpWarn">⚠ {en ? 'Not investment advice. News is live-only (press copyright, no redistribution).' : '투자 자문 아님. 뉴스는 라이브 표시 전용(언론사 저작권·재배포 불가)'}.</div>
-				<a class="dpTerms" href={termsUrl} target="_blank" rel="noreferrer">{isUs ? 'SEC EDGAR' : 'DART'} {en ? 'terms' : '이용약관'} ↗</a>
 			</div>
 		</div>
-	{/if}
-</div>
+
+		{#if err}<div class="dsErr">⚠ {err}</div>{/if}
+
+		<div class="dpPolicy">
+			<div>
+				{en ? 'Source' : '원자료'} <b>{isUs ? 'SEC EDGAR' : 'DART'}</b> · {en ? 'processed by' : '가공'} <b>dartlab</b> · HuggingFace · {en ? 'public data, free to use & redistribute' : '공공데이터·영리/비영리 자유 이용·재배포 가능'}.
+			</div>
+			<div class="dpWarn">⚠ {en ? 'Not investment advice. News is live-only (press copyright, no redistribution).' : '투자 자문 아님. 뉴스는 라이브 표시 전용(언론사 저작권·재배포 불가)'}.</div>
+			<a class="dpTerms" href={termsUrl} target="_blank" rel="noreferrer">{isUs ? 'SEC EDGAR' : 'DART'} {en ? 'terms' : '이용약관'} ↗</a>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.dataDl {
 		position: relative;
 		display: inline-flex;
 	}
-	.dlBackdrop {
+	.dlgBackdrop {
 		position: fixed;
 		inset: 0;
-		z-index: 60;
-		background: transparent;
+		z-index: 200;
+		background: rgba(2, 6, 16, 0.66);
 		border: 0;
 		cursor: default;
 	}
-	.dlPop {
-		position: absolute;
-		top: calc(100% + 8px);
-		right: 0;
-		z-index: 61;
-		width: 340px;
-		max-height: 80vh;
-		overflow-y: auto;
+	.dlg {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		z-index: 201;
+		width: min(760px, 94vw);
+		max-height: 88vh;
 		display: flex;
 		flex-direction: column;
-		gap: 2px;
-		padding: 11px;
+		overflow: hidden;
 		background: #0a0e18;
 		border: 1px solid #263145;
-		border-radius: 8px;
-		box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55);
+		border-radius: 10px;
+		box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
 	}
-	.dpH {
-		font-size: 12px;
-		color: #cbd5e1;
+	.dlgHead {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 11px 16px;
+		border-bottom: 1px solid #1e2433;
+		flex-shrink: 0;
+	}
+	.dlgTitle {
+		font-size: 13px;
 		font-weight: 600;
-		margin-bottom: 4px;
+		color: #e2e8f0;
+	}
+	.dlgSub {
+		color: #64748b;
+		font-weight: 400;
+		margin-left: 6px;
+	}
+	.dlgClose {
+		border: 0;
+		background: transparent;
+		color: #64748b;
+		font-size: 15px;
+		line-height: 1;
+		cursor: pointer;
+		padding: 3px 7px;
+		border-radius: 4px;
+	}
+	.dlgClose:hover {
+		color: #e2e8f0;
+		background: rgba(255, 255, 255, 0.06);
+	}
+	.dlgBody {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0 24px;
+		padding: 8px 16px 12px;
+		overflow-y: auto;
+	}
+	.dlgCol {
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+		min-width: 0;
+	}
+	@media (max-width: 580px) {
+		.dlgBody {
+			grid-template-columns: 1fr;
+		}
 	}
 	.dpDiv {
-		margin-top: 7px;
+		margin-top: 9px;
 		font-size: 9px;
 		color: #475569;
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
+	}
+	.dlgCol > .dpDiv:first-child {
+		margin-top: 2px;
 	}
 	.dsRow {
 		display: flex;
@@ -413,14 +466,15 @@
 	.dsErr {
 		font-size: 11px;
 		color: #fca5a5;
-		padding: 3px 2px;
+		padding: 3px 16px;
+		flex-shrink: 0;
 	}
 	.dpPolicy {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
-		margin-top: 7px;
-		padding-top: 7px;
+		gap: 3px;
+		flex-shrink: 0;
+		padding: 9px 16px 12px;
 		border-top: 1px solid #1e2433;
 		font-size: 10px;
 		line-height: 1.5;
