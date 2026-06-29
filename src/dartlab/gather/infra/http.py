@@ -66,6 +66,8 @@ _USER_AGENTS = [
 _threadLoop: asyncio.AbstractEventLoop | None = None
 _threadPool = ThreadPoolExecutor(max_workers=1)
 _activeProxy: contextvars.ContextVar[str | None] = contextvars.ContextVar("dartlabGatherProxy", default=None)
+# 프록시 풀(여러 프록시 회전) — useProxyPool 이 itertools.cycle 을 세팅, _resolveProxy 가 요청마다 회전.
+_activeProxyPool: contextvars.ContextVar[object | None] = contextvars.ContextVar("dartlabGatherProxyPool", default=None)
 
 
 def _getThreadLoop() -> asyncio.AbstractEventLoop:
@@ -369,9 +371,63 @@ class GatherHttpClient:
         finally:
             _activeProxy.reset(token)
 
+    @contextlib.contextmanager
+    def useProxyPool(self, proxies: list[str] | None):
+        """현재 gather 호출 범위에 프록시 풀(회전)을 적용 — 요청마다 다음 프록시 사용.
+
+        Sig: ``with client.useProxyPool([p1, p2, ...]): ...``
+
+        Capabilities: 여러 프록시를 round-robin 회전 → 동시 요청이 서로 다른 IP 로 분산.
+            rate limit/semaphore 가 (도메인×프록시)별이라 프록시 수만큼 throughput 확장.
+        AIContext: ``dartlab.gather(..., proxies=[...])`` 의 공통 HTTP 적용 범위. proxy 우회 기능으로
+            설명 금지, 인증정보 노출 금지.
+        Guide: 프록시 *미지정*(None/빈 리스트)이면 기본 direct 단일 client + 도메인 단위 rate limit
+            = 안전 직렬(기존 동작 불변). 풀 지정 시에만 회전·분산.
+        When: ``GatherEntry._run`` 이 ``proxies`` kwarg 를 받은 gather 호출 범위를 실행할 때.
+        How: ``_activeProxyPool`` contextvar 에 ``itertools.cycle(proxies)`` 를 세팅하고,
+            ``get``/``post`` 가 명시 proxy 없을 때 ``_resolveProxy`` 로 다음 프록시를 회전 획득.
+
+        Args:
+            proxies: HTTP(S) 프록시 URL 리스트. None/빈 리스트면 기본(direct) — 안전 직렬(기존 동작).
+
+        Returns:
+            context manager — 블록 안 GET/POST 가 풀에서 회전. proxy 인증정보는 로그/답변 노출 금지.
+
+        Raises:
+            없음. contextvar set/reset 만 수행 — 네트워크 오류는 get/post 에서 처리.
+
+        Example:
+            >>> with client.useProxyPool(["http://a:1", "http://b:1"]):
+            ...     runAsync(crawl())
+
+        Requires:
+            ``contextvars`` 런타임 + ``GatherHttpClient`` 인스턴스. 풀의 각 URL 유효성/인증은
+            httpx transport 에 위임.
+
+        SeeAlso:
+            useProxy : 단일 프록시 적용.
+            _resolveProxy : 요청별 proxy 결정(명시 > 풀 회전 > 단일).
+            GatherEntry._run : 공개 ``proxies`` kwarg 를 이 context 로 연결.
+        """
+        if not proxies:
+            yield
+            return
+        import itertools
+
+        token = _activeProxyPool.set(itertools.cycle(list(proxies)))
+        try:
+            yield
+        finally:
+            _activeProxyPool.reset(token)
+
     def _resolveProxy(self, proxy: str | None) -> str | None:
-        """요청별 proxy가 없으면 현재 gather 호출 범위의 proxy를 사용한다."""
-        return proxy or _activeProxy.get()
+        """요청별 proxy → 없으면 풀(회전) → 없으면 현재 gather 호출 범위의 단일 proxy."""
+        if proxy:
+            return proxy
+        pool = _activeProxyPool.get()
+        if pool is not None:
+            return next(pool)  # type: ignore[call-overload]
+        return _activeProxy.get()
 
     def _getPolicy(self, domain: str) -> DomainConfig:
         """도메인별 정책 반환. 미등록 도메인은 기본 정책 사용.
@@ -392,41 +448,47 @@ class GatherHttpClient:
         """
         return DOMAIN_POLICY.get(domain, _DEFAULT_POLICY)
 
-    def _getLimiter(self, domain: str) -> _AsyncRateLimiter:
-        """도메인별 rate limiter 인스턴스 반환 (lazy 생성).
+    def _getLimiter(self, domain: str, proxy: str | None = None) -> _AsyncRateLimiter:
+        """(도메인×프록시)별 rate limiter (lazy). proxy=None 이면 도메인 단위(기존 안전 기본).
 
         Parameters
         ----------
         domain : str
             호스트명.
+        proxy : str | None
+            적용 프록시. 풀 회전 시 프록시마다 독립 RPM budget → throughput 확장.
 
         Returns
         -------
         _AsyncRateLimiter
-            해당 도메인의 sliding window rate limiter.
+            해당 (도메인, 프록시) 의 sliding window rate limiter.
         """
-        if domain not in self._limiters:
+        key = domain if not proxy else f"{domain}|{proxy}"
+        if key not in self._limiters:
             policy = self._getPolicy(domain)
-            self._limiters[domain] = _AsyncRateLimiter(domain, policy.rpm, policy.minInterval)
-        return self._limiters[domain]
+            self._limiters[key] = _AsyncRateLimiter(key, policy.rpm, policy.minInterval)
+        return self._limiters[key]
 
-    def _getSemaphore(self, domain: str) -> asyncio.Semaphore:
-        """도메인별 동시 연결 제한 세마포어 반환 (lazy 생성).
+    def _getSemaphore(self, domain: str, proxy: str | None = None) -> asyncio.Semaphore:
+        """(도메인×프록시)별 동시 연결 세마포어 (lazy). proxy=None 이면 도메인 단위(기존 안전 기본).
 
         Parameters
         ----------
         domain : str
             호스트명.
+        proxy : str | None
+            적용 프록시. 풀 회전 시 프록시마다 독립 동시성.
 
         Returns
         -------
         asyncio.Semaphore
-            해당 도메인의 동시 요청 수 제한 세마포어.
+            해당 (도메인, 프록시) 의 동시 요청 수 제한 세마포어.
         """
-        if domain not in self._semaphores:
+        key = domain if not proxy else f"{domain}|{proxy}"
+        if key not in self._semaphores:
             policy = self._getPolicy(domain)
-            self._semaphores[domain] = asyncio.Semaphore(policy.concurrency)
-        return self._semaphores[domain]
+            self._semaphores[key] = asyncio.Semaphore(policy.concurrency)
+        return self._semaphores[key]
 
     async def get(
         self,
@@ -486,10 +548,11 @@ class GatherHttpClient:
         """
         domain = urlparse(url).netloc
         policy = self._getPolicy(domain)
-        limiter = self._getLimiter(domain)
-        semaphore = self._getSemaphore(domain)
+        resolvedProxy = self._resolveProxy(proxy)
+        limiter = self._getLimiter(domain, resolvedProxy)
+        semaphore = self._getSemaphore(domain, resolvedProxy)
         req_timeout = timeout or policy.timeout
-        req_client = self._getClientForProxy(self._resolveProxy(proxy))
+        req_client = self._getClientForProxy(resolvedProxy)
 
         # Sprint 1 PR2 — 일일 quota 사전 차단 (80% 도달 시 fallback chain 으로 즉시 전환)
         if not quota.checkDaily(domain):
@@ -596,10 +659,11 @@ class GatherHttpClient:
         """
         domain = urlparse(url).netloc
         policy = self._getPolicy(domain)
-        limiter = self._getLimiter(domain)
-        semaphore = self._getSemaphore(domain)
+        resolvedProxy = self._resolveProxy(proxy)
+        limiter = self._getLimiter(domain, resolvedProxy)
+        semaphore = self._getSemaphore(domain, resolvedProxy)
         req_timeout = timeout or policy.timeout
-        req_client = self._getClientForProxy(self._resolveProxy(proxy))
+        req_client = self._getClientForProxy(resolvedProxy)
 
         # Sprint 1 PR2 — 일일 quota 사전 차단 (POST 동행)
         if not quota.checkDaily(domain):

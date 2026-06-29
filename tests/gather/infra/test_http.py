@@ -101,3 +101,42 @@ def test_GatherHttpClient_proxy_context_propagates_through_runAsync() -> None:
 
     assert client._resolveProxy(None) is None
     runAsync(client.close())
+
+
+def test_useProxyPool_rotatesRoundRobin() -> None:
+    """프록시 풀 안에서 _resolveProxy 가 round-robin 회전, 밖에서는 None (안전 기본)."""
+    from dartlab.gather.infra.http import GatherHttpClient, runAsync
+
+    client = GatherHttpClient()
+    with client.useProxyPool(["http://a", "http://b"]):
+        got = [client._resolveProxy(None) for _ in range(4)]
+    assert got == ["http://a", "http://b", "http://a", "http://b"]
+    assert client._resolveProxy(None) is None  # 풀 밖 → direct
+    runAsync(client.close())
+
+
+def test_useProxyPool_explicitWins_and_emptyNoop() -> None:
+    """명시 proxy 는 풀보다 우선, 빈 풀/None 은 no-op(direct)."""
+    from dartlab.gather.infra.http import GatherHttpClient, runAsync
+
+    client = GatherHttpClient()
+    with client.useProxyPool(["http://a", "http://b"]):
+        assert client._resolveProxy("http://explicit") == "http://explicit"
+    with client.useProxyPool(None):
+        assert client._resolveProxy(None) is None
+    with client.useProxyPool([]):
+        assert client._resolveProxy(None) is None
+    runAsync(client.close())
+
+
+def test_limiterAndSemaphore_keyedByProxy() -> None:
+    """(도메인×프록시)별 독립 limiter/semaphore — 프록시별 budget 확장. proxy=None 은 도메인 단위(기존)."""
+    from dartlab.gather.infra.http import GatherHttpClient, runAsync
+
+    client = GatherHttpClient()
+    base = client._getLimiter("finance.naver.com")
+    viaP = client._getLimiter("finance.naver.com", "http://p")
+    assert base is not viaP
+    assert client._getLimiter("finance.naver.com") is base  # 도메인 단위 재사용
+    assert client._getSemaphore("finance.naver.com") is not client._getSemaphore("finance.naver.com", "http://p")
+    runAsync(client.close())

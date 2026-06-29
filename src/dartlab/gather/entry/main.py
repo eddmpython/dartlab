@@ -326,8 +326,15 @@ class GatherEntry:
         market = kwargs.pop("market", "KR")
         start = kwargs.pop("start", None)
         end = kwargs.pop("end", None)
-        proxyScope = getattr(getattr(g, "_client", None), "useProxy", None)
-        proxyContext = proxyScope(kwargs.get("proxy")) if callable(proxyScope) else contextlib.nullcontext()
+        # 프록시 공통배선 — proxies=[...] 풀(회전) 우선, 없으면 단일 proxy, 둘 다 없으면 안전 직렬(기존).
+        client = getattr(g, "_client", None)
+        proxies = kwargs.pop("proxies", None)
+        if proxies and callable(getattr(client, "useProxyPool", None)):
+            proxyContext = client.useProxyPool(proxies)
+        elif callable(getattr(client, "useProxy", None)):
+            proxyContext = client.useProxy(kwargs.get("proxy"))
+        else:
+            proxyContext = contextlib.nullcontext()
 
         with proxyContext:
             targets = kwargs.pop("targets", None)
