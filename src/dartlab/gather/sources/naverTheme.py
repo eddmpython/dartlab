@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import re
+import sys
 
 import polars as pl
 
@@ -166,77 +167,83 @@ async def fetchThemeStocks(client: GatherHttpClient, themeNo: int, *, limit: int
     return rows if limit is None else rows[:limit]
 
 
-def _makeProgressBar(total: int):
-    """rich.Progress 진행바 (prog, taskId) — 비-TTY/rich 미설치면 None (조용)."""
-    try:
+def _themeProgress():
+    """수집 진행바 — 터미널/Jupyter 는 SSOT getProgress(rich), 마리모는 force_terminal 로 라이브.
+
+    마리모(stdout=marimo._messaging.streams)는 TTY·IPython 둘 다 아니라 rich 가 라이브를
+    억제하지만, force_terminal=True 면 ANSI 프레임을 emit 하고 마리모가 이를 렌더한다(실측 확인).
+    """
+    if type(sys.stdout).__module__.startswith("marimo"):
+        from rich.console import Console
         from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeRemainingColumn
 
-        from dartlab.core.logger import getConsole
-
-        console = getConsole()
-        if not console.is_terminal:
-            return None
-        prog = Progress(
-            TextColumn("[cyan]테마 수집"),
+        return Progress(
+            TextColumn("[cyan]{task.description}"),
             BarColumn(),
             MofNCompleteColumn(),
             TimeRemainingColumn(),
-            console=console,
-            transient=True,
+            console=Console(force_terminal=True),
         )
-        prog.start()
-        return prog, prog.add_task("themes", total=total)
-    except ImportError:
-        return None
+    from dartlab.core.logger import getProgress
+
+    return getProgress()
 
 
 async def _crawlThemes(client: GatherHttpClient, selected: list[tuple[int, str]], *, progress: bool) -> list[dict]:
-    """선택 테마들의 편입종목 순회 수집 — 다중 테마(>1)면 rich 진행바(TTY 한정)."""
-    bar = _makeProgressBar(len(selected)) if progress and len(selected) > 1 else None
+    """선택 테마들의 편입종목 순회 수집 — 다중 테마(>1)면 SSOT rich 진행바.
+
+    진행바는 ``core.logger.getProgress`` (rich) 재사용 — 터미널·Jupyter 는 라이브,
+    마리모는 force_terminal 로 라이브 ANSI (둘 다 실측 확인). 단일/리스트는 바 없음.
+    """
+    total = len(selected)
     records: list[dict] = []
-    try:
+    if not (progress and total > 1):
         for no, name in selected:
             for stock in await fetchThemeStocks(client, no):
                 records.append({"themeNo": no, "themeName": name, **stock})
-            if bar is not None:
-                bar[0].update(bar[1], advance=1)
-    finally:
-        if bar is not None:
-            bar[0].stop()
+        return records
+    with _themeProgress() as prog:
+        task = prog.add_task("테마 수집", total=total)
+        for no, name in selected:
+            for stock in await fetchThemeStocks(client, no):
+                records.append({"themeNo": no, "themeName": name, **stock})
+            prog.advance(task)
     return records
 
 
 async def collectTheme(client: GatherHttpClient, target: str | None, *, progress: bool = True) -> pl.DataFrame:
-    """테마 축 수집 오케스트레이터 — target 분기로 리스트/단일/전체를 DataFrame 으로.
+    """테마 축 수집 오케스트레이터 — 기본은 전 테마를 개별 수집해 하나의 long DataFrame 으로.
 
     Capabilities:
-        - target None/"" : 전체 테마 *리스트* (themeNo/themeName/url) — 가벼움.
-        - target "all"   : 전 테마 편입종목 long 테이블 (약 280 테마 상세 크롤 — 무거움).
-        - target 숫자    : 해당 themeNo 테마의 편입종목.
-        - target 문자열  : 테마명 exact → 없으면 contains 매칭 테마들의 편입종목.
+        - target None/""/"all" : 전 테마(약 280)를 개별 수집 → 하나의 long DataFrame 으로
+          결합 (themeNo/themeName/stockCode/stockName/reason). 기본 동작.
+        - target "list"        : 테마 *리스트* 만 (themeNo/themeName/url) — 가벼움.
+        - target 숫자          : 해당 themeNo 테마의 편입종목만.
+        - target 문자열        : 테마명 exact → 없으면 contains 매칭 테마들의 편입종목.
         - 매칭 0 : 빈 DataFrame (스키마 유지, 크래시 없음).
 
-    AIContext: gather('theme', ...) handler 의 backend — target 의미 분기 단일 진입점.
-    Guide: target 없음=리스트가 기본. 'all' 은 약 280 상세 크롤이라 무거워 진행바를 띄운다.
+    AIContext: gather('theme', ...) handler 의 backend — 기본은 전수 크롤 후 단일 프레임 결합.
+    Guide: 기본(target 없음)이 전 테마 크롤이라 무겁다 — SSOT rich 진행바를 띄운다.
+        wide(테마기준) 행렬은 ``df.pivot(values="reason", index="stockCode", on="themeName")``.
     When: handleTheme 가 runAsync 로 호출.
-    How: target 분기 → fetchThemeList(이름매핑) → _crawlThemes(선택 테마 fetchThemeStocks) → DataFrame.
+    How: fetchThemeList → 선택 테마 결정(기본=전체) → _crawlThemes(개별 fetchThemeStocks) → concat.
 
     Args:
         client: GatherHttpClient (rate limit·jitter 자체 처리 — 별도 sleep 불요).
-        target: None | "all" | 테마명 | themeNo 문자열.
-        progress: 다중 테마 크롤 시 rich 진행바 표시 (TTY 한정, 기본 True).
+        target: None/"all"=전체 결합(기본) · "list"=목록만 · 테마명/themeNo=해당 테마만.
+        progress: 다중 테마 크롤 시 rich 진행바 (getProgress SSOT; 터미널/Jupyter/marimo, 기본 True).
 
     Returns:
-        pl.DataFrame — target None 이면 _LIST_SCHEMA, 그 외 _STOCKS_SCHEMA.
+        pl.DataFrame — target "list" 면 _LIST_SCHEMA, 그 외 _STOCKS_SCHEMA(long 결합).
 
     Raises:
         없음 — 빈 결과는 빈 DataFrame.
 
     Example::
 
-        await collectTheme(client, None)      # 전체 테마 리스트
-        await collectTheme(client, "2차전지")  # 매칭 테마 편입종목
-        await collectTheme(client, "all")     # 전 테마 long 테이블 (+ 진행바)
+        await collectTheme(client, None)      # 전 테마 결합 long DataFrame (기본)
+        await collectTheme(client, "list")    # 테마 목록만
+        await collectTheme(client, "2차전지")  # 해당 테마만 필터
 
     Requires:
         네트워크 (finance.naver.com 무인증). 산출물 재배포 금지(DB권/저작권).
@@ -245,22 +252,21 @@ async def collectTheme(client: GatherHttpClient, target: str | None, *, progress
         fetchThemeList / fetchThemeStocks : 본 함수가 호출하는 수집기.
         entry.handlers.handleTheme : gather('theme') dispatch caller.
     """
-    if target is None or str(target).strip() == "":
-        themes = await fetchThemeList(client)
-        return pl.DataFrame(themes, schema=_LIST_SCHEMA)
-
-    target = str(target).strip()
     themeList = await fetchThemeList(client)
     nameByNo = {t["themeNo"]: t["themeName"] for t in themeList}
+    norm = "" if target is None else str(target).strip()
 
-    if target == "all":
+    if norm.lower() == "list":
+        return pl.DataFrame(themeList, schema=_LIST_SCHEMA)
+
+    if norm in ("", "all"):
         selected = [(t["themeNo"], t["themeName"]) for t in themeList]
-    elif target.isdigit() and int(target) in nameByNo:
-        no = int(target)
+    elif norm.isdigit() and int(norm) in nameByNo:
+        no = int(norm)
         selected = [(no, nameByNo[no])]
     else:
-        exact = [t for t in themeList if t["themeName"] == target]
-        matches = exact or [t for t in themeList if target in t["themeName"]]
+        exact = [t for t in themeList if t["themeName"] == norm]
+        matches = exact or [t for t in themeList if norm in t["themeName"]]
         selected = [(t["themeNo"], t["themeName"]) for t in matches]
 
     if not selected:

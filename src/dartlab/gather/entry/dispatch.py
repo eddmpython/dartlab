@@ -156,12 +156,12 @@ AXIS_REGISTRY: dict[str, GatherAxisEntry] = {
     "theme": GatherAxisEntry(
         label="테마 분류 (KR, 로컬 개인용)",
         description=(
-            "네이버 금융 테마 분류 (KR). target 없으면 전체 테마 리스트 (themeNo/themeName/url), "
-            "테마명/번호 지정 시 해당 테마 편입종목+편입사유, 'all' 지정 시 전 테마 편입종목 long 테이블. "
-            "⚠ 네이버 편집저작물 — 본인 컴퓨터 로컬 분석은 무방하나 수집 결과의 재배포·공개"
+            "네이버 금융 테마 분류 (KR). 기본(target 없음)은 전 테마(약 280)를 개별 수집해 하나의 "
+            "long DataFrame(themeNo/themeName/stockCode/stockName/reason)으로 결합. 'list'=테마 목록만, "
+            "테마명/번호=해당 테마만 필터. ⚠ 네이버 편집저작물 — 로컬 개인 분석은 무방하나 재배포·공개"
             "(HF 적재·서비스 배포·제3자 공개)는 DB권(저작권법 제4장)·저작권 문제 발생 가능."
         ),
-        example='gather("theme") / gather("theme", "2차전지") / gather("theme", "all")',
+        example='gather("theme") / gather("theme", "list") / gather("theme", "2차전지")',
         targetRequired=False,
         targetType="keyword",
     ),

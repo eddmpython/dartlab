@@ -1198,7 +1198,7 @@ def handleTheme(
         g: Gather 싱글턴 — ``g._client`` 공통 HTTP client 재사용(proxy scope 상속).
         target: None=전체 테마 리스트 · 테마명/번호=편입종목 · "all"=전 테마 long 테이블.
         market/start/end/marketExplicit: 무시 (KR 네이버 전용).
-        **kwargs: progress (다중 테마 크롤 진행바 표시, 기본 True). 그 외 무시.
+        **kwargs: progress (다중 테마 크롤 rich 진행바, 기본 True). 그 외 무시.
 
     Returns:
         pl.DataFrame — target None: themeNo/themeName/url, 그 외: themeNo/themeName/stockCode/stockName/reason.

@@ -86,10 +86,19 @@ def test_parseThemeDetailHtml():
     assert rows[1]["reason"] == ""
 
 
-def test_collectTheme_listWhenNoTarget():
-    """target 없으면 테마 리스트 DataFrame (_LIST_SCHEMA)."""
+def test_collectTheme_defaultCrawlsAllCombined():
+    """target 없으면 전 테마 개별 수집 → 하나의 long DataFrame 으로 결합 (기본 동작)."""
+    client = _FakeClient(_LIST_HTML, {523: _DETAIL_523, 449: _DETAIL_449})
+    df = runAsync(naverTheme.collectTheme(client, None, progress=False))
+    assert df.columns == ["themeNo", "themeName", "stockCode", "stockName", "reason"]
+    assert set(df["themeNo"].to_list()) == {523, 449}  # 전 테마 결합
+    assert df.height == 3
+
+
+def test_collectTheme_listKeyword():
+    """target 'list' 면 테마 리스트만 (_LIST_SCHEMA)."""
     client = _FakeClient(_LIST_HTML, {})
-    df = runAsync(naverTheme.collectTheme(client, None))
+    df = runAsync(naverTheme.collectTheme(client, "list"))
     assert df.columns == ["themeNo", "themeName", "url"]
     assert df.height == 2
     assert df["themeNo"].to_list() == [523, 449]
@@ -114,11 +123,28 @@ def test_collectTheme_byNumber():
 
 
 def test_collectTheme_all():
-    """'all' → 전 테마 편입종목 concat."""
+    """'all' → 전 테마 편입종목 concat. progress=True 로 SSOT rich 진행바 경로도 실행."""
     client = _FakeClient(_LIST_HTML, {523: _DETAIL_523, 449: _DETAIL_449})
-    df = runAsync(naverTheme.collectTheme(client, "all", progress=False))
+    df = runAsync(naverTheme.collectTheme(client, "all", progress=True))
     assert set(df["themeNo"].to_list()) == {523, 449}
     assert df.height == 3
+
+
+def test_themeProgress_marimoForcesTerminal():
+    """마리모 stdout 모듈 감지 시 force_terminal console (라이브 ANSI). 그 외엔 SSOT getProgress."""
+    import sys
+
+    class _MarimoStream:
+        pass
+
+    _MarimoStream.__module__ = "marimo._messaging.streams"
+    orig = sys.stdout
+    sys.stdout = _MarimoStream()
+    try:
+        prog = naverTheme._themeProgress()
+    finally:
+        sys.stdout = orig
+    assert prog.console.is_terminal is True
 
 
 def test_collectTheme_noMatchEmpty():
@@ -128,8 +154,3 @@ def test_collectTheme_noMatchEmpty():
     assert df.is_empty()
     assert df.columns == ["themeNo", "themeName", "stockCode", "stockName", "reason"]
     assert df.schema["themeNo"] == pl.Int64
-
-
-def test_makeProgressBar_noneOnNonTty():
-    """비-TTY 환경(테스트/파이프)에선 진행바 None — 출력 오염 없음."""
-    assert naverTheme._makeProgressBar(10) is None
