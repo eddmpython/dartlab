@@ -1,13 +1,12 @@
 <script lang="ts">
-	// 터미널 상단(헤더) 「데이터」 — 공개 데이터를 Excel·CSV 로. 브라우저 parquet/포트 직독→변환(서버 0).
-	// 회사별: 재무(원본 long + 시계열 가공 IS/BS/CF 시트분할)·공시수평화·정기보고서·일별시세·공시리스트.
-	// 전종목: scan 프리빌드. 전역(회사 무관, 헤더라 상시): 거시(FRED·ECOS·관세청)·SEC ticker맵·시장지수·증권사
-	// 리서치·전종목 시세. 뉴스는 언론사 저작권(재배포 불가)이라 라이브 표시 전용 — 다운로드 미제공.
+	// 터미널 헤더 「데이터」 다이얼로그 — 원하는 데이터셋을 체크해서 *한 번에* 받는다(하나하나 X).
+	// 선택분 → 단일 Excel 워크북(데이터셋별 시트 분할) 또는 CSV 묶음(zip). 브라우저 parquet/포트 직독→변환(서버 0).
+	// 전종목 180만행 횡단은 시트 한도 초과라 묶음 불가 → 개별 CSV. 뉴스는 언론사 저작권이라 다운로드 미제공.
 	import type { DartLabRuntime, StmtKind } from '@dartlab/ui-contracts';
 	import { KR_INDEX_PRESETS } from '@dartlab/ui-contracts';
 	import { DOWNLOAD_CATALOG } from '@dartlab/ui-runtime/data/catalog/downloadCatalog';
 	import { readParquetRows } from '@dartlab/ui-runtime/data/parquet/hfRange';
-	import { objectsToWorkbook, downloadBlob, downloadCsv, type ObjectSheet } from '../../downloadExport';
+	import { objectsToWorkbook, downloadBlob, downloadCsv, toCsv, ZipStore, type ObjectSheet } from '../../downloadExport';
 	import type { Lang } from '../lib/types';
 
 	interface Props {
@@ -34,7 +33,7 @@
 		'edgar/panel': en ? 'Disclosure (wide)' : '공시 수평화',
 		'edgar/prices/company': en ? 'Daily prices (OHLCV)' : '일별 시세 (OHLCV)'
 	}));
-	// 기술 경로 대신 "무엇을 받는지" 한 줄 설명(일반인용 보조).
+	// 기술 경로 대신 "무엇을 받는지" 한 줄 설명(일반인용).
 	const DESC: Record<string, string> = $derived.by(() => ({
 		'dart/finance': en ? 'all accounts, all periods' : '전 계정·전기간 숫자',
 		'dart/panel': en ? 'disclosure body, structured' : '공시 본문 구조화 표',
@@ -44,7 +43,7 @@
 		'edgar/panel': en ? 'disclosure body, structured' : '공시 본문 구조화 표',
 		'edgar/prices/company': en ? 'daily OHLCV' : '일별 OHLCV'
 	}));
-	// 회사 단위 parquet 데이터셋 (카탈로그 자동 — 새 회사 dir 추가 시 자동 노출). krx/prices/company 제외(gov 중복·404).
+	// 회사 단위 parquet 데이터셋(카탈로그 자동). krx/prices/company 제외(gov 중복·404).
 	const parquetSets = $derived(
 		DOWNLOAD_CATALOG.filter(
 			(e) =>
@@ -55,49 +54,24 @@
 		)
 	);
 
-	// scan 프리빌드 — 전종목 횡단 파일. valuation 은 작아(2.5천행) Excel/CSV, finance-lite·changes 는 180만행이라
-	// Excel 한도(104만) 초과 → CSV 만(parquet 안 줌 — 일반인용). csvOnly=Excel 버튼 숨김.
-	const SCAN_FILES = $derived([
-		{ path: 'dart/scan/valuation.parquet', label: en ? 'Valuation (PER·PBR·cap)' : '밸류에이션 (PER·PBR·시총)', desc: en ? 'all listed firms' : '상장 전종목', csvOnly: false },
-		{ path: 'dart/scan/finance-lite.parquet', label: en ? 'Finance-lite (all · 1.8M rows)' : '재무 라이트 (전종목·180만행)', desc: en ? 'all firms, key accounts' : '전종목 주요계정', csvOnly: true },
-		{ path: 'dart/scan/changes.parquet', label: en ? 'Disclosure changes (all · 1.8M)' : '공시 변경 (전종목·180만행)', desc: en ? '1Y disclosure diffs' : '1년 공시 변경', csvOnly: true }
+	// 전역 거시·지수(회사 무관). krx/indices·krx/prices·edgar/meta 는 HF 미발행이라 제외.
+	const MARKET_FILES = $derived([
+		{ path: 'macro/fred/observations.parquet', label: en ? 'FRED macro series' : 'FRED 거시 시계열', desc: en ? 'US macro indicators' : '美 거시지표 (금리·물가 등)' },
+		{ path: 'macro/ecos/observations.parquet', label: en ? 'ECOS (BOK) macro' : 'ECOS 한은 거시', desc: en ? 'Bank of Korea macro' : '한은 거시지표' },
+		{ path: 'macro/customs/observations.parquet', label: en ? 'Customs trade (KR)' : '관세청 수출입', desc: en ? 'monthly trade stats' : '월별 수출입 통계' },
+		{ path: 'edgar/tickers/tickers.parquet', label: en ? 'SEC ticker↔CIK map' : 'SEC ticker↔CIK 맵', desc: en ? 'US ticker mapping' : '美 종목코드 매핑' }
 	]);
 
 	let open = $state(false);
 	let busy = $state('');
 	let err = $state('');
+	let sel = $state(new Set<string>());
 
 	const clean = (s: string) => s.replace(/[/ ()·]/g, '');
-	function stem(label: string): string {
-		return `${corpName || code}_${clean(label)}`;
-	}
-	// fileStem 미지정 = 회사 접두(회사 데이터). 전역(거시·지수) 데이터는 회사명 접두 없이 label 그대로.
-	function emit(label: string, rows: Record<string, unknown>[], fmt: 'xlsx' | 'csv', fileStem?: string) {
-		if (!rows.length) {
-			err = en ? 'no data' : '데이터 없음';
-			return;
-		}
-		const cols = Object.keys(rows[0]);
-		const name = fileStem ?? stem(label);
-		if (fmt === 'csv') downloadCsv(name, cols, rows);
-		else downloadBlob(objectsToWorkbook([{ label, columns: cols, rows }]), `${name}.xlsx`, XLSX_MIME);
-	}
+	const stem = (label: string) => `${corpName || code}_${clean(label)}`;
 
-	async function run(key: string, fn: () => Promise<void>) {
-		if (busy) return;
-		busy = key;
-		err = '';
-		try {
-			await fn();
-		} catch (e) {
-			err = e instanceof Error ? e.message : String(e);
-		} finally {
-			busy = '';
-		}
-	}
-
-	// 일반인용 컬럼 정리 — pick: 내부 엔진 컬럼(atocId·xbrlMatchScore 등) 제거하고 사용자 컬럼만. ko: raw 소스
-	// 코드(BAS_DD·CLSPRC_IDX 등)를 한글로. 원본(dart/finance·edgar/financeStmt)은 비포함 → raw 유지(시계열이 가공본).
+	// 일반인용 컬럼 정리 — pick: 내부 엔진 컬럼(atocId·xbrlMatchScore 등) 제거. ko: raw 소스 코드(BAS_DD 등)→한글.
+	// 원본(dart/finance·edgar/financeStmt)은 비포함 → raw 유지(시계열이 가공본).
 	const COL_SPEC: Record<string, { pick?: string[]; ko?: Record<string, string> }> = {
 		'dart/panel': {
 			pick: ['corp', 'period', 'rceptNo', 'chapter', 'sectionPath', 'sectionLeaf', 'contentRaw'],
@@ -128,80 +102,7 @@
 		});
 	}
 
-	const dlParquet = (dir: string, fmt: 'xlsx' | 'csv') =>
-		run(`${dir}:${fmt}`, async () => {
-			const { rows } = await readParquetRows(`${dir}/${code}.parquet`);
-			emit(LABELS[dir] ?? dir, reshape(rows, dir), fmt);
-		});
-
-	// 재무제표 시계열 — 가공된 IS/BS/CF(+비율) 를 계정×기간으로, 시트 분할.
-	const dlFinanceTs = () =>
-		run('finTs', async () => {
-			const bundle = await runtime.finance.bundle(code);
-			const view = bundle?.views[bundle.defaultMode] ?? bundle?.views.annual ?? bundle?.views.quarter ?? null;
-			if (!view) {
-				err = en ? 'no financials' : '재무 데이터 없음';
-				return;
-			}
-			const periods = view.periods;
-			const kinds: { k: StmtKind; label: string }[] = [
-				{ k: 'IS', label: en ? 'Income' : '손익계산서' },
-				{ k: 'BS', label: en ? 'Balance' : '재무상태표' },
-				{ k: 'CF', label: en ? 'Cashflow' : '현금흐름표' }
-			];
-			const toRows = (stmt: { kr: string; en: string; values: (number | null)[] }[]) =>
-				stmt.map((r) => {
-					const o: Record<string, unknown> = { [en ? 'Account' : '계정']: en ? r.en : r.kr };
-					periods.forEach((p, i) => (o[p] = r.values[i]));
-					return o;
-				});
-			const sheets: ObjectSheet[] = kinds
-				.map(({ k, label }) => ({ label, columns: [en ? 'Account' : '계정', ...periods], rows: toRows(view.statements[k] ?? []) }))
-				.filter((s) => s.rows.length);
-			if (view.ratios?.length)
-				sheets.push({ label: en ? 'Ratios' : '주요비율', columns: [en ? 'Metric' : '지표', ...periods], rows: toRows(view.ratios) });
-			if (!sheets.length) {
-				err = en ? 'no financials' : '재무 데이터 없음';
-				return;
-			}
-			const cur = bundle?.currency === 'USD' ? 'USD-bil' : '조원';
-			downloadBlob(objectsToWorkbook(sheets), `${stem((en ? 'financials_timeseries_' : '재무제표_시계열_') + cur)}.xlsx`, XLSX_MIME);
-		});
-
-	// 공시 리스트 — 정기 + 수시 공시 목록(접수일·보고서·접수번호·URL).
-	const dlFilings = (fmt: 'xlsx' | 'csv') =>
-		run(`filings:${fmt}`, async () => {
-			const [reg, non] = await Promise.all([runtime.filing.regular(code, 300), runtime.filing.nonRegular(code, 1000)]);
-			const rows: Record<string, unknown>[] = [
-				...reg.map((f) => ({ 구분: en ? 'regular' : '정기', 접수일: f.rceptDate, 보고서: f.reportType, 사업연도: f.year, 제출인: '', 접수번호: f.rceptNo, URL: f.url })),
-				...non.map((f) => ({ 구분: en ? 'event' : '수시', 접수일: f.rceptDate, 보고서: f.reportNm, 사업연도: '', 제출인: f.filer, 접수번호: f.rceptNo, URL: f.url }))
-			];
-			rows.sort((a, b) => String(b.접수일).localeCompare(String(a.접수일)));
-			emit(en ? 'filings' : '공시리스트', rows, fmt);
-		});
-
-	const dlScan = (file: { path: string; label: string }, fmt: 'xlsx' | 'csv') =>
-		run(`scan:${file.path}:${fmt}`, async () => {
-			const { rows } = await readParquetRows(file.path);
-			emit(file.label, rows, fmt, clean(file.label)); // 전종목 — 회사명 접두 없이
-		});
-
-	// 시장·거시 전역 데이터 — 회사 무관(헤더라 상시 노출). 모두 Excel/CSV 직변환(행수 ≤104만 안전 실측).
-	// krx/indices·krx/prices·edgar/meta 는 HF 미발행이라 제외.
-	const MARKET_FILES = $derived([
-		{ path: 'macro/fred/observations.parquet', label: en ? 'FRED macro series' : 'FRED 거시 시계열', desc: en ? 'US macro indicators' : '美 거시지표 (금리·물가 등)' },
-		{ path: 'macro/ecos/observations.parquet', label: en ? 'ECOS (BOK) macro' : 'ECOS 한은 거시', desc: en ? 'Bank of Korea macro' : '한은 거시지표' },
-		{ path: 'macro/customs/observations.parquet', label: en ? 'Customs trade (KR)' : '관세청 수출입', desc: en ? 'monthly trade stats' : '월별 수출입 통계' },
-		{ path: 'edgar/tickers/tickers.parquet', label: en ? 'SEC ticker↔CIK map' : 'SEC ticker↔CIK 맵', desc: en ? 'US ticker mapping' : '美 종목코드 매핑' }
-	]);
-	const dlMarket = (m: { path: string; label: string }, fmt: 'xlsx' | 'csv') =>
-		run(`mkt:${m.path}:${fmt}`, async () => {
-			const { rows } = await readParquetRows(m.path);
-			emit(m.label, rows, fmt, clean(m.label));
-		});
-
-	// 다파일 데이터셋 → 일반인용 Excel/CSV (개발자용 parquet 폴더 대신). HF tree API 는 CORS 차단이라 브라우저
-	// 나열 불가 → 샤드 경로를 런타임 지식(지수 프리셋·월/연 범위)으로 생성, 404 샤드는 skip 후 concat.
+	// 다파일 샤드 concat — HF tree API 는 CORS 차단이라 경로를 런타임 지식으로 생성, 404 skip.
 	const RESERVED = /[/\\:*?"<>|]/g;
 	const indexKey = (market: string, name: string) =>
 		`${market}-${name.normalize('NFC').trim().replace(RESERVED, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '')}`;
@@ -211,42 +112,185 @@
 			const res = await Promise.allSettled(paths.slice(i, i + cap).map((p) => readParquetRows(p)));
 			for (const r of res) if (r.status === 'fulfilled') chunks.push(r.value.rows as Record<string, unknown>[]);
 		}
-		return chunks.flat(); // out.push(...rows) 는 33만+ 행에서 콜스택 초과(Maximum call stack) — flat() 은 안전
+		return chunks.flat(); // push(...rows) 는 33만+ 행에서 콜스택 초과 — flat() 안전
 	}
 
-	// 시장지수 — KR 프리셋 5종 per-index(전이력) concat.
-	const dlIndices = (fmt: 'xlsx' | 'csv') =>
-		run(`idx:${fmt}`, async () => {
-			const rows = await readShards(KR_INDEX_PRESETS.map((p) => `gov/indices/index/${indexKey(p.market, p.name)}.parquet`));
-			emit(en ? 'Market indices' : '시장지수', reshape(rows, 'gov/indices/index'), fmt, en ? 'market_indices' : '시장지수');
-		});
-	// 증권사 리서치 — 201901~현재월 probe(월 sparse·인덱스 없음), 존재분 concat.
-	const dlBrokerage = (fmt: 'xlsx' | 'csv') =>
-		run(`brk:${fmt}`, async () => {
-			const now = new Date();
-			const months: string[] = [];
-			for (let y = 2019; y <= now.getFullYear(); y += 1)
-				for (let m = 1; m <= 12; m += 1) {
-					if (y === now.getFullYear() && m > now.getMonth() + 1) break;
-					months.push(`research/brokerage/${y}${String(m).padStart(2, '0')}.parquet`);
-				}
-			emit(en ? 'Brokerage research' : '증권사 리서치', await readShards(months), fmt, en ? 'brokerage_research' : '증권사리서치');
-		});
-	// 전종목 일별시세 — 최근 가용연도 1개(전체는 67만행×N년이라 폴더 ↗). CSV 권장.
-	const dlPricesYear = (fmt: 'xlsx' | 'csv') =>
-		run(`pxy:${fmt}`, async () => {
-			const y = new Date().getFullYear();
-			for (const yr of [y, y - 1, y - 2]) {
-				const rows = await readShards([`gov/prices/date/${yr}.parquet`]);
-				if (rows.length) return emit(en ? 'All-stock daily' : '전종목 일별시세', rows, fmt, (en ? 'all_stock_daily_' : '전종목일별시세_') + yr);
+	const sheet = (label: string, rows: Record<string, unknown>[]): ObjectSheet => ({ label, columns: rows.length ? Object.keys(rows[0]) : [], rows });
+
+	// ── 데이터 소스 통일 모델 — 각 소스는 fetch()→시트[]. 개별 다운로드도 묶음도 같은 fetch 재사용.
+	//    bulk=180만행(시트 한도 초과·묶음 불가, 개별 CSV). bare=전역(파일명 회사 접두 없음).
+	interface Src {
+		key: string;
+		label: string;
+		desc: string;
+		group: 'co' | 'scan' | 'mkt';
+		bulk?: boolean;
+		bare?: boolean;
+		fetch: () => Promise<ObjectSheet[]>;
+	}
+	const SOURCES = $derived.by<Src[]>(() => {
+		const out: Src[] = [];
+		// 재무제표 시계열 — 가공 IS/BS/CF(+비율) 계정×기간(이미 멀티시트).
+		out.push({
+			key: 'finTs', label: en ? 'Financials — time series' : '재무제표 시계열', desc: 'IS·BS·CF', group: 'co',
+			fetch: async () => {
+				const bundle = await runtime.finance.bundle(code);
+				const view = bundle?.views[bundle.defaultMode] ?? bundle?.views.annual ?? bundle?.views.quarter ?? null;
+				if (!view) return [];
+				const periods = view.periods;
+				const toRows = (stmt: { kr: string; en: string; values: (number | null)[] }[]) =>
+					stmt.map((r) => {
+						const o: Record<string, unknown> = { [en ? 'Account' : '계정']: en ? r.en : r.kr };
+						periods.forEach((p, i) => (o[p] = r.values[i]));
+						return o;
+					});
+				const kinds: { k: StmtKind; label: string }[] = [
+					{ k: 'IS', label: en ? 'Income' : '손익계산서' },
+					{ k: 'BS', label: en ? 'Balance' : '재무상태표' },
+					{ k: 'CF', label: en ? 'Cashflow' : '현금흐름표' }
+				];
+				const sheets = kinds
+					.map(({ k, label }) => ({ label, columns: [en ? 'Account' : '계정', ...periods], rows: toRows(view.statements[k] ?? []) }))
+					.filter((s) => s.rows.length);
+				if (view.ratios?.length) sheets.push({ label: en ? 'Ratios' : '주요비율', columns: [en ? 'Metric' : '지표', ...periods], rows: toRows(view.ratios) });
+				return sheets;
 			}
-			err = en ? 'no data' : '데이터 없음';
 		});
+		// 회사 parquet 데이터셋
+		for (const d of parquetSets)
+			out.push({
+				key: d.dir, label: LABELS[d.dir], desc: DESC[d.dir] ?? d.dir, group: 'co',
+				fetch: async () => [sheet(LABELS[d.dir], reshape((await readParquetRows(`${d.dir}/${code}.parquet`)).rows, d.dir))]
+			});
+		// 공시 리스트
+		out.push({
+			key: 'filings', label: en ? 'Filings list' : '공시 리스트', desc: en ? 'regular + events' : '정기 + 수시', group: 'co',
+			fetch: async () => {
+				const [reg, non] = await Promise.all([runtime.filing.regular(code, 300), runtime.filing.nonRegular(code, 1000)]);
+				const rows: Record<string, unknown>[] = [
+					...reg.map((f) => ({ 구분: en ? 'regular' : '정기', 접수일: f.rceptDate, 보고서: f.reportType, 사업연도: f.year, 제출인: '', 접수번호: f.rceptNo, URL: f.url })),
+					...non.map((f) => ({ 구분: en ? 'event' : '수시', 접수일: f.rceptDate, 보고서: f.reportNm, 사업연도: '', 제출인: f.filer, 접수번호: f.rceptNo, URL: f.url }))
+				];
+				rows.sort((a, b) => String(b.접수일).localeCompare(String(a.접수일)));
+				return [sheet(en ? 'Filings' : '공시리스트', rows)];
+			}
+		});
+		// scan 전종목 — valuation(작음·묶음 가능), finance-lite·changes(180만행·개별 CSV)
+		out.push({ key: 'scan:val', label: en ? 'Valuation (PER·PBR·cap)' : '밸류에이션 (PER·PBR·시총)', desc: en ? 'all listed firms' : '상장 전종목', group: 'scan', bare: true, fetch: async () => [sheet(en ? 'Valuation' : '밸류에이션', (await readParquetRows('dart/scan/valuation.parquet')).rows)] });
+		out.push({ key: 'scan:fin', label: en ? 'Finance-lite (all · 1.8M)' : '재무 라이트 (전종목·180만행)', desc: en ? 'all firms, key accounts' : '전종목 주요계정', group: 'scan', bare: true, bulk: true, fetch: async () => [sheet('finance-lite', (await readParquetRows('dart/scan/finance-lite.parquet')).rows)] });
+		out.push({ key: 'scan:chg', label: en ? 'Disclosure changes (all · 1.8M)' : '공시 변경 (전종목·180만행)', desc: en ? '1Y disclosure diffs' : '1년 공시 변경', group: 'scan', bare: true, bulk: true, fetch: async () => [sheet('changes', (await readParquetRows('dart/scan/changes.parquet')).rows)] });
+		// 시장·거시 전역
+		for (const m of MARKET_FILES)
+			out.push({ key: 'mkt:' + m.path, label: m.label, desc: m.desc, group: 'mkt', bare: true, fetch: async () => [sheet(m.label, (await readParquetRows(m.path)).rows)] });
+		out.push({
+			key: 'idx', label: en ? 'Market indices (KOSPI·KOSDAQ…)' : '시장지수 (KOSPI·KOSDAQ 등)', desc: en ? 'daily index levels' : '지수별 일별 시계열', group: 'mkt', bare: true,
+			fetch: async () => [sheet(en ? 'indices' : '시장지수', reshape(await readShards(KR_INDEX_PRESETS.map((p) => `gov/indices/index/${indexKey(p.market, p.name)}.parquet`)), 'gov/indices/index'))]
+		});
+		out.push({
+			key: 'brk', label: en ? 'Brokerage research (monthly)' : '증권사 리서치 (월별)', desc: en ? 'report link index' : '리포트 링크 인덱스', group: 'mkt', bare: true,
+			fetch: async () => {
+				const now = new Date();
+				const months: string[] = [];
+				for (let y = 2019; y <= now.getFullYear(); y += 1)
+					for (let m = 1; m <= 12; m += 1) {
+						if (y === now.getFullYear() && m > now.getMonth() + 1) break;
+						months.push(`research/brokerage/${y}${String(m).padStart(2, '0')}.parquet`);
+					}
+				return [sheet(en ? 'brokerage' : '증권사리서치', await readShards(months))];
+			}
+		});
+		out.push({
+			key: 'pxy', label: en ? 'All-stock daily prices (latest yr)' : '전종목 일별시세 (최근연도)', desc: en ? 'latest year · 670k rows' : '최근연도 · 67만행', group: 'mkt', bare: true,
+			fetch: async () => {
+				const y = new Date().getFullYear();
+				for (const yr of [y, y - 1, y - 2]) {
+					const rows = await readShards([`gov/prices/date/${yr}.parquet`]);
+					if (rows.length) return [sheet((en ? 'all_stock_daily_' : '전종목일별시세_') + yr, rows)];
+				}
+				return [];
+			}
+		});
+		return out;
+	});
+
+	const byGroup = (g: Src['group']) => SOURCES.filter((s) => s.group === g);
+	const combinable = $derived(SOURCES.filter((s) => !s.bulk).map((s) => s.key));
+	const selCount = $derived(combinable.filter((k) => sel.has(k)).length);
+	const allSel = $derived(combinable.length > 0 && selCount === combinable.length);
+
+	function toggle(key: string) {
+		if (sel.has(key)) sel.delete(key);
+		else sel.add(key);
+		sel = new Set(sel);
+	}
+	function selectAll() {
+		sel = allSel ? new Set() : new Set(combinable);
+	}
+
+	function zipCsvs(sheets: ObjectSheet[]): Uint8Array {
+		const zip = new ZipStore();
+		const te = new TextEncoder();
+		const used = new Set<string>();
+		for (const s of sheets) {
+			let base = clean(s.label) || 'sheet';
+			let nm = base;
+			let n = 2;
+			while (used.has(nm)) nm = `${base}_${n++}`;
+			used.add(nm);
+			zip.addEntry(`${nm}.csv`, te.encode(toCsv(s.columns, s.rows)));
+		}
+		return zip.finalize();
+	}
+
+	// 개별 다운로드(주로 bulk) — 한 소스만.
+	async function dlOne(src: Src, fmt: 'xlsx' | 'csv') {
+		if (busy) return;
+		busy = src.key;
+		err = '';
+		try {
+			const sheets = (await src.fetch()).filter((s) => s.rows.length);
+			if (!sheets.length) {
+				err = en ? 'no data' : '데이터 없음';
+				return;
+			}
+			const name = src.bare ? clean(src.label) : stem(src.label);
+			if (fmt === 'xlsx') downloadBlob(objectsToWorkbook(sheets), `${name}.xlsx`, XLSX_MIME);
+			else if (sheets.length === 1) downloadCsv(name, sheets[0].columns, sheets[0].rows);
+			else downloadBlob(zipCsvs(sheets), `${name}.zip`, 'application/zip');
+		} catch (e) {
+			err = e instanceof Error ? e.message : String(e);
+		} finally {
+			busy = '';
+		}
+	}
+
+	// 묶음 다운로드 — 선택한 소스(비-bulk) 전부 → 단일 Excel(시트 분할) 또는 CSV(zip).
+	async function dlBundle(fmt: 'xlsx' | 'csv') {
+		const chosen = SOURCES.filter((s) => sel.has(s.key) && !s.bulk);
+		if (!chosen.length || busy) return;
+		busy = 'bundle';
+		err = '';
+		try {
+			const all = await Promise.all(chosen.map((s) => s.fetch().catch(() => [] as ObjectSheet[])));
+			const sheets = all.flat().filter((s) => s.rows.length);
+			if (!sheets.length) {
+				err = en ? 'no data' : '데이터 없음';
+				return;
+			}
+			const name = `${corpName || code}_${en ? 'data' : '데이터'}`;
+			if (fmt === 'xlsx') downloadBlob(objectsToWorkbook(sheets), `${name}.xlsx`, XLSX_MIME);
+			else downloadBlob(zipCsvs(sheets), `${name}.zip`, 'application/zip');
+		} catch (e) {
+			err = e instanceof Error ? e.message : String(e);
+		} finally {
+			busy = '';
+		}
+	}
 </script>
 
 <svelte:window onkeydown={(e) => { if (open && e.key === 'Escape') open = false; }} />
 <div class="dataDl">
-	<button class={'hdrLink' + (open ? ' on' : '')} onclick={() => (open = !open)} title={en ? 'Download all data for this company' : '이 회사 전체 데이터 다운로드'}>
+	<button class={'hdrLink' + (open ? ' on' : '')} onclick={() => (open = !open)} title={en ? 'Download data for this company' : '이 회사 데이터 다운로드'}>
 		{en ? 'Data' : '데이터'}
 	</button>
 </div>
@@ -258,77 +302,55 @@
 			<button class="dlgClose" aria-label={en ? 'close' : '닫기'} onclick={() => (open = false)}>✕</button>
 		</div>
 
+		<div class="dlgHint">{en ? 'Tick the datasets you want, then download them together as one Excel (sheet per dataset) or CSV zip.' : '원하는 데이터셋을 체크하고 한 번에 받으세요 — 하나의 엑셀(데이터셋별 시트) 또는 CSV 묶음(zip).'}</div>
+
 		<div class="dlgBody">
 			<div class="dlgCol">
 				<div class="dpDiv">{en ? 'this company' : '이 회사'}</div>
-				<div class="dsRow">
-					<span class="dsLabel">{en ? 'Financials — time series' : '재무제표 — 시계열'}<span class="dsDir">IS·BS·CF{en ? ' (sheets)' : ' (시트 분할)'}</span></span>
-					<span class="dsBtns"><button class="dsBtn" onclick={dlFinanceTs} disabled={!!busy}>{busy === 'finTs' ? '…' : 'Excel'}</button></span>
-				</div>
-				{#each parquetSets as d (d.dir)}
-					<div class="dsRow">
-						<span class="dsLabel">{LABELS[d.dir]}<span class="dsDir">{DESC[d.dir] ?? d.dir}</span></span>
-						<span class="dsBtns">
-							<button class="dsBtn" onclick={() => dlParquet(d.dir, 'xlsx')} disabled={!!busy}>{busy === `${d.dir}:xlsx` ? '…' : 'Excel'}</button>
-							<button class="dsBtn" onclick={() => dlParquet(d.dir, 'csv')} disabled={!!busy}>{busy === `${d.dir}:csv` ? '…' : 'CSV'}</button>
-						</span>
-					</div>
-				{/each}
-				<div class="dsRow">
-					<span class="dsLabel">{en ? 'Filings list' : '공시 리스트'}<span class="dsDir">{en ? 'regular + events' : '정기 + 수시'}</span></span>
-					<span class="dsBtns">
-						<button class="dsBtn" onclick={() => dlFilings('xlsx')} disabled={!!busy}>{busy === 'filings:xlsx' ? '…' : 'Excel'}</button>
-						<button class="dsBtn" onclick={() => dlFilings('csv')} disabled={!!busy}>{busy === 'filings:csv' ? '…' : 'CSV'}</button>
-					</span>
-				</div>
-
-				<div class="dpDiv">{en ? 'cross-section prebuild (all)' : '전종목 프리빌드'}</div>
-				{#each SCAN_FILES as s (s.path)}
-					<div class="dsRow">
+				{#each byGroup('co') as s (s.key)}
+					<label class="dsRow rowSel">
+						<input type="checkbox" checked={sel.has(s.key)} onchange={() => toggle(s.key)} />
 						<span class="dsLabel">{s.label}<span class="dsDir">{s.desc}</span></span>
-						<span class="dsBtns">
-							{#if !s.csvOnly}<button class="dsBtn" onclick={() => dlScan(s, 'xlsx')} disabled={!!busy}>{busy === `scan:${s.path}:xlsx` ? '…' : 'Excel'}</button>{/if}
-							<button class="dsBtn" onclick={() => dlScan(s, 'csv')} disabled={!!busy}>{busy === `scan:${s.path}:csv` ? '…' : 'CSV'}</button>
-						</span>
-					</div>
+					</label>
+				{/each}
+
+				<div class="dpDiv">{en ? 'cross-section (all firms)' : '전종목 프리빌드'}</div>
+				{#each byGroup('scan') as s (s.key)}
+					{#if s.bulk}
+						<div class="dsRow">
+							<span class="dsLabel dsLabelPad">{s.label}<span class="dsDir">{s.desc} · {en ? 'too big to bundle' : '대용량·개별'}</span></span>
+							<button class="dsBtn" onclick={() => dlOne(s, 'csv')} disabled={!!busy}>{busy === s.key ? '…' : 'CSV'}</button>
+						</div>
+					{:else}
+						<label class="dsRow rowSel">
+							<input type="checkbox" checked={sel.has(s.key)} onchange={() => toggle(s.key)} />
+							<span class="dsLabel">{s.label}<span class="dsDir">{s.desc}</span></span>
+						</label>
+					{/if}
 				{/each}
 			</div>
 
 			<div class="dlgCol">
 				<div class="dpDiv">{en ? 'market & macro (global)' : '시장·거시 (전역)'}</div>
-				{#each MARKET_FILES as m (m.path)}
-					<div class="dsRow">
-						<span class="dsLabel">{m.label}<span class="dsDir">{m.desc}</span></span>
-						<span class="dsBtns">
-							<button class="dsBtn" onclick={() => dlMarket(m, 'xlsx')} disabled={!!busy}>{busy === `mkt:${m.path}:xlsx` ? '…' : 'Excel'}</button>
-							<button class="dsBtn" onclick={() => dlMarket(m, 'csv')} disabled={!!busy}>{busy === `mkt:${m.path}:csv` ? '…' : 'CSV'}</button>
-						</span>
-					</div>
+				{#each byGroup('mkt') as s (s.key)}
+					<label class="dsRow rowSel">
+						<input type="checkbox" checked={sel.has(s.key)} onchange={() => toggle(s.key)} />
+						<span class="dsLabel">{s.label}<span class="dsDir">{s.desc}</span></span>
+					</label>
 				{/each}
-				<div class="dsRow">
-					<span class="dsLabel">{en ? 'Market indices (KOSPI·KOSDAQ…)' : '시장지수 (KOSPI·KOSDAQ 등)'}<span class="dsDir">{en ? 'daily index levels' : '지수별 일별 시계열'}</span></span>
-					<span class="dsBtns">
-						<button class="dsBtn" onclick={() => dlIndices('xlsx')} disabled={!!busy}>{busy === 'idx:xlsx' ? '…' : 'Excel'}</button>
-						<button class="dsBtn" onclick={() => dlIndices('csv')} disabled={!!busy}>{busy === 'idx:csv' ? '…' : 'CSV'}</button>
-					</span>
-				</div>
-				<div class="dsRow">
-					<span class="dsLabel">{en ? 'Brokerage research (monthly)' : '증권사 리서치 (월별)'}<span class="dsDir">{en ? 'report link index' : '리포트 링크 인덱스'}</span></span>
-					<span class="dsBtns">
-						<button class="dsBtn" onclick={() => dlBrokerage('xlsx')} disabled={!!busy}>{busy === 'brk:xlsx' ? '…' : 'Excel'}</button>
-						<button class="dsBtn" onclick={() => dlBrokerage('csv')} disabled={!!busy}>{busy === 'brk:csv' ? '…' : 'CSV'}</button>
-					</span>
-				</div>
-				<div class="dsRow">
-					<span class="dsLabel">{en ? 'All-stock daily prices (latest yr)' : '전종목 일별시세 (최근연도)'}<span class="dsDir">{en ? 'latest year · 670k rows' : '최근연도 · 67만행'}</span></span>
-					<span class="dsBtns">
-						<button class="dsBtn" onclick={() => dlPricesYear('csv')} disabled={!!busy}>{busy === 'pxy:csv' ? '…' : 'CSV'}</button>
-					</span>
-				</div>
 			</div>
 		</div>
 
 		{#if err}<div class="dsErr">⚠ {err}</div>{/if}
+
+		<div class="dlgFoot">
+			<button class="footSel" onclick={selectAll}>{allSel ? (en ? 'Clear' : '선택 해제') : (en ? 'Select all' : '전체 선택')}</button>
+			<span class="footN">{en ? `${selCount} selected` : `${selCount}개 선택`}</span>
+			<span class="footBtns">
+				<button class="dsBtn dsBtnGo" disabled={!selCount || !!busy} onclick={() => dlBundle('xlsx')}>{busy === 'bundle' ? '…' : (en ? 'Excel' : 'Excel 묶음')}</button>
+				<button class="dsBtn" disabled={!selCount || !!busy} onclick={() => dlBundle('csv')}>{busy === 'bundle' ? '…' : (en ? 'CSV zip' : 'CSV 묶음')}</button>
+			</span>
+		</div>
 
 		<div class="dpPolicy">
 			<div>
@@ -359,7 +381,7 @@
 		left: 50%;
 		transform: translate(-50%, -50%);
 		z-index: 201;
-		width: min(760px, 94vw);
+		width: min(780px, 94vw);
 		max-height: 88vh;
 		display: flex;
 		flex-direction: column;
@@ -401,6 +423,14 @@
 		color: #e2e8f0;
 		background: rgba(255, 255, 255, 0.06);
 	}
+	.dlgHint {
+		flex-shrink: 0;
+		padding: 7px 16px;
+		font-size: 11px;
+		color: #94a3b8;
+		background: rgba(245, 158, 11, 0.05);
+		border-bottom: 1px solid #1e2433;
+	}
 	.dlgBody {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
@@ -414,14 +444,14 @@
 		gap: 1px;
 		min-width: 0;
 	}
-	@media (max-width: 580px) {
+	@media (max-width: 600px) {
 		.dlgBody {
 			grid-template-columns: 1fr;
 		}
 	}
 	.dpDiv {
 		margin-top: 10px;
-		margin-bottom: 1px;
+		margin-bottom: 2px;
 		font-size: 10px;
 		font-weight: 600;
 		color: #9fb0c6;
@@ -434,29 +464,44 @@
 	.dsRow {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		gap: 8px;
-		padding: 4px 0 4px 2px;
+		gap: 9px;
+		padding: 4px 2px;
+		border-radius: 5px;
+	}
+	.rowSel {
+		cursor: pointer;
+	}
+	.rowSel:hover {
+		background: rgba(245, 158, 11, 0.06);
+	}
+	.dsRow input[type='checkbox'] {
+		flex-shrink: 0;
+		width: 15px;
+		height: 15px;
+		accent-color: #f59e0b;
+		cursor: pointer;
+		margin: 0;
 	}
 	.dsLabel {
 		display: flex;
 		flex-direction: column;
+		flex: 1;
+		min-width: 0;
 		font-size: 12px;
 		color: #e2e8f0;
 		line-height: 1.25;
+	}
+	.dsLabelPad {
+		padding-left: 0;
 	}
 	.dsDir {
 		font-size: 10px;
 		color: #8493a8;
 	}
-	.dsBtns {
-		display: flex;
-		gap: 5px;
-		flex-shrink: 0;
-	}
 	.dsBtn {
+		flex-shrink: 0;
 		min-width: 46px;
-		padding: 5px 9px;
+		padding: 5px 10px;
 		border: 1px solid rgba(245, 158, 11, 0.4);
 		border-radius: 5px;
 		background: rgba(245, 158, 11, 0.1);
@@ -465,21 +510,60 @@
 		font-size: 11px;
 		font-weight: 600;
 		cursor: pointer;
-		text-decoration: none;
 		text-align: center;
 	}
 	.dsBtn:hover:not(:disabled) {
 		background: rgba(245, 158, 11, 0.2);
 	}
 	.dsBtn:disabled {
-		opacity: 0.5;
+		opacity: 0.45;
 		cursor: default;
+	}
+	.dsBtnGo {
+		background: #f59e0b;
+		color: #0a0e18;
+		border-color: #f59e0b;
+	}
+	.dsBtnGo:hover:not(:disabled) {
+		background: #fbbf24;
 	}
 	.dsErr {
 		font-size: 11px;
 		color: #fca5a5;
 		padding: 3px 16px;
 		flex-shrink: 0;
+	}
+	.dlgFoot {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		flex-shrink: 0;
+		padding: 9px 16px;
+		border-top: 1px solid #1e2433;
+		background: #0c1120;
+	}
+	.footSel {
+		border: 1px solid #334155;
+		background: transparent;
+		color: #cbd5e1;
+		font: inherit;
+		font-size: 11px;
+		font-weight: 600;
+		padding: 5px 11px;
+		border-radius: 5px;
+		cursor: pointer;
+	}
+	.footSel:hover {
+		background: rgba(255, 255, 255, 0.05);
+	}
+	.footN {
+		font-size: 11px;
+		color: #94a3b8;
+	}
+	.footBtns {
+		margin-left: auto;
+		display: flex;
+		gap: 6px;
 	}
 	.dpPolicy {
 		display: flex;
