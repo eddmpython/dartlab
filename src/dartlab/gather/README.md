@@ -18,7 +18,7 @@ g = dartlab.gather.getDefaultGather()  # Form B — 축이 아닌 고급 수집�
 g.dividends("005930"); g.collect("005930")
 ```
 
-- **Form A** (`dartlab.gather(axis, target, **kwargs)`) — 공개 11 축 + 베타 2 축(hidden). 축 정본 = `entry/dispatch.py` 의 `AXIS_REGISTRY`.
+- **Form A** (`dartlab.gather(axis, target, **kwargs)`) — 공개 12 축 + 베타 2 축(hidden). 축 정본 = `entry/dispatch.py` 의 `AXIS_REGISTRY`.
 - **Form B** (`getDefaultGather()` → `Gather`) — dividends/splits/majorShareholders/collect 등 축 미등록 수집기.
 
 ## 모듈 지도 (실제 레이아웃)
@@ -27,7 +27,7 @@ g.dividends("005930"); g.collect("005930")
 |------|------|
 | `entry/` | `dartlab.gather()` 콜러블 — `GatherEntry`(main) · `AXIS_REGISTRY`/dispatch · axis `handlers` |
 | `engine.py` + `mixins/` | `Gather` 클래스 (Form B). mixin = price · info · news · macro · collect · context |
-| `sources/` | L1 fetcher — `price.py` · `flow.py` · `news.py`(+ `naverNews`·`newsIo`·`newsSchema`·`newsSources`) · `history.py` · `insider.py` · `ownership.py` · `sector.py` · `gdelt.py` · `reader.py` · `search.py` |
+| `sources/` | L1 fetcher — `price.py` · `flow.py` · `news.py`(+ `naverNews`·`newsIo`·`newsSchema`·`newsSources`) · `history.py` · `insider.py` · `ownership.py` · `sector.py` · `naverTheme.py`(로컬용) · `gdelt.py` · `reader.py` · `search.py` |
 | `domains/` | provider 도메인 — `fdr` · `fmp` · `krx` · `naver` · `naverGlobal` · `yahooChart` · `fallback` |
 | `transforms/` | 수집 후 가공 — `adjustPrice`(수정주가) · `indicatorDispatch`(기술지표) · `corporateAction` · `pit` · `macro` |
 | `original/` | DART 정기+비정기 document.xml zip 원본 백업 (gather 자체포함, `data/original/` 로컬, HF 미공개) |
@@ -63,6 +63,18 @@ dartlab.gather.writeEnvExample()                 # .env.example 생성 (레지�
 - core 만 import
 - 외부 본문 untrusted — `wrap_external_in_result` 마커 (T2-5 audit)
 - prebuild 단계 import 금지 (offlineGuard, T7-2)
+
+## 법적 고지 (데이터 출처)
+
+네이버 등 외부 사이트에서 **라이브 직독**하는 축(`price`·`flow`·`ownership`·`sector`·`peers`·`theme`)은
+dartlab 이 데이터를 호스팅·재배포하지 않고 호출 시점에 원본에서 직접 당겨온다 (라이브러리 클라이언트).
+
+- **로컬 개인 사용까지는 문제되지 않는다** — 본인 컴퓨터에서 분석 용도로 라이브 수집해 쓰는 것은 무방하다.
+- **재배포·공개는 DB권 문제가 발생할 수 있다** — 수집 결과를 HF 업로드·서비스 배포·제3자 공개하면
+  데이터베이스제작자의 권리(저작권법 제4장)·저작권 문제가 발생할 수 있다. 이는 `theme` 의 테마 분류·편입사유
+  같은 편집저작물뿐 아니라 `price`(네이버 화면 시세) 등 네이버 출처 데이터 전반에 동일하게 적용된다.
+- 따라서 이 축들의 산출물은 **HF SSOT 적재 대상이 아니며 공개 터미널 제품에 배선하지 않는다** — 라이브 직독
+  라이브러리 verb 로만 노출한다.
 
 ## 관련
 

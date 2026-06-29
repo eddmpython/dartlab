@@ -1174,3 +1174,50 @@ def handleDartDoc(
     from dartlab.gather.dart.viewer import fetch as _fetchDartDoc
 
     return _fetchDartDoc(target)
+
+
+def handleTheme(
+    g: Any,
+    target: str | None,
+    *,
+    market: str,  # noqa: ARG001 — KR 전용
+    start: str | None,  # noqa: ARG001
+    end: str | None,  # noqa: ARG001
+    marketExplicit: bool,  # noqa: ARG001
+    **kwargs: Any,  # noqa: ARG001
+) -> pl.DataFrame:
+    """theme axis dispatch — 네이버 금융 테마 분류 (KR, 로컬 개인용).
+
+    Capabilities: target 분기(None=리스트·숫자/테마명=편입종목·"all"=전체 long) → naverTheme.collectTheme.
+    AIContext: gather("theme", ...) 본체 — 네이버 편집저작물 라이브 직독, 재배포 금지(README 고지).
+    Guide: 로컬 개인 분석용. 매칭 테마 없으면 빈 DataFrame (크래시 없음).
+    When: GatherEntry._run("theme", target, ...) lookup 시.
+    How: runAsync(naverTheme.collectTheme(g._client, target)) — 소스가 파싱·크롤·DataFrame 책임.
+
+    Args:
+        g: Gather 싱글턴 — ``g._client`` 공통 HTTP client 재사용(proxy scope 상속).
+        target: None=전체 테마 리스트 · 테마명/번호=편입종목 · "all"=전 테마 long 테이블.
+        market/start/end/marketExplicit: 무시 (KR 네이버 전용).
+        **kwargs: 무시.
+
+    Returns:
+        pl.DataFrame — target None: themeNo/themeName/url, 그 외: themeNo/themeName/stockCode/stockName/reason.
+
+    Raises:
+        없음 — 빈/실패 결과는 빈 DataFrame.
+
+    Example::
+
+        df = handleTheme(g, "2차전지", market="KR", start=None, end=None, marketExplicit=False)
+
+    Requires:
+        Gather 인스턴스 + 네트워크 (finance.naver.com 무인증). 산출물 재배포 금지(DB권/저작권).
+
+    See Also:
+        main.GatherEntry._run : dispatch caller.
+        sources.naverTheme.collectTheme : 본 handler 가 호출하는 backend.
+    """
+    from ..infra.http import runAsync
+    from ..sources import naverTheme
+
+    return runAsync(naverTheme.collectTheme(g._client, target))
