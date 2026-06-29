@@ -47,6 +47,12 @@ class DataEntry:
 
     notesDispatch: tuple[str, str] | None = None
 
+    # 노트(NT_) 추출 메타 — canonicalKey=정부 disclosureKey(NT_D######),
+    # noteShape=축유형(composition[다축 멤버]/lineitem[단일축 라벨]/movement[변동표]/flat[잔액]).
+    # analysis.financial.noteExtract.extractNoteView 가 shape 로 셀을 피벗.
+    canonicalKey: str | None = None
+    noteShape: str | None = None
+
     aliases: tuple[str, ...] = ()
 
     requires: str | None = None
