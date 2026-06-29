@@ -18,7 +18,7 @@ g = dartlab.gather.getDefaultGather()  # Form B — 축이 아닌 고급 수집�
 g.dividends("005930"); g.collect("005930")
 ```
 
-- **Form A** (`dartlab.gather(axis, target, **kwargs)`) — 공개 13 축 + 베타 2 축(hidden). 축 정본 = `entry/dispatch.py` 의 `AXIS_REGISTRY`.
+- **Form A** (`dartlab.gather(axis, target, **kwargs)`) — 공개 16 축 + 베타 2 축(hidden). 축 정본 = `entry/dispatch.py` 의 `AXIS_REGISTRY`.
 - **Form B** (`getDefaultGather()` → `Gather`) — dividends/splits/majorShareholders/collect 등 축 미등록 수집기.
 
 ## 모듈 지도 (실제 레이아웃)

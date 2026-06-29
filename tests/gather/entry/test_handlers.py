@@ -29,12 +29,13 @@ def test_all_axes_have_handler() -> None:
 
 
 def test_handlers_callable() -> None:
-    """12 handler 모두 callable + uniform 시그니처 (가짜 g 로 호출 안 함)."""
+    """현재 공개 handler 전체가 callable (가짜 g 로 호출 안 함) — 신규 axis 누락 차단."""
     from dartlab.gather.entry import handlers
 
     expected = [
         "handlePrice",
         "handleFlow",
+        "handleFlowMany",
         "handleMacro",
         "handleNews",
         "handleSector",
@@ -43,8 +44,14 @@ def test_handlers_callable() -> None:
         "handlePeers",
         "handleKrx",
         "handleKrxIndex",
+        "handleNarrative",
+        "handleResearch",
         "handleCalendar",
         "handleDartDoc",
+        "handleNaverTheme",
+        "handleNaverIndustry",
+        "handleNaverEtf",
+        "handleNaverEtn",
     ]
     for name in expected:
         assert hasattr(handlers, name), f"handlers.{name} 누락"
@@ -98,6 +105,93 @@ def test_flow_handler_accepts_all_alias() -> None:
     assert seen["full"] is True
     assert seen["sleepSec"] == 0.5
     assert seen["proxy"] == "http://proxy.example:8080"
+
+
+def test_naverTheme_handler_routesToThemeGroup(monkeypatch: pytest.MonkeyPatch) -> None:
+    """handleNaverTheme → groups.collectGroup(groupKey='theme') + progress/maxAgeDays/refresh 전달."""
+    import polars as pl
+
+    from dartlab.gather.entry import handlers
+    from dartlab.gather.sources.naver import groups
+
+    seen: dict = {}
+
+    async def fakeCollect(client, groupKey, target, **kwargs):
+        seen["groupKey"] = groupKey
+        seen["target"] = target
+        seen.update(kwargs)
+        return pl.DataFrame({"groupNo": [1]})
+
+    monkeypatch.setattr(groups, "collectGroup", fakeCollect)
+
+    class FakeGather:
+        _client = object()
+
+    df = handlers.handleNaverTheme(
+        FakeGather(),
+        "리튬",
+        market="KR",
+        start=None,
+        end=None,
+        marketExplicit=False,
+        maxAgeDays=3,
+        refresh=True,
+    )
+    assert df.height == 1
+    assert seen["groupKey"] == "theme"
+    assert seen["target"] == "리튬"
+    assert seen["maxAgeDays"] == 3.0
+    assert seen["refresh"] is True
+
+
+def test_naverIndustry_handler_routesToIndustryGroup(monkeypatch: pytest.MonkeyPatch) -> None:
+    """handleNaverIndustry → groups.collectGroup(groupKey='industry')."""
+    import polars as pl
+
+    from dartlab.gather.entry import handlers
+    from dartlab.gather.sources.naver import groups
+
+    seen: dict = {}
+
+    async def fakeCollect(client, groupKey, target, **kwargs):
+        seen["groupKey"] = groupKey
+        return pl.DataFrame({"groupNo": [1]})
+
+    monkeypatch.setattr(groups, "collectGroup", fakeCollect)
+
+    class FakeGather:
+        _client = object()
+
+    handlers.handleNaverIndustry(FakeGather(), "list", market="KR", start=None, end=None, marketExplicit=False)
+    assert seen["groupKey"] == "industry"
+
+
+def test_naverProduct_handlers_routeToEtfEtn(monkeypatch: pytest.MonkeyPatch) -> None:
+    """handleNaverEtf/handleNaverEtn → products.collectEtf/collectEtn (target 전달, 저장 없음)."""
+    import polars as pl
+
+    from dartlab.gather.entry import handlers
+    from dartlab.gather.sources.naver import products
+
+    seen: dict = {}
+
+    async def fakeEtf(client, target=None):
+        seen["etf"] = target
+        return pl.DataFrame({"code": ["A"]})
+
+    async def fakeEtn(client, target=None):
+        seen["etn"] = target
+        return pl.DataFrame({"code": ["B"]})
+
+    monkeypatch.setattr(products, "collectEtf", fakeEtf)
+    monkeypatch.setattr(products, "collectEtn", fakeEtn)
+
+    class FakeGather:
+        _client = object()
+
+    handlers.handleNaverEtf(FakeGather(), "KODEX", market="KR", start=None, end=None, marketExplicit=False)
+    handlers.handleNaverEtn(FakeGather(), None, market="KR", start=None, end=None, marketExplicit=False)
+    assert seen == {"etf": "KODEX", "etn": None}
 
 
 def test_gather_entry_flow_targets_parallel(monkeypatch: pytest.MonkeyPatch) -> None:

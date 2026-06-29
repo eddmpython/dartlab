@@ -88,6 +88,24 @@ def test_parseGroupDetailHtml_reasonAndNone():
     assert all(r["reason"] == "" for r in upjong)
 
 
+def test_fetchGroupList_directAndLimit():
+    """fetchGroupList — 리스트 fetch + type 필터 + limit 적용."""
+    client = _FakeClient({"theme": _THEME_LIST}, {})
+    rows = runAsync(groups.fetchGroupList(client, "theme"))
+    assert [r["groupNo"] for r in rows] == [523, 449]
+    limited = runAsync(groups.fetchGroupList(client, "theme", limit=1))
+    assert [r["groupNo"] for r in limited] == [523]
+
+
+def test_fetchGroupStocks_directReasonAndLimit():
+    """fetchGroupStocks — 단일 그룹 편입종목 + 사유 매핑 + limit."""
+    client = _FakeClient({}, {523: _THEME_DETAIL})
+    rows = runAsync(groups.fetchGroupStocks(client, "theme", 523))
+    assert [r["stockCode"] for r in rows] == ["270520", "290670"]
+    assert rows[0]["reason"] == "리튬 사업 추진."
+    assert len(runAsync(groups.fetchGroupStocks(client, "theme", 523, limit=1))) == 1
+
+
 def test_collectGroup_themeDefaultCombinedAndSaved(tmpDataDir):
     """theme 전수 → 결합 long + collectedAt 저장."""
     client = _FakeClient({"theme": _THEME_LIST}, {523: _THEME_DETAIL, 449: _THEME_DETAIL})
