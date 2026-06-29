@@ -19,6 +19,9 @@ const NEWS_PROXY = ((viteEnv?.VITE_DARTLAB_NEWS_PROXY as string | undefined) ?? 
 const MARKET_NEWS_PROXY = ((viteEnv?.VITE_DARTLAB_MARKET_NEWS_PROXY as string | undefined) ?? '').replace(/\/+$/, '');
 const MARKET_FILINGS_PROXY = ((viteEnv?.VITE_DARTLAB_MARKET_FILINGS_PROXY as string | undefined) ?? '').replace(/\/+$/, '');
 const NAVER_PROXY = ((viteEnv?.VITE_DARTLAB_NAVER_PROXY as string | undefined) ?? '').replace(/\/+$/, '');
+//   csvWorker = CF 워커 /v1/{dir}/{id}.{csv|tsv} 라우트(라이브 데이터 API, parquet→CSV/TSV 온더플라이).
+//     미설정 → Tier2 비활성, 데이터센터는 Tier1 다운로드만 노출(dev=퍼블릭 기준 무중단). mainPlan/data-download-center 03.
+const CSV_PROXY = ((viteEnv?.VITE_DARTLAB_CSV_PROXY as string | undefined) ?? '').replace(/\/+$/, '');
 const naverDev = Boolean(viteEnv?.DEV);
 // gov 주가 dev 라이브 fill 게이트(naverDev 동형) — dev 만 /__gov 미들웨어 존재, 프로덕션은 읽기 전용.
 const govDev = Boolean(viteEnv?.DEV);
@@ -33,7 +36,8 @@ export type OriginId =
 	| 'marketFilingsWorker'
 	| 'naverWorker'
 	| 'duckdbHf'
-	| 'govDev';
+	| 'govDev'
+	| 'csvWorker';
 
 /** 캐시 정책 — 오리진별 차등(정직 TTL, 04 §정직 TTL). scope='none' = 무캐시.
  *  ('persist' 는 선언만 하고 미구현이던 죽은 scope라 제거 — 영속 캐시는 JSON arm(dartlabData.loadJson)이
@@ -107,6 +111,13 @@ const ORIGINS: Partial<Record<OriginId, OriginDef>> = {
 		resolve: (code) => `/__gov?code=${encodeURIComponent(code)}`,
 		defaultCache: { scope: 'none', ttlMs: 0 },
 		configured: () => govDev
+	},
+	// 라이브 데이터 API 워커 — path = `{dir}/{id}.{csv|tsv}[?cols=&tail=&head=&freq=]`. 데이터센터 링크빌더가
+	// 이 origin 으로 Tier2 =IMPORTDATA URL 을 만든다(직접 조립 금지, uiDataWiring 가드 준수). 미설정 → Tier1 만.
+	csvWorker: {
+		resolve: (path) => `${CSV_PROXY}/v1/${path.replace(/^\/+/, '')}`,
+		defaultCache: { scope: 'memory', ttlMs: 60 * MIN, maxEntries: 64 },
+		configured: () => Boolean(CSV_PROXY)
 	}
 };
 
