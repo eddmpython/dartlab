@@ -36,11 +36,11 @@
 
 ## 5. Phase 체크리스트
 
-- [ ] **Phase 0 — 스캐폴드**: `DATA_RELEASES` → 노출 화이트리스트 빌드타임 emit 상수 + drift 가드 테스트(`tests/audit/csvWorkerAllowlist`). 변환 전 SSOT 게이트부터.
-- [ ] **Phase 1 — Tier1 다운로드(MVP 척추)**: `lab/data-center` 프로토타입, `requestParquetRows` 직독 → `buildWorkbook`/`csvExport` 재사용, 링크빌더 UX. 백엔드 0.
-- [ ] **Phase 2 — 졸업**: 스크린샷 눈검수 후 `/data` 승격, 운영자 명시 push 승인.
+- [x] **Phase 0 — 스캐폴드**: `downloadCatalog()`(Python SSOT) + TS 미러 + 워커 `allowlist.js` + drift 가드(`test_download_catalog.py::test_worker_allowlist_in_sync`). public·flat·표형만 노출, private 자동 차단.
+- [x] **Phase 1 — Tier1 다운로드(MVP 척추)**: `landing/src/routes/lab/data-center` 링크빌더 — 카탈로그 21셋 → 종목/시리즈 → 스키마 조회(브라우저 `readParquetRows` 직독) → 컬럼 투영·범위(tail/head/freq) → `.xlsx`/`.csv` 다운로드 + Tier2 =IMPORTDATA URL + 셀수 프리뷰. 신규 작성기 0(objectsToWorkbook·toCsv·originUrl 재사용). 검증: svelte-check 0에러, Playwright PASS(005930 xlsx 27.6KB·csv 3.8KB 실다운로드·한글 stem 13컬럼·콘솔에러 0). `998c1ab1e`.
+- [ ] **Phase 2 — 졸업**: 스크린샷 눈검수(운영자) 후 `/data` 승격 + 명시 push 승인. (현재 `/lab/data-center` 격리, push 대기.)
 - [x] **Phase 3 — Tier2 워커 (코드·로컬증명 완료, 무료 배포 준비)**: `infra/workers/dataCsv` 구현 — `/v1/{dir}/{id}.{csv|tsv}?cols=&tail=&head=&freq=` + `/v1/`카탈로그 + `schema.json` + allowlist 게이트(allowlist.js) + footer 예산 가드 + 셀cap 헤더 + 에러모델(400/404/405/413/502). 로컬 node 로 13 케이스 end-to-end PASS(BOM·en-US숫자·honest-gap·한글 stem·413 dateShard·404 private 누설0·400+available·HEAD). **실측 결론(배포 호스트 게이트)**: 디코드 RSS = gov/prices/company 70MB · dart/finance 119MB · macro/fred 210MB · **dart/panel 927MB**(본문). footer `total_uncompressed_size`×6 ≈ 실측 RSS(panel 추정 932MB vs 측정 927MB 일치). **호스트 = CF Worker(PRD)**. CF 128MB 메모리상: 회사 flat 파일(prices 70MB·indices·brokerage·finance 119MB) 라이브, fred observations 210MB·panel-full 927MB 는 **413→Tier1**(killList 패턴). `cols` 투영이 탈출구(panel 본문 제외 927→80MB). `tail`/`head` 는 단일 row-group 이라 메모리 안 줄임(슬라이스만). 남은 게이트 = openDecision #2 CF CPU(무료 10ms vs 유료) = 배포 후 실측·운영자 보고(05 §3). drift 가드 `test_worker_allowlist_in_sync` 추가. (⚠ 옛 기재 '~1GB 서버리스/Vercel' 은 PRD 이탈 — 철회, CF 로 재정렬.)
-- [ ] **Phase 4 — 배선**: `csvWorker` origin 등록 + `VITE_DARTLAB_CSV_PROXY` env. (워커 변환·셀cap·카탈로그·schema 는 Phase 3 완료 — 남은 건 호스트 배포 + UI origin 배선뿐.)
+- [x] **Phase 4 — 배선**: `csvWorker` origin 등록(`registry.ts`) + `VITE_DARTLAB_CSV_PROXY` 게이트. 미설정 시 Tier2 비활성·Tier1 만 노출(무중단). 데이터센터가 이 origin 으로 Tier2 URL 생성. `998c1ab1e`. (남은 건 CF 배포 시 env 설정뿐.)
 - [ ] **Phase 5 — 후속(MVP 외)**: 날짜샤드 Tier2(CF 한도 통과 시)·`freq` OHLCV-aware 집계·`/v1/{dir}/index.json` HF tree 열거·passthrough 격상 검토.
 
 ## 6. 열린 질문 (운영자 결정)
@@ -52,7 +52,7 @@
 
 ## 7. NEXT
 
-**Phase 3 워커 구현+로컬 메모리 실측 완료(`infra/workers/dataCsv`, CF Worker).** 남은 PRD 게이트 = **CF 배포 후 CPU 실측 → 운영자 보고**(05 §3, openDecision #2). 회사 flat 파일(prices·finance·indices·brokerage)은 메모리상 CF 라이브 가능, fred observations·panel-full 은 413→Tier1. → CF 배포 → CPU 보고 → Phase 4 UI origin 배선(`csvWorker`+`VITE_DARTLAB_CSV_PROXY`).
+**Phase 0·1·3·4 완료 — 빌드 가능한 전부 끝.** Tier1 다운로드 surface 라이브 작동(브라우저 직독, 백엔드 0), Tier2 워커 CF-ready, origin 배선 완료. **남은 건 운영자 게이트 2개뿐**: ① **UI 스크린샷 눈검수 + 명시 push 승인**(`/lab/data-center` 커밋 `998c1ab1e` 등 UI 커밋 push 대기) → 통과 시 `/data` 졸업(Phase 2). ② **CF 워커 배포(`wrangler deploy`, 운영자 CF 로그인) + CPU 실측 보고**(05 §3, openDecision #2) → `VITE_DARTLAB_CSV_PROXY` 설정 시 Tier2 라이브 URL 활성. 배포 전엔 데이터센터가 Tier1 만 노출(무중단).
 
 ## 8. 화해 상태
 
