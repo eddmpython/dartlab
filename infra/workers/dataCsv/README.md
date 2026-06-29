@@ -20,23 +20,23 @@ https://{host}/v1/{dir}/{id}.{csv|tsv}?cols=&tail=&head=&freq=
 파라미터: `cols`(컬럼 투영·출력순서) · `tail`(최근 N행) · `head`(최초 N행, tail 과 배타) ·
 `freq`(다운샘플 d\|w\|m\|q\|y, last-of-period). 확장자가 포맷 단일 결정(`.csv`=Sheets, `.tsv`=Excel 한국 로케일).
 
-## ⚠ 호스트 메모리 — 실측 게이트 (배포 전 운영자 결정)
+## 호스트 메모리 — 전 카탈로그는 무료 1GB 서버리스에서 ($0)
 
 디코드 메모리 = parquet 압축해제 비용. 본 워커는 footer 의 컬럼별 `total_uncompressed_size` 합 ×
 팽창계수로 **디코드 전에** 예산(`MAX_DECODE_BYTES`)을 검사해 초과면 413(+`cols` 안내)한다. 실측:
 
-| 데이터셋 | 전량 디코드 RSS | CF 128MB | ~1GB 서버리스 |
+| 데이터셋 | 전량 디코드 RSS | CF Workers 128MB(무료) | Vercel/Netlify Hobby 1GB(무료) |
 |---|---|---|---|
 | `gov/prices/company/{code}` (4천행) | ~70MB | ✅ | ✅ |
 | `dart/finance/{code}` (1.3만행) | ~119MB | ⚠ | ✅ |
-| `macro/fred/observations` (33만행) | ~210MB | ❌ | ✅ |
+| `macro/fred/{seriesId}` (observations 33만행) | ~210MB | ❌ | ✅ |
 | `dart/panel/{code}` (본문 포함) | ~927MB | ❌ | ❌(→`cols` 투영) |
 | `dart/panel/{code}?cols=`(본문 제외) | ~30~80MB | ⚠ | ✅ |
 
-- **CF Workers = 128MB 고정(전 플랜)** → 큰 파일을 못 올린다. `MAX_DECODE_BYTES≈90MB`·
-  `MAX_DECODE_ROWS≈30만`이면 작은 회사파일만 라이브, 큰 파일은 413 으로 정직하게 거부된다.
-- **전 카탈로그 라이브를 원하면 ~1GB 메모리 서버리스 함수**(Vercel/Netlify Functions 등)에 올리고
-  `MAX_DECODE_BYTES≈700MB`. 같은 `worker.js` 핸들러가 node·CF·서버리스에서 동일 동작(호스트 무관).
+- **전 카탈로그 라이브 = 무료다.** Vercel Hobby·Netlify 무료 함수는 메모리 **1024MB**라 fred·panel(cols)
+  포함 전부 $0 로 라이브. 유료 결심 불필요 — `api/[...path].js`+`vercel.json` 으로 `vercel` 한 줄 배포.
+- CF Workers(역시 무료, 기존 인프라)는 128MB 고정이라 **회사파일만** 라이브(fred·panel-full 은 413→Tier1).
+  새 계정 없이 시작하려면 이쪽. 같은 `worker.js` 핸들러 — 호스트만 다르다.
 - `cols` 투영이 진짜 메모리 탈출구다 — panel 본문(`contentRaw`) 제외 시 927→80MB(실측). 큰 파일도
   컬럼만 고르면 어디서나 라이브.
 
@@ -61,10 +61,14 @@ curl "http://localhost:8787/v1/gov/prices/company/005930.csv?cols=date,close&tai
 
 node 는 메모리가 충분해 전 카탈로그를 디코드한다(배포 호스트 메모리만 위 표대로 다름).
 
-## 배포 (운영자 호스트 결정 후)
+## 배포 — 둘 다 무료
 
 ```bash
-npm run deploy         # CF: wrangler deploy (작은 파일만 라이브). 큰 파일까지면 1GB 서버리스로.
+# A. 전 카탈로그 라이브 (권장) — Vercel Hobby 무료 1GB. api/[...path].js + vercel.json 포함.
+vercel          # 또는 vercel --prod. Root Directory = infra/workers/dataCsv. 메모리 1024MB·60s 자동.
+
+# B. 회사파일만 라이브 — 기존 무료 CF Workers(새 계정 0)
+npm run deploy  # wrangler deploy. fred·panel-full 은 413→Tier1.
 ```
 
 배포 후 UI 배선: `ui/.../data/origins/registry.ts` 에 `csvWorker` origin 등록 + `VITE_DARTLAB_CSV_PROXY`
