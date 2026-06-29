@@ -126,6 +126,27 @@ describe('projectReport — 덱 구조 + 정직', () => {
 		expect(deck.cards.length).toBeGreaterThanOrEqual(2); // cover + finChart(+closing)
 		expect(deck.cards.some((c) => c.kind === 'finChart')).toBe(true);
 	});
+	it('자동 핵심지표가 전부 결측이면 빈 KPI 카드를 붙이지 않는다', () => {
+		const deck = projectReport(
+			model({
+				headlineKpis: [
+					{ label: '매출', value: '-' },
+					{ label: '영업이익률', value: '–' }
+				]
+			})
+		);
+		expect(deck.cards.some((c) => c.kind === 'kpis')).toBe(false);
+	});
+	it('편집자가 검증한 핵심지표가 있으면 자동 핵심지표보다 우선한다', () => {
+		const lead: CarouselCard[] = [
+			{ kind: 'editorial', line: '커버', chapter: '표지' },
+			{ kind: 'kpis', heading: '핵심 지표', chapter: '핵심지표', metrics: [{ label: '매출', value: '13억8563만달러' }] }
+		];
+		const deck = projectReport(model(), { lead });
+		const kpis = deck.cards.filter((c) => c.kind === 'kpis');
+		expect(kpis).toHaveLength(1);
+		expect(kpis[0]).toMatchObject({ metrics: [{ label: '매출', value: '13억8563만달러' }] });
+	});
 });
 
 describe('큐레이션 오버레이(CarouselSpec) — notes/order', () => {

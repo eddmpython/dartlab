@@ -15,7 +15,7 @@
 키 = **슬러그**(회사 `003230-samyang-foods` · 이슈 `2026-06-korea-macro`). 회사당 N편(1:N).
 
 계약(글당 1파일):
-  { code, slug, name, sector?, title?, caption?, explainers?, relatedNews?, pinnedComment?, date?,
+  { code, slug, name, sector?, title?, caption?, keyMetrics?, explainers?, relatedNews?, pinnedComment?, date?,
     slides: [ {layout, date?|kicker?, line?, sub?, bigNumber?, unit?, context?, image?} ],
     spec?: { hero?, order?, notes? } }
   layout ∈ editorial(커버) | editorialBeat(헤드라인 비트) | editorialStat(큰 숫자)
@@ -195,8 +195,29 @@ def _normalize_related_news(source: dict) -> list[dict]:
     return out
 
 
+def _normalize_key_metrics(source: dict) -> list[dict]:
+    """검증된 핵심 지표(`keyMetrics`) → 계약 필드. label/value 둘 다 있어야 하며 빈 값은 버린다."""
+    raw = source.get("keyMetrics") or source.get("key_metrics") or []
+    if isinstance(raw, dict):
+        raw = [{"label": k, "value": v} for k, v in raw.items()]
+    if not isinstance(raw, list):
+        return []
+    out: list[dict] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        label = str(item.get("label") or item.get("term") or "").strip()
+        value = str(item.get("value") or item.get("text") or "").strip()
+        if label and value and value not in {"-", "–"}:
+            out.append({"label": label, "value": value})
+    return out
+
+
 def _attach_caption_context(contract: dict, source: dict) -> None:
     """캡션 보조 맥락(짧은 설명·관련뉴스)을 계약에 싣는다."""
+    key_metrics = _normalize_key_metrics(source)
+    if key_metrics:
+        contract["keyMetrics"] = key_metrics
     explainers = _normalize_explainers(source)
     if explainers:
         contract["explainers"] = explainers

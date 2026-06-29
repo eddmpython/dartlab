@@ -24,6 +24,11 @@ function assertNever(x: never): never {
 	throw new Error(`projectBlock: 미매핑 ReportBlock 변종 — ${JSON.stringify(x)}`);
 }
 
+function isFilledMetricValue(value: string | null | undefined): boolean {
+	const v = String(value ?? '').trim();
+	return !!v && v !== '-' && v !== '–' && v.toLowerCase() !== 'n/a';
+}
+
 /** 카드용 초단문 — 첫 문장(마침표까지)만, 길면 자른다. 캐러셀은 리포트가 아니라 한 줄 후킹(기존 SNS 카피 톤). */
 function hook(text: string, max = 80): string {
 	const t = clean(text).trim();
@@ -180,7 +185,9 @@ export function projectReport(
 		return { ...base, cards };
 	}
 
-	if (model.headlineKpis.length) cards.push({ kind: 'kpis', heading: '핵심 지표', chapter: CH_KPIS, metrics: model.headlineKpis });
+	const hasLeadKpis = cards.some((c) => c.kind === 'kpis');
+	const headlineKpis = model.headlineKpis.filter((m) => isFilledMetricValue(m.value));
+	if (!hasLeadKpis && headlineKpis.length) cards.push({ kind: 'kpis', heading: '핵심 지표', chapter: CH_KPIS, metrics: headlineKpis });
 	// 재무 백본 = 터미널 중간패널 재무 그리드를 **보는 관점 순서** 그대로 한 장씩(각 장 = MiniFinChart 그래프
 	// + 표 한 세트). 손익→현금→효율→체력. cardKey 로 번들 카드 선택. 스파크라인(table) 금지.
 	for (const p of FIN_PERSPECTIVES) cards.push({ kind: 'finChart', heading: p.heading, sub: p.sub, chapter: CH_FIN, stockCode: model.stockCode, cardKey: p.key });
@@ -225,14 +232,14 @@ const FIN_PERSPECTIVES: { key: string; heading: string; sub: string }[] = [
 	// 손익 — 얼마나 버나
 	{ key: 'incomeBreakdown', heading: '손익구조', sub: '매출에서 이익까지' },
 	{ key: 'costStructure', heading: '비용구조', sub: '원가·판관비가 매출을 먹는 정도' },
-	{ key: 'marginTrend', heading: '이익률', sub: 'GPM·OPM·NPM 추이' },
+	{ key: 'marginTrend', heading: '이익률', sub: '매출총이익률·영업이익률·순이익률 추이' },
 	// 현금 — 이익이 진짜인가
 	{ key: 'cashflowSigned', heading: '현금흐름', sub: '영업·투자·재무 현금' },
 	{ key: 'cashConversion', heading: '이익의 현금화', sub: '순이익이 진짜 현금인가' },
-	{ key: 'fcfTrend', heading: '잉여현금 FCF', sub: '쓰고 남는 진짜 현금' },
+	{ key: 'fcfTrend', heading: '잉여현금흐름', sub: '쓰고 남는 현금' },
 	// 효율 — 자본을 잘 굴리나
-	{ key: 'returnTrend', heading: '자본수익', sub: 'ROE·ROA' },
-	{ key: 'dupont', heading: 'ROE 분해', sub: '마진·회전·레버리지' },
+	{ key: 'returnTrend', heading: '자본수익', sub: '자기자본·자산 수익률' },
+	{ key: 'dupont', heading: '자기자본수익률 분해', sub: '마진·회전·레버리지' },
 	// 체력 — 버틸 수 있나
 	{ key: 'assetComposition', heading: '자산구조', sub: '무엇으로 구성됐나' },
 	{ key: 'leverageTrend', heading: '레버리지·유동', sub: '버틸 수 있나' }

@@ -116,6 +116,11 @@ export interface ContractRelatedNews {
 	track?: 'naver' | 'gdelt' | 'official' | 'web' | string;
 }
 
+export interface ContractMetric {
+	label: string;
+	value: string;
+}
+
 export interface CarouselContract {
 	/** 종목코드 — 회사 캐러셀만. 이슈(standalone)는 빈 문자열(렌더가 회사 report 조회 안 함). */
 	code: string;
@@ -129,6 +134,8 @@ export interface CarouselContract {
 	title?: string;
 	/** 인스타 캡션(caption) — 포스트 우측 설명 산문(문단=빈 줄 구분). 슬라이드와 별개의 본문. */
 	caption?: string;
+	/** 편집자가 검증한 핵심 지표 — 자동 재무 번들 결측 시 빈 KPI 대신 이 값을 렌더한다. */
+	keyMetrics?: ContractMetric[];
 	/** 짧은 설명 — 록빌/CDMO 같은 낯선 용어를 캡션 옆에서 바로 풀어준다. */
 	explainers?: ContractExplainer[];
 	/** 관련 뉴스/근거 링크 — 네이버 보관 뉴스나 공식 발표 원문. */

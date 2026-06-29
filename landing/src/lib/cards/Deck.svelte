@@ -109,6 +109,14 @@
 	});
 
 	const total = $derived(deck.cards.length);
+	const badgeName = $derived.by(() => {
+		const code = (sym ?? '').trim().toUpperCase();
+		const propName = (corpName ?? '').trim();
+		const builtName = (deck.corpName ?? '').trim();
+		if (propName && propName.toUpperCase() !== code) return propName;
+		if (builtName && builtName.toUpperCase() !== code) return builtName;
+		return propName || builtName || sym;
+	});
 
 	// 닷 = 인스타식 슬라이딩 윈도우(절대 줄바꿈 X). 회사 덱은 20장+이라 모든 점을 한 줄에 못 넣는다 →
 	// 한 번에 고정 개수(DOT_WINDOW)만 보이고, 활성점을 가운데 두며 윈도우를 슬라이드. 양 끝점은 축소해
@@ -185,7 +193,7 @@
 
 		<!-- 코너 크롬(전 슬라이드 고정) — 회사명·코드 + 페이지 + 확대. dartlab 서명은 우측 캡션 패널에 있어
 		     캐러셀 이미지엔 안 얹는다(중복 + 슬라이드 본문과 겹침 방지). -->
-		<div class="badge">{deck.corpName}{sym ? ` · ${sym}` : ''}</div>
+		<div class="badge">{badgeName}{sym ? ` · ${sym}` : ''}</div>
 		{#if total > 1}<div class="pageBadge">{idx + 1} / {total}</div>{/if}
 		{#if onEnlarge}<button class="enlarge" onclick={onEnlarge} title="확대" aria-label="확대">⤢</button>{/if}
 

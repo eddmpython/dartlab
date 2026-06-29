@@ -38,6 +38,11 @@ carousel:
 
     둘째 문단.
   pinnedComment: "근거·면책 한 줄"
+  keyMetrics:
+    - label: "매출 (검증 기준일)"
+      value: "10억달러"
+    - label: "영업이익률 (기준)"
+      value: "12%"
   explainers:
     - term: "낯선 용어"
       body: "처음 보는 독자가 캡션을 끊지 않고 이해할 수 있게 한두 문장으로 설명"
@@ -65,8 +70,10 @@ carousel:
 ```
 - layout 은 **3종만**: `editorial`(표지) · `editorialStat`(큰 숫자) · `editorialBeat`(비트).
 - 슬라이드 숫자는 본문에 있는 숫자만(없는 숫자 쓰면 audit 가 경고).
+- `keyMetrics` 는 공식 발표·공시·검증표에서 확인한 핵심 지표만 넣는다. 자동 재무 번들에 결측이 있어도 공개 화면의 `핵심 지표` 카드가 빈 값으로 나가지 않게 하는 편집자 검증값이다.
 - `explainers` 는 록빌·CDMO처럼 독자가 멈칫할 용어를 바로 풀어주는 짧은 설명이다.
 - `relatedNews` 는 네이버 보관 뉴스(`track: naver`)나 공식 발표(`track: official`)를 연결한다. title/url 은 필수다.
+- 카드 본문·캡션은 전문용어 약자를 앞세우지 않는다. `ARR`, `EDR`, `SOC`, `FCF`처럼 처음 보는 독자에게 막히는 약자는 슬라이드와 캡션에서 `연간 반복 매출`, `단말 보안 대응`, `보안 관제`, `잉여현금흐름`처럼 풀어 쓴다. 원어가 필요하면 짧은 설명에 보조로만 둔다.
 
 ## 화면(코드)도 바꿨을 때
 - slides 텍스트만 바꿈 → 위 3단계로 끝(데이터만).
@@ -121,7 +128,7 @@ uv run python -X utf8 blog/_scripts/plan_card_news.py --issue {slug} --write
 uv run python -X utf8 blog/_scripts/build_carousel_contracts.py
 ```
 - 순수 매크로/제도 이슈는 `stockCode` 없이 둔다 → 손글 카드만 렌더.
-- 특정 기업 관전 포인트 이슈는 `stockCode`와 `corpName`을 넣는다 → 블로그 CTA는 숨기지만 카드 뒤에 회사 report 기반 KPI·그래프·테이블이 붙는다.
+- 특정 기업 관전 포인트 이슈는 `stockCode`와 `corpName`을 넣고, 공식 발표 기준 `keyMetrics` 를 함께 넣는다 → 블로그 CTA는 숨기지만 카드 뒤에 회사 report 기반 그래프·테이블이 붙고, 자동 지표 결측 때도 빈 핵심지표를 내보내지 않는다.
 
 ⛔ **핀터레스트·구글 이미지 금지** — 거기 올라온 사진은 대부분 **저작권 있음**(긁어온 것)이라 가져다 쓰면 침해다.
 스톡 보강은 아래 무료 소스만 쓴다.

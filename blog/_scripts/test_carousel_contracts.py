@@ -37,6 +37,9 @@ def _write_post(
     캡션 문단1.
 
     캡션 문단2.
+  keyMetrics:
+    - label: "매출"
+      value: "10억"
   pinnedComment: "근거·면책"
 {slides_yaml}"""
     (d / "index.md").write_text(
@@ -77,6 +80,7 @@ def test_one_to_n_same_code_two_slugs(tmp_path: Path) -> None:
     assert contracts["999999-bbb"]["code"] == "999999"
     assert len(contracts["999999-aaa"]["slides"]) == 2
     assert len(contracts["999999-bbb"]["slides"]) == 1
+    assert contracts["999999-aaa"]["keyMetrics"] == [{"label": "매출", "value": "10억"}]
 
 
 def test_index_date_desc(tmp_path: Path) -> None:
@@ -183,6 +187,9 @@ stockCode: "207940"
 corpName: "삼성바이오로직스"
 title: "공장 가동을 봅니다"
 date: 2026-06-28
+keyMetrics:
+  - label: "매출"
+    value: "10억"
 explainers:
   - term: "록빌"
     body: "미국 생산 거점"
@@ -205,6 +212,7 @@ slides:
     assert c["code"] == "207940"
     assert c["name"] == "삼성바이오로직스"
     assert c["standalone"] is True  # 블로그 글은 없어서 CTA 숨김. 차트 첨부 여부는 code 가 결정.
+    assert c["keyMetrics"] == [{"label": "매출", "value": "10억"}]
     assert c["explainers"] == [{"term": "록빌", "body": "미국 생산 거점"}]
     assert c["relatedNews"] == [
         {

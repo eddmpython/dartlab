@@ -36,7 +36,7 @@ export function resolveSlideImage(media: MediaIndex | null, code: string, image?
 
 /** 계약 → 편집 카드 슬라이드(라이브 렌더용). image 는 hfMedia URL 로 해석해 bg 에 싣는다. */
 export function contractToCards(contract: CarouselContract, media: MediaIndex | null): CarouselCard[] {
-	return contract.slides.map((s) => {
+	const cards: CarouselCard[] = contract.slides.map((s) => {
 		const bg = resolveSlideImage(media, contract.code, s.image);
 		if (s.layout === 'editorialStat') {
 			return { kind: 'editorialStat', kicker: s.kicker, bigNumber: s.bigNumber ?? '', unit: s.unit, context: s.context, bg };
@@ -46,4 +46,13 @@ export function contractToCards(contract: CarouselContract, media: MediaIndex | 
 		}
 		return { kind: 'editorial', date: s.date, line: s.line ?? '', sub: s.sub, bg };
 	});
+	if (contract.keyMetrics?.length) {
+		cards.push({
+			kind: 'kpis',
+			heading: '핵심 지표',
+			chapter: '핵심지표',
+			metrics: contract.keyMetrics
+		});
+	}
+	return cards;
 }
