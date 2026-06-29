@@ -14,6 +14,7 @@ from dartlab.core.dataConfig import DATA_RELEASES, downloadCatalog
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _TS_MIRROR = _REPO_ROOT / "ui" / "packages" / "runtime" / "src" / "data" / "catalog" / "downloadCatalog.ts"
+_WORKER_MIRROR = _REPO_ROOT / "infra" / "workers" / "dataCsv" / "allowlist.js"
 
 # 코드 게이트가 막아야 하는 private dir (공개 repo 와 same-repo 라 토큰 차단 안 먹음 — 03-tier2-live-worker).
 _MUST_BLOCK = {
@@ -32,6 +33,13 @@ _MUST_BLOCK = {
 def _tsMirrorEntries() -> dict[str, str]:
     """TS 미러 파일에서 {dir: shardKind} 추출."""
     text = _TS_MIRROR.read_text(encoding="utf-8")
+    pairs = re.findall(r"\{\s*dir:\s*'([^']+)',[^}]*shardKind:\s*'([^']+)'", text)
+    return {d: kind for d, kind in pairs}
+
+
+def _workerMirrorEntries() -> dict[str, str]:
+    """라이브 API 워커 allowlist.js 에서 {dir: shardKind} 추출 (TS 미러와 동일 리터럴 형태)."""
+    text = _WORKER_MIRROR.read_text(encoding="utf-8")
     pairs = re.findall(r"\{\s*dir:\s*'([^']+)',[^}]*shardKind:\s*'([^']+)'", text)
     return {d: kind for d, kind in pairs}
 
@@ -68,3 +76,19 @@ def test_ts_mirror_in_sync() -> None:
     assert not extraInTs, f"TS 미러 잉여(Python 에 없음): {sorted(extraInTs)}"
     for d, kind in pyCatalog.items():
         assert tsCatalog[d] == kind, f"shardKind drift {d}: py={kind} ts={tsCatalog[d]}"
+
+
+def test_worker_allowlist_in_sync() -> None:
+    """라이브 API 워커(infra/workers/dataCsv/allowlist.js)의 dir↔shardKind 가 Python SSOT 와 정확히
+    일치한다 (drift 0). 워커 allowlist 는 same-repo private 6종 차단의 유일 방어라 SSOT 동기화가 보안 게이트."""
+    pyCatalog = {entry["dir"]: entry["shardKind"] for entry in downloadCatalog()}
+    workerCatalog = _workerMirrorEntries()
+    assert workerCatalog, f"워커 allowlist 파싱 실패: {_WORKER_MIRROR}"
+    missing = set(pyCatalog) - set(workerCatalog)
+    extra = set(workerCatalog) - set(pyCatalog)
+    assert not missing, f"워커 allowlist 누락(Python 에만 있음): {sorted(missing)}"
+    assert not extra, f"워커 allowlist 잉여(Python 에 없음 — 보안 누설 위험): {sorted(extra)}"
+    leaked = set(workerCatalog) & _MUST_BLOCK
+    assert not leaked, f"워커 allowlist 에 private dir 노출됨: {sorted(leaked)}"
+    for d, kind in pyCatalog.items():
+        assert workerCatalog[d] == kind, f"워커 shardKind drift {d}: py={kind} worker={workerCatalog[d]}"

@@ -1,0 +1,15 @@
+{
+	"name": "dartlab-data-csv-worker",
+	"private": true,
+	"type": "module",
+	"version": "0.1.0",
+	"description": "DartLab live data API — HF parquet → CSV/TSV on-the-fly for Google Sheets / Excel runtime use.",
+	"scripts": {
+		"dev": "node dev.mjs",
+		"deploy": "wrangler deploy"
+	},
+	"dependencies": {
+		"hyparquet": "^1.26.0",
+		"hyparquet-compressors": "^1.1.1"
+	}
+}

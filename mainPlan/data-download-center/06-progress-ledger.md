@@ -39,8 +39,8 @@
 - [ ] **Phase 0 — 스캐폴드**: `DATA_RELEASES` → 노출 화이트리스트 빌드타임 emit 상수 + drift 가드 테스트(`tests/audit/csvWorkerAllowlist`). 변환 전 SSOT 게이트부터.
 - [ ] **Phase 1 — Tier1 다운로드(MVP 척추)**: `lab/data-center` 프로토타입, `requestParquetRows` 직독 → `buildWorkbook`/`csvExport` 재사용, 링크빌더 UX. 백엔드 0.
 - [ ] **Phase 2 — 졸업**: 스크린샷 눈검수 후 `/data` 승격, 운영자 명시 push 승인.
-- [ ] **Phase 3 — Tier2 워커 실측 게이트**: `infra/workers/dataCsv`(가칭), 회사파일 CF 128MB/CPU 실측, 비용 운영자 결정 후 착수.
-- [ ] **Phase 4 — 배선**: `csvWorker` origin 등록 + `VITE_DARTLAB_CSV_PROXY` env. TSV/CSV 온더플라이 + 셀cap 헤더 + `/v1/` 카탈로그 + `schema.json` 프로브 + Sheets/Excel 카피.
+- [x] **Phase 3 — Tier2 워커 + 실측 게이트 (코드·로컬증명 완료, 배포 운영자 결정 대기)**: `infra/workers/dataCsv` 구현 — `/v1/{dir}/{id}.{csv|tsv}?cols=&tail=&head=&freq=` + `/v1/`카탈로그 + `schema.json` + allowlist 게이트(allowlist.js) + footer 예산 가드 + 셀cap 헤더 + 에러모델(400/404/405/413/502). 로컬 node 로 13 케이스 end-to-end PASS(BOM·en-US숫자·honest-gap·한글 stem·413 dateShard·404 private 누설0·400+available·HEAD). **실측 결론(배포 호스트 게이트)**: 디코드 RSS = gov/prices/company 70MB · dart/finance 119MB · macro/fred 210MB · **dart/panel 927MB**(본문). footer `total_uncompressed_size`×6 ≈ 실측 RSS(panel 추정 932MB vs 측정 927MB 일치). **CF Workers 128MB(전 플랜 고정)는 큰 파일 불가** → 작은 회사파일만 라이브. 전 카탈로그 라이브 = **~1GB 서버리스 함수**(같은 핸들러). `cols` 투영이 메모리 탈출구(panel 본문 제외 927→80MB). `tail`/`head` 는 단일 row-group 이라 메모리 안 줄임(슬라이스만). → 미결정 #1 호스트·#2 플랜 = ~1GB 서버리스 권장. drift 가드 `test_worker_allowlist_in_sync` 추가.
+- [ ] **Phase 4 — 배선**: `csvWorker` origin 등록 + `VITE_DARTLAB_CSV_PROXY` env. (워커 변환·셀cap·카탈로그·schema 는 Phase 3 완료 — 남은 건 호스트 배포 + UI origin 배선뿐.)
 - [ ] **Phase 5 — 후속(MVP 외)**: 날짜샤드 Tier2(CF 한도 통과 시)·`freq` OHLCV-aware 집계·`/v1/{dir}/index.json` HF tree 열거·passthrough 격상 검토.
 
 ## 6. 열린 질문 (운영자 결정)
@@ -54,7 +54,7 @@
 
 ## 7. NEXT
 
-**Phase 0 부터** — `DATA_RELEASES` 노출 화이트리스트 emit 상수 + drift 가드. 운영자 결정(§6) 중 **#1 워커 위치 · #2 CF 플랜**은 Phase 3 착수 전까지만 필요(Phase 0~2 Tier1 은 무관하게 진행 가능). 착수 = 운영자 go.
+**Phase 3 코드·로컬증명 완료(`infra/workers/dataCsv`).** 남은 게이트 = 운영자 호스트 결정(미결정 #1·#2): **CF 128MB(작은 파일만 라이브) vs ~1GB 서버리스(전 카탈로그, 권장)**. 호스트 정해지면 → 배포(`wrangler deploy` 또는 서버리스) → Phase 4 UI origin 배선(`csvWorker`+`VITE_DARTLAB_CSV_PROXY`). follow-up: macro/* 단일 시리즈 `series=` 필터 결정(단일 벌크 observations.parquet 라 post-decode 필터 안전).
 
 ## 8. 화해 상태
 

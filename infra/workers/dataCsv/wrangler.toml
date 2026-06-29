@@ -1,0 +1,18 @@
+# DartLab 라이브 데이터 API 워커. 배포 = `wrangler deploy` (운영자 호스트/플랜 결정 후).
+#
+# ⚠ CF Workers 메모리 = 128MB 고정(전 플랜). 실측상 큰 파일(macro/fred 210MB·dart/panel 927MB)은
+#   디코드가 128MB 를 넘는다 → MAX_DECODE_BYTES 를 ~90MB 로 두면 작은 파일만 라이브, 큰 파일은
+#   413(+cols 안내)로 정직하게 거부된다. 전 카탈로그 라이브를 원하면 ~1GB 서버리스 함수(Vercel/
+#   Netlify, 같은 worker.js 핸들러)에 올리고 MAX_DECODE_BYTES 를 ~700MB 로. → README.md.
+name = "dartlab-data-csv"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# 호스트 메모리 예산(바이트). CF 128MB → 90MB 권장. ~1GB 서버리스 → 700MB.
+MAX_DECODE_BYTES = "94371840"
+# 행 수 상한(텍스트 없는 대형 시계열 가드). CF → 30만, 1GB → 200만.
+MAX_DECODE_ROWS = "300000"
+# IMPORTDATA ~5만셀 한도 정렬 (cols×rows).
+CELL_CAP = "45000"
