@@ -8,7 +8,9 @@ handler 시그니처 통일: ``(g, target, *, market, start, end, marketExplicit
 각 handler 가 자신에게 필요 없는 인자는 무시.
 
 Capabilities:
-    - 12 axis (price/flow/macro/news/sector/insider/ownership/peers/krx/krxIndex/calendar/dartDoc)
+    - 공개 16 axis + 베타 2 hidden (정본 = dispatch.AXIS_REGISTRY) — price/flow/macro/news/
+      sector/insider/ownership/peers/krx/krxIndex/narrative/research/naverTheme/naverIndustry/
+      naverEtf/naverEtn + (hidden) dartDoc/calendar
     - 시장 지수 (KOSPI/KOSDAQ/KPI200) 자동 인식 (price)
     - macro 의 _marketExplicit 분기 보존 (target/market 위치 모호성 해소)
     - krx 의 legacyDate alias / krxIndex 의 indexMarket 분리
@@ -1181,9 +1183,9 @@ def handleDartDoc(
 
 
 def _handleNaverGroup(g: Any, groupKey: str, target: str | None, **kwargs: Any) -> pl.DataFrame:
-    """네이버 그룹(테마/업종) 공통 dispatch — naverGroups.groups.collectGroup 위임."""
+    """네이버 그룹(테마/업종) 공통 dispatch — naver.groups.collectGroup 위임."""
     from ..infra.http import runAsync
-    from ..sources.naverGroups import groups
+    from ..sources.naver import groups
 
     progress = bool(kwargs.pop("progress", True))
     maxAgeDays = float(kwargs.pop("maxAgeDays", 7.0))
@@ -1191,6 +1193,15 @@ def _handleNaverGroup(g: Any, groupKey: str, target: str | None, **kwargs: Any) 
     return runAsync(
         groups.collectGroup(g._client, groupKey, target, progress=progress, maxAgeDays=maxAgeDays, refresh=refresh)
     )
+
+
+def _handleNaverProduct(g: Any, productKey: str, target: str | None) -> pl.DataFrame:
+    """네이버 상품(ETF/ETN) 공통 dispatch — naver.products.collectEtf/Etn 위임 (단일 호출·라이브)."""
+    from ..infra.http import runAsync
+    from ..sources.naver import products
+
+    collectFn = products.collectEtf if productKey == "etf" else products.collectEtn
+    return runAsync(collectFn(g._client, target))
 
 
 def handleNaverTheme(
@@ -1207,7 +1218,7 @@ def handleNaverTheme(
 
     Capabilities: target 분기(None/all=전수 결합·list=목록·테마명/번호=필터) → groups.collectGroup("theme").
     AIContext: gather("naverTheme", ...) 본체 — 네이버 편집저작물 라이브 직독, 재배포 금지(README 고지).
-    Guide: 출처를 이름에 명시(naverGroups 패키지·다른 테마 소스 확장 여지). 매칭 0 이면 빈 DataFrame.
+    Guide: 출처를 이름에 명시(naver 패키지·다른 테마 소스 확장 여지). 매칭 0 이면 빈 DataFrame.
     When: GatherEntry._run("naverTheme", target, ...) lookup 시.
     How: _handleNaverGroup(g, "theme", target) → groups.collectGroup.
 
@@ -1233,7 +1244,7 @@ def handleNaverTheme(
 
     See Also:
         main.GatherEntry._run : dispatch caller.
-        sources.naverGroups.groups.collectGroup : 본 handler 가 호출하는 backend.
+        sources.naver.groups.collectGroup : 본 handler 가 호출하는 backend.
     """
     return _handleNaverGroup(g, "theme", target, **kwargs)
 
@@ -1277,7 +1288,7 @@ def handleNaverIndustry(
 
     See Also:
         main.GatherEntry._run : dispatch caller.
-        sources.naverGroups.groups.collectGroup : 본 handler 가 호출하는 backend.
+        sources.naver.groups.collectGroup : 본 handler 가 호출하는 backend.
     """
     return _handleNaverGroup(g, "industry", target, **kwargs)
 
@@ -1320,12 +1331,9 @@ def handleNaverEtf(
 
     See Also:
         main.GatherEntry._run : dispatch caller.
-        sources.naverGroups.products.collectEtf : 본 handler 가 호출하는 backend.
+        sources.naver.products.collectEtf : 본 handler 가 호출하는 backend.
     """
-    from ..infra.http import runAsync
-    from ..sources.naverGroups import products
-
-    return runAsync(products.collectEtf(g._client, target))
+    return _handleNaverProduct(g, "etf", target)
 
 
 def handleNaverEtn(
@@ -1366,9 +1374,6 @@ def handleNaverEtn(
 
     See Also:
         main.GatherEntry._run : dispatch caller.
-        sources.naverGroups.products.collectEtn : 본 handler 가 호출하는 backend.
+        sources.naver.products.collectEtn : 본 handler 가 호출하는 backend.
     """
-    from ..infra.http import runAsync
-    from ..sources.naverGroups import products
-
-    return runAsync(products.collectEtn(g._client, target))
+    return _handleNaverProduct(g, "etn", target)

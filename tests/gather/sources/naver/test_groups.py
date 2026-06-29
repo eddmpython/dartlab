@@ -1,4 +1,4 @@
-"""naverGroups.groups 단위 테스트 — 테마·업종 공통 collector (네트워크 없음).
+"""naver.groups 단위 테스트 — 테마·업종 공통 collector (네트워크 없음).
 
 sise_group 구조를 fake client 로 대체. 파싱·type 필터·target 분기·freshness 저장 검증.
 config.dataDir → tmp_path 로 전수 크롤 저장 격리.
@@ -11,7 +11,7 @@ import pytest
 
 from dartlab import config as cfg
 from dartlab.gather.infra.http import runAsync
-from dartlab.gather.sources.naverGroups import groups
+from dartlab.gather.sources.naver import groups
 
 pytestmark = pytest.mark.unit
 
@@ -94,7 +94,7 @@ def test_collectGroup_themeDefaultCombinedAndSaved(tmpDataDir):
     df = runAsync(groups.collectGroup(client, "theme", None, progress=False))
     assert set(df["groupNo"].to_list()) == {523, 449}
     assert "collectedAt" in df.columns
-    assert (tmpDataDir / "naverGroups" / "theme" / "data.parquet").exists()
+    assert (tmpDataDir / "naver" / "theme" / "data.parquet").exists()
 
 
 def test_collectGroup_industryDefault(tmpDataDir):
@@ -104,7 +104,7 @@ def test_collectGroup_industryDefault(tmpDataDir):
     assert df["groupName"].unique().to_list() == ["전기제품"]
     assert df.height == 2
     assert all(r == "" for r in df["reason"].to_list())
-    assert (tmpDataDir / "naverGroups" / "industry" / "data.parquet").exists()
+    assert (tmpDataDir / "naver" / "industry" / "data.parquet").exists()
 
 
 def test_collectGroup_list():

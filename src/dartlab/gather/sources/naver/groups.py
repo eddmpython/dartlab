@@ -50,12 +50,12 @@ class _GroupSpec:
 
     typeParam: str  # naver ?type= 값 ("theme" | "upjong")
     noun: str  # 진행/로그 표시 ("테마" | "업종")
-    category: str  # persist 카테고리 ("naverGroups/theme")
+    category: str  # persist 카테고리 ("naver/theme")
 
 
 _GROUP_SPECS: dict[str, _GroupSpec] = {
-    "theme": _GroupSpec("theme", "테마", "naverGroups/theme"),
-    "industry": _GroupSpec("upjong", "업종", "naverGroups/industry"),
+    "theme": _GroupSpec("theme", "테마", "naver/theme"),
+    "industry": _GroupSpec("upjong", "업종", "naver/industry"),
 }
 
 
@@ -218,7 +218,7 @@ async def collectGroup(
         - 매칭 0 : 빈 DataFrame (스키마 유지).
 
     AIContext: gather('naverTheme'/'naverIndustry') handler 의 backend — theme/industry 공통.
-    Guide: 전수 크롤이 무거워 ``data/naverGroups/<key>`` 에 저장, maxAgeDays 신선도로 재크롤 가름.
+    Guide: 전수 크롤이 무거워 ``data/naver/<key>`` 에 저장, maxAgeDays 신선도로 재크롤 가름.
         wide(그룹기준)=``df.pivot(values="reason", index="stockCode", on="groupName")``.
     When: handleNaverTheme/handleNaverIndustry 가 runAsync 로 호출.
     How: 전수면 loadOrCollectAsync(crawl)→신선 직독/재크롤, 부분이면 fetchGroupList+필터.

@@ -30,9 +30,9 @@ def _sample() -> pl.DataFrame:
 
 def test_savesAndStampsCollectedAt(tmpDataDir):
     """수집 시 collectedAt(ISO) 컬럼 박고 parquet 저장."""
-    df = persist.loadOrCollect("naverGroups/theme", _sample)
+    df = persist.loadOrCollect("naver/theme", _sample)
     assert "collectedAt" in df.columns
-    assert (tmpDataDir / "naverGroups" / "theme" / "data.parquet").exists()
+    assert (tmpDataDir / "naver" / "theme" / "data.parquet").exists()
     # ISO 파싱 가능
     datetime.fromisoformat(df["collectedAt"][0])
 

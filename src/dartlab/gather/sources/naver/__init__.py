@@ -4,5 +4,5 @@
 - ``products`` : ETF·ETN 상품 목록 (JSON) — 별 스키마.
 
 호출자는 명시 path 사용 (facade re-export 안 함, alias 금지 룰):
-    from dartlab.gather.sources.naverGroups import groups
+    from dartlab.gather.sources.naver import groups
 """

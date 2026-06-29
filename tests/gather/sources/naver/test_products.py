@@ -1,4 +1,4 @@
-"""naverGroups.products 단위 테스트 — ETF·ETN JSON(euc-kr) 파싱·필터 (네트워크 없음)."""
+"""naver.products 단위 테스트 — ETF·ETN JSON(euc-kr) 파싱·필터 (네트워크 없음)."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import json
 import pytest
 
 from dartlab.gather.infra.http import runAsync
-from dartlab.gather.sources.naverGroups import products
+from dartlab.gather.sources.naver import products
 
 pytestmark = pytest.mark.unit
 

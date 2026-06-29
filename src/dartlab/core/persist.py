@@ -88,7 +88,7 @@ def loadOrCollect(
 
     Capabilities: collectedAt 컬럼 기준 maxAgeDays 신선도 판정 → 로컬 parquet 직독 또는 재수집.
     Args:
-        category: 저장 카테고리 경로 (예: "naverGroups/theme"). config.dataDir 하위.
+        category: 저장 카테고리 경로 (예: "naver/theme"). config.dataDir 하위.
         collectFn: 재수집 함수 — DataFrame 반환 (느린 크롤 등).
         maxAgeDays: 신선도 윈도우(일). 기본 7. 이내면 재수집 안 함.
         refresh: True 면 신선도 무시하고 항상 재수집.
@@ -98,7 +98,7 @@ def loadOrCollect(
         없음 — 손상/없는 파일은 재수집으로 흡수.
     Example::
 
-        df = loadOrCollect("naverGroups/theme", crawlAllThemes, maxAgeDays=7)
+        df = loadOrCollect("naver/theme", crawlAllThemes, maxAgeDays=7)
     """
     cached = _loadFresh(category, maxAgeDays, refresh)
     if cached is not None:
@@ -129,7 +129,7 @@ async def loadOrCollectAsync(
         없음.
     Example::
 
-        df = await loadOrCollectAsync("naverGroups/theme", lambda: crawlAll(client), maxAgeDays=7)
+        df = await loadOrCollectAsync("naver/theme", lambda: crawlAll(client), maxAgeDays=7)
     """
     cached = _loadFresh(category, maxAgeDays, refresh)
     if cached is not None:

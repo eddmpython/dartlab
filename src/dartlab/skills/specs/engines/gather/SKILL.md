@@ -94,7 +94,7 @@ linkedSkills:
 source:
   type: manual_skill
   format: markdown
-lastUpdated: '2026-06-14'
+lastUpdated: '2026-06-30'
 testUniverse:
   market: KR
   stockCodes:
@@ -129,6 +129,13 @@ dartlab.gather("macro", "FEDFUNDS")           # FRED 자동 감지
 dartlab.gather("news", "삼성전자")             # Google News RSS
 dartlab.gather("narrative", market="KR", days=30)    # 뉴스 내러티브 archive
 dartlab.gather("krxIndex", "close", market="KOSPI")  # 시장군 지수
+dartlab.gather("research", "005930")                 # 증권사 리서치 메타 인덱스
+# 네이버 분류/목록 (로컬 개인용 — 재배포 금지). 계약은 아래 "naver* 축" 절.
+dartlab.gather("naverTheme")                          # 전 테마 결합 (7일 로컬 저장·재호출 직독)
+dartlab.gather("naverTheme", "list")                  # 테마 목록만 ("리튬"=해당 테마 · refresh=True=강제 재크롤)
+dartlab.gather("naverIndustry", "반도체")             # 네이버 업종 분류
+dartlab.gather("naverEtf", "KODEX")                  # ETF 목록 (종목명 필터)
+dartlab.gather("naverEtn")                            # ETN 목록
 # 정기공시 due 는 Company.calendar — gather("calendar") 는 0.10 폐기
 dartlab.Company("005930").calendar(horizonDays=30)   # DART_API_KEY
 
@@ -149,7 +156,7 @@ g.collect("005930")                           # 전체 도메인 병렬 수집 �
 
 ## 강행 호출 룰 (agent 답변 품질 회귀 차단)
 
-공개 11 axis (price/flow/macro/news/sector/insider/ownership/peers/krx/krxIndex/narrative) + 베타 2 (dartDoc·calendar, hidden) 수집에서 다음 4 룰 강행:
+공개 16 axis (price/flow/macro/news/sector/insider/ownership/peers/krx/krxIndex/narrative/research/naverTheme/naverIndustry/naverEtf/naverEtn) + 베타 2 (dartDoc·calendar, hidden) 수집에서 다음 4 룰 강행 (정본 = `AXIS_REGISTRY`):
 
 1. **외부 API (네이버/KRX/뉴스) 호출은 본 엔진이 단독 담당** — `EngineCall(apiRef="gather", args={"axis": "...", "target": "..."})` 양식. RunPython 직접 requests/aiohttp 호출 금지 (cache · circuit breaker 우회 차단).
 2. **본문 안 가격·flow·뉴스 인용에 `[datasetRef:...]` + `[dateRef:...]` inline 표기 필수**. gather 데이터는 시점 변동성 크다 (분 단위) — dateRef 누락 시 stale 환각.
@@ -181,7 +188,7 @@ dartlab.gather.writeEnvExample()                   # .env.example 생성 (레지
 
 ## 호출 동작
 
-형태 A — `dartlab.gather` 는 `GatherEntry` 인스턴스 (모듈 callable). `dartlab.gather()` 는 axis=None → 가이드 DataFrame, `dartlab.gather(axis, target, **kwargs)` 는 공개 11 axis (`price/flow/macro/news/sector/insider/ownership/peers/krx/krxIndex/narrative`) 디스패치 + 베타 2 (`dartDoc`/`calendar`, hidden — 가이드 미노출, `calendar` 는 0.10 폐기 → `Company.calendar`). 축 정본 = `entry/dispatch.py` 의 `AXIS_REGISTRY`. 미등록 axis 는 `ValueError("알 수 없는 gather 축")`.
+형태 A — `dartlab.gather` 는 `GatherEntry` 인스턴스 (모듈 callable). `dartlab.gather()` 는 axis=None → 가이드 DataFrame, `dartlab.gather(axis, target, **kwargs)` 는 공개 16 axis (`price/flow/macro/news/sector/insider/ownership/peers/krx/krxIndex/narrative/research/naverTheme/naverIndustry/naverEtf/naverEtn`) 디스패치 + 베타 2 (`dartDoc`/`calendar`, hidden — 가이드 미노출, `calendar` 는 0.10 폐기 → `Company.calendar`). 축 정본 = `entry/dispatch.py` 의 `AXIS_REGISTRY`. 미등록 axis 는 `ValueError("알 수 없는 gather 축")`.
 
 price 는 target 형태로 시장을 자동 판정한다. `dartlab.gather("price", "005930")` 는 KR, `dartlab.gather("price", "AAPL")` 는 US 로 간다. 공개 예시에서 US 주가 조회를 위해 `market="US"` 를 요구하지 않는다.
 
@@ -216,13 +223,26 @@ price 는 target 형태로 시장을 자동 판정한다. `dartlab.gather("price
 - `targets` 를 flow 외 axis 에 넣으면 즉시 `ValueError` 로 막는다. 사용자가 여러 축을 동시에 돌려야 하면 호출을 분리하고, 결과 결합은 상위 분석/노트북에서 명시적으로 한다.
 - proxy + parallel 조합은 지원한다. 단, 도메인별 RPM/concurrency 제한은 유지되므로 `parallel` 을 크게 줘도 HTTP client 가 공급자 보호 정책 안에서 조절한다.
 
+### naver* 축 — 네이버 분류/목록 (로컬 개인용)
+
+`naverTheme`·`naverIndustry`·`naverEtf`·`naverEtn` 는 네이버 금융의 분류·상품 목록을 라이브 직독하는 **로컬 개인용** 축이다. 공통 패키지 `gather/sources/naver/` (그룹 `groups`, 상품 `products`).
+
+- **테마·업종 (`naverTheme`/`naverIndustry`)** — `sise_group` 동일 구조의 그룹→편입종목. target 분기:
+  - 없음/`"all"` : 전 그룹을 개별 수집해 **하나의 long DataFrame 결합** (`groupNo/groupName/stockCode/stockName/reason`). 전수 크롤이 무거워 **freshness 로컬 저장** — `collectedAt` 컬럼 기준 `maxAgeDays`(기본 7) 내면 재크롤 없이 직독, 아니면 재수집. `refresh=True` 로 강제.
+  - `"list"` : 그룹 목록만(`groupNo/groupName/url`) — 라이브.
+  - 그룹명/번호 : 해당 그룹만 — 라이브. 업종은 편입사유(`reason`) 없음.
+  - wide(그룹기준) = `df.pivot(values="reason", index="stockCode", on="groupName")`.
+- **ETF·ETN (`naverEtf`/`naverEtn`)** — 단일 JSON 호출의 상품 목록 + 현재가 스냅샷(`code/name/price/changeRate/marketCap...`). 장중 가격이라 저장 없이 **매 호출 라이브**. target=종목명 contains 필터.
+- **프록시 풀 (공통배선)** — 느린 전수 크롤은 `dartlab.gather("naverTheme", proxies=["http://a", "http://b"])` 로 프록시 풀 round-robin. rate limit 이 (도메인×프록시)별이라 프록시 수만큼 throughput 확장. **프록시 미지정이면 도메인 단위 안전 직렬**(IP 보호) — 우회 기능 아님.
+- **저작권/재배포** — 네이버 편집저작물(분류·편입사유)이다. 로컬 개인 분석은 무방하나 **수집 결과의 재배포·공개(HF 적재·서비스 배포·제3자 공개)는 DB권(저작권법 제4장)·저작권 문제 발생 가능**. 따라서 HF SSOT 미적재·공개 터미널 미배선 — 라이브 직독 라이브러리 verb 로만 노출.
+
 형태 B — `getDefaultGather()` 는 모듈 싱글턴 `Gather` 인스턴스를 반환. provider/cache/circuit breaker 가 붙은 풀 메서드 셋 (`price/flow/history/news/revenueConsensus/dividends/splits/sector/insiderTrading/majorShareholders/ownership/industryPeers/macro/collect/invalidate/close`). 모두 camelCase. API 키가 필요한 provider 는 키 누락 시 안내 가능한 예외 또는 제한 상태 반환.
 
 Company-bound `c.gather(axis)` 는 회사의 종목코드와 market 을 자동으로 넣어 형태 A 로 호출한다.
 
 ## 전체 축/메서드 목록
 
-아래 표는 형태 B (`Gather` 클래스 메서드) 기준. 형태 A (`dartlab.gather(axis, ...)`) 는 공개 11 axis 만 받음 — `price · flow · macro · news · sector · insider · ownership · peers · krx · krxIndex · narrative` (+ 베타 hidden 2: `dartDoc` · `calendar`(0.10 폐기) — 가이드 미노출). `dividends / splits / majorShareholders / industryPeers / collect` 같은 항목은 형태 A 에서는 axis 가 아니라 형태 B 메서드로만 노출.
+아래 표는 형태 B (`Gather` 클래스 메서드) 기준. 형태 A (`dartlab.gather(axis, ...)`) 는 공개 16 axis 만 받음 — `price · flow · macro · news · sector · insider · ownership · peers · krx · krxIndex · narrative · research · naverTheme · naverIndustry · naverEtf · naverEtn` (+ 베타 hidden 2: `dartDoc` · `calendar`(0.10 폐기) — 가이드 미노출). 정본 = `AXIS_REGISTRY`. `dividends / splits / majorShareholders / industryPeers / collect` 같은 항목은 형태 A 에서는 axis 가 아니라 형태 B 메서드로만 노출.
 
 | method (형태 B) | axis (형태 A) | 담당 데이터 | 대표 호출 |
 | --- | --- | --- | --- |
@@ -242,6 +262,11 @@ Company-bound `c.gather(axis)` 는 회사의 종목코드와 market 을 자동�
 | — | krx | KRX 회사별 와이드 (지표 28+) | `dartlab.gather("krx", "close", start=, end=)` |
 | — | krxIndex | KRX 시장군 지수 OHLCV (KOSPI/KOSDAQ 등) | `dartlab.gather("krxIndex", "close", market="KOSPI")` |
 | — | narrative | 뉴스 내러티브 archive (RSS+GDELT) | `dartlab.gather("narrative", market="KR", days=30)` · `dartlab.gather("narrative", "score")` |
+| — | research | 증권사 리서치 메타 인덱스 | `dartlab.gather("research", "005930")` · `dartlab.gather("research", query="2차전지")` |
+| — | naverTheme (로컬용) | 네이버 테마 분류 (전수 결합·7일 저장) | `dartlab.gather("naverTheme")` · `dartlab.gather("naverTheme", "list")` |
+| — | naverIndustry (로컬용) | 네이버 업종 분류 | `dartlab.gather("naverIndustry", "반도체")` |
+| — | naverEtf (로컬용) | 네이버 ETF 목록 (라이브) | `dartlab.gather("naverEtf", "KODEX")` |
+| — | naverEtn (로컬용) | 네이버 ETN 목록 (라이브) | `dartlab.gather("naverEtn")` |
 | — | dartDoc (베타·hidden) | DART 공시 원문 단건 fetch (무인증) | `dartlab.gather("dartDoc", "20240315000123")` |
 | — | calendar (베타·hidden, 폐기) | 정기공시 due date | `Company("005930").calendar(horizonDays=30)` — `gather("calendar")` 는 0.10 폐기 |
 | collect | — | 도메인 병렬 수집 → GatherSnapshot | `g.collect("005930", market="KR")` |
@@ -499,6 +524,7 @@ listing("topics", corp="005930")
 
 ## 변경 이력
 
+- 2026-06-30 — **네이버 분류/목록 축 + 호출계약 정리**. 로컬 개인용 축 `naverTheme`·`naverIndustry`·`naverEtf`·`naverEtn` 추가 (공통 패키지 `gather/sources/naver/` — 그룹 `groups`(테마·업종 type 파라미터화), 상품 `products`(ETF/ETN JSON)). 신규 SSOT — `core.persist`(freshness 로컬 저장, collectedAt·디폴트 7일), `core.progress`(rich 진행바 환경자동), `GatherHttpClient` 프록시 풀(`proxies=[...]` round-robin, 도메인×프록시 rate limit, 미지정 시 안전 직렬). 축 개수 표기 11→16 정정(research 누락분 포함), "naver* 축" 절 신설(freshness·list/filter·프록시 풀·저작권 계약). naver* 산출물은 네이버 편집저작물이라 재배포 금지·HF 미적재.
 - 2026-06-14 (잔여 정합) — 직전 강화에서 놓친 정합 잔재 정정: 형태 A 코드 예시·11축 목록에 남아 있던 폐기 `calendar` → 공개 축 `narrative` 교체 (예시는 `Company.calendar` 로 분리), 형태 B 표에 공개 축 `narrative` 행 + 베타 `dartDoc` 행 추가 (calendar 와 대칭), `dispatch.py` 의 krxIndex stale 주석 정정 (hidden=False = 공개 축). README 모듈 지도에 실제 `transforms/`·`original/` 디렉터리 + mixins `context` 누락 보강.
 - 2026-06-14 — **호출계약 일관성·온보딩 강화** (독립 엔진 홍보 준비). 축 개수 표기 정정 (공개 11 + 베타 2 = 13, SSOT=AXIS_REGISTRY; narrative 추가·calendar 폐기 명시), Form A vs Form B 경계 명문화 + `test_noOrphanPublicGatherMethod` 구조적 드리프트 가드, stale `_apiKeyGuide()` 제거 → 단일 env 표면 = 기존 `formatStatus()`/`setCredential()` (새 이름 추가 금지 — 중복 제거가 강화), camelCase 정정 (revenueConsensus·horizonDays). **데이터 노출** — EU(ECB)/GLOBAL(BIS·OECD·IMF) live SDMX 거시지표 `macro` axis 라우팅 문서화 (HF 벌크 sync 는 졸업게이트 보류), customs 직접 호출 경로 노출. **키 설정 단일 진입점** — `dartlab.setup()` 이 추론 provider + 데이터 provider 키를 한 화면(no-arg)/이름 라우팅(setup("fred") 등)으로 통합 (레지스트리는 도메인별 2개 유지, 진입점만 1개 — 복제 0).
 - 2026-06-10 — **자격증명·env 단일 진입점** 섹션 추가 (공급자 단위 레지스트리 `core/providers/dataCredentials.py`, `dartlab.gather.setCredential/credentialStatus/formatStatus`, `resolveKey` 규약). **관세청 무역통계 source(customs)** 추가 (`gather.customs.Customs().series`, HF `macro/customs`, productIndicators 외생변수). `DATA_GO_KR_KEY` 단일 키 = gov·customs·pension.

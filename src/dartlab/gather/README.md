@@ -27,7 +27,7 @@ g.dividends("005930"); g.collect("005930")
 |------|------|
 | `entry/` | `dartlab.gather()` 콜러블 — `GatherEntry`(main) · `AXIS_REGISTRY`/dispatch · axis `handlers` |
 | `engine.py` + `mixins/` | `Gather` 클래스 (Form B). mixin = price · info · news · macro · collect · context |
-| `sources/` | L1 fetcher — `price.py` · `flow.py` · `news.py`(+ `naverNews`·`newsIo`·`newsSchema`·`newsSources`) · `history.py` · `insider.py` · `ownership.py` · `sector.py` · `naverGroups/`(테마·업종 `groups`, ETF/ETN `products` — 로컬용) · `gdelt.py` · `reader.py` · `search.py` |
+| `sources/` | L1 fetcher — `price.py` · `flow.py` · `news.py`(+ `naverNews`·`newsIo`·`newsSchema`·`newsSources`) · `history.py` · `insider.py` · `ownership.py` · `sector.py` · `naver/`(테마·업종 `groups`, ETF/ETN `products` — 로컬용) · `gdelt.py` · `reader.py` · `search.py` |
 | `domains/` | provider 도메인 — `fdr` · `fmp` · `krx` · `naver` · `naverGlobal` · `yahooChart` · `fallback` |
 | `transforms/` | 수집 후 가공 — `adjustPrice`(수정주가) · `indicatorDispatch`(기술지표) · `corporateAction` · `pit` · `macro` |
 | `original/` | DART 정기+비정기 document.xml zip 원본 백업 (gather 자체포함, `data/original/` 로컬, HF 미공개) |
