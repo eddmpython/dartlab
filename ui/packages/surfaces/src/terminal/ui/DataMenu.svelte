@@ -34,6 +34,16 @@
 		'edgar/panel': en ? 'Disclosure (wide)' : '공시 수평화',
 		'edgar/prices/company': en ? 'Daily prices (OHLCV)' : '일별 시세 (OHLCV)'
 	}));
+	// 기술 경로 대신 "무엇을 받는지" 한 줄 설명(일반인용 보조).
+	const DESC: Record<string, string> = $derived.by(() => ({
+		'dart/finance': en ? 'all accounts, all periods' : '전 계정·전기간 숫자',
+		'dart/panel': en ? 'disclosure body, structured' : '공시 본문 구조화 표',
+		'dart/report': en ? 'annual/half/quarter reports' : '사업·반기·분기보고서',
+		'gov/prices/company': en ? 'daily OHLCV + market cap' : '일별 OHLCV·시가총액',
+		'edgar/financeStmt': en ? 'all accounts (raw)' : '전 계정 raw',
+		'edgar/panel': en ? 'disclosure body, structured' : '공시 본문 구조화 표',
+		'edgar/prices/company': en ? 'daily OHLCV' : '일별 OHLCV'
+	}));
 	// 회사 단위 parquet 데이터셋 (카탈로그 자동 — 새 회사 dir 추가 시 자동 노출). krx/prices/company 제외(gov 중복·404).
 	const parquetSets = $derived(
 		DOWNLOAD_CATALOG.filter(
@@ -48,9 +58,9 @@
 	// scan 프리빌드 — 전종목 횡단 파일. valuation 은 작아(2.5천행) Excel/CSV, finance-lite·changes 는 180만행이라
 	// Excel 한도(104만) 초과 → CSV 만(parquet 안 줌 — 일반인용). csvOnly=Excel 버튼 숨김.
 	const SCAN_FILES = $derived([
-		{ path: 'dart/scan/valuation.parquet', label: en ? 'Valuation (PER·PBR·cap)' : '밸류에이션 (PER·PBR·시총)', csvOnly: false },
-		{ path: 'dart/scan/finance-lite.parquet', label: en ? 'Finance-lite (all · 1.8M rows)' : '재무 라이트 (전종목·180만행)', csvOnly: true },
-		{ path: 'dart/scan/changes.parquet', label: en ? 'Disclosure changes (all · 1.8M)' : '공시 변경 (전종목·180만행)', csvOnly: true }
+		{ path: 'dart/scan/valuation.parquet', label: en ? 'Valuation (PER·PBR·cap)' : '밸류에이션 (PER·PBR·시총)', desc: en ? 'all listed firms' : '상장 전종목', csvOnly: false },
+		{ path: 'dart/scan/finance-lite.parquet', label: en ? 'Finance-lite (all · 1.8M rows)' : '재무 라이트 (전종목·180만행)', desc: en ? 'all firms, key accounts' : '전종목 주요계정', csvOnly: true },
+		{ path: 'dart/scan/changes.parquet', label: en ? 'Disclosure changes (all · 1.8M)' : '공시 변경 (전종목·180만행)', desc: en ? '1Y disclosure diffs' : '1년 공시 변경', csvOnly: true }
 	]);
 
 	let open = $state(false);
@@ -179,10 +189,10 @@
 	// 시장·거시 전역 데이터 — 회사 무관(헤더라 상시 노출). 모두 Excel/CSV 직변환(행수 ≤104만 안전 실측).
 	// krx/indices·krx/prices·edgar/meta 는 HF 미발행이라 제외.
 	const MARKET_FILES = $derived([
-		{ path: 'macro/fred/observations.parquet', label: en ? 'FRED macro series' : 'FRED 거시 시계열' },
-		{ path: 'macro/ecos/observations.parquet', label: en ? 'ECOS (BOK) macro' : 'ECOS 한은 거시' },
-		{ path: 'macro/customs/observations.parquet', label: en ? 'Customs trade (KR)' : '관세청 수출입' },
-		{ path: 'edgar/tickers/tickers.parquet', label: en ? 'SEC ticker↔CIK map' : 'SEC ticker↔CIK 맵' }
+		{ path: 'macro/fred/observations.parquet', label: en ? 'FRED macro series' : 'FRED 거시 시계열', desc: en ? 'US macro indicators' : '美 거시지표 (금리·물가 등)' },
+		{ path: 'macro/ecos/observations.parquet', label: en ? 'ECOS (BOK) macro' : 'ECOS 한은 거시', desc: en ? 'Bank of Korea macro' : '한은 거시지표' },
+		{ path: 'macro/customs/observations.parquet', label: en ? 'Customs trade (KR)' : '관세청 수출입', desc: en ? 'monthly trade stats' : '월별 수출입 통계' },
+		{ path: 'edgar/tickers/tickers.parquet', label: en ? 'SEC ticker↔CIK map' : 'SEC ticker↔CIK 맵', desc: en ? 'US ticker mapping' : '美 종목코드 매핑' }
 	]);
 	const dlMarket = (m: { path: string; label: string }, fmt: 'xlsx' | 'csv') =>
 		run(`mkt:${m.path}:${fmt}`, async () => {
@@ -196,13 +206,14 @@
 	const indexKey = (market: string, name: string) =>
 		`${market}-${name.normalize('NFC').trim().replace(RESERVED, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '')}`;
 	async function readShards(paths: string[], cap = 6): Promise<Record<string, unknown>[]> {
-		const out: Record<string, unknown>[] = [];
+		const chunks: Record<string, unknown>[][] = [];
 		for (let i = 0; i < paths.length; i += cap) {
 			const res = await Promise.allSettled(paths.slice(i, i + cap).map((p) => readParquetRows(p)));
-			for (const r of res) if (r.status === 'fulfilled') out.push(...(r.value.rows as Record<string, unknown>[]));
+			for (const r of res) if (r.status === 'fulfilled') chunks.push(r.value.rows as Record<string, unknown>[]);
 		}
-		return out;
+		return chunks.flat(); // out.push(...rows) 는 33만+ 행에서 콜스택 초과(Maximum call stack) — flat() 은 안전
 	}
+
 	// 시장지수 — KR 프리셋 5종 per-index(전이력) concat.
 	const dlIndices = (fmt: 'xlsx' | 'csv') =>
 		run(`idx:${fmt}`, async () => {
@@ -256,7 +267,7 @@
 				</div>
 				{#each parquetSets as d (d.dir)}
 					<div class="dsRow">
-						<span class="dsLabel">{LABELS[d.dir]}<span class="dsDir">{d.dir}</span></span>
+						<span class="dsLabel">{LABELS[d.dir]}<span class="dsDir">{DESC[d.dir] ?? d.dir}</span></span>
 						<span class="dsBtns">
 							<button class="dsBtn" onclick={() => dlParquet(d.dir, 'xlsx')} disabled={!!busy}>{busy === `${d.dir}:xlsx` ? '…' : 'Excel'}</button>
 							<button class="dsBtn" onclick={() => dlParquet(d.dir, 'csv')} disabled={!!busy}>{busy === `${d.dir}:csv` ? '…' : 'CSV'}</button>
@@ -274,7 +285,7 @@
 				<div class="dpDiv">{en ? 'cross-section prebuild (all)' : '전종목 프리빌드'}</div>
 				{#each SCAN_FILES as s (s.path)}
 					<div class="dsRow">
-						<span class="dsLabel">{s.label}<span class="dsDir">{s.path.replace('.parquet', '')}</span></span>
+						<span class="dsLabel">{s.label}<span class="dsDir">{s.desc}</span></span>
 						<span class="dsBtns">
 							{#if !s.csvOnly}<button class="dsBtn" onclick={() => dlScan(s, 'xlsx')} disabled={!!busy}>{busy === `scan:${s.path}:xlsx` ? '…' : 'Excel'}</button>{/if}
 							<button class="dsBtn" onclick={() => dlScan(s, 'csv')} disabled={!!busy}>{busy === `scan:${s.path}:csv` ? '…' : 'CSV'}</button>
@@ -287,7 +298,7 @@
 				<div class="dpDiv">{en ? 'market & macro (global)' : '시장·거시 (전역)'}</div>
 				{#each MARKET_FILES as m (m.path)}
 					<div class="dsRow">
-						<span class="dsLabel">{m.label}<span class="dsDir">{m.path.replace('.parquet', '')}</span></span>
+						<span class="dsLabel">{m.label}<span class="dsDir">{m.desc}</span></span>
 						<span class="dsBtns">
 							<button class="dsBtn" onclick={() => dlMarket(m, 'xlsx')} disabled={!!busy}>{busy === `mkt:${m.path}:xlsx` ? '…' : 'Excel'}</button>
 							<button class="dsBtn" onclick={() => dlMarket(m, 'csv')} disabled={!!busy}>{busy === `mkt:${m.path}:csv` ? '…' : 'CSV'}</button>
@@ -295,21 +306,21 @@
 					</div>
 				{/each}
 				<div class="dsRow">
-					<span class="dsLabel">{en ? 'Market indices (KOSPI·KOSDAQ…)' : '시장지수 (KOSPI·KOSDAQ 등)'}<span class="dsDir">gov/indices/index</span></span>
+					<span class="dsLabel">{en ? 'Market indices (KOSPI·KOSDAQ…)' : '시장지수 (KOSPI·KOSDAQ 등)'}<span class="dsDir">{en ? 'daily index levels' : '지수별 일별 시계열'}</span></span>
 					<span class="dsBtns">
 						<button class="dsBtn" onclick={() => dlIndices('xlsx')} disabled={!!busy}>{busy === 'idx:xlsx' ? '…' : 'Excel'}</button>
 						<button class="dsBtn" onclick={() => dlIndices('csv')} disabled={!!busy}>{busy === 'idx:csv' ? '…' : 'CSV'}</button>
 					</span>
 				</div>
 				<div class="dsRow">
-					<span class="dsLabel">{en ? 'Brokerage research (monthly)' : '증권사 리서치 (월별)'}<span class="dsDir">research/brokerage</span></span>
+					<span class="dsLabel">{en ? 'Brokerage research (monthly)' : '증권사 리서치 (월별)'}<span class="dsDir">{en ? 'report link index' : '리포트 링크 인덱스'}</span></span>
 					<span class="dsBtns">
 						<button class="dsBtn" onclick={() => dlBrokerage('xlsx')} disabled={!!busy}>{busy === 'brk:xlsx' ? '…' : 'Excel'}</button>
 						<button class="dsBtn" onclick={() => dlBrokerage('csv')} disabled={!!busy}>{busy === 'brk:csv' ? '…' : 'CSV'}</button>
 					</span>
 				</div>
 				<div class="dsRow">
-					<span class="dsLabel">{en ? 'All-stock daily prices (latest yr)' : '전종목 일별시세 (최근연도)'}<span class="dsDir">gov/prices/date · 67만행</span></span>
+					<span class="dsLabel">{en ? 'All-stock daily prices (latest yr)' : '전종목 일별시세 (최근연도)'}<span class="dsDir">{en ? 'latest year · 670k rows' : '최근연도 · 67만행'}</span></span>
 					<span class="dsBtns">
 						<button class="dsBtn" onclick={() => dlPricesYear('csv')} disabled={!!busy}>{busy === 'pxy:csv' ? '…' : 'CSV'}</button>
 					</span>
@@ -409,9 +420,11 @@
 		}
 	}
 	.dpDiv {
-		margin-top: 9px;
-		font-size: 9px;
-		color: #475569;
+		margin-top: 10px;
+		margin-bottom: 1px;
+		font-size: 10px;
+		font-weight: 600;
+		color: #9fb0c6;
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
 	}
@@ -433,9 +446,8 @@
 		line-height: 1.25;
 	}
 	.dsDir {
-		font-size: 9px;
-		color: #475569;
-		font-family: ui-monospace, monospace;
+		font-size: 10px;
+		color: #8493a8;
 	}
 	.dsBtns {
 		display: flex;
@@ -476,9 +488,9 @@
 		flex-shrink: 0;
 		padding: 9px 16px 12px;
 		border-top: 1px solid #1e2433;
-		font-size: 10px;
+		font-size: 10.5px;
 		line-height: 1.5;
-		color: #94a3b8;
+		color: #a8b4c6;
 	}
 	.dpPolicy b {
 		color: #cbd5e1;
