@@ -190,57 +190,76 @@ async def _crawlThemes(client: GatherHttpClient, selected: list[tuple[int, str]]
     return records
 
 
-async def collectTheme(client: GatherHttpClient, target: str | None, *, progress: bool = True) -> pl.DataFrame:
+async def collectTheme(
+    client: GatherHttpClient,
+    target: str | None,
+    *,
+    progress: bool = True,
+    maxAgeDays: float = 7.0,
+    refresh: bool = False,
+) -> pl.DataFrame:
     """테마 축 수집 오케스트레이터 — 기본은 전 테마를 개별 수집해 하나의 long DataFrame 으로.
 
     Capabilities:
         - target None/""/"all" : 전 테마(약 280)를 개별 수집 → 하나의 long DataFrame 으로
-          결합 (themeNo/themeName/stockCode/stockName/reason). 기본 동작.
-        - target "list"        : 테마 *리스트* 만 (themeNo/themeName/url) — 가벼움.
-        - target 숫자          : 해당 themeNo 테마의 편입종목만.
-        - target 문자열        : 테마명 exact → 없으면 contains 매칭 테마들의 편입종목.
+          결합. freshness-gated 로컬 저장(collectedAt, 디폴트 7일) — 7일 내면 크롤 없이 직독.
+        - target "list"        : 테마 *리스트* 만 (themeNo/themeName/url) — 라이브, 가벼움.
+        - target 숫자          : 해당 themeNo 테마의 편입종목만 — 라이브.
+        - target 문자열        : 테마명 exact → 없으면 contains 매칭 — 라이브.
         - 매칭 0 : 빈 DataFrame (스키마 유지, 크래시 없음).
 
-    AIContext: gather('theme', ...) handler 의 backend — 기본은 전수 크롤 후 단일 프레임 결합.
-    Guide: 기본(target 없음)이 전 테마 크롤이라 무겁다 — SSOT rich 진행바를 띄운다.
-        wide(테마기준) 행렬은 ``df.pivot(values="reason", index="stockCode", on="themeName")``.
-    When: handleTheme 가 runAsync 로 호출.
-    How: fetchThemeList → 선택 테마 결정(기본=전체) → _crawlThemes(개별 fetchThemeStocks) → concat.
+    AIContext: gather('naverTheme', ...) handler 의 backend — 전수는 저장, 부분은 라이브.
+    Guide: 전수 크롤이 무거워 결과를 ``data/naverGroups/theme`` 에 저장 — maxAgeDays 신선도로
+        재크롤을 가른다. wide(테마기준)=``df.pivot(values="reason", index="stockCode", on="themeName")``.
+    When: handleNaverTheme 가 runAsync 로 호출.
+    How: 전수면 loadOrCollectAsync(crawl) → 신선 직독/재크롤, 부분이면 fetchThemeList+필터.
 
     Args:
-        client: GatherHttpClient (rate limit·jitter 자체 처리 — 별도 sleep 불요).
-        target: None/"all"=전체 결합(기본) · "list"=목록만 · 테마명/themeNo=해당 테마만.
-        progress: 다중 테마 크롤 시 rich 진행바 (getProgress SSOT; 터미널/Jupyter/marimo, 기본 True).
+        client: GatherHttpClient (rate limit·jitter 자체 처리 — 프록시 미사용 시 안전 직렬).
+        target: None/"all"=전수 결합(저장) · "list"=목록 · 테마명/themeNo=해당 테마만(라이브).
+        progress: 다중 테마 크롤 시 rich 진행바 (core.progress SSOT, 기본 True).
+        maxAgeDays: 저장 신선도 윈도우(일). 전수 크롤이 이내면 직독. 기본 7.
+        refresh: True 면 저장 무시하고 전수 재크롤.
 
     Returns:
-        pl.DataFrame — target "list" 면 _LIST_SCHEMA, 그 외 _STOCKS_SCHEMA(long 결합).
+        pl.DataFrame — "list"=_LIST_SCHEMA, 전수=_STOCKS_SCHEMA+collectedAt, 부분=_STOCKS_SCHEMA.
 
     Raises:
         없음 — 빈 결과는 빈 DataFrame.
 
     Example::
 
-        await collectTheme(client, None)      # 전 테마 결합 long DataFrame (기본)
-        await collectTheme(client, "list")    # 테마 목록만
-        await collectTheme(client, "2차전지")  # 해당 테마만 필터
+        await collectTheme(client, None)               # 전 테마 결합 (7일 내면 직독)
+        await collectTheme(client, None, refresh=True)  # 강제 재크롤
+        await collectTheme(client, "list")             # 테마 목록만
+        await collectTheme(client, "2차전지")           # 해당 테마만 필터 (라이브)
 
     Requires:
         네트워크 (finance.naver.com 무인증). 산출물 재배포 금지(DB권/저작권).
 
     See Also:
         fetchThemeList / fetchThemeStocks : 본 함수가 호출하는 수집기.
-        entry.handlers.handleTheme : gather('theme') dispatch caller.
+        dartlab.core.persist.loadOrCollectAsync : freshness-gated 저장.
+        entry.handlers.handleNaverTheme : gather('naverTheme') dispatch caller.
     """
-    themeList = await fetchThemeList(client)
-    nameByNo = {t["themeNo"]: t["themeName"] for t in themeList}
     norm = "" if target is None else str(target).strip()
 
+    if norm in ("", "all"):
+        from dartlab.core.persist import loadOrCollectAsync
+
+        async def _crawlAll() -> pl.DataFrame:
+            themes = await fetchThemeList(client)
+            selected = [(t["themeNo"], t["themeName"]) for t in themes]
+            records = await _crawlThemes(client, selected, progress=progress)
+            return pl.DataFrame(records, schema=_STOCKS_SCHEMA)
+
+        return await loadOrCollectAsync("naverGroups/theme", _crawlAll, maxAgeDays=maxAgeDays, refresh=refresh)
+
+    themeList = await fetchThemeList(client)
+    nameByNo = {t["themeNo"]: t["themeName"] for t in themeList}
     if norm.lower() == "list":
         return pl.DataFrame(themeList, schema=_LIST_SCHEMA)
-
-    if norm in ("", "all"):
-        selected = [(t["themeNo"], t["themeName"]) for t in themeList]
-    elif norm.isdigit() and int(norm) in nameByNo:
+    if norm.isdigit() and int(norm) in nameByNo:
         no = int(norm)
         selected = [(no, nameByNo[no])]
     else:
@@ -249,7 +268,7 @@ async def collectTheme(client: GatherHttpClient, target: str | None, *, progress
         selected = [(t["themeNo"], t["themeName"]) for t in matches]
 
     if not selected:
-        log.info("gather('theme', %r): 매칭 테마 없음 — 빈 결과", target)
+        log.info("gather('naverTheme', %r): 매칭 테마 없음 — 빈 결과", target)
         return pl.DataFrame(schema=_STOCKS_SCHEMA)
 
     records = await _crawlThemes(client, selected, progress=progress)

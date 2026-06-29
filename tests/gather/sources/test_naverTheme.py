@@ -9,10 +9,18 @@ from __future__ import annotations
 import polars as pl
 import pytest
 
+from dartlab import config as cfg
 from dartlab.gather.infra.http import runAsync
 from dartlab.gather.sources import naverTheme
 
 pytestmark = pytest.mark.unit
+
+
+@pytest.fixture
+def tmpDataDir(tmp_path, monkeypatch):
+    """config.dataDir → tmp_path (전수 크롤 freshness 저장이 실제 data/ 를 오염시키지 않게)."""
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    return tmp_path
 
 
 # 라이브 구조를 축약한 샘플 — 테마 링크 2개, 페이지네이션 없음(lastPage=1).
@@ -86,13 +94,33 @@ def test_parseThemeDetailHtml():
     assert rows[1]["reason"] == ""
 
 
-def test_collectTheme_defaultCrawlsAllCombined():
-    """target 없으면 전 테마 개별 수집 → 하나의 long DataFrame 으로 결합 (기본 동작)."""
+def test_collectTheme_defaultCrawlsAllCombined(tmpDataDir):
+    """target 없으면 전 테마 개별 수집 → 하나의 long DataFrame 결합 + collectedAt 저장."""
     client = _FakeClient(_LIST_HTML, {523: _DETAIL_523, 449: _DETAIL_449})
     df = runAsync(naverTheme.collectTheme(client, None, progress=False))
-    assert df.columns == ["themeNo", "themeName", "stockCode", "stockName", "reason"]
     assert set(df["themeNo"].to_list()) == {523, 449}  # 전 테마 결합
     assert df.height == 3
+    assert "collectedAt" in df.columns  # freshness-gated 저장
+    assert (tmpDataDir / "naverGroups" / "theme" / "data.parquet").exists()
+
+
+def test_collectTheme_freshReloadSkipsCrawl(tmpDataDir):
+    """7일 내 저장본이 있으면 재크롤 없이 직독 (호출 카운트로 검증)."""
+    calls = {"n": 0}
+
+    class _Counting(_FakeClient):
+        async def get(self, url, *, params=None, headers=None, **kwargs):
+            calls["n"] += 1
+            return await super().get(url, params=params, headers=headers, **kwargs)
+
+    client = _Counting(_LIST_HTML, {523: _DETAIL_523, 449: _DETAIL_449})
+    runAsync(naverTheme.collectTheme(client, None, progress=False))
+    first = calls["n"]
+    runAsync(naverTheme.collectTheme(client, None, progress=False))  # 직독 → 추가 호출 0
+    assert calls["n"] == first
+    # refresh=True 면 재크롤
+    runAsync(naverTheme.collectTheme(client, None, progress=False, refresh=True))
+    assert calls["n"] > first
 
 
 def test_collectTheme_listKeyword():
@@ -122,12 +150,13 @@ def test_collectTheme_byNumber():
     assert df["stockName"].to_list() == ["엔켐"]
 
 
-def test_collectTheme_all():
-    """'all' → 전 테마 편입종목 concat. progress=True 로 SSOT rich 진행바 경로도 실행."""
+def test_collectTheme_all(tmpDataDir):
+    """'all' → 전 테마 결합 + 저장. progress=True 로 SSOT rich 진행바 경로도 실행."""
     client = _FakeClient(_LIST_HTML, {523: _DETAIL_523, 449: _DETAIL_449})
     df = runAsync(naverTheme.collectTheme(client, "all", progress=True))
     assert set(df["themeNo"].to_list()) == {523, 449}
     assert df.height == 3
+    assert "collectedAt" in df.columns
 
 
 def test_collectTheme_noMatchEmpty():

@@ -1202,7 +1202,8 @@ def handleNaverTheme(
         g: Gather 싱글턴 — ``g._client`` 공통 HTTP client 재사용(proxy scope 상속).
         target: None/"all"=전수 결합 · "list"=목록 · 테마명/번호=해당 테마만.
         market/start/end/marketExplicit: 무시 (KR 네이버 전용).
-        **kwargs: progress (다중 테마 크롤 rich 진행바, 기본 True). 그 외 무시.
+        **kwargs: progress (rich 진행바, 기본 True) · maxAgeDays (전수 저장 신선도, 기본 7) ·
+            refresh (강제 재크롤, 기본 False). 그 외 무시.
 
     Returns:
         pl.DataFrame — target "list": themeNo/themeName/url, 그 외: themeNo/themeName/stockCode/stockName/reason.
@@ -1225,4 +1226,8 @@ def handleNaverTheme(
     from ..sources import naverTheme
 
     progress = bool(kwargs.pop("progress", True))
-    return runAsync(naverTheme.collectTheme(g._client, target, progress=progress))
+    maxAgeDays = float(kwargs.pop("maxAgeDays", 7.0))
+    refresh = bool(kwargs.pop("refresh", False))
+    return runAsync(
+        naverTheme.collectTheme(g._client, target, progress=progress, maxAgeDays=maxAgeDays, refresh=refresh)
+    )
