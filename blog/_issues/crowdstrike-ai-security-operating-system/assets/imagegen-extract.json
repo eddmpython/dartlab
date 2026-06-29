@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "generatedAt": "2026-06-29T06:59:43.376164+00:00",
+  "method": "codex-session-jsonl-image-generation-call-result",
+  "cardCrop4x5": true,
+  "assets": [
+    {
+      "file": "scene-01-cover-hook.webp",
+      "session": "C:\\Users\\MSI\\.codex\\sessions\\2026\\06\\27\\rollout-2026-06-27T16-41-58-019f0807-37df-7d52-923d-13c5caac64ba.jsonl",
+      "line": 2304,
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/crowdstrike-ai-security-operating-system/assets/scene-01-cover-hook.webp\nAsset key: scene-01-cover-hook\nPrimary request: Create a rea"
+    },
+    {
+      "file": "scene-02-number-evidence.webp",
+      "session": "C:\\Users\\MSI\\.codex\\sessions\\2026\\06\\27\\rollout-2026-06-27T16-41-58-019f0807-37df-7d52-923d-13c5caac64ba.jsonl",
+      "line": 2307,
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/crowdstrike-ai-security-operating-system/assets/scene-02-number-evidence.webp\nAsset key: scene-02-number-evidence\nPrimary request: Cr"
+    },
+    {
+      "file": "scene-03-number-evidence.webp",
+      "session": "C:\\Users\\MSI\\.codex\\sessions\\2026\\06\\27\\rollout-2026-06-27T16-41-58-019f0807-37df-7d52-923d-13c5caac64ba.jsonl",
+      "line": 2312,
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/crowdstrike-ai-security-operating-system/assets/scene-03-number-evidence.webp\nAsset key: scene-03-number-evidence\nPrimary request: Cr"
+    },
+    {
+      "file": "scene-04-narrative-turn.webp",
+      "session": "C:\\Users\\MSI\\.codex\\sessions\\2026\\06\\27\\rollout-2026-06-27T16-41-58-019f0807-37df-7d52-923d-13c5caac64ba.jsonl",
+      "line": 2315,
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/crowdstrike-ai-security-operating-system/assets/scene-04-narrative-turn.webp\nAsset key: scene-04-narrative-turn\nPrimary request: Crea"
+    },
+    {
+      "file": "scene-05-number-evidence.webp",
+      "session": "C:\\Users\\MSI\\.codex\\sessions\\2026\\06\\27\\rollout-2026-06-27T16-41-58-019f0807-37df-7d52-923d-13c5caac64ba.jsonl",
+      "line": 2318,
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/crowdstrike-ai-security-operating-system/assets/scene-05-number-evidence.webp\nAsset key: scene-05-number-evidence\nPrimary request: Cr"
+    },
+    {
+      "file": "scene-06-closing-checkpoint.webp",
+      "session": "C:\\Users\\MSI\\.codex\\sessions\\2026\\06\\27\\rollout-2026-06-27T16-41-58-019f0807-37df-7d52-923d-13c5caac64ba.jsonl",
+      "line": 2321,
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/crowdstrike-ai-security-operating-system/assets/scene-06-closing-checkpoint.webp\nAsset key: scene-06-closing-checkpoint\nPrimary reque"
+    }
+  ]
+}

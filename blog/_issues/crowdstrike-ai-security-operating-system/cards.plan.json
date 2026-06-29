@@ -1,0 +1,167 @@
+{
+  "version": 1,
+  "generatedAt": "2026-06-29T06:49:24.118230+00:00",
+  "target": {
+    "kind": "issue",
+    "slug": "crowdstrike-ai-security-operating-system",
+    "stockCode": "CRWD",
+    "corpName": "CrowdStrike",
+    "title": "CrowdStrike는 백신보다 보안 운영체제를 봅니다",
+    "postPath": "blog/_issues/crowdstrike-ai-security-operating-system/carousel.yaml",
+    "assetRoot": "blog/_issues/crowdstrike-ai-security-operating-system/assets",
+    "planPath": "blog/_issues/crowdstrike-ai-security-operating-system/cards.plan.json"
+  },
+  "planning": {
+    "blogThesis": "사이버보안은 예전처럼 백신 하나를 깔고 끝나는 시장이 아닙니다.",
+    "cardThesis": "사이버보안은 예전처럼 백신 하나를 깔고 끝나는 시장이 아닙니다.",
+    "audienceQuestion": "CrowdStrike는 백신보다 보안 운영체제를 봅니다 이슈를 /cards에서 볼 때 마지막에 무엇을 확인해야 하나?",
+    "blogAndCardsTogether": false,
+    "bodyPreview": ""
+  },
+  "carousel": {
+    "slideCount": 6,
+    "layouts": [
+      "editorial",
+      "editorialStat",
+      "editorialStat",
+      "editorialBeat",
+      "editorialStat",
+      "editorialBeat"
+    ]
+  },
+  "imagePlan": [
+    {
+      "order": 1,
+      "assetKey": "scene-01-cover-hook",
+      "slideRefs": [
+        1
+      ],
+      "role": "cover-hook",
+      "scene": "modern security operations center at night-shift scale: analysts watching endpoint, cloud, identity, and AI-agent alert streams on unreadable dashboards, one unified command wall without logos",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/crowdstrike-ai-security-operating-system/assets/scene-01-cover-hook.webp\nAsset key: scene-01-cover-hook\nPrimary request: Create a realistic editorial image for DartLab landing /cards about CrowdStrike (CRWD).\nStory title: CrowdStrike는 백신보다 보안 운영체제를 봅니다.\nCarousel role: cover-hook.\nImage subject: modern security operations center at night-shift scale: analysts watching endpoint, cloud, identity, and AI-agent alert streams on unreadable dashboards, one unified command wall without logos.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 2,
+      "assetKey": "scene-02-number-evidence",
+      "slideRefs": [
+        2
+      ],
+      "role": "number-evidence",
+      "scene": "enterprise subscription renewal war room: security leaders review anonymized annual contract folders and a muted recurring-revenue dashboard, SOC screens in background, no readable numbers or charts",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/crowdstrike-ai-security-operating-system/assets/scene-02-number-evidence.webp\nAsset key: scene-02-number-evidence\nPrimary request: Create a realistic editorial image for DartLab landing /cards about CrowdStrike (CRWD).\nStory title: CrowdStrike는 백신보다 보안 운영체제를 봅니다.\nCarousel role: number-evidence.\nImage subject: enterprise subscription renewal war room: security leaders review anonymized annual contract folders and a muted recurring-revenue dashboard, SOC screens in background, no readable numbers or charts.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 3,
+      "assetKey": "scene-03-number-evidence",
+      "slideRefs": [
+        3
+      ],
+      "role": "number-evidence",
+      "scene": "new customer onboarding for cloud security: laptops and server access badges connected to a secure deployment checklist, engineers enabling endpoint agents across a hybrid fleet, no logos or readable screens",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/crowdstrike-ai-security-operating-system/assets/scene-03-number-evidence.webp\nAsset key: scene-03-number-evidence\nPrimary request: Create a realistic editorial image for DartLab landing /cards about CrowdStrike (CRWD).\nStory title: CrowdStrike는 백신보다 보안 운영체제를 봅니다.\nCarousel role: number-evidence.\nImage subject: new customer onboarding for cloud security: laptops and server access badges connected to a secure deployment checklist, engineers enabling endpoint agents across a hybrid fleet, no logos or readable screens.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 4,
+      "assetKey": "scene-04-narrative-turn",
+      "slideRefs": [
+        4
+      ],
+      "role": "narrative-turn",
+      "scene": "unified security platform scene: endpoint laptops, cloud server racks, identity access gates, and log pipelines converging into one SOC workflow made of physical cables and screens, no readable text",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/crowdstrike-ai-security-operating-system/assets/scene-04-narrative-turn.webp\nAsset key: scene-04-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about CrowdStrike (CRWD).\nStory title: CrowdStrike는 백신보다 보안 운영체제를 봅니다.\nCarousel role: narrative-turn.\nImage subject: unified security platform scene: endpoint laptops, cloud server racks, identity access gates, and log pipelines converging into one SOC workflow made of physical cables and screens, no readable text.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 5,
+      "assetKey": "scene-05-number-evidence",
+      "slideRefs": [
+        5
+      ],
+      "role": "number-evidence",
+      "scene": "module expansion evidence scene: a cybersecurity team opens several unbranded product modules on a large command console, six distinct security workstreams visible as icon-only panels, no text",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/crowdstrike-ai-security-operating-system/assets/scene-05-number-evidence.webp\nAsset key: scene-05-number-evidence\nPrimary request: Create a realistic editorial image for DartLab landing /cards about CrowdStrike (CRWD).\nStory title: CrowdStrike는 백신보다 보안 운영체제를 봅니다.\nCarousel role: number-evidence.\nImage subject: module expansion evidence scene: a cybersecurity team opens several unbranded product modules on a large command console, six distinct security workstreams visible as icon-only panels, no text.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 6,
+      "assetKey": "scene-06-closing-checkpoint",
+      "slideRefs": [
+        6
+      ],
+      "role": "closing-checkpoint",
+      "scene": "final investment checkpoint: SOC incident review table with unreadable postmortem documents, blurred trust and retention notes, locked folders, and server lights, no charts or readable text",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/crowdstrike-ai-security-operating-system/assets/scene-06-closing-checkpoint.webp\nAsset key: scene-06-closing-checkpoint\nPrimary request: Create a realistic editorial image for DartLab landing /cards about CrowdStrike (CRWD).\nStory title: CrowdStrike는 백신보다 보안 운영체제를 봅니다.\nCarousel role: closing-checkpoint.\nImage subject: final investment checkpoint: SOC incident review table with unreadable postmortem documents, blurred trust and retention notes, locked folders, and server lights, no charts or readable text.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    }
+  ],
+  "imagegen": {
+    "tool": "GPT image_gen",
+    "generationRule": "각 imagePlan.prompt 를 한 장씩 image_gen 으로 생성한다. 프롬프트는 그 글의 회사·사건·장소·운영 질문을 상징하는 실제 사용용 이미지를 목표로 하며, 범용 금융 배경은 탈락시킨다.",
+    "extractCommand": "uv run python -X utf8 sns/scripts/extractImagegenAssets.py assets --assets-root blog/_issues/crowdstrike-ai-security-operating-system --count 6 --names scene-01-cover-hook,scene-02-number-evidence,scene-03-number-evidence,scene-04-narrative-turn,scene-05-number-evidence,scene-06-closing-checkpoint --keywords \"CrowdStrike,crowdstrike-ai-security-operating-system,CrowdStrike는 백신보다 보안 운영체제를 봅니다\"",
+    "checkCommand": "uv run python -X utf8 sns/scripts/checkImagegenAssets.py blog/_issues/crowdstrike-ai-security-operating-system/assets",
+    "publishCommands": [
+      "uv run python -X utf8 blog/_scripts/build_carousel_contracts.py"
+    ]
+  },
+  "reviewGate": {
+    "status": "passed",
+    "requiredRounds": [
+      {
+        "id": "writerPanel",
+        "purpose": "훅 강도, 서사 스파인, 블로그 산문과 카드 흐름의 일치 여부를 본다.",
+        "status": "passed"
+      },
+      {
+        "id": "honestyEvidence",
+        "purpose": "슬라이드 숫자와 주장 근거가 블로그 본문/검증표에 있는지 본다.",
+        "status": "passed"
+      },
+      {
+        "id": "imageFit",
+        "purpose": "5~10장 이미지가 그 글의 회사·사건·장소에 맞는 서로 다른 의미 장면인지, 가짜 공식 로고·텍스트·도식이 없는지 본다.",
+        "status": "passed"
+      },
+      {
+        "id": "readerFit",
+        "purpose": "처음 보는 독자가 첫 장과 마지막 장만 봐도 관전 포인트를 이해하는지 본다.",
+        "status": "passed"
+      },
+      {
+        "id": "reevaluation",
+        "purpose": "수정 후 같은 패널이 다시 보고 발행 가능 여부를 닫는다.",
+        "status": "passed"
+      }
+    ],
+    "decisionLog": [
+      {
+        "round": "writerPanel",
+        "decision": "사이버보안 미개척 분야로 확정. 훅은 백신 vs 보안 운영체제, 본문 흐름은 ARR -> 신규 ARR -> 플랫폼화 -> 모듈 확장 -> 유지율/현금흐름 체크로 닫았다."
+      },
+      {
+        "round": "honestyEvidence",
+        "decision": "큰 숫자 5.51B$, 256M$, 51%는 CrowdStrike FY2027 1분기 실적 발표에 있는 수치만 사용했다. AI AgentWorks는 제품 방향 근거로만 쓰고 매출 인과로 단정하지 않았다."
+      },
+      {
+        "round": "imageFit",
+        "decision": "image_gen 6장은 SOC 관제, 계약 갱신, 신규 고객 온보딩, 플랫폼 통합, 모듈 확장, 사고 후 체크포인트로 서로 다른 장면을 담았다. 로고, 읽을 수 있는 주장, 가짜 공식문서, 평면 차트는 제외했고 밝기/프레이밍 검사를 통과했다."
+      },
+      {
+        "round": "readerFit",
+        "decision": "EDR, SOC, ARR, Agentic SOC 설명을 캡션에 붙여 처음 보는 독자가 카드 흐름을 따라갈 수 있게 했다. 마지막 장은 AI 보안 서사를 유지율과 free cash flow로 검증하라는 질문으로 닫는다."
+      },
+      {
+        "round": "reevaluation",
+        "decision": "검토 후 어두운 SOC 장면 5장을 발행용 WebP에서만 밝기 보정했다. 원본 생성물은 Codex 생성 폴더와 세션 manifest로 추적 가능하며, plan/check/build dry-run 기준으로 발행 가능하다."
+      }
+    ]
+  }
+}
