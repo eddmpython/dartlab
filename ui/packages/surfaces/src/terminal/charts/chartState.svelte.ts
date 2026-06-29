@@ -51,17 +51,23 @@ function subYmdMonths(ymd: string, months: number): string {
 	const p = (n: number) => String(n).padStart(2, '0');
 	return `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}`;
 }
-// 봉 주기 — 데이터는 일봉, 주/월/분기/년은 클라이언트 집계(aggregateCandles). TF_DIV = 거래일 환산 제수.
-// 자동 상향 체인(바스페이스 1px 미달)은 일→주→월까지만 — 분기·년은 수동 선택 전용.
-export type TfKey = 'D' | 'W' | 'M' | 'Q' | 'Y';
+// 봉 주기 — 1/3/5분은 서버 실시간 분봉, 일봉은 원본, 주/월/분기/년은 클라이언트 집계(aggregateCandles).
+// TF_DIV = 거래일 환산 제수. 분봉은 기간 칩의 "보이는 봉 수"만 따로 환산한다(PriceChart).
+export type MinuteTfKey = '1m' | '3m' | '5m';
+export type TfKey = MinuteTfKey | 'D' | 'W' | 'M' | 'Q' | 'Y';
+export const MINUTE_TFS: MinuteTfKey[] = ['1m', '3m', '5m'];
+export const isMinuteTf = (tf: TfKey): tf is MinuteTfKey => (MINUTE_TFS as readonly string[]).includes(tf);
 export const TFS: { v: TfKey; kr: string; en: string }[] = [
+	{ v: '1m', kr: '1분', en: '1m' },
+	{ v: '3m', kr: '3분', en: '3m' },
+	{ v: '5m', kr: '5분', en: '5m' },
 	{ v: 'D', kr: '일', en: 'D' },
 	{ v: 'W', kr: '주', en: 'W' },
 	{ v: 'M', kr: '월', en: 'M' },
 	{ v: 'Q', kr: '분기', en: 'Q' },
 	{ v: 'Y', kr: '년', en: 'Y' }
 ];
-export const TF_DIV: Record<TfKey, number> = { D: 1, W: 5, M: 21, Q: 63, Y: 252 };
+export const TF_DIV: Record<TfKey, number> = { '1m': 1, '3m': 1, '5m': 1, D: 1, W: 5, M: 21, Q: 63, Y: 252 };
 export const YMODES: { v: YMode; kr: string; en: string }[] = [
 	{ v: 'normal', kr: '일반', en: 'Linear' },
 	{ v: 'log', kr: '로그', en: 'Log' },

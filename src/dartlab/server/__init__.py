@@ -30,6 +30,7 @@ from .api import (
     dart_router,
     data_router,
     dl_router,
+    live_router,
     macro_router,
     price_events_router,
     room_router,
@@ -229,6 +230,7 @@ app.include_router(ask_router)
 app.include_router(company_router)
 app.include_router(data_router)
 app.include_router(dl_router)
+app.include_router(live_router)
 app.include_router(macro_router)
 app.include_router(price_events_router)
 app.include_router(room_router)

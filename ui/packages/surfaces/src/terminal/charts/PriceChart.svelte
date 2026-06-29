@@ -16,7 +16,7 @@
 	import { registerBtIndicators, buildBtExtend, applyBt, clearBt } from './btLayer';
 	import { registerEconIndicator, ECON_INDICATOR, type EconExtend } from './econOverlay';
 	import { registerExtraIndicators } from './extraIndicators';
-	import { type ChartCtl, PERIOD_N, TF_DIV, type CandleStyle, type IndexControl, type OverlayKey, type SubKey, type TfKey } from './chartState.svelte';
+	import { type ChartCtl, PERIOD_N, TF_DIV, isMinuteTf, type CandleStyle, type IndexControl, type MinuteTfKey, type OverlayKey, type PeriodKey, type SubKey, type TfKey } from './chartState.svelte';
 	import { loadDraws, saveDraws, type SavedDraw } from './drawStore';
 	import { publishView } from './seriesBus';
 	import { registerWorkOverlays, MEASURE_NAME, TEXT_NAME } from './avwapOverlay';
@@ -28,6 +28,7 @@
 	import ChartRibbon from './ChartRibbon.svelte';
 	import DrawToolbar from './DrawToolbar.svelte';
 	import BtChip from './BtChip.svelte';
+	import { fetchLiveQuote, fetchMinuteBars, type LiveQuote, type MinuteBar } from '../lib/livePrice';
 
 	interface Props {
 		candles: Candle[]; // 초기(현재+직전 연도)
@@ -108,6 +109,9 @@
 	let dataRev = $state(0);
 	let dataRevSeq = 0;
 	const bumpDataRev = () => (dataRev = ++dataRevSeq);
+	let minuteRev = $state(0);
+	let minuteRevSeq = 0;
+	const bumpMinuteRev = () => (minuteRev = ++minuteRevSeq);
 	let econOn = false; // ECON indicator 생성 여부 (비반응)
 	let econToken = 0; // stale async 가드
 	let cmpOn = false; // 종목비교(CMP) indicator 생성 여부 (비반응)
@@ -121,6 +125,7 @@
 	let bandIds: string[] = [];
 	let eventIds: string[] = [];
 	let refIds: string[] = [];
+	let liveQuoteLineIds: string[] = [];
 	// 드로잉 — drawMap = 완성 드로잉 id→직렬화 (localStorage 영속 SSOT). pending = 진행중(ESC 취소 대상).
 	const drawMap = new Map<string, SavedDraw>();
 	let pendingDrawId: string | null = null;
@@ -128,6 +133,16 @@
 	// load-more 상태 (비반응 — 콜백이 읽음). oldestYear↔newestYear = 현재 로드된 이력 범위.
 	// viewLen = 현재 tf 로 차트에 적용된 봉 수 (주/월 집계 후 길이 — applySpacing 기준).
 	const hist = { code: '', oldestYear: 9999, newestYear: 0, loading: false, viewLen: 0 };
+	const MINUTE_REFRESH_MS = 15_000; // 분봉 전체 재조회 — 새 분 형성·거래량 보정
+	const QUOTE_REFRESH_MS = 500; // 선택된 단일 종목 현재가 — 마지막 분봉 close 를 0.5초 단위로 보정
+	const MINUTE_PERIOD_N: Record<PeriodKey, number> = { '1M': 60, '3M': 120, '6M': 180, '1Y': 240, '3Y': 360, MAX: 100000 };
+	let minuteCandles = $state<Candle[]>([]);
+	let minuteFor = $state<{ code: string; tf: MinuteTfKey } | null>(null);
+	let minuteProvider = $state<string | null>(null);
+	let liveQuote = $state<LiveQuote | null>(null);
+	let liveQuoteRev = $state(0);
+	let liveQuoteRevSeq = 0;
+	const bumpLiveQuoteRev = () => (liveQuoteRev = ++liveQuoteRevSeq);
 	let appliedTf: TfKey = 'D'; // tf effect 의 mount 중복 재적용 차단용 비반응 스냅샷
 	let appliedStyle: CandleStyle = ctl.candleStyle; // HA ↔ 비HA 전환만 데이터 재적용 (스냅샷 가드)
 	// 바 리플레이 — replayCutT = 현재 리플레이 봉 라벨(YYYYMMDD, 비반응). displaySeries 가 이 날짜까지
@@ -135,7 +150,13 @@
 	let replayCutT: string | null = null;
 	let appliedReplay = { on: false, idx: -1 }; // replay effect 중복 재적용 차단 스냅샷
 
-	const toMs = (t: string) => Date.UTC(+t.slice(0, 4), +t.slice(4, 6) - 1, +t.slice(6, 8));
+	const toMs = (t: string) => {
+		if (/^\d{8}$/.test(t)) return Date.UTC(+t.slice(0, 4), +t.slice(4, 6) - 1, +t.slice(6, 8));
+		const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/.exec(t);
+		if (m) return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] ?? 0));
+		const ms = Date.parse(t);
+		return Number.isFinite(ms) ? ms : 0;
+	};
 	// x축 날짜 라벨을 한국식 간단 표기로 압축 — 라이브러리 기본(YYYY-MM·MM-DD·YYYY)을 YY.MM·MM.DD·YYYY 로.
 	// registerXAxis 가 이미 계산된 ticks 의 text 만 치환(틱 산출·간격 로직은 라이브러리 그대로 — 회귀 0).
 	function compactAxisText(s: string): string {
@@ -148,6 +169,45 @@
 	// turnover 는 억 단위 — {turnover} 플레이스홀더가 콤마만 붙이고 축약을 안 해 원 단위면
 	// "446,546,135,655" 생짜 노출 (TVAL 페인·매물대 가중치도 동일 단위 공유, 상대값이라 무영향)
 	const toK = (c: Candle) => ({ timestamp: toMs(c.t), open: c.o, high: c.h, low: c.l, close: c.c, volume: c.v, turnover: c.tv != null ? c.tv / 1e8 : undefined });
+
+	const minuteLabel = (tf: MinuteTfKey, lg: Lang = lang) =>
+		tf === '1m' ? (lg === 'en' ? '1m' : '1분봉')
+		: tf === '3m' ? (lg === 'en' ? '3m' : '3분봉')
+		: lg === 'en' ? '5m' : '5분봉';
+	const minuteSourceLabel = (provider: string | null, lg: Lang = lang) =>
+		provider === 'kis'
+			? (lg === 'en' ? 'Korea Investment OpenAPI' : '한국투자증권 OpenAPI')
+			: provider === 'naver'
+				? (lg === 'en' ? 'Naver Finance' : '네이버증권')
+				: (lg === 'en' ? 'live quote API' : '실시간 시세 API');
+	function minuteBarsToCandles(bars: MinuteBar[]): Candle[] {
+		const out: Candle[] = [];
+		let prevC: number | null = null;
+		for (const b of [...bars].sort((a, z) => a.t.localeCompare(z.t))) {
+			const o = Number(b.o), h = Number(b.h), l = Number(b.l), c = Number(b.c), v = Number(b.v);
+			if (![o, h, l, c, v].every((x) => Number.isFinite(x)) || c <= 0) continue;
+			out.push({ t: b.t, o, h: Math.max(o, h, l, c), l: Math.min(o, h, l, c), c, v, r: prevC && prevC > 0 ? (c / prevC - 1) * 100 : null });
+			prevC = c;
+		}
+		return out;
+	}
+	function minuteBucketIso(tf: MinuteTfKey, raw?: string): string {
+		const mins = Number(tf.slice(0, -1)) || 1;
+		const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(raw || '');
+		let y: number, mo: number, d: number, h: number, mi: number;
+		if (m) {
+			y = +m[1]; mo = +m[2]; d = +m[3]; h = +m[4]; mi = +m[5];
+		} else {
+			const now = new Date();
+			y = now.getFullYear(); mo = now.getMonth() + 1; d = now.getDate(); h = now.getHours(); mi = now.getMinutes();
+		}
+		mi = Math.floor(mi / mins) * mins;
+		const p = (n: number) => String(n).padStart(2, '0');
+		return `${y}-${p(mo)}-${p(d)}T${p(h)}:${p(mi)}:00+09:00`;
+	}
+	function periodBars(tf: TfKey, p: PeriodKey, len: number): number {
+		return Math.min(isMinuteTf(tf) ? (MINUTE_PERIOD_N[p] ?? len) : Math.ceil((PERIOD_N[p] ?? len) / TF_DIV[tf]), len);
+	}
 
 	// 공시 레일(02 §4) — disclosures(날짜 그룹) 각 날짜를 convertToPixel 로 x 픽셀화해 x축 날짜라벨 "아래" 전용 띠에 dot 배치.
 	// 캔들 고가 텍스트 annotation(폭주·가격 차폐, §2.2 금지) 폐기. 레일 띠 = 캔버스가 끝나는 chartWrap 하단 padding 영역
@@ -222,13 +282,20 @@
 	});
 	// 리본 Row1 정보 — 표시 시계열(리플레이 절단·수정주가 반영) 기준이라 리플레이 중에도 정직.
 	// dataRev = reapply 동행 신호 (displaySeries 내부 untrack 읽기를 대신 깨운다).
-	const ribbonInfo = $derived.by<{ last: number; prev: number | null; date: string; hi: number; lo: number } | null>(() => {
+	const ribbonInfo = $derived.by<{ last: number; prev: number | null; date: string; hi: number; lo: number; live?: boolean; provider?: string; status?: string } | null>(() => {
 		void dataRev;
-		if (!candles.length) return null;
-		const s = displaySeries();
+		void minuteRev;
+		void liveQuoteRev;
+		const tfv = ctl.tf;
+		if (!candles.length && !minuteCandles.length) return null;
+		const s = isMinuteTf(tfv) ? chartSourceSeries(tfv) : displaySeries();
+		const q = subject === 'price' && !ctl.replay.on && liveQuote?.code === code ? liveQuote : null;
 		if (!s.length) {
 			const n = candles.length;
-			return { last: candles[n - 1].c, prev: n >= 2 ? candles[n - 2].c : null, date: candles[n - 1].t, hi: candles[n - 1].h, lo: candles[n - 1].l };
+			const fallback = { last: candles[n - 1].c, prev: n >= 2 ? candles[n - 2].c : null, date: candles[n - 1].t, hi: candles[n - 1].h, lo: candles[n - 1].l };
+			if (!q) return fallback;
+			const prev = Number.isFinite(q.changeAmount) ? q.price - q.changeAmount : fallback.prev;
+			return { ...fallback, last: q.price, prev, date: q.tradedAt || q.updatedAt, hi: Math.max(fallback.hi, q.high ?? q.price, q.price), lo: Math.min(fallback.lo, q.low ?? q.price, q.price), live: true, provider: q.provider, status: q.marketStatusLabel || q.marketStatus };
 		}
 		const lastK = s[s.length - 1];
 		const win = s.slice(-252);
@@ -238,7 +305,9 @@
 			if (k.h > hi) hi = k.h;
 			if (k.l < lo) lo = k.l;
 		}
-		return { last: lastK.c, prev: s.length >= 2 ? s[s.length - 2].c : null, date: lastK.t, hi, lo };
+		if (!q) return { last: lastK.c, prev: s.length >= 2 ? s[s.length - 2].c : null, date: lastK.t, hi, lo };
+		const prev = Number.isFinite(q.changeAmount) ? q.price - q.changeAmount : s.length >= 2 ? s[s.length - 2].c : null;
+		return { last: q.price, prev, date: q.tradedAt || q.updatedAt, hi: Math.max(hi, q.high ?? q.price, q.price), lo: Math.min(lo, q.low ?? q.price, q.price), live: true, provider: q.provider, status: q.marketStatusLabel || q.marketStatus };
 	});
 	// 상태 피드백 1줄 — 과거 백필 진행 동작을 리본에 노출 (침묵 로딩 = 버그처럼 보임 방지)
 	let notice = $state<string | null>(null);
@@ -361,6 +430,12 @@
 				const p = (n: number) => String(n).padStart(2, '0');
 				return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`;
 			};
+			const fmtChartDate = (ts: number) => {
+				const d = new Date(ts);
+				const p = (n: number) => String(n).padStart(2, '0');
+				const ymd = `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`;
+				return untrack(() => isMinuteTf(ctl.tf)) ? `${ymd} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}` : ymd;
+			};
 			// 큰 수 표기 — 라이브러리 기본 K/M/B(서양식) 대신 만·억·조. 거래량(주)·거래대금(원)
 			// 축 라벨·툴팁 공통. 자릿수 규칙 고정: 조·억 = 소수 2자리, 만 = 정수, 만 미만 = 정수 콤마.
 			const fmtBigKr = (value: string | number): string => {
@@ -375,7 +450,7 @@
 			try {
 				local.setCustomApi({
 					formatDate: (dtf: unknown, ts: number, format: string, type: number) => {
-						if (type === 0 || type === 1) return fmtYmd(ts);
+						if (type === 0 || type === 1) return fmtChartDate(ts);
 						try { return mod.utils.formatDate(dtf, ts, format); } catch { return fmtYmd(ts); }
 					},
 					formatBigNumber: fmtBigKr
@@ -439,6 +514,11 @@
 		return untrack(() => ctl.adj) ? adjustCandles(base) : base;
 	}
 
+	function chartSourceSeries(tfv: TfKey): Candle[] {
+		if (isMinuteTf(tfv) && subject === 'price') return minuteFor?.code === code && minuteFor.tf === tfv ? minuteCandles : [];
+		return fullSeries();
+	}
+
 	// 표시 시계열 (BT·기준선·이벤트 마커 공용) — 리플레이 중엔 현재 봉 날짜까지 절단.
 	// 절단 덕에 dataRev 의존 effect(BT·52주 기준선)가 그 시점까지 데이터만으로 정직하게 재계산된다.
 	function displaySeries(): Candle[] {
@@ -453,13 +533,15 @@
 	// 리플레이 ON 이면 idx 봉까지 절단, 하이킨아시면 적용 직전 변환(버스·BT 는 원본 가격 유지).
 	function reapply(c: any) {
 		const tfv = untrack(() => ctl.tf);
-		const base = fullSeries();
+		const base = chartSourceSeries(tfv);
 		if (!base.length) return;
-		// 가용 데이터 범위 publish — 검증 구간 날짜 입력 bound·기본 전체창(StrategyDock). 동일값 가드로 재실행 루프 0.
-		const loT = base[0].t, hiT = base[base.length - 1].t;
-		if (ctl.dataFromT !== loT) ctl.dataFromT = loT;
-		if (ctl.dataToT !== hiT) ctl.dataToT = hiT;
-		let view = tfv === 'D' ? base : aggregateCandles(base, tfv);
+		if (!isMinuteTf(tfv)) {
+			// 가용 데이터 범위 publish — 검증 구간 날짜 입력 bound·기본 전체창(StrategyDock). 동일값 가드로 재실행 루프 0.
+			const loT = base[0].t, hiT = base[base.length - 1].t;
+			if (ctl.dataFromT !== loT) ctl.dataFromT = loT;
+			if (ctl.dataToT !== hiT) ctl.dataToT = hiT;
+		}
+		let view = tfv === 'D' || isMinuteTf(tfv) ? base : aggregateCandles(base, tfv);
 		hist.viewLen = view.length; // 전체 길이 (리플레이 절단 전 — applySpacing·replay len 기준)
 		// ⚠ untrack 은 콜백 안 읽기만 보호 — proxy 를 꺼내 밖에서 .on 읽으면 호출 effect 에 의존이 생긴다
 		const rp = untrack(() => ({ on: ctl.replay.on, idx: ctl.replay.idx }));
@@ -472,7 +554,8 @@
 		publishView(view, toMs); // AVWAP·측정룰러가 구독하는 표시 시계열 버스 (원본 가격)
 		const out = !indexLine && untrack(() => ctl.candleStyle) === 'ha' ? heikinAshi(view) : view;
 		c.applyNewData(out.map(toK), !rp.on && tfv === 'D' && hist.oldestYear - 1 >= KRX_MIN_YEAR);
-		bumpDataRev();
+		if (isMinuteTf(tfv)) bumpMinuteRev();
+		else bumpDataRev();
 	}
 
 	// 리플레이를 reapply 없이 종료 — 직후 자체 reapply 하는 effect(회사전환·tf·adj)용 (이중 재적용 방지).
@@ -482,6 +565,35 @@
 			ctl.replayExit();
 			appliedReplay = { on: false, idx: ctl.replay.idx };
 		});
+	}
+
+	function applyLiveQuoteToMinute(c: any, tfv: MinuteTfKey, price: number, tradedAt?: string) {
+		if (!Number.isFinite(price) || price <= 0) return;
+		const t = minuteBucketIso(tfv, tradedAt);
+		const base = minuteCandles;
+		const last = base[base.length - 1];
+		let next: Candle;
+		let out: Candle[];
+		const merge = (old: Candle): Candle => ({ ...old, c: price, h: Math.max(old.h, price), l: Math.min(old.l, price) });
+		if (last?.t === t) {
+			next = merge(last);
+			out = [...base.slice(0, -1), next];
+		} else {
+			const idx = base.findIndex((x) => x.t === t);
+			if (idx >= 0) {
+				next = merge(base[idx]);
+				out = [...base.slice(0, idx), next, ...base.slice(idx + 1)];
+			} else if (!last || last.t < t) {
+				next = { t, o: price, h: price, l: price, c: price, v: 0, r: last?.c ? (price / last.c - 1) * 100 : null };
+				out = [...base, next];
+			} else {
+				return;
+			}
+		}
+		minuteCandles = out.slice(-420);
+		hist.viewLen = minuteCandles.length;
+		try { c.updateData(toK(next)); } catch { reapply(c); }
+		bumpMinuteRev();
 	}
 
 	// ── 데이터 적용 (회사전환 = applyNewData, dispose 안 함 = 영속) ──
@@ -494,10 +606,21 @@
 		hist.newestYear = +cs[cs.length - 1].t.slice(0, 4);
 		hist.loading = false;
 		exitReplaySilently(); // 회사 전환 — 이전 회사 시점 리플레이는 무의미
-		reapply(c);
+		if (untrack(() => isMinuteTf(ctl.tf))) {
+			minuteCandles = [];
+			minuteFor = null;
+			minuteProvider = null;
+			hist.viewLen = 0;
+			try { c.applyNewData([], false); } catch { /* */ }
+			bumpMinuteRev();
+		} else {
+			reapply(c);
+		}
 		bandIds.forEach((id) => c.removeOverlay(id));
 		eventIds.forEach((id) => c.removeOverlay(id));
 		refIds.forEach((id) => c.removeOverlay(id));
+		liveQuoteLineIds.forEach((id) => c.removeOverlay(id));
+		liveQuoteLineIds = [];
 		try { c.removeOverlay({ groupId: 'draw' }); } catch { /* */ }
 		bandIds = [];
 		eventIds = [];
@@ -510,8 +633,88 @@
 		// untrack — applyPeriodFull 의 ctl.period 읽기가 본 effect 의존이 되면 기간 클릭마다
 		// 회사전환 전체(재적용+드로잉 삭제)가 재실행되고, viewLen 갱신 전 이중 tf 상향(W→M)까지 일으킨다.
 		untrack(() => applyPeriodFull(c));
-		// 주/월봉 유지 상태로 회사 전환 — 집계 정합 위해 전체 백필 (gov 전이력 회사는 no-op)
-		if (untrack(() => ctl.tf) !== 'D') void backfillTo(c, KRX_MIN_YEAR);
+		// 주/월봉 유지 상태로 회사 전환 — 집계 정합 위해 전체 백필 (분봉은 서버 분봉 API가 담당)
+		const tf0 = untrack(() => ctl.tf);
+		if (tf0 !== 'D' && !isMinuteTf(tf0)) void backfillTo(c, KRX_MIN_YEAR);
+	});
+
+	// 분봉 선택 — 기존 차트 인스턴스에 서버 실시간 분봉을 직접 적용. 별도 패널/별도 차트 없음.
+	$effect(() => {
+		const tfv = ctl.tf;
+		const c = chart;
+		const cd = code;
+		const subj = subject;
+		if (!c || subj !== 'price' || !isMinuteTf(tfv)) return;
+		let cancelled = false;
+		let busy = false;
+		const load = async (showNotice: boolean) => {
+			if (busy) return;
+			busy = true;
+			if (showNotice) {
+				notice = T(`실시간 ${minuteLabel(tfv, 'kr')} 불러오는 중 …`, `loading live ${minuteLabel(tfv, 'en')} …`);
+			}
+			try {
+				const res = await fetchMinuteBars(cd, tfv);
+				if (cancelled || chart !== c || code !== cd || ctl.tf !== tfv) return;
+				if (!res?.bars?.length) throw new Error('minute_empty');
+				minuteCandles = minuteBarsToCandles(res.bars);
+				minuteFor = { code: cd, tf: tfv };
+				minuteProvider = res.provider;
+				untrack(() => {
+					reapply(c);
+					applySpacing(c);
+				});
+			} catch {
+				if (!cancelled && showNotice) notice = T('분봉 데이터를 불러오지 못했습니다', 'minute bars unavailable');
+			} finally {
+				busy = false;
+				if (!cancelled) {
+					if (notice?.includes('불러오는 중') || notice?.includes('loading live')) notice = null;
+				}
+			}
+		};
+		void load(true);
+		const id = setInterval(() => void load(false), MINUTE_REFRESH_MS);
+		return () => {
+			cancelled = true;
+			clearInterval(id);
+		};
+	});
+
+	// 현재가 조회 — 단일 선택 종목의 웹 quote 를 리본에 반영하고, 분봉 화면이면 마지막 봉도 보정한다.
+	$effect(() => {
+		const c = chart;
+		const cd = code;
+		const subj = subject;
+		if (!c || subj !== 'price') return;
+		let cancelled = false;
+		let timer: ReturnType<typeof setTimeout> | null = null;
+		let delay = QUOTE_REFRESH_MS;
+		liveQuote = null;
+		bumpLiveQuoteRev();
+		const schedule = () => {
+			if (!cancelled) timer = setTimeout(() => void tick(), delay);
+		};
+		const tick = async () => {
+			try {
+				const q = await fetchLiveQuote(cd);
+				delay = q?.provider === 'kis'
+					? Math.max(QUOTE_REFRESH_MS, q.refreshIntervalMs ?? QUOTE_REFRESH_MS)
+					: Math.max(3000, q?.refreshIntervalMs ?? 7000);
+				if (cancelled || chart !== c || code !== cd || !q) return;
+				liveQuote = q;
+				bumpLiveQuoteRev();
+				const tfv = untrack(() => ctl.tf);
+				if (isMinuteTf(tfv)) untrack(() => applyLiveQuoteToMinute(c, tfv, q.price, q.tradedAt || q.updatedAt));
+			} finally {
+				schedule();
+			}
+		};
+		void tick();
+		return () => {
+			cancelled = true;
+			if (timer) clearTimeout(timer);
+		};
 	});
 
 	// 가시 봉 수 재배치 — 현재 tf 적용 후 봉 수(viewLen) 기준. klinecharts BarSpace 하한 = 1px:
@@ -534,7 +737,7 @@
 				return;
 			}
 		}
-		const N = Math.min(Math.ceil((PERIOD_N[ctl.period] ?? len) / TF_DIV[tfv]), len);
+		const N = periodBars(tfv, ctl.period, len);
 		const space = w / Math.max(1, N);
 		// 봉 주기는 사용자가 고른 그대로 유지한다 — 긴 기간에서 일/주봉이 1px 미만이 되어도 자동 상향(일→주→월)
 		// 하지 않는다(HTS·TradingView 관행: tf = 집계 선택일 뿐, 과거는 드래그/스크롤로 이동). 1px 미만이면 최근
@@ -570,6 +773,7 @@
 	const yearsForPeriod = (p: string): number => (p === 'MAX' ? 999 : Math.ceil((PERIOD_N[p] ?? 252) / 252) + 1);
 	function applyPeriodFull(c: any) {
 		applySpacing(c);
+		if (isMinuteTf(untrack(() => ctl.tf))) return;
 		const target = ctl.btCustomWin && ctl.btWinFrom
 			? Math.max(KRX_MIN_YEAR, +ctl.btWinFrom.slice(0, 4) - 1) // 커스텀 시작연도까지 백필(워밍업 여유 −1)
 			: ctl.period === 'MAX' ? KRX_MIN_YEAR : Math.max(KRX_MIN_YEAR, hist.newestYear - yearsForPeriod(ctl.period) + 1);
@@ -588,7 +792,21 @@
 		exitReplaySilently(); // 봉 주기 전환 — 리플레이 idx 좌표계가 깨지므로 자동 종료
 		const code0 = hist.code;
 		(async () => {
-			if (tfv !== 'D') await backfillTo(c, KRX_MIN_YEAR);
+			if (isMinuteTf(tfv)) {
+				if (minuteFor?.code !== code || minuteFor.tf !== tfv) {
+					minuteCandles = [];
+					minuteFor = null;
+					minuteProvider = null;
+					hist.viewLen = 0;
+					try { c.applyNewData([], false); } catch { /* */ }
+					bumpMinuteRev();
+				} else {
+					reapply(c);
+					applySpacing(c);
+				}
+				return;
+			}
+			if (tfv !== 'D' && !isMinuteTf(tfv)) await backfillTo(c, KRX_MIN_YEAR);
 			if (chart !== c || hist.code !== code0) return;
 			reapply(c);
 			applySpacing(c);
@@ -666,7 +884,8 @@
 	// 리플레이 진입 — 시작점 = 현재 기간 윈도 시작(최소 30봉 워밍업), 현재 tf 봉 수로 환산.
 	function enterReplay() {
 		if (!chart || !hist.viewLen) return;
-		const n = Math.ceil((PERIOD_N[ctl.period] ?? 252) / TF_DIV[ctl.tf]);
+		if (isMinuteTf(ctl.tf)) return;
+		const n = periodBars(ctl.tf, ctl.period, hist.viewLen);
 		const idx = Math.min(Math.max(30, hist.viewLen - n), hist.viewLen - 1);
 		ctl.replay = { on: true, idx, playing: false, start: idx, len: hist.viewLen };
 	}
@@ -781,6 +1000,19 @@
 		const prevC = base[base.length - 2].c;
 		const mk = (price: number, color: string) => c.createOverlay({ name: 'priceLine', points: [{ value: price }], lock: true, styles: { line: { color, style: 'dashed', size: 1 }, text: { color } } });
 		refIds = [mk(hi, 'rgba(240,97,111,0.65)'), mk(lo, 'rgba(96,165,250,0.65)'), mk(prevC, 'rgba(139,145,158,0.65)')].filter(Boolean) as string[];
+	});
+
+	// 웹 현재가 라인 — 캔들 데이터는 변경하지 않고 차트 안에서 현재 quote 위치만 표시한다.
+	$effect(() => {
+		void liveQuoteRev;
+		const c = chart;
+		const q = liveQuote;
+		liveQuoteLineIds.forEach((id) => c?.removeOverlay(id));
+		liveQuoteLineIds = [];
+		if (!c || subject !== 'price' || ctl.replay.on || q?.code !== code || !Number.isFinite(q.price) || q.price <= 0) return;
+		const color = q.changeAmount >= 0 ? 'rgba(52,211,153,0.9)' : 'rgba(240,97,111,0.9)';
+		const id = c.createOverlay({ name: 'priceLine', points: [{ value: q.price }], lock: true, styles: { line: { color, style: 'solid', size: 1 }, text: { color } } });
+		liveQuoteLineIds = id ? [id] : [];
 	});
 
 	// 실적·공시 시점 마커 → simpleAnnotation (토글, 가장 가까운 거래일 스냅).
@@ -1253,11 +1485,15 @@
 
 	const T = (kr: string, en: string) => (lang === 'en' ? en : kr);
 	// 출처 표기 SSOT — DOM 캡션과 스냅샷 띠가 같은 문자열 (공공누리 출처표시 의무)
-	const srcText = () =>
-		T('출처: 금융위원회·한국거래소 (공공데이터포털)', 'Source: FSC · KRX (data.go.kr)') +
-		(ctl.econ.length ? ' · ' + MACRO_ATTRIBUTION : '') +
-		(ctl.adj ? T(' · 수정주가', ' · adjusted') : '') +
-		(ctl.candleStyle === 'ha' ? ' · HA' : ''); // 하이킨아시 = 변형값 정직 고지
+	const srcText = () => {
+		const minute = isMinuteTf(ctl.tf);
+		return (minute
+			? T(`출처: ${minuteSourceLabel(minuteProvider, 'kr')} (분봉)`, `Source: ${minuteSourceLabel(minuteProvider, 'en')} (minute bars)`)
+			: T('출처: 금융위원회·한국거래소 (공공데이터포털)', 'Source: FSC · KRX (data.go.kr)')) +
+			(ctl.econ.length ? ' · ' + MACRO_ATTRIBUTION : '') +
+			(!minute && ctl.adj ? T(' · 수정주가', ' · adjusted') : '') +
+			(ctl.candleStyle === 'ha' ? ' · HA' : ''); // 하이킨아시 = 변형값 정직 고지
+	};
 	function snapshot() {
 		const ymd = candles.length ? candles[candles.length - 1].t : '';
 		const date = ymd ? `${ymd.slice(0, 4)}-${ymd.slice(4, 6)}-${ymd.slice(6, 8)}` : '';

@@ -20,7 +20,7 @@
 		name: string;
 		code: string;
 		// 표시 시계열 기준 (리플레이 절단 반영 — PriceChart.ribbonInfo): 현재가·전일대비·기준일·52주
-		info: { last: number; prev: number | null; date: string; hi: number; lo: number } | null;
+		info: { last: number; prev: number | null; date: string; hi: number; lo: number; live?: boolean; provider?: string; status?: string } | null;
 		notice?: string | null; // 자동 tf 상향·백필 진행 등 상태 피드백 1줄
 		peers?: { code: string; name: string }[];
 		cmpRows?: { name: string; code: string; r: (number | null)[] }[]; // VS 팝오버 기간 수익률 (1M/3M/6M/1Y)
@@ -37,9 +37,10 @@
 	const T = (kr: string, en: string) => (lang === 'en' ? en : kr);
 	const styleShown = $derived(indexLine ? 'area' : ctl.candleStyle); // US 지수면 'area'(라인) 강조 — disabled 세그먼트 정합
 	const fmtN = (v: number) => v.toLocaleString('en-US', { maximumFractionDigits: 0 });
-	const fmtD = (t: string) => `${t.slice(0, 4)}-${t.slice(4, 6)}-${t.slice(6, 8)}`;
+	const fmtD = (t: string) => /^\d{8}$/.test(t) ? `${t.slice(0, 4)}-${t.slice(4, 6)}-${t.slice(6, 8)}` : t.slice(0, 16).replace('T', ' ');
 	const chg = $derived(info && info.prev ? ((info.last / info.prev) - 1) * 100 : null);
 	const pos52 = $derived(info && info.hi > info.lo ? Math.max(0, Math.min(100, ((info.last - info.lo) / (info.hi - info.lo)) * 100)) : null);
+	const quoteSource = $derived(!info?.live ? 'EOD' : info.provider === 'kis' ? 'KIS' : info.provider === 'naver' ? 'NAVER' : 'LIVE');
 	const CMP_RET_LBL = ['1M', '3M', '6M', '1Y'];
 	let pop = $state<string>('none'); // 'econ' | 'ovAdd' | 'subAdd' | 'bt' | 'vs' | 'tmpl' | `edit:${지표명}`
 	const offOverlays = $derived(OVERLAY_ALL.filter((o) => !ctl.overlays.includes(o)));
@@ -67,7 +68,7 @@
 			{#if info}
 				<span class="mono crLast">{fmtN(info.last)}</span>
 				{#if chg != null}<span class={'mono ' + (chg >= 0 ? 'tUp' : 'tDn')}>{chg >= 0 ? '+' : ''}{chg.toFixed(1)}%{info.prev != null ? ` (${chg >= 0 ? '+' : '−'}${fmtN(Math.abs(info.last - info.prev))})` : ''}</span>{/if}
-				<span class="crEod mono" title={T('일별 종가 기준(EOD) — 이 차트의 마지막 데이터 일자', 'end-of-day — last data date')}>EOD {fmtD(info.date)}</span>
+				<span class="crEod mono" title={info.live ? T(`웹 현재가 · ${info.status ?? '확인 중'}`, `web quote · ${info.status ?? 'unknown'}`) : T('일별 종가 기준(EOD) — 이 차트의 마지막 데이터 일자', 'end-of-day — last data date')}>{quoteSource} {fmtD(info.date)}</span>
 				{#if pos52 != null}
 					<span class="cr52" title={T(`52주 위치 ${pos52.toFixed(0)}% (저 ${fmtN(info.lo)} ~ 고 ${fmtN(info.hi)})`, `52w position ${pos52.toFixed(0)}%`)}>
 						<i class="cr52Lbl">52W</i><span class="cr52Track"><span class="cr52Now" style={`left:${pos52}%`}></span></span>
