@@ -48,6 +48,9 @@ _FOREIGN_NAME_PATTERNS = re.compile(
     re.IGNORECASE,
 )
 
+# alias 합계/소계 변형 접미 — "재고자산" ↔ "재고자산계" ↔ "재고자산합계" 만 alias 후보.
+_TOTAL_SUFFIXES = ("계", "합계", "총계", "소계")
+
 
 def _classifyType(name: str, values: list[str]) -> str:
     """항목명 + 값에서 유형 자동 분류."""
@@ -158,13 +161,12 @@ def scanNotes(stockCode: str) -> dict[str, dict[str, Any]]:
                 break
 
     items: dict[str, dict[str, Any]] = {}
-    rcptDefault = ""
     for r in nt.filter(pl.col("leafType") == "table").iter_rows(named=True):
         if (r.get("scope") or "consolidated") != "consolidated":
             continue
         dk = r.get("disclosureKey") or ""
         category = titles.get(dk, dk)
-        rcept = r.get("rceptNo") or rcptDefault
+        rcept = r.get("rceptNo") or ""
         for c in annual:
             content = r.get(c)
             if not content:
@@ -247,9 +249,6 @@ def discoverAliases(
     # 예: "재고자산" vs "제품및상품" vs "재고자산계" (합계 행 역할)
     aliases: dict[str, str] = {}
 
-    # 합계/총계 역할 키워드 — 이 키워드가 포함된 항목끼리만 alias 후보
-    _TOTAL_HINTS = {"합계", "계", "총액", "총계"}
-
     # alias 탐지 대상 category — 이름 4글자 이상 (법인세, 리스 등 짧은 건 과잉매칭)
     _ALIAS_CATEGORIES = {"재고자산", "차입금", "충당부채", "매출채권", "투자부동산", "무형자산"}
 
@@ -284,10 +283,7 @@ def discoverAliases(
                 if len(shorter) <= 3:
                     continue
 
-                # 핵심 규칙: suffix 변형만 alias
-                # "재고자산" ↔ "재고자산계" ↔ "재고자산합계"
-                # suffix: 계, 합계, 총계, 소계
-                _TOTAL_SUFFIXES = ("계", "합계", "총계", "소계")
+                # 핵심 규칙: suffix 변형만 alias ("재고자산" ↔ "재고자산계" ↔ "재고자산합계").
                 isVariant = False
                 for sfx in _TOTAL_SUFFIXES:
                     base1 = name1.removesuffix(sfx) if name1.endswith(sfx) else None
