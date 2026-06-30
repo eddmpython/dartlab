@@ -38,6 +38,7 @@ MONITORED_WORKFLOWS = [
     "Quant Audit",
     "Update KindList",
     "Intent Model Pipeline",  # 공시 Q&A 라우팅 모델 빌드+회귀게이트+HF 업로드 (cron 0 20 일요일)
+    "Notify Watch",  # 공개 왓처 토픽(IPO 신규상장·신규수주) 발송 (cron 0 8 평일) — 조용한 발송실패 가드
 ]
 
 FAILURE_LABEL = "pipeline-failure"

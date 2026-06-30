@@ -1,0 +1,41 @@
+name: Notify Publish
+
+# 블로그·카드 발행 시 구독자 기기로 웹푸시 알림. deploy-landing(group=pages, cancel-in-progress)에 얹으면
+# 연속 push 시 취소로 알림 유실 → 독립 워크플로 + cancel-in-progress 미설정(push 이벤트당 1회 보장).
+# 러너 = .github/scripts/notify/send.py (git diff 발행 검출 → 허브 /send). (topic,slug) 결정적 nonce 멱등.
+# 설계: mainPlan/watcher-notify-platform/08-p1-publish-ops-test.md §2.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'blog/**/index.md' # detect _BLOG_RE 와 1:1
+      - 'blog/_issues/**/cards.plan.json' # detect _ISSUE_RE 와 1:1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notify-publish # cancel-in-progress 미설정 → 취소 0, push 이벤트당 1회 보장
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # git diff before..sha (얕은 checkout 금지)
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Send publish notifications
+        # 직접 스크립트 경로 — sys.path[0]=notify/ 라 플랫 import(authHeaders·payload·sanitize) 해소, cwd=repo 루트라
+        # git diff·frontmatter 경로 정합. --no-project = dartlab 전체 sync 회피(yaml 만 필요, 발송 지연 최소).
+        run: uv run --no-project --with pyyaml python -X utf8 .github/scripts/notify/send.py --before "${{ github.event.before }}" --sha "${{ github.sha }}"
+        env:
+          PUSHHUB_URL: ${{ vars.VITE_PUSHHUB_URL }}
+          PUSHHUB_SEND_TOKEN: ${{ secrets.PUSHHUB_SEND_TOKEN }}
+          PYTHONUNBUFFERED: "1"

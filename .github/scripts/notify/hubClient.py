@@ -1,0 +1,45 @@
+"""허브 /send POST + 응답 분류 — 발행 러너(send.py)·왓처 러너(watch.py) 공유.
+
+발송 1건 = topic 브로드캐스트 또는 endpoints 타겟. (topic,slug) 결정적 nonce 라 같은 매치 재발송은 409(멱등).
+분류: 401/5xx/네트워크 = problem(헬스게이트 RED), 409 = dup(이미 발송, 정상), 2xx = ok.
+설계: mainPlan/watcher-notify-platform/06-p1-hub-worker.md §2 · 08 §1·§2.
+"""
+
+from __future__ import annotations
+
+import json
+import urllib.error
+import urllib.request
+
+from authHeaders import auth_headers, serialize_body
+
+
+def post_to_hub(hub: str, token: str, topic: str, slug: str, notification: dict, ts: int) -> tuple[int, dict | None]:
+    """topic 브로드캐스트 1 POST. (status, body) 반환. 네트워크 실패는 status=0."""
+    raw = serialize_body({"topic": topic, "notification": notification})
+    headers = {
+        **auth_headers(ts, topic, slug),
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+    req = urllib.request.Request(hub + "/send", data=raw, method="POST", headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.status, json.loads(r.read().decode("utf-8") or "{}")
+    except urllib.error.HTTPError as e:
+        try:
+            body = json.loads(e.read().decode("utf-8") or "{}")
+        except Exception:
+            body = None
+        return e.code, body
+    except Exception:
+        return 0, None
+
+
+def classify(status: int) -> str:
+    """발송 응답 → 'ok' | 'dup'(409 멱등) | 'problem'(401/5xx/네트워크 = RED)."""
+    if status == 0 or status == 401 or status >= 500:
+        return "problem"
+    if status == 409:
+        return "dup"
+    return "ok"

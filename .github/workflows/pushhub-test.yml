@@ -1,0 +1,49 @@
+name: PushHub Test
+
+# 왓처·알림 플랫폼 P1 의 3 러너 중 2종 CI 강제(러너1 landing vitest 는 deploy-landing.yml build 전 step).
+#   러너2: pushHub Worker (vitest-pool-workers — 인증·nonce·구독검증·fan-out·purge)
+#   러너3: 발행 러너 py (detect·payload·nonce·sanitize)
+# 설계: mainPlan/watcher-notify-platform/08-p1-publish-ops-test.md §4.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'infra/workers/pushHub/**'
+      - '.github/scripts/notify/**'
+      - 'landing/src/lib/notify/**'
+      - '.github/workflows/pushhub-test.yml'
+  pull_request:
+    paths:
+      - 'infra/workers/pushHub/**'
+      - '.github/scripts/notify/**'
+      - 'landing/src/lib/notify/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+      - name: Worker tests (vitest-pool-workers)
+        working-directory: infra/workers/pushHub
+        run: |
+          npm ci
+          npm test
+
+  py:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+      - name: Notify runner tests
+        run: uv run --no-project --with pyyaml --with pytest python -X utf8 -m pytest .github/scripts/notify/ -q
