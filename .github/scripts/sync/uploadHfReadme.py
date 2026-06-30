@@ -27,13 +27,15 @@ tags:
   - korea
   - financial-statements
   - corporate-filings
+  - stock-prices
+  - macroeconomics
   - 전자공시
   - 재무제표
   - 사업보고서
   - 한국
 pretty_name: DartLab 전자공시 데이터
 size_categories:
-  - 1K<n<10K
+  - 1M<n<10M
 ---
 
 <div align="center">
@@ -42,136 +44,211 @@ size_categories:
 
 <img alt="DartLab" src="https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main/assets/logo.png" width="160">
 
-<h3>DartLab Data</h3>
+<h3>DartLab 데이터</h3>
 
-<p><b>Structured company data from DART & EDGAR disclosure filings</b></p>
-<p>DART 전자공시 + EDGAR 공시 데이터 — 한국 2,700사 / 미국 970사</p>
+<p><b>종목코드 하나로 읽는 한국 DART + 미국 SEC EDGAR 공시 데이터</b></p>
+<p><sub>Structured Korean (DART) and US (SEC EDGAR) disclosure data, ready as Parquet.</sub></p>
 
 <p>
+<a href="https://eddmpython.github.io/dartlab/terminal"><img src="https://img.shields.io/badge/터미널-바로_써보기-ea4647?style=for-the-badge&labelColor=050811" alt="터미널"></a>
+<a href="https://eddmpython.github.io/dartlab/data"><img src="https://img.shields.io/badge/데이터_센터-CSV·엑셀_받기-38bdf8?style=for-the-badge&labelColor=050811" alt="데이터 센터"></a>
 <a href="https://github.com/eddmpython/dartlab"><img src="https://img.shields.io/badge/GitHub-dartlab-ea4647?style=for-the-badge&labelColor=050811&logo=github&logoColor=white" alt="GitHub"></a>
 <a href="https://pypi.org/project/dartlab/"><img src="https://img.shields.io/pypi/v/dartlab?style=for-the-badge&color=ea4647&labelColor=050811&logo=pypi&logoColor=white" alt="PyPI"></a>
-<a href="https://eddmpython.github.io/dartlab/"><img src="https://img.shields.io/badge/Docs-GitHub_Pages-38bdf8?style=for-the-badge&labelColor=050811&logo=github-pages&logoColor=white" alt="Docs"></a>
-<a href="https://buymeacoffee.com/eddmpython"><img src="https://img.shields.io/badge/Sponsor-Buy_Me_A_Coffee-ffdd00?style=for-the-badge&labelColor=050811&logo=buy-me-a-coffee&logoColor=white" alt="Sponsor"></a>
+<a href="https://buymeacoffee.com/eddmpython"><img src="https://img.shields.io/badge/후원-Buy_Me_A_Coffee-ffdd00?style=for-the-badge&labelColor=050811&logo=buy-me-a-coffee&logoColor=white" alt="후원"></a>
 </p>
 
 </div>
 
-## What is this?
+## 무엇인가요?
 
 <img align="right" src="https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main/assets/avatar-study.png" width="120">
 
-Pre-collected [Parquet](https://parquet.apache.org/) files from [DartLab](https://github.com/eddmpython/dartlab) — a Python library that turns DART (Korea) and EDGAR (US) disclosure filings into one structured company map.
+[DartLab](https://github.com/eddmpython/dartlab)이 한국 DART 전자공시와 미국 SEC EDGAR 공시를 **종목코드 하나로 비교 가능한 표**로 가공해 [Parquet](https://parquet.apache.org/)으로 올려둔 데이터셋입니다.
 
-한국 DART 전자공시 시스템과 미국 SEC EDGAR에서 수집한 기업 공시 데이터입니다.
+한국 전 상장사(약 2,700사)와 미국 주요 상장사(약 1,000사)의 재무제표, 사업보고서 본문, 정형 공시, 주가, 거시지표가 들어 있습니다.
 
-This dataset is the **data layer** behind DartLab. When you run `dartlab.Company("005930")`, the library automatically downloads the relevant parquet from this repo.
+이 데이터셋은 DartLab의 **데이터 층**입니다. `dartlab.Company("005930")`을 호출하면 라이브러리가 필요한 parquet을 여기서 자동으로 내려받습니다. 숫자는 원문 그대로 보존합니다(반올림·추정·보간 없음).
 
-## Dataset Structure
-
-```
-dart/
-├── panel/         DART disclosure panel (horizontalized filings)
-├── finance/       financial statements (BS, IS, CF, XBRL)
-└── report/        structured disclosure APIs (28 types)
-```
-
-Each file is one company: `{stockCode}.parquet`
-
-### panel — Disclosure Panel
-
-DART periodic reports horizontalized into a company-level panel. Narrative text and XBRL-linked tables share one artifact so the viewer, search, and comparison tools use the same source.
-
-| Column | Description |
-|--------|------------|
-| `corp` | Stock code |
-| `period` | Period key (`YYYYQn`) |
-| `rceptNo` | DART filing ID |
-| `chapter` | Top-level report chapter |
-| `sectionLeaf` | Native section title |
-| `sectionPath` | Full native section path |
-| `leafType` | `text` / `table` |
-| `blockLeaf` | Block or table title |
-| `xbrlClass` | Native DART XBRL class |
-| `disclosureKey` | Canonical horizontalization key |
-| `contentRaw` | Source-preserving XML/text payload |
-
-### finance — Financial Statements
-
-XBRL-based financial data from DART OpenAPI (`fnlttSinglAcntAll`).
-
-| Column | Description |
-|--------|------------|
-| `bsns_year` | Business year |
-| `reprt_code` | Report quarter code |
-| `stock_code` | Stock code |
-| `corp_name` | Company name |
-| `fs_div` | `CFS` (consolidated) / `OFS` (separate) |
-| `sj_div` | Statement type (BS/IS/CF/SCE) |
-| `account_id` | XBRL account ID |
-| `account_nm` | Account name (Korean) |
-| `thstrm_amount` | Current period amount |
-| `frmtrm_amount` | Prior period amount |
-| `bfefrmtrm_amount` | Two periods prior amount |
-
-### report — Structured Disclosure APIs
-
-28 DART API categories covering governance, compensation, shareholding, and more.
-
-| Column | Description |
-|--------|------------|
-| `apiType` | API category (e.g., `dividend`, `employee`, `executive`) |
-| `year` | Year |
-| `quarter` | Quarter |
-| `stockCode` | Stock code |
-| `corpCode` | DART corp code |
-| *(varies)* | Category-specific columns |
-
-**28 API types:** dividend, employee, executive, majorHolder, treasuryStock, capitalChange, auditOpinion, stockTotal, outsideDirector, corporateBond, and more.
-
-## Learn More
+## 코드 없이도 바로 씁니다
 
 <img align="right" src="https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main/assets/avatar-analyze.png" width="120">
 
-DartLab auto-downloads from this dataset — one stock code gives you the full company map. Start with the intro below.
+Python을 몰라도 됩니다. 웹에서 데이터를 고르고 미리본 다음, **CSV·엑셀(.xlsx)로 바로 받거나** 구글시트·Python·curl이 읽는 **라이브 API**로 가져갈 수 있습니다.
 
-<div align="center">
+| 입구 | 무엇을 하나 | 링크 |
+|---|---|---|
+| **데이터 센터** | DART·EDGAR·시세·거시 데이터를 골라 미리보기 → CSV·엑셀 다운로드 → 구글시트·Python·curl 라이브 API | [열기](https://eddmpython.github.io/dartlab/data) |
+| **터미널** | 종목 하나로 재무·주가·공시·신용·산업·매크로를 한 화면에서. 헤더 「데이터」에서 회사 데이터 일괄 CSV·엑셀 묶음 다운로드 | [열기](https://eddmpython.github.io/dartlab/terminal) |
+| **공시 뷰어** | 사업보고서 본문을 항목 × 기간 격자로 | [열기](https://eddmpython.github.io/dartlab/viewer) |
 
-<a href="https://www.youtube.com/shorts/97lYLWMWzvA"><img src="https://img.youtube.com/vi/97lYLWMWzvA/maxresdefault.jpg" alt="DartLab 30s Demo" width="320"></a>
+> 데이터 센터에서는 종목·항목을 고른 뒤 컬럼 선택, 최근/처음 N행, 일·주·월·분기·연 주기 다운샘플까지 골라 받을 수 있습니다. 구글시트 한 칸에 `=IMPORTDATA(...)` 한 줄이면 약 1시간마다 자동으로 갱신됩니다.
 
-<sub>▶ <a href="https://www.youtube.com/shorts/97lYLWMWzvA">DartLab 30s Demo</a></sub>
+## 데이터 구조
 
-</div>
+각 파일은 회사 1곳입니다: `{종목코드}.parquet` (시세·거시 등 일부는 날짜·시리즈 단위).
 
-- **GitHub** — [github.com/eddmpython/dartlab](https://github.com/eddmpython/dartlab)
-- **Intro blog** — [DartLab 시작하기 / Getting started](https://eddmpython.github.io/dartlab/blog/dartlab-easy-start)
-- **Docs** — [eddmpython.github.io/dartlab](https://eddmpython.github.io/dartlab/)
-- **YouTube** — [@eddmpython](https://www.youtube.com/@eddmpython)
+```
+dart/        한국 DART 공시
+├── panel/       공시 수평화 (회사당 17-col, 본문 + XBRL 한 표)
+├── finance/     재무제표 (K-IFRS XBRL: BS·IS·CF)
+├── report/      정형 공시 (28종 API: 배당·임원·지분 등)
+└── scan/        전 상장사 횡단 프리빌드 (비율·이익의 질·공시 변경 등)
+
+edgar/       미국 SEC EDGAR
+├── panel/       공시 수평화 (회사당 16-col, cross-market)
+├── financeStmt/ 재무제표 (DART finance 와 동형 표준화)
+├── prices/      회사별 일별 OHLCV
+└── tickers/     ticker↔CIK 맵
+
+gov/ · krx/  시세·지수 (공공데이터·KRX)
+├── prices/company/   회사별 일별 OHLCV + 시가총액
+├── prices/date/      일별 전종목 (날짜 샤딩)
+└── indices/          KOSPI·KOSDAQ 등 지수 일별
+
+macro/       거시경제 시계열
+├── fred/        미국 FRED (금리·물가 등)
+├── ecos/        한국은행 ECOS
+└── customs/     관세청 월별 수출입
+
+research/
+└── brokerage/   증권사 리서치 메타 인덱스 (제목·링크·발간일, 본문 없음)
+```
+
+### dart/panel · 공시 수평화
+
+DART 정기보고서를 회사 단위 패널로 수평화합니다. 서술 본문과 XBRL 연결 표가 한 artifact 에 함께 들어가, 뷰어·검색·비교가 같은 출처를 씁니다.
+
+| 컬럼 | 설명 |
+|--------|------------|
+| `corp` | 종목코드 |
+| `period` | 기간 키 (`YYYYQn`) |
+| `rceptNo` | DART 접수번호 |
+| `chapter` | 보고서 최상위 장 |
+| `sectionLeaf` | 원본 섹션 제목 |
+| `sectionPath` | 전체 섹션 경로 |
+| `leafType` | `text` / `table` |
+| `blockLeaf` | 블록·표 제목 |
+| `xbrlClass` | DART XBRL 클래스 |
+| `disclosureKey` | 수평화 표준 키 |
+| `contentRaw` | 원본 보존 XML/텍스트 |
+
+### dart/finance · 재무제표
+
+DART OpenAPI(`fnlttSinglAcntAll`) 기반 XBRL 재무 데이터.
+
+| 컬럼 | 설명 |
+|--------|------------|
+| `bsns_year` | 사업연도 |
+| `reprt_code` | 보고서 분기 코드 |
+| `stock_code` | 종목코드 |
+| `corp_name` | 회사명 |
+| `fs_div` | `CFS`(연결) / `OFS`(별도) |
+| `sj_div` | 재무제표 구분 (BS/IS/CF/SCE) |
+| `account_id` | XBRL 계정 ID |
+| `account_nm` | 계정명(한글) |
+| `thstrm_amount` | 당기 금액 |
+| `frmtrm_amount` | 전기 금액 |
+| `bfefrmtrm_amount` | 전전기 금액 |
+
+### dart/report · 정형 공시
+
+지배구조, 보수, 지분, 배당 등을 다루는 DART API 28종.
+
+| 컬럼 | 설명 |
+|--------|------------|
+| `apiType` | API 분류 (예: `dividend`, `employee`, `executive`) |
+| `year` | 연도 |
+| `quarter` | 분기 |
+| `stockCode` | 종목코드 |
+| `corpCode` | DART 고유번호 |
+| *(가변)* | 분류별 컬럼 |
+
+**28종 API:** dividend, employee, executive, majorHolder, treasuryStock, capitalChange, auditOpinion, stockTotal, outsideDirector, corporateBond 등.
+
+### 그 외 데이터
+
+| 경로 | 내용 |
+|---|---|
+| `edgar/panel` | 미국 공시 본문 수평화 (회사당, cross-market 16-col) |
+| `edgar/financeStmt` | 미국 재무제표 (DART finance 와 동형 표준화) |
+| `edgar/prices/company` | 미국 회사별 일별 OHLCV |
+| `gov/prices/company` | 한국 회사별 일별 OHLCV + 시가총액 |
+| `gov/indices/index` | KOSPI·KOSDAQ 등 지수별 일별 시계열 |
+| `macro/fred` · `macro/ecos` · `macro/customs` | 미국·한국·무역 거시 시계열 |
+| `research/brokerage` | 증권사 리서치 링크 인덱스 (월별, 본문 없음) |
+
+## Python 으로 쓰기
+
+라이브러리가 필요한 parquet 을 자동으로 내려받고 로컬에 캐시합니다. API 키가 필요 없습니다.
+
+```python
+import dartlab
+
+c = dartlab.Company("005930")   # 삼성전자, HF 에서 자동 다운로드
+c.panel()                       # 공시 항목 × 기간 전체 격자
+c.panel("IS")                   # 손익계산서 (finance 정규화 숫자)
+c.panel("사업")                  # 사업 개요 등 공시 본문 행 검색
+```
+
+## parquet 을 직접 읽기
+
+종목코드별 parquet URL 을 어떤 도구로든 바로 읽을 수 있습니다.
+
+```python
+import polars as pl
+url = "https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main/dart/finance/005930.parquet"
+df = pl.read_parquet(url)
+```
+
+```python
+import duckdb
+duckdb.sql(f"SELECT * FROM read_parquet('{url}')")
+```
+
+> **엑셀 365**: 데이터 → 데이터 가져오기 → 파일에서 → Parquet 에서 → 위 URL. 또는 [데이터 센터](https://eddmpython.github.io/dartlab/data)에서 CSV·엑셀로 바로 받기.
+
+## 데이터 출처
 
 <img align="right" src="https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main/assets/avatar-discover.png" width="120">
 
-## Data Source
+- **DART** (한국): [dart.fss.or.kr](https://dart.fss.or.kr) · 금융감독원 전자공시시스템
+- **EDGAR** (미국): [sec.gov/edgar](https://www.sec.gov/edgar) · SEC 전자공시 시스템
+- **시세·지수**: 공공데이터포털·KRX
+- **거시**: 미국 FRED, 한국은행 ECOS, 관세청
 
-- **DART** (Korea): [dart.fss.or.kr](https://dart.fss.or.kr) — Korea's electronic disclosure system operated by the Financial Supervisory Service
-- **EDGAR** (US): [sec.gov/edgar](https://www.sec.gov/edgar) — SEC's Electronic Data Gathering, Analysis, and Retrieval system
+모두 공개된 정부·공공 공시 시스템에서 가져온 데이터입니다. 재무 수치는 원문 그대로 보존합니다(반올림·추정·보간 없음). 뉴스 본문은 언론사 저작권 때문에 데이터셋에 포함하지 않습니다.
 
-All data is sourced from public government disclosure systems. Financial figures are preserved as-is from the original filings — no rounding, no estimation, no interpolation.
+## 갱신 주기
 
-## Update Schedule
+GitHub Actions 로 매일 자동 갱신됩니다. 최근 공시를 증분으로 확인·수집합니다.
 
-This dataset is updated automatically via GitHub Actions (daily). Recent filings (last 7 days) are checked and collected incrementally.
+## 라이선스
 
-## License
+Apache 2.0 · [DartLab](https://github.com/eddmpython/dartlab) 과 동일.
 
-Apache 2.0 — same as [DartLab](https://github.com/eddmpython/dartlab).
+## 더 보기
 
-## Support
+<div align="center">
 
-If DartLab is useful for your work, consider supporting the project:
+<a href="https://www.youtube.com/shorts/97lYLWMWzvA"><img src="https://img.youtube.com/vi/97lYLWMWzvA/maxresdefault.jpg" alt="DartLab 30초 데모" width="320"></a>
 
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-Support-ffdd00?style=for-the-badge&labelColor=050811&logo=buy-me-a-coffee&logoColor=white)](https://buymeacoffee.com/eddmpython)
+<sub>▶ <a href="https://www.youtube.com/shorts/97lYLWMWzvA">DartLab 30초 데모</a></sub>
 
-- [GitHub Issues](https://github.com/eddmpython/dartlab/issues) — bug reports, feature requests
-- [Blog](https://eddmpython.github.io/dartlab/blog/) — 120+ articles on Korean disclosure analysis
+</div>
+
+- **GitHub** · [github.com/eddmpython/dartlab](https://github.com/eddmpython/dartlab)
+- **시작하기** · [DartLab 쉽게 시작하기](https://eddmpython.github.io/dartlab/blog/dartlab-easy-start)
+- **문서** · [eddmpython.github.io/dartlab](https://eddmpython.github.io/dartlab/)
+- **블로그** · [한국 공시 분석 글 120+편](https://eddmpython.github.io/dartlab/blog/)
+- **YouTube** · [@eddmpython](https://www.youtube.com/@eddmpython)
+
+## 후원
+
+DartLab 이 도움이 되셨다면 프로젝트를 후원해주세요.
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-후원-ffdd00?style=for-the-badge&labelColor=050811&logo=buy-me-a-coffee&logoColor=white)](https://buymeacoffee.com/eddmpython)
+
+- [GitHub Issues](https://github.com/eddmpython/dartlab/issues) · 버그 신고, 기능 제안
 """
 
 api = HfApi(token=token)
@@ -180,6 +257,6 @@ api.upload_file(
     repo_type="dataset",
     path_or_fileobj=README.encode("utf-8"),
     path_in_repo="README.md",
-    commit_message="update sponsor link to buymeacoffee.com/eddmpython",
+    commit_message="데이터셋 카드 한글 전면 개편: 웹 터미널·데이터 센터(CSV·엑셀·라이브 API) + 전체 데이터 surface 반영",
 )
 print("README.md 업로드 완료")
