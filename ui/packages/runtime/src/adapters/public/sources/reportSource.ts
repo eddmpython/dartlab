@@ -690,18 +690,25 @@ export function createReportSource(core: DataCore): ReportPort {
 	// 밸류에이션 스냅샷 — dart/scan/valuation.parquet 통파일 직독(소형 ~44KB, 전 종목 1행). 동종 밸류에이션
 	// 좌표(PER/PBR 업종 분포 백분위)용. report/ 하위가 아닌 scan 루트라 read() 헬퍼 대신 직접 통파일 read.
 	async function buildValuationSnapshot(): Promise<ValuationSnapshot | null> {
-		const rows = await core.requestParquetWholeFile<Row>({
-			origin: 'hf',
-			path: 'dart/scan/valuation.parquet',
-			columns: ['stockCode', 'per', 'pbr', 'marketCap'],
-			cacheKey: 'scan.valuation',
-			cache: { scope: 'memory', ttlMs: 6 * 3_600_000, maxEntries: 2 } // 일 1회 파생(snapshotAt) — 6h TTL 충분
-		});
-		if (!rows || !rows.length) return null;
+		// KR(dart) + US(edgar) 통파일 병합 — 같은 스키마, US ticker ∩ KR 6자리코드 무충돌(resolveMarket SSOT).
+		// US 미발행이면 .catch → KR 만. edgar/scan/valuation 은 KR dart/scan/valuation 동형(scan/builders/edgar/valuationBuild).
+		const readOne = (path: string) =>
+			core
+				.requestParquetWholeFile<Row>({
+					origin: 'hf',
+					path,
+					columns: ['stockCode', 'per', 'pbr', 'marketCap'],
+					cacheKey: `scan.valuation:${path}`,
+					cache: { scope: 'memory', ttlMs: 6 * 3_600_000, maxEntries: 2 } // 일 1회 파생(snapshotAt) — 6h TTL 충분
+				})
+				.catch(() => null);
+		const [kr, us] = await Promise.all([readOne('dart/scan/valuation.parquet'), readOne('edgar/scan/valuation.parquet')]);
 		const out: ValuationSnapshot = {};
-		for (const r of rows) {
-			const code = str(r.stockCode);
-			if (code) out[code] = { per: num(r.per), pbr: num(r.pbr), marketCap: num(r.marketCap) };
+		for (const rows of [kr, us]) {
+			for (const r of rows ?? []) {
+				const code = str(r.stockCode);
+				if (code) out[code] = { per: num(r.per), pbr: num(r.pbr), marketCap: num(r.marketCap) };
+			}
 		}
 		return Object.keys(out).length ? out : null;
 	}
