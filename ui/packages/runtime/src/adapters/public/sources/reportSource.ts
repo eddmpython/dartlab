@@ -7,6 +7,8 @@
 import type {
 	AuditFeeYear,
 	AuditYear,
+	BusinessTable,
+	BusinessTablesBundle,
 	CapitalChangeEvent,
 	CapitalChangesBundle,
 	NoteSeriesBundle,
@@ -34,6 +36,7 @@ import { resolveMarket } from '@dartlab/ui-contracts';
 import type { DataCore } from '../../../data/fetch/request';
 import { detectUnit, xbrlCellsFromContent } from './xbrlCells';
 import { buildSeries, costCells, segmentCells, type PeriodComposition } from './noteSeries';
+import { collapseColspanDupes, expandTables } from './tableGrid';
 
 const browser = typeof window !== 'undefined';
 
@@ -888,6 +891,75 @@ export function createReportSource(core: DataCore): ReportPort {
 		return { cost, segment };
 	}
 
+	// 사업 서술 표(생산능력·원재료·주요제품·매출수주) 토픽 → sectionLeaf 정규식.
+	const BIZ_SECTIONS: { topic: string; re: RegExp }[] = [
+		{ topic: 'salesOrder', re: /수주/ },
+		{ topic: 'rawMaterial', re: /원재료|생산설비|생산능력|가동/ },
+		{ topic: 'productService', re: /주요\s*제품|주요\s*서비스/ }
+	];
+
+	async function buildBusinessTables(code: string): Promise<BusinessTablesBundle | null> {
+		// 메타행("(단위: 억원)" 류 = 값 1개로 채워진 행) 건너뛴 실제 헤더 행 인덱스.
+		const headerStart = (grid: string[][]): number => {
+			for (let i = 0; i < Math.min(2, grid.length - 1); i++) if (new Set(grid[i]!.filter(Boolean)).size >= 2) return i;
+			return 0;
+		};
+		// 숫자 셀이 많은 표를 본문 표로 선호(목차·각주 표 배제).
+		const tableScore = (grid: string[][]): number => {
+			let n = 0;
+			for (const row of grid) for (const c of row) if (/\d{2,}/.test(c)) n++;
+			return n;
+		};
+		const pr = await core.requestParquetRows<{ period?: unknown }>({
+			origin: 'hfRange',
+			path: `dart/panel/${code}.parquet`,
+			columns: ['period'],
+			cacheKey: `panel.periods:${code}`,
+			cache: { scope: 'memory', ttlMs: 30 * 60_000, maxEntries: 128 }
+		});
+		const periods = [...new Set(pr.map((r) => str(r.period)).filter(Boolean))].sort();
+		if (!periods.length) return null;
+		// 서술 표는 사업보고서(Q4) 항목. 최신 Q4 우선, 없으면 최신 기간.
+		const annual = periods.filter((p) => p.endsWith('Q4'));
+		const target = (annual.length ? annual : periods).at(-1)!;
+		let lo = -1;
+		let hi = -1;
+		for (let i = 0; i < pr.length; i++)
+			if (str(pr[i]!.period) === target) {
+				if (lo < 0) lo = i;
+				hi = i;
+			}
+		if (lo < 0) return null;
+		const rows = await core.requestParquetRows<Row>({
+			origin: 'hfRange',
+			path: `dart/panel/${code}.parquet`,
+			columns: ['period', 'sectionLeaf', 'leafType', 'contentRaw'],
+			rowStart: lo,
+			rowEnd: hi + 1,
+			cacheKey: `panel.bizTables:${code}`,
+			cache: { scope: 'memory', ttlMs: 30 * 60_000, maxEntries: 64 }
+		});
+		const tableRows = rows.filter((r) => str(r.period) === target && str(r.leafType) === 'table');
+		const tables: BusinessTable[] = [];
+		for (const { topic, re } of BIZ_SECTIONS) {
+			let best: { grid: string[][]; title: string; score: number } | null = null;
+			for (const r of tableRows) {
+				if (!re.test(str(r.sectionLeaf))) continue;
+				for (const g0 of expandTables(str(r.contentRaw))) {
+					const grid = collapseColspanDupes(g0);
+					if (grid.length < 2 || grid[0]!.length < 2) continue;
+					const sc = tableScore(grid);
+					if (!best || sc > best.score) best = { grid, title: str(r.sectionLeaf), score: sc };
+				}
+			}
+			if (best && best.score > 0) {
+				const g = best.grid.slice(headerStart(best.grid)).slice(0, 40);
+				if (g.length >= 2) tables.push({ topic, title: best.title, period: target, headers: g[0]!, rows: g.slice(1) });
+			}
+		}
+		return tables.length ? { tables } : null;
+	}
+
 	// ── ReportPort · 각 메서드는 guarded(브라우저 가드 + null 폴백) 로 build 함수를 감싼다.
 	// shareholders 는 shareholderPeriods 의 최신기로 파생(단일 read 공유, 코어가 dedup). ──
 	return {
@@ -904,6 +976,7 @@ export function createReportSource(core: DataCore): ReportPort {
 		auditTrail: (code) => guarded(() => buildAuditTrail(code.trim())),
 		topExecPay: (code) => guarded(() => buildTopExecPay(code.trim())),
 		auditFees: (code) => guarded(() => buildAuditFees(code.trim())),
-		noteSeries: (code) => guarded(() => buildNoteSeries(code.trim()))
+		noteSeries: (code) => guarded(() => buildNoteSeries(code.trim())),
+		businessTables: (code) => guarded(() => buildBusinessTables(code.trim()))
 	};
 }

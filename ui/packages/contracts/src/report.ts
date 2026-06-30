@@ -194,10 +194,24 @@ export interface CompositionSeries {
 	categories: string[]; // 안정 카테고리(표시명) — 전 기간 합계 desc 상위 K (비용은 마지막 '기타' 롤업). 색·범례·적층 순서 SSOT
 	points: CompositionPoint[]; // period 오름차순
 }
-// 비용 체질 + 부문별 매출 — 둘 다 없으면(미공시/단일부문) 각각 null.
+// 비용 체질 + 부문별 매출. 둘 다 없으면(미공시/단일부문) 각각 null.
 export interface NoteSeriesBundle {
 	cost: CompositionSeries | null; // 비용 성격별(acode 카테고리)
 	segment: CompositionSeries | null; // 부문별 매출(axisPath 세그먼트). 단일부문/미태깅이면 null
+}
+
+// ── 사업 서술 표 — II.사업의내용의 HTML 표(생산능력·가동률·원재료·주요제품·매출수주)를 격자전개
+// (tableGrid)로 직사각 정규화한 일반 표. panel contentRaw 런타임 직독(별도 bake 0). XBRL 셀이 아닌
+// 표 레이아웃이라 typed 시계열 대신 헤더+행 그대로 노출(CleanTable). 최신 사업보고서(Q4) 기준. ──
+export interface BusinessTable {
+	topic: string; // 'salesOrder' | 'rawMaterial' | 'productService'
+	title: string; // sectionLeaf (사람이 읽는 섹션명)
+	period: string; // 'YYYYQn'
+	headers: string[]; // 표 헤더 행
+	rows: string[][]; // 데이터 행 (헤더 제외, 격자 정렬)
+}
+export interface BusinessTablesBundle {
+	tables: BusinessTable[]; // 토픽별 본문 표 (없으면 빈 배열로 오지 않고 bundle 자체 null)
 }
 
 export interface ReportPort {
@@ -220,4 +234,7 @@ export interface ReportPort {
 	/** 주석 구성 시계열 — 비용 성격별(acode) + 부문별 매출(axisPath). panel contentRaw 의 정부 XBRL 태그 런타임 직독
 	 * (별도 bake 0). 최근 분기(ACONTEXT 2025-03+)만. 우측 글랜스·상세 다이얼로그 공용. 둘 다 없으면 null. */
 	noteSeries(code: string): Promise<NoteSeriesBundle | null>;
+	/** 사업 서술 표. II.사업의내용 HTML 표(생산능력·가동률·원재료·주요제품·매출수주)를 격자전개로 정규화.
+	 * panel contentRaw 런타임 직독(별도 bake 0). 최신 사업보고서(Q4) 기준. 표 없으면 null. */
+	businessTables(code: string): Promise<BusinessTablesBundle | null>;
 }
