@@ -107,3 +107,20 @@ def test_eval_new_orders_custom_threshold():
     df = FakeDF([{"stockCode": "555555", "bookToBill": 1.5, "recentRevenue": 1e12, "nContract": 3}])
     assert watch.eval_new_orders(df, min_book_to_bill=2.0) == []  # 임계 상향 → 제외
     assert len(watch.eval_new_orders(df, min_book_to_bill=1.0)) == 1
+
+
+# ── 발송 위생: 토픽별 cap (조용한 절단 금지) ──────────────────────────
+def test_cap_matches_per_topic_order_preserved():
+    ms = [{"topic": "newIpo", "slug": str(i)} for i in range(5)] + [
+        {"topic": "newOrders", "slug": str(i)} for i in range(4)
+    ]
+    kept, dropped = watch.cap_matches(ms, caps={"newIpo": 3, "newOrders": 2})
+    assert [m["slug"] for m in kept if m["topic"] == "newIpo"] == ["0", "1", "2"]  # 앞 3개(관련도순) 유지
+    assert sum(1 for m in kept if m["topic"] == "newOrders") == 2
+    assert len(dropped) == 4  # ipo 2 + orders 2 초과
+
+
+def test_cap_matches_under_cap_keeps_all():
+    ms = [{"topic": "newIpo", "slug": "a"}, {"topic": "newOrders", "slug": "b"}]
+    kept, dropped = watch.cap_matches(ms)
+    assert len(kept) == 2 and dropped == []

@@ -104,6 +104,29 @@ def eval_new_orders(df=None, min_book_to_bill: float = 1.0) -> list[dict]:
 
 _EVALUATORS = {"newIpo": eval_new_ipo, "newOrders": eval_new_orders}
 
+# 발송 위생 — 토픽별 1회 발송 cap(폭주 방지). 24h dedupe 는 허브 sentNonce 가 영구 멱등으로 처리(별도 불요).
+# 조용한 시간(22~08)은 cron 발화시각(평일 17시 KST)이 구조적으로 회피 — 야간 배치 큐는 미도입(YAGNI).
+_TOPIC_CAP = {"newIpo": 20, "newOrders": 15}
+
+
+def cap_matches(matches: list[dict], caps: dict[str, int] = _TOPIC_CAP) -> tuple[list[dict], list[dict]]:
+    """매치를 토픽별 cap 으로 자른다 — 입력 순서(scan 정렬=관련도순) 유지. (보낼것, 드롭) 반환.
+
+    조용한 절단 금지: 드롭분은 호출자가 로그한다.
+    """
+    kept: list[dict] = []
+    dropped: list[dict] = []
+    seen: dict[str, int] = {}
+    for m in matches:
+        t = m["topic"]
+        cap = caps.get(t, 50)
+        if seen.get(t, 0) < cap:
+            kept.append(m)
+            seen[t] = seen.get(t, 0) + 1
+        else:
+            dropped.append(m)
+    return kept, dropped
+
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="공개 왓처 토픽 러너")
@@ -135,6 +158,10 @@ def main() -> int:
     if not matches:
         print("[watch] 매치 0 — no-op", flush=True)
         return 0
+
+    matches, dropped = cap_matches(matches)
+    for m in dropped:  # 조용한 절단 금지 — 드롭 명시 로그
+        print(f"[watch] cap 초과 drop: {m['topic']}:{m['slug']}", flush=True)
 
     ts = int(time.time())
     new_sent = dup = 0
