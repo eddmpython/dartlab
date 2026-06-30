@@ -14,36 +14,50 @@ import polars as pl
 if TYPE_CHECKING:
     from dartlab.providers.edgar.company import Company
 
-# 직원 수 추출 패턴
+# 직원수 추출 패턴. providers(L1)가 파싱 SSOT. scan(L1.5) employeeBuild 가 downward import 로 공유한다.
+# 구체 우선(approximately/had/total of...) 후 일반("NNN employees"). 첫 매칭 채택.
 _EMPLOYEE_PATTERNS = [
-    # "approximately 164,000 full-time employees"
     re.compile(r"approximately\s+([\d,]+)\s+(?:full[- ]?time\s+)?employees", re.IGNORECASE),
-    # "had approximately 161,000 employees"
     re.compile(r"had\s+approximately\s+([\d,]+)\s+employees", re.IGNORECASE),
-    # "employed approximately 228,000 people"
     re.compile(r"employed?\s+approximately\s+([\d,]+)\s+(?:people|personnel|workers)", re.IGNORECASE),
-    # "total of 181,000 employees"
     re.compile(r"total\s+of\s+([\d,]+)\s+employees", re.IGNORECASE),
-    # "181,000 full-time equivalent employees"
     re.compile(r"([\d,]+)\s+full[- ]?time\s+(?:equivalent\s+)?employees", re.IGNORECASE),
-    # "We had 221,000 employees"
     re.compile(r"(?:we|the company)\s+had\s+([\d,]+)\s+employees", re.IGNORECASE),
-    # "our workforce of approximately 150,000"
     re.compile(r"workforce\s+of\s+approximately\s+([\d,]+)", re.IGNORECASE),
-    # 단순 "NNN,NNN employees"
     re.compile(r"([\d,]+)\s+employees", re.IGNORECASE),
 ]
 
 
-def _parseNumber(text: str) -> int | None:
-    """쉼표 제거 후 정수 변환."""
-    cleaned = text.replace(",", "").strip()
-    try:
-        val = int(cleaned)
-        # 상식적 범위: 10명 ~ 5,000,000명
-        return val if 10 <= val <= 5_000_000 else None
-    except ValueError:
-        return None
+def parseEmployeeCount(text: str) -> int | None:
+    """10-K 본문 텍스트에서 직원수 추출. 패턴 우선순위 + 상식 범위(10~5,000,000) 가드.
+
+    구체 패턴(approximately/had/total of...)을 먼저 시도하고, 매칭 시 쉼표 제거 후 정수화한다. 상식
+    범위를 벗어난 값(오탐. 연도·금액 등)은 거른다. scan ``employeeBuild`` 가 본 함수를 공유한다(파싱 SSOT).
+
+    Args:
+        text: 10-K Item1/Human Capital 등의 본문 텍스트.
+
+    Returns:
+        int | None. 직원수(10~5M). 패턴 미매칭 또는 범위 밖이면 None.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> parseEmployeeCount("we had approximately 164,000 full-time employees")
+        164000
+    """
+    for pattern in _EMPLOYEE_PATTERNS:
+        match = pattern.search(text)
+        if match:
+            cleaned = match.group(1).replace(",", "").strip()
+            try:
+                val = int(cleaned)
+            except ValueError:
+                continue
+            if 10 <= val <= 5_000_000:
+                return val
+    return None
 
 
 def extractEmployee(company: "Company") -> pl.DataFrame | None:
@@ -101,7 +115,7 @@ def extractEmployee(company: "Company") -> pl.DataFrame | None:
                 for pcol in periodCols:
                     texts = item1Topics[pcol].drop_nulls().to_list()
                     fullText = " ".join(str(t) for t in texts)
-                    count = _extractEmployeeCount(fullText)
+                    count = parseEmployeeCount(fullText)
                     if count is not None:
                         rows.append({"period": pcol, "employeeCount": count, "source": "10-K_text"})
 
@@ -148,14 +162,3 @@ def _getEmployeeFacts(company: "Company") -> list[dict]:
         return records
     except (pl.exceptions.ComputeError, OSError):
         return []
-
-
-def _extractEmployeeCount(text: str) -> int | None:
-    """텍스트에서 직원 수 추출."""
-    for pattern in _EMPLOYEE_PATTERNS:
-        match = pattern.search(text)
-        if match:
-            val = _parseNumber(match.group(1))
-            if val is not None:
-                return val
-    return None

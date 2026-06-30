@@ -160,10 +160,11 @@ jobs:
         run: |
           uv run python -X utf8 -c "
           from dartlab.scan.builders.edgar import buildEdgarFinance, buildEdgarValuation
-          from dartlab.scan.builders.edgar.report import buildEdgarReport
+          from dartlab.scan.builders.edgar.report import buildEdgarReport, buildEdgarEmployee
           buildEdgarFinance(sinceYear=2021, verbose=True)
           buildEdgarValuation(verbose=True)
           buildEdgarReport(verbose=True)
+          buildEdgarEmployee(verbose=True)
           "
         env:
           DARTLAB_DATA_DIR: ${{ github.workspace }}/data
