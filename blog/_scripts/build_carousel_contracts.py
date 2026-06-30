@@ -102,6 +102,10 @@ def _normalize_slide(raw: object) -> dict | None:
         v = raw.get(f)
         if v not in (None, ""):
             slide[f] = v
+    # 하이브리드 시각 슬롯 — 큰문장 아래 증거(렌더링 계약). dict 그대로 통과(종류·필드 검증은 cards_plan 게이트).
+    vis = raw.get("visual")
+    if isinstance(vis, dict) and vis.get("kind"):
+        slide["visual"] = vis
     return slide
 
 

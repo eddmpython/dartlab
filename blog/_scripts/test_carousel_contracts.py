@@ -20,6 +20,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import build_carousel_contracts as bcc  # noqa: E402
+import cards_plan as cp  # noqa: E402
 import migrate_carousels_to_blog as mig  # noqa: E402
 
 
@@ -254,6 +255,32 @@ def test_migration_idempotent(tmp_path: Path) -> None:
     assert mig._has_carousel(idx) is True
     assert mig._inject(idx, block) is False  # 멱등 — 두 번째 주입 안 함
     assert idx.read_text(encoding="utf-8") == first  # 본문/frontmatter 불변
+
+
+def test_visual_contract_gate() -> None:
+    """하이브리드 visual 렌더링 계약 게이트 + 확장 루프 — 렌더러 구현분만 통과, 나머지는 '추가하라'로 막는다."""
+
+    def contract(visual: dict) -> dict:
+        return {"slides": [{"layout": "editorialBeat", "line": "큰문장입니다", "visual": visual}]}
+
+    # 렌더러 구현분(bars/line/table) — 필드 유효하면 통과
+    assert (
+        cp.validate_contract_visuals(
+            "s", contract({"kind": "bars", "rows": [{"label": "a", "value": 1, "display": "1"}]})
+        )
+        == []
+    )
+    assert cp.validate_contract_visuals("s", contract({"kind": "line", "series": [1, 2, 3]})) == []
+    # 등록됐으나 렌더러 미구현(finChart) → 확장 루프(렌더러 추가) 안내로 막힘
+    errs = cp.validate_contract_visuals("s", contract({"kind": "finChart", "stockCode": "005930"}))
+    assert errs and "렌더러 미구현" in errs[0]
+    # 미등록 계약(sankey) → 레지스트리 추가(확장 루프) 안내로 막힘
+    errs2 = cp.validate_contract_visuals("s", contract({"kind": "sankey"}))
+    assert errs2 and "미등록" in errs2[0]
+    # 필수 필드 누락(line series<2) → 막힘
+    assert cp.validate_contract_visuals("s", contract({"kind": "line", "series": [1]}))
+    # visual 없는 슬라이드(기존 카드) → 무회귀(통과)
+    assert cp.validate_contract_visuals("s", {"slides": [{"layout": "editorialBeat", "line": "x"}]}) == []
 
 
 if __name__ == "__main__":

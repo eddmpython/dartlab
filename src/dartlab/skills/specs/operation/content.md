@@ -83,6 +83,15 @@ lastUpdated: 2026-06-30
 - 카드뉴스 — 스파인을 슬라이드로. layout 3종: editorial(표지) / editorialBeat(문장 비트, 숫자를 문장에 녹임, 스캔독해 주력) / editorialStat(큰 숫자, 단 context에 완성 문장 필수). stat 남발 금지, beat 위주. 카드 수는 이야기가 필요한 만큼(7~10 권장, 상한 없음). 숫자 증거는 작은 sub에 두어 큰문장을 가리지 않는다.
 - 블로그 — 막마다 장면 → 숫자 → 반전 → 판단. 글쓰기 다듬기 규칙은 `blog/BLOG.md`.
 
+## 렌더링 계약 레지스트리 + 기획-구동 확장 루프
+카드를 "있는 레이아웃"에 맞추지 않는다. 기획이 필요로 하는 시각을 *선언*하면 파이프라인이 거기 맞춰 자란다. 글만 쓰지 말고, 주장에 그 주장을 증명하는 시각을 붙인다(작가 craft '신뢰'의 시각판).
+- **레지스트리(정례화)** — 카드가 쓸 수 있는 계약의 공식 카탈로그. 각 계약 = 스키마 + 렌더러 + whenToUse.
+  - 레이아웃: `editorial`(표지) · `editorialBeat`(문장 비트) · `editorialStat`(큰 숫자)
+  - 시각 슬롯(`visual`, editorialBeat에 부착) — 큰문장 아래 붙는 증거: `bars` · `line` · `table`(렌더러 구현분) · `finChart`(등록만, 렌더러는 확장 루프로)
+- **강한 기획** — beat마다 큰문장 + "이 주장을 어떤 계약으로 증명하나"를 plan에서 선언한다. "원가 마진을 많이 남긴다"면 옆에 마진 추이(line/finChart)를 붙여 글+시각으로 받친다. 설명만 하고 끝내지 않는다.
+- **확장 루프(없으면 그때그때 개선)** — 부른 계약이 레지스트리에 있고 렌더러가 있으면 bind. 없거나(미등록) 렌더러 미구현이면 `build_carousel_contracts.py` 게이트가 "계약 없음 → 추가"로 멈춘다 → 계약 추가(model 타입 + CardSlide 렌더러 + cards_plan 레지스트리 등록 + 이 표 갱신) → 재기획해 bind. **파이프라인이 가장 강한 기획에 맞춰 자란다.** (insightContract 게이트 추가가 이 루프의 첫 실례였다.)
+- 기계 게이트 SSOT = `cards_plan.py`(`VISUAL_CONTRACTS_RENDERABLE`/`REGISTERED` + `validate_contract_visuals`). 렌더 SSOT = `landing/src/lib/cards/CardSlide.svelte`(visual 슬롯).
+
 ## 2. 평가·개선 루프 — 실제로 거르고 다시 쓰게 한다
 도장 찍는 루프가 아니다. 서로 다른 전문 에디터가 독립 비평하고 각자 재작성을 강제할 권한을 갖는다. 최소 2회전, 모두가 "공유하겠다"로 수렴할 때까지.
 - 스캔독해(서사) — 큰문장만 읽어 완결되나. 끊기거나 맨숫자로 무너지는 카드를 잡아 재작성.

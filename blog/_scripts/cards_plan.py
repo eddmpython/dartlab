@@ -129,6 +129,19 @@ CLOSING_TOKENS = (
 )
 SENTENCE_END_RE = re.compile(r"[다요까죠][.!?…)]*$")
 
+# ── 렌더링 계약 레지스트리 — 카드가 쓸 수 있는 시각 계약의 공식 카탈로그(정례화) ──
+# 기획이 beat 마다 큰문장 + visual 계약을 선언한다. 부른 계약이 RENDERABLE(렌더러 구현분)이면 통과,
+# REGISTERED 이나 렌더러 미구현(예: finChart)이면 게이트가 "계약 추가(확장 루프)"로 막는다 —
+# 파이프라인이 가장 강한 기획에 맞춰 자라게 하는 닫힌 루프의 기계 게이트. SSOT 표는 operation.content.
+LAYOUT_CONTRACTS = ("editorial", "editorialBeat", "editorialStat")
+VISUAL_CONTRACTS_RENDERABLE = ("bars", "line", "table")  # CardSlide 에 렌더러 구현분 — 발행 통과
+VISUAL_CONTRACTS_REGISTERED = (
+    "bars",
+    "line",
+    "table",
+    "finChart",
+)  # 카탈로그 등록분(finChart=등록만, 렌더러는 확장 루프로)
+
 
 def rel(path: Path) -> str:
     try:
@@ -769,6 +782,51 @@ def validate_contract_readability(slug: str, contract: dict[str, Any]) -> list[s
     return errors
 
 
+def validate_contract_visuals(slug: str, contract: dict[str, Any]) -> list[str]:
+    """하이브리드 visual 슬롯 검증 + 확장 루프 게이트.
+
+    부른 시각 계약이 미등록이면 "레지스트리에 추가", 등록됐으나 렌더러 미구현이면
+    "CardSlide 렌더러 추가(확장 루프) 후 발행" 으로 막는다. 종류별 필수 필드도 본다.
+    """
+    errors: list[str] = []
+    for idx, slide in enumerate(contract.get("slides", []), start=1):
+        if not isinstance(slide, dict):
+            continue
+        vis = slide.get("visual")
+        if vis in (None, "", {}):
+            continue
+        if not isinstance(vis, dict):
+            errors.append(f"{slug}: slide[{idx}].visual 은 객체여야 함")
+            continue
+        kind = str(vis.get("kind") or "")
+        if kind not in VISUAL_CONTRACTS_REGISTERED:
+            errors.append(
+                f"{slug}: slide[{idx}].visual.kind {kind!r} 미등록 렌더링 계약 — "
+                f"레지스트리에 계약 추가(확장 루프). 등록분: {', '.join(VISUAL_CONTRACTS_REGISTERED)}"
+            )
+            continue
+        if kind not in VISUAL_CONTRACTS_RENDERABLE:
+            errors.append(
+                f"{slug}: slide[{idx}].visual.kind {kind!r} 은 등록됐으나 렌더러 미구현 — "
+                "CardSlide 에 렌더러 추가(확장 루프) 후 발행"
+            )
+            continue
+        if kind == "bars" and not (isinstance(vis.get("rows"), list) and vis.get("rows")):
+            errors.append(f"{slug}: slide[{idx}].visual(bars) 는 rows 가 필요함")
+        elif kind == "line":
+            series = vis.get("series")
+            if not (isinstance(series, list) and sum(1 for n in series if isinstance(n, (int, float))) >= 2):
+                errors.append(f"{slug}: slide[{idx}].visual(line) 은 series 최소 2개 수치가 필요함")
+        elif kind == "table" and not (
+            isinstance(vis.get("cols"), list)
+            and vis.get("cols")
+            and isinstance(vis.get("data"), list)
+            and vis.get("data")
+        ):
+            errors.append(f"{slug}: slide[{idx}].visual(table) 는 cols·data 가 필요함")
+    return errors
+
+
 def load_plan_file(path: Path) -> tuple[dict[str, Any] | None, list[str]]:
     try:
         plan = json.loads(path.read_text(encoding="utf-8"))
@@ -827,10 +885,12 @@ def validate_contract_plan_gate(
             )
         copy_errors = validate_contract_readability(slug, contract)
         flow_errors = validate_contract_big_sentence_flow(slug, contract) if strict_big_sentence else []
-        if plan_errors or copy_errors or flow_errors:
+        visual_errors = validate_contract_visuals(slug, contract)
+        if plan_errors or copy_errors or flow_errors or visual_errors:
             errors.extend(f"{rel(plan_path)}: {err}" for err in plan_errors)
             errors.extend(copy_errors)
             errors.extend(flow_errors)
+            errors.extend(visual_errors)
         else:
             stats["passed"] += 1
     return errors, stats

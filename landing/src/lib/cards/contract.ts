@@ -42,7 +42,7 @@ export function contractToCards(contract: CarouselContract, media: MediaIndex | 
 			return { kind: 'editorialStat', kicker: s.kicker, bigNumber: s.bigNumber ?? '', unit: s.unit, context: s.context, bg };
 		}
 		if (s.layout === 'editorialBeat') {
-			return { kind: 'editorialBeat', kicker: s.kicker, line: s.line ?? '', sub: s.sub, bg };
+			return { kind: 'editorialBeat', kicker: s.kicker, line: s.line ?? '', sub: s.sub, visual: s.visual, bg };
 		}
 		return { kind: 'editorial', date: s.date, line: s.line ?? '', sub: s.sub, bg };
 	});

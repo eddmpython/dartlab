@@ -7,7 +7,7 @@
 	import { pickKrwUnit, fmtKrw } from '@dartlab/ui-format/krw';
 	import { CARD, CARD_SERIES, accentParts, stripDots } from './theme';
 	import { cellTone, verdictTone, TXT_COLS, lineGeo, wonLabel } from '$lib/report/render';
-	import type { CarouselCard } from './model';
+	import type { CarouselCard, SlideVisual } from './model';
 
 	let { card, rt }: { card: CarouselCard; rt: DartLabRuntime } = $props();
 
@@ -71,11 +71,13 @@
 	const photoMode = $derived(
 		card.kind === 'cover'
 			? 'cover'
-			: EDITORIAL_KINDS.has(card.kind)
-				? 'editorial'
-				: CHART_KINDS.has(card.kind)
-					? 'dim'
-					: 'full'
+			: card.kind === 'editorialBeat' && card.visual
+				? 'dim' // 하이브리드(큰문장+시각) — 차트처럼 dim 처리해 증거가 읽히게
+				: EDITORIAL_KINDS.has(card.kind)
+					? 'editorial'
+					: CHART_KINDS.has(card.kind)
+						? 'dim'
+						: 'full'
 	);
 
 	let finCards = $state<{ card: FinCard; periods: string[] } | null>(null);
@@ -205,6 +207,37 @@
 	<span class={cls}>{#each accentParts(stripDots(commaText(text))) as p}<span class:hl={p.accent}>{p.text}</span>{/each}</span>
 {/snippet}
 
+{#snippet visualBlock(v: SlideVisual)}
+	{#if v.kind === 'bars'}
+		{@const mx = Math.max(1, ...v.rows.map((r) => Math.abs(r.value)))}
+		<div class="vBars">
+			{#each v.rows as r (r.label)}
+				<div class="bar"><span class="bL">{r.label}</span><span class="bT"><span class="bF" class:neg={r.tone === 'neg'} style="width:{(Math.abs(r.value) / mx) * 100}%"></span></span><span class="bV">{r.display}</span></div>
+			{/each}
+		</div>
+	{:else if v.kind === 'line'}
+		{@const g = lineGeo(v.series, v.markers ?? [])}
+		{#if g}
+			<svg viewBox="0 0 100 30" preserveAspectRatio="none" class="vLine">
+				<polygon points={g.area} class="lArea" />
+				<polyline points={g.pts} class="lLine" />
+				{#each g.mk as m}<line x1="0" x2="100" y1={m.y} y2={m.y} class="lMark" />{/each}
+				<circle cx={g.lastX} cy={g.lastY} r="0.9" class="lDot" />
+			</svg>
+		{/if}
+		<div class="vMeta">
+			{#if v.xLabels}<span>{v.xLabels[0]} → {v.xLabels[1]}</span>{/if}
+			{#if v.markers?.length}{#each v.markers as m (m.label)}<span>{m.label} {v.valueFmt === 'won' ? wonLabel(m.v) : m.v}</span>{/each}{/if}
+		</div>
+	{:else if v.kind === 'table'}
+		<table class="cT vTable">
+			<thead><tr>{#each v.cols as c, ci (c)}<th class:num={ci !== 0}>{ci === 0 && v.unit ? `${c} · ${v.unit}` : c}</th>{/each}</tr></thead>
+			<tbody>{#each v.data as row, ri (ri)}<tr>{#each v.cols as c, ci (c)}<td class:num={ci !== 0} class={ci === 0 || TXT_COLS.has(c) ? verdictTone(row[c]) : cellTone(row[c])}>{row[c] ?? '-'}</td>{/each}</tr>{/each}</tbody>
+		</table>
+	{/if}
+	{#if v.caption}<p class="vCap">{stripDots(commaText(v.caption))}</p>{/if}
+{/snippet}
+
 <article class="slide pm-{photoMode}">
 	{#if card.bg}
 		<img class="bg" src={card.bg} alt="" loading="lazy" />
@@ -218,6 +251,16 @@
 				<h2 class="bigName">{card.corpName}</h2>
 				<p class="lead">{@render accent(card.conclusion)}</p>
 				<p class="mono">{card.stockCode} · {card.dataBasis}</p>
+			</div>
+		{:else if card.kind === 'editorialBeat' && card.visual}
+			<!-- 하이브리드 — 큰문장(주장) + 시각(증거). 글만 쓰지 않고 그 주장을 차트가 받친다. -->
+			<div class="hybrid">
+				<div class="hybTop">
+					{#if card.kicker}<span class="eyebrow">{card.kicker}</span>{/if}
+					<h2 class="hLine">{@render accent(card.line)}</h2>
+				</div>
+				<div class="hViz">{@render visualBlock(card.visual)}</div>
+				{#if card.sub}<p class="eSub hSub">{stripDots(commaText(card.sub))}</p>{/if}
 			</div>
 		{:else if card.kind === 'editorial' || card.kind === 'editorialBeat'}
 			<div class="editorial">
@@ -553,6 +596,75 @@
 		-webkit-box-orient: vertical;
 		-webkit-line-clamp: 2; /* 긴 unit 2줄까지(그 이상은 클립) */
 		overflow: hidden;
+	}
+	/* 하이브리드 — 큰문장(주장, 위) + 시각(증거, 중) + 받침(아래). 글만이 아니라 차트가 주장을 받친다. */
+	.hybrid {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 0.7em;
+		min-height: 0;
+	}
+	.hybTop {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35em;
+	}
+	.hLine {
+		margin: 0;
+		font-size: clamp(19px, 4.8cqw, 38px);
+		font-weight: 900;
+		line-height: 1.16;
+		letter-spacing: -0.01em;
+		color: #f4f6fb;
+		white-space: pre-line;
+		word-break: keep-all;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 3;
+		overflow: hidden;
+	}
+	.hViz {
+		flex: 1 1 auto;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		gap: 0.55em;
+		background: rgba(5, 8, 17, 0.6);
+		border: 1px solid rgba(30, 36, 51, 0.7);
+		border-radius: 12px;
+		padding: 5% 5.5%;
+		box-sizing: border-box;
+	}
+	.hSub {
+		flex: 0 0 auto;
+	}
+	.vBars {
+		display: flex;
+		flex-direction: column;
+		gap: 0.55em;
+	}
+	.vLine {
+		width: 100%;
+		height: clamp(90px, 22cqw, 150px);
+	}
+	.vMeta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3em 1.1em;
+		font-size: clamp(10px, 2.2cqw, 15px);
+		color: #94a3b8;
+		font-variant-numeric: tabular-nums;
+	}
+	.vCap {
+		margin: 0;
+		font-size: clamp(10px, 2.2cqw, 14px);
+		color: #9aa7c0;
+		line-height: 1.4;
+	}
+	.vTable {
+		font-size: clamp(9px, 2cqw, 14px);
 	}
 	/* cover */
 	.cover {
