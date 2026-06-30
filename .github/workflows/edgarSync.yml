@@ -153,15 +153,19 @@ jobs:
           path: data/dart/searchCatalog/edgarPanel/**
           if-no-files-found: ignore
 
-      # ── 4. scan 프리빌드 (다년 패널 — finance-us 5Y 소스) ──
-      - name: Build EDGAR scan prebuild
+      # ── 4. scan 프리빌드 (다년 패널 — finance-us 5Y 소스 + valuation) ──
+      # finance 직후 valuation(같은 facts + prices-snapshot 직독, 별도 수집 0). 둘 다 data/edgar/scan/ 에
+      # 쓰면 아래 deployEdgarToHF(['scan']) 가 통째 발행(KR dart/scan/valuation 대칭).
+      - name: Build EDGAR scan prebuild (finance + valuation)
         run: |
           uv run python -X utf8 -c "
-          from dartlab.scan.builders.edgar import buildEdgarFinance
+          from dartlab.scan.builders.edgar import buildEdgarFinance, buildEdgarValuation
           buildEdgarFinance(sinceYear=2021, verbose=True)
+          buildEdgarValuation(verbose=True)
           "
         env:
           DARTLAB_DATA_DIR: ${{ github.workspace }}/data
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
       # ── 4b. US 터미널 게이트 집계 (finance-us / search-us JSON) ──
       # 브라우저 터미널 raw.finance / raw.index 의 US 분 — scan 집계(위에서 빌드)를 reshape.

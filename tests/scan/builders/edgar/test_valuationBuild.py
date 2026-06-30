@@ -70,6 +70,26 @@ def test_valuation_no_price_excluded():
     assert computeValuationRow(facts, "NOPX", None, asOf=_AS_OF) is None
 
 
+def test_valuation_row_schema_matches_runtime():
+    """출력 행 키 = KR valuation.parquet 동형 + 런타임 reportSource 가 읽는 4컬럼 포함(계약 가드)."""
+    from dartlab.scan.builders.edgar.valuationBuild import computeValuationRow
+
+    facts = _facts(
+        [
+            {"namespace": "dei", "tag": "EntityCommonStockSharesOutstanding", "val": 1_000_000.0},
+            {"namespace": "us-gaap", "tag": "EarningsPerShareDiluted", "val": 5.0},
+            {"namespace": "us-gaap", "tag": "StockholdersEquity", "val": 2_000_000.0},
+        ]
+    )
+    row = computeValuationRow(facts, "SCHEMA", 100.0, asOf=_AS_OF)
+    assert row is not None
+    # KR _RAW_SCHEMA 동형 (stockCode + marketCap·per·pbr·current·dividendYield·snapshotAt)
+    assert set(row) == {"stockCode", "marketCap", "per", "pbr", "current", "dividendYield", "snapshotAt"}
+    # reportSource.buildValuationSnapshot 가 직독하는 4컬럼 — 반드시 존재
+    for col in ("stockCode", "per", "pbr", "marketCap"):
+        assert col in row
+
+
 def test_valuation_negative_eps_no_per():
     """적자(EPS≤0·netIncome≤0)면 per=None, 그러나 marketCap·pbr 은 유지."""
     from dartlab.scan.builders.edgar.valuationBuild import computeValuationRow
