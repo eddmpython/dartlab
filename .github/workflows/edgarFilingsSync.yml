@@ -1,0 +1,41 @@
+name: EDGAR Filings Sync (submissions bulk)
+
+# US 공시 피드 — SEC submissions.zip(~1.3GB) bulk → edgar/allFilings/{recent,market_recent}.parquet.
+# 수시공시(8-K·DEF 14A·SC 13·Form 4 등) 전 종목. 정기보고서(10-K/10-Q)는 제외(재무 패널 몫).
+# KR allFilings(buildAllFilingsRecent) 대칭. 주 1회 — 수시공시는 일 단위 급변 아님(daily 는 과함).
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # 매주 월요일 UTC 06:00
+  workflow_dispatch:
+    inputs:
+      sinceYear:
+        description: 'filingDate 연도 하한(피드 윈도)'
+        default: '2023'
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hf-edgar-filings
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+      - name: Set up Python
+        run: uv python install 3.12
+      - name: Install dependencies
+        run: uv sync
+      - name: Build EDGAR filings feed (submissions bulk → recent + market_recent → HF)
+        run: |
+          uv run python -X utf8 .github/scripts/sync/buildEdgarAllFilingsRecent.py --since-year "${{ github.event.inputs.sinceYear || '2023' }}"
+        env:
+          DARTLAB_DATA_DIR: ${{ github.workspace }}/data
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}

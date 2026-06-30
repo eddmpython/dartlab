@@ -325,6 +325,82 @@ def findRegularFilings(
     return rows
 
 
+def findAllFilings(
+    submissions: dict[str, Any],
+    *,
+    sinceYear: int = 2023,
+    since: str | date | datetime | None = None,
+    until: str | date | datetime | None = None,
+) -> list[dict[str, Any]]:
+    """submissions 의 ``filings.recent`` 블록에서 **전 form** filing 메타를 뽑는다 (네트워크 0).
+
+    공시 피드(수시공시 8-K·DEF 14A·SC 13·Form 4 등)용 — ``findRegularFilings`` 의 형제지만
+    ``SUPPORTED_REGULAR_FORMS`` 게이트가 *없고*, ``mergeSubmissionFilings`` 의 페이지 fetch 도 안 한다
+    (recent 블록 ~1000건이 수년치 피드 충분). bulk(submissions.zip) 회사별 처리에서 네트워크 없이 순회하기
+    위함. 정기/수시 구분 없이 전부 반환 — 정기 제외는 소비자(런타임 feed)가 form 으로 필터.
+
+    Args:
+        submissions: ``getSubmissionsJson`` 또는 submissions.zip 의 회사 JSON dict.
+        sinceYear: filingDate 연도 하한 (default 2023 — 피드 윈도).
+        since: 시작일 (``YYYY-MM-DD``/``YYYYMMDD``/date/datetime).
+        until: 종료일.
+
+    Returns:
+        list[dict] — filing_date ASC. 각 dict: ``cik``·``entityName``·``form``·``filing_date``·
+        ``accession_no``·``primary_document``·``primary_doc_description``·``filing_url``·``year``.
+
+    Raises:
+        없음 — recent 블록 부재/형식오류는 빈 list.
+
+    Example:
+        >>> rows = findAllFilings(getSubmissionsJson("0000320193"), sinceYear=2024)  # doctest: +SKIP
+        >>> {r["form"] for r in rows} & {"8-K", "10-K"}  # doctest: +SKIP
+    """
+    recent = submissions.get("filings", {}).get("recent", {})
+    forms = recent.get("form") or []
+    if not forms:
+        return []
+    filingDates = recent.get("filingDate", [])
+    accessions = recent.get("accessionNumber", [])
+    primaryDocs = recent.get("primaryDocument", [])
+    descriptions = recent.get("primaryDocDescription", [])
+    cik = str(submissions.get("cik") or "").zfill(10)
+    entityName = str(submissions.get("name") or submissions.get("entityName") or "")
+    sinceBound = _coerceDateBound(since, end=False)
+    untilBound = _coerceDateBound(until, end=True)
+
+    def _at(arr: list, idx: int) -> str:
+        return str(arr[idx]) if idx < len(arr) and arr[idx] is not None else ""
+
+    rows: list[dict[str, Any]] = []
+    for idx, formType in enumerate(forms):
+        filingDate = _at(filingDates, idx)
+        if len(filingDate) < 4 or not filingDate[:4].isdigit() or int(filingDate[:4]) < sinceYear:
+            continue
+        if sinceBound is not None and filingDate < sinceBound:
+            continue
+        if untilBound is not None and filingDate > untilBound:
+            continue
+        accession = _at(accessions, idx)
+        primaryDocument = _at(primaryDocs, idx)
+        filingDir = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession.replace('-', '')}"
+        rows.append(
+            {
+                "cik": cik,
+                "entityName": entityName,
+                "form": str(formType or ""),
+                "filing_date": filingDate,
+                "accession_no": accession,
+                "primary_document": primaryDocument or None,
+                "primary_doc_description": _at(descriptions, idx) or None,
+                "filing_url": f"{filingDir}/{primaryDocument}" if primaryDocument else filingDir,
+                "year": filingDate[:4],
+            }
+        )
+    rows.sort(key=lambda row: (row["filing_date"], row["accession_no"]))
+    return rows
+
+
 def filingsFrame(
     submissions: dict[str, Any],
     *,
