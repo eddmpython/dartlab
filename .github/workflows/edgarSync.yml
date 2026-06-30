@@ -156,12 +156,14 @@ jobs:
       # ── 4. scan 프리빌드 (다년 패널 — finance-us 5Y 소스 + valuation) ──
       # finance 직후 valuation(같은 facts + prices-snapshot 직독, 별도 수집 0). 둘 다 data/edgar/scan/ 에
       # 쓰면 아래 deployEdgarToHF(['scan']) 가 통째 발행(KR dart/scan/valuation 대칭).
-      - name: Build EDGAR scan prebuild (finance + valuation)
+      - name: Build EDGAR scan prebuild (finance + valuation + report)
         run: |
           uv run python -X utf8 -c "
           from dartlab.scan.builders.edgar import buildEdgarFinance, buildEdgarValuation
+          from dartlab.scan.builders.edgar.report import buildEdgarReport
           buildEdgarFinance(sinceYear=2021, verbose=True)
           buildEdgarValuation(verbose=True)
+          buildEdgarReport(verbose=True)
           "
         env:
           DARTLAB_DATA_DIR: ${{ github.workspace }}/data
