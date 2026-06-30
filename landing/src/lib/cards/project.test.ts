@@ -228,23 +228,30 @@ describe('챕터 점프 앵커(chapterAnchors) — 섹션 네비', () => {
 	});
 });
 
-describe('projectReport — composition 미주입 + 챕터 태깅(렌더 단순화)', () => {
-	it('수익성 + noteSeries 라도 composition(부문/비용) 카드는 자동 덱에 안 붙는다 — MiniFinChart 와 렌더 결이 달라 제거', () => {
+describe('projectReport — composition 주입 + 챕터 태깅(자동 kpis 없음)', () => {
+	it('수익성 + noteSeries → 부문/비용 composition 2장(finChart 뒤)', () => {
 		const ns: NoteSeriesBundle = { segment: comp(['반도체', 'DX']), cost: comp(['원재료', '인건비']) };
 		const deck = projectReport(model(), { noteSeries: ns });
-		expect(deck.cards.some((c) => c.kind === 'composition')).toBe(false);
+		const comps = deck.cards.filter((c) => c.kind === 'composition');
+		expect(comps.map((c) => c.heading)).toEqual(['부문별 매출', '비용 체질']);
 	});
-	it('비-수익성 관점에도 composition 없음', () => {
+	it('segment 만 있으면 1장(cost null → 조건부 skip)', () => {
+		const ns: NoteSeriesBundle = { segment: comp(['a', 'b']), cost: null };
+		const deck = projectReport(model(), { noteSeries: ns });
+		expect(deck.cards.filter((c) => c.kind === 'composition').map((c) => c.heading)).toEqual(['부문별 매출']);
+	});
+	it('비-수익성 관점에는 미주입(5덱 비대화 방지)', () => {
 		const ns: NoteSeriesBundle = { segment: comp(['a', 'b']), cost: comp(['c', 'd']) };
 		const deck = projectReport(model({ perspectiveKey: 'liquidity', perspectiveLabel: '재무안정성' }), { noteSeries: ns });
 		expect(deck.cards.some((c) => c.kind === 'composition')).toBe(false);
 	});
-	it('cover/finChart 챕터 태깅 — 네비 앵커(표지·재무), 자동 kpis 없음', () => {
-		const deck = projectReport(model());
+	it('cover/finChart/composition 챕터 태깅 — 자동 kpis 없음, 앵커(표지·재무·사업·운영)', () => {
+		const ns: NoteSeriesBundle = { segment: comp(['a', 'b']), cost: null };
+		const deck = projectReport(model(), { noteSeries: ns });
 		expect(deck.cards[0].chapter).toBe('표지');
 		expect(deck.cards.some((c) => c.kind === 'kpis')).toBe(false);
 		expect(deck.cards.find((c) => c.kind === 'finChart')?.chapter).toBe('재무');
-		expect(chapterAnchors(deck.cards).map((a) => a.label)).toEqual(['표지', '재무']);
+		expect(chapterAnchors(deck.cards).map((a) => a.label)).toEqual(['표지', '재무', '사업·운영']);
 	});
 });
 

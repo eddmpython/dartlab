@@ -184,8 +184,14 @@ export function projectReport(
 	// + 표 한 세트). 손익→현금→효율→체력. cardKey 로 번들 카드 선택. 스파크라인(table) 금지.
 	for (const p of FIN_PERSPECTIVES) cards.push({ kind: 'finChart', heading: p.heading, sub: p.sub, chapter: CH_FIN, stockCode: model.stockCode, cardKey: p.key });
 
-	// 주석 구성(부문별매출·비용성격별) 카드는 자동 덱에서 뺀다 — 시간축 스택+표 렌더가 MiniFinChart
-	// 재무 카드들과 결이 달라 덱 안에서 이질적으로 보인다. 구성 분석은 터미널 패널에서 본다(compositionToCard 보존).
+	// 사업·운영 깊은 카드 — 주석 구성(부문별매출·비용성격별)을 수익성 관점에만 주입(맥락 적합·5덱 비대화 방지).
+	// rt.report.noteSeries 직독(별도 bake 0). 단일부문/미공시면 compositionToShare 가 null → 조건부 skip(핵심만).
+	if (model.perspectiveKey === 'earningsPower' && opts.noteSeries) {
+		const seg = compositionToCard(opts.noteSeries.segment, '부문별 매출', '어디서 버나');
+		const cost = compositionToCard(opts.noteSeries.cost, '비용 체질', '돈을 뭐에 쓰나');
+		if (seg) cards.push(seg);
+		if (cost) cards.push(cost);
+	}
 
 	// 큐레이션 order: 섹션 key 화이트리스트로 필터/재정렬(없으면 원순서). 미지정 key 는 무시(누락 surface 는 audit).
 	let sections = model.sections;
@@ -222,6 +228,7 @@ const FIN_PERSPECTIVES: { key: string; heading: string; sub: string }[] = [
 	// 현금 — 이익이 진짜인가
 	{ key: 'cashflowSigned', heading: '현금흐름', sub: '영업·투자·재무 현금' },
 	{ key: 'cashConversion', heading: '이익의 현금화', sub: '순이익이 진짜 현금인가' },
+	{ key: 'fcfTrend', heading: '잉여현금흐름', sub: '쓰고 남는 현금' },
 	// 효율 — 자본을 잘 굴리나
 	{ key: 'returnTrend', heading: '자본수익', sub: '자기자본·자산 수익률' },
 	{ key: 'dupont', heading: '자기자본수익률 분해', sub: '마진·회전·레버리지' },
