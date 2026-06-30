@@ -87,6 +87,7 @@ def test_build_company_plan_defaults_to_seven_images(tmp_path: Path) -> None:
     assert plan["version"] == cp.PLAN_VERSION
     assert plan["planning"]["narrativeContract"]["spine"] == "훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문"
     assert "체크리스트" in " ".join(plan["planning"]["narrativeContract"]["rules"])
+    assert "구조명" in " ".join(plan["planning"]["narrativeContract"]["rules"])
     assert "큰문장" in " ".join(plan["planning"]["bigSentenceContract"]["rules"])
     assert "전문용어" in " ".join(plan["planning"]["plainLanguageContract"]["rules"])
     assert plan["planning"]["plainLanguageContract"]["preferredRewrites"]["AI"] == "인공지능"
@@ -125,11 +126,12 @@ def test_plan_validation_requires_plain_language_contract(tmp_path: Path) -> Non
 def test_contract_readability_blocks_jargon_and_checklist() -> None:
     contract = {
         "caption": "다음 체크포인트는 AI 수요입니다.",
-        "slides": [{"layout": "editorialBeat", "kicker": "다음 질문", "line": "HBM이 좋아집니다"}],
+        "slides": [{"layout": "editorialBeat", "kicker": "승", "line": "HBM이 좋아집니다"}],
         "explainers": [{"term": "HBM", "body": "High Bandwidth Memory의 약자입니다."}],
     }
     errors = cp.validate_contract_readability("x", contract)
     assert any("체크리스트식 문구" in err for err in errors)
+    assert any("구조 라벨 금지" in err for err in errors)
     assert any("어려운 약어 사용" in err and "AI" in err for err in errors)
     assert any("약자 설명형 문장" in err for err in errors)
 

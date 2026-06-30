@@ -57,37 +57,30 @@ slides:
     sub: "먼저 버릴 것을 정해야 흐름이 보입니다."
     image: scene-01-cover-hook
   - layout: editorialBeat
-    kicker: "기"
     line: "대신 돈이 먼저 움직이는 곳만 봅니다."
     sub: "사람의 해석보다 가격이 먼저 겁을 냅니다."
     image: scene-02-narrative-turn
   - layout: editorialBeat
-    kicker: "승"
     line: "첫 번째는 금리입니다. 돈이 불안하면 빌리는 값부터 흔들립니다."
     sub: "돈을 빌릴 때 붙는 가격이 먼저 달라집니다."
     image: scene-03-narrative-turn
   - layout: editorialBeat
-    kicker: "승"
     line: "두 번째는 환율입니다. 원화는 밖에서 받는 압박을 빨리 보여줍니다."
     sub: "한국 경제가 외부 충격을 받는지 볼 때 원화의 가격을 봅니다."
     image: scene-04-narrative-turn
   - layout: editorialBeat
-    kicker: "승"
     line: "세 번째는 기름값입니다. 비용이 오르면 좋은 뉴스보다 부담이 먼저 커집니다."
     sub: "에너지 비용은 기업 이익과 가계 지출에 바로 닿습니다."
     image: scene-05-narrative-turn
   - layout: editorialBeat
-    kicker: "전"
     line: "그런데 숫자 하나만 보면 자주 속습니다."
     sub: "금리, 환율, 유가는 혼자 움직일 때보다 같이 움직일 때 의미가 커집니다."
     image: scene-06-narrative-turn
   - layout: editorialBeat
-    kicker: "전"
     line: "그래서 세 가격표가 같은 방향을 말하는지 봅니다."
     sub: "불안이 한곳이 아니라 여러 곳에서 동시에 나오는지 확인합니다."
     image: scene-07-narrative-turn
   - layout: editorialBeat
-    kicker: "결"
     line: "여기에 수출과 기업의 돈값을 붙이면 경기가 식는지 더 분명해집니다."
     sub: "밖의 주문이 줄고 약한 기업의 부담이 커지면 흐름은 더 선명해집니다."
     image: scene-08-narrative-turn

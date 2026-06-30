@@ -28,6 +28,8 @@ MIN_IMAGES = 7
 RECOMMENDED_MAX_IMAGES = 10
 ASSET_KEY_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,62}$")
 FORBIDDEN_ASSET_TOKENS = ("card", "thumbnail", "thumb")
+STRUCTURE_KICKER_LABELS = {"기", "승", "전", "결", "서론", "본론", "전개", "결론", "도입", "마무리"}
+VISIBLE_STRUCTURE_LABEL_RULE = "기/승/전/결 같은 구조명은 내부 기획에만 쓰고 카드 위 라벨로 노출하지 않는다."
 REQUIRED_REVIEW_ROUNDS = (
     "writerPanel",
     "honestyEvidence",
@@ -229,7 +231,7 @@ def scene_role(order: int, count: int, slide: dict[str, Any] | None) -> str:
 def narrative_contract() -> dict[str, Any]:
     return {
         "spine": "훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문",
-        "rules": list(NARRATIVE_RULES),
+        "rules": [*NARRATIVE_RULES, VISIBLE_STRUCTURE_LABEL_RULE],
     }
 
 
@@ -695,6 +697,13 @@ def validate_contract_big_sentence_flow(slug: str, contract: dict[str, Any]) -> 
 
 def validate_contract_readability(slug: str, contract: dict[str, Any]) -> list[str]:
     errors: list[str] = []
+    for idx, slide in enumerate(contract.get("slides", []), start=1):
+        if not isinstance(slide, dict):
+            continue
+        kicker = clean_card_text(slide.get("kicker"))
+        normalized_kicker = re.sub(r"[^0-9A-Za-z가-힣]", "", kicker)
+        if normalized_kicker in STRUCTURE_KICKER_LABELS:
+            errors.append(f"{slug}: slide[{idx}].kicker 구조 라벨 금지: {kicker!r} — 내용 문장 자체에 흐름을 넣어야 함")
     for loc, text in _contract_reading_texts(contract):
         for phrase in CHECKLIST_PHRASES:
             if phrase in text:
