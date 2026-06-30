@@ -504,11 +504,14 @@ function buildBundle(rows: RawRow[], fs: FinScope, availScopes: FinScope[]): Ter
 				{ name: '영업익', data: yoy('operatingIncome'), color: C.op, type: 'line' },
 				{ name: '순익', data: yoy('netIncome'), color: C.net, type: 'line' }
 			] },
-			// 2행 — 현금
-			{ key: 'cashflowSigned', title: '현금흐름', unit: '조', series: [
+			// 2행 — 현금. signed-stack: 영업(유입)은 0선 위, 투자·재무(유출)는 0선 아래로 쌓아
+			// "한 해 들어온 현금 vs 나간 현금"을 0선이 가르고, 순현금 선이 바닥선(증감)을 보여 준다.
+			// → grouped 막대(부호·합 안 보임) 대비 현금 내러티브가 직독된다. cardGuide cashflowSigned 와 짝.
+			{ key: 'cashflowSigned', title: '현금흐름', unit: '조', stacked: true, signed: true, series: [
 				{ name: '영업', data: ser('cfOperating'), color: C.good, type: 'bar' },
 				{ name: '투자', data: ser('cfInvesting'), color: C.blue, type: 'bar' },
-				{ name: '재무', data: ser('cfFinancing'), color: C.op, type: 'bar' }
+				{ name: '재무', data: ser('cfFinancing'), color: C.op, type: 'bar' },
+				{ name: '순현금', data: compose(['cfOperating', 1], ['cfInvesting', 1], ['cfFinancing', 1]), color: C.purple, type: 'line' }
 			] },
 			cashConversionCard,
 			{ key: 'cfMargin', title: '현금마진', unit: '%', series: [
