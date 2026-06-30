@@ -47,3 +47,28 @@ export function priceWithIndicators(rows: Record<string, unknown>[]): Record<str
 		ATR14: r2(a14[i])
 	}));
 }
+
+// 단일 값 시계열(경제지표·지수)용 · value 컬럼에 MA·RSI·MACD·볼린저. 고저·거래량이 없어 ATR·스토캐스틱·거래량이평은 제외.
+export const VALUE_IND_COLS = ['date', 'value', 'MA5', 'MA20', 'MA60', 'RSI14', 'MACD', 'MACD_signal', 'MACD_hist', 'BB_mid', 'BB_upper', 'BB_lower'];
+export function valueWithIndicators(rows: Record<string, unknown>[], valueCol: string, dateCol: string): Record<string, unknown>[] {
+	if (!rows.length) return [];
+	const v = rows.map((r) => n(r[valueCol]));
+	const ma5 = sma(v, 5), ma20 = sma(v, 20), ma60 = sma(v, 60);
+	const r14 = rsi(v, 14);
+	const m = macd(v);
+	const bb = bollinger(v, 20, 2);
+	return rows.map((row, i) => ({
+		date: row[dateCol],
+		value: row[valueCol],
+		MA5: r2(ma5[i]),
+		MA20: r2(ma20[i]),
+		MA60: r2(ma60[i]),
+		RSI14: r2(r14[i]),
+		MACD: r2(m.line[i]),
+		MACD_signal: r2(m.signal[i]),
+		MACD_hist: r2(m.hist[i]),
+		BB_mid: r2(bb.mid[i]),
+		BB_upper: r2(bb.upper[i]),
+		BB_lower: r2(bb.lower[i])
+	}));
+}

@@ -25,7 +25,15 @@ import { ALLOW, RELEASES, isTier2 } from './allowlist.js';
 // .ts import 는 wrangler/esbuild 가 번들(로컬 dev 는 npm run build 의 esbuild dist 경유).
 import { bundleFromRows } from '../../../ui/packages/runtime/src/adapters/public/sources/financeSource.ts';
 import { FINANCE_COLUMNS } from '../../../ui/packages/runtime/src/data/finance/accounts.ts';
-import { priceWithIndicators, PRICE_IND_COLS } from '../../../ui/packages/surfaces/src/terminal/lib/priceIndicators.ts';
+import { priceWithIndicators, PRICE_IND_COLS, valueWithIndicators, VALUE_IND_COLS } from '../../../ui/packages/surfaces/src/terminal/lib/priceIndicators.ts';
+
+// 단일 값 시계열 데이터셋 → (value 컬럼, date 컬럼). 경제지표(fred/ecos/customs)·지수(gov/indices) 보조지표용.
+const VALUE_SPEC = {
+	'macro/fred': ['value', 'date'],
+	'macro/ecos': ['value', 'date'],
+	'macro/customs': ['value', 'date'],
+	'gov/indices/index': ['CLSPRC_IDX', 'BAS_DD']
+};
 
 // 압축해제기 — dartlab parquet 는 전량 ZSTD(실측). fzstd 는 순수 JS 라 CF Workers 의 런타임 WASM 금지
 // (hyparquet-compressors 의 hysnappy WASM 은 `WebAssembly.Module()` 바이트컴파일 → CF 거부)를 회피한다.
@@ -330,6 +338,47 @@ export default {
 				} });
 			} catch (e) {
 				return json({ error: 'price indicators failed', detail: String(e && e.message || e) }, 502, indexLink);
+			}
+		}
+
+		// 라이브 변환 단일값 보조지표 /v1/valueInd/{dir}/{id}.{csv|tsv}
+		// 경제지표(fred/ecos/customs observations·seriesId)·지수(gov/indices/index) raw → valueWithIndicators(MA·RSI·MACD·볼린저).
+		const mVi = rest.match(/^valueInd\/(.+)\/([^/]+)\.(csv|tsv)$/);
+		if (mVi) {
+			const vdir = mVi[1];
+			let vid;
+			try { vid = decodeURIComponent(mVi[2]); } catch { return json({ error: 'invalid id' }, 400, indexLink); } // 지수 stem 'KOSPI-코스피' 등 한글 퍼센트 디코드
+			const viExt = mVi[3];
+			const spec = VALUE_SPEC[vdir];
+			if (!spec) return json({ error: 'unsupported series dir', supported: Object.keys(VALUE_SPEC) }, 400, indexLink);
+			if (!validId(vid)) return json({ error: 'invalid id' }, 400, indexLink);
+			const [valueCol, dateCol] = spec;
+			const viPhys = resolvePhysical(vdir, vid);
+			const viFileUrl = `${UPSTREAM}/${vdir}/${viPhys.stem}.parquet`;
+			const viProbe = await probeSize(viFileUrl, baseFetch);
+			if (viProbe.status === 404) return json({ error: 'not found', hint: 'unknown series/index id' }, 404, indexLink);
+			if (viProbe.status >= 500) return json({ error: 'upstream error', status: viProbe.status }, 502, indexLink);
+			try {
+				const file = await asyncBufferFromUrl({ url: viFileUrl, byteLength: viProbe.size, fetch: (u, i) => retryFetch(u, i, baseFetch) });
+				let raw = await parquetReadObjects({ file, compressors });
+				if (viPhys.seriesFilter) {
+					raw = raw.filter((r) => String(r[viPhys.seriesFilter.col]) === viPhys.seriesFilter.value);
+					if (!raw.length) return json({ error: 'unknown series id', hint: `GET /v1/${vdir}/manifest.csv` }, 404, indexLink);
+				}
+				const ind = valueWithIndicators(raw, valueCol, dateCol);
+				if (!ind.length) return json({ error: 'no rows for this id' }, 404, indexLink);
+				const viBody = serialize(ind, VALUE_IND_COLS, viExt);
+				return new Response(req.method === 'HEAD' ? null : viBody, { status: 200, headers: {
+					...CORS,
+					'Access-Control-Expose-Headers': 'X-DartLab-Total-Rows',
+					'Content-Type': viExt === 'tsv' ? 'text/tab-separated-values; charset=utf-8' : 'text/csv; charset=utf-8',
+					'Content-Disposition': contentDisposition(`${vid}_indicators`, viExt),
+					...cacheH,
+					...indexLink,
+					'X-DartLab-Total-Rows': String(ind.length)
+				} });
+			} catch (e) {
+				return json({ error: 'value indicators failed', detail: String(e && e.message || e) }, 502, indexLink);
 			}
 		}
 
