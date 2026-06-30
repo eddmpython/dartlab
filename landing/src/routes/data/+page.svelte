@@ -596,9 +596,9 @@
 
 <style>
 	.dc {
-		max-width: 900px;
+		max-width: 72rem; /* 헤더 nav(max-w-6xl) 와 동일 폭 · 아바타~우측 아이콘 경계까지 */
 		margin: 0 auto;
-		padding: 5.5rem 1.25rem 4rem;
+		padding: 5.5rem 1rem 4rem; /* 좌우 1rem = 헤더 px-4 정렬 */
 		color: var(--dl-ink);
 		font-family: var(--dl-font-ui);
 	}
