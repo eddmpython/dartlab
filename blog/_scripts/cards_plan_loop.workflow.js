@@ -23,7 +23,7 @@ export const meta = {
 const PRINCIPLES = `카드뉴스 5대원칙(합격선):
 1. 맥락: 큰문장만 위에서 아래로 읽어도 한 편의 짧은 글로 완결. 각 장은 앞장보다 질문을 하나 얹거나 갚는다. 순서 바꿔도 말 되면 실패.
 2. 인사이트: 통념과 충돌하는 사실 + 왜 가능한가(메커니즘) + 앞으로 무엇을 다르게 볼까(렌즈)까지. 제목 재진술이면 실패. 다 읽고도 세계관 그대로면 실패. 추가 강행:
-   (a) 재탕 금지: 이미 널리 도는 서사의 재포장이면 실패. 금융 좀 아는 독자가 "들어본 얘기"라 하면 실패(예: 'AI 순환 금융', '하이퍼스케일러 capex가 곧 엔비디아 매출', '곡괭이와 삽', '데이터는 새 석유'는 2024~2025년 닳은 서사다). 닳은 정성 서사에 정밀 숫자(비율 0.75 등)를 얹는다고 새로워지지 않는다. 새로워야 하는 건 인과·구조 주장(인사이트)이지 수치 한 칸이 아니다.
+   (a) 재탕은 최대한 피한다(권고). 이미 널리 도는 서사라도 그것만으로 탈락은 아니다. 닳은 서사 같으면 더 날카로운 각이 있는지 한 번 더 보되, 이미 정한 각이면 그대로 간다. 단 우열·투자권유·단정은 절대 금지.
    (b) 억지 수치 금지: 핀 코멘트나 본문에서 "이런 뜻은 아니다"라고 변명해야 하는 비율·지표는 인사이트가 약한 것이다. 변명이 필요하면 실패.
    (c) 프레임 정직: 주인공이 제목의 실제 주어와 일치해야 한다. 인프라에 돈 쓰는 회사를 'AI 주인공'으로 둔갑시키지 마라(진짜 AI 주자=GPT·Claude·Gemini, 인프라=엔비디아·하이퍼스케일러를 섞지 마라).
 3. 시각 정합: 주장 카드에는 그 주장을 증명하는 시각(그래프)이 붙는다. 큰문장을 가려도 그래프만으로 같은 긴장이 남아야 한다.
@@ -133,20 +133,22 @@ const VERDICT_SCHEMA = {
 }
 
 const SKEPTIC_SCHEMA = {
-  type: 'object', additionalProperties: false, required: ['verdict', 'kills'],
+  type: 'object', additionalProperties: false, required: ['verdict', 'kills', 'softNotes'],
   properties: {
     verdict: { type: 'string', enum: ['survive', 'kill'] },
     kills: {
       type: 'array',
+      description: 'kill 사유. 네 하드 축만. 재탕(recycled)은 여기 넣지 않는다(소프트 권고).',
       items: {
         type: 'object', additionalProperties: false, required: ['axis', 'why', 'fix'],
         properties: {
-          axis: { type: 'string', enum: ['recycled', 'forced-metric', 'misleading-frame', 'generic-image', 'overclaim'] },
+          axis: { type: 'string', enum: ['forced-metric', 'misleading-frame', 'generic-image', 'overclaim'] },
           why: { type: 'string' },
           fix: { type: 'string' },
         },
       },
     },
+    softNotes: { type: 'array', items: { type: 'string' }, description: '재탕 의심 등 권고. kill 사유 아님. 최대한 피하되 이미 정한 각이면 그대로.' },
   },
 }
 
@@ -173,7 +175,7 @@ ${evidence}
 
 지시:
 - 위 타입 지침을 지킨다.
-- 인사이트는 재탕 금지. 이미 도는 서사면 실패다. freshnessArgument 에 "왜 재탕이 아닌가"를 못 적으면 인사이트를 바꿔라. 변명해야 하는 억지 비율 금지. 프레임은 제목의 실제 주어와 일치(인프라 회사를 AI 주인공으로 둔갑 금지).
+- 인사이트는 재탕을 최대한 피한다(권고). freshnessArgument 에 새 지점을 적되, 이미 도는 서사라도 그것만으로 탈락은 아니다. 변명해야 하는 억지 비율 금지. 프레임은 제목의 실제 주어와 일치(인프라 회사를 AI 주인공으로 둔갑 금지).
 - 그래프는 기획에서 모양까지 설계. 시계열은 분기로 밀도 있게(6점 이상), 빈 값 금지, data 길이=periods 길이. 추이는 line.
 - images: spine 의 각 장에 배경을 기획한다. 회사명을 말하는 장은 subjectCompany 에 그 회사명, bg 에 그 회사 로고·제품·상호를 박는다(일반 장면 금지). 회사 특정 안 되는 개념 장만 일반 장면. 그래프 장은 "(배경 없음)".
 - 8~10장. 큰문장만 읽어도 한 편으로 완결. 표지는 호기심 갭, 마지막은 판단으로 닫음.
@@ -202,7 +204,7 @@ ${PRINCIPLES}
 ${evidence}
 
 특히 깐다:
-- 인사이트가 재탕인가(이미 도는 서사). 통념-반전-렌즈-메커니즘이 다 살아있고 의외인가. freshnessArgument 가 진짜 새 지점인가.
+- 인사이트가 통념-반전-렌즈-메커니즘이 다 살아있고 의외인가. (재탕은 감점 요소지 단독 탈락 사유 아님.)
 - 변명해야 하는 억지 수치가 있나. 프레임이 제목 실제 주어와 일치하나.
 - 타입 지침을 어겼는가. 그래프가 주장을 증명하고 밀도 있나(분기 6점+), 큰문장 가려도 긴장이 남나.
 - 큰문장만 읽어 한 편으로 완결되나, 표지가 1초에 멈추나, 마지막이 표지 약속을 갚나.
@@ -215,9 +217,9 @@ ${JSON.stringify(plan)}`,
       { label: `평가자 r${round}`, phase: '평가개선', schema: VERDICT_SCHEMA }
     ),
     () => agent(
-      `너는 dartlab 카드뉴스 회의자(skeptic)다. 네 임무는 통과시키는 게 아니라 이 인사이트를 죽이는 것이다. 기본값은 kill. 아래 다섯 축을 다 통과해야만 survive 다. 하나라도 걸리면 verdict=kill 과 kills[](축·이유·고칠방법)를 낸다.
+      `너는 dartlab 카드뉴스 회의자(skeptic)다. 네 임무는 통과시키는 게 아니라 이 기획안을 죽이는 것이다. 기본값은 kill. 아래 네 하드 축(억지수치·틀린프레임·일반이미지·과장) 중 하나라도 걸리면 verdict=kill 과 kills[](축·이유·고칠방법)를 낸다. 네 축이 다 깨끗하면 survive.
 
-- recycled: 인사이트가 이미 널리 도는 서사의 재포장인가. 금융 좀 아는 독자가 "들어본 얘기"라 하면 kill. (닳은 서사 예: 'AI 순환 금융', '빅테크 capex가 엔비디아로 흐른다', '곡괭이와 삽', '데이터는 새 석유'.) 핵심: 닳은 정성 서사에 정밀 숫자(비율 0.75 등)를 얹은 것만으로는 새롭지 않다. 새로워야 하는 건 인과·구조 주장 자체지 수치 한 칸이 아니다. 숫자만 새롭고 주장이 닳았으면 kill.
+- (소프트 권고) recycled: 인사이트가 이미 널리 도는 서사의 재포장 같으면 softNotes 에 적는다. 단 이것만으로는 kill 하지 않는다. 재탕은 최대한 피하려는 권고일 뿐, 이미 정한 각이면 그대로 간다.
 - forced-metric: 핀 코멘트나 본문에서 "이런 뜻은 아니다"라고 변명해야 하는 억지 비율·지표가 있나. 있으면 kill.
 - misleading-frame: 주인공이 제목의 실제 주어와 다른가. 인프라에 돈 쓰는 회사를 'AI 주인공'으로 둔갑시켰나. 그러면 kill.
 - generic-image: 회사명을 말하는 장의 배경(images[].bg)이 그 회사 로고·제품이 아니라 일반 장면인가. 하나라도 있으면 kill.
@@ -239,7 +241,7 @@ ${JSON.stringify(plan)}`,
   passed = evalPass && skepticPass
   loopLog.push({
     round, decision: verdict && verdict.decision, scores: verdict && verdict.scores, minScore,
-    skeptic: skeptic && skeptic.verdict, kills: (skeptic && skeptic.kills) || [],
+    skeptic: skeptic && skeptic.verdict, kills: (skeptic && skeptic.kills) || [], softNotes: (skeptic && skeptic.softNotes) || [],
     findings: (verdict && verdict.findings) || [], rationale: verdict && verdict.rationale, passed,
   })
   if (passed) break
@@ -260,8 +262,10 @@ ${evidence}
 ${JSON.stringify(verdict.findings)}
 평가자 총평: ${verdict.rationale}
 
-회의자가 죽인 축(전부 살려라):
+회의자가 죽인 하드 축(전부 살려라):
 ${JSON.stringify(skeptic.kills)}
+회의자 소프트 권고(가능하면 반영. 재탕은 최대한 줄이되 무리해서 각을 갈아엎지는 말 것):
+${JSON.stringify(skeptic.softNotes || [])}
 
 직전 기획안:
 ${JSON.stringify(plan)}
