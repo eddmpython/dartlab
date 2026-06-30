@@ -509,6 +509,11 @@
 			border-left: none;
 			border-top: 1px solid #1e2433;
 		}
+		/* 모바일: 캡션 내부 스크롤 제거. postInner 하나만 스크롤해 이중 스크롤(카드+캡션 한 흐름)을 막는다. */
+		.prScroll {
+			flex: 0 0 auto;
+			overflow-y: visible;
+		}
 	}
 	/* 폰(≤640) · 모달을 화면 꽉 채움(거터 0). 카드 위 / 캡션 아래 한 흐름으로 스크롤.
 	   100dvh = iOS Safari 주소창 가변 높이 잘림 방지(미지원 시 위 820 블록 max-height:92vh 폴백). */

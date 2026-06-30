@@ -276,8 +276,32 @@ function newsDevPlugin() {
 	};
 }
 
+// 로컬 카드 프리뷰 전용 HF 미디어 폴백. VITE_DARTLAB_HF_MEDIA_RESOLVE='' 로 미디어 base 를 로컬로 돌려
+// 미발행 carousels/index.json 을 끼워 보는 동안에도, 실제 이미지(companies·issues·docs)는 HF 에서 그대로
+// 보이게 한다. 로컬 static 에 있는 파일(새 카드의 신규 이미지)은 정적 서빙이 우선, 없으면 HF 로 302.
+// 정상 dev(base=HF 기본)에서는 이미지가 huggingface.co 절대 URL 로 직접 가므로 이 미들웨어는 발동하지 않는다(무영향).
+function hfMediaFallbackPlugin() {
+	const HF = 'https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main';
+	const staticDir = path.resolve(__dirname, 'static');
+	const MEDIA_RE = /^\/(companies|issues|docs)\/.+\.(webp|svg|png|jpe?g|avif|gif)$/i;
+	return {
+		name: 'hf-media-fallback',
+		configureServer(server: ViteDevServer) {
+			server.middlewares.use((req, res, next) => {
+				const url = (req.url ?? '').split('?')[0];
+				if (!MEDIA_RE.test(url)) return next();
+				const local = path.join(staticDir, decodeURIComponent(url));
+				if (fs.existsSync(local)) return next(); // 로컬에 있으면(새 카드) 정적 서빙
+				res.statusCode = 302;
+				res.setHeader('Location', HF + url);
+				res.end();
+			});
+		}
+	};
+}
+
 export default defineConfig({
-	plugins: [tailwindcss(), blogAssetsPlugin(), skillCatalogPlugin(), govPriceDevPlugin(), naverPriceDevPlugin(), newsDevPlugin(), sveltekit()],
+	plugins: [tailwindcss(), blogAssetsPlugin(), skillCatalogPlugin(), govPriceDevPlugin(), naverPriceDevPlugin(), newsDevPlugin(), hfMediaFallbackPlugin(), sveltekit()],
 	define: {
 		__DARTLAB_VERSION__: JSON.stringify(dartlabVersion)
 	},
