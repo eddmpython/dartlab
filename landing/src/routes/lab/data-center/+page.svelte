@@ -66,9 +66,86 @@
 	let probing = $state(false);
 	let probeErr = $state('');
 	let probedKey = $state('');
+	let fileSize = $state(0);
 	let apiTab = $state<'sheets' | 'excel' | 'python' | 'curl'>('sheets');
 	let showCols = $state(false);
 	let copiedKey = $state('');
+
+	// ── 파일 브라우저(탐색) — HF 트리 그대로(공개 repo). CORS 허용·Link 커서 페이지네이션 ──
+	const HF_API = 'https://huggingface.co/api/datasets/eddmpython/dartlab-data/tree/main';
+	const HF_RESOLVE = 'https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main';
+	type Entry = { type: string; path: string; name: string; size: number };
+	let mode = $state<'sets' | 'browse'>('sets');
+	let cwd = $state('');
+	let entries = $state<Entry[]>([]);
+	let browseLoading = $state(false);
+	let nextCursor = $state<string | null>(null);
+	let totalCount = $state(0);
+	let filter = $state('');
+
+	function fmtBytes(n: number): string {
+		if (!n) return '';
+		if (n < 1024) return `${n} B`;
+		if (n < 1048576) return `${(n / 1024).toFixed(0)} KB`;
+		if (n < 1073741824) return `${(n / 1048576).toFixed(1)} MB`;
+		return `${(n / 1073741824).toFixed(2)} GB`;
+	}
+
+	async function loadTree(path: string, append = false) {
+		browseLoading = true;
+		try {
+			const base = path ? `${HF_API}/${path}` : HF_API; // 루트는 trailing slash 금지(HF 가 거부)
+			const url = append && nextCursor ? nextCursor : `${base}?limit=100`;
+			const res = await fetch(url);
+			totalCount = Number(res.headers.get('X-Total-Count')) || 0;
+			const link = res.headers.get('Link') || '';
+			const m = link.match(/<([^>]+)>;\s*rel="next"/);
+			nextCursor = m ? m[1] : null;
+			const list = (await res.json()) as Array<{ type: string; path: string; size?: number; lfs?: { size?: number } }>;
+			const mapped: Entry[] = list.map((x) => ({ type: x.type, path: x.path, name: x.path.split('/').pop() ?? x.path, size: x.lfs?.size ?? x.size ?? 0 }));
+			entries = append ? [...entries, ...mapped] : mapped;
+			if (!append) {
+				cwd = path;
+				filter = '';
+			}
+		} catch {
+			if (!append) entries = [];
+		} finally {
+			browseLoading = false;
+		}
+	}
+
+	function switchBrowse() {
+		mode = 'browse';
+		if (!entries.length) loadTree('');
+	}
+	const crumbs = $derived(cwd ? cwd.split('/') : []);
+	const shownEntries = $derived.by(() => {
+		const f = filter.trim().toLowerCase();
+		const list = f ? entries.filter((e) => e.name.toLowerCase().includes(f)) : entries;
+		return [...list].sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'directory' ? -1 : 1));
+	});
+
+	function openEntry(e: Entry) {
+		if (e.type === 'directory') {
+			loadTree(e.path);
+			return;
+		}
+		if (e.name.endsWith('.parquet')) {
+			const d = e.path.replace(/\/[^/]+$/, '');
+			const idv = e.name.replace(/\.parquet$/, '');
+			const entry = DOWNLOAD_CATALOG.find((c) => c.dir === d);
+			if (entry) {
+				mode = 'sets';
+				selectDir(d);
+				id = idv;
+				probe();
+				return;
+			}
+		}
+		window.open(`${HF_RESOLVE}/${e.path}`, '_blank'); // 카탈로그 밖·비parquet = 원본 직링크
+	}
+	const rawUrl = $derived(dir && id.trim() ? `${HF_RESOLVE}/${physical(dir.dir, id.trim()).path}` : '');
 
 	const cleanName = (s: string) => s.replace(/[\\/:*?"<>|]+/g, '_').slice(0, 80);
 
@@ -154,6 +231,7 @@
 			const meta = await readParquetMetadata(phys.path);
 			allCols = meta.columns;
 			totalRows = meta.rows;
+			fileSize = meta.size ?? 0;
 			pickedCols = new Set();
 			// 실데이터 미리보기 — 첫 PREVIEW_N 행(전 컬럼). 컬럼 토글은 캐시에서 즉시 재렌더.
 			if (phys.seriesCol) {
@@ -177,6 +255,7 @@
 	}
 
 	async function loadExample(ex: (typeof QUICK)[number]) {
+		mode = 'sets';
 		selectDir(ex.dir);
 		id = ex.id;
 		await probe();
@@ -303,6 +382,12 @@
 	</div>
 
 	<section class="panel">
+		<div class="modes">
+			<button class="modetab" class:on={mode === 'sets'} onclick={() => (mode = 'sets')}>데이터셋</button>
+			<button class="modetab" class:on={mode === 'browse'} onclick={switchBrowse}>탐색 — 파일 브라우저</button>
+		</div>
+
+		{#if mode === 'sets'}
 		<!-- 1. 고르기 -->
 		<div class="ctl">
 			<label class="fld grow">
@@ -374,8 +459,9 @@
 					<div class="btns">
 						<button class="btn primary" onclick={() => download('xlsx')} disabled={!!busy}>{busy === 'xlsx' ? '변환 중…' : 'Excel (.xlsx)'}</button>
 						<button class="btn" onclick={() => download('csv')} disabled={!!busy}>{busy === 'csv' ? '변환 중…' : 'CSV'}</button>
+						{#if rawUrl}<a class="btn ghost" href={rawUrl} target="_blank" rel="noopener">원본 .parquet ↗</a>{/if}
 					</div>
-					<p class="note">브라우저가 직접 변환 · 한도 없음 · 진짜 Number</p>
+					<p class="note">가공(Excel/CSV) = 한도 없음·진짜 Number · 원본 = HF parquet{#if fileSize} {fmtBytes(fileSize)}{/if}</p>
 				</div>
 
 				{#if eligible && tier2On && liveUrl}
@@ -393,6 +479,37 @@
 						<p class="note">{apiHint}</p>
 					</div>
 				{/if}
+			</div>
+		{/if}
+		{:else}
+			<!-- 탐색 — 파일 브라우저 (HF 트리 그대로 · 공개 repo) -->
+			<div class="browse">
+				<div class="crumbs">
+					<button class="crumb" onclick={() => loadTree('')}>dartlab-data</button>
+					{#each crumbs as seg, i (i)}
+						<span class="crumb-sep">/</span>
+						<button class="crumb" onclick={() => loadTree(crumbs.slice(0, i + 1).join('/'))}>{seg}</button>
+					{/each}
+				</div>
+				<input class="id-input bsearch" placeholder="이 폴더에서 검색 (파일명·종목코드)" bind:value={filter} aria-label="파일 검색" />
+				<div class="tablewrap blist">
+					<table class="ptable">
+						<tbody>
+							{#each shownEntries as e (e.path)}
+								<tr class="brow" onclick={() => openEntry(e)}>
+									<td class="bname"><span class="bicon">{e.type === 'directory' ? '📁' : e.name.endsWith('.parquet') ? '▦' : '·'}</span>{e.name}</td>
+									<td class="bsize">{e.type === 'directory' ? '' : fmtBytes(e.size)}</td>
+									<td class="bact">{e.type === 'directory' ? '열기 →' : e.name.endsWith('.parquet') ? '미리보기 →' : '원본 ↗'}</td>
+								</tr>
+							{/each}
+							{#if !shownEntries.length && !browseLoading}<tr><td colspan="3" class="bempty">{filter ? '검색 결과 없음' : '비어 있음'}</td></tr>{/if}
+						</tbody>
+					</table>
+				</div>
+				<div class="bfoot">
+					<span class="block-meta">{totalCount ? `${totalCount.toLocaleString()}개 항목` : `${entries.length}개`}{#if browseLoading} · 불러오는 중…{/if}{#if filter} · 검색은 불러온 항목 내{/if}</span>
+					{#if nextCursor && !filter}<button class="btn sm" onclick={() => loadTree(cwd, true)} disabled={browseLoading}>더 보기</button>{/if}
+				</div>
 			</div>
 		{/if}
 	</section>
@@ -472,6 +589,104 @@
 		border-radius: var(--dl-r-lg);
 		background: var(--dl-bg-raised);
 		padding: var(--dl-s-4) var(--dl-s-5);
+	}
+
+	/* 모드 토글 */
+	.modes {
+		display: flex;
+		gap: var(--dl-s-1);
+		margin-bottom: var(--dl-s-4);
+		border-bottom: 1px solid var(--dl-line);
+	}
+	.modetab {
+		padding: 0.45rem 0.9rem;
+		background: none;
+		border: 0;
+		border-bottom: 2px solid transparent;
+		color: var(--dl-ink-mute);
+		font-size: 0.88rem;
+		font-weight: 600;
+		font-family: inherit;
+		cursor: pointer;
+		margin-bottom: -1px;
+	}
+	.modetab:hover {
+		color: var(--dl-ink);
+	}
+	.modetab.on {
+		color: var(--dl-accent);
+		border-bottom-color: var(--dl-accent);
+	}
+
+	/* 탐색 (파일 브라우저) */
+	.browse {
+		display: flex;
+		flex-direction: column;
+		gap: var(--dl-s-3);
+	}
+	.crumbs {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.25rem;
+	}
+	.crumb {
+		background: none;
+		border: 0;
+		color: var(--dl-accent);
+		font-family: var(--dl-font-mono);
+		font-size: 0.82rem;
+		cursor: pointer;
+		padding: 0.1rem 0.2rem;
+	}
+	.crumb:hover {
+		text-decoration: underline;
+	}
+	.crumb-sep {
+		color: var(--dl-ink-faint);
+	}
+	.bsearch {
+		width: 100%;
+		max-width: 340px;
+	}
+	.blist {
+		max-height: 440px;
+		overflow-y: auto;
+	}
+	.brow {
+		cursor: pointer;
+	}
+	.brow:hover td {
+		background: var(--dl-bg-overlay);
+	}
+	.bname {
+		color: var(--dl-ink);
+	}
+	.bicon {
+		display: inline-block;
+		width: 1.4rem;
+	}
+	.bsize {
+		color: var(--dl-ink-mute);
+		text-align: right;
+		white-space: nowrap;
+	}
+	.bact {
+		color: var(--dl-accent);
+		text-align: right;
+		white-space: nowrap;
+		font-size: 0.72rem;
+	}
+	.bempty {
+		color: var(--dl-ink-mute);
+		text-align: center;
+		padding: var(--dl-s-4);
+	}
+	.bfoot {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--dl-s-3);
 	}
 
 	/* 고르기 */

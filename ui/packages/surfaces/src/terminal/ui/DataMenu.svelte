@@ -19,6 +19,7 @@
 
 	const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 	const en = $derived(lang === 'en');
+	const base = $derived(runtime?.env?.basePath ?? ''); // 데이터 센터 바로가기 base 경로
 	const isUs = $derived(!/^\d{6}$/.test(code));
 	const termsUrl = $derived(
 		isUs ? 'https://www.sec.gov/os/accessing-edgar-data' : 'https://opendart.fss.or.kr/intro/terms.do'
@@ -317,6 +318,8 @@
 
 		<div class="dlgHint">{en ? 'Tick the datasets you want, then download them together as one Excel (sheet per dataset) or CSV zip.' : '원하는 데이터셋을 체크하고 한 번에 받으세요 — 하나의 엑셀(데이터셋별 시트) 또는 CSV 묶음(zip).'}</div>
 
+		<a class="dcGo" href="{base}/lab/data-center" target="_blank" rel="noopener">{en ? 'Data Center — browse all files, preview & live API (Sheets·Python·curl) ↗' : '데이터 센터 — 전체 파일 탐색·미리보기·라이브 API (시트·Python·curl) ↗'}</a>
+
 		<div class="dlgBody">
 			<div class="dlgCol">
 				<div class="dpDiv">{en ? 'this company' : '이 회사'}</div>
@@ -443,6 +446,21 @@
 		color: #94a3b8;
 		background: rgba(245, 158, 11, 0.05);
 		border-bottom: 1px solid #1e2433;
+	}
+	.dcGo {
+		flex-shrink: 0;
+		display: block;
+		padding: 9px 16px;
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--amber, #f59e0b);
+		text-decoration: none;
+		background: rgba(var(--amber-rgb, 245, 158, 11), 0.08);
+		border-bottom: 1px solid #1e2433;
+	}
+	.dcGo:hover {
+		background: rgba(var(--amber-rgb, 245, 158, 11), 0.16);
+		text-decoration: underline;
 	}
 	.dlgBody {
 		display: grid;
