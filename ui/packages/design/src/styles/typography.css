@@ -1,11 +1,10 @@
 /* Typography — 한글·영문·숫자 위계
  * 한국어 본문 16-18px, 행간 1.75 (Pretendard 권장)
- * 영문 헤드라인 Newsreader (편집 톤), 숫자 JetBrains Mono (tabular)
+ * 헤드라인 Pretendard (본문과 같은 family · 위계는 size·weight), 숫자 JetBrains Mono (tabular)
+ * (옛 Newsreader serif 헤드라인은 전 뷰어 Pretendard 통일로 폐지 — @import 제거)
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,700&display=swap');
-
-/* ── Heading · slab serif (편집 톤) ── */
+/* ── Heading (Pretendard · size·weight 위계) ── */
 .dl-h1 {
 	font-family: var(--dl-font-head);
 	font-size: clamp(40px, 5vw, 64px);

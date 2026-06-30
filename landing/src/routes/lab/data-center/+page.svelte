@@ -369,7 +369,7 @@
 	}
 	.head h1 {
 		margin: 0 0 var(--dl-s-2);
-		font-family: var(--dl-font-head); /* 영문 Newsreader · 한글 Pretendard(토큰 fallback) — 전 뷰어 통일 */
+		font-family: var(--dl-font-head); /* = Pretendard (토큰 통일) — 본문과 같은 family, 위계는 weight/size */
 		font-size: clamp(1.5rem, 3vw, 2.1rem);
 		font-weight: 600;
 		line-height: 1.2;

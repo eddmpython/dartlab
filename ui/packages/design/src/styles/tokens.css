@@ -201,9 +201,10 @@
 	/* ── Type families ── */
 	--dl-font-ui: 'Pretendard Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
 	--dl-font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
-	/* 헤드라인 — 영문은 Newsreader(편집 serif). 한글은 Newsreader 에 글리프가 없어 글자별 fallback 으로
-	 * Pretendard(sans)가 받는다 → 한글 헤드라인이 시스템 명조로 깨지던 것을 전 뷰어 동시 해소(글씨체 통일). */
-	--dl-font-head: 'Newsreader', 'Pretendard Variable', 'Tiempos Headline', Georgia, serif;
+	/* 헤드라인 — Pretendard 단일(전 뷰어 통일). 본문과 같은 family, 위계는 size·weight 로.
+	 * (옛 Newsreader serif 는 landing 일부 페이지에만 박혀 한글 명조 fallback 으로 깨지고 메인·터미널·블로그
+	 *  Pretendard 와 불일치 → 운영자 결정으로 전부 Pretendard 로 통일. 영문 brand 도 Pretendard.) */
+	--dl-font-head: 'Pretendard Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
