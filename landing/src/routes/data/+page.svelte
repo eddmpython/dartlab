@@ -6,6 +6,7 @@
 	import Header from '$lib/components/sections/Header.svelte';
 	import { readParquetRows, readParquetMetadata } from '@dartlab/ui-runtime/data/parquet/hfRange';
 	import { loadFinanceBundle } from '@dartlab/ui-runtime/data/financeRows';
+	import { priceWithIndicators, PRICE_IND_COLS } from '@dartlab/ui-surfaces/priceIndicators';
 	import type { TerminalFinanceBundle, StmtKind } from '@dartlab/ui-contracts';
 	import {
 		objectsToWorkbook,
@@ -86,6 +87,11 @@
 	let finStmt = $state<'IS' | 'BS' | 'CF' | 'CIS' | 'SCE' | 'RATIOS'>('IS');
 	let finFreq = $state<'quarter' | 'annual' | 'ttm'>('quarter');
 	const isFin = $derived(dir?.dir === FIN_DIR);
+	// 주가 + 보조지표 변환 데이터셋(indicators.ts SSOT 공유). finance 와 동형.
+	const PRICE_DIR = 'gov/prices/__indicators__';
+	const PRICE_ENTRY: CatalogEntry = { dir: PRICE_DIR, label: '주가 + 보조지표 (MA·RSI·MACD·볼린저)', shardKind: 'company' };
+	const isPriceInd = $derived(dir?.dir === PRICE_DIR);
+	const isTransform = $derived(isFin || isPriceInd); // 변환 데이터셋(라이브 API·옵션 무의미 공통 판정)
 	function finView(b: TerminalFinanceBundle) {
 		return b.views[b.defaultMode] ?? b.views.annual ?? b.views.quarter ?? null;
 	}
@@ -194,7 +200,7 @@
 		}
 		window.open(`${HF_RESOLVE}/${e.path}`, '_blank'); // 카탈로그 밖·비parquet = 원본 직링크
 	}
-	const rawUrl = $derived(dir && id.trim() && !isFin ? `${HF_RESOLVE}/${physical(dir.dir, id.trim()).path}` : '');
+	const rawUrl = $derived(dir && id.trim() && !isTransform ? `${HF_RESOLVE}/${physical(dir.dir, id.trim()).path}` : '');
 
 	const cleanName = (s: string) => s.replace(/[\\/:*?"<>|]+/g, '_').slice(0, 80);
 
@@ -206,13 +212,14 @@
 	const cols = $derived([...pickedCols].filter((c) => allCols.includes(c)));
 	const outCols = $derived(cols.length ? cols : allCols);
 	const hasDateCol = $derived(allCols.some((c) => /(^date$|날짜|기준일|^month$|pub_?date|기간)/i.test(c)));
-	const eligible = $derived(dir && !isFin ? isTier2Eligible(dir) : false);
+	const eligible = $derived(dir && !isTransform ? isTier2Eligible(dir) : false);
 	const probed = $derived(dir != null && id.trim() !== '' && probedKey === `${dir.dir}/${id.trim()}`);
 
 	const liveUrl = $derived.by(() => {
 		if (!id.trim() || !tier2On) return '';
 		// 변환 재무제표 = 워커 변환 라우트(financeSource SSOT 공유, 베이크 0). raw = parquet→CSV.
 		if (isFin) return originUrl('csvWorker', `finance/${id.trim()}.csv?stmt=${finStmt}&freq=${finFreq}`);
+		if (isPriceInd) return originUrl('csvWorker', `priceInd/${id.trim()}.csv`);
 		if (!dir || !eligible) return '';
 		const p = new URLSearchParams();
 		if (cols.length && cols.length < allCols.length) p.set('cols', cols.join(','));
@@ -249,7 +256,7 @@
 	}
 
 	function selectDir(dirStr: string) {
-		dir = dirStr === FIN_DIR ? FIN_ENTRY : (DOWNLOAD_CATALOG.find((e) => e.dir === dirStr) ?? null);
+		dir = dirStr === FIN_DIR ? FIN_ENTRY : dirStr === PRICE_DIR ? PRICE_ENTRY : (DOWNLOAD_CATALOG.find((e) => e.dir === dirStr) ?? null);
 		finBundle = null;
 		allCols = [];
 		pickedCols = new Set();
@@ -290,6 +297,18 @@
 				fileSize = 0;
 				pickedCols = new Set();
 				previewRows = finStmtRows(view.statements.IS ?? [], view.periods).slice(0, PREVIEW_N);
+				probedKey = key;
+				return;
+			}
+			if (dir.dir === PRICE_DIR) {
+				const raw = (await readParquetRows(`gov/prices/company/${id.trim()}.parquet`)).rows;
+				if (!raw.length) throw new Error('주가 데이터 없음 (종목 확인)');
+				const ind = priceWithIndicators(raw);
+				allCols = PRICE_IND_COLS;
+				totalRows = ind.length;
+				fileSize = 0;
+				pickedCols = new Set();
+				previewRows = ind.slice(-PREVIEW_N).reverse(); // 최신 기간이 위
 				probedKey = key;
 				return;
 			}
@@ -406,6 +425,15 @@
 				}
 				return;
 			}
+			if (dir.dir === PRICE_DIR) {
+				const raw = (await readParquetRows(`gov/prices/company/${id.trim()}.parquet`)).rows;
+				const ind = priceWithIndicators(raw);
+				if (!ind.length) { probeErr = '주가 데이터 없음'; return; }
+				const nm = `${cleanName(id.trim())}_주가지표`;
+				if (f === 'xlsx') downloadBlob(objectsToWorkbook([{ label: nm, columns: PRICE_IND_COLS, rows: ind }]), `${nm}.xlsx`, XLSX_MIME);
+				else downloadCsv(nm, PRICE_IND_COLS, ind);
+				return;
+			}
 			const sheet = await readSlice();
 			if (!sheet.rows.length) {
 				probeErr = '결과 0행 (ID/슬라이스 확인)';
@@ -472,8 +500,9 @@
 			<label class="fld grow">
 				<span class="fld-label">데이터셋</span>
 				<select value={dir?.dir ?? ''} onchange={(e) => changeDir(e.currentTarget.value)} aria-label="데이터셋 선택">
-					<optgroup label="변환 · 런타임 (멀티시트)">
+					<optgroup label="변환 · 런타임">
 						<option value={FIN_DIR}>{FIN_ENTRY.label}</option>
+						<option value={PRICE_DIR}>{PRICE_ENTRY.label}</option>
 					</optgroup>
 					{#each grouped as g (g.name)}
 						<optgroup label={g.name}>
@@ -486,7 +515,7 @@
 				<span class="fld-label">{dir?.shardKind === 'company' ? '종목' : '항목'}</span>
 				<input class="id-input" placeholder={dir ? ID_HINT[dir.shardKind] : ''} bind:value={id} aria-label="종목·항목 ID" onkeydown={(ev) => ev.key === 'Enter' && probe()} onblur={idBlur} />
 			</label>
-			{#if dir}<span class="tag" class:live={eligible || isFin}>{eligible || isFin ? '라이브 API' : '다운로드 전용'}</span>{/if}
+			{#if dir}<span class="tag" class:live={eligible || isTransform}>{eligible || isTransform ? '라이브 API' : '다운로드 전용'}</span>{/if}
 		</div>
 		{#if dir && BULK_OBS.has(dir.dir)}<p class="micro">시리즈ID 입력 · 목록은 <code>{dir.dir}/manifest</code></p>{/if}
 		{#if probeErr}<p class="err">{probeErr}</p>{/if}
@@ -500,7 +529,7 @@
 			<div class="block">
 				<div class="block-head">
 					<span class="block-title">미리보기</span>
-					<span class="block-meta">{#if isFin}손익계산서 미리보기 · {Math.max(0, allCols.length - 1)}개 기간 · 다운로드는 IS·BS·CF·CIS·자본변동표·비율 시트{:else}전체 {totalRows.toLocaleString()}행 · {allCols.length}열 · 처음 {previewCap}행{/if}</span>
+					<span class="block-meta">{#if isFin}손익계산서 미리보기 · {Math.max(0, allCols.length - 1)}개 기간 · 다운로드는 IS·BS·CF·CIS·자본변동표·비율 시트{:else if isPriceInd}주가 + 보조지표 미리보기 (최신순) · MA·RSI·MACD·볼린저·거래량이평·ATR{:else}전체 {totalRows.toLocaleString()}행 · {allCols.length}열 · 처음 {previewCap}행{/if}</span>
 				</div>
 				<div class="tablewrap">
 					<table class="ptable">
@@ -513,7 +542,7 @@
 					</table>
 				</div>
 				<!-- 옵션 (raw 데이터셋만 · 변환 재무제표는 계정×기간 고정이라 숨김) -->
-				<div class="opts" style:display={isFin ? 'none' : undefined}>
+				<div class="opts" style:display={isTransform ? 'none' : undefined}>
 					<div class="opt">
 						<span class="opt-k">컬럼</span>
 						<div class="colwrap">
@@ -543,10 +572,10 @@
 						<button class="btn" onclick={() => download('csv')} disabled={!!busy}>{busy === 'csv' ? '변환 중…' : 'CSV'}</button>
 						{#if rawUrl}<a class="btn ghost" href={rawUrl} target="_blank" rel="noopener">원본 .parquet ↗</a>{/if}
 					</div>
-					<p class="note">{#if isFin}변환 6시트(IS·BS·CF·CIS·자본변동표·비율) · 진짜 Number · 터미널과 동일 변환{:else}가공(Excel/CSV) = 한도 없음·진짜 Number · 원본 = HF parquet{#if fileSize} {fmtBytes(fileSize)}{/if}{/if}</p>
+					<p class="note">{#if isFin}변환 6시트(IS·BS·CF·CIS·자본변동표·비율) · 진짜 Number · 터미널과 동일 변환{:else if isPriceInd}주가 OHLCV + 보조지표(MA5/20/60·RSI14·MACD·볼린저·VolMA20·ATR14) · 터미널 차트와 동일 계산{:else}가공(Excel/CSV) = 한도 없음·진짜 Number · 원본 = HF parquet{#if fileSize} {fmtBytes(fileSize)}{/if}{/if}</p>
 				</div>
 
-				{#if (eligible || isFin) && tier2On && liveUrl}
+				{#if (eligible || isTransform) && tier2On && liveUrl}
 					<div class="get-col api">
 						<span class="get-k">라이브 API <span class="muted">(시트·코드가 URL 을 직접 읽음)</span></span>
 						{#if isFin}

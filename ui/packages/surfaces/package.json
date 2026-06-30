@@ -49,6 +49,11 @@
 			"types": "./src/downloadExport.ts",
 			"svelte": "./src/downloadExport.ts",
 			"default": "./src/downloadExport.ts"
+		},
+		"./priceIndicators": {
+			"types": "./src/terminal/lib/priceIndicators.ts",
+			"svelte": "./src/terminal/lib/priceIndicators.ts",
+			"default": "./src/terminal/lib/priceIndicators.ts"
 		}
 	},
 	"scripts": {

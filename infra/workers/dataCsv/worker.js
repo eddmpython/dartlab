@@ -25,6 +25,7 @@ import { ALLOW, RELEASES, isTier2 } from './allowlist.js';
 // .ts import 는 wrangler/esbuild 가 번들(로컬 dev 는 npm run build 의 esbuild dist 경유).
 import { bundleFromRows } from '../../../ui/packages/runtime/src/adapters/public/sources/financeSource.ts';
 import { FINANCE_COLUMNS } from '../../../ui/packages/runtime/src/data/finance/accounts.ts';
+import { priceWithIndicators, PRICE_IND_COLS } from '../../../ui/packages/surfaces/src/terminal/lib/priceIndicators.ts';
 
 // 압축해제기 — dartlab parquet 는 전량 ZSTD(실측). fzstd 는 순수 JS 라 CF Workers 의 런타임 WASM 금지
 // (hyparquet-compressors 의 hysnappy WASM 은 `WebAssembly.Module()` 바이트컴파일 → CF 거부)를 회피한다.
@@ -298,6 +299,37 @@ export default {
 				} });
 			} catch (e) {
 				return json({ error: 'finance transform failed', detail: String(e && e.message || e) }, 502, indexLink);
+			}
+		}
+
+		// 라이브 변환 주가 보조지표 /v1/priceInd/{code}.{csv|tsv}
+		// gov/prices/company raw 를 읽어 indicators.ts(SSOT) 보조지표(MA·RSI·MACD·볼린저·거래량·ATR)를 산출(베이크 0).
+		const mPi = rest.match(/^priceInd\/(.+)\.(csv|tsv)$/);
+		if (mPi) {
+			const code = mPi[1];
+			const piExt = mPi[2];
+			if (!validId(code)) return json({ error: 'invalid code' }, 400, indexLink);
+			const piUrl = `${UPSTREAM}/gov/prices/company/${code}.parquet`;
+			const piProbe = await probeSize(piUrl, baseFetch);
+			if (piProbe.status === 404) return json({ error: 'not found', hint: 'price not published for this code' }, 404, indexLink);
+			if (piProbe.status >= 500) return json({ error: 'upstream error', status: piProbe.status }, 502, indexLink);
+			try {
+				const file = await asyncBufferFromUrl({ url: piUrl, byteLength: piProbe.size, fetch: (u, i) => retryFetch(u, i, baseFetch) });
+				const raw = await parquetReadObjects({ file, compressors });
+				const ind = priceWithIndicators(raw);
+				if (!ind.length) return json({ error: 'no price rows for this code' }, 404, indexLink);
+				const piBody = serialize(ind, PRICE_IND_COLS, piExt);
+				return new Response(req.method === 'HEAD' ? null : piBody, { status: 200, headers: {
+					...CORS,
+					'Access-Control-Expose-Headers': 'X-DartLab-Total-Rows',
+					'Content-Type': piExt === 'tsv' ? 'text/tab-separated-values; charset=utf-8' : 'text/csv; charset=utf-8',
+					'Content-Disposition': contentDisposition(`${code}_indicators`, piExt),
+					...cacheH,
+					...indexLink,
+					'X-DartLab-Total-Rows': String(ind.length)
+				} });
+			} catch (e) {
+				return json({ error: 'price indicators failed', detail: String(e && e.message || e) }, 502, indexLink);
 			}
 		}
 
