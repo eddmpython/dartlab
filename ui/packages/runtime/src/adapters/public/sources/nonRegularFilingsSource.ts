@@ -4,6 +4,7 @@
 // 통합파일 생성: .github/scripts/sync/buildAllFilingsRecent.py (정기보고서는 이미 제외됨).
 // 타입 정본 = contracts (NonRegularFiling 승격 완료 — 중복 정의 금지).
 import type { MarketFiling, NonRegularFiling } from '@dartlab/ui-contracts';
+import { resolveMarket } from '@dartlab/ui-contracts';
 import type { DataCore } from '../../../data/fetch/request';
 import { originConfigured } from '../../../data/origins/registry';
 
@@ -21,6 +22,83 @@ const REGULAR = ['사업보고서', '반기보고서', '분기보고서'];
 function fmtDate(s: string): string {
 	const c = String(s).replace(/\D/g, '').slice(0, 8);
 	return c.length === 8 ? `${c.slice(0, 4)}-${c.slice(4, 6)}-${c.slice(6, 8)}` : String(s);
+}
+
+// ── EDGAR(US) 공시 — edgar/allFilings/{recent,market_recent}.parquet 직독 (KR dart/allFilings 대칭).
+// buildEdgarAllFilingsRecent 가 굽는 camelCase 컬럼. 정기보고서(10-K/10-Q)는 빌드서 이미 제외 — 수시만.
+interface EdgarFilingRow extends Record<string, unknown> {
+	stockCode?: unknown;
+	entityName?: unknown;
+	filingDate?: unknown;
+	form?: unknown;
+	accessionNo?: unknown;
+	docDescription?: unknown;
+	url?: unknown;
+}
+const EDGAR_FILING_COLS = ['stockCode', 'entityName', 'filingDate', 'form', 'accessionNo', 'docDescription', 'url'];
+
+// EDGAR 행 → NonRegularFiling. reportNm = form(+설명). accessionNo 가 rceptNo, entityName 이 filer(회사 자신).
+function toEdgarNonRegular(r: EdgarFilingRow): NonRegularFiling | null {
+	const rceptNo = String(r.accessionNo ?? '').trim();
+	if (!rceptNo) return null;
+	const form = String(r.form ?? '').trim();
+	const desc = String(r.docDescription ?? '').trim();
+	return {
+		rceptNo,
+		reportNm: desc && desc !== form ? `${form} · ${desc}` : form,
+		rceptDate: fmtDate(String(r.filingDate ?? '')),
+		filer: String(r.entityName ?? '').trim(),
+		url: String(r.url ?? '').trim()
+	};
+}
+
+async function loadEdgarCompanyFilings(core: DataCore, ticker: string): Promise<NonRegularFiling[]> {
+	try {
+		const rows = await core.requestParquetRows<EdgarFilingRow>({
+			origin: 'hfRange',
+			path: 'edgar/allFilings/recent.parquet',
+			columns: EDGAR_FILING_COLS,
+			filter: { stockCode: { $in: [ticker] } },
+			cacheKey: `edgarFilings.recent:one:${ticker}`,
+			cache: { scope: 'memory', ttlMs: 10 * 60_000, maxEntries: 256 }
+		});
+		const seen = new Set<string>();
+		const out: NonRegularFiling[] = [];
+		for (const r of rows) {
+			const f = toEdgarNonRegular(r);
+			if (!f || seen.has(f.rceptNo)) continue;
+			seen.add(f.rceptNo);
+			out.push(f);
+		}
+		out.sort((a, b) => b.rceptDate.localeCompare(a.rceptDate) || b.rceptNo.localeCompare(a.rceptNo));
+		return out;
+	} catch {
+		return [];
+	}
+}
+
+async function loadEdgarMarketFeed(core: DataCore): Promise<MarketFiling[]> {
+	try {
+		const rows = await core.requestParquetWholeFile<EdgarFilingRow>({
+			origin: 'hf',
+			path: 'edgar/allFilings/market_recent.parquet',
+			columns: EDGAR_FILING_COLS,
+			cacheKey: 'edgarFilings.marketFeed',
+			cache: { scope: 'memory', ttlMs: 10 * 60_000, maxEntries: 2 }
+		});
+		const seen = new Set<string>();
+		const out: MarketFiling[] = [];
+		for (const r of rows ?? []) {
+			const f = toEdgarNonRegular(r);
+			const stockCode = String(r.stockCode ?? '').trim();
+			if (!f || !stockCode || seen.has(f.rceptNo)) continue;
+			seen.add(f.rceptNo);
+			out.push({ ...f, stockCode, corpName: String(r.entityName ?? '').trim() });
+		}
+		return out;
+	} catch {
+		return [];
+	}
 }
 
 // 워커 marketFilingsWorker — DART list 당일 전체 공시(라이브). 시장 피드·종목 비정기 공용(코어 캐시 공유).
@@ -49,6 +127,8 @@ function loadLiveMarketFilings(core: DataCore): Promise<LiveFilingRow[]> {
 
 export async function loadCompanyNonRegularFilings(core: DataCore, stockCode: string): Promise<NonRegularFiling[]> {
 	const code = stockCode.trim();
+	const m = resolveMarket(code);
+	if (m.market === 'US' && m.ticker) return loadEdgarCompanyFilings(core, m.ticker); // US = edgar/allFilings 직독
 	if (!/^\d{6}$/.test(code)) return [];
 	try {
 		// HF 누적(전 이력) + 라이브 당일 공시(이 종목분 필터) 동시 — 라이브가 배치 사이 갭(당일) 메움.
@@ -150,7 +230,7 @@ interface FeedRow extends RecentRow {
 export async function loadMarketFeed(core: DataCore): Promise<MarketFiling[]> {
 	try {
 		// HF 누적 bake(3개월) + 라이브 당일 전체 공시 동시 — 라이브가 배치(14:30) 사이 갭(당일) 메움.
-		const [rows, live] = await Promise.all([
+		const [rows, live, edgar] = await Promise.all([
 			core.requestParquetWholeFile<FeedRow>({
 				origin: 'hf',
 				path: 'dart/allFilings/market_recent.parquet',
@@ -158,7 +238,8 @@ export async function loadMarketFeed(core: DataCore): Promise<MarketFiling[]> {
 				cacheKey: 'allFilings.marketFeed',
 				cache: { scope: 'memory', ttlMs: 10 * 60_000, maxEntries: 2 } // 일일 cron 갱신 — 신선도 우선 10분 TTL(worker 엣지 600s 와 일치)
 			}),
-			loadLiveMarketFilings(core)
+			loadLiveMarketFilings(core),
+			loadEdgarMarketFeed(core) // US 수시공시 피드 병합(KR dart + US edgar, rceptNo 무충돌)
 		]);
 		const seen = new Set<string>();
 		const result: MarketFiling[] = [];
@@ -188,7 +269,13 @@ export async function loadMarketFeed(core: DataCore): Promise<MarketFiling[]> {
 				url: `https://dart.fss.or.kr/dsaf001/main.do?rcpNo=${rceptNo}`
 			});
 		}
-		// 라이브(오늘) + HF(bake desc) 합침 → rceptDate desc 재정렬(라이브 오늘이 위로). 캐시·dedup 은 코어/위.
+		// US(edgar) 시장 피드 병합 — rceptNo(accession) 가 KR rcept_no 와 무충돌이라 같은 seen 으로 dedup.
+		for (const f of edgar) {
+			if (seen.has(f.rceptNo)) continue;
+			seen.add(f.rceptNo);
+			result.push(f);
+		}
+		// 라이브(오늘) + HF(bake desc) + US 합침 → rceptDate desc 재정렬(라이브 오늘이 위로). 캐시·dedup 은 코어/위.
 		result.sort((a, b) => b.rceptDate.localeCompare(a.rceptDate) || b.rceptNo.localeCompare(a.rceptNo));
 		return result;
 	} catch {
