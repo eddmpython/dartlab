@@ -474,14 +474,13 @@ def extractRawMaterialEdges(nodes: list[IndustryNode]) -> list[IndustryEdge]:
     # providers.dart.panel.text SSOT. panel contentRaw raw DART XML 표를
     # providers.dart.panel.text.panelXmlTables(lxml)가 markdown extractTables 와 동일 shape(표×행×셀)로 추출 —
     # 공급사명/매입액/비중 복원(드롭 0). period=None=전 기간(다운스트림 corp 명 dedup).
-    from dartlab.providers.dart.panel.text import panelXmlTables
+    from dartlab.providers.dart.panel.text import gridToRowDicts, panelXmlTables
     from dartlab.providers.dart.tableRows import (
         extractCorpNames,
         findTableByHeaders,
         normalizeCorpName,
         parseAmount,
         parsePercent,
-        tableToRowDictsWithHeaderRow,
     )
 
     edges: list[IndustryEdge] = []
@@ -505,7 +504,9 @@ def extractRawMaterialEdges(nodes: list[IndustryNode]) -> list[IndustryEdge]:
             continue
 
         table, hi = found
-        rows = tableToRowDictsWithHeaderRow(table, hi, inheritColumns=["부문", "부 문"])
+        # 격자전개(parsePanelXmlTables)가 rowspan 으로 부문 셀을 이미 forward-fill 하므로
+        # 헤더행(hi)부터 슬라이스해 정렬된 row dict 로 변환 (옛 inheritColumns shift 휴리스틱 불요).
+        rows = gridToRowDicts(table, headerRow=hi)
 
         buyerFacts: list[dict] = []  # 레버 A: 비상장 매입처 leaf fact (멱등 — 루프 후 할당)
         for r in rows:

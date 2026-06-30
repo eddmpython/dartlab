@@ -99,19 +99,36 @@ def _numShares(cell: str | None) -> int | None:
 def _parseSharesTable(tables: list[list[list[str]]]) -> dict | None:
     """providers.dart.panel.text.panelXmlTables('주식의 총수') 표 행 → 발행/자기/유통 주식수 (panel XML 표).
 
-    표 컬럼: [label, 보통주, 우선주, 합계]. Ⅰ발행할~Ⅵ유통 행 라벨 매칭.
+    헤더 기반 추출. 격자전개(parsePanelXmlTables)가 '구분' COLSPAN·다단 헤더를 직사각화하므로,
+    위치 인덱싱 대신 ``gridToRowDicts`` 로 '보통주'/'우선주'/'합계' 헤더 열을 이름으로 잡는다. 라벨
+    (Ⅰ발행할~Ⅵ유통)은 첫 열(구분)에서 매칭.
     """
+    from dartlab.providers.dart.panel.text import gridToRowDicts
+
     for t in tables:
         labels = "".join(row[0] for row in t if row).replace(" ", "")
         if "발행주식의총수" not in labels and "유통주식수" not in labels:
             continue
+        # 다단 헤더 대응: '합계' + ('보통주'|'우선주') 가 있는 행을 헤더로.
+        headerRow = 0
+        for i, row in enumerate(t[:4]):
+            joined = "".join(row).replace(" ", "")
+            if "합계" in joined and ("보통주" in joined or "우선주" in joined):
+                headerRow = i
+                break
+        rows = gridToRowDicts(t, headerRow=headerRow)
+        if not rows:
+            continue
+        keys = list(rows[0].keys())
+        labelKey = keys[0]
+        prefKey = next((k for k in keys if k.replace(" ", "") == "우선주"), None)
+        totalKey = next((k for k in keys if k.replace(" ", "") == "합계"), None)
+
         out: dict = {}
-        for row in t:
-            if not row:
-                continue
-            label = row[0].replace(" ", "")
-            pref = _numShares(row[2]) if len(row) > 2 else None
-            total = _numShares(row[3]) if len(row) > 3 else None
+        for r in rows:
+            label = (r.get(labelKey) or "").replace(" ", "")
+            pref = _numShares(r.get(prefKey)) if prefKey else None
+            total = _numShares(r.get(totalKey)) if totalKey else None
             if "발행할주식의총수" in label:
                 out["authorizedShares"] = total
             elif "현재까지발행한주식" in label:

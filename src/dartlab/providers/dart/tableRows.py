@@ -123,7 +123,7 @@ def tableToRowDicts(table: list[list[str]]) -> list[dict[str, str]]:
         [{'A': '1', 'B': '2'}]
 
     Guide:
-        헤더가 메타 행 ("(단위: 억원)") 등으로 시작하면 ``tableToRowDictsWithHeaderRow`` 사용.
+        헤더가 메타 행 ("(단위: 억원)") 등으로 시작하면 ``findTableByHeaders`` 로 헤더 행을 찾아 슬라이스.
 
     When:
         단순 테이블 → dict 변환 (헤더 0 행이 명확할 때).
@@ -135,7 +135,8 @@ def tableToRowDicts(table: list[list[str]]) -> list[dict[str, str]]:
         - 외부 의존 없음.
 
     See Also:
-        - ``dartlab.providers.dart.tableRows.tableToRowDictsWithHeaderRow`` : 헤더 행 선택
+        - ``dartlab.providers.dart.tableRows.findTableByHeaders`` : 헤더 행 검색
+        - ``dartlab.providers.dart.panel.text.gridToRowDicts`` : panel XML 격자(rowspan 전개) dict 변환
 
     AIContext:
         AI 직접 호출 없음 (내부 헬퍼).
@@ -207,103 +208,6 @@ def findTableByHeaders(
             if all(kw.lower() in headerText for kw in requiredHeaders):
                 return table, hi
     return None
-
-
-def tableToRowDictsWithHeaderRow(
-    table: list[list[str]],
-    headerRow: int = 0,
-    *,
-    inheritColumns: list[str] | None = None,
-) -> list[dict[str, str]]:
-    """특정 행을 헤더로 지정하여 dict 리스트 변환.
-
-    Capabilities:
-        ``headerRow`` 인덱스 행을 헤더로 지정해 그 아래 행들을 dict 리스트로 변환. ``inheritColumns``
-        의 키워드에 매칭되는 헤더의 빈 셀은 이전 행 값을 상속 (마크다운 rowspan 병합 복원).
-        DART 보고서 "부문" 컬럼 병합 셀 처리에 특화.
-
-    Parameters
-    ----------
-    inheritColumns : list[str] | None
-        빈 셀을 이전 행에서 상속할 헤더 키워드 목록.
-        예: ['부문', '부 문'] — 병합된 셀 복원.
-        None이면 상속 없음 (빈 셀은 빈 셀 그대로).
-
-    Raises:
-        없음 — 빈 / headerRow 범위 초과 시 빈 리스트.
-
-    Example:
-        >>> tableToRowDictsWithHeaderRow(table, headerRow=1, inheritColumns=["부문"])
-
-    Guide:
-        DART 사업보고서 원재료/매출 표는 보통 행 0 이 "(단위: 백만원)" — ``findTableByHeaders``
-        결과의 ``hi`` 를 ``headerRow`` 로 전달해 사용.
-
-    When:
-        ``extractRawMaterialEdges`` 가 매입처 표 변환 시 본 함수 호출.
-
-    How:
-        헤더 행 추출 → 상속 컬럼 인덱스 집합 → 데이터 행 루프 → shift 휴리스틱 (첫 셀 비어있고
-        끝 셀 비어있으면 한 칸 미는 패턴 검출) → 셀 값 채우기.
-
-    Requires:
-        - 외부 의존 없음.
-
-    See Also:
-        - ``dartlab.providers.dart.tableRows.findTableByHeaders`` : 헤더 행 검색
-        - ``dartlab.industry.build.edges.extractRawMaterialEdges`` : 본 함수 사용자
-
-    AIContext:
-        AI 직접 호출 없음 (내부 헬퍼). 결과 dict 가 supplier 엣지 product/amount/ratio 추출 원본.
-    """
-    if not table or headerRow >= len(table):
-        return []
-    header = table[headerRow]
-
-    # 상속할 컬럼 인덱스 결정
-    inheritIdxs: set[int] = set()
-    if inheritColumns:
-        for i, h in enumerate(header):
-            hClean = h.strip()
-            if any(kw in hClean for kw in inheritColumns):
-                inheritIdxs.add(i)
-
-    rows: list[dict[str, str]] = []
-    prev: list[str] = ["" for _ in header]
-    # 첫 컬럼이 상속 대상일 때, 값이 비어있으면 앞 행 상속 + 나머지 칸 한 칸 당기기
-    # (마크다운 테이블 rowspan 병합 효과 복원)
-    shouldShift = 0 in inheritIdxs
-
-    for raw in table[headerRow + 1 :]:
-        padded = raw[: len(header)] + [""] * (len(header) - len(raw))
-
-        # shift 필요한지 판단: 첫 셀이 비어있고 끝 셀도 비어있으면 한 칸 밀린 것
-        if shouldShift and padded[0] and not padded[-1]:
-            # 첫 셀이 있지만 실제로는 이전 부문의 하위 품목인지 판단
-            # 조건: 끝 셀이 빈 문자열이고 첫 셀 값이 header[1]류일 때
-            # 보수적: 첫 셀이 부문 값 패턴(이전 prev[0]과 같은 레벨)이 아닐 때만 shift
-            # 간단한 휴리스틱: 첫 셀이 "부문"/"소계"/"총계"/"기타"가 아니고 prev[0]이 있으면 shift
-            firstCell = padded[0]
-            isNewBumun = any(k in firstCell for k in ["부문", "부 문", "소 계", "소계", "총 계", "총계", "기타"])
-            isHarmonSam = (
-                firstCell in ["Harman", "SDC", "DX", "DS"] or firstCell.startswith("DS") or firstCell.startswith("DX")
-            )
-            if not isNewBumun and not isHarmonSam and prev[0]:
-                # 한 칸 당기기: [a,b,c,d,e,''] → ['', a, b, c, d, e]
-                padded = [""] + padded[:-1]
-
-        row = []
-        for i, v in enumerate(padded):
-            if v:
-                row.append(v)
-                prev[i] = v
-            elif i in inheritIdxs:
-                row.append(prev[i])
-            else:
-                row.append("")
-        rows.append(dict(zip(header, row)))
-
-    return rows
 
 
 def parseAmount(text: str) -> float | None:

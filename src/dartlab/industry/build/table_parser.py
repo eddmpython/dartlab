@@ -12,7 +12,6 @@ from dartlab.providers.dart.tableRows import (
     normalizeCorpName,
     parseAmount,
     parsePercent,
-    tableToRowDictsWithHeaderRow,
 )
 
 __all__ = [
@@ -21,5 +20,4 @@ __all__ = [
     "normalizeCorpName",
     "parseAmount",
     "parsePercent",
-    "tableToRowDictsWithHeaderRow",
 ]
