@@ -9,6 +9,13 @@ const n = (v: unknown): number => {
 const r2 = (v: number | null | undefined): number | null =>
 	v == null || !Number.isFinite(v) ? null : Math.round(v * 100) / 100;
 
+// 날짜 오름차순 정렬 키. 지표(MA·RSI·MACD 등)는 시간순 전제라, parquet 행 순서가 역순·뒤섞여 있어도
+// 정확하게 계산되도록 입력을 항상 date 오름차순으로 맞춘다. Date·'YYYY-MM-DD'·'YYYYMMDD' 모두 흡수.
+const ymd = (v: unknown): string => {
+	if (v instanceof Date) return v.toISOString().slice(0, 10).replace(/-/g, '');
+	return String(v ?? '').replace(/[^0-9]/g, '').slice(0, 8);
+};
+
 // 출력 컬럼 순서(헤더 SSOT) · raw OHLCV 다음 지표.
 export const PRICE_IND_COLS = [
 	'date', 'name', 'close', 'volume',
@@ -18,6 +25,7 @@ export const PRICE_IND_COLS = [
 
 export function priceWithIndicators(rows: Record<string, unknown>[]): Record<string, unknown>[] {
 	if (!rows.length) return [];
+	rows = [...rows].sort((a, b) => ymd(a.date).localeCompare(ymd(b.date)));
 	const close = rows.map((r) => n(r.close));
 	const high = rows.map((r) => n(r.high));
 	const low = rows.map((r) => n(r.low));
@@ -52,6 +60,7 @@ export function priceWithIndicators(rows: Record<string, unknown>[]): Record<str
 export const VALUE_IND_COLS = ['date', 'value', 'MA5', 'MA20', 'MA60', 'RSI14', 'MACD', 'MACD_signal', 'MACD_hist', 'BB_mid', 'BB_upper', 'BB_lower'];
 export function valueWithIndicators(rows: Record<string, unknown>[], valueCol: string, dateCol: string): Record<string, unknown>[] {
 	if (!rows.length) return [];
+	rows = [...rows].sort((a, b) => ymd(a[dateCol]).localeCompare(ymd(b[dateCol])));
 	const v = rows.map((r) => n(r[valueCol]));
 	const ma5 = sma(v, 5), ma20 = sma(v, 20), ma60 = sma(v, 60);
 	const r14 = rsi(v, 14);

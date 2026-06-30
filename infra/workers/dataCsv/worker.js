@@ -311,15 +311,20 @@ export default {
 		}
 
 		// 라이브 변환 주가 보조지표 /v1/priceInd/{code}.{csv|tsv}
-		// gov/prices/company raw 를 읽어 indicators.ts(SSOT) 보조지표(MA·RSI·MACD·볼린저·거래량·ATR)를 산출(베이크 0).
+		// KR(6자리)=gov/prices/company · 그 외=US 티커 edgar/prices/company raw 를 읽어 indicators.ts(SSOT)
+		// 보조지표(MA·RSI·MACD·볼린저·거래량·ATR)를 산출(베이크 0). 두 소스는 동일 컬럼(date/close/high/low/volume)이라
+		// rename 0 (finance 라우트의 isKr 분기와 동형). priceWithIndicators 가 date 오름차순 정렬 후 계산.
 		const mPi = rest.match(/^priceInd\/(.+)\.(csv|tsv)$/);
 		if (mPi) {
-			const code = mPi[1];
+			const rawCode = mPi[1];
 			const piExt = mPi[2];
-			if (!validId(code)) return json({ error: 'invalid code' }, 400, indexLink);
-			const piUrl = `${UPSTREAM}/gov/prices/company/${code}.parquet`;
+			if (!validId(rawCode)) return json({ error: 'invalid code' }, 400, indexLink);
+			const piIsKr = /^\d{6}$/.test(rawCode);
+			const code = piIsKr ? rawCode : rawCode.toUpperCase(); // US 티커 파일은 대문자 stem
+			const piDir = piIsKr ? 'gov/prices/company' : 'edgar/prices/company';
+			const piUrl = `${UPSTREAM}/${piDir}/${code}.parquet`;
 			const piProbe = await probeSize(piUrl, baseFetch);
-			if (piProbe.status === 404) return json({ error: 'not found', hint: 'price not published for this code' }, 404, indexLink);
+			if (piProbe.status === 404) return json({ error: 'not found', hint: piIsKr ? 'KR price not published for this code' : 'US ticker price not published' }, 404, indexLink);
 			if (piProbe.status >= 500) return json({ error: 'upstream error', status: piProbe.status }, 502, indexLink);
 			try {
 				const file = await asyncBufferFromUrl({ url: piUrl, byteLength: piProbe.size, fetch: (u, i) => retryFetch(u, i, baseFetch) });

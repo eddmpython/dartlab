@@ -42,9 +42,9 @@
 	const grouped = GROUPS.map((g) => ({ name: g.name, items: DOWNLOAD_CATALOG.filter((e) => g.test(e.dir)) })).filter((g) => g.items.length);
 
 	const QUICK = [
-		{ label: '삼성전자 주가', dir: 'gov/prices/company', id: '005930' },
+		{ label: '삼성전자 주가지표', dir: 'gov/prices/__indicators__', id: '005930' },
+		{ label: '엔비디아 주가지표(US)', dir: 'gov/prices/__indicators__', id: 'NVDA' },
 		{ label: '삼성전자 재무', dir: 'dart/finance', id: '005930' },
-		{ label: 'SK하이닉스 주가', dir: 'gov/prices/company', id: '000660' },
 		{ label: 'KOSPI 지수', dir: 'gov/indices/index', id: 'KOSPI-코스피' },
 		{ label: 'FRED 금리(10년)', dir: 'macro/fred', id: 'DGS10' }
 	];
@@ -91,6 +91,11 @@
 	const PRICE_DIR = 'gov/prices/__indicators__';
 	const PRICE_ENTRY: CatalogEntry = { dir: PRICE_DIR, label: '주가 + 보조지표 (MA·RSI·MACD·볼린저)', shardKind: 'company' };
 	const isPriceInd = $derived(dir?.dir === PRICE_DIR);
+	// 주가 소스: KR(6자리)=gov/prices/company · 그 외=US 티커 edgar/prices/company. 동일 컬럼이라 변환 동형(워커 isKr 분기와 일치).
+	function pricePath(idv: string): string {
+		const t = idv.trim();
+		return /^\d{6}$/.test(t) ? `gov/prices/company/${t}.parquet` : `edgar/prices/company/${t.toUpperCase()}.parquet`;
+	}
 	// 경제지표·지수 보조지표(단일 값 시계열). 소스(fred/ecos/customs/지수)별 value·date 컬럼 매핑.
 	const VALUE_DIR = 'macro/__indicators__';
 	const VALUE_ENTRY: CatalogEntry = { dir: VALUE_DIR, label: '경제지표·지수 + 보조지표 (MA·RSI·MACD·볼린저)', shardKind: 'series' };
@@ -313,8 +318,8 @@
 				return;
 			}
 			if (dir.dir === PRICE_DIR) {
-				const raw = (await readParquetRows(`gov/prices/company/${id.trim()}.parquet`)).rows;
-				if (!raw.length) throw new Error('주가 데이터 없음 (종목 확인)');
+				const raw = (await readParquetRows(pricePath(id.trim()))).rows;
+				if (!raw.length) throw new Error('주가 데이터 없음 (종목·티커 확인)');
 				const ind = priceWithIndicators(raw);
 				allCols = PRICE_IND_COLS;
 				totalRows = ind.length;
@@ -453,7 +458,7 @@
 				return;
 			}
 			if (dir.dir === PRICE_DIR) {
-				const raw = (await readParquetRows(`gov/prices/company/${id.trim()}.parquet`)).rows;
+				const raw = (await readParquetRows(pricePath(id.trim()))).rows;
 				const ind = priceWithIndicators(raw);
 				if (!ind.length) { probeErr = '주가 데이터 없음'; return; }
 				const nm = `${cleanName(id.trim())}_주가지표`;
@@ -553,7 +558,7 @@
 			</label>
 			<label class="fld">
 				<span class="fld-label">{dir?.shardKind === 'company' ? '종목' : '항목'}</span>
-				<input class="id-input" placeholder={dir ? ID_HINT[dir.shardKind] : ''} bind:value={id} aria-label="종목·항목 ID" onkeydown={(ev) => ev.key === 'Enter' && probe()} onblur={idBlur} />
+				<input class="id-input" placeholder={isPriceInd ? '005930 · NVDA' : dir ? ID_HINT[dir.shardKind] : ''} bind:value={id} aria-label="종목·항목 ID" onkeydown={(ev) => ev.key === 'Enter' && probe()} onblur={idBlur} />
 			</label>
 			{#if dir}<span class="tag" class:live={eligible || isTransform}>{eligible || isTransform ? '라이브 API' : '다운로드 전용'}</span>{/if}
 		</div>
@@ -569,7 +574,7 @@
 			<div class="block">
 				<div class="block-head">
 					<span class="block-title">미리보기</span>
-					<span class="block-meta">{#if isFin}손익계산서 미리보기 · {Math.max(0, allCols.length - 1)}개 기간 · 다운로드는 IS·BS·CF·CIS·자본변동표·비율 시트{:else if isPriceInd}주가 + 보조지표 미리보기 (최신순) · MA·RSI·MACD·볼린저·거래량이평·ATR{:else if isValueInd}경제지표·지수 보조지표 미리보기 (최신순) · MA·RSI·MACD·볼린저{:else}전체 {totalRows.toLocaleString()}행 · {allCols.length}열 · 처음 {previewCap}행{/if}</span>
+					<span class="block-meta">{#if isFin}손익계산서 미리보기 · {Math.max(0, allCols.length - 1)}개 기간 · 다운로드는 IS·BS·CF·CIS·자본변동표·비율 시트{:else if isPriceInd}주가 + 보조지표 미리보기 (최신순) · KR 6자리·US 티커 · MA·RSI·MACD·볼린저·거래량이평·ATR{:else if isValueInd}경제지표·지수 보조지표 미리보기 (최신순) · MA·RSI·MACD·볼린저{:else}전체 {totalRows.toLocaleString()}행 · {allCols.length}열 · 처음 {previewCap}행{/if}</span>
 				</div>
 				<div class="tablewrap">
 					<table class="ptable">
@@ -612,7 +617,7 @@
 						<button class="btn" onclick={() => download('csv')} disabled={!!busy}>{busy === 'csv' ? '변환 중…' : 'CSV'}</button>
 						{#if rawUrl}<a class="btn ghost" href={rawUrl} target="_blank" rel="noopener">원본 .parquet ↗</a>{/if}
 					</div>
-					<p class="note">{#if isFin}변환 6시트(IS·BS·CF·CIS·자본변동표·비율) · 진짜 Number · 터미널과 동일 변환{:else if isPriceInd}주가 OHLCV + 보조지표(MA5/20/60·RSI14·MACD·볼린저·VolMA20·ATR14) · 터미널 차트와 동일 계산{:else if isValueInd}단일 값 시계열 + 보조지표(MA5/20/60·RSI14·MACD·볼린저) · 고저·거래량 없어 ATR·스토캐스틱 제외{:else}가공(Excel/CSV) = 한도 없음·진짜 Number · 원본 = HF parquet{#if fileSize} {fmtBytes(fileSize)}{/if}{/if}</p>
+					<p class="note">{#if isFin}변환 6시트(IS·BS·CF·CIS·자본변동표·비율) · 진짜 Number · 터미널과 동일 변환{:else if isPriceInd}주가 OHLCV + 보조지표(MA5/20/60·RSI14·MACD·볼린저·VolMA20·ATR14) · 한국(6자리)·미국(티커) 자동 · 터미널 차트와 동일 계산{:else if isValueInd}단일 값 시계열 + 보조지표(MA5/20/60·RSI14·MACD·볼린저) · 고저·거래량 없어 ATR·스토캐스틱 제외{:else}가공(Excel/CSV) = 한도 없음·진짜 Number · 원본 = HF parquet{#if fileSize} {fmtBytes(fileSize)}{/if}{/if}</p>
 				</div>
 
 				{#if (eligible || isTransform) && tier2On && liveUrl}
