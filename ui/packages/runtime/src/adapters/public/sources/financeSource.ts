@@ -101,20 +101,26 @@ function scopeHasData(rows: RawRow[], fs: FinScope): boolean {
 
 // 터미널 재무 번들 · core 를 어댑터당 1 인스턴스로 주입(전역 싱글턴 금지). read 는 core 가 캐시·dedup 하고,
 // 번들 빌드(transform)는 재실행돼도 무거운 read 를 공유하므로 결과 레벨 bundleCache Map 은 폐기.
+// rows → 변환 번들 (scope 판정 + buildBundle). 브라우저는 core read 로, 워커(infra/workers/dataCsv)는
+// hyparquet read 로 같은 rows 를 만들어 이 함수를 공유한다. 변환 SSOT 1개, 베이크 0(런타임-SSOT 정합).
+export function bundleFromRows(rows: RawRow[], scope?: FinScope, currency?: 'KRW' | 'USD'): TerminalFinanceBundle | null {
+	const avail: FinScope[] = (['CFS', 'OFS'] as FinScope[]).filter((s) => scopeHasData(rows, s));
+	if (avail.length === 0) return null;
+	// 기본 = 연결 우선(최신성보다 우선) · 연결이 있으면 옛 분기여도 연결, 연결이 아예 없을 때만 별도. 지정 + 가용 시 그대로.
+	const fallback: FinScope = avail.includes('CFS') ? 'CFS' : 'OFS';
+	const useScope: FinScope = scope && avail.includes(scope) ? scope : fallback;
+	const bundle = buildBundle(rows, useScope, avail);
+	if (bundle && currency) bundle.currency = currency;
+	return bundle;
+}
+
 export function loadTerminalFinance(core: DataCore, stockCode: string, scope?: FinScope): Promise<TerminalFinanceBundle | null> {
 	if (!browser) return Promise.resolve(null);
 	const code = stockCode.trim();
 	return (async () => {
 		const rows = await loadRows(core, code);
 		if (!rows) return null;
-		const avail: FinScope[] = (['CFS', 'OFS'] as FinScope[]).filter((s) => scopeHasData(rows, s));
-		if (avail.length === 0) return null;
-		// 기본 = 연결 우선(최신성보다 우선) · 연결이 있으면 옛 분기여도 연결, 연결이 아예 없을 때만 별도. 지정 + 가용 시 그대로.
-		const fallback: FinScope = avail.includes('CFS') ? 'CFS' : 'OFS';
-		const useScope: FinScope = scope && avail.includes(scope) ? scope : fallback;
-		const bundle = buildBundle(rows, useScope, avail);
-		if (bundle) bundle.currency = resolveMarket(code).market === 'US' ? 'USD' : 'KRW';
-		return bundle;
+		return bundleFromRows(rows, scope, resolveMarket(code).market === 'US' ? 'USD' : 'KRW');
 	})();
 }
 

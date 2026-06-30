@@ -4,7 +4,7 @@
 # 128MB 를 넘으므로 MAX_DECODE_BYTES=90MB 가드가 413→Tier1(PRD killList 패턴). 회사 flat 파일이 CF
 # 라이브의 핵심. 남은 게이트 = openDecision #2 CF CPU 플랜(무료 10ms vs 유료) — 배포 후 실측·운영자 보고.
 name = "dartlab-data-csv"
-main = "worker.js"
+main = "dist/worker.mjs"  # esbuild 번들(financeSource .ts 포함) · npm run build 산출물
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 

@@ -21,6 +21,10 @@
 import { asyncBufferFromUrl, parquetMetadataAsync, parquetReadObjects, parquetSchema } from 'hyparquet';
 import { decompress as decompressZstd } from 'fzstd';
 import { ALLOW, RELEASES, isTier2 } from './allowlist.js';
+// 변환 재무제표 · 브라우저(financeSource)와 동일 SSOT 변환을 워커가 raw read 후 그대로 호출(베이크 0).
+// .ts import 는 wrangler/esbuild 가 번들(로컬 dev 는 npm run build 의 esbuild dist 경유).
+import { bundleFromRows } from '../../../ui/packages/runtime/src/adapters/public/sources/financeSource.ts';
+import { FINANCE_COLUMNS } from '../../../ui/packages/runtime/src/data/finance/accounts.ts';
 
 // 압축해제기 — dartlab parquet 는 전량 ZSTD(실측). fzstd 는 순수 JS 라 CF Workers 의 런타임 WASM 금지
 // (hyparquet-compressors 의 hysnappy WASM 은 `WebAssembly.Module()` 바이트컴파일 → CF 거부)를 회피한다.
@@ -49,6 +53,38 @@ function resolvePhysical(dir, id) {
 	if (!idCol) return { stem: id, seriesFilter: null };
 	if (id === 'manifest') return { stem: 'manifest', seriesFilter: null };
 	return { stem: 'observations', seriesFilter: { col: idCol, value: id } };
+}
+
+// 변환 재무제표 stmt → 시트(컬럼·행). 데이터센터 finSheets 와 동형(같은 bundle 소비). IS/BS/CF/RATIOS 는
+// 기간 축(계정×기간), CIS 는 ociCard(순이익·총포괄·OCI), SCE 는 sceBridge 워터폴(단계×값).
+const FIN_STMTS = new Set(['IS', 'BS', 'CF', 'CIS', 'SCE', 'RATIOS']);
+function finStmtSheet(view, stmt) {
+	const ACCT = '계정';
+	const P = view.periods;
+	const cols = [ACCT, ...P];
+	const rowsOf = (arr) => (arr || []).map((r) => {
+		const o = { [ACCT]: r.kr };
+		P.forEach((p, i) => (o[p] = r.values[i]));
+		return o;
+	});
+	if (stmt === 'IS' || stmt === 'BS' || stmt === 'CF') return { columns: cols, rows: rowsOf(view.statements[stmt]) };
+	if (stmt === 'RATIOS') return { columns: cols, rows: rowsOf(view.ratios) };
+	if (stmt === 'CIS') {
+		const oci = view.tabCards?.profitability?.find((c) => c.key === 'oci');
+		if (!oci) return null;
+		return { columns: cols, rows: oci.series.map((s) => {
+			const o = { [ACCT]: s.name };
+			P.forEach((p, i) => (o[p] = s.data[i]));
+			return o;
+		}) };
+	}
+	if (stmt === 'SCE') {
+		const sce = view.tabCards?.shareholder?.find((c) => c.key === 'sceBridge');
+		if (!sce?.steps?.length) return null;
+		const vc = `${sce.title ?? '자본변동'} (조)`;
+		return { columns: ['단계', vc], rows: sce.steps.map((s) => ({ 단계: s.name, [vc]: s.value })) };
+	}
+	return null;
 }
 
 const CORS = {
@@ -225,6 +261,45 @@ export default {
 		}
 		if (!p.startsWith('/v1/')) return json({ error: 'not found — see /v1/' }, 404);
 		const rest = p.slice('/v1/'.length);
+
+		// 라이브 변환 재무제표 /v1/finance/{code}.{csv|tsv}?stmt=IS&freq=quarter
+		// dart/finance(KR 6자리)·edgar/financeStmt(US ticker) raw 를 읽어 financeSource 변환(bundleFromRows)을
+		// 브라우저와 동일하게 돌린다(베이크 0). 회사 1개 파일은 작아 메모리 가드 불필요(전량 디코드).
+		const mFin = rest.match(/^finance\/(.+)\.(csv|tsv)$/);
+		if (mFin) {
+			const code = mFin[1];
+			const fext = mFin[2];
+			if (!validId(code)) return json({ error: 'invalid code' }, 400, indexLink);
+			const stmt = (url.searchParams.get('stmt') || 'IS').toUpperCase();
+			const fmode = (url.searchParams.get('freq') || 'quarter').toLowerCase();
+			if (!FIN_STMTS.has(stmt)) return json({ error: `invalid stmt '${stmt}'`, allowed: [...FIN_STMTS] }, 400, indexLink);
+			const isKr = /^\d{6}$/.test(code);
+			const finUrl = `${UPSTREAM}/${isKr ? 'dart/finance' : 'edgar/financeStmt'}/${code}.parquet`;
+			const fProbe = await probeSize(finUrl, baseFetch);
+			if (fProbe.status === 404) return json({ error: 'not found', hint: 'company finance not published' }, 404, indexLink);
+			if (fProbe.status >= 500) return json({ error: 'upstream error', status: fProbe.status }, 502, indexLink);
+			try {
+				const file = await asyncBufferFromUrl({ url: finUrl, byteLength: fProbe.size, fetch: (u, i) => retryFetch(u, i, baseFetch) });
+				const rows = await parquetReadObjects({ file, compressors, columns: FINANCE_COLUMNS });
+				const bundle = bundleFromRows(rows, undefined, isKr ? 'KRW' : 'USD');
+				const view = bundle ? (bundle.views[fmode] ?? bundle.views[bundle.defaultMode] ?? null) : null;
+				if (!view) return json({ error: 'no parseable financial statements for this company' }, 404, indexLink);
+				const sheet = finStmtSheet(view, stmt);
+				if (!sheet || !sheet.rows.length) return json({ error: `statement '${stmt}' is empty for this company` }, 404, indexLink);
+				const fBody = serialize(sheet.rows, sheet.columns, fext);
+				return new Response(req.method === 'HEAD' ? null : fBody, { status: 200, headers: {
+					...CORS,
+					'Access-Control-Expose-Headers': 'X-DartLab-Total-Rows',
+					'Content-Type': fext === 'tsv' ? 'text/tab-separated-values; charset=utf-8' : 'text/csv; charset=utf-8',
+					'Content-Disposition': contentDisposition(`${code}_${stmt}`, fext),
+					...cacheH,
+					...indexLink,
+					'X-DartLab-Total-Rows': String(sheet.rows.length)
+				} });
+			} catch (e) {
+				return json({ error: 'finance transform failed', detail: String(e && e.message || e) }, 502, indexLink);
+			}
+		}
 
 		// ── schema.json (footer만 — cols/tail 추측용, 동일 allowlist 게이트) ──
 		if (rest.endsWith('/schema.json')) {

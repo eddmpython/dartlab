@@ -83,6 +83,8 @@
 		{ k: 'CF', label: '현금흐름표' }
 	];
 	let finBundle = $state<TerminalFinanceBundle | null>(null);
+	let finStmt = $state<'IS' | 'BS' | 'CF' | 'CIS' | 'SCE' | 'RATIOS'>('IS');
+	let finFreq = $state<'quarter' | 'annual' | 'ttm'>('quarter');
 	const isFin = $derived(dir?.dir === FIN_DIR);
 	function finView(b: TerminalFinanceBundle) {
 		return b.views[b.defaultMode] ?? b.views.annual ?? b.views.quarter ?? null;
@@ -208,7 +210,10 @@
 	const probed = $derived(dir != null && id.trim() !== '' && probedKey === `${dir.dir}/${id.trim()}`);
 
 	const liveUrl = $derived.by(() => {
-		if (!dir || !id.trim() || !tier2On || !eligible) return '';
+		if (!id.trim() || !tier2On) return '';
+		// 변환 재무제표 = 워커 변환 라우트(financeSource SSOT 공유, 베이크 0). raw = parquet→CSV.
+		if (isFin) return originUrl('csvWorker', `finance/${id.trim()}.csv?stmt=${finStmt}&freq=${finFreq}`);
+		if (!dir || !eligible) return '';
 		const p = new URLSearchParams();
 		if (cols.length && cols.length < allCols.length) p.set('cols', cols.join(','));
 		if (limitMode === 'tail') p.set('tail', String(limitN));
@@ -481,7 +486,7 @@
 				<span class="fld-label">{dir?.shardKind === 'company' ? '종목' : '항목'}</span>
 				<input class="id-input" placeholder={dir ? ID_HINT[dir.shardKind] : ''} bind:value={id} aria-label="종목·항목 ID" onkeydown={(ev) => ev.key === 'Enter' && probe()} onblur={idBlur} />
 			</label>
-			{#if dir}<span class="tag" class:live={eligible}>{eligible ? '라이브 API' : '다운로드 전용'}</span>{/if}
+			{#if dir}<span class="tag" class:live={eligible || isFin}>{eligible || isFin ? '라이브 API' : '다운로드 전용'}</span>{/if}
 		</div>
 		{#if dir && BULK_OBS.has(dir.dir)}<p class="micro">시리즈ID 입력 · 목록은 <code>{dir.dir}/manifest</code></p>{/if}
 		{#if probeErr}<p class="err">{probeErr}</p>{/if}
@@ -541,9 +546,26 @@
 					<p class="note">{#if isFin}변환 6시트(IS·BS·CF·CIS·자본변동표·비율) · 진짜 Number · 터미널과 동일 변환{:else}가공(Excel/CSV) = 한도 없음·진짜 Number · 원본 = HF parquet{#if fileSize} {fmtBytes(fileSize)}{/if}{/if}</p>
 				</div>
 
-				{#if eligible && tier2On && liveUrl}
+				{#if (eligible || isFin) && tier2On && liveUrl}
 					<div class="get-col api">
 						<span class="get-k">라이브 API <span class="muted">(시트·코드가 URL 을 직접 읽음)</span></span>
+						{#if isFin}
+							<div class="finpick">
+								<select bind:value={finStmt} aria-label="재무제표 선택">
+									<option value="IS">손익계산서</option>
+									<option value="BS">재무상태표</option>
+									<option value="CF">현금흐름표</option>
+									<option value="CIS">포괄손익</option>
+									<option value="SCE">자본변동표</option>
+									<option value="RATIOS">주요비율</option>
+								</select>
+								<select bind:value={finFreq} aria-label="주기">
+									<option value="quarter">분기</option>
+									<option value="annual">연간</option>
+									<option value="ttm">TTM</option>
+								</select>
+							</div>
+						{/if}
 						<div class="apitabs">
 							{#each CONSUMERS as c (c.key)}
 								<button class="apitab" class:on={apiTab === c.key} onclick={() => (apiTab = c.key)}>{c.label}</button>
@@ -1023,6 +1045,21 @@
 		font-size: 0.76rem;
 		color: var(--dl-ink-mute);
 		line-height: 1.5;
+	}
+	.finpick {
+		display: flex;
+		gap: 0.5rem;
+		margin-bottom: 0.6rem;
+	}
+	.finpick select {
+		padding: 0.34rem 0.5rem;
+		background: var(--dl-bg-raised);
+		border: 1px solid var(--dl-line-strong);
+		border-radius: var(--dl-r-md);
+		color: var(--dl-ink);
+		font-family: var(--dl-font-ui);
+		font-size: 0.82rem;
+		cursor: pointer;
 	}
 	.apitabs {
 		display: flex;

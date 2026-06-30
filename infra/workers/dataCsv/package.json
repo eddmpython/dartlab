@@ -5,8 +5,9 @@
 	"version": "0.1.0",
 	"description": "DartLab live data API — HF parquet → CSV/TSV on-the-fly for Google Sheets / Excel runtime use.",
 	"scripts": {
-		"dev": "node dev.mjs",
-		"deploy": "wrangler deploy"
+		"build": "npx --no-install esbuild worker.js --bundle --format=esm --platform=browser --conditions=worker,browser --outfile=dist/worker.mjs",
+		"dev": "npm run build && node dev.mjs",
+		"deploy": "npm run build && wrangler deploy"
 	},
 	"dependencies": {
 		"hyparquet": "^1.26.0",
