@@ -21,8 +21,11 @@ ISSUES_DIR = ROOT / "blog" / "_issues"
 SNS_ASSETS_DIR = ROOT / "sns" / "assets"
 PLAN_FILE = "cards.plan.json"
 
-MIN_IMAGES = 5
-MAX_IMAGES = 10
+PLAN_VERSION = 3
+SUPPORTED_PLAN_VERSIONS = {1, 2, PLAN_VERSION}
+LEGACY_MIN_IMAGES = 5
+MIN_IMAGES = 7
+RECOMMENDED_MAX_IMAGES = 10
 ASSET_KEY_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,62}$")
 FORBIDDEN_ASSET_TOKENS = ("card", "thumbnail", "thumb")
 REQUIRED_REVIEW_ROUNDS = (
@@ -37,6 +40,13 @@ NARRATIVE_RULES = (
     "각 슬라이드는 앞장의 주장이나 숫자를 받아 다음 장으로 넘겨야 한다.",
     "서로 끊긴 체크리스트, '다음에는 이것을 본다'식 나열, 새 항목만 덧붙이는 끝맺음은 실패다.",
     "마지막 장은 새 정보를 추가하는 장이 아니라 앞선 주장과 근거를 종합해 독자가 남길 판단 질문으로 닫는다.",
+)
+BIG_SENTENCE_RULES = (
+    "카드는 7장 이상으로 잡고, 큰문장만 이어 읽어도 한 편의 짧은 글처럼 이해되어야 한다.",
+    "각 장의 큰문장은 단어·라벨·메모가 아니라 앞장 뒤에 붙는 완성 문장이어야 한다.",
+    "숫자 카드는 bigNumber만 던지지 말고 context에 그 숫자가 앞장 주장과 어떻게 이어지는지 문장으로 쓴다.",
+    "중간 장은 '이 구조', '그 결과', '하지만', '그래서', '결국'처럼 앞장과의 관계를 자연스럽게 드러낸다.",
+    "마지막 장은 새 항목 소개가 아니라 앞선 흐름에서 나온 판단 문장으로 닫는다.",
 )
 PLAIN_LANGUAGE_RULES = (
     "카드 문장은 독자가 소리 내어 읽어도 자연스러운 한국어 문장이어야 한다.",
@@ -65,6 +75,48 @@ CHECKLIST_PHRASES = (
     "다음에 이것",
     "다음에는 이것",
 )
+CONTINUITY_TOKENS = (
+    "그래서",
+    "하지만",
+    "그런데",
+    "그다음",
+    "그 다음",
+    "두 번째",
+    "세 번째",
+    "반대로",
+    "여기서",
+    "이 구조",
+    "이 숫자",
+    "이 돈",
+    "이 흐름",
+    "이 회사",
+    "그 구조",
+    "그 숫자",
+    "그 돈",
+    "그 결과",
+    "여기에",
+    "문제는",
+    "답은",
+    "핵심은",
+    "결국",
+    "이어집니다",
+    "바뀝니다",
+    "남습니다",
+)
+CLOSING_TOKENS = (
+    "결국",
+    "그래서",
+    "남는",
+    "판단",
+    "확인",
+    "보면",
+    "봐야",
+    "물어야",
+    "힘",
+    "약해",
+    "강해",
+)
+SENTENCE_END_RE = re.compile(r"[다요까죠][.!?…)]*$")
 
 
 def rel(path: Path) -> str:
@@ -120,18 +172,46 @@ def normalize_slide(raw: object) -> dict[str, Any] | None:
 
 def requested_image_count(slides: list[dict[str, Any]], count: int | None) -> int:
     if count is not None:
-        if not MIN_IMAGES <= count <= MAX_IMAGES:
-            raise ValueError(f"--count must be between {MIN_IMAGES} and {MAX_IMAGES}")
+        if count < MIN_IMAGES:
+            raise ValueError(f"--count must be at least {MIN_IMAGES}")
         return count
-    return min(MAX_IMAGES, max(MIN_IMAGES, len(slides) or MIN_IMAGES))
+    return max(MIN_IMAGES, len(slides) or MIN_IMAGES)
+
+
+def clean_card_text(value: object) -> str:
+    return " ".join(str(value or "").replace("[[", "").replace("]]", "").split())
 
 
 def slide_line(slide: dict[str, Any]) -> str:
     for key in ("line", "context", "sub", "kicker", "bigNumber"):
-        value = str(slide.get(key, "")).strip()
+        value = clean_card_text(slide.get(key, ""))
         if value:
-            return value.replace("[[", "").replace("]]", "")
+            return value
     return "핵심 장면"
+
+
+def big_sentence_for_slide(slide: dict[str, Any]) -> str:
+    layout = str(slide.get("layout") or "")
+    if layout == "editorialStat":
+        context = clean_card_text(slide.get("context"))
+        kicker = clean_card_text(slide.get("kicker"))
+        number = clean_card_text(" ".join(str(slide.get(k) or "") for k in ("bigNumber", "unit")))
+        if context and number:
+            prefix = f"{kicker} {number}".strip()
+            return f"{prefix}: {context}" if prefix and prefix not in context else context
+        return context or f"{kicker} {number}".strip()
+    return clean_card_text(slide.get("line") or slide.get("sub") or slide.get("context") or slide.get("kicker"))
+
+
+def big_sentence_strip(slides: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "order": idx,
+            "layout": str(slide.get("layout") or ""),
+            "mainText": big_sentence_for_slide(slide),
+        }
+        for idx, slide in enumerate(slides, start=1)
+    ]
 
 
 def scene_role(order: int, count: int, slide: dict[str, Any] | None) -> str:
@@ -150,6 +230,19 @@ def narrative_contract() -> dict[str, Any]:
     return {
         "spine": "훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문",
         "rules": list(NARRATIVE_RULES),
+    }
+
+
+def big_sentence_contract(slides: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "slideRange": f"{MIN_IMAGES}장 이상({MIN_IMAGES}~{RECOMMENDED_MAX_IMAGES}장 권장, 필요하면 초과)",
+        "mainTextFields": {
+            "editorial": "line",
+            "editorialBeat": "line",
+            "editorialStat": "context",
+        },
+        "rules": list(BIG_SENTENCE_RULES),
+        "strip": big_sentence_strip(slides),
     }
 
 
@@ -270,7 +363,7 @@ def review_gate(status: str = "planned") -> dict[str, Any]:
             },
             {
                 "id": "imageFit",
-                "purpose": "5~10장 이미지가 그 글의 회사·사건·장소에 맞는 서로 다른 의미 장면인지, 가짜 공식 로고·텍스트·도식이 없는지 본다.",
+                "purpose": "7장 이상 이미지가 그 글의 회사·사건·장소에 맞는 서로 다른 의미 장면인지, 가짜 공식 로고·텍스트·도식이 없는지 본다.",
                 "status": "todo",
             },
             {
@@ -298,7 +391,7 @@ def build_company_post_plan(post_dir: Path, *, count: int | None = None) -> dict
     corp_name = str(fm.get("corpName") or carousel.get("name") or code or title)
     asset_root = f"sns/assets/{code or slug}"
     return {
-        "version": 1,
+        "version": PLAN_VERSION,
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "target": {
             "kind": "companyPost",
@@ -316,6 +409,7 @@ def build_company_post_plan(post_dir: Path, *, count: int | None = None) -> dict
             "audienceQuestion": f"{corp_name} 이야기를 /cards에서 넘길 때 첫 장에서 무엇을 궁금해해야 하나?",
             "blogAndCardsTogether": True,
             "narrativeContract": narrative_contract(),
+            "bigSentenceContract": big_sentence_contract(slides),
             "plainLanguageContract": plain_language_contract(),
             "bodyPreview": " ".join(body.strip().split())[:360],
         },
@@ -382,7 +476,7 @@ def build_issue_plan(issue_dir: Path, *, count: int | None = None) -> dict[str, 
     )
     keyword_bits = ",".join(bit for bit in (corp_name, slug, title) if bit)
     return {
-        "version": 1,
+        "version": PLAN_VERSION,
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "target": {
             "kind": "issue",
@@ -400,6 +494,7 @@ def build_issue_plan(issue_dir: Path, *, count: int | None = None) -> dict[str, 
             "audienceQuestion": f"{title} 이슈를 /cards에서 볼 때 마지막에 무엇을 확인해야 하나?",
             "blogAndCardsTogether": False,
             "narrativeContract": narrative_contract(),
+            "bigSentenceContract": big_sentence_contract(slides),
             "plainLanguageContract": plain_language_contract(),
             "bodyPreview": "",
         },
@@ -437,8 +532,10 @@ def validate_plan(plan: dict[str, Any], *, require_passed: bool = True, require_
     errors: list[str] = []
     target = plan.get("target") if isinstance(plan.get("target"), dict) else {}
     slug = str(target.get("slug") or "<unknown>")
-    if plan.get("version") != 1:
-        errors.append(f"{slug}: version 은 1이어야 함")
+    version = plan.get("version")
+    if version not in SUPPORTED_PLAN_VERSIONS:
+        errors.append(f"{slug}: version 은 {sorted(SUPPORTED_PLAN_VERSIONS)} 중 하나여야 함")
+    strict_big_sentence = version == PLAN_VERSION
     for field in ("kind", "slug", "title", "assetRoot"):
         if not str(target.get(field, "")).strip():
             errors.append(f"{slug}: target.{field} 누락")
@@ -458,6 +555,22 @@ def validate_plan(plan: dict[str, Any], *, require_passed: bool = True, require_
         missing_rules = [rule for rule in NARRATIVE_RULES if rule not in rule_texts]
         if missing_rules:
             errors.append(f"{slug}: planning.narrativeContract 필수 규칙 누락 {len(missing_rules)}건")
+    if strict_big_sentence:
+        big_sentence = planning.get("bigSentenceContract")
+        if not isinstance(big_sentence, dict):
+            errors.append(f"{slug}: planning.bigSentenceContract 누락")
+        else:
+            rules = big_sentence.get("rules")
+            if not isinstance(rules, list):
+                errors.append(f"{slug}: planning.bigSentenceContract.rules 는 리스트여야 함")
+                rules = []
+            rule_texts = {str(rule).strip() for rule in rules}
+            missing_rules = [rule for rule in BIG_SENTENCE_RULES if rule not in rule_texts]
+            if missing_rules:
+                errors.append(f"{slug}: planning.bigSentenceContract 필수 규칙 누락 {len(missing_rules)}건")
+            strip = big_sentence.get("strip")
+            if not isinstance(strip, list) or not strip:
+                errors.append(f"{slug}: planning.bigSentenceContract.strip 누락")
     plain = planning.get("plainLanguageContract")
     if not isinstance(plain, dict):
         errors.append(f"{slug}: planning.plainLanguageContract 누락")
@@ -474,8 +587,9 @@ def validate_plan(plan: dict[str, Any], *, require_passed: bool = True, require_
     if not isinstance(image_plan, list):
         errors.append(f"{slug}: imagePlan 은 리스트여야 함")
         image_plan = []
-    if not MIN_IMAGES <= len(image_plan) <= MAX_IMAGES:
-        errors.append(f"{slug}: imagePlan 은 {MIN_IMAGES}~{MAX_IMAGES}장이어야 함(현재 {len(image_plan)})")
+    min_images = MIN_IMAGES if strict_big_sentence else LEGACY_MIN_IMAGES
+    if len(image_plan) < min_images:
+        errors.append(f"{slug}: imagePlan 은 최소 {min_images}장이어야 함(현재 {len(image_plan)})")
     asset_root = ROOT / str(target.get("assetRoot", ""))
     for idx, item in enumerate(image_plan, start=1):
         if not isinstance(item, dict):
@@ -545,6 +659,40 @@ def _contract_reading_texts(contract: dict[str, Any]) -> list[tuple[str, str]]:
     return out
 
 
+def validate_contract_big_sentence_flow(slug: str, contract: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    slides = [s for s in contract.get("slides", []) if isinstance(s, dict)]
+    if len(slides) < MIN_IMAGES:
+        errors.append(f"{slug}: 큰문장 서사형 카드는 최소 {MIN_IMAGES}장이어야 함(현재 {len(slides)}장)")
+        return errors
+
+    strip: list[tuple[int, str, str]] = []
+    for idx, slide in enumerate(slides, start=1):
+        layout = str(slide.get("layout") or "")
+        text = big_sentence_for_slide(slide)
+        strip.append((idx, layout, text))
+        compact = re.sub(r"[^0-9A-Za-z가-힣]", "", text)
+        if layout == "editorialStat" and not clean_card_text(slide.get("context")):
+            errors.append(f"{slug} #{idx}: 숫자 카드도 context 에 큰문장 서사를 써야 함")
+        if len(compact) < 12:
+            errors.append(f"{slug} #{idx}: 큰문장이 너무 짧아 메모처럼 보임: {text!r}")
+        if text and not SENTENCE_END_RE.search(text):
+            errors.append(f"{slug} #{idx}: 큰문장은 완성 문장으로 끝나야 함: {text!r}")
+
+    continuity_hits = sum(1 for _, _, text in strip[1:-1] if any(token in text for token in CONTINUITY_TOKENS))
+    required_hits = max(3, (len(strip) - 2) // 2)
+    if continuity_hits < required_hits:
+        errors.append(
+            f"{slug}: 큰문장 사이 연결어/지시어가 부족함({continuity_hits}/{required_hits}) — "
+            "넘겨 읽으면 낱장 메모처럼 끊김"
+        )
+
+    last_text = strip[-1][2] if strip else ""
+    if last_text and not any(token in last_text for token in CLOSING_TOKENS):
+        errors.append(f"{slug}: 마지막 큰문장이 앞선 흐름을 판단으로 닫지 못함: {last_text!r}")
+    return errors
+
+
 def validate_contract_readability(slug: str, contract: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     for loc, text in _contract_reading_texts(contract):
@@ -559,13 +707,21 @@ def validate_contract_readability(slug: str, contract: dict[str, Any]) -> list[s
     return errors
 
 
-def validate_plan_file(path: Path, *, require_passed: bool = True, require_assets: bool = False) -> list[str]:
+def load_plan_file(path: Path) -> tuple[dict[str, Any] | None, list[str]]:
     try:
         plan = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        return [f"{rel(path)}: JSON 파싱 실패: {exc}"]
+        return None, [f"{rel(path)}: JSON 파싱 실패: {exc}"]
     if not isinstance(plan, dict):
-        return [f"{rel(path)}: 최상위 객체가 아님"]
+        return None, [f"{rel(path)}: 최상위 객체가 아님"]
+    return plan, []
+
+
+def validate_plan_file(path: Path, *, require_passed: bool = True, require_assets: bool = False) -> list[str]:
+    plan, errors = load_plan_file(path)
+    if errors:
+        return errors
+    assert plan is not None
     return validate_plan(plan, require_passed=require_passed, require_assets=require_assets)
 
 
@@ -599,11 +755,18 @@ def validate_contract_plan_gate(
                 errors.append(f"{slug}: cards.plan.json 없음")
             continue
         stats["plans"] += 1
-        plan_errors = validate_plan_file(plan_path, require_passed=require_passed, require_assets=require_assets)
+        plan, load_errors = load_plan_file(plan_path)
+        plan_errors = load_errors
+        strict_big_sentence = False
+        if plan is not None:
+            plan_errors.extend(validate_plan(plan, require_passed=require_passed, require_assets=require_assets))
+            strict_big_sentence = plan.get("version") == PLAN_VERSION
         copy_errors = validate_contract_readability(slug, contract)
-        if plan_errors or copy_errors:
+        flow_errors = validate_contract_big_sentence_flow(slug, contract) if strict_big_sentence else []
+        if plan_errors or copy_errors or flow_errors:
             errors.extend(f"{rel(plan_path)}: {err}" for err in plan_errors)
             errors.extend(copy_errors)
+            errors.extend(flow_errors)
         else:
             stats["passed"] += 1
     return errors, stats

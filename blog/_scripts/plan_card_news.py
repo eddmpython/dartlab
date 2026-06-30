@@ -46,6 +46,7 @@ def write_plan(plan: dict, path: Path) -> None:
     print(f"wrote {rel(path)}")
     print(f"imagePlan={len(plan.get('imagePlan', []))} reviewGate={plan.get('reviewGate', {}).get('status')}")
     print("먼저 planning.narrativeContract 기준으로 슬라이드가 한 문장처럼 이어지는지 닫는다.")
+    print("새 계획은 큰문장만 이어 읽어도 이해되는 7장 이상 서사를 발행 게이트에서 다시 검사한다.")
     print("다음: imagePlan[].prompt 를 image_gen 으로 한 장씩 생성하고, imagegen.extractCommand 로 저장한다.")
 
 
@@ -74,7 +75,7 @@ def main() -> int:
     target.add_argument("--issue", help="blog/_issues/<slug>")
     target.add_argument("--check", action="store_true", help="check existing cards.plan.json files")
     parser.add_argument(
-        "--count", type=int, help="image count, 5~10. Default derives from slide count and clamps to 5~10"
+        "--count", type=int, help="image count, at least 7 for new narrative plans. Default derives from slide count"
     )
     parser.add_argument("--write", action="store_true", help="write cards.plan.json instead of printing JSON")
     parser.add_argument(

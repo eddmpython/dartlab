@@ -55,16 +55,42 @@ def _mark_passed(plan: dict) -> dict:
     return plan
 
 
-def test_build_company_plan_clamps_to_min_five_images(tmp_path: Path) -> None:
+def _valid_big_sentence_slides() -> list[dict]:
+    return [
+        {"layout": "editorial", "line": "계산대보다 먼저 회원권이 돈을 만듭니다"},
+        {"layout": "editorialBeat", "line": "이 구조는 낮은 가격을 약속할 때 작동합니다"},
+        {
+            "layout": "editorialStat",
+            "kicker": "분기 매출",
+            "bigNumber": "636",
+            "unit": "억달러",
+            "context": "이 숫자는 사람이 계속 매장으로 돌아왔다는 뜻입니다",
+        },
+        {"layout": "editorialBeat", "line": "그 돈은 낮은 마진을 버틸 시간을 만듭니다"},
+        {
+            "layout": "editorialStat",
+            "kicker": "회비",
+            "bigNumber": "12",
+            "unit": "억달러",
+            "context": "그 결과 회비가 이익의 중심을 더 선명하게 보여줍니다",
+        },
+        {"layout": "editorialBeat", "line": "하지만 회원이 줄면 낮은 가격 전략도 힘을 잃습니다"},
+        {"layout": "editorialBeat", "line": "결국 힘은 회비와 재방문이 같이 늘어나는지로 봐야 합니다"},
+    ]
+
+
+def test_build_company_plan_defaults_to_seven_images(tmp_path: Path) -> None:
     post = _write_post(tmp_path / "blog", "01-999999-test", slides=_TWO_SLIDES)
     plan = cp.build_company_post_plan(post)
     assert plan["target"]["slug"] == "999999-test"
     assert plan["target"]["assetRoot"] == "sns/assets/999999"
+    assert plan["version"] == cp.PLAN_VERSION
     assert plan["planning"]["narrativeContract"]["spine"] == "훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문"
     assert "체크리스트" in " ".join(plan["planning"]["narrativeContract"]["rules"])
+    assert "큰문장" in " ".join(plan["planning"]["bigSentenceContract"]["rules"])
     assert "전문용어" in " ".join(plan["planning"]["plainLanguageContract"]["rules"])
     assert plan["planning"]["plainLanguageContract"]["preferredRewrites"]["AI"] == "인공지능"
-    assert len(plan["imagePlan"]) == 5
+    assert len(plan["imagePlan"]) == 7
     assert all("/cards" in row["prompt"] for row in plan["imagePlan"])
     assert all("Asset key:" in row["prompt"] for row in plan["imagePlan"])
     assert all("Story specificity:" in row["prompt"] for row in plan["imagePlan"])
@@ -73,7 +99,7 @@ def test_build_company_plan_clamps_to_min_five_images(tmp_path: Path) -> None:
 
 def test_plan_validation_requires_passed_review(tmp_path: Path) -> None:
     post = _write_post(tmp_path / "blog", "01-999999-test", slides=_TWO_SLIDES)
-    planned = cp.build_company_post_plan(post, count=6)
+    planned = cp.build_company_post_plan(post, count=7)
     assert cp.validate_plan(planned, require_passed=False) == []
     errors = cp.validate_plan(planned, require_passed=True)
     assert any("reviewGate.status" in err for err in errors)
@@ -82,7 +108,7 @@ def test_plan_validation_requires_passed_review(tmp_path: Path) -> None:
 
 def test_plan_validation_requires_narrative_contract(tmp_path: Path) -> None:
     post = _write_post(tmp_path / "blog", "01-999999-test", slides=_TWO_SLIDES)
-    planned = cp.build_company_post_plan(post, count=6)
+    planned = cp.build_company_post_plan(post, count=7)
     planned["planning"].pop("narrativeContract")
     errors = cp.validate_plan(planned, require_passed=False)
     assert any("planning.narrativeContract" in err for err in errors)
@@ -90,7 +116,7 @@ def test_plan_validation_requires_narrative_contract(tmp_path: Path) -> None:
 
 def test_plan_validation_requires_plain_language_contract(tmp_path: Path) -> None:
     post = _write_post(tmp_path / "blog", "01-999999-test", slides=_TWO_SLIDES)
-    planned = cp.build_company_post_plan(post, count=6)
+    planned = cp.build_company_post_plan(post, count=7)
     planned["planning"].pop("plainLanguageContract")
     errors = cp.validate_plan(planned, require_passed=False)
     assert any("planning.plainLanguageContract" in err for err in errors)
@@ -111,9 +137,9 @@ def test_contract_readability_blocks_jargon_and_checklist() -> None:
 def test_contract_plan_gate_finds_plan_by_slug(tmp_path: Path) -> None:
     blog = tmp_path / "blog"
     post = _write_post(blog, "01-999999-test", slides=_TWO_SLIDES)
-    plan = _mark_passed(cp.build_company_post_plan(post, count=5))
+    plan = _mark_passed(cp.build_company_post_plan(post, count=7))
     (post / cp.PLAN_FILE).write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
-    contracts = {"999999-test": {"code": "999999", "slug": "999999-test", "slides": [{"layout": "editorial"}]}}
+    contracts = {"999999-test": {"code": "999999", "slug": "999999-test", "slides": _valid_big_sentence_slides()}}
     errors, stats = cp.validate_contract_plan_gate(contracts, blog_dir=blog, issues_dir=tmp_path / "_issues")
     assert errors == []
     assert stats == {"contracts": 1, "plans": 1, "missing": 0, "passed": 1}
@@ -131,9 +157,32 @@ def test_contract_plan_gate_can_require_all_plans(tmp_path: Path) -> None:
     assert any("cards.plan.json 없음" in err for err in errors)
 
 
-def test_count_must_be_between_five_and_ten(tmp_path: Path) -> None:
+def test_count_must_be_at_least_seven_without_hard_upper_bound(tmp_path: Path) -> None:
     post = _write_post(tmp_path / "blog", "01-999999-test", slides=_TWO_SLIDES)
     with pytest.raises(ValueError):
-        cp.build_company_post_plan(post, count=4)
-    with pytest.raises(ValueError):
-        cp.build_company_post_plan(post, count=11)
+        cp.build_company_post_plan(post, count=6)
+    plan = cp.build_company_post_plan(post, count=11)
+    assert len(plan["imagePlan"]) == 11
+
+
+def test_contract_big_sentence_flow_blocks_fragmented_labels() -> None:
+    contract = {
+        "slides": [
+            {"layout": "editorial", "line": "회원권"},
+            {"layout": "editorialBeat", "line": "매출"},
+            {"layout": "editorialStat", "kicker": "마진", "bigNumber": "3", "unit": "%"},
+            {"layout": "editorialBeat", "line": "가격"},
+            {"layout": "editorialBeat", "line": "결론"},
+            {"layout": "editorialBeat", "line": "다음"},
+            {"layout": "editorialBeat", "line": "확인"},
+        ]
+    }
+    errors = cp.validate_contract_big_sentence_flow("x", contract)
+    assert any("큰문장이 너무 짧아" in err for err in errors)
+    assert any("context 에 큰문장 서사" in err for err in errors)
+    assert any("낱장 메모처럼" in err for err in errors)
+
+
+def test_contract_big_sentence_flow_accepts_connected_story() -> None:
+    errors = cp.validate_contract_big_sentence_flow("x", {"slides": _valid_big_sentence_slides()})
+    assert errors == []

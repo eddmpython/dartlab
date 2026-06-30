@@ -16,9 +16,12 @@
 2. 이미지·토론 계획 생성: `uv run python -X utf8 blog/_scripts/plan_card_news.py --post blog/05-company-reports/{글폴더} --write`
    - 계획 파일 = 같은 글 폴더의 `cards.plan.json`.
    - `planning.narrativeContract` 는 강행 규칙이다. 한 주제 안에서 **훅 → 왜 지금 중요한가 → 근거 → 전환 → 판단 질문**으로 이어져야 한다.
+   - `planning.bigSentenceContract` 도 강행 규칙이다. **카드를 넘길 때 큰문장만 읽어도 한 편의 짧은 글처럼 이해되어야 한다.** 단어·라벨·메모형 큰글씨는 실패다.
+   - 신규 기획은 **7장 이상**으로 잡고, 보통 7~10장을 권장한다. 5~6장에 억지로 압축해 큰문장이 끊기면 카드를 더 만든다.
+   - 숫자 카드는 숫자만 던지지 않는다. `context` 에 그 숫자가 앞장 주장과 어떻게 이어지는지 완성 문장으로 쓴다.
    - 슬라이드는 체크리스트가 아니다. 각 장은 앞장의 주장이나 숫자를 받아 다음 장으로 넘겨야 하며, "다음에는 이것을 본다"식 나열이면 발행 실패다.
    - `planning.plainLanguageContract` 도 강행 규칙이다. 전문용어·약어를 앞세우지 말고, 독자가 소리 내어 읽어도 자연스러운 한국어로 먼저 쓴다.
-   - `imagePlan[]` 은 **5~10장**이어야 한다. 고정 템플릿이 아니라 카드 흐름에서 의미가 다른 장면만 기획한다.
+   - `imagePlan[]` 은 신규 기획 기준 **7장 이상**이어야 한다. 고정 템플릿이 아니라 카드 흐름에서 의미가 다른 장면만 기획한다.
    - 이미지는 그 글의 회사·사건·장소·시설·제품·운영 질문을 상징하는 **실제 사용용 장면**이어야 한다. 범용 금융 배경은 탈락.
    - 상호/회사명은 프롬프트와 검색 키워드에 써도 된다. 다만 생성형 이미지가 공식 로고·공식 문서·실제 내부시설을 사실처럼 꾸며내면 안 된다.
    - 각 항목의 `prompt` 를 GPT `image_gen` 으로 한 장씩 생성한다.
@@ -61,11 +64,15 @@ carousel:
       line: "큰 글씨 한 줄"
       sub: "받침 문장"
       image: imagegen-xxx       # 이미지 '이름'만(hfMedia 에서 실제 파일 찾음)
+    - layout: editorialBeat
+      kicker: "전개"
+      line: "앞장의 질문은 여기서 숫자로 이어집니다"
+      sub: "받침"
     - layout: editorialStat     # 큰 숫자
       kicker: "라벨"
       bigNumber: "100"
       unit: "억개"
-      context: "설명"
+      context: "이 숫자가 앞장의 주장과 어떻게 연결되는지 완성 문장으로 씁니다"
     - layout: editorialBeat     # 헤드라인 비트
       kicker: "라벨"
       line: "한 줄"
@@ -77,7 +84,8 @@ carousel:
 - `explainers` 는 록빌·CDMO처럼 독자가 멈칫할 용어를 바로 풀어주는 짧은 설명이다.
 - `relatedNews` 는 네이버 보관 뉴스(`track: naver`)나 공식 발표(`track: official`)를 연결한다. title/url 은 필수다.
 - 카드 본문·캡션은 전문용어 약자를 앞세우지 않는다. `AI`, `ARR`, `EDR`, `SOC`, `FCF`, `CDMO`, `HBM`처럼 처음 보는 독자에게 막히는 약자는 슬라이드와 캡션에서 `인공지능`, `연간 반복 매출`, `단말 보안 대응`, `보안 관제`, `잉여현금흐름`, `위탁개발생산`, `고대역폭 메모리`처럼 풀어 쓴다. 원어가 필요하면 짧은 설명에 보조로만 둔다.
-- 카드 말은 이어져야 한다. `line`, `sub`, `context` 는 독립 메모가 아니라 앞장과 다음 장 사이의 연결문이다. 제목을 잡았으면 첫 장의 질문, 중간의 근거, 마지막 판단 질문이 한 문단처럼 읽혀야 한다.
+- 카드 말은 이어져야 한다. 특히 `line` 과 `context` 만 위에서 아래로 뽑아 읽었을 때도 첫 장의 질문, 중간의 근거, 마지막 판단이 한 문단처럼 읽혀야 한다.
+- 큰문장은 완성 문장으로 쓴다. `매출`, `마진`, `결론`, `다음 질문` 같은 라벨만 크게 놓고 설명을 작은 글씨로 미루면 실패다.
 - `다음 질문`, `다음 체크포인트`, `체크포인트는` 같은 작업 지시형 문구는 쓰지 않는다. 독자에게 지시하지 말고 앞선 근거에서 자연스럽게 결론 문장으로 이어 쓴다.
 
 ## 화면(코드)도 바꿨을 때
@@ -117,7 +125,7 @@ image_gen 프롬프트는 “그 회사/그 사건/그 장소/그 운영 질문�
 기본 생성 절차:
 ```
 uv run python -X utf8 blog/_scripts/plan_card_news.py --post blog/05-company-reports/{글폴더} --write
-# imagePlan[].prompt 를 GPT image_gen 으로 5~10장 생성
+# imagePlan[].prompt 를 GPT image_gen 으로 카드 수만큼 생성
 # cards.plan.json 의 imagegen.extractCommand 실행
 # cards.plan.json 의 imagegen.checkCommand 실행
 uv run python -X utf8 sns/scripts/build_index.py
@@ -128,7 +136,7 @@ uv run python -X utf8 blog/_scripts/build_carousel_contracts.py
 이슈 카드(`blog/_issues/{slug}/carousel.yaml`)는:
 ```
 uv run python -X utf8 blog/_scripts/plan_card_news.py --issue {slug} --write
-# imagePlan[].prompt 를 GPT image_gen 으로 5~10장 생성
+# imagePlan[].prompt 를 GPT image_gen 으로 카드 수만큼 생성
 # cards.plan.json 의 imagegen.extractCommand 실행
 uv run python -X utf8 blog/_scripts/build_carousel_contracts.py
 ```

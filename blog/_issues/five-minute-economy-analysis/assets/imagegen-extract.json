@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "generatedAt": "2026-06-30T02:06:52.428369+00:00",
+  "method": "codex-session-jsonl-image-generation-call-result",
+  "cardCrop4x5": true,
+  "assets": [
+    {
+      "file": "scene-01-cover-hook.webp",
+      "session": "C:\\Users\\MSI\\.codex\\sessions\\2026\\06\\27\\rollout-2026-06-27T16-41-58-019f0807-37df-7d52-923d-13c5caac64ba.jsonl",
+      "line": 3506,
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards background for blog/_issues/five-minute-economy-analysis/assets/scene-01-cover-hook.webp\nAsset key: scene-01-cover-hook\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다\nSlug: fiv"
+    },
+    {
+      "file": "scene-02-narrative-turn.webp",
+      "session": "C:\\Users\\MSI\\.codex\\sessions\\2026\\06\\27\\rollout-2026-06-27T16-41-58-019f0807-37df-7d52-923d-13c5caac64ba.jsonl",
+      "line": 3454,
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards background for blog/_issues/five-minute-economy-analysis/assets/scene-02-narrative-turn.webp\nAsset key: scene-02-narrative-turn\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다\nS"
+    },
+    {
+      "file": "scene-03-narrative-turn.webp",
+      "session": "C:\\Users\\MSI\\.codex\\sessions\\2026\\06\\27\\rollout-2026-06-27T16-41-58-019f0807-37df-7d52-923d-13c5caac64ba.jsonl",
+      "line": 3457,
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards background for blog/_issues/five-minute-economy-analysis/assets/scene-03-narrative-turn.webp\nAsset key: scene-03-narrative-turn\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다\nS"
+    },
+    {
+      "file": "scene-04-narrative-turn.webp",
+      "session": "C:\\Users\\MSI\\.codex\\sessions\\2026\\06\\27\\rollout-2026-06-27T16-41-58-019f0807-37df-7d52-923d-13c5caac64ba.jsonl",
+      "line": 3509,
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards background for blog/_issues/five-minute-economy-analysis/assets/scene-04-narrative-turn.webp\nAsset key: scene-04-narrative-turn\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다\nS"
+    },
+    {
+      "file": "scene-05-narrative-turn.webp",
+      "session": "C:\\Users\\MSI\\.codex\\sessions\\2026\\06\\27\\rollout-2026-06-27T16-41-58-019f0807-37df-7d52-923d-13c5caac64ba.jsonl",
+      "line": 3463,
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards background for blog/_issues/five-minute-economy-analysis/assets/scene-05-narrative-turn.webp\nAsset key: scene-05-narrative-turn\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다\nS"
+    },
+    {
+      "file": "scene-06-narrative-turn.webp",
+      "session": "C:\\Users\\MSI\\.codex\\sessions\\2026\\06\\27\\rollout-2026-06-27T16-41-58-019f0807-37df-7d52-923d-13c5caac64ba.jsonl",
+      "line": 3466,
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards background for blog/_issues/five-minute-economy-analysis/assets/scene-06-narrative-turn.webp\nAsset key: scene-06-narrative-turn\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다\nS"
+    },
+    {
+      "file": "scene-07-narrative-turn.webp",
+      "session": "C:\\Users\\MSI\\.codex\\sessions\\2026\\06\\27\\rollout-2026-06-27T16-41-58-019f0807-37df-7d52-923d-13c5caac64ba.jsonl",
+      "line": 3469,
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards background for blog/_issues/five-minute-economy-analysis/assets/scene-07-narrative-turn.webp\nAsset key: scene-07-narrative-turn\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다\nS"
+    },
+    {
+      "file": "scene-08-narrative-turn.webp",
+      "session": "C:\\Users\\MSI\\.codex\\sessions\\2026\\06\\27\\rollout-2026-06-27T16-41-58-019f0807-37df-7d52-923d-13c5caac64ba.jsonl",
+      "line": 3472,
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards background for blog/_issues/five-minute-economy-analysis/assets/scene-08-narrative-turn.webp\nAsset key: scene-08-narrative-turn\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다\nS"
+    },
+    {
+      "file": "scene-09-closing-checkpoint.webp",
+      "session": "C:\\Users\\MSI\\.codex\\sessions\\2026\\06\\27\\rollout-2026-06-27T16-41-58-019f0807-37df-7d52-923d-13c5caac64ba.jsonl",
+      "line": 3475,
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards background for blog/_issues/five-minute-economy-analysis/assets/scene-09-closing-checkpoint.webp\nAsset key: scene-09-closing-checkpoint\nStory title: 5분 경제분석은 뉴스보다 돈의 순"
+    }
+  ]
+}
