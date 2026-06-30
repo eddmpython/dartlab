@@ -44,8 +44,8 @@
 
 ## 위치·졸업
 
-- 프로토타입 = `landing/src/routes/lab/data-center/+page.svelte`(lab 격리).
-- 졸업 = 스크린샷 전수 눈검수 후 `/data` 로 승격(운영자 명시 push 승인). UI 변경 자동 push 금지 → [05](05-validation-and-rollback.md).
+- 라우트 = `landing/src/routes/data/+page.svelte`(`/data` 승격 완료, 옛 lab/data-center).
+- 졸업 = 운영자 "승격해라" 지시로 `/data` 승격 완료(`693d228be`). → [05](05-validation-and-rollback.md).
 
 ## SSOT 청결
 

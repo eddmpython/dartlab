@@ -42,5 +42,5 @@ private dir 6종(`allFilings` · `edgar/scan` · `stemIndex` · `edinet` · `edi
 ## 6. 롤백
 
 - **Tier 2** — `VITE_DARTLAB_CSV_PROXY` env 제거 → `csvWorker.configured()=false` → Tier2 비활성, **Tier1 만 무중단**. 워커 자체는 정적 자산이라 트래픽 0이면 비용 0.
-- **Tier 1** — lab 프로토타입(`/lab/data-center`)은 격리. `/data` 졸업 전 회귀 시 라우트 미공개 유지.
+- **Tier 1** — `/data` 라우트(승격 완료, 옛 /lab/data-center). 회귀 시 git revert 로 라우트 롤백.
 - **SSOT 무손상** — 어느 티어도 HF 에 사본을 굽지 않으므로 롤백 시 정리할 산출물 0.

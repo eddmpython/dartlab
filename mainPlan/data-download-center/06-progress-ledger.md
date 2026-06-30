@@ -38,7 +38,7 @@
 
 - [x] **Phase 0 — 스캐폴드**: `downloadCatalog()`(Python SSOT) + TS 미러 + 워커 `allowlist.js` + drift 가드(`test_download_catalog.py::test_worker_allowlist_in_sync`). public·flat·표형만 노출, private 자동 차단.
 - [x] **Phase 1 — Tier1 다운로드(MVP 척추)**: `landing/src/routes/lab/data-center` 링크빌더 — 카탈로그 21셋 → 종목/시리즈 → 스키마 조회(브라우저 `readParquetRows` 직독) → 컬럼 투영·범위(tail/head/freq) → `.xlsx`/`.csv` 다운로드 + Tier2 =IMPORTDATA URL + 셀수 프리뷰. 신규 작성기 0(objectsToWorkbook·toCsv·originUrl 재사용). 검증: svelte-check 0에러, Playwright PASS(005930 xlsx 27.6KB·csv 3.8KB 실다운로드·한글 stem 13컬럼·콘솔에러 0). `998c1ab1e`.
-- [ ] **Phase 2 — 졸업**: 스크린샷 눈검수(운영자) 후 `/data` 승격 + 명시 push 승인. (현재 `/lab/data-center` 격리, push 대기.)
+- [x] **Phase 2 — 졸업**: `/data` 승격 완료 — 운영자 "승격해라" 지시로 라우트 lab/data-center→/data 이동(100% rename)·터미널 바로가기 갱신(`693d228be`, svelte-check 0에러).
 - [x] **Phase 3 — Tier2 워커 (코드·로컬증명 완료, 무료 배포 준비)**: `infra/workers/dataCsv` 구현 — `/v1/{dir}/{id}.{csv|tsv}?cols=&tail=&head=&freq=` + `/v1/`카탈로그 + `schema.json` + allowlist 게이트(allowlist.js) + footer 예산 가드 + 셀cap 헤더 + 에러모델(400/404/405/413/502). 로컬 node 로 13 케이스 end-to-end PASS(BOM·en-US숫자·honest-gap·한글 stem·413 dateShard·404 private 누설0·400+available·HEAD). **실측 결론(배포 호스트 게이트)**: 디코드 RSS = gov/prices/company 70MB · dart/finance 119MB · macro/fred 210MB · **dart/panel 927MB**(본문). footer `total_uncompressed_size`×6 ≈ 실측 RSS(panel 추정 932MB vs 측정 927MB 일치). **호스트 = CF Worker(PRD)**. CF 128MB 메모리상: 회사 flat 파일(prices 70MB·indices·brokerage·finance 119MB) 라이브, fred observations 210MB·panel-full 927MB 는 **413→Tier1**(killList 패턴). `cols` 투영이 탈출구(panel 본문 제외 927→80MB). `tail`/`head` 는 단일 row-group 이라 메모리 안 줄임(슬라이스만). 남은 게이트 = openDecision #2 CF CPU(무료 10ms vs 유료) = 배포 후 실측·운영자 보고(05 §3). drift 가드 `test_worker_allowlist_in_sync` 추가. (⚠ 옛 기재 '~1GB 서버리스/Vercel' 은 PRD 이탈 — 철회, CF 로 재정렬.)
 - [x] **Phase 4 — 배선**: `csvWorker` origin 등록(`registry.ts`) + `VITE_DARTLAB_CSV_PROXY` 게이트. 미설정 시 Tier2 비활성·Tier1 만 노출(무중단). 데이터센터가 이 origin 으로 Tier2 URL 생성. `998c1ab1e`. (남은 건 CF 배포 시 env 설정뿐.)
 - [ ] **Phase 5 — 후속(MVP 외)**: 날짜샤드 Tier2(CF 한도 통과 시)·`freq` OHLCV-aware 집계·`/v1/{dir}/index.json` HF tree 열거·passthrough 격상 검토.
@@ -48,11 +48,11 @@
 1. ✅ **워커 도메인/라우트** — `infra/workers/dataCsv` 전용 워커, **배포됨** `https://dartlab-data-csv.eddmpython.workers.dev` (.env 토큰 비대화식, 로그인 불필요).
 2. ✅ **CF CPU — 해결: 무료로 됨**. 배포 후 실측(05 §3) — 회사주가·재무 584KB·지수(한글)·브로커리지 200 실데이터, CPU 한도 에러 0. **유료 불필요**. (⚠ 단 CF 런타임 WASM 금지로 hyparquet-compressors hysnappy 대신 순수 JS fzstd 로 ZSTD 디코드 — dartlab parquet 전량 ZSTD 실측.)
 3. **CELL_CAP** = 45,000 확정. **Tier2 대상** = isTier2(company/series). **macro 단일시리즈** = `{id}=seriesId` 구현했으나 observations 전량 디코드(210MB)라 CF 128MB 초과 → CF 에선 413. 라이브하려면 observations 시리즈별 분할(sync 측 build 변경=PRD-gap, 별도 토론·승인).
-4. **`/data-center` → `/data` 졸업** — 스크린샷 눈검수 + 운영자 명시 push 승인 (남은 유일 운영자 게이트).
+4. ✅ **`/data-center` → `/data` 졸업** — 완료(운영자 "승격해라", `693d228be`).
 
 ## 7. NEXT
 
-**Phase 0·1·3·4 완료 + Tier2 워커 CF 배포 완료.** 라이브 `https://dartlab-data-csv.eddmpython.workers.dev` — 회사파일 200 실데이터(무료 CF, CPU OK), 큰 파일 413→Tier1, private 404. 데이터센터(`/lab/data-center`)가 라이브 =IMPORTDATA URL 생성(round-trip BOM·셀cap·1h 캐시 검증). **남은 건 운영자 게이트 1개**: **UI 스크린샷 눈검수 + 명시 push 승인**(`998c1ab1e`·`b6a7f8a37` 등 push 대기) → 통과 시 `/data` 졸업(Phase 2). macro 단일시리즈 CF 라이브(observations 분할)는 PRD-gap 후속.
+**Phase 0~4 + 졸업 완료.** Tier2 워커 라이브 `https://dartlab-data-csv.eddmpython.workers.dev`(회사파일 200 실데이터·무료 CF, 큰 파일 413→Tier1, private 404). 데이터센터 **`/data` 승격 완료**(`693d228be`) — 데이터셋 미리보기·다운로드(가공+원본 parquet)·탐색(HF 파일 브라우저)·라이브 API(시트·엑셀·Python·curl). 터미널 데이터 다이얼로그에 바로가기. 후속(MVP 외): macro 단일시리즈 CF 라이브(observations 분할=PRD-gap)·날짜샤드 Tier2·`/v1/index.json` HF tree 열거.
 
 ## 8. 화해 상태
 
