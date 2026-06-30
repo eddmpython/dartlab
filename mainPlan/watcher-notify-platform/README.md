@@ -30,9 +30,11 @@ DartLab 을 "보고 끝"이 아니라 "**변화가 생기면 먼저 알려주는
 
 ## 상태
 
-PRD 합성(6 분야 패널) + **P1 구현급 상세설계(06~08) + 적대적 평가 4 라운드 → 빌드-ready 수렴 선언**([09](09-evaluation-ledger.md)).
-구조·크립토(aes128gcm 2단 HKDF RFC 검증)·계약·보안 = 안정. 러너/하네스 라이브바인딩 = 검증사실 박제 + 테스트게이트 위임.
-**P1 미착수.** 운영자 결정 8종 → [04 §4](04-phasing-scope-guardrails.md)·[09](09-evaluation-ledger.md). 결정 회수 후 P1 deep 플랜 → 구현.
+PRD 합성(6 분야 패널) + P1 구현급 상세설계(06~08) + 적대적 평가 4 라운드 → 빌드-ready 수렴 → **P1+P2 구현 완료(2026-06-30)**.
+구현·검증 = [05 진행원장](05-progress-ledger.md). 코드·테스트 전부 green(허브 16 + 러너 18 + landing 17 + 크립토 16),
+커밋 완료. **남은 = 운영자 롤아웃 게이트**: ① Cloudflare 배포(D1·secret·VAPID·wrangler deploy) ② landing UI 눈검수 후
+push ③ 실기기 1대 aes128gcm 수신 확인(P1 SHIP). 런북 = [05 §배포](05-progress-ledger.md) · [08 §3](08-p1-publish-ops-test.md).
+P3(개인 왓처·로컬 브리지)·P4 는 PRD 가 정한 게이트(≥2 소비자 실증·운영자 결정)대로 **의도적 보류**(YAGNI).
 
 ## 핵심 정정 (브리프 원안 → 패널 확정)
 
