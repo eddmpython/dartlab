@@ -10,7 +10,11 @@ from __future__ import annotations
 
 import pytest
 
-from dartlab.providers.dart.securitiesRegistration import classifyIpo, parseIpoProspectus
+from dartlab.providers.dart.securitiesRegistration import (
+    classifyIpo,
+    parseIpoProspectus,
+    parseOfferingConfirmation,
+)
 
 pytestmark = [pytest.mark.unit]
 
@@ -176,6 +180,23 @@ def test_parse_six_sections_and_risk():
     r = parseIpoProspectus(_FIXTURE)
     assert {"offering", "method", "underwriterOpinion", "financials", "riskSummary", "riskDetail"} <= set(r["sections"])
     assert r["risk"]["count"] >= 3  # 핵심투자위험 + 사업/회사위험
+
+
+def test_parse_offering_confirmation():
+    # 정의문(확정공모가액(이하 …)은 숫자 미동반 → 배제, 실제 '확정공모가액 N원'만 추출.
+    doc = (
+        "<DOCUMENT><TITLE>증권발행조건확정</TITLE><P>희망공모가액 17,800원. "
+        '모집(매출)가액의 확정(이하 "확정공모가액")은 수요예측 결과 결정됩니다. '
+        "총 인수대가는 확정공모가액 20,700원입니다.</P></DOCUMENT>"
+    )
+    r = parseOfferingConfirmation(doc)
+    assert r["isConfirmation"] is True
+    assert r["confirmedPrice"] == 20700.0  # 희망 17,800 아니라 확정 20,700
+
+
+def test_parse_offering_confirmation_none_on_full_prospectus():
+    r = parseOfferingConfirmation("<DOCUMENT><TITLE>1. 공모개요</TITLE>희망공모가액 80,000원</DOCUMENT>")
+    assert r["confirmedPrice"] is None and r["isConfirmation"] is False
 
 
 def test_never_raise_on_garbage():

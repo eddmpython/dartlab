@@ -237,6 +237,67 @@ def parseIpoProspectus(content: str) -> dict:
     }
 
 
+def parseOfferingConfirmation(content: str) -> dict:
+    """``[발행조건확정]`` CORRECTION doc → 확정공모가 (수요예측 후 확정가).
+
+    FULL 신고서가 아니라 단일 TITLE ``증권발행조건확정`` doc(6 섹션 없음 → :func:`parseIpoProspectus`
+    부적용). 확정공모가는 본문 ``확정공모가액 N원``으로 추출하되 ``희망공모가액``과 구분한다(정의문
+    ``확정공모가액(이하 …`` 는 숫자가 안 따라와 자동 배제). 실측: 레메디 20,700·매드업 8,000·레몬 10,000.
+
+    Args:
+        content: ``[발행조건확정]증권신고서(지분증권)`` 본문 (``classifyIpo`` 의 ``"발행조건확정" in report_nm``).
+
+    Returns:
+        dict
+            isConfirmation : bool — 발행조건확정 doc 여부 (TITLE 확인).
+            confirmedPrice : float | None — 확정공모가(원). 밴드 상단 초과 시 흥행, 하단=수요부진 신호.
+
+    Raises:
+        없음 — 미검출 시 confirmedPrice=None.
+
+    Example:
+        >>> parseOfferingConfirmation("<DOCUMENT><TITLE>증권발행조건확정</TITLE>확정공모가액 20,700원</DOCUMENT>")
+        {'isConfirmation': True, 'confirmedPrice': 20700.0}
+
+    Capabilities:
+        - 수요예측 후 확정공모가 추출 (희망공모가밴드와 비교해 흥행/부진 좌표).
+
+    Guide:
+        - 경쟁률·의무보유확약 상세는 이 doc 에 일관된 구조 표로 제공되지 않아(발행실적 별 트랙) 미추출.
+        - 희망공모가밴드는 FULL 신고서 :func:`parseIpoProspectus` 의 ``offering.priceBand``.
+
+    SeeAlso:
+        - :func:`parseIpoProspectus` — FULL 신고서 6 카테고리.
+        - :func:`classifyIpo` — ``발행조건확정`` report_nm 식별.
+
+    Requires:
+        - ``[발행조건확정]`` doc 본문.
+
+    AIContext:
+        Agent 가 "확정공모가 / 공모가 밴드 상단 갔나" 류 질문 시. 밴드 대비 위치로 흥행 좌표화.
+
+    LLM Specifications:
+        AntiPatterns:
+            - FULL 신고서를 넣고 호출 (확정가 없음 — 확정가는 발행조건확정 doc 에만).
+            - 희망공모가액을 확정가로 오인 (둘 다 본문 등장 — '확정공모가액 N원' 만 확정).
+        OutputSchema:
+            - dict: isConfirmation(bool) / confirmedPrice(float|None).
+        Prerequisites:
+            - 발행조건확정 doc 본문.
+        Freshness:
+            - 수요예측·확정 시점(상장 직전).
+        Dataflow:
+            - listFilings('발행조건확정') → parseOfferingConfirmation → 확정가 vs 밴드.
+        TargetMarkets:
+            - KR (DART 발행조건확정).
+    """
+    isConfirmation = bool(re.search(r"<TITLE[^>]*>\s*증권발행조건확정", content)) or "발행조건확정" in content[:3000]
+    out: dict[str, object] = {"isConfirmation": isConfirmation}
+    m = re.search(r"확정\s*공모\s*가액[^\d]{0,10}([\d,]{4,})\s*원", content)
+    out["confirmedPrice"] = float(m.group(1).replace(",", "")) if m else None
+    return out
+
+
 # ═══════════════════════════════════════════
 # 내부 — 섹션 앵커 / 셀 추출
 # ═══════════════════════════════════════════
@@ -663,4 +724,4 @@ def _verifyIdentities(offering: dict, valuation: dict, financials: dict, allocat
     return out
 
 
-__all__ = ["IPO_SECTION_ANCHORS", "classifyIpo", "parseIpoProspectus"]
+__all__ = ["IPO_SECTION_ANCHORS", "classifyIpo", "parseIpoProspectus", "parseOfferingConfirmation"]
