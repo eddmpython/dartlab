@@ -318,7 +318,7 @@
 
 		<div class="dlgHint">{en ? 'Tick the datasets you want, then download them together as one Excel (sheet per dataset) or CSV zip.' : '원하는 데이터셋을 체크하고 한 번에 받으세요 — 하나의 엑셀(데이터셋별 시트) 또는 CSV 묶음(zip).'}</div>
 
-		<a class="dcGo" href="{base}/lab/data-center" target="_blank" rel="noopener">{en ? 'Data Center — browse all files, preview & live API (Sheets·Python·curl) ↗' : '데이터 센터 — 전체 파일 탐색·미리보기·라이브 API (시트·Python·curl) ↗'}</a>
+		<a class="dcGo" href="{base}/data" target="_blank" rel="noopener">{en ? 'Data Center — browse all files, preview & live API (Sheets·Python·curl) ↗' : '데이터 센터 — 전체 파일 탐색·미리보기·라이브 API (시트·Python·curl) ↗'}</a>
 
 		<div class="dlgBody">
 			<div class="dlgCol">
