@@ -355,6 +355,33 @@ def findAllFilings(
     Example:
         >>> rows = findAllFilings(getSubmissionsJson("0000320193"), sinceYear=2024)  # doctest: +SKIP
         >>> {r["form"] for r in rows} & {"8-K", "10-K"}  # doctest: +SKIP
+
+    Capabilities:
+        - recent 블록(네트워크 0)에서 정기/수시 구분 없이 전 form filing 메타를 연도·기간 필터로 추출.
+          ``findRegularFilings`` 와 달리 form 게이트·과거 페이지 fetch 없음(피드 윈도 수년치 충분).
+
+    AIContext:
+        US 공시 피드(수시 8-K·DEF 14A 등)의 행 생성기. AI 직접 호출 X — sync 워크플로가 bulk 순회 중
+        회사별로 본 함수를 불러 recent.parquet 행을 만든다.
+
+    Guide:
+        - "US 전 공시(정기+수시)를 네트워크 없이" → 본 함수. 정기만이면 ``findRegularFilings``.
+        - 정기 제외(피드 전용)는 소비자가 ``SUPPORTED_REGULAR_FORMS`` 로 필터(여기선 전부 반환).
+
+    When:
+        edgarFilingsSync 가 submissions.zip 회사별 JSON 을 순회할 때. 로컬 dev 눈검수 1회.
+
+    How:
+        ``filings.recent`` 의 컬럼 병렬 배열(form·filingDate·accessionNumber·...)을 인덱스로 zip,
+        sinceYear/since/until 경계로 거른 뒤 SEC Archives URL 을 합성해 dict 행 생성.
+
+    Requires:
+        - ``getSubmissionsJson`` 또는 submissions.zip 의 회사 JSON(``filings.recent`` 키)
+        - ``_coerceDateBound`` (기간 경계 정규화)
+
+    SeeAlso:
+        - :func:`findRegularFilings` — 정기 form 게이트 + 페이지 fetch 형제
+        - :func:`dartlab.gather.edgar.bulkSubmissions.iterSubmissionsBulk` — bulk 순회 공급원
     """
     recent = submissions.get("filings", {}).get("recent", {})
     forms = recent.get("form") or []

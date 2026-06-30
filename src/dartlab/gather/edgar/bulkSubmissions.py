@@ -48,6 +48,34 @@ def downloadSubmissionsBulk(*, force: bool = False, ttlHours: int = 24) -> Path:
 
     Example:
         >>> downloadSubmissionsBulk(force=False)  # doctest: +SKIP
+
+    Capabilities:
+        - SEC submissions.zip(~1.3GB) 를 TTL freshness 가드와 함께 스트림 다운로드(메모리 폭증 0).
+          24h TTL 내면 재다운로드 스킵, force=True 면 무조건 재수신.
+
+    AIContext:
+        공시 피드(수시 8-K·DEF 14A) 수집의 1단계. AI 직접 호출 X — sync 워크플로(buildEdgarAllFilingsRecent)
+        가 본 함수로 zip 을 확보한 뒤 ``iterSubmissionsBulk`` 로 순회한다.
+
+    Guide:
+        - "전 상장사 공시 메타를 한 번에" → 본 벌크 다운로더. per-ticker submissions API 는 사용자 선택.
+        - XET 429·502 회피는 SEC 직접 endpoint 라 무관(HF 아님).
+
+    When:
+        edgarFilingsSync cron(주 1회) 첫 단계. 로컬 dev 눈검수 시 1회.
+
+    How:
+        ``_bulkDir()/submissions.zip`` 대상. ``isBulkFresh`` TTL 통과 시 즉시 반환, 아니면 httpx 스트림
+        (1MB 청크)으로 ``.tmp`` 기록 후 atomic replace + ``touchBulkFreshness``.
+
+    Requires:
+        - 인터넷 + SEC ``Archives/edgar/daily-index/bulkdata/submissions.zip`` 접근
+        - ``_UA``(User-Agent) — SEC 403 회피
+        - ``core.edgarBulkFreshness`` (TTL 상태)
+
+    SeeAlso:
+        - :func:`iterSubmissionsBulk` — 받은 zip 스트리밍 순회
+        - :func:`dartlab.gather.edgar.bulk.downloadCompanyfactsBulk` — companyfacts 동형 벌크
     """
     zipPath = _bulkDir() / "submissions.zip"
     if not force and zipPath.exists() and isBulkFresh(_TAG, ttlHours=ttlHours):
@@ -90,6 +118,10 @@ def iterSubmissionsBulk(zipPath: Path, *, recentOnly: bool = True) -> Iterator[t
     Example:
         >>> for cik, js in iterSubmissionsBulk(Path("submissions.zip")):  # doctest: +SKIP
         ...     pass
+
+    Requires:
+        - ``downloadSubmissionsBulk`` 가 받아둔 로컬 ``submissions.zip``
+        - 표준 라이브러리 ``zipfile`` / ``json`` (외부 의존 0 — 스트리밍 추출)
     """
     with zipfile.ZipFile(zipPath, "r") as zf:
         for info in zf.infolist():
