@@ -47,9 +47,13 @@ def build(tickersPath: Path, scanPath: Path, out: Path) -> int:
         print(f"[search-us] scan 스키마 부적합: {scan.columns}", flush=True)
         return 0
 
-    # 회사별 최신 fy 1행 (sales/sector) — 다년 패널이면 latest 슬라이스, 단년이면 그대로.
+    # 회사별 최신 fy 1행 (sales/net_profit/sector). 다년 패널이면 latest 슬라이스, 단년이면 그대로.
+    # openable 게이트는 sales 단독이 아니라 손익신호(sales OR net_profit). 금융·REIT 는 매출이
+    # 이자/리스수익이라 sales 태그가 비어도 net_profit 으로 열 수 있어야 한다(매출 only 게이트가
+    # AAON 류 외에 금융·REIT 수백 종목도 부당 제외했음). revenue 는 랭킹용으로만 sales 사용.
     sel = (
         ["stockCode", "sales"]
+        + (["net_profit"] if "net_profit" in scan.columns else [])
         + (["sector"] if "sector" in scan.columns else [])
         + (["fy"] if "fy" in scan.columns else [])
     )
@@ -59,6 +63,7 @@ def build(tickersPath: Path, scanPath: Path, out: Path) -> int:
 
     sectorMap: dict[str, str] = {}
     revMap: dict[str, float] = {}
+    openSet: set[str] = set()  # 손익신호(sales OR net_profit) 있는 종목 = openable
     for r in scan.iter_rows(named=True):
         code = str(r["stockCode"]).strip().upper()
         if not code:
@@ -71,11 +76,13 @@ def build(tickersPath: Path, scanPath: Path, out: Path) -> int:
                 revMap[code] = round(float(sales) / 1_000_000_000_000, 4)
             except (ValueError, TypeError):
                 pass
+        if sales is not None or r.get("net_profit") is not None:
+            openSet.add(code)
 
     rows: list[dict] = []
     for r in tk.iter_rows(named=True):
         ticker = str(r["ticker"]).strip().upper()
-        if not ticker or ticker not in revMap:  # 재무 없는 티커 제외 (검색돼도 못 여니까)
+        if not ticker or ticker not in openSet:  # 손익신호 없는 티커 제외 (열어도 빈 패널이라)
             continue
         rows.append(
             {
@@ -83,7 +90,7 @@ def build(tickersPath: Path, scanPath: Path, out: Path) -> int:
                 "corpName": str(r["title"]).strip() if r["title"] else ticker,
                 "industry": sectorMap.get(ticker) or (str(r["exchange"]).strip() if r["exchange"] else "US"),
                 "market": "US",
-                "revenue": revMap[ticker],
+                "revenue": revMap.get(ticker, 0.0),  # net_profit-only(금융·REIT) 은 매출 0(랭킹 하단)
             }
         )
     # 매출 내림차순 (검색 랭킹 대형주 우선)
