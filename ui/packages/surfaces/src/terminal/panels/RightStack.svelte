@@ -5,6 +5,7 @@
 		DebtProfileBundle,
 		FinMode,
 		FinScope,
+		BusinessTable,
 		InvestmentPeriod,
 		InvestmentTrendYear,
 		InvestmentsView,
@@ -376,6 +377,38 @@
 	const costBar = $derived(barSegsOf(noteBundle?.cost ?? null));
 	const segBar = $derived(barSegsOf(noteBundle?.segment ?? null));
 	const topChips = (segs: { name: string; pct: number; color: string }[]): { name: string; pct: number; color: string }[] => segs.filter((s) => s.name !== '기타').sort((a, b) => b.pct - a.pct).slice(0, 3);
+	// 사업 서술 표 · panel contentRaw HTML 표 격자전개(reportSource.businessTables). 생산능력·원재료·매출수주.
+	// 글랜스(토픽 칩) + 상세보기 → BusinessTablesDialog. 노트와 같은 sentinel 게이트 공유(둘 다 panel 직독).
+	let bizTables = $state<BusinessTable[] | null>(null);
+	let bizState = $state<'idle' | 'loading' | 'ready' | 'empty' | 'error'>('idle');
+	let bizOpen = $state(false);
+	const BIZ_TOPIC_KR: Record<string, string> = { salesOrder: '매출·수주', rawMaterial: '원재료·생산', productService: '주요 제품' };
+	$effect(() => {
+		const code = co.code;
+		const wanted = notesWanted;
+		bizTables = null;
+		if (!wanted) {
+			bizState = 'idle';
+			return;
+		}
+		bizState = 'loading';
+		let cancelled = false;
+		withTimeout(Promise.resolve().then(() => rt.report.businessTables(code)), 25_000).then(
+			(b) => {
+				if (cancelled) return;
+				bizTables = b?.tables ?? null;
+				bizState = b && b.tables.length ? 'ready' : 'empty';
+			},
+			(err) => {
+				if (cancelled) return;
+				console.warn('[terminal] report businessTables load failed:', err);
+				bizState = 'error';
+			}
+		);
+		return () => {
+			cancelled = true;
+		};
+	});
 	// 최신 연간 현금성자산 (BS 'cash', 조 단위) → 원 환산. 단기 상환벽 신호의 분모.
 	const cashLatestWon = $derived.by<number | null>(() => {
 		const av = finBundle?.views.annual;
@@ -739,6 +772,22 @@
 	</Panel>
 {/if}
 
+<!-- 사업 서술 표 · 생산능력·원재료·매출수주 (II.사업의내용 표 격자전개). 글랜스 토픽 칩 + 상세보기. -->
+{#if bizState !== 'empty'}
+	<Panel {lang} className="eIndustry" prov="real" title={{ kr: '사업 서술 표', en: 'BUSINESS TABLES' }} flush>
+		{#snippet right()}{#if bizState === 'ready'}<button class="finFullBtn" onclick={() => (bizOpen = true)} title={lang === 'en' ? 'production · materials · sales/orders' : '생산능력 · 원재료 · 매출수주'}>{lang === 'en' ? 'detail' : '상세보기'}</button>{/if}{/snippet}
+		{#if bizState === 'idle'}
+			<div class="storyEmpty dim" role="status">{lang === 'en' ? 'scroll to load' : '스크롤하면 로드'}</div>
+		{:else if bizState === 'loading'}
+			<div class="storyEmpty" role="status" aria-busy="true">{lang === 'en' ? 'reading tables …' : '표 읽는 중 …'}</div>
+		{:else if bizState === 'error'}
+			<div class="storyEmpty" role="status">{lang === 'en' ? 'failed to load' : '불러오지 못함'}</div>
+		{:else if bizTables}
+			<div class="noteKeys">{#each bizTables as t (t.topic)}<span>{BIZ_TOPIC_KR[t.topic] ?? t.title} <b>{t.rows.length}</b></span>{/each}</div>
+		{/if}
+	</Panel>
+{/if}
+
 <!-- 주석 상세 다이얼로그 (lazy) · import/마운트 실패는 {:catch} 로 가시화(과거 catch 부재 시 무표시=안 뜬 것처럼 보임). -->
 {#if dashOpen}
 	{#await import('./NotesDashboardDialog.svelte')}
@@ -752,6 +801,13 @@
 				<div class="ndBody"><div class="storyEmpty">{lang === 'en' ? 'failed to open detail' : '상세 열기 실패'} · {String((err as Error)?.message ?? err)}</div></div>
 			</div>
 		</div>
+	{/await}
+{/if}
+
+<!-- 사업 서술 표 상세 (lazy) -->
+{#if bizOpen}
+	{#await import('./BusinessTablesDialog.svelte') then { default: BusinessTablesDialog }}
+		<BusinessTablesDialog {co} {lang} tables={bizTables ?? []} onClose={() => (bizOpen = false)} />
 	{/await}
 {/if}
 
