@@ -45,14 +45,14 @@
 
 ## 6. 열린 질문 (운영자 결정)
 
-1. **워커 도메인/라우트** — 전용 워커(`infra/workers/dataCsv`, 게이트 격리) 구현됨. placeholder=`*.workers.dev`.
-2. **CF Worker CPU 플랜** (PRD 핵심 게이트) — 메모리는 실측 확정(회사파일 128MB 안, 큰 파일 413→Tier1). 남은 건 **CPU**: 무료(10ms) vs 유료(50ms~30s). parquet 디코드 CPU 가 무료 10ms 안에 드는지 = **CF 배포 후 실측 → 운영자 보고**(05 §3). 운영자 "유료 안 함" 이면 무료 10ms 에 드는 작은 회사파일만 라이브, 못 들면 Tier1 전용.
+1. ✅ **워커 도메인/라우트** — `infra/workers/dataCsv` 전용 워커, **배포됨** `https://dartlab-data-csv.eddmpython.workers.dev` (.env 토큰 비대화식, 로그인 불필요).
+2. ✅ **CF CPU — 해결: 무료로 됨**. 배포 후 실측(05 §3) — 회사주가·재무 584KB·지수(한글)·브로커리지 200 실데이터, CPU 한도 에러 0. **유료 불필요**. (⚠ 단 CF 런타임 WASM 금지로 hyparquet-compressors hysnappy 대신 순수 JS fzstd 로 ZSTD 디코드 — dartlab parquet 전량 ZSTD 실측.)
 3. **CELL_CAP** = 45,000 확정. **Tier2 대상** = isTier2(company/series). **macro 단일시리즈** = `{id}=seriesId` 구현했으나 observations 전량 디코드(210MB)라 CF 128MB 초과 → CF 에선 413. 라이브하려면 observations 시리즈별 분할(sync 측 build 변경=PRD-gap, 별도 토론·승인).
-4. **`/data-center` → `/data` 졸업** — 스크린샷 눈검수 + 운영자 명시 push 승인.
+4. **`/data-center` → `/data` 졸업** — 스크린샷 눈검수 + 운영자 명시 push 승인 (남은 유일 운영자 게이트).
 
 ## 7. NEXT
 
-**Phase 0·1·3·4 완료 — 빌드 가능한 전부 끝.** Tier1 다운로드 surface 라이브 작동(브라우저 직독, 백엔드 0), Tier2 워커 CF-ready, origin 배선 완료. **남은 건 운영자 게이트 2개뿐**: ① **UI 스크린샷 눈검수 + 명시 push 승인**(`/lab/data-center` 커밋 `998c1ab1e` 등 UI 커밋 push 대기) → 통과 시 `/data` 졸업(Phase 2). ② **CF 워커 배포(`wrangler deploy`, 운영자 CF 로그인) + CPU 실측 보고**(05 §3, openDecision #2) → `VITE_DARTLAB_CSV_PROXY` 설정 시 Tier2 라이브 URL 활성. 배포 전엔 데이터센터가 Tier1 만 노출(무중단).
+**Phase 0·1·3·4 완료 + Tier2 워커 CF 배포 완료.** 라이브 `https://dartlab-data-csv.eddmpython.workers.dev` — 회사파일 200 실데이터(무료 CF, CPU OK), 큰 파일 413→Tier1, private 404. 데이터센터(`/lab/data-center`)가 라이브 =IMPORTDATA URL 생성(round-trip BOM·셀cap·1h 캐시 검증). **남은 건 운영자 게이트 1개**: **UI 스크린샷 눈검수 + 명시 push 승인**(`998c1ab1e`·`b6a7f8a37` 등 push 대기) → 통과 시 `/data` 졸업(Phase 2). macro 단일시리즈 CF 라이브(observations 분할)는 PRD-gap 후속.
 
 ## 8. 화해 상태
 

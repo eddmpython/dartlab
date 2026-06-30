@@ -36,8 +36,8 @@ https://{host}/v1/{dir}/{id}.{csv|tsv}?cols=&tail=&head=&freq=
 | `dart/panel/{code}?cols=`(본문 제외) | ~30~80MB | ✅ (cols 투영) |
 
 - `cols` 투영이 메모리 탈출구 — panel 본문(`contentRaw`) 제외 시 927→80MB(실측).
-- **남은 게이트 = PRD openDecision #2 (CF CPU 플랜)**. 무료 CF=10ms CPU·유료=50ms~30s. parquet 디코드
-  CPU 가 무료 10ms 안에 드는지는 **CF 배포 후 실측 → 운영자 보고**(PRD 05 §3). 메모리는 위 표대로 확정.
+- **openDecision #2 (CF CPU) 해결 = 무료로 됨**(배포 후 실측, PRD 05 §3). `dartlab-data-csv.eddmpython.workers.dev`
+  에 배포해 회사주가·재무(584KB)·지수(한글 stem)·브로커리지 전부 200 실데이터, CPU 한도 에러 0. 유료 불필요.
 
 예산 추정 = 텍스트 payload(컬럼 압축해제×`DECODE_EXPANSION`) + 셀 객체 오버헤드(행수×컬럼수×`CELL_OBJ`)
 두 항 — 전자가 panel(텍스트 거대), 후자가 fred(행 多 작음)를 잡는다. env(`MAX_DECODE_BYTES`·`MAX_DECODE_ROWS`·
@@ -60,15 +60,22 @@ curl "http://localhost:8787/v1/gov/prices/company/005930.csv?cols=date,close&tai
 
 node 는 메모리가 충분해 전 카탈로그를 디코드한다(배포 호스트 메모리만 위 표대로 다름).
 
-## 배포 — Cloudflare Worker (PRD 03·05·06)
+## 배포 — Cloudflare Worker (배포됨)
+
+라이브: **`https://dartlab-data-csv.eddmpython.workers.dev`**. 저장소 루트 `.env` 의
+`CLOUDFLARE_API_TOKEN`+`CLOUDFLARE_ACCOUNT_ID` 로 비대화식 배포(hfProxy 동일 관례, 로그인 불필요):
 
 ```bash
-npm run deploy   # wrangler deploy → *.workers.dev. CF 무료 128MB. 큰 파일은 413→Tier1.
+cd infra/workers/dataCsv
+CLOUDFLARE_API_TOKEN=*** CLOUDFLARE_ACCOUNT_ID=*** npx wrangler deploy
 ```
 
-배포 후 CF CPU 실측(무료 10ms vs 유료 플랜) → 운영자 보고(PRD 05 §3). UI 배선:
-`ui/.../data/origins/registry.ts` 에 `csvWorker` origin 등록 + `VITE_DARTLAB_CSV_PROXY` env
-(03-tier2-live-worker §origins). env 미설정 = Tier2 비활성(UI 가 Tier1 만 노출, dev 무중단).
+⚠ 압축해제는 **순수 JS fzstd(ZSTD)** 만 — CF Workers 는 런타임 WASM 컴파일(`WebAssembly.Module()`)을
+금지하므로 hyparquet-compressors 의 hysnappy(snappy WASM)를 쓰면 배포 검증에서 실패한다. dartlab parquet
+는 전량 ZSTD(실측)라 fzstd 면 충분.
+
+UI 배선(완료): `registry.ts` `csvWorker` origin + `deploy-landing.yml`·`landing/.env`
+`VITE_DARTLAB_CSV_PROXY=https://dartlab-data-csv.eddmpython.workers.dev`. env 미설정 = Tier2 비활성(Tier1 만).
 
 ## 스프레드시트 사용
 
