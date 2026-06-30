@@ -1,7 +1,7 @@
 <script lang="ts">
-	// 월별 수익률 히트맵 — quant tearsheet 시그니처. equity+ts 파생(신규 수집 0).
+	// 월별 수익률 히트맵 · quant tearsheet 시그니처. equity+ts 파생(신규 수집 0).
 	// 행=연도(오름차순 고정·수익순 정렬 금지) × 열=1~12월 + YTD. 셀 색=과거 사실(적녹 diverging).
-	// ⛔ argmax 화살표·best 라벨·정렬 금지(04 §G4 정신) — '꾸준함 vs 한 방'을 보일 뿐, 특정 셀 강조 안 함.
+	// ⛔ argmax 화살표·best 라벨·정렬 금지(04 §G4 정신) · '꾸준함 vs 한 방'을 보일 뿐, 특정 셀 강조 안 함.
 	import type { Lang } from '../lib/types';
 	import { monthlyReturns } from './chartFrame';
 

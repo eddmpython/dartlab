@@ -12,7 +12,7 @@
   import { buildReport, buildOverview } from '$lib/report/build';
   import { isSkipped, type ReportModel, type OverviewModel } from '$lib/report/model';
   import { PERSPECTIVES, findPerspective } from '$lib/report/perspectives';
-  // 순수 렌더 헬퍼 — /cards 와 공유(인라인에서 추출, 기계적 동치). $lib/report/render SSOT.
+  // 순수 렌더 헬퍼 · /cards 와 공유(인라인에서 추출, 기계적 동치). $lib/report/render SSOT.
   import {
     clean,
     engineLabel,
@@ -30,27 +30,27 @@
 
   let { data }: { data: PageData } = $props();
 
-  // 정적 씨데이터 base 주입 (loadJson SSOT) — search-index.json 등 데이터 작업대 직독 경로 정합.
+  // 정적 씨데이터 base 주입 (loadJson SSOT) · search-index.json 등 데이터 작업대 직독 경로 정합.
   setStaticBase(base);
   const rt = getPublicRuntime();
   // SNS·후원 링크 = dartlab 공통 SSOT(터미널 상단과 동일 정본).
   const links = DARTLAB_BRAND_LINKS;
-  // GitHub 스타 라이브 배지 — 터미널 SNS 와 동일(fetchGithubStars 재사용). null=미조회/실패(배지 숨김).
+  // GitHub 스타 라이브 배지 · 터미널 SNS 와 동일(fetchGithubStars 재사용). null=미조회/실패(배지 숨김).
   let ghStars = $state<number | null>(null);
   fetchGithubStars(links.repo).then((n) => (ghStars = n));
 
-  // 화이트/다크 — A4 용지 위 두 모드. 기본 = 화이트(진짜 보고서). 헤더 크롬은 항상 다크 에디토리얼.
+  // 화이트/다크 · A4 용지 위 두 모드. 기본 = 화이트(진짜 보고서). 헤더 크롬은 항상 다크 에디토리얼.
   let theme = $state<'light' | 'dark'>('light');
   function toggleTheme() {
     theme = theme === 'light' ? 'dark' : 'light';
   }
 
-  // 관점 — 같은 회사를 5개 렌즈로. 데이터 작업대 리얼타임. URL view= 로 초기 관점 동기화. 헤더 탭으로 전환.
+  // 관점 · 같은 회사를 5개 렌즈로. 데이터 작업대 리얼타임. URL view= 로 초기 관점 동기화. 헤더 탭으로 전환.
   let perspectiveKey = $state<string>('earningsPower');
   $effect(() => {
     if (data.perspective) perspectiveKey = data.perspective;
   });
-  // 표지 제목 옆 ! 툴팁(활성 관점 한정) — 클릭=토글, 다음 클릭/관점전환=닫힘. 관점 메타는 렌더에서 findPerspective.
+  // 표지 제목 옆 ! 툴팁(활성 관점 한정) · 클릭=토글, 다음 클릭/관점전환=닫힘. 관점 메타는 렌더에서 findPerspective.
   let perspTipOpen = $state(false);
   $effect(() => {
     if (!perspTipOpen) return;
@@ -59,7 +59,7 @@
     return () => { clearTimeout(id); document.removeEventListener('click', close); };
   });
 
-  // ── 종목 검색 (공통 작업대 SSOT — loadJson, raw fetch·자체 캐시 금지) ──
+  // ── 종목 검색 (공통 작업대 SSOT · loadJson, raw fetch·자체 캐시 금지) ──
   // 회사명·코드 유니버스 = map/search-index.json (buildReport 와 동일 직독 경로, 추가 다운로드 0).
   let universe = $state<IndexRow[]>([]);
   loadJson<IndexRow[]>('map/search-index.json', { fetchFn: fetch, preferLocal: true })
@@ -69,7 +69,7 @@
   let showSuggest = $state(false);
   let selIdx = $state(-1);
   let cmdInput = $state<HTMLInputElement | null>(null);
-  // ⌘K / `/` 종목검색 포커스 — 터미널 cmdBar 와 동일 거동.
+  // ⌘K / `/` 종목검색 포커스 · 터미널 cmdBar 와 동일 거동.
   $effect(() => {
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement | null)?.tagName;
@@ -114,10 +114,10 @@
     else if (suggestions[0]) selectCompany(suggestions[0].stockCode);
   }
 
-  // 후원·기여 — 터미널 상단과 동일 SupportDialog(♥).
+  // 후원·기여 · 터미널 상단과 동일 SupportDialog(♥).
   let supportOpen = $state(false);
 
-  // ── 빌드 — 종목 1개당 5관점 전부 조립(종목 변경 시 동시성 토큰 가드). 화면은 활성 관점만, 인쇄는 전부
+  // ── 빌드 · 종목 1개당 5관점 전부 조립(종목 변경 시 동시성 토큰 가드). 화면은 활성 관점만, 인쇄는 전부
   //    이어붙인다(탭은 인쇄 못 하므로 연속 문서). 관점 전환은 재빌드 없이 즉시(이미 빌드된 models 에서 선택). ──
   let models = $state<ReportModel[]>([]);
   let status = $state<'loading' | 'ready' | 'skipped' | 'error'>('loading');
@@ -148,7 +148,7 @@
         skipReason = String(e?.message ?? e);
       });
   });
-  // 활성 관점(헤더 탭·검색 view·표지 등) — 빌드된 models 에서 선택. 없으면 첫 관점.
+  // 활성 관점(헤더 탭·검색 view·표지 등) · 빌드된 models 에서 선택. 없으면 첫 관점.
   const model = $derived(models.find((m) => m.perspectiveKey === perspectiveKey) ?? models[0] ?? null);
 
   // 화면 = 활성 관점 1개만 렌더(빌드된 models 에서 선택). 인쇄/PDF 기능은 제거(헤디드 Chrome 빈 페이지 문제로 폐기).
@@ -160,7 +160,7 @@
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // ── 5관점 통합 리드 — 종목당 1회 빌드(관점과 독립). 5관점을 교차한 thesis. ──
+  // ── 5관점 통합 리드 · 종목당 1회 빌드(관점과 독립). 5관점을 교차한 thesis. ──
   let overview = $state<OverviewModel | null>(null);
   let ovTok = 0;
   $effect(() => {
@@ -286,7 +286,7 @@
       {@const mPersp = findPerspective(m.perspectiveKey)}
       {@const allAnalysis = m.sections.every((s) => s.sourceEngine === 'analysis')}
       <article class="sheet perspSheet">
-        <!-- ── 표지 (관점마다 표지로 시작 — 인쇄 시 관점별 섹션 구분) ── -->
+        <!-- ── 표지 (관점마다 표지로 시작 · 인쇄 시 관점별 섹션 구분) ── -->
         <header class="cover">
           <div class="coverKicker">기업분석보고서 <span class="kSep">·</span> {m.perspectiveLabel}{#if m.perspectiveKey === perspectiveKey}<span class="perspInfoWrap"><button class="perspInfo" onclick={(e) => { e.stopPropagation(); perspTipOpen = !perspTipOpen; }} aria-label="이 관점이 답하는 질문" title="관점 설명">!</button>{#if perspTipOpen}<span class="perspTip" role="tooltip"><b>{mPersp.label}</b> · {mPersp.question}{#if mPersp.focusQuestions.length}<span class="perspTipQs">{#each mPersp.focusQuestions as fq}<span>{fq}</span>{/each}</span>{/if}</span>{/if}</span>{/if}</div>
           <h1 class="coverTitle">{m.corpName}<span class="code">{m.stockCode}</span></h1>
@@ -336,7 +336,7 @@
 
         <div class="printPerspective">관점: {m.perspectiveLabel} · {mPersp.question}</div>
 
-        <!-- ── 요약 (Executive Summary) — 산문 리드 + 요약 지표표 (카드 폐기, 문서형) ── -->
+        <!-- ── 요약 (Executive Summary) · 산문 리드 + 요약 지표표 (카드 폐기, 문서형) ── -->
         <section class="block summary">
           <h2 class="blockTitle">요약</h2>
           <p class="leadProse">{clean(m.conclusion)}</p>
@@ -536,18 +536,18 @@
 
   /* ── 헤더 = 터미널 top bar 그대로 재사용(terminal.css · .dlTerm 스코프). 색·brand·cmdBar·SNS·hdrLink 는
      terminal.css 가 소유(단일 SSOT). 여기선 .dlTerm 의 전체화면 레이아웃(100vh·flex·overflow:hidden)만
-     중화해 sticky 헤더로 쓴다 — 내 자체 색/스타일 없음. ── */
+     중화해 sticky 헤더로 쓴다 · 내 자체 색/스타일 없음. ── */
   .rptHeader.dlTerm {
     height: auto; display: block; overflow: visible;
     position: sticky; top: 0; z-index: 30;
   }
-  /* 종목검색 = 아바타 옆 고정폭(터미널은 flex:1 — 여기선 늘리지 않음). 관점탭 = 중앙(좌측 search·우측 SNS 사이 free space 분할). */
+  /* 종목검색 = 아바타 옆 고정폭(터미널은 flex:1 · 여기선 늘리지 않음). 관점탭 = 중앙(좌측 search·우측 SNS 사이 free space 분할). */
   .rptHeader .cmdBar { flex: 0 1 300px; }
   .rptHeader .perspLinks { margin-left: auto; }
   /* 관점 탭 = 터미널 .hdrLink(amber active) 그대로. 한 줄, 넘치면 가로 스크롤(스크롤바 숨김). */
   .perspLinks { overflow-x: auto; scrollbar-width: none; }
   .perspLinks::-webkit-scrollbar { display: none; }
-  /* 모바일 — topBar wrap(terminal.css 640) 정렬: brand+SNS=1줄, 검색=2줄(order3·full), 관점탭=3줄(order4·full·가로스크롤).
+  /* 모바일 · topBar wrap(terminal.css 640) 정렬: brand+SNS=1줄, 검색=2줄(order3·full), 관점탭=3줄(order4·full·가로스크롤).
      데스크톱 고정폭(300px)·우측정렬은 해제. */
   @media (max-width: 640px) {
     .rptHeader .cmdBar { flex: 1 1 100%; }
@@ -556,7 +556,7 @@
 
   .main { min-width: 0; }
 
-  /* ── 표지 제목 옆 관점 ! — 클릭 시 '이 관점이 답하는 질문' 툴팁(AI 사족 prose 폐기, 느낌표로 압축) ── */
+  /* ── 표지 제목 옆 관점 ! · 클릭 시 '이 관점이 답하는 질문' 툴팁(AI 사족 prose 폐기, 느낌표로 압축) ── */
   .perspInfoWrap { position: relative; display: inline-block; }
   .perspInfo { width: 15px; height: 15px; margin-left: 7px; padding: 0; border: 1px solid var(--accent); border-radius: 50%; background: transparent; color: var(--accent); font-family: var(--mono); font-weight: 800; font-size: 10px; line-height: 1; cursor: pointer; vertical-align: 1px; }
   .perspInfo:hover { background: var(--accent); color: #fff; }
@@ -602,11 +602,11 @@
   .coverFacts dd { font-size: 13px; font-weight: 600; margin: 0; font-variant-numeric: tabular-nums; }
   .coverIntro { font-size: 13px; line-height: 1.75; color: var(--dim); margin: 18px 0 0; }
 
-  /* ── 통합 리드 (5관점 한 몸 — 보고서 첫 페이지 executive overview) ── */
+  /* ── 통합 리드 (5관점 한 몸 · 보고서 첫 페이지 executive overview) ── */
   .overviewLead { border: 1px solid var(--bd2); border-radius: 6px; background: var(--soft); padding: 16px 18px; margin-bottom: 26px; }
   .ovKicker { font-size: 11px; font-weight: 800; color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 9px; }
   .ovThesis { font-size: 13.5px; line-height: 1.72; font-weight: 600; margin: 0 0 12px; }
-  /* 구조화 thesis — 중심논거 + 지지기둥 + 콜/약세론/트리거 */
+  /* 구조화 thesis · 중심논거 + 지지기둥 + 콜/약세론/트리거 */
   .ovThesisStruct { margin: 0 0 13px; }
   .ovCentral { font-size: 14.5px; line-height: 1.62; font-weight: 700; margin: 0 0 10px; letter-spacing: -0.01em; }
   .ovPillars { margin: 0 0 11px; padding: 0; list-style: none; display: grid; gap: 6px; }
@@ -640,7 +640,7 @@
   .blockTitle { font-size: 13px; font-weight: 800; letter-spacing: 0.02em; margin: 0 0 12px; padding-bottom: 7px; border-bottom: 1px solid var(--bd2); display: flex; align-items: baseline; gap: 8px; }
   .blockTitle .subNote { font-size: 10.5px; font-weight: 400; color: var(--dim); }
 
-  /* ── 요약(Executive Summary) — 문서형 산문 리드 + 요약 지표표(카드 폐기) ── */
+  /* ── 요약(Executive Summary) · 문서형 산문 리드 + 요약 지표표(카드 폐기) ── */
   .leadProse { font-size: 15px; font-weight: 600; line-height: 1.68; letter-spacing: -0.005em; margin: 0 0 10px; }
   .leadSub { font-size: 12.5px; line-height: 1.75; color: var(--dim); margin: 0 0 14px; }
   .summaryTable { border-collapse: collapse; width: 100%; font-size: 12px; margin-top: 6px; border-top: 1px solid var(--bd2); }
@@ -648,12 +648,12 @@
   .summaryTable td { text-align: left; font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 700; padding: 7px 28px 7px 0; border-bottom: 1px solid var(--bd); white-space: nowrap; }
   .summaryTable td.neg { color: var(--down); } .summaryTable td.pos { color: var(--up); }
 
-  /* ── 주요 관찰 — 칩 폐기, 문서형 목록 ── */
+  /* ── 주요 관찰 · 칩 폐기, 문서형 목록 ── */
   .obsList { margin: 4px 0 0; padding-left: 18px; }
   .obsList li { font-size: 12.5px; line-height: 1.7; padding: 3px 0; }
   .obsKey { color: var(--accent); font-weight: 700; }
   .obsSrc { font-size: 10.5px; color: var(--dim); }
-  /* 본문 figure 표 — 메트릭 칩 대체(라벨|값 인라인 표) */
+  /* 본문 figure 표 · 메트릭 칩 대체(라벨|값 인라인 표) */
   .figTable { border-collapse: collapse; font-size: 12px; margin: 10px 0; }
   .figTable th { text-align: left; font-weight: 500; color: var(--dim); font-family: var(--sans); padding: 5px 10px 5px 0; white-space: nowrap; }
   .figTable td { text-align: left; font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 700; padding: 5px 24px 5px 0; white-space: nowrap; }
@@ -680,7 +680,7 @@
   .rptRoot.dark .cover { border-bottom-width: 1px; border-bottom-color: var(--bd2); }
   .rptRoot.dark .secHead { border-bottom-width: 1px; border-bottom-color: var(--bd2); }
   .rptRoot.dark .rptFooter { border-top-width: 1px; border-top-color: var(--bd2); }
-  /* 다크 표 가독성 — 행 구분선·zebra·헤더 대비 강화 (감수 P4) */
+  /* 다크 표 가독성 · 행 구분선·zebra·헤더 대비 강화 (감수 P4) */
   .rptRoot.dark .bTable td { border-bottom-color: rgba(255, 255, 255, 0.07); }
   .rptRoot.dark .bTable th { border-bottom-color: rgba(255, 255, 255, 0.28); }
   .rptRoot.dark .bTable tbody tr:nth-child(even) { background: #1d2531; }
@@ -701,7 +701,7 @@
 
   .bTableWrap { margin: 12px 0; overflow-x: auto; }
   .tCap { font-size: 11.5px; color: var(--dim); margin-bottom: 6px; font-weight: 600; }
-  /* 표 캡션(좌) + 단위 배지(우상단) — 단위를 셀에서 빼 칸 폭 절약·숫자 줄바뀜 방지 */
+  /* 표 캡션(좌) + 단위 배지(우상단) · 단위를 셀에서 빼 칸 폭 절약·숫자 줄바뀜 방지 */
   .bTableTop { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 6px; }
   .bTableTop .tCap { margin-bottom: 0; }
   .tUnit { font-size: 11px; color: var(--dim); font-family: var(--mono); white-space: nowrap; flex-shrink: 0; }
@@ -709,7 +709,7 @@
   .bTable th { padding: 7px 10px; border-bottom: 1.5px solid var(--ink); color: var(--dim); font-weight: 700; font-family: var(--mono); background: color-mix(in srgb, var(--soft) 70%, transparent); }
   .bTable th.lbl { text-align: left; font-family: var(--sans); }
   .bTable th.num, .bTable th.sparkCol { text-align: right; }
-  /* 라벨열↔연도격자 구분선(첫 데이터열 좌측 경계 — '연구 exhibit' 인상) */
+  /* 라벨열↔연도격자 구분선(첫 데이터열 좌측 경계 · '연구 exhibit' 인상) */
   .bTable th.num:first-of-type, .bTable td.num:first-of-type,
   .bTable th.verdict-h:first-of-type, .bTable td.verdict:first-of-type,
   .bTable th.txt-h:first-of-type, .bTable td.txt:first-of-type { border-left: 1px solid var(--bd); }
@@ -717,11 +717,11 @@
   .bTable td.lbl { text-align: left; font-weight: 600; white-space: nowrap; }
   .bTable td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .bTable td.num.neg { color: var(--down); } .bTable td.num.pos { color: var(--up); }
-  .bTable td.num.dash { color: var(--bd2); } /* 결측 '-' 은 옅게 — 있는 숫자가 도드라지게 */
-  /* 비숫자 의미 컬럼 — 좌측 sans (시계열표 흉내 방지) */
+  .bTable td.num.dash { color: var(--bd2); } /* 결측 '-' 은 옅게 · 있는 숫자가 도드라지게 */
+  /* 비숫자 의미 컬럼 · 좌측 sans (시계열표 흉내 방지) */
   .bTable td.txt, .bTable th.txt-h { text-align: left; font-family: var(--sans); color: var(--ink); font-weight: 400; }
   .bTable td.txt.threshold { color: var(--dim); font-size: 11px; }
-  /* 판정 — 상태 칩(양호=녹·주의=황갈·산출불가=중립). 적색은 음수 SSOT라 주의에 안 씀 */
+  /* 판정 · 상태 칩(양호=녹·주의=황갈·산출불가=중립). 적색은 음수 SSOT라 주의에 안 씀 */
   .bTable td.verdict, .bTable th.verdict-h { text-align: center; font-family: var(--sans); white-space: nowrap; }
   .vPill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 11px; }
   .vPill.ok { color: var(--up); background: color-mix(in srgb, var(--up) 13%, transparent); }
@@ -729,11 +729,11 @@
   .vMark { font-size: 8px; vertical-align: 1px; }
   .bTable tbody tr:nth-child(even) { background: var(--soft); }
   .bTable tbody tr:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); }
-  /* 스냅샷 표(시계열 아님 — 주요주주·임원보수·감사이력) — 인셋처럼 한 단계 축소 */
+  /* 스냅샷 표(시계열 아님 · 주요주주·임원보수·감사이력) · 인셋처럼 한 단계 축소 */
   .bTable.snapshot { font-size: 11.5px; }
   .bTable.snapshot th { background: color-mix(in srgb, var(--soft) 45%, transparent); border-bottom-color: var(--bd2); }
   .bTable.snapshot td { padding: 5px 10px; }
-  /* 스냅샷 결측은 본문표보다 덜 옅게 — 빈 행이 '깨진 칸'이 아니라 '값 없음'으로 읽히게 */
+  /* 스냅샷 결측은 본문표보다 덜 옅게 · 빈 행이 '깨진 칸'이 아니라 '값 없음'으로 읽히게 */
   .bTable.snapshot td.num.dash { color: color-mix(in srgb, var(--bd2) 55%, var(--dim)); }
   .bTable td.sparkCol { text-align: right; padding-right: 2px; width: 74px; }
   .spark { vertical-align: middle; color: var(--accent); width: 64px; height: 22px; }
@@ -801,7 +801,7 @@
   .evNote { font-size: 10.5px; color: var(--dim); margin-top: 10px; font-style: italic; }
   .evSource { display: inline-block; margin-top: 11px; font-size: 11.5px; color: var(--accent); text-decoration: none; font-weight: 600; }
   .evSource:hover { text-decoration: underline; }
-  /* 섹션 헤더 원공시 딥링크 — 신뢰 last mile(숫자→원본 공시) */
+  /* 섹션 헤더 원공시 딥링크 · 신뢰 last mile(숫자→원본 공시) */
   .secSrc { font-size: 10px; color: var(--dim); text-decoration: none; border: 1px solid var(--bd2); border-radius: 5px; padding: 2px 7px; white-space: nowrap; align-self: center; }
   .secSrc:hover { color: var(--accent); border-color: var(--accent); }
 
@@ -822,7 +822,7 @@
     .coverTitle { font-size: 28px; }
   }
 
-  /* ── 폰(≤640) — '떠있는 용지' 은유 해제: 카드 크롬(margin·radius·shadow·side border) 제거하고
+  /* ── 폰(≤640) · '떠있는 용지' 은유 해제: 카드 크롬(margin·radius·shadow·side border) 제거하고
      콘텐츠가 뷰포트 폭을 꽉 채운다. backdrop 회색 거터 소멸 = 낭비 여백 0. 데스크톱(>640) 무변경. ── */
   @media (max-width: 640px) {
     .sheet {
@@ -834,7 +834,7 @@
     .coverTitle { font-size: clamp(21px, 6.4vw, 28px); margin-bottom: 12px; line-height: 1.12; }
     .coverTitle .code { display: block; margin: 6px 0 0; font-size: 13px; }
     .coverIntro { font-size: 12.5px; margin-top: 12px; }
-    /* coverFacts — right-border 격자 → 2열 + bottom-border(폰에서 깔끔히 쌓임) */
+    /* coverFacts · right-border 격자 → 2열 + bottom-border(폰에서 깔끔히 쌓임) */
     .coverFacts { grid-template-columns: 1fr 1fr; }
     .coverFacts .fact { padding: 8px 12px 8px 0; border-right: 1px solid var(--bd); border-bottom: 1px solid var(--bd); }
     .coverFacts .fact:nth-child(2n) { border-right: 0; }
@@ -842,7 +842,7 @@
     .ovThesis { font-size: 12.5px; }
     .block { margin-bottom: 20px; }
     .leadProse { font-size: clamp(13.5px, 4vw, 15px); }
-    /* 표 우측 과패딩 축소 — 좁은 폭 칸 확보 */
+    /* 표 우측 과패딩 축소 · 좁은 폭 칸 확보 */
     .summaryTable td { padding-right: 14px; }
     .figTable td { padding-right: 14px; }
     .rptSection { margin-bottom: 22px; scroll-margin-top: 132px; }
@@ -850,23 +850,23 @@
     .secNo { font-size: 13px; }
     .secTitle { font-size: clamp(16px, 5vw, 19px); }
     .secSrc { font-size: 9.5px; padding: 2px 5px; }
-    /* 표 — 가로스크롤 유지(숫자 격자 보존) + 셀 패딩 축소. 폰에선 스파크열 숨겨 숫자열 우선. */
+    /* 표 · 가로스크롤 유지(숫자 격자 보존) + 셀 패딩 축소. 폰에선 스파크열 숨겨 숫자열 우선. */
     .bTableWrap { margin: 10px 0; -webkit-overflow-scrolling: touch; }
     .bTable td, .bTable th { padding-left: 8px; padding-right: 8px; }
     .bTable td.sparkCol, .bTable th.sparkCol { display: none; }
-    /* 종합 의견 — 3열 그리드 → 라벨/출처 한 줄, 본문 아래 풀폭(auto 칸 압박 해소) */
+    /* 종합 의견 · 3열 그리드 → 라벨/출처 한 줄, 본문 아래 풀폭(auto 칸 압박 해소) */
     .clRow { grid-template-columns: 1fr auto; gap: 4px 10px; padding-left: 10px; }
     .clLine { grid-column: 1 / -1; font-size: 12.5px; }
     .rptFooter { margin-top: 24px; }
     .footSign { font-size: 11px; gap: 5px; }
   }
 
-  /* ── 인쇄 — A4, 화이트 강제 ── */
+  /* ── 인쇄 · A4, 화이트 강제 ── */
   @media print {
     /* 루트 레이아웃의 :global(html/body){overflow-x:clip} 이 Chrome 인쇄 페이지네이션을 비워(빈 미리보기)
-       인쇄 시에만 해제 — 화면 가로스크롤 가드는 그대로 유지. */
+       인쇄 시에만 해제 · 화면 가로스크롤 가드는 그대로 유지. */
     :global(html), :global(body) { overflow: visible !important; max-width: none !important; height: auto !important; }
-    /* 색 변수는 !important 로 강제 — 다크 테마(.rptRoot.dark)나 dev 스타일 주입 순서에 상관없이
+    /* 색 변수는 !important 로 강제 · 다크 테마(.rptRoot.dark)나 dev 스타일 주입 순서에 상관없이
        인쇄는 무조건 검정-on-흰색. (override 가 못 이기면 본문이 흰색으로 찍혀 빈 페이지처럼 보였다) */
     .rptRoot, .rptRoot.dark {
       --backdrop: #fff !important; --sheet: #fff !important; --soft: #eef2f6 !important; --ink: #161616 !important; --dim: #555a60 !important;
@@ -882,7 +882,7 @@
     /* 인쇄 = 5관점 전부(beforeprint 가 렌더). 관점마다 새 페이지·"5관점 요약"은 첫 관점에만. */
     .perspSheet + .perspSheet { break-before: page; page-break-before: always; }
     .perspSheet:not(:first-of-type) .overviewLead { display: none; }
-    /* break-inside:avoid 는 *작은 원자 단위*에만 — 한 페이지보다 큰 섹션 컨테이너에 걸면 Chrome 이
+    /* break-inside:avoid 는 *작은 원자 단위*에만 · 한 페이지보다 큰 섹션 컨테이너에 걸면 Chrome 이
        클리핑/빈 페이지를 낸다. 섹션은 하위 블록(.bTableWrap·.secHead) 경계에서 깔끔히 쪼개지게 둔다. */
     .clRow, .summaryTable, .coverFacts, .focusRow, .bTableWrap { break-inside: avoid; }
     .cover { break-after: avoid; }

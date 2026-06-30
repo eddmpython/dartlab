@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// origins 레지스트리는 mock — vitest 워크스페이스 해석 비의존 + URL 예측 가능.
+// origins 레지스트리는 mock · vitest 워크스페이스 해석 비의존 + URL 예측 가능.
 vi.mock('@dartlab/ui-runtime/data/origins/registry', () => ({
 	originUrl: (_id: string, path: string) => `https://media.test/${path}`
 }));
@@ -38,7 +38,7 @@ describe('단일 파일 캐러셀 계약', () => {
 		const { loadContract } = await import('./contract');
 		const c = await loadContract('000660-skhynix');
 		expect(c?.code).toBe('000660');
-		expect(f).toHaveBeenCalledTimes(1); // per-slug round-trip 없음 — 단일 파일에서 찾기
+		expect(f).toHaveBeenCalledTimes(1); // per-slug round-trip 없음 · 단일 파일에서 찾기
 		expect(String(f.mock.calls[0][0])).toContain('carousels/index.json');
 		expect(await loadContract('nope')).toBeNull();
 	});

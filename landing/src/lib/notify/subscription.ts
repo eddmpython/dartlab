@@ -1,4 +1,4 @@
-// Web Push 구독 공유 모듈 — service-worker 와 NotifyOptIn 이 함께 import(직렬화 형태·URL·토픽 1 SSOT).
+// Web Push 구독 공유 모듈 · service-worker 와 NotifyOptIn 이 함께 import(직렬화 형태·URL·토픽 1 SSOT).
 // 허브 계약: mainPlan/watcher-notify-platform/06-p1-hub-worker.md §2.
 
 const HUB_BASE = (import.meta.env.VITE_PUSHHUB_URL ?? '').replace(/\/+$/, '');
@@ -35,7 +35,7 @@ export function serializeSubscription(sub: PushSubscription, topics: string[]): 
 	};
 }
 
-/** 기존 구독 있으면 재사용, 없으면 신규 구독(userVisibleOnly 강제 — silent push 불가). */
+/** 기존 구독 있으면 재사용, 없으면 신규 구독(userVisibleOnly 강제 · silent push 불가). */
 export async function subscribePush(reg: ServiceWorkerRegistration, vapidPublicKey: string): Promise<PushSubscription> {
 	const existing = await reg.pushManager.getSubscription();
 	if (existing) return existing;
@@ -55,7 +55,7 @@ export async function postSubscribe(payload: SubscribePayload): Promise<void> {
 	if (!res.ok) throw new Error(`subscribe failed: ${res.status}`);
 }
 
-/** 구독 해지 — 전체 또는 부분(topics). pushManager.unsubscribe 와 동시 호출. */
+/** 구독 해지 · 전체 또는 부분(topics). pushManager.unsubscribe 와 동시 호출. */
 export async function postUnsubscribe(endpoint: string, topics?: string[]): Promise<void> {
 	await fetch(SUBSCRIBE_URL, {
 		method: 'DELETE',

@@ -1,6 +1,6 @@
 <script lang="ts">
 	/**
-	 * 분포 패널 — 현재 정렬 컬럼의 30 bin 히스토그램.
+	 * 분포 패널 · 현재 정렬 컬럼의 30 bin 히스토그램.
 	 *
 	 *  - bin click → 그 구간 회사를 그리드에서 highlight (양방향)
 	 *  - 산업 필터 시 산업 평균 line 추가 표시
@@ -282,7 +282,7 @@
 								type="button"
 								class="ranked-item top"
 								onclick={() => onCompanyClick?.(r.n.id)}
-								title="{r.n.label} ({r.n.id}) — 클릭 시 디테일"
+								title="{r.n.label} ({r.n.id}) · 클릭 시 디테일"
 							>
 								<span class="r-dot" style:background={(r.n.color as string) || '#475569'}></span>
 								<span class="r-label">{r.n.label}</span>
@@ -299,7 +299,7 @@
 								type="button"
 								class="ranked-item bottom"
 								onclick={() => onCompanyClick?.(r.n.id)}
-								title="{r.n.label} ({r.n.id}) — 클릭 시 디테일"
+								title="{r.n.label} ({r.n.id}) · 클릭 시 디테일"
 							>
 								<span class="r-dot" style:background={(r.n.color as string) || '#475569'}></span>
 								<span class="r-label">{r.n.label}</span>

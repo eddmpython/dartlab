@@ -1,6 +1,6 @@
 <script lang="ts">
 	/**
-	 * 헤더 드롭다운 — 내 컬럼셋 list + 저장 + 공유 URL 복사.
+	 * 헤더 드롭다운 · 내 컬럼셋 list + 저장 + 공유 URL 복사.
 	 */
 	import {
 		listColumnSets,

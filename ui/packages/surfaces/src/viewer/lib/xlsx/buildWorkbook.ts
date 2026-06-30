@@ -1,6 +1,6 @@
-// buildWorkbook — 격자 시트들 → 진짜 .xlsx 바이트. 엔진 `viz/export/excel.py::_writeGridSheet` +
+// buildWorkbook · 격자 시트들 → 진짜 .xlsx 바이트. 엔진 `viz/export/excel.py::_writeGridSheet` +
 // `_mergeRanges` 의 브라우저 대응. 병합셀은 앵커(top-left)에만 값 1회 + <mergeCell> 범위, coerceCell 로
-// Number/text, unit/note 는 상단 라벨 행, 결손 빈셀은 blank(0 금지 — honest-gap).
+// Number/text, unit/note 는 상단 라벨 행, 결손 빈셀은 blank(0 금지 · honest-gap).
 //
 // 시트명 규칙: 31자 유니코드 trim · 금지문자(: \ / ? * [ ])→공백 · 충돌→"_2" · 빈/숫자시작→"시트N".
 
@@ -24,7 +24,7 @@ export interface SheetInput {
 
 const FORBIDDEN_RE = /[:\\/?*[\]]/g;
 
-/** 시트명 정규화 — 금지문자→공백, 31자 trim, 빈/숫자시작 폴백, 충돌 dedup. */
+/** 시트명 정규화 · 금지문자→공백, 31자 trim, 빈/숫자시작 폴백, 충돌 dedup. */
 export function sheetName(raw: string, used: Set<string>, index: number): string {
 	let name = (raw || '').replace(FORBIDDEN_RE, ' ').trim().slice(0, 31).trim();
 	// 빈 이름 또는 숫자로 시작(Excel 이 시트명 숫자시작 싫어함) → "시트N".
@@ -43,7 +43,7 @@ export function sheetName(raw: string, used: Set<string>, index: number): string
 	return name;
 }
 
-// 격자 병합 범위 추출 — 같은 GridCell 인스턴스가 여러 좌표면 그 extent 가 병합 범위.
+// 격자 병합 범위 추출 · 같은 GridCell 인스턴스가 여러 좌표면 그 extent 가 병합 범위.
 // 엔진 `_mergeRanges` 대응 (id() 대신 인스턴스 참조 Map). 극단 rowspan 도 단일 범위 1개.
 interface Extent {
 	minR: number;
@@ -85,7 +85,7 @@ function gridToSheet(name: string, input: SheetInput): SheetPart {
 	const merges: string[] = [];
 	let startRow = 0; // 0-base
 
-	// 단위·노트 머리 행 (값 환산 없음 — 라벨만).
+	// 단위·노트 머리 행 (값 환산 없음 · 라벨만).
 	if (input.unit) {
 		cells.push({ row: startRow, col: 0, value: `(단위: ${input.unit})`, styleId: STYLE.NOTE });
 		startRow += 1;
@@ -106,7 +106,7 @@ function gridToSheet(name: string, input: SheetInput): SheetPart {
 		for (let cIdx = 0; cIdx < nCols; cIdx += 1) {
 			const cell = cIdx < row.length ? row[cIdx] : undefined;
 			if (!cell) continue;
-			if (written.has(cell)) continue; // 병합셀 — 앵커에만 1회 쓰기
+			if (written.has(cell)) continue; // 병합셀 · 앵커에만 1회 쓰기
 			written.add(cell);
 			const e = ext.get(cell)!;
 			const value = coerceCell(cell.text);
@@ -119,7 +119,7 @@ function gridToSheet(name: string, input: SheetInput): SheetPart {
 				if (typeof value === 'number') {
 					styleId = STYLE.NUMBER_NEG;
 				} else {
-					// 텍스트 — align + wrapText 반영.
+					// 텍스트 · align + wrapText 반영.
 					const wrap = cell.text.indexOf('\n') >= 0;
 					if (wrap) styleId = STYLE.TEXT_WRAP;
 					else if (cell.align === 'right') styleId = STYLE.TEXT_RIGHT;
@@ -130,7 +130,7 @@ function gridToSheet(name: string, input: SheetInput): SheetPart {
 				cells.push({ row: xlRow, col: xlCol, value, styleId });
 			}
 
-			// 극단 rowspan 포함 — 단일 merge 범위 1개.
+			// 극단 rowspan 포함 · 단일 merge 범위 1개.
 			if (e.maxR > e.minR || e.maxC > e.minC) {
 				merges.push(
 					`${cellRef(startRow + e.minR, e.minC)}:${cellRef(startRow + e.maxR, e.maxC)}`
@@ -168,22 +168,22 @@ export function buildWorkbook(sheets: SheetInput[]): Uint8Array {
 	return zip.finalize();
 }
 
-/** 객체 행(parquet/포트) 시트 입력 — 헤더 columns + rows(컬럼→네이티브 값). 데이터 export 전용. */
+/** 객체 행(parquet/포트) 시트 입력 · 헤더 columns + rows(컬럼→네이티브 값). 데이터 export 전용. */
 export interface ObjectSheet {
 	label: string;
 	columns: string[];
 	rows: Record<string, unknown>[];
 }
 
-// 식별자 컬럼 — 숫자로 보여도 텍스트 강제(005930·14자리 접수번호가 숫자로 뭉개지지 않게). 한글 라벨(종목코드·
-// 접수번호·…코드)도 포함 — 일반인용 export 가 컬럼을 한글로 rename 해도 식별자 보존되게.
+// 식별자 컬럼 · 숫자로 보여도 텍스트 강제(005930·14자리 접수번호가 숫자로 뭉개지지 않게). 한글 라벨(종목코드·
+// 접수번호·…코드)도 포함 · 일반인용 export 가 컬럼을 한글로 rename 해도 식별자 보존되게.
 const ID_COL_RE = /(_no$|_cd$|code$|_id$|isin|ticker$|cik|accession|rcept|stock_?code|corp_?code|isu_cd|코드$|접수번호)/i;
-// 날짜류 컬럼명 — 값이 6자리 YYYYMM·4자리 연도라 숫자로 보여도 텍스트 강제(date 202401 → 숫자 202401 방지).
+// 날짜류 컬럼명 · 값이 6자리 YYYYMM·4자리 연도라 숫자로 보여도 텍스트 강제(date 202401 → 숫자 202401 방지).
 const DATE_COL_RE = /(^date$|date$|_date$|^period$|^yyyymm$|^ym$|^month$|^quarter$|^year$|일자|날짜|기간|연월|기준일)/i;
-// 날짜 문자열 — 8자리 YYYYMMDD 또는 구분자 날짜 → 텍스트.
+// 날짜 문자열 · 8자리 YYYYMMDD 또는 구분자 날짜 → 텍스트.
 const DATE_VAL_RE = /^(19|20)\d{6}$|^\d{4}[-./]\d{1,2}[-./]\d{1,2}/;
 
-/** 컬럼별 숫자/텍스트 추론 — 데이터셋은 금액을 콤마없는 *문자열*로 주기도 한다(dart/finance). 한 컬럼의
+/** 컬럼별 숫자/텍스트 추론 · 데이터셋은 금액을 콤마없는 *문자열*로 주기도 한다(dart/finance). 한 컬럼의
  *  모든 비공백 값이 깨끗한 수치(leading-zero·날짜 아님)면 숫자 컬럼. 식별자 이름은 무조건 텍스트. */
 function inferNumericCols(columns: string[], rows: Record<string, unknown>[]): Set<string> {
 	const numeric = new Set<string>();
@@ -215,7 +215,7 @@ function inferNumericCols(columns: string[], rows: Record<string, unknown>[]): S
 	return numeric;
 }
 
-// 한 ObjectSheet → SheetPart. **타입 보존** — 금액류 컬럼은 숫자 셀(t="n", 정수=천단위/소수=일반), 식별자·
+// 한 ObjectSheet → SheetPart. **타입 보존** · 금액류 컬럼은 숫자 셀(t="n", 정수=천단위/소수=일반), 식별자·
 // 날짜·텍스트는 inlineStr. null/빈값=blank(honest-gap, 0 금지).
 function objectSheetToPart(name: string, input: ObjectSheet): SheetPart {
 	const numericCols = inferNumericCols(input.columns, input.rows);
@@ -242,7 +242,7 @@ function objectSheetToPart(name: string, input: ObjectSheet): SheetPart {
 
 /**
  * 객체 행 시트들 → 타입 보존 `.xlsx` 바이트. buildWorkbook(텍스트 격자, coerce)과 달리 parquet/포트
- * 네이티브 타입을 그대로 — 숫자는 숫자, 식별자·날짜 문자열은 텍스트. 시트 분할(다중 ObjectSheet) 지원.
+ * 네이티브 타입을 그대로 · 숫자는 숫자, 식별자·날짜 문자열은 텍스트. 시트 분할(다중 ObjectSheet) 지원.
  */
 // 엑셀 시트 행 한도(1,048,576, 헤더 포함) 초과분은 invalid 워크북이 된다 → "label (N)" 로 분할.
 const XLSX_ROW_LIMIT = 1_048_575;

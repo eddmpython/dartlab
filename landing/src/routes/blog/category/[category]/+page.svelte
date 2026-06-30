@@ -11,7 +11,7 @@
 	const category = $derived(getCategory(categorySlug));
 	const posts = $derived(category ? getPostsByCategory(category.id) : []);
 	const seriesGroups = $derived(category ? getSeriesGroupsByCategory(category.id) : []);
-	const pageTitle = $derived(category ? `${category.seoTitle} — DartLab 전자공시 분석` : 'Blog Category — DartLab 전자공시 분석');
+	const pageTitle = $derived(category ? `${category.seoTitle} · DartLab 전자공시 분석` : 'Blog Category · DartLab 전자공시 분석');
 	const pageDesc = $derived(category?.seoDescription ?? 'DartLab 블로그 카테고리');
 	const pageUrl = $derived(category ? `${brand.url}blog/category/${category.slug}` : `${brand.url}blog/`);
 	const jsonLd = $derived(
@@ -247,7 +247,7 @@
 		grid-template-columns: minmax(0, 1fr) clamp(240px, 32%, 320px);
 		gap: 1.25rem;
 		align-items: stretch;
-		min-height: 168px; /* 카드 균일 높이 — 우측 썸네일이 비율로 위아래 꽉 차게 */
+		min-height: 168px; /* 카드 균일 높이 · 우측 썸네일이 비율로 위아래 꽉 차게 */
 	}
 
 	.category-post-body {

@@ -1,5 +1,5 @@
 /**
- * ChartSpec JSON loader — viz SSOT 통일 회로의 진입점.
+ * ChartSpec JSON loader · viz SSOT 통일 회로의 진입점.
  *
  * Python `dartlab.viz` 가 빌드 타임에 dump 한 ChartSpec JSON 을 fetch.
  * 위치: `landing/static/charts/{stockCode}/manifest.json` + section JSON.

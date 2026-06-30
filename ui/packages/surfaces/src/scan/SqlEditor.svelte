@@ -1,10 +1,10 @@
 <script lang="ts">
 	/**
-	 * Power user SQL Editor — DuckDB-WASM 직접 query (PR-δ).
+	 * Power user SQL Editor · DuckDB-WASM 직접 query (PR-δ).
 	 *
 	 * 등록 테이블 (8+):
 	 *   In-memory (그리드 결과 재사용):
-	 *     - ecosystem      : 회사 노드 (raw 41 필드 — id/label/industry/roe/opMargin/등급/Δ 등)
+	 *     - ecosystem      : 회사 노드 (raw 41 필드 · id/label/industry/roe/opMargin/등급/Δ 등)
 	 *     - prices         : KRX SQL 결과 (currentPrice/marketCap/return1y/spark[] 등)
 	 *     - valuation_mem  : Naver API in-mem (per/pbr/dividendYield/marketCap)
 	 *     - changes_mem    : 공시 변경 카운트 in-mem
@@ -140,7 +140,7 @@ LIMIT 50`
 	async function ensureRegistered() {
 		if (registered || !db) return;
 		try {
-			// ── in-memory (그리드가 이미 fetch 한 결과 재사용 — 빠름) ──
+			// ── in-memory (그리드가 이미 fetch 한 결과 재사용 · 빠름) ──
 			await db.registerJson('ecosystem', ecosystem);
 			if (priceMap.size > 0) {
 				const arr = Array.from(priceMap.entries()).map(([stockCode, p]) => ({
@@ -164,7 +164,7 @@ LIMIT 50`
 				await db.registerJson('changes_mem', arr);
 			}
 
-			// ── HF parquet view (lazy SQL 시점에 fetch — 첫 query 시 약간 지연) ──
+			// ── HF parquet view (lazy SQL 시점에 fetch · 첫 query 시 약간 지연) ──
 			const lazyParquets: Array<[string, string]> = [
 				['finance_lite', 'dart/scan/finance-lite.parquet'],
 				['valuation', 'dart/scan/valuation.parquet'],
@@ -177,7 +177,7 @@ LIMIT 50`
 				try {
 					await db.registerHfParquet(view, path);
 				} catch (err) {
-					console.info(`[scan-sql] ${view} parquet skip — ${path}`, err);
+					console.info(`[scan-sql] ${view} parquet skip · ${path}`, err);
 				}
 			}
 
@@ -237,7 +237,7 @@ LIMIT 50`
 			const result = await Promise.race([
 				db.query<Record<string, unknown>>(trimmed),
 				new Promise<never>((_, reject) =>
-					setTimeout(() => reject(new Error('5초 timeout — query 가 너무 오래 걸립니다')), 5000)
+					setTimeout(() => reject(new Error('5초 timeout · query 가 너무 오래 걸립니다')), 5000)
 				)
 			]);
 			const cap = result.slice(0, 10000);
@@ -281,10 +281,10 @@ LIMIT 50`
 	}
 
 	function fmtCell(v: unknown): string {
-		if (v == null) return '—';
+		if (v == null) return '·';
 		if (Array.isArray(v)) return `[${v.length}]`;
 		if (typeof v === 'number') {
-			if (!Number.isFinite(v)) return '—';
+			if (!Number.isFinite(v)) return '·';
 			const fmt1 = (n: number) =>
 				n.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 			if (Math.abs(v) >= 1e8) return fmt1(v / 1e8) + '억';

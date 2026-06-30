@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { resolveMarket } from '@dartlab/ui-contracts';
 
-// S1-L2.1 게이트 — priority-비대칭 식별자 라우팅. 핵심: 6자리 숫자는 KR코드 ∩ US CIK
+// S1-L2.1 게이트 · priority-비대칭 식별자 라우팅. 핵심: 6자리 숫자는 KR코드 ∩ US CIK
 // 모양 충돌이라 자동판정은 KR(모호 플래그), US CIK 는 명시 market 필요.
 describe('resolveMarket', () => {
 	it('KR 6자리 종목코드 → KR(모호 플래그)', () => {
@@ -12,7 +12,7 @@ describe('resolveMarket', () => {
 		expect(resolveMarket('aapl')).toMatchObject({ market: 'US', ticker: 'AAPL' });
 	});
 
-	it('6자리 숫자 CIK(320193) 자동판정은 KR — US 는 명시 필요', () => {
+	it('6자리 숫자 CIK(320193) 자동판정은 KR · US 는 명시 필요', () => {
 		const auto = resolveMarket('320193');
 		expect(auto.market).toBe('KR');
 		expect(auto.ambiguous).toBe(true);

@@ -1,5 +1,5 @@
 /**
- * Scan Studio — DuckDB-WASM 으로 HF parquet 직접 query.
+ * Scan Studio · DuckDB-WASM 으로 HF parquet 직접 query.
  *
  * 3 source 별 lazy 로드:
  *   - prices  : gov/prices/date/{year}.parquet + raw-{year-1}.parquet UNION → 1Y window
@@ -13,7 +13,7 @@
  * 시계열은 PR-D 디테일 패널에서. PR-B 는 60일 sparkline 만 활용.
  */
 
-// duckdb 접근은 셸이 주입한다 — surfaces(vanilla svelte)는 SvelteKit/Vite 전용 $lib/data/duckdb
+// duckdb 접근은 셸이 주입한다 · surfaces(vanilla svelte)는 SvelteKit/Vite 전용 $lib/data/duckdb
 // ($app/environment·@vite-ignore·OPFS)에 직접 결합하지 않는다(viewer financeQuery seam 동형, queryStream/persisted 등
 // scan 사용 멤버 포함). landing 컴포지션 루트가 provideScanDuckDb(loadDartDb) 주입. 미주입(또는 기기 제약) = null → 정직 강등.
 export interface DartDb {
@@ -32,7 +32,7 @@ export function provideScanDuckDb(provider: () => Promise<DartDb | null>): void 
 function loadDartDb(): Promise<DartDb | null> {
 	return scanDuckDbProvider ? scanDuckDbProvider() : Promise.resolve(null);
 }
-// SQL 단일인용 escape — 1줄 순수 유틸(옛 $lib/data/duckdb.sqlEscape 인라인 — 결합 절제).
+// SQL 단일인용 escape · 1줄 순수 유틸(옛 $lib/data/duckdb.sqlEscape 인라인 · 결합 절제).
 function sqlEscape(value: string): string {
 	return value.replace(/'/g, "''");
 }
@@ -61,7 +61,7 @@ async function setupKrxPricesView(db: DartDb): Promise<void> {
 			`CREATE OR REPLACE VIEW krxPrices AS SELECT * FROM krxPricesCurr UNION ALL SELECT * FROM krxPricesPrev`
 		);
 	} catch (errPrev) {
-		console.warn(`[scan] 직전 연도 parquet 등록 실패 — 현재 연도만`, errPrev);
+		console.warn(`[scan] 직전 연도 parquet 등록 실패 · 현재 연도만`, errPrev);
 		await db.query(`CREATE OR REPLACE VIEW krxPrices AS SELECT * FROM krxPricesCurr`);
 	}
 }
@@ -164,7 +164,7 @@ export async function ensureDuckDb(): Promise<{ db: DartDb | null; state: DbStat
 	}
 }
 
-/** Phase 1 — latest snapshot 만. 현재가 + 시총만. 매우 가볍.
+/** Phase 1 · latest snapshot 만. 현재가 + 시총만. 매우 가볍.
  *
  *  - 한 raw-{year}.parquet 만 등록 (직전 연도 X)
  *  - WINDOW + LAG + 252-day aggregate 모두 X
@@ -216,7 +216,7 @@ export async function loadPriceSnapshot(db: DartDb): Promise<Map<string, PriceMe
 			});
 		}
 		console.info(
-			`[scan] ✅ Phase 1 snapshot — ${map.size}사 (${(performance.now() - t0).toFixed(0)}ms)`
+			`[scan] ✅ Phase 1 snapshot · ${map.size}사 (${(performance.now() - t0).toFixed(0)}ms)`
 		);
 		return map;
 	} catch (err) {
@@ -364,7 +364,7 @@ export async function loadFinanceLiteMetrics(db: DartDb): Promise<Map<string, Fi
 			});
 		}
 		console.info(
-			`[scan] ✅ finance-lite metrics — ${map.size}사 (${(performance.now() - t0).toFixed(0)}ms)`
+			`[scan] ✅ finance-lite metrics · ${map.size}사 (${(performance.now() - t0).toFixed(0)}ms)`
 		);
 		return map;
 	} catch (err) {
@@ -373,7 +373,7 @@ export async function loadFinanceLiteMetrics(db: DartDb): Promise<Map<string, Fi
 	}
 }
 
-/** PRICES_MAIN_SQL — main aggregate (spark 제외, 빠름). */
+/** PRICES_MAIN_SQL · main aggregate (spark 제외, 빠름). */
 const PRICES_MAIN_SQL = `
 	WITH ranked AS (
 		SELECT
@@ -436,7 +436,7 @@ const PRICES_MAIN_SQL = `
 	LEFT JOIN prev252 p252 USING (ISU_CD)
 `;
 
-/** SPARK60_SQL — 60거래일 종가 array. 단기 모멘텀 column. */
+/** SPARK60_SQL · 60거래일 종가 array. 단기 모멘텀 column. */
 const SPARK60_SQL = `
 	WITH ranked AS (
 		SELECT
@@ -452,7 +452,7 @@ const SPARK60_SQL = `
 	GROUP BY ISU_CD
 `;
 
-/** SPARK_SQL — 1Y(252거래일) 종가 array, 5일 다운샘플 ≈ 50포인트. cell sparkline + hover 차트 공용. */
+/** SPARK_SQL · 1Y(252거래일) 종가 array, 5일 다운샘플 ≈ 50포인트. cell sparkline + hover 차트 공용. */
 const SPARK_SQL = `
 	WITH ranked AS (
 		SELECT
@@ -486,7 +486,7 @@ interface PriceRow {
 	spark: number[] | null;
 }
 
-/** Promise + timeout — N초 안에 안 끝나면 throw. */
+/** Promise + timeout · N초 안에 안 끝나면 throw. */
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
 	return Promise.race([
 		p,
@@ -496,7 +496,7 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
 	]);
 }
 
-/** Phase 2 — main aggregate (가벼운 SQL) + spark 별도 query. spark 가 hang 해도 main 은 결과 나옴. */
+/** Phase 2 · main aggregate (가벼운 SQL) + spark 별도 query. spark 가 hang 해도 main 은 결과 나옴. */
 export async function loadPriceMetrics(db: DartDb): Promise<Map<string, PriceMetrics>> {
 	const t0 = performance.now();
 	const map = new Map<string, PriceMetrics>();
@@ -511,7 +511,7 @@ export async function loadPriceMetrics(db: DartDb): Promise<Map<string, PriceMet
 		return map;
 	}
 
-	// 2. main aggregate SQL (currentPrice, marketCap, return, vol, week52 등) — spark 제외, 가벼움
+	// 2. main aggregate SQL (currentPrice, marketCap, return, vol, week52 등) · spark 제외, 가벼움
 	const tMain = performance.now();
 	try {
 		console.info('[scan] KRX main aggregate SQL 시작…');
@@ -543,14 +543,14 @@ export async function loadPriceMetrics(db: DartDb): Promise<Map<string, PriceMet
 			});
 		}
 		console.info(
-			`[scan] ✅ KRX main aggregate — ${map.size}사 (${(performance.now() - tMain).toFixed(0)}ms)`
+			`[scan] ✅ KRX main aggregate · ${map.size}사 (${(performance.now() - tMain).toFixed(0)}ms)`
 		);
 	} catch (err) {
 		console.error('[scan] ❌ KRX main aggregate SQL 실패', err);
 		return map;
 	}
 
-	// 3. 60D spark 별도 query — hang 해도 main 결과는 보존 (20초 timeout)
+	// 3. 60D spark 별도 query · hang 해도 main 결과는 보존 (20초 timeout)
 	try {
 		const tSpark60 = performance.now();
 		console.info('[scan] KRX spark 60D SQL 시작…');
@@ -571,13 +571,13 @@ export async function loadPriceMetrics(db: DartDb): Promise<Map<string, PriceMet
 			}
 		}
 		console.info(
-			`[scan] ✅ KRX spark 60D — ${merged}사 (${(performance.now() - tSpark60).toFixed(0)}ms)`
+			`[scan] ✅ KRX spark 60D · ${merged}사 (${(performance.now() - tSpark60).toFixed(0)}ms)`
 		);
 	} catch (err) {
-		console.warn('[scan] ⚠ KRX spark 60D 별도 query 실패 — main 결과만 반환', err);
+		console.warn('[scan] ⚠ KRX spark 60D 별도 query 실패 · main 결과만 반환', err);
 	}
 
-	// 4. 1Y spark 별도 query — hang 해도 main 결과는 보존 (30초 timeout)
+	// 4. 1Y spark 별도 query · hang 해도 main 결과는 보존 (30초 timeout)
 	try {
 		const tSpark = performance.now();
 		console.info('[scan] KRX spark 1Y SQL 시작…');
@@ -587,11 +587,11 @@ export async function loadPriceMetrics(db: DartDb): Promise<Map<string, PriceMet
 			'KRX spark'
 		);
 		let merged = 0;
-		// 디버그 — 첫 row 의 spark 컬럼 타입 확인
+		// 디버그 · 첫 row 의 spark 컬럼 타입 확인
 		if (sparkRows.length > 0) {
 			const first = sparkRows[0];
 			console.info(
-				`[scan] spark sample — type=${typeof first.spark}, isArray=${Array.isArray(first.spark)}, ctor=${first.spark?.constructor?.name}, len=${(first.spark as any)?.length}`
+				`[scan] spark sample · type=${typeof first.spark}, isArray=${Array.isArray(first.spark)}, ctor=${first.spark?.constructor?.name}, len=${(first.spark as any)?.length}`
 			);
 		}
 		for (const r of sparkRows) {
@@ -604,10 +604,10 @@ export async function loadPriceMetrics(db: DartDb): Promise<Map<string, PriceMet
 			}
 		}
 		console.info(
-			`[scan] ✅ KRX spark 1Y — ${merged}사 (${(performance.now() - tSpark).toFixed(0)}ms)`
+			`[scan] ✅ KRX spark 1Y · ${merged}사 (${(performance.now() - tSpark).toFixed(0)}ms)`
 		);
 	} catch (err) {
-		console.warn('[scan] ⚠ KRX spark 별도 query 실패 — main 결과만 반환', err);
+		console.warn('[scan] ⚠ KRX spark 별도 query 실패 · main 결과만 반환', err);
 	}
 
 	return map;
@@ -653,7 +653,7 @@ export async function loadValuation(db: DartDb): Promise<Map<string, ValuationMe
 			});
 		}
 		console.info(
-			`[scan] ✅ valuation — ${map.size}사 (${(performance.now() - t0).toFixed(0)}ms)`
+			`[scan] ✅ valuation · ${map.size}사 (${(performance.now() - t0).toFixed(0)}ms)`
 		);
 		return map;
 	} catch (err) {
@@ -696,7 +696,7 @@ export async function loadChanges(db: DartDb): Promise<Map<string, ChangeMetrics
 			});
 		}
 		console.info(
-			`[scan] ✅ changes — ${map.size}사 (${(performance.now() - t0).toFixed(0)}ms)`
+			`[scan] ✅ changes · ${map.size}사 (${(performance.now() - t0).toFixed(0)}ms)`
 		);
 		return map;
 	} catch (err) {
@@ -716,7 +716,7 @@ export function getSparkForCompany(
 // ── Streaming variants (PR-β) ────────────────────────
 //
 // generator 가 chunk 단위 (2048 row 까지) Map 으로 yield.
-// caller 가 progressive 하게 main map 에 merge — 첫 batch 가 < 1초 안에 시각화.
+// caller 가 progressive 하게 main map 에 merge · 첫 batch 가 < 1초 안에 시각화.
 
 const PRICES_SQL = `
 	WITH ranked AS (
@@ -787,7 +787,7 @@ const PRICES_SQL = `
 	LEFT JOIN spark s USING (ISU_CD)
 `;
 
-/** PR-β — KRX prices SQL 결과를 batch 단위 yield. caller 가 main map 에 merge. */
+/** PR-β · KRX prices SQL 결과를 batch 단위 yield. caller 가 main map 에 merge. */
 export async function* loadPriceMetricsStream(
 	db: DartDb
 ): AsyncGenerator<Map<string, PriceMetrics>, void, void> {
@@ -801,7 +801,7 @@ export async function* loadPriceMetricsStream(
 				`CREATE OR REPLACE VIEW krxPrices AS SELECT * FROM krxPricesCurr UNION ALL SELECT * FROM krxPricesPrev`
 			);
 		} catch (errPrev) {
-			console.warn(`[scan] 직전 연도 parquet 등록 실패 — 현재 연도만`, errPrev);
+			console.warn(`[scan] 직전 연도 parquet 등록 실패 · 현재 연도만`, errPrev);
 			await db.query(`CREATE OR REPLACE VIEW krxPrices AS SELECT * FROM krxPricesCurr`);
 		}
 		let totalRows = 0;
@@ -851,14 +851,14 @@ export async function* loadPriceMetricsStream(
 			if (chunk.size > 0) yield chunk;
 		}
 		console.info(
-			`[scan] ✅ Streaming KRX prices — ${totalRows}사 (${(performance.now() - t0).toFixed(0)}ms)`
+			`[scan] ✅ Streaming KRX prices · ${totalRows}사 (${(performance.now() - t0).toFixed(0)}ms)`
 		);
 	} catch (err) {
 		console.error('[scan] ❌ Streaming prices SQL 실패', err);
 	}
 }
 
-/** PR-β — valuation streaming. */
+/** PR-β · valuation streaming. */
 export async function* loadValuationStream(
 	db: DartDb
 ): AsyncGenerator<Map<string, ValuationMetrics>, void, void> {
@@ -895,14 +895,14 @@ export async function* loadValuationStream(
 			if (chunk.size > 0) yield chunk;
 		}
 		console.info(
-			`[scan] ✅ Streaming valuation — ${totalRows}사 (${(performance.now() - t0).toFixed(0)}ms)`
+			`[scan] ✅ Streaming valuation · ${totalRows}사 (${(performance.now() - t0).toFixed(0)}ms)`
 		);
 	} catch (err) {
 		console.warn('[scan] valuation streaming 실패', err);
 	}
 }
 
-/** PR-β — changes streaming. */
+/** PR-β · changes streaming. */
 export async function* loadChangesStream(
 	db: DartDb
 ): AsyncGenerator<Map<string, ChangeMetrics>, void, void> {
@@ -942,7 +942,7 @@ export async function* loadChangesStream(
 			if (chunk.size > 0) yield chunk;
 		}
 		console.info(
-			`[scan] ✅ Streaming changes — ${totalRows}사 (${(performance.now() - t0).toFixed(0)}ms)`
+			`[scan] ✅ Streaming changes · ${totalRows}사 (${(performance.now() - t0).toFixed(0)}ms)`
 		);
 	} catch (err) {
 		console.warn('[scan] changes streaming 실패', err);
@@ -975,7 +975,7 @@ export async function loadFinanceTimeseries(
 ): Promise<FinanceYear[]> {
 	try {
 		await db.registerHfParquet('financeLite', 'dart/scan/finance-lite.parquet');
-		// long-form raw — JS 에서 pivot. 5 계정만 추출.
+		// long-form raw · JS 에서 pivot. 5 계정만 추출.
 		const rows = await db.query<{
 			bsns_year: number;
 			reprt_nm: string;

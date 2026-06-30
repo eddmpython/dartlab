@@ -1,4 +1,4 @@
-// 단순 TTL 캐시 — 어댑터 구현 공용. BoundedCache 원칙(상한 필수 — 무한 증식 금지).
+// 단순 TTL 캐시 · 어댑터 구현 공용. BoundedCache 원칙(상한 필수 · 무한 증식 금지).
 
 export interface RuntimeCacheOptions {
 	maxEntries: number;

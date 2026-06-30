@@ -41,10 +41,10 @@ export const GROUP_META: Record<MetricGroup, { label: string; color: string }> =
 };
 
 const pct = (withSign = false) => (v: unknown) =>
-	typeof v === 'number' ? fmtPct(v, { withSign }) : '—';
+	typeof v === 'number' ? fmtPct(v, { withSign }) : '·';
 
 const wonAsEok = (v: unknown) => {
-	if (typeof v !== 'number' || !Number.isFinite(v)) return '—';
+	if (typeof v !== 'number' || !Number.isFinite(v)) return '·';
 	const eok = v / 1e8;
 	const abs = Math.abs(eok);
 	const maximumFractionDigits = abs >= 100 ? 0 : 1;
@@ -128,7 +128,7 @@ const baseMetrics: MetricDef[] = [
 		definition: '산업 내 매출 순위. 1위가 가장 높다.',
 		higherBetter: false,
 		source: 'ecosystem',
-		format: (v) => (typeof v === 'number' ? `${v}위` : '—')
+		format: (v) => (typeof v === 'number' ? `${v}위` : '·')
 	},
 	{
 		key: 'revenue',
@@ -206,7 +206,7 @@ const baseMetrics: MetricDef[] = [
 		definition: '영업이익 ÷ 이자비용.',
 		higherBetter: true,
 		source: 'ecosystem',
-		format: (v) => (typeof v === 'number' ? fmtMul(v, 1) : '—')
+		format: (v) => (typeof v === 'number' ? fmtMul(v, 1) : '·')
 	},
 	{
 		key: 'profGrade',
@@ -266,7 +266,7 @@ const baseMetrics: MetricDef[] = [
 		unit: '%p',
 		definition: '직전 1년 대주주 지분 변화.',
 		source: 'ecosystem',
-		format: (v) => (typeof v === 'number' ? fmtPct(v, { withSign: true, suffix: '%p' }) : '—')
+		format: (v) => (typeof v === 'number' ? fmtPct(v, { withSign: true, suffix: '%p' }) : '·')
 	},
 	{
 		key: 'stability',
@@ -332,7 +332,7 @@ const baseMetrics: MetricDef[] = [
 		unit: '명',
 		definition: '직전 사업연도 평균 임직원 수.',
 		source: 'ecosystem',
-		format: (v) => (typeof v === 'number' ? `${v.toLocaleString('ko-KR')}명` : '—'),
+		format: (v) => (typeof v === 'number' ? `${v.toLocaleString('ko-KR')}명` : '·'),
 		distribution: 'log'
 	},
 	{
@@ -344,7 +344,7 @@ const baseMetrics: MetricDef[] = [
 		definition: '직전 사업연도 ROE 변화.',
 		higherBetter: true,
 		source: 'ecosystem',
-		format: (v) => (typeof v === 'number' ? fmtPct(v, { withSign: true, suffix: '%p' }) : '—')
+		format: (v) => (typeof v === 'number' ? fmtPct(v, { withSign: true, suffix: '%p' }) : '·')
 	},
 	{
 		key: 'opMarginDelta',
@@ -355,7 +355,7 @@ const baseMetrics: MetricDef[] = [
 		definition: '직전 사업연도 영업이익률 변화.',
 		higherBetter: true,
 		source: 'ecosystem',
-		format: (v) => (typeof v === 'number' ? fmtPct(v, { withSign: true, suffix: '%p' }) : '—')
+		format: (v) => (typeof v === 'number' ? fmtPct(v, { withSign: true, suffix: '%p' }) : '·')
 	},
 	{
 		key: 'debtRatioDelta',
@@ -366,7 +366,7 @@ const baseMetrics: MetricDef[] = [
 		definition: '직전 사업연도 부채비율 변화. 음수는 개선.',
 		higherBetter: false,
 		source: 'ecosystem',
-		format: (v) => (typeof v === 'number' ? fmtPct(v, { withSign: true, suffix: '%p' }) : '—')
+		format: (v) => (typeof v === 'number' ? fmtPct(v, { withSign: true, suffix: '%p' }) : '·')
 	},
 	{
 		key: 'currentPrice',
@@ -376,7 +376,7 @@ const baseMetrics: MetricDef[] = [
 		unit: '원',
 		definition: '직전 거래일 종가.',
 		source: 'prices',
-		format: (v) => (typeof v === 'number' ? fmtPrice(v) : '—')
+		format: (v) => (typeof v === 'number' ? fmtPrice(v) : '·')
 	},
 	{
 		key: 'marketCap',
@@ -443,7 +443,7 @@ const baseMetrics: MetricDef[] = [
 		definition: '직전 52주 고가.',
 		higherBetter: true,
 		source: 'prices',
-		format: (v) => (typeof v === 'number' ? fmtPrice(v) : '—')
+		format: (v) => (typeof v === 'number' ? fmtPrice(v) : '·')
 	},
 	{
 		key: 'week52Low',
@@ -454,7 +454,7 @@ const baseMetrics: MetricDef[] = [
 		definition: '직전 52주 저가.',
 		higherBetter: false,
 		source: 'prices',
-		format: (v) => (typeof v === 'number' ? fmtPrice(v) : '—')
+		format: (v) => (typeof v === 'number' ? fmtPrice(v) : '·')
 	},
 	{
 		key: 'volumeAvg30d',
@@ -465,7 +465,7 @@ const baseMetrics: MetricDef[] = [
 		definition: '직전 30거래일 평균 거래량.',
 		higherBetter: true,
 		source: 'prices',
-		format: (v) => (typeof v === 'number' ? v.toLocaleString('ko-KR') : '—'),
+		format: (v) => (typeof v === 'number' ? v.toLocaleString('ko-KR') : '·'),
 		distribution: 'log'
 	},
 	{
@@ -501,7 +501,7 @@ const baseMetrics: MetricDef[] = [
 		definition: '주가 ÷ 주당순이익.',
 		higherBetter: false,
 		source: 'valuation',
-		format: (v) => (typeof v === 'number' ? fmtMul(v, 1) : '—')
+		format: (v) => (typeof v === 'number' ? fmtMul(v, 1) : '·')
 	},
 	{
 		key: 'pbr',
@@ -512,7 +512,7 @@ const baseMetrics: MetricDef[] = [
 		definition: '주가 ÷ 주당순자산.',
 		higherBetter: false,
 		source: 'valuation',
-		format: (v) => (typeof v === 'number' ? fmtMul(v, 2) : '—')
+		format: (v) => (typeof v === 'number' ? fmtMul(v, 2) : '·')
 	},
 	{
 		key: 'dividendYield',
@@ -533,7 +533,7 @@ const baseMetrics: MetricDef[] = [
 		unit: '건',
 		definition: '직전 1년 재무 정정·변경 건수.',
 		source: 'changes',
-		format: (v) => (typeof v === 'number' ? `${v}건` : '—')
+		format: (v) => (typeof v === 'number' ? `${v}건` : '·')
 	},
 	{
 		key: 'structuralChanges1y',
@@ -543,7 +543,7 @@ const baseMetrics: MetricDef[] = [
 		unit: '건',
 		definition: '직전 1년 사업구조 변경 건수.',
 		source: 'changes',
-		format: (v) => (typeof v === 'number' ? `${v}건` : '—')
+		format: (v) => (typeof v === 'number' ? `${v}건` : '·')
 	},
 	{
 		key: 'totalChanges1y',
@@ -554,7 +554,7 @@ const baseMetrics: MetricDef[] = [
 		definition: '직전 1년 전체 공시 변경 건수.',
 		higherBetter: false,
 		source: 'report',
-		format: (v) => (typeof v === 'number' ? `${v}건` : '—')
+		format: (v) => (typeof v === 'number' ? `${v}건` : '·')
 	},
 	{
 		key: 'recentChangeYear',
@@ -565,7 +565,7 @@ const baseMetrics: MetricDef[] = [
 		definition: '공시 변경 데이터의 최근 연도.',
 		higherBetter: false,
 		source: 'report',
-		format: (v) => (typeof v === 'number' ? `${v}` : '—')
+		format: (v) => (typeof v === 'number' ? `${v}` : '·')
 	}
 ];
 

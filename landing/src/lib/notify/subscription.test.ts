@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { urlBase64ToUint8Array, serializeSubscription, DEFAULT_TOPICS } from './subscription';
 
-describe('urlBase64ToUint8Array — VAPID 키 디코드', () => {
+describe('urlBase64ToUint8Array · VAPID 키 디코드', () => {
 	it('padding 없는 base64url 복원', () => {
 		// "Man" → "TWFu" (padding 0). 길이 3 기대.
 		expect(Array.from(urlBase64ToUint8Array('TWFu'))).toEqual([77, 97, 110]);
@@ -23,7 +23,7 @@ describe('urlBase64ToUint8Array — VAPID 키 디코드', () => {
 	});
 });
 
-describe('serializeSubscription — 허브 /subscribe body', () => {
+describe('serializeSubscription · 허브 /subscribe body', () => {
 	const endpoint = 'https://fcm.googleapis.com/fcm/send/abc123';
 	const fakeSub = {
 		endpoint,

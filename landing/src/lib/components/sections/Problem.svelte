@@ -52,7 +52,7 @@
 						<span class="text-dl-primary">✓</span> 텍스트 + 숫자 + 보고서, 하나의 Company 객체
 					</div>
 					<div class="flex items-center gap-3 text-dl-text">
-						<span class="text-dl-primary">✓</span> 5년치 나란히 — `diff()` 한 줄
+						<span class="text-dl-primary">✓</span> 5년치 나란히 · `diff()` 한 줄
 					</div>
 					<div class="h-px bg-dl-border my-2"></div>
 					<div class="flex items-center gap-3 text-dl-text">

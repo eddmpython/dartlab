@@ -1,10 +1,10 @@
-// STORE(method 0, 무압축) ZIP 작성기 — 라이브러리 0. .xlsx = ZIP 컨테이너라 이게 핵심 위험면이다.
+// STORE(method 0, 무압축) ZIP 작성기 · 라이브러리 0. .xlsx = ZIP 컨테이너라 이게 핵심 위험면이다.
 // local file header + central directory + EOCD 바이트 레이아웃을 정확히(little-endian, CRC32, 크기 필드).
 // 압축 0 이라 compressedSize == uncompressedSize, method == 0. UTF-8 파일명(general-purpose bit 11 set).
 //
-// 참조: PKWARE APPNOTE — Local file header(0x04034b50) / Central directory(0x02014b50) / EOCD(0x06054b50).
+// 참조: PKWARE APPNOTE · Local file header(0x04034b50) / Central directory(0x02014b50) / EOCD(0x06054b50).
 
-// ── CRC32 (IEEE 802.3, 표준 ZIP 다항식 0xEDB88320) — 256 엔트리 테이블 ──
+// ── CRC32 (IEEE 802.3, 표준 ZIP 다항식 0xEDB88320) · 256 엔트리 테이블 ──
 const CRC_TABLE: Uint32Array = (() => {
 	const table = new Uint32Array(256);
 	for (let n = 0; n < 256; n += 1) {
@@ -45,7 +45,7 @@ export class ZipStore {
 		this.offset += bytes.length;
 	}
 
-	/** 한 항목 추가 — STORE(무압축) local file header + 데이터를 즉시 쓴다. */
+	/** 한 항목 추가 · STORE(무압축) local file header + 데이터를 즉시 쓴다. */
 	addEntry(name: string, data: Uint8Array): void {
 		const nameBytes = TE.encode(name);
 		const crc = crc32(data);

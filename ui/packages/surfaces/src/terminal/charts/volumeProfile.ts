@@ -1,5 +1,5 @@
-// 매물대 (Volume Profile) — 가시 구간 거래대금(폴백 거래량) 가중 가격대 분포 + POC 수평선.
-// registerIndicator figures:[] + draw 전용 (econOverlay 패턴 — 캔들 y축 무왜곡, 줌·스크롤마다
+// 매물대 (Volume Profile) · 가시 구간 거래대금(폴백 거래량) 가중 가격대 분포 + POC 수평선.
+// registerIndicator figures:[] + draw 전용 (econOverlay 패턴 · 캔들 y축 무왜곡, 줌·스크롤마다
 // draw 재호출 = 자동 재계산, 구독 0). 로그축은 convertFrom/ToPixel 이 변환을 흡수한다.
 export const VP_INDICATOR = 'VPVR';
 

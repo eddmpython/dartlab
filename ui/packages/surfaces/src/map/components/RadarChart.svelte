@@ -1,6 +1,6 @@
 <script lang="ts">
 	/**
-	 * 5축 SVG 레이더 차트 — Simply Wall St Snowflake 스타일.
+	 * 5축 SVG 레이더 차트 · Simply Wall St Snowflake 스타일.
 	 *
 	 * axes: 5개 축 배열 [{label, value(0~100), benchmark(0~100)?}]
 	 * value = 이 회사 점수 (빨강 실선)
@@ -32,7 +32,7 @@
 		const angle = (Math.PI * 2 * i) / N - Math.PI / 2;
 		return cy + r * Math.sin(angle);
 	}
-	// 라벨 정렬 — 스포크 다수(10+)일 때 겹침 완화: 우측은 start(밖으로), 좌측은 end, 상·하는 middle.
+	// 라벨 정렬 · 스포크 다수(10+)일 때 겹침 완화: 우측은 start(밖으로), 좌측은 end, 상·하는 middle.
 	function anchorFor(i: number): 'start' | 'middle' | 'end' {
 		const c = Math.cos((Math.PI * 2 * i) / N - Math.PI / 2);
 		return c > 0.3 ? 'start' : c < -0.3 ? 'end' : 'middle';

@@ -20,7 +20,7 @@
 	const parquetUrl = $derived(
 		`https://huggingface.co/datasets/${brand.hfRepo}/resolve/main/${entry.dir}/${code}.parquet`
 	);
-	// HF 파일 블롭 페이지 — 브라우저에서 parquet을 테이블 뷰로 preview
+	// HF 파일 블롭 페이지 · 브라우저에서 parquet을 테이블 뷰로 preview
 	const blobUrl = $derived(
 		`https://huggingface.co/datasets/${brand.hfRepo}/blob/main/${entry.dir}/${code}.parquet`
 	);

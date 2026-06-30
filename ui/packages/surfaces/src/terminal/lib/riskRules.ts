@@ -1,24 +1,24 @@
-// 리스크 경고등 규칙 SSOT — riskFlagsOf(글랜스 평가) + RiskFlagsDialog(설명 카탈로그) *공동 소비*.
+// 리스크 경고등 규칙 SSOT · riskFlagsOf(글랜스 평가) + RiskFlagsDialog(설명 카탈로그) *공동 소비*.
 // 평가 로직은 각 규칙의 evaluate 클로저 한 곳에만 존재(임계·라벨·설명은 선언) → 두 표면 사이 로직 중복 0.
 //
 // 정직 가드(forensic.ts·gradeGuide.ts 와 정합):
-//  · 결정론 — evaluate 는 순수 임계 비교만(LLM 추론 0).
+//  · 결정론 · evaluate 는 순수 임계 비교만(LLM 추론 0).
 //  · 글랜스 패널은 점등(red/yellow)만 표시 / 다이얼로그만 clear·na 전체 카탈로그 표시(역할 분리).
 //  · 완결성 점검 아님 · 매수/매도/목표가 신호 아님 · 인과 단정 금지.
-//  · null = 판정불가(데이터 부재 등) — green 으로도 red 로도 흘리지 않음. "—"=공시 부재(0 대체 금지).
+//  · null = 판정불가(데이터 부재 등) · green 으로도 red 로도 흘리지 않음. "·"=공시 부재(0 대체 금지).
 //
 // 단위 주의(engine.ts mk 확인): icr = 배수(<1.0배), currentRatio = 백분율(<100%), debtRatio·opMargin = %.
 import type { EcoNode, RiskCatalogItem } from './types';
 
 export type RiskLevel = 'red' | 'yellow';
 
-/** 평가 컨텍스트 — 회사 EcoNode + 업종 중앙값 조회(industryStats, 없으면 null). */
+/** 평가 컨텍스트 · 회사 EcoNode + 업종 중앙값 조회(industryStats, 없으면 null). */
 export interface RiskRuleCtx {
 	e: EcoNode;
 	median: (field: keyof EcoNode) => number | null;
 }
 
-/** 점등(red/yellow) — 글랜스 패널 표시. kr/en = *조건별* 라벨(영업적자/저수익 등, 차원명 아님). */
+/** 점등(red/yellow) · 글랜스 패널 표시. kr/en = *조건별* 라벨(영업적자/저수익 등, 차원명 아님). */
 export interface RiskHit {
 	lv: RiskLevel;
 	kr: string;
@@ -30,9 +30,9 @@ export type RiskEval = RiskHit | { lv: 'clear'; d: string } | null;
 
 export interface RiskRule {
 	id: string;
-	kr: string; // 차원명(다이얼로그 카탈로그 행) — 조건별 라벨과 다름
+	kr: string; // 차원명(다이얼로그 카탈로그 행) · 조건별 라벨과 다름
 	en: string;
-	axis: string | null; // GradeExplainDialog 교차링크 키(COMPOSITE_AXES): prof|growth|audit|qual|debt|liq|stab — 없으면 null
+	axis: string | null; // GradeExplainDialog 교차링크 키(COMPOSITE_AXES): prof|growth|audit|qual|debt|liq|stab · 없으면 null
 	whatKr: string; // "무엇을 보나"
 	whatEn: string;
 	thresholdKr: string; // 켜지는 조건(다이얼로그 표기 SSOT)
@@ -42,13 +42,13 @@ export interface RiskRule {
 	evaluate: (c: RiskRuleCtx) => RiskEval;
 }
 
-// (RiskCatalogItem 타입은 types.ts — 순환 import 회피 위해 데이터 타입은 그곳이 SSOT)
+// (RiskCatalogItem 타입은 types.ts · 순환 import 회피 위해 데이터 타입은 그곳이 SSOT)
 
-// detail 포맷 헬퍼 — 단위 명시(거짓정밀 방지: 배수/백분율 혼동 차단).
+// detail 포맷 헬퍼 · 단위 명시(거짓정밀 방지: 배수/백분율 혼동 차단).
 const pct0 = (v: number): string => v.toFixed(0) + '%';
 const pct1 = (v: number): string => v.toFixed(1) + '%';
 const medTail = (med: number | null, fmt: (n: number) => string): string => (med != null ? ' · 업종중앙 ' + fmt(med) : '');
-// 금융업(은행·보험·증권) — 운전자본·레버리지 정의가 일반기업과 달라(예금=부채) 유동비율·부채비율 무의미 → 판정 제외(na).
+// 금융업(은행·보험·증권) · 운전자본·레버리지 정의가 일반기업과 달라(예금=부채) 유동비율·부채비율 무의미 → 판정 제외(na).
 const isFinance = (e: EcoNode): boolean => e.industry === 'finance';
 
 export const RISK_RULES: RiskRule[] = [
@@ -57,15 +57,15 @@ export const RISK_RULES: RiskRule[] = [
 		kr: '수익성',
 		en: 'Profitability',
 		axis: 'prof',
-		whatKr: '본업에서 돈을 버는가 — 영업이익률',
-		whatEn: 'Does the core business make money — OP margin',
+		whatKr: '본업에서 돈을 버는가 · 영업이익률',
+		whatEn: 'Does the core business make money · OP margin',
 		thresholdKr: '영업이익률 < 0% 또는 수익성 등급 "적자" → red · 등급 "저수익" → yellow',
 		thresholdEn: 'OP margin < 0% or profitability grade "loss" → red · grade "low" → yellow',
 		source: 'EcoNode.opMargin / profGrade',
 		hard: true,
 		evaluate: ({ e }) => {
 			const om = e.opMargin;
-			// red = 영업적자 (수치 우선, 수치 부재 시 등급 라벨로 보강 — red 손실 방지)
+			// red = 영업적자 (수치 우선, 수치 부재 시 등급 라벨로 보강 · red 손실 방지)
 			if ((om != null && om < 0) || e.profGrade === '적자') return { lv: 'red', kr: '영업적자', en: 'Operating loss', d: om != null ? pct1(om) : '' };
 			if (e.profGrade === '저수익') return { lv: 'yellow', kr: '저수익', en: 'Low margin', d: om != null ? pct1(om) : '' };
 			if (om != null) return { lv: 'clear', d: pct1(om) };
@@ -77,10 +77,10 @@ export const RISK_RULES: RiskRule[] = [
 		kr: '성장성',
 		en: 'Growth',
 		axis: 'growth',
-		whatKr: '외형이 자라는가 — 매출 추세',
-		whatEn: 'Is the top line growing — revenue trend',
-		thresholdKr: '성장 등급 "급감"·"역성장" → yellow (매출 감소는 경기순환성 — 단독 red 아님, 주의)',
-		thresholdEn: 'Growth grade "collapse"·"decline" → yellow (revenue drop is cyclical — caution, not red)',
+		whatKr: '외형이 자라는가 · 매출 추세',
+		whatEn: 'Is the top line growing · revenue trend',
+		thresholdKr: '성장 등급 "급감"·"역성장" → yellow (매출 감소는 경기순환성 · 단독 red 아님, 주의)',
+		thresholdEn: 'Growth grade "collapse"·"decline" → yellow (revenue drop is cyclical · caution, not red)',
 		source: 'EcoNode.growthGrade (detail: revCagr)',
 		hard: false,
 		evaluate: ({ e }) => {
@@ -115,8 +115,8 @@ export const RISK_RULES: RiskRule[] = [
 		kr: '이익질',
 		en: 'Earnings quality',
 		axis: 'qual',
-		whatKr: '이익이 현금·본업으로 뒷받침되는가 — 발생액·현금화',
-		whatEn: 'Is profit cash- and core-backed — accruals / cash conversion',
+		whatKr: '이익이 현금·본업으로 뒷받침되는가 · 발생액·현금화',
+		whatEn: 'Is profit cash- and core-backed · accruals / cash conversion',
 		thresholdKr: '이익질 등급 "위험" → red · "주의" → yellow (detail: 발생액비율)',
 		thresholdEn: 'Earnings-quality grade "risk" → red · "watch" → yellow (detail: accrual ratio)',
 		source: 'EcoNode.qualGrade (detail: accrualRatio)',
@@ -130,16 +130,16 @@ export const RISK_RULES: RiskRule[] = [
 		}
 	},
 	{
-		// ICR 대체 — 현 ecosystem icr 는 분모가 finance_costs(금융비용 전체, ratios.py:857) 라 라벨-입력 불일치(중앙 0.80배,
+		// ICR 대체 · 현 ecosystem icr 는 분모가 finance_costs(금융비용 전체, ratios.py:857) 라 라벨-입력 불일치(중앙 0.80배,
 		// 영업흑자 91% 가 ICR<1) → 글랜스 신호로 부적합. 검증된 절대 부채비율 레벨로 대체. ICR 수치는 업종 백분위 패널에 지표로 존재.
 		id: 'debtBurden',
 		kr: '부채 부담',
 		en: 'Debt burden',
 		axis: 'debt',
-		whatKr: '자기자본 대비 부채가 과중한가 — 부채비율 절대 수준 (금융업 제외)',
-		whatEn: 'Is leverage heavy relative to equity — absolute debt ratio (financials excluded)',
+		whatKr: '자기자본 대비 부채가 과중한가 · 부채비율 절대 수준 (금융업 제외)',
+		whatEn: 'Is leverage heavy relative to equity · absolute debt ratio (financials excluded)',
 		thresholdKr: '부채비율 > 400% → red · 200~400% → yellow · 금융업 해당없음',
-		thresholdEn: 'Debt ratio > 400% → red · 200–400% → yellow · n/a for financials',
+		thresholdEn: 'Debt ratio > 400% → red · 200-400% → yellow · n/a for financials',
 		source: 'EcoNode.debtRatio (industry ≠ finance)',
 		hard: true,
 		evaluate: ({ e, median }) => {
@@ -156,8 +156,8 @@ export const RISK_RULES: RiskRule[] = [
 		kr: '유동성',
 		en: 'Liquidity',
 		axis: 'liq',
-		whatKr: '1년 내 갚을 빚을 1년 내 현금화 자산으로 덮는가 — 유동비율 (금융업 제외)',
-		whatEn: 'Do near-term assets cover near-term liabilities — current ratio (financials excluded)',
+		whatKr: '1년 내 갚을 빚을 1년 내 현금화 자산으로 덮는가 · 유동비율 (금융업 제외)',
+		whatEn: 'Do near-term assets cover near-term liabilities · current ratio (financials excluded)',
 		thresholdKr: '유동비율 < 100%(유동부채 > 유동자산) → red · 금융업 해당없음',
 		thresholdEn: 'Current ratio < 100% → red · n/a for financials',
 		source: 'EcoNode.currentRatio (industry ≠ finance)',
@@ -171,7 +171,7 @@ export const RISK_RULES: RiskRule[] = [
 			return { lv: 'clear', d: pct0(v) + tail };
 		}
 	},
-	// ※ controlStability(경영권 등급) 규칙 제거 — stability 등급은 "최대주주 지분이 낮으면 위험"으로 매겨져
+	// ※ controlStability(경영권 등급) 규칙 제거 · stability 등급은 "최대주주 지분이 낮으면 위험"으로 매겨져
 	//   지분 분산된 우량주(삼성 20%·NAVER 9%)를 "경영 불안정 red"로 오점등(14.5%). 지분분산 ≠ 위험 → cry-wolf.
 	//   지배구조 정보는 거버넌스 패널에 stability/holderPct 로 노출. 위험 신호로는 *급감 이벤트*(ownerStakeDrop)만 유지.
 	{
@@ -218,7 +218,7 @@ export const RISK_RULES: RiskRule[] = [
 	}
 ];
 
-/** 다이얼로그용 — 전체 차원 카탈로그 + 이 회사 현상태(점등/통과/판정불가). 억제·정렬 없음(교육 목적 전체 표시). */
+/** 다이얼로그용 · 전체 차원 카탈로그 + 이 회사 현상태(점등/통과/판정불가). 억제·정렬 없음(교육 목적 전체 표시). */
 export function evalRiskCatalog(ctx: RiskRuleCtx): RiskCatalogItem[] {
 	return RISK_RULES.map((r) => {
 		const ev = r.evaluate(ctx);

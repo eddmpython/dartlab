@@ -1,5 +1,5 @@
-// 시장 관점 계산 — 베타(OLS)·상대강도·PER 자기역사. 신규 '추가개발'(엔진 개념 부족분).
-// runtime 패키지(터미널 공유) 미변경 — 보고서 전용 순수함수로 격리.
+// 시장 관점 계산 · 베타(OLS)·상대강도·PER 자기역사. 신규 '추가개발'(엔진 개념 부족분).
+// runtime 패키지(터미널 공유) 미변경 · 보고서 전용 순수함수로 격리.
 import type { Candle } from '@dartlab/ui-contracts';
 
 export interface BetaResult {
@@ -45,7 +45,7 @@ export function calcBeta(stock: Candle[], market: Candle[], maxDays = 500): Beta
 	return { beta, r2, days: tail.length };
 }
 
-/** 연말(각 캘린더 연도 마지막 거래일) 종가 맵 — PER/PBR 자기역사 매칭용. */
+/** 연말(각 캘린더 연도 마지막 거래일) 종가 맵 · PER/PBR 자기역사 매칭용. */
 export function yearEndCloses(candles: Candle[]): Map<string, number> {
 	const byYear = new Map<string, { t: string; c: number }>();
 	for (const c of candles) {

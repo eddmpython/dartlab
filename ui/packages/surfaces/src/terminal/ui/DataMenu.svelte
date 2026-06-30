@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 터미널 헤더 「데이터」 다이얼로그 — 원하는 데이터셋을 체크해서 *한 번에* 받는다(하나하나 X).
+	// 터미널 헤더 「데이터」 다이얼로그 · 원하는 데이터셋을 체크해서 *한 번에* 받는다(하나하나 X).
 	// 선택분 → 단일 Excel 워크북(데이터셋별 시트 분할) 또는 CSV 묶음(zip). 브라우저 parquet/포트 직독→변환(서버 0).
 	// 전종목 180만행 횡단은 시트 한도 초과라 묶음 불가 → 개별 CSV. 뉴스는 언론사 저작권이라 다운로드 미제공.
 	import type { DartLabRuntime, StmtKind } from '@dartlab/ui-contracts';
@@ -71,7 +71,7 @@
 	const clean = (s: string) => s.replace(/[/ ()·]/g, '');
 	const stem = (label: string) => `${corpName || code}_${clean(label)}`;
 
-	// 일반인용 컬럼 정리 — pick: 내부 엔진 컬럼(atocId·xbrlMatchScore 등) 제거. ko: raw 소스 코드(BAS_DD 등)→한글.
+	// 일반인용 컬럼 정리 · pick: 내부 엔진 컬럼(atocId·xbrlMatchScore 등) 제거. ko: raw 소스 코드(BAS_DD 등)→한글.
 	// 원본(dart/finance·edgar/financeStmt)은 비포함 → raw 유지(시계열이 가공본).
 	const COL_SPEC: Record<string, { pick?: string[]; ko?: Record<string, string>; trunc?: Record<string, number> }> = {
 		'dart/panel': {
@@ -110,7 +110,7 @@
 		});
 	}
 
-	// 다파일 샤드 concat — HF tree API 는 CORS 차단이라 경로를 런타임 지식으로 생성, 404 skip.
+	// 다파일 샤드 concat · HF tree API 는 CORS 차단이라 경로를 런타임 지식으로 생성, 404 skip.
 	const RESERVED = /[/\\:*?"<>|]/g;
 	const indexKey = (market: string, name: string) =>
 		`${market}-${name.normalize('NFC').trim().replace(RESERVED, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '')}`;
@@ -120,12 +120,12 @@
 			const res = await Promise.allSettled(paths.slice(i, i + cap).map((p) => readParquetRows(p)));
 			for (const r of res) if (r.status === 'fulfilled') chunks.push(r.value.rows as Record<string, unknown>[]);
 		}
-		return chunks.flat(); // push(...rows) 는 33만+ 행에서 콜스택 초과 — flat() 안전
+		return chunks.flat(); // push(...rows) 는 33만+ 행에서 콜스택 초과 · flat() 안전
 	}
 
 	const sheet = (label: string, rows: Record<string, unknown>[]): ObjectSheet => ({ label, columns: rows.length ? Object.keys(rows[0]) : [], rows });
 
-	// ── 데이터 소스 통일 모델 — 각 소스는 fetch()→시트[]. 개별 다운로드도 묶음도 같은 fetch 재사용.
+	// ── 데이터 소스 통일 모델 · 각 소스는 fetch()→시트[]. 개별 다운로드도 묶음도 같은 fetch 재사용.
 	//    bulk=180만행(시트 한도 초과·묶음 불가, 개별 CSV). bare=전역(파일명 회사 접두 없음).
 	interface Src {
 		key: string;
@@ -138,9 +138,9 @@
 	}
 	const SOURCES = $derived.by<Src[]>(() => {
 		const out: Src[] = [];
-		// 재무제표 시계열 — 가공 IS/BS/CF(+비율) 계정×기간(이미 멀티시트).
+		// 재무제표 시계열 · 가공 IS/BS/CF(+비율) 계정×기간(이미 멀티시트).
 		out.push({
-			key: 'finTs', label: en ? 'Financials — time series' : '재무제표 시계열', desc: 'IS·BS·CF', group: 'co',
+			key: 'finTs', label: en ? 'Financials, time series' : '재무제표 시계열', desc: 'IS·BS·CF', group: 'co',
 			fetch: async () => {
 				const bundle = await runtime.finance.bundle(code);
 				const view = bundle?.views[bundle.defaultMode] ?? bundle?.views.annual ?? bundle?.views.quarter ?? null;
@@ -183,7 +183,7 @@
 				return [sheet(en ? 'Filings' : '공시리스트', rows)];
 			}
 		});
-		// scan 전종목 — valuation(작음·묶음 가능), finance-lite·changes(180만행·개별 CSV)
+		// scan 전종목 · valuation(작음·묶음 가능), finance-lite·changes(180만행·개별 CSV)
 		out.push({ key: 'scan:val', label: en ? 'Valuation (PER·PBR·cap)' : '밸류에이션 (PER·PBR·시총)', desc: en ? 'all listed firms' : '상장 전종목', group: 'scan', bare: true, fetch: async () => [sheet(en ? 'Valuation' : '밸류에이션', (await readParquetRows('dart/scan/valuation.parquet')).rows)] });
 		out.push({ key: 'scan:fin', label: en ? 'Finance-lite (all · 1.8M)' : '재무 라이트 (전종목·180만행)', desc: en ? 'all firms, key accounts' : '전종목 주요계정', group: 'scan', bare: true, bulk: true, fetch: async () => [sheet('finance-lite', (await readParquetRows('dart/scan/finance-lite.parquet')).rows)] });
 		out.push({ key: 'scan:chg', label: en ? 'Disclosure changes (all · 1.8M)' : '공시 변경 (전종목·180만행)', desc: en ? '1Y disclosure diffs' : '1년 공시 변경', group: 'scan', bare: true, bulk: true, fetch: async () => [sheet('changes', (await readParquetRows('dart/scan/changes.parquet')).rows)] });
@@ -256,7 +256,7 @@
 		return zip.finalize();
 	}
 
-	// 개별 다운로드(주로 bulk) — 한 소스만.
+	// 개별 다운로드(주로 bulk) · 한 소스만.
 	async function dlOne(src: Src, fmt: 'xlsx' | 'csv') {
 		if (busy) return;
 		busy = src.key;
@@ -278,7 +278,7 @@
 		}
 	}
 
-	// 묶음 다운로드 — 선택한 소스(비-bulk) 전부 → 단일 Excel(시트 분할) 또는 CSV(zip).
+	// 묶음 다운로드 · 선택한 소스(비-bulk) 전부 → 단일 Excel(시트 분할) 또는 CSV(zip).
 	async function dlBundle(fmt: 'xlsx' | 'csv') {
 		const chosen = SOURCES.filter((s) => sel.has(s.key) && !s.bulk);
 		if (!chosen.length || busy) return;
@@ -316,9 +316,9 @@
 			<button class="dlgClose" aria-label={en ? 'close' : '닫기'} onclick={() => (open = false)}>✕</button>
 		</div>
 
-		<div class="dlgHint">{en ? 'Tick the datasets you want, then download them together as one Excel (sheet per dataset) or CSV zip.' : '원하는 데이터셋을 체크하고 한 번에 받으세요 — 하나의 엑셀(데이터셋별 시트) 또는 CSV 묶음(zip).'}</div>
+		<div class="dlgHint">{en ? 'Tick the datasets you want, then download them together as one Excel (sheet per dataset) or CSV zip.' : '원하는 데이터셋을 체크하고 한 번에 받으세요. 하나의 엑셀(데이터셋별 시트) 또는 CSV 묶음(zip).'}</div>
 
-		<a class="dcGo" href="{base}/data" target="_blank" rel="noopener">{en ? 'Data Center — browse all files, preview & live API (Sheets·Python·curl) ↗' : '데이터 센터 — 전체 파일 탐색·미리보기·라이브 API (시트·Python·curl) ↗'}</a>
+		<a class="dcGo" href="{base}/data" target="_blank" rel="noopener">{en ? 'Data Center · browse all files, preview & live API (Sheets·Python·curl) ↗' : '데이터 센터 · 전체 파일 탐색·미리보기·라이브 API (시트·Python·curl) ↗'}</a>
 
 		<div class="dlgBody">
 			<div class="dlgCol">

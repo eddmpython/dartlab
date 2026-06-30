@@ -1,4 +1,4 @@
-// 공급망/관계 — map/companies/{code}.json (per-company, 브라우저 fetch, DuckDB 불필요).
+// 공급망/관계 · map/companies/{code}.json (per-company, 브라우저 fetch, DuckDB 불필요).
 // dartlab 고유: 공급사·고객사(제품·매출비중), ego, blogPosts(강점/약점/verdict).
 import type { BlogVerdict, CompanyRelations, RelEdge } from '@dartlab/ui-contracts';
 import { loadJson } from '../../../data/dartlabData';

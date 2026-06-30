@@ -49,7 +49,7 @@
 	const lyMin = $derived(lMin < 0 ? lMin - lPad : 0);
 	const lyMax = $derived(lMax + lPad);
 
-	// 우축 스케일 (막대) — dualAxis일 때만 별도
+	// 우축 스케일 (막대) · dualAxis일 때만 별도
 	const allVals = $derived([...lineVals, ...barVals]);
 	const rMin = $derived(dualAxis && barVals.length > 0 ? Math.min(...barVals, 0) : Math.min(...allVals, 0));
 	const rMax = $derived(dualAxis && barVals.length > 0 ? Math.max(...barVals, 0) : Math.max(...allVals, 0));
@@ -189,7 +189,7 @@
 				{@const color = isLine ? lineColors[lineKeys.indexOf(k)] : barColors[barKeys.indexOf(k)]}
 				<text x={tx + tw / 2} y={PAD.top + 14 + (ki + 1) * 18} text-anchor="middle"
 					fill={color} font-size="11">
-					{k}: {d[k] != null ? fmt(d[k] as number) : '—'}
+					{k}: {d[k] != null ? fmt(d[k] as number) : '·'}
 				</text>
 			{/each}
 		{/if}

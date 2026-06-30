@@ -7,7 +7,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	// URL 파라미터 — ?theme=dark|light · ?brand=0|1 · ?h=auto (iframe 자동 리사이즈)
+	// URL 파라미터 · ?theme=dark|light · ?brand=0|1 · ?h=auto (iframe 자동 리사이즈)
 	let theme = $derived(page.url.searchParams.get('theme') || 'dark');
 	let showBrand = $derived(page.url.searchParams.get('brand') !== '0');
 

@@ -1,5 +1,5 @@
 /**
- * CSV export — BOM + 한글 Excel 호환.
+ * CSV export · BOM + 한글 Excel 호환.
  *
  * 사용:
  *   downloadCsv('prices.csv', ['stockCode', 'currentPrice'], rows);

@@ -15,7 +15,7 @@ export function absorbAttachedRow(r: LeafRow): void {
 	if (r.blockOrder != null) r.blockOrder += 1_000_000;
 }
 
-// 섹션 번호 정렬키 — "2. …"→2, "7-1. …"→[7,1]. 번호 없으면 null(nulls_last). orderBySpine _secNum/_secSub 1:1.
+// 섹션 번호 정렬키 · "2. …"→2, "7-1. …"→[7,1]. 번호 없으면 null(nulls_last). orderBySpine _secNum/_secSub 1:1.
 export function sectionNum(sectionLeaf: string): [number | null, number] {
 	const m = /^\s*(\d+)/.exec(sectionLeaf);
 	const sub = /^\s*\d+\s*-\s*(\d+)/.exec(sectionLeaf);

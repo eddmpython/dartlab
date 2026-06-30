@@ -1,6 +1,6 @@
 <script lang="ts">
 	/**
-	 * SQL Notebook 컨테이너 — motherduck-style.
+	 * SQL Notebook 컨테이너 · motherduck-style.
 	 *
 	 *   - 셀 list (SQL 또는 Markdown)
 	 *   - 셀 add / delete / reorder
@@ -39,7 +39,7 @@
 			id: 'a1',
 			type: 'md',
 			code:
-				'# SQL Notebook\n셀 단위 SQL — `▶ 실행` 또는 `⌘Enter`. `Shift+Enter` = 실행 + 다음 셀.\n\n각 SQL 셀이 `cell_${id}` 라는 TEMP VIEW 로 등록 → 다른 셀이 `FROM cell_a2` 로 참조 가능.\n\n사용 가능 테이블: `ecosystem`, `prices`, `valuation`, `changes`, `finance_lite`, `dividend`, `treasuryStock`, `executive`'
+				'# SQL Notebook\n셀 단위 SQL · `▶ 실행` 또는 `⌘Enter`. `Shift+Enter` = 실행 + 다음 셀.\n\n각 SQL 셀이 `cell_${id}` 라는 TEMP VIEW 로 등록 → 다른 셀이 `FROM cell_a2` 로 참조 가능.\n\n사용 가능 테이블: `ecosystem`, `prices`, `valuation`, `changes`, `finance_lite`, `dividend`, `treasuryStock`, `executive`'
 		},
 		{
 			id: 'a2',
@@ -192,7 +192,7 @@ ORDER BY avg_roe DESC`
 		const idx = cells.findIndex((c) => c.id === id);
 		const next = cells[idx + 1];
 		if (next && next.type === 'sql') {
-			// SqlCell 의 runCell 직접 trigger 어렵 — focus 만 넘김. 사용자가 ⌘Enter.
+			// SqlCell 의 runCell 직접 trigger 어렵 · focus 만 넘김. 사용자가 ⌘Enter.
 			// 단순화: 다음 셀이 SQL 이면 그 셀의 editor focus.
 			const el = document.querySelector(`[data-cell-id="${next.id}"] .cm-editor`) as HTMLElement | null;
 			el?.focus();

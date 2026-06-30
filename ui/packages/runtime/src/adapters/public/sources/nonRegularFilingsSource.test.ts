@@ -1,4 +1,4 @@
-// 시장 공시 피드 source 단위 테스트 — fake DataCore(requestParquetWholeFile 주입)로 네트워크 없이
+// 시장 공시 피드 source 단위 테스트 · fake DataCore(requestParquetWholeFile 주입)로 네트워크 없이
 // 정규화 검증: dedup(rceptNo)·정기보고서 제외·필드 매핑·corpName·url·trim·bake 순서 보존.
 import { describe, it, expect } from 'vitest';
 import { loadMarketFeed } from './nonRegularFilingsSource';
@@ -9,7 +9,7 @@ function row(o: Partial<Record<string, unknown>>): Record<string, unknown> {
 	return { stock_code: '', corp_name: '', rcept_dt: '', report_nm: '', rcept_no: '', flr_nm: '', ...o };
 }
 
-// rows 를 그대로 돌려주는 fake core — loadMarketFeed 는 requestParquetWholeFile 만 호출.
+// rows 를 그대로 돌려주는 fake core · loadMarketFeed 는 requestParquetWholeFile 만 호출.
 function fakeCore(rows: Record<string, unknown>[] | null): DataCore {
 	return {
 		requestParquetWholeFile: async () => rows

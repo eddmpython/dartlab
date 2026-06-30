@@ -2,7 +2,7 @@
    dartlab design tokens
    ============================================================ */
 :root {
-  /* 색상 = tokens.css SSOT(--dl-* / --p-* ) alias. 여기서 색 정의 금지 — 색은 tokens.css 한 곳에서 제어.
+  /* 색상 = tokens.css SSOT(--dl-* / --p-* ) alias. 여기서 색 정의 금지 · 색은 tokens.css 한 곳에서 제어.
    * grad-heat 가 레드→오렌지에서 레드→핑크(--dl-grad-heat)로 통일 → 랜딩 버튼이 전 surface 와 일치. */
   --bg: var(--dl-mkt-bg);
   --bg-elev: var(--dl-mkt-bg-2);

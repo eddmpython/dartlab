@@ -1,12 +1,12 @@
 <script lang="ts" module>
-	// 산업분석 공유 산포도 — 위치=구조 인코딩(읽기 아님). 3곳 공유: 좌측 미니맵 · 다이얼로그 지형도 · 드릴 회사 산포도.
+	// 산업분석 공유 산포도 · 위치=구조 인코딩(읽기 아님). 3곳 공유: 좌측 미니맵 · 다이얼로그 지형도 · 드릴 회사 산포도.
 	// 위치는 데이터(중앙값/회사값) = 사실. verdict 아님(축 라벨 중립·사분면 음영 없음·중앙값 십자 기준선만).
 	export interface ScatterPt {
 		id: string;
 		x: number; // 가로 데이터값
 		y: number; // 세로 데이터값
 		size: number; // 반지름 근거(산업=멤버수, 회사=gov 시총). >=0
-		tone?: string; // gradeTone('up'|'good'|'neutral'|'warn'|'down') — 없으면 중립 블루
+		tone?: string; // gradeTone('up'|'good'|'neutral'|'warn'|'down') · 없으면 중립 블루
 		label: string;
 		faint?: boolean; // 소표본/저신뢰 → 흐림·라벨 생략
 		meta?: string; // hover 정보바 보조 텍스트
@@ -23,9 +23,9 @@
 		pts: ScatterPt[];
 		xLabel: string;
 		yLabel: string;
-		compact?: boolean; // 미니(패널) 모드 — 축라벨·정보바·상시라벨 생략
-		compactH?: number; // 미니 모드 viewBox 높이(기본 134) — 좌측 패널 세로공간 절약 시 축소(점 위치 보존·잘림 없음)
-		showLabels?: boolean; // 상시 라벨(충돌 제거) — 지형도/회사맵 on, 미니 off
+		compact?: boolean; // 미니(패널) 모드 · 축라벨·정보바·상시라벨 생략
+		compactH?: number; // 미니 모드 viewBox 높이(기본 134) · 좌측 패널 세로공간 절약 시 축소(점 위치 보존·잘림 없음)
+		showLabels?: boolean; // 상시 라벨(충돌 제거) · 지형도/회사맵 on, 미니 off
 		zeroX?: boolean; // x가 음수~양수 가로지르면 0 기준선
 		yFloor0?: boolean; // y축 0 시작(격차 등); 아니면 min 패딩
 		highlightId?: string; // 상시 강조(현재 산업/종목)
@@ -55,10 +55,10 @@
 		// 축 범위는 현재점 + 꼬리점 합집합으로 잡는다(꼬리가 잘리지 않게). 중앙값 십자·크기는 현재점(ps)만.
 		const tps = trails.flatMap((t) => t.points).filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
 		const bx = tps.length ? xs.concat(tps.map((p) => p.x)) : xs, by = tps.length ? ys.concat(tps.map((p) => p.y)) : ys;
-		// 로버스트 축 — 극단 아웃라이어가 축을 늘려 본질 클러스터를 뭉개는 것 방지(분포 2.5~97.5% 범위).
+		// 로버스트 축 · 극단 아웃라이어가 축을 늘려 본질 클러스터를 뭉개는 것 방지(분포 2.5~97.5% 범위).
 		// 범위 밖 점은 가장자리에 클램프(드롭 아님·hover=실제값). 산업맵(중앙값·소수)엔 영향 미미.
 		const q = (arr: number[], pp: number) => { const s = [...arr].sort((a, b) => a - b); const idx = (s.length - 1) * pp; const lo = Math.floor(idx), hi = Math.ceil(idx); return s[lo] + (s[hi] - s[lo]) * (idx - lo); };
-		const qlo = ps.length > 40 ? 0.1 : 0.025, qhi = 1 - qlo; // 점 많으면(회사맵 100+사) 10~90%로 타이트 — 정상기업 중앙압축 방지. 소수(산업맵 29)는 극단 보존.
+		const qlo = ps.length > 40 ? 0.1 : 0.025, qhi = 1 - qlo; // 점 많으면(회사맵 100+사) 10~90%로 타이트 · 정상기업 중앙압축 방지. 소수(산업맵 29)는 극단 보존.
 		let xmin = q(bx, qlo), xmax = q(bx, qhi);
 		let ymin = yFloor0 ? 0 : q(by, qlo), ymax = q(by, qhi);
 		if (xmax <= xmin) { xmin = Math.min(...bx); xmax = Math.max(...bx); }
@@ -147,13 +147,13 @@
 		{/if}
 	</div>
 {:else}
-	<div class="smEmpty">{compact ? '데이터 없음' : '표본 부족 — 점 2개 미만'}</div>
+	<div class="smEmpty">{compact ? '데이터 없음' : '표본 부족 · 점 2개 미만'}</div>
 {/if}
 
 <style>
 	.smWrap { width: 100%; }
 	.smSvg { width: 100%; height: auto; display: block; }
-	/* max-height 캡 제거 — 캡이 있으면 레일이 viewBox(220px)보다 넓을 때 letterbox(좌우 여백)가 생긴다.
+	/* max-height 캡 제거 · 캡이 있으면 레일이 viewBox(220px)보다 넓을 때 letterbox(좌우 여백)가 생긴다.
 	   width:100%·height:auto 로 레일 폭을 꽉 채우고(원형 유지), 박스 높이는 SVG 비율을 따른다. */
 	.sm-mini .smSvg { max-height: none; }
 	.smAx { stroke: var(--dl-line, #2a3142); stroke-width: 1; }

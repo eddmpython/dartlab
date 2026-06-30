@@ -1,9 +1,9 @@
-// 알림 sink 정화 — SW 렌더 직전 방어심층(authoritative 정화는 발행 러너 .github/scripts/notify/sanitize.py).
+// 알림 sink 정화 · SW 렌더 직전 방어심층(authoritative 정화는 발행 러너 .github/scripts/notify/sanitize.py).
 // 알림 body 는 OS 알림센터 + 화면에 렌더되는 sink. LLM wrap_external 부적용, 전용 정화.
 // 설계: mainPlan/watcher-notify-platform/02-hub-d1-receiving.md 6절.
 
 // C0/C1 제어 + zero-width + RTL/LTR override·embedding·isolate(양방향 스푸핑) + BOM.
-// U+0009 ~ U+000D (tab·LF·VT·FF·CR) 는 보존 — 아래 정규식이 단일 공백으로 정규화(단어 붙음 방지).
+// U+0009 ~ U+000D (tab·LF·VT·FF·CR) 는 보존 · 아래 정규식이 단일 공백으로 정규화(단어 붙음 방지).
 // 소스 순수 ASCII 유지 위해 이스케이프 문자열로 구성(보이지 않는 문자 리터럴 금지).
 const STRIP_RE = new RegExp(
 	'[\\u0000-\\u0008\\u000E-\\u001F\\u007F-\\u009F\\u200B-\\u200F\\u202A-\\u202E\\u2060-\\u2064\\u2066-\\u2069\\uFEFF]',

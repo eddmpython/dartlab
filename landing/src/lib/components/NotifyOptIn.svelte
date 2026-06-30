@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 알림 켜기 — 2단 게이트(소프트 프롬프트 → 클릭 시에만 OS 권한). 콜드 자동 팝업 금지(1회 거부=영구 차단).
+	// 알림 켜기 · 2단 게이트(소프트 프롬프트 → 클릭 시에만 OS 권한). 콜드 자동 팝업 금지(1회 거부=영구 차단).
 	// iOS 16.4+ 는 홈화면 설치(standalone) 안에서만 푸시 가능 → 미설치 Safari 는 숨김(InstallPrompt 가 설치유도).
 	// 설계: mainPlan/watcher-notify-platform/07-p1-client-receiving.md §2.
 	import { base } from '$app/paths';
@@ -31,7 +31,7 @@
 		try {
 			localStorage.setItem(DISMISS_KEY, '1');
 		} catch {
-			/* 프라이빗 모드 — 무시 */
+			/* 프라이빗 모드 · 무시 */
 		}
 	}
 
@@ -47,7 +47,7 @@
 		}
 	}
 
-	// '알림 켜기' 클릭(제스처) — OS 권한 팝업은 오직 여기. requestPermission 을 먼저(ready await 가 제스처 끊는 것 회피).
+	// '알림 켜기' 클릭(제스처) · OS 권한 팝업은 오직 여기. requestPermission 을 먼저(ready await 가 제스처 끊는 것 회피).
 	async function enable() {
 		let perm: NotificationPermission;
 		try {
@@ -71,7 +71,7 @@
 				await sub.unsubscribe();
 			}
 		} catch {
-			/* 무시 — 서버 purge 가 결국 정리 */
+			/* 무시 · 서버 purge 가 결국 정리 */
 		}
 		phase = 'soft';
 	}
@@ -82,7 +82,7 @@
 	}
 
 	onMount(async () => {
-		// 가드 순서 — 하나라도 걸리면 requestPermission 미호출(콜드 팝업 0).
+		// 가드 순서 · 하나라도 걸리면 requestPermission 미호출(콜드 팝업 0).
 		if (typeof Notification === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) return; // ① 미지원
 		if (!VAPID_PUBLIC_KEY) return; // ② 키 미주입 = 기능 off(graceful)
 		if (!isStandalone() && isIosSafari()) return; // ③ iOS 미설치 = InstallPrompt 가 설치유도(중복 안내 0)
@@ -93,7 +93,7 @@
 			return;
 		}
 		if (perm === 'granted') {
-			// ⑥ 이미 허용 — 기존 구독 있으면 on, 없으면 구독
+			// ⑥ 이미 허용 · 기존 구독 있으면 on, 없으면 구독
 			try {
 				const reg = await navigator.serviceWorker.ready;
 				const existing = await reg.pushManager.getSubscription();
@@ -135,7 +135,7 @@
 {/if}
 
 <style>
-	/* InstallPrompt 미러 — 단 더 위(70px)에 두어 두 바 시각 겹침 방지(07 §6). */
+	/* InstallPrompt 미러 · 단 더 위(70px)에 두어 두 바 시각 겹침 방지(07 §6). */
 	.notifyBar {
 		position: fixed;
 		left: 50%;

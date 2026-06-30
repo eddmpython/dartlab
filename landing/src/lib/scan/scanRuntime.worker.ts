@@ -1,4 +1,4 @@
-// scan surface 승격(단계-8 Phase2) — financeLiteRuntime 은 surface 로 이동, 본 worker 는 라우트가 생성(URL 상대경로)
+// scan surface 승격(단계-8 Phase2) · financeLiteRuntime 은 surface 로 이동, 본 worker 는 라우트가 생성(URL 상대경로)
 // 하므로 landing 잔류. worker 번들은 svelte 컴포넌트를 파싱 못 하므로 배럴(.svelte 재export) 대신
 // 순수 TS runtime sub-export(@dartlab/ui-surfaces/scan/runtime)만 import 한다(단계-8 worker 회귀 가드).
 import { loadFinanceLiteRuntime } from '@dartlab/ui-surfaces/scan/runtime';

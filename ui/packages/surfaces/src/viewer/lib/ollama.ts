@@ -1,5 +1,5 @@
-// 로컬 Ollama(http://localhost:11434) 연동 — 사용자 PC에서 도는 더 큰 모델로 품질 향상(옵션 레인).
-// 자동 프로브 금지: detectOllama 는 반드시 사용자 제스처(연결 버튼 클릭) 뒤에만 호출 — Chrome 142+
+// 로컬 Ollama(http://localhost:11434) 연동 · 사용자 PC에서 도는 더 큰 모델로 품질 향상(옵션 레인).
+// 자동 프로브 금지: detectOllama 는 반드시 사용자 제스처(연결 버튼 클릭) 뒤에만 호출 · Chrome 142+
 //   Local Network Access(LNA) 권한 팝업이 제스처를 요구한다(제스처 없이 부르면 조용히 차단).
 // 외부 전송 0(localhost loopback). 모델 본문(근거)은 buildEvidenceBlock 의 untrusted 마커로 이미 감싸져 옴.
 // 호출 허용 엔드포인트는 정확히 2개: GET /api/tags(감지), POST /api/chat(스트리밍). pull/delete/create/push 등 금지.
@@ -46,13 +46,13 @@ export async function detectOllama(): Promise<OllamaStatus> {
 		return { ok: true, models, pick };
 	} catch (e) {
 		// TimeoutError = 타임아웃. 나머지 TypeError("Failed to fetch") = 미실행/CORS(OLLAMA_ORIGINS 미설정)/LNA 거부
-		// — 브라우저가 셋을 구분 안 줌. UX 는 한 메시지(cors)로 통일.
+		// · 브라우저가 셋을 구분 안 줌. UX 는 한 메시지(cors)로 통일.
 		const reason = e instanceof Error && e.name === 'TimeoutError' ? 'timeout' : 'cors';
 		return { ok: false, models: [], pick: null, reason };
 	}
 }
 
-// 스트리밍 채팅 — POST /api/chat. messages 는 buildChatMessages 산출(provider 무관, OpenAI 호환 형식).
+// 스트리밍 채팅 · POST /api/chat. messages 는 buildChatMessages 산출(provider 무관, OpenAI 호환 형식).
 // Ollama 는 NDJSON(줄당 1 JSON) 반환. 청크 경계가 줄 경계와 무관하므로 buf 에 모아 \n 으로만 잘라 파싱.
 export async function ollamaChat(
 	messages: OllamaChatMessage[],

@@ -1,5 +1,5 @@
-// 로컬 filing 포트 — 정기/비정기 공시 목록·워치 신선도는 공개 HF 소스를 공통배선 재사용(백엔드 0,
-// price·finance 와 동일 "깃헙페이지 자산 공유"). panel 격자(공시뷰어)만 로컬 /api — 인-터미널 뷰어는
+// 로컬 filing 포트 · 정기/비정기 공시 목록·워치 신선도는 공개 HF 소스를 공통배선 재사용(백엔드 0,
+// price·finance 와 동일 "깃헙페이지 자산 공유"). panel 격자(공시뷰어)만 로컬 /api · 인-터미널 뷰어는
 // 백엔드 보유 시 여는 로컬 전용 기능(공개 어댑터는 단계-6 까지 notWiredYet). 타입 정본 = contracts.
 import type {
 	FilingPort,
@@ -13,7 +13,7 @@ import { loadCompanyRegularFilings } from '../../public/sources/regularFilingsSo
 import { loadCompanyNonRegularFilings, loadMarketFeed, loadRecentFilingsForCodes } from '../../public/sources/nonRegularFilingsSource';
 import type { DataCore } from '../../../data/fetch/request';
 
-// 로컬 panel toc 는 leafType/disclosureKey 메타 미탑재 — 미제공 = null 정직 표기 (위조 금지).
+// 로컬 panel toc 는 leafType/disclosureKey 메타 미탑재 · 미제공 = null 정직 표기 (위조 금지).
 function tocToContract(toc: ClientPanelToc): PanelTocResponse {
 	return {
 		stockCode: toc.stockCode,
@@ -30,7 +30,7 @@ function tocToContract(toc: ClientPanelToc): PanelTocResponse {
 	};
 }
 
-// chapter/sectionLeaf 가 null 이면 sectionKey(`${chapter}␟${sectionLeaf}`)에서 파생 — 키가 SSOT.
+// chapter/sectionLeaf 가 null 이면 sectionKey(`${chapter}␟${sectionLeaf}`)에서 파생 · 키가 SSOT.
 function gridToContract(g: ClientPanelGrid): PanelGridResponse {
 	const [keyChapter = '', keyLeaf = ''] = g.sectionKey.split('␟');
 	const dartUrlByPeriod = g.dartUrlByPeriod
@@ -75,11 +75,11 @@ function loadPanelInit(api: LocalApi, caches: LocalCaches, code: string): Promis
 
 export function localFilingPort(api: LocalApi, caches: LocalCaches, core: DataCore): FilingPort {
 	return {
-		// 공통배선 — 공개 HF 소스 그대로(정기 = regularFilingsSource, 비정기 = allFilings). 로컬 :8400 불요.
+		// 공통배선 · 공개 HF 소스 그대로(정기 = regularFilingsSource, 비정기 = allFilings). 로컬 :8400 불요.
 		regular: (code, limit = 500) => loadCompanyRegularFilings(core, code, limit),
 		nonRegular: (code) => loadCompanyNonRegularFilings(core, code),
 		recentForCodes: (codes) => loadRecentFilingsForCodes(core, codes),
-		marketFeed: () => loadMarketFeed(core), // 시장 공시 피드 — 공개와 동일 공통배선(HF 통파일)
+		marketFeed: () => loadMarketFeed(core), // 시장 공시 피드 · 공개와 동일 공통배선(HF 통파일)
 
 		async panelToc(code) {
 			const toc = await api.getJson<ClientPanelToc>(

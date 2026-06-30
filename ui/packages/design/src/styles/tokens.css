@@ -1,4 +1,4 @@
-/* dartlab Design Tokens — 3계층 색상 SSOT (Primitive → Semantic → Surface-local)
+/* dartlab Design Tokens · 3계층 색상 SSOT (Primitive → Semantic → Surface-local)
  *
  * 정체성: "1970년대 금융 저널의 지면을 OLED 패널 위에서 다시 읽는다"
  *
@@ -17,16 +17,16 @@
 
 :root {
 	/* ═══════════════════════════════════════════════════════════════════
-	   Tier 0 · Primitive 팔레트 — raw 색 원자 (theme 무관 · 직접 사용 금지)
+	   Tier 0 · Primitive 팔레트 · raw 색 원자 (theme 무관 · 직접 사용 금지)
 	   값을 바꾸면 이를 참조하는 모든 semantic 토큰이 따라 바뀐다.
 	   ═══════════════════════════════════════════════════════════════════ */
-	/* Brand — 핑크(시그니처 accent) · 레드(dartlab) */
+	/* Brand · 핑크(시그니처 accent) · 레드(dartlab) */
 	--p-pink-300: #f9a8d4;
 	--p-pink-400: #f472b6;
 	--p-pink-500: #ec4899;
 	--p-pink-700: #be185d;
 	--p-pink-500-rgb: 236, 72, 153;
-	/* 시그니처 accent seed (#ff3f6f) — 브랜드 swap이 건드리는 유일한 hex. data-brand 프리셋이 여기만 re-pin. */
+	/* 시그니처 accent seed (#ff3f6f) · 브랜드 swap이 건드리는 유일한 hex. data-brand 프리셋이 여기만 re-pin. */
 	--p-accent-500: #ff3f6f;
 	--p-accent-500-rgb: 255, 63, 111;
 	--p-accent-400: #ff6f8f;
@@ -49,13 +49,13 @@
 	/* 한국 금융 컨벤션 (상승 빨강 / 하락 파랑) */
 	--p-up: #e43f3f;
 	--p-down: #1d64dc;
-	/* 중성 — 제품 그레이 (터미널·scan·map·viewer dark surface) */
+	/* 중성 · 제품 그레이 (터미널·scan·map·viewer dark surface) */
 	--p-gray-950: #08090b;
 	--p-gray-900: #0f0f10;
 	--p-gray-850: #16171a;
 	--p-gray-800: #1d1f23;
 	--p-gray-750: #25272d;
-	/* 중성 — 랜딩 마케팅 네이비 (딥다크 · 별도 family 로 톤 보존) */
+	/* 중성 · 랜딩 마케팅 네이비 (딥다크 · 별도 family 로 톤 보존) */
 	--p-navy-950: #030509;
 	--p-navy-900: #050811;
 	--p-navy-850: #0a0e18;
@@ -74,19 +74,19 @@
 	--p-white: #ffffff;
 
 	/* ═══════════════════════════════════════════════════════════════════
-	   Tier 1 · Semantic 토큰 — ★색을 바꾸는 유일한 지점 (dark 기본값)
+	   Tier 1 · Semantic 토큰 · ★색을 바꾸는 유일한 지점 (dark 기본값)
 	   ═══════════════════════════════════════════════════════════════════ */
 
 	/* ── Brand · dartlab red→accent (theme 무관 = 정체성) ── */
 	--dl-red: var(--p-red-500);
 	--dl-red-deep: var(--p-red-700);
 	--dl-red-rgb: var(--p-red-500-rgb);
-	--dl-orange: var(--p-orange-400); /* 레거시 보조색 — 데이터 카테고리 등 의미색에만 */
+	--dl-orange: var(--p-orange-400); /* 레거시 보조색 · 데이터 카테고리 등 의미색에만 */
 	--dl-orange-soft: rgba(251, 146, 60, 0.12);
 	/* 히트 그라데이션 = 브랜드 레드→시그니처 핑크(accent). 버튼·히어로 강조 표면 통일(SSOT). */
 	--dl-grad-heat: linear-gradient(135deg, var(--dl-red) 0%, var(--dl-accent) 100%);
 
-	/* ── Accent · 시그니처 강조색 (#ff3f6f 핑크) — 전 surface 강조색 단일 제어점 ──
+	/* ── Accent · 시그니처 강조색 (#ff3f6f 핑크) · 전 surface 강조색 단일 제어점 ──
 	 * 여기 한 곳만 바꾸면 터미널(--amber)·landing·scan·map·viewer 강조색 일괄 변경.
 	 * --dl-accent-rgb 는 알파 변형용: rgba(var(--dl-accent-rgb), 0.3). dim/light 는 같은 hue 음영.
 	 */
@@ -95,7 +95,7 @@
 	--dl-accent-dim: var(--p-accent-400);
 	--dl-accent-light: var(--p-accent-300);
 	--dl-accent-soft: rgba(var(--p-accent-500-rgb), 0.12);
-	/* surfaces 레거시 alias 전역 fallback — scan/map/viewer 등 .dlTerm 밖에서도 강조색 var 해석되게. */
+	/* surfaces 레거시 alias 전역 fallback · scan/map/viewer 등 .dlTerm 밖에서도 강조색 var 해석되게. */
 	--amber: var(--dl-accent);
 	--amber-rgb: var(--dl-accent-rgb);
 	--amberDim: var(--dl-accent-dim);
@@ -117,7 +117,7 @@
 	--dl-warn: var(--p-amber-400);
 	--dl-bad: var(--p-coral-500);
 	--dl-info: var(--p-blue-400);
-	/* 신호 up/down — 터미널·리포트가 의도적으로 쓰는 green-up 컨벤션(한국 --dl-up/down 빨강-up 과 별개의 *문서화된* 분기).
+	/* 신호 up/down · 터미널·리포트가 의도적으로 쓰는 green-up 컨벤션(한국 --dl-up/down 빨강-up 과 별개의 *문서화된* 분기).
 	 * data-brand='green-up' 프리셋으로 KR 표면도 이 컨벤션으로 flip 비교 가능. */
 	--dl-signal-up: var(--p-green-400);
 	--dl-signal-down: var(--p-red-soft);
@@ -130,7 +130,7 @@
 	--dl-bg-deep: var(--p-gray-950); /* OLED 깊이 (사용 절제) */
 
 	/* ── Marketing surface (랜딩 전용 · 딥다크 네이비, theme 의존) ──
-	 * 제품 그레이와 별도 family — 랜딩 마케팅 톤(더 깊은 네이비) 보존. 라이트에서 화이트로 flip. */
+	 * 제품 그레이와 별도 family · 랜딩 마케팅 톤(더 깊은 네이비) 보존. 라이트에서 화이트로 flip. */
 	--dl-mkt-bg-0: var(--p-navy-950); /* 최심(헤더·darker 섹션) */
 	--dl-mkt-bg: var(--p-navy-900);
 	--dl-mkt-bg-2: var(--p-navy-850);
@@ -201,14 +201,14 @@
 	/* ── Type families ── */
 	--dl-font-ui: 'Pretendard Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
 	--dl-font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
-	/* 헤드라인 — Pretendard 단일(전 뷰어 통일). 본문과 같은 family, 위계는 size·weight 로.
+	/* 헤드라인 · Pretendard 단일(전 뷰어 통일). 본문과 같은 family, 위계는 size·weight 로.
 	 * (옛 Newsreader serif 는 landing 일부 페이지에만 박혀 한글 명조 fallback 으로 깨지고 메인·터미널·블로그
 	 *  Pretendard 와 불일치 → 운영자 결정으로 전부 Pretendard 로 통일. 영문 brand 도 Pretendard.) */
 	--dl-font-head: 'Pretendard Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Tier 1 · Light theme — surface·ink·line 만 재매핑 (brand/signal/한국금융 = 상속)
+   Tier 1 · Light theme · surface·ink·line 만 재매핑 (brand/signal/한국금융 = 상속)
    콘텐츠 표면(landing·viewer·blog) 전용. data-theme 미설정 시 dormant(=dark).
    ⚠ P4 에서 값 확정 + 콘텐츠 표면 적용 + 터미널/scan/map 은 primitive 로 re-pin(다크 고정).
    ═══════════════════════════════════════════════════════════════════════ */
@@ -228,7 +228,7 @@
 	--dl-ink-faint: #9aa1ad;
 	--dl-ink-print: #0d0f14;
 
-	/* 랜딩 마케팅 surface — 네이비→화이트(클린 에디토리얼) */
+	/* 랜딩 마케팅 surface · 네이비→화이트(클린 에디토리얼) */
 	--dl-mkt-bg-0: #eef1f5;
 	--dl-mkt-bg: var(--p-white);
 	--dl-mkt-bg-2: #f7f8fa;
@@ -238,7 +238,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Brand 프리셋 — data-brand 한 속성으로 SEED 만 re-pin (파생·전 표면 동시 따라옴)
+   Brand 프리셋 · data-brand 한 속성으로 SEED 만 re-pin (파생·전 표면 동시 따라옴)
    기본(속성 없음) = 핑크(#ff3f6f). dev BrandSwitcher 또는 <html data-brand="…"> 로
    랜딩+터미널+scan+map+viewer+report+카드를 리빌드 없이 실시간 비교한다.
    ═══════════════════════════════════════════════════════════════════════ */
@@ -300,7 +300,7 @@
 	--p-accent-400: #60a5fa;
 	--p-accent-300: #93c5fd;
 }
-/* 컨벤션 프리셋(강조와 직교, 별도 속성 data-conv) — KR 빨강-up 표면(scan/map/viewer)을 green-up 으로 flip 비교 */
+/* 컨벤션 프리셋(강조와 직교, 별도 속성 data-conv) · KR 빨강-up 표면(scan/map/viewer)을 green-up 으로 flip 비교 */
 :root[data-conv='green-up'] {
 	--dl-up: var(--p-green-400);
 	--dl-up-soft: rgba(52, 211, 153, 0.1);

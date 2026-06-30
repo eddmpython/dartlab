@@ -1,5 +1,5 @@
-// 유니버스 크로스섹셔널 백테스트 엔진 — 매 리밸 전종목 랭킹 → 분위 보유 → 재랭킹. holdings 회계.
-// terminal-strategy-lab 05 §2. 단일종목 runPass(candles-aligned) 비공유 — 순수 equity 헬퍼 6종만 재사용.
+// 유니버스 크로스섹셔널 백테스트 엔진 · 매 리밸 전종목 랭킹 → 분위 보유 → 재랭킹. holdings 회계.
+// terminal-strategy-lab 05 §2. 단일종목 runPass(candles-aligned) 비공유 · 순수 equity 헬퍼 6종만 재사용.
 // ★U-G1 이중실행 밴드: unknown 폐지를 0손실(낙관)/−100%(보수) 2회 → 밴드=진짜 unknown 의존도.
 //   합병/코드변경 = last-close(0, 밴드 제외). decisionYm<fillYm 불변(look-ahead 차단).
 
@@ -30,14 +30,14 @@ function meanReturn(outcomes: Outcome[], mode: Mode): number {
 	return s / outcomes.length;
 }
 
-/** 리밸 ym 축 — 윈도 내 정렬 unique ym, M=매월·Q=3개월 간격. */
+/** 리밸 ym 축 · 윈도 내 정렬 unique ym, M=매월·Q=3개월 간격. */
 function rebalanceAxis(allYms: string[], spec: UniverseSpec): string[] {
 	const inWin = allYms.filter((y) => y >= spec.windowFrom && y <= spec.windowTo).sort();
 	if (spec.rebalance === 'M') return inWin;
-	return inWin.filter((_, i) => i % 3 === 0); // 분기(3개월) — retFwd3m 정렬
+	return inWin.filter((_, i) => i % 3 === 0); // 분기(3개월) · retFwd3m 정렬
 }
 
-/** 한 청산가정(mode) NAV 회계 — 분위별·EW. perPeriodBuckets/perPeriodEW 는 양 모드 공유(선정 동일). */
+/** 한 청산가정(mode) NAV 회계 · 분위별·EW. perPeriodBuckets/perPeriodEW 는 양 모드 공유(선정 동일). */
 function runMode(
 	ymAxis: string[],
 	perPeriodBuckets: Outcome[][][], // [period][bucket][member]
@@ -73,7 +73,7 @@ function runMode(
 	};
 }
 
-/** 유니버스 백테스트 — 패널 전체 행 + spec → 이중실행 밴드 결과. */
+/** 유니버스 백테스트 · 패널 전체 행 + spec → 이중실행 밴드 결과. */
 export function runUniverse(rows: UniverseRow[], spec: UniverseSpec): UniverseBtResult {
 	// ym → 그 달 행들(code→row) 인덱스
 	const byYm = new Map<string, Map<string, UniverseRow>>();

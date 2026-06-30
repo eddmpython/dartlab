@@ -1,4 +1,4 @@
-// 셀 diff / 행 식별 순수 헬퍼 — ui/web `analysis.$code.viewer.tsx` 1:1 포팅.
+// 셀 diff / 행 식별 순수 헬퍼 · ui/web `analysis.$code.viewer.tsx` 1:1 포팅.
 // diff/timeline 은 프론트 인접셀 비교 (백엔드 계산 0).
 
 import type { PanelRow } from './types';
@@ -20,14 +20,14 @@ export function hasVisibleContent(row: PanelRow, windowPeriods: string[]): boole
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// 화면 내 분석 (viewport analysis) — 학습·임베딩·LLM 0 의 결정론 휴리스틱.
+// 화면 내 분석 (viewport analysis) · 학습·임베딩·LLM 0 의 결정론 휴리스틱.
 //
 // ★5회사 실측 판정(memory project_viewer_ai_analysis): 메인 격자 셀은 raw DART XML
 // (텍스트/표 덩어리, 항목 라벨 열 없음)이라 "셀 추세"는 라벨없는 max숫자가 기간마다 딴 항목을
 // 가리켜(노이즈 점프 ×35만) gimmick → 본 모듈은 추세를 내지 않는다(carve).
 // 진짜 가치 = facet(금액·비율·연도) 추출: BM25 가 구조적으로 못 보는(부등식·단위환산) 정량 사실을
 // 산술로 전수 포착(constraintFacet.py 실측: BM25 재현율 4~28%). 진짜 추세는 정렬된 finance 숫자
-// (financeSignals)에서만 — 거기엔 계정 라벨이 있어 신뢰 가능.
+// (financeSignals)에서만 · 거기엔 계정 라벨이 있어 신뢰 가능.
 //
 // 입력은 viewport 그대로: rows(activeSection×activeBlock) × periods(windowPeriods, 최신좌측).
 // 재사용: searchIndex maxAmountKrw(조 다의어 2중차단)·parseConstraint·amtOk·plainText.
@@ -123,7 +123,7 @@ export function analyzeViewport(
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// finance 정렬숫자 위 신호 — FinanceStatement(loadFinanceStatement 결과, 계정라벨·동류기간·진짜 숫자)
+// finance 정렬숫자 위 신호 · FinanceStatement(loadFinanceStatement 결과, 계정라벨·동류기간·진짜 숫자)
 // 의 단조추세·흑적전환·큰변동을 결정론으로 뽑는다. panel 셀과 달리 계정 라벨이 있어 "이 숫자가 무엇인지"가
 // 명확 = 신뢰 가능한 추세. 사람이 9기간 격자에서 못 잡는 것(연속추세·부호전환 시점·배수점프)을 산술로.
 // 입력 stmt.periods 는 최신좌측, freq 단위로 동류(YoY/QoQ 혼동 없음).

@@ -1,7 +1,7 @@
-// 산업 profit-pool 원자료 — map/industries/{id}.json (브라우저 fetch, DuckDB 불필요).
-// stages[].nodes[].revenue/opMargin 원자료만 반환 — rollup(매출가중 영업이익률·coverageRatio)은
+// 산업 profit-pool 원자료 · map/industries/{id}.json (브라우저 fetch, DuckDB 불필요).
+// stages[].nodes[].revenue/opMargin 원자료만 반환 · rollup(매출가중 영업이익률·coverageRatio)은
 // 소비 surface(@dartlab/ui-surfaces/map rollupProfitPool) 책임 (계층: runtime ← surface 단방향).
-// 로컬 어댑터도 이 loader 를 그대로 재사용 — 정적 자산이라 백엔드 0("깃헙페이지 자산 공유", price·finance 동일).
+// 로컬 어댑터도 이 loader 를 그대로 재사용 · 정적 자산이라 백엔드 0("깃헙페이지 자산 공유", price·finance 동일).
 import type { ProfitPoolStageRaw } from '@dartlab/ui-contracts';
 import { loadJson } from '../../../data/dartlabData';
 

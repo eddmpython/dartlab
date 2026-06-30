@@ -1,4 +1,4 @@
-// 라이브 덱 빌더 — buildReport(라이브·무-bake) + hfMedia hero 를 합쳐 CarouselDeck 를 만든다.
+// 라이브 덱 빌더 · buildReport(라이브·무-bake) + hfMedia hero 를 합쳐 CarouselDeck 를 만든다.
 // 순수 투영(projectResult)과 분리: 여기는 런타임 I/O(데이터·미디어), 투영은 fixture 테스트 가능한 순수 함수.
 import type { DartLabRuntime } from '@dartlab/ui-contracts';
 import { originUrl } from '@dartlab/ui-runtime/data/origins/registry';
@@ -9,7 +9,7 @@ import { findPerspective, PERSPECTIVES } from '$lib/report/perspectives';
 import { loadMediaIndex, heroUrls as allHeroUrls, mediaKey, mediaCompany } from './media';
 import { loadContract, contractToCards } from './contract';
 
-/** 회사 hero URL 전부 — spec.hero 가 있으면 그 장을 맨 앞(표지)으로. 파일명은 콘텐츠해시 stem 매칭. */
+/** 회사 hero URL 전부 · spec.hero 가 있으면 그 장을 맨 앞(표지)으로. 파일명은 콘텐츠해시 stem 매칭. */
 function resolveHeroes(media: MediaIndex | null, code: string, spec?: CarouselSpec): string[] {
 	const all = allHeroUrls(media, code);
 	if (spec?.hero) {
@@ -32,13 +32,13 @@ export async function buildDeck(
 	post: { code: string; slug: string },
 	perspectiveKey: string
 ): Promise<CarouselDeck> {
-	// media·contract 먼저(둘 다 캐시된 가벼운 단일 fetch) — code 유무로 회사/이슈 경로를 가른다.
+	// media·contract 먼저(둘 다 캐시된 가벼운 단일 fetch) · code 유무로 회사/이슈 경로를 가른다.
 	const [media, contract] = await Promise.all([loadMediaIndex(), loadContract(post.slug)]);
 	const lead = contract ? contractToCards(contract, media) : [];
 	// 차트 슬라이드 배경은 **편집 계약의 큐레이션 이미지만** 순환(엉뚱한 자산[generic bg·타사 오배치] 끼우지 않게).
 	const curated = [...new Set(lead.map((c) => c.bg).filter((u): u is string => !!u))];
 
-	// 이슈(standalone·종목코드 없음) — 회사 report 조회/차트 첨부 안 하고 손글 editorial 슬라이드만 렌더.
+	// 이슈(standalone·종목코드 없음) · 회사 report 조회/차트 첨부 안 하고 손글 editorial 슬라이드만 렌더.
 	if (!post.code) {
 		const cards = lead.length ? lead : [{ kind: 'empty' as const, reason: '카드가 아직 준비되지 않았습니다.' }];
 		return {
@@ -67,5 +67,5 @@ export async function buildDeck(
 }
 
 
-/** 플레이어 관점 탭 — 구현된 관점만. */
+/** 플레이어 관점 탭 · 구현된 관점만. */
 export const DECK_PERSPECTIVES = PERSPECTIVES.filter((p) => p.built).map((p) => ({ key: p.key, label: p.label }));

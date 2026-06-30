@@ -2,7 +2,7 @@
 //
 // 들어온 질문 → intentModel(오프라인 curated 384질문에서 뽑은 압축 모델 ~27KB) 로 intent 라우팅(IDF 가중 bigram,
 // generic 어휘 깎음) → 그 intent 의 *실제 섹션 target* 으로 검색 범위를 좁힌다(searchIndex.search {scopeSections}).
-// searchIndex 가 plain BM25 ⊕ 섹션scoping 을 RRF 융합 — 라우팅 틀려도 plain 보존(안 깨짐), 맞으면 정답 섹션 끌어올림.
+// searchIndex 가 plain BM25 ⊕ 섹션scoping 을 RRF 융합 · 라우팅 틀려도 plain 보존(안 깨짐), 맞으면 정답 섹션 끌어올림.
 //
 // 검증(tests/_attempts/viewerDenseEvidence/buildVerify.py): 5개 업종 end-to-end top-6 섹션도달 plain 56~71% →
 // 섹션scoping 83~90%. 라우팅 LOO 71%(IDF). dense(30MB)·fuzzy canon(옛) 둘 다 능가하며 무게 0.
@@ -14,8 +14,8 @@ import { hfUrl } from '@dartlab/ui-runtime/data/parquet/hfRange';
 import { tokenizeBigram } from './searchIndex';
 
 export interface IntentEntry {
-	sections: string[]; // 결정론 섹션 target (intentSpec — 실제 DART chapter>sectionLeaf taxonomy)
-	canon: string[]; // scope 검색 보강어(코퍼스 어휘) — 구어질의↔본문 간극 흡수("돌아가"→"가동률")
+	sections: string[]; // 결정론 섹션 target (intentSpec · 실제 DART chapter>sectionLeaf taxonomy)
+	canon: string[]; // scope 검색 보강어(코퍼스 어휘) · 구어질의↔본문 간극 흡수("돌아가"→"가동률")
 	route: Record<string, number>; // 라우팅 bigram → IDF 가중치(count·idf/dl 사전계산, top-K bounded)
 	n: number; // 이 intent 큐레이션 질문 수(진단)
 }
@@ -24,12 +24,12 @@ export interface IntentModel {
 	intents: Record<string, IntentEntry>;
 }
 
-const BUNDLED: IntentModel = intentModelJson as IntentModel; // 빌드 동결본 — HF 실패 시 fallback(항상 동작)
+const BUNDLED: IntentModel = intentModelJson as IntentModel; // 빌드 동결본 · HF 실패 시 fallback(항상 동작)
 const MODEL_PATH = 'dart/queries/intentModel.json'; // 파이프라인(.github/scripts/queries)이 HF 로 자동 업로드하는 경로
 
 let modelP: Promise<IntentModel | null> | null = null;
 
-// 1회 로드 — HF 의 *라이브* 모델 우선(파이프라인 재학습이 프론트 재배포 0 으로 반영), 실패 시 번들 fallback.
+// 1회 로드 · HF 의 *라이브* 모델 우선(파이프라인 재학습이 프론트 재배포 0 으로 반영), 실패 시 번들 fallback.
 // 모듈 캐시(modelP)로 회사 이동 재마운트에도 1회. 시그니처 불변(호출부 무수정).
 export function loadIntentModel(fetchFn: typeof fetch = fetch): Promise<IntentModel | null> {
 	if (modelP) return modelP;
@@ -38,7 +38,7 @@ export function loadIntentModel(fetchFn: typeof fetch = fetch): Promise<IntentMo
 			const resp = await fetchFn(hfUrl(MODEL_PATH));
 			if (resp.ok) {
 				const j = (await resp.json()) as IntentModel;
-				if (j?.v === 2 && j.intents) return j; // schema 가드 — drift 시 번들로
+				if (j?.v === 2 && j.intents) return j; // schema 가드 · drift 시 번들로
 			}
 		} catch {
 			/* 네트워크/CORS 실패 → 번들 fallback */

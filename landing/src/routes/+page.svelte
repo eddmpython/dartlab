@@ -35,7 +35,7 @@
 		},
 		{
 			question: 'DartLab 은 누구를 위한 도구인가요?',
-			answer: '기업 공시 데이터를 다루는 모든 사람 — 기간별로 회사를 비교하는 투자자, 재무 모델을 만드는 퀀트, 공시에서 NLP 데이터셋을 만드는 연구자, 금융 애플리케이션 개발자, LLM 에 구조화된 회사 컨텍스트가 필요한 AI 빌더.'
+			answer: '기업 공시 데이터를 다루는 모든 사람 · 기간별로 회사를 비교하는 투자자, 재무 모델을 만드는 퀀트, 공시에서 NLP 데이터셋을 만드는 연구자, 금융 애플리케이션 개발자, LLM 에 구조화된 회사 컨텍스트가 필요한 AI 빌더.'
 		},
 		{
 			question: '다른 금융 데이터 도구와 무엇이 다른가요?',
@@ -43,11 +43,11 @@
 		},
 		{
 			question: 'EDGAR 10-K · 10-Q 도 지원하나요?',
-			answer: '지원합니다. dartlab.Company("AAPL") 처럼 티커를 넘기면 미국 10-K · 10-Q 분석이 가능합니다. DART 와 동일한 인터페이스 — sections · show · trace · diff · BS · IS · CF · ratios 모두 동일하게 동작합니다.'
+			answer: '지원합니다. dartlab.Company("AAPL") 처럼 티커를 넘기면 미국 10-K · 10-Q 분석이 가능합니다. DART 와 동일한 인터페이스 · sections · show · trace · diff · BS · IS · CF · ratios 모두 동일하게 동작합니다.'
 		},
 		{
 			question: '코드를 짜야만 쓸 수 있나요?',
-			answer: '아닙니다. CLI 명령 "dartlab ask" 로 자연어 질문이 가능합니다 — 예: dartlab ask "삼성전자 재무건전성 분석해줘". DartLab 이 회사 데이터를 구조화해 자동으로 LLM 에 먹입니다. 심층 분석·커스텀 워크플로우는 Python 으로 가능합니다.'
+			answer: '아닙니다. CLI 명령 "dartlab ask" 로 자연어 질문이 가능합니다 · 예: dartlab ask "삼성전자 재무건전성 분석해줘". DartLab 이 회사 데이터를 구조화해 자동으로 LLM 에 먹입니다. 심층 분석·커스텀 워크플로우는 Python 으로 가능합니다.'
 		},
 		{
 			question: '전자공시 분석 도구가 뭔가요?',
@@ -73,13 +73,13 @@
 </script>
 
 <svelte:head>
-	<title>DartLab — {brand.description}</title>
-	<meta name="description" content="기업의 이야기는 공시에 있다. DartLab 은 종목코드 하나로 한국 DART 와 미국 SEC EDGAR 공시를 구조화·비교 가능한 데이터로 만든다 — Python 한 줄." />
+	<title>DartLab · {brand.description}</title>
+	<meta name="description" content="기업의 이야기는 공시에 있다. DartLab 은 종목코드 하나로 한국 DART 와 미국 SEC EDGAR 공시를 구조화·비교 가능한 데이터로 만든다 · Python 한 줄." />
 	<meta name="keywords" content="DART, OpenDART, EDGAR, financial analysis, annual report, Python, Korean stocks, disclosure parsing, dartlab, sections, company analysis, financial data, 전자공시, 사업보고서, 재무제표, 공시분석, 다트, DART전자공시, 한국주식분석" />
 	<link rel="canonical" href="https://eddmpython.github.io/dartlab/" />
 
 	<meta property="og:type" content="website" />
-	<meta property="og:title" content="DartLab — {brand.description}" />
+	<meta property="og:title" content="DartLab · {brand.description}" />
 	<meta property="og:description" content="기업의 모든 진실은 공시에 있다. DartLab은 DART 전자공시와 EDGAR 공시를 읽을 수 있게 만든다. 종목코드 하나로 한국·미국 상장기업의 재무제표, 사업보고서를 구조화된 데이터로." />
 	<meta property="og:url" content="https://eddmpython.github.io/dartlab/" />
 	<meta property="og:site_name" content="DartLab" />
@@ -89,7 +89,7 @@
 	<meta property="og:locale" content="ko_KR" />
 
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content="DartLab — {brand.description}" />
+	<meta name="twitter:title" content="DartLab · {brand.description}" />
 	<meta name="twitter:description" content="기업의 모든 진실은 공시에 있다. DartLab은 DART 전자공시와 EDGAR 공시를 읽을 수 있게 만든다. 종목코드 하나로 한국·미국 상장기업의 재무제표, 사업보고서를 구조화된 데이터로." />
 	<meta name="twitter:image" content="https://eddmpython.github.io/dartlab/og-image.png" />
 

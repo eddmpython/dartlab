@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 스캔 등급 설명 다이얼로그 — "왜 이 등급인가". 좌 스파이더 / 우 근거 / 아래 기준.
+	// 스캔 등급 설명 다이얼로그 · "왜 이 등급인가". 좌 스파이더 / 우 근거 / 아래 기준.
 	// ★신규 능력 0: 데이터(co.radar·co.verdict·co.analysis.tracks·co.credit·co.grades)는 전부 엔진 산물(공동배선
 	//   = 퍼블릭·로컬 동일). 모달 크롬은 전역 .scrimWrap/.scrModal/.scrHead/.scrClose 재사용. 레이더는 map RadarChart 재사용.
 	// 정직: 매수/매도 신호·목표주가·인과 금지. 결손 축은 채우지 않고 뺀다(0대체 금지). 등급 = 판정(근거+기준 동반).
@@ -18,7 +18,7 @@
 
 	const tcls = (t: string) =>
 		(({ up: 'tUp', good: 'tGood', neutral: 'tNeu', warn: 'tWarn', down: 'tDn' }) as Record<string, string>)[t] || 'tNeu';
-	// 등급 톤 → 막대 색. ★터미널 기존 토큰만 사용(신규 색 금지) — --up/good/warn/dn 은 .tUp 등과 동일 팔레트.
+	// 등급 톤 → 막대 색. ★터미널 기존 토큰만 사용(신규 색 금지) · --up/good/warn/dn 은 .tUp 등과 동일 팔레트.
 	const TONE_COL: Record<string, string> = { up: 'var(--up)', good: 'var(--good)', neutral: 'var(--dim)', warn: 'var(--warn)', down: 'var(--dn)' };
 	// 신용 구성 점수(0~100) → 같은 터미널 토큰 색(높을수록 양호). credit.tone 임계(70/49)와 정합.
 	const creditCol = (s: number): string => (s >= 70 ? 'var(--up)' : s >= 50 ? 'var(--good)' : s >= 30 ? 'var(--warn)' : 'var(--dn)');
@@ -26,7 +26,7 @@
 	const vd = $derived(co.verdict);
 	const pct = $derived(co.percentile);
 	const hasPct = $derived(!!pct && pct.n >= 5);
-	// 좌측 레이더 = 순서형 종합 축 스포크. s = *축 백분위*(피어 상대, 상위일수록 큼) — 등급을 매긴 근거를 시각화.
+	// 좌측 레이더 = 순서형 종합 축 스포크. s = *축 백분위*(피어 상대, 상위일수록 큼) · 등급을 매긴 근거를 시각화.
 	// cf(분류)는 엔진에서 이미 제외. 결손 축(s=null)은 스포크 생략(0대체 금지). 짧은 라벨로 겹침 완화.
 	const radarAxes = $derived(
 		co.radar
@@ -52,7 +52,7 @@
 		onclick={(e) => e.stopPropagation()}
 	>
 		<div class="scrHead">
-			<span class="scrTitle">{lang === 'en' ? 'SCAN GRADE — why this grade' : '스캔 등급 — 왜 이 등급인가'}</span>
+			<span class="scrTitle">{lang === 'en' ? 'SCAN GRADE · why this grade' : '스캔 등급 · 왜 이 등급인가'}</span>
 			<span class={'geBand ' + tcls(vd.band.tone)}>{txc(vd.band, lang)} <b class="mono">{vd.composite}</b></span>
 			<span class="geCredit"><i>{lang === 'en' ? 'credit' : '신용'}</i> <b class="tCredit mono">{co.credit.grade}</b></span>
 			<button class="scrClose" onclick={onClose} aria-label="close">✕</button>
@@ -68,7 +68,7 @@
 				{/if}
 			</div>
 
-			<!-- 우: 왜 이 등급(근거) — 신용 + 강점/우려. 백분위·분포곡선은 아래 등급기준의 각 축으로 이동. -->
+			<!-- 우: 왜 이 등급(근거) · 신용 + 강점/우려. 백분위·분포곡선은 아래 등급기준의 각 축으로 이동. -->
 			<div class="geWhy">
 				<div class="geCred">
 					<span class="geCredK">{lang === 'en' ? 'credit' : '신용'}</span>
@@ -88,7 +88,7 @@
 						{#each vd.concerns as c}<span class="geTag dn">{txc(c, lang)}</span>{/each}
 					</div>
 				{/if}
-				<!-- 신용등급(dCR) 구성 — 레이더 우측 여백 채움 + 헤더 신용등급의 근거(5요소 0~100). -->
+				<!-- 신용등급(dCR) 구성 · 레이더 우측 여백 채움 + 헤더 신용등급의 근거(5요소 0~100). -->
 				{#if co.credit.tracks?.length}
 					<div class="geCredTracks">
 						<span class="geGl">{lang === 'en' ? 'Credit factors' : '신용 구성'}</span>
@@ -104,7 +104,7 @@
 			</div>
 		</div>
 
-		<!-- 아래: 등급 기준 — 각 종합 축의 동종업종 백분위(상위 N%) + 등급레벨 분포 막대 = 그 등급을 매긴 근거. -->
+		<!-- 아래: 등급 기준 · 각 종합 축의 동종업종 백분위(상위 N%) + 등급레벨 분포 막대 = 그 등급을 매긴 근거. -->
 		<div class="geCriteria">
 			<div class="geCrHead">
 				{lang === 'en' ? 'Grade criteria' : '등급 기준'}{#if hasPct && pct} · {lang === 'en' ? `vs ${pct.n} peers` : `업종 ${pct.n}개사 내 위치`}{#if co.eco.industryRank != null} ({co.eco.industryRank}{lang === 'en' ? '' : '위'}){/if}{/if}
@@ -129,7 +129,7 @@
 						</div>
 						{#if isClass}
 							{@const signs = CF_PATTERN_SIGNS[g.v]}
-							<!-- 영업·투자·재무 현금흐름 부호(+유입 / −유출) — 패턴을 정의하는 직관적 표기 -->
+							<!-- 영업·투자·재무 현금흐름 부호(+유입 / −유출) · 패턴을 정의하는 직관적 표기 -->
 							{#if signs}
 								<div class="geCfFlow">
 									{#each [['영업', 'Op'], ['투자', 'Inv'], ['재무', 'Fin']] as lbl, i (i)}
@@ -158,7 +158,7 @@
 									{/each}
 								</div>
 							{:else}
-								<!-- 피어 부족(로컬 단일사 등) — 단순 사다리 폴백 -->
+								<!-- 피어 부족(로컬 단일사 등) · 단순 사다리 폴백 -->
 								<div class="geLadder">
 									{#each scale as step}<span class={'geStep' + (step === g.v ? ' on' : '')}>{step}</span>{/each}
 								</div>
@@ -169,8 +169,8 @@
 			</div>
 			<div class="geNote">
 				{lang === 'en'
-					? '※ "—" means that figure is absent from this company’s filings (not filled with 0). The composite verdict uses 5 bands plus a continuous 0–100 score (top); credit dCR (14 bands) is a separate scale. Cash flow is a category (8 patterns), so it has no ladder or ranking. A grade is an assessment with criteria — not a buy/sell signal.'
-					: '※ "—" 는 해당 수치가 이 회사 공시에 없다는 뜻(0으로 채우지 않음). 종합 판정은 5밴드 + 연속 0~100 점수(상단)·신용 dCR(14단)은 별도 스케일. 현금흐름은 8가지 유형(순서 없음)이라 등급 사다리·순위가 없다. 등급은 기준에 따른 판정이며 매수/매도 신호가 아니다.'}
+					? '※ "·" means that figure is absent from this company’s filings (not filled with 0). The composite verdict uses 5 bands plus a continuous 0-100 score (top); credit dCR (14 bands) is a separate scale. Cash flow is a category (8 patterns), so it has no ladder or ranking. A grade is an assessment with criteria · not a buy/sell signal.'
+					: '※ "·" 는 해당 수치가 이 회사 공시에 없다는 뜻(0으로 채우지 않음). 종합 판정은 5밴드 + 연속 0~100 점수(상단)·신용 dCR(14단)은 별도 스케일. 현금흐름은 8가지 유형(순서 없음)이라 등급 사다리·순위가 없다. 등급은 기준에 따른 판정이며 매수/매도 신호가 아니다.'}
 			</div>
 		</div>
 	</div>
@@ -202,7 +202,7 @@
 		gap: 16px;
 		padding: 14px 14px 6px;
 		align-items: flex-start;
-		flex: 0 0 auto; /* 헤더·레이더·신용 구성은 고정 — 아래 등급기준만 스크롤 */
+		flex: 0 0 auto; /* 헤더·레이더·신용 구성은 고정 · 아래 등급기준만 스크롤 */
 	}
 	.geRadar {
 		flex: 0 0 224px;
@@ -309,7 +309,7 @@
 		line-height: 1.5;
 		margin-top: 10px;
 	}
-	/* 등급기준 — 종합 축 1개당 1블록(축명 · 등급 pill · 업종 상위 N% + 등급레벨 분포 막대) */
+	/* 등급기준 · 종합 축 1개당 1블록(축명 · 등급 pill · 업종 상위 N% + 등급레벨 분포 막대) */
 	.geCrTop {
 		display: flex;
 		align-items: baseline;
@@ -325,7 +325,7 @@
 		color: var(--dl-ink-dim, #5b6473);
 		font-variant-numeric: tabular-nums;
 	}
-	/* 등급 pill — 축의 현재 등급(톤 색). 우측 정렬(상위% 가 뒤따름) */
+	/* 등급 pill · 축의 현재 등급(톤 색). 우측 정렬(상위% 가 뒤따름) */
 	.geCrPill {
 		margin-left: auto;
 		font-size: 10.5px;
@@ -341,7 +341,7 @@
 		font-style: italic;
 		color: var(--dl-ink-dim, #5b6473);
 	}
-	/* 현금흐름 부호 행 — 영업/투자/재무 +유입(--up)/−유출(--dn) 직관 표기(터미널 토큰) */
+	/* 현금흐름 부호 행 · 영업/투자/재무 +유입(--up)/−유출(--dn) 직관 표기(터미널 토큰) */
 	.geCfFlow {
 		display: flex;
 		gap: 5px;
@@ -373,7 +373,7 @@
 	.geCfCell.neg .geCfS {
 		color: var(--dn);
 	}
-	/* 등급레벨별 동종사 분포 막대 — 막대높이 = 동종사 비중%, 회사 등급 칼럼 하이라이트 */
+	/* 등급레벨별 동종사 분포 막대 · 막대높이 = 동종사 비중%, 회사 등급 칼럼 하이라이트 */
 	.geDist {
 		display: flex;
 		align-items: flex-end;
@@ -398,7 +398,7 @@
 	.geDcBar {
 		width: 100%;
 		min-width: 0;
-		background: rgba(139, 148, 158, 0.26); /* 기본 = 회색(분포 형태만) — 회사 칼럼만 톤색(인라인)으로 구분 */
+		background: rgba(139, 148, 158, 0.26); /* 기본 = 회색(분포 형태만) · 회사 칼럼만 톤색(인라인)으로 구분 */
 		border-radius: 2px 2px 0 0;
 		transition: height 0.2s;
 	}
@@ -443,7 +443,7 @@
 	.geCredX b {
 		color: var(--dl-ink, #c8cfdb);
 	}
-	/* 신용 구성 — 레이더 우측 여백 채움(dCR 등급 근거 5요소 0~100) */
+	/* 신용 구성 · 레이더 우측 여백 채움(dCR 등급 근거 5요소 0~100) */
 	.geCredTracks {
 		display: flex;
 		flex-direction: column;

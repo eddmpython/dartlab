@@ -1,18 +1,18 @@
 <script lang="ts">
 	/**
-	 * Scan Studio 메인 그리드 — 가상 스크롤.
+	 * Scan Studio 메인 그리드 · 가상 스크롤.
 	 *
 	 * 2,664 row × N 컬럼을 한 화면에. 자체 구현 가상 스크롤 (~120 LOC core)
-	 * — 단축 axis 수직, 고정 row height, sticky 회사명 컬럼.
+	 * · 단축 axis 수직, 고정 row height, sticky 회사명 컬럼.
 	 *
 	 * 책임:
 	 *  - 헤더 클릭 = 정렬 토글 (1차 정렬)
 	 *  - 헤더 hover = HeaderTooltip (메트릭 정의)
-	 *  - 행 click = onSelect (Detail 패널 — PR-D)
+	 *  - 행 click = onSelect (Detail 패널 · PR-D)
 	 *  - 회사명 click = 행 선택
 	 *  - 행 색 = qualGrade 톤 (subtle 6%)
 	 *  - 등급 셀 = 색칩
-	 *  - placeholder = `—`
+	 *  - placeholder = `·`
 	 */
 	import HeaderTooltip from './HeaderTooltip.svelte';
 	import HeaderFilterPopover from './HeaderFilterPopover.svelte';
@@ -47,7 +47,7 @@
 		percentiles?: Map<string, Percentile>;
 		selectedId: string | null;
 		/** 'screener' = 메인 그리드 (heatmap·hover·등급칩 활성)
-		 *  'table'   = 단순 raw 테이블 (모달 내 — 모두 비활성, 동적 컬럼 width) */
+		 *  'table'   = 단순 raw 테이블 (모달 내 · 모두 비활성, 동적 컬럼 width) */
 		mode?: 'screener' | 'table';
 		/** stockCode → 'KOSPI'/'KOSDAQ'/'KONEX' 같은 market 라벨. 노드 자체 market 없을 때 fallback. */
 		markets?: Record<string, string>;
@@ -81,7 +81,7 @@
 	}
 	let isTable = $derived(mode === 'table');
 
-	/** 셀 분위 배경색 — p10 이하 / p90 이상 강조 (subtle 12%). */
+	/** 셀 분위 배경색 · p10 이하 / p90 이상 강조 (subtle 12%). */
 	function cellHeatmapBg(key: string, v: unknown): string {
 		if (typeof v !== 'number' || !Number.isFinite(v)) return 'transparent';
 		const p = percentiles?.get(key);
@@ -288,7 +288,7 @@
 </script>
 
 <div class="grid-wrap">
-	<!-- viewport (scrollable) — header 도 안에 두고 sticky-top 처리 -->
+	<!-- viewport (scrollable) · header 도 안에 두고 sticky-top 처리 -->
 	<div
 		class="viewport"
 		bind:this={viewport}
@@ -362,7 +362,7 @@
 					{@const formatted = def?.format
 						? def.format(v)
 						: v == null || v === ''
-							? '—'
+							? '·'
 							: String(v)}
 					{@const heatBg = !isTable && def?.type === 'number' && !isPinned(key) ? cellHeatmapBg(key, v) : 'transparent'}
 					<div
@@ -405,7 +405,7 @@
 									style:background={marketColor(rawMarket) + '14'}
 								>{marketLabel(rawMarket)}</span>
 							{:else}
-								<span class="dim">—</span>
+								<span class="dim">·</span>
 							{/if}
 						{:else if key === 'spark' || key === 'spark30' || key === 'spark60'}
 							{@const sparkData = sparkForCell(rd, key)}
@@ -420,7 +420,7 @@
 									<Sparkline data={sparkData} width={88} height={24} stroke="currentColor" smooth />
 								</span>
 							{:else}
-								<span class="dim">—</span>
+								<span class="dim">·</span>
 							{/if}
 						{:else if def?.type === 'series'}
 							{@const series = seriesForCell(v)}
@@ -430,7 +430,7 @@
 									<span class="series-latest">{formatted}</span>
 								</span>
 							{:else}
-								<span class="dim">—</span>
+								<span class="dim">·</span>
 							{/if}
 						{:else if def?.type === 'enum'}
 							{@const tone = gradeTone(key, v)}
@@ -439,12 +439,12 @@
 									{v}
 								</span>
 							{:else}
-								<span class="dim">—</span>
+								<span class="dim">·</span>
 							{/if}
 						{:else if def?.format}
 							<span class:dim={v == null}>{formatted}</span>
 						{:else if v == null || v === ''}
-							<span class="dim">—</span>
+							<span class="dim">·</span>
 						{:else}
 							<span>{formatted}</span>
 						{/if}

@@ -1,8 +1,8 @@
 <script lang="ts">
-	// 피드 카드 — 인스타식 반응형. 모바일(≤640px): 풀폭 카드가 그 자리에서 좌우 스와이프되는 *인라인 캐러셀*
-	// (Deck 재사용 — 점 인디케이터·스냅·페이지카운터, 화살표는 hover 없으니 자동 숨김=스와이프만). 캡션은
+	// 피드 카드 · 인스타식 반응형. 모바일(≤640px): 풀폭 카드가 그 자리에서 좌우 스와이프되는 *인라인 캐러셀*
+	// (Deck 재사용 · 점 인디케이터·스냅·페이지카운터, 화살표는 hover 없으니 자동 숨김=스와이프만). 캡션은
 	// 이미지 아래(이름·공유·제목 더보기→모달). 데스크톱(>640px): 기존 그리드 커버 썸네일(CoverThumb) 탭→모달.
-	// 둘 다 가벼움 — Deck/CoverThumb 가 뷰포트 진입 시에만 라이브 빌드(지연).
+	// 둘 다 가벼움 · Deck/CoverThumb 가 뷰포트 진입 시에만 라이브 빌드(지연).
 	import type { DartLabRuntime } from '@dartlab/ui-contracts';
 	import Deck from './Deck.svelte';
 	import CoverThumb from './CoverThumb.svelte';
@@ -39,7 +39,7 @@
 		onOpen: () => void;
 	} = $props();
 
-	// 섹션 점프 네비 + 캡션 배지(제품·지주) — PostModal 과 동형. Deck 이 onSections 로 앵커를 넘기고
+	// 섹션 점프 네비 + 캡션 배지(제품·지주) · PostModal 과 동형. Deck 이 onSections 로 앵커를 넘기고
 	// jumpTo 는 bind:this 로 호출. 배지는 rt.company.products 직독(공유 이미지 무변경, 캡션 크롬만).
 	let deckRef = $state<{ jumpTo: (i: number) => void } | null>(null);
 	let anchors = $state<{ label: string; index: number }[]>([]);
@@ -53,7 +53,7 @@
 		});
 	});
 
-	// 캡션 인라인 펼침(인스타 피드식) — 클릭 시 모달이 아니라 그 자리(같은 페이지) 이미지 아래에서 펼침/접힘.
+	// 캡션 인라인 펼침(인스타 피드식) · 클릭 시 모달이 아니라 그 자리(같은 페이지) 이미지 아래에서 펼침/접힘.
 	let expanded = $state(false);
 	function captionParas(c: string): string[] {
 		return String(c ?? '')
@@ -63,7 +63,7 @@
 	}
 	const hasCaption = $derived(!!caption.trim());
 
-	// 뷰포트 분기 — matchMedia(반응형). 모바일=인라인 스와이프, 데스크톱=그리드 썸네일.
+	// 뷰포트 분기 · matchMedia(반응형). 모바일=인라인 스와이프, 데스크톱=그리드 썸네일.
 	let mobile = $state(false);
 	$effect(() => {
 		const mq = window.matchMedia('(max-width: 640px)');
@@ -73,7 +73,7 @@
 		return () => mq.removeEventListener('change', apply);
 	});
 
-	// 공유 — cardShare 워커 링크(첫 슬라이드 OG + 딥링크) 복사.
+	// 공유 · cardShare 워커 링크(첫 슬라이드 OG + 딥링크) 복사.
 	let copied = $state(false);
 	async function share() {
 		try {
@@ -87,7 +87,7 @@
 </script>
 
 {#if mobile}
-	<!-- 인스타 피드식 — 풀폭 인라인 스와이프 캐러셀 + 아래 캡션 바. -->
+	<!-- 인스타 피드식 · 풀폭 인라인 스와이프 캐러셀 + 아래 캡션 바. -->
 	<article class="fc">
 		<div class="fcDeck">
 			<Deck bind:this={deckRef} {rt} sym={code} {slug} {corpName} heroUrls={heroUrls(media, code)} {leadCards} onSections={(a) => (anchors = a)} />
@@ -139,7 +139,7 @@
 {/if}
 
 <style>
-	/* 모바일 인라인 피드 카드 — 풀폭, 캐러셀 + 캡션 바. */
+	/* 모바일 인라인 피드 카드 · 풀폭, 캐러셀 + 캡션 바. */
 	.fc {
 		display: flex;
 		flex-direction: column;
@@ -149,7 +149,7 @@
 	.fcDeck {
 		width: 100%;
 	}
-	/* 캡션 바 — 아바타 · 이름 · 공유(우측). 인스타 포스트 헤더/액션 줄 역할. */
+	/* 캡션 바 · 아바타 · 이름 · 공유(우측). 인스타 포스트 헤더/액션 줄 역할. */
 	.fcBar {
 		display: flex;
 		align-items: center;
@@ -188,7 +188,7 @@
 	.fcShare:active {
 		background: rgba(var(--dl-accent-rgb), 0.2);
 	}
-	/* 섹션 점프 프리셋(모바일) — 캡션 바 아래 가로 칩 행(넘치면 가로 스크롤). */
+	/* 섹션 점프 프리셋(모바일) · 캡션 바 아래 가로 칩 행(넘치면 가로 스크롤). */
 	.fcNav {
 		display: flex;
 		gap: 6px;
@@ -215,7 +215,7 @@
 		border-color: rgba(var(--dl-accent-rgb), 0.6);
 		color: var(--dl-accent);
 	}
-	/* 회사 배지(모바일) — 제품·지주. */
+	/* 회사 배지(모바일) · 제품·지주. */
 	.fcBadges {
 		display: flex;
 		flex-wrap: wrap;
@@ -237,7 +237,7 @@
 		border-color: rgba(var(--dl-accent-rgb), 0.4);
 		background: rgba(var(--dl-accent-rgb), 0.08);
 	}
-	/* 인스타 피드 캡션 — 이미지 아래 같은 페이지. 접힘=제목 2줄, '더 보기'로 캡션 본문 인라인 펼침(모달 아님). */
+	/* 인스타 피드 캡션 · 이미지 아래 같은 페이지. 접힘=제목 2줄, '더 보기'로 캡션 본문 인라인 펼침(모달 아님). */
 	.fcCap {
 		padding: 0 4px 2px;
 	}

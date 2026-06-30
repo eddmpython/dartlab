@@ -1,5 +1,5 @@
 <script lang="ts">
-	// lucide-svelte 1.0 브랜드 아이콘 제거(Github 미수출) 대응 — 옛 lucide github 패스 인라인 (ISC).
+	// lucide-svelte 1.0 브랜드 아이콘 제거(Github 미수출) 대응 · 옛 lucide github 패스 인라인 (ISC).
 	let { size = 24, class: className = '' }: { size?: number | string; class?: string } = $props();
 </script>
 

@@ -1,10 +1,10 @@
 /**
- * 워치리스트 — localStorage 기반 익명 저장.
+ * 워치리스트 · localStorage 기반 익명 저장.
  *
  * - 최대 20개 stockCode
  * - 페이지 새로고침/재방문 시 복원
  * - URL 공유: `?watch=AAA,BBB,...` 로 export/import
- * - 구독·계정 불필요 — 로컬 저장
+ * - 구독·계정 불필요 · 로컬 저장
  *
  * 사용:
  * ```ts
@@ -69,7 +69,7 @@ class WatchlistStore {
 		this.items = [];
 		_save(this.items);
 	}
-	/** URL 공유용 문자열 — `?watch=005930,000660,...` */
+	/** URL 공유용 문자열 · `?watch=005930,000660,...` */
 	toQuery(): string {
 		return this.items.join(',');
 	}

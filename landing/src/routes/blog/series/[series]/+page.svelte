@@ -9,7 +9,7 @@
 
 	const series = $derived(getSeries(data.series));
 	const posts = $derived(series ? getSeriesPosts(series.id) : []);
-	const pageTitle = $derived(series ? `${series.seoTitle} — DartLab 전자공시 분석` : 'Blog Series — DartLab 전자공시 분석');
+	const pageTitle = $derived(series ? `${series.seoTitle} · DartLab 전자공시 분석` : 'Blog Series · DartLab 전자공시 분석');
 	const pageDesc = $derived(series?.seoDescription ?? 'DartLab 블로그 시리즈');
 	const pageUrl = $derived(series ? `${brand.url}blog/series/${series.id}` : `${brand.url}blog/`);
 	const jsonLd = $derived(
@@ -203,7 +203,7 @@
 		grid-template-columns: minmax(0, 1fr) clamp(240px, 32%, 320px);
 		gap: 1.25rem;
 		align-items: stretch;
-		min-height: 168px; /* 카드 균일 높이 — 우측 썸네일이 비율로 위아래 꽉 차게 */
+		min-height: 168px; /* 카드 균일 높이 · 우측 썸네일이 비율로 위아래 꽉 차게 */
 	}
 
 	.series-step-main {

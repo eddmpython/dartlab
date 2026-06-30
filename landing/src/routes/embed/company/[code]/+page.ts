@@ -1,7 +1,7 @@
 import type { PageLoad } from './$types';
 import { base } from '$app/paths';
 
-// 임베드는 prerender 불필요 — 다양한 code 파라미터 x URL 파라미터
+// 임베드는 prerender 불필요 · 다양한 code 파라미터 x URL 파라미터
 export const prerender = false;
 export const ssr = false;
 

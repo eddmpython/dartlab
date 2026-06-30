@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CURRENT_MACRO_EDGE_SECTOR_KEYS, EDGE_SECTOR_TO_TAILWIND, classifyTailwind, hasNegativeTailwind } from './macroMappings';
 
-describe('macroMappings — terminal macro lens wiring', () => {
+describe('macroMappings · terminal macro lens wiring', () => {
 	it('positive blended never renders as headwind', () => {
 		expect(classifyTailwind(0.08)).toMatchObject({ bucket: 'weakTailwind', tone: 'good', labelKr: '상대 약순풍' });
 		expect(classifyTailwind(0.4)).toMatchObject({ bucket: 'tailwind', tone: 'up', labelKr: '순풍' });

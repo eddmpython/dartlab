@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
-	/** "i" 버튼 + 툴팁 — CMoney 스타일. 지표 옆 용어 설명. */
+	/** "i" 버튼 + 툴팁 · CMoney 스타일. 지표 옆 용어 설명. */
 	interface Props {
 		label?: string; // 툴팁 텍스트 (간단)
 		children?: Snippet; // 본문 (마크업 가능)

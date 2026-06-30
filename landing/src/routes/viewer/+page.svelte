@@ -1,5 +1,5 @@
 <script lang="ts">
-	// /viewer 진입 — 마지막 본 종목(캐시) 또는 기본 삼성전자(005930)로 즉시 이동. 인덱스 UI 없음.
+	// /viewer 진입 · 마지막 본 종목(캐시) 또는 기본 삼성전자(005930)로 즉시 이동. 인덱스 UI 없음.
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';

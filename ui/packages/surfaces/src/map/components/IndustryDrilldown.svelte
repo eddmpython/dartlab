@@ -184,7 +184,7 @@
 		}
 	});
 
-	// 색 동기화 — nodes prop 의 color 만 바뀌면 위치/시뮬 유지하고 색만 갱신
+	// 색 동기화 · nodes prop 의 color 만 바뀌면 위치/시뮬 유지하고 색만 갱신
 	$effect(() => {
 		const colorById = new Map<string, string>();
 		for (const n of nodes) colorById.set(n.id, n.color);
@@ -416,7 +416,7 @@
 	</div>
 
 	{#if simNodes.length === 0}
-		<div class="empty">표시할 회사가 없습니다 — 좌측 공정 필터를 확인하세요.</div>
+		<div class="empty">표시할 회사가 없습니다 · 좌측 공정 필터를 확인하세요.</div>
 	{/if}
 </div>
 

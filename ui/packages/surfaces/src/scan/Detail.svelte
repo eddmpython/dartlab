@@ -12,7 +12,7 @@
 		db: DartDb | null;
 		financeLoading?: boolean;
 		onClose: () => void;
-		// 셸 주입 — surface 는 $app/paths·publicRuntime 무결합(포터블). filing=공시 포트(정기공시), basePath=뷰어 링크.
+		// 셸 주입 · surface 는 $app/paths·publicRuntime 무결합(포터블). filing=공시 포트(정기공시), basePath=뷰어 링크.
 		filing: FilingPort;
 		basePath?: string;
 	}
@@ -168,7 +168,7 @@
 	}
 
 	function formatDate(value: string): string {
-		if (!/^\d{8}$/.test(value)) return value || '—';
+		if (!/^\d{8}$/.test(value)) return value || '·';
 		return `${value.slice(0, 4)}.${value.slice(4, 6)}.${value.slice(6, 8)}`;
 	}
 
@@ -227,7 +227,7 @@
 		return pts.length >= 2 ? `M${pts.join('L')}` : '';
 	}
 	function fmtAmount(v: number | null): string {
-		if (v == null) return '—';
+		if (v == null) return '·';
 		const abs = Math.abs(v);
 		const maximumFractionDigits = abs >= 100 ? 0 : 1;
 		return `${v.toLocaleString('ko-KR', { maximumFractionDigits })}억원`;
@@ -436,21 +436,21 @@
 						{#if v && v !== ''}
 							<span class="g-chip" style:color={toneColor(tone)} style:border-color={toneColor(tone)}>{v}</span>
 						{:else}
-							<span class="g-chip dim">—</span>
+							<span class="g-chip dim">·</span>
 						{/if}
 					</div>
 				{/each}
 			</div>
 			<div class="delta-row">
-				<span>ROE 변화 {typeof node.roeDelta === 'number' ? fmtPct(node.roeDelta, { withSign: true, suffix: '%p' }) : '—'}</span>
-				<span>OPM 변화 {typeof node.opMarginDelta === 'number' ? fmtPct(node.opMarginDelta, { withSign: true, suffix: '%p' }) : '—'}</span>
+				<span>ROE 변화 {typeof node.roeDelta === 'number' ? fmtPct(node.roeDelta, { withSign: true, suffix: '%p' }) : '·'}</span>
+				<span>OPM 변화 {typeof node.opMarginDelta === 'number' ? fmtPct(node.opMarginDelta, { withSign: true, suffix: '%p' }) : '·'}</span>
 			</div>
 		</section>
 
 		<section class="d-section filings">
 			<div class="filings-head">
 				<span class="sec-title">최근 정기공시</span>
-				<a class="viewer-btn" href={`${basePath}/viewer/company/${node.id}`} target="_blank" rel="noreferrer" title="공시뷰어로 열기 — panel 항목×기간 격자·정량재무제표">공시뷰어 ↗</a>
+				<a class="viewer-btn" href={`${basePath}/viewer/company/${node.id}`} target="_blank" rel="noreferrer" title="공시뷰어로 열기 · panel 항목×기간 격자·정량재무제표">공시뷰어 ↗</a>
 			</div>
 			{#if filingsLoading}
 				<div class="loading">로드 중...</div>
@@ -563,7 +563,7 @@
 		letter-spacing: 0.05em;
 		margin-bottom: 4px;
 	}
-	/* 최근 정기공시 제목 라인 — 우측에 공시뷰어 바로가기 */
+	/* 최근 정기공시 제목 라인 · 우측에 공시뷰어 바로가기 */
 	.filings-head {
 		display: flex;
 		align-items: center;

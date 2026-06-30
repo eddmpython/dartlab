@@ -41,14 +41,14 @@ export const TABLE_SOURCES: TableSource[] = [
 		label: 'screen',
 		icon: SlidersHorizontal,
 		source: 'screen',
-		desc: '조건형 스크리닝 — 필드 검색, 조건 조합, 그리드 필터 적용'
+		desc: '조건형 스크리닝 · 필드 검색, 조건 조합, 그리드 필터 적용'
 	},
 	{
 		id: 'ecosystem',
 		label: 'ecosystem',
 		icon: Building2,
 		source: 'memory',
-		desc: '회사 노드 — 41 필드 (id/label/industry + scan 등급 8종 + 정량·변화 + 거버넌스)'
+		desc: '회사 노드 · 41 필드 (id/label/industry + scan 등급 8종 + 정량·변화 + 거버넌스)'
 	},
 	{
 		id: 'prices',
@@ -59,7 +59,7 @@ export const TABLE_SOURCES: TableSource[] = [
 		viewName: 'krxPricesAll',
 		defaultLimit: 1000,
 		searchableColumns: ['ISU_CD'],
-		desc: 'KRX 일별 OHLCV — 회사×일자 long-form (~67만 row)'
+		desc: 'KRX 일별 OHLCV · 회사×일자 long-form (~67만 row)'
 	},
 	{
 		id: 'valuation',
@@ -81,7 +81,7 @@ export const TABLE_SOURCES: TableSource[] = [
 		viewName: 'changes',
 		defaultLimit: 1000,
 		searchableColumns: ['stockCode', 'sectionTitle'],
-		desc: '공시 변경 raw — 회사×기간×섹션'
+		desc: '공시 변경 raw · 회사×기간×섹션'
 	},
 	{
 		id: 'finance_lite',
@@ -92,7 +92,7 @@ export const TABLE_SOURCES: TableSource[] = [
 		viewName: 'finance_lite',
 		defaultLimit: 1000,
 		searchableColumns: ['stockCode', 'account_id'],
-		desc: '재무 long-form — 회사×분기×계정 (30+ 계정)'
+		desc: '재무 long-form · 회사×분기×계정 (30+ 계정)'
 	},
 	{
 		id: 'dividend',
@@ -103,7 +103,7 @@ export const TABLE_SOURCES: TableSource[] = [
 		viewName: 'dividend',
 		defaultLimit: 5000,
 		searchableColumns: ['stockCode'],
-		desc: '배당 보고 — 결산월·주당배당금·배당수익률'
+		desc: '배당 보고 · 결산월·주당배당금·배당수익률'
 	},
 	{
 		id: 'treasuryStock',
@@ -114,7 +114,7 @@ export const TABLE_SOURCES: TableSource[] = [
 		viewName: 'treasuryStock',
 		defaultLimit: 5000,
 		searchableColumns: ['stockCode'],
-		desc: '자사주 — 매입액·매입주식수·보유주식수'
+		desc: '자사주 · 매입액·매입주식수·보유주식수'
 	},
 	{
 		id: 'executive',
@@ -125,14 +125,14 @@ export const TABLE_SOURCES: TableSource[] = [
 		viewName: 'executive',
 		defaultLimit: 1000,
 		searchableColumns: ['stockCode'],
-		desc: '임원 — 임원명·직위·급여·상여·퇴직금'
+		desc: '임원 · 임원명·직위·급여·상여·퇴직금'
 	},
 	{
 		id: 'notebook',
 		label: 'SQL Notebook',
 		icon: Notebook,
 		source: 'notebook',
-		desc: 'motherduck-style — CodeMirror SQL 셀 + Markdown + 셀 간 reference + autocomplete'
+		desc: 'motherduck-style · CodeMirror SQL 셀 + Markdown + 셀 간 reference + autocomplete'
 	}
 ];
 

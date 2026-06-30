@@ -1,6 +1,6 @@
-// US(EDGAR) 주가 source 정규화 단위 테스트 — date(YYYY-MM-DD/YYYYMMDD/epoch 방어)→Candle.t(YYYYMMDD)
+// US(EDGAR) 주가 source 정규화 단위 테스트 · date(YYYY-MM-DD/YYYYMMDD/epoch 방어)→Candle.t(YYYYMMDD)
 // 변환·오름차순 정렬·일자 dedup·null/비정상 close 행 제외를 네트워크 없이 검증(parseEdgarPriceRows 순수 함수).
-// bake schema(date/open/high/low/close/volume)는 KR gov company 와 동형 — close=수정주가라 r/tv=null.
+// bake schema(date/open/high/low/close/volume)는 KR gov company 와 동형 · close=수정주가라 r/tv=null.
 import { describe, it, expect } from 'vitest';
 import { parseEdgarPriceRows, parseEdgarRecent } from './edgarPriceSource';
 
@@ -30,7 +30,7 @@ describe('parseEdgarPriceRows', () => {
 		const out = parseEdgarPriceRows([
 			row({ date: '2026-06-24', close: 3 }),
 			row({ date: '2026-06-22', close: 1 }),
-			row({ date: '2026-06-24', close: 9 }), // 중복 일자 — keep-first(정렬 후 첫 항목)
+			row({ date: '2026-06-24', close: 9 }), // 중복 일자 · keep-first(정렬 후 첫 항목)
 			row({ date: '2026-06-23', close: 2 })
 		]);
 		expect(out.map((k) => k.t)).toEqual(['20260622', '20260623', '20260624']);

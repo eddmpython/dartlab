@@ -1,4 +1,4 @@
-// dedupKeyed — keyed 행 (disclosureKey,scope,leafType,period) 당 1개 (xbrlClass 있음·긴 본문 우선).
+// dedupKeyed · keyed 행 (disclosureKey,scope,leafType,period) 당 1개 (xbrlClass 있음·긴 본문 우선).
 // Python mapper.dedupKeyed 1:1. narrative(null key)는 보존.
 
 import { SEP, scopeOf } from '../keys';

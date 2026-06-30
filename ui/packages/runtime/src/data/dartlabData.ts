@@ -5,7 +5,7 @@ import { RequestDedup } from './cache/requestDedup';
 import { HF_RESOLVE } from './origins/hf';
 export { HF_RESOLVE };
 
-// static 경로 base — 옛 `$app/paths base` 의존을 주입으로 대체 (runtime 패키지는 SvelteKit 을 모른다).
+// static 경로 base · 옛 `$app/paths base` 의존을 주입으로 대체 (runtime 패키지는 SvelteKit 을 모른다).
 // 과도기: 앱 shell(landing +layout)이 1회 호출. 4a-2 에서 RuntimeEnvironment.basePath 로 정식화.
 let base = '';
 export function setStaticBase(value: string): void {
@@ -28,7 +28,7 @@ function normalizePath(path: string): string {
 
 function hasHfLandingJson(path: string): boolean {
 	return (
-		// dashboards — mapBuild 가 매일 HF publish (git 정적 사본 4/22 동결 사고 후 신설 경로)
+		// dashboards · mapBuild 가 매일 HF publish (git 정적 사본 4/22 동결 사고 후 신설 경로)
 		path === 'dashboards/finance.json' ||
 		path === 'dashboards/quarters.json' ||
 		path === 'dashboards/macro.json' ||
@@ -51,9 +51,9 @@ function shouldCacheJson(path: string): boolean {
 	return (
 		path !== 'map/ecosystem.json' &&
 		path !== 'map/prices-snapshot.json' &&
-		// macro 도 캐시 제외 — HF-first 신선본이 6h 캐시에 가려지는 지연 차단 (소형 파일이라 비용 0)
+		// macro 도 캐시 제외 · HF-first 신선본이 6h 캐시에 가려지는 지연 차단 (소형 파일이라 비용 0)
 		path !== 'dashboards/macro.json' &&
-		// industryStats 도 제외 — 분포 지표가 점증(revCagr 등 신규 metric 추가)되므로 6h 캐시가 옛 스키마를
+		// industryStats 도 제외 · 분포 지표가 점증(revCagr 등 신규 metric 추가)되므로 6h 캐시가 옛 스키마를
 		// 붙들면 신규 지표 의존 뷰(산업 지형도 y=매출 CAGR)가 통째 빈다. 소형(~250KB)이라 비용 0.
 		path !== 'map/industryStats.json' &&
 		path !== 'landing/map/ecosystem.json' &&
@@ -73,9 +73,9 @@ async function fetchJson<T>(url: string, fetchFn: FetchLike): Promise<T | null> 
 	}
 }
 
-// in-flight dedup — 동시 동일 자원(여러 패널·워밍업)이 cacheStore 읽기·fetch 사다리를 1회만 공유.
+// in-flight dedup · 동시 동일 자원(여러 패널·워밍업)이 cacheStore 읽기·fetch 사다리를 1회만 공유.
 // 옛 loadJson 은 dedup 이 없어 첫 페인트에 같은 JSON 을 중복 fetch 했다(소비자 per-file Map 이 그 구멍을
-// 메우던 이유). 데이터 워크벤치 코어의 RequestDedup 을 JSON arm 에도 재사용(dual-SSOT — 코어로 접지 않고
+// 메우던 이유). 데이터 워크벤치 코어의 RequestDedup 을 JSON arm 에도 재사용(dual-SSOT · 코어로 접지 않고
 // 같은 패키지 sibling arm 으로, base 전역·다중URL 폴백은 loadJson 에 남김. mainPlan/_done/data-workbench-ssot).
 const jsonDedup = new RequestDedup();
 
@@ -84,7 +84,7 @@ export async function loadJson<T>(
 	{ fetchFn, ttlMs = DEFAULT_TTL_MS, required = false, preferLocal = false }: LoadJsonOptions
 ): Promise<T | null> {
 	const normalized = normalizePath(path);
-	// 키에 preferLocal 포함 — 미스 시 local↔HF 우선순위가 달라 승자 자원이 갈릴 수 있다. required 는
+	// 키에 preferLocal 포함 · 미스 시 local↔HF 우선순위가 달라 승자 자원이 갈릴 수 있다. required 는
 	// 자원 동일성과 무관(전부 실패 시 throw 여부만)이라 공유 계산 밖에서 호출자별 적용.
 	const result = (await jsonDedup.run(`${normalized}:${preferLocal ? 'L' : 'H'}`, () =>
 		resolveJson<T>(normalized, fetchFn, ttlMs, preferLocal)
@@ -93,7 +93,7 @@ export async function loadJson<T>(
 	return result;
 }
 
-// cacheStore(영속·6h·stale 폴백) + local↔HF 폴백 사다리 — dedup 안에서 실행(동시 호출 공유). 순서 불변.
+// cacheStore(영속·6h·stale 폴백) + local↔HF 폴백 사다리 · dedup 안에서 실행(동시 호출 공유). 순서 불변.
 async function resolveJson<T>(
 	normalized: string,
 	fetchFn: FetchLike,

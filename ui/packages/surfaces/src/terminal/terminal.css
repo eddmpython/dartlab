@@ -1,17 +1,17 @@
 /* =========================================================================
-   DartLab Terminal — dense 터미널 디자인 시스템 (dartlab 토큰 매핑 · .dlTerm 스코프)
+   DartLab Terminal · dense 터미널 디자인 시스템 (dartlab 토큰 매핑 · .dlTerm 스코프)
    원본 Bloomberg 스타일 아티팩트 CSS 를 landing 토큰(tokens.css)으로 재배선.
    · 색/폰트는 --dl-* 토큰 기반 (브랜딩 일치)
    · 한국 컨벤션: 상승=빨강(--dl-up) / 하락=파랑(--dl-down)
-   · 모든 선택자 .dlTerm 하위로 스코프 — 다른 lab 페이지로 누출 금지
+   · 모든 선택자 .dlTerm 하위로 스코프 · 다른 lab 페이지로 누출 금지
    ========================================================================= */
 .dlTerm {
-	/* 토큰 백킹 — 원본 클래스가 참조하는 로컬 var 을 dartlab 토큰으로 매핑.
+	/* 토큰 백킹 · 원본 클래스가 참조하는 로컬 var 을 dartlab 토큰으로 매핑.
 	 * 강조색(amber)=시그니처 accent SSOT(tokens.css --dl-accent, 현재 캐러셀 핑크). 알파는 rgba(var(--amber-rgb), x). */
 	--amber: var(--dl-accent);
 	--amber-rgb: var(--dl-accent-rgb);
 	--amberDim: var(--dl-accent-dim);
-	/* 강조(핑크) 위 잉크 — 옛 앰버 전제 갈색(#1a1206) 대체. 밝은 핑크엔 근흑이 대비 우위(블랙 6.4:1 > 화이트 3.3:1). */
+	/* 강조(핑크) 위 잉크 · 옛 앰버 전제 갈색(#1a1206) 대체. 밝은 핑크엔 근흑이 대비 우위(블랙 6.4:1 > 화이트 3.3:1). */
 	--onAccent: #240810;
 	--credit: var(--dl-red);
 	/* 신호 팔레트 = tokens.css SSOT 위임. 터미널은 의도적 green-up 컨벤션(한국 --dl-up/down 빨강-up 과
@@ -23,10 +23,10 @@
 	--industry: var(--p-violet-400);
 	--valuation: var(--dl-good);
 	--txt: var(--dl-ink);
-	/* 회색글자 가독성 — 기본 토큰(--dl-ink-mute/-dim)이 너무 어두워 흰색에 가깝게 상향(운영자 요청). */
+	/* 회색글자 가독성 · 기본 토큰(--dl-ink-mute/-dim)이 너무 어두워 흰색에 가깝게 상향(운영자 요청). */
 	--dim: #c4ccd8;
 	--dimmer: #a7b2c2;
-	/* 터미널 배경 톤업(운영자 "전체적으로 어둡다") — 근원 토큰(#0f0f10 OLED블랙)보다 한 단 밝은 슬레이트로.
+	/* 터미널 배경 톤업(운영자 "전체적으로 어둡다") · 근원 토큰(#0f0f10 OLED블랙)보다 한 단 밝은 슬레이트로.
 	   .dlTerm 스코프 override 라 landing 등 다른 surface 무영향. */
 	--bg: #121419;
 	--panel: #1b1e25;
@@ -45,7 +45,7 @@
 	color: var(--txt);
 	font-family: var(--sans);
 	font-size: 11.5px;
-	/* 한글(Pretendard) 기준 행간 — 1.25 는 영문 condensed 가정이라 한글이 눌림. 표는 로컬 1.3 유지 */
+	/* 한글(Pretendard) 기준 행간 · 1.25 는 영문 condensed 가정이라 한글이 눌림. 표는 로컬 1.3 유지 */
 	line-height: 1.4;
 	-webkit-font-smoothing: antialiased;
 	overflow: hidden;
@@ -84,7 +84,7 @@
 	font-family: var(--mono); font-weight: 600; font-size: 10px; letter-spacing: 0.16em; color: var(--amber);
 	text-transform: uppercase;
 }
-/* SNS — Header.svelte 와 동일 거동 */
+/* SNS · Header.svelte 와 동일 거동 */
 .dlTerm .sns { display: flex; align-items: center; gap: 1px; }
 .dlTerm .snsBtn {
 	width: 24px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
@@ -92,9 +92,9 @@
 	border: 0; background: transparent; padding: 0; cursor: pointer; /* button 으로도 쓰임(후원·기여) */
 }
 .dlTerm .snsBtn:hover { color: #ffffff; background: rgba(255, 255, 255, 0.08); }
-.dlTerm .snsHeart { color: #fb7185; } /* 후원·기여 진입 — 하트 핑크(살짝 채움) */
+.dlTerm .snsHeart { color: #fb7185; } /* 후원·기여 진입 · 하트 핑크(살짝 채움) */
 .dlTerm .snsHeart:hover { color: #fda4c0; background: rgba(255, 255, 255, 0.08); }
-.dlTerm .ghStars { /* GitHub 스타 라이브 배지 — 사회적 증명(과홍보 아님) */
+.dlTerm .ghStars { /* GitHub 스타 라이브 배지 · 사회적 증명(과홍보 아님) */
 	display: inline-flex; align-items: center; gap: 3px; height: 24px; padding: 0 6px; border-radius: 4px;
 	font-family: var(--dl-font-mono); font-variant-numeric: tabular-nums; font-size: 11px;
 	color: var(--dl-ink-mute, #8a93a3); text-decoration: none; transition: color 0.15s, background 0.15s;
@@ -138,7 +138,7 @@
 	background: var(--dl-bg-deep); border: 1px solid var(--bdAmber); padding: 1px 6px; border-radius: 2px;
 }
 .dlTerm .topRight { display: flex; align-items: center; gap: 14px; margin-left: auto; }
-/* 모바일 — topBar 3단(brand·검색·SNS)이 한 줄에 안 들어가 가로 overflow 로 깨지던 것: 줄바꿈 허용 + 검색(cmdBar)을
+/* 모바일 · topBar 3단(brand·검색·SNS)이 한 줄에 안 들어가 가로 overflow 로 깨지던 것: 줄바꿈 허용 + 검색(cmdBar)을
    전용 줄(full-width)로 내려 윗줄엔 brand+SNS 만. cards·report·terminal 공용(.dlTerm SSOT). 데스크톱(>640) 무변경. */
 @media (max-width: 640px) {
 	.dlTerm .topBar { flex-wrap: wrap; height: auto; flex: 0 0 auto; row-gap: 8px; column-gap: 8px; padding: 8px 10px; }
@@ -164,11 +164,11 @@
 .dlTerm .hdrLink.on { color: var(--amber); border-color: var(--bdAmber); background: rgba(var(--amber-rgb), 0.1); }
 .dlTerm .hdrReport { color: var(--amber); border-color: var(--bdAmber); }
 .dlTerm .hdrReport:hover { color: var(--amber); background: rgba(var(--amber-rgb), 0.16); }
-/* 카드뉴스 — 헤더(보고서 옆) 버튼 = /cards 피드로 이동(전체 보기). 회사 네비 .symCards(다이얼로그)와 별개. */
+/* 카드뉴스 · 헤더(보고서 옆) 버튼 = /cards 피드로 이동(전체 보기). 회사 네비 .symCards(다이얼로그)와 별개. */
 .dlTerm .hdrCards { color: var(--amber); border-color: var(--bdAmber); }
 .dlTerm .hdrCards:hover { color: var(--amber); background: rgba(var(--amber-rgb), 0.16); }
 
-/* 종목 토론 드로어 (giscus — GitHub Discussions). mount 유지 + 표시 토글로 iframe 보존. */
+/* 종목 토론 드로어 (giscus · GitHub Discussions). mount 유지 + 표시 토글로 iframe 보존. */
 .dlTerm .dscDrawer { position: fixed; top: 0; right: 0; bottom: 0; width: clamp(380px, 28vw, 460px); z-index: 120; display: none; flex-direction: column; background: var(--dl-bg-base); border-left: 1px solid var(--bdHi); box-shadow: -18px 0 42px rgba(0, 0, 0, 0.5); }
 .dlTerm .dscDrawer.on { display: flex; }
 .dlTerm .dscHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--bd); }
@@ -190,7 +190,7 @@
 .dlTerm .tickerItem:hover b { color: var(--amber); }
 .dlTerm .tickerItem .mono { font-size: 10px; }
 
-/* BOARD — ⛔ `main.board` 로 element 한정(전역 `.dlTerm .board` 금지): 공시뷰어 컴포넌트 임베드(ViewerOverlay)가
+/* BOARD · ⛔ `main.board` 로 element 한정(전역 `.dlTerm .board` 금지): 공시뷰어 컴포넌트 임베드(ViewerOverlay)가
    .dlTerm DOM 안에 mount 되는데 뷰어도 `<section class="board">`(flex column matrix 컨테이너)를 쓴다. 한정 없으면
    터미널 3컬럼 grid 가 뷰어 board 를 덮어써 임베드 본문 격자가 붕괴(standalone /viewer 는 .dlTerm 없어 정상). */
 .dlTerm main.board { flex: 1; min-height: 0; display: grid; grid-template-columns: 300px minmax(0, 1fr) 496px; gap: 3px; padding: 3px; }
@@ -202,10 +202,10 @@
 /* PANEL */
 .dlTerm .panel { background: var(--panel); border: 1px solid var(--bd); border-radius: 2px; display: flex; flex-direction: column; min-height: 0; }
 .dlTerm .panelHead { display: flex; align-items: center; gap: 7px; height: 20px; flex: 0 0 20px; padding: 0 8px; background: linear-gradient(180deg, var(--dl-bg-overlay), var(--dl-bg-raised)); border-bottom: 1px solid var(--bd); overflow: hidden; }
-/* 제목 우선 — 절대 짜부되지 않음(좁은 좌측 레일에서 sub·우측버튼이 제목을 0px 로 밀어내 "주가·재무 스크리너" 가
+/* 제목 우선 · 절대 짜부되지 않음(좁은 좌측 레일에서 sub·우측버튼이 제목을 0px 로 밀어내 "주가·재무 스크리너" 가
    완전히 사라지던 회귀 가드). 패널명은 짧아 flex-shrink:0 안전. */
 .dlTerm .panelTitle { font-family: var(--cond); font-weight: 700; font-size: 12px; letter-spacing: 1.2px; color: var(--amberDim); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
-/* sub(메타)가 먼저 양보 — 좁아지면 제목·우측버튼보다 먼저 말줄임 */
+/* sub(메타)가 먼저 양보 · 좁아지면 제목·우측버튼보다 먼저 말줄임 */
 .dlTerm .panelSub { font-family: var(--mono); font-size: 10px; color: var(--dim); letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex-shrink: 1; }
 .dlTerm .panelRight { margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--dim); flex-shrink: 0; white-space: nowrap; padding-left: 6px; }
 .dlTerm .panelBody { padding: 5px 6px; flex: 1; min-height: 0; }
@@ -277,26 +277,26 @@
 .dlTerm .rkHCol { font-family: var(--cond); font-size: 9px; color: var(--dim); text-align: right; background: none; border: none; cursor: pointer; padding: 0; white-space: nowrap; }
 .dlTerm .rkHCol:hover { color: var(--txt); }
 .dlTerm .rkHCol.on { color: var(--amber); font-weight: 700; }
-/* TYPE 컬럼 = 유형 칩 범례 열기(ⓘ). 칩이 보이는 바로 위라 직관적 — 옛 위치(데이터 출처 모달)에서 분리. */
+/* TYPE 컬럼 = 유형 칩 범례 열기(ⓘ). 칩이 보이는 바로 위라 직관적 · 옛 위치(데이터 출처 모달)에서 분리. */
 .dlTerm .rkHType { display: inline-flex; align-items: center; justify-content: flex-end; gap: 2px; }
 .dlTerm .rkHTypeI { font-size: 8px; color: var(--dimmer); }
 .dlTerm .rkHType:hover .rkHTypeI { color: var(--amber); }
 .dlTerm .rkCol { font-size: 9.5px; text-align: right; white-space: nowrap; }
-/* 좌측 레일 — 30거래일 스파크 + 유형 라벨 2칩 (음축·양축 각 1, finType.displayPair) */
+/* 좌측 레일 · 30거래일 스파크 + 유형 라벨 2칩 (음축·양축 각 1, finType.displayPair) */
 .dlTerm .rkSpark { display: flex; align-items: center; justify-content: flex-end; }
 .dlTerm .rkSpark svg { width: 36px; height: 11px; opacity: 0.9; }
 .dlTerm .rkChips { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; min-width: 0; }
 .dlTerm .rkChip { font-family: var(--cond); font-size: 8.5px; line-height: 1.15; white-space: nowrap; }
 
-/* 출처 모달 — 상태 컬럼: 점검(파이프라인 실행)·변경(데이터 push) 한 칸 2줄, 라벨로 구분.
+/* 출처 모달 · 상태 컬럼: 점검(파이프라인 실행)·변경(데이터 push) 한 칸 2줄, 라벨로 구분.
    절대일자는 점 hover title. 두 신호를 '파이프라인 건강' 하나로 묶어 직관화. */
 .dlTerm .srcStat { white-space: nowrap; font-size: 9.5px; line-height: 1.55; }
 .dlTerm .statLine { display: flex; align-items: baseline; gap: 4px; }
 .dlTerm .statLabel { flex: 0 0 22px; color: #8794a5; font-size: 8.5px; }
 .dlTerm .syncDot { font-size: 8px; vertical-align: 1px; }
 
-/* 정량재무제표 다이얼로그 터미널 스킨 — viewer FinanceDialog/Pane/Table 의 --fin-* 토큰 오버라이드.
-   렌더러는 viewer 와 한몸(두 입구) — 여기서는 색·각·폰트만 터미널 문법으로 바꾼다. */
+/* 정량재무제표 다이얼로그 터미널 스킨 · viewer FinanceDialog/Pane/Table 의 --fin-* 토큰 오버라이드.
+   렌더러는 viewer 와 한몸(두 입구) · 여기서는 색·각·폰트만 터미널 문법으로 바꾼다. */
 .dlTermFinSkin {
 	--fin-modal-bg: var(--dl-bg-base);
 	--fin-modal-bd: var(--bdHi);
@@ -339,10 +339,10 @@
 .dlTerm .sName { font-family: var(--cond); font-weight: 600; font-size: 10px; color: var(--txt); letter-spacing: 0.2px; }
 .dlTerm .sChg { font-family: var(--mono); font-size: 10px; font-weight: 600; }
 
-/* INDUSTRY SWEEP — 거시 깔때기 산업층(섹터 히트맵 대체). 지형도 단독 — 상세는 패널 헤더. */
+/* INDUSTRY SWEEP · 거시 깔때기 산업층(섹터 히트맵 대체). 지형도 단독 · 상세는 패널 헤더. */
 .dlTerm .swMap { padding: 0; }
 
-/* 시장 공시 피드(좌측) — 전상장사 3개월 수시공시. 회사명 1순위 4-col 그리드 + 주가영향 6탭 칩. */
+/* 시장 공시 피드(좌측) · 전상장사 3개월 수시공시. 회사명 1순위 4-col 그리드 + 주가영향 6탭 칩. */
 .dlTerm .eMarketFeed .feedCats { display: flex; gap: 0; overflow-x: auto; border-bottom: 1px solid var(--bd); scrollbar-width: none; }
 .dlTerm .eMarketFeed .feedCats::-webkit-scrollbar { display: none; }
 .dlTerm .feedCat { flex: 0 0 auto; font-family: var(--cond); font-size: 9.5px; font-weight: 600; color: var(--dimmer); background: transparent; border: none; padding: 4px 6px; cursor: pointer; white-space: nowrap; }
@@ -356,32 +356,32 @@
 .dlTerm .feedInstNote { font-family: var(--cond); font-size: 8px; color: var(--dimmer); }
 .dlTerm .filingList.feedList,
 .dlTerm .filingList.newsFeedList { flex: 1 1 0; min-height: 0; max-height: none; } /* 고정높이 패널 내부에서 잔여 채우고 스크롤(검색바+칩+sub 와 무관하게 견고) */
-/* 좌측 레일 높이 — 산업 스윕은 고정 시각화(scatter)라 166, 시장공시는 스크롤 리스트라 분리해 더 키운다
+/* 좌측 레일 높이 · 산업 스윕은 고정 시각화(scatter)라 166, 시장공시는 스크롤 리스트라 분리해 더 키운다
    (헤더+검색바+칩이 166 안을 잠식해 ~4행만 보이던 문제 해소). 컬럼은 overflow-y:auto 라 합이
    뷰포트를 넘으면 스크롤 흡수 + 하단 스크리너/워치(fillCol)가 잔여 흡수. */
 .dlTerm .colL > .panel.eIndustry { flex: 0 0 166px; height: 166px; }
 .dlTerm .colL > .panel.eMarketFeed { flex: 0 0 264px; height: 264px; }
 /* 시장공시 패널 body = flex column → 헤더 아래 검색바·칩 고정, 리스트가 잔여 흡수+스크롤. */
 .dlTerm .colL > .panel.eMarketFeed .panelBody { display: flex; flex-direction: column; min-height: 0; }
-/* 스크리너(scan)가 피드에 밀려 0 으로 압착되지 않게 min-height — 초과 시 .col(overflow-y:auto) 스크롤. */
+/* 스크리너(scan)가 피드에 밀려 0 으로 압착되지 않게 min-height · 초과 시 .col(overflow-y:auto) 스크롤. */
 .dlTerm .col > .panel.eQuant.fillCol { min-height: 172px; }
-/* .filingRow.feedRow 특이도(0,3,0) — 기본 .filingRow(0,2,0, 소스 뒤)에 안 밀리게 회사명 58px 고정 + 제목 1fr. */
+/* .filingRow.feedRow 특이도(0,3,0) · 기본 .filingRow(0,2,0, 소스 뒤)에 안 밀리게 회사명 58px 고정 + 제목 1fr. */
 .dlTerm .filingRow.feedRow { grid-template-columns: 58px minmax(0, 1fr) auto 12px; }
 .dlTerm .feedRow.on { background: var(--dl-bg-overlay); }
 .dlTerm .feedRow .flArrow { text-decoration: none; }
-/* 회사명 셀 = flex(이름 ellipsis + ● flex:none) — 긴 이름서도 기관 ● 가 안 잘리게. */
+/* 회사명 셀 = flex(이름 ellipsis + ● flex:none) · 긴 이름서도 기관 ● 가 안 잘리게. */
 .dlTerm .feedCorp { display: flex; align-items: center; gap: 2px; overflow: hidden; }
 .dlTerm .feedCorpName { font-family: var(--cond); font-size: 10px; font-weight: 700; color: var(--amber); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .dlTerm .feedNm { font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--dim); }
 .dlTerm .feedInstDot { flex: none; color: var(--amber); font-size: 7px; }
 .dlTerm .feedCap { padding: 4px 8px; font-family: var(--cond); font-size: 8px; color: var(--dimmer); text-align: center; }
-/* 뉴스 피드 행(좌측 cross) — 제목 1줄 ellipsis + 우측 메타(출처·날짜). 클릭=기사 원문(<a>). 종목 점프 아님. */
+/* 뉴스 피드 행(좌측 cross) · 제목 1줄 ellipsis + 우측 메타(출처·날짜). 클릭=기사 원문(<a>). 종목 점프 아님. */
 .dlTerm .newsFeedRow { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 7px; padding: 4px 8px; border-bottom: 1px solid var(--dl-line); text-decoration: none; cursor: pointer; }
 .dlTerm .newsFeedRow:hover { background: var(--dl-bg-overlay); }
 .dlTerm .newsFeedTitle { font-family: var(--cond); font-size: 10.5px; font-weight: 500; color: var(--txt); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .dlTerm .newsFeedMeta { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
 .dlTerm .newsFeedSrc { font-family: var(--cond); font-size: 8.5px; color: var(--dimmer); max-width: 64px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* 공시 본문 검색 트리거 — 입력처럼 보이는 버튼(클릭=⌘⇧F 다이얼로그). 시장공시 피드 바로 위. */
+/* 공시 본문 검색 트리거 · 입력처럼 보이는 버튼(클릭=⌘⇧F 다이얼로그). 시장공시 피드 바로 위. */
 .dlTerm .feedSearchBar { display: flex; align-items: center; gap: 6px; width: 100%; padding: 5px 8px; background: var(--panel); border: 1px solid var(--bd); border-radius: 2px; cursor: text; }
 .dlTerm .feedSearchBar:hover { border-color: var(--amber); }
 .dlTerm .feedSearchIcon { font-size: 12px; color: var(--dim); }
@@ -408,7 +408,7 @@
 .dlTerm .symBadge { font-family: var(--cond); font-weight: 700; font-size: 9px; letter-spacing: 1px; padding: 1px 5px; border-radius: 2px; }
 .dlTerm .symBadge.kr { background: rgba(96, 165, 250, 0.15); color: var(--dl-info); border: 1px solid rgba(96, 165, 250, 0.3); }
 .dlTerm .symName { font-family: var(--cond); font-weight: 700; font-size: 17px; color: var(--dl-ink-print); letter-spacing: 0.2px; }
-/* 기업분석보고서 CTA — 회사명 옆 작은 pill(amber 브랜드). 새 탭으로 본진 /report 열기. */
+/* 기업분석보고서 CTA · 회사명 옆 작은 pill(amber 브랜드). 새 탭으로 본진 /report 열기. */
 .dlTerm .symReport { align-self: center; font-family: var(--mono); font-size: 9.5px; font-weight: 700; letter-spacing: 0.3px; text-decoration: none; color: var(--amber); border: 1px solid var(--bdAmber); border-radius: 5px; padding: 1.5px 7px; line-height: 1.3; white-space: nowrap; transition: background 0.15s, color 0.15s; }
 .dlTerm .symReport:hover { background: var(--amber); color: var(--onAccent); }
 .dlTerm .symMeta { font-family: var(--mono); font-size: 9px; color: var(--dimmer); margin-top: 2px; letter-spacing: 0.3px; }
@@ -416,7 +416,7 @@
 .dlTerm .symLinks { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; flex-shrink: 0; }
 .dlTerm .symLinks a, .dlTerm .symLinks button { font-family: var(--mono); font-size: 8.5px; color: var(--amberDim); text-decoration: none; letter-spacing: 0.2px; background: none; border: 0; padding: 0; cursor: pointer; line-height: 1.35; white-space: nowrap; }
 .dlTerm .symLinks a:hover, .dlTerm .symLinks button:hover { color: var(--amber); }
-/* 카드뉴스 — 시그니처 accent(SSOT). 회사 네비 중 유일하게 콘텐츠(스토리) 진입이라 강조색으로 구분. */
+/* 카드뉴스 · 시그니처 accent(SSOT). 회사 네비 중 유일하게 콘텐츠(스토리) 진입이라 강조색으로 구분. */
 .dlTerm .symLinks button.symCards { color: var(--dl-accent-dim); }
 .dlTerm .symLinks button.symCards:hover { color: var(--dl-accent); }
 .dlTerm .symPrice { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; }
@@ -438,7 +438,7 @@
 .dlTerm .gcLabel { font-family: var(--cond); font-size: 8.5px; color: var(--dimmer); letter-spacing: 0.3px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dlTerm .gcVal { font-family: var(--cond); font-weight: 700; font-size: 14px; line-height: 1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* PROFIT POOL — 공정 단계별 영업이익률·매출 수평 스트립 (우측, 영업이익률 내림차순, 저높이) */
+/* PROFIT POOL · 공정 단계별 영업이익률·매출 수평 스트립 (우측, 영업이익률 내림차순, 저높이) */
 .dlTerm .poolWrap { display: flex; gap: 1px; background: var(--bd); align-items: stretch; }
 .dlTerm .poolCol { flex: 1; min-width: 0; background: var(--panel); display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 3px; overflow: hidden; }
 .dlTerm .poolCol.poolMax { background: color-mix(in srgb, #34d399 13%, var(--panel)); }
@@ -466,41 +466,41 @@
 .dlTerm .vRiskline b { font-family: var(--mono); }
 
 /* CHART (trend) */
-/* 하단 15px = 공시 위치 레일(.discRail) 전용 띠 — 캔버스(X축 날짜)가 그만큼 위에서 끝나, 레일 dot 이 타임라인 "아래"에 놓인다. (출처는 패널 헤더로 이동) */
+/* 하단 15px = 공시 위치 레일(.discRail) 전용 띠 · 캔버스(X축 날짜)가 그만큼 위에서 끝나, 레일 dot 이 타임라인 "아래"에 놓인다. (출처는 패널 헤더로 이동) */
 .dlTerm .chartWrap { position: relative; width: 100%; min-height: 320px; overflow: hidden; padding-bottom: 15px; }
 .dlTerm .chartHost { width: 100%; height: 100%; }
 /* 일반 모드 = 컨트롤 바(.chartTopBar) 위 + 캔버스 아래 세로 스택. 전체화면(.full)은 ChartRibbon 오버레이라 제외. */
 .dlTerm .chartWrap:not(.full) { display: flex; flex-direction: column; }
 .dlTerm .chartWrap:not(.full) .chartHost { flex: 1 1 auto; min-height: 0; height: auto; }
-/* 상단 패딩 = 리본 실측 높이(--crH, ChartRibbon bind:clientHeight) — 좁은 창에서 리본이 3~4줄로 늘어도 차트를 덮지 않는다 */
+/* 상단 패딩 = 리본 실측 높이(--crH, ChartRibbon bind:clientHeight) · 좁은 창에서 리본이 3~4줄로 늘어도 차트를 덮지 않는다 */
 .dlTerm .chartWrap.full { position: fixed; inset: 0; width: 100vw; height: 100vh; min-height: 100vh; z-index: 9000; background: var(--dl-bg-deep); padding: calc(var(--crH, 70px) + 8px) 10px 22px 58px; }
-/* 차트 컨트롤 바 — 그래프 위 전용 행(normal flow·밀도). 좌 chartBar + 우 chartTools 한 줄, z-index>캔버스(드롭다운 비클립). */
+/* 차트 컨트롤 바 · 그래프 위 전용 행(normal flow·밀도). 좌 chartBar + 우 chartTools 한 줄, z-index>캔버스(드롭다운 비클립). */
 .dlTerm .chartTopBar { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 6px; padding: 2px 6px; border-bottom: 1px solid var(--bd); background: var(--dl-bg-base); position: relative; z-index: 10; }
 .dlTerm .chartTools { display: flex; gap: 4px; align-items: center; margin-left: auto; }
 .dlTerm .chartWrap.full .chartTools { top: 10px; right: 16px; }
-/* 버튼류 — 한글 라벨이 mono(한글 글리프 없음→generic 폴백)로 눌리던 것 sans 통일 + 10px 하한 */
+/* 버튼류 · 한글 라벨이 mono(한글 글리프 없음→generic 폴백)로 눌리던 것 sans 통일 + 10px 하한 */
 .dlTerm .chartTool { background: var(--dl-bg-base); color: var(--dim); font-family: var(--sans); font-size: 10px; line-height: 1.2; border: 1px solid var(--bd); border-radius: 2px; padding: 2px 7px; cursor: pointer; }
 .dlTerm .chartTool:hover { color: var(--txt); border-color: var(--amber); }
 .dlTerm .chartTool.on { background: var(--amber); color: var(--onAccent); font-weight: 600; border-color: var(--amber); }
 .dlTerm .chartTool:disabled { opacity: 0.4; cursor: default; }
-/* 인-차트 툴바 — 기간(좌상) */
+/* 인-차트 툴바 · 기간(좌상) */
 .dlTerm .chartBar { display: flex; gap: 3px; align-items: center; }
 .dlTerm .cbDiv { width: 1px; height: 12px; background: var(--bd); margin: 0 2px; }
 .dlTerm .cbtn { background: var(--dl-bg-base); color: var(--dim); font-family: var(--sans); font-size: 10px; line-height: 1.2; border: 1px solid var(--bd); border-radius: 2px; padding: 4px 8px; cursor: pointer; }
 .dlTerm .cbtn:hover { color: var(--txt); border-color: var(--amber); }
 .dlTerm .cbtn.on { background: var(--amber); color: var(--onAccent); font-weight: 600; border-color: var(--amber); }
-/* 다중 토글(수정·실적·밴드·기준·매물대·비교류) — 라디오(segGroup 솔리드)와 시각 위계 분리: tint on */
+/* 다중 토글(수정·실적·밴드·기준·매물대·비교류) · 라디오(segGroup 솔리드)와 시각 위계 분리: tint on */
 .dlTerm .cbtn.tg.on { background: rgba(var(--amber-rgb), 0.14); color: var(--amber); font-weight: 600; border-color: var(--amber); }
 .dlTerm .cbtn.cIco { display: inline-flex; align-items: center; justify-content: center; padding: 3px 5px; }
 /* 지표·드로잉 팝오버 */
 .dlTerm .ctWrap { position: relative; }
 .dlTerm .ctMenu { position: absolute; top: calc(100% + 4px); right: 0; z-index: 30; display: flex; flex-direction: column; gap: 4px; padding: 6px; background: var(--dl-bg-modal, #11161f); border: 1px solid var(--bdHi, #2a3142); border-radius: 4px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); }
 .dlTerm .ctMenu .ctRow { display: flex; gap: 3px; }
-/* 넓은 그리드 — 칩을 가로로 빽빽하게 채워 드롭다운이 세로로 길어지지 않게(운영자: 세로 열거 금지). 팝오버라 차트 위로 좌측 확장 무해.
-   ⚠ width 강제 필수 — absolute 메뉴는 폭이 내용에 맞춰 수축(가장 넓은 버튼)해서, max-width 만으론 1개씩 세로 줄바꿈. width 로 그리드 폭 고정. */
+/* 넓은 그리드 · 칩을 가로로 빽빽하게 채워 드롭다운이 세로로 길어지지 않게(운영자: 세로 열거 금지). 팝오버라 차트 위로 좌측 확장 무해.
+   ⚠ width 강제 필수 · absolute 메뉴는 폭이 내용에 맞춰 수축(가장 넓은 버튼)해서, max-width 만으론 1개씩 세로 줄바꿈. width 로 그리드 폭 고정. */
 .dlTerm .ctMenu .ctRow.ctRowWrap { flex-wrap: wrap; width: 340px; }
 .dlTerm .ctMenu.ctMenuWide .ctRow.ctRowWrap { width: 440px; }
-/* 전략 백테스트 = 차트 좌측 영구 도크(StrategyDock.svelte). 드롭다운 폐기 — 스타일 SSOT 는 컴포넌트 scoped. */
+/* 전략 백테스트 = 차트 좌측 영구 도크(StrategyDock.svelte). 드롭다운 폐기 · 스타일 SSOT 는 컴포넌트 scoped. */
 .dlTerm .btParamRow { align-items: center; gap: 4px; }
 .dlTerm .btParamLbl { font-size: 11px; color: var(--dim); min-width: 42px; }
 .dlTerm .btParamVal { font-size: 13px; color: var(--txt); min-width: 28px; text-align: center; font-variant-numeric: tabular-nums; }
@@ -513,10 +513,10 @@
 .dlTerm .chartBody .chartHost { min-width: 0; }
 /* 백테스트 결과 SSOT = HonestyFooter(도크 하단)·BtChip(차트 위). 구 .btStrip 하단 도킹 폐기. */
 
-/* 전체화면 전문가 리본 (2단) — 캔버스 밖 불투명 overlay, 차트 리플로우 0.
+/* 전체화면 전문가 리본 (2단) · 캔버스 밖 불투명 overlay, 차트 리플로우 0.
    전체화면 = 작업 화면이라 일반 모드보다 한 단계 큰 타이포·히트영역 (행 34px·버튼 10.5px). */
 .dlTerm .chartRibbon { position: absolute; top: 0; left: 0; right: 0; z-index: 26; display: flex; flex-direction: column; background: var(--dl-bg-modal, #11161f); border-bottom: 1px solid var(--bd); }
-/* overflow-x:auto 금지 — 스크롤 컨테이너가 되면 .crMenu 드롭다운이 행 밖에서 클리핑·클릭 불가 (elementFromPoint=crRow 실측) */
+/* overflow-x:auto 금지 · 스크롤 컨테이너가 되면 .crMenu 드롭다운이 행 밖에서 클리핑·클릭 불가 (elementFromPoint=crRow 실측) */
 .dlTerm .crRow { display: flex; align-items: center; gap: 9px; min-height: 34px; flex-wrap: wrap; padding: 2px 12px; overflow: visible; }
 .dlTerm .chartRibbon .cbtn { font-size: 10.5px; padding: 5px 9px; }
 .dlTerm .chartRibbon .seg { font-size: 10.5px; padding: 5px 9px; background: var(--dl-bg-base); }
@@ -537,7 +537,7 @@
 .dlTerm .crJumpHint { color: var(--dimmer); font-size: 10px; }
 .dlTerm .crLast { font-size: 12.5px; font-weight: 700; color: var(--txt); }
 .dlTerm .crEod { font-size: 9px; color: var(--dim); border: 1px solid var(--bd); border-radius: 2px; padding: 1px 5px; letter-spacing: 0.3px; }
-/* 52주 위치 미니게이지 — 호가창 없는 EOD 차트의 1급 위치 정보 (밸류에이션 .fairTrack 문법 축소판) */
+/* 52주 위치 미니게이지 · 호가창 없는 EOD 차트의 1급 위치 정보 (밸류에이션 .fairTrack 문법 축소판) */
 .dlTerm .cr52 { display: inline-flex; align-items: center; gap: 4px; }
 .dlTerm .cr52Lbl { font-style: normal; font-family: var(--cond); font-size: 8.5px; color: var(--dimmer); letter-spacing: 0.4px; }
 .dlTerm .cr52Track { position: relative; width: 46px; height: 5px; background: var(--dl-line); border-radius: 3px; }
@@ -545,7 +545,7 @@
 .dlTerm .crNotice { font-family: var(--cond); font-size: 9.5px; color: var(--dim); white-space: nowrap; animation: crNoticeIn 0.18s ease-out; }
 @keyframes crNoticeIn { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: none; } }
 
-/* 심볼 점프 팔레트 (전체화면 ⌘K · /) — 차트를 떠나지 않는 종목 전환 */
+/* 심볼 점프 팔레트 (전체화면 ⌘K · /) · 차트를 떠나지 않는 종목 전환 */
 .dlTerm .chartJump { position: absolute; top: calc(var(--crH, 70px) + 36px); left: 50%; transform: translateX(-50%); z-index: 40; width: min(420px, 86vw); background: var(--dl-bg-modal, #11161f); border: 1px solid var(--bdHi); border-radius: 4px; box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55); overflow: hidden; }
 .dlTerm .cjInput { width: 100%; box-sizing: border-box; background: var(--dl-bg-deep); border: none; border-bottom: 1px solid var(--bd); color: var(--txt); font-size: 12px; padding: 9px 12px; outline: none; }
 .dlTerm .cjInput::placeholder { color: var(--dimmer); }
@@ -557,7 +557,7 @@
 .dlTerm .cjRow.on { background: rgba(var(--amber-rgb), 0.1); box-shadow: inset 2px 0 0 var(--amber); }
 .dlTerm .cjEmpty { padding: 10px 12px; font-family: var(--cond); font-size: 10px; color: var(--dimmer); }
 
-/* 단축키·숨은기능 도움말 (?) — 발견성 오버레이 */
+/* 단축키·숨은기능 도움말 (?) · 발견성 오버레이 */
 .dlTerm .chartHelp { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 40; width: min(760px, 92vw); background: var(--dl-bg-modal, #11161f); border: 1px solid var(--bdHi); border-radius: 4px; box-shadow: 0 22px 60px rgba(0, 0, 0, 0.6); padding: 12px 16px 14px; }
 .dlTerm .chHd { display: flex; align-items: center; justify-content: space-between; font-family: var(--cond); font-size: 11px; font-weight: 700; color: var(--amber); letter-spacing: 0.6px; padding-bottom: 8px; border-bottom: 1px solid var(--bd); margin-bottom: 10px; }
 .dlTerm .chCols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 22px; }
@@ -572,7 +572,7 @@
 .dlTerm .cmpRetTbl th { color: var(--dimmer); font-weight: 400; text-align: right; padding: 2px 7px; }
 .dlTerm .cmpRetTbl td { text-align: right; padding: 2px 7px; border-top: 1px solid var(--dl-line); }
 .dlTerm .cmpRetTbl .cmpRetNm { text-align: left; font-family: var(--cond); color: var(--txt); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* 전체화면 좌측 그리기 툴바 (DrawToolbar.svelte) — 상시 노출 세로 위젯 */
+/* 전체화면 좌측 그리기 툴바 (DrawToolbar.svelte) · 상시 노출 세로 위젯 */
 .dlTerm .drawBar { position: absolute; left: 10px; top: calc(var(--crH, 70px) + 16px); z-index: 25; display: flex; flex-direction: column; gap: 3px; padding: 5px 4px; background: var(--dl-bg-modal, #11161f); border: 1px solid var(--bd); border-radius: 4px; }
 .dlTerm .dbBtn { position: relative; width: 32px; height: 30px; display: flex; align-items: center; justify-content: center; background: none; color: var(--dim); font-size: 14px; line-height: 1; border: 1px solid transparent; border-radius: 3px; cursor: pointer; }
 .dlTerm .dbBtn:hover:not(:disabled) { color: var(--txt); border-color: var(--amber); }
@@ -595,7 +595,7 @@
 .dlTerm .crAdd:hover { color: var(--amber); border-color: var(--amber); }
 .dlTerm .crPop { position: relative; }
 .dlTerm .crMenu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 40; display: flex; flex-direction: column; gap: 4px; padding: 6px; background: var(--dl-bg-modal, #11161f); border: 1px solid var(--bdHi, #2a3142); border-radius: 4px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); min-width: 264px; }
-/* 전역 .ctRow(grid 54px/1fr/26px) 차단 — 리본 메뉴 행은 flex (ctMenu 와 동일 규칙, 누락 시 버튼이 격자에 찌그러짐) */
+/* 전역 .ctRow(grid 54px/1fr/26px) 차단 · 리본 메뉴 행은 flex (ctMenu 와 동일 규칙, 누락 시 버튼이 격자에 찌그러짐) */
 .dlTerm .crMenu .ctRow { display: flex; gap: 3px; }
 .dlTerm .crMenu .ctRow.ctRowWrap { flex-wrap: wrap; max-width: 300px; }
 .dlTerm .crMenuR { left: auto; right: 0; }
@@ -603,7 +603,7 @@
 .dlTerm .crClose { margin-left: auto; flex: none; }
 .dlTerm .mItem.mGear { padding: 4px 4px; margin-left: -2px; border-left: 0; }
 .dlTerm .btModelNote { font-size: 10px; color: var(--dimmer); border-top: 1px solid var(--dl-line, #1b2130); padding-top: 4px; margin-top: 2px; max-width: 250px; line-height: 1.5; }
-/* 백테스트 전략 콘솔 — 섹션 그룹·셀렉터·설명·벤치마크 라벨 (03 §0.5.9-E) */
+/* 백테스트 전략 콘솔 · 섹션 그룹·셀렉터·설명·벤치마크 라벨 (03 §0.5.9-E) */
 .dlTerm .btConfig { display: flex; flex-direction: column; gap: 6px; min-width: 240px; }
 .dlTerm .btSection { display: flex; flex-direction: column; gap: 3px; }
 .dlTerm .btSelect { width: 100%; background: var(--dl-bg-deep); color: var(--txt); border: 1px solid var(--bd); border-radius: 2px; padding: 3px 6px; font-size: 11px; line-height: 1.3; cursor: pointer; outline: none; }
@@ -616,12 +616,12 @@
 .dlTerm .mItem.on { background: var(--amber); color: var(--onAccent); font-weight: 600; border-color: var(--amber); }
 .dlTerm .mItem.mClear { width: 100%; color: var(--dl-red, #f0616f); }
 .dlTerm .ctMenuLbl { font-family: var(--cond); font-size: 10px; color: var(--dimmer); text-transform: uppercase; letter-spacing: 0.4px; margin: 3px 1px 0; }
-/* 지표 그룹 sub-라벨 (추세/모멘텀/거래량 + ECON 상한 안내, 04 §3-4) — 그룹 구분 강조 표지 */
+/* 지표 그룹 sub-라벨 (추세/모멘텀/거래량 + ECON 상한 안내, 04 §3-4) · 그룹 구분 강조 표지 */
 .dlTerm .ctMenuLbl.ctMenuGrp { color: var(--amber); opacity: 0.7; margin-top: 5px; }
-/* 동행 상관 배지 — 거시 칩 옆 corr 값(정=초록·역=빨강). 인과 아님(라벨로 명시). */
+/* 동행 상관 배지 · 거시 칩 옆 corr 값(정=초록·역=빨강). 인과 아님(라벨로 명시). */
 .dlTerm .coCorr { font-family: var(--mono); font-size: 9px; margin-left: 3px; color: #34d399; }
 .dlTerm .coCorr.neg { color: #f0616f; }
-/* 요인군 태그 — 강상관 거시(환율·금리 등) "같은 요인" 오독 차단(정적, 데이터 군집 아님). */
+/* 요인군 태그 · 강상관 거시(환율·금리 등) "같은 요인" 오독 차단(정적, 데이터 군집 아님). */
 .dlTerm .coGrp { font-size: 8px; margin-left: 3px; padding: 0 3px; border-radius: 3px; background: rgba(255,255,255,0.06); color: var(--dim); opacity: 0.75; vertical-align: middle; }
 .dlTerm .ohlcTag { position: absolute; top: 5px; left: 8px; z-index: 5; display: flex; gap: 11px; font-family: var(--mono); font-size: 10px; color: var(--dim); pointer-events: none; }
 .dlTerm .ohlcTag b { color: var(--txt); font-weight: 600; }
@@ -636,9 +636,9 @@
 /* CHART CONTROL ROW (price/fin) */
 .dlTerm .chartCtlRow { display: flex; align-items: center; gap: 7px; padding: 3px 7px; border-bottom: 1px solid var(--bd); background: var(--dl-bg-base); flex-wrap: wrap; }
 .dlTerm .eodBadge { margin-left: auto; font-family: var(--mono); font-size: 8px; color: var(--dimmer); border: 1px solid var(--bd); border-radius: 2px; padding: 1px 5px; letter-spacing: 0.3px; white-space: nowrap; }
-/* 지수 picker(01) — 주가/지수 토글 + 전체 지수 select(시장군 그룹). 차트 컨트롤 바 한 줄 통합. */
+/* 지수 picker(01) · 주가/지수 토글 + 전체 지수 select(시장군 그룹). 차트 컨트롤 바 한 줄 통합. */
 .dlTerm .idxToggle { flex-shrink: 0; }
-/* 지수 select — 전체 카탈로그(KR 165+US) 시장군 optgroup 브라우징(운영자: 뭐가 있는지 목록). */
+/* 지수 select · 전체 카탈로그(KR 165+US) 시장군 optgroup 브라우징(운영자: 뭐가 있는지 목록). */
 .dlTerm .idxSelect { max-width: 180px; flex-shrink: 0; background: var(--dl-bg-deep); color: var(--txt); border: 1px solid var(--bd); border-radius: 2px; padding: 2px 6px; font-size: 10px; line-height: 1.2; cursor: pointer; outline: none; }
 .dlTerm .idxSelect:hover, .dlTerm .idxSelect:focus { border-color: var(--amber); }
 .dlTerm .idxChips { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
@@ -650,10 +650,10 @@
 .dlTerm .idxItem.on { background: var(--amber); color: var(--onAccent); font-weight: 600; border-color: var(--amber); }
 .dlTerm .idxMkt { font-size: 7.5px; color: var(--dimmer); border: 1px solid var(--bd); border-radius: 2px; padding: 0 2px; }
 .dlTerm .idxItem.on .idxMkt { color: var(--onAccent); border-color: rgba(26, 18, 6, 0.4); }
-/* 지수 subject 비활성 컨트롤 — disabled 회색(정직: 없는 데이터·무의미 조작 차단, 01 §3.6/§4.2/§4.3) */
+/* 지수 subject 비활성 컨트롤 · disabled 회색(정직: 없는 데이터·무의미 조작 차단, 01 §3.6/§4.2/§4.3) */
 .dlTerm .seg:disabled, .dlTerm .cbtn:disabled, .dlTerm .mItem:disabled, .dlTerm .crAdd:disabled { opacity: 0.4; cursor: default; }
 .dlTerm .seg:disabled:hover { color: var(--dim); }
-/* 로딩 상태 — 캔들 실루엣 스켈레톤 (그라디언트 시머) 위에 상태 텍스트. 작은 스피너 금지. */
+/* 로딩 상태 · 캔들 실루엣 스켈레톤 (그라디언트 시머) 위에 상태 텍스트. 작은 스피너 금지. */
 .dlTerm .chartLoad { position: relative; z-index: 0; height: 300px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11px; color: var(--dim); padding: 0 12px; text-align: center; overflow: hidden; }
 .dlTerm .chartLoad::before { content: ''; position: absolute; z-index: -1; inset: 12px 16px; background: repeating-linear-gradient(90deg, rgba(60,72,94,0.28) 0 6px, transparent 6px 14px); -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 28%, #000 86%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0%, #000 28%, #000 86%, transparent 100%); animation: dlSkel 1.6s ease-in-out infinite; }
 @keyframes dlSkel { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
@@ -664,8 +664,8 @@
 .dlTerm .finChart figure { margin: 0; }
 .dlTerm .finChart figcaption { font-family: var(--cond); font-size: 9.5px; color: var(--dimmer); margin-bottom: 3px; }
 
-/* 재무제표 분석 — 4열 그리드, 계정명 범례 + Y축 숫자 + X축 기간 (해석 가능·크게) */
-/* 12칸 그리드 = 기본 4열(span 3). 카드 수 나머지(1·2·3)는 마지막 1~2행을 3열/2열로 재배분 —
+/* 재무제표 분석 · 4열 그리드, 계정명 범례 + Y축 숫자 + X축 기간 (해석 가능·크게) */
+/* 12칸 그리드 = 기본 4열(span 3). 카드 수 나머지(1·2·3)는 마지막 1~2행을 3열/2열로 재배분 ·
    어떤 카드 수에도 모든 행이 꽉 차고, 1행 1그래프가 구조적으로 불가능. */
 .dlTerm .finGrid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 3px; padding: 2px 2px 3px; }
 .dlTerm .finGrid > * { grid-column: span 3; min-width: 0; }
@@ -681,7 +681,7 @@
 .dlTerm .finGrid > *:nth-child(4n + 1):nth-last-child(3) ~ * { grid-column: span 4; }
 .dlTerm .finMini { border: 1px solid var(--bd); border-radius: 2px; background: var(--dl-bg-base); padding: 4px 2px 2px; min-width: 0; }
 .dlTerm .mfc { display: flex; flex-direction: column; position: relative; }
-/* ! 해석 가이드 — 카드 헤더 토글 버튼 + 오버레이 (cardGuide.ts 큐레이션) */
+/* ! 해석 가이드 · 카드 헤더 토글 버튼 + 오버레이 (cardGuide.ts 큐레이션) */
 .dlTerm .mfcInfo { width: 13px; height: 13px; border-radius: 50%; border: 1px solid var(--bd); background: none; color: var(--dimmer); font-size: 8.5px; font-weight: 700; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; margin-left: 4px; }
 .dlTerm .mfcInfo:hover, .dlTerm .mfcInfo.on { color: var(--amber); border-color: var(--amber); }
 .dlTerm .mfcGuide { position: absolute; top: 18px; left: 4px; right: 4px; z-index: 8; background: rgba(8, 13, 23, 0.97); border: 1px solid var(--bdHi, #2a3142); border-radius: 4px; padding: 7px 8px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55); }
@@ -803,7 +803,7 @@
 /* 조건검색 모달 (상용급 스크리너) */
 .scrimWrap { position: fixed; inset: 0; z-index: 10050; background: rgba(4, 7, 13, 0.72); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; padding: 28px; }
 .scrModal { width: min(960px, 96vw); max-height: 88vh; display: flex; flex-direction: column; background: var(--dl-bg-raised, #0e141f); border: 1px solid var(--dl-line-strong, #2a3142); border-radius: 8px; box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6); overflow: hidden; font-family: var(--dl-font-ui); color: var(--dl-ink); }
-/* ── 주석 대시보드 다이얼로그 (nd*) — 파싱된 찐정보 시각화. 색·바 기존 토큰만, 차트엔진 0 ── */
+/* ── 주석 대시보드 다이얼로그 (nd*) · 파싱된 찐정보 시각화. 색·바 기존 토큰만, 차트엔진 0 ── */
 .scrModal.ndModal { width: min(720px, 95vw); max-height: 90vh; }
 .dlTerm .ndBody, .ndBody { overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
 .ndHero { border: 1px solid var(--bd); border-radius: 4px; background: var(--panel); padding: 9px 11px; }
@@ -815,7 +815,7 @@
 .ndTotal { font-family: var(--cond); font-size: 10.5px; color: var(--dim); margin-bottom: 6px; }
 .ndStack { display: flex; height: 16px; border-radius: 3px; overflow: hidden; gap: 1px; background: var(--dl-bg-deep); }
 .ndStack .ndSeg { height: 100%; min-width: 1px; }
-/* 비용 체질 시계열 — 100% 적층 area(SVG) + 연도 눈금 */
+/* 비용 체질 시계열 · 100% 적층 area(SVG) + 연도 눈금 */
 .ndAreaWrap { margin: 2px 0 5px; }
 .ndArea { display: block; width: 100%; height: 124px; border-radius: 3px; background: var(--dl-bg-deep); }
 .ndArea .ndAreaSeg { stroke: var(--dl-bg-deep); stroke-width: 0.5; }
@@ -883,7 +883,7 @@
 .srcPath { font-size: 10px; color: #b4bdca; }
 .srcLic { color: #b4bdca; white-space: nowrap; }
 .srcLatest { font-size: 10px; color: var(--dl-ink, #cfd5e0); white-space: nowrap; }
-/* 재무 유형 라벨 기준 소절은 FinTypeLegendDialog(좌측 레일 TYPE 컬럼 ⓘ)로 이전 — 출처 모달은 데이터 출처만 다룬다. */
+/* 재무 유형 라벨 기준 소절은 FinTypeLegendDialog(좌측 레일 TYPE 컬럼 ⓘ)로 이전 · 출처 모달은 데이터 출처만 다룬다. */
 .srcNotes { padding: 8px 12px 12px; display: flex; flex-direction: column; gap: 3px; border-top: 1px solid var(--dl-line, #1b2130); }
 .srcNote { font-size: 10px; color: #b4bdca; }
 .srcNote.dim { color: #93a0b0; }
@@ -897,12 +897,12 @@
 .dlTerm .finTabs { display: flex; border-bottom: 1px solid var(--bd); }
 .dlTerm .finTab { flex: 1; background: var(--panel2); color: var(--dim); font-family: var(--cond); font-weight: 600; font-size: 10.5px; letter-spacing: 0.5px; line-height: 1.2; border: none; border-right: 1px solid var(--bd); padding: 2px 4px; cursor: pointer; }
 .dlTerm .finTab:last-child { border-right: none; }
-/* 선택 버튼 = 솔리드 핑크 채움 단일 언어(.seg.on 과 동일) — 탭/토글이 한 헤더에 섞여도 일관. */
+/* 선택 버튼 = 솔리드 핑크 채움 단일 언어(.seg.on 과 동일) · 탭/토글이 한 헤더에 섞여도 일관. */
 .dlTerm .finTab.on { background: var(--amber); color: var(--onAccent); font-weight: 700; }
 .dlTerm .finTab:hover:not(.on) { color: var(--txt); }
 .dlTerm .finScroll { max-height: 248px; overflow-y: auto; }
 
-/* 좌측 하단 통합 패널 탭 (스크리너 ⇄ 공시 워치) — 패널 헤더 자리를 탭 바로 사용 */
+/* 좌측 하단 통합 패널 탭 (스크리너 ⇄ 공시 워치) · 패널 헤더 자리를 탭 바로 사용 */
 .dlTerm .leftTabHead { gap: 0; padding: 0; }
 .dlTerm .leftTab { height: 100%; display: inline-flex; align-items: center; font-family: var(--cond); font-weight: 700; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--dimmer); background: transparent; border: none; border-right: 1px solid var(--bd); padding: 0 11px; cursor: pointer; white-space: nowrap; }
 .dlTerm .leftTab.on { color: var(--amber); box-shadow: inset 0 -2px 0 var(--amber); }
@@ -918,7 +918,7 @@
 .dlTerm .finTable tr.finKey .finAcct { color: var(--amber); font-weight: 600; }
 .dlTerm .finTable tbody tr:hover { background: var(--dl-bg-overlay); }
 .dlTerm .finNote { font-family: var(--mono); font-size: 7.5px; color: var(--dimmer); padding: 2px 7px; border-top: 1px solid var(--bd); letter-spacing: 0.3px; }
-/* 전 기간(분기) 가로 스크롤 — 계정명 열 sticky-left 고정 */
+/* 전 기간(분기) 가로 스크롤 · 계정명 열 sticky-left 고정 */
 .dlTerm .finScrollX { overflow-x: auto; overflow-y: auto; }
 .dlTerm .finScrollX .finTable { width: max-content; min-width: 100%; }
 .dlTerm .finScrollX .finTable th.r, .dlTerm .finScrollX .finTable td.r { min-width: 50px; }
@@ -936,7 +936,7 @@
 .dlTerm .factV .factSrc:hover { color: var(--amber); }
 
 
-/* 도시에 섹션 자기정규화 문장 — 판정 0·형용사 0(lossPct·control-shift·인력 자기이력). 그래프 금지(텍스트만) */
+/* 도시에 섹션 자기정규화 문장 · 판정 0·형용사 0(lossPct·control-shift·인력 자기이력). 그래프 금지(텍스트만) */
 .dlTerm .secSentBox { padding: 3px 8px 4px; border-bottom: 1px solid var(--dl-line); display: flex; flex-direction: column; gap: 2px; }
 .dlTerm .secSent { font-family: var(--cond); font-size: 9.5px; line-height: 1.35; color: var(--txt); white-space: normal; }
 
@@ -991,7 +991,7 @@
 .dlTerm .peerProd { font-size: 9px; color: var(--dimmer); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
 .dlTerm .peerRow:hover { background: var(--dl-bg-overlay); }
 .dlTerm .peerRow.self { background: rgba(var(--amber-rgb), 0.08); box-shadow: inset 2px 0 0 var(--amber); }
-/* 회사명은 길면 ellipsis 로 줄이고(min-width:0 으로 1fr 트랙이 줄어듦) 코드(.pc)는 고정 — 긴 이름이 막대·매출 컬럼을 우측으로 밀던 것 차단. */
+/* 회사명은 길면 ellipsis 로 줄이고(min-width:0 으로 1fr 트랙이 줄어듦) 코드(.pc)는 고정 · 긴 이름이 막대·매출 컬럼을 우측으로 밀던 것 차단. */
 .dlTerm .peerName { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .dlTerm .peerName b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--cond); font-weight: 600; color: var(--txt); }
 .dlTerm .peerName .pc { flex: 0 0 auto; font-family: var(--mono); font-size: 8.5px; color: var(--dimmer); }
@@ -1018,7 +1018,7 @@
 .dlTerm .storyEmpty { padding: 10px 8px; font-size: 10px; color: var(--dimmer); font-family: var(--mono); line-height: 1.5; }
 .dlTerm .factRetry { background: none; border: none; color: var(--amber); font-family: var(--mono); font-size: 10px; cursor: pointer; padding: 0; text-decoration: underline; }
 .dlTerm .factRetry:hover { opacity: 0.8; }
-/* 정기보고서 주석 간단 글랜스 — 비용 체질 real digest 한 줄 + 대시보드 토픽. */
+/* 정기보고서 주석 간단 글랜스 · 비용 체질 real digest 한 줄 + 대시보드 토픽. */
 .dlTerm .noteGlance { padding: 6px 8px; font-family: var(--cond); font-size: 10.5px; color: var(--txt); line-height: 1.4; }
 .dlTerm .noteGlance .ngLabel { color: var(--dimmer); font-size: 9px; margin-right: 5px; }
 .dlTerm .noteMore { padding: 0 8px 7px; font-family: var(--cond); font-size: 9.5px; color: var(--dim); }
@@ -1070,7 +1070,7 @@
 
 /* PROVENANCE TAG */
 .dlTerm .provTag { font-family: var(--mono); font-size: 8px; font-weight: 600; letter-spacing: 0.4px; padding: 1px 4px; border-radius: 2px; line-height: 1.5; flex-shrink: 0; cursor: help; }
-/* 출처 배지 — 기본값(실데이터)은 모든 패널에 깔리므로 조용한 회색(소음 제거), 예외(파생=핑크·재구성=파랑점선)만 유색. 글자=배경 hue 일치. */
+/* 출처 배지 · 기본값(실데이터)은 모든 패널에 깔리므로 조용한 회색(소음 제거), 예외(파생=핑크·재구성=파랑점선)만 유색. 글자=배경 hue 일치. */
 .dlTerm .provTag.pReal { color: var(--dimmer); background: rgba(255, 255, 255, 0.05); }
 .dlTerm .provTag.pDeriv { color: var(--amber); background: rgba(var(--amber-rgb), 0.12); }
 .dlTerm .provTag.pWire { color: var(--good); background: rgba(96, 165, 250, 0.12); border: 1px dashed rgba(96, 165, 250, 0.4); }
@@ -1081,9 +1081,9 @@
 .dlTerm .sbItem b { font-family: var(--mono); font-size: 9px; }
 .dlTerm .sbSpacer { flex: 1; }
 
-/* 섹션 헤더 통일 — 모든 패널 제목은 amber 단색(엔진별 색상 분기 폐지). 높이 20px·12px 는 .panelHead/.panelTitle 단일 정의가 강제. */
+/* 섹션 헤더 통일 · 모든 패널 제목은 amber 단색(엔진별 색상 분기 폐지). 높이 20px·12px 는 .panelHead/.panelTitle 단일 정의가 강제. */
 
-/* 공시뷰어 인터미널 오버레이 — ViewerStudio(embedded) 호스트. 스튜디오 스타일은 component-scoped 라 충돌 없음 */
+/* 공시뷰어 인터미널 오버레이 · ViewerStudio(embedded) 호스트. 스튜디오 스타일은 component-scoped 라 충돌 없음 */
 .dlViewerFs { position: fixed; inset: 0; z-index: 120; background: #050811; display: flex; flex-direction: column; }
 .dlViewerFs > main.viewer-page { flex: 1; min-height: 0; }
 .dlViewerLoad { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--mono); font-size: 12px; color: var(--dim); }
@@ -1107,27 +1107,27 @@
 	.dlTerm .symStats { grid-template-columns: repeat(3, auto); }
 }
 
-/* CENTER KPI TICKER (경제·시장 지표 — 종목/주가 라인 위, 좌우 흐름) */
+/* CENTER KPI TICKER (경제·시장 지표 · 종목/주가 라인 위, 좌우 흐름) */
 .dlTerm .kpiTicker { height: 24px; overflow: hidden; background: var(--dl-bg-deep); border: 1px solid var(--bd); border-radius: 2px; display: flex; align-items: center; margin-bottom: 4px; flex: 0 0 auto; }
-/* 흐름 속도 — 지표 35종으로 트랙이 길어져 48s 면 px/s 가 빨라졌다. 150s 로 늦춰 차분히 읽히게(운영자). hover=정지. */
+/* 흐름 속도 · 지표 35종으로 트랙이 길어져 48s 면 px/s 가 빨라졌다. 150s 로 늦춰 차분히 읽히게(운영자). hover=정지. */
 .dlTerm .kpiTrack { display: flex; gap: 22px; white-space: nowrap; animation: dlTermScroll 150s linear infinite; padding-left: 10px; }
 .dlTerm .kpiTrack:hover { animation-play-state: paused; }
 .dlTerm .kpiItem { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; }
 .dlTerm .kpiSpark { width: 36px; height: 12px; opacity: 0.9; flex-shrink: 0; }
-/* 지표명 — dimmer 는 다크 배경에서 식별 불가 (운영자 지적). 본문 한 단계 아래 명도로. */
+/* 지표명 · dimmer 는 다크 배경에서 식별 불가 (운영자 지적). 본문 한 단계 아래 명도로. */
 .dlTerm .kpiItem i { font-family: var(--cond); font-style: normal; color: #aab2c0; text-transform: uppercase; letter-spacing: 0.5px; font-size: 10px; }
 .dlTerm .kpiItem b { font-family: var(--mono); font-weight: 600; }
-/* 클릭 가능 KPI (id 보유 경제지표) — 마퀴 클릭→차트 econ 오버레이(04 §5). 버튼 기본스킨 리셋 + hover/활성/비활성. */
+/* 클릭 가능 KPI (id 보유 경제지표) · 마퀴 클릭→차트 econ 오버레이(04 §5). 버튼 기본스킨 리셋 + hover/활성/비활성. */
 .dlTerm button.kpiBtn { border: none; background: transparent; padding: 1px 4px; margin: -1px 0; border-radius: 2px; cursor: pointer; transition: background 0.12s, box-shadow 0.12s; }
 .dlTerm button.kpiBtn:hover:not(:disabled) { background: rgba(var(--amber-rgb), 0.12); }
 .dlTerm button.kpiBtn.on { background: rgba(var(--amber-rgb), 0.16); box-shadow: inset 0 -1.5px 0 var(--amber); }
 .dlTerm button.kpiBtn:disabled { cursor: default; opacity: 0.4; }
 
-/* 헤더 가운데 — 주요제품+회사정보(좌, 세로) / 회사 네비(우, 세로). 우측=가격관련만. 헤더 ~3줄 밀도. */
+/* 헤더 가운데 · 주요제품+회사정보(좌, 세로) / 회사 네비(우, 세로). 우측=가격관련만. 헤더 ~3줄 밀도. */
 .dlTerm .symProd { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: 14px; padding: 0 10px; border-left: 1px solid var(--bd); overflow: hidden; }
 .dlTerm .symProdInfo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .dlTerm .symProdLine { display: flex; align-items: baseline; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden; }
-/* 회사 기본정보 (대표·결산·상장·본사) — 좌측 정렬 */
+/* 회사 기본정보 (대표·결산·상장·본사) · 좌측 정렬 */
 .dlTerm .symInfoRow { display: flex; align-items: baseline; gap: 12px; white-space: nowrap; overflow: hidden; }
 .dlTerm .sif { display: inline-flex; align-items: baseline; gap: 4px; min-width: 0; }
 .dlTerm .sif i { font-style: normal; font-family: var(--cond); font-size: 8.5px; color: var(--dimmer); letter-spacing: 0.5px; text-transform: uppercase; flex-shrink: 0; }
@@ -1182,7 +1182,7 @@
 .dlTerm .govDelta i { font-family: var(--cond); font-style: normal; color: var(--dimmer); text-transform: uppercase; letter-spacing: 0.4px; }
 .dlTerm .govDelta b { font-family: var(--mono); font-weight: 600; }
 
-/* ── FinFullscreen 격상 (append-only) — 감사 이력 스트립 + 개별 임원 보수 표 ── */
+/* ── FinFullscreen 격상 (append-only) · 감사 이력 스트립 + 개별 임원 보수 표 ── */
 .dlTerm .audStrip { border: 1px solid var(--bd); border-radius: 2px; background: var(--dl-bg-base); padding: 8px 10px; margin-bottom: 10px; }
 .dlTerm .audStripHead { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
 .dlTerm .audStripTitle { font-family: var(--cond); font-size: 10px; letter-spacing: 0.6px; color: var(--dim); text-transform: uppercase; }
@@ -1217,9 +1217,9 @@
 .dlTerm .tmplRow .mItem { flex: 1; text-align: left; border-radius: 2px 0 0 2px; }
 
 /* ───────── 거시 국면 (MacroRegimePanel 글랜스 + MacroRegimeDialog 상세) ───────── */
-/* 좌측 최상단 글랜스 — 콘텐츠 높이(판정 1줄+근거+확신도). 산업/공시 패널과 달리 고정높이 미강제. */
+/* 좌측 최상단 글랜스 · 콘텐츠 높이(판정 1줄+근거+확신도). 산업/공시 패널과 달리 고정높이 미강제. */
 .dlTerm .colL > .panel.eMacro { flex: 0 0 auto; }
-/* 좌측 글랜스 — 한국 | 미국 세로 2분할. 각 칸: 국면·확신도·방향·사분면. */
+/* 좌측 글랜스 · 한국 | 미국 세로 2분할. 각 칸: 국면·확신도·방향·사분면. */
 .dlTerm .mrSplit { display: grid; grid-template-columns: 1fr 1fr; }
 .dlTerm .mrCol { display: flex; flex-direction: column; gap: 2px; padding: 0 7px; min-width: 0; }
 .dlTerm .mrCol + .mrCol { border-left: 1px solid var(--bd); }
@@ -1236,7 +1236,7 @@
 .dlTerm .mrAsset { font-family: var(--cond); font-size: 10px; padding: 2px 7px; border: 1px solid var(--bd); border-radius: 9px; display: inline-flex; align-items: center; gap: 4px; color: var(--dim); }
 .dlTerm .mrAsset b { font-family: var(--mono); font-weight: 700; }
 
-/* 다이얼로그 — 판정 + 모델 타일 + 고밀도 차트 */
+/* 다이얼로그 · 판정 + 모델 타일 + 고밀도 차트 */
 .dlTerm .scrModal.mrModal { width: min(860px, 96vw); max-height: 94vh; }
 .dlTerm .mrTabs { display: flex; gap: 0; margin-left: 14px; }
 .dlTerm .mrTab { font-family: var(--cond); font-size: 10px; font-weight: 700; letter-spacing: 0.6px; padding: 3px 11px; background: var(--dl-bg-deep); border: 1px solid var(--bd); color: var(--dim); cursor: pointer; text-transform: uppercase; }
@@ -1246,7 +1246,7 @@
 .dlTerm .mrBody { padding: 12px 14px 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
 .dlTerm .mrTop { display: grid; gap: 12px; }
 .dlTerm .mrTop.two { grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr); align-items: stretch; }
-/* 근거 차트 — 4테마 2×2. finMini(재무 SSOT) 카드 크롬·폰트 유지(폭 ~410px = 재무와 동일), 2열로만 재정의. */
+/* 근거 차트 · 4테마 2×2. finMini(재무 SSOT) 카드 크롬·폰트 유지(폭 ~410px = 재무와 동일), 2열로만 재정의. */
 .dlTerm .finFsGrid.mrCharts2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .dlTerm .mrSec { border: 1px solid var(--bd); border-radius: 5px; background: var(--panel); padding: 10px 12px; }
 .dlTerm .mrSecHd { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
@@ -1299,13 +1299,13 @@
 @keyframes mrSpin { to { transform: rotate(360deg); } }
 .dlTerm .mrFoot { font-family: var(--cond); font-size: 9px; color: var(--dimmer); text-align: right; }
 
-/* 전망 시뮬 — 현황|전망 토글 + 국면경로 SVG + 정직 note */
+/* 전망 시뮬 · 현황|전망 토글 + 국면경로 SVG + 정직 note */
 .dlTerm .mrViewTabs { margin-left: 10px; }
 .dlTerm .mrPathSvg { width: 100%; height: 30px; display: block; margin-top: 3px; }
 .dlTerm .mrPathNow { stroke: var(--amber); stroke-width: 0.7; stroke-dasharray: 1.5 1.5; opacity: 0.7; }
 .dlTerm .mrPathPast { fill: none; stroke: var(--dim); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
 .dlTerm .mrPathFuture { fill: none; stroke: var(--dn); stroke-width: 1.6; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
 .dlTerm .mrSimNote { font-family: var(--cond); font-size: 9px; color: var(--dimmer); margin-top: 7px; padding-top: 5px; border-top: 1px dashed var(--bd); }
-/* 시나리오 조건부 — 프리셋 칩(기준|긴축|완화) + '조건부 가정' 배지(별색=조건부 overlay 라인 톤) */
+/* 시나리오 조건부 · 프리셋 칩(기준|긴축|완화) + '조건부 가정' 배지(별색=조건부 overlay 라인 톤) */
 .dlTerm .mrScenTabs { margin: 0 0 8px; }
 .dlTerm .mrScenBadge { font-family: var(--cond); font-size: 9px; font-weight: 700; letter-spacing: 0.4px; color: #f0a93b; border: 1px solid rgba(240, 169, 59, 0.4); border-radius: 3px; padding: 1px 6px; white-space: nowrap; }

@@ -47,7 +47,7 @@
 			>
 			<h2 class="text-3xl md:text-4xl font-bold text-dl-text mb-4">실습 노트북</h2>
 			<p class="text-dl-text-muted text-lg">
-				11개 주제, Colab · Molab · 로컬 마리모 — 같은 코드로 돌려볼 수 있다.
+				11개 주제, Colab · Molab · 로컬 마리모 · 같은 코드로 돌려볼 수 있다.
 			</p>
 		</div>
 
@@ -120,7 +120,7 @@
 				</div>
 			</div>
 			<p class="text-xs text-dl-text-dim mt-3 leading-relaxed">
-				Marimo 는 코드만, Colab 은 마크다운 설명 + 코드 — 같은 구성을 두 포맷으로 유지한다.
+				Marimo 는 코드만, Colab 은 마크다운 설명 + 코드 · 같은 구성을 두 포맷으로 유지한다.
 			</p>
 		</Card>
 	</div>

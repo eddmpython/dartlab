@@ -1,4 +1,4 @@
-// service command registry — TerminalSurface 는 descriptor/command 만 렌더하고 구현은 여기 등록 (02 §7).
+// service command registry · TerminalSurface 는 descriptor/command 만 렌더하고 구현은 여기 등록 (02 §7).
 import type {
 	ServiceCommand,
 	ServiceCommandInput,
@@ -37,7 +37,7 @@ export function createServiceRegistry(registrations: ServiceRegistration[]): Ser
 				return { kind: 'status', ok: false, message: `unknown command: ${input.commandId}` };
 			}
 			if (reg.descriptor.availability === 'localOnly' || reg.descriptor.availability === 'disabled') {
-				// 실행 불가를 정직하게 — upgradeHint 는 surface 가 descriptor 에서 렌더.
+				// 실행 불가를 정직하게 · upgradeHint 는 surface 가 descriptor 에서 렌더.
 				return { kind: 'status', ok: false, message: reg.descriptor.reason ?? reg.descriptor.availability };
 			}
 			return reg.execute(input);

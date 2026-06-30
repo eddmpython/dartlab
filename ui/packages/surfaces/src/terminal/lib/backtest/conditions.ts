@@ -1,4 +1,4 @@
-// 조건 빌더 — "프리셋 고르기"가 아니라 *사용자가 규칙을 조립*하는 전문가급 커스텀 패널의 엔진.
+// 조건 빌더 · "프리셋 고르기"가 아니라 *사용자가 규칙을 조립*하는 전문가급 커스텀 패널의 엔진.
 // 좌변 지표 + 연산자 + 우변(상수 또는 다른 지표)을 조건 1개로, 여러 조건을 AND/OR 합성 → 진입/청산.
 // terminal-strategy-lab 01 §2.4. 봉별 조건 만족(satisfied)도 산출 → 조건 레인 시각화(02 §1.5).
 // look-ahead 0: 전 series 는 t 이전 데이터로만(지표 내부 보장), 체결은 엔진의 t+1 shift 가 상속.
@@ -7,11 +7,11 @@ import type { BtParamDef, Candle, PresetFamily } from './types';
 
 const closesOf = (cs: Candle[]) => cs.map((c) => c.c);
 
-// 조건 빌더가 노출하는 좌변/우변 지표 카탈로그 — 이게 "조작패널"이 보여주는 building block 목록.
+// 조건 빌더가 노출하는 좌변/우변 지표 카탈로그 · 이게 "조작패널"이 보여주는 building block 목록.
 export type SeriesKey =
 	| 'price' | 'ma' | 'ema' | 'rsi' | 'stochK' | 'macdHist' | 'bbPctB'
 	| 'volRatio' | 'atrPct' | 'realizedVol' | 'momRet' | 'high20Prox'
-	| 'fundGate'; // ★펀더게이트 — 캔들 파생 아닌 *외부 PIT 시계열*(Piotroski 등) 주입. SERIES_CATALOG 비포함(별도 게이트 UI). W2
+	| 'fundGate'; // ★펀더게이트 · 캔들 파생 아닌 *외부 PIT 시계열*(Piotroski 등) 주입. SERIES_CATALOG 비포함(별도 게이트 UI). W2
 
 export interface SeriesDef {
 	key: SeriesKey;
@@ -22,7 +22,7 @@ export interface SeriesDef {
 	calc: (cs: Candle[], p: Record<string, number>) => (number | null)[];
 }
 
-// 고저종/거래량을 쓰는 지표 — 종가만 쓰던 6프리셋의 약점(거래량·변동성 무시)을 조건 단위로 해소.
+// 고저종/거래량을 쓰는 지표 · 종가만 쓰던 6프리셋의 약점(거래량·변동성 무시)을 조건 단위로 해소.
 export const SERIES_CATALOG: SeriesDef[] = [
 	{ key: 'price', kr: '종가', en: 'price', unit: '원', params: [], calc: (cs) => closesOf(cs) },
 	{ key: 'ma', kr: '이동평균(SMA)', en: 'SMA', unit: '원', params: [{ name: 'period', kr: '기간', en: 'period', min: 5, max: 200, step: 5, def: 20 }], calc: (cs, p) => sma(closesOf(cs), p.period) },
@@ -103,7 +103,7 @@ function combine(sats: Uint8Array[], mode: 'AND' | 'OR', n: number): Uint8Array 
 }
 
 export interface RuleEval {
-	target: Int8Array; // long/flat (엔진 체결 입력 — 기존 preset.signal 과 동일 계약)
+	target: Int8Array; // long/flat (엔진 체결 입력 · 기존 preset.signal 과 동일 계약)
 	entrySat: Uint8Array[]; // 진입 조건별 만족 (조건 레인)
 	exitSat: Uint8Array[]; // 청산 조건별 만족
 	entryCombined: Uint8Array; // AND/OR 합성 진입 신호
@@ -111,7 +111,7 @@ export interface RuleEval {
 }
 
 /** 룰 → target(long/flat 상태기계) + 조건 레인. 진입조건 충족시 진입, 보유중 청산조건 충족시 청산.
- *  gate = 펀더게이트 PIT 시계열(있으면 fundGate 조건이 이를 소비 — 공시 전 봉 null=진입차단, look-ahead 0). */
+ *  gate = 펀더게이트 PIT 시계열(있으면 fundGate 조건이 이를 소비 · 공시 전 봉 null=진입차단, look-ahead 0). */
 export function evalRule(cs: Candle[], rule: StrategyRule, gate: (number | null)[] | null = null): RuleEval {
 	const n = cs.length;
 	const entrySat = rule.entry.map((c) => evalCondition(cs, c, gate));
@@ -123,14 +123,14 @@ export function evalRule(cs: Candle[], rule: StrategyRule, gate: (number | null)
 	for (let i = 0; i < n; i++) {
 		if (state === 0) state = entryCombined[i] ? 1 : 0;
 		else state = exitCombined.length && exitCombined[i] ? 0 : 1;
-		// 청산 조건이 비어있으면(exit 0개) 진입신호가 꺼질 때 청산(보유=진입조건 유지) — signal-following.
+		// 청산 조건이 비어있으면(exit 0개) 진입신호가 꺼질 때 청산(보유=진입조건 유지) · signal-following.
 		if (state === 1 && !rule.exit.length) state = entryCombined[i] ? 1 : 0;
 		target[i] = state;
 	}
 	return { target, entrySat, exitSat, entryCombined, exitCombined };
 }
 
-// ── rule 프리셋 — 종가만 쓰던 6프리셋 너머. 전부 편집 가능(빌더에서 불러와 조건 수정). OHLCV 활용. ──
+// ── rule 프리셋 · 종가만 쓰던 6프리셋 너머. 전부 편집 가능(빌더에서 불러와 조건 수정). OHLCV 활용. ──
 const cond = (left: SeriesKey, leftParams: Record<string, number>, op: Op, right: Condition['right']): Condition => ({ left, leftParams, op, right });
 const k = (value: number): Condition['right'] => ({ kind: 'const', value });
 const ser = (key: SeriesKey, params: Record<string, number>): Condition['right'] => ({ kind: 'series', key, params });
@@ -220,7 +220,7 @@ export const RULE_PRESETS: RulePreset[] = [
 	}
 ];
 
-/** 워밍업 — 룰 내 모든 series 의 최대 기간(보수적으로 period/lookback 최대값). */
+/** 워밍업 · 룰 내 모든 series 의 최대 기간(보수적으로 period/lookback 최대값). */
 export function ruleWarmup(rule: StrategyRule): number {
 	let w = 1;
 	const scan = (c: Condition) => {

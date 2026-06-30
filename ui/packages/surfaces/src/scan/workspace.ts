@@ -47,7 +47,7 @@ export function saveColumnSet(set: Omit<SavedColumnSet, 'id' | 'createdAt'>): Sa
 		...set
 	};
 	sets.push(newSet);
-	// 최대 cap — 가장 오래된 것 evict
+	// 최대 cap · 가장 오래된 것 evict
 	while (sets.length > MAX_SETS) {
 		sets.sort((a, b) => a.createdAt - b.createdAt);
 		sets.shift();

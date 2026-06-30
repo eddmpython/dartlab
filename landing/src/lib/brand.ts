@@ -29,7 +29,7 @@ export const brand = {
 		edgarFinanceStmt: { dir: 'edgar/financeStmt', label: 'SEC EDGAR 터미널 재무 (파사드 표준화)' },
 	},
 
-	// ⛔ 색은 여기서 정의하지 않는다 — 색 SSOT = ui/packages/design/src/styles/tokens.css (--p-*/--dl-*).
+	// ⛔ 색은 여기서 정의하지 않는다 · 색 SSOT = ui/packages/design/src/styles/tokens.css (--p-*/--dl-*).
 	// Tailwind 유틸은 landing/src/app.css 의 @theme inline 이 var(--dl-*) 로 브리지한다.
 	// (옛 color:{} 블록이 syncBrand.js 로 app.css 를 생성해 오렌지 accent #fb923c 발산 원인이었음 → 폐기.)
 } as const;

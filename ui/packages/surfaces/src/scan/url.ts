@@ -1,8 +1,8 @@
 /**
- * Scan Studio URL 직렬화 — base64 ?q= 페이로드.
+ * Scan Studio URL 직렬화 · base64 ?q= 페이로드.
  *
  * v2 ScanPayload: { v: 2, i, c, s, cols, p, sel }
- * v1 (구 /screener) ScreenerPayload: { i, c, s, p } — backward compat 디코딩.
+ * v1 (구 /screener) ScreenerPayload: { i, c, s, p } · backward compat 디코딩.
  *
  * v1 → v2 마이그레이션: cols 가 없으면 default 컬럼 사용. 깨진 derived 메트릭
  * (qoqRevenueGrowth, revCagr, etc.) 가 cond 에 있으면 silent drop + console warn.
@@ -38,9 +38,9 @@ export function decodeScanPayload(q: string): ScanPayload | null {
 		if (obj.v === 2) {
 			return sanitizePayload(obj);
 		}
-		// v1 — { i, c, s, p } 만 — 마이그레이션
+		// v1 · { i, c, s, p } 만 · 마이그레이션
 		if (Array.isArray(obj.i) && Array.isArray(obj.c) && Array.isArray(obj.s)) {
-			console.info('[scan] v1 /screener payload 디코딩 — 호환 모드');
+			console.info('[scan] v1 /screener payload 디코딩 · 호환 모드');
 			return sanitizePayload({
 				v: 2,
 				i: obj.i,

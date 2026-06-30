@@ -1,4 +1,4 @@
-// 거시 산업 sweep 렌즈 SSOT — 좌측 LeftRail 산업층 · IndustryDialog 공유(정의 1곳).
+// 거시 산업 sweep 렌즈 SSOT · 좌측 LeftRail 산업층 · IndustryDialog 공유(정의 1곳).
 // 각 렌즈 = 34산업을 가로지르는 한 차원. value/band/lower/unit + 정직 라벨.
 // 측정 근거: tests/_attempts/macroIndustrySweep/ (산업을 *실제로 가르는* 신호만 채택, median 압축지표 배제).
 import type { IndustryDist, IndustryMacro } from './engine';
@@ -8,7 +8,7 @@ export interface IndustryLens {
 	kr: string;
 	en: string;
 	unit: string;
-	lower: boolean; // true = 낮을수록 좋음(부채·밸류·부실) — 색 방향 반전
+	lower: boolean; // true = 낮을수록 좋음(부채·밸류·부실) · 색 방향 반전
 	valueOf: (m: IndustryMacro) => number | null; // 정렬·표시 값(median 등)
 	bandOf: (m: IndustryMacro) => IndustryDist | null; // 분포 막대(없으면 null → 막대 생략)
 	note: string; // 렌즈별 정직 라벨(04 §3)
@@ -55,7 +55,7 @@ export const INDUSTRY_LENSES: IndustryLens[] = [
 
 export const lensByKey = (key: string): IndustryLens => INDUSTRY_LENSES.find((l) => l.key === key) || INDUSTRY_LENSES[0];
 
-// 렌즈 값 → 0~100 백분위(상대 위치, lower 반영) — DistCurve 톤·정렬 보조.
+// 렌즈 값 → 0~100 백분위(상대 위치, lower 반영) · DistCurve 톤·정렬 보조.
 export function lensRank(lens: IndustryLens, value: number, all: number[]): number {
 	if (!all.length) return 50;
 	const below = all.filter((v) => v < value).length;

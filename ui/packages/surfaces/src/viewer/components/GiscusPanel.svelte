@@ -1,8 +1,8 @@
 <script lang="ts">
-	// 공시 토론 — 회사별 GitHub Discussions 댓글(giscus) 우측 슬라이드오버.
-	// blog/[slug] 의 giscus 설정과 동일(repo/category/lang) — mapping=pathname 이라 회사 URL(/viewer/company/{code})
+	// 공시 토론 · 회사별 GitHub Discussions 댓글(giscus) 우측 슬라이드오버.
+	// blog/[slug] 의 giscus 설정과 동일(repo/category/lang) · mapping=pathname 이라 회사 URL(/viewer/company/{code})
 	// 당 독립 토론 스레드. theme=transparent_dark 로 드로어 배경(#050811)에 블렌드.
-	// 드로어는 항상 마운트(CSS transform 토글 + inert) — 닫아도 giscus 가 DOM 에 유지돼 재오픈 즉시(깜빡임 0).
+	// 드로어는 항상 마운트(CSS transform 토글 + inert) · 닫아도 giscus 가 DOM 에 유지돼 재오픈 즉시(깜빡임 0).
 	// 주입은 처음 열 때 1회, 종목 전환 시에만 재주입(loadedKey).
 	import { X } from 'lucide-svelte';
 	import { fade } from 'svelte/transition';
@@ -61,7 +61,7 @@
 	<div class="dbody">
 		<div bind:this={giscusEl}></div>
 		<p class="dhint">
-			GitHub 로그인으로 이 회사 공시를 토론하세요 — 회사별로 스레드가 분리됩니다.<br />
+			GitHub 로그인으로 이 회사 공시를 토론하세요 · 회사별로 스레드가 분리됩니다.<br />
 			뷰어 개선·새 기능 건의는
 			<a href="https://github.com/eddmpython/dartlab/discussions/new?category=ideas" target="_blank" rel="noopener noreferrer">아이디어 남기기 →</a>
 		</p>
@@ -94,7 +94,7 @@
 	}
 	.drawer.open {
 		transform: translateX(0);
-		box-shadow: -16px 0 48px rgba(0, 0, 0, 0.5); /* 열렸을 때만 — 닫힘 시 우측 가장자리 그림자 누출 차단 */
+		box-shadow: -16px 0 48px rgba(0, 0, 0, 0.5); /* 열렸을 때만 · 닫힘 시 우측 가장자리 그림자 누출 차단 */
 	}
 	.dh {
 		flex-shrink: 0;

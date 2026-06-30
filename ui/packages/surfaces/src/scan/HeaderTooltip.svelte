@@ -1,6 +1,6 @@
 <script lang="ts">
 	/**
-	 * 컬럼 헤더 hover 툴팁 — 메트릭 정의 + 단위 + 좋은 방향.
+	 * 컬럼 헤더 hover 툴팁 · 메트릭 정의 + 단위 + 좋은 방향.
 	 *
 	 * Tooltip.svelte 가 "i" 버튼 + 툴팁 패턴인데, 컬럼 헤더는
 	 * 헤더 셀 전체가 hover trigger 가 되어야 자연스러움. 그래서
@@ -9,7 +9,7 @@
 	import type { MetricDef } from './types';
 
 	interface Props {
-		/** METRICS catalog 의 정의 — raw 테이블 컬럼처럼 catalog 에 없으면 undefined */
+		/** METRICS catalog 의 정의 · raw 테이블 컬럼처럼 catalog 에 없으면 undefined */
 		metric?: MetricDef;
 		/** metric 없을 때 사용할 컬럼명 fallback */
 		fallbackKey?: string;

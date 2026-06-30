@@ -1,6 +1,6 @@
-// 차트틀 (인디케이터 템플릿) 다중 저장 — 현재 차트 설정(지표·파라미터·축·캔들·봉주기·표시)을
+// 차트틀 (인디케이터 템플릿) 다중 저장 · 현재 차트 설정(지표·파라미터·축·캔들·봉주기·표시)을
 // 이름 슬롯으로 저장/적용. localStorage 1키(상한 12, drawStore 무해 영속 패턴). 적용은 ChartCtl
-// 필드 일괄 대입만 — PriceChart 의 기존 reconcile effect 들이 차트 반영을 이어받는다 (명령 0).
+// 필드 일괄 대입만 · PriceChart 의 기존 reconcile effect 들이 차트 반영을 이어받는다 (명령 0).
 const browser = typeof window !== 'undefined'; // $app/environment 결합 제거 (4a-3)
 import { OVERLAY_ALL, SUB_ALL, TFS, YMODES, CANDLES, type ChartCtl, type OverlayKey, type SubKey, type YMode, type CandleStyle, type TfKey } from './chartState.svelte';
 import { IND_DEFS } from './indicatorParams';
@@ -20,7 +20,7 @@ export interface ChartTemplate {
 const KEY = 'dlTerm.tmpl';
 export const TMPL_CAP = 12;
 
-// 슬롯 단위 화이트리스트 검증 — 스키마 드리프트·손상 항목만 버리고 나머지는 살린다 (hydrate 와 동일 철학).
+// 슬롯 단위 화이트리스트 검증 · 스키마 드리프트·손상 항목만 버리고 나머지는 살린다 (hydrate 와 동일 철학).
 function sanitize(raw: unknown): ChartTemplate | null {
 	if (!raw || typeof raw !== 'object') return null;
 	const t = raw as Record<string, unknown>;
@@ -44,7 +44,7 @@ function sanitize(raw: unknown): ChartTemplate | null {
 	};
 }
 
-/** 저장된 차트틀 목록 — 손상·비배열은 빈 배열로 무해 처리. */
+/** 저장된 차트틀 목록 · 손상·비배열은 빈 배열로 무해 처리. */
 export function loadTemplates(): ChartTemplate[] {
 	if (!browser) return [];
 	try {
@@ -63,7 +63,7 @@ function persist(list: ChartTemplate[]): void {
 		if (!list.length) localStorage.removeItem(KEY);
 		else localStorage.setItem(KEY, JSON.stringify(list.slice(-TMPL_CAP)));
 	} catch {
-		/* quota — 무해 */
+		/* quota · 무해 */
 	}
 }
 
@@ -92,7 +92,7 @@ export function deleteTemplate(name: string): ChartTemplate[] {
 	return list;
 }
 
-/** 틀 적용 — ChartCtl 필드 일괄 대입. 차트 반영은 PriceChart reconcile effect 들이 자동 수행. */
+/** 틀 적용 · ChartCtl 필드 일괄 대입. 차트 반영은 PriceChart reconcile effect 들이 자동 수행. */
 export function applyTemplate(ctl: ChartCtl, t: ChartTemplate): void {
 	ctl.overlays = [...t.overlays];
 	ctl.subs = [...t.subs];

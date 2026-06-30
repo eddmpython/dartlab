@@ -1,5 +1,5 @@
 <!--
-  BrandSwitch — 브랜드 색 테마 아이콘(팝오버). 전 표면 공유 SSOT 컨트롤(프레임워크 무관, document 직접).
+  BrandSwitch · 브랜드 색 테마 아이콘(팝오버). 전 표면 공유 SSOT 컨트롤(프레임워크 무관, document 직접).
   SNS 아이콘 행에 인라인으로 붙는다(터미널 topbar · 카드 페이지 · 랜딩 Header 동일).
   documentElement 에 data-brand(프리셋)·data-conv(상승색)·--p-accent-500/--p-red-500(커스텀) 세팅 →
   tokens.css SSOT 를 통해 랜딩·터미널·뷰어·report·카드가 리빌드 없이 실시간 리테마. localStorage 영속.
@@ -61,7 +61,7 @@
 	}
 	function pickPreset(id: string) {
 		brand = id;
-		// 커스텀 입력도 선택색으로 시작 — 프리셋에서 미세조정 출발점.
+		// 커스텀 입력도 선택색으로 시작 · 프리셋에서 미세조정 출발점.
 		const p = PRESETS.find((x) => x.id === id);
 		if (p) custom = p.hex;
 		applyAccent();
@@ -118,7 +118,7 @@
 	</button>
 	{#if open}
 		<div class="bswPop">
-			<div class="bswHead">브랜드색 — 한 곳에서 전 화면(메인 랜딩 포함) 적용</div>
+			<div class="bswHead">브랜드색 · 한 곳에서 전 화면(메인 랜딩 포함) 적용</div>
 			<div class="bswRow">
 				{#each PRESETS as p (p.id)}
 					<button class="bswSwatch" class:on={brand === p.id} style="background:{p.hex}" title={p.name} aria-label={p.name} onclick={() => pickPreset(p.id)}></button>
@@ -148,7 +148,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		color: inherit; /* SNS 이웃 아이콘과 동일 톤 — 문맥 텍스트색 상속(터미널 밝음). 회색 처리 안 함. */
+		color: inherit; /* SNS 이웃 아이콘과 동일 톤 · 문맥 텍스트색 상속(터미널 밝음). 회색 처리 안 함. */
 		background: transparent;
 		border: 0;
 		cursor: pointer;

@@ -1,4 +1,4 @@
-// DartLab Terminal — compute engine (dartlab.js 포팅 + 데이터 정직성 수정).
+// DartLab Terminal · compute engine (dartlab.js 포팅 + 데이터 정직성 수정).
 //   · 연간 cf.op/inv/fin 은 실데이터 → CFO/CFI/CFF/FCF 실표시 (opening/closing 은 null → 제외)
 //   · ecosystem YoY delta 는 99% null → finance 5Y 배열에서 직접 YoY 계산 (실데이터화)
 //   · 합성 OHLC 제거 → 실 재무추세(매출·영업이익·이익률) annual/quarter
@@ -50,19 +50,19 @@ const SECTOR_KR: Record<string, string> = {
 	realestate: '부동산', education: '교육', medicalDevice: '의료기기', environment: '환경',
 	buildingMaterials: '건자재', railroad: '철도', consulting: '지주', agriculture: '농업', misc: '기타'
 };
-// 등급 사다리 SSOT — gradeTone/gradeScore 가 위치(좋음→나쁨)로 톤·점수(0~1)를 도출. scan 엔진 실제 출력값과 일치.
-// 미수록 값(eff '해당없음'=N/A, stab '미확인')은 indexOf<0 → gradeScore null(레이더 스포크 생략)·gradeTone neutral(중립칩) — 거짓 순서 방지.
+// 등급 사다리 SSOT · gradeTone/gradeScore 가 위치(좋음→나쁨)로 톤·점수(0~1)를 도출. scan 엔진 실제 출력값과 일치.
+// 미수록 값(eff '해당없음'=N/A, stab '미확인')은 indexOf<0 → gradeScore null(레이더 스포크 생략)·gradeTone neutral(중립칩) · 거짓 순서 방지.
 export const GRADE_SCALE: Record<string, string[]> = {
 	prof: ['우수', '양호', '보통', '저수익', '적자'],
 	growth: ['고성장', '성장', '정체', '역성장', '급감'],
 	debt: ['안전', '관찰', '주의', '고위험'],
 	liq: ['우수', '양호', '보통', '주의', '위험'],
-	eff: ['우수', '양호', '보통', '비효율'], // scanEfficiency grade — '해당없음'(N/A)은 척도 밖(중립)
+	eff: ['우수', '양호', '보통', '비효율'], // scanEfficiency grade · '해당없음'(N/A)은 척도 밖(중립)
 	qual: ['우수', '양호', '보통', '주의', '위험'],
 	gov: ['A', 'B', 'C', 'D', 'E'],
 	stab: ['안정', '보통', '취약', '경고', '위험'], // scan insider stability 실제 출력(옛 '불안정' 미발생·'미확인'은 척도 밖)
 	audit: ['안전', '관찰', '주의', '고위험'], // scanAudit riskLevel 4단 (옛 3단 저/중/고 교체)
-	cap: ['적극환원', '환원형', '중립', '희석형'] // scanCapital 분류 — 주주환원 강도
+	cap: ['적극환원', '환원형', '중립', '희석형'] // scanCapital 분류 · 주주환원 강도
 };
 
 // ── 종합(composite) 축 SSOT ──
@@ -91,20 +91,20 @@ export const COMPOSITE_AXES: CompositeAxis[] = [
 	{ key: 'cap', kr: '주주환원', en: 'Capital return', short: '환원', group: 'disclosure', field: 'capClass', kind: 'ordered' },
 	{ key: 'cf', kr: '현금흐름', en: 'Cash flow', short: '현금', group: 'price', field: 'cfPattern', kind: 'class' }
 ];
-// dartlab scan group colors — dartlab 토큰 계열로 정렬
+// dartlab scan group colors · dartlab 토큰 계열로 정렬
 const GROUP_COLOR: Record<string, string> = {
 	identity: '#a3a8b3', income: '#60a5fa', health: '#34d399', governance: '#a78bfa',
 	quality: '#fbbf24', workforce: '#f472b6', changes: '#ec4899', price: '#ea4647',
 	valuation: '#34d399', disclosure: '#c084fc'
 };
 const MARKET_LABEL: Record<string, string> = { 유가증권: 'KOSPI', 코스닥: 'KOSDAQ', 코넥스: 'KONEX' };
-// 블로그 공개 슬러그 정규화 — 옛 meta.json(6h 캐시 잔존)은 폴더명 그대로(정렬용 "NN-" 접두 포함)를
+// 블로그 공개 슬러그 정규화 · 옛 meta.json(6h 캐시 잔존)은 폴더명 그대로(정렬용 "NN-" 접두 포함)를
 // 슬러그로 실었다. 공개 슬러그는 6자리 종목코드로 시작하므로, 코드 앞 1~3자리 접두일 때만 벗긴다
-// (새 슬러그 "005930-…" 는 \d{1,3}- 패턴에 안 걸려 무변 — 멱등).
+// (새 슬러그 "005930-…" 는 \d{1,3}- 패턴에 안 걸려 무변 · 멱등).
 const normalizeBlogSlug = (s: string): string => s.replace(/^\d{1,3}-(?=[0-9A-Z]{6}-)/, '');
 const rev = <T>(a: T[] | undefined): T[] => (a || []).slice().reverse();
 
-// 법인명 정규화 — ㈜·(주)·주식회사·공백 제거 + 소문자. 출자 다이얼로그의 피출자사명→상장코드 exact 해소용.
+// 법인명 정규화 · ㈜·(주)·주식회사·공백 제거 + 소문자. 출자 다이얼로그의 피출자사명→상장코드 exact 해소용.
 // 영문약칭↔한글표기(예: 삼성SDS↔삼성에스디에스) 차이는 정규화로 못 풀어 미해소(=비상장 취급, 보수적).
 function normalizeCorpName(s: string): string {
 	return (s || '').replace(/㈜/g, '').replace(/\(주\)/g, '').replace(/주식회사/g, '').replace(/\s+/g, '').toLowerCase();
@@ -122,8 +122,8 @@ function median(a: Num[]): number | null {
 	const s = a.filter((x): x is number => x != null && Number.isFinite(x)).sort((x, y) => x - y);
 	return s.length ? s[Math.floor(s.length / 2)] : null;
 }
-// 정렬값 배열 5분위(p10~p90) 선형보간 — 시장/전체 유니버스 분포곡선을 모집단 배열에서 라이브 산출(prebuild 불필요).
-// 표본 < 10 이면 null — 분포 신뢰 부족(02 정직 가드 "n<10 분포 숨김"). DistCurve 는 band null 이면 미렌더.
+// 정렬값 배열 5분위(p10~p90) 선형보간 · 시장/전체 유니버스 분포곡선을 모집단 배열에서 라이브 산출(prebuild 불필요).
+// 표본 < 10 이면 null · 분포 신뢰 부족(02 정직 가드 "n<10 분포 숨김"). DistCurve 는 band null 이면 미렌더.
 function quantileBand(arr: Num[]): { p10: number; p25: number; median: number; p75: number; p90: number } | null {
 	const xs = arr.filter((x): x is number => x != null && Number.isFinite(x)).sort((a, b) => a - b);
 	if (xs.length < 10) return null;
@@ -135,7 +135,7 @@ function quantileBand(arr: Num[]): { p10: number; p25: number; median: number; p
 	};
 	return { p10: q(0.1), p25: q(0.25), median: q(0.5), p75: q(0.75), p90: q(0.9) };
 }
-// 실도수 히스토그램 — 동종사 전체 값 배열을 robust 범위(p2~p98)로 클리핑해 N빈으로 집계(outlier 무력화).
+// 실도수 히스토그램 · 동종사 전체 값 배열을 robust 범위(p2~p98)로 클리핑해 N빈으로 집계(outlier 무력화).
 // 5분위 보간(quantileBand)보다 정직: 실제 봉우리·gap·왜도를 그대로. 회사값은 범위 클램프 + 초과 표식.
 function histOf(arr: Num[], companyVal: Num, bins = 22): Hist | null {
 	const xs = arr.filter((x): x is number => x != null && Number.isFinite(x)).sort((a, b) => a - b);
@@ -195,10 +195,10 @@ function gradeScore(scaleKey: string, val?: string): Num {
 	return 1 - i / (sc.length - 1);
 }
 
-// 통화별 raw 금액(원/USD) 포맷 — 시총·장부가 등. KRW=조/억, USD=$T/$B/$M. 통화 인식 SSOT.
+// 통화별 raw 금액(원/USD) 포맷 · 시총·장부가 등. KRW=조/억, USD=$T/$B/$M. 통화 인식 SSOT.
 // 재무 시리즈(이미 조 단위로 ÷1e12 된 값)는 fmtMoneyTril 을 쓴다(별 컨벤션).
 export function fmtMoney(v: Num, currency = 'KRW'): string {
-	if (v == null) return '—';
+	if (v == null) return '·';
 	if (currency === 'USD') {
 		const a = Math.abs(v);
 		if (a >= 1e12) return '$' + (v / 1e12).toLocaleString('en-US', { maximumFractionDigits: 2 }) + 'T';
@@ -206,16 +206,16 @@ export function fmtMoney(v: Num, currency = 'KRW'): string {
 		if (a >= 1e6) return '$' + (v / 1e6).toLocaleString('en-US', { maximumFractionDigits: 1 }) + 'M';
 		return '$' + v.toLocaleString('en-US', { maximumFractionDigits: 0 });
 	}
-	// 천단위 콤마 — 조/억 환산값도 콤마 적용(타법인 출자 장부가·시총 등 큰 금액 가독성).
+	// 천단위 콤마 · 조/억 환산값도 콤마 적용(타법인 출자 장부가·시총 등 큰 금액 가독성).
 	if (v >= 1e12) return (v / 1e12).toLocaleString('en-US', { maximumFractionDigits: 1 }) + '조';
 	if (v >= 1e8) return Math.round(v / 1e8).toLocaleString('en-US') + '억';
 	return v.toLocaleString('en-US');
 }
 
-// 이미 조(兆) 단위로 환산된 재무 시리즈 값(예 0.4162=$416B·300=300조) 포맷 — fmtMoney(raw)와 컨벤션 다름.
+// 이미 조(兆) 단위로 환산된 재무 시리즈 값(예 0.4162=$416B·300=300조) 포맷 · fmtMoney(raw)와 컨벤션 다름.
 // KRW: v+'조'. USD: v≥1 → $vT, 아니면 $(v*1000)B (조달러→억/십억달러).
 export function fmtMoneyTril(v: Num, currency = 'KRW'): string {
-	if (v == null) return '—';
+	if (v == null) return '·';
 	if (currency === 'USD') {
 		const a = Math.abs(v);
 		if (a >= 1) return '$' + v.toLocaleString('en-US', { maximumFractionDigits: 2 }) + 'T';
@@ -241,18 +241,18 @@ export interface Engine {
 	sectorTailwinds(): { id: string; kr: string; en: string; blended: number; tailwindKey: string }[];
 	priceOf(code: string): RawData['prices']['data'][string] | undefined;
 	nameOf(code: string): string;
-	// 피출자사명 → 상장 종목 해소(시총·최근 순익). 정규화 exact + 시총·재무 존재 게이트 — 미해소 = null(비상장 취급).
+	// 피출자사명 → 상장 종목 해소(시총·최근 순익). 정규화 exact + 시총·재무 존재 게이트 · 미해소 = null(비상장 취급).
 	lookupListed(name: string): { code: string; marketCap: number; net: number | null } | null;
-	// 유니버스 교차 백분위 — co.percentile(업종 고정)과 달리 모집단(업종/시장/전체) 선택. 다이얼로그 전용(콜드 비용 0).
+	// 유니버스 교차 백분위 · co.percentile(업종 고정)과 달리 모집단(업종/시장/전체) 선택. 다이얼로그 전용(콜드 비용 0).
 	percentileIn(code: string, universe: Universe): UniversePercentile | null;
-	// 거시 산업 sweep — 한 산업의 cross-industry 비교 스냅샷(분포·scan grade 버킷%·gov 밸류·tailwind·멤버). 좌측 sweep·산업 다이얼로그 전용.
+	// 거시 산업 sweep · 한 산업의 cross-industry 비교 스냅샷(분포·scan grade 버킷%·gov 밸류·tailwind·멤버). 좌측 sweep·산업 다이얼로그 전용.
 	industryMacro(id: string): IndustryMacro | null;
 	industryMembers(id: string): IndustryMember[];
-	industryTrails(): IndustryTrail[]; // 산업 연도별 이동 — (수익성 × 전년比 성장) 궤적. 지형도 시간축.
+	industryTrails(): IndustryTrail[]; // 산업 연도별 이동 · (수익성 × 전년比 성장) 궤적. 지형도 시간축.
 }
 
 // ── 거시 산업 sweep 모델 (좌측 LeftRail 산업층 · IndustryDialog) ──
-// 산업이 *주체* — 회사 주체 percentileIn 과 직교. 모두 baked(industryStats·ecosystem·gov prices) 합성, 새 fetch 0.
+// 산업이 *주체* · 회사 주체 percentileIn 과 직교. 모두 baked(industryStats·ecosystem·gov prices) 합성, 새 fetch 0.
 export interface IndustryDist {
 	p10: number;
 	p25: number;
@@ -271,9 +271,9 @@ export interface IndustryMember {
 	name: string;
 	margin: number; // opMargin % (가로)
 	growth: number; // revCagr % (세로)
-	cap: number; // gov 시총(크기) — 0 가능
+	cap: number; // gov 시총(크기) · 0 가능
 	grade: string; // profGrade (수익성 등급)
-	debtGrade: string; // debtGrade (재무 건전성) — 색=gradeTone('debt'). x축(수익성)과 직교.
+	debtGrade: string; // debtGrade (재무 건전성) · 색=gradeTone('debt'). x축(수익성)과 직교.
 }
 export interface IndustryTrail {
 	id: string;
@@ -287,10 +287,10 @@ export interface IndustryMacro {
 	count: number; // 산업 멤버(상장 primary) 수
 	dist: Record<string, IndustryDist | null>; // industryStats 분포(n<10 → null). opMargin·netMargin·roe·debtRatio·currentRatio·revCagr·netIncomeCagr·ccc·assetTurnover·icr
 	marginIqr: number | null; // opMargin p75-p25 = 마진 양극화(polarization 마진렌즈)
-	pbr: IndustryDist | null; // gov 시총/자본 분포(KRX 아님 — raw.prices=gov/prices). 밸류 양극화
+	pbr: IndustryDist | null; // gov 시총/자본 분포(KRX 아님 · raw.prices=gov/prices). 밸류 양극화
 	bucket: { profRisk: number; lossRisk: number; growthRisk: number; debtRisk: number; liqRisk: number; cfDistress: number }; // scan grade 악성 버킷 %(ordinal 평균 아님). profRisk=적자+저수익, lossRisk=적자만(혼합 방지)
 	cfSignature: { pattern: string; share: number } | null; // cfPattern 최빈 = 산업 현금흐름 시그니처
-	direction: { opMarginDelta: number | null; roeDelta: number | null; revenueYoyPct: number | null }; // YoY 방향(개선/악화) — 다년 CAGR과 직교(최근 변화), 구조 vs 순환 단서
+	direction: { opMarginDelta: number | null; roeDelta: number | null; revenueYoyPct: number | null }; // YoY 방향(개선/악화) · 다년 CAGR과 직교(최근 변화), 구조 vs 순환 단서
 	tailwind: number | null; // macro blended 순풍/역풍
 	macroPhase: string;
 	top: { roe: IndustryMacroMember[]; growth: IndustryMacroMember[]; risk: IndustryMacroMember[] }; // Q4 멤버 지형 → 종목 드릴인
@@ -394,7 +394,7 @@ export function createEngine(raw: RawData): Engine {
 		};
 	}
 
-	// 위험 평가 컨텍스트 — EcoNode + 업종 중앙값(industryStats distribution). riskFlagsOf·riskCatalogOf 공유.
+	// 위험 평가 컨텍스트 · EcoNode + 업종 중앙값(industryStats distribution). riskFlagsOf·riskCatalogOf 공유.
 	// 규칙·임계·라벨은 lib/riskRules.ts SSOT (글랜스·다이얼로그 공동 소비, 로직 중복 0).
 	function riskCtxOf(code: string): RiskRuleCtx {
 		const e = ecoByCode[code] || ({} as EcoNode);
@@ -406,7 +406,7 @@ export function createEngine(raw: RawData): Engine {
 
 	function riskFlagsOf(code: string): RiskFlag[] {
 		const ctx = riskCtxOf(code);
-		// 점등(red/yellow)만 수집 — clear·na 는 글랜스 미표시(다이얼로그 전용).
+		// 점등(red/yellow)만 수집 · clear·na 는 글랜스 미표시(다이얼로그 전용).
 		const lit = new Map<string, { hard: boolean; flag: RiskFlag }>();
 		for (const rule of RISK_RULES) {
 			const ev = rule.evaluate(ctx);
@@ -420,12 +420,12 @@ export function createEngine(raw: RawData): Engine {
 		const out = [...lit.values()]
 			.sort((a, b) => lvRank(a.flag.lv) - lvRank(b.flag.lv) || (a.hard === b.hard ? 0 : a.hard ? -1 : 1))
 			.map((x) => x.flag);
-		// fallback green — '검사한 임계 중' 한정(검사 안 한 차원까지 보증 안 함 = 거짓완결성 회피).
+		// fallback green · '검사한 임계 중' 한정(검사 안 한 차원까지 보증 안 함 = 거짓완결성 회피).
 		if (!out.length) out.push({ lv: 'green', kr: '주요 위험 신호 없음', en: 'No major red flags', d: '검사 임계 중 초과 없음' });
 		return out;
 	}
 
-	// 다이얼로그용 — 전체 차원 카탈로그 + 이 회사 현상태(점등/통과/판정불가). 억제·정렬 없음.
+	// 다이얼로그용 · 전체 차원 카탈로그 + 이 회사 현상태(점등/통과/판정불가). 억제·정렬 없음.
 	function riskCatalogOf(code: string): RiskCatalogItem[] {
 		return evalRiskCatalog(riskCtxOf(code));
 	}
@@ -478,7 +478,7 @@ export function createEngine(raw: RawData): Engine {
 	}
 
 	// ── 유니버스 교차 백분위 (engine 내부, raw 클로저) ──
-	// buildFundMetrics: 정량 13지표 백분위. peers(모집단)만 바꾸면 같은 산식이 업종/시장/전체로 — pctRank 는
+	// buildFundMetrics: 정량 13지표 백분위. peers(모집단)만 바꾸면 같은 산식이 업종/시장/전체로 · pctRank 는
 	//   유니버스 무관 순수함수(로직 복제 0). band: useStatsBand=업종 industryStats(prebuilt), 아니면 peers 라이브 5분위.
 	//   lowerBetter=true (부채비율·CCC·발생액비율) 는 pctRank 가 p 를 뒤집어 "상위 N%" 가 항상 우수를 뜻함.
 	function buildFundMetrics(node: EcoNode, peers: EcoNode[], useStatsBand: boolean, withHist: boolean): PercentileMetric[] {
@@ -487,7 +487,7 @@ export function createEngine(raw: RawData): Engine {
 		const dist = statsRec?.[node.industry]?.distribution;
 		const bandOf = (field: keyof EcoNode): PercentileMetric['band'] => {
 			if (useStatsBand) {
-				// 업종 분포 밴드(industryStats) — public 만 실데이터, local(단일사) 은 null. distribution 키 = metric field 와 1:1.
+				// 업종 분포 밴드(industryStats) · public 만 실데이터, local(단일사) 은 null. distribution 키 = metric field 와 1:1.
 				const d = dist?.[field as string];
 				if (!d || d.p10 == null || d.p90 == null) return null;
 				const med = d.median ?? d.p10;
@@ -517,7 +517,7 @@ export function createEngine(raw: RawData): Engine {
 		].filter((m): m is PercentileMetric => m.p != null);
 	}
 
-	// 정성(범주형) 등급 — 유니버스 내 *같은 등급 비중*(순위 아님, 가짜 백분위 금지 02 KILL#3). 거버넌스·경영권·감사·주주환원·현금흐름.
+	// 정성(범주형) 등급 · 유니버스 내 *같은 등급 비중*(순위 아님, 가짜 백분위 금지 02 KILL#3). 거버넌스·경영권·감사·주주환원·현금흐름.
 	const QUAL_KEYS = ['gov', 'stab', 'audit', 'cap', 'cf'];
 	function buildQualShares(node: EcoNode, peers: EcoNode[]): CategoricalShare[] {
 		return COMPOSITE_AXES.filter((a) => QUAL_KEYS.includes(a.key))
@@ -529,14 +529,14 @@ export function createEngine(raw: RawData): Engine {
 				const counts: Record<string, number> = {};
 				for (const pn of valued) { const v = pn[a.field] as string; if (scale.includes(v)) counts[v] = (counts[v] || 0) + 1; }
 				const same = myVal ? valued.filter((pn) => (pn[a.field] as string) === myVal).length : 0;
-				// 등급레벨별 동종사 비중 — "이 잣대에서 어느 등급에 많이 몰렸나"(분포). 회사 등급은 cell 에서 하이라이트.
+				// 등급레벨별 동종사 비중 · "이 잣대에서 어느 등급에 많이 몰렸나"(분포). 회사 등급은 cell 에서 하이라이트.
 				const dist = scale.map((step) => ({ step, share: vn ? Math.round(((counts[step] || 0) / vn) * 100) : 0, tone: gradeTone(a.key, step) }));
 				return { key: a.key, kr: a.kr, en: a.en, v: myVal, tone: gradeTone(a.key, myVal), sameShare: vn && myVal ? Math.round((same / vn) * 100) : null, peerN: vn, dist };
 			})
 			.filter((g) => !!g.v);
 	}
 
-	// 가격(PER/PBR) — EcoNode 에 없어 raw.finance+prices 에서 노드별 산출(valuationOf 동일 식·이상치 가드). 펀더와 *분리* 격자(02 KILL#2).
+	// 가격(PER/PBR) · EcoNode 에 없어 raw.finance+prices 에서 노드별 산출(valuationOf 동일 식·이상치 가드). 펀더와 *분리* 격자(02 KILL#2).
 	function priceRatios(id: string): { per: number | null; pbr: number | null } {
 		const f = raw.finance.companies[id];
 		const p = raw.prices.data[id];
@@ -565,7 +565,7 @@ export function createEngine(raw: RawData): Engine {
 		};
 	}
 
-	// co.percentile (업종 고정) — buildCompany 가 매번 호출하는 핫패스. 무손상 유지(grades/price 미산출=콜드비용 0).
+	// co.percentile (업종 고정) · buildCompany 가 매번 호출하는 핫패스. 무손상 유지(grades/price 미산출=콜드비용 0).
 	function industryPercentile(code: string): Company['percentile'] {
 		const node = ecoByCode[code];
 		if (!node) return null;
@@ -573,8 +573,8 @@ export function createEngine(raw: RawData): Engine {
 		return { industry: node.industryName || SECTOR_KR[node.industry] || node.industry, n: peers.length, metrics: buildFundMetrics(node, peers, true, false) };
 	}
 
-	// 유니버스 교차 백분위 — 다이얼로그 전용(buildCompany 비경유 → 콜드비용 0). 모집단(업종/시장/전체) 선택만 분기.
-	// 소속지수('index')는 구성종목 멤버십 데이터 부재로 BLOCKED(00 ④) — union 미포함, "시총상위N=KOSPI200" 위조 금지(02 KILL#5).
+	// 유니버스 교차 백분위 · 다이얼로그 전용(buildCompany 비경유 → 콜드비용 0). 모집단(업종/시장/전체) 선택만 분기.
+	// 소속지수('index')는 구성종목 멤버십 데이터 부재로 BLOCKED(00 ④) · union 미포함, "시총상위N=KOSPI200" 위조 금지(02 KILL#5).
 	function percentileIn(code: string, universe: Universe): UniversePercentile | null {
 		const node = ecoByCode[code];
 		if (!node) return null;
@@ -635,7 +635,7 @@ export function createEngine(raw: RawData): Engine {
 		};
 	}
 
-	// ui/web 재무카드 — finance.json 5Y 에서 계산 (DuckDB 불필요, 즉시)
+	// ui/web 재무카드 · finance.json 5Y 에서 계산 (DuckDB 불필요, 즉시)
 	function computeFinancials(fin: FinanceCompany): Financials {
 		const yrs = years;
 		const sales = fin.is.sales;
@@ -687,7 +687,7 @@ export function createEngine(raw: RawData): Engine {
 		return (Math.pow(a[a.length - 1] / a[0], 1 / (a.length - 1)) - 1) * 100;
 	}
 
-	// 회사별 결과 캐시 — raw 불변이므로 재선택 시 즉시 반환(buildCompanyImpl 의 전수스캔 반복 제거).
+	// 회사별 결과 캐시 · raw 불변이므로 재선택 시 즉시 반환(buildCompanyImpl 의 전수스캔 반복 제거).
 	const companyCache = new Map<string, Company | null>();
 	function buildCompany(code: string): Company | null {
 		if (companyCache.has(code)) return companyCache.get(code) ?? null;
@@ -706,7 +706,7 @@ export function createEngine(raw: RawData): Engine {
 		const industry = idx ? idx.industry : 'misc';
 		const last = px.currentPrice;
 		const mktcapKRW = px.marketCap;
-		// 표시 통화 — finance 엔트리 currency 태그(US=USD). 기본 KRW(KR 무회귀).
+		// 표시 통화 · finance 엔트리 currency 태그(US=USD). 기본 KRW(KR 무회귀).
 		const currency = (fin as { currency?: string }).currency ?? 'KRW';
 
 		const net = lastNonNull(fin.is.net);
@@ -761,17 +761,17 @@ export function createEngine(raw: RawData): Engine {
 		const crVal = (() => {
 			const c = lastNonNull(T.currAsset);
 			const l = lastNonNull(T.currLiab);
-			return c && l && l.v ? ((c.v / l.v) * 100).toFixed(0) + '%' : '—';
+			return c && l && l.v ? ((c.v / l.v) * 100).toFixed(0) + '%' : '·';
 		})();
 		const ratios = [
-			{ kr: 'ROE', en: 'Return on equity', id: 'roe', v: roe ? roe.v.toFixed(1) + '%' : '—', tone: (roe && roe.v > 8 ? 'up' : 'neutral') as Tone },
-			{ kr: '영업이익률', en: 'Operating margin', id: 'opm', v: opm ? opm.v.toFixed(1) + '%' : '—', tone: (opm && opm.v > 8 ? 'up' : opm && opm.v < 0 ? 'down' : 'neutral') as Tone },
-			{ kr: '순이익률', en: 'Net margin', id: 'npm', v: npm != null ? npm.toFixed(1) + '%' : '—', tone: (npm != null && npm > 5 ? 'up' : npm != null && npm < 0 ? 'down' : 'neutral') as Tone },
-			{ kr: '부채비율', en: 'Debt ratio', id: 'dr', v: dr ? dr.v.toFixed(1) + '%' : '—', tone: (dr && dr.v < 100 ? 'good' : dr && dr.v > 300 ? 'warn' : 'neutral') as Tone },
+			{ kr: 'ROE', en: 'Return on equity', id: 'roe', v: roe ? roe.v.toFixed(1) + '%' : '·', tone: (roe && roe.v > 8 ? 'up' : 'neutral') as Tone },
+			{ kr: '영업이익률', en: 'Operating margin', id: 'opm', v: opm ? opm.v.toFixed(1) + '%' : '·', tone: (opm && opm.v > 8 ? 'up' : opm && opm.v < 0 ? 'down' : 'neutral') as Tone },
+			{ kr: '순이익률', en: 'Net margin', id: 'npm', v: npm != null ? npm.toFixed(1) + '%' : '·', tone: (npm != null && npm > 5 ? 'up' : npm != null && npm < 0 ? 'down' : 'neutral') as Tone },
+			{ kr: '부채비율', en: 'Debt ratio', id: 'dr', v: dr ? dr.v.toFixed(1) + '%' : '·', tone: (dr && dr.v < 100 ? 'good' : dr && dr.v > 300 ? 'warn' : 'neutral') as Tone },
 			{ kr: '유동비율', en: 'Current ratio', id: 'cr', v: crVal, tone: 'good' as Tone },
-			{ kr: 'PER', en: 'P/E', id: 'per', v: per != null ? per.toFixed(1) + 'x' : '—', tone: 'neutral' as Tone },
-			{ kr: 'PBR', en: 'P/B', id: 'pbr', v: pbr != null ? pbr.toFixed(2) + 'x' : '—', tone: 'neutral' as Tone },
-			{ kr: 'PSR', en: 'P/S', id: 'psr', v: psr != null ? psr.toFixed(2) + 'x' : '—', tone: 'neutral' as Tone }
+			{ kr: 'PER', en: 'P/E', id: 'per', v: per != null ? per.toFixed(1) + 'x' : '·', tone: 'neutral' as Tone },
+			{ kr: 'PBR', en: 'P/B', id: 'pbr', v: pbr != null ? pbr.toFixed(2) + 'x' : '·', tone: 'neutral' as Tone },
+			{ kr: 'PSR', en: 'P/S', id: 'psr', v: psr != null ? psr.toFixed(2) + 'x' : '·', tone: 'neutral' as Tone }
 		];
 
 		const salesCagr = cagr(fin.is.sales);
@@ -781,29 +781,29 @@ export function createEngine(raw: RawData): Engine {
 		const tn = (b: unknown): Tone => (b ? 'up' : 'warn');
 		const analysis = {
 			summary: {
-				kr: `${name}는 5년 매출 CAGR ${salesCagr != null ? (salesCagr >= 0 ? '+' : '') + salesCagr.toFixed(1) + '%' : '—'}, 최근 영업이익률 ${opm ? opm.v.toFixed(1) + '%' : '—'}. ROE ${roe ? roe.v.toFixed(1) + '%' : '—'} · 부채비율 ${dr ? dr.v.toFixed(0) + '%' : '—'}. dartlab 파생 신용 ${credit.grade}, 건전도 ${credit.healthScore}/100.`,
-				en: `${name}: 5Y revenue CAGR ${salesCagr != null ? (salesCagr >= 0 ? '+' : '') + salesCagr.toFixed(1) + '%' : '—'}, latest OP margin ${opm ? opm.v.toFixed(1) + '%' : '—'}. ROE ${roe ? roe.v.toFixed(1) + '%' : '—'} · debt ${dr ? dr.v.toFixed(0) + '%' : '—'}. Derived credit ${credit.grade}, health ${credit.healthScore}/100.`
+				kr: `${name}는 5년 매출 CAGR ${salesCagr != null ? (salesCagr >= 0 ? '+' : '') + salesCagr.toFixed(1) + '%' : '·'}, 최근 영업이익률 ${opm ? opm.v.toFixed(1) + '%' : '·'}. ROE ${roe ? roe.v.toFixed(1) + '%' : '·'} · 부채비율 ${dr ? dr.v.toFixed(0) + '%' : '·'}. dartlab 파생 신용 ${credit.grade}, 건전도 ${credit.healthScore}/100.`,
+				en: `${name}: 5Y revenue CAGR ${salesCagr != null ? (salesCagr >= 0 ? '+' : '') + salesCagr.toFixed(1) + '%' : '·'}, latest OP margin ${opm ? opm.v.toFixed(1) + '%' : '·'}. ROE ${roe ? roe.v.toFixed(1) + '%' : '·'} · debt ${dr ? dr.v.toFixed(0) + '%' : '·'}. Derived credit ${credit.grade}, health ${credit.healthScore}/100.`
 			},
 			tracks: [
-				{ kr: '수익성', en: 'Profitability', verdict: { kr: `영업이익률 ${opm ? opm.v.toFixed(1) + '%' : '—'}, 5년 ${opmDelta != null ? (opmDelta >= 0 ? '+' : '') + opmDelta.toFixed(1) + 'pp' : '—'}`, en: `OP margin ${opm ? opm.v.toFixed(1) + '%' : '—'}, 5Y ${opmDelta != null ? (opmDelta >= 0 ? '+' : '') + opmDelta.toFixed(1) + 'pp' : '—'}` }, tone: tn(opm && opm.v > 5), delta: opm ? opm.v.toFixed(1) + '%' : '—' },
-				{ kr: '성장성', en: 'Growth', verdict: { kr: `매출 CAGR ${salesCagr != null ? salesCagr.toFixed(1) + '%' : '—'}`, en: `Revenue CAGR ${salesCagr != null ? salesCagr.toFixed(1) + '%' : '—'}` }, tone: tn(salesCagr != null && salesCagr > 0), delta: salesCagr != null ? (salesCagr >= 0 ? '+' : '') + salesCagr.toFixed(1) + '%' : '—' },
-				{ kr: '안정성', en: 'Stability', verdict: { kr: `부채비율 ${dr ? dr.v.toFixed(0) + '%' : '—'} · 유동 ${credit.basis.curr != null ? credit.basis.curr + '%' : '—'}`, en: `Debt ${dr ? dr.v.toFixed(0) + '%' : '—'} · current ${credit.basis.curr != null ? credit.basis.curr + '%' : '—'}` }, tone: tn(dr && dr.v < 150), delta: dr ? dr.v.toFixed(0) + '%' : '—' },
-				{ kr: '현금흐름', en: 'Cash flow', verdict: { kr: `영업CF ${cf.op != null ? cf.op + '조' : '—'} · FCF ${fcf != null ? fcf + '조' : '—'}`, en: `CFO ${cf.op != null ? cf.op + 'T' : '—'} · FCF ${fcf != null ? fcf + 'T' : '—'}` }, tone: tn(fcf != null && fcf > 0), delta: fcf != null ? (fcf >= 0 ? 'FCF+' : 'FCF-') : '—' },
-				{ kr: '가치평가', en: 'Valuation', verdict: { kr: `PER ${per != null ? per.toFixed(1) + 'x' : '—'} · PBR ${pbr != null ? pbr.toFixed(2) + 'x' : '—'}`, en: `PER ${per != null ? per.toFixed(1) + 'x' : '—'} · PBR ${pbr != null ? pbr.toFixed(2) + 'x' : '—'}` }, tone: 'good' as Tone, delta: per != null ? per.toFixed(1) + 'x' : '—' }
+				{ kr: '수익성', en: 'Profitability', verdict: { kr: `영업이익률 ${opm ? opm.v.toFixed(1) + '%' : '·'}, 5년 ${opmDelta != null ? (opmDelta >= 0 ? '+' : '') + opmDelta.toFixed(1) + 'pp' : '·'}`, en: `OP margin ${opm ? opm.v.toFixed(1) + '%' : '·'}, 5Y ${opmDelta != null ? (opmDelta >= 0 ? '+' : '') + opmDelta.toFixed(1) + 'pp' : '·'}` }, tone: tn(opm && opm.v > 5), delta: opm ? opm.v.toFixed(1) + '%' : '·' },
+				{ kr: '성장성', en: 'Growth', verdict: { kr: `매출 CAGR ${salesCagr != null ? salesCagr.toFixed(1) + '%' : '·'}`, en: `Revenue CAGR ${salesCagr != null ? salesCagr.toFixed(1) + '%' : '·'}` }, tone: tn(salesCagr != null && salesCagr > 0), delta: salesCagr != null ? (salesCagr >= 0 ? '+' : '') + salesCagr.toFixed(1) + '%' : '·' },
+				{ kr: '안정성', en: 'Stability', verdict: { kr: `부채비율 ${dr ? dr.v.toFixed(0) + '%' : '·'} · 유동 ${credit.basis.curr != null ? credit.basis.curr + '%' : '·'}`, en: `Debt ${dr ? dr.v.toFixed(0) + '%' : '·'} · current ${credit.basis.curr != null ? credit.basis.curr + '%' : '·'}` }, tone: tn(dr && dr.v < 150), delta: dr ? dr.v.toFixed(0) + '%' : '·' },
+				{ kr: '현금흐름', en: 'Cash flow', verdict: { kr: `영업CF ${cf.op != null ? cf.op + '조' : '·'} · FCF ${fcf != null ? fcf + '조' : '·'}`, en: `CFO ${cf.op != null ? cf.op + 'T' : '·'} · FCF ${fcf != null ? fcf + 'T' : '·'}` }, tone: tn(fcf != null && fcf > 0), delta: fcf != null ? (fcf >= 0 ? 'FCF+' : 'FCF-') : '·' },
+				{ kr: '가치평가', en: 'Valuation', verdict: { kr: `PER ${per != null ? per.toFixed(1) + 'x' : '·'} · PBR ${pbr != null ? pbr.toFixed(2) + 'x' : '·'}`, en: `PER ${per != null ? per.toFixed(1) + 'x' : '·'} · PBR ${pbr != null ? pbr.toFixed(2) + 'x' : '·'}` }, tone: 'good' as Tone, delta: per != null ? per.toFixed(1) + 'x' : '·' }
 			]
 		};
 
 		const blog = raw.meta?.blog ? raw.meta.blog[code] : undefined;
 		const marketLabel = MARKET_LABEL[eco.market || ''] || 'KRX';
-		// ── 종합(composite) 축의 동종업종 백분위 — 등급을 매긴 *근거* ──
+		// ── 종합(composite) 축의 동종업종 백분위 · 등급을 매긴 *근거* ──
 		// 핵심: 원시지표(영업이익률 등) 백분위가 아니라 *축 자체*를 백분위한다. 같은 축에서 동종사들의 등급을
 		// gradeScore(0~1)로 환산해 회사 순위를 낸다. "이 축에서 업종 상위 N%" = 그 등급의 근거.
-		// (원시지표 백분위는 우측 패널 = 다른 세션 담당 — 여긴 축 종합만.)
+		// (원시지표 백분위는 우측 패널 = 다른 세션 담당 · 여긴 축 종합만.)
 		const peers = industryNodes(industry);
 		const axisStat = (a: CompositeAxis): { score: Num; topPct: number | null; n: number; dist: { step: string; share: number; tone: Tone }[]; sameShare: number | null } => {
 			const myVal = eco[a.field] as string | undefined;
 			if (a.kind === 'class') {
-				// 분류(현금흐름) — 순서 없음 → 순위·사다리 금지. 동종사 내 *같은 유형 비중*(빈도)만(순위 아님).
+				// 분류(현금흐름) · 순서 없음 → 순위·사다리 금지. 동종사 내 *같은 유형 비중*(빈도)만(순위 아님).
 				const valued = peers.filter((pn) => !!(pn[a.field] as string | undefined));
 				const same = myVal ? valued.filter((pn) => (pn[a.field] as string) === myVal).length : 0;
 				const vn = valued.length;
@@ -828,7 +828,7 @@ export function createEngine(raw: RawData): Engine {
 			const topPct = myScore == null || scored < 5 ? null : Math.max(1, Math.min(100, Math.round(((better + tie / 2) / scored) * 100)));
 			return { score: myScore, topPct, n: scored, dist, sameShare: null };
 		};
-		// 종합 축 칩 — COMPOSITE_AXES SSOT 에서 파생(중간패널·다이얼로그·레이더 단일 출처). 결손 축은 누락(0대체 금지).
+		// 종합 축 칩 · COMPOSITE_AXES SSOT 에서 파생(중간패널·다이얼로그·레이더 단일 출처). 결손 축은 누락(0대체 금지).
 		// cf(kind='class')는 GRADE_SCALE 에 없어 gradeTone='neutral' → 중립칩(거짓 순서 색 방지). 각 칩에 축 백분위(topPct)·분포(dist) 동봉.
 		const grades = COMPOSITE_AXES.map((a) => ({ a, v: (eco[a.field] as string | undefined) || '' }))
 			.filter((x) => !!x.v)
@@ -842,7 +842,7 @@ export function createEngine(raw: RawData): Engine {
 			return { kr: a.kr, en: a.en, short: a.short, s: st.topPct != null ? (100 - st.topPct) / 100 : st.score };
 		});
 
-		// YoY 변화 — ecosystem delta 가 99% null 이므로 finance 5Y 배열에서 직접 계산 (실데이터).
+		// YoY 변화 · ecosystem delta 가 99% null 이므로 finance 5Y 배열에서 직접 계산 (실데이터).
 		const yoyDelta = (arr: Num[]): Num => {
 			const a = arr.filter((v): v is number => v != null);
 			return a.length >= 2 ? +(a[a.length - 1] - a[a.length - 2]).toFixed(1) : null;
@@ -911,7 +911,7 @@ export function createEngine(raw: RawData): Engine {
 		return null;
 	}
 
-	// 출자 다이얼로그 — 피출자사명을 상장 종목으로 해소(보유지분 시가 환산용). 정규화 exact 매칭 +
+	// 출자 다이얼로그 · 피출자사명을 상장 종목으로 해소(보유지분 시가 환산용). 정규화 exact 매칭 +
 	// 시총·재무 존재(=buildCompany 전제) 게이트. 미해소는 null → 호출측이 비상장으로 처리(보수적).
 	function lookupListed(name: string): { code: string; marketCap: number; net: number | null } | null {
 		const k = normalizeCorpName(name);
@@ -972,7 +972,7 @@ export function createEngine(raw: RawData): Engine {
 			.sort((a, b) => b.chg - a.chg);
 	}
 
-	// 매크로 국면 → 섹터 순풍/역풍(blended) — INDUSTRY_TAILWIND_MAP·SECTOR_KR SSOT 재사용, blended 내림차순.
+	// 매크로 국면 → 섹터 순풍/역풍(blended) · INDUSTRY_TAILWIND_MAP·SECTOR_KR SSOT 재사용, blended 내림차순.
 	function sectorTailwinds() {
 		const tw = raw.macro?.sectorTailwind;
 		if (!tw) return [];
@@ -987,7 +987,7 @@ export function createEngine(raw: RawData): Engine {
 		return out.sort((a, b) => b.blended - a.blended);
 	}
 
-	// 거시 산업 sweep — scan grade 악성 버킷(04 §3 Rule 5: 버킷% 만, ordinal 평균 금지) · cf distress.
+	// 거시 산업 sweep · scan grade 악성 버킷(04 §3 Rule 5: 버킷% 만, ordinal 평균 금지) · cf distress.
 	const _RISK_BUCKET = {
 		prof: new Set(['저수익', '적자']),
 		loss: new Set(['적자']),
@@ -996,7 +996,7 @@ export function createEngine(raw: RawData): Engine {
 		liq: new Set(['주의', '위험'])
 	};
 	const _CF_DISTRESS = new Set(['현금위기형', '쇠퇴형', '외부의존형']);
-	const _DISTRESS_DEBT = new Set(['주의', '고위험']); // 부실 멤버 선별 — 부채등급 위험권(절대 부채액 아님)
+	const _DISTRESS_DEBT = new Set(['주의', '고위험']); // 부실 멤버 선별 · 부채등급 위험권(절대 부채액 아님)
 
 	function _band(arr: number[]): IndustryDist | null {
 		const s = arr.filter((v) => v != null && !Number.isNaN(v)).sort((a, b) => a - b);
@@ -1014,7 +1014,7 @@ export function createEngine(raw: RawData): Engine {
 		const nodes = industryNodes(id);
 		if (!nodes.length) return null;
 
-		// (1) 재무 분포 — industryStats baked(n<10 → null, 04 §3 Rule 5)
+		// (1) 재무 분포 · industryStats baked(n<10 → null, 04 §3 Rule 5)
 		const sd = (raw.industryStats as Record<string, IndustryStat> | null)?.[id]?.distribution || {};
 		const pick = (m: string): IndustryDist | null => {
 			const d = sd[m];
@@ -1027,7 +1027,7 @@ export function createEngine(raw: RawData): Engine {
 		const om = dist.opMargin;
 		const marginIqr = om ? +(om.p75 - om.p25).toFixed(2) : null;
 
-		// (2) gov 시총/자본 → 산업 PBR 분포 (KRX 아님 — raw.prices = gov/prices/date/*.parquet)
+		// (2) gov 시총/자본 → 산업 PBR 분포 (KRX 아님 · raw.prices = gov/prices/date/*.parquet)
 		const pbrArr: number[] = [];
 		for (const node of nodes) {
 			const f = raw.finance.companies[node.id];
@@ -1041,7 +1041,7 @@ export function createEngine(raw: RawData): Engine {
 		}
 		const pbr = _band(pbrArr);
 
-		// (3) scan grade 악성 버킷 % (ecosystem baked) — 버킷% 만(ordinal 평균 금지)
+		// (3) scan grade 악성 버킷 % (ecosystem baked) · 버킷% 만(ordinal 평균 금지)
 		const pct = (field: keyof EcoNode, bad: Set<string>): number => {
 			const has = nodes.filter((n) => n[field]);
 			if (!has.length) return 0;
@@ -1055,7 +1055,7 @@ export function createEngine(raw: RawData): Engine {
 			liqRisk: pct('liqGrade', _RISK_BUCKET.liq),
 			cfDistress: pct('cfPattern', _CF_DISTRESS)
 		};
-		// YoY 방향(개선/악화) — baked 델타 산업 median. 다년 CAGR(평균)과 직교: 최근 변화 = 구조 vs 순환 단서.
+		// YoY 방향(개선/악화) · baked 델타 산업 median. 다년 CAGR(평균)과 직교: 최근 변화 = 구조 vs 순환 단서.
 		const nodeMed = (field: keyof EcoNode): number | null => {
 			const vals = nodes.map((n) => n[field]).filter((v): v is number => typeof v === 'number');
 			if (vals.length < 5) return null;
@@ -1075,7 +1075,7 @@ export function createEngine(raw: RawData): Engine {
 		const cfTop = Object.entries(cfCount).sort((a, b) => b[1] - a[1])[0];
 		const cfSignature = cfTop && cfTot ? { pattern: cfTop[0], share: Math.round((cfTop[1] / cfTot) * 100) } : null;
 
-		// (4) 멤버 지형 — 지표 top5 → 종목 드릴인. '부실 주의' = distress 복합(고부채≠부실: CF·수익성·부채등급 합성).
+		// (4) 멤버 지형 · 지표 top5 → 종목 드릴인. '부실 주의' = distress 복합(고부채≠부실: CF·수익성·부채등급 합성).
 		const distressed: IndustryMacroMember[] = nodes
 			.filter((n) => (n.debtGrade && _DISTRESS_DEBT.has(n.debtGrade)) || n.profGrade === '적자' || (n.cfPattern && _CF_DISTRESS.has(n.cfPattern)))
 			.sort((a, b) => (b.debtRatio ?? 0) - (a.debtRatio ?? 0))
@@ -1107,7 +1107,7 @@ export function createEngine(raw: RawData): Engine {
 		};
 	}
 
-	// 산업 내 회사 점들 — 회사 산포도(드릴). 가로=수익성(opMargin) · 세로=성장(revCagr) · 크기=gov 시총 · 색=수익성등급.
+	// 산업 내 회사 점들 · 회사 산포도(드릴). 가로=수익성(opMargin) · 세로=성장(revCagr) · 크기=gov 시총 · 색=수익성등급.
 	// 위치 = 회사 실측값(사실, 판정 아님). margin·growth 둘 다 있는 회사만(양축 plot). cap 없으면 0(최소 크기).
 	function industryMembers(id: string): IndustryMember[] {
 		const out: IndustryMember[] = [];
@@ -1126,7 +1126,7 @@ export function createEngine(raw: RawData): Engine {
 		return out;
 	}
 
-	// 산업 연도별 이동 — finance 회사별 연도배열을 산업별 median 집계 → (수익성 × 전년比 성장) 궤적.
+	// 산업 연도별 이동 · finance 회사별 연도배열을 산업별 median 집계 → (수익성 × 전년比 성장) 궤적.
 	// x=opMargin median(해당 연도) · y=전년比 매출성장 median(YoY, sales[y]/sales[y-1]-1). 끝점=최신연도.
 	// 새 fetch 0(이미 로드된 finance+eco). 생존편향: 오늘 상장 멤버를 과거로 집계(상폐·비상장 제외).
 	function industryTrails(): IndustryTrail[] {
@@ -1137,7 +1137,7 @@ export function createEngine(raw: RawData): Engine {
 			const nodes = industryNodes(id);
 			if (nodes.length < 10) continue;
 			const pts: { year: string; x: number; y: number }[] = [];
-			for (let yi = 1; yi < fy.length; yi++) { // yi=1 부터 — YoY 는 직전연도 필요
+			for (let yi = 1; yi < fy.length; yi++) { // yi=1 부터 · YoY 는 직전연도 필요
 				const margins: number[] = [], grows: number[] = [];
 				for (const n of nodes) {
 					const f = raw.finance.companies[n.id];

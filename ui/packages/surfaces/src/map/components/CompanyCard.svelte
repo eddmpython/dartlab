@@ -10,15 +10,15 @@
 		// companies/{code}.json (있으면 풍부한 데이터, 없으면 null)
 		detail: any | null;
 		loading?: boolean;
-		// industryStats.json[node.industry] — 업종 분포 통계
+		// industryStats.json[node.industry] · 업종 분포 통계
 		industryStat?: any | null;
-		// meta.json.dataAsOf — 신선도 표시
+		// meta.json.dataAsOf · 신선도 표시
 		dataAsOf?: Record<string, string | null | undefined> | null;
 		// 비교에 추가 콜백
 		onAddCompare?: (stockCode: string) => void;
 		// 닫기
 		onClose?: () => void;
-		// "띄우기" — 플로팅 윈도우로 detach
+		// "띄우기" · 플로팅 윈도우로 detach
 		onDetach?: (stockCode: string) => void;
 		compareDisabled?: boolean;
 		// 플로팅 모드에선 "띄우기" 버튼 숨김
@@ -27,7 +27,7 @@
 		onShock?: (stockCode: string) => void;
 		// movers 이상 신호 (이 회사에 해당하면)
 		moverSignal?: string | null;
-		// 셸 base 경로(블로그 링크 등 에셋) — $app/paths 무결합(포터블 surface). 셸이 주입.
+		// 셸 base 경로(블로그 링크 등 에셋) · $app/paths 무결합(포터블 surface). 셸이 주입.
 		basePath?: string;
 	}
 
@@ -143,7 +143,7 @@
 
 	// ── 업종 정규화 ──
 	// industryStat.distribution[metric] = {n, p10, p25, median, p75, p90, mean, std}
-	// 반환: 백분위(0~100), z-score, 색상 — 표본 작으면 null
+	// 반환: 백분위(0~100), z-score, 색상 · 표본 작으면 null
 	function normalize(
 		value: number | null | undefined,
 		metric: 'roe' | 'opMargin' | 'debtRatio' | 'revCagr'
@@ -177,7 +177,7 @@
 
 		const zScore = dist.std > 0 ? (value - dist.mean) / dist.std : 0;
 
-		// 역방향(debtRatio) 고려 — 낮을수록 좋음
+		// 역방향(debtRatio) 고려 · 낮을수록 좋음
 		const invert = metric === 'debtRatio';
 		const goodness = invert ? 100 - percentile : percentile;
 		let color: string;
@@ -395,7 +395,7 @@
 			/>
 		</div>
 	{:else if !loading}
-		<!-- enriched JSON 없는 회사 (top500 외) — 노드 정보만 표시 -->
+		<!-- enriched JSON 없는 회사 (top500 외) · 노드 정보만 표시 -->
 		{#if node.revenue}
 			<div class="section">
 				<h3>매출</h3>
@@ -450,7 +450,7 @@
 									<span
 										class="scan-delta {dExtreme ? 'extreme' : dGood ? 'good' : 'bad'}"
 										title={dExtreme
-											? `전년 대비 ${row.delta > 0 ? '+' : ''}${row.delta}${row.deltaUnit} — 극단적 변화, 1회성/재분류 가능성 확인`
+											? `전년 대비 ${row.delta > 0 ? '+' : ''}${row.delta}${row.deltaUnit} · 극단적 변화, 1회성/재분류 가능성 확인`
 											: `전년 대비 ${row.delta > 0 ? '+' : ''}${row.delta}${row.deltaUnit}`}
 									>
 										{dExtreme ? '⚠ ' : dGood ? '▲ ' : '▼ '}{row.delta > 0 ? '+' : ''}{row.delta}{row.deltaUnit}
@@ -591,7 +591,7 @@
 				2-hop 공급망
 				{#if detail.hop2.hub}<span class="hop2-hub-tag">허브 · 제한됨</span>{/if}
 			</h3>
-			<p class="hop2-note">1-hop 이웃을 통해 연결된 회사 Top 10 — "내 공급사의 공급사"</p>
+			<p class="hop2-note">1-hop 이웃을 통해 연결된 회사 Top 10 · "내 공급사의 공급사"</p>
 			<ul class="hop2-list">
 				{#each detail.hop2.hop2Neighbors.slice(0, 10) as h (h.stockCode)}
 					<li>
@@ -756,7 +756,7 @@
 		text-align: center;
 	}
 
-	/* T1: 3초 요약 — dartlab brand gradient */
+	/* T1: 3초 요약 · dartlab brand gradient */
 	.t1-summary {
 		margin-top: 12px;
 		padding: 12px 14px;

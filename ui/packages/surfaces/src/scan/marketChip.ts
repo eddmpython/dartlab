@@ -1,5 +1,5 @@
 /**
- * 시장 구분 (KOSPI / KOSDAQ / KONEX) — 색·라벨 lookup.
+ * 시장 구분 (KOSPI / KOSDAQ / KONEX) · 색·라벨 lookup.
  *
  * ecosystem.json 의 노드 `market` 필드 (빌드 시 KRX 데이터 join).
  * 미지정 시 'UNKNOWN' / 회색.
@@ -11,7 +11,7 @@ export const MARKET_INFO: Record<Market, { color: string; label: string }> = {
 	KOSPI: { color: '#3b82f6', label: 'KOSPI' },
 	KOSDAQ: { color: '#fbbf24', label: 'KOSDAQ' },
 	KONEX: { color: '#94a3b8', label: 'KONEX' },
-	UNKNOWN: { color: '#475569', label: '—' }
+	UNKNOWN: { color: '#475569', label: '·' }
 };
 
 /** 노드의 market 필드를 정규화. 'KOSPI'/'KOSDAQ'/'KONEX' 외엔 'UNKNOWN'.

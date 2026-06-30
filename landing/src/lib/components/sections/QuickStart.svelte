@@ -8,7 +8,7 @@
 
 c = dartlab.Company("005930")   # 삼성전자
 c.show("IS")                    # 손익계산서 전 분기
-c.show("CF")                    # 현금흐름표 — 문자열만 바꾸면 끝`;
+c.show("CF")                    # 현금흐름표 · 문자열만 바꾸면 끝`;
 
 	async function copy() {
 		await navigator.clipboard.writeText(snippet);
@@ -66,7 +66,7 @@ dartlab</span>
 					><span class="text-dl-text-muted">(</span><span class="text-emerald-400"
 						>"CF"</span
 					><span class="text-dl-text-muted">)</span><span class="text-dl-text-dim"
-						>                    # 현금흐름표 — 문자열만 바꾸면 끝</span
+						>                    # 현금흐름표 · 문자열만 바꾸면 끝</span
 					></code
 				></pre>
 		</Card>
@@ -77,7 +77,7 @@ dartlab</span>
 			<div>
 				<div class="text-sm font-semibold text-dl-text mb-1">실습은 노트북 섹션에서</div>
 				<p class="text-sm text-dl-text-muted leading-relaxed">
-					Colab · Molab · 로컬 마리모 — 같은 코드를 세 경로로 바로 돌려볼 수 있다.
+					Colab · Molab · 로컬 마리모 · 같은 코드를 세 경로로 바로 돌려볼 수 있다.
 				</p>
 			</div>
 			<a

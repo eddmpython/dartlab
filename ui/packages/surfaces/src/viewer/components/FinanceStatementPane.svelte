@@ -37,12 +37,12 @@
 
 	const KINDS: FinanceKind[] = ['IS', 'BS', 'CF', 'CIS', 'SCE'];
 	const UNITS: FinanceUnit[] = ['원', '백만', '억'];
-	// avail probe 실패(파케이 404 등) 시에도 로드는 진행시켜 정직한 에러 메시지를 띄운다 — null 고정 = 영구 스피너 회귀.
+	// avail probe 실패(파케이 404 등) 시에도 로드는 진행시켜 정직한 에러 메시지를 띄운다 · null 고정 = 영구 스피너 회귀.
 	const AVAIL_FALLBACK: FinanceAvailability = { scopes: ['CFS', 'OFS'], byScope: { CFS: KINDS, OFS: KINDS } };
 
 	let kind = $state<FinanceKind>('IS');
-	let freq = $state<FinanceFreq>('quarter'); // 기본 분기 — 표는 최신 보고 원값 우선 (연간·누적은 토글)
-	let scope = $state<FinanceScope>('CFS'); // 연결 우선 — availableScopes(CFS 우선 정렬) 미포함 시에만 첫 가용범위로
+	let freq = $state<FinanceFreq>('quarter'); // 기본 분기 · 표는 최신 보고 원값 우선 (연간·누적은 토글)
+	let scope = $state<FinanceScope>('CFS'); // 연결 우선 · availableScopes(CFS 우선 정렬) 미포함 시에만 첫 가용범위로
 	let unit = $state<FinanceUnit>('백만');
 	let avail = $state<FinanceAvailability | null>(null);
 	let statement = $state<FinanceStatement | null>(null);
@@ -112,7 +112,7 @@
 	$effect(() => {
 		if (!avail) return;
 		if (!availableScopes.includes(scope)) {
-			scope = availableScopes[0]; // 연결 우선(availableScopes CFS 우선) — 연결 없을 때만 별도
+			scope = availableScopes[0]; // 연결 우선(availableScopes CFS 우선) · 연결 없을 때만 별도
 			return;
 		}
 		if (!availableKinds.includes(kind)) pickKind(firstTabKind(availableKinds));
@@ -125,7 +125,7 @@
 		const k = kind;
 		const f = freq;
 		const s = scope;
-		// 가용성 확정 전엔 로드 보류 — 기본 kind(IS)로 헛로드하면 단일 포괄손익(CIS) 회사에서
+		// 가용성 확정 전엔 로드 보류 · 기본 kind(IS)로 헛로드하면 단일 포괄손익(CIS) 회사에서
 		// 빈 IS 결과가 CIS 라벨로 잠깐 렌더되는 깜빡임 + 이중로드가 생긴다. avail 도착 시 kind 교정 후 1회 로드.
 		if (!avail) return;
 		const key = `${m}:${c}:${k}:${f}:${s}`;

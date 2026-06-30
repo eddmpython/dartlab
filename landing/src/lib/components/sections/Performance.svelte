@@ -100,9 +100,9 @@
 				<Card hover={false} class="mt-4">
 					<div class="text-xs font-mono text-dl-text-dim mb-3 uppercase tracking-wider">왜 빠른가</div>
 					<div class="space-y-2 text-sm text-dl-text-muted leading-relaxed">
-						<p><span class="text-dl-text font-medium">단일 구조.</span> 모든 쿼리가 sections 위에서 실행 — 데이터 변환 불필요.</p>
+						<p><span class="text-dl-text font-medium">단일 구조.</span> 모든 쿼리가 sections 위에서 실행 · 데이터 변환 불필요.</p>
 						<p><span class="text-dl-text font-medium">Polars.</span> Pandas 대비 5~10 배 빠른 DataFrame 연산.</p>
-						<p><span class="text-dl-text font-medium">Parquet.</span> 컬럼나 포맷 — 필요한 컬럼만 읽는다.</p>
+						<p><span class="text-dl-text font-medium">Parquet.</span> 컬럼나 포맷 · 필요한 컬럼만 읽는다.</p>
 					</div>
 				</Card>
 			</div>

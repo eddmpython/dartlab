@@ -1,7 +1,7 @@
-// 공시뷰어 인-페이지 검색 — gridBySection(브라우저 보유) 위 BM25 역인덱스. 서버·임베딩·LLM 0.
+// 공시뷰어 인-페이지 검색 · gridBySection(브라우저 보유) 위 BM25 역인덱스. 서버·임베딩·LLM 0.
 //
 // 설계: 한국어 음절 bigram(조사 변형 흡수, 형태소 0) + BM25 + 큐레이션 동의어확장. 표(blockType='table')는
-// 라벨만 인덱싱(거대표 13MB 본문 폭주 차단 — 표는 라벨/섹션으로 찾음). 빌드는 타임슬라이싱(메인스레드 비차단).
+// 라벨만 인덱싱(거대표 13MB 본문 폭주 차단 · 표는 라벨/섹션으로 찾음). 빌드는 타임슬라이싱(메인스레드 비차단).
 // 실측 검증: tests/_attempts/viewerSearch/ (삼성·SK·카카오 진짜 panel, 빌드 0.76s·쿼리 0.3ms). README 참조.
 
 import type { PanelBundle, PanelRow } from './types';
@@ -27,13 +27,13 @@ export function tokenizeBigram(text: string): string[] {
 	return out;
 }
 
-// 검색용 경량 평문화 — 태그·엔티티→공백, 공백 1회 정규화. (cell.ts stripInlineTags 는 캡션파싱용 6패스라
-// 대량 인덱싱엔 과함 — 실측 2배 느림. 인덱싱은 단일라인 평문이면 충분.)
+// 검색용 경량 평문화 · 태그·엔티티→공백, 공백 1회 정규화. (cell.ts stripInlineTags 는 캡션파싱용 6패스라
+// 대량 인덱싱엔 과함 · 실측 2배 느림. 인덱싱은 단일라인 평문이면 충분.)
 export function plainText(raw: string): string {
 	return raw.replace(TAG, ' ').replace(ENT, ' ').replace(WS, ' ').trim();
 }
 
-// ── 금액 추출 (원 단위) — "100억 이상" 같은 숫자/조건 검색용. tests/_attempts/viewerSearch/constraintFacet.py
+// ── 금액 추출 (원 단위) · "100억 이상" 같은 숫자/조건 검색용. tests/_attempts/viewerSearch/constraintFacet.py
 // 검증판 1:1. 명시단위 조/억만, "조" 다의어(兆 vs 條 법조항) 2중 차단: 앞 '제' 배제 + 조는 뒤 원/억 동반시만. ──
 const AMT_KR = /(\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?)\s?(조|억)(?=\s*원|[\s,.)\]]|$)/g;
 const UNIT_MULT: Record<string, number> = { 조: 1e12, 억: 1e8 };
@@ -54,8 +54,8 @@ export function maxAmountKrw(text: string): number {
 	return max;
 }
 
-// 큐레이션 동의어 — dartlab `ngramIndex._L0_INFORMAL`(43키) + 공시 도메인 상식 시드. 운영자 수동 관리.
-// PMI/공기행렬 자동발굴 금지(단일회사 코퍼스 동어반복 인공물 — project_unified_search_table §8 격하).
+// 큐레이션 동의어 · dartlab `ngramIndex._L0_INFORMAL`(43키) + 공시 도메인 상식 시드. 운영자 수동 관리.
+// PMI/공기행렬 자동발굴 금지(단일회사 코퍼스 동어반복 인공물 · project_unified_search_table §8 격하).
 const SYNONYMS: Record<string, string[]> = {
 	부채: ['차입금', '사채', '우발부채', '지급보증', '리스부채'],
 	차입금: ['사채', '단기차입', '장기차입', 'borrowings'],
@@ -86,7 +86,7 @@ export interface IndexedRow {
 	cells: Record<string, string>; // period → 평문 셀 (스니펫·hit period 용)
 	tf: Map<string, number>;
 	len: number;
-	maxAmount: number; // 행 본문 최대 금액(원) — "100억 이상" 조건검색 필터용. 없으면 0.
+	maxAmount: number; // 행 본문 최대 금액(원) · "100억 이상" 조건검색 필터용. 없으면 0.
 }
 
 export interface SearchIndex {
@@ -95,7 +95,7 @@ export interface SearchIndex {
 	df: Map<string, number>;
 	avgdl: number;
 	vocab: number;
-	periods: string[]; // bundle.periods (최신좌측 timeline SSOT) — 근거 기간선택·recency 랭킹의 정본
+	periods: string[]; // bundle.periods (최신좌측 timeline SSOT) · 근거 기간선택·recency 랭킹의 정본
 }
 
 export interface SearchHit {
@@ -175,7 +175,7 @@ function finalize(acc: Acc, bundle: PanelBundle): SearchIndex {
 		df: acc.df,
 		avgdl: acc.totalLen / Math.max(1, acc.rows.length),
 		vocab: acc.df.size,
-		periods: bundle.periods // SSOT(최신좌측) 보존 — 호출 시 cells 키 재정렬 금지(과거기간 근거 버그 근본차단)
+		periods: bundle.periods // SSOT(최신좌측) 보존 · 호출 시 cells 키 재정렬 금지(과거기간 근거 버그 근본차단)
 	};
 }
 
@@ -183,7 +183,7 @@ function defaults(opts: BuildOpts): Required<BuildOpts> {
 	return { tableBody: opts.tableBody ?? false, cellCap: opts.cellCap ?? 4000 };
 }
 
-/** 동기 빌드 — 작은 회사·테스트용. 큰 회사는 buildIndexChunked 권장. */
+/** 동기 빌드 · 작은 회사·테스트용. 큰 회사는 buildIndexChunked 권장. */
 export function buildIndex(bundle: PanelBundle, opts: BuildOpts = {}): SearchIndex {
 	const o = defaults(opts);
 	const acc: Acc = { rows: [], postings: new Map(), df: new Map(), totalLen: 0 };
@@ -203,7 +203,7 @@ function yieldToMain(): Promise<void> {
 }
 
 /**
- * 타임슬라이싱 빌드 — 섹션 묶음마다 메인스레드에 양보(잼 0). 결과는 buildIndex 와 동일(parity).
+ * 타임슬라이싱 빌드 · 섹션 묶음마다 메인스레드에 양보(잼 0). 결과는 buildIndex 와 동일(parity).
  * 거대표 회사(카카오 1.4s)도 16ms 프레임 안 넘게 끊어 빌드.
  */
 export async function buildIndexChunked(bundle: PanelBundle, opts: BuildOpts = {}, chunkSections = 8): Promise<SearchIndex> {
@@ -222,13 +222,13 @@ export async function buildIndexChunked(bundle: PanelBundle, opts: BuildOpts = {
 
 const K1 = 1.5;
 const B = 0.75;
-// 공시 Q&A 는 기본 최신우선 — 근거의 최신 needle 셀이 오래될수록 점수 감쇠(1/(1+λ·rank)). λ=0.08 →
+// 공시 Q&A 는 기본 최신우선 · 근거의 최신 needle 셀이 오래될수록 점수 감쇠(1/(1+λ·rank)). λ=0.08 →
 // 5기간전 ×0.71, 40기간전 ×0.24. 강한 relevance 는 살리되 옛 근거를 최신 위로 못 올린다(불만2 "과거기간" 직격).
 const RECENCY_LAMBDA = 0.08;
 const RERANK_POOL = 50; // BM25 상위 풀만 recency 재랭킹(비용 bound, topK ≪ pool)
-const RRF_K = 60; // Reciprocal Rank Fusion 상수(표준) — plain BM25 ⊕ 섹션scoping 융합 시 1/(K+rank) 합
+const RRF_K = 60; // Reciprocal Rank Fusion 상수(표준) · plain BM25 ⊕ 섹션scoping 융합 시 1/(K+rank) 합
 const SCORE_CUT_RATIO = 0.25; // top1 대비 미만 곁가지 컷(불만1 "안맞는 근거" 완화, 최소 1건 보장)
-// 텍스트 행인데 표면어가 어느 셀에도 없음 = bigram 유령매칭(예 "영업이익" 질의에 이익잉여금 행 — 영업·이익 조각만
+// 텍스트 행인데 표면어가 어느 셀에도 없음 = bigram 유령매칭(예 "영업이익" 질의에 이익잉여금 행 · 영업·이익 조각만
 // 맞고 문구는 없음). 감점해 진짜 문구 든 행을 올린다. 표(table) 행은 라벨매칭이 본가치라 제외(표라벨 정답 보존).
 const SURFACELESS_PENALTY = 0.5;
 
@@ -243,7 +243,7 @@ export function expandQuery(query: string, expand = true): { weights: Map<string
 	const added: string[] = [];
 	if (expand) {
 		// 동의어 발화 = *어절 경계* 매칭 (옛 query.replace(공백) substring 은 "확정급여부채"→부채, "리스크"→리스 등
-		// 단어경계 넘은 오발화 다수 — 곁가지 동의어를 끌어왔다). 어절이 key 와 일치 또는 key 로 시작할 때만.
+		// 단어경계 넘은 오발화 다수 · 곁가지 동의어를 끌어왔다). 어절이 key 와 일치 또는 key 로 시작할 때만.
 		const words = query.toLowerCase().match(/[가-힣a-z0-9]{2,}/g) ?? [];
 		for (const [key, syns] of Object.entries(SYNONYMS)) {
 			const k = key.toLowerCase();
@@ -258,7 +258,7 @@ export function expandQuery(query: string, expand = true): { weights: Map<string
 	return { weights, added };
 }
 
-// ── 숫자/조건 쿼리 파싱 — 기존 검색창이 "100억 이상", "1조 초과", "50억 이하"를 이해(새 UI 0). ──
+// ── 숫자/조건 쿼리 파싱 · 기존 검색창이 "100억 이상", "1조 초과", "50억 이하"를 이해(새 UI 0). ──
 // 작은 bounded 집합(조/억 × 이상·초과·넘는·넘게=gte / 이하·미만·미달=lte). 패턴이 끝없이 늘면 = 덕지덕지 신호.
 const AMOUNT_Q = /(\d[\d,]*(?:\.\d+)?)\s*(조|억)\s*(?:원\s*)?(이상|초과|넘는|넘게|이하|미만|미달)/;
 export interface AmtConstraint {
@@ -290,8 +290,8 @@ function surfaceNeedles(query: string, added: string[]): string[] {
 
 interface EvPeriod { period: string; rank: number; hasNeedle: boolean; stale: boolean }
 
-// 근거 기간 선택 — SSOT periods(최신좌측) 순회: needle 든 *최신* 셀. 없으면 최신 비어있지 않은 셀
-// (옛 fallback 은 가장 오래된 셀로 추락했음 — 2015Q4 소송 같은 헛근거 근본차단). needlesLc = 소문자 needle.
+// 근거 기간 선택 · SSOT periods(최신좌측) 순회: needle 든 *최신* 셀. 없으면 최신 비어있지 않은 셀
+// (옛 fallback 은 가장 오래된 셀로 추락했음 · 2015Q4 소송 같은 헛근거 근본차단). needlesLc = 소문자 needle.
 // stale = needle 셀이 이 행의 더 최신 비어있지 않은 셀보다 옛것 = "이 항목의 최근 언급은 과거".
 function evidencePeriod(cells: Record<string, string>, periods: string[], needlesLc: string[]): EvPeriod {
 	let firstNonEmpty = -1;
@@ -310,7 +310,7 @@ function evidencePeriod(cells: Record<string, string>, periods: string[], needle
 	return { period: periods[idx] ?? '', rank: idx, hasNeedle: false, stale: false };
 }
 
-// 선택된 셀에서 스니펫 + 매칭어. (period 선택은 evidencePeriod 가 담당 — 셀/period 항상 정합.)
+// 선택된 셀에서 스니펫 + 매칭어. (period 선택은 evidencePeriod 가 담당 · 셀/period 항상 정합.)
 function snippetAt(cell: string, needles: string[]): { snippet: string; matchedTerms: string[] } {
 	const lc = cell.toLowerCase();
 	let bestAt = Number.POSITIVE_INFINITY;
@@ -369,7 +369,7 @@ export function search(
 		return e;
 	};
 
-	// 2차 신호 — 섹션scoping(scopeSections). RRF 융합용. 없으면 순수 BM25.
+	// 2차 신호 · 섹션scoping(scopeSections). RRF 융합용. 없으면 순수 BM25.
 	// scoped 레인 = (질의 ∪ 예측 intent canon=scopeTerms) BM25 를 *예측 target 섹션 행*에만 누적. canon 이 구어질의↔본문
 	// 어휘 간극 흡수("돌아가"→"가동률"), 섹션 제약이 곁가지 차단. 라우팅 틀려도 plain 보존 → always-safe.
 	// 5업종 held-out top-6 섹션도달 56~71%→92~98%(pipeline.py verify). 재계산 비용 = scope 행만 순회.
@@ -398,7 +398,7 @@ export function search(
 			}
 		}
 	}
-	// 후보 랭킹 — 표면어 BM25 있으면: 상위 풀만 recency 재랭킹(최신우선) → 상대컷(곁가지 제거).
+	// 후보 랭킹 · 표면어 BM25 있으면: 상위 풀만 recency 재랭킹(최신우선) → 상대컷(곁가지 제거).
 	// 순수 조건("100억 이상")이면 조건 만족 행을 금액 내림차순. 둘 다 없으면 빈 결과.
 	const hasSecond = !!secondary && secondary.size > 0;
 	let ranked: Array<[number, number]>;
@@ -448,7 +448,7 @@ export function search(
 		return { hits: [], added };
 	}
 
-	// 결과 dedupe — 같은 (섹션,블록)의 scope(연결/별도)·leafSeq 변형을 하나로 접어 top-K 가 서로 다른 항목이
+	// 결과 dedupe · 같은 (섹션,블록)의 scope(연결/별도)·leafSeq 변형을 하나로 접어 top-K 가 서로 다른 항목이
 	// 되게(출시 후 감사: 쿼리당 평균 1.2~1.6 중복 = "같은 항목 4번" 제거). 첫 등장(최고 랭킹)만 유지.
 	const topK = opts.topK ?? 8;
 	const seenLabel = new Set<string>();

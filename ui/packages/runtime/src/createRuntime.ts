@@ -1,4 +1,4 @@
-// kind 디스패처 — 앱 shell 진입점 1곳에서만 호출. surface 는 kind 를 모른다 (02 §1-5).
+// kind 디스패처 · 앱 shell 진입점 1곳에서만 호출. surface 는 kind 를 모른다 (02 §1-5).
 // 어댑터별 필수 옵션(public 의 shared 주입 등)이 다르므로 discriminated union 으로 받는다.
 import type { DartLabRuntime } from '@dartlab/ui-contracts';
 import { createPublicRuntime, type PublicRuntimeOptions } from './adapters/public/createPublicRuntime';

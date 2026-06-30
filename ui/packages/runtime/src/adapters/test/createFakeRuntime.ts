@@ -1,6 +1,6 @@
-// test adapter — 네트워크 0, 전 포트 fixture 구현 (02 §9.3).
+// test adapter · 네트워크 0, 전 포트 fixture 구현 (02 §9.3).
 // DartLabRuntime 타입을 통째로 구현하므로, tsc 가 "전 포트 required 메서드 구현 존재"를
-// 기계 검사한다 (05 §2 conformance 의 컴파일 타임 절반 — 런타임 fixture 대조는 첫 surface 테스트와 동행).
+// 기계 검사한다 (05 §2 conformance 의 컴파일 타임 절반 · 런타임 fixture 대조는 첫 surface 테스트와 동행).
 import type {
 	AiPort,
 	Candle,
@@ -34,7 +34,7 @@ import { listExportableTables } from '../export/exportShared';
 const FIXTURE_CODE = '005930';
 
 function fixtureCandles(): Candle[] {
-	// 5영업일 고정 fixture — 시각 회귀·렌더 검증용 (난수·현재시각 금지: 결정론).
+	// 5영업일 고정 fixture · 시각 회귀·렌더 검증용 (난수·현재시각 금지: 결정론).
 	return [
 		{ t: '20260601', o: 100, h: 110, l: 95, c: 105, v: 1000 },
 		{ t: '20260602', o: 105, h: 115, l: 100, c: 110, v: 1200 },
@@ -89,7 +89,7 @@ function fakePrice(): PricePort {
 }
 
 function fakeIndex(): IndexPort {
-	// 결정론 fixture — KR 코스피(OHLCV) + US SP500(degenerate o=h=l=c·v=0). 그 외 null. 난수·현재시각 금지.
+	// 결정론 fixture · KR 코스피(OHLCV) + US SP500(degenerate o=h=l=c·v=0). 그 외 null. 난수·현재시각 금지.
 	const krCandles: Candle[] = [
 		{ t: '20260601', o: 2700, h: 2720, l: 2690, c: 2710, v: 500_000 },
 		{ t: '20260602', o: 2710, h: 2735, l: 2705, c: 2730, v: 520_000 },
@@ -399,7 +399,7 @@ function fakeScan(): ScanPort {
 			return [];
 		},
 		async savePreset() {
-			// fixture — no-op
+			// fixture · no-op
 		}
 	};
 }
@@ -456,10 +456,10 @@ function fakeViewer(): ViewerPort {
 			return `/viewer/company/${code}`;
 		},
 		async openCompany() {
-			// fixture — host 앱이 onNavigate 로 검증
+			// fixture · host 앱이 onNavigate 로 검증
 		},
 		async openFiling() {
-			// fixture — no-op
+			// fixture · no-op
 		}
 	};
 }
@@ -496,7 +496,7 @@ function fakeAi(): AiPort {
 			];
 		},
 		async setMode() {
-			// fixture — no-op
+			// fixture · no-op
 		},
 		async getMode() {
 			return 'chat';
@@ -539,7 +539,7 @@ function fakeExport(): ExportPort {
 			return true;
 		},
 		async generate(input: ExportInput): Promise<ExportArtifact> {
-			// fixture — 결정론 빈 .xlsx 자리표시자 Blob(실 writer 는 surfaces/엔진).
+			// fixture · 결정론 빈 .xlsx 자리표시자 Blob(실 writer 는 surfaces/엔진).
 			return {
 				filename: `${input.code}_공시표.xlsx`,
 				mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

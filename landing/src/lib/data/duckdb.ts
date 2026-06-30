@@ -1,5 +1,5 @@
 /**
- * DuckDB-WASM lazy 로더 — HF parquet 직접 query.
+ * DuckDB-WASM lazy 로더 · HF parquet 직접 query.
  *
  * dartlab 의 데이터 SSOT 는 HF dataset (`eddmpython/dartlab-data`, public). 이 파일은
  * 브라우저에서 DuckDB-WASM 을 lazy 로드하고, HF parquet 을 HTTPS 로 직접 query 하는
@@ -7,8 +7,8 @@
  *
  * 핵심 전략:
  *   - 첫 호출 시 CDN (jsdelivr) 에서 DuckDB-WASM 동적 import (~1MB, 캐시됨)
- *   - 싱글톤 — 페이지 내 한 번만 인스턴스화
- *   - httpfs 자동 활성 — `read_parquet('https://...')` 패턴 그대로 사용
+ *   - 싱글톤 · 페이지 내 한 번만 인스턴스화
+ *   - httpfs 자동 활성 · `read_parquet('https://...')` 패턴 그대로 사용
  *   - 작은 JSON (ecosystem.json 등) 은 fetch 후 `registerJson()` 으로 임시 테이블화
  *   - iOS Safari (메모리 제한) 는 null 반환 → 호출자 JS fallback
  *
@@ -17,7 +17,7 @@
  *   import { loadDartDb, hfParquetUrl } from '$lib/data/duckdb';
  *
  *   const db = await loadDartDb();
- *   if (!db) return; // iOS or 로드 실패 — JS fallback
+ *   if (!db) return; // iOS or 로드 실패 · JS fallback
  *
  *   await db.registerHfParquet('prices2024', 'gov/prices/date/2024.parquet');
  *   const rows = await db.query<{ ISU_CD: string; close: number }>(
@@ -72,7 +72,7 @@ export function hfParquetUrl(pathOrUrl: string): string {
 	return HF_RESOLVE + pathOrUrl.replace(/^\/+/, '');
 }
 
-/** SQL 문자열 escape — 단일 인용부 안전. */
+/** SQL 문자열 escape · 단일 인용부 안전. */
 export function sqlEscape(value: string): string {
 	return value.replace(/'/g, "''");
 }
@@ -80,7 +80,7 @@ export function sqlEscape(value: string): string {
 function _detectMobileSafari(): boolean {
 	if (!browser || typeof navigator === 'undefined') return false;
 	const ua = navigator.userAgent;
-	// iOS WebKit (Safari, Chrome iOS, Firefox iOS 모두 동일 엔진) — 메모리 제한
+	// iOS WebKit (Safari, Chrome iOS, Firefox iOS 모두 동일 엔진) · 메모리 제한
 	const isIos = /iPad|iPhone|iPod/.test(ua);
 	const isIosChrome = /CriOS/.test(ua);
 	const isIosFirefox = /FxiOS/.test(ua);
@@ -91,9 +91,9 @@ function _detectMobileSafari(): boolean {
 async function _instantiate(): Promise<DartDb | null> {
 	if (!browser) return null;
 
-	// iOS Safari 가드 — DuckDB WASM 이 1GB 까지 메모리 요청 가능, iOS 는 200~512MB 한계
+	// iOS Safari 가드 · DuckDB WASM 이 1GB 까지 메모리 요청 가능, iOS 는 200~512MB 한계
 	if (_detectMobileSafari()) {
-		console.info('[duckdb] iOS Safari 감지 — DuckDB-WASM 비활성, JS fallback 권장');
+		console.info('[duckdb] iOS Safari 감지 · DuckDB-WASM 비활성, JS fallback 권장');
 		return null;
 	}
 
@@ -130,23 +130,23 @@ async function _instantiate(): Promise<DartDb | null> {
 		// Blob URL revoke (worker 가 이미 인스턴스화됐으니 해제 가능)
 		URL.revokeObjectURL(workerBlobUrl);
 
-		// httpfs 활성 — HF parquet HTTPS query 핵심
+		// httpfs 활성 · HF parquet HTTPS query 핵심
 		// (DuckDB-WASM 표준 빌드는 httpfs 가 자동 포함되지만 명시적 LOAD 안전)
 		try {
 			await _conn.query('INSTALL httpfs');
 			await _conn.query('LOAD httpfs');
 		} catch {
-			// 이미 로드됐거나 빌드에 포함 — 무시
+			// 이미 로드됐거나 빌드에 포함 · 무시
 		}
 
-		// OPFS attach — 임시 비활성. v1.29 의 BROWSER_FSACCESS protocol 작동 검증 후 재활성.
+		// OPFS attach · 임시 비활성. v1.29 의 BROWSER_FSACCESS protocol 작동 검증 후 재활성.
 		// const opfsResult = await attachOpfs(_db, _conn, duckdb);
 		// _persisted = opfsResult.ok;
 		// _opfsRebuilt = opfsResult.rebuilt;
 		_persisted = false;
 		_opfsRebuilt = false;
 	} catch (err) {
-		console.warn('[duckdb] 인스턴스화 실패 — JS fallback', err);
+		console.warn('[duckdb] 인스턴스화 실패 · JS fallback', err);
 		await _cleanup();
 		return null;
 	}
@@ -234,7 +234,7 @@ function _normalizeRow<T>(row: any): T {
 		} else if (typeof v === 'bigint') {
 			obj[key] = Number(v);
 		} else if (typeof v === 'object') {
-			// Arrow ListVector / Vector — `.toArray()` 로 native 추출 후 Array.from 으로 plain JS 배열
+			// Arrow ListVector / Vector · `.toArray()` 로 native 추출 후 Array.from 으로 plain JS 배열
 			let extracted: any = v;
 			if (typeof (v as any).toArray === 'function') {
 				try {
@@ -270,7 +270,7 @@ function _batchToRows<T>(batch: any): T[] {
 		const rows = batch.toArray() as any[];
 		return rows.map((r) => _normalizeRow<T>(r));
 	}
-	// fallback — iterator
+	// fallback · iterator
 	const out: T[] = [];
 	try {
 		for (const r of batch as Iterable<any>) {
@@ -282,14 +282,14 @@ function _batchToRows<T>(batch: any): T[] {
 	return out;
 }
 
-/** SQL streaming — connection.send() 시도, 실패 시 query() 로 fallback.
+/** SQL streaming · connection.send() 시도, 실패 시 query() 로 fallback.
  *
  * DuckDB-WASM v1.29 의 send() 가 일부 SQL (특히 GROUP BY · CTE 다단) 에서
  * reject 하는 경우가 있음. streaming 효과를 잃더라도 정확한 결과 우선.
  */
 async function* _streamRows<T>(sql: string): AsyncGenerator<T[], void, void> {
 	if (!_conn) throw new Error('DuckDB 연결이 없습니다');
-	// 1) streaming 시도 — 성공하면 batch 단위 yield
+	// 1) streaming 시도 · 성공하면 batch 단위 yield
 	try {
 		const reader = await _conn.send(sql);
 		if (reader && typeof reader[Symbol.asyncIterator] === 'function') {
@@ -302,19 +302,19 @@ async function* _streamRows<T>(sql: string): AsyncGenerator<T[], void, void> {
 				}
 			}
 			if (yielded) return;
-			// streaming 이 0 batch 줬을 수도 — query() 로 재시도
+			// streaming 이 0 batch 줬을 수도 · query() 로 재시도
 		}
 	} catch (err) {
 		console.info('[duckdb] streaming 미지원 SQL → query() fallback');
 	}
-	// 2) fallback — non-streaming.
+	// 2) fallback · non-streaming.
 	const result = await _conn.query(sql);
 	const all = _toRowObjects<T>(result);
 	if (all.length > 0) yield all;
 }
 
 function _safeIdent(name: string): string {
-	// SQL 식별자 — 영문·숫자·밑줄만 허용. 충돌 시 throw.
+	// SQL 식별자 · 영문·숫자·밑줄만 허용. 충돌 시 throw.
 	if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
 		throw new Error(`invalid SQL identifier: ${name}`);
 	}
@@ -322,7 +322,7 @@ function _safeIdent(name: string): string {
 }
 
 /**
- * DuckDB-WASM 인스턴스 lazy 로드. 싱글톤 — 한 페이지 내 1회만 실제 로드.
+ * DuckDB-WASM 인스턴스 lazy 로드. 싱글톤 · 한 페이지 내 1회만 실제 로드.
  *
  * @returns DartDb 인스턴스. iOS Safari 또는 로드 실패 시 null.
  */

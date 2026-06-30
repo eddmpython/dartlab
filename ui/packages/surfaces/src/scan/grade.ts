@@ -107,7 +107,7 @@ export function gradeTone(metricKey: string, value: unknown): Tone {
 	}
 }
 
-// 신호색 SSOT — tokens.css(--dl-good/warn/bad/ink-mute) 참조. 전부 CSS 컨텍스트(style:color·color-mix·
+// 신호색 SSOT · tokens.css(--dl-good/warn/bad/ink-mute) 참조. 전부 CSS 컨텍스트(style:color·color-mix·
 // style:--cg)에서만 소비되므로 var() 사용 가능(canvas 0 확인). 한 곳(tokens.css)에서 전 surface 신호색 제어.
 /** qualGrade 기준 행 배경 톤 (CSS color-mix 인풋). */
 export function rowTintColor(qualGrade: unknown): string {

@@ -1,8 +1,8 @@
-// US(EDGAR 유니버스) 일별 OHLCV — edgar/prices/company/{ticker}.parquet 통파일 직독.
+// US(EDGAR 유니버스) 일별 OHLCV · edgar/prices/company/{ticker}.parquet 통파일 직독.
 // KR govPriceSource 와 동형: 회사별 전체 OHLCV(Yahoo v8 ~10년 bake)를 read-only 로 읽는다.
 //
 // 원천 = gather US history(yahooChart.fetchHistory, Yahoo v8 period1/period2·interval=1d·adjclose)를
-// 오프라인 bake 한 산출(edgar/prices/company). 런타임 라이브 호출 0 — Yahoo 는 429(per-IP)·CORS 라
+// 오프라인 bake 한 산출(edgar/prices/company). 런타임 라이브 호출 0 · Yahoo 는 429(per-IP)·CORS 라
 // 브라우저 직호출 불가(KR 이 gov 에 굽는 이유와 동일). close 는 수정주가(adjclose)라 KR 의 등락률 체이닝
 // 불필요 → r/tv = null. 표시 변환(집계·하이킨아시)은 surface 의 candleMath, 본 모듈은 로드·정규화만.
 import type { Candle } from '@dartlab/ui-contracts';
@@ -39,7 +39,7 @@ function rowToCandle(r: EdgarPriceRow): Candle | null {
 	return { t, o: Number(r.open) || c, h: Number(r.high) || c, l: Number(r.low) || c, c, v: Number(r.volume) || 0, r: null, tv: null };
 }
 
-/** parquet 행 묶음 → 정규화 캔들(오름차순·일자 dedup). 순수 함수 — 단위 테스트 진입점(네트워크 무관). */
+/** parquet 행 묶음 → 정규화 캔들(오름차순·일자 dedup). 순수 함수 · 단위 테스트 진입점(네트워크 무관). */
 export function parseEdgarPriceRows(rows: EdgarPriceRow[]): Candle[] {
 	const out: Candle[] = [];
 	for (const r of rows) {
@@ -57,14 +57,14 @@ export function parseEdgarPriceRows(rows: EdgarPriceRow[]): Candle[] {
 	return dedup;
 }
 
-// 최근 거래일 tail — 일증분(Polygon by-day)이 매일 갱신하는 edgar/prices/recent.parquet(전 종목 1파일).
+// 최근 거래일 tail · 일증분(Polygon by-day)이 매일 갱신하는 edgar/prices/recent.parquet(전 종목 1파일).
 // 회사 base(company/{ticker})와 머지해 마지막 봉까지 신선. KR gov/prices/recent 와 동형(ticker 컬럼 추가).
 const EDGAR_RECENT_COLUMNS = ['ticker', 'date', 'open', 'high', 'low', 'close', 'volume'];
 interface EdgarRecentRow extends EdgarPriceRow {
 	ticker?: string | null;
 }
 
-/** recent parquet 행 묶음 → {ticker: 캔들 오름차순}. 순수 함수 — 단위 테스트 진입점(네트워크 무관). */
+/** recent parquet 행 묶음 → {ticker: 캔들 오름차순}. 순수 함수 · 단위 테스트 진입점(네트워크 무관). */
 export function parseEdgarRecent(rows: EdgarRecentRow[]): Record<string, Candle[]> {
 	const map: Record<string, Candle[]> = {};
 	for (const r of rows) {
@@ -88,7 +88,7 @@ export function loadEdgarRecent(core?: DataCore): Promise<Record<string, Candle[
 				path: 'edgar/prices/recent.parquet',
 				columns: EDGAR_RECENT_COLUMNS,
 				cacheKey: 'edgar.prices.recent',
-				cache: { scope: 'memory', ttlMs: 10 * 60_000, maxEntries: 2 } // 일증분 — 신선도 우선 10분 TTL
+				cache: { scope: 'memory', ttlMs: 10 * 60_000, maxEntries: 2 } // 일증분 · 신선도 우선 10분 TTL
 			});
 			if (!rows) return null;
 			return parseEdgarRecent(rows);
@@ -106,13 +106,13 @@ export function loadEdgarCandles(ticker: string, core?: DataCore): Promise<Candl
 	const dc = edgarCore(core);
 	return (async () => {
 		try {
-			// 회사별 파일은 작다(~수백 KB) — HEAD probe 없이 GET 1 회 통파일(핫패스 RTT 최소화). 코어가 read 캐시·dedup.
+			// 회사별 파일은 작다(~수백 KB) · HEAD probe 없이 GET 1 회 통파일(핫패스 RTT 최소화). 코어가 read 캐시·dedup.
 			const rows = await dc.requestParquetWholeFile<EdgarPriceRow>({
 				origin: 'hf',
 				path: `edgar/prices/company/${t}.parquet`,
 				columns: EDGAR_PRICE_COLUMNS,
 				cacheKey: `edgar.prices.company:${t}`,
-				cache: { scope: 'memory', ttlMs: 20 * 60_000, maxEntries: 128 } // 주가 신선도 — 짧은 TTL(20분), 회사 파일 주기 파생
+				cache: { scope: 'memory', ttlMs: 20 * 60_000, maxEntries: 128 } // 주가 신선도 · 짧은 TTL(20분), 회사 파일 주기 파생
 			});
 			if (!rows) return null;
 			const candles = parseEdgarPriceRows(rows);

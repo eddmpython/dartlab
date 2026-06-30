@@ -53,7 +53,7 @@
 	);
 	const totalResults = $derived(skillResults.length + blogResults.length);
 	const pageUrl = buildAbsoluteUrl('search');
-	const pageTitle = 'DartLab 검색 — 전자공시 문서와 블로그 찾기';
+	const pageTitle = 'DartLab 검색 · 전자공시 문서와 블로그 찾기';
 	const pageDesc = 'DartLab 문서와 블로그에서 전자공시, DART, EDGAR 관련 내용을 검색한다.';
 	const searchJsonLd = JSON.stringify([
 		{

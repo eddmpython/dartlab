@@ -4,12 +4,12 @@ import type {
 	MacroTransmissionResult as ContractMacroTransmissionResult
 } from '@dartlab/ui-contracts';
 
-// DartLab Terminal — raw data file shapes + built Company shape.
+// DartLab Terminal · raw data file shapes + built Company shape.
 // 스키마는 landing/static 의 실데이터에서 검증 (finance/macro/meta/prices/search-index/ecosystem/quarters/industryStats).
-// 가짜 필드 없음 — cf.opening/closing 는 실데이터에서 null 이라 표면에 노출하지 않는다.
+// 가짜 필드 없음 · cf.opening/closing 는 실데이터에서 null 이라 표면에 노출하지 않는다.
 
 export type Num = number | null;
-// ui/shared/chart 의 ChartSpec (loose — 차트 컴포넌트는 @ts-nocheck spec 객체 수신).
+// ui/shared/chart 의 ChartSpec (loose · 차트 컴포넌트는 @ts-nocheck spec 객체 수신).
 export type ChartSpec = Record<string, unknown>;
 export type Lang = 'kr' | 'en';
 export type Tone = 'up' | 'down' | 'good' | 'warn' | 'neutral';
@@ -122,7 +122,7 @@ export interface MacroSide {
 	confidence?: string;
 	signals?: string | string[] | Record<string, unknown> | null;
 	transition?: MacroTransition | null;
-	quadrant?: MacroQuadrant; // 빌더 입력 부족(cycle 결측) 시 부재 가능 — 소비처 옵셔널 접근 강제
+	quadrant?: MacroQuadrant; // 빌더 입력 부족(cycle 결측) 시 부재 가능 · 소비처 옵셔널 접근 강제
 }
 export type MacroTransmissionDriver = ContractMacroTransmissionDriver;
 export type MacroTransmissionEdge = ContractMacroTransmissionEdge;
@@ -135,7 +135,7 @@ export interface TailwindEntry {
 // ── regime 키 (초강화·prebuild 가 deploy 시 HF macro/regime/{kr,us}.json 에서 조립) ──
 // sync(buildMacroRegime.py)가 동결한 forecast 4모델 + 수익률곡선 + GaR 분포 + Hamilton band.
 // 모델 sub-key 의 필드는 게이트 통과 여부에 따라 가변(통과 시 값·탈락 시 status). view-model 이
-// 옵셔널 접근으로 읽으므로 느슨하게 타이핑 — 모델 dict 는 Record<string, unknown> 로 두되,
+// 옵셔널 접근으로 읽으므로 느슨하게 타이핑 · 모델 dict 는 Record<string, unknown> 로 두되,
 // view-model 이 좁히는 키(zone/signal/contractionProb/status 등)는 인덱스 시그니처로 접근.
 export interface MacroRegimeModel {
 	status?: string;
@@ -207,7 +207,7 @@ export interface MacroFile {
 	us: MacroSide;
 	sectorTailwind: Record<string, TailwindEntry>;
 	transmission?: MacroTransmissionPayload | null;
-	// 초강화 regime 키 — 옵셔널(현 라이브 macro.json 미보유·prebuild deploy 시 주입).
+	// 초강화 regime 키 · 옵셔널(현 라이브 macro.json 미보유·prebuild deploy 시 주입).
 	regime?: { kr: MacroRegimePayload; us: MacroRegimePayload };
 }
 
@@ -327,7 +327,7 @@ export interface RawData {
 	index: IndexRow[];
 	eco: EcosystemFile | null;
 	quarters: QuartersFile | null;
-	// 업종 분포 통계(p10~p90 밴드) — map 이 쓰던 자산. public 셸은 로드, local 단일사 브리지는 null(정직). 필수=공동배선 강제.
+	// 업종 분포 통계(p10~p90 밴드) · map 이 쓰던 자산. public 셸은 로드, local 단일사 브리지는 null(정직). 필수=공동배선 강제.
 	industryStats: IndustryStatsFile | null;
 }
 
@@ -362,11 +362,11 @@ export interface GradeChip {
 	tone: Tone;
 	color: string;
 	kind?: 'ordered' | 'class'; // 'class'(현금흐름)=순서 없음 → 다이얼로그 분류 변형(사다리·색·곡선 없음).
-	// 종합 축의 동종업종 백분위 — 등급 근거(다이얼로그). 원시지표 백분위 아님(그건 우측 패널·다른 세션).
+	// 종합 축의 동종업종 백분위 · 등급 근거(다이얼로그). 원시지표 백분위 아님(그건 우측 패널·다른 세션).
 	topPct?: number | null; // 상위 N% = 동급 이상 동종사 비율(순서형만). 표본<5 → null.
 	peerN?: number; // 동종사 표본 수(순서형=등급 보유사, 분류=값 보유사).
 	dist?: { step: string; share: number; tone: Tone }[]; // 등급레벨별 동종사 비중 % + 톤(좋음→나쁨 색). 순서형 분포 막대.
-	sameShare?: number | null; // 분류(cf) 전용 — 동종사 내 같은 유형 비중 %(순위 아님).
+	sameShare?: number | null; // 분류(cf) 전용 · 동종사 내 같은 유형 비중 %(순위 아님).
 }
 export interface RadarAxis {
 	kr: string;
@@ -400,7 +400,7 @@ export interface RiskFlag {
 	en: string;
 	d: string;
 }
-// 위험 경고등 카탈로그 1행 — 다이얼로그(점검 차원 전체 + 이 회사 현상태)용. 글랜스 RiskFlag 와 별개 표면.
+// 위험 경고등 카탈로그 1행 · 다이얼로그(점검 차원 전체 + 이 회사 현상태)용. 글랜스 RiskFlag 와 별개 표면.
 // status: red/yellow 점등 · clear 임계미달(통과) · na 판정불가(데이터 부재). 규칙 SSOT = lib/riskRules.ts.
 export interface RiskCatalogItem {
 	id: string;
@@ -415,7 +415,7 @@ export interface RiskCatalogItem {
 	status: 'red' | 'yellow' | 'clear' | 'na';
 	d: string; // 현재 실측값/detail
 }
-// 히스토그램 — 동종사 전체 값 배열의 실도수(막대 높이=몰린 정도). robust 범위(p2~p98)로 outlier 클리핑.
+// 히스토그램 · 동종사 전체 값 배열의 실도수(막대 높이=몰린 정도). robust 범위(p2~p98)로 outlier 클리핑.
 // 5분위 보간 곡선(band)보다 정직: 실제 봉우리·gap·왜도를 그대로 보인다.
 export interface Hist {
 	bins: number[]; // 막대 높이 0~1(최댓값 정규화). 길이 = 빈 개수.
@@ -432,22 +432,22 @@ export interface PercentileMetric {
 	v: Num;
 	p: number;
 	unit: string;
-	axis: string; // 등급축 key(prof/growth/stab/liq/qual/eff) — 등급기준 섹션·중간패널 그루핑용.
-	lowerBetter?: boolean; // 낮을수록 우수(부채비율·CCC·발생액비율) — 방향 색띠(좋은 쪽) 좌우 결정용.
-	// 업종 분포 밴드(industryStats) — public 만 실데이터, local(단일사 seed)·분포 부재 = null(다이얼로그 생략).
+	axis: string; // 등급축 key(prof/growth/stab/liq/qual/eff) · 등급기준 섹션·중간패널 그루핑용.
+	lowerBetter?: boolean; // 낮을수록 우수(부채비율·CCC·발생액비율) · 방향 색띠(좋은 쪽) 좌우 결정용.
+	// 업종 분포 밴드(industryStats) · public 만 실데이터, local(단일사 seed)·분포 부재 = null(다이얼로그 생략).
 	// p10~p90 5분위점 = 분포곡선(skew 반영, 정규가정 아님)·회사 위치 마커 렌더용.
 	band: { p10: number; p25: number; median: number; p75: number; p90: number } | null;
 	hist?: Hist | null; // 실도수 히스토그램(다이얼로그 1차 시각). null = 표본<12 또는 미산출.
 }
 // ── 유니버스 교차 백분위 (PercentileCrossDialog) ──
 // co.percentile(업종 고정, Company['percentile'])과 별개. percentileIn(code, universe) 가 반환.
-// 소속지수('index')는 구성종목 멤버십 데이터 부재로 BLOCKED — union 미포함(00 ④ · 02 KILL#5).
+// 소속지수('index')는 구성종목 멤버십 데이터 부재로 BLOCKED · union 미포함(00 ④ · 02 KILL#5).
 export type Universe = 'industry' | 'market' | 'all';
 export interface CategoricalShare {
 	key: string;
 	kr: string;
 	en: string;
-	v: string; // 회사 등급(범주형) — 0~100 백분위로 칠하지 않음(02 KILL#3).
+	v: string; // 회사 등급(범주형) · 0~100 백분위로 칠하지 않음(02 KILL#3).
 	tone: Tone;
 	sameShare: number | null; // 이 유니버스 내 같은 등급 비중 %(순위 아님).
 	peerN: number; // 등급 보유 동종사 수.
@@ -455,7 +455,7 @@ export interface CategoricalShare {
 }
 export interface PriceStat {
 	v: number | null;
-	// 분포 내 위치(낮을수록 작은 p) — lowerBetter 미적용. 가격 우열 모호(저PER=저평가 vs 우려)라 톤·우수 프레이밍 금지(02 KILL#2).
+	// 분포 내 위치(낮을수록 작은 p) · lowerBetter 미적용. 가격 우열 모호(저PER=저평가 vs 우려)라 톤·우수 프레이밍 금지(02 KILL#2).
 	p: number | null;
 	band: { p10: number; p25: number; median: number; p75: number; p90: number } | null;
 	hist?: Hist | null; // 가격 분포 히스토그램(중립 마커).
@@ -465,7 +465,7 @@ export interface UniversePercentile {
 	universe: Universe;
 	label: string; // 유니버스 라벨(업종명 / KOSPI·KOSDAQ / 전체상장사).
 	n: number; // 모집단 표본 수(n<10 = 띠·곡선 숨김, 02 정직 가드).
-	metrics: PercentileMetric[]; // 정량 13지표 — 업종=industryStats 밴드, 시장/전체=라이브 5분위.
+	metrics: PercentileMetric[]; // 정량 13지표 · 업종=industryStats 밴드, 시장/전체=라이브 5분위.
 	grades: CategoricalShare[]; // 정성 등급 동급비중(거버넌스·경영권·감사·주주환원·현금흐름).
 	price: { per: PriceStat; pbr: PriceStat }; // 가격(펀더와 분리 격자).
 }
@@ -521,7 +521,7 @@ export interface AnalysisTrack {
 	tone: Tone;
 	delta: string;
 }
-// ui/web 재무카드 포팅 — finance.json 5Y 에서 계산
+// ui/web 재무카드 포팅 · finance.json 5Y 에서 계산
 export interface StackSeg {
 	kr: string;
 	v: number;
@@ -543,12 +543,12 @@ export interface Financials {
 }
 export interface Company {
 	code: string;
-	/** 표시 통화 — KR='KRW'(조/억), US(EDGAR)='USD'($T/$B). buildCompany 가 finance 엔트리 currency 태그에서 채움. 기본 KRW(무회귀). */
+	/** 표시 통화 · KR='KRW'(조/억), US(EDGAR)='USD'($T/$B). buildCompany 가 finance 엔트리 currency 태그에서 채움. 기본 KRW(무회귀). */
 	currency: string;
 	marketLabel: string;
 	name: Bilingual;
 	sector: Bilingual;
-	/** 산업 raw id (map/industries/{id}.json 키) — sector 는 라벨, 본 필드는 식별자. */
+	/** 산업 raw id (map/industries/{id}.json 키) · sector 는 라벨, 본 필드는 식별자. */
 	industry: string;
 	stage: string;
 	role: string;
@@ -559,7 +559,7 @@ export interface Company {
 	price: {
 		last: number;
 		mktcap: string;
-		mktcapRaw: number; // 원 — 캔들 최신가 기준 시총 보정용
+		mktcapRaw: number; // 원 · 캔들 최신가 기준 시총 보정용
 		ret1m: Num;
 		ret3m: Num;
 		ret1y: Num;

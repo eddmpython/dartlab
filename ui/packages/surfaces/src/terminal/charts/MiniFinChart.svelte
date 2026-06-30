@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 재무 분석 차트 — 막대+선·이중축·signed·stacked·refLine·heatmap.
+	// 재무 분석 차트 · 막대+선·이중축·signed·stacked·refLine·heatmap.
 	// 계정명 범례 + Y축 숫자(좌/우) + X축 기간 + 호버 툴팁 + ! 해석 가이드 → 해석 가능. 크게.
 	import type { FinCard, Num } from '@dartlab/ui-contracts';
 	import { pickKrwUnit } from '@dartlab/ui-format/krw';
@@ -12,7 +12,7 @@
 	}
 	let { card, periods, h = 152 }: Props = $props();
 
-	// ! 해석 가이드 — 카드 key 큐레이션 텍스트 (일반론 해석 기준, 회사 판단 아님). 클릭 토글.
+	// ! 해석 가이드 · 카드 key 큐레이션 텍스트 (일반론 해석 기준, 회사 판단 아님). 클릭 토글.
 	const guide = $derived(CARD_GUIDE[card.key] ?? null);
 	let showGuide = $state(false);
 
@@ -24,10 +24,10 @@
 
 	const fin = (v: Num): v is number => typeof v === 'number' && Number.isFinite(v);
 
-	// ── 히트맵 (kind='heatmap') — heat 기반 (연도행×분기열, 셀 값 + 색=YoY) ──
+	// ── 히트맵 (kind='heatmap') · heat 기반 (연도행×분기열, 셀 값 + 색=YoY) ──
 	const isHeat = $derived(card.kind === 'heatmap');
 	const heat = $derived(isHeat ? (card.heat ?? { rows: [], cols: [], vals: [], yoy: [] }) : { rows: [], cols: [], vals: [], yoy: [] });
-	// 히트맵 전용 지오메트리 — 우축 없음, 좌 라벨 + 하단 열 라벨
+	// 히트맵 전용 지오메트리 · 우축 없음, 좌 라벨 + 하단 열 라벨
 	const heatL = 34;
 	const heatR = 6;
 	const cellW = $derived(heat.cols.length ? (W - heatL - heatR) / heat.cols.length : 0);
@@ -40,7 +40,7 @@
 	let hoverR = $state(-1);
 	let hoverC = $state(-1);
 
-	// ── 워터폴 (kind='waterfall') — steps 기반, series/periods 미사용 ──
+	// ── 워터폴 (kind='waterfall') · steps 기반, series/periods 미사용 ──
 	const isWf = $derived(card.kind === 'waterfall');
 	const wfSteps = $derived(isWf ? ((card.steps ?? []).filter((s) => s.value != null) as { name: string; value: number; total?: boolean }[]) : []);
 	// 누적 floating: flow = 이전 레벨에서 ±, total = 0 부터 자기 값 (소계 막대)
@@ -60,7 +60,7 @@
 	const rightSeries = $derived(card.series.filter((s) => s.axis === 'r'));
 	const barSeries = $derived(leftSeries.filter((s) => s.type === 'bar'));
 	const leftLineSeries = $derived(leftSeries.filter((s) => s.type === 'line'));
-	// 좌축 로그 눈금 — 지수(=100) 다중 시계열 등 자릿수 차 큰 시리즈 비교용. 양수만 표시(≤0 은 pen-up).
+	// 좌축 로그 눈금 · 지수(=100) 다중 시계열 등 자릿수 차 큰 시리즈 비교용. 양수만 표시(≤0 은 pen-up).
 	const logLeft = $derived(!!card.logLeft);
 
 	function extent(vals: number[], incl0: boolean): [number, number] {
@@ -72,7 +72,7 @@
 		const pad = (hi - lo) * 0.1;
 		return [lo - (lo < 0 ? pad : 0), hi + pad];
 	}
-	// 로그 좌축 범위 — 양수만, 로그 공간 8% 패딩 후 raw 경계 반환 (ticks/yL 는 raw 값으로 동작).
+	// 로그 좌축 범위 · 양수만, 로그 공간 8% 패딩 후 raw 경계 반환 (ticks/yL 는 raw 값으로 동작).
 	function extentLog(vals: number[]): [number, number] {
 		const pos = vals.filter((v) => v > 0);
 		if (!pos.length) return [1, 10];
@@ -89,7 +89,7 @@
 			return logLeft ? extentLog(vals) : extent(vals, true);
 		}
 		if (card.stacked && card.signed) {
-			// signed 스택 — 양수합·음수합이 각각 위/아래 경계
+			// signed 스택 · 양수합·음수합이 각각 위/아래 경계
 			for (let i = 0; i < n; i++) {
 				let pos = 0;
 				let neg = 0;
@@ -114,7 +114,7 @@
 		return extent(vals, true);
 	});
 
-	// 조 단위 카드 자동 단위 선택 — SSOT(@dartlab/ui-format pickKrwUnit)가 좌축 값들의 최대 크기로
+	// 조 단위 카드 자동 단위 선택 · SSOT(@dartlab/ui-format pickKrwUnit)가 좌축 값들의 최대 크기로
 	// 표시 단위(조/억…)를 정한다(중소형사 0.0조 범벅 방지). 데이터·스케일 불변, 라벨 환산(k)만. 우축(%) 무관.
 	const unitScale = $derived.by<{ k: number; unit: string }>(() => {
 		if (card.unit !== '조') return { k: 1, unit: card.unit };
@@ -131,12 +131,12 @@
 	});
 
 	const x = (i: number) => (n <= 1 ? M.l + plotW / 2 : M.l + (i / (n - 1)) * plotW);
-	// 워터폴 전용 — 슬롯 중앙 배치 (양끝 클리핑 없음, step name 라벨 공간)
+	// 워터폴 전용 · 슬롯 중앙 배치 (양끝 클리핑 없음, step name 라벨 공간)
 	const xw = (i: number) => M.l + ((i + 0.5) / Math.max(1, n)) * plotW;
 	const yOf = (v: number, [lo, hi]: [number, number]) => M.t + plotH - ((v - lo) / (hi - lo || 1)) * plotH;
 	const yL = (v: number) => {
 		if (logLeft) {
-			if (!(v > 0)) return NaN; // 로그축은 양수만 — ≤0 은 선 끊김(pen-up)
+			if (!(v > 0)) return NaN; // 로그축은 양수만 · ≤0 은 선 끊김(pen-up)
 			const loL = Math.log10(leftExt[0]);
 			const hiL = Math.log10(leftExt[1]);
 			return M.t + plotH - ((Math.log10(v) - loL) / ((hiL - loL) || 1)) * plotH;
@@ -145,7 +145,7 @@
 	};
 	const yR = (v: number) => yOf(v, rightExt);
 
-	// 바 폭 상한 22px — 기간 수가 적어도(연 5개) 빽빽한 밀도 유지 (뚱뚱한 바 금지)
+	// 바 폭 상한 22px · 기간 수가 적어도(연 5개) 빽빽한 밀도 유지 (뚱뚱한 바 금지)
 	const slotW = $derived(n > 0 ? plotW / n : plotW);
 	const groupW = $derived(Math.min(slotW * 0.72, (card.stacked || barSeries.length <= 1 ? 1 : barSeries.length) * 22));
 	const barW = $derived(card.stacked || barSeries.length <= 1 ? groupW : groupW / barSeries.length);
@@ -163,12 +163,13 @@
 	const rightTicks = $derived(rightSeries.length ? ticks(rightExt) : []);
 	const fmtTick = (v: number) => {
 		const a = Math.abs(v);
+		if (a === 0) return '0';
 		if (a >= 1000) return Math.round(v).toLocaleString();
 		if (a >= 10) return v.toFixed(0);
 		if (a >= 1) return v.toFixed(1);
 		return v.toFixed(2);
 	};
-	// X 라벨 (~5) — 워터폴은 step name 전부를 별도 렌더
+	// X 라벨 (~5) · 워터폴은 step name 전부를 별도 렌더
 	const xLabels = $derived.by(() => {
 		if (n === 0 || isWf) return [] as number[];
 		const out: number[] = [];
@@ -184,7 +185,7 @@
 		data.forEach((v, i) => {
 			if (!fin(v)) { pen = false; return; }
 			const y = yfn(v);
-			if (!Number.isFinite(y)) { pen = false; return; } // 로그축 ≤0 등 — 선 끊김
+			if (!Number.isFinite(y)) { pen = false; return; } // 로그축 ≤0 등 · 선 끊김
 			d += `${pen ? 'L' : 'M'}${x(i).toFixed(1)},${y.toFixed(1)} `;
 			pen = true;
 		});
@@ -196,12 +197,12 @@
 	const fmtVal = (v0: number) => {
 		const v = v0 * unitScale.k;
 		const a = Math.abs(v);
-		if (a >= 1000) return Math.round(v).toLocaleString(); // 천단위 콤마 — 축(fmtTick)·툴팁(fmtTip)과 일관
+		if (a >= 1000) return Math.round(v).toLocaleString(); // 천단위 콤마 · 축(fmtTick)·툴팁(fmtTip)과 일관
 		if (unitScale.unit === '억') return a >= 100 ? v.toFixed(0) : v.toFixed(1);
 		if (card.unit === '조' || card.unit === '배') return a >= 100 ? v.toFixed(1) : v.toFixed(2);
 		return a >= 100 ? v.toFixed(0) : v.toFixed(1);
 	};
-	// scaled = 좌축(조→억 환산 대상) 값 여부 — 우축(%·배율)은 원값 그대로
+	// scaled = 좌축(조→억 환산 대상) 값 여부 · 우축(%·배율)은 원값 그대로
 	const fmtTip = (v0: number, scaled = true) => {
 		const v = scaled ? v0 * unitScale.k : v0;
 		const a = Math.abs(v);
@@ -268,7 +269,7 @@
 			<div class="mfcGuideRow"><span class="mfcGuideTag">읽는법</span>{guide.what}</div>
 			<div class="mfcGuideRow"><span class="mfcGuideTag gtGood">긍정</span>{guide.good}</div>
 			<div class="mfcGuideRow"><span class="mfcGuideTag gtBad">부정</span>{guide.bad}</div>
-			<div class="mfcGuideFoot">일반적 해석 기준 — 업종·상황에 따라 다를 수 있음</div>
+			<div class="mfcGuideFoot">일반적 해석 기준 · 업종·상황에 따라 다를 수 있음</div>
 		</div>
 	{/if}
 	<div class="mfcLegend">
@@ -306,7 +307,7 @@
 				{#if hoverI >= 0}<line x1={isWf ? xw(hoverI) : x(hoverI)} x2={isWf ? xw(hoverI) : x(hoverI)} y1={M.t} y2={M.t + plotH} stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="2 2" />{/if}
 			{/if}
 			{#if isHeat}
-				<!-- 히트맵 — 연도행(최신 위) × 분기열, 셀 텍스트 = 값, 색 = 전년동기比 -->
+				<!-- 히트맵 · 연도행(최신 위) × 분기열, 셀 텍스트 = 값, 색 = 전년동기比 -->
 				{#each heat.rows as ry, r (ry)}
 					<text x={heatL - 3} y={M.t + r * cellH + cellH / 2 + 2.5} text-anchor="end" class="mfcAx">{ry}</text>
 					{#each heat.cols as cl, c (cl)}
@@ -323,7 +324,7 @@
 					<text x={heatL + c * cellW + cellW / 2} y={H - 4} text-anchor="middle" class="mfcAx">{cl}</text>
 				{/each}
 			{:else if isWf}
-				<!-- 워터폴 — floating rect (total 은 0 부터) + 점선 connector + step name 라벨 -->
+				<!-- 워터폴 · floating rect (total 은 0 부터) + 점선 connector + step name 라벨 -->
 				{#each wfBars as b, i (i)}
 					<rect x={xw(i) - wfBarW / 2} y={Math.min(yL(b.from), yL(b.to))} width={wfBarW} height={Math.max(0.8, Math.abs(yL(b.to) - yL(b.from)))} fill={wfColor(b)} fill-opacity={hoverI < 0 || hoverI === i ? 0.9 : 0.45} />
 					{#if i < wfBars.length - 1}
@@ -335,7 +336,7 @@
 				<!-- bars -->
 				{#each periods as _p, i (i)}
 					{#if card.stacked && card.signed}
-						<!-- signed 스택 — 양수는 0 위로, 음수는 0 아래로 같은 부호끼리 누적 -->
+						<!-- signed 스택 · 양수는 0 위로, 음수는 0 아래로 같은 부호끼리 누적 -->
 						{#each barSeries as b, bi (b.name)}
 							{@const v = b.data[i]}
 							{#if fin(v) && v !== 0}
@@ -379,8 +380,8 @@
 			{@const hg = heat.yoy[hoverR][hoverC]}
 			<div class="mfcTip" style={hoverC >= 2 ? 'left:3px' : 'right:3px'}>
 				<div class="mfcTipP mono">{heat.rows[hoverR]} {heat.cols[hoverC]}</div>
-				<div class="mfcTipR"><i style={`background:${fin(hv) ? heatFill(hg) : '#64748b'}`}></i><span class="mfcTipN">매출</span><b class="mono">{fin(hv) ? fmtTip(hv) + unitScale.unit : '—'}</b></div>
-				<div class="mfcTipR"><i style={`background:${hg == null ? '#64748b' : hg >= 0 ? '#34d399' : '#f0616f'}`}></i><span class="mfcTipN">YoY</span><b class="mono">{hg == null ? '—' : (hg > 0 ? '+' : '') + hg.toFixed(1) + '%'}</b></div>
+				<div class="mfcTipR"><i style={`background:${fin(hv) ? heatFill(hg) : '#64748b'}`}></i><span class="mfcTipN">매출</span><b class="mono">{fin(hv) ? fmtTip(hv) + unitScale.unit : '·'}</b></div>
+				<div class="mfcTipR"><i style={`background:${hg == null ? '#64748b' : hg >= 0 ? '#34d399' : '#f0616f'}`}></i><span class="mfcTipN">YoY</span><b class="mono">{hg == null ? '·' : (hg > 0 ? '+' : '') + hg.toFixed(1) + '%'}</b></div>
 			</div>
 		{/if}
 		{#if hoverI >= 0}
@@ -396,7 +397,7 @@
 					<div class="mfcTipP mono">{periods[hoverI]}</div>
 					{#each card.series as s (s.name)}
 						{@const v = s.data[hoverI]}
-						<div class="mfcTipR"><i style={`background:${s.color}`}></i><span class="mfcTipN">{s.name}</span><b class="mono">{fin(v) ? fmtTip(v as number, s.axis !== 'r') : '—'}</b></div>
+						<div class="mfcTipR"><i style={`background:${s.color}`}></i><span class="mfcTipN">{s.name}</span><b class="mono">{fin(v) ? fmtTip(v as number, s.axis !== 'r') : '·'}</b></div>
 					{/each}
 				{/if}
 			</div>

@@ -1,12 +1,12 @@
-// 뷰어 명령 버스 — 채팅(현재=결정론, 미래=모델 tool-call)이 뒷화면(공시뷰어)을 조작하는 단일 계약.
-// 순수 타입 + executeAction 디스패처 + deriveActions 결정론 프로듀서. Svelte/$state 0 — 호스트가
+// 뷰어 명령 버스 · 채팅(현재=결정론, 미래=모델 tool-call)이 뒷화면(공시뷰어)을 조작하는 단일 계약.
+// 순수 타입 + executeAction 디스패처 + deriveActions 결정론 프로듀서. Svelte/$state 0 · 호스트가
 // ViewerApi 로 자기 mutator 를 주입한다. 모든 변형은 executeAction 한 곳을 통과(라이브 상태 검증 게이트):
 // 모델은 절대 Svelte state 를 직접 못 만지고 schema-제약 액션만 제안, 호스트가 검증·실행한다.
 import type { SearchHit } from './searchIndex';
 import type { CompanyHit } from './companyNames';
 import type { Intent } from './answerCompose';
 
-// ── 액션 스키마 — 채팅이 emit 하는 계약(JSON 직렬화 가능). 각 variant = 호스트 함수 1:1. ──
+// ── 액션 스키마 · 채팅이 emit 하는 계약(JSON 직렬화 가능). 각 variant = 호스트 함수 1:1. ──
 export type ViewerAction =
 	| { kind: 'navigateCompany'; code: string; carryQ?: string }
 	| { kind: 'focusEvidence'; hit: SearchHit }
@@ -23,7 +23,7 @@ export type ViewerAction =
 
 export type ViewerActionKind = ViewerAction['kind'];
 
-// 호스트(+page.svelte)가 주입하는 능력 집합 — 기존 mutator 1:1 + 검증용 라이브 상태 게터.
+// 호스트(+page.svelte)가 주입하는 능력 집합 · 기존 mutator 1:1 + 검증용 라이브 상태 게터.
 export interface ViewerApi {
 	navigateCompany: (code: string, carryQ: string) => void;
 	focusEvidence: (hit: SearchHit) => void;
@@ -38,7 +38,7 @@ export interface ViewerApi {
 	closeFinance: () => void;
 	addCompare: (code: string) => void;
 	removeCompare: (code: string) => void;
-	// 검증 게터(라이브 상태) — 환각·무효 차단
+	// 검증 게터(라이브 상태) · 환각·무효 차단
 	hasSection: (sectionKey: string) => boolean;
 	hasPeriod: (period: string) => boolean; // visiblePeriods 기준
 	knownCode: (code: string) => boolean; // 데이터셋 보유 + self 아님
@@ -49,7 +49,7 @@ export interface ActionResult {
 	reason?: string; // 거부 사유(테스트·디버그·미래 모델 피드백)
 }
 
-// 단일 디스패처 — 라이브 상태 검증 후 호스트 mutator 호출. 무효면 no-op + reason. 여기만 뒷화면을 바꾼다.
+// 단일 디스패처 · 라이브 상태 검증 후 호스트 mutator 호출. 무효면 no-op + reason. 여기만 뒷화면을 바꾼다.
 export function executeAction(a: ViewerAction, api: ViewerApi): ActionResult {
 	switch (a.kind) {
 		case 'navigateCompany':
@@ -98,7 +98,7 @@ export function executeAction(a: ViewerAction, api: ViewerApi): ActionResult {
 	}
 }
 
-// ── 결정론 드라이버 — 질문 + 기존 휴리스틱 산출물 → 액션 목록. AI 0. ──
+// ── 결정론 드라이버 · 질문 + 기존 휴리스틱 산출물 → 액션 목록. AI 0. ──
 // 호출측(AskDrawer)이 이미 가진 resolveCompanies 결과·search hits·composeAnswer.intent 를 받아
 // 액션으로 표현(로직 중복 0). 같은 액션 스키마를 나중에 모델이 emit → 동일 executeAction 통과.
 export interface DeriveInput {
@@ -114,7 +114,7 @@ const YEAR_RE = /(20\d{2})/;
 
 export function deriveActions(input: DeriveInput): ViewerAction[] {
 	const { q, targets, hits, intent, topHit, visiblePeriods } = input;
-	void hits; // 현재 미사용(topHit 로 충분) — 시그니처 안정성 위해 입력엔 유지
+	void hits; // 현재 미사용(topHit 로 충분) · 시그니처 안정성 위해 입력엔 유지
 	const out: ViewerAction[] = [];
 
 	// (1) 타 회사 단일 감지 → 이동(원질문 carryQ). 이동이면 다른 액션 무의미(새 회사서 재실행) → 단독 반환.

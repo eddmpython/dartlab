@@ -32,10 +32,10 @@
 		flows: FlowEdge[];
 		onSelect?: (ind: IndustryNode) => void;
 		colorMetric?: string;
-		// 타임라인 — 선택 연도의 산업별 totalRevenue (원 단위)
+		// 타임라인 · 선택 연도의 산업별 totalRevenue (원 단위)
 		timelineYear?: string;
 		industryTotalsByYear?: Record<string, Record<string, { totalRevenue: number; count: number; avgOpm: number | null }>>;
-		// 변화감지 렌즈 — 산업별 movers 카운트 (>0 면 펄스 링)
+		// 변화감지 렌즈 · 산업별 movers 카운트 (>0 면 펄스 링)
 		moversByIndustry?: Map<string, number>;
 	}
 
@@ -138,12 +138,12 @@
 
 	function onWindowMouseUp() {
 		if (dragNode && !dragMoved) {
-			// 클릭으로 간주 — 고정 해제 + select
+			// 클릭으로 간주 · 고정 해제 + select
 			dragNode.fx = null;
 			dragNode.fy = null;
 			onSelect?.(dragNode);
 		} else if (dragNode) {
-			// 드래그 완료 — 고정 해제 (force 다시 흘러가게 하려면 null, 고정하려면 유지)
+			// 드래그 완료 · 고정 해제 (force 다시 흘러가게 하려면 null, 고정하려면 유지)
 			// 사용자가 배치한 위치 유지: fx/fy 그대로. 두 번 클릭하면 해제.
 		}
 		dragNode = null;
@@ -268,7 +268,7 @@
 	}
 
 	let builtSignature = '';
-	// $derived로 반응성 보장 — timelineYear 변경 시 자동 재계산
+	// $derived로 반응성 보장 · timelineYear 변경 시 자동 재계산
 	let currentSignature = $derived.by(() => {
 		const indIds = industries
 			.map((i) => i.id)
@@ -320,8 +320,8 @@
 		}
 	});
 
-	// 색 동기화 — industries prop 의 color 만 바뀌면 위치/시뮬 유지하고 색만 갱신
-	// (signature 가 안 바뀌어 build() 안 도는 케이스 — 예: colorMetric 변경)
+	// 색 동기화 · industries prop 의 color 만 바뀌면 위치/시뮬 유지하고 색만 갱신
+	// (signature 가 안 바뀌어 build() 안 도는 케이스 · 예: colorMetric 변경)
 	$effect(() => {
 		const colorById = new Map<string, string>();
 		for (const i of industries) colorById.set(i.id, i.color);
@@ -452,7 +452,7 @@
 							filter="url(#hub-glow)"
 						/>
 					{/if}
-					<!-- 변화 감지 렌즈 — movers 있는 산업에 펄스 링 -->
+					<!-- 변화 감지 렌즈 · movers 있는 산업에 펄스 링 -->
 					{#if moverCount > 0}
 						<circle
 							class="movers-pulse"
@@ -474,7 +474,7 @@
 						stroke={n.isHub ? '#f8fafc' : n.color}
 						stroke-width={n.isHub ? 2.5 : 1.5}
 					/>
-					<!-- 변화 감지 렌즈 — movers 카운트 배지 -->
+					<!-- 변화 감지 렌즈 · movers 카운트 배지 -->
 					{#if moverCount > 0}
 						<g class="mover-badge" transform="translate({n.r * 0.7}, {-n.r * 0.7})">
 							<circle r="9" fill="#ef4444" stroke="#0f1219" stroke-width="1.5" />
@@ -543,7 +543,7 @@
 	<div class="legend">
 		<div class="legend-item">
 			<span class="legend-swatch flow"></span>
-			<span>공급 플로우 — 굵기 = 거래 수</span>
+			<span>공급 플로우 · 굵기 = 거래 수</span>
 		</div>
 		<div class="legend-item">
 			<span class="legend-swatch node"></span>

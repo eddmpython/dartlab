@@ -1,4 +1,4 @@
-// 옛 `$app/environment browser` 의존 제거 — runtime 패키지는 SvelteKit 을 모른다.
+// 옛 `$app/environment browser` 의존 제거 · runtime 패키지는 SvelteKit 을 모른다.
 const browser = typeof window !== 'undefined';
 
 const CACHE_NAME = 'dartlab-data-json-v1';

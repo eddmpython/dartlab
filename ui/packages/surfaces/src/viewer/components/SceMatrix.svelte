@@ -1,11 +1,11 @@
 <script lang="ts">
-	// 자본변동표 — 변동유형(행) × 자본구성요소(열), 선택 기간 1개. account×period 표로는 2D 를 못 담아 전용.
+	// 자본변동표 · 변동유형(행) × 자본구성요소(열), 선택 기간 1개. account×period 표로는 2D 를 못 담아 전용.
 	import type { SceMatrixData } from '../lib/finance/types';
 
 	let { data, period, divisor }: { data: SceMatrixData; period: string; divisor: number } = $props();
 
 	const nf = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 });
-	const fmt = (v: number | null | undefined): string => (v == null ? '–' : nf.format(Math.round(v / divisor)));
+	const fmt = (v: number | null | undefined): string => (v == null ? '-' : nf.format(Math.round(v / divisor)));
 	const rows = $derived(data.byPeriod[period] ?? []);
 </script>
 

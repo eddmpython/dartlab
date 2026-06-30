@@ -1,6 +1,6 @@
-// OOXML 부품 emit — [Content_Types].xml · _rels/.rels · xl/workbook.xml · xl/_rels/workbook.xml.rels ·
+// OOXML 부품 emit · [Content_Types].xml · _rels/.rels · xl/workbook.xml · xl/_rels/workbook.xml.rels ·
 // xl/styles.xml(최소) · xl/worksheets/sheetN.xml. inlineStr(텍스트)·t="n"(숫자) 셀 + <mergeCells>.
-// sharedStrings 대신 inlineStr — 표가 좁고 쓰기 전용이라 dedup 이득 < 복잡도(feedback_always_check_clutter).
+// sharedStrings 대신 inlineStr · 표가 좁고 쓰기 전용이라 dedup 이득 < 복잡도(feedback_always_check_clutter).
 //
 // styleId 고정 테이블 (xl/styles.xml 의 cellXfs 순서와 정확히 일치):
 //   0 = 기본            1 = 헤더 볼드(가운데)
@@ -29,7 +29,7 @@ export function xmlEsc(s: string): string {
 		.replace(/'/g, '&apos;');
 }
 
-// A1 표기 — col(0-base) → "A".."Z","AA".. ; row(0-base) → 1-base 숫자.
+// A1 표기 · col(0-base) → "A".."Z","AA".. ; row(0-base) → 1-base 숫자.
 export function colLetter(col: number): string {
 	let n = col;
 	let s = '';
@@ -50,7 +50,7 @@ const CONTENT_TYPES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 const ROOT_RELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
 
-// 최소 styles.xml — numFmt(custom 164/165) + fonts(기본·볼드·노트) + cellXfs(위 STYLE 순서).
+// 최소 styles.xml · numFmt(custom 164/165) + fonts(기본·볼드·노트) + cellXfs(위 STYLE 순서).
 const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="#,##0"/><numFmt numFmtId="165" formatCode="#,##0;[Red]-#,##0"/></numFmts><fonts count="3"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><i/><sz val="9"/><color rgb="FF808080"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="9"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf><xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf><xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
 

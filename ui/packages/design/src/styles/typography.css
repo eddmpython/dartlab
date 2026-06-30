@@ -1,7 +1,7 @@
-/* Typography — 한글·영문·숫자 위계
+/* Typography · 한글·영문·숫자 위계
  * 한국어 본문 16-18px, 행간 1.75 (Pretendard 권장)
  * 헤드라인 Pretendard (본문과 같은 family · 위계는 size·weight), 숫자 JetBrains Mono (tabular)
- * (옛 Newsreader serif 헤드라인은 전 뷰어 Pretendard 통일로 폐지 — @import 제거)
+ * (옛 Newsreader serif 헤드라인은 전 뷰어 Pretendard 통일로 폐지 · @import 제거)
  */
 
 /* ── Heading (Pretendard · size·weight 위계) ── */

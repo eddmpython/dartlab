@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 인스타식 포스트 다이얼로그 — 좌 캐러셀(Deck, 스와이프) + 우 캡션(계약 title/caption/pinned). 배경/✕/Esc 닫기.
+	// 인스타식 포스트 다이얼로그 · 좌 캐러셀(Deck, 스와이프) + 우 캡션(계약 title/caption/pinned). 배경/✕/Esc 닫기.
 	// /cards 피드와 /terminal 회사 네비「카드뉴스」가 공유(단일 SSOT). 계약은 code 로 직접 로드(레이스 가드).
 	import type { DartLabRuntime } from '@dartlab/ui-contracts';
 	import Deck from './Deck.svelte';
@@ -28,7 +28,7 @@
 	} = $props();
 
 	let contract = $state<CarouselContract | null>(null);
-	// slug 가 바뀌면(다이얼로그 재사용) 재로딩 — 레이스 가드로 늦게 온 응답 무시.
+	// slug 가 바뀌면(다이얼로그 재사용) 재로딩 · 레이스 가드로 늦게 온 응답 무시.
 	$effect(() => {
 		const s = slug;
 		contract = null;
@@ -37,11 +37,11 @@
 		});
 	});
 
-	// 섹션 점프 네비 — Deck 이 빌드 후 챕터 앵커를 onSections 로 넘긴다. jumpTo 는 bind:this 로 호출.
+	// 섹션 점프 네비 · Deck 이 빌드 후 챕터 앵커를 onSections 로 넘긴다. jumpTo 는 bind:this 로 호출.
 	let deckRef = $state<{ jumpTo: (i: number) => void } | null>(null);
 	let anchors = $state<{ label: string; index: number }[]>([]);
 
-	// 캡션 배지 — 제품·지주(rt.company.products 직독 + 회사명 휴리스틱). code 바뀌면 재로딩(레이스 가드).
+	// 캡션 배지 · 제품·지주(rt.company.products 직독 + 회사명 휴리스틱). code 바뀌면 재로딩(레이스 가드).
 	let badges = $state<CompanyBadges | null>(null);
 	$effect(() => {
 		const c = code;
@@ -66,7 +66,7 @@
 		if (e.key === 'Escape') onClose();
 	}
 
-	// 공유 — cardShare 워커 링크(첫 슬라이드 OG 미리보기 + 이 캐러셀로 딥링크) 복사. 워커 미설정 시 /cards?post= 폴백.
+	// 공유 · cardShare 워커 링크(첫 슬라이드 OG 미리보기 + 이 캐러셀로 딥링크) 복사. 워커 미설정 시 /cards?post= 폴백.
 	let copied = $state(false);
 	async function share() {
 		try {
@@ -98,7 +98,7 @@
 					{#if copied}복사됨 ✓{:else}<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>공유{/if}
 				</button>
 			</header>
-			<!-- 섹션 점프 프리셋 — 캡션 헤더 바로 아래(사진 밖 웹 리더 크롬). 20장+ 익명 닷 보완. -->
+			<!-- 섹션 점프 프리셋 · 캡션 헤더 바로 아래(사진 밖 웹 리더 크롬). 20장+ 익명 닷 보완. -->
 			{#if anchors.length > 1}
 				<nav class="prNav" aria-label="섹션 바로가기">
 					{#each anchors as a (a.index)}<button onclick={() => deckRef?.jumpTo(a.index)}>{a.label}</button>{/each}
@@ -140,7 +140,7 @@
 							</div>
 						</section>
 					{/if}
-					<!-- 블로그 이어 읽기 — 회사 캐러셀만(같은 slug=blog [slug]). 이슈(standalone)는 원문 글이 없어 숨김. -->
+					<!-- 블로그 이어 읽기 · 회사 캐러셀만(같은 slug=blog [slug]). 이슈(standalone)는 원문 글이 없어 숨김. -->
 					{#if !contract.standalone}
 						<a class="prBlog" href="{base}/blog/{slug}" target="_blank" rel="noopener">
 							<span class="prBlogIco" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg></span>
@@ -159,7 +159,7 @@
 </div>
 
 <style>
-	/* 인스타 포스트 모달 — 좌 캐러셀(4:5) + 우 캡션 패널. z-index 는 터미널 오버레이(scrimWrap 10050)
+	/* 인스타 포스트 모달 · 좌 캐러셀(4:5) + 우 캡션 패널. z-index 는 터미널 오버레이(scrimWrap 10050)
 	   위로 떠야 하므로 높게(10060). /cards 에선 경쟁 오버레이가 없어 무해. */
 	.post {
 		position: fixed;
@@ -222,7 +222,7 @@
 		color: #94a3b8;
 		text-transform: uppercase;
 	}
-	/* 공유 버튼 — 헤더 우측. 링크 복사 시 '복사됨 ✓'. 테마색 보더. */
+	/* 공유 버튼 · 헤더 우측. 링크 복사 시 '복사됨 ✓'. 테마색 보더. */
 	.prShare {
 		margin-left: auto;
 		display: inline-flex;
@@ -258,7 +258,7 @@
 		color: var(--dl-accent);
 		font-weight: 700;
 	}
-	/* 섹션 점프 프리셋 — 캡션 헤더 아래 가로 칩 행(넘치면 가로 스크롤, 줄바꿈 금지). */
+	/* 섹션 점프 프리셋 · 캡션 헤더 아래 가로 칩 행(넘치면 가로 스크롤, 줄바꿈 금지). */
 	.prNav {
 		display: flex;
 		gap: 6px;
@@ -290,7 +290,7 @@
 		border-color: rgba(var(--dl-accent-rgb), 0.6);
 		color: var(--dl-accent);
 	}
-	/* 회사 배지 — 제품·지주(캡션 메타 아래). 작은 칩. */
+	/* 회사 배지 · 제품·지주(캡션 메타 아래). 작은 칩. */
 	.prBadges {
 		display: flex;
 		flex-wrap: wrap;
@@ -412,7 +412,7 @@
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 	}
-	/* 블로그 이어 읽기 CTA — 캡션 아래, 면책 위. 테마색(--dl-accent) 배선(캐러셀 점·재생버튼과 동색). */
+	/* 블로그 이어 읽기 CTA · 캡션 아래, 면책 위. 테마색(--dl-accent) 배선(캐러셀 점·재생버튼과 동색). */
 	.prBlog {
 		display: flex;
 		align-items: center;
@@ -490,7 +490,7 @@
 		cursor: pointer;
 		z-index: 2;
 	}
-	/* 좁은 화면 — 세로 스택(캐러셀 위, 캡션 아래) */
+	/* 좁은 화면 · 세로 스택(캐러셀 위, 캡션 아래) */
 	@media (max-width: 820px) {
 		.postInner {
 			flex-direction: column;
@@ -510,7 +510,7 @@
 			border-top: 1px solid #1e2433;
 		}
 	}
-	/* 폰(≤640) — 모달을 화면 꽉 채움(거터 0). 카드 위 / 캡션 아래 한 흐름으로 스크롤.
+	/* 폰(≤640) · 모달을 화면 꽉 채움(거터 0). 카드 위 / 캡션 아래 한 흐름으로 스크롤.
 	   100dvh = iOS Safari 주소창 가변 높이 잘림 방지(미지원 시 위 820 블록 max-height:92vh 폴백). */
 	@media (max-width: 640px) {
 		.post {

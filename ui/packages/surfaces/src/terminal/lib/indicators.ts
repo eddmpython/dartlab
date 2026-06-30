@@ -1,4 +1,4 @@
-// 보조지표 — OHLCV close 배열에서 클라이언트 계산 (gather 지표는 Python 서버용이라 브라우저는 직접 산출).
+// 보조지표 · OHLCV close 배열에서 클라이언트 계산 (gather 지표는 Python 서버용이라 브라우저는 직접 산출).
 export function sma(a: number[], p: number): (number | null)[] {
 	const o: (number | null)[] = [];
 	for (let i = 0; i < a.length; i++) {
@@ -110,7 +110,7 @@ export interface Bollinger {
 	upper: (number | null)[];
 	lower: (number | null)[];
 }
-// ATR(평균진폭) — Wilder 평활. 고저종 입력. 변동성 손절·채널·필터의 기반(종가만 쓰는 6프리셋의 약점 보강).
+// ATR(평균진폭) · Wilder 평활. 고저종 입력. 변동성 손절·채널·필터의 기반(종가만 쓰는 6프리셋의 약점 보강).
 export function atr(highs: number[], lows: number[], closes: number[], p = 14): (number | null)[] {
 	const tr: number[] = [];
 	for (let i = 0; i < closes.length; i++) {
@@ -128,11 +128,11 @@ export function atr(highs: number[], lows: number[], closes: number[], p = 14): 
 	}
 	return out;
 }
-// 거래량 단순이평 — 거래량 확인(fake breakout 제거)용. volRatio = vol / volSma 로 쓴다.
+// 거래량 단순이평 · 거래량 확인(fake breakout 제거)용. volRatio = vol / volSma 로 쓴다.
 export function volSma(vols: number[], p = 20): (number | null)[] {
 	return sma(vols, p);
 }
-// 실현 변동성(연환산 %) — 종가 로그수익 표준편차 × √252 × 100. 변동성 필터·저변동 전략.
+// 실현 변동성(연환산 %) · 종가 로그수익 표준편차 × √252 × 100. 변동성 필터·저변동 전략.
 export function realizedVol(closes: number[], p = 20): (number | null)[] {
 	const out: (number | null)[] = [];
 	for (let i = 0; i < closes.length; i++) {

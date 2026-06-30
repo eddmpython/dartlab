@@ -1,9 +1,9 @@
-// local ExportPort — 엔진 openpyxl 완전판 .xlsx(자동너비·음수 빨강·풍부 서식). /api/export/* 프록시(03 §3).
+// local ExportPort · 엔진 openpyxl 완전판 .xlsx(자동너비·음수 빨강·풍부 서식). /api/export/* 프록시(03 §3).
 // generate: POST /api/export/excel {code, template} → FileResponse(.xlsx 바이너리) → object URL.
 // 양식 CRUD: GET/POST/DELETE /api/export/templates (data.py 계약). listExportableTables 는 공유 순수 함수(동일).
-// 모든 /api 호출은 로컬 게이트(api/localApi) 경유 — raw fetch·URL 합성을 이 source 가 직접 갖지 않는다(02 §5).
+// 모든 /api 호출은 로컬 게이트(api/localApi) 경유 · raw fetch·URL 합성을 이 source 가 직접 갖지 않는다(02 §5).
 // blob·DELETE·상태코드별 정직 표기가 필요하므로 게이트의 fetchRaw 로 raw Response 를 받아 해석한다.
-// silent fallback 금지(게이트 규약) — 실패는 throw/정직 표기, 다른 소스 우회 0.
+// silent fallback 금지(게이트 규약) · 실패는 throw/정직 표기, 다른 소스 우회 0.
 
 import type {
 	ExcelTemplate,
@@ -18,7 +18,7 @@ import type { LocalApi } from '../api/localApi';
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
-/** Content-Disposition filename 추출(서버 FileResponse 가 outPath.name 을 지정) — 없으면 폴백. */
+/** Content-Disposition filename 추출(서버 FileResponse 가 outPath.name 을 지정) · 없으면 폴백. */
 function filenameFromResponse(res: Response, fallback: string): string {
 	const cd = res.headers.get('content-disposition') ?? '';
 	const star = /filename\*=(?:UTF-8'')?([^;]+)/i.exec(cd);
@@ -29,7 +29,7 @@ function filenameFromResponse(res: Response, fallback: string): string {
 }
 
 /**
- * local ExportPort 생성 — 엔진 /api/export/* 프록시(로컬 게이트 경유).
+ * local ExportPort 생성 · 엔진 /api/export/* 프록시(로컬 게이트 경유).
  *
  * @param api 로컬 provider 게이트(createLocalRuntime 이 1개 만들어 주입).
  * @returns ExportPort.

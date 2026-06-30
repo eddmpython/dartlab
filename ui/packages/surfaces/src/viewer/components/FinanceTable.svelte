@@ -1,11 +1,11 @@
 <script lang="ts">
-	// 정량재무제표 순수 표 — 계정 행 × 기간 열. sticky 첫 열(계정)+sticky 헤더(기간), 숫자 우측정렬·천단위 콤마·음수 빨강.
+	// 정량재무제표 순수 표 · 계정 행 × 기간 열. sticky 첫 열(계정)+sticky 헤더(기간), 숫자 우측정렬·천단위 콤마·음수 빨강.
 	import type { FinanceStatement } from '../lib/finance/types';
 
 	let { statement, divisor = 1 }: { statement: FinanceStatement; divisor?: number } = $props();
 
 	const nf = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 });
-	const fmt = (v: number | null | undefined): string => (v == null ? '–' : nf.format(Math.round(v / divisor)));
+	const fmt = (v: number | null | undefined): string => (v == null ? '-' : nf.format(Math.round(v / divisor)));
 </script>
 
 <div class="ftable-scroll">
@@ -102,7 +102,7 @@
 	.val.nil {
 		color: #475569;
 	}
-	/* 구조 — 총계(isTotal) 굵게+상단 보더, 소계(비총계 depth≤1) 굵게. 들여쓰기는 depth(inline padding-left). */
+	/* 구조 · 총계(isTotal) 굵게+상단 보더, 소계(비총계 depth≤1) 굵게. 들여쓰기는 depth(inline padding-left). */
 	tr.total .acct-c,
 	tr.total .val {
 		font-weight: 700;

@@ -1,4 +1,4 @@
-// DartLab Terminal — 공유 UI 헬퍼 (bilingual 해석 · tone 클래스 · 포맷).
+// DartLab Terminal · 공유 UI 헬퍼 (bilingual 해석 · tone 클래스 · 포맷).
 import type { Bilingual, Lang, Tone } from '../lib/types';
 
 type MaybeBilingual = Bilingual | { kr?: string; en?: string } | string | null | undefined;
@@ -8,7 +8,7 @@ export function tx(obj: MaybeBilingual, lang: Lang): string {
 	if (typeof obj === 'string') return obj;
 	return obj[lang] || obj.kr || obj.en || '';
 }
-// compact 라벨 — 현재 언어 1개만 (dense)
+// compact 라벨 · 현재 언어 1개만 (dense)
 export function txc(obj: MaybeBilingual, lang: Lang): string {
 	if (obj == null) return '';
 	if (typeof obj === 'string') return obj;
@@ -25,11 +25,11 @@ export function chgClass(n: number | null | undefined): string {
 }
 
 export function fmtNum(n: number | null | undefined, d = 0): string {
-	if (n == null || Number.isNaN(n)) return '—';
+	if (n == null || Number.isNaN(n)) return '·';
 	return n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
 }
 export function fmtAbbr(n: number | null | undefined): string {
-	if (n == null || Number.isNaN(n)) return '—';
+	if (n == null || Number.isNaN(n)) return '·';
 	const a = Math.abs(n);
 	if (a >= 1e12) return (n / 1e12).toFixed(2) + 'T';
 	if (a >= 1e9) return (n / 1e9).toFixed(2) + 'B';
@@ -38,10 +38,10 @@ export function fmtAbbr(n: number | null | undefined): string {
 	return '' + n;
 }
 export function sign(n: number | null | undefined, d = 2): string {
-	if (n == null || Number.isNaN(n)) return '—';
+	if (n == null || Number.isNaN(n)) return '·';
 	return (n > 0 ? '+' : '') + fmtNum(n, d);
 }
-// 미니 스파크라인 polyline points (min-max 정규화) — 티커 스트립·KPI·좌측 레일 공유
+// 미니 스파크라인 polyline points (min-max 정규화) · 티커 스트립·KPI·좌측 레일 공유
 export function sparkPts(s: number[], w = 34, h = 11): string {
 	const lo = Math.min(...s);
 	const hi = Math.max(...s);
@@ -56,7 +56,7 @@ export function heat(v: number, max = 1): string {
 	return `rgba(240, 97, 111, ${0.06 + -t * 0.45})`;
 }
 
-// 'LIVE' 라벨 금지 — 모든 소스가 EOD·일배치·분기공시 캐시(실시간 아님). 실데이터/파생만 구분.
+// 'LIVE' 라벨 금지 · 모든 소스가 EOD·일배치·분기공시 캐시(실시간 아님). 실데이터/파생만 구분.
 export const PROV: Record<string, { kr: string; en: string; cls: string; t: Bilingual }> = {
 	real: { kr: '실데이터', en: 'REAL', cls: 'pReal', t: { kr: '공시·시세 원천 실데이터 (EOD·일배치)', en: 'real source data (EOD · daily batch)' } },
 	derived: { kr: '파생', en: 'DERIVED', cls: 'pDeriv', t: { kr: '실데이터에서 계산 (엔진출력 아님)', en: 'computed from real data' } },

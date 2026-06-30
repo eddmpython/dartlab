@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { runUniverse } from './engine';
 import type { UniverseRow, UniverseSpec, DelistReason } from './types';
 
-// 합성 패널 빌더 — ym 리스트 × 종목, 명시 momMonthly·retFwd1m·delistReason.
+// 합성 패널 빌더 · ym 리스트 × 종목, 명시 momMonthly·retFwd1m·delistReason.
 function row(
 	ym: string,
 	code: string,
@@ -35,7 +35,7 @@ const SPEC: UniverseSpec = {
 	windowTo: '202005'
 };
 
-describe('runUniverse — holdings 회계 + U-G1 이중밴드', () => {
+describe('runUniverse · holdings 회계 + U-G1 이중밴드', () => {
 	it('NAV 시작 100 · decisionYm<fillYm · 상위 모멘텀=분위1', () => {
 		// A=고모멘텀(분위1), B=저모멘텀(분위2). 둘 다 매월 +10% forward.
 		const rows: UniverseRow[] = [];

@@ -34,7 +34,7 @@
 		return skills.filter((skill) => displayTier(skill) === tier).length;
 	}
 
-	const pageTitle = 'DartLab Skill Market — 커뮤니티 분석 질문';
+	const pageTitle = 'DartLab Skill Market · 커뮤니티 분석 질문';
 	const pageDesc =
 		'GitHub Discussions 에 공유된 분석 질문을 DartLab Forge 가 커뮤니티 스킬 후보로 구조화한 정적 Skill Market.';
 	const pageUrl = buildAbsoluteUrl('skills/market');

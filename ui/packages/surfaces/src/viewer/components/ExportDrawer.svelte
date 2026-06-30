@@ -1,5 +1,5 @@
 <script lang="ts">
-	// table-export 선택 바구니 드로어 — AskDrawer 와 같은 우측 380px 슬롯(상호배타). 선택한 표들을 시트 목록으로
+	// table-export 선택 바구니 드로어 · AskDrawer 와 같은 우측 380px 슬롯(상호배타). 선택한 표들을 시트 목록으로
 	// 보여주고, 시트명 인라인 편집(31자)·모드 토글(수평/원본)·드래그 정렬·기간 표시·제거를 제공한다.
 	// [내보내기] = deriveWorkbookInput → buildWorkbook → 진짜 .xlsx 바이트 → downloadBlob. 빈 선택은 안내(크래시 0).
 	import { GripVertical, X, Download, FileSpreadsheet } from 'lucide-svelte';
@@ -20,7 +20,7 @@
 		bundle: PanelBundle | null;
 		corpName: string;
 		basePath?: string;
-		tier?: 'public' | 'local'; // 03 §7 — public 은 [설치 ↗] hint, local 은 완전판(hint 없음). 숨기지 않고 라벨만.
+		tier?: 'public' | 'local'; // 03 §7 · public 은 [설치 ↗] hint, local 은 완전판(hint 없음). 숨기지 않고 라벨만.
 		onclose: () => void;
 	} = $props();
 
@@ -30,7 +30,7 @@
 	// order 순 선택 목록 (드래그 정렬 반영).
 	const list = $derived(store.ordered());
 
-	// 라이브 카운트 — 시트 수(출처 포함 시 +1) + 회사·시점 요약. 빈 선택 시 0.
+	// 라이브 카운트 · 시트 수(출처 포함 시 +1) + 회사·시점 요약. 빈 선택 시 0.
 	const sheetCount = $derived(list.length + (store.includeSource && list.length ? 1 : 0));
 	const periodSummary = $derived.by(() => {
 		const ps = new Set<string>();
@@ -62,7 +62,7 @@
 			const bytes = buildWorkbook(sheets);
 			const safe = (corpName || bundle.stockCode).replace(/[\\/:*?"<>|]/g, '_');
 			downloadBlob(bytes, `${safe}_공시표.xlsx`, XLSX_MIME);
-			// 선택 유지(연속 내보내기) — PRD §5. 닫지 않는다.
+			// 선택 유지(연속 내보내기) · PRD §5. 닫지 않는다.
 		} catch (e) {
 			exportErr = e instanceof Error ? e.message : String(e);
 		} finally {
@@ -70,7 +70,7 @@
 		}
 	}
 
-	// 시트명 인라인 편집 — contenteditable 대신 input(IME·커서 안정). 31자 트림 + 카운터 빨강 경고.
+	// 시트명 인라인 편집 · contenteditable 대신 input(IME·커서 안정). 31자 트림 + 카운터 빨강 경고.
 	function onLabelInput(s: SheetSelection, e: Event) {
 		const el = e.currentTarget as HTMLInputElement;
 		const trimmed = trimLabel(el.value);
@@ -78,7 +78,7 @@
 		store.setLabel(s.id, trimmed);
 	}
 
-	// ── 드래그 정렬 — HTML5 DnD, 핸들 그립으로만 시작. dragover 시 그 항목 위로 재배치. ──
+	// ── 드래그 정렬 · HTML5 DnD, 핸들 그립으로만 시작. dragover 시 그 항목 위로 재배치. ──
 	let dragId = $state<string | null>(null);
 	function onDragStart(id: string, e: DragEvent) {
 		dragId = id;
@@ -171,7 +171,7 @@
 									class:on={s.mode === 'horizontalized'}
 									role="radio"
 									aria-checked={s.mode === 'horizontalized'}
-									title="전 기간을 가로로 — 행=항목, 열=시점(텍스트 블록만, 표는 원본 폴백)"
+									title="전 기간을 가로로 · 행=항목, 열=시점(텍스트 블록만, 표는 원본 폴백)"
 									onclick={() => store.setMode(s.id, 'horizontalized')}
 								>{s.mode === 'horizontalized' ? '◉' : '○'} 수평</button>
 								<button
@@ -218,7 +218,7 @@
 			</span>
 		</div>
 		{#if tier === 'local'}
-			<p class="ed-note">엔진 완전판 .xlsx — 자동너비·음수 빨강·풍부한 서식</p>
+			<p class="ed-note">엔진 완전판 .xlsx · 자동너비·음수 빨강·풍부한 서식</p>
 		{:else}
 			<p class="ed-note ed-tier">
 				이 브라우저 내보내기 = 빠른 .xlsx · 서버 전송 0. 자동너비·음수 빨강·풍부한 서식의 완전판은 로컬 터미널 dartlab.
@@ -295,7 +295,7 @@
 		padding: 10px;
 	}
 
-	/* 빈 안내 — 격자 체크박스 유도 */
+	/* 빈 안내 · 격자 체크박스 유도 */
 	.onboard {
 		margin: auto;
 		display: flex;
@@ -539,7 +539,7 @@
 		text-decoration: underline;
 	}
 
-	/* 모바일 — 드로어가 부모(+page @media)에서 전체화면 오버레이. 터치 타깃 확대. */
+	/* 모바일 · 드로어가 부모(+page @media)에서 전체화면 오버레이. 터치 타깃 확대. */
 	@media (max-width: 880px) {
 		.ed-x {
 			width: 40px;

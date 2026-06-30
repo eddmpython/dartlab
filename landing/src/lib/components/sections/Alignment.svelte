@@ -94,12 +94,12 @@
 					<svg class="w-4 h-4 text-dl-primary shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
 					</svg>
-					<span class="text-dl-text text-xs">`show(...)` 과 `trace(...)` 가 같은 company spine 위에 올라간다 — 별도 구조를 만들지 않는다.</span>
+					<span class="text-dl-text text-xs">`show(...)` 과 `trace(...)` 가 같은 company spine 위에 올라간다 · 별도 구조를 만들지 않는다.</span>
 				</div>
 			</Card>
 		</div>
 
-		<!-- trace() + diff() — 같은 spine 위 두 도구 -->
+		<!-- trace() + diff() · 같은 spine 위 두 도구 -->
 		<div class="mt-6 grid md:grid-cols-2 gap-6">
 			<Card>
 				<div class="text-xs font-mono text-dl-text-dim mb-5 uppercase tracking-wider">

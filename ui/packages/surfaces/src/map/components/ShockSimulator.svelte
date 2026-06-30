@@ -1,9 +1,9 @@
 <script lang="ts">
 	/**
-	 * 공급망 충격 시뮬레이터 — "이 회사에 문제 생기면 어디까지?"
+	 * 공급망 충격 시뮬레이터 · "이 회사에 문제 생기면 어디까지?"
 	 *
 	 * BFS 2홉으로 영향 받는 회사를 추출하고, 강도별 색상 표시.
-	 * Bloomberg SPLC에도 없는 기능 — 세계 유일.
+	 * Bloomberg SPLC에도 없는 기능 · 세계 유일.
 	 */
 
 	interface Props {
@@ -21,7 +21,7 @@
 
 	let { targetId, targetName, links, nodes, onClose, onImpactChange }: Props = $props();
 
-	// Build adjacency list (양방향 — 공급사 문제는 고객에게, 고객 문제는 공급사에게 영향)
+	// Build adjacency list (양방향 · 공급사 문제는 고객에게, 고객 문제는 공급사에게 영향)
 	let adj = $derived.by(() => {
 		const m = new Map<string, Array<{ id: string; weight: number }>>();
 		for (const l of links) {

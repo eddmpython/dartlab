@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 라이브 카드 캐러셀 라우터 — 전 종목의 인스타식 4:5 캐러셀 피드. 각 카드는 첫 슬라이드(회사 사진+이름)가
+	// 라이브 카드 캐러셀 라우터 · 전 종목의 인스타식 4:5 캐러셀 피드. 각 카드는 첫 슬라이드(회사 사진+이름)가
 	// 바로 보이고 그 자리에서 스와이프, 뷰포트 진입 시 라이브 빌드. 공통배선: 데이터=loadJson·미디어=hfMedia.
 	import type { PageData } from './$types';
 	import { base } from '$app/paths';
@@ -31,7 +31,7 @@
 	let searchEl = $state<HTMLInputElement | null>(null);
 	let sentinel = $state<HTMLDivElement | null>(null);
 	let supportOpen = $state(false);
-	// 인스타 포스트 모달 — 첫장 클릭 시 좌 캐러셀 + 우 캡션(PostModal 이 계약 로드·렌더). /terminal 카드뉴스와 공유.
+	// 인스타 포스트 모달 · 첫장 클릭 시 좌 캐러셀 + 우 캡션(PostModal 이 계약 로드·렌더). /terminal 카드뉴스와 공유.
 	let post = $state<{ code: string; slug: string; corpName: string } | null>(null);
 
 	function openPost(code: string, slug: string, corpName: string) {
@@ -45,7 +45,7 @@
 		loaded = true;
 		// 터미널 카드 버튼이 sym(코드)으로 들어왔는데 그 회사 글이 없으면 전체 피드로(빈 화면 방지).
 		if (data.sym && !posts.some((x) => x.code === data.sym)) query = '';
-		// 공유/딥링크 ?post=<슬러그> — 해당 캐러셀 포스트 모달 바로 열기(cardShare 워커가 사람을 여기로 보냄).
+		// 공유/딥링크 ?post=<슬러그> · 해당 캐러셀 포스트 모달 바로 열기(cardShare 워커가 사람을 여기로 보냄).
 		if (data.post) {
 			const hit = posts.find((x) => x.slug === data.post);
 			if (hit) openPost(hit.code, hit.slug, hit.name || media?.companies[hit.code]?.displayName || hit.code);
@@ -61,7 +61,7 @@
 			caption: p.caption ?? '',
 			pinnedComment: p.pinnedComment ?? '',
 			standalone: !!p.standalone,
-			leadCards: contractToCards(p, media), // 계약 lead 슬라이드 미리 투영 — 미리보기 표지 깜빡임 제거
+			leadCards: contractToCards(p, media), // 계약 lead 슬라이드 미리 투영 · 미리보기 표지 깜빡임 제거
 			corpName: p.name || media?.companies[p.code]?.displayName || p.code
 		}));
 		const q = query.trim().toLowerCase();
@@ -205,14 +205,14 @@
 		color: #64748b;
 		padding: 40px 0;
 	}
-	/* 폰(≤640) — 1열 피드 거터 축소(인스타 패턴 유지, 양 끝 낭비 제거). 데스크톱 무변경. */
+	/* 폰(≤640) · 1열 피드 거터 축소(인스타 패턴 유지, 양 끝 낭비 제거). 데스크톱 무변경. */
 	@media (max-width: 640px) {
 		.feed {
 			padding: 12px 12px 64px;
 		}
 		.grid {
 			grid-template-columns: 1fr;
-			gap: 32px; /* 덱-더보기-다음덱이 붙어 보이던 것 해소 — 카드뉴스 사이 확실한 간격 */
+			gap: 32px; /* 덱-더보기-다음덱이 붙어 보이던 것 해소 · 카드뉴스 사이 확실한 간격 */
 		}
 		.cHeader {
 			padding: 8px 12px;

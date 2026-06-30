@@ -17,7 +17,7 @@
 
 	const allNodes = $derived((data.ecosystem as any)?.nodes ?? []);
 
-	// URL ?codes=005930,000660,035420,000270 — 기본 4 큰 회사
+	// URL ?codes=005930,000660,035420,000270 · 기본 4 큰 회사
 	const codesParam = $derived(page.url?.searchParams?.get('codes') ?? '005930,000660,035420,000270');
 	let codes = $state<string[]>([]);
 	$effect(() => {
@@ -262,7 +262,7 @@
 				<Card eyebrow={n.id} accent={(['red', 'orange', 'good', 'info'] as any)[i]} padded>
 					<h3 class="detail-name">{n.label}</h3>
 					<div class="detail-meta">
-						<Tag>{n.industryName ?? '—'}</Tag>
+						<Tag>{n.industryName ?? '·'}</Tag>
 						{#if n.stageName}<Tag tone="info">{n.stageName}</Tag>{/if}
 					</div>
 					<div class="detail-rev">
@@ -295,7 +295,7 @@
 {/if}
 
 <footer class="lab-foot">
-	<Eyebrow text="END · /lab/compare — Phase 3 EXPLORE prototype" />
+	<Eyebrow text="END · /lab/compare · Phase 3 EXPLORE prototype" />
 </footer>
 
 <style>

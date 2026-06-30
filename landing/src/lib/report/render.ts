@@ -1,4 +1,4 @@
-// /report·/cards 공용 순수 렌더 헬퍼 — 기하/포맷/신호색. Svelte 비의존(window/document 없음)이라
+// /report·/cards 공용 순수 렌더 헬퍼 · 기하/포맷/신호색. Svelte 비의존(window/document 없음)이라
 // 단위테스트 가능하고 두 소비자가 같은 렌더 언어를 공유한다. report/+page.svelte 인라인에서 추출
 // (명명함수 → 기계적 동치, vitest 가 중립색·verdict 합성 0 을 고정). 새 합성·LLM·신규 숫자 없음.
 
@@ -7,7 +7,7 @@ export function clean(t: unknown): string {
 	return String(t ?? '')
 		.replace(/\*\*(.+?)\*\*/g, '$1')
 		.replace(/\*\*/g, '')
-		.replace(/\s*[—–]\s*/g, ', ') // em/en 대시 제거 → 쉼표(절 구분)
+		.replace(/\s*[·-]\s*/g, ', ') // em/en 대시 제거 → 쉼표(절 구분)
 		.replace(/\s*,\s*,/g, ',') // 중복 쉼표 정리
 		.replace(/\s{2,}/g, ' ')
 		.replace(/^[\s,]+|[\s,]+$/g, ''); // 앞뒤 잔여 쉼표·공백
@@ -22,7 +22,7 @@ export const engineLabel: Record<string, string> = {
 	story: '종합서사'
 };
 
-/** 숫자 셀 신호색 — 음수(적)/양수(녹). 단위·기호를 걷어낸 코어로 판정. 같은 색으로 좋고/나쁨 주장 안 함. */
+/** 숫자 셀 신호색 · 음수(적)/양수(녹). 단위·기호를 걷어낸 코어로 판정. 같은 색으로 좋고/나쁨 주장 안 함. */
 export function cellTone(v: unknown): string {
 	const s = String(v ?? '').trim();
 	if (!s || s === '-') return '';
@@ -32,7 +32,7 @@ export function cellTone(v: unknown): string {
 	return '';
 }
 
-// 판정 어휘 신호색 — 신용/건전성 점검표의 '양호/주의' 전용(적색=음수 SSOT와 분리해 주의=황갈).
+// 판정 어휘 신호색 · 신용/건전성 점검표의 '양호/주의' 전용(적색=음수 SSOT와 분리해 주의=황갈).
 export function verdictTone(v: unknown): string {
 	const s = String(v ?? '').trim();
 	if (s.startsWith('양호') || s === '안정' || s === '충족') return 'ok';
@@ -43,7 +43,7 @@ export function verdictTone(v: unknown): string {
 // 비숫자 의미 컬럼(좌측 텍스트, cellTone 미적용) 화이트리스트
 export const TXT_COLS = new Set(['최근 범위', '기준', '업종 내 위치']);
 
-// 스파크라인 — 64×22 면적 채움 microchart. 색은 중립(accent): 같은 색으로 좋고/나쁨을
+// 스파크라인 · 64×22 면적 채움 microchart. 색은 중립(accent): 같은 색으로 좋고/나쁨을
 // 주장하지 않게(부채비율↓·매출↑ 모두 같은 색). 좋고 나쁨은 판정 컬럼·본문이 말한다.
 export function spark(row: Record<string, string>, yearCols: string[]) {
 	const pairs: { yr: number; n: number }[] = [];
@@ -58,7 +58,7 @@ export function spark(row: Record<string, string>, yearCols: string[]) {
 	const nums: number[] = pairs.map((p) => p.n);
 	const valid = nums.filter((n) => Number.isFinite(n));
 	if (valid.length < 3) return null;
-	// robust 도메인 — 단일 극단값(예: NAVER FY21 순이익률 241.7%)이 나머지를 1px 평지로
+	// robust 도메인 · 단일 극단값(예: NAVER FY21 순이익률 241.7%)이 나머지를 1px 평지로
 	// 깔아 추세를 거짓 전달하지 않게 median±3·IQR 로 *그리는 값만* 클램프(표 숫자는 불변).
 	const sorted = [...valid].sort((a, b) => a - b);
 	const q = (p: number) => sorted[Math.max(0, Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * p)))];
@@ -107,12 +107,12 @@ export function chunk<T>(arr: T[], n: number): T[][] {
 	return out;
 }
 
-// 표에 그릴 스파크라인이 하나라도 있나 — 전부 빈 칸이면 추이 컬럼 자체를 숨긴다(휑한 거터 방지).
+// 표에 그릴 스파크라인이 하나라도 있나 · 전부 빈 칸이면 추이 컬럼 자체를 숨긴다(휑한 거터 방지).
 export function tableHasSpark(data: Record<string, string>[], cols: string[]): boolean {
 	return data.some((row) => spark(row, cols.slice(1)) != null);
 }
 
-// ── 라인 차트(주가 궤적) — series 정규화 + 면적 + 수평 마커 ──
+// ── 라인 차트(주가 궤적) · series 정규화 + 면적 + 수평 마커 ──
 export function lineGeo(series: number[], markers: { label: string; v: number }[] = []) {
 	const v = series.filter((n) => Number.isFinite(n));
 	if (v.length < 2) return null;
@@ -139,7 +139,7 @@ export function wonLabel(v: number): string {
 
 export function splitTitle(t: string): { head: string; sub: string } {
 	const s = String(t ?? '');
-	const m = s.split(/\s*(?:--|—|·)\s*/);
+	const m = s.split(/\s*(?:--|·|·)\s*/);
 	if (m.length >= 2) return { head: m[0].trim(), sub: m.slice(1).join(' · ').trim() };
 	return { head: s.trim(), sub: '' };
 }

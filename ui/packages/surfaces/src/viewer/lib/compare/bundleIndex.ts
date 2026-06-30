@@ -1,4 +1,4 @@
-// Per-bundle disclosureKey index — 절번호 drift(회사마다 같은 공시가 다른 절번호)로 같은
+// Per-bundle disclosureKey index · 절번호 drift(회사마다 같은 공시가 다른 절번호)로 같은
 // sectionKey 가 없는 회사를 disclosureKey 로 전역 조회해 비교 누락을 막는다.
 
 import type { PanelBundle, PanelRow } from '../types';

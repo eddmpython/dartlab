@@ -1,4 +1,4 @@
-// 시장 뉴스 source 정규화 단위 테스트 — 날짜(Date 객체/문자열/epoch-days) 정규화·url dedup·제목/url
+// 시장 뉴스 source 정규화 단위 테스트 · 날짜(Date 객체/문자열/epoch-days) 정규화·url dedup·제목/url
 // 필수 필터·date 내림차순 정렬을 네트워크 없이 검증(normalizeMarketNews 순수 함수).
 // url 은 dedup 키·passthrough 일 뿐이라 비-URL 플레이스홀더 사용(checkUiDataWiring rule 2: http(s) 리터럴 금지).
 import { describe, it, expect } from 'vitest';
@@ -45,8 +45,8 @@ describe('normalizeMarketNews', () => {
 		expect(out[0]).toEqual({ date: '2026-06-12', title: '제목', source: '연합', url: 'art-x' });
 	});
 
-	it('라이브 오버레이 + HF shard 머지 — 최신 라이브가 상단, url 중복은 live keep-first', () => {
-		// loadMarketNews 가 [...live, ...hf] 순으로 넘기는 계약 — 같은 기사(dup)는 라이브분 유지, 날짜순 재정렬.
+	it('라이브 오버레이 + HF shard 머지 · 최신 라이브가 상단, url 중복은 live keep-first', () => {
+		// loadMarketNews 가 [...live, ...hf] 순으로 넘기는 계약 · 같은 기사(dup)는 라이브분 유지, 날짜순 재정렬.
 		const live = [row({ date: '2026-06-25', title: '라이브 최신', url: 'live-1' }), row({ date: '2026-06-24', title: '공통기사(라이브)', url: 'dup' })];
 		const hf = [row({ date: '2026-06-24', title: '공통기사(HF)', url: 'dup' }), row({ date: '2026-06-23', title: 'HF 과거', url: 'hf-1' })];
 		const out = normalizeMarketNews([...live, ...hf]);

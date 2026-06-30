@@ -1,6 +1,6 @@
 <script lang="ts">
 	// 피드 썸네일 = 편집 계약의 첫 슬라이드(표지)만. 인스타 피드처럼 한 장씩 보이고, 클릭하면 포스트 모달
-	// (좌 캐러셀 + 우 캡션)이 열린다. 피드에서는 스와이프/네비 없음 — 첫장만. 가벼움(계약 JSON 1개만 fetch).
+	// (좌 캐러셀 + 우 캡션)이 열린다. 피드에서는 스와이프/네비 없음 · 첫장만. 가벼움(계약 JSON 1개만 fetch).
 	import type { DartLabRuntime } from '@dartlab/ui-contracts';
 	import CardSlide from './CardSlide.svelte';
 	import { loadContract, contractToCards } from './contract';
@@ -25,7 +25,7 @@
 		onOpen: () => void;
 	} = $props();
 
-	// 첫 슬라이드(표지) — 계약 로드 후(슬러그 키). media 갱신 시 배경 이미지 추종(reactive).
+	// 첫 슬라이드(표지) · 계약 로드 후(슬러그 키). media 갱신 시 배경 이미지 추종(reactive).
 	let cover = $state<CarouselCard | null>(null);
 	let contract = $state<CarouselContract | null>(null);
 	$effect(() => {
@@ -34,7 +34,7 @@
 			contract = c;
 			if (!c) return;
 			const cov = contractToCards(c, m)[0] ?? null;
-			// 표지 이미지가 안 풀리면(이름 불일치 등) 회사 hero 로 폴백 — 검정 카드 방지.
+			// 표지 이미지가 안 풀리면(이름 불일치 등) 회사 hero 로 폴백 · 검정 카드 방지.
 			if (cov && !cov.bg) cov.bg = heroUrl(m, code);
 			cover = cov;
 		});
@@ -47,8 +47,8 @@
 	<div class="frame">
 		{#if cover}<CardSlide card={cover} {rt} />{/if}
 		<div class="badge">{name}{code ? ` · ${code}` : ''}</div>
-		<!-- dartlab 서명 — base 무관 항상 노출(dev=퍼블릭 기준). 아바타+dartlab 만 작게(부제 'COMPANY STORY BY
-		     TICKER' 제거 — 상단 헤더에 이미 dartlab. 캡처·공유 대비 최소 서명만). avatar.webp=정적(/avatar.webp). -->
+		<!-- dartlab 서명 · base 무관 항상 노출(dev=퍼블릭 기준). 아바타+dartlab 만 작게(부제 'COMPANY STORY BY
+		     TICKER' 제거 · 상단 헤더에 이미 dartlab. 캡처·공유 대비 최소 서명만). avatar.webp=정적(/avatar.webp). -->
 		<div class="brand">
 			<img src="{base}/avatar.webp" alt="" width="22" height="22" />
 			<b class="bName">dartlab</b>
@@ -83,7 +83,7 @@
 		transform: translateY(-3px);
 		box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
 	}
-	/* 표지 본문 하단에 dartlab 서명 띠(44px) 확보 — 헤드라인/설명이 좌하단 브랜드와 겹치지 않게(서명은 본문 아래로). */
+	/* 표지 본문 하단에 dartlab 서명 띠(44px) 확보 · 헤드라인/설명이 좌하단 브랜드와 겹치지 않게(서명은 본문 아래로). */
 	.frame :global(.content) {
 		padding-bottom: 44px;
 	}

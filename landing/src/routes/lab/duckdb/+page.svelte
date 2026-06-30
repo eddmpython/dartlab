@@ -10,9 +10,9 @@
 	import { fmtKrwFromEok } from '@dartlab/ui-format/krw';
 	import { loadDartDb, type DartDb } from '$lib/data/duckdb';
 
-	// ── DuckDB-WASM 통합 검증 — Phase A ──
+	// ── DuckDB-WASM 통합 검증 · Phase A ──
 	// $lib/data/duckdb 의 lazy 로더 사용. HF parquet HTTPS query 까지 검증.
-	// 이 페이지는 PoC 가 아니라 진짜 작동 — 다른 라우트 (/screener) 도 동일 모듈 활용.
+	// 이 페이지는 PoC 가 아니라 진짜 작동 · 다른 라우트 (/screener) 도 동일 모듈 활용.
 
 	let stage: 'idle' | 'loading' | 'ready' | 'error' = $state('idle');
 	let mode: 'js' | 'duckdb' = $state('js');
@@ -58,7 +58,7 @@ LIMIT 10`);
 		try {
 			const db = await loadDartDb();
 			if (!db) {
-				errorMsg = 'DuckDB-WASM 로드 불가 (iOS Safari 또는 환경 미지원) — JS 모드로 fallback 하세요';
+				errorMsg = 'DuckDB-WASM 로드 불가 (iOS Safari 또는 환경 미지원) · JS 모드로 fallback 하세요';
 				stage = 'error';
 				return;
 			}
@@ -82,7 +82,7 @@ LIMIT 10`);
 		}
 	}
 
-	/** HF parquet 직접 query 검증 — Phase A 핵심 인프라. */
+	/** HF parquet 직접 query 검증 · Phase A 핵심 인프라. */
 	async function testHfParquet() {
 		hfTestErr = '';
 		hfTestResult = [];
@@ -309,26 +309,26 @@ LIMIT 10`);
 				<pre class="cmd"><code>cd landing && npm install @duckdb/duckdb-wasm</code></pre>
 			</li>
 			<li>
-				<strong>parquet 파일 생성</strong> — Python script 로 ecosystem.json + finance.json 통합 → companies.parquet
+				<strong>parquet 파일 생성</strong> · Python script 로 ecosystem.json + finance.json 통합 → companies.parquet
 			</li>
 			<li>
-				<strong>호스팅</strong> — 작으면 GitHub Pages, 50MB 초과면 Cloudflare R2 custom domain (HF Range CORS 회피)
+				<strong>호스팅</strong> · 작으면 GitHub Pages, 50MB 초과면 Cloudflare R2 custom domain (HF Range CORS 회피)
 			</li>
 			<li>
-				<strong>lazy loader</strong> — `landing/src/lib/data/duckdb.ts` 에 import (chunked, 첫 진입 부담 회피)
+				<strong>lazy loader</strong> · `landing/src/lib/data/duckdb.ts` 에 import (chunked, 첫 진입 부담 회피)
 			</li>
 			<li>
-				<strong>OPFS 캐시</strong> — 버전 prefix 파일명 ({'`finance-v{sha}.parquet`'}) + 부팅 시 구버전 remove
+				<strong>OPFS 캐시</strong> · 버전 prefix 파일명 ({'`finance-v{sha}.parquet`'}) + 부팅 시 구버전 remove
 			</li>
 			<li>
-				<strong>iOS Safari 가드</strong> — UA 감지 시 WASM Memory 512MB 고정 (2GB 초기화 시 즉시 OOM)
+				<strong>iOS Safari 가드</strong> · UA 감지 시 WASM Memory 512MB 고정 (2GB 초기화 시 즉시 OOM)
 			</li>
 		</ol>
 	</Card>
 </Section>
 
 <footer class="lab-foot">
-	<Eyebrow text="END · /lab/duckdb — Phase 0 검증 페이지" />
+	<Eyebrow text="END · /lab/duckdb · Phase 0 검증 페이지" />
 </footer>
 
 <style>

@@ -1,7 +1,7 @@
 <script lang="ts">
-  // T1-5 health dashboard — metrics workflow (T1-2) 산출물을 시각화.
+  // T1-5 health dashboard · metrics workflow (T1-2) 산출물을 시각화.
   // 데이터: /metrics/rolling.json (30일 rolling) + /metrics/{date}.json (daily).
-  // 차트 라이브러리 없이 SVG sparkline 직접 — 의존성 0.
+  // 차트 라이브러리 없이 SVG sparkline 직접 · 의존성 0.
 
   import { onMount } from 'svelte';
 
@@ -45,12 +45,12 @@
 
 <svelte:head>
   <title>DartLab Health Dashboard</title>
-  <meta name="description" content="DartLab 운영 관측성 대시보드 — 7 신호 30일 rolling 시계열" />
+  <meta name="description" content="DartLab 운영 관측성 대시보드 · 7 신호 30일 rolling 시계열" />
 </svelte:head>
 
 <main>
   <h1>Health Dashboard</h1>
-  <p class="subtitle">운영 관측성 7 신호 — 30일 rolling 윈도우. 데이터 소스: <code>metrics.yml</code> workflow (T1-2).</p>
+  <p class="subtitle">운영 관측성 7 신호 · 30일 rolling 윈도우. 데이터 소스: <code>metrics.yml</code> workflow (T1-2).</p>
 
   {#if loading}
     <p class="loading">로딩 중...</p>
@@ -96,7 +96,7 @@
       <h2>관련</h2>
       <ul>
         <li><a href="https://github.com/eddmpython/dartlab/blob/master/docs/SLO.md">SLO 4종 정의</a></li>
-        <li><a href="https://github.com/eddmpython/dartlab/blob/master/docs/INCIDENTS.md">INCIDENTS — 공개 사고 RCA</a></li>
+        <li><a href="https://github.com/eddmpython/dartlab/blob/master/docs/INCIDENTS.md">INCIDENTS · 공개 사고 RCA</a></li>
         <li><a href="https://github.com/eddmpython/dartlab/blob/master/docs/ROADMAP_1_0_0.md">1.0.0 ROADMAP</a></li>
         <li><a href="https://github.com/eddmpython/dartlab/actions">CI workflows</a></li>
       </ul>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 공시뷰어 — panel 하나로 브라우저 readWide → TOC + 항목×기간 격자 + 타임라인 + 원본 링크.
+	// 공시뷰어 · panel 하나로 브라우저 readWide → TOC + 항목×기간 격자 + 타임라인 + 원본 링크.
 	// 디자인 = scan 방식(flat #050811 · #1e2433 보더 · 오렌지 단일 액센트). 풀블리드(좌우 패딩 0 · 갭 0).
 	import { onMount, untrack } from 'svelte';
 	import { base } from '$app/paths';
@@ -43,7 +43,7 @@
 	const code = $derived(data.code);
 	const vsCodes = $derived(data.vs ?? []);
 
-	// 회사명 — panel 엔 없음 → ecosystem(code→name) 해석. corp(panel) 우선, 없으면 ecosystem.
+	// 회사명 · panel 엔 없음 → ecosystem(code→name) 해석. corp(panel) 우선, 없으면 ecosystem.
 	let nameMap = $state<Map<string, string>>(new Map());
 	onMount(() => {
 		void loadCompanies().then((l) => (nameMap = new Map(l.map((c) => [c.code, c.name]))));
@@ -52,7 +52,7 @@
 		} catch {
 			/* localStorage 불가 무시 */
 		}
-		// D3 — 모바일(≤880px)은 동시표시 기간 1개가 기본(390px 에 260px 셀 3개 강제 가로스크롤 회피).
+		// D3 · 모바일(≤880px)은 동시표시 기간 1개가 기본(390px 에 260px 셀 3개 강제 가로스크롤 회피).
 		// 데스크톱은 cols=3 그대로(이 분기는 mount 시 1회·좁은 화면에서만). 이후 사용자 cols 토글은 자유.
 		if (typeof window !== 'undefined' && window.matchMedia('(max-width: 880px)').matches) cols = 1;
 	});
@@ -62,9 +62,9 @@
 	let bundle = $state<PanelBundle | null>(null);
 	let errorMsg = $state<string | null>(null);
 	let loading = $state(true);
-	let swapping = $state(false); // 회사 전환 중 — 옛 화면 유지 + 미세 인디케이터(soft swap, 전체화면 스피너 회피)
+	let swapping = $state(false); // 회사 전환 중 · 옛 화면 유지 + 미세 인디케이터(soft swap, 전체화면 스피너 회피)
 	let activeSectionKey = $state<string | undefined>(undefined);
-	let activeBlock = $state<string | null>(null); // 활성 주석(blockLeaf) — null 이면 섹션 전체
+	let activeBlock = $state<string | null>(null); // 활성 주석(blockLeaf) · null 이면 섹션 전체
 	let windowEnd = $state(0); // periods 시작 인덱스 (0 = 최신, 좌측)
 	let cols = $state(3);
 	let isFullscreen = $state(false);
@@ -73,7 +73,7 @@
 	let askOpen = $state(false); // AI 공시 Q&A 드로어 (헤더 아바타 버튼 → 우측 push)
 	let stockSearchOpen = $state(false); // 종목검색 팝오버 (화면내검색 ⌘K 와 분리된 회사전환 입력)
 	let askCarryQ = $state(''); // AI 가 타 회사 감지 → 이동 후 새 회사 index 준비되면 운반·자동 ask 할 질문
-	let annualOnly = $state(false); // 연간만(사업보고서) 필터 — period 축을 회사별 결산보정 annual 로 거름
+	let annualOnly = $state(false); // 연간만(사업보고서) 필터 · period 축을 회사별 결산보정 annual 로 거름
 	let searchIndex = $state<SearchIndex | null>(null);
 	let indexing = $state(false);
 	let glowCell = $state<{ rowIndex: number; period: string } | null>(null);
@@ -84,8 +84,8 @@
 	let vsFailed = $state(0);
 	let lockedPeriod = $state(''); // 비교 모드 = 한 시점 lock
 	let addOpen = $state(false); // 회사 추가 팝오버
-	let cmpHintDismissed = $state(false); // 비교 모드 안내 띠 — 한 번 닫으면 localStorage 로 다시 안 뜸
-	// 비교 모드 판정 — 파생을 일찍 선언(windowPeriods 등이 참조). vsCodes/bundle/vsBundles 에만 의존.
+	let cmpHintDismissed = $state(false); // 비교 모드 안내 띠 · 한 번 닫으면 localStorage 로 다시 안 뜸
+	// 비교 모드 판정 · 파생을 일찍 선언(windowPeriods 등이 참조). vsCodes/bundle/vsBundles 에만 의존.
 	const compareMode = $derived(vsCodes.length > 0);
 	function dismissCmpHint() {
 		cmpHintDismissed = true;
@@ -97,7 +97,7 @@
 	}
 	const allBundles = $derived(bundle ? [bundle, ...vsBundles] : []);
 
-	// code 바뀌면(검색 이동) 재로드 — soft swap. 첫 로드만 전체화면 스피너, 회사 전환은 옛 화면을 유지한 채
+	// code 바뀌면(검색 이동) 재로드 · soft swap. 첫 로드만 전체화면 스피너, 회사 전환은 옛 화면을 유지한 채
 	// 새 번들을 백그라운드 로드 후 준비되면 교체(studio·AskDrawer 언마운트 0 → 깜빡임 없는 매끄러운 전환).
 	$effect(() => {
 		const c = code;
@@ -114,7 +114,7 @@
 		let cancelled = false;
 		loadPanelBundle(c)
 			.then((b) => {
-				if (cancelled) return; // 빠른 연속 전환 — 옛 응답이 새 회사를 덮어쓰지 않게
+				if (cancelled) return; // 빠른 연속 전환 · 옛 응답이 새 회사를 덮어쓰지 않게
 				bundle = b; // 새 회사 화면으로 교체(리셋도 이 시점에만 → 전환 중 옛 화면 안정)
 				windowEnd = 0;
 				activeBlock = null;
@@ -135,7 +135,7 @@
 		};
 	});
 
-	// 본문 검색 색인 — bundle 로드 후 타임슬라이싱 빌드(메인스레드 비차단). code 바뀌면 재빌드.
+	// 본문 검색 색인 · bundle 로드 후 타임슬라이싱 빌드(메인스레드 비차단). code 바뀌면 재빌드.
 	$effect(() => {
 		const b = bundle;
 		searchIndex = null;
@@ -156,7 +156,7 @@
 		};
 	});
 
-	// 비교 회사(?vs) 병렬 로드 — allSettled(한 회사 실패해도 나머지 비교). code/vs 바뀌면 재로드.
+	// 비교 회사(?vs) 병렬 로드 · allSettled(한 회사 실패해도 나머지 비교). code/vs 바뀌면 재로드.
 	$effect(() => {
 		const codes = vsCodes;
 		void code; // code 바뀌면도 재로드(reference 교체)
@@ -183,14 +183,14 @@
 	});
 
 	// 검색 결과 클릭 → 그 섹션·기간으로 격자 점프 + 셀 글로우. 매번 새 객체로 설정해 PanelMatrix 가 재트리거하고
-	// 강조 수명(스크롤 도착 후 dwell)을 직접 소유한다 — 여기서 클리어 타이머를 돌리면 먼 스크롤 중 강조가 꺼진다.
+	// 강조 수명(스크롤 도착 후 dwell)을 직접 소유한다 · 여기서 클리어 타이머를 돌리면 먼 스크롤 중 강조가 꺼진다.
 	function onSearchResult(hit: SearchHit) {
 		pickSection(hit.sectionKey);
 		pickPeriod(hit.period);
 		glowCell = { rowIndex: hit.rowIndex, period: hit.period };
 	}
 
-	// 종목검색 — 다른 회사 공시뷰어로 이동(단일). 대화는 askSession 스토어로 유지된다(수동 이동도 동행).
+	// 종목검색 · 다른 회사 공시뷰어로 이동(단일). 대화는 askSession 스토어로 유지된다(수동 이동도 동행).
 	// askCarryQ 비움 = 수동 이동엔 자동질문 없음(직전 AI 이동의 묵은 carryQ 재발화 차단).
 	function onStockPick(c: string) {
 		stockSearchOpen = false;
@@ -219,7 +219,7 @@
 	});
 
 	const periods = $derived(bundle?.periods ?? []);
-	// "연간만" 필터 시 사업보고서(annual) period 만 — 빈 결과면 자동으로 전체로 폴백(빈 화면 방지).
+	// "연간만" 필터 시 사업보고서(annual) period 만 · 빈 결과면 자동으로 전체로 폴백(빈 화면 방지).
 	const annualPeriods = $derived.by(() => {
 		const b = bundle;
 		return b ? periods.filter((p) => b.periodKind[p] === 'annual') : [];
@@ -229,7 +229,7 @@
 	const windowPeriods = $derived(
 		compareMode ? (lockedPeriod ? [lockedPeriod] : []) : visiblePeriods.slice(windowEnd, windowEnd + cols)
 	);
-	// 활성 섹션 행 — 주석(blockLeaf) 선택 시 그 주석만(기간별), 아니면 섹션 전체.
+	// 활성 섹션 행 · 주석(blockLeaf) 선택 시 그 주석만(기간별), 아니면 섹션 전체.
 	const rows = $derived.by(() => {
 		if (!activeSectionKey || !bundle) return [];
 		const base = bundle.gridBySection.get(activeSectionKey) ?? [];
@@ -248,7 +248,7 @@
 	const financeDlUrl = $derived(hfUrl(`dart/finance/${code}.parquet`));
 	const DATASET_URL = 'https://huggingface.co/datasets/eddmpython/dartlab-data';
 
-	// 일반인용 다운로드 — 브라우저에 로드된 데이터를 CSV/Excel 로(서버 0). 공시 수평화표=CSV, 재무제표=Excel(멀티시트).
+	// 일반인용 다운로드 · 브라우저에 로드된 데이터를 CSV/Excel 로(서버 0). 공시 수평화표=CSV, 재무제표=Excel(멀티시트).
 	let financeDownloading = $state(false);
 	function downloadPanelCsv() {
 		if (bundle) downloadText(panelToCsv(bundle), `${corpName || code}_공시수평화.csv`, 'text/csv;charset=utf-8');
@@ -302,7 +302,7 @@
 		void goto(vsUrl(vsCodes.filter((x) => x !== c)));
 	}
 
-	// 섹션/주석 이동은 보고 있던 기간 윈도우를 보존 — 기간축은 섹션 무관 글로벌이라 리셋할 이유 없음(같은 시점의
+	// 섹션/주석 이동은 보고 있던 기간 윈도우를 보존 · 기간축은 섹션 무관 글로벌이라 리셋할 이유 없음(같은 시점의
 	// 다른 TOC 를 보려는 흐름). 리셋은 축 변경(연간토글)·회사 변경 때만.
 	function pickSection(sectionKey: string) {
 		activeSectionKey = sectionKey;
@@ -341,7 +341,7 @@
 		windowEnd = 0; // 축이 바뀌므로 최신으로 리셋
 	}
 
-	// 액션 버스 호스트 — 기존 mutator + 라이브 검증 게터를 ViewerApi 로 묶어 executeAction 에 주입.
+	// 액션 버스 호스트 · 기존 mutator + 라이브 검증 게터를 ViewerApi 로 묶어 executeAction 에 주입.
 	function setCols(n: 3 | 6 | 9) {
 		cols = n;
 	}
@@ -407,7 +407,7 @@
 		</div>
 		<div class="ph-right">
 			<div class="stock-wrap">
-				<button type="button" class="fs-btn" class:active={stockSearchOpen} onclick={() => (stockSearchOpen = !stockSearchOpen)} title="종목검색 — 다른 회사 공시뷰어로 이동">
+				<button type="button" class="fs-btn" class:active={stockSearchOpen} onclick={() => (stockSearchOpen = !stockSearchOpen)} title="종목검색 · 다른 회사 공시뷰어로 이동">
 					<Search size={13} /> 종목검색
 				</button>
 				{#if stockSearchOpen}
@@ -415,7 +415,7 @@
 				{/if}
 			</div>
 			<CommandPalette index={searchIndex} toc={bundle?.toc ?? null} {indexing} onResult={onSearchResult} onSection={pickSection} />
-			<button type="button" class="fs-btn ask-trigger" class:active={askOpen} onclick={() => (askOpen = !askOpen)} title="AI 공시 Q&A — 근거 검색 + 즉시 답(다운로드 0)">
+			<button type="button" class="fs-btn ask-trigger" class:active={askOpen} onclick={() => (askOpen = !askOpen)} title="AI 공시 Q&A · 근거 검색 + 즉시 답(다운로드 0)">
 				<picture><source srcset="{base}/avatar-detective.webp" type="image/webp" /><img class="ask-ava" src="{base}/avatar-detective.png" alt="" width="16" height="16" /></picture> AI
 			</button>
 			<button type="button" class="fs-btn" onclick={() => (financeOpen = true)} title="재무제표 정량 (IS/BS/CF/CIS/자본변동 · 연결/별도)">
@@ -425,12 +425,12 @@
 				<button type="button" class="fs-btn"><Download size={13} /> 데이터</button>
 				<div class="data-pop">
 					<div class="dp-h">이 회사 데이터 · 공개 다운로드</div>
-					<div class="dp-sub">보기 쉬운 형식 — Excel · Sheets · 메모장</div>
+					<div class="dp-sub">보기 쉬운 형식 · Excel · Sheets · 메모장</div>
 					<button type="button" class="dp-link dp-btn" onclick={downloadPanelCsv} disabled={!bundle}>공시 수평화표 <span class="dp-ext">CSV</span></button>
 					{#if dlMarket !== 'US'}
 						<button type="button" class="dp-link dp-btn" onclick={downloadFinanceExcel} disabled={financeDownloading}>재무제표 (IS·BS·CF·CIS) <span class="dp-ext">{financeDownloading ? '생성 중…' : 'Excel'}</span></button>
 					{/if}
-					<div class="dp-sub">원본 — 개발자용 (parquet)</div>
+					<div class="dp-sub">원본 · 개발자용 (parquet)</div>
 					<a class="dp-link" href={panelDlUrl} download>공시 panel <span class="dp-ext">.parquet</span></a>
 					{#if dlMarket !== 'US'}
 						<a class="dp-link" href={financeDlUrl} download>재무제표 <span class="dp-ext">.parquet</span></a>
@@ -438,7 +438,7 @@
 					<a class="dp-link dp-ds" href={DATASET_URL} target="_blank" rel="noreferrer">전체 데이터셋 (모든 회사) ↗</a>
 					<div class="dp-policy">
 						<div>원자료 <b>{dlMarket === 'US' ? 'SEC EDGAR' : 'DART 전자공시'}</b> · 가공·수평화 <b>dartlab</b> · 배포 HuggingFace 공개 데이터셋.</div>
-						<div>{dlMarket === 'US' ? '미국 정부 저작물(퍼블릭 도메인)' : '공공데이터(공공데이터법)'} — 영리·비영리 <b>자유 이용·재배포 가능</b> · <b>출처 표기 권장</b>(DART/SEC · dartlab).</div>
+						<div>{dlMarket === 'US' ? '미국 정부 저작물(퍼블릭 도메인)' : '공공데이터(공공데이터법)'} · 영리·비영리 <b>자유 이용·재배포 가능</b> · <b>출처 표기 권장</b>(DART/SEC · dartlab).</div>
 						<div class="dp-warn">⚠ 데이터 정확성·완전성 미보증(원자료는 공시제출인 책임) · <b>투자 판단·자문이 아닙니다</b>.</div>
 						<a class="dp-terms" href={dlMarket === 'US' ? 'https://www.sec.gov/os/accessing-edgar-data' : 'https://opendart.fss.or.kr/intro/terms.do'} target="_blank" rel="noreferrer">{dlMarket === 'US' ? 'SEC EDGAR 이용조건' : 'DART 이용약관'} ↗</a>
 					</div>
@@ -447,12 +447,12 @@
 			<button type="button" class="fs-btn" onclick={() => (discussOpen = true)} title="공시 토론 (GitHub Discussions)">
 				<MessageSquare size={13} /> 토론
 			</button>
-			<a class="fs-btn" href="{brand.repo}/issues/new" target="_blank" rel="noopener" title="이슈 등록 — 버그·요청 (GitHub)">
+			<a class="fs-btn" href="{brand.repo}/issues/new" target="_blank" rel="noopener" title="이슈 등록 · 버그·요청 (GitHub)">
 				<Bug size={13} /> 이슈
 			</a>
 			{#if bundle}
 				<div class="add-wrap">
-					<button type="button" class="fs-btn" class:active={compareMode} onclick={() => (addOpen = !addOpen)} title="회사 간 비교 — 회사 추가 (최대 6)" disabled={allBundles.length >= 6}>
+					<button type="button" class="fs-btn" class:active={compareMode} onclick={() => (addOpen = !addOpen)} title="회사 간 비교 · 회사 추가 (최대 6)" disabled={allBundles.length >= 6}>
 						<Plus size={13} /> 비교
 					</button>
 					{#if addOpen}
@@ -470,7 +470,7 @@
 				{:else}
 					<span class="meta">항목 {rows.length} · 기간 {visiblePeriods.length}{annualOnly ? '(연간)' : ''}</span>
 				{/if}
-				<button type="button" class="annual-btn" class:active={annualOnly} onclick={toggleAnnual} title="사업보고서(연간)만 표시 — 회사 결산월 보정">연간만</button>
+				<button type="button" class="annual-btn" class:active={annualOnly} onclick={toggleAnnual} title="사업보고서(연간)만 표시 · 회사 결산월 보정">연간만</button>
 				{#if !compareMode}
 					<div class="cols" title="동시 표시 기간 수 (가로 폭)">
 						<Columns3 size={13} />
@@ -495,7 +495,7 @@
 	{#if compareMode && allBundles.length >= 2 && !cmpHintDismissed}
 		<div class="cmp-hint">
 			<span
-				><b>비교 모드</b> — 같은 시점·같은 항목으로 회사를 나란히. 시점은 <b>상단 타임라인</b>, 항목은
+				><b>비교 모드</b> · 같은 시점·같은 항목으로 회사를 나란히. 시점은 <b>상단 타임라인</b>, 항목은
 				<b>좌측 TOC</b> 에서 고르고, 회사 빼기는 칩의 ✕</span
 			>
 			<button type="button" class="cmp-hint-x" onclick={dismissCmpHint} title="안내 닫기"><X size={12} /></button>
@@ -589,7 +589,7 @@
 		padding: 8px 12px;
 		border-bottom: 1px solid #1e2433;
 	}
-	/* 회사 전환 진행 바 — 헤더 하단에 얇게, 레이아웃 시프트 0(absolute overlay). */
+	/* 회사 전환 진행 바 · 헤더 하단에 얇게, 레이아웃 시프트 0(absolute overlay). */
 	.swap-bar {
 		position: absolute;
 		left: 0;
@@ -716,7 +716,7 @@
 		cursor: not-allowed;
 	}
 
-	/* 데이터 다운로드 — 버튼 hover 시 팝오버(다운로드 링크 + 정책) */
+	/* 데이터 다운로드 · 버튼 hover 시 팝오버(다운로드 링크 + 정책) */
 	.data-dl {
 		position: relative;
 	}
@@ -820,7 +820,7 @@
 		text-decoration: underline;
 	}
 
-	/* 회사 간 비교 — 칩 + 추가 팝오버 */
+	/* 회사 간 비교 · 칩 + 추가 팝오버 */
 	.chips {
 		display: flex;
 		align-items: center;
@@ -898,7 +898,7 @@
 		color: #64748b;
 		font-size: 10px;
 	}
-	/* 종목검색 팝오버 — 화면내검색(⌘K)과 분리된 회사전환 입력 */
+	/* 종목검색 팝오버 · 화면내검색(⌘K)과 분리된 회사전환 입력 */
 	.stock-wrap {
 		position: relative;
 	}
@@ -1019,7 +1019,7 @@
 	.studio.ask-open {
 		grid-template-columns: 240px minmax(0, 1fr) 380px;
 	}
-	/* soft swap — 전환 중 문서영역(TOC·격자)만 살짝 죽여 "로딩 중" 신호 + 묵은 클릭 차단. 드로어는 또렷이 유지. */
+	/* soft swap · 전환 중 문서영역(TOC·격자)만 살짝 죽여 "로딩 중" 신호 + 묵은 클릭 차단. 드로어는 또렷이 유지. */
 	.studio.swapping .toc,
 	.studio.swapping .board {
 		opacity: 0.5;
@@ -1047,17 +1047,17 @@
 		}
 	}
 	@media (max-width: 720px) {
-		/* D2 — 모바일에서 드로어를 격자 아래로 적층(grid 1열)하지 않는다. 적층하면 board(상단·죽은 공간) +
+		/* D2 · 모바일에서 드로어를 격자 아래로 적층(grid 1열)하지 않는다. 적층하면 board(상단·죽은 공간) +
 		   drawer(하단·끼임)로 둘 다 못 쓴다. 대신 드로어를 전체화면 오버레이로 띄워 board 위에 덮는다.
 		   board grid 는 단일 1fr 그대로 유지(데스크톱 push grid 미사용) → board 는 정상 풀폭으로 살아있고,
 		   드로어는 그 위에 fixed 로 덮인다. .ask-open 의 3번째(380px) 트랙을 만들지 않아 board 압착 0. */
 		.studio.ask-open {
-			position: relative; /* 드로어 오버레이의 positioning context — board/ribbon 아래 studio 영역에 정확히 덮임 */
+			position: relative; /* 드로어 오버레이의 positioning context · board/ribbon 아래 studio 영역에 정확히 덮임 */
 			grid-template-columns: 1fr;
 		}
 		.studio.ask-open :global(.ask-drawer) {
 			position: absolute;
-			inset: 0; /* studio 영역(헤더·리본 아래) 전체를 덮는 오버레이 — 전체화면/일반 모두 정확 */
+			inset: 0; /* studio 영역(헤더·리본 아래) 전체를 덮는 오버레이 · 전체화면/일반 모두 정확 */
 			z-index: 90;
 			border-left: none;
 			box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.6);
@@ -1082,13 +1082,13 @@
 			grid-template-columns: 1fr;
 		}
 		.toc {
-			/* D4 — 모바일 TOC 상단 접이: 더 얕게(140px) + 자체 스크롤. 격자에 세로 공간 양보. */
+			/* D4 · 모바일 TOC 상단 접이: 더 얕게(140px) + 자체 스크롤. 격자에 세로 공간 양보. */
 			max-height: 140px;
 			border-right: none;
 			border-bottom: 1px solid #1e2433;
 		}
 
-		/* D1 — 헤더 11버튼 가로 오버플로(scrollW 927 > 390) 해소. 데스크톱은 nowrap 한 줄 유지,
+		/* D1 · 헤더 11버튼 가로 오버플로(scrollW 927 > 390) 해소. 데스크톱은 nowrap 한 줄 유지,
 		   모바일에선 줄바꿈(wrap)으로 모든 버튼을 화면 안에 둔다. 가로스크롤(overflow-x:auto) 대신 wrap 을
 		   택한 이유: .stock-pop/.data-pop/.add-pop 가 absolute 라 overflow 컨테이너에 세로로도 클리핑된다. */
 		.page-head {
@@ -1097,7 +1097,7 @@
 			padding: 8px 10px;
 		}
 		.ph-left {
-			/* 회사명이 0폭으로 압착돼 "삼"으로 잘리던 문제 — 한 줄 통째로 차지하게 해 온전히 보이게 한다. */
+			/* 회사명이 0폭으로 압착돼 "삼"으로 잘리던 문제 · 한 줄 통째로 차지하게 해 온전히 보이게 한다. */
 			flex: 1 0 100%;
 			min-width: 0;
 		}
@@ -1107,12 +1107,12 @@
 			text-overflow: ellipsis;
 		}
 		.ph-right {
-			/* 두 번째 줄에 버튼들을 줄바꿈 배치 — flex-shrink 해제하고 wrap 허용. */
+			/* 두 번째 줄에 버튼들을 줄바꿈 배치 · flex-shrink 해제하고 wrap 허용. */
 			flex: 1 1 100%;
 			flex-wrap: wrap;
 			gap: 8px;
 		}
-		/* D5 — 터치 타깃 44px(HIG). 헤더 버튼·연간만 토글 높이 확대(데스크톱 30px 불변). */
+		/* D5 · 터치 타깃 44px(HIG). 헤더 버튼·연간만 토글 높이 확대(데스크톱 30px 불변). */
 		.fs-btn,
 		.annual-btn {
 			min-height: 44px;

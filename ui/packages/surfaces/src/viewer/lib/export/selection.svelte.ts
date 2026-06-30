@@ -1,6 +1,6 @@
-// table-export 선택 스토어 (Svelte 5 runes) — "뷰어 격자 = 미리보기" 선택 바구니의 상태 + buildWorkbook 입력 파생.
+// table-export 선택 스토어 (Svelte 5 runes) · "뷰어 격자 = 미리보기" 선택 바구니의 상태 + buildWorkbook 입력 파생.
 //
-// 선택 원자 = (테이블 정체성 + 기간 범위). 정체성은 (sectionKey, indexInSection) — bundle.gridBySection 의
+// 선택 원자 = (테이블 정체성 + 기간 범위). 정체성은 (sectionKey, indexInSection) · bundle.gridBySection 의
 // 섹션 배열 절대 인덱스. PRD 의 `${sectionKey}|${blockLeaf}` 보다 견고(같은 blockLeaf 가 한 섹션에 여러 행일 때
 // blockLeaf 만으론 충돌). PanelMatrix data-cell 키(rowIndex)는 현재 표시 필터 상대값이라, 선택 시 ViewerStudio 가
 // 섹션 절대 인덱스로 환산해 add 한다.
@@ -43,19 +43,19 @@ export function selectionId(sectionKey: string, indexInSection: number): string 
 	return `${sectionKey}|${indexInSection}`;
 }
 
-// 섹션 라벨 — sectionKey = `${chapter}␟${sectionLeaf}`. 표시·기본 시트명 폴백용.
+// 섹션 라벨 · sectionKey = `${chapter}␟${sectionLeaf}`. 표시·기본 시트명 폴백용.
 function sectionLeafOf(sectionKey: string): string {
 	return sectionKey.split('␟').pop() ?? sectionKey;
 }
 
 /**
- * 선택 스토어 — ViewerStudio 가 1개 인스턴스를 만들어 ExportDrawer·PanelMatrix·PanelTocTree 와 공유한다.
+ * 선택 스토어 · ViewerStudio 가 1개 인스턴스를 만들어 ExportDrawer·PanelMatrix·PanelTocTree 와 공유한다.
  *
  * 회사 전환(code 변경) 시 ViewerStudio 가 `clear()` 를 호출한다(타 회사 선택 잔존 방지).
  */
 export function createSelectionStore() {
 	const items = $state<SheetSelection[]>([]);
-	// 옵션 — 출처 시트 포함(provenance, 기본 ON). 회사 이식(N사)은 후속(브라우저 단일회사 단계에선 미배선).
+	// 옵션 · 출처 시트 포함(provenance, 기본 ON). 회사 이식(N사)은 후속(브라우저 단일회사 단계에선 미배선).
 	const opts = $state<{ includeSource: boolean }>({ includeSource: true });
 
 	function indexById(id: string): number {
@@ -115,7 +115,7 @@ export function createSelectionStore() {
 			});
 		},
 
-		/** 셀 클릭 토글 — 없으면 add, 있으면 remove. 클릭 1번 = on/off. */
+		/** 셀 클릭 토글 · 없으면 add, 있으면 remove. 클릭 1번 = on/off. */
 		toggle(args: {
 			sectionKey: string;
 			indexInSection: number;
@@ -164,7 +164,7 @@ export function createSelectionStore() {
 
 export type SelectionStore = ReturnType<typeof createSelectionStore>;
 
-// ── buildWorkbook 입력 파생 (순수 — 스토어 무관, bundle 만 입력) ──
+// ── buildWorkbook 입력 파생 (순수 · 스토어 무관, bundle 만 입력) ──
 
 // 한 raw 셀 XML → 첫 <table> 의 격자(as-filed). 표가 없으면 텍스트만 1열 격자로(텍스트 블록 폴백).
 function gridFromCellXml(rawXml: string): { grid: GridCell[][]; unit: string } {
@@ -194,7 +194,7 @@ function gridFromCellXml(rawXml: string): { grid: GridCell[][]; unit: string } {
 	return { grid, unit };
 }
 
-// 행 라벨(첫 컬럼 식별 텍스트) — horizontalized 격자의 행 헤더. blockLeaf 또는 셀 첫 줄.
+// 행 라벨(첫 컬럼 식별 텍스트) · horizontalized 격자의 행 헤더. blockLeaf 또는 셀 첫 줄.
 function periodsToUse(sel: SheetSelection, available: string[]): string[] {
 	if (sel.periods === 'all') return available;
 	return sel.periods.filter((p) => available.includes(p));
@@ -216,7 +216,7 @@ export function selectionToSheet(sel: SheetSelection, bundle: PanelBundle): Shee
 	const use = periodsToUse(sel, allPeriods);
 	if (use.length === 0) return null;
 
-	// horizontalized — 표 행은 라벨 정렬 불확실 → as-filed 자동 폴백 + 시트 노트(honest-gap, PRD §4.1).
+	// horizontalized · 표 행은 라벨 정렬 불확실 → as-filed 자동 폴백 + 시트 노트(honest-gap, PRD §4.1).
 	// 텍스트(narrative) 행은 행=기간, 열=본문 텍스트의 수평화가 자연(라벨 정렬 문제 없음).
 	if (sel.mode === 'horizontalized') {
 		if (row.blockType === 'text') {
@@ -248,7 +248,7 @@ export function selectionToSheet(sel: SheetSelection, bundle: PanelBundle): Shee
 		};
 	}
 
-	// as-filed — 선택 기간(들) 중 최신 1개의 표 구조 그대로 transcribe. 병합셀 보존.
+	// as-filed · 선택 기간(들) 중 최신 1개의 표 구조 그대로 transcribe. 병합셀 보존.
 	const period = use[0];
 	const { grid, unit } = gridFromCellXml(row.cells[period] ?? '');
 	if (!grid.length) return null;
@@ -260,7 +260,7 @@ export function selectionToSheet(sel: SheetSelection, bundle: PanelBundle): Shee
 	};
 }
 
-/** 출처 시트(provenance) — 어떤 회사·시점·섹션을 어떤 모드로 뽑았는지 기록. includeSource 옵션 ON 시 1장 추가. */
+/** 출처 시트(provenance) · 어떤 회사·시점·섹션을 어떤 모드로 뽑았는지 기록. includeSource 옵션 ON 시 1장 추가. */
 export function sourceSheet(
 	selections: SheetSelection[],
 	bundle: PanelBundle
@@ -299,7 +299,7 @@ export function sourceSheet(
  * @param selections order 순 선택 목록.
  * @param bundle 현재 회사 PanelBundle.
  * @param includeSource 출처 시트 포함 여부.
- * @returns SheetInput[] — buildWorkbook 에 그대로 전달.
+ * @returns SheetInput[] · buildWorkbook 에 그대로 전달.
  *
  * @example
  * const sheets = deriveWorkbookInput(store.ordered(), bundle, store.includeSource);
@@ -319,18 +319,18 @@ export function deriveWorkbookInput(
 	return sheets;
 }
 
-// ── ExportPort 다리 — 직렬화 DTO(SheetSelectionDTO) → 내부 SheetSelection → buildWorkbook 바이트 ──
+// ── ExportPort 다리 · 직렬화 DTO(SheetSelectionDTO) → 내부 SheetSelection → buildWorkbook 바이트 ──
 // public 어댑터(runtime)는 surfaces 를 import 못 하므로(역방향 금지), 셸이 이 함수로 ExportInput 을 .xlsx 바이트로
 // 변환해 publicExportPort 의 exportShared.buildWorkbookBytes 로 주입한다. 직접 ViewerStudio 경로(deriveWorkbookInput
 // →buildWorkbook)와 *동일* 격자/writer 라 산출 .xlsx 동형(패리티).
 
-/** DTO 의 sectionKey 내 행 절대 인덱스 해석 — store id(`${sectionKey}|${index}`) 우선, 폴백은 (blockLeaf,disclosureKey,scope) 매칭. */
+/** DTO 의 sectionKey 내 행 절대 인덱스 해석 · store id(`${sectionKey}|${index}`) 우선, 폴백은 (blockLeaf,disclosureKey,scope) 매칭. */
 function resolveIndexInSection(sel: SheetSelectionDTO, rows: PanelRow[]): number {
 	// store 생성 id 는 끝에 정수 인덱스(selectionId). id 가 `${sectionKey}|${n}` 이면 그 n 사용.
 	const tail = sel.id.slice(sel.sectionKey.length + 1);
 	const n = Number(tail);
 	if (Number.isInteger(n) && n >= 0 && n < rows.length) return n;
-	// 폴백 — 동일 식별자 첫 매칭(같은 blockLeaf 다중행은 disclosureKey/scope 로 좁힘).
+	// 폴백 · 동일 식별자 첫 매칭(같은 blockLeaf 다중행은 disclosureKey/scope 로 좁힘).
 	return rows.findIndex(
 		(r) => r.blockLeaf === sel.blockLeaf && r.disclosureKey === sel.disclosureKey && r.scope === sel.scope
 	);
@@ -362,7 +362,7 @@ function dtoToSelection(sel: SheetSelectionDTO, bundle: PanelBundle): SheetSelec
  * ExportInput(직렬화 DTO) + bundle → 진짜 .xlsx 바이트. publicExportPort 주입(03 §3 패리티 다리).
  *
  * @param input ExportInput(code·selections·includeProvenance).
- * @param bundle 현재 회사 PanelBundle(loadPanelBundle LRU 캐시 — 재다운로드 0).
+ * @param bundle 현재 회사 PanelBundle(loadPanelBundle LRU 캐시 · 재다운로드 0).
  * @returns .xlsx Uint8Array 또는 null(내보낼 데이터 없음).
  *
  * @example

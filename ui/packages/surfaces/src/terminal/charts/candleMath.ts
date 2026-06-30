@@ -1,11 +1,11 @@
-// 캔들 표시용 순수 변환 — 수정주가 체이닝·주기 집계·하이킨아시. 로드·캐시는 runtime 어댑터
-// (priceSource) 소관이라 여기엔 fetch 가 없다. 입력 불변·결정론 — 차트 크롬이 자유롭게 재적용.
+// 캔들 표시용 순수 변환 · 수정주가 체이닝·주기 집계·하이킨아시. 로드·캐시는 runtime 어댑터
+// (priceSource) 소관이라 여기엔 fetch 가 없다. 입력 불변·결정론 · 차트 크롬이 자유롭게 재적용.
 import type { Candle } from '@dartlab/ui-contracts';
 
-// 입력 배열 identity 기준 메모 — reapply·백테스트·이벤트 effect 가 같은 배열로 반복 호출 (백필 merge 시 새 배열 = 자동 무효화)
+// 입력 배열 identity 기준 메모 · reapply·백테스트·이벤트 effect 가 같은 배열로 반복 호출 (백필 merge 시 새 배열 = 자동 무효화)
 const adjCache = new WeakMap<Candle[], Candle[]>();
 
-/** HTS 수정주가 — 등락률(기준가 대비) 체이닝으로 액면분할·병합·감자·권리락 단차 제거.
+/** HTS 수정주가 · 등락률(기준가 대비) 체이닝으로 액면분할·병합·감자·권리락 단차 제거.
  *
  * KRX 기준가는 자본 액션 시 조정되므로 `종가/전일종가` 와 `1+등락률` 의 괴리 = 액션 배율.
  * 마지막 봉 기준으로 과거를 누적 보정 (가격 ×factor, 거래량 ÷factor). 괴리 ±3% 미만은
@@ -38,7 +38,7 @@ export function adjustCandles(daily: Candle[]): Candle[] {
 	return res;
 }
 
-// 월요일 시작 주 키 — YYYYMMDD → 해당 주 월요일 YYYYMMDD (UTC 산술, 시간대 무관)
+// 월요일 시작 주 키 · YYYYMMDD → 해당 주 월요일 YYYYMMDD (UTC 산술, 시간대 무관)
 function weekKey(t: string): string {
 	const d = new Date(Date.UTC(+t.slice(0, 4), +t.slice(4, 6) - 1, +t.slice(6, 8)));
 	d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
@@ -73,9 +73,9 @@ export function aggregateCandles(daily: Candle[], tf: 'W' | 'M' | 'Q' | 'Y'): Ca
 	return out;
 }
 
-/** 하이킨아시 변환 — haC=(o+h+l+c)/4, haO=(전봉haO+전봉haC)/2 (첫 봉 = (o+c)/2),
+/** 하이킨아시 변환 · haC=(o+h+l+c)/4, haO=(전봉haO+전봉haC)/2 (첫 봉 = (o+c)/2),
  * haH=max(h,haO,haC), haL=min(l,haO,haC). 순수함수: 입력 불변, prefix 안정(앞부분 슬라이스 결과 동일).
- * 표시 전용 변형값 — 시계열 버스(publishView)·백테스트는 원본 가격을 유지한다. */
+ * 표시 전용 변형값 · 시계열 버스(publishView)·백테스트는 원본 가격을 유지한다. */
 export function heikinAshi(candles: Candle[]): Candle[] {
 	if (!candles.length) return candles;
 	const out: Candle[] = new Array(candles.length);

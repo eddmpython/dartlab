@@ -112,7 +112,7 @@ const companyFixture = (overrides: Partial<Company> = {}): Company => ({
 	balance: { periods: [], rows: [] },
 	cashflow: { periods: [], rows: [] },
 	ratios: [],
-	credit: { grade: 'NA', healthScore: 0, pd: '—', tone: 'neutral', tracks: [], basis: { debtRatio: null, curr: null, opm: null } },
+	credit: { grade: 'NA', healthScore: 0, pd: '·', tone: 'neutral', tracks: [], basis: { debtRatio: null, curr: null, opm: null } },
 	analysis: { summary: { kr: '', en: '' }, tracks: [] },
 	macroExposure: null,
 	peers: [],
@@ -126,7 +126,7 @@ const companyFixture = (overrides: Partial<Company> = {}): Company => ({
 	...overrides
 } as unknown as Company);
 
-// 합성 driver/edge stub — buildExposureMatrixRows/pickFocusCell가 읽는 필드만 채운다(나머지 cast).
+// 합성 driver/edge stub · buildExposureMatrixRows/pickFocusCell가 읽는 필드만 채운다(나머지 cast).
 const mkDriver = (id: string, relevance: MacroDriverView['relevance'] = 'secondary'): MacroDriverView =>
 	({ id, label: id, relevance } as unknown as MacroDriverView);
 const mkEdge = (
@@ -138,7 +138,7 @@ const mkEdge = (
 ): MacroTransmissionEdgeView =>
 	({ id: `${driverId}-${channel}`, driverId, channel, evidenceLevel, confidence, financialLine: `${channel} line`, valuationLever: 'growth', sign: 'positive', lagMonths: [1, 6], ...extra } as unknown as MacroTransmissionEdgeView);
 
-describe('macroLens builders — current macro v19 artifact (redesign)', () => {
+describe('macroLens builders · current macro v19 artifact (redesign)', () => {
 	it('builds a 2x2 regime model without leaking raw coordinate signals', () => {
 		const view = buildRegimeQuadrant(macro);
 		expect(view.cells.map((cell) => cell.key).sort()).toEqual(['deflation', 'goldilocks', 'reflation', 'stagflation']);
@@ -160,7 +160,7 @@ describe('macroLens builders — current macro v19 artifact (redesign)', () => {
 
 	it('builds a market-only glance before a company is selected', () => {
 		const view = buildMacroGlanceView(macro, sectorTailwinds(), { mode: 'compact' });
-		// asOf 는 빌드 시점(재빌드마다 변동) — 날짜 형태만 단언(하드코딩 결합 회피).
+		// asOf 는 빌드 시점(재빌드마다 변동) · 날짜 형태만 단언(하드코딩 결합 회피).
 		expect(view.asOf).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 		expect(view.regime.markets).toHaveLength(2);
 		expect(view.path.links.length).toBeGreaterThan(0);
@@ -168,7 +168,7 @@ describe('macroLens builders — current macro v19 artifact (redesign)', () => {
 	});
 });
 
-describe('macroLens snapshot — verdict layer removed, evidence gates kept', () => {
+describe('macroLens snapshot · verdict layer removed, evidence gates kept', () => {
 	it('produces no verdict layer and no single macro score', () => {
 		const snapshot = buildMarketMacroLensSnapshot({
 			macro,
@@ -218,7 +218,7 @@ describe('macroLens snapshot — verdict layer removed, evidence gates kept', ()
 		const snapshot = buildMacroLensSnapshot({
 			co: companyFixture({
 				tailwind: { key: 'semiconductor', kr: '반도체', en: 'Semiconductor', blended: 0.45, krScore: 0.5, usScore: 0.4, label: '순풍', labelEn: 'tailwind', tone: 'up' },
-				// macroExposure carries Korean engine reasons + Korean indicator labels/impact (157 live companies) — exercise the analysis-data EN path.
+				// macroExposure carries Korean engine reasons + Korean indicator labels/impact (157 live companies) · exercise the analysis-data EN path.
 				macroExposure: {
 					exposureQuality: { status: 'blocked', reason: '회사 매출과 매크로 지표의 겹친 표본이 부족합니다.', blockedReason: 'selected macro regression absent', missingEvidence: [], sourceRef: 'analysis.macroExposure:005930', nObs: null, rSquared: null, window: null, frequency: null, lagMonths: null, coverage: 'missing', minObs: 5, method: 'ols', modelVersion: 'v1', targetMetric: 'salesGrowth' },
 					// APT_PRICE is NOT in MACRO_SERIES (the 43-id contract), so this exercises the EXPOSURE_SERIES_EN map path (the R7 leak), not macroDefOf.
@@ -323,7 +323,7 @@ describe('macroLens snapshot — verdict layer removed, evidence gates kept', ()
 	});
 });
 
-describe('buildExposureMatrixRows — sparsity, cap 6, deterministic drop', () => {
+describe('buildExposureMatrixRows · sparsity, cap 6, deterministic drop', () => {
 	it('produces rows with cells.length === channels.length and filledCount', () => {
 		const snapshot = buildMacroLensSnapshot({
 			co: companyFixture(),
@@ -396,7 +396,7 @@ describe('buildExposureMatrixRows — sparsity, cap 6, deterministic drop', () =
 	});
 });
 
-describe('pickFocusCell — observed priority, channel tie-break, determinism', () => {
+describe('pickFocusCell · observed priority, channel tie-break, determinism', () => {
 	const rowsOf = (edges: MacroTransmissionEdgeView[]): MacroExposureMatrixRow[] => {
 		const byDriver = new Map<string, MacroTransmissionEdgeView[]>();
 		for (const e of edges) {
@@ -416,7 +416,7 @@ describe('pickFocusCell — observed priority, channel tie-break, determinism', 
 	});
 
 	it('breaks ties by channel priority (revenue > margin > valuation), not by change/lag', () => {
-		// 3 observed edges all medium confidence — 채널 우선순위로 revenue(EXPORT)가 초점.
+		// 3 observed edges all medium confidence · 채널 우선순위로 revenue(EXPORT)가 초점.
 		const focus = pickFocusCell(rowsOf([
 			mkEdge('PPI_SEMI', 'margin', 'observed', 'medium'),
 			mkEdge('EXPORT', 'revenue', 'observed', 'medium'),
@@ -503,12 +503,12 @@ const macroWithRegime = (us = usRegimePayload(), kr = krRegimePayload()): MacroF
 	return m;
 };
 
-describe('macro regime view-model — transitionFraction', () => {
+describe('macro regime view-model · transitionFraction', () => {
 	it('emits an integer fraction triggered/(triggered+pending), never a percent', () => {
 		const side = { transition: { from: 'slowdown', to: 'contraction', progress: 33, triggered: ['gold_surging'], pending: ['vix_spiking', 'term_spread_inverted'] } } as unknown as MacroSide;
 		const frac = transitionFraction(side);
 		expect(frac).not.toBeNull();
-		// fraction 은 언어중립 '1/3' 만 — '충족'/'met' 접미는 템플릿이 T() 로 붙인다(i18n).
+		// fraction 은 언어중립 '1/3' 만 · '충족'/'met' 접미는 템플릿이 T() 로 붙인다(i18n).
 		expect(frac!.fraction).toBe('1/3');
 		expect(frac!.from).toBe('slowdown');
 		expect(frac!.to).toBe('contraction');
@@ -523,7 +523,7 @@ describe('macro regime view-model — transitionFraction', () => {
 	});
 });
 
-describe('macro regime view-model — bucketOf (§3.3 3-step table)', () => {
+describe('macro regime view-model · bucketOf (§3.3 3-step table)', () => {
 	it('maps probit moderate → 0 (absorbed) and the full §3.3 table', () => {
 		expect(bucketOf({ zone: 'low' })).toBe(0);
 		expect(bucketOf({ zone: 'moderate' })).toBe(0); // 흡수
@@ -547,7 +547,7 @@ describe('macro regime view-model — bucketOf (§3.3 3-step table)', () => {
 	});
 });
 
-describe('macro regime view-model — agreementOf (adjacent=agree, names disagreeing, no score)', () => {
+describe('macro regime view-model · agreementOf (adjacent=agree, names disagreeing, no score)', () => {
 	it('returns 교차 불가 with valid count when <2 valid (bilingual {kr,en})', () => {
 		expect(agreementOf([{ model: 'CLI', bucket: null }]).kr).toBe('교차 불가 (유효 0개)');
 		expect(agreementOf([{ model: 'CLI', bucket: null }]).en).toBe('cross-check N/A (0 valid)');
@@ -579,7 +579,7 @@ describe('macro regime view-model — agreementOf (adjacent=agree, names disagre
 	});
 });
 
-describe('macro regime view-model — focusChannelAlignment (narrative only, no 수혜/sensitivity)', () => {
+describe('macro regime view-model · focusChannelAlignment (narrative only, no 수혜/sensitivity)', () => {
 	const focusOf = (channel: MacroChannel, sign: MacroTransmissionEdgeView['sign']) =>
 		({ channel, edge: { sign } });
 	it('describes alignment when edge sign positive (bilingual, no 수혜/sensitivity)', () => {
@@ -605,9 +605,9 @@ describe('macro regime view-model — focusChannelAlignment (narrative only, no 
 	});
 });
 
-describe('macro regime view-model — buildRegimeView (US confluence, KR asymmetry)', () => {
+describe('macro regime view-model · buildRegimeView (US confluence, KR asymmetry)', () => {
 	it('is undefined-safe when macro.regime is absent (renders nothing)', () => {
-		// regime 키를 명시적으로 제거(라이브 artifact 의 regime 배포 여부와 무결합) — undefined-safety 만 검증.
+		// regime 키를 명시적으로 제거(라이브 artifact 의 regime 배포 여부와 무결합) · undefined-safety 만 검증.
 		const view = buildRegimeView({ ...macro, regime: undefined }, null);
 		expect(view.available).toBe(false);
 		expect(view.us).toBeNull();
@@ -653,8 +653,8 @@ describe('macro regime view-model — buildRegimeView (US confluence, KR asymmet
 		const lei = view.us!.tiles.find((t) => t.model === 'lei')!;
 		const ham = view.us!.tiles.find((t) => t.model === 'hamilton')!;
 		expect(probit.gaugeValue).toBe(0.18); // 원확률(probability), probabilityRounded(0.2) 아님
-		expect(sahm.gaugeValue).toBeNull(); // %p 트리거 — 0~1 확률 아님
-		expect(lei.gaugeValue).toBeNull(); // 방향 신호 — 0~1 확률 아님
+		expect(sahm.gaugeValue).toBeNull(); // %p 트리거 · 0~1 확률 아님
+		expect(lei.gaugeValue).toBeNull(); // 방향 신호 · 0~1 확률 아님
 		expect(ham.gaugeValue).toBeNull(); // EM 미수렴(contractionProb null) → suppressed
 	});
 	it('LEI tile carries overlapNote (partial correlation, not fully independent)', () => {
@@ -694,7 +694,7 @@ describe('macro regime view-model — buildRegimeView (US confluence, KR asymmet
 		expect(band.available).toBe(true);
 		expect(band.points.length).toBeLessThanOrEqual(24);
 		expect(band.points.length).toBe(11);
-		// 절대 침체확률(0~1) 보존 — per-window 재정규화 금지(진폭 정직).
+		// 절대 침체확률(0~1) 보존 · per-window 재정규화 금지(진폭 정직).
 		expect(Math.max(...band.points)).toBeLessThanOrEqual(1);
 		expect(Math.min(...band.points)).toBeGreaterThanOrEqual(0);
 		expect(band.points[0]).toBeCloseTo(0.05, 5); // 원 확률 그대로(정규화 시 0 이 됨)
@@ -703,7 +703,7 @@ describe('macro regime view-model — buildRegimeView (US confluence, KR asymmet
 		expect(band.caption.en).toContain('retrospective');
 	});
 	it('quadrant direction shows growth/inflation labels + assets, raw signals never exposed', () => {
-		// 합성 us.quadrant 부착(라이브 macro.us.quadrant 존재 여부 무관 — fixture 명시).
+		// 합성 us.quadrant 부착(라이브 macro.us.quadrant 존재 여부 무관 · fixture 명시).
 		const m = macroWithRegime();
 		m.us = { ...m.us, quadrant: { quadrant: 'reflation', quadrantLabel: '리플레이션', growth: 'rising', inflation: 'rising', growthSignal: 662678, inflationSignal: 26.71, assetImplication: { commodity: 'overweight', bond: 'underweight' }, description: '' } } as unknown as MacroSide;
 		const view = buildRegimeView(m, { channel: 'revenue', edge: { sign: 'positive' } });
@@ -737,7 +737,7 @@ describe('macro regime view-model — buildRegimeView (US confluence, KR asymmet
 		expect(view.kr!.agreement.kr).toContain('단일 모델');
 		expect(view.kr!.agreement.en).toContain('single model');
 	});
-	it('snapshot.regime is wired — present when deployed, undefined-safe when absent', () => {
+	it('snapshot.regime is wired · present when deployed, undefined-safe when absent', () => {
 		// regime 제거 → available:false (artifact 배포 여부와 무결합).
 		const noRegime = buildMarketMacroLensSnapshot({ macro: { ...macro, regime: undefined }, macroLatest: macroLatest(), sectorTailwinds: sectorTailwinds() });
 		expect(noRegime.regime).toBeDefined();
@@ -750,7 +750,7 @@ describe('macro regime view-model — buildRegimeView (US confluence, KR asymmet
 });
 
 describe('buildMacroEvidenceCards', () => {
-	// 합성 시리즈 — 빌더는 순수(now 미사용)라 endYm 을 데이터 최신월에서 유도. d 오름차순.
+	// 합성 시리즈 · 빌더는 순수(now 미사용)라 endYm 을 데이터 최신월에서 유도. d 오름차순.
 	const monthly = (startYm: string, count: number): { d: string; v: number }[] =>
 		Array.from({ length: count }, (_, i) => {
 			let y = Number(startYm.slice(0, 4));
@@ -760,7 +760,7 @@ describe('buildMacroEvidenceCards', () => {
 			return { d: `${y}${String(m).padStart(2, '0')}15`, v: i };
 		});
 
-	it('정렬 — 다중 cadence 입력이 동일 길이·오름차순 periods 산출', () => {
+	it('정렬 · 다중 cadence 입력이 동일 길이·오름차순 periods 산출', () => {
 		const out = buildMacroEvidenceCards('US', {
 			INDPRO: monthly('202001', 60),
 			PAYEMS: [{ d: '20230101', v: 1 }, { d: '20240601', v: 2 }] // 희소
@@ -771,7 +771,7 @@ describe('buildMacroEvidenceCards', () => {
 		expect(out.periods[47] > out.periods[0]).toBe(true);
 	});
 
-	it('결측 시리즈 제외 — 데이터 있는 시리즈만 카드에 포함', () => {
+	it('결측 시리즈 제외 · 데이터 있는 시리즈만 카드에 포함', () => {
 		const out = buildMacroEvidenceCards('US', { INDPRO: monthly('202201', 30) }, 'kr');
 		const growth = out.cards.find((c) => c.key === 'usGrowth');
 		expect(growth).toBeDefined();
@@ -785,7 +785,7 @@ describe('buildMacroEvidenceCards', () => {
 		expect(out.periods).toEqual([]);
 	});
 
-	it('dual-axis spec 보존 — 우축 series 의 axis=r 유지·좌축 미지정', () => {
+	it('dual-axis spec 보존 · 우축 series 의 axis=r 유지·좌축 미지정', () => {
 		const out = buildMacroEvidenceCards('US', {
 			T10Y2Y: monthly('202201', 30),
 			BAMLH0A0HYM2: monthly('202201', 30),

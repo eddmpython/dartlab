@@ -1,8 +1,8 @@
-// 결정론 답변 조립기 (Tier 0) — 질문 의도 분류 + financeSignals/search/constraint 출력을 인용 달린
+// 결정론 답변 조립기 (Tier 0) · 질문 의도 분류 + financeSignals/search/constraint 출력을 인용 달린
 // 한국어 완성문으로 조립한다. 0모델·0다운로드·환각 0(숫자는 결정론 SSOT 직접). 공시뷰어 질문의 다수
 // (숫자·추세·유무·규모·조건)는 여기서 즉답된다. LLM(Tier 1)은 "왜?/종합/본문해석" 소수에만 opt-in.
 //
-// 재사용: searchIndex.parseConstraint, diff.FinanceSignal. 새 데이터구조 0 — 기존 출력 필드만 소비.
+// 재사용: searchIndex.parseConstraint, diff.FinanceSignal. 새 데이터구조 0 · 기존 출력 필드만 소비.
 
 import { parseConstraint, type SearchHit } from './searchIndex';
 import type { FinanceSignal } from './diff';
@@ -25,7 +25,7 @@ function won(v: number): string {
 	return `${sign}${a.toLocaleString()}`;
 }
 
-// bounded 의도 패턴 — 끝없이 늘면 덕지덕지 신호(searchIndex.parseConstraint 규율과 동일).
+// bounded 의도 패턴 · 끝없이 늘면 덕지덕지 신호(searchIndex.parseConstraint 규율과 동일).
 const FLIP_RE = /전환|흑자|적자|돌아|마이너스|손실로/;
 const TREND_RE = /추세|증감|늘|줄|변화|증가|감소|성장|하락|개선|악화|나아|어때|어떻/;
 const MAG_RE = /규모|얼마|금액|총액|몇\s*(억|조|원)|수준|크기|많/;
@@ -33,8 +33,8 @@ const EXIST_RE = /있나|있는지|여부|존재|했나|하나요|있습니까|�
 const WHY_RE = /왜|이유|원인|때문|배경|어째/;
 const SYNTH_RE = /종합|전반|평가|요약|설명|정리|건전|어떤\s*회사|투자/;
 
-// 재무비율 — 분자/분모 계정을 financeSignals 에서 찾아 동일기간 나눠 산출(생성 아닌 계산). label = 표준화 계정명.
-// 매출은 업종별 드리프트(제조 '매출액' vs 금융/IT '영업수익')라 분모 후보 2개. bounded — 끝없이 늘면 덕지덕지.
+// 재무비율 · 분자/분모 계정을 financeSignals 에서 찾아 동일기간 나눠 산출(생성 아닌 계산). label = 표준화 계정명.
+// 매출은 업종별 드리프트(제조 '매출액' vs 금융/IT '영업수익')라 분모 후보 2개. bounded · 끝없이 늘면 덕지덕지.
 interface RatioDef {
 	key: string;
 	numer: string[];
@@ -52,7 +52,7 @@ const RATIO_RE = new RegExp(RATIO_TRIGGERS.map((r) => r.key).join('|'));
 
 export function classifyIntent(q: string, hasConstraint: boolean): Intent {
 	if (hasConstraint) return 'constraint';
-	if (RATIO_RE.test(q.replace(/\s/g, ''))) return 'ratio'; // 비율 먼저 — "영업이익률"이 trend(영업이익)로 새지 않게
+	if (RATIO_RE.test(q.replace(/\s/g, ''))) return 'ratio'; // 비율 먼저 · "영업이익률"이 trend(영업이익)로 새지 않게
 	if (FLIP_RE.test(q)) return 'flip';
 	if (TREND_RE.test(q)) return 'trend';
 	if (MAG_RE.test(q)) return 'magnitude';
@@ -62,7 +62,7 @@ export function classifyIntent(q: string, hasConstraint: boolean): Intent {
 
 // 질문어 → 재무계정 매칭 (label 부분일치 + 경량 동의어). 더 구체(긴) 라벨 우선.
 // 단축어 → 정식 계정명 후보(질문에 단축어 있으면 probe 에 정식명들 덧붙여 매칭). "부채"⊂"부채총계" 부분어 +
-// 업종별 변형(제조=매출액, IT/금융=영업수익) 해소. searchIndex.SYNONYMS 와 같은 큐레이션 — bounded.
+// 업종별 변형(제조=매출액, IT/금융=영업수익) 해소. searchIndex.SYNONYMS 와 같은 큐레이션 · bounded.
 const ACCT_SYN: Record<string, string[]> = {
 	판관비: ['판매비와관리비'],
 	순이익: ['당기순이익'],
@@ -72,7 +72,7 @@ const ACCT_SYN: Record<string, string[]> = {
 	매출: ['매출액', '영업수익'],
 	수익: ['영업수익', '매출액'],
 	돈: ['매출액', '영업수익', '당기순이익'], // "돈을 어떻게 버나" 의미형 → 매출/순이익 결정론 매칭(신설 사전 0)
-	// '사업'은 동의어 제외 — "주요 사업 *내용*이 뭐야"(서술형)를 매출 숫자로 확신-오정렬시킴. 돈 버는 질문은
+	// '사업'은 동의어 제외 · "주요 사업 *내용*이 뭐야"(서술형)를 매출 숫자로 확신-오정렬시킴. 돈 버는 질문은
 	// '돈'·'수익'·'실적'이 이미 커버하고, 서술형 사업질문은 lookup(근거 섹션 점프)이 정답(확신오정렬 > 정렬실패).
 	실적: ['영업이익', '매출액', '당기순이익'], // "실적 어때"
 	부채: ['부채총계'],
@@ -82,7 +82,7 @@ const ACCT_SYN: Record<string, string[]> = {
 	이익잉여: ['이익잉여금'],
 	배당: ['배당금지급'] // CF 실지급액. 이익잉여금(누적)은 배당액 아님 → 오해 방지로 제외(없으면 thin)
 };
-// 라벨 변형 — 전체("수익(매출액)")·괄호제거("수익")·괄호내용("매출액", 단 3자+ 만 = 손실/이익/손익 2자 노이즈 배제).
+// 라벨 변형 · 전체("수익(매출액)")·괄호제거("수익")·괄호내용("매출액", 단 3자+ 만 = 손실/이익/손익 2자 노이즈 배제).
 function labelVariants(label: string): string[] {
 	const noSp = label.replace(/\s/g, '');
 	const stripped = noSp.replace(/\([^)]*\)/g, '');
@@ -103,7 +103,7 @@ function matchSignal(q: string, signals: FinanceSignal[]): FinanceSignal | null 
 		const full = s.label.replace(/\s/g, '').length;
 		for (const v of labelVariants(s.label)) {
 			if (!probe.includes(v)) continue;
-			// 더 긴 매칭 우선; 동률이면 *전체 라벨이 짧은* 본 계정 우선 — "당기순이익" > "(비지배주주지분)당기순이익"
+			// 더 긴 매칭 우선; 동률이면 *전체 라벨이 짧은* 본 계정 우선 · "당기순이익" > "(비지배주주지분)당기순이익"
 			// (괄호제거 변형이 동률을 만들어 하위 라인이 잘못 선택되던 버그 차단).
 			if (v.length > bestLen || (v.length === bestLen && full < bestFull)) {
 				best = s;
@@ -119,7 +119,7 @@ function dirWord(d: FinanceSignal['direction']): string {
 	return d === 'up' ? '증가' : d === 'down' ? '감소' : d === 'flat' ? '거의 변화 없음' : '등락 혼조';
 }
 
-// 주제격 조사 — 마지막 글자 받침 유무로 은/는 선택("부채총계는"·"영업이익은"). 한글 아니면 는.
+// 주제격 조사 · 마지막 글자 받침 유무로 은/는 선택("부채총계는"·"영업이익은"). 한글 아니면 는.
 function topicJosa(word: string): string {
 	const ch = word.trim().slice(-1);
 	const code = ch.charCodeAt(0);
@@ -127,7 +127,7 @@ function topicJosa(word: string): string {
 	return (code - 0xac00) % 28 !== 0 ? '은' : '는';
 }
 
-// 표준 계정명(공백제거) 정확 일치로 신호 1개 선택 — 비율 분자/분모용. labels 순서 = 우선순위(매출액 우선 등).
+// 표준 계정명(공백제거) 정확 일치로 신호 1개 선택 · 비율 분자/분모용. labels 순서 = 우선순위(매출액 우선 등).
 function findSig(signals: FinanceSignal[], labels: string[]): FinanceSignal | null {
 	for (const lab of labels) {
 		const s = signals.find((x) => x.label.replace(/\s/g, '') === lab);
@@ -135,7 +135,7 @@ function findSig(signals: FinanceSignal[], labels: string[]): FinanceSignal | nu
 	}
 	return null;
 }
-// 분자/분모 동일 기간 정렬 후 비율(%) 시계열(최신좌측). 생성 아닌 계산 — financeSignals.points 직접.
+// 분자/분모 동일 기간 정렬 후 비율(%) 시계열(최신좌측). 생성 아닌 계산 · financeSignals.points 직접.
 function ratioSeries(numer: FinanceSignal, denom: FinanceSignal): { period: string; value: number }[] {
 	const dmap = new Map(denom.points.map((p) => [p.period, p.value]));
 	const out: { period: string; value: number }[] = [];
@@ -150,18 +150,18 @@ export function composeAnswer(q: string, hits: SearchHit[], addedTerms: string[]
 	const { c } = parseConstraint(q);
 	const intent = classifyIntent(q, !!c);
 	const suggestLlm = WHY_RE.test(q) || SYNTH_RE.test(q);
-	// lookup 도 계정 매칭 시도 — "무슨 사업으로 돈을 버나"(추세어 없음)처럼 추세/규모 키워드는 없지만 계정어(돈→매출)가
+	// lookup 도 계정 매칭 시도 · "무슨 사업으로 돈을 버나"(추세어 없음)처럼 추세/규모 키워드는 없지만 계정어(돈→매출)가
 	// 있으면 thin lookup 대신 수치 답(sig 분기의 magnitude fallthrough). constraint/existence 만 제외.
 	const sig = intent === 'constraint' || intent === 'existence' ? null : matchSignal(q, signals);
 
-	// 조건(금액) — search 가 이미 amount 필터+내림차순
+	// 조건(금액) · search 가 이미 amount 필터+내림차순
 	if (intent === 'constraint') {
 		if (!hits.length) return { intent, answer: `'${q}' 조건을 만족하는 항목을 색인에서 찾지 못했습니다.`, citedSignal: null, suggestLlm: false };
 		const top = hits.slice(0, 4).map((h) => h.block || h.section).filter(Boolean).join(', ');
 		return { intent, answer: `조건을 만족하는 항목 ${hits.length}건을 찾았습니다: ${top}${hits.length > 4 ? ' 등' : ''}. 근거를 클릭해 금액을 확인하세요.`, citedSignal: null, suggestLlm: false };
 	}
 
-	// 재무비율 — 분자/분모 계정을 동일기간 나눠 계산(생성0). 분모 부재(금융업 등)면 raw 절대값 폴백(거짓정밀 금지).
+	// 재무비율 · 분자/분모 계정을 동일기간 나눠 계산(생성0). 분모 부재(금융업 등)면 raw 절대값 폴백(거짓정밀 금지).
 	if (intent === 'ratio') {
 		const nq = q.replace(/\s/g, '');
 		const def = RATIO_TRIGGERS.find((r) => nq.includes(r.key));
@@ -194,7 +194,7 @@ export function composeAnswer(q: string, hits: SearchHit[], addedTerms: string[]
 		}
 	}
 
-	// 재무 정렬숫자에서 직접 답(가장 정확) — TREND/FLIP/MAGNITUDE
+	// 재무 정렬숫자에서 직접 답(가장 정확) · TREND/FLIP/MAGNITUDE
 	if (sig) {
 		if (intent === 'flip') {
 			const j = topicJosa(sig.label);
@@ -214,7 +214,7 @@ export function composeAnswer(q: string, hits: SearchHit[], addedTerms: string[]
 				suggestLlm
 			};
 		}
-		// magnitude — 특정 연도 조회("2023년 영업이익") 우선, 없으면 최신값 + YoY 라벨.
+		// magnitude · 특정 연도 조회("2023년 영업이익") 우선, 없으면 최신값 + YoY 라벨.
 		const yr = q.match(/(20\d{2})/);
 		if (yr) {
 			const pt = sig.points.find((p) => p.period.startsWith(yr[1]));
@@ -236,7 +236,7 @@ export function composeAnswer(q: string, hits: SearchHit[], addedTerms: string[]
 		if (hits.length) {
 			const t = hits[0];
 			const syn = addedTerms.length ? `, 동의어 ${addedTerms.slice(0, 3).join('·')} 포함` : '';
-			return { intent, answer: `관련 공시가 있습니다 — ${[t.section, t.block].filter(Boolean).join(' > ')}: ${t.snippet}… (관련 ${hits.length}건${syn}).`, citedSignal: null, suggestLlm };
+			return { intent, answer: `관련 공시가 있습니다 · ${[t.section, t.block].filter(Boolean).join(' > ')}: ${t.snippet}… (관련 ${hits.length}건${syn}).`, citedSignal: null, suggestLlm };
 		}
 		const syn = addedTerms.length ? ` (동의어 ${addedTerms.slice(0, 3).join('·')}까지 검색)` : '';
 		return { intent, answer: `색인에서 '${q}' 관련 항목은 확인되지 않았습니다${syn}. 표 본문은 라벨만 색인되므로 부재를 단정하지 않습니다.`, citedSignal: null, suggestLlm: false };

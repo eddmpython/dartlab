@@ -2,9 +2,9 @@
 	interface Props {
 		// ecosystem.json 노드 (심층 비재무 필드: 지배구조·인력·CF·감사·이익질·유동성·주주환원·업종위치)
 		node: any;
-		// companies/{code}.json (creditMetrics 등 — 없으면 null)
+		// companies/{code}.json (creditMetrics 등 · 없으면 null)
 		detail: any | null;
-		// 산업 분위(상위 %) — 부모 $derived 전달(node.industryRank/PeerCount 파생)
+		// 산업 분위(상위 %) · 부모 $derived 전달(node.industryRank/PeerCount 파생)
 		peerPct: number | null;
 	}
 	let { node, detail, peerPct }: Props = $props();

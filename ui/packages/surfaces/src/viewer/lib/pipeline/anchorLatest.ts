@@ -1,4 +1,4 @@
-// anchorLatest — scope era-안정 + keyed 라벨 최신통일 (narrative 보존). Python read.anchorLatest 1:1.
+// anchorLatest · scope era-안정 + keyed 라벨 최신통일 (narrative 보존). Python read.anchorLatest 1:1.
 
 import { SEP } from '../keys';
 import type { LeafRow } from '../types';
@@ -9,7 +9,7 @@ export function anchorLatest(rows: LeafRow[]): void {
 	for (const r of rows) (r as LeafRow & { scope: string }).scope = scopeOf(r.xbrlClass);
 	const anchorKey = (r: LeafRow) => r.disclosureKey ?? r.xbrlClass;
 
-	// scope era-안정 — anchorKey & xbrlClass 보유 행의 최신 period scope 를 같은 anchorKey 전 era 에 전파.
+	// scope era-안정 · anchorKey & xbrlClass 보유 행의 최신 period scope 를 같은 anchorKey 전 era 에 전파.
 	const scopeByAnchor = new Map<string, { period: string; scope: string }>();
 	for (const r of rows) {
 		const ak = anchorKey(r);
@@ -26,7 +26,7 @@ export function anchorLatest(rows: LeafRow[]): void {
 		}
 	}
 
-	// keyed 라벨 통일 — (anchorKey, scope) 최신 period 라벨. 같은 period 면 (첨부) 먼저 → canonical 채택.
+	// keyed 라벨 통일 · (anchorKey, scope) 최신 period 라벨. 같은 period 면 (첨부) 먼저 → canonical 채택.
 	type Label = { chapter: string | null; sectionLeaf: string | null; blockLeaf: string | null };
 	const labelByGroup = new Map<string, { period: string; attach: boolean; label: Label }>();
 	for (const r of rows) {

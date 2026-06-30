@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 후원·기여 센터 — 감사-우선 단일 스크롤(좁은 편지형). 진입 = 헤더 SNS ♥ 버튼.
+	// 후원·기여 센터 · 감사-우선 단일 스크롤(좁은 편지형). 진입 = 헤더 SNS ♥ 버튼.
 	// 순서: 소개 → 터미널을 만들게 해준 분들(Threads) → 후원해주신 분들 → 함께하는 법(의견·이슈 + 후원 박스).
 	// 후원금 캡션·계좌/스폰서는 셸 주입(TerminalBrandLinks). 미주입 항목은 줄 숨김(가짜 금지).
 	import type { Lang } from '../lib/types';
@@ -25,11 +25,11 @@
 		contrib: { sym: '♣', cls: 'supRoleContrib', kr: '기여', en: 'contributor' }
 	};
 	const curated = $derived(links.people ?? []); // 영감·후원 큐레이션(SSOT)
-	const donors = $derived(links.donors ?? []); // 후원해주신 분 — 비면 섹션 숨김
+	const donors = $derived(links.donors ?? []); // 후원해주신 분 · 비면 섹션 숨김
 
 	const monogram = (h: string) => (h.replace(/^@/, '')[0] ?? '?').toUpperCase();
 
-	// GitHub 기여자 자동 — 다이얼로그 첫 오픈 시 1회(localStorage 6h 캐시). 봇·소유자 제외.
+	// GitHub 기여자 자동 · 다이얼로그 첫 오픈 시 1회(localStorage 6h 캐시). 봇·소유자 제외.
 	let ghPeople = $state<SupportPerson[]>([]);
 	let ghFetched = false;
 	$effect(() => {
@@ -54,7 +54,7 @@
 			copied = true;
 			if (copyTimer) clearTimeout(copyTimer);
 			copyTimer = setTimeout(() => (copied = false), 1500);
-		} catch { /* 클립보드 권한 거부 등 — 무시 */ }
+		} catch { /* 클립보드 권한 거부 등 · 무시 */ }
 	}
 
 	function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose(); }
@@ -161,9 +161,9 @@
 {/if}
 
 <style>
-	/* 자기완결 모달 크롬 — terminal.css 없는 셸(landing 헤더 등)에서도 동작하도록 베이스 포함(var 폴백 필수).
+	/* 자기완결 모달 크롬 · terminal.css 없는 셸(landing 헤더 등)에서도 동작하도록 베이스 포함(var 폴백 필수).
 	   터미널 안에선 global terminal.css 와 값 동일(중복 무해). */
-	/* 호스트(라이트/다크) 테마와 무관하게 모달은 자기 다크 팔레트로 고정 — 랜딩 라이트모드가 --dl-bg-raised·
+	/* 호스트(라이트/다크) 테마와 무관하게 모달은 자기 다크 팔레트로 고정 · 랜딩 라이트모드가 --dl-bg-raised·
 	   --dl-ink 만 라이트로 덮고 --dl-bg(칩·후원박스)는 다크 폴백이라 흰배경+검은박스로 깨지던 것 차단. 값은
 	   terminal.css 다크와 동일(터미널 안에선 재선언=무해). amber=accent(브랜드색 추종). */
 	.scrimWrap { position: fixed; inset: 0; z-index: 200; background: rgba(4, 7, 13, 0.72); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; padding: 28px; --dl-bg: #0a0e16; --dl-bg-raised: #0e141f; --dl-ink: #e2e8f0; --dl-ink-mute: #8a93a3; --dl-ink-dim: #5b6473; --dl-line: #1b2130; --dl-line-strong: #2a3142; --amber: var(--dl-accent); }
@@ -173,9 +173,9 @@
 	.scrClose { margin-left: auto; background: none; border: none; color: var(--dl-ink-dim, #5b6473); font-size: 14px; line-height: 1; cursor: pointer; padding: 2px 6px; border-radius: 3px; }
 	.scrClose:hover { color: var(--dl-ink, #e2e8f0); background: rgba(255, 255, 255, 0.06); }
 
-	/* 좁은 편지형 — 폭만 560 으로 좁힘(.scrModal 뒤 선언 → 우선) */
+	/* 좁은 편지형 · 폭만 560 으로 좁힘(.scrModal 뒤 선언 → 우선) */
 	.supModal { width: min(560px, 94vw); }
-	/* flex:1+min-height:0 — 88vh 모달 안에서 본문이 줄어들어 내부 스크롤되게(헤더 고정). 없으면 본문이
+	/* flex:1+min-height:0 · 88vh 모달 안에서 본문이 줄어들어 내부 스크롤되게(헤더 고정). 없으면 본문이
 	   콘텐츠 높이로 안 줄고 모달 overflow:hidden 에 잘려 헤더까지 밀리며 클립되던 것 교정. */
 	.supBody { flex: 1 1 auto; min-height: 0; padding: 16px 18px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
 

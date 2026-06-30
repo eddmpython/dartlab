@@ -1,5 +1,5 @@
 /**
- * SQL Notebook LocalStorage CRUD — 사용자 다중 노트북 저장.
+ * SQL Notebook LocalStorage CRUD · 사용자 다중 노트북 저장.
  */
 
 export interface NotebookCell {

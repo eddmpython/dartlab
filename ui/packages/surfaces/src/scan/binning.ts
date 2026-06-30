@@ -1,8 +1,8 @@
 /**
- * Scan Studio 분포 패널 binning — 30 bin 히스토그램.
+ * Scan Studio 분포 패널 binning · 30 bin 히스토그램.
  *
  * mergedNodes (ecosystem + parquet 합본) 의 한 컬럼을 30 bin 으로 압축.
- * frontend bin (JS) 만 사용 — 2,664 회사 × 단일 컬럼 ≈ 2ms.
+ * frontend bin (JS) 만 사용 · 2,664 회사 × 단일 컬럼 ≈ 2ms.
  *
  * log 스케일 옵션: 시총·매출처럼 long-tail 분포에 권장 (MetricDef.distribution).
  */
@@ -11,7 +11,7 @@ export interface Bin {
 	x0: number;
 	x1: number;
 	count: number;
-	values: number[]; // bin 안의 raw 값 (sample, outlier 표시용 — 최대 10)
+	values: number[]; // bin 안의 raw 값 (sample, outlier 표시용 · 최대 10)
 }
 
 export interface DistributionData {
@@ -34,7 +34,7 @@ function quantile(sorted: number[], p: number): number {
 	return sorted[idx];
 }
 
-/** 한 컬럼의 분포 — bins + 통계량 (mean/median/p10/p90). */
+/** 한 컬럼의 분포 · bins + 통계량 (mean/median/p10/p90). */
 export function binNumeric(
 	values: (number | null | undefined)[],
 	scale: 'linear' | 'log' = 'linear'
@@ -69,7 +69,7 @@ export function binNumeric(
 
 	const bins: Bin[] = [];
 	if (max <= min) {
-		// 모든 값 동일 — 단일 bin
+		// 모든 값 동일 · 단일 bin
 		bins.push({ x0: min, x1: max, count: valid.length, values: valid.slice(0, 10) });
 		return { bins, min, max, count: valid.length, scale, mean, median, p10, p90 };
 	}

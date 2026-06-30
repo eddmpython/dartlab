@@ -1,4 +1,4 @@
-// 백테스트 프리셋 레지스트리 — 신호 함수 정의. 변경 이유: 전략 추가/수정(엔진 체결 의미와 분리, 03 §0.5.3).
+// 백테스트 프리셋 레지스트리 · 신호 함수 정의. 변경 이유: 전략 추가/수정(엔진 체결 의미와 분리, 03 §0.5.3).
 // 프리셋은 교육·탐색용 (추천 아님, 03 §9.1·§14). 각 preset 은 param schema·warmup 보유.
 import { sma, rsi, macd, bollinger } from '../indicators';
 import type { BtPresetDef } from './types';
@@ -107,7 +107,7 @@ export const BT_PRESETS: BtPresetDef[] = [
 			{ name: 'exit', kr: '청산M', en: 'exit', min: 5, max: 50, step: 5, def: 10 }
 		],
 		warmup: (p) => Math.max(p.entry, p.exit) + 1,
-		// 종가 기준 채널 — 당일 종가가 직전 N일(당일 제외) 최고 종가 초과 시 진입 (look-ahead 0)
+		// 종가 기준 채널 · 당일 종가가 직전 N일(당일 제외) 최고 종가 초과 시 진입 (look-ahead 0)
 		signal: (c, p) => {
 			const t = new Int8Array(c.length);
 			let state = 0;

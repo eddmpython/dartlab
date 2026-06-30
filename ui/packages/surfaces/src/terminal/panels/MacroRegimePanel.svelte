@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 거시 국면 — 좌측 최상단 글랜스. 한국 | 미국 세로 2분할로 두 시장 국면을 동시에.
+	// 거시 국면 · 좌측 최상단 글랜스. 한국 | 미국 세로 2분할로 두 시장 국면을 동시에.
 	// 각 칸: 국면·확신도·성장/물가 방향·사분면·자산함의(빈 공간 없이 채움). 깊이·차트는 다이얼로그.
 	import type { Lang } from '../lib/types';
 	import type { RegimeQuadrantView, RegimeMarketView } from '../lib/macroLens';

@@ -1,9 +1,9 @@
 <script lang="ts">
 	/**
-	 * 데이터 탐색 모달 — screen builder + raw 테이블/노트북.
+	 * 데이터 탐색 모달 · screen builder + raw 테이블/노트북.
 	 *
 	 *   탭 1~8 = TableView (raw 테이블)
-	 *   탭 9   = SQL Notebook (SqlNotebook — CodeMirror SQL 셀, duckdb 직질의)
+	 *   탭 9   = SQL Notebook (SqlNotebook · CodeMirror SQL 셀, duckdb 직질의)
 	 *
 	 * lazy load: parquet source 는 첫 진입 시 SELECT * LIMIT 1000.
 	 * 메모리 source (ecosystem/prices/valuation/changes) 는 부모가 props 로 넘김.

@@ -1,5 +1,5 @@
 /**
- * SQL Notebook URL share — `?nb=base64(cells)` encode/decode.
+ * SQL Notebook URL share · `?nb=base64(cells)` encode/decode.
  */
 
 import type { NotebookCell } from './notebookStore';

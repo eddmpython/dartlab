@@ -1,4 +1,4 @@
-// panel 셀 렌더 순수 헬퍼 — ui/web `analysis.$code.viewer.tsx` 1:1 포팅 (프레임워크 무관 TS).
+// panel 셀 렌더 순수 헬퍼 · ui/web `analysis.$code.viewer.tsx` 1:1 포팅 (프레임워크 무관 TS).
 // panel 셀 = raw DART XML (무손실, 대문자 정부 태그). 브라우저 렌더 위해 표준 html 로 정규화 + sanitize.
 
 // ── DART 대문자 XML → 표준 html 태그 맵 ──
@@ -18,7 +18,7 @@ const DART_TAG_MAP: Record<string, string> = {
 	BR: 'br'
 };
 
-// DART USERMARK(폰트 size/볼드/색) → 구조 class. 원본은 절제목·소항목 헤딩을 USERMARK="F-NN B" 로 인코딩 —
+// DART USERMARK(폰트 size/볼드/색) → 구조 class. 원본은 절제목·소항목 헤딩을 USERMARK="F-NN B" 로 인코딩 ·
 // F-14↑ = 소항목 헤딩(가/나/다, block+볼드+위 줄바꿈), 그 외 B = 인라인 볼드. 본문(F-10)·색상(0X)·폰트패밀리
 // (F-GL/F-BT)는 손대지 않음(다크테마 가독성). standalone "B" 만 볼드로(F-BT/F-GL 의 B 오탐 차단).
 export function userMarkClass(um: string): string {
@@ -42,7 +42,7 @@ export function normalizeDartXml(value: string): string {
 			if (!slash && attrs) {
 				const am = attrs.match(/\b(colspan|rowspan|align)\s*=\s*("[^"]*"|'[^']*'|\S+)/gi);
 				if (am) keep = ' ' + am.join(' ');
-				// 헤딩 구조 — TITLE(절 제목) + SPAN USERMARK(size/볼드). 원본 문서구조를 적당히 반영.
+				// 헤딩 구조 · TITLE(절 제목) + SPAN USERMARK(size/볼드). 원본 문서구조를 적당히 반영.
 				let cls = '';
 				if (upper === 'TITLE') cls = 'dm-title';
 				else if (upper === 'SPAN') {
@@ -56,7 +56,7 @@ export function normalizeDartXml(value: string): string {
 	);
 }
 
-// DART 본문은 untrusted — DOMPurify 로 script/style/handler/iframe 제거 (CellContent.svelte 에서 적용).
+// DART 본문은 untrusted · DOMPurify 로 script/style/handler/iframe 제거 (CellContent.svelte 에서 적용).
 export const SANITIZE_CONFIG = {
 	ALLOWED_TAGS: ['table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', 'br', 'span', 'div', 'b', 'i', 'u', 'strong', 'em', 'sub', 'sup'],
 	ALLOWED_ATTR: ['colspan', 'rowspan', 'class', 'align']

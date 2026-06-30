@@ -1,4 +1,4 @@
-// hfMedia(회사 hero 이미지 serve SSOT) 클라이언트 — companies/index.json 1회 로드 + hero URL 해석.
+// hfMedia(회사 hero 이미지 serve SSOT) 클라이언트 · companies/index.json 1회 로드 + hero URL 해석.
 // 매니페스트/이미지 미게시(P0 운영자 publish 전)면 graceful null → 카드가 SVG/그라데이션 폴백(빈 화면 금지).
 import { originUrl } from '@dartlab/ui-runtime/data/origins/registry';
 import type { MediaIndex, MediaCompany } from './model';

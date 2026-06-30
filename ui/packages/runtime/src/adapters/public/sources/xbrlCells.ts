@@ -1,6 +1,6 @@
-// panel contentRaw 의 정부 XBRL <TE ACODE ACONTEXT> 셀 직독 — 엔진 providers/dart/panel/build/cell.py 동형(런타임 포팅).
+// panel contentRaw 의 정부 XBRL <TE ACODE ACONTEXT> 셀 직독 · 엔진 providers/dart/panel/build/cell.py 동형(런타임 포팅).
 // panel 본문엔 정부가 태깅한 셀이 무손실 보존돼 있어, 런타임이 이미 받는 contentRaw 에서 직접 읽는다(별도 bake 0).
-// 표 *레이아웃* 정규식 파싱이 아니라 정부 *택소노미 태그*(ACODE=개념·ACONTEXT=기간/축) 직독 — 노이즈·이름변경·총계에 강건.
+// 표 *레이아웃* 정규식 파싱이 아니라 정부 *택소노미 태그*(ACODE=개념·ACONTEXT=기간/축) 직독 · 노이즈·이름변경·총계에 강건.
 // 결정론 문자열 분해(lxml/엔진 무관, 순수). 비용=acode, 부문=axisPath 멤버. ACONTEXT 양식 = 2025-03 사업보고서+.
 
 export interface XbrlCell {

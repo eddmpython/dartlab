@@ -11,7 +11,7 @@
 		buildWebsiteJsonLd
 	} from '$lib/seo';
 
-	const pageTitle = 'About — DartLab';
+	const pageTitle = 'About · DartLab';
 	const pageDesc =
 		'DartLab 은 한국 DART 와 미국 SEC EDGAR 공시를 구조화해 분석 가능한 데이터로 만드는 오픈소스 프로젝트다.';
 	const pageUrl = buildAbsoluteUrl('about');
@@ -60,7 +60,7 @@
 				<li>위 둘을 코드로 바로 재사용 가능하게 만드는 표준화 레이어.</li>
 			</ul>
 			<p>
-				핵심 아이디어 — "공시를 어떻게 읽는가" 와 "공시를 데이터로 어떻게 쓰는가" 를 한 프로젝트
+				핵심 아이디어 · "공시를 어떻게 읽는가" 와 "공시를 데이터로 어떻게 쓰는가" 를 한 프로젝트
 				안에서 잇는다.
 			</p>
 		</section>
@@ -89,7 +89,7 @@
 				<li>SEC EDGAR 공시 원문과 XBRL 데이터.</li>
 			</ul>
 			<p>
-				핵심 원칙은 <strong>source-aware structure</strong> — 숫자는 더 강한 source 를 우선하고,
+				핵심 원칙은 <strong>source-aware structure</strong> · 숫자는 더 강한 source 를 우선하고,
 				서술 정보는 원본 맥락 보존을 우선한다.
 			</p>
 		</section>
@@ -113,10 +113,10 @@
 			<h2>이 사이트를 어떻게 읽나</h2>
 			<p>처음 방문이라면 다음 순서가 가장 효율적이다.</p>
 			<ol>
-				<li><a href="{base}/skills">Skill Catalog</a> — 절차·엔진 능력·운영 규칙 진입.</li>
-				<li><a href="{base}/skills/start.installUv">Installation</a> — 설치와 첫 실행.</li>
-				<li><a href="{base}/skills/start.quickStart">Quick Start</a> — 8 단계 walkthrough.</li>
-				<li><a href="{base}/blog">Blog</a> — 공시 해석 프레임워크와 사례.</li>
+				<li><a href="{base}/skills">Skill Catalog</a> · 절차·엔진 능력·운영 규칙 진입.</li>
+				<li><a href="{base}/skills/start.installUv">Installation</a> · 설치와 첫 실행.</li>
+				<li><a href="{base}/skills/start.quickStart">Quick Start</a> · 8 단계 walkthrough.</li>
+				<li><a href="{base}/blog">Blog</a> · 공시 해석 프레임워크와 사례.</li>
 			</ol>
 			<p>
 				Skills 가 사용 절차·AI workflow·런타임 제약의 일차 카탈로그. 블로그는 실제 공시를 어떻게

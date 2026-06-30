@@ -69,7 +69,7 @@ export interface LiveCompanyReportFact {
 	value: string;
 	detail: string;
 	source: string;
-	// 도시에 스파인 — 출처 공시 접수번호(↗원문) + 결산 기준일(as-of). contracts 와 동기(additive optional).
+	// 도시에 스파인 · 출처 공시 접수번호(↗원문) + 결산 기준일(as-of). contracts 와 동기(additive optional).
 	rceptNo?: string | null;
 	stlmDt?: string | null;
 }
@@ -205,7 +205,7 @@ export async function loadLiveCompany(stockCode: string): Promise<LiveCompanyBun
 			preferLocal: true
 		}),
 		loadJson<any>('map/meta.json', { fetchFn: fetch, preferLocal: true }),
-		// 시세 스냅샷만 HF-first — 일배치 HF 갱신을 정적 사본이 가리는 동결 방지 (terminal routeLoad 동일)
+		// 시세 스냅샷만 HF-first · 일배치 HF 갱신을 정적 사본이 가리는 동결 방지 (terminal routeLoad 동일)
 		loadJson<PriceSnapshotFile>('map/prices-snapshot.json', { fetchFn: fetch })
 	]);
 	const valuation = await withTimeout(valuationPromise, 1200, null);
@@ -268,17 +268,17 @@ export async function loadLiveCompanyChanges(stockCode: string, limit = 8): Prom
 	return await loadChangesForCompany(stockCode, limit);
 }
 
-// 정기보고서 팩트 — hyparquet 직독(reportSource 와 동일 빠른 경로, 60분 read 캐시).
+// 정기보고서 팩트 · hyparquet 직독(reportSource 와 동일 빠른 경로, 60분 read 캐시).
 // ⛔ DuckDB-WASM 경유 폐기: 단일 워커 직렬 큐에 6개 전시장 parquet 등록+스캔이 묶여 첫 표시가
 //   수십 초로 멈추던 회귀(인력·주주환원 패널은 이미 hyparquet 이관, 본 패널만 잔류했었다).
-//   origin='hfRange' 는 표기용 — URL 은 hfRangeUrl 이 자동 해석(HF_RESOLVE). core 미주입이라 모듈 1회 생성.
+//   origin='hfRange' 는 표기용 · URL 은 hfRangeUrl 이 자동 해석(HF_RESOLVE). core 미주입이라 모듈 1회 생성.
 const REPORT_FACTS_TTL = 3_600_000;
 let _reportFactsCore: DataCore | null = null;
 function reportFactsCore(): DataCore {
 	return (_reportFactsCore ??= createDataCore());
 }
 
-// 4자리 달력연도만 인식 — auditOpinion 등은 year 가 '제58기 1분기' 기수 라벨이라
+// 4자리 달력연도만 인식 · auditOpinion 등은 year 가 '제58기 1분기' 기수 라벨이라
 // 단순 숫자추출(→581)은 오정렬. 기수만 있으면 -1 로 후순위(DuckDB NULLS LAST 대체).
 const factYear = (r: any): number => {
 	const m = String(r?.year ?? '').match(/(?:19|20)\d{2}/);

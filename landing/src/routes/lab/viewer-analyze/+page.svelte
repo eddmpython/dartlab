@@ -53,7 +53,7 @@
 	let financeSigs = $state<FinanceSignal[]>([]);
 	let financeRan = $state(false);
 
-	// WebLLM 내레이션 (실험) — 결정론 신호를 한국어로 다듬기만(숫자 불변). WebGPU 없으면 비활성.
+	// WebLLM 내레이션 (실험) · 결정론 신호를 한국어로 다듬기만(숫자 불변). WebGPU 없으면 비활성.
 	let webgpuOk = $state(false);
 	let llmText = $state<string | null>(null);
 	let llmLoading = $state(false);
@@ -106,7 +106,7 @@
 	});
 	const sectionLabel = $derived(activeSectionKey ? activeSectionKey.split('␟').slice(1).join(' · ') : '');
 
-	// ★화면 내 분석 — viewport(현재 섹션×보이는 기간) 위 결정론 facet 분석. activeSection/window/query 바뀌면 자동 재계산.
+	// ★화면 내 분석 · viewport(현재 섹션×보이는 기간) 위 결정론 facet 분석. activeSection/window/query 바뀌면 자동 재계산.
 	const viewport = $derived.by(() =>
 		activeSectionKey && rows.length ? analyzeViewport(rows, windowPeriods, { sectionKey: activeSectionKey, query: query.trim() || undefined }) : null
 	);
@@ -185,14 +185,14 @@
 		return '큰변동';
 	}
 
-	// 결정론 한국어 내레이션 (model 0 — 숫자 절대 안 틀림). 신호를 문장으로 조립할 뿐 새 사실 생성 X.
+	// 결정론 한국어 내레이션 (model 0 · 숫자 절대 안 틀림). 신호를 문장으로 조립할 뿐 새 사실 생성 X.
 	const narration = $derived.by(() => {
 		const va = viewport;
 		if (!va) return '';
 		const parts: string[] = [];
 		parts.push(`이 화면(${va.periods.length}기간·${va.rowsVisible}행): 금액 ${va.amountCells}곳·비율 ${va.percentCells}곳·연도 ${va.yearCells}곳.`);
 		if (va.biggestAmount > 0) parts.push(`최대 금액 ${won(va.biggestAmount)}.`);
-		if (va.constraint && va.constraintHits.length) parts.push(`입력 조건 만족 ${va.constraintHits.length}곳 — BM25 검색이 구조적으로 못 찾는 정량 조건을 산술로 포착.`);
+		if (va.constraint && va.constraintHits.length) parts.push(`입력 조건 만족 ${va.constraintHits.length}곳 · BM25 검색이 구조적으로 못 찾는 정량 조건을 산술로 포착.`);
 		const flips = financeSigs.filter((s) => s.kind === 'flip');
 		const streaks = financeSigs.filter((s) => s.kind === 'streak');
 		const movers = financeSigs.filter((s) => s.kind === 'mover');
@@ -374,9 +374,9 @@
 						{#if llmErr}
 							<div class="note err">{llmErr}</div>
 						{/if}
-						<div class="note">실험: Qwen3-0.6B 온디바이스(~360MB 1회 다운로드, 외부 전송 0). 위 결정론 신호를 문장만 다듬음 — 숫자·사실의 진실 원본은 결정론.</div>
+						<div class="note">실험: Qwen3-0.6B 온디바이스(~360MB 1회 다운로드, 외부 전송 0). 위 결정론 신호를 문장만 다듬음 · 숫자·사실의 진실 원본은 결정론.</div>
 					{:else}
-						<div class="note">이 브라우저는 WebGPU 미지원 — 결정론 내레이션만 제공(온디바이스 LLM 다듬기 비활성).</div>
+						<div class="note">이 브라우저는 WebGPU 미지원 · 결정론 내레이션만 제공(온디바이스 LLM 다듬기 비활성).</div>
 					{/if}
 				</div>
 			</aside>

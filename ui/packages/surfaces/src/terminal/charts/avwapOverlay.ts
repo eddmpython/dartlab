@@ -1,7 +1,7 @@
-// 앵커드 VWAP — 앵커 시점부터 현재까지 (h+l+c)/3 거래량가중 평균 누적선 (기관 평단 추정).
+// 앵커드 VWAP · 앵커 시점부터 현재까지 (h+l+c)/3 거래량가중 평균 누적선 (기관 평단 추정).
 // registerOverlay 기반: 매 paint 재계산이라 앵커 드래그·봉주기 전환·수정주가 토글 자동 추종.
-// 측정룰러(MEASURE)도 본 파일 — 2점 구간 Δ가격·%·봉수·일수 즉석 표기, 영속 제외(선택 해제 시 제거).
-// 포지션 R:R 도구(positionTool)도 본 파일 — 3점(진입→손절→목표) 리스크/리워드 박스 (TV Long/Short Position).
+// 측정룰러(MEASURE)도 본 파일 · 2점 구간 Δ가격·%·봉수·일수 즉석 표기, 영속 제외(선택 해제 시 제거).
+// 포지션 R:R 도구(positionTool)도 본 파일 · 3점(진입→손절→목표) 리스크/리워드 박스 (TV Long/Short Position).
 import { viewCandles, viewIndexOf } from './seriesBus';
 
 export const AVWAP_NAME = 'anchoredVWAP';
@@ -25,7 +25,7 @@ export function registerWorkOverlays(kc: { registerOverlay: (t: unknown) => void
 			if (!cs.length) return [];
 			let i0 = viewIndexOf(pt.timestamp);
 			if (i0 == null) {
-				// 집계 전환 직후 등 timestamp 불일치 — 앵커 이후 첫 봉으로 근접 스냅
+				// 집계 전환 직후 등 timestamp 불일치 · 앵커 이후 첫 봉으로 근접 스냅
 				i0 = cs.findIndex((k) => Date.UTC(+k.t.slice(0, 4), +k.t.slice(4, 6) - 1, +k.t.slice(6, 8)) >= pt.timestamp);
 				if (i0 < 0) return [];
 			}
@@ -79,7 +79,7 @@ export function registerWorkOverlays(kc: { registerOverlay: (t: unknown) => void
 		}
 	});
 
-	// 텍스트 주석 — 1점 + extendData 문자열. 입력·수정은 PriceChart 인라인 에디터(onDrawEnd/더블클릭 → 팝오버).
+	// 텍스트 주석 · 1점 + extendData 문자열. 입력·수정은 PriceChart 인라인 에디터(onDrawEnd/더블클릭 → 팝오버).
 	kc.registerOverlay({
 		name: TEXT_NAME,
 		totalStep: 2, // 1점이면 완성
@@ -100,11 +100,11 @@ export function registerWorkOverlays(kc: { registerOverlay: (t: unknown) => void
 		}
 	});
 
-	// 롱/숏 포지션 R:R — 진입~손절 = 위험(빨강 반투명), 진입~목표 = 보상(초록 반투명).
+	// 롱/숏 포지션 R:R · 진입~손절 = 위험(빨강 반투명), 진입~목표 = 보상(초록 반투명).
 	// 라벨 = 롱/숏 + R:R 1:x + 진입/손절/목표 가격. 3점 영속(drawStore 자동 탑승)·드래그 편집 추종.
 	kc.registerOverlay({
 		name: POSITION_NAME,
-		totalStep: 4, // 3점 — 진입·손절·목표
+		totalStep: 4, // 3점 · 진입·손절·목표
 		needDefaultPointFigure: true,
 		createPointFigures: ({ overlay, coordinates }: any) => {
 			if (!coordinates || coordinates.length < 2) return [];
@@ -136,7 +136,7 @@ export function registerWorkOverlays(kc: { registerOverlay: (t: unknown) => void
 					attrs: {
 						x: x0 + w / 2,
 						y: Math.min(yE, yS, yT) - 5,
-						text: `${long ? '롱' : '숏'} R:R 1:${rr != null ? rr.toFixed(1) : '—'} · 진입 ${fmt(entry)} · 손절 ${fmt(stop)} · 목표 ${fmt(target)}`,
+						text: `${long ? '롱' : '숏'} R:R 1:${rr != null ? rr.toFixed(1) : '·'} · 진입 ${fmt(entry)} · 손절 ${fmt(stop)} · 목표 ${fmt(target)}`,
 						align: 'center',
 						baseline: 'bottom'
 					},

@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 타임라인 리본 — 전체 기간 축(최신좌측) 칩 + 현재 윈도우 강조 + 좌(최신)/우(과거) 이동.
+	// 타임라인 리본 · 전체 기간 축(최신좌측) 칩 + 현재 윈도우 강조 + 좌(최신)/우(과거) 이동.
 	// ui/web TimelineRibbon 이식, scan 디자인(다크 #050811 + 오렌지 단일 액센트).
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 

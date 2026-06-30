@@ -1,9 +1,9 @@
 <script lang="ts">
 	/**
-	 * ⌘K 프리셋 모달 — 7 안정 프리셋 + 회사명·종목코드·산업 검색.
+	 * ⌘K 프리셋 모달 · 7 안정 프리셋 + 회사명·종목코드·산업 검색.
 	 *
 	 * 활성 트리거: ⌘K (Mac) · Ctrl+K (Win) · `/` 키 · 헤더 버튼.
-	 * 위→아래 list 단일 흐름 — 카테고리 색칩 + 한국어 자연어.
+	 * 위→아래 list 단일 흐름 · 카테고리 색칩 + 한국어 자연어.
 	 */
 	import { onMount } from 'svelte';
 	import { PRESETS, PRESET_CATEGORIES } from './presets';

@@ -69,7 +69,7 @@
 									{#each entry.limitations ?? [] as l}<li class="lim">{l}</li>{/each}
 								</ul>
 							{:else}
-								<span class="dim">—</span>
+								<span class="dim">·</span>
 							{/if}
 						</td>
 					</tr>

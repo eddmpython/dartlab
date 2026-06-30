@@ -1,10 +1,10 @@
 // 공공데이터포털 금융위원회_주식시세정보(공공누리/KOGL, 비상업+출처표시 재배포 가능) 기반 주가 캐시.
 // KRX OpenAPI(제3자 제공 금지)와 달리 dartlab(비상업)은 출처표시 조건으로 공개 재배포·표시 합법.
 //
-// 파이프라인 (프리빌드 아님 — 런타임 온디맨드):
-//   1. 읽기 — HF `gov/prices/company/{code}.parquet` (공개·토큰 0, origin.ts HF_RESOLVE 경유).
-//   2. 미스 & 로컬 dev — Vite dev 미들웨어 `/__gov` 가 data.go.kr 라이브 호출 → 정규화 → HF 업로드 → 반환.
-//   3. 프로덕션 — 캐시 읽기 전용(미스 시 호출측이 KRX 폴백). 운영자가 로컬에서 열며 공유 HF 캐시를 채운다.
+// 파이프라인 (프리빌드 아님 · 런타임 온디맨드):
+//   1. 읽기 · HF `gov/prices/company/{code}.parquet` (공개·토큰 0, origin.ts HF_RESOLVE 경유).
+//   2. 미스 & 로컬 dev · Vite dev 미들웨어 `/__gov` 가 data.go.kr 라이브 호출 → 정규화 → HF 업로드 → 반환.
+//   3. 프로덕션 · 캐시 읽기 전용(미스 시 호출측이 KRX 폴백). 운영자가 로컬에서 열며 공유 HF 캐시를 채운다.
 // 출처표시 의무(공공누리): gov 데이터 표시 시 contracts 의 GOV_ATTRIBUTION 노출.
 import type { Candle } from '@dartlab/ui-contracts';
 import { moduleFallbackCore, type DataCore } from '../../../data/fetch/request';
@@ -21,11 +21,11 @@ export interface GovCandleFile {
 
 // publicPricePort 는 ui/web 레거시·로컬 어댑터 양쪽이 호출하므로 core 미주입 경로 전용 모듈 폴백 코어를 lazy
 // 생성한다(financeSource.financeRowsCore 동형). 어댑터는 자신의 createDataCore() 를 주입한다.
-// 옛 cache·inflight·recentPromise Map(결과/in-flight 수기 관리)은 폐기 — 코어가 read 레벨에서 캐시·dedup.
+// 옛 cache·inflight·recentPromise Map(결과/in-flight 수기 관리)은 폐기 · 코어가 read 레벨에서 캐시·dedup.
 const govCore = moduleFallbackCore();
 
 // HF 캐시 = 회사별 parquet (gov/prices/company 동일 schema). 필요한 OHLCV+등락률 컬럼만 projection.
-// fluctuationRate = 기준가 대비 등락률 — 수정주가(adjustCandles) 체이닝 입력.
+// fluctuationRate = 기준가 대비 등락률 · 수정주가(adjustCandles) 체이닝 입력.
 const GOV_PARQUET_COLUMNS = ['date', 'open', 'high', 'low', 'close', 'volume', 'fluctuationRate', 'tradedValue'];
 interface GovRow extends Record<string, unknown> {
 	date?: string | null;
@@ -52,13 +52,13 @@ function pick(j: unknown): Candle[] | null {
 
 async function readHf(core: DataCore, code: string): Promise<Candle[] | null> {
 	try {
-		// 회사별 파일은 작다(~100KB) — HEAD probe 없이 GET 1 회 통파일 (핫패스 RTT 최소화). 코어가 read 캐시·dedup.
+		// 회사별 파일은 작다(~100KB) · HEAD probe 없이 GET 1 회 통파일 (핫패스 RTT 최소화). 코어가 read 캐시·dedup.
 		const rows = await core.requestParquetWholeFile<GovRow>({
 			origin: 'hf',
 			path: `gov/prices/company/${code}.parquet`,
 			columns: GOV_PARQUET_COLUMNS,
 			cacheKey: `gov.prices.company:${code}`,
-			cache: { scope: 'memory', ttlMs: 20 * 60_000, maxEntries: 128 } // 주가 신선도 — 짧은 TTL(20분), 회사 파일 주간 파생
+			cache: { scope: 'memory', ttlMs: 20 * 60_000, maxEntries: 128 } // 주가 신선도 · 짧은 TTL(20분), 회사 파일 주간 파생
 		});
 		if (!rows) return null;
 		const candles = rows.map(rowToCandle).filter((x): x is Candle => x != null);
@@ -71,7 +71,7 @@ async function readHf(core: DataCore, code: string): Promise<Candle[] | null> {
 async function fillViaDev(core: DataCore, code: string): Promise<Candle[] | null> {
 	if (!originConfigured('govDev')) return null; // 프로덕션: 미들웨어 없음 → 읽기 전용
 	try {
-		// 작업대 경유(코어 request) — origin 'govDev' = Vite /__gov 미들웨어. dev fill 무캐시(즉시 HF 반영),
+		// 작업대 경유(코어 request) · origin 'govDev' = Vite /__gov 미들웨어. dev fill 무캐시(즉시 HF 반영),
 		// 코어가 동일 코드 동시호출 dedup(중복 data.go.kr 호출 차단). 옛 raw fetch 폐기(data-wiring SSOT).
 		const j = await core.request<unknown>({
 			origin: 'govDev',
@@ -85,7 +85,7 @@ async function fillViaDev(core: DataCore, code: string): Promise<Candle[] | null
 	}
 }
 
-// 최근 30거래일 전종목 슬림 1파일 — 회사 파일(주간 파생)과 병합하는 신선 tail.
+// 최근 30거래일 전종목 슬림 1파일 · 회사 파일(주간 파생)과 병합하는 신선 tail.
 // 전 종목이 한 파일을 공유 → 첫 다운로드 후 회사 전환 시 tail 비용 0(코어 read 캐시 공유).
 const RECENT_COLUMNS = ['stockCode', 'date', 'open', 'high', 'low', 'close', 'volume', 'fluctuationRate', 'tradedValue'];
 
@@ -99,7 +99,7 @@ export function loadGovRecent(core?: DataCore): Promise<Record<string, Candle[]>
 				path: 'gov/prices/recent.parquet',
 				columns: RECENT_COLUMNS,
 				cacheKey: 'gov.prices.recent',
-				cache: { scope: 'memory', ttlMs: 10 * 60_000, maxEntries: 2 } // 최근 거래일 슬림 파일 — 신선도 우선 10분 TTL
+				cache: { scope: 'memory', ttlMs: 10 * 60_000, maxEntries: 2 } // 최근 거래일 슬림 파일 · 신선도 우선 10분 TTL
 			});
 			if (!rows) return null;
 			const map: Record<string, Candle[]> = {};

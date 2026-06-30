@@ -1,4 +1,4 @@
-// 블로그 회사글 재무 — 데이터 SSOT(dart/finance/{code}.parquet)를 빌드타임(prerender·Node)에 직독해
+// 블로그 회사글 재무 · 데이터 SSOT(dart/finance/{code}.parquet)를 빌드타임(prerender·Node)에 직독해
 // 정적 HTML 에 굽는다. 터미널과 동일한 표준화(@dartlab/ui-runtime accounts.ts SSOT) → 숫자 일치·화석화 불가.
 // 옛 blog/_scripts/sync_financials.py(커밋 시점 정적 bake) 대체. KR 6자리 코드만(EDGAR=Phase 2).
 //

@@ -5,21 +5,21 @@
 		{
 			label: 'panel',
 			code: 'samsung.panel("businessOverview")',
-			desc: '공시 panel — 토픽과 블록을 기간 축으로 수평화',
+			desc: '공시 panel · 토픽과 블록을 기간 축으로 수평화',
 			headers: ['chapter', 'topic', 'blockType', '2024', '2023', '2022'],
 			rows: [
 				['I', 'companyOverview', 'text', '1969년 설립…', '1969년 설립…', '1969년 설립…'],
 				['II', 'businessOverview', 'text', '반도체·디스플레이…', '반도체·디스플레이…', '반도체·디스플레이…'],
 				['II', 'businessOverview', 'table', '매출 비중 (5×3)', '매출 비중 (5×3)', '매출 비중 (5×3)'],
-				['III', 'riskManagement', 'text', '환율 위험 노출…', '환율 위험 노출…', '—'],
+				['III', 'riskManagement', 'text', '환율 위험 노출…', '환율 위험 노출…', '·'],
 				['V', 'auditOpinion', 'text', '적정', '적정', '적정']
 			],
-			footer: 'shape: (329, 106) — panel 토픽 329 × 기간 106'
+			footer: 'shape: (329, 106) · panel 토픽 329 × 기간 106'
 		},
 		{
 			label: 'show("BS")',
 			code: 'samsung.show("BS")',
-			desc: '재무상태표 — finance 네임스페이스의 정규화된 숫자',
+			desc: '재무상태표 · finance 네임스페이스의 정규화된 숫자',
 			headers: ['account', '2024Q4', '2024Q3', '2024Q2', '2024Q1', '2023Q4'],
 			rows: [
 				['total_assets', '476.1T', '472.8T', '465.2T', '455.9T', '455.3T'],
@@ -28,12 +28,12 @@
 				['current_assets', '230.5T', '226.3T', '222.8T', '218.7T', '218.2T'],
 				['retained_earnings', '315.4T', '311.8T', '308.2T', '302.6T', '302.0T']
 			],
-			footer: '소스: finance (공식) — 분기 별도 정규화'
+			footer: '소스: finance (공식) · 분기 별도 정규화'
 		},
 		{
 			label: 'show("ratios")',
 			code: 'samsung.show("ratios")',
-			desc: '재무비율 시계열 — 수익성·안정성·가치평가',
+			desc: '재무비율 시계열 · 수익성·안정성·가치평가',
 			headers: ['ratio', '2024Q4', '2024Q3', '2024Q2', '2024Q1', '2023Q4'],
 			rows: [
 				['roe', '10.2%', '9.8%', '7.5%', '2.1%', '1.6%'],
@@ -42,26 +42,26 @@
 				['current_ratio', '258.6%', '252.1%', '248.3%', '246.8%', '254.3%'],
 				['per', '18.7', '20.3', '25.1', '42.8', '46.2']
 			],
-			footer: 'TTM 기준 — 최근 4 분기 누계'
+			footer: 'TTM 기준 · 최근 4 분기 누계'
 		},
 		{
 			label: 'show("text")',
 			code: 'samsung.show("businessOverview")',
-			desc: '서술형 토픽 — heading/body 텍스트 + 내포 표',
+			desc: '서술형 토픽 · heading/body 텍스트 + 내포 표',
 			headers: ['blockType', 'nodeType', '2024', '2023'],
 			rows: [
 				['text', 'heading', '1. 산업의 특성', '1. 산업의 특성'],
 				['text', 'body', '반도체 산업은 기술 집약적…', '반도체 산업은 기술 집약적…'],
-				['table', '—', 'DataFrame(5×3)', 'DataFrame(5×3)'],
+				['table', '·', 'DataFrame(5×3)', 'DataFrame(5×3)'],
 				['text', 'heading', '2. 시장 현황', '2. 시장 현황'],
 				['text', 'body', 'AI 반도체 수요 급증…', '메모리 수요 회복 지연…']
 			],
-			footer: 'shape: (12, 5) — text + table 블록, 기간 컬럼'
+			footer: 'shape: (12, 5) · text + table 블록, 기간 컬럼'
 		},
 		{
 			label: 'trace',
 			code: 'samsung.trace("BS")',
-			desc: '소스 추적 — 어느 네임스페이스에서 왔는지',
+			desc: '소스 추적 · 어느 네임스페이스에서 왔는지',
 			headers: ['field', 'value'],
 			rows: [
 				['primarySource', 'finance'],
@@ -75,16 +75,16 @@
 		{
 			label: 'diff',
 			code: 'samsung.diff("businessOverview")',
-			desc: '텍스트 변화 감지 — 기간 간 서술 비교',
+			desc: '텍스트 변화 감지 · 기간 간 서술 비교',
 			headers: ['segment', 'period', 'changeType', 'detail'],
 			rows: [
 				['매출 비중', '2024→2023', 'modified', '반도체 비중 31%→35%'],
 				['주요 제품', '2024→2023', 'added', 'HBM 단락 추가'],
 				['시장 전망', '2024→2023', 'modified', 'AI 칩 수요 전망 수정'],
-				['경쟁 환경', '2024→2023', 'unchanged', '—'],
+				['경쟁 환경', '2024→2023', 'unchanged', '·'],
 				['신규 사업', '2024→2023', 'added', '온디바이스 AI 설명 추가']
 			],
-			footer: '세그먼트 단위 비교 — added · modified · removed · unchanged'
+			footer: '세그먼트 단위 비교 · added · modified · removed · unchanged'
 		}
 	];
 
@@ -100,7 +100,7 @@
 	<div class="max-w-6xl mx-auto">
 		<div class="text-center mb-12">
 			<span class="text-xs font-semibold uppercase tracking-widest text-dl-primary mb-3 block">실제 데이터</span>
-			<h2 class="text-3xl md:text-4xl font-bold text-dl-text mb-3">삼성전자 — 실제 출력</h2>
+			<h2 class="text-3xl md:text-4xl font-bold text-dl-text mb-3">삼성전자 · 실제 출력</h2>
 			<p class="text-dl-text-muted text-lg">Company("005930") 한 줄로 받아보는 결과</p>
 		</div>
 

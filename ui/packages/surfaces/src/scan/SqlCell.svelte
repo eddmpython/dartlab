@@ -1,6 +1,6 @@
 <script lang="ts">
 	/**
-	 * 단일 SQL 셀 — motherduck-style.
+	 * 단일 SQL 셀 · motherduck-style.
 	 *
 	 *   - CodeMirror 6 SQL editor (lang-sql + autocomplete + one-dark)
 	 *   - ▶ Run 버튼 + ⌘Enter 단축키 (Shift+Enter = 실행 + 다음 셀)
@@ -80,14 +80,14 @@
 			resultColumns = result.length > 0 ? Object.keys(result[0]) : [];
 			elapsed = performance.now() - t0;
 
-			// 2. TEMP VIEW 등록 — 다른 셀이 cell_${id} 로 reference
+			// 2. TEMP VIEW 등록 · 다른 셀이 cell_${id} 로 reference
 			//    user SQL 자체가 SELECT 면 그대로 wrap, CREATE TEMP VIEW 면 skip.
 			if (/^\s*SELECT|WITH/i.test(code)) {
 				try {
 					await db.query(`CREATE OR REPLACE TEMP VIEW cell_${id} AS ${code}`);
 					cellViewRegistered = true;
 				} catch {
-					// VIEW 생성 실패 — 결과는 이미 받음. 다른 셀이 못 reference 만 함.
+					// VIEW 생성 실패 · 결과는 이미 받음. 다른 셀이 못 reference 만 함.
 				}
 			}
 		} catch (err) {

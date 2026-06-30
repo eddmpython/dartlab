@@ -103,7 +103,7 @@ function scanRow(row: DeepSearchRow, weights: Map<string, number>, needles: stri
 			snippet: Number.isFinite(textMatch.bestAt) ? snippetAround(text, textMatch.bestAt) : text.slice(0, 96),
 			matchKind: 'table',
 			matchedTerms: rawMatch.matchedTerms.slice(0, 8),
-			stale: false // deepSearch 는 특정 period 셀의 직접 매칭 — 행-최신 비교 없음(해당 셀 자체가 근거)
+			stale: false // deepSearch 는 특정 period 셀의 직접 매칭 · 행-최신 비교 없음(해당 셀 자체가 근거)
 		};
 		if (!best || hit.score > best.score) best = hit;
 	}

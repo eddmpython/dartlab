@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { niceTicks, yearTicks, nearestIdx, monthlyReturns } from './chartFrame';
 
-describe('niceTicks — 1/2/5 배수 y 그리드', () => {
+describe('niceTicks · 1/2/5 배수 y 그리드', () => {
 	it('수익률 범위를 보기좋은 눈금으로 스냅', () => {
 		const t = niceTicks(85, 130, 5);
 		expect(t.length).toBeGreaterThanOrEqual(3);
@@ -22,7 +22,7 @@ describe('niceTicks — 1/2/5 배수 y 그리드', () => {
 	});
 });
 
-describe('yearTicks — 연 경계 x 그리드', () => {
+describe('yearTicks · 연 경계 x 그리드', () => {
 	it('YYYY 바뀌는 인덱스만 추출', () => {
 		const ts = ['20200102', '20200601', '20210104', '20210701', '20220103'];
 		const yt = yearTicks(ts);
@@ -37,7 +37,7 @@ describe('yearTicks — 연 경계 x 그리드', () => {
 	});
 });
 
-describe('nearestIdx — 크로스헤어 역산', () => {
+describe('nearestIdx · 크로스헤어 역산', () => {
 	it('플롯 양끝/중앙 매핑 + 범위 clamp', () => {
 		// padL=40, plotW=200, n=11 → 인덱스 0..10
 		expect(nearestIdx(40, 40, 200, 11)).toBe(0);
@@ -48,7 +48,7 @@ describe('nearestIdx — 크로스헤어 역산', () => {
 	});
 });
 
-describe('monthlyReturns — 월말 equity 비율 행렬', () => {
+describe('monthlyReturns · 월말 equity 비율 행렬', () => {
 	it('월말 수익률·연간 누적·결측 null', () => {
 		// 2개월: 1월 100→110(+10%), 2월 110→121(+10%) → YTD ≈ +21%
 		const eq = [100, 105, 110, 115, 121];

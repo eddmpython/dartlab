@@ -66,7 +66,7 @@
 				<span
 					class="hidden sm:inline-flex items-center gap-1.5 ml-2 px-3 h-6 rounded-md text-[11px] font-semibold tracking-tight whitespace-nowrap"
 					style="background: rgba(var(--dl-accent-rgb), .12); color: var(--dl-accent); border: 1px solid rgba(var(--dl-accent-rgb), .4);"
-					title="이 페이지는 개발 중 — 데이터·기능 검증 중, 정확성 보장 안 함"
+					title="이 페이지는 개발 중 · 데이터·기능 검증 중, 정확성 보장 안 함"
 				>
 					<Construction class="w-3 h-3" />
 					<span>개발중 · 데이터 검증 중, 정확성 보장 안 함</span>

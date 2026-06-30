@@ -4,7 +4,7 @@ export const prerender = true;
 export const ssr = false;
 
 /**
- * Scan Studio — 횡단조회 판떼기.
+ * Scan Studio · 횡단조회 판떼기.
  *
  * 첫 paint 는 ecosystem.json 만으로 가능하게 단순화. industryStats / quarters /
  * movers 는 후속 PR 이 필요로 할 때 fetch.

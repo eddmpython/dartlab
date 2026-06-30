@@ -1,4 +1,4 @@
-// Compare target normalization — browser-side equivalent of Python compare input guards.
+// Compare target normalization · browser-side equivalent of Python compare input guards.
 
 import { marketForCode, type Market } from '../dartUrl';
 

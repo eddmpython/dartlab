@@ -1,4 +1,4 @@
-// landing 공개 셸의 runtime 컴포지션 루트 — createPublicRuntime 인스턴스는 여기 1곳에서만 만든다.
+// landing 공개 셸의 runtime 컴포지션 루트 · createPublicRuntime 인스턴스는 여기 1곳에서만 만든다.
 // 공유 엔진(duckdb-wasm) 의존 메서드(reportFacts·changes)는 landing 잔류 모듈을 주입해 의존 방향을
 // 보존한다 (packages → landing 역참조 금지). 컴포넌트는 setDartLabRuntime/useDartLabRuntime 컨텍스트로,
 // 라우트 load·scan 글루 같은 비컴포넌트 셸 코드만 getPublicRuntime() 을 직접 부른다.
@@ -27,8 +27,8 @@ function publicViewerPort(): ViewerPort {
 	};
 }
 
-// table-export — public ExportPort.generate 가 wrap 할 브라우저 워크북 빌더. ViewerStudio 직접 경로와 *동일*
-// loadPanelBundle(LRU 캐시 — 재다운로드 0) + exportInputToWorkbookBytes(deriveWorkbookInput+buildWorkbook) 라 산출 동형.
+// table-export · public ExportPort.generate 가 wrap 할 브라우저 워크북 빌더. ViewerStudio 직접 경로와 *동일*
+// loadPanelBundle(LRU 캐시 · 재다운로드 0) + exportInputToWorkbookBytes(deriveWorkbookInput+buildWorkbook) 라 산출 동형.
 const exportShared: PublicExportShared = {
 	async buildWorkbookBytes(input: ExportInput) {
 		const bundle = await loadPanelBundle(input.code);

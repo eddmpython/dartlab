@@ -1,7 +1,7 @@
 <script lang="ts">
-	// 한 슬라이드 — 인스타 4:5 에디토리얼. 회사 hero 사진을 배경으로 깔고(전 슬라이드), 헤드라인은
+	// 한 슬라이드 · 인스타 4:5 에디토리얼. 회사 hero 사진을 배경으로 깔고(전 슬라이드), 헤드라인은
 	// AccentText(`[[구절]]`=rose-red). 색감·레이아웃은 기존 SNS 캐러셀(colors.ts/PhotoFrame/InsightCard)
-	// 재현 — 새로 짓지 않음. 차트는 $lib/report/render 순수 SVG(klinecharts·백테스트 0), finChart 만 MiniFinChart.
+	// 재현 · 새로 짓지 않음. 차트는 $lib/report/render 순수 SVG(klinecharts·백테스트 0), finChart 만 MiniFinChart.
 	import type { DartLabRuntime, FinCard } from '@dartlab/ui-contracts';
 	import { MiniFinChart, CARD_GUIDE } from '@dartlab/ui-surfaces/terminal';
 	import { pickKrwUnit, fmtKrw } from '@dartlab/ui-format/krw';
@@ -11,7 +11,7 @@
 
 	let { card, rt }: { card: CarouselCard; rt: DartLabRuntime } = $props();
 
-	// 큰 숫자 천단위 콤마(editorialStat bigNumber) — 정수부만 그룹화, 소수·부호·기존 콤마 보존(멱등).
+	// 큰 숫자 천단위 콤마(editorialStat bigNumber) · 정수부만 그룹화, 소수·부호·기존 콤마 보존(멱등).
 	function fmtBig(s: string): string {
 		const m = String(s).match(/^(-?)([\d,]+)(\.\d+)?(.*)$/);
 		if (!m) return String(s);
@@ -19,7 +19,7 @@
 		return m[1] + intPart + (m[3] ?? '') + (m[4] ?? '');
 	}
 
-	// editorialStat 길이 인지 — 긴 bigNumber/unit 이 거대폰트로 줄깨짐·충돌하던 버그 가드.
+	// editorialStat 길이 인지 · 긴 bigNumber/unit 이 거대폰트로 줄깨짐·충돌하던 버그 가드.
 	const eStatGeo = $derived.by(() => {
 		if (card.kind !== 'editorialStat') return { big: '', numCq: 18, unitCq: 6 };
 		const big = fmtBig(card.bigNumber ?? '');
@@ -32,7 +32,7 @@
 		};
 	});
 
-	// 자유텍스트(line/sub/context) 천단위 콤마 — 4자리+ 순수 정수만(소수·기존콤마 보존, 4자리 연도 19xx/20xx 제외).
+	// 자유텍스트(line/sub/context) 천단위 콤마 · 4자리+ 순수 정수만(소수·기존콤마 보존, 4자리 연도 19xx/20xx 제외).
 	function commaText(s: string): string {
 		return String(s).replace(/\d[\d,]*\.?\d*/g, (m) => {
 			if (m.includes(',') || m.includes('.') || m.length < 4) return m;
@@ -41,7 +41,7 @@
 		});
 	}
 
-	// 선그래프 — y축 값(min/max)·호버 좌표용 기하. valueFmt='won' → 조/억, 아니면 원값(천단위 콤마).
+	// 선그래프 · y축 값(min/max)·호버 좌표용 기하. valueFmt='won' → 조/억, 아니면 원값(천단위 콤마).
 	const lineStat = $derived.by(() => {
 		if (card.kind !== 'line') return null;
 		const v = card.series.filter((n): n is number => Number.isFinite(n));
@@ -53,9 +53,9 @@
 		const n = card.series.length;
 		return { min, max, n, step: 100 / (n - 1), yOf: (x: number) => 30 - ((x - min) / range) * 30 };
 	});
-	/** 값 포맷 — won 이면 조/억(wonLabel), 아니면 천단위 콤마. */
+	/** 값 포맷 · won 이면 조/억(wonLabel), 아니면 천단위 콤마. */
 	function fmtNum(v: number, won: boolean): string {
-		if (!Number.isFinite(v)) return '–';
+		if (!Number.isFinite(v)) return '-';
 		return won ? wonLabel(v) : v.toLocaleString('ko-KR');
 	}
 	let hoverIdx = $state(-1);
@@ -65,14 +65,14 @@
 		hoverIdx = lineStat ? Math.round(pct * (lineStat.n - 1)) : -1;
 	}
 
-	// 사진 모드 — 편집 카드=monochrome+강한 하단 그라데이션(기존 SNS editorial), 텍스트=풀, 차트=dim.
+	// 사진 모드 · 편집 카드=monochrome+강한 하단 그라데이션(기존 SNS editorial), 텍스트=풀, 차트=dim.
 	const CHART_KINDS = new Set(['kpis', 'line', 'bars', 'share', 'composition', 'table', 'finChart']);
 	const EDITORIAL_KINDS = new Set(['editorial', 'editorialBeat', 'editorialStat']);
 	const photoMode = $derived(
 		card.kind === 'cover'
 			? 'cover'
 			: card.kind === 'editorialBeat' && card.visual
-				? 'dim' // 하이브리드(큰문장+시각) — 차트처럼 dim 처리해 증거가 읽히게
+				? 'dim' // 하이브리드(큰문장+시각) · 차트처럼 dim 처리해 증거가 읽히게
 				: EDITORIAL_KINDS.has(card.kind)
 					? 'editorial'
 					: CHART_KINDS.has(card.kind)
@@ -90,13 +90,13 @@
 		rt.finance
 			.bundle(code)
 			.then((b) => {
-				// 분기 우선(밀도 — 데이터 작업대 기본 결) → 없으면 연간 폴백. FY 표지화 금지.
+				// 분기 우선(밀도 · 데이터 작업대 기본 결) → 없으면 연간 폴백. FY 표지화 금지.
 				const view = b?.views?.quarter ?? b?.views?.annual ?? Object.values(b?.views ?? {}).find(Boolean);
-				// 관점 카드(cardKey) 선택 — 터미널 재무 그리드의 그 카드. 없으면 첫 카드.
+				// 관점 카드(cardKey) 선택 · 터미널 재무 그리드의 그 카드. 없으면 첫 카드.
 				const list = view?.cards ?? [];
 				const c0 = (card.cardKey ? list.find((c) => c.key === card.cardKey) : null) ?? list[0];
 				if (c0 && view) {
-					// 단위 스케일은 SSOT 가 책임진다 — 차트 축은 MiniFinChart 내부 pickKrwUnit, 표는 셀별
+					// 단위 스케일은 SSOT 가 책임진다 · 차트 축은 MiniFinChart 내부 pickKrwUnit, 표는 셀별
 					// fmtKrwFromJo(자연 단위, 0.0조 차단). 여기선 raw 조 카드 그대로 넘기고 색만 캐러셀 팔레트로.
 					const recolored = { ...c0, series: c0.series.map((s, i) => ({ ...s, color: CARD_SERIES[i % CARD_SERIES.length] })) };
 					finCards = { card: recolored, periods: view.periods };
@@ -106,7 +106,7 @@
 			.catch(() => (finState = 'empty'));
 	});
 
-	// 차트 밑에 같이 둘 수치표 — 시리즈(매출·영업이익·순이익…) × 최근 6기간. 정적 카드는 hover 가 없어
+	// 차트 밑에 같이 둘 수치표 · 시리즈(매출·영업이익·순이익…) × 최근 6기간. 정적 카드는 hover 가 없어
 	// 차트만으론 정확값을 못 보니 표를 병치(추세=시각, 정확값=표). 우축은 작은 값(예 영업이익)을 큰 매출
 	// 막대 옆에 보이게 한 2차 *같은 단위* 스케일이라 % 가 아님 → 단위 접미 없이 원값 그대로(헤더에 단위 1회).
 	const finTable = $derived.by(() => {
@@ -114,14 +114,14 @@
 		const all = finCards.periods;
 		const periods = all.slice(-6);
 		const off = all.length - periods.length;
-		// 표 전체 단위 1개 — SSOT(pickKrwUnit)가 값 다수의 단위로 통일("억이 지배하면 전부 억"). 매출 조·
+		// 표 전체 단위 1개 · SSOT(pickKrwUnit)가 값 다수의 단위로 통일("억이 지배하면 전부 억"). 매출 조·
 		// 영업익 억 혼합 금지·"0.0조" 차단. 비금액(%·배)은 그대로 + 단위 헤더.
 		const isJo = finCards.card.unit === '조';
 		const sc = isJo
 			? pickKrwUnit(finCards.card.series.flatMap((s) => s.data) as number[], { from: '조' })
 			: null;
 		const fmt = (v: unknown): string => {
-			if (typeof v !== 'number' || !Number.isFinite(v)) return '–';
+			if (typeof v !== 'number' || !Number.isFinite(v)) return '-';
 			if (sc) return sc.fmt(v);
 			const a = Math.abs(v);
 			if (a >= 100) return Math.round(v).toLocaleString();
@@ -135,7 +135,7 @@
 		return { unit: sc ? sc.unit : (finCards.card.unit ?? ''), periods, rows };
 	});
 
-	// 표 슬라이드에도 그래프 — 각 행(지표)을 한 선으로. 단위는 셀의 '%' 유무로 금액/비율 그룹 분리.
+	// 표 슬라이드에도 그래프 · 각 행(지표)을 한 선으로. 단위는 셀의 '%' 유무로 금액/비율 그룹 분리.
 	// ★자릿수 차 처리: 그룹 안에서 행들의 스케일 차가 크면(>8배, 예 매출 vs 영업익) 행별 정규화(작은 항목이
 	// 바닥에 안 깔림), 비슷하면(마진·성장) 공유축으로 상대 높이 비교. 정확값은 아래 표가 준다.
 	const tableChart = $derived.by(() => {
@@ -173,7 +173,7 @@
 		};
 		const groupLines = (group: typeof rows, startCi: number) => {
 			if (!group.length) return [] as { name: string; color: string; points: string }[];
-			// 공유축 — 금액 행을 실제 크기로 비교(손익구조 정직). 행별 정규화(매출·판관비를 똑같은 높이로
+			// 공유축 · 금액 행을 실제 크기로 비교(손익구조 정직). 행별 정규화(매출·판관비를 똑같은 높이로
 			// 펴 엉키던 실타래)는 폐기: 매출은 위, 영업익·순익은 아래로 크기 그대로 읽히게.
 			const shared = rangeOf(group.flatMap((r) => r.vals));
 			return group.map((r, i) => toLine(r, shared, CARD_SERIES[(startCi + i) % CARD_SERIES.length]));
@@ -186,12 +186,12 @@
 
 	const line = $derived(card.kind === 'line' ? lineGeo(card.series, card.markers ?? []) : null);
 	const barMax = $derived(card.kind === 'bars' ? Math.max(1, ...card.rows.map((r) => Math.abs(r.value))) : 1);
-	// 비중 차트 세그먼트 색 — 캐러셀 팔레트(로즈+그레이)만. 초록/앰버/보라/시안 금지.
+	// 비중 차트 세그먼트 색 · 캐러셀 팔레트(로즈+그레이)만. 초록/앰버/보라/시안 금지.
 	const SHARE_C = ['var(--dl-accent)', 'var(--dl-accent-light)', '#d8e2f0', '#9aa7c0', '#6b7794', '#c0cad8', '#7f8aa3'];
 	const shareColor = (i: number) => SHARE_C[i % SHARE_C.length];
 	const fmtPct = (p: number | null | undefined): string => (p == null ? '·' : p.toFixed(1));
 
-	// 재무카드 제목 아래 "무엇을 보나" 한 줄 — 터미널 CARD_GUIDE.what(일반 가이드, 회사 판단·환각 0).
+	// 재무카드 제목 아래 "무엇을 보나" 한 줄 · 터미널 CARD_GUIDE.what(일반 가이드, 회사 판단·환각 0).
 	// what = "[차트요소 구문]. [무엇을보나 문장]." 꼴 → 범례에 이미 있는 차트요소 구문(끝에 마침표라 거슬림)은
 	// 버리고 *마지막 서술 문장만*(본다/있다로 끝나는 문장이라 마침표 정당). 해석은 회사별로 안 쓴다.
 	const finGuide = $derived.by(() => {
@@ -208,27 +208,17 @@
 {/snippet}
 
 {#snippet visualBlock(v: SlideVisual)}
-	{#if v.kind === 'bars'}
-		{@const mx = Math.max(1, ...v.rows.map((r) => Math.abs(r.value)))}
-		<div class="vBars">
-			{#each v.rows as r (r.label)}
-				<div class="bar"><span class="bL">{r.label}</span><span class="bT"><span class="bF" class:neg={r.tone === 'neg'} style="width:{(Math.abs(r.value) / mx) * 100}%"></span></span><span class="bV">{r.display}</span></div>
-			{/each}
-		</div>
-	{:else if v.kind === 'line'}
-		{@const g = lineGeo(v.series, v.markers ?? [])}
-		{#if g}
-			<svg viewBox="0 0 100 30" preserveAspectRatio="none" class="vLine">
-				<polygon points={g.area} class="lArea" />
-				<polyline points={g.pts} class="lLine" />
-				{#each g.mk as m}<line x1="0" x2="100" y1={m.y} y2={m.y} class="lMark" />{/each}
-				<circle cx={g.lastX} cy={g.lastY} r="0.9" class="lDot" />
-			</svg>
-		{/if}
-		<div class="vMeta">
-			{#if v.xLabels}<span>{v.xLabels[0]} → {v.xLabels[1]}</span>{/if}
-			{#if v.markers?.length}{#each v.markers as m (m.label)}<span>{m.label} {v.valueFmt === 'won' ? wonLabel(m.v) : m.v}</span>{/each}{/if}
-		</div>
+	{#if v.kind === 'finCard'}
+		{@const fc = {
+			key: 'viz',
+			title: v.title ?? '',
+			unit: v.unit ?? '',
+			stacked: v.stacked,
+			signed: v.signed,
+			refLines: v.refLines,
+			series: v.series.map((s, i) => ({ name: s.name, data: s.data, type: s.type ?? 'line', axis: s.axis, color: s.color ?? CARD_SERIES[i % CARD_SERIES.length] }))
+		} as FinCard}
+		<div class="vChart"><MiniFinChart card={fc} periods={v.periods} h={188} /></div>
 	{:else if v.kind === 'table'}
 		<table class="cT vTable">
 			<thead><tr>{#each v.cols as c, ci (c)}<th class:num={ci !== 0}>{ci === 0 && v.unit ? `${c} · ${v.unit}` : c}</th>{/each}</tr></thead>
@@ -253,14 +243,14 @@
 				<p class="mono">{card.stockCode} · {card.dataBasis}</p>
 			</div>
 		{:else if card.kind === 'editorialBeat' && card.visual}
-			<!-- 하이브리드 — 큰문장(주장) + 시각(증거). 글만 쓰지 않고 그 주장을 차트가 받친다. -->
+			<!-- 하이브리드 · 그래프(위, 꽉 차게) + 텍스트(아래, 에디토리얼처럼). 주장을 차트가 받친다. -->
 			<div class="hybrid">
-				<div class="hybTop">
+				<div class="hViz">{@render visualBlock(card.visual)}</div>
+				<div class="hybText">
 					{#if card.kicker}<span class="eyebrow">{card.kicker}</span>{/if}
 					<h2 class="hLine">{@render accent(card.line)}</h2>
+					{#if card.sub}<p class="eSub hSub">{stripDots(commaText(card.sub))}</p>{/if}
 				</div>
-				<div class="hViz">{@render visualBlock(card.visual)}</div>
-				{#if card.sub}<p class="eSub hSub">{stripDots(commaText(card.sub))}</p>{/if}
 			</div>
 		{:else if card.kind === 'editorial' || card.kind === 'editorialBeat'}
 			<div class="editorial">
@@ -336,7 +326,7 @@
 				{@const off = card.periods.length - tp.length}
 				<div class="comp">
 					<p class="compMeta">당기 <b>{fmtKrw(card.latestTotal)}</b> · {card.latestPeriod}</p>
-					<!-- 시간축 100% 세로 스택 — 분기별 컬럼(왼→오 과거→당기). 색 = 카테고리(범례·표와 SSOT). -->
+					<!-- 시간축 100% 세로 스택 · 분기별 컬럼(왼→오 과거→당기). 색 = 카테고리(범례·표와 SSOT). -->
 					<div class="compTs" role="img" aria-label="{card.heading} 구성 추이">
 						{#each card.periods as p, j (j)}
 							<div class="compCol">
@@ -417,7 +407,7 @@
 		background: #050811;
 		color: #f1f5f9;
 		overflow: hidden;
-		text-align: left; /* 좌측 정렬 못박음 — <button>(CoverThumb) 안에서 text-align:center 상속 차단 */
+		text-align: left; /* 좌측 정렬 못박음 · <button>(CoverThumb) 안에서 text-align:center 상속 차단 */
 		container-type: inline-size; /* cqw = 슬라이드 폭 기준 반응형 타이포(인스타 1080 기준 스케일) */
 		font-family: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif;
 	}
@@ -435,13 +425,13 @@
 		opacity: 0.74;
 	}
 	.pm-dim .bg {
-		opacity: 0.68; /* 차트 슬라이드도 회사 사진이 또렷이(모든 슬라이드에 이미지) — 차트는 아래 패널로 가독 확보 */
+		opacity: 0.68; /* 차트 슬라이드도 회사 사진이 또렷이(모든 슬라이드에 이미지) · 차트는 아래 패널로 가독 확보 */
 	}
 	.scrim {
 		position: absolute;
 		inset: 0;
 	}
-	/* 배경 밝게 — 하단만 가독용 어둠, 상·중단은 사진 노출(전체 어둠 금지). */
+	/* 배경 밝게 · 하단만 가독용 어둠, 상·중단은 사진 노출(전체 어둠 금지). */
 	.pm-cover .scrim {
 		background: linear-gradient(180deg, rgba(5, 8, 17, 0.05) 0%, rgba(5, 8, 17, 0.16) 48%, rgba(5, 8, 17, 0.88) 100%);
 	}
@@ -463,7 +453,7 @@
 	.pm-editorial .content {
 		--hl: var(--dl-accent);
 	}
-	/* 차트 카드(dim) — 하단 닷/페이지뱃지(Deck 크롬)와 차트·표가 겹치지 않게 바닥 여백을 더 둔다(특히 모바일). */
+	/* 차트 카드(dim) · 하단 닷/페이지뱃지(Deck 크롬)와 차트·표가 겹치지 않게 바닥 여백을 더 둔다(특히 모바일). */
 	.pm-dim .content {
 		padding-bottom: clamp(52px, 13%, 92px);
 	}
@@ -477,7 +467,7 @@
 		flex-direction: column;
 		overflow: hidden; /* 텍스트가 4:5 프레임을 절대 안 넘치게(hook() 단축 + 하드 클립 belt-and-suspenders) */
 	}
-	/* 다중행 클램프 — 긴 데이터 산문이 카드를 넘치지 않게(인스타 카피는 짧다). 블록 요소만(.narr/.closing
+	/* 다중행 클램프 · 긴 데이터 산문이 카드를 넘치지 않게(인스타 카피는 짧다). 블록 요소만(.narr/.closing
 	   는 flex-center 라 .content overflow:hidden + hook() 단축으로 클립). */
 	.lead,
 	.sSub,
@@ -495,7 +485,7 @@
 	.note {
 		-webkit-line-clamp: 2;
 	}
-	/* 재무카드 "무엇을 보나" 가이드 — 제목 아래 작고 흐린 2줄(해석 아님·읽는 법). */
+	/* 재무카드 "무엇을 보나" 가이드 · 제목 아래 작고 흐린 2줄(해석 아님·읽는 법). */
 	.sGuide {
 		display: -webkit-box;
 		-webkit-box-orient: vertical;
@@ -527,7 +517,7 @@
 	.hl {
 		color: var(--hl, var(--dl-accent));
 	}
-	/* editorial (기존 SNS editorial 재현 — 하단 텍스트 블록) */
+	/* editorial (기존 SNS editorial 재현 · 하단 텍스트 블록) */
 	.editorial {
 		margin-top: auto;
 		display: flex;
@@ -575,7 +565,7 @@
 		max-width: 100%;
 	}
 	.eNum {
-		/* 길이 인지 폰트(--eNumCq, JS 가 자릿수로 설정) — 긴 숫자도 한 줄 유지(쪼개짐 0) */
+		/* 길이 인지 폰트(--eNumCq, JS 가 자릿수로 설정) · 긴 숫자도 한 줄 유지(쪼개짐 0) */
 		font-size: clamp(28px, calc(var(--eNumCq, 18) * 1cqw), 200px);
 		font-weight: 900;
 		line-height: 0.92;
@@ -597,22 +587,36 @@
 		-webkit-line-clamp: 2; /* 긴 unit 2줄까지(그 이상은 클립) */
 		overflow: hidden;
 	}
-	/* 하이브리드 — 큰문장(주장, 위) + 시각(증거, 중) + 받침(아래). 글만이 아니라 차트가 주장을 받친다. */
+	/* 하이브리드 · 그래프(위, 꽉 차게) + 텍스트(아래, 에디토리얼처럼). 빈 박스 없이 차트가 채운다. */
 	.hybrid {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		gap: 0.7em;
 		min-height: 0;
+		gap: 0.25em;
 	}
-	.hybTop {
+	.hViz {
+		flex: 1 1 auto;
+		min-height: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.35em;
+		justify-content: center;
+	}
+	.vChart {
+		width: 100%;
+	}
+	.hViz :global(.mfc) {
+		width: 100%;
+	}
+	.hybText {
+		flex: 0 0 auto;
+		display: flex;
+		flex-direction: column;
+		gap: 0.3em;
 	}
 	.hLine {
 		margin: 0;
-		font-size: clamp(19px, 4.8cqw, 38px);
+		font-size: clamp(18px, 4.4cqw, 34px);
 		font-weight: 900;
 		line-height: 1.16;
 		letter-spacing: -0.01em;
@@ -624,41 +628,11 @@
 		-webkit-line-clamp: 3;
 		overflow: hidden;
 	}
-	.hViz {
-		flex: 1 1 auto;
-		min-height: 0;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		gap: 0.55em;
-		background: rgba(5, 8, 17, 0.6);
-		border: 1px solid rgba(30, 36, 51, 0.7);
-		border-radius: 12px;
-		padding: 5% 5.5%;
-		box-sizing: border-box;
-	}
 	.hSub {
 		flex: 0 0 auto;
 	}
-	.vBars {
-		display: flex;
-		flex-direction: column;
-		gap: 0.55em;
-	}
-	.vLine {
-		width: 100%;
-		height: clamp(90px, 22cqw, 150px);
-	}
-	.vMeta {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.3em 1.1em;
-		font-size: clamp(10px, 2.2cqw, 15px);
-		color: #94a3b8;
-		font-variant-numeric: tabular-nums;
-	}
 	.vCap {
-		margin: 0;
+		margin: 0.12em 0 0;
 		font-size: clamp(10px, 2.2cqw, 14px);
 		color: #9aa7c0;
 		line-height: 1.4;
@@ -784,7 +758,7 @@
 	.flags.opportunity li {
 		border-color: #d8e2f0;
 	}
-	/* charts — 사진 위에서도 가독되게 반투명 패널 + 사진 일부 노출 */
+	/* charts · 사진 위에서도 가독되게 반투명 패널 + 사진 일부 노출 */
 	.chart,
 	.bars,
 	.share,
@@ -811,7 +785,7 @@
 		width: 100%;
 		flex: 0 0 auto;
 	}
-	/* 차트 밑 수치표 — 시리즈×기간(compact). 시리즈명 열은 auto·좌측, 값은 우측. */
+	/* 차트 밑 수치표 · 시리즈×기간(compact). 시리즈명 열은 auto·좌측, 값은 우측. */
 	.finT {
 		font-size: clamp(8px, 1.85cqw, 13px);
 		flex: 0 0 auto;
@@ -862,7 +836,7 @@
 	.lDot {
 		fill: var(--dl-accent);
 	}
-	/* y축 값(min/max) — 단위 보이게(won=조/억). 우상단·우하단 고정. */
+	/* y축 값(min/max) · 단위 보이게(won=조/억). 우상단·우하단 고정. */
 	.lY {
 		position: absolute;
 		right: 0.3em;
@@ -889,7 +863,7 @@
 		color: #94a3b8;
 		font-variant-numeric: tabular-nums;
 	}
-	/* 마우스 호버 — 세로 크로스헤어 + 값 툴팁 */
+	/* 마우스 호버 · 세로 크로스헤어 + 값 툴팁 */
 	.lHair {
 		stroke: rgba(255, 255, 255, 0.55);
 		stroke-width: 0.4;
@@ -988,7 +962,7 @@
 	}
 	.cT {
 		width: 100%;
-		table-layout: fixed; /* 4:5 프레임에 맞게 — 컬럼이 균등 축소(가로 스크롤·넘침 금지) */
+		table-layout: fixed; /* 4:5 프레임에 맞게 · 컬럼이 균등 축소(가로 스크롤·넘침 금지) */
 		border-collapse: collapse;
 		font-size: clamp(9px, 2.1cqw, 15px);
 	}
@@ -1003,7 +977,7 @@
 	}
 	.cT th:first-child,
 	.cT td:first-child {
-		width: 26%; /* 라벨 열 — 좁혀서 기간 열에 폭을 양보(헤더 '24Q1' 절단 방지) */
+		width: 26%; /* 라벨 열 · 좁혀서 기간 열에 폭을 양보(헤더 '24Q1' 절단 방지) */
 		white-space: normal;
 		word-break: keep-all;
 	}
@@ -1022,7 +996,7 @@
 	.cT td.warn {
 		color: #ff9ab0;
 	}
-	/* 표 위 다중 라인 차트(각 행=한 선) — 행별 정규화(이중축 효과)·로즈 팔레트. 정확값은 아래 표. */
+	/* 표 위 다중 라인 차트(각 행=한 선) · 행별 정규화(이중축 효과)·로즈 팔레트. 정확값은 아래 표. */
 	.tChart {
 		width: 100%;
 		height: 26%;
@@ -1076,7 +1050,7 @@
 		font-size: clamp(14px, 3cqw, 24px);
 		text-align: left;
 	}
-	/* 주석 구성 — 시간축 100% 세로 스택 컬럼 + 구성표(터미널 NotesDashboardDialog 동형, 카드 규격). */
+	/* 주석 구성 · 시간축 100% 세로 스택 컬럼 + 구성표(터미널 NotesDashboardDialog 동형, 카드 규격). */
 	.comp {
 		display: flex;
 		flex-direction: column;

@@ -63,9 +63,9 @@
 
 	<!-- 제품 미리보기 영상 -->
 	<div class="relative mx-auto max-w-5xl mt-16">
-		<YouTube id="-Y3kY1zs62I" wide facade title="DartLab — 공시를 비교 가능한 데이터로" />
+		<YouTube id="-Y3kY1zs62I" wide facade title="DartLab · 공시를 비교 가능한 데이터로" />
 		<p class="mt-5 text-center text-sm text-dl-text-dim">
-			panel 로 공시를 수평화하고, 공시 뷰어로 브라우저에서 바로 비교 — 1분 50초
+			panel 로 공시를 수평화하고, 공시 뷰어로 브라우저에서 바로 비교 · 1분 50초
 		</p>
 	</div>
 

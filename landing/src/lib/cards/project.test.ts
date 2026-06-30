@@ -1,4 +1,4 @@
-// 카드 투영 단위테스트 — projectBlock 8 변종 매핑·pending/skip 정직 카드·미매핑 fail-loud·
+// 카드 투영 단위테스트 · projectBlock 8 변종 매핑·pending/skip 정직 카드·미매핑 fail-loud·
 // narration 신규합성 0(모델값 그대로). fixture 만으로 런타임 비의존 검증.
 import { describe, it, expect } from 'vitest';
 import type { ReportModel, ReportBlock, ReportSection } from '$lib/report/model';
@@ -33,7 +33,7 @@ function model(overrides: Partial<ReportModel> = {}): ReportModel {
 
 const HEAD = { heading: '재무분석', sub: '수익성' };
 
-describe('projectBlock — 8 변종 명시 매핑', () => {
+describe('projectBlock · 8 변종 명시 매핑', () => {
 	it('line/bars/share/metrics/flags/table(시계열) → 카드', () => {
 		expect(projectBlock({ type: 'line', series: [1, 2, 3] }, HEAD)?.kind).toBe('line');
 		expect(projectBlock({ type: 'bars', rows: [{ label: 'a', value: 1, display: '1' }] }, HEAD)?.kind).toBe('bars');
@@ -59,8 +59,8 @@ describe('projectBlock — 8 변종 명시 매핑', () => {
 	});
 });
 
-describe('projectBlock table — 4:5 카드 정규화(라벨 맨앞·기간 cap·요약열 드롭)', () => {
-	it('라벨이 끝열인 표(연간추세)도 라벨을 cols[0] 로 정규화 — 열 어긋남 방지', () => {
+describe('projectBlock table · 4:5 카드 정규화(라벨 맨앞·기간 cap·요약열 드롭)', () => {
+	it('라벨이 끝열인 표(연간추세)도 라벨을 cols[0] 로 정규화 · 열 어긋남 방지', () => {
 		// 실제 케이스: ['2020'..'2025','연간 지표'] (라벨이 마지막). 라벨이 맨 앞으로 와야 함.
 		const block: ReportBlock = {
 			type: 'table',
@@ -85,7 +85,7 @@ describe('projectBlock table — 4:5 카드 정규화(라벨 맨앞·기간 cap�
 	});
 });
 
-describe('projectReport — 덱 구조 + 정직', () => {
+describe('projectReport · 덱 구조 + 정직', () => {
 	const sec: ReportSection = {
 		key: 'profit',
 		title: '재무분석 -- 수익성은 지속되는가',
@@ -96,15 +96,15 @@ describe('projectReport — 덱 구조 + 정직', () => {
 			{ type: 'flags', kind: 'opportunity', flags: ['신규 라인 가동'] }
 		]
 	};
-	it('cover → kpis → finChart → 섹션카드(시각만 1장) — 자동 종합·산문·신호 없음', () => {
+	it('cover → kpis → finChart → 섹션카드(시각만 1장) · 자동 종합·산문·신호 없음', () => {
 		const deck = projectReport(model({ sections: [sec] }), { heroUrls: ['https://x/h.webp'] });
 		const kinds = deck.cards.map((c) => c.kind);
 		expect(kinds[0]).toBe('cover');
 		expect(kinds).not.toContain('kpis'); // 자동 핵심지표 카드 제거(4:5 줄깨짐·렌더 단순화)
 		expect(kinds).toContain('finChart');
-		expect(kinds).toContain('line'); // 섹션은 차트(line) 1장만 — flags 는 같은 섹션이라 탈락(시각만)
+		expect(kinds).toContain('line'); // 섹션은 차트(line) 1장만 · flags 는 같은 섹션이라 탈락(시각만)
 		expect(kinds).not.toContain('flags');
-		expect(kinds).not.toContain('closing'); // 자동 종합 제거 — 종합/서사는 수기 editorial 로
+		expect(kinds).not.toContain('closing'); // 자동 종합 제거 · 종합/서사는 수기 editorial 로
 		expect(kinds).not.toContain('narrative'); // 자동 산문 제거
 		expect(deck.cards.filter((c) => c.kind === 'line')[0]).toMatchObject({ heading: '재무분석', sub: '수익성은 지속되는가' });
 	});
@@ -121,12 +121,12 @@ describe('projectReport — 덱 구조 + 정직', () => {
 		expect(deck.cards[0].bg).toBe('a'); // 표지 = 첫 hero
 		expect(new Set(bgs).size).toBeGreaterThan(1); // 여러 hero 가 실제로 쓰임(순환)
 	});
-	it('hero 부재 시에도 덱 렌더 가능(빈 화면 금지) — cover+finChart 최소', () => {
+	it('hero 부재 시에도 덱 렌더 가능(빈 화면 금지) · cover+finChart 최소', () => {
 		const deck = projectReport(model({ headlineKpis: [], sections: [] }));
 		expect(deck.cards.length).toBeGreaterThanOrEqual(2); // cover + finChart(+closing)
 		expect(deck.cards.some((c) => c.kind === 'finChart')).toBe(true);
 	});
-	it('자동 핵심지표 카드는 더 이상 붙이지 않는다(값이 차 있어도 — 4:5 줄깨짐·렌더 단순화)', () => {
+	it('자동 핵심지표 카드는 더 이상 붙이지 않는다(값이 차 있어도 · 4:5 줄깨짐·렌더 단순화)', () => {
 		const deck = projectReport(model()); // headlineKpis(매출·영업이익률)가 채워져 있어도
 		expect(deck.cards.some((c) => c.kind === 'kpis')).toBe(false);
 	});
@@ -142,7 +142,7 @@ describe('projectReport — 덱 구조 + 정직', () => {
 	});
 });
 
-describe('큐레이션 오버레이(CarouselSpec) — notes/order', () => {
+describe('큐레이션 오버레이(CarouselSpec) · notes/order', () => {
 	const secA: ReportSection = {
 		key: 'profit',
 		title: '재무분석 -- 수익성',
@@ -172,7 +172,7 @@ describe('큐레이션 오버레이(CarouselSpec) — notes/order', () => {
 	});
 });
 
-// 주석 구성 시계열 fixture — 부문별매출/비용성격별(rt.report.noteSeries).
+// 주석 구성 시계열 fixture · 부문별매출/비용성격별(rt.report.noteSeries).
 function comp(cats: string[]): CompositionSeries {
 	return {
 		categories: cats,
@@ -183,7 +183,7 @@ function comp(cats: string[]): CompositionSeries {
 	};
 }
 
-describe('주석 구성 깊은 카드(compositionToCard) — 세로 스택+표·조건부·신규합성 0', () => {
+describe('주석 구성 깊은 카드(compositionToCard) · 세로 스택+표·조건부·신규합성 0', () => {
 	it('categories(최신 desc)·periods(최근6·shortPeriod)·shares·amounts, chapter=사업·운영', () => {
 		const card = compositionToCard(comp(['반도체', '디스플레이']), '부문별 매출', '어디서 버나');
 		expect(card?.kind).toBe('composition');
@@ -216,7 +216,7 @@ describe('주석 구성 깊은 카드(compositionToCard) — 세로 스택+표·
 	});
 });
 
-describe('챕터 점프 앵커(chapterAnchors) — 섹션 네비', () => {
+describe('챕터 점프 앵커(chapterAnchors) · 섹션 네비', () => {
 	const tagged = (chapter?: string): CarouselCard => ({ kind: 'empty', reason: 'x', chapter }) as CarouselCard;
 	it('distinct chapter 첫 index, 연속 dedup', () => {
 		const cards = [tagged('표지'), tagged('핵심지표'), tagged('재무'), tagged('재무'), tagged('사업·운영')];
@@ -228,7 +228,7 @@ describe('챕터 점프 앵커(chapterAnchors) — 섹션 네비', () => {
 	});
 });
 
-describe('projectReport — composition 주입 + 챕터 태깅(자동 kpis 없음)', () => {
+describe('projectReport · composition 주입 + 챕터 태깅(자동 kpis 없음)', () => {
 	it('수익성 + noteSeries → 부문/비용 composition 2장(finChart 뒤)', () => {
 		const ns: NoteSeriesBundle = { segment: comp(['반도체', 'DX']), cost: comp(['원재료', '인건비']) };
 		const deck = projectReport(model(), { noteSeries: ns });
@@ -245,7 +245,7 @@ describe('projectReport — composition 주입 + 챕터 태깅(자동 kpis 없�
 		const deck = projectReport(model({ perspectiveKey: 'liquidity', perspectiveLabel: '재무안정성' }), { noteSeries: ns });
 		expect(deck.cards.some((c) => c.kind === 'composition')).toBe(false);
 	});
-	it('cover/finChart/composition 챕터 태깅 — 자동 kpis 없음, 앵커(표지·재무·사업·운영)', () => {
+	it('cover/finChart/composition 챕터 태깅 · 자동 kpis 없음, 앵커(표지·재무·사업·운영)', () => {
 		const ns: NoteSeriesBundle = { segment: comp(['a', 'b']), cost: null };
 		const deck = projectReport(model(), { noteSeries: ns });
 		expect(deck.cards[0].chapter).toBe('표지');
@@ -255,7 +255,7 @@ describe('projectReport — composition 주입 + 챕터 태깅(자동 kpis 없�
 	});
 });
 
-describe('pending/skip — 정직 빈 카드', () => {
+describe('pending/skip · 정직 빈 카드', () => {
 	it('pending 관점 → empty 카드', () => {
 		const deck = projectReport(model({ pending: true }));
 		expect(deck.cards.map((c) => c.kind)).toEqual(['cover', 'empty']);

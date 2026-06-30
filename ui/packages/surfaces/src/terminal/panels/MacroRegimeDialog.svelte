@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 거시 국면 상세 — 판정 + 자산함의 + 전이 + 모델 합류(probit/sahm/lei/hamilton·금리커브·GaR·Hamilton밴드)
+	// 거시 국면 상세 · 판정 + 자산함의 + 전이 + 모델 합류(probit/sahm/lei/hamilton·금리커브·GaR·Hamilton밴드)
 	// + 테마별 고밀도 복합차트(성장/물가/금리/금융조건). KR/US 탭. 차트 = MiniFinChart SSOT(손수 차트 0).
 	// 데이터: 판정·타일 = macro.json(라이브) / 시계열 = observations.parquet via loadSeries(rt.macro.getSeries).
 	import type { MacroPoint, MacroSimFile } from '@dartlab/ui-contracts';
@@ -46,7 +46,7 @@
 	const arrow = (s: string): string => (/(ris|up|상승|확장|↑)/i.test(s) ? '↑' : /(fall|down|하락|둔화|↓)/i.test(s) ? '↓' : '→');
 	const bucketTone = (b: 0 | 1 | 2 | null): string => (b === 2 ? 'tDn' : b === 1 ? 'tWarn' : b === 0 ? 'tGood' : 'tNeu');
 
-	// ── 근거지표 시계열 로드 — 시장 탭별 필요 id 만 누적 캐시(중복 fetch 0). observations 코어 캐시 공유. ──
+	// ── 근거지표 시계열 로드 · 시장 탭별 필요 id 만 누적 캐시(중복 fetch 0). observations 코어 캐시 공유. ──
 	const idsFor = (mk: 'KR' | 'US'): string[] => [...new Set(MACRO_EVIDENCE_SPECS[mk].flatMap((s) => s.series.map((x) => x.id)))];
 	let loaded = $state<Record<string, MacroPoint[] | null>>({});
 	let loading = $state(true);
@@ -77,7 +77,7 @@
 	const bandPoly = (pts: number[]): string =>
 		pts.map((v, i) => `${((i / Math.max(1, pts.length - 1)) * 100).toFixed(1)},${(24 - Math.max(0, Math.min(1, v)) * 24).toFixed(1)}`).join(' ');
 
-	// ── 전망 시뮬(BVAR 팬) 로드 — 시장별 1회 캐시. macro/sim/{market}.json via getSim. ──
+	// ── 전망 시뮬(BVAR 팬) 로드 · 시장별 1회 캐시. macro/sim/{market}.json via getSim. ──
 	let simCache = $state<Record<string, MacroSimFile | null>>({});
 	let simLoading = $state(false);
 	$effect(() => {
@@ -93,11 +93,11 @@
 		});
 		return () => { cancelled = true; };
 	});
-	// 활성 시나리오(정책금리 충격 프리셋) — 칩 선택 시 팬에 조건부 중앙 overlay. null=기준.
+	// 활성 시나리오(정책금리 충격 프리셋) · 칩 선택 시 팬에 조건부 중앙 overlay. null=기준.
 	let activeScenario = $state<string | null>(null);
 	const simView = $derived<MacroSimView>(buildMacroSimView(simCache[market] ?? null, lang, activeScenario));
 
-	// 국면경로 과거+미래 연속 polyline — 과거 history + 미래 forward P(수축), 0~1 고정축.
+	// 국면경로 과거+미래 연속 polyline · 과거 history + 미래 forward P(수축), 0~1 고정축.
 	const regimePoly = (hist: number[], fwd: { h: number; p: number }[]): { past: string; future: string; boundary: number } => {
 		const all = [...hist, ...fwd.map((f) => f.p)];
 		const n = Math.max(1, all.length - 1);
@@ -126,7 +126,7 @@
 
 		<div class="mrBody">
 		{#if view === 'current'}
-			<!-- 상단 2단 — 판정(좌) + 국면 모델 합류(우). 빈 공간 없이 한눈에. -->
+			<!-- 상단 2단 · 판정(좌) + 국면 모델 합류(우). 빈 공간 없이 한눈에. -->
 			<div class="mrTop" class:two={!!lens}>
 			<!-- 1. 판정 -->
 			{#if mv}
@@ -162,7 +162,7 @@
 				</div>
 			{/if}
 
-			<!-- 2. 모델 합류 — probit/sahm/lei/hamilton · 금리커브 · GaR · Hamilton 밴드 -->
+			<!-- 2. 모델 합류 · probit/sahm/lei/hamilton · 금리커브 · GaR · Hamilton 밴드 -->
 			{#if lens}
 				<div class="mrSec">
 					<div class="mrSecHd">
@@ -211,7 +211,7 @@
 
 			</div>
 
-			<!-- 3. 근거지표 — 테마별 고밀도 복합차트 (전폭) -->
+			<!-- 3. 근거지표 · 테마별 고밀도 복합차트 (전폭) -->
 			<div class="mrSec">
 				<div class="mrSecHd">
 					<span class="mrSecTitle">{T('근거 지표', 'EVIDENCE INDICATORS')}</span>
@@ -230,13 +230,13 @@
 				{/if}
 			</div>
 		{:else}
-			<!-- 전망 시뮬레이션 — BVAR 팬 + 국면경로 (macro/sim/{market}.json via getSim) -->
+			<!-- 전망 시뮬레이션 · BVAR 팬 + 국면경로 (macro/sim/{market}.json via getSim) -->
 			{#if simView.status === 'ok'}
 				{#if simView.regimePath}
 					{@const rp = regimePoly(simView.regimePath.history, simView.regimePath.forward)}
 					<div class="mrSec">
 						<div class="mrSecHd">
-							<span class="mrSecTitle">{T('국면 경로 — 수축확률', 'REGIME PATH — P(contraction)')}</span>
+							<span class="mrSecTitle">{T('국면 경로 · 수축확률', 'REGIME PATH · P(contraction)')}</span>
 							<span class="mrSecSub mono">{T('현재', 'now')} {(simView.regimePath.current * 100).toFixed(0)}% → {simView.horizon}M {((simView.regimePath.forward.at(-1)?.p ?? 0) * 100).toFixed(0)}%</span>
 						</div>
 						<svg class="mrPathSvg" viewBox="0 0 100 24" preserveAspectRatio="none" role="img" aria-label={T('국면 경로', 'regime path')}>
@@ -249,7 +249,7 @@
 				{/if}
 				<div class="mrSec">
 					<div class="mrSecHd">
-						<span class="mrSecTitle">{T('전망 — BVAR 팬', 'OUTLOOK — BVAR fan')}</span>
+						<span class="mrSecTitle">{T('전망 · BVAR 팬', 'OUTLOOK · BVAR fan')}</span>
 						{#if simView.activeScenario}
 							<span class="mrScenBadge">{T('조건부 가정', 'conditional')} · {simView.activeScenario.condLabel}</span>
 						{:else}
@@ -278,7 +278,7 @@
 			{:else if simLoading}
 				<div class="mrLoading"><span class="mrSpinner"></span>{T('전망 시뮬 계산 중 (런타임 BVAR)', 'computing outlook (runtime BVAR)')}</div>
 			{:else}
-				<div class="mrEmpty">{T('전망 시뮬 표시 보류 — 표본 부족 또는 불안정', 'outlook pending — insufficient sample or unstable')}</div>
+				<div class="mrEmpty">{T('전망 시뮬 표시 보류 · 표본 부족 또는 불안정', 'outlook pending · insufficient sample or unstable')}</div>
 			{/if}
 		{/if}
 

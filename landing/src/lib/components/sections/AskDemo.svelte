@@ -121,7 +121,7 @@
 			</div>
 		</div>
 
-		<!-- AI 는 적극적 분석가 — 대화 중에 엔진 가정을 직접 바꾼다 -->
+		<!-- AI 는 적극적 분석가 · 대화 중에 엔진 가정을 직접 바꾼다 -->
 		<div class="mt-6 rounded-lg overflow-hidden bg-[#0d1117] border border-dl-border shadow-lg shadow-black/20">
 			<div class="flex items-center gap-2 px-4 py-2.5 bg-white/[0.03] border-b border-dl-border">
 				<span class="w-2 h-2 rounded-full bg-dl-primary"></span>
@@ -138,7 +138,7 @@
 					<span class="text-dl-text-dim">›</span>
 					<span class="text-dl-text-muted">c.analysis("valuation")</span>
 					<span class="text-dl-text-dim">&rarr;</span>
-					<span class="text-dl-warning">implied WACC 18.2% — 이 프로파일에는 높아 보임</span>
+					<span class="text-dl-warning">implied WACC 18.2% · 이 프로파일에는 높아 보임</span>
 				</div>
 				<div>
 					<span class="text-dl-accent">you</span>

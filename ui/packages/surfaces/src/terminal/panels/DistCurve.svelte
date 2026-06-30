@@ -1,7 +1,7 @@
 <script lang="ts">
 	// 동종사 분포 미니 차트 + 회사 위치 마커.
-	//  · hist(실도수 히스토그램) 가 있으면 그것을 그린다 — 막대 높이 = 그 구간 동종사 수(어디에 몰렸나, 봉우리·gap·왜도 그대로).
-	//  · 없으면 band(p10~p90 5분위 보간) 폴백 — 정규가정 아님, 국소밀도로 왜도 반영.
+	//  · hist(실도수 히스토그램) 가 있으면 그것을 그린다 · 막대 높이 = 그 구간 동종사 수(어디에 몰렸나, 봉우리·gap·왜도 그대로).
+	//  · 없으면 band(p10~p90 5분위 보간) 폴백 · 정규가정 아님, 국소밀도로 왜도 반영.
 	// 회사값은 범위 밖이어도 항상 보이게 마커로 표시(이상치 = 봉우리에서 떨어진 위치).
 	import type { Lang, Hist } from '../lib/types';
 
@@ -19,12 +19,12 @@
 		band?: { p10: number; p25: number; median: number; p75: number; p90: number } | null;
 		hist?: Hist | null;
 		value: number | null;
-		p: number; // 0~100 백분위 (lowerBetter 이미 반영 — 높을수록 우수)
+		p: number; // 0~100 백분위 (lowerBetter 이미 반영 · 높을수록 우수)
 		unit?: string;
 		lang?: Lang;
 		w?: number;
 		h?: number;
-		neutral?: boolean; // true = 회사 마커 회색(우열 프레이밍 금지 — 가격 등 lowerBetter 모호 지표용)
+		neutral?: boolean; // true = 회사 마커 회색(우열 프레이밍 금지 · 가격 등 lowerBetter 모호 지표용)
 	} = $props();
 
 	const W = $derived(w);
@@ -81,7 +81,7 @@
 
 <svg class="dc" width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label={tip} style={`height:${H}px`}>
 	<title>{tip}</title>
-	<!-- 바닥축 — 분포와 회사 마커가 *같은 축* 위임을 명시(이상치라 마커가 봉우리에서 떨어져도 동일 분포 위 위치로 읽힘). -->
+	<!-- 바닥축 · 분포와 회사 마커가 *같은 축* 위임을 명시(이상치라 마커가 봉우리에서 떨어져도 동일 분포 위 위치로 읽힘). -->
 	<line class="dcBase" x1="0" x2={W} y1={base} y2={base} vector-effect="non-scaling-stroke" />
 	{#if hist}
 		{#each bars as b, i (i)}
@@ -95,7 +95,7 @@
 	{/if}
 	{#if markX != null}
 		<line class={'dcMark ' + tone} x1={markX} x2={markX} y1="5" y2={H} vector-effect="non-scaling-stroke" />
-		<!-- 꼭지(핀) — "여기가 이 회사" 가 박히도록 마커 상단에 삼각 헤드. -->
+		<!-- 꼭지(핀) · "여기가 이 회사" 가 박히도록 마커 상단에 삼각 헤드. -->
 		<path class={'dcPin ' + tone} d={`M ${(markX - 3.2).toFixed(1)} 0 L ${(markX + 3.2).toFixed(1)} 0 L ${markX.toFixed(1)} 5.5 Z`} />
 	{/if}
 </svg>

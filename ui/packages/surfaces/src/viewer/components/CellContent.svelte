@@ -1,5 +1,5 @@
 <script lang="ts">
-	// panel 셀(raw DART XML) 렌더 — ui/web CellContent 이식. content-sniffing: html table / narrative.
+	// panel 셀(raw DART XML) 렌더 · ui/web CellContent 이식. content-sniffing: html table / narrative.
 	import DOMPurify from 'dompurify';
 	import {
 		normalizeDartXml,
@@ -131,7 +131,7 @@
 		padding: 3px 6px;
 		vertical-align: top;
 	}
-	/* 원본 XML 이 숫자 셀에 ALIGN="RIGHT" 보유(실측 96/96) — author text-align 으로 덮어쓰지 않고 원본 align 존중
+	/* 원본 XML 이 숫자 셀에 ALIGN="RIGHT" 보유(실측 96/96) · author text-align 으로 덮어쓰지 않고 원본 align 존중
 	   (feedback_xml_native_truth). align 없는 셀만 기본 좌측(표제·텍스트). 숫자=우측은 원본이 이미 가진 정렬. */
 	.dartlab-html :global(td:not([align])),
 	.dartlab-html :global(th:not([align])) {
@@ -142,7 +142,7 @@
 		font-weight: 600;
 		color: #e2e8f0;
 	}
-	/* 원본 XML 문서구조 반영 — 절 제목(TITLE) 크게, 소항목 헤딩(USERMARK F-14↑) 볼드+위 줄바꿈, 인라인 볼드. */
+	/* 원본 XML 문서구조 반영 · 절 제목(TITLE) 크게, 소항목 헤딩(USERMARK F-14↑) 볼드+위 줄바꿈, 인라인 볼드. */
 	.dartlab-html :global(.dm-title) {
 		font-size: 14.5px;
 		font-weight: 700;

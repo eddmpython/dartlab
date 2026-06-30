@@ -1,7 +1,7 @@
 <script lang="ts">
-	// 출자 관계 — 양방향 관계망 다이얼로그. 위=나를 소유한 주주(reverse)·중앙=본체·아래=내가 출자한 자회사(forward, tier 레인).
+	// 출자 관계 · 양방향 관계망 다이얼로그. 위=나를 소유한 주주(reverse)·중앙=본체·아래=내가 출자한 자회사(forward, tier 레인).
 	// 모든 변수를 채널에 배정: 크기=장부가/지분, 색=이익기여(forward)·주주유형(reverse), 테두리=상장, 모양=법인/개인, 엣지=지분%·방향.
-	// 좌표는 holdings.ts buildNetworkLayout(순수). 정직: 매수/목표주가·인과 금지, 개인주주 익명, 근사 명기, null '—' 분리.
+	// 좌표는 holdings.ts buildNetworkLayout(순수). 정직: 매수/목표주가·인과 금지, 개인주주 익명, 근사 명기, null '·' 분리.
 	import type { Company, Lang } from '../lib/types';
 	import type { InvestmentPeriod, InvestmentRow, InvestmentTrendYear, ShareholderKind, ShareholdersView } from '@dartlab/ui-contracts';
 	import { buildHoldingsModel, buildNetworkLayout, mutualCodes, type ListedLookup, type HoldingTier, type HoldingsRow, type NetNode } from '../lib/holdings';
@@ -23,18 +23,18 @@
 	let { co, year, rows, periods, shareholders, shPeriods, lang, lookupListed, onPick, onClose }: Props = $props();
 	const T = (kr: string, en: string) => (lang === 'en' ? en : kr);
 
-	// 본체 재무 주입(원) — 시총 = mktcapRaw, 순익 = 시총/PER 근사(둘 다 원). PER null·≤0 → parentNet=null → contribShare 생략.
+	// 본체 재무 주입(원) · 시총 = mktcapRaw, 순익 = 시총/PER 근사(둘 다 원). PER null·≤0 → parentNet=null → contribShare 생략.
 	const parentMktcap = $derived(co.price.mktcapRaw ?? null);
 	const parentNet = $derived(co.fundamentals.per && co.fundamentals.per > 0 && co.price.mktcapRaw ? co.price.mktcapRaw / co.fundamentals.per : null);
 
-	// ── 기간 시계열 (연도/분기) — 관계망·표 탭이 공유하는 단일 기간 컨트롤 ──
+	// ── 기간 시계열 (연도/분기) · 관계망·표 탭이 공유하는 단일 기간 컨트롤 ──
 	const qr = (q: string) => (q === '4분기' ? 4 : q === '3분기' ? 3 : q === '2분기' ? 2 : 1);
 	let gran = $state<'year' | 'quarter'>('year');
 	let periodIdx = $state(-1); // -1 = 최신(기본). selIdx 에서 보정
 	let playing = $state(false);
 	interface TLEntry { year: string; quarter: string; label: string; fwdRows: InvestmentRow[]; sh: ShareholdersView | null; }
 	const timeline = $derived.by<TLEntry[]>(() => {
-		// 타법인 출자(forward)가 주체 — forward 보고 기간만 타임라인. 1·3분기 보고서는 출자 상세가 비어(invValid 필터로 제외)
+		// 타법인 출자(forward)가 주체 · forward 보고 기간만 타임라인. 1·3분기 보고서는 출자 상세가 비어(invValid 필터로 제외)
 		// periods 에 애초에 없으므로 빈 기간이 끼지 않는다. reverse(주주)는 같은 (year,quarter) exact → 없으면 같은 연도 best quarter 매칭.
 		const revAt = (year: string, quarter: string): ShareholdersView | null => {
 			const exact = shPeriods.find((s) => s.year === year && s.quarter === quarter);
@@ -68,7 +68,7 @@
 		if (selIdx >= timeline.length - 1) periodIdx = 0; // 끝이면 처음(과거)부터
 		playing = true;
 	};
-	// 재생 — 기간 자동 스텝(끝에서 정지). effect 본문 tracked read 는 playing/timeline 뿐(periodIdx 는 콜백 내부라 매 스텝 effect 재실행 안 함).
+	// 재생 · 기간 자동 스텝(끝에서 정지). effect 본문 tracked read 는 playing/timeline 뿐(periodIdx 는 콜백 내부라 매 스텝 effect 재실행 안 함).
 	$effect(() => {
 		if (!playing || timeline.length === 0) return;
 		const id = setInterval(() => {
@@ -92,7 +92,7 @@
 		treasury: { kr: '자기주식', en: 'treasury' },
 		person: { kr: '개인', en: 'person' }
 	};
-	// 주주 유형 색 — reverse 노드(상장/이익기여 무관, 유형으로 구분).
+	// 주주 유형 색 · reverse 노드(상장/이익기여 무관, 유형으로 구분).
 	const HOLDER_COLOR: Record<ShareholderKind, string> = {
 		institution: '#8b5cf6',
 		corp: '#5b9bf0',
@@ -100,27 +100,27 @@
 		treasury: '#6b7280',
 		person: '#9ca3af'
 	};
-	const krw = (v: number | null) => (v == null ? '—' : fmtKRW(v));
-	// 표 금액 컬럼 — 억원 고정 단위(컬럼 내 단위 통일 → 행 간 비교 가능). 10억 미만 1자리·이상 정수+콤마, 부호 보존. (fmtKRW 의 조/억/원 적응 표기는 컬럼에서 섞여 비교 불가)
+	const krw = (v: number | null) => (v == null ? '·' : fmtKRW(v));
+	// 표 금액 컬럼 · 억원 고정 단위(컬럼 내 단위 통일 → 행 간 비교 가능). 10억 미만 1자리·이상 정수+콤마, 부호 보존. (fmtKRW 의 조/억/원 적응 표기는 컬럼에서 섞여 비교 불가)
 	const eok = (v: number | null) => {
-		if (v == null) return '—';
+		if (v == null) return '·';
 		const a = Math.abs(v) / 1e8;
 		const s = a < 10 ? a.toLocaleString('en-US', { maximumFractionDigits: 1 }) : Math.round(a).toLocaleString('en-US');
 		return (v < 0 ? '-' : '') + s;
 	};
 	const ratioCls = (r: number | null, mid = 1) => (r == null ? 'tNeu' : r > mid ? 'tUp' : r < mid ? 'tDn' : 'tNeu');
-	// 이익기여 부호 색 (forward) — 흑자 녹/적자 적/미상 회.
+	// 이익기여 부호 색 (forward) · 흑자 녹/적자 적/미상 회.
 	const signColor = (v: number | null) => (v == null ? 'var(--dim)' : v > 0 ? 'var(--up)' : v < 0 ? 'var(--dn)' : 'var(--dim)');
 	const clip = (s: string, n = 8) => {
 		const c = (s || '').replace(/\(주\)|㈜|주식회사/g, '').trim();
 		return c.length > n ? c.slice(0, n - 1) + '…' : c;
 	};
 	const maxEarn = $derived(Math.max(...m.rows.map((r) => Math.abs(r.equityEarn ?? 0)), 1));
-	// 적자 자회사 장부가 비중 — "딱 보고 아는 한 문장"(판정 아닌 사실 기술). 단일 SSOT = holdings.ts(헤더·다이얼로그 공용, G4).
+	// 적자 자회사 장부가 비중 · "딱 보고 아는 한 문장"(판정 아닌 사실 기술). 단일 SSOT = holdings.ts(헤더·다이얼로그 공용, G4).
 	const lossBook = $derived(m.lossBook);
 	const lossPct = $derived(m.lossPct);
 
-	// reverse 법인·기관 주주 — 상장 해소(클릭 이동용). 개인은 익명 집계라 named 에 없음.
+	// reverse 법인·기관 주주 · 상장 해소(클릭 이동용). 개인은 익명 집계라 named 에 없음.
 	const reverseNamed = $derived(
 		(selSh?.named ?? []).map((sh) => {
 			if (sh.kind === 'corp' || sh.kind === 'institution') {
@@ -141,7 +141,7 @@
 	// 그래프 탭은 본문을 가득 채운다(탭 분리 → 스크롤 제거 → 그래프 확대 → 회사명 상시 라벨 수용). 높이는 캔버스 실측, 미측정 시 460.
 	const NET_H = $derived(mapH || 460);
 	const layout = $derived(mapW ? buildNetworkLayout(m.rows, m.maxBook, reverseNamed, selSh?.person ?? null, mapW, NET_H) : null);
-	// 상호출자(2-cycle) — 선택 기간에서 forward∩reverse 종목코드 교집합(상장 상호보유만). 노드 배지 + 닫힌 고리 커넥터.
+	// 상호출자(2-cycle) · 선택 기간에서 forward∩reverse 종목코드 교집합(상장 상호보유만). 노드 배지 + 닫힌 고리 커넥터.
 	const mutual = $derived(mutualCodes(m.rows, reverseNamed));
 	const mutualLinks = $derived.by(() => {
 		if (!layout || !mutual.size) return [] as { code: string; x1: number; y1: number; x2: number; y2: number; cx: number; cy: number }[];
@@ -162,7 +162,7 @@
 		}
 		return out;
 	});
-	// 호버 툴팁 — 상시 라벨 대신 회사명 + 기본정보. hoverName 으로 forward/reverse 노드 데이터 조회.
+	// 호버 툴팁 · 상시 라벨 대신 회사명 + 기본정보. hoverName 으로 forward/reverse 노드 데이터 조회.
 	const hoverFwd = $derived(hoverName ? (m.rows.find((h) => h.name === hoverName) ?? null) : null);
 	const hoverRev = $derived(hoverName && !hoverFwd ? (reverseNamed.find((s) => s.name === hoverName) ?? null) : null);
 
@@ -178,7 +178,7 @@
 <div class="scrimWrap" role="presentation" onclick={onClose}>
 	<div class="scrModal hdModal" role="dialog" aria-modal="true" aria-label={T('출자 관계', 'holdings relationship')} onclick={(e) => e.stopPropagation()}>
 		<div class="scrHead">
-			<span class="scrTitle">{T('출자 관계', 'HOLDINGS — relationship')} · {co.name.kr} · {m.year}</span>
+			<span class="scrTitle">{T('출자 관계', 'HOLDINGS · relationship')} · {co.name.kr} · {m.year}</span>
 			<span class="hdSub dim">{T('피출자사', 'holdings')} {m.rows.length}{T('개', '')}{#if selSh} · {T('주주', 'holders')} {reverseNamed.length + (selSh.person ? 1 : 0)}{/if}</span>
 			<button class="scrClose" onclick={onClose} aria-label="close">✕</button>
 		</div>
@@ -197,21 +197,21 @@
 					<div class="hdSumSub dim">{T('상장', 'listed')} {m.counts.listed} · {T('비상장', 'unlisted')} {m.counts.unlisted}{m.counts.loss ? ' · ' + T('적자피출자', 'loss') + ' ' + m.counts.loss : ''}</div>
 				</div>
 				<div class="hdSumCard">
-					<div class="hdSumLbl">{T('가치 — 상장 보유지분 시가', 'VALUE — listed stake')}</div>
-					<div class="hdSumV mono">{isLatest ? krw(m.listedStakeSum) : '—'}</div>
-					<div class="hdSumSub dim">{isLatest ? (m.pctOfParentCap != null ? T('본체 시총 대비 ', 'of parent cap ') + m.pctOfParentCap.toFixed(1) + '%' : T('본체 시총 대비 — (미산출)', 'parent cap n/a')) : T('현재가 기반 — 최신기만', 'current price — latest only')}</div>
+					<div class="hdSumLbl">{T('가치 · 상장 보유지분 시가', 'VALUE · listed stake')}</div>
+					<div class="hdSumV mono">{isLatest ? krw(m.listedStakeSum) : '·'}</div>
+					<div class="hdSumSub dim">{isLatest ? (m.pctOfParentCap != null ? T('본체 시총 대비 ', 'of parent cap ') + m.pctOfParentCap.toFixed(1) + '%' : T('본체 시총 대비 · (미산출)', 'parent cap n/a')) : T('현재가 기반 · 최신기만', 'current price · latest only')}</div>
 				</div>
 				<div class="hdSumCard">
-					<div class="hdSumLbl">{T('효율 — 지분법 이익기여(근사)', 'EFFICIENCY — equity earnings (approx)')}</div>
+					<div class="hdSumLbl">{T('효율 · 지분법 이익기여(근사)', 'EFFICIENCY · equity earnings (approx)')}</div>
 					<div class={'hdSumV mono ' + (m.sumEquityEarn > 0 ? 'tUp' : m.sumEquityEarn < 0 ? 'tDn' : 'tNeu')}>{krw(m.sumEquityEarn)}</div>
-					<div class="hdSumSub dim">{m.contribShare != null ? T('본체 순익 대비 ', 'of parent net ') + m.contribShare.toFixed(1) + '%' : T('본체 순익 대비 — (참고·미산출)', 'parent net n/a')}</div>
+					<div class="hdSumSub dim">{m.contribShare != null ? T('본체 순익 대비 ', 'of parent net ') + m.contribShare.toFixed(1) + '%' : T('본체 순익 대비 · (참고·미산출)', 'parent net n/a')}</div>
 				</div>
 			</div>
 
 			{#if timeline.length > 1}
-				<!-- 공통 기간 컨트롤 — 관계망·표 탭 공유. 연도(각 연도 사업보고서 우선)/분기(보고된 것만) 토글 + 칩. -->
+				<!-- 공통 기간 컨트롤 · 관계망·표 탭 공유. 연도(각 연도 사업보고서 우선)/분기(보고된 것만) 토글 + 칩. -->
 				<div class="hdPeriodBar">
-					<button class={'hdPlay ' + (playing ? 'on' : '')} onclick={togglePlay} aria-label={T('재생 — 기간 자동 변화', 'play — auto-step periods')} title={T('재생 — 기간 자동 변화', 'play — auto-step periods')}>{playing ? '⏸' : '▶'}</button>
+					<button class={'hdPlay ' + (playing ? 'on' : '')} onclick={togglePlay} aria-label={T('재생 · 기간 자동 변화', 'play · auto-step periods')} title={T('재생 · 기간 자동 변화', 'play · auto-step periods')}>{playing ? '⏸' : '▶'}</button>
 					<span class="hdGran">
 						<button class={'hdGranBtn ' + (gran === 'year' ? 'on' : '')} onclick={() => (gran = 'year')}>{T('연도', 'Year')}</button>
 						<button class={'hdGranBtn ' + (gran === 'quarter' ? 'on' : '')} onclick={() => (gran = 'quarter')}>{T('분기', 'Qtr')}</button>
@@ -221,7 +221,7 @@
 							<button class={'hdChip ' + (i === selIdx ? 'on' : '')} onclick={() => (periodIdx = i)}>{t.label}</button>
 						{/each}
 					</span>
-					{#if !isLatest}<span class="hdPbNote dim">{T('과거 — 출자 구조 변화(시가 아님)', 'past — structure change, not market value')}</span>{/if}
+					{#if !isLatest}<span class="hdPbNote dim">{T('과거 · 출자 구조 변화(시가 아님)', 'past · structure change, not market value')}</span>{/if}
 				</div>
 			{/if}
 
@@ -231,7 +231,7 @@
 			</nav>
 
 			{#if tab === 'net'}
-			<!-- 양방향 관계망 — 위=주주(누가 나를 소유)·중앙=본체·아래=자회사(tier 레인). 노드 호버 → 툴팁. 회사명 상시 라벨. -->
+			<!-- 양방향 관계망 · 위=주주(누가 나를 소유)·중앙=본체·아래=자회사(tier 레인). 노드 호버 → 툴팁. 회사명 상시 라벨. -->
 			<div class="hdMapSec hdPane">
 				<div class="hdMapTitle">
 					<span class="hdMapH">{T('관계망', 'Network')}</span>
@@ -244,7 +244,7 @@
 							<div class="hdHelpH">{T('뭘 봐야 하나', 'What to look at')}</div>
 							<ul>
 								<li>{T('위 = 나를 소유한 주주 · 중앙 = 본체 · 아래 = 내가 출자한 회사', 'top = holders · center = this company · bottom = investees')}</li>
-								<li>{T('아래 레인 = 회계 관계: 연결(지분 ≥50%) · 지분법(20~50%) · 단순(<20%)', 'lanes = consolidated (≥50%) · equity (20–50%) · simple (<20%)')}</li>
+								<li>{T('아래 레인 = 회계 관계: 연결(지분 ≥50%) · 지분법(20~50%) · 단순(<20%)', 'lanes = consolidated (≥50%) · equity (20-50%) · simple (<20%)')}</li>
 								<li>{T('노드 크기 = 장부가 · 색 = 이익기여 흑자(녹)/적자(적) · ★ = 경영참여', 'size = book value · color = profit(green)/loss(red) · ★ = mgmt intent')}</li>
 								<li>{T('굵은 테두리 = 시가>장부(숨은가치)·시가<장부(잠재손상) · 실선 노드 = 상장(클릭 → 종목 이동)', 'thick border = mkt vs book gap · solid node = listed (click to open)')}</li>
 								<li>{T('엣지 굵기 = 지분율 · ↔ = 상호출자(서로 지분 보유, 상장 상호보유만)', 'edge width = stake % · ↔ = cross-holding (mutual, listed only)')}</li>
@@ -274,7 +274,7 @@
 							{#each layout.edges as e (e.key)}
 								<line x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} stroke={(hoverName && layout.nodes.some((n) => (n.h?.name === hoverName || n.sh?.name === hoverName) && (n.x === e.x2 || n.x === e.x1))) ? 'var(--amber)' : e.up ? '#8b5cf6' : 'var(--dim)'} stroke-width={e.w} stroke-opacity={hoverName ? 0.12 : e.up ? 0.4 : 0.28} stroke-dasharray={e.dashed ? '2 2' : 'none'} />
 							{/each}
-							<!-- 상호출자 닫힌 고리 — 위(주주) 인스턴스 ↔ 아래(피출자) 인스턴스 곡선 연결 -->
+							<!-- 상호출자 닫힌 고리 · 위(주주) 인스턴스 ↔ 아래(피출자) 인스턴스 곡선 연결 -->
 							{#each mutualLinks as ml (ml.code)}
 								<path d={`M ${ml.x1} ${ml.y1} Q ${ml.cx} ${ml.cy} ${ml.x2} ${ml.y2}`} fill="none" stroke="var(--amber)" stroke-width="1.6" stroke-opacity={hoverName ? 0.2 : 0.6} stroke-dasharray="4 3" />
 							{/each}
@@ -283,7 +283,7 @@
 								{#if n.kind === 'forward' && n.h}
 									{@const h = n.h}
 									{@const dim = hoverName && hoverName !== h.name}
-									{@const tt = h.name + ' · ' + (h.stakePct != null ? h.stakePct.toFixed(1) + '%' : '—') + ' · ' + T('장부', 'book') + ' ' + krw(h.bookValue) + (h.marketStake != null ? ' · ' + T('시가', 'mkt') + ' ' + krw(h.marketStake) + (h.gapRatio != null ? '(' + h.gapRatio.toFixed(1) + '×)' : '') : '') + (h.equityEarn != null ? ' · ' + T('이익기여', 'earn') + ' ' + (h.equityEarn < 0 ? '-' : '') + fmtKRW(Math.abs(h.equityEarn)) : '') + (h.purpose ? ' · ' + h.purpose : '')}
+									{@const tt = h.name + ' · ' + (h.stakePct != null ? h.stakePct.toFixed(1) + '%' : '·') + ' · ' + T('장부', 'book') + ' ' + krw(h.bookValue) + (h.marketStake != null ? ' · ' + T('시가', 'mkt') + ' ' + krw(h.marketStake) + (h.gapRatio != null ? '(' + h.gapRatio.toFixed(1) + '×)' : '') : '') + (h.equityEarn != null ? ' · ' + T('이익기여', 'earn') + ' ' + (h.equityEarn < 0 ? '-' : '') + fmtKRW(Math.abs(h.equityEarn)) : '') + (h.purpose ? ' · ' + h.purpose : '')}
 									{#if h.code}
 										<g class="hdNode click" role="button" tabindex={0} aria-label={h.name} onmouseenter={() => (hoverName = h.name)} onmouseleave={() => (hoverName = null)} onclick={() => onPick(h.code!)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(h.code!); } }}>
 											<circle cx={n.x} cy={n.y} r={n.r} fill={signColor(h.equityEarn)} fill-opacity={dim ? 0.25 : 0.9} stroke={hoverName === h.name ? 'var(--amber)' : h.gapRatio != null && h.gapRatio > 1.15 ? 'var(--up)' : h.gapRatio != null && h.gapRatio < 0.85 ? 'var(--dn)' : 'rgba(255,255,255,0.6)'} stroke-width={hoverName === h.name || (h.gapRatio != null && (h.gapRatio > 1.15 || h.gapRatio < 0.85)) ? 2.4 : 1.2} />
@@ -304,7 +304,7 @@
 								{:else if n.kind === 'reverseNamed' && n.sh}
 									{@const sh = n.sh}
 									{@const dim = hoverName && hoverName !== sh.name}
-									{@const tt = sh.name + ' · ' + KIND_LABEL[sh.kind][lang === 'en' ? 'en' : 'kr'] + (sh.relate ? ' · ' + sh.relate : '') + ' · ' + (sh.ratio != null ? sh.ratio.toFixed(2) + '%' : '—')}
+									{@const tt = sh.name + ' · ' + KIND_LABEL[sh.kind][lang === 'en' ? 'en' : 'kr'] + (sh.relate ? ' · ' + sh.relate : '') + ' · ' + (sh.ratio != null ? sh.ratio.toFixed(2) + '%' : '·')}
 									{#if n.code}
 										<g class="hdNode click" role="button" tabindex={0} aria-label={sh.name} onmouseenter={() => (hoverName = sh.name)} onmouseleave={() => (hoverName = null)} onclick={() => onPick(n.code!)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(n.code!); } }}>
 											<rect x={n.x - n.r} y={n.y - n.r} width={n.r * 2} height={n.r * 2} rx="3" fill={HOLDER_COLOR[sh.kind]} fill-opacity={dim ? 0.25 : 0.9} stroke={hoverName === sh.name ? 'var(--amber)' : 'rgba(255,255,255,0.6)'} stroke-width={hoverName === sh.name ? 2.4 : 1.2} />
@@ -324,7 +324,7 @@
 									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<g class="hdNode" role="img" aria-label={T('특수관계인 개인', 'individuals')}>
 										<rect x={n.x - n.r} y={n.y - n.r} width={n.r * 2} height={n.r * 2} transform={`rotate(45 ${n.x} ${n.y})`} fill={HOLDER_COLOR.person} fill-opacity="0.7" stroke="var(--bd)" stroke-width="1" />
-										<title>{T('특수관계인 개인', 'related individuals')} {n.person.count}{T('인', '')} · {n.person.ratio != null ? n.person.ratio.toFixed(2) + '%' : '—'} ({T('익명 집계', 'aggregated')})</title>
+										<title>{T('특수관계인 개인', 'related individuals')} {n.person.count}{T('인', '')} · {n.person.ratio != null ? n.person.ratio.toFixed(2) + '%' : '·'} ({T('익명 집계', 'aggregated')})</title>
 									</g>
 									<text class="hdNodeLab" x={n.x} y={n.y - n.r - 16} text-anchor="middle">{T('개인', 'person')} {n.person.count}{T('인', '')}</text>
 						{#if n.person.ratio != null}<text class="hdNodeSub" x={n.x} y={n.y - n.r - 6} text-anchor="middle">{n.person.ratio.toFixed(1)}%</text>{/if}
@@ -348,17 +348,17 @@
 							{#if hoverFwd}
 								<b>{hoverFwd.name}</b>
 								<div class="hdTipR"><span>{T('성격', 'tier')}</span><span>{T(TIER_LABEL[hoverFwd.tier].kr, TIER_LABEL[hoverFwd.tier].en)}{hoverFwd.intent ? ' · ' + T('경영참여', 'intent') : ''}</span></div>
-								<div class="hdTipR"><span>{T('지분', 'stake')}</span><span class="mono">{hoverFwd.stakePct != null ? hoverFwd.stakePct.toFixed(1) + '%' : '—'}</span></div>
+								<div class="hdTipR"><span>{T('지분', 'stake')}</span><span class="mono">{hoverFwd.stakePct != null ? hoverFwd.stakePct.toFixed(1) + '%' : '·'}</span></div>
 								<div class="hdTipR"><span>{T('장부가', 'book')}</span><span class="mono">{krw(hoverFwd.bookValue)}</span></div>
 								{#if hoverFwd.marketStake != null}<div class="hdTipR"><span>{T('시가지분', 'mkt')}</span><span class="mono">{krw(hoverFwd.marketStake)}{hoverFwd.gapRatio != null ? ` (${hoverFwd.gapRatio.toFixed(1)}×)` : ''}</span></div>{/if}
-								<div class="hdTipR"><span>{T('피출자순익', 'net')}</span><span class="mono">{hoverFwd.targetNet != null ? (hoverFwd.targetNet < 0 ? '-' : '') + fmtKRW(Math.abs(hoverFwd.targetNet)) : '—'}</span></div>
-								<div class="hdTipR"><span>{T('이익기여', 'earn')}</span><span class="mono">{hoverFwd.equityEarn != null ? (hoverFwd.equityEarn < 0 ? '-' : '') + fmtKRW(Math.abs(hoverFwd.equityEarn)) : '—'}</span></div>
+								<div class="hdTipR"><span>{T('피출자순익', 'net')}</span><span class="mono">{hoverFwd.targetNet != null ? (hoverFwd.targetNet < 0 ? '-' : '') + fmtKRW(Math.abs(hoverFwd.targetNet)) : '·'}</span></div>
+								<div class="hdTipR"><span>{T('이익기여', 'earn')}</span><span class="mono">{hoverFwd.equityEarn != null ? (hoverFwd.equityEarn < 0 ? '-' : '') + fmtKRW(Math.abs(hoverFwd.equityEarn)) : '·'}</span></div>
 								{#if hoverFwd.code}<div class="hdTipGo">{T('클릭 → 종목 이동', 'click → open')}</div>{/if}
 							{:else if hoverRev}
 								<b>{hoverRev.name}</b>
 								<div class="hdTipR"><span>{T('유형', 'kind')}</span><span>{T(KIND_LABEL[hoverRev.kind].kr, KIND_LABEL[hoverRev.kind].en)}</span></div>
 								{#if hoverRev.relate}<div class="hdTipR"><span>{T('관계', 'relate')}</span><span>{hoverRev.relate}</span></div>{/if}
-								<div class="hdTipR"><span>{T('지분', 'stake')}</span><span class="mono">{hoverRev.ratio != null ? hoverRev.ratio.toFixed(2) + '%' : '—'}</span></div>
+								<div class="hdTipR"><span>{T('지분', 'stake')}</span><span class="mono">{hoverRev.ratio != null ? hoverRev.ratio.toFixed(2) + '%' : '·'}</span></div>
 								{#if hoverRev.code}<div class="hdTipGo">{T('클릭 → 종목 이동', 'click → open')}</div>{/if}
 							{/if}
 						</div>
@@ -373,7 +373,7 @@
 					<span>{T('★=경영참여 · 굵은 테두리=시가/장부 괴리', '★=intent · thick border=mkt/book gap')}</span>
 					{#if mutual.size}<span><i class="lg" style:background="var(--amber)"></i>{T('↔ 상호출자(상장 상호보유)', '↔ cross-holding (listed)')}</span>{/if}
 				</div>
-				{#if !selSh}<div class="hdMapNote dim">{T('이 기간 주주 데이터 없음 — 위쪽(소유 구조) 생략.', 'No holder data for this period — upstream omitted.')}</div>{/if}
+				{#if !selSh}<div class="hdMapNote dim">{T('이 기간 주주 데이터 없음 · 위쪽(소유 구조) 생략.', 'No holder data for this period · upstream omitted.')}</div>{/if}
 			</div>
 			{:else}
 			<div class="hdPane hdTablePane">
@@ -387,7 +387,7 @@
 							<th class="r">{T('지분', 'STAKE')}</th>
 							<th class="r">{T('장부가(억)', 'BOOK(억)')}</th>
 							<th class="r">{T('시가지분(억)', 'MKT(억)')}</th>
-							<th class="r" title={T('시가/장부 (>1 숨은가치, <1 잠재손상) — 상장만', 'market/book')}>{T('시가/장부', 'M/B')}</th>
+							<th class="r" title={T('시가/장부 (>1 숨은가치, <1 잠재손상) · 상장만', 'market/book')}>{T('시가/장부', 'M/B')}</th>
 							<th class="r" title={T('장부/취득 (>1 평가이익 누적, <1 손상가능)', 'book/cost')}>{T('장부/취득', 'B/C')}</th>
 							<th class="r">{T('피출자순익(억)', 'TGT NET(억)')}</th>
 							<th class="r" title={T('지분법 이익기여 근사 (지분% × 피출자순익)', 'equity earnings approx')}>{T('이익기여(억)', 'EQ EARN(억)')}</th>
@@ -404,24 +404,24 @@
 									{#if h.intent}<span class="hdIntent" title={T('경영참여 의사', 'management intent')}>{T('경영참여', 'intent')}</span>{/if}
 								</td>
 								<td><span class={'hdTierMini ' + TIER_LABEL[h.tier].cls}>{T(TIER_LABEL[h.tier].kr, TIER_LABEL[h.tier].en)}</span></td>
-								<td class="r mono">{h.stakePct != null ? h.stakePct.toFixed(1) + '%' : '—'}</td>
+								<td class="r mono">{h.stakePct != null ? h.stakePct.toFixed(1) + '%' : '·'}</td>
 								<td class="r mono">{eok(h.bookValue)}</td>
 								<td class="r mono">{eok(h.marketStake)}</td>
-								<td class={'r mono ' + ratioCls(h.gapRatio)}>{h.gapRatio != null ? h.gapRatio.toFixed(2) + '×' : '—'}</td>
-								<td class={'r mono ' + ratioCls(h.markRatio)}>{h.markRatio != null ? h.markRatio.toFixed(2) + '×' : '—'}</td>
+								<td class={'r mono ' + ratioCls(h.gapRatio)}>{h.gapRatio != null ? h.gapRatio.toFixed(2) + '×' : '·'}</td>
+								<td class={'r mono ' + ratioCls(h.markRatio)}>{h.markRatio != null ? h.markRatio.toFixed(2) + '×' : '·'}</td>
 								<td class={'r mono ' + (h.targetNet != null && h.targetNet < 0 ? 'tDn' : '')}>{eok(h.targetNet)}</td>
 								<td class={'r mono ' + (h.equityEarn != null && h.equityEarn < 0 ? 'tDn' : h.equityEarn != null && h.equityEarn > 0 ? 'tUp' : '')}>{eok(h.equityEarn)}</td>
-								<td class={'r mono ' + (h.investROIC != null ? (h.investROIC > 0 ? 'tUp' : h.investROIC < 0 ? 'tDn' : 'tNeu') : 'tNeu')}>{h.investROIC != null ? (h.investROIC * 100).toFixed(1) + '%' : '—'}</td>
+								<td class={'r mono ' + (h.investROIC != null ? (h.investROIC > 0 ? 'tUp' : h.investROIC < 0 ? 'tDn' : 'tNeu') : 'tNeu')}>{h.investROIC != null ? (h.investROIC * 100).toFixed(1) + '%' : '·'}</td>
 							</tr>
 						{/each}
 					</tbody>
 				</table>
 			</div>
 
-			<!-- reverse 최대주주 표 (누가 이 회사를 소유) — 개인 익명 집계 -->
+			<!-- reverse 최대주주 표 (누가 이 회사를 소유) · 개인 익명 집계 -->
 			{#if selSh && (reverseNamed.length || selSh.person)}
 				<div class="hdScroll hdOwners">
-					<div class="hdOwnTitle dim">{T('최대주주 — 누가 이 회사를 소유하나', 'OWNERS — who owns this company')} · {sel?.label ?? selSh.year}{#if selSh.totalPct != null} · {T('합산', 'total')} {selSh.totalPct.toFixed(1)}%{/if}</div>
+					<div class="hdOwnTitle dim">{T('최대주주 · 누가 이 회사를 소유하나', 'OWNERS · who owns this company')} · {sel?.label ?? selSh.year}{#if selSh.totalPct != null} · {T('합산', 'total')} {selSh.totalPct.toFixed(1)}%{/if}</div>
 					<table class="finTable hdTable">
 						<thead>
 							<tr><th class="finAcct">{T('주주', 'HOLDER')}</th><th>{T('유형', 'KIND')}</th><th>{T('관계', 'RELATE')}</th><th class="r">{T('지분', 'STAKE')}</th><th class="r">{T('주식수', 'SHARES')}</th></tr>
@@ -431,9 +431,9 @@
 								<tr class={(h.kind === 'corp' && (h.ratio ?? 0) >= 30 ? 'finKey ' : '') + (hoverName === h.name ? 'hlRow' : '')}>
 									<td class="finAcct">{#if h.code}<button type="button" class="hdLink" onclick={() => onPick(h.code!)}>{h.name}</button>{:else}{h.name}{/if}</td>
 									<td><span class="hdTierMini">{T(KIND_LABEL[h.kind].kr, KIND_LABEL[h.kind].en)}</span></td>
-									<td class="dim">{h.relate || '—'}</td>
-									<td class="r mono">{h.ratio != null ? h.ratio.toFixed(2) + '%' : '—'}</td>
-									<td class="r mono">{h.shares != null ? h.shares.toLocaleString('en-US') : '—'}</td>
+									<td class="dim">{h.relate || '·'}</td>
+									<td class="r mono">{h.ratio != null ? h.ratio.toFixed(2) + '%' : '·'}</td>
+									<td class="r mono">{h.shares != null ? h.shares.toLocaleString('en-US') : '·'}</td>
 								</tr>
 							{/each}
 							{#if selSh.person}
@@ -441,8 +441,8 @@
 									<td class="finAcct dim">{T('특수관계인 개인', 'related individuals')} {selSh.person.count}{T('인', '')}</td>
 									<td><span class="hdTierMini">{T('개인', 'person')}</span></td>
 									<td class="dim">{T('익명 집계', 'aggregated')}</td>
-									<td class="r mono">{selSh.person.ratio != null ? selSh.person.ratio.toFixed(2) + '%' : '—'}</td>
-									<td class="r mono">{selSh.person.shares != null ? selSh.person.shares.toLocaleString('en-US') : '—'}</td>
+									<td class="r mono">{selSh.person.ratio != null ? selSh.person.ratio.toFixed(2) + '%' : '·'}</td>
+									<td class="r mono">{selSh.person.shares != null ? selSh.person.shares.toLocaleString('en-US') : '·'}</td>
 								</tr>
 							{/if}
 						</tbody>
@@ -490,7 +490,7 @@
 		gap: 8px;
 		margin-bottom: 10px;
 	}
-	/* 탭 — 관계망(그래프) / 표 전환. 스크롤 대신 분리해 그래프 탭이 본문을 가득 채운다. */
+	/* 탭 · 관계망(그래프) / 표 전환. 스크롤 대신 분리해 그래프 탭이 본문을 가득 채운다. */
 	.hdTabs {
 		flex: none;
 		display: flex;
@@ -526,7 +526,7 @@
 		color: var(--dimmer, #6b7280);
 		font-weight: 400;
 	}
-	/* 공통 기간 컨트롤 — 관계망·표 공유. 연/분기 토글 + 기간 칩(+ P3 재생). */
+	/* 공통 기간 컨트롤 · 관계망·표 공유. 연/분기 토글 + 기간 칩(+ P3 재생). */
 	.hdPeriodBar {
 		flex: none;
 		display: flex;
@@ -736,7 +736,7 @@
 	}
 	.hdNode circle,
 	.hdNode rect {
-		/* 기간 전환·재생 시 노드가 미끄러지듯 이동(Chromium: cx/cy/r/x/y 트랜지션; 미지원 브라우저는 snap — 기능 동일). physics 0. */
+		/* 기간 전환·재생 시 노드가 미끄러지듯 이동(Chromium: cx/cy/r/x/y 트랜지션; 미지원 브라우저는 snap · 기능 동일). physics 0. */
 		transition: fill-opacity 0.12s, cx 0.5s ease, cy 0.5s ease, r 0.5s ease, x 0.5s ease, y 0.5s ease, width 0.5s ease, height 0.5s ease;
 	}
 	.hdNetCanvas line {

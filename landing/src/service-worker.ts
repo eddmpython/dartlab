@@ -4,7 +4,7 @@
 /// <reference lib="webworker" />
 
 /**
- * dartlab Service Worker — 설치형 PWA(앱 셸 오프라인) + 데이터 무간섭.
+ * dartlab Service Worker · 설치형 PWA(앱 셸 오프라인) + 데이터 무간섭.
  *
  * - 앱 셸(build/files: 해시 불변 JS·CSS·정적 자산)은 install 시 프리캐시 → cache-first.
  * - 내비게이션(HTML)은 network-first → 성공분 캐시 → 오프라인이면 캐시 폴백.
@@ -57,10 +57,10 @@ self.addEventListener('fetch', (event) => {
 	if (req.method !== 'GET') return;
 	const url = new URL(req.url);
 
-	// ⛔ 크로스오리진(HF·프록시·뉴스 등 데이터) — SW 무간섭. 네트워크 그대로.
+	// ⛔ 크로스오리진(HF·프록시·뉴스 등 데이터) · SW 무간섭. 네트워크 그대로.
 	if (url.origin !== self.location.origin) return;
 
-	// 앱 셸 자산(해시 불변) — 캐시 우선.
+	// 앱 셸 자산(해시 불변) · 캐시 우선.
 	if (ASSET_SET.has(url.pathname)) {
 		event.respondWith(
 			(async () => {
@@ -71,7 +71,7 @@ self.addEventListener('fetch', (event) => {
 		return;
 	}
 
-	// 내비게이션(HTML) — 네트워크 우선, 성공분 캐시, 오프라인이면 캐시 폴백.
+	// 내비게이션(HTML) · 네트워크 우선, 성공분 캐시, 오프라인이면 캐시 폴백.
 	if (req.mode === 'navigate') {
 		event.respondWith(
 			(async () => {
@@ -84,7 +84,7 @@ self.addEventListener('fetch', (event) => {
 					const cached = await caches.match(req);
 					return (
 						cached ??
-						new Response('오프라인 — 연결을 확인하세요.', {
+						new Response('오프라인 · 연결을 확인하세요.', {
 							status: 503,
 							headers: { 'Content-Type': 'text/html; charset=utf-8' }
 						})
@@ -95,10 +95,10 @@ self.addEventListener('fetch', (event) => {
 		return;
 	}
 
-	// 그 외 same-origin GET — 기본 네트워크(가로채지 않음).
+	// 그 외 same-origin GET · 기본 네트워크(가로채지 않음).
 });
 
-// ── Web Push 수신 3 리스너 (P1) — 기존 셸 캐시 동작과 독립 ──────────────
+// ── Web Push 수신 3 리스너 (P1) · 기존 셸 캐시 동작과 독립 ──────────────
 // 설계: mainPlan/watcher-notify-platform/07-p1-client-receiving.md
 const ICON = `${import.meta.env.BASE_URL}icon-192.png`; // BASE_URL='/dartlab/' (절대경로 404 가드)
 
@@ -109,7 +109,7 @@ interface PushPayload {
 	tag?: string;
 }
 
-// push — aes128gcm 복호된 payload(notification 서브객체) 렌더. 항상 showNotification(미표시=userVisibleOnly 위반).
+// push · aes128gcm 복호된 payload(notification 서브객체) 렌더. 항상 showNotification(미표시=userVisibleOnly 위반).
 self.addEventListener('push', (event) => {
 	event.waitUntil(
 		(async () => {
@@ -129,7 +129,7 @@ self.addEventListener('push', (event) => {
 	);
 });
 
-// notificationclick — same-origin 창 있으면 focus+navigate, 없으면 openWindow. 목적지=검증된 상대경로.
+// notificationclick · same-origin 창 있으면 focus+navigate, 없으면 openWindow. 목적지=검증된 상대경로.
 self.addEventListener('notificationclick', (event) => {
 	event.notification.close();
 	const dest = (event.notification.data?.url as string) || `${import.meta.env.BASE_URL}`;
@@ -148,7 +148,7 @@ self.addEventListener('notificationclick', (event) => {
 	);
 });
 
-// pushsubscriptionchange — 만료/회전 시 재구독 + /subscribe 재등록. 구 endpoint 는 /send 404/410 자가청소.
+// pushsubscriptionchange · 만료/회전 시 재구독 + /subscribe 재등록. 구 endpoint 는 /send 404/410 자가청소.
 interface PushSubscriptionChangeEvent extends ExtendableEvent {
 	newSubscription: PushSubscription | null;
 	oldSubscription: PushSubscription | null;

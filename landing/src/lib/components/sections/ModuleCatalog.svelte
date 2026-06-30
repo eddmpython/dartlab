@@ -12,7 +12,7 @@
 			borderColor: 'border-dl-accent/30',
 			desc: '서술 구조 · 섹션 경계 · retrieval 블록',
 			modules: [
-				{ name: 'sections', desc: '토픽 × 기간 수평화 — 회사 지도' },
+				{ name: 'sections', desc: '토픽 × 기간 수평화 · 회사 지도' },
 				{ name: 'retrievalBlocks', desc: 'RAG 용 텍스트 블록' },
 				{ name: 'contextSlices', desc: '증거 레이어 슬라이스' },
 				{ name: 'companyOverview', desc: '회사 개요' },
@@ -48,7 +48,7 @@
 			color: 'text-dl-success',
 			bgColor: 'bg-dl-success/10',
 			borderColor: 'border-dl-success/30',
-			desc: '정형 공시 API — DART 전용',
+			desc: '정형 공시 API · DART 전용',
 			modules: [
 				{ name: 'audit', desc: '감사인 · 감사 의견' },
 				{ name: 'dividend', desc: '배당 정보' },

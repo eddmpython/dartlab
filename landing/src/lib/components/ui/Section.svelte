@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import Eyebrow from './Eyebrow.svelte';
 
-	/** 페이지 섹션 — eyebrow + title + subtitle + body */
+	/** 페이지 섹션 · eyebrow + title + subtitle + body */
 	interface Props {
 		eyebrow?: string;
 		title?: string;

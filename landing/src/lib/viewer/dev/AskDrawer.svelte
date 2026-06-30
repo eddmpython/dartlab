@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 본진 공시뷰어 우측 AI Q&A 채팅 드로어 — 헤더 아바타 버튼으로 열리고 격자를 밀고 나온다(push).
+	// 본진 공시뷰어 우측 AI Q&A 채팅 드로어 · 헤더 아바타 버튼으로 열리고 격자를 밀고 나온다(push).
 	// 모델은 명시적 [받기] 버튼+프로그래스바로 1회 다운로드(상태 가시화). 받기 전에도 결정론 답·근거는 즉시(다운로드 0).
 	// 받은 뒤엔 질문하면 그 위에서 대화로 자동 응답(멀티턴). 근거 칩 → 부모 onSearchResult(셀 glow) 재사용.
 	import { base } from '$app/paths';
@@ -36,14 +36,14 @@
 	} from '@dartlab/ui-surfaces/viewer';
 	import { ask, type EvRef, type NavOption } from './askSession.svelte';
 
-	// 로컬 Ollama 설치 4단계 — 인라인 렌더(blocked/no-model 에서도 항상 보임, 툴팁 클리핑 0). origin 은 실배포처 고정(환각 URL 금지).
+	// 로컬 Ollama 설치 4단계 · 인라인 렌더(blocked/no-model 에서도 항상 보임, 툴팁 클리핑 0). origin 은 실배포처 고정(환각 URL 금지).
 	// {cmd:true} 줄은 monospace 코드 박스로 렌더해 명령을 복사·식별 가능하게 한다.
 	const OLLAMA_STEPS: { t: string; cmd?: boolean }[] = [
-		{ t: '1. 설치 — ollama.com 에서 받아 실행' },
+		{ t: '1. 설치 · ollama.com 에서 받아 실행' },
 		{ t: '2. 모델 받기 (터미널)' },
 		{ t: 'ollama pull qwen2.5:3b', cmd: true },
 		{ t: '한국어 강함: ollama pull exaone3.5:7.8b' },
-		{ t: '3. 이 사이트 허용 (한 번만) — 1줄 실행 후 Ollama 재시작' },
+		{ t: '3. 이 사이트 허용 (한 번만) · 1줄 실행 후 Ollama 재시작' },
 		{ t: 'Windows: setx OLLAMA_ORIGINS "https://eddmpython.github.io"', cmd: true },
 		{ t: 'macOS: launchctl setenv OLLAMA_ORIGINS "https://eddmpython.github.io"', cmd: true },
 		{ t: 'Linux: systemctl edit ollama.service → Environment="OLLAMA_ORIGINS=https://eddmpython.github.io"', cmd: true },
@@ -75,7 +75,7 @@
 	let question = $state('');
 	let busy = $state(false);
 	let finSignals = $state<FinanceSignal[]>([]);
-	let intentModel = $state<IntentModel | null>(null); // intentModel v2(번들 ~27KB) — query→intent 라우팅→섹션 scoping. 1회 로드, 실패=null→BM25 단독.
+	let intentModel = $state<IntentModel | null>(null); // intentModel v2(번들 ~27KB) · query→intent 라우팅→섹션 scoping. 1회 로드, 실패=null→BM25 단독.
 	let guideOpen = $state(false); // hidden 상태에서 설치 가이드 펼침(blocked/no-model 은 항상 펼침)
 	let inputEl = $state<HTMLTextAreaElement | null>(null);
 	let scrollEl = $state<HTMLElement | null>(null);
@@ -93,7 +93,7 @@
 	function sizeLabel(mb: number): string {
 		return mb >= 1000 ? `${(mb / 1000).toFixed(1)}GB` : `${mb}MB`;
 	}
-	// 모델 선택 변경 — 영속 + modelState='checking' 으로 마운트 effect 재산정(선택 모델 캐시 여부 → 자동/받기).
+	// 모델 선택 변경 · 영속 + modelState='checking' 으로 마운트 effect 재산정(선택 모델 캐시 여부 → 자동/받기).
 	function onModelChange() {
 		try {
 			localStorage.setItem('dartlab.viewer.webllmModel', ask.selectedModel);
@@ -117,17 +117,17 @@
 		t.trBusy = false;
 	}
 
-	// 대화·모델·Ollama 상태는 askSession 모듈 스토어(ask) 에 둔다 — 회사 이동 시 viewer +page 가 bundle 을 잠시
+	// 대화·모델·Ollama 상태는 askSession 모듈 스토어(ask) 에 둔다 · 회사 이동 시 viewer +page 가 bundle 을 잠시
 	// null 로 만들어 AskDrawer 가 언마운트돼도 세션이 생존한다(크로스-회사 "AI 화면 그대로" 요구).
 	const provider = $derived<Provider>(ask.ollamaState === 'ready' ? 'ollama' : 'webllm');
 
-	// blocked 진단 한 줄 — reason 4종을 정확히. timeout=로딩 중일 수 있음, cors=허용 안 됨, unreachable=미실행.
+	// blocked 진단 한 줄 · reason 4종을 정확히. timeout=로딩 중일 수 있음, cors=허용 안 됨, unreachable=미실행.
 	const ollamaDiag = $derived(
 		ask.ollamaReason === 'timeout'
-			? '응답이 늦습니다 — 큰 모델 로딩 중일 수 있어요. 잠시 후 다시 연결하세요.'
+			? '응답이 늦습니다 · 큰 모델 로딩 중일 수 있어요. 잠시 후 다시 연결하세요.'
 			: ask.ollamaReason === 'unreachable'
-				? 'Ollama 응답이 비정상입니다 — 실행 상태를 확인하세요(1번).'
-				: '대개 3번(사이트 허용) 누락입니다 — 설정 후 Ollama 재시작.'
+				? 'Ollama 응답이 비정상입니다 · 실행 상태를 확인하세요(1번).'
+				: '대개 3번(사이트 허용) 누락입니다 · 설정 후 Ollama 재시작.'
 	);
 
 	// 마운트 1회: WebGPU 가용 → 캐시 보유 여부까지 물어 'cached'(이미 받음·빠른 불러오기) vs 'idle'(처음·~705MB) 분기.
@@ -140,7 +140,7 @@
 				ask.modelState = 'unsupported';
 				return;
 			}
-			// 모델별 캐시 배지 — 비었으면 1회 수집(회사 이동 재마운트에도 생존). 큐레이션 3종만.
+			// 모델별 캐시 배지 · 비었으면 1회 수집(회사 이동 재마운트에도 생존). 큐레이션 3종만.
 			if (ask.cachedModels.length === 0) {
 				const flags = await Promise.all(WEBLLM_MODELS.map((m) => isModelCached(m.id)));
 				ask.cachedModels = WEBLLM_MODELS.filter((_, i) => flags[i]).map((m) => m.id);
@@ -149,12 +149,12 @@
 			if (await isModelCached(ask.selectedModel)) {
 				void warmModel(ask.selectedModel, true); // 선택 모델 이미 받음 → 버튼 없이 자동 불러오기(다운로드 0)
 			} else {
-				ask.modelState = 'idle'; // 선택 모델 처음 — 명시 [받기](다운로드는 사용자 동의)
+				ask.modelState = 'idle'; // 선택 모델 처음 · 명시 [받기](다운로드는 사용자 동의)
 			}
 		});
 	});
 	// [회귀가드] ask.chat·ollama 는 code 변경에 불간섭(크로스-회사 대화 유지 핵심). 여기에 ask.chat=[] 또는
-	// {#key code} 추가 시 회사 이동마다 대화 소멸 — 절대 금지. finance prefetch 만 code 따라간다.
+	// {#key code} 추가 시 회사 이동마다 대화 소멸 · 절대 금지. finance prefetch 만 code 따라간다.
 	$effect(() => {
 		void loadIntentModel().then((m) => (intentModel = m)); // 시드 canonical 모델 1회 로드(모듈 캐시 → 1회)
 	});
@@ -175,10 +175,10 @@
 		});
 	}
 
-	// 캐시에서 불러오는 중인지(받기 아님) — 진행바 카피 분기용. loading 진입 시점에 고정.
+	// 캐시에서 불러오는 중인지(받기 아님) · 진행바 카피 분기용. loading 진입 시점에 고정.
 	let loadingFromCache = $state(false);
 
-	// 선택 모델 GPU 적재 — fromCache=true 면 캐시에서(다운로드 0·몇 초), false 면 첫 다운로드. reload 로 모델만 교체.
+	// 선택 모델 GPU 적재 · fromCache=true 면 캐시에서(다운로드 0·몇 초), false 면 첫 다운로드. reload 로 모델만 교체.
 	async function warmModel(modelId: string, fromCache: boolean) {
 		if (ask.modelState === 'loading' || ask.modelState === 'ready') return;
 		loadingFromCache = fromCache;
@@ -192,12 +192,12 @@
 			ask.modelState = 'error';
 		}
 	}
-	// 명시 버튼 전용 — 첫 다운로드(idle) · 재시도(error). cached 는 마운트에서 자동 불러오므로 버튼이 없다.
+	// 명시 버튼 전용 · 첫 다운로드(idle) · 재시도(error). cached 는 마운트에서 자동 불러오므로 버튼이 없다.
 	function downloadModel() {
 		void warmModel(ask.selectedModel, loadingFromCache); // 현재 선택 모델로(재시도는 직전 받기/불러오기 맥락 유지)
 	}
 
-	// 사용자 제스처(클릭) 안에서만 — Chrome 142 LNA 팝업이 제스처 직후에만 의미 있게 뜬다($effect/마운트 호출 금지).
+	// 사용자 제스처(클릭) 안에서만 · Chrome 142 LNA 팝업이 제스처 직후에만 의미 있게 뜬다($effect/마운트 호출 금지).
 	async function connectOllama() {
 		ask.ollamaState = 'probing';
 		const s = await detectOllama();
@@ -210,15 +210,15 @@
 			ask.ollamaState = 'no-model';
 			ask.ollamaReason = null;
 		} else {
-			ask.ollamaState = 'blocked'; // unreachable/cors/timeout 통합(상태 1개) — 카피만 reason 으로 정확히
+			ask.ollamaState = 'blocked'; // unreachable/cors/timeout 통합(상태 1개) · 카피만 reason 으로 정확히
 			ask.ollamaReason = s.reason ?? 'cors';
 		}
 	}
 
-	// 현재 회사(=code) 패널에서 grounded 답 — 결정론(즉시) + (모델 ready 면) 대화 스트리밍.
+	// 현재 회사(=code) 패널에서 grounded 답 · 결정론(즉시) + (모델 ready 면) 대화 스트리밍.
 	// b/i 를 인자로 받아 이동 직후 stale 클로저를 피한다(항상 현재 reactive 값으로 호출). busy 해제 책임은 여기.
 	async function answerOnCompany(q: string, b: PanelBundle, i: SearchIndex) {
-		// 결정론 섹션 scoping — query→intent(IDF 라우팅)→target 섹션 + canon 보강어. search 가 plain BM25 ⊕ (scope+canon)
+		// 결정론 섹션 scoping · query→intent(IDF 라우팅)→target 섹션 + canon 보강어. search 가 plain BM25 ⊕ (scope+canon)
 		// 을 RRF 융합(매퍼0·모델0·dense0). 5업종 held-out top-6 섹션도달 56~71%→95~98%(selfProbe). dense·fuzzy canon 능가.
 		const scope = queryScope(intentModel, q);
 		const { hits, added } = search(i, q, { topK: 6, expand: false, scopeSections: scope.sections, scopeTerms: scope.terms });
@@ -236,7 +236,7 @@
 		if (!finSignals.length && sigs.length) finSignals = sigs;
 		const composed = composeAnswer(q, hits, added, sigs);
 		const aiReady = provider === 'ollama' ? ask.ollamaState === 'ready' : ask.modelState === 'ready';
-		// suggestLlm(왜/종합/의미형)도 생성 트리거 — 근거 0건이어도 결정론 payload 로 grounded. (옛 코드는 산출만 하고 미사용)
+		// suggestLlm(왜/종합/의미형)도 생성 트리거 · 근거 0건이어도 결정론 payload 로 grounded. (옛 코드는 산출만 하고 미사용)
 		const useAi = aiReady && (evItems.length > 0 || composed.citedSignal != null || composed.suggestLlm);
 
 		ask.chat.push({
@@ -258,13 +258,13 @@
 		const idx = ask.chat.length - 1;
 		scrollBottom();
 
-		// 액션 버스 — 답이 가리키는 곳으로 뒷화면 이동(근거 셀 점프·재무 열기·연도 시점). 결정론·즉시.
+		// 액션 버스 · 답이 가리키는 곳으로 뒷화면 이동(근거 셀 점프·재무 열기·연도 시점). 결정론·즉시.
 		for (const a of deriveActions({ q, targets: [], hits, intent: composed.intent, topHit: evHits[0] ?? null, visiblePeriods: b.periods })) onAction(a);
 
 		if (!useAi) {
 			// 의미형 질문인데 모델 미보유(받을 수 있는데 안 받음) → 결정론 답 뒤에 1줄 유도. unsupported 는 제외(헛유도 방지).
 			if (composed.suggestLlm && !aiReady && ask.modelState !== 'unsupported') {
-				ask.chat[idx].det += ' — 대화 모델을 받으면 이 질문을 더 깊이 풀어드릴 수 있어요(아래 [대화 모델 받기]).';
+				ask.chat[idx].det += ' · 대화 모델을 받으면 이 질문을 더 깊이 풀어드릴 수 있어요(아래 [대화 모델 받기]).';
 			}
 			busy = false;
 			return;
@@ -272,7 +272,7 @@
 		const history: ChatTurn[] = [];
 		for (let k = 0; k < ask.chat.length; k++) {
 			if (ask.chat[k].nav.length) continue; // 이동-칩 turn 은 history 제외
-			// 회사 태그 프리픽스 — 이동 후 대명사/비교 맥락 유지("그럼 얘 매출은?" → 현재 회사 해석).
+			// 회사 태그 프리픽스 · 이동 후 대명사/비교 맥락 유지("그럼 얘 매출은?" → 현재 회사 해석).
 			history.push({ role: 'user', content: `[${ask.chat[k].companyName}] ${ask.chat[k].q}` });
 			if (k !== idx) history.push({ role: 'assistant', content: ask.chat[k].ai || ask.chat[k].det });
 		}
@@ -350,14 +350,14 @@
 		busy = false;
 	}
 
-	// 이동 칩 클릭 — 부모로 위임(goto + 원질문 운반). 부모가 새 회사 로드 후 carryQ 로 자동 재실행.
+	// 이동 칩 클릭 · 부모로 위임(goto + 원질문 운반). 부모가 새 회사 로드 후 carryQ 로 자동 재실행.
 	function clickNav(target: NavOption, carryQuestion: string) {
 		onAction({ kind: 'navigateCompany', code: target.code, carryQ: carryQuestion });
 	}
 
-	// 이동 후 운반된 질문 1회 자동 실행 — carryQ + 새 회사 bundle/index 가 모두 reactive prop 이라,
+	// 이동 후 운반된 질문 1회 자동 실행 · carryQ + 새 회사 bundle/index 가 모두 reactive prop 이라,
 	// "새 회사 인덱스 준비됨"을 effect 가 자연 감지해 1회 ask. ask.consumedCarry(스토어) 가드로 재실행 방지
-	// — 재마운트에도 생존해 수동 종목검색 후 묵은 carryQ 재발화를 막는다.
+	// · 재마운트에도 생존해 수동 종목검색 후 묵은 carryQ 재발화를 막는다.
 	$effect(() => {
 		const cq = carryQ;
 		if (!cq || cq === ask.consumedCarry) return;
@@ -376,7 +376,7 @@
 	}
 </script>
 
-<!-- Ollama 설치 4단계 인라인 가이드 — hidden(펼침)·blocked·no-model 공용. 컨테이너 폭에 맞춰 줄바꿈(클리핑 0). -->
+<!-- Ollama 설치 4단계 인라인 가이드 · hidden(펼침)·blocked·no-model 공용. 컨테이너 폭에 맞춰 줄바꿈(클리핑 0). -->
 {#snippet guide()}
 	<div class="ob-guide">
 		{#each OLLAMA_STEPS as s (s.t)}
@@ -405,7 +405,7 @@
 					<img class="onboard-ava" src="{base}/avatar.png" alt="" width="76" height="76" />
 				</picture>
 
-				<!-- 온디바이스 모델 영역 — 자식 폭을 한 컬럼(.ob-block)으로 묶어 좌우 정렬 일치 -->
+				<!-- 온디바이스 모델 영역 · 자식 폭을 한 컬럼(.ob-block)으로 묶어 좌우 정렬 일치 -->
 				<div class="ob-block">
 					{#if ask.modelState === 'idle'}
 						<select class="model-pick" bind:value={ask.selectedModel} onchange={onModelChange} aria-label="대화 모델 선택">
@@ -434,14 +434,14 @@
 						</select>
 						<button type="button" class="onboard-dl err" onclick={downloadModel}>로드 실패 · 다시</button>
 					{:else if ask.modelState === 'unsupported'}
-						<span class="onboard-sub">이 브라우저는 대화 미지원 — 근거·결정론 답은 됩니다</span>
+						<span class="onboard-sub">이 브라우저는 대화 미지원 · 근거·결정론 답은 됩니다</span>
 					{/if}
 				</div>
 
-				<!-- 로컬 Ollama 옵션 영역 — 같은 .ob-block 컬럼. 자동 프로브 금지(클릭 시만). 가이드는 인라인(툴팁 클리핑 0). -->
+				<!-- 로컬 Ollama 옵션 영역 · 같은 .ob-block 컬럼. 자동 프로브 금지(클릭 시만). 가이드는 인라인(툴팁 클리핑 0). -->
 				<div class="ob-block">
 					{#if ask.ollamaState === 'hidden'}
-						<button type="button" class="ollama-link" onclick={connectOllama}>로컬 Ollama 연결 — 더 좋은 품질</button>
+						<button type="button" class="ollama-link" onclick={connectOllama}>로컬 Ollama 연결 · 더 좋은 품질</button>
 						<button type="button" class="ob-guide-toggle" onclick={() => (guideOpen = !guideOpen)} aria-expanded={guideOpen}>설치 방법 {guideOpen ? '접기' : '보기'}</button>
 						{#if guideOpen}{@render guide()}{/if}
 					{:else if ask.ollamaState === 'probing'}
@@ -480,7 +480,7 @@
 					<span class="co-badge">{t.companyName}</span>
 				{/if}
 				{#if t.nav.length}
-					<!-- 이동 칩 turn — 답 대신 안내 + 칩(클릭 시 이동·원질문 자동 답) -->
+					<!-- 이동 칩 turn · 답 대신 안내 + 칩(클릭 시 이동·원질문 자동 답) -->
 					<p class="bot-text">{t.det}</p>
 					<div class="ev-row">
 						{#each t.nav as opt (opt.code)}
@@ -519,7 +519,7 @@
 		{/each}
 	</div>
 
-	<!-- 대화 중 모델 strip — 메시지 있고 아직 안 올렸을 때만(중앙 온보딩과 중복 방지). ready 면 숨김. -->
+	<!-- 대화 중 모델 strip · 메시지 있고 아직 안 올렸을 때만(중앙 온보딩과 중복 방지). ready 면 숨김. -->
 	{#if ask.chat.length > 0 && ask.modelState === 'idle' && ask.ollamaState !== 'ready'}
 		<button type="button" class="ad-model dl" onclick={downloadModel}>
 			<Download size={14} /> 대화 모델 받기 <span class="sz">처음 1회 ~705MB</span>
@@ -532,7 +532,7 @@
 	{:else if ask.chat.length > 0 && ask.modelState === 'error'}
 		<button type="button" class="ad-model dl err" onclick={downloadModel}>대화 모델 로드 실패 · 다시</button>
 	{:else if ask.chat.length > 0 && ask.modelState === 'ready' && ask.ollamaState !== 'ready'}
-		<!-- 대화 중에도 모델 교체 — 받은 모델은 즉시 전환, 안 받은 모델은 받기로. 답 품질 낮으면 3B 로 바꿀 수 있게. -->
+		<!-- 대화 중에도 모델 교체 · 받은 모델은 즉시 전환, 안 받은 모델은 받기로. 답 품질 낮으면 3B 로 바꿀 수 있게. -->
 		<select class="ad-model-pick" bind:value={ask.selectedModel} onchange={onModelChange} aria-label="대화 모델 변경">
 			{#each pickerModels as m (m.id)}
 				<option value={m.id}>{m.label}{ask.cachedModels.includes(m.id) ? ' · 받음' : ' · ' + sizeLabel(m.sizeMB)}</option>
@@ -663,7 +663,7 @@
 		color: #94a3b8;
 		font-size: 9px;
 	}
-	/* 크로스-회사 이동 — 전환 divider + 회사 배지 + 이동 칩 */
+	/* 크로스-회사 이동 · 전환 divider + 회사 배지 + 이동 칩 */
 	.co-divider {
 		align-self: stretch;
 		text-align: center;
@@ -701,7 +701,7 @@
 		text-overflow: ellipsis;
 	}
 	.nav-chip:hover { background: rgba(var(--dl-accent-rgb), 0.2); }
-	/* 중앙 온보딩 — 빈 대화 시 아바타 + 모델 영역 + Ollama 영역. 단일 폭(.ob-block)으로 좌우 정렬 일치. */
+	/* 중앙 온보딩 · 빈 대화 시 아바타 + 모델 영역 + Ollama 영역. 단일 폭(.ob-block)으로 좌우 정렬 일치. */
 	.onboard {
 		margin: auto;
 		display: flex;
@@ -716,7 +716,7 @@
 	.onboard-ava {
 		border-radius: 50%;
 	}
-	/* 정렬 컨테이너 — 모델/Ollama 자식을 같은 폭·같은 좌측선으로. 폭 혼재(240px warn vs inline-flex link) 제거. */
+	/* 정렬 컨테이너 · 모델/Ollama 자식을 같은 폭·같은 좌측선으로. 폭 혼재(240px warn vs inline-flex link) 제거. */
 	.ob-block {
 		width: 100%;
 		display: flex;
@@ -724,7 +724,7 @@
 		align-items: center;
 		gap: 7px;
 	}
-	/* 모델 선택 드롭다운 — 받기 전 어떤 모델을 받을지 고른다. scan 다크 폼 스타일. */
+	/* 모델 선택 드롭다운 · 받기 전 어떤 모델을 받을지 고른다. scan 다크 폼 스타일. */
 	.model-pick {
 		width: 100%;
 		max-width: 240px;
@@ -741,7 +741,7 @@
 		outline: none;
 		border-color: #38bdf8;
 	}
-	/* 대화 중 컴팩트 모델 교체 셀렉트 — 입력창 위 strip. 받은 모델 즉시 전환. */
+	/* 대화 중 컴팩트 모델 교체 셀렉트 · 입력창 위 strip. 받은 모델 즉시 전환. */
 	.ad-model-pick {
 		flex-shrink: 0;
 		align-self: flex-start;
@@ -871,7 +871,7 @@
 	}
 	.ad-send:disabled { opacity: 0.45; cursor: default; }
 
-	/* Ollama 옵션 레인 — 기존 팔레트 재사용(새 색 없음). ready 만 초록, 나머지 muted/warn. */
+	/* Ollama 옵션 레인 · 기존 팔레트 재사용(새 색 없음). ready 만 초록, 나머지 muted/warn. */
 	.ollama-link {
 		padding: 0;
 		border: none;
@@ -884,7 +884,7 @@
 		text-underline-offset: 2px;
 	}
 	.ollama-link:hover { color: var(--dl-accent); }
-	/* hidden 상태 가이드 펼치기 토글 — 작은 보조 링크(평소 접힘, 클릭 시 인라인 가이드). */
+	/* hidden 상태 가이드 펼치기 토글 · 작은 보조 링크(평소 접힘, 클릭 시 인라인 가이드). */
 	.ob-guide-toggle {
 		padding: 0;
 		border: none;
@@ -912,7 +912,7 @@
 		cursor: pointer;
 	}
 	.retry:hover { background: rgba(var(--dl-accent-rgb), 0.18); }
-	/* 인라인 설치 가이드 — 컨테이너 폭(최대 300px) 안에서 줄바꿈, 좌측 정렬. 절대배치/280px 툴팁 폐기로 클리핑 0. */
+	/* 인라인 설치 가이드 · 컨테이너 폭(최대 300px) 안에서 줄바꿈, 좌측 정렬. 절대배치/280px 툴팁 폐기로 클리핑 0. */
 	.ob-guide {
 		width: 100%;
 		display: flex;
@@ -949,7 +949,7 @@
 		font-weight: 700;
 	}
 
-	/* D5 — 모바일 터치 타깃 HIG(44px). 데스크톱(≥881px)은 위 기본값(26/38px) 불변.
+	/* D5 · 모바일 터치 타깃 HIG(44px). 데스크톱(≥881px)은 위 기본값(26/38px) 불변.
 	   드로어가 모바일에선 전체화면 오버레이(부모 +page @media)라 입력·닫기·전송이 손가락에 충분해야 한다. */
 	@media (max-width: 880px) {
 		.ad-head {
@@ -971,7 +971,7 @@
 			width: 48px;
 			height: 48px;
 		}
-		/* 온보딩 모델 영역 — 오버레이 풀폭이라 카드도 넉넉히. 받기 버튼 터치 타깃 확대. */
+		/* 온보딩 모델 영역 · 오버레이 풀폭이라 카드도 넉넉히. 받기 버튼 터치 타깃 확대. */
 		.onboard {
 			max-width: 420px;
 		}

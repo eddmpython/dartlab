@@ -1,6 +1,6 @@
 <script lang="ts">
-	// 연간 수익률 막대 — 전략 vs 보유(B&H) 캘린더 연도별. QuantStats·PortfolioVisualizer·QuantConnect 공통 시각.
-	// CAGR 한 숫자가 가리는 '연도 의존성'을 드러냄 — 한두 해 몰아주기인지, 매년 꾸준한지. monthlyReturns().ytd 재사용(중복 계산 0).
+	// 연간 수익률 막대 · 전략 vs 보유(B&H) 캘린더 연도별. QuantStats·PortfolioVisualizer·QuantConnect 공통 시각.
+	// CAGR 한 숫자가 가리는 '연도 의존성'을 드러냄 · 한두 해 몰아주기인지, 매년 꾸준한지. monthlyReturns().ytd 재사용(중복 계산 0).
 	// EquityChart 와 동일 실측 px 좌표계 · niceTicks y 그리드. 첫 해는 구간 시작부터의 부분 연도(라벨 *).
 	import type { Lang } from '../lib/types';
 	import { niceTicks, monthlyReturns } from './chartFrame';
@@ -45,7 +45,7 @@
 	const yt = $derived(niceTicks(dom.lo, dom.hi, 5));
 	const zeroY = $derived(yAt(0));
 
-	// 연도 슬롯 — 그룹(전략·B&H 2막대). 슬롯폭/막대폭 px.
+	// 연도 슬롯 · 그룹(전략·B&H 2막대). 슬롯폭/막대폭 px.
 	const slotW = $derived(rows.length ? plotW / rows.length : plotW);
 	const barW = $derived(Math.min(18, Math.max(4, (slotW - 6) / 2)));
 	const slotX = (i: number) => AX.l + slotW * (i + 0.5);
@@ -108,8 +108,8 @@
 			{@const r = rows[hover]}
 			<div class="yrTip">
 				<b>{r.year}{r.partial ? '*' : ''}</b>
-				<span class={(r.strat ?? 0) >= 0 ? 'u' : 'd'}>{T('전략', 'strat')} {r.strat != null ? sgn(r.strat) + '%' : '—'}</span>
-				<span class={(r.bh ?? 0) >= 0 ? 'u' : 'd'}>{T('보유', 'B&H')} {r.bh != null ? sgn(r.bh) + '%' : '—'}</span>
+				<span class={(r.strat ?? 0) >= 0 ? 'u' : 'd'}>{T('전략', 'strat')} {r.strat != null ? sgn(r.strat) + '%' : '·'}</span>
+				<span class={(r.bh ?? 0) >= 0 ? 'u' : 'd'}>{T('보유', 'B&H')} {r.bh != null ? sgn(r.bh) + '%' : '·'}</span>
 			</div>
 		{/if}
 	</div>

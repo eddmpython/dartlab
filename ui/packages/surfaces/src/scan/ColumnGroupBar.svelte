@@ -1,6 +1,6 @@
 <script lang="ts">
 	/**
-	 * 컬럼 그룹 toggle bar — 그리드 위쪽에 가로로.
+	 * 컬럼 그룹 toggle bar · 그리드 위쪽에 가로로.
 	 *
 	 * 사용자가 그룹 (재무/비율/등급/주가/공시 등) 단위로 컬럼 펼침/접기.
 	 * 그룹 클릭 = 해당 그룹 컬럼 모두 add (기존 active 와 union) / remove.
@@ -52,7 +52,7 @@
 		const state = groupState(g);
 		const next = new Set(activeColumns);
 		if (state === 'all') {
-			// 모두 제거 — 단 PINNED 는 보존
+			// 모두 제거 · 단 PINNED 는 보존
 			for (const m of cols) {
 				if (!PINNED_COLUMNS.includes(m.key)) next.delete(m.key);
 			}

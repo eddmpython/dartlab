@@ -1,4 +1,4 @@
-// Viewer compare model — 회사 비교 surface. 각 회사의 섹션/블록 콘텐츠를 열로 병치한다
+// Viewer compare model · 회사 비교 surface. 각 회사의 섹션/블록 콘텐츠를 열로 병치한다
 // (계정/키 분해 없음). null 셀 = honest-gap(그 회사엔 해당 공시 없음).
 
 export const COMPARE_SEP = '␟';

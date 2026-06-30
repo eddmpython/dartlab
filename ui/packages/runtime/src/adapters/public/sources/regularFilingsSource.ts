@@ -1,5 +1,5 @@
-// 정기공시 목록 — dart/panel/{code}.parquet 의 (period, rceptNo) 직독. 캐시·dedup 은 fetch 코어
-// (데이터 워크벤치 SSOT) — 자체 read·캐시 금지(hfRange 직접 import 금지, 가드 rule 6). 타입 정본 = contracts.
+// 정기공시 목록 · dart/panel/{code}.parquet 의 (period, rceptNo) 직독. 캐시·dedup 은 fetch 코어
+// (데이터 워크벤치 SSOT) · 자체 read·캐시 금지(hfRange 직접 import 금지, 가드 rule 6). 타입 정본 = contracts.
 import type { RegularFiling } from '@dartlab/ui-contracts';
 import type { DataCore } from '../../../data/fetch/request';
 

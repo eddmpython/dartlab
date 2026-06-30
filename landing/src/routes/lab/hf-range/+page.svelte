@@ -138,7 +138,7 @@
 						{#each requests as req, i}
 							<tr>
 								<td>{req.status}</td>
-								<td>{req.range ?? '—'}</td>
+								<td>{req.range ?? '·'}</td>
 								<td>{req.bytes.toLocaleString('ko-KR')}</td>
 								<td>{req.durationMs.toFixed(0)}</td>
 							</tr>

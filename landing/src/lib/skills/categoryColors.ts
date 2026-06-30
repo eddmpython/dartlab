@@ -1,4 +1,4 @@
-// Skill 카테고리 색상 SSOT — graph 시각화 + 카드 그리드 공통 사용.
+// Skill 카테고리 색상 SSOT · graph 시각화 + 카드 그리드 공통 사용.
 // SCHEMA.md §1 "start · runtime · operation · engines · recipes" 와 정합.
 
 export const categoryColor: Record<string, string> = {

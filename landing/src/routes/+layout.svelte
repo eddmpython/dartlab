@@ -13,10 +13,10 @@
 	import { provideScanDuckDb } from '@dartlab/ui-surfaces/scan';
 	import type { Snippet } from 'svelte';
 
-	// runtime/data 의 static 경로 base 주입 (과도기 — 4a-2 에서 RuntimeEnvironment.basePath 로 정식화)
+	// runtime/data 의 static 경로 base 주입 (과도기 · 4a-2 에서 RuntimeEnvironment.basePath 로 정식화)
 	setStaticBase(base);
-	// 정량재무제표 표(viewer FinanceDialog)는 DuckDB-WASM 대신 hyparquet raw 행으로 JS 집계 — 차트(bundle)와
-	// 같은 rowsCache 공유라 회사당 1회 다운로드·엔진 콜드스타트 0. scan 은 여전히 DuckDB-WASM(duckSql) — 전역 주입.
+	// 정량재무제표 표(viewer FinanceDialog)는 DuckDB-WASM 대신 hyparquet raw 행으로 JS 집계 · 차트(bundle)와
+	// 같은 rowsCache 공유라 회사당 1회 다운로드·엔진 콜드스타트 0. scan 은 여전히 DuckDB-WASM(duckSql) · 전역 주입.
 	provideFinanceRows(loadFinanceRows);
 	provideScanDuckDb(loadDartDb);
 	import CloudflareWebAnalytics from '$lib/components/CloudflareWebAnalytics.svelte';
@@ -26,7 +26,7 @@
 
 	let { children }: { children: Snippet } = $props();
 
-	// 라우트별 테마 적용 — 콘텐츠 표면은 사용자 선호(라이트 가능), 도구 표면은 강제 다크. 네비게이션마다 재평가.
+	// 라우트별 테마 적용 · 콘텐츠 표면은 사용자 선호(라이트 가능), 도구 표면은 강제 다크. 네비게이션마다 재평가.
 	$effect(() => {
 		applyTheme($themePref, page.url.pathname, base);
 	});
@@ -39,7 +39,7 @@
 {@render children()}
 
 <style>
-	/* 전역 모바일 보호 — viewport 가로 스크롤 차단
+	/* 전역 모바일 보호 · viewport 가로 스크롤 차단
 	   app.css에 두면 Tailwind v4 빌드에서 누락되므로 svelte global로 강제 */
 	:global(html) {
 		max-width: 100vw;
@@ -63,7 +63,7 @@
 		max-width: 100vw;
 	}
 
-	/* dartlab 다크 톤 scrollbar 통일 — 모든 element 의 native scrollbar.
+	/* dartlab 다크 톤 scrollbar 통일 · 모든 element 의 native scrollbar.
 	   WebKit 기반 (Chrome/Safari/Edge) + Firefox scrollbar-color. */
 	:global(*::-webkit-scrollbar) {
 		width: 10px;

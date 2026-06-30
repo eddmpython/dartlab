@@ -31,7 +31,7 @@
 </script>
 
 <svelte:head>
-	<title>dartlab · /lab — 디자인 시스템 검증</title>
+	<title>dartlab · /lab · 디자인 시스템 검증</title>
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
@@ -56,10 +56,10 @@
 	</div>
 </header>
 
-<!-- ─── Hero — editorial brutalist ─── -->
+<!-- ─── Hero · editorial brutalist ─── -->
 <section class="hero">
 	<div class="hero-inner">
-		<Eyebrow text="dartlab — design tokens · v1" />
+		<Eyebrow text="dartlab · design tokens · v1" />
 		<h1 class="hero-h1">
 			읽히는 재무 분석.<br />
 			<span class="hero-h1-em">비교 가능한 숫자.</span><br />
@@ -110,7 +110,7 @@
 	</div>
 </Section>
 
-<!-- ─── KPI 그리드 — 한국 표준 컬러 + tabular-nums ─── -->
+<!-- ─── KPI 그리드 · 한국 표준 컬러 + tabular-nums ─── -->
 <Section
 	number="02"
 	eyebrow="KPI · QUALITY"
@@ -155,7 +155,7 @@
 <!-- ─── 한국어 숫자 포맷 데모 ─── -->
 <Section
 	eyebrow="NUMBER FORMAT"
-	title="한국어 숫자 표기 — SSOT"
+	title="한국어 숫자 표기 · SSOT"
 	subtitle="만 단위 (10⁴) 기반. 조 · 억 · 만. 0.X 조는 X,XXX억으로 (한국 직관)."
 	container="article"
 >
@@ -241,7 +241,7 @@
 </Section>
 
 <footer class="lab-foot">
-	<span class="dl-eyebrow">END · /lab — 다음 단계: Sankey · LayerChart 통합 · DuckDB-WASM 검증</span>
+	<span class="dl-eyebrow">END · /lab · 다음 단계: Sankey · LayerChart 통합 · DuckDB-WASM 검증</span>
 </footer>
 
 <style>

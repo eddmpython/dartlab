@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 지표 파라미터 generic 에디터 — IND_DEFS 카탈로그 기반, 29종 전부 한 컴포넌트.
+	// 지표 파라미터 generic 에디터 · IND_DEFS 카탈로그 기반, 29종 전부 한 컴포넌트.
 	// 확인 버튼 없음(즉시 반영 = HTS 감각). 적용은 ChartCtl.setIndParams → PriceChart diff effect 가 overrideIndicator.
 	import type { Lang } from '../lib/types';
 	import type { ChartCtl } from './chartState.svelte';
@@ -32,7 +32,7 @@
 		ctl.setIndParams(name, cur.filter((_, j) => j !== i));
 	}
 	function addLine() {
-		if (cur.length >= 5) return; // 기본 라인 팔레트 5색 — 6번째부터 색 재사용이라 상한 5
+		if (cur.length >= 5) return; // 기본 라인 팔레트 5색 · 6번째부터 색 재사용이라 상한 5
 		const pd = paramDef(cur.length);
 		ctl.setIndParams(name, [...cur, Math.min(pd.max, Math.round(cur[cur.length - 1] * 2))]);
 	}

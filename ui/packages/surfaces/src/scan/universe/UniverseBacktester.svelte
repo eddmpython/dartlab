@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 유니버스 백테스터 — 전종목 크로스섹셔널 랭킹(17년 가격보존). terminal-strategy-lab 05 §6 킬러뷰.
+	// 유니버스 백테스터 · 전종목 크로스섹셔널 랭킹(17년 가격보존). terminal-strategy-lab 05 §6 킬러뷰.
 	// "분위가 단조롭게 벌어지나"가 한 자에 + 폐지 양극단 밴드로 불확실성까지 정직. 단일종목 랩과 별도 객체.
 	// 정직 가드 상존(U-G1~G8): 이중밴드·시도카운터·OOS 강제·이중벤치·근사라벨·추천아님.
 	import { ensureDuckDb } from '../duckSql';
@@ -21,14 +21,14 @@
 	let errMsg = $state('');
 	let ymRange = $state<{ min: string; max: string } | null>(null);
 
-	// 컨트롤(P1 사전규칙 — 데이터 보기 전 결정). 시도 카운터(U-G7): 조합 바꿀 때마다 +1.
+	// 컨트롤(P1 사전규칙 · 데이터 보기 전 결정). 시도 카운터(U-G7): 조합 바꿀 때마다 +1.
 	let signal = $state<RankSignalKey>('mom12_1');
 	let buckets = $state(5);
 	let rebalance = $state<'M' | 'Q'>('Q');
-	let liquidityPctile = $state(0.7); // 상위30% — 필수(penny 인공물 차단)
+	let liquidityPctile = $state(0.7); // 상위30% · 필수(penny 인공물 차단)
 	let attempts = $state(0);
 
-	// OOS 강제(끌 수 없음) — train 2010~2019 / test 2020~. 두 구간 동시 회계.
+	// OOS 강제(끌 수 없음) · train 2010~2019 / test 2020~. 두 구간 동시 회계.
 	const result = $derived.by<UniverseBtResult | null>(() => {
 		if (!rows || rows.length === 0) return null;
 		void signal;
@@ -87,7 +87,7 @@
 		const span = hi - lo || 1;
 		const x = (i: number) => PAD.l + (i / Math.max(1, n - 1)) * (W - PAD.l - PAD.r);
 		const y = (val: number) => PAD.t + (1 - (val - lo) / span) * (H - PAD.t - PAD.b);
-		// 계단(직선보간 금지 — 월말만 평가 시각화, 05 §6)
+		// 계단(직선보간 금지 · 월말만 평가 시각화, 05 §6)
 		let d = '';
 		for (let i = 0; i < n; i++) {
 			if (!Number.isFinite(nav[i])) continue;
@@ -104,7 +104,7 @@
 	<div class="ubHead">
 		<b class="ubTtl">{T('유니버스 백테스터', 'Universe Backtester')}</b>
 		<span class="ubSub">{T('전종목 크로스섹셔널 (폐지 포함·17년 가격보존)', 'cross-sectional · 17y price-preserved')}</span>
-		<span class="ubApprox" title={T('월말 리샘플 근사 — 월중 손절·갭·정지 미반영(MDD 과소평가)', 'month-end resample approx')}
+		<span class="ubApprox" title={T('월말 리샘플 근사 · 월중 손절·갭·정지 미반영(MDD 과소평가)', 'month-end resample approx')}
 			>{T('월말 근사 ⓘ', 'month-end ⓘ')}</span>
 		{#if onClose}<button class="ubX" onclick={onClose} aria-label="close">✕</button>{/if}
 	</div>
@@ -123,7 +123,7 @@
 				<button class={buckets === b ? 'on' : ''} onclick={() => { buckets = b; bump(); }}>{b}{T('분위', 'q')}</button>
 			{/each}
 		</span>
-		<label class="ubLiq" title={T('유동성 컷 — 그 시점 거래대금 상위 (필수: penny 인공물 차단)', 'liquidity cut')}>
+		<label class="ubLiq" title={T('유동성 컷 · 그 시점 거래대금 상위 (필수: penny 인공물 차단)', 'liquidity cut')}>
 			{T('유동성 상위', 'liquid top')}
 			<select bind:value={liquidityPctile} onchange={bump}>
 				<option value={0.8}>20%</option><option value={0.7}>30%</option><option value={0.5}>50%</option>
@@ -158,7 +158,7 @@
 
 		<div class="ubHeadline">
 			{#if r.headlineSuppressed}
-				<span class="ubBand">⚠ {T('폐지 의존 과다 — 단일 수치 무의미', 'too delisting-dependent — no single number')}</span>
+				<span class="ubBand">⚠ {T('폐지 의존 과다 · 단일 수치 무의미', 'too delisting-dependent · no single number')}</span>
 			{:else}
 				<b class="ubBig">Q1 {fmt((consTop.at(-1) ?? 100) - 100)}</b>
 				<span class="ubBandSm">{T('밴드', 'band')} {fmt((consTop.at(-1) ?? 100) - 100)}~{fmt((optTop.at(-1) ?? 100) - 100)}</span>
@@ -168,14 +168,14 @@
 			<span class="ubChip">EW {fmt((ew.at(-1) ?? 100) - 100)}</span>
 		</div>
 
-		<!-- 정직 표면 상존(닫기불가) — U-G1·G3·G4·G7·G8 -->
+		<!-- 정직 표면 상존(닫기불가) · U-G1·G3·G4·G7·G8 -->
 		<div class="ubHonesty">
 			<div>⚠ {T('단조성=눈으로(t-stat·IC 수치 아님) · 사후선택 1신호 · 표본=리밸', 'monotonicity by eye (not t-stat) · selection · sample=rebalances')} {r.rebalances.length}{T('회', '')}</div>
 			<div>⚠ {T('동일가중=소형주 틸트(size 프리미엄 포함) · 폐지 밴드=unknown', 'equal-weight=small-cap tilt · band=unknown delist')} {r.nUnknownExits}{T('종목', '')}{#if r.nMergerExits > 0} · {T('합병 추정', 'merger~')} {r.nMergerExits}{T('=last-close 제외', '=excluded')}{/if}</div>
 			<div class="ubFoot">{T('과거 [기간] 이 유니버스·규칙 회계 결과 · 월말 근사(MDD 과소평가) · 추천 아님 · 검증된 팩터 아님', 'historical accounting · month-end approx · not advice')}</div>
 		</div>
 	{:else if result}
-		<div class="ubMsg">{T('표본 부족(리밸<4) — 윈도/신호 조정', 'insufficient sample')}</div>
+		<div class="ubMsg">{T('표본 부족(리밸<4) · 윈도/신호 조정', 'insufficient sample')}</div>
 	{/if}
 </div>
 

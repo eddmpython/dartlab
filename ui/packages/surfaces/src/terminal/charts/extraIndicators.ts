@@ -1,8 +1,8 @@
-// 증권사 필수·klinecharts 미내장 커스텀 지표 — ICHI(일목균형표)·ENV(Envelope). econOverlay 등록 패턴.
+// 증권사 필수·klinecharts 미내장 커스텀 지표 · ICHI(일목균형표)·ENV(Envelope). econOverlay 등록 패턴.
 // ICHI 핵심: 선행스팬은 calc 단계에서 +기준기간 선-시프트(이력 구간은 기본 figure 가 그림 = y축 range·툴팁 자동),
 //   draw 는 구름 fill + 미래 구간 연장만 그리고 return false → 기본 5선이 구름 "위에" 렌더(klinecharts 는
 //   draw 를 figures 보다 먼저 실행). 미래 x 좌표는 dataIndexToCoordinate 가 길이 클램프 없는 순수 산술이라 외삽 가능.
-// styles.lines 는 deep-merge 안 됨 — color/size/style/smooth/dashedValue 완전 지정(누락 = 내부 draw 크래시).
+// styles.lines 는 deep-merge 안 됨 · color/size/style/smooth/dashedValue 완전 지정(누락 = 내부 draw 크래시).
 type Num = number | null;
 
 const hhll = (highs: number[], lows: number[], i: number, p: number): [number, number] | null => {
@@ -24,7 +24,7 @@ interface IchiDatum {
 	chikou?: number;
 	spanA?: number;
 	spanB?: number;
-	_a?: number; // 비-figure 원시값 — draw 미래 연장용 (y축 range 미기여)
+	_a?: number; // 비-figure 원시값 · draw 미래 연장용 (y축 range 미기여)
 	_b?: number;
 }
 
@@ -82,7 +82,7 @@ export function registerExtraIndicators(kc: { registerIndicator: (t: unknown) =>
 			const n = result.length;
 			if (!n) return false;
 			const p2 = indicator.calcParams[1] ?? 26;
-			// 구름 좌표 수집: 이력(i<n: spanA/spanB) + 미래(i>=n: result[i-p2]._a/_b — calc 산출 재사용, 즉석 재계산 0)
+			// 구름 좌표 수집: 이력(i<n: spanA/spanB) + 미래(i>=n: result[i-p2]._a/_b · calc 산출 재사용, 즉석 재계산 0)
 			const from = Math.max(0, visibleRange.from);
 			const to = Math.min(n + p2, visibleRange.realTo ?? visibleRange.to + p2);
 			const pts: { x: number; a: number; b: number }[] = [];
@@ -107,7 +107,7 @@ export function registerExtraIndicators(kc: { registerIndicator: (t: unknown) =>
 			};
 			let bull: boolean | null = null;
 			for (const p of pts) {
-				const nowBull = p.a <= p.b; // 픽셀 y 는 아래로 증가 — a 픽셀이 작으면 spanA 가 위(양운)
+				const nowBull = p.a <= p.b; // 픽셀 y 는 아래로 증가 · a 픽셀이 작으면 spanA 가 위(양운)
 				if (bull != null && nowBull !== bull) flush();
 				bull = nowBull;
 				seg.push(p);
@@ -135,7 +135,7 @@ export function registerExtraIndicators(kc: { registerIndicator: (t: unknown) =>
 		name: 'TVAL',
 		shortName: 'TVAL',
 		series: 'volume',
-		// turnover 는 toK 에서 억 단위로 변환 — 축약(K/M) 대신 콤마 정수가 한국 단위 관행
+		// turnover 는 toK 에서 억 단위로 변환 · 축약(K/M) 대신 콤마 정수가 한국 단위 관행
 		shouldFormatBigNumber: false,
 		precision: 0,
 		minValue: 0,

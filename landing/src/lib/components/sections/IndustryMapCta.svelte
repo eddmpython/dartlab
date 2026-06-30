@@ -7,7 +7,7 @@
 	<div class="inner">
 		<div class="left">
 			<div class="kicker">실시간 시각화</div>
-			<h2 id="map-cta-title">전 상장사가 어떻게 <br />연결되는지 — 10초 안에</h2>
+			<h2 id="map-cta-title">전 상장사가 어떻게 <br />연결되는지 · 10초 안에</h2>
 			<p class="lead">
 				전 상장사 · 모든 산업 · 모든 공급망 관계를 한 화면에.
 				버블을 클릭해 산업으로 드릴다운, 종목을 선택해 5년 재무 ·

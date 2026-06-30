@@ -1,6 +1,6 @@
-// 거시 forward 시뮬 — 브라우저 *런타임* BVAR 계산. 별도 데이터 빌드/배선·HF publish 0.
+// 거시 forward 시뮬 · 브라우저 *런타임* BVAR 계산. 별도 데이터 빌드/배선·HF publish 0.
 // 이미 로드된 observations(rt.macro.getSeries)로 BVAR 추정 → 해석적 분위 팬 + IRF.
-// ⛔ Python 정본(src/dartlab/macro/simulate)과 *동일 수식* — golden parity 테스트로 drift 차단.
+// ⛔ Python 정본(src/dartlab/macro/simulate)과 *동일 수식* · golden parity 테스트로 drift 차단.
 //    난수 0(해석적)이라 Python·TS byte 수준 일치. fan = 예측오차 분산 누적(Lütkepohl §2.2).
 import type { MacroPoint, MacroSimFile, MacroSimFanVar, MacroSimScenario } from '@dartlab/ui-contracts';
 
@@ -77,7 +77,7 @@ function cholesky(a: Mat): Mat | null {
 	}
 	return l;
 }
-// OLS 계수 (XᵀX)⁻¹ Xᵀy — 잔차 std(ddof) 용.
+// OLS 계수 (XᵀX)⁻¹ Xᵀy · 잔차 std(ddof) 용.
 function olsResidStd(x: Mat, y: number[], ddof: number): number {
 	const xt = transpose(x), xtxInv = matInv(matMul(xt, x));
 	if (!xtxInv) return 1;
@@ -138,7 +138,7 @@ function companion(fit: BvarFit): Mat {
 	return c;
 }
 export function maxCompanionModulus(fit: BvarFit): number {
-	// 스펙트럴 반경 ρ(C) ≈ Gelfand 공식 ‖C^k‖_F^(1/k) (k 큼) — 임의(복소고유값) 행렬에 수렴.
+	// 스펙트럴 반경 ρ(C) ≈ Gelfand 공식 ‖C^k‖_F^(1/k) (k 큼) · 임의(복소고유값) 행렬에 수렴.
 	// power iteration 은 복소 dominant 고유값에서 모듈러스를 못 잡아 부적합. 안정성 게이트(ρ<1)용.
 	const c = companion(fit), m = c.length, K = 100;
 	let ck = c.map((r) => [...r]);
@@ -283,7 +283,7 @@ export function conditionalPath(fit: BvarFit, history: Mat, condIdx: number, con
 	const hn = horizon * n, m = Math.min(condDeltas.length, horizon);
 	const muStack: number[] = [];
 	for (let h = 0; h < horizon; h++) for (let i = 0; i < n; i++) muStack.push(mean[h][i]);
-	const omRt = zeros(hn, m); // Ω R' — column a = Ω[:, a·n+condIdx]
+	const omRt = zeros(hn, m); // Ω R' · column a = Ω[:, a·n+condIdx]
 	for (let r = 0; r < hn; r++) for (let a = 0; a < m; a++) omRt[r][a] = omega[r][a * n + condIdx];
 	const rOmRt = zeros(m, m); // R Ω R' = omRt 의 조건 행
 	for (let a = 0; a < m; a++) for (let bb = 0; bb < m; bb++) rOmRt[a][bb] = omRt[a * n + condIdx][bb];
@@ -344,7 +344,7 @@ export async function computeMacroSim(
 	const fit = estimateBvar(built.panel, cfg.specs, lag, lam, built.lastLevels);
 	if (!fit) return hold('추정 실패·표시 보류');
 	const eig = maxCompanionModulus(fit);
-	// 게이트 1.05 — Gelfand(Frobenius) 추정이 near-unit-root(정책금리 ρ≈0.997)·고차원에서 ~수% 과대평가해도
+	// 게이트 1.05 · Gelfand(Frobenius) 추정이 near-unit-root(정책금리 ρ≈0.997)·고차원에서 ~수% 과대평가해도
 	// 통과, 진짜 폭발(비정상)만 fail-close. fan 유한성(아래)이 2차 가드.
 	if (!isFinite(eig) || eig >= 1.05) return hold('불안정(비정상)·표시 보류', [{ id: 'stability', status: '표시 보류', reason: `eig ${eig.toFixed(3)}` }]);
 
@@ -358,6 +358,6 @@ export async function computeMacroSim(
 	return {
 		market, status: 'ok', asOf: built.yms[built.yms.length - 1], horizon,
 		model: { kind: 'BVAR', lag, prior: 'minnesota', nObs, companionEig: +eig.toFixed(4), status: 'ok' },
-		fan, irf, scenarios, regimePath: { status: '국면경로 — 런타임 미산출' }, missing: []
+		fan, irf, scenarios, regimePath: { status: '국면경로 · 런타임 미산출' }, missing: []
 	};
 }

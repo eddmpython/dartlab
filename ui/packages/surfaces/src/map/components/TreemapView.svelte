@@ -51,7 +51,7 @@
 	// Industry name map
 	let indNameMap = $derived(new Map(industries.map((i: any) => [i.id, i.name || i.id])));
 
-	// Size value extractor — treemap needs positive values
+	// Size value extractor · treemap needs positive values
 	function sizeValue(n: any): number {
 		// 타임라인 모드: 해당 연도 매출로 크기 결정
 		if (timelineYear) {

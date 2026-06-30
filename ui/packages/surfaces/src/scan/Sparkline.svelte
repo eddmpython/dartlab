@@ -1,5 +1,5 @@
 <script lang="ts">
-	/** 미니 sparkline — pure SVG, no deps. mono color, smooth curve. */
+	/** 미니 sparkline · pure SVG, no deps. mono color, smooth curve. */
 	interface Props {
 		data: (number | null | undefined)[];
 		width?: number;

@@ -1,5 +1,5 @@
 /**
- * CodeMirror 6 mount helper — SQL editor with autocomplete + dark theme.
+ * CodeMirror 6 mount helper · SQL editor with autocomplete + dark theme.
  *
  * 사용:
  *   const view = mountCodemirror({
@@ -95,9 +95,9 @@ export function mountCodemirror(opts: MountOptions): EditorView {
 	});
 }
 
-/** 외부에서 schema 변경 시 호출 — view 재구성. */
+/** 외부에서 schema 변경 시 호출 · view 재구성. */
 export function updateSchema(view: EditorView, _schemaTables: Record<string, string[]>) {
-	// 간단한 reload — schema 변경은 드물어 dispatch 보다 destroy + remount 권장.
+	// 간단한 reload · schema 변경은 드물어 dispatch 보다 destroy + remount 권장.
 	// 호출자가 destroy + mountCodemirror 재호출하면 됨.
 	void view;
 	void _schemaTables;

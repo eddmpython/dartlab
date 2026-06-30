@@ -1,4 +1,4 @@
-// 공시뷰어 데이터 계약 — ui/web `features/dashboard/api/client.ts` 와 동일 shape.
+// 공시뷰어 데이터 계약 · ui/web `features/dashboard/api/client.ts` 와 동일 shape.
 // 브라우저 readWide(panelWide.ts)가 산출하고 Svelte 컴포넌트가 소비.
 
 // panel parquet 한 leaf 행 (brower read 필요 컬럼). 컬럼 목록은 panelLoad.READ_COLUMNS. pipeline 입력 단위.
@@ -51,7 +51,7 @@ export interface PanelTocResponse {
 	periods: string[]; // 최신좌측 정렬 (timeline SSOT)
 }
 
-// 한 회사 전체 — 브라우저가 panel 하나에서 온더플라이로 산출.
+// 한 회사 전체 · 브라우저가 panel 하나에서 온더플라이로 산출.
 export interface PanelBundle {
 	stockCode: string;
 	corpName: string;

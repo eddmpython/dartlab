@@ -1,5 +1,5 @@
 <script lang="ts">
-	// ⌘K 커맨드 팔레트 — 공시뷰어 *화면내검색* 전용 (본문검색 + 섹션점프). 회사전환은 헤더 종목검색 버튼이 담당(분리).
+	// ⌘K 커맨드 팔레트 · 공시뷰어 *화면내검색* 전용 (본문검색 + 섹션점프). 회사전환은 헤더 종목검색 버튼이 담당(분리).
 	// 본문검색은 searchIndex(gridBySection BM25) 결과를 그대로 격자로 데려간다(pickSection+pickPeriod+glow).
 	// scan 검색 디자인 언어(다크 #050811 · 오렌지 var(--amber)).
 	import { onMount } from 'svelte';
@@ -99,7 +99,7 @@
 	}
 
 	onMount(() => {
-		// ⌘K 를 capture 단계에서 선점 + stopImmediatePropagation — 뷰어 페이지에선 전역 사이트 팔레트
+		// ⌘K 를 capture 단계에서 선점 + stopImmediatePropagation · 뷰어 페이지에선 전역 사이트 팔레트
 		// (components/CommandPalette.svelte, svelte:window 버블 리스너)보다 우선. 뷰어 떠나면 언마운트로 전역 복귀.
 		const onGlobal = (e: KeyboardEvent) => {
 			if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
@@ -117,7 +117,7 @@
 	}
 </script>
 
-<button class="kbd-hint" type="button" onclick={openPalette} title="화면내검색 — 이 공시 본문에서 찾기 (⌘K)">
+<button class="kbd-hint" type="button" onclick={openPalette} title="화면내검색 · 이 공시 본문에서 찾기 (⌘K)">
 	<Search size={13} />
 	<span>화면내검색</span>
 	<kbd>⌘K</kbd>

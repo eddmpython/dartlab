@@ -1,10 +1,10 @@
-// fetch 코어 단위 테스트 — fetchFn·now 주입으로 네트워크 없이 결정론 검증.
+// fetch 코어 단위 테스트 · fetchFn·now 주입으로 네트워크 없이 결정론 검증.
 // 캐시 적중 / in-flight dedup / 에러 비캐시 / TTL 만료 / scope 'none' 5 케이스.
 import { describe, it, expect } from 'vitest';
 import { createDataCore } from './request';
 import type { FetchLike } from '../parquet/hfRange';
 
-// 호출 횟수를 세는 fake fetch — 항상 200 OK + JSON payload 반환.
+// 호출 횟수를 세는 fake fetch · 항상 200 OK + JSON payload 반환.
 function countingFetch(payload: unknown): { fetchFn: FetchLike; calls: () => number } {
 	let n = 0;
 	const fetchFn = (async () => {
@@ -20,7 +20,7 @@ function countingFetch(payload: unknown): { fetchFn: FetchLike; calls: () => num
 const jsonParse = (r: Response) => r.json();
 
 describe('createDataCore.request', () => {
-	it('memory cache hit — 동일 키 두 번 호출 시 fetchFn 1 회', async () => {
+	it('memory cache hit · 동일 키 두 번 호출 시 fetchFn 1 회', async () => {
 		const { fetchFn, calls } = countingFetch({ v: 1 });
 		const core = createDataCore({ fetchFn, now: () => 0 });
 		const spec = { origin: 'hf' as const, path: 'x.json', parse: jsonParse, cacheKey: 'k-hit' };
@@ -33,7 +33,7 @@ describe('createDataCore.request', () => {
 		expect(b).toEqual({ v: 1 });
 	});
 
-	it('in-flight dedup — 동시 동일 키 2 건 시 fetchFn 1 회', async () => {
+	it('in-flight dedup · 동시 동일 키 2 건 시 fetchFn 1 회', async () => {
 		let n = 0;
 		let release!: () => void;
 		const gate = new Promise<void>((r) => (release = r));
@@ -46,7 +46,7 @@ describe('createDataCore.request', () => {
 		const core = createDataCore({ fetchFn, now: () => 0 });
 		const spec = { origin: 'hf' as const, path: 'y.json', parse: jsonParse, cacheKey: 'k-dedup' };
 
-		const p1 = core.request<{ v: number }>(spec); // await 하지 않음 — in-flight 유지
+		const p1 = core.request<{ v: number }>(spec); // await 하지 않음 · in-flight 유지
 		const p2 = core.request<{ v: number }>(spec);
 		release();
 		const [a, b] = await Promise.all([p1, p2]);
@@ -56,11 +56,11 @@ describe('createDataCore.request', () => {
 		expect(b).toEqual({ v: 2 });
 	});
 
-	it('error not cached — parse throw 후 재호출이 fetchFn 재실행', async () => {
+	it('error not cached · parse throw 후 재호출이 fetchFn 재실행', async () => {
 		const { fetchFn, calls } = countingFetch({ v: 3 });
 		const core = createDataCore({ fetchFn, now: () => 0 });
 		let parseCalls = 0;
-		// 첫 parse 는 throw(에러 전파), 두 번째는 정상값 — 에러가 캐시되지 않았음을 증명.
+		// 첫 parse 는 throw(에러 전파), 두 번째는 정상값 · 에러가 캐시되지 않았음을 증명.
 		const parse = async (r: Response) => {
 			parseCalls += 1;
 			if (parseCalls === 1) throw new Error('parse boom');
@@ -77,7 +77,7 @@ describe('createDataCore.request', () => {
 		expect(ok).toEqual({ v: 3 });
 	});
 
-	it('TTL expiry — ttl 경과 후 재요청 시 fetchFn 2 회', async () => {
+	it('TTL expiry · ttl 경과 후 재요청 시 fetchFn 2 회', async () => {
 		const { fetchFn, calls } = countingFetch({ v: 4 });
 		let t = 0;
 		const core = createDataCore({ fetchFn, now: () => t });
@@ -97,7 +97,7 @@ describe('createDataCore.request', () => {
 		expect(calls()).toBe(2);
 	});
 
-	it("scope 'none' — 매 호출 refetch", async () => {
+	it("scope 'none' · 매 호출 refetch", async () => {
 		const { fetchFn, calls } = countingFetch({ v: 5 });
 		const core = createDataCore({ fetchFn, now: () => 0 });
 		const spec = {

@@ -58,7 +58,7 @@ export function buildWebsiteJsonLd(): SeoThing {
 		'@id': websiteId,
 		name: brand.name,
 		url: brand.url,
-		description: 'Official DartLab site — DART electronic disclosure analysis and filing guides. DART 전자공시 분석과 공시 가이드.',
+		description: 'Official DartLab site · DART electronic disclosure analysis and filing guides. DART 전자공시 분석과 공시 가이드.',
 		inLanguage: ['ko', 'en'],
 		publisher: { '@id': organizationId },
 		potentialAction: {
@@ -117,7 +117,7 @@ export function buildSourceCodeJsonLd(): SeoThing {
 		'@type': 'SoftwareSourceCode',
 		name: 'DartLab',
 		description:
-			'Python library that turns DART and EDGAR filings into one structured company map — financials, text, reports aligned across every period.',
+			'Python library that turns DART and EDGAR filings into one structured company map · financials, text, reports aligned across every period.',
 		codeRepository: brand.repo,
 		codeSampleType: 'full solution',
 		programmingLanguage: {

@@ -1,7 +1,7 @@
 <script lang="ts">
-	// 공시 워치 — 좌측 레일 패널(스크리너·히트맵과 동급). 행 = 회사명 + 30거래일 스파크 + 1Y + 수시공시 신선도 배지.
+	// 공시 워치 · 좌측 레일 패널(스크리너·히트맵과 동급). 행 = 회사명 + 30거래일 스파크 + 1Y + 수시공시 신선도 배지.
 	// 신선도 = 절대시각 기준(현재 − 접수일) Tier 1, 기기 무관·무상태. 데이터: recentMap(가격, LeftRail 공유) +
-	// filing.nonRegular(회사당 기존 per-code 캐시 재사용). 워치 집합이 작아(목표 10~30) per-company 로 충분 —
+	// filing.nonRegular(회사당 기존 per-code 캐시 재사용). 워치 집합이 작아(목표 10~30) per-company 로 충분 ·
 	// 다중코드 배치 read 는 후속 최적화(포트 표면 1 메서드 신설 필요). 정직 라벨: "이 기기 저장"·완결성 단정 없음.
 	import type { Candle } from '@dartlab/ui-contracts';
 	import { useDartLabRuntime } from '@dartlab/ui-runtime';
@@ -17,12 +17,12 @@
 		active: string;
 		onPick: (code: string) => void;
 		recentMap: Record<string, Candle[]> | null; // 30거래일 스파크 (LeftRail 과 어댑터 캐시 공유, 추가 다운로드 0)
-		bare?: boolean; // 탭 모드 — Panel 크롬(헤더·테두리) 없이 본문만. 하단 탭(LeftRail)이 헤더·제목 제공.
+		bare?: boolean; // 탭 모드 · Panel 크롬(헤더·테두리) 없이 본문만. 하단 탭(LeftRail)이 헤더·제목 제공.
 	}
 	let { eng, lang, active, onPick, recentMap, bare = false }: Props = $props();
 	const rt = useDartLabRuntime();
 
-	// 신선도 — 수시공시(allFilings) 접수일 기준 최근 7/30 일 건수 + 최신일. 회사당 1 회 비동기 로드(요청 중복 가드).
+	// 신선도 · 수시공시(allFilings) 접수일 기준 최근 7/30 일 건수 + 최신일. 회사당 1 회 비동기 로드(요청 중복 가드).
 	interface Fresh {
 		new7: number;
 		new30: number;
@@ -73,7 +73,7 @@
 			const px = eng.priceOf(code);
 			return { code, node: nodeById.get(code), r1y: px ? ((px.return1y as number | null) ?? null) : null, f: fresh[code] ?? null };
 		});
-		// 신선도순 — 7일 신규 > 30일 신규 > 최신 공시일. 미로드(f=null)는 후순위.
+		// 신선도순 · 7일 신규 > 30일 신규 > 최신 공시일. 미로드(f=null)는 후순위.
 		return list.sort((a, b) => {
 			const sa = a.f ? a.f.new7 * 1000 + a.f.new30 : -1;
 			const sb = b.f ? b.f.new7 * 1000 + b.f.new30 : -1;
@@ -83,7 +83,7 @@
 	});
 </script>
 
-<!-- 본문 — Panel 모드와 bare(탭) 모드가 공유. 헤더/테두리만 모드별로 다름. -->
+<!-- 본문 · Panel 모드와 bare(탭) 모드가 공유. 헤더/테두리만 모드별로 다름. -->
 {#snippet inner()}
 	{#if !watchlist.count}
 		<div class="watchEmpty">{lang === 'en' ? 'Add companies with the header ☆ to monitor their filings here.' : '헤더의 ☆ 로 회사를 담으면 공시 신선도를 한눈에 모읍니다.'}</div>
@@ -94,13 +94,13 @@
 				<div class={'watchRow' + (active === r.code ? ' on' : '')} role="button" tabindex="0" onclick={() => onPick(r.code)} onkeydown={(e) => e.key === 'Enter' && onPick(r.code)}>
 					<span class="wName"><b>{eng.nameOf(r.code) || r.code}</b><span class="wInd">{r.node?.industryName || r.code}</span></span>
 					<span class="wSpark">{#if sp && sp.length > 1}<svg class={chgClass(r.r1y)} viewBox="0 0 34 11" preserveAspectRatio="none" aria-hidden="true"><polyline points={sparkPts(sp.map((k) => k.c))} fill="none" stroke="currentColor" stroke-width="1.1" /></svg>{/if}</span>
-					<span class={'wR1y mono ' + chgClass(r.r1y)}>{r.r1y == null ? '—' : sign(r.r1y, 0) + '%'}</span>
+					<span class={'wR1y mono ' + chgClass(r.r1y)}>{r.r1y == null ? '·' : sign(r.r1y, 0) + '%'}</span>
 					<span class="wFresh">
 						{#if r.f == null}<span class="wfDim mono">·</span>
 						{:else if r.f.new7 > 0}<span class="wfHot mono" title={lang === 'en' ? 'new non-regular filings within 7 days' : '최근 7일 신규 수시공시'}>{lang === 'en' ? '7D ' : '7일 '}{r.f.new7}</span>
 						{:else if r.f.new30 > 0}<span class="wfWarm mono" title={lang === 'en' ? 'within 30 days' : '최근 30일'}>{lang === 'en' ? '30D ' : '30일 '}{r.f.new30}</span>
 						{:else if r.f.latest}<span class="wfDim mono" title={lang === 'en' ? 'latest filing date' : '최근 공시일'}>{r.f.latest.slice(2)}</span>
-						{:else}<span class="wfDim mono">—</span>{/if}
+						{:else}<span class="wfDim mono">·</span>{/if}
 					</span>
 					<button class="wDel" title={lang === 'en' ? 'remove from watch' : '워치에서 제거'} aria-label="remove" onclick={(e) => { e.stopPropagation(); watchlist.remove(r.code); }}>✕</button>
 				</div>
@@ -129,7 +129,7 @@
 		display: flex;
 		flex-direction: column;
 	}
-	/* 탭 모드 — 패널 잔여 높이를 채우고 목록만 내부 스크롤(무한 증가가 다른 패널을 밀지 않음). */
+	/* 탭 모드 · 패널 잔여 높이를 채우고 목록만 내부 스크롤(무한 증가가 다른 패널을 밀지 않음). */
 	.watchBare {
 		display: flex;
 		flex-direction: column;

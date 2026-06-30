@@ -1,10 +1,10 @@
 <script lang="ts">
-	// 상용급 조건검색 — 주가·재무·등급 프리빌드 전필드 다조건 AND 스크리너 (eco + prices).
+	// 상용급 조건검색 · 주가·재무·등급 프리빌드 전필드 다조건 AND 스크리너 (eco + prices).
 	// scan 보드 이동 없이 터미널 안에서 즉시. 결과 클릭 → 종목 로드.
 	import type { Engine } from '../lib/engine';
 	import type { EcoNode, Lang } from '../lib/types';
 	import { chgClass } from '../ui/helpers';
-	import { finTypeOf } from '../lib/finType'; // 재무 유형 라벨 SSOT — 좌측 레일과 동일 판정
+	import { finTypeOf } from '../lib/finType'; // 재무 유형 라벨 SSOT · 좌측 레일과 동일 판정
 
 	interface Props {
 		eng: Engine;
@@ -59,7 +59,7 @@
 	];
 	const byKey = Object.fromEntries(F.map((f) => [f.key, f]));
 	const fmtNum = (f: FieldDef, v: number | null): string => {
-		if (v == null) return '—';
+		if (v == null) return '·';
 		if (f.unit === '조') return v.toFixed(1) + '조';
 		if (f.unit === '위') return v.toFixed(0) + '위';
 		if (f.unit === '') return v.toFixed(2);
@@ -176,7 +176,7 @@
 								<option value=">=">≥</option>
 								<option value="<=">≤</option>
 							</select>
-							<input class="scrNum mono" type="number" bind:value={c.v} placeholder="—" />
+							<input class="scrNum mono" type="number" bind:value={c.v} placeholder="·" />
 							<span class="scrUnit">{f?.unit}</span>
 						{/if}
 						<button class="scrDel" onclick={() => removeCond(c.id)} aria-label="remove">✕</button>
@@ -216,7 +216,7 @@
 							</tr>
 						{/each}
 						{#if results.length === 0}
-							<tr><td colspan={cols.length + 2} class="scrEmpty">{lang === 'en' ? 'no matches — loosen conditions' : '조건 충족 종목 없음 — 조건 완화'}</td></tr>
+							<tr><td colspan={cols.length + 2} class="scrEmpty">{lang === 'en' ? 'no matches · loosen conditions' : '조건 충족 종목 없음 · 조건 완화'}</td></tr>
 						{/if}
 					</tbody>
 				</table>

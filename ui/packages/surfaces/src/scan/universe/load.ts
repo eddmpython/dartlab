@@ -1,6 +1,6 @@
-// 유니버스 패널 로더 — gov/prices/universe-monthly.parquet(floor, HF SSOT) → UniverseRow[].
+// 유니버스 패널 로더 · gov/prices/universe-monthly.parquet(floor, HF SSOT) → UniverseRow[].
 // scan DuckDB-wasm 인프라(registerHfParquet) 재사용. 브라우저 전용(node 단위테스트는 engine.test 가 합성으로).
-// 실측 11.91MB·443,422행 단일파일 — 1회 로드 후 ym 윈도 SELECT.
+// 실측 11.91MB·443,422행 단일파일 · 1회 로드 후 ym 윈도 SELECT.
 
 import type { DartDb } from '../duckSql';
 import type { DelistReason, UniverseRow } from './types';

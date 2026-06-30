@@ -1,9 +1,9 @@
-// 종목 뉴스 헤드라인 로더 — 네이버 검색 API archive(private, 언론사 저작권)를 CF 워커가 read 토큰으로
+// 종목 뉴스 헤드라인 로더 · 네이버 검색 API archive(private, 언론사 저작권)를 CF 워커가 read 토큰으로
 // 서버사이드 read 해 반환(라이브 표시 = 의도된 용도, 공개 벌크 재배포 아님). 브라우저는 private 직독 불가라
-// 워커 경유가 유일 경로 — 공개·로컬 동일(price·macro 와 같은 "공통 배선": 워커/HF 단일 소스).
+// 워커 경유가 유일 경로 · 공개·로컬 동일(price·macro 와 같은 "공통 배선": 워커/HF 단일 소스).
 //   모든 환경 = CF 워커 /news 라우트(origins newsWorker). 미설정 시 [] (정직한 미배선).
-// (옛 dev /__news 미들웨어 분기는 구현된 적 없어 로컬을 빈 상태로 만들었다 — newsWorker 게이트로 통일.)
-// 옛 module Map 캐시 + 인라인 fetch 는 폐기 — fetch 코어가 read 레벨 캐시(10분 TTL)·dedup. env 게이트 +
+// (옛 dev /__news 미들웨어 분기는 구현된 적 없어 로컬을 빈 상태로 만들었다 · newsWorker 게이트로 통일.)
+// 옛 module Map 캐시 + 인라인 fetch 는 폐기 · fetch 코어가 read 레벨 캐시(10분 TTL)·dedup. env 게이트 +
 //   워커 URL 조립은 origins 레지스트리(newsWorker)로 흡수.
 import type { NewsItem } from '@dartlab/ui-contracts';
 import { moduleFallbackCore, type DataCore } from '../../../data/fetch/request';

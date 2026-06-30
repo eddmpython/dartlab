@@ -1,11 +1,11 @@
 /**
- * Scan Studio 클라이언트 캐시 — IndexedDB 기반.
+ * Scan Studio 클라이언트 캐시 · IndexedDB 기반.
  *
  * priceMap / valuationMap / changesMap 결과를 직렬화 후 저장.
  * 재방문 시 즉시 hit → 0초 first-paint of 가격·시총·1Y·sparkline.
  *
  * TTL: 6시간 (HF parquet 매일 KST 17:00~18:00 갱신, 그 후 만료시 fresh fetch).
- * 저장 부피: priceMap 약 800KB (sparkline 포함) — IndexedDB 한계 대비 안전.
+ * 저장 부피: priceMap 약 800KB (sparkline 포함) · IndexedDB 한계 대비 안전.
  */
 
 const DB_NAME = 'dartlab-scan';
@@ -55,12 +55,12 @@ export async function readCachedMap<V>(key: string): Promise<Map<string, V> | nu
 				const entry = req.result as CacheEntry<Array<[string, V]>> | undefined;
 				if (!entry) return resolve(null);
 				if (Date.now() - entry.ts > TTL_MS) {
-					console.info(`[scan/cache] ${key} 만료 — refresh 필요`);
+					console.info(`[scan/cache] ${key} 만료 · refresh 필요`);
 					return resolve(null);
 				}
 				const map = new Map<string, V>(entry.data);
 				console.info(
-					`[scan/cache] ✅ ${key} hit — ${map.size}사 (${((Date.now() - entry.ts) / 1000 / 60).toFixed(0)}분 전 저장)`
+					`[scan/cache] ✅ ${key} hit · ${map.size}사 (${((Date.now() - entry.ts) / 1000 / 60).toFixed(0)}분 전 저장)`
 				);
 				resolve(map);
 			};
@@ -86,7 +86,7 @@ export async function writeCachedMap<V>(key: string, map: Map<string, V>): Promi
 			};
 			const req = tx.objectStore(STORE).put(entry);
 			req.onsuccess = () => {
-				console.info(`[scan/cache] ${key} 저장 — ${map.size}사`);
+				console.info(`[scan/cache] ${key} 저장 · ${map.size}사`);
 				resolve();
 			};
 			req.onerror = () => {

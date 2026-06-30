@@ -1,10 +1,10 @@
-// 공시뷰어 답변 번역 — Chrome 온디바이스 Translator API(내장 AI, Chrome 138+ 데스크톱).
+// 공시뷰어 답변 번역 · Chrome 온디바이스 Translator API(내장 AI, Chrome 138+ 데스크톱).
 //
 // 결정론 한국어 답(answerCompose 의 composed.answer, SSOT)을 외부 전송 0·온디바이스로 번역만 한다.
-// 전용 MT 모델이라 생성형 환각이 없다(숫자·계정명·기간 그대로). WebGPU 불필요 — Tier1 LLM 과 독립.
+// 전용 MT 모델이라 생성형 환각이 없다(숫자·계정명·기간 그대로). WebGPU 불필요 · Tier1 LLM 과 독립.
 // Gemini Nano(Prompt API)는 한국어 생성 미지원(en/ja/es)이라 번역 레이어엔 쓰지 않는다.
 //
-// 모든 진입점은 기능 탐지 후 부재 시 안전 결과(supported:false)를 반환 — 결정론 답엔 영향 없음.
+// 모든 진입점은 기능 탐지 후 부재 시 안전 결과(supported:false)를 반환 · 결정론 답엔 영향 없음.
 
 // 내장 AI 공통 4-값 가용성 enum.
 export type Availability = 'unavailable' | 'downloadable' | 'downloading' | 'available';
@@ -72,7 +72,7 @@ export async function translateAnswer(
 	if (status === 'unavailable') {
 		return { supported: false, text: '', reason: `ko→${target} 번역을 이 기기에서 사용할 수 없습니다.` };
 	}
-	// 다운로드 필요 시 사용자 제스처 필요 — 호출은 click 핸들러 안이므로 통상 isActive.
+	// 다운로드 필요 시 사용자 제스처 필요 · 호출은 click 핸들러 안이므로 통상 isActive.
 	if (
 		status !== 'available' &&
 		typeof navigator !== 'undefined' &&

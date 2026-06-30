@@ -1,4 +1,4 @@
-# `lib/viewer/dev/` — 테스트 라우터 격리 사본
+# `lib/viewer/dev/` · 테스트 라우터 격리 사본
 
 `/lab/viewer-dev/[stockCode]` 테스트 라우터가 **본진과 같은 동일환경**에서 코파일럿/액션레이어를
 개발하되, 본진(`/viewer/company`)에 새지 않도록 **파일로 격리**한 사본 폴더다.
@@ -13,9 +13,9 @@
 
 ## 현재 격리 대상
 
-- `AskDrawer.svelte` — 코파일럿 UI (개발 surface). 내부 import 중 `askSession` 만 `./`(dev 사본),
+- `AskDrawer.svelte` · 코파일럿 UI (개발 surface). 내부 import 중 `askSession` 만 `./`(dev 사본),
   나머지(`$lib/viewer/searchIndex·answerCompose·webllm·viewerActions·translate·...`)는 공유.
-- `askSession.svelte.ts` — 대화/모델 상태 **모듈 싱글턴**. 공유하면 dev↔본진 대화가 섞이므로 **반드시 격리**.
+- `askSession.svelte.ts` · 대화/모델 상태 **모듈 싱글턴**. 공유하면 dev↔본진 대화가 섞이므로 **반드시 격리**.
   (내부 `searchIndex`/`webllm` import 는 공유 canonical 로 재지정.)
 
 그 외 코파일럿 모듈(`answerCompose`/`financeAsk`/`webllm`/`ollama`/`translate`/`searchIndex`/

@@ -86,7 +86,7 @@
 		};
 	});
 
-	const pageTitle = $derived(`${meta.title} — DartLab Skills`);
+	const pageTitle = $derived(`${meta.title} · DartLab Skills`);
 	const pageDesc = $derived(meta.purpose);
 	const pageUrl = $derived(buildAbsoluteUrl(`skills/${id}`));
 

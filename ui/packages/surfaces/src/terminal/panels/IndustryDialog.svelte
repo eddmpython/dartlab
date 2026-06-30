@@ -1,7 +1,7 @@
 <script lang="ts">
-	// 산업 분석 다이얼로그 — 산업이 *주체*. 시각화 우선(읽는 표 최소): 지형도 → 클릭 → 회사 산포도.
-	//  · 지형도(기본): 29산업을 (수익 수준 × 마진 격차) 평면에 — 구조가 0.5초에 보임. 순위표는 보조 토글.
-	//  · 드릴: 산업 내 회사들을 (수익성 × 성장) 산포 — 양극화·스타·부실이 *보임*. 크기=gov 시총·색=수익성 등급.
+	// 산업 분석 다이얼로그 · 산업이 *주체*. 시각화 우선(읽는 표 최소): 지형도 → 클릭 → 회사 산포도.
+	//  · 지형도(기본): 29산업을 (수익 수준 × 마진 격차) 평면에 · 구조가 0.5초에 보임. 순위표는 보조 토글.
+	//  · 드릴: 산업 내 회사들을 (수익성 × 성장) 산포 · 양극화·스타·부실이 *보임*. 크기=gov 시총·색=수익성 등급.
 	// 전부 baked(industryStats·ecosystem·gov 시총), 새 fetch 0. 위치=관측(판정 아님, 04 §3).
 	import type { Engine, IndustryMacro, IndustryMember } from '../lib/engine';
 	import { gradeTone } from '../lib/engine';
@@ -31,11 +31,11 @@
 	const all = $derived(industryIds.map((id) => eng.industryMacro(id)).filter((x): x is IndustryMacro => x != null && x.count >= 10));
 	const m = $derived(view ? all.find((x) => x.id === view) ?? eng.industryMacro(view) : null);
 
-	const fmt1 = (v: number | null | undefined, u = ''): string => (v == null ? '—' : (Math.abs(v) >= 10 ? Math.round(v).toString() : v.toFixed(1)) + u);
+	const fmt1 = (v: number | null | undefined, u = ''): string => (v == null ? '·' : (Math.abs(v) >= 10 ? Math.round(v).toString() : v.toFixed(1)) + u);
 	const twLabel = (t: number | null): string => (t == null ? '' : t >= 0.55 ? (lang === 'en' ? 'tailwind' : '순풍') : t <= 0.35 ? (lang === 'en' ? 'headwind' : '역풍') : (lang === 'en' ? 'neutral' : '중립'));
 
 	// ── 지형도: 산업 = (영업이익률 중앙값 × 매출 CAGR 중앙값). 드릴(회사맵)과 동일한 (수익성×성장) 좌표 → 깔때기 연속.
-	//   마진 격차(IQR)는 버려지지 않음 — 순위 토글 'polar(마진분산)' 렌즈에 잔존(정보 손실 0).
+	//   마진 격차(IQR)는 버려지지 않음 · 순위 토글 'polar(마진분산)' 렌즈에 잔존(정보 손실 0).
 	const industryPts = $derived.by((): ScatterPt[] =>
 		all
 			.filter((x) => x.dist.opMargin?.median != null && x.dist.revCagr?.median != null)
@@ -76,15 +76,15 @@
 	);
 	const plotted = $derived(memberPts.length);
 
-	// 드릴 표(보조) — 산포와 동일 데이터(members), 정렬만. 행 클릭=종목 점프. 산포=모양·표=정확수치 스캔.
+	// 드릴 표(보조) · 산포와 동일 데이터(members), 정렬만. 행 클릭=종목 점프. 산포=모양·표=정확수치 스캔.
 	const sortedMembers = $derived.by((): IndustryMember[] =>
 		[...members].sort((a, b) => (drillDesc ? b[drillSort] - a[drillSort] : a[drillSort] - b[drillSort]))
 	);
 	const setDrillSort = (k: 'cap' | 'margin' | 'growth') => { if (drillSort === k) drillDesc = !drillDesc; else { drillSort = k; drillDesc = true; } };
-	const fmtCap = (v: number): string => (v >= 1e11 ? (v / 1e12).toFixed(2) + '조' : v > 0 ? Math.round(v / 1e8) + '억' : '—');
+	const fmtCap = (v: number): string => (v >= 1e11 ? (v / 1e12).toFixed(2) + '조' : v > 0 ? Math.round(v / 1e8) + '억' : '·');
 	const sortArrow = (k: 'cap' | 'margin' | 'growth'): string => (drillSort === k ? (drillDesc ? ' ▾' : ' ▴') : '');
 
-	// 랜드스케이프 순위표(보조) — 선택 렌즈 정렬(lower 반영)
+	// 랜드스케이프 순위표(보조) · 선택 렌즈 정렬(lower 반영)
 	const landRows = $derived.by(() => {
 		const rows = all.filter((x) => lens.valueOf(x) != null).map((x) => ({ x, v: lens.valueOf(x) as number }));
 		rows.sort((a, b) => (lens.lower ? a.v - b.v : b.v - a.v));
@@ -92,21 +92,21 @@
 	});
 	const landVals = $derived(landRows.map((r) => r.v));
 	const rankToneVal = (pct: number): string => (pct >= 66 ? 'tUp' : pct <= 33 ? 'tDn' : 'tNeu');
-	const fmtUnit = (v: number | null | undefined, unit: string): string => (v == null ? '—' : (unit === '배' ? v.toFixed(1) : fmt1(v)) + (unit === '배' ? '배' : unit));
+	const fmtUnit = (v: number | null | undefined, unit: string): string => (v == null ? '·' : (unit === '배' ? v.toFixed(1) : fmt1(v)) + (unit === '배' ? '배' : unit));
 
-	// 드릴 보조 — 비공간 사실(방향 YoY·tailwind·distress). 표 아님, 얇은 칩 한 줄.
+	// 드릴 보조 · 비공간 사실(방향 YoY·tailwind·distress). 표 아님, 얇은 칩 한 줄.
 	const dir = $derived(m?.direction ?? null);
 	const dirSigns = $derived(dir ? [dir.opMarginDelta, dir.roeDelta, dir.revenueYoyPct].filter((x): x is number => x != null) : []);
 	const dirLabel = $derived.by(() => {
 		if (dirSigns.length < 2) return { txt: '', cls: 'tNeu' };
 		const up = dirSigns.filter((x) => x > 0).length, dn = dirSigns.filter((x) => x < 0).length;
-		// 색 중립(tNeu) — 부호 다수결을 초록/빨강으로 칠하면 매출 −를 묻고 verdict 누출. 라벨 텍스트만.
+		// 색 중립(tNeu) · 부호 다수결을 초록/빨강으로 칠하면 매출 −를 묻고 verdict 누출. 라벨 텍스트만.
 		return up > dn ? { txt: lang === 'en' ? 'improving' : '개선', cls: 'tNeu' } : dn > up ? { txt: lang === 'en' ? 'deteriorating' : '악화', cls: 'tNeu' } : { txt: lang === 'en' ? 'mixed' : '혼조', cls: 'tNeu' };
 	});
-	const sgn = (v: number | null | undefined, u: string): string => (v == null ? '—' : (v > 0 ? '+' : '') + v.toFixed(1) + u);
+	const sgn = (v: number | null | undefined, u: string): string => (v == null ? '·' : (v > 0 ? '+' : '') + v.toFixed(1) + u);
 	const polarLabel = $derived(m?.marginIqr == null ? '' : m.marginIqr > 15 ? (lang === 'en' ? 'wide' : '넓음') : m.marginIqr < 8 ? (lang === 'en' ? 'narrow' : '좁음') : (lang === 'en' ? 'mid' : '보통'));
 
-	// 색 범례 = 재무 건전성(debtGrade 4단). x축 수익성과 직교 — "고수익인데 빨강=현금 압박" 즉시 보임.
+	// 색 범례 = 재무 건전성(debtGrade 4단). x축 수익성과 직교 · "고수익인데 빨강=현금 압박" 즉시 보임.
 	const GRADE_LEG: { t: string; k: string; e: string }[] = [
 		{ t: 'up', k: '안전', e: 'safe' }, { t: 'good', k: '관찰', e: 'watch' }, { t: 'warn', k: '주의', e: 'caution' }, { t: 'down', k: '고위험', e: 'high-risk' }
 	];
@@ -134,7 +134,7 @@
 
 		<div class="indBody">
 			{#if view && m}
-				<!-- ── 드릴: 회사 산포도(수익성 × 성장) — 양극화·스타·부실이 보임 ── -->
+				<!-- ── 드릴: 회사 산포도(수익성 × 성장) · 양극화·스타·부실이 보임 ── -->
 				<div class="indScatterHd">
 					<span class="indScatterT">{lang === 'en' ? 'Companies' : '회사'} <em class="indScatterSub">{drillView === 'map' ? (lang === 'en' ? 'profitability × growth' : '수익성 × 성장') : (lang === 'en' ? 'ranked table' : '순위표')}</em></span>
 					<div class="indDrillRight">
@@ -151,7 +151,7 @@
 					<ScatterMap pts={memberPts} xLabel={lang === 'en' ? 'op-margin %' : '수익성(영업이익률 %)'} yLabel={lang === 'en' ? 'rev CAGR %' : '성장(매출 CAGR %)'} showLabels zeroX onPick={onPick}
 						hint={lang === 'en' ? `※ dot = company · size = gov market-cap · color = financial health (debt grade) · position = actual values (${plotted} plotted, extremes pinned to edge) · click → company` : `※ 점=회사 · 크기=gov 시총 · 색=재무 건전성(부채등급) · 위치=실측값 (${plotted}사 · 극단값 가장자리·hover=실제) · 클릭 → 종목`} />
 				{:else}
-					<!-- 회사 순위표 — 산포와 동일 데이터, 열 클릭=정렬, 행 클릭=종목 점프. 정확 수치 스캔용. -->
+					<!-- 회사 순위표 · 산포와 동일 데이터, 열 클릭=정렬, 행 클릭=종목 점프. 정확 수치 스캔용. -->
 					<div class="indMem">
 						<div class="indMemHd">
 							<span class="indMR">#</span>
@@ -168,12 +168,12 @@
 								<span class="indMV mono">{fmt1(c.margin, '%')}</span>
 								<span class="indMV mono">{fmt1(c.growth, '%')}</span>
 								<span class="indMV mono">{fmtCap(c.cap)}</span>
-								<span class={'indMGr ' + gradeTone('debt', c.debtGrade)}>{c.debtGrade || '—'}</span>
+								<span class={'indMGr ' + gradeTone('debt', c.debtGrade)}>{c.debtGrade || '·'}</span>
 							</button>
 						{/each}
 					</div>
 				{/if}
-				<!-- 비공간 사실 — 얇은 칩 한 줄(표 아님) -->
+				<!-- 비공간 사실 · 얇은 칩 한 줄(표 아님) -->
 				<div class="indFactStrip">
 					<span>{lang === 'en' ? 'spread(IQR)' : '마진 격차'} <b>{fmt1(m.marginIqr)}%p</b> {polarLabel}</span>
 					<span>{lang === 'en' ? 'loss' : '적자'} <b>{m.bucket.lossRisk}%</b></span>
@@ -214,7 +214,7 @@
 								<span class="indLName">{lang === 'en' ? r.x.en : r.x.kr}{#if r.x.tailwind != null}<i class={'swTw ' + (r.x.tailwind >= 0.55 ? 'tw-up' : r.x.tailwind <= 0.35 ? 'tw-dn' : 'tw-nu')}>{r.x.tailwind >= 0.55 ? '↑' : r.x.tailwind <= 0.35 ? '↓' : '·'}</i>{/if}</span>
 								<span class="indLCurve">{#if band}<DistCurve {band} value={r.v} p={rank} unit={lens.unit} {lang} h={20} neutral={lens.lower} />{/if}</span>
 								<span class={'indLVal mono ' + rankToneVal(rank)}>{fmtUnit(r.v, lens.unit)}</span>
-								<span class="indLN mono" class:warn={r.x.count < 15} title={r.x.count < 15 ? (lang === 'en' ? 'small sample — rank less stable' : '표본 작아 순위 불안정') : ''}>{r.x.count}{#if r.x.count < 15}⚠{/if}</span>
+								<span class="indLN mono" class:warn={r.x.count < 15} title={r.x.count < 15 ? (lang === 'en' ? 'small sample · rank less stable' : '표본 작아 순위 불안정') : ''}>{r.x.count}{#if r.x.count < 15}⚠{/if}</span>
 							</button>
 						{/each}
 					</div>
@@ -229,8 +229,8 @@
 					? 'Company dots = actual reported values; color = scan debt grade (financial health, an assessment, labeled). n<15 (⚠) ranks less stable.'
 					: '회사 점 = 실측 보고값 · 색 = scan 부채(건전성) 등급(평가값, 라벨). n<15(⚠) 순위 불안정.'}</div>
 				<div>※ {lang === 'en'
-					? 'Snapshot of current listed members (survivorship: delisted/unlisted excluded) — not a trend; positions shift year to year.'
-					: '현재 상장 멤버 스냅샷(생존편향: 상폐·비상장 제외) — 추세 아님, 위치는 연도별로 바뀜.'}</div>
+					? 'Snapshot of current listed members (survivorship: delisted/unlisted excluded) · not a trend; positions shift year to year.'
+					: '현재 상장 멤버 스냅샷(생존편향: 상폐·비상장 제외) · 추세 아님, 위치는 연도별로 바뀜.'}</div>
 			</div>
 		</div>
 	</div>
@@ -244,7 +244,7 @@
 	.indWho i { font-style: normal; font-weight: 400; margin-left: 7px; font-size: 10px; color: #c2cad6; }
 	.indLens { font-size: 10px; color: #c2cad6; font-style: italic; }
 	.indBody { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 10px 14px 14px; }
-	/* 드릴 — 회사 산포도 헤더 + 등급 범례 */
+	/* 드릴 · 회사 산포도 헤더 + 등급 범례 */
 	.indScatterHd { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
 	.indScatterT { font-size: 11px; font-weight: 700; color: var(--dl-ink, #c8cfdb); }
 	.indGradeLeg { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; color: #c2cad6; }
@@ -261,7 +261,7 @@
 	.indHint { font-size: 9.5px; color: #c2cad6; line-height: 1.45; margin-top: 6px; font-style: italic; }
 	.indScatterSub { font-style: normal; font-weight: 400; font-size: 10px; color: #c2cad6; margin-left: 5px; }
 	.indDrillRight { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-	/* 드릴 회사 순위표(보조) — 산포와 동일 데이터, 열 클릭=정렬, 행 클릭=종목 점프 */
+	/* 드릴 회사 순위표(보조) · 산포와 동일 데이터, 열 클릭=정렬, 행 클릭=종목 점프 */
 	.indMem { display: flex; flex-direction: column; margin-bottom: 6px; max-height: 56vh; overflow-y: auto; }
 	.indMemHd, .indMemRow { display: grid; grid-template-columns: 22px 1fr 54px 54px 62px 42px; align-items: center; gap: 6px; padding: 2px 4px; text-align: left; }
 	.indMemHd { position: sticky; top: 0; background: var(--dl-bg, #0d1117); border-bottom: 1px solid var(--dl-line, #2a3142); z-index: 1; }

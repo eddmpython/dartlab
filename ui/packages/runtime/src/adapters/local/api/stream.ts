@@ -1,4 +1,4 @@
-// 로컬 게이트 SSE 경로 — 에이전트 실행(POST /api/agent/runs)을 AiStreamEvent 스트림으로 매핑.
+// 로컬 게이트 SSE 경로 · 에이전트 실행(POST /api/agent/runs)을 AiStreamEvent 스트림으로 매핑.
 // SSE 는 캐시·dedup 부적합(streaming)이라 데이터 코어 request() 와 분리된 게이트 전용 경로다(02 §5).
 // 서버 emitter(agentGateway._event)가 data 에 type + 계약 필드명을 그대로 실어 보내므로(AG-UI allowlist
 // = ai.ts 계약 SSOT) 파싱한 객체를 그대로 통과시킨다.
@@ -33,7 +33,7 @@ function parseSseBlock(raw: string): AiStreamEvent | null {
 }
 
 /**
- * 에이전트 SSE 스트림 — POST(SSE) → AiStreamEvent 제너레이터.
+ * 에이전트 SSE 스트림 · POST(SSE) → AiStreamEvent 제너레이터.
  *
  * @param endpoint 게이트가 합성한 절대(또는 same-origin) URL(예: `${apiBase}/api/agent/runs`).
  * @param input 질의 입력(prompt·code·mode).

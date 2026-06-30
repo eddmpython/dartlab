@@ -1,5 +1,5 @@
 <script lang="ts">
-	/** Editorial slug — "Q3 2025 · 005930 · 분석 2026-04-23" 류 */
+	/** Editorial slug · "Q3 2025 · 005930 · 분석 2026-04-23" 류 */
 	interface Props {
 		text?: string;
 		mark?: boolean; // 좌측 짧은 라인

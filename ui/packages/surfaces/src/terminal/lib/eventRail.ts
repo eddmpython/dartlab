@@ -1,6 +1,6 @@
-// 이벤트 레일 분류 taxonomy — 주가차트 하단 "이벤트 레일"(공시 dot)의 카테고리 필터 SSOT.
+// 이벤트 레일 분류 taxonomy · 주가차트 하단 "이벤트 레일"(공시 dot)의 카테고리 필터 SSOT.
 // 지금은 DART 공시(정기 + 비정기 그룹)만. 향후 뉴스·실적·매크로 등 다른 이벤트 타입을 같은 레일에 채울 수 있게
-// key 레지스트리로 설계한다 — 레일 item 은 generic `category` 한 필드만 들고, 새 타입은 여기 EVENT_CATS 에 키만 추가.
+// key 레지스트리로 설계한다 · 레일 item 은 generic `category` 한 필드만 들고, 새 타입은 여기 EVENT_CATS 에 키만 추가.
 // 비정기 공시는 DART 공식 공시그룹 필드가 (현 데이터 계약에) 없어, 공시 원문명(reportNm) 키워드로 *근사* 매핑한다.
 
 export interface EventCat {
@@ -17,7 +17,7 @@ export const EVENT_CATS: EventCat[] = [
 	{ key: 'issue', kr: '발행공시', en: 'Issuance' },
 	{ key: 'exchange', kr: '거래소공시', en: 'Exchange' },
 	{ key: 'audit', kr: '감사', en: 'Audit' },
-	{ key: 'news', kr: '뉴스', en: 'News' }, // 네이버 헤드라인(공시 아님) — item.kind='news', url=원문. 공시와 색 구분.
+	{ key: 'news', kr: '뉴스', en: 'News' }, // 네이버 헤드라인(공시 아님) · item.kind='news', url=원문. 공시와 색 구분.
 	{ key: 'etc', kr: '기타', en: 'Other' }
 	// 향후 확장 예: { key: 'earnings', kr: '실적', en: 'Earnings' } …
 	// (레일 item.category 에 해당 key 를 실어 보내고, 분류기/수집기만 추가하면 필터 UI 는 자동 반영)
@@ -28,13 +28,13 @@ export const EVENT_CAT_LABEL: Record<string, { kr: string; en: string }> = Objec
 	EVENT_CATS.map((c) => [c.key, { kr: c.kr, en: c.en }])
 );
 
-// 지분공시(소유) 패턴 — 차트 이벤트레일(classifyFiling 'equity')과 시장피드(marketFeedCategory
-// 'ownership')가 *공유*하는 단일 SSOT 리터럴. 복붙 금지 — 양쪽이 이 const 를 import 한다.
+// 지분공시(소유) 패턴 · 차트 이벤트레일(classifyFiling 'equity')과 시장피드(marketFeedCategory
+// 'ownership')가 *공유*하는 단일 SSOT 리터럴. 복붙 금지 · 양쪽이 이 const 를 import 한다.
 export const RX_OWNERSHIP = /대량보유|특정증권|의결권|주식등의|임원[ㆍ·]?주요주주/;
 
 /**
  * 비정기 공시 원문명(reportNm) → 공시그룹 키워드 근사 분류. 순서 = 우선순위(첫 매치 채택).
- * 공식 DART 카테고리 필드 부재로 키워드 휴리스틱 — 모호하면 'etc'. 정기보고서는 kind 로 이미 'regular'.
+ * 공식 DART 카테고리 필드 부재로 키워드 휴리스틱 · 모호하면 'etc'. 정기보고서는 kind 로 이미 'regular'.
  */
 export function classifyFiling(reportNm: string): string {
 	const s = reportNm || '';

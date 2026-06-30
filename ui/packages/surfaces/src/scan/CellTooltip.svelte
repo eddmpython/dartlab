@@ -29,7 +29,7 @@
 		if (last < first * 0.995) return 'down';
 		return 'flat';
 	});
-	// 한국 증시 정서 — 상승 빨강, 하락 파랑
+	// 한국 증시 정서 · 상승 빨강, 하락 파랑
 	let trendColor = $derived(
 		trend === 'up' ? '#ef4444' : trend === 'down' ? '#3b82f6' : '#94a3b8'
 	);

@@ -1,8 +1,8 @@
 <script lang="ts">
-	// 전역 공시 본문 검색 다이얼로그 — 커맨드 팔레트(⌘⇧F). cmdBar(종목 점프)와 분리된 *본문* BM25 검색.
-	// 공통배선: useDartLabRuntime().search(=createSearchPort) — 퍼블릭/로컬 동일 코어·HF sidecar byte-range.
+	// 전역 공시 본문 검색 다이얼로그 · 커맨드 팔레트(⌘⇧F). cmdBar(종목 점프)와 분리된 *본문* BM25 검색.
+	// 공통배선: useDartLabRuntime().search(=createSearchPort) · 퍼블릭/로컬 동일 코어·HF sidecar byte-range.
 	// 콜드 1회(~10MB stats)는 첫 질의 시 lazy 로드(검색 안 쓰면 비용 0). 행 클릭 → 회사 soft-swap(onPick) +
-	// dart/edgar 원문 외부 링크(정직 floor — 본문 직행 불가). 회사 인덱스 검색은 cmdBar 담당(여기 아님).
+	// dart/edgar 원문 외부 링크(정직 floor · 본문 직행 불가). 회사 인덱스 검색은 cmdBar 담당(여기 아님).
 	import { Search, X } from 'lucide-svelte';
 	import { useDartLabRuntime } from '@dartlab/ui-runtime';
 	import type { FilingHit } from '@dartlab/ui-contracts';
@@ -25,12 +25,12 @@
 	let coldFirst = $state(true); // 첫 질의 = 콜드 stats 로드(스피너 카피 분기)
 	let selIdx = $state(0);
 	let inputEl = $state<HTMLInputElement | null>(null);
-	let bodyEl = $state<HTMLDivElement | null>(null); // 결과 스크롤 컨테이너 — 키보드 이동 시 선택행 추적
-	let seq = 0; // in-flight 토큰 — stale 응답 폐기
+	let bodyEl = $state<HTMLDivElement | null>(null); // 결과 스크롤 컨테이너 · 키보드 이동 시 선택행 추적
+	let seq = 0; // in-flight 토큰 · stale 응답 폐기
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 	const recent = $state<string[]>(readRecent());
-	let builtAt = $state<string | null>(null); // 인덱스 빌드시점(as-of) — manifest 만 읽어 콜드 stats 무관
+	let builtAt = $state<string | null>(null); // 인덱스 빌드시점(as-of) · manifest 만 읽어 콜드 stats 무관
 
 	function readRecent(): string[] {
 		if (typeof localStorage === 'undefined') return [];
@@ -50,7 +50,7 @@
 			try {
 				localStorage.setItem(RECENT_KEY, JSON.stringify(next));
 			} catch {
-				// localStorage 불가(프라이빗 모드 등) — 최근검색 칩만 미저장, 검색 자체는 정상.
+				// localStorage 불가(프라이빗 모드 등) · 최근검색 칩만 미저장, 검색 자체는 정상.
 			}
 		}
 	}
@@ -152,7 +152,7 @@
 		row?.scrollIntoView({ block: 'nearest' });
 	});
 
-	// 인덱스 as-of 라벨 — 다이얼로그 열릴 때 manifest builtAt 만 경량 조회(콜드 stats ~10MB 강제 안 함).
+	// 인덱스 as-of 라벨 · 다이얼로그 열릴 때 manifest builtAt 만 경량 조회(콜드 stats ~10MB 강제 안 함).
 	$effect(() => {
 		rt.search
 			.indexBuiltAt()
@@ -228,10 +228,10 @@
 						title={hit.stockCode ? (lang === 'en' ? 'Enter → company' : 'Enter → 회사로 점프') : (lang === 'en' ? 'no linked company (news)' : '회사 연결 없음(뉴스)')}
 					>
 						<span class="fsCorp">
-							<b>{hit.corpName || '—'}</b>
+							<b>{hit.corpName || '·'}</b>
 							{#if hit.stockCode}<i class="fsCode">{hit.stockCode}</i>{/if}
 						</span>
-						<span class="fsReport">{hit.reportNm || '—'}</span>
+						<span class="fsReport">{hit.reportNm || '·'}</span>
 						<span class="fsDate">{hit.rceptDt}</span>
 						<span class={'fsBadge ' + badge.cls}>{badge.label}</span>
 						{#if hit.snippet}<span class="fsSnippet">{hit.snippet}</span>{/if}

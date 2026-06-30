@@ -5,7 +5,7 @@ import { runBacktestRule } from './engine';
 import type { Candle } from './types';
 import type { Condition, StrategyRule } from './conditions';
 
-describe('buildGateSeries — PIT 계단(look-ahead 0)', () => {
+describe('buildGateSeries · PIT 계단(look-ahead 0)', () => {
 	it('공시일 이후 봉부터 값, 그 전 null · 계단 유지', () => {
 		const dates = ['20210101', '20210301', '20210401', '20220301', '20220401'];
 		const rows = [
@@ -25,11 +25,11 @@ describe('buildGateSeries — PIT 계단(look-ahead 0)', () => {
 	});
 });
 
-describe('fundGate 조건 — 재무 게이트 진입 차단', () => {
+describe('fundGate 조건 · 재무 게이트 진입 차단', () => {
 	const mkCandles = (n: number): Candle[] =>
 		Array.from({ length: n }, (_, i) => ({ t: `2021${String(i + 1).padStart(4, '0')}`, o: 100, h: 101, l: 99, c: 100, v: 1000 }));
 
-	it('evalCondition: fundGate≥6 — gate null/저점=0, 충족=1', () => {
+	it('evalCondition: fundGate≥6 · gate null/저점=0, 충족=1', () => {
 		const cs = mkCandles(4);
 		const gate = [null, 4, 7, 8]; // 봉별 Piotroski
 		const cond: Condition = { left: 'fundGate', leftParams: {}, op: '>=', right: { kind: 'const', value: 6 } };

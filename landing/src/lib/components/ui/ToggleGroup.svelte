@@ -1,5 +1,5 @@
 <script lang="ts">
-	/** segmented toggle — 4뷰 토글, 기간 선택 등 */
+	/** segmented toggle · 4뷰 토글, 기간 선택 등 */
 	interface Option {
 		value: string;
 		label: string;

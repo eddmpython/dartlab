@@ -140,7 +140,7 @@
 		| 'govGrade' | 'qualGrade' | 'holderPct' | 'holderChange' | 'marketShare' | 'empCount';
 	let colorMetric: ColorMetric = $state('roe');
 
-	// ── 렌즈 (분석 관점) — 각 렌즈가 색·오버레이 기본값을 한꺼번에 세팅 ──
+	// ── 렌즈 (분석 관점) · 각 렌즈가 색·오버레이 기본값을 한꺼번에 세팅 ──
 	type Lens = 'default' | 'changes';
 	let lens: Lens = $state('default');
 	function applyLens(next: Lens) {
@@ -249,7 +249,7 @@
 
 	let indColorMap = $derived(new Map(industries.map((i: any) => [i.id, i.color])));
 
-	// 산업별 집계 — ecosystem.nodes 에서 모든 메트릭의 평균/합 산출
+	// 산업별 집계 · ecosystem.nodes 에서 모든 메트릭의 평균/합 산출
 	const GRADE_TO_NUM: Record<string, number> = {
 		A: 4, B: 3, C: 2, D: 1, E: 0,
 		'우수': 4, '양호': 3, '보통': 2, '주의': 1, '위험': 0
@@ -287,7 +287,7 @@
 		return out;
 	});
 
-	// Atlas 산업 노드용 색 + metricValue (라벨 표시용) — colorMetric 에 따라 위 집계로
+	// Atlas 산업 노드용 색 + metricValue (라벨 표시용) · colorMetric 에 따라 위 집계로
 	let atlasIndustriesColored = $derived.by(() => {
 		return data.atlas.industries.map((ind: any) => {
 			const baseColor = indColorMap.get(ind.id) || '#9ca3af';
@@ -298,7 +298,7 @@
 			const a = industryAggregates.get(ind.id);
 			if (!a) return { ...ind, color: baseColor, metricValue: null };
 
-			// 등급 메트릭 — 0~4 numeric 평균을 직접 색 스케일에 매핑
+			// 등급 메트릭 · 0~4 numeric 평균을 직접 색 스케일에 매핑
 			if (colorMetric === 'govGrade' || colorMetric === 'qualGrade') {
 				const v = colorMetric === 'govGrade' ? a.govGradeNum : a.qualGradeNum;
 				if (v === null || v === undefined) {
@@ -598,7 +598,7 @@
 
 	let industryNodes = $derived.by(() => {
 		if (!industryDetail) return [];
-		// 연도 선택 시 — 해당 연도 데이터가 있는 회사만 포함, revenue/opMargin 도 그 해 값으로 덮어쓰기
+		// 연도 선택 시 · 해당 연도 데이터가 있는 회사만 포함, revenue/opMargin 도 그 해 값으로 덮어쓰기
 		const yearData: Record<string, { revenue?: number; opMargin?: number | null }> | null =
 			selectedYear ? (timelineData[selectedYear] || {}) : null;
 		const out: any[] = [];
@@ -679,7 +679,7 @@
 			const res = await fetch(url);
 			console.log('[map] fetch', url, 'status', res.status);
 			if (!res.ok) {
-				loadError = `HTTP ${res.status} — ${url}`;
+				loadError = `HTTP ${res.status} · ${url}`;
 				industryDetail = null;
 				return;
 			}
@@ -759,7 +759,7 @@
 
 	// ── URL 쿼리 처리 (외부 진입: /map?focus=005930, /map?highlight=001830,005930) ──
 	let urlHandled = $state(false);
-	/** /screener → /map 양방향 링크 — 결과 회사 stockCode set */
+	/** /screener → /map 양방향 링크 · 결과 회사 stockCode set */
 	let highlightCompanies = $state<Set<string>>(new Set());
 	onMount(() => {
 		if (urlHandled) return;
@@ -882,7 +882,7 @@
 		content="한국 상장사 2,664사 · 34개 산업 · 공급망 18,418 관계. 10초 안에 보는 산업 생태계 지도."
 	/>
 	<meta property="og:type" content="website" />
-	<meta property="og:title" content="dartlab 산업지도 — 한국 상장사 2,664사 생태계" />
+	<meta property="og:title" content="dartlab 산업지도 · 한국 상장사 2,664사 생태계" />
 	<meta
 		property="og:description"
 		content="34 산업 × 공급망 드릴다운 · 변화 감지 · 조건 검색 · 비교. 10초 안에 보는 지도."
@@ -924,7 +924,7 @@
 				href={brand.coffee}
 				target="_blank"
 				rel="noopener"
-				title="Buy Me A Coffee — 후원"
+				title="Buy Me A Coffee · 후원"
 				aria-label="Buy Me A Coffee"
 			>
 				<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -938,7 +938,7 @@
 			<button
 				class="brand-btn help"
 				onclick={() => (tourOpen = true)}
-				title="가이드 투어 — 뭘 보고 어떻게 쓰는지 화면 안내"
+				title="가이드 투어 · 뭘 보고 어떻게 쓰는지 화면 안내"
 				aria-label="가이드 투어"
 			>
 				<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1085,7 +1085,7 @@
 				</button>
 				<!-- companies/industry 탭은 v12에서 숨김 (코드는 유지, 자동 드릴다운만) -->
 				<!-- hidden: 전 회사 뷰 -->
-				<!-- hidden: 산업 내부 — atlas에서 산업 클릭 시 자동 진입 -->
+				<!-- hidden: 산업 내부 · atlas에서 산업 클릭 시 자동 진입 -->
 				{#if false}
 				<button
 					class="view-tab"
@@ -1293,7 +1293,7 @@
 
 	<!-- 메인 지도 -->
 	<main class="map-main">
-		<!-- 렌즈 (분석 관점) — 떠있는 칩 오버레이 -->
+		<!-- 렌즈 (분석 관점) · 떠있는 칩 오버레이 -->
 		<div class="lens-overlay">
 			<button
 				class="lens-chip"
@@ -1320,7 +1320,7 @@
 			<div class="movers-banner">
 				<span class="m-icon">⚡</span>
 				<span class="m-text">
-					이번 회계연도 급변 <strong>{moversCount}건</strong> 감지 — ROE 개선/악화 · 매출 급증/급락 · 부채 스트레스
+					이번 회계연도 급변 <strong>{moversCount}건</strong> 감지 · ROE 개선/악화 · 매출 급증/급락 · 부채 스트레스
 				</span>
 				<a class="m-cta" href="{base}/changes">상세 보기 →</a>
 				<button class="m-close" onclick={() => (moversDismissed = true)} aria-label="닫기">✕</button>
@@ -1773,7 +1773,7 @@
 		color: #94a3b8;
 	}
 
-	/* 렌즈 (분석 관점) — 떠있는 오버레이 */
+	/* 렌즈 (분석 관점) · 떠있는 오버레이 */
 	.lens-overlay {
 		position: absolute;
 		top: 16px;
@@ -2235,7 +2235,7 @@
 		background: rgba(96, 165, 250, 0.3);
 	}
 
-	/* Timeline Bar — 하단 중앙 editorial */
+	/* Timeline Bar · 하단 중앙 editorial */
 	.timeline-bar {
 		position: absolute;
 		bottom: 20px;
@@ -2324,7 +2324,7 @@
 		accent-color: var(--color-dl-primary);
 	}
 
-	/* Editorial Breadcrumb — 좌측 상단 고정 */
+	/* Editorial Breadcrumb · 좌측 상단 고정 */
 	.drill-breadcrumb {
 		position: absolute;
 		top: 16px;

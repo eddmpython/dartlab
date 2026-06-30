@@ -1,5 +1,5 @@
 /**
- * Scan Studio 프리셋 라이브러리 — ⌘K 모달용.
+ * Scan Studio 프리셋 라이브러리 · ⌘K 모달용.
  *
  * 한 클릭으로 conds + sorts + cols 자동 입력. 자연어 한국어 + 한 줄 설명.
  *
@@ -35,7 +35,7 @@ export const PRESETS: Preset[] = [
 		id: 'real-money-makers',
 		title: '진짜 돈 버는 회사',
 		subtitle: '4축 흑자 + 수익성',
-		desc: '영업이익률 + ROE + 매출 YoY + 흑자 4축 동시 만족 — 실력으로 돈 버는 회사',
+		desc: '영업이익률 + ROE + 매출 YoY + 흑자 4축 동시 만족 · 실력으로 돈 버는 회사',
 		category: 'theme',
 		conds: [
 			{ metric: 'opMargin', op: '>=', value: 5 },
@@ -61,7 +61,7 @@ export const PRESETS: Preset[] = [
 		id: 'quality-compounder',
 		title: 'Quality Compounder',
 		subtitle: '높은 ROE + 안전 부채 + 우량',
-		desc: 'ROE 15%↑ + 부채비율 100%↓ + 이익질 양호 이상 — 장기 복리 우량주',
+		desc: 'ROE 15%↑ + 부채비율 100%↓ + 이익질 양호 이상 · 장기 복리 우량주',
 		category: 'theme',
 		conds: [
 			{ metric: 'roe', op: '>=', value: 15 },
@@ -83,7 +83,7 @@ export const PRESETS: Preset[] = [
 		id: 'growth-and-safety',
 		title: '성장 + 안전',
 		subtitle: '매출 성장 + 부채 통제',
-		desc: 'CAGR 15%↑ + 부채 80%↓ + 매출 YoY 10%↑ — 빠르게 크면서 빚 안 늘리는 회사',
+		desc: 'CAGR 15%↑ + 부채 80%↓ + 매출 YoY 10%↑ · 빠르게 크면서 빚 안 늘리는 회사',
 		category: 'theme',
 		conds: [
 			{ metric: 'revCagr', op: '>=', value: 15 },
@@ -106,7 +106,7 @@ export const PRESETS: Preset[] = [
 		id: 'low-debt-high-icr',
 		title: '저부채 + 이자안전',
 		subtitle: '부채 50%↓ + ICR 5↑',
-		desc: '부채비율 50% 이하 + 이자보상배율 5배↑ — 이자 갚고도 남는 안전 회사',
+		desc: '부채비율 50% 이하 + 이자보상배율 5배↑ · 이자 갚고도 남는 안전 회사',
 		category: 'safety',
 		conds: [
 			{ metric: 'debtRatio', op: '<=', value: 50 },
@@ -127,7 +127,7 @@ export const PRESETS: Preset[] = [
 		id: 'high-roe-strong-margin',
 		title: '고ROE + 고마진',
 		subtitle: 'ROE 20%↑ + 영업이익률 10%↑',
-		desc: 'ROE 20% 이상 + 영업이익률 10% 이상 — 수익성·자본효율 동시 우수',
+		desc: 'ROE 20% 이상 + 영업이익률 10% 이상 · 수익성·자본효율 동시 우수',
 		category: 'leader',
 		conds: [
 			{ metric: 'roe', op: '>=', value: 20 },
@@ -141,7 +141,7 @@ export const PRESETS: Preset[] = [
 		id: 'industry-leader',
 		title: '산업 리더',
 		subtitle: '산업 순위 3위↑ + 흑자',
-		desc: '산업 내 매출 3위 이내 + 상장사매출비중 10%↑ + 영업이익 흑자 — 상장사 풀 내 상위 회사',
+		desc: '산업 내 매출 3위 이내 + 상장사매출비중 10%↑ + 영업이익 흑자 · 상장사 풀 내 상위 회사',
 		category: 'leader',
 		conds: [
 			{ metric: 'industryRank', op: '<=', value: 3 },
@@ -159,7 +159,7 @@ export const PRESETS: Preset[] = [
 		id: 'risk-watch',
 		title: '이상 신호',
 		subtitle: '감사·부채 위험 + ROE 급변',
-		desc: '감사 고위험 또는 부채 고위험 또는 ROE Δ -5%p 이하 — 주의 필요한 회사',
+		desc: '감사 고위험 또는 부채 고위험 또는 ROE Δ -5%p 이하 · 주의 필요한 회사',
 		category: 'risk',
 		conds: [{ metric: 'auditRisk', op: '==', value: '고위험' }],
 		sorts: [{ key: 'roeDelta', dir: 'asc' }],

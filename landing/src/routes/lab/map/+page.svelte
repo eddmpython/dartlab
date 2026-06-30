@@ -194,7 +194,7 @@
 <!-- editorial hero -->
 <section class="hero">
 	<div class="hero-inner">
-		<Eyebrow text="한국 산업 지도 — 2026.04" />
+		<Eyebrow text="한국 산업 지도 · 2026.04" />
 		<h1 class="hero-h1">
 			<MonoNumber value={totalCompanies.toLocaleString()} size="xl" tone="ink" align="left" />
 			<span class="hero-h1-text">개 상장사의 네트워크</span>
@@ -265,7 +265,7 @@
 						<a href="{base}/terminal?sym={e.stockCode}" class="ins-item">
 							<span class="ins-rank dl-mono">{(i + 1).toString().padStart(2, '0')}</span>
 							<span class="ins-name">{e.corpName ?? e.stockCode}</span>
-							<span class="ins-rev dl-mono">{e.revenue ? fmtKrwFromEok(e.revenue / 1e8) : '—'}</span>
+							<span class="ins-rev dl-mono">{e.revenue ? fmtKrwFromEok(e.revenue / 1e8) : '·'}</span>
 						</a>
 					</li>
 				{/each}
@@ -288,7 +288,7 @@
 			<div class="ind-stats">
 				<div>
 					<span class="dl-label">회사 수</span>
-					<MonoNumber value={selectedIndustry.nodeCount?.toLocaleString() ?? '—'} size="lg" tone="ink" align="left" />
+					<MonoNumber value={selectedIndustry.nodeCount?.toLocaleString() ?? '·'} size="lg" tone="ink" align="left" />
 				</div>
 				<div>
 					<span class="dl-label">총 매출</span>

@@ -1,4 +1,4 @@
-// 랭킹 신호 — UniverseRow 에서 그 시점 랭킹 값 추출(가격/기술 팩터만, 17년 가격보존-clean).
+// 랭킹 신호 · UniverseRow 에서 그 시점 랭킹 값 추출(가격/기술 팩터만, 17년 가격보존-clean).
 // 재무 팩터 랭킹은 금지(상폐사 재무 13.9% = 생존편향, 05 §4). 단일종목 펀더게이트(W2)와 분리.
 
 import type { RankSignalKey, UniverseRow } from './types';
@@ -27,7 +27,7 @@ export function rankValue(row: UniverseRow, signal: RankSignalKey): number | nul
 	return RANK_SIGNAL_LABEL[signal].lowerBetter ? -v : v;
 }
 
-/** 그 리밸 시점 turnover 퍼센타일 임계 — PIT(절대 임계는 16년 인플레로 왜곡, 퍼센타일이 robust). */
+/** 그 리밸 시점 turnover 퍼센타일 임계 · PIT(절대 임계는 16년 인플레로 왜곡, 퍼센타일이 robust). */
 function turnoverThreshold(rows: UniverseRow[], liquidityPctile: number): number {
 	if (liquidityPctile <= 0) return 0;
 	const ts = rows.map((r) => r.turnover).filter((t) => t > 0).sort((a, b) => a - b);
@@ -36,7 +36,7 @@ function turnoverThreshold(rows: UniverseRow[], liquidityPctile: number): number
 	return ts[idx];
 }
 
-/** 정렬 가능한 (code, value) 리스트 — value 큰 순(상위분위) 정렬은 호출부. null·저유동성 제외.
+/** 정렬 가능한 (code, value) 리스트 · value 큰 순(상위분위) 정렬은 호출부. null·저유동성 제외.
  *  ★유동성 컷 필수(실측): 없으면 penny-stock 인공물이 저분위를 폭발시킴(Q5 230배). U-G3. */
 export function eligibleRanked(
 	rows: UniverseRow[],
@@ -55,7 +55,7 @@ export function eligibleRanked(
 	return out;
 }
 
-/** NTILE 분위 배정 — 정렬된 리스트를 buckets 등분(상위=1). 동점 경계는 인덱스 기준(결정론). */
+/** NTILE 분위 배정 · 정렬된 리스트를 buckets 등분(상위=1). 동점 경계는 인덱스 기준(결정론). */
 export function assignBuckets(ranked: { code: string; value: number }[], buckets: number): Map<string, number> {
 	const n = ranked.length;
 	const m = new Map<string, number>();

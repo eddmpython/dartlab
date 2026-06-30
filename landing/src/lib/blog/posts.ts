@@ -189,12 +189,12 @@ const categoryById = new Map<string, CategoryDefinition>(categoryDefinitions.map
 const categoryBySlug = new Map<string, CategoryDefinition>(categoryDefinitions.map((category) => [category.slug, category]));
 
 /**
- * 카드 썸네일 위에 얹을 핵심키워드(카드뉴스 헤드라인) — 타이틀을 그대로 쓰지 않고 hook 한 구절만 뽑는다.
- * "회사 (코드) — hook" → hook · "주제 — sub" → sub · hook 에 ':' 있으면 앞부분(핵심). 대시 없으면 제목 그대로.
+ * 카드 썸네일 위에 얹을 핵심키워드(카드뉴스 헤드라인) · 타이틀을 그대로 쓰지 않고 hook 한 구절만 뽑는다.
+ * "회사 (코드) · hook" → hook · "주제 · sub" → sub · hook 에 ':' 있으면 앞부분(핵심). 대시 없으면 제목 그대로.
  */
 function deriveKeyword(title: string): string {
 	let s = title.trim();
-	const dash = s.search(/[—–]/); // em/en dash
+	const dash = s.search(/[·-]/); // em/en dash
 	if (dash >= 0) s = s.slice(dash + 1).trim();
 	const colon = s.search(/[:：]/);
 	if (colon > 0) s = s.slice(0, colon).trim();
@@ -221,12 +221,12 @@ export interface PostMeta {
 	seriesLabel?: string;
 	seriesOrder?: number;
 	youtubeId?: string;
-	stockCode?: string; // 기업이야기 글의 종목코드 — /cards 캐러셀 큐레이션 역인덱스 키.
+	stockCode?: string; // 기업이야기 글의 종목코드 · /cards 캐러셀 큐레이션 역인덱스 키.
 	carousel?: CarouselSpec; // frontmatter `carousel:` 선택 블록(손글 narration·hero·순서). 없으면 자동 투영.
 }
 
 // metadata 는 mdsvex YAML frontmatter → 중첩 객체(`carousel:`·`ai:`)도 담길 수 있으므로 unknown.
-// (옛 string|number 는 중첩 블록을 타입상 드롭했다 — String() 평탄화가 못 읽던 근본.)
+// (옛 string|number 는 중첩 블록을 타입상 드롭했다 · String() 평탄화가 못 읽던 근본.)
 type BlogModule = { metadata?: Record<string, unknown> };
 
 const modules = import.meta.glob('@blog/**/index.md', { eager: true }) as Record<string, BlogModule>;
@@ -288,11 +288,11 @@ function buildPosts(): PostMeta[] {
 		const ogCard = ogImage && /^\/thumbnails\/.+\.webp$/.test(ogImage) ? ogImage.replace(/\.webp$/, '-card.webp') : undefined;
 		const cardPreview = metadata.cardPreview ? String(metadata.cardPreview) : (ogCard ?? ogImage ?? previewAsset ?? thumbnail);
 		const cardPreviewWebp = toWebpAsset(cardPreview);
-		// 이미지 위에 얹을 핵심키워드 — 타이틀·내용 그대로가 아니라 hook 한 구절(카드뉴스 헤드라인). frontmatter cardKeyword 로 개별 지정 가능.
+		// 이미지 위에 얹을 핵심키워드 · 타이틀·내용 그대로가 아니라 hook 한 구절(카드뉴스 헤드라인). frontmatter cardKeyword 로 개별 지정 가능.
 		const titleStr = metadata.title ? String(metadata.title) : '';
 		const cardKeyword = metadata.cardKeyword ? String(metadata.cardKeyword) : deriveKeyword(titleStr);
 		const stockCode = metadata.stockCode ? String(metadata.stockCode).trim() || undefined : undefined;
-		// carousel 은 중첩 객체 — 객체일 때만 채택(스칼라 오기는 무시). 검증은 blog/_scripts/audit_seo.py(yaml).
+		// carousel 은 중첩 객체 · 객체일 때만 채택(스칼라 오기는 무시). 검증은 blog/_scripts/audit_seo.py(yaml).
 		const carousel =
 			metadata.carousel && typeof metadata.carousel === 'object' ? (metadata.carousel as CarouselSpec) : undefined;
 

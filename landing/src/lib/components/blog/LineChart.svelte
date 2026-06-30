@@ -183,7 +183,7 @@
 					fill={colors[ki % colors.length]}
 					font-size="11"
 				>
-					{key}: {d[key] != null ? fmt(d[key] as number) : '—'}{unit === '억원' ? '' : unit}
+					{key}: {d[key] != null ? fmt(d[key] as number) : '·'}{unit === '억원' ? '' : unit}
 				</text>
 			{/each}
 		{/if}

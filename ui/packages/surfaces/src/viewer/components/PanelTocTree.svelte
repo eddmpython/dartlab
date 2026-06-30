@@ -1,6 +1,6 @@
 <script lang="ts">
-	// 목차 — chapter > sectionLeaf > (활성 섹션이면) blockLeaf 트리. landing 디자인(다크 네이비 + 오렌지).
-	// 최근 XBRL 주석은 개별 주석(일반사항·재무위험관리·유형자산…)이 blockLeaf(NT_ 키)로 상세 분해 — 활성 섹션
+	// 목차 · chapter > sectionLeaf > (활성 섹션이면) blockLeaf 트리. landing 디자인(다크 네이비 + 오렌지).
+	// 최근 XBRL 주석은 개별 주석(일반사항·재무위험관리·유형자산…)이 blockLeaf(NT_ 키)로 상세 분해 · 활성 섹션
 	// 아래 그 blocks 를 펼쳐 주석 단위 네비게이션. 주석 클릭 시 격자가 그 주석만(기간별)으로 필터.
 	import type { PanelTocResponse } from '../lib/types';
 

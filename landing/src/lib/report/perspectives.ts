@@ -1,9 +1,9 @@
-// 관점 5종 — 같은 회사를 5개 렌즈로(투자자 질문 축으로 분리). 데이터 작업대 리얼타임.
+// 관점 5종 · 같은 회사를 5개 렌즈로(투자자 질문 축으로 분리). 데이터 작업대 리얼타임.
 // built=false 는 후속 사이클에서 리얼타임 구현(현재는 정직 '준비 중' 표기).
 export interface PerspectiveMeta {
 	key: string;
 	label: string;
-	question: string; // 한 줄 정의 — 투자자가 답을 얻는 질문
+	question: string; // 한 줄 정의 · 투자자가 답을 얻는 질문
 	focusQuestions: string[];
 	built: boolean;
 }

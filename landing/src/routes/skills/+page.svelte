@@ -20,7 +20,7 @@
 		runtimeCompatibility?: Record<string, RuntimeEntry>;
 	}
 
-	// 진입 skill — 처음 방문자가 어디부터 봐야 하는지 명시.
+	// 진입 skill · 처음 방문자가 어디부터 봐야 하는지 명시.
 	const entryIds = ['start.dartlabSkillOs', 'start.installUv', 'start.quickStart'];
 	const entrySkills = entryIds
 		.map((id) => skills.find((s) => s.id === id))
@@ -39,7 +39,7 @@
 		selectedSubGroup = subGroup;
 	}
 
-	const pageTitle = 'DartLab Skills — 작업 체계 카탈로그';
+	const pageTitle = 'DartLab Skills · 작업 체계 카탈로그';
 	const pageDesc =
 		'DartLab 분석 절차 · 엔진 능력 · 운영 규칙 · 확장 절차를 카테고리로 골라 입력 · 출력 · 검증 · 실행 순서를 한 화면에서 읽는 skill catalog. 사람과 LLM 이 같은 표면을 본다.';
 	const pageUrl = buildAbsoluteUrl('skills');
@@ -71,19 +71,19 @@
 		<h1>DartLab Skills 작업 체계</h1>
 		<p class="lead">
 			무엇을 분석하거나 운영하려는지 먼저 고른다. 각 skill 은 입력 · 출력 · 검증 기준 · 실행 순서를
-			한 화면에 묶는다. 사람과 LLM 이 같은 표면을 본다 — 외부 API 문서를 직접 뒤지지 않는다.
+			한 화면에 묶는다. 사람과 LLM 이 같은 표면을 본다 · 외부 API 문서를 직접 뒤지지 않는다.
 		</p>
 		<p class="lead-graph">
 			<a href="{base}/skills/graph" class="graph-link">
 				<Sparkles size={14} />
-				<span>그래프로 보기 — 257 노드 클릭 탐색</span>
+				<span>그래프로 보기 · 257 노드 클릭 탐색</span>
 				<ArrowRight size={14} />
 			</a>
 		</p>
 		<p class="lead-market">
 			<a href="{base}/skills/market" class="market-link">
 				<Sparkles size={14} />
-				<span>Community Skill Market — 분석 질문을 공유 자산으로 보기</span>
+				<span>Community Skill Market · 분석 질문을 공유 자산으로 보기</span>
 				<ArrowRight size={14} />
 			</a>
 		</p>
@@ -107,7 +107,7 @@
 		<section class="entry-block" aria-label="첫 진입">
 			<header class="entry-head">
 				<Sparkles size={14} class="entry-icon" />
-				<h2>처음 왔다면 — 진입 순서</h2>
+				<h2>처음 왔다면 · 진입 순서</h2>
 			</header>
 			<ol class="entry-grid">
 				{#each entrySkills as skill, i}

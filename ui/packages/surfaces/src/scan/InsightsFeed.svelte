@@ -1,11 +1,11 @@
 <script lang="ts">
 	/**
-	 * 자동 발굴 신호 카드 5종 — 행 미선택 시 디테일 자리에 표시.
+	 * 자동 발굴 신호 카드 5종 · 행 미선택 시 디테일 자리에 표시.
 	 *
-	 *  1. ROE 급상승 TOP  — roeDelta desc, top 10
-	 *  2. 영업이익률 급상승 — opMarginDelta desc, top 10
-	 *  3. 부채비율 급증 위험 — debtRatioDelta desc, top 10
-	 *  4. 매출액 증가 — revenueYoyPct desc, top 10
+	 *  1. ROE 급상승 TOP  · roeDelta desc, top 10
+	 *  2. 영업이익률 급상승 · opMarginDelta desc, top 10
+	 *  3. 부채비율 급증 위험 · debtRatioDelta desc, top 10
+	 *  4. 매출액 증가 · revenueYoyPct desc, top 10
 	 *  5. 우량주 (qualGrade 우수 + roe 15+ + 부채 100-)
 	 *
 	 * 카드 → 클릭 = 자동 필터 + 정렬 적용 (onApply).

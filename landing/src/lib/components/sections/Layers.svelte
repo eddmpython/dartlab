@@ -16,7 +16,7 @@
 		<div class="mb-20 flex justify-center">
 			<img
 				src="{base}/architecture.svg"
-				alt="DartLab 통합 아키텍처 — 입구 · 자율 작업대 (chat-native + 운용 자원 3 종) · story 종합 · 공식 분석 5 (analysis · credit · macro · quant · industry) · 횡단 처리 3 (gather · company · scan) · core · 외부 1 차 소스 · 3 자 진화 루프"
+				alt="DartLab 통합 아키텍처 · 입구 · 자율 작업대 (chat-native + 운용 자원 3 종) · story 종합 · 공식 분석 5 (analysis · credit · macro · quant · industry) · 횡단 처리 3 (gather · company · scan) · core · 외부 1 차 소스 · 3 자 진화 루프"
 				class="max-w-3xl w-full h-auto rounded-xl border border-dl-border bg-dl-bg-card shadow-2xl"
 				loading="lazy"
 				width="800"
@@ -28,7 +28,7 @@
 		</div>
 
 		<div class="text-center mb-12">
-			<span class="text-xs font-semibold uppercase tracking-widest text-dl-accent mb-3 block">Company 레이어 — 4 네임스페이스</span>
+			<span class="text-xs font-semibold uppercase tracking-widest text-dl-accent mb-3 block">Company 레이어 · 4 네임스페이스</span>
 			<h3 class="text-2xl md:text-3xl font-bold text-dl-text mb-3">하나의 회사, 4 개 네임스페이스</h3>
 			<p class="text-dl-text-muted">지도는 그대로. 소스 책임만 다르다.</p>
 		</div>

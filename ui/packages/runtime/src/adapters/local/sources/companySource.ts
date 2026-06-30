@@ -1,5 +1,5 @@
-// 로컬 company 포트 — 전부 공개 HF 자산 공통배선(corpList·relations·profit-pool). 로컬 :8400 불요
-// (macro·finance·price 와 동일 "로컬이 깃헙페이지 자산을 공유"). relations 도 공개 HF(map ego) 직독 —
+// 로컬 company 포트 · 전부 공개 HF 자산 공통배선(corpList·relations·profit-pool). 로컬 :8400 불요
+// (macro·finance·price 와 동일 "로컬이 깃헙페이지 자산을 공유"). relations 도 공개 HF(map ego) 직독 ·
 // 옛 /api meta 체크 후 빈 관계 반환 스텁 폐기(실관계 노출). reportFacts(라이브 duckdb)는 셸 주입 영역이라 로컬 [].
 import type { CompanyPort, ProductIndexItem } from '@dartlab/ui-contracts';
 import { loadHfProductIndexMap } from '../../public/sources/productIndexSource';
@@ -27,9 +27,9 @@ export function localCompanyPort(): CompanyPort {
 			return rec?.[code.trim()] ?? null;
 		},
 		productIndex: loadProductIndexRecord,
-		// 공급망 관계 = 공개 HF(map ego) 직독 — 공개 어댑터와 동일.
+		// 공급망 관계 = 공개 HF(map ego) 직독 · 공개 어댑터와 동일.
 		relations: loadCompanyRelations,
-		// 라이브 보고서 팩트 — 셸 주입(duckdb-wasm) 영역. 로컬 미배선 = [].
+		// 라이브 보고서 팩트 · 셸 주입(duckdb-wasm) 영역. 로컬 미배선 = [].
 		async reportFacts() {
 			return [];
 		},

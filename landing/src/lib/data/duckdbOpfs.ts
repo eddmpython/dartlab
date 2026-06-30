@@ -1,5 +1,5 @@
 /**
- * OPFS (Origin Private File System) attach helper — DuckDB-WASM 1.27+.
+ * OPFS (Origin Private File System) attach helper · DuckDB-WASM 1.27+.
  *
  * 첫 방문: parquet 다운 + SQL 결과를 `persisted.<table>` 로 영속화.
  * 재방문: `persisted.<table>` 즉시 SELECT → SQL 0 + parquet 다운 0.
@@ -25,7 +25,7 @@ export function isOpfsSupported(): boolean {
 
 /** DuckDB instance 에 OPFS file 등록 + ATTACH AS persisted. 성공 시 true.
  *
- * @param db AsyncDuckDB instance (any 타입 — duckdb-wasm 의 export 가 dynamic)
+ * @param db AsyncDuckDB instance (any 타입 · duckdb-wasm 의 export 가 dynamic)
  * @param conn AsyncDuckDBConnection
  * @param duckdbModule duckdb-wasm 모듈 (DuckDBDataProtocol enum 참조용)
  */
@@ -41,7 +41,7 @@ export async function attachOpfs(
 		const root = await navigator.storage.getDirectory();
 		const fileHandle = await root.getFileHandle(OPFS_FILENAME, { create: true });
 
-		// BROWSER_FSACCESS protocol — sync handle (worker 에서 효율적).
+		// BROWSER_FSACCESS protocol · sync handle (worker 에서 효율적).
 		const protocol =
 			duckdbModule?.DuckDBDataProtocol?.BROWSER_FSACCESS ??
 			(duckdbModule as any)?.DuckDBDataProtocol?.BROWSER_FSACCESS;
@@ -60,14 +60,14 @@ export async function attachOpfs(
 			const currentVersion = rows.length > 0 ? Number(rows[0].user_version ?? 0) : 0;
 			if (currentVersion !== SCHEMA_VERSION) {
 				console.info(
-					`[opfs] schema version mismatch (got ${currentVersion}, expected ${SCHEMA_VERSION}) — rebuild`
+					`[opfs] schema version mismatch (got ${currentVersion}, expected ${SCHEMA_VERSION}) · rebuild`
 				);
 				await dropAllPersistedTables(conn);
 				await conn.query(`PRAGMA ${OPFS_DB_ALIAS}.user_version=${SCHEMA_VERSION}`);
 				rebuilt = true;
 			}
 		} catch (err) {
-			console.warn('[opfs] user_version 검사 실패 — 안전하게 rebuild', err);
+			console.warn('[opfs] user_version 검사 실패 · 안전하게 rebuild', err);
 			await dropAllPersistedTables(conn);
 			rebuilt = true;
 		}
@@ -76,7 +76,7 @@ export async function attachOpfs(
 		return { ok: true, rebuilt };
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
-		console.warn('[opfs] attach 실패 — in-memory fallback', err);
+		console.warn('[opfs] attach 실패 · in-memory fallback', err);
 		return { ok: false, rebuilt: false, error: message };
 	}
 }

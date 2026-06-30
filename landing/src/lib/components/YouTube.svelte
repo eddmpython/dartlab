@@ -3,7 +3,7 @@
 		id: string;
 		title?: string;
 		shorts?: boolean;
-		/** 큰 미리보기(히어로용) — max-width·테두리·그림자 확대 */
+		/** 큰 미리보기(히어로용) · max-width·테두리·그림자 확대 */
 		wide?: boolean;
 		/** 포스터 썸네일 표시 후 클릭 시 iframe 로드 (히어로 LCP 보호) */
 		facade?: boolean;

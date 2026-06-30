@@ -4,7 +4,7 @@
 	import { base } from '$app/paths';
 	import { page } from '$app/state';
 
-	// /map/screen 은 v1 부터 /screener 로 통합 — base64 ?q= 쿼리 그대로 호환.
+	// /map/screen 은 v1 부터 /screener 로 통합 · base64 ?q= 쿼리 그대로 호환.
 	onMount(() => {
 		const q = page.url.searchParams.get('q');
 		const next = q ? `${base}/scan?q=${q}` : `${base}/scan`;

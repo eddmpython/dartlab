@@ -1,4 +1,4 @@
-// Skill Graph 시각화 데이터 변환 — d3-hierarchy 트리 + d3-force simulation.
+// Skill Graph 시각화 데이터 변환 · d3-hierarchy 트리 + d3-force simulation.
 import graphPayload from '$skills/graph.json';
 import * as d3 from 'd3-force';
 import { hierarchy, tree } from 'd3-hierarchy';
@@ -88,7 +88,7 @@ export function buildCategoryRegions(
 	}));
 }
 
-// d3-hierarchy 트리 변환 — 카테고리 → cluster → skill 3 단계 트리.
+// d3-hierarchy 트리 변환 · 카테고리 → cluster → skill 3 단계 트리.
 export function buildHierarchy(graph: GraphPayload, opts: { width: number; height: number }) {
 	const byCategory: Record<string, Record<string, GraphNode[]>> = {};
 	for (const node of graph.nodes) {
@@ -117,7 +117,7 @@ export function buildHierarchy(graph: GraphPayload, opts: { width: number; heigh
 	return rootHierarchy;
 }
 
-// d3-force simulation 셋업 — 257 노드, knowledge 점선/linkedRecipe 굵은선.
+// d3-force simulation 셋업 · 257 노드, knowledge 점선/linkedRecipe 굵은선.
 export function buildForceSimulation(
 	graph: GraphPayload,
 	opts: { width: number; height: number }

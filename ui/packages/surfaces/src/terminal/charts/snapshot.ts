@@ -1,4 +1,4 @@
-// 차트 스냅샷 PNG — klinecharts getConvertPictureUrl + 하단 출처 띠 합성.
+// 차트 스냅샷 PNG · klinecharts getConvertPictureUrl + 하단 출처 띠 합성.
 // DOM 의 .chartSrc 캡션은 라이브러리 캔버스에 포함되지 않으므로, 공공누리 출처표시 의무를
 // 이미지 산출물에 보존하는 유일 경로가 이 합성이다. 다크 배경·png·오버레이 포함 3인자 전부 명시.
 export async function downloadSnapshot(chart: { getConvertPictureUrl?: (o: boolean, t: string, bg: string) => string }, opts: { fileTag: string; srcLine: string }): Promise<void> {

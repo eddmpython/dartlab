@@ -1,9 +1,9 @@
-// 정기보고서 시계열 — dart/scan/report/{employee,investedCompany,dividend,treasuryStock}.parquet 을
+// 정기보고서 시계열 · dart/scan/report/{employee,investedCompany,dividend,treasuryStock}.parquet 을
 // hyparquet 직독 (stockCode 정렬 + 컬럼 projection + row-group pruning, 4파일 병렬).
-// DuckDB-WASM 경유 금지 — 단일 워커 직렬 큐에 묶여 첫 표시가 수십 초로 밀린다(실측 40s → 수 초).
+// DuckDB-WASM 경유 금지 · 단일 워커 직렬 큐에 묶여 첫 표시가 수십 초로 밀린다(실측 40s → 수 초).
 // 버틀러식 인력·생산성 / 주주환원 / 타법인출자 패널의 데이터층. 수치는 콤마 문자열('-'=결측).
 // 실측 구조: employee 는 fo_bbm='성별합계' 행이 성별 합계+급여 보유, treasuryStock 은 acqs_mth1='총계' 행이 총계.
-// 타입 정본 = contracts (옛 로컬 재정의는 contracts 로 승격 완료 — 중복 정의 금지).
+// 타입 정본 = contracts (옛 로컬 재정의는 contracts 로 승격 완료 · 중복 정의 금지).
 import type {
 	AuditFeeYear,
 	AuditYear,
@@ -37,27 +37,27 @@ import { buildSeries, costCells, segmentCells, type PeriodComposition } from './
 
 const browser = typeof window !== 'undefined';
 
-// 패널 3종은 독립 로더 — Promise.all 로 묶으면 가장 무거운 investedCompany(16MB)가
-// 가벼운 인력·배당 패널까지 지연시킨다. 결과 레벨 캐시는 폐기 — fetch 코어가 parquet read 레벨에서
+// 패널 3종은 독립 로더 · Promise.all 로 묶으면 가장 무거운 investedCompany(16MB)가
+// 가벼운 인력·배당 패널까지 지연시킨다. 결과 레벨 캐시는 폐기 · fetch 코어가 parquet read 레벨에서
 // 캐시·dedup 한다(transform 은 재실행되어도 read 는 공유, 데이터 워크벤치 SSOT 이관 P1).
 
 const num = (v: unknown): Num => {
 	if (typeof v === 'number') return Number.isFinite(v) ? v : null;
 	if (typeof v === 'bigint') return Number(v);
 	if (typeof v === 'string' && v.trim() && v !== '-') {
-		// '%' suffix — minorityHolder.hold_stock_rate ('68.23%') 류. 콤마와 함께 제거.
+		// '%' suffix · minorityHolder.hold_stock_rate ('68.23%') 류. 콤마와 함께 제거.
 		const n = Number(v.replace(/[,%]/g, ''));
 		return Number.isFinite(n) ? n : null;
 	}
 	return null;
 };
 const str = (v: unknown): string => (v == null ? '' : String(v));
-// 같은 연도에 4분기(사업보고서) 우선, 없으면 반기·분기 — 연도축 1행 확정용.
+// 같은 연도에 4분기(사업보고서) 우선, 없으면 반기·분기 · 연도축 1행 확정용.
 const qRank = (q: unknown): number => (str(q) === '4분기' ? 4 : str(q) === '3분기' ? 3 : str(q) === '2분기' ? 2 : 1);
 
 type Row = Record<string, unknown>;
 
-// 연도별 최우선 분기만 남긴다 (사업보고서 > 반기 > 분기). bestQ 도 함께 반환 — 급여처럼
+// 연도별 최우선 분기만 남긴다 (사업보고서 > 반기 > 분기). bestQ 도 함께 반환 · 급여처럼
 // 연간 누적값은 사업보고서(4분기)에서만 유효한 필드의 게이트로 쓴다.
 function bestQuarterRows(rows: Row[]): Map<string, { q: number; rows: Row[] }> {
 	const bestQ = new Map<string, number>();
@@ -78,7 +78,7 @@ function bestQuarterRows(rows: Row[]): Map<string, { q: number; rows: Row[] }> {
 	return out;
 }
 
-// 정기보고서 포트 팩토리 — fetch 코어를 어댑터당 주입(전역 싱글턴 금지). read 단일 chokepoint 이
+// 정기보고서 포트 팩토리 · fetch 코어를 어댑터당 주입(전역 싱글턴 금지). read 단일 chokepoint 이
 // core 를 클로저로 잡아 parquet read 레벨에서 캐시(60분 TTL, 분기 안정)·dedup 한다.
 export function createReportSource(core: DataCore): ReportPort {
 	function read(path: string, code: string, columns: string[]): Promise<Row[]> {
@@ -92,7 +92,7 @@ export function createReportSource(core: DataCore): ReportPort {
 		});
 	}
 
-	// 브라우저 가드 + 정직 폴백(null) — 결과 메모이즈는 코어가 read 레벨에서 담당하므로 제거.
+	// 브라우저 가드 + 정직 폴백(null) · 결과 메모이즈는 코어가 read 레벨에서 담당하므로 제거.
 	function guarded<T>(fn: () => Promise<T | null>): Promise<T | null> {
 		if (!browser) return Promise.resolve(null);
 		return fn().catch((err) => {
@@ -126,7 +126,7 @@ export function createReportSource(core: DataCore): ReportPort {
 			}
 			w.total = (w.male ?? 0) + (w.female ?? 0) || null;
 			w.tenure = tenureN ? +(tenureSum / tenureN).toFixed(1) : null;
-			// 급여총액은 연간 누적 — 사업보고서(4분기) 아닌 해는 부분연도라 표시하면 왜곡 → null
+			// 급여총액은 연간 누적 · 사업보고서(4분기) 아닌 해는 부분연도라 표시하면 왜곡 → null
 			if (q !== 4) w.totalSalary = null;
 			w.avgSalary = w.total && w.totalSalary ? w.totalSalary / w.total : null;
 			if (w.total != null) workforce.push(w);
@@ -137,7 +137,7 @@ export function createReportSource(core: DataCore): ReportPort {
 
 	async function buildInvestments(code: string): Promise<InvestmentsBundle | null> {
 		const inv = await read('investedCompany', code, ['inv_prm', 'invstmnt_purps', 'frst_acqs_amount', 'trmend_blce_qota_rt', 'trmend_blce_acntbk_amount', 'recent_bsns_year_fnnr_sttus_thstrm_ntpf']);
-		// ── latest: 최신 유효 (year, quarter) 의 전체 출자사 (장부가 desc) — 우측 패널 스크롤·출자 다이얼로그 단일 소스 ──
+		// ── latest: 최신 유효 (year, quarter) 의 전체 출자사 (장부가 desc) · 우측 패널 스크롤·출자 다이얼로그 단일 소스 ──
 		let latest: InvestmentsView | null = null;
 		const isSumRow = (r: Row) => str(r.inv_prm).replace(/\s/g, '').includes('합계');
 		const invValid = inv.filter((r) => {
@@ -163,12 +163,12 @@ export function createReportSource(core: DataCore): ReportPort {
 					targetNet: num(r.recent_bsns_year_fnnr_sttus_thstrm_ntpf)
 				}))
 				.sort((a, b) => (b.bookValue ?? 0) - (a.bookValue ?? 0));
-			// 전체 반환 — 우측 패널 finScroll(248px) 가 73개사 전부 스크롤, 출자 다이얼로그도 동일 rows 소비(단일 소스).
+			// 전체 반환 · 우측 패널 finScroll(248px) 가 73개사 전부 스크롤, 출자 다이얼로그도 동일 rows 소비(단일 소스).
 			// moreCount/moreBook 은 계약 호환 위해 0 유지 (헤더 카운트 = rows.length + 0 = 정합, 각주 자동 비표시).
 			latest = { year: bestYear, rows, moreCount: 0, moreBook: 0 };
 		}
 		if (!latest) return null;
-		// ── trend: 연도별 장부가 합계 — 합계행 직접 채택(개별행 '-' 결측에 강건), 부재 연도만 개별 합산 ──
+		// ── trend: 연도별 장부가 합계 · 합계행 직접 채택(개별행 '-' 결측에 강건), 부재 연도만 개별 합산 ──
 		const trend: InvestmentTrendYear[] = [];
 		for (const [year, { rows }] of bestQuarterRows(inv)) {
 			const sumRow = rows.find((r) => isSumRow(r) && num(r.trmend_blce_acntbk_amount) != null);
@@ -184,7 +184,7 @@ export function createReportSource(core: DataCore): ReportPort {
 			if (bookTotal != null) trend.push({ year, bookTotal, count: valid.length });
 		}
 		trend.sort((a, b) => a.year.localeCompare(b.year));
-		// ── periods: 보고된 (year, quarter)별 전체 피출자사 — 시간축 그래프·재생. latest 와 동일 유효필터·매핑이라 periods 의 마지막 = latest ──
+		// ── periods: 보고된 (year, quarter)별 전체 피출자사 · 시간축 그래프·재생. latest 와 동일 유효필터·매핑이라 periods 의 마지막 = latest ──
 		const toRow = (r: Row): InvestmentRow => ({
 			name: str(r.inv_prm),
 			purpose: str(r.invstmnt_purps) === '-' ? '' : str(r.invstmnt_purps),
@@ -209,8 +209,8 @@ export function createReportSource(core: DataCore): ReportPort {
 		return { latest, trend, periods };
 	}
 
-	// US(EDGAR) 주주환원 — edgar/scan/report/shareholderReturn.parquet 직독(ShareholderReturnYear 동형 컬럼,
-	// buildEdgarReport 산출). KR 의 dividend/treasury DART 필드코드 파싱과 분리 — US 는 이미 정규화된 행을 1:1 매핑.
+	// US(EDGAR) 주주환원 · edgar/scan/report/shareholderReturn.parquet 직독(ShareholderReturnYear 동형 컬럼,
+	// buildEdgarReport 산출). KR 의 dividend/treasury DART 필드코드 파싱과 분리 · US 는 이미 정규화된 행을 1:1 매핑.
 	async function loadEdgarShareholderReturn(ticker: string): Promise<ShareholderReturnYear[] | null> {
 		try {
 			const rows = await core.requestParquetRows<Row>({
@@ -306,8 +306,8 @@ export function createReportSource(core: DataCore): ReportPort {
 			if (!o) { o = { year, majorPct: null, minorPct: null, minorCount: null, stockTotal: null }; byYear.set(year, o); }
 			return o;
 		};
-		// majorHolder: 계행(최대주주측 합산)만 — 개별행 합산은 이중계상 위험으로 기각(계행 부재 연도 null 정직 표시).
-		// 보통주 우선, 없으면 의결권 있는 주식 ('의결권 없는' 변형 배제). 기초(bsis_*) 금지 — 기말만.
+		// majorHolder: 계행(최대주주측 합산)만 · 개별행 합산은 이중계상 위험으로 기각(계행 부재 연도 null 정직 표시).
+		// 보통주 우선, 없으면 의결권 있는 주식 ('의결권 없는' 변형 배제). 기초(bsis_*) 금지 · 기말만.
 		for (const [year, { rows }] of bestQuarterRows(maj)) {
 			const sums = rows.filter((r) => str(r.nm).trim() === '계' && num(r.trmend_posesn_stock_qota_rt) != null);
 			const common = sums.filter((r) => str(r.stock_knd).includes('보통'));
@@ -316,7 +316,7 @@ export function createReportSource(core: DataCore): ReportPort {
 			const top = latestRcept(pool)[0];
 			if (top) own(year).majorPct = num(top.trmend_posesn_stock_qota_rt);
 		}
-		// minorityHolder: se='소액주주' 행만 (se=null 깡통행 제외). hold_stock_rate 가 진짜 지분율 (shrholdr_rate 는 주주수 비율 — 사용 금지).
+		// minorityHolder: se='소액주주' 행만 (se=null 깡통행 제외). hold_stock_rate 가 진짜 지분율 (shrholdr_rate 는 주주수 비율 · 사용 금지).
 		for (const [year, { rows }] of bestQuarterRows(min)) {
 			const valid = rows.filter((r) => str(r.se).trim() === '소액주주');
 			if (!valid.length) continue;
@@ -325,7 +325,7 @@ export function createReportSource(core: DataCore): ReportPort {
 			const o = own(year);
 			o.minorPct = num(r.hold_stock_rate);
 			o.minorCount = num(r.shrholdr_co);
-			o.stockTotal = num(r.stock_tot_co); // 같은 채택행만 — 분기 혼용 금지 (분할·소각 연중 변동 왜곡 방지)
+			o.stockTotal = num(r.stock_tot_co); // 같은 채택행만 · 분기 혼용 금지 (분할·소각 연중 변동 왜곡 방지)
 		}
 		const out = [...byYear.values()]
 			.filter((o) => o.majorPct != null || o.minorPct != null || o.stockTotal != null)
@@ -333,7 +333,7 @@ export function createReportSource(core: DataCore): ReportPort {
 		return out.length ? out : null;
 	}
 
-	// ── 역방향 소유(최대주주 개별) 분류·정규화 — 개인은 익명 집계(개인정보·동명이인 가드).
+	// ── 역방향 소유(최대주주 개별) 분류·정규화 · 개인은 익명 집계(개인정보·동명이인 가드).
 	// 명시 법인/기관/정부/자기주식 신호가 잡힌 것만 실명(named), 나머지는 person 으로 보수 분류(실명 미노출). ──
 	const SH_TREASURY = /자기주식|자사주/;
 	const SH_GOV = /국민연금|공무원연금|사학연금|군인연금|우정사업본부|예금보험공사|산업은행|연기금|한국은행|정책금융|성장금융/;
@@ -399,7 +399,7 @@ export function createReportSource(core: DataCore): ReportPort {
 		};
 	}
 
-	// 최대주주 (year, quarter) 전(全) 기간 — 역방향 소유 시계열. ownership 과 별도 read·캐시(계약 비파괴).
+	// 최대주주 (year, quarter) 전(全) 기간 · 역방향 소유 시계열. ownership 과 별도 read·캐시(계약 비파괴).
 	async function buildShareholderPeriods(code: string): Promise<ShareholdersView[] | null> {
 		const maj = await read('majorHolder', code, ['nm', 'relate', 'stock_knd', 'trmend_posesn_stock_qota_rt', 'trmend_posesn_stock_co', 'rcept_no']);
 		if (!maj.length) return null;
@@ -433,7 +433,7 @@ export function createReportSource(core: DataCore): ReportPort {
 			if (!e) { e = { year, execAvgPay: null, execTotalPay: null, execCount: null, directors: null, outsideDirectors: null }; byYear.set(year, e); }
 			return e;
 		};
-		// 보수는 연중 누적(기아 Q1 604M→Q4 3,335M 실측) — 사업보고서(4분기) 행만. bestQuarterRows 금지.
+		// 보수는 연중 누적(기아 Q1 604M→Q4 3,335M 실측) · 사업보고서(4분기) 행만. bestQuarterRows 금지.
 		const payByYear = new Map<string, Row[]>();
 		for (const r of pay) {
 			if (str(r.quarter) !== '4분기') continue;
@@ -447,7 +447,7 @@ export function createReportSource(core: DataCore): ReportPort {
 			const e = eb(year);
 			const only = grp.length === 1 ? grp[0] : undefined;
 			if (only) {
-				// 단일행 = 공시값 그대로 — jan_avrg_mendng_am 은 연환산 평균인원 기준이라 totamt/nmpr 재계산 금지
+				// 단일행 = 공시값 그대로 · jan_avrg_mendng_am 은 연환산 평균인원 기준이라 totamt/nmpr 재계산 금지
 				e.execAvgPay = num(only.jan_avrg_mendng_am);
 				e.execTotalPay = num(only.mendng_totamt);
 				e.execCount = num(only.nmpr);
@@ -465,7 +465,7 @@ export function createReportSource(core: DataCore): ReportPort {
 				e.execAvgPay = anyTot && cnt > 0 ? tot / cnt : null;
 			}
 		}
-		// 이사회 구성 — 실질 2·4분기만 공시라 연 축 (bestQuarterRows 4분기 우선)
+		// 이사회 구성 · 실질 2·4분기만 공시라 연 축 (bestQuarterRows 4분기 우선)
 		for (const [year, { rows }] of bestQuarterRows(od)) {
 			const r = latestRcept(rows)[0];
 			if (!r) continue;
@@ -492,7 +492,7 @@ export function createReportSource(core: DataCore): ReportPort {
 			return d;
 		};
 		const isTotal = (r: Row) => str(r.remndr_exprtn2).trim() === '합계';
-		const buckets7 = new Map<string, Num[]>(); // 검산 통과 연도의 7버킷 원본 — 전방 만기 사다리용
+		const buckets7 = new Map<string, Num[]>(); // 검산 통과 연도의 7버킷 원본 · 전방 만기 사다리용
 		// corporateBond: 합계행 우선(공모+사모 공시 오류 36건 자동 방어). 단위 = 원 실측 확정(기아 2.82조 BS 대조).
 		for (const [year, { rows }] of bestQuarterRows(cb)) {
 			const sumRow = rows.find((r) => isTotal(r) && num(r.sm) != null);
@@ -514,7 +514,7 @@ export function createReportSource(core: DataCore): ReportPort {
 					buckets7.set(year, [b1, mids[0] ?? null, mids[1] ?? null, mids[2] ?? null, mids[3] ?? null, b510, b10p]);
 				}
 			} else {
-				// 합계행 sm 결측 — 공모+사모 행 sm 합산 fallback (버킷 null)
+				// 합계행 sm 결측 · 공모+사모 행 sm 합산 fallback (버킷 null)
 				const parts = rows.filter((r) => !isTotal(r) && num(r.sm) != null);
 				if (parts.length) d.bondTotal = parts.reduce((a, r) => a + (num(r.sm) ?? 0), 0);
 			}
@@ -531,7 +531,7 @@ export function createReportSource(core: DataCore): ReportPort {
 			.filter((d) => d.bondTotal != null || d.stb != null || d.cp != null)
 			.sort((a, b) => a.year.localeCompare(b.year));
 		if (!out.length) return null;
-		// 전방 만기 사다리 — 2% 검산 통과한 최신 연도만 발행. 전단채·CP(만기 ≤1y)는 같은 연도 합계.
+		// 전방 만기 사다리 · 2% 검산 통과한 최신 연도만 발행. 전단채·CP(만기 ≤1y)는 같은 연도 합계.
 		let ladder: DebtLadder | null = null;
 		const ladderYears = [...buckets7.keys()].sort();
 		const latestLadderYear = ladderYears[ladderYears.length - 1];
@@ -545,7 +545,7 @@ export function createReportSource(core: DataCore): ReportPort {
 
 	async function buildCapitalChanges(code: string): Promise<CapitalChangesBundle | null> {
 		const rows = await read('capitalChange', code, ['isu_dcrs_de', 'isu_dcrs_stle', 'isu_dcrs_stock_knd', 'isu_dcrs_qy', 'rcept_no']);
-		// 같은 이벤트가 여러 분기 보고서에 반복 수록 — (일자, 형태, 수량) 키 dedupe + rcept_no 최신 우선.
+		// 같은 이벤트가 여러 분기 보고서에 반복 수록 · (일자, 형태, 수량) 키 dedupe + rcept_no 최신 우선.
 		const best = new Map<string, Row>();
 		for (const r of rows) {
 			const de = str(r.isu_dcrs_de);
@@ -555,8 +555,8 @@ export function createReportSource(core: DataCore): ReportPort {
 			const cur = best.get(key);
 			if (!cur || str(r.rcept_no) > str(cur.rcept_no)) best.set(key, r);
 		}
-		// 유형 분류 — 무상증자·주식배당·주식분할(액면)은 기계적 주식수 변동이라 희석 집계 제외.
-		// 상환권행사 등 분류 밖 유형도 제외 (방향 모호 — 추측 집계 금지).
+		// 유형 분류 · 무상증자·주식배당·주식분할(액면)은 기계적 주식수 변동이라 희석 집계 제외.
+		// 상환권행사 등 분류 밖 유형도 제외 (방향 모호 · 추측 집계 금지).
 		const kindOf = (stle: string): CapitalChangeEvent['kind'] | null => {
 			const s = stle.replace(/\s/g, '');
 			if (s.includes('무상증자') || s.includes('주식배당') || s.includes('주식분할') || s.includes('액면')) return null;
@@ -588,7 +588,7 @@ export function createReportSource(core: DataCore): ReportPort {
 
 	async function buildAuditTrail(code: string): Promise<AuditYear[] | null> {
 		const rows = await read('auditOpinion', code, ['adtor', 'adt_opinion', 'adt_reprt_spcmnt_matter', 'rcept_no']);
-		// ⚠ auditOpinion 의 year 컬럼은 캘린더 연도가 아니라 공시 원문 기수 라벨('제55기(당기)' 류 — 실측).
+		// ⚠ auditOpinion 의 year 컬럼은 캘린더 연도가 아니라 공시 원문 기수 라벨('제55기(당기)' 류 · 실측).
 		// 신뢰 가능한 캘린더 앵커는 rcept_no(접수일자)뿐: 사업보고서(4분기)는 익년 제출 → 사업연도 = 접수연도 − 1.
 		// 한 보고서에 당기·전기·전전기 행이 같이 실리므로 당기 행만 채택 (마커 부재 옛 공시는 기수 최대 행).
 		const annual = rows.filter((r) => str(r.quarter) === '4분기' && str(r.rcept_no).length >= 8);
@@ -615,7 +615,7 @@ export function createReportSource(core: DataCore): ReportPort {
 		};
 		const out: AuditYear[] = [];
 		for (const [fy, grp0] of byFy) {
-			const grp = latestRcept(grp0); // 같은 연도 정정공시 — 최신 접수만
+			const grp = latestRcept(grp0); // 같은 연도 정정공시 · 최신 접수만
 			const tagged = grp.filter((r) => {
 				const l = str(r.year);
 				return l.includes('당기') && !l.includes('당분기') && !l.includes('당반기');
@@ -639,7 +639,7 @@ export function createReportSource(core: DataCore): ReportPort {
 
 	async function buildTopExecPay(code: string): Promise<TopExecPay | null> {
 		const rows = await read('executivePayIndividual', code, ['nm', 'ofcps', 'mendng_totamt', 'rcept_no']);
-		// 보수는 연간 확정값 — 사업보고서(4분기)만. 최신 연도 + 최신 접수(정정 우선) → 보수 내림차순 top 8.
+		// 보수는 연간 확정값 · 사업보고서(4분기)만. 최신 연도 + 최신 접수(정정 우선) → 보수 내림차순 top 8.
 		const annual = rows.filter((r) => str(r.quarter) === '4분기' && num(r.mendng_totamt) != null && str(r.nm).trim() && str(r.nm) !== '-');
 		if (!annual.length) return null;
 		let year = '';
@@ -650,13 +650,13 @@ export function createReportSource(core: DataCore): ReportPort {
 			.sort((a, b) => b.pay - a.pay)
 			.slice(0, 8);
 		if (!list.length) return null;
-		const eb = await buildExecBoard(code); // read 공유 — 코어가 동일 parquet read 캐시·dedup (1인평균 배수 병치용)
+		const eb = await buildExecBoard(code); // read 공유 · 코어가 동일 parquet read 캐시·dedup (1인평균 배수 병치용)
 		const avgPay = eb?.find((e) => e.year === year)?.execAvgPay ?? null;
 		return { year, avgPay, rows: list };
 	}
 
 	// 상대 기수 라벨 → 사업연도 offset. 한 보고서에 당기·전기·전전기 3개 연도 표가 같이 실린다.
-	// ⚠ '전전기' 가 '전기' 를 포함하므로 검사 순서 고정. '당분기/당반기' 도 0 — 감사 계약보수는 연간
+	// ⚠ '전전기' 가 '전기' 를 포함하므로 검사 순서 고정. '당분기/당반기' 도 0 · 감사 계약보수는 연간
 	// 단일 계약값이라 분기 시점에도 동일 (하이닉스 1분기 2,975 = 4분기 확정 2,975 실측).
 	const relOffset = (label: string): number | null => {
 		const s = label.replace(/\s/g, '');
@@ -673,7 +673,7 @@ export function createReportSource(core: DataCore): ReportPort {
 			read('auditContract', code, ['bsns_year', 'stlm_dt', 'mendng', 'adt_cntrct_dtls_mendng', 'rcept_no']),
 			read('nonAuditContract', code, ['bsns_year', 'stlm_dt', 'servc_mendng', 'rcept_no'])
 		]);
-		// 사업연도 = stlm_dt(보고서 결산 기준일) 연도 − 상대기수. 상대 마커 없는 행은 버린다 —
+		// 사업연도 = stlm_dt(보고서 결산 기준일) 연도 − 상대기수. 상대 마커 없는 행은 버린다 ·
 		// 기수 숫자(제N기)는 회사·문서 간 불일치 실측(현대차 59기↔2025 vs 56기↔2023 모순)이라 신뢰 불가.
 		// 부정확한 장기 시계열보다 정확한 단기가 정직.
 		const fyOf = (r: Row): number | null => {
@@ -683,7 +683,7 @@ export function createReportSource(core: DataCore): ReportPort {
 			const fy = Number(m[1]) - off;
 			return fy >= 1990 ? fy : null;
 		};
-		// 감사보수 — 같은 연도가 여러 보고서에 재수록(당기→전기→전전기) → 최신 접수 우선.
+		// 감사보수 · 같은 연도가 여러 보고서에 재수록(당기→전기→전전기) → 최신 접수 우선.
 		// 신필드(adt_cntrct_dtls_mendng, 2020 신외감법 양식) 우선, 구필드(mendng) 폴백. 단위 백만원 → 원.
 		const acBest = new Map<number, { rc: string; fee: number }>();
 		for (const r of ac) {
@@ -696,7 +696,7 @@ export function createReportSource(core: DataCore): ReportPort {
 			if (!cur || rc > cur.rc) acBest.set(fy, { rc, fee });
 		}
 		if (!acBest.size) return null;
-		// 비감사보수 — 같은 연도 최신 접수 공시 그룹의 용역 행 합산 (분기 반복 수록 dedup).
+		// 비감사보수 · 같은 연도 최신 접수 공시 그룹의 용역 행 합산 (분기 반복 수록 dedup).
 		// 그룹은 있는데 유효 보수 0 = 비감사용역 없음('-' 행) → 0. 그룹 자체 부재 → null (미공시 구분).
 		const nacGrp = new Map<number, Row[]>();
 		for (const r of nac) {
@@ -723,10 +723,10 @@ export function createReportSource(core: DataCore): ReportPort {
 		return out;
 	}
 
-	// 밸류에이션 스냅샷 — dart/scan/valuation.parquet 통파일 직독(소형 ~44KB, 전 종목 1행). 동종 밸류에이션
+	// 밸류에이션 스냅샷 · dart/scan/valuation.parquet 통파일 직독(소형 ~44KB, 전 종목 1행). 동종 밸류에이션
 	// 좌표(PER/PBR 업종 분포 백분위)용. report/ 하위가 아닌 scan 루트라 read() 헬퍼 대신 직접 통파일 read.
 	async function buildValuationSnapshot(): Promise<ValuationSnapshot | null> {
-		// KR(dart) + US(edgar) 통파일 병합 — 같은 스키마, US ticker ∩ KR 6자리코드 무충돌(resolveMarket SSOT).
+		// KR(dart) + US(edgar) 통파일 병합 · 같은 스키마, US ticker ∩ KR 6자리코드 무충돌(resolveMarket SSOT).
 		// US 미발행이면 .catch → KR 만. edgar/scan/valuation 은 KR dart/scan/valuation 동형(scan/builders/edgar/valuationBuild).
 		const readOne = (path: string) =>
 			core
@@ -735,7 +735,7 @@ export function createReportSource(core: DataCore): ReportPort {
 					path,
 					columns: ['stockCode', 'per', 'pbr', 'marketCap'],
 					cacheKey: `scan.valuation:${path}`,
-					cache: { scope: 'memory', ttlMs: 6 * 3_600_000, maxEntries: 2 } // 일 1회 파생(snapshotAt) — 6h TTL 충분
+					cache: { scope: 'memory', ttlMs: 6 * 3_600_000, maxEntries: 2 } // 일 1회 파생(snapshotAt) · 6h TTL 충분
 				})
 				.catch(() => null);
 		const [kr, us] = await Promise.all([readOne('dart/scan/valuation.parquet'), readOne('edgar/scan/valuation.parquet')]);
@@ -749,17 +749,17 @@ export function createReportSource(core: DataCore): ReportPort {
 		return Object.keys(out).length ? out : null;
 	}
 
-	// ── 주석 구성 시계열 (비용 성격별·부문별 매출) — panel contentRaw 의 정부 XBRL <TE ACODE ACONTEXT> 런타임 직독.
-	// 별도 bake 0(공동 데이터 작업대 굽기 금지) — 런타임이 이미 받는 panel 본문에서 태그 직독. 비용=acode(IFRS 택소노미
+	// ── 주석 구성 시계열 (비용 성격별·부문별 매출) · panel contentRaw 의 정부 XBRL <TE ACODE ACONTEXT> 런타임 직독.
+	// 별도 bake 0(공동 데이터 작업대 굽기 금지) · 런타임이 이미 받는 panel 본문에서 태그 직독. 비용=acode(IFRS 택소노미
 	// 가 곧 카테고리), 부문=axisPath 세그먼트 멤버. ACONTEXT 는 2025-03 사업보고서+라 최근 분기만 자연 포착(상세는 viewer).
 	// panel 최신기들은 연속 tail → 최근 N분기 행 범위만 rowStart/rowEnd prune(대용량 read 회피). ──
 	const COST_BLK = /비용의\s*성격별|성격별\s*분류|성격별\s*비용|영업비용의\s*성격별/;
 	const SEG_BLK = /부문정보|영업부문|부문별\s*정보|부문별\s*보고|사업부문/;
-	const RECENT_N = 6; // 최근 N분기 — ACONTEXT XBRL 은 2025-03 사업보고서+ 라 실제 셀은 ~5분기. 6 이면 충분히 커버.
-	// (panel 은 단일 row group 이라 rowStart/rowEnd 가 네트워크를 못 줄인다 — read 자체는 lazy 로 호출측에서 보류.)
+	const RECENT_N = 6; // 최근 N분기 · ACONTEXT XBRL 은 2025-03 사업보고서+ 라 실제 셀은 ~5분기. 6 이면 충분히 커버.
+	// (panel 은 단일 row group 이라 rowStart/rowEnd 가 네트워크를 못 줄인다 · read 자체는 lazy 로 호출측에서 보류.)
 
 	async function buildNoteSeries(code: string): Promise<NoteSeriesBundle | null> {
-		// Pass A — period 컬럼만(경량) → 최근 N분기 + 그 행 범위(연속 tail).
+		// Pass A · period 컬럼만(경량) → 최근 N분기 + 그 행 범위(연속 tail).
 		const pr = await core.requestParquetRows<{ period?: unknown }>({
 			origin: 'hfRange',
 			path: `dart/panel/${code}.parquet`,
@@ -774,7 +774,7 @@ export function createReportSource(core: DataCore): ReportPort {
 		let hi = -1;
 		for (let i = 0; i < pr.length; i++) if (recent.has(str(pr[i]!.period))) { if (lo < 0) lo = i; hi = i; }
 		if (lo < 0) return null;
-		// Pass B — 최근 N분기 행 범위만(rowStart/rowEnd → row-group prune).
+		// Pass B · 최근 N분기 행 범위만(rowStart/rowEnd → row-group prune).
 		const rows = await core.requestParquetRows<Row>({
 			origin: 'hfRange',
 			path: `dart/panel/${code}.parquet`,
@@ -794,7 +794,7 @@ export function createReportSource(core: DataCore): ReportPort {
 			arr.push(r);
 		}
 		// 한 기간 블록(cost|segment)의 연결 우선 table 본문 → XBRL 셀. 단위는 블록 전체(text+table)에서 1회 검출
-		// — '단위 : 천원' 마커가 표 본문 아닌 헤더 text 프래그먼트에 있는 경우 방어(CJ대한통운 등). 연결 없으면 별도 폴백.
+		// · '단위 : 천원' 마커가 표 본문 아닌 헤더 text 프래그먼트에 있는 경우 방어(CJ대한통운 등). 연결 없으면 별도 폴백.
 		const cellsFor = (prows: Row[], blk: RegExp) => {
 			const matched = prows.filter((r) => blk.test(str(r.blockLeaf)) || blk.test(str(r.sectionLeaf)));
 			if (!matched.length) return [];
@@ -820,7 +820,7 @@ export function createReportSource(core: DataCore): ReportPort {
 		return { cost, segment };
 	}
 
-	// ── ReportPort — 각 메서드는 guarded(브라우저 가드 + null 폴백) 로 build 함수를 감싼다.
+	// ── ReportPort · 각 메서드는 guarded(브라우저 가드 + null 폴백) 로 build 함수를 감싼다.
 	// shareholders 는 shareholderPeriods 의 최신기로 파생(단일 read 공유, 코어가 dedup). ──
 	return {
 		workforce: (code) => guarded(() => buildWorkforce(code.trim())),

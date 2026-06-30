@@ -4,15 +4,15 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<script>
-			/* 테마 초기화 — paint 전 data-theme 선세팅(FOUC 방지). 선호 dark 기본. 라우트별 적용은 +layout 이 보정. */
+			/* 테마 초기화 · paint 전 data-theme 선세팅(FOUC 방지). 선호 dark 기본. 라우트별 적용은 +layout 이 보정. */
 			try {
 				var t = localStorage.getItem('dl-theme') === 'light' ? 'light' : 'dark';
 				document.documentElement.dataset.theme = t;
 				document.documentElement.style.colorScheme = t;
 			} catch (e) {}
-			/* 브랜드 초기화 — paint 전 data-brand/data-conv/커스텀 accent 선세팅. BrandSwitch 와 동일 규약
+			/* 브랜드 초기화 · paint 전 data-brand/data-conv/커스텀 accent 선세팅. BrandSwitch 와 동일 규약
 			   (dl-brand·dl-conv localStorage). BrandSwitch 미마운트 라우트(/report 등 새 탭)도 사용자가 고른
-			   브랜드 색을 따르게 — 전역 SSOT(그동안 BrandSwitch 있는 화면만 리테마되던 누락 보정). */
+			   브랜드 색을 따르게 · 전역 SSOT(그동안 BrandSwitch 있는 화면만 리테마되던 누락 보정). */
 			try {
 				var el = document.documentElement;
 				var b = localStorage.getItem('dl-brand') || '';
@@ -30,7 +30,7 @@
 		<meta name="theme-color" content="#050811" />
 		<meta name="color-scheme" content="dark" />
 		<meta name="robots" content="index, follow" />
-		<!-- PWA standalone(홈 화면 추가 시 앱처럼) — manifest 와 함께. iOS 는 apple-* 메타로 standalone 인식. -->
+		<!-- PWA standalone(홈 화면 추가 시 앱처럼) · manifest 와 함께. iOS 는 apple-* 메타로 standalone 인식. -->
 		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

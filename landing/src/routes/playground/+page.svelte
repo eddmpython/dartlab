@@ -87,7 +87,7 @@ except Exception:
 </script>
 
 <svelte:head>
-	<title>Playground — dartlab 전자공시 재무분석</title>
+	<title>Playground · dartlab 전자공시 재무분석</title>
 	<meta
 		name="description"
 		content="브라우저에서 바로 실행하는 한국 전자공시 재무분석. 설치 없이 dartlab을 체험하세요."

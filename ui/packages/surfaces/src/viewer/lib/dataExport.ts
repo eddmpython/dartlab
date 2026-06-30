@@ -1,4 +1,4 @@
-// 일반인 접근용 데이터 export — 브라우저에 이미 로드된 데이터를 CSV/Excel 로 변환·다운로드 (서버 0, 라이브러리 0).
+// 일반인 접근용 데이터 export · 브라우저에 이미 로드된 데이터를 CSV/Excel 로 변환·다운로드 (서버 0, 라이브러리 0).
 // 공시 수평화표 = CSV(항목×기간 텍스트 격자), 재무제표 = Excel(.xls SpreadsheetML 멀티시트, 숫자).
 
 import type { FinanceStatement } from './finance/types';
@@ -39,11 +39,11 @@ export function panelToCsv(bundle: PanelBundle): string {
 	return toCsv(rows);
 }
 
-// ── Excel (SpreadsheetML 2003 .xls — 멀티시트, 라이브러리 0. Excel/Sheets 가 직접 엶) ──
+// ── Excel (SpreadsheetML 2003 .xls · 멀티시트, 라이브러리 0. Excel/Sheets 가 직접 엶) ──
 function xmlEsc(s: string): string {
 	return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
-// 시트명 — Excel 제한 31자·특수문자(:\/?*[]) 불가.
+// 시트명 · Excel 제한 31자·특수문자(:\/?*[]) 불가.
 function sheetName(name: string): string {
 	return name.replace(/[:\\/?*[\]]/g, ' ').slice(0, 31);
 }
@@ -73,7 +73,7 @@ export function financeToExcel(sheets: Array<{ name: string; statement: FinanceS
 	return `<?xml version="1.0"?>\n<?mso-application progid="Excel.Sheet"?>\n<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">${ws}</Workbook>`;
 }
 
-// 브라우저 다운로드 트리거 (Blob) — 이름·revoke 정리 단일 출처.
+// 브라우저 다운로드 트리거 (Blob) · 이름·revoke 정리 단일 출처.
 function triggerDownload(blob: Blob, filename: string): void {
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement('a');
@@ -90,7 +90,7 @@ export function downloadText(content: string, filename: string, mime: string): v
 	triggerDownload(new Blob([content], { type: mime }), filename);
 }
 
-// 바이너리(진짜 .xlsx 등 Uint8Array) 다운로드 — buildWorkbook 산출 바이트용.
+// 바이너리(진짜 .xlsx 등 Uint8Array) 다운로드 · buildWorkbook 산출 바이트용.
 export function downloadBlob(bytes: Uint8Array, filename: string, mime: string): void {
 	// lib.dom BlobPart 는 ArrayBufferView<ArrayBuffer> 를 요구하는데 Uint8Array 의 buffer 는 ArrayBufferLike
 	// (SharedArrayBuffer 가능)로 추론돼 거부된다. slice() 로 정확히 크기맞춘 새 ArrayBuffer 사본을 만들어 그 buffer 전달.

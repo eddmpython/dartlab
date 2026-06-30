@@ -1,9 +1,9 @@
-// 백테스트 차트 좌표 SSOT — 손수 SVG 다벌 중복 제거 + preserveAspectRatio="none" 왜곡 박멸의 단일 진입점.
-// 순수함수(Svelte·DOM 의존 0) — 브라우저 없이 좌표 수식을 단위검증할 수 있다(chartFrame.test.ts).
+// 백테스트 차트 좌표 SSOT · 손수 SVG 다벌 중복 제거 + preserveAspectRatio="none" 왜곡 박멸의 단일 진입점.
+// 순수함수(Svelte·DOM 의존 0) · 브라우저 없이 좌표 수식을 단위검증할 수 있다(chartFrame.test.ts).
 // EquityChart·MonthlyReturnsHeatmap 등 모달 차트가 import. 실측 px 좌표는 각 컴포넌트가 clientWidth 로 인라인.
 
 /**
- * nice 눈금 배열 — [lo,hi] 범위를 1/2/5 배수 step 으로 스냅해 target 개 근처 눈금을 만든다.
+ * nice 눈금 배열 · [lo,hi] 범위를 1/2/5 배수 step 으로 스냅해 target 개 근처 눈금을 만든다.
  * y축 가로 그리드(정량 비교의 핵심). 빈/역전 범위는 [] (호출부에서 그리드 생략).
  */
 export function niceTicks(lo: number, hi: number, target = 5): number[] {
@@ -19,8 +19,8 @@ export function niceTicks(lo: number, hi: number, target = 5): number[] {
 }
 
 /**
- * 연 경계 인덱스(ts[i] 의 YYYY 가 바뀌는 지점) — x축 세로 그리드/연도 라벨. ts=YYYYMMDD, candles 정렬.
- * 라벨이 max 개를 넘으면 균등 솎음(LOD) — 장기 구간에서 라벨 겹침 방지.
+ * 연 경계 인덱스(ts[i] 의 YYYY 가 바뀌는 지점) · x축 세로 그리드/연도 라벨. ts=YYYYMMDD, candles 정렬.
+ * 라벨이 max 개를 넘으면 균등 솎음(LOD) · 장기 구간에서 라벨 겹침 방지.
  */
 export function yearTicks(ts: string[], max = 8): { idx: number; label: string }[] {
 	if (ts.length < 1) return [];
@@ -44,12 +44,12 @@ export function nearestIdx(mx: number, padL: number, plotW: number, n: number): 
 }
 
 /**
- * 월별 수익률 매트릭스 — 월말 equity 비율(직전 월말 대비). 첫 달은 구간 시작값(eq[0]) 기준 근사.
+ * 월별 수익률 매트릭스 · 월말 equity 비율(직전 월말 대비). 첫 달은 구간 시작값(eq[0]) 기준 근사.
  * equity=평가창 non-null 슬라이스, ts=동일 인덱스 YYYYMMDD. 결측 월은 null(거짓 0% 금지).
- * 색·정렬은 호출부(히트맵)가 결정 — 여기선 사실 행렬만(argmax 강조 없음).
+ * 색·정렬은 호출부(히트맵)가 결정 · 여기선 사실 행렬만(argmax 강조 없음).
  */
 export interface MonthlyReturns {
-	years: number[]; // 오름차순 고정(시간 순서 — 수익순 정렬 금지)
+	years: number[]; // 오름차순 고정(시간 순서 · 수익순 정렬 금지)
 	cell: (year: number, month: number) => number | null; // month 1..12, ret%
 	ytd: (year: number) => number | null; // 연 누적(월 복리, 결측 스킵)
 }

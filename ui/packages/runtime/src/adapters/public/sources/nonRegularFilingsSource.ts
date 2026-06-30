@@ -1,8 +1,8 @@
-// 비정기(수시)공시 — dart/allFilings/recent.parquet (HF, 전 이력 통합 1파일) 을 stock_code
-// 필터로 단건 읽기. 일자 date-scan(휴일 404 콘솔오염) 폐기 — 통합파일은 stock_code 정렬이라
+// 비정기(수시)공시 · dart/allFilings/recent.parquet (HF, 전 이력 통합 1파일) 을 stock_code
+// 필터로 단건 읽기. 일자 date-scan(휴일 404 콘솔오염) 폐기 · 통합파일은 stock_code 정렬이라
 // filter pushdown 이 회사 row-group 만 읽음. content_raw 없음(빌드시 메타만). per-code 캐시.
 // 통합파일 생성: .github/scripts/sync/buildAllFilingsRecent.py (정기보고서는 이미 제외됨).
-// 타입 정본 = contracts (NonRegularFiling 승격 완료 — 중복 정의 금지).
+// 타입 정본 = contracts (NonRegularFiling 승격 완료 · 중복 정의 금지).
 import type { MarketFiling, NonRegularFiling } from '@dartlab/ui-contracts';
 import { resolveMarket } from '@dartlab/ui-contracts';
 import type { DataCore } from '../../../data/fetch/request';
@@ -24,8 +24,8 @@ function fmtDate(s: string): string {
 	return c.length === 8 ? `${c.slice(0, 4)}-${c.slice(4, 6)}-${c.slice(6, 8)}` : String(s);
 }
 
-// ── EDGAR(US) 공시 — edgar/allFilings/{recent,market_recent}.parquet 직독 (KR dart/allFilings 대칭).
-// buildEdgarAllFilingsRecent 가 굽는 camelCase 컬럼. 정기보고서(10-K/10-Q)는 빌드서 이미 제외 — 수시만.
+// ── EDGAR(US) 공시 · edgar/allFilings/{recent,market_recent}.parquet 직독 (KR dart/allFilings 대칭).
+// buildEdgarAllFilingsRecent 가 굽는 camelCase 컬럼. 정기보고서(10-K/10-Q)는 빌드서 이미 제외 · 수시만.
 interface EdgarFilingRow extends Record<string, unknown> {
 	stockCode?: unknown;
 	entityName?: unknown;
@@ -101,7 +101,7 @@ async function loadEdgarMarketFeed(core: DataCore): Promise<MarketFiling[]> {
 	}
 }
 
-// 워커 marketFilingsWorker — DART list 당일 전체 공시(라이브). 시장 피드·종목 비정기 공용(코어 캐시 공유).
+// 워커 marketFilingsWorker · DART list 당일 전체 공시(라이브). 시장 피드·종목 비정기 공용(코어 캐시 공유).
 // 미배선/실패는 []. 워커 응답 {asOf, items:[{rceptNo,rceptDate,stockCode,corpName,reportNm,filer}]}.
 interface LiveFilingRow {
 	rceptNo?: string;
@@ -131,7 +131,7 @@ export async function loadCompanyNonRegularFilings(core: DataCore, stockCode: st
 	if (m.market === 'US' && m.ticker) return loadEdgarCompanyFilings(core, m.ticker); // US = edgar/allFilings 직독
 	if (!/^\d{6}$/.test(code)) return [];
 	try {
-		// HF 누적(전 이력) + 라이브 당일 공시(이 종목분 필터) 동시 — 라이브가 배치 사이 갭(당일) 메움.
+		// HF 누적(전 이력) + 라이브 당일 공시(이 종목분 필터) 동시 · 라이브가 배치 사이 갭(당일) 메움.
 		const [rows, live] = await Promise.all([
 			core.requestParquetRows<RecentRow>({
 				origin: 'hfRange',
@@ -139,13 +139,13 @@ export async function loadCompanyNonRegularFilings(core: DataCore, stockCode: st
 				columns: COLS,
 				filter: { stock_code: { $in: [code] } },
 				cacheKey: `allFilings.recent:one:${code}`,
-				cache: { scope: 'memory', ttlMs: 10 * 60_000, maxEntries: 256 } // 신선도 — 짧은 TTL, 자체 Map 폐기
+				cache: { scope: 'memory', ttlMs: 10 * 60_000, maxEntries: 256 } // 신선도 · 짧은 TTL, 자체 Map 폐기
 			}),
 			loadLiveMarketFilings(core)
 		]);
 		const seen = new Set<string>();
 		const result: NonRegularFiling[] = [];
-		// 라이브(오늘) 먼저 — 이 종목분만, 최신 우선 dedup(rceptNo)
+		// 라이브(오늘) 먼저 · 이 종목분만, 최신 우선 dedup(rceptNo)
 		for (const r of live) {
 			if (String(r.stockCode ?? '').trim() !== code) continue;
 			const rceptNo = String(r.rceptNo ?? '').trim();
@@ -168,14 +168,14 @@ export async function loadCompanyNonRegularFilings(core: DataCore, stockCode: st
 			});
 		}
 		result.sort((a, b) => b.rceptDate.localeCompare(a.rceptDate) || b.rceptNo.localeCompare(a.rceptNo));
-		return result; // 전 이력 — slice 캡 없음(레일/우측패널 완결성). 캐시/dedup 은 코어.
+		return result; // 전 이력 · slice 캡 없음(레일/우측패널 완결성). 캐시/dedup 은 코어.
 	} catch {
 		return [];
 	}
 }
 
-// 워치 신선도 — 여러 종목을 한 read 로 ($in:[codes]). 단일판과 동일 HF 파일·정규화, code→목록 그룹핑.
-// 공개/로컬 공통배선(둘 다 이 함수 호출 → 백엔드 0). 캐시·dedup 은 fetch 코어(data/fetch) 담당 —
+// 워치 신선도 · 여러 종목을 한 read 로 ($in:[codes]). 단일판과 동일 HF 파일·정규화, code→목록 그룹핑.
+// 공개/로컬 공통배선(둘 다 이 함수 호출 → 백엔드 0). 캐시·dedup 은 fetch 코어(data/fetch) 담당 ·
 // 신선도 데이터라 짧은 TTL(10분). 자체 batchCache Map 폐기(데이터 워크벤치 SSOT 이관 P1).
 export async function loadRecentFilingsForCodes(
 	core: DataCore,
@@ -218,7 +218,7 @@ export async function loadRecentFilingsForCodes(
 	}
 }
 
-// 시장 공시 피드(좌측 터미널) — 전상장사 최근 3개월 수시공시 시간순. 우측 단일기업 경로(stock_code
+// 시장 공시 피드(좌측 터미널) · 전상장사 최근 3개월 수시공시 시간순. 우측 단일기업 경로(stock_code
 // 필터 row-group)와 *경로 분리*: 이건 전체시장이라 필터가 없고, 전용 bake 파일(market_recent.parquet,
 // rcept_dt 내림차순·~656KB)을 통파일 1 GET 으로 읽는다(govRecent 동형). recent.parquet 은 stock_code
 // 정렬이라 날짜순을 못 뽑으므로 재사용 금지. category 는 UI 가 report_nm 으로 분류(여기선 원본만).
@@ -229,21 +229,21 @@ interface FeedRow extends RecentRow {
 
 export async function loadMarketFeed(core: DataCore): Promise<MarketFiling[]> {
 	try {
-		// HF 누적 bake(3개월) + 라이브 당일 전체 공시 동시 — 라이브가 배치(14:30) 사이 갭(당일) 메움.
+		// HF 누적 bake(3개월) + 라이브 당일 전체 공시 동시 · 라이브가 배치(14:30) 사이 갭(당일) 메움.
 		const [rows, live, edgar] = await Promise.all([
 			core.requestParquetWholeFile<FeedRow>({
 				origin: 'hf',
 				path: 'dart/allFilings/market_recent.parquet',
 				columns: FEED_COLS,
 				cacheKey: 'allFilings.marketFeed',
-				cache: { scope: 'memory', ttlMs: 10 * 60_000, maxEntries: 2 } // 일일 cron 갱신 — 신선도 우선 10분 TTL(worker 엣지 600s 와 일치)
+				cache: { scope: 'memory', ttlMs: 10 * 60_000, maxEntries: 2 } // 일일 cron 갱신 · 신선도 우선 10분 TTL(worker 엣지 600s 와 일치)
 			}),
 			loadLiveMarketFilings(core),
 			loadEdgarMarketFeed(core) // US 수시공시 피드 병합(KR dart + US edgar, rceptNo 무충돌)
 		]);
 		const seen = new Set<string>();
 		const result: MarketFiling[] = [];
-		// 라이브(오늘 전체 시장) 먼저 — 최신 우선 dedup(rceptNo)
+		// 라이브(오늘 전체 시장) 먼저 · 최신 우선 dedup(rceptNo)
 		for (const r of live) {
 			const rceptNo = String(r.rceptNo ?? '').trim();
 			const stockCode = String(r.stockCode ?? '').trim();
@@ -269,7 +269,7 @@ export async function loadMarketFeed(core: DataCore): Promise<MarketFiling[]> {
 				url: `https://dart.fss.or.kr/dsaf001/main.do?rcpNo=${rceptNo}`
 			});
 		}
-		// US(edgar) 시장 피드 병합 — rceptNo(accession) 가 KR rcept_no 와 무충돌이라 같은 seen 으로 dedup.
+		// US(edgar) 시장 피드 병합 · rceptNo(accession) 가 KR rcept_no 와 무충돌이라 같은 seen 으로 dedup.
 		for (const f of edgar) {
 			if (seen.has(f.rceptNo)) continue;
 			seen.add(f.rceptNo);

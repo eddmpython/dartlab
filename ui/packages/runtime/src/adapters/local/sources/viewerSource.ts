@@ -1,5 +1,5 @@
-// 로컬 viewer 포트 — external-url 모드. 터미널 overlay 가 iframe 으로 /analysis/[code]/viewer 라우트를 띄운다.
-// 단계-6(viewer surface 추출) 전까지 URL-embed — 추출 시 embedded-component 승급 검토.
+// 로컬 viewer 포트 · external-url 모드. 터미널 overlay 가 iframe 으로 /analysis/[code]/viewer 라우트를 띄운다.
+// 단계-6(viewer surface 추출) 전까지 URL-embed · 추출 시 embedded-component 승급 검토.
 import type { ViewerPort } from '@dartlab/ui-contracts';
 
 export function localViewerPort(): ViewerPort {

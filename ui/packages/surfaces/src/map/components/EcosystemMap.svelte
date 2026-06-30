@@ -80,7 +80,7 @@
 		$state([]);
 	let companyLabels: Array<{ id: string; name: string; x: number; y: number; rev: number }> = $state([]);
 
-	// semantic zoom — 산업 버블/flow 화면 좌표
+	// semantic zoom · 산업 버블/flow 화면 좌표
 	let industryNodesOnScreen: Array<{
 		id: string; name: string; color: string; count: number;
 		sx: number; sy: number; sr: number; revLabel: string;

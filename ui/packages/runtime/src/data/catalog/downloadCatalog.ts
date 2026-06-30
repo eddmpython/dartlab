@@ -1,6 +1,6 @@
-// 다운로드 센터 노출 카탈로그 — SSOT = Python `src/dartlab/core/dataConfig.py::downloadCatalog()`.
+// 다운로드 센터 노출 카탈로그 · SSOT = Python `src/dartlab/core/dataConfig.py::downloadCatalog()`.
 // TS 는 Python import 불가라 손수 미러(brand.ts·hf.ts 동일 패턴). dir↔shardKind drift 는
-// `tests/core/test_download_catalog.py` 가 강제(불일치 시 CI fail) — 새 public 카테고리 추가 시
+// `tests/core/test_download_catalog.py` 가 강제(불일치 시 CI fail) · 새 public 카테고리 추가 시
 // Python 은 자동 도출, 본 미러는 여기 한 줄 추가해야 가드 통과.
 //
 // 보안: 본 목록은 DATA_RELEASES `public:True` · flat(nested 아님) · 표형 dir 만. private(allFilings·
@@ -9,15 +9,15 @@
 export type ShardKind = 'company' | 'series' | 'dateShard' | 'bulk';
 
 export interface CatalogEntry {
-	/** HF parquet dir — URL `/v1/{dir}/{id}.{ext}` 의 {dir}. */
+	/** HF parquet dir · URL `/v1/{dir}/{id}.{ext}` 의 {dir}. */
 	dir: string;
 	/** 다운로드 센터 표시 라벨. */
 	label: string;
-	/** {id} 의미 — 'company'(종목코드/ticker)·'series'(시리즈/지수/월)·'dateShard'(날짜, 대형)·'bulk'(단일/대형). */
+	/** {id} 의미 · 'company'(종목코드/ticker)·'series'(시리즈/지수/월)·'dateShard'(날짜, 대형)·'bulk'(단일/대형). */
 	shardKind: ShardKind;
 }
 
-/** Tier2(라이브 워커) 적격 — 회사당/series flat 만. dateShard·bulk 는 대형이라 Tier1 다운로드 전용. */
+/** Tier2(라이브 워커) 적격 · 회사당/series flat 만. dateShard·bulk 는 대형이라 Tier1 다운로드 전용. */
 export function isTier2Eligible(entry: CatalogEntry): boolean {
 	return entry.shardKind === 'company' || entry.shardKind === 'series';
 }

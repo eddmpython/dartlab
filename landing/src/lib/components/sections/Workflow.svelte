@@ -6,7 +6,7 @@
 			icon: Download,
 			step: '01',
 			title: '설치',
-			desc: '한 줄 — uv add dartlab. 별도 데이터 준비 불필요.',
+			desc: '한 줄 · uv add dartlab. 별도 데이터 준비 불필요.',
 			code: '$ uv add dartlab',
 			color: 'text-dl-primary bg-dl-primary/10 border-dl-primary/20'
 		},

@@ -1,10 +1,10 @@
 <script lang="ts">
-	// 회사 검색 — ecosystem(회사 유니버스)에서 회사명/종목코드로 찾아 그 회사 공시뷰어로 이동.
+	// 회사 검색 · ecosystem(회사 유니버스)에서 회사명/종목코드로 찾아 그 회사 공시뷰어로 이동.
 	// scan 검색 스타일(다크 #050811 + 오렌지 포커스). lazy 로드(첫 포커스 시 1회).
 	// 키보드: ↑↓ 로 후보 이동, Enter 선택, Esc 닫기. 마우스: hover 하이라이트 + 클릭.
 	import { loadCompanies, type Co } from '../lib/companyNames';
 
-	// onpick = 회사 선택 콜백(필수) — 셸/부모가 이동 위임($app/navigation·paths 무결합, 포터블 surface).
+	// onpick = 회사 선택 콜백(필수) · 셸/부모가 이동 위임($app/navigation·paths 무결합, 포터블 surface).
 	// 비교 모드 "회사 추가"·회사 전환 팝오버 공용. busy = 추가한 회사 로딩 중 → 입력창 스피너 + 입력 잠금.
 	let { onpick, busy = false }: { onpick: (code: string) => void; busy?: boolean } = $props();
 

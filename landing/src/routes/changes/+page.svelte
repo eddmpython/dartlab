@@ -56,7 +56,7 @@
 	}
 
 	function copyMarkdown(entries: any[], title: string) {
-		const header = `# ${title} — dartlab ${data.movers.asOf}\n\n`;
+		const header = `# ${title} · dartlab ${data.movers.asOf}\n\n`;
 		const tableHead =
 			'| 회사 | 종목코드 | 산업 | ROE | ROE YoY | 매출 YoY | 신호 |\n' +
 			'|---|---|---|---|---|---|---|\n';
@@ -73,7 +73,7 @@
 		content="한국 상장사 이번 분기 급변 Top N. ROE 개선/악화, 매출 급증/급락, 부채 스트레스, 극단 이상치."
 	/>
 	<meta property="og:type" content="website" />
-	<meta property="og:title" content="변화 감지 — dartlab" />
+	<meta property="og:title" content="변화 감지 · dartlab" />
 	<meta
 		property="og:description"
 		content="한국 상장사 이번 회계연도 급변 Top. ROE·매출·부채 6 카테고리 자동 감지."

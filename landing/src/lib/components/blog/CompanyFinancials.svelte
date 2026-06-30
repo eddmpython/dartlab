@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 블로그 회사글 재무 섹션 — 데이터 SSOT(dart/finance) 를 빌드타임에 표준화한 companyFinance(+page.server.ts)를
+	// 블로그 회사글 재무 섹션 · 데이터 SSOT(dart/finance) 를 빌드타임에 표준화한 companyFinance(+page.server.ts)를
 	// +page.svelte 가 context 로 내려준다(중첩 mdsvex 컴포넌트 SSR 안전). 숫자를 .md 에 박지 않는다 → 화석화 불가.
 	import { getContext } from 'svelte';
 	import ComboChart from './ComboChart.svelte';
@@ -16,7 +16,7 @@
 	const fin = $derived(finGetter ? finGetter() : null);
 
 	function cell(v: number | null): string {
-		if (v == null) return '—';
+		if (v == null) return '·';
 		if (Math.abs(v) >= 1) return Math.round(v).toLocaleString('ko-KR');
 		return v.toFixed(1);
 	}
@@ -35,7 +35,7 @@
 </script>
 
 {#if fin && fin.code === code}
-	<h2 id="재무제표">재무제표 — 최근 5개년</h2>
+	<h2 id="재무제표">재무제표 · 최근 5개년</h2>
 	<blockquote class="cf-note">
 		<p>아래는 최근 5개년 요약입니다(단위 억원, 연결 기준). 전체 기간·분기별 데이터는 dartlab에서 직접 확인할 수 있습니다:</p>
 		<pre><code>import dartlab
@@ -66,7 +66,7 @@ c.select("CF", freq="Y")  # 현금흐름표</code></pre>
 		</div>
 	{/snippet}
 
-	<h3>손익계산서 (IS) — 단위 억원</h3>
+	<h3>손익계산서 (IS) · 단위 억원</h3>
 	<ComboChart
 		data={fin.charts.is}
 		lineKeys={['매출액']}
@@ -78,11 +78,11 @@ c.select("CF", freq="Y")  # 현금흐름표</code></pre>
 	/>
 	{@render table(fin.is, fin.years)}
 
-	<h3>재무상태표 (BS) — 단위 억원</h3>
+	<h3>재무상태표 (BS) · 단위 억원</h3>
 	<StackBar data={bsStack} title="부채 vs 자본 구조" unit="억원" />
 	{@render table(fin.bs, fin.years)}
 
-	<h3>현금흐름표 (CF) — 단위 억원</h3>
+	<h3>현금흐름표 (CF) · 단위 억원</h3>
 	<ComboChart
 		data={fin.charts.cf}
 		barKeys={['영업CF', '투자CF', '재무CF']}

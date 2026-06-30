@@ -317,11 +317,11 @@ export function financeGrowthKey(growthId: string): string {
 }
 
 function pctFormat(withSign = false) {
-	return (v: unknown) => (typeof v === 'number' ? fmtPct(v, { withSign }) : '—');
+	return (v: unknown) => (typeof v === 'number' ? fmtPct(v, { withSign }) : '·');
 }
 
 function fmtWonAsEok(v: unknown): string {
-	if (typeof v !== 'number' || !Number.isFinite(v)) return '—';
+	if (typeof v !== 'number' || !Number.isFinite(v)) return '·';
 	const eok = v / 1e8;
 	const abs = Math.abs(eok);
 	const maximumFractionDigits = abs >= 100 ? 0 : 1;

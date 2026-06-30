@@ -4,7 +4,7 @@
 </script>
 
 <svelte:head>
-	<title>Playground 컴포넌트 검증 — dartlab</title>
+	<title>Playground 컴포넌트 검증 · dartlab</title>
 	<meta name="robots" content="noindex" />
 </svelte:head>
 

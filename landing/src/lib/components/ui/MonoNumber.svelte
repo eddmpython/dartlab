@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { pctTone } from '@dartlab/ui-format/pct';
 
-	/** 숫자 표시 — tabular-nums + 톤별 색 */
+	/** 숫자 표시 · tabular-nums + 톤별 색 */
 	interface Props {
 		value: number | string | null | undefined;
 		size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -20,7 +20,7 @@
 		align = 'right'
 	}: Props = $props();
 
-	const display = $derived(value == null || value === '' ? '—' : String(value));
+	const display = $derived(value == null || value === '' ? '·' : String(value));
 
 	// auto tone: value 가 숫자면 부호로 결정
 	const computedTone = $derived.by(() => {

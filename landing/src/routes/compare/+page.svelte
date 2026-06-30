@@ -200,9 +200,9 @@
 
 <svelte:head>
 	<title>기업 비교 | dartlab 전자공시</title>
-	<meta name="description" content="한국 상장사 최대 4사 비교 — 재무/공급망/AI 분석 나란히." />
+	<meta name="description" content="한국 상장사 최대 4사 비교 · 재무/공급망/AI 분석 나란히." />
 	<meta property="og:type" content="website" />
-	<meta property="og:title" content="기업 비교 — dartlab" />
+	<meta property="og:title" content="기업 비교 · dartlab" />
 	<meta property="og:description" content="4사 재무·공급망·AI 나란히. 공통 공급사 교집합 자동." />
 	<meta property="og:image" content="https://eddmpython.github.io/dartlab/og-image.png" />
 	<meta property="og:image:width" content="1200" />
@@ -325,7 +325,7 @@
 				{#if commonSuppliers.length > 0}
 					<div class="common-group">
 						<h3>공통 공급사 ({commonSuppliers.length})</h3>
-						<p class="common-desc">이 회사들 모두가 공통으로 받아쓰는 공급사 — 같은 밸류체인/경쟁 관계의 지표.</p>
+						<p class="common-desc">이 회사들 모두가 공통으로 받아쓰는 공급사 · 같은 밸류체인/경쟁 관계의 지표.</p>
 						<ul>
 							{#each commonSuppliers as s (s.stockCode)}
 								<li>
@@ -339,7 +339,7 @@
 				{#if commonCustomers.length > 0}
 					<div class="common-group">
 						<h3>공통 고객사 ({commonCustomers.length})</h3>
-						<p class="common-desc">이 회사들 모두가 판매하는 고객사 — 수요 집중 리스크.</p>
+						<p class="common-desc">이 회사들 모두가 판매하는 고객사 · 수요 집중 리스크.</p>
 						<ul>
 							{#each commonCustomers as c (c.stockCode)}
 								<li><a href="{base}/map?focus={c.stockCode}">{c.corpName}</a></li>
@@ -357,7 +357,7 @@
 		</div>
 
 		<div class="disclaimer">
-			dartlab 은 공시·재무 데이터를 시각화합니다. 투자 자문 아님. 자동 하이라이트(▲▼)는 비교 대상 중 상대값 — 업종 전체 평균 아님.
+			dartlab 은 공시·재무 데이터를 시각화합니다. 투자 자문 아님. 자동 하이라이트(▲▼)는 비교 대상 중 상대값 · 업종 전체 평균 아님.
 		</div>
 	{/if}
 </div>

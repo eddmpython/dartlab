@@ -1,4 +1,4 @@
-// 동시 동일 요청 중복 제거 — in-flight Promise 공유. 어댑터 구현 공용.
+// 동시 동일 요청 중복 제거 · in-flight Promise 공유. 어댑터 구현 공용.
 
 export class RequestDedup {
 	#inflight = new Map<string, Promise<unknown>>();

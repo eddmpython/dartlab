@@ -96,7 +96,7 @@
 	let trendError = $state<string | null>(null);
 	let DetailComponent = $state<any>(null);
 	let DataExplorerComponent = $state<any>(null);
-	// 유니버스 백테스터(간판① — 전종목 크로스섹셔널). lazy 모달.
+	// 유니버스 백테스터(간판① · 전종목 크로스섹셔널). lazy 모달.
 	let universeOpen = $state(false);
 	let UniverseBacktesterComponent = $state<any>(null);
 
@@ -143,7 +143,7 @@
 	// ── Distribution panel: bin highlight (양방향) ────
 	let highlightBin = $state<{ x0: number; x1: number } | null>(null);
 
-	// ── Percentiles (활성 컬럼별 p10/p90) — 셀 분위 색상용 ─
+	// ── Percentiles (활성 컬럼별 p10/p90) · 셀 분위 색상용 ─
 	let percentiles = $derived.by(() => {
 		const map = new Map<string, { p10: number; p90: number; higherBetter?: boolean }>();
 		for (const key of activeColumns) {
@@ -165,7 +165,7 @@
 		return map;
 	});
 
-	// ── Data badge — keep infrastructure names out of the user-facing UI ─
+	// ── Data badge · keep infrastructure names out of the user-facing UI ─
 	let dbBadgeKind = $derived.by(() => {
 		if (runtimeState === 'error') return 'error';
 		if (runtimeState === 'loading') return 'loading';
@@ -218,7 +218,7 @@
 				spark30: p?.spark30 ?? (n.spark30 as number[] | undefined) ?? [],
 				spark60: p?.spark60 ?? (n.spark60 as number[] | undefined) ?? [],
 				spark: p?.spark ?? (n.spark as number[] | undefined) ?? [],
-				// valuation (Naver) — marketCap 우선 valuation, fallback KRX
+				// valuation (Naver) · marketCap 우선 valuation, fallback KRX
 				marketCap: val?.marketCap ?? p?.marketCap ?? (n.marketCap as number | null | undefined) ?? null,
 				per: val?.per ?? (n.per as number | null | undefined) ?? null,
 				pbr: val?.pbr ?? (n.pbr as number | null | undefined) ?? null,
@@ -608,7 +608,7 @@
 
 	async function bootRuntimeSidecars() {
 		const [prices, meta] = await Promise.all([
-			// 시세 스냅샷만 HF-first — 일배치 HF 갱신을 정적 사본이 가리는 동결 방지 (terminal routeLoad 동일)
+			// 시세 스냅샷만 HF-first · 일배치 HF 갱신을 정적 사본이 가리는 동결 방지 (terminal routeLoad 동일)
 			loadJson<PriceSnapshotFile>('map/prices-snapshot.json', { fetchFn: fetch }),
 			loadJson<any>('map/meta.json', { fetchFn: fetch, preferLocal: true })
 		]);

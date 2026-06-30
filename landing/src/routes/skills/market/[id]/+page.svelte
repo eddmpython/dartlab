@@ -11,7 +11,7 @@
 	let { data } = $props<{ data: { skill: MarketSkill } }>();
 	const skill = $derived(data.skill);
 
-	const pageTitle = $derived(`${skill.title} — DartLab Skill Market`);
+	const pageTitle = $derived(`${skill.title} · DartLab Skill Market`);
 	const pageDesc = $derived(skill.summary ?? skill.intent ?? 'DartLab community Skill Market entry');
 	const pageUrl = $derived(buildAbsoluteUrl(`skills/market/${skill.id}`));
 	const jsonLd = $derived(

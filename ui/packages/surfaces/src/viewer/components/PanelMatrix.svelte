@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 수평화 매트릭스 — 행=panel 항목, 열=period. landing 디자인 언어(다크 네이비 + 오렌지).
+	// 수평화 매트릭스 · 행=panel 항목, 열=period. landing 디자인 언어(다크 네이비 + 오렌지).
 	import CellContent from './CellContent.svelte';
 	import { hasVisibleContent } from '../lib/diff';
 	import type { PanelRow } from '../lib/types';
@@ -23,19 +23,19 @@
 		// ── table-export 선택 모드 ── selecting=true 면 셀 좌상단 체크박스 오버레이(레이아웃 시프트 0).
 		// rowIds[i] = 표시 행 i 의 섹션 절대 selection id (ViewerStudio 가 환산해 주입). selectedIds 에 있으면 steady glow.
 		selecting?: boolean;
-		rowIds?: string[]; // visible 매핑 전 원본 rows 인덱스 기준 — 부모가 rows 와 같은 순서로 제공
+		rowIds?: string[]; // visible 매핑 전 원본 rows 인덱스 기준 · 부모가 rows 와 같은 순서로 제공
 		selectedIds?: Set<string> | null;
 		onToggleCell?: (rowId: string, row: PanelRow, period: string) => void;
 	} = $props();
 
-	// 섹션 내 build-order 인덱스 보존 — 행 식별(disclosureKey/NARR)은 leafSeq 미포함이라 EDGAR 동명 narrative
+	// 섹션 내 build-order 인덱스 보존 · 행 식별(disclosureKey/NARR)은 leafSeq 미포함이라 EDGAR 동명 narrative
 	// 행이 충돌(each_key_duplicate). 별개 행이므로 둘 다 표시하되 DOM 키는 안정·유일한 원본 인덱스로.
 	const visible = $derived(rows.map((r, i) => ({ r, i })).filter(({ r }) => hasVisibleContent(r, periods)));
-	// 항목 라벨 열 없음 — 셀 본문(표 제목 내장)이 자기 식별. 격자는 기간 열만.
+	// 항목 라벨 열 없음 · 셀 본문(표 제목 내장)이 자기 식별. 격자는 기간 열만.
 	const template = $derived(`repeat(${periods.length}, minmax(260px, 1fr))`);
 	const minMatrixWidth = $derived(`${periods.length * 260}px`);
 
-	// 검색 점프 셀 글로우 — 표시 수명을 여기서 소유한다(부모 타이머 아님). 옛 방식은 glow 설정 즉시 2.2s
+	// 검색 점프 셀 글로우 · 표시 수명을 여기서 소유한다(부모 타이머 아님). 옛 방식은 glow 설정 즉시 2.2s
 	// fade 애니메이션 + 클리어 타이머가 돌아, 먼 거리 smooth 스크롤이 끝나기 전에 강조가 꺼졌다. 이제:
 	// ① 섹션 변경 렌더 후(2프레임) 셀을 찾아 스크롤(없으면 재시도) ② 스크롤 도착(scrollend, 없으면 fallback)
 	// 후 dwell 동안 *steady 펄스* 강조 유지 → 도착 시점에 확실히 보인다.
@@ -71,7 +71,7 @@
 			el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
 			scroller = el.closest('.matrix-scroll') ?? window;
 			scroller.addEventListener('scrollend', startDwell as EventListener, { once: true });
-			fallback = setTimeout(startDwell, 1400); // scrollend 미지원/미발생 대비 — 도착 후 dwell 보장
+			fallback = setTimeout(startDwell, 1400); // scrollend 미지원/미발생 대비 · 도착 후 dwell 보장
 		};
 		requestAnimationFrame(() => requestAnimationFrame(() => begin(8)));
 		return () => {
@@ -194,17 +194,17 @@
 		position: relative; /* pick-box 오버레이 앵커 (체크박스 absolute, 레이아웃 시프트 0). */
 		color: #cbd5e1;
 	}
-	/* steady 강조 + 펄스 — 스크롤 도착 시점에 확실히 보이게(옛 t0 fade 레이스 제거). 수명은 JS(glowKey)가 제어. */
+	/* steady 강조 + 펄스 · 스크롤 도착 시점에 확실히 보이게(옛 t0 fade 레이스 제거). 수명은 JS(glowKey)가 제어. */
 	.body-cell.glow {
 		box-shadow: inset 0 0 0 2px var(--amber);
 		animation: cellglow 1.1s ease-in-out infinite;
 	}
-	/* table-export 선택 — steady 보더(펄스 없음, glow 와 구분). 선택 유지 상시. */
+	/* table-export 선택 · steady 보더(펄스 없음, glow 와 구분). 선택 유지 상시. */
 	.body-cell.picked {
 		box-shadow: inset 0 0 0 2px var(--amber);
 		background: rgba(var(--amber-rgb), 0.08);
 	}
-	/* 셀 좌상단 체크박스 — fade-in, position:absolute(격자 레이아웃 시프트 0). */
+	/* 셀 좌상단 체크박스 · fade-in, position:absolute(격자 레이아웃 시프트 0). */
 	.pick-box {
 		position: absolute;
 		top: 5px;
@@ -253,7 +253,7 @@
 		}
 	}
 
-	/* D3 — 모바일 격자 가독성. 데스크톱(≥881px)은 inline style 의 repeat(N, minmax(260px,1fr)) 그대로(불변).
+	/* D3 · 모바일 격자 가독성. 데스크톱(≥881px)은 inline style 의 repeat(N, minmax(260px,1fr)) 그대로(불변).
 	   모바일에선 부모(+page)가 cols=1 로 강제해 periods.length=1 → 격자가 자연히 단일 컬럼(DOM 순서상 head→body
 	   정렬 유지). 여기선 셀 패딩만 모바일용으로 키워 손가락·가독 여백 확보(가로스크롤 0, 풀폭 셀). 기간 전환은 리본. */
 	@media (max-width: 880px) {

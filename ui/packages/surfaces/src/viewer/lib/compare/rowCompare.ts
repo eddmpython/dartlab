@@ -1,4 +1,4 @@
-// Company compare — 단일 뷰어를 회사별로 미러한다. 각 회사의 이 섹션(+활성 블록) 콘텐츠를
+// Company compare · 단일 뷰어를 회사별로 미러한다. 각 회사의 이 섹션(+활성 블록) 콘텐츠를
 // 자기 열에 통째로 보여줄 뿐, 계정/키 단위로 쪼개거나 회사 간 행 정렬을 하지 않는다
 // (운영자 요청: "계정간 비교 말고 각 회사 표 그대로 나란히" = 요약재무 방식). 절번호 drift로
 // 같은 sectionKey 가 없는 회사는 기준 블록의 disclosureKey 로 전역 조회해 누락을 막는다.
@@ -85,7 +85,7 @@ export function alignBundles(bundles: PanelBundle[], sectionKey: string, period:
 	return compareRows(bundles, sectionKey, period, block).rows;
 }
 
-// TOC 점/회색처리 — 회사가 이 섹션/블록 콘텐츠를 가졌나(절번호 drift 시 disclosureKey 전역).
+// TOC 점/회색처리 · 회사가 이 섹션/블록 콘텐츠를 가졌나(절번호 drift 시 disclosureKey 전역).
 export function sectionPresence(bundles: PanelBundle[], sectionKey: string, block: string | null = null): boolean[] {
 	const base = bundles[0];
 	let baseRows = base?.gridBySection.get(sectionKey) ?? [];

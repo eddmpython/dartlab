@@ -1,18 +1,18 @@
-// 재무제표 28 표준계정 매핑 + 계정매칭 — 단일 SSOT.
+// 재무제표 28 표준계정 매핑 + 계정매칭 · 단일 SSOT.
 //
 // 원래 financeSource.ts(터미널 번들)에 인라인돼 있던 STD 테이블·매칭 규칙·파싱 primitive 를
 // 여기로 추출한다. financeSource.ts(브라우저 터미널)와 annual.ts(블로그·정적 SEO 빌드타임)가
-// **같은 표준화**를 공유 — 평행 재구현 추가 0. src/dartlab/viz/display/finance/accounts.py(_STANDARDS)
+// **같은 표준화**를 공유 · 평행 재구현 추가 0. src/dartlab/viz/display/finance/accounts.py(_STANDARDS)
 // 포팅의 TS 정본.
 //
-// Node+브라우저 안전(svelte·DOM 의존 0) — annual.ts 가 SvelteKit prerender(Node)에서 import 한다.
+// Node+브라우저 안전(svelte·DOM 의존 0) · annual.ts 가 SvelteKit prerender(Node)에서 import 한다.
 
 export interface StdAcct {
 	key: string;
 	sj: 'IS' | 'BS' | 'CF' | 'CIS';
 	ids: string[]; // account_id (IFRS) 우선
 	kw: string[]; // account_nm 키워드 fallback
-	ex?: string[]; // nm 매칭 제외 키워드 — includes 포함매칭의 오선택 차단 (예: longDebt 가 '유동성장기차입금'을 잡는 사고)
+	ex?: string[]; // nm 매칭 제외 키워드 · includes 포함매칭의 오선택 차단 (예: longDebt 가 '유동성장기차입금'을 잡는 사고)
 }
 
 // ── 28 표준계정 (accounts.py _STANDARDS 포팅) ──
@@ -38,7 +38,7 @@ export const STD: StdAcct[] = [
 	{ key: 'payables', sj: 'BS', ids: ['ifrs-full_TradeAndOtherCurrentPayables', 'dart_ShortTermTradePayables'], kw: ['매입채무'] },
 	{ key: 'shortDebt', sj: 'BS', ids: ['ifrs-full_ShorttermBorrowings', 'ifrs_ShorttermBorrowings'], kw: ['단기차입금'], ex: ['유동성'] },
 	// '유동성장기차입금'.includes('장기차입금')=true 라 ex 가드 없이는 longDebt 가 유동성 행을
-	// 오선택/이중계상 — 차입 3분해(shortDebt·currentLtDebt·longDebt)의 정합 전제.
+	// 오선택/이중계상 · 차입 3분해(shortDebt·currentLtDebt·longDebt)의 정합 전제.
 	{ key: 'longDebt', sj: 'BS', ids: ['ifrs-full_LongtermBorrowings', 'ifrs_LongtermBorrowings'], kw: ['장기차입금', '사채'], ex: ['유동성'] },
 	{ key: 'currentLtDebt', sj: 'BS', ids: [], kw: ['유동성장기차입금', '유동성장기부채', '유동성사채'] },
 	{ key: 'equity', sj: 'BS', ids: ['ifrs-full_Equity', 'ifrs_Equity'], kw: ['자본총계'] },
@@ -51,7 +51,7 @@ export const STD: StdAcct[] = [
 	{ key: 'cfFinancing', sj: 'CF', ids: ['ifrs-full_CashFlowsFromUsedInFinancingActivities', 'ifrs_CashFlowsFromUsedInFinancingActivities'], kw: ['재무활동현금흐름', '재무활동'] },
 	{ key: 'capex', sj: 'CF', ids: ['ifrs-full_PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities', 'dart_PurchaseOfPropertyPlantAndEquipment'], kw: ['유형자산의취득', '유형자산취득'] },
 	{ key: 'dividendsPaid', sj: 'CF', ids: ['ifrs-full_DividendsPaidClassifiedAsFinancingActivities', 'ifrs_DividendsPaid'], kw: ['배당금지급'] },
-	// CIS — 포괄손익계산서 원본 레인. 단일 포괄손익 회사(카카오류)의 손익 폴백·포괄손익 격차·SCE OCI 폴백.
+	// CIS · 포괄손익계산서 원본 레인. 단일 포괄손익 회사(카카오류)의 손익 폴백·포괄손익 격차·SCE OCI 폴백.
 	{ key: 'cisNetIncome', sj: 'CIS', ids: ['ifrs-full_ProfitLoss', 'ifrs_ProfitLoss'], kw: ['당기순이익', '분기순이익', '반기순이익'] },
 	{ key: 'cisComprehensive', sj: 'CIS', ids: ['ifrs-full_ComprehensiveIncome', 'ifrs_ComprehensiveIncome'], kw: ['총포괄손익', '총포괄이익'] }
 ];
@@ -59,7 +59,7 @@ export const STD: StdAcct[] = [
 export const STD_BY_KEY: Record<string, StdAcct> = Object.fromEntries(STD.map((s) => [s.key, s]));
 export const isStock = (k: string): boolean => STD_BY_KEY[k]?.sj === 'BS';
 
-// thstrm_add_amount = 누적(YTD) — 정량재무 표(분기 standalone)가 쓴다. 표·차트 1회 다운로드 공유 위해 컬럼셋 통일.
+// thstrm_add_amount = 누적(YTD) · 정량재무 표(분기 standalone)가 쓴다. 표·차트 1회 다운로드 공유 위해 컬럼셋 통일.
 export const FINANCE_COLUMNS = ['sj_div', 'fs_div', 'reprt_code', 'rcept_no', 'bsns_year', 'account_id', 'account_nm', 'account_detail', 'thstrm_amount', 'thstrm_add_amount', 'ord'];
 
 export const Q_BY_CODE: Record<string, number> = { '11013': 1, '11012': 2, '11014': 3, '11011': 4 };
@@ -99,7 +99,7 @@ export function num(v: unknown): number | null {
 	return null;
 }
 
-// 표준계정 × (year,q) 격자 — STD 별 독립 매칭(행 소비/순서 의존 없음). id 매칭 우선, 없으면 nm 키워드.
+// 표준계정 × (year,q) 격자 · STD 별 독립 매칭(행 소비/순서 의존 없음). id 매칭 우선, 없으면 nm 키워드.
 // 같은 셀 다중 후보 시 account_detail='-' 우선·ord 최소. financeSource buildBundle 의 인라인 로직과 동일.
 export function buildGrid(parsed: Parsed[]): Record<string, Map<string, Parsed>> {
 	const score = (x: Parsed, byId: boolean) => (byId ? 0 : 1000) + (x.detail === '-' || x.detail === '' ? 0 : 100) + Math.min(x.ord, 99);

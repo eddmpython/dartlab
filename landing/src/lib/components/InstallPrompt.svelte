@@ -1,7 +1,7 @@
 <script lang="ts">
-	// 은근한 PWA 설치 안내 — 설치 가능할 때만 1회, 하단 작은 바. 3겹 가드로 *이미 설치한 사람에겐 안 뜸*:
+	// 은근한 PWA 설치 안내 · 설치 가능할 때만 1회, 하단 작은 바. 3겹 가드로 *이미 설치한 사람에겐 안 뜸*:
 	//  ① standalone 실행(홈화면 아이콘으로 연 앱)이면 숨김  ② 안드/데스크톱은 beforeinstallprompt(설치 안 됨일 때만
-	//     발생)로만 노출 + appinstalled 즉시 숨김  ③ iOS Safari 탭만 수동 힌트 1회(설치여부 감지 불가 — show-once).
+	//     발생)로만 노출 + appinstalled 즉시 숨김  ③ iOS Safari 탭만 수동 힌트 1회(설치여부 감지 불가 · show-once).
 	// 닫으면 localStorage 로 다시 안 뜸. 라우트 무관(루트 레이아웃 마운트).
 	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
@@ -34,7 +34,7 @@
 		try {
 			localStorage.setItem(DISMISS_KEY, '1');
 		} catch {
-			/* 프라이빗 모드 등 — 무시 */
+			/* 프라이빗 모드 등 · 무시 */
 		}
 	}
 	function isIosSafari(): boolean {
@@ -62,7 +62,7 @@
 	onMount(() => {
 		if (isStandalone() || dismissed()) return; // 가드① + 이미 닫음
 
-		// 가드② — 안드/데스크톱: 설치 가능할 때만 이벤트가 온다(이미 설치면 안 옴).
+		// 가드② · 안드/데스크톱: 설치 가능할 때만 이벤트가 온다(이미 설치면 안 옴).
 		const onBip = (e: Event) => {
 			e.preventDefault();
 			deferred = e as BipEvent;
@@ -76,7 +76,7 @@
 		window.addEventListener('beforeinstallprompt', onBip);
 		window.addEventListener('appinstalled', onInstalled);
 
-		// 가드③ — iOS Safari 탭: beforeinstallprompt 없음 → 콘텐츠 잠깐 본 뒤 수동 힌트 1회.
+		// 가드③ · iOS Safari 탭: beforeinstallprompt 없음 → 콘텐츠 잠깐 본 뒤 수동 힌트 1회.
 		let iosTimer: ReturnType<typeof setTimeout> | null = null;
 		if (isIosSafari()) {
 			iosTimer = setTimeout(() => {
@@ -127,7 +127,7 @@
 		display: flex;
 		align-items: center;
 		gap: 11px;
-		/* 명시 width — 없으면 fixed+flex 가 콘텐츠 최소폭으로 쪼그라들고, 전역 overflow-wrap:anywhere 가
+		/* 명시 width · 없으면 fixed+flex 가 콘텐츠 최소폭으로 쪼그라들고, 전역 overflow-wrap:anywhere 가
 		   글자단위로 끊어 세로로 깨진다. 고정폭 + 아래 텍스트 keep-all 로 정상 줄바꿈. */
 		width: min(380px, calc(100vw - 24px));
 		padding: 10px 12px;
@@ -160,7 +160,7 @@
 		flex: 1 1 auto;
 		min-width: 0;
 		line-height: 1.3;
-		/* 전역 overflow-wrap:anywhere 해제 — 한글 어절 단위(keep-all)로만 줄바꿈(글자단위 깨짐 차단). */
+		/* 전역 overflow-wrap:anywhere 해제 · 한글 어절 단위(keep-all)로만 줄바꿈(글자단위 깨짐 차단). */
 		overflow-wrap: normal;
 		word-break: keep-all;
 	}

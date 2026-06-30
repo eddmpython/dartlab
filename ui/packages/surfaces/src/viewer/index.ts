@@ -1,8 +1,8 @@
-// viewer surface 공개 표면 (§8.1 — 작업면 한 폴더, index.ts 하나가 공개 API).
+// viewer surface 공개 표면 (§8.1 · 작업면 한 폴더, index.ts 하나가 공개 API).
 // 셸(landing /viewer route·terminal hosts·lab/viewer-*·CompanyQuickSearch·dev AskDrawer)이 소비하는
 // 컴포넌트 + 데이터레이어 심볼만 공개. 내부 부품(CellContent·FinanceStatementPane·AskDrawer 본진 등)은
-// 비공개 — 트리 내부 상대 import 로만 접근. 모든 export 는 외부 실소비 import 로 검증된 심볼.
-// 정량재무제표 raw 행은 셸이 provideFinanceRows 로 주입(financeQuery seam — 차트 hyparquet 캐시 공유, DuckDB 제거).
+// 비공개 · 트리 내부 상대 import 로만 접근. 모든 export 는 외부 실소비 import 로 검증된 심볼.
+// 정량재무제표 raw 행은 셸이 provideFinanceRows 로 주입(financeQuery seam · 차트 hyparquet 캐시 공유, DuckDB 제거).
 
 // ── 컴포넌트 (외부 소비: route·terminal hosts·lab) ──
 export { default as ViewerStudio } from './components/ViewerStudio.svelte';
@@ -50,7 +50,7 @@ export { checkBrowserAiAvailability, runBrowserAiPrompt, type BrowserAiStatus } 
 export { analyzeEvidencePack, attachBrowserAiText, type ViewerAnalysis } from './lib/viewerAnalyst';
 export { marketForCode } from './lib/dartUrl';
 export { panelToCsv, financeToExcel, downloadText, downloadBlob } from './lib/dataExport';
-// table-export — ExportPort 다리(셸이 publicExportPort.exportShared 로 주입) + 선택 스토어 타입.
+// table-export · ExportPort 다리(셸이 publicExportPort.exportShared 로 주입) + 선택 스토어 타입.
 export {
 	createSelectionStore,
 	deriveWorkbookInput,

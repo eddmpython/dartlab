@@ -271,7 +271,7 @@ export interface MacroLensSnapshot {
 	glance?: MacroGlanceView;
 	macroPath?: MacroPathView;
 	marketOnly?: boolean;
-	// 국면 렌즈(Regime Lens·초강화) — 읽기전용 표시 데이터. macro.regime 부재 시 undefined(렌즈 숨김).
+	// 국면 렌즈(Regime Lens·초강화) · 읽기전용 표시 데이터. macro.regime 부재 시 undefined(렌즈 숨김).
 	regime?: MacroRegimeView;
 }
 
@@ -306,7 +306,7 @@ export interface RegimeMarketView {
 	lensConflict: boolean;
 	transitionLabel: string;
 	hasTransitionProgress: boolean;
-	// 구조화 전이 — 평면 계기가 양언어로 직접 렌더(전이신호 from→to·진행률·신호 충족수). null=미산출.
+	// 구조화 전이 · 평면 계기가 양언어로 직접 렌더(전이신호 from→to·진행률·신호 충족수). null=미산출.
 	transition: {
 		fromKr: string; fromEn: string; toKr: string; toEn: string;
 		progressPct: number | null; triggered: number; total: number;
@@ -328,18 +328,18 @@ export interface RegimeQuadrantView {
 }
 
 // ───────────────────────── 국면 렌즈 (Regime Lens · 초강화) ─────────────────────────
-// 읽기전용 view-model. 점수·서수 badge·합산 0 — N 타일 나란히 + 불일치 모델명 텍스트.
+// 읽기전용 view-model. 점수·서수 badge·합산 0 · N 타일 나란히 + 불일치 모델명 텍스트.
 // 각 타일은 자기 호라이즌·시간성·freshness 를 독립 표기(단일 '12M·확률' 프레임 금지).
 // i18n: 사용자 노출 산문은 view-model 이 양언어({kr,en})로 합성, 템플릿이 T(x.kr,x.en) 로 고른다
-// (라벨/노트/캡션 EN 패리티 — backend 한국어 enum 은 결정론 매핑으로 EN 라벨 보강).
+// (라벨/노트/캡션 EN 패리티 · backend 한국어 enum 은 결정론 매핑으로 EN 라벨 보강).
 export type RegimeText = { kr: string; en: string };
 export interface RegimeTileView {
 	model: 'probit' | 'sahm' | 'lei' | 'hamilton';
 	modelName: string;
-	zoneLabel: RegimeText; // 주역(13px/700) — 상태성 라벨. status-only 면 '표시 보류'.
+	zoneLabel: RegimeText; // 주역(13px/700) · 상태성 라벨. status-only 면 '표시 보류'.
 	secondary: string | null; // probit ~20% 등 보조(수치·중립). 없으면 null.
 	gaugeValue: number | null; // 0~1 게이지 기하 입력(probit=probability·hamilton=contractionProb). 확률 아닌 모델(sahm/lei)=null. 표현 아님(데이터).
-	bucket: 0 | 1 | 2 | null; // 위험 군집(bucketOf SSOT·0 낮음/1 상승/2 높음). 색축 결정론 — UI 재유도 금지. status-only=null.
+	bucket: 0 | 1 | 2 | null; // 위험 군집(bucketOf SSOT·0 낮음/1 상승/2 높음). 색축 결정론 · UI 재유도 금지. status-only=null.
 	horizonLabel: RegimeText; // 호라이즌 + 시간성 (예: '12M·leading')
 	scaleLabel: RegimeText; // 자기 척도 (예: '확률·T10Y3M')
 	asOf: string | null;
@@ -347,7 +347,7 @@ export interface RegimeTileView {
 	staleLabel: string | null;
 	suppressed: boolean; // status-only(게이트 탈락·데이터 부족) → dim 렌더.
 	statusText: RegimeText | null; // status-only 모델의 사유 텍스트.
-	note: RegimeText; // title/aria — precisionNote·overlapNote·이중계상 노트.
+	note: RegimeText; // title/aria · precisionNote·overlapNote·이중계상 노트.
 }
 export interface RegimeYieldCurveView {
 	available: boolean;
@@ -355,7 +355,7 @@ export interface RegimeYieldCurveView {
 	spread: number | null; // 10Y-3M 스프레드 원수치(온도계 기하 입력·%p). 0 미만=역전.
 	spreadText: string; // 예 '+0.40%p'
 	asOf: string | null;
-	note: RegimeText; // '형태=NS·spread=T10Y3M 동일곡선 — probit과 독립 신호 아님'
+	note: RegimeText; // '형태=NS·spread=T10Y3M 동일곡선 · probit과 독립 신호 아님'
 }
 export interface RegimeGaRBarView {
 	key: 'gar5' | 'gar25' | 'median' | 'gar75' | 'gar95';
@@ -387,7 +387,7 @@ export interface RegimeQuadrantDirectionView {
 }
 export interface RegimeMarketLensView {
 	market: 'KR' | 'US';
-	// confluence 헤더 — 'N모델 중 M 유효 · 호라이즌·시간성 상이 · 동의: <text>'
+	// confluence 헤더 · 'N모델 중 M 유효 · 호라이즌·시간성 상이 · 동의: <text>'
 	validCount: number;
 	totalCount: number;
 	agreement: RegimeText;
@@ -694,7 +694,7 @@ const EDGE_TEMPLATES: EdgeTemplate[] = [
 	}
 ];
 
-// 내부 시나리오 콘텐츠 — 산문 필드는 양언어({kr,en}), 빌더가 L 로 평문 string 해석.
+// 내부 시나리오 콘텐츠 · 산문 필드는 양언어({kr,en}), 빌더가 L 로 평문 string 해석.
 // id/driverId/valuationLever/shock 은 언어중립 토큰(시리즈ID·숫자·%·레버 enum) → 그대로 string.
 interface ScenarioTemplate {
 	id: string;
@@ -742,7 +742,7 @@ const CHANNEL_LABELS: Record<MacroChannel, { kr: string; en: string }> = {
 	valuation: { kr: '밸류', en: 'Value' }
 };
 
-const fmtDate = (d?: string | null) => d ? (d.length === 8 ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}` : d) : '—';
+const fmtDate = (d?: string | null) => d ? (d.length === 8 ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}` : d) : '·';
 
 function fmtLatest(m: MacroLatest): string {
 	const v = m.v.toLocaleString('en-US', { maximumFractionDigits: m.def.digits ?? 2 });
@@ -752,9 +752,9 @@ function fmtLatest(m: MacroLatest): string {
 }
 
 function fmtChange(m: MacroLatest): string {
-	if (m.chg == null) return '—';
+	if (m.chg == null) return '·';
 	const digits = m.def.digits ?? 2;
-	// 부호는 표시 정밀도로 반올림한 값 기준 — raw 가 -0.3·digits 0 이면 "0"인데 raw 부호로 "-0" 나오던 버그.
+	// 부호는 표시 정밀도로 반올림한 값 기준 · raw 가 -0.3·digits 0 이면 "0"인데 raw 부호로 "-0" 나오던 버그.
 	const rounded = Number(m.chg.toFixed(digits));
 	const v = Math.abs(rounded).toLocaleString('en-US', { maximumFractionDigits: digits });
 	const sign = rounded > 0 ? '+' : rounded < 0 ? '-' : '';
@@ -810,7 +810,7 @@ function frequencyOf(def: MacroSeriesDef): string {
 
 function addDaysYmd(d: string, days: number): string {
 	const t = parseYmd(d);
-	if (t == null) return '—';
+	if (t == null) return '·';
 	const next = new Date(t + days * MS_DAY);
 	const y = next.getUTCFullYear();
 	const m = `${next.getUTCMonth() + 1}`.padStart(2, '0');
@@ -972,8 +972,8 @@ function phaseView(market: 'KR' | 'US', side: MacroSide | undefined, L: LFn): Ma
 		phase: side.phase,
 		label: side.phaseLabel || side.phase,
 		quadrant: q?.quadrantLabel || q?.quadrant || L('상세 없음', 'no detail'),
-		growth: q?.growth || '—',
-		inflation: q?.inflation || '—',
+		growth: q?.growth || '·',
+		inflation: q?.inflation || '·',
 		description: q?.description || L('국면 상세 데이터 없음', 'no regime detail data')
 	};
 }
@@ -1053,8 +1053,8 @@ function buildRegimeMarket(market: 'KR' | 'US', side?: MacroSide): RegimeMarketV
 		phase,
 		phaseLabel,
 		quadrantLabel,
-		growth: q?.growth || '—',
-		inflation: q?.inflation || '—',
+		growth: q?.growth || '·',
+		inflation: q?.inflation || '·',
 		confidence: q?.confidence || side?.confidence || null,
 		hasQuadrant: !!q,
 		lensConflict: !!q && phase !== q.quadrant,
@@ -1121,7 +1121,7 @@ export function buildMacroPath(
 ): MacroPathView {
 	const lang = opts.lang ?? 'kr';
 	const L = makeL(lang);
-	// 경로 driver 라벨 — 전파 payload driver 는 labelKr 만 보유. EN 은 MACRO_SERIES 정의 EN 라벨로 보강.
+	// 경로 driver 라벨 · 전파 payload driver 는 labelKr 만 보유. EN 은 MACRO_SERIES 정의 EN 라벨로 보강.
 	const driverLabelOf = (id: string, payloadLabelKr?: string): string =>
 		lang === 'en' ? (macroDefOf(id)?.en || payloadLabelKr || id) : (payloadLabelKr || id);
 	const mode = opts.mode ?? 'compact';
@@ -1164,7 +1164,7 @@ export function buildMacroPath(
 			opacity: blocked ? 0.3 : style.opacity,
 			financialLine: trText(edge.financialLine, lang, TR_FINLINE_EN),
 			valuationLever: edge.valuationLever,
-			lagLabel: normalizeLag(edge.lagMonths) ? `${normalizeLag(edge.lagMonths)![0]}-${normalizeLag(edge.lagMonths)![1]}M` : '—',
+			lagLabel: normalizeLag(edge.lagMonths) ? `${normalizeLag(edge.lagMonths)![0]}-${normalizeLag(edge.lagMonths)![1]}M` : '·',
 			note: noteFromTransmission(edge, L, lang),
 			sourceRefs: edge.sourceRefs?.length ? edge.sourceRefs : [edge.sourceRef ?? `macro.transmission:edge:${edge.id}`],
 			active: sectorNodes.some((node) => node.active),
@@ -1230,7 +1230,7 @@ function buildCheckpoints(co: Company, L: LFn): MacroCheckpointView[] {
 		{
 			id: 'sector',
 			label: L('섹터 전파', 'Sector transmission'),
-			value: co.tailwind ? `${L(co.tailwind.label, co.tailwind.labelEn)} ${co.tailwind.blended.toFixed(2)}` : '—',
+			value: co.tailwind ? `${L(co.tailwind.label, co.tailwind.labelEn)} ${co.tailwind.blended.toFixed(2)}` : '·',
 			tone: co.tailwind?.tone ?? 'neutral',
 			reason: L('현재 macro sectorTailwind와 선택 업종의 방향', 'Direction of the current macro sectorTailwind and the selected industry'),
 			source: 'macro.sectorTailwind'
@@ -1238,7 +1238,7 @@ function buildCheckpoints(co: Company, L: LFn): MacroCheckpointView[] {
 		{
 			id: 'margin',
 			label: L('마진 흡수력', 'Margin absorption'),
-			value: f.opm == null ? '—' : `${f.opm.toFixed(1)}%`,
+			value: f.opm == null ? '·' : `${f.opm.toFixed(1)}%`,
 			tone: toneFromValue(f.opm),
 			reason: L('원가·환율 충격이 영업이익률에 흡수되는지 보는 1차 checkpoint', 'First checkpoint for whether cost and FX shocks are absorbed into the operating margin'),
 			source: 'company.fundamentals.opm'
@@ -1246,7 +1246,7 @@ function buildCheckpoints(co: Company, L: LFn): MacroCheckpointView[] {
 		{
 			id: 'debt',
 			label: L('금리 민감도', 'Rate sensitivity'),
-			value: f.dr == null ? '—' : `${f.dr.toFixed(0)}%`,
+			value: f.dr == null ? '·' : `${f.dr.toFixed(0)}%`,
 			tone: toneFromValue(f.dr, false),
 			reason: L('금리와 신용스프레드 충격이 이자비용·재조달로 닿는 경로', 'The path by which rate and credit-spread shocks reach interest expense and refinancing'),
 			source: 'company.fundamentals.dr'
@@ -1254,7 +1254,7 @@ function buildCheckpoints(co: Company, L: LFn): MacroCheckpointView[] {
 		{
 			id: 'cashFlow',
 			label: L('현금흐름 흡수', 'Cash-flow absorption'),
-			value: fcf == null ? '—' : `${fcf.toFixed(2)}${L('조', 'tn')}`,
+			value: fcf == null ? '·' : `${fcf.toFixed(2)}${L('조', 'tn')}`,
 			tone: fcf == null ? 'neutral' : fcf > 0 ? 'good' : 'warn',
 			reason: L('마진·수요 충격이 실제 현금흐름을 잠식하는지 확인', 'Whether margin and demand shocks erode actual cash flow'),
 			source: 'company.financials.cf.fcf'
@@ -1262,7 +1262,7 @@ function buildCheckpoints(co: Company, L: LFn): MacroCheckpointView[] {
 		{
 			id: 'valuation',
 			label: L('밸류 lever', 'Valuation lever'),
-			value: co.valuation?.per == null ? '—' : `PER ${co.valuation.per.toFixed(1)}x`,
+			value: co.valuation?.per == null ? '·' : `PER ${co.valuation.per.toFixed(1)}x`,
 			tone: 'neutral',
 			reason: L('금리·성장률·마진 충격이 multiple 또는 할인율로 번역되는 위치', 'Where rate, growth, and margin shocks translate into the multiple or discount rate'),
 			source: 'company.valuation'
@@ -1336,7 +1336,7 @@ function normalizeLag(lag: number[] | [number, number] | null | undefined): [num
 function transmissionLineageOf(driver: MacroTransmissionPayload['drivers'][number]): string {
 	const lineage = driver.sourceLineage;
 	if (!lineage) return `${driver.source} · ${driver.sourceSeriesId} · ${driver.transform}`;
-	const date = lineage.date ? fmtDate(lineage.date) : '—';
+	const date = lineage.date ? fmtDate(lineage.date) : '·';
 	return `${lineage.source} · ${lineage.sourceSeriesId} · obs ${date} · ${driver.transform} · ${lineage.status}`;
 }
 
@@ -1368,7 +1368,7 @@ function transmissionEdgeMatches(edge: MacroTransmissionEdge, sectorKey: string)
 }
 
 // 전송 페이로드(macro.json transmission)의 한국어 edge 콘텐츠 → EN. payload 는 backend bake(한국어 단일 문자열)이라
-// UI-local 결정론 매핑으로 EN 모드를 해소한다. 미매핑은 원문(한국어) 유지 — EN 날조 금지(정직). 어휘는 EDGE_TEMPLATES/DRIVER_SEMANTICS EN 과 일관.
+// UI-local 결정론 매핑으로 EN 모드를 해소한다. 미매핑은 원문(한국어) 유지 · EN 날조 금지(정직). 어휘는 EDGE_TEMPLATES/DRIVER_SEMANTICS EN 과 일관.
 const TR_FINLINE_EN: Record<string, string> = {
 	'매출 성장률 / 가동률': 'Revenue growth / utilization',
 	'매출 성장률 / 환산손익': 'Revenue growth / FX translation P&L',
@@ -1580,7 +1580,7 @@ function buildFalsifiers(coMovers: CoMover[], drivers: MacroDriverView[], macro:
 			type: 'quality',
 			label: L('회사 노출 품질 후보', 'Company exposure quality candidate'),
 			severity: 'info',
-			detail: `nObs ${exposureQuality.nObs ?? '—'}, R² ${exposureQuality.rSquared ?? '—'}, ${exposureQuality.window ?? L('window 없음', 'no window')}. ${L('정량 후보지만 추천·목표가로 번역하지 않는다.', 'A quantitative candidate, but not translated into a recommendation or price target.')}`,
+			detail: `nObs ${exposureQuality.nObs ?? '·'}, R² ${exposureQuality.rSquared ?? '·'}, ${exposureQuality.window ?? L('window 없음', 'no window')}. ${L('정량 후보지만 추천·목표가로 번역하지 않는다.', 'A quantitative candidate, but not translated into a recommendation or price target.')}`,
 			sourceRef: exposureQuality.sourceRef
 		});
 	} else {
@@ -1674,7 +1674,7 @@ function normalizeExposureIndicators(rows: MacroExposureIndicatorPayload[] | und
 		modelVersion: row.modelVersion ?? null,
 		targetMetric: row.targetMetric ?? null,
 		minObs: typeof row.minObs === 'number' ? row.minObs : null,
-		// label 은 macro 시계열명(한국어 bake) — EXPOSURE_SERIES_EN(전수) → macroDefOf().en 순으로 EN 해소(미상이면 원문 유지).
+		// label 은 macro 시계열명(한국어 bake) · EXPOSURE_SERIES_EN(전수) → macroDefOf().en 순으로 EN 해소(미상이면 원문 유지).
 		label: L(row.label || row.seriesId, EXPOSURE_SERIES_EN[row.label ?? ''] || macroDefOf(row.seriesId)?.en || row.label || row.seriesId),
 		seriesId: row.seriesId,
 		axis: row.axis || 'macro',
@@ -1687,7 +1687,7 @@ function normalizeExposureIndicators(rows: MacroExposureIndicatorPayload[] | und
 		sourceRef: row.sourceRef,
 		sourceRefs: Array.isArray(row.sourceRefs) ? row.sourceRefs : [],
 		latestChange: typeof row.latestChange === 'number' ? row.latestChange : null,
-		impact: row.impact ? L(row.impact, EXPOSURE_IMPACT_EN[row.impact] ?? row.impact) : '—'
+		impact: row.impact ? L(row.impact, EXPOSURE_IMPACT_EN[row.impact] ?? row.impact) : '·'
 	}));
 }
 
@@ -1748,8 +1748,8 @@ function buildEvidenceGates(args: {
 	const coWindows = candidates.map((d) => `${d.id}:${d.coMovement?.window ?? 'window?'}`);
 	const companyHasEvidence = args.exposureQuality.coverage === 'company' && args.exposureQuality.nObs != null;
 	const quantOpen = quantEvidenceOpen(args.exposureQuality);
-	const qualityDetailKr = `nObs ${args.exposureQuality.nObs ?? '—'} · R² ${args.exposureQuality.rSquared ?? '—'} · ${args.exposureQuality.window ?? 'window 없음'}`;
-	const qualityDetailEn = `nObs ${args.exposureQuality.nObs ?? '—'} · R² ${args.exposureQuality.rSquared ?? '—'} · ${args.exposureQuality.window ?? 'no window'}`;
+	const qualityDetailKr = `nObs ${args.exposureQuality.nObs ?? '·'} · R² ${args.exposureQuality.rSquared ?? '·'} · ${args.exposureQuality.window ?? 'window 없음'}`;
+	const qualityDetailEn = `nObs ${args.exposureQuality.nObs ?? '·'} · R² ${args.exposureQuality.rSquared ?? '·'} · ${args.exposureQuality.window ?? 'no window'}`;
 	const companyBlocks = companyHasEvidence ? [] : (args.exposureQuality.missingEvidence.length ? args.exposureQuality.missingEvidence : [`coverage ${args.exposureQuality.coverage}`, 'company sample absent']);
 	const quantBlocks = quantOpen ? [] : quantEvidenceBlocks(args.exposureQuality);
 	return [
@@ -1912,7 +1912,7 @@ function buildContributionStacks(
 				id: 'company',
 				label: L('회사 품질', 'Company quality'),
 				value: company,
-				detail: `${exposureQuality.status} · nObs ${exposureQuality.nObs ?? '—'} · R² ${exposureQuality.rSquared ?? '—'}`,
+				detail: `${exposureQuality.status} · nObs ${exposureQuality.nObs ?? '·'} · R² ${exposureQuality.rSquared ?? '·'}`,
 				status: componentStatus(company),
 				sourceRef: exposureQuality.sourceRef
 			}
@@ -1989,7 +1989,7 @@ export function buildMacroLensSnapshot(args: {
 	const edgeSourceRef = transmission ? 'dartlab://macro/transmission' : 'macro transmission edge template';
 	const evidenceGates = buildEvidenceGates({ asOf: macro?.asOf ?? null, drivers, topPressures, edges, exposureQuality, edgeSourceRef });
 	const financePeriod = co.trendQuarter?.periods.at(-1) ?? co.trendAnnual?.periods.at(-1) ?? null;
-	// 국면 렌즈 sub-view — focusCell(초점 채널)을 view-model 차원에서 계산해 국면↔노출 다리(§6.3) 연결.
+	// 국면 렌즈 sub-view · focusCell(초점 채널)을 view-model 차원에서 계산해 국면↔노출 다리(§6.3) 연결.
 	const regimeFocus = pickFocusCell(buildExposureMatrixRows(drivers, topPressures, edges, MAP_CHANNEL_ORDER));
 	const regime = buildRegimeView(macro, regimeFocus);
 	return {
@@ -2100,7 +2100,7 @@ export function buildMarketMacroLensSnapshot(args: {
 	const missing = buildMissing({ macro, macroLatest, edges, coMovers: [], transmission, L });
 	const edgeSourceRef = transmission ? 'dartlab://macro/transmission' : 'macro transmission missing';
 	const evidenceGates = buildEvidenceGates({ asOf: macro?.asOf ?? null, drivers, topPressures, edges, exposureQuality, edgeSourceRef });
-	// 국면 렌즈 — market-only 는 회사 초점채널 없음(focusCell blocked/none 시 alignment null·다리 미렌더).
+	// 국면 렌즈 · market-only 는 회사 초점채널 없음(focusCell blocked/none 시 alignment null·다리 미렌더).
 	const regimeFocus = pickFocusCell(buildExposureMatrixRows(drivers, topPressures, edges, MAP_CHANNEL_ORDER));
 	const regime = buildRegimeView(macro, regimeFocus);
 	const falsifiers = buildFalsifiers([], drivers, macro, exposureQuality, L);
@@ -2199,7 +2199,7 @@ const FOCUS_CONFIDENCE_RANK: Record<MacroTransmissionEdgeView['confidence'], num
 	low: 2,
 	blocked: 3
 };
-// 채널 우선순위(매출>마진>밸류>차입>현금) — enum 순서 아님(명시 배열).
+// 채널 우선순위(매출>마진>밸류>차입>현금) · enum 순서 아님(명시 배열).
 const FOCUS_CHANNEL_PRIORITY: MacroChannel[] = ['revenue', 'margin', 'valuation', 'balanceSheet', 'cashFlow'];
 // Exposure Map 채널 열 순서(dialog channels 와 동일·SSOT). 국면↔노출 다리(focusCell) 계산용.
 const MAP_CHANNEL_ORDER: MacroChannel[] = ['revenue', 'margin', 'balanceSheet', 'cashFlow', 'valuation'];
@@ -2233,7 +2233,7 @@ export function pickFocusCell(
 
 // ───────────────────────── 국면 렌즈 view-model 헬퍼 (초강화·전부 점수 아님) ─────────────────────────
 
-// A블록 전향 분수 — 백분율 없이 정수 분수만(progress·% 미사용). transition null → null(렌더 0).
+// A블록 전향 분수 · 백분율 없이 정수 분수만(progress·% 미사용). transition null → null(렌더 0).
 // fraction 은 언어중립 'triggered/total' 만. '충족'/'met' 접미는 템플릿이 T() 로 붙인다(i18n).
 // 재설계가 삭제 예정인 transitionLabel(`${progress}%` 방출)을 재사용하지 않는 신규 전용 함수.
 export function transitionFraction(side?: MacroSide | null): { fraction: string; from: string; to: string } | null {
@@ -2249,7 +2249,7 @@ export function transitionFraction(side?: MacroSide | null): { fraction: string;
 
 // 4모델 zone 어휘 → 결정론적 공통 3단계 bucket {확장 0·경계 1·침체 2}. (§3.3 표 SSOT)
 // probit moderate→0 흡수(거짓 divergence 차단). status-only/null → null(유효 아님, 제외).
-// 색 정렬·서수 badge 아님 — agree/diverge 텍스트 파생에만 쓴다.
+// 색 정렬·서수 badge 아님 · agree/diverge 텍스트 파생에만 쓴다.
 export function bucketOf(model: MacroRegimeModel | undefined | null): 0 | 1 | 2 | null {
 	if (!model || model.status) return null;
 	const zone = typeof model.zone === 'string' ? model.zone : null;
@@ -2279,7 +2279,7 @@ export function bucketOf(model: MacroRegimeModel | undefined | null): 0 | 1 | 2 
 const BUCKET_LABEL = ['확장', '경계', '침체'] as const;
 const BUCKET_LABEL_EN = ['Expansion', 'Caution', 'Recession'] as const;
 
-// agree/diverge — 점수·서수·badge 0. 불일치 모델명 동반 텍스트만. 양언어({kr,en}) 합성(템플릿 T()).
+// agree/diverge · 점수·서수·badge 0. 불일치 모델명 동반 텍스트만. 양언어({kr,en}) 합성(템플릿 T()).
 // (a) 유효(게이트 통과·bucket 존재) <2 → '교차 불가 (유효 N개)'.
 // (b) ≥2 → 다수 bucket 방향 + 불일치 모델명 명시. 단 인접 bucket(0-1,1-2)은 동의(2단계 이상만 불일치).
 // probit·yieldCurve 이중계상 가드는 호출부에서 yieldCurve 를 별도 표로 넣지 않음으로 보장(probit 1표).
@@ -2299,19 +2299,19 @@ export function agreementOf(models: { model: string; bucket: 0 | 1 | 2 | null }[
 	const disagreeing = valid.filter((v) => Math.abs(v.bucket - majority) >= 2);
 	if (!disagreeing.length) {
 		return {
-			kr: `동의 — ${BUCKET_LABEL[majority]} 방향 ${valid.length}모델 일치(인접 bucket 포함)${tieKr}`,
-			en: `agree — ${BUCKET_LABEL_EN[majority]} direction across ${valid.length} models (adjacent buckets incl.)${tieEn}`
+			kr: `동의 · ${BUCKET_LABEL[majority]} 방향 ${valid.length}모델 일치(인접 bucket 포함)${tieKr}`,
+			en: `agree · ${BUCKET_LABEL_EN[majority]} direction across ${valid.length} models (adjacent buckets incl.)${tieEn}`
 		};
 	}
 	const namesKr = disagreeing.map((v) => `${v.model} ${BUCKET_LABEL[v.bucket]}`).join(' · ');
 	const namesEn = disagreeing.map((v) => `${v.model} ${BUCKET_LABEL_EN[v.bucket]}`).join(' · ');
 	return {
-		kr: `동의 낮음 — 다수 ${BUCKET_LABEL[majority]} vs ${namesKr}`,
-		en: `low agreement — majority ${BUCKET_LABEL_EN[majority]} vs ${namesEn}`
+		kr: `동의 낮음 · 다수 ${BUCKET_LABEL[majority]} vs ${namesKr}`,
+		en: `low agreement · majority ${BUCKET_LABEL_EN[majority]} vs ${namesEn}`
 	};
 }
 
-// 국면축(quadrant 방향) ↔ 종목 노출축(C블록 초점채널) 다리 — 라벨만(점수·판정·민감도 0).
+// 국면축(quadrant 방향) ↔ 종목 노출축(C블록 초점채널) 다리 · 라벨만(점수·판정·민감도 0).
 // 정합/역방향 *서술*만. '수혜/유리' 확정·민감도 숫자·매수 시사 0. quadrant·focusCell 부재 → null.
 export function focusChannelAlignment(
 	quadrant: { growth?: string; inflation?: string } | undefined | null,
@@ -2329,19 +2329,19 @@ export function focusChannelAlignment(
 	const sign = focusCell.edge.sign;
 	if (sign === 'positive') {
 		return {
-			kr: `초점채널 ${channelUpper}(${channelLabelKr}) 방향 정합 — 현 국면(${growthArrowKr})과 같은 방향`,
-			en: `focus channel ${channelUpper}(${channelLabelEn}) aligned — same direction as regime (${growthArrowEn})`
+			kr: `초점채널 ${channelUpper}(${channelLabelKr}) 방향 정합 · 현 국면(${growthArrowKr})과 같은 방향`,
+			en: `focus channel ${channelUpper}(${channelLabelEn}) aligned · same direction as regime (${growthArrowEn})`
 		};
 	}
 	if (sign === 'negative') {
 		return {
-			kr: `초점채널 ${channelUpper}(${channelLabelKr}) 역방향 — 현 국면(${growthArrowKr})과 반대`,
-			en: `focus channel ${channelUpper}(${channelLabelEn}) opposite — against regime (${growthArrowEn})`
+			kr: `초점채널 ${channelUpper}(${channelLabelKr}) 역방향 · 현 국면(${growthArrowKr})과 반대`,
+			en: `focus channel ${channelUpper}(${channelLabelEn}) opposite · against regime (${growthArrowEn})`
 		};
 	}
 	return {
-		kr: `초점채널 ${channelUpper}(${channelLabelKr}) 방향 혼재 — 현 국면(${growthArrowKr}) 정합 불명`,
-		en: `focus channel ${channelUpper}(${channelLabelEn}) mixed — alignment with regime (${growthArrowEn}) unclear`
+		kr: `초점채널 ${channelUpper}(${channelLabelKr}) 방향 혼재 · 현 국면(${growthArrowKr}) 정합 불명`,
+		en: `focus channel ${channelUpper}(${channelLabelEn}) mixed · alignment with regime (${growthArrowEn}) unclear`
 	};
 }
 
@@ -2353,13 +2353,13 @@ const REGIME_SCALE: Record<string, RegimeText> = {
 	lei: { kr: '%YoY·CBLEI', en: '%YoY·CBLEI' },
 	hamilton: { kr: '확률·GDP', en: 'prob·GDP' }
 };
-// backend(macro.json regime) 가 한국어로 bake 하는 유한 enum 의 EN 라벨 — 결정론 매핑(타일 face EN 패리티).
+// backend(macro.json regime) 가 한국어로 bake 하는 유한 enum 의 EN 라벨 · 결정론 매핑(타일 face EN 패리티).
 const ZONE_EN: Record<string, string> = { low: 'Low', moderate: 'Moderate', elevated: 'Elevated', high: 'High', normal: 'Normal', warning: 'Warning', recession: 'Recession' };
 const SIGNAL_EN: Record<string, string> = { expansion: 'Expansion', caution: 'Caution', recession_warning: 'Recession warning' };
-// horizon/timeKind 토큰 중 한국어만 EN 으로(나머지는 이미 영문 — pass-through).
+// horizon/timeKind 토큰 중 한국어만 EN 으로(나머지는 이미 영문 · pass-through).
 const REGIME_TOKEN_EN: Record<string, string> = { '동행': 'coincident', 'trigger(동행)': 'trigger(coincident)', '선행': 'leading', '회고': 'retrospective' };
 const regimeTokenEn = (t: string): string => REGIME_TOKEN_EN[t] ?? t;
-// status-only 사유 — 알려진 backend 문자열의 EN(미상이면 KR pass-through, suppressed dim 메타라 영향 작음).
+// status-only 사유 · 알려진 backend 문자열의 EN(미상이면 KR pass-through, suppressed dim 메타라 영향 작음).
 const REGIME_STATUS_EN: Record<string, string> = {
 	'EM 미수렴': 'EM not converged', '데이터 없음': 'no data', '표시 보류': 'suppressed',
 	'단위 parity 미확정·표시 보류': 'unit parity unconfirmed · suppressed', '표본 부족·표시 보류': 'insufficient sample · suppressed'
@@ -2379,8 +2379,8 @@ function buildRegimeTile(id: 'probit' | 'sahm' | 'lei' | 'hamilton', model: Macr
 	const horizon = typeof model?.horizon === 'string' ? model.horizon : '';
 	const timeKind = typeof model?.timeKind === 'string' ? model.timeKind : '';
 	const horizonLabel: RegimeText = {
-		kr: [horizon, timeKind].filter(Boolean).join('·') || '—',
-		en: [horizon, timeKind].filter(Boolean).map(regimeTokenEn).join('·') || '—'
+		kr: [horizon, timeKind].filter(Boolean).join('·') || '·',
+		en: [horizon, timeKind].filter(Boolean).map(regimeTokenEn).join('·') || '·'
 	};
 	const asOf = typeof model?.asOf === 'string' ? model.asOf : null;
 	const fresh = regimeStale(model?.asOf, model?.staleAfterDays);
@@ -2399,14 +2399,14 @@ function buildRegimeTile(id: 'probit' | 'sahm' | 'lei' | 'hamilton', model: Macr
 	const zoneKr = typeof model.zoneLabel === 'string' ? model.zoneLabel
 		: typeof model.signalLabel === 'string' ? model.signalLabel
 		: typeof model.contractionProb === 'number' ? `수축 ${Math.round(model.contractionProb * 100)}%`
-		: '—';
+		: '·';
 	const zoneEn = (zone && ZONE_EN[zone]) || (signal && SIGNAL_EN[signal])
 		|| (typeof model.contractionProb === 'number' ? `contraction ${Math.round(model.contractionProb * 100)}%` : null)
 		|| zoneKr;
 	const zoneLabel: RegimeText = { kr: zoneKr, en: zoneEn };
 	let secondary: string | null = null;
 	let note: RegimeText = { kr: '', en: '' };
-	// 게이지 기하 입력 — probit=원확률(0~1), hamilton=수축확률. 확률 아닌 모델은 null(아크/링 미렌더).
+	// 게이지 기하 입력 · probit=원확률(0~1), hamilton=수축확률. 확률 아닌 모델은 null(아크/링 미렌더).
 	const gaugeValue: number | null = id === 'probit'
 		? (typeof model.probability === 'number' ? model.probability : typeof model.probabilityRounded === 'number' ? model.probabilityRounded : null)
 		: id === 'hamilton' && typeof model.contractionProb === 'number' ? model.contractionProb
@@ -2453,8 +2453,8 @@ function buildGaRView(gar: MacroRegimePayload['gar']): RegimeGaRView | null {
 	const span = max - min || 1;
 	const bars: RegimeGaRBarView[] = raw.map((b) => ({ ...b, frac: Math.max(0.04, (b.value - min) / span) }));
 	const h = gar.horizon ?? 4;
-	const tailKr = typeof gar.tailRiskLabel === 'string' ? gar.tailRiskLabel : (typeof gar.tailRisk === 'string' ? gar.tailRisk : '—');
-	const tailEn = typeof gar.tailRisk === 'string' ? gar.tailRisk : (typeof gar.tailRiskLabel === 'string' ? gar.tailRiskLabel : '—');
+	const tailKr = typeof gar.tailRiskLabel === 'string' ? gar.tailRiskLabel : (typeof gar.tailRisk === 'string' ? gar.tailRisk : '·');
+	const tailEn = typeof gar.tailRisk === 'string' ? gar.tailRisk : (typeof gar.tailRiskLabel === 'string' ? gar.tailRiskLabel : '·');
 	return {
 		available: true,
 		bars,
@@ -2471,7 +2471,7 @@ function buildGaRView(gar: MacroRegimePayload['gar']): RegimeGaRView | null {
 
 function buildBandView(band: MacroRegimePayload['regimeBand']): RegimeBandView | null {
 	if (!band || band.status || !Array.isArray(band.band) || !band.band.length) return null;
-	// 절대 침체확률(0~1) 그대로 — 렌더러 bandPoints 가 고정 0~1 축에 그린다(per-window 재정규화 금지·진폭 정직).
+	// 절대 침체확률(0~1) 그대로 · 렌더러 bandPoints 가 고정 0~1 축에 그린다(per-window 재정규화 금지·진폭 정직).
 	const vals = band.band.slice(0, 24).map((v) => Math.max(0, Math.min(1, v)));
 	return {
 		available: true,
@@ -2487,7 +2487,7 @@ function buildBandView(band: MacroRegimePayload['regimeBand']): RegimeBandView |
 function motionArrow(value: string | undefined, kind: 'growth' | 'inflation'): RegimeText {
 	const kr = kind === 'growth' ? '성장' : '물가';
 	const en = kind === 'growth' ? 'growth' : 'inflation';
-	const arrow = value === 'rising' ? '↑' : value === 'falling' ? '↓' : '—';
+	const arrow = value === 'rising' ? '↑' : value === 'falling' ? '↓' : '·';
 	return { kr: `${kr}${arrow}`, en: `${en}${arrow}` };
 }
 
@@ -2498,7 +2498,7 @@ const REGIME_ASSET_LABEL_EN: Record<string, string> = {
 	equity: 'Equity', bond: 'Bonds', commodity: 'Commodities', gold: 'Gold', tips: 'TIPS', cash: 'Cash'
 };
 // KR LEI growthLabel(backend 한국어) → EN. KR notApplicable reason(backend 한국어) → EN.
-// KR forecast growthLabel 실제 producer enum = {확장·수축·안정}(forecast.py) — '안정' 매핑 필수(미매핑 시 EN 누출). 나머지는 안전 여유.
+// KR forecast growthLabel 실제 producer enum = {확장·수축·안정}(forecast.py) · '안정' 매핑 필수(미매핑 시 EN 누출). 나머지는 안전 여유.
 const GROWTH_LABEL_EN: Record<string, string> = { '확장': 'Expansion', '수축': 'Contraction', '안정': 'Stable', '둔화': 'Slowdown', '회복': 'Recovery', '횡보': 'Flat' };
 const REGIME_REASON_EN: Record<string, string> = { 'US 전용': 'US-only', 'US 중심(FCI 입력)': 'US-centric (FCI input)' };
 
@@ -2520,23 +2520,23 @@ function buildQuadrantDirection(
 	};
 }
 
-// US 국면 렌즈 — confluence 4타일 + 수익률곡선 + GaR + band + quadrant 방향.
+// US 국면 렌즈 · confluence 4타일 + 수익률곡선 + GaR + band + quadrant 방향.
 function buildUsLens(payload: MacroRegimePayload, side: MacroSide | undefined, alignment: RegimeText | null): RegimeMarketLensView {
 	const models = payload.forecast?.models ?? {};
 	const ids: ('probit' | 'sahm' | 'lei' | 'hamilton')[] = ['probit', 'sahm', 'lei', 'hamilton'];
 	const tiles = ids.map((id) => buildRegimeTile(id, models[id]));
-	// agreement: probit·yieldCurve 이중계상 가드 — yieldCurve 는 별도 표로 넣지 않음(probit 1표).
+	// agreement: probit·yieldCurve 이중계상 가드 · yieldCurve 는 별도 표로 넣지 않음(probit 1표).
 	const buckets = ids.map((id) => ({ model: REGIME_MODEL_NAME[id] ?? id, bucket: bucketOf(models[id]) }));
 	const validCount = buckets.filter((b) => b.bucket != null).length;
 	const rates = payload.rates;
 	const yieldCurve: RegimeYieldCurveView | null = rates && !rates.missing?.length && typeof rates.spread10y3m === 'number'
 		? {
 			available: true,
-			curveShapeLabel: { kr: rates.curveShapeLabel || rates.curveShape || '—', en: rates.curveShape || rates.curveShapeLabel || '—' },
+			curveShapeLabel: { kr: rates.curveShapeLabel || rates.curveShape || '·', en: rates.curveShape || rates.curveShapeLabel || '·' },
 			spread: rates.spread10y3m as number,
 			spreadText: `${rates.sign === '-' ? '' : '+'}${(rates.spread10y3m as number).toFixed(2)}%p`,
 			asOf: typeof rates.asOf === 'string' ? rates.asOf : null,
-			note: { kr: '형태=NS·spread=T10Y3M 동일곡선 — probit과 독립 신호 아님', en: 'shape=NS·spread=T10Y3M same curve — not an independent signal from probit' }
+			note: { kr: '형태=NS·spread=T10Y3M 동일곡선 · probit과 독립 신호 아님', en: 'shape=NS·spread=T10Y3M same curve · not an independent signal from probit' }
 		}
 		: null;
 	return {
@@ -2553,13 +2553,13 @@ function buildUsLens(payload: MacroRegimePayload, side: MacroSide | undefined, a
 	};
 }
 
-// KR 국면 렌즈 — CLI momentum 1타일 + probit/sahm/hamilton 'US 전용'/'단위 parity' 회색 라벨.
+// KR 국면 렌즈 · CLI momentum 1타일 + probit/sahm/hamilton 'US 전용'/'단위 parity' 회색 라벨.
 function buildKrLens(payload: MacroRegimePayload, side: MacroSide | undefined, alignment: RegimeText | null): RegimeMarketLensView {
 	const lei = payload.forecast?.models?.lei;
 	const tiles: RegimeTileView[] = [];
 	if (lei && !lei.status) {
 		const cliMomentum = typeof lei.cliMomentum === 'number' ? lei.cliMomentum : null;
-		const growthLabel = typeof lei.growthLabel === 'string' ? lei.growthLabel : '—';
+		const growthLabel = typeof lei.growthLabel === 'string' ? lei.growthLabel : '·';
 		const fresh = regimeStale(lei.asOf, lei.staleAfterDays);
 		tiles.push({
 			model: 'lei', modelName: 'CLI momentum',
@@ -2570,7 +2570,7 @@ function buildKrLens(payload: MacroRegimePayload, side: MacroSide | undefined, a
 			asOf: typeof lei.asOf === 'string' ? lei.asOf : null,
 			stale: fresh.stale, staleLabel: fresh.label,
 			suppressed: false, statusText: null,
-			note: { kr: 'OECD CLI momentum (KR forecast 는 CLI composite — US 와 다른 shape)', en: 'OECD CLI momentum (KR forecast is a CLI composite — different shape from US)' }
+			note: { kr: 'OECD CLI momentum (KR forecast 는 CLI composite · US 와 다른 shape)', en: 'OECD CLI momentum (KR forecast is a CLI composite · different shape from US)' }
 		});
 	}
 	const missing = payload.forecast?.missing ?? [];
@@ -2586,11 +2586,11 @@ function buildKrLens(payload: MacroRegimePayload, side: MacroSide | undefined, a
 		market: 'KR',
 		validCount: tiles.length,
 		totalCount: 1,
-		// KR 은 단일 모델(CLI momentum)이라 교차검증 불가 — agreementOf(전부 null) 의 '(유효 0개)' 가
+		// KR 은 단일 모델(CLI momentum)이라 교차검증 불가 · agreementOf(전부 null) 의 '(유효 0개)' 가
 		// 헤더 validCount(=1)와 모순되므로, 카운트 없는 단일모델 문구로 대체(#KR-AGREE 정직 교정).
 		agreement: tiles.length
-			? { kr: '교차 불가 — 단일 모델(CLI momentum)', en: 'cross-check N/A — single model (CLI momentum)' }
-			: { kr: '교차 불가 — 유효 모델 없음', en: 'cross-check N/A — no valid model' },
+			? { kr: '교차 불가 · 단일 모델(CLI momentum)', en: 'cross-check N/A · single model (CLI momentum)' }
+			: { kr: '교차 불가 · 유효 모델 없음', en: 'cross-check N/A · no valid model' },
 		tiles,
 		notApplicable,
 		yieldCurve: null, // US 전용.
@@ -2620,9 +2620,9 @@ export function buildRegimeView(
 	};
 }
 
-// ───────────────────────── 거시 국면 — 근거지표 고밀도 차트 (MacroRegimeDialog 전용) ─────────────────────────
+// ───────────────────────── 거시 국면 · 근거지표 고밀도 차트 (MacroRegimeDialog 전용) ─────────────────────────
 // 좌측 「거시 국면」 다이얼로그가 보여주는 테마별 복합차트(성장/물가/금리/금융조건) 스펙 + 빌더.
-// 데이터는 rt.macro.getSeries(macro/{src}/observations.parquet) 라이브 — 백엔드·HF 무변경. MiniFinChart(FinCard) SSOT 렌더.
+// 데이터는 rt.macro.getSeries(macro/{src}/observations.parquet) 라이브 · 백엔드·HF 무변경. MiniFinChart(FinCard) SSOT 렌더.
 // 순수함수: end month 를 데이터에서 유도(now 미사용) → 결정론·단위테스트 가능.
 
 interface MacroChartSeriesSpec {
@@ -2637,47 +2637,47 @@ interface MacroChartSpec {
 	key: string;
 	titleKr: string;
 	titleEn: string;
-	unit: string; // 좌축 단위 라벨 (동질 유지 — 우축 series 는 자체 스케일·범례에 '(우)' 표기)
+	unit: string; // 좌축 단위 라벨 (동질 유지 · 우축 series 는 자체 스케일·범례에 '(우)' 표기)
 	series: MacroChartSeriesSpec[];
 }
 
-/** 근거지표 차트 스펙 — 시장별 4 테마. seriesId 는 전부 contracts MACRO_SERIES 화이트리스트 실재. */
+/** 근거지표 차트 스펙 · 시장별 4 테마. seriesId 는 전부 contracts MACRO_SERIES 화이트리스트 실재. */
 export const MACRO_EVIDENCE_SPECS: Record<'KR' | 'US', MacroChartSpec[]> = {
 	US: [
-		{ key: 'usGrowth', titleKr: '성장 — 산업생산·고용', titleEn: 'Growth — IP & payrolls', unit: '%', series: [
+		{ key: 'usGrowth', titleKr: '성장 · 산업생산·고용', titleEn: 'Growth · IP & payrolls', unit: '%', series: [
 			{ id: 'INDPRO', nameKr: '산업생산 YoY', nameEn: 'IP YoY', color: '#5b9bf0', type: 'line' },
 			{ id: 'PAYEMS', nameKr: '고용 YoY', nameEn: 'Payrolls YoY', color: '#34d399', type: 'line' }
 		] },
-		{ key: 'usInflation', titleKr: '물가 — CPI·근원·PCE', titleEn: 'Inflation — CPI/core/PCE', unit: '%', series: [
+		{ key: 'usInflation', titleKr: '물가 · CPI·근원·PCE', titleEn: 'Inflation · CPI/core/PCE', unit: '%', series: [
 			{ id: 'CPIAUCSL', nameKr: 'CPI YoY', nameEn: 'CPI YoY', color: '#f0616f', type: 'line' },
 			{ id: 'CPILFESL', nameKr: '근원 CPI', nameEn: 'Core CPI', color: '#fbbf24', type: 'line' },
 			{ id: 'PCEPI', nameKr: 'PCE YoY', nameEn: 'PCE YoY', color: '#a78bfa', type: 'line' }
 		] },
-		{ key: 'usRates', titleKr: '금리·정책 — 연준·2년·10년', titleEn: 'Rates & policy', unit: '%', series: [
+		{ key: 'usRates', titleKr: '금리·정책 · 연준·2년·10년', titleEn: 'Rates & policy', unit: '%', series: [
 			{ id: 'FEDFUNDS', nameKr: '연준 기준금리', nameEn: 'Fed funds', color: '#f0616f', type: 'line' },
 			{ id: 'DGS2', nameKr: '2년', nameEn: '2Y', color: '#fbbf24', type: 'line' },
 			{ id: 'DGS10', nameKr: '10년', nameEn: '10Y', color: '#5b9bf0', type: 'line' }
 		] },
-		{ key: 'usFinancial', titleKr: '금융조건 — 커브·신용·변동성', titleEn: 'Financial — curve/credit/vol', unit: '%p', series: [
+		{ key: 'usFinancial', titleKr: '금융조건 · 커브·신용·변동성', titleEn: 'Financial · curve/credit/vol', unit: '%p', series: [
 			{ id: 'T10Y2Y', nameKr: '장단기차(10Y-2Y)', nameEn: '10Y-2Y', color: '#5b9bf0', type: 'bar' },
 			{ id: 'BAMLH0A0HYM2', nameKr: '하이일드 스프레드', nameEn: 'HY spread', color: '#f0616f', type: 'line' },
 			{ id: 'VIXCLS', nameKr: 'VIX(우)', nameEn: 'VIX (R)', color: '#a78bfa', type: 'line', axis: 'r' }
 		] }
 	],
 	KR: [
-		{ key: 'krGrowth', titleKr: '성장 — 산업생산·수출', titleEn: 'Growth — IP & exports', unit: '%', series: [
+		{ key: 'krGrowth', titleKr: '성장 · 산업생산·수출', titleEn: 'Growth · IP & exports', unit: '%', series: [
 			{ id: 'IPI', nameKr: '산업생산 YoY', nameEn: 'IP YoY', color: '#5b9bf0', type: 'line' },
 			{ id: 'EXPORT', nameKr: '수출 YoY', nameEn: 'Exports YoY', color: '#34d399', type: 'line' }
 		] },
-		{ key: 'krInflation', titleKr: '물가 — CPI·제조 PPI', titleEn: 'Inflation — CPI & mfg PPI', unit: '%', series: [
+		{ key: 'krInflation', titleKr: '물가 · CPI·제조 PPI', titleEn: 'Inflation · CPI & mfg PPI', unit: '%', series: [
 			{ id: 'CPI', nameKr: '소비자물가 YoY', nameEn: 'CPI YoY', color: '#f0616f', type: 'line' },
 			{ id: 'PPI_MFG', nameKr: '제조업 PPI YoY', nameEn: 'Mfg PPI YoY', color: '#fbbf24', type: 'line' }
 		] },
-		{ key: 'krRates', titleKr: '금리·환율 — 기준금리·원달러', titleEn: 'Rate & FX', unit: '%', series: [
+		{ key: 'krRates', titleKr: '금리·환율 · 기준금리·원달러', titleEn: 'Rate & FX', unit: '%', series: [
 			{ id: 'BASE_RATE', nameKr: '한은 기준금리', nameEn: 'BOK rate', color: '#f0616f', type: 'line' },
 			{ id: 'USDKRW', nameKr: '원/달러(우)', nameEn: 'USD/KRW (R)', color: '#5b9bf0', type: 'line', axis: 'r' }
 		] },
-		{ key: 'krSentiment', titleKr: '경기·심리 — 선행·소비', titleEn: 'Cycle & sentiment', unit: 'pt', series: [
+		{ key: 'krSentiment', titleKr: '경기·심리 · 선행·소비', titleEn: 'Cycle & sentiment', unit: 'pt', series: [
 			{ id: 'CLI', nameKr: '경기선행지수', nameEn: 'CLI', color: '#5b9bf0', type: 'line' },
 			{ id: 'CSI', nameKr: '소비자심리', nameEn: 'Consumer sentiment', color: '#34d399', type: 'line' }
 		] }
@@ -2686,7 +2686,7 @@ export const MACRO_EVIDENCE_SPECS: Record<'KR' | 'US', MacroChartSpec[]> = {
 
 const MACRO_EVIDENCE_MONTHS = 48;
 
-// 최신월(endYm) 기준 n 개월 월축 ('YYYYMM' 오름차순). now 미사용 — endYm 은 데이터에서 유도.
+// 최신월(endYm) 기준 n 개월 월축 ('YYYYMM' 오름차순). now 미사용 · endYm 은 데이터에서 유도.
 function macroMonthsAxis(endYm: string, n: number): string[] {
 	let y = Number(endYm.slice(0, 4));
 	let m = Number(endYm.slice(4, 6));
@@ -2699,7 +2699,7 @@ function macroMonthsAxis(endYm: string, n: number): string[] {
 	return out.reverse();
 }
 
-// 월축 정렬 — 각 월에 해당 월 이하 마지막 관측을 carry-forward(ffill). 일/월/분기 혼재 시리즈를 균일화.
+// 월축 정렬 · 각 월에 해당 월 이하 마지막 관측을 carry-forward(ffill). 일/월/분기 혼재 시리즈를 균일화.
 // 첫 관측 이전 월은 null(선두 gap → MiniFinChart pen-up). pts 는 d 오름차순 가정(getSeries 가 정렬).
 function macroAlignToMonths(pts: MacroPoint[], axis: string[]): Num[] {
 	const out: Num[] = [];
@@ -2713,7 +2713,7 @@ function macroAlignToMonths(pts: MacroPoint[], axis: string[]): Num[] {
 }
 
 /**
- * 시장별 근거지표 복합차트 — MACRO_EVIDENCE_SPECS 를 observations 시계열(seriesMap)로 채워 FinCard[] 산출.
+ * 시장별 근거지표 복합차트 · MACRO_EVIDENCE_SPECS 를 observations 시계열(seriesMap)로 채워 FinCard[] 산출.
  * end month 는 데이터 최신월에서 유도(결정론). 결측 시리즈는 제외, 한 카드의 모든 시리즈가 비면 카드 자체 제외.
  */
 export function buildMacroEvidenceCards(
@@ -2750,7 +2750,7 @@ export function buildMacroEvidenceCards(
 	return { periods, cards };
 }
 
-// ───────────────────────── 거시 forward 시뮬 — BVAR 팬·IRF·국면경로 (MacroRegimeDialog 전망 섹션) ─────────────────────────
+// ───────────────────────── 거시 forward 시뮬 · BVAR 팬·IRF·국면경로 (MacroRegimeDialog 전망 섹션) ─────────────────────────
 // macro/sim/{market}.json (rt.macro.getSim) → 뷰모델. 팬 = 과거 실적(실선) + 미래 p50/p5/p95(밴드) FinCard.
 // 결정론: 해석적 BVAR(난수 0)이라 같은 데이터 같은 화면. fail-closed: status≠'ok'·regimePath.status 면 표시 보류.
 
@@ -2778,7 +2778,7 @@ export interface MacroSimView {
 	fanCards: FinCard[];
 	/** 시나리오 칩(정책금리 충격 프리셋). 빈 배열이면 칩 미렌더. */
 	scenarios: MacroSimScenarioView[];
-	/** 활성 시나리오(칩 선택 시) — fanCards 에 조건부 중앙 overlay + '조건부 가정' 배지. null=기준. */
+	/** 활성 시나리오(칩 선택 시) · fanCards 에 조건부 중앙 overlay + '조건부 가정' 배지. null=기준. */
 	activeScenario: MacroSimScenarioView | null;
 	regimePath: MacroSimRegimePathView | null;
 	irf: MacroSimIrfView | null;
@@ -2830,7 +2830,7 @@ export function buildMacroSimView(sim: MacroSimFile | null, lang: Lang, activeSc
 	const activeRaw = activeScenarioKey ? simScenarios.find((s) => s.key === activeScenarioKey) ?? null : null;
 	const activeScenario: MacroSimScenarioView | null = activeRaw ? { key: activeRaw.key, label: T(activeRaw.label, activeRaw.labelEn), condLabel: T(activeRaw.condLabel, activeRaw.condLabelEn) } : null;
 
-	// 팬 FinCard — 변수당 1장: 과거 실적(실선) + 현재 anchor 에서 p50/p5/p95(밴드) 미래로.
+	// 팬 FinCard · 변수당 1장: 과거 실적(실선) + 현재 anchor 에서 p50/p5/p95(밴드) 미래로.
 	// 원유는 모델 control(물가퍼즐 해소용)이라 헤드라인 팬에서 제외 → 깔끔한 2×2.
 	const fanCards: FinCard[] = [];
 	for (const [label, v] of Object.entries(sim.fan)) {
@@ -2852,20 +2852,20 @@ export function buildMacroSimView(sim: MacroSimFile | null, lang: Lang, activeSc
 			{ name: T('중앙', 'median'), data: fanOf(v.q50), color: SIM_COLORS.mid, type: 'line' },
 			{ name: T('하위10', 'p10'), data: fanOf(v.q5), color: SIM_COLORS.band, type: 'line' }
 		];
-		// 조건부 overlay — 활성 시나리오의 같은 변수 조건부 q50(별색 1라인). baseline 밴드 위에 얹어 delta 가시.
+		// 조건부 overlay · 활성 시나리오의 같은 변수 조건부 q50(별색 1라인). baseline 밴드 위에 얹어 delta 가시.
 		const condVar = activeRaw?.fan?.[label];
 		if (condVar) series.push({ name: T('조건부', 'cond'), data: fanOf(condVar.q50), color: SIM_COLORS.scenario, type: 'line' });
 		const unit = v.transform === 'logdiff100' ? '%' : '%';
 		fanCards.push({ key: v.seriesId, title: `${label} · ${T(v.transform === 'logdiff100' ? '월간 변화' : '수준', v.transform === 'logdiff100' ? 'MoM' : 'level')}`, unit, series });
 	}
 
-	// 국면경로 — status 있으면 보류(null).
+	// 국면경로 · status 있으면 보류(null).
 	const rp = sim.regimePath;
 	const regimePath: MacroSimRegimePathView | null = rp && !rp.status && rp.forward?.length
 		? { forward: rp.forward.map((f) => ({ h: f.h, p: f.pContraction })), history: rp.history ?? [], current: rp.current ?? 0, ergodic: rp.ergodic ?? 0 }
 		: null;
 
-	// IRF — 변수 경로만(문자열 키 제외).
+	// IRF · 변수 경로만(문자열 키 제외).
 	const irfVars = Object.entries(sim.irf).filter(([k, val]) => Array.isArray(val) && k !== 'caveat' && k !== 'shockLabel').map(([k, val]) => ({ label: k, data: val as number[] }));
 	const irf: MacroSimIrfView | null = irfVars.length
 		? { shockLabel: typeof sim.irf.shockLabel === 'string' ? sim.irf.shockLabel : T('정책금리 충격', 'policy-rate shock'), caveat: typeof sim.irf.caveat === 'string' ? sim.irf.caveat : '', vars: irfVars }

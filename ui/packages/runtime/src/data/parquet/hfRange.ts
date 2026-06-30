@@ -45,7 +45,7 @@ export function hfUrl(path: string): string {
 	return `${HF_RESOLVE}/${path.replace(/^\/+/, '')}`;
 }
 
-// 동일 파일의 HEAD(범위 probe)는 세션 내 1 회만 — 반복 readParquetRows·lazy 좌측 팬의
+// 동일 파일의 HEAD(범위 probe)는 세션 내 1 회만 · 반복 readParquetRows·lazy 좌측 팬의
 // 불필요한 RTT 제거. 파일은 세션 중 불변이므로 ref(size/etag) 캐시 안전.
 // 커스텀 fetchFn(측정/프록시 주입)은 캐시하지 않음.
 const refCache = new Map<string, Promise<HfObjectRef>>();
@@ -63,7 +63,7 @@ export function headHfObject(path: string, fetchFn: FetchLike = fetch): Promise<
 }
 
 async function headHfObjectFresh(path: string, fetchFn: FetchLike): Promise<HfObjectRef> {
-	// range probe·세션은 HF 직결(hfRangeUrl) — 프록시 206 은 엣지캐시 불가라 7~9배 느림(origin.ts 참조).
+	// range probe·세션은 HF 직결(hfRangeUrl) · 프록시 206 은 엣지캐시 불가라 7~9배 느림(origin.ts 참조).
 	const url = hfRangeUrl(path);
 	const resp = await fetchResilient(fetchFn, url, { headers: { Range: 'bytes=0-0' } });
 	if (!resp.ok && resp.status !== 206) throw new Error(`${path} range probe 실패: ${resp.status}`);
@@ -81,7 +81,7 @@ async function headHfObjectFresh(path: string, fetchFn: FetchLike): Promise<HfOb
 	await resp.arrayBuffer();
 	return {
 		path,
-		// 안정 resolve URL 보관(서명된 cas-bridge 리다이렉트 URL 아님) — refCache 가 세션 내내 ref 를 재사용하므로
+		// 안정 resolve URL 보관(서명된 cas-bridge 리다이렉트 URL 아님) · refCache 가 세션 내내 ref 를 재사용하므로
 		// 서명 URL 캐시 시 만료 후 range 읽기가 깨진다. 매 요청이 stable URL 로 재해석된다(직결 redirect 비용은 측정 ~0.38s 에 포함).
 		url,
 		size,
@@ -108,7 +108,7 @@ export async function probeHfRange(
 	};
 }
 
-// 범위요청 + 브라우저 HTTP 캐시 충돌(net::ERR_CACHE_OPERATION_NOT_SUPPORTED 등 — Range 응답이 캐시와 어긋날 때
+// 범위요청 + 브라우저 HTTP 캐시 충돌(net::ERR_CACHE_OPERATION_NOT_SUPPORTED 등 · Range 응답이 캐시와 어긋날 때
 // Chrome 이 던짐) → 캐시 우회(reload)로 1회 재시도. 잦은 "로드 실패" 가드.
 export async function fetchResilient(fetchFn: FetchLike, input: Parameters<FetchLike>[0], init?: RequestInit): Promise<Response> {
 	// 전이적 CDN 전파(갓 업로드/콜드 캐시)는 403/429/5xx 로 반환되거나 네트워크 throw → 짧은 백오프 재시도.
@@ -130,7 +130,7 @@ export async function fetchResilient(fetchFn: FetchLike, input: Parameters<Fetch
 				await new Promise((r) => setTimeout(r, 200 + 280 * attempt));
 				continue;
 			}
-			return resp; // 최종 비-OK(404 등)는 그대로 — 호출측이 처리
+			return resp; // 최종 비-OK(404 등)는 그대로 · 호출측이 처리
 		} catch {
 			if (attempt < LAST) {
 				await new Promise((r) => setTimeout(r, 200 + 280 * attempt));
@@ -142,9 +142,9 @@ export async function fetchResilient(fetchFn: FetchLike, input: Parameters<Fetch
 	return await fetchFn(input, noStore);
 }
 
-// 소형 파일 통파일 임계 — 이하면 range 세션(직렬 메타데이터 왕복 수 회) 대신 1 회 GET.
+// 소형 파일 통파일 임계 · 이하면 range 세션(직렬 메타데이터 왕복 수 회) 대신 1 회 GET.
 // 회사별 gov 주가(~100KB)·소형 report parquet 가 8요청/~2s → 1요청/수백 ms 로 줄어든다.
-// 큰 monolith(3~15MB report·date 파티션)는 projection/필터 range 가 여전히 유리 — 제외.
+// 큰 monolith(3~15MB report·date 파티션)는 projection/필터 range 가 여전히 유리 · 제외.
 const WHOLE_FILE_MAX_BYTES = 1536 * 1024;
 
 export async function openHfParquet(
@@ -154,7 +154,7 @@ export async function openHfParquet(
 	const [{ asyncBufferFromUrl }, ref] = await Promise.all([import('hyparquet'), headHfObject(path, fetchFn)]);
 	const requests: RangeRequestStat[] = [];
 	if (ref.size <= WHOLE_FILE_MAX_BYTES) {
-		// 소형 통파일(Range 없는 GET)은 프록시(hfUrl) — 엣지캐시(cross-user)·per-file cache-control(recent=600s
+		// 소형 통파일(Range 없는 GET)은 프록시(hfUrl) · 엣지캐시(cross-user)·per-file cache-control(recent=600s
 		// 신선도)·403 흡수 이득이 살아있다. range(>임계)만 직결로 갔다(ref.url=hfRangeUrl). 책임경계 분리.
 		const wholeUrl = hfUrl(path);
 		const t0 = performance.now();
@@ -203,7 +203,7 @@ export async function readParquetMetadata(
 	};
 }
 
-// 소형 단일 파일 직독 — HEAD probe 생략, GET 1 회로 전체 버퍼 → 파싱. 미존재(404)는 null.
+// 소형 단일 파일 직독 · HEAD probe 생략, GET 1 회로 전체 버퍼 → 파싱. 미존재(404)는 null.
 // gov 회사별 주가처럼 "작고 통째로 읽는" 핫패스 전용 (요청 2→1, 콜드 RTT 1회 제거).
 export async function readParquetWholeFile<T extends Record<string, unknown> = Record<string, unknown>>(
 	path: string,

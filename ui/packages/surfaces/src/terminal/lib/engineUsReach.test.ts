@@ -1,11 +1,11 @@
-// US(EDGAR) 회사가 엔진에 도달하는지 검증 — routeLoad 가 finance+prices+index 에 US 를 병합하면
+// US(EDGAR) 회사가 엔진에 도달하는지 검증 · routeLoad 가 finance+prices+index 에 US 를 병합하면
 // suggest 가 ticker 를 찾고 buildCompany 가 non-null co 를 만든다(eco 없이도). 통화 표시 polish 와 독립.
 import { describe, it, expect } from 'vitest';
 import { createEngine } from './engine';
 import type { RawData } from './types';
 
 function rawWithUs(): RawData {
-	// US 번들 1개(AAPL) — proto_us_terminal_data.py 산출 shape 축약. KR base 는 빈 생태계.
+	// US 번들 1개(AAPL) · proto_us_terminal_data.py 산출 shape 축약. KR base 는 빈 생태계.
 	const aaplFin = {
 		currency: 'USD',
 		is: { sales: [null, null, 0.3833, 0.391, 0.4162], op: [null, null, 0.1142, 0.1232, 0.1331], net: [null, null, 0.097, 0.0937, 0.112], opMargin: [null, null, 29.8, 31.5, 32] },
@@ -45,7 +45,7 @@ describe('US terminal reach', () => {
 		expect(co).not.toBeNull();
 		expect(co?.code).toBe('AAPL');
 		expect(co?.name).toBeTruthy();
-		// 가격/재무가 흘러든다 — currentPrice, 매출 시리즈 존재
+		// 가격/재무가 흘러든다 · currentPrice, 매출 시리즈 존재
 		expect(co?.price.last).toBe(293.08);
 		expect(co?.income.rows.find((r) => r.id === 'sales')?.vals.some((v) => v != null)).toBe(true);
 	});

@@ -1,12 +1,12 @@
 <script lang="ts">
 	/**
-	 * Floating card window — Figma/VSCode 스타일 떠있는 패널.
+	 * Floating card window · Figma/VSCode 스타일 떠있는 패널.
 	 *
 	 * - 헤더 드래그로 이동
 	 * - 우측 하단 모서리 리사이즈 (CSS resize)
 	 * - 클릭 시 최상단 (z-index 자동)
 	 * - 닫기 버튼
-	 * - 모바일(<768px)에서는 숨김 — 기본 우측 패널만 사용
+	 * - 모바일(<768px)에서는 숨김 · 기본 우측 패널만 사용
 	 */
 	import type { Snippet } from 'svelte';
 

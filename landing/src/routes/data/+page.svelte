@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 데이터 센터 — dartlab 공동작업대(HF parquet)를 탐색·다운로드·라이브 API 로.
+	// 데이터 센터 · dartlab 공동작업대(HF parquet)를 탐색·다운로드·라이브 API 로.
 	// 흐름: 고르기 → 실제 데이터 미리보기 → 가져가기(다운로드 + 구글시트·엑셀·Python·curl API).
 	// 신규 작성기 0(readParquetRows·objectsToWorkbook·toCsv·originUrl 재사용). 색은 전부 디자인 토큰 SSOT.
 	import { onMount } from 'svelte';
@@ -71,7 +71,7 @@
 	let showCols = $state(false);
 	let copiedKey = $state('');
 
-	// ── 파일 브라우저(탐색) — HF 트리 그대로(공개 repo). CORS 허용·Link 커서 페이지네이션 ──
+	// ── 파일 브라우저(탐색) · HF 트리 그대로(공개 repo). CORS 허용·Link 커서 페이지네이션 ──
 	const HF_API = 'https://huggingface.co/api/datasets/eddmpython/dartlab-data/tree/main';
 	const HF_RESOLVE = 'https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main';
 	type Entry = { type: string; path: string; name: string; size: number };
@@ -182,7 +182,7 @@
 		if (apiTab === 'sheets') return '구글시트 빈 셀에 붙여넣기 → 약 1시간마다 자동 갱신.';
 		if (apiTab === 'excel') return '엑셀 → 데이터 → 웹에서 → 이 .tsv URL 붙여넣기 → 모두 새로 고침. (한국 엑셀 콤마 회피)';
 		if (apiTab === 'python') return 'pandas 가 URL 을 바로 읽습니다. 슬라이스는 URL 쿼리(?cols=&tail=&freq=)로.';
-		return '터미널·어디서나. JSON 이 아니라 CSV — 그대로 표 형태.';
+		return '터미널·어디서나. JSON 이 아니라 CSV, 그대로 표 형태.';
 	});
 
 	const previewCap = $derived(totalRows ? Math.min(PREVIEW_N, totalRows) : PREVIEW_N);
@@ -233,11 +233,11 @@
 			totalRows = meta.rows;
 			fileSize = meta.size ?? 0;
 			pickedCols = new Set();
-			// 실데이터 미리보기 — 첫 PREVIEW_N 행(전 컬럼). 컬럼 토글은 캐시에서 즉시 재렌더.
+			// 실데이터 미리보기 · 첫 PREVIEW_N 행(전 컬럼). 컬럼 토글은 캐시에서 즉시 재렌더.
 			if (phys.seriesCol) {
 				const all = (await readParquetRows(phys.path, {})).rows;
 				const sub = all.filter((r) => String(r[phys.seriesCol as string]) === phys.seriesVal);
-				if (!sub.length) throw new Error(`시리즈 '${phys.seriesVal}' 없음 — manifest 확인`);
+				if (!sub.length) throw new Error(`시리즈 '${phys.seriesVal}' 없음 (manifest 확인)`);
 				totalRows = sub.length;
 				previewRows = sub.slice(0, PREVIEW_N);
 			} else {
@@ -245,7 +245,7 @@
 			}
 			probedKey = key;
 		} catch (e) {
-			probeErr = `조회 실패 — 경로/ID 확인 (${String((e as Error)?.message ?? e).slice(0, 60)})`;
+			probeErr = `조회 실패. 경로/ID 확인 (${String((e as Error)?.message ?? e).slice(0, 60)})`;
 			allCols = [];
 			totalRows = 0;
 			previewRows = [];
@@ -329,7 +329,7 @@
 		try {
 			const sheet = await readSlice();
 			if (!sheet.rows.length) {
-				probeErr = '결과 0행 — ID/슬라이스 확인';
+				probeErr = '결과 0행 (ID/슬라이스 확인)';
 				return;
 			}
 			const name = sheet.label;
@@ -343,7 +343,7 @@
 				downloadBlob(zip.finalize(), `${name}.zip`, 'application/zip');
 			}
 		} catch (e) {
-			probeErr = `다운로드 실패 — ${String((e as Error)?.message ?? e).slice(0, 80)}`;
+			probeErr = `다운로드 실패: ${String((e as Error)?.message ?? e).slice(0, 80)}`;
 		} finally {
 			busy = '';
 		}
@@ -355,7 +355,7 @@
 			copiedKey = key;
 			setTimeout(() => (copiedKey = ''), 1600);
 		} catch {
-			/* clipboard 차단 — 무시 */
+			/* clipboard 차단 · 무시 */
 		}
 	}
 </script>
@@ -384,7 +384,7 @@
 	<section class="panel">
 		<div class="modes">
 			<button class="modetab" class:on={mode === 'sets'} onclick={() => (mode = 'sets')}>데이터셋</button>
-			<button class="modetab" class:on={mode === 'browse'} onclick={switchBrowse}>탐색 — 파일 브라우저</button>
+			<button class="modetab" class:on={mode === 'browse'} onclick={switchBrowse}>탐색 · 파일 브라우저</button>
 		</div>
 
 		{#if mode === 'sets'}
@@ -466,7 +466,7 @@
 
 				{#if eligible && tier2On && liveUrl}
 					<div class="get-col api">
-						<span class="get-k">라이브 API <span class="muted">— 시트·코드가 URL 을 직접 읽음</span></span>
+						<span class="get-k">라이브 API <span class="muted">(시트·코드가 URL 을 직접 읽음)</span></span>
 						<div class="apitabs">
 							{#each CONSUMERS as c (c.key)}
 								<button class="apitab" class:on={apiTab === c.key} onclick={() => (apiTab = c.key)}>{c.label}</button>
@@ -482,7 +482,7 @@
 			</div>
 		{/if}
 		{:else}
-			<!-- 탐색 — 파일 브라우저 (HF 트리 그대로 · 공개 repo) -->
+			<!-- 탐색 · 파일 브라우저 (HF 트리 그대로 · 공개 repo) -->
 			<div class="browse">
 				<div class="crumbs">
 					<button class="crumb" onclick={() => loadTree('')}>dartlab-data</button>
@@ -1048,7 +1048,7 @@
 		}
 	}
 
-	/* 접근성 — 키보드 포커스 */
+	/* 접근성 · 키보드 포커스 */
 	.btn:focus-visible,
 	.chip-ex:focus-visible,
 	.link-btn:focus-visible,

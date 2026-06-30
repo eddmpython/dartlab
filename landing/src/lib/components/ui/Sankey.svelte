@@ -1,5 +1,5 @@
 <script lang="ts">
-	/** P&L Sankey — 매출 → COGS / 영업이익 → SG&A / 순이익 흐름
+	/** P&L Sankey · 매출 → COGS / 영업이익 → SG&A / 순이익 흐름
 	 *  pure SVG, no deps. dartlab editorial dark + brand color.
 	 */
 
@@ -52,7 +52,7 @@
 	const nodeW = 14;
 	const margin = 12;
 
-	// 노드별 y 위치 — 동일 레이어 안에서 value 비례 stacking
+	// 노드별 y 위치 · 동일 레이어 안에서 value 비례 stacking
 	const nodePos = $derived.by(() => {
 		const layers: Record<number, NodeInfo[]> = {};
 		for (const n of nodes) (layers[n.layer] ??= []).push(n);
@@ -71,7 +71,7 @@
 		return pos;
 	});
 
-	// flow path — bezier between nodes
+	// flow path · bezier between nodes
 	function flowPath(f: Flow) {
 		const from = nodePos.get(f.from);
 		const to = nodePos.get(f.to);

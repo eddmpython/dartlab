@@ -1,5 +1,5 @@
-// 로컬 StoragePort — 브라우저 localStorage 백엔드(네임스페이스 접두로 충돌 방지). 비브라우저(SSR)는 in-memory 폴백.
-// 로컬 앱은 ssr=false SPA 라 실사용은 항상 브라우저 — 폴백은 컴파일/타입 안전용.
+// 로컬 StoragePort · 브라우저 localStorage 백엔드(네임스페이스 접두로 충돌 방지). 비브라우저(SSR)는 in-memory 폴백.
+// 로컬 앱은 ssr=false SPA 라 실사용은 항상 브라우저 · 폴백은 컴파일/타입 안전용.
 import type { RuntimeStorageKey, StoragePort } from '@dartlab/ui-contracts';
 
 const PREFIX = 'dartlab:';

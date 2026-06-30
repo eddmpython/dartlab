@@ -1,6 +1,6 @@
-// 정기보고서 주석 구성 — XBRL 셀(xbrlCells)에서 비용 성격별·부문별 매출을 뽑아 기간 시계열로.
+// 정기보고서 주석 구성 · XBRL 셀(xbrlCells)에서 비용 성격별·부문별 매출을 뽑아 기간 시계열로.
 // 비용 = acode(정부 IFRS 택소노미가 곧 카테고리). 부문 = axisPath 세그먼트 멤버. 표 레이아웃 파싱 0(태그 직독).
-// 순수 함수(렌더·IO 0) — reportSource 가 panel 기간별로 호출. 최근 분기(ACONTEXT 2025-03+)만 자연 포착.
+// 순수 함수(렌더·IO 0) · reportSource 가 panel 기간별로 호출. 최근 분기(ACONTEXT 2025-03+)만 자연 포착.
 
 import type { CompositionPoint, CompositionSeries } from '@dartlab/ui-contracts';
 import type { XbrlCell } from './xbrlCells';
@@ -13,7 +13,7 @@ const SEG_NONSEG = /Geograph|Countr|Domestic|Foreign|Overseas|MajorCustomer|Prod
 const SEG_AGG = /^(Operating|Consolidated|Total|Reportable|Business|Intersegment)?Segments?$|^(Operating|Consolidated|Total|Reportable)$/;
 const SEG_CC = /^(Cn|Us|Jp|Kr|Uk|De|Fr|Eu|In|Vn|Sg|Hk|Tw|Au|Ca|Br|Ru|Mx|Id|Th|My|Ph|It|Es|Nl|Pl|Tr|Ae|Sa)$/i;
 
-// 당기 셀만 — 해당 기간 연도 & 흐름 모드(A=누적YTD / Y=연간). 전기/전전기(ctxYear<year) 배제.
+// 당기 셀만 · 해당 기간 연도 & 흐름 모드(A=누적YTD / Y=연간). 전기/전전기(ctxYear<year) 배제.
 const isCurrent = (c: XbrlCell, year: number): boolean => c.ctxYear === year && (c.ctxMode === 'A' || c.ctxMode === 'Y');
 
 /** axisPath leaf → 읽을 세그먼트명. entity 접두·택소노미 꼬리·집계어 제거. */
@@ -26,7 +26,7 @@ export function segName(axis: string): string {
 	return last.trim();
 }
 
-/** 한 기간 비용 성격별 구성 — acode별 당기 값(라벨=한글명). key=acode(언어무관 정체성). */
+/** 한 기간 비용 성격별 구성 · acode별 당기 값(라벨=한글명). key=acode(언어무관 정체성). */
 export function costCells(cells: XbrlCell[], year: number): Map<string, { name: string; value: number }> {
 	const out = new Map<string, { name: string; value: number }>();
 	for (const c of cells) {
@@ -38,7 +38,7 @@ export function costCells(cells: XbrlCell[], year: number): Map<string, { name: 
 	return out;
 }
 
-/** 한 기간 부문별 매출 — Revenue 셀 × 영업/보고부문 축(지역·고객·제품·집계 배제). key=세그먼트명. */
+/** 한 기간 부문별 매출 · Revenue 셀 × 영업/보고부문 축(지역·고객·제품·집계 배제). key=세그먼트명. */
 export function segmentCells(cells: XbrlCell[], year: number): Map<string, { name: string; value: number }> {
 	const out = new Map<string, { name: string; value: number }>();
 	for (const c of cells) {
@@ -63,7 +63,7 @@ export interface PeriodComposition {
 
 /** 기간별 구성 → 시계열(CompositionSeries). 전 기간 합계 상위 K 카테고리(+비용은 '기타' 롤업) 안정 정렬. */
 export function buildSeries(perPeriod: PeriodComposition[], { topK, rollupOther }: { topK: number; rollupOther: boolean }): CompositionSeries | null {
-	// 표시명을 정체성으로 재키잉(병합) — 서로 다른 acode 가 같은 한글 라벨(예 '급여')을 가지면 categories 에
+	// 표시명을 정체성으로 재키잉(병합) · 서로 다른 acode 가 같은 한글 라벨(예 '급여')을 가지면 categories 에
 	// 중복명이 생겨 다이얼로그·패널의 keyed {#each (name)} 가 each_key_duplicate 로 렌더 throw → 마운트 실패.
 	// 같은 표시명은 같은 경제 카테고리이므로 값 합산이 정합. (부문은 이미 name-key 라 무변.)
 	const merged: PeriodComposition[] = perPeriod.map((p) => {

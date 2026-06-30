@@ -1,4 +1,4 @@
-// 브라우저 readWide 오케스트레이터 — panel long(flat 16-col) 하나에서 항목×기간 wide 를 온더플라이 계산.
+// 브라우저 readWide 오케스트레이터 · panel long(flat 16-col) 하나에서 항목×기간 wide 를 온더플라이 계산.
 //
 // Python `panel.read.readWide` 1:1 포팅. 파이프라인 단계는 pipeline/* 모듈, TOC 는 toc/buildToc, 보고서유형
 // 보정은 periodKind, 공유 키는 keys 로 분리(클린 모듈 트리). 본 파일은 단계 호출 + leafSeq·collapse·pivot·order
@@ -16,7 +16,7 @@ import { dedupKeyed } from './pipeline/dedupKeyed';
 import { buildToc } from './toc/buildToc';
 import type { LeafRow, PanelBundle, PanelRow } from './types';
 
-// period 최신순(내림차순) — "YYYYQn" 문자열 정렬.
+// period 최신순(내림차순) · "YYYYQn" 문자열 정렬.
 function sortPeriodsDesc(periods: string[]): string[] {
 	return [...periods].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
 }
@@ -39,7 +39,7 @@ export function buildPanelBundle(
 	};
 	if (rows.length === 0) return empty;
 
-	// corpName — panel 에 회사명 컬럼 없음(corp=코드). opt 로만 주입, 없으면 빈값(라우트가 코드로 표기).
+	// corpName · panel 에 회사명 컬럼 없음(corp=코드). opt 로만 주입, 없으면 빈값(라우트가 코드로 표기).
 	const corpName = opts.corpName ?? '';
 
 	alignNotes(rows, opts.noteTaxonomy ?? {});
@@ -54,7 +54,7 @@ export function buildPanelBundle(
 		anchorNarrativeToSpineRow(r); // chapter 확정·(첨부) 흡수 후 = SPINE 룩업 키 정합 (read.py 1:1)
 	}
 
-	// leafSeq — narrative(disclosureKey null) 는 (chapter,sectionLeaf,leafType,period) 내 blockOrder ordinal rank, keyed=0.
+	// leafSeq · narrative(disclosureKey null) 는 (chapter,sectionLeaf,leafType,period) 내 blockOrder ordinal rank, keyed=0.
 	const seqGroups = new Map<string, LeafRow[]>();
 	for (const r of deduped) {
 		if (r.disclosureKey != null) {
@@ -71,7 +71,7 @@ export function buildPanelBundle(
 		arr.forEach((r, i) => ((r as LeafRow & { leafSeq: number }).leafSeq = i + 1));
 	}
 
-	// collapse — indexKey(=[chapter,sectionLeaf,blockLeaf,leafType,disclosureKey,scope,leafSeq]) × period.
+	// collapse · indexKey(=[chapter,sectionLeaf,blockLeaf,leafType,disclosureKey,scope,leafSeq]) × period.
 	interface Agg {
 		chapter: string; sectionLeaf: string; blockLeaf: string; leafType: string;
 		disclosureKey: string | null; scope: string | null; leafSeq: number;
@@ -130,7 +130,7 @@ export function buildPanelBundle(
 		});
 	}
 
-	// order — [_canonRank, _secNum(절 번호), _secSub, _spOrder(XBRL 척추), _skel, _skelOld, leafSeq] nulls_last (orderBySpine 1:1).
+	// order · [_canonRank, _secNum(절 번호), _secSub, _spOrder(XBRL 척추), _skel, _skelOld, leafSeq] nulls_last (orderBySpine 1:1).
 	const nl = (v: number | null) => (v == null ? Infinity : v);
 	built.sort((x, y) =>
 		nl(x.canonRank) - nl(y.canonRank) ||
@@ -164,7 +164,7 @@ export function buildPanelBundle(
 
 	const toc = buildToc(opts.code, corpName, gridBySection, periods);
 
-	// dartUrlByPeriod — period 별 첫 rceptNo (leafRows 원본).
+	// dartUrlByPeriod · period 별 첫 rceptNo (leafRows 원본).
 	const rceptByPeriod = new Map<string, string>();
 	for (const r of leafRows) {
 		if (r.period && r.rceptNo && !rceptByPeriod.has(r.period)) rceptByPeriod.set(r.period, r.rceptNo);
@@ -172,7 +172,7 @@ export function buildPanelBundle(
 	const dartUrlByPeriod: Record<string, string | null> = {};
 	for (const p of periods) dartUrlByPeriod[p] = viewerUrl(market, rceptByPeriod.get(p) ?? null);
 
-	// 보고서 유형 보정 — period 별 비빈 셀수(본문량) 누적 → computePeriodKind (사업보고서 분기 검출).
+	// 보고서 유형 보정 · period 별 비빈 셀수(본문량) 누적 → computePeriodKind (사업보고서 분기 검출).
 	const cellCount: Record<string, number> = {};
 	for (const arr of gridBySection.values()) {
 		for (const row of arr) for (const p in row.cells) cellCount[p] = (cellCount[p] ?? 0) + 1;

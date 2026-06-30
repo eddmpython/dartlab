@@ -1,7 +1,7 @@
 <script lang="ts">
-	// 전략 백테스트 도크 — 차트 워크스페이스 좌측 영구 패널(드랍다운 폐기 SSOT). 차트 클릭/팬/줌에 안 닫힘.
+	// 전략 백테스트 도크 · 차트 워크스페이스 좌측 영구 패널(드랍다운 폐기 SSOT). 차트 클릭/팬/줌에 안 닫힘.
 	//   헤더(접기·닫기) · 컨텍스트(종목·일봉) · ① 전략(조건 빌더) · ② 손절/익절 · ③ 검증(비용·OOS·게이트) · 결과 푸터(HonestyFooter).
-	// BtConfig 의 조건 빌더 로직을 그대로 흡수(ctl.bt* 변이 → PriceChart $effect 재계산, tweak→see 무배선). 그래프 금지(3열 규칙) — equity 는 차트.
+	// BtConfig 의 조건 빌더 로직을 그대로 흡수(ctl.bt* 변이 → PriceChart $effect 재계산, tweak→see 무배선). 그래프 금지(3열 규칙) · equity 는 차트.
 	// 접기=28px 스파인(결과 유지), 닫기=clearBtAll+도크 off(맨 차트 복귀). 폭 리사이즈(260~420).
 	import type { Lang } from '../lib/types';
 	import { type ChartCtl, PERIODS } from './chartState.svelte';
@@ -13,7 +13,7 @@
 	interface Props {
 		ctl: ChartCtl;
 		lang: Lang;
-		pf?: PortfolioBtResult | null; // 결과(있으면 하단 푸터) — fill(좌패널) 모드에선 미전달(결과는 중앙 하단 보고서)
+		pf?: PortfolioBtResult | null; // 결과(있으면 하단 푸터) · fill(좌패널) 모드에선 미전달(결과는 중앙 하단 보고서)
 		code?: string;
 		name?: string;
 		fill?: boolean; // true = 좌측 패널 전체 차지(폭 100%·리사이즈·접기 없음). false = 차트 좌측 도크(레거시)
@@ -27,9 +27,9 @@
 
 	let collapsed = $state(false);
 	let presetsOpen = $state(false); // 전략 ≥1 일 때 프리셋 그리드 접힘 토글(빈 상태는 항상 펼침)
-	let presetQuery = $state(''); // 프리셋 검색 — 라벨·설명 토큰 매칭(15+ 프리셋 발견성)
+	let presetQuery = $state(''); // 프리셋 검색 · 라벨·설명 토큰 매칭(15+ 프리셋 발견성)
 
-	// 통합 프리셋 목록 — BT_PRESETS(단일지표)·RULE_PRESETS(편집가능 룰)를 패밀리로 묶어 한 picker 로.
+	// 통합 프리셋 목록 · BT_PRESETS(단일지표)·RULE_PRESETS(편집가능 룰)를 패밀리로 묶어 한 picker 로.
 	// '약하다'의 진짜 원인은 개수 아닌 평면 2열이 descKr 을 안 써서 발견성 0 → 패밀리 그룹 + 설명 동반.
 	type PickItem = { kind: 'preset'; def: BtPresetDef } | { kind: 'rule'; def: RulePreset };
 	const ALL_PRESETS: PickItem[] = [
@@ -47,14 +47,14 @@
 		presetQuery = '';
 	}
 
-	// ── 검증 구간 — 항상 시작/종료 날짜창(기본 전체기간·일봉). period 칩은 날짜를 채우는 빠른선택. 국면 프리셋으로 원클릭 ──
+	// ── 검증 구간 · 항상 시작/종료 날짜창(기본 전체기간·일봉). period 칩은 날짜를 채우는 빠른선택. 국면 프리셋으로 원클릭 ──
 	const PHASE_PRESETS = [
 		{ k: 'covid', kr: '2020 코로나', en: '2020 COVID', from: '20200101', to: '20201231' },
 		{ k: 'bear22', kr: '2022 약세', en: '2022 bear', from: '20220101', to: '20221231' },
 		{ k: 'rec23', kr: '2023 회복', en: '2023 recovery', from: '20230101', to: '20231231' }
 	];
 	const dateInput = (t: string | null): string => (t && t.length === 8 ? `${t.slice(0, 4)}-${t.slice(4, 6)}-${t.slice(6, 8)}` : '');
-	// 시작/종료 직접 입력(키보드·달력) — 빈값=데이터 경계 복원(창 항상 유효), 범위 밖 입력은 데이터 있는 날짜로 clamp, from>to 방어.
+	// 시작/종료 직접 입력(키보드·달력) · 빈값=데이터 경계 복원(창 항상 유효), 범위 밖 입력은 데이터 있는 날짜로 clamp, from>to 방어.
 	function setWinPart(which: 'from' | 'to', v: string) {
 		let ymd: string | null = v ? v.replace(/-/g, '') : null;
 		if (!ymd) ymd = which === 'from' ? ctl.dataFromT : ctl.dataToT;
@@ -69,7 +69,7 @@
 			else ctl.btWinFrom = ctl.btWinTo;
 		}
 	}
-	// 폭 리사이즈 — 드래그 핸들(우측 가장자리). 세션 한정 $state.
+	// 폭 리사이즈 · 드래그 핸들(우측 가장자리). 세션 한정 $state.
 	let dockW = $state(320);
 	function startResize(e: PointerEvent) {
 		e.preventDefault();
@@ -97,7 +97,7 @@
 		ctl.btStop = { ...ctl.btStop, [k]: next === 0 ? undefined : next };
 	}
 
-	// ── 룰 불변 편집 — 슬롯의 rule 을 clone·변형 후 setSlotRule ──
+	// ── 룰 불변 편집 · 슬롯의 rule 을 clone·변형 후 setSlotRule ──
 	function editRule(i: number, fn: (r: StrategyRule) => void) {
 		const slot = ctl.btStrategies[i];
 		if (!slot?.rule) return;
@@ -137,7 +137,7 @@
 </script>
 
 {#if collapsed && !fill}
-	<!-- 접힘 스파인(28px) — 차트 도크 모드에서만. 좌패널(fill) 모드는 접기 없음. -->
+	<!-- 접힘 스파인(28px) · 차트 도크 모드에서만. 좌패널(fill) 모드는 접기 없음. -->
 	<button class="sdSpine" onclick={() => (collapsed = false)} title={T('전략 도크 펼치기', 'expand strategy dock')}>
 		<span class="sdSpineTtl">{T('전략 백테스트', 'STRATEGY LAB')}</span>
 		{#if headRet != null}<span class={'sdSpineRet mono ' + (headRet >= 0 ? 'tUp' : 'tDn')}>{sgn(headRet)}%</span>{/if}
@@ -151,7 +151,7 @@
 				<span class="sdTtl">{T('전략 백테스트', 'STRATEGY LAB')}</span>
 				<span class="sdSub">{T('규칙 조립 → 차트 위 즉시 검증', 'compose → verify on chart')}</span>
 			</div>
-			{#if !fill}<button class="sdHbtn" onclick={() => (collapsed = true)} aria-label="collapse" title={T('접기(결과 유지)', 'collapse')}>—</button>{/if}
+			{#if !fill}<button class="sdHbtn" onclick={() => (collapsed = true)} aria-label="collapse" title={T('접기(결과 유지)', 'collapse')}>·</button>{/if}
 			<button class="sdHbtn" onclick={onClose} aria-label="close" title={T('백테스트 종료', 'close & exit')}>✕</button>
 		</div>
 
@@ -161,31 +161,31 @@
 					<button class={ctl.btScope === o.v ? 'sdScopeBtn on' : 'sdScopeBtn'} onclick={() => (ctl.btScope = o.v)}>{T(o.kr, o.en)}</button>
 				{/each}
 			</div>
-			<div class={ctl.btScope === 'single' ? 'sdScopeNote' : 'sdScopeNote callout'}>{ctl.btScope === 'universe' ? T('전 종목 횡단면 팩터 · 17년 상폐보존 — 제어·결과는 아래 보고서에 나타납니다.', 'cross-sectional factor · controls & results appear in the report below') : ctl.btScope === 'market' ? T('지수 타이밍 — 차트 상단의 [지수] 버튼에서 지수를 먼저 선택하세요. 선택한 지수에 전략을 적용합니다(미선택 시 결과 없음).', 'index timing — first pick an index from the [INDEX] button on the chart bar; the strategy then runs on that index (no result until chosen)') : T('이 종목에 매매 규칙을 적용해 검증.', 'apply a rule to this stock')}</div>
-			<!-- 컨텍스트 — 종목·일봉 -->
+			<div class={ctl.btScope === 'single' ? 'sdScopeNote' : 'sdScopeNote callout'}>{ctl.btScope === 'universe' ? T('전 종목 횡단면 팩터 · 17년 상폐보존 · 제어·결과는 아래 보고서에 나타납니다.', 'cross-sectional factor · controls & results appear in the report below') : ctl.btScope === 'market' ? T('지수 타이밍 · 차트 상단의 [지수] 버튼에서 지수를 먼저 선택하세요. 선택한 지수에 전략을 적용합니다(미선택 시 결과 없음).', 'index timing · first pick an index from the [INDEX] button on the chart bar; the strategy then runs on that index (no result until chosen)') : T('이 종목에 매매 규칙을 적용해 검증.', 'apply a rule to this stock')}</div>
+			<!-- 컨텍스트 · 종목·일봉 -->
 			<div class="sdCtx">
 				<span class="sdCtxSym">{name ?? ''} {code ?? ''}</span>
 				<span class="sdCtxMeta">· {T('일봉', 'daily')}</span>
 			</div>
-			<!-- 검증 구간 = 백테스트 창(차트 줌과 공유·일봉 고정). 시작/종료 날짜 항상 표시 — 기본 전체기간, 데이터 있는 날짜 안에서만 조작(키보드 입력 가능). -->
+			<!-- 검증 구간 = 백테스트 창(차트 줌과 공유·일봉 고정). 시작/종료 날짜 항상 표시 · 기본 전체기간, 데이터 있는 날짜 안에서만 조작(키보드 입력 가능). -->
 			<div class="sdWindow">
 				<div class="sdWinHd"><span class="sdWinLbl">{T('검증 구간', 'window')}</span><span class="sdWinHint">{T('이 기간으로 백테스트 · 차트도 같은 구간(일봉)', 'backtest over this period · chart shows the same range (daily)')}</span></div>
-				<!-- 빠른선택 — 클릭 시 아래 시작/종료 날짜를 채움(최신 기준 역산 · 전체=MAX). -->
+				<!-- 빠른선택 · 클릭 시 아래 시작/종료 날짜를 채움(최신 기준 역산 · 전체=MAX). -->
 				<div class="sdWinSeg" role="radiogroup">
 					{#each PERIODS as p (p)}<button class={ctl.btWindowChip === p ? 'sdWinBtn on' : 'sdWinBtn'} aria-pressed={ctl.btWindowChip === p} disabled={!ctl.dataToT} onclick={() => ctl.setWindowPeriod(p)}>{p}</button>{/each}
 				</div>
-				<!-- 시작/종료 직접 입력(키보드·달력) — min/max 가 데이터 있는 날짜로 제한. -->
+				<!-- 시작/종료 직접 입력(키보드·달력) · min/max 가 데이터 있는 날짜로 제한. -->
 				<div class="sdCustRow">
 					<input class="sdDate mono" type="date" value={dateInput(ctl.btWinFrom)} min={dateInput(ctl.dataFromT) || undefined} max={dateInput(ctl.btWinTo) || dateInput(ctl.dataToT) || undefined} onchange={(e) => setWinPart('from', e.currentTarget.value)} aria-label={T('시작일', 'start')} />
 					<span class="sdCustTo">~</span>
 					<input class="sdDate mono" type="date" value={dateInput(ctl.btWinTo)} min={dateInput(ctl.btWinFrom) || dateInput(ctl.dataFromT) || undefined} max={dateInput(ctl.dataToT) || undefined} onchange={(e) => setWinPart('to', e.currentTarget.value)} aria-label={T('종료일', 'end')} />
 				</div>
-				<!-- 국면 프리셋 — 특정 역사 구간(체리피킹 예시) 원클릭. -->
+				<!-- 국면 프리셋 · 특정 역사 구간(체리피킹 예시) 원클릭. -->
 				<div class="sdPhaseRow">
 					{#each PHASE_PRESETS as ph (ph.k)}<button class="sdPhase" onclick={() => ctl.setCustomWin(ph.from, ph.to)}>{T(ph.kr, ph.en)}</button>{/each}
 				</div>
 				{#if ctl.btWindowIsSubset}
-					<div class="sdCustNote">{T('⚠ 특정 구간만 보면 체리피킹(좋아 보이게 고른 구간) 위험 — 전체 기간과 비교하세요.', '⚠ a hand-picked window risks cherry-picking — compare with the full period.')}</div>
+					<div class="sdCustNote">{T('⚠ 특정 구간만 보면 체리피킹(좋아 보이게 고른 구간) 위험 · 전체 기간과 비교하세요.', '⚠ a hand-picked window risks cherry-picking · compare with the full period.')}</div>
 				{/if}
 				{#if ctl.dataFromT && ctl.dataToT}
 					<div class="sdRangeNote">{T('데이터', 'data')} {dateInput(ctl.dataFromT)} ~ {dateInput(ctl.dataToT)} · {T('일봉', 'daily')}</div>
@@ -197,7 +197,7 @@
 				<div class="ctMenuLbl">{T('① 전략 (최대 3 · 같은 차트 비교)', '① Strategies (up to 3)')}</div>
 				{#if ctl.btStrategies.length === 0}
 					<div class="btEmpty">
-						<div class="btEmptyDesc">{T('당신의 매매 규칙(진입·청산)을 정의하면 — 미래참조 차단·실제 비용·표본 밖(OOS)으로 정직하게 검증해 차트 위에 그립니다. 아래에서 규칙을 조립하거나 프리셋을 출발점으로 고르세요.', 'Define your entry/exit rule — it is tested honestly (no look-ahead · real costs · out-of-sample) and drawn on the chart. Compose a rule or start from a preset below.')}</div>
+						<div class="btEmptyDesc">{T('당신의 매매 규칙(진입·청산)을 정의하면 · 미래참조 차단·실제 비용·표본 밖(OOS)으로 정직하게 검증해 차트 위에 그립니다. 아래에서 규칙을 조립하거나 프리셋을 출발점으로 고르세요.', 'Define your entry/exit rule · it is tested honestly (no look-ahead · real costs · out-of-sample) and drawn on the chart. Compose a rule or start from a preset below.')}</div>
 				</div>
 				{/if}
 				{#each ctl.btStrategies as s, i (s.id)}
@@ -282,7 +282,7 @@
 				{/each}
 				{#snippet presetPicker()}
 					<div class="ptPicker">
-						<button class="ptCustomTop" onclick={() => { ctl.addCustomRule(); presetsOpen = false; presetQuery = ''; }}>＋ {T('커스텀 규칙 빌더 — 직접 조립', 'custom rule builder')}</button>
+						<button class="ptCustomTop" onclick={() => { ctl.addCustomRule(); presetsOpen = false; presetQuery = ''; }}>＋ {T('커스텀 규칙 빌더 · 직접 조립', 'custom rule builder')}</button>
 						<input class="ptSearch mono" type="text" placeholder={T('또는 프리셋 검색 (이름·설명)', 'or search presets by name or description')} bind:value={presetQuery} />
 						<div class="ptScroll">
 							{#each FAMILY_ORDER as fam (fam)}
@@ -318,24 +318,24 @@
 					<div class="ctRow btParamRow">
 						<span class="btParamLbl">{T('손절', 'stop')}</span>
 						<button class="mItem" onclick={() => stepStop('lossPct', -1)}>−</button>
-						<b class="btParamVal mono">{ctl.btStop.lossPct != null ? '−' + ctl.btStop.lossPct : '—'}</b>
+						<b class="btParamVal mono">{ctl.btStop.lossPct != null ? '−' + ctl.btStop.lossPct : '·'}</b>
 						<span class="btParamLbl">%</span>
 						<button class="mItem" onclick={() => stepStop('lossPct', 1)}>+</button>
 					</div>
 					<div class="ctRow btParamRow">
 						<span class="btParamLbl">{T('익절', 'take')}</span>
 						<button class="mItem" onclick={() => stepStop('gainPct', -1)}>−</button>
-						<b class="btParamVal mono">{ctl.btStop.gainPct != null ? '+' + ctl.btStop.gainPct : '—'}</b>
+						<b class="btParamVal mono">{ctl.btStop.gainPct != null ? '+' + ctl.btStop.gainPct : '·'}</b>
 						<span class="btParamLbl">%</span>
 						<button class="mItem" onclick={() => stepStop('gainPct', 1)}>+</button>
 					</div>
-					{#if ctl.btStop.lossPct || ctl.btStop.gainPct}<div class="btDesc warn">{T('⚠ 장중 터치/갭 관통 시 보수 체결(갭조정) 가정 — t+1 시가 모델과 시점 충돌(보수: 손절 우선)', 'gap-adjusted stop/take (worse of stop or gap-open) — conflicts with the t+1 fill model')}</div>{/if}
+					{#if ctl.btStop.lossPct || ctl.btStop.gainPct}<div class="btDesc warn">{T('⚠ 장중 터치/갭 관통 시 보수 체결(갭조정) 가정 · t+1 시가 모델과 시점 충돌(보수: 손절 우선)', 'gap-adjusted stop/take (worse of stop or gap-open) · conflicts with the t+1 fill model')}</div>{/if}
 				</div>
 			{/if}
 
-			<!-- ③ 검증 — 비용 + OOS + 게이트(이것이 결과를 '진짜'로 만든다) -->
+			<!-- ③ 검증 · 비용 + OOS + 게이트(이것이 결과를 '진짜'로 만든다) -->
 			<div class="btSection">
-				<div class="ctMenuLbl">{T('③ 검증 — 비용·OOS·게이트 (공유)', '③ Validation — costs · OOS · gate')}</div>
+				<div class="ctMenuLbl">{T('③ 검증 · 비용·OOS·게이트 (공유)', '③ Validation · costs · OOS · gate')}</div>
 				<!-- (a) 비용 -->
 				<div class="ctRow">
 					<button class={ctl.btCosts ? 'mItem on' : 'mItem'} onclick={() => (ctl.btCosts = !ctl.btCosts)}>{ctl.btCosts ? T('✓ 수수료·세금 포함', '✓ costs included') : T('수수료·세금 포함', 'include costs')}</button>
@@ -352,7 +352,7 @@
 					{/each}
 					{#if !costsDefault}<div class="ctRow"><button class="mItem" onclick={() => (ctl.btCostsBp = { ...BT_COSTS })}>{T('비용 기본값', 'reset')}</button></div>{/if}
 				{:else}
-					<div class="btDesc warn">{T('⚠ 비용 미포함 — 실거래 대비 낙관적', '⚠ costs off — optimistic vs live')}</div>
+					<div class="btDesc warn">{T('⚠ 비용 미포함 · 실거래 대비 낙관적', '⚠ costs off · optimistic vs live')}</div>
 				{/if}
 				<!-- (b) OOS -->
 				{#if ctl.btStrategies.length}
@@ -370,18 +370,18 @@
 
 		</div>
 
-		<!-- 정직 고지 띠(sticky bottom·상존) — 체결모델·미래참조차단·B&H. 스크롤에 밀려나지 않음(정직 OS 사상). -->
+		<!-- 정직 고지 띠(sticky bottom·상존) · 체결모델·미래참조차단·B&H. 스크롤에 밀려나지 않음(정직 OS 사상). -->
 		<div class="sdHonestBar">
 			<div class="btBench">{T('비교 기준 · 보유(B&H) · 동일 비용', 'benchmark · buy & hold · same costs')}</div>
 			<div class="btModelNote">{T('신호 t일 종가 → t+1일 시가 체결 · 미래참조 차단 · 과거 가정 노출형 시뮬레이션(추천 아님)', 'signal close(t) → fill open(t+1) · no look-ahead · not advice')}</div>
 		</div>
 
-		<!-- 결과 + 정직 푸터(sticky) — 그래프 금지(equity 는 차트). 결과 없으면 미표시. -->
+		<!-- 결과 + 정직 푸터(sticky) · 그래프 금지(equity 는 차트). 결과 없으면 미표시. -->
 		{#if pf && ctl.btStrategies.length}
 			<HonestyFooter {pf} slots={ctl.btStrategies} focus={ctl.btFocus} withCosts={ctl.btCosts} adjusted={ctl.adj} {lang} onFocus={(i) => ctl.setBtFocus(i)} onOpenReport={onOpenReport ?? (() => {})} />
 		{/if}
 
-		<!-- 폭 리사이즈 핸들 — 차트 도크 모드에서만(좌패널 fill 은 컬럼 폭). -->
+		<!-- 폭 리사이즈 핸들 · 차트 도크 모드에서만(좌패널 fill 은 컬럼 폭). -->
 		{#if !fill}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div class="sdResize" onpointerdown={startResize} title={T('폭 조절', 'resize')}></div>
@@ -401,7 +401,7 @@
 		border-right: 1px solid var(--dl-line-strong, #2a3142);
 		font-family: var(--sans, inherit);
 	}
-	/* 좌패널 전체 차지 모드 — 컬럼 폭 100%(글로벌 좌측 레일 대체). */
+	/* 좌패널 전체 차지 모드 · 컬럼 폭 100%(글로벌 좌측 레일 대체). */
 	.stratDock.fill { width: 100%; flex: 1 1 auto; border-right: none; }
 	/* 헤더 sticky */
 	.sdHeader { flex: none; display: flex; align-items: center; gap: 7px; padding: 6px 8px; border-bottom: 1px solid var(--dl-line-strong, #2a3142); background: rgba(var(--amber-rgb), 0.05); }
@@ -427,7 +427,7 @@
 	.sdWinBtn:hover { color: var(--dl-ink, #c8cfdb); background: rgba(255, 255, 255, 0.04); }
 	.sdWinBtn.on { background: var(--amber, var(--amber)); color: #1a1206; font-weight: 700; }
 	.sdWinBtn:disabled { opacity: 0.4; cursor: default; }
-	/* 검증 구간 — 시작/종료 날짜창(상시) + 국면 프리셋 + 체리피킹 정직 노트 + 데이터 범위 캡션. */
+	/* 검증 구간 · 시작/종료 날짜창(상시) + 국면 프리셋 + 체리피킹 정직 노트 + 데이터 범위 캡션. */
 	.sdCustRow { display: flex; align-items: center; gap: 5px; margin-top: 1px; }
 	.sdDate { flex: 1 1 0; min-width: 0; font-size: 11px; background: var(--dl-bg-raised, #0e141f); color: var(--dl-ink, #c8cfdb); border: 1px solid var(--dl-line, #1b2130); border-radius: 4px; padding: 3px 5px; font-family: inherit; color-scheme: dark; }
 	.sdCustTo { color: var(--dim, #8b94a3); font-size: 12px; flex: none; }
@@ -469,10 +469,10 @@
 	.btParamVal { font-size: 12px; min-width: 30px; text-align: center; color: var(--dl-ink, #c8cfdb); font-variant-numeric: tabular-nums; }
 	.btDesc { font-size: 10.5px; color: var(--dim, #8b94a3); line-height: 1.5; margin-top: 3px; }
 	.btDesc.warn { color: var(--amber, var(--amber)); }
-	/* 정직 고지 띠 — sdBody 밖 sticky 하단(flex:none). 스크롤 내용과 무관하게 항상 보임. */
+	/* 정직 고지 띠 · sdBody 밖 sticky 하단(flex:none). 스크롤 내용과 무관하게 항상 보임. */
 		.sdHonestBar { flex: none; padding: 5px 8px 6px; border-top: 1px solid var(--dl-line-strong, #2a3142); background: var(--dl-bg-base, #0a0e15); }
 		.btBench { font-size: 10.5px; color: var(--dim, #8b94a3); }
-		/* 전략 추가 토글 — 프리셋 그리드 접힘(전략 >=1). 빈 상태는 그리드 직접 노출. */
+		/* 전략 추가 토글 · 프리셋 그리드 접힘(전략 >=1). 빈 상태는 그리드 직접 노출. */
 		.btAddToggle { width: 100%; margin-top: 4px; font-size: 11px; background: rgba(255, 255, 255, 0.03); border: 1px dashed var(--dl-line-strong, #2a3142); color: #aeb6c2; border-radius: 4px; padding: 6px 8px; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 6px; }
 		.btAddToggle:hover { border-color: var(--amber, var(--amber)); color: var(--amber, var(--amber)); }
 		.btAddCaret { color: var(--dimmer, #5b6573); }
@@ -500,7 +500,7 @@
 	.sdScopeBtn.on { background: var(--amber, var(--amber)); color: #1a1206; border-color: var(--amber, var(--amber)); font-weight: 700; }
 	.sdScopeNote { font-size: 10.5px; color: var(--dim, #8b94a3); line-height: 1.5; margin-bottom: 5px; }
 	.sdScopeNote.callout { color: #d7c4a8; background: rgba(var(--amber-rgb), 0.07); border: 1px solid rgba(var(--amber-rgb), 0.3); border-radius: 4px; padding: 5px 7px; }
-	/* 프리셋 picker — 4패밀리 카테고리 + 작은 칩(라벨+설명) + 스크롤 + 검색. '약하다'=발견성 0 해소(깎기). */
+	/* 프리셋 picker · 4패밀리 카테고리 + 작은 칩(라벨+설명) + 스크롤 + 검색. '약하다'=발견성 0 해소(깎기). */
 	.ptPicker { margin-top: 2px; }
 	.ptSearch { width: 100%; box-sizing: border-box; font-size: 11px; background: var(--dl-bg-raised, #0e141f); color: var(--dl-ink, #c8cfdb); border: 1px solid var(--dl-line, #1b2130); border-radius: 4px; padding: 4px 7px; margin-bottom: 4px; font-family: inherit; }
 	.ptSearch::placeholder { color: var(--dimmer, #5b6573); }
@@ -513,7 +513,7 @@
 	.ptChipName { font-size: 11.5px; color: var(--dl-ink, #c8cfdb); font-weight: 600; display: flex; align-items: center; gap: 5px; }
 	.ptRuleTag { font-style: normal; font-size: 9px; color: #a78bfa; border: 1px solid rgba(167, 139, 250, 0.4); border-radius: 3px; padding: 0 3px; }
 	.ptChipDesc { font-size: 10px; color: var(--dim, #8b94a3); line-height: 1.35; }
-	/* 커스텀 빌더 진입점 — 검색창 위 상단 고정(스크롤 없이 발견). 클릭=슬롯 추가→프리셋 picker가 빌더로 교체(프리셋 공간 숨김). 보라=직접 규칙 신호. */
+	/* 커스텀 빌더 진입점 · 검색창 위 상단 고정(스크롤 없이 발견). 클릭=슬롯 추가→프리셋 picker가 빌더로 교체(프리셋 공간 숨김). 보라=직접 규칙 신호. */
 		.ptCustomTop { width: 100%; text-align: center; font-size: 11.5px; font-weight: 600; background: rgba(167, 139, 250, 0.07); border: 1px solid rgba(167, 139, 250, 0.4); color: #a78bfa; border-radius: 4px; padding: 6px; margin-bottom: 5px; cursor: pointer; font-family: inherit; }
 	.ptCustomTop:hover { border-color: #a78bfa; background: rgba(167, 139, 250, 0.12); }
 	.tUp { color: var(--up, #34d399); }

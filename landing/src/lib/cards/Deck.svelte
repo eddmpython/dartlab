@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 인스타식 4:5 카드 캐러셀(인라인) — 첫 슬라이드(표지)는 hfMedia 만으로 즉시, 뷰포트에 들어오면
+	// 인스타식 4:5 카드 캐러셀(인라인) · 첫 슬라이드(표지)는 hfMedia 만으로 즉시, 뷰포트에 들어오면
 	// buildDeck(라이브)로 전체 슬라이드 업그레이드(피드 가벼움). 코너 크롬 = 회사뱃지·dartlab 아바타·페이지뱃지.
 	// 색감·규격은 기존 SNS 캐러셀(colors.ts·1080×1350) 재현. 키보드 ←→ 는 포커스된 덱에만.
 	import type { DartLabRuntime } from '@dartlab/ui-contracts';
@@ -24,20 +24,20 @@
 		slug: string;
 		corpName: string;
 		heroUrls?: string[];
-		/** 편집 계약 lead 슬라이드(부모가 contract 로 미리 투영) — 미리보기를 빌드 후 첫 슬라이드와 동일하게. */
+		/** 편집 계약 lead 슬라이드(부모가 contract 로 미리 투영) · 미리보기를 빌드 후 첫 슬라이드와 동일하게. */
 		leadCards?: CarouselCard[];
 		perspectiveKey?: string;
 		onEnlarge?: () => void;
-		/** 빌드 완료 후 챕터 점프 앵커 콜백 — 캡션 패널 섹션 네비(사진 밖 크롬)가 받아 렌더. */
+		/** 빌드 완료 후 챕터 점프 앵커 콜백 · 캡션 패널 섹션 네비(사진 밖 크롬)가 받아 렌더. */
 		onSections?: (anchors: { label: string; index: number }[]) => void;
 	} = $props();
 
-	// 외부(캡션 네비)에서 호출하는 점프 — 기존 검증된 go()(scrollIntoView+idx) 재사용. bind:this 로 노출.
+	// 외부(캡션 네비)에서 호출하는 점프 · 기존 검증된 go()(scrollIntoView+idx) 재사용. bind:this 로 노출.
 	export function jumpTo(i: number) {
 		go(i);
 	}
 
-	// 표지 미리보기 — buildReport 없이 즉시 첫장 노출(피드 가벼움).
+	// 표지 미리보기 · buildReport 없이 즉시 첫장 노출(피드 가벼움).
 	function previewDeck(): CarouselDeck {
 		const base = {
 			stockCode: sym,
@@ -47,10 +47,10 @@
 			asOf: '',
 			heroUrls
 		};
-		// 편집 계약의 실제 lead 슬라이드가 주어지면 그대로 미리보기로 — 빌드 후 첫 슬라이드(들)와 동일해
+		// 편집 계약의 실제 lead 슬라이드가 주어지면 그대로 미리보기로 · 빌드 후 첫 슬라이드(들)와 동일해
 		// 표지가 '엉뚱한 사진 → 다른 사진'으로 깜빡이며 바뀌는 현상 제거(빌드는 뒤에 차트만 덧붙인다).
 		if (leadCards.length) return { ...base, cards: leadCards };
-		// 계약 없는 자동 덱만 합성 표지(heroUrls[0]) — 이 경우 빌드 표지도 heroUrls[0] 라 깜빡임 없음.
+		// 계약 없는 자동 덱만 합성 표지(heroUrls[0]) · 이 경우 빌드 표지도 heroUrls[0] 라 깜빡임 없음.
 		return {
 			...base,
 			cards: [
@@ -74,7 +74,7 @@
 	let root = $state<HTMLElement | null>(null);
 	let tok = 0;
 
-	// 빌드 전에는 미디어(회사명·사진) 비동기 로드에 맞춰 표지 미리보기를 갱신 — 코드("000270")만 뜨고
+	// 빌드 전에는 미디어(회사명·사진) 비동기 로드에 맞춰 표지 미리보기를 갱신 · 코드("000270")만 뜨고
 	// 사진이 빈 첫 페인트 방지. previewDeck() 이 corpName/heroUrls prop 을 읽으므로 그 갱신을 추종한다.
 	$effect(() => {
 		if (!built) deck = previewDeck();
@@ -129,7 +129,7 @@
 	);
 	function dotScale(i: number): number {
 		const pos = i - winStart;
-		if (pos < 0 || pos >= winCount) return 0; // 창 밖 — 뷰포트가 클립
+		if (pos < 0 || pos >= winCount) return 0; // 창 밖 · 뷰포트가 클립
 		const moreL = winStart > 0;
 		const moreR = winStart + winCount < total;
 		if (moreL && pos === 0) return 0.45;
@@ -159,7 +159,7 @@
 		}
 	}
 
-	// 자동재생 — 점 좌측 재생버튼 토글. 3초마다 다음 슬라이드(끝이면 처음으로 순환). 다시 누르면 정지.
+	// 자동재생 · 점 좌측 재생버튼 토글. 3초마다 다음 슬라이드(끝이면 처음으로 순환). 다시 누르면 정지.
 	let playing = $state(false);
 	let timer: ReturnType<typeof setInterval> | null = null;
 	function togglePlay() {
@@ -191,7 +191,7 @@
 			{/each}
 		</div>
 
-		<!-- 코너 크롬(전 슬라이드 고정) — 회사명·코드 + 페이지 + 확대. dartlab 서명은 우측 캡션 패널에 있어
+		<!-- 코너 크롬(전 슬라이드 고정) · 회사명·코드 + 페이지 + 확대. dartlab 서명은 우측 캡션 패널에 있어
 		     캐러셀 이미지엔 안 얹는다(중복 + 슬라이드 본문과 겹침 방지). -->
 		<div class="badge">{badgeName}{sym ? ` · ${sym}` : ''}</div>
 		{#if total > 1}<div class="pageBadge">{idx + 1} / {total}</div>{/if}
@@ -253,7 +253,7 @@
 		width: 100%;
 		height: 100%;
 		scroll-snap-align: start;
-		/* 빠른 스와이프가 여러 스냅을 건너뛰어 두세 장이 한 번에 넘어가는 것 방지 — 한 번에 한 장만. */
+		/* 빠른 스와이프가 여러 스냅을 건너뛰어 두세 장이 한 번에 넘어가는 것 방지 · 한 번에 한 장만. */
 		scroll-snap-stop: always;
 	}
 	/* chrome */
@@ -340,7 +340,7 @@
 		gap: 3px;
 		z-index: 3;
 	}
-	/* 닷 뷰포트 — 고정 폭(winCount*step) 클립. 창 밖 점은 잘려 절대 줄바꿈 안 됨(IG 페이지네이션). */
+	/* 닷 뷰포트 · 고정 폭(winCount*step) 클립. 창 밖 점은 잘려 절대 줄바꿈 안 됨(IG 페이지네이션). */
 	.dotWin {
 		overflow: hidden;
 		display: flex;
@@ -351,7 +351,7 @@
 		gap: 5px;
 		transition: transform 0.25s ease;
 	}
-	/* 재생/정지 — 점 행 맨 좌측 작은 토글. 켜지면 테마색. */
+	/* 재생/정지 · 점 행 맨 좌측 작은 토글. 켜지면 테마색. */
 	.playBtn {
 		display: inline-flex;
 		align-items: center;

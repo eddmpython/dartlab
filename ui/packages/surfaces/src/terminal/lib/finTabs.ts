@@ -1,6 +1,6 @@
-// 재무 전체화면 탭 레지스트리 — finance 심화 카드(TerminalFinance.tabCards, 모드 토글 동작)
+// 재무 전체화면 탭 레지스트리 · finance 심화 카드(TerminalFinance.tabCards, 모드 토글 동작)
 // + report·교차 카드(연 축 고정, 카드 제목에 '· 연' 표기). 데이터 규칙은 전부 runtime ReportPort
-// 구현이 보장 — 본 모듈은 포트 출력 → FinCard 매핑만 한다 (집계·재계산 없음).
+// 구현이 보장 · 본 모듈은 포트 출력 → FinCard 매핑만 한다 (집계·재계산 없음).
 // 교차 카드(배당여력·생산성·인건비)는 finBundle.views.annual.statements 의 조 단위 값을
 // report 연도와 union 축으로 정렬한다 (결측 = null → MiniFinChart pen-up).
 import type { FinCard, Num, ReportPort, TerminalFinanceBundle } from '@dartlab/ui-contracts';
@@ -12,16 +12,16 @@ export interface TabCard {
 export interface FsTab {
 	key: string;
 	label: { kr: string; en: string };
-	q?: string; // 탭이 답하는 질문 — 분석 내러티브 캡션 (body 상단)
+	q?: string; // 탭이 답하는 질문 · 분석 내러티브 캡션 (body 상단)
 	finKey?: 'profitability' | 'cashflow' | 'debt' | 'shareholder'; // terminalFinance.tabCards 키 (모드 토글 동작)
-	load?: (code: string, bundle: TerminalFinanceBundle, report: ReportPort) => Promise<TabCard[]>; // report·교차 (연 축) — 포트는 호출측(FinFullscreen)이 runtime 컨텍스트에서 주입
+	load?: (code: string, bundle: TerminalFinanceBundle, report: ReportPort) => Promise<TabCard[]>; // report·교차 (연 축) · 포트는 호출측(FinFullscreen)이 runtime 컨텍스트에서 주입
 	note?: string; // 탭 하단 정직성 캡션
 }
 
 const C = { rev: '#5b9bf0', op: '#ec4899', net: '#34d399', good: '#34d399', warn: '#fbbf24', purple: '#a78bfa', red: '#f0616f', blue: '#60a5fa', cyan: '#22d3ee', dim: '#64748b' };
 
 const fyLabel = (year: string) => 'FY' + year.slice(2);
-// 시리즈 전부 null 인 카드는 버린다 (빈 카드 노출 금지 — 신규 탭 공통 규칙)
+// 시리즈 전부 null 인 카드는 버린다 (빈 카드 노출 금지 · 신규 탭 공통 규칙)
 const alive = (tc: TabCard): boolean => tc.card.series.some((s) => s.data.some((v) => v != null));
 
 // finance annual statements 에서 계정 1행을 연도('2024') → 조 값 Map 으로
@@ -67,7 +67,7 @@ async function shareholderReport(code: string, bundle: TerminalFinanceBundle, re
 		const srYears = sr.map((s) => s.year);
 		const srP = srYears.map(fyLabel);
 		const niBy = annualMap(bundle, 'IS', 'netIncome');
-		// 배당수익률 — 공시값(DPS/주가) 단일 시리즈. 자사주 취득가치는 공시에 금액이 없어
+		// 배당수익률 · 공시값(DPS/주가) 단일 시리즈. 자사주 취득가치는 공시에 금액이 없어
 		// 연평균종가 추정에 의존하므로(진짜 공시값 아님) 총주주환원·자사주수익률 추정 카드는 제외.
 		cards.push({
 			periods: srP,
@@ -77,7 +77,7 @@ async function shareholderReport(code: string, bundle: TerminalFinanceBundle, re
 				]
 			}
 		});
-		// ③ 주당지표 — EPS·DPS + 주당 배당성향
+		// ③ 주당지표 · EPS·DPS + 주당 배당성향
 		cards.push({
 			periods: srP,
 			card: {
@@ -88,7 +88,7 @@ async function shareholderReport(code: string, bundle: TerminalFinanceBundle, re
 				]
 			}
 		});
-		// 배당여력 — report 연도 ∪ finance annual 연도 union 축 (비12월 결산은 사업연도 기준 정렬)
+		// 배당여력 · report 연도 ∪ finance annual 연도 union 축 (비12월 결산은 사업연도 기준 정렬)
 		const cfoBy = annualMap(bundle, 'CF', 'cfOperating');
 		const capexBy = annualMap(bundle, 'CF', 'capex');
 		const years = [...new Set([...srYears, ...niBy.keys()])].sort();
@@ -105,7 +105,7 @@ async function shareholderReport(code: string, bundle: TerminalFinanceBundle, re
 			}
 		});
 	}
-	// 희석 이력 — capitalChange 이벤트 연 합산 (양수 = 신주, 음수 = 감자·소각) + 발행주식수 추이
+	// 희석 이력 · capitalChange 이벤트 연 합산 (양수 = 신주, 음수 = 감자·소각) + 발행주식수 추이
 	{
 		const dilYears = (dil?.years ?? []).map((d) => String(d.year));
 		const stYears = (own ?? []).filter((o) => o.stockTotal != null).map((o) => o.year);
@@ -125,7 +125,7 @@ async function shareholderReport(code: string, bundle: TerminalFinanceBundle, re
 			});
 		}
 	}
-	// 자사주 수량 흐름 — 취득(+)·처분/소각(−) signed stack + 기말 보유 우축. dilution(증자·감자)과 소스·축 별개.
+	// 자사주 수량 흐름 · 취득(+)·처분/소각(−) signed stack + 기말 보유 우축. dilution(증자·감자)과 소스·축 별개.
 	// disposalQty/buybackCancel 은 양수 카운트 공시값이라 표시 시 명시 부호 반전.
 	{
 		const tq = (sr ?? []).filter((s) => s.buybackQty != null || s.disposalQty != null || s.buybackCancel != null || s.treasuryEnd != null);
@@ -174,7 +174,7 @@ async function peopleReport(code: string, bundle: TerminalFinanceBundle, report:
 				]
 			}
 		});
-		// 남녀 인원 구성 — 우측 레일 스냅샷(남/여)의 시계열판. employee.parquet 성별합계 기집계, 추가 fetch 0.
+		// 남녀 인원 구성 · 우측 레일 스냅샷(남/여)의 시계열판. employee.parquet 성별합계 기집계, 추가 fetch 0.
 		cards.push({
 			periods: wfP,
 			card: {
@@ -194,7 +194,7 @@ async function peopleReport(code: string, bundle: TerminalFinanceBundle, report:
 				]
 			}
 		});
-		// 생산성·인건비 — finance annual 교차 (조 → 억: ×1e4)
+		// 생산성·인건비 · finance annual 교차 (조 → 억: ×1e4)
 		const revBy = annualMap(bundle, 'IS', 'revenue');
 		const opBy = annualMap(bundle, 'IS', 'operatingIncome');
 		const wfBy = new Map(wf.map((w) => [w.year, w]));
@@ -235,7 +235,7 @@ async function peopleReport(code: string, bundle: TerminalFinanceBundle, report:
 		}
 	}
 	if (eb && eb.length) {
-		// 보수총액·인원 — execPay(1인평균)와 축이 다른 별개 정보 (사업보고서 4분기 확정값, 추가 fetch 0)
+		// 보수총액·인원 · execPay(1인평균)와 축이 다른 별개 정보 (사업보고서 4분기 확정값, 추가 fetch 0)
 		cards.push({
 			periods: eb.map((e) => fyLabel(e.year)),
 			card: {
@@ -262,9 +262,9 @@ async function peopleReport(code: string, bundle: TerminalFinanceBundle, report:
 async function debtReport(code: string, bundle: TerminalFinanceBundle, report: ReportPort): Promise<TabCard[]> {
 	const [dp, af] = await Promise.all([report.debtProfile(code), report.auditFees(code)]);
 	const cards: TabCard[] = [];
-	// ⚠ 채무증권 발행 실적(debtSecurities) 카드는 기각 — 외화채 분기 환산 변동이 dedup 을 뚫어
+	// ⚠ 채무증권 발행 실적(debtSecurities) 카드는 기각 · 외화채 분기 환산 변동이 dedup 을 뚫어
 	// 중복 합산(삼성 2015 Harman "26.74조" 허구)·인수 전 이력 유입·CP 차환 롤오버 지배 3중 오염 실측.
-	// 감사보수·독립성 — 비감사/감사 보수 비율 = 감사인 독립성 고전 지표 (높을수록 적신호)
+	// 감사보수·독립성 · 비감사/감사 보수 비율 = 감사인 독립성 고전 지표 (높을수록 적신호)
 	const auditFeeCard: TabCard | null = af && af.length >= 2 ? {
 		periods: af.map((a) => fyLabel(String(a.year))),
 		card: {
@@ -278,7 +278,7 @@ async function debtReport(code: string, bundle: TerminalFinanceBundle, report: R
 	const tail = [auditFeeCard].filter((c): c is TabCard => c != null);
 	if (!dp || !dp.years.length) return [...tail].filter(alive); // 무사채 회사도 감사보수는 노출
 	const dpr = dp.years;
-	// 전방 만기 사다리 — 최신 연도 잔존만기 7버킷 (x축 = 만기 버킷). 점선 = 최신 연간 현금성자산.
+	// 전방 만기 사다리 · 최신 연도 잔존만기 7버킷 (x축 = 만기 버킷). 점선 = 최신 연간 현금성자산.
 	if (dp.ladder) {
 		const cashBy = annualMap(bundle, 'BS', 'cash');
 		const cashYears = [...cashBy.keys()].sort();
@@ -302,7 +302,7 @@ async function debtReport(code: string, bundle: TerminalFinanceBundle, report: R
 		{ name: '5~10년', data: dpr.map((d) => (d.bond5to10 != null ? +(d.bond5to10 / 1e12).toFixed(3) : null)), color: C.blue, type: 'bar' },
 		{ name: '10년초과', data: dpr.map((d) => (d.bond10plus != null ? +(d.bond10plus / 1e12).toFixed(3) : null)), color: C.purple, type: 'bar' }
 	];
-	// 초단기물(전단채+CP) — 보유율 ~5% 라 단독 카드 금지, 유효 연도가 있을 때만 조건부 시리즈
+	// 초단기물(전단채+CP) · 보유율 ~5% 라 단독 카드 금지, 유효 연도가 있을 때만 조건부 시리즈
 	if (dpr.some((d) => d.stb != null || d.cp != null)) {
 		series.push({ name: '초단기물(전단채+CP)', data: dpr.map((d) => (d.stb != null || d.cp != null ? +(((d.stb ?? 0) + (d.cp ?? 0)) / 1e12).toFixed(3) : null)), color: C.cyan, type: 'line' });
 	}
@@ -316,25 +316,25 @@ async function debtReport(code: string, bundle: TerminalFinanceBundle, report: R
 export const FS_TABS: FsTab[] = [
 	{
 		key: 'profitability', label: { kr: '수익성', en: 'PROFIT' }, q: '얼마나 잘 버나', finKey: 'profitability',
-		note: '포괄손익 격차 = CIS(포괄손익계산서) 직독. OCI = 환산차이·금융자산평가·확정급여 재측정 등 — 손익계산서 밖에서 자본으로 직행하는 손익.'
+		note: '포괄손익 격차 = CIS(포괄손익계산서) 직독. OCI = 환산차이·금융자산평가·확정급여 재측정 등 · 손익계산서 밖에서 자본으로 직행하는 손익.'
 	},
 	{ key: 'cashflow', label: { kr: '현금·투자', en: 'CASH' }, q: '이익이 현금인가, 어디에 쓰나', finKey: 'cashflow', load: cashflowReport },
 	{
 		key: 'debt', label: { kr: '재무체력', en: 'DEBT' }, q: '버틸 수 있나', finKey: 'debt', load: debtReport,
-		note: '만기 사다리 = 액면 기준 미상환 잔액(report) — 장부가와 소폭 차이. 점선 = 최신 연간 현금성자산. 무사채 회사는 카드 비표시. 감사보수 = 감사용역 계약보수(연간 계약값), 비감사 = 같은 연도 용역 보수 합 — 비감사/감사 비율이 높을수록 감사인 독립성 적신호. 감사 이력 = 사업보고서 기준 (사업연도 = 접수연도−1).'
+		note: '만기 사다리 = 액면 기준 미상환 잔액(report) · 장부가와 소폭 차이. 점선 = 최신 연간 현금성자산. 무사채 회사는 카드 비표시. 감사보수 = 감사용역 계약보수(연간 계약값), 비감사 = 같은 연도 용역 보수 합 · 비감사/감사 비율이 높을수록 감사인 독립성 적신호. 감사 이력 = 사업보고서 기준 (사업연도 = 접수연도−1).'
 	},
 	{
 		key: 'shareholder', label: { kr: '주주환원·소유', en: 'RETURN' }, q: '주주에게 무엇을 주나', finKey: 'shareholder', load: shareholderReport,
-		note: '자본변동 브리지 = 최신 연간 자본변동표(SCE) 합계 차원 — 기타 = 기말 대조 잔차(소유주거래·연결범위변동·주식보상 등). 배당·자사주 = 보통주 기준 공시값 · report. 배당여력의 FCF·순이익 = 연간 재무제표 교차. 자사주 가치 = 연평균종가 × 취득수량 추정. 희석 이력 = 증자·전환·감자 공시 이벤트 연 합산 (무상증자·분할 제외).'
+		note: '자본변동 브리지 = 최신 연간 자본변동표(SCE) 합계 차원 · 기타 = 기말 대조 잔차(소유주거래·연결범위변동·주식보상 등). 배당·자사주 = 보통주 기준 공시값 · report. 배당여력의 FCF·순이익 = 연간 재무제표 교차. 자사주 가치 = 연평균종가 × 취득수량 추정. 희석 이력 = 증자·전환·감자 공시 이벤트 연 합산 (무상증자·분할 제외).'
 	},
 	{
 		key: 'people', label: { kr: '인력·보수', en: 'PEOPLE' }, q: '사람과 보상', load: peopleReport,
 		note: '급여 = 직원 급여만(임원·복리후생 제외), 사업보고서 연간 확정값. 보수 = 이사·감사 전체(등기 구분 미공시).'
 	},
-	// 가격↔기초체력 + PER·PBR 추이 — finKey/load 없는 메타 전용 탭. 카드는 FinFullscreen 이 candles·EPS·
+	// 가격↔기초체력 + PER·PBR 추이 · finKey/load 없는 메타 전용 탭. 카드는 FinFullscreen 이 candles·EPS·
 	// 발행주식수와 buildPriceFundamentalCard / buildPerPbrCard 로 직접 빌드(특수 분기, lazy report).
 	{
 		key: 'price', label: { kr: '가격', en: 'PRICE' }, q: '주가가 기초체력과 함께, 그리고 합당한 값에 거래됐나',
-		note: '시장가격을 펀더멘털에 비추는 탭. 위 = 주가·매출·자본을 =100 으로 리베이스(로그축)해 함께 갔는지, 아래 = PER·PBR 추이로 자기 이력 대비 밸류에이션 수준. 주가는 각 기간 공시 접수일 종가(미리보기 아님), PER·PBR 은 연 축. 어느 것도 적정주가 판정은 아니다 — 각 카드의 ! 로 해석 기준 참조.'
+		note: '시장가격을 펀더멘털에 비추는 탭. 위 = 주가·매출·자본을 =100 으로 리베이스(로그축)해 함께 갔는지, 아래 = PER·PBR 추이로 자기 이력 대비 밸류에이션 수준. 주가는 각 기간 공시 접수일 종가(미리보기 아님), PER·PBR 은 연 축. 어느 것도 적정주가 판정은 아니다 · 각 카드의 ! 로 해석 기준 참조.'
 	}
 ];

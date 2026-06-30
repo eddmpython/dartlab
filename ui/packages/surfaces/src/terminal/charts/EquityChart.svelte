@@ -1,8 +1,8 @@
 <script lang="ts">
-	// 자산곡선 + 언더워터(낙폭) — 실측 px 좌표계로 preserveAspectRatio="none" 왜곡 박멸.
+	// 자산곡선 + 언더워터(낙폭) · 실측 px 좌표계로 preserveAspectRatio="none" 왜곡 박멸.
 	// y niceTicks 가로 그리드 · x 연경계 세로 그리드 · 두 패널 x 공유 · 크로스헤어 + 호버 값박스.
 	// 데이터 파생(eqRange·dd·splitFrac)은 BacktestDialog 가 계산해 props 로 전달(산출 동치, 회귀 0).
-	// 모달은 고정폭이라 ResizeObserver 불필요 — bind:clientWidth 만으로 충분. 조합 곡선은 .bdCombo 배너 담당(여기 미표시).
+	// 모달은 고정폭이라 ResizeObserver 불필요 · bind:clientWidth 만으로 충분. 조합 곡선은 .bdCombo 배너 담당(여기 미표시).
 	import type { Lang } from '../lib/types';
 	import { niceTicks, yearTicks, nearestIdx } from './chartFrame';
 
@@ -11,10 +11,10 @@
 		bhq: number[]; // 보유(B&H) 동일 길이
 		dd: number[]; // 낙폭(≤0) 동일 길이
 		ts: string[]; // YYYYMMDD, eq 와 동일 인덱스(평가창 슬라이스)
-		splitFrac: number | null; // OOS 분할 위치(0..1) — 검증구간 음영
+		splitFrac: number | null; // OOS 분할 위치(0..1) · 검증구간 음영
 		eqRange: { lo: number; hi: number };
 		ddMin: number;
-		stratColor?: string; // 포커스 전략 색(STRAT_COLORS) — strip·캔버스 레전드와 색 일치
+		stratColor?: string; // 포커스 전략 색(STRAT_COLORS) · strip·캔버스 레전드와 색 일치
 		lang: Lang;
 	}
 	let { eq, bhq, dd, ts, splitFrac, eqRange, ddMin, stratColor = '#fbbf24', lang }: Props = $props();
@@ -58,7 +58,7 @@
 
 	let hoverIdx = $state<number | null>(null);
 	function onMove(e: PointerEvent) {
-		// SVG 자체 rect 기준 — .eqWrap 테두리(1px) 오프셋 제거.
+		// SVG 자체 rect 기준 · .eqWrap 테두리(1px) 오프셋 제거.
 		const r = (eqSvg ?? (e.currentTarget as HTMLElement)).getBoundingClientRect();
 		hoverIdx = nearestIdx(e.clientX - r.left, AX.l, plotW, n);
 	}
@@ -112,7 +112,7 @@
 		{/if}
 	</svg>
 
-	<!-- 하단: 언더워터(낙폭) — 상단과 동일 x -->
+	<!-- 하단: 언더워터(낙폭) · 상단과 동일 x -->
 	<svg class="ddSvg" width="100%" height={H_DD} role="presentation">
 		<path d={ddFill} fill="rgba(240,97,111,0.16)" stroke="none" />
 		<path d={ddPath} fill="none" stroke="#f0616f" stroke-width="1.4" />

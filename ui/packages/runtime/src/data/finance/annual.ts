@@ -1,4 +1,4 @@
-// 블로그·정적 SEO 표면용 연간 5개년 IS/BS/CF — 데이터 SSOT(dart/finance/{code}.parquet)를
+// 블로그·정적 SEO 표면용 연간 5개년 IS/BS/CF · 데이터 SSOT(dart/finance/{code}.parquet)를
 // Node+브라우저 공통 hyparquet 로 직독, financeSource(터미널)와 **동일한** 28 표준계정(accounts.ts)으로
 // 표준화한다. 평행 재구현 추가 0.
 //
@@ -16,7 +16,7 @@ export interface AnnualStmtRow {
 	label: string;
 	values: (number | null)[]; // 억원 (연도 축과 동일 순서)
 }
-// index signature — 블로그 ComboChart 의 DataPoint({year; [k]: string|number|null}) 와 호환.
+// index signature · 블로그 ComboChart 의 DataPoint({year; [k]: string|number|null}) 와 호환.
 export interface AnnualChartISPoint {
 	year: string;
 	매출액: number | null;
@@ -40,7 +40,7 @@ export interface AnnualChartCFPoint {
 export interface CompanyAnnualFinance {
 	code: string;
 	scope: 'CFS' | 'OFS'; // 연결 우선
-	years: string[]; // 최신 우선 — 예: ['2025','2024','2023','2022','2021']
+	years: string[]; // 최신 우선 · 예: ['2025','2024','2023','2022','2021']
 	asOf: string | null; // 최신 회계연도 라벨 (데이터 기준 시점)
 	is: AnnualStmtRow[];
 	bs: AnnualStmtRow[];
@@ -48,7 +48,7 @@ export interface CompanyAnnualFinance {
 	charts: { is: AnnualChartISPoint[]; bs: AnnualChartBSPoint[]; cf: AnnualChartCFPoint[] };
 }
 
-// 한 scope(연결/별도)의 행을 Parsed[] 로 — financeSource buildBundle 의 IS/CIS 채택 규약과 동일.
+// 한 scope(연결/별도)의 행을 Parsed[] 로 · financeSource buildBundle 의 IS/CIS 채택 규약과 동일.
 function parseScope(rows: RawRow[], fs: string): Parsed[] {
 	const incomeSrc = rows.some((r) => (r.fs_div || '') === fs && r.sj_div === 'IS') ? 'IS' : 'CIS';
 	const out: Parsed[] = [];
@@ -98,7 +98,7 @@ export function buildAnnualFromRows(code: string, rows: RawRow[], maxYears = 5):
 	// 연간 = q4 (reprt_code 11011). 부분분기(q1~q3)는 표에 절대 섞지 않는다.
 	const annual = (key: string, y: number): number | null => grid[key]?.get(`${y}-4`)?.amt ?? null;
 
-	// 연간(q4) 데이터가 있는 회계연도 — 핵심 계정 기준 — 최신 maxYears 개.
+	// 연간(q4) 데이터가 있는 회계연도 · 핵심 계정 기준 · 최신 maxYears 개.
 	const yset = new Set<number>();
 	for (const k of ['revenue', 'assets', 'cfOperating', 'netIncome', 'equity']) {
 		for (const pk of grid[k]?.keys() ?? []) {
@@ -172,7 +172,7 @@ export function buildAnnualFromRows(code: string, rows: RawRow[], maxYears = 5):
 }
 
 // dart/finance/{code}.parquet(데이터 SSOT) 직독 → 연간 표준화. KR 6자리 코드 전용(EDGAR=Phase 2).
-// 미존재/실패 = null(정직 폴백 — 컴포넌트가 부재 표기). 빌드타임·브라우저 공통(hyparquet).
+// 미존재/실패 = null(정직 폴백 · 컴포넌트가 부재 표기). 빌드타임·브라우저 공통(hyparquet).
 export async function loadAnnualStatements(
 	code: string,
 	opts: { maxYears?: number; fetchFn?: FetchLike } = {}

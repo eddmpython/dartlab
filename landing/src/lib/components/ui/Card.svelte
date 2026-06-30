@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
-	/** 기본 카드 — shadow 없이 1px border + raised bg */
+	/** 기본 카드 · shadow 없이 1px border + raised bg */
 	interface Props {
 		title?: string;
 		eyebrow?: string;

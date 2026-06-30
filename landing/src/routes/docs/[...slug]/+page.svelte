@@ -25,7 +25,7 @@
 </script>
 
 <svelte:head>
-	<title>Redirecting to {target} — DartLab</title>
+	<title>Redirecting to {target} · DartLab</title>
 	<meta name="robots" content="noindex" />
 	<meta http-equiv="refresh" content="0;url={fullUrl}" />
 	<link rel="canonical" href={fullUrl} />

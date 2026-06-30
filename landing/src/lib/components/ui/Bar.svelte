@@ -1,5 +1,5 @@
 <script lang="ts">
-	/** 수평 막대 — 비율 비교용 (peer · 백분위 등) */
+	/** 수평 막대 · 비율 비교용 (peer · 백분위 등) */
 	interface Props {
 		value: number; // 0~1 또는 절대값
 		max?: number; // 절대값 기준일 때 max

@@ -1,7 +1,7 @@
 <script lang="ts">
-	// 거래별 MAE/MFE 산점도 — 데스크탑 백테스터(TradeStation·MT5·AmiBroker) 시그니처 시각.
+	// 거래별 MAE/MFE 산점도 · 데스크탑 백테스터(TradeStation·MT5·AmiBroker) 시그니처 시각.
 	// x=최대역행(MAE%, 보유 중 worst 미실현), y=실현수익%. 점=거래(초록 승/빨강 패). 점 클릭 → 해당 진입봉.
-	// "이 승자는 거의 손절당할 뻔"(왼쪽 위) / "곱게 순항한 거래"(오른쪽 위)를 한눈에 — 닫힌 P&L 숫자가 못 보여주는 보유 중 열(heat).
+	// "이 승자는 거의 손절당할 뻔"(왼쪽 위) / "곱게 순항한 거래"(오른쪽 위)를 한눈에 · 닫힌 P&L 숫자가 못 보여주는 보유 중 열(heat).
 	// EquityChart 와 동일 실측 px 좌표계(preserveAspectRatio 왜곡 박멸) · niceTicks 그리드.
 	import type { Lang } from '../lib/types';
 	import { niceTicks } from './chartFrame';
@@ -81,7 +81,7 @@
 			{#if zeroY != null}
 				<line x1={AX.l} y1={zeroY} x2={AX.l + plotW} y2={zeroY} stroke="rgba(139,145,158,0.32)" stroke-width="1" stroke-dasharray="2 3" />
 			{/if}
-			<!-- 점 — 초록 승 / 빨강 패. 클릭 → 진입봉. -->
+			<!-- 점 · 초록 승 / 빨강 패. 클릭 → 진입봉. -->
 			{#each pts as p, i (p.entryT + '-' + i)}
 				<!-- svelte-ignore a11y_click_events_have_key_events -->
 				<circle

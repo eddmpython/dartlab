@@ -1,6 +1,6 @@
 <script lang="ts">
 	/**
-	 * Markdown 셀 — 가벼운 inline render.
+	 * Markdown 셀 · 가벼운 inline render.
 	 *
 	 * mdsvex 는 build-time 처리라 runtime 동적 변환에는 직접 사용 불가.
 	 * 대신 매우 단순한 markdown subset (제목·목록·코드·강조·링크) 자체 변환.

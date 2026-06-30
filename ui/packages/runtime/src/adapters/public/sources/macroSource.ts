@@ -1,6 +1,6 @@
-// 매크로 경제지표 시계열 — macro/{fred,ecos}/observations.parquet (HF) hyparquet 직독.
+// 매크로 경제지표 시계열 · macro/{fred,ecos}/observations.parquet (HF) hyparquet 직독.
 // (seriesId, date, value) 가 seriesId+date 정렬이라 seriesId 필터로 row-group pruning.
-// 차트 오버레이(ECON)·KPI 티커가 공유하는 단일 로더. 전체 파일 1.5MB 이하 — 시리즈당 첫 로드 수백 ms.
+// 차트 오버레이(ECON)·KPI 티커가 공유하는 단일 로더. 전체 파일 1.5MB 이하 · 시리즈당 첫 로드 수백 ms.
 // 화이트리스트·출처표시 정본은 contracts (MACRO_SERIES·MACRO_ATTRIBUTION).
 import { MACRO_SERIES, type MacroLatest, type MacroPoint, type MacroPort, type MacroTransmissionEdge, type MacroTransmissionQuery, type MacroTransmissionResult } from '@dartlab/ui-contracts';
 import { loadJson } from '../../../data/dartlabData';
@@ -48,15 +48,15 @@ async function loadSource(core: DataCore, src: 'fred' | 'ecos'): Promise<Map<str
 			path: `macro/${src}/observations.parquet`,
 			columns: ['seriesId', 'date', 'value'],
 			cacheKey: `macro.obs:${src}`,
-			cache: { scope: 'memory', ttlMs: 60 * 60_000, maxEntries: 8 } // 분기/월 단위 갱신 — 60분 TTL
+			cache: { scope: 'memory', ttlMs: 60 * 60_000, maxEntries: 8 } // 분기/월 단위 갱신 · 60분 TTL
 		});
 	} catch {
-		return bySeries; // 빈 맵 — 호출측 null 처리
+		return bySeries; // 빈 맵 · 호출측 null 처리
 	}
 	for (const r of rows) {
 		const id = r.seriesId == null ? '' : String(r.seriesId);
 		const d = toYmd(r.date);
-		if (r.value == null) continue; // null 관측 skip (Number(null)=0 오변환 차단 — Python drop_nulls 정합)
+		if (r.value == null) continue; // null 관측 skip (Number(null)=0 오변환 차단 · Python drop_nulls 정합)
 		const v = Number(r.value);
 		if (!id || d.length !== 8 || !Number.isFinite(v)) continue;
 		let arr = bySeries.get(id);
@@ -91,8 +91,8 @@ export async function loadMacroSeries(id: string, core?: DataCore): Promise<Macr
 	return pts.length ? pts : null;
 }
 
-/** 시리즈 *원시* 이력 (yoy 미적용 — 저장된 index/level 그대로). 거시 시뮬 BVAR 입력처럼 원본이 필요할 때.
- *  같은 observations.parquet(getSeries 와 동일 데이터·캐시) — 별도 데이터 배선 아님, yoy 뷰변환만 생략. */
+/** 시리즈 *원시* 이력 (yoy 미적용 · 저장된 index/level 그대로). 거시 시뮬 BVAR 입력처럼 원본이 필요할 때.
+ *  같은 observations.parquet(getSeries 와 동일 데이터·캐시) · 별도 데이터 배선 아님, yoy 뷰변환만 생략. */
 export async function loadMacroSeriesRaw(id: string, core?: DataCore): Promise<MacroPoint[] | null> {
 	if (!browser) return null;
 	const def = defById.get(id);
@@ -103,9 +103,9 @@ export async function loadMacroSeriesRaw(id: string, core?: DataCore): Promise<M
 }
 
 /**
- * IndexPort 전용 raw 채널 — fred seriesId 의 원시 (d,v) 점을 yoy 변환·MACRO_SERIES 화이트리스트 *없이* 반환.
- * loadSource('fred') 코어 read 캐시를 ECON 오버레이와 공유(파일 1 회 로드) — SP500 등 지수는 yoy 무의미라 raw.
- * 화이트리스트 게이팅은 호출측(fredIndexSource 의 US_INDEX_PRESETS)이 담당 — 임의 ID dump 아님.
+ * IndexPort 전용 raw 채널 · fred seriesId 의 원시 (d,v) 점을 yoy 변환·MACRO_SERIES 화이트리스트 *없이* 반환.
+ * loadSource('fred') 코어 read 캐시를 ECON 오버레이와 공유(파일 1 회 로드) · SP500 등 지수는 yoy 무의미라 raw.
+ * 화이트리스트 게이팅은 호출측(fredIndexSource 의 US_INDEX_PRESETS)이 담당 · 임의 ID dump 아님.
  */
 export async function loadFredSeriesPoints(seriesId: string, core?: DataCore): Promise<MacroPoint[] | null> {
 	if (!browser) return null;
@@ -114,7 +114,7 @@ export async function loadFredSeriesPoints(seriesId: string, core?: DataCore): P
 	return pts && pts.length ? pts : null;
 }
 
-// 최근 1년(일별 252·월별 12) 구간을 최대 n 점으로 다운샘플 — 스파크라인 폴리라인용.
+// 최근 1년(일별 252·월별 12) 구간을 최대 n 점으로 다운샘플 · 스파크라인 폴리라인용.
 function sparkOf(pts: MacroPoint[], n = 40): number[] {
 	const daily = pts.length > 400; // 일별 시리즈 추정
 	const win = pts.slice(-(daily ? 252 : 12));
@@ -127,11 +127,11 @@ function sparkOf(pts: MacroPoint[], n = 40): number[] {
 	return out;
 }
 
-/** KPI 티커용 — 화이트리스트 전 시리즈의 최신값+직전 대비 변화+스파크라인. src 그룹은 1 회만 로드(코어 캐시 공유). */
+/** KPI 티커용 · 화이트리스트 전 시리즈의 최신값+직전 대비 변화+스파크라인. src 그룹은 1 회만 로드(코어 캐시 공유). */
 export async function loadMacroLatest(core?: DataCore): Promise<MacroLatest[]> {
 	if (!browser) return [];
 	const c = macroCore(core);
-	// src 별 그룹 Map 을 src 당 1 회만 빌드(loadMacroSeries 시리즈당 재그룹화 회피) — 무거운 read 는 코어가 공유.
+	// src 별 그룹 Map 을 src 당 1 회만 빌드(loadMacroSeries 시리즈당 재그룹화 회피) · 무거운 read 는 코어가 공유.
 	const groups = new Map<'fred' | 'ecos', Map<string, MacroPoint[]>>();
 	const groupFor = async (src: 'fred' | 'ecos'): Promise<Map<string, MacroPoint[]>> => {
 		let g = groups.get(src);
@@ -187,9 +187,9 @@ async function loadMacroTransmission(query: MacroTransmissionQuery = {}): Promis
 	return payload ? filterTransmission(payload, query) : null;
 }
 
-/** HF 공개 데이터 기반 MacroPort — 거시 시계열은 회사·앱 무관이라 local 셸도 본 포트를 명시적으로 재사용한다.
+/** HF 공개 데이터 기반 MacroPort · 거시 시계열은 회사·앱 무관이라 local 셸도 본 포트를 명시적으로 재사용한다.
  *  core 는 어댑터(createXRuntime)가 주입(전역 싱글턴 금지). 미주입(ui/web 레거시 직접 호출)은 모듈 폴백 코어.
- *  ⛔ 거시 시뮬은 본 포트에 없음 — 런타임 pyodide(landing) 가 직접 실행, 별도 데이터 배선 금지. */
+ *  ⛔ 거시 시뮬은 본 포트에 없음 · 런타임 pyodide(landing) 가 직접 실행, 별도 데이터 배선 금지. */
 export function createHfMacroPort(core?: DataCore): MacroPort {
 	const c = macroCore(core);
 	return {

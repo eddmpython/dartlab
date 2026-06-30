@@ -43,7 +43,7 @@
 		cursor: default;
 	}
 	/* --fin-* 토큰: 미정의 시 fallback = 기존 viewer 값 (픽셀 무변화).
-	   터미널은 .dlTermFinSkin 래퍼가 terminal.css 토큰으로 오버라이드 — 렌더러 한몸두입구. */
+	   터미널은 .dlTermFinSkin 래퍼가 terminal.css 토큰으로 오버라이드 · 렌더러 한몸두입구. */
 	.modal {
 		position: fixed;
 		top: 50%;

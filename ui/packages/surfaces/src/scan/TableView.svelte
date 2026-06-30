@@ -1,10 +1,10 @@
 <script lang="ts">
 	/**
-	 * 단일 raw 테이블 view — 자체 native <table>.
+	 * 단일 raw 테이블 view · 자체 native <table>.
 	 *
 	 *   - sticky header (수직 스크롤 시 헤더 고정)
 	 *   - 가로/세로 스크롤
-	 *   - 검색 (frontend ILIKE 또는 SQL re-query — 부모가 결정)
+	 *   - 검색 (frontend ILIKE 또는 SQL re-query · 부모가 결정)
 	 *   - 컬럼 헤더 클릭 = 정렬 (asc/desc 토글)
 	 *   - 컬럼 hide / 복원 (드롭다운)
 	 *   - CSV export
@@ -126,11 +126,11 @@
 	}
 
 	function fmtCell(v: unknown): string {
-		if (v === null || v === undefined) return '—';
+		if (v === null || v === undefined) return '·';
 		if (Array.isArray(v)) return `[${v.length}]`;
 		if (typeof v === 'object') return JSON.stringify(v).slice(0, 80);
 		if (typeof v === 'number') {
-			if (!Number.isFinite(v)) return '—';
+			if (!Number.isFinite(v)) return '·';
 			return v.toLocaleString('ko-KR', { maximumFractionDigits: 2 });
 		}
 		const s = String(v);

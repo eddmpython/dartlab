@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 주석 상세 — 비용 체질 + 부문별 매출. 카드별 = 100% 스택바(당기 구성 한눈에) + 분기별 구성 테이블(밀도).
+	// 주석 상세 · 비용 체질 + 부문별 매출. 카드별 = 100% 스택바(당기 구성 한눈에) + 분기별 구성 테이블(밀도).
 	// 데이터 = panel 정부 XBRL 태그 런타임 직독(reportSource.noteSeries). 종합점수·판정 0(NEVER-CLAIM).
 	import type { Company, Lang } from '../lib/types';
 	import type { CompositionSeries } from '@dartlab/ui-contracts';
@@ -51,7 +51,7 @@
 		subKr: string;
 		subEn: string;
 		quarters: string[];
-		cols: TsCol[]; // 시계열 스택 — 기간(분기)별 컬럼
+		cols: TsCol[]; // 시계열 스택 · 기간(분기)별 컬럼
 		rows: TblRow[];
 		latestPeriod: string;
 		latestTotal: number;
@@ -72,7 +72,7 @@
 			.filter((r) => r.latestPct > 0.05) // 당기 0 인 사족 행 제거(태그 변경 잔여 등)
 			.sort((a, b) => b.latestPct - a.latestPct);
 		if (!rows.length) return null;
-		// 시계열 스택 — 각 기간(분기)을 100% 적층 컬럼으로. 세그먼트 순서 = rows(당기 비중 desc) 고정이라 색 밴드가 기간 가로질러 흐름.
+		// 시계열 스택 · 각 기간(분기)을 100% 적층 컬럼으로. 세그먼트 순서 = rows(당기 비중 desc) 고정이라 색 밴드가 기간 가로질러 흐름.
 		const cols: TsCol[] = pts.map((p, j) => ({
 			label: shortPeriod(p.period),
 			total: p.total,
@@ -99,7 +99,7 @@
 						<span class="ndCardTitle">{T(c.titleKr, c.titleEn)} <span class="dim">· {T(c.subKr, c.subEn)}</span></span>
 						<span class="ndHdRight">{T('당기', 'period')} <b class="mono">{fmtKRW(c.latestTotal)}</b> · {c.latestPeriod}</span>
 					</div>
-					<!-- 시계열 스택 — 분기별 100% 적층 컬럼(왼→오 과거→당기). 색 = 카테고리, 밴드가 기간 가로질러 흐름. -->
+					<!-- 시계열 스택 · 분기별 100% 적층 컬럼(왼→오 과거→당기). 색 = 카테고리, 밴드가 기간 가로질러 흐름. -->
 					<div class="ndTs" role="img" aria-label={T(c.titleKr, c.titleEn) + ' time series'}>
 						{#each c.cols as col, j (col.label)}
 							<div class="ndTsCol">

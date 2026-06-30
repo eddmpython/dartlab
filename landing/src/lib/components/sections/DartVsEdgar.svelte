@@ -27,7 +27,7 @@
 	<div class="max-w-4xl mx-auto">
 		<div class="text-center mb-12">
 			<span class="text-xs font-semibold uppercase tracking-widest text-dl-primary mb-3 block">커버리지</span>
-			<h2 class="text-3xl md:text-4xl font-bold text-dl-text mb-3">DART + EDGAR — 동일한 인터페이스</h2>
+			<h2 class="text-3xl md:text-4xl font-bold text-dl-text mb-3">DART + EDGAR · 동일한 인터페이스</h2>
 			<p class="text-dl-text-muted text-lg">한국 DART 와 미국 SEC EDGAR 를 하나의 Company 인터페이스로</p>
 		</div>
 
@@ -141,14 +141,14 @@ c.insights.grades()</code></pre>
 									{#if f.dart}
 										<span class="text-dl-success">&#10003;</span>
 									{:else}
-										<span class="text-dl-text-dim">—</span>
+										<span class="text-dl-text-dim">·</span>
 									{/if}
 								</td>
 								<td class="px-4 py-2 text-center">
 									{#if f.edgar}
 										<span class="text-dl-success">&#10003;</span>
 									{:else}
-										<span class="text-dl-text-dim">—</span>
+										<span class="text-dl-text-dim">·</span>
 									{/if}
 								</td>
 							</tr>
@@ -159,7 +159,7 @@ c.insights.grades()</code></pre>
 		</div>
 
 		<div class="mt-4 text-center">
-			<p class="text-xs text-dl-text-dim">Company("005930") for DART · Company("AAPL") for EDGAR — same interface, same methods</p>
+			<p class="text-xs text-dl-text-dim">Company("005930") for DART · Company("AAPL") for EDGAR · same interface, same methods</p>
 		</div>
 	</div>
 </section>

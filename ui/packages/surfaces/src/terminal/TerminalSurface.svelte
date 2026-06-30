@@ -2,7 +2,7 @@
 	// ── 터미널 구역 규칙 (불가침) ──
 	// 좌측 레일 + 상단 헤더 = 네비게이션 (검색·목록·이동·상태)
 	// 중앙 스택            = 시각화 중심 (차트·그래프·전체화면 분석)
-	// 우측 스택            = 테이블·텍스트·수치·정성 — 그래프 배치 금지 (그래프는 중앙으로)
+	// 우측 스택            = 테이블·텍스트·수치·정성 · 그래프 배치 금지 (그래프는 중앙으로)
 	import './terminal.css';
 	import type { Candle, DartLabRuntime, MacroLatest } from '@dartlab/ui-contracts';
 	import { setDartLabRuntime } from '@dartlab/ui-runtime';
@@ -10,8 +10,8 @@
 	import type { TerminalHosts, TerminalBrandLinks } from './lib/hosts';
 	import type { Lang } from './lib/types';
 	import { chgClass, fmtNum, sign, sparkPts } from './ui/helpers';
-	import BrandSwitch from './ui/BrandSwitch.svelte'; // 브랜드 색 테마 — SNS 행 첫 아이콘(카드·랜딩 Header 와 동일 컨트롤)
-	import DataMenu from './ui/DataMenu.svelte'; // 상단 「데이터」 — 이 회사 데이터 공개 다운로드(viewer DataDownloadMenu 동형)
+	import BrandSwitch from './ui/BrandSwitch.svelte'; // 브랜드 색 테마 · SNS 행 첫 아이콘(카드·랜딩 Header 와 동일 컨트롤)
+	import DataMenu from './ui/DataMenu.svelte'; // 상단 「데이터」 · 이 회사 데이터 공개 다운로드(viewer DataDownloadMenu 동형)
 	import LeftRail from './panels/LeftRail.svelte';
 	import StrategyDock from './charts/StrategyDock.svelte'; // 백테스트 모드 = 좌패널 전체를 조작 패널로 교체(좌중우 중 좌)
 	import CenterStack from './panels/CenterStack.svelte';
@@ -31,16 +31,16 @@
 
 	interface Props {
 		eng: Engine;
-		/** 데이터 포트 묶음 — 앱 셸(landing route · ui/web 브리지)이 주입. 전역 locator 금지. */
+		/** 데이터 포트 묶음 · 앱 셸(landing route · ui/web 브리지)이 주입. 전역 locator 금지. */
 		runtime: DartLabRuntime;
-		/** 뷰어 컴포넌트 주입 — 셸이 lazy 로더 제공 (terminal → viewer 역의존 제거, 4a-3). */
+		/** 뷰어 컴포넌트 주입 · 셸이 lazy 로더 제공 (terminal → viewer 역의존 제거, 4a-3). */
 		hosts: TerminalHosts;
-		/** 헤더 SNS·외부 링크 — 셸이 자기 brand 에서 주입 (surface 가 brand 소유 안 함, 4b). */
+		/** 헤더 SNS·외부 링크 · 셸이 자기 brand 에서 주입 (surface 가 brand 소유 안 함, 4b). */
 		links: TerminalBrandLinks;
-		/** 카드뉴스(편집 캐러셀) 보유 종목코드 집합 — 셸(landing /terminal)이 carousels/index.json 로드해 주입.
+		/** 카드뉴스(편집 캐러셀) 보유 종목코드 집합 · 셸(landing /terminal)이 carousels/index.json 로드해 주입.
 		 *  회사명 옆 링크 줄에 *해당 종목에 한해* 「카드뉴스」를 노출(개별). 미주입 시 링크 없음(standalone 무해). */
 		cardsCodes?: Set<string>;
-		/** 카드뉴스 클릭 핸들러 — 셸이 인스타식 포스트 다이얼로그(Deck+캡션)를 오버레이로 띄운다. Deck=landing 의존이라
+		/** 카드뉴스 클릭 핸들러 · 셸이 인스타식 포스트 다이얼로그(Deck+캡션)를 오버레이로 띄운다. Deck=landing 의존이라
 		 *  surface 는 콜백만 받는다(viewer 포트와 동형 호스트 주입). */
 		onOpenCards?: (code: string) => void;
 		initial?: string;
@@ -48,7 +48,7 @@
 	let { eng, runtime, hosts, links, cardsCodes, onOpenCards, initial = '005930' }: Props = $props();
 	// 하위 패널 전체가 useDartLabRuntime() 컨텍스트로 같은 인스턴스를 본다 (컴포넌트 init 시 1회).
 	setDartLabRuntime(runtime);
-	// base path — $app/paths 대신 runtime 환경 계약 (ui/web 셸에서도 동작)
+	// base path · $app/paths 대신 runtime 환경 계약 (ui/web 셸에서도 동작)
 	const base = runtime.env.basePath;
 	const allowTerminalAsk = $derived(runtime.env.kind === 'local');
 
@@ -71,10 +71,10 @@
 	let sectorFilter = $state('');
 	let bottomTab = $state<'screener' | 'watch'>(readStore<string>('dlTerm.bottomTab', 'screener') === 'watch' ? 'watch' : 'screener');
 	const chartCtl = new ChartCtl();
-	// GitHub 스타 수 — SNS 버튼 옆 라이브 배지(사회적 증명). null = 미조회/실패(배지 숨김).
+	// GitHub 스타 수 · SNS 버튼 옆 라이브 배지(사회적 증명). null = 미조회/실패(배지 숨김).
 	let ghStars = $state<number | null>(null);
 	fetchGithubStars(links.repo).then((n) => (ghStars = n));
-	// 출처 모달 "최근 일자" — 라이브 재무 최신 분기 (finance.bundle in-flight dedup, 추가 다운로드 0)
+	// 출처 모달 "최근 일자" · 라이브 재무 최신 분기 (finance.bundle in-flight dedup, 추가 다운로드 0)
 	let finLatest = $state('');
 	$effect(() => {
 		const c = co?.code;
@@ -114,7 +114,7 @@
 	}
 	$effect(() => {
 		const onDocKey = (e: KeyboardEvent) => {
-			// 차트 전체화면 중엔 양보 — 오버레이 밑 보이지 않는 검색창에 포커스가 걸려 이후 모든
+			// 차트 전체화면 중엔 양보 · 오버레이 밑 보이지 않는 검색창에 포커스가 걸려 이후 모든
 			// 타이핑·ESC 를 삼키던 트랩 버그. 전체화면의 ⌘K·/ 는 차트 심볼 점프(PriceChart)가 받는다.
 			if (document.querySelector('.dlTerm .chartWrap.full')) return;
 			const tag = (e.target as HTMLElement | null)?.tagName;
@@ -135,10 +135,10 @@
 		if (c) warmCompany(runtime, c.code);
 	});
 	const tickerCodes = $derived(eng.featured(14));
-	// 회사 티커 스파크라인 — recent.parquet(최근 30거래일 전종목) 재사용, 추가 다운로드 0 (어댑터 캐시 공유)
+	// 회사 티커 스파크라인 · recent.parquet(최근 30거래일 전종목) 재사용, 추가 다운로드 0 (어댑터 캐시 공유)
 	let recentMap = $state<Record<string, Candle[]> | null>(null);
 	runtime.price.govRecent().then((m) => (recentMap = m));
-	// 실 경제지표 최신값 (ECOS·FRED 시계열) — 종목명·주가차트 윗단 KPI 티커에 합류.
+	// 실 경제지표 최신값 (ECOS·FRED 시계열) · 종목명·주가차트 윗단 KPI 티커에 합류.
 	let macroLatest = $state<MacroLatest[]>([]);
 	runtime.macro.getLatest().then((m) => (macroLatest = m));
 	const fmtMacro = (m: MacroLatest): string => {
@@ -147,7 +147,7 @@
 		const u = m.def.unit;
 		return u === 'pt' || u === '원' ? signed : u === '$/t' ? '$' + signed : signed + u;
 	};
-	// 경제·시장 KPI (CenterStack 헤더 티커) — 실 지표 최신값+스파크라인 + 매크로 국면 KR/US + 섹터 순풍·역풍 + 시장폭/평균.
+	// 경제·시장 KPI (CenterStack 헤더 티커) · 실 지표 최신값+스파크라인 + 매크로 국면 KR/US + 섹터 순풍·역풍 + 시장폭/평균.
 	const macroKpis = $derived.by<{ l: string; v: string; t: string; s?: number[]; id?: string }[]>(() => {
 		const m = eng.raw.macro;
 		const tw = eng.sectorTailwinds();
@@ -159,7 +159,7 @@
 		for (const ml of macroLatest)
 			out.push({ l: lang === 'en' ? ml.def.en : ml.def.kr, v: fmtMacro(ml), t: ml.chg == null || ml.chg === 0 ? 'tNeu' : ml.chg > 0 ? 'tUp' : 'tDn', s: ml.spark, id: ml.def.id });
 		if (m) {
-			// quadrant 결측(빌더 입력 부족) 방어 — 방향 미상은 중립 톤 (크래시 금지)
+			// quadrant 결측(빌더 입력 부족) 방어 · 방향 미상은 중립 톤 (크래시 금지)
 			const dir = (g?: string) => (g == null ? 'tNeu' : g === 'rising' || g === '상승' ? 'tUp' : 'tDn');
 			out.push({ l: 'KR', v: lang === 'en' ? m.kr.phase : m.kr.phaseLabel, t: dir(m.kr.quadrant?.growth) });
 			out.push({ l: 'US', v: lang === 'en' ? m.us.phase : m.us.phaseLabel, t: dir(m.us.quadrant?.growth) });
@@ -269,16 +269,16 @@
 				<div class="hdrLinks">
 					{#if co}
 						<DataMenu {runtime} code={co.code} corpName={co.name.kr} {lang} />
-						<a class="hdrLink hdrReport" href="{base}/report?sym={co.code}" target="_blank" rel="noopener" title={lang === 'en' ? 'Corporate analysis report — printable (PDF)' : '기업분석보고서 — 인쇄 가능 (PDF)'}>{lang === 'en' ? 'Report' : '보고서'}</a>
-						<a class="hdrLink hdrCards" href="{base}/cards" target="_blank" rel="noopener" title={lang === 'en' ? 'Card stories — Instagram-style feed (all companies)' : '카드뉴스 — 인스타그램형 피드(전체 회사)'}>{lang === 'en' ? 'Cards' : '카드뉴스'}</a>
+						<a class="hdrLink hdrReport" href="{base}/report?sym={co.code}" target="_blank" rel="noopener" title={lang === 'en' ? 'Corporate analysis report · printable (PDF)' : '기업분석보고서 · 인쇄 가능 (PDF)'}>{lang === 'en' ? 'Report' : '보고서'}</a>
+						<a class="hdrLink hdrCards" href="{base}/cards" target="_blank" rel="noopener" title={lang === 'en' ? 'Card stories · Instagram-style feed (all companies)' : '카드뉴스 · 인스타그램형 피드(전체 회사)'}>{lang === 'en' ? 'Cards' : '카드뉴스'}</a>
 					{/if}
 					{#if allowTerminalAsk}
-						<button class="hdrLink hdrAsk" onclick={() => co && runtime.navigation.toAsk({ code: co.code })} title="AI에게 직접 질문 — 로컬 LLM 질의(/ask)" aria-label="AI" style="display:inline-flex;align-items:center;gap:4px">
+						<button class="hdrLink hdrAsk" onclick={() => co && runtime.navigation.toAsk({ code: co.code })} title="AI에게 직접 질문 · 로컬 LLM 질의(/ask)" aria-label="AI" style="display:inline-flex;align-items:center;gap:4px">
 							<picture><source srcset="{base}/avatar-detective.webp" type="image/webp" /><img src="{base}/avatar-detective.png" alt="" width="14" height="14" style="border-radius:50%" /></picture>AI
 						</button>
 					{/if}
-					<button class={'hdrLink' + (discussOpen ? ' on' : '')} onclick={() => (discussOpen = !discussOpen)} title="종목 토론 — giscus(GitHub Discussions) 인-터미널">{lang === 'en' ? 'Discuss' : '토론'}</button>
-					<a class="hdrLink" href="{links.repo}/issues/new" target="_blank" rel="noopener" title="GitHub 이슈 등록 — 버그·요청">{lang === 'en' ? 'Issue' : '이슈'}</a>
+					<button class={'hdrLink' + (discussOpen ? ' on' : '')} onclick={() => (discussOpen = !discussOpen)} title="종목 토론 · giscus(GitHub Discussions) 인-터미널">{lang === 'en' ? 'Discuss' : '토론'}</button>
+					<a class="hdrLink" href="{links.repo}/issues/new" target="_blank" rel="noopener" title="GitHub 이슈 등록 · 버그·요청">{lang === 'en' ? 'Issue' : '이슈'}</a>
 				</div>
 				<nav class="sns">
 					<BrandSwitch />
@@ -322,7 +322,7 @@
 		<main class="board">
 			<div class="col colL">
 				{#if chartCtl.btReportMode}
-					<!-- 백테스트 모드 — 좌패널 전체가 조작 패널(스코프·프리셋버튼·커스텀·검증). LeftRail(매크로·스크리너) 교체. -->
+					<!-- 백테스트 모드 · 좌패널 전체가 조작 패널(스코프·프리셋버튼·커스텀·검증). LeftRail(매크로·스크리너) 교체. -->
 					<StrategyDock ctl={chartCtl} {lang} code={co.code} name={co.name.kr} fill onClose={() => { chartCtl.clearBtAll(); chartCtl.btReportMode = false; chartCtl.btDockOpen = false; }} />
 				{:else}
 					<LeftRail {eng} {lang} active={sym} onPick={pick} onIndustry={openIndustry} onFilingSearch={() => (filingSearchOpen = true)} {sectorFilter} {bottomTab} onSectorFilter={handleSectorFilter} onBottomTab={(tab) => (bottomTab = tab)} />

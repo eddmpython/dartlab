@@ -1,8 +1,8 @@
-// AccentText 헬퍼 — 기존 SNS 캐러셀 AccentText.tsx 와 동일 규약(`[[구절]]`=강조).
+// AccentText 헬퍼 · 기존 SNS 캐러셀 AccentText.tsx 와 동일 규약(`[[구절]]`=강조).
 import { describe, it, expect } from 'vitest';
 import { accentParts, stripDots } from './theme';
 
-describe('accentParts — [[구절]] 강조 분해', () => {
+describe('accentParts · [[구절]] 강조 분해', () => {
 	it('마커 안은 accent, 밖은 일반', () => {
 		expect(accentParts('본업 [[현금]]이 받친다')).toEqual([
 			{ text: '본업 ', accent: false },
@@ -18,7 +18,7 @@ describe('accentParts — [[구절]] 강조 분해', () => {
 	});
 });
 
-describe('stripDots — 줄 끝 마침표 제거(소수점·쉼표 보존)', () => {
+describe('stripDots · 줄 끝 마침표 제거(소수점·쉼표 보존)', () => {
 	it('줄 끝 마침표만 제거', () => {
 		expect(stripDots('판매량보다 이익률 방어가 질문입니다.')).toBe('판매량보다 이익률 방어가 질문입니다');
 	});

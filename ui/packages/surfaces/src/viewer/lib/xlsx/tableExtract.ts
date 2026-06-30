@@ -1,12 +1,12 @@
-// table-export 정합 정규화 — 엔진 `dartXmlNormalize.coerceCell` + `detectUnit` 의 1:1 TS 포팅.
+// table-export 정합 정규화 · 엔진 `dartXmlNormalize.coerceCell` + `detectUnit` 의 1:1 TS 포팅.
 // 순수 함수 (DOM 0, fetch 0). 엔진과 같은 골든 규칙으로 같은 *.grid.json 픽스처를 양쪽 검증한다.
 //
 // 규칙 (엔진 `providers/dart/parse/dartXmlNormalize.py` 와 정확히 동일):
 //   - 숫자 `^-?[\d,]+(\.\d+)?$` (콤마 제거 후) → Number. "1,234" → 1234, "23.7" → 23.7.
 //   - 한국식 음수: "(1,234)" → -1234 ; "△1,234"/"▲1234"(줄바꿈 포함 "△\n5") → -1234.
-//   - 빈/공백뿐 → null (honest-gap — 결손을 절대 0 으로 만들지 않는다).
+//   - 빈/공백뿐 → null (honest-gap · 결손을 절대 0 으로 만들지 않는다).
 //   - 그 외(한글·혼합·"5,000원"·"2024.12.31") → 원본 문자열(trim). 단위 접미 벗기기 금지.
-//   - detectUnit 은 라벨만 — 값 스케일 환산 0 (xml-native-truth).
+//   - detectUnit 은 라벨만 · 값 스케일 환산 0 (xml-native-truth).
 
 const NUMERIC_RE = /^-?[\d,]+(\.\d+)?$/;
 // 한국식 음수 래퍼: (1,234) 괄호음수 ; △ / ▲ 삼각형 접두 (줄바꿈·공백 흡수 \s*).
@@ -19,10 +19,10 @@ function toNumber(digits: string): number {
 }
 
 /**
- * 표 셀 문자열을 타입값으로 정합 정규화 — 엔진 `coerceCell` 포팅.
+ * 표 셀 문자열을 타입값으로 정합 정규화 · 엔진 `coerceCell` 포팅.
  *
  * @param text raw 셀 텍스트.
- * @returns number | string | null. 결손은 null (절대 0 아님 — honest-gap).
+ * @returns number | string | null. 결손은 null (절대 0 아님 · honest-gap).
  *
  * @example
  * coerceCell('1,234');        // 1234
@@ -58,10 +58,10 @@ export function coerceCell(text: string | null | undefined): number | string | n
 	return s;
 }
 
-// ── 단위 감지 (감지만, 환산 0 — xml-native-truth) ──
+// ── 단위 감지 (감지만, 환산 0 · xml-native-truth) ──
 // "(단위: 백만원)" / "단위 : 천원" / "(단위:원)" 등. 콜론 뒤 단위 토큰 캡처.
 const UNIT_RE = /단위\s*[:：]?\s*([^)\]\n]+)/;
-// 알려진 한국 회계 단위 토큰 — 검증용. 미지 토큰 → "" (추측 0).
+// 알려진 한국 회계 단위 토큰 · 검증용. 미지 토큰 → "" (추측 0).
 const KNOWN_UNITS: Record<string, string> = {
 	원: '원',
 	천원: '천원',
@@ -80,7 +80,7 @@ const KNOWN_UNITS: Record<string, string> = {
 };
 
 /**
- * 단위 캡션("(단위: 백만원)") 감지 → canonical 단위 토큰 반환, 값 환산 0 — 엔진 `detectUnit` 포팅.
+ * 단위 캡션("(단위: 백만원)") 감지 → canonical 단위 토큰 반환, 값 환산 0 · 엔진 `detectUnit` 포팅.
  *
  * @param caption "(단위: …)" 조각을 포함할 수 있는 임의 텍스트.
  * @returns canonical 단위 토큰(예 "백만원", "원", "%") 또는 인식 실패 시 "".
@@ -97,7 +97,7 @@ export function detectUnit(caption: string | null | undefined): string {
 	const raw = m[1].trim().replace(/[)\]\s]+$/, '').trim();
 	const key = raw.toLowerCase();
 	if (key in KNOWN_UNITS) return KNOWN_UNITS[key];
-	// "백만원, 주" 식 다중 단위 — 접두 매칭으로 첫 알려진 토큰.
+	// "백만원, 주" 식 다중 단위 · 접두 매칭으로 첫 알려진 토큰.
 	for (const token of Object.keys(KNOWN_UNITS)) {
 		if (raw.startsWith(token)) return KNOWN_UNITS[token];
 	}

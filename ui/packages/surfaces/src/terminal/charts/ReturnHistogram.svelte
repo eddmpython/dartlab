@@ -1,6 +1,6 @@
 <script lang="ts">
-	// 거래별 수익률 분포 히스토그램 — QuantStats·pyfolio·QuantConnect 공통. Sharpe·평균이 가리는 꼬리(skew)·치우침을 드러냄.
-	// 높은 평균이라도 왼쪽 긴 꼬리(드문 큰 손실)면 다른 베팅 — 막대 색은 손익분기(0) 기준 빨강/초록, 평균선 점선.
+	// 거래별 수익률 분포 히스토그램 · QuantStats·pyfolio·QuantConnect 공통. Sharpe·평균이 가리는 꼬리(skew)·치우침을 드러냄.
+	// 높은 평균이라도 왼쪽 긴 꼬리(드문 큰 손실)면 다른 베팅 · 막대 색은 손익분기(0) 기준 빨강/초록, 평균선 점선.
 	// argmax 강조 없음(사실 분포만) · 실측 px 좌표 · niceTicks. 빈 도수 0 막대 유지(거짓 연속 금지).
 	import type { Lang } from '../lib/types';
 	import { niceTicks } from './chartFrame';
@@ -15,7 +15,7 @@
 
 	const mean = $derived(rets.length ? rets.reduce((s, v) => s + v, 0) / rets.length : 0);
 
-	// 빈 경계 — [lo,hi] 를 nice step 으로 잡고 0 이 경계에 오도록 정렬(손익 분리 명확).
+	// 빈 경계 · [lo,hi] 를 nice step 으로 잡고 0 이 경계에 오도록 정렬(손익 분리 명확).
 	const bins = $derived.by(() => {
 		if (rets.length < 2) return null;
 		let lo = Math.min(...rets);
@@ -63,7 +63,7 @@
 				<line x1={AX.l} y1={AX.t + plotH - yCount(c)} x2={AX.l + plotW} y2={AX.t + plotH - yCount(c)} stroke="rgba(139,145,158,0.09)" stroke-width="1" />
 				<text class="rhAx" x={AX.l - 4} y={AX.t + plotH - yCount(c) + 3} text-anchor="end">{c}</text>
 			{/each}
-			<!-- 막대 — 빈 중심 부호로 색 -->
+			<!-- 막대 · 빈 중심 부호로 색 -->
 			{#each bins.counts as c, i (i)}
 				{@const x0 = xAt(bins.start + i * bins.step)}
 				{@const x1 = xAt(bins.start + (i + 1) * bins.step)}
@@ -99,7 +99,7 @@
 				· <b>{bins.counts[hover]}</b>{T('건', '')}
 			</div>
 		{/if}
-		<div class="rhCap">{unitLabel ?? T('거래별 실현 수익률 — 막대=거래 수, 점선=평균', 'per-trade realized return — bars = count, dashed = mean')}</div>
+		<div class="rhCap">{unitLabel ?? T('거래별 실현 수익률 · 막대=거래 수, 점선=평균', 'per-trade realized return · bars = count, dashed = mean')}</div>
 	</div>
 {:else}
 	<div class="rhEmpty">{T('분포를 그릴 거래가 부족합니다.', 'too few trades for a distribution.')}</div>

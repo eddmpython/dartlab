@@ -1,7 +1,7 @@
 // US FRED 지수 = macro/fred/observations.parquet 직독(종가 value 1컬럼) → degenerate Candle.
-// macroSource 의 srcCache(loadSource('fred')) 재사용 — fred 파일 1 회 로드 공유(중복 다운로드 0).
+// macroSource 의 srcCache(loadSource('fred')) 재사용 · fred 파일 1 회 로드 공유(중복 다운로드 0).
 // FRED /series/observations 는 (date, value) 2컬럼이라 OHLC 부재 → o=h=l=c=value, v=0(거래량 부재 정직).
-// 화이트리스트 게이팅: US_INDEX_PRESETS 의 seriesId 4종만 — 임의 FRED 시리즈 fetch 차단(raw dump 방지).
+// 화이트리스트 게이팅: US_INDEX_PRESETS 의 seriesId 4종만 · 임의 FRED 시리즈 fetch 차단(raw dump 방지).
 import type { Candle, IndexRef } from '@dartlab/ui-contracts';
 import { US_INDEX_PRESETS } from '@dartlab/ui-contracts';
 import { loadFredSeriesPoints } from './macroSource';
@@ -18,7 +18,7 @@ export async function loadFredIndexCandles(ref: IndexRef, core?: DataCore): Prom
 	return pts.map((p) => ({ t: p.d, o: p.v, h: p.v, l: p.v, c: p.v, v: 0, r: null, tv: null }));
 }
 
-/** US preset 라벨/seriesId 부분일치 검색(FRED universe 확장 0 — 큐레이트 4종만). */
+/** US preset 라벨/seriesId 부분일치 검색(FRED universe 확장 0 · 큐레이트 4종만). */
 export function searchUsIndexPresets(query: string): IndexRef[] {
 	const q = query.trim();
 	if (!q) return [];

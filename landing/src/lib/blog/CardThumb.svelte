@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 블로그 리스트 썸네일 — 카드뉴스(CardSlide editorial) 그대로. 흑백 이미지 위에 HTML 텍스트(굽지 않음):
+	// 블로그 리스트 썸네일 · 카드뉴스(CardSlide editorial) 그대로. 흑백 이미지 위에 HTML 텍스트(굽지 않음):
 	// 좌하단 kicker(● 카테고리) + 핵심키워드(숫자=테마색 accent). 모든 리스트(홈·카테고리·시리즈) 공통.
 	let {
 		image,
@@ -57,7 +57,7 @@
 		object-fit: cover;
 		object-position: center;
 	}
-	/* 하단만 어둡게 — 사진은 위·중단 노출, 글씨는 아래에서 읽힘(CardSlide editorial scrim). */
+	/* 하단만 어둡게 · 사진은 위·중단 노출, 글씨는 아래에서 읽힘(CardSlide editorial scrim). */
 	.ct-scrim {
 		position: absolute;
 		inset: 0;

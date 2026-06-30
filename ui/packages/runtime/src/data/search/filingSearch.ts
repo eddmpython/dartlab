@@ -1,12 +1,12 @@
-// 전역 공시 본문 검색 — 질의어 postings + top-k meta 만 HTTP range fetch(서버리스·exact BM25).
+// 전역 공시 본문 검색 · 질의어 postings + top-k meta 만 HTTP range fetch(서버리스·exact BM25).
 // 공통배선: 퍼블릭·로컬 동일 코어(DataCore)·동일 경로(hf 통파일 / hfRange 조각). 인덱스 sidecar는
 // fieldIndex.saveShardedSegment 산출(postings/terms/docLengths/meta.bin + main_stems.json + search_meta.json).
 // 검증(_attempts/filingPostingsFetch): byte-range fetch BM25 = full BM25 overlap 1.0000(exact).
-// 회사 인덱스(universe/query)는 별개 feature(census A-11) — 본 포트는 queryFilings(공시 코퍼스)만 구현.
+// 회사 인덱스(universe/query)는 별개 feature(census A-11) · 본 포트는 queryFilings(공시 코퍼스)만 구현.
 //
 // ★배포 layout: 인덱스 파일은 flat 경로가 아니라 run-scoped staging 에 있고, flat `manifest.json` 이
 // 안정 pointer(`fileSources`: 파일명→staging 경로)다(publishIndex.manifestPointer 모델). 그래서 항상
-// manifest 를 먼저 읽어 fileSources 로 각 파일을 resolve 한다 — CI 가 새 빌드를 publish 하면 pointer 만
+// manifest 를 먼저 읽어 fileSources 로 각 파일을 resolve 한다 · CI 가 새 빌드를 publish 하면 pointer 만
 // 갈아끼워도 다음 세션이 자동 추종(공통배선이 publish SSOT 와 일치). fileSources 부재 시 flat fallback.
 import type { DataCore } from '../fetch/request';
 import type { SearchPort, FilingHit, FilingSearchQuery } from '@dartlab/ui-contracts';
@@ -29,7 +29,7 @@ function tokenizeBigram(text: string): string[] {
 	return out;
 }
 
-// LEB128 unsigned varint — count 개 디코드(값 < 2^31 보장: docId<~5M, tf 소). 반환 (값, 다음 pos).
+// LEB128 unsigned varint · count 개 디코드(값 < 2^31 보장: docId<~5M, tf 소). 반환 (값, 다음 pos).
 function readVarints(bytes: Uint8Array, pos: number, count: number): number[] {
 	const vals = new Array<number>(count);
 	for (let n = 0; n < count; n++) {
@@ -71,7 +71,7 @@ interface SearchStats {
 }
 
 export interface FilingSearchOptions {
-	/** 인덱스 tier. 기본 ``full``(flat ``dart/contentIndex/`` — 전체 코퍼스, range-fetch 라 클라 비용 동일).
+	/** 인덱스 tier. 기본 ``full``(flat ``dart/contentIndex/`` · 전체 코퍼스, range-fetch 라 클라 비용 동일).
 	 *  그 외 tier 는 ``dart/contentIndex/{tier}/`` 서브디렉터리(예 lite). 둘 다 manifest pointer 경유. */
 	tier?: string;
 }
@@ -85,7 +85,7 @@ export function createSearchPort(core: DataCore, opts: FilingSearchOptions = {})
 
 	// flat `manifest.json`(pointer)을 *1회* 읽어 fileSources(파일명→staging 경로) resolve + builtAt(인덱스
 	// 빌드시점, as-of 라벨용) 캐시. 부재 시 flat fallback. core.request 가 캐시하므로 stats(~10MB)와 무관하게
-	// 경량(manifest 만)으로 builtAt 만 떼올 수 있다 — indexBuiltAt 는 콜드 stats 로드를 강제하지 않는다.
+	// 경량(manifest 만)으로 builtAt 만 떼올 수 있다 · indexBuiltAt 는 콜드 stats 로드를 강제하지 않는다.
 	function loadManifest(): Promise<{ resolve: (name: string) => string; builtAt: string | null }> {
 		return (manifestP ??= (async () => {
 			let fileSources: Record<string, string> = {};
@@ -105,7 +105,7 @@ export function createSearchPort(core: DataCore, opts: FilingSearchOptions = {})
 		})());
 	}
 
-	// 단일 main 세그먼트(compact-only — delta 폐기). stats blob = 콜드 1회 캐시. 통파일 hf(프록시), 조각 hfRange.
+	// 단일 main 세그먼트(compact-only · delta 폐기). stats blob = 콜드 1회 캐시. 통파일 hf(프록시), 조각 hfRange.
 	async function loadStats(): Promise<SearchStats> {
 		const { resolve } = await loadManifest();
 		const ab = (name: string) => core.request<ArrayBuffer>({ origin: 'hf', path: resolve(name), parse: (r) => r.arrayBuffer() });
@@ -178,7 +178,7 @@ export function createSearchPort(core: DataCore, opts: FilingSearchOptions = {})
 
 		const top = [...scores.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit);
 
-		// hydration — metaOffsets 합류(scoring 동안 병렬 다운로드돼 보통 이미 완료). top-k doc meta 만 range fetch.
+		// hydration · metaOffsets 합류(scoring 동안 병렬 다운로드돼 보통 이미 완료). top-k doc meta 만 range fetch.
 		const metaOffsets = await stats.metaOffsetsP;
 		return Promise.all(
 			top.map(async ([docId, score]) => {
@@ -201,13 +201,13 @@ export function createSearchPort(core: DataCore, opts: FilingSearchOptions = {})
 		);
 	}
 
-	// 인덱스 빌드시점(as-of 라벨) — manifest 만 읽어 builtAt 반환(콜드 stats ~10MB 강제 안 함). 부재 시 null.
+	// 인덱스 빌드시점(as-of 라벨) · manifest 만 읽어 builtAt 반환(콜드 stats ~10MB 강제 안 함). 부재 시 null.
 	async function indexBuiltAt(): Promise<string | null> {
 		return (await loadManifest()).builtAt;
 	}
 
 	const companyIndexUnwired = (): never => {
-		throw new Error('[search] universe/query(회사 인덱스)는 별도 feature(census A-11) — 이 경로는 미배선. queryFilings(공시 본문)만 구현됨.');
+		throw new Error('[search] universe/query(회사 인덱스)는 별도 feature(census A-11) · 이 경로는 미배선. queryFilings(공시 본문)만 구현됨.');
 	};
 	return { universe: companyIndexUnwired, query: companyIndexUnwired, queryFilings, indexBuiltAt };
 }

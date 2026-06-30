@@ -1,13 +1,13 @@
-// 보고서 전용 순수 시계열 해석 헬퍼 — build.ts 에서 격리(format.ts·market.ts 동일 패턴).
+// 보고서 전용 순수 시계열 해석 헬퍼 · build.ts 에서 격리(format.ts·market.ts 동일 패턴).
 // coverage/detectOneOff/finite/readTrend/cagr: Num[] → 값·문장·플래그. 모듈 상태·클로저 0(behavior-preserving 이동).
 import type { Num } from '@dartlab/ui-contracts';
 
-// 금액 표(단일 단위 스케일) — 빈 행 자동 제거. 유효 행 0이면 null.
+// 금액 표(단일 단위 스케일) · 빈 행 자동 제거. 유효 행 0이면 null.
 export function coverage(values: Num[]): number {
 	return values.filter((v) => v != null && Number.isFinite(v)).length;
 }
 
-// 일회성 스파이크 탐지 — 한 칸이 본업 추세를 압도(중앙값 4배 초과 & 절대 60 초과)하면 {연도,값}.
+// 일회성 스파이크 탐지 · 한 칸이 본업 추세를 압도(중앙값 4배 초과 & 절대 60 초과)하면 {연도,값}.
 // 값은 *건드리지 않고*(정직), 본문에 맥락 각주만 붙인다(NAVER FY21 순이익률 241.7% 등).
 export function detectOneOff(values: Num[], yearCols: string[]): { year: string; value: number } | null {
 	const pairs = values
@@ -27,7 +27,7 @@ export function finite(values: Num[]): number[] {
 	return values.filter((v): v is number => v != null && Number.isFinite(v));
 }
 
-// 추세 1문장 — risingIsGood=false 면 상승을 '약화'로(부채비율 등 역방향 지표).
+// 추세 1문장 · risingIsGood=false 면 상승을 '약화'로(부채비율 등 역방향 지표).
 // 변동성(부호 전환 빈도+진폭)·장기방향·직전해방향을 합쳐 회사별 reading 을 만든다.
 export function readTrend(values: Num[], risingIsGood = true): string | null {
 	const v = finite(values);
@@ -56,7 +56,7 @@ export function readTrend(values: Num[], risingIsGood = true): string | null {
 	return '대체로 비슷한 수준을 유지했습니다';
 }
 
-// 연평균 성장률(CAGR, %) — 첫·끝 모두 양수일 때만(음수 시작은 CAGR 무의미 → null).
+// 연평균 성장률(CAGR, %) · 첫·끝 모두 양수일 때만(음수 시작은 CAGR 무의미 → null).
 export function cagr(values: Num[]): number | null {
 	const v = finite(values).filter((x) => x > 0);
 	if (v.length < 2) return null;

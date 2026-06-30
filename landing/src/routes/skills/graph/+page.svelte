@@ -16,7 +16,7 @@
 
 <svelte:head>
 	<title>Skill Graph · DartLab</title>
-	<meta name="description" content="DartLab Skill OS 그래프 — 257 노드 + 1337 엣지를 클릭으로 탐색." />
+	<meta name="description" content="DartLab Skill OS 그래프 · 257 노드 + 1337 엣지를 클릭으로 탐색." />
 </svelte:head>
 
 <Header context="skills" />

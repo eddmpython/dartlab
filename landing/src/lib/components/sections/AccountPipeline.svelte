@@ -83,7 +83,7 @@
 		<div class="grid md:grid-cols-2 gap-4 mb-10">
 			<!-- Before -->
 			<Card hover={false}>
-				<div class="text-[10px] font-mono text-dl-warning uppercase tracking-wider mb-3">표준화 전 — 원본 XBRL</div>
+				<div class="text-[10px] font-mono text-dl-warning uppercase tracking-wider mb-3">표준화 전 · 원본 XBRL</div>
 				<div class="space-y-2 font-mono text-xs">
 					<div class="flex justify-between"><span class="text-dl-text-dim">삼성전자</span><span class="text-dl-text-muted">ifrs-full_Revenue</span></div>
 					<div class="flex justify-between"><span class="text-dl-text-dim">SK하이닉스</span><span class="text-dl-text-muted">dart_Revenue</span></div>
@@ -100,7 +100,7 @@
 					<div class="flex justify-between"><span class="text-dl-text">SK하이닉스</span><span class="text-dl-primary">revenue</span></div>
 					<div class="flex justify-between"><span class="text-dl-text">LG에너지솔루션</span><span class="text-dl-primary">revenue</span></div>
 				</div>
-				<div class="mt-3 pt-3 border-t border-dl-border text-xs text-dl-text">전부 <code class="text-dl-primary">revenue</code> 로 — 회사간 비교가 그냥 동작</div>
+				<div class="mt-3 pt-3 border-t border-dl-border text-xs text-dl-text">전부 <code class="text-dl-primary">revenue</code> 로 · 회사간 비교가 그냥 동작</div>
 			</Card>
 		</div>
 

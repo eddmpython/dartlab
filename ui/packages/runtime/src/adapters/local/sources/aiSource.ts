@@ -1,6 +1,6 @@
-// 로컬 AiPort — 로컬 provider 게이트(adapters/local/api) 경유로 로컬 Python 서버(AG-UI 게이트웨이) 연결.
+// 로컬 AiPort · 로컬 provider 게이트(adapters/local/api) 경유로 로컬 Python 서버(AG-UI 게이트웨이) 연결.
 // capabilities() 는 /api/status 로 provider 구성 여부 probe → 있으면 advanced, 없으면 deterministic(throw 금지·정직 강등).
-// streamAsk 는 게이트 SSE 경로(api.streamAgentRun) — SSE 파싱/요청 본문 구성은 게이트(api/stream.ts)에 있다.
+// streamAsk 는 게이트 SSE 경로(api.streamAgentRun) · SSE 파싱/요청 본문 구성은 게이트(api/stream.ts)에 있다.
 // raw fetch·SSE 파싱은 이 source 가 직접 갖지 않는다(로컬 /api 호출 단일 게이트 집결, 02 §5).
 import type {
 	AiAskInput,
@@ -51,7 +51,7 @@ export function localAiPort(api: LocalApi): AiPort {
 					providerLabel: 'local'
 				};
 			}
-			// provider 미구성 — 로컬도 결정론 Q&A 이상 동작(throw 금지). 업그레이드 안내만.
+			// provider 미구성 · 로컬도 결정론 Q&A 이상 동작(throw 금지). 업그레이드 안내만.
 			return {
 				tier: 'deterministic',
 				streaming: true,
@@ -67,7 +67,7 @@ export function localAiPort(api: LocalApi): AiPort {
 		streamAsk(input): AsyncGenerator<AiStreamEvent> {
 			return api.streamAgentRun(input);
 		},
-		// 로컬은 단일 도구 직접 실행 엔드포인트 미보유(도구는 streamAsk 내부에서 에이전트가 실행) — honest error(throw 아님).
+		// 로컬은 단일 도구 직접 실행 엔드포인트 미보유(도구는 streamAsk 내부에서 에이전트가 실행) · honest error(throw 아님).
 		async runTool(input: AiToolRunInput): Promise<AiToolRunResult> {
 			return {
 				status: 'error',

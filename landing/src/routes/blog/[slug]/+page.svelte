@@ -8,7 +8,7 @@
 
 	let { data } = $props();
 
-	// 회사글 재무(빌드타임 SSOT) 를 마크다운 내 <CompanyFinancials> 에 context 로 전달 — getter 라 client 네비게이션에도 반응.
+	// 회사글 재무(빌드타임 SSOT) 를 마크다운 내 <CompanyFinancials> 에 context 로 전달 · getter 라 client 네비게이션에도 반응.
 	setContext('blogCompanyFinance', () => data.companyFinance);
 
 	interface TocItem {
@@ -128,8 +128,8 @@
 	const seriesPrevNext = $derived(findSeriesPrevNext(slug));
 	const relatedCategoryPosts = $derived(getRelatedPostsByCategory(slug, 3));
 
-	const pageTitle = $derived(`${meta?.title ?? 'Blog'} — DartLab 전자공시 분석`);
-	const pageDesc = $derived(meta?.description ?? `DartLab Blog — ${meta?.title ?? ''}`);
+	const pageTitle = $derived(`${meta?.title ?? 'Blog'} · DartLab 전자공시 분석`);
+	const pageDesc = $derived(meta?.description ?? `DartLab Blog · ${meta?.title ?? ''}`);
 	const pageUrl = $derived(`${brand.url}blog/${slug}`);
 	const pageImage = $derived(
 		postInfo?.ogImage ? `${brand.url}${postInfo.ogImage.replace(/^\//, '')}` :
@@ -581,7 +581,7 @@
 		color: var(--dl-ink-dim);
 	}
 
-	/* Article typography — mirrors docs layout */
+	/* Article typography · mirrors docs layout */
 	.blog-article {
 		min-width: 0;
 		max-width: 100%;
@@ -693,7 +693,7 @@
 		-webkit-overflow-scrolling: touch;
 	}
 
-	/* thead/tbody — 컨테이너 풀폭 우선, 컨텐츠가 더 크면 가로 스크롤
+	/* thead/tbody · 컨테이너 풀폭 우선, 컨텐츠가 더 크면 가로 스크롤
 	   table은 block + overflow-x auto이므로 자식이 max-content면 표 안에서만 스크롤 */
 
 	.blog-article :global(thead) {
@@ -720,7 +720,7 @@
 		vertical-align: top;
 	}
 
-	/* 첫 컬럼은 헤더만 nowrap (연도 라벨 등). td는 wrap 허용 — 긴 본문 셀이 다른 컬럼을 밀어내지 않도록 */
+	/* 첫 컬럼은 헤더만 nowrap (연도 라벨 등). td는 wrap 허용 · 긴 본문 셀이 다른 컬럼을 밀어내지 않도록 */
 	.blog-article :global(th:first-child) {
 		white-space: nowrap;
 	}
@@ -730,13 +730,13 @@
 		max-width: 320px;
 	}
 
-	/* 숫자 컬럼 우측 정렬 — 첫 컬럼(항목명) 제외 */
+	/* 숫자 컬럼 우측 정렬 · 첫 컬럼(항목명) 제외 */
 	.blog-article :global(td:not(:first-child)),
 	.blog-article :global(th:not(:first-child)) {
 		text-align: right;
 	}
 
-	/* 표 안의 inline code는 줄바꿈 허용 — 코드가 컬럼을 옆으로 밀어내지 않도록 */
+	/* 표 안의 inline code는 줄바꿈 허용 · 코드가 컬럼을 옆으로 밀어내지 않도록 */
 	.blog-article :global(td code:not(pre code)),
 	.blog-article :global(th code:not(pre code)) {
 		white-space: normal;
@@ -815,7 +815,7 @@
 		font-size: 0.7rem;
 		font-family: 'JetBrains Mono', monospace;
 		background: rgba(148, 163, 184, 0.15);
-		color: var(--p-slate-400); /* 코드블록(다크 섬) 위 — 라이트에서도 고정 밝은 회색 */
+		color: var(--p-slate-400); /* 코드블록(다크 섬) 위 · 라이트에서도 고정 밝은 회색 */
 		border: 1px solid rgba(148, 163, 184, 0.2);
 		border-radius: 4px;
 		cursor: pointer;
@@ -1207,7 +1207,7 @@
 			word-break: keep-all;
 			overflow-wrap: anywhere;
 		}
-		/* 본문 자체 — 모든 자식이 부모 폭 넘지 않도록 */
+		/* 본문 자체 · 모든 자식이 부모 폭 넘지 않도록 */
 		.blog-article {
 			max-width: 100%;
 			min-width: 0;

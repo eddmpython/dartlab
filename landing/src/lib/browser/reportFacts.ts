@@ -1,12 +1,12 @@
-// 보고서 비재무 fact 매퍼 — 정기보고서 parquet row → LiveCompanyReportFact. companyLive 에서 격리(순수 row-shaper).
-// 타입 import 는 erased(런타임 circular 무해) — 값 의존은 companyLive→reportFacts 단방향.
+// 보고서 비재무 fact 매퍼 · 정기보고서 parquet row → LiveCompanyReportFact. companyLive 에서 격리(순수 row-shaper).
+// 타입 import 는 erased(런타임 circular 무해) · 값 의존은 companyLive→reportFacts 단방향.
 import type { LiveCompanyReportFact } from './companyLive';
 
-// 정기보고서 parquet row 의 부분 스키마(DART 필드코드) — 매퍼가 읽는 필드만 선언.
+// 정기보고서 parquet row 의 부분 스키마(DART 필드코드) · 매퍼가 읽는 필드만 선언.
 // 값은 문자열 셀로 다룬다(value/detail 가 string). readReportFactRows 가 any[] 를 주므로 caller 무영향(경계 격리).
 export interface PeriodicReportRow {
 	year?: string | null;
-	// 도시에 스파인 — 출처 공시 접수번호(↗원문) + 결산 기준일(as-of)
+	// 도시에 스파인 · 출처 공시 접수번호(↗원문) + 결산 기준일(as-of)
 	rcept_no?: string | null;
 	stlm_dt?: string | null;
 	// 배당
@@ -35,7 +35,7 @@ export interface PeriodicReportRow {
 	evl_grad_instt?: string | null;
 }
 
-// 도시에 스파인 — 출처 공시(rcept_no) + 결산기준일(stlm_dt)을 fact 에 부착(↗원문·as-of). 모든 매퍼 공유.
+// 도시에 스파인 · 출처 공시(rcept_no) + 결산기준일(stlm_dt)을 fact 에 부착(↗원문·as-of). 모든 매퍼 공유.
 function srcOf(row: PeriodicReportRow | null | undefined): { rceptNo: string | null; stlmDt: string | null } {
 	const rc = row?.rcept_no?.trim();
 	const sd = row?.stlm_dt?.trim();

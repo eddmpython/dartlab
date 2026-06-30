@@ -1,11 +1,11 @@
-// Profit-pool stage 롤업 — `map/industries/{id}.json` 의 stages[].nodes[] 를
+// Profit-pool stage 롤업 · `map/industries/{id}.json` 의 stages[].nodes[] 를
 // stage 단위 (매출규모 × revenue-weighted 영업이익률 × coverageRatio) 격자로 변환한다.
 // "이 산업의 이익은 어느 공정 단계가 버나" (McKinsey profit pool: 이익집중 ≠ 매출집중).
 //
 // ★dual-source SSOT (mainPlan/industry-analysis-lab/07-implementation-plan.md §구멍1):
 //   엔진 `buildIndustrySummary`(panel Σ영업이익/Σ매출) 가 **캐논**이고, 본 브라우저 롤업은
 //   **표시용**이다. 브라우저는 per-node `opMargin`(이미 비율) 기반이라 커버리지·값이 엔진과
-//   갈릴 수 있어, coverageRatio 를 *항상* 노출한다 (결손 0 채움 금지 — 빠진 노드는 가중에서
+//   갈릴 수 있어, coverageRatio 를 *항상* 노출한다 (결손 0 채움 금지 · 빠진 노드는 가중에서
 //   제외하고 분모로만 카운트).
 
 export interface ProfitPoolNode {

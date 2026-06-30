@@ -8,10 +8,10 @@
 	let stages = $derived(ind.stages || []);
 	let edges = $derived(ind.edges || []);
 
-	// Profit-pool 격자 — "이익은 어느 공정 단계가 버나" (이익집중 ≠ 매출집중).
+	// Profit-pool 격자 · "이익은 어느 공정 단계가 버나" (이익집중 ≠ 매출집중).
 	// dual-source: 브라우저 표시용 롤업, 엔진 buildIndustrySummary 가 캐논 (07 §구멍1).
 	let profitPool = $derived(rollupProfitPool(stages));
-	// 마진 산출가능 stage 만 2D 플롯 (opMargin 결손 stage 는 격자 제외 — 0 채움 금지).
+	// 마진 산출가능 stage 만 2D 플롯 (opMargin 결손 stage 는 격자 제외 · 0 채움 금지).
 	let poolPlot = $derived.by(() => {
 		const plottable = profitPool.filter((s) => s.opMarginPct !== null && s.revenue > 0);
 		if (plottable.length === 0) return null;
@@ -29,13 +29,13 @@
 		}));
 		return { bubbles, yMin, yMax, zeroPct: ((0 - yMin) / yRange) * 100 };
 	});
-	// 마진 결손 stage (플롯 제외 — 정직 가드)
+	// 마진 결손 stage (플롯 제외 · 정직 가드)
 	let poolMissing = $derived(profitPool.filter((s) => s.opMarginPct === null && s.companyCount > 0));
 	function fmtMargin(v: number | null): string {
-		return v === null ? '—' : `${v}%`;
+		return v === null ? '·' : `${v}%`;
 	}
 
-	// 산업 분포 밴드 (Phase C) — industryStats p10~p90. percentile 밴드만(mean±std 금지),
+	// 산업 분포 밴드 (Phase C) · industryStats p10~p90. percentile 밴드만(mean±std 금지),
 	// n<10 metric 숨김, 분포출처 ≠ 공식지수 라벨 (04 §3 #5/#8). 신규 계산 0.
 	let distBands = $derived.by(() => {
 		const dist = stats?.distribution;
@@ -114,7 +114,7 @@
 		content={`${ind.name} 산업 ${ind.nodeCount}사의 공정별 구조, 공급망 엣지 ${edges.length}건, 총 매출 ${formatRev(ind.totalRevenue)}`}
 	/>
 	<meta property="og:type" content="website" />
-	<meta property="og:title" content={`${ind.name} 산업지도 — dartlab`} />
+	<meta property="og:title" content={`${ind.name} 산업지도 · dartlab`} />
 	<meta
 		property="og:description"
 		content={`${ind.nodeCount}사 · 총매출 ${formatRev(ind.totalRevenue)} · Top ROE/성장/위험 + 공급망`}
@@ -292,7 +292,7 @@
 		</section>
 	{/if}
 
-	<!-- Profit-pool 격자 — 이익은 어느 단계가 버나 -->
+	<!-- Profit-pool 격자 · 이익은 어느 단계가 버나 -->
 	{#if poolPlot}
 		<section class="sec">
 			<h2>이익은 어느 공정 단계가 버나</h2>
@@ -348,7 +348,7 @@
 				{/each}
 			</div>
 			<p class="pool-caption">
-				분포출처: industryStats(KSIC 섹터·동일가중·상장 primary사) — KRX 시총가중 업종지수 아님.
+				분포출처: industryStats(KSIC 섹터·동일가중·상장 primary사) · KRX 시총가중 업종지수 아님.
 				n&lt;10 지표는 표시 생략.
 			</p>
 		</section>
@@ -448,14 +448,14 @@
 								</td>
 								<td class="product">{e.product || '-'}</td>
 								<td class="num amount">{formatAmount(e.amount)}원</td>
-								<td class="num dep">{e.ratio != null ? e.ratio.toFixed(1) + '%' : '—'}</td>
+								<td class="num dep">{e.ratio != null ? e.ratio.toFixed(1) + '%' : '·'}</td>
 								<td>
 									<span
 										class="src-chip"
 										class:strong={e.source === 'docs_table'}
 										class:weak={e.source === 'docs'}
 										title={e.source === 'docs_table' ? '공시 표 추출(강)' : e.source === 'docs' ? '본문 언급(약)' : e.source === 'network' ? '출자 관계' : e.source}
-									>{e.source || '—'}</span>
+									>{e.source || '·'}</span>
 								</td>
 							</tr>
 						{/each}
@@ -463,8 +463,8 @@
 				</table>
 			</div>
 			<p class="pool-caption">
-				의존도 = 공급사가 신고한 매출처 의존도(사업보고서 「주요 매출처/매입처」 공시 추출). 추출 누락분은 '—'(0 채움 안 함).
-				상장 그래프·금액 공개분 한정 — 전체 거래의 일부다.
+				의존도 = 공급사가 신고한 매출처 의존도(사업보고서 「주요 매출처/매입처」 공시 추출). 추출 누락분은 '·'(0 채움 안 함).
+				상장 그래프·금액 공개분 한정 · 전체 거래의 일부다.
 			</p>
 		</section>
 	{/if}
