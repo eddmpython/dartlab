@@ -58,3 +58,39 @@ def test_employee_rows_empty_without_match():
 
     panel = pl.DataFrame({"period": ["2024"], "contentRaw": ["no headcount disclosure here"]})
     assert employeeRowsFromPanel(panel, "X") == []
+
+
+def test_build_merges_prior_seed(tmp_path, monkeypatch):
+    """누적 병합: 기존 발행본 시드 + 로컬 panel 추출 합산. 충돌은 로컬 우선, 시드 전용 종목 유지."""
+    import dartlab.config as cfg
+    from dartlab.scan.builders.edgar.report import employeeBuild
+
+    # 로컬 panel 1종(NEWCO) 합성
+    panelDir = tmp_path / "edgar" / "panel"
+    panelDir.mkdir(parents=True)
+    pl.DataFrame(
+        {
+            "chapter": ["10-K", "10-K"],
+            "period": ["2024", "2023"],
+            "contentRaw": ["we had approximately 5,000 employees", "we had approximately 4,000 employees"],
+        }
+    ).write_parquet(panelDir / "NEWCO.parquet")
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+
+    # 시드: OLDCO(로컬에 없음) + NEWCO 2024(로컬이 덮어써야 함, 9999 -> 5000)
+    seed = pl.DataFrame(
+        {
+            "stockCode": ["OLDCO", "NEWCO"],
+            "year": ["2022", "2024"],
+            "employeeCount": [777, 9999],
+            "source": ["10-K", "10-K"],
+        }
+    ).cast(employeeBuild.EMPLOYEE_COLS)
+    monkeypatch.setattr(employeeBuild, "_loadPriorEmployee", lambda: seed)
+
+    p = employeeBuild.buildEdgarEmployee(verbose=False)
+    out = pl.read_parquet(p)
+    by = {(r["stockCode"], r["year"]): r["employeeCount"] for r in out.to_dicts()}
+    assert by[("OLDCO", "2022")] == 777  # 시드 전용 종목 유지
+    assert by[("NEWCO", "2024")] == 5000  # 로컬이 시드(9999) 덮어씀
+    assert by[("NEWCO", "2023")] == 4000  # 로컬 신규

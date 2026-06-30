@@ -30,6 +30,29 @@ EMPLOYEE_COLS = {
 # buildEdgarEmployee 가 panel 에서 읽는 최소 컬럼(메모리. contentRaw 가 전 10-K 텍스트라 무겁다).
 _READ_COLS = ["chapter", "period", "contentRaw"]
 
+_HF_REPO = "eddmpython/dartlab-data"
+_HF_EMPLOYEE_PATH = "edgar/scan/report/employee.parquet"
+
+
+def _loadPriorEmployee() -> pl.DataFrame | None:
+    """기존 발행본 employee.parquet(HF)을 시드로 로드. 누적 병합용. 실패 시 None.
+
+    panel 텍스트는 30GB(7,300+)라 CI 로컬 캐시는 일부만 보유한다. 매 run 이 로컬 추출분만 쓰면 직원수
+    커버리지가 줄어든다. 기존 발행본을 시드로 병합해 한 번 채운 종목이 유지되게 한다(panel backfill 동형 누적).
+
+    Returns:
+        pl.DataFrame | None. 기존 발행본(없거나 로드 실패면 None).
+    """
+    try:
+        import os
+
+        from huggingface_hub import hf_hub_download
+
+        fp = hf_hub_download(_HF_REPO, _HF_EMPLOYEE_PATH, repo_type="dataset", token=os.environ.get("HF_TOKEN"))
+        return pl.read_parquet(fp)
+    except Exception:  # noqa: BLE001 (네트워크/부재 모두 graceful None)
+        return None
+
 
 def employeeRowsFromPanel(panel: pl.DataFrame, ticker: str) -> list[dict]:
     """단일 회사 panel(10-K contentRaw) 에서 연도별 직원수 행 추출. 연도당 첫 유효 매칭.
@@ -139,6 +162,12 @@ def buildEdgarEmployee(*, verbose: bool = False) -> Path:
         rows.extend(employeeRowsFromPanel(sub, ticker))
 
     out = pl.DataFrame(rows, schema=EMPLOYEE_COLS) if rows else pl.DataFrame(schema=EMPLOYEE_COLS)
+    # 누적 병합: 기존 발행본을 시드로 합치고 (stockCode, year) 충돌은 로컬 신규 우선(keep=first).
+    # CI panel 캐시가 일부라 매 run 로컬분만 쓰면 커버리지가 줄어든다. 시드 병합으로 한 번 채운 종목 유지.
+    prior = _loadPriorEmployee()
+    if prior is not None and not prior.is_empty():
+        prior = prior.select(list(EMPLOYEE_COLS.keys())).cast(EMPLOYEE_COLS)  # 스키마 정합
+        out = pl.concat([out, prior], how="vertical_relaxed").unique(subset=["stockCode", "year"], keep="first")
     out = out.sort(["stockCode", "year"])
     outPath = outDir / "employee.parquet"
     out.write_parquet(str(outPath), compression="zstd")
