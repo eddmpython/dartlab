@@ -56,14 +56,15 @@ export async function buildDeck(
 	// 주석 구성(부문별매출·비용성격별)은 수익성 덱에만 주입하므로 그 관점일 때만 fetch(나머지 4덱 낭비 0).
 	// noteSeries 는 panel XBRL 태그 런타임 직독(별도 bake 0). 어댑터 throw 는 null 로 흡수(덱 무회귀).
 	const wantNotes = perspectiveKey === 'earningsPower';
-	const [result, noteSeries] = await Promise.all([
+	const [result, noteSeries, businessTables] = await Promise.all([
 		buildReport(rt, post.code, perspectiveKey),
-		wantNotes ? rt.report.noteSeries(post.code).catch(() => null) : Promise.resolve(null)
+		wantNotes ? rt.report.noteSeries(post.code).catch(() => null) : Promise.resolve(null),
+		wantNotes ? rt.report.businessTables(post.code).catch(() => null) : Promise.resolve(null)
 	]);
 	const spec = contract?.spec;
 	// 계약이 없으면(자동 덱) 회사 hero 전체로 폴백.
 	const heroUrls = curated.length ? curated : resolveHeroes(media, post.code, spec);
-	return projectResult(result, persp.label, { heroUrls, spec, lead, noteSeries });
+	return projectResult(result, persp.label, { heroUrls, spec, lead, noteSeries, businessTables });
 }
 
 

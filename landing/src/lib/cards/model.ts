@@ -70,6 +70,8 @@ export type CarouselCard =
 			latestPeriod: string; // 최신 기간 라벨(헤더 우측)
 	  })
 	| (CardHead & { kind: 'table'; cols: string[]; data: Record<string, string>[]; unit?: string })
+	// 사업 서술 표(생산능력·원재료·매출수주) · II.사업의내용 HTML 표 격자전개(CleanTable). 헤더+행 그대로.
+	| (CardHead & { kind: 'businessTable'; topic: string; headers: string[]; rows: string[][] })
 	| (CardHead & { kind: 'finChart'; stockCode: string; cardKey?: string }) // MiniFinChart 백본(finance.bundle) · cardKey=관점 카드 선택(없으면 cards[0])
 	| (CardHead & { kind: 'closing'; thesis: string })
 	| (CardHead & { kind: 'empty'; reason: string }) // pending/skip 정직 카드(broken img 아님)

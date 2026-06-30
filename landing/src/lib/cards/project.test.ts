@@ -2,9 +2,9 @@
 // narration 신규합성 0(모델값 그대로). fixture 만으로 런타임 비의존 검증.
 import { describe, it, expect } from 'vitest';
 import type { ReportModel, ReportBlock, ReportSection } from '$lib/report/model';
-import type { NoteSeriesBundle, CompositionSeries } from '@dartlab/ui-contracts';
+import type { NoteSeriesBundle, CompositionSeries, BusinessTablesBundle, BusinessTable } from '@dartlab/ui-contracts';
 import type { CarouselCard } from './model';
-import { projectBlock, projectReport, projectResult, compositionToCard, chapterAnchors } from './project';
+import { projectBlock, projectReport, projectResult, compositionToCard, businessTableToCard, chapterAnchors } from './project';
 
 function model(overrides: Partial<ReportModel> = {}): ReportModel {
 	return {
@@ -252,6 +252,40 @@ describe('projectReport · composition 주입 + 챕터 태깅(자동 kpis 없음
 		expect(deck.cards.some((c) => c.kind === 'kpis')).toBe(false);
 		expect(deck.cards.find((c) => c.kind === 'finChart')?.chapter).toBe('재무');
 		expect(chapterAnchors(deck.cards).map((a) => a.label)).toEqual(['표지', '재무', '사업·운영']);
+	});
+});
+
+describe('사업 서술 표 카드(businessTableToCard) · cap·조건부·주입', () => {
+	const bt = (topic: string, rows: number): BusinessTable => ({
+		topic,
+		title: `${topic} 섹션`,
+		period: '2025Q4',
+		headers: ['부문', '품목', '매출액', '비중', '매입처', '비고'],
+		rows: Array.from({ length: rows }, (_, i) => [`부문${i}`, `품목${i}`, `${i}00`, `${i}%`, `사${i}`, '-'])
+	});
+	it('표 카드 · 6행·5열 cap + 사업·운영 챕터', () => {
+		const c = businessTableToCard(bt('rawMaterial', 9));
+		if (c?.kind !== 'businessTable') throw new Error('businessTable 아님');
+		expect(c.rows.length).toBe(6);
+		expect(c.headers.length).toBe(5);
+		expect(c.rows[0].length).toBe(5);
+		expect(c.chapter).toBe('사업·운영');
+	});
+	it('빈/단열 → null(조건부 skip)', () => {
+		expect(businessTableToCard({ topic: 'x', title: 't', period: 'p', headers: ['a', 'b'], rows: [] })).toBeNull();
+		expect(businessTableToCard({ topic: 'x', title: 't', period: 'p', headers: ['a'], rows: [['1']] })).toBeNull();
+	});
+	it('수익성 + businessTables → 상위 2 토픽 주입', () => {
+		const tb: BusinessTablesBundle = { tables: [bt('salesOrder', 3), bt('rawMaterial', 3), bt('productService', 3)] };
+		const deck = projectReport(model(), { businessTables: tb });
+		const cards = deck.cards.filter((c) => c.kind === 'businessTable');
+		expect(cards.length).toBe(2);
+		expect(cards.every((c) => c.chapter === '사업·운영')).toBe(true);
+	});
+	it('비-수익성 관점 미주입', () => {
+		const tb: BusinessTablesBundle = { tables: [bt('salesOrder', 3)] };
+		const deck = projectReport(model({ perspectiveKey: 'liquidity', perspectiveLabel: '재무안정성' }), { businessTables: tb });
+		expect(deck.cards.some((c) => c.kind === 'businessTable')).toBe(false);
 	});
 });
 

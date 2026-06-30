@@ -66,7 +66,7 @@
 	}
 
 	// 사진 모드 · 편집 카드=monochrome+강한 하단 그라데이션(기존 SNS editorial), 텍스트=풀, 차트=dim.
-	const CHART_KINDS = new Set(['kpis', 'line', 'bars', 'share', 'composition', 'table', 'finChart']);
+	const CHART_KINDS = new Set(['kpis', 'line', 'bars', 'share', 'composition', 'table', 'businessTable', 'finChart']);
 	const EDITORIAL_KINDS = new Set(['editorial', 'editorialBeat', 'editorialStat']);
 	const photoMode = $derived(
 		card.kind === 'cover'
@@ -367,6 +367,17 @@
 								<tr>
 									{#each card.cols as c, ci}<td class:num={ci !== 0} class="{ci === 0 || TXT_COLS.has(c) ? verdictTone(row[c]) : cellTone(row[c])}">{row[c] ?? '-'}</td>{/each}
 								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			{:else if card.kind === 'businessTable'}
+				<div class="tWrap">
+					<table class="cT">
+						<thead><tr>{#each card.headers as h, i (i)}<th class:num={i !== 0}>{h}</th>{/each}</tr></thead>
+						<tbody>
+							{#each card.rows as row, ri (ri)}
+								<tr>{#each row as cell, ci (ci)}<td class:num={ci !== 0 && /\d/.test(cell)}>{cell || '-'}</td>{/each}</tr>
 							{/each}
 						</tbody>
 					</table>

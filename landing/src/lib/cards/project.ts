@@ -5,7 +5,7 @@
 import type { ReportBlock, ReportModel, ReportResult, OverviewModel } from '$lib/report/model';
 import { isSkipped } from '$lib/report/model';
 import { clean, splitTitle, isTimeSeries } from '$lib/report/render';
-import type { NoteSeriesBundle, CompositionSeries } from '@dartlab/ui-contracts';
+import type { NoteSeriesBundle, CompositionSeries, BusinessTablesBundle, BusinessTable } from '@dartlab/ui-contracts';
 import type { CarouselCard, CarouselDeck, CarouselSpec } from './model';
 
 // 챕터 라벨 SSOT · 캡션 패널 섹션 점프 네비(chapterAnchors)가 이 순서대로 앵커를 만든다.
@@ -70,6 +70,27 @@ export function compositionToCard(
 		amounts: order.map((i) => ((last.shares[i] ?? 0) / 100) * last.total),
 		latestTotal: last.total,
 		latestPeriod: shortPeriod(last.period)
+	};
+}
+
+const BIZ_HEADING: Record<string, { h: string; s: string }> = {
+	salesOrder: { h: '매출·수주 실적', s: '제품별로 얼마나 파나' },
+	rawMaterial: { h: '원재료·생산', s: '무엇으로 만드나' },
+	productService: { h: '주요 제품', s: '무엇을 파나' }
+};
+/** 사업 서술 표(businessTables) 1개 → 표 카드. 4:5 카드에 맞춰 상위 6행·5열 cap. 빈 표면 null(조건부 skip). */
+export function businessTableToCard(t: BusinessTable): CarouselCard | null {
+	if (!t.rows.length || t.headers.length < 2) return null;
+	const ncol = Math.min(t.headers.length, 5);
+	const meta = BIZ_HEADING[t.topic];
+	return {
+		kind: 'businessTable',
+		heading: meta?.h ?? t.title,
+		sub: meta?.s ?? '',
+		chapter: CH_BIZ,
+		topic: t.topic,
+		headers: t.headers.slice(0, ncol),
+		rows: t.rows.slice(0, 6).map((r) => r.slice(0, ncol))
 	};
 }
 
@@ -142,7 +163,7 @@ export function projectBlock(block: ReportBlock, head: HeadCtx): CarouselCard | 
  *  `carousel:`)이 있으면 큐레이션 오버레이 · order 로 섹션 필터/재정렬, notes[key] 로 손글 caption. */
 export function projectReport(
 	model: ReportModel,
-	opts: { heroUrls?: string[]; spec?: CarouselSpec; lead?: CarouselCard[]; noteSeries?: NoteSeriesBundle | null } = {}
+	opts: { heroUrls?: string[]; spec?: CarouselSpec; lead?: CarouselCard[]; noteSeries?: NoteSeriesBundle | null; businessTables?: BusinessTablesBundle | null } = {}
 ): CarouselDeck {
 	const spec = opts.spec;
 	const heroUrls = opts.heroUrls ?? [];
@@ -191,6 +212,13 @@ export function projectReport(
 		const cost = compositionToCard(opts.noteSeries.cost, '비용 체질', '돈을 뭐에 쓰나');
 		if (seg) cards.push(seg);
 		if (cost) cards.push(cost);
+	}
+	// 사업 서술 표(생산능력·원재료·매출수주) · businessTables 직독(별도 bake 0). 상위 2개 토픽만(덱 비대화 방지).
+	if (model.perspectiveKey === 'earningsPower' && opts.businessTables) {
+		for (const t of opts.businessTables.tables.slice(0, 2)) {
+			const c = businessTableToCard(t);
+			if (c) cards.push(c);
+		}
 	}
 
 	// 큐레이션 order: 섹션 key 화이트리스트로 필터/재정렬(없으면 원순서). 미지정 key 는 무시(누락 surface 는 audit).
@@ -261,7 +289,7 @@ function assignHeroes(cards: CarouselCard[], heroUrls: string[]): void {
 export function projectResult(
 	result: ReportResult,
 	perspectiveLabel: string,
-	opts: { heroUrls?: string[]; spec?: CarouselSpec; lead?: CarouselCard[]; noteSeries?: NoteSeriesBundle | null } = {}
+	opts: { heroUrls?: string[]; spec?: CarouselSpec; lead?: CarouselCard[]; noteSeries?: NoteSeriesBundle | null; businessTables?: BusinessTablesBundle | null } = {}
 ): CarouselDeck {
 	if (isSkipped(result)) {
 		// 데이터 skip 이어도 편집 계약 슬라이드(lead)는 그대로 보여준다(굽지 않은 손글). 없으면 정직 빈 카드.
