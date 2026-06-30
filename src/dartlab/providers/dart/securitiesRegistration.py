@@ -161,6 +161,8 @@ def parseIpoProspectus(content: str) -> dict:
             allocation : dict — byTarget(우리사주/일반공모 주식수)·total.
             float : dict — freeFloatShares·freeFloatPct(상장후 유통가능)·lockedShares(매각제한)·
                 postOfferingShares·lockups[{holder,shares,period}](주주별 보호예수 일정).
+            multiples : dict — marketCap(low,high)·per·psr·pbr(공모가밴드 기준 IPO 자체 멀티플,
+                비교기업 멀티플 대비 좌표)·annualPeriod·isLoss(적자 리스크 태그).
             risk : dict — sections(사업/회사/기타위험)·count.
             identities : dict — 각 카테고리 항등식 통과 여부 (truth proxy).
             sections : list[str] — 검출된 섹션 앵커 키 (커버리지).
@@ -176,6 +178,7 @@ def parseIpoProspectus(content: str) -> dict:
     Capabilities:
         - 공모개요(공모가밴드·청약일)·밸류(적용 PER·평가가액·할인율)·재무3개년·배정·리스크 추출.
         - 상장후 유통가능물량·보호예수(매각제한) 워터폴 + 주주별 보호예수 일정.
+        - 공모가밴드 기준 IPO 자체 implied PER/PBR/PSR (비교기업 멀티플 대비 고저평가 좌표·적자 태그).
         - 카테고리별 내적 항등식으로 오추출·원문오타 검출 및 복구 (truth proxy).
 
     Guide:
@@ -218,6 +221,7 @@ def parseIpoProspectus(content: str) -> dict:
     financials = _parseFinancials(sections)
     allocation = _parseAllocation(sections)
     floatData = _parseFloat(content)
+    multiples = _impliedMultiples(offering, financials, floatData)
     risk = _parseRisk(content)
     identities = _verifyIdentities(offering, valuation, financials, allocation, floatData)
     return {
@@ -226,6 +230,7 @@ def parseIpoProspectus(content: str) -> dict:
         "financials": financials,
         "allocation": allocation,
         "float": floatData,
+        "multiples": multiples,
         "risk": risk,
         "identities": identities,
         "sections": sorted(sections.keys()),
@@ -429,11 +434,21 @@ def _parsePeers(grids: list[list[list[str]]]) -> list[str]:
     return []
 
 
+_FIN_UNITS = {"백만원": 1e6, "천원": 1e3, "억원": 1e8, "원": 1.0}
+
+
+def _financialsUnit(sec: str) -> float:
+    """요약재무정보 '단위: 백만원/천원/원' 캡션 → 원 환산 배수. 미검출 시 1.0(원)."""
+    m = re.search(r"단위\s*[:：]?\s*([가-힣]*원)", sec)
+    return _FIN_UNITS.get(m.group(1), 1.0) if m else 1.0
+
+
 def _parseFinancials(sections: dict[str, str]) -> dict:
-    """카테고리5 — 요약재무정보 3 개년(+분기) 격자에서 핵심 라인 추출."""
-    grids = _tableGrids(sections.get("financials", ""))
+    """카테고리5 — 요약재무정보 3 개년(+분기) 격자에서 핵심 라인 + 단위 추출."""
+    sec = sections.get("financials", "")
+    grids = _tableGrids(sec)
     main = max(grids, key=lambda g: len(g) * (max((len(r) for r in g), default=0)), default=None)
-    out: dict[str, object] = {}
+    out: dict[str, object] = {"unit": _financialsUnit(sec)}
     if not main:
         return out
     out["periods"] = [h for h in (main[0][1:] if main else []) if h]
@@ -444,6 +459,50 @@ def _parseFinancials(sections: dict[str, str]) -> dict:
                 rows[label] = [_num(c) for c in row[1:]]
                 break
     out["rows"] = rows
+    return out
+
+
+def _impliedMultiples(offering: dict, financials: dict, floatData: dict) -> dict:
+    """공모가밴드 × 상장후주식수 = 시가총액 → IPO 자체 implied PER/PBR/PSR (비교기업 멀티플 대비 좌표).
+
+    연간 컬럼(periods 중 '분기' 아닌 최근 연도)의 당기순이익·매출액 + 최근 자본총계(가장 최신 컬럼).
+    적자(연간순이익≤0)면 per=None(PER 무의미·리스크). 재무 단위(원/백만원) 환산 후 계산.
+    """
+    band = offering.get("priceBand")
+    shares = floatData.get("postOfferingShares")
+    rows = financials.get("rows", {})
+    periods = financials.get("periods", [])
+    unit = financials.get("unit", 1.0)
+    if not band or not shares or not periods or not rows:
+        return {}
+    lo, hi = float(min(band)), float(max(band))
+    mcapLo, mcapHi = lo * shares, hi * shares
+    out: dict[str, object] = {"marketCap": (mcapLo, mcapHi)}
+    # 연간 컬럼만 — 'YYYY년' 이되 '월'(월말 interim)·'분기' 제외(레몬 '제10기(2026년3월말)' 류 오선택 차단).
+    annualIdx = next(
+        (i for i, p in enumerate(periods) if re.search(r"\d{4}\s*년", p) and "월" not in p and "분기" not in p),
+        None,
+    )
+    if annualIdx is None:
+        return out  # 깨끗한 연간 컬럼 없으면 멀티플 미산정 — 부정확값 방출 대신 marketCap 만 반환
+
+    def _at(label: str, idx: int) -> float | None:
+        vals = rows.get(label)
+        v = vals[idx] if vals and idx < len(vals) else None
+        return v * unit if v is not None else None
+
+    netIncome = _at("당기순이익", annualIdx)
+    revenue = _at("매출액", annualIdx)
+    equity = _at("자본총계", 0)  # 자본총계는 시점값 — 가장 최신 컬럼
+    out["annualPeriod"] = periods[annualIdx]
+    if netIncome is not None:
+        out["isLoss"] = netIncome <= 0  # 적자 리스크 태그 (None=미검출이라 미표기)
+    if netIncome and netIncome > 0:
+        out["per"] = (round(mcapLo / netIncome, 2), round(mcapHi / netIncome, 2))
+    if revenue and revenue > 0:
+        out["psr"] = (round(mcapLo / revenue, 2), round(mcapHi / revenue, 2))
+    if equity and equity > 0:
+        out["pbr"] = (round(mcapLo / equity, 2), round(mcapHi / equity, 2))
     return out
 
 

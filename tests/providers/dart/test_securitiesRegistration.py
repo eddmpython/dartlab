@@ -81,6 +81,7 @@ _FIXTURE = """<?xml version="1.0" encoding="utf-8"?>
 <TR><TD>부채총계</TD><TD>600</TD><TD>500</TD></TR>
 <TR><TD>자본총계</TD><TD>400</TD><TD>400</TD></TR>
 <TR><TD>매출액</TD><TD>2,000</TD><TD>1,800</TD></TR>
+<TR><TD>당기순이익</TD><TD>100</TD><TD>90</TD></TR>
 </TABLE>
 <TITLE>1. 핵심투자위험</TITLE>
 <TITLE>III. 투자위험요소</TITLE>
@@ -145,6 +146,30 @@ def test_parse_float_waterfall_identity():
     assert r["identities"]["floatBalance"] is True
     # 주주별 보호예수(매각제한) 일정
     assert any(lu["holder"] == "홍길동" and "24개월" in lu["period"] for lu in f["lockups"])
+
+
+def test_implied_multiples_from_offer_price():
+    r = parseIpoProspectus(_FIXTURE)
+    m = r["multiples"]
+    shares = r["float"]["postOfferingShares"]  # 1,000,000
+    band = r["offering"]["priceBand"]  # (80000, 90000)
+    rows = r["financials"]["rows"]
+    # 예상 시가총액 = 공모가밴드 × 상장후주식수 (항상 산정 — cat1 요청)
+    assert m["marketCap"] == (band[0] * shares, band[1] * shares)
+    # implied 멀티플 = 시총 / 연간 실적 (연간 컬럼 '2025년')
+    assert m["per"][0] == pytest.approx(band[0] * shares / rows["당기순이익"][0])
+    assert m["psr"][0] == pytest.approx(band[0] * shares / rows["매출액"][0])
+    assert m["pbr"][0] == pytest.approx(band[0] * shares / rows["자본총계"][0])
+    assert m["isLoss"] is False  # 당기순이익 100 > 0
+    assert m["annualPeriod"] == "2025년"
+
+
+def test_implied_multiples_skips_when_no_clean_annual():
+    # 월말 interim 컬럼만(분기성)이면 멀티플 미산정, marketCap 만 — 쓰레기 금지.
+    fx = _FIXTURE.replace("<TD>2025년</TD><TD>2024년</TD>", "<TD>2026년3월말</TD><TD>2025년3월말</TD>")
+    m = parseIpoProspectus(fx)["multiples"]
+    assert "marketCap" in m
+    assert m.get("per") is None and m.get("annualPeriod") is None
 
 
 def test_parse_six_sections_and_risk():
