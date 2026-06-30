@@ -159,13 +159,11 @@ def buildEdgarFinance(*, sinceYear: int = 2021, verbose: bool = False) -> Path:
 
     # CIK → ticker 매핑 (universe 기준) — stockCode 컬럼을 user-facing ticker 로 저장하기 위함.
     # 다운스트림 소비자(quant/AI)는 ticker 만 사용한다. CIK 는 내부 SEC 식별자.
+    # edgarCikToTicker = 대표(보통주) 티커 우선 SSOT — finance·valuation·report 공유(키 드리프트 0).
     try:
-        from dartlab.core.dataLoader import loadEdgarListedUniverse
+        from dartlab.scan.builders.edgar.helpers import edgarCikToTicker
 
-        _univ = loadEdgarListedUniverse()
-        cikToTicker: dict[str, str] = {
-            str(c).zfill(10): t for c, t in zip(_univ["cik"].to_list(), _univ["ticker"].to_list()) if t
-        }
+        cikToTicker = edgarCikToTicker()
     except (OSError, ValueError, KeyError):
         cikToTicker = {}
 

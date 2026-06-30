@@ -1,8 +1,10 @@
-"""EDGAR scan report 빌더 — shareholderReturnRows 가 배당 연도 시계열(ShareholderReturnYear 동형)을
-XBRL facts 에서 정확히 뽑는지 + 태그 폴백 머지. 합성 facts → 네트워크/OOM 무관.
+"""EDGAR scan report 빌더 — 3관점(주주환원·부채만기·임원보수)을 XBRL facts 에서 정확히 뽑는지 +
+태그 폴백 머지 + ecd 연도 도출. 합성 facts → 네트워크/OOM 무관.
 """
 
 from __future__ import annotations
+
+from datetime import date
 
 import polars as pl
 import pytest
@@ -90,3 +92,119 @@ def test_latest_filed_restatement_wins():
     )
     rows = shareholderReturnRows(facts, "R")
     assert rows[0]["dps"] == 1.1  # 최신 filed
+
+
+def test_buyback_amount_qty_and_total_payout():
+    """자사주매입 금액·소각주식수 채움 + totalPayoutPct=(배당+매입)/순이익 — 미국 자본환원 핵심."""
+    from dartlab.scan.builders.edgar.report.build import shareholderReturnRows
+
+    facts = _facts(
+        [
+            {"tag": "PaymentsOfDividendsCommonStock", "val": 15_000_000.0, "fy": 2024},
+            {"tag": "PaymentsForRepurchaseOfCommonStock", "val": 45_000_000.0, "fy": 2024},
+            {"tag": "StockRepurchasedAndRetiredDuringPeriodShares", "val": 135_000.0, "fy": 2024},
+            {"tag": "NetIncomeLoss", "val": 100_000_000.0, "fy": 2024},
+        ]
+    )
+    rows = shareholderReturnRows(facts, "AAPL")
+    assert len(rows) == 1
+    r = rows[0]
+    assert r["buybackAmount"] == 45_000_000.0
+    assert r["buybackQty"] == 135_000.0  # 소각 주식수(treasury 없어도)
+    assert r["payoutPct"] == 15.0  # 배당만 15%
+    assert r["totalPayoutPct"] == 60.0  # (15+45)/100 × 100
+
+
+def test_buyback_only_year_included():
+    """배당 없이 자사주매입만 있는 연도도 포함 — 무배당 성장주의 buyback 스토리."""
+    from dartlab.scan.builders.edgar.report.build import shareholderReturnRows
+
+    facts = _facts([{"tag": "PaymentsForRepurchaseOfCommonStock", "val": 9_000_000.0, "fy": 2023}])
+    rows = shareholderReturnRows(facts, "GROWTH")
+    assert len(rows) == 1
+    assert rows[0]["buybackAmount"] == 9_000_000.0
+    assert rows[0]["totalDividend"] is None
+
+
+def test_debt_maturity_ladder():
+    """부채 만기 사다리 y1~y5·after5·총장기부채 연도별 추출."""
+    from dartlab.scan.builders.edgar.report.build import debtMaturityRows
+
+    facts = _facts(
+        [
+            {"tag": "LongTermDebtMaturitiesRepaymentsOfPrincipalInNextTwelveMonths", "val": 12.0, "fy": 2024},
+            {"tag": "LongTermDebtMaturitiesRepaymentsOfPrincipalInYearTwo", "val": 10.0, "fy": 2024},
+            {"tag": "LongTermDebtMaturitiesRepaymentsOfPrincipalAfterYearFive", "val": 49.0, "fy": 2024},
+            {"tag": "LongTermDebt", "val": 90.0, "fy": 2024},
+        ]
+    )
+    rows = debtMaturityRows(facts, "AAPL")
+    assert len(rows) == 1
+    r = rows[0]
+    assert r["y1"] == 12.0
+    assert r["y2"] == 10.0
+    assert r["y5"] is None  # 미공시 버킷은 null
+    assert r["after5"] == 49.0
+    assert r["longTermDebt"] == 90.0
+
+
+def test_debt_maturity_empty_when_no_buckets():
+    """만기 버킷 전무면 빈 list(장기부채만 있어도 사다리 없으면 제외)."""
+    from dartlab.scan.builders.edgar.report.build import debtMaturityRows
+
+    facts = _facts([{"tag": "LongTermDebt", "val": 50.0, "fy": 2024}])
+    assert debtMaturityRows(facts, "X") == []
+
+
+def test_exec_comp_from_ecd_year_from_end():
+    """임원보수 — ecd(PvP) CEO·평균NEO 보수, fy 없어 기간 end 의 연도로 키."""
+    from dartlab.scan.builders.edgar.report.build import execCompRows
+
+    facts = pl.DataFrame(
+        [
+            {
+                "namespace": "ecd",
+                "tag": "PeoTotalCompAmt",
+                "val": 29_000_000.0,
+                "fp": None,
+                "fy": None,
+                "filed": "2026-04-01",
+                "end": date(2026, 1, 31),
+            },
+            {
+                "namespace": "ecd",
+                "tag": "NonPeoNeoAvgTotalCompAmt",
+                "val": 25_000_000.0,
+                "fp": None,
+                "fy": None,
+                "filed": "2026-04-01",
+                "end": date(2026, 1, 31),
+            },
+            {
+                "namespace": "ecd",
+                "tag": "TotalShareholderRtnAmt",
+                "val": 272.0,
+                "fp": None,
+                "fy": None,
+                "filed": "2026-04-01",
+                "end": date(2026, 1, 31),
+            },
+        ]
+    )
+    rows = execCompRows(facts, "WMT")
+    assert len(rows) == 1
+    r = rows[0]
+    assert r["year"] == "2026"  # end 연도
+    assert r["ceoTotalComp"] == 29_000_000.0
+    assert r["neoAvgTotalComp"] == 25_000_000.0
+    assert r["companyTsr"] == 272.0
+
+
+def test_exec_comp_empty_without_ecd():
+    """ecd 미제출사(us-gaap 만)는 빈 list — proxy 인라인 XBRL 부재."""
+    from dartlab.scan.builders.edgar.report.build import execCompRows
+
+    facts = _facts([{"tag": "NetIncomeLoss", "val": 5.0, "fy": 2024}]).with_columns(
+        pl.lit(None).cast(pl.Date).alias("end")
+    )
+    assert execCompRows(facts, "MSFT") == []

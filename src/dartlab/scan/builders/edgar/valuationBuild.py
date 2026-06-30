@@ -186,10 +186,9 @@ def buildEdgarValuation(*, priceSnapshot: dict[str, float] | None = None, verbos
         raise FileNotFoundError("EDGAR finance parquet 없음")
 
     try:
-        from dartlab.core.dataLoader import loadEdgarListedUniverse
+        from dartlab.scan.builders.edgar.helpers import edgarCikToTicker
 
-        univ = loadEdgarListedUniverse()
-        cikToTicker = {str(c).zfill(10): t for c, t in zip(univ["cik"].to_list(), univ["ticker"].to_list()) if t}
+        cikToTicker = edgarCikToTicker()  # 대표 보통주 티커 우선(finance 와 동일 키)
     except (OSError, ValueError, KeyError):
         cikToTicker = {}
 

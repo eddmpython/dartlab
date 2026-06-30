@@ -9,6 +9,48 @@ from __future__ import annotations
 import polars as pl
 
 
+def edgarCikToTicker(univ: pl.DataFrame | None = None) -> dict[str, str]:
+    """CIK(10자리 zero-pad) → 대표(보통주) 티커 매핑 — 다중 티커 CIK 는 첫 티커 채택.
+
+    SEC ``company_tickers`` 는 CIK 당 보통주를 *맨 앞*에 둔다(예 JPMORGAN: JPM → JPM-PC → ... → VYLD).
+    단순 dict 컴프리헨션은 *마지막* 티커(우선주·구조화상품)를 남겨 ~18% 다중티커 CIK 를 엉뚱한 코드로
+    키잉했다(JPM→VYLD). 본 헬퍼는 ``setdefault`` 로 *첫* 티커를 채택해 보통주를 보장한다. finance·
+    valuation·report 빌더가 공유해 stockCode 키 일관성(드리프트 0)을 강제한다.
+
+    Parameters
+    ----------
+    univ : pl.DataFrame | None
+        ``loadEdgarListedUniverse()`` 결과(cik·ticker 컬럼). None 이면 직접 로드.
+
+    Returns
+    -------
+    dict[str, str]
+        {cik(10자리): 대표 티커}. ticker 가 빈 행은 제외.
+
+    Raises
+    ------
+    OSError
+        ``univ=None`` 인데 universe 로드 실패 시.
+
+    Examples
+    --------
+    >>> from dartlab.scan.builders.edgar.helpers import edgarCikToTicker
+    >>> m = edgarCikToTicker()  # doctest: +SKIP
+    >>> m["0000019617"]  # doctest: +SKIP
+    'JPM'
+    """
+    if univ is None:
+        from dartlab.core.dataLoader import loadEdgarListedUniverse
+
+        univ = loadEdgarListedUniverse()
+    out: dict[str, str] = {}
+    for c, t in zip(univ["cik"].to_list(), univ["ticker"].to_list()):
+        if not t:
+            continue
+        out.setdefault(str(c).zfill(10), str(t))  # 첫(=대표 보통주) 티커 우선
+    return out
+
+
 def scanEdgarAccounts(snakeIds: list[str], *, annual: bool = True) -> pl.DataFrame:
     """여러 EDGAR 계정을 한번에 스캔하여 wide DataFrame으로 반환.
 
