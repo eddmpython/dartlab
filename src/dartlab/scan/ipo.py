@@ -36,8 +36,11 @@ _OUTPUT_SCHEMA = {
     "perShareValue": pl.Float64,
     "discountLow": pl.Float64,
     "discountHigh": pl.Float64,
+    "freeFloatPct": pl.Float64,
+    "lockedShares": pl.Float64,
     "chainOk": pl.Boolean,
     "financialsOk": pl.Boolean,
+    "floatOk": pl.Boolean,
     "asOf": pl.Utf8,
 }
 
@@ -95,7 +98,7 @@ def _parseRow(client, meta: dict, asOf: str) -> dict:
     content, status = _collectOneRaw(client, meta["rcept_no"])
     if status == "ok" and content:
         p = parseIpoProspectus(content)
-        off, val, ids = p["offering"], p["valuation"], p["identities"]
+        off, val, ids, flt = p["offering"], p["valuation"], p["identities"], p["float"]
         band = off.get("priceBand")
         disc = val.get("discount")
         row.update(
@@ -110,8 +113,11 @@ def _parseRow(client, meta: dict, asOf: str) -> dict:
                 "perShareValue": val.get("perShareValue"),
                 "discountLow": min(disc) if disc else None,
                 "discountHigh": max(disc) if disc else None,
+                "freeFloatPct": flt.get("freeFloatPct"),
+                "lockedShares": flt.get("lockedShares"),
                 "chainOk": ids.get("valuationChain"),
                 "financialsOk": ids.get("financialsBalance"),
+                "floatOk": ids.get("floatBalance"),
             }
         )
     return row
@@ -146,8 +152,11 @@ def scanIpo(*, dateFrom: str | None = None, deep: bool = True, verbose: bool = T
             appliedPer : float — 발행사 적용 비교기업 PER (deep)
             perShareValue : float — 주당 평가가액(원, deep)
             discountLow / discountHigh : float — 평가액 대비 할인율(%, deep)
+            freeFloatPct : float — 상장 직후 유통가능비율(%, deep)
+            lockedShares : float — 매각제한(보호예수)물량 주식수 (deep)
             chainOk : bool — 밸류 체인 항등식(①×②÷③≈평가액) 통과 (deep)
             financialsOk : bool — 재무 항등식(자산=부채+자본) 통과 (deep)
+            floatOk : bool — 유통 항등식(매각제한+유통가능=공모후총발행) 통과 (deep)
             asOf : str — 발굴 기준일(YYYYMMDD)
 
     Raises:

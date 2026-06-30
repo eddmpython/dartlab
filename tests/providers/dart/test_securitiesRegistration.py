@@ -86,6 +86,15 @@ _FIXTURE = """<?xml version="1.0" encoding="utf-8"?>
 <TITLE>III. 투자위험요소</TITLE>
 <TITLE>1. 사업위험</TITLE>
 <TITLE>2. 회사위험</TITLE>
+<TITLE>3. 기타위험</TITLE>
+<TABLE>
+<TR><TD>구분</TD><TD>주주명</TD><TD>회사와의관계</TD><TD>공모후</TD><TD>공모후</TD><TD>매각제한물량</TD><TD>매각제한물량</TD><TD>유통가능물량</TD><TD>유통가능물량</TD><TD>매각제한기간</TD><TD>매각제한사유</TD></TR>
+<TR><TD>구분</TD><TD>주주명</TD><TD>회사와의관계</TD><TD>보유주식</TD><TD>보유주식</TD><TD>매각제한물량</TD><TD>매각제한물량</TD><TD>유통가능물량</TD><TD>유통가능물량</TD><TD>매각제한기간</TD><TD>매각제한사유</TD></TR>
+<TR><TD>구분</TD><TD>주주명</TD><TD>회사와의관계</TD><TD>주식수</TD><TD>지분율</TD><TD>주식수</TD><TD>지분율</TD><TD>주식수</TD><TD>지분율</TD><TD>매각제한기간</TD><TD>매각제한사유</TD></TR>
+<TR><TD>최대주주등</TD><TD>홍길동</TD><TD>본인</TD><TD>700,000</TD><TD>70.00%</TD><TD>700,000</TD><TD>70.00%</TD><TD>-</TD><TD>0.00%</TD><TD>24개월</TD><TD>주1)</TD></TR>
+<TR><TD>공모주주</TD><TD>일반공모</TD><TD>일반</TD><TD>300,000</TD><TD>30.00%</TD><TD>-</TD><TD>0.00%</TD><TD>300,000</TD><TD>30.00%</TD><TD>-</TD><TD>-</TD></TR>
+<TR><TD>합계</TD><TD>합계</TD><TD>합계</TD><TD>1,000,000</TD><TD>100.00%</TD><TD>700,000</TD><TD>70.00%</TD><TD>300,000</TD><TD>30.00%</TD><TD>-</TD><TD>-</TD></TR>
+</TABLE>
 </DOCUMENT>"""
 
 
@@ -123,6 +132,19 @@ def test_parse_allocation_sum_identity():
     r = parseIpoProspectus(_FIXTURE)
     assert r["allocation"]["total"] == 1_000_000.0  # 200,000 + 800,000
     assert r["identities"]["allocationSum"] is True
+
+
+def test_parse_float_waterfall_identity():
+    r = parseIpoProspectus(_FIXTURE)
+    f = r["float"]
+    assert f["postOfferingShares"] == 1_000_000.0
+    assert f["lockedShares"] == 700_000.0
+    assert f["freeFloatShares"] == 300_000.0
+    assert f["freeFloatPct"] == 30.0
+    # 매각제한 + 유통가능 = 공모후 총발행
+    assert r["identities"]["floatBalance"] is True
+    # 주주별 보호예수(매각제한) 일정
+    assert any(lu["holder"] == "홍길동" and "24개월" in lu["period"] for lu in f["lockups"])
 
 
 def test_parse_six_sections_and_risk():

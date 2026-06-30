@@ -159,6 +159,8 @@ def parseIpoProspectus(content: str) -> dict:
             valuation : dict — model·netIncome·peerMultiple·perShareValue·discount·band·peers.
             financials : dict — periods·rows(자산총계/매출액/당기순이익 등 × 기간).
             allocation : dict — byTarget(우리사주/일반공모 주식수)·total.
+            float : dict — freeFloatShares·freeFloatPct(상장후 유통가능)·lockedShares(매각제한)·
+                postOfferingShares·lockups[{holder,shares,period}](주주별 보호예수 일정).
             risk : dict — sections(사업/회사/기타위험)·count.
             identities : dict — 각 카테고리 항등식 통과 여부 (truth proxy).
             sections : list[str] — 검출된 섹션 앵커 키 (커버리지).
@@ -173,6 +175,7 @@ def parseIpoProspectus(content: str) -> dict:
 
     Capabilities:
         - 공모개요(공모가밴드·청약일)·밸류(적용 PER·평가가액·할인율)·재무3개년·배정·리스크 추출.
+        - 상장후 유통가능물량·보호예수(매각제한) 워터폴 + 주주별 보호예수 일정.
         - 카테고리별 내적 항등식으로 오추출·원문오타 검출 및 복구 (truth proxy).
 
     Guide:
@@ -199,7 +202,7 @@ def parseIpoProspectus(content: str) -> dict:
             - 평문 get_text 정규식으로 숫자 추출 (전부 실패 — ``<TABLE>`` 구조 파싱 강제).
             - ``identities`` False 인 값을 신뢰 (항등식 위반 = 오추출 의심).
         OutputSchema:
-            - dict: offering / valuation / financials / allocation / risk / identities / sections.
+            - dict: offering / valuation / financials / allocation / float / risk / identities / sections.
         Prerequisites:
             - FULL 증권신고서(지분증권) dart4.xsd 본문.
         Freshness:
@@ -214,13 +217,15 @@ def parseIpoProspectus(content: str) -> dict:
     valuation = _parseValuation(sections)
     financials = _parseFinancials(sections)
     allocation = _parseAllocation(sections)
+    floatData = _parseFloat(content)
     risk = _parseRisk(content)
-    identities = _verifyIdentities(offering, valuation, financials, allocation)
+    identities = _verifyIdentities(offering, valuation, financials, allocation, floatData)
     return {
         "offering": offering,
         "valuation": valuation,
         "financials": financials,
         "allocation": allocation,
+        "float": floatData,
         "risk": risk,
         "identities": identities,
         "sections": sorted(sections.keys()),
@@ -462,6 +467,79 @@ def _parseAllocation(sections: dict[str, str]) -> dict:
     return out
 
 
+def _colLabels(rows: list[list[str]], headN: int = 3) -> dict[int, str]:
+    """헤더 상위 headN 행을 컬럼별로 합쳐 라벨 — 병합셀 중복 제거(워터폴 다단 헤더 컬럼 식별)."""
+    ncol = max((len(r) for r in rows), default=0)
+    labels: dict[int, str] = {}
+    for j in range(ncol):
+        seen: set[str] = set()
+        parts: list[str] = []
+        for r in rows[:headN]:
+            v = _ws(r[j]) if j < len(r) else ""
+            if v and v not in seen:
+                seen.add(v)
+                parts.append(v)
+        labels[j] = "".join(parts)
+    return labels
+
+
+def _findCol(labels: dict[int, str], must: list[str], without: tuple[str, ...] = ()) -> int | None:
+    for j, lab in labels.items():
+        if all(k in lab for k in must) and not any(b in lab for b in without):
+            return j
+    return None
+
+
+def _parseFloat(content: str) -> dict:
+    """카테고리4 (2 차) — 상장후 유통가능물량 + 보호예수(매각제한·의무보유) 워터폴.
+
+    독립 TITLE 없이 'III.투자위험요소 → 기타위험'의 다단 헤더 표(유통가능물량+매각제한물량)로 산다.
+    보호예수는 신규정 용어 '의무보유/매각제한'(구 '보호예수')으로 표기. 헤더 3 행을 컬럼별로 합쳐
+    컬럼을 식별(발행사별 열수 변동 흡수)하고 합계행에서 추출, 주주별 보호예수 일정 동반.
+    항등식: 매각제한물량 + 유통가능물량 = 공모후 총발행주식수 (발행사 6 곳 EXACT).
+    """
+    out: dict[str, object] = {}
+    for tm in re.finditer(r"<TABLE.*?</TABLE>", content, re.S):
+        tbl = tm.group(0)
+        flat = _ws(re.sub(r"<[^>]+>", " ", tbl))
+        if "유통가능물량" not in flat or "매각제한물량" not in flat:
+            continue
+        grid = cellGrid(normalizeDartXml(tbl))
+        if not grid:
+            continue
+        rows = [[(c.text if c else "") for c in row] for row in grid]
+        labels = _colLabels(rows)
+        freeShareCol = _findCol(labels, ["유통가능물량", "주식수"])
+        freePctCol = _findCol(labels, ["유통가능물량", "지분율"])
+        lockShareCol = _findCol(labels, ["매각제한물량", "주식수"])
+        postShareCol = _findCol(labels, ["공모후", "주식수"])
+        periodCol = _findCol(labels, ["매각제한기간"])
+        if freeShareCol is None or lockShareCol is None:
+            continue
+        total = next((r for r in rows if re.match(r"합\s*계", (r[0] or "").strip())), None)
+        if total:
+            out["lockedShares"] = _numIn(total[lockShareCol]) if lockShareCol < len(total) else None
+            out["freeFloatShares"] = _numIn(total[freeShareCol]) if freeShareCol < len(total) else None
+            if postShareCol is not None and postShareCol < len(total):
+                out["postOfferingShares"] = _numIn(total[postShareCol])
+            if freePctCol is not None and freePctCol < len(total):
+                out["freeFloatPct"] = _numIn(total[freePctCol])
+        lockups: list[dict] = []
+        if periodCol is not None:
+            for r in rows[3:]:
+                if periodCol < len(r) and re.search(r"\d+\s*개월|\d+\s*년", r[periodCol] or ""):
+                    lockups.append(
+                        {
+                            "holder": (r[1] or "").strip() if len(r) > 1 else "",
+                            "shares": _numIn(r[lockShareCol]) if lockShareCol < len(r) else None,
+                            "period": re.sub(r"\s+", " ", (r[periodCol] or "").strip()),
+                        }
+                    )
+        out["lockups"] = lockups
+        return out
+    return out
+
+
 def _parseRisk(content: str) -> dict:
     """카테고리6 — 투자위험요소 하위 위험 섹션(사업/회사/기타) 수."""
     risk = [t for _, t in _titlePositions(content) if re.search(r"위험", t)]
@@ -473,7 +551,7 @@ def _parseRisk(content: str) -> dict:
 # ═══════════════════════════════════════════
 
 
-def _verifyIdentities(offering: dict, valuation: dict, financials: dict, allocation: dict) -> dict:
+def _verifyIdentities(offering: dict, valuation: dict, financials: dict, allocation: dict, floatData: dict) -> dict:
     """카테고리별 내적 항등식 → 추출 신뢰도 (truth proxy). 위반 시 복구값 동반."""
     out: dict[str, object] = {}
 
@@ -513,6 +591,15 @@ def _verifyIdentities(offering: dict, valuation: dict, financials: dict, allocat
     recovered = out.get("sharesRecovered")
     if allocTotal and recovered:
         out["allocationSum"] = abs(allocTotal - recovered) / recovered < 0.01
+
+    # 유통: 매각제한물량 + 유통가능물량 ≈ 공모후 총발행주식수.
+    locked, free, post = (
+        floatData.get("lockedShares"),
+        floatData.get("freeFloatShares"),
+        floatData.get("postOfferingShares"),
+    )
+    if locked and free and post:
+        out["floatBalance"] = abs((locked + free) - post) / post < 0.001
 
     return out
 
