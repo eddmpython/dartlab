@@ -30,6 +30,7 @@ import type {
 	ValuationSnapshot,
 	WorkforceYear
 } from '@dartlab/ui-contracts';
+import { resolveMarket } from '@dartlab/ui-contracts';
 import type { DataCore } from '../../../data/fetch/request';
 import { detectUnit, xbrlCellsFromContent } from './xbrlCells';
 import { buildSeries, costCells, segmentCells, type PeriodComposition } from './noteSeries';
@@ -208,7 +209,42 @@ export function createReportSource(core: DataCore): ReportPort {
 		return { latest, trend, periods };
 	}
 
+	// US(EDGAR) 주주환원 — edgar/scan/report/shareholderReturn.parquet 직독(ShareholderReturnYear 동형 컬럼,
+	// buildEdgarReport 산출). KR 의 dividend/treasury DART 필드코드 파싱과 분리 — US 는 이미 정규화된 행을 1:1 매핑.
+	async function loadEdgarShareholderReturn(ticker: string): Promise<ShareholderReturnYear[] | null> {
+		try {
+			const rows = await core.requestParquetRows<Row>({
+				origin: 'hfRange',
+				path: 'edgar/scan/report/shareholderReturn.parquet',
+				columns: ['stockCode', 'year', 'dps', 'eps', 'totalDividend', 'payoutPct', 'yieldPct', 'buybackQty', 'disposalQty', 'buybackCancel', 'treasuryEnd'],
+				filter: { stockCode: { $eq: ticker } },
+				cacheKey: `edgarReport.shareholderReturn:${ticker}`,
+				cache: { scope: 'memory', ttlMs: 6 * 3_600_000, maxEntries: 256 }
+			});
+			const out: ShareholderReturnYear[] = rows
+				.map((r) => ({
+					year: str(r.year),
+					dps: num(r.dps),
+					eps: num(r.eps),
+					totalDividend: num(r.totalDividend),
+					payoutPct: num(r.payoutPct),
+					yieldPct: num(r.yieldPct),
+					buybackQty: num(r.buybackQty),
+					disposalQty: num(r.disposalQty),
+					buybackCancel: num(r.buybackCancel),
+					treasuryEnd: num(r.treasuryEnd)
+				}))
+				.filter((s) => s.year && (s.dps != null || s.totalDividend != null || s.treasuryEnd != null))
+				.sort((a, b) => a.year.localeCompare(b.year));
+			return out.length ? out : null;
+		} catch {
+			return null;
+		}
+	}
+
 	async function buildShareholderReturn(code: string): Promise<ShareholderReturnYear[] | null> {
+		const m = resolveMarket(code);
+		if (m.market === 'US' && m.ticker) return loadEdgarShareholderReturn(m.ticker); // US = edgar/scan/report 직독
 		const [div, tre] = await Promise.all([
 			read('dividend', code, ['se', 'stock_knd', 'thstrm']),
 			read('treasuryStock', code, ['acqs_mth1', 'stock_knd', 'change_qy_acqs', 'change_qy_dsps', 'change_qy_incnr', 'trmend_qy'])
