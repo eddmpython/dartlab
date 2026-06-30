@@ -65,6 +65,15 @@
 	let freq = $state('');
 	let busy = $state('');
 	let copiedKey = $state('');
+	let showCols = $state(false); // 컬럼 칩은 기본 접힘(전체) — [고르기]로만 펼침(단순성)
+
+	function changeDir(dirStr: string) {
+		selectDir(dirStr);
+		if (id.trim()) probe(); // 데이터셋 바꾸면 같은 ID 로 자동 조회(편의성)
+	}
+	function idBlur() {
+		if (id.trim() && dir && probedKey !== `${dir.dir}/${id.trim()}`) probe();
+	}
 
 	const cleanName = (s: string) => s.replace(/[\\/:*?"<>|]+/g, '_').slice(0, 80);
 
@@ -269,7 +278,7 @@
 		<div class="ctl">
 			<label class="fld grow">
 				<span class="fld-label">데이터</span>
-				<select value={dir?.dir ?? ''} onchange={(e) => selectDir(e.currentTarget.value)}>
+				<select value={dir?.dir ?? ''} onchange={(e) => changeDir(e.currentTarget.value)} aria-label="데이터셋 선택">
 					{#each grouped as g (g.name)}
 						<optgroup label={g.name}>
 							{#each g.items as e (e.dir)}<option value={e.dir}>{e.label}</option>{/each}
@@ -279,7 +288,7 @@
 			</label>
 			<label class="fld">
 				<span class="fld-label">{dir?.shardKind === 'company' ? '종목' : '항목'}</span>
-				<input class="id-input" placeholder={dir ? ID_HINT[dir.shardKind] : ''} bind:value={id} onkeydown={(ev) => ev.key === 'Enter' && probe()} />
+				<input class="id-input" placeholder={dir ? ID_HINT[dir.shardKind] : ''} bind:value={id} aria-label="종목·항목 ID" onkeydown={(ev) => ev.key === 'Enter' && probe()} onblur={idBlur} />
 			</label>
 			<button class="btn" onclick={probe} disabled={!id.trim() || probing}>{probing ? '조회 중…' : '조회'}</button>
 			{#if dir}
@@ -290,15 +299,23 @@
 		{#if probeErr}<p class="err">{probeErr}</p>{/if}
 
 		{#if probed && allCols.length}
-			<!-- 컬럼 -->
+			<!-- 컬럼 (기본 접힘 = 전체) -->
 			<div class="optline">
 				<span class="opt-label">컬럼</span>
-				<div class="cols">
-					{#each allCols as c (c)}
-						<label class="chip" class:on={pickedCols.has(c)}>
-							<input type="checkbox" checked={pickedCols.has(c)} onchange={() => toggleCol(c)} />{c}
-						</label>
-					{/each}
+				<div class="colwrap">
+					<button class="link-btn" onclick={() => (showCols = !showCols)} aria-expanded={showCols}>
+						{cols.length === 0 || cols.length === allCols.length ? `전체 ${allCols.length}열` : `${cols.length} / ${allCols.length}열 선택`}
+						<span class="caret">{showCols ? '▾' : '▸'}</span>
+					</button>
+					{#if showCols}
+						<div class="cols">
+							{#each allCols as c (c)}
+								<label class="chip" class:on={pickedCols.has(c)}>
+									<input type="checkbox" checked={pickedCols.has(c)} onchange={() => toggleCol(c)} />{c}
+								</label>
+							{/each}
+						</div>
+					{/if}
 				</div>
 			</div>
 			<!-- 범위 -->
@@ -515,6 +532,29 @@
 		gap: var(--dl-s-2);
 		align-items: center;
 	}
+	.colwrap {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: var(--dl-s-2);
+		align-items: flex-start;
+	}
+	.link-btn {
+		padding: 0.1rem 0;
+		background: none;
+		border: 0;
+		color: var(--dl-ink);
+		font-size: 0.85rem;
+		font-family: inherit;
+		cursor: pointer;
+	}
+	.link-btn:hover {
+		color: var(--dl-accent);
+	}
+	.caret {
+		color: var(--dl-accent);
+		font-size: 0.7rem;
+	}
 	.range {
 		row-gap: var(--dl-s-1);
 	}
@@ -670,5 +710,20 @@
 		color: var(--dl-accent);
 		font-family: var(--dl-font-mono);
 		font-size: 0.86em;
+	}
+
+	/* 접근성 — 키보드 포커스 링 */
+	.btn:focus-visible,
+	.chip-ex:focus-visible,
+	.link-btn:focus-visible,
+	select:focus-visible,
+	.id-input:focus-visible,
+	.num:focus-visible,
+	.chip:focus-within,
+	.radio:focus-within,
+	summary:focus-visible {
+		outline: 2px solid var(--dl-focus);
+		outline-offset: 2px;
+		border-radius: var(--dl-r-sm);
 	}
 </style>
