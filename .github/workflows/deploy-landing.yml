@@ -128,6 +128,9 @@ jobs:
           # 당일 공시 라이브 오버레이 프록시(같은 hfProxy 워커 /market-filings 라우트). DART list.json 을 당일
           # 전체로 서버사이드 fetch → HF 누적 위에 머지. 배치(14:30) 사이 갭을 조회시점으로 메움. 비우면 HF base 만, 가역.
           VITE_DARTLAB_MARKET_FILINGS_PROXY: https://dartlab-hf-proxy.eddmpython.workers.dev/market-filings
+          # 라이브 데이터 API 워커(infra/workers/dataCsv, /v1 라우트). HF parquet→CSV/TSV 온더플라이 → 데이터센터가
+          # 구글시트 =IMPORTDATA / 엑셀 Power Query 용 라이브 URL 생성. 비우면 Tier2 비활성·Tier1 다운로드만, 가역.
+          VITE_DARTLAB_CSV_PROXY: https://dartlab-data-csv.eddmpython.workers.dev
           # Cloudflare Web Analytics 공개 beacon site token 또는 Cloudflare 제공 script snippet.
           # 비우면 analytics beacon 을 로드하지 않음.
           VITE_CLOUDFLARE_WEB_ANALYTICS_TOKEN: ${{ vars.CLOUDFLARE_WEB_ANALYTICS_TOKEN }}

@@ -19,8 +19,13 @@
 // CSV/TSV emit(BOM·en-US 숫자) · 셀cap 헤더 신호 · footer 예산 가드 · /v1 카탈로그 · schema.json.
 
 import { asyncBufferFromUrl, parquetMetadataAsync, parquetReadObjects, parquetSchema } from 'hyparquet';
-import { compressors } from 'hyparquet-compressors';
+import { decompress as decompressZstd } from 'fzstd';
 import { ALLOW, RELEASES, isTier2 } from './allowlist.js';
+
+// 압축해제기 — dartlab parquet 는 전량 ZSTD(실측). fzstd 는 순수 JS 라 CF Workers 의 런타임 WASM 금지
+// (hyparquet-compressors 의 hysnappy WASM 은 `WebAssembly.Module()` 바이트컴파일 → CF 거부)를 회피한다.
+// hyparquet-compressors 의 ZSTD 정의(input => decompressZstd(input))를 그대로. UNCOMPRESSED 는 hyparquet 내장.
+const compressors = { ZSTD: (input) => decompressZstd(input) };
 
 const UPSTREAM_DEFAULT = 'https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main';
 // {id} 가드 — 유니코드 글자/숫자/._- 만(예 'KOSPI-코스피' 지수 stem 허용). '/'·'\'·공백·':'·'?' 등은
@@ -380,6 +385,8 @@ export default {
 
 			const body = serialize(rows, cols, ext);
 			const headers = {
+				...CORS, // public 데이터 — 브라우저 소비자도 fetch 가능(PRD §3). IMPORTDATA/Power Query 는 서버측이라 무관하나 일관성.
+				'Access-Control-Expose-Headers': 'X-DartLab-Capped, X-DartLab-Total-Rows, X-DartLab-Cells-Returned, X-DartLab-Hint',
 				'Content-Type': ext === 'tsv' ? 'text/tab-separated-values; charset=utf-8' : 'text/csv; charset=utf-8',
 				'Content-Disposition': contentDisposition(dd.id, ext),
 				...cacheH,

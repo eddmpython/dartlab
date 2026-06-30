@@ -10,6 +10,6 @@
 	},
 	"dependencies": {
 		"hyparquet": "^1.26.0",
-		"hyparquet-compressors": "^1.1.1"
+		"fzstd": "^0.1.1"
 	}
 }
