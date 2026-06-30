@@ -22,6 +22,7 @@
 	import CloudflareWebAnalytics from '$lib/components/CloudflareWebAnalytics.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import InstallPrompt from '$lib/components/InstallPrompt.svelte';
+	import NotifyOptIn from '$lib/components/NotifyOptIn.svelte';
 
 	let { children }: { children: Snippet } = $props();
 
@@ -34,6 +35,7 @@
 <CloudflareWebAnalytics />
 <CommandPalette />
 <InstallPrompt />
+<NotifyOptIn />
 {@render children()}
 
 <style>

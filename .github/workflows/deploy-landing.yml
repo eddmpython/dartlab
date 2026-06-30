@@ -111,6 +111,10 @@ jobs:
         env:
           # 공시 Q&A 질문 수집 Worker(공개 URL, secret 아님) — 빌드에 심어야 prod 토글 노출.
           VITE_FEEDBACK_URL: https://dartlab-question-collector.eddmpython.workers.dev
+          # Web Push 알림(pushHub Worker) — 공개값(secret 아님). 비우면 NotifyOptIn graceful hidden·SW 재구독 skip.
+          # VAPID 공개키 = genVapid.mjs raw 65B base64url. 허브 base = 배포한 dartlab-push-hub.<sub>.workers.dev.
+          VITE_VAPID_PUBLIC_KEY: ${{ vars.VITE_VAPID_PUBLIC_KEY }}
+          VITE_PUSHHUB_URL: ${{ vars.VITE_PUSHHUB_URL }}
           # HF parquet 레인지 프록시(콜드 403 흡수 + range 헤더 보존, infra/workers/hfProxy). 비우면 HF 직결로 가역.
           VITE_DARTLAB_HF_RESOLVE: https://dartlab-hf-proxy.eddmpython.workers.dev/hf
           # 캐러셀/회사 이미지(dartlab-media) 엣지 캐시 프록시(/media 라우트). 브라우저가 HF resolve 를 직접
@@ -136,6 +140,7 @@ jobs:
           VITE_CLOUDFLARE_WEB_ANALYTICS_TOKEN: ${{ vars.CLOUDFLARE_WEB_ANALYTICS_TOKEN }}
         run: |
           npm ci
+          npm test -w landing
           BASE_PATH=/dartlab npm run build -w landing
 
       - name: Upload artifact

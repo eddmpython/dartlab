@@ -12,6 +12,14 @@
  *   의 Range 요청을 네트워크에 그대로 맡겨야 첫 방문자의 저장소·메모리를 불리지 않는다(설계 불변).
  */
 import { build, files, version } from '$service-worker';
+import {
+	SUBSCRIBE_URL,
+	VAPID_PUBLIC_KEY,
+	DEFAULT_TOPICS,
+	serializeSubscription,
+	urlBase64ToUint8Array
+} from '$lib/notify/subscription';
+import { sanitizeNotificationText, safeSelfRoute } from '$lib/notify/sanitize';
 
 declare const self: ServiceWorkerGlobalScope;
 
@@ -89,5 +97,83 @@ self.addEventListener('fetch', (event) => {
 
 	// 그 외 same-origin GET — 기본 네트워크(가로채지 않음).
 });
+
+// ── Web Push 수신 3 리스너 (P1) — 기존 셸 캐시 동작과 독립 ──────────────
+// 설계: mainPlan/watcher-notify-platform/07-p1-client-receiving.md
+const ICON = `${import.meta.env.BASE_URL}icon-192.png`; // BASE_URL='/dartlab/' (절대경로 404 가드)
+
+interface PushPayload {
+	title?: string;
+	body?: string;
+	url?: string;
+	tag?: string;
+}
+
+// push — aes128gcm 복호된 payload(notification 서브객체) 렌더. 항상 showNotification(미표시=userVisibleOnly 위반).
+self.addEventListener('push', (event) => {
+	event.waitUntil(
+		(async () => {
+			let payload: PushPayload = {};
+			try {
+				payload = (event.data?.json() as PushPayload) ?? {};
+			} catch {
+				payload = {};
+			}
+			const title = sanitizeNotificationText(payload.title || 'DartLab', 80) || 'DartLab';
+			const body = sanitizeNotificationText(payload.body || '새 업데이트가 있습니다.', 120);
+			// payload.url = app-path(base 없음) → SW 가 한 곳에서 BASE 접두 + same-origin 검증(피싱 차단).
+			const url = safeSelfRoute(payload.url, import.meta.env.BASE_URL, self.location.origin);
+			const tag = typeof payload.tag === 'string' ? payload.tag : undefined;
+			await self.registration.showNotification(title, { body, tag, icon: ICON, badge: ICON, data: { url } });
+		})()
+	);
+});
+
+// notificationclick — same-origin 창 있으면 focus+navigate, 없으면 openWindow. 목적지=검증된 상대경로.
+self.addEventListener('notificationclick', (event) => {
+	event.notification.close();
+	const dest = (event.notification.data?.url as string) || `${import.meta.env.BASE_URL}`;
+	event.waitUntil(
+		(async () => {
+			const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+			for (const c of all) {
+				if (new URL(c.url).origin === self.location.origin) {
+					await c.focus();
+					if ('navigate' in c) await (c as WindowClient).navigate(dest);
+					return;
+				}
+			}
+			await self.clients.openWindow(dest);
+		})()
+	);
+});
+
+// pushsubscriptionchange — 만료/회전 시 재구독 + /subscribe 재등록. 구 endpoint 는 /send 404/410 자가청소.
+interface PushSubscriptionChangeEvent extends ExtendableEvent {
+	newSubscription: PushSubscription | null;
+	oldSubscription: PushSubscription | null;
+}
+self.addEventListener('pushsubscriptionchange', ((event: PushSubscriptionChangeEvent) => {
+	event.waitUntil(
+		(async () => {
+			let sub = event.newSubscription;
+			if (!sub) {
+				// oldSubscription.options 가 원래 applicationServerKey 보존 → 재구독 시 VAPID 키 플러밍 거의 불요.
+				const opts =
+					event.oldSubscription?.options ??
+					(VAPID_PUBLIC_KEY
+						? { userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) }
+						: null);
+				if (!opts || !opts.applicationServerKey) return; // 키 없음 → skip(graceful)
+				sub = await self.registration.pushManager.subscribe(opts as PushSubscriptionOptionsInit);
+			}
+			await fetch(SUBSCRIBE_URL, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(serializeSubscription(sub, DEFAULT_TOPICS))
+			});
+		})()
+	);
+}) as EventListener);
 
 export {};
