@@ -45,7 +45,6 @@ slides:
   - layout: editorialBeat
     line: "두 회사를 분기로 펼치면 영업이익률 곡선이 위아래로 [[거꾸로]] 교차합니다"
     sub: "하이닉스가 깊은 골일 때 넥스틴은 고원에, 하이닉스가 정점일 때 넥스틴은 바닥에 있습니다."
-    image: scene-04-narrative-turn
     visual:
       kind: finCard
       title: "검사 장비와 메모리, 거꾸로 도는 분기 영업이익률 (%)"
