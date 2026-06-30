@@ -1,6 +1,6 @@
 {
-  "version": 3,
-  "generatedAt": "2026-06-30T01:52:13.526990+00:00",
+  "version": 4,
+  "generatedAt": "2026-06-30T05:26:36.420039+00:00",
   "target": {
     "kind": "issue",
     "slug": "five-minute-economy-analysis",
@@ -12,8 +12,8 @@
     "planPath": "blog/_issues/five-minute-economy-analysis/cards.plan.json"
   },
   "planning": {
-    "blogThesis": "5분 안에 경제를 전부 맞히는 방법은 없습니다.",
-    "cardThesis": "5분 안에 경제를 전부 맞히는 방법은 없습니다.",
+    "blogThesis": "5분 안에 경제를 전부 맞히는 방법은 없습니다. 그래서 맞히려 하지 않고, 돈이 먼저 겁내는 곳만 봅니다.",
+    "cardThesis": "5분 안에 경제를 전부 맞히는 방법은 없습니다. 그래서 맞히려 하지 않고, 돈이 먼저 겁내는 곳만 봅니다.",
     "audienceQuestion": "5분 경제분석은 뉴스보다 돈의 순서를 봅니다 이슈를 /cards에서 볼 때 마지막에 무엇을 확인해야 하나?",
     "blogAndCardsTogether": false,
     "narrativeContract": {
@@ -22,8 +22,8 @@
         "한 주제 안에서 훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문으로 이어진다.",
         "각 슬라이드는 앞장의 주장이나 숫자를 받아 다음 장으로 넘겨야 한다.",
         "서로 끊긴 체크리스트, '다음에는 이것을 본다'식 나열, 새 항목만 덧붙이는 끝맺음은 실패다.",
-        "기/승/전/결 같은 구조명은 내부 기획에만 쓰고 카드 위 라벨로 노출하지 않는다.",
-        "마지막 장은 새 정보를 추가하는 장이 아니라 앞선 주장과 근거를 종합해 독자가 남길 판단 질문으로 닫는다."
+        "마지막 장은 새 정보를 추가하는 장이 아니라 앞선 주장과 근거를 종합해 독자가 남길 판단 질문으로 닫는다.",
+        "기/승/전/결 같은 구조명은 내부 기획에만 쓰고 카드 위 라벨로 노출하지 않는다."
       ]
     },
     "bigSentenceContract": {
@@ -44,47 +44,47 @@
         {
           "order": 1,
           "layout": "editorial",
-          "mainText": "5분밖에 없다면, 경제뉴스를 다 보려 하지 않습니다."
+          "mainText": "5분밖에 없다면, 경제 뉴스를 다 보려 하지 마세요"
         },
         {
           "order": 2,
           "layout": "editorialBeat",
-          "mainText": "대신 돈이 먼저 움직이는 곳만 봅니다."
+          "mainText": "대신 뉴스보다 먼저 겁내는 것을 봅니다 — 돈입니다"
         },
         {
           "order": 3,
           "layout": "editorialBeat",
-          "mainText": "첫 번째는 금리입니다. 돈이 불안하면 빌리는 값부터 흔들립니다."
+          "mainText": "돈은 순서대로 움직입니다. 빠른 가격이 먼저입니다"
         },
         {
           "order": 4,
           "layout": "editorialBeat",
-          "mainText": "두 번째는 환율입니다. 원화는 밖에서 받는 압박을 빨리 보여줍니다."
+          "mainText": "그다음 수출과 기업의 돈값이 뒤따라옵니다"
         },
         {
           "order": 5,
           "layout": "editorialBeat",
-          "mainText": "세 번째는 기름값입니다. 비용이 오르면 좋은 뉴스보다 부담이 먼저 커집니다."
+          "mainText": "그런데 숫자 하나는 거짓말을 합니다"
         },
         {
           "order": 6,
           "layout": "editorialBeat",
-          "mainText": "그런데 숫자 하나만 보면 자주 속습니다."
+          "mainText": "그래서 여러 가격이 같은 방향인지를 봅니다"
         },
         {
           "order": 7,
           "layout": "editorialBeat",
-          "mainText": "그래서 세 가격표가 같은 방향을 말하는지 봅니다."
+          "mainText": "여기에 수출과 기업 돈값이 뒤따르면 흐름은 더 분명해집니다"
         },
         {
           "order": 8,
           "layout": "editorialBeat",
-          "mainText": "여기에 수출과 기업의 돈값을 붙이면 경기가 식는지 더 분명해집니다."
+          "mainText": "결국 5분 경제분석은 예측이 아니라 확인입니다"
         },
         {
           "order": 9,
           "layout": "editorial",
-          "mainText": "결국 5분 경제분석은 예측이 아니라, 돈이 어디서 먼저 겁내는지 확인하는 일입니다."
+          "mainText": "다음에 경제가 궁금하면, 뉴스가 아니라 가격이 같은 말을 하는지부터 확인하세요"
         }
       ]
     },
@@ -110,6 +110,22 @@
         "Gbps": "기가비트/초"
       }
     },
+    "insightContract": {
+      "rules": [
+        "통념(commonBelief): 독자가 당연하게 여기는 상식·헤드라인 관점을 한 문장으로 적는다.",
+        "반전 사실(twistFact): 그 통념과 충돌하는, 공시 직독으로 확인한 단 하나의 사실 + 왜 그게 가능한가(메커니즘)를 적는다. 제목·캡션의 재진술이면 인사이트가 아니다.",
+        "그래서 볼 것(whatToWatch): 독자가 이 덱을 본 뒤 앞으로 무엇을 다르게 볼지(렌즈·관전 포인트)를 적는다.",
+        "evidenceRefs: 반전·렌즈를 떠받치는 실측 수치나 ref 를 최소 1개 이상 적는다(분모·기간 명시)."
+      ],
+      "commonBelief": "경제는 뉴스를 많이 보고 미래를 예측하는 일이다.",
+      "twistFact": "돈(가격)은 뉴스보다, 그리고 수출·실적 같은 느린 숫자보다 먼저 움직인다 — 금리·환율·유가가 가장 먼저 겁내고 수출·기업 돈값이 뒤따른다(돈의 순서). 게다가 숫자 하나는 거짓말한다: 금리만·환율만·유가만 보면 원인을 헷갈린다. 그래서 핵심은 예측이 아니라, 여러 가격이 같은 방향을 가리키는지를 확인하는 것(confirmation)이다.",
+      "whatToWatch": "뉴스가 아니라 가격을 보고, 한 숫자가 아니라 합의를 본다. 금리·환율·유가가 같은 방향이면 신호, 따로 놀면 노이즈. 그 뒤로 수출이 줄고 약한 기업의 회사채 가산금리가 벌어지면 가격이 먼저 낸 신호가 확인된다.",
+      "evidenceRefs": [
+        "금리·환율 — 한국은행 경제통계(확인 경로)",
+        "수출 — K-Stat 무역통계 / 유가 — 한국석유공사 Petronet",
+        "기업의 돈값 — FRED 하이일드 회사채 가산금리(BAMLH0A0HYM2)"
+      ]
+    },
     "bodyPreview": ""
   },
   "carousel": {
@@ -134,10 +150,10 @@
         1
       ],
       "role": "cover-hook",
-      "scene": "story-specific opening scene for 경제 읽기, making the article angle '5분밖에 없다면, 경제뉴스를 다 보려 하지 않습니다.' visible through a concrete asset, place, or operation",
+      "scene": "story-specific opening scene for 경제 읽기, making the article angle '5분밖에 없다면, 경제 뉴스를 다 보려 하지 마세요' visible through a concrete asset, place, or operation",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "planned",
-      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-01-cover-hook.webp\nAsset key: scene-01-cover-hook\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: cover-hook.\nImage subject: story-specific opening scene for 경제 읽기, making the article angle '5분밖에 없다면, 경제뉴스를 다 보려 하지 않습니다.' visible through a concrete asset, place, or operation.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-01-cover-hook.webp\nAsset key: scene-01-cover-hook\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: cover-hook.\nImage subject: story-specific opening scene for 경제 읽기, making the article angle '5분밖에 없다면, 경제 뉴스를 다 보려 하지 마세요' visible through a concrete asset, place, or operation.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
     },
     {
       "order": 2,
@@ -146,10 +162,10 @@
         2
       ],
       "role": "narrative-turn",
-      "scene": "editorial business-news scene tied to 경제 읽기, showing the turning point '대신 돈이 먼저 움직이는 곳만 봅니다.' through physical work, demand, location, or operations",
+      "scene": "editorial business-news scene tied to 경제 읽기, showing the turning point '대신 뉴스보다 먼저 겁내는 것을 봅니다 — 돈입니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "planned",
-      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-02-narrative-turn.webp\nAsset key: scene-02-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 경제 읽기, showing the turning point '대신 돈이 먼저 움직이는 곳만 봅니다.' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-02-narrative-turn.webp\nAsset key: scene-02-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 경제 읽기, showing the turning point '대신 뉴스보다 먼저 겁내는 것을 봅니다 — 돈입니다' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
     },
     {
       "order": 3,
@@ -158,10 +174,10 @@
         3
       ],
       "role": "narrative-turn",
-      "scene": "editorial business-news scene tied to 경제 읽기, showing the turning point '첫 번째는 금리입니다. 돈이 불안하면 빌리는 값부터 흔들립니다.' through physical work, demand, location, or operations",
+      "scene": "editorial business-news scene tied to 경제 읽기, showing the turning point '돈은 순서대로 움직입니다. 빠른 가격이 먼저입니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "planned",
-      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-03-narrative-turn.webp\nAsset key: scene-03-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 경제 읽기, showing the turning point '첫 번째는 금리입니다. 돈이 불안하면 빌리는 값부터 흔들립니다.' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-03-narrative-turn.webp\nAsset key: scene-03-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 경제 읽기, showing the turning point '돈은 순서대로 움직입니다. 빠른 가격이 먼저입니다' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
     },
     {
       "order": 4,
@@ -170,10 +186,10 @@
         4
       ],
       "role": "narrative-turn",
-      "scene": "editorial business-news scene tied to 경제 읽기, showing the turning point '두 번째는 환율입니다. 원화는 밖에서 받는 압박을 빨리 보여줍니다.' through physical work, demand, location, or operations",
+      "scene": "editorial business-news scene tied to 경제 읽기, showing the turning point '그다음 수출과 기업의 돈값이 뒤따라옵니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "planned",
-      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-04-narrative-turn.webp\nAsset key: scene-04-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 경제 읽기, showing the turning point '두 번째는 환율입니다. 원화는 밖에서 받는 압박을 빨리 보여줍니다.' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-04-narrative-turn.webp\nAsset key: scene-04-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 경제 읽기, showing the turning point '그다음 수출과 기업의 돈값이 뒤따라옵니다' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
     },
     {
       "order": 5,
@@ -182,10 +198,10 @@
         5
       ],
       "role": "narrative-turn",
-      "scene": "editorial business-news scene tied to 경제 읽기, showing the turning point '세 번째는 기름값입니다. 비용이 오르면 좋은 뉴스보다 부담이 먼저 커집니다.' through physical work, demand, location, or operations",
+      "scene": "editorial business-news scene tied to 경제 읽기, showing the turning point '그런데 숫자 하나는 거짓말을 합니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "planned",
-      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-05-narrative-turn.webp\nAsset key: scene-05-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 경제 읽기, showing the turning point '세 번째는 기름값입니다. 비용이 오르면 좋은 뉴스보다 부담이 먼저 커집니다.' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-05-narrative-turn.webp\nAsset key: scene-05-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 경제 읽기, showing the turning point '그런데 숫자 하나는 거짓말을 합니다' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
     },
     {
       "order": 6,
@@ -194,10 +210,10 @@
         6
       ],
       "role": "narrative-turn",
-      "scene": "editorial business-news scene tied to 경제 읽기, showing the turning point '그런데 숫자 하나만 보면 자주 속습니다.' through physical work, demand, location, or operations",
+      "scene": "editorial business-news scene tied to 경제 읽기, showing the turning point '그래서 여러 가격이 같은 방향인지를 봅니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "planned",
-      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-06-narrative-turn.webp\nAsset key: scene-06-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 경제 읽기, showing the turning point '그런데 숫자 하나만 보면 자주 속습니다.' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-06-narrative-turn.webp\nAsset key: scene-06-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 경제 읽기, showing the turning point '그래서 여러 가격이 같은 방향인지를 봅니다' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
     },
     {
       "order": 7,
@@ -206,10 +222,10 @@
         7
       ],
       "role": "narrative-turn",
-      "scene": "editorial business-news scene tied to 경제 읽기, showing the turning point '그래서 세 가격표가 같은 방향을 말하는지 봅니다.' through physical work, demand, location, or operations",
+      "scene": "editorial business-news scene tied to 경제 읽기, showing the turning point '여기에 수출과 기업 돈값이 뒤따르면 흐름은 더 분명해집니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "planned",
-      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-07-narrative-turn.webp\nAsset key: scene-07-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 경제 읽기, showing the turning point '그래서 세 가격표가 같은 방향을 말하는지 봅니다.' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-07-narrative-turn.webp\nAsset key: scene-07-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 경제 읽기, showing the turning point '여기에 수출과 기업 돈값이 뒤따르면 흐름은 더 분명해집니다' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
     },
     {
       "order": 8,
@@ -218,10 +234,10 @@
         8
       ],
       "role": "narrative-turn",
-      "scene": "editorial business-news scene tied to 경제 읽기, showing the turning point '여기에 수출과 기업의 돈값을 붙이면 경기가 식는지 더 분명해집니다.' through physical work, demand, location, or operations",
+      "scene": "editorial business-news scene tied to 경제 읽기, showing the turning point '결국 5분 경제분석은 예측이 아니라 확인입니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "planned",
-      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-08-narrative-turn.webp\nAsset key: scene-08-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 경제 읽기, showing the turning point '여기에 수출과 기업의 돈값을 붙이면 경기가 식는지 더 분명해집니다.' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-08-narrative-turn.webp\nAsset key: scene-08-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 경제 읽기, showing the turning point '결국 5분 경제분석은 예측이 아니라 확인입니다' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
     },
     {
       "order": 9,
@@ -230,10 +246,10 @@
         9
       ],
       "role": "closing-checkpoint",
-      "scene": "quiet final-check scene tied to 경제 읽기 for the reader to verify '결국 5분 경제분석은 예측이 아니라, 돈이 어디서 먼저 겁내는지 확인하는 일입니다.', such as documents, equipment, facility context, or customer workflow",
+      "scene": "quiet final-check scene tied to 경제 읽기 for the reader to verify '다음에 경제가 궁금하면, 뉴스가 아니라 가격이 같은 말을 하는지부터 확인하세요', such as documents, equipment, facility context, or customer workflow",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "planned",
-      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-09-closing-checkpoint.webp\nAsset key: scene-09-closing-checkpoint\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: closing-checkpoint.\nImage subject: quiet final-check scene tied to 경제 읽기 for the reader to verify '결국 5분 경제분석은 예측이 아니라, 돈이 어디서 먼저 겁내는지 확인하는 일입니다.', such as documents, equipment, facility context, or customer workflow.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/five-minute-economy-analysis/assets/scene-09-closing-checkpoint.webp\nAsset key: scene-09-closing-checkpoint\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nStory title: 5분 경제분석은 뉴스보다 돈의 순서를 봅니다.\nCarousel role: closing-checkpoint.\nImage subject: quiet final-check scene tied to 경제 읽기 for the reader to verify '다음에 경제가 궁금하면, 뉴스가 아니라 가격이 같은 말을 하는지부터 확인하세요', such as documents, equipment, facility context, or customer workflow.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
     }
   ],
   "imagegen": {
@@ -250,22 +266,22 @@
     "requiredRounds": [
       {
         "id": "writerPanel",
-        "purpose": "훅 강도, 서사 스파인, 앞장-다음장 연결, 쉬운 말, 블로그 산문과 카드 흐름의 일치 여부를 본다. 체크리스트식 나열이면 실패다.",
+        "purpose": "표지 후크(호기심 갭), 서사 스파인, 앞장-다음장의 긴장 전진(연결만이 아니라 매 장이 질문을 얹거나 갚는가), 인사이트(통념과 충돌하는 사실 + 메커니즘 + 독자 렌즈), 표지 약속을 마지막이 갚는가(promise·payoff), 쉬운 말·문장 리듬을 본다. 순서를 바꿔도 말이 되는 덱, 충돌 사실만 던지고 끝나는 덱, 체크리스트식 나열은 실패다.",
         "status": "passed"
       },
       {
         "id": "honestyEvidence",
-        "purpose": "슬라이드 숫자와 주장 근거가 블로그 본문/검증표에 있는지 본다.",
+        "purpose": "교육용 카드의 주장과 방법이 공개 확인 경로(한국은행·K-Stat·Petronet·FRED)로 검증 가능한지 본다. 투자 권유·예측 단정이 없는지 본다.",
         "status": "passed"
       },
       {
         "id": "imageFit",
-        "purpose": "7장 이상 이미지가 그 글의 회사·사건·장소에 맞는 서로 다른 의미 장면인지, 가짜 공식 로고·텍스트·도식이 없는지 본다.",
+        "purpose": "이미지가 그 카드의 주장을 한 번 더 말하는 서로 다른 의미 장면인지, 가짜 공식 로고·텍스트·도식이 없는지 본다.",
         "status": "passed"
       },
       {
         "id": "readerFit",
-        "purpose": "처음 보는 독자가 첫 장부터 마지막 장까지 끊기지 않고 자연스럽게 읽으며 관전 포인트를 이해하는지 본다. 어려운 약어가 남으면 실패다.",
+        "purpose": "처음 보는 독자가 첫 장부터 마지막 장까지 끊기지 않고 읽으며 관전 포인트를 이해하는지 본다. 어려운 약어가 남으면 실패다.",
         "status": "passed"
       },
       {
@@ -277,23 +293,23 @@
     "decisionLog": [
       {
         "round": "writerPanel",
-        "decision": "큰문장 9장을 먼저 읽었을 때 '다 못 본다 -> 먼저 움직이는 가격표 -> 숫자 하나의 함정 -> 같은 방향 확인 -> 예측이 아니라 불안 순서 확인'으로 흐름이 닫힌다. 항목 나열이 아니라 전환이 있는 짧은 산문으로 판단했다."
+        "decision": "직전 버전은 '금리·환율·유가·수출·기업돈값을 봐라'는 방법 나열이라 인사이트(그래서 뭘 보라는 건지)와 강조색이 없다는 혹평을 받았다. 인사이트를 '돈의 순서 + 확인(confirmation)'으로 박았다 — ①가격이 뉴스·실적보다 먼저 움직이고 빠른 가격(금리·환율·유가)이 느린 숫자(수출·기업돈값)를 앞선다 ②숫자 하나는 거짓말하니 여러 가격의 합의가 신호다 ③그래서 경제분석은 예측이 아니라 확인이다. 표지가 '뉴스를 다 보려 하지 마라'로 호기심 갭을 열고, 마지막이 '가격이 같은 말을 하는지 확인하라'로 그 약속을 갚는다. 모든 큰문장에 강조색([[ ]])을 넣고 연결어로 긴장을 전진시켰다."
       },
       {
         "round": "honestyEvidence",
-        "decision": "슬라이드에는 실시간 숫자를 쓰지 않았다. 확인 경로는 금리·환율=한국은행 경제통계, 수출=K-Stat, 유가=Petronet, 기업의 돈값=세인트루이스 연방준비은행 회사채 금리 차이 지표로 분리했다."
+        "decision": "교육용 카드로 예측·투자권유 단정 없음. 방법의 검증 경로를 공개 출처로 명시 — 금리·환율(한국은행), 수출(K-Stat), 유가(Petronet), 기업의 돈값(FRED 하이일드 가산금리 BAMLH0A0HYM2). insightContract.evidenceRefs 와 pinnedComment·relatedNews 가 동일 경로를 가리킨다."
       },
       {
         "round": "imageFit",
-        "decision": "생성형 이미지 도구로 9장 모두 만들었고, 표지·금리·환율·유가·숫자 함정·합류·수출/기업 돈값·확인의 피사체가 서로 다르다. 1차 검사에서 어두운 1번·4번은 재생성해 전부 통과시켰다."
+        "decision": "기존 9장 실사(scene-01~09)를 새 서사 순서에 맞춰 유지·재확인했다. 표지·돈의 순서·함정·확인 규칙·종합 장면에 1:1로 붙고, 가짜 로고·도식은 없다. 발행 전 운영자 눈검수로 최종 확정한다."
       },
       {
         "round": "readerFit",
-        "decision": "금리·환율·유가·수출·기업의 돈값은 짧은 설명으로 풀었고, 슬라이드 본문에는 어려운 약어를 쓰지 않았다. '다음 질문'식 작업 지시 문구도 없다."
+        "decision": "어려운 약어 0. 금리·환율·유가·수출·기업의 돈값은 explainer 로 쉬운 말로 풀었다. 큰 글자만 훑어도 '뉴스 말고 돈을 봐라→돈의 순서→한 숫자는 거짓말→여러 가격의 합의가 신호→예측이 아니라 확인'까지 한 편으로 읽힌다."
       },
       {
         "round": "reevaluation",
-        "decision": "build_carousel_contracts.py --dry-run의 큰문장 흐름 게이트에서 연결 부족이 한 번 잡혔고, 연결어 기준을 Skill OS 표현에 맞춰 보강한 뒤 재검사했다. 남은 실패는 없고 이미지 자산도 존재한다."
+        "decision": "큰문장 흐름·인사이트(통념·반전·렌즈)·강조색을 반영해 다시 검토했다. cards_plan v4 게이트(insightContract + 큰문장 연결·판단형 종결 + 약어)와 build_carousel_contracts.py --dry-run 기준으로 발행 가능하다. 공개 발행(hfMedia)·landing push 는 운영자 시각 검수·승인 후 진행한다."
       }
     ]
   }
