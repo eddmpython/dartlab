@@ -178,3 +178,16 @@ class TestMapperBasic:
         m = AccountMapper.get()
         result = m.map("", "이상한항목_절대없을거야_abc123")
         assert result is None
+
+    def test_edgar_revenue_covers_both_assessed_tax_variants(self):
+        """EDGAR revenue 매핑이 RevenueFromContractWithCustomer Excluding+Including 둘 다 포함.
+
+        제조사·소매(판매세 포함분 Including 사용)도 매출이 잡혀야 검색/열림·매출카드가 채워진다.
+        Excluding 만 있으면 AAON 등 Including-only 종목이 매출 0 → unopenable (search-index 누락).
+        """
+        from dartlab.providers.edgar.finance.mapper import EdgarMapper
+
+        tags = EdgarMapper.getTagsForSnakeIds(["sales", "revenue"])
+        assert "RevenueFromContractWithCustomerExcludingAssessedTax" in tags
+        assert "RevenueFromContractWithCustomerIncludingAssessedTax" in tags  # 보강분
+        assert "Revenues" in tags
