@@ -33,7 +33,8 @@ def fetchGroupedDaily(date, *, apiKey: str, client: httpx.Client | None = None, 
         timeout: 요청 타임아웃(초).
 
     Returns:
-        pl.DataFrame: ticker·date(YYYYMMDD)·open·high·low·close·volume. 휴장/미확정일은 빈 DataFrame.
+        pl.DataFrame: ticker(SEC 대시 convention)·date(YYYYMMDD)·open·high·low·close·volume.
+        클래스주는 Polygon 점(BRK.B)을 SEC 대시(BRK-B)로 정규화. 휴장/미확정일은 빈 DataFrame.
 
     Raises:
         ValueError: apiKey 빈 문자열.
@@ -69,7 +70,10 @@ def fetchGroupedDaily(date, *, apiKey: str, client: httpx.Client | None = None, 
             continue
         out.append(
             {
-                "ticker": str(ticker).upper(),
+                # Polygon 클래스주 구분자는 점(BRK.B), dartlab 유니버스(SEC company_tickers)는 대시(BRK-B).
+                # SEC convention 으로 정규화해 valuation·finance·runtime resolveMarket 와 키 일치(BRK-B 등 가격 매칭).
+                # 워런트/유닛(.WS·.U)도 대시화되나 상장 common 유니버스 밖이라 listedOnly 필터에서 자연 제외.
+                "ticker": str(ticker).upper().replace(".", "-"),
                 "date": ymd,
                 "open": x.get("o"),
                 "high": x.get("h"),

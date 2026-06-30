@@ -80,6 +80,23 @@ def test_grouped_daily_parses_results() -> None:
     assert client.calls[0][1]["adjusted"] == "true"
 
 
+def test_grouped_daily_class_share_normalized_to_sec_dash() -> None:
+    """클래스주 점 구분자(BRK.B) → SEC 대시(BRK-B) 정규화. 유니버스(SEC)·runtime 키 일치 보장."""
+    from dartlab.gather.domains import polygon
+
+    resp = _FakeResp(
+        payload={
+            "status": "OK",
+            "results": [
+                {"T": "BRK.B", "o": 400.0, "h": 410.0, "l": 399.0, "c": 405.0, "v": 100.0},
+                {"T": "BF.A", "o": 30.0, "h": 31.0, "l": 29.0, "c": 30.5, "v": 50.0},
+            ],
+        }
+    )
+    df = polygon.fetchGroupedDaily("20260629", apiKey="k", client=_FakeClient(resp))
+    assert df["ticker"].to_list() == ["BRK-B", "BF-A"]  # 점 → 대시(SEC convention)
+
+
 def test_grouped_daily_404_returns_empty() -> None:
     """404(미확정/휴장일) → 빈 DataFrame (raise 아님)."""
     from dartlab.gather.domains import polygon
