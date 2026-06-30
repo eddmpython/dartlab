@@ -58,12 +58,20 @@
 	}
 
 	function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose(); }
+
+	// 모달을 document.body 로 portal. 조상의 transform·backdrop-filter(예: 스크롤 시 fixed 헤더의
+	// backdrop-blur)가 position:fixed 의 containing block 을 가로채 모달이 헤더 박스 기준으로 잘리던 것을
+	// 근본 차단. 어느 표면(터미널·랜딩 헤더·report·cards)에서 열든 항상 viewport 기준으로 고정된다.
+	function portal(node: HTMLElement) {
+		document.body.appendChild(node);
+		return { destroy() { node.parentNode?.removeChild(node); } };
+	}
 </script>
 
 <svelte:window onkeydown={open ? onKey : undefined} />
 
 {#if open}
-	<div class="scrimWrap" role="presentation" onclick={onClose}>
+	<div class="scrimWrap" use:portal role="presentation" onclick={onClose}>
 		<div class="scrModal supModal" role="dialog" aria-modal="true" aria-label={T('후원·기여', 'Support & contribute')} onclick={(e) => e.stopPropagation()}>
 			<div class="scrHead">
 				<span class="scrTitle">{T('함께 만들기', 'BUILD TOGETHER')}</span>
