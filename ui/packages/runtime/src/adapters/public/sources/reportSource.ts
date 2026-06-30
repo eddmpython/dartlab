@@ -101,7 +101,32 @@ export function createReportSource(core: DataCore): ReportPort {
 		});
 	}
 
+	// US(EDGAR) 인력 · edgar/scan/report/employee.parquet 직독(10-K 표지 총원, employeeBuild 산출). DART 의
+	// 성별·정규/계약·급여 분해는 US facts 부재 → total 만 채우고 나머지 정직 null(소비처 workforceTrend 가
+	// total≥2년이면 총원 추이 산출, 성별/계약 비중은 null 자연 미표시).
+	async function loadEdgarWorkforce(ticker: string): Promise<WorkforceYear[] | null> {
+		try {
+			const rows = await core.requestParquetRows<Row>({
+				origin: 'hfRange',
+				path: 'edgar/scan/report/employee.parquet',
+				columns: ['stockCode', 'year', 'employeeCount'],
+				filter: { stockCode: { $eq: ticker } },
+				cacheKey: `edgarReport.employee:${ticker}`,
+				cache: { scope: 'memory', ttlMs: 6 * 3_600_000, maxEntries: 256 }
+			});
+			const out: WorkforceYear[] = rows
+				.map((r) => ({ year: str(r.year), total: num(r.employeeCount), male: null, female: null, regular: null, contract: null, avgSalary: null, totalSalary: null, tenure: null }))
+				.filter((w) => w.year && w.total != null)
+				.sort((a, b) => a.year.localeCompare(b.year));
+			return out.length ? out : null;
+		} catch {
+			return null;
+		}
+	}
+
 	async function buildWorkforce(code: string): Promise<WorkforceYear[] | null> {
+		const m = resolveMarket(code);
+		if (m.market === 'US' && m.ticker) return loadEdgarWorkforce(m.ticker); // US = edgar/scan/report 직독
 		const emp = await read('employee', code, ['fo_bbm', 'sexdstn', 'rgllbr_co', 'cnttk_co', 'sm', 'avrg_cnwk_sdytrn', 'fyer_salary_totamt']);
 		// ── workforce: 성별합계 행 우선, 없으면(기아 등 단일부문 공시) 부문×성별 행 합산 → 연도 1행 ──
 		const workforce: WorkforceYear[] = [];
@@ -479,7 +504,50 @@ export function createReportSource(core: DataCore): ReportPort {
 		return out.length ? out : null;
 	}
 
+	// US(EDGAR) 부채 만기 · edgar/scan/report/debtMaturity.parquet 직독(잔존만기 원금 사다리 y1~y5·after5,
+	// buildEdgarReport 산출). KR 사채 잔존만기 버킷과 1:1 대응(y1=1년이하·y2~y5=1~5년 구간·after5=5년초과).
+	// DART 전단채·CP(stb·cp)는 US 무개념 → null. 검산 불필요(XBRL 버킷 직접, 공시 사다리 그대로).
+	async function loadEdgarDebtProfile(ticker: string): Promise<DebtProfileBundle | null> {
+		try {
+			const rows = await core.requestParquetRows<Row>({
+				origin: 'hfRange',
+				path: 'edgar/scan/report/debtMaturity.parquet',
+				columns: ['stockCode', 'year', 'y1', 'y2', 'y3', 'y4', 'y5', 'after5', 'longTermDebt'],
+				filter: { stockCode: { $eq: ticker } },
+				cacheKey: `edgarReport.debtMaturity:${ticker}`,
+				cache: { scope: 'memory', ttlMs: 6 * 3_600_000, maxEntries: 256 }
+			});
+			const sorted = rows
+				.map((r) => ({
+					year: str(r.year),
+					y1: num(r.y1), y2: num(r.y2), y3: num(r.y3), y4: num(r.y4), y5: num(r.y5),
+					after5: num(r.after5), longTermDebt: num(r.longTermDebt)
+				}))
+				.filter((d) => d.year)
+				.sort((a, b) => a.year.localeCompare(b.year));
+			const years: DebtProfileYear[] = [];
+			for (const d of sorted) {
+				const mid = [d.y2, d.y3, d.y4, d.y5];
+				const bond1to5 = mid.some((v) => v != null) ? mid.reduce<number>((a, v) => a + (v ?? 0), 0) : null;
+				years.push({ year: d.year, bond1y: d.y1, bond1to5, bond5to10: d.after5, bond10plus: null, bondTotal: d.longTermDebt, stb: null, cp: null });
+			}
+			const valid = years.filter((d) => d.bond1y != null || d.bond1to5 != null || d.bond5to10 != null || d.bondTotal != null);
+			if (!valid.length) return null;
+			// 최신 연도 사다리 · 7버킷(1년이하·1~2·2~3·3~4·4~5·5~10·10년초과) 중 EDGAR 는 5~10 칸에 after5(5년초과) 배치, 10년초과는 미분리 null.
+			let ladder: DebtLadder | null = null;
+			const last = sorted[sorted.length - 1];
+			if (last && [last.y1, last.y2, last.y3, last.y4, last.y5, last.after5].some((v) => v != null)) {
+				ladder = { year: last.year, buckets: [last.y1, last.y2, last.y3, last.y4, last.y5, last.after5, null], shortTerm: null };
+			}
+			return { years: valid, ladder };
+		} catch {
+			return null;
+		}
+	}
+
 	async function buildDebtProfile(code: string): Promise<DebtProfileBundle | null> {
+		const m = resolveMarket(code);
+		if (m.market === 'US' && m.ticker) return loadEdgarDebtProfile(m.ticker); // US = edgar/scan/report 직독
 		const [cb, stb, cp] = await Promise.all([
 			read('corporateBond', code, ['remndr_exprtn2', 'sm', 'yy1_below', 'yy1_excess_yy2_below', 'yy2_excess_yy3_below', 'yy3_excess_yy4_below', 'yy4_excess_yy5_below', 'yy5_excess_yy10_below', 'yy10_excess']),
 			read('shortTermBond', code, ['remndr_exprtn2', 'sm']),
