@@ -46,13 +46,7 @@ export function contractToCards(contract: CarouselContract, media: MediaIndex | 
 		}
 		return { kind: 'editorial', date: s.date, line: s.line ?? '', sub: s.sub, bg };
 	});
-	if (contract.keyMetrics?.length) {
-		cards.push({
-			kind: 'kpis',
-			heading: '핵심 지표',
-			chapter: '핵심지표',
-			metrics: contract.keyMetrics
-		});
-	}
+	// 핵심지표(kpis) 카드는 붙이지 않는다 — 긴 값이 4:5 카드에서 줄깨짐·넘침이라 의미 대비 비용이 크다.
+	// keyMetrics 는 캡션·우측 패널 검증값으로만 쓴다(카드 슬라이드로는 렌더하지 않음).
 	return cards;
 }

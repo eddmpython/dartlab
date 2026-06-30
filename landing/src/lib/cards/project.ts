@@ -10,7 +10,6 @@ import type { CarouselCard, CarouselDeck, CarouselSpec } from './model';
 
 // 챕터 라벨 SSOT — 캡션 패널 섹션 점프 네비(chapterAnchors)가 이 순서대로 앵커를 만든다.
 const CH_COVER = '표지';
-const CH_KPIS = '핵심지표';
 const CH_FIN = '재무';
 const CH_BIZ = '사업·운영';
 
@@ -22,11 +21,6 @@ interface HeadCtx {
 
 function assertNever(x: never): never {
 	throw new Error(`projectBlock: 미매핑 ReportBlock 변종 — ${JSON.stringify(x)}`);
-}
-
-function isFilledMetricValue(value: string | null | undefined): boolean {
-	const v = String(value ?? '').trim();
-	return !!v && v !== '-' && v !== '–' && v.toLowerCase() !== 'n/a';
 }
 
 /** 카드용 초단문 — 첫 문장(마침표까지)만, 길면 자른다. 캐러셀은 리포트가 아니라 한 줄 후킹(기존 SNS 카피 톤). */
@@ -185,21 +179,13 @@ export function projectReport(
 		return { ...base, cards };
 	}
 
-	const hasLeadKpis = cards.some((c) => c.kind === 'kpis');
-	const headlineKpis = model.headlineKpis.filter((m) => isFilledMetricValue(m.value));
-	if (!hasLeadKpis && headlineKpis.length) cards.push({ kind: 'kpis', heading: '핵심 지표', chapter: CH_KPIS, metrics: headlineKpis });
+	// 핵심지표(kpis) 카드 제거 — 값이 길면 4:5 카드에서 줄깨짐·넘침이라 의미 대비 비용이 크다. 지표는 캡션·표로 충분.
 	// 재무 백본 = 터미널 중간패널 재무 그리드를 **보는 관점 순서** 그대로 한 장씩(각 장 = MiniFinChart 그래프
 	// + 표 한 세트). 손익→현금→효율→체력. cardKey 로 번들 카드 선택. 스파크라인(table) 금지.
 	for (const p of FIN_PERSPECTIVES) cards.push({ kind: 'finChart', heading: p.heading, sub: p.sub, chapter: CH_FIN, stockCode: model.stockCode, cardKey: p.key });
 
-	// 사업·운영 깊은 카드 — 주석 구성(부문별매출·비용성격별)을 수익성 관점에만 주입(맥락 적합·5덱 비대화 방지).
-	// rt.report.noteSeries 직독(별도 bake 0). 단일부문/미공시면 compositionToShare 가 null → 조건부 skip(핵심만).
-	if (model.perspectiveKey === 'earningsPower' && opts.noteSeries) {
-		const seg = compositionToCard(opts.noteSeries.segment, '부문별 매출', '어디서 버나');
-		const cost = compositionToCard(opts.noteSeries.cost, '비용 체질', '돈을 뭐에 쓰나');
-		if (seg) cards.push(seg);
-		if (cost) cards.push(cost);
-	}
+	// 주석 구성(부문별매출·비용성격별) 카드는 자동 덱에서 뺀다 — 시간축 스택+표 렌더가 MiniFinChart
+	// 재무 카드들과 결이 달라 덱 안에서 이질적으로 보인다. 구성 분석은 터미널 패널에서 본다(compositionToCard 보존).
 
 	// 큐레이션 order: 섹션 key 화이트리스트로 필터/재정렬(없으면 원순서). 미지정 key 는 무시(누락 surface 는 audit).
 	let sections = model.sections;
@@ -236,7 +222,6 @@ const FIN_PERSPECTIVES: { key: string; heading: string; sub: string }[] = [
 	// 현금 — 이익이 진짜인가
 	{ key: 'cashflowSigned', heading: '현금흐름', sub: '영업·투자·재무 현금' },
 	{ key: 'cashConversion', heading: '이익의 현금화', sub: '순이익이 진짜 현금인가' },
-	{ key: 'fcfTrend', heading: '잉여현금흐름', sub: '쓰고 남는 현금' },
 	// 효율 — 자본을 잘 굴리나
 	{ key: 'returnTrend', heading: '자본수익', sub: '자기자본·자산 수익률' },
 	{ key: 'dupont', heading: '자기자본수익률 분해', sub: '마진·회전·레버리지' },

@@ -100,7 +100,7 @@ describe('projectReport — 덱 구조 + 정직', () => {
 		const deck = projectReport(model({ sections: [sec] }), { heroUrls: ['https://x/h.webp'] });
 		const kinds = deck.cards.map((c) => c.kind);
 		expect(kinds[0]).toBe('cover');
-		expect(kinds).toContain('kpis');
+		expect(kinds).not.toContain('kpis'); // 자동 핵심지표 카드 제거(4:5 줄깨짐·렌더 단순화)
 		expect(kinds).toContain('finChart');
 		expect(kinds).toContain('line'); // 섹션은 차트(line) 1장만 — flags 는 같은 섹션이라 탈락(시각만)
 		expect(kinds).not.toContain('flags');
@@ -126,18 +126,11 @@ describe('projectReport — 덱 구조 + 정직', () => {
 		expect(deck.cards.length).toBeGreaterThanOrEqual(2); // cover + finChart(+closing)
 		expect(deck.cards.some((c) => c.kind === 'finChart')).toBe(true);
 	});
-	it('자동 핵심지표가 전부 결측이면 빈 KPI 카드를 붙이지 않는다', () => {
-		const deck = projectReport(
-			model({
-				headlineKpis: [
-					{ label: '매출', value: '-' },
-					{ label: '영업이익률', value: '–' }
-				]
-			})
-		);
+	it('자동 핵심지표 카드는 더 이상 붙이지 않는다(값이 차 있어도 — 4:5 줄깨짐·렌더 단순화)', () => {
+		const deck = projectReport(model()); // headlineKpis(매출·영업이익률)가 채워져 있어도
 		expect(deck.cards.some((c) => c.kind === 'kpis')).toBe(false);
 	});
-	it('편집자가 검증한 핵심지표가 있으면 자동 핵심지표보다 우선한다', () => {
+	it('편집 계약 lead 의 핵심지표 카드는 그대로 보존한다(자동 추가는 없음)', () => {
 		const lead: CarouselCard[] = [
 			{ kind: 'editorial', line: '커버', chapter: '표지' },
 			{ kind: 'kpis', heading: '핵심 지표', chapter: '핵심지표', metrics: [{ label: '매출', value: '13억8563만달러' }] }
@@ -235,30 +228,23 @@ describe('챕터 점프 앵커(chapterAnchors) — 섹션 네비', () => {
 	});
 });
 
-describe('projectReport — 깊은 카드 주입 + 챕터 태깅', () => {
-	it('수익성 + noteSeries → 부문/비용 composition 2장(finChart 뒤)', () => {
+describe('projectReport — composition 미주입 + 챕터 태깅(렌더 단순화)', () => {
+	it('수익성 + noteSeries 라도 composition(부문/비용) 카드는 자동 덱에 안 붙는다 — MiniFinChart 와 렌더 결이 달라 제거', () => {
 		const ns: NoteSeriesBundle = { segment: comp(['반도체', 'DX']), cost: comp(['원재료', '인건비']) };
 		const deck = projectReport(model(), { noteSeries: ns });
-		const comps = deck.cards.filter((c) => c.kind === 'composition');
-		expect(comps.map((c) => c.heading)).toEqual(['부문별 매출', '비용 체질']);
+		expect(deck.cards.some((c) => c.kind === 'composition')).toBe(false);
 	});
-	it('segment 만 있으면 1장(cost null → 조건부 skip)', () => {
-		const ns: NoteSeriesBundle = { segment: comp(['a', 'b']), cost: null };
-		const deck = projectReport(model(), { noteSeries: ns });
-		expect(deck.cards.filter((c) => c.kind === 'composition').map((c) => c.heading)).toEqual(['부문별 매출']);
-	});
-	it('비-수익성 관점에는 미주입(5덱 비대화 방지)', () => {
+	it('비-수익성 관점에도 composition 없음', () => {
 		const ns: NoteSeriesBundle = { segment: comp(['a', 'b']), cost: comp(['c', 'd']) };
 		const deck = projectReport(model({ perspectiveKey: 'liquidity', perspectiveLabel: '재무안정성' }), { noteSeries: ns });
 		expect(deck.cards.some((c) => c.kind === 'composition')).toBe(false);
 	});
-	it('cover/kpis/finChart 챕터 태깅 — 네비 앵커 4종 성립', () => {
-		const ns: NoteSeriesBundle = { segment: comp(['a', 'b']), cost: null };
-		const deck = projectReport(model(), { noteSeries: ns });
+	it('cover/finChart 챕터 태깅 — 네비 앵커(표지·재무), 자동 kpis 없음', () => {
+		const deck = projectReport(model());
 		expect(deck.cards[0].chapter).toBe('표지');
-		expect(deck.cards.find((c) => c.kind === 'kpis')?.chapter).toBe('핵심지표');
+		expect(deck.cards.some((c) => c.kind === 'kpis')).toBe(false);
 		expect(deck.cards.find((c) => c.kind === 'finChart')?.chapter).toBe('재무');
-		expect(chapterAnchors(deck.cards).map((a) => a.label)).toEqual(['표지', '핵심지표', '재무', '사업·운영']);
+		expect(chapterAnchors(deck.cards).map((a) => a.label)).toEqual(['표지', '재무']);
 	});
 });
 

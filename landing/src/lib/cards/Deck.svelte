@@ -253,6 +253,8 @@
 		width: 100%;
 		height: 100%;
 		scroll-snap-align: start;
+		/* 빠른 스와이프가 여러 스냅을 건너뛰어 두세 장이 한 번에 넘어가는 것 방지 — 한 번에 한 장만. */
+		scroll-snap-stop: always;
 	}
 	/* chrome */
 	.badge {

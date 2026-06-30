@@ -143,6 +143,8 @@
 	.fc {
 		display: flex;
 		flex-direction: column;
+		padding-bottom: 20px;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.07); /* 다음 카드뉴스와의 명확한 구분선(모바일 피드) */
 	}
 	.fcDeck {
 		width: 100%;

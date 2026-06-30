@@ -420,6 +420,10 @@
 	.pm-editorial .content {
 		--hl: var(--dl-accent);
 	}
+	/* 차트 카드(dim) — 하단 닷/페이지뱃지(Deck 크롬)와 차트·표가 겹치지 않게 바닥 여백을 더 둔다(특히 모바일). */
+	.pm-dim .content {
+		padding-bottom: clamp(52px, 13%, 92px);
+	}
 	.content {
 		position: relative;
 		z-index: 1;

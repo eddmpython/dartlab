@@ -212,7 +212,7 @@
 		}
 		.grid {
 			grid-template-columns: 1fr;
-			gap: 14px;
+			gap: 32px; /* 덱-더보기-다음덱이 붙어 보이던 것 해소 — 카드뉴스 사이 확실한 간격 */
 		}
 		.cHeader {
 			padding: 8px 12px;
