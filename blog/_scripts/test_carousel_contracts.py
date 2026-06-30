@@ -263,23 +263,38 @@ def test_visual_contract_gate() -> None:
     def contract(visual: dict) -> dict:
         return {"slides": [{"layout": "editorialBeat", "line": "큰문장입니다", "visual": visual}]}
 
-    # 렌더러 구현분(bars/line/table) — 필드 유효하면 통과
+    # 렌더러 구현분(finCard/table). 밀도 충족(분기 6점 이상) + 필드 유효하면 통과
+    dense = ["24Q1", "24Q2", "24Q3", "24Q4", "25Q1", "25Q2"]
     assert (
         cp.validate_contract_visuals(
-            "s", contract({"kind": "bars", "rows": [{"label": "a", "value": 1, "display": "1"}]})
+            "s", contract({"kind": "finCard", "periods": dense, "series": [{"name": "x", "data": [1, 2, 3, 4, 5, 6]}]})
         )
         == []
     )
-    assert cp.validate_contract_visuals("s", contract({"kind": "line", "series": [1, 2, 3]})) == []
-    # 등록됐으나 렌더러 미구현(finChart) → 확장 루프(렌더러 추가) 안내로 막힘
+    assert (
+        cp.validate_contract_visuals(
+            "s", contract({"kind": "table", "cols": ["기간", "값"], "data": [{"기간": "24", "값": "1"}]})
+        )
+        == []
+    )
+    # 등록됐으나 렌더러 미구현(finChart). 확장 루프(렌더러 추가) 안내로 막힘
     errs = cp.validate_contract_visuals("s", contract({"kind": "finChart", "stockCode": "005930"}))
     assert errs and "렌더러 미구현" in errs[0]
-    # 미등록 계약(sankey) → 레지스트리 추가(확장 루프) 안내로 막힘
+    # 미등록 계약(sankey). 레지스트리 추가(확장 루프) 안내로 막힘
     errs2 = cp.validate_contract_visuals("s", contract({"kind": "sankey"}))
     assert errs2 and "미등록" in errs2[0]
-    # 필수 필드 누락(line series<2) → 막힘
-    assert cp.validate_contract_visuals("s", contract({"kind": "line", "series": [1]}))
-    # visual 없는 슬라이드(기존 카드) → 무회귀(통과)
+    # 듬성 시계열(periods<6). 막힘(그래프는 항상 밀도 있게)
+    sparse = cp.validate_contract_visuals(
+        "s", contract({"kind": "finCard", "periods": ["23", "24", "25"], "series": [{"name": "x", "data": [1, 2, 3]}]})
+    )
+    assert sparse and any("밀도" in e for e in sparse)
+    # 구멍(빈 값) 있는 시리즈. 막힘(연도·분기 건너뛰지 않는다)
+    holed = cp.validate_contract_visuals(
+        "s",
+        contract({"kind": "finCard", "periods": dense, "series": [{"name": "x", "data": [1, 2, None, 4, 5, 6]}]}),
+    )
+    assert holed and any("구멍" in e for e in holed)
+    # visual 없는 슬라이드(기존 카드). 무회귀(통과)
     assert cp.validate_contract_visuals("s", {"slides": [{"layout": "editorialBeat", "line": "x"}]}) == []
 
 

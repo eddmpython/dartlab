@@ -134,13 +134,17 @@ SENTENCE_END_RE = re.compile(r"[다요까죠][.!?…)]*$")
 # REGISTERED 이나 렌더러 미구현(예: finChart)이면 게이트가 "계약 추가(확장 루프)"로 막는다 —
 # 파이프라인이 가장 강한 기획에 맞춰 자라게 하는 닫힌 루프의 기계 게이트. SSOT 표는 operation.content.
 LAYOUT_CONTRACTS = ("editorial", "editorialBeat", "editorialStat")
-VISUAL_CONTRACTS_RENDERABLE = ("bars", "line", "table")  # CardSlide 에 렌더러 구현분 — 발행 통과
+# 인라인 차트는 실제 재무그래프(MiniFinChart)와 동일 렌더러로 그린다. finCard(손글 시리즈)·table 구현분.
+VISUAL_CONTRACTS_RENDERABLE = ("finCard", "table")  # CardSlide 에 렌더러 구현분, 발행 통과
 VISUAL_CONTRACTS_REGISTERED = (
-    "bars",
-    "line",
+    "finCard",
     "table",
-    "finChart",
-)  # 카탈로그 등록분(finChart=등록만, 렌더러는 확장 루프로)
+    "finChart",  # 회사 재무 카드(bundle 직독). 렌더러는 확장 루프로
+    "priceChart",  # 회사 주가. 렌더러는 확장 루프로
+)
+# 그래프는 항상 밀도 있게. 시계열 finCard 는 연도별 듬성(3~4점) 금지, 분기급 최소 길이를 강제한다.
+# 운영자 지시 "그래프는 항상 밀도 있게 한다". 6 = 분기 1.5년치 하한(연도별 듬성 차트 차단).
+MIN_VIZ_PERIODS = 6
 
 
 def rel(path: Path) -> str:
@@ -290,6 +294,40 @@ def insight_contract() -> dict[str, Any]:
         "whatToWatch": "",
         "evidenceRefs": [],
     }
+
+
+def visual_plan_for_slides(slides: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """기획단계 시각 설계 명세. 카드의 visual 슬롯마다 모양(시리즈 type)·밀도·증명대상을 박제한다.
+
+    운영자 지시: "기획단계에서 그래프 모양까지 필요하면 테이블까지 기획한다". 시각은 글에
+    나중에 덧붙이는 장식이 아니라 기획단계에서 무엇을 어떤 모양으로 증명할지 먼저 설계한다.
+    granularity 가 sparse(연도별 듬성)이면 발행 게이트가 막는다.
+    """
+    out: list[dict[str, Any]] = []
+    for idx, slide in enumerate(slides, start=1):
+        vis = slide.get("visual")
+        if not isinstance(vis, dict):
+            continue
+        kind = str(vis.get("kind") or "")
+        entry: dict[str, Any] = {"order": idx, "kind": kind}
+        if kind == "finCard":
+            series = vis.get("series") if isinstance(vis.get("series"), list) else []
+            periods = vis.get("periods") if isinstance(vis.get("periods"), list) else []
+            entry["shape"] = [
+                {"name": str(s.get("name") or ""), "type": str(s.get("type") or "bar")}
+                for s in series
+                if isinstance(s, dict)
+            ]
+            entry["periods"] = len(periods)
+            entry["granularity"] = "quarterly" if len(periods) >= MIN_VIZ_PERIODS else "sparse"
+        elif kind == "table":
+            cols = vis.get("cols") if isinstance(vis.get("cols"), list) else []
+            data = vis.get("data") if isinstance(vis.get("data"), list) else []
+            entry["shape"] = [str(c) for c in cols]
+            entry["rows"] = len(data)
+        entry["proves"] = clean_card_text(vis.get("caption")) or clean_card_text(slide.get("line"))
+        out.append(entry)
+    return out
 
 
 def scene_for(role: str, topic: str, corp_name: str, slide: dict[str, Any] | None) -> str:
@@ -451,6 +489,7 @@ def build_company_post_plan(post_dir: Path, *, count: int | None = None) -> dict
             "bigSentenceContract": big_sentence_contract(slides),
             "plainLanguageContract": plain_language_contract(),
             "insightContract": insight_contract(),
+            "visualPlan": visual_plan_for_slides(slides),
             "bodyPreview": " ".join(body.strip().split())[:360],
         },
         "carousel": {
@@ -537,6 +576,7 @@ def build_issue_plan(issue_dir: Path, *, count: int | None = None) -> dict[str, 
             "bigSentenceContract": big_sentence_contract(slides),
             "plainLanguageContract": plain_language_contract(),
             "insightContract": insight_contract(),
+            "visualPlan": visual_plan_for_slides(slides),
             "bodyPreview": "",
         },
         "carousel": {
@@ -577,7 +617,9 @@ def validate_plan(plan: dict[str, Any], *, require_passed: bool = True, require_
     if version not in SUPPORTED_PLAN_VERSIONS:
         errors.append(f"{slug}: version 은 {sorted(SUPPORTED_PLAN_VERSIONS)} 중 하나여야 함")
     strict_big_sentence = isinstance(version, int) and version >= STRICT_FLOW_MIN_VERSION
-    require_insight = isinstance(version, int) and version >= INSIGHT_MIN_VERSION
+    # 인사이트는 발행 게이트(require_passed) 요건이다. 갓 빌드한 스캐폴드(require_passed=False)는
+    # 빈 insightContract 가 정상이고, 기획 루프가 채운 뒤 발행 시 강제한다.
+    require_insight = require_passed and isinstance(version, int) and version >= INSIGHT_MIN_VERSION
     for field in ("kind", "slug", "title", "assetRoot"):
         if not str(target.get(field, "")).strip():
             errors.append(f"{slug}: target.{field} 누락")
@@ -811,12 +853,34 @@ def validate_contract_visuals(slug: str, contract: dict[str, Any]) -> list[str]:
                 "CardSlide 에 렌더러 추가(확장 루프) 후 발행"
             )
             continue
-        if kind == "bars" and not (isinstance(vis.get("rows"), list) and vis.get("rows")):
-            errors.append(f"{slug}: slide[{idx}].visual(bars) 는 rows 가 필요함")
-        elif kind == "line":
+        if kind == "finCard":
             series = vis.get("series")
-            if not (isinstance(series, list) and sum(1 for n in series if isinstance(n, (int, float))) >= 2):
-                errors.append(f"{slug}: slide[{idx}].visual(line) 은 series 최소 2개 수치가 필요함")
+            periods = vis.get("periods")
+            if not (
+                isinstance(series, list)
+                and series
+                and all(isinstance(s, dict) and isinstance(s.get("data"), list) for s in series)
+            ):
+                errors.append(f"{slug}: slide[{idx}].visual(finCard) 는 series[].data 가 필요함")
+            elif not isinstance(periods, list) or len(periods) < MIN_VIZ_PERIODS:
+                errors.append(
+                    f"{slug}: slide[{idx}].visual(finCard) periods 는 최소 {MIN_VIZ_PERIODS}개여야 함"
+                    f"(현재 {len(periods) if isinstance(periods, list) else 0}). 그래프는 항상 밀도 있게(분기 시계열)"
+                )
+            else:
+                for s in series:
+                    data = s.get("data")
+                    name = str(s.get("name") or "")
+                    if any(v is None for v in data):
+                        errors.append(
+                            f"{slug}: slide[{idx}].visual(finCard) '{name}' 시리즈에 빈 값(구멍) 금지. "
+                            "연도·분기를 건너뛰지 말고 밀도 있게 채운다"
+                        )
+                    if len(data) != len(periods):
+                        errors.append(
+                            f"{slug}: slide[{idx}].visual(finCard) '{name}' 데이터 길이({len(data)})가 "
+                            f"periods({len(periods)})와 다름"
+                        )
         elif kind == "table" and not (
             isinstance(vis.get("cols"), list)
             and vis.get("cols")

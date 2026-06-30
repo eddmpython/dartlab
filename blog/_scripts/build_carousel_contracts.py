@@ -273,6 +273,7 @@ def build_contracts(blog_dir: Path = BLOG_DIR) -> dict[str, dict]:
         spec = _spec_from(carousel)
         if spec:
             contract["spec"] = spec
+        contract["_pub"] = _plan_generated_at(md.parent)  # 같은 날짜 내 발간 시각 정렬키(build_index 에서 사용 후 제거)
         if slug in contracts:
             sys.stderr.write(f"  dup slug(덮어쓰기 방지): {slug}\n")
         contracts[slug] = contract
@@ -352,6 +353,9 @@ def build_issue_contracts(
         spec = _spec_from(data)
         if spec:
             contract["spec"] = spec
+        contract["_pub"] = _plan_generated_at(
+            yml.parent
+        )  # 같은 날짜 내 발간 시각 정렬키(build_index 에서 사용 후 제거)
         contracts[slug] = contract
     return contracts, ops
 
@@ -371,14 +375,30 @@ def _stale_carousel_jsons(files: set[str]) -> set[str]:
     }
 
 
+def _plan_generated_at(folder: Path) -> str:
+    """cards.plan.json 의 generatedAt(ISO). 같은 날짜(day) 안 발간 시각 2차 정렬키. 없으면 빈 문자열.
+    커밋되는 값이라 CI 체크아웃에서도 유지된다(파일 mtime 은 체크아웃에서 리셋돼 못 쓴다)."""
+    plan = folder / "cards.plan.json"
+    if not plan.exists():
+        return ""
+    try:
+        return str(json.loads(plan.read_text(encoding="utf-8")).get("generatedAt") or "")
+    except (json.JSONDecodeError, OSError):
+        return ""
+
+
 def build_index(contracts: dict[str, dict]) -> list[dict]:
-    """발간 최신순(date 내림차순, 동률 슬러그) **전체 계약** 배열 — 단일 index.json 의 posts[].
-    피드·상세 모두 이 한 파일로(별도 인덱스·per-slug round-trip 0). date 없으면 맨 뒤."""
-    return sorted(
+    """발간 최신순 전체 계약 배열(단일 index.json 의 posts[]). 1차 date(day) 내림차순,
+    같은 날짜는 cards.plan.json generatedAt(발간 시각) 내림차순, 그다음 슬러그. date 없으면 맨 뒤.
+    피드·상세 모두 이 한 파일로(별도 인덱스·per-slug round-trip 0)."""
+    ordered = sorted(
         contracts.values(),
-        key=lambda c: (c.get("date") or "", c["slug"]),
+        key=lambda c: (c.get("date") or "", c.get("_pub") or "", c["slug"]),
         reverse=True,
     )
+    for c in ordered:
+        c.pop("_pub", None)  # 내부 정렬키. 발행 JSON 에는 안 싣는다
+    return ordered
 
 
 def main() -> None:

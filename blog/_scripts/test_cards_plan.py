@@ -52,6 +52,14 @@ def _mark_passed(plan: dict) -> dict:
     plan["reviewGate"]["status"] = "passed"
     for row in plan["reviewGate"]["requiredRounds"]:
         row["status"] = "passed"
+    # 발행 준비된 plan 은 insightContract(통념·반전·렌즈·근거)도 채워져 있어야 한다(v4+ 발행 게이트).
+    ic = plan.setdefault("planning", {}).setdefault("insightContract", {})
+    ic["commonBelief"] = "회원제 창고형 매장은 싸게 파니까 이익이 얇을 것이라고 여긴다."
+    ic["twistFact"] = (
+        "실제 이익의 중심은 상품 마진이 아니라 회비다. 낮은 상품 가격으로 재방문을 만들고 그 회비가 이익을 떠받친다."
+    )
+    ic["whatToWatch"] = "분기 상품 마진이 아니라 회비 매출과 재방문이 같이 늘어나는지를 본다."
+    ic["evidenceRefs"] = ["분기 회비 매출 12억달러, 상품 매출 636억달러 대비 비중"]
     return plan
 
 
