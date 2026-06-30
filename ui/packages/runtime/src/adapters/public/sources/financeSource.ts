@@ -520,8 +520,8 @@ function buildBundle(rows: RawRow[], fs: FinScope, availScopes: FinScope[]): Ter
 			] },
 			{ key: 'fcfTrend', title: 'FCF', unit: '조', series: [
 				{ name: 'FCF', data: compose(['cfOperating', 1], ['capex', -1]), color: C.warn, type: 'line' },
-				{ name: '영업CF', data: ser('cfOperating'), color: C.good, type: 'bar' },
-				{ name: 'CAPEX', data: compose(['capex', -1]), color: C.dim, type: 'bar' }
+				{ name: '영업CF', data: ser('cfOperating'), color: C.good, type: 'line' },
+				{ name: 'CAPEX', data: compose(['capex', -1]), color: C.dim, type: 'line' }
 			] },
 			// 3행 — 효율
 			{ key: 'returnTrend', title: 'ROE·ROA', unit: '%', series: [
