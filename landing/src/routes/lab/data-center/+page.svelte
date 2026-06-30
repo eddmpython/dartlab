@@ -43,13 +43,13 @@
 	];
 	const grouped = GROUPS.map((g) => ({ name: g.name, items: DOWNLOAD_CATALOG.filter((e) => g.test(e.dir)) })).filter((g) => g.items.length);
 
-	// 빠른 시작 — 클릭하면 즉시 채우고 조회
+	// 빠른 시작 — 한 번 클릭이면 데이터셋·종목 채우고 바로 받을 수 있게
 	const QUICK = [
-		{ label: '삼성전자 주가', dir: 'gov/prices/company', id: '005930', cols: ['date', 'close', 'volume'] },
-		{ label: '삼성전자 재무', dir: 'dart/finance', id: '005930', cols: ['bsns_year', 'account_nm', 'thstrm_amount'] },
-		{ label: 'SK하이닉스 주가', dir: 'gov/prices/company', id: '000660', cols: ['date', 'close', 'volume'] },
-		{ label: '현대차 재무', dir: 'dart/finance', id: '005380', cols: ['bsns_year', 'account_nm', 'thstrm_amount'] },
-		{ label: 'KOSPI 지수', dir: 'gov/indices/index', id: 'KOSPI-코스피', cols: [] }
+		{ label: '삼성전자 주가', dir: 'gov/prices/company', id: '005930' },
+		{ label: '삼성전자 재무', dir: 'dart/finance', id: '005930' },
+		{ label: 'SK하이닉스 주가', dir: 'gov/prices/company', id: '000660' },
+		{ label: '현대차 재무', dir: 'dart/finance', id: '005380' },
+		{ label: 'KOSPI 지수', dir: 'gov/indices/index', id: 'KOSPI-코스피' }
 	];
 
 	let dir = $state<CatalogEntry | null>(null);
@@ -60,12 +60,12 @@
 	let probing = $state(false);
 	let probeErr = $state('');
 	let probedKey = $state('');
-	let limitMode = $state<'all' | 'tail' | 'head'>('tail');
+	let limitMode = $state<'all' | 'tail' | 'head'>('all'); // 기본 = 전체(받기 우선, 옵션 0)
 	let limitN = $state(250);
 	let freq = $state('');
 	let busy = $state('');
 	let copiedKey = $state('');
-	let showCols = $state(false); // 컬럼 칩은 기본 접힘(전체) — [고르기]로만 펼침(단순성)
+	let showAdvanced = $state(false); // 컬럼·범위·주기는 전부 세부 조정에 숨김(단순성)
 
 	function changeDir(dirStr: string) {
 		selectDir(dirStr);
@@ -145,8 +145,7 @@
 	async function loadExample(ex: (typeof QUICK)[number]) {
 		selectDir(ex.dir);
 		id = ex.id;
-		await probe();
-		if (ex.cols.length) pickedCols = new Set(ex.cols.filter((c) => allCols.includes(c)));
+		await probe(); // 컬럼·범위는 기본값(전체) — 사용자가 고를 게 없음
 	}
 
 	onMount(() => {
@@ -274,7 +273,7 @@
 	</div>
 
 	<section class="panel">
-		<!-- 1줄: 데이터 + ID + 조회 -->
+		<!-- 필수 선택 2개: 데이터 + 종목 (조회는 자동) -->
 		<div class="ctl">
 			<label class="fld grow">
 				<span class="fld-label">데이터</span>
@@ -290,67 +289,57 @@
 				<span class="fld-label">{dir?.shardKind === 'company' ? '종목' : '항목'}</span>
 				<input class="id-input" placeholder={dir ? ID_HINT[dir.shardKind] : ''} bind:value={id} aria-label="종목·항목 ID" onkeydown={(ev) => ev.key === 'Enter' && probe()} onblur={idBlur} />
 			</label>
-			<button class="btn" onclick={probe} disabled={!id.trim() || probing}>{probing ? '조회 중…' : '조회'}</button>
-			{#if dir}
-				<span class="tag" class:live={eligible}>{eligible ? '라이브 가능' : '다운로드 전용'}</span>
-			{/if}
+			{#if dir}<span class="tag" class:live={eligible}>{eligible ? '라이브 가능' : '다운로드 전용'}</span>{/if}
 		</div>
 		{#if dir && BULK_OBS.has(dir.dir)}<p class="micro">시리즈ID 를 넣으세요 · 목록은 <code>{dir.dir}/manifest</code></p>{/if}
 		{#if probeErr}<p class="err">{probeErr}</p>{/if}
 
-		{#if probed && allCols.length}
-			<!-- 컬럼 (기본 접힘 = 전체) -->
-			<div class="optline">
-				<span class="opt-label">컬럼</span>
-				<div class="colwrap">
-					<button class="link-btn" onclick={() => (showCols = !showCols)} aria-expanded={showCols}>
-						{cols.length === 0 || cols.length === allCols.length ? `전체 ${allCols.length}열` : `${cols.length} / ${allCols.length}열 선택`}
-						<span class="caret">{showCols ? '▾' : '▸'}</span>
-					</button>
-					{#if showCols}
+		{#if dir && id.trim()}
+			<!-- 받기 — 버튼 3개가 전부 (옵션 0) -->
+			<div class="get">
+				<button class="btn primary" onclick={() => download('xlsx')} disabled={!!busy}>{busy === 'xlsx' ? '변환 중…' : 'Excel 받기'}</button>
+				<button class="btn" onclick={() => download('csv')} disabled={!!busy}>{busy === 'csv' ? '변환 중…' : 'CSV 받기'}</button>
+				{#if eligible && tier2On && liveUrl}
+					<button class="btn live-btn" onclick={() => copy(`=IMPORTDATA("${liveUrl}")`, 'live')}>{copiedKey === 'live' ? '복사됨 ✓ — 구글시트에 붙여넣기' : '구글시트 라이브 복사'}</button>
+				{/if}
+			</div>
+			<div class="meta">
+				{#if probed}<span class="meta-info">{totalRows.toLocaleString()}행 · {allCols.length}열 전체</span>{:else if probing}<span class="meta-info">불러오는 중…</span>{/if}
+				<button class="link-btn" onclick={() => (showAdvanced = !showAdvanced)} aria-expanded={showAdvanced}>세부 조정 <span class="caret">{showAdvanced ? '▾' : '▸'}</span></button>
+			</div>
+
+			{#if showAdvanced && probed && allCols.length}
+				<div class="advanced">
+					<div class="optline">
+						<span class="opt-label">컬럼</span>
 						<div class="cols">
 							{#each allCols as c (c)}
-								<label class="chip" class:on={pickedCols.has(c)}>
-									<input type="checkbox" checked={pickedCols.has(c)} onchange={() => toggleCol(c)} />{c}
-								</label>
+								<label class="chip" class:on={pickedCols.has(c)}><input type="checkbox" checked={pickedCols.has(c)} onchange={() => toggleCol(c)} />{c}</label>
 							{/each}
+						</div>
+					</div>
+					<div class="optline">
+						<span class="opt-label">범위</span>
+						<div class="range">
+							<label class="radio"><input type="radio" value="all" bind:group={limitMode} /> 전체</label>
+							<label class="radio"><input type="radio" value="tail" bind:group={limitMode} /> 최근</label>
+							<label class="radio"><input type="radio" value="head" bind:group={limitMode} /> 처음</label>
+							{#if limitMode !== 'all'}<input class="num" type="number" min="1" bind:value={limitN} /> 행{/if}
+							{#if hasDateCol}<span class="sep">·</span><span class="radio">주기<select bind:value={freq}><option value="">원본</option><option value="d">일</option><option value="w">주</option><option value="m">월</option><option value="q">분기</option><option value="y">연</option></select></span>{/if}
+							<span class="prev">받을 {preview.nr.toLocaleString()}행 × {preview.nc}열{#if preview.over}<span class="warn"> · 라이브 ~5만셀 자동절단</span>{/if}</span>
+						</div>
+					</div>
+					{#if eligible && tier2On && liveUrl}
+						<div class="optline">
+							<span class="opt-label">URL</span>
+							<div class="livebox">
+								<code>{liveUrl}</code>
+								<button class="btn sm" onclick={() => copy(liveUrl, 'url')}>{copiedKey === 'url' ? '복사됨 ✓' : 'URL 복사'}</button>
+							</div>
 						</div>
 					{/if}
 				</div>
-			</div>
-			<!-- 범위 -->
-			<div class="optline">
-				<span class="opt-label">범위</span>
-				<div class="range">
-					<label class="radio"><input type="radio" value="tail" bind:group={limitMode} /> 최근</label>
-					<label class="radio"><input type="radio" value="head" bind:group={limitMode} /> 처음</label>
-					<label class="radio"><input type="radio" value="all" bind:group={limitMode} /> 전체</label>
-					{#if limitMode !== 'all'}<input class="num" type="number" min="1" bind:value={limitN} /> 행{/if}
-					{#if hasDateCol}<span class="sep">·</span><span class="radio">주기<select bind:value={freq}><option value="">원본</option><option value="d">일</option><option value="w">주</option><option value="m">월</option><option value="q">분기</option><option value="y">연</option></select></span>{/if}
-					<span class="prev">{preview.nr.toLocaleString()}행 × {preview.nc}열{#if preview.over}<span class="warn"> · ~5만셀 한도 자동절단</span>{/if}</span>
-				</div>
-			</div>
-
-			<!-- 받기 -->
-			<div class="out">
-				<div class="optline">
-					<span class="opt-label">받기</span>
-					<div class="dl">
-						<button class="btn primary" onclick={() => download('xlsx')} disabled={!!busy}>{busy === 'xlsx' ? '변환 중…' : 'Excel (.xlsx)'}</button>
-						<button class="btn" onclick={() => download('csv')} disabled={!!busy}>{busy === 'csv' ? '변환 중…' : 'CSV'}</button>
-						<span class="dl-note">브라우저 직접 변환 · 한도 없음 · 진짜 Number</span>
-					</div>
-				</div>
-				{#if eligible && tier2On && liveUrl}
-					<div class="optline">
-						<span class="opt-label">라이브</span>
-						<div class="livebox">
-							<code>{liveUrl}</code>
-							<button class="btn sm" onclick={() => copy(`=IMPORTDATA("${liveUrl}")`, 'live')}>{copiedKey === 'live' ? '복사됨 ✓' : '=IMPORTDATA 복사'}</button>
-						</div>
-					</div>
-				{/if}
-			</div>
+			{/if}
 		{/if}
 	</section>
 
@@ -441,6 +430,40 @@
 		padding: var(--dl-s-4) var(--dl-s-5);
 	}
 
+	/* 받기 — 핵심 3버튼 */
+	.get {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--dl-s-2);
+		margin-top: var(--dl-s-4);
+	}
+	.live-btn {
+		background: var(--dl-cat-operation-soft);
+		border-color: transparent;
+		color: var(--dl-good);
+		font-weight: 600;
+	}
+	.live-btn:hover:not(:disabled) {
+		border-color: var(--dl-good);
+	}
+	.meta {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--dl-s-3);
+		margin-top: var(--dl-s-3);
+		flex-wrap: wrap;
+	}
+	.meta-info {
+		font-size: 0.82rem;
+		color: var(--dl-ink-mute);
+	}
+	.advanced {
+		margin-top: var(--dl-s-2);
+		padding-top: var(--dl-s-2);
+		border-top: 1px solid var(--dl-line);
+	}
+
 	.ctl {
 		display: flex;
 		gap: var(--dl-s-3);
@@ -524,20 +547,12 @@
 	}
 	.cols,
 	.range,
-	.dl,
 	.livebox {
 		flex: 1;
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--dl-s-2);
 		align-items: center;
-	}
-	.colwrap {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		gap: var(--dl-s-2);
-		align-items: flex-start;
 	}
 	.link-btn {
 		padding: 0.1rem 0;
@@ -610,9 +625,6 @@
 		color: var(--dl-warn);
 	}
 
-	.out {
-		margin-top: 0;
-	}
 	.btn {
 		padding: 0.5rem 0.95rem;
 		border-radius: var(--dl-r-md);
@@ -644,10 +656,6 @@
 	.btn.sm {
 		padding: 0.38rem 0.65rem;
 		font-size: 0.78rem;
-	}
-	.dl-note {
-		font-size: 0.76rem;
-		color: var(--dl-ink-mute);
 	}
 	.livebox code {
 		flex: 1;
