@@ -5,6 +5,8 @@
 	import { onMount } from 'svelte';
 	import Header from '$lib/components/sections/Header.svelte';
 	import { readParquetRows, readParquetMetadata } from '@dartlab/ui-runtime/data/parquet/hfRange';
+	import { loadFinanceBundle } from '@dartlab/ui-runtime/data/financeRows';
+	import type { TerminalFinanceBundle, StmtKind } from '@dartlab/ui-contracts';
 	import {
 		objectsToWorkbook,
 		downloadBlob,
@@ -70,6 +72,51 @@
 	let apiTab = $state<'sheets' | 'excel' | 'python' | 'curl'>('sheets');
 	let showCols = $state(false);
 	let copiedKey = $state('');
+
+	// ── 변환 재무제표(런타임) · 터미널과 동일 financeSource 변환을 데이터센터에서 그대로 호출(베이크 0).
+	const FIN_DIR = 'dart/finance/__stmt__'; // 가상 dir · raw dart/finance 와 구분
+	const FIN_ENTRY: CatalogEntry = { dir: FIN_DIR, label: '재무제표 (변환·IS·BS·CF)', shardKind: 'company' };
+	const FIN_ACCOUNT = '계정';
+	const FIN_KINDS: { k: StmtKind; label: string }[] = [
+		{ k: 'IS', label: '손익계산서' },
+		{ k: 'BS', label: '재무상태표' },
+		{ k: 'CF', label: '현금흐름표' }
+	];
+	let finBundle = $state<TerminalFinanceBundle | null>(null);
+	const isFin = $derived(dir?.dir === FIN_DIR);
+	function finView(b: TerminalFinanceBundle) {
+		return b.views[b.defaultMode] ?? b.views.annual ?? b.views.quarter ?? null;
+	}
+	function finStmtRows(stmt: { kr: string; values: (number | null)[] }[], periods: string[]): Record<string, unknown>[] {
+		return stmt.map((r) => {
+			const o: Record<string, unknown> = { [FIN_ACCOUNT]: r.kr };
+			periods.forEach((p, i) => (o[p] = r.values[i]));
+			return o;
+		});
+	}
+	function finSheets(b: TerminalFinanceBundle): ObjectSheet[] {
+		const view = finView(b);
+		if (!view) return [];
+		const cols = [FIN_ACCOUNT, ...view.periods];
+		const sheets = FIN_KINDS.map(({ k, label }) => ({ label, columns: cols, rows: finStmtRows(view.statements[k] ?? [], view.periods) })).filter((s) => s.rows.length);
+		// CIS 포괄손익 · ociCard(순이익·총포괄이익·OCI) 시계열, 같은 기간 축
+		const oci = view.tabCards?.profitability?.find((c) => c.key === 'oci');
+		if (oci?.series?.some((s) => s.data.some((v) => v != null))) {
+			sheets.push({ label: '포괄손익(CIS)', columns: cols, rows: oci.series.map((s) => {
+				const o: Record<string, unknown> = { [FIN_ACCOUNT]: s.name };
+				view.periods.forEach((p, i) => (o[p] = s.data[i]));
+				return o;
+			}) });
+		}
+		// 자본변동표 · sceBridge 워터폴(최신 연간 스냅샷): 기초자본 → 순이익 → 기타포괄 → 배당 → 자기주식 → 기말자본
+		const sce = view.tabCards?.shareholder?.find((c) => c.key === 'sceBridge');
+		if (sce?.steps?.length) {
+			const vc = `${sce.title ?? '자본변동'} (조)`;
+			sheets.push({ label: '자본변동표', columns: ['단계', vc], rows: sce.steps.map((s) => ({ 단계: s.name, [vc]: s.value })) });
+		}
+		if (view.ratios?.length) sheets.push({ label: '주요비율', columns: cols, rows: finStmtRows(view.ratios, view.periods) });
+		return sheets;
+	}
 
 	// ── 파일 브라우저(탐색) · HF 트리 그대로(공개 repo). CORS 허용·Link 커서 페이지네이션 ──
 	const HF_API = 'https://huggingface.co/api/datasets/eddmpython/dartlab-data/tree/main';
@@ -145,7 +192,7 @@
 		}
 		window.open(`${HF_RESOLVE}/${e.path}`, '_blank'); // 카탈로그 밖·비parquet = 원본 직링크
 	}
-	const rawUrl = $derived(dir && id.trim() ? `${HF_RESOLVE}/${physical(dir.dir, id.trim()).path}` : '');
+	const rawUrl = $derived(dir && id.trim() && !isFin ? `${HF_RESOLVE}/${physical(dir.dir, id.trim()).path}` : '');
 
 	const cleanName = (s: string) => s.replace(/[\\/:*?"<>|]+/g, '_').slice(0, 80);
 
@@ -157,7 +204,7 @@
 	const cols = $derived([...pickedCols].filter((c) => allCols.includes(c)));
 	const outCols = $derived(cols.length ? cols : allCols);
 	const hasDateCol = $derived(allCols.some((c) => /(^date$|날짜|기준일|^month$|pub_?date|기간)/i.test(c)));
-	const eligible = $derived(dir ? isTier2Eligible(dir) : false);
+	const eligible = $derived(dir && !isFin ? isTier2Eligible(dir) : false);
 	const probed = $derived(dir != null && id.trim() !== '' && probedKey === `${dir.dir}/${id.trim()}`);
 
 	const liveUrl = $derived.by(() => {
@@ -197,7 +244,8 @@
 	}
 
 	function selectDir(dirStr: string) {
-		dir = DOWNLOAD_CATALOG.find((e) => e.dir === dirStr) ?? null;
+		dir = dirStr === FIN_DIR ? FIN_ENTRY : (DOWNLOAD_CATALOG.find((e) => e.dir === dirStr) ?? null);
+		finBundle = null;
 		allCols = [];
 		pickedCols = new Set();
 		totalRows = 0;
@@ -227,6 +275,19 @@
 		probeErr = '';
 		const key = `${dir.dir}/${id.trim()}`;
 		try {
+			if (dir.dir === FIN_DIR) {
+				const b = await loadFinanceBundle(id.trim());
+				const view = b ? finView(b) : null;
+				if (!b || !view) throw new Error('재무 데이터 없음 (종목 확인)');
+				finBundle = b;
+				allCols = [FIN_ACCOUNT, ...view.periods];
+				totalRows = FIN_KINDS.reduce((n, { k }) => n + (view.statements[k]?.length ?? 0), 0);
+				fileSize = 0;
+				pickedCols = new Set();
+				previewRows = finStmtRows(view.statements.IS ?? [], view.periods).slice(0, PREVIEW_N);
+				probedKey = key;
+				return;
+			}
 			const phys = physical(dir.dir, id.trim());
 			const meta = await readParquetMetadata(phys.path);
 			allCols = meta.columns;
@@ -327,6 +388,19 @@
 		busy = f;
 		probeErr = '';
 		try {
+			if (dir.dir === FIN_DIR && finBundle) {
+				const sheets = finSheets(finBundle);
+				if (!sheets.length) { probeErr = '재무 표 없음'; return; }
+				const nm = `${cleanName(id.trim())}_재무제표`;
+				if (f === 'xlsx') downloadBlob(objectsToWorkbook(sheets), `${nm}.xlsx`, XLSX_MIME);
+				else {
+					const zip = new ZipStore();
+					const te = new TextEncoder();
+					for (const s of sheets) zip.addEntry(`${cleanName(s.label)}.csv`, te.encode(toCsv(s.columns, s.rows)));
+					downloadBlob(zip.finalize(), `${nm}.zip`, 'application/zip');
+				}
+				return;
+			}
 			const sheet = await readSlice();
 			if (!sheet.rows.length) {
 				probeErr = '결과 0행 (ID/슬라이스 확인)';
@@ -393,6 +467,9 @@
 			<label class="fld grow">
 				<span class="fld-label">데이터셋</span>
 				<select value={dir?.dir ?? ''} onchange={(e) => changeDir(e.currentTarget.value)} aria-label="데이터셋 선택">
+					<optgroup label="변환 · 런타임 (멀티시트)">
+						<option value={FIN_DIR}>{FIN_ENTRY.label}</option>
+					</optgroup>
 					{#each grouped as g (g.name)}
 						<optgroup label={g.name}>
 							{#each g.items as e (e.dir)}<option value={e.dir}>{e.label}</option>{/each}
@@ -418,7 +495,7 @@
 			<div class="block">
 				<div class="block-head">
 					<span class="block-title">미리보기</span>
-					<span class="block-meta">전체 {totalRows.toLocaleString()}행 · {allCols.length}열 · 처음 {previewCap}행</span>
+					<span class="block-meta">{#if isFin}손익계산서 미리보기 · {Math.max(0, allCols.length - 1)}개 기간 · 다운로드는 IS·BS·CF·CIS·자본변동표·비율 시트{:else}전체 {totalRows.toLocaleString()}행 · {allCols.length}열 · 처음 {previewCap}행{/if}</span>
 				</div>
 				<div class="tablewrap">
 					<table class="ptable">
@@ -430,8 +507,8 @@
 						</tbody>
 					</table>
 				</div>
-				<!-- 옵션 (항상 보임, 미리보기·API 에 즉시 반영) -->
-				<div class="opts">
+				<!-- 옵션 (raw 데이터셋만 · 변환 재무제표는 계정×기간 고정이라 숨김) -->
+				<div class="opts" style:display={isFin ? 'none' : undefined}>
 					<div class="opt">
 						<span class="opt-k">컬럼</span>
 						<div class="colwrap">
@@ -461,7 +538,7 @@
 						<button class="btn" onclick={() => download('csv')} disabled={!!busy}>{busy === 'csv' ? '변환 중…' : 'CSV'}</button>
 						{#if rawUrl}<a class="btn ghost" href={rawUrl} target="_blank" rel="noopener">원본 .parquet ↗</a>{/if}
 					</div>
-					<p class="note">가공(Excel/CSV) = 한도 없음·진짜 Number · 원본 = HF parquet{#if fileSize} {fmtBytes(fileSize)}{/if}</p>
+					<p class="note">{#if isFin}변환 6시트(IS·BS·CF·CIS·자본변동표·비율) · 진짜 Number · 터미널과 동일 변환{:else}가공(Excel/CSV) = 한도 없음·진짜 Number · 원본 = HF parquet{#if fileSize} {fmtBytes(fileSize)}{/if}{/if}</p>
 				</div>
 
 				{#if eligible && tier2On && liveUrl}

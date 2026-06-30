@@ -118,6 +118,13 @@ export function loadTerminalFinance(core: DataCore, stockCode: string, scope?: F
 	})();
 }
 
+// 데이터센터(landing) 등 셸이 core 주입 없이 변환 번들을 받는 공개 헬퍼. loadFinanceRows 와 같은
+// 내부 폴백코어(read 캐시 공유)로 loadTerminalFinance 호출. 비브라우저·미존재 = null.
+export function loadFinanceBundle(stockCode: string, scope?: FinScope): Promise<TerminalFinanceBundle | null> {
+	if (!browser) return Promise.resolve(null);
+	return loadTerminalFinance(financeRowsCore(), stockCode.trim(), scope);
+}
+
 // ── SCE(자본변동표) 브리지 · 최신 연간(11011)·최신 rcept_no 의 합계 차원에서
 // 기초자본 → +순이익 → +기타포괄 → −배당 → ±자기주식 → ±기타(잔차 plug) → 기말자본 워터폴.
 // 합계 차원 = account_detail 에 '|' 없는 '연결재무제표 [member]'/'재무제표 [member]' root
