@@ -21,8 +21,10 @@ ISSUES_DIR = ROOT / "blog" / "_issues"
 SNS_ASSETS_DIR = ROOT / "sns" / "assets"
 PLAN_FILE = "cards.plan.json"
 
-PLAN_VERSION = 3
-SUPPORTED_PLAN_VERSIONS = {1, 2, PLAN_VERSION}
+PLAN_VERSION = 4
+SUPPORTED_PLAN_VERSIONS = {1, 2, 3, PLAN_VERSION}
+STRICT_FLOW_MIN_VERSION = 3  # 이 버전 이상이면 큰문장 흐름(연결·판단형 종결)을 강제 검사
+INSIGHT_MIN_VERSION = 4  # 이 버전 이상이면 insightContract(통념·반전·렌즈)를 강제
 LEGACY_MIN_IMAGES = 5
 MIN_IMAGES = 7
 RECOMMENDED_MAX_IMAGES = 10
@@ -55,6 +57,13 @@ PLAIN_LANGUAGE_RULES = (
     "전문용어와 약어를 앞세우지 말고 쉬운 말로 먼저 설명한다.",
     "꼭 필요한 산업 용어는 짧은 설명에 풀어 쓰되, 슬라이드 본문은 가능한 쉬운 말로 쓴다.",
     "브랜드명과 공식 제품명은 허용하지만, 의미를 설명하지 않은 약어는 실패다.",
+)
+INSIGHT_CONTRACT_FIELDS = ("commonBelief", "twistFact", "whatToWatch")
+INSIGHT_CONTRACT_RULES = (
+    "통념(commonBelief): 독자가 당연하게 여기는 상식·헤드라인 관점을 한 문장으로 적는다.",
+    "반전 사실(twistFact): 그 통념과 충돌하는, 공시 직독으로 확인한 단 하나의 사실 + 왜 그게 가능한가(메커니즘)를 적는다. 제목·캡션의 재진술이면 인사이트가 아니다.",
+    "그래서 볼 것(whatToWatch): 독자가 이 덱을 본 뒤 앞으로 무엇을 다르게 볼지(렌즈·관전 포인트)를 적는다.",
+    "evidenceRefs: 반전·렌즈를 떠받치는 실측 수치나 ref 를 최소 1개 이상 적는다(분모·기간 명시).",
 )
 JARGON_REPLACEMENTS = {
     "AI": "인공지능",
@@ -255,6 +264,21 @@ def plain_language_contract() -> dict[str, Any]:
     }
 
 
+def insight_contract() -> dict[str, Any]:
+    """인사이트 계약 — 빈 스캐폴드. v4+ 발행 게이트는 통념·반전·렌즈가 채워졌는지 강제한다.
+
+    충돌하는 사실에서 멈추지 않고, 왜 가능한가(메커니즘)와 독자가 앞으로 무엇을 다르게
+    볼지(렌즈)까지 적게 해 '매끄럽지만 알맹이 없는' 덱을 기획 단계에서 막는다.
+    """
+    return {
+        "rules": list(INSIGHT_CONTRACT_RULES),
+        "commonBelief": "",
+        "twistFact": "",
+        "whatToWatch": "",
+        "evidenceRefs": [],
+    }
+
+
 def scene_for(role: str, topic: str, corp_name: str, slide: dict[str, Any] | None) -> str:
     cue = slide_line(slide or {})
     subject = corp_name or topic
@@ -355,7 +379,7 @@ def review_gate(status: str = "planned") -> dict[str, Any]:
         "requiredRounds": [
             {
                 "id": "writerPanel",
-                "purpose": "훅 강도, 서사 스파인, 앞장-다음장 연결, 쉬운 말, 블로그 산문과 카드 흐름의 일치 여부를 본다. 체크리스트식 나열이면 실패다.",
+                "purpose": "표지 후크(호기심 갭), 서사 스파인, 앞장-다음장의 긴장 전진(연결만이 아니라 매 장이 질문을 얹거나 갚는가), 인사이트(통념과 충돌하는 사실 + 메커니즘 + 독자 렌즈), 표지 약속을 마지막이 갚는가(promise·payoff), 쉬운 말·문장 리듬을 본다. 순서를 바꿔도 말이 되는 덱, 충돌 사실만 던지고 끝나는 덱, 체크리스트식 나열은 실패다.",
                 "status": "todo",
             },
             {
@@ -413,6 +437,7 @@ def build_company_post_plan(post_dir: Path, *, count: int | None = None) -> dict
             "narrativeContract": narrative_contract(),
             "bigSentenceContract": big_sentence_contract(slides),
             "plainLanguageContract": plain_language_contract(),
+            "insightContract": insight_contract(),
             "bodyPreview": " ".join(body.strip().split())[:360],
         },
         "carousel": {
@@ -498,6 +523,7 @@ def build_issue_plan(issue_dir: Path, *, count: int | None = None) -> dict[str, 
             "narrativeContract": narrative_contract(),
             "bigSentenceContract": big_sentence_contract(slides),
             "plainLanguageContract": plain_language_contract(),
+            "insightContract": insight_contract(),
             "bodyPreview": "",
         },
         "carousel": {
@@ -537,7 +563,8 @@ def validate_plan(plan: dict[str, Any], *, require_passed: bool = True, require_
     version = plan.get("version")
     if version not in SUPPORTED_PLAN_VERSIONS:
         errors.append(f"{slug}: version 은 {sorted(SUPPORTED_PLAN_VERSIONS)} 중 하나여야 함")
-    strict_big_sentence = version == PLAN_VERSION
+    strict_big_sentence = isinstance(version, int) and version >= STRICT_FLOW_MIN_VERSION
+    require_insight = isinstance(version, int) and version >= INSIGHT_MIN_VERSION
     for field in ("kind", "slug", "title", "assetRoot"):
         if not str(target.get(field, "")).strip():
             errors.append(f"{slug}: target.{field} 누락")
@@ -585,6 +612,32 @@ def validate_plan(plan: dict[str, Any], *, require_passed: bool = True, require_
         missing_rules = [rule for rule in PLAIN_LANGUAGE_RULES if rule not in rule_texts]
         if missing_rules:
             errors.append(f"{slug}: planning.plainLanguageContract 필수 규칙 누락 {len(missing_rules)}건")
+    if require_insight:
+        insight = planning.get("insightContract")
+        if not isinstance(insight, dict):
+            errors.append(
+                f"{slug}: planning.insightContract 누락 — v{INSIGHT_MIN_VERSION}+ 는 통념·반전·렌즈를 적어야 함"
+            )
+        else:
+            for field in INSIGHT_CONTRACT_FIELDS:
+                if not str(insight.get(field, "")).strip():
+                    errors.append(
+                        f"{slug}: planning.insightContract.{field} 누락 — 인사이트는 통념·반전·렌즈를 모두 적어야 함"
+                    )
+            refs = insight.get("evidenceRefs")
+            if not isinstance(refs, list) or not [r for r in refs if str(r).strip()]:
+                errors.append(f"{slug}: planning.insightContract.evidenceRefs 누락 — 반전을 떠받치는 실측 ref 최소 1개")
+            twist = re.sub(r"\s+", "", str(insight.get("twistFact", "")))
+            title_norm = re.sub(r"\s+", "", str(target.get("title", "")))
+            thesis_norm = re.sub(r"\s+", "", str(planning.get("cardThesis", "")))
+            if twist and twist in (title_norm, thesis_norm):
+                errors.append(
+                    f"{slug}: insightContract.twistFact 가 제목/카드주제의 재진술 — 헤드라인 너머의 사실이어야 함"
+                )
+            elif twist and len(twist) < 20:
+                errors.append(
+                    f"{slug}: insightContract.twistFact 가 너무 짧음 — 충돌하는 사실 + 메커니즘을 한 문장으로"
+                )
     image_plan = plan.get("imagePlan")
     if not isinstance(image_plan, list):
         errors.append(f"{slug}: imagePlan 은 리스트여야 함")
@@ -769,7 +822,9 @@ def validate_contract_plan_gate(
         strict_big_sentence = False
         if plan is not None:
             plan_errors.extend(validate_plan(plan, require_passed=require_passed, require_assets=require_assets))
-            strict_big_sentence = plan.get("version") == PLAN_VERSION
+            strict_big_sentence = (
+                isinstance(plan.get("version"), int) and plan.get("version") >= STRICT_FLOW_MIN_VERSION
+            )
         copy_errors = validate_contract_readability(slug, contract)
         flow_errors = validate_contract_big_sentence_flow(slug, contract) if strict_big_sentence else []
         if plan_errors or copy_errors or flow_errors:

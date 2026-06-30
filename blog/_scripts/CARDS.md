@@ -28,6 +28,8 @@
    - 각 항목의 `prompt` 를 GPT `image_gen` 으로 한 장씩 생성한다.
    - 생성 뒤 `imagegen.extractCommand` 로 `sns/assets/{code}/{assetKey}.webp` 에 저장하고 `imagegen.checkCommand` 로 프레이밍을 본다.
 3. 작가 패널 토론·평가를 `cards.plan.json` 의 `reviewGate` 에 기록하고 `status: "passed"` 로 닫는다.
+   - `planning.insightContract` (v4+ 강행): **통념(commonBelief)·반전(twistFact=충돌 사실+메커니즘)·그래서 볼 것(whatToWatch=렌즈)·evidenceRefs** 를 적는다. 충돌 사실만 던지고 끝나면 인사이트가 아니다. 발행 게이트가 셋이 채워졌고 반전이 제목·캡션의 재진술이 아닌지 검사한다.
+   - 카드뉴스 5대 원칙(맥락·인사이트·이미지 정합·쉬움·재미/호기심)과 작가 craft(표지 후크·promise/payoff·구체 장면화·so what·신뢰·정직한 의외성)는 `operation.content` 가 정본이다.
 4. (선택) 검사: `uv run python -X utf8 blog/_scripts/audit_seo.py`  ← 형식·숫자 점검
 5. 발행: `uv run python -X utf8 blog/_scripts/build_carousel_contracts.py`
    - hfMedia 에 `carousels/index.json` **한 파일** 올림(옛 파일 자동 삭제).
