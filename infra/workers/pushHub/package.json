@@ -1,0 +1,14 @@
+{
+  "name": "dartlab-push-hub",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.8.71",
+    "vitest": "~3.2.4",
+    "wrangler": "^3.90.0"
+  }
+}
