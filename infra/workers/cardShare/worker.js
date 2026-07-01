@@ -5,20 +5,20 @@
 // 이 워커는 /cards 가 브라우저에서 hfMedia 를 라이브로 읽는 것과 동일 원리를, 크롤러용으로 서버사이드에서
 // 한다. hfProxy·news 워커가 "정적 사이트가 못 하는 라이브 HF 브리지"를 하는 것과 같은 패턴.
 //
-// 라우트:
-//   GET /c/<slug>   : 크롤러용 OG 메타 HTML + 사람용 JS 리다이렉트(LANDING_BASE/cards?post=<slug>).
-//   GET /og/<slug>  : 첫 슬라이드 이미지를 워커가 직접 프록시(안정 200 image/webp).
+// 라우트: GET /c/<slug>
+//   1. carousels/index.json 라이브 read(엣지 캐시 10분, index 는 가변).
+//   2. slug 로 캐러셀 → og:title(제목) · og:description(캡션 첫 문단) · og:image(첫 슬라이드).
+//   3. 크롤러는 메타만 읽고 워커 페이지에 머문다(canonical=self). 사람은 JS(location.replace)로만
+//      LANDING_BASE/cards?post=<slug> 로 이동. 없는 slug 는 그 딥링크로 302.
 //
-// ⚠ 사람 이동은 JS(location.replace)로만 한다. <meta http-equiv="refresh"> 는 금지 : 크롤러는 JS 를 안
-//   돌리지만 meta refresh 는 따라가서, OG 없는 landing SPA(github.io/cards)로 넘어가 미리보기가 빈다.
-//   canonical 도 self(워커 shareUrl)로 둬야 Meta 가 OG 를 landing 으로 재귀속하지 않는다. JS 꺼진 사람은
-//   body 의 폴백 링크로 이동.
-//
-// ⚠ og:image 는 워커 자기 오리진의 /og/<slug> 를 가리킨다. hfMedia resolve URL 을 직접 og:image 로 쓰면
-//   크롤러(카톡·페북·스레드·X)가 못 읽는다. HF Xet 이관 후 resolve 는 (1) 302 크로스도메인 리다이렉트,
-//   (2) 리다이렉트 응답 Content-Type=text/plain, (3) 최종 URL 은 Expires 서명 + Cache-Control:no-store 라
-//   크롤러가 이미지로 인식·캐시하지 못한다. 워커가 서버사이드에서 리다이렉트를 풀어 이미지 바이트를 안정
-//   Content-Type/Cache 로 재서빙하면 이 문제가 사라진다(리다이렉트·만료·no-store·크로스도메인 제거).
+// ⚠ OG 이미지 2 가지 회귀 가드:
+//   (A) 크롤러 리다이렉트 금지: <meta http-equiv="refresh"> 를 쓰면 크롤러가 따라가서 OG 없는 landing
+//       SPA(github.io/cards)로 넘어가 미리보기가 빈다. 사람 이동은 JS 로만, canonical 도 self.
+//   (B) og:image = wsrv.nl 변환 JPEG 직접 링크. hfMedia 원본은 webp 인데 (1) 일부 크롤러(카톡 등)가
+//       WebP OG 를 안 띄우고, (2) HF 는 Xet 이관 후 resolve 가 302 크로스도메인·Expires 서명·no-store 라
+//       크롤러가 이미지로 인식·캐시 못 한다. wsrv 가 HF resolve 302 를 서버사이드에서 풀고 1080x1350 4:5
+//       baseline JPEG 로 변환해 안정 200 image/jpeg 로 서빙한다. 크롤러(Meta 등)는 wsrv 에서 바로 받는다.
+//       (워커가 직접 프록시하려 했으나 Cloudflare Worker → wsrv 아웃바운드가 막혀 폴백만 돼 제거함.)
 //
 // 새 캐러셀을 데이터로만 올려도(carousels/index.json 재게시) 그 공유 링크가 즉시 작동. 워커·landing 재배포 0.
 //
@@ -59,6 +59,11 @@ async function resolveOgImage(post, companiesIndex) {
 	return asset ? `${MEDIA_BASE}/companies/${key}/${asset.name}` : null;
 }
 
+// hfMedia 원본(webp) URL → og:image 용 wsrv.nl JPEG 링크(1080x1350 4:5, baseline). 크롤러 호환 통일.
+function ogImageUrl(src) {
+	return `https://wsrv.nl/?url=${encodeURIComponent(src)}&output=jpg&w=1080&h=1350&fit=cover&q=88`;
+}
+
 // 캡션 산문 첫 문단 → og:description(180자 이하). 없으면 첫 슬라이드 line.
 function ogDescription(post) {
 	const cap = String(post.caption || '').split(/\n\s*\n/)[0].replace(/\s+/g, ' ').trim();
@@ -86,51 +91,11 @@ async function loadPost(slug, ctx) {
 	return (index && Array.isArray(index.posts) && index.posts.find((p) => p.slug === slug)) || null;
 }
 
-// /og/<slug>: 첫 슬라이드 이미지를 워커가 프록시. HF resolve 302(서명·만료·no-store·text/plain)를
-// 서버사이드에서 풀어, 안정된 image/webp + 장수명 캐시로 재서빙한다. 크롤러가 바로 읽고 캐시할 수 있게.
-async function serveOgImage(url, slug, ctx) {
-	const cacheKey = new Request(`${url.origin}/og/${slug}`); // 확장자·쿼리 무관 단일 캐시 키
-	const cached = await caches.default.match(cacheKey);
-	if (cached) return cached;
-
-	const post = await loadPost(slug, ctx);
-	if (!post) return new Response('not found', { status: 404 });
-	const companies = post.code ? await cachedJson(`${MEDIA_BASE}/companies/index.json`, 600, ctx) : null;
-	const src = await resolveOgImage(post, companies);
-	if (!src) return new Response('no image', { status: 404 });
-
-	// HF resolve 302 를 따라가 이미지 바이트 확보(서버사이드는 서명 URL·no-store 무관, 즉시 소비).
-	const upstream = await fetch(src, { headers: { 'User-Agent': 'dartlab-card-share/1.0', Accept: 'image/webp,image/*' } });
-	if (!upstream.ok) return new Response('upstream error', { status: 502 });
-
-	// Content-Type 은 실제 응답 우선, 없으면 확장자로 추정(hfMedia 는 .webp 위주).
-	const ct = upstream.headers.get('Content-Type') || (/\.png($|\?)/i.test(src) ? 'image/png' : /\.jpe?g($|\?)/i.test(src) ? 'image/jpeg' : 'image/webp');
-	const resp = new Response(upstream.body, {
-		headers: {
-			'Content-Type': ct,
-			// 콘텐츠 해시 파일명이라 장수명 캐시 안전. 재게시로 slug→새 이미지 바뀌면 최대 1h 후 갱신.
-			'Cache-Control': 'public, max-age=3600, s-maxage=3600',
-			'Access-Control-Allow-Origin': '*',
-			'X-Content-Type-Options': 'nosniff'
-		}
-	});
-	if (ctx) ctx.waitUntil(caches.default.put(cacheKey, resp.clone()));
-	return resp;
-}
-
 export default {
 	async fetch(req, env, ctx) {
 		const LANDING_BASE = (env.LANDING_BASE || 'https://eddmpython.github.io/dartlab').replace(/\/+$/, '');
 		const url = new URL(req.url);
 		if (req.method !== 'GET' && req.method !== 'HEAD') return new Response('method not allowed', { status: 405 });
-
-		// 이미지 프록시. /og/<slug> 또는 /og/<slug>.webp.
-		const ogm = url.pathname.match(/^\/og\/([^/]+?)(?:\.(?:webp|png|jpe?g))?\/?$/);
-		if (ogm) {
-			const slug = cleanSlug(ogm[1]);
-			if (!slug) return new Response('bad slug', { status: 400 });
-			return serveOgImage(url, slug, ctx);
-		}
 
 		const m = url.pathname.match(/^\/c\/([^/]+)\/?$/);
 		if (!m) return Response.redirect(`${LANDING_BASE}/cards`, 302);
@@ -141,14 +106,14 @@ export default {
 		if (!post) return Response.redirect(target, 302); // 없는 슬러그 → 그냥 피드/딥링크로
 
 		const companies = post.code ? await cachedJson(`${MEDIA_BASE}/companies/index.json`, 600, ctx) : null;
-		const hasImage = !!(await resolveOgImage(post, companies));
-		// og:image 는 워커 자기 오리진 프록시(/og/<slug>.webp). 안정 200 image/webp, 리다이렉트·만료 없음.
-		const ogImage = hasImage ? `${url.origin}/og/${encodeURIComponent(slug)}.webp` : null;
+		const ogSrc = await resolveOgImage(post, companies);
+		// og:image 는 wsrv.nl 변환 JPEG 직접 링크(위 ⚠ B). HF resolve 를 직접 쓰지 않는다.
+		const ogImage = ogSrc ? ogImageUrl(ogSrc) : null;
 		const title = String(post.title || post.name || 'DartLab 카드').trim();
 		const desc = ogDescription(post);
 		const shareUrl = `${url.origin}/c/${encodeURIComponent(slug)}`;
 
-		// 크롤러용 OG/twitter 메타 + 사람용 JS 리다이렉트(meta refresh 금지, 위 ⚠ 참조). body 는 폴백 링크.
+		// 크롤러용 OG/twitter 메타 + 사람용 JS 리다이렉트(meta refresh 금지, 위 ⚠ A). body 는 폴백 링크.
 		const html = `<!doctype html>
 <html lang="ko">
 <head>
@@ -163,7 +128,7 @@ export default {
 <meta property="og:url" content="${esc(shareUrl)}">
 ${ogImage ? `<meta property="og:image" content="${esc(ogImage)}">
 <meta property="og:image:secure_url" content="${esc(ogImage)}">
-<meta property="og:image:type" content="image/webp">
+<meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1080">
 <meta property="og:image:height" content="1350">
 <meta property="og:image:alt" content="${esc(title)}">` : ''}
