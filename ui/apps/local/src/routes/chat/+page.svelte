@@ -1,16 +1,21 @@
 <script lang="ts">
+	// 로컬 챗. 옛 React ui/web 챗 GUI(ChatGPT 양식: 사이드바 대화이력 + 아바타 + 마크다운 + 둥근 composer)를
+	// Svelte 로 옮긴 것. AiPort.streamAsk(mode:'chat') 한 포트로 대화(터미널 모드와 같은 Ask engine 계약).
 	import { onMount, tick } from 'svelte';
 	import { base } from '$app/paths';
 	import { getLocalRuntime } from '$lib/runtime/localRuntime';
-	import { ChatSession } from '$lib/chat/chatSession.svelte';
+	import { ChatStore } from '$lib/chat/chatStore.svelte';
+	import { theme } from '$lib/chat/theme.svelte';
+	import Sidebar from '$lib/chat/Sidebar.svelte';
+	import Composer from '$lib/chat/Composer.svelte';
+	import Markdown from '$lib/chat/Markdown.svelte';
 
-	// 챗 모드 — AiPort.streamAsk(mode:'chat') 한 포트로 대화. 터미널 모드와 같은 Ask engine 계약 공유(단계-7).
 	const runtime = getLocalRuntime();
-	const session = new ChatSession(runtime.ai);
+	const store = new ChatStore(runtime.ai);
 
 	let draft = $state('');
-	let composing = $state(false);
 	let scroller: HTMLDivElement | null = $state(null);
+	let sidebarOpen = $state(true);
 
 	const tierLabel: Record<string, string> = {
 		advanced: '고급 엔진',
@@ -19,189 +24,235 @@
 		none: '비활성'
 	};
 
-	const examples = [
-		'005930 회사 개요를 알려줘',
-		'최근 분기 매출이 늘어난 코스피 회사는?',
-		'반도체 업종 주요 회사를 비교해줘'
+	const suggestions = [
+		'삼성전자 005930 최근 5년 매출과 영업이익 추이',
+		'코스피에서 ROE 높고 부채비율 낮은 종목 찾아줘',
+		'테슬라 최근 분기 실적 정리',
+		'한국 매크로 지표 (환율 · 금리 · CPI)'
 	];
 
 	onMount(() => {
-		void session.loadCapabilities();
+		theme.apply();
+		void store.loadCapabilities();
 	});
 
-	// 스트리밍·새 메시지마다 하단 고정. 마지막 메시지 텍스트 길이를 의존성으로 추적(델타 누적 반응).
+	const active = $derived(store.active);
+	const messages = $derived(active?.messages ?? []);
+	const hasMessages = $derived(messages.length > 0);
+	const cap = $derived(store.capabilities);
+	const code = $derived(active?.code?.trim() ?? '');
+	const hasCode = $derived(/^\d{6}$/.test(code));
+
+	// 스트리밍·새 메시지마다 하단 고정. 사용자가 위로 스크롤했으면(200px 밖) 건드리지 않는다.
 	$effect(() => {
-		session.messages.length;
-		session.messages.at(-1)?.text;
-		session.messages.at(-1)?.activities.length;
-		if (scroller) {
+		messages.length;
+		messages.at(-1)?.text;
+		messages.at(-1)?.activities.length;
+		if (!scroller) return;
+		const el = scroller;
+		const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+		if (dist < 220) {
 			void tick().then(() => {
-				if (scroller) scroller.scrollTop = scroller.scrollHeight;
+				el.scrollTop = el.scrollHeight;
 			});
 		}
 	});
 
-	async function submit() {
+	async function submit(): Promise<void> {
 		const text = draft.trim();
-		if (!text || session.busy) return;
+		if (!text || store.busy) return;
 		draft = '';
-		await session.send(text);
+		await store.send(text);
 	}
 
-	function onKeydown(e: KeyboardEvent) {
-		if (e.key === 'Enter' && !e.shiftKey && !composing) {
-			e.preventDefault();
-			void submit();
-		}
-	}
-
-	function ask(prompt: string) {
+	function ask(prompt: string): void {
 		draft = prompt;
 		void submit();
 	}
 
-	const hasCode = $derived(/^\d{6}$/.test(session.code.trim()));
+	function onCode(e: Event): void {
+		const v = (e.target as HTMLInputElement).value;
+		if (active) active.code = v;
+	}
 </script>
 
 <svelte:head>
-	<title>챗 — dartlab local</title>
+	<title>챗 · dartlab local</title>
 </svelte:head>
 
-<div class="chat">
-	<header>
-		<a class="back" href={base || '/'}>← local</a>
-		<div class="title">
-			<h1>챗</h1>
-			{#if session.capabilitiesLoaded}
-				<span class="tier" class:adv={session.capabilities?.tier === 'advanced'}>
-					{tierLabel[session.capabilities?.tier ?? 'none'] ?? '비활성'}
-				</span>
-			{/if}
-		</div>
-		<div class="ctx">
-			<input
-				class="code"
-				bind:value={session.code}
-				placeholder="종목 컨텍스트 (선택, 6자리)"
-				inputmode="numeric"
-				maxlength="6"
-				aria-label="종목 컨텍스트 코드"
-			/>
-			{#if hasCode}
-				<a class="goterm" href={`${base}/terminal/${session.code.trim()}`}>터미널 →</a>
-			{/if}
-		</div>
-	</header>
-
-	{#if session.capabilities?.upgradeHint}
-		<div class="hint">{session.capabilities.upgradeHint}</div>
+<div class="shell">
+	{#if sidebarOpen}
+		<Sidebar {store} />
 	{/if}
 
-	<div class="stream" bind:this={scroller}>
-		{#if session.messages.length === 0}
-			<div class="empty">
-				<p class="lead">DartLab 챗 — 회사·재무·시장을 질문하세요.</p>
-				<p class="note">근거 기반 Ask 엔진이 답하고, 사용한 출처를 함께 표시합니다.</p>
-				<div class="examples">
-					{#each examples as ex (ex)}
-						<button class="ex" onclick={() => ask(ex)}>{ex}</button>
-					{/each}
-				</div>
+	<main class="main">
+		<header class="topbar">
+			<button class="ghost" onclick={() => (sidebarOpen = !sidebarOpen)} aria-label="사이드바 토글" title="사이드바">
+				<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></svg>
+			</button>
+			<div class="crumb">
+				<span>챗</span>
+				{#if store.capabilitiesLoaded}
+					<span class="tier" class:adv={cap?.tier === 'advanced'}>{tierLabel[cap?.tier ?? 'none'] ?? '비활성'}</span>
+				{/if}
 			</div>
+			<div class="ctx">
+				<input
+					class="codein"
+					value={active?.code ?? ''}
+					oninput={onCode}
+					placeholder="종목 컨텍스트 (선택, 6자리)"
+					inputmode="numeric"
+					maxlength="6"
+					aria-label="종목 컨텍스트 코드"
+				/>
+				{#if hasCode}
+					<a class="goterm" href={`${base}/terminal/${code}`}>터미널 →</a>
+				{/if}
+			</div>
+		</header>
+
+		{#if cap?.upgradeHint}
+			<div class="hint">{cap.upgradeHint}</div>
 		{/if}
 
-		{#each session.messages as m (m.id)}
-			<div class="msg" class:user={m.role === 'user'} class:assistant={m.role === 'assistant'}>
-				{#if m.role === 'assistant' && m.activities.length}
-					<div class="acts">
-						{#each m.activities as a (a.id)}
-							<span class="act" class:running={a.status === 'running'}>
-								{a.status === 'running' ? '⋯' : '✓'} {a.summary}
-							</span>
-						{/each}
+		<div class="stream" bind:this={scroller}>
+			<div class="col">
+				{#if !hasMessages}
+					<div class="welcome">
+						<img class="ava" src="{base}/avatar.png" alt="DartLab" width="56" height="56" />
+						<h1>무엇을 도와드릴까요?</h1>
+						<p>회사·재무·공시·시장·거시 지표. 무엇이든 물어보세요. 근거 기반 Ask 엔진이 답합니다.</p>
+						<div class="chips">
+							{#each suggestions as s (s)}
+								<button class="chip" onclick={() => ask(s)}>{s}</button>
+							{/each}
+						</div>
 					</div>
-				{/if}
+				{:else}
+					{#each messages as m (m.id)}
+						{#if m.role === 'user'}
+							<div class="turn user">
+								<div class="bubble">{m.text}</div>
+							</div>
+						{:else}
+							<div class="turn assistant">
+								<img class="msgava" src="{base}/avatar.png" alt="DartLab" width="30" height="30" />
+								<div class="body">
+									{#if m.activities.length}
+										<div class="acts">
+											{#each m.activities as a (a.id)}
+												<span class="act" class:running={a.status === 'running'}>
+													{a.status === 'running' ? '⋯' : '✓'} {a.summary}
+												</span>
+											{/each}
+										</div>
+									{/if}
 
-				{#if m.text}
-					<div class="bubble">{m.text}{#if m.streaming}<span class="caret"></span>{/if}</div>
-				{:else if m.role === 'assistant' && m.streaming && !m.error}
-					<div class="bubble thinking"><span class="caret"></span></div>
-				{/if}
+									{#if m.text}
+										<Markdown text={m.text} />
+										{#if m.streaming}<span class="caret"></span>{/if}
+									{:else if m.streaming && !m.error}
+										<div class="thinking"><span class="dot"></span><span class="dot"></span><span class="dot"></span> 분석 준비 중</div>
+									{/if}
 
-				{#if m.error}
-					<div class="err">응답 오류: {m.error}</div>
-				{/if}
+									{#if m.error}
+										<div class="err">⚠ 응답 오류: {m.error}</div>
+									{/if}
 
-				{#if m.refs.length}
-					<div class="refs">
-						{#each m.refs as r (r.id)}
-							<span class="ref" title={`${r.kind} · ${r.source}`}>{r.title || r.kind}</span>
-						{/each}
-					</div>
-				{/if}
+									{#if m.refs.length}
+										<div class="refs">
+											{#each m.refs as r (r.id)}
+												<span class="ref" title={`${r.kind} · ${r.source}`}>{r.title || r.kind}</span>
+											{/each}
+										</div>
+									{/if}
 
-				{#if m.suggested.length}
-					<div class="suggest">
-						{#each m.suggested as s (s)}
-							<button class="sug" onclick={() => ask(s)} disabled={session.busy}>{s}</button>
-						{/each}
-					</div>
+									{#if m.suggested.length}
+										<div class="suggest">
+											{#each m.suggested as s (s)}
+												<button class="sug" onclick={() => ask(s)} disabled={store.busy}>{s}</button>
+											{/each}
+										</div>
+									{/if}
+								</div>
+							</div>
+						{/if}
+					{/each}
 				{/if}
 			</div>
-		{/each}
-	</div>
+		</div>
 
-	<form class="composer" onsubmit={(e) => { e.preventDefault(); void submit(); }}>
-		<textarea
-			bind:value={draft}
-			onkeydown={onKeydown}
-			oncompositionstart={() => (composing = true)}
-			oncompositionend={() => (composing = false)}
-			placeholder={hasCode ? `${session.code.trim()} 에 대해 질문…` : '질문을 입력하세요…  (Enter 전송 · Shift+Enter 줄바꿈)'}
-			rows="1"
-			disabled={session.busy}
-		></textarea>
-		<button type="submit" disabled={session.busy || !draft.trim()}>
-			{session.busy ? '…' : '전송'}
-		</button>
-	</form>
+		<div class="dock">
+			<div class="col">
+				{#if cap && (cap.providerLabel || cap.modelLabel)}
+					<div class="model">
+						<span class="pip" class:adv={cap.tier === 'advanced'}></span>
+						{#if cap.providerLabel}<span class="prov">{cap.providerLabel}</span>{/if}
+						{#if cap.modelLabel}<span class="mdl">{cap.modelLabel}</span>{/if}
+					</div>
+				{/if}
+				<Composer
+					bind:value={draft}
+					busy={store.busy}
+					placeholder={hasCode ? `${code} 에 대해 질문…` : '질문을 입력하세요…  (Enter 전송 · Shift+Enter 줄바꿈)'}
+					onsend={submit}
+				/>
+			</div>
+		</div>
+	</main>
 </div>
 
 <style>
-	.chat {
+	.shell {
+		display: flex;
+		height: 100vh;
+		background: var(--dl-bg-base, #0f0f10);
+		color: var(--dl-ink, #e7e7ea);
+	}
+	.main {
 		display: flex;
 		flex-direction: column;
+		flex: 1;
+		min-width: 0;
 		height: 100vh;
-		max-width: 860px;
-		margin: 0 auto;
-		padding: 0 1rem;
 	}
-	header {
+	.topbar {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
-		padding: 1rem 0 0.75rem;
-		border-bottom: 1px solid var(--dl-bd, #2a2c33);
+		gap: 0.75rem;
+		padding: 0.6rem 1rem;
+		border-bottom: 1px solid var(--dl-line, #2a2c33);
 	}
-	.back {
+	.ghost {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border: none;
+		border-radius: 7px;
+		background: none;
 		color: var(--dl-ink-dim, #9aa0aa);
-		text-decoration: none;
-		font-size: 0.85rem;
+		cursor: pointer;
 	}
-	.title {
+	.ghost:hover {
+		background: var(--dl-bg-raised, #16171a);
+		color: var(--dl-ink, #e7e7ea);
+	}
+	.crumb {
 		display: flex;
-		align-items: baseline;
+		align-items: center;
 		gap: 0.5rem;
-	}
-	h1 {
-		font-size: 1.25rem;
-		margin: 0;
+		font-size: 0.9rem;
+		font-weight: 600;
 	}
 	.tier {
-		font-size: 0.7rem;
+		font-size: 0.68rem;
+		font-weight: 500;
 		padding: 0.1rem 0.45rem;
 		border-radius: 999px;
-		border: 1px solid var(--dl-bd, #2a2c33);
+		border: 1px solid var(--dl-line, #2a2c33);
 		color: var(--dl-ink-mute, #6b7280);
 	}
 	.tier.adv {
@@ -214,15 +265,19 @@
 		align-items: center;
 		gap: 0.5rem;
 	}
-	.code {
+	.codein {
 		width: 11rem;
 		padding: 0.35rem 0.6rem;
-		border: 1px solid var(--dl-bd, #2a2c33);
-		border-radius: 6px;
+		border: 1px solid var(--dl-line, #2a2c33);
+		border-radius: 7px;
 		background: var(--dl-bg-raised, #16171a);
 		color: var(--dl-ink, #e7e7ea);
 		font-family: var(--dl-font-mono, ui-monospace, monospace);
-		font-size: 0.8rem;
+		font-size: 0.78rem;
+		outline: none;
+	}
+	.codein:focus {
+		border-color: var(--dl-accent, #ff5a36);
 	}
 	.goterm {
 		font-size: 0.78rem;
@@ -233,96 +288,105 @@
 	.hint {
 		font-size: 0.78rem;
 		color: var(--dl-ink-mute, #6b7280);
-		padding: 0.5rem 0;
+		padding: 0.5rem 1rem;
+		border-bottom: 1px solid var(--dl-line, #2a2c33);
 	}
 	.stream {
 		flex: 1;
 		overflow-y: auto;
-		padding: 1.25rem 0;
+		scrollbar-width: thin;
+	}
+	.col {
+		width: 100%;
+		max-width: 46rem;
+		margin: 0 auto;
+		padding: 0 1.25rem;
+	}
+	.stream .col {
+		padding-top: 1.5rem;
+		padding-bottom: 2rem;
+	}
+
+	/* 빈 상태 웰컴 */
+	.welcome {
+		min-height: 60vh;
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
-	}
-	.empty {
-		margin: auto 0;
-		text-align: center;
-		color: var(--dl-ink-dim, #9aa0aa);
-	}
-	.empty .lead {
-		font-size: 1.05rem;
-		color: var(--dl-ink, #e7e7ea);
-		margin: 0 0 0.3rem;
-	}
-	.empty .note {
-		font-size: 0.85rem;
-		margin: 0 0 1.5rem;
-	}
-	.examples {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
 		align-items: center;
+		justify-content: center;
+		text-align: center;
+		gap: 0.4rem;
 	}
-	.ex {
+	.welcome .ava {
+		border-radius: 14px;
+		margin-bottom: 0.6rem;
+	}
+	.welcome h1 {
+		font-size: 1.5rem;
+		font-weight: 600;
+		letter-spacing: -0.02em;
+		margin: 0;
+	}
+	.welcome p {
+		max-width: 30rem;
+		font-size: 0.88rem;
+		color: var(--dl-ink-dim, #9aa0aa);
+		margin: 0 0 1rem;
+	}
+	.chips {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.5rem;
+	}
+	.chip {
 		padding: 0.5rem 0.9rem;
-		border: 1px solid var(--dl-bd, #2a2c33);
+		border: 1px solid var(--dl-line, #2a2c33);
 		border-radius: 999px;
 		background: var(--dl-bg-raised, #16171a);
 		color: var(--dl-ink-dim, #9aa0aa);
+		font-size: 0.8rem;
 		cursor: pointer;
-		font-size: 0.82rem;
 	}
-	.ex:hover {
+	.chip:hover {
 		border-color: var(--dl-accent, #ff5a36);
 		color: var(--dl-ink, #e7e7ea);
 	}
-	.msg {
+
+	/* 메시지 */
+	.turn {
 		display: flex;
-		flex-direction: column;
-		gap: 0.4rem;
-		max-width: 88%;
+		margin: 1.25rem 0;
 	}
-	.msg.user {
-		align-self: flex-end;
-		align-items: flex-end;
-	}
-	.msg.assistant {
-		align-self: flex-start;
-	}
-	.bubble {
-		padding: 0.65rem 0.9rem;
-		border-radius: 12px;
-		white-space: pre-wrap;
-		word-break: break-word;
-		line-height: 1.55;
-		font-size: 0.92rem;
+	.turn.user {
+		justify-content: flex-end;
 	}
 	.user .bubble {
-		background: var(--dl-accent, #ff5a36);
-		color: #fff;
-	}
-	.assistant .bubble {
+		max-width: 78%;
+		padding: 0.6rem 0.9rem;
+		border-radius: 1.1rem;
 		background: var(--dl-bg-raised, #16171a);
-		border: 1px solid var(--dl-bd, #2a2c33);
-		color: var(--dl-ink, #e7e7ea);
+		border: 1px solid var(--dl-line, #2a2c33);
+		font-size: 0.92rem;
+		line-height: 1.55;
+		white-space: pre-wrap;
+		word-break: break-word;
 	}
-	.thinking {
-		min-height: 1.2rem;
+	.turn.assistant {
+		gap: 0.7rem;
+		align-items: flex-start;
 	}
-	.caret {
-		display: inline-block;
-		width: 0.5rem;
-		height: 1rem;
-		margin-left: 1px;
-		vertical-align: text-bottom;
-		background: currentColor;
-		opacity: 0.6;
-		animation: blink 1s step-start infinite;
+	.msgava {
+		flex-shrink: 0;
+		border-radius: 9px;
+		margin-top: 0.1rem;
 	}
-	@keyframes blink {
-		50% {
-			opacity: 0;
-		}
+	.body {
+		min-width: 0;
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
 	}
 	.acts {
 		display: flex;
@@ -330,19 +394,62 @@
 		gap: 0.35rem;
 	}
 	.act {
-		font-size: 0.72rem;
+		font-size: 0.7rem;
 		padding: 0.15rem 0.5rem;
 		border-radius: 6px;
 		background: var(--dl-bg-raised, #16171a);
-		border: 1px solid var(--dl-bd, #2a2c33);
+		border: 1px solid var(--dl-line, #2a2c33);
 		color: var(--dl-ink-mute, #6b7280);
 		font-family: var(--dl-font-mono, ui-monospace, monospace);
 	}
 	.act.running {
 		color: var(--dl-info, #6ab0ff);
+		border-color: color-mix(in srgb, var(--dl-info, #6ab0ff) 40%, var(--dl-line, #2a2c33));
+	}
+	.caret {
+		display: inline-block;
+		width: 0.5rem;
+		height: 1rem;
+		margin-left: 2px;
+		vertical-align: text-bottom;
+		background: var(--dl-accent, #ff5a36);
+		animation: blink 1s step-start infinite;
+	}
+	@keyframes blink {
+		50% {
+			opacity: 0;
+		}
+	}
+	.thinking {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-size: 0.85rem;
+		color: var(--dl-ink-mute, #6b7280);
+	}
+	.thinking .dot {
+		width: 0.35rem;
+		height: 0.35rem;
+		border-radius: 50%;
+		background: currentColor;
+		animation: bob 1.2s infinite ease-in-out;
+	}
+	.thinking .dot:nth-child(2) {
+		animation-delay: 0.15s;
+	}
+	.thinking .dot:nth-child(3) {
+		animation-delay: 0.3s;
+	}
+	@keyframes bob {
+		0%, 60%, 100% {
+			opacity: 0.3;
+		}
+		30% {
+			opacity: 1;
+		}
 	}
 	.err {
-		font-size: 0.82rem;
+		font-size: 0.85rem;
 		color: var(--dl-bad, #ff6b6b);
 	}
 	.refs {
@@ -351,13 +458,11 @@
 		gap: 0.35rem;
 	}
 	.ref {
-		font-size: 0.72rem;
+		font-size: 0.7rem;
 		padding: 0.15rem 0.5rem;
 		border-radius: 6px;
-		background: transparent;
-		border: 1px solid var(--dl-bd, #2a2c33);
+		border: 1px solid var(--dl-line, #2a2c33);
 		color: var(--dl-ink-dim, #9aa0aa);
-		cursor: default;
 	}
 	.suggest {
 		display: flex;
@@ -369,8 +474,8 @@
 		font-size: 0.78rem;
 		padding: 0.3rem 0.7rem;
 		border-radius: 999px;
-		background: transparent;
-		border: 1px dashed var(--dl-bd, #2a2c33);
+		border: 1px dashed var(--dl-line, #2a2c33);
+		background: none;
 		color: var(--dl-info, #6ab0ff);
 		cursor: pointer;
 	}
@@ -381,39 +486,34 @@
 		opacity: 0.5;
 		cursor: default;
 	}
-	.composer {
-		display: flex;
-		gap: 0.5rem;
+
+	/* 하단 입력 도크 */
+	.dock {
+		border-top: 1px solid var(--dl-line, #2a2c33);
 		padding: 0.75rem 0 1rem;
-		border-top: 1px solid var(--dl-bd, #2a2c33);
 	}
-	textarea {
-		flex: 1;
-		resize: none;
-		max-height: 8rem;
-		padding: 0.6rem 0.8rem;
-		border: 1px solid var(--dl-bd, #2a2c33);
-		border-radius: 10px;
-		background: var(--dl-bg-raised, #16171a);
-		color: var(--dl-ink, #e7e7ea);
-		font: inherit;
-		line-height: 1.5;
+	.model {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.4rem;
+		margin-bottom: 0.5rem;
+		font-size: 0.74rem;
+		color: var(--dl-ink-mute, #6b7280);
 	}
-	textarea:focus {
-		outline: none;
-		border-color: var(--dl-accent, #ff5a36);
+	.pip {
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 50%;
+		background: var(--dl-ink-mute, #6b7280);
 	}
-	.composer button {
-		padding: 0 1.2rem;
-		border: 1px solid var(--dl-accent, #ff5a36);
-		border-radius: 10px;
-		background: var(--dl-accent, #ff5a36);
-		color: #fff;
-		cursor: pointer;
-		font-weight: 600;
+	.pip.adv {
+		background: var(--dl-good, #46d39a);
 	}
-	.composer button:disabled {
-		opacity: 0.45;
-		cursor: default;
+	.model .prov {
+		color: var(--dl-ink-dim, #9aa0aa);
+	}
+	.model .mdl {
+		font-family: var(--dl-font-mono, ui-monospace, monospace);
 	}
 </style>
