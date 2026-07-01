@@ -7,8 +7,7 @@
   import { getPublicRuntime } from '$lib/runtime/publicRuntime';
   // 헤더 = 터미널 top bar 디자인 그대로 재사용(.dlTerm 스코프 + 터미널 클래스). 색·아이콘·SNS 동일 SSOT.
   import '@dartlab/ui-surfaces/terminal/terminal.css';
-  import { DARTLAB_BRAND_LINKS, SupportDialog, BrandSwitch, fetchGithubStars, fmtStars } from '@dartlab/ui-surfaces/terminal';
-  import BrandSocial from '$lib/components/BrandSocial.svelte';
+  import { DARTLAB_BRAND_LINKS, SupportDialog, BrandSwitch, BrandSocial, fetchGithubStars, fmtStars } from '@dartlab/ui-surfaces/terminal';
   import { buildReport, buildOverview } from '$lib/report/build';
   import { isSkipped, type ReportModel, type OverviewModel } from '$lib/report/model';
   import { PERSPECTIVES, findPerspective } from '$lib/report/perspectives';

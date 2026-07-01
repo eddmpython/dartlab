@@ -1,8 +1,8 @@
 <script lang="ts">
-	// SNS 채널 아이콘 묶음 SSOT · GitHub·스타·후원(하트)·YouTube·Threads·Instagram. /cards·/report 가 헤더에
-	// 각자 인라인 복붙하던 동일 마크업을 한 컴포넌트로(중복 제거). `.snsBtn`/`.ghStars`/`.snsHeart` 스타일은
-	// terminal.css(.dlTerm 스코프) 정본 · 본 컴포넌트는 그 스코프 안(헤더 .sns)에서 렌더된다(스타일 무복제).
-	import { fmtStars } from '@dartlab/ui-surfaces/terminal';
+	// SNS 채널 아이콘 묶음 SSOT · GitHub·스타·후원(하트)·YouTube·Threads·Instagram. landing(/cards·/report)·
+	// 로컬 챗 셸이 각자 인라인 복붙하던 동일 마크업을 한 컴포넌트로(중복 제거). `.snsBtn`/`.ghStars`/`.snsHeart`
+	// 스타일은 terminal.css(.dlTerm 스코프) 정본 · 본 컴포넌트는 그 스코프 안(헤더 .sns)에서 렌더된다(스타일 무복제).
+	import { fmtStars } from '../lib/githubStars';
 
 	let {
 		links,

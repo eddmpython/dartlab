@@ -7,6 +7,14 @@
 
 	marked.setOptions({ gfm: true, breaks: false });
 
+	// 로컬 추론모델(qwen3 등)이 흘리는 <think>...</think> 사고 블록 제거. 답변 본문만 보여준다.
+	function stripThinking(t: string): string {
+		let out = t.replace(/<think>[\s\S]*?<\/think>/gi, '');
+		// 스트리밍 중 아직 닫히지 않은 <think> 이후는 잠정 숨김(닫히면 위 규칙이 처리).
+		out = out.replace(/<think>[\s\S]*$/i, '');
+		return out;
+	}
+
 	// 모델이 본문에 raw tool call id(`근거: call_xxx`)를 흘리는 회귀 차단. WorkLoop 칩이 이미 도구를 보여준다.
 	function stripRawCallIds(t: string): string {
 		let out = t.replace(/^[\s\-*•]*근거[\s:：][\s]*call_[A-Za-z0-9_]+\s*$/gm, '');
@@ -35,7 +43,7 @@
 	}
 
 	const html = $derived.by(() => {
-		const cleaned = fixCjkBold(stripRawCallIds(text ?? ''));
+		const cleaned = fixCjkBold(stripRawCallIds(stripThinking(text ?? '')));
 		return sanitize(marked.parse(cleaned) as string);
 	});
 </script>

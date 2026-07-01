@@ -56,6 +56,11 @@ export class ChatStore {
 		return this.conversations.find((c) => c.id === this.activeId) ?? null;
 	}
 
+	/** LLM 공급자가 실제 연결(사용가능)됐는가. capabilities tier 로 판정. */
+	get connected(): boolean {
+		return this.capabilities?.tier === 'advanced' || this.capabilities?.tier === 'onDevice';
+	}
+
 	/** 고정 먼저, 그 다음 updatedAt 내림차순. */
 	get sorted(): Conversation[] {
 		return [...this.conversations].sort((a, b) => {
@@ -157,6 +162,17 @@ export class ChatStore {
 		});
 		conv.updatedAt = Date.now();
 		const idx = conv.messages.length - 1;
+
+		// 미연결(선택 LLM 공급자 사용불가) 이면 heuristic 폴백의 오답 대신 명확한 안내로 답한다.
+		if (this.capabilitiesLoaded && !this.connected) {
+			conv.messages[idx].text =
+				'AI 공급자가 연결되어 있지 않습니다. 우측 상단 톱니(공급자 설정)에서 Ollama(로컬) 또는 Gemini 를 연결하면 답변합니다.';
+			conv.messages[idx].streaming = false;
+			conv.updatedAt = Date.now();
+			this.busy = false;
+			this.#persist();
+			return;
+		}
 
 		const code = conv.code.trim();
 		try {

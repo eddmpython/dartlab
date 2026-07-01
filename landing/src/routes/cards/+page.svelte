@@ -6,8 +6,7 @@
 	import { setStaticBase } from '@dartlab/ui-runtime/data/dartlabData';
 	import { getPublicRuntime } from '$lib/runtime/publicRuntime';
 	import '@dartlab/ui-surfaces/terminal/terminal.css';
-	import { DARTLAB_BRAND_LINKS, SupportDialog, BrandSwitch, fetchGithubStars, fmtStars } from '@dartlab/ui-surfaces/terminal';
-	import BrandSocial from '$lib/components/BrandSocial.svelte';
+	import { DARTLAB_BRAND_LINKS, SupportDialog, BrandSwitch, BrandSocial, fetchGithubStars, fmtStars } from '@dartlab/ui-surfaces/terminal';
 	import { loadMediaIndex } from '$lib/cards/media';
 	import { loadCarousels, contractToCards } from '$lib/cards/contract';
 	import type { MediaIndex, CarouselContract } from '$lib/cards/model';

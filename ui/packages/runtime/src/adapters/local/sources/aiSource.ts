@@ -18,7 +18,16 @@ import type {
 import type { LocalApi } from '../api/localApi';
 
 interface StatusProbe {
-	providers?: Record<string, { available?: boolean | null; secretConfigured?: boolean }>;
+	providers?: Record<
+		string,
+		{
+			available?: boolean | null;
+			secretConfigured?: boolean;
+			selected?: boolean;
+			label?: string;
+			model?: string;
+		}
+	>;
 }
 
 async function collectAsk(api: LocalApi, input: AiAskInput): Promise<AiAskResult> {
@@ -38,27 +47,30 @@ export function localAiPort(api: LocalApi): AiPort {
 		async capabilities(): Promise<AiCapabilities> {
 			const status = await api.getJson<StatusProbe>('/api/status');
 			const providers = status?.providers ?? {};
-			const configured = Object.values(providers).some(
-				(p) => p?.available === true || p?.secretConfigured === true
-			);
-			if (configured) {
+			// 연결상태는 *선택된* provider 의 실제 available 로만 판정한다. secretConfigured 만 보면
+			// 세션만료·미로그인 provider 를 advanced 로 오보한다(게이트웨이는 LLM 없는 heuristic 으로 도는데 UI 만 연결된 척).
+			const selected = Object.values(providers).find((p) => p?.selected) ?? null;
+			const connected = selected?.available === true;
+			if (connected) {
 				return {
 					tier: 'advanced',
 					streaming: true,
 					toolCalling: true,
 					localWorkspace: true,
 					deterministicAnswers: true,
-					providerLabel: 'local'
+					providerLabel: selected?.label ?? 'local',
+					modelLabel: selected?.model
 				};
 			}
-			// provider 미구성 · 로컬도 결정론 Q&A 이상 동작(throw 금지). 업그레이드 안내만.
+			// LLM 미연결(선택 provider 사용불가·미선택). heuristic 폴백은 신뢰 낮으므로 미연결로 안내한다.
 			return {
 				tier: 'deterministic',
 				streaming: true,
 				toolCalling: false,
 				localWorkspace: true,
-				deterministicAnswers: true,
-				upgradeHint: '공급자를 설정하면 고급 분석 엔진을 사용할 수 있습니다.'
+				deterministicAnswers: false,
+				providerLabel: selected?.label,
+				upgradeHint: 'AI 공급자가 연결되어 있지 않습니다. 설정에서 공급자(예 Ollama·Gemini)를 연결하세요.'
 			};
 		},
 		ask(input) {

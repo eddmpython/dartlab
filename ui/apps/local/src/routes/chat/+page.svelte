@@ -5,11 +5,11 @@
 	import { base } from '$app/paths';
 	import { getLocalRuntime } from '$lib/runtime/localRuntime';
 	import { ChatStore } from '$lib/chat/chatStore.svelte';
-	import { theme } from '$lib/chat/theme.svelte';
 	import Sidebar from '$lib/chat/Sidebar.svelte';
 	import Composer from '$lib/chat/Composer.svelte';
 	import Markdown from '$lib/chat/Markdown.svelte';
-	import SnsLinks from '$lib/chat/SnsLinks.svelte';
+	import '@dartlab/ui-surfaces/terminal/terminal.css';
+	import { BrandSocial, DARTLAB_BRAND_LINKS, LAST_SYM_KEY } from '@dartlab/ui-surfaces/terminal';
 
 	const runtime = getLocalRuntime();
 	const store = new ChatStore(runtime.ai);
@@ -25,8 +25,13 @@
 		'한국 매크로 지표 (환율 · 금리 · CPI)'
 	];
 
+	// 터미널 토글 목적지 · surface 가 관리하는 최근 종목(LAST_SYM_KEY), 없으면 005930.
+	const recent =
+		(typeof localStorage !== 'undefined' && localStorage.getItem(LAST_SYM_KEY)) || '005930';
+
 	onMount(() => {
-		theme.apply();
+		// 챗은 터미널과 같은 다크 계기판 · 라이트 잔상 제거(공용 SNS 아이콘 가시성 보장).
+		if (typeof document !== 'undefined') document.documentElement.removeAttribute('data-theme');
 		void store.loadCapabilities();
 	});
 
@@ -34,8 +39,8 @@
 	const messages = $derived(active?.messages ?? []);
 	const hasMessages = $derived(messages.length > 0);
 	const cap = $derived(store.capabilities);
-	const code = $derived(active?.code?.trim() ?? '');
-	const hasCode = $derived(/^\d{6}$/.test(code));
+	// 연결 = 선택된 LLM 공급자가 실제 사용가능(advanced/onDevice). 아니면 미연결 안내.
+	const connected = $derived(cap?.tier === 'advanced' || cap?.tier === 'onDevice');
 
 	// 스트리밍·새 메시지마다 하단 고정. 사용자가 위로 스크롤했으면(200px 밖) 건드리지 않는다.
 	$effect(() => {
@@ -64,11 +69,21 @@
 		void submit();
 	}
 
-	function onCode(e: Event): void {
-		const v = (e.target as HTMLInputElement).value;
-		if (!store.active) store.newConversation();
-		const a = store.active;
-		if (a) a.code = v;
+	function openSupport(): void {
+		window.open(DARTLAB_BRAND_LINKS.coffee, '_blank', 'noopener');
+	}
+
+	let copiedId = $state<string | null>(null);
+	async function copyMsg(id: string, text: string): Promise<void> {
+		try {
+			await navigator.clipboard.writeText(text);
+			copiedId = id;
+			setTimeout(() => {
+				if (copiedId === id) copiedId = null;
+			}, 1400);
+		} catch {
+			// 클립보드 미지원 환경은 무시.
+		}
 	}
 </script>
 
@@ -87,11 +102,22 @@
 				<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></svg>
 			</button>
 			<div class="spacer"></div>
-			<SnsLinks />
+			<a class="ghost" href={`${base}/terminal/${recent}`} title="터미널로" aria-label="터미널로">
+				<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6-6-6M12 19h8" /></svg>
+			</a>
+			<a class="ghost" href={`${base}/settings/providers`} title="AI 공급자 설정" aria-label="AI 공급자 설정">
+				<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+			</a>
+			<div class="dlTerm chatSns" style="display:contents">
+				<nav class="sns"><BrandSocial links={DARTLAB_BRAND_LINKS} ghStars={null} onSupport={openSupport} /></nav>
+			</div>
 		</div>
 
-		{#if cap?.upgradeHint}
-			<div class="hint">{cap.upgradeHint}</div>
+		{#if store.capabilitiesLoaded && !connected}
+			<div class="notice">
+				<span>AI 공급자가 연결되어 있지 않습니다. 연결 전에는 답변하지 않습니다.</span>
+				<a href={`${base}/settings/providers`}>공급자 연결 →</a>
+			</div>
 		{/if}
 
 		<div class="stream" bind:this={scroller}>
@@ -153,6 +179,20 @@
 											{/each}
 										</div>
 									{/if}
+
+									{#if m.text && !m.streaming}
+										<div class="msgacts">
+											<button class="msgact" onclick={() => copyMsg(m.id, m.text)} title="복사">
+												{#if copiedId === m.id}
+													<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+													복사됨
+												{:else}
+													<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
+													복사
+												{/if}
+											</button>
+										</div>
+									{/if}
 								</div>
 							</div>
 						{/if}
@@ -163,24 +203,10 @@
 
 		<div class="dock">
 			<div class="col">
-				<div class="ctxrow">
-					<input
-						class="codein"
-						value={active?.code ?? ''}
-						oninput={onCode}
-						placeholder="종목 컨텍스트 (선택, 6자리)"
-						inputmode="numeric"
-						maxlength="6"
-						aria-label="종목 컨텍스트 코드"
-					/>
-					{#if hasCode}
-						<a class="goterm" href={`${base}/terminal/${code}`}>터미널 →</a>
-					{/if}
-				</div>
 				<Composer
 					bind:value={draft}
 					busy={store.busy}
-					placeholder={hasCode ? `${code} 에 대해 질문…` : '질문을 입력하세요…  (Enter 전송 · Shift+Enter 줄바꿈)'}
+					placeholder="질문을 입력하세요…  (Enter 전송 · Shift+Enter 줄바꿈)"
 					onsend={submit}
 				/>
 			</div>
@@ -227,37 +253,25 @@
 		background: var(--dl-bg-raised, #16171a);
 		color: var(--dl-ink, #e7e7ea);
 	}
-	.ctxrow {
+	.notice {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		margin-bottom: 0.5rem;
+		gap: 0.6rem;
+		flex-wrap: wrap;
+		font-size: 0.8rem;
+		color: var(--dl-warn, #f4b740);
+		background: color-mix(in srgb, var(--dl-warn, #f4b740) 10%, transparent);
+		padding: 0.55rem 1rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--dl-warn, #f4b740) 30%, var(--dl-line, #2a2c33));
 	}
-	.codein {
-		width: 11rem;
-		padding: 0.35rem 0.6rem;
-		border: 1px solid var(--dl-line, #2a2c33);
-		border-radius: 7px;
-		background: var(--dl-bg-raised, #16171a);
-		color: var(--dl-ink, #e7e7ea);
-		font-family: var(--dl-font-mono, ui-monospace, monospace);
-		font-size: 0.78rem;
-		outline: none;
-	}
-	.codein:focus {
-		border-color: var(--dl-accent, #ff5a36);
-	}
-	.goterm {
-		font-size: 0.78rem;
-		color: var(--dl-info, #6ab0ff);
+	.notice a {
+		color: var(--dl-accent, #ff5a36);
 		text-decoration: none;
+		font-weight: 600;
 		white-space: nowrap;
 	}
-	.hint {
-		font-size: 0.78rem;
-		color: var(--dl-ink-mute, #6b7280);
-		padding: 0.5rem 1rem;
-		border-bottom: 1px solid var(--dl-line, #2a2c33);
+	.notice a:hover {
+		text-decoration: underline;
 	}
 	.stream {
 		flex: 1;
@@ -453,6 +467,30 @@
 	.sug:disabled {
 		opacity: 0.5;
 		cursor: default;
+	}
+	.msgacts {
+		margin-top: 0.15rem;
+		opacity: 0;
+		transition: opacity 0.15s ease;
+	}
+	.turn.assistant:hover .msgacts {
+		opacity: 1;
+	}
+	.msgact {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.25rem 0.5rem;
+		border: none;
+		border-radius: 6px;
+		background: none;
+		color: var(--dl-ink-mute, #6b7280);
+		font-size: 0.72rem;
+		cursor: pointer;
+	}
+	.msgact:hover {
+		background: var(--dl-bg-raised, #16171a);
+		color: var(--dl-ink, #e7e7ea);
 	}
 
 	/* 하단 입력 도크 */
