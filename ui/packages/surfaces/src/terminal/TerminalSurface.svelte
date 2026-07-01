@@ -273,9 +273,9 @@
 						<a class="hdrLink hdrCards" href="{base}/cards" target="_blank" rel="noopener" title={lang === 'en' ? 'Card stories · Instagram-style feed (all companies)' : '카드뉴스 · 인스타그램형 피드(전체 회사)'}>{lang === 'en' ? 'Cards' : '카드뉴스'}</a>
 					{/if}
 					{#if allowTerminalAsk}
-						<button class="hdrLink hdrAsk" onclick={() => co && runtime.navigation.toAsk({ code: co.code })} title="AI에게 직접 질문 · 로컬 LLM 질의(/ask)" aria-label="AI" style="display:inline-flex;align-items:center;gap:4px">
-							<picture><source srcset="{base}/avatar-detective.webp" type="image/webp" /><img src="{base}/avatar-detective.png" alt="" width="14" height="14" style="border-radius:50%" /></picture>AI
-						</button>
+						<a class="hdrLink hdrAsk" href={runtime.navigation.href({ kind: 'chat' })} title="AI 챗 모드 · 대화형 분석 작업대" aria-label="챗 모드" style="display:inline-flex;align-items:center;gap:4px">
+							<picture><source srcset="{base}/avatar-detective.webp" type="image/webp" /><img src="{base}/avatar-detective.png" alt="" width="14" height="14" style="border-radius:50%" /></picture>챗
+						</a>
 					{/if}
 					<button class={'hdrLink' + (discussOpen ? ' on' : '')} onclick={() => (discussOpen = !discussOpen)} title="종목 토론 · giscus(GitHub Discussions) 인-터미널">{lang === 'en' ? 'Discuss' : '토론'}</button>
 					<a class="hdrLink" href="{links.repo}/issues/new" target="_blank" rel="noopener" title="GitHub 이슈 등록 · 버그·요청">{lang === 'en' ? 'Issue' : '이슈'}</a>
