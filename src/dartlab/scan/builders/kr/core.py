@@ -62,6 +62,7 @@ from dartlab.scan.builders.kr.fiscal import _loadCorpProfileMap as _loadCorpProf
 from dartlab.scan.builders.kr.fiscal import _toCalendarPeriod as _toCalendarPeriod
 from dartlab.scan.builders.kr.report.build import SCAN_API_TYPES as SCAN_API_TYPES
 from dartlab.scan.builders.kr.report.build import buildReport as buildReport
+from dartlab.scan.builders.kr.salesByProduct import buildSalesByProductSafe as _buildSalesByProductSafe
 from dartlab.scan.builders.kr.shares import buildSharesOutstandingSafe as _buildSharesOutstandingSafe
 from dartlab.scan.builders.kr.valuationBuild import buildValuation as buildValuation
 
@@ -69,10 +70,10 @@ from dartlab.scan.builders.kr.valuationBuild import buildValuation as buildValua
 def buildScan(
     *, sinceYear: int = 2021, reportSinceYear: int = 2016, verbose: bool = True, incremental: bool = False
 ) -> dict[str, Path | list[Path] | None]:
-    """scan 프리빌드 통합 (changes + finance + finance-lite + report + sharesOutstanding).
+    """scan 프리빌드 통합 (changes + finance + finance-lite + report + sharesOutstanding + salesByProduct).
 
     ``.github/scripts/prebuildData.py`` 가 매 prebuild 사이클 (KST 03:00 / 15:00) 에 호출하는
-    파사드. 하위 5 단계를 순서대로 실행하며, ``buildValuation`` 은 별도 cron 이므로 본 함수에
+    파사드. 하위 6 단계를 순서대로 실행하며, ``buildValuation`` 은 별도 cron 이므로 본 함수에
     포함하지 않는다.
 
     Parameters
@@ -136,7 +137,8 @@ def buildScan(
     How:
         1) ``buildChanges`` → 2) ``buildFinance`` (결산월 환원 + sanity check 자동) →
         3) ``buildFinanceLite`` (finance.parquet 직후 파생) → 4) ``buildReport`` (apiType 분할)
-        → 5) ``_buildSharesOutstandingSafe`` (별도 try/except wrapper).
+        → 5) ``_buildSharesOutstandingSafe`` → 6) ``_buildSalesByProductSafe``
+        (마지막 2 개는 별도 try/except wrapper, panel 매출및수주 표 파싱).
 
     Requires:
         - 로컬 ``data/dart/{docs,finance,report}/{stockCode}.parquet`` (Data Sync 결과)
@@ -164,6 +166,8 @@ def buildScan(
     _releaseNativeMemory()
     results["sharesOutstanding"] = _buildSharesOutstandingSafe(verbose=verbose, incremental=incremental)
     _releaseNativeMemory()
+    results["salesByProduct"] = _buildSalesByProductSafe(verbose=verbose, incremental=incremental)
+    _releaseNativeMemory()
 
     if verbose:
         _say("=" * 60)
@@ -179,6 +183,7 @@ __all__ = [
     "SCAN_API_TYPES",
     "_BATCH",
     "_FISCAL_Q_MAP",
+    "_buildSalesByProductSafe",
     "_buildSharesOutstandingSafe",
     "_calendarizeFiscalColumns",
     "_estimateFiscalMonthFromAnnualFiling",

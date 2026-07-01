@@ -221,6 +221,13 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="최근 신규상장 IPO 발굴 (증권신고서 지분증권) — 공모가밴드·청약일·적용 PER·할인율·항등식 검증",
         example='scan("ipo")',
     ),
+    "salesByProduct": _AxisEntry(
+        module="dartlab.scan.salesByProduct",
+        fn="scanSalesByProduct",
+        label="사업부문 매출구성",
+        description="전 상장사 사업부문별 매출 비중·집중도(HHI)·다각화 등급 (사업보고서 매출및수주 표). 단위-불변 mix 지표",
+        example='scan("salesByProduct")',
+    ),
 }
 
 
@@ -307,6 +314,13 @@ _ALIASES: dict[str, str] = {
     "공모": "ipo",
     "아이피오": "ipo",
     "증권신고서": "ipo",
+    # salesByProduct
+    "부문별매출": "salesByProduct",
+    "사업부문": "salesByProduct",
+    "매출구성": "salesByProduct",
+    "제품별매출": "salesByProduct",
+    "다각화": "salesByProduct",
+    "사업다각화": "salesByProduct",
 }
 
 
