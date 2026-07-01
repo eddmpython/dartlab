@@ -1,0 +1,43 @@
+# 에피소드 메타데이터 (사람이 작성하는 SSOT).
+# 회사 에피소드: 소스 = 블로그 글(SSOT). 별도 script.md 없음. sourceDoc = 블로그 발행 URL.
+# 발행 시 guid/오디오크기/길이/발행일은 published.json 에 기록된다(여기 아님).
+episode:
+  version: 1
+  episodeId: P02-company-skhynix         # 폴더명과 동일. P0N-{lane}-{slug}
+  episodeNo: 2
+  slug: skhynix
+  title: "SK하이닉스: 다섯 번 죽을 뻔한 회사가 어떻게 AI 시대 이익률 58%를 찍었나"
+  lane: company                          # 회사 lane
+  language: ko
+  status: draft                          # 오디오 수령 후 ready 로 바꾸면 발행 대상
+
+  # 오디오 소스 = 블로그 글. 운영자가 이 URL 을 NotebookLM 에 넣어 오디오 생성.
+  audio:
+    generator: notebooklm
+    sourceHint: ""                       # NotebookLM m4a 경로(발행 시 --audio 로 지정)
+    sourceDoc: https://eddmpython.github.io/dartlab/blog/000660-skhynix   # 소스 = 블로그 URL
+
+  audienceQuestion: 적자로 죽어가던 메모리 회사가 어떻게 2년 만에 영업이익률 58%를 찍었나?
+  oneLineMessage: >-
+    SK하이닉스는 다섯 번 위기를 넘긴 세계 2위 메모리 회사로, HBM과 메모리 사이클 상방을 타고
+    2025년 4분기 영업이익률 58.4%까지 올랐다. 텐베거 여부는 AI 수요·HBM 마진·증설 타이밍의 곱이다.
+  summary: >-
+    1983년 현대전자로 시작해 다섯 번 죽을 뻔한 회사가, HBM과 메모리 사이클 상방을 타고 2025년
+    4분기 영업이익률 58.4%(dartlab 실측)까지 올랐습니다. 무슨 회사고, 어떻게 성장했고, 왜 성장할
+    수 있었는지, 그리고 텐베거가 될 수 있는지를 강세와 약세 양쪽으로, 이 서사가 언제까지 갈지를
+    관찰 포인트로 풉니다. 투자 권유가 아닌 재무제표 교육용 서사입니다.
+  whereToLook:
+    - 매출총이익률이 정점(약 68.8%)에서 내려오기 시작하는지
+    - 설비투자(CAPEX)가 이익보다 빨리 커지는지
+    - HBM4에서 엔비디아 내 점유율이 방어되는지
+  forbiddenAngles: [매수, 매도, 목표가, 수익 보장, 확정 전망]
+
+  # 교차 링크 조인 키 + 역링크
+  stockCode: "000660"
+  corpName: SK하이닉스
+  topicSlug: skhynix
+  cardType: company
+  links:
+    blogSlug: "000660-skhynix"           # {base}/blog/000660-skhynix (소스이자 역링크)
+    cardSlug: ""                          # 블로그 frontmatter carousel 발행 시 채움
+    terminalCode: "000660"                # {base}/terminal?sym=000660

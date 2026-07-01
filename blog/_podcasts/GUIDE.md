@@ -1,0 +1,57 @@
+# 팟캐스트 제작 가이드 (블로그 -> NotebookLM -> 발행)
+
+운영자용. 우리 파이프라인이 블로그 글(SSOT)과 episode.yaml 을 준비해두면, 운영자는 아래 4단계만 하면 된다.
+
+전제: 회사 에피소드의 소스는 **블로그 글 하나**다. 별도 대본(script.md)을 손으로 쓰지 않는다. episode.yaml 의 `links.blogSlug` 와 `audio.sourceDoc`(블로그 발행 URL)이 이미 채워져 있다.
+
+## 1. NotebookLM 에 블로그를 소스로 넣기
+
+1. notebooklm.google.com -> 새 노트북(New).
+2. 소스 추가 -> "웹사이트(Website)" -> episode.yaml 의 `audio.sourceDoc` URL(그 회사 블로그 글 URL)을 붙여넣고 추가.
+   - 예: `https://eddmpython.github.io/dartlab/blog/skhynix`
+3. 다른 소스(다른 웹·PDF·다른 회사 글)를 절대 섞지 않는다. 한 에피소드 = 그 블로그 글 하나.
+4. 수집된 소스 미리보기를 열어, 재무 수치(매출·영업이익률 등)와 핵심 문장이 실제로 들어왔는지 눈으로 확인한다.
+   - 표가 비었거나 숫자가 안 들어왔으면 폴백: 그 블로그 글을 브라우저로 열고 본문 전체(제목 아래부터 검증표까지)를 복사 -> NotebookLM 의 "복사된 텍스트(Paste text)" 소스로 넣는다. URL 소스는 지운다.
+   - 이 텍스트는 새 문서가 아니라 블로그 글의 복사본이다(SSOT 는 여전히 블로그).
+
+## 2. 고정 설정 (매 에피소드 동일)
+
+- 출력 언어: 한국어 (Settings -> Output language -> Korean).
+- Audio Overview -> Customize 상자에 아래를 그대로 붙여넣는다:
+
+```
+이 소스 하나만 근거로 삼아 진행하세요. 소스에 없는 사실이나 숫자는 만들지 마세요.
+처음 듣는 사람도 따라오게 쉬운 한국어로, 소리 내어 자연스러운 말투로 대담하세요.
+모든 숫자는 분모와 기간을 함께 말해 귀로만 들어도 이해되게 하세요.
+투자 권유나 목표가, 매수매도 판단, 확정 전망은 하지 마세요. 교육용 설명입니다.
+오프닝에서 던진 질문을 마지막에 판단으로 갚고, 다음에 확인할 지표로 닫으세요.
+```
+
+- 길이: 소스가 충분하면 대략 8~15분. 톤은 두 진행자 대담(대본 배분은 NotebookLM 이 한다).
+
+## 3. 오디오 수령
+
+1. 생성된 Audio Overview 를 `.m4a` 로 내려받는다(파일명 자유).
+2. 한번 들어보며 확인: 소스 밖 숫자·목표가·확정 전망이 새어들지 않았는지, 숫자에 분모·기간이 붙었는지. 이상하면 재생성.
+3. 그 에피소드 `episode.yaml` 의 `status` 를 `ready` 로 바꾼다.
+
+## 4. 발행 (오디오 수령 후 이 명령 한 줄)
+
+```
+uv run python -X utf8 blog/_podcasts/_lib/publish_podcast.py --episode P0N-<lane>-<slug> --audio "<내려받은 m4a 경로>"
+```
+
+자동 처리: m4a -> mp3 전사, 길이·크기 측정, guid 1회 발급(재발행 시 재사용), R2 업로드, feed.xml + index.json 재생성·업로드, 커버 정규화.
+- 검증만: `--dry-run`. 오디오 안 바꾸고 feed/index 만: `--rebuild-only`.
+- 출력된 피드 URL 을 castfeedvalidator.com 으로 1회 검증.
+- 플랫폼 최초 1회만 제출: 유튜브 뮤직(YouTube Studio -> 콘텐츠 -> 팟캐스트 -> RSS 연결), Apple Podcasts Connect, Spotify for Creators 에 피드 URL. 소유권 인증 메일은 channel.yaml 의 ownerEmail 로 온다. 이후 에피소드는 발행 명령만으로 자동 반영된다.
+
+## 하지 않는 것
+
+- 대본(script.md)을 손으로 쓰지 않는다. 블로그 글이 소스다.
+- 오디오 파일을 레포에 커밋하지 않는다(R2 산출물, 용량 격리).
+- 숫자를 지어내지 않는다. 블로그에 없는 수치는 오디오에도 없어야 한다.
+
+## 왜 블로그가 소스인가
+
+블로그 글 하나가 SSOT 다. 거기서 카드뉴스(프론트매터 carousel), 팟캐스트(이 가이드), 정적 커버·이미지가 한 세트로 파생된다. 서사를 블로그에서 완성하면 나머지는 그 투영일 뿐이라, 서사·숫자가 한 곳에서만 관리된다.
