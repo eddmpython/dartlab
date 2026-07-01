@@ -45,6 +45,17 @@ POSTS: list[tuple[str, str, list[str], list[str]]] = [
         ],
         ["phone", "smartphone", "mobile", "hand", "screen", "social"],
     ),
+    (
+        "11",
+        "dart-libraries-compared",
+        [
+            "colorful source code syntax highlighting screen",
+            "python source code editor colourful",
+            "programming code on computer monitor",
+            "software code editor dark screen",
+        ],
+        ["code", "python", "programming", "software", "screen", "monitor", "laptop", "computer", "editor", "syntax"],
+    ),
 ]
 
 

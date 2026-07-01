@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560">
+  <title>회사별 반복문과 한 줄 횡단 scan 비교</title>
+  <desc>기존 방식은 회사마다 반복문으로 요청하고 DART 전용이지만, dartlab은 전 종목을 한 줄로 훑고 DART와 EDGAR를 같은 문법으로 다룬다</desc>
+
+  <defs>
+    <linearGradient id="bg11s" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="560" fill="url(#bg11s)" rx="16"/>
+
+  <text x="600" y="52" text-anchor="middle" fill="#f1f5f9" font-family="system-ui, sans-serif" font-size="26" font-weight="700">전 종목을 보는 두 가지 길</text>
+  <text x="600" y="82" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="15">회사 하나씩 도느냐, 한 줄로 접느냐</text>
+
+  <!-- 왼쪽: 회사별 반복문 -->
+  <rect x="70" y="120" width="480" height="360" rx="12" fill="#1a1a10" stroke="#f59e0b" stroke-width="1"/>
+  <text x="310" y="156" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="17" font-weight="700">기존 라이브러리</text>
+  <text x="310" y="180" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">회사마다 반복 요청</text>
+
+  <rect x="110" y="204" width="400" height="120" rx="8" fill="#0f172a"/>
+  <text x="130" y="232" fill="#fde68a" font-family="ui-monospace, monospace" font-size="14">for code in codes:   # 2,700회</text>
+  <text x="130" y="258" fill="#94a3b8" font-family="ui-monospace, monospace" font-size="14">    fs = fetch(code)</text>
+  <text x="130" y="284" fill="#94a3b8" font-family="ui-monospace, monospace" font-size="14">    normalize(fs)   # 계정명 맞추기</text>
+  <text x="130" y="310" fill="#94a3b8" font-family="ui-monospace, monospace" font-size="14">    merge(...)</text>
+
+  <text x="310" y="360" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="14">요청 제한 · 재정규화 · 병합</text>
+
+  <rect x="110" y="392" width="400" height="60" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+  <text x="310" y="428" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14" font-weight="600">한국 DART 전용</text>
+
+  <!-- 오른쪽: 한 줄 scan -->
+  <rect x="650" y="120" width="480" height="360" rx="12" fill="#0a1a10" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="890" y="156" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="17" font-weight="700">dartlab.scan</text>
+  <text x="890" y="180" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="13">전 종목을 한 줄로</text>
+
+  <rect x="690" y="204" width="400" height="120" rx="8" fill="#0f172a"/>
+  <text x="710" y="256" fill="#86efac" font-family="ui-monospace, monospace" font-size="15">dartlab.scan(</text>
+  <text x="710" y="284" fill="#f1f5f9" font-family="ui-monospace, monospace" font-size="15">  "profitability")</text>
+
+  <text x="890" y="360" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="14">전 상장사가 한 테이블로</text>
+
+  <rect x="690" y="392" width="190" height="60" rx="8" fill="#14532d" stroke="#22c55e" stroke-width="1"/>
+  <text x="785" y="428" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="14" font-weight="700">한국 DART</text>
+
+  <rect x="900" y="392" width="190" height="60" rx="8" fill="#14532d" stroke="#22c55e" stroke-width="1"/>
+  <text x="995" y="428" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="14" font-weight="700">미국 EDGAR</text>
+
+  <text x="600" y="518" text-anchor="middle" fill="#f1f5f9" font-family="system-ui, sans-serif" font-size="15" font-weight="600">같은 진입점, 같은 계정 이름. 한국과 미국을 나란히 놓는다.</text>
+</svg>

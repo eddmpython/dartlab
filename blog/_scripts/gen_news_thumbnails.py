@@ -87,6 +87,13 @@ POSTS: list[tuple[str, str, str, list[str], str]] = [
         ["2만 자 분석은 안 읽힌다", "같은 숫자를 카드로"],
         "회사·이슈 카드 · /cards 에서 스와이프",
     ),
+    (
+        "11",
+        "dart-libraries-compared",
+        "DartLab 소식 · 비교",
+        ["가져오는 건 기존 도구도", "한다. 그다음이 dartlab"],
+        "OpenDartReader·dart-fss 그리고 dartlab",
+    ),
 ]
 
 

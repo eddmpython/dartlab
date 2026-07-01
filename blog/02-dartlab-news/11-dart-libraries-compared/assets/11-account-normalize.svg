@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560">
+  <title>계정명 정규화 전후 비교</title>
+  <desc>기존 방식은 회사마다 다른 계정명을 그대로 받아 손으로 매핑해야 하지만, dartlab은 표준 계정으로 맞춘 격자를 돌려준다</desc>
+
+  <defs>
+    <linearGradient id="bg11n" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="560" fill="url(#bg11n)" rx="16"/>
+
+  <text x="600" y="52" text-anchor="middle" fill="#f1f5f9" font-family="system-ui, sans-serif" font-size="26" font-weight="700">같은 매출인데 이름이 다르다</text>
+  <text x="600" y="82" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="15">가져온 원문 그대로는 회사끼리 비교되지 않는다</text>
+
+  <!-- 왼쪽: 가져온 원문 (제각각) -->
+  <text x="300" y="132" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="16" font-weight="700">가져온 원문 계정명</text>
+
+  <rect x="90" y="160" width="420" height="66" rx="8" fill="#1a1a10" stroke="#f59e0b" stroke-width="1"/>
+  <text x="112" y="192" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="15" font-weight="600">A사</text>
+  <text x="220" y="192" fill="#fde68a" font-family="ui-monospace, monospace" font-size="16">매출액</text>
+  <text x="112" y="214" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">1,300,000</text>
+
+  <rect x="90" y="238" width="420" height="66" rx="8" fill="#1a1a10" stroke="#f59e0b" stroke-width="1"/>
+  <text x="112" y="270" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="15" font-weight="600">B사</text>
+  <text x="220" y="270" fill="#fde68a" font-family="ui-monospace, monospace" font-size="16">영업수익</text>
+  <text x="112" y="292" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">870,000</text>
+
+  <rect x="90" y="316" width="420" height="66" rx="8" fill="#1a1a10" stroke="#f59e0b" stroke-width="1"/>
+  <text x="112" y="348" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="15" font-weight="600">C사</text>
+  <text x="220" y="348" fill="#fde68a" font-family="ui-monospace, monospace" font-size="16">수익(매출액)</text>
+  <text x="112" y="370" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">540,000</text>
+
+  <text x="300" y="418" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="14">서로 다른 문자열 → 한 표에 못 세운다</text>
+  <text x="300" y="440" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">매핑 사전을 손으로 만들어야 한다</text>
+
+  <!-- 화살표 -->
+  <text x="600" y="270" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="34" font-weight="700">→</text>
+  <text x="600" y="300" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="12">표준 계정 매핑</text>
+
+  <!-- 오른쪽: 정규화된 격자 -->
+  <text x="900" y="132" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="16" font-weight="700">dartlab 표준 계정</text>
+
+  <rect x="690" y="160" width="420" height="222" rx="10" fill="#0a1a10" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="712" y="192" fill="#86efac" font-family="system-ui, sans-serif" font-size="13">계정</text>
+  <text x="900" y="192" fill="#86efac" font-family="system-ui, sans-serif" font-size="13">A사</text>
+  <text x="990" y="192" fill="#86efac" font-family="system-ui, sans-serif" font-size="13">B사</text>
+  <text x="1080" y="192" text-anchor="end" fill="#86efac" font-family="system-ui, sans-serif" font-size="13">C사</text>
+  <line x1="712" y1="204" x2="1088" y2="204" stroke="#166534" stroke-width="1"/>
+
+  <text x="712" y="240" fill="#f1f5f9" font-family="ui-monospace, monospace" font-size="16" font-weight="700">매출액</text>
+  <text x="900" y="240" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14">130만</text>
+  <text x="990" y="240" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14">87만</text>
+  <text x="1080" y="240" text-anchor="end" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14">54만</text>
+
+  <text x="712" y="286" fill="#f1f5f9" font-family="ui-monospace, monospace" font-size="16" font-weight="700">영업이익</text>
+  <text x="900" y="286" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">...</text>
+  <text x="990" y="286" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">...</text>
+  <text x="1080" y="286" text-anchor="end" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">...</text>
+
+  <text x="712" y="332" fill="#f1f5f9" font-family="ui-monospace, monospace" font-size="16" font-weight="700">당기순이익</text>
+  <text x="900" y="332" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">...</text>
+  <text x="990" y="332" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">...</text>
+  <text x="1080" y="332" text-anchor="end" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">...</text>
+
+  <text x="900" y="418" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="14">하나의 이름, 하나의 격자</text>
+  <text x="900" y="440" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="13">바로 비교 가능</text>
+
+  <rect x="300" y="484" width="600" height="46" rx="12" fill="#14532d" stroke="#22c55e" stroke-width="1"/>
+  <text x="600" y="513" text-anchor="middle" fill="#f1f5f9" font-family="system-ui, sans-serif" font-size="15" font-weight="700">정규화가 끝난 자리에서 dartlab이 시작한다</text>
+</svg>

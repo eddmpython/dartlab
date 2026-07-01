@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520">
+  <title>가져오기 위에 쌓이는 분석 엔진</title>
+  <desc>가져오기 위에 정규화, 비교, 분석, 질문이 차례로 쌓인다. 기존 라이브러리는 첫 단계에서 멈추고 dartlab은 그 위 전체를 이어 간다</desc>
+
+  <defs>
+    <linearGradient id="bg11e" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="520" fill="url(#bg11e)" rx="16"/>
+
+  <text x="600" y="52" text-anchor="middle" fill="#f1f5f9" font-family="system-ui, sans-serif" font-size="26" font-weight="700">가져오기 위에 분석이 얹힌다</text>
+  <text x="600" y="82" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="15">한 객체 안에서 다음 단계로 이어진다</text>
+
+  <!-- 5개 단계 가로 파이프라인 -->
+  <!-- 1 가져오기 -->
+  <rect x="60" y="150" width="190" height="150" rx="10" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+  <text x="155" y="196" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="16" font-weight="700">가져오기</text>
+  <text x="155" y="224" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">원문 · 재무제표</text>
+  <text x="155" y="272" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="12" font-weight="700">기존 도구</text>
+
+  <text x="268" y="230" text-anchor="middle" fill="#334155" font-family="system-ui, sans-serif" font-size="26">→</text>
+
+  <!-- 2 정규화 -->
+  <rect x="286" y="150" width="190" height="150" rx="10" fill="#0a1a10" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="381" y="196" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="16" font-weight="700">정규화</text>
+  <text x="381" y="224" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="12">표준 계정 · 격자</text>
+  <text x="381" y="266" text-anchor="middle" fill="#64748b" font-family="ui-monospace, monospace" font-size="11">c.select("IS", ...)</text>
+
+  <text x="494" y="230" text-anchor="middle" fill="#334155" font-family="system-ui, sans-serif" font-size="26">→</text>
+
+  <!-- 3 비교 -->
+  <rect x="512" y="150" width="190" height="150" rx="10" fill="#0a1a10" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="607" y="196" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="16" font-weight="700">비교</text>
+  <text x="607" y="224" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="12">전 종목 · 한미</text>
+  <text x="607" y="266" text-anchor="middle" fill="#64748b" font-family="ui-monospace, monospace" font-size="11">dartlab.scan(...)</text>
+
+  <text x="720" y="230" text-anchor="middle" fill="#334155" font-family="system-ui, sans-serif" font-size="26">→</text>
+
+  <!-- 4 분석 -->
+  <rect x="738" y="150" width="190" height="150" rx="10" fill="#0a1a10" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="833" y="196" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="16" font-weight="700">분석</text>
+  <text x="833" y="224" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="12">비율 · 신용 · 가치</text>
+  <text x="833" y="266" text-anchor="middle" fill="#64748b" font-family="ui-monospace, monospace" font-size="11">c.credit("등급")</text>
+
+  <text x="946" y="230" text-anchor="middle" fill="#334155" font-family="system-ui, sans-serif" font-size="26">→</text>
+
+  <!-- 5 질문 -->
+  <rect x="964" y="150" width="176" height="150" rx="10" fill="#0a1a10" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="1052" y="196" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="16" font-weight="700">질문</text>
+  <text x="1052" y="224" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="12">자연어로</text>
+  <text x="1052" y="266" text-anchor="middle" fill="#64748b" font-family="ui-monospace, monospace" font-size="11">dartlab ask</text>
+
+  <!-- 범위 브래킷 -->
+  <line x1="60" y1="330" x2="250" y2="330" stroke="#f59e0b" stroke-width="2"/>
+  <line x1="60" y1="322" x2="60" y2="330" stroke="#f59e0b" stroke-width="2"/>
+  <line x1="250" y1="322" x2="250" y2="330" stroke="#f59e0b" stroke-width="2"/>
+  <text x="155" y="352" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="13" font-weight="700">기존 라이브러리가 맡는 곳</text>
+
+  <line x1="286" y1="330" x2="1140" y2="330" stroke="#22c55e" stroke-width="2"/>
+  <line x1="286" y1="322" x2="286" y2="330" stroke="#22c55e" stroke-width="2"/>
+  <line x1="1140" y1="322" x2="1140" y2="330" stroke="#22c55e" stroke-width="2"/>
+  <text x="713" y="352" text-anchor="middle" fill="#4ade80" font-family="system-ui, sans-serif" font-size="13" font-weight="700">dartlab이 이어 가는 곳</text>
+
+  <rect x="300" y="410" width="600" height="52" rx="14" fill="#14532d" stroke="#22c55e" stroke-width="1"/>
+  <text x="600" y="443" text-anchor="middle" fill="#f1f5f9" font-family="system-ui, sans-serif" font-size="16" font-weight="700">가져오기에서 멈추지 않고 질문까지 이어진다</text>
+</svg>
