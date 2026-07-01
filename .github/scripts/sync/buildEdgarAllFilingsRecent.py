@@ -74,8 +74,15 @@ def _accumulate(fresh: pl.DataFrame, base: pl.DataFrame | None) -> pl.DataFrame:
     return out.unique(subset=["accessionNo"], keep="first").sort(["stockCode", "filingDate"], descending=[False, True])
 
 
+_FLUSH_EVERY = 500  # N 종목마다 rows 를 프레임으로 flush (deep 모드 대용량 리스트 OOM 가드)
+
+
 def build(*, sinceYear: int, mergeHf: bool = True, zipPath: Path | None = None) -> pl.DataFrame:
     """submissions bulk 순회 + HF baseline merge → 수시공시 전 종목 1프레임 (stockCode 정렬, 전 이력 누적).
+
+    심화 백필은 ``sinceYear`` 를 낮춰 수행한다(예 2015). 메인 CIK{10}.json 을 순회하고, recent 블록이
+    ``sinceYear`` 를 못 덮는 회사는 findAllFilings 가 ``files`` 포인터로 과거 페이지를 병합한다(실측: Apple
+    sinceYear 2023→2015 시 304건→1000건, 2015-05 까지). baseline merge 로 이후 daily 가 그 심도를 보존.
 
     Args:
         sinceYear: filingDate 연도 하한(신규 수집분). baseline 의 과거분은 이 하한과 무관하게 보존.
@@ -87,8 +94,17 @@ def build(*, sinceYear: int, mergeHf: bool = True, zipPath: Path | None = None) 
     """
     cikToTicker = _cikToTicker()
     zp = zipPath if zipPath is not None else downloadSubmissionsBulk()
+    schema = {c: pl.Utf8 for c in _COLS}
+    frames: list[pl.DataFrame] = []
     rows: list[dict] = []
     seen = 0
+
+    def _flush() -> None:  # rows 리스트를 프레임으로 옮겨 파이썬 리스트 메모리 상한 (심화 백필 대용량 가드)
+        nonlocal rows
+        if rows:
+            frames.append(pl.DataFrame(rows, schema=schema))
+            rows = []
+
     for cik, payload in iterSubmissionsBulk(zp, recentOnly=True):
         ticker = cikToTicker.get(cik)
         if not ticker:
@@ -108,8 +124,11 @@ def build(*, sinceYear: int, mergeHf: bool = True, zipPath: Path | None = None) 
                     "url": r["filing_url"],
                 }
             )
-    schema = {c: pl.Utf8 for c in _COLS}
-    fresh = pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
+        if seen % _FLUSH_EVERY == 0:
+            _flush()
+    _flush()
+
+    fresh = pl.concat(frames, how="diagonal_relaxed") if frames else pl.DataFrame(schema=schema)
     out = _accumulate(fresh, _hfBaseFrame() if mergeHf else None)
     span = f"{out['filingDate'].min()}~{out['filingDate'].max()}" if out.height else "(빈)"
     print(
@@ -147,7 +166,7 @@ def push(dest: Path, token: str, name: str) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-push", action="store_true", help="HF 발행 생략(로컬 검증)")
-    ap.add_argument("--since-year", type=int, default=2023, help="filingDate 연도 하한")
+    ap.add_argument("--since-year", type=int, default=2023, help="filingDate 연도 하한(심화 백필은 2015 등 하향)")
     args = ap.parse_args()
 
     out = build(sinceYear=args.since_year)
