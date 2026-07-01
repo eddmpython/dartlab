@@ -46,15 +46,44 @@ def _cikToTicker() -> dict[str, str]:
     return {str(c).zfill(10): str(t).upper() for c, t in zip(univ["cik"].to_list(), univ["ticker"].to_list()) if t}
 
 
-def build(*, sinceYear: int, zipPath: Path | None = None) -> pl.DataFrame:
-    """submissions bulk 순회 → 수시공시 전 종목 1프레임 (stockCode 정렬).
+def _hfBaseFrame() -> pl.DataFrame | None:
+    """기존 HF edgar/allFilings/recent.parquet (있으면). 증분 merge 의 baseline. KR buildAllFilingsRecent 동형.
+
+    US recent 은 submissions recent 블록(회사당 ~1000건)만 재빌드하면 활성 공시기업의 옛 공시가
+    블록에서 밀려 사라진다(슬라이딩). HF baseline 과 merge·dedup 하면 전 이력이 누적 보존된다(trim 없음).
+    이력 심화(floor 2015)는 backfill(recentOnly=False, 과거 페이지)이 담당하고 본 merge 가 그 결과를 보존한다.
+    """
+    url = f"https://huggingface.co/datasets/{_REPO}/resolve/main/{_REL_DIR}/{_RECENT_NAME}"
+    from dartlab.core.hfRetry import retryHfCall  # HF read SSOT (transient 429/timeout 재시도)
+
+    try:
+        return retryHfCall(pl.read_parquet, url, columns=_COLS)
+    except Exception:  # noqa: BLE001 (최초 빌드 파일 부재·영구 실패면 None, 다음 cron 자가복구)
+        return None
+
+
+def _accumulate(fresh: pl.DataFrame, base: pl.DataFrame | None) -> pl.DataFrame:
+    """신규분 + HF baseline merge → accessionNo dedup, trim 없이 누적 (KR 동형). 순수 함수(네트워크 무관).
+
+    trim 을 두지 않는다. recent 블록이 밀려도 baseline 이 과거를 보존해야 전 이력이 남는다.
+    """
+    frames = [fresh]
+    if base is not None and base.height:
+        frames.append(base.select([c for c in _COLS if c in base.columns]))
+    out = pl.concat(frames, how="diagonal_relaxed")
+    return out.unique(subset=["accessionNo"], keep="first").sort(["stockCode", "filingDate"], descending=[False, True])
+
+
+def build(*, sinceYear: int, mergeHf: bool = True, zipPath: Path | None = None) -> pl.DataFrame:
+    """submissions bulk 순회 + HF baseline merge → 수시공시 전 종목 1프레임 (stockCode 정렬, 전 이력 누적).
 
     Args:
-        sinceYear: filingDate 연도 하한(피드 윈도).
+        sinceYear: filingDate 연도 하한(신규 수집분). baseline 의 과거분은 이 하한과 무관하게 보존.
+        mergeHf: True 면 기존 HF recent.parquet 과 merge·dedup 해 전 이력 누적(KR 동형). 슬라이딩 방지.
         zipPath: None 이면 자동 다운로드(TTL 가드).
 
     Returns:
-        pl.DataFrame — _COLS 스키마, stockCode·filingDate(desc) 정렬. 정기보고서 제외.
+        pl.DataFrame. _COLS 스키마, stockCode·filingDate(desc) 정렬. 정기보고서 제외.
     """
     cikToTicker = _cikToTicker()
     zp = zipPath if zipPath is not None else downloadSubmissionsBulk()
@@ -66,7 +95,7 @@ def build(*, sinceYear: int, zipPath: Path | None = None) -> pl.DataFrame:
             continue
         seen += 1
         for r in findAllFilings(payload, sinceYear=sinceYear):
-            if r["form"] in _REGULAR:  # 정기보고서 제외 — 수시만
+            if r["form"] in _REGULAR:  # 정기보고서 제외(수시만)
                 continue
             rows.append(
                 {
@@ -80,9 +109,12 @@ def build(*, sinceYear: int, zipPath: Path | None = None) -> pl.DataFrame:
                 }
             )
     schema = {c: pl.Utf8 for c in _COLS}
-    out = pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
-    out = out.unique(subset=["accessionNo"], keep="first").sort(["stockCode", "filingDate"], descending=[False, True])
-    print(f"[build] {out.height:,} rows ({out['stockCode'].n_unique():,} 종목, listed CIK {seen:,})", flush=True)
+    fresh = pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
+    out = _accumulate(fresh, _hfBaseFrame() if mergeHf else None)
+    span = f"{out['filingDate'].min()}~{out['filingDate'].max()}" if out.height else "(빈)"
+    print(
+        f"[build] {out.height:,} rows ({out['stockCode'].n_unique():,} 종목, listed CIK {seen:,}, {span})", flush=True
+    )
     return out
 
 
