@@ -1,12 +1,13 @@
 name: EDGAR Filings Sync (submissions bulk)
 
-# US 공시 피드 — SEC submissions.zip(~1.3GB) bulk → edgar/allFilings/{recent,market_recent}.parquet.
+# US 공시 피드. SEC submissions.zip(~1.3GB) bulk 로 edgar/allFilings/{recent,market_recent}.parquet.
 # 수시공시(8-K·DEF 14A·SC 13·Form 4 등) 전 종목. 정기보고서(10-K/10-Q)는 제외(재무 패널 몫).
-# KR allFilings(buildAllFilingsRecent) 대칭. 주 1회 — 수시공시는 일 단위 급변 아님(daily 는 과함).
+# KR allFilings(buildAllFilingsRecent, 하루 2회 + 매일 심화) 대칭. 수시공시 피드는 매일 최신이어야
+# 좌측 시장 레일이 살아있다(주 1회는 최대 7일 stale = 죽은 피드). baseline merge 로 전 이력 누적.
 
 on:
   schedule:
-    - cron: '0 6 * * 1'   # 매주 월요일 UTC 06:00
+    - cron: '0 8 * * *'   # 매일 UTC 08:00 (SEC submissions.zip 야간 재생성 후, 전일 공시 반영)
   workflow_dispatch:
     inputs:
       sinceYear:
