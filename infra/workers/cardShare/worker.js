@@ -59,9 +59,10 @@ async function resolveOgImage(post, companiesIndex) {
 	return asset ? `${MEDIA_BASE}/companies/${key}/${asset.name}` : null;
 }
 
-// hfMedia 원본(webp) URL → og:image 용 wsrv.nl JPEG 링크(1080x1350 4:5, baseline). 크롤러 호환 통일.
+// hfMedia 원본(webp) URL → og:image 용 wsrv.nl JPEG 링크(1080x1350 4:5, baseline). 크롤러 호환 통일 +
+// greyscale(에디토리얼 카드 톤). 크롤러 호환 위해 JPEG, 그레이톤은 카드 정체성.
 function ogImageUrl(src) {
-	return `https://wsrv.nl/?url=${encodeURIComponent(src)}&output=jpg&w=1080&h=1350&fit=cover&q=88`;
+	return `https://wsrv.nl/?url=${encodeURIComponent(src)}&output=jpg&w=1080&h=1350&fit=cover&q=88&filt=greyscale`;
 }
 
 // 캡션 산문 첫 문단 → og:description(180자 이하). 없으면 첫 슬라이드 line.
