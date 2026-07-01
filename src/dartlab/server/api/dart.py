@@ -173,3 +173,37 @@ def dartListing(
         return _dfToResponse(df)
     except (ValueError, KeyError, RuntimeError, FileNotFoundError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/ipo/scan")
+def dartIpoScan(
+    deep: bool = Query(True, description="True=6카테고리 핵심값(느림), False=발굴 메타만"),
+    dateFrom: str | None = Query(None, description="YYYYMMDD 이상만"),
+):
+    """신규상장 IPO 발굴 횡단. 로컬 런타임 직독(베이크 0). 증권신고서(지분증권) 최근 발굴 + 핵심값."""
+    try:
+        from dartlab.scan.ipo import scanIpo
+
+        df = scanIpo(dateFrom=dateFrom, deep=deep, verbose=False)
+        return _dfToResponse(df, maxRows=100)
+    except (ValueError, KeyError, RuntimeError, FileNotFoundError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/ipo/report")
+def dartIpoReport(
+    rcept: str = Query(..., description="FULL 증권신고서(지분증권) 접수번호"),
+    corp: str | None = Query(None, description="발행사명 (제목)"),
+    confirmationRcept: str | None = Query(None, description="[발행조건확정] doc 접수번호(확정공모가 병합)"),
+):
+    """IPO 공모분석 리포트. 로컬 서버가 신고서 본문을 런타임 파싱해 6카테고리 리포트 생성(베이크 0).
+
+    무거운 파싱(2 만~470 만 자)이라 HF 프리빌드가 아니라 로컬 상위집합에서 라이브 산출한다
+    (터미널 HF-SSOT/로컬-compute 정합). 반환 = title/sections/markdown.
+    """
+    try:
+        from dartlab.story.ipoReport import buildIpoReport
+
+        return buildIpoReport(rcept, corpName=corp, confirmationRcept=confirmationRcept)
+    except (ValueError, KeyError, RuntimeError, FileNotFoundError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
