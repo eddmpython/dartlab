@@ -52,7 +52,24 @@
 
 ## 7. NEXT
 
-**Phase 0~4 + 졸업 완료.** Tier2 워커 라이브 `https://dartlab-data-csv.eddmpython.workers.dev`(회사파일 200 실데이터·무료 CF, 큰 파일 413→Tier1, private 404). 데이터센터 **`/data` 승격 완료**(`693d228be`) — 데이터셋 미리보기·다운로드(가공+원본 parquet)·탐색(HF 파일 브라우저)·라이브 API(시트·엑셀·Python·curl). 터미널 데이터 다이얼로그에 바로가기. 후속(MVP 외): macro 단일시리즈 CF 라이브(observations 분할=PRD-gap)·날짜샤드 Tier2·`/v1/index.json` HF tree 열거.
+**Phase 0~4 + 졸업 완료.** Tier2 워커 라이브 `https://dartlab-data-csv.eddmpython.workers.dev`(회사파일 200 실데이터·무료 CF, 큰 파일 413→Tier1, private 404). 데이터센터 **`/data` 승격 완료**(`693d228be`). 데이터셋 미리보기·다운로드(가공+원본 parquet)·탐색(HF 파일 브라우저)·라이브 API(시트·엑셀·Python·curl). 터미널 데이터 다이얼로그에 바로가기. 후속(MVP 외): macro 단일시리즈 CF 라이브(observations 분할=PRD-gap)·날짜샤드 Tier2·`/v1/index.json` HF tree 열거.
+
+## 9. as-built 확장 · 런타임 변환 라이브 API (원 PRD 밖, 2026-07-01)
+
+원 PRD 는 raw parquet 슬라이스만 다뤘다. 졸업 후 **런타임 변환 3종**을 라이브 API 로 추가(런타임-SSOT 규칙 정합, 베이크 0). 워커(`infra/workers/dataCsv/worker.js`)가 브라우저와 **동일 변환 함수를 esbuild 번들로 공유**(worker.js 가 financeSource/priceIndicators `.ts` 를 `dist/worker.mjs` 로 번들, wrangler main=dist, dev=esbuild dist).
+
+- **재무제표** `financeSource.bundleFromRows`(dart/finance KR·edgar/financeStmt US, isKr 분기) → IS/BS/CF/CIS/SCE/RATIOS. `/v1/finance/{code}.csv?stmt=&freq=`.
+- **주가 보조지표** `priceIndicators.priceWithIndicators`(MA/RSI/MACD/볼린저/거래량/ATR). `/v1/priceInd/{code}.csv`.
+- **경제지표·지수 보조지표** `priceIndicators.valueWithIndicators`(fred/ecos/customs/gov-indices, 소스 선택). `/v1/valueInd/{dir}/{id}.csv`.
+
+**2026-07-01 전수 재감사(Explore 2 + 실측). 결론: 데이터센터 스코프의 적합·비중복 변환은 전부 반영.**
+- ① **주가지표 US 갭 = 진짜 누락, 닫음**(커밋 `92037a265` 배포): priceInd 가 gov/prices/company(KR)만 하드코딩하던 것을 finance 와 동일 isKr 분기로 확장(KR 6자리=gov·그외 US 티커=edgar/prices/company, 동일 컬럼이라 rename 0). landing `pricePath` 는 market.ts SSOT(resolveMarket)로 정리(`2ff584156`). krx 는 gov 원시 중복이라 제외.
+- ② **잠재버그 수정**: `priceWithIndicators`·`valueWithIndicators` 가 정렬 없이 parquet 행순서 의존 → date 오름차순 정렬 가드.
+- ③ **데이터 이상**(코드무관): edgar/prices/company 대부분 일봉(MSFT·NVDA ~2887행)인데 **AAPL 만 월봉 110행**(그 티커 bake 이상, 쇼케이스는 NVDA).
+- ④ **noteSeries(비용/부문) = 워커 라이브 API 불가 실측**: dart/panel/{code} contentRaw 디코드 추정 RSS 937MB ≫ CF 90MB → 413. 브라우저(Tier1)만 가능하나 터미널 reportSource 가 이미 수행 → 데이터센터 download-only 추가는 균일성·중복이라 보류.
+- ⑤ 나머지 후보(annual·financePeriods=finance 중복, workforce/dividend/debt=dart/scan/report 벌크·report-full-harvest 도메인)는 중복·스코프크리프로 제외.
+
+**잔여**: landing UI(주가 US 예시·pricePath·안내 문구) push 는 화면 변경이라 운영자 눈검수 대기. 워커·priceIndicators 는 배포·커밋 완료.
 
 ## 8. 화해 상태
 

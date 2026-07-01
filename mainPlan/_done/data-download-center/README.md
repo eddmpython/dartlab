@@ -1,7 +1,9 @@
-# 데이터 다운로드 센터 — PRD 인덱스
+# 데이터 다운로드 센터 · PRD 인덱스
 
-> 상태: v0.1 (2026-06-28 작성, 전문 패널 3 설계 + 적대 교차검증 3 + 수석 종합 후 확정).
-> 끊긴 세션은 [06-progress-ledger](06-progress-ledger.md) §NEXT 만 읽고 재개. 본 README = 인덱스 + 정신모델.
+> ✅ 완료 (2026-07-01). Phase 0~4 + 졸업 완료, `/data` 프로덕션 라이브(미리보기·다운로드·HF 파일브라우저·라이브 API 시트/엑셀/Python/curl). Tier2 워커 `dartlab-data-csv.eddmpython.workers.dev` 무료 CF 배포.
+> **as-built 확장(원 PRD 밖, 런타임-SSOT 정합)**: 런타임 변환 3종을 라이브 API 로 추가. 재무제표(bundleFromRows·KR+US)·주가 보조지표(priceWithIndicators·KR gov 일봉+US edgar)·경제지표/지수 보조지표(valueWithIndicators). 워커가 브라우저와 동일 변환 함수를 esbuild 번들로 공유(베이크 0). 상세·잔여(landing UI push 운영자 대기)=memory [[project_data_download_center]].
+> ⏭ 미착수(MVP 외): Phase 5(날짜샤드 Tier2·freq OHLCV-aware·`/v1/index.json`)·macro 단일시리즈 CF 라이브(observations 분할=PRD-gap, 별도 승인).
+> 이 폴더는 완료 격리분(`_done`). 워커·allowlist·drift 가드는 배포된 현역 시스템이라 유지보수 시 계속 참조. 끊긴 세션은 [06-progress-ledger](06-progress-ledger.md) §NEXT.
 
 ## 한 줄 정신모델
 
