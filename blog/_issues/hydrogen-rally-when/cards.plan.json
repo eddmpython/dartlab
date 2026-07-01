@@ -1,0 +1,373 @@
+{
+  "version": 4,
+  "generatedAt": "2026-07-01T10:38:37.771071+00:00",
+  "target": {
+    "kind": "issue",
+    "slug": "hydrogen-rally-when",
+    "stockCode": "",
+    "corpName": "수소 랠리",
+    "title": "수소 대장주가 올해 3배 올랐습니다. 그런데 오른 이유가 수소가 아닙니다",
+    "postPath": "blog/_issues/hydrogen-rally-when/carousel.yaml",
+    "assetRoot": "blog/_issues/hydrogen-rally-when/assets",
+    "planPath": "blog/_issues/hydrogen-rally-when/cards.plan.json"
+  },
+  "planning": {
+    "blogThesis": "수소 대장주 두산퓨얼셀 주가가 올해 3.5배 올랐습니다. 그런데 이 회사는 2025년에 영업이익 1,056억 적자를 냈고, 2026년 1분기도 적자입니다. 주가는 3배 넘게 갔는데 이익은 아직 적자입니다.",
+    "cardThesis": "수소 대장주 두산퓨얼셀 주가가 올해 3.5배 올랐습니다. 그런데 이 회사는 2025년에 영업이익 1,056억 적자를 냈고, 2026년 1분기도 적자입니다. 주가는 3배 넘게 갔는데 이익은 아직 적자입니다.",
+    "audienceQuestion": "수소 대장주가 올해 3배 올랐습니다. 그런데 오른 이유가 수소가 아닙니다 이슈를 /cards에서 볼 때 마지막에 무엇을 확인해야 하나?",
+    "blogAndCardsTogether": false,
+    "narrativeContract": {
+      "spine": "훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문",
+      "rules": [
+        "한 주제 안에서 훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문으로 이어진다.",
+        "각 슬라이드는 앞장의 주장이나 숫자를 받아 다음 장으로 넘겨야 한다.",
+        "서로 끊긴 체크리스트, '다음에는 이것을 본다'식 나열, 새 항목만 덧붙이는 끝맺음은 실패다.",
+        "마지막 장은 새 정보를 추가하는 장이 아니라 앞선 주장과 근거를 종합해 독자가 남길 판단 질문으로 닫는다.",
+        "기/승/전/결 같은 구조명은 내부 기획에만 쓰고 카드 위 라벨로 노출하지 않는다."
+      ]
+    },
+    "bigSentenceContract": {
+      "slideRange": "7장 이상(7~10장 권장, 필요하면 초과)",
+      "mainTextFields": {
+        "editorial": "line",
+        "editorialBeat": "line",
+        "editorialStat": "context"
+      },
+      "rules": [
+        "카드는 7장 이상으로 잡고, 큰문장만 이어 읽어도 한 편의 짧은 글처럼 이해되어야 한다.",
+        "각 장의 큰문장은 단어·라벨·메모가 아니라 앞장 뒤에 붙는 완성 문장이어야 한다.",
+        "숫자 카드는 bigNumber만 던지지 말고 context에 그 숫자가 앞장 주장과 어떻게 이어지는지 문장으로 쓴다.",
+        "중간 장은 '이 구조', '그 결과', '하지만', '그래서', '결국'처럼 앞장과의 관계를 자연스럽게 드러낸다.",
+        "마지막 장은 새 항목 소개가 아니라 앞선 흐름에서 나온 판단 문장으로 닫는다."
+      ],
+      "strip": [
+        {
+          "order": 1,
+          "layout": "editorial",
+          "mainText": "수소 대장주가 올해 3배 넘게 올랐습니다. 그런데 회사는 적자입니다"
+        },
+        {
+          "order": 2,
+          "layout": "editorialBeat",
+          "mainText": "두산퓨얼셀 주가가 올해 3.5배 올랐습니다"
+        },
+        {
+          "order": 3,
+          "layout": "editorialBeat",
+          "mainText": "그런데 같은 회사 영업이익은 2025년 1,056억 적자였습니다"
+        },
+        {
+          "order": 4,
+          "layout": "editorial",
+          "mainText": "여기서 질문이 생깁니다. 이 주가는 무엇을 보고 오른 걸까요"
+        },
+        {
+          "order": 5,
+          "layout": "editorialBeat",
+          "mainText": "수소차부터 안 팔립니다. 넥쏘는 1만대에서 2,751대로 줄었습니다"
+        },
+        {
+          "order": 6,
+          "layout": "editorialBeat",
+          "mainText": "발전과 원료도 마찬가지입니다. 밀어주던 정책마저 뒤로 갔습니다"
+        },
+        {
+          "order": 7,
+          "layout": "editorial",
+          "mainText": "그런데 수소경제는 다 멈췄는데, 주가만 혼자 올랐습니다"
+        },
+        {
+          "order": 8,
+          "layout": "editorial",
+          "mainText": "주가를 올린 건 수소경제가 아니라 AI였습니다"
+        },
+        {
+          "order": 9,
+          "layout": "editorial",
+          "mainText": "하지만 이건 실적이 아니라 기대로 오른 겁니다"
+        },
+        {
+          "order": 10,
+          "layout": "editorial",
+          "mainText": "그래서 볼 건 하나입니다. 두산퓨얼셀이 분기 흑자로 돌아서는 때입니다"
+        }
+      ]
+    },
+    "plainLanguageContract": {
+      "rules": [
+        "카드 문장은 독자가 소리 내어 읽어도 자연스러운 한국어 문장이어야 한다.",
+        "전문용어와 약어를 앞세우지 말고 쉬운 말로 먼저 설명한다.",
+        "꼭 필요한 산업 용어는 짧은 설명에 풀어 쓰되, 슬라이드 본문은 가능한 쉬운 말로 쓴다.",
+        "브랜드명과 공식 제품명은 허용하지만, 의미를 설명하지 않은 약어는 실패다."
+      ],
+      "preferredRewrites": {
+        "ARR": "연간 반복 매출",
+        "EDR": "단말 보안 대응",
+        "SOC": "보안 관제",
+        "FCF": "잉여현금흐름",
+        "ID": "계정",
+        "CDMO": "위탁개발생산",
+        "HBM": "고대역폭 메모리",
+        "HBM4E": "차세대 고대역폭 메모리",
+        "GPU": "그래픽처리장치",
+        "MR-MUF": "보호재 충전 패키징",
+        "Gbps": "기가비트/초"
+      }
+    },
+    "insightContract": {
+      "rules": [
+        "통념(commonBelief): 독자가 당연하게 여기는 상식·헤드라인 관점을 한 문장으로 적는다.",
+        "반전 사실(twistFact): 그 통념과 충돌하는, 공시 직독으로 확인한 단 하나의 사실 + 왜 그게 가능한가(메커니즘)를 적는다. 제목·캡션의 재진술이면 인사이트가 아니다.",
+        "그래서 볼 것(whatToWatch): 독자가 이 덱을 본 뒤 앞으로 무엇을 다르게 볼지(렌즈·관전 포인트)를 적는다.",
+        "evidenceRefs: 반전·렌즈를 떠받치는 실측 수치나 ref 를 최소 1개 이상 적는다(분모·기간 명시)."
+      ],
+      "commonBelief": "두산퓨얼셀 주가가 3배 넘게 올랐으니 수소경제가 드디어 상승 테마를 타기 시작했다고 본다.",
+      "twistFact": "주가가 올해 3.5배 오르는 동안 이 회사 2025년 영업이익은 1,056억 적자로 오히려 커졌고 2026년 1분기도 적자다. 같은 기간 수소차 판매, 충전소 증설, 청정수소 발전 입찰, 그린수소 값은 다 멈췄거나 뒤로 갔다. 수소경제 본체가 멈췄는데도 주가가 오른 이유는 AI 데이터센터에 전기를 대는 연료전지 수출 기대다. 수소라는 이름이 붙었을 뿐 실제로 움직인 건 AI 전력 수요다.",
+      "whatToWatch": "수소경제가 진짜 오르기 시작하는 신호는 정책 발표나 주가 급등이 아니라, 대장주 두산퓨얼셀 영업이익이 적자에서 흑자로 돌아서는 분기다. 지금은 실적이 아니라 기대로 오른 상태라, 그 기대가 매출로 잡히는지를 봐야 한다.",
+      "evidenceRefs": [
+        "두산퓨얼셀(336260) 연간 영업이익 공시 직독: 2020 +465, 2021 +269, 2022 -35, 2023 +55, 2024 -18, 2025 -1,056억, 2026년 1분기 -13억",
+        "두산퓨얼셀 주가 2026년 연초 대비 +245.89%, 52주 17,800~108,900원, 5월 26일 종가 99,800원(뉴스)",
+        "현대차 넥쏘 판매: 2022년 10,164대 → 2023년 4,328대 → 2024년 2,751대(뉴스)",
+        "청정수소 발전 입찰(CHPS) 2025년 10월 17일 취소, 2026년 이후 물량 미확정(뉴스)",
+        "그린수소 생산단가 2026년 1kg당 4~7달러, 경쟁력 목표 2~3달러는 2030년(뉴스)",
+        "상승 촉매: 데이터센터용 연료전지 수요와 미국 수출 기대(뉴스·회사 설명)"
+      ]
+    },
+    "visualPlan": [
+      {
+        "order": 3,
+        "kind": "finCard",
+        "shape": [
+          {
+            "name": "영업이익",
+            "type": "line"
+          }
+        ],
+        "periods": 7,
+        "granularity": "quarterly",
+        "proves": "2020년 흑자에서 2025년 대규모 적자로 내려앉았습니다. 아직 흑자로 못 돌아왔습니다."
+      },
+      {
+        "order": 6,
+        "kind": "table",
+        "shape": [
+          "수소경제 지표",
+          "지금 상태"
+        ],
+        "rows": 4,
+        "proves": "수소경제를 재는 네 가지가 다 멈췄거나 뒤로 갔습니다."
+      }
+    ],
+    "bodyPreview": "",
+    "imageSourcing": {
+      "status": "generated",
+      "note": "??? ?? ??? 3??6?? ??? 8? ???? ????. ?????, ?? ??, ????? ??? ? ????? ??? ????, ?? ?? ??? ??? ?? ??? ????. 8?? ?? ??? ?? ??? ???? ?????.",
+      "cards": [
+        {
+          "slide": 1,
+          "key": "scene-01-cover-hook",
+          "concept": "????? ??? ??? ???? ??? ??? ?? ??"
+        },
+        {
+          "slide": 2,
+          "key": "scene-02-narrative-turn",
+          "concept": "????? ?? ?? ??? ???? ??"
+        },
+        {
+          "slide": 4,
+          "key": "scene-04-business-context",
+          "concept": "???? ??? ??? ???? ?? ??"
+        },
+        {
+          "slide": 5,
+          "key": "scene-05-narrative-turn",
+          "concept": "?? ??? ??? ?????"
+        },
+        {
+          "slide": 7,
+          "key": "scene-07-business-context",
+          "concept": "?? ???? ??? ?? ?? ??? ??? ??"
+        },
+        {
+          "slide": 8,
+          "key": "scene-08-business-context",
+          "concept": "????? ??? ? ????? ???? ??"
+        },
+        {
+          "slide": 9,
+          "key": "scene-09-business-context",
+          "concept": "?? ??? ?? ? ?? ???? ??? ?? ??"
+        },
+        {
+          "slide": 10,
+          "key": "scene-10-closing-checkpoint",
+          "concept": "?? ?? ??? ???? ???? ??"
+        }
+      ]
+    }
+  },
+  "carousel": {
+    "slideCount": 10,
+    "layouts": [
+      "editorial",
+      "editorialBeat",
+      "editorialBeat",
+      "editorial",
+      "editorialBeat",
+      "editorialBeat",
+      "editorial",
+      "editorial",
+      "editorial",
+      "editorial"
+    ]
+  },
+  "imagePlan": [
+    {
+      "order": 1,
+      "assetKey": "scene-01-cover-hook",
+      "slideRefs": [
+        1
+      ],
+      "role": "cover-hook",
+      "scene": "두산퓨얼셀(Doosan Fuel Cell) 상호와 로고, 발전용 연료전지 스택 설비(회사 실제 제품)를 어두운 배경에. 주가가 올랐다는 분위기는 은은히, 오른 이유는 숨긴 표지.",
+      "reason": "회사 로고·제품을 배경에 박아 이 회사·이야기 전용 시각 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/hydrogen-rally-when/assets/scene-01-cover-hook.webp\nAsset key: scene-01-cover-hook\nKeywords for session extraction: ?? ??, ?????, hydrogen-rally-when\nPrimary request: Create a realistic editorial business-news photo for a Korean card news story: a hydrogen stock rose more than threefold, but the reason may not be the hydrogen economy itself.\nScene/backdrop: a clean industrial showroom or investor briefing area with a visible Doosan Fuel Cell company sign, fuel-cell power modules, hydrogen piping, and a quiet stock-rally atmosphere suggested only by lighting and motion, not a chart.\nSubject: Doosan Fuel Cell brand and power-generation fuel-cell equipment as the cover hook, with the real reason for the rally still visually unresolved.\nBrand handling: Doosan Fuel Cell company name and logo may appear clearly as a public-facing sign. This is intentional for a stock and finance education card. Do not invent official claims or fake financial figures.\nComposition/framing: strict vertical 4:5; main sign and fuel-cell modules in upper and middle 60%; lower 40% clean floor or dark equipment surface for Korean text overlay.\nStyle/medium: realistic business-news photography, not illustration, not chart, not infographic.\nLighting/mood: bright enough under a dark overlay, industrial depth, premium but not glossy advertising.\nConstraints: no watermark, no recognizable private individual face, no readable financial numbers, no fake stock chart, no fake newspaper, no fabricated official document.\nAvoid: collage, split panels, abstract glow, generic financial wallpaper, ultra-tall phone wallpaper, blacked-out frame."
+    },
+    {
+      "order": 2,
+      "assetKey": "scene-02-narrative-turn",
+      "slideRefs": [
+        2
+      ],
+      "role": "narrative-turn",
+      "scene": "두산퓨얼셀 로고와 상호, 회사 연료전지 발전소 또는 발전용 셀 모듈 제품. 주가 급등을 상징하는 밝은 상승 톤.",
+      "reason": "회사 로고·제품을 배경에 박아 이 회사·이야기 전용 시각 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/hydrogen-rally-when/assets/scene-02-narrative-turn.webp\nAsset key: scene-02-narrative-turn\nKeywords for session extraction: ?? ??, ?????, hydrogen-rally-when\nPrimary request: Create a realistic editorial business-news photo for the slide saying Doosan Fuel Cell's stock rose about 3.5 times this year.\nScene/backdrop: a Doosan Fuel Cell investor briefing area with a large public company sign, fuel-cell module display, and analysts' notebooks on a table. Show a sense of market excitement through people looking at equipment and presentation screens, without using a literal stock chart.\nSubject: Doosan Fuel Cell brand, fuel-cell power modules, and investor attention around the company.\nBrand handling: Doosan Fuel Cell name and logo may appear clearly. This is intentional. Do not create fake official financial numbers or fake analyst documents.\nComposition/framing: strict vertical 4:5; company sign and fuel-cell module in upper and middle 60%; lower 40% as clean table or floor area for text overlay.\nStyle/medium: realistic business-news photography, not illustration, not chart, not infographic.\nLighting/mood: bright industrial showroom lighting, rising-market energy but credible and restrained.\nConstraints: no watermark, no recognizable private individual face, no readable figures, no fake stock chart, no fake newspaper, no fabricated official report.\nAvoid: generic exchange trading screen, giant arrow graphic, collage, split panels, abstract glow, blacked-out frame."
+    },
+    {
+      "order": 4,
+      "assetKey": "scene-04-business-context",
+      "slideRefs": [
+        4
+      ],
+      "role": "business-context",
+      "scene": "수소경제가 정말 살아나는지 하나씩 점검하러 들어가는 개념 장면. 수소(H2) 기호와 저울 또는 여러 갈래로 나뉜 길. 특정 회사 아님.",
+      "reason": "이야기의 뜻을 담은 개념 장면 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/hydrogen-rally-when/assets/scene-04-business-context.webp\nAsset key: scene-04-business-context\nKeywords for session extraction: ?? ??, ?????, hydrogen-rally-when\nPrimary request: Create a realistic editorial image for the slide asking what the stock price is really looking at, before checking the hydrogen economy indicators.\nScene/backdrop: a clean energy strategy desk in a research office. On the desk are a small hydrogen cylinder labeled H2, a neutral balance scale, road-sign style markers for fuel-cell cars, clean hydrogen power bidding, hydrogen stations, and green hydrogen cost, all as physical objects rather than a chart.\nSubject: a careful checklist of the hydrogen economy, suggesting the story is about checking whether the theme itself is alive.\nBrand handling: no specific company logo in this concept scene. Use physical objects and neutral signs only.\nComposition/framing: strict vertical 4:5; H2 cylinder, scale, and marker objects in upper and middle 60%; lower 40% clean desk surface for text overlay.\nStyle/medium: realistic business-news photography, not illustration, not infographic, not a flat diagram.\nLighting/mood: neutral research-office light, analytical and restrained.\nConstraints: no watermark, no recognizable person, no fake financial numbers, no fake official document, no long readable text.\nAvoid: abstract glow, collage, split panels, generic green energy wallpaper, literal stock chart, blacked-out frame."
+    },
+    {
+      "order": 5,
+      "assetKey": "scene-05-narrative-turn",
+      "slideRefs": [
+        5
+      ],
+      "role": "narrative-turn",
+      "scene": "현대자동차(Hyundai) 로고와 넥쏘(NEXO) 수소전기차 실제 제품. 텅 빈 수소충전소를 배경으로 판매 위축을 암시.",
+      "reason": "회사 로고·제품을 배경에 박아 이 회사·이야기 전용 시각 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/hydrogen-rally-when/assets/scene-05-narrative-turn.webp\nAsset key: scene-05-narrative-turn\nKeywords for session extraction: ?? ??, ?????, hydrogen-rally-when\nPrimary request: Create a realistic editorial business-news photo for the slide saying Hyundai NEXO hydrogen fuel-cell car sales fell sharply.\nScene/backdrop: a quiet hydrogen refueling station forecourt with a Hyundai NEXO fuel-cell vehicle parked near an H2 pump. The car should be angled so the Hyundai emblem and NEXO badge are visible as real product context. The station feels underused: empty bays, no crowd, subdued daylight.\nSubject: Hyundai NEXO and hydrogen refueling infrastructure as the visible signal that the consumer hydrogen-car side is weak.\nBrand handling: Hyundai emblem and NEXO badge may appear clearly on the vehicle. This is intentional for product context. Do not create fake ads, promotional copy, or sales claims.\nComposition/framing: strict vertical 4:5; NEXO vehicle, Hyundai emblem, NEXO badge, and H2 pump in upper and middle 60%; lower 40% clean pavement for text overlay.\nStyle/medium: realistic business-news photography, not illustration, not chart, not infographic.\nLighting/mood: overcast or early-morning light, calm and slightly empty, not dramatic.\nConstraints: no watermark, no recognizable private individual face, no readable price signs, no fake sales numbers, no fabricated official document, no long readable text except Hyundai or NEXO badge.\nAvoid: glossy car advertisement, crowded showroom, collage, split panels, abstract green hydrogen glow, blacked-out frame."
+    },
+    {
+      "order": 7,
+      "assetKey": "scene-07-business-context",
+      "slideRefs": [
+        7
+      ],
+      "role": "business-context",
+      "scene": "수소경제 지표들은 회색으로 내려앉아 멈췄는데, 그 한가운데 주가 화살표 하나만 홀로 위로 치솟는 강한 대비 장면. 화살표 끝에 아직 답을 숨긴 물음표. 특정 회사 아님.",
+      "reason": "이야기의 뜻을 담은 개념 장면 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/hydrogen-rally-when/assets/scene-07-business-context.webp\nAsset key: scene-07-business-context\nKeywords for session extraction: ?? ??, ?????, hydrogen-rally-when\nPrimary request: Create a realistic editorial business-news photo for the slide saying hydrogen-economy indicators are stalled, but the stock price alone rose.\nScene/backdrop: an energy research desk with four gray, inactive indicator props for hydrogen cars, clean hydrogen bidding, hydrogen stations, and green hydrogen cost. In the middle is one separate upward-pointing physical marker made of metal, with no numbers and no drawn chart.\nSubject: a strong contrast between stalled hydrogen-economy fundamentals and a lone rising stock-market expectation.\nBrand handling: no specific company logo in this concept scene.\nComposition/framing: strict vertical 4:5; gray inactive props and a single rising marker in upper and middle 60%; lower 40% uncluttered desk surface for text overlay.\nStyle/medium: realistic business-news photography, not illustration, not infographic, not a flat chart.\nLighting/mood: neutral light with restrained contrast, serious analytical mood.\nConstraints: no watermark, no recognizable person, no readable financial numbers, no fake chart, no fake newspaper, no fabricated official document.\nAvoid: literal stock graph screen, big neon arrow, collage, split panels, abstract glow, generic trading-wall imagery, blacked-out frame."
+    },
+    {
+      "order": 8,
+      "assetKey": "scene-08-business-context",
+      "slideRefs": [
+        8
+      ],
+      "role": "business-context",
+      "scene": "두산퓨얼셀 로고와 발전용 연료전지 제품. 뒤로 AI 데이터센터 서버랙과 전력 케이블을 연결한 구도. 회사 제품이 데이터센터에 전기를 대는 장면. AI를 만드는 게 아니라 AI 전력을 대는 쪽임을 시각화.",
+      "reason": "회사 로고·제품을 배경에 박아 이 회사·이야기 전용 시각 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/hydrogen-rally-when/assets/scene-08-business-context.webp\nAsset key: scene-08-business-context\nKeywords for session extraction: ?? ??, ?????, hydrogen-rally-when\nPrimary request: Create a realistic editorial business-news photo for the slide saying the stock was lifted by artificial-intelligence data-center power demand, not by the hydrogen economy itself.\nScene/backdrop: an industrial data center power room. In the foreground is a Doosan Fuel Cell branded fuel-cell power module and hydrogen piping; behind it are server racks, power cables, cooling pipes, and electrical cabinets. The fuel-cell module is physically connected into the data-center infrastructure.\nSubject: Doosan Fuel Cell equipment as a power-supply asset beside data-center racks.\nBrand handling: the only readable brand text should be the public-facing company name or logo \"DOOSAN FUEL CELL\" on the module or a simple sign. No slogans, no claims, no contract text, no announcement text, no figures.\nComposition/framing: strict vertical 4:5; fuel-cell module and server racks in upper and middle 60%; lower 40% clean floor or equipment surface for text overlay.\nStyle/medium: realistic documentary business photography, not illustration, not chart, not infographic.\nLighting/mood: bright industrial light, metallic texture, credible infrastructure mood.\nConstraints: no watermark, no recognizable private individual face, no readable text except DOOSAN FUEL CELL, no fake official document, no stock chart, no fake financial numbers.\nAvoid: abstract neon AI art, robot imagery, marketing slogan, wall slogan, readable claim, collage, split panels, generic server wallpaper, blacked-out frame."
+    },
+    {
+      "order": 9,
+      "assetKey": "scene-09-business-context",
+      "slideRefs": [
+        9
+      ],
+      "role": "business-context",
+      "scene": "실적이 아니라 기대로 먼저 오른 상태를 나타내는 개념 장면. 크게 위로 뻗은 주가 곡선 아래로 아직 비어 있는 실적 막대들이 그림자처럼 놓임. 특정 회사 아님.",
+      "reason": "이야기의 뜻을 담은 개념 장면 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/hydrogen-rally-when/assets/scene-09-business-context.webp\nAsset key: scene-09-business-context\nKeywords for session extraction: ?? ??, ?????, hydrogen-rally-when\nPrimary request: Create a realistic editorial business-news photo for the slide saying the rally is still expectation, not confirmed earnings.\nScene/backdrop: a finance review desk for an energy company theme. In the foreground are two physical trays: one labeled only with a neutral icon for expectations, full of unsigned proposal folders and model fuel-cell parts; the other tray for realized earnings is mostly empty. A laptop in the background shows blurred accounting columns without readable figures.\nSubject: expectations arriving before actual profit, shown through paperwork and empty realized-earnings tray, not a literal chart.\nBrand handling: no specific company logo in this concept scene.\nComposition/framing: strict vertical 4:5; trays, folders, and fuel-cell model parts in upper and middle 60%; lower 40% clean desktop for text overlay.\nStyle/medium: realistic business-news photography, not illustration, not infographic, not a flat chart.\nLighting/mood: calm finance-office light, sober and analytical.\nConstraints: no watermark, no recognizable person, no readable financial numbers, no fake stock chart, no fake official document, no newspaper.\nAvoid: giant arrow, line chart, bar chart, dollar signs, collage, split panels, abstract glow, blacked-out frame."
+    },
+    {
+      "order": 10,
+      "assetKey": "scene-10-closing-checkpoint",
+      "slideRefs": [
+        10
+      ],
+      "role": "closing-checkpoint",
+      "scene": "적자에서 흑자로 넘어가는 손익분기 개념 장면. 0선을 뚫고 올라오는 이익 곡선과 캘린더의 한 분기 표시. 판단으로 닫는 마무리 톤. 특정 회사 아님.",
+      "reason": "이야기의 뜻을 담은 개념 장면 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/hydrogen-rally-when/assets/scene-10-closing-checkpoint.webp\nAsset key: scene-10-closing-checkpoint\nKeywords for session extraction: ?? ??, ?????, hydrogen-rally-when\nPrimary request: Create a realistic editorial closing image for the slide saying the key signal is when Doosan Fuel Cell returns to quarterly operating profit.\nScene/backdrop: a quiet quarterly earnings review desk. There is a calendar opened to a quarter-end page, a neutral profit-and-loss folder, a calculator, and a simple physical zero-line marker made from a thin metal strip with a small marker crossing from red side to black side. No numbers.\nSubject: the checkpoint of crossing from loss to profit by quarter, shown physically and calmly.\nBrand handling: no specific company logo in this closing concept scene. Keep it a neutral checkpoint image.\nComposition/framing: strict vertical 4:5; calendar, folder, calculator, and physical zero-line marker in upper and middle 60%; lower 40% clean desk surface for text overlay.\nStyle/medium: realistic business-news photography, not illustration, not infographic, not a flat chart.\nLighting/mood: calm desk lamp, clear and sober, final-check tone.\nConstraints: no watermark, no recognizable person, no readable financial numbers, no fake official document, no fake stock chart, no newspaper.\nAvoid: giant graph, bar chart, dollar icon, collage, split panels, abstract glow, blacked-out frame."
+    }
+  ],
+  "imagegen": {
+    "tool": "image_gen",
+    "generationRule": "? imagePlan.prompt? asset?? ? ?? ????. ???? 4:5 ??? ?? ??? ????, ???? ?? ??? 3?? 6?? ??? ?? ????.",
+    "extractCommand": "uv run python -X utf8 sns/scripts/extractImagegenAssets.py assets --assets-root blog/_issues/hydrogen-rally-when --count 8 --names scene-01-cover-hook,scene-02-narrative-turn,scene-04-business-context,scene-05-narrative-turn,scene-07-business-context,scene-08-business-context,scene-09-business-context,scene-10-closing-checkpoint --keywords \"수소 랠리,두산퓨얼셀,hydrogen-rally-when\"",
+    "checkCommand": "uv run python -X utf8 sns/scripts/checkImagegenAssets.py blog/_issues/hydrogen-rally-when/assets",
+    "publishCommands": [
+      "uv run python -X utf8 blog/_scripts/build_carousel_contracts.py"
+    ],
+    "note": "???? 3(???? ??)?6(???? ?? ?)? ?? ?? ????? ??? ???? ???. ? 8?? ????."
+  },
+  "reviewGate": {
+    "status": "passed",
+    "requiredRounds": [
+      {
+        "id": "writerPanel",
+        "purpose": "표지 후크(호기심 갭), 서사 스파인, 앞장-다음장의 긴장 전진(연결만이 아니라 매 장이 질문을 얹거나 갚는가), 인사이트(통념과 충돌하는 사실 + 메커니즘 + 독자 렌즈), 표지 약속을 마지막이 갚는가(promise·payoff), 쉬운 말·문장 리듬을 본다. 순서를 바꿔도 말이 되는 덱, 충돌 사실만 던지고 끝나는 덱, 체크리스트식 나열은 실패다.",
+        "status": "passed"
+      },
+      {
+        "id": "honestyEvidence",
+        "purpose": "슬라이드 숫자와 주장 근거가 블로그 본문/검증표에 있는지 본다.",
+        "status": "passed"
+      },
+      {
+        "id": "imageFit",
+        "purpose": "7장 이상 이미지가 그 글의 회사·사건·장소에 맞는 서로 다른 의미 장면인지, 가짜 공식 로고·텍스트·도식이 없는지 본다.",
+        "status": "passed"
+      },
+      {
+        "id": "readerFit",
+        "purpose": "처음 보는 독자가 첫 장부터 마지막 장까지 끊기지 않고 자연스럽게 읽으며 관전 포인트를 이해하는지 본다. 어려운 약어가 남으면 실패다.",
+        "status": "passed"
+      },
+      {
+        "id": "reevaluation",
+        "purpose": "수정 후 같은 패널이 다시 보고 발행 가능 여부를 닫는다.",
+        "status": "passed"
+      }
+    ],
+    "decisionLog": [
+      {
+        "round": "cards-plan-loop",
+        "result": "passed",
+        "detail": "기획작가↔평가자+회의자 루프 3라운드 통과. 평가자 pass(맥락90 인사이트89 시각정합88 쉬움92 재미88, 최저 88), 회의자 survive(kill 0). 회의자가 1~2라운드에서 지어낸 월별 데이터를 두 번 kill해 3라운드는 실측만 남김. 문장은 담백하게 재작성(비유·추상 제거)."
+      },
+      {
+        "round": "imageFit",
+        "decision": "8? ?? ??? ?? ???? ?? ? ?? ??. ????? ??? ???? ??, ?? ??? ?????, ????? ???, ??? ??? ??? ???? ?? ?? ???? ????. 8?? ?? ?? ??? ?? ??? ???? ?????. 4:5??? ??? ???? ???? ????."
+      }
+    ]
+  }
+}

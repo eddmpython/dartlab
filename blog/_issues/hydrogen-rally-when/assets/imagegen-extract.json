@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-01T11:04:59.251911+00:00",
+  "cardCrop4x5": true,
+  "assets": [
+    {
+      "file": "scene-01-cover-hook.webp",
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/hydrogen-rally-when/assets/scene-01-cover-hook.webp\nAsset key: scene-01-cover-hook\nKeywords for session extraction: 수소 랠리, 두산퓨얼셀,"
+    },
+    {
+      "file": "scene-02-narrative-turn.webp",
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/hydrogen-rally-when/assets/scene-02-narrative-turn.webp\nAsset key: scene-02-narrative-turn\nKeywords for session extraction: 수소 랠리"
+    },
+    {
+      "file": "scene-04-business-context.webp",
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/hydrogen-rally-when/assets/scene-04-business-context.webp\nAsset key: scene-04-business-context\nKeywords for session extraction: 수"
+    },
+    {
+      "file": "scene-05-narrative-turn.webp",
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/hydrogen-rally-when/assets/scene-05-narrative-turn.webp\nAsset key: scene-05-narrative-turn\nKeywords for session extraction: 수소 랠리"
+    },
+    {
+      "file": "scene-07-business-context.webp",
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/hydrogen-rally-when/assets/scene-07-business-context.webp\nAsset key: scene-07-business-context\nKeywords for session extraction: 수"
+    },
+    {
+      "file": "scene-08-business-context.webp",
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/hydrogen-rally-when/assets/scene-08-business-context.webp\nAsset key: scene-08-business-context\nKeywords for session extraction: 수"
+    },
+    {
+      "file": "scene-09-business-context.webp",
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/hydrogen-rally-when/assets/scene-09-business-context.webp\nAsset key: scene-09-business-context\nKeywords for session extraction: 수"
+    },
+    {
+      "file": "scene-10-closing-checkpoint.webp",
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/hydrogen-rally-when/assets/scene-10-closing-checkpoint.webp\nAsset key: scene-10-closing-checkpoint\nKeywords for session extractio"
+    }
+  ]
+}
