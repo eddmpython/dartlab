@@ -8,6 +8,8 @@
 	import Sidebar from '$lib/chat/Sidebar.svelte';
 	import Composer from '$lib/chat/Composer.svelte';
 	import Markdown from '$lib/chat/Markdown.svelte';
+	import ToolCard from '$lib/chat/ToolCard.svelte';
+	import Evidence from '$lib/chat/Evidence.svelte';
 	import ProviderSettings from '$lib/chat/ProviderSettings.svelte';
 	import '@dartlab/ui-surfaces/terminal/terminal.css';
 	import { BrandSocial, DARTLAB_BRAND_LINKS, LAST_SYM_KEY } from '@dartlab/ui-surfaces/terminal';
@@ -48,7 +50,7 @@
 	$effect(() => {
 		messages.length;
 		messages.at(-1)?.text;
-		messages.at(-1)?.activities.length;
+		messages.at(-1)?.tools.length;
 		if (!scroller) return;
 		const el = scroller;
 		const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
@@ -145,12 +147,10 @@
 							<div class="turn assistant">
 								<img class="msgava" src="{base}/avatar.png" alt="DartLab" width="30" height="30" />
 								<div class="body">
-									{#if m.activities.length}
-										<div class="acts">
-											{#each m.activities as a (a.id)}
-												<span class="act" class:running={a.status === 'running'}>
-													{a.status === 'running' ? '⋯' : '✓'} {a.summary}
-												</span>
+									{#if m.tools.length}
+										<div class="workbench">
+											{#each m.tools as t (t.id)}
+												<ToolCard tool={t} />
 											{/each}
 										</div>
 									{/if}
@@ -159,7 +159,7 @@
 										<Markdown text={m.text} />
 										{#if m.streaming}<span class="caret"></span>{/if}
 									{:else if m.streaming && !m.error}
-										<div class="thinking"><span class="dot"></span><span class="dot"></span><span class="dot"></span> 분석 준비 중</div>
+										<div class="thinking"><span class="dot"></span><span class="dot"></span><span class="dot"></span> {m.tools.length ? '근거를 정리하는 중' : '분석 준비 중'}</div>
 									{/if}
 
 									{#if m.error}
@@ -167,11 +167,7 @@
 									{/if}
 
 									{#if m.refs.length}
-										<div class="refs">
-											{#each m.refs as r (r.id)}
-												<span class="ref" title={`${r.kind} · ${r.source}`}>{r.title || r.kind}</span>
-											{/each}
-										</div>
+										<Evidence refs={m.refs} />
 									{/if}
 
 									{#if m.suggested.length}
@@ -391,23 +387,10 @@
 		flex-direction: column;
 		gap: 0.5rem;
 	}
-	.acts {
+	.workbench {
 		display: flex;
-		flex-wrap: wrap;
-		gap: 0.35rem;
-	}
-	.act {
-		font-size: 0.7rem;
-		padding: 0.15rem 0.5rem;
-		border-radius: 6px;
-		background: var(--dl-bg-raised, #16171a);
-		border: 1px solid var(--dl-line, #2a2c33);
-		color: var(--dl-ink-mute, #6b7280);
-		font-family: var(--dl-font-mono, ui-monospace, monospace);
-	}
-	.act.running {
-		color: var(--dl-info, #6ab0ff);
-		border-color: color-mix(in srgb, var(--dl-info, #6ab0ff) 40%, var(--dl-line, #2a2c33));
+		flex-direction: column;
+		gap: 0.4rem;
 	}
 	.caret {
 		display: inline-block;
@@ -454,18 +437,6 @@
 	.err {
 		font-size: 0.85rem;
 		color: var(--dl-bad, #ff6b6b);
-	}
-	.refs {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.35rem;
-	}
-	.ref {
-		font-size: 0.7rem;
-		padding: 0.15rem 0.5rem;
-		border-radius: 6px;
-		border: 1px solid var(--dl-line, #2a2c33);
-		color: var(--dl-ink-dim, #9aa0aa);
 	}
 	.suggest {
 		display: flex;

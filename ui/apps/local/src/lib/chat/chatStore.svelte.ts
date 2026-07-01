@@ -6,10 +6,21 @@
 // 거친 참조(this.active, conv.messages[idx])로 해야 반응한다. 배열 재할당(new/delete/clearAll)만 = 로 교체.
 import type { AiCapabilities, AiPort, AiStreamEvent, EvidenceRef } from '@dartlab/ui-contracts';
 
-export interface ChatActivity {
+/**
+ * 작업대 블록. LLM 이 자율 호출한 도구 한 건 (입력 args + 결과 표/마크다운/stdout).
+ * ChatGPT/Claude 의 tool-use 카드에 대응. 진행중 spinner, 완료 시 접힌 카드로 결과 확인.
+ */
+export interface ToolBlock {
 	id: string;
+	name: string;
+	args: Record<string, unknown>;
+	status: 'running' | 'done' | 'error';
 	summary: string;
-	status: 'running' | 'done';
+	markdown: string | null;
+	stdout: string | null;
+	tableHead: unknown[] | null;
+	tableRows: number | null;
+	error: string | null;
 }
 
 export interface ChatMessage {
@@ -17,7 +28,8 @@ export interface ChatMessage {
 	role: 'user' | 'assistant';
 	text: string;
 	refs: EvidenceRef[];
-	activities: ChatActivity[];
+	/** 작업대. 자율 도구 호출 카드 (근거를 만드는 과정). */
+	tools: ToolBlock[];
 	suggested: string[];
 	error: string | null;
 	streaming: boolean;
@@ -145,7 +157,7 @@ export class ChatStore {
 			role: 'user',
 			text,
 			refs: [],
-			activities: [],
+			tools: [],
 			suggested: [],
 			error: null,
 			streaming: false
@@ -155,7 +167,7 @@ export class ChatStore {
 			role: 'assistant',
 			text: '',
 			refs: [],
-			activities: [],
+			tools: [],
 			suggested: [],
 			error: null,
 			streaming: true
@@ -206,27 +218,54 @@ export class ChatStore {
 				m.text += ev.delta;
 				break;
 			case 'TOOL_CALL_START':
-				m.activities.push({ id: ev.toolCallId, summary: ev.toolName, status: 'running' });
+				// 작업대 카드 신설 (진행중). args 를 보존해 펼쳤을 때 입력을 보여준다.
+				m.tools.push({
+					id: ev.toolCallId,
+					name: ev.toolName,
+					args: ev.args ?? {},
+					status: 'running',
+					summary: '',
+					markdown: null,
+					stdout: null,
+					tableHead: null,
+					tableRows: null,
+					error: null
+				});
 				break;
 			case 'TOOL_CALL_RESULT': {
-				const a = m.activities.find((x) => x.id === ev.toolCallId);
-				if (a) {
-					a.status = 'done';
-					if (ev.summary) a.summary = ev.summary;
+				const t = m.tools.find((x) => x.id === ev.toolCallId);
+				if (t) {
+					t.status = ev.status === 'error' ? 'error' : 'done';
+					if (ev.summary) t.summary = ev.summary;
+					if (ev.error) t.error = ev.error;
+					const r = ev.result;
+					if (r) {
+						if (typeof r.markdown === 'string' && r.markdown.trim()) t.markdown = r.markdown;
+						if (typeof r.stdout === 'string' && r.stdout.trim()) t.stdout = r.stdout;
+						if (Array.isArray(r.tableHead)) t.tableHead = r.tableHead;
+						if (typeof r.tableRows === 'number') t.tableRows = r.tableRows;
+						else if (Array.isArray(r.tableRows)) t.tableRows = r.tableRows.length;
+					}
 				}
-				if (ev.refDetails?.length) m.refs.push(...ev.refDetails);
+				// 근거는 id 중복 제거해 누적 (같은 ref 가 여러 도구 결과에 반복 등장).
+				if (ev.refDetails?.length) {
+					const seen = new Set(m.refs.map((x) => x.id));
+					for (const ref of ev.refDetails) {
+						if (ref?.id && !seen.has(ref.id)) {
+							seen.add(ref.id);
+							m.refs.push(ref);
+						}
+					}
+				}
 				break;
 			}
-			case 'ACTIVITY_DELTA':
-				m.activities.push({ id: this.#uid('act'), summary: ev.summary, status: ev.status });
-				break;
 			case 'RUN_FINISHED':
 				m.suggested = ev.suggestedQuestions ?? [];
 				break;
 			case 'RUN_ERROR':
 				m.error = ev.message;
 				break;
-			// 기타 allowlist 이벤트(START/END/SNAPSHOT/VIEW_SPEC 등)는 챗 렌더 무관이라 드롭.
+			// 기타 allowlist 이벤트(START/END/SNAPSHOT/DELTA/VIEW_SPEC 등)는 챗 렌더 무관이라 드롭.
 		}
 	}
 
@@ -252,7 +291,11 @@ export class ChatStore {
 				messages: (c.messages ?? []).map((m) => ({
 					...m,
 					streaming: false,
-					activities: (m.activities ?? []).map((a) => ({ ...a, status: 'done' as const }))
+					// 재시작 후 진행중이던 도구 카드는 완료 처리 (결과가 다시 오지 않으므로).
+					tools: (m.tools ?? []).map((t) => ({
+						...t,
+						status: t.status === 'running' ? ('done' as const) : t.status
+					}))
 				}))
 			}));
 			this.activeId = data.activeId ?? this.conversations[0]?.id ?? null;
