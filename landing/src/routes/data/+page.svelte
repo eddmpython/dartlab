@@ -8,6 +8,7 @@
 	import { loadFinanceBundle } from '@dartlab/ui-runtime/data/financeRows';
 	import { priceWithIndicators, PRICE_IND_COLS, valueWithIndicators, VALUE_IND_COLS } from '@dartlab/ui-surfaces/priceIndicators';
 	import type { TerminalFinanceBundle, StmtKind } from '@dartlab/ui-contracts';
+	import { resolveMarket } from '@dartlab/ui-contracts';
 	import {
 		objectsToWorkbook,
 		downloadBlob,
@@ -91,10 +92,11 @@
 	const PRICE_DIR = 'gov/prices/__indicators__';
 	const PRICE_ENTRY: CatalogEntry = { dir: PRICE_DIR, label: '주가 + 보조지표 (MA·RSI·MACD·볼린저)', shardKind: 'company' };
 	const isPriceInd = $derived(dir?.dir === PRICE_DIR);
-	// 주가 소스: KR(6자리)=gov/prices/company · 그 외=US 티커 edgar/prices/company. 동일 컬럼이라 변환 동형(워커 isKr 분기와 일치).
+	// 주가 소스: KR=gov/prices/company · US 티커=edgar/prices/company. 동일 컬럼이라 변환 동형.
+	// KR/US 분기는 market.ts SSOT(resolveMarket) 사용. finance financeParquetPath 와 동형(US 티커 대문자 정규화 포함).
 	function pricePath(idv: string): string {
-		const t = idv.trim();
-		return /^\d{6}$/.test(t) ? `gov/prices/company/${t}.parquet` : `edgar/prices/company/${t.toUpperCase()}.parquet`;
+		const m = resolveMarket(idv.trim());
+		return m.market === 'US' && m.ticker ? `edgar/prices/company/${m.ticker}.parquet` : `gov/prices/company/${m.code ?? idv.trim()}.parquet`;
 	}
 	// 경제지표·지수 보조지표(단일 값 시계열). 소스(fred/ecos/customs/지수)별 value·date 컬럼 매핑.
 	const VALUE_DIR = 'macro/__indicators__';
