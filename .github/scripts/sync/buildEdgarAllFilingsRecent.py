@@ -77,16 +77,42 @@ def _accumulate(fresh: pl.DataFrame, base: pl.DataFrame | None) -> pl.DataFrame:
 _FLUSH_EVERY = 500  # N 종목마다 rows 를 프레임으로 flush (deep 모드 대용량 리스트 OOM 가드)
 
 
-def build(*, sinceYear: int, mergeHf: bool = True, zipPath: Path | None = None) -> pl.DataFrame:
+def _fillEntityName(fresh: pl.DataFrame) -> pl.DataFrame:
+    """과거 페이지 wrap 은 name 이 없어 entityName 이 빈다. stockCode 별 비어있지 않은 값으로 채운다."""
+    if not fresh.height:
+        return fresh
+    nmeMap = (
+        fresh.filter(pl.col("entityName").str.len_chars() > 0)
+        .group_by("stockCode")
+        .agg(pl.col("entityName").first().alias("_nm"))
+    )
+    return (
+        fresh.join(nmeMap, on="stockCode", how="left")
+        .with_columns(
+            pl.when(pl.col("entityName").str.len_chars() > 0)
+            .then(pl.col("entityName"))
+            .otherwise(pl.col("_nm").fill_null(""))
+            .alias("entityName")
+        )
+        .drop("_nm")
+        .select(_COLS)
+    )
+
+
+def build(
+    *, sinceYear: int, mergeHf: bool = True, recentOnly: bool = True, zipPath: Path | None = None
+) -> pl.DataFrame:
     """submissions bulk 순회 + HF baseline merge → 수시공시 전 종목 1프레임 (stockCode 정렬, 전 이력 누적).
 
-    심화 백필은 ``sinceYear`` 를 낮춰 수행한다(예 2015). 메인 CIK{10}.json 을 순회하고, recent 블록이
-    ``sinceYear`` 를 못 덮는 회사는 findAllFilings 가 ``files`` 포인터로 과거 페이지를 병합한다(실측: Apple
-    sinceYear 2023→2015 시 304건→1000건, 2015-05 까지). baseline merge 로 이후 daily 가 그 심도를 보존.
+    findAllFilings 는 recent 블록(회사당 ~1000건)만 읽고 과거 페이지 fetch 는 안 한다. 그래서 공시 잦은
+    회사(예 WMT 연 330건)는 recent 블록이 3년치라 심화가 안 된다. 심화 백필(recentOnly=False)은 zip 안
+    과거 페이지(``CIK{10}-submissions-NNN.json``)까지 순회해, bare 병렬배열을 ``filings.recent`` 로 감싸
+    같은 파서에 태워 전 이력을 판다. SEC 는 한도 없어 zip 에 과거가 통째 있으므로 네트워크 0.
 
     Args:
-        sinceYear: filingDate 연도 하한(신규 수집분). baseline 의 과거분은 이 하한과 무관하게 보존.
+        sinceYear: filingDate 연도 하한. baseline 의 과거분은 이 하한과 무관하게 보존.
         mergeHf: True 면 기존 HF recent.parquet 과 merge·dedup 해 전 이력 누적(KR 동형). 슬라이딩 방지.
+        recentOnly: True(일상)면 메인만. False(심화 백필)면 과거 페이지까지 파 전 이력.
         zipPath: None 이면 자동 다운로드(TTL 가드).
 
     Returns:
@@ -105,12 +131,14 @@ def build(*, sinceYear: int, mergeHf: bool = True, zipPath: Path | None = None) 
             frames.append(pl.DataFrame(rows, schema=schema))
             rows = []
 
-    for cik, payload in iterSubmissionsBulk(zp, recentOnly=True):
+    for cik, payload in iterSubmissionsBulk(zp, recentOnly=recentOnly):
         ticker = cikToTicker.get(cik)
         if not ticker:
             continue
         seen += 1
-        for r in findAllFilings(payload, sinceYear=sinceYear):
+        # 과거 페이지(bare 병렬배열)는 filings.recent 로 감싸 findAllFilings 동일 파서에 태운다. 메인은 그대로.
+        subs = payload if "filings" in payload else {"filings": {"recent": payload}, "cik": cik}
+        for r in findAllFilings(subs, sinceYear=sinceYear):
             if r["form"] in _REGULAR:  # 정기보고서 제외(수시만)
                 continue
             rows.append(
@@ -128,11 +156,11 @@ def build(*, sinceYear: int, mergeHf: bool = True, zipPath: Path | None = None) 
             _flush()
     _flush()
 
-    fresh = pl.concat(frames, how="diagonal_relaxed") if frames else pl.DataFrame(schema=schema)
+    fresh = _fillEntityName(pl.concat(frames, how="diagonal_relaxed") if frames else pl.DataFrame(schema=schema))
     out = _accumulate(fresh, _hfBaseFrame() if mergeHf else None)
     span = f"{out['filingDate'].min()}~{out['filingDate'].max()}" if out.height else "(빈)"
     print(
-        f"[build] {out.height:,} rows ({out['stockCode'].n_unique():,} 종목, listed CIK {seen:,}, {span})", flush=True
+        f"[build] {out.height:,} rows ({out['stockCode'].n_unique():,} 종목, zip 엔트리 {seen:,}, {span})", flush=True
     )
     return out
 
@@ -167,9 +195,10 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-push", action="store_true", help="HF 발행 생략(로컬 검증)")
     ap.add_argument("--since-year", type=int, default=2023, help="filingDate 연도 하한(심화 백필은 2015 등 하향)")
+    ap.add_argument("--deep", action="store_true", help="과거 페이지까지 심화 백필(recentOnly=False, 전 이력)")
     args = ap.parse_args()
 
-    out = build(sinceYear=args.since_year)
+    out = build(sinceYear=args.since_year, recentOnly=not args.deep)
     outDir = Path(_cfg.dataDir) / "edgar" / "allFilings"
     outDir.mkdir(parents=True, exist_ok=True)
     recentPath = outDir / _RECENT_NAME

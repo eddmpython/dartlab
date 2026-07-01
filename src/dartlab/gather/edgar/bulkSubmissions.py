@@ -98,6 +98,17 @@ def downloadSubmissionsBulk(*, force: bool = False, ttlHours: int = 24) -> Path:
     return zipPath
 
 
+def cikFromStem(stem: str) -> str:
+    """zip 엔트리 stem에서 CIK(0-padded 10자리) 추출. 메인·과거 페이지 공통.
+
+    메인은 ``CIK0000104169``, 과거 페이지는 ``CIK0000104169-submissions-001``. 후자에서 CIK만
+    떼려면 ``-`` 앞부분만 취해야 한다(옛 lstrip 방식은 과거 페이지 stem을 ``104169-submissions-001``로
+    깨뜨려 cik→ticker 매핑 실패 = 과거 페이지 전량 누락 버그).
+    """
+    core = stem.replace("CIK", "").split("-")[0]
+    return (core.lstrip("0") or "0").zfill(10)
+
+
 def iterSubmissionsBulk(zipPath: Path, *, recentOnly: bool = True) -> Iterator[tuple[str, dict]]:
     """submissions.zip 스트리밍 → (cik, submissions_json) yield (메인 회사 JSON만).
 
@@ -132,8 +143,8 @@ def iterSubmissionsBulk(zipPath: Path, *, recentOnly: bool = True) -> Iterator[t
             if not stem.startswith("CIK"):
                 continue
             if recentOnly and "-submissions-" in stem:
-                continue  # 과거 페이지 — recent 블록만
-            cik = (stem.replace("CIK", "").lstrip("0") or "0").zfill(10)
+                continue  # 과거 페이지(recent 블록만)
+            cik = cikFromStem(stem)
             try:
                 with zf.open(info) as f:
                     payload = json.load(f)
@@ -143,4 +154,4 @@ def iterSubmissionsBulk(zipPath: Path, *, recentOnly: bool = True) -> Iterator[t
             yield cik, payload
 
 
-__all__ = ["downloadSubmissionsBulk", "iterSubmissionsBulk"]
+__all__ = ["cikFromStem", "downloadSubmissionsBulk", "iterSubmissionsBulk"]
