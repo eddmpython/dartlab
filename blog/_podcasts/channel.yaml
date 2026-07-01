@@ -24,7 +24,7 @@ r2:
   baseUrl: https://pub-ef732bbc413941dd80734f96e0cfe95d.r2.dev
 
 # 쇼 커버 (정사각 RGB, 3000x3000, <500KB JPEG 로 정규화되어 cover/show-cover-3000.jpg 로 업로드)
-# 소스는 blog/_podcasts/assets/showCover.png. 정식 커버는 운영자 GPT 생성본으로 교체 가능.
+# 소스는 blog/_podcasts/assets/showCover.png. 정식 커버는 생성 이미지로 교체 가능.
 cover:
   source: assets/showCover.png
   key: cover/show-cover-3000.jpg

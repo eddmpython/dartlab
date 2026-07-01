@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-01T16:32:55.113111+00:00",
+  "cardCrop4x5": false,
+  "assets": [
+    {
+      "file": "source-gray.webp",
+      "role": "reusable-source",
+      "promptSummary": "Gray-tone editorial podcast background with disclosure documents, one unified analysis grid, and a secondary studio microphone."
+    }
+  ]
+}

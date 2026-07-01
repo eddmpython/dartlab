@@ -34,7 +34,7 @@ blog/_podcasts/
 ├── README.md                     # 이 파일 (트랙 SSOT)
 ├── channel.yaml                  # RSS channel 상수 + R2 baseUrl + 커버 소스
 ├── assets/
-│   └── showCover.png             # 쇼 커버 소스 (정식본은 GPT 생성으로 교체 가능)
+│   └── showCover.png             # 쇼 커버 소스 (정식본은 생성 이미지로 교체 가능)
 ├── templates/
 │   ├── sourceDoc.template.md     # 소스 문서(기획서) 뼈대
 │   ├── episode.template.yaml     # episode.yaml 뼈대
@@ -46,6 +46,11 @@ blog/_podcasts/
 └── episodes/
     └── P0N-{lane}-{slug}/        # 에피소드 산출물
         ├── episode.yaml          # 메타데이터 SSOT (사람 작성)
+        ├── cover.jpg             # RSS item 정사각 커버
+        ├── static-video.jpg      # 16:9 정적 영상 이미지와 썸네일 소스
+        ├── assets/
+        │   ├── source-gray.webp  # 재사용 가능한 원본 배경
+        │   └── CREDITS.md        # 이미지 출처와 역할
         ├── script.md             # NotebookLM 소스 문서 (우리 최종 deliverable)
         ├── brief.json            # 기획 요지 + 루프 로그
         └── published.json        # 발행 기계값 (guid mint-once, 오디오 크기/길이/발행일)
@@ -61,7 +66,21 @@ dartlab-podcast/                                  baseUrl = https://pub-...r2.de
 ├── feed.xml                                       RSS 2.0 (플랫폼 제출 대상, 재발행마다 덮어쓰기)
 ├── index.json                                     프론트 크로스링크 레지스트리
 ├── cover/show-cover-3000.jpg                      쇼 커버 (정사각 RGB, <500KB)
-└── episodes/<slug>/audio.mp3                       전사 MP3 (enclosure)
+└── episodes/<slug>/
+    ├── audio.mp3                                  전사 MP3 (enclosure)
+    ├── cover-3000.jpg                             RSS item 커버 (정사각 RGB, <500KB)
+    └── static-video.jpg                           정적 영상 이미지 (16:9 RGB, <500KB)
+```
+
+## 3-1. HF media 원본 레이아웃
+
+최종 RSS 산출물은 R2 에 둔다. 재사용 가능한 원본 배경은 HF media repo 에 콘텐츠 해시 파일명으로 둔다.
+이 원본으로 `cover.jpg` 와 `static-video.jpg` 를 언제든 다시 만들 수 있다.
+
+```
+eddmpython/dartlab-media/
+└── podcasts/<slug>/
+    └── source-gray.<hash>.webp
 ```
 
 R2 를 쓰는 이유: egress 무료(청취자 스트리밍 트래픽 부담 0), 200 직응답(HF `/resolve` 는 302
@@ -80,7 +99,10 @@ uv run python -X utf8 blog/_podcasts/_lib/plan_episode.py --plan plan.json --lan
 
 # 3. 운영자: script.md 검토 -> NotebookLM 에 제공 -> 오디오 m4a 수령 -> episode.yaml status=ready
 
-# 4. 발행 (전사 -> R2 업로드 -> feed.xml + index.json 재생성 -> 업로드)
+# 4. 정적 이미지 렌더 (sourceAssets 원본 -> cover.jpg + static-video.jpg)
+uv run python -X utf8 blog/_podcasts/_lib/render_episode_image.py --episode P0N-...
+
+# 5. 발행 (전사 -> R2 업로드 -> HF 원본 업로드 -> feed.xml + index.json 재생성 -> 업로드)
 uv run python -X utf8 blog/_podcasts/_lib/publish_podcast.py --episode P0N-... --audio <m4a 경로>
 ```
 
@@ -115,11 +137,28 @@ uv run python -X utf8 blog/_podcasts/_lib/publish_podcast.py --episode P0N-... -
 프론트(Phase 2)는 이 한 파일을 읽어 카드 모달, 블로그, 터미널 회사 화면에 "관련 팟캐스트"를 렌더하고,
 RSS item link 는 회사 에피소드면 터미널 딥링크로 역방향 연결한다.
 
-## 8. 커버
+## 8. 커버, 정적 영상 이미지, 캡션
 
-쇼 커버는 정사각 RGB, 3000x3000 로 정규화, 500KB 미만 JPEG(Apple 한계). 현재는 브랜드 워드마크 커버
-(`assets/showCover.png`)를 쓴다. 더 정교한 커버가 필요하면 GPT image_gen 정사각 생성본으로 교체 후
-재발행한다. 에피소드별 실사 배경은 Openverse(`blog/_scripts/fetch_cc0_images.py`)로 수급한다.
+쇼 커버는 정사각 RGB, 3000x3000 로 정규화하고, RSS 검증 안정성을 위해 500KB 미만 JPEG 로 압축한다. 현재는 브랜드 워드마크 커버
+(`assets/showCover.png`)를 쓴다. 더 정교한 커버가 필요하면 생성 이미지 정사각 소스로 교체 후 재발행한다.
+
+에피소드 이미지는 세 필드를 분리한다.
+
+- `image`: RSS item 용 정사각 커버. 발행 시 1400~3000 정사각 RGB JPEG, 500KB 미만으로 정규화한다.
+- `staticImage`: 유튜브 정적 영상 이미지와 썸네일용 16:9 이미지. 발행 시 1280x720 RGB JPEG, 500KB 미만으로 정규화한다.
+- `sourceAssets`: 재사용 가능한 원본 배경. 발행 시 HF media repo 의 `podcasts/<slug>/` 아래에 콘텐츠 해시 파일명으로 올린다.
+
+`thumbnail` 은 호환 필드다. `staticImage` 와 같은 파일이면 같은 source/key 를 지정한다. 프론트
+`index.json` 에는 `imageUrl`, `staticImageUrl`, `thumbnailUrl`, `sourceAssets`, `caption` 이 함께 실린다.
+RSS item 의 `itunes:image` 는 정사각 `image` 를 사용하고, 정적 영상 표면은 `staticImage` 를 사용한다.
+
+에피소드별 실사 배경은 Openverse(`blog/_scripts/fetch_cc0_images.py`)나 `image_gen` 으로 수급한다. 생성형
+이미지를 쓸 때는 레포 안 에피소드 폴더에 최종 소스를 저장해야 하며, 세션 기본 저장 경로에만 두지 않는다.
+
+카드뉴스형 정적 이미지는 `_lib/render_episode_image.py` 로 만든다. 원본 배경을 흑백 cover 처리하고
+어두운 스크림 위에 짧은 제목만 얹는다. 긴 설명, CTA, 해시태그는 이미지에 넣지 않고 `caption` 필드에 둔다.
+캡션은 후크 한 줄, 맥락 2~3문장, CTA, 필요한 해시태그 순서로 쓴다. 투자 권유, 목표가, 수익 보장,
+확정 전망은 `forbiddenAngles` 와 동일하게 금지한다.
 
 ## 9. Phase 2 (규모·안정성 필요 시)
 

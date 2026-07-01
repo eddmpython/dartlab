@@ -15,6 +15,28 @@ episode:
     sourceHint: ""                       # NotebookLM m4a 경로(발행 시 --audio 로 지정)
     sourceDoc: script.md
 
+  image:
+    source: ""                           # 에피소드 폴더 기준 커버 소스. 예: cover.png
+    key: episodes/{slug}/cover-3000.jpg  # R2 업로드 키. 비우면 source 기준 기본값 사용
+  staticImage:
+    source: ""                           # 16:9 정적 영상 이미지 소스. 예: static-video.jpg
+    key: episodes/{slug}/static-video.jpg
+  thumbnail:
+    source: ""                           # staticImage 와 같으면 같은 파일 지정
+    key: episodes/{slug}/static-video.jpg
+  sourceAssets: []                       # HF media repo 에 보관할 재사용 원본 이미지
+  visual:
+    source: ""                           # 예: assets/source-gray.webp
+    kicker: "EP.00 · DartLab Podcast"
+    titleLines: []                       # 카드뉴스형 줄바꿈 제목
+    subtitle: ""
+    footer: ""
+  caption:
+    hook: ""
+    body: ""
+    cta: ""
+    hashtags: []
+
   audienceQuestion: "{독자 질문}"
   oneLineMessage: "{한 줄 요지}"
   summary: "{RSS description 원본, 2~3문장}"

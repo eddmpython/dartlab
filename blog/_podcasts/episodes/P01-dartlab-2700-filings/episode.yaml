@@ -16,6 +16,36 @@ episode:
     sourceHint: "Downloads/2700개기업공시를한줄로통합하는dartlab.m4a"
     sourceDoc: script.md                 # 이 오디오를 만든 소스 문서(향후 에피소드는 우리 파이프라인이 생성)
 
+  image:
+    source: cover.jpg
+    key: episodes/dartlab-2700-filings/cover-3000.jpg
+  staticImage:
+    source: static-video.jpg
+    key: episodes/dartlab-2700-filings/static-video.jpg
+  thumbnail:
+    source: static-video.jpg
+    key: episodes/dartlab-2700-filings/static-video.jpg
+  sourceAssets:
+    - source: assets/source-gray.webp
+      role: reusable-original
+      name: source-gray
+  visual:
+    source: assets/source-gray.webp
+    kicker: EP.01 · DartLab Podcast
+    titleLines:
+      - 2700개 기업 공시를
+      - 한 줄로 통합하는
+      - DartLab
+    subtitle: 공시와 재무제표를 하나의 격자로 읽는 첫 이야기
+    footer: 공시 원문 직독 · 재무제표 격자 · 근거 링크
+  caption:
+    hook: DartLab은 2700개 상장사 공시와 재무제표를 하나의 비교 격자로 묶는 분석 도구입니다.
+    body: >-
+      첫 에피소드에서는 회사마다 흩어진 공시 원문을 런타임에 직독하고,
+      숫자와 근거 링크를 함께 남기는 방식이 왜 필요한지 짚습니다.
+    cta: 전체 에피소드는 DartLab 팟캐스트에서 들을 수 있습니다.
+    hashtags: ["#DartLab", "#공시읽기", "#재무제표"]
+
   # 기획 요지
   audienceQuestion: DartLab은 대체 무엇을 해주는 도구인가?
   oneLineMessage: >-
