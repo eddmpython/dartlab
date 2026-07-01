@@ -264,8 +264,16 @@ class OpenAICompatibleProvider:
             return bool(self.config.baseUrl and self.config.apiKey)
         return bool(self.config.apiKey)
 
+    def _isOllama(self) -> bool:
+        """ollama 전용 네이티브 경로 분기 판정. 다른 provider 는 OpenAI SDK 경로 유지."""
+        return (self.config.provider or "").lower() == "ollama"
+
     def generate(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> ProviderTurn:
         """messages + tools → OpenAI responses 또는 chat.completions 호출 → ProviderTurn."""
+        # ollama 는 OpenAI-compat 엔드포인트가 num_ctx 를 무시 (기본 4096) 해 시스템 프롬프트+도구
+        # 스키마 (~8000 tok) 가 잘린다. 네이티브 /api/chat 로만 num_ctx 확대가 가능하다.
+        if self._isOllama():
+            return self._generateOllamaNative(messages, tools)
         try:
             from openai import OpenAI
         except Exception as exc:  # pragma: no cover - environment dependent
@@ -346,6 +354,10 @@ class OpenAICompatibleProvider:
         text 델타를 즉시 yield → UI typing 효과. 마지막 chunk 는 final=True + ProviderTurn.
         tool_calls streaming 처리는 Phase E 에서 — 현재는 final ProviderTurn 에서 한 번에.
         """
+        # ollama 네이티브 스트리밍 (num_ctx 확대 + thinking 분리). generate 와 동일 사유.
+        if self._isOllama():
+            yield from self._streamOllamaNative(messages, tools)
+            return
         try:
             from openai import OpenAI
         except Exception as exc:  # pragma: no cover
@@ -409,6 +421,181 @@ class OpenAICompatibleProvider:
             final=True,
             turn=ProviderTurn(content=accumulated, toolCalls=toolCalls, raw=None),
         )
+
+    # ollama 네이티브 /api/chat 경로.
+    # OpenAI-compat (/v1) 엔드포인트는 num_ctx 파라미터를 무시하고 서버 기본 (4096) 으로 로드한다.
+    # DartLab 챗은 시스템 프롬프트 (~5000 tok) + 도구 스키마 22 종 (~2950 tok) 만으로 baseline ~8000
+    # tok 이라 4096 창에서 프롬프트/도구 정의부터 잘려 답변 품질이 무너진다. 네이티브 /api/chat 의
+    # options.num_ctx 로만 창을 넓힐 수 있어 ollama 만 이 경로로 우회한다 (클라우드 provider 무영향).
+
+    def _ollamaNativeUrl(self) -> str:
+        """config.baseUrl (…/v1) 에서 네이티브 /api/chat URL 을 유도."""
+        base = (self.config.baseUrl or "http://127.0.0.1:11434/v1").rstrip("/")
+        if base.endswith("/v1"):
+            base = base[: -len("/v1")]
+        return f"{base}/api/chat"
+
+    def _ollamaOptions(self) -> dict[str, Any]:
+        """추론 옵션. num_ctx (VRAM 기반) + temperature."""
+        options: dict[str, Any] = {"num_ctx": _ollamaNumCtx()}
+        if self.config.temperature is not None:
+            options["temperature"] = self.config.temperature
+        return options
+
+    @staticmethod
+    def _toNativeMessages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """OpenAI 형식 messages 를 ollama 네이티브 형식으로 변환.
+
+        assistant.tool_calls[*].function.arguments 는 JSON 문자열이면 dict 로 변환 (네이티브는
+        object 기대). tool 역할은 {role, content} 로 단순화 (네이티브는 순서 매칭, tool_call_id
+        불필요). content=None (microcompact) 은 빈 문자열로.
+        """
+        import json as _json
+
+        out: list[dict[str, Any]] = []
+        for m in messages:
+            role = m.get("role")
+            if role == "assistant" and m.get("tool_calls"):
+                native_tcs: list[dict[str, Any]] = []
+                for tc in m["tool_calls"]:
+                    fn = tc.get("function") or {}
+                    args = fn.get("arguments")
+                    if isinstance(args, str):
+                        try:
+                            args = _json.loads(args or "{}")
+                        except (ValueError, TypeError):
+                            args = {}
+                    native_tcs.append({"function": {"name": fn.get("name"), "arguments": args or {}}})
+                out.append({"role": "assistant", "content": m.get("content") or "", "tool_calls": native_tcs})
+            elif role == "tool":
+                out.append({"role": "tool", "content": str(m.get("content") or "")})
+            else:
+                out.append({"role": role or "user", "content": str(m.get("content") or "")})
+        return out
+
+    @staticmethod
+    def _parseNativeToolCalls(msg: dict[str, Any], startIndex: int) -> list[ToolCall]:
+        """네이티브 message.tool_calls 를 ToolCall 리스트로. id 없으면 index 로 합성."""
+        out: list[ToolCall] = []
+        for offset, tc in enumerate(msg.get("tool_calls") or []):
+            fn = tc.get("function") or {}
+            args = fn.get("arguments")
+            if isinstance(args, str):
+                args = _parseToolArgs(args)
+            elif not isinstance(args, dict):
+                args = {}
+            out.append(
+                ToolCall(
+                    id=str(tc.get("id") or f"call_{startIndex + offset}"),
+                    name=str(fn.get("name") or ""),
+                    args=args,
+                )
+            )
+        return out
+
+    def _generateOllamaNative(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> ProviderTurn:
+        """네이티브 /api/chat 단발 (비스트리밍) 호출로 ProviderTurn 생성."""
+        import httpx
+
+        body: dict[str, Any] = {
+            "model": self.resolvedModel,
+            "messages": self._toNativeMessages(messages),
+            "stream": False,
+            "options": self._ollamaOptions(),
+            "keep_alive": "30m",
+        }
+        if tools:
+            body["tools"] = tools
+        resp = httpx.post(self._ollamaNativeUrl(), json=body, timeout=httpx.Timeout(300.0, connect=10.0))
+        resp.raise_for_status()
+        data = resp.json()
+        msg = data.get("message") or {}
+        return ProviderTurn(
+            content=str(msg.get("content") or ""),
+            toolCalls=self._parseNativeToolCalls(msg, 0),
+            raw=None,
+        )
+
+    def _streamOllamaNative(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]):
+        """네이티브 /api/chat 스트리밍으로 StreamChunk yield. thinking 필드는 답변에서 분리 (드롭)."""
+        import json as _json
+
+        import httpx
+
+        body: dict[str, Any] = {
+            "model": self.resolvedModel,
+            "messages": self._toNativeMessages(messages),
+            "stream": True,
+            "options": self._ollamaOptions(),
+            "keep_alive": "30m",
+        }
+        if tools:
+            body["tools"] = tools
+
+        accumulated = ""
+        toolCalls: list[ToolCall] = []
+        with httpx.stream(
+            "POST", self._ollamaNativeUrl(), json=body, timeout=httpx.Timeout(300.0, connect=10.0)
+        ) as resp:
+            resp.raise_for_status()
+            for line in resp.iter_lines():
+                if not line:
+                    continue
+                try:
+                    obj = _json.loads(line)
+                except ValueError:
+                    continue
+                msg = obj.get("message") or {}
+                text = msg.get("content") or ""
+                if text:
+                    accumulated += text
+                    yield StreamChunk(text=text)
+                if msg.get("tool_calls"):
+                    toolCalls.extend(self._parseNativeToolCalls(msg, len(toolCalls)))
+                if obj.get("done"):
+                    break
+
+        yield StreamChunk(
+            final=True,
+            turn=ProviderTurn(content=accumulated, toolCalls=toolCalls, raw=None),
+        )
+
+
+_OLLAMA_NUM_CTX_CACHE: int | None = None
+
+
+def _ollamaNumCtx() -> int:
+    """ollama num_ctx 결정. 환경변수 우선, 없으면 VRAM 기반. baseline 오버헤드 (~8000 tok) 커버 필수.
+
+    ``OLLAMA_NUM_CTX`` 환경변수로 명시 override. 미설정 시 GPU VRAM 으로 자동 산정
+    (8GB 는 16384, 6GB 는 12288, 그 미만은 8192). 결과는 프로세스 1 회 캐시.
+    """
+    global _OLLAMA_NUM_CTX_CACHE
+    if _OLLAMA_NUM_CTX_CACHE is not None:
+        return _OLLAMA_NUM_CTX_CACHE
+    env = os.environ.get("OLLAMA_NUM_CTX")
+    if env and env.isdigit() and int(env) > 0:
+        _OLLAMA_NUM_CTX_CACHE = int(env)
+        return _OLLAMA_NUM_CTX_CACHE
+    vram = 0
+    try:
+        from dartlab.ai.providers.support.ollamaSetup import _detectGpu
+
+        vram = _detectGpu().get("vram_mb") or 0
+    except Exception:  # noqa: BLE001
+        vram = 0
+    if vram >= 24000:
+        ctx = 32768
+    elif vram >= 12000:
+        ctx = 24576
+    elif vram >= 8000:
+        ctx = 16384
+    elif vram >= 6000:
+        ctx = 12288
+    else:
+        ctx = 8192
+    _OLLAMA_NUM_CTX_CACHE = ctx
+    return ctx
 
 
 def _parseToolArgs(rawArgs: Any) -> dict[str, Any]:
