@@ -37,6 +37,8 @@ import argparse
 import hashlib
 import json
 import re
+import shutil
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -54,6 +56,11 @@ BLOG_DIR = ROOT / "blog" / "05-company-reports"
 ISSUES_DIR = ROOT / "blog" / "_issues"  # standalone 이슈 캐러셀(블로그 글 없음) — code 없는 경제/시국 카드
 MEDIA_PREFIX = "carousels"
 ISSUE_MEDIA_PREFIX = "issues"  # 이슈 이미지 hfMedia 네임스페이스(companies/ 와 병렬, 콘텐츠해시 파일명)
+OG_MEDIA_PREFIX = "og"  # 브랜디드 OG 이미지 네임스페이스(og/<slug>.<hash8>.jpg)
+OG_TEMPLATE_VERSION = "2"  # 렌더 템플릿 버전. bump 하면 해시 바뀌어 전량 재렌더(예 bg 로드 회귀 수정)
+HF_MEDIA_RESOLVE = f"https://huggingface.co/datasets/{HF_MEDIA_REPO}/resolve/main"
+AVATAR_PATH = ROOT / "landing" / "static" / "avatar.png"  # OG 좌상단 아바타
+OG_RENDERER = ROOT / "blog" / "_scripts" / "render_og_cards.mjs"  # Node 배치 렌더러
 
 _SLIDE_LAYOUTS = ("editorial", "editorialBeat", "editorialStat")
 # 슬라이드가 채택하는 필드(나머지 키는 무시). image=semantic 파일명(해시 없음).
@@ -281,8 +288,105 @@ def build_contracts(blog_dir: Path = BLOG_DIR) -> dict[str, dict]:
 
 
 def _content_hash(path: Path) -> str:
-    """파일 콘텐츠 sha256 앞 8자 — served 파일명 캐시버스트(companies/ 의 hash8 동형)."""
+    """파일 콘텐츠 sha256 앞 8자. served 파일명 캐시버스트(companies/ 의 hash8 동형)."""
     return hashlib.sha256(path.read_bytes()).hexdigest()[:8]
+
+
+# 브랜디드 OG 이미지.
+# 카드 첫 슬라이드를 dartlab 에디토리얼 카드(그레이톤+아바타/dartlab+헤드라인) 1080x1350 JPEG 로 렌더해
+# HF og/<slug>.<hash>.jpg 로 올리고, 계약에 ogImage 를 실어 공유 워커 og:image 가 그걸 가리키게 한다.
+# 텍스트·로고 합성은 URL 필터로 불가, 엣지 런타임 생성은 무료 워커 용량 한계라 발행 시점 렌더가 정공.
+
+
+def _og_bg(post: dict, repo_files: set[str]) -> tuple[str | None, str | None]:
+    """첫 슬라이드 배경을 렌더용 소스로 해석. 반환 (bgUrl, bgId).
+    이슈: 로컬 assets webp(file:// · 신규 발행분도 HF 업로드 전 렌더 가능). 회사: HF url(이미 올라감).
+    bgId = og 파일명 해시 입력(콘텐츠 식별). 못 풀면 (None, None)."""
+    slides = post.get("slides") or []
+    if not slides:
+        return None, None
+    img = str(slides[0].get("image") or "")
+    if not img:
+        return None, None
+    if "/" in img:  # 이슈: issues/<slug>/<name>.<hash>.webp
+        parts = img.split("/")
+        if len(parts) >= 3:
+            slug, fname = parts[1], parts[-1]
+            name = fname.rsplit(".", 2)[0]  # <name>.<hash>.webp 에서 <name>
+            local = ISSUES_DIR / slug / "assets" / f"{name}.webp"
+            if local.exists():
+                return str(local), _content_hash(local)  # 로컬 절대경로(렌더러가 data URI 임베드)
+        return f"{HF_MEDIA_RESOLVE}/{img}", img  # 폴백: HF(기존 발행분)
+    # 회사: semantic 파일명을 companies/<key>/<name>.<hash>.webp 로 해석(repo_files 매칭)
+    code = str(post.get("code") or "")
+    key = code if (code.isdigit() and len(code) == 6) else code.upper()
+    prefix = f"companies/{key}/{img}."
+    match = next((f for f in sorted(repo_files) if f.startswith(prefix) and f.endswith(".webp")), None)
+    if match:
+        return f"{HF_MEDIA_RESOLVE}/{match}", match
+    return None, None
+
+
+def plan_og_images(contracts: dict[str, dict], repo_files: set[str], *, enabled: bool = True) -> list[dict]:
+    """각 계약에 ogImage(og/<slug>.<hash>.jpg) 를 설정하고, 아직 HF 에 없는 것들의 렌더 잡을 반환한다.
+    해시 = name+line+배경식별자. 입력 안 바뀌면 파일명 동일이라 재렌더·재업로드 스킵. enabled=False 면 no-op."""
+    jobs: list[dict] = []
+    if not enabled:
+        return jobs
+    for slug, c in contracts.items():
+        slides = c.get("slides") or []
+        line = str(slides[0].get("line") or "") if slides else ""
+        name = str(c.get("name") or "")
+        if not line:
+            continue
+        bg_url, bg_id = _og_bg(c, repo_files)
+        if not bg_url or not bg_id:
+            continue
+        h = hashlib.sha256(f"{OG_TEMPLATE_VERSION}\x00{name}\x00{line}\x00{bg_id}".encode()).hexdigest()[:8]
+        og_path = f"{OG_MEDIA_PREFIX}/{slug}.{h}.jpg"
+        c["ogImage"] = og_path
+        if og_path not in repo_files:
+            jobs.append({"slug": slug, "name": name, "line": line, "bg": bg_url, "og_path": og_path})
+    return jobs
+
+
+def render_og_images(jobs: list[dict], out_dir: Path, contracts: dict[str, dict]) -> list[CommitOperationAdd]:
+    """렌더 잡을 Node 배치 렌더러로 1080x1350 JPEG 생성 후 업로드 op 반환. Node/Playwright 부재·개별
+    실패는 경고 후 스킵(그 카드는 ogImage 제거 → 워커가 평사진 폴백). 발행 자체는 절대 막지 않는다."""
+    ops: list[CommitOperationAdd] = []
+    if not jobs:
+        return ops
+    node = shutil.which("node")
+    if not node:
+        sys.stderr.write("  OG 렌더 스킵: node 없음 (카드 og 없이 발행)\n")
+        for j in jobs:
+            contracts[j["slug"]].pop("ogImage", None)
+        return ops
+    for j in jobs:
+        j["out"] = str(out_dir / f"og_{j['slug']}.jpg")
+    manifest = out_dir / "og_manifest.json"
+    manifest.write_text(json.dumps(jobs, ensure_ascii=False), encoding="utf-8")
+    try:
+        r = subprocess.run(
+            [node, str(OG_RENDERER), str(manifest), str(AVATAR_PATH)],
+            capture_output=True,
+            text=True,
+            timeout=900,
+        )
+        if r.stderr:
+            sys.stderr.write("  [og] " + r.stderr.strip()[-800:] + "\n")
+    except Exception as exc:
+        sys.stderr.write(f"  OG 렌더 스킵(예외): {exc}\n")
+        for j in jobs:
+            contracts[j["slug"]].pop("ogImage", None)
+        return ops
+    for j in jobs:
+        out = Path(j["out"])
+        if out.exists() and out.stat().st_size > 0:
+            ops.append(CommitOperationAdd(path_in_repo=j["og_path"], path_or_fileobj=str(out)))
+        else:
+            contracts[j["slug"]].pop("ogImage", None)  # 산출 실패분은 폴백
+    return ops
 
 
 def build_issue_contracts(
@@ -375,6 +479,12 @@ def _stale_carousel_jsons(files: set[str]) -> set[str]:
     }
 
 
+def _stale_og_images(files: set[str], contracts: dict[str, dict]) -> set[str]:
+    """og/ 중 현재 어느 계약도 안 쓰는 옛 OG 파일(삭제 대상). 템플릿 버전 bump·헤드라인 변경 시 옛 해시 정리."""
+    used = {str(c["ogImage"]) for c in contracts.values() if c.get("ogImage")}
+    return {f for f in files if f.startswith(f"{OG_MEDIA_PREFIX}/")} - used
+
+
 def _plan_generated_at(folder: Path) -> str:
     """cards.plan.json 의 generatedAt(ISO). 같은 날짜(day) 안 발간 시각 2차 정렬키. 없으면 빈 문자열.
     커밋되는 값이라 CI 체크아웃에서도 유지된다(파일 mtime 은 체크아웃에서 리셋돼 못 쓴다)."""
@@ -415,6 +525,7 @@ def main() -> None:
     parser.add_argument(
         "--require-card-assets", action="store_true", help="cards.plan.json 의 모든 image_gen 산출물 존재 요구"
     )
+    parser.add_argument("--no-og", action="store_true", help="브랜디드 OG 이미지 렌더/업로드 건너뜀")
     args = parser.parse_args()
 
     # 발간 전 repo 파일 목록 1회(옛 json 삭제 + 이미 올라간 이슈 이미지 해시 스킵 양쪽에 씀).
@@ -462,13 +573,16 @@ def main() -> None:
         f"통과 {plan_stats['passed']}개 · 누락 {plan_stats['missing']}개"
     )
 
+    # 브랜디드 OG 계획. 계약에 ogImage 설정, 렌더 필요분(HF 미보유) 잡 목록. 렌더는 실제 발행에서만.
+    og_jobs = plan_og_images(contracts, repo_files, enabled=not args.no_og)
+
     posts = build_index(contracts)
     n_slides = sum(len(c["slides"]) for c in contracts.values())
     n_companies = len({c["code"] for c in contracts.values() if c.get("code")})
     n_issues = len(issue_contracts)
     print(
         f"계약: {len(contracts)}편 · {n_companies}개 회사 · {n_issues}개 이슈 · "
-        f"{n_slides}개 편집 슬라이드 · 이슈 이미지 {len(image_ops)}장 업로드 예정 (+ index.json)"
+        f"{n_slides}개 편집 슬라이드 · 이슈 이미지 {len(image_ops)}장 · OG 렌더 {len(og_jobs)}장 예정 (+ index.json)"
     )
 
     if args.dry_run:
@@ -489,14 +603,20 @@ def main() -> None:
 
     api = HfApi(token=_resolveHfToken())
     with tempfile.TemporaryDirectory() as td:
-        # 단일 파일 — 전 계약(슬라이드까지)을 index.json 하나에. per-slug 파일 안 만듦.
+        # OG 렌더 먼저(개별 실패분 ogImage 제거) → index.json 이 최종 ogImage 를 반영하게. 같은 commit.
+        og_ops = render_og_images(og_jobs, Path(td), contracts)
+        # 단일 파일. 전 계약(슬라이드까지)을 index.json 하나에. per-slug 파일 안 만듦.
         idx = Path(td) / "index.json"
         idx.write_text(json.dumps({"posts": posts}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         ops: list = [CommitOperationAdd(path_in_repo=f"{MEDIA_PREFIX}/index.json", path_or_fileobj=str(idx))]
-        ops += image_ops  # 이슈 이미지(issues/<slug>/...) 동시 업로드 — 같은 commit
-        # 그 외 carousels/*.json(옛 code-키·옛 per-slug) 전부 삭제 — 단일 index.json 만 유지(폴더 청결).
+        ops += image_ops  # 이슈 이미지(issues/<slug>/...) 동시 업로드. 같은 commit
+        ops += og_ops  # 브랜디드 OG 이미지(og/<slug>.<hash>.jpg)
+        # 그 외 carousels/*.json(옛 code-키·옛 per-slug) 전부 삭제. 단일 index.json 만 유지(폴더 청결).
         stale = sorted(_stale_carousel_jsons(repo_files))
         ops += [CommitOperationDelete(path_in_repo=p) for p in stale]
+        # 안 쓰는 옛 OG(버전 bump·헤드라인 변경 잔재) 정리.
+        stale_og = sorted(_stale_og_images(repo_files, contracts))
+        ops += [CommitOperationDelete(path_in_repo=p) for p in stale_og]
         retryHfCall(
             api.create_commit,
             repo_id=args.repo,
@@ -504,12 +624,12 @@ def main() -> None:
             operations=ops,
             commit_message=(
                 f"carousels: {len(contracts)} posts ({n_companies} companies, {n_issues} issues), "
-                f"+{len(image_ops)} issue imgs, -{len(stale)} stale"
+                f"+{len(image_ops)} issue imgs, +{len(og_ops)} og imgs, -{len(stale)} stale"
             ),
         )
     print(
-        f"완료 — {args.repo} carousels/index.json 게시({len(contracts)}편, 이슈 {n_issues} · "
-        f"이미지 +{len(image_ops)} · 옛 {len(stale)}개 삭제)."
+        f"완료. {args.repo} carousels/index.json 게시({len(contracts)}편, 이슈 {n_issues} · "
+        f"이미지 +{len(image_ops)} · OG +{len(og_ops)} · 옛 {len(stale)}개 삭제)."
     )
 
 

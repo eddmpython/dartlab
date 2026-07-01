@@ -59,10 +59,11 @@ async function resolveOgImage(post, companiesIndex) {
 	return asset ? `${MEDIA_BASE}/companies/${key}/${asset.name}` : null;
 }
 
-// hfMedia 원본(webp) URL → og:image 용 wsrv.nl JPEG 링크(1080x1350 4:5, baseline). 크롤러 호환 통일 +
-// greyscale(에디토리얼 카드 톤). 크롤러 호환 위해 JPEG, 그레이톤은 카드 정체성.
-function ogImageUrl(src) {
-	return `https://wsrv.nl/?url=${encodeURIComponent(src)}&output=jpg&w=1080&h=1350&fit=cover&q=88&filt=greyscale`;
+// hfMedia URL → og:image 용 wsrv.nl JPEG 링크(1080x1350 4:5, baseline). 크롤러 호환 위해 JPEG 통일.
+// grey=true 면 그레이톤 필터(평사진 폴백용). 발행 시 구운 브랜디드 OG 는 이미 그레이톤이라 grey=false.
+function ogImageUrl(src, grey = true) {
+	const f = grey ? '&filt=greyscale' : '';
+	return `https://wsrv.nl/?url=${encodeURIComponent(src)}&output=jpg&w=1080&h=1350&fit=cover&q=88${f}`;
 }
 
 // 캡션 산문 첫 문단 → og:description(180자 이하). 없으면 첫 슬라이드 line.
@@ -106,10 +107,17 @@ export default {
 		const post = await loadPost(slug, ctx);
 		if (!post) return Response.redirect(target, 302); // 없는 슬러그 → 그냥 피드/딥링크로
 
-		const companies = post.code ? await cachedJson(`${MEDIA_BASE}/companies/index.json`, 600, ctx) : null;
-		const ogSrc = await resolveOgImage(post, companies);
-		// og:image 는 wsrv.nl 변환 JPEG 직접 링크(위 ⚠ B). HF resolve 를 직접 쓰지 않는다.
-		const ogImage = ogSrc ? ogImageUrl(ogSrc) : null;
+		// og:image 우선순위: (1) 발행 시 구운 브랜디드 OG(og/<slug>.<hash>.jpg, 그레이톤+아바타/dartlab+헤드라인)
+		// → (2) 없으면 첫 슬라이드 평사진(그레이톤 필터). 둘 다 wsrv.nl JPEG 링크(위 ⚠ B, HF resolve 직접 금지).
+		let ogImage = null;
+		const ogPath = typeof post.ogImage === 'string' && post.ogImage ? post.ogImage : null;
+		if (ogPath) {
+			ogImage = ogImageUrl(`${MEDIA_BASE}/${ogPath}`, false); // 구운 OG 는 이미 그레이톤
+		} else {
+			const companies = post.code ? await cachedJson(`${MEDIA_BASE}/companies/index.json`, 600, ctx) : null;
+			const ogSrc = await resolveOgImage(post, companies);
+			ogImage = ogSrc ? ogImageUrl(ogSrc, true) : null;
+		}
 		const title = String(post.title || post.name || 'DartLab 카드').trim();
 		const desc = ogDescription(post);
 		const shareUrl = `${url.origin}/c/${encodeURIComponent(slug)}`;
