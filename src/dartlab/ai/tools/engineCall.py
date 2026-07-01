@@ -809,7 +809,7 @@ def _statementMarkdown(companyName: str, stockCode: str, statement: str, summary
             lines.append(f"| {row['item']} | " + " | ".join(cells) + " |")
         if len(periods) > 12:
             lines.append("")
-            lines.append(f"(직전 {len(header_periods)} 분기만 표기 — 전체 {len(periods)} 분기는 timeseries 필드 참조)")
+            lines.append(f"(직전 {len(header_periods)} 분기만 표기. 전체 {len(periods)} 분기는 timeseries 필드 참조)")
     else:
         lines.append("| 항목 | 값 |")
         lines.append("|---|---:|")
