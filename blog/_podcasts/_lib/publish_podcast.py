@@ -184,7 +184,10 @@ def normalize_cover(src: Path, out_jpg: Path, size: int = 3000, max_bytes: int =
     w, h = im.size
     s = min(w, h)
     left, top = (w - s) // 2, (h - s) // 2
-    im = im.crop((left, top, left + s, top + s)).resize((size, size), Image.LANCZOS)
+    im = im.crop((left, top, left + s, top + s))
+    # Apple 최소 1400, 소스보다 크게 억지 업스케일 안 함, 상한 size(3000)
+    target = min(size, max(s, 1400))
+    im = im.resize((target, target), Image.LANCZOS)
     q = 90
     while q >= 40:
         im.save(out_jpg, "JPEG", quality=q, optimize=True)
