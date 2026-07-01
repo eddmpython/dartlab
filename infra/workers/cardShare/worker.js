@@ -6,8 +6,13 @@
 // 한다. hfProxy·news 워커가 "정적 사이트가 못 하는 라이브 HF 브리지"를 하는 것과 같은 패턴.
 //
 // 라우트:
-//   GET /c/<slug>   : 크롤러용 OG 메타 HTML + 사람용 즉시 리다이렉트(LANDING_BASE/cards?post=<slug>).
+//   GET /c/<slug>   : 크롤러용 OG 메타 HTML + 사람용 JS 리다이렉트(LANDING_BASE/cards?post=<slug>).
 //   GET /og/<slug>  : 첫 슬라이드 이미지를 워커가 직접 프록시(안정 200 image/webp).
+//
+// ⚠ 사람 이동은 JS(location.replace)로만 한다. <meta http-equiv="refresh"> 는 금지 : 크롤러는 JS 를 안
+//   돌리지만 meta refresh 는 따라가서, OG 없는 landing SPA(github.io/cards)로 넘어가 미리보기가 빈다.
+//   canonical 도 self(워커 shareUrl)로 둬야 Meta 가 OG 를 landing 으로 재귀속하지 않는다. JS 꺼진 사람은
+//   body 의 폴백 링크로 이동.
 //
 // ⚠ og:image 는 워커 자기 오리진의 /og/<slug> 를 가리킨다. hfMedia resolve URL 을 직접 og:image 로 쓰면
 //   크롤러(카톡·페북·스레드·X)가 못 읽는다. HF Xet 이관 후 resolve 는 (1) 302 크로스도메인 리다이렉트,
@@ -143,7 +148,7 @@ export default {
 		const desc = ogDescription(post);
 		const shareUrl = `${url.origin}/c/${encodeURIComponent(slug)}`;
 
-		// 크롤러용 OG/twitter 메타 + 사람용 즉시 리다이렉트. body 는 폴백 링크만(JS 꺼져도 이동 가능).
+		// 크롤러용 OG/twitter 메타 + 사람용 JS 리다이렉트(meta refresh 금지, 위 ⚠ 참조). body 는 폴백 링크.
 		const html = `<!doctype html>
 <html lang="ko">
 <head>
@@ -166,8 +171,7 @@ ${ogImage ? `<meta property="og:image" content="${esc(ogImage)}">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(desc)}">
 ${ogImage ? `<meta name="twitter:image" content="${esc(ogImage)}">` : ''}
-<link rel="canonical" href="${esc(target)}">
-<meta http-equiv="refresh" content="0; url=${esc(target)}">
+<link rel="canonical" href="${esc(shareUrl)}">
 <script>location.replace(${JSON.stringify(target)});</script>
 </head>
 <body style="background:#030509;color:#f1f5f9;font-family:system-ui,sans-serif;text-align:center;padding:18vh 8vw">

@@ -12,7 +12,7 @@
 - `GET /c/<slug>`:
   1. `carousels/index.json` 라이브 read(엣지 캐시 10분, index 는 가변).
   2. slug 로 캐러셀 → `og:title`(제목) · `og:description`(캡션 첫 문단) · `og:image`(워커 `/og/<slug>` 프록시).
-  3. 크롤러는 메타만, 사람은 `LANDING_BASE/cards?post=<slug>` 로 즉시 리다이렉트.
+  3. 크롤러는 메타만 읽고 워커 페이지에 머문다(canonical=self). 사람은 **JS(`location.replace`)로만** `LANDING_BASE/cards?post=<slug>` 로 이동. ⚠ `<meta http-equiv="refresh">` 는 쓰지 않는다(크롤러가 따라가 OG 없는 landing SPA 로 넘어가 미리보기가 빔).
 - `GET /og/<slug>` (또는 `/og/<slug>.webp`): 첫 슬라이드 이미지를 워커가 **직접 프록시**해 안정 200 `image/webp` 로 서빙.
   - 이슈 카드: 이미지가 `issues/<slug>/...` hfMedia 경로라 그대로.
   - 회사 카드: `companies/index.json` 으로 semantic 파일명 해석.
