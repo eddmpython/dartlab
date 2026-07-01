@@ -39,11 +39,15 @@ _REGULAR = set(SUPPORTED_REGULAR_FORMS)
 
 
 def _cikToTicker() -> dict[str, str]:
-    """CIK(0-padded 10) → ticker(대문자). 상장 universe 만 — 미상장 CIK 공시는 피드 제외."""
-    from dartlab.core.dataLoader import loadEdgarListedUniverse
+    """CIK(0-padded 10) → 대표(보통주) 티커. 상장 universe 만(미상장 CIK 공시는 피드 제외).
 
-    univ = loadEdgarListedUniverse()
-    return {str(c).zfill(10): str(t).upper() for c, t in zip(univ["cik"].to_list(), univ["ticker"].to_list()) if t}
+    edgarCikToTicker(first-wins) 재사용. 단순 last-wins dict 는 JPM CIK 를 VYLD(구조화상품)로 오키잉해
+    JPM·T 공시가 통째 누락됐다. finance·valuation·report 빌더와 동일 canonical 공유(stockCode 키 일관성).
+    """
+    from dartlab.core.dataLoader import loadEdgarListedUniverse
+    from dartlab.scan.builders.edgar.helpers import edgarCikToTicker
+
+    return edgarCikToTicker(loadEdgarListedUniverse())
 
 
 def _hfBaseFrame() -> pl.DataFrame | None:
