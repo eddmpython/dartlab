@@ -2,7 +2,6 @@
 	// 챗 사이드바. 브랜드 + 테마토글 + [새 대화] + 검색 + 대화이력(고정·이름변경·삭제) + 전체삭제.
 	// 옛 ui/web AppSidebar 의 AskNav 를 runes 로 옮긴 것.
 	import { base } from '$app/paths';
-	import { theme } from './theme.svelte';
 	import type { ChatStore, Conversation } from './chatStore.svelte';
 
 	let { store }: { store: ChatStore } = $props();
@@ -49,19 +48,9 @@
 <aside class="sidebar">
 	<header class="brand">
 		<a class="id" href={base || '/'}>
-			<img src="{base}/avatar.png" alt="DartLab" width="32" height="32" />
-			<span class="txt">
-				<strong>DartLab</strong>
-				<em>local · 챗</em>
-			</span>
+			<img src="{base}/avatar.png" alt="DartLab" width="30" height="30" />
+			<strong>DartLab</strong>
 		</a>
-		<button class="icon" onclick={() => theme.toggle()} aria-label="테마 전환" title="테마 전환">
-			{#if theme.value === 'dark'}
-				<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
-			{:else}
-				<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></svg>
-			{/if}
-		</button>
 	</header>
 
 	<button class="new" onclick={() => store.newConversation()}>
@@ -165,35 +154,9 @@
 		border-radius: 8px;
 		flex-shrink: 0;
 	}
-	.txt {
-		display: grid;
-		min-width: 0;
-		line-height: 1.15;
-	}
-	.txt strong {
-		font-size: 0.9rem;
+	.id strong {
+		font-size: 0.95rem;
 		font-weight: 600;
-	}
-	.txt em {
-		font-style: normal;
-		font-size: 0.72rem;
-		color: var(--dl-ink-mute, #6b7280);
-	}
-	.icon {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 1.9rem;
-		height: 1.9rem;
-		border-radius: 7px;
-		border: none;
-		background: none;
-		color: var(--dl-ink-dim, #9aa0aa);
-		cursor: pointer;
-	}
-	.icon:hover {
-		background: var(--dl-bg-raised, #16171a);
-		color: var(--dl-ink, #e7e7ea);
 	}
 	.new {
 		display: flex;

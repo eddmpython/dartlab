@@ -9,6 +9,7 @@
 	import Sidebar from '$lib/chat/Sidebar.svelte';
 	import Composer from '$lib/chat/Composer.svelte';
 	import Markdown from '$lib/chat/Markdown.svelte';
+	import SnsLinks from '$lib/chat/SnsLinks.svelte';
 
 	const runtime = getLocalRuntime();
 	const store = new ChatStore(runtime.ai);
@@ -16,13 +17,6 @@
 	let draft = $state('');
 	let scroller: HTMLDivElement | null = $state(null);
 	let sidebarOpen = $state(true);
-
-	const tierLabel: Record<string, string> = {
-		advanced: '고급 엔진',
-		onDevice: '온디바이스',
-		deterministic: '결정론',
-		none: '비활성'
-	};
 
 	const suggestions = [
 		'삼성전자 005930 최근 5년 매출과 영업이익 추이',
@@ -72,7 +66,9 @@
 
 	function onCode(e: Event): void {
 		const v = (e.target as HTMLInputElement).value;
-		if (active) active.code = v;
+		if (!store.active) store.newConversation();
+		const a = store.active;
+		if (a) a.code = v;
 	}
 </script>
 
@@ -86,31 +82,13 @@
 	{/if}
 
 	<main class="main">
-		<header class="topbar">
+		<div class="topstrip">
 			<button class="ghost" onclick={() => (sidebarOpen = !sidebarOpen)} aria-label="사이드바 토글" title="사이드바">
 				<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></svg>
 			</button>
-			<div class="crumb">
-				<span>챗</span>
-				{#if store.capabilitiesLoaded}
-					<span class="tier" class:adv={cap?.tier === 'advanced'}>{tierLabel[cap?.tier ?? 'none'] ?? '비활성'}</span>
-				{/if}
-			</div>
-			<div class="ctx">
-				<input
-					class="codein"
-					value={active?.code ?? ''}
-					oninput={onCode}
-					placeholder="종목 컨텍스트 (선택, 6자리)"
-					inputmode="numeric"
-					maxlength="6"
-					aria-label="종목 컨텍스트 코드"
-				/>
-				{#if hasCode}
-					<a class="goterm" href={`${base}/terminal/${code}`}>터미널 →</a>
-				{/if}
-			</div>
-		</header>
+			<div class="spacer"></div>
+			<SnsLinks />
+		</div>
 
 		{#if cap?.upgradeHint}
 			<div class="hint">{cap.upgradeHint}</div>
@@ -185,13 +163,20 @@
 
 		<div class="dock">
 			<div class="col">
-				{#if cap && (cap.providerLabel || cap.modelLabel)}
-					<div class="model">
-						<span class="pip" class:adv={cap.tier === 'advanced'}></span>
-						{#if cap.providerLabel}<span class="prov">{cap.providerLabel}</span>{/if}
-						{#if cap.modelLabel}<span class="mdl">{cap.modelLabel}</span>{/if}
-					</div>
-				{/if}
+				<div class="ctxrow">
+					<input
+						class="codein"
+						value={active?.code ?? ''}
+						oninput={onCode}
+						placeholder="종목 컨텍스트 (선택, 6자리)"
+						inputmode="numeric"
+						maxlength="6"
+						aria-label="종목 컨텍스트 코드"
+					/>
+					{#if hasCode}
+						<a class="goterm" href={`${base}/terminal/${code}`}>터미널 →</a>
+					{/if}
+				</div>
 				<Composer
 					bind:value={draft}
 					busy={store.busy}
@@ -217,12 +202,14 @@
 		min-width: 0;
 		height: 100vh;
 	}
-	.topbar {
+	.topstrip {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
-		padding: 0.6rem 1rem;
-		border-bottom: 1px solid var(--dl-line, #2a2c33);
+		gap: 0.5rem;
+		padding: 0.5rem 0.75rem;
+	}
+	.spacer {
+		flex: 1;
 	}
 	.ghost {
 		display: inline-flex;
@@ -240,30 +227,11 @@
 		background: var(--dl-bg-raised, #16171a);
 		color: var(--dl-ink, #e7e7ea);
 	}
-	.crumb {
+	.ctxrow {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		font-size: 0.9rem;
-		font-weight: 600;
-	}
-	.tier {
-		font-size: 0.68rem;
-		font-weight: 500;
-		padding: 0.1rem 0.45rem;
-		border-radius: 999px;
-		border: 1px solid var(--dl-line, #2a2c33);
-		color: var(--dl-ink-mute, #6b7280);
-	}
-	.tier.adv {
-		color: var(--dl-accent, #ff5a36);
-		border-color: var(--dl-accent, #ff5a36);
-	}
-	.ctx {
-		margin-left: auto;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
+		margin-bottom: 0.5rem;
 	}
 	.codein {
 		width: 11rem;
@@ -491,29 +459,5 @@
 	.dock {
 		border-top: 1px solid var(--dl-line, #2a2c33);
 		padding: 0.75rem 0 1rem;
-	}
-	.model {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.4rem;
-		margin-bottom: 0.5rem;
-		font-size: 0.74rem;
-		color: var(--dl-ink-mute, #6b7280);
-	}
-	.pip {
-		width: 0.5rem;
-		height: 0.5rem;
-		border-radius: 50%;
-		background: var(--dl-ink-mute, #6b7280);
-	}
-	.pip.adv {
-		background: var(--dl-good, #46d39a);
-	}
-	.model .prov {
-		color: var(--dl-ink-dim, #9aa0aa);
-	}
-	.model .mdl {
-		font-family: var(--dl-font-mono, ui-monospace, monospace);
 	}
 </style>
