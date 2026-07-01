@@ -51,7 +51,7 @@ whenToUse:
 | **구조 / 계층** | architecture · code · apiContract · refactorChecklist |
 | **테스트 / 검증** | testing · engineAudit · skillDevelopmentLoop |
 | **운영 / CLI** | cliMaintenance · contributionWorkflow · issues · recipePromote |
-| **데이터 / 매핑** | mappingRefresh · docsBuilderRefactor |
+| **데이터 / 매핑** | mappingRefresh · docsBuilderRefactor · dataDownloadCenter (공개 parquet 서빙·라이브 API) |
 | **AI / Skill** | aiEngine · aiProductReplatform · extendSkills · intentBoosts · opsAsSkills · skillMarket · docstringStandard |
 | **UI / 시각** | dashboardDesign · ui |
 | **분석 시나리오** | sixActsAnalysis (회사 간 비교는 engines.panel `dartlab.compare`) |
