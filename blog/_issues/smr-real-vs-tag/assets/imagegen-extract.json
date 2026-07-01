@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-01T13:16:16.593373+00:00",
+  "cardCrop4x5": true,
+  "assets": [
+    {
+      "file": "scene-01-cover-hook.webp",
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/smr-real-vs-tag/assets/scene-01-cover-hook.webp\nAsset key: scene-01-cover-hook\nKeywords for session extraction: SMR, smr-real-vs-"
+    },
+    {
+      "file": "scene-02-business-context.webp",
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/smr-real-vs-tag/assets/scene-02-business-context.webp\nAsset key: scene-02-business-context\nKeywords for session extraction: SMR, "
+    },
+    {
+      "file": "scene-04-narrative-turn.webp",
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/smr-real-vs-tag/assets/scene-04-narrative-turn.webp\nAsset key: scene-04-narrative-turn\nKeywords for session extraction: SMR, smr-"
+    },
+    {
+      "file": "scene-06-business-context.webp",
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/smr-real-vs-tag/assets/scene-06-business-context.webp\nAsset key: scene-06-business-context\nKeywords for session extraction: SMR, "
+    },
+    {
+      "file": "scene-07-number-evidence.webp",
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/smr-real-vs-tag/assets/scene-07-number-evidence.webp\nAsset key: scene-07-number-evidence\nKeywords for session extraction: SMR, sm"
+    },
+    {
+      "file": "scene-08-closing-checkpoint.webp",
+      "promptPreview": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/smr-real-vs-tag/assets/scene-08-closing-checkpoint.webp\nAsset key: scene-08-closing-checkpoint\nKeywords for session extraction: S"
+    }
+  ]
+}

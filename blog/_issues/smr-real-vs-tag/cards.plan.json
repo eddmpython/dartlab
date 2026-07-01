@@ -1,0 +1,372 @@
+{
+  "version": 4,
+  "generatedAt": "2026-07-01T13:01:18.461169+00:00",
+  "target": {
+    "kind": "issue",
+    "slug": "smr-real-vs-tag",
+    "stockCode": "",
+    "corpName": "SMR",
+    "title": "완성된 SMR은 세계에 0기, 그런데 그 전기는 벌써 9.7GW가 팔렸습니다",
+    "postPath": "blog/_issues/smr-real-vs-tag/carousel.yaml",
+    "assetRoot": "blog/_issues/smr-real-vs-tag/assets",
+    "planPath": "blog/_issues/smr-real-vs-tag/cards.plan.json"
+  },
+  "planning": {
+    "blogThesis": "완성된 SMR은 세계에 아직 0기입니다. 그런데 구글·아마존·마이크로소프트·메타는 아직 짓지도 않은 원전 전기를 합쳐 약 9.7GW 미리 계약했습니다. AI 데이터센터 전력난 때문입니다.",
+    "cardThesis": "완성된 SMR은 세계에 아직 0기입니다. 그런데 구글·아마존·마이크로소프트·메타는 아직 짓지도 않은 원전 전기를 합쳐 약 9.7GW 미리 계약했습니다. AI 데이터센터 전력난 때문입니다.",
+    "audienceQuestion": "완성된 SMR은 세계에 0기, 그런데 그 전기는 벌써 9.7GW가 팔렸습니다 이슈를 /cards에서 볼 때 마지막에 무엇을 확인해야 하나?",
+    "blogAndCardsTogether": false,
+    "narrativeContract": {
+      "spine": "훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문",
+      "rules": [
+        "한 주제 안에서 훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문으로 이어진다.",
+        "각 슬라이드는 앞장의 주장이나 숫자를 받아 다음 장으로 넘겨야 한다.",
+        "서로 끊긴 체크리스트, '다음에는 이것을 본다'식 나열, 새 항목만 덧붙이는 끝맺음은 실패다.",
+        "마지막 장은 새 정보를 추가하는 장이 아니라 앞선 주장과 근거를 종합해 독자가 남길 판단 질문으로 닫는다.",
+        "기/승/전/결 같은 구조명은 내부 기획에만 쓰고 카드 위 라벨로 노출하지 않는다."
+      ]
+    },
+    "bigSentenceContract": {
+      "slideRange": "7장 이상(7~10장 권장, 필요하면 초과)",
+      "mainTextFields": {
+        "editorial": "line",
+        "editorialBeat": "line",
+        "editorialStat": "context"
+      },
+      "rules": [
+        "카드는 7장 이상으로 잡고, 큰문장만 이어 읽어도 한 편의 짧은 글처럼 이해되어야 한다.",
+        "각 장의 큰문장은 단어·라벨·메모가 아니라 앞장 뒤에 붙는 완성 문장이어야 한다.",
+        "숫자 카드는 bigNumber만 던지지 말고 context에 그 숫자가 앞장 주장과 어떻게 이어지는지 문장으로 쓴다.",
+        "중간 장은 '이 구조', '그 결과', '하지만', '그래서', '결국'처럼 앞장과의 관계를 자연스럽게 드러낸다.",
+        "마지막 장은 새 항목 소개가 아니라 앞선 흐름에서 나온 판단 문장으로 닫는다."
+      ],
+      "strip": [
+        {
+          "order": 1,
+          "layout": "editorial",
+          "mainText": "완성된 SMR은 세계에 아직 0기입니다"
+        },
+        {
+          "order": 2,
+          "layout": "editorial",
+          "mainText": "이유는 AI 데이터센터입니다"
+        },
+        {
+          "order": 3,
+          "layout": "editorialBeat",
+          "mainText": "그래서 빅테크 네 곳이 아직 짓지도 않은 원전 전기를 9.7GW 미리 샀습니다"
+        },
+        {
+          "order": 4,
+          "layout": "editorialBeat",
+          "mainText": "수요는 확정입니다. 그럼 그 전기를 댈 진짜 선수는 여러 나라에 흩어져 있습니다"
+        },
+        {
+          "order": 5,
+          "layout": "editorialBeat",
+          "mainText": "여기서 태그가 아니라 실제로 쥔 것으로 갈라 봅니다"
+        },
+        {
+          "order": 6,
+          "layout": "editorial",
+          "mainText": "그런데 연료가 병목입니다. 미국 HALEU는 센트러스가 이제 시작했을 뿐입니다"
+        },
+        {
+          "order": 7,
+          "layout": "editorialStat",
+          "mainText": "4.3조 분기 매출: 한국의 자리는 설계가 아니라 부품입니다. 두산에너빌리티가 뉴스케일 핵심 부품을 대는 파트너입니다. 두산은 이미 2026년 1분기 매출 4.3조원, 영업이익 2,335억원 흑자인 실체 기업이고, SMR은 그 위에 얹는 새 자리입니다."
+        },
+        {
+          "order": 8,
+          "layout": "editorialBeat",
+          "mainText": "결국 태그가 아니라, 실제 계약과 연료 일정을 함께 봐야 합니다"
+        }
+      ]
+    },
+    "plainLanguageContract": {
+      "rules": [
+        "카드 문장은 독자가 소리 내어 읽어도 자연스러운 한국어 문장이어야 한다.",
+        "전문용어와 약어를 앞세우지 말고 쉬운 말로 먼저 설명한다.",
+        "꼭 필요한 산업 용어는 짧은 설명에 풀어 쓰되, 슬라이드 본문은 가능한 쉬운 말로 쓴다.",
+        "브랜드명과 공식 제품명은 허용하지만, 의미를 설명하지 않은 약어는 실패다."
+      ],
+      "preferredRewrites": {
+        "ARR": "연간 반복 매출",
+        "EDR": "단말 보안 대응",
+        "SOC": "보안 관제",
+        "FCF": "잉여현금흐름",
+        "ID": "계정",
+        "CDMO": "위탁개발생산",
+        "HBM": "고대역폭 메모리",
+        "HBM4E": "차세대 고대역폭 메모리",
+        "GPU": "그래픽처리장치",
+        "MR-MUF": "보호재 충전 패키징",
+        "Gbps": "기가비트/초"
+      }
+    },
+    "insightContract": {
+      "rules": [
+        "통념(commonBelief): 독자가 당연하게 여기는 상식·헤드라인 관점을 한 문장으로 적는다.",
+        "반전 사실(twistFact): 그 통념과 충돌하는, 공시 직독으로 확인한 단 하나의 사실 + 왜 그게 가능한가(메커니즘)를 적는다. 제목·캡션의 재진술이면 인사이트가 아니다.",
+        "그래서 볼 것(whatToWatch): 독자가 이 덱을 본 뒤 앞으로 무엇을 다르게 볼지(렌즈·관전 포인트)를 적는다.",
+        "evidenceRefs: 반전·렌즈를 떠받치는 실측 수치나 ref 를 최소 1개 이상 적는다(분모·기간 명시)."
+      ],
+      "commonBelief": "SMR 하면 두산에너빌리티, SMR은 한국의 이야기라고 생각합니다. 소형 원전은 아직 먼 미래의 기술이라 지금 사고팔 것도 없다고 여깁니다.",
+      "twistFact": "상업 가동 중인 SMR은 세계에 아직 0기입니다. 그런데 구글·아마존·마이크로소프트·메타는 아직 짓지도 않은 SMR의 전기를 합쳐 약 9.7GW어치 미리 계약했습니다. AI 데이터센터 전력난 때문입니다. 그 전기를 댈 진짜 선수는 자리마다 소수로 좁혀집니다. 설계 선수는 미국·영국에 여럿이지만 미국 규제당국(NRC) 설계 인증을 받은 곳은 뉴스케일 하나뿐이고, HALEU 연료를 미국에서 생산하기 시작한 곳은 센트러스 하나입니다. 한국(두산에너빌리티)은 설계가 아니라 뉴스케일 부품 공급으로 그 레이스에 낍니다. 즉 이름표가 붙은 회사는 많은데 실제 인증·계약·연료·부품을 쥔 곳은 자리마다 하나둘입니다. 그 병목이 연료입니다. HALEU 대량 생산 설비가 아직 러시아·중국에 묶여 있어 서방 밖에서 안 풀리면 미리 산 전기의 배치가 밀릴 수 있습니다.",
+      "whatToWatch": "SMR 관련주는 테마 태그가 아니라 실제로 무엇을 쥐었는지(NRC 설계 인증·빅테크 구매계약·부품 공급·연료 생산)로 나눠서 봅니다. 그리고 연료 병목을 함께 봅니다. HALEU 대량 생산이 러시아·중국 밖에서 풀리는 속도가, 빅테크가 미리 산 약 9.7GW가 언제 실제 전기가 되는지를 가릅니다.",
+      "evidenceRefs": [
+        "완성 SMR 세계 0기, 첫 착공 GE Hitachi BWRX-300(캐나다 달링턴), 첫 가동 2029~2030 목표(뉴스)",
+        "빅테크 원전 커밋 합계 약 9.7GW: 구글-카이로스 500MW, 아마존-엑스에너지 7억달러·12기, MS-스리마일 835MW·160억달러, 메타-오클로 1~4GW(뉴스 2026.5)",
+        "NRC 설계 인증 유일=뉴스케일(NYSE SMR), 미국 HALEU 생산 시작 유일=센트러스(NYSE LEU)(뉴스)",
+        "두산에너빌리티 뉴스케일 부품 공급 파트너, 삼성물산·GS에너지 뉴스케일 투자(뉴스)",
+        "두산에너빌리티 2026Q1 매출 4.3조원·영업이익 2,335억원 흑자·투자등급(공시 직독)",
+        "HALEU 대량 생산 설비는 아직 러시아·중국만 보유(뉴스)"
+      ]
+    },
+    "visualPlan": [
+      {
+        "order": 3,
+        "kind": "table",
+        "shape": [
+          "빅테크",
+          "SMR 전력 계약"
+        ],
+        "rows": 4,
+        "proves": "네 곳 합쳐 약 9.7GW. 완성품 0기인데 전기는 이미 팔렸습니다."
+      },
+      {
+        "order": 5,
+        "kind": "table",
+        "shape": [
+          "선수",
+          "실제로 쥔 것",
+          "상장"
+        ],
+        "rows": 5,
+        "proves": "태그만 붙은 곳과, 실제로 무엇을 쥔 곳이 갈립니다."
+      }
+    ],
+    "bodyPreview": "",
+    "imageSourcing": {
+      "status": "generated",
+      "tool": "image_gen",
+      "checkedAt": "2026-07-01T13:16:00+00:00",
+      "cards": [
+        {
+          "order": 1,
+          "assetKey": "scene-01-cover-hook",
+          "file": "assets/scene-01-cover-hook.webp",
+          "fit": "unfinished SMR site plus data center transmission context"
+        },
+        {
+          "order": 2,
+          "assetKey": "scene-02-business-context",
+          "file": "assets/scene-02-business-context.webp",
+          "fit": "AI data center electricity demand context"
+        },
+        {
+          "order": 4,
+          "assetKey": "scene-04-narrative-turn",
+          "file": "assets/scene-04-narrative-turn.webp",
+          "fit": "global map of split SMR roles"
+        },
+        {
+          "order": 6,
+          "assetKey": "scene-06-business-context",
+          "file": "assets/scene-06-business-context.webp",
+          "fit": "Centrus Energy HALEU fuel bottleneck"
+        },
+        {
+          "order": 7,
+          "assetKey": "scene-07-number-evidence",
+          "file": "assets/scene-07-number-evidence.webp",
+          "fit": "Doosan Enerbility heavy component manufacturing"
+        },
+        {
+          "order": 8,
+          "assetKey": "scene-08-closing-checkpoint",
+          "file": "assets/scene-08-closing-checkpoint.webp",
+          "fit": "HALEU supply timing checkpoint"
+        }
+      ],
+      "skipped": [
+        {
+          "order": 3,
+          "reason": "표 슬라이드는 배경 이미지 없이 렌더됩니다."
+        },
+        {
+          "order": 5,
+          "reason": "표 슬라이드는 배경 이미지 없이 렌더됩니다."
+        }
+      ],
+      "checks": [
+        "extractImagegenAssets.py saved 6 WebP assets with cardCrop4x5=true",
+        "checkImagegenAssets.py checked=6 failed=0",
+        "manual contact sheet review passed"
+      ]
+    }
+  },
+  "carousel": {
+    "slideCount": 8,
+    "layouts": [
+      "editorial",
+      "editorial",
+      "editorialBeat",
+      "editorialBeat",
+      "editorialBeat",
+      "editorial",
+      "editorialStat",
+      "editorialBeat"
+    ]
+  },
+  "imagePlan": [
+    {
+      "order": 1,
+      "assetKey": "scene-01-cover-hook",
+      "slideRefs": [
+        1
+      ],
+      "role": "cover-hook",
+      "scene": "완공을 앞두고 아직 텅 빈 SMR 건설 현장 위로 데이터센터를 향해 뻗은 송전선. 아무것도 가동되지 않은 정적 표지. 특정 회사 없음.",
+      "reason": "개념 장면 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/smr-real-vs-tag/assets/scene-01-cover-hook.webp\nAsset key: scene-01-cover-hook\nKeywords for session extraction: SMR, smr-real-vs-tag\nPrimary request: Create a realistic editorial business-news photograph for a Korean card news story about the global SMR race.\nStory title context: Completed SMRs are still zero globally, but future electricity has already been contracted.\nScene/backdrop: an unfinished small modular reactor construction site, quiet and not yet operating, with clean industrial concrete, reactor module foundation, cranes at rest, and high-voltage transmission lines stretching toward a distant modern data center campus.\nSubject: the tension between zero completed SMRs and already-sold future electricity.\nStyle/medium: realistic business-news photography, documentary industrial scene, no chart, no infographic.\nComposition/framing: strict vertical 4:5 card background. Keep the main subject in the upper and middle 60 percent. Keep the lower 40 percent visually calm and uncluttered for Korean text overlay. Deep perspective from construction site to data center in background.\nLighting/mood: clear overcast daylight, serious but bright enough for dark overlay text.\nColor palette: steel gray, concrete, clean blue-white highlights, restrained industrial colors.\nText: no overlaid captions, no fake numbers, no fake signs.\nConstraints: no watermark, no recognizable private individual face, no fabricated official document, no stock chart, no financial wallpaper, no abstract nuclear glow.\nAvoid: collage, sci-fi reactor core, dramatic explosion, radiation symbol as a main subject, 9:16 crop, heavy black vignette."
+    },
+    {
+      "order": 2,
+      "assetKey": "scene-02-business-context",
+      "slideRefs": [
+        2
+      ],
+      "role": "business-context",
+      "scene": "거대한 AI 데이터센터 서버랙이 줄지어 늘어선 홀. 냉각팬·전력 케이블이 빽빽해 전력 수요의 크기를 압도적으로 표현. 특정 회사 없음.",
+      "reason": "개념 장면 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/smr-real-vs-tag/assets/scene-02-business-context.webp\nAsset key: scene-02-business-context\nKeywords for session extraction: SMR, smr-real-vs-tag\nPrimary request: Create a realistic editorial business-news photograph for a Korean card news story about why AI data centers are driving SMR electricity demand.\nStory title context: The driver is AI data center electricity demand.\nScene/backdrop: a vast modern AI data center hall with long rows of server racks, dense power cables, cooling ducts, power distribution units, and bright service aisles. No single company branding.\nSubject: overwhelming electricity demand from AI computing infrastructure.\nStyle/medium: realistic business-news photography, data center operations, not a chart or infographic.\nComposition/framing: strict vertical 4:5 card background. Use strong depth lines from server aisles in upper and middle 60 percent. Keep the lower 40 percent calmer and darker, with floor and cable trays suitable for Korean text overlay.\nLighting/mood: cool clean industrial lighting, bright enough for dark overlay, high detail but not cluttered in lower area.\nColor palette: cool white, steel gray, muted blue, small amber status lights.\nText: no overlaid captions, no fake dashboards, no readable invented labels.\nConstraints: no watermark, no recognizable private individual face, no fake chart, no fabricated numbers, no company logos.\nAvoid: sci-fi holograms, abstract AI brain, stock market symbols, collage, 9:16 crop, heavy black vignette."
+    },
+    {
+      "order": 3,
+      "assetKey": "scene-03-narrative-turn",
+      "slideRefs": [
+        3
+      ],
+      "role": "narrative-turn",
+      "scene": "(표 슬라이드. 배경 없이 렌더되므로 이미지 생성 불필요.)",
+      "reason": "표 슬라이드, 배경 없음",
+      "status": "skipped",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/smr-real-vs-tag/assets/scene-03-narrative-turn.webp\nAsset key: scene-03-narrative-turn\n이 슬라이드는 표(table) 슬라이드라 배경 없이 렌더된다. 이미지를 생성하지 않는다."
+    },
+    {
+      "order": 4,
+      "assetKey": "scene-04-narrative-turn",
+      "slideRefs": [
+        4
+      ],
+      "role": "narrative-turn",
+      "scene": "세계 지도 위에 설계·연료·부품·수요 네 자리가 서로 다른 나라에 점으로 흩어진 지도형 장면. 특정 회사 로고 없음.",
+      "reason": "개념 장면 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/smr-real-vs-tag/assets/scene-04-narrative-turn.webp\nAsset key: scene-04-narrative-turn\nKeywords for session extraction: SMR, smr-real-vs-tag\nPrimary request: Create a realistic editorial business-news photograph for a Korean card news story about the global SMR race being split across countries and roles.\nStory title context: Demand is committed, but the real players are scattered across countries and roles.\nScene/backdrop: an executive strategy room table with a large physical world map, small industrial markers for reactor design, fuel, components, and electricity demand placed across the United States, United Kingdom, South Korea, Russia, China, and big-tech demand centers. Add subtle power cables and a miniature reactor module model on the table.\nSubject: design, fuel, components, and demand are in different countries, not one simple national story.\nStyle/medium: realistic business-news photography, physical tabletop strategy scene, not a digital infographic.\nComposition/framing: strict vertical 4:5 card background. Top and middle 60 percent show map markers and miniature industrial objects. Lower 40 percent should be calmer map/table surface for Korean text overlay.\nLighting/mood: bright newsroom-meeting-room light, serious strategic tone, clear details.\nColor palette: neutral table wood, muted map colors, small red and blue marker pins, steel miniatures.\nText: no overlaid captions, no fake labels, no fake company names, no fake numbers.\nConstraints: no watermark, no recognizable private individual face, no fabricated official documents, no stock chart, no glowing abstract network.\nAvoid: flat vector map, UI dashboard, collage, fantasy nuclear core, 9:16 crop, heavy black vignette."
+    },
+    {
+      "order": 5,
+      "assetKey": "scene-05-narrative-turn",
+      "slideRefs": [
+        5
+      ],
+      "role": "narrative-turn",
+      "scene": "(표 슬라이드. 배경 없이 렌더되므로 이미지 생성 불필요.)",
+      "reason": "표 슬라이드, 배경 없음",
+      "status": "skipped",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/smr-real-vs-tag/assets/scene-05-narrative-turn.webp\nAsset key: scene-05-narrative-turn\n이 슬라이드는 표(table) 슬라이드라 배경 없이 렌더된다. 이미지를 생성하지 않는다."
+    },
+    {
+      "order": 6,
+      "assetKey": "scene-06-business-context",
+      "slideRefs": [
+        6
+      ],
+      "role": "business-context",
+      "scene": "센트러스 에너지(Centrus Energy) 로고와 HALEU 농축 원심분리기 캐스케이드 설비. 티커 LEU 병기. 로고·설비를 배경 전면에.",
+      "reason": "회사 로고·설비 배경 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/smr-real-vs-tag/assets/scene-06-business-context.webp\nAsset key: scene-06-business-context\nKeywords for session extraction: SMR, smr-real-vs-tag, HALEU, Centrus Energy, LEU\nPrimary request: Create a realistic editorial business-news photograph for a Korean card news story about HALEU fuel as the bottleneck for SMR deployment.\nStory title context: Fuel is the bottleneck, and US HALEU production is only beginning.\nScene/backdrop: a clean uranium enrichment facility interior with tall centrifuge cascade equipment, polished metal pipes, control cabinets, and a safety glass viewing area. Include a realistic corporate sign or wall placard that reads exactly \"Centrus Energy\" and a small plain ticker-style plaque reading \"LEU\" if it can be rendered cleanly.\nSubject: Centrus Energy and HALEU fuel production as a scarce industrial bottleneck.\nStyle/medium: realistic business-news photography, industrial facility documentation, not a chart or infographic.\nComposition/framing: strict vertical 4:5 card background. Put centrifuge cascade and company placard in upper and middle 60 percent. Keep lower 40 percent calmer with clean floor or dark equipment surfaces for Korean text overlay.\nLighting/mood: bright, clean, high-trust industrial lighting, controlled facility feel.\nColor palette: white, brushed metal, muted blue safety signage, restrained green-yellow safety accents.\nText: only the exact company name \"Centrus Energy\" and optional \"LEU\" signage. No extra slogans, no invented numbers, no fake warning labels.\nConstraints: no watermark, no recognizable private individual face, no fabricated official document, no chart, no glowing reactor core.\nAvoid: misspelled company names, fake large financial tickers, stock market screen, abstract nuclear symbol, 9:16 crop, heavy black vignette."
+    },
+    {
+      "order": 7,
+      "assetKey": "scene-07-number-evidence",
+      "slideRefs": [
+        7
+      ],
+      "role": "number-evidence",
+      "scene": "두산에너빌리티(Doosan Enerbility) 로고와 창원공장 대형 원전 주기기(압력용기·증기발생기) 제작 현장. 파트너 뉴스케일(NuScale) 로고 작게 병기.",
+      "reason": "회사 로고·설비 배경 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/smr-real-vs-tag/assets/scene-07-number-evidence.webp\nAsset key: scene-07-number-evidence\nKeywords for session extraction: SMR, smr-real-vs-tag, Doosan Enerbility, NuScale\nPrimary request: Create a realistic editorial business-news photograph for a Korean card news story about South Korea's place in SMR being components, not reactor design.\nStory title context: South Korea's place is components, not reactor design. Doosan Enerbility is a NuScale component partner.\nScene/backdrop: a large heavy-industry manufacturing hall in Changwon-style turbine and nuclear component production, with a massive reactor pressure vessel or steam generator component on a shop floor, overhead cranes, welding rigs, and workers only as tiny indistinct silhouettes. Include realistic corporate signage reading exactly \"Doosan Enerbility\" and a small partner plaque reading \"NuScale\" if it can be rendered cleanly.\nSubject: Doosan Enerbility as a real industrial component supplier in the SMR chain.\nStyle/medium: realistic business-news photography, high-trust industrial production scene, not a chart or infographic.\nComposition/framing: strict vertical 4:5 card background. Put the large component, crane, and signage in upper and middle 60 percent. Keep lower 40 percent calmer with floor, shadows, or machinery base for Korean text overlay.\nLighting/mood: bright factory lighting, credible manufacturing detail, clean and serious.\nColor palette: steel, warm industrial yellow crane, dark blue signage, concrete floor.\nText: only exact company names \"Doosan Enerbility\" and optional \"NuScale\". No slogans, no fake numbers, no invented documents.\nConstraints: no watermark, no recognizable private individual face, no stock screen, no fake chart, no fabricated financial statement.\nAvoid: misspelled company names, generic anonymous factory without nuclear-scale component, cartoon reactor, abstract glow, 9:16 crop, heavy black vignette."
+    },
+    {
+      "order": 8,
+      "assetKey": "scene-08-closing-checkpoint",
+      "slideRefs": [
+        8
+      ],
+      "role": "closing-checkpoint",
+      "scene": "세계 지도 위 러시아·중국 영역만 밝게 켜지고 서방 HALEU 대량 설비 자리는 어둡게 남은 대비. 연료 병목 상징. 특정 회사 없음.",
+      "reason": "개념 장면 앵커",
+      "status": "generated",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/smr-real-vs-tag/assets/scene-08-closing-checkpoint.webp\nAsset key: scene-08-closing-checkpoint\nKeywords for session extraction: SMR, smr-real-vs-tag, HALEU\nPrimary request: Create a realistic editorial business-news photograph for a Korean card news closing slide about watching real SMR contracts together with the HALEU fuel schedule.\nStory title context: Watch real contracts together with the fuel schedule, not just theme tags.\nScene/backdrop: a darkened policy war-room table with a physical world map, small uranium fuel cylinders, a calendar page with blank squares, shipping documents without readable text, and colored light focused on Russia and China while western fuel facility markers remain dim. Add a small unbranded reactor module model and power-line miniature.\nSubject: HALEU fuel bottleneck and the timing checkpoint for turning SMR contracts into actual electricity.\nStyle/medium: realistic business-news photography, physical tabletop scene, not a chart or infographic.\nComposition/framing: strict vertical 4:5 card background. Put map, fuel cylinders, dim and bright markers in upper and middle 60 percent. Keep lower 40 percent calm, dark table surface for Korean text overlay.\nLighting/mood: serious closing-note mood, controlled directional light, bright enough to pass asset checks, no heavy black half.\nColor palette: charcoal table, muted map colors, selective amber and blue markers, brushed metal cylinders.\nText: no readable captions, no fake country labels, no fake numbers, no fake official documents.\nConstraints: no watermark, no recognizable private individual face, no stock chart, no fabricated official paperwork.\nAvoid: flat vector map, collage, sci-fi glow, radiation danger symbol as main subject, 9:16 crop, heavy vignette, over-dark lower half."
+    }
+  ],
+  "imagegen": {
+    "tool": "image_gen",
+    "generationRule": "Generate one image per imagePlan prompt with image_gen. Each prompt must target a story-specific business-news scene tied to the company, event, place, or operating question, and generic financial backgrounds are rejected.",
+    "extractCommand": "uv run python -X utf8 sns/scripts/extractImagegenAssets.py assets --assets-root blog/_issues/smr-real-vs-tag --count 6 --names scene-01-cover-hook,scene-02-business-context,scene-04-narrative-turn,scene-06-business-context,scene-07-number-evidence,scene-08-closing-checkpoint --keywords \"SMR,smr-real-vs-tag\" --force",
+    "checkCommand": "uv run python -X utf8 sns/scripts/checkImagegenAssets.py blog/_issues/smr-real-vs-tag/assets",
+    "publishCommands": [
+      "uv run python -X utf8 blog/_scripts/build_carousel_contracts.py"
+    ],
+    "note": "슬라이드 3(빅테크 계약 표)·5(진짜 vs 이름표 표)는 배경 없이 렌더되므로 생성하지 않는다. 아래 6장(scene-01·02·04·06·07·08)만 생성한다."
+  },
+  "reviewGate": {
+    "status": "passed",
+    "requiredRounds": [
+      {
+        "id": "writerPanel",
+        "purpose": "표지 후크(호기심 갭), 서사 스파인, 앞장-다음장의 긴장 전진(연결만이 아니라 매 장이 질문을 얹거나 갚는가), 인사이트(통념과 충돌하는 사실 + 메커니즘 + 독자 렌즈), 표지 약속을 마지막이 갚는가(promise·payoff), 쉬운 말·문장 리듬을 본다. 순서를 바꿔도 말이 되는 덱, 충돌 사실만 던지고 끝나는 덱, 체크리스트식 나열은 실패다.",
+        "status": "passed"
+      },
+      {
+        "id": "honestyEvidence",
+        "purpose": "슬라이드 숫자와 주장 근거가 블로그 본문/검증표에 있는지 본다.",
+        "status": "passed"
+      },
+      {
+        "id": "imageFit",
+        "purpose": "7장 이상 이미지가 그 글의 회사·사건·장소에 맞는 서로 다른 의미 장면인지, 가짜 공식 로고·텍스트·도식이 없는지 본다.",
+        "status": "passed"
+      },
+      {
+        "id": "readerFit",
+        "purpose": "처음 보는 독자가 첫 장부터 마지막 장까지 끊기지 않고 자연스럽게 읽으며 관전 포인트를 이해하는지 본다. 어려운 약어가 남으면 실패다.",
+        "status": "passed"
+      },
+      {
+        "id": "reevaluation",
+        "purpose": "수정 후 같은 패널이 다시 보고 발행 가능 여부를 닫는다.",
+        "status": "passed"
+      }
+    ],
+    "decisionLog": [
+      {
+        "round": "cards-plan-loop",
+        "result": "passed-after-fix",
+        "detail": "루프 4라운드. 회의자 survive(2~4R kill 0), 인사이트 90·재미 88·맥락 88. 시각정합 84(1점 부족) 원인이 미등록 렌더계약(companyStatBadge)+editorialStat 표 배선. 저작 단계에서 렌더 가능 형태(표=editorialBeat+visual, 두산=editorialStat 스탯)로 교체해 해소. 뼈대=글로벌 지도(빅테크 계약표+진짜/이름표 매트릭스), 두산 solo 금지·해외 선수 다수 포함, 관심 대 돈 시계열 회피."
+      },
+      {
+        "round": "image-generation",
+        "result": "passed",
+        "detail": "이미지 파이프라인으로 6장 생성. 3번과 5번은 표 슬라이드라 배경 이미지 생략. extractImagegenAssets.py 추출 완료, checkImagegenAssets.py checked=6 failed=0, 연락시트 눈검수 통과."
+      }
+    ]
+  }
+}
