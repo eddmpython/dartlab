@@ -5,16 +5,16 @@
     "kind": "issue",
     "slug": "ai-boom-how-long",
     "stockCode": "",
-    "corpName": "인공지능 광풍",
-    "title": "인공지능 광풍, 언제까지 갈까요. 봐야 할 신호는 딱 하나입니다",
+    "corpName": "AI 광풍",
+    "title": "AI 광풍, 언제까지 갈까요. 봐야 할 신호는 딱 하나입니다",
     "postPath": "blog/_issues/ai-boom-how-long/carousel.yaml",
     "assetRoot": "blog/_issues/ai-boom-how-long/assets",
     "planPath": "blog/_issues/ai-boom-how-long/cards.plan.json"
   },
   "planning": {
-    "blogThesis": "인공지능이 미쳐 날뛴다는 말이 과장이 아닙니다. 챗GPT 한 곳만 월 사용자가 약 11억명입니다. 그런데 이 광풍이 언제까지 갈지 재려면 관심이 아니라 돈을 봐야 합니다.",
-    "cardThesis": "인공지능이 미쳐 날뛴다는 말이 과장이 아닙니다. 챗GPT 한 곳만 월 사용자가 약 11억명입니다. 그런데 이 광풍이 언제까지 갈지 재려면 관심이 아니라 돈을 봐야 합니다.",
-    "audienceQuestion": "인공지능 광풍, 언제까지 갈까요. 봐야 할 신호는 딱 하나입니다 이슈를 /cards에서 볼 때 마지막에 무엇을 확인해야 하나?",
+    "blogThesis": "AI가 미쳐 날뛴다는 말이 과장이 아닙니다. 챗GPT 한 곳만 월 사용자가 약 11억명입니다. 그런데 이 광풍이 언제까지 갈지 재려면 관심이 아니라 돈을 봐야 합니다.",
+    "cardThesis": "AI가 미쳐 날뛴다는 말이 과장이 아닙니다. 챗GPT 한 곳만 월 사용자가 약 11억명입니다. 그런데 이 광풍이 언제까지 갈지 재려면 관심이 아니라 돈을 봐야 합니다.",
+    "audienceQuestion": "AI 광풍, 언제까지 갈까요. 봐야 할 신호는 딱 하나입니다 이슈를 /cards에서 볼 때 마지막에 무엇을 확인해야 하나?",
     "blogAndCardsTogether": false,
     "narrativeContract": {
       "spine": "훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문",
@@ -44,7 +44,7 @@
         {
           "order": 1,
           "layout": "editorial",
-          "mainText": "인공지능 광풍, 언제까지 갈까요. 봐야 할 신호는 딱 하나입니다"
+          "mainText": "AI 광풍, 언제까지 갈까요. 봐야 할 신호는 딱 하나입니다"
         },
         {
           "order": 2,
@@ -79,7 +79,7 @@
         {
           "order": 8,
           "layout": "editorialBeat",
-          "mainText": "그 흔적은 한 회사만의 일이 아닙니다. 오픈에이아이의 돈 곡선도 나란히 위로 갔습니다"
+          "mainText": "그 흔적은 한 회사만의 일이 아닙니다. 오픈AI의 돈 곡선도 나란히 위로 갔습니다"
         },
         {
           "order": 9,
@@ -96,7 +96,6 @@
         "브랜드명과 공식 제품명은 허용하지만, 의미를 설명하지 않은 약어는 실패다."
       ],
       "preferredRewrites": {
-        "AI": "인공지능",
         "ARR": "연간 반복 매출",
         "EDR": "단말 보안 대응",
         "SOC": "보안 관제",
@@ -216,7 +215,7 @@
         1
       ],
       "role": "cover-hook",
-      "scene": "story-specific opening scene for 인공지능 광풍, making the article angle '인공지능 광풍, 언제까지 갈까요. 봐야 할 신호는 딱 하나입니다' visible through a concrete asset, place, or operation",
+      "scene": "story-specific opening scene for AI 광풍, making the article angle 'AI 광풍, 언제까지 갈까요. 봐야 할 신호는 딱 하나입니다' visible through a concrete asset, place, or operation",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "generated",
       "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/ai-boom-how-long/assets/scene-01-cover-hook.webp\nAsset key: scene-01-cover-hook\nKeywords for session extraction: ???? ??, ai-boom-how-long, ???? ??, ???? ???. ?? ? ??? ? ?????\nPrimary request: Create a realistic editorial business-news photo for a Korean card news story asking how long the artificial intelligence boom can last and what signal matters.\nScene/backdrop: a late-evening technology newsroom desk with three phones and a laptop open to public-facing artificial intelligence chatbot services: ChatGPT, Gemini, and Claude. Beside them are subscription receipts, cloud billing folders, and a quarter calendar, suggesting attention versus money.\nSubject: the physical checkpoint for the boom's duration: not social buzz, but whether paid usage and revenue keep rising.\nBrand handling: company and product logos may appear as public-facing app icons or signage for ChatGPT, Gemini, Claude, OpenAI, and Anthropic. Do not invent official claims or fake press releases.\nComposition/framing: strict vertical 4:5 image; keep phones, laptop, folders, and calendar in the upper and middle 60%; keep the lower 40% as a clean desk surface usable under dark text overlay.\nStyle/medium: realistic documentary business photography, not illustration, not infographic, not a chart.\nLighting/mood: crisp office light mixed with screen glow, bright enough to survive a dark overlay, no heavy vignette.\nConstraints: no watermark, no recognizable public figure, no readable long text, no fake numbers, no stock chart, no fake newspaper, no fabricated official badge.\nAvoid: collage, split panels, gradients, abstract glow, generic financial wallpaper, blacked-out half frame, ultra-tall phone wallpaper."
@@ -228,7 +227,7 @@
         2
       ],
       "role": "narrative-turn",
-      "scene": "editorial business-news scene tied to 인공지능 광풍, showing the turning point '열풍은 진짜입니다. 챗GPT 한 곳만 월 사용자가 약 11억명입니다' through physical work, demand, location, or operations",
+      "scene": "editorial business-news scene tied to AI 광풍, showing the turning point '열풍은 진짜입니다. 챗GPT 한 곳만 월 사용자가 약 11억명입니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "generated",
       "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/ai-boom-how-long/assets/scene-02-narrative-turn.webp\nAsset key: scene-02-narrative-turn\nKeywords for session extraction: ???? ??, ai-boom-how-long, ???? ??, ???? ???. ?? ? ??? ? ?????\nPrimary request: Create a realistic editorial business-news photo for the slide saying the heat is real and ChatGPT alone has roughly 1.1 billion monthly users.\nScene/backdrop: a busy but face-free commuter cafe and office lobby scene, many hands and phones visible from behind, most phone screens showing the ChatGPT app icon or public ChatGPT login page, with a soft OpenAI sign or logo visible on a wall display.\nSubject: massive everyday adoption of ChatGPT, shown through many real devices being used at once.\nBrand handling: ChatGPT and OpenAI logos may appear as public-facing app icons or signage. Keep them plausible and visible, but do not create fake official announcements.\nComposition/framing: strict vertical 4:5 image; cluster of phone screens and a wall display in the upper and middle 60%; lower 40% quieter tabletop or floor for text overlay.\nStyle/medium: realistic documentary business photography, not illustration, not chart, not infographic.\nLighting/mood: bright public indoor light, lively but clean, realistic screen reflections.\nConstraints: no recognizable faces, no watermark, no readable long text, no fake numbers, no stock ticker, no fabricated documents.\nAvoid: abstract neural network art, collage, split panels, generic financial wallpaper, blacked-out frame, fake newspaper."
@@ -240,7 +239,7 @@
         3
       ],
       "role": "narrative-turn",
-      "scene": "editorial business-news scene tied to 인공지능 광풍, showing the turning point '그런데 관심만 보면 선두가 오히려 내려가고 있습니다' through physical work, demand, location, or operations",
+      "scene": "editorial business-news scene tied to AI 광풍, showing the turning point '그런데 관심만 보면 선두가 오히려 내려가고 있습니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "generated",
       "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/ai-boom-how-long/assets/scene-03-narrative-turn.webp\nAsset key: scene-03-narrative-turn\nKeywords for session extraction: ???? ??, ai-boom-how-long, ???? ??, ???? ???. ?? ? ??? ? ?????\nPrimary request: Create a realistic editorial business-news photo for the slide saying the attention leader is declining when measured by web-visit share.\nScene/backdrop: a clean analytics operations room with three large app tiles on monitors: ChatGPT, Gemini, and Claude. The ChatGPT tile is still largest but no longer alone; Gemini and Claude tiles are now close beside it. Use visual scale and device placement, not readable charts or percentages.\nSubject: attention is splitting across major chatbot services, so the leader's share can fall even as the market remains active.\nBrand handling: product logos or app names for ChatGPT, Gemini, and Claude may appear. Do not fabricate official dashboards or claims.\nComposition/framing: strict vertical 4:5 image; monitors and app tiles in upper and middle 60%; lower 40% as a clean console desk for text overlay.\nStyle/medium: realistic business-news photography, not illustration, not infographic.\nLighting/mood: neutral operations-room light, crisp screens, real depth, readable as a newsroom or product analytics room.\nConstraints: no watermark, no recognizable people, no readable numbers, no fake line chart, no stock ticker, no fake official report.\nAvoid: literal chart with percentages, collage, split panels, abstract glow, generic finance screen wall, blacked-out frame."
@@ -252,7 +251,7 @@
         4
       ],
       "role": "narrative-turn",
-      "scene": "editorial business-news scene tied to 인공지능 광풍, showing the turning point '사라진 게 아니라 여러 곳으로 나뉜 겁니다. 판 자체는 오히려 커졌습니다' through physical work, demand, location, or operations",
+      "scene": "editorial business-news scene tied to AI 광풍, showing the turning point '사라진 게 아니라 여러 곳으로 나뉜 겁니다. 판 자체는 오히려 커졌습니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "generated",
       "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/ai-boom-how-long/assets/scene-04-narrative-turn.webp\nAsset key: scene-04-narrative-turn\nKeywords for session extraction: ???? ??, ai-boom-how-long, ???? ??, ???? ???. ?? ? ??? ? ?????\nPrimary request: Create a realistic editorial business-news photo for the slide saying the market did not disappear, it split among ChatGPT, Gemini, and Claude while the whole field kept growing.\nScene/backdrop: an enterprise product testing lab with three workstations side by side, each showing one public chatbot service: ChatGPT, Gemini, and Claude. Around them are multiple anonymous user-testing tablets and notebooks, suggesting demand is spreading across services.\nSubject: the artificial intelligence chatbot market widening into multiple major services.\nBrand handling: ChatGPT, Gemini, and Claude logos or app names may be visible as product context. No fabricated official statements.\nComposition/framing: strict vertical 4:5 image; three workstations and user-testing tablets in upper and middle 60%; lower 40% clean table surface for text overlay.\nStyle/medium: realistic business-news photography, not illustration, not chart, not infographic.\nLighting/mood: bright product-lab light, neutral modern office, crisp device screens.\nConstraints: no recognizable faces, no watermark, no readable paragraphs, no fake numbers, no official-looking report, no stock chart.\nAvoid: abstract network wallpaper, split panels, collage, literal market-share pie chart, blacked-out frame."
@@ -264,7 +263,7 @@
         5
       ],
       "role": "narrative-turn",
-      "scene": "editorial business-news scene tied to 인공지능 광풍, showing the turning point '그래서 관심은 붐이 언제 식나를 재는 신호로 못 씁니다. 봐야 할 건 돈입니다' through physical work, demand, location, or operations",
+      "scene": "editorial business-news scene tied to AI 광풍, showing the turning point '그래서 관심은 붐이 언제 식나를 재는 신호로 못 씁니다. 봐야 할 건 돈입니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "generated",
       "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/ai-boom-how-long/assets/scene-05-narrative-turn.webp\nAsset key: scene-05-narrative-turn\nKeywords for session extraction: ???? ??, ai-boom-how-long, ???? ??, ???? ???. ?? ? ??? ? ?????\nPrimary request: Create a realistic editorial business-news photo for the slide saying attention cannot measure when the boom cools, money is the signal.\nScene/backdrop: a product finance desk where a muted social-media trend monitor sits in the background, while the foreground has payment receipts, subscription folders, cloud billing statements, and enterprise contract binders for chatbot services. Small app icons for ChatGPT, Gemini, Claude, OpenAI, and Anthropic may appear on tabs or devices.\nSubject: switching the viewer's attention from hype and web buzz to paid usage, invoices, and revenue.\nBrand handling: public brand logos may appear as app icons or small binder labels. Do not invent official claims or fake financial statements.\nComposition/framing: strict vertical 4:5 image; finance desk and muted trend monitor in upper and middle 60%; lower 40% clean desk surface for text overlay.\nStyle/medium: realistic business-news photography, not illustration, not chart, not infographic.\nLighting/mood: calm office light, grounded and analytical, bright enough under a dark overlay.\nConstraints: no readable long text, no fake numbers, no watermark, no recognizable people, no fake chart, no fake newspaper.\nAvoid: literal dollar-sign graphics, stock ticker, collage, split panels, abstract neon, bokeh-only background."
@@ -276,7 +275,7 @@
         6
       ],
       "role": "narrative-turn",
-      "scene": "editorial business-news scene tied to 인공지능 광풍, showing the turning point '그런데 관심이 흔들리는 동안에도, 돈 곡선은 한 번도 꺾이지 않았습니다' through physical work, demand, location, or operations",
+      "scene": "editorial business-news scene tied to AI 광풍, showing the turning point '그런데 관심이 흔들리는 동안에도, 돈 곡선은 한 번도 꺾이지 않았습니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "generated",
       "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/ai-boom-how-long/assets/scene-06-narrative-turn.webp\nAsset key: scene-06-narrative-turn\nKeywords for session extraction: ???? ??, ai-boom-how-long, ???? ??, ???? ???. ?? ? ??? ? ?????\nPrimary request: Create a realistic editorial business-news photo for the slide saying Anthropic's annualized revenue run rate kept climbing even while attention was shifting.\nScene/backdrop: an enterprise software revenue operations room with a Claude product demo screen and an Anthropic logo sign on a glass wall. On the table are cloud reseller folders, subscription renewal envelopes, and enterprise usage reports, all with unreadable details.\nSubject: Anthropic and Claude monetization through enterprise usage and reseller cloud revenue, shown as physical business operations rather than a chart.\nBrand handling: Anthropic and Claude logos may appear as public-facing signage or app icons. Do not invent official claims or fake numbers.\nComposition/framing: strict vertical 4:5 image; Claude screen, Anthropic sign, and revenue folders in upper and middle 60%; lower 40% clean table surface for text overlay.\nStyle/medium: realistic business-news photography, not illustration, not infographic, not chart.\nLighting/mood: bright office and meeting-room light, precise and credible, no heavy vignette.\nConstraints: no watermark, no recognizable public figure, no readable financial figures, no fake official document, no stock chart.\nAvoid: literal line chart, giant dollar signs, abstract glow, collage, split panels, blacked-out bottom."
@@ -288,7 +287,7 @@
         7
       ],
       "role": "narrative-turn",
-      "scene": "editorial business-news scene tied to 인공지능 광풍, showing the turning point '헤드라인 크기가 아니라, 기업이 실제로 지갑을 여는 흔적을 봅니다' through physical work, demand, location, or operations",
+      "scene": "editorial business-news scene tied to AI 광풍, showing the turning point '헤드라인 크기가 아니라, 기업이 실제로 지갑을 여는 흔적을 봅니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "generated",
       "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/ai-boom-how-long/assets/scene-07-narrative-turn.webp\nAsset key: scene-07-narrative-turn\nKeywords for session extraction: ???? ??, ai-boom-how-long, ???? ??, ???? ???. ?? ? ??? ? ?????\nPrimary request: Create a realistic editorial business-news photo for the slide saying the important sign is that companies are actually opening their wallets.\nScene/backdrop: a corporate procurement meeting for Claude and Anthropic services. A conference table holds enterprise seat-license folders, cloud usage reports, payment approval stamps, and laptops showing the Claude logo. People are present only as cropped hands and shoulders, no identifiable faces.\nSubject: paid enterprise adoption and procurement, not headline hype.\nBrand handling: Claude and Anthropic logos may appear on screens, folders, mugs, or a small wall sign. Do not invent official claims or readable financial figures.\nComposition/framing: strict vertical 4:5 image; meeting table, logo screen, folders, and payment approvals in upper and middle 60%; lower 40% clean table surface for text overlay.\nStyle/medium: realistic business-news photography, not illustration, not chart, not infographic.\nLighting/mood: clear conference-room light, serious purchasing decision mood, realistic materials.\nConstraints: no recognizable faces, no watermark, no readable contracts, no fake numbers, no fake official press release, no stock chart.\nAvoid: generic smiling office stock photo, giant dollar icon, collage, split panels, neon abstraction, dark unusable lower half."
@@ -300,7 +299,7 @@
         8
       ],
       "role": "narrative-turn",
-      "scene": "editorial business-news scene tied to 인공지능 광풍, showing the turning point '그 흔적은 한 회사만의 일이 아닙니다. 오픈에이아이의 돈 곡선도 나란히 위로 갔습니다' through physical work, demand, location, or operations",
+      "scene": "editorial business-news scene tied to AI 광풍, showing the turning point '그 흔적은 한 회사만의 일이 아닙니다. 오픈AI의 돈 곡선도 나란히 위로 갔습니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "generated",
       "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/ai-boom-how-long/assets/scene-08-narrative-turn.webp\nAsset key: scene-08-narrative-turn\nKeywords for session extraction: ???? ??, ai-boom-how-long, ???? ??, ???? ???. ?? ? ??? ? ?????\nPrimary request: Create a realistic editorial business-news photo for the slide saying OpenAI's money curve also moved upward alongside Anthropic.\nScene/backdrop: an OpenAI and ChatGPT revenue operations desk overlooking a server room. A tablet shows the ChatGPT app icon, a wall screen shows a clean OpenAI logo, and the desk has subscription-renewal folders, enterprise account notes, and cloud invoice envelopes with unreadable details.\nSubject: paid ChatGPT and OpenAI usage continuing to grow while attention splits across services.\nBrand handling: OpenAI and ChatGPT logos may appear as public-facing signage or app icons. Do not fabricate official statements, exact financial reports, or claims.\nComposition/framing: strict vertical 4:5 image; OpenAI wall screen, ChatGPT tablet, folders, and server-room window in upper and middle 60%; lower 40% clean desk surface for text overlay.\nStyle/medium: realistic business-news photography, not illustration, not chart, not infographic.\nLighting/mood: cool modern operations office, credible and bright, no heavy vignette.\nConstraints: no recognizable people, no watermark, no readable numbers, no fake official documents, no stock chart, no fake newspaper.\nAvoid: generic trading desk, giant dollar signs, abstract blue glow, collage, split panels, blacked-out lower frame."
@@ -312,7 +311,7 @@
         9
       ],
       "role": "closing-checkpoint",
-      "scene": "quiet final-check scene tied to 인공지능 광풍 for the reader to verify '결국 앞으로는 SNS보다, 돈 곡선이 관심과 벌어지며 꺾이는 분기인지 봐야 합니다', such as documents, equipment, facility context, or customer workflow",
+      "scene": "quiet final-check scene tied to AI 광풍 for the reader to verify '결국 앞으로는 SNS보다, 돈 곡선이 관심과 벌어지며 꺾이는 분기인지 봐야 합니다', such as documents, equipment, facility context, or customer workflow",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "generated",
       "prompt": "Use case: photorealistic-natural\nAsset type: vertical 4:5 landing /cards news-card background for blog/_issues/ai-boom-how-long/assets/scene-09-closing-checkpoint.webp\nAsset key: scene-09-closing-checkpoint\nKeywords for session extraction: ???? ??, ai-boom-how-long, ???? ??, ???? ???. ?? ? ??? ? ?????\nPrimary request: Create a realistic editorial closing image for the slide saying the signal is not when social buzz goes quiet, but the quarter when revenue curves break away from attention and turn down.\nScene/backdrop: a quiet quarterly review desk at night. On the desk are a calendar opened to quarter-end, four branded app cards for ChatGPT, Gemini, Claude, and Anthropic, a stack of subscription-renewal folders, and a tablet showing a non-readable revenue monitoring dashboard with no numbers.\nSubject: the final checkpoint: watch paid revenue momentum by quarter, not social noise.\nBrand handling: ChatGPT, Gemini, Claude, OpenAI, and Anthropic logos may appear as public-facing app cards or folder icons. Do not create fake official claims or readable financial figures.\nComposition/framing: strict vertical 4:5 image; quarter calendar, app cards, folders, and tablet in upper and middle 60%; lower 40% clean desk surface for text overlay.\nStyle/medium: realistic documentary business photography, not illustration, not infographic, not chart.\nLighting/mood: calm late-night review, clear desk lamp, bright enough to survive a dark overlay.\nConstraints: no recognizable people, no watermark, no readable numbers, no fake chart, no fake newspaper, no fabricated official document.\nAvoid: literal alarm clock, stock ticker, dollar icons, collage, split panels, abstract glow, blacked-out frame."
@@ -321,7 +320,7 @@
   "imagegen": {
     "tool": "image_gen",
     "generationRule": "? imagePlan.prompt? asset?? ? ?? ????. ???? 4:5 ??? ?? ??? ????, ??? ??? ?? ??? ?? ???? ????.",
-    "extractCommand": "uv run python -X utf8 sns/scripts/extractImagegenAssets.py assets --assets-root blog/_issues/ai-boom-how-long --count 9 --names scene-01-cover-hook,scene-02-narrative-turn,scene-03-narrative-turn,scene-04-narrative-turn,scene-05-narrative-turn,scene-06-narrative-turn,scene-07-narrative-turn,scene-08-narrative-turn,scene-09-closing-checkpoint --keywords \"인공지능 광풍,ai-boom-how-long,인공지능 광풍, 언제까지 갈까요. 봐야 할 신호는 딱 하나입니다\"",
+    "extractCommand": "uv run python -X utf8 sns/scripts/extractImagegenAssets.py assets --assets-root blog/_issues/ai-boom-how-long --count 9 --names scene-01-cover-hook,scene-02-narrative-turn,scene-03-narrative-turn,scene-04-narrative-turn,scene-05-narrative-turn,scene-06-narrative-turn,scene-07-narrative-turn,scene-08-narrative-turn,scene-09-closing-checkpoint --keywords \"AI 광풍,ai-boom-how-long,AI 광풍, 언제까지 갈까요. 봐야 할 신호는 딱 하나입니다\"",
     "checkCommand": "uv run python -X utf8 sns/scripts/checkImagegenAssets.py blog/_issues/ai-boom-how-long/assets",
     "publishCommands": [
       "uv run python -X utf8 blog/_scripts/build_carousel_contracts.py"

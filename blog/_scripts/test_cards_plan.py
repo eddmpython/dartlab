@@ -98,7 +98,8 @@ def test_build_company_plan_defaults_to_seven_images(tmp_path: Path) -> None:
     assert "구조명" in " ".join(plan["planning"]["narrativeContract"]["rules"])
     assert "큰문장" in " ".join(plan["planning"]["bigSentenceContract"]["rules"])
     assert "전문용어" in " ".join(plan["planning"]["plainLanguageContract"]["rules"])
-    assert plan["planning"]["plainLanguageContract"]["preferredRewrites"]["AI"] == "인공지능"
+    assert plan["planning"]["plainLanguageContract"]["preferredRewrites"]["ARR"] == "연간 반복 매출"
+    assert "AI" not in plan["planning"]["plainLanguageContract"]["preferredRewrites"]
     assert len(plan["imagePlan"]) == 7
     assert all("/cards" in row["prompt"] for row in plan["imagePlan"])
     assert all("Asset key:" in row["prompt"] for row in plan["imagePlan"])
@@ -133,14 +134,14 @@ def test_plan_validation_requires_plain_language_contract(tmp_path: Path) -> Non
 
 def test_contract_readability_blocks_jargon_and_checklist() -> None:
     contract = {
-        "caption": "다음 체크포인트는 AI 수요입니다.",
+        "caption": "다음 체크포인트는 CDMO 수요입니다.",
         "slides": [{"layout": "editorialBeat", "kicker": "승", "line": "HBM이 좋아집니다"}],
         "explainers": [{"term": "HBM", "body": "High Bandwidth Memory의 약자입니다."}],
     }
     errors = cp.validate_contract_readability("x", contract)
     assert any("체크리스트식 문구" in err for err in errors)
     assert any("구조 라벨 금지" in err for err in errors)
-    assert any("어려운 약어 사용" in err and "AI" in err for err in errors)
+    assert any("어려운 약어 사용" in err and "CDMO" in err for err in errors)
     assert any("약자 설명형 문장" in err for err in errors)
 
 

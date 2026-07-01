@@ -66,7 +66,6 @@ INSIGHT_CONTRACT_RULES = (
     "evidenceRefs: 반전·렌즈를 떠받치는 실측 수치나 ref 를 최소 1개 이상 적는다(분모·기간 명시).",
 )
 JARGON_REPLACEMENTS = {
-    "AI": "인공지능",
     "ARR": "연간 반복 매출",
     "EDR": "단말 보안 대응",
     "SOC": "보안 관제",
