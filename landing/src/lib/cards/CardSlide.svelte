@@ -473,7 +473,9 @@
 		z-index: 1;
 		height: 100%;
 		box-sizing: border-box;
-		padding: 7% 7.5% 9%;
+		/* 하단 패딩에 px 바닥값(52px) · 좁은 모바일 폭에서 %(9%)가 고정 px 하단 크롬(점·페이지 배지 약 43px)보다
+		   작아져 텍스트가 크롬에 겹치던 것 가드. 데스크톱(폭 큼)은 9%가 이미 52px 초과라 무변경. */
+		padding: 7% 7.5% max(9%, 52px);
 		display: flex;
 		flex-direction: column;
 		overflow: hidden; /* 텍스트가 4:5 프레임을 절대 안 넘치게(hook() 단축 + 하드 클립 belt-and-suspenders) */
