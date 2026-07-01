@@ -8,6 +8,7 @@
 	import Sidebar from '$lib/chat/Sidebar.svelte';
 	import Composer from '$lib/chat/Composer.svelte';
 	import Markdown from '$lib/chat/Markdown.svelte';
+	import ProviderSettings from '$lib/chat/ProviderSettings.svelte';
 	import '@dartlab/ui-surfaces/terminal/terminal.css';
 	import { BrandSocial, DARTLAB_BRAND_LINKS, LAST_SYM_KEY } from '@dartlab/ui-surfaces/terminal';
 
@@ -17,6 +18,7 @@
 	let draft = $state('');
 	let scroller: HTMLDivElement | null = $state(null);
 	let sidebarOpen = $state(true);
+	let providerOpen = $state(false);
 
 	const suggestions = [
 		'삼성전자 005930 최근 5년 매출과 영업이익 추이',
@@ -105,9 +107,9 @@
 			<a class="ghost" href={`${base}/terminal/${recent}`} title="터미널로" aria-label="터미널로">
 				<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6-6-6M12 19h8" /></svg>
 			</a>
-			<a class="ghost" href={`${base}/settings/providers`} title="AI 공급자 설정" aria-label="AI 공급자 설정">
+			<button class="ghost" onclick={() => (providerOpen = true)} title="공급자 설정" aria-label="공급자 설정">
 				<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
-			</a>
+			</button>
 			<div class="dlTerm chatSns" style="display:contents">
 				<nav class="sns"><BrandSocial links={DARTLAB_BRAND_LINKS} ghStars={null} onSupport={openSupport} /></nav>
 			</div>
@@ -213,6 +215,25 @@
 		</div>
 	</main>
 </div>
+
+<svelte:window onkeydown={(e) => { if (e.key === 'Escape' && providerOpen) providerOpen = false; }} />
+
+{#if providerOpen}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="povl" onclick={() => (providerOpen = false)}>
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<div class="pmodal" role="dialog" aria-modal="true" aria-label="공급자 설정" onclick={(e) => e.stopPropagation()}>
+			<header class="pmhead">
+				<h2>AI 공급자</h2>
+				<button class="pmx" onclick={() => (providerOpen = false)} aria-label="닫기">✕</button>
+			</header>
+			<p class="pmsub">분석에 사용할 공급자를 선택하세요. 챗 답변(LLM)의 전제입니다.</p>
+			<div class="pmbody">
+				<ProviderSettings onChange={() => store.loadCapabilities()} />
+			</div>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.shell {
@@ -497,5 +518,63 @@
 	.dock {
 		border-top: 1px solid var(--dl-line, #2a2c33);
 		padding: 0.75rem 0 1rem;
+	}
+	.povl {
+		position: fixed;
+		inset: 0;
+		z-index: 100;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(0, 0, 0, 0.6);
+		padding: 1rem;
+	}
+	.pmodal {
+		width: 100%;
+		max-width: 34rem;
+		max-height: 85vh;
+		display: flex;
+		flex-direction: column;
+		background: var(--dl-bg-base, #0f0f10);
+		border: 1px solid var(--dl-line, #2a2c33);
+		border-radius: 14px;
+		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+		overflow: hidden;
+	}
+	.pmhead {
+		display: flex;
+		align-items: center;
+		padding: 1rem 1.25rem 0.4rem;
+	}
+	.pmhead h2 {
+		font-size: 1.05rem;
+		font-weight: 600;
+		margin: 0;
+	}
+	.pmx {
+		margin-left: auto;
+		width: 1.9rem;
+		height: 1.9rem;
+		border: none;
+		border-radius: 7px;
+		background: none;
+		color: var(--dl-ink-dim, #9aa0aa);
+		font-size: 0.95rem;
+		cursor: pointer;
+	}
+	.pmx:hover {
+		background: var(--dl-bg-raised, #16171a);
+		color: var(--dl-ink, #e7e7ea);
+	}
+	.pmsub {
+		font-size: 0.82rem;
+		color: var(--dl-ink-dim, #9aa0aa);
+		margin: 0;
+		padding: 0 1.25rem 0.75rem;
+	}
+	.pmbody {
+		overflow-y: auto;
+		padding: 0 1.25rem 1.25rem;
+		scrollbar-width: thin;
 	}
 </style>
