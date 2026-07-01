@@ -1,0 +1,49 @@
+name: EDGAR Filings Content Sync (allFilings content_raw)
+
+# US 수시공시 본문(content_raw) 점진 수집. recent.parquet 메타의 filing_url 을 건당 GET 해 원문 body 를
+# edgar/allFilingsContent/{date}.parquet 로 발행. 정기(10-K/10-Q)는 panel 소유라 이미 제외.
+# 전 종목 2015 이후 전 공시는 4M+ 이라 run 당 예산(max-days)만큼 forward+backfill 로 채운다.
+# DART allFilingsBackfill(content_raw fillContent) 대칭. SEC 는 한도 없어 fair-access(~8req/s)만 지킴.
+
+on:
+  schedule:
+    - cron: '30 3 * * *'   # 매일 UTC 03:30 (edgarFilingsSync 08:00 이전, 메타 갱신분 채움)
+  workflow_dispatch:
+    inputs:
+      maxDays:
+        description: '이번 run 처리할 일 수(CI 시간 예산)'
+        default: '20'
+        type: string
+      forwardDays:
+        description: '최신 미충전일 우선 충전 수'
+        default: '3'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hf-edgar-filings-content
+  cancel-in-progress: false
+
+jobs:
+  fill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+      - name: Set up Python
+        run: uv python install 3.12
+      - name: Install dependencies
+        run: uv sync
+      - name: Fill allFilings content (forward + backfill → HF)
+        run: |
+          uv run python -X utf8 .github/scripts/sync/fillEdgarAllFilingsContent.py \
+            --max-days "${{ github.event.inputs.maxDays || '20' }}" \
+            --forward-days "${{ github.event.inputs.forwardDays || '3' }}"
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          DARTLAB_DATA_DIR: ${{ github.workspace }}/data
+          DARTLAB_HF_RETRY_ATTEMPTS: '3'
