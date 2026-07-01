@@ -1,0 +1,34 @@
+# 에피소드 메타데이터 템플릿. plan_episode.py 가 이 형태로 생성하고, 사람이 이어서 손본다.
+# 발행 시 guid/오디오크기/길이/발행일 같은 기계값은 여기 쓰지 않고 published.json 에 기록된다.
+episode:
+  version: 1
+  episodeId: P0N-{lane}-{slug}           # 폴더명과 동일
+  episodeNo: 0                           # 정수. RSS itunes:episode + 정렬
+  slug: {slug}
+  title: "{제목}"
+  lane: company                          # dartlab | company | economy | disclosure | quant
+  language: ko
+  status: draft                          # draft | ready | published (ready 이상만 발행)
+
+  audio:
+    generator: notebooklm
+    sourceHint: ""                       # NotebookLM m4a 경로(발행 시 --audio 로 지정)
+    sourceDoc: script.md
+
+  audienceQuestion: "{독자 질문}"
+  oneLineMessage: "{한 줄 요지}"
+  summary: "{RSS description 원본, 2~3문장}"
+  whereToLook:
+    - "{확인점 1}"
+    - "{확인점 2}"
+  forbiddenAngles: [매수, 매도, 목표가, 수익 보장, 확정 전망]
+
+  # 교차 링크 조인 키 + 역링크 (회사 에피소드가 아니면 빈 값)
+  stockCode: ""                          # company lane 이면 6자리
+  corpName: ""
+  topicSlug: "{slug}"                    # 항상 존재. dartlab lane 은 dartlab
+  cardType: company                      # company | event | economy | meta
+  links:
+    blogSlug: ""                         # {base}/blog/<slug>
+    cardSlug: ""                         # {base}/cards?post=<slug>
+    terminalCode: ""                     # {base}/terminal?sym=<code>

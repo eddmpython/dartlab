@@ -1,0 +1,41 @@
+# 에피소드 메타데이터 (사람이 작성하는 SSOT).
+# 발행 시 guid/오디오크기/길이/발행일 같은 기계값은 여기 쓰지 않고 published.json 에 기록된다.
+episode:
+  version: 1
+  episodeId: P01-dartlab-2700-filings   # 폴더명과 동일. P0N-{lane}-{slug}
+  episodeNo: 1                           # 정수. RSS <itunes:episode> + 정렬
+  slug: dartlab-2700-filings             # 링크/파일 slug
+  title: 2700개 기업 공시를 한 줄로 통합하는 DartLab
+  lane: dartlab                          # dartlab | company | economy | disclosure | quant
+  language: ko
+  status: ready                          # draft | ready | published (ready 이상만 발행)
+
+  # 오디오 소스 (NotebookLM 산출물). 레포에 커밋하지 않는다. 발행 시 --audio 로 경로 전달.
+  audio:
+    generator: notebooklm
+    sourceHint: "Downloads/2700개기업공시를한줄로통합하는dartlab.m4a"
+    sourceDoc: script.md                 # 이 오디오를 만든 소스 문서(향후 에피소드는 우리 파이프라인이 생성)
+
+  # 기획 요지
+  audienceQuestion: DartLab은 대체 무엇을 해주는 도구인가?
+  oneLineMessage: >-
+    DartLab은 2700개 상장사의 공시와 재무제표를 런타임에 직독해 하나의 격자로 통합하고,
+    그 위에서 분석까지 잇는 오픈 파이프라인이다.
+  summary: >-
+    회사마다 제각각인 공시와 재무제표를, DartLab이 어떻게 하나의 표준 격자로 통합해
+    2700개 기업을 같은 잣대로 비교하게 만드는지 풀어봅니다. 굽지 않고 런타임에 직독하는
+    이유, 근거를 함께 내는 분석까지.
+  whereToLook:
+    - 어떤 회사든 공시 원본까지 직독하는지
+    - 분석이 근거(ref)와 함께 나오는지
+  forbiddenAngles: [매수, 매도, 목표가, 수익 보장, 확정 전망]
+
+  # 교차 링크 조인 키 + 역링크 (회사 에피소드가 아니면 빈 값)
+  stockCode: ""                          # 회사 lane 이면 6자리
+  corpName: ""
+  topicSlug: dartlab                     # 항상 존재. 주제축 키
+  cardType: meta                         # company | event | economy | meta
+  links:
+    blogSlug: ""
+    cardSlug: ""
+    terminalCode: ""

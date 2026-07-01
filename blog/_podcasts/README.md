@@ -1,0 +1,133 @@
+# 팟캐스트 트랙 SSOT
+
+DartLab 팟캐스트. 우리 파이프라인이 **완결 산문 소스 문서(기획서)** 를 만들고, 운영자가 그걸
+Google NotebookLM 에 넣어 오디오 개요를 생성한다. 결과 오디오를 R2 에 올리고 RSS 로 발행해
+YouTube Music, Apple Podcasts, Spotify 로 내보낸다. 카드뉴스, 블로그, 터미널의 같은 회사, 같은
+주제와 서로 링크된다.
+
+> **부활 근거 (2026-07-02).** 팟캐스트 트랙은 2026-06-30 "음성 품질 미달"로 폐기됐다. 그 사유는
+> 자체 TTS 렌더의 한계였다. 새 파이프라인은 오디오를 렌더하지 않는다. NotebookLM 이 오디오를
+> 만든다. 우리 산출물의 정체성이 "음성"에서 "완결 내러티브 소스 문서"로 바뀐 것이 부활의 핵심이다.
+
+---
+
+## 1. 무엇을 우리가 하고, 무엇을 운영자가 하나
+
+| 단계 | 주체 | 도구 |
+|---|---|---|
+| 주제 기획 + 소스 문서 작성 + 평가 루프 | 파이프라인 | `_lib/podcast_plan_loop.workflow.js` + `_lib/plan_episode.py` |
+| script.md 검토 | 운영자 | 눈검수 |
+| 오디오 생성 | 운영자 + NotebookLM | `templates/notebooklm_settings.md` 설정 |
+| 오디오 -> R2 업로드 + RSS/인덱스 발행 | 파이프라인 | `_lib/publish_podcast.py` |
+| 플랫폼 최초 제출(1회) | 운영자 | Apple/Spotify/YouTube 콘솔 |
+| 카드/블로그/터미널 링크 렌더 | 파이프라인(프론트) | 랜딩 (Phase 2) |
+
+핵심: **내용거리와 기획은 우리 파이프라인이 한다.** 운영자는 script.md 검토, NotebookLM 실행,
+오디오 전달, 플랫폼 최초 제출만 한다. 그 다음부터는 발행 명령 하나로 세 플랫폼에 자동 반영된다.
+
+---
+
+## 2. 폴더 구조
+
+```
+blog/_podcasts/
+├── README.md                     # 이 파일 (트랙 SSOT)
+├── channel.yaml                  # RSS channel 상수 + R2 baseUrl + 커버 소스
+├── assets/
+│   └── showCover.png             # 쇼 커버 소스 (정식본은 GPT 생성으로 교체 가능)
+├── templates/
+│   ├── sourceDoc.template.md     # 소스 문서(기획서) 뼈대
+│   ├── episode.template.yaml     # episode.yaml 뼈대
+│   └── notebooklm_settings.md    # NotebookLM 고정 설정(언어·소스만·톤)
+├── _lib/
+│   ├── podcast_plan_loop.workflow.js  # 기획 루프 (기획작가 -> 평가자+회의자, 통과까지)
+│   ├── plan_episode.py           # plan JSON -> 에피소드 폴더(script.md+episode.yaml+brief.json)
+│   └── publish_podcast.py        # 전사+R2 업로드+RSS/인덱스 발행 (발행자)
+└── episodes/
+    └── P0N-{lane}-{slug}/        # 에피소드 산출물
+        ├── episode.yaml          # 메타데이터 SSOT (사람 작성)
+        ├── script.md             # NotebookLM 소스 문서 (우리 최종 deliverable)
+        ├── brief.json            # 기획 요지 + 루프 로그
+        └── published.json        # 발행 기계값 (guid mint-once, 오디오 크기/길이/발행일)
+```
+
+오디오(m4a/mp3)는 레포에 두지 않는다. R2 런타임 산출물이라 용량을 격리한다. 레포에는 텍스트와
+작은 커버 소스만 커밋한다.
+
+## 3. R2 레이아웃 (버킷 dartlab-podcast, 공개 r2.dev)
+
+```
+dartlab-podcast/                                  baseUrl = https://pub-...r2.dev
+├── feed.xml                                       RSS 2.0 (플랫폼 제출 대상, 재발행마다 덮어쓰기)
+├── index.json                                     프론트 크로스링크 레지스트리
+├── cover/show-cover-3000.jpg                      쇼 커버 (정사각 RGB, <500KB)
+└── episodes/<slug>/audio.mp3                       전사 MP3 (enclosure)
+```
+
+R2 를 쓰는 이유: egress 무료(청취자 스트리밍 트래픽 부담 0), 200 직응답(HF `/resolve` 는 302
+리다이렉트라 Apple 이 거부), Range 요청 지원(스트리밍/시크). 자격증명은 기존 `.env`
+`CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` 로 wrangler 가 업로드한다(새 S3 키 불필요).
+
+## 4. 발행 플로우
+
+```
+# 1. 기획 루프 (통과까지 반복). evidence 는 메인 스레드에서 dartlab 직독으로 확인한 수치.
+Workflow({ scriptPath: "blog/_podcasts/_lib/podcast_plan_loop.workflow.js",
+           args: { topic, lane, evidence } })
+
+# 2. 통과한 plan 을 에피소드 폴더로 저작
+uv run python -X utf8 blog/_podcasts/_lib/plan_episode.py --plan plan.json --lane company --slug <slug> --stock-code <6자리>
+
+# 3. 운영자: script.md 검토 -> NotebookLM 에 제공 -> 오디오 m4a 수령 -> episode.yaml status=ready
+
+# 4. 발행 (전사 -> R2 업로드 -> feed.xml + index.json 재생성 -> 업로드)
+uv run python -X utf8 blog/_podcasts/_lib/publish_podcast.py --episode P0N-... --audio <m4a 경로>
+```
+
+멱등: 같은 에피소드 재발행 시 guid 재사용(구독자 중복 방지), 재전사·재업로드로 정정한다.
+검증만: `--dry-run`. feed/index 만 재생성: `--rebuild-only`.
+
+## 5. 발행 게이트
+
+- `episode.yaml` `status` 가 `ready` 이상만 발행 대상.
+- 기획은 `podcast_plan_loop` 의 평가자(6원칙 각 85점 이상) + 회의자(hard 축 0 kill) 둘 다 통과해야 함.
+- 6원칙: 완결·따라오기 / 인사이트(통념-반전-메커니즘-렌즈) / 귀 정합(숫자에 분모·기간, 시각 의존 금지) /
+  쉬움·담백(약어 풀기, 허황된 비유 금지, AI는 그대로) / 재미·호기심(오프닝 갭, 클로징이 약속 갚음) /
+  구조 독창성(같은 뼈대 반복 금지).
+- 회의자 hard 축: forced-metric, misleading-frame, overclaim, external-dependency(문서 밖 지식 의존).
+- 숫자는 dartlab 직독 검증본만. 지어내기 금지. 투자 권유·목표가·확정 전망 금지.
+- 표기: em dash(긴 줄표) 금지, 범위는 물결(~), 문장은 다/요/까.
+
+## 6. 플랫폼 제출 (최초 1회, 이후 자동)
+
+발행하면 `feed.xml` 이 안정 URL 로 뜬다. castfeedvalidator.com 으로 검증 후 각 콘솔에 피드 URL 제출.
+세 플랫폼 모두 소유권 인증은 `channel.yaml` 의 `ownerEmail` 로 온다.
+
+- **YouTube Music**: YouTube Studio > 콘텐츠 > 팟캐스트 > RSS 피드 연결 > 피드 URL > 이메일 인증.
+  YouTube 가 커버로 정지영상 비디오를 자동 생성. 이후 에피소드는 피드에 추가만 하면 자동.
+- **Apple Podcasts**: podcastsconnect.apple.com > New Show > Add with RSS feed > 피드 URL > 이메일 인증.
+- **Spotify**: creators.spotify.com > existing RSS feed > 피드 URL > 8자리 코드 인증. (MP3 enclosure 라 임포트됨.)
+
+## 7. 크로스 링크 (회사·주제로 카드/블로그/터미널 연결)
+
+`index.json` 이 조인 레지스트리다. 조인 키는 `stockCode`(회사축)와 `topicSlug`(주제축). 각 에피소드가
+연결하는 카드 slug, 블로그 slug, 터미널 코드를 `episode.yaml` `links` 에 명시하고 index 에 실린다.
+프론트(Phase 2)는 이 한 파일을 읽어 카드 모달, 블로그, 터미널 회사 화면에 "관련 팟캐스트"를 렌더하고,
+RSS item link 는 회사 에피소드면 터미널 딥링크로 역방향 연결한다.
+
+## 8. 커버
+
+쇼 커버는 정사각 RGB, 3000x3000 로 정규화, 500KB 미만 JPEG(Apple 한계). 현재는 브랜드 워드마크 커버
+(`assets/showCover.png`)를 쓴다. 더 정교한 커버가 필요하면 GPT image_gen 정사각 생성본으로 교체 후
+재발행한다. 에피소드별 실사 배경은 Openverse(`blog/_scripts/fetch_cc0_images.py`)로 수급한다.
+
+## 9. Phase 2 (규모·안정성 필요 시)
+
+r2.dev 공개 서브도메인은 완만한 rate limit 이 있다(니치 채널엔 충분). 커스텀 도메인이 필요해지면
+Cloudflare zone 에 도메인을 붙여 R2 에 바인딩하고 `channel.yaml` 의 `baseUrl` 한 줄만 바꿔 재발행한다.
+플랫폼에는 "change feed URL" 플로우로 이전한다.
+
+## 참고 히스토리
+
+- 2026-06-30 팟캐스트 트랙 폐기(자체 TTS 음성 품질 미달).
+- 2026-07-02 부활. NotebookLM 소스 문서 파이프라인 + R2 발행 + RSS. 1편 발행(dartlab 2700 filings).

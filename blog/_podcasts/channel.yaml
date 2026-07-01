@@ -1,0 +1,30 @@
+# DartLab 팟캐스트 채널 상수 (RSS channel 레벨 SSOT)
+# feed.xml 은 이 파일 + 각 episode.yaml + published.json 으로 매 발행 시 재생성된다.
+# baseUrl 은 R2 공개 URL. Phase-2 로 커스텀 도메인 붙이면 이 한 줄만 바꾸고 재발행.
+channel:
+  title: DartLab
+  link: https://eddmpython.github.io/dartlab
+  language: ko
+  description: >-
+    2700개 기업 공시를 한 줄로 통합하는 DartLab. 재무제표와 공시를 데이터로 읽어
+    이야기로 풀어주는 한국 주식 분석 팟캐스트.
+  author: DartLab
+  ownerName: DartLab
+  ownerEmail: o12486vs2@gmail.com
+  category: Business
+  subCategory: Investing
+  explicit: false
+  type: episodic
+  copyright: DartLab
+
+# R2 공개 베이스. 버킷 dartlab-podcast, r2.dev 관리 서브도메인.
+# 오디오 enclosure / feed.xml / index.json / 커버 전부 이 아래로 서빙.
+r2:
+  bucket: dartlab-podcast
+  baseUrl: https://pub-ef732bbc413941dd80734f96e0cfe95d.r2.dev
+
+# 쇼 커버 (정사각 RGB, 3000x3000, <500KB JPEG 로 정규화되어 cover/show-cover-3000.jpg 로 업로드)
+# 소스는 blog/_podcasts/assets/showCover.png. 정식 커버는 운영자 GPT 생성본으로 교체 가능.
+cover:
+  source: assets/showCover.png
+  key: cover/show-cover-3000.jpg
