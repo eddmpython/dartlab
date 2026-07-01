@@ -126,6 +126,21 @@ def test_buyback_only_year_included():
     assert rows[0]["totalDividend"] is None
 
 
+def test_polluted_fiscal_year_dropped():
+    """오염 fy(엑셀 시리얼·오타 미래연도)는 제외. 패널에 '43830년' 류 표시 차단."""
+    from dartlab.scan.builders.edgar.report.build import shareholderReturnRows
+
+    facts = _facts(
+        [
+            {"tag": "CommonStockDividendsPerShareDeclared", "val": 1.0, "fy": 2024},
+            {"tag": "CommonStockDividendsPerShareDeclared", "val": 9.0, "fy": 43830},  # 오염 fy
+            {"tag": "PaymentsOfDividendsCommonStock", "val": 500.0, "fy": 2107},  # 오타 미래연도
+        ]
+    )
+    years = {r["year"] for r in shareholderReturnRows(facts, "WTBA")}
+    assert years == {"2024"}  # 1990~2035 밖은 드롭
+
+
 def test_debt_maturity_ladder():
     """부채 만기 사다리 y1~y5·after5·총장기부채 연도별 추출."""
     from dartlab.scan.builders.edgar.report.build import debtMaturityRows

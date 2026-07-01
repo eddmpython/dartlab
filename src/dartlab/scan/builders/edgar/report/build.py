@@ -137,6 +137,8 @@ def _annualByYear(facts: pl.DataFrame, tags: tuple[str, ...]) -> dict[int, float
             if fy is None:
                 continue
             fyInt = int(fy)
+            if fyInt < 1990 or fyInt > 2035:
+                continue  # 오염 fy(엑셀 시리얼 43465·오타 미래연도 2107) 방어. 패널 '43830년' 표시 차단.
             f = str(filed or "")
             if fyInt not in byFy or f >= bestFiled[fyInt]:  # 최신 filed(정정) 채택
                 byFy[fyInt] = float(val)
