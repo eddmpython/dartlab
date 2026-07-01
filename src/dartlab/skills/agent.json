@@ -2,7 +2,7 @@
   "meta": {
     "entrySkillId": "start.dartlabSkillOs",
     "canonicalSurface": "DartLab Skill OS",
-    "skillCount": 295,
+    "skillCount": 297,
     "categories": [
       {
         "id": "start",
@@ -20,7 +20,7 @@
         "id": "operation",
         "title": "Operation",
         "description": "ops 원문을 skill 절차로 묶어 테스트, 문서, 릴리즈, 확장 규칙을 찾는 운영 지도.",
-        "count": 33
+        "count": 35
       },
       {
         "id": "engines",
@@ -2861,7 +2861,7 @@
     },
     {
       "id": "engines.gather",
-      "bodyPreview": "## 엔진 역할\n\n`gather`는 분석 엔진이 쓰는 외부/보조 데이터를 가져오는 L1 성격의 실행 엔진이다. 가격, 컨센서스, 수급, 뉴스, 배당/분할, 섹터, 내부자거래, 주요주주, 기관 보유, peer, 매크로 원자료를 다룬다.\n\n`gather`는 원자료 수집과 snapshot 생성이 목적이다. 재무 해석은 `analysis`, 시장 매크로 해석은 `macro`, 후보 발굴은 `scan`이 담당한다.\n\n## 공개 호출 방식\n\n`dartlab.gather` 는 두 가지 형태로 쓴다 — 형태 A 가 권장 진입점, 형태 B 는 Gather 클래스 메서드를 직접 부를 때.\n\n```python\n# 형태 A — 모듈 callable (권장). dartlab.gather 는 GatherEntry 인스턴스라 axis 디스패치.\nimport dartlab\n\ndartlab.gather()                              # 가이드 DataFrame (전체 axis 목록)\ndartlab.gather(\"price\", \"005930\")             # KR OHLCV\ndartlab.gather(\"price\", \"AAPL\")               # US OHLCV (자동 판정)\ndartlab.gather(\"flow\", \"005930\")              # 수급\ndartlab.gather(\"flow\", \"005930\", limit=30)    # 최근 30거래일 수급\ndartlab.gather(\"flow\", \"005930\", start=\"2010-01-04\", end=\"2010-01-08\", sleepSec=1.0)  # 과거 수급 저속 백필\ndartlab.gather(\"flow\", \"005930\", all=True, sleepSec=1.0)  # 가능한 전체 수급 이력\ndartlab.gather(\"flow\", \"005930\", all=True, sleepSec=1.0, proxy=\"http://user:pass@host:port\")  # 사용자 프록시 경유\ndartlab.gather(\"flow\", targets=[\"005930\", \"000660\"], limit=30, parallel=2, proxy=\"http://user:pass@host:port\")  # 종목 단위 병렬 수급\ndartlab.gather(\"macro\")                       # KR 거시지표 wide\ndartlab.gather(\"macro\", \"FEDFUNDS\")           # FRED 자동 감지\ndartlab.gather(\"news\", \"삼성전자\")             # Google News RSS\ndartlab.gather(\"narrative\", market=\"KR\", days=30)    # 뉴스 내러티브 archive\ndartlab.gather(\"krxIndex\", \"close\", market=\"KOSPI\")  # 시장군 지수\n# 정기공시 due 는 Company.calendar — gather(\"calendar\"",
+      "bodyPreview": "## 엔진 역할\n\n`gather`는 분석 엔진이 쓰는 외부/보조 데이터를 가져오는 L1 성격의 실행 엔진이다. 가격, 컨센서스, 수급, 뉴스, 배당/분할, 섹터, 내부자거래, 주요주주, 기관 보유, peer, 매크로 원자료를 다룬다.\n\n`gather`는 원자료 수집과 snapshot 생성이 목적이다. 재무 해석은 `analysis`, 시장 매크로 해석은 `macro`, 후보 발굴은 `scan`이 담당한다.\n\n## 공개 호출 방식\n\n`dartlab.gather` 는 두 가지 형태로 쓴다 — 형태 A 가 권장 진입점, 형태 B 는 Gather 클래스 메서드를 직접 부를 때.\n\n```python\n# 형태 A — 모듈 callable (권장). dartlab.gather 는 GatherEntry 인스턴스라 axis 디스패치.\nimport dartlab\n\ndartlab.gather()                              # 가이드 DataFrame (전체 axis 목록)\ndartlab.gather(\"price\", \"005930\")             # KR OHLCV\ndartlab.gather(\"price\", \"AAPL\")               # US OHLCV (자동 판정)\ndartlab.gather(\"flow\", \"005930\")              # 수급\ndartlab.gather(\"flow\", \"005930\", limit=30)    # 최근 30거래일 수급\ndartlab.gather(\"flow\", \"005930\", start=\"2010-01-04\", end=\"2010-01-08\", sleepSec=1.0)  # 과거 수급 저속 백필\ndartlab.gather(\"flow\", \"005930\", all=True, sleepSec=1.0)  # 가능한 전체 수급 이력\ndartlab.gather(\"flow\", \"005930\", all=True, sleepSec=1.0, proxy=\"http://user:pass@host:port\")  # 사용자 프록시 경유\ndartlab.gather(\"flow\", targets=[\"005930\", \"000660\"], limit=30, parallel=2, proxy=\"http://user:pass@host:port\")  # 종목 단위 병렬 수급\ndartlab.gather(\"macro\")                       # KR 거시지표 wide\ndartlab.gather(\"macro\", \"FEDFUNDS\")           # FRED 자동 감지\ndartlab.gather(\"news\", \"삼성전자\")             # Google News RSS\ndartlab.gather(\"narrative\", market=\"KR\", days=30)    # 뉴스 내러티브 archive\ndartlab.gather(\"krxIndex\", \"close\", market=\"KOSPI\")  # 시장군 지수\ndartlab.gather(\"research\", \"005930\")             ",
       "title": "Gather",
       "category": "engines",
       "categoryTitle": "Engines",
@@ -4925,7 +4925,7 @@
     },
     {
       "id": "engines.scan",
-      "bodyPreview": "## 엔진 역할\n\n`scan`은 여러 기업을 한 번에 훑어 후보를 찾는 **L1.5 횡단 엔진**이다. L1 (company · gather) 위에서 전체 종목 universe 를 스캔해 ranking · filter · candidate evidence table 을 만든다. 단일 종목 심층 분석은 L2 (analysis · credit · macro · quant · industry) 의 책임. 질문의 단위가 \"삼성전자를 분석해줘\"이면 `Company`/`analysis`가 우선이고, \"조건에 맞는 종목을 찾아줘\", \"전종목에서 상위 기업을 골라줘\"이면 `scan`이 우선이다.\n\n`account`와 `ratio`는 primitive다. 복합 투자 질문은 `screen` preset/spec 또는 `quality`, `valuation`, `growth`, `profitability` 같은 축으로 시작하고, 최종 판단은 후보별 `analysis`, `credit`, `quant`로 검증한다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\n# 전체 스캔 축 가이드\nguide = dartlab.scan()\n\n# 축 실행\nquality = dartlab.scan(\"quality\")\nvaluation = dartlab.scan(\"valuation\")\ncashflow = dartlab.scan(\"cashflow\")\n\n# primitive\nrevenue = dartlab.scan(\"account\", \"매출액\")\nroe = dartlab.scan(\"ratio\", \"roe\")\n\n# 조건형 스크리닝\nfields = dartlab.scan(\"fields\", \"roe\")\nvalue = dartlab.scan(\"screen\", \"value\")\ncustom = dartlab.scan(\"screen\", spec={\"filters\": []})\n```\n\n## 강행 호출 룰 (agent 답변 품질 회귀 차단)\n\n21 axis 횡단 스크리닝에서 다음 4 룰 강행 — 메모리 압박 + refs 0 회귀 차단.\n\n1. **1 차 도구는 EngineCall 강제**. `EngineCall(apiRef=\"scan\", args={\"axis\": \"ratio\", \"metric\": \"roe\"})` 양식. RunPython 으로 전 종목 parquet 직접 로드 금지 — Polars Rust 힙 누수 (Company 1 개 ≈ 200~500MB) 로 OOM 가능.\n2. **개별 종목 분석 질문에 scan 호출 금지** — \"삼성전자 수익성\" 처럼 단일 기업이면 `Company.panel`/`Company.analysis` 사용. scan 은 *여러 종목 후보 찾기* 한정.\n3. **scan 결과 후보 → 상위 N (보통 10~20) 만 다음 단계로 전달**. 전종목 결과 그대로 답변 본문 dump 금지.\n4. **본문 숫자에 `[datasetRef:...]` + `[tableRef:...]` inline 표기 필수** — 스캔 결과는 prebuild 시점 (a",
+      "bodyPreview": "## 엔진 역할\n\n`scan`은 여러 기업을 한 번에 훑어 후보를 찾는 **L1.5 횡단 엔진**이다. L1 (company · gather) 위에서 전체 종목 universe 를 스캔해 ranking · filter · candidate evidence table 을 만든다. 단일 종목 심층 분석은 L2 (analysis · credit · macro · quant · industry) 의 책임. 질문의 단위가 \"삼성전자를 분석해줘\"이면 `Company`/`analysis`가 우선이고, \"조건에 맞는 종목을 찾아줘\", \"전종목에서 상위 기업을 골라줘\"이면 `scan`이 우선이다.\n\n`account`와 `ratio`는 primitive다. 복합 투자 질문은 `screen` preset/spec 또는 `quality`, `valuation`, `growth`, `profitability` 같은 축으로 시작하고, 최종 판단은 후보별 `analysis`, `credit`, `quant`로 검증한다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\n# 전체 스캔 축 가이드\nguide = dartlab.scan()\n\n# 축 실행\nquality = dartlab.scan(\"quality\")\nvaluation = dartlab.scan(\"valuation\")\ncashflow = dartlab.scan(\"cashflow\")\n\n# primitive\nrevenue = dartlab.scan(\"account\", \"매출액\")\nroe = dartlab.scan(\"ratio\", \"roe\")\n\n# 조건형 스크리닝\nfields = dartlab.scan(\"fields\", \"roe\")\nvalue = dartlab.scan(\"screen\", \"value\")\ncustom = dartlab.scan(\"screen\", spec={\"filters\": []})\n```\n\n## 강행 호출 룰 (agent 답변 품질 회귀 차단)\n\n22 axis 횡단 스크리닝에서 다음 4 룰 강행 — 메모리 압박 + refs 0 회귀 차단.\n\n1. **1 차 도구는 EngineCall 강제**. `EngineCall(apiRef=\"scan\", args={\"axis\": \"ratio\", \"metric\": \"roe\"})` 양식. RunPython 으로 전 종목 parquet 직접 로드 금지 — Polars Rust 힙 누수 (Company 1 개 ≈ 200~500MB) 로 OOM 가능.\n2. **개별 종목 분석 질문에 scan 호출 금지** — \"삼성전자 수익성\" 처럼 단일 기업이면 `Company.panel`/`Company.analysis` 사용. scan 은 *여러 종목 후보 찾기* 한정.\n3. **scan 결과 후보 → 상위 N (보통 10~20) 만 다음 단계로 전달**. 전종목 결과 그대로 답변 본문 dump 금지.\n4. **본문 숫자에 `[datasetRef:...]` + `[tableRef:...]` inline 표기 필수** — 스캔 결과는 prebuild 시점 (a",
       "title": "Scan",
       "category": "engines",
       "categoryTitle": "Engines",
@@ -4982,7 +4982,7 @@
         "dartlab://skills/engines.scan"
       ],
       "procedure": [
-        "dartlab.scan() 으로 21 축 가이드 DataFrame 확인.",
+        "dartlab.scan() 으로 22 축 가이드 DataFrame 확인.",
         "axis 선택 (account · ratio · screen · valuation · quality · governance 등).",
         "dartlab.scan(axis, target?, universe=..., spec=...) 호출.",
         "결과의 ranking · universe · datasetAsOf · filter · formula · executionRef 묶음.",
@@ -7721,6 +7721,79 @@
       }
     },
     {
+      "id": "operation.content",
+      "bodyPreview": "# 콘텐츠 파이프라인 — 블로그 + 카드뉴스\n\n콘텐츠는 게이트 통과물이 아니라 편집물이다. 기계 검사는 바닥(위생)일 뿐, 기획과 반복 개선이 본체다. 이 문서는 그 본체를 잡는다.\n\n## 북극성 — 무엇이 훌륭한가\n- 카드뉴스: ① 각 카드의 가장 큰 글자만 위에서 아래로 훑어도 한 편의 짧은 글로 완결된다. ② 표지가 처음 본 사람을 1초에 멈춘다. ③ 카드마다 그 문장이 말하는 이미지가 붙는다. ④ 모든 숫자가 공시 실측이다. ⑤ 직전 편들과 다른 이야기다.\n- 블로그: 첫 두 문단이 비전문가를 계속 읽게 하고, 독자질문 하나로 끝까지 끌고 가며, 끝이 \"다음 공시를 어떻게 볼지\"를 바꾼다.\n- 둘 다 \"통과했나\"가 아니라 \"이름 걸고 공유하겠는가\"로 판정한다.\n\n## 카드뉴스 5대 원칙 (대원칙, 운영자 확정)\n이 다섯이 모든 카드의 합격선이다. 다섯을 모두 넘겨야 \"읽히는\" 카드다.\n1. **쉬운 이야기 + 인사이트(핵심)**: 소리 내어 읽어 자연스럽고(어려운 약어 0), 큰문장만 이어 읽어도 앞장을 받아 다음 장으로 넘기는 한 편의 이야기로 완결된다. 그리고 반드시 인사이트가 있어야 한다. 통념과 충돌하는 사실 + 왜 가능한가(메커니즘) + 앞으로 무엇을 다르게 볼까(렌즈). 쉬움도 서사도 인사이트 없이는 빈 카드다.\n2. **사람들이 관심 있는 이야기**: 독자가 이미 궁금해하는, 지금 회자되는 주제를 고른다. 표지가 1초에 멈추고 끝까지 넘기고 싶어야 한다. 파생적·지루한 각도는 탈락. 주제 선정 자체도 이 기준으로 한다(주제 토론 단계).\n3. **시각과 함께 설명**: 주장을 글로만 두지 말고, 그 주장을 증명하는 시각(그래프·표)을 옆에 붙여 글과 시각으로 함께 설명한다. 시각은 장식이 아니라 증거다.\n4. **절제와 시각의 조화**: 보기 좋은 떡이 목표가 아니다. 덕지덕지 꾸미지 말고 꼭 필요한 시각만 절제해서 글과 조화시킨다. 화려함이 아니라 읽힘이 기준이다.\n5. **관련성 있는 배경이미지 (회사 주제면 그 회사 로고·상징이 기본값)**: 카드마다 그 내용과 맞는 배경 이미지를 찾아 붙인다. 범용·장식 사진은 실패. **회사가 주인공인 슬라이드의 배경은 그 회사의 실제 로고·심볼·상호(간판)·브랜드 실물을 기본값으로 쓴다.** 주식·재무·교육용 카드에서 회사 로고·상징 사용은 저작권 문제가 되지 않는다. 일반 산업 장면(범용 공장·웨이퍼·데이터센터)으로 도망가면 차별성이 0이라 실패다. 일반 장면은 회사가 특정되지 않는 개념 슬라이드에만. 맞는 실사를 끝내 못 찾을 때만 깨끗한 다크 텍스트로 둔다.\n\n## 작가 craft — 사람이 읽히는 글\n연결만으로는 \"편한데 안 남는\" 덱이 된다. 연결 위에 긴장·약속·장면·보상을 얹는다.\n- **표지 후크(호기심 갭)** — 표지는 정보가 아니라 결핍을 만든다. 충돌하는 사실의 일부만 보이고 답은 숨긴다. 과장 형용사·빈 질문·정답을 다 적어 갭을 닫는 표지·본문이 약속을 못 갚는 낚시는 금지.\n- **약속과 보상(promise·payoff)** — 0b의 편집 약속이",
+      "title": "콘텐츠 파이프라인 — 블로그 + 카드뉴스",
+      "category": "operation",
+      "categoryTitle": "Operation",
+      "kind": "curated",
+      "status": "observed",
+      "purpose": "블로그 글과 라이브 카드뉴스(/cards)를 기획부터 발행까지 만드는 운영 SSOT. 기획(인사이트·스파인 선작성)을 본체로 두고, 평가개선 루프가 재작성을 강제하며, 카드별 이미지 적합성과 숫자 정직성을 구조에 박는다.",
+      "whenToUse": [
+        "카드뉴스 제작",
+        "읽히는 카드",
+        "캐러셀 발행",
+        "블로그 글 기획",
+        "콘텐츠 파이프라인",
+        "/cards 발행"
+      ],
+      "inputs": [],
+      "requiredInputs": [],
+      "outputs": [],
+      "apiRefs": [],
+      "toolRefs": [],
+      "datasetRefs": [],
+      "knowledgeRefs": [],
+      "linkedSkills": [],
+      "requires": [],
+      "alternatives": [],
+      "succeededBy": [],
+      "deprecatedBy": [],
+      "sourceRefs": [],
+      "procedure": [
+        "인사이트 발굴 — 상식과 충돌하는 단 하나의 사실",
+        "편집 약속 한 문장 + 직전 편과 다른 서사 구조",
+        "스파인(큰문장) 선작성 — 카드뉴스 핵심",
+        "카드별 비주얼 동시 구상",
+        "평가개선 루프 — 재작성 강제",
+        "카드별 이미지 수급 + 눈검수 · 숫자 dartlab 재검증",
+        "발행 게이트 통과 + 운영자 시각 검수·승인"
+      ],
+      "recipeSteps": [],
+      "requiredEvidence": [],
+      "expectedOutputs": [
+        "카드뉴스 — carousel.yaml(또는 글 frontmatter carousel) + cards.plan.json + 카드별 이미지",
+        "블로그 — 검증된 글 + carousel + hero 이미지",
+        "발행 — hfMedia carousels/index.json(라이브 /cards)"
+      ],
+      "visualGuidance": [],
+      "failureModes": [],
+      "forbidden": [],
+      "examples": [
+        "다음 카드뉴스 주제 잡고 만들어줘",
+        "이 카드 큰글자만 읽어도 읽히게 고쳐줘",
+        "블로그 글 기획부터 발행까지"
+      ],
+      "runtimeCompatibility": {
+        "server": {
+          "status": "supported"
+        },
+        "localPython": {
+          "status": "supported"
+        },
+        "mcp": {
+          "status": "limited"
+        },
+        "webAi": {
+          "status": "limited"
+        },
+        "pyodide": {
+          "status": "unsupported",
+          "notes": "블로그·카드 스크립트는 네트워크·파일 IO와 HF 발행을 쓰므로 pyodide에서 실행하지 않는다."
+        }
+      }
+    },
+    {
       "id": "operation.contributionWorkflow",
       "bodyPreview": "## 원칙\n\n기여 작업은 Skill OS에서 시작한다. 저장소의 공식 규칙은 `start.dartlabSkillOs`를 통해 찾고, 변경 범위에 맞는 `operation.*` skill을 확인한 뒤 작업한다.\n\n코드 변경은 기존 구조와 책임 경계를 우선한다. 새 abstraction은 중복이나 복잡도를 실제로 줄일 때만 추가하고, unrelated 정리 작업은 같은 변경에 섞지 않는다.\n\n## 코드 규칙\n\n- 식별자와 파일명은 기존 DartLab 규칙을 따른다. Python 함수·메서드·변수·파일명은 camelCase, 클래스는 PascalCase, 모듈 상수는 ALL_CAPS를 기본으로 한다.\n- 공개 API, 대표 반환 형태, 오류·제한 동작은 Skill OS와 capability/docstring이 어긋나지 않게 유지한다.\n- 계층 경계는 `operation.architecture`를 따른다. L2 엔진 간 직접 import, L1.5 sibling cross import, 표현/전송 helper의 비즈니스 로직 유입을 회귀로 본다.\n- provider와 대용량 데이터 경로는 `operation.code`의 메모리-safe 룰을 따른다. eager cross-scan, full dataframe 기본 반환, baseline 증가를 새 코드에 만들지 않는다.\n\n## 검증 규칙\n\n- 테스트는 변경 범위에 맞게 좁게 시작하고, shared behavior나 계층 경계를 건드리면 architecture/audit gate까지 넓힌다.\n- 긴 테스트나 pytest 직접 실행이 필요한 경우 `tests/test-lock.sh`를 우선 사용한다.\n- Guard Index 관련 회귀 작업은 `operation.testing`, `operation.code`, `operation.architecture`의 절차를 함께 적용한다.\n- 실패한 검증은 숨기지 않는다. 기존 실패인지, 이번 변경으로 생긴 실패인지 구분해 기록한다.\n\n## 커밋 규칙\n\n- 커밋은 한 논리 단위로 나눈다. 기능 변경과 생성 산출물 동기화가 분리 가능한 경우 별도 커밋으로 둔다.\n- staging은 명시 경로만 사용한다. 예: `git add README.md src/dartlab/skills/specs/operation/contributionWorkflow.md`.\n- 전체 staging 명령 (`git add .`, `git add -A`)은 사용하지 않는다.\n- 커밋 메시지는 한국어로 작성하고, 변경 범주와 내용을 함께 담는다. 예: `문서: Skill OS 운영 안내 추가`.\n- 커밋 메시지와 공개 산출물에는 assistant identity, 모델명, vendor명, generated-by 표식을 남기지 않는다.\n- push는 별도 요청이 있을 때만 수행한다.\n\n## 공개 산출물 규칙\n\nREADME, Skill OS, landing page, blog, JSON index는 사용자가 직접 읽는 공개 산출물이다. 표현은 주체 중립적으로 쓴다.\n\n운영 실패나 폐기 이력은 ",
       "title": "기여 작업 흐름과 커밋 규칙",
@@ -8004,6 +8077,100 @@
         },
         "pyodide": {
           "status": "supported"
+        }
+      }
+    },
+    {
+      "id": "operation.dataDownloadCenter",
+      "bodyPreview": "## 역할\n\n데이터 다운로드 센터는 dartlab 공개 데이터(HuggingFace `eddmpython/dartlab-data` 의 parquet)를 python 을 쓰지 않는 소비자가 **슬라이스·라이브**로 가져가게 하는 서빙 층이다. `engines.data`(수집·프리빌드·업로드 파이프라인)의 반대편, 소비 층에 해당한다. 랜딩 `/data` 표면 + Cloudflare Worker `dartlab-data-csv` 로 구성된다.\n\n핵심 원칙: **CSV 사본을 굽지 않는다.** HF parquet 이 SSOT 이고 브라우저·워커가 요청 시점에 직독·변환한다(런타임-SSOT, `operation.architecture`).\n\n## 정신 모델 (거울 URL)\n\nHF parquet 경로를 그대로 비추고 확장자만 바꾼다.\n\n```\nHF   …/resolve/main/{dir}/{id}.parquet\nAPI  https://{worker}/v1/{dir}/{id}.{csv|tsv}\n```\n\n워커가 아는 유일한 데이터 지식 = `dartlab.core.dataConfig.DATA_RELEASES` 의 `public` 플래그에서 도출한 노출 화이트리스트(`downloadCatalog()`). 새 public·flat·표형 카테고리는 코드 0 으로 자동 노출, private 은 자동 차단된다.\n\n## 2 티어\n\n| 티어 | 백엔드 | 범위 | 방식 |\n|---|---|---|---|\n| Tier1 브라우저 | 0 | 노출 dir 전부(날짜샤드 포함) | parquet 직독 → xlsx/csv (buildWorkbook·csvExport 재사용) |\n| Tier2 워커 | Cloudflare Worker 1개 | 회사·시리즈 flat 파일 | parquet → CSV/TSV 온더플라이 (IMPORTDATA·Power Query) |\n\nTier2 부적격(날짜샤드·전종목 대형)은 413 + Tier1 안내로 정직하게 떨어뜨린다.\n\n## URL 계약\n\n```\n/v1/{dir}/{id}.{csv|tsv}?cols=&tail=&head=&freq=\n/v1/{dir}/{id}/schema.json      # footer 만 (cols/tail 추측용)\n/v1/                            # 자기기술 카탈로그 (url_syntax·params·datasets)\n```\n\n- `cols` 컬럼 투영(출력 순서 겸용) · `tail`/`head` 행 슬라이스 · `freq` 다운샘플(d/w/m/q/y, last-of-period).\n- 숫자는 en-US invariant, 결손은 빈 셀(0 대체 금지), 선두 UTF-8 BOM, CRLF. 기본 TSV(한국 Excel 콤마 로케일 회피) + CSV 병행.\n- 셀(cols×rows) cap 초과 시 최근행 우선 자동 tail + `X-DartLab-Capped` 헤더 신호(본문 주석행 금지, IMPORTDATA 오염 방지).\n\n## 런타임 변환 (워커·브라우저 공유 SSOT)\n\nraw 슬라",
+      "title": "데이터 다운로드 센터 (공개 parquet · 시트·코드 라이브 서빙)",
+      "category": "operation",
+      "categoryTitle": "Operation",
+      "kind": "curated",
+      "status": "observed",
+      "purpose": "공개 HF parquet 데이터를 비-python 소비자(구글시트·엑셀·curl·브라우저)가 슬라이스·라이브 API 로 쓰게 하는 서빙 층 운영 SSOT. Tier1 브라우저 직독 다운로드 + Tier2 Cloudflare Worker 온더플라이 CSV/TSV, 런타임 변환은 워커·브라우저 공유(베이크 0). 트리거 '데이터센터', '데이터 다운로드', '라이브 API', 'IMPORTDATA'.",
+      "whenToUse": [
+        "데이터 다운로드 센터",
+        "데이터센터",
+        "/data",
+        "라이브 데이터 API",
+        "IMPORTDATA",
+        "구글시트 데이터",
+        "엑셀 parquet",
+        "CSV API",
+        "데이터 슬라이스 다운로드"
+      ],
+      "inputs": [
+        "데이터셋 dir (예 dart/finance · gov/prices/company · macro/fred)",
+        "종목코드 또는 시리즈 id",
+        "변환 종류 (raw · 재무제표 · 주가 보조지표 · 경제지표 보조지표)"
+      ],
+      "requiredInputs": [],
+      "outputs": [
+        "xlsx/csv 다운로드 (Tier1 브라우저)",
+        "CSV/TSV 라이브 URL (Tier2 워커, 시트·엑셀·Python·curl)"
+      ],
+      "apiRefs": [],
+      "toolRefs": [],
+      "datasetRefs": [],
+      "knowledgeRefs": [
+        "engines.data",
+        "operation.architecture",
+        "operation.ui",
+        "runtime.dataAvailabilityCheck"
+      ],
+      "linkedSkills": [],
+      "requires": [],
+      "alternatives": [],
+      "succeededBy": [],
+      "deprecatedBy": [],
+      "sourceRefs": [
+        "dartlab://skills/operation.dataDownloadCenter"
+      ],
+      "procedure": [
+        "`cols` 컬럼 투영(출력 순서 겸용) · `tail`/`head` 행 슬라이스 · `freq` 다운샘플(d/w/m/q/y, last-of-period).",
+        "숫자는 en-US invariant, 결손은 빈 셀(0 대체 금지), 선두 UTF-8 BOM, CRLF. 기본 TSV(한국 Excel 콤마 로케일 회피) + CSV 병행.",
+        "셀(cols×rows) cap 초과 시 최근행 우선 자동 tail + `X-DartLab-Capped` 헤더 신호(본문 주석행 금지, IMPORTDATA 오염 방지).",
+        "KR/US 는 code 모양으로 자동 분기한다(6자리=KR, 그 외=US 티커, `resolveMarket` SSOT). 재무·주가 동일 규칙.",
+        "재무제표 stmt = IS/BS/CF/CIS/SCE/RATIOS, freq = quarter/annual/ttm.",
+        "보조지표는 MA5/20/60·RSI14·MACD·볼린저(+주가는 거래량이평·ATR). 지표는 시간순 전제라 date 오름차순 정렬 후 계산한다.",
+        "사용자: 랜딩 `/data` (데이터셋 미리보기·다운로드[가공 + 원본 parquet]·HF 파일브라우저 탐색·라이브 API 스니펫 시트/엑셀/Python/curl).",
+        "워커 자기기술: `/v1/` 카탈로그 · `/v1/{dir}/{id}/schema.json`.",
+        "코드: `infra/workers/dataCsv/`(worker.js · allowlist.js · dist esbuild 번들) · `landing/src/routes/data/+page.svelte`.",
+        "drift 가드: `tests/core/test_download_catalog.py::test_worker_allowlist_in_sync` (Python `downloadCatalog()` ↔ 워커 allowlist 동기 강제).",
+        "UI: svelte-check 0 에러 + Playwright(다운로드 실파일·라이브 API 헤더).",
+        "워커: `infra/workers/dataCsv` esbuild dist → wrangler deploy(비대화식, `.env` 토큰). 로컬 증명은 `node dev.mjs`."
+      ],
+      "recipeSteps": [],
+      "requiredEvidence": [],
+      "expectedOutputs": [],
+      "visualGuidance": [],
+      "failureModes": [
+        "큰 파일(날짜샤드·panel 본문)을 Tier2 라이브 변환으로 시도 (CF 128MB 초과로 413)",
+        "private dir 을 노출 대상으로 오인 (public 플래그 SSOT 위반)",
+        "CSV 사본을 HF 에 굽기 (런타임-SSOT 규칙 위반, 온더플라이만)"
+      ],
+      "forbidden": [
+        "public 아닌 dir 을 다운로드 센터에 노출",
+        "변환 결과를 별도 parquet 로 베이크 (런타임 공유만)",
+        "결손을 0 으로 채우기 (honest-gap 빈 셀 유지)"
+      ],
+      "examples": [],
+      "runtimeCompatibility": {
+        "server": {
+          "status": "supported"
+        },
+        "localPython": {
+          "status": "supported"
+        },
+        "mcp": {
+          "status": "supported"
+        },
+        "webAi": {
+          "status": "supported"
+        },
+        "pyodide": {
+          "status": "limited"
         }
       }
     },

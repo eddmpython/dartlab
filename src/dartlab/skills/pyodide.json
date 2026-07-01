@@ -752,6 +752,15 @@
       "limitations": []
     },
     {
+      "id": "operation.dataDownloadCenter",
+      "title": "데이터 다운로드 센터 (공개 parquet · 시트·코드 라이브 서빙)",
+      "category": "operation",
+      "status": "limited",
+      "dataSources": [],
+      "requiredSetup": [],
+      "limitations": []
+    },
+    {
       "id": "operation.dataLineage",
       "title": "Data Lineage — raw → parquet → axis 매핑 SSOT",
       "category": "operation",

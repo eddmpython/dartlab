@@ -239,7 +239,7 @@
       "title": "Data (수집·프리빌드 파이프라인)",
       "category": "engines",
       "purpose": "Data 는 dartlab 의 데이터 파이프라인 운영 SSOT — DART 12h 수집, EDGAR 일배치, scan 프리빌드, HF 직렬 업로드를 하나의 워크플로우 그래프로 묶는다. 사용자 호출 capability 가 아니라 *운영자 절차* + python 진입점 (gather/Company/scan) 안내. 트리거 — '데이터 수집', 'data 명세', '프리빌드', 'HF 업로드'.",
-      "inDegree": 2,
+      "inDegree": 3,
       "outDegree": 8,
       "cluster": "data",
       "isEntry": false,
@@ -1019,7 +1019,7 @@
       "title": "dartlab 아키텍처 — 전체 청사진",
       "category": "operation",
       "purpose": "dartlab 아키텍처 — 전체 청사진 운영 규칙을 Skill OS에서 확인하고 변경 전후 검증 게이트로 사용한다.",
-      "inDegree": 14,
+      "inDegree": 15,
       "outDegree": 1,
       "cluster": "operation",
       "isEntry": false,
@@ -1051,6 +1051,19 @@
       "isEntry": false,
       "isLeaf": false,
       "isOrphan": false,
+      "audiences": []
+    },
+    {
+      "id": "operation.content",
+      "title": "콘텐츠 파이프라인 — 블로그 + 카드뉴스",
+      "category": "operation",
+      "purpose": "블로그 글과 라이브 카드뉴스(/cards)를 기획부터 발행까지 만드는 운영 SSOT. 기획(인사이트·스파인 선작성)을 본체로 두고, 평가개선 루프가 재작성을 강제하며, 카드별 이미지 적합성과 숫자 정직성을 구조에 박는다.",
+      "inDegree": 0,
+      "outDegree": 0,
+      "cluster": "operation",
+      "isEntry": false,
+      "isLeaf": true,
+      "isOrphan": true,
       "audiences": []
     },
     {
@@ -1090,6 +1103,19 @@
       "isEntry": false,
       "isLeaf": false,
       "isOrphan": false,
+      "audiences": []
+    },
+    {
+      "id": "operation.dataDownloadCenter",
+      "title": "데이터 다운로드 센터 (공개 parquet · 시트·코드 라이브 서빙)",
+      "category": "operation",
+      "purpose": "공개 HF parquet 데이터를 비-python 소비자(구글시트·엑셀·curl·브라우저)가 슬라이스·라이브 API 로 쓰게 하는 서빙 층 운영 SSOT. Tier1 브라우저 직독 다운로드 + Tier2 Cloudflare Worker 온더플라이 CSV/TSV, 런타임 변환은 워커·브라우저 공유(베이크 0). 트리거 '데이터센터', '데이터 다운로드', '라이브 API', 'IMPORTDATA'.",
+      "inDegree": 0,
+      "outDegree": 4,
+      "cluster": "operation",
+      "isEntry": false,
+      "isLeaf": false,
+      "isOrphan": true,
       "audiences": []
     },
     {
@@ -1374,7 +1400,7 @@
       "title": "UI 엔진 (L4 표현 계층)",
       "category": "operation",
       "purpose": "UI 엔진 (L4 표현 계층) 운영 규칙을 Skill OS에서 확인하고 변경 전후 검증 게이트로 사용한다.",
-      "inDegree": 2,
+      "inDegree": 3,
       "outDegree": 3,
       "cluster": "operation",
       "isEntry": false,
@@ -3659,12 +3685,12 @@
       "title": "데이터 가용성 확인",
       "category": "runtime",
       "purpose": "분석 전에 dataset, Company topic, snapshot 최신성, 실행 가능 runtime을 확인한다.",
-      "inDegree": 0,
+      "inDegree": 1,
       "outDegree": 0,
       "cluster": "runtime",
       "isEntry": false,
       "isLeaf": true,
-      "isOrphan": true,
+      "isOrphan": false,
       "audiences": []
     },
     {
@@ -5488,6 +5514,26 @@
     {
       "src": "operation.dashboardDesign",
       "dst": "engines.viz",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.dataDownloadCenter",
+      "dst": "engines.data",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.dataDownloadCenter",
+      "dst": "operation.architecture",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.dataDownloadCenter",
+      "dst": "operation.ui",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.dataDownloadCenter",
+      "dst": "runtime.dataAvailabilityCheck",
       "kind": "knowledge"
     },
     {
@@ -9725,6 +9771,8 @@
     "operation.agentBoundaries",
     "operation.aiEngine",
     "operation.cliMaintenance",
+    "operation.content",
+    "operation.dataDownloadCenter",
     "operation.dataLineage",
     "operation.docstringStandard",
     "operation.engineAudit",
@@ -9811,7 +9859,6 @@
     "recipes.technical.priceVolumeZScore",
     "recipes.technical.rsiBollingerCluster",
     "runtime.cacheStrategy",
-    "runtime.dataAvailabilityCheck",
     "runtime.mcpWorkbench",
     "runtime.multimodal",
     "runtime.notebooks",
@@ -9889,8 +9936,10 @@
     "operation.aiProductReplatform",
     "operation.apiContract",
     "operation.cliMaintenance",
+    "operation.content",
     "operation.coreloop",
     "operation.dashboardDesign",
+    "operation.dataDownloadCenter",
     "operation.dataLineage",
     "operation.docsBuilderRefactor",
     "operation.docstringStandard",

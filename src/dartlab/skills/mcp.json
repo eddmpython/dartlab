@@ -2,7 +2,7 @@
   "meta": {
     "entrySkillId": "start.dartlabSkillOs",
     "canonicalSurface": "DartLab Skill OS",
-    "skillCount": 295,
+    "skillCount": 297,
     "categories": [
       {
         "id": "start",
@@ -20,7 +20,7 @@
         "id": "operation",
         "title": "Operation",
         "description": "ops 원문을 skill 절차로 묶어 테스트, 문서, 릴리즈, 확장 규칙을 찾는 운영 지도.",
-        "count": 33
+        "count": 35
       },
       {
         "id": "engines",
@@ -1640,6 +1640,22 @@
       "bodyPreview": "외부 LLM 용 짧은 도입 — < 200 토큰. 사실 + 호출 시그니처만."
     },
     {
+      "id": "operation.content",
+      "title": "콘텐츠 파이프라인 — 블로그 + 카드뉴스",
+      "category": "operation",
+      "purpose": "블로그 글과 라이브 카드뉴스(/cards)를 기획부터 발행까지 만드는 운영 SSOT. 기획(인사이트·스파인 선작성)을 본체로 두고, 평가개선 루프가 재작성을 강제하며, 카드별 이미지 적합성과 숫자 정직성을 구조에 박는다.",
+      "whenToUse": [
+        "카드뉴스 제작",
+        "읽히는 카드",
+        "캐러셀 발행",
+        "블로그 글 기획",
+        "콘텐츠 파이프라인",
+        "/cards 발행"
+      ],
+      "nextSkills": [],
+      "bodyPreview": "# 콘텐츠 파이프라인 — 블로그 + 카드뉴스\n\n콘텐츠는 게이트 통과물이 아니라 편집물이다. 기계 검사는 바닥(위생)일 뿐, 기획과 반복 개선이 본체다. 이 문서는 그 본체를 잡는다.\n\n## 북극성 — 무엇이 훌륭한가\n- 카드뉴스: ① 각 카드의 가장 큰 글자만 위에서 아래로 훑어도 한 편의 짧은 글로 완결된다. ② 표지가 처음 본 사람을 1초에 멈춘다. ③ 카드마다 그 문장이 말하는 이미지가 붙는다. ④ 모든 숫자가 공시 실측이다. ⑤ 직전 편들과 다른 이야기다.\n- 블로그: 첫 두 문단이 비전문가를 계속 읽게 하고, 독자질문 하나로 끝까지 끌고 가며, 끝이 \"다음 공시를 어떻게 볼지\"를 바꾼다.\n- 둘 다 \"통과했나\"가 아니라 \"이름 걸고 공유하겠는가\"로 판정한다.\n\n## 카드뉴스 5대 원칙 (대원칙, 운영자 확정)\n이 다섯이 모든 카드의 합격선이다. 다섯을 모두 넘겨야 \"읽히는\" 카드다.\n1. **쉬운 이야기 + 인사이트(핵심)**: 소리 내어 읽어 자연스럽고(어려운 약어 0), 큰문장만 이어 읽어도 앞장을 받아 다음 장으로 넘기는 한 편의 이야기로 완결된다. 그리고 반드시 인사이트가 있어야 한다. 통념과 충돌하는 사실 + 왜 가능한가(메커니즘) + 앞으"
+    },
+    {
       "id": "operation.contributionWorkflow",
       "title": "기여 작업 흐름과 커밋 규칙",
       "category": "operation",
@@ -1688,6 +1704,25 @@
       ],
       "nextSkills": [],
       "bodyPreview": "# 대시보드 배치·설계 원칙\n\n## 1. Bento 5 원칙 (Apple/Vercel/shadcn 합성)\n\n1. **의도적 비대칭** — 동일 grid 위 size 변주로 hierarchy. 모든 카드 같은\n   크기 금지.\n2. **size = 위계** — Apple WWDC25: 가장 큰 카드 = 가장 중요. dartlab: 자산구조\n   dual-stack (XL 4×4) > KPI row 4×(1×1) > supporting trend (M 2×2).\n3. **Gestalt 일관** — border radius / shadow / padding 통일. shadcn `rounded-2xl`\n   + `gap-4 md:gap-6 p-6 shadow-sm`.\n4. **6~12 블록 상한 (view 당)** — 15+ 시 인지부하. dartlab 4 sub × 6~12 카드.\n5. **`grid-auto-flow: dense` + 모바일 1-col stack** — CSS Grid 만으로 packing.\n   라이브러리 무도입 1차.\n\n## 2. Sub 분류 원칙\n\n- **회계 분류** (default) — dartlab 채택. 재무제표 4 sub: perf"
+    },
+    {
+      "id": "operation.dataDownloadCenter",
+      "title": "데이터 다운로드 센터 (공개 parquet · 시트·코드 라이브 서빙)",
+      "category": "operation",
+      "purpose": "공개 HF parquet 데이터를 비-python 소비자(구글시트·엑셀·curl·브라우저)가 슬라이스·라이브 API 로 쓰게 하는 서빙 층 운영 SSOT. Tier1 브라우저 직독 다운로드 + Tier2 Cloudflare Worker 온더플라이 CSV/TSV, 런타임 변환은 워커·브라우저 공유(베이크 0). 트리거 '데이터센터', '데이터 다운로드', '라이브 API', 'IMPORTDATA'.",
+      "whenToUse": [
+        "데이터 다운로드 센터",
+        "데이터센터",
+        "/data",
+        "라이브 데이터 API",
+        "IMPORTDATA",
+        "구글시트 데이터",
+        "엑셀 parquet",
+        "CSV API",
+        "데이터 슬라이스 다운로드"
+      ],
+      "nextSkills": [],
+      "bodyPreview": "## 역할\n\n데이터 다운로드 센터는 dartlab 공개 데이터(HuggingFace `eddmpython/dartlab-data` 의 parquet)를 python 을 쓰지 않는 소비자가 **슬라이스·라이브**로 가져가게 하는 서빙 층이다. `engines.data`(수집·프리빌드·업로드 파이프라인)의 반대편, 소비 층에 해당한다. 랜딩 `/data` 표면 + Cloudflare Worker `dartlab-data-csv` 로 구성된다.\n\n핵심 원칙: **CSV 사본을 굽지 않는다.** HF parquet 이 SSOT 이고 브라우저·워커가 요청 시점에 직독·변환한다(런타임-SSOT, `operation.architecture`).\n\n## 정신 모델 (거울 URL)\n\nHF parquet 경로를 그대로 비추고 확장자만 바꾼다.\n\n```\nHF   …/resolve/main/{dir}/{id}.parquet\nAPI  https://{worker}/v1/{dir}/{id}.{csv|tsv}\n```\n\n워커가 아는 유일한 데이터 지식 = `dartlab.core.dataConfig.DATA_RELEASES` 의 `public` 플래그에서 도출한 노출 화이트리스트(`do"
     },
     {
       "id": "operation.dataLineage",
