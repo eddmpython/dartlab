@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { brand } from '$lib/brand';
+	import SubjectHub from '$lib/subjects/SubjectHub.svelte';
 	import { findPrevNext, findSeriesPrevNext, getCategoryPath, getPost, getRelatedPostsByCategory, getSeriesPath } from '$lib/blog/posts';
 	import { buildAbsoluteUrl, buildArticleJsonLd, buildBreadcrumbJsonLd, buildFaqJsonLd, parseFaqFromMarkdown } from '$lib/seo';
 	import { Calendar, ChevronLeft, ChevronRight } from 'lucide-svelte';
@@ -127,6 +128,9 @@
 	const prevNext = $derived(findPrevNext(slug));
 	const seriesPrevNext = $derived(findSeriesPrevNext(slug));
 	const relatedCategoryPosts = $derived(getRelatedPostsByCategory(slug, 3));
+	// 주제 허브 join 키 · 회사글=stockCode, 주제글=topicSlug(프론트매터). 관련 팟캐스트 슬롯 채움(없으면 미표시).
+	const subjectCode = $derived(String((meta as Record<string, unknown>)?.stockCode ?? '').trim());
+	const subjectTopic = $derived(String((meta as Record<string, unknown>)?.topicSlug ?? '').trim());
 
 	const pageTitle = $derived(`${meta?.title ?? 'Blog'} · DartLab 전자공시 분석`);
 	const pageDesc = $derived(meta?.description ?? `DartLab Blog · ${meta?.title ?? ''}`);
@@ -339,6 +343,8 @@
 					<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="160" height="45" loading="lazy" decoding="async" />
 				</a>
 			</div>
+
+			<SubjectHub stockCode={subjectCode} topicSlug={subjectTopic} />
 
 			{#if seriesPrevNext.prev || seriesPrevNext.next}
 				<section class="series-nav">
