@@ -427,8 +427,59 @@ export function createReportSource(core: DataCore): ReportPort {
 		};
 	}
 
+	// US(EDGAR) 실질지분 · edgar/scan/report/ownership.parquet 직독(proxy Beneficial Ownership 표,
+	// proxyBuild 산출). holder+pct 만 있어 shares/relate 는 null. 개인은 KR 동형 익명 집계.
+	async function loadEdgarShareholderPeriods(ticker: string): Promise<ShareholdersView[] | null> {
+		try {
+			const rows = await core.requestParquetRows<Row>({
+				origin: 'hfRange',
+				path: 'edgar/scan/report/ownership.parquet',
+				columns: ['stockCode', 'year', 'holder', 'pct'],
+				filter: { stockCode: { $eq: ticker } },
+				cacheKey: `edgarReport.ownership:${ticker}`,
+				cache: { scope: 'memory', ttlMs: 6 * 3_600_000, maxEntries: 256 }
+			});
+			const byYear = new Map<string, Row[]>();
+			for (const r of rows) {
+				const y = str(r.year);
+				if (!y) continue;
+				let arr = byYear.get(y);
+				if (!arr) byYear.set(y, (arr = []));
+				arr.push(r);
+			}
+			const out: ShareholdersView[] = [];
+			for (const [year, grp] of byYear) {
+				const named: ShareholderRow[] = [];
+				let pn = 0;
+				let pc = 0;
+				for (const r of grp) {
+					const name = str(r.holder).trim();
+					const ratio = num(r.pct);
+					if (!name || ratio == null) continue;
+					const kind = classifyShareholder(name);
+					if (kind === 'person') {
+						pn++;
+						pc += ratio;
+					} else {
+						named.push({ name, relate: '', ratio, shares: null, kind, code: null });
+					}
+				}
+				named.sort((a, b) => (b.ratio ?? 0) - (a.ratio ?? 0));
+				if (named.length || pn) {
+					out.push({ year, quarter: '', named: named.slice(0, 12), person: pn ? { count: pn, ratio: pc || null, shares: null } : null, totalPct: null });
+				}
+			}
+			out.sort((a, b) => a.year.localeCompare(b.year));
+			return out.length ? out : null;
+		} catch {
+			return null;
+		}
+	}
+
 	// 최대주주 (year, quarter) 전(全) 기간 · 역방향 소유 시계열. ownership 과 별도 read·캐시(계약 비파괴).
 	async function buildShareholderPeriods(code: string): Promise<ShareholdersView[] | null> {
+		const m = resolveMarket(code);
+		if (m.market === 'US' && m.ticker) return loadEdgarShareholderPeriods(m.ticker); // US = proxy ownership 직독
 		const maj = await read('majorHolder', code, ['nm', 'relate', 'stock_knd', 'trmend_posesn_stock_qota_rt', 'trmend_posesn_stock_co', 'rcept_no']);
 		if (!maj.length) return null;
 		const byPeriod = new Map<string, { year: string; quarter: string; rows: Row[] }>();
@@ -708,7 +759,36 @@ export function createReportSource(core: DataCore): ReportPort {
 		return out.length ? out : null;
 	}
 
+	// US(EDGAR) 개별임원보수 · edgar/scan/report/execPayIndividual.parquet 직독(proxy SCT, proxyBuild 산출).
+	async function loadEdgarTopExecPay(ticker: string): Promise<TopExecPay | null> {
+		try {
+			const rows = await core.requestParquetRows<Row>({
+				origin: 'hfRange',
+				path: 'edgar/scan/report/execPayIndividual.parquet',
+				columns: ['stockCode', 'year', 'name', 'title', 'totalPay'],
+				filter: { stockCode: { $eq: ticker } },
+				cacheKey: `edgarReport.execPay:${ticker}`,
+				cache: { scope: 'memory', ttlMs: 6 * 3_600_000, maxEntries: 256 }
+			});
+			let year = '';
+			for (const r of rows) {
+				const y = str(r.year);
+				if (y > year) year = y;
+			}
+			const list = rows
+				.filter((r) => str(r.year) === year && num(r.totalPay) != null && str(r.name).trim())
+				.map((r) => ({ name: str(r.name).trim(), title: str(r.title).replace(/\s+/g, ' ').trim(), pay: num(r.totalPay)! }))
+				.sort((a, b) => b.pay - a.pay)
+				.slice(0, 8);
+			return list.length ? { year, avgPay: null, rows: list } : null;
+		} catch {
+			return null;
+		}
+	}
+
 	async function buildTopExecPay(code: string): Promise<TopExecPay | null> {
+		const m = resolveMarket(code);
+		if (m.market === 'US' && m.ticker) return loadEdgarTopExecPay(m.ticker); // US = proxy SCT 직독
 		const rows = await read('executivePayIndividual', code, ['nm', 'ofcps', 'mendng_totamt', 'rcept_no']);
 		// 보수는 연간 확정값 · 사업보고서(4분기)만. 최신 연도 + 최신 접수(정정 우선) → 보수 내림차순 top 8.
 		const annual = rows.filter((r) => str(r.quarter) === '4분기' && num(r.mendng_totamt) != null && str(r.nm).trim() && str(r.nm) !== '-');
@@ -739,7 +819,37 @@ export function createReportSource(core: DataCore): ReportPort {
 	// '4,219(주1)' 류 주석 꼬리 제거 후 수치화 (감사시간·보수 필드 실측 오염 패턴)
 	const numClean = (v: unknown): Num => num(typeof v === 'string' ? v.replace(/\(.*?\)/g, '') : v);
 
+	// US(EDGAR) 감사보수 · edgar/scan/report/auditFees.parquet 직독(proxy Audit Fees 표, proxyBuild 산출).
+	// nonAudit = auditRelated+tax+other 합(전부 null 이면 null 로 미공시 구분).
+	async function loadEdgarAuditFees(ticker: string): Promise<AuditFeeYear[] | null> {
+		try {
+			const rows = await core.requestParquetRows<Row>({
+				origin: 'hfRange',
+				path: 'edgar/scan/report/auditFees.parquet',
+				columns: ['stockCode', 'year', 'auditFee', 'auditRelatedFee', 'taxFee', 'otherFee'],
+				filter: { stockCode: { $eq: ticker } },
+				cacheKey: `edgarReport.auditFees:${ticker}`,
+				cache: { scope: 'memory', ttlMs: 6 * 3_600_000, maxEntries: 256 }
+			});
+			const out: AuditFeeYear[] = [];
+			for (const r of rows) {
+				const year = Number(str(r.year));
+				const auditFee = num(r.auditFee);
+				if (!Number.isFinite(year) || auditFee == null) continue;
+				const parts = [num(r.auditRelatedFee), num(r.taxFee), num(r.otherFee)];
+				const nonAuditFee = parts.some((v) => v != null) ? parts.reduce<number>((a, v) => a + (v ?? 0), 0) : null;
+				out.push({ year, auditFee, nonAuditFee });
+			}
+			out.sort((a, b) => a.year - b.year);
+			return out.length ? out : null;
+		} catch {
+			return null;
+		}
+	}
+
 	async function buildAuditFees(code: string): Promise<AuditFeeYear[] | null> {
+		const m = resolveMarket(code);
+		if (m.market === 'US' && m.ticker) return loadEdgarAuditFees(m.ticker); // US = proxy 감사보수 직독
 		const [ac, nac] = await Promise.all([
 			read('auditContract', code, ['bsns_year', 'stlm_dt', 'mendng', 'adt_cntrct_dtls_mendng', 'rcept_no']),
 			read('nonAuditContract', code, ['bsns_year', 'stlm_dt', 'servc_mendng', 'rcept_no'])
