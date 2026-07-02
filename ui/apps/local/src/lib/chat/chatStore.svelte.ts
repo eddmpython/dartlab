@@ -27,6 +27,8 @@ export interface ChatMessage {
 	id: string;
 	role: 'user' | 'assistant';
 	text: string;
+	/** 추론(사고) 스트림. reasoning 모델의 사고 흐름 (접이식 추론 패널). */
+	thinking: string;
 	refs: EvidenceRef[];
 	/** 작업대. 자율 도구 호출 카드 (근거를 만드는 과정). */
 	tools: ToolBlock[];
@@ -152,10 +154,17 @@ export class ChatStore {
 
 		const conv = this.#ensureActive();
 		if (conv.messages.length === 0) conv.title = text.slice(0, 24);
+		// 이전 턴들(현재 질문 제외)을 히스토리로. 후속 질문("그럼 영업이익률은?")의 맥락 유지.
+		// 로컬 모델 컨텍스트 창 보호를 위해 최근 12 턴으로 제한.
+		const history = conv.messages
+			.filter((m) => m.text && !m.error)
+			.slice(-12)
+			.map((m) => ({ role: m.role, content: m.text }));
 		conv.messages.push({
 			id: this.#uid('u'),
 			role: 'user',
 			text,
+			thinking: '',
 			refs: [],
 			tools: [],
 			suggested: [],
@@ -166,6 +175,7 @@ export class ChatStore {
 			id: this.#uid('a'),
 			role: 'assistant',
 			text: '',
+			thinking: '',
 			refs: [],
 			tools: [],
 			suggested: [],
@@ -191,7 +201,8 @@ export class ChatStore {
 			for await (const ev of this.#ai.streamAsk({
 				prompt: text,
 				mode: 'chat',
-				code: /^\d{6}$/.test(code) ? code : undefined
+				code: /^\d{6}$/.test(code) ? code : undefined,
+				history
 			})) {
 				this.#apply(conv, idx, ev);
 			}
@@ -216,6 +227,9 @@ export class ChatStore {
 		switch (ev.type) {
 			case 'TEXT_MESSAGE_CONTENT':
 				m.text += ev.delta;
+				break;
+			case 'THINKING_DELTA':
+				m.thinking += ev.delta;
 				break;
 			case 'TOOL_CALL_START':
 				// 작업대 카드 신설 (진행중). args 를 보존해 펼쳤을 때 입력을 보여준다.
@@ -291,6 +305,7 @@ export class ChatStore {
 				messages: (c.messages ?? []).map((m) => ({
 					...m,
 					streaming: false,
+					thinking: m.thinking ?? '',
 					// 재시작 후 진행중이던 도구 카드는 완료 처리 (결과가 다시 오지 않으므로).
 					tools: (m.tools ?? []).map((t) => ({
 						...t,

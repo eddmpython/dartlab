@@ -10,6 +10,7 @@
 	import Markdown from '$lib/chat/Markdown.svelte';
 	import ToolCard from '$lib/chat/ToolCard.svelte';
 	import Evidence from '$lib/chat/Evidence.svelte';
+	import ThinkingPanel from '$lib/chat/ThinkingPanel.svelte';
 	import ProviderSettings from '$lib/chat/ProviderSettings.svelte';
 	import '@dartlab/ui-surfaces/terminal/terminal.css';
 	import { BrandSocial, DARTLAB_BRAND_LINKS, LAST_SYM_KEY } from '@dartlab/ui-surfaces/terminal';
@@ -50,6 +51,7 @@
 	$effect(() => {
 		messages.length;
 		messages.at(-1)?.text;
+		messages.at(-1)?.thinking;
 		messages.at(-1)?.tools.length;
 		if (!scroller) return;
 		const el = scroller;
@@ -147,6 +149,10 @@
 							<div class="turn assistant">
 								<img class="msgava" src="{base}/avatar.png" alt="DartLab" width="30" height="30" />
 								<div class="body">
+									{#if m.thinking || (m.streaming && !m.text)}
+										<ThinkingPanel thinking={m.thinking} active={m.streaming && !m.text} />
+									{/if}
+
 									{#if m.tools.length}
 										<div class="workbench">
 											{#each m.tools as t (t.id)}
@@ -158,8 +164,6 @@
 									{#if m.text}
 										<Markdown text={m.text} />
 										{#if m.streaming}<span class="caret"></span>{/if}
-									{:else if m.streaming && !m.error}
-										<div class="thinking"><span class="dot"></span><span class="dot"></span><span class="dot"></span> {m.tools.length ? '근거를 정리하는 중' : '분석 준비 중'}</div>
 									{/if}
 
 									{#if m.error}
@@ -406,34 +410,6 @@
 			opacity: 0;
 		}
 	}
-	.thinking {
-		display: flex;
-		align-items: center;
-		gap: 0.3rem;
-		font-size: 0.85rem;
-		color: var(--dl-ink-mute, #6b7280);
-	}
-	.thinking .dot {
-		width: 0.35rem;
-		height: 0.35rem;
-		border-radius: 50%;
-		background: currentColor;
-		animation: bob 1.2s infinite ease-in-out;
-	}
-	.thinking .dot:nth-child(2) {
-		animation-delay: 0.15s;
-	}
-	.thinking .dot:nth-child(3) {
-		animation-delay: 0.3s;
-	}
-	@keyframes bob {
-		0%, 60%, 100% {
-			opacity: 0.3;
-		}
-		30% {
-			opacity: 1;
-		}
-	}
 	.err {
 		font-size: 0.85rem;
 		color: var(--dl-bad, #ff6b6b);
@@ -448,13 +424,14 @@
 		font-size: 0.78rem;
 		padding: 0.3rem 0.7rem;
 		border-radius: 999px;
-		border: 1px dashed var(--dl-line, #2a2c33);
+		border: 1px solid var(--dl-line, #2a2c33);
 		background: none;
-		color: var(--dl-info, #6ab0ff);
+		color: var(--dl-ink-dim, #9aa0aa);
 		cursor: pointer;
 	}
 	.sug:hover:not(:disabled) {
-		border-style: solid;
+		border-color: var(--dl-accent, #ff5a36);
+		color: var(--dl-ink, #e7e7ea);
 	}
 	.sug:disabled {
 		opacity: 0.5;

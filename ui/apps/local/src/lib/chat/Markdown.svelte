@@ -24,10 +24,29 @@
 		return out;
 	}
 
+	// 볼드 정규화. 로컬 모델이 흘리는 `** 단어`(여는 별표 뒤 공백, left-flanking 실패)와
+	// 닫힘 누락(줄 안 홀수 `**`)을 렌더 전에 보정해 raw 별표가 화면에 노출되지 않게 한다.
+	function normalizeBold(t: string): string {
+		let out = t.replace(/(?<=^|[^*])\*\*[ \t]+(?=\S)/gm, '**');
+		out = out
+			.split('\n')
+			.map((line) => {
+				const n = (line.match(/\*\*/g) || []).length;
+				if (n % 2 === 1) {
+					const i = line.lastIndexOf('**');
+					return line.slice(0, i) + line.slice(i + 2);
+				}
+				return line;
+			})
+			.join('\n');
+		return out;
+	}
+
 	// CommonMark flanking 보정. `**"..."**한글` 처럼 닫는 ** 뒤가 CJK 면 right-flanking 실패 -> 공백 삽입.
+	// 여는 ** 는 줄시작/공백/괄호/파이프 뒤에만 온다는 lookbehind 로 닫는별+여는별 오인 쌍을 차단.
 	function fixCjkBold(t: string): string {
-		let out = t.replace(/\*\*\s*([^*\n]*?[^\s*])\s*\*\*/g, '**$1**');
-		out = out.replace(/(\*\*[^*\n]+?\*\*)(?=[가-힣ぁ-んァ-ヴー一-龥])/g, '$1 ');
+		let out = t.replace(/(?<=^|[\s(|])\*\*\s*([^*\n]*?[^\s*])\s*\*\*/gm, '**$1**');
+		out = out.replace(/(?<=^|[\s(|])(\*\*[^*\n]+?\*\*)(?=[가-힣ぁ-んァ-ヴー一-龥])/gm, '$1 ');
 		return out;
 	}
 
@@ -43,7 +62,7 @@
 	}
 
 	const html = $derived.by(() => {
-		const cleaned = fixCjkBold(stripRawCallIds(stripThinking(text ?? '')));
+		const cleaned = fixCjkBold(normalizeBold(stripRawCallIds(stripThinking(text ?? ''))));
 		return sanitize(marked.parse(cleaned) as string);
 	});
 </script>

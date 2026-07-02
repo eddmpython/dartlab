@@ -84,7 +84,6 @@
 			{/if}
 		</span>
 		<span class="name">{label}</span>
-		<span class="mono">{tool.name}</span>
 		{#if tool.summary}<span class="sum">{tool.summary}</span>{/if}
 		<span class="sp"></span>
 		{#if hasBody}
@@ -96,7 +95,7 @@
 		<div class="body">
 			{#if argCode}
 				<div class="seg">
-					<div class="segh">입력</div>
+					<div class="segh">입력 · {tool.name}</div>
 					<pre class="code"><code>{argCode}</code></pre>
 				</div>
 			{/if}
@@ -189,12 +188,6 @@
 	.name {
 		font-weight: 600;
 		color: var(--dl-ink, #e7e7ea);
-		flex-shrink: 0;
-	}
-	.mono {
-		font-family: var(--dl-font-mono, ui-monospace, monospace);
-		font-size: 0.68rem;
-		color: var(--dl-ink-mute, #6b7280);
 		flex-shrink: 0;
 	}
 	.sum {
