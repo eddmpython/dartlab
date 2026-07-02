@@ -9,13 +9,49 @@ episode:
   title: "SK하이닉스: 다섯 번 죽을 뻔한 회사가 어떻게 AI 시대 이익률 58%를 찍었나"
   lane: company                          # 회사 lane
   language: ko
-  status: draft                          # 오디오 수령 후 ready 로 바꾸면 발행 대상
+  status: ready                          # 오디오 수령 완료. ready 이상만 발행 대상
 
   # 오디오 소스 = 블로그 글. 운영자가 이 URL 을 NotebookLM 에 넣어 오디오 생성.
   audio:
     generator: notebooklm
-    sourceHint: ""                       # NotebookLM m4a 경로(발행 시 --audio 로 지정)
+    sourceHint: "Downloads/5번의_파산_위기_딛고_삼성을_넘다.m4a"   # 발행 시 --audio 로 지정
     sourceDoc: https://eddmpython.github.io/dartlab/blog/000660-skhynix   # 소스 = 블로그 URL
+
+  # 이미지: source.webp(companies/000660 풀 재사용) 에서 카드풍 스틸을 렌더한다(그레이톤 + 로즈 강조).
+  image:
+    source: cover.jpg
+    key: episodes/skhynix/cover-3000.jpg
+  staticImage:
+    source: static-video.jpg
+    key: episodes/skhynix/static-video.jpg
+  thumbnail:
+    source: static-video.jpg
+    key: episodes/skhynix/static-video.jpg
+  # 재사용 원본(한 세트) · companies/000660 공유 풀을 이름으로 참조(재업로드 없음). blog/OPERATIONS.md 2절.
+  sourceAssets:
+    - name: hynix-hbm-cleanroom
+      role: reusable-original
+      pool: companyAsset
+    - name: skhynix-dram-chip
+      role: source
+      pool: companyAsset
+  visual:
+    source: assets/source.webp
+    kicker: EP.02 · DartLab Podcast
+    titleLines:
+      - 다섯 번 죽을 뻔한 회사가
+      - "[[삼성]]을 넘어섰다"
+      - "이익률 [[58%]]"
+    subtitle: 1983 현대전자에서 AI 메모리 최강까지, 텐베거의 조건을 강세와 약세 양쪽으로
+    footer: 재무제표 격자 · 근거 링크 · 투자권유 아님
+  caption:
+    hook: 적자로 죽어가던 메모리 회사가 2년 만에 영업이익률 58%를 찍었습니다.
+    body: >-
+      1983년 현대전자로 시작해 다섯 번 죽을 뻔한 회사가, HBM과 메모리 사이클 상방을 타고
+      2025년 4분기 사상 처음으로 모회사 삼성전자를 추월했습니다. 무슨 회사고, 어떻게
+      성장했고, 왜 성장할 수 있었는지, 그리고 텐베거가 될 수 있는지를 강세와 약세 양쪽으로 풉니다.
+    cta: 전체 에피소드는 DartLab 팟캐스트와 블로그 글에서 들을 수 있습니다.
+    hashtags: ["#SK하이닉스", "#HBM", "#메모리반도체", "#텐베거", "#DartLab"]
 
   audienceQuestion: 적자로 죽어가던 메모리 회사가 어떻게 2년 만에 영업이익률 58%를 찍었나?
   oneLineMessage: >-
@@ -39,5 +75,5 @@ episode:
   cardType: company
   links:
     blogSlug: "000660-skhynix"           # {base}/blog/000660-skhynix (소스이자 역링크)
-    cardSlug: ""                          # 블로그 frontmatter carousel 발행 시 채움
-    terminalCode: "000660"                # {base}/terminal?sym=000660
+    cardSlug: "000660-skhynix"            # {base}/cards?post=000660-skhynix (카드뉴스 포스트)
+    terminalCode: "000660"               # {base}/terminal?sym=000660
