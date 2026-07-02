@@ -3,6 +3,13 @@
 from dartlab.scan.builders.edgar.report.auditorBuild import buildEdgarAuditor
 from dartlab.scan.builders.edgar.report.build import buildEdgarReport
 from dartlab.scan.builders.edgar.report.employeeBuild import buildEdgarEmployee
+from dartlab.scan.builders.edgar.report.ex21Build import buildEdgarSubsidiaries
 from dartlab.scan.builders.edgar.report.proxyBuild import buildEdgarProxyReport
 
-__all__ = ["buildEdgarAuditor", "buildEdgarEmployee", "buildEdgarProxyReport", "buildEdgarReport"]
+__all__ = [
+    "buildEdgarAuditor",
+    "buildEdgarEmployee",
+    "buildEdgarProxyReport",
+    "buildEdgarReport",
+    "buildEdgarSubsidiaries",
+]

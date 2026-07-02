@@ -163,7 +163,46 @@ export function createReportSource(core: DataCore): ReportPort {
 		return workforce.length ? workforce : null;
 	}
 
+	// US(EDGAR) 자회사 · edgar/scan/report/subsidiaries.parquet 직독(10-K EX-21, ex21Build 산출).
+	// US 는 자회사명·설립관할만 공시(장부가·지분율 무공시) → purpose 에 관할 표기, 수치는 정직 null.
+	async function loadEdgarInvestments(ticker: string): Promise<InvestmentsBundle | null> {
+		try {
+			const rows = await core.requestParquetRows<Row>({
+				origin: 'hfRange',
+				path: 'edgar/scan/report/subsidiaries.parquet',
+				columns: ['stockCode', 'year', 'name', 'jurisdiction'],
+				filter: { stockCode: { $eq: ticker } },
+				cacheKey: `edgarReport.subsidiaries:${ticker}`,
+				cache: { scope: 'memory', ttlMs: 6 * 3_600_000, maxEntries: 256 }
+			});
+			let bestYear = '';
+			for (const r of rows) {
+				const y = str(r.year);
+				if (y > bestYear) bestYear = y;
+			}
+			const list: InvestmentRow[] = rows
+				.filter((r) => str(r.year) === bestYear && str(r.name).trim())
+				.map((r) => ({
+					name: str(r.name).trim(),
+					purpose: str(r.jurisdiction).trim(),
+					stakePct: null,
+					bookValue: null,
+					acquiredAmt: null,
+					targetNet: null
+				}))
+				.sort((a, b) => a.name.localeCompare(b.name));
+			if (!list.length) return null;
+			const latest: InvestmentsView = { year: bestYear, rows: list, moreCount: 0, moreBook: 0 };
+			// trend 는 장부가 무공시라 자회사 수만(bookTotal null 불가 계약 → 미제공 대신 count 기반 생략), periods 는 최신 1기.
+			return { latest, trend: [], periods: [{ year: bestYear, quarter: '', rows: list }] };
+		} catch {
+			return null;
+		}
+	}
+
 	async function buildInvestments(code: string): Promise<InvestmentsBundle | null> {
+		const m = resolveMarket(code);
+		if (m.market === 'US' && m.ticker) return loadEdgarInvestments(m.ticker); // US = 10-K EX-21 직독
 		const inv = await read('investedCompany', code, ['inv_prm', 'invstmnt_purps', 'frst_acqs_amount', 'trmend_blce_qota_rt', 'trmend_blce_acntbk_amount', 'recent_bsns_year_fnnr_sttus_thstrm_ntpf']);
 		// ── latest: 최신 유효 (year, quarter) 의 전체 출자사 (장부가 desc) · 우측 패널 스크롤·출자 다이얼로그 단일 소스 ──
 		let latest: InvestmentsView | null = null;
