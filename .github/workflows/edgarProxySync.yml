@@ -1,0 +1,66 @@
+name: EDGAR Proxy Sync (governance 3-table)
+
+# US 거버넌스 3표(감사보수·개별임원보수·실질지분) proxy(DEF 14A) 수집. done 마커가 filingDate 기반이라
+# 새 proxy 제출사만 자동 재수집(연 1회 proxy 시즌에 자연 갱신). 초기 백필은 로컬, 본 워크플로는 유지보수.
+# DART 정기보고서 report/ 수집의 US 대칭. SEC fair-access 페이싱, run 당 청크 예산.
+
+on:
+  schedule:
+    - cron: '0 10 * * 2'   # 매주 화요일 UTC 10:00 (edgarFilingsSync 메타 갱신 후)
+  workflow_dispatch:
+    inputs:
+      chunk:
+        description: '청크당 회사 수'
+        default: '300'
+        type: string
+      maxChunks:
+        description: 'run 당 청크 상한(CI 예산)'
+        default: '4'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hf-edgar-proxy
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+      - name: Set up Python
+        run: uv python install 3.12
+      - name: Install dependencies
+        run: uv sync
+      - name: Download allFilings meta (proxy 대상 SSOT)
+        run: |
+          uv run python -X utf8 -c "
+          import os
+          from pathlib import Path
+          from huggingface_hub import hf_hub_download
+          import shutil
+          import dartlab.config as cfg
+          fp = hf_hub_download('eddmpython/dartlab-data', 'edgar/allFilings/recent.parquet',
+                               repo_type='dataset', token=os.environ['HF_TOKEN'])
+          dst = Path(cfg.dataDir) / 'edgar' / 'allFilings' / 'recent.parquet'
+          dst.parent.mkdir(parents=True, exist_ok=True)
+          shutil.copyfile(fp, dst)
+          print('meta ready:', dst)
+          "
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          DARTLAB_DATA_DIR: ${{ github.workspace }}/data
+      - name: Proxy governance sync (chunked, resume via done marker)
+        run: |
+          uv run python -X utf8 .github/scripts/sync/backfillEdgarProxyReport.py \
+            --chunk "${{ github.event.inputs.chunk || '300' }}" \
+            --max-chunks "${{ github.event.inputs.maxChunks || '4' }}"
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          DARTLAB_DATA_DIR: ${{ github.workspace }}/data
+          DARTLAB_HF_RETRY_ATTEMPTS: '3'

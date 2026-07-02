@@ -27,6 +27,12 @@ _TABLES = {
     "ownership": "OWNERSHIP_COLS",
 }
 _DONE = "proxyDone.parquet"
+# 재수집 dedup 키. 같은 키의 신규(fresh)가 구값을 대체(정정 proxy 반영).
+_KEYS = {
+    "auditFees": ["stockCode", "year"],
+    "execPayIndividual": ["stockCode", "year", "name"],
+    "ownership": ["stockCode", "year", "holder"],
+}
 
 
 def _dl(api, name: str, tok: str) -> pl.DataFrame | None:
@@ -78,10 +84,29 @@ def main() -> int:
     for k, sc in schemas.items():
         seeded = _dl(api, f"{k}.parquet", tok)
         frames[k] = seeded if seeded is not None else pl.DataFrame(schema=sc)  # polars 진리값 불가(or 금지)
+    # done 마커 = stockCode+filingDate. 새 proxy(더 최신 filingDate) 제출 시 자동 무효화 → 주기 재수집.
+    import dartlab.config as _cfg
+
+    metaFp = Path(_cfg.dataDir) / "edgar" / "allFilings" / "recent.parquet"
+    meta = pl.read_parquet(metaFp, columns=["stockCode", "form", "filingDate"]).filter(pl.col("form") == "DEF 14A")
+    latestFd: dict[str, str] = dict(
+        meta.sort("filingDate", descending=True)
+        .group_by("stockCode")
+        .head(1)
+        .select(["stockCode", "filingDate"])
+        .iter_rows()
+    )
     doneDf = _dl(api, _DONE, tok)
-    done: set[str] = set(doneDf["stockCode"].to_list()) if doneDf is not None else set()
+    doneFd: dict[str, str] = {}
+    if doneDf is not None:
+        if "filingDate" in doneDf.columns:
+            doneFd = dict(doneDf.select(["stockCode", "filingDate"]).iter_rows())
+        else:  # 구스키마(stockCode only) = 현재 최신 proxy 로 처리된 것 (백필 당시 최신)
+            doneFd = {tk: latestFd.get(tk, "") for tk in doneDf["stockCode"].to_list()}
+    done: set[str] = {tk for tk, fd in doneFd.items() if fd >= latestFd.get(tk, "")}
     print(
-        f"[proxyBackfill] 시드: done {len(done)}사 · " + " · ".join(f"{k}={v.height}행" for k, v in frames.items()),
+        f"[proxyBackfill] 시드: done {len(done)}사(마커 {len(doneFd)}, 신규 proxy 무효화 {len(doneFd) - len(done)}) · "
+        + " · ".join(f"{k}={v.height}행" for k, v in frames.items()),
         flush=True,
     )
 
@@ -97,12 +122,16 @@ def main() -> int:
             print(f"[proxyBackfill] 전 회사 처리 완료 ({time.time() - t0:.0f}s)", flush=True)
             break
         done |= set(processed)
+        for tk in processed:
+            doneFd[tk] = latestFd.get(tk, "")
         for k in frames:
             fresh = pl.DataFrame(rows[k], schema=schemas[k]) if rows[k] else pl.DataFrame(schema=schemas[k])
             frames[k] = (
-                pl.concat([frames[k], fresh], how="vertical_relaxed").unique(keep="first").sort(["stockCode", "year"])
+                pl.concat([fresh, frames[k]], how="vertical_relaxed")
+                .unique(subset=_KEYS[k], keep="first")  # fresh 우선(정정 proxy 가 구값 대체)
+                .sort(["stockCode", "year"])
             )
-        doneOut = pl.DataFrame({"stockCode": sorted(done)})
+        doneOut = pl.DataFrame({"stockCode": sorted(doneFd), "filingDate": [doneFd[t] for t in sorted(doneFd)]})
         _publish(api, frames, doneOut, tmp, tok)
         chunks += 1
         print(f"[proxyBackfill] 청크 {chunks} 완료: 누적 done {len(done)}사 ({time.time() - t0:.0f}s)", flush=True)
