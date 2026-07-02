@@ -708,7 +708,31 @@ export function createReportSource(core: DataCore): ReportPort {
 		return { events, years: [...dilByYear.values()].sort((a, b) => a.year - b.year) };
 	}
 
+	// US(EDGAR) 감사인 · edgar/scan/report/auditor.parquet 직독(10-K 텍스트 canonical 추출, auditorBuild 산출).
+	// US 상장 대형주 의견은 사실상 전부 unqualified 라 opinion 은 null(정직), 감사법인·연도 시계열이 본질.
+	async function loadEdgarAuditTrail(ticker: string): Promise<AuditYear[] | null> {
+		try {
+			const rows = await core.requestParquetRows<Row>({
+				origin: 'hfRange',
+				path: 'edgar/scan/report/auditor.parquet',
+				columns: ['stockCode', 'year', 'auditor', 'sinceYear'],
+				filter: { stockCode: { $eq: ticker } },
+				cacheKey: `edgarReport.auditor:${ticker}`,
+				cache: { scope: 'memory', ttlMs: 6 * 3_600_000, maxEntries: 256 }
+			});
+			const out: AuditYear[] = rows
+				.map((r) => ({ year: Number(str(r.year)), auditor: str(r.auditor).trim(), opinion: null, special: null }))
+				.filter((a) => Number.isFinite(a.year) && a.auditor)
+				.sort((a, b) => a.year - b.year);
+			return out.length ? out : null;
+		} catch {
+			return null;
+		}
+	}
+
 	async function buildAuditTrail(code: string): Promise<AuditYear[] | null> {
+		const m = resolveMarket(code);
+		if (m.market === 'US' && m.ticker) return loadEdgarAuditTrail(m.ticker); // US = 10-K 감사인 직독
 		const rows = await read('auditOpinion', code, ['adtor', 'adt_opinion', 'adt_reprt_spcmnt_matter', 'rcept_no']);
 		// ⚠ auditOpinion 의 year 컬럼은 캘린더 연도가 아니라 공시 원문 기수 라벨('제55기(당기)' 류 · 실측).
 		// 신뢰 가능한 캘린더 앵커는 rcept_no(접수일자)뿐: 사업보고서(4분기)는 익년 제출 → 사업연도 = 접수연도 − 1.
