@@ -735,7 +735,31 @@ export function createReportSource(core: DataCore): ReportPort {
 		return { years: out, ladder };
 	}
 
+	// US(EDGAR) 주식수 변동 · edgar/scan/report/capitalChanges.parquet 직독(XBRL StockIssued*/Repurchased* 연간 집계).
+	// XBRL 은 연 합계만 주므로 events 는 빈 배열(주가 차트 마커에 합성 일자 금지, 정직). 희석 이력 카드는 years 로 점등.
+	async function loadEdgarCapitalChanges(ticker: string): Promise<CapitalChangesBundle | null> {
+		try {
+			const rows = await core.requestParquetRows<Row>({
+				origin: 'hfRange',
+				path: 'edgar/scan/report/capitalChanges.parquet',
+				columns: ['stockCode', 'year', 'paidIn', 'conversion', 'reduction'],
+				filter: { stockCode: { $eq: ticker } },
+				cacheKey: `edgarReport.capitalChanges:${ticker}`,
+				cache: { scope: 'memory', ttlMs: 6 * 3_600_000, maxEntries: 256 }
+			});
+			const years: DilutionYear[] = rows
+				.map((r) => ({ year: Number(str(r.year)), paidIn: num(r.paidIn), conversion: num(r.conversion), reduction: num(r.reduction) }))
+				.filter((d) => Number.isFinite(d.year) && (d.paidIn != null || d.conversion != null || d.reduction != null))
+				.sort((a, b) => a.year - b.year);
+			return years.length ? { events: [], years } : null;
+		} catch {
+			return null;
+		}
+	}
+
 	async function buildCapitalChanges(code: string): Promise<CapitalChangesBundle | null> {
+		const m = resolveMarket(code);
+		if (m.market === 'US' && m.ticker) return loadEdgarCapitalChanges(m.ticker); // US = edgar/scan/report 직독
 		const rows = await read('capitalChange', code, ['isu_dcrs_de', 'isu_dcrs_stle', 'isu_dcrs_stock_knd', 'isu_dcrs_qy', 'rcept_no']);
 		// 같은 이벤트가 여러 분기 보고서에 반복 수록 · (일자, 형태, 수량) 키 dedupe + rcept_no 최신 우선.
 		const best = new Map<string, Row>();

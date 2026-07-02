@@ -223,3 +223,23 @@ def test_exec_comp_empty_without_ecd():
         pl.lit(None).cast(pl.Date).alias("end")
     )
     assert execCompRows(facts, "MSFT") == []
+
+
+def test_capital_changes_rows_signs_and_merge():
+    """유상증자·전환+행사 합산·감자소각 음수 부호 (KR DilutionYear 대칭)."""
+    from dartlab.scan.builders.edgar.report.build import capitalChangesRows
+
+    facts = _facts(
+        [
+            {"tag": "StockIssuedDuringPeriodSharesNewIssues", "val": 1_000_000.0, "fy": 2024},
+            {"tag": "StockIssuedDuringPeriodSharesConversionOfConvertibleSecurities", "val": 200_000.0, "fy": 2024},
+            {"tag": "StockIssuedDuringPeriodSharesStockOptionsExercised", "val": 50_000.0, "fy": 2024},
+            {"tag": "StockRepurchasedAndRetiredDuringPeriodShares", "val": 300_000.0, "fy": 2024},
+            {"tag": "StockRepurchasedAndRetiredDuringPeriodShares", "val": 400_000.0, "fy": 2023},
+        ]
+    )
+    rows = {r["year"]: r for r in capitalChangesRows(facts, "TEST")}
+    assert rows["2024"]["paidIn"] == 1_000_000.0
+    assert rows["2024"]["conversion"] == 250_000.0  # 전환 200K + 행사 50K
+    assert rows["2024"]["reduction"] == -300_000.0  # 소각 음수 부호
+    assert rows["2023"]["paidIn"] is None and rows["2023"]["reduction"] == -400_000.0

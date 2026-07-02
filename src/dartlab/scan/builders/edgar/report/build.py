@@ -55,6 +55,17 @@ _DEBT_MAT_TAGS = {
 _LONG_TERM_DEBT_TAGS = ("LongTermDebt", "LongTermDebtNoncurrent")
 
 # ── ecd(Executive Comp Disclosure, Pay-vs-Performance) 태그 — proxy 인라인 XBRL. fy 없음(end 로 연도) ──
+_CAPCHG_TAGS = {
+    # KR capitalChange 분류(유상증자·전환/행사·감자소각)의 US 대칭. 주식수 단위.
+    "paidIn": ("StockIssuedDuringPeriodSharesNewIssues",),
+    "conversionConv": (
+        "StockIssuedDuringPeriodSharesConversionOfConvertibleSecurities",
+        "ConversionOfStockSharesIssued1",
+    ),
+    "conversionExer": ("StockIssuedDuringPeriodSharesStockOptionsExercised",),
+    "reduction": ("StockRepurchasedAndRetiredDuringPeriodShares",),
+}
+
 _ECD_TAGS = {
     "ceoTotalComp": ("PeoTotalCompAmt",),
     "ceoActuallyPaid": ("PeoActuallyPaidCompAmt",),
@@ -101,6 +112,14 @@ EXEC_COMP_COLS = {
     "neoAvgActuallyPaid": pl.Float64,
     "companyTsr": pl.Float64,
     "peerTsr": pl.Float64,
+}
+
+CAPITAL_CHANGES_COLS = {
+    "stockCode": pl.Utf8,
+    "year": pl.Utf8,
+    "paidIn": pl.Float64,
+    "conversion": pl.Float64,
+    "reduction": pl.Float64,  # 음수(감자·소각 방향, KR DilutionYear 부호 관례)
 }
 
 # buildEdgarReport 가 finance parquet 에서 읽는 최소 컬럼(메모리 — end 는 ecd 연도 도출용).
@@ -290,6 +309,42 @@ def execCompRows(facts: pl.DataFrame, ticker: str) -> list[dict]:
     return rows
 
 
+def capitalChangesRows(facts: pl.DataFrame, ticker: str) -> list[dict]:
+    """단일 회사 facts → 연도별 주식수 변동 행(유상증자·전환/행사·감자소각. KR DilutionYear 대칭).
+
+    conversion = 전환사채 전환 + 스톡옵션 행사 합(둘 다 KR '전환·행사' 분류). reduction 은 소각
+    주식수를 음수로(KR 부호 관례. finTabs '감자·소각(-)' signed stack 그대로 소비).
+
+    Args:
+        facts: 회사 edgar/finance parquet.
+        ticker: stockCode.
+
+    Returns:
+        list[dict]. 변동 신호가 하나라도 있는 연도만.
+    """
+    paidIn = _annualByYear(facts, _CAPCHG_TAGS["paidIn"])
+    conv = _annualByYear(facts, _CAPCHG_TAGS["conversionConv"])
+    exer = _annualByYear(facts, _CAPCHG_TAGS["conversionExer"])
+    reduction = _annualByYear(facts, _CAPCHG_TAGS["reduction"])
+    years = set(paidIn) | set(conv) | set(exer) | set(reduction)
+    rows: list[dict] = []
+    for y in sorted(years):
+        cv = conv.get(y)
+        ex = exer.get(y)
+        conversion = (cv or 0) + (ex or 0) if cv is not None or ex is not None else None
+        red = reduction.get(y)
+        rows.append(
+            {
+                "stockCode": ticker,
+                "year": str(y),
+                "paidIn": paidIn.get(y),
+                "conversion": conversion,
+                "reduction": -red if red is not None and red > 0 else red,
+            }
+        )
+    return rows
+
+
 def buildEdgarReport(*, verbose: bool = False) -> list[Path]:
     """전종목 EDGAR facts → edgar/scan/report/{shareholderReturn,debtMaturity,execComp}.parquet (순수 계산).
 
@@ -360,6 +415,7 @@ def buildEdgarReport(*, verbose: bool = False) -> list[Path]:
     srRows: list[dict] = []
     dmRows: list[dict] = []
     ecRows: list[dict] = []
+    ccRows: list[dict] = []
     for fp in parquets:
         ticker = cikToTicker.get(fp.stem.zfill(10))
         if not ticker:
@@ -374,12 +430,14 @@ def buildEdgarReport(*, verbose: bool = False) -> list[Path]:
         srRows.extend(shareholderReturnRows(facts, tk))
         dmRows.extend(debtMaturityRows(facts, tk))
         ecRows.extend(execCompRows(facts, tk))
+        ccRows.extend(capitalChangesRows(facts, tk))
 
     outputs: list[Path] = []
     for rows, schema, name in (
         (srRows, SHAREHOLDER_RETURN_COLS, "shareholderReturn"),
         (dmRows, DEBT_MATURITY_COLS, "debtMaturity"),
         (ecRows, EXEC_COMP_COLS, "execComp"),
+        (ccRows, CAPITAL_CHANGES_COLS, "capitalChanges"),
     ):
         out = pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
         out = out.sort(["stockCode", "year"])
