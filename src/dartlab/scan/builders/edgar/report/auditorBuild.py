@@ -37,7 +37,11 @@ def _loadPriorAuditor() -> pl.DataFrame | None:
 
         from huggingface_hub import hf_hub_download
 
-        fp = hf_hub_download(_HF_REPO, _HF_AUDITOR_PATH, repo_type="dataset", token=os.environ.get("HF_TOKEN"))
+        from dartlab.core.hfRetry import retryHfCall
+
+        fp = retryHfCall(
+            hf_hub_download, _HF_REPO, _HF_AUDITOR_PATH, repo_type="dataset", token=os.environ.get("HF_TOKEN")
+        )
         return pl.read_parquet(fp)
     except Exception:  # noqa: BLE001 (네트워크/부재 모두 graceful None)
         return None

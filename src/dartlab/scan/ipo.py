@@ -46,9 +46,17 @@ _OUTPUT_SCHEMA = {
 
 
 def _latestFullProspectuses(client, dateFrom: str | None, verbose: bool) -> tuple[list[dict], str]:
-    """listFilings(corp_cls=E) → IPO 통과분 중 발행사별 최신 FULL 신고서 (CORRECTION 제외)."""
+    """listFilings(corp_cls=E) → IPO 통과분 중 발행사별 최신 FULL 신고서 (CORRECTION 제외).
+
+    client None 이면 내부 생성. 호출측이 API 키 없이 mock 으로 검증 가능하게 지연 생성.
+    """
     from dartlab.gather.dart.disclosure import listFilings
     from dartlab.providers.dart.securitiesRegistration import classifyIpo
+
+    if client is None:
+        from dartlab.core.dartClient import DartClient
+
+        client = DartClient()
 
     end = date.today()
     start = end - timedelta(days=85)  # list.json corp_code 없으면 3 개월 제한
@@ -214,13 +222,13 @@ def scanIpo(*, dateFrom: str | None = None, deep: bool = True, verbose: bool = T
         TargetMarkets:
             - KR (DART 증권신고서 지분증권).
     """
-    from dartlab.core.dartClient import DartClient
-
-    client = DartClient()
-    metas, asOf = _latestFullProspectuses(client, dateFrom, verbose)
+    metas, asOf = _latestFullProspectuses(None, dateFrom, verbose)
     if not metas:
         return pl.DataFrame(schema=_OUTPUT_SCHEMA)
 
+    from dartlab.core.dartClient import DartClient
+
+    client = DartClient() if deep else None
     rows = []
     for i, meta in enumerate(metas, start=1):
         if deep:

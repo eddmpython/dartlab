@@ -49,6 +49,16 @@ def fetchFilingBody(url: str, *, client: httpx.Client, timeout: float = 30.0) ->
 
     Returns:
         ``(content_raw, fetch_status)``. status 가 ``ok`` 면 content_raw 는 원문, 아니면 None.
+
+    Raises:
+        없음. HTTP/타임아웃 예외는 내부에서 ``error`` status 로 흡수.
+
+    Example:
+        >>> with httpx.Client(headers={"User-Agent": ua}) as c:
+        ...     body, status = fetchFilingBody(url, client=c)
+
+    Requires:
+        - httpx (SEC fair-access User-Agent 필수)
     """
     if not url:
         return None, "no_body"
@@ -79,6 +89,37 @@ def fillContentDay(dayMeta: pl.DataFrame, outPath: Path, *, maxFetch: int | None
 
     Returns:
         pl.DataFrame. per-day content 최종 내용 (_CONTENT_COLS). skip 보존분 + 신규/retry 병합.
+
+    Raises:
+        OSError: outPath 쓰기 실패(atomic rename 포함).
+
+    Example:
+        >>> day = recent.filter(pl.col("filingDate") == "2026-06-30")
+        >>> fillContentDay(day, Path("edgar/allFilingsContent/2026-06-30.parquet"))
+
+    SeeAlso:
+        - ``.github/scripts/sync/fillEdgarAllFilingsContent.py`` (일 단위 runner)
+        - ``dartlab.gather.edgar.submissions`` (메타 recent.parquet 원천)
+
+    Requires:
+        - httpx (SEC fair-access UA + pacing)
+        - polars
+
+    Capabilities:
+        - DART content_raw 대칭. 공시 본문(primary doc)을 per-day parquet 로 아카이브.
+        - idempotent: 기존 ok/no_body 보존, error·신규만 재시도.
+
+    Guide:
+        - "US 공시 본문 수집" 요구 시 본 함수 (runner 경유가 기본).
+
+    When:
+        - 매일 cron(edgarFilingsContentSync)에서 forward/backfill 일자별 호출.
+
+    How:
+        - 기존 파일 로드 후 ok/no_body skip, 잔여만 fetch, tmp 쓰기 후 rename.
+
+    AIContext:
+        internal 수집기 (runner/CI 전용). AI 직접 호출 X.
     """
     priorRows: dict[str, dict] = {}
     prior: dict[str, str] = {}

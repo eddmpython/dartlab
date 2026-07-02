@@ -104,6 +104,16 @@ def cikFromStem(stem: str) -> str:
     메인은 ``CIK0000104169``, 과거 페이지는 ``CIK0000104169-submissions-001``. 후자에서 CIK만
     떼려면 ``-`` 앞부분만 취해야 한다(옛 lstrip 방식은 과거 페이지 stem을 ``104169-submissions-001``로
     깨뜨려 cik→ticker 매핑 실패 = 과거 페이지 전량 누락 버그).
+
+    Raises:
+        없음. 순수 문자열 변환.
+
+    Example:
+        >>> cikFromStem("CIK0000104169-submissions-001")
+        '0000104169'
+
+    Requires:
+        - 표준 라이브러리만.
     """
     core = stem.replace("CIK", "").split("-")[0]
     return (core.lstrip("0") or "0").zfill(10)
