@@ -8,6 +8,9 @@
 	import { cardShareUrl } from './share';
 	import { heroUrls } from './media';
 	import type { MediaIndex, CarouselContract } from './model';
+	// 관련 팟캐스트 조인 · 블로그 주제허브와 같은 로더(팟캐스트 R2 index.json) 재사용. code 로 회사 에피소드 매칭.
+	import { loadPodcastEpisodes, podcastFor } from '$lib/subjects/subjects';
+	import type { PodcastEpisode } from '$lib/subjects/model';
 
 	let {
 		rt,
@@ -51,6 +54,23 @@
 			if (c === code) badges = b;
 		});
 	});
+
+	// 관련 팟캐스트 · code(회사) 로 팟캐스트 index.json 조인. 매칭 에피소드 있으면 '듣기' CTA 표시(없으면 미표시).
+	let podcast = $state<PodcastEpisode | null>(null);
+	$effect(() => {
+		const c = code;
+		podcast = null;
+		if (!c) return; // 이슈(standalone)는 code 가 비어 조인 대상 아님
+		loadPodcastEpisodes().then((all) => {
+			if (c !== code) return;
+			podcast = podcastFor(all, c, '')[0] ?? null;
+		});
+	});
+	function fmtDur(sec: number): string {
+		const m = Math.floor((sec || 0) / 60);
+		const s = (sec || 0) % 60;
+		return `${m}:${String(s).padStart(2, '0')}`;
+	}
 
 	// 캡션 산문 → 문단 배열(빈 줄 구분). 문단 내부 \n 은 pre-line 으로 보존.
 	function captionParas(caption?: string): string[] {
@@ -146,6 +166,14 @@
 							<span class="prBlogIco" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg></span>
 							<span class="prBlogTxt"><small>블로그에서 이어 읽기</small><b>{contract.title ?? contract.name}</b></span>
 							<span class="prBlogArr" aria-hidden="true">↗</span>
+						</a>
+					{/if}
+					<!-- 관련 팟캐스트 듣기 · code 로 매칭된 회사 에피소드 오디오(R2). 없으면 미표시. -->
+					{#if podcast}
+						<a class="prPod" href={podcast.audioUrl} target="_blank" rel="noopener">
+							<span class="prPodIco" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14v-3a9 9 0 0 1 18 0v3" /><path d="M21 16.5A2.5 2.5 0 0 1 18.5 19H18a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h3z" /><path d="M3 16.5A2.5 2.5 0 0 0 5.5 19H6a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H3z" /></svg></span>
+							<span class="prPodTxt"><small>팟캐스트로 듣기 · EP.{String(podcast.episodeNo).padStart(2, '0')}{podcast.durationSec ? ` · ${fmtDur(podcast.durationSec)}` : ''}</small><b>{podcast.title}</b></span>
+							<span class="prPodArr" aria-hidden="true">▶</span>
 						</a>
 					{/if}
 					{#if contract.pinnedComment}<p class="prPinned">{contract.pinnedComment}</p>{/if}
@@ -475,6 +503,70 @@
 		font-size: 15px;
 		color: var(--dl-accent);
 		opacity: 0.85;
+	}
+	/* 관련 팟캐스트 듣기 CTA · 블로그 CTA 바로 아래. 로즈 강조는 유지하되 채움(accent fill)으로 '듣기'를 구분. */
+	.prPod {
+		display: flex;
+		align-items: center;
+		gap: 11px;
+		margin: 9px 0 2px;
+		padding: 11px 13px;
+		border: 1px solid rgba(var(--dl-accent-rgb), 0.34);
+		border-radius: 11px;
+		background: rgba(var(--dl-accent-rgb), 0.13);
+		text-decoration: none;
+		transition:
+			border-color 0.15s,
+			background 0.15s,
+			transform 0.12s;
+	}
+	.prPod:hover {
+		border-color: rgba(var(--dl-accent-rgb), 0.7);
+		background: rgba(var(--dl-accent-rgb), 0.2);
+		transform: translateY(-1px);
+	}
+	.prPodIco {
+		flex: 0 0 auto;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 32px;
+		border-radius: 8px;
+		background: var(--dl-accent);
+		color: #0b0e14;
+	}
+	.prPodTxt {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		min-width: 0;
+	}
+	.prPodTxt small {
+		font-size: 9.5px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		font-weight: 700;
+		color: var(--dl-accent);
+	}
+	.prPodTxt b {
+		font-size: 13px;
+		font-weight: 700;
+		line-height: 1.35;
+		color: #e8f0fb;
+		word-break: keep-all;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+	.prPodArr {
+		flex: 0 0 auto;
+		margin-left: auto;
+		font-size: 12px;
+		color: var(--dl-accent);
+		opacity: 0.9;
 	}
 	.postClose {
 		position: absolute;
