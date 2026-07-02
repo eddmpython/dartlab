@@ -1,5 +1,5 @@
-// AI 계약 — 3-티어 (02 §4) + AG-UI allowlist 15종 (단계-1b census: emitter SSOT = server/agentGateway.py
-// `_ALLOWED_EVENTS`, 수신 SSOT = ui/web streamAsk.ts). allowlist 가 계약이고 emit 은 부분집합(12종 발행).
+// AI 계약. 3-티어 (02 §4) + AG-UI allowlist 16종 (emitter SSOT = server/agentGateway.py
+// `_ALLOWED_EVENTS`, 수신 SSOT = ui/web streamAsk.ts). allowlist 가 계약이고 emit 은 부분집합.
 import type { EvidenceRef, EvidenceSelection } from './evidence';
 
 export type AiTier = 'advanced' | 'onDevice' | 'deterministic' | 'none';
@@ -25,12 +25,13 @@ export interface AiMode {
 	available: boolean;
 }
 
-// ── AG-UI allowlist (15종 — TOOL_CALL_ARGS·MESSAGES_SNAPSHOT·ACTIVITY_SNAPSHOT 은 reserved, 현재 미발행) ──
+// AG-UI allowlist (16종. TOOL_CALL_ARGS·MESSAGES_SNAPSHOT·ACTIVITY_SNAPSHOT 은 reserved, 현재 미발행)
 
 export type AgUiEventType =
 	| 'TEXT_MESSAGE_START'
 	| 'TEXT_MESSAGE_CONTENT'
 	| 'TEXT_MESSAGE_END'
+	| 'THINKING_DELTA'
 	| 'TOOL_CALL_START'
 	| 'TOOL_CALL_ARGS' // reserved
 	| 'TOOL_CALL_RESULT'
@@ -58,6 +59,13 @@ export interface ToolResultBody {
 
 export interface AiStreamTextDelta {
 	type: 'TEXT_MESSAGE_CONTENT';
+	messageId: string;
+	delta: string;
+}
+
+/** 추론(사고) 델타. reasoning 모델의 사고 흐름을 답변 본문과 분리 스트림 (접이식 추론 패널용). */
+export interface AiStreamThinkingDelta {
+	type: 'THINKING_DELTA';
 	messageId: string;
 	delta: string;
 }
@@ -122,11 +130,12 @@ export interface AiStreamRunError {
 	code?: string;
 }
 
-/** 기타 allowlist 이벤트(START/END/SNAPSHOT/DELTA 등)는 렌더 무관 — surface 는 드롭. */
+/** 기타 allowlist 이벤트(START/END/SNAPSHOT/DELTA 등)는 렌더 무관. surface 는 드롭. */
 export interface AiStreamOther {
 	type: Exclude<
 		AgUiEventType,
 		| 'TEXT_MESSAGE_CONTENT'
+		| 'THINKING_DELTA'
 		| 'TOOL_CALL_START'
 		| 'TOOL_CALL_RESULT'
 		| 'ACTIVITY_DELTA'
@@ -139,6 +148,7 @@ export interface AiStreamOther {
 
 export type AiStreamEvent =
 	| AiStreamTextDelta
+	| AiStreamThinkingDelta
 	| AiStreamToolStart
 	| AiStreamToolResult
 	| AiStreamActivity
@@ -147,11 +157,19 @@ export type AiStreamEvent =
 	| AiStreamRunError
 	| AiStreamOther;
 
+/** 대화 히스토리 한 턴 (다중턴 컨텍스트 전달용). */
+export interface AiHistoryTurn {
+	role: 'user' | 'assistant';
+	content: string;
+}
+
 export interface AiAskInput {
 	prompt: string;
 	mode: AiModeId;
 	code?: string;
 	evidence?: EvidenceSelection[];
+	/** 이전 대화 턴들 (현재 prompt 제외). 게이트웨이가 LLM history 로 전달해 후속 질문 맥락 유지. */
+	history?: AiHistoryTurn[];
 }
 
 export interface AiAskResult {

@@ -37,6 +37,7 @@ _ALLOWED_EVENTS = {
     "TEXT_MESSAGE_START",
     "TEXT_MESSAGE_CONTENT",
     "TEXT_MESSAGE_END",
+    "THINKING_DELTA",
     "TOOL_CALL_START",
     "TOOL_CALL_ARGS",
     "TOOL_CALL_END",
@@ -296,6 +297,10 @@ def _publicEvents(event: TraceEvent, *, runId: str, messageId: str) -> list[dict
     if kind == "chunk":
         text = str(data.get("text") or "")
         return [_event("TEXT_MESSAGE_CONTENT", {"messageId": messageId, "delta": text})] if text else []
+    if kind == "thinking":
+        # 추론(사고) 델타. reasoning 모델(qwen3 등)의 사고 흐름을 답변과 분리 스트림.
+        text = str(data.get("text") or "")
+        return [_event("THINKING_DELTA", {"messageId": messageId, "delta": text})] if text else []
     if kind == "answer":
         refs = [str(v) for v in data.get("evidenceRefs") or []]
         return [_activity(f"근거 {len(refs)}개로 답변을 작성했습니다.", refs=refs, passLabel=_passLabel(data))]

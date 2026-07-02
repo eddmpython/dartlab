@@ -187,9 +187,14 @@ class ProviderTurn:
 
 @dataclass(frozen=True)
 class StreamChunk:
-    """LLM streaming 델타. text 는 신규 부분만 (누적 X). final=True 가 종료 신호."""
+    """LLM streaming 델타. text 는 신규 부분만 (누적 X). final=True 가 종료 신호.
+
+    thinking 은 추론(사고) 델타. 답변 본문과 분리 스트림 (qwen3 등 reasoning 모델의
+    네이티브 thinking 필드). 미지원 provider 는 항상 빈 문자열.
+    """
 
     text: str = ""
+    thinking: str = ""
     final: bool = False
     turn: ProviderTurn | None = None
 
@@ -546,6 +551,9 @@ class OpenAICompatibleProvider:
                 except ValueError:
                     continue
                 msg = obj.get("message") or {}
+                think = msg.get("thinking") or ""
+                if think:
+                    yield StreamChunk(thinking=think)
                 text = msg.get("content") or ""
                 if text:
                     accumulated += text

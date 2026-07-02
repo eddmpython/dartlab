@@ -227,6 +227,9 @@ def _runAgentImpl(
                 if chunk.final:
                     final_chunk = chunk
                     continue
+                # 추론(사고) 델타. 답변 본문과 분리 스트림, UI 가 접이식 추론 패널로 표시.
+                if getattr(chunk, "thinking", ""):
+                    yield TraceEvent("thinking", {"text": chunk.thinking})
                 if chunk.text:
                     if stream_first_chunk_ms is None:
                         stream_first_chunk_ms = (time.monotonic() - turn_start_ms) * 1000.0
