@@ -24,7 +24,10 @@ episode:
   thumbnail:
     source: ""                           # staticImage 와 같으면 같은 파일 지정
     key: episodes/{slug}/static-video.jpg
-  sourceAssets: []                       # HF media repo 에 보관할 재사용 원본 이미지
+  sourceAssets: []                       # 재사용 원본 이미지(한 세트).
+                                         #  회사: {name: source-gray, pool: companyAsset, role: reusable-original}
+                                         #    -> 업로드 안 하고 companies/{stockCode} 공유 풀을 이름으로 참조
+                                         #  meta/topic: {source: assets/x.webp, name: x} -> podcasts/{slug} 신규 업로드
   visual:
     source: ""                           # 예: assets/source-gray.webp
     kicker: "EP.00 · DartLab Podcast"

@@ -278,8 +278,26 @@ def source_asset_fields(ep_dir: Path, meta: dict) -> tuple[list[dict], list[dict
         raw_assets = [raw_assets]
     public_assets: list[dict] = []
     upload_assets: list[dict] = []
+    code = str(meta.get("stockCode") or "").strip()
     for raw in raw_assets:
         if not isinstance(raw, dict):
+            continue
+        # 공유 풀 참조(한 세트): 회사 에피소드는 companies/{code} 풀 자산을 재사용한다. 재업로드하지 않고 이름으로 기록(프론트가 companies/index.json 으로 해석). 명시 key 있으면 URL 도 기록.
+        if str(raw.get("pool") or "").strip() == "companyAsset" and code:
+            pool_name = str(raw.get("name") or Path(str(raw.get("source") or "")).stem).strip()
+            if not pool_name:
+                continue
+            entry = {
+                "name": pool_name,
+                "role": str(raw.get("role") or "source").strip(),
+                "pool": "companyAsset",
+                "code": code,
+            }
+            explicit_key = str(raw.get("key") or "").strip()
+            if explicit_key:
+                entry["key"] = explicit_key
+                entry["url"] = f"{HF_MEDIA_BASE_URL.rstrip('/')}/{explicit_key}"
+            public_assets.append(entry)
             continue
         source = str(raw.get("source") or "").strip()
         if not source:
