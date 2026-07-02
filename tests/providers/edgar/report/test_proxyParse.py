@@ -80,6 +80,18 @@ def test_ownership_percent_column_only_blocks_age():
     assert "Jane Doe" not in got  # '*'(1% 미만)·나이 82 는 pct 아님
 
 
+def test_audit_fees_no_year_header_emits_nothing():
+    """연도 헤더 미검출 표는 행을 emit 하지 않음(year='1' 쓰레기 행 회귀 가드, MSFT 실측)."""
+    from dartlab.providers.edgar.report.proxyParse import parseAuditFees
+
+    html = """
+    <table>
+      <tr><th></th><th>Current</th><th>Prior</th></tr>
+      <tr><td>Audit Fees</td><td>$56,300</td><td>$50,000</td></tr>
+    </table>"""
+    assert parseAuditFees(html) == []  # 연도 불명 = 정직 미emit
+
+
 def test_empty_html_returns_empty():
     """표 없는 문서(특별총회 proxy 류)는 전부 빈 결과(패널 자연 미표시)."""
     from dartlab.providers.edgar.report.proxyParse import (

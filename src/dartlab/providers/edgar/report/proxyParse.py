@@ -187,7 +187,10 @@ def parseAuditFees(html: str | BeautifulSoup) -> list[dict]:
                 if not dedup or dedup[-1] != a:
                     dedup.append(a)
             for i, a in enumerate(dedup[: len(years) or 3]):
-                yr = years[i] if i < len(years) else str(int(years[0]) - i) if years else str(i)
+                # 연도 미검출 표는 emit 하지 않는다(옛 str(i) fallback 이 year='1' 쓰레기 행 생성).
+                yr = years[i] if i < len(years) else (str(int(years[0]) - i) if years else None)
+                if yr is None or not (1990 <= int(yr) <= 2035):
+                    continue
                 byYear.setdefault(yr, {"year": yr})[key] = a * mult
         out = [
             {**{"auditFee": None, "auditRelatedFee": None, "taxFee": None, "otherFee": None}, **v}
