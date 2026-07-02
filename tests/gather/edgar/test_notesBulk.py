@@ -12,17 +12,17 @@ pytestmark = pytest.mark.unit
 
 def test_list_notes_stems_quarterly_then_monthly():
     """2022 까지 분기, 2023 부터 직전월까지 월 stem. 당월은 미포함(미완성 zip)."""
-    from dartlab.gather.edgar.notesBulk import listNotesStems
+    from dartlab.gather.edgar.notesBulk import notesStems
 
-    stems = listNotesStems(sinceYear=2022, today=date(2023, 3, 15))
+    stems = notesStems(sinceYear=2022, today=date(2023, 3, 15))
     assert stems == ["2022q1", "2022q2", "2022q3", "2022q4", "2023_01", "2023_02"]
 
 
 def test_list_notes_stems_year_rollover():
     """12월 → 1월 롤오버."""
-    from dartlab.gather.edgar.notesBulk import listNotesStems
+    from dartlab.gather.edgar.notesBulk import notesStems
 
-    stems = listNotesStems(sinceYear=2023, today=date(2024, 1, 10))
+    stems = notesStems(sinceYear=2023, today=date(2024, 1, 10))
     assert stems[-2:] == ["2023_11", "2023_12"]
 
 

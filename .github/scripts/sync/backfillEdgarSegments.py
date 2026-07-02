@@ -58,7 +58,7 @@ def main() -> int:
 
     from dartlab.core.hfRetry import retryHfCall
     from dartlab.gather.edgar.identity import loadTickers
-    from dartlab.gather.edgar.notesBulk import downloadNotesBulk, listNotesStems
+    from dartlab.gather.edgar.notesBulk import downloadNotesBulk, notesStems
     from dartlab.scan.builders.edgar.report.segmentsBuild import SEGMENTS_COLS, segmentRowsFromZip
 
     api = HfApi(token=tok)
@@ -66,7 +66,7 @@ def main() -> int:
     frame = seeded if seeded is not None else pl.DataFrame(schema=SEGMENTS_COLS)
     doneDf = _dl(api, _DONE, tok)
     done: set[str] = set(doneDf["stem"].to_list()) if doneDf is not None else set()
-    allStems = listNotesStems(sinceYear=args.since_year)
+    allStems = notesStems(sinceYear=args.since_year)
     newest = allStems[-1] if allStems else ""
     # 최신 stem 은 월중 zip 이 계속 자라므로 done 이어도 항상 재처리(강제 재다운로드 + fresh 우선 병합).
     stems = [s for s in reversed(allStems) if s not in done or s == newest]
@@ -81,9 +81,8 @@ def main() -> int:
     for i, stem in enumerate(stems, start=1):
         try:
             zp = downloadNotesBulk(stem, force=stem == newest)
-        except Exception as e:  # noqa: BLE001 (미배포 stem 등)
+        except Exception as e:  # noqa: BLE001 (미배포 stem 등 · done 마킹 안 함 = 다음 run 재시도)
             print(f"  skip {stem}: {repr(e)[:60]}", flush=True)
-            done.add(stem)
             continue
         rows = segmentRowsFromZip(zp, cikToTicker, verbose=True)
         fresh = pl.DataFrame(rows, schema=SEGMENTS_COLS) if rows else pl.DataFrame(schema=SEGMENTS_COLS)

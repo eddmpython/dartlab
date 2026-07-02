@@ -31,14 +31,14 @@ _TIMEOUT = httpx.Timeout(120.0, read=None, write=60.0, connect=30.0)
 
 def _notesDir() -> Path:
     """`data/edgar/_bulk/notes/` 저장 폴더(없으면 생성)."""
-    from dartlab import config as _cfg
+    from dartlab.core.dataLoader import _getDataRoot
 
-    d = Path(_cfg.dataDir) / "edgar" / "_bulk" / "notes"
+    d = _getDataRoot() / "edgar" / "_bulk" / "notes"
     d.mkdir(parents=True, exist_ok=True)
     return d
 
 
-def listNotesStems(*, sinceYear: int = 2015, today: date | None = None) -> list[str]:
+def notesStems(*, sinceYear: int = 2015, today: date | None = None) -> list[str]:
     """가용 notes zip stem 목록(과거→현재). 분기(~2022q4) + 월별(2023_01~) 배포 주기 반영.
 
     Args:
@@ -52,7 +52,7 @@ def listNotesStems(*, sinceYear: int = 2015, today: date | None = None) -> list[
         없음.
 
     Example:
-        >>> listNotesStems(sinceYear=2022, today=date(2023, 3, 15))
+        >>> notesStems(sinceYear=2022, today=date(2023, 3, 15))
         ['2022q1', '2022q2', '2022q3', '2022q4', '2023_01', '2023_02']
 
     SeeAlso:
@@ -185,4 +185,4 @@ def iterNotesTsv(zipPath: Path, member: str) -> Iterator[dict[str, str]]:
         yield from reader
 
 
-__all__ = ["downloadNotesBulk", "iterNotesTsv", "listNotesStems"]
+__all__ = ["downloadNotesBulk", "iterNotesTsv", "notesStems"]
