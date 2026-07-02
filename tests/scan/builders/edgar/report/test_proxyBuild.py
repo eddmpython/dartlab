@@ -59,7 +59,7 @@ def test_build_skips_done_and_uses_latest_proxy(tmp_path, monkeypatch):
         fetched.append(url)
         return _PROXY_HTML, "ok"
 
-    monkeypatch.setattr("dartlab.gather.edgar.allFilingsContent.fetchFilingBody", _fakeFetch)
+    monkeypatch.setattr("dartlab.gather.edgar.allFilingsContent.getFilingBody", _fakeFetch)
     monkeypatch.setattr(mod, "_PACE_SECONDS", 0)
 
     out = mod.buildEdgarProxyReport(metaPath=mp, doneTickers={"BBB"})

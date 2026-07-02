@@ -2,7 +2,7 @@
 
 DART 정기보고서 API 가 주는 감사보수(auditContract)·개별임원보수(executivePayIndividual)·최대주주
 (majorHolder)의 US 대칭. SEC 는 XBRL 집계로 안 주므로 proxy HTML 표를 파싱한다. 수집은 gather
-(``allFilingsContent.fetchFilingBody``), 파싱은 providers(``proxyParse``), 본 모듈은 오케스트레이션
+(``allFilingsContent.getFilingBody``), 파싱은 providers(``proxyParse``), 본 모듈은 오케스트레이션
 (메타 선정·순회·emit)만. 메타 SSOT = ``edgar/allFilings/recent.parquet`` (form='DEF 14A').
 
 산출 4종 (``edgar/scan/report/``):
@@ -152,7 +152,7 @@ def buildEdgarProxyReport(
 
     Requires:
         - edgar/allFilings/recent.parquet (DEF 14A 메타·url)
-        - gather.edgar.allFilingsContent.fetchFilingBody (수집 위임)
+        - gather.edgar.allFilingsContent.getFilingBody (수집 위임)
         - providers.edgar.report.proxyParse (파싱 위임)
 
     SeeAlso:
@@ -162,7 +162,7 @@ def buildEdgarProxyReport(
     import httpx
 
     from dartlab import config as _cfg
-    from dartlab.gather.edgar.allFilingsContent import fetchFilingBody
+    from dartlab.gather.edgar.allFilingsContent import getFilingBody
 
     mp = Path(metaPath) if metaPath else Path(_cfg.dataDir) / "edgar" / "allFilings" / "recent.parquet"
     if not mp.exists():
@@ -188,7 +188,7 @@ def buildEdgarProxyReport(
                 break
             n += 1
             out["processedTickers"].append(tk)
-            body, status = fetchFilingBody(str(r["url"] or ""), client=client)
+            body, status = getFilingBody(str(r["url"] or ""), client=client)
             if status == "ok" and body:
                 try:
                     af, ep, ow, bd = proxyRowsFromHtml(body, tk, str(r["filingDate"])[:4])

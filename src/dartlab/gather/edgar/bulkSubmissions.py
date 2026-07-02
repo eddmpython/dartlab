@@ -105,6 +105,12 @@ def cikFromStem(stem: str) -> str:
     떼려면 ``-`` 앞부분만 취해야 한다(옛 lstrip 방식은 과거 페이지 stem을 ``104169-submissions-001``로
     깨뜨려 cik→ticker 매핑 실패 = 과거 페이지 전량 누락 버그).
 
+    Args:
+        stem: zip 엔트리 파일명 stem (``CIK{10}`` 또는 ``CIK{10}-submissions-NNN``).
+
+    Returns:
+        str. 0-padded 10자리 CIK.
+
     Raises:
         없음. 순수 문자열 변환.
 

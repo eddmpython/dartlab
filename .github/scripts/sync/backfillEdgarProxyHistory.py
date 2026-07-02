@@ -88,7 +88,7 @@ def main() -> int:
 
     import dartlab.config as _cfg
     import dartlab.scan.builders.edgar.report.proxyBuild as pb
-    from dartlab.gather.edgar.allFilingsContent import fetchFilingBody
+    from dartlab.gather.edgar.allFilingsContent import getFilingBody
 
     api = HfApi(token=tok)
     schemas = {k: getattr(pb, v) for k, v in _TABLES.items()}
@@ -124,7 +124,7 @@ def main() -> int:
                 break
             n += 1
             acc = str(r["accessionNo"])
-            body, status = fetchFilingBody(str(r["url"] or ""), client=client)
+            body, status = getFilingBody(str(r["url"] or ""), client=client)
             if status == "ok" and body:
                 try:
                     af, ep, ow, bd = pb.proxyRowsFromHtml(body, str(r["stockCode"]), str(r["filingDate"])[:4])

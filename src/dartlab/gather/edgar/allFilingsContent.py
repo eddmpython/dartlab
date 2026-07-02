@@ -36,7 +36,7 @@ _CONTENT_COLS = {
 }
 
 
-def fetchFilingBody(url: str, *, client: httpx.Client, timeout: float = 30.0) -> tuple[str | None, str]:
+def getFilingBody(url: str, *, client: httpx.Client, timeout: float = 30.0) -> tuple[str | None, str]:
     """단일 filing primary document GET 후 (content_raw, fetch_status) 반환.
 
     DART ``_fetchContent`` 대칭. SEC fair-access User-Agent 로 GET. 200+비어있지않음 = ``ok``,
@@ -55,7 +55,7 @@ def fetchFilingBody(url: str, *, client: httpx.Client, timeout: float = 30.0) ->
 
     Example:
         >>> with httpx.Client(headers={"User-Agent": ua}) as c:
-        ...     body, status = fetchFilingBody(url, client=c)
+        ...     body, status = getFilingBody(url, client=c)
 
     Requires:
         - httpx (SEC fair-access User-Agent 필수)
@@ -148,7 +148,7 @@ def fillContentDay(dayMeta: pl.DataFrame, outPath: Path, *, maxFetch: int | None
     if todo:
         with httpx.Client(headers={"User-Agent": _SEC_UA}) as client:
             for i, r in enumerate(todo):
-                body, status = fetchFilingBody(str(r.get("url") or ""), client=client)
+                body, status = getFilingBody(str(r.get("url") or ""), client=client)
                 fetched.append(
                     {
                         "accessionNo": str(r["accessionNo"]),
@@ -174,4 +174,4 @@ def fillContentDay(dayMeta: pl.DataFrame, outPath: Path, *, maxFetch: int | None
     return out
 
 
-__all__ = ["fetchFilingBody", "fillContentDay"]
+__all__ = ["getFilingBody", "fillContentDay"]
