@@ -180,6 +180,8 @@ def iterNotesTsv(zipPath: Path, member: str) -> Iterator[dict[str, str]]:
     AIContext:
         internal 스트리밍 헬퍼. AI 직접 호출 X.
     """
+    # txt/footnote 류 초대형 필드가 기본 한도(128KB)를 넘는 zip 실존(2017q4 크래시 실측) → 상향.
+    csv.field_size_limit(1 << 27)
     with zipfile.ZipFile(zipPath) as z, z.open(member) as f:
         reader = csv.DictReader(io.TextIOWrapper(f, encoding="utf-8"), delimiter="\t")
         yield from reader

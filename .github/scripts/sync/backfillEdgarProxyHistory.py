@@ -105,12 +105,8 @@ def main() -> int:
     )
     doneDf = _dl(api, _DONE, tok)
     doneAcc: set[str] = set(doneDf["accessionNo"].to_list()) if doneDf is not None else set()
-    # 회사별 최신 proxy 는 본 백필(proxyDone)이 이미 처리 → accession 단위로 선마킹해 재fetch 방지.
-    latest = meta.group_by("stockCode").head(1)
-    doneP = _dl(api, "proxyDone", tok)
-    if doneP is not None:
-        covered = set(doneP["stockCode"].to_list())
-        doneAcc |= {str(a) for tk, a in latest.select(["stockCode", "accessionNo"]).iter_rows() if tk in covered}
+    # (선마킹 폐기 2026-07-03) 옛 proxyDone 기반 최신 proxy 선마킹은 그 회사들의 board 최신연도 행을
+    # 영구 누락시켰다. 이제 proxyHistoryDone(accession 단위)만 리줌 정본이다.
     todo = meta.filter(~pl.col("accessionNo").is_in(sorted(doneAcc)))
     print(f"[proxyHistory] 전체 {meta.height} · done {len(doneAcc)} · 남은 {todo.height}", flush=True)
 
