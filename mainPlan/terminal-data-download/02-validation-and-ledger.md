@@ -46,8 +46,16 @@
 - **토론 2차(보정, 2라운드, 심사단 100/100)**: 라운드 5 적대 반증의 8개 검증된 수정 흡수 — getDataList(render 진실)·PNG≠export(범주 교정)·index 명시 게이트·CSV `#` 주석 부패 회피·SSOT 우회 비-모범화. 새 함정 2종 발견(파일명 절단·거래대금 1e8). 점수 100.
 - **최종 레드팀 정정(3 major, 본 문서 흡수)**: ① 함정 1 *메커니즘* 교정 — 절단 동인은 LRU eviction 이 아니라 *백필 append-beyond-prop*(`loadOlderYear:127-138` 가 prop 갱신 안 함); 테스트도 백필 divergence 유발로 교정. ② HA/리플레이 fork 자기모순 해소 — DISABLE 로 확정(미결 출하 금지). ③ 파일 경로 정정 — `priceSource.ts` = `ui/packages/runtime/src/adapters/public/sources/`, `panelLoad.ts` = `ui/packages/surfaces/src/viewer/lib/`, `CenterStack.svelte` = `ui/packages/surfaces/src/terminal/panels/`.
 
+## 구현 완료 (2026-07-02) · 운영자 push 대기
+
+산출물(=PRD 전부) 구현·검증 완료. 남은 건 운영자 push(공개 surface) + 최종 눈검수뿐.
+
+- **직렬화기(순수·테스트)**: `ui/packages/surfaces/src/terminal/charts/priceCsv.ts`. `chart.getDataList()` 봉을 데이터-only 행으로. `barYmd`(ms Date.UTC 역변환, TZ off by one 0), turnover 생략(함정 5), 결손 volume=빈셀·진짜 0 보존, 파일명 마지막 날짜=봉에서 도출(함정 2).
+- **배선**: `PriceChart.svelte` `exportCsv()` + `canCsv` derived(index/HA/리플레이=미렌더 게이트, 함정 3·4). `getDataList()` 직렬화(candles prop 아님=백필 무성절단 방지, 함정 1). `ChartMenus`(표 텍스트)·`ChartRibbon`(표 아이콘)에 `onCsv` prop 배선(부모가 canCsv 일 때만 전달, 미전달 시 미렌더).
+- **검증**: `priceCsv.test.ts` 5/5 green(barYmd·컬럼·turnover 생략·결손빈셀 vs 진짜0·파일명 마지막봉+tf/_adj). svelte-check 0 error. dev 눈검수(터미널 000660 툴바 「표」 버튼=스냅샷 대칭).
+- **테스트 한계(정직)**: 함정 1(getDataList vs candles)·게이트 미렌더는 컴포넌트 통합이라 단위 아닌 `canCsv` derived + `exportCsv` 의 `getDataList()` 호출 코드로 보장. 순수 단위는 함정 2·5·결손셀 커버.
+
 ## NEXT (세션 재개용)
 
-- 착수 = 운영자 go. 본 문서 + [00](00-product-and-scope.md) + [01](01-architecture-traps-format.md) 만으로 재조사 없이 구현 가능.
-- 구현 순서: 직렬화기 → 버튼 배선(ChartMenus/ChartRibbon) → 테스트 a–h → 스크린샷 눈검수 → 커밋(자율) → push(운영자 승인 대기).
-- 착수 전 단 하나 확인: macro/screener OPEN QUESTION 은 *범위 재팽창 신호* — 손대지 말 것.
+- 운영자: landing/terminal 스크린샷 최종 눈검수 후 push(공개 surface). push 되면 본 폴더 `_done` 이동 가능.
+- macro/screener OPEN QUESTION 은 *범위 재팽창 신호*. 손대지 않음(범위 유지).

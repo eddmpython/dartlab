@@ -23,6 +23,8 @@
 	import { registerVolumeProfile, VP_INDICATOR } from './volumeProfile';
 	import { registerCmpIndicator, CMP_INDICATOR, type CmpExtend } from './compareOverlay';
 	import { downloadSnapshot } from './snapshot';
+	import { downloadCsv } from '../../scan/csvExport';
+	import { priceBarsToRows, priceCsvFilename, PRICE_CSV_COLUMNS, type PriceBar } from './priceCsv';
 	import { IND_DEFS } from './indicatorParams';
 	import ChartMenus from './ChartMenus.svelte';
 	import ChartRibbon from './ChartRibbon.svelte';
@@ -1263,6 +1265,21 @@
 		const date = ymd ? `${ymd.slice(0, 4)}-${ymd.slice(4, 6)}-${ymd.slice(6, 8)}` : '';
 		void downloadSnapshot(chart, { fileTag: `${code}_${ymd}`, srcLine: `${name} ${code} · ${date} · ${srcText()}` }).catch(() => { /* 이미지 합성 실패 · 무해 */ });
 	}
+	// 가격 시계열 CSV(표) · terminal-data-download PRD. render 진실(chart.getDataList) 직렬화.
+	//  index=출처(GOV) 불일치, HA=합성봉, 리플레이=절단 시계열 -> 비활성(버튼 미렌더). 이 3 게이트가 canCsv.
+	const canCsv = $derived(subject !== 'index' && ctl.candleStyle !== 'ha' && !ctl.replay.on);
+	function exportCsv() {
+		if (!canCsv) return;
+		let bars: PriceBar[] = [];
+		try {
+			bars = (chart?.getDataList?.() ?? []) as PriceBar[]; // candles prop 아님 = 백필 무성절단 방지(함정 1)
+		} catch {
+			bars = [];
+		}
+		if (!bars.length) return;
+		const rows = priceBarsToRows(bars);
+		downloadCsv(priceCsvFilename(code, rows, ctl.tf, ctl.adj), [...PRICE_CSV_COLUMNS] as string[], rows as unknown as Array<Record<string, unknown>>);
+	}
 	// 실시간 틱 (나중 가격 API 연결 시 호출) · 일봉 전용 (주/월 집계 봉에 일봉 append 방지)
 	export function pushTick(c: Candle) { if (ctl.tf !== 'D') return; try { chart?.updateData(toK(c)); } catch { /* */ } }
 </script>
@@ -1270,7 +1287,7 @@
 <div class="chartWrap" class:full={ctl.full} role="img" aria-label="price chart" style={ctl.full ? '' : 'height:480px;min-height:360px;'}>
 	{#if !ctl.full}
 		<!-- 차트 컨트롤 바 · 그래프 위 전용 행(absolute 오버레이 아님, 밀도). 전체화면은 ChartRibbon. -->
-		<ChartMenus {ctl} {lang} {subject} {indexLine} {indexCtl} {coMovers} {marketCoMovers} hasBand={!!valBand} {railCatCounts} onDraw={startDraw} onClearDraw={clearDraw} onSnapshot={snapshot} />
+		<ChartMenus {ctl} {lang} {subject} {indexLine} {indexCtl} {coMovers} {marketCoMovers} hasBand={!!valBand} {railCatCounts} onDraw={startDraw} onClearDraw={clearDraw} onSnapshot={snapshot} onCsv={canCsv ? exportCsv : undefined} />
 	{/if}
 	<div class="chartHost" bind:this={el}></div>
 
@@ -1330,7 +1347,7 @@
 	{/if}
 
 	{#if ctl.full}
-		<ChartRibbon {ctl} {lang} {subject} {indexLine} hasBand={!!valBand} {name} {code} info={ribbonInfo} {notice} {peers} {cmpRows} {railCatCounts} canJump={!!(suggest && onPick)} onSnapshot={snapshot} onReplay={enterReplay} onJump={() => { jumpOpen = true; helpOpen = false; requestAnimationFrame(() => jumpInput?.focus()); }} onHelp={() => { helpOpen = !helpOpen; jumpOpen = false; }} />
+		<ChartRibbon {ctl} {lang} {subject} {indexLine} hasBand={!!valBand} {name} {code} info={ribbonInfo} {notice} {peers} {cmpRows} {railCatCounts} canJump={!!(suggest && onPick)} onSnapshot={snapshot} onCsv={canCsv ? exportCsv : undefined} onReplay={enterReplay} onJump={() => { jumpOpen = true; helpOpen = false; requestAnimationFrame(() => jumpInput?.focus()); }} onHelp={() => { helpOpen = !helpOpen; jumpOpen = false; }} />
 		<DrawToolbar {ctl} {lang} onDraw={startDraw} onClearDraw={clearDraw} />
 
 		{#if jumpOpen}

@@ -18,13 +18,14 @@
 		onDraw: (name: string) => void;
 		onClearDraw: () => void;
 		onSnapshot?: () => void; // PNG 저장 · 전체화면 전용 잠금 해제 (발견성)
+		onCsv?: () => void; // 가격 시계열 CSV(표) 저장 · 부모가 활성 조건일 때만 넘김(index/HA/리플레이면 undefined=미렌더)
 		subject?: 'price' | 'index'; // 'index' = BT·매물대 비활성(지수는 거래 대상 아님, 01 §4.2-4.3)
 		indexLine?: boolean; // US 지수(종가전용) = candleStyle 'area' 고정(세그먼트 disabled, 01 §3.6)
 		indexCtl?: IndexControl; // 주가/지수 토글 + 지수 picker (CenterStack 소유 → 컨트롤 바 한 줄에 통합)
 		coMovers?: { id: string; corr: number; n: number }[]; // 종목↔거시 동행(상관) 순위 · ECON 메뉴 "동행 상위" (인과 아님)
 		marketCoMovers?: { id: string; name: string; corr: number; n: number }[]; // 종목↔국내 시장지수 동행(베타) · 거시와 별도 행, 인과 아님
 	}
-	let { ctl, lang, hasBand, railCatCounts = {}, onDraw, onClearDraw, onSnapshot, subject = 'price', indexLine = false, indexCtl, coMovers = [], marketCoMovers = [] }: Props = $props();
+	let { ctl, lang, hasBand, railCatCounts = {}, onDraw, onClearDraw, onSnapshot, onCsv, subject = 'price', indexLine = false, indexCtl, coMovers = [], marketCoMovers = [] }: Props = $props();
 	const T = (kr: string, en: string) => (lang === 'en' ? en : kr);
 	// 동행(상관) 우선순위 · coMovers 있으면 전 목록을 |corr| 내림차순 재배치(없으면 선언순). corr 없는 시리즈는 -1 로 하단.
 	const corrById = $derived(new Map(coMovers.map((c) => [c.id, c])));
@@ -211,6 +212,9 @@
 	<div class="ctWrap">
 		<button class={(ctl.btDockOpen || ctl.btStrategies.length) && subject !== 'index' ? 'chartTool on' : 'chartTool'} disabled={subject === 'index'} onclick={() => { if (subject === 'index') return; ctl.btDockOpen = !ctl.btDockOpen; ctl.btReportMode = ctl.btDockOpen; menu = 'none'; }} title={subject === 'index' ? T('지수는 거래 대상 아님', 'index not tradable') : T('전략 백테스트 · 차트 좌측 영구 패널(차트 조작해도 안 닫힘)', 'Strategy Lab · persistent left panel (survives chart interaction)')}>{T('백테스트', 'BT')}</button>
 	</div>
+	{#if onCsv}
+		<button class="chartTool" onclick={() => onCsv?.()} title={T('가격 시계열 CSV(표) 저장 · 차트가 그리는 봉 그대로', 'save price CSV')} aria-label="csv">{T('표', 'CSV')}</button>
+	{/if}
 	<button class="chartTool" onclick={() => onSnapshot?.()} title={T('차트 PNG 저장 (출처 띠 포함)', 'save PNG')} aria-label="snapshot">
 		<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M2 5h2.4L6 3.2h4L11.6 5H14v8H2z"/><circle cx="8" cy="8.6" r="2.5"/></svg>
 	</button>

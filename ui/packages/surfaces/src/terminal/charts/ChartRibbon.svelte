@@ -27,13 +27,14 @@
 		railCatCounts?: Record<string, number>; // 이벤트 레일 카테고리별 건수 (필터 팝오버)
 		canJump?: boolean;
 		onSnapshot?: () => void;
+		onCsv?: () => void; // 가격 시계열 CSV(표) · 부모가 활성 조건일 때만 넘김(미전달=미렌더)
 		onReplay?: () => void; // 바 리플레이 진입 (시작점 환산은 PriceChart · viewLen 보유 주체)
 		onJump?: () => void; // 심볼 점프 팔레트 열기 (⌘K·/)
 		onHelp?: () => void; // 단축키 도움말 (?)
 		subject?: 'price' | 'index'; // 'index' = BT·매물대·VS 비활성(지수, 01 §4.2-4.3·§5.1)
 		indexLine?: boolean; // US 지수(종가전용) = candleStyle 'area' 고정(세그먼트 disabled, 01 §3.6)
 	}
-	let { ctl, lang, hasBand, name, code, info, notice = null, peers = [], cmpRows = [], railCatCounts = {}, canJump = false, onSnapshot, onReplay, onJump, onHelp, subject = 'price', indexLine = false }: Props = $props();
+	let { ctl, lang, hasBand, name, code, info, notice = null, peers = [], cmpRows = [], railCatCounts = {}, canJump = false, onSnapshot, onCsv, onReplay, onJump, onHelp, subject = 'price', indexLine = false }: Props = $props();
 	const T = (kr: string, en: string) => (lang === 'en' ? en : kr);
 	const styleShown = $derived(indexLine ? 'area' : ctl.candleStyle); // US 지수면 'area'(라인) 강조 · disabled 세그먼트 정합
 	const fmtN = (v: number) => v.toLocaleString('en-US', { maximumFractionDigits: 0 });
@@ -176,6 +177,11 @@
 		</div>
 		{#if notice}<span class="crNotice">{notice}</span>{/if}
 		<button class="crClose cbtn cIco" onclick={() => onHelp?.()} title={T('단축키·숨은 기능 (?)', 'shortcuts (?)')} aria-label="help">?</button>
+		{#if onCsv}
+			<button class="cbtn cIco" onclick={() => onCsv?.()} title={T('가격 시계열 CSV(표) 저장 · 차트가 그리는 봉 그대로', 'save price CSV')} aria-label="csv">
+				<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M2 6.5h12M6 6.5v6.5M10 6.5v6.5"/></svg>
+			</button>
+		{/if}
 		<button class="cbtn cIco" onclick={() => onSnapshot?.()} title={T('차트 PNG 저장 (S)', 'save PNG (S)')} aria-label="snapshot">
 			<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M2 5h2.4L6 3.2h4L11.6 5H14v8H2z"/><circle cx="8" cy="8.6" r="2.5"/></svg>
 		</button>
