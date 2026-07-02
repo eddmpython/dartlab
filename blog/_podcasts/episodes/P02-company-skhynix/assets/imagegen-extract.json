@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-02T00:00:00+00:00",
+  "cardCrop4x5": false,
+  "pool": "companyAsset",
+  "stockCode": "000660",
+  "assets": [
+    {
+      "file": "source.webp",
+      "role": "reusable-source",
+      "poolOrigin": "companies/000660/hynix-hbm-cleanroom",
+      "promptSummary": "SK Hynix HBM cleanroom, gray-tone editorial podcast background reused from the shared company image pool."
+    }
+  ]
+}
