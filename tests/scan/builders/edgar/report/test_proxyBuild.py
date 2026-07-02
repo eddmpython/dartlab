@@ -65,3 +65,17 @@ def test_build_skips_done_and_uses_latest_proxy(tmp_path, monkeypatch):
     out = mod.buildEdgarProxyReport(metaPath=mp, doneTickers={"BBB"})
     assert fetched == ["u-new"]  # AAA 최신만 (u-old 아님) · BBB skip · CCC 는 proxy 없음
     assert {r["stockCode"] for r in out["auditFees"]} == {"AAA"}
+
+
+def test_future_year_rows_gated_by_filing_year():
+    """proxy 제출연도 이후 연도 행 차단 (옵션 만기연도 오인 등 미래연도 오염 불변식)."""
+    from dartlab.scan.builders.edgar.report.proxyBuild import proxyRowsFromHtml
+
+    html = """
+    <p>(in thousands)</p>
+    <table>
+      <tr><th></th><th>2025</th><th>2042</th></tr>
+      <tr><td>Audit Fees</td><td>$1,000</td><td>$900</td></tr>
+    </table>"""
+    af, ep, ow, bd = proxyRowsFromHtml(html, "TST", "2026")
+    assert {r["year"] for r in af} == {"2025"}  # 2042 행 차단

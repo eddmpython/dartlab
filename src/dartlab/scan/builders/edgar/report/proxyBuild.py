@@ -84,8 +84,13 @@ def proxyRowsFromHtml(html: str, ticker: str, filingYear: str) -> tuple[list[dic
     )
 
     soup = BeautifulSoup(html, "lxml")  # 1회 파싱해 4파서 공유 (대형 proxy 재파싱 제거)
-    af = [{"stockCode": ticker, **r} for r in parseAuditFees(soup)]
-    ep = [{"stockCode": ticker, **r} for r in parseSummaryComp(soup)]
+
+    def _yearOk(r: dict) -> bool:
+        # 불변식: proxy 는 제출연도 이후 연도를 보고할 수 없다(옵션 만기연도 오인 등 미래연도 오염 차단).
+        return str(r.get("year", "")) <= filingYear
+
+    af = [{"stockCode": ticker, **r} for r in parseAuditFees(soup) if _yearOk(r)]
+    ep = [{"stockCode": ticker, **r} for r in parseSummaryComp(soup) if _yearOk(r)]
     ow = [{"stockCode": ticker, "year": filingYear, **r} for r in parseBeneficialOwnership(soup)]
     board = parseBoardComposition(soup)
     bd = [{"stockCode": ticker, "year": filingYear, **board}] if board else []
