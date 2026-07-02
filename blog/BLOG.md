@@ -376,7 +376,7 @@ c.quant("종합"); c.quant("팩터")
 
 ### Phase 3 실행 순서
 
-SVG **최소 5개** Write → GPT `image_gen` 2~3 + 썸네일 배경 1개 생성 → `extractImagegenAssets.py` 로 WebP 추출 → 본문 참조 → SEO audit → **SVG 5개 미만이면 발행 불가** → **이미지 0 개면 발행 불가** → 자산 완료 후 커밋. FLUX 는 `image_gen` 경로가 실패했을 때만 보조로 호출한다.
+SVG **최소 5개** Write → GPT `image_gen` 2~3 + 썸네일 배경 1개 생성 → `extractImagegenAssets.py` 로 WebP 추출 → 본문 참조 → SEO audit → **SVG 5개 미만이면 발행 불가** → **이미지 0 개면 발행 불가** → 자산 완료 후 커밋. 이미지 수급 정책(Openverse 실사 주력 후 GPT `image_gen`, FLUX 폐기)은 `blog/OPERATIONS.md` 2절이 정본이다.
 
 ### Phase 4: 독자 루프 (95 점까지 반복)
 
