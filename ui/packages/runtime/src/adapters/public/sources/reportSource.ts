@@ -540,7 +540,38 @@ export function createReportSource(core: DataCore): ReportPort {
 		return out.length ? out : null;
 	}
 
+	// US(EDGAR) 이사회 구성 · edgar/scan/report/board.parquet 직독(proxy 산문 서술 수치, proxyBuild 산출).
+	// 보수 필드는 null(정직): SCT 는 NEO 상위 수인만 공시라 KR 등기임원 전체 보수와 개념 불일치, 개별 보수는 topExecPay 패널 담당.
+	async function loadEdgarExecBoard(ticker: string): Promise<ExecBoardYear[] | null> {
+		try {
+			const rows = await core.requestParquetRows<Row>({
+				origin: 'hfRange',
+				path: 'edgar/scan/report/board.parquet',
+				columns: ['stockCode', 'year', 'directors', 'independentDirectors'],
+				filter: { stockCode: { $eq: ticker } },
+				cacheKey: `edgarReport.board:${ticker}`,
+				cache: { scope: 'memory', ttlMs: 6 * 3_600_000, maxEntries: 256 }
+			});
+			const out: ExecBoardYear[] = rows
+				.map((r) => ({
+					year: str(r.year),
+					execAvgPay: null,
+					execTotalPay: null,
+					execCount: null,
+					directors: num(r.directors),
+					outsideDirectors: num(r.independentDirectors)
+				}))
+				.filter((e) => e.year && e.directors != null)
+				.sort((a, b) => a.year.localeCompare(b.year));
+			return out.length ? out : null;
+		} catch {
+			return null;
+		}
+	}
+
 	async function buildExecBoard(code: string): Promise<ExecBoardYear[] | null> {
+		const m = resolveMarket(code);
+		if (m.market === 'US' && m.ticker) return loadEdgarExecBoard(m.ticker); // US = edgar/scan/report 직독
 		const [pay, od] = await Promise.all([
 			read('executivePayAllTotal', code, ['nmpr', 'jan_avrg_mendng_am', 'mendng_totamt', 'rcept_no']),
 			read('outsideDirector', code, ['drctr_co', 'otcmp_drctr_co', 'rcept_no'])

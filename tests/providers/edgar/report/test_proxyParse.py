@@ -104,3 +104,37 @@ def test_empty_html_returns_empty():
     assert parseAuditFees(html) == []
     assert parseSummaryComp(html) == []
     assert parseBeneficialOwnership(html) == []
+
+
+def test_board_full_statement_beats_class_nominees():
+    """Tier1(전체 서술) 우선. 기수제(Class I 선임 3명)여도 전체 14명이 답(BL 실측 회귀 가드)."""
+    from dartlab.providers.edgar.report.proxyParse import parseBoardComposition
+
+    html = """<p>Our Board is currently comprised of 14 members, divided into three classes.</p>
+    <p>To elect as Class I directors the three nominees named in this proxy statement.</p>"""
+    assert parseBoardComposition(html) == {"directors": 14, "independentDirectors": None}
+
+
+def test_board_nominee_statement_with_independence():
+    """Tier2(선임 안건 서술) + 독립이사 'N of M' 교차검증(M=board 일치 시만)."""
+    from dartlab.providers.edgar.report.proxyParse import parseBoardComposition
+
+    html = """<p>Elect the 12 director nominees named in this Proxy Statement.</p>
+    <p>11 of 12 director nominees are independent.</p>"""
+    assert parseBoardComposition(html) == {"directors": 12, "independentDirectors": 11}
+
+
+def test_board_class_only_nominees_returns_none():
+    """전체 서술 없이 Class 선임분만 있으면 오답 대신 None(정직 미표시)."""
+    from dartlab.providers.edgar.report.proxyParse import parseBoardComposition
+
+    html = "<p>To elect as Class II directors the three nominees named in this proxy statement.</p>"
+    assert parseBoardComposition(html) is None
+
+
+def test_board_word_number_and_paren():
+    """영어 수사 + 괄호 숫자 병기('eleven (11) Directors', CBC 실측) 파싱."""
+    from dartlab.providers.edgar.report.proxyParse import parseBoardComposition
+
+    html = "<p>As of December 31, 2025, the full Board consisted of eleven (11) Directors.</p>"
+    assert parseBoardComposition(html) == {"directors": 11, "independentDirectors": None}

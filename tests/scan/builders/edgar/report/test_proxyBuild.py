@@ -8,6 +8,7 @@ import pytest
 pytestmark = pytest.mark.unit
 
 _PROXY_HTML = """
+<p>Our Board of Directors currently consists of eight directors. 6 of our 8 directors are independent.</p>
 <p>(in thousands)</p>
 <table>
   <tr><th></th><th>2025</th><th>2024</th></tr>
@@ -24,16 +25,17 @@ _PROXY_HTML = """
 """
 
 
-def test_proxy_rows_from_html_three_tables():
-    """단일 HTML 에서 3표 행 동시 생성 + stockCode/기준연도 주입."""
+def test_proxy_rows_from_html_four_tables():
+    """단일 HTML 에서 4표 행 동시 생성 + stockCode/기준연도 주입."""
     from dartlab.scan.builders.edgar.report.proxyBuild import proxyRowsFromHtml
 
-    af, ep, ow = proxyRowsFromHtml(_PROXY_HTML, "TST", "2026")
+    af, ep, ow, bd = proxyRowsFromHtml(_PROXY_HTML, "TST", "2026")
     byYear = {r["year"]: r for r in af}
     assert byYear["2025"]["stockCode"] == "TST" and byYear["2025"]["auditFee"] == 1_000_000.0  # thousands 보정
     assert byYear["2024"]["auditFee"] == 900_000.0
     assert ep[0]["name"] == "Jane Roe" and ep[0]["totalPay"] == 2_000_000.0
     assert ow[0] == {"stockCode": "TST", "year": "2026", "holder": "Big Fund LP", "pct": 12.5}
+    assert bd == [{"stockCode": "TST", "year": "2026", "directors": 8, "independentDirectors": 6}]
 
 
 def test_build_skips_done_and_uses_latest_proxy(tmp_path, monkeypatch):

@@ -315,4 +315,104 @@ def parseBeneficialOwnership(html: str | BeautifulSoup) -> list[dict]:
     return []
 
 
-__all__ = ["moneyToFloat", "parseAuditFees", "parseBeneficialOwnership", "parseSummaryComp", "tableGrid"]
+# ── 이사회 구성(board composition) 서술 수치 파서 ─────────────────────────────
+# 표 카운팅(1차 시도 30~50%)이 아니라 proxy 산문이 직접 서술한 수치를 뽑는다(카운팅 오차 0).
+# 실측(execBoardProbe 20사 스윕): board 19/20 (전부 stated), 미스는 표준 proxy 없는 폐쇄형펀드.
+
+_BOARD_WORDS = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
+    "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13,
+    "fourteen": 14, "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18,
+    "nineteen": 19, "twenty": 20,
+}  # fmt: skip
+_BOARD_NUM = r"(\d{1,2}|" + "|".join(_BOARD_WORDS) + r")"
+
+# Tier1: 전체 이사회 규모 직접 서술 (classified board 에도 안전)
+_FULL_BOARD_PATTERNS = [
+    rf"(?i)board(?: of directors)?\s*(?:\([^)]{{0,40}}\))?,?\s+(?:is |are |was |were )?(?:currently |presently |now )?(?:consists? of|consisted of|composed of|comprised of|comprises?)\s+(?:a )?{_BOARD_NUM}(?:\s*\(\d+\))?\s+(?:members|directors|seats)",
+    rf"(?i)(?:we|company) (?:currently |presently |now )?(?:have|has) {_BOARD_NUM}\s+directors",
+    rf"(?i)number of directors (?:is|has been|was) (?:currently )?(?:fixed|set) at {_BOARD_NUM}",
+    rf"(?i)(?:our|the) {_BOARD_NUM}[- ]member board",
+]
+# Tier2: 선임 안건 상용구. classified board(기수제)는 그 해 Class 분만 세므로 Class 가드 필수.
+_NOMINEE_PATTERNS = [
+    rf"(?i)elect(?:ion of)?(?: as directors)?,?\s+(?:the |all |each of the )?{_BOARD_NUM}\s+(?:director\s+)?nominees",
+    rf"(?i)(?:the |all |each of the )?{_BOARD_NUM}\s+(?:director\s+)?nominees\s+(?:named|identified|listed)\s+in\s+th(?:is|e)",
+    rf"(?i)the following {_BOARD_NUM}\s+(?:director\s+)?nominees",
+    rf"(?i)the {_BOARD_NUM}\s+director nominees\s+(?:possess|bring|have|are)",
+]
+# 독립이사: (pattern, indepGroup, totalGroup). 문형별 그룹 순서 상이.
+_INDEP_PATTERNS = [
+    (rf"(?i){_BOARD_NUM}\s*(?:of\s+(?:our|the)?|/)\s*{_BOARD_NUM}\s+(?:current )?(?:directors?|director nominees|board members|nominees) (?:are|is|were|qualify as) independent", 1, 2),
+    (rf"(?i)of the {_BOARD_NUM} (?:board |director )?nominees,? {_BOARD_NUM} are independent", 2, 1),
+]  # fmt: skip
+_CLASS_RE = re.compile(r"(?i)class\s+(?:i{1,3}|iv)\b")
+
+
+def _boardInt(s: str) -> int | None:
+    """'11' 또는 'eleven' 을 int 로. 이사회 규모 범위(2~25) 밖이면 None."""
+    v = _BOARD_WORDS.get(s.lower()) if not s.isdigit() else int(s)
+    return v if v is not None and 2 <= v <= 25 else None
+
+
+def _boardMode(text: str, patterns: list[str], *, classGuard: bool = False) -> int | None:
+    """패턴 매칭 수치의 최빈값(문서 내 반복 서술 안정화). classGuard 면 Class I~IV 인접 매칭 배제."""
+    votes: dict[int, int] = {}
+    for pat in patterns:
+        for m in re.finditer(pat, text):
+            if classGuard and _CLASS_RE.search(text[max(0, m.start() - 120) : m.end() + 120]):
+                continue
+            v = _boardInt(m.group(1))
+            if v is not None:
+                votes[v] = votes.get(v, 0) + 1
+    return max(votes, key=lambda k: votes[k]) if votes else None
+
+
+def parseBoardComposition(html: str | BeautifulSoup) -> dict | None:
+    """proxy 산문에서 이사회 규모·독립이사 수 서술 수치를 뽑는다.
+
+    Tier1(전체 이사회 서술: "board consists of eleven directors")을 우선하고, 없으면
+    Tier2(선임 안건: "elect the 12 director nominees", Class 가드로 기수제 오답 차단).
+    독립이사는 "N of M ... are independent" 문형(M 은 board 와 교차검증).
+
+    Args:
+        html: DEF 14A 전체 HTML 또는 사전 파싱 BeautifulSoup(1회 파싱 공유).
+
+    Returns:
+        dict | None: ``{directors, independentDirectors}`` (후자는 미검출 시 None).
+        board 자체 미검출이면 None(패널 자연 미표시).
+
+    Raises:
+        없음.
+
+    Example:
+        >>> parseBoardComposition(proxyHtml)  # doctest: +SKIP
+        {'directors': 12, 'independentDirectors': 11}
+    """
+    soup = html if isinstance(html, BeautifulSoup) else BeautifulSoup(html, "lxml")
+    text = re.sub(r"\s+", " ", soup.get_text(" "))
+    board = _boardMode(text, _FULL_BOARD_PATTERNS)
+    if board is None:
+        board = _boardMode(text, _NOMINEE_PATTERNS, classGuard=True)
+    if board is None:
+        return None
+    indep = None
+    for pat, gi, gt in _INDEP_PATTERNS:
+        for m in re.finditer(pat, text):
+            n, tot = _boardInt(m.group(gi)), _boardInt(m.group(gt))
+            if n is not None and tot is not None and n <= tot and tot == board:
+                indep = n
+                break
+        if indep is not None:
+            break
+    return {"directors": board, "independentDirectors": indep}
+
+
+__all__ = [
+    "moneyToFloat",
+    "parseAuditFees",
+    "parseBeneficialOwnership",
+    "parseBoardComposition",
+    "parseSummaryComp",
+    "tableGrid",
+]

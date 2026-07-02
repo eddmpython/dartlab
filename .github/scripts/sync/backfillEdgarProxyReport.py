@@ -1,8 +1,8 @@
-"""EDGAR proxy 거버넌스 3표 백필 runner. 청크 순회 + HF 시드 리줌 + 체크포인트 발행.
+"""EDGAR proxy 거버넌스 4표 백필 runner. 청크 순회 + HF 시드 리줌 + 체크포인트 발행.
 
-buildEdgarProxyReport(오케스트레이션)를 청크로 반복 호출해 감사보수·개별임원보수·실질지분 parquet 을
-edgar/scan/report/ 에 누적 발행한다. 리줌 = proxyDone.parquet(처리 마킹, 0행 회사 포함)가 시드라
-죽어도 재실행이 남은 회사만 처리(backfillEmployee 동형). 회사별 최신 DEF 14A 1건.
+buildEdgarProxyReport(오케스트레이션)를 청크로 반복 호출해 감사보수·개별임원보수·실질지분·이사회구성
+parquet 을 edgar/scan/report/ 에 누적 발행한다. 리줌 = proxyDone.parquet(처리 마킹, 0행 회사 포함)가
+시드라 죽어도 재실행이 남은 회사만 처리(backfillEmployee 동형). 회사별 최신 DEF 14A 1건.
 
 실행::
 
@@ -25,6 +25,7 @@ _TABLES = {
     "auditFees": "AUDIT_FEES_COLS",
     "execPayIndividual": "EXEC_PAY_COLS",
     "ownership": "OWNERSHIP_COLS",
+    "board": "BOARD_COLS",
 }
 _DONE = "proxyDone.parquet"
 # 재수집 dedup 키. 같은 키의 신규(fresh)가 구값을 대체(정정 proxy 반영).
@@ -32,6 +33,7 @@ _KEYS = {
     "auditFees": ["stockCode", "year"],
     "execPayIndividual": ["stockCode", "year", "name"],
     "ownership": ["stockCode", "year", "holder"],
+    "board": ["stockCode", "year"],
 }
 
 
