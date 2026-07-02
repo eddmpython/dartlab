@@ -74,7 +74,10 @@ def main() -> int:
 
     api = HfApi(token=tok)
     schemas = {k: getattr(pb, v) for k, v in _TABLES.items()}
-    frames = {k: (_dl(api, f"{k}.parquet", tok) or pl.DataFrame(schema=s)) for k, s in schemas.items()}
+    frames = {}
+    for k, sc in schemas.items():
+        seeded = _dl(api, f"{k}.parquet", tok)
+        frames[k] = seeded if seeded is not None else pl.DataFrame(schema=sc)  # polars 진리값 불가(or 금지)
     doneDf = _dl(api, _DONE, tok)
     done: set[str] = set(doneDf["stockCode"].to_list()) if doneDf is not None else set()
     print(
