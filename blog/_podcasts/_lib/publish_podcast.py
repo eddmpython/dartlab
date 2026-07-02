@@ -583,6 +583,16 @@ def upload_cover(env: dict, channel: dict, dry_run: bool) -> None:
     out_jpg.unlink(missing_ok=True)
 
 
+def render_episode_stills(episode_ids: list[str]) -> None:
+    """render_episode_image.py 를 subprocess 로 호출해 카드풍 스틸(커버/정적)을 생성한다(업로드 전)."""
+    renderer = LIB_DIR / "render_episode_image.py"
+    for ep_id in episode_ids:
+        try:
+            subprocess.run([sys.executable, str(renderer), "--episode", ep_id], check=True)
+        except subprocess.CalledProcessError as exc:
+            print(f"[render] {ep_id} 스틸 생성 실패(소스 없음 등), 건너뜀: {exc}")
+
+
 def upload_episode_images(env: dict, channel: dict, records: list[dict], dry_run: bool) -> None:
     """에피소드별 커버와 썸네일 소스를 정규화해 R2 로 업로드."""
     tmp = LIB_DIR / ".tmp"
@@ -687,6 +697,9 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--no-hf-source-assets", action="store_true", help="원본 이미지 HF 업로드 건너뜀")
     parser.add_argument("--hf-source-assets-only", action="store_true", help="R2 없이 원본 이미지만 HF 업로드")
     parser.add_argument("--hf-repo", default=HF_MEDIA_REPO, help="원본 이미지를 올릴 HF dataset repo")
+    parser.add_argument(
+        "--render-images", action="store_true", help="업로드 전 render_episode_image.py 로 카드풍 스틸(커버/정적) 생성"
+    )
     parser.add_argument("--dry-run", action="store_true", help="업로드 없이 로컬 검증")
     args = parser.parse_args(argv)
 
@@ -720,6 +733,9 @@ def main(argv: list[str]) -> int:
 
     if not args.no_cover:
         upload_cover(env, channel, args.dry_run)
+    if args.render_images:
+        render_ids = [args.episode] if args.episode else [r["episodeId"] for r in records]
+        render_episode_stills([e for e in render_ids if e])
     upload_episode_images(env, channel, records, args.dry_run)
     if not args.no_hf_source_assets:
         upload_hf_source_assets(records, args.dry_run, args.hf_repo)

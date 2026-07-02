@@ -11,6 +11,17 @@ import argparse
 from pathlib import Path
 
 import yaml
+from card_style import (
+    ACCENT_RGB,
+    BG_RGB,
+    BRIGHTNESS,
+    CONTRAST,
+    DIM_RGB,
+    GRAYSCALE,
+    INK_RGB,
+    MUTED_RGB,
+    accent_parts,
+)
 from PIL import Image, ImageDraw, ImageEnhance, ImageFont
 
 LIB_DIR = Path(__file__).resolve().parent
@@ -20,11 +31,12 @@ EPISODES_DIR = PODCAST_DIR / "episodes"
 FONT_BOLD = "C:/Windows/Fonts/malgunbd.ttf"
 FONT_REG = "C:/Windows/Fonts/malgun.ttf"
 
-INK = (244, 246, 248)
-DIM = (204, 210, 214)
-MUTED = (158, 167, 172)
-ACCENT = (176, 190, 196)
-BG = (6, 8, 11)
+# 카드 팔레트 미러(card_style): INK=본문, DIM=부제, MUTED=풋터, ACCENT=로즈 강조.
+INK = INK_RGB
+DIM = MUTED_RGB
+MUTED = DIM_RGB
+ACCENT = ACCENT_RGB
+BG = BG_RGB
 
 
 def load_episode(ep_dir: Path) -> dict:
@@ -55,9 +67,9 @@ def editorial_background(src: Path, width: int, height: int) -> Image.Image:
     im = Image.open(src).convert("RGB")
     im = cover_crop(im, width, height)
     gray = im.convert("L").convert("RGB")
-    im = Image.blend(im, gray, 0.9)
-    im = ImageEnhance.Contrast(im).enhance(1.08)
-    im = ImageEnhance.Brightness(im).enhance(0.84)
+    im = Image.blend(im, gray, GRAYSCALE)
+    im = ImageEnhance.Contrast(im).enhance(CONTRAST)
+    im = ImageEnhance.Brightness(im).enhance(BRIGHTNESS)
     return im
 
 
@@ -102,6 +114,16 @@ def truncate(d: ImageDraw.ImageDraw, text: str, f: ImageFont.FreeTypeFont, max_w
     return text.rstrip() + ell
 
 
+def draw_accent_line(
+    d: ImageDraw.ImageDraw, x: int, y: int, line: str, f: ImageFont.FreeTypeFont, ink: tuple, accent: tuple
+) -> None:
+    """한 줄을 그린다. `[[구절]]` 은 accent 색, 나머지는 ink (카드 강조 규약)."""
+    cx = x
+    for text, is_accent in accent_parts(line):
+        d.text((cx, y), text, fill=(accent if is_accent else ink), font=f)
+        cx += round(d.textlength(text, font=f))
+
+
 def visual_spec(meta: dict) -> dict:
     visual = meta.get("visual") or {}
     if not isinstance(visual, dict):
@@ -131,7 +153,7 @@ def draw_label(d: ImageDraw.ImageDraw, x: int, y: int, text: str, scale: float) 
 def draw_static(meta: dict, src: Path, out: Path) -> None:
     width, height = 1920, 1080
     spec = visual_spec(meta)
-    img = add_scrim(editorial_background(src, width, height), 212, 130)
+    img = add_scrim(editorial_background(src, width, height), 120, 165)
     d = ImageDraw.Draw(img)
 
     x = 128
@@ -142,9 +164,9 @@ def draw_static(meta: dict, src: Path, out: Path) -> None:
     y = 284
     for idx, line in enumerate(spec["titleLines"][:4]):
         size = 100 if idx < 3 else 82
-        f = fit_font(d, line, FONT_BOLD, size, max_w, 58)
-        fill = INK if "DartLab" not in line else ACCENT
-        d.text((x + 26, y), line, fill=fill, font=f)
+        plain = "".join(t for t, _ in accent_parts(line))
+        f = fit_font(d, plain, FONT_BOLD, size, max_w, 58)
+        draw_accent_line(d, x + 26, y, line, f, INK, ACCENT)
         y += f.size + 24
 
     sub_f = font(FONT_REG, 36)
@@ -163,7 +185,7 @@ def draw_static(meta: dict, src: Path, out: Path) -> None:
 def draw_cover(meta: dict, src: Path, out: Path) -> None:
     width, height = 3000, 3000
     spec = visual_spec(meta)
-    img = add_scrim(editorial_background(src, width, height), 168, 210)
+    img = add_scrim(editorial_background(src, width, height), 96, 225)
     d = ImageDraw.Draw(img)
 
     x = 220
@@ -172,9 +194,9 @@ def draw_cover(meta: dict, src: Path, out: Path) -> None:
     draw_label(d, x, y - 170, spec["kicker"], 1.35)
     for idx, line in enumerate(spec["titleLines"][:4]):
         size = 150 if idx < 3 else 124
-        f = fit_font(d, line, FONT_BOLD, size, max_w, 82)
-        fill = INK if "DartLab" not in line else ACCENT
-        d.text((x, y), line, fill=fill, font=f)
+        plain = "".join(t for t, _ in accent_parts(line))
+        f = fit_font(d, plain, FONT_BOLD, size, max_w, 82)
+        draw_accent_line(d, x, y, line, f, INK, ACCENT)
         y += f.size + 36
 
     sub_f = font(FONT_REG, 58)
