@@ -59,11 +59,12 @@ async function resolveOgImage(post, companiesIndex) {
 	return asset ? `${MEDIA_BASE}/companies/${key}/${asset.name}` : null;
 }
 
-// hfMedia URL → og:image 용 wsrv.nl JPEG 링크(1080x1350 4:5, baseline). 크롤러 호환 위해 JPEG 통일.
+// hfMedia URL → og:image 용 wsrv.nl JPEG 링크(1200x630 1.91:1, baseline). 링크 미리보기(스레드·카톡·
+// 페북)가 크롭 없이 다 보이는 규격 · 세로 4:5 는 미리보기에서 가로 크롭돼 상하 브랜딩이 잘린다.
 // grey=true 면 그레이톤 필터(평사진 폴백용). 발행 시 구운 브랜디드 OG 는 이미 그레이톤이라 grey=false.
 function ogImageUrl(src, grey = true) {
 	const f = grey ? '&filt=greyscale' : '';
-	return `https://wsrv.nl/?url=${encodeURIComponent(src)}&output=jpg&w=1080&h=1350&fit=cover&q=88${f}`;
+	return `https://wsrv.nl/?url=${encodeURIComponent(src)}&output=jpg&w=1200&h=630&fit=cover&q=88${f}`;
 }
 
 // 캡션 산문 첫 문단 → og:description(180자 이하). 없으면 첫 슬라이드 line.
@@ -140,8 +141,8 @@ export default {
 ${ogImage ? `<meta property="og:image" content="${esc(ogImage)}">
 <meta property="og:image:secure_url" content="${esc(ogImage)}">
 <meta property="og:image:type" content="image/jpeg">
-<meta property="og:image:width" content="1080">
-<meta property="og:image:height" content="1350">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="${esc(title)}">` : ''}
 <meta name="twitter:card" content="${ogImage ? 'summary_large_image' : 'summary'}">
 <meta name="twitter:title" content="${esc(title)}">

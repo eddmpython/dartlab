@@ -35,14 +35,14 @@ const jobs = JSON.parse(readFileSync(manifestPath, 'utf-8'));
 const avatarB64 = readFileSync(avatarPath).toString('base64');
 const avatarUri = `data:image/png;base64,${avatarB64}`;
 
-// 헤드라인 길이 인지 폰트(긴 문장도 프레임 안, CardSlide eLine 결). 공백 제외 글자 수 기준.
+// 헤드라인 길이 인지 폰트(가로 1200x630 프레임 · 좌측 텍스트 컬럼 기준). 공백 제외 글자 수.
 function headlineSize(line) {
 	const n = String(line).replace(/\[\[|\]\]/g, '').replace(/\s/g, '').length;
-	if (n <= 22) return 82;
-	if (n <= 30) return 74;
-	if (n <= 40) return 64;
-	if (n <= 52) return 56;
-	return 50;
+	if (n <= 14) return 62;
+	if (n <= 22) return 54;
+	if (n <= 32) return 46;
+	if (n <= 44) return 40;
+	return 34;
 }
 
 function esc(s) {
@@ -73,28 +73,30 @@ async function bgDataUri(bg) {
 	return `data:${mime};base64,${readFileSync(p).toString('base64')}`;
 }
 
+// 가로 1200x630(1.91:1). 링크 미리보기(스레드·카톡·페북·X)가 크롭 없이 다 보이는 규격. 세로 4:5 는
+// 미리보기에서 가로로 크롭돼 상하 브랜딩이 잘린다. 매거진 결: 좌측 다크 스크림 위 텍스트, 우측 사진 노출.
 function pageHtml(job, bgUri) {
 	const size = headlineSize(job.line);
 	return `<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  html,body { width:1080px; height:1350px; }
-  .card { position:relative; width:1080px; height:1350px; overflow:hidden; background:#050811;
+  html,body { width:1200px; height:630px; }
+  .card { position:relative; width:1200px; height:630px; overflow:hidden; background:#050811;
     font-family:'Pretendard',system-ui,sans-serif; color:#f6f8fb; }
   .bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
-    filter:grayscale(1) contrast(1.05) brightness(1.02); opacity:0.96; }
-  .scrim { position:absolute; inset:0; background:linear-gradient(180deg,
-     rgba(3,5,9,0.30) 0%, rgba(3,5,9,0.30) 42%, rgba(3,5,9,0.90) 100%); }
-  .brand { position:absolute; top:64px; left:76px; display:flex; align-items:center; gap:18px; z-index:2; }
-  .brand img { width:72px; height:72px; border-radius:50%; }
-  .brand .wm { font-size:40px; font-weight:800; letter-spacing:-0.01em; color:#f6f8fb; }
-  .body { position:absolute; left:76px; right:76px; bottom:118px; z-index:2; }
-  .eyebrow { font-size:34px; font-weight:800; letter-spacing:0.02em; color:#ff3f6f; margin-bottom:22px;
+    filter:grayscale(1) contrast(1.05) brightness(1.02); opacity:0.95; }
+  .scrim { position:absolute; inset:0; background:linear-gradient(100deg,
+     rgba(3,5,9,0.93) 0%, rgba(3,5,9,0.78) 32%, rgba(3,5,9,0.42) 60%, rgba(3,5,9,0.12) 100%); }
+  .brand { position:absolute; top:44px; left:56px; display:flex; align-items:center; gap:15px; z-index:2; }
+  .brand img { width:54px; height:54px; border-radius:50%; }
+  .brand .wm { font-size:31px; font-weight:800; letter-spacing:-0.01em; color:#f6f8fb; }
+  .body { position:absolute; left:56px; right:44%; bottom:52px; z-index:2; }
+  .eyebrow { font-size:25px; font-weight:800; letter-spacing:0.02em; color:#ff3f6f; margin-bottom:16px;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .line { font-size:${size}px; font-weight:900; line-height:1.14; letter-spacing:-0.01em;
     color:#f6f8fb; word-break:keep-all;
-    display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:5; overflow:hidden; }
+    display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:4; overflow:hidden; }
   .line .hl { color:#ff3f6f; }
 </style></head>
 <body><div class="card">
@@ -109,7 +111,7 @@ function pageHtml(job, bgUri) {
 }
 
 const browser = await chromium.launch({ headless: true });
-const ctx = await browser.newContext({ viewport: { width: 1080, height: 1350 }, deviceScaleFactor: 1 });
+const ctx = await browser.newContext({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
 let ok = 0;
 let fail = 0;
 for (const job of jobs) {
