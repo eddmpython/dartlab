@@ -148,8 +148,15 @@ def parseAuditFees(html: str | BeautifulSoup) -> list[dict]:
         g = tableGrid(table)
         if not g:
             continue
-        labels = [r[0] for r in g if r]
-        if not any(re.match(r"(?i)^audit fees?\b", x or "") for x in labels):
+
+        # 라벨 = 행의 첫 비어있지 않은 셀 (MSFT 류 선두 빈 셀/들여쓰기 td 대응. r[0] 고정은 전부 miss)
+        def _lab(row: list[str]) -> tuple[str, int]:
+            for j, c in enumerate(row):
+                if (c or "").strip():
+                    return c.strip(), j
+            return "", 0
+
+        if not any(re.match(r"(?i)^audit fees?\b", _lab(r)[0]) for r in g if r):
             continue
         head, _ = _mergedHead(g)
         years = []
@@ -157,9 +164,11 @@ def parseAuditFees(html: str | BeautifulSoup) -> list[dict]:
             m = re.search(r"\b(20\d\d)\b", c)
             if m and m.group(1) not in years:
                 years.append(m.group(1))
-        if not years:  # 헤더 연도 부재 시 표 텍스트에서 좌→우 순 추출
-            m = re.findall(r"\b(20\d\d)\b", " ".join(head) + " " + " ".join(g[0]))
-            years = list(dict.fromkeys(m))
+        if not years:  # 헤더 연도 부재 시 상위 2행 + 직전 산문("fiscal years 2025 and 2024")에서 추출
+            near = " ".join(head) + " " + " ".join(g[0]) + (" " + " ".join(g[1]) if len(g) > 1 else "")
+            prevTxt = " ".join(str(x) for x in table.find_all_previous(string=True, limit=25))[:500]
+            m = re.findall(r"\b(20\d\d)\b", near) or re.findall(r"\b(20\d\d)\b", prevTxt)
+            years = [y for y in dict.fromkeys(m) if 1990 <= int(y) <= 2035][:3]
         # 단위: 표 자신 + 직전 형제 텍스트에서 thousands 마커
         ctx = table.get_text(" ", strip=True)[:400]
         prev = table.find_previous(string=re.compile(r"(?i)in thousands|\(\s*\$?\s*000"))
@@ -176,11 +185,12 @@ def parseAuditFees(html: str | BeautifulSoup) -> list[dict]:
         for r in g:
             if not r:
                 continue
-            lab = (r[0] or "").lower()
+            labTxt, labIdx = _lab(r)
+            lab = labTxt.lower()
             key = next((v for k, v in fieldOf if lab.startswith(k)), None)
             if not key:
                 continue
-            amts = [a for a in (moneyToFloat(c) for c in r[1:]) if a is not None]
+            amts = [a for a in (moneyToFloat(c) for c in r[labIdx + 1 :]) if a is not None]
             # 같은 값 colspan 중복 제거(인접 동일값 collapse)
             dedup: list[float] = []
             for a in amts:
