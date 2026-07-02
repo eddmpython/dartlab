@@ -74,7 +74,7 @@
 		flex-wrap: wrap;
 	}
 	.ep-no {
-		color: var(--dl-accent, #ff3f6f);
+		color: var(--dl-accent);
 		font-weight: 700;
 		font-size: 0.82rem;
 		letter-spacing: 0.02em;
