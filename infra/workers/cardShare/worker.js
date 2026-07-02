@@ -120,7 +120,9 @@ export default {
 		}
 		const title = String(post.title || post.name || 'DartLab 카드').trim();
 		const desc = ogDescription(post);
-		const shareUrl = `${url.origin}/c/${encodeURIComponent(slug)}`;
+		// og:url/canonical 은 요청 URL(쿼리 포함). 크롤러 캐시는 URL 별이라 og:url 이 쿼리를 반영해야
+		// `?v=2` 같은 캐시버스터가 새 스크랩으로 인식된다(옛 미리보기 강제 갱신). 슬러그 라우팅은 쿼리 무관.
+		const shareUrl = `${url.origin}/c/${encodeURIComponent(slug)}${url.search}`;
 
 		// 크롤러용 OG/twitter 메타 + 사람용 JS 리다이렉트(meta refresh 금지, 위 ⚠ A). body 는 폴백 링크.
 		const html = `<!doctype html>
