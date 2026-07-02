@@ -2,5 +2,6 @@
 
 from dartlab.scan.builders.edgar.report.build import buildEdgarReport
 from dartlab.scan.builders.edgar.report.employeeBuild import buildEdgarEmployee
+from dartlab.scan.builders.edgar.report.proxyBuild import buildEdgarProxyReport
 
-__all__ = ["buildEdgarEmployee", "buildEdgarReport"]
+__all__ = ["buildEdgarEmployee", "buildEdgarProxyReport", "buildEdgarReport"]
