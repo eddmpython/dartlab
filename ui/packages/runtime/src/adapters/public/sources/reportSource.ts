@@ -1033,7 +1033,45 @@ export function createReportSource(core: DataCore): ReportPort {
 	const RECENT_N = 6; // 최근 N분기 · ACONTEXT XBRL 은 2025-03 사업보고서+ 라 실제 셀은 ~5분기. 6 이면 충분히 커버.
 	// (panel 은 단일 row group 이라 rowStart/rowEnd 가 네트워크를 못 줄인다 · read 자체는 lazy 로 호출측에서 보류.)
 
+	// US(EDGAR) 부문 구성 · edgar/scan/report/segments.parquet 직독(DERA notes 차원 태그, segmentsBuild 산출).
+	// 분기(flow=Q) 3기 이상이면 분기 시계열(KR 대칭), 아니면 연간(flow=Y). 비용 성격별 분류는 US GAAP 미공시라 null(정직).
+	async function loadEdgarNoteSeries(ticker: string): Promise<NoteSeriesBundle | null> {
+		try {
+			const rows = await core.requestParquetRows<Row>({
+				origin: 'hfRange',
+				path: 'edgar/scan/report/segments.parquet',
+				columns: ['stockCode', 'period', 'year', 'quarter', 'flow', 'segment', 'revenue'],
+				filter: { stockCode: { $eq: ticker } },
+				cacheKey: `edgarReport.segments:${ticker}`,
+				cache: { scope: 'memory', ttlMs: 6 * 3_600_000, maxEntries: 128 }
+			});
+			const byFlow = (fl: string) => rows.filter((r) => str(r.flow) === fl && str(r.period) && num(r.revenue) != null);
+			const q = byFlow('Q');
+			const use = new Set(q.map((r) => str(r.period))).size >= 3 ? q : byFlow('Y');
+			if (!use.length) return null;
+			const byPeriod = new Map<string, PeriodComposition>();
+			for (const r of use) {
+				const period = str(r.period);
+				let p = byPeriod.get(period);
+				if (!p) byPeriod.set(period, (p = { period, year: str(r.year), quarter: str(r.quarter) + '분기', items: new Map() }));
+				const nm = str(r.segment);
+				const prev = p.items.get(nm);
+				p.items.set(nm, { name: nm, value: (prev?.value ?? 0) + (num(r.revenue) ?? 0) });
+			}
+			const perPeriod = [...byPeriod.values()]
+				.filter((p) => p.items.size >= 2) // 단일부문 자동 배제(KR 동일)
+				.sort((a, b) => a.period.localeCompare(b.period))
+				.slice(-RECENT_N);
+			const segment = buildSeries(perPeriod, { topK: 8, rollupOther: false });
+			return segment ? { cost: null, segment } : null;
+		} catch {
+			return null;
+		}
+	}
+
 	async function buildNoteSeries(code: string): Promise<NoteSeriesBundle | null> {
+		const m = resolveMarket(code);
+		if (m.market === 'US' && m.ticker) return loadEdgarNoteSeries(m.ticker); // US = edgar/scan/report 직독
 		// Pass A · period 컬럼만(경량) → 최근 N분기 + 그 행 범위(연속 tail).
 		const pr = await core.requestParquetRows<{ period?: unknown }>({
 			origin: 'hfRange',
