@@ -34,7 +34,7 @@ concurrency:
 jobs:
   expectation-cycle:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 360  # quarterly 전상장사 순차 sweep (Company 1개씩 로드·해제) 대비
 
     steps:
       - uses: actions/checkout@v6

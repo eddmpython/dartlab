@@ -20,16 +20,25 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cycle", choices=["monthly", "quarterly"], default="monthly")
     parser.add_argument("--market", default="KR")
+    parser.add_argument("--codes", default="", help="quarterly 대상 종목 CSV (기본 = 전상장사)")
     parser.add_argument("--push", action="store_true", help="HF expectations/ surface 업로드")
     args = parser.parse_args()
 
-    from dartlab.simulate.expectationCycle import buildScorecard, issueMacro, scoreDue
+    from dartlab.simulate.expectationCycle import buildScorecard, issueMacro, issueRevenue, scoreDue
     from dartlab.simulate.expectationLedger import ledgerDir
 
-    issued = []
+    issued: list = []
+    skipped: dict[str, str] = {}
     if args.cycle == "monthly":
         issued = issueMacro(market=args.market, live=True)
-    # quarterly(매출·손익·credit) 발행은 P3~P5 에서 본 진입점에 합류한다.
+    else:  # quarterly: 전상장사 매출 (순차 스트림, Company 1개씩 로드·해제)
+        if args.codes:
+            codes = [c.strip() for c in args.codes.split(",") if c.strip()]
+        else:
+            import dartlab
+
+            codes = dartlab.listing().get_column("종목코드").to_list()
+        issued, skipped = issueRevenue(codes, live=True)
 
     scores = scoreDue()
     card = buildScorecard()
@@ -38,8 +47,13 @@ def main() -> int:
     (outDir / "scorecard.json").write_text(json.dumps(card, ensure_ascii=False, indent=1), encoding="utf-8")
     print(
         f"[expectation-cycle] cycle={args.cycle} issued={len(issued)} scored={len(scores)} "
-        f"errorRows={card['totals']['errorRows']} unscored={card['totals']['unscored']} dir={outDir}"
+        f"errorRows={card['totals']['errorRows']} unscored={card['totals']['unscored']} "
+        f"skipped={len(skipped)} dir={outDir}"
     )
+    if skipped:  # 발행 결손 census: 조용히 빼면 생존 편향, 반드시 남긴다
+        (outDir / f"issueCensus_{args.cycle}.json").write_text(
+            json.dumps(skipped, ensure_ascii=False, indent=1), encoding="utf-8"
+        )
 
     if args.push:
         from dartlab.pipeline.hfUpload import uploadCategoryToHf

@@ -1,16 +1,25 @@
-"""Forward Test 인프라 — 매출 예측 저장 + 사후 평가."""
+"""Forward Test 인프라 : 매출 예측 저장 + 사후 평가.
+
+저장 위치 (2026-07-03 승격, scenario-simulator 09 §10.2 P9b + expectation-grid 00 §9 A2):
+``~/.dartlab``(ephemeral) 폐기. ``DARTLAB_DATA_DIR`` env > ``./data`` 아래 ``forwardTests/``.
+"""
 
 from __future__ import annotations
 
 import json
 import logging
+import os
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-_FORWARD_TEST_DIR = Path.home() / ".dartlab" / "forward_tests"
+
+def _forwardTestDir() -> Path:
+    """기록 루트: DARTLAB_DATA_DIR env > ./data. (옛 ~/.dartlab 저장 폐기, A2)."""
+    root = os.environ.get("DARTLAB_DATA_DIR")
+    return (Path(root) if root else Path("data")) / "forwardTests"
 
 
 @dataclass
@@ -109,8 +118,9 @@ def saveForecast(record: ForwardTestRecord) -> Path:
     AIContext:
         AI 답변 시 forward test 누적 후 캘리브레이션 점수 트래킹에 사용.
     """
-    _FORWARD_TEST_DIR.mkdir(parents=True, exist_ok=True)
-    filepath = _FORWARD_TEST_DIR / f"{record.stockCode}.json"
+    baseDir = _forwardTestDir()
+    baseDir.mkdir(parents=True, exist_ok=True)
+    filepath = baseDir / f"{record.stockCode}.json"
 
     # 기존 기록 로드
     records = _loadRaw(filepath)
@@ -168,7 +178,7 @@ def loadRecords(stockCode: str) -> list[ForwardTestRecord]:
     AIContext:
         AI 답변 시 과거 예측 회수 → 사후 평가용 데이터 소스.
     """
-    filepath = _FORWARD_TEST_DIR / f"{stockCode}.json"
+    filepath = _forwardTestDir() / f"{stockCode}.json"
     raw = _loadRaw(filepath)
     results = []
     for r in raw:
@@ -371,9 +381,10 @@ def evaluateCalibration(
 
     if stockCodes is None:
         # 모든 종목 파일 스캔
-        if not _FORWARD_TEST_DIR.exists():
+        baseDir = _forwardTestDir()
+        if not baseDir.exists():
             return None
-        stockCodes = [f.stem for f in _FORWARD_TEST_DIR.glob("*.json")]
+        stockCodes = [f.stem for f in baseDir.glob("*.json")]
 
     predictions: list[float] = []
     outcomes: list[int] = []
@@ -388,6 +399,90 @@ def evaluateCalibration(
         return None
 
     return generateCalibrationReport(predictions, outcomes)
+
+
+def recordForecast(
+    *,
+    stockCode: str,
+    horizon: int,
+    projected: list[float],
+    scenarios: dict[str, list[float]],
+    sourcesUsed: list[str],
+    assumptions: list[str],
+    version: str = "v3",
+    directionProbability: float | None = None,
+    directionPredicted: str | None = None,
+) -> Path:
+    """예측 봉인 write-end : thin facade (새 저장 메커니즘 0, ForwardTestRecord+saveForecast 재사용).
+
+    Capabilities:
+        forecast 산출물을 발행 시각(now UTC)과 함께 ForwardTestRecord 로 봉인 저장.
+        scenario-simulator 09 §10.2 P9c 티켓의 구현 : forward-test 루프의 write-end.
+
+    Parameters
+    ----------
+    stockCode : str
+        6자리 종목코드.
+    horizon : int
+        예측 연 수.
+    projected : list[float]
+        연도별 예측 매출 (원).
+    scenarios : dict[str, list[float]]
+        Base/Bull/Bear 경로.
+    sourcesUsed : list[str]
+        사용 소스 목록.
+    assumptions : list[str]
+        예측 가정.
+    version : str
+        기록 스키마 버전 태그 (기본 "v3").
+    directionProbability : float | None
+        매출 방향 예측 확률 (v4 캘리브레이션용).
+    directionPredicted : str | None
+        "up" | "down".
+
+    Returns
+    -------
+    Path
+        저장된 종목 JSON 경로.
+
+    Guide:
+        발행 즉시 호출한다. 사후 채점은 ``evaluate``, 캘리브레이션 집계는
+        ``evaluateCalibration`` 이 닫는다 (write→evaluate→calibration 루프).
+
+    When:
+        expectation-grid 수집자(issueRevenue)·forecast 파이프라인이 예측을 낼 때마다.
+
+    How:
+        generateKey + now(UTC) 로 ForwardTestRecord 구성 → saveForecast 위임.
+
+    Raises:
+        없음. 저장 실패는 saveForecast 의 OSError 전파.
+
+    Example:
+        >>> recordForecast(stockCode="005930", horizon=3, projected=[1.0],
+        ...                scenarios={}, sourcesUsed=[], assumptions=[])  # doctest: +SKIP
+
+    See Also:
+        - saveForecast : 저장 본체
+        - evaluate / evaluateCalibration : 루프의 read-end
+
+    Requires:
+        쓰기 가능한 DARTLAB_DATA_DIR (기본 ./data).
+    """
+    record = ForwardTestRecord(
+        key=generateKey(stockCode, horizon, version),
+        stockCode=stockCode,
+        forecastDate=datetime.now(timezone.utc).isoformat(),
+        version=version,
+        horizon=horizon,
+        projected=list(projected),
+        scenarios=dict(scenarios),
+        sourcesUsed=list(sourcesUsed),
+        assumptions=list(assumptions),
+        directionProbability=directionProbability,
+        directionPredicted=directionPredicted,
+    )
+    return saveForecast(record)
 
 
 def _loadRaw(filepath: Path) -> list[dict]:

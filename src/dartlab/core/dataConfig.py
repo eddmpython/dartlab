@@ -183,6 +183,11 @@ DATA_RELEASES: dict[str, dict] = {
         "label": "기대치 격자 원장 (발행 봉인 + 사후 채점, append-only, 시뮬레이터 검증척추)",
         "public": True,
     },
+    "forwardTests": {
+        "dir": "forwardTests",
+        "label": "매출 예측 도메인 기록 (ForwardTestRecord JSON, 09 P9a/P9b 승격분)",
+        "public": False,
+    },
     # ── generated artifact (landing 빌드 시 HF 에서 fetch) ──
     "industryMap": {
         "dir": "landing/map",

@@ -98,6 +98,60 @@ def test_score_publication_lag_stays_pending(tmp_path):
     assert scores == []  # grace 안에서는 error 봉인 없이 pending
 
 
+@dataclass
+class FakeRevenueResult:
+    projected: list = field(default_factory=lambda: [110.0, 120.0, 130.0])
+    scenarios: dict = field(
+        default_factory=lambda: {
+            "base": [110.0, 120.0, 130.0],
+            "bull": [125.0, 140.0, 155.0],
+            "bear": [95.0, 100.0, 105.0],
+        }
+    )
+    method: str = "ensemble"
+    sources: list = field(default_factory=list)
+    assumptions: list = field(default_factory=list)
+
+
+def revenueFixture(tmp_path, *, live=True):
+    from dartlab.simulate.expectationCycle import issueRevenue
+
+    annual = {"005930": {2021: 80.0, 2022: 90.0, 2023: 95.0, 2024: 100.0, 2025: 105.0}}
+    return issueRevenue(
+        ["005930", "999999"],
+        live=live,
+        baseDir=tmp_path,
+        resultByCode={"005930": FakeRevenueResult()},
+        annualByCode=annual,
+    )
+
+
+def test_issue_revenue_quantile_mapping_and_census(tmp_path):
+    rows, skipped = revenueFixture(tmp_path)
+    assert len(rows) == 3 and skipped == {"999999": "예측 불가(projected 없음)"}
+    r1 = next(r for r in rows if r.horizon == 1)
+    assert r1.targetPeriod == "FY2026" and r1.freq == "Y"
+    q = r1.quantiles
+    assert (q[25], q[50], q[75]) == (95.0, 110.0, 125.0)  # bear/base/bull -> p25/p50/p75
+    assert q[5] < q[25] and q[95] > q[75]  # 정규 근사 꼬리 확장
+    assert "scenarioQuantileApprox" in r1.warnings
+    assert r1.baselines["persistence"] == 105.0  # 최신 완결 FY 매출 봉인
+
+
+def test_score_revenue_due_grace_and_actual(tmp_path):
+    revenueFixture(tmp_path)
+    annual = {"005930": {2026: 118.0}}
+    # FY2026 은 2027-04 부터 due
+    assert scoreDue(now="2027-03", baseDir=tmp_path, annualRevenueByCode=annual, monthlyBySeries={}) == []
+    scores = scoreDue(now="2027-04", baseDir=tmp_path, annualRevenueByCode=annual, monthlyBySeries={})
+    assert len(scores) == 1 and scores[0].error is None
+    assert scores[0].coverageHit50 is True  # 118 in [95, 125]
+    # FY2027 는 2028-04 due + grace 3개월: actual 없으면 2028-06 까지 pending, 2028-07 error 봉인
+    assert scoreDue(now="2028-06", baseDir=tmp_path, annualRevenueByCode=annual, monthlyBySeries={}) == []
+    scores2 = scoreDue(now="2028-07", baseDir=tmp_path, annualRevenueByCode=annual, monthlyBySeries={})
+    assert len(scores2) == 1 and scores2[0].error is not None
+
+
 def test_scorecard_groups_and_sample_gate(tmp_path):
     issueFixture(tmp_path)
     scoreDue(now="2026-07", baseDir=tmp_path, monthlyBySeries=makeMonthly())
