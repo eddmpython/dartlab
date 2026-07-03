@@ -1,12 +1,12 @@
-"""블로그 통합 썸네일 제너레이터 — 카드뉴스(CardSlide) editorial 언어 그대로.
+"""블로그 통합 썸네일 제너레이터. 카드뉴스(CardSlide) editorial 언어 그대로.
 
-정책(BLOG.md §썸네일 신, 2026-06-27): 사진을 버리지 않는다. 카드뉴스 editorial 표지 그대로 —
+정책(BLOG.md §썸네일 신, 2026-06-27): 사진을 버리지 않는다. 카드뉴스 editorial 표지 그대로.
 배경 사진을 흑백(그레이톤)으로 깔고 그 위에 어두운 스크림 + 카드뉴스 텍스트를 얹는다.
 - 배경: 글 폴더 assets/{NN}*thumbnail-bg.webp 를 흑백 cover (CardSlide CSS와 동일: grayscale·대비·밝기).
         이미지가 없으면 navy #050811 + 좌하단 accent 글로우로 폴백.
-- 스크림: 텍스트 시작점 위로 부드럽게 진해지는 navy 그라데이션 — 사진 위에서도 글씨가 읽힌다.
+- 스크림: 텍스트 시작점 위로 부드럽게 진해지는 navy 그라데이션. 사진 위에서도 글씨가 읽힌다.
 - 텍스트: 하단 정렬·좌측. kicker(● + 카테고리, accent) → 제목(흰 #f6f8fb, 숫자=accent) → 부제(dim).
-- 서명: 좌하단 avatar.webp(원형) + "dartlab"(굵게) — CoverThumb .brand 그대로.
+- 서명: 좌하단 avatar.webp(원형) + "dartlab"(굵게). CoverThumb .brand 그대로.
 - 색 = CARD 팔레트(accent #ff3f6f). frontmatter title·description 만으로 생성(글마다 즉흥 없음).
 
 실행:
@@ -35,9 +35,9 @@ BG = (5, 8, 17)  # CARD.bgDark #050811
 BG2 = (10, 14, 24)  # 살짝 밝은 navy (옅은 그라데이션)
 ACCENT = (255, 63, 111)  # CARD.accent #ff3f6f
 INK = (246, 248, 251)  # CARD.text #f6f8fb
-DIM = (200, 206, 214)  # 부제 — 사진 스크림 위라 약간 밝게
+DIM = (200, 206, 214)  # 부제(사진 스크림 위라 약간 밝게)
 
-# CardSlide editorial 필터값과 정렬(grayscale 0.85·대비 1.06·밝기 0.92 — 사진을 무드 있게 통일)
+# CardSlide editorial 필터값과 정렬(grayscale 0.85·대비 1.06·밝기 0.92, 사진을 무드 있게 통일)
 GRAY_BLEND = 0.85
 CONTRAST = 1.06
 BRIGHTNESS = 0.92
@@ -48,6 +48,7 @@ PREFIX = {
     "credit-reports": "신용분석 보고서",
     "company-reports": "기업이야기",
     "data-reports": "데이터 리포트",
+    "tech-story": "기술이야기",
 }
 
 # 숫자(+한글 단위) = accent 강조 (카드뉴스 [[구절]] 자동 근사)
@@ -94,7 +95,7 @@ def grayscaleCover(bg_path: Path) -> Image.Image:
 
 
 def flatNavy() -> Image.Image:
-    """이미지 없는 글 폴백 — navy 세로 그라데이션 + 좌하단 옅은 accent 글로우."""
+    """이미지 없는 글 폴백. navy 세로 그라데이션 + 좌하단 옅은 accent 글로우."""
     img = Image.new("RGB", (W, H), BG)
     d = ImageDraw.Draw(img)
     for y in range(H):
@@ -106,13 +107,13 @@ def flatNavy() -> Image.Image:
 
 
 def applyScrim(img: Image.Image, text_top: int) -> Image.Image:
-    """text_top 위로 부드럽게, 아래로 진하게 — 사진 위에서도 글씨가 읽히는 navy 스크림."""
+    """text_top 위로 부드럽게, 아래로 진하게. 사진 위에서도 글씨가 읽히는 navy 스크림."""
     fade_start = max(0, text_top - 230)
     scrim = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     sd = ImageDraw.Draw(scrim)
     for y in range(H):
         if y <= fade_start:
-            a = 26  # 상단 — 사진 거의 그대로(살짝만 가라앉힘)
+            a = 26  # 상단: 사진 거의 그대로(살짝만 가라앉힘)
         elif y >= text_top:
             t2 = (y - text_top) / max(1, H - text_top)
             a = int(165 + 78 * t2)  # 텍스트 영역 165 → 바닥 243
@@ -124,7 +125,7 @@ def applyScrim(img: Image.Image, text_top: int) -> Image.Image:
 
 
 def wrapAccent(d: ImageDraw.ImageDraw, title: str, max_w: int) -> tuple[list[list[tuple]], ImageFont.FreeTypeFont]:
-    """제목을 폭에 맞춰 ≤3줄로 — 각 줄은 [(텍스트, accent여부)] 세그먼트. 안 맞으면 폰트 축소."""
+    """제목을 폭에 맞춰 ≤3줄로 자른다. 각 줄은 [(텍스트, accent여부)] 세그먼트. 안 맞으면 폰트 축소."""
     for size in (58, 52, 46, 42):
         font = ImageFont.truetype(FB, size)
         words = title.split(" ")
@@ -165,17 +166,17 @@ def render(fm: dict, bg_path: Path | None, out_path: Path) -> None:
     title_top = title_bottom - len(seg_lines) * line_h
     kicker_top = title_top - 16 - fkick.size
 
-    # 스크림은 텍스트 시작점(kicker) 기준으로 — 사진이면 강하게, 폴백 navy 면 거의 영향 없음
+    # 스크림은 텍스트 시작점(kicker) 기준: 사진이면 강하게, 폴백 navy 면 거의 영향 없음
     img = applyScrim(base, kicker_top)
     d = ImageDraw.Draw(img)
 
-    # kicker — ● + 카테고리(accent)
+    # kicker: ● + 카테고리(accent)
     prefix = PREFIX.get(fm.get("category", ""), "DartLab")
     dot_r = 7
     d.ellipse([PAD, kicker_top + 9, PAD + dot_r * 2, kicker_top + 9 + dot_r * 2], fill=ACCENT)
     d.text((PAD + dot_r * 2 + 12, kicker_top), prefix, fill=ACCENT, font=fkick)
 
-    # 제목 — 흰색 + 숫자 accent
+    # 제목: 흰색 + 숫자 accent
     y = title_top
     for segs in seg_lines:
         x = PAD
@@ -184,7 +185,7 @@ def render(fm: dict, bg_path: Path | None, out_path: Path) -> None:
             x += d.textlength(text, font=ftitle)
         y += line_h
 
-    # 부제 — dim, 1줄(폭 넘으면 말줄임)
+    # 부제: dim, 1줄(폭 넘으면 말줄임)
     desc = fm.get("description", "")
     if desc:
         full = desc
@@ -194,7 +195,7 @@ def render(fm: dict, bg_path: Path | None, out_path: Path) -> None:
             desc = desc.rstrip() + "…"
         d.text((PAD, sub_top), desc, fill=DIM, font=fsub)
 
-    # 서명 — 좌하단 avatar(원형) + dartlab
+    # 서명: 좌하단 avatar(원형) + dartlab
     img.paste(circleAvatar(avatar_d), (PAD, avatar_top), circleAvatar(avatar_d))
     d.text((PAD + avatar_d + 12, avatar_top + 6), "dartlab", fill=INK, font=ImageFont.truetype(FB, 23))
 
@@ -205,7 +206,7 @@ def render(fm: dict, bg_path: Path | None, out_path: Path) -> None:
 
 
 def renderCard(bg_path: Path | None, out_path: Path) -> None:
-    """리스트 카드용 — 텍스트 없는 깨끗한 흑백 이미지(제목은 카드가 따로 보여줌, 중복·crop 방지)."""
+    """리스트 카드용: 텍스트 없는 깨끗한 흑백 이미지(제목은 카드가 따로 보여줌, 중복·crop 방지)."""
     img = grayscaleCover(bg_path) if (bg_path and bg_path.exists()) else flatNavy()
     out_path.parent.mkdir(parents=True, exist_ok=True)
     img.convert("RGB").save(out_path, "WEBP", quality=88)
@@ -231,7 +232,7 @@ def iterPosts():
 
 
 def outPathFor(slug: str, fm: dict, preview_dir: Path | None) -> Path | None:
-    """미리보기면 preview_dir/{slug}.webp. 적용이면 ogImage 경로 덮어쓰기(없으면 None — 건너뜀)."""
+    """미리보기면 preview_dir/{slug}.webp. 적용이면 ogImage 경로 덮어쓰기(없으면 None, 건너뜀)."""
     if preview_dir is not None:
         return preview_dir / f"{slug}.webp"
     og = fm.get("ogImage", "")
@@ -260,8 +261,8 @@ def main() -> None:
         if out is None:
             skipped.append(f"{fm.get('category', '?')}/{slug}")
             continue
-        render(fm, bg, out)  # og:image — 텍스트 합성(소셜 공유용)
-        renderCard(bg, out.with_name(out.stem + "-card" + out.suffix))  # 리스트 카드용 — 텍스트 없는 깨끗한 이미지
+        render(fm, bg, out)  # og:image: 텍스트 합성(소셜 공유용)
+        renderCard(bg, out.with_name(out.stem + "-card" + out.suffix))  # 리스트 카드용: 텍스트 없는 깨끗한 이미지
         n += 1
         if bg:
             n_img += 1

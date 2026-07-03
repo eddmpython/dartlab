@@ -61,6 +61,18 @@ export const categoryDefinitions = [
 			'DartLab 데이터 리포트. 전상장사 공시 데이터를 전수 집계해 자사주·주주환원·재무 구조의 시장 전체 패턴을 드러냅니다.',
 		brandMessage:
 			'DartLab은 전상장사 공시 데이터를 한 번에 집계해, 개별 종목이 아니라 시장 전체의 구조를 드러냅니다.'
+	},
+	{
+		id: 'tech-story',
+		slug: 'tech-story',
+		folder: '08-tech-story',
+		label: '기술이야기',
+		description: '반도체, 2차전지, 원전, 로봇 같은 기술의 원리를 풀고, 그 기술이 기업의 원가·마진·투자에 어떻게 남는지까지 잇는 이야기입니다.',
+		seoTitle: '기술이야기 | 기술의 원리와 재무제표를 잇다',
+		seoDescription:
+			'DartLab 기술이야기. 반도체 HBM, 2차전지 양극재, 원전 SMR 같은 기술의 원리를 풀어내고, 그 기술이 기업의 원가·마진·투자·현금흐름을 어떻게 바꾸는지까지 연결합니다.',
+		brandMessage:
+			'DartLab은 기술을 원리로 끝내지 않고, 그 기술이 기업의 숫자에 남긴 흔적까지 함께 읽습니다.'
 	}
 ] as const;
 
@@ -179,6 +191,14 @@ export const seriesDefinitions = {
 		seoTitle: '데이터 리포트 | 전상장사 전수 집계',
 		seoDescription: 'DartLab 데이터 리포트 시리즈. 자사주, 주주환원, 부채, 현금흐름 등 전상장사 공시 데이터를 전수 집계한 분석.',
 		brandMessage: 'DartLab은 전상장사 데이터를 전수로 집계해 시장 전체의 구조를 드러냅니다.'
+	},
+	'tech-story': {
+		id: 'tech-story',
+		label: '기술이야기',
+		description: '기술의 원리를 풀고, 그 기술이 기업의 원가·마진·투자에 어떻게 남는지까지 잇는 시리즈입니다.',
+		seoTitle: '기술이야기 | 기술의 원리와 재무제표를 잇다',
+		seoDescription: 'DartLab 기술이야기 시리즈. 반도체, 2차전지, 원전, 로봇 같은 기술의 원리를 풀어내고, 그 기술이 기업의 숫자를 어떻게 바꾸는지 연결합니다.',
+		brandMessage: 'DartLab은 기술을 원리로 끝내지 않고, 그 기술이 기업의 숫자에 남긴 흔적까지 함께 읽습니다.'
 	}
 } as const;
 
