@@ -927,6 +927,9 @@
 .dlTerm .expPanel .factRow:nth-child(odd) { border-right: 0; }
 .dlTerm .expPanel .factL { font-size: 10.5px; }
 .dlTerm .expPanel .factV { font-size: 11px; }
+/* E-3표 추정 컬럼: 실적과 시각 구분(앰버 헤더 + dim 값 + 좌측 구분선) */
+.dlTerm .finTable th.finEHead { color: var(--amber); border-left: 1px dashed var(--bd); }
+.dlTerm .finTable td.finE { color: var(--dim, #a3a8b3); border-left: 1px dashed var(--bd); font-style: italic; }
 /* 전 기간(분기) 가로 스크롤 · 계정명 열 sticky-left 고정 */
 .dlTerm .finScrollX { overflow-x: auto; overflow-y: auto; }
 .dlTerm .finScrollX .finTable { width: max-content; min-width: 100%; }

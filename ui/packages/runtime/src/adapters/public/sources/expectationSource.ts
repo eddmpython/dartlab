@@ -1,6 +1,12 @@
 // 기대치 격자 원장 · HF expectations/ 직독 (원장 정본 = append-only parquet + scorecard.json).
 // 발행 = dartlab.simulate.expectationCycle (CI cron) · 여기는 read-only 소비자.
-import type { ExpectationRow, ExpectationScorecard, ExpectationScoreRow, ExpectationsPort } from '@dartlab/ui-contracts';
+import type {
+	ExpectationRow,
+	ExpectationScorecard,
+	ExpectationScoreRow,
+	ExpectationsPort,
+	ProformaEstimateRow
+} from '@dartlab/ui-contracts';
 import { moduleFallbackCore, type DataCore } from '../../../data/fetch/request';
 
 const fallbackCore = moduleFallbackCore();
@@ -80,6 +86,29 @@ export function createExpectationPort(core?: DataCore): ExpectationsPort {
 				error: r.error == null ? null : String(r.error)
 			}));
 			return { expectations, scores };
+		},
+		async getProforma(code: string): Promise<ProformaEstimateRow[] | null> {
+			// v1: 연도 shard 통파일 직독(현재 수천 행). 전상장사 sweep 후 수십만 행이 되면
+			// code 정렬 + row-group prune(hfRange) 로 전환한다 (05 E4 원장 부채로 기록).
+			const year = new Date().getUTCFullYear();
+			const raw = await c().requestParquetWholeFile<Record<string, unknown>>({
+				origin: 'hf',
+				path: `expectations/proforma_${year}.parquet`,
+				cacheKey: `expectations.proforma:${year}`,
+				cache: { scope: 'memory', ttlMs: HOUR, maxEntries: 2 }
+			});
+			if (!raw) return null;
+			return raw
+				.filter((r) => String(r.code) === code && Boolean(r.issuedLive))
+				.map((r) => ({
+					parentId: String(r.parentId),
+					targetPeriod: String(r.targetPeriod),
+					quantile: Number(r.quantile),
+					statement: String(r.statement),
+					account: String(r.account),
+					value: Number(r.value),
+					issuedLive: Boolean(r.issuedLive)
+				}));
 		}
 	};
 }

@@ -115,6 +115,45 @@
 		operatingProfit: { kr: '영업이익', en: 'Op profit' },
 		netIncome: { kr: '순이익', en: 'Net income' }
 	};
+
+	// E-3표 : 재무제표 시계열에 추정 컬럼 병합 (05 §1-2 "그 시계열에 추정치를 똑같이 붙인다").
+	// proforma 원장(계정 단위 봉인) -> StmtRow.key 클린 매핑만 표시, 근사 매핑은 '·' (정직).
+	const PF_TO_ROWKEY: Record<string, string> = {
+		revenue: 'revenue', cogs: 'costOfSales', gross_profit: 'grossProfit', sga: 'sga',
+		operating_income: 'operatingIncome', tax: 'incomeTax', net_income: 'netIncome',
+		total_assets: 'assets', current_assets: 'currentAssets', cash: 'cash',
+		inventories: 'inventories', receivables: 'receivables', total_liabilities: 'liabilities',
+		current_liabilities: 'currentLiabilities', total_equity: 'equity', retained_earnings: 'retainedEarnings',
+		ocf: 'cfOperating', financing_cf: 'cfFinancing'
+	};
+	let pfEstimates = $state<import('@dartlab/ui-contracts').ProformaEstimateRow[] | null>(null);
+	$effect(() => {
+		const code = co.code;
+		pfEstimates = null;
+		void rt.expectations.getProforma(code).then((rows) => {
+			if (co.code === code) pfEstimates = rows;
+		});
+	});
+	// E컬럼: targetPeriod 별 {rowKey -> {p50/p25/p75}} (단위: 조 KRW = StmtRow.values 동일)
+	const finECols = $derived.by(() => {
+		const rows = pfEstimates;
+		if (!rows || rows.length === 0) return [];
+		const byPeriod = new Map<string, Map<string, { p50?: number; p25?: number; p75?: number }>>();
+		for (const r of rows) {
+			const rowKey = PF_TO_ROWKEY[r.account];
+			if (!rowKey) continue;
+			const period = byPeriod.get(r.targetPeriod) ?? new Map<string, { p50?: number; p25?: number; p75?: number }>();
+			byPeriod.set(r.targetPeriod, period);
+			const cell = period.get(rowKey) ?? {};
+			period.set(rowKey, cell);
+			if (r.quantile === 50) cell.p50 = r.value / 1e12;
+			else if (r.quantile === 25) cell.p25 = r.value / 1e12;
+			else if (r.quantile === 75) cell.p75 = r.value / 1e12;
+		}
+		return [...byPeriod.entries()]
+			.sort((a, b) => b[0].localeCompare(a[0])) // 미래 먼 쪽이 먼저 (표가 최신 우선 역순이라)
+			.map(([tp, cells]) => ({ label: `FY${tp.slice(6)}E`, cells }));
+	});
 	let viewerOpen = $state(false); // 공시뷰어 인터미널 오버레이 (정기공시 패널 ⤢)
 	let holdingsOpen = $state(false); // 출자 관계 분석 전체화면 (타법인 출자 패널 ⤢)
 	let tablesOpen = $state(false); // 재무제표 원표 모달 (재무 패널 ⤢)
@@ -684,17 +723,25 @@
 	{/snippet}
 	<div class="finTabs">{#each tabs as t (t.k)}<button class={'finTab ' + (stmt === t.k ? 'on' : '')} onclick={() => (stmt = t.k)}>{lang === 'en' ? t.en : t.kr}</button>{/each}</div>
 	{#if finView}
+		{@const showECols = finMode === 'annual' && stmt !== 'RT' ? finECols : []}
 		<div class="finScroll finScrollX"><table class="finTable">
-			<thead><tr><th class="finAcct">{lang === 'en' ? 'ACCOUNT' : '계정'}</th>{#each dispPeriods as p (p)}<th class="r">{p}</th>{/each}</tr></thead>
+			<thead><tr><th class="finAcct">{lang === 'en' ? 'ACCOUNT' : '계정'}</th>{#each showECols as e (e.label)}<th class="r finEHead" title={lang === 'en' ? 'estimate · sealed at issuance (revenue driver -> historical-ratio cascade), p50 · hover = 25~75% band' : '추정 · 발행시점 봉인(매출 드라이버 -> 역사 비율 전개) p50 · 마우스오버 = 25~75% 구간'}>{e.label}</th>{/each}{#each dispPeriods as p (p)}<th class="r">{p}</th>{/each}</tr></thead>
 			<tbody>
 				{#each stmtRows as r (r.key)}
 					<tr class={KEY_ROWS.includes(r.key) ? 'finKey' : ''}>
 						<td class="finAcct">{lang === 'en' ? r.en : r.kr}{#if r.unit}<span class="finUnit">{r.unit}</span>{/if}</td>
+						{#each showECols as e (e.label)}
+							{@const cell = e.cells.get(r.key)}
+							<td class="r mono finE" title={cell?.p25 != null && cell?.p75 != null ? `25~75%: ${finVal(cell.p25)} ~ ${finVal(cell.p75)}` : undefined}>{cell?.p50 != null ? finVal(cell.p50) : '·'}</td>
+						{/each}
 						{#each r.values.slice().reverse() as val, i (i)}<td class={'r mono ' + (val != null && val < 0 ? 'tDn' : '')}>{val == null ? '·' : stmt === 'RT' ? fmtNum(val, 1) : finVal(val)}</td>{/each}
 					</tr>
 				{/each}
 			</tbody>
 		</table></div>
+		{#if showECols.length}
+			<div class="expNote">{lang === 'en' ? 'E columns = sealed estimates (proforma cascade from the revenue driver, accounting-identity closed). Blank cells have no clean account mapping.' : 'E열 = 봉인된 추정(매출 드라이버 -> proforma 전개, 회계 항등식으로 닫힘). 빈 칸은 클린 계정 매핑이 없는 항목입니다.'}</div>
+		{/if}
 	{:else}
 		<div class="chartLoad" style="height:90px">{lang === 'en' ? 'loading statements …' : '재무제표 불러오는 중 …'}</div>
 	{/if}

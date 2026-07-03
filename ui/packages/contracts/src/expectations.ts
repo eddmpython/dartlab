@@ -53,9 +53,22 @@ export interface ExpectationScoreRow {
 	error: string | null;
 }
 
+/** E-3표 계정 행 (proforma_{yyyy}.parquet · 05 §2 구조화 봉인). value 단위 = 원. */
+export interface ProformaEstimateRow {
+	parentId: string;
+	targetPeriod: string; // "FY2026"
+	quantile: number; // 25 | 50 | 75
+	statement: string; // "IS" | "BS" | "CF"
+	account: string; // ProFormaYear 필드명 (snake_case)
+	value: number;
+	issuedLive: boolean;
+}
+
 export interface ExpectationsPort {
 	/** 미발간/조회 실패 = null (패널이 빈상태 문구로 정직 표기). */
 	getScorecard(): Promise<ExpectationScorecard | null>;
 	/** 라이브 발행 행 + 채점 행 (현재 연도 shard). 미발간 = null. */
 	getLedger(): Promise<{ expectations: ExpectationRow[]; scores: ExpectationScoreRow[] } | null>;
+	/** 한 회사의 E-3표 계정 행 (라이브 발행분). 미발행 회사 = 빈 배열, 원장 미발간 = null. */
+	getProforma(code: string): Promise<ProformaEstimateRow[] | null>;
 }
