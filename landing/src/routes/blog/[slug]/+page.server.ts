@@ -3,7 +3,7 @@
 // 옛 blog/_scripts/sync_financials.py(커밋 시점 정적 bake) 대체. KR 6자리 코드만(EDGAR=Phase 2).
 //
 // 서버 load 라 prerender 시 1회 산출→정적, 클라이언트 네비게이션은 baked __data.json 재사용(HF 재페치 0).
-import { loadAnnualStatements, type CompanyAnnualFinance } from '@dartlab/ui-runtime/data/finance/annual';
+import { loadCompanyFinance, type CompanyAnnualFinance, type CompanyQuarterlyFinance } from '@dartlab/ui-runtime/data/finance/annual';
 
 // slug → stockCode (frontmatter). raw 글롭은 posts.ts·+page.ts 도 쓰는 동일 소스(추가 비용 0).
 const raw = import.meta.glob('@blog/**/index.md', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
@@ -23,8 +23,9 @@ for (const [path, md] of Object.entries(raw)) {
 	if (code) codeBySlug.set(m[1], code);
 }
 
-export async function load({ params }: { params: { slug: string } }): Promise<{ companyFinance: CompanyAnnualFinance | null }> {
+export async function load({ params }: { params: { slug: string } }): Promise<{ companyFinance: CompanyAnnualFinance | null; companyQuarter: CompanyQuarterlyFinance | null }> {
 	const code = codeBySlug.get(params.slug);
-	if (!code || !/^\d{6}$/.test(code)) return { companyFinance: null };
-	return { companyFinance: await loadAnnualStatements(code) };
+	if (!code || !/^\d{6}$/.test(code)) return { companyFinance: null, companyQuarter: null };
+	const fin = await loadCompanyFinance(code);
+	return { companyFinance: fin.annual, companyQuarter: fin.quarterly };
 }

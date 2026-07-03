@@ -5,7 +5,7 @@
 	import ComboChart from './ComboChart.svelte';
 	import StackBar from './StackBar.svelte';
 	import HFDataLink from './HFDataLink.svelte';
-	import type { AnnualStmtRow, CompanyAnnualFinance } from '@dartlab/ui-runtime/data/finance/annual';
+	import type { AnnualStmtRow, CompanyAnnualFinance, CompanyQuarterlyFinance, QuarterlyStmtRow } from '@dartlab/ui-runtime/data/finance/annual';
 
 	interface Props {
 		code: string;
@@ -14,6 +14,9 @@
 
 	const finGetter = getContext<(() => CompanyAnnualFinance | null) | undefined>('blogCompanyFinance');
 	const fin = $derived(finGetter ? finGetter() : null);
+	// 분기 뷰(라이브 테이블 = 분기 기준) · 최신 분기부터 노출, 연간 궤적은 아래.
+	const qGetter = getContext<(() => CompanyQuarterlyFinance | null) | undefined>('blogCompanyQuarter');
+	const q = $derived(qGetter ? qGetter() : null);
 
 	function cell(v: number | null): string {
 		if (v == null) return '·';
@@ -33,6 +36,61 @@
 			: []
 	);
 </script>
+
+{#if q && q.code === code}
+	<h2 id="분기실적">분기 실적 · 최근 {q.periods.length}분기</h2>
+	<blockquote class="cf-note">
+		<p>가장 최신 흐름부터 봅니다(단위 억원, 연결 기준). 손익·현금흐름은 단일분기 환산, 재무상태는 기말 시점입니다:</p>
+		<pre><code>import dartlab
+c = dartlab.Company("{code}")
+c.select("IS", freq="Q")  # 손익계산서 (분기)
+c.select("BS", freq="Q")  # 재무상태표
+c.select("CF", freq="Q")  # 현금흐름표</code></pre>
+	</blockquote>
+
+	{#snippet qtable(rows: QuarterlyStmtRow[], periods: string[])}
+		<div class="cf-tablewrap">
+			<table class="cf-table">
+				<thead>
+					<tr>
+						<th>항목</th>
+						{#each periods as p (p)}<th class="num">{p}</th>{/each}
+					</tr>
+				</thead>
+				<tbody>
+					{#each rows as r (r.key)}
+						<tr>
+							<td>{r.label}</td>
+							{#each r.values as v, i (i)}<td class="num">{cell(v)}</td>{/each}
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{/snippet}
+
+	<h3>분기 손익 (IS) · 단위 억원</h3>
+	<ComboChart
+		data={q.charts.is}
+		lineKeys={['매출액']}
+		barKeys={['영업이익', '당기순이익']}
+		lineColors={['#22c55e']}
+		barColors={['#3b82f6', '#f59e0b']}
+		title="분기 매출(라인) vs 영업이익·당기순이익(막대)"
+		unit="억원"
+	/>
+	{@render qtable(q.is, q.periods)}
+
+	<h3>분기 재무상태 (BS) · 단위 억원 · 기말 시점</h3>
+	{@render qtable(q.bs, q.periods)}
+
+	<h3>분기 현금흐름 (CF) · 단위 억원 · 단일분기</h3>
+	{@render qtable(q.cf, q.periods)}
+
+	<p class="cf-src">
+		최신 · dartlab 실측(HF 공개 데이터 · 연결{q.scope === 'OFS' ? '→별도' : ''}) · 최신 분기 {q.asOf} · 빌드 시점 자동 갱신
+	</p>
+{/if}
 
 {#if fin && fin.code === code}
 	<h2 id="재무제표">재무제표 · 최근 5개년</h2>

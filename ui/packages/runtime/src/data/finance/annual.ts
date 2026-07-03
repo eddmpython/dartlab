@@ -9,7 +9,7 @@
 // 윈도 정책: 연간(reprt_code 11011 = q4)만, 최신 maxYears 개 회계연도. 옛 bake 의 버그(최신 부분분기
 // 2026Q1 혼입·"최근 5개년" 표에 분기 섞임)를 구조적으로 배제.
 import { readParquetWholeFile, type FetchLike } from '../parquet/hfRange';
-import { buildGrid, FINANCE_COLUMNS, num, Q_BY_CODE, type Parsed, type RawRow } from './accounts';
+import { buildGrid, FINANCE_COLUMNS, isStock, num, Q_BY_CODE, type Parsed, type RawRow } from './accounts';
 
 export interface AnnualStmtRow {
 	key: string;
@@ -188,4 +188,157 @@ export async function loadAnnualStatements(
 	}
 	if (!rows || rows.length === 0) return null;
 	return buildAnnualFromRows(c, rows, opts.maxYears ?? 5);
+}
+
+// ── 분기 뷰(라이브 테이블 = 무조건 분기 기준) ──
+// 블로그 회사글의 라이브 재무 테이블은 최신성을 위해 분기 단위로 노출한다(연간 5개년은 아래 궤적 컨텍스트).
+// flow(IS·CF)는 DART 분기 규약(YTD 누적/standalone 혼재)을 자동판정해 단일분기로 환산 · financeSource
+// buildBundle 의 `standalone` 과 **동일 로직**(터미널 분기 뷰 SSOT 미러, 평행 재구현 아님). BS 는 시점 스냅샷.
+export interface QuarterlyStmtRow {
+	key: string;
+	label: string;
+	values: (number | null)[]; // 억원 · periods 축과 동순서(오래된→최신)
+}
+export interface QuarterlyChartISPoint {
+	year: string; // 분기 라벨(ComboChart x축 재사용) · 예 '25Q1'
+	매출액: number | null;
+	영업이익: number | null;
+	당기순이익: number | null;
+	[key: string]: string | number | null;
+}
+export interface CompanyQuarterlyFinance {
+	code: string;
+	scope: 'CFS' | 'OFS';
+	periods: string[]; // 오래된→최신 · 예 ['24Q1','24Q2',...,'25Q4']
+	asOf: string | null; // 최신 분기 라벨
+	is: QuarterlyStmtRow[];
+	bs: QuarterlyStmtRow[];
+	cf: QuarterlyStmtRow[];
+	charts: { is: QuarterlyChartISPoint[] };
+}
+
+// flow 단일분기 환산 · financeSource `standalone` 과 라인 대 라인 동일(검증된 SSOT 미러).
+function quarterStandalone(grid: Record<string, Map<string, Parsed>>, key: string, y: number, q: number): number | null {
+	const rawV = (k: string, yy: number, qq: number): number | null => grid[k]?.get(`${yy}-${qq}`)?.amt ?? null;
+	const q1 = rawV(key, y, 1),
+		q2 = rawV(key, y, 2),
+		q3 = rawV(key, y, 3),
+		a = rawV(key, y, 4);
+	const allInterim = q1 != null && q2 != null && q3 != null;
+	const ytd = allInterim && a != null && q1! + q2! + q3! > a! * 1.05;
+	if (q === 1) return q1; // Q1 누적 = Q1 단일분기
+	if (q === 4) {
+		if (a == null) return null;
+		if (ytd) return q3 != null ? a - q3 : null;
+		if (allInterim) return a - (q1! + q2! + q3!);
+		return a; // annual-only 연도(분기 미제출) → 연간값 그대로
+	}
+	const cur = rawV(key, y, q);
+	if (cur == null) return null;
+	if (ytd) {
+		const prev = rawV(key, y, q - 1);
+		return prev != null ? cur - prev : cur;
+	}
+	return cur;
+}
+
+// raw 행 → 분기 뷰(순수·네트워크 없음). maxQuarters 개 최신 분기.
+export function buildQuarterlyFromRows(code: string, rows: RawRow[], maxQuarters = 8): CompanyQuarterlyFinance | null {
+	if (!rows || rows.length === 0) return null;
+	const scope: 'CFS' | 'OFS' | null = hasScope(rows, 'CFS') ? 'CFS' : hasScope(rows, 'OFS') ? 'OFS' : null;
+	if (!scope) return null;
+	const parsed = parseScope(rows, scope);
+	if (parsed.length === 0) return null;
+	const grid = buildGrid(parsed);
+
+	// 사용 가능한 (year,q) · 매출 또는 자산 존재 기준 · 오래된→최신 정렬 후 최신 maxQuarters 개.
+	const pkSet = new Set<string>();
+	for (const key of ['revenue', 'assets', 'cfOperating', 'netIncome']) {
+		for (const pk of grid[key]?.keys() ?? []) pkSet.add(pk);
+	}
+	const allPk = [...pkSet]
+		.map((pk) => {
+			const parts = pk.split('-').map(Number);
+			return { y: parts[0] ?? 0, q: parts[1] ?? 0 };
+		})
+		.filter((p) => Number.isFinite(p.y) && p.q >= 1 && p.q <= 4)
+		.sort((a, b) => a.y - b.y || a.q - b.q);
+	// 분기(Q1~Q3) 제출이 없으면(연간만 있는 회사) 분기 뷰를 만들지 않는다 · 연간값을 Q4 로 오표기 방지.
+	// financeSource `views.quarter = hasInterim ? ... : null` 미러. 연간 궤적 섹션이 대신 커버.
+	if (!allPk.some((p) => p.q !== 4)) return null;
+	const used = allPk.slice(-maxQuarters);
+	if (used.length === 0) return null;
+	const periods = used.map((p) => `${String(p.y).slice(2)}Q${p.q}`);
+
+	const oku = (v: number | null): number | null => (v == null ? null : +(v / 1e8).toFixed(1));
+	const rawSnap = (key: string, y: number, q: number): number | null => grid[key]?.get(`${y}-${q}`)?.amt ?? null;
+	// 값: BS = 시점 스냅샷, flow(IS·CF) = 단일분기 환산.
+	const rowVals = (key: string): (number | null)[] => used.map((p) => oku(isStock(key) ? rawSnap(key, p.y, p.q) : quarterStandalone(grid, key, p.y, p.q)));
+
+	const is: QuarterlyStmtRow[] = [
+		{ key: 'revenue', label: '매출액', values: rowVals('revenue') },
+		{ key: 'operatingIncome', label: '영업이익', values: rowVals('operatingIncome') },
+		{ key: 'netIncome', label: '당기순이익', values: rowVals('netIncome') }
+	];
+	const bs: QuarterlyStmtRow[] = [
+		{ key: 'assets', label: '자산총계', values: rowVals('assets') },
+		{ key: 'liabilities', label: '부채총계', values: rowVals('liabilities') },
+		{ key: 'equity', label: '자본총계', values: rowVals('equity') }
+	];
+	const cf: QuarterlyStmtRow[] = [
+		{ key: 'cfOperating', label: '영업활동현금흐름', values: rowVals('cfOperating') },
+		{ key: 'cfInvesting', label: '투자활동현금흐름', values: rowVals('cfInvesting') },
+		{ key: 'cfFinancing', label: '재무활동현금흐름', values: rowVals('cfFinancing') }
+	];
+	if (![...is, ...bs, ...cf].some((r) => r.values.some((v) => v != null))) return null;
+
+	const at = (arr: QuarterlyStmtRow[], key: string, i: number): number | null => arr.find((r) => r.key === key)?.values[i] ?? null;
+	const charts = {
+		is: periods.map((label, i) => ({ year: label, 매출액: at(is, 'revenue', i), 영업이익: at(is, 'operatingIncome', i), 당기순이익: at(is, 'netIncome', i) }))
+	};
+
+	return { code, scope, periods, asOf: periods[periods.length - 1] ?? null, is, bs, cf, charts };
+}
+
+// dart/finance/{code}.parquet 직독 → 분기 표준화. KR 6자리 전용 · 미존재/실패 = null.
+export async function loadQuarterlyStatements(
+	code: string,
+	opts: { maxQuarters?: number; fetchFn?: FetchLike } = {}
+): Promise<CompanyQuarterlyFinance | null> {
+	const c = (code || '').trim();
+	if (!/^\d{6}$/.test(c)) return null;
+	let rows: RawRow[] | null = null;
+	try {
+		rows = await readParquetWholeFile<RawRow>(`dart/finance/${c}.parquet`, { columns: FINANCE_COLUMNS, fetchFn: opts.fetchFn });
+	} catch (e) {
+		console.warn('[blog/quarterly] finance parquet load failed', c, e);
+		return null;
+	}
+	if (!rows || rows.length === 0) return null;
+	return buildQuarterlyFromRows(c, rows, opts.maxQuarters ?? 8);
+}
+
+// 연간 + 분기 동시 산출 · parquet 1회만 읽어(중복 다운로드/파싱 0) 두 뷰를 만든다. 블로그 라우트 진입점.
+export interface CompanyFinance {
+	annual: CompanyAnnualFinance | null;
+	quarterly: CompanyQuarterlyFinance | null;
+}
+export async function loadCompanyFinance(
+	code: string,
+	opts: { maxYears?: number; maxQuarters?: number; fetchFn?: FetchLike } = {}
+): Promise<CompanyFinance> {
+	const c = (code || '').trim();
+	if (!/^\d{6}$/.test(c)) return { annual: null, quarterly: null };
+	let rows: RawRow[] | null = null;
+	try {
+		rows = await readParquetWholeFile<RawRow>(`dart/finance/${c}.parquet`, { columns: FINANCE_COLUMNS, fetchFn: opts.fetchFn });
+	} catch (e) {
+		console.warn('[blog/finance] finance parquet load failed', c, e);
+		return { annual: null, quarterly: null };
+	}
+	if (!rows || rows.length === 0) return { annual: null, quarterly: null };
+	return {
+		annual: buildAnnualFromRows(c, rows, opts.maxYears ?? 5),
+		quarterly: buildQuarterlyFromRows(c, rows, opts.maxQuarters ?? 8)
+	};
 }

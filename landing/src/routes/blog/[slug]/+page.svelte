@@ -2,6 +2,7 @@
 	import { base } from '$app/paths';
 	import { brand } from '$lib/brand';
 	import SubjectHub from '$lib/subjects/SubjectHub.svelte';
+	import BlogActionBar from '$lib/blog/BlogActionBar.svelte';
 	import { findPrevNext, findSeriesPrevNext, getCategoryPath, getPost, getRelatedPostsByCategory, getSeriesPath } from '$lib/blog/posts';
 	import { buildAbsoluteUrl, buildArticleJsonLd, buildBreadcrumbJsonLd, buildFaqJsonLd, parseFaqFromMarkdown } from '$lib/seo';
 	import { Calendar, ChevronLeft, ChevronRight } from 'lucide-svelte';
@@ -10,7 +11,9 @@
 	let { data } = $props();
 
 	// 회사글 재무(빌드타임 SSOT) 를 마크다운 내 <CompanyFinancials> 에 context 로 전달 · getter 라 client 네비게이션에도 반응.
+	// 라이브 테이블은 분기 기준(companyQuarter) 이 먼저, 5개년 궤적(companyFinance) 은 컨텍스트.
 	setContext('blogCompanyFinance', () => data.companyFinance);
+	setContext('blogCompanyQuarter', () => data.companyQuarter);
 
 	interface TocItem {
 		id: string;
@@ -327,6 +330,7 @@
 						<p>{meta.description}</p>
 					</div>
 				{/if}
+				<BlogActionBar stockCode={subjectCode} topicSlug={subjectTopic} shareUrl={pageUrl} shareTitle={meta?.title ?? 'DartLab'} />
 			</header>
 
 			<article class="blog-article" bind:this={articleEl}>

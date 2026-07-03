@@ -43,3 +43,8 @@
 
 ## 진행 원장
 - 2026-07-03 기획: 서브에이전트 자산맵 실측 6기능 + 데이터 워크벤치 감사(추출엔진 완성·notesDetail 접근 확인). PIPELINE.md 데이터완주+이야기꺼리+막별 비주얼 기획 선반영(커밋 `1963d11`). 미착수(P0 데이터/문서만 무게이트).
+- 2026-07-03 P1 착수(운영자 "푸시해" 명시 승인): 
+  - **#5+#2 상단 액션바** = `landing/src/lib/blog/BlogActionBar.svelte` 신설. 팟캐스트(in-page 스크롤 `#related-podcast`)·카드뉴스(`?post=` 조인, code 매치)·터미널(`?sym=` 딥링크)·공유(navigator.share→클립보드). 발행 슬롯만 렌더(없으면 숨김). post-header 삽입. 블로그→카드 링크 갭 닫음.
+  - **#3 분기 라이브 재무** = `annual.ts` 에 `buildQuarterlyFromRows`/`loadQuarterlyStatements`/`loadCompanyFinance`(parquet 1회 읽어 연간+분기 동시). flow 단일분기 환산은 financeSource `standalone` 라인 미러(검증 SSOT). BS=시점. `CompanyFinancials.svelte` 상단에 "분기 실적 · 최근 8분기"(IS ComboChart + IS/BS/CF 표) 추가, 연간 5개년은 아래 컨텍스트. `quarterly.test.ts` 7 테스트(YTD 차분·스냅샷·기간순서).
+  - 검증: svelte-check 0 errors · runtime tsc 0 · vitest 14 pass · checkUiDataWiring PASS · em dash 0.
+  - 남은 P1: `youtubeId` 값 주입(운영·실제 영상ID 필요). 남은 P2: 회사별 라이브 뉴스/증권사 리포트·주가 캔들(사전토론 게이트).

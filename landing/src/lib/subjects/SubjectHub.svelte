@@ -27,7 +27,7 @@
 </script>
 
 {#if episodes.length}
-	<section class="subject-hub" aria-label="관련 팟캐스트">
+	<section id="related-podcast" class="subject-hub" aria-label="관련 팟캐스트">
 		<h2>관련 팟캐스트</h2>
 		<ul>
 			{#each episodes as ep (ep.guid)}
