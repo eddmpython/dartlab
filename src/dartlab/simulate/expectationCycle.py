@@ -242,7 +242,6 @@ def issueRevenue(
     rows: list[ExpectationSpec] = []
     skipped: dict[str, str] = {}
     for code in codes:
-        company = None
         try:
             if resultByCode is not None:
                 result = resultByCode.get(code)
@@ -251,9 +250,9 @@ def issueRevenue(
                 import dartlab
                 from dartlab.analysis.financial._forecastCalcsHelpers import _runForecastRevenue
 
-                company = dartlab.Company(code)
-                annual = _annualRevenueMap(company)
-                result = _runForecastRevenue(company)
+                with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
+                    annual = _annualRevenueMap(company)
+                    result = _runForecastRevenue(company)
             if result is None or not getattr(result, "projected", None):
                 skipped[code] = "예측 불가(projected 없음)"
                 continue
@@ -327,9 +326,6 @@ def issueRevenue(
                 )
         except (ValueError, KeyError, AttributeError, TypeError) as exc:
             skipped[code] = f"{type(exc).__name__}: {exc}"
-        finally:
-            if company is not None:
-                del company  # Polars heap guard: one Company at a time, release immediately
     appendExpectations(rows, baseDir=baseDir)
     return rows, skipped
 
@@ -369,7 +365,6 @@ def issueEarnings(
     rows: list[ExpectationSpec] = []
     skipped: dict[str, str] = {}
     for code in codes:
-        company = None
         try:
             revRows = (
                 []
@@ -391,10 +386,10 @@ def issueEarnings(
             else:
                 import dartlab
 
-                company = dartlab.Company(code)
-                ts = company._buildFinanceSeries(freq="Q")
-                series = ts[0] if isinstance(ts, tuple) else ts
-                annual = _annualMetricMap(company, "IS", "sales")
+                with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
+                    ts = company._buildFinanceSeries(freq="Q")
+                    series = ts[0] if isinstance(ts, tuple) else ts
+                    annual = _annualMetricMap(company, "IS", "sales")
             if not annual:
                 skipped[code] = "연간 매출 이력 없음"
                 continue
@@ -462,9 +457,6 @@ def issueEarnings(
                     )
         except (ValueError, KeyError, AttributeError, TypeError, RuntimeError, OSError) as exc:
             skipped[code] = f"{type(exc).__name__}: {exc}"
-        finally:
-            if company is not None:
-                del company  # Polars heap guard
     appendExpectations(rows, baseDir=baseDir)
     return rows, skipped
 
@@ -572,7 +564,6 @@ def issuePriceDirection(
     rows: list[ExpectationSpec] = []
     skipped: dict[str, str] = {}
     for code in codes:
-        company = None
         try:
             if mcUpsideByCode is not None:
                 prob = mcUpsideByCode.get(code)
@@ -581,9 +572,9 @@ def issuePriceDirection(
                 import dartlab
                 from dartlab.analysis.forecast.simulation import monteCarloForecast
 
-                company = dartlab.Company(code)
-                ts = company._buildFinanceSeries(freq="Q")
-                series = ts[0] if isinstance(ts, tuple) else ts
+                with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
+                    ts = company._buildFinanceSeries(freq="Q")
+                    series = ts[0] if isinstance(ts, tuple) else ts
                 mc = monteCarloForecast(series)
                 prob = float(getattr(mc, "upsideProbability", 0.0)) / 100.0
                 issuePrice = _monthCloseViaGather(code, None)
@@ -620,9 +611,6 @@ def issuePriceDirection(
             )
         except (ValueError, KeyError, AttributeError, TypeError, RuntimeError, OSError) as exc:
             skipped[code] = f"{type(exc).__name__}: {exc}"
-        finally:
-            if company is not None:
-                del company  # Polars heap guard
     appendExpectations(rows, baseDir=baseDir)
     return rows, skipped
 
@@ -721,14 +709,12 @@ def scoreDue(
                 else:
                     import dartlab
 
-                    company = dartlab.Company(code)
                     try:
-                        for m2, (s2, k2) in _METRIC_KEYS.items():  # 한 번 로드에 3 metric 전부
-                            fundCache[f"{code}.{m2}"] = _annualMetricMap(company, s2, k2)
+                        with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
+                            for m2, (s2, k2) in _METRIC_KEYS.items():  # 한 번 로드에 3 metric 전부
+                                fundCache[f"{code}.{m2}"] = _annualMetricMap(company, s2, k2)
                     except (ValueError, KeyError, AttributeError, TypeError):
                         fundCache[cacheKey] = {}
-                    finally:
-                        del company  # Polars heap guard
             actual = fundCache.get(cacheKey, {}).get(fy)
             if actual is None and _ymDiff(nowYm, dueYm) < _REV_GRACE_MONTHS:
                 continue  # filing/consolidation lag: stay pending inside the grace window
