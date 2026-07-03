@@ -107,6 +107,32 @@ function kstToday() {
 	const d = new Date(Date.now() + 9 * 3600000);
 	return `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
 }
+function kstDaysAgo(days) {
+	const d = new Date(Date.now() + 9 * 3600000 - days * 86400000);
+	return `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
+}
+// IPO(상장 전, corp_cls=E) 증권신고 지분증권 목록 라이브. pblntf_detail_ty=C001 upstream 필터라 3개월
+// ~30행(실측 2026-07) 소량. 판별(3조건 classifyIpo 미러)·발행사 그룹핑은 클라(ipoFilingsSource) 담당,
+// 워커는 upstream 파라미터 필터만(엔진 로직 0). corp_code 는 발행사 그룹핑 키.
+// ⚠ 윈도우는 85일 고정. corp_code 없는 list.json 은 3개월 제한(92일 → status 100 빈 응답, 라이브 실측).
+async function dartListIpo(key, bgn, end, page) {
+	const u = `https://opendart.fss.or.kr/api/list.json?crtfc_key=${key}&bgn_de=${bgn}&end_de=${end}&corp_cls=E&pblntf_detail_ty=C001&page_no=${page}&page_count=100&sort=date&sort_mth=desc`;
+	const r = await fetch(u, { headers: { 'User-Agent': DART_UA } });
+	if (!r.ok) throw new Error(`dart ${r.status}`);
+	const j = await r.json();
+	if (j.status !== '000') return { rows: [], totalPage: 0 }; // 013=무자료 등 정상 빈
+	const rows = (j.list || []).map((it) => ({
+		rceptNo: it.rcept_no || '',
+		rceptDate: dartYmd(it.rcept_dt),
+		corpCode: it.corp_code || '',
+		corpCls: it.corp_cls || '',
+		stockCode: it.stock_code || '',
+		corpName: it.corp_name || '',
+		reportNm: (it.report_nm || '').trim(),
+		filer: it.flr_nm || ''
+	}));
+	return { rows, totalPage: Number(j.total_page || 1) };
+}
 
 export default {
 	async fetch(req, env, ctx) {
@@ -280,6 +306,50 @@ export default {
 			}
 			const resp = new Response(JSON.stringify({ asOf: items[0]?.rceptDate ?? '', items }), {
 				headers: { ...jsonHeaders, 'Cache-Control': 'public, max-age=600' }
+			});
+			if (ctx && items.length) ctx.waitUntil(caches.default.put(cacheKey, resp.clone()));
+			return resp;
+		}
+		// /ipo-filings . 신규상장 IPO 발굴 라이브(최근 85일 · list.json 3개월 제한 여유). allFilings HF bake 는 상장사(Y/K) 한정이라
+		// 상장 전 발행사(corp_cls=E)는 이 라이브 read-through 가 유일한 퍼블릭 데이터원(베이크 0).
+		// upstream 필터(corp_cls=E + pblntf_detail_ty=C001)만 워커가 담당, 3조건 판별은 클라 미러. 30분 캐시.
+		if (url.pathname === '/ipo-filings') {
+			const jsonHeaders = { ...cors, 'Content-Type': 'application/json; charset=utf-8' };
+			const key = env.DART_API_KEY || '';
+			if (!key) {
+				return new Response(JSON.stringify({ items: [], note: 'dart key not configured' }), {
+					headers: { ...jsonHeaders, 'Cache-Control': 'public, max-age=1800' }
+				});
+			}
+			const bgn = kstDaysAgo(85);
+			const end = kstToday();
+			const cacheKey = new Request(`https://dl-ipo-filings.cache/${end}/${Math.floor(Date.now() / 1800000)}`);
+			const hit = await caches.default.match(cacheKey);
+			if (hit) {
+				const h2 = new Headers(hit.headers);
+				for (const [k, v] of Object.entries(jsonHeaders)) h2.set(k, v);
+				h2.set('x-dl-edge', 'HIT');
+				return new Response(hit.body, { status: hit.status, headers: h2 });
+			}
+			let items = [];
+			try {
+				const first = await dartListIpo(key, bgn, end, 1);
+				items = first.rows;
+				const lastPage = Math.min(first.totalPage, 4); // 실측 3개월 1페이지 · 4페이지(400행) 안전캡
+				if (lastPage > 1) {
+					const pages = await Promise.all(
+						Array.from({ length: lastPage - 1 }, (_, i) => dartListIpo(key, bgn, end, i + 2).then((p) => p.rows).catch(() => []))
+					);
+					items = items.concat(pages.flat());
+				}
+				const seen = new Set();
+				items = items.filter((it) => it.rceptNo && !seen.has(it.rceptNo) && !!seen.add(it.rceptNo));
+				items.sort((a, b) => String(b.rceptNo).localeCompare(String(a.rceptNo))); // 접수번호 desc = 최신순
+			} catch (e) {
+				return new Response(JSON.stringify({ items: [], error: String(e) }), { status: 502, headers: jsonHeaders });
+			}
+			const resp = new Response(JSON.stringify({ asOf: end, items }), {
+				headers: { ...jsonHeaders, 'Cache-Control': 'public, max-age=1800' }
 			});
 			if (ctx && items.length) ctx.waitUntil(caches.default.put(cacheKey, resp.clone()));
 			return resp;
