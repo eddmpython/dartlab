@@ -250,14 +250,87 @@ def print_human(report: dict[str, object]) -> None:
         print(f"- shallow deep report (본문 {item['prose_chars']}자): {item['path']}")
 
 
+# ── 발행 하드 게이트 (단일 글) ──
+# 형식만 채우면 통과하던 SEO 게이트의 구멍을 막는다. company-reports 심층 리포트는 이 게이트를
+# 통과해야 발행한다. 위반 시 exit 1. 기존 글엔 소급 적용 안 함(--gate <폴더>로 신규 글만 검사).
+_OG_RE = re.compile(r"^/thumbnails/.+\.webp$")
+
+
+def publish_gate(post_dir: Path) -> list[str]:
+    """단일 글 발행 하드 게이트. 위반 리스트 반환(비면 통과).
+
+    company-reports(심층) 기준으로 (1)실사 OG 카드 (2)실사 hero webp (3)본문 실사 사진 ≥1
+    (4)본문 깊이 ≥14,000자 (5)기획 루프 산출물(brief.json)을 강제한다. 손수 SVG·기본 아바타·
+    얕은 본문·루프 스킵을 걸러 "형식만 통과"를 차단한다."""
+    idx = post_dir / "index.md"
+    if not idx.is_file():
+        return [f"index.md 없음: {post_dir}"]
+    raw = idx.read_text(encoding="utf-8")
+    body = strip_frontmatter(raw)
+    cat = frontmatter_value(raw, "category")
+    fails: list[str] = []
+    if cat not in DEEP_GENRE_CATEGORIES:
+        return fails  # 심층 카테고리만 하드 게이트
+
+    slug = re.sub(r"^\d+-", "", post_dir.name)
+    assets = post_dir / "assets"
+    photos = []
+    if assets.is_dir():
+        for ext in ("*.webp", "*.jpg", "*.jpeg", "*.png"):
+            photos += list(assets.glob(ext))
+
+    # 1. 실사 OG 카드 (리스트/공유 미리보기). 기본 아바타 폴백이면 실패.
+    og = frontmatter_value(raw, "ogImage").strip().strip("\"'")
+    if not _OG_RE.match(og):
+        fails.append(
+            f"ogImage가 /thumbnails/{slug}.webp 실사 OG가 아님(현재 {og!r}). 기본 아바타 폴백 금지 → render_og_cards 수급"
+        )
+    else:
+        og_file = repo_root() / "landing" / "static" / og.lstrip("/")
+        if not og_file.is_file():
+            fails.append(f"OG 파일 없음: landing/static{og} (render_og_cards 미실행)")
+
+    # 2. 실사 hero/사진 webp (손수 SVG는 실사 아님)
+    if not photos:
+        fails.append("assets에 실사 사진 0장(손수 SVG는 실사 아님). gen_blog_cc0/imagePlan 수급 필요")
+
+    # 3. 본문에 실사 사진 markdown 이미지 ≥1
+    if not re.search(r"!\[[^\]]*\]\([^)]+\.(?:webp|jpg|jpeg|png)\)", body):
+        fails.append("본문 실사 사진 0장(![](*.webp) 필요). 손수 SVG만으론 시각 부실")
+
+    # 4. 깊이 하드 블록
+    pc = prose_char_count(body)
+    if pc < DEEP_MIN_PROSE_CHARS:
+        fails.append(
+            f"본문 {pc}자 < 심층 하한 {DEEP_MIN_PROSE_CHARS}자(목표 {DEEP_TARGET_PROSE_CHARS}). blog_plan_loop 막 구조로 심화 필요"
+        )
+
+    # 5. 기획 루프 산출물(루프 실행 증거)
+    if not (post_dir / "brief.json").is_file() and not (post_dir / "plan.json").is_file():
+        fails.append("기획 루프 산출물(brief.json/plan.json) 없음. blog_plan_loop.workflow.js 미실행 의심")
+
+    return fails
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Audit blog posts and SVG assets.")
     parser.add_argument("--json", action="store_true", dest="as_json", help="Print the full report as JSON.")
+    parser.add_argument("--gate", metavar="POST_DIR", help="단일 글 발행 하드 게이트(위반 시 exit 1).")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    if args.gate:
+        post_dir = Path(args.gate).resolve()
+        fails = publish_gate(post_dir)
+        if fails:
+            print(f"발행 게이트 실패: {post_dir.name}")
+            for f in fails:
+                print(f"  ❌ {f}")
+            raise SystemExit(1)
+        print(f"발행 게이트 통과: {post_dir.name}")
+        return
     blog_root = repo_root() / "blog"
     report = build_report(blog_root)
     if args.as_json:

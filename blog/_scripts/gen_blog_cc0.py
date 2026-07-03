@@ -157,6 +157,15 @@ SECTORS: list[tuple[list[str], list[str], list[str]]] = [
         ["store", "retail", "shop", "mall", "shelves", "consumer", "interior"],
     ),
     (
+        ["toy", "toys", "aurora", "aurora-world", "sonokong", "daewon", "character", "plush", "mimiworld"],
+        [
+            "plush stuffed animals teddy bear shelf",
+            "toy store colorful shelves children",
+            "soft toys display collection",
+        ],
+        ["toy", "toys", "plush", "teddy", "bear", "stuffed", "doll", "character", "kids", "children", "store", "shelf"],
+    ),
+    (
         ["logistics", "cj-logistics", "hmm"],
         ["cargo container port aerial", "logistics warehouse shelves", "container ship sea"],
         ["cargo", "container", "port", "warehouse", "logistics", "ship", "shipping"],
@@ -228,30 +237,18 @@ GENERIC_FALLBACK = [
     ("downtown skyscrapers business", DEFAULT_KEYWORDS),
 ]
 
-# 거부 피사체 — 초상화·로고·지도·삽화 등(인물/상징은 썸네일 배경 부적합). title/tags 에 있으면 탈락.
+# 거부 피사체(썸네일 배경 부적합): 초상화·지도·인물 등. title/tags 에 있으면 탈락.
+# 운영자 지시(2026-07): 회사 로고·상징품·제품은 내용 연상에 오히려 좋으니 거부하지 않는다
+# (logo·emblem·seal·icon 제거). 인물 초상·지도·묘지·무기 등만 거부.
 REJECT_TOKENS = (
     "portrait",
     "painting",
-    "drawing",
-    "illustration",
-    "logo",
-    "seal",
-    "coat of arms",
-    "emblem",
     "map",
     "flag",
-    "stamp",
-    "coin",
     "banknote",
     "engraving",
     "statue",
-    "sculpture",
     "bust",
-    "poster",
-    "sketch",
-    "cartoon",
-    "diagram",
-    "icon",
     "grave",
     "tomb",
     "surgeon",
