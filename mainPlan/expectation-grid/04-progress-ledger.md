@@ -12,7 +12,15 @@
 | P3 매출 연 사이클 + recordForecast(P9c) + redirect(P9b) | ✅ 표본 3사 라이브 9행 + 이중기록 |
 | P4 손익 캐스케이드 (proforma 계보) | ✅ 3사 18행 (OP·NI, FCF=P4b defer) |
 | P5 credit 유지확률 + 주가 방향확률 | ✅ 주가 3행 라이브, credit=census 대기(recordGrade 미축적) |
-| P6 성적표 터미널 패널 + CI cron | 🔨 패널 구축 중 (UI push=눈검수 게이트) |
+| P6 성적표 터미널 패널 + CI cron | ✅ 빌드·타입체크·배선감사 green, **push 는 운영자 눈검수 대기** (UI 자동 push 금지) |
+
+## P6 상세 (2026-07-03)
+
+- 계약: `ui/packages/contracts/src/expectations.ts` (ExpectationsPort, DartLabRuntime 필수 포트)
+- 배선: public·local·test 런타임 3종 + `expectationSource.ts` (origin `hf` 직독, checkUiDataWiring PASS 위반 0)
+- 패널: RightStack "기대치 성적표" (macro 변수별 + 도메인 rollup, verified=False 는 성과 숫자 0 · 미검증 라벨만, live 발행분만)
+- 검증: contracts/runtime tsc 0 err · surfaces svelte-check 0 err · landing build 성공 · dev 5173/terminal 200
+- CI red 수리: cleanupCalls 감사 위반 3건(Company 루프) → `with Company()` 컨텍스트 전환, 98 테스트 green
 
 ## 부산물: 엔진 소유권 버그 수리 (2026-07-03)
 
