@@ -46,7 +46,7 @@ carousel:
   - term: PCC선(자동차운반선)
     body: 완성차를 통째로 싣는 전용 선박입니다. 현대글로비스 매출의 18%지만 이익의 36%를 만드는 진짜 엔진이라, 용선료(빌리는 값)가 뛰면 이익이 같이 뜁니다.
   - term: 비계열 물량
-    body: 현대차그룹이 아닌 외부 고객(예: BYD)의 화물 비중입니다. 2021년 22%에서 2025년 55%로 역전돼, 그룹 의존도를 낮추며 마진을 키웠습니다.
+    body: "현대차그룹이 아닌 외부 고객(예: BYD)의 화물 비중입니다. 2021년 22%에서 2025년 55%로 역전돼, 그룹 의존도를 낮추며 마진을 키웠습니다."
   relatedNews:
   - title: "[生기업TALK] 현대글로비스, 해운·물류 동력 삼아 'AI·로보틱스' 신사업"
     source: sisacast.kr
@@ -54,7 +54,7 @@ carousel:
     url: http://www.sisacast.kr/news/articleView.html?idxno=97113
     track: naver
     description: 네이버 보관 뉴스 기준. 로보틱스 신사업 행보 — 카드가 짚은 '보스턴다이내믹스 지분' 가치와 같은 축입니다.
-  - title: '중동 리스크' 장기화…해운업계 "시장 예측보다 대응력이 중요"
+  - title: "'중동 리스크' 장기화…해운업계 \"시장 예측보다 대응력이 중요\""
     source: dailylog.co.kr
     date: '2026-06-26'
     url: http://www.dailylog.co.kr/news/articleView.html?idxno=26594
