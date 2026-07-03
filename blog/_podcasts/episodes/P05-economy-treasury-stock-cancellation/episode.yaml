@@ -9,7 +9,7 @@ episode:
   title: "자사주 매입의 배신: 상장사 10곳 중 9곳이 소각하지 않는 진짜 이유"
   lane: economy                          # dartlab | company | economy | disclosure | quant
   language: ko
-  status: draft                          # draft | ready | published (ready 이상만 발행)
+  status: published                      # draft | ready | published (ready 이상만 발행)
 
   # 오디오 소스 (NotebookLM 산출물). 레포에 커밋하지 않는다. 발행 시 --audio 로 경로 전달.
   audio:
