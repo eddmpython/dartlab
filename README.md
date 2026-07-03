@@ -16,6 +16,7 @@
 <a href="https://github.com/eddmpython/dartlab/actions/workflows/ci-fast.yml"><img src="https://img.shields.io/github/actions/workflow/status/eddmpython/dartlab/ci-fast.yml?branch=master&style=for-the-badge&labelColor=050811&logo=github&logoColor=white&label=CI" alt="CI"></a>
 <a href="https://eddmpython.github.io/dartlab/"><img src="https://img.shields.io/badge/Docs-GitHub_Pages-38bdf8?style=for-the-badge&labelColor=050811&logo=github-pages&logoColor=white" alt="Docs"></a>
 <a href="https://eddmpython.github.io/dartlab/blog/"><img src="https://img.shields.io/badge/Blog-fbbf24?style=for-the-badge&labelColor=050811&logo=rss&logoColor=white" alt="Blog"></a>
+<a href="https://music.youtube.com/playlist?list=PLVYhaasf1oNs&si=YLzmTO2M9oHHxsJY"><img src="https://img.shields.io/badge/Podcast-YouTube_Music-ff0000?style=for-the-badge&labelColor=050811&logo=youtubemusic&logoColor=white" alt="YouTube Music Podcast"></a>
 </p>
 
 <p>
@@ -468,7 +469,7 @@ publishReport("068270")    # 셀트리온 — 6막 기업이야기 자동 발간
 <div align="center">
 <a href="https://www.youtube.com/watch?v=d7RUQIlimVM"><img src="https://img.youtube.com/vi/d7RUQIlimVM/maxresdefault.jpg" alt="셀트리온 기업이야기" width="100%"></a>
 
-[셀트리온 이야기 보기](https://www.youtube.com/watch?v=d7RUQIlimVM) · [DartLab 30초 데모](https://www.youtube.com/shorts/97lYLWMWzvA) · [유튜브 채널](https://www.youtube.com/@eddmpython)
+[셀트리온 이야기 보기](https://www.youtube.com/watch?v=d7RUQIlimVM) · [DartLab 30초 데모](https://www.youtube.com/shorts/97lYLWMWzvA) · [유튜브 채널](https://www.youtube.com/@eddmpython) · [팟캐스트 (YouTube Music)](https://music.youtube.com/playlist?list=PLVYhaasf1oNs&si=YLzmTO2M9oHHxsJY)
 </div>
 
 ### Search: 공시·뉴스를 의미로 검색
