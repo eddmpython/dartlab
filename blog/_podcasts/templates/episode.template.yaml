@@ -5,7 +5,7 @@ episode:
   episodeId: P0N-{lane}-{slug}           # 폴더명과 동일
   episodeNo: 0                           # 정수. RSS itunes:episode + 정렬
   slug: {slug}
-  title: "{제목}"
+  title: "{제목}"                        # SEO+궁금증 규율(README §5-1): 회사명 앞 15자·궁금증 갭·핵심 숫자 1개·낚시 금지
   lane: company                          # dartlab | company | economy | disclosure | quant
   language: ko
   status: draft                          # draft | ready | published (ready 이상만 발행)

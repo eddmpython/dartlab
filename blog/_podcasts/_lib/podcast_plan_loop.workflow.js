@@ -43,7 +43,7 @@ const PLAN_SCHEMA = {
   type: 'object', additionalProperties: false,
   required: ['title', 'oneLineMessage', 'insight', 'sections', 'closingWhereToLook', 'forbiddenAngles'],
   properties: {
-    title: { type: 'string', description: '에피소드 제목. 오디오 개요 제목 = RSS title.' },
+    title: { type: 'string', description: '에피소드 제목(RSS·오디오 개요). SEO+궁금증 규율: (1) 검색되는 고유명(회사명·티커·핵심 키워드)을 앞 15자 안에 둔다(모바일 검색은 앞부분만 노출). (2) 상식과 충돌하는 훅 또는 열린 질문("어떻게 ~했나", "~일까")으로 궁금증 갭을 열되 답은 숨긴다. (3) 핵심 숫자 1개(분모·기간 함의)로 구체화한다. (4) 낚시(내용 불일치)·목표가·확정전망·수익보장 금지. em dash 금지, 구분자는 콜론 또는 전각바(ㅣ). 예: "SK하이닉스: 다섯 번 죽을 뻔한 회사가 어떻게 AI 시대 이익률 58%를 찍었나". 유튜브 검색용 변형은 README 제목 규율 참조.' },
     oneLineMessage: { type: 'string', description: '이 에피소드가 답하는 질문과 결론을 한 문장으로.' },
     insight: {
       type: 'object', additionalProperties: false,
