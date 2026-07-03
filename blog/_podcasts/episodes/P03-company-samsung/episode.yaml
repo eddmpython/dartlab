@@ -1,0 +1,80 @@
+# 에피소드 메타데이터 (사람이 작성하는 SSOT).
+# 회사 에피소드: 소스 = 블로그 글(SSOT). 별도 script.md 없음. sourceDoc = 블로그 발행 URL.
+# 발행 시 guid/오디오크기/길이/발행일은 published.json 에 기록된다(여기 아님).
+episode:
+  version: 1
+  episodeId: P03-company-samsung         # 폴더명과 동일. P0N-{lane}-{slug}
+  episodeNo: 3
+  slug: samsung
+  title: "삼성전자: 하이닉스에 추월당한 33년의 왕좌"
+  lane: company                          # 회사 lane
+  language: ko
+  status: ready                          # 오디오 수령 완료. ready 이상만 발행 대상
+
+  # 오디오 소스 = 블로그 글. 운영자가 이 URL 을 NotebookLM 에 넣어 오디오 생성.
+  audio:
+    generator: notebooklm
+    sourceHint: "Downloads/하이닉스에_추월당한_삼성전자_33년의_왕좌.m4a"   # 발행 시 --audio 로 지정
+    sourceDoc: https://eddmpython.github.io/dartlab/blog/005930-samsung   # 소스 = 블로그 URL
+
+  # 이미지: source.webp(companies/005930 풀 재사용) 에서 카드풍 스틸을 렌더한다(그레이톤 + 로즈 강조).
+  image:
+    source: cover.jpg
+    key: episodes/samsung/cover-3000.jpg
+  staticImage:
+    source: static-video.jpg
+    key: episodes/samsung/static-video.jpg
+  thumbnail:
+    source: static-video.jpg
+    key: episodes/samsung/static-video.jpg
+  # 재사용 원본(한 세트) · companies/005930 공유 풀을 이름으로 참조(재업로드 없음). blog/OPERATIONS.md 2절.
+  sourceAssets:
+    - name: samsung-semiconductor
+      role: reusable-original
+      pool: companyAsset
+    - name: samsung-pyeongtaek
+      role: source
+      pool: companyAsset
+  visual:
+    source: assets/source.webp
+    kicker: EP.03 · DartLab Podcast
+    titleLines:
+      - 하이닉스에 추월당한
+      - "[[삼성전자]]"
+      - "33년의 [[왕좌]]"
+    subtitle: 1969 TV 회사에서 33년 메모리 1위까지, 그리고 처음 당한 추월. 거인의 역설을 강세와 약세로
+    footer: 재무제표 격자 · 근거 링크 · 투자권유 아님
+  caption:
+    hook: 33년간 메모리 세계 1위였던 회사가, AI 시대의 메모리에서 처음 추월당했습니다.
+    body: >-
+      1969년 TV 회사로 시작해 1983년 도쿄선언, 33년간 메모리 세계 1위였던 삼성전자가 AI 시대의
+      메모리 HBM에서 만년 2위 SK하이닉스에 처음 추월당했습니다. 파운드리는 TSMC에 10배 밀립니다.
+      그런데도 여전히 가장 큰 거인의 역설을 강세와 약세 양쪽으로 풉니다.
+    cta: 전체 에피소드는 DartLab 팟캐스트와 블로그 글에서 들을 수 있습니다.
+    hashtags: ["#삼성전자", "#반도체", "#HBM", "#파운드리", "#DartLab"]
+
+  audienceQuestion: 33년 메모리 1위가 처음 추월당했는데, 그런데도 왜 여전히 가장 큰가?
+  oneLineMessage: >-
+    삼성전자는 33년 메모리 1위였지만 FY2025 영업이익에서 SK하이닉스(47.21조)에 처음 추월당했다(삼성 43.6조).
+    매출 334조지만 반도체 빼면 영업이익률 7%, 파운드리 적자 7조. 거인의 다음 10년은 HBM 반격과 파운드리에 달렸다.
+  summary: >-
+    1969년 TV 회사로 시작해 1983년 도쿄선언, 33년간 메모리 세계 1위였던 삼성전자가 AI 시대의 메모리
+    HBM에서 만년 2위 SK하이닉스에 처음 추월당했습니다(FY2025 하이닉스 47.21조 > 삼성 43.6조, dartlab
+    실측). 매출 334조지만 반도체를 빼면 영업이익률 7%, 파운드리는 TSMC에 10배 밀립니다. 그런데도 여전히
+    가장 큰 거인의 역설을, 강세와 약세 양쪽으로 풉니다. 투자 권유가 아닌 재무제표 교육용 서사입니다.
+  whereToLook:
+    - 반도체(DS) 영업이익률 27%가 더 오르는지 아니면 내려오기 시작하는지
+    - 파운드리 적자가 줄며 흑자전환에 다가가는지
+    - HBM4에서 엔비디아 내 삼성 점유율이 회복되는지
+  forbiddenAngles: [매수, 매도, 목표가, 수익 보장, 확정 전망]
+
+  # 교차 링크 조인 키 + 역링크
+  stockCode: "005930"
+  corpName: 삼성전자
+  topicSlug: samsung
+  cardType: company
+  youtubeId: ""                          # 유튜브 영상 ID(공개 업로드 후 채우면 블로그/카드가 유튜브로 재생)
+  links:
+    blogSlug: "005930-samsung"           # {base}/blog/005930-samsung (소스이자 역링크)
+    cardSlug: "005930-samsung"           # {base}/cards?post=005930-samsung (카드뉴스 포스트)
+    terminalCode: "005930"               # {base}/terminal?sym=005930

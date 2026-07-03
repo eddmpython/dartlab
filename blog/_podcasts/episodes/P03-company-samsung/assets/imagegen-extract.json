@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-03T00:00:00+00:00",
+  "cardCrop4x5": false,
+  "pool": "companyAsset",
+  "stockCode": "005930",
+  "assets": [
+    {
+      "file": "source.webp",
+      "role": "reusable-source",
+      "poolOrigin": "companies/005930/samsung-semiconductor",
+      "promptSummary": "Samsung semiconductor fab, gray-tone editorial podcast background reused from the shared company image pool."
+    }
+  ]
+}
