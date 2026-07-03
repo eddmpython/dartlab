@@ -134,6 +134,7 @@ GATES: dict[str, Gate] = {
         cmd=(
             "ruff check src/dartlab/ tests/ --exclude tests/_attempts && "
             "python -X utf8 tests/audit/noScriptsDir.py && "
+            "python -X utf8 tests/audit/workspaceHygiene.py && "
             "python -X utf8 tests/audit/checkSilentFail.py && "
             "python tests/audit/stale_references.py && "
             "python -X utf8 tests/audit/lint_camelcase_ast.py --changed --strict && "
