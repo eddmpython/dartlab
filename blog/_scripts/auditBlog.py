@@ -16,6 +16,12 @@ LOW_INTERNAL_LINKS = 3
 LOW_SVG_TEXT_NODES = 4
 HIGH_TEMPLATE_REPETITION = 0.5
 
+# 심층 리포트 깊이 게이트 (본문 기준: 표·SVG·코드 제외한 읽는 글자수).
+# 길이는 막·증거·시나리오의 산물이지 패딩이 아니다 (반복도 가드와 짝).
+DEEP_GENRE_CATEGORIES = {"company-reports"}
+DEEP_MIN_PROSE_CHARS = 14000  # 미만 = 얕음, 깊이 보강 리라이트 후보
+DEEP_TARGET_PROSE_CHARS = 20000  # 심층 완성 목표 (최고작 티어, 북극성)
+
 
 @dataclass
 class PostAudit:
@@ -24,6 +30,7 @@ class PostAudit:
     category: str
     series: str
     word_count: int
+    prose_chars: int
     svg_count: int
     faq: bool
     checklist_heading: bool
@@ -65,6 +72,16 @@ def plain_word_count(text: str) -> int:
     return len(plain.split()) if plain else 0
 
 
+def prose_char_count(text: str) -> int:
+    """읽는 본문의 글자수 (공백 제외). 표(| … |)·SVG·코드·HTML 태그는 데이터라 제외 =
+    문장 깊이의 정직한 지표. 길이 패딩을 막으려 반복도 가드와 함께 쓴다."""
+    body = re.sub(r"```[\s\S]*?```", " ", text)
+    body = re.sub(r"<svg[\s\S]*?</svg>", " ", body, flags=re.I)
+    body = re.sub(r"<[^>]+>", " ", body)
+    body = "\n".join(line for line in body.splitlines() if not line.strip().startswith("|"))
+    return len(re.sub(r"\s", "", body))
+
+
 def is_internal_link(target: str) -> bool:
     if target.startswith(("http://", "https://", "//")):
         return False
@@ -99,6 +116,7 @@ def audit_posts(blog_root: Path) -> list[PostAudit]:
                 category=frontmatter_value(raw, "category"),
                 series=frontmatter_value(raw, "series"),
                 word_count=plain_word_count(body),
+                prose_chars=prose_char_count(body),
                 svg_count=len(re.findall(r"!\[[^\]]*\]\(\./assets/[^)]+\.svg\)", body)),
                 faq=any(heading.lower() in {"faq", "자주 묻는 질문"} for heading in headings),
                 checklist_heading=any(
@@ -160,6 +178,16 @@ def build_report(blog_root: Path) -> dict[str, object]:
         "post_count": len(posts),
         "svg_count": len(svgs),
         "short_posts": [row.path for row in posts if row.word_count < SHORT_POST_WORDS],
+        "shallow_deep_reports": [
+            {"path": row.path, "prose_chars": row.prose_chars}
+            for row in posts
+            if row.category in DEEP_GENRE_CATEGORIES and row.prose_chars < DEEP_MIN_PROSE_CHARS
+        ],
+        "deep_reports_at_target": [
+            row.path
+            for row in posts
+            if row.category in DEEP_GENRE_CATEGORIES and row.prose_chars >= DEEP_TARGET_PROSE_CHARS
+        ],
         "low_svg_posts": [row.path for row in posts if row.svg_count < LOW_SVG_COUNT],
         "missing_faq": [row.path for row in posts if not row.faq],
         "missing_checklist_heading": [row.path for row in posts if not row.checklist_heading],
@@ -191,6 +219,12 @@ def print_human(report: dict[str, object]) -> None:
     print(f"- posts: {summary['post_count']}")
     print(f"- svgs: {summary['svg_count']}")
     print(f"- short posts (<{SHORT_POST_WORDS} words): {len(summary['short_posts'])}")
+    deep_total = summary["category_counts"].get("company-reports", 0)
+    print(
+        f"- shallow deep reports (본문 <{DEEP_MIN_PROSE_CHARS}자): "
+        f"{len(summary['shallow_deep_reports'])}/{deep_total}편  "
+        f"| 목표(>={DEEP_TARGET_PROSE_CHARS}자) 도달: {len(summary['deep_reports_at_target'])}편"
+    )
     print(f"- low svg posts (<{LOW_SVG_COUNT}): {len(summary['low_svg_posts'])}")
     print(f"- missing faq: {len(summary['missing_faq'])}")
     print(f"- missing checklist heading: {len(summary['missing_checklist_heading'])}")
@@ -212,6 +246,8 @@ def print_human(report: dict[str, object]) -> None:
         print(f"- short post: {path}")
     for item in summary["high_template_repetition"][:5]:
         print(f"- high repetition ({item['score']:.1%}): {item['path']}")
+    for item in sorted(summary["shallow_deep_reports"], key=lambda x: x["prose_chars"])[:8]:
+        print(f"- shallow deep report (본문 {item['prose_chars']}자): {item['path']}")
 
 
 def parse_args() -> argparse.Namespace:

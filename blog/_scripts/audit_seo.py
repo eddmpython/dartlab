@@ -10,7 +10,7 @@ import re
 import sys
 
 try:
-    import yaml  # frontmatter 중첩(`carousel:`) 검증 — regex 는 중첩 못 읽음
+    import yaml  # frontmatter 중첩(`carousel:`) 검증. regex 는 중첩 못 읽음
 except ImportError:  # pragma: no cover
     yaml = None
 
@@ -23,17 +23,17 @@ HERO_SUFFIXES = (".webp", ".png", ".jpg", ".jpeg")
 
 
 def _numbers(text: str) -> set:
-    """문자열에서 숫자 토큰(2자리+ 또는 소수) 추출 — 콤마 제거한 digit-core. no-new-number 비교용."""
+    """문자열에서 숫자 토큰(2자리+ 또는 소수) 추출. 콤마 제거한 digit-core. no-new-number 비교용."""
     out = set()
     for m in re.findall(r"\d[\d,]*\.?\d*", str(text)):
         core = m.replace(",", "").rstrip(".")
-        if len(core.replace(".", "")) >= 2:  # 한 자리(연도 끝자리 등) 제외 — 노이즈
+        if len(core.replace(".", "")) >= 2:  # 한 자리(연도 끝자리 등) 제외. 노이즈
             out.add(core)
     return out
 
 
 def validate_carousel(folder_path: str) -> list:
-    """frontmatter `carousel:` 블록 검증 — 구조·hero 존재·노트 길이·no-new-number(노트 숫자⊆본문).
+    """frontmatter `carousel:` 블록 검증. 구조·hero 존재·노트 길이·no-new-number(노트 숫자⊆본문).
 
     캐러셀은 ReportModel 자동 투영이 기본이고, `carousel:` 는 *선택* 큐레이션 오버레이라
     없으면 검사 없음(빈 리스트). 손글 narration 이 본문에 없는 숫자를 새로 만들지 않게 가드한다.
@@ -82,11 +82,11 @@ def validate_carousel(folder_path: str) -> list:
                     issues.append(("error", f"carousel.notes[{key}] 는 문자열이어야 함"))
                     continue
                 if len(line) > CAROUSEL_NOTE_MAX:
-                    issues.append(("warn", f"carousel.notes[{key}] {len(line)}자 — {CAROUSEL_NOTE_MAX}자 권장 초과"))
+                    issues.append(("warn", f"carousel.notes[{key}] {len(line)}자, {CAROUSEL_NOTE_MAX}자 권장 초과"))
                 novel = _numbers(line) - body_numbers
                 if novel:
                     issues.append(
-                        ("warn", f"carousel.notes[{key}] 본문에 없는 숫자 {sorted(novel)} — no-new-number 위반 의심")
+                        ("warn", f"carousel.notes[{key}] 본문에 없는 숫자 {sorted(novel)}, no-new-number 위반 의심")
                     )
 
     # 인스타 포스트 텍스트(제목·캡션·고정댓글) 타입.
@@ -98,7 +98,7 @@ def validate_carousel(folder_path: str) -> list:
         if val is not None and not isinstance(val, str):
             issues.append(("error", f"carousel.{key} 는 문자열이어야 함"))
 
-    # 손글 편집 슬라이드 — layout enum·필수필드·image 타입·no-new-number(슬라이드 숫자⊆본문).
+    # 손글 편집 슬라이드. layout enum·필수필드·image 타입·no-new-number(슬라이드 숫자⊆본문).
     slides = spec.get("slides")
     if slides is not None:
         if not isinstance(slides, list):
@@ -131,7 +131,7 @@ def validate_carousel(folder_path: str) -> list:
                         novel |= _numbers(sl[f]) - body_numbers
                 if novel:
                     issues.append(
-                        ("warn", f"carousel.slides[{i}] 본문에 없는 숫자 {sorted(novel)} — no-new-number 위반 의심")
+                        ("warn", f"carousel.slides[{i}] 본문에 없는 숫자 {sorted(novel)}, no-new-number 위반 의심")
                     )
     return issues
 
@@ -194,14 +194,18 @@ def score_post(folder_path: str) -> dict:
     total += scores["frontmatter"]
     max_total += fm_max
 
-    # 2. 본문 길이 (15점)
-    body_len = len(body.replace(" ", "").replace("\n", ""))
+    # 2. 본문 길이 (15점). 본문(prose) 기준으로 표·SVG·코드·태그를 뺀 읽는 글자수만 센다.
+    prose = re.sub(r"```[\s\S]*?```", " ", body)
+    prose = re.sub(r"<svg[\s\S]*?</svg>", " ", prose, flags=re.I)
+    prose = re.sub(r"<[^>]+>", " ", prose)
+    prose = "\n".join(line for line in prose.splitlines() if not line.strip().startswith("|"))
+    body_len = len(re.sub(r"\s", "", prose))
     len_max = 15
-    if body_len >= 12000:
+    if body_len >= 10000:
         len_score = 15
-    elif body_len >= 8000:
+    elif body_len >= 6000:
         len_score = 12
-    elif body_len >= 5000:
+    elif body_len >= 3500:
         len_score = 8
     else:
         len_score = 3
@@ -332,7 +336,7 @@ def main():
 
     # 콘솔 출력
     print(f"\n{'=' * 80}")
-    print(f"블로그 SEO 스코어링 — {len(results)}편")
+    print(f"블로그 SEO 스코어링: {len(results)}편")
     print(f"{'=' * 80}\n")
 
     print(f"{'글':<45} {'점수':>6} {'건강':>4} {'글자':>7} {'H2':>4} {'링크':>4} {'SVG':>4} {'IMG':>4} {'코드':>4}")
@@ -356,11 +360,11 @@ def main():
                 issues.append(f"시각자산 {s['svg_count'] + s['img_count']}개")
             if s["length_chars"] < 8000:
                 issues.append(f"글자수 {s['length_chars']}")
-            print(f"  🔴 {f}: {s['pct']}% — {', '.join(issues)}")
+            print(f"  🔴 {f}: {s['pct']}%: {', '.join(issues)}")
 
     print(f"\n평균: {sum(s['pct'] for _, s in results) // len(results)}%")
 
-    # 카드 캐러셀 큐레이션 검증 — `carousel:` 블록 있는 글만.
+    # 카드 캐러셀 큐레이션 검증. `carousel:` 블록 있는 글만.
     car_issues = []
     for folder in sorted(os.listdir(BLOG_DIR)):
         fp = os.path.join(BLOG_DIR, folder)
@@ -369,14 +373,14 @@ def main():
                 car_issues.append((folder, level, msg))
     if car_issues:
         errs = [c for c in car_issues if c[1] == "error"]
-        print(f"\n🎠 캐러셀 검증 — {len(car_issues)}건 ({len(errs)} error):")
+        print(f"\n🎠 캐러셀 검증: {len(car_issues)}건 ({len(errs)} error):")
         for folder, level, msg in car_issues:
             mark = "🔴" if level == "error" else "🟡"
             print(f"  {mark} {folder}: {msg}")
         if errs:
             sys.exit(1)
     elif yaml is not None:
-        print("🎠 캐러셀 검증 — carousel: 블록 없음(자동 투영만) 또는 0 이슈.")
+        print("🎠 캐러셀 검증: carousel: 블록 없음(자동 투영만) 또는 0 이슈.")
 
 
 if __name__ == "__main__":
