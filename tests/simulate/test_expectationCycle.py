@@ -319,8 +319,11 @@ def test_scorecard_groups_and_sample_gate(tmp_path):
     assert card["groups"][key]["n"] == 1 and card["groups"][key]["verified"] is False
 
 
-def quarterlyFixture(tmp_path, *, now="2026-07", years=(1,)):
-    """연간 매출·손익 봉인 후 분기 분해 발행 (계절성 주입: 매출 편중, 영업이익 균등)."""
+def quarterlyFixture(tmp_path, *, now="2026-07", years=(1,), published=frozenset({"2026Q1"})):
+    """연간 매출·손익 봉인 후 분기 분해 발행 (계절성 주입: 매출 편중, 영업이익 균등).
+
+    published 기본 = Q1 공시완료 (now=7월: Q2 는 분기말 경과·미공시 = nowcast 대상).
+    """
     from dartlab.simulate.expectationCycle import issueEarnings, issueQuarterlyIs
 
     revenueFixture(tmp_path)
@@ -338,32 +341,35 @@ def quarterlyFixture(tmp_path, *, now="2026-07", years=(1,)):
         years=years,
         baseDir=tmp_path,
         seasonalityByCode={"005930": ([0.2, 0.3, 0.1, 0.4], [0.25, 0.25, 0.25, 0.25])},
+        publishedByCode={"005930": set(published)},
         now=now,
     )
 
 
-def test_issue_quarterly_seasonal_split_lineage_and_lookahead(tmp_path):
+def test_issue_quarterly_seasonal_split_lineage_and_data_gate(tmp_path):
     from dartlab.simulate.expectationCycle import issueQuarterlyIs
     from dartlab.simulate.expectationLedger import readProforma
 
     rows, skipped = quarterlyFixture(tmp_path)
     assert skipped == {"222222": "연간 매출 기대 없음(h1, 선행 issueRevenue 필요)"}
-    # now=2026-07: Q1·Q2 는 이미 종료 -> look-ahead 차단, Q3·Q4 x 2지표 = 4행
-    assert len(rows) == 4
-    assert {r.targetPeriod for r in rows} == {"2026Q3", "2026Q4"}
+    # 데이터 게이트: Q1 은 실제값 공시완료 -> 제외. Q2 는 분기말 경과·미공시 -> nowcast 발행.
+    assert len(rows) == 6
+    assert {r.targetPeriod for r in rows} == {"2026Q2", "2026Q3", "2026Q4"}
     revQ3 = next(r for r in rows if r.variable == "005930.revenue" and r.targetPeriod == "2026Q3")
     assert revQ3.freq == "Q" and revQ3.horizon == 3 and revQ3.domain == "revenue"
     # 연간 h1 (p25=95, p50=110, p75=125) x Q3 비중 0.1 = 시나리오 일관 분해
     assert abs(revQ3.quantiles[50] - 11.0) < 1e-9
     assert abs(revQ3.quantiles[25] - 9.5) < 1e-9 and abs(revQ3.quantiles[75] - 12.5) < 1e-9
     assert revQ3.sourceRefs[0].startswith("revenue.005930.revenue.Y1.FY2026@")  # 모체 계보
-    assert "seasonalSplitOfAnnual" in revQ3.warnings
+    assert "seasonalSplitOfAnnual" in revQ3.warnings and "quarterEndedAtIssue" not in revQ3.warnings
+    revQ2 = next(r for r in rows if r.variable == "005930.revenue" and r.targetPeriod == "2026Q2")
+    assert "quarterEndedAtIssue" in revQ2.warnings  # 분기말 경과·미공시 = nowcast 라벨
     opQ4 = next(r for r in rows if r.variable == "005930.operatingProfit" and r.targetPeriod == "2026Q4")
     assert opQ4.domain == "earnings" and "flatSeasonalityFallback" in opQ4.warnings
-    # E-3표 분기 행: 2분기 x 3분위 x 2계정 = 12행 (연간 발행분과 별개)
+    # E-3표 분기 행: 3분기 x 3분위 x 2계정 = 18행 (연간 발행분과 별개)
     pf = readProforma(baseDir=tmp_path, code="005930")
     qpf = pf.filter(pf["targetPeriod"].str.contains("Q"))
-    assert qpf.height == 12 and set(qpf.get_column("account").unique().to_list()) == {"revenue", "operating_income"}
+    assert qpf.height == 18 and set(qpf.get_column("account").unique().to_list()) == {"revenue", "operating_income"}
     # idempotent 재실행
     rows2, _ = issueQuarterlyIs(
         ["005930"],
@@ -371,16 +377,32 @@ def test_issue_quarterly_seasonal_split_lineage_and_lookahead(tmp_path):
         years=(1,),
         baseDir=tmp_path,
         seasonalityByCode={"005930": ([0.2, 0.3, 0.1, 0.4], [0.25, 0.25, 0.25, 0.25])},
+        publishedByCode={"005930": {"2026Q1"}},
         now="2026-07",
     )
     assert rows2 == [] and readProforma(baseDir=tmp_path, code="005930").height == pf.height
 
 
+def test_issue_quarterly_skips_quarters_already_in_data(tmp_path):
+    """공시완료 분기(실제값이 SSOT 에 존재)는 라이브 발행 금지 (달력 아님, 데이터 기준)."""
+    rows, _ = quarterlyFixture(tmp_path, published={"2026Q1", "2026Q2"})
+    assert {r.targetPeriod for r in rows} == {"2026Q3", "2026Q4"}
+    assert all("quarterEndedAtIssue" not in r.warnings for r in rows)
+
+
 def test_issue_quarterly_default_splits_next_fiscal_year_too(tmp_path):
-    """기본 years=(1,2): 당해 잔여분기(Q3·Q4) + 차년 4분기 전부, 차년 계보 = FY2027 매출 부모."""
+    """기본 years=(1,2): 당해 잔여분기(Q2~Q4) + 차년 4분기 전부, 차년 계보 = FY2027 매출 부모."""
     rows, _ = quarterlyFixture(tmp_path, years=(1, 2))
-    assert {r.targetPeriod for r in rows} == {"2026Q3", "2026Q4", "2027Q1", "2027Q2", "2027Q3", "2027Q4"}
-    assert len(rows) == 12  # (2 + 4) 분기 x 2지표
+    assert {r.targetPeriod for r in rows} == {
+        "2026Q2",
+        "2026Q3",
+        "2026Q4",
+        "2027Q1",
+        "2027Q2",
+        "2027Q3",
+        "2027Q4",
+    }
+    assert len(rows) == 14  # (3 + 4) 분기 x 2지표
     q1 = next(r for r in rows if r.variable == "005930.revenue" and r.targetPeriod == "2027Q1")
     assert q1.horizon == 1 and q1.sourceRefs[0].startswith("revenue.005930.revenue.Y2.FY2027@")
 
@@ -415,9 +437,15 @@ def test_issue_quarterly_annual_cascade_not_polluted(tmp_path):
 
 def test_score_quarterly_due_grace_and_actual(tmp_path):
     quarterlyFixture(tmp_path)
-    actuals = {"005930": {"revenue": {"2026Q3": 11.5}, "operatingProfit": {"2026Q3": 2.6}}}
-    # Q3(분기말 2026-09) 는 2026-11 부터 due
-    assert scoreDue(now="2026-10", baseDir=tmp_path, monthlyBySeries={}, quarterlyByCode=actuals) == []
+    actuals = {
+        "005930": {
+            "revenue": {"2026Q2": 30.0, "2026Q3": 11.5},
+            "operatingProfit": {"2026Q2": 2.4, "2026Q3": 2.6},
+        }
+    }
+    # Q2(nowcast, 분기말 2026-06) 는 2026-08 due, Q3(분기말 2026-09) 는 2026-11 due
+    early = scoreDue(now="2026-10", baseDir=tmp_path, monthlyBySeries={}, quarterlyByCode=actuals)
+    assert len(early) == 2 and all(".2026Q2@" in s.expectationId for s in early)
     scores = scoreDue(now="2026-11", baseDir=tmp_path, monthlyBySeries={}, quarterlyByCode=actuals)
     q3 = [s for s in scores if ".2026Q3@" in s.expectationId]
     assert len(scores) == 2 and len(q3) == 2 and all(s.error is None for s in q3)
@@ -435,3 +463,19 @@ def test_score_quarterly_due_grace_and_actual(tmp_path):
     )
     q4 = [s for s in late if ".2026Q4@" in s.expectationId]
     assert len(q4) == 2 and all(s.error is not None for s in q4)  # 결측 봉인(생존편향 금지)
+
+
+def test_scorecard_separates_nowcast_group(tmp_path):
+    """nowcast(분기말 경과 후 발행) 채점은 일반 예측 그룹과 혼합 집계 금지."""
+    quarterlyFixture(tmp_path)
+    actuals = {
+        "005930": {
+            "revenue": {"2026Q2": 30.0, "2026Q3": 11.5},
+            "operatingProfit": {"2026Q2": 2.4, "2026Q3": 2.6},
+        }
+    }
+    scoreDue(now="2026-10", baseDir=tmp_path, monthlyBySeries={}, quarterlyByCode=actuals)
+    scoreDue(now="2026-11", baseDir=tmp_path, monthlyBySeries={}, quarterlyByCode=actuals)
+    card = buildScorecard(baseDir=tmp_path)
+    assert "revenue.005930.revenue.Q2.live.nowcast" in card["groups"]
+    assert "revenue.005930.revenue.Q3.live" in card["groups"]

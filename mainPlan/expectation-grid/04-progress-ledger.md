@@ -77,3 +77,9 @@ KR macro 3변수 x h=1/3/6, 2025-01~2026-04 매월 asOf backfill(issuedLive=Fals
 
 ### 알려진 정합 갭 (후속, 신규 아님)
 - **proforma 매출 앵커 갭**: E-3표 연간 매출(예 005930 FY26E 427.6조)이 봉인 연간 기대(367.3조)와 어긋남. 원인 = issueEarnings 가 봉인 레벨을 성장률로 변환 후 buildProforma 가 자기 내부 베이스(최근 4분기 합)에 적용. 분기 E 는 봉인 연간을 직접 분해하므로 분기합 != 연간 E열. 정공법 = buildProforma 에 revenueLevelPath(절대 경로) 지원 추가 후 재발행분부터 앵커 일치 (L2 엔진 변경이라 별도 단위).
+
+## E2c : look-ahead 게이트 데이터 기준 전환 (2026-07-04, 운영자 지적 "Q2 왜 건너뛰나")
+
+- 종전 게이트(달력: 분기말 경과 = 발행 금지)가 미공시 분기(Q2, 분기보고서 8월)를 부당하게 제외. 전환: **실제값이 SSOT 시계열에 존재하는 분기만 제외** (발행 시점 정보집합 기준). 분기말 경과·미공시 = nowcast 로 발행하되 `quarterEndedAtIssue` 경고 봉인 + 성적표 그룹 `.nowcast` 접미사로 일반 예측과 혼합 집계 금지 (정보우위 오염 차단).
+- 잠복 결함 동시 수리: 분기 채점 실제값 소스가 panel("is") 였는데 분기창에 Q4 열이 없어 Q4 채점이 전부 grace 후 error 봉인될 운명이었음. `_seriesQuarterValues`(_buildFinanceSeries freq=Q) 로 교체, 발행 게이트와 채점이 같은 실제값 소스 공유.
+- 검증: pytest 28 green (데이터 게이트·nowcast 라벨·분리 그룹·Q2 채점) · guard strict PASS. 2026Q2 nowcast 6행(3사) 봉인·HF 재발행 (원장 84행).
