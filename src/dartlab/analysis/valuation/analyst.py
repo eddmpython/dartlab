@@ -63,7 +63,9 @@ class Analyst:
             self._gather = getMacroProvider().getDefaultGather()
         else:
             self._gather = gather
-        self._owns_gather = gather is None
+        # 두 경로 모두 차용이다: None 이면 공유 싱글턴을 빌리는 것이지 자체 생성이 아니다.
+        # 싱글턴을 close 하면 프로세스 전체 gather 가 죽는다 (소유권 위반 수리, 2026-07-03).
+        self._owns_gather = False
 
     def report(
         self,
