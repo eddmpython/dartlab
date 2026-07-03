@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-03T00:00:00+00:00",
+  "cardCrop4x5": false,
+  "pool": "companyAsset",
+  "stockCode": "005380",
+  "assets": [
+    {
+      "file": "source.webp",
+      "role": "reusable-source",
+      "poolOrigin": "companies/005380/hm-assembly-line",
+      "promptSummary": "Hyundai Motor assembly line, gray-tone editorial podcast background reused from the shared company image pool."
+    }
+  ]
+}
