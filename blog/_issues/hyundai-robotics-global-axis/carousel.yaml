@@ -1,0 +1,96 @@
+name: "현대차"
+stockCode: "005380"
+corpName: "현대차"
+title: "현대차는 로봇으로 세계의 축이 될 수 있을까"
+date: 2026-07-03
+sector: mobility
+caption: |
+  현대차 주가는 2026년 6월 1일 사상 최고인 78만 3천원까지 올랐습니다. 그 값을 밀어올린 건 자동차가 아니라 로봇, 보스턴다이내믹스였습니다.
+
+  현대차는 이 로봇 회사를 2021년 8.8억달러에 사들였고, 2026년 6월 남은 지분까지 인수해 그룹과 정의선 회장이 지분 100%를 채웠습니다. 세계의 로봇 축이 되겠다는 선언입니다.
+
+  그런데 장부는 다른 말을 합니다. 보스턴다이내믹스의 2025년 매출은 1,501억원으로 현대차 연결 매출의 0.08%에 그치고, 순손실은 5,284억원, 5년 누적 손실은 약 1.76조원입니다. 매출보다 손실이 세 배 넘게 큰 적자 자회사입니다.
+
+  그런데도 증권가는 이 회사 가치를 약 30조로 봅니다. 한 증권사는 목표주가 100만원의 근거를 이 로봇에 뒀습니다. 다만 둘 다 재무사실이 아니라 아직 검증되지 않은 기대입니다. 78만원을 만든 진짜 촉매는 실적이 아니라, 로봇 상장으로 정의선 회장 개인 지분 20%가 현금이 되는 승계의 시계였습니다.
+
+  그래서 판단은 연 3만대 로봇공장의 약속이 실제 매출과 흑자로 바뀌는지에서 갈립니다. 아틀라스 양산, 나스닥 상장 서류, 공장 가동. 이 셋이 기대를 실체로 바꿉니다.
+keyMetrics:
+  - label: "로봇 자회사 2025 매출"
+    value: "1,501억원"
+  - label: "로봇 자회사 2025 순손실"
+    value: "-5,284억원"
+  - label: "연결 매출 대비 로봇 비중"
+    value: "0.08%"
+  - label: "2021 인수가(기업가치)"
+    value: "약 1.25조원"
+explainers:
+  - term: "보스턴다이내믹스"
+    body: "현대차그룹이 2021년 소프트뱅크에서 사들인 미국 로봇 회사입니다. 사람을 닮은 아틀라스와 네 발 로봇 스팟으로 유명합니다."
+  - term: "휴머노이드"
+    body: "사람 모습을 한 이족보행 로봇입니다. 공장과 물류 현장에 넣어 사람 일을 대신하게 하려는 목표로 개발됩니다."
+  - term: "구주 상장으로 만드는 승계 재원"
+    body: "회사가 상장하면 기존 주주가 보유 지분을 시장에 팔아 현금을 만들 수 있습니다. 정의선 회장이 개인으로 가진 로봇 회사 지분이 여기에 해당합니다."
+relatedNews:
+  - title: "현대차 목표주가 또 100만원, 보스턴다이내믹스 가치 상승 기대"
+    source: "v.daum.net"
+    date: "2026-06-02"
+    url: "https://v.daum.net/v/20260602093053016"
+    track: "naver"
+    description: "네이버 보관 뉴스 기준. 목표주가 100만원의 근거가 자동차가 아니라 로봇 자회사라는 점을 확인합니다."
+  - title: "Boston Dynamics Unveils New Atlas Robot to Revolutionize Industry"
+    source: "Boston Dynamics"
+    date: "2026-01-05"
+    url: "https://bostondynamics.com/blog/boston-dynamics-unveils-new-atlas-robot-to-revolutionize-industry/"
+    track: "official"
+    description: "CES 2026에서 공개한 전기구동 아틀라스 양산형 발표입니다. 데모가 양산으로 넘어가는지를 보는 근거입니다."
+  - title: "현대차그룹, 소프트뱅크 보스턴다이내믹스 잔여지분 인수로 100% 확보"
+    source: "greened.kr"
+    date: "2026-06-22"
+    url: "https://www.greened.kr/news/articleView.html?idxno=342946"
+    track: "naver"
+    description: "네이버 보관 뉴스 기준. 남은 지분을 사들여 지분 100%를 확보한 거래로, 상장 유연성 확보의 근거입니다."
+pinnedComment: "투자 권유 아님. 근거는 보스턴다이내믹스 공시 손익과 현대차 연결 재무입니다. 기업가치 약 30조와 목표주가 100만원은 재무사실이 아니라 아직 검증되지 않은 시장 기대입니다. 로봇 매출이 흑자로 전환되고 상장 서류가 실제로 나오는지 확인해야 합니다."
+slides:
+  - layout: editorial
+    date: "2026. 07. 03"
+    line: "현대차를 78만원까지 밀어올린 건 자동차가 아니라 [[로봇]]이었습니다"
+    sub: "현대차가 세계의 로봇 축이 되겠다고 합니다. 그런데 그 로봇의 장부는 다른 말을 합니다."
+    image: scene-01-cover-hook
+  - layout: editorialBeat
+    kicker: "오래 끌어온 베팅"
+    line: "소프트뱅크에서 산 [[보스턴다이내믹스]], 이제 지분 100%입니다"
+    sub: "2021년 8.8억달러에 사들였고, 2026년 6월 남은 지분까지 인수해 그룹과 정의선 회장이 온전히 손에 넣었습니다."
+    image: scene-02-narrative-turn
+  - layout: editorialStat
+    kicker: "로봇 매출"
+    bigNumber: "1,501"
+    unit: "억원"
+    context: "보스턴다이내믹스의 2025년 매출입니다. 현대차 연결 매출의 0.08%로, 세계 축이라 부르기엔 재무제표에 거의 보이지 않습니다."
+    image: scene-03-number-evidence
+  - layout: editorialStat
+    kicker: "로봇 손익"
+    bigNumber: "-5,284"
+    unit: "억원"
+    context: "같은 해 순손실입니다. 매출보다 손실이 세 배 넘게 큰 적자 자회사이고, 5년 누적 손실은 약 1.76조원입니다."
+    image: scene-04-number-evidence
+  - layout: editorialBeat
+    kicker: "시장의 기대"
+    line: "장부는 적자인데, 값은 [[30조]]로 매겨집니다"
+    sub: "증권가는 이 로봇 회사 가치를 약 30조로 추정합니다. 한 증권사는 목표주가 100만원의 근거를 자동차가 아니라 이 로봇에 뒀습니다. 아직 검증되지 않은 기대입니다."
+    image: scene-05-narrative-turn
+  - layout: editorialBeat
+    kicker: "진짜 시계"
+    line: "78만원을 만든 건 실적이 아니라 [[승계]]였습니다"
+    sub: "로봇 회사가 상장하면 정의선 회장의 개인 지분 20%가 현금이 됩니다. 시장이 주목한 건 로봇 실적이 아니라 이 승계의 시계였습니다."
+    image: scene-06-narrative-turn
+  - layout: editorialStat
+    kicker: "약속의 규모"
+    bigNumber: "3"
+    unit: "만대"
+    context: "보스턴에 짓는 아틀라스 로봇공장의 연간 목표 생산능력입니다. 이 약속이 실제 매출과 흑자로 바뀌는 순간, 기대는 비로소 검증이 됩니다."
+    image: scene-07-number-evidence
+  - layout: editorialBeat
+    kicker: "축이 되려면"
+    line: "데모가 [[매출]]로 바뀌는지 봅니다"
+    sub: "보스턴다이내믹스의 휴머노이드 아틀라스 양산, 미국 상장 서류, 로봇공장 가동. 이 셋이 옵션을 실체로 바꿉니다. 그때 세계의 축이라는 말이 처음으로 증명됩니다."
+    image: scene-08-closing-checkpoint

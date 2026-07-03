@@ -1,0 +1,294 @@
+{
+  "version": 4,
+  "generatedAt": "2026-07-03T04:27:58.724505+00:00",
+  "target": {
+    "kind": "issue",
+    "slug": "hyundai-robotics-global-axis",
+    "stockCode": "005380",
+    "corpName": "현대차",
+    "title": "현대차는 로봇으로 세계의 축이 될 수 있을까",
+    "postPath": "blog/_issues/hyundai-robotics-global-axis/carousel.yaml",
+    "assetRoot": "blog/_issues/hyundai-robotics-global-axis/assets",
+    "planPath": "blog/_issues/hyundai-robotics-global-axis/cards.plan.json"
+  },
+  "planning": {
+    "blogThesis": "현대차 주가는 2026년 6월 1일 사상 최고인 78만 3천원까지 올랐습니다. 그 값을 밀어올린 건 자동차가 아니라 로봇, 보스턴다이내믹스였습니다.",
+    "cardThesis": "현대차 주가는 2026년 6월 1일 사상 최고인 78만 3천원까지 올랐습니다. 그 값을 밀어올린 건 자동차가 아니라 로봇, 보스턴다이내믹스였습니다.",
+    "audienceQuestion": "현대차는 로봇으로 세계의 축이 될 수 있을까 이슈를 /cards에서 볼 때 마지막에 무엇을 확인해야 하나?",
+    "blogAndCardsTogether": false,
+    "narrativeContract": {
+      "spine": "훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문",
+      "rules": [
+        "한 주제 안에서 훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문으로 이어진다.",
+        "각 슬라이드는 앞장의 주장이나 숫자를 받아 다음 장으로 넘겨야 한다.",
+        "서로 끊긴 체크리스트, '다음에는 이것을 본다'식 나열, 새 항목만 덧붙이는 끝맺음은 실패다.",
+        "마지막 장은 새 정보를 추가하는 장이 아니라 앞선 주장과 근거를 종합해 독자가 남길 판단 질문으로 닫는다.",
+        "기/승/전/결 같은 구조명은 내부 기획에만 쓰고 카드 위 라벨로 노출하지 않는다."
+      ]
+    },
+    "bigSentenceContract": {
+      "slideRange": "7장 이상(7~10장 권장, 필요하면 초과)",
+      "mainTextFields": {
+        "editorial": "line",
+        "editorialBeat": "line",
+        "editorialStat": "context"
+      },
+      "rules": [
+        "카드는 7장 이상으로 잡고, 큰문장만 이어 읽어도 한 편의 짧은 글처럼 이해되어야 한다.",
+        "각 장의 큰문장은 단어·라벨·메모가 아니라 앞장 뒤에 붙는 완성 문장이어야 한다.",
+        "숫자 카드는 bigNumber만 던지지 말고 context에 그 숫자가 앞장 주장과 어떻게 이어지는지 문장으로 쓴다.",
+        "중간 장은 '이 구조', '그 결과', '하지만', '그래서', '결국'처럼 앞장과의 관계를 자연스럽게 드러낸다.",
+        "마지막 장은 새 항목 소개가 아니라 앞선 흐름에서 나온 판단 문장으로 닫는다."
+      ],
+      "strip": [
+        {
+          "order": 1,
+          "layout": "editorial",
+          "mainText": "78만원까지 오른 건 자동차가 아니라 로봇이었습니다"
+        },
+        {
+          "order": 2,
+          "layout": "editorialBeat",
+          "mainText": "소프트뱅크에서 산 보스턴다이내믹스, 이제 100%입니다"
+        },
+        {
+          "order": 3,
+          "layout": "editorialStat",
+          "mainText": "로봇 매출 1,501 억원: 보스턴다이내믹스의 2025년 매출입니다. 현대차 연결 매출의 0.08%로, 세계 축이라 부르기엔 재무제표에 거의 보이지 않습니다."
+        },
+        {
+          "order": 4,
+          "layout": "editorialStat",
+          "mainText": "로봇 손익 -5,284 억원: 같은 해 순손실입니다. 매출보다 손실이 세 배 넘게 큰 적자 자회사이고, 5년 누적 손실은 약 1.76조원입니다."
+        },
+        {
+          "order": 5,
+          "layout": "editorialBeat",
+          "mainText": "장부는 적자인데, 값은 30조로 매겨집니다"
+        },
+        {
+          "order": 6,
+          "layout": "editorialBeat",
+          "mainText": "78만원을 만든 건 실적이 아니라 승계였습니다"
+        },
+        {
+          "order": 7,
+          "layout": "editorialStat",
+          "mainText": "약속의 규모 3 만대: 보스턴에 짓는 아틀라스 로봇공장의 연간 목표 생산능력입니다. 이 약속이 실제 매출과 흑자로 바뀌는 순간, 기대는 비로소 검증이 됩니다."
+        },
+        {
+          "order": 8,
+          "layout": "editorialBeat",
+          "mainText": "데모가 매출로 바뀌는지 봅니다"
+        }
+      ]
+    },
+    "plainLanguageContract": {
+      "rules": [
+        "카드 문장은 독자가 소리 내어 읽어도 자연스러운 한국어 문장이어야 한다.",
+        "전문용어와 약어를 앞세우지 말고 쉬운 말로 먼저 설명한다.",
+        "꼭 필요한 산업 용어는 짧은 설명에 풀어 쓰되, 슬라이드 본문은 가능한 쉬운 말로 쓴다.",
+        "브랜드명과 공식 제품명은 허용하지만, 의미를 설명하지 않은 약어는 실패다."
+      ],
+      "preferredRewrites": {
+        "ARR": "연간 반복 매출",
+        "EDR": "단말 보안 대응",
+        "SOC": "보안 관제",
+        "FCF": "잉여현금흐름",
+        "ID": "계정",
+        "CDMO": "위탁개발생산",
+        "HBM": "고대역폭 메모리",
+        "HBM4E": "차세대 고대역폭 메모리",
+        "GPU": "그래픽처리장치",
+        "MR-MUF": "보호재 충전 패키징",
+        "Gbps": "기가비트/초"
+      }
+    },
+    "insightContract": {
+      "rules": [
+        "통념(commonBelief): 독자가 당연하게 여기는 상식·헤드라인 관점을 한 문장으로 적는다.",
+        "반전 사실(twistFact): 그 통념과 충돌하는, 공시 직독으로 확인한 단 하나의 사실 + 왜 그게 가능한가(메커니즘)를 적는다. 제목·캡션의 재진술이면 인사이트가 아니다.",
+        "그래서 볼 것(whatToWatch): 독자가 이 덱을 본 뒤 앞으로 무엇을 다르게 볼지(렌즈·관전 포인트)를 적는다.",
+        "evidenceRefs: 반전·렌즈를 떠받치는 실측 수치나 ref 를 최소 1개 이상 적는다(분모·기간 명시)."
+      ],
+      "commonBelief": "",
+      "twistFact": "",
+      "whatToWatch": "",
+      "evidenceRefs": []
+    },
+    "visualPlan": [],
+    "bodyPreview": ""
+  },
+  "carousel": {
+    "slideCount": 8,
+    "layouts": [
+      "editorial",
+      "editorialBeat",
+      "editorialStat",
+      "editorialStat",
+      "editorialBeat",
+      "editorialBeat",
+      "editorialStat",
+      "editorialBeat"
+    ]
+  },
+  "imagePlan": [
+    {
+      "order": 1,
+      "assetKey": "scene-01-cover-hook",
+      "slideRefs": [
+        1
+      ],
+      "role": "cover-hook",
+      "scene": "photorealistic humanoid bipedal robot standing on an automotive assembly floor at dusk, industrial robot arms and unfinished car bodies behind, dramatic rim light, no logos or readable text",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "pending",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/hyundai-robotics-global-axis/assets/scene-01-cover-hook.webp\nAsset key: scene-01-cover-hook\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대차 (005380).\nStory title: 현대차는 로봇으로 세계의 축이 될 수 있을까.\nCarousel role: cover-hook.\nImage subject: photorealistic humanoid bipedal robot standing on an automotive assembly floor at dusk, industrial robot arms and unfinished car bodies behind, dramatic rim light, no logos or readable text.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 2,
+      "assetKey": "scene-02-narrative-turn",
+      "slideRefs": [
+        2
+      ],
+      "role": "narrative-turn",
+      "scene": "a single advanced humanoid robot standing in a robotics research warehouse, engineers in the background observing, a sense of one company taking full ownership of the robot, no logos or readable text",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "pending",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/hyundai-robotics-global-axis/assets/scene-02-narrative-turn.webp\nAsset key: scene-02-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대차 (005380).\nStory title: 현대차는 로봇으로 세계의 축이 될 수 있을까.\nCarousel role: narrative-turn.\nImage subject: a single advanced humanoid robot standing in a robotics research warehouse, engineers in the background observing, a sense of one company taking full ownership of the robot, no logos or readable text.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 3,
+      "assetKey": "scene-03-number-evidence",
+      "slideRefs": [
+        3
+      ],
+      "role": "number-evidence",
+      "scene": "one prototype humanoid robot alone in a mostly empty industrial R&D lab, quiet and early-stage, test cables and lab benches around it, emphasizing small scale, no charts or readable text",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "pending",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/hyundai-robotics-global-axis/assets/scene-03-number-evidence.webp\nAsset key: scene-03-number-evidence\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대차 (005380).\nStory title: 현대차는 로봇으로 세계의 축이 될 수 있을까.\nCarousel role: number-evidence.\nImage subject: one prototype humanoid robot alone in a mostly empty industrial R&D lab, quiet and early-stage, test cables and lab benches around it, emphasizing small scale, no charts or readable text.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 4,
+      "assetKey": "scene-04-number-evidence",
+      "slideRefs": [
+        4
+      ],
+      "role": "number-evidence",
+      "scene": "a robotics laboratory late at night, engineers working around a partly disassembled humanoid robot prototype, cost and effort visible, no charts or readable text",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "pending",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/hyundai-robotics-global-axis/assets/scene-04-number-evidence.webp\nAsset key: scene-04-number-evidence\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대차 (005380).\nStory title: 현대차는 로봇으로 세계의 축이 될 수 있을까.\nCarousel role: number-evidence.\nImage subject: a robotics laboratory late at night, engineers working around a partly disassembled humanoid robot prototype, cost and effort visible, no charts or readable text.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 5,
+      "assetKey": "scene-05-narrative-turn",
+      "slideRefs": [
+        5
+      ],
+      "role": "narrative-turn",
+      "scene": "a humanoid robot demonstrated under bright spotlights on a technology expo stage, blurred audience silhouettes watching in the dark, hype and expectation, no logos or readable signage",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "pending",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/hyundai-robotics-global-axis/assets/scene-05-narrative-turn.webp\nAsset key: scene-05-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대차 (005380).\nStory title: 현대차는 로봇으로 세계의 축이 될 수 있을까.\nCarousel role: narrative-turn.\nImage subject: a humanoid robot demonstrated under bright spotlights on a technology expo stage, blurred audience silhouettes watching in the dark, hype and expectation, no logos or readable signage.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 6,
+      "assetKey": "scene-06-narrative-turn",
+      "slideRefs": [
+        6
+      ],
+      "role": "narrative-turn",
+      "scene": "a quiet corporate boardroom at dusk with a humanoid robot standing near a floor-to-ceiling window, empty leather chairs around a long table, a sense of ownership and control, no recognizable people, no logos",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "pending",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/hyundai-robotics-global-axis/assets/scene-06-narrative-turn.webp\nAsset key: scene-06-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대차 (005380).\nStory title: 현대차는 로봇으로 세계의 축이 될 수 있을까.\nCarousel role: narrative-turn.\nImage subject: a quiet corporate boardroom at dusk with a humanoid robot standing near a floor-to-ceiling window, empty leather chairs around a long table, a sense of ownership and control, no recognizable people, no logos.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 7,
+      "assetKey": "scene-07-number-evidence",
+      "slideRefs": [
+        7
+      ],
+      "role": "number-evidence",
+      "scene": "rows of humanoid robots on an assembly line inside a modern robot manufacturing factory, robotic arms building humanoid robots, industrial scale, no logos or readable text",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "pending",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/hyundai-robotics-global-axis/assets/scene-07-number-evidence.webp\nAsset key: scene-07-number-evidence\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대차 (005380).\nStory title: 현대차는 로봇으로 세계의 축이 될 수 있을까.\nCarousel role: number-evidence.\nImage subject: rows of humanoid robots on an assembly line inside a modern robot manufacturing factory, robotic arms building humanoid robots, industrial scale, no logos or readable text.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 8,
+      "assetKey": "scene-08-closing-checkpoint",
+      "slideRefs": [
+        8
+      ],
+      "role": "closing-checkpoint",
+      "scene": "a humanoid robot stepping from a research lab through a doorway onto a real factory floor, transition from demonstration to production, soft morning light, no readable text",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "pending",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for blog/_issues/hyundai-robotics-global-axis/assets/scene-08-closing-checkpoint.webp\nAsset key: scene-08-closing-checkpoint\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대차 (005380).\nStory title: 현대차는 로봇으로 세계의 축이 될 수 있을까.\nCarousel role: closing-checkpoint.\nImage subject: a humanoid robot stepping from a research lab through a doorway onto a real factory floor, transition from demonstration to production, soft morning light, no readable text.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    }
+  ],
+  "imagegen": {
+    "tool": "GPT image_gen",
+    "generationRule": "각 imagePlan.prompt 를 한 장씩 image_gen 으로 생성한다. 프롬프트는 그 글의 회사·사건·장소·운영 질문을 상징하는 실제 사용용 이미지를 목표로 하며, 범용 금융 배경은 탈락시킨다.",
+    "extractCommand": "uv run python -X utf8 sns/scripts/extractImagegenAssets.py assets --assets-root blog/_issues/hyundai-robotics-global-axis --count 8 --names scene-01-cover-hook,scene-02-narrative-turn,scene-03-number-evidence,scene-04-number-evidence,scene-05-narrative-turn,scene-06-narrative-turn,scene-07-number-evidence,scene-08-closing-checkpoint --keywords \"현대차,hyundai-robotics-global-axis,현대차는 로봇으로 세계의 축이 될 수 있을까\"",
+    "checkCommand": "uv run python -X utf8 sns/scripts/checkImagegenAssets.py blog/_issues/hyundai-robotics-global-axis/assets",
+    "publishCommands": [
+      "uv run python -X utf8 blog/_scripts/build_carousel_contracts.py"
+    ]
+  },
+  "reviewGate": {
+    "status": "pending",
+    "requiredRounds": [
+      {
+        "id": "writerPanel",
+        "purpose": "표지 후크(호기심 갭), 서사 스파인, 앞장-다음장의 긴장 전진(연결만이 아니라 매 장이 질문을 얹거나 갚는가), 인사이트(통념과 충돌하는 사실 + 메커니즘 + 독자 렌즈), 표지 약속을 마지막이 갚는가(promise·payoff), 쉬운 말·문장 리듬을 본다. 순서를 바꿔도 말이 되는 덱, 충돌 사실만 던지고 끝나는 덱, 체크리스트식 나열은 실패다.",
+        "status": "passed"
+      },
+      {
+        "id": "honestyEvidence",
+        "purpose": "슬라이드 숫자와 주장 근거가 블로그 본문/검증표에 있는지 본다.",
+        "status": "passed"
+      },
+      {
+        "id": "imageFit",
+        "purpose": "7장 이상 이미지가 그 글의 회사·사건·장소에 맞는 서로 다른 의미 장면인지, 가짜 공식 로고·텍스트·도식이 없는지 본다.",
+        "status": "pending"
+      },
+      {
+        "id": "readerFit",
+        "purpose": "처음 보는 독자가 첫 장부터 마지막 장까지 끊기지 않고 자연스럽게 읽으며 관전 포인트를 이해하는지 본다. 어려운 약어가 남으면 실패다.",
+        "status": "passed"
+      },
+      {
+        "id": "reevaluation",
+        "purpose": "수정 후 같은 패널이 다시 보고 발행 가능 여부를 닫는다.",
+        "status": "pending"
+      }
+    ],
+    "decisionLog": [
+      {
+        "round": "writerPanel",
+        "decision": "통과(89). 표지 훅에 주어(현대차)를 심고 슬라이드2 kicker의 미검증 8년을 비수치 표현으로 바꿔 근거없는 수치가 스파인 신뢰를 흔드는 문제를 닫음."
+      },
+      {
+        "round": "honestyEvidence",
+        "decision": "통과(89). 100% 귀속을 블로그대로 그룹과 정의선 회장으로 정정해 슬라이드6의 20%와 정합, 캡션의 30조·100만원에 미검증 라벨 추가, 세 배를 세 배 넘게로 통일."
+      },
+      {
+        "round": "imageFit",
+        "decision": "미완(pending). CC0 8장 전량 눈검수 폐기(휴머노이드 실사 CC0 부재·워터마크·인물혼입·무관피사체). GPT image_gen 로 8장 생성 필요. imagePlan 프롬프트 로봇테마로 확정."
+      },
+      {
+        "round": "readerFit",
+        "decision": "통과(88). 마지막 종결의 하우스 클리셰(숫자로 남습니다)를 증명 장면으로 변주해 시리즈 반복 신호 완화."
+      },
+      {
+        "round": "reevaluation",
+        "decision": "미완(pending). 콘텐츠 재평가는 통과, 이미지 수급 후 imageFit 최종 확인 필요."
+      }
+    ]
+  }
+}
