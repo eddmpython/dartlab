@@ -53,15 +53,19 @@ export interface ExpectationScoreRow {
 	error: string | null;
 }
 
-/** E-3표 계정 행 (proforma_{yyyy}.parquet · 05 §2 구조화 봉인). value 단위 = 원. */
-export interface ProformaEstimateRow {
-	parentId: string;
+/** E-3표 정렬 뷰 행 (estimateStatements.parquet). 매핑·라벨·순서 = 라이브러리 SSOT
+ * (dartlab.simulate.estimateStatements). 표면은 rowKey 매칭 + 렌더만 한다. value 단위 = 원. */
+export interface EstimateStatementRow {
+	code: string;
 	targetPeriod: string; // "FY2026"
 	quantile: number; // 25 | 50 | 75
 	statement: string; // "IS" | "BS" | "CF"
-	account: string; // ProFormaYear 필드명 (snake_case)
+	rowKey: string; // 재무제표 표시 계약 정본 키 (예 "revenue", "costOfSales")
+	labelKr: string;
+	labelEn: string;
+	sortOrder: number;
 	value: number;
-	issuedLive: boolean;
+	parentId: string;
 }
 
 export interface ExpectationsPort {
@@ -69,6 +73,6 @@ export interface ExpectationsPort {
 	getScorecard(): Promise<ExpectationScorecard | null>;
 	/** 라이브 발행 행 + 채점 행 (현재 연도 shard). 미발간 = null. */
 	getLedger(): Promise<{ expectations: ExpectationRow[]; scores: ExpectationScoreRow[] } | null>;
-	/** 한 회사의 E-3표 계정 행 (라이브 발행분). 미발행 회사 = 빈 배열, 원장 미발간 = null. */
-	getProforma(code: string): Promise<ProformaEstimateRow[] | null>;
+	/** 한 회사의 E-3표 정렬 뷰 행 (라이브 발행분). 미발행 회사 = 빈 배열, 뷰 미발간 = null. */
+	getEstimateStatements(code: string): Promise<EstimateStatementRow[] | null>;
 }

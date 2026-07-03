@@ -48,13 +48,16 @@ def main() -> int:
 
     scores = scoreDue()
     card = buildScorecard()
+    from dartlab.simulate.estimateStatements import writeEstimateStatements
+
+    viewPath = writeEstimateStatements()
     outDir = ledgerDir()
     outDir.mkdir(parents=True, exist_ok=True)
     (outDir / "scorecard.json").write_text(json.dumps(card, ensure_ascii=False, indent=1), encoding="utf-8")
     print(
         f"[expectation-cycle] cycle={args.cycle} issued={len(issued)} scored={len(scores)} "
         f"errorRows={card['totals']['errorRows']} unscored={card['totals']['unscored']} "
-        f"skipped={len(skipped)} dir={outDir}"
+        f"skipped={len(skipped)} view={viewPath.name if viewPath else None} dir={outDir}"
     )
     if skipped:  # 발행 결손 census: 조용히 빼면 생존 편향, 반드시 남긴다
         (outDir / f"issueCensus_{args.cycle}.json").write_text(

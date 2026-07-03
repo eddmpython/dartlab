@@ -116,21 +116,13 @@
 		netIncome: { kr: '순이익', en: 'Net income' }
 	};
 
-	// E-3표 : 재무제표 시계열에 추정 컬럼 병합 (05 §1-2 "그 시계열에 추정치를 똑같이 붙인다").
-	// proforma 원장(계정 단위 봉인) -> StmtRow.key 클린 매핑만 표시, 근사 매핑은 '·' (정직).
-	const PF_TO_ROWKEY: Record<string, string> = {
-		revenue: 'revenue', cogs: 'costOfSales', gross_profit: 'grossProfit', sga: 'sga',
-		operating_income: 'operatingIncome', tax: 'incomeTax', net_income: 'netIncome',
-		total_assets: 'assets', current_assets: 'currentAssets', cash: 'cash',
-		inventories: 'inventories', receivables: 'receivables', total_liabilities: 'liabilities',
-		current_liabilities: 'currentLiabilities', total_equity: 'equity', retained_earnings: 'retainedEarnings',
-		ocf: 'cfOperating', financing_cf: 'cfFinancing'
-	};
-	let pfEstimates = $state<import('@dartlab/ui-contracts').ProformaEstimateRow[] | null>(null);
+	// E-3표 : 재무제표 시계열에 추정 컬럼 병합. 매핑·라벨·순서 = 라이브러리 SSOT
+	// (simulate.estimateStatements 발행 뷰). 여기는 rowKey 매칭 + 렌더만 (분위 피벗은 표시용 조립).
+	let pfEstimates = $state<import('@dartlab/ui-contracts').EstimateStatementRow[] | null>(null);
 	$effect(() => {
 		const code = co.code;
 		pfEstimates = null;
-		void rt.expectations.getProforma(code).then((rows) => {
+		void rt.expectations.getEstimateStatements(code).then((rows) => {
 			if (co.code === code) pfEstimates = rows;
 		});
 	});
@@ -140,12 +132,10 @@
 		if (!rows || rows.length === 0) return [];
 		const byPeriod = new Map<string, Map<string, { p50?: number; p25?: number; p75?: number }>>();
 		for (const r of rows) {
-			const rowKey = PF_TO_ROWKEY[r.account];
-			if (!rowKey) continue;
 			const period = byPeriod.get(r.targetPeriod) ?? new Map<string, { p50?: number; p25?: number; p75?: number }>();
 			byPeriod.set(r.targetPeriod, period);
-			const cell = period.get(rowKey) ?? {};
-			period.set(rowKey, cell);
+			const cell = period.get(r.rowKey) ?? {};
+			period.set(r.rowKey, cell);
 			if (r.quantile === 50) cell.p50 = r.value / 1e12;
 			else if (r.quantile === 25) cell.p25 = r.value / 1e12;
 			else if (r.quantile === 75) cell.p75 = r.value / 1e12;

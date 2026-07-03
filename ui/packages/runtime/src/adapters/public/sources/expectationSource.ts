@@ -1,11 +1,11 @@
 // 기대치 격자 원장 · HF expectations/ 직독 (원장 정본 = append-only parquet + scorecard.json).
 // 발행 = dartlab.simulate.expectationCycle (CI cron) · 여기는 read-only 소비자.
 import type {
+	EstimateStatementRow,
 	ExpectationRow,
 	ExpectationScorecard,
 	ExpectationScoreRow,
-	ExpectationsPort,
-	ProformaEstimateRow
+	ExpectationsPort
 } from '@dartlab/ui-contracts';
 import { moduleFallbackCore, type DataCore } from '../../../data/fetch/request';
 
@@ -87,27 +87,28 @@ export function createExpectationPort(core?: DataCore): ExpectationsPort {
 			}));
 			return { expectations, scores };
 		},
-		async getProforma(code: string): Promise<ProformaEstimateRow[] | null> {
-			// v1: 연도 shard 통파일 직독(현재 수천 행). 전상장사 sweep 후 수십만 행이 되면
-			// code 정렬 + row-group prune(hfRange) 로 전환한다 (05 E4 원장 부채로 기록).
-			const year = new Date().getUTCFullYear();
+		async getEstimateStatements(code: string): Promise<EstimateStatementRow[] | null> {
+			// 라이브러리 발행 뷰(estimateStatements.parquet) 직독. 매핑·라벨·순서는 뷰가 가진다.
 			const raw = await c().requestParquetWholeFile<Record<string, unknown>>({
 				origin: 'hf',
-				path: `expectations/proforma_${year}.parquet`,
-				cacheKey: `expectations.proforma:${year}`,
-				cache: { scope: 'memory', ttlMs: HOUR, maxEntries: 2 }
+				path: 'expectations/estimateStatements.parquet',
+				cacheKey: 'expectations.estimateStatements',
+				cache: { scope: 'memory', ttlMs: HOUR, maxEntries: 1 }
 			});
 			if (!raw) return null;
 			return raw
-				.filter((r) => String(r.code) === code && Boolean(r.issuedLive))
+				.filter((r) => String(r.code) === code)
 				.map((r) => ({
-					parentId: String(r.parentId),
+					code: String(r.code),
 					targetPeriod: String(r.targetPeriod),
 					quantile: Number(r.quantile),
 					statement: String(r.statement),
-					account: String(r.account),
+					rowKey: String(r.rowKey),
+					labelKr: String(r.labelKr),
+					labelEn: String(r.labelEn),
+					sortOrder: Number(r.sortOrder),
 					value: Number(r.value),
-					issuedLive: Boolean(r.issuedLive)
+					parentId: String(r.parentId)
 				}));
 		}
 	};
