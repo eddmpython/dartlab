@@ -200,6 +200,38 @@ def test_issue_earnings_cascade_and_lineage(tmp_path):
     assert rows2 == []
 
 
+def test_issue_earnings_seals_structured_proforma(tmp_path):
+    from dartlab.simulate.expectationCycle import _PF_ACCOUNTS, issueEarnings
+    from dartlab.simulate.expectationLedger import readProforma
+
+    revenueFixture(tmp_path)
+    issueEarnings(
+        ["005930"],
+        live=True,
+        baseDir=tmp_path,
+        proformaFn=_fakeProforma,
+        seriesByCode={"005930": {"IS": {}}},
+        annualByCode={"005930": {2025: 105.0}},
+    )
+    pf = readProforma(baseDir=tmp_path, code="005930")
+    assert pf is not None
+    # 34계정 x 3분위 x 3연도 = 306행, 계보(parentId) = 모체 매출 기대 행
+    assert pf.height == len(_PF_ACCOUNTS) * 3 * 3
+    row = pf.row(0, named=True)
+    assert row["parentId"].startswith("revenue.005930.revenue.")
+    assert set(pf.get_column("statement").unique().to_list()) == {"IS", "BS", "CF"}
+    # 자체 존재키 idempotency: 재실행해도 계정 행 불변
+    issueEarnings(
+        ["005930"],
+        live=True,
+        baseDir=tmp_path,
+        proformaFn=_fakeProforma,
+        seriesByCode={"005930": {"IS": {}}},
+        annualByCode={"005930": {2025: 105.0}},
+    )
+    assert readProforma(baseDir=tmp_path, code="005930").height == pf.height
+
+
 def test_score_earnings_actual(tmp_path):
     from dartlab.simulate.expectationCycle import issueEarnings
 

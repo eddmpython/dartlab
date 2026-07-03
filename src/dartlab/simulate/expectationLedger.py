@@ -65,7 +65,21 @@ _SCORE_SCHEMA: dict[str, pl.DataType] = {
     "brier": pl.Float64,
     "error": pl.Utf8,
 }
-_SCHEMA_BY_TABLE = {"expectations": _EXPECTATION_SCHEMA, "scores": _SCORE_SCHEMA}
+# 추정 3표 구조화 봉인: 요약 숫자가 아니라 계정 단위(IS/BS/CF x 분위 x 연도)로 남긴다.
+# parentId = 모체 매출 기대 행(expectationId) : 전개는 proforma 결정론이라 계보로 재현 가능.
+_PROFORMA_SCHEMA: dict[str, pl.DataType] = {
+    "parentId": pl.Utf8,
+    "code": pl.Utf8,
+    "issuedAt": pl.Utf8,
+    "issuedLive": pl.Boolean,
+    "targetPeriod": pl.Utf8,
+    "quantile": pl.Int64,
+    "statement": pl.Utf8,
+    "account": pl.Utf8,
+    "value": pl.Float64,
+    "bsBalanced": pl.Boolean,
+}
+_SCHEMA_BY_TABLE = {"expectations": _EXPECTATION_SCHEMA, "scores": _SCORE_SCHEMA, "proforma": _PROFORMA_SCHEMA}
 
 
 def ledgerDir(baseDir: Path | None = None) -> Path:
@@ -125,6 +139,37 @@ def appendScores(rows: list[ExpectationScore], *, baseDir: Path | None = None) -
     if not rows:
         return []
     return _append(rows, ledgerDir(baseDir), "scores", "scoredAt", uniqueId=False)
+
+
+def appendProformaRows(rows: list[dict], *, baseDir: Path | None = None) -> list[Path]:
+    """Append structured pro-forma statement rows (dicts matching _PROFORMA_SCHEMA)."""
+    if not rows:
+        return []
+    base = ledgerDir(baseDir)
+    base.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
+    byYear: dict[str, list[dict]] = {}
+    for r in rows:
+        byYear.setdefault(r["issuedAt"][:4], []).append(r)
+    for yyyy, flat in sorted(byYear.items()):
+        path = base / f"proforma_{yyyy}.parquet"
+        new = pl.DataFrame(flat, schema=_PROFORMA_SCHEMA)
+        if path.exists():
+            old = pl.read_parquet(path)
+            new = pl.concat([old, new.select(old.columns)], how="vertical")
+        tmp = path.with_suffix(".parquet.tmp")
+        new.write_parquet(tmp)
+        tmp.replace(path)
+        written.append(path)
+    return written
+
+
+def readProforma(*, baseDir: Path | None = None, code: str | None = None) -> pl.DataFrame | None:
+    """Read pro-forma statement rows (optionally one company)."""
+    df = _readAll(ledgerDir(baseDir), "proforma")
+    if df is None or code is None:
+        return df
+    return df.filter(pl.col("code") == code)
 
 
 def _readAll(base: Path, table: str) -> pl.DataFrame | None:

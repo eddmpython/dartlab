@@ -22,8 +22,10 @@ from pathlib import Path
 
 from dartlab.simulate.expectationLedger import (
     appendExpectations,
+    appendProformaRows,
     appendScores,
     readExpectations,
+    readProforma,
     readScores,
 )
 from dartlab.synth.expectationSpec import (
@@ -60,6 +62,43 @@ _METRIC_KEYS = {
     "netIncome": ("IS", "net_profit"),
 }
 _EARNINGS_METRICS = (("operatingProfit", "operating_income"), ("netIncome", "net_income"))
+# 추정 3표 구조화 봉인 계정 (ProFormaYear 전 필드). 요약 3숫자와 별개로 계정 단위 원장을 남긴다.
+_PF_ACCOUNTS: tuple[tuple[str, str], ...] = (
+    ("IS", "revenue"),
+    ("IS", "cogs"),
+    ("IS", "gross_profit"),
+    ("IS", "sga"),
+    ("IS", "depreciation"),
+    ("IS", "operating_income"),
+    ("IS", "interest_expense"),
+    ("IS", "ebt"),
+    ("IS", "tax"),
+    ("IS", "net_income"),
+    ("IS", "ebitda"),
+    ("BS", "cash"),
+    ("BS", "receivables"),
+    ("BS", "inventories"),
+    ("BS", "other_current_assets"),
+    ("BS", "current_assets"),
+    ("BS", "ppe_net"),
+    ("BS", "other_noncurrent_assets"),
+    ("BS", "total_assets"),
+    ("BS", "payables"),
+    ("BS", "short_term_debt"),
+    ("BS", "other_current_liabilities"),
+    ("BS", "current_liabilities"),
+    ("BS", "long_term_debt"),
+    ("BS", "other_noncurrent_liabilities"),
+    ("BS", "total_liabilities"),
+    ("BS", "retained_earnings"),
+    ("BS", "total_equity"),
+    ("CF", "ocf"),
+    ("CF", "capex"),
+    ("CF", "fcf"),
+    ("CF", "dividends"),
+    ("CF", "financing_cf"),
+    ("CF", "net_cash_change"),
+)
 _ENGINE_CREDIT = "credit.monitoring.history+scoring.migration"
 _ENGINE_PRICE = "analysis.forecast.simulation.monteCarloForecast"
 _CREDIT_GRACE_MONTHS = 2
@@ -363,6 +402,16 @@ def issueEarnings(
     existing = _existingKeys(baseDir)
     exps = readExpectations(baseDir=baseDir)
     rows: list[ExpectationSpec] = []
+    pfRows: list[dict] = []
+    pfDf = readProforma(baseDir=baseDir)
+    pfExisting: set[tuple[str, str, int]] = (
+        set()
+        if pfDf is None
+        else {
+            (r["parentId"], r["targetPeriod"], r["quantile"])
+            for r in pfDf.select(["parentId", "targetPeriod", "quantile"]).unique().iter_rows(named=True)
+        }
+    )
     skipped: dict[str, str] = {}
     for code in codes:
         try:
@@ -416,6 +465,31 @@ def issueEarnings(
             for q, growth in pathByQ.items():
                 fn = proformaFn or (lambda s, g, n: proformaLeaf(s, revenueGrowthPath=g, scenarioName=n))
                 pfByQ[q] = fn(series, growth, f"expGrid_p{q}")
+            # E-3표 구조화 봉인 (05 §2): 요약 3숫자와 별개, 자체 존재키로 idempotent.
+            for h in range(1, maxH + 1):
+                if h not in revByH:
+                    continue
+                parentId = revByH[h]["expectationId"]
+                pfTarget = f"FY{baseFY + h}"
+                for q in (25, 50, 75):
+                    if (parentId, pfTarget, q) in pfExisting:
+                        continue
+                    pfYear = pfByQ[q].projections[h - 1]
+                    for stmt, account in _PF_ACCOUNTS:
+                        pfRows.append(
+                            {
+                                "parentId": parentId,
+                                "code": code,
+                                "issuedAt": issuedAt,
+                                "issuedLive": live,
+                                "targetPeriod": pfTarget,
+                                "quantile": q,
+                                "statement": stmt,
+                                "account": account,
+                                "value": float(getattr(pfYear, account, 0.0) or 0.0),
+                                "bsBalanced": bool(getattr(pfYear, "bs_balanced", True)),
+                            }
+                        )
             for metric, pfAttr in _EARNINGS_METRICS:
                 for h in range(1, maxH + 1):
                     if h not in revByH:
@@ -458,6 +532,7 @@ def issueEarnings(
         except (ValueError, KeyError, AttributeError, TypeError, RuntimeError, OSError) as exc:
             skipped[code] = f"{type(exc).__name__}: {exc}"
     appendExpectations(rows, baseDir=baseDir)
+    appendProformaRows(pfRows, baseDir=baseDir)
     return rows, skipped
 
 
