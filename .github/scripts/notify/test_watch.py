@@ -78,6 +78,7 @@ def test_eval_new_orders_threshold_and_guards():
         [
             {
                 "stockCode": "111111",
+                "corpName": "테스트조선",
                 "bookToBill": 2.1,
                 "recentRevenue": 5.0e11,
                 "nContract": 4,
@@ -98,9 +99,19 @@ def test_eval_new_orders_threshold_and_guards():
     assert [m["slug"] for m in items] == ["111111"]  # 통과는 하나
     m = items[0]
     assert m["topic"] == "newOrders"
+    assert "테스트조선" in m["notification"]["title"]  # 코드 아니라 회사명(가독)
     assert "book-to-bill" in m["notification"]["body"]
     assert "현대차" in m["notification"]["body"]
+    assert m["notification"]["url"] == "/terminal?sym=111111"  # 딥링크(해당 종목 오픈)
     assert m["notification"]["tag"] == "orders:111111"
+
+
+def test_eval_new_orders_no_corpname_falls_back_to_code():
+    """corpName 결측(과거 스캔 스키마)이면 '종목 {code}' 로 안전 폴백 · url 은 여전히 딥링크."""
+    df = FakeDF([{"stockCode": "111111", "bookToBill": 2.1, "recentRevenue": 5e11, "nContract": 4}])
+    m = watch.eval_new_orders(df)[0]
+    assert "종목 111111" in m["notification"]["title"]
+    assert m["notification"]["url"] == "/terminal?sym=111111"
 
 
 def test_eval_new_orders_custom_threshold():

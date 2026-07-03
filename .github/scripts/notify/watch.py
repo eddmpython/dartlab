@@ -83,6 +83,7 @@ def eval_new_orders(df=None, min_book_to_bill: float = 1.0) -> list[dict]:
             continue
         if not r.get("recentRevenue") or (r.get("nContract") or 0) < 1:
             continue  # micro-cap/잡음 가드(docstring 경고)
+        name = r.get("corpName") or f"종목 {code}"  # 코드만으론 정체 불명(newIpo 동형 가독)
         parts = [f"book-to-bill {b2b:.2f}"]
         if r.get("grade"):
             parts.append(f"등급 {r['grade']}")
@@ -93,9 +94,10 @@ def eval_new_orders(df=None, min_book_to_bill: float = 1.0) -> list[dict]:
                 "topic": "newOrders",
                 "slug": str(code),
                 "notification": {
-                    "title": sanitize(f"[신규수주] 종목 {code} 백로그 확대", 80),
+                    "title": sanitize(f"[신규수주] {name} 백로그 확대", 80),
+                    # 딥링크 · 클릭 시 해당 종목이 터미널에 열림(newIpo ?ipo=1 동형, ?sym= 종목 선택).
                     "body": sanitize(" · ".join(parts), 120),
-                    "url": _TERMINAL,
+                    "url": f"/terminal?sym={code}",
                     "tag": f"orders:{code}",
                 },
             }

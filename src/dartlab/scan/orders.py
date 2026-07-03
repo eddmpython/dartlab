@@ -22,6 +22,7 @@ _log = getLogger(__name__)
 
 _OUTPUT_SCHEMA = {
     "stockCode": pl.Utf8,
+    "corpName": pl.Utf8,
     "ttmOrders": pl.Float64,
     "recentRevenue": pl.Float64,
     "bookToBill": pl.Float64,
@@ -97,6 +98,7 @@ def _collectUniverse(eventType: str, dateFrom: str | None, verbose: bool) -> tup
             parsed = parseEventDisclosure(body, eventType) if (kind in ("contract", "amend") and body) else {}
             parsed["kind"] = kind
             parsed["rcept_dt"] = rec.get("rcept_dt")
+            parsed["corp_name"] = rec.get("corp_name")  # 알림·리포트 가독(코드만으론 정체 불명)
             code = rec.get("stock_code") or "?"
             byCompany.setdefault(code, []).append(parsed)
         del day, hit
@@ -151,8 +153,10 @@ def _aggregateCompany(code: str, rows: list[dict], asOf: date) -> dict:
         byParty[party] = byParty.get(party, 0.0) + float(amt)
     topParty, topAmt = max(byParty.items(), key=lambda kv: kv[1]) if byParty else ("-", 0.0)
 
+    corpName = next((r.get("corp_name") for r in rows if r.get("corp_name")), None)
     return {
         "stockCode": code,
+        "corpName": corpName,
         "ttmOrders": ttmOrders,
         "recentRevenue": recentRevenue,
         "bookToBill": round(bookToBill, 4) if bookToBill is not None else None,
@@ -180,8 +184,9 @@ def scanOrders(*, eventType: str = "supplyContract", dateFrom: str | None = None
 
     Returns:
         pl.DataFrame
-            stockCode : str — 종목코드
-            ttmOrders : float — 최근 365 일 신규수주 합(원)
+            stockCode : str. 종목코드
+            corpName : str. 회사명 (allFilings corp_name, 알림·리포트 가독)
+            ttmOrders : float. 최근 365 일 신규수주 합(원)
             recentRevenue : float — 최근매출액(원, 공시 self-report 중앙값)
             bookToBill : float — TTM수주/최근매출. >1 = 백로그 확대
             grade : str — 수주확대/견조/둔화/약함/해당없음
@@ -234,7 +239,7 @@ def scanOrders(*, eventType: str = "supplyContract", dateFrom: str | None = None
             - book-to-bill 상위 그대로 추천 (매출 규모·계약건수 필터 없으면 micro-cap 잡음).
             - momentum 극단치(직전TTM 0 근처)를 추세로 단정.
         OutputSchema:
-            - stockCode + ttmOrders/recentRevenue/bookToBill/grade/momentum/momentumLabel/
+            - stockCode + corpName + ttmOrders/recentRevenue/bookToBill/grade/momentum/momentumLabel/
               topCounterparty/topShare/nContract/nAmend/nCancel/asOf.
         Prerequisites:
             - allFilings 수집(자동 HF pull). 첫 호출 느릴 수 있음.
