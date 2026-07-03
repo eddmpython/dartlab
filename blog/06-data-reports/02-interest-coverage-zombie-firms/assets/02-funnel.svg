@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560">
+  <title>이자를 무는 비금융 상장사 1,924곳 중 713곳이 3년 연속 이자보상배율 1 미만</title>
+  <desc>이자지급이 잡히는 상장사 2,578곳에서 비금융·이자부담 1,924곳으로 좁히고, 그중 713곳(37%)이 3년 연속 이자보상배율 1 미만, 다시 그중 402곳은 3년 연속 영업적자. 한국은행 상장사 한계기업 비중 27.6%와 같은 방향.</desc>
+  <defs>
+    <linearGradient id="bg02f" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="560" fill="url(#bg02f)" rx="16"/>
+
+  <text x="600" y="52" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="26" font-weight="700">3년 내리 이자도 못 갚은 상장사 713곳</text>
+  <text x="600" y="84" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">2023~2025 · 비금융 · 이자보상배율(영업이익 / 현금 이자지급) &lt; 1 · dartlab 전수</text>
+
+  <!-- Bar 1: 2578 -->
+  <rect x="150" y="120" width="900" height="52" rx="8" fill="#334155"/>
+  <text x="170" y="153" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="17" font-weight="600">이자지급이 잡히는 상장사</text>
+  <text x="1030" y="153" text-anchor="end" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="19" font-weight="700">2,578곳</text>
+
+  <!-- Bar 2: 1924 -->
+  <rect x="220" y="196" width="760" height="52" rx="8" fill="#475569"/>
+  <text x="240" y="229" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="17" font-weight="600">비금융 + 3년 내내 이자 지급</text>
+  <text x="960" y="229" text-anchor="end" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="19" font-weight="700">1,924곳</text>
+
+  <!-- Bar 3: 713 (amber) -->
+  <rect x="310" y="272" width="580" height="58" rx="8" fill="#b45309"/>
+  <text x="330" y="299" fill="#fde68a" font-family="system-ui, sans-serif" font-size="15">3년 연속 이자보상배율 1 미만</text>
+  <text x="330" y="322" fill="#ffffff" font-family="system-ui, sans-serif" font-size="22" font-weight="800">713곳</text>
+  <text x="870" y="308" text-anchor="end" fill="#fde68a" font-family="system-ui, sans-serif" font-size="17" font-weight="700">대상의 37%</text>
+
+  <!-- Bar 4: 402 (red) -->
+  <rect x="390" y="354" width="420" height="52" rx="8" fill="#991b1b"/>
+  <text x="410" y="379" fill="#fecaca" font-family="system-ui, sans-serif" font-size="15">└ 그중 3년 연속 영업적자</text>
+  <text x="790" y="388" text-anchor="end" fill="#ffffff" font-family="system-ui, sans-serif" font-size="19" font-weight="700">402곳</text>
+
+  <!-- 한국은행 callout -->
+  <rect x="150" y="446" width="900" height="82" rx="12" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+  <text x="180" y="482" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="30" font-weight="800">27.6%</text>
+  <text x="300" y="475" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="15" font-weight="700">한국은행 「금융안정보고서」(2025.12): 상장사 한계기업 비중</text>
+  <text x="300" y="500" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">전상장사 공시로 직접 센 우리 집계와 같은 방향 (분모·방법 차이)</text>
+  <text x="1030" y="490" text-anchor="end" fill="#64748b" font-family="system-ui, sans-serif" font-size="13">코스닥 32.6% vs 코스피 16.7%</text>
+</svg>

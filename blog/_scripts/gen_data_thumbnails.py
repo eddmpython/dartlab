@@ -45,6 +45,20 @@ POSTS: list[tuple[str, str, str, list[str], str, list[str], list[str]]] = [
         ],
         ["stock", "market", "exchange", "finance", "trading", "board", "building", "skyline", "business", "screen"],
     ),
+    (
+        "02",
+        "interest-coverage-zombie-firms",
+        "데이터 리포트 · 한계기업",
+        ["3년 내리 이자도", "못 갚은 상장사 713곳"],
+        "비금융 상장사 1,924곳 전수 · 37%가 3년 연속 이자보상배율 1 미만",
+        [
+            "abandoned factory industrial",
+            "financial district skyscraper night",
+            "stock market chart red",
+            "empty office building",
+        ],
+        ["factory", "industrial", "building", "finance", "chart", "market", "business", "office", "skyline", "screen"],
+    ),
 ]
 
 

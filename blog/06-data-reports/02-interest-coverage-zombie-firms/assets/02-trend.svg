@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560">
+  <title>단년도 이자보상배율 1 미만 비중이 매년 절반을 넘는다</title>
+  <desc>비금융 상장사 중 그해 이자보상배율 1 미만 비중은 2023년 49.8%, 2024년 53.1%, 2025년 52.1%로 3년 내내 절반 언저리. 그중 3년을 모두 넘긴 만성 좀비가 713곳.</desc>
+  <defs>
+    <linearGradient id="bg02t" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="560" fill="url(#bg02t)" rx="16"/>
+
+  <text x="600" y="52" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="26" font-weight="700">한 해만 봐도 절반이 이자를 못 갚는다</text>
+  <text x="600" y="84" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">비금융 상장사 중 그해 이자보상배율 1 미만 비중 · dartlab 전수</text>
+
+  <!-- 50% guide line -->
+  <line x1="150" y1="270" x2="1050" y2="270" stroke="#334155" stroke-width="1" stroke-dasharray="5 5"/>
+  <text x="150" y="262" fill="#64748b" font-family="system-ui, sans-serif" font-size="13">50%</text>
+
+  <!-- bars: baseline y=430, height scaled (49.8/53.1/52.1) *6 -->
+  <!-- 2023 -->
+  <rect x="230" y="131" width="150" height="299" rx="6" fill="#7c2d12"/>
+  <text x="305" y="118" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="26" font-weight="800">49.8%</text>
+  <text x="305" y="458" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="16">2023</text>
+  <text x="305" y="482" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="13">1,033 / 2,073</text>
+
+  <!-- 2024 -->
+  <rect x="525" y="111" width="150" height="319" rx="6" fill="#b45309"/>
+  <text x="600" y="98" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="26" font-weight="800">53.1%</text>
+  <text x="600" y="458" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="16">2024</text>
+  <text x="600" y="482" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="13">1,126 / 2,120</text>
+
+  <!-- 2025 -->
+  <rect x="820" y="117" width="150" height="313" rx="6" fill="#c2620a"/>
+  <text x="895" y="104" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="26" font-weight="800">52.1%</text>
+  <text x="895" y="458" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="16">2025</text>
+  <text x="895" y="482" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="13">1,203 / 2,308</text>
+
+  <!-- 713 callout -->
+  <rect x="150" y="500" width="900" height="44" rx="10" fill="#0f172a" stroke="#b45309" stroke-width="1.5"/>
+  <text x="600" y="528" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="15">세 해를 모두 넘긴 만성 좀비(3년 연속 1 미만) = <tspan fill="#fbbf24" font-weight="800">713곳</tspan></text>
+</svg>

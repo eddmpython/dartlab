@@ -2,6 +2,7 @@
 
 > **한 장으로 보는 전 과정.** 상세 how-to 는 각 단계의 `→` 링크가 정본(여기선 중복 안 씀).
 > 블로그 상세 = [BLOG.md](BLOG.md) · 카드 상세 = [_scripts/CARDS.md](_scripts/CARDS.md) ·
+> 데이터 리포트(전상장사 전수) 파생 파이프라인 = [06-data-reports/PIPELINE.md](06-data-reports/PIPELINE.md) ·
 > 작가 편집 게이트 = [_reference/BLOG_MASTER_WRITER.md](_reference/BLOG_MASTER_WRITER.md) ·
 > 스크립트 인덱스 = [_scripts/README.md](_scripts/README.md) (자산 공유 `sns/scripts` 배선 포함) · SNS 트랙 = [../sns/README.md](../sns/README.md).
 > 메모리는 **인덱스·진행상태만**. 운영 절차(루프·게이트·프로토콜)는 이 문서가 정본.

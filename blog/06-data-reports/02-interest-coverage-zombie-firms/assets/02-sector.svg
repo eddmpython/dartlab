@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560">
+  <title>좀비 713곳의 시장·업종 분포: 코스닥 69% 집중</title>
+  <desc>3년 연속 좀비 713곳 중 코스닥이 491곳(68.9%), 코스피 186곳(26.1%). 업종은 특수목적기계 41, 소프트웨어 38, 전자부품 37, 연구개발 33, 반도체 33, 의약품 25 순으로 코스닥 성장·바이오·IT와 사이클 제조가 섞여 있다.</desc>
+  <defs>
+    <linearGradient id="bg02s" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="560" fill="url(#bg02s)" rx="16"/>
+
+  <text x="600" y="48" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="26" font-weight="700">좀비는 코스닥에 몰려 있다</text>
+  <text x="600" y="78" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">3년 연속 좀비 713곳의 시장·업종 분포 · dartlab 전수</text>
+
+  <!-- market split 100% bar -->
+  <text x="150" y="120" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="14" font-weight="600">시장 구분</text>
+  <rect x="150" y="132" width="620" height="46" rx="6" fill="#b45309"/>
+  <rect x="772" y="132" width="235" height="46" fill="#475569"/>
+  <rect x="1009" y="132" width="41" height="46" rx="6" fill="#334155"/>
+  <text x="170" y="161" fill="#ffffff" font-family="system-ui, sans-serif" font-size="16" font-weight="700">코스닥 491곳 (68.9%)</text>
+  <text x="889" y="161" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">코스피 186</text>
+  <text x="1030" y="161" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">기타36</text>
+
+  <!-- 업종 bars -->
+  <text x="150" y="222" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="14" font-weight="600">좀비가 많은 업종 (상위 7)</text>
+
+  <g font-family="system-ui, sans-serif">
+    <text x="150" y="262" fill="#cbd5e1" font-size="13.5">특수목적용 기계</text>
+    <rect x="330" y="248" width="500" height="22" rx="4" fill="#c2620a"/><text x="842" y="266" fill="#fbbf24" font-size="14" font-weight="700">41</text>
+
+    <text x="150" y="298" fill="#cbd5e1" font-size="13.5">소프트웨어 개발</text>
+    <rect x="330" y="284" width="463" height="22" rx="4" fill="#c2620a"/><text x="805" y="302" fill="#fbbf24" font-size="14" font-weight="700">38</text>
+
+    <text x="150" y="334" fill="#cbd5e1" font-size="13.5">전자부품</text>
+    <rect x="330" y="320" width="451" height="22" rx="4" fill="#b45309"/><text x="793" y="338" fill="#fbbf24" font-size="14" font-weight="700">37</text>
+
+    <text x="150" y="370" fill="#cbd5e1" font-size="13.5">과학·공학 연구개발</text>
+    <rect x="330" y="356" width="402" height="22" rx="4" fill="#b45309"/><text x="744" y="374" fill="#fbbf24" font-size="14" font-weight="700">33</text>
+
+    <text x="150" y="406" fill="#cbd5e1" font-size="13.5">반도체 제조</text>
+    <rect x="330" y="392" width="402" height="22" rx="4" fill="#b45309"/><text x="744" y="410" fill="#fbbf24" font-size="14" font-weight="700">33</text>
+
+    <text x="150" y="442" fill="#cbd5e1" font-size="13.5">의약품 제조</text>
+    <rect x="330" y="428" width="305" height="22" rx="4" fill="#92400e"/><text x="647" y="446" fill="#fbbf24" font-size="14" font-weight="700">25</text>
+
+    <text x="150" y="478" fill="#cbd5e1" font-size="13.5">기타 화학제품</text>
+    <rect x="330" y="464" width="268" height="22" rx="4" fill="#92400e"/><text x="610" y="482" fill="#fbbf24" font-size="14" font-weight="700">22</text>
+  </g>
+
+  <text x="150" y="524" fill="#64748b" font-family="system-ui, sans-serif" font-size="13">코스닥의 성장·바이오·IT(연구개발·소프트웨어·의약품)와 코스피의 사이클 제조가 섞여 있다.</text>
+</svg>
