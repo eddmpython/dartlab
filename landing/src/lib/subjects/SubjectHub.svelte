@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { loadPodcastEpisodes, podcastFor } from './subjects';
 	import type { PodcastEpisode } from './model';
+	import YouTube from '$lib/components/YouTube.svelte';
 
 	interface Props {
 		stockCode?: string;
@@ -37,7 +38,11 @@
 						{#if ep.durationSec}<span class="ep-dur">{fmtDur(ep.durationSec)}</span>{/if}
 					</div>
 					{#if ep.summary}<p class="ep-sum">{ep.summary}</p>{/if}
-					<audio controls preload="none" src={ep.audioUrl}></audio>
+					{#if ep.youtubeId}
+						<YouTube id={ep.youtubeId} title={ep.title} facade />
+					{:else}
+						<audio controls preload="none" src={ep.audioUrl}></audio>
+					{/if}
 				</li>
 			{/each}
 		</ul>

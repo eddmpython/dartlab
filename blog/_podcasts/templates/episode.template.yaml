@@ -53,6 +53,7 @@ episode:
   corpName: ""
   topicSlug: "{slug}"                    # 항상 존재. dartlab lane 은 dartlab
   cardType: company                      # company | event | economy | meta
+  youtubeId: ""                          # 유튜브 영상 ID(공개 업로드 후 채우면 블로그/카드가 유튜브로 재생)
   links:
     blogSlug: ""                         # {base}/blog/<slug>
     cardSlug: ""                         # {base}/cards?post=<slug>

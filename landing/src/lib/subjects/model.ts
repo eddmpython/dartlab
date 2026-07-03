@@ -20,6 +20,8 @@ export interface PodcastEpisode {
 	topicSlug: string;
 	cardType: string;
 	summary: string;
+	/** 유튜브 영상 ID · 있으면 블로그/카드에서 유튜브 플레이어로 재생(없으면 R2 오디오 폴백). */
+	youtubeId: string;
 	links: PodcastLinks;
 }
 

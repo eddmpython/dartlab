@@ -11,6 +11,7 @@
 	// 관련 팟캐스트 조인 · 블로그 주제허브와 같은 로더(팟캐스트 R2 index.json) 재사용. code 로 회사 에피소드 매칭.
 	import { loadPodcastEpisodes, podcastFor } from '$lib/subjects/subjects';
 	import type { PodcastEpisode } from '$lib/subjects/model';
+	import YouTube from '$lib/components/YouTube.svelte';
 
 	let {
 		rt,
@@ -168,8 +169,13 @@
 							<span class="prBlogArr" aria-hidden="true">↗</span>
 						</a>
 					{/if}
-					<!-- 관련 팟캐스트 듣기 · code 로 매칭된 회사 에피소드 오디오(R2). 없으면 미표시. -->
-					{#if podcast}
+					<!-- 관련 팟캐스트 · youtubeId 있으면 유튜브 플레이어 임베드, 없으면 R2 오디오 CTA. 매칭 없으면 미표시. -->
+					{#if podcast?.youtubeId}
+						<div class="prPodYt">
+							<span class="prPodYtLbl">관련 팟캐스트 · EP.{String(podcast.episodeNo).padStart(2, '0')}{podcast.durationSec ? ` · ${fmtDur(podcast.durationSec)}` : ''}</span>
+							<YouTube id={podcast.youtubeId} title={podcast.title} facade />
+						</div>
+					{:else if podcast}
 						<a class="prPod" href={podcast.audioUrl} target="_blank" rel="noopener">
 							<span class="prPodIco" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14v-3a9 9 0 0 1 18 0v3" /><path d="M21 16.5A2.5 2.5 0 0 1 18.5 19H18a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h3z" /><path d="M3 16.5A2.5 2.5 0 0 0 5.5 19H6a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H3z" /></svg></span>
 							<span class="prPodTxt"><small>팟캐스트로 듣기 · EP.{String(podcast.episodeNo).padStart(2, '0')}{podcast.durationSec ? ` · ${fmtDur(podcast.durationSec)}` : ''}</small><b>{podcast.title}</b></span>
@@ -567,6 +573,23 @@
 		font-size: 12px;
 		color: var(--dl-accent);
 		opacity: 0.9;
+	}
+	/* 관련 팟캐스트 유튜브 임베드 · 좁은 캡션 패널에 맞게 컴포넌트 기본 여백/폭 override(16:9 그대로). */
+	.prPodYt {
+		margin: 12px 0 2px;
+	}
+	.prPodYtLbl {
+		display: block;
+		margin-bottom: 7px;
+		font-size: 9.5px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		font-weight: 700;
+		color: var(--dl-accent);
+	}
+	.prPodYt :global(.yt-wrap) {
+		margin: 0;
+		max-width: 100%;
 	}
 	.postClose {
 		position: absolute;

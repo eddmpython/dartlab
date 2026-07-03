@@ -409,6 +409,7 @@ def published_record(channel: dict, ep_dir: Path, meta: dict, pub: dict) -> dict
         "stockCode": meta.get("stockCode", ""),
         "topicSlug": meta.get("topicSlug", ""),
         "cardType": meta.get("cardType", "meta"),
+        "youtubeId": str(meta.get("youtubeId") or "").strip(),
         "links": meta.get("links", {"blogSlug": "", "cardSlug": "", "terminalCode": ""}),
     }
     record.update(episode_image_fields(channel, ep_dir, meta))
@@ -444,6 +445,7 @@ def build_index(channel: dict, records: list[dict]) -> str:
                 "stockCode": r.get("stockCode", ""),
                 "topicSlug": r.get("topicSlug", ""),
                 "cardType": r.get("cardType", "meta"),
+                "youtubeId": r.get("youtubeId", ""),
                 "summary": r.get("summary", ""),
                 "caption": r.get("caption", ""),
                 "links": r.get("links", {"blogSlug": "", "cardSlug": "", "terminalCode": ""}),

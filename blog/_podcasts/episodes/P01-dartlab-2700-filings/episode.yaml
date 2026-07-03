@@ -65,6 +65,7 @@ episode:
   corpName: ""
   topicSlug: dartlab                     # 항상 존재. 주제축 키
   cardType: meta                         # company | event | economy | meta
+  youtubeId: ""                          # 유튜브 영상 ID(공개 업로드 후 채우면 블로그/카드가 유튜브로 재생)
   links:
     blogSlug: ""
     cardSlug: ""

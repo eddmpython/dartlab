@@ -73,6 +73,7 @@ episode:
   corpName: SK하이닉스
   topicSlug: skhynix
   cardType: company
+  youtubeId: ""                          # 유튜브 영상 ID(공개 업로드 후 채우면 블로그/카드가 유튜브로 재생)
   links:
     blogSlug: "000660-skhynix"           # {base}/blog/000660-skhynix (소스이자 역링크)
     cardSlug: "000660-skhynix"            # {base}/cards?post=000660-skhynix (카드뉴스 포스트)
