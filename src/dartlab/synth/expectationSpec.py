@@ -254,18 +254,23 @@ def aggregateCalibration(scores: list[ExpectationScore], *, minN: int = 24) -> d
         verified=False 인 집계는 화면에서 성과 숫자를 렌더링하지 않는다
         (고정 문구 "발행 n건 축적 중 · 캘리브레이션 미검증"만 허용).
     """
-    ok = [s for s in scores if s.error is None and s.crps is not None]
-    n = len(ok)
+    okC = [s for s in scores if s.error is None and s.crps is not None]  # 연속(분위)
+    okB = [s for s in scores if s.error is None and s.brier is not None]  # 이진(방향)
+    n = len(okC) + len(okB)
+    errorRows = sum(1 for s in scores if s.error is not None)
     if n == 0:
-        return {"n": 0, "verified": False, "errorRows": sum(1 for s in scores if s.error is not None)}
-    skills = [s.skill for s in ok if s.skill is not None]
-    return {
-        "n": n,
-        "verified": n >= minN,
-        "coverage90": sum(bool(s.coverageHit90) for s in ok) / n,
-        "coverage50": sum(bool(s.coverageHit50) for s in ok) / n,
-        "meanPit": sum(s.pit for s in ok if s.pit is not None) / n,
-        "meanCrps": sum(s.crps for s in ok if s.crps is not None) / n,
-        "meanSkill": (sum(skills) / len(skills)) if skills else None,
-        "errorRows": len(scores) - n,
-    }
+        return {"n": 0, "verified": False, "errorRows": errorRows}
+    skills = [s.skill for s in okC if s.skill is not None]
+    out: dict = {"n": n, "verified": n >= minN, "errorRows": errorRows}
+    if okC:
+        out.update(
+            coverage90=sum(bool(s.coverageHit90) for s in okC) / len(okC),
+            coverage50=sum(bool(s.coverageHit50) for s in okC) / len(okC),
+            meanPit=sum(s.pit for s in okC if s.pit is not None) / len(okC),
+            meanCrps=sum(s.crps for s in okC if s.crps is not None) / len(okC),
+            meanSkill=(sum(skills) / len(skills)) if skills else None,
+        )
+    if okB:
+        out["meanBrier"] = sum(s.brier for s in okB if s.brier is not None) / len(okB)
+        out["nDirection"] = len(okB)
+    return out

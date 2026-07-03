@@ -152,6 +152,130 @@ def test_score_revenue_due_grace_and_actual(tmp_path):
     assert len(scores2) == 1 and scores2[0].error is not None
 
 
+class _FakePfYear:
+    def __init__(self, operating_income, net_income):
+        self.operating_income = operating_income
+        self.net_income = net_income
+
+
+class _FakePfResult:
+    def __init__(self, factor):
+        # 매출 성장경로에 단조 반응: growth% 합에 비례하는 이익 (계보 검증용 결정론)
+        self.projections = [_FakePfYear(10.0 * factor + h, 7.0 * factor + h) for h in range(3)]
+
+
+def _fakeProforma(series, growthPathPct, name):
+    return _FakePfResult(factor=1.0 + sum(growthPathPct) / 100.0)
+
+
+def test_issue_earnings_cascade_and_lineage(tmp_path):
+    from dartlab.simulate.expectationCycle import issueEarnings
+
+    revenueFixture(tmp_path)  # 모체 매출 기대 봉인 (005930)
+    rows, skipped = issueEarnings(
+        ["005930", "111111"],
+        live=True,
+        baseDir=tmp_path,
+        proformaFn=_fakeProforma,
+        seriesByCode={"005930": {"IS": {}}},
+        annualByCode={"005930": {2025: 105.0}},
+    )
+    assert skipped == {"111111": "매출 기대 없음(선행 issueRevenue 필요)"}
+    assert len(rows) == 6  # 2 metric x 3 horizon
+    r = next(r for r in rows if r.variable == "005930.operatingProfit" and r.horizon == 1)
+    assert r.domain == "earnings" and r.targetPeriod == "FY2026"
+    q = r.quantiles
+    assert q[25] <= q[50] <= q[75]  # 단조 캐스케이드 보존
+    assert r.sourceRefs[0].startswith("revenue.005930.revenue.Y1.FY2026@")  # 모체 계보
+    assert "revenueQuantileMapped" in r.warnings
+    # 결정론 재현: 같은 입력 재실행은 idempotent skip (기존 키)
+    rows2, _ = issueEarnings(
+        ["005930"],
+        live=True,
+        baseDir=tmp_path,
+        proformaFn=_fakeProforma,
+        seriesByCode={"005930": {"IS": {}}},
+        annualByCode={"005930": {2025: 105.0}},
+    )
+    assert rows2 == []
+
+
+def test_score_earnings_actual(tmp_path):
+    from dartlab.simulate.expectationCycle import issueEarnings
+
+    revenueFixture(tmp_path)
+    issueEarnings(
+        ["005930"],
+        live=True,
+        baseDir=tmp_path,
+        proformaFn=_fakeProforma,
+        seriesByCode={"005930": {"IS": {}}},
+        annualByCode={"005930": {2025: 105.0}},
+    )
+    scores = scoreDue(
+        now="2027-04",
+        baseDir=tmp_path,
+        monthlyBySeries={},
+        annualRevenueByCode={"005930": {2026: 118.0}},
+        fundamentalsByCode={"005930": {"operatingProfit": {2026: 11.5}, "netIncome": {2026: 8.2}}},
+    )
+    byVar = {}
+    for s in scores:
+        byVar.setdefault(s.expectationId.split(".")[2], s)
+    assert len(scores) == 3  # revenue h1 + OP h1 + NI h1
+    assert all(s.error is None for s in scores)
+
+
+def test_issue_and_score_credit_stay_probability(tmp_path):
+    from dartlab.simulate.expectationCycle import issueCredit
+
+    hist = {"005930": [{"timestamp": "2026-06-30", "grade": "dCR-AA"}]}
+    rows, skipped = issueCredit(
+        ["005930", "222222"],
+        live=True,
+        baseDir=tmp_path,
+        historyByCode=hist,
+        stayProbByGrade={"dCR-AA": 0.9},
+    )
+    assert len(rows) == 1 and "222222" in skipped
+    r = rows[0]
+    assert r.kind == "direction" and r.direction["predicted"] == "stay" and r.direction["prob"] == 0.9
+    target = r.targetPeriod  # 발행월 다음 분기
+    # 분기말 후 등급 유지 -> actual "stay", brier = (0.9-1)^2
+    histAfter = {"005930": hist["005930"] + [{"timestamp": "2027-01-15", "grade": "dCR-AA"}]}
+    scores = scoreDue(now="2027-02", baseDir=tmp_path, monthlyBySeries={}, historyByCode=histAfter)
+    creditScores = [s for s in scores if s.expectationId.startswith("credit.")]
+    assert len(creditScores) == 1 and creditScores[0].brier is not None
+    assert abs(creditScores[0].brier - 0.01) < 1e-9
+    assert target.endswith("Q") is False  # sanity: "YYYYQn" 형식
+
+
+def test_issue_and_score_price_direction(tmp_path):
+    from dartlab.simulate.expectationCycle import issuePriceDirection
+
+    rows, skipped = issuePriceDirection(
+        ["005930"],
+        live=True,
+        baseDir=tmp_path,
+        mcUpsideByCode={"005930": 0.62},
+        issuePriceByCode={"005930": 60000.0},
+    )
+    assert len(rows) == 1 and skipped == {}
+    r = rows[0]
+    assert r.direction["predicted"] == "up" and "mcUpsideProxy" in r.warnings
+    target = r.targetPeriod
+    closeUp = {"005930": {target: 66000.0}}
+    scores = scoreDue(
+        now=f"{int(target[:4]) + (target[5:7] == '12')}-{'01' if target[5:7] == '12' else f'{int(target[5:7]) + 1:02d}'}",
+        baseDir=tmp_path,
+        monthlyBySeries={},
+        closeByCodeMonth=closeUp,
+    )
+    priceScores = [s for s in scores if s.expectationId.startswith("price.")]
+    assert len(priceScores) == 1
+    assert abs(priceScores[0].brier - (0.62 - 1.0) ** 2) < 1e-9  # actual up, predicted up
+
+
 def test_scorecard_groups_and_sample_gate(tmp_path):
     issueFixture(tmp_path)
     scoreDue(now="2026-07", baseDir=tmp_path, monthlyBySeries=makeMonthly())
