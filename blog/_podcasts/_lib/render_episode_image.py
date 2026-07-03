@@ -1,8 +1,13 @@
-"""Render podcast episode still images from one reusable source artwork.
+"""Render podcast episode still images in the card visual language.
 
-The renderer keeps the source image reusable and creates two derived assets:
-  - static-video.jpg: 16:9 still image for video and thumbnail surfaces
+One reusable source artwork produces two derived stills:
+  - static-video.jpg: 16:9 still for video and thumbnail surfaces
   - cover.jpg: square RSS artwork for podcast directories
+
+Composition mirrors the card news slide (CardSlide.svelte): grayscale editorial
+background with a rose accent, and a bottom-left text block. From top to bottom the
+block is kicker(accent eyebrow), bold headline([[phrase]]=rose), small subtitle, and a
+bottom-left signature of the round dartlab avatar plus the "dartlab" wordmark.
 """
 
 from __future__ import annotations
@@ -19,24 +24,18 @@ from card_style import (
     DIM_RGB,
     GRAYSCALE,
     INK_RGB,
-    MUTED_RGB,
     accent_parts,
 )
 from PIL import Image, ImageDraw, ImageEnhance, ImageFont
 
 LIB_DIR = Path(__file__).resolve().parent
 PODCAST_DIR = LIB_DIR.parent
+ROOT = PODCAST_DIR.parents[1]
 EPISODES_DIR = PODCAST_DIR / "episodes"
+AVATAR = ROOT / "landing" / "static" / "avatar.png"
 
 FONT_BOLD = "C:/Windows/Fonts/malgunbd.ttf"
 FONT_REG = "C:/Windows/Fonts/malgun.ttf"
-
-# 카드 팔레트 미러(card_style): INK=본문, DIM=부제, MUTED=풋터, ACCENT=로즈 강조.
-INK = INK_RGB
-DIM = MUTED_RGB
-MUTED = DIM_RGB
-ACCENT = ACCENT_RGB
-BG = BG_RGB
 
 
 def load_episode(ep_dir: Path) -> dict:
@@ -81,12 +80,12 @@ def add_scrim(im: Image.Image, left_strength: int, bottom_strength: int) -> Imag
         t = 1.0 - min(1.0, x / (width * 0.72))
         a = int(left_strength * (t**1.8))
         if a:
-            d.line([(x, 0), (x, height)], fill=(BG[0], BG[1], BG[2], a))
+            d.line([(x, 0), (x, height)], fill=(BG_RGB[0], BG_RGB[1], BG_RGB[2], a))
     for y in range(height):
         t = max(0.0, (y - height * 0.42) / (height * 0.58))
         a = int(bottom_strength * (t**1.35))
         if a:
-            d.line([(0, y), (width, y)], fill=(BG[0], BG[1], BG[2], a))
+            d.line([(0, y), (width, y)], fill=(BG_RGB[0], BG_RGB[1], BG_RGB[2], a))
     return Image.alpha_composite(im.convert("RGBA"), overlay).convert("RGB")
 
 
@@ -138,76 +137,113 @@ def visual_spec(meta: dict) -> dict:
     }
 
 
-def draw_label(d: ImageDraw.ImageDraw, x: int, y: int, text: str, scale: float) -> None:
-    f = font(FONT_BOLD, round(30 * scale))
-    d.rounded_rectangle(
-        [x, y, x + round(d.textlength(text, font=f)) + round(32 * scale), y + round(50 * scale)],
-        radius=round(6 * scale),
-        fill=(18, 22, 25),
-        outline=(72, 80, 86),
-        width=max(1, round(1 * scale)),
+def paste_avatar(img: Image.Image, x: int, y: int, s: int) -> None:
+    """dartlab 아바타를 원형으로 좌측하단 서명 자리에 붙인다 (카드 아바타 규약)."""
+    circle = Image.new("RGBA", (s, s), (BG_RGB[0], BG_RGB[1], BG_RGB[2], 255))
+    if AVATAR.exists():
+        av = Image.open(AVATAR).convert("RGBA").resize((s, s), Image.LANCZOS)
+        circle.alpha_composite(av)
+    mask = Image.new("L", (s, s), 0)
+    ImageDraw.Draw(mask).ellipse((0, 0, s - 1, s - 1), fill=255)
+    img.paste(circle.convert("RGB"), (x, y), mask)
+
+
+def draw_frame(meta: dict, src: Path, out: Path, width: int, height: int, cfg: dict) -> None:
+    """카드 시각언어 스틸 한 장. 하단좌측 = 아바타+dartlab, 그 위 kicker/굵은 헤드라인/작은 sub."""
+    spec = visual_spec(meta)
+    img = add_scrim(editorial_background(src, width, height), cfg["scrimL"], cfg["scrimB"])
+    d = ImageDraw.Draw(img)
+
+    x = cfg["x"]
+    max_w = width - 2 * x
+    bottom = height - cfg["marginB"]
+
+    # 좌측하단 서명 = 원형 아바타 + dartlab 워드마크 (아바타 세로중앙에 텍스트 정렬)
+    av = cfg["avatar"]
+    sig_y = bottom - av
+    paste_avatar(img, x, sig_y, av)
+    d.text(
+        (x + av + cfg["gapAv"], sig_y + av // 2),
+        "dartlab",
+        font=font(FONT_BOLD, cfg["brand"]),
+        fill=INK_RGB,
+        anchor="lm",
     )
-    d.text((x + round(16 * scale), y + round(9 * scale)), text, fill=ACCENT, font=f)
+
+    cy = sig_y - cfg["gapSig"]  # 서명 위부터 위로 쌓는다
+
+    # 작은 sub (한 줄, 넘치면 자름)
+    sub_f = font(FONT_REG, cfg["sub"])
+    sub = truncate(d, spec["subtitle"], sub_f, max_w)
+    if sub:
+        d.text((x, cy - cfg["sub"]), sub, font=sub_f, fill=DIM_RGB)
+        cy = cy - cfg["sub"] - cfg["gapSub"]
+
+    # 굵은 헤드라인 (마지막 줄부터 위로) · [[구절]] = 로즈
+    for line in reversed(spec["titleLines"][:4]):
+        plain = "".join(t for t, _ in accent_parts(line))
+        f = fit_font(d, plain, FONT_BOLD, cfg["head"], max_w, cfg["headMin"])
+        draw_accent_line(d, x, cy - f.size, line, f, INK_RGB, ACCENT_RGB)
+        cy = cy - f.size - cfg["lineGap"]
+
+    # kicker (accent eyebrow + 점)
+    cy = cy - cfg["gapKick"]
+    k = cfg["kick"]
+    dot = int(k * 0.42)
+    ky = cy - k
+    center = ky + int(k * 0.55)
+    d.ellipse((x, center - dot // 2, x + dot, center + dot // 2), fill=ACCENT_RGB)
+    d.text((x + dot + int(k * 0.5), ky), spec["kicker"].upper(), font=font(FONT_BOLD, k), fill=ACCENT_RGB)
+
+    out.parent.mkdir(parents=True, exist_ok=True)
+    img.save(out, "JPEG", quality=cfg["q"], optimize=True)
+    print(f"[render] {out.name} {out.stat().st_size:,} B")
+
+
+COVER_CFG = {
+    "x": 210,
+    "marginB": 210,
+    "scrimL": 96,
+    "scrimB": 235,
+    "avatar": 136,
+    "brand": 100,
+    "gapAv": 36,
+    "gapSig": 66,
+    "sub": 60,
+    "gapSub": 42,
+    "head": 150,
+    "headMin": 92,
+    "lineGap": 28,
+    "gapKick": 40,
+    "kick": 54,
+    "q": 89,
+}
+STATIC_CFG = {
+    "x": 112,
+    "marginB": 86,
+    "scrimL": 120,
+    "scrimB": 185,
+    "avatar": 72,
+    "brand": 52,
+    "gapAv": 20,
+    "gapSig": 40,
+    "sub": 34,
+    "gapSub": 24,
+    "head": 90,
+    "headMin": 54,
+    "lineGap": 16,
+    "gapKick": 26,
+    "kick": 30,
+    "q": 91,
+}
 
 
 def draw_static(meta: dict, src: Path, out: Path) -> None:
-    width, height = 1920, 1080
-    spec = visual_spec(meta)
-    img = add_scrim(editorial_background(src, width, height), 120, 165)
-    d = ImageDraw.Draw(img)
-
-    x = 128
-    max_w = 1000
-    d.line([(x, 145), (x, 845)], fill=(142, 153, 160), width=4)
-    draw_label(d, x + 26, 144, spec["kicker"], 1.0)
-
-    y = 284
-    for idx, line in enumerate(spec["titleLines"][:4]):
-        size = 100 if idx < 3 else 82
-        plain = "".join(t for t, _ in accent_parts(line))
-        f = fit_font(d, plain, FONT_BOLD, size, max_w, 58)
-        draw_accent_line(d, x + 26, y, line, f, INK, ACCENT)
-        y += f.size + 24
-
-    sub_f = font(FONT_REG, 36)
-    sub = truncate(d, spec["subtitle"], sub_f, max_w)
-    d.text((x + 30, y + 22), sub, fill=DIM, font=sub_f)
-
-    foot_f = font(FONT_REG, 25)
-    d.text((x + 30, height - 118), spec["footer"], fill=MUTED, font=foot_f)
-    d.text((width - 128, height - 118), "dartlab", fill=INK, font=font(FONT_BOLD, 26), anchor="ra")
-
-    out.parent.mkdir(parents=True, exist_ok=True)
-    img.save(out, "JPEG", quality=91, optimize=True)
-    print(f"[render] static {out} {out.stat().st_size:,} B")
+    draw_frame(meta, src, out, 1920, 1080, STATIC_CFG)
 
 
 def draw_cover(meta: dict, src: Path, out: Path) -> None:
-    width, height = 3000, 3000
-    spec = visual_spec(meta)
-    img = add_scrim(editorial_background(src, width, height), 96, 225)
-    d = ImageDraw.Draw(img)
-
-    x = 220
-    y = 1500
-    max_w = width - 440
-    draw_label(d, x, y - 170, spec["kicker"], 1.35)
-    for idx, line in enumerate(spec["titleLines"][:4]):
-        size = 150 if idx < 3 else 124
-        plain = "".join(t for t, _ in accent_parts(line))
-        f = fit_font(d, plain, FONT_BOLD, size, max_w, 82)
-        draw_accent_line(d, x, y, line, f, INK, ACCENT)
-        y += f.size + 36
-
-    sub_f = font(FONT_REG, 58)
-    sub = truncate(d, spec["subtitle"], sub_f, max_w)
-    d.text((x, y + 52), sub, fill=DIM, font=sub_f)
-    d.text((x, height - 270), spec["footer"], fill=MUTED, font=font(FONT_REG, 42))
-    d.text((width - 220, height - 270), "dartlab", fill=INK, font=font(FONT_BOLD, 46), anchor="ra")
-
-    out.parent.mkdir(parents=True, exist_ok=True)
-    img.save(out, "JPEG", quality=89, optimize=True)
-    print(f"[render] cover {out} {out.stat().st_size:,} B")
+    draw_frame(meta, src, out, 3000, 3000, COVER_CFG)
 
 
 def main(argv: list[str] | None = None) -> int:
