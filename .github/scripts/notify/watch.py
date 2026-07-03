@@ -22,7 +22,8 @@ import time
 from hubClient import classify, post_to_hub
 from sanitize import sanitize
 
-_TERMINAL = "/terminal"  # 클릭 자기 라우트(피싱 차단). Phase D 에서 종목 deep-link 격상 가능.
+_TERMINAL = "/terminal"  # 클릭 자기 라우트(피싱 차단).
+_TERMINAL_IPO = "/terminal?ipo=1"  # newIpo 딥링크 · 터미널 IPO 공모 다이얼로그 자동 오픈(TerminalSurface ?ipo=1).
 
 
 def _won(v: object) -> str | None:
@@ -60,7 +61,7 @@ def eval_new_ipo(df=None) -> list[dict]:
                 "notification": {
                     "title": sanitize(f"[신규상장] {name}{spac}", 80),
                     "body": sanitize(" · ".join(parts) or "증권신고서 접수", 120),
-                    "url": _TERMINAL,
+                    "url": _TERMINAL_IPO,
                     "tag": f"ipo:{rcept}",
                 },
             }

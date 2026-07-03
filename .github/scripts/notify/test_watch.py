@@ -49,7 +49,7 @@ def test_eval_new_ipo_basic():
     assert "공모가" in m["notification"]["body"]
     assert "청약" in m["notification"]["body"]
     assert m["notification"]["tag"] == "ipo:20260626000715"
-    assert m["notification"]["url"] == "/terminal"  # 자기 라우트
+    assert m["notification"]["url"] == "/terminal?ipo=1"  # 자기 라우트 + IPO 다이얼로그 딥링크
 
 
 def test_eval_new_ipo_spac_label_and_skip_no_rcept():
