@@ -918,9 +918,15 @@
 .dlTerm .finTable tr.finKey .finAcct { color: var(--amber); font-weight: 600; }
 .dlTerm .finTable tbody tr:hover { background: var(--dl-bg-overlay); }
 .dlTerm .finNote { font-family: var(--mono); font-size: 7.5px; color: var(--dimmer); padding: 2px 7px; border-top: 1px solid var(--bd); letter-spacing: 0.3px; }
-/* 기대치 성적표 · 섹션 소제목(회색 캡) + 미검증 라벨(회색 dim) */
-.dlTerm .expSecHead { font-family: var(--mono); font-size: 7.5px; color: var(--dimmer); padding: 4px 7px 1px; letter-spacing: 0.4px; text-transform: uppercase; }
+/* 기대치 성적표 · 섹션 소제목/푸터는 읽히는 크기(운영자 실측: 7.5px 는 숫자 오독 유발) */
+.dlTerm .expSecHead { font-family: var(--mono); font-size: 9.5px; color: var(--dim, #a3a8b3); padding: 6px 7px 2px; letter-spacing: 0.4px; text-transform: uppercase; font-weight: 700; }
+.dlTerm .expNote { font-family: var(--mono); font-size: 9.5px; line-height: 1.55; color: var(--dimmer); padding: 5px 7px; border-top: 1px solid var(--bd); }
 .dlTerm .expUnverified { color: var(--dimmer); font-weight: 400; }
+/* 성적표 패널 한정: 2열 격자 해제(구간 문자열이 길다) + 값 폰트 상향 */
+.dlTerm .expPanel .factGrid { grid-template-columns: 1fr; }
+.dlTerm .expPanel .factRow:nth-child(odd) { border-right: 0; }
+.dlTerm .expPanel .factL { font-size: 10.5px; }
+.dlTerm .expPanel .factV { font-size: 11px; }
 /* 전 기간(분기) 가로 스크롤 · 계정명 열 sticky-left 고정 */
 .dlTerm .finScrollX { overflow-x: auto; overflow-y: auto; }
 .dlTerm .finScrollX .finTable { width: max-content; min-width: 100%; }
