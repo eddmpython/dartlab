@@ -275,6 +275,7 @@
 						<DataMenu {runtime} code={co.code} corpName={co.name.kr} {lang} />
 						<a class="hdrLink hdrReport" href="{base}/report?sym={co.code}" target="_blank" rel="noopener" title={lang === 'en' ? 'Corporate analysis report · printable (PDF)' : '기업분석보고서 · 인쇄 가능 (PDF)'}>{lang === 'en' ? 'Report' : '보고서'}</a>
 						<a class="hdrLink hdrCards" href="{base}/cards" target="_blank" rel="noopener" title={lang === 'en' ? 'Card stories · Instagram-style feed (all companies)' : '카드뉴스 · 인스타그램형 피드(전체 회사)'}>{lang === 'en' ? 'Cards' : '카드뉴스'}</a>
+						<a class="hdrLink hdrBlog" href="{base}/blog" target="_blank" rel="noopener" title={lang === 'en' ? 'Blog · company stories, disclosure reading, dartlab news' : '블로그 · 기업 이야기·공시 읽기·dartlab 소식'}>{lang === 'en' ? 'Blog' : '블로그'}</a>
 					{/if}
 					{#if allowTerminalAsk}
 						<a class="hdrLink hdrAsk" href={runtime.navigation.href({ kind: 'chat' })} title="AI 챗 모드 · 대화형 분석 작업대" aria-label="챗 모드" style="display:inline-flex;align-items:center;gap:4px">

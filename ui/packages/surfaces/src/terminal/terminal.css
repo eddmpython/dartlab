@@ -167,6 +167,9 @@
 /* 카드뉴스 · 헤더(보고서 옆) 버튼 = /cards 피드로 이동(전체 보기). 회사 네비 .symCards(다이얼로그)와 별개. */
 .dlTerm .hdrCards { color: var(--amber); border-color: var(--bdAmber); }
 .dlTerm .hdrCards:hover { color: var(--amber); background: rgba(var(--amber-rgb), 0.16); }
+/* 블로그 · 카드뉴스 옆 버튼 = /blog(기업 이야기·공시 읽기·소식). 카드뉴스와 형제 콘텐츠 목적지라 동일 amber. */
+.dlTerm .hdrBlog { color: var(--amber); border-color: var(--bdAmber); }
+.dlTerm .hdrBlog:hover { color: var(--amber); background: rgba(var(--amber-rgb), 0.16); }
 
 /* 종목 토론 드로어 (giscus · GitHub Discussions). mount 유지 + 표시 토글로 iframe 보존. */
 .dlTerm .dscDrawer { position: fixed; top: 0; right: 0; bottom: 0; width: clamp(380px, 28vw, 460px); z-index: 120; display: none; flex-direction: column; background: var(--dl-bg-base); border-left: 1px solid var(--bdHi); box-shadow: -18px 0 42px rgba(0, 0, 0, 0.5); }
