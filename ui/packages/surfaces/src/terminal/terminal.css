@@ -918,7 +918,8 @@
 .dlTerm .finTable tr.finKey .finAcct { color: var(--amber); font-weight: 600; }
 .dlTerm .finTable tbody tr:hover { background: var(--dl-bg-overlay); }
 .dlTerm .finNote { font-family: var(--mono); font-size: 7.5px; color: var(--dimmer); padding: 2px 7px; border-top: 1px solid var(--bd); letter-spacing: 0.3px; }
-/* 기대치 성적표 · 미검증 라벨(회색 dim · 성과 숫자 대체) */
+/* 기대치 성적표 · 섹션 소제목(회색 캡) + 미검증 라벨(회색 dim) */
+.dlTerm .expSecHead { font-family: var(--mono); font-size: 7.5px; color: var(--dimmer); padding: 4px 7px 1px; letter-spacing: 0.4px; text-transform: uppercase; }
 .dlTerm .expUnverified { color: var(--dimmer); font-weight: 400; }
 /* 전 기간(분기) 가로 스크롤 · 계정명 열 sticky-left 고정 */
 .dlTerm .finScrollX { overflow-x: auto; overflow-y: auto; }

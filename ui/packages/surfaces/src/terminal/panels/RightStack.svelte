@@ -51,49 +51,56 @@
 	const rt = useDartLabRuntime();
 	const base = rt.env.basePath;
 
-	// 기대치 성적표 · 시장 전역(회사 무관) 1회 로드. 원장 = HF expectations/ (발행시점 봉인 append-only).
-	// 표시 계약: verified=false 그룹은 성과 숫자 렌더링 금지(미검증 라벨만) · live 발행분만 표시.
+	// 기대치 성적표 · 봉인된 기대 "내용물"을 보여준다 (장부 카운트가 아니라).
+	// ①이 회사의 봉인 기대(매출 구간·주가 방향확률) ②시장 기대(물가·금리·환율 최신 발행 구간)
+	// ③도착한 채점(실제값 · 구간 적중). 원장 = HF expectations/ (발행시점 봉인 append-only).
+	// 정직 규율: 개별 봉인·채점 사실만 표시 · 집계 성과 주장은 표본 게이트(verified) 전 금지.
 	let scorecard = $state<import('@dartlab/ui-contracts').ExpectationScorecard | null>(null);
-	let scLoaded = $state(false);
+	let expLedger = $state<{ expectations: import('@dartlab/ui-contracts').ExpectationRow[]; scores: import('@dartlab/ui-contracts').ExpectationScoreRow[] } | null>(null);
+	let expLoaded = $state(false);
 	$effect(() => {
-		void rt.expectations.getScorecard().then((sc) => {
+		void Promise.all([rt.expectations.getScorecard(), rt.expectations.getLedger()]).then(([sc, led]) => {
 			scorecard = sc;
-			scLoaded = true;
+			expLedger = led;
+			expLoaded = true;
 		});
 	});
 	const EXP_VAR_LABEL: Record<string, { kr: string; en: string }> = {
-		'KR.CPI': { kr: '물가(CPI)', en: 'CPI' },
+		'KR.CPI': { kr: '물가(CPI지수)', en: 'CPI (index)' },
 		'KR.BASE_RATE': { kr: '기준금리', en: 'Base rate' },
 		'KR.USDKRW': { kr: '원/달러', en: 'USDKRW' }
 	};
-	const EXP_DOMAIN_LABEL: Record<string, { kr: string; en: string }> = {
-		revenue: { kr: '매출(연간)', en: 'Revenue (FY)' },
-		earnings: { kr: '손익 캐스케이드', en: 'Earnings cascade' },
-		credit: { kr: '신용등급 유지', en: 'Grade retention' },
-		price: { kr: '주가 방향(12M)', en: 'Price direction (12M)' }
-	};
-	// live 그룹 파싱: "macro.KR.CPI.h1.live" -> {domain, varKey, h}. macro 는 변수별, 나머지는 도메인 rollup.
-	const expRows = $derived.by(() => {
-		const sc = scorecard;
-		if (!sc) return null;
-		const macro: { label: { kr: string; en: string }; h: number; g: (typeof sc.groups)[string] }[] = [];
-		const roll: Record<string, { n: number; anyVerified: boolean }> = {};
-		for (const [key, g] of Object.entries(sc.groups)) {
-			if (!key.endsWith('.live')) continue;
-			const parts = key.split('.');
-			const domain = parts[0];
-			const h = Number((parts[parts.length - 2] || '').replace('h', '')) || 0;
-			if (domain === 'macro') {
-				const varKey = parts.slice(1, -2).join('.');
-				macro.push({ label: EXP_VAR_LABEL[varKey] ?? { kr: varKey, en: varKey }, h, g });
-			} else {
-				const r = (roll[domain] ??= { n: 0, anyVerified: false });
-				r.n += g.n;
-				r.anyVerified ||= g.verified;
-			}
-		}
-		macro.sort((a, b) => a.label.kr.localeCompare(b.label.kr) || a.h - b.h);
-		return { macro, roll };
+	const expFmt = (v: number, sid: string) => (sid === 'KR.BASE_RATE' ? v.toFixed(2) : sid === 'KR.USDKRW' ? v.toFixed(0) : v.toFixed(1));
+	// 최신 발행분만: 변수별 max issuedAt → 가장 가까운 미래 target (h 최소) 1행.
+	const expView = $derived.by(() => {
+		const led = expLedger;
+		if (!led) return null;
+		const live = led.expectations.filter((r) => r.issuedLive);
+		const scoreById = new Map(led.scores.filter((s) => !s.error).map((s) => [s.expectationId, s]));
+		const latestOf = (rows: typeof live) => {
+			if (!rows.length) return [] as typeof live;
+			const latest = rows.reduce((m, r) => (r.issuedAt > m ? r.issuedAt : m), '');
+			return rows.filter((r) => r.issuedAt === latest);
+		};
+		// ① 시장 기대: 변수별 최신 발행에서 미채점(미래) 최소 h 행
+		const market = Object.keys(EXP_VAR_LABEL)
+			.map((sid) => {
+				const rows = latestOf(live.filter((r) => r.variable === sid && r.kind === 'quantiles'));
+				const future = rows.filter((r) => !scoreById.has(r.expectationId)).sort((a, b) => a.horizon - b.horizon);
+				return future[0] ? { sid, r: future[0] } : null;
+			})
+			.filter((x): x is { sid: string; r: (typeof live)[number] } => x !== null);
+		// ② 이 회사의 봉인 기대: 매출 h1 + 주가 방향
+		const mine = live.filter((r) => r.variable.startsWith(co.code + '.'));
+		const myRevenue = latestOf(mine.filter((r) => r.variable.endsWith('.revenue'))).sort((a, b) => a.horizon - b.horizon)[0] ?? null;
+		const myPrice = latestOf(mine.filter((r) => r.variable.endsWith('.priceDirection')))[0] ?? null;
+		// ③ 도착한 채점: 최근 4건 (실제값 · 구간 적중 사실)
+		const scored = live
+			.filter((r) => scoreById.has(r.expectationId) && r.kind === 'quantiles')
+			.map((r) => ({ r, s: scoreById.get(r.expectationId)! }))
+			.sort((a, b) => (a.s.scoredAt < b.s.scoredAt ? 1 : -1))
+			.slice(0, 4);
+		return { market, myRevenue, myPrice, scored };
 	});
 	let viewerOpen = $state(false); // 공시뷰어 인터미널 오버레이 (정기공시 패널 ⤢)
 	let holdingsOpen = $state(false); // 출자 관계 분석 전체화면 (타법인 출자 패널 ⤢)
@@ -1032,36 +1039,58 @@
 	</Panel>
 </div>
 
-<!-- 기대치 성적표 · 엔진 자기채점 원장(HF expectations/, 발행시점 봉인 append-only). 회사 무관 시장 전역.
-     정직 규율: 표본<기준 = '미검증' 라벨만(성과 숫자 0) · live 발행분만 · naive 동시봉인 명시. -->
-<Panel {lang} className="eAnalysis" prov="real" title={{ kr: '기대치 성적표', en: 'EXPECTATION SCORECARD' }} sub={{ kr: '엔진 자기채점 · 발행시점 봉인', en: 'engine self-scoring · sealed at issuance' }}>
-	{#if scorecard && expRows}
-		<div class="factGrid">
-			<div class="factRow"><span class="factL">{lang === 'en' ? 'issued / scored / pending' : '발행 / 채점 / 대기'}</span><span class="factV mono">{scorecard.totals.issued} / {scorecard.totals.scored} / {scorecard.totals.unscored}</span></div>
-			{#each expRows.macro as r (r.label.en + r.h)}
-				<div class="factRow">
-					<span class="factL">{lang === 'en' ? r.label.en : r.label.kr} · h{r.h}</span>
-					<span class="factV mono">
-						{#if r.g.verified && r.g.coverage90 != null}
-							cov90 {(r.g.coverage90 * 100).toFixed(0)}%{r.g.meanSkill != null ? ` · skill ${r.g.meanSkill >= 0 ? '+' : ''}${r.g.meanSkill.toFixed(2)}` : ''}
-						{:else}
-							<span class="expUnverified">{r.g.n}{lang === 'en' ? ' scored · unverified' : '건 채점 · 미검증'}</span>
-						{/if}
-					</span>
-				</div>
-			{/each}
-			{#each Object.entries(expRows.roll) as [domain, r] (domain)}
-				<div class="factRow">
-					<span class="factL">{lang === 'en' ? (EXP_DOMAIN_LABEL[domain]?.en ?? domain) : (EXP_DOMAIN_LABEL[domain]?.kr ?? domain)}</span>
-					<span class="factV mono"><span class="expUnverified">{r.n}{lang === 'en' ? ' scored · unverified' : '건 채점 · 미검증'}</span></span>
-				</div>
-			{/each}
-		</div>
-		<div class="finNote">{lang === 'en' ? 'sealed at issuance · naive baselines co-sealed · live issuances only · unverified until sample gate' : '발행시점 봉인 · naive 기준선 동시봉인 · 라이브 발행분만 · 표본 게이트 전 미검증'}</div>
-	{:else if scLoaded}
-		<div class="finNote">{lang === 'en' ? 'scorecard not published yet' : '성적표 미발간'}</div>
+<!-- 기대치 성적표 · 엔진이 "발행 시점에 봉인한 예측"과 "도착한 실제값 대조"를 그대로 보여준다.
+     정직 규율: 개별 봉인·채점 사실만 표시 · 집계 성과 숫자는 표본 게이트(verified) 전 금지. -->
+<Panel {lang} className="eAnalysis" prov="real" title={{ kr: '기대치 성적표', en: 'EXPECTATION SCORECARD' }} sub={{ kr: '엔진이 미리 적어둔 예측 · 사후 대조', en: 'engine forecasts sealed ahead · checked after' }}>
+	{#if expView}
+		{#if expView.myRevenue || expView.myPrice}
+			<div class="expSecHead">{lang === 'en' ? `sealed for ${co.code}` : `이 회사에 봉인된 기대`}</div>
+			<div class="factGrid">
+				{#if expView.myRevenue}
+					{@const q = expView.myRevenue.quantiles}
+					<div class="factRow">
+						<span class="factL">{lang === 'en' ? `revenue ${expView.myRevenue.targetPeriod}` : `매출 ${expView.myRevenue.targetPeriod}`}</span>
+						<span class="factV mono">{q ? `${fmtKRW(q[50])} (${fmtKRW(q[25])}~${fmtKRW(q[75])})` : '·'}</span>
+					</div>
+				{/if}
+				{#if expView.myPrice?.direction}
+					<div class="factRow">
+						<span class="factL">{lang === 'en' ? 'price direction 12M' : '주가 방향 12M'}</span>
+						<span class="factV mono">{lang === 'en' ? 'up' : '상승'} {(expView.myPrice.direction.prob * 100).toFixed(0)}% · {expView.myPrice.targetPeriod} {lang === 'en' ? 'due' : '채점'}</span>
+					</div>
+				{/if}
+			</div>
+		{/if}
+		{#if expView.market.length}
+			<div class="expSecHead">{lang === 'en' ? 'market forecasts (latest issuance)' : '시장 기대 (최신 발행)'}</div>
+			<div class="factGrid">
+				{#each expView.market as m (m.sid)}
+					{@const q = m.r.quantiles}
+					<div class="factRow">
+						<span class="factL">{lang === 'en' ? EXP_VAR_LABEL[m.sid].en : EXP_VAR_LABEL[m.sid].kr} · {m.r.targetPeriod}</span>
+						<span class="factV mono">{q ? `${expFmt(q[50], m.sid)} (${expFmt(q[25], m.sid)}~${expFmt(q[75], m.sid)})` : '·'}</span>
+					</div>
+				{/each}
+			</div>
+		{/if}
+		{#if expView.scored.length}
+			<div class="expSecHead">{lang === 'en' ? 'arrived actuals vs sealed band' : '도착한 실제값 vs 봉인 구간'}</div>
+			<div class="factGrid">
+				{#each expView.scored as x (x.r.expectationId)}
+					<div class="factRow">
+						<span class="factL">{lang === 'en' ? (EXP_VAR_LABEL[x.r.variable]?.en ?? x.r.variable) : (EXP_VAR_LABEL[x.r.variable]?.kr ?? x.r.variable)} · {x.r.targetPeriod}</span>
+						<span class="factV mono">{lang === 'en' ? 'actual' : '실제'} {x.s.actual != null ? expFmt(Number(x.s.actual), x.r.variable) : '·'} · <span class={x.s.coverageHit90 ? 'tUp' : 'tWarn'}>{x.s.coverageHit90 ? (lang === 'en' ? 'in band' : '구간 적중') : (lang === 'en' ? 'missed' : '구간 이탈')}</span></span>
+					</div>
+				{/each}
+			</div>
+		{/if}
+		<div class="finNote">{lang === 'en'
+			? `sealed at issuance, never edited · naive baselines co-sealed · ${scorecard ? `${scorecard.totals.issued} issued / ${scorecard.totals.scored} scored` : ''} · calibration unverified until sample gate`
+			: `발행 후 수정 불가 봉인 · naive 기준선 동시봉인 · ${scorecard ? `누적 발행 ${scorecard.totals.issued} / 채점 ${scorecard.totals.scored}` : ''} · 표본 게이트 전 캘리브레이션 미검증`}</div>
+	{:else if expLoaded}
+		<div class="finNote">{lang === 'en' ? 'no sealed forecasts published yet' : '봉인된 기대 미발간'}</div>
 	{:else}
-		<div class="finNote">{lang === 'en' ? 'loading scorecard …' : '성적표 불러오는 중 …'}</div>
+		<div class="finNote">{lang === 'en' ? 'loading …' : '불러오는 중 …'}</div>
 	{/if}
 </Panel>
 

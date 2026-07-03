@@ -24,7 +24,38 @@ export interface ExpectationScorecard {
 	groups: Record<string, ExpectationGroupCalibration>;
 }
 
+/** 원장 발행 행 (expectations_{yyyy}.parquet 1행 · quantiles/direction 은 파싱된 형태). */
+export interface ExpectationRow {
+	expectationId: string;
+	domain: string; // "macro" | "revenue" | "earnings" | "credit" | "price"
+	variable: string; // 예 "KR.CPI" · "005930.revenue"
+	unit: string;
+	freq: string;
+	horizon: number;
+	targetPeriod: string;
+	issuedAt: string;
+	issuedLive: boolean;
+	kind: string; // "quantiles" | "direction"
+	quantiles: Record<number, number> | null;
+	direction: { prob: number; predicted: string; issuePrice?: number; fromGrade?: string } | null;
+	warnings: string[];
+}
+
+/** 원장 채점 행 (scores_{yyyy}.parquet 1행). */
+export interface ExpectationScoreRow {
+	expectationId: string;
+	scoredAt: string;
+	actual: string | null;
+	coverageHit90: boolean | null;
+	coverageHit50: boolean | null;
+	skill: number | null;
+	brier: number | null;
+	error: string | null;
+}
+
 export interface ExpectationsPort {
 	/** 미발간/조회 실패 = null (패널이 빈상태 문구로 정직 표기). */
 	getScorecard(): Promise<ExpectationScorecard | null>;
+	/** 라이브 발행 행 + 채점 행 (현재 연도 shard). 미발간 = null. */
+	getLedger(): Promise<{ expectations: ExpectationRow[]; scores: ExpectationScoreRow[] } | null>;
 }
