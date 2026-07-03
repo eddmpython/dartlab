@@ -53,11 +53,12 @@ export interface ExpectationScoreRow {
 	error: string | null;
 }
 
-/** E-3표 정렬 뷰 행 (estimateStatements.parquet). 매핑·라벨·순서 = 라이브러리 SSOT
+/** E-3표 정렬 뷰 행 (estimateStatements.parquet). 매핑·라벨·순서·기간분류 = 라이브러리 SSOT
  * (dartlab.simulate.estimateStatements). 표면은 rowKey 매칭 + 렌더만 한다. value 단위 = 원. */
 export interface EstimateStatementRow {
 	code: string;
-	targetPeriod: string; // "FY2026"
+	targetPeriod: string; // "FY2026" | "2026Q3"
+	periodKind: string; // "FY"(연간) | "Q"(분기) · 분류는 뷰 소유, 표면은 파싱 금지
 	quantile: number; // 25 | 50 | 75
 	statement: string; // "IS" | "BS" | "CF"
 	rowKey: string; // 재무제표 표시 계약 정본 키 (예 "revenue", "costOfSales")

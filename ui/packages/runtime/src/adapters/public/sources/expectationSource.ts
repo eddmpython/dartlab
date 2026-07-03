@@ -101,6 +101,7 @@ export function createExpectationPort(core?: DataCore): ExpectationsPort {
 				.map((r) => ({
 					code: String(r.code),
 					targetPeriod: String(r.targetPeriod),
+					periodKind: String(r.periodKind),
 					quantile: Number(r.quantile),
 					statement: String(r.statement),
 					rowKey: String(r.rowKey),

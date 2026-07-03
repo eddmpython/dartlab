@@ -71,6 +71,14 @@
 		'KR.USDKRW': { kr: '원/달러', en: 'USDKRW' }
 	};
 	const expFmt = (v: number, sid: string) => (sid === 'KR.BASE_RATE' ? v.toFixed(2) : sid === 'KR.USDKRW' ? v.toFixed(0) : v.toFixed(1));
+	// 채점 행: 매크로 변수는 시리즈 라벨/포맷, 회사 지표(005930.revenue 등)는 지표 라벨 + 원화 포맷
+	const expRowLabel = (variable: string) => {
+		const v = EXP_VAR_LABEL[variable];
+		if (v) return lang === 'en' ? v.en : v.kr;
+		const m = EXP_METRIC_LABEL[variable.split('.')[1] ?? ''];
+		return m ? (lang === 'en' ? m.en : m.kr) : variable;
+	};
+	const expValFmt = (v: number, variable: string) => (EXP_VAR_LABEL[variable] ? expFmt(v, variable) : fmtKRW(v));
 	// 최신 발행분만: 변수별 max issuedAt → 가장 가까운 미래 target (h 최소) 1행.
 	const expView = $derived.by(() => {
 		const led = expLedger;
@@ -90,16 +98,26 @@
 				return future[0] ? { sid, r: future[0] } : null;
 			})
 			.filter((x): x is { sid: string; r: (typeof live)[number] } => x !== null);
-		// ② 이 회사의 봉인 기대: 원장에 있는 전부 (매출·영업이익·순이익 x 전 FY + 주가 + 등급)
+		// ② 이 회사의 봉인 기대: 원장에 있는 전부 (매출·영업이익·순이익 x 전 FY + 분기 + 주가 + 등급)
+		// 대상기간별 최신 발행 1행: 같은 target 이 여러 시점에 봉인돼도(재스윕·h 단축) 최신 추정만 표시.
+		// 전역 최신 배치만 남기면 다른 시점에 봉인된 target 이 화면에서 사라진다 (freq 혼합도 동일).
+		const latestPerTarget = (rows: typeof live) => {
+			const by = new Map<string, (typeof live)[number]>();
+			for (const r of rows) {
+				const p = by.get(r.targetPeriod);
+				if (!p || r.issuedAt > p.issuedAt) by.set(r.targetPeriod, r);
+			}
+			return [...by.values()].sort((a, b) => a.targetPeriod.localeCompare(b.targetPeriod));
+		};
 		const mine = live.filter((r) => r.variable.startsWith(co.code + '.'));
 		const myFund = (['revenue', 'operatingProfit', 'netIncome'] as const)
 			.map((metric) => {
-				const rows = latestOf(mine.filter((r) => r.variable === `${co.code}.${metric}` && r.kind === 'quantiles')).sort(
-					(a, b) => a.horizon - b.horizon
-				);
-				return { metric: metric as string, rows };
+				const all = mine.filter((r) => r.variable === `${co.code}.${metric}` && r.kind === 'quantiles');
+				const rows = latestPerTarget(all.filter((r) => r.freq === 'Y'));
+				const qRows = latestPerTarget(all.filter((r) => r.freq === 'Q'));
+				return { metric: metric as string, rows, qRows };
 			})
-			.filter((x) => x.rows.length > 0);
+			.filter((x) => x.rows.length > 0 || x.qRows.length > 0);
 		const myPrice = latestOf(mine.filter((r) => r.variable.endsWith('.priceDirection')))[0] ?? null;
 		const myGrade = latestOf(mine.filter((r) => r.variable.endsWith('.grade')))[0] ?? null;
 		// ③ 도착한 채점: 최근 4건 (실제값 · 구간 적중 사실)
@@ -115,6 +133,29 @@
 		operatingProfit: { kr: '영업이익', en: 'Op profit' },
 		netIncome: { kr: '순이익', en: 'Net income' }
 	};
+	// 봉인 기대 테이블 모델: 행 = 지표, 열 = 대상기간 (연간·분기 분리 테이블). 나열식 대체(밀도 우선).
+	const expFundTables = $derived.by(() => {
+		const v = expView;
+		if (!v) return null;
+		const build = (freq: 'Y' | 'Q') => {
+			const periods: string[] = [];
+			const rows: { metric: string; cells: Map<string, Record<number, number>> }[] = [];
+			for (const f of v.myFund) {
+				const cells = new Map<string, Record<number, number>>();
+				for (const r of freq === 'Y' ? f.rows : f.qRows) {
+					if (!r.quantiles) continue;
+					cells.set(r.targetPeriod, r.quantiles);
+					if (!periods.includes(r.targetPeriod)) periods.push(r.targetPeriod);
+				}
+				if (cells.size) rows.push({ metric: f.metric, cells });
+			}
+			periods.sort();
+			// 분기는 가장 가까운 4개만 (패널 폭 제약 · 전체 격자는 재무제표 표의 E열이 담당)
+			const shown = freq === 'Q' ? periods.slice(0, 4) : periods;
+			return rows.length ? { periods: shown, rows } : null;
+		};
+		return { y: build('Y'), q: build('Q') };
+	});
 
 	// E-3표 : 재무제표 시계열에 추정 컬럼 병합. 매핑·라벨·순서 = 라이브러리 SSOT
 	// (simulate.estimateStatements 발행 뷰). 여기는 rowKey 매칭 + 렌더만 (분위 피벗은 표시용 조립).
@@ -127,22 +168,28 @@
 		});
 	});
 	// E컬럼: targetPeriod 별 {rowKey -> {p50/p25/p75}} (단위: 조 KRW = StmtRow.values 동일)
+	// periodKind(뷰 소유 분류) 별 분리: 연간 탭 = FY 컬럼(FY26E), 분기 탭 = Q 컬럼(26Q3E).
 	const finECols = $derived.by(() => {
 		const rows = pfEstimates;
-		if (!rows || rows.length === 0) return [];
-		const byPeriod = new Map<string, Map<string, { p50?: number; p25?: number; p75?: number }>>();
+		const empty = { fy: [] as { label: string; cells: Map<string, { p50?: number; p25?: number; p75?: number }> }[], q: [] as { label: string; cells: Map<string, { p50?: number; p25?: number; p75?: number }> }[] };
+		if (!rows || rows.length === 0) return empty;
+		const byPeriod = new Map<string, { kind: string; cells: Map<string, { p50?: number; p25?: number; p75?: number }> }>();
 		for (const r of rows) {
-			const period = byPeriod.get(r.targetPeriod) ?? new Map<string, { p50?: number; p25?: number; p75?: number }>();
+			const period = byPeriod.get(r.targetPeriod) ?? { kind: r.periodKind, cells: new Map() };
 			byPeriod.set(r.targetPeriod, period);
-			const cell = period.get(r.rowKey) ?? {};
-			period.set(r.rowKey, cell);
+			const cell = period.cells.get(r.rowKey) ?? {};
+			period.cells.set(r.rowKey, cell);
 			if (r.quantile === 50) cell.p50 = r.value / 1e12;
 			else if (r.quantile === 25) cell.p25 = r.value / 1e12;
 			else if (r.quantile === 75) cell.p75 = r.value / 1e12;
 		}
-		return [...byPeriod.entries()]
-			.sort((a, b) => b[0].localeCompare(a[0])) // 미래 먼 쪽이 먼저 (표가 최신 우선 역순이라)
-			.map(([tp, cells]) => ({ label: `FY${tp.slice(6)}E`, cells }));
+		const cols = (kind: string, label: (tp: string) => string) =>
+			[...byPeriod.entries()]
+				.filter(([, v]) => v.kind === kind)
+				.sort((a, b) => b[0].localeCompare(a[0])) // 미래 먼 쪽이 먼저 (표가 최신 우선 역순이라)
+				.map(([tp, v]) => ({ label: label(tp), cells: v.cells }));
+		// 실제값 헤더 표기와 통일: 연간 "FY26" -> "FY26E", 분기 "26Q3" -> "26Q3E"
+		return { fy: cols('FY', (tp) => `FY${tp.slice(4)}E`), q: cols('Q', (tp) => `${tp.slice(2)}E`) };
 	});
 	let viewerOpen = $state(false); // 공시뷰어 인터미널 오버레이 (정기공시 패널 ⤢)
 	let holdingsOpen = $state(false); // 출자 관계 분석 전체화면 (타법인 출자 패널 ⤢)
@@ -713,7 +760,7 @@
 	{/snippet}
 	<div class="finTabs">{#each tabs as t (t.k)}<button class={'finTab ' + (stmt === t.k ? 'on' : '')} onclick={() => (stmt = t.k)}>{lang === 'en' ? t.en : t.kr}</button>{/each}</div>
 	{#if finView}
-		{@const showECols = finMode === 'annual' && stmt !== 'RT' ? finECols : []}
+		{@const showECols = stmt === 'RT' ? [] : finMode === 'annual' ? finECols.fy : finMode === 'quarter' && stmt === 'IS' ? finECols.q : []}
 		<div class="finScroll finScrollX"><table class="finTable">
 			<thead><tr><th class="finAcct">{lang === 'en' ? 'ACCOUNT' : '계정'}</th>{#each showECols as e (e.label)}<th class="r finEHead" title={lang === 'en' ? 'estimate · sealed at issuance (revenue driver -> historical-ratio cascade), p50 · hover = 25~75% band' : '추정 · 발행시점 봉인(매출 드라이버 -> 역사 비율 전개) p50 · 마우스오버 = 25~75% 구간'}>{e.label}</th>{/each}{#each dispPeriods as p (p)}<th class="r">{p}</th>{/each}</tr></thead>
 			<tbody>
@@ -730,7 +777,9 @@
 			</tbody>
 		</table></div>
 		{#if showECols.length}
-			<div class="expNote">{lang === 'en' ? 'E columns = sealed estimates (proforma cascade from the revenue driver, accounting-identity closed). Blank cells have no clean account mapping.' : 'E열 = 봉인된 추정(매출 드라이버 -> proforma 전개, 회계 항등식으로 닫힘). 빈 칸은 클린 계정 매핑이 없는 항목입니다.'}</div>
+			<div class="expNote">{finMode === 'quarter'
+				? (lang === 'en' ? 'E columns = quarterly seasonal split of the sealed annual estimates (3y Q1~Q4 shares), revenue & operating income only.' : 'E열 = 봉인된 연간 추정의 분기 분해(과거 3년 Q1~Q4 계절성 비중). 매출·영업이익만 제공합니다.')
+				: (lang === 'en' ? 'E columns = sealed estimates (proforma cascade from the revenue driver, accounting-identity closed). Blank cells have no clean account mapping.' : 'E열 = 봉인된 추정(매출 드라이버 -> proforma 전개, 회계 항등식으로 닫힘). 빈 칸은 클린 계정 매핑이 없는 항목입니다.')}</div>
 		{/if}
 	{:else}
 		<div class="chartLoad" style="height:90px">{lang === 'en' ? 'loading statements …' : '재무제표 불러오는 중 …'}</div>
@@ -1095,55 +1144,91 @@
 	{#if expView}
 		{#if expView.myFund.length || expView.myPrice || expView.myGrade}
 			<div class="expSecHead">{lang === 'en' ? `sealed for ${co.code}` : `이 회사에 봉인된 기대`}</div>
-			<div class="factGrid">
-				{#each expView.myFund as f (f.metric)}
-					{#each f.rows as r (r.expectationId)}
-						{@const q = r.quantiles}
+			{#if expFundTables?.y}
+				<table class="expTable">
+					<thead><tr><th></th>{#each expFundTables.y.periods as p (p)}<th class="r">{p}</th>{/each}</tr></thead>
+					<tbody>
+						{#each expFundTables.y.rows as fr (fr.metric)}
+							<tr>
+								<td class="expTLabel">{lang === 'en' ? EXP_METRIC_LABEL[fr.metric].en : EXP_METRIC_LABEL[fr.metric].kr}</td>
+								{#each expFundTables.y.periods as p (p)}
+									{@const q = fr.cells.get(p)}
+									<td class="r mono">{#if q}<b>{fmtKRW(q[50])}</b><span class="expBand">{fmtKRW(q[25])}~{fmtKRW(q[75])}</span>{:else}·{/if}</td>
+								{/each}
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			{/if}
+			{#if expFundTables?.q}
+				<div class="expSecHead">{lang === 'en' ? 'quarterly split (seasonal shares, sealed)' : '분기 분해 (계절성 비중 · 봉인)'}</div>
+				<table class="expTable">
+					<thead><tr><th></th>{#each expFundTables.q.periods as p (p)}<th class="r">{p}</th>{/each}</tr></thead>
+					<tbody>
+						{#each expFundTables.q.rows as fr (fr.metric)}
+							<tr>
+								<td class="expTLabel">{lang === 'en' ? EXP_METRIC_LABEL[fr.metric].en : EXP_METRIC_LABEL[fr.metric].kr}</td>
+								{#each expFundTables.q.periods as p (p)}
+									{@const q = fr.cells.get(p)}
+									<td class="r mono">{#if q}<b>{fmtKRW(q[50])}</b><span class="expBand">{fmtKRW(q[25])}~{fmtKRW(q[75])}</span>{:else}·{/if}</td>
+								{/each}
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			{/if}
+			{#if expView.myPrice?.direction || expView.myGrade?.direction}
+				<div class="factGrid">
+					{#if expView.myPrice?.direction}
 						<div class="factRow">
-							<span class="factL">{lang === 'en' ? EXP_METRIC_LABEL[f.metric].en : EXP_METRIC_LABEL[f.metric].kr} {r.targetPeriod}</span>
-							<span class="factV mono">{q ? `${fmtKRW(q[50])} (${fmtKRW(q[25])}~${fmtKRW(q[75])})` : '·'}</span>
+							<span class="factL">{lang === 'en' ? 'price direction 12M' : '주가 방향 12M'}</span>
+							<span class="factV mono">{lang === 'en' ? 'up' : '상승'} {(expView.myPrice.direction.prob * 100).toFixed(0)}% · {expView.myPrice.targetPeriod} {lang === 'en' ? 'due' : '채점'}</span>
 						</div>
-					{/each}
-				{/each}
-				{#if expView.myPrice?.direction}
-					<div class="factRow">
-						<span class="factL">{lang === 'en' ? 'price direction 12M' : '주가 방향 12M'}</span>
-						<span class="factV mono">{lang === 'en' ? 'up' : '상승'} {(expView.myPrice.direction.prob * 100).toFixed(0)}% · {expView.myPrice.targetPeriod} {lang === 'en' ? 'due' : '채점'}</span>
-					</div>
-				{/if}
-				{#if expView.myGrade?.direction}
-					<div class="factRow">
-						<span class="factL">{lang === 'en' ? 'grade retention (next Q)' : '신용등급 유지 (내분기)'}</span>
-						<span class="factV mono">{expView.myGrade.direction.fromGrade ?? '·'} {lang === 'en' ? 'stay' : '유지'} {(expView.myGrade.direction.prob * 100).toFixed(0)}%</span>
-					</div>
-				{/if}
-			</div>
+					{/if}
+					{#if expView.myGrade?.direction}
+						<div class="factRow">
+							<span class="factL">{lang === 'en' ? 'grade retention (next Q)' : '신용등급 유지 (내분기)'}</span>
+							<span class="factV mono">{expView.myGrade.direction.fromGrade ?? '·'} {lang === 'en' ? 'stay' : '유지'} {(expView.myGrade.direction.prob * 100).toFixed(0)}%</span>
+						</div>
+					{/if}
+				</div>
+			{/if}
 		{:else}
 			<div class="expSecHead">{lang === 'en' ? `sealed for ${co.code}` : `이 회사에 봉인된 기대`}</div>
 			<div class="expNote">{lang === 'en' ? 'not issued for this company yet (quarterly sweep pending)' : '이 회사는 아직 미발행 (분기 전상장사 sweep 대기)'}</div>
 		{/if}
 		{#if expView.market.length}
 			<div class="expSecHead">{lang === 'en' ? 'market forecasts (latest issuance)' : '시장 기대 (최신 발행)'}</div>
-			<div class="factGrid">
-				{#each expView.market as m (m.sid)}
-					{@const q = m.r.quantiles}
-					<div class="factRow">
-						<span class="factL">{lang === 'en' ? EXP_VAR_LABEL[m.sid].en : EXP_VAR_LABEL[m.sid].kr} · {m.r.targetPeriod}</span>
-						<span class="factV mono">{q ? `${expFmt(q[50], m.sid)} (${expFmt(q[25], m.sid)}~${expFmt(q[75], m.sid)})` : '·'}</span>
-					</div>
-				{/each}
-			</div>
+			<table class="expTable">
+				<thead><tr><th></th><th>{lang === 'en' ? 'target' : '대상'}</th><th class="r">p50</th><th class="r">{lang === 'en' ? '25~75% band' : '25~75% 구간'}</th></tr></thead>
+				<tbody>
+					{#each expView.market as m (m.sid)}
+						{@const q = m.r.quantiles}
+						<tr>
+							<td class="expTLabel">{lang === 'en' ? EXP_VAR_LABEL[m.sid].en : EXP_VAR_LABEL[m.sid].kr}</td>
+							<td class="mono">{m.r.targetPeriod}</td>
+							<td class="r mono"><b>{q ? expFmt(q[50], m.sid) : '·'}</b></td>
+							<td class="r mono expDim">{q ? `${expFmt(q[25], m.sid)}~${expFmt(q[75], m.sid)}` : '·'}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
 		{/if}
 		{#if expView.scored.length}
 			<div class="expSecHead">{lang === 'en' ? 'arrived actuals vs sealed band' : '도착한 실제값 vs 봉인 구간'}</div>
-			<div class="factGrid">
-				{#each expView.scored as x (x.r.expectationId)}
-					<div class="factRow">
-						<span class="factL">{lang === 'en' ? (EXP_VAR_LABEL[x.r.variable]?.en ?? x.r.variable) : (EXP_VAR_LABEL[x.r.variable]?.kr ?? x.r.variable)} · {x.r.targetPeriod}</span>
-						<span class="factV mono">{lang === 'en' ? 'actual' : '실제'} {x.s.actual != null ? expFmt(Number(x.s.actual), x.r.variable) : '·'} · <span class={x.s.coverageHit90 ? 'tUp' : 'tWarn'}>{x.s.coverageHit90 ? (lang === 'en' ? 'in band' : '구간 적중') : (lang === 'en' ? 'missed' : '구간 이탈')}</span></span>
-					</div>
-				{/each}
-			</div>
+			<table class="expTable">
+				<thead><tr><th></th><th>{lang === 'en' ? 'target' : '대상'}</th><th class="r">{lang === 'en' ? 'actual' : '실제'}</th><th class="r">{lang === 'en' ? 'verdict' : '판정'}</th></tr></thead>
+				<tbody>
+					{#each expView.scored as x (x.r.expectationId)}
+						<tr>
+							<td class="expTLabel">{expRowLabel(x.r.variable)}</td>
+							<td class="mono">{x.r.targetPeriod}</td>
+							<td class="r mono">{x.s.actual != null ? expValFmt(Number(x.s.actual), x.r.variable) : '·'}</td>
+							<td class="r"><span class={x.s.coverageHit90 ? 'tUp' : 'tWarn'}>{x.s.coverageHit90 ? (lang === 'en' ? 'in band' : '구간 적중') : (lang === 'en' ? 'missed' : '구간 이탈')}</span></td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
 		{/if}
 		<div class="expNote">{lang === 'en'
 			? `Sealed at issuance, never edited. ${scorecard ? `${scorecard.totals.issued} issued, ${scorecard.totals.scored} scored so far.` : ''} Calibration claims wait for the sample gate.`
