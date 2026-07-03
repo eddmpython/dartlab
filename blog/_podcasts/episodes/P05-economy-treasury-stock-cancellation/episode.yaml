@@ -18,17 +18,20 @@ episode:
     sourceDoc: https://eddmpython.github.io/dartlab/blog/treasury-stock-not-cancelled
 
   image:
-    source: ""                           # 커버 이미지 수급 후 지정 (예: cover.jpg)
+    source: cover.jpg                    # 3000x3000 정사각 RSS 커버 (렌더 산출)
     key: episodes/treasury-stock-cancellation/cover-3000.jpg
   staticImage:
-    source: ""                           # 16:9 정적 영상 이미지 수급 후 지정 (예: static-video.jpg)
+    source: static-video.jpg             # 1280x720 16:9 (팟빵·유튜브 썸네일 규격, 렌더 산출)
     key: episodes/treasury-stock-cancellation/static-video.jpg
   thumbnail:
-    source: ""
+    source: static-video.jpg
     key: episodes/treasury-stock-cancellation/static-video.jpg
-  sourceAssets: []                       # 배경 원본 수급 후: {source: assets/source-gray.webp, name: source-gray, role: reusable-original}
+  sourceAssets:
+    - source: assets/source-gray.webp
+      name: source-gray
+      role: reusable-original
   visual:
-    source: ""
+    source: assets/source-gray.webp
     kicker: DartLab Podcast
     titleLines:
       - 자사주 매입의 배신

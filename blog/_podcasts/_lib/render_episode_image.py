@@ -218,28 +218,30 @@ COVER_CFG = {
     "kick": 54,
     "q": 89,
 }
+# 1280x720 (팟빵 + 유튜브 썸네일·정적영상 규격, 16:9). 픽셀 값은 옛 1920x1080 튜닝을 2/3 스케일.
+# scrimL/scrimB 는 알파 강도(0~255)라 스케일하지 않는다.
 STATIC_CFG = {
-    "x": 112,
-    "marginB": 86,
+    "x": 75,
+    "marginB": 57,
     "scrimL": 120,
     "scrimB": 185,
-    "avatar": 72,
-    "brand": 52,
-    "gapAv": 20,
-    "gapSig": 40,
-    "sub": 34,
-    "gapSub": 24,
-    "head": 90,
-    "headMin": 54,
-    "lineGap": 16,
-    "gapKick": 26,
-    "kick": 30,
+    "avatar": 48,
+    "brand": 35,
+    "gapAv": 13,
+    "gapSig": 27,
+    "sub": 23,
+    "gapSub": 16,
+    "head": 60,
+    "headMin": 36,
+    "lineGap": 11,
+    "gapKick": 17,
+    "kick": 20,
     "q": 91,
 }
 
 
 def draw_static(meta: dict, src: Path, out: Path) -> None:
-    draw_frame(meta, src, out, 1920, 1080, STATIC_CFG)
+    draw_frame(meta, src, out, 1280, 720, STATIC_CFG)
 
 
 def draw_cover(meta: dict, src: Path, out: Path) -> None:
