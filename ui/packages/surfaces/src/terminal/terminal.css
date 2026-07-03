@@ -936,6 +936,7 @@
 .dlTerm .expTable td { font-family: var(--mono); font-size: 10.5px; color: var(--txt); padding: 3px 7px; vertical-align: top; border-bottom: 1px solid var(--dl-line); white-space: nowrap; }
 .dlTerm .expTable .r { text-align: right; }
 .dlTerm .expTable td b { font-weight: 600; font-size: 11px; }
+.dlTerm .expTable th .eTag { font-style: normal; color: var(--amber); margin-left: 1px; font-size: 8px; vertical-align: super; }
 .dlTerm .expTable .expTLabel { font-family: var(--cond); font-weight: 600; font-size: 10.5px; color: var(--amber); }
 .dlTerm .expBand { display: block; font-size: 9px; color: var(--dimmer); line-height: 1.4; }
 .dlTerm .expDim { color: var(--dimmer); }
