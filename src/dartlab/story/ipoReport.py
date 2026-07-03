@@ -61,9 +61,12 @@ def renderIpoReport(
 
     Returns:
         dict
-            title : str — "{회사명} 공모분석".
-            sections : list[dict] — {title, rows[(label,value)], badge}.
-            markdown : str — 터미널/랜딩 표시용 전체 리포트.
+            title : str. "{회사명} 공모분석".
+            summary : dict. UI KPI 스트립용 typed 핵심값 (priceBand/confirmedPrice/bandLocation/
+                offerTotal/marketCap/subscription/freeFloatPct/impliedPer/peerPer/isLoss/identities).
+                숫자는 원값 그대로(포맷은 소비처) · 미산출은 None.
+            sections : list[dict]. {title, rows[(label,value)], badge}.
+            markdown : str. 터미널/랜딩 표시용 전체 리포트.
 
     Capabilities:
         - 6 카테고리(개요·일정·밸류·유통물량/보호예수·재무·리스크)를 항등식 배지와 함께 리포트화.
@@ -87,7 +90,7 @@ def renderIpoReport(
             - badge 미검증(✗)인 섹션 수치를 확정값으로 단정.
             - implied PER 를 절대 고/저평가 단정 (비교군 기준 좌표).
         OutputSchema:
-            - dict: title(str) / sections(list) / markdown(str).
+            - dict: title(str) / summary(dict) / sections(list) / markdown(str).
         Prerequisites:
             - parseIpoProspectus 결과 dict.
         Freshness:
@@ -111,11 +114,12 @@ def renderIpoReport(
     # 1. 공모 개요 + 예상 시가총액
     band = off.get("priceBand")
     bandStr = _pair(band)
+    bandLocation = None
     if confirmedPrice and band:
-        loc = (
+        bandLocation = (
             "밴드 상단" if confirmedPrice >= max(band) else ("밴드 하단" if confirmedPrice <= min(band) else "밴드 내")
         )
-        bandStr += f"  → 확정 {confirmedPrice:,.0f}원 ({loc})"
+        bandStr += f"  → 확정 {confirmedPrice:,.0f}원 ({bandLocation})"
     sections.append(
         {
             "title": "공모 개요",
@@ -214,6 +218,26 @@ def renderIpoReport(
         }
     )
 
+    # ── summary · UI KPI 스트립용 typed 핵심값 (sections 라벨 문자열 파싱 금지, 소비처가 숫자 직접 포맷) ──
+    mc = mult.get("marketCap")
+    summary = {
+        "priceBand": [min(band), max(band)] if band else None,
+        "confirmedPrice": confirmedPrice,
+        "bandLocation": bandLocation,
+        "offerTotal": off.get("offerTotal"),
+        "marketCap": [min(mc), max(mc)] if mc else None,
+        "subscription": off.get("subscription") or None,
+        "freeFloatPct": flt.get("freeFloatPct"),
+        "impliedPer": [min(impPer), max(impPer)] if impPer else None,
+        "peerPer": peer,
+        "isLoss": bool(mult.get("isLoss")),
+        "identities": {
+            k: bool(ids[k])
+            for k in ("valuationChain", "financialsBalance", "floatBalance", "offeringRawQtyOk")
+            if ids.get(k) is not None
+        },
+    }
+
     # ── markdown ──
     lines = [f"# {name} 공모분석", ""]
     src = "증권신고서(지분증권)" + (f" · 접수 {rceptDt}" if rceptDt else "")
@@ -233,7 +257,7 @@ def renderIpoReport(
         "implied 멀티플·할인율은 비교군 기준 좌표 — 고/저평가 단정 아님."
     )
 
-    return {"title": f"{name} 공모분석", "sections": sections, "markdown": "\n".join(lines)}
+    return {"title": f"{name} 공모분석", "summary": summary, "sections": sections, "markdown": "\n".join(lines)}
 
 
 def buildIpoReport(rcept: str, *, corpName: str | None = None, confirmationRcept: str | None = None) -> dict:
@@ -245,8 +269,8 @@ def buildIpoReport(rcept: str, *, corpName: str | None = None, confirmationRcept
         confirmationRcept: ``[발행조건확정]`` doc 접수번호 (확정공모가 병합) 또는 None.
 
     Returns:
-        dict — :func:`renderIpoReport` 와 동일 (title/sections/markdown). 본문 fetch 실패 시
-        markdown 에 사유.
+        dict. :func:`renderIpoReport` 와 동일 (title/summary/sections/markdown). 본문 fetch 실패 시
+        summary=None · markdown 에 사유.
 
     Capabilities:
         - 단일 rcept → 6 카테고리 IPO 공모분석 리포트 라이브 산출 (원문근거 동반).
@@ -269,7 +293,7 @@ def buildIpoReport(rcept: str, *, corpName: str | None = None, confirmationRcept
         AntiPatterns:
             - ``[발행조건확정]`` rcept 를 rcept 인자로 (6 섹션 없음 — confirmationRcept 로).
         OutputSchema:
-            - dict: title / sections / markdown.
+            - dict: title / summary / sections / markdown.
         Prerequisites:
             - FULL 증권신고서 rcept + DART_API_KEYS.
         Freshness:
@@ -287,6 +311,7 @@ def buildIpoReport(rcept: str, *, corpName: str | None = None, confirmationRcept
     if status != "ok" or not content:
         return {
             "title": f"{corpName or '발행사'} 공모분석",
+            "summary": None,
             "sections": [],
             "markdown": f"# 리포트 생성 실패\n본문 fetch 실패(status={status}).",
         }

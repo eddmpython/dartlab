@@ -75,3 +75,17 @@ def test_render_never_raises_on_empty():
     r = renderIpoReport({}, corpName="빈회사")
     assert r["title"] == "빈회사 공모분석"
     assert isinstance(r["markdown"], str) and "빈회사 공모분석" in r["markdown"]
+    assert r["summary"]["priceBand"] is None and r["summary"]["identities"] == {}
+
+
+def test_render_summary_typed_values():
+    """summary = UI KPI 스트립용 typed 핵심값. 라벨 문자열 파싱 없이 숫자 그대로 소비 가능해야."""
+    r = renderIpoReport(_PARSED, corpName="테스트", confirmation={"confirmedPrice": 90000})
+    s = r["summary"]
+    assert s["priceBand"] == [80000, 90000]
+    assert s["confirmedPrice"] == 90000 and s["bandLocation"] == "밴드 상단"
+    assert s["marketCap"] == [80e9, 90e9]
+    assert s["impliedPer"] == [8.0, 9.0] and s["peerPer"] == 20.0
+    assert s["freeFloatPct"] == 30.0 and s["isLoss"] is False
+    assert s["subscription"] == "2026.09.01 ~ 09.02"
+    assert s["identities"] == {"valuationChain": True, "financialsBalance": True, "floatBalance": True}
