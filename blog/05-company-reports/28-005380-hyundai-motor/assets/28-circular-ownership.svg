@@ -1,66 +1,58 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" style="background:#0a0e1a;font-family:-apple-system,'Segoe UI',sans-serif">
-  <text x="400" y="38" fill="#f1f5f9" font-size="17" font-weight="bold" text-anchor="middle">정의선의 7.6% — 현대모비스-현대차-기아 순환출자 구조</text>
-  <text x="400" y="60" fill="#64748b" font-size="13" text-anchor="middle">지분율 기준, 2025년 사업보고서</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 460" style="background:#0a0e1a;font-family:-apple-system,'Segoe UI',sans-serif">
+  <text x="400" y="38" fill="#f1f5f9" font-size="18" font-weight="bold" text-anchor="middle">정의선의 0.32%: 현대모비스 지분 0.32%로 그룹을 지배한다</text>
+  <text x="400" y="60" fill="#64748b" font-size="13" text-anchor="middle">순환출자 고리, 2025 기준. 국내 10대 그룹 중 유일하게 남은 순환출자</text>
 
   <defs>
-    <marker id="arrowYellow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24"/>
-    </marker>
     <marker id="arrowSlate" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
       <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
     </marker>
+    <marker id="arrowAmber" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
   </defs>
 
-  <!-- Three circles: Mobis (top), Hyundai (bottom-left), Kia (bottom-right) -->
+  <!-- 현대모비스 top -->
+  <circle cx="400" cy="150" r="66" fill="none" stroke="#3b82f6" stroke-width="2.5"/>
+  <text x="400" y="146" fill="#3b82f6" font-size="16" font-weight="bold" text-anchor="middle">현대모비스</text>
+  <text x="400" y="167" fill="#94a3b8" font-size="11" text-anchor="middle">핵심 지배 고리</text>
 
-  <!-- Hyundai Motor (bottom-left) -->
-  <circle cx="230" cy="320" r="70" fill="none" stroke="#fbbf24" stroke-width="2.5"/>
-  <text x="230" y="312" fill="#fbbf24" font-size="16" font-weight="bold" text-anchor="middle">현대차</text>
-  <text x="230" y="334" fill="#94a3b8" font-size="12" text-anchor="middle">시총 $97B</text>
+  <!-- 현대차 bottom-left -->
+  <circle cx="235" cy="330" r="66" fill="none" stroke="#fbbf24" stroke-width="2.5"/>
+  <text x="235" y="335" fill="#fbbf24" font-size="16" font-weight="bold" text-anchor="middle">현대차</text>
 
-  <!-- Hyundai Mobis (top) -->
-  <circle cx="400" cy="150" r="70" fill="none" stroke="#3b82f6" stroke-width="2"/>
-  <text x="400" y="142" fill="#3b82f6" font-size="16" font-weight="bold" text-anchor="middle">현대모비스</text>
-  <text x="400" y="164" fill="#94a3b8" font-size="12" text-anchor="middle">핵심 지배 고리</text>
+  <!-- 기아 bottom-right -->
+  <circle cx="565" cy="330" r="66" fill="none" stroke="#22c55e" stroke-width="2"/>
+  <text x="565" y="335" fill="#22c55e" font-size="16" font-weight="bold" text-anchor="middle">기아</text>
 
-  <!-- Kia (bottom-right) -->
-  <circle cx="570" cy="320" r="70" fill="none" stroke="#22c55e" stroke-width="2"/>
-  <text x="570" y="312" fill="#22c55e" font-size="16" font-weight="bold" text-anchor="middle">기아</text>
-  <text x="570" y="334" fill="#94a3b8" font-size="12" text-anchor="middle">시총 $35B</text>
+  <!-- 모비스 -> 현대차 약 22% -->
+  <path d="M 350 195 C 305 235 275 255 268 268" fill="none" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#arrowSlate)"/>
+  <rect x="250" y="222" width="60" height="24" rx="4" fill="#94a3b8" opacity="0.12"/>
+  <text x="280" y="239" fill="#94a3b8" font-size="13" font-weight="bold" text-anchor="middle">약 22%</text>
 
-  <!-- Arrow: Mobis → Hyundai (21.4%) -->
-  <path d="M 345 200 C 300 240 260 260 260 260" fill="none" stroke="#fbbf24" stroke-width="2.5" marker-end="url(#arrowYellow)"/>
-  <rect x="255" y="218" width="68" height="24" rx="4" fill="#fbbf24" opacity="0.12"/>
-  <text x="289" y="235" fill="#fbbf24" font-size="13" font-weight="bold" text-anchor="middle">21.4%</text>
+  <!-- 현대차 -> 기아 약 35% -->
+  <path d="M 300 355 C 370 390 430 390 500 355" fill="none" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#arrowSlate)"/>
+  <rect x="370" y="378" width="60" height="24" rx="4" fill="#94a3b8" opacity="0.12"/>
+  <text x="400" y="395" fill="#94a3b8" font-size="13" font-weight="bold" text-anchor="middle">약 35%</text>
 
-  <!-- Arrow: Hyundai → Kia (33.9%) -->
-  <path d="M 300 330 C 370 370 440 370 500 330" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrowSlate)"/>
-  <rect x="365" y="360" width="68" height="24" rx="4" fill="#94a3b8" opacity="0.12"/>
-  <text x="399" y="377" fill="#94a3b8" font-size="13" font-weight="bold" text-anchor="middle">33.9%</text>
+  <!-- 기아 -> 모비스 약 18% -->
+  <path d="M 532 268 C 500 235 470 210 460 200" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrowSlate)"/>
+  <rect x="490" y="222" width="60" height="24" rx="4" fill="#94a3b8" opacity="0.12"/>
+  <text x="520" y="239" fill="#94a3b8" font-size="13" font-weight="bold" text-anchor="middle">약 18%</text>
 
-  <!-- Arrow: Kia → Mobis (17.1%) -->
-  <path d="M 540 260 C 510 220 470 195 460 185" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrowSlate)"/>
-  <rect x="495" y="208" width="68" height="24" rx="4" fill="#94a3b8" opacity="0.12"/>
-  <text x="529" y="225" fill="#94a3b8" font-size="13" font-weight="bold" text-anchor="middle">17.1%</text>
+  <!-- 정의선 -->
+  <circle cx="110" cy="150" r="40" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5"/>
+  <text x="110" y="146" fill="#f59e0b" font-size="13" font-weight="bold" text-anchor="middle">정의선</text>
+  <text x="110" y="163" fill="#94a3b8" font-size="11" text-anchor="middle">회장</text>
 
-  <!-- Chung Euisun (정의선) -->
-  <circle cx="120" cy="150" r="40" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5"/>
-  <text x="120" y="145" fill="#f59e0b" font-size="13" font-weight="bold" text-anchor="middle">정의선</text>
-  <text x="120" y="162" fill="#94a3b8" font-size="11" text-anchor="middle">회장</text>
+  <!-- 정의선 -> 모비스 0.32% -->
+  <line x1="150" y1="150" x2="332" y2="150" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="4" marker-end="url(#arrowAmber)"/>
+  <text x="240" y="142" fill="#f59e0b" font-size="12" font-weight="bold" text-anchor="middle">0.32%</text>
 
-  <!-- Chung → Hyundai 7.6% -->
-  <line x1="145" y1="180" x2="185" y2="265" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4" marker-end="url(#arrowYellow)"/>
-  <text x="145" y="228" fill="#f59e0b" font-size="12" font-weight="bold" text-anchor="middle">7.6%</text>
+  <!-- 정의선 -> 현대차 2.7% -->
+  <line x1="128" y1="185" x2="190" y2="280" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="4" marker-end="url(#arrowAmber)"/>
+  <text x="135" y="238" fill="#f59e0b" font-size="12" font-weight="bold" text-anchor="middle">2.7%</text>
 
-  <!-- Chung → Mobis 0.6% -->
-  <line x1="160" y1="150" x2="325" y2="150" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4"/>
-  <text x="242" y="142" fill="#f59e0b" font-size="11" text-anchor="middle">0.6%</text>
-
-  <!-- Summary box -->
-  <rect x="120" y="415" width="560" height="42" rx="6" fill="#f59e0b" opacity="0.06"/>
-  <text x="400" y="434" fill="#f59e0b" font-size="12" font-weight="bold" text-anchor="middle">정의선 직접 지분 7.6% + 모비스 경유 실질 지배력 — "적은 지분, 큰 지배"의 전형</text>
-  <text x="400" y="450" fill="#64748b" font-size="11" text-anchor="middle">순환출자: 모비스→현대차 21.4% → 기아 33.9% → 모비스 17.1%</text>
-
-  <!-- Footer -->
-  <text x="400" y="475" fill="#475569" font-size="11" text-anchor="middle">출처: 현대자동차 2025 사업보고서, 금감원 전자공시</text>
+  <rect x="110" y="405" width="580" height="42" rx="6" fill="#f59e0b" opacity="0.06"/>
+  <text x="400" y="424" fill="#f59e0b" font-size="12" font-weight="bold" text-anchor="middle">직접 지분은 현대차 2.7%, 모비스 0.32%. 지배력의 핵심은 현대글로비스 약 20%와 순환출자 고리다.</text>
+  <text x="400" y="441" fill="#64748b" font-size="11" text-anchor="middle">2018년 개편안은 엘리엇 반대로 자진 철회. 고리는 아직 살아있다.</text>
 </svg>
