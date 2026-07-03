@@ -1,0 +1,72 @@
+# 에피소드 메타데이터 (사람이 작성하는 SSOT).
+# 발행 시 guid/오디오크기/길이/발행일 같은 기계값은 여기 쓰지 않고 published.json 에 기록된다.
+# 소스 문서는 블로그 글 하나다(GUIDE 전제). 별도 script.md 를 손으로 쓰지 않는다.
+episode:
+  version: 1
+  episodeId: P05-economy-treasury-stock-cancellation   # 폴더명과 동일. P0N-{lane}-{slug}
+  episodeNo: 5                           # 정수. RSS <itunes:episode> + 정렬
+  slug: treasury-stock-cancellation      # 링크/파일 slug
+  title: "자사주 매입의 배신: 상장사 10곳 중 9곳이 소각하지 않는 진짜 이유"
+  lane: economy                          # dartlab | company | economy | disclosure | quant
+  language: ko
+  status: draft                          # draft | ready | published (ready 이상만 발행)
+
+  # 오디오 소스 (NotebookLM 산출물). 레포에 커밋하지 않는다. 발행 시 --audio 로 경로 전달.
+  audio:
+    generator: notebooklm
+    sourceHint: "Downloads/자사주_소각_의무화_주가에_독인가_약인가.m4a"
+    sourceDoc: https://eddmpython.github.io/dartlab/blog/treasury-stock-not-cancelled
+
+  image:
+    source: ""                           # 커버 이미지 수급 후 지정 (예: cover.jpg)
+    key: episodes/treasury-stock-cancellation/cover-3000.jpg
+  staticImage:
+    source: ""                           # 16:9 정적 영상 이미지 수급 후 지정 (예: static-video.jpg)
+    key: episodes/treasury-stock-cancellation/static-video.jpg
+  thumbnail:
+    source: ""
+    key: episodes/treasury-stock-cancellation/static-video.jpg
+  sourceAssets: []                       # 배경 원본 수급 후: {source: assets/source-gray.webp, name: source-gray, role: reusable-original}
+  visual:
+    source: ""
+    kicker: DartLab Podcast
+    titleLines:
+      - 자사주 매입의 배신
+      - 10곳 중 9곳은
+      - 소각하지 않는다
+    subtitle: 전상장사 2,933곳 전수 분석
+    footer: 공시 직독 · 소각률 · 오버행
+  caption:
+    hook: 자사주 매입 공시에 기뻐하기 전에, 소각률부터 봐야 합니다.
+    body: >-
+      dartlab이 전상장사 2,933곳을 전수 집계했더니, 자사주를 보유한 798곳 중 742곳(93%)이
+      최근 1년간 단 한 주도 소각하지 않았습니다. 왜 쟁여두는지(삼성물산), 왜 사도 주가가
+      안 오르는지(오버행)까지 데이터로 짚습니다.
+    cta: 전체 에피소드는 DartLab 팟캐스트에서 들을 수 있습니다.
+    hashtags: ["#DartLab", "#자사주소각", "#주주환원"]
+
+  # 기획 요지
+  audienceQuestion: 자사주를 사기만 하고 소각하지 않으면 무슨 일이 벌어지나?
+  oneLineMessage: >-
+    자사주 매입은 환원의 절반일 뿐이고, 소각까지 가야 영구적 환원이다. 전상장사 집계로 보면
+    보유사의 93%가 최근 1년 소각이 0이었고, 쌓아둔 자사주는 오버행으로 오히려 감점 요인이 된다.
+  summary: >-
+    dartlab이 전상장사 2,933곳의 자기주식 취득·소각·처분을 한 번에 집계했습니다. 자사주를
+    보유한 798곳 중 742곳(93%)이 최근 1년 소각이 0이었습니다. 왜 소각하지 않고 쟁여두는지
+    (삼성물산과 KCC의 경영권 방어), 회사 매입과 대주주 개인 매수는 어떻게 다른지(한미반도체),
+    사는데도 왜 주가가 안 오르는지(미국·한국 시총 계산 차이, 오버행 24%p)를 풀어봅니다.
+  whereToLook:
+    - 매입 발표 건수가 아니라 소각률을 보는지
+    - 회사의 자사주 매입인지 대주주 개인 매수인지 갈라 보는지
+  forbiddenAngles: [매수, 매도, 목표가, 수익 보장, 확정 전망]
+
+  # 교차 링크 조인 키 + 역링크 (회사 에피소드가 아니면 빈 값)
+  stockCode: ""                          # 회사 lane 이면 6자리
+  corpName: ""
+  topicSlug: treasury-stock-cancellation # 항상 존재. 주제축 키
+  cardType: economy                      # company | event | economy | meta
+  youtubeId: ""                          # 유튜브 영상 ID(공개 업로드 후 채우면 블로그/카드가 유튜브로 재생)
+  links:
+    blogSlug: treasury-stock-not-cancelled
+    cardSlug: ""
+    terminalCode: ""

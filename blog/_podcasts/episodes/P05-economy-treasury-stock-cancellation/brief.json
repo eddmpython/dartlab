@@ -1,0 +1,30 @@
+{
+  "episodeId": "P05-economy-treasury-stock-cancellation",
+  "lane": "economy",
+  "topicSlug": "treasury-stock-cancellation",
+  "origin": "블로그 06-data-reports/01-treasury-stock-not-cancelled 를 소스로 운영자가 NotebookLM 오디오를 먼저 제작. 사후에 블로그를 4개 서사로 보충해 소스=SSOT 정합을 맞춤(자사주 소각 데이터 리포트에 원인/기제/대가 추가).",
+  "sourceDoc": "https://eddmpython.github.io/dartlab/blog/treasury-stock-not-cancelled",
+  "audienceQuestion": "자사주를 사기만 하고 소각하지 않으면 무슨 일이 벌어지나?",
+  "evidence": {
+    "dartlab_reproducible": [
+      "자사주 보유 798곳 중 최근 1년 소각 0: 742곳 (93%)",
+      "자사주 매입 139곳 중 같은 기간 소각 0: 110곳 (79%)",
+      "대형주(매출 1조+) 보유 77곳 중 소각 0: 68곳 (88%)",
+      "적극환원(배당+매입, 최근 증자로 희석 안 함): 7곳",
+      "재현: dartlab.scan('capital')"
+    ],
+    "external_verified": [
+      "삼성물산 자사주 KCC 매각(2015): 자사주 5.76%(899만557주) 6,743억 원, 합병 찬성 69.5%(요건 66.7%), 엘리엇 처분금지 가처분 기각. 출처: 공개 보도·법원 판결",
+      "한미반도체 곽동신 회장 사재 자사주 매입: 2026-07-02 공시 50억 추가(7-30 장내매수 예정), 2023년 이후 누적 약 695억, 지분율 33%대. 출처: 회사 공시·보도",
+      "김우진(서울대)·임지은(한성대) 한국증권학회지 '자사주 보유가 기업가치에 미치는 영향': 자사주 보유량 많은 기업이 적은 기업보다 토빈의 Q 약 24%p 낮음(2004~2018 제조업 1,860사)",
+      "한국증권학회지 '자사주 포함 관행이 시가총액 및 주당지표에 미치는 영향': 국내 시총 평균 6% 과대평가, EPS 3.6% 과소평가",
+      "자본시장연구원 '자기주식 소각 의무화 논의와 대안': 소각 의무화 입법 논의"
+    ]
+  },
+  "gate": {
+    "external_facts_cross_checked": true,
+    "dartlab_numbers_reproducible": true,
+    "no_investment_advice": true,
+    "note": "외부 사실 4종은 2026-07-04 웹 검색 교차확인. 블로그 방법론 각주에 출처 명시. 블로그가 오디오의 상위집합이라 소스 밖 주장 없음."
+  }
+}
