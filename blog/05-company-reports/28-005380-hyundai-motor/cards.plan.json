@@ -1,19 +1,19 @@
 {
-  "version": 4,
-  "generatedAt": "2026-07-03T05:42:06.087864+00:00",
+  "version": 5,
+  "generatedAt": "2026-07-03T08:59:10.724405+00:00",
   "target": {
     "kind": "companyPost",
     "slug": "005380-hyundai-motor",
     "stockCode": "005380",
     "corpName": "현대자동차",
-    "title": "현대차는 11조를 벌고 6조가 빠져나가는 회사입니다",
+    "title": "현대차, 영업이익 11조를 내고도 한때 장부가 반값이던 회사",
     "postPath": "blog/05-company-reports/28-005380-hyundai-motor/index.md",
     "assetRoot": "sns/assets/005380",
     "planPath": "blog/05-company-reports/28-005380-hyundai-motor/cards.plan.json"
   },
   "planning": {
     "blogThesis": "연결 영업이익 11.5조인데 영업현금은 마이너스 6조. 현대캐피탈이 삼킨 34조. 주가는 20만원에서 78만원 찍고 50만원으로. 관세 25%에서 15%로, 밸류업 자사주, 보스턴다이내믹스라는 미검증 로봇 옵션. 세계 판매 3위 현대차의 재무 기계장치.",
-    "cardThesis": "현대차는 2025년 영업이익 11.5조를 벌었습니다. 그런데 같은 해 영업활동으로 들어온 현금은 마이너스 5.99조, 그러니까 6조 가까이 빠졌습니다. 벌었는데 빠졌습니다.",
+    "cardThesis": "세계에서 세 번째로 차를 많이 파는 현대차그룹, 그 상장 본체인 현대차가 2025년 영업이익 11조4700억을 냈습니다. 그런데 영업활동으로 들어온 현금은 오히려 5조9900억이 마이너스였습니다. 최근 5년 중 4년이 그랬습니다.",
     "audienceQuestion": "현대자동차 이야기를 /cards에서 넘길 때 첫 장에서 무엇을 궁금해해야 하나?",
     "blogAndCardsTogether": true,
     "narrativeContract": {
@@ -44,42 +44,42 @@
         {
           "order": 1,
           "layout": "editorial",
-          "mainText": "현대차는 11조를 벌고 6조가 빠져나가는 회사입니다"
+          "mainText": "세계에서 세 번째로 차를 많이 파는 그룹의 본체가 영업이익 11조를 내고도 한때 장부가 반값에 팔렸습니다"
         },
         {
           "order": 2,
-          "layout": "editorialStat",
-          "mainText": "2025 영업이익 11.5 조원: 벌었다고 장부에 적힌 돈입니다. 그런데 같은 해 통장은 정반대의 말을 합니다."
+          "layout": "editorialBeat",
+          "mainText": "그런데 11조를 벌고도 현금은 오히려 6조가 빠졌습니다"
         },
         {
           "order": 3,
-          "layout": "editorialStat",
-          "mainText": "2025 영업현금 -6 조원: 영업활동으로 들어온 현금은 마이너스 5.99조입니다. 벌었는데 빠졌습니다. 손실이 아니라 다른 이유가 있습니다."
+          "layout": "editorialBeat",
+          "mainText": "답은 손실이 아니라 고객에게 빌려준 돈이었습니다"
         },
         {
           "order": 4,
           "layout": "editorialBeat",
-          "mainText": "현대캐피탈이 운전자본 34조를 삼켰습니다"
+          "mainText": "여기에 부채 190%도 위험해서가 아니라 금융사를 연결한 무게였습니다"
         },
         {
           "order": 5,
-          "layout": "editorialStat",
-          "mainText": "부채비율 190 %: 같은 차를 파는 기아는 71%입니다. 현대차만 2.7배 무거운 건 실력이 아니라 캐피탈을 장부에 얹었기 때문입니다."
+          "layout": "editorialBeat",
+          "mainText": "여기서 오해는 끝나지만 마진은 실제로 3.6%까지 눌렸습니다"
         },
         {
           "order": 6,
-          "layout": "editorialStat",
-          "mainText": "영업이익률 6.2 %: 착시가 아니라 2023년 9.3% 정점에서 깎이는 중입니다. 미국 관세와 제품 믹스가 마진을 눌렀습니다."
+          "layout": "editorialBeat",
+          "mainText": "그 사이 20만원이 78만원 찍고 50만원으로 돌아왔습니다"
         },
         {
           "order": 7,
           "layout": "editorialBeat",
-          "mainText": "20만원이 78만원 찍고 50만원으로 되돌아왔습니다"
+          "mainText": "돌아온 값에는 밸류업이라는 실체와 검증 안 된 로봇 기대가 섞였습니다"
         },
         {
           "order": 8,
-          "layout": "editorialBeat",
-          "mainText": "78만원엔 로봇 기대가 섞였습니다"
+          "layout": "editorial",
+          "mainText": "결국 사라진 게 아니라 빌려준 것이었고 무거운 것과 위험한 것은 달랐습니다"
         }
       ]
     },
@@ -106,35 +106,167 @@
     },
     "insightContract": {
       "rules": [
-        "통념(commonBelief): 독자가 당연하게 여기는 상식·헤드라인 관점을 한 문장으로 적는다.",
-        "반전 사실(twistFact): 그 통념과 충돌하는, 공시 직독으로 확인한 단 하나의 사실 + 왜 그게 가능한가(메커니즘)를 적는다.",
-        "그래서 볼 것(whatToWatch): 독자가 이 덱을 본 뒤 앞으로 무엇을 다르게 볼지(렌즈·관전 포인트)를 적는다.",
-        "evidenceRefs: 반전·렌즈를 떠받치는 실측 수치나 ref 를 최소 1개 이상 적는다(분모·기간 명시)."
+        "통념(commonBelief): 독자가 당연하게 여기는 헤드라인 관점을 한 문장으로.",
+        "반전 사실(twistFact): 통념과 충돌하는 공시 직독 사실 + 메커니즘. 제목 재진술·억지수치 금지.",
+        "그래서 볼 것(whatToWatch): 앞으로 무엇을 다르게 볼지(렌즈).",
+        "evidenceRefs: 반전·렌즈를 떠받치는 실측(분모·기간 명시)."
       ],
-      "commonBelief": "현대차는 세계 판매 3위인데도 시장이 한때 장부가 반값으로 매긴 저평가 회사이거나, 많이 팔아도 남기지 못하는 회사다.",
-      "twistFact": "영업이익 11.47조 흑자인데 연결 영업현금이 마이너스 5.99조인 건 손실이 아니라 현대캐피탈 연결이 만든 착시다. 차를 할부로 팔수록 대출채권이 늘어 운전자본에서만 34.33조가 빠지고, 그게 연결 현금을 마이너스로 만든다. 부채비율 190%(기아 71%)도 캐피탈 대출자산을 장부에 얹은 착시이며 완성차 별도 현금은 정상이다.",
-      "whatToWatch": "재평가된 주가에서 검증된 완성차 현금엔진의 값과 아직 검증 안 된 로봇 옵션(보스턴다이내믹스)값을 분리해서 보고, 연결 영업현금의 방향과 별도 완성차 현금, 자사주 소각 지속, 로봇 상장 실체를 관전 포인트로 삼는다.",
+      "commonBelief": "영업이익 11조를 내고도 영업활동현금흐름이 5년 중 4년 마이너스이고 부채비율이 190%면, 겉보기 실적과 달리 속이 위태로워 장부가 반값도 정당하다.",
+      "twistFact": "2025년 영업활동현금흐름 -5.99조의 정체는 손실이 아니라 현대캐피탈이 고객에게 새로 내준 할부·리스 채권이다. 이 채권이 한 해 34조 늘며 운전자본이 현금을 묶었고, 본업이 번 현금이 대부분을 메웠지만 다 못 메워 남은 순액이 -6조다. 34조는 총액, 6조는 순액이다. 부채비율 190%가 기아 71%·현대모비스 46%의 2.7배인 것도 금융 자회사를 통째로 연결한 결과일 뿐, 신용등급은 A+급 투자적격, 1년 부도확률 0.04%다. 무거운 재무를 위험으로 읽은 것이 오해다. 다만 이 오해가 반값의 유일 원인이라고 과장하지 않는다.",
+      "whatToWatch": "재평가로 순자산의 0.9배까지 온 힘에는 밸류업(자사주 소각·배당)이라는 실체와 로봇(보스턴다이내믹스, 연결 매출의 0.08%·5년 누적손실 1.76조 적자 자회사)이라는 아직 검증 안 된 기대가 섞여 있다. 이제 볼 것은 자동차의 현금이 아니라, 아직 재무제표에 없는 로봇 기대를 주가가 얼마나 앞당겨 반영했는가다.",
       "evidenceRefs": [
-        "영업이익 11.47조 vs 연결 영업활동현금흐름 -5.99조 (2025 연간, dartlab 실측)",
-        "운전자본증감 -34.33조 (2025, 현대캐피탈 할부·리스채권 증가)",
-        "부채비율 190% vs 기아 71% (2026Q1, PeerCompareN)",
-        "주가 52주 203,500~783,000, 현재 502,000 (2026-06-30)"
+        "2025 영업이익 11.47조 vs 영업활동현금흐름 -5.99조(5년 중 4년 마이너스)",
+        "2025 운전자본증감 -34.33조 = 금융 할부·리스채권 증가(손실 아님), 34조=총액·순액이 영업현금 -5.99조",
+        "peer 부채비율 190%/71%/46%, 신용 현대차 A+급·부도확률 0.04% vs 기아·모비스 AA급",
+        "관세 반영 2025Q4 영업이익률 3.6%(21분기 최저), 중국 179만대->19.7만대 -89%",
+        "주가 저점 203,500 -> 최고 783,000(3.8배) -> 현재 502,000(순자산 0.9배)",
+        "보스턴다이내믹스 연결 매출의 0.08%·5년 누적손실 1.76조, 목표주가 100만원 근거=로봇(미검증)"
       ]
     },
-    "visualPlan": [],
+    "visualPlan": [
+      {
+        "order": 1,
+        "claim": "세계에서 세 번째로 차를 많이 파는 그룹의 본체가 영업이익 11조를 내고도 한때 장부가 반값에 팔렸습니다",
+        "visualKind": "image",
+        "visualRole": "sceneSupport",
+        "dataExplanation": "",
+        "evidenceRefs": [],
+        "rules": [
+          "숫자·비교·강한 주장 카드는 어떤 데이터가 그 문장을 증명하는지 dataExplanation 에 적는다.",
+          "evidenceRefs 에 기간·분모·출처가 드러난 실측 ref 를 최소 1개 이상 적는다.",
+          "숫자·비교 카드는 image 배경만으로 통과하지 않는다. finCard 또는 table 같은 실제 visual 계약을 붙인다.",
+          "visualPlan 의 visualKind 는 실제 slide.visual.kind 와 같아야 한다."
+        ],
+        "proves": "세계에서 세 번째로 차를 많이 파는 그룹의 본체가 영업이익 11조를 내고도 한때 장부가 반값에 팔렸습니다"
+      },
+      {
+        "order": 2,
+        "claim": "그런데 11조를 벌고도 현금은 오히려 6조가 빠졌습니다",
+        "visualKind": "finCard",
+        "visualRole": "dataEvidence",
+        "dataExplanation": "영업이익 선은 늘 0 위인데 현금 선은 자꾸 0 아래로 내려갑니다. 2025년 3분기엔 한 분기에 4조8600억이 빠졌습니다.",
+        "evidenceRefs": [
+          "2025 영업이익 11.47조 vs 영업활동현금흐름 -5.99조(최근 5년 중 4년 마이너스, 2022만 흑자)",
+          "21분기 영업이익은 전부 플러스(1.53~4.28조)인데 2025Q3 영업현금은 -4.86조"
+        ],
+        "rules": [],
+        "shape": [
+          {
+            "name": "영업이익",
+            "type": "line"
+          },
+          {
+            "name": "영업활동현금흐름",
+            "type": "line"
+          }
+        ],
+        "periods": 21,
+        "granularity": "quarterly",
+        "proves": "영업이익 선은 늘 0 위인데 현금 선은 자꾸 0 아래로 내려갑니다. 2025년 3분기엔 한 분기에 4조8600억이 빠졌습니다."
+      },
+      {
+        "order": 3,
+        "claim": "답은 손실이 아니라 고객에게 빌려준 돈이었습니다",
+        "visualKind": "image",
+        "visualRole": "sceneSupport",
+        "dataExplanation": "",
+        "evidenceRefs": [],
+        "rules": [],
+        "proves": "답은 손실이 아니라 고객에게 빌려준 돈이었습니다"
+      },
+      {
+        "order": 4,
+        "claim": "여기에 부채 190%도 위험해서가 아니라 금융사를 연결한 무게였습니다",
+        "visualKind": "table",
+        "visualRole": "dataEvidence",
+        "dataExplanation": "부채비율은 현대차 190%로 기아 71%, 현대모비스 46%보다 훨씬 무겁지만, 신용등급은 A+급 투자적격에 1년 부도확률 0.04%로 셋 중 위험이 가장 낮다. 무게와 위험이 반대로 간다.",
+        "evidenceRefs": [
+          "peer 부채비율 현대차 190% / 기아 71% / 현대모비스 46%(2026Q1 연결)",
+          "신용 현대차 A+급·1년 부도확률 0.04% / 기아·현대모비스 AA급(dartlab 스코어카드)"
+        ],
+        "rules": [],
+        "shape": [
+          "회사",
+          "부채비율",
+          "신용등급",
+          "1년 부도확률"
+        ],
+        "rows": 3,
+        "proves": "가장 무거운 현대차가 가장 안전한 등급을 답니다."
+      },
+      {
+        "order": 5,
+        "claim": "여기서 오해는 끝나지만 마진은 실제로 3.6%까지 눌렸습니다",
+        "visualKind": "finCard",
+        "visualRole": "dataEvidence",
+        "dataExplanation": "대체로 6~10%를 오가다 맨 끝 2025년 4분기에 3.6%로 21분기 중 가장 낮게 급락합니다.",
+        "evidenceRefs": [
+          "21분기 영업이익률 2023 정점 10.0%에서 2025Q4 3.6%로 최저(관세 반영)",
+          "중국 판매 179만대(2016) -> 19.7만대(2025) 89% 감소"
+        ],
+        "rules": [],
+        "shape": [
+          {
+            "name": "영업이익률",
+            "type": "line"
+          }
+        ],
+        "periods": 21,
+        "granularity": "quarterly",
+        "proves": "대체로 6~10%를 오가다 맨 끝 2025년 4분기에 3.6%로 21분기 중 가장 낮게 급락합니다."
+      },
+      {
+        "order": 6,
+        "claim": "그 사이 20만원이 78만원 찍고 50만원으로 돌아왔습니다",
+        "visualKind": "table",
+        "visualRole": "dataEvidence",
+        "dataExplanation": "52주 저점 203,500원에서 사상최고 783,000원까지 저점의 3.8배로 뛰었다가 현재 502,000원, 순자산의 약 0.9배로 되돌아왔다. 고점은 자동차가 아니라 로봇 기대가 얹힌 값이다.",
+        "evidenceRefs": [
+          "주가 저점 203,500 -> 사상최고 783,000(3.8배, 2026-06-01) -> 현재 502,000(2.5배, 순자산 0.9배, 2026-06-30)"
+        ],
+        "rules": [],
+        "shape": [
+          "시점",
+          "주가",
+          "저점 대비"
+        ],
+        "rows": 3,
+        "proves": "고점 78만원은 자동차값이 아니라 로봇 기대가 얹힌 값이었습니다."
+      },
+      {
+        "order": 7,
+        "claim": "돌아온 값에는 밸류업이라는 실체와 검증 안 된 로봇 기대가 섞였습니다",
+        "visualKind": "image",
+        "visualRole": "sceneSupport",
+        "dataExplanation": "",
+        "evidenceRefs": [],
+        "rules": [],
+        "proves": "돌아온 값에는 밸류업이라는 실체와 검증 안 된 로봇 기대가 섞였습니다"
+      },
+      {
+        "order": 8,
+        "claim": "결국 사라진 게 아니라 빌려준 것이었고 무거운 것과 위험한 것은 달랐습니다",
+        "visualKind": "image",
+        "visualRole": "sceneSupport",
+        "dataExplanation": "",
+        "evidenceRefs": [],
+        "rules": [],
+        "proves": "결국 사라진 게 아니라 빌려준 것이었고 무거운 것과 위험한 것은 달랐습니다"
+      }
+    ],
     "bodyPreview": "<script> import CompanyFinancials from '$lib/components/blog/CompanyFinancials.svelte'; import HFDataLink from '$lib/components/blog/HFDataLink.svelte'; </script> > **사이클** | 자동차 > 완성차 | 2026-07-03 dartlab 실측 > 같은 시리즈: [SK하이닉스](/blog/000660-skhynix) · [삼양식품](/blog/003230-samyang-foods) · [두산에너빌리티](/blog/034020-doosan-enerbility) · [알테오젠](/blog/196170-alteoge"
   },
   "carousel": {
     "slideCount": 8,
     "layouts": [
       "editorial",
-      "editorialStat",
-      "editorialStat",
       "editorialBeat",
-      "editorialStat",
-      "editorialStat",
       "editorialBeat",
-      "editorialBeat"
+      "editorialBeat",
+      "editorialBeat",
+      "editorialBeat",
+      "editorialBeat",
+      "editorial"
     ]
   },
   "imagePlan": [
@@ -145,34 +277,34 @@
         1
       ],
       "role": "cover-hook",
-      "scene": "story-specific opening scene for 현대자동차, making the article angle '현대차는 11조를 벌고 6조가 빠져나가는 회사입니다' visible through a concrete asset, place, or operation",
+      "scene": "story-specific opening scene for 현대자동차, making the article angle '세계에서 세 번째로 차를 많이 파는 그룹의 본체가 영업이익 11조를 내고도 한때 장부가 반값에 팔렸습니다' visible through a concrete asset, place, or operation",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "planned",
-      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/005380/scene-01-cover-hook.webp\nAsset key: scene-01-cover-hook\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대자동차 (005380).\nStory title: 현대차는 11조를 벌고 6조가 빠져나가는 회사입니다.\nCarousel role: cover-hook.\nImage subject: story-specific opening scene for 현대자동차, making the article angle '현대차는 11조를 벌고 6조가 빠져나가는 회사입니다' visible through a concrete asset, place, or operation.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/005380/scene-01-cover-hook.webp\nAsset key: scene-01-cover-hook\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대자동차 (005380).\nStory title: 현대차, 영업이익 11조를 내고도 한때 장부가 반값이던 회사.\nCarousel role: cover-hook.\nImage subject: story-specific opening scene for 현대자동차, making the article angle '세계에서 세 번째로 차를 많이 파는 그룹의 본체가 영업이익 11조를 내고도 한때 장부가 반값에 팔렸습니다' visible through a concrete asset, place, or operation.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
     },
     {
       "order": 2,
-      "assetKey": "scene-02-number-evidence",
+      "assetKey": "scene-02-narrative-turn",
       "slideRefs": [
         2
       ],
-      "role": "number-evidence",
-      "scene": "real-world 현대자동차 operation or evidence scene behind the number '벌었다고 장부에 적힌 돈입니다. 그런데 같은 해 통장은 정반대의 말을 합니다.', using physical production, facility, customer, or supply-chain context instead of charts",
+      "role": "narrative-turn",
+      "scene": "editorial business-news scene tied to 현대자동차, showing the turning point '그런데 11조를 벌고도 현금은 오히려 6조가 빠졌습니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "planned",
-      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/005380/scene-02-number-evidence.webp\nAsset key: scene-02-number-evidence\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대자동차 (005380).\nStory title: 현대차는 11조를 벌고 6조가 빠져나가는 회사입니다.\nCarousel role: number-evidence.\nImage subject: real-world 현대자동차 operation or evidence scene behind the number '벌었다고 장부에 적힌 돈입니다. 그런데 같은 해 통장은 정반대의 말을 합니다.', using physical production, facility, customer, or supply-chain context instead of charts.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/005380/scene-02-narrative-turn.webp\nAsset key: scene-02-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대자동차 (005380).\nStory title: 현대차, 영업이익 11조를 내고도 한때 장부가 반값이던 회사.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 현대자동차, showing the turning point '그런데 11조를 벌고도 현금은 오히려 6조가 빠졌습니다' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
     },
     {
       "order": 3,
-      "assetKey": "scene-03-number-evidence",
+      "assetKey": "scene-03-narrative-turn",
       "slideRefs": [
         3
       ],
-      "role": "number-evidence",
-      "scene": "real-world 현대자동차 operation or evidence scene behind the number '영업활동으로 들어온 현금은 마이너스 5.99조입니다. 벌었는데 빠졌습니다. 손실이 아니라 다른 이유가 있습니다.', using physical production, facility, customer, or supply-chain context instead of charts",
+      "role": "narrative-turn",
+      "scene": "editorial business-news scene tied to 현대자동차, showing the turning point '답은 손실이 아니라 고객에게 빌려준 돈이었습니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "planned",
-      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/005380/scene-03-number-evidence.webp\nAsset key: scene-03-number-evidence\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대자동차 (005380).\nStory title: 현대차는 11조를 벌고 6조가 빠져나가는 회사입니다.\nCarousel role: number-evidence.\nImage subject: real-world 현대자동차 operation or evidence scene behind the number '영업활동으로 들어온 현금은 마이너스 5.99조입니다. 벌었는데 빠졌습니다. 손실이 아니라 다른 이유가 있습니다.', using physical production, facility, customer, or supply-chain context instead of charts.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/005380/scene-03-narrative-turn.webp\nAsset key: scene-03-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대자동차 (005380).\nStory title: 현대차, 영업이익 11조를 내고도 한때 장부가 반값이던 회사.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 현대자동차, showing the turning point '답은 손실이 아니라 고객에게 빌려준 돈이었습니다' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
     },
     {
       "order": 4,
@@ -181,34 +313,34 @@
         4
       ],
       "role": "narrative-turn",
-      "scene": "editorial business-news scene tied to 현대자동차, showing the turning point '현대캐피탈이 운전자본 34조를 삼켰습니다' through physical work, demand, location, or operations",
+      "scene": "editorial business-news scene tied to 현대자동차, showing the turning point '여기에 부채 190%도 위험해서가 아니라 금융사를 연결한 무게였습니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "planned",
-      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/005380/scene-04-narrative-turn.webp\nAsset key: scene-04-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대자동차 (005380).\nStory title: 현대차는 11조를 벌고 6조가 빠져나가는 회사입니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 현대자동차, showing the turning point '현대캐피탈이 운전자본 34조를 삼켰습니다' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/005380/scene-04-narrative-turn.webp\nAsset key: scene-04-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대자동차 (005380).\nStory title: 현대차, 영업이익 11조를 내고도 한때 장부가 반값이던 회사.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 현대자동차, showing the turning point '여기에 부채 190%도 위험해서가 아니라 금융사를 연결한 무게였습니다' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
     },
     {
       "order": 5,
-      "assetKey": "scene-05-number-evidence",
+      "assetKey": "scene-05-narrative-turn",
       "slideRefs": [
         5
       ],
-      "role": "number-evidence",
-      "scene": "real-world 현대자동차 operation or evidence scene behind the number '같은 차를 파는 기아는 71%입니다. 현대차만 2.7배 무거운 건 실력이 아니라 캐피탈을 장부에 얹었기 때문입니다.', using physical production, facility, customer, or supply-chain context instead of charts",
+      "role": "narrative-turn",
+      "scene": "editorial business-news scene tied to 현대자동차, showing the turning point '여기서 오해는 끝나지만 마진은 실제로 3.6%까지 눌렸습니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "planned",
-      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/005380/scene-05-number-evidence.webp\nAsset key: scene-05-number-evidence\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대자동차 (005380).\nStory title: 현대차는 11조를 벌고 6조가 빠져나가는 회사입니다.\nCarousel role: number-evidence.\nImage subject: real-world 현대자동차 operation or evidence scene behind the number '같은 차를 파는 기아는 71%입니다. 현대차만 2.7배 무거운 건 실력이 아니라 캐피탈을 장부에 얹었기 때문입니다.', using physical production, facility, customer, or supply-chain context instead of charts.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/005380/scene-05-narrative-turn.webp\nAsset key: scene-05-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대자동차 (005380).\nStory title: 현대차, 영업이익 11조를 내고도 한때 장부가 반값이던 회사.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 현대자동차, showing the turning point '여기서 오해는 끝나지만 마진은 실제로 3.6%까지 눌렸습니다' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
     },
     {
       "order": 6,
-      "assetKey": "scene-06-number-evidence",
+      "assetKey": "scene-06-narrative-turn",
       "slideRefs": [
         6
       ],
-      "role": "number-evidence",
-      "scene": "real-world 현대자동차 operation or evidence scene behind the number '착시가 아니라 2023년 9.3% 정점에서 깎이는 중입니다. 미국 관세와 제품 믹스가 마진을 눌렀습니다.', using physical production, facility, customer, or supply-chain context instead of charts",
+      "role": "narrative-turn",
+      "scene": "editorial business-news scene tied to 현대자동차, showing the turning point '그 사이 20만원이 78만원 찍고 50만원으로 돌아왔습니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "planned",
-      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/005380/scene-06-number-evidence.webp\nAsset key: scene-06-number-evidence\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대자동차 (005380).\nStory title: 현대차는 11조를 벌고 6조가 빠져나가는 회사입니다.\nCarousel role: number-evidence.\nImage subject: real-world 현대자동차 operation or evidence scene behind the number '착시가 아니라 2023년 9.3% 정점에서 깎이는 중입니다. 미국 관세와 제품 믹스가 마진을 눌렀습니다.', using physical production, facility, customer, or supply-chain context instead of charts.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/005380/scene-06-narrative-turn.webp\nAsset key: scene-06-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대자동차 (005380).\nStory title: 현대차, 영업이익 11조를 내고도 한때 장부가 반값이던 회사.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 현대자동차, showing the turning point '그 사이 20만원이 78만원 찍고 50만원으로 돌아왔습니다' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
     },
     {
       "order": 7,
@@ -217,10 +349,10 @@
         7
       ],
       "role": "narrative-turn",
-      "scene": "editorial business-news scene tied to 현대자동차, showing the turning point '20만원이 78만원 찍고 50만원으로 되돌아왔습니다' through physical work, demand, location, or operations",
+      "scene": "editorial business-news scene tied to 현대자동차, showing the turning point '돌아온 값에는 밸류업이라는 실체와 검증 안 된 로봇 기대가 섞였습니다' through physical work, demand, location, or operations",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "planned",
-      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/005380/scene-07-narrative-turn.webp\nAsset key: scene-07-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대자동차 (005380).\nStory title: 현대차는 11조를 벌고 6조가 빠져나가는 회사입니다.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 현대자동차, showing the turning point '20만원이 78만원 찍고 50만원으로 되돌아왔습니다' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/005380/scene-07-narrative-turn.webp\nAsset key: scene-07-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대자동차 (005380).\nStory title: 현대차, 영업이익 11조를 내고도 한때 장부가 반값이던 회사.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 현대자동차, showing the turning point '돌아온 값에는 밸류업이라는 실체와 검증 안 된 로봇 기대가 섞였습니다' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
     },
     {
       "order": 8,
@@ -229,16 +361,16 @@
         8
       ],
       "role": "closing-checkpoint",
-      "scene": "quiet final-check scene tied to 현대자동차 for the reader to verify '78만원엔 로봇 기대가 섞였습니다', such as documents, equipment, facility context, or customer workflow",
+      "scene": "quiet final-check scene tied to 현대자동차 for the reader to verify '결국 사라진 게 아니라 빌려준 것이었고 무거운 것과 위험한 것은 달랐습니다', such as documents, equipment, facility context, or customer workflow",
       "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
       "status": "planned",
-      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/005380/scene-08-closing-checkpoint.webp\nAsset key: scene-08-closing-checkpoint\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대자동차 (005380).\nStory title: 현대차는 11조를 벌고 6조가 빠져나가는 회사입니다.\nCarousel role: closing-checkpoint.\nImage subject: quiet final-check scene tied to 현대자동차 for the reader to verify '78만원엔 로봇 기대가 섞였습니다', such as documents, equipment, facility context, or customer workflow.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/005380/scene-08-closing-checkpoint.webp\nAsset key: scene-08-closing-checkpoint\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 현대자동차 (005380).\nStory title: 현대차, 영업이익 11조를 내고도 한때 장부가 반값이던 회사.\nCarousel role: closing-checkpoint.\nImage subject: quiet final-check scene tied to 현대자동차 for the reader to verify '결국 사라진 게 아니라 빌려준 것이었고 무거운 것과 위험한 것은 달랐습니다', such as documents, equipment, facility context, or customer workflow.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
     }
   ],
   "imagegen": {
     "tool": "GPT image_gen",
     "generationRule": "각 imagePlan.prompt 를 한 장씩 image_gen 으로 생성한다. 프롬프트는 그 글의 회사·사건·장소·운영 질문을 상징하는 실제 사용용 이미지를 목표로 하며, 범용 금융 배경은 탈락시킨다.",
-    "extractCommand": "uv run python -X utf8 sns/scripts/extractImagegenAssets.py 005380 --count 8 --names scene-01-cover-hook,scene-02-number-evidence,scene-03-number-evidence,scene-04-narrative-turn,scene-05-number-evidence,scene-06-number-evidence,scene-07-narrative-turn,scene-08-closing-checkpoint --keywords \"현대자동차,005380-hyundai-motor\"",
+    "extractCommand": "uv run python -X utf8 sns/scripts/extractImagegenAssets.py 005380 --count 8 --names scene-01-cover-hook,scene-02-narrative-turn,scene-03-narrative-turn,scene-04-narrative-turn,scene-05-narrative-turn,scene-06-narrative-turn,scene-07-narrative-turn,scene-08-closing-checkpoint --keywords \"현대자동차,005380-hyundai-motor\"",
     "checkCommand": "uv run python -X utf8 sns/scripts/checkImagegenAssets.py 005380",
     "publishCommands": [
       "uv run python -X utf8 sns/scripts/build_index.py",
@@ -278,23 +410,23 @@
     "decisionLog": [
       {
         "round": "writerPanel",
-        "decision": "통과(84). slide4·7 명사구를 완결 문장으로, slide6에 착시에서 진짜하락으로 넘기는 힌지 추가. 표지 훅과 도입 3장 착지 유지."
+        "decision": "정식 기획루프(cards_plan_loop) 라운드4 = 맥락 90·인사이트 88·시각정합 86·재미 88, 회의자 kill 0. 총액 34조 vs 순액 6조 화해, 부채 190%는 금융연결 착시(신용 A+급·부도 0.04%), 관세·중국 실물악재 별도 인정."
       },
       {
         "round": "honestyEvidence",
-        "decision": "통과(84). 2.5배를 정점 78만원이 아니라 되돌아온 50만원(50/20)에 재부착해 카드 내부 수치 모순 제거. 같은 오류가 전파된 블로그 1막표·산문·9막·SVG도 고점 +285%/세 배 넘게로 정합. 미검증 로봇 라벨 유지."
+        "decision": "전 수치 검증데이터 내. 미검증(로봇 가치·목표주가 100만원) 라벨 유지. 저점 PBR 역산치는 데이터 지침대로 수치로 못박지 않음."
       },
       {
         "round": "imageFit",
-        "decision": "통과(84). 가짜 공식문서(trump-sign Executive Order) 제거, 가로형 hyundai-factory(크롭 사고) 제거, 전부 세로 실사(assembly-line·container-ship·night-factory·santafe-hev)로 톤 정합. 눈검수 완료(도식·텍스트·인물 0)."
+        "decision": "데이터주장 카드 4장은 finCard 2 + table 2 그래프가 시각물이라 배경 비움. 이미지 4장(표지·범인·섞인두힘·마무리)은 현대 실물(사옥/공장/수출선/차). 가짜문서·인물 0."
       },
       {
         "round": "readerFit",
-        "decision": "통과(84). slide4 용어를 caption·검증표의 운전자본으로 통일. 회사=로봇 1장, 이슈=로봇 전담 역할분담 정합."
+        "decision": "평가자 라운드4 쉬움 지적 반영: dCR 약어 제거, A+급 투자적격·부도확률 0.04%로 풀어씀. bare stat 카드 제거(숫자만 뜨고 그래프 없는 안티패턴 삭제), 모든 데이터주장 카드가 자기 증거 그래프를 얹음."
       },
       {
         "round": "reevaluation",
-        "decision": "통과. 안전수정 5건 + 이미지 3건 + 블로그 오류 정합 반영 후 재확인 완료."
+        "decision": "메인 스레드 조립에서 평가자 라운드4 fix + 시각게이트(visualPlan) 전수 반영. peerBarBadge 미빌드 렌더계약은 table(부채/신용/부도)로 대체해 같은 반전 유지. 마무리 문장은 데이터visual 강제 키워드 회피해 그래프 없이 판단으로 닫음."
       }
     ]
   }
