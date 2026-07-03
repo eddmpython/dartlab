@@ -27,6 +27,46 @@ from dartlab.synth.expectationSpec import ExpectationScore, ExpectationSpec
 LEDGER_SUBDIR = "expectations"
 _JSON_FIELDS = {"quantiles", "direction", "baselines", "sourceRefs", "warnings", "crpsBaseline"}
 
+# Explicit column schemas: dtype inference on an all-None column (e.g. `error` in a clean
+# month) would freeze the shard as Null and break later appends of real values.
+_EXPECTATION_SCHEMA: dict[str, pl.DataType] = {
+    "expectationId": pl.Utf8,
+    "domain": pl.Utf8,
+    "variable": pl.Utf8,
+    "unit": pl.Utf8,
+    "freq": pl.Utf8,
+    "horizon": pl.Int64,
+    "targetPeriod": pl.Utf8,
+    "issuedAt": pl.Utf8,
+    "issuedLive": pl.Boolean,
+    "asOf": pl.Utf8,
+    "engine": pl.Utf8,
+    "engineVersion": pl.Utf8,
+    "kind": pl.Utf8,
+    "quantiles": pl.Utf8,
+    "direction": pl.Utf8,
+    "baselines": pl.Utf8,
+    "sourceRefs": pl.Utf8,
+    "warnings": pl.Utf8,
+    "schemaVersion": pl.Int64,
+}
+_SCORE_SCHEMA: dict[str, pl.DataType] = {
+    "expectationId": pl.Utf8,
+    "scoredAt": pl.Utf8,
+    "actual": pl.Utf8,
+    "actualAsOf": pl.Utf8,
+    "revisionPolicy": pl.Utf8,
+    "coverageHit90": pl.Boolean,
+    "coverageHit50": pl.Boolean,
+    "pit": pl.Float64,
+    "crps": pl.Float64,
+    "crpsBaseline": pl.Utf8,
+    "skill": pl.Float64,
+    "brier": pl.Float64,
+    "error": pl.Utf8,
+}
+_SCHEMA_BY_TABLE = {"expectations": _EXPECTATION_SCHEMA, "scores": _SCORE_SCHEMA}
+
 
 def ledgerDir(baseDir: Path | None = None) -> Path:
     """Resolve the ledger root: explicit baseDir > DARTLAB_DATA_DIR env > ./data."""
@@ -43,6 +83,8 @@ def _flatten(row: ExpectationSpec | ExpectationScore) -> dict:
             d[k] = json.dumps(d[k], ensure_ascii=False)
         elif d[k] is not None and not isinstance(d[k], (str, int, float, bool)):
             d[k] = str(d[k])
+    if "actual" in d and d["actual"] is not None:
+        d["actual"] = str(d["actual"])  # float|str 혼합 열은 parquet 불가: 문자열로 통일 저장
     return d
 
 
@@ -54,7 +96,7 @@ def _append(rows: list, base: Path, table: str, stampField: str, *, uniqueId: bo
         byYear.setdefault(getattr(r, stampField)[:4], []).append(_flatten(r))
     for yyyy, flat in sorted(byYear.items()):
         path = base / f"{table}_{yyyy}.parquet"
-        new = pl.DataFrame(flat)
+        new = pl.DataFrame(flat, schema=_SCHEMA_BY_TABLE[table])
         if path.exists():
             old = pl.read_parquet(path)
             if uniqueId:

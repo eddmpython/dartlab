@@ -1,0 +1,77 @@
+name: Expectation Cycle
+
+# ──────────────────────────────────────────────────────────────
+# 기대치 격자 (Expectation Grid) 자동 사이클 : 발행 → 채점 → 성적표 → HF push
+#
+# 원장 = HF expectations/ (append-only). 오케스트레이션 SSOT =
+# dartlab.simulate.expectationCycle (유일 기록자 = simulate).
+# 월 cron: KST 매월 6일 06:00 (ECOS/FRED 월초 발표·HF macro sync 반영 후).
+# 상세: mainPlan/expectation-grid/
+# ──────────────────────────────────────────────────────────────
+
+on:
+  schedule:
+    - cron: '0 21 5 * *'  # UTC 21:00 5일 = KST 06:00 6일 (monthly: macro 발행+채점)
+  workflow_dispatch:
+    inputs:
+      cycle:
+        description: 'monthly (macro) / quarterly (매출·손익·credit, P3+ 합류)'
+        default: 'monthly'
+        type: choice
+        options: [monthly, quarterly]
+      push:
+        description: 'HF expectations/ 업로드'
+        default: true
+        type: boolean
+
+permissions:
+  contents: read  # HF push 는 HF_TOKEN 사용. git 쓰기 없음.
+
+concurrency:
+  group: hf-expectations-push
+  cancel-in-progress: false  # append-only 원장: 실행 중 취소 금지
+
+jobs:
+  expectation-cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Smoke import (fail fast on src regression)
+        run: uv run python -c "import dartlab; print('dartlab', getattr(dartlab, '__version__', 'dev'))"
+
+      - name: Seed ledger from HF (append-only continuity)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          uv run python -X utf8 - <<'PY'
+          from pathlib import Path
+          from huggingface_hub import snapshot_download
+          Path("data").mkdir(exist_ok=True)
+          snapshot_download(
+              repo_id="eddmpython/dartlab-data", repo_type="dataset",
+              allow_patterns=["expectations/*"], local_dir="data",
+          )
+          print("seeded:", sorted(p.name for p in Path("data/expectations").glob("*")) if Path("data/expectations").exists() else "empty (first cycle)")
+          PY
+
+      - name: Run cycle (issue -> score -> scorecard -> push)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+        run: |
+          PUSH_FLAG=""
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.push }}" = "true" ]; then PUSH_FLAG="--push"; fi
+          uv run python -X utf8 .github/scripts/sync/buildExpectations.py \
+            --cycle "${{ inputs.cycle || 'monthly' }}" $PUSH_FLAG

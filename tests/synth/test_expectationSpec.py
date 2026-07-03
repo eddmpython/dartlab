@@ -83,8 +83,13 @@ class TestScoringGolden:
         assert s.brier == pytest.approx(0.09)
 
     def test_expectation_id_format(self):
-        eid = buildExpectationId("macro", "KR.CPI", "M", 3, "2026-07-03T09:00")
-        assert eid == "macro.KR.CPI.M3@20260703T0900"
+        eid = buildExpectationId("macro", "KR.CPI", "M", 3, "2026-10", "2026-07-03T09:00")
+        assert eid == "macro.KR.CPI.M3.2026-10@20260703T0900"
+
+    def test_expectation_id_distinct_target_same_minute(self):
+        a = buildExpectationId("macro", "KR.CPI", "M", 1, "2026-08", "2026-07-03T09:00")
+        b = buildExpectationId("macro", "KR.CPI", "M", 1, "2026-09", "2026-07-03T09:00")
+        assert a != b
 
 
 class TestScoreExpectation:

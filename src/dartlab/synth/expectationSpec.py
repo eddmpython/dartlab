@@ -122,25 +122,26 @@ class ExpectationScore:
     error: str | None = None
 
 
-def buildExpectationId(domain: str, variable: str, freq: str, horizon: int, issuedAt: str) -> str:
-    """원장 기본키 생성 : 동일 (도메인·변수·주기·수평선·발행시각) 재발행은 원장에서 거절된다.
+def buildExpectationId(domain: str, variable: str, freq: str, horizon: int, targetPeriod: str, issuedAt: str) -> str:
+    """원장 기본키 생성 : (도메인·변수·주기·수평선·대상기·발행시각) 재발행은 원장에서 거절된다.
 
     Args:
         domain: 도메인.
         variable: 변수 식별자.
         freq: 주기.
         horizon: 수평선.
+        targetPeriod: 채점 대상 기 (id 에 포함해 같은 분(minute) 내 다른 대상기 충돌 차단).
         issuedAt: 발행 시각 문자열 (구분자 포함 가능, 내부에서 정규화).
 
     Returns:
-        str: ``{domain}.{variable}.{freq}{horizon}@{정규화 발행시각}``.
+        str: ``{domain}.{variable}.{freq}{horizon}.{targetPeriod}@{정규화 발행시각}``.
 
     Example:
-        >>> buildExpectationId("macro", "KR.CPI", "M", 3, "2026-07-03T09:00")
-        'macro.KR.CPI.M3@20260703T0900'
+        >>> buildExpectationId("macro", "KR.CPI", "M", 3, "2026-10", "2026-07-03T09:00")
+        'macro.KR.CPI.M3.2026-10@20260703T0900'
     """
     stamp = issuedAt.replace("-", "").replace(":", "")[:13]
-    return f"{domain}.{variable}.{freq}{horizon}@{stamp}"
+    return f"{domain}.{variable}.{freq}{horizon}.{targetPeriod}@{stamp}"
 
 
 def pinballLoss(quantiles: dict[int, float], actual: float) -> float:

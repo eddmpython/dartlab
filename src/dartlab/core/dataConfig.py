@@ -178,6 +178,11 @@ DATA_RELEASES: dict[str, dict] = {
         "label": "관세청 무역통계 월별 수출입 시계열 (HF 벌크, 산업 선행지표)",
         "public": True,
     },
+    "expectations": {
+        "dir": "expectations",
+        "label": "기대치 격자 원장 (발행 봉인 + 사후 채점, append-only, 시뮬레이터 검증척추)",
+        "public": True,
+    },
     # ── generated artifact (landing 빌드 시 HF 에서 fetch) ──
     "industryMap": {
         "dir": "landing/map",
@@ -324,6 +329,7 @@ _DOWNLOAD_SHARD_KIND = {
     "macro/fred": "series",
     "macro/ecos": "series",
     "macro/customs": "series",
+    "expectations": "series",
     "gov/indices/index": "series",
     "research/brokerage": "series",
     "gov/prices/date": "dateShard",
