@@ -127,10 +127,10 @@ def visual_spec(meta: dict) -> dict:
     visual = meta.get("visual") or {}
     if not isinstance(visual, dict):
         visual = {}
-    episode_no = int(meta.get("episodeNo") or 0)
     return {
         "source": str(visual.get("source") or "assets/source-gray.webp"),
-        "kicker": str(visual.get("kicker") or f"EP.{episode_no:02d} · DartLab Podcast"),
+        # 에피소드 번호(EP.NN)는 이미지에 넣지 않는다 (운영자 지시 2026-07-03). kicker = 브랜드만.
+        "kicker": str(visual.get("kicker") or "DartLab Podcast"),
         "titleLines": [str(x) for x in (visual.get("titleLines") or [str(meta.get("title") or "")]) if str(x).strip()],
         "subtitle": str(visual.get("subtitle") or meta.get("oneLineMessage") or meta.get("summary") or ""),
         "footer": str(visual.get("footer") or "DartLab"),

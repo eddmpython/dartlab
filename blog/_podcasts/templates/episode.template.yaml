@@ -30,7 +30,7 @@ episode:
                                          #  meta/topic: {source: assets/x.webp, name: x} -> podcasts/{slug} 신규 업로드
   visual:
     source: ""                           # 예: assets/source-gray.webp
-    kicker: "EP.00 · DartLab Podcast"
+    kicker: "DartLab Podcast"           # 에피소드 번호(EP.NN)는 이미지에 넣지 않는다
     titleLines: []                       # 카드뉴스형 줄바꿈 제목
     subtitle: ""
     footer: ""

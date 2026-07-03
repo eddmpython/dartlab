@@ -37,7 +37,7 @@ episode:
       pool: companyAsset
   visual:
     source: assets/source.webp
-    kicker: EP.04 · DartLab Podcast
+    kicker: DartLab Podcast
     titleLines:
       - "[[11조]] 벌고도"
       - 현금이 마른다

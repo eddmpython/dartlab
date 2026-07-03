@@ -37,7 +37,7 @@ episode:
       pool: companyAsset
   visual:
     source: assets/source.webp
-    kicker: EP.03 · DartLab Podcast
+    kicker: DartLab Podcast
     titleLines:
       - 하이닉스에 추월당한
       - "[[삼성전자]]"

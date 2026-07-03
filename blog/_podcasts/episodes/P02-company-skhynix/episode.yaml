@@ -37,7 +37,7 @@ episode:
       pool: companyAsset
   visual:
     source: assets/source.webp
-    kicker: EP.02 · DartLab Podcast
+    kicker: DartLab Podcast
     titleLines:
       - 다섯 번 죽을 뻔한 회사가
       - "[[삼성]]을 넘어섰다"

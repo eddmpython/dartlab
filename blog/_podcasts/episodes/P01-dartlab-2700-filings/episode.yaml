@@ -31,7 +31,7 @@ episode:
       name: source-gray
   visual:
     source: assets/source-gray.webp
-    kicker: EP.01 · DartLab Podcast
+    kicker: DartLab Podcast
     titleLines:
       - 2700개 기업 공시를
       - 한 줄로 통합하는
