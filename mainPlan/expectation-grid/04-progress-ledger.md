@@ -63,3 +63,17 @@ KR macro 3변수 x h=1/3/6, 2025-01~2026-04 매월 asOf backfill(issuedLive=Fals
 2. 분기 quarterly cron 첫 전상장사 sweep (workflow_dispatch cycle=quarterly, 실패율 census)
 3. 완성 정의 잔여: 라이브 사이클의 "실제값 도착→성적표 갱신" = 2026-08 monthly cron 이 자동 수행
    (기계는 전부 배선됨. 사이클 자체는 backfill 로 실데이터 증명 완료 = P0 131행 채점)
+
+## E2b : 분기 E 발행 + 패널 밀도 테이블 (2026-07-04, 운영자 지적 2건 대응)
+
+운영자 지적: ①성적표 패널 나열식 비효율 -> 테이블 ②재무제표 연간만 E, 분기 부재.
+
+- **분기 E 발행 (`issueQuarterlyIs`)**: 봉인된 연간 분위행의 결정적 계절 분해(새 예측 아님, sourceRefs 계보 = 연간 부모). 계절성 = `scenarioSim.seasonalSharesFromYearQuarters` 코어(3년 Q1~Q4 |값| 비중 평균, 신규 공개 verb) x `_buildFinanceSeries(freq="Q")`. **panel("is") 는 분기창에 Q4 열이 없어 부적합(실측)** -> 첫 발행 12행(3사 2026Q3·Q4)은 flat 0.25 분해로 봉인됨(`flatSeasonalityFallback` 경고 동봉, append-only 원칙대로 유지·삭제 안 함). 소스 교체 후 2027Q1~Q4 24행은 실 계절성(005930 영업이익 [0.15,0.18,0.31,0.36] 하반기 편중 실측). 지표 = 매출·영업이익만(scenarioSim 전례, 순이익 분기 부호 요동). years=(1,2) 기본: 당해 잔여분기 + 차년 4분기. live 는 종료 분기 발행 금지(look-ahead 차단). horizon = FY 내 분기 위치(1~4).
+- **분기 채점**: scoreDue freq=Q 브랜치(분기말 +2개월 due, grace 3개월 후 결측 error 봉인). 실적 = `quarterlyValues`(신규 공개 verb, 미발표 분기 = 키 부재).
+- **오염 가드 2건 선제 수리**: ①issueEarnings 연간 캐스케이드에 freq=Y 필터(분기 행 혼입 시 horizon 맵 붕괴) ②buildScorecard 그룹 키에 freq 삽입(`revenue.*.Q1` vs `Y1` 혼입 차단, 키 형식 `{domain}.{variable}.{freq}{h}.{live}`).
+- **뷰/UI**: estimateStatements 뷰에 `periodKind`(FY|Q, 분류 = 라이브러리 소유) -> 분기 탭 손익에만 E열(26Q3E~27Q4E), 연간 E열 라벨 버그 수정(slice(6) -> "FYE" 중복 키). 성적표 패널 = 밀도 테이블 3종(연간 기대 지표x FY / 분기 분해 근접 4분기 / 시장·채점 4열). 패널 표시 = 대상기간별 최신 발행(전역 최신 배치만 남기면 이시각 발행 target 소실 실측).
+- 검증: pytest 34 green(신규 분기 발행·채점·계보·오염가드·계절성 코어) · dartlabGuard strict 7룰+6게이트 PASS · publicApiCoverage OK · svelte-check 0 err · checkUiDataWiring 0 · 스크린샷 눈검수 2장.
+- 원장 현황: 발행 78 (연간 42 + 분기 36) · HF 4파일 재발행 완료.
+
+### 알려진 정합 갭 (후속, 신규 아님)
+- **proforma 매출 앵커 갭**: E-3표 연간 매출(예 005930 FY26E 427.6조)이 봉인 연간 기대(367.3조)와 어긋남. 원인 = issueEarnings 가 봉인 레벨을 성장률로 변환 후 buildProforma 가 자기 내부 베이스(최근 4분기 합)에 적용. 분기 E 는 봉인 연간을 직접 분해하므로 분기합 != 연간 E열. 정공법 = buildProforma 에 revenueLevelPath(절대 경로) 지원 추가 후 재발행분부터 앵커 일치 (L2 엔진 변경이라 별도 단위).

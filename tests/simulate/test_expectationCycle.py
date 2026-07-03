@@ -314,6 +314,124 @@ def test_scorecard_groups_and_sample_gate(tmp_path):
     card = buildScorecard(baseDir=tmp_path)
     assert card["totals"]["issued"] == 6 and card["totals"]["scored"] == 3
     assert card["totals"]["unscored"] == 3
-    key = "macro.KR.CPI.h1.live"
+    key = "macro.KR.CPI.M1.live"  # freq 포함 키: 분기/연간 동일 variable 혼입 차단
     assert key in card["groups"]
     assert card["groups"][key]["n"] == 1 and card["groups"][key]["verified"] is False
+
+
+def quarterlyFixture(tmp_path, *, now="2026-07", years=(1,)):
+    """연간 매출·손익 봉인 후 분기 분해 발행 (계절성 주입: 매출 편중, 영업이익 균등)."""
+    from dartlab.simulate.expectationCycle import issueEarnings, issueQuarterlyIs
+
+    revenueFixture(tmp_path)
+    issueEarnings(
+        ["005930"],
+        live=True,
+        baseDir=tmp_path,
+        proformaFn=_fakeProforma,
+        seriesByCode={"005930": {"IS": {}}},
+        annualByCode={"005930": {2025: 105.0}},
+    )
+    return issueQuarterlyIs(
+        ["005930", "222222"],
+        live=True,
+        years=years,
+        baseDir=tmp_path,
+        seasonalityByCode={"005930": ([0.2, 0.3, 0.1, 0.4], [0.25, 0.25, 0.25, 0.25])},
+        now=now,
+    )
+
+
+def test_issue_quarterly_seasonal_split_lineage_and_lookahead(tmp_path):
+    from dartlab.simulate.expectationCycle import issueQuarterlyIs
+    from dartlab.simulate.expectationLedger import readProforma
+
+    rows, skipped = quarterlyFixture(tmp_path)
+    assert skipped == {"222222": "연간 매출 기대 없음(h1, 선행 issueRevenue 필요)"}
+    # now=2026-07: Q1·Q2 는 이미 종료 -> look-ahead 차단, Q3·Q4 x 2지표 = 4행
+    assert len(rows) == 4
+    assert {r.targetPeriod for r in rows} == {"2026Q3", "2026Q4"}
+    revQ3 = next(r for r in rows if r.variable == "005930.revenue" and r.targetPeriod == "2026Q3")
+    assert revQ3.freq == "Q" and revQ3.horizon == 3 and revQ3.domain == "revenue"
+    # 연간 h1 (p25=95, p50=110, p75=125) x Q3 비중 0.1 = 시나리오 일관 분해
+    assert abs(revQ3.quantiles[50] - 11.0) < 1e-9
+    assert abs(revQ3.quantiles[25] - 9.5) < 1e-9 and abs(revQ3.quantiles[75] - 12.5) < 1e-9
+    assert revQ3.sourceRefs[0].startswith("revenue.005930.revenue.Y1.FY2026@")  # 모체 계보
+    assert "seasonalSplitOfAnnual" in revQ3.warnings
+    opQ4 = next(r for r in rows if r.variable == "005930.operatingProfit" and r.targetPeriod == "2026Q4")
+    assert opQ4.domain == "earnings" and "flatSeasonalityFallback" in opQ4.warnings
+    # E-3표 분기 행: 2분기 x 3분위 x 2계정 = 12행 (연간 발행분과 별개)
+    pf = readProforma(baseDir=tmp_path, code="005930")
+    qpf = pf.filter(pf["targetPeriod"].str.contains("Q"))
+    assert qpf.height == 12 and set(qpf.get_column("account").unique().to_list()) == {"revenue", "operating_income"}
+    # idempotent 재실행
+    rows2, _ = issueQuarterlyIs(
+        ["005930"],
+        live=True,
+        years=(1,),
+        baseDir=tmp_path,
+        seasonalityByCode={"005930": ([0.2, 0.3, 0.1, 0.4], [0.25, 0.25, 0.25, 0.25])},
+        now="2026-07",
+    )
+    assert rows2 == [] and readProforma(baseDir=tmp_path, code="005930").height == pf.height
+
+
+def test_issue_quarterly_default_splits_next_fiscal_year_too(tmp_path):
+    """기본 years=(1,2): 당해 잔여분기(Q3·Q4) + 차년 4분기 전부, 차년 계보 = FY2027 매출 부모."""
+    rows, _ = quarterlyFixture(tmp_path, years=(1, 2))
+    assert {r.targetPeriod for r in rows} == {"2026Q3", "2026Q4", "2027Q1", "2027Q2", "2027Q3", "2027Q4"}
+    assert len(rows) == 12  # (2 + 4) 분기 x 2지표
+    q1 = next(r for r in rows if r.variable == "005930.revenue" and r.targetPeriod == "2027Q1")
+    assert q1.horizon == 1 and q1.sourceRefs[0].startswith("revenue.005930.revenue.Y2.FY2027@")
+
+
+def test_series_seasonality_from_finance_quarters():
+    """_buildFinanceSeries(freq=Q) 형태에서 계절성: 완비 연도만, panel Q4 결손 대체 경로."""
+    from dartlab.simulate.expectationCycle import _seriesSeasonality
+
+    periods = ["2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2", "2025-Q3"]
+    series = {"IS": {"sales": [1.0, 2.0, 3.0, 4.0, 9.0, 9.0, 9.0]}}
+    # 2025 는 Q4 미도래 -> 표본 제외, 2024 만
+    assert _seriesSeasonality(series, periods, "sales", ["2024", "2025"]) == [0.1, 0.2, 0.3, 0.4]
+    assert _seriesSeasonality(series, periods, "sales", ["2023"]) == [0.25] * 4
+    assert _seriesSeasonality({"IS": {}}, periods, "sales", ["2024"]) == [0.25] * 4
+
+
+def test_issue_quarterly_annual_cascade_not_polluted(tmp_path):
+    """분기 행이 원장에 있어도 issueEarnings 연간 캐스케이드는 freq=Y 만 읽는다."""
+    from dartlab.simulate.expectationCycle import issueEarnings
+
+    quarterlyFixture(tmp_path)
+    rows2, _ = issueEarnings(
+        ["005930"],
+        live=True,
+        baseDir=tmp_path,
+        proformaFn=_fakeProforma,
+        seriesByCode={"005930": {"IS": {}}},
+        annualByCode={"005930": {2025: 105.0}},
+    )
+    assert rows2 == []  # 분기 행 혼입으로 horizon 맵이 깨지면 여기서 재발행이 일어난다
+
+
+def test_score_quarterly_due_grace_and_actual(tmp_path):
+    quarterlyFixture(tmp_path)
+    actuals = {"005930": {"revenue": {"2026Q3": 11.5}, "operatingProfit": {"2026Q3": 2.6}}}
+    # Q3(분기말 2026-09) 는 2026-11 부터 due
+    assert scoreDue(now="2026-10", baseDir=tmp_path, monthlyBySeries={}, quarterlyByCode=actuals) == []
+    scores = scoreDue(now="2026-11", baseDir=tmp_path, monthlyBySeries={}, quarterlyByCode=actuals)
+    q3 = [s for s in scores if ".2026Q3@" in s.expectationId]
+    assert len(scores) == 2 and len(q3) == 2 and all(s.error is None for s in q3)
+    rev = next(s for s in q3 if s.expectationId.startswith("revenue."))
+    assert rev.coverageHit50 is True  # 11.5 in [9.5, 12.5]
+    # Q4(분기말 2026-12) 는 2027-02 due + grace 3개월: 실적 없으면 2027-04 pending, 2027-05 error 봉인
+    assert scoreDue(now="2027-03", baseDir=tmp_path, monthlyBySeries={}, quarterlyByCode=actuals) == []
+    late = scoreDue(
+        now="2027-05",
+        baseDir=tmp_path,
+        monthlyBySeries={},
+        quarterlyByCode=actuals,
+        annualRevenueByCode={"005930": {2026: 118.0}},
+        fundamentalsByCode={"005930": {"operatingProfit": {2026: 11.5}, "netIncome": {2026: 8.2}}},
+    )
+    q4 = [s for s in late if ".2026Q4@" in s.expectationId]
+    assert len(q4) == 2 and all(s.error is not None for s in q4)  # 결측 봉인(생존편향 금지)

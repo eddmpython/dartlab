@@ -7,7 +7,7 @@ Roles (mainPlan/expectation-grid/01 §2.4):
 - ``scoreDue``    : join due unscored rows with the latest actuals and append score rows.
   Not-yet-published actuals are skipped inside a grace window; past the grace window a missing
   actual is sealed as an error row (no silent survivorship).
-- ``buildScorecard`` : aggregate scores per (domain, variable, horizon, issuedLive) with the
+- ``buildScorecard`` : aggregate scores per (domain, variable, freq, horizon, issuedLive) with the
   sample gates of mainPlan/expectation-grid/02 §4 (verified=False forces the "미검증" label).
 
 This module is the only writer of the ledger. L2 engines stay ledger-blind; the downward-only
@@ -54,6 +54,11 @@ _ENGINE_EARNINGS = "analysis.financial.proforma.buildProforma"
 _TAIL_FACTOR = 1.645 / 0.674  # normal approx: p5/p95 from the p25/p75 spread (z-ratio)
 _REV_DUE_MONTH = 4  # FY{Y} annual report filed by end of March -> due from {Y+1}-04
 _REV_GRACE_MONTHS = 3  # due + grace with no actual -> sealed error row
+_QTR_DUE_LAG_MONTHS = 2  # 분기보고서 45일 규정 -> 분기말 +2개월부터 채점 시도
+_ENGINE_SEASONAL = "analysis.forecast.scenarioSim.seasonalSharesFromYearQuarters"
+# 분기 발행 계정: (지표, 부모 도메인, proforma 계정). scenarioSim 전례(매출·영업이익만,
+# 순이익은 분기 부호 요동으로 비중 분해가 무의미) 를 따른다.
+_QTR_METRICS = (("revenue", "revenue", "revenue"), ("operatingProfit", "earnings", "operating_income"))
 # ledger metric -> (finance series section, key) for annual actuals. fcf joins in P4b once a
 # CF-based actual definition is sealed (no expectation without a scoreable actual).
 _METRIC_KEYS = {
@@ -421,7 +426,10 @@ def issueEarnings(
                 else [
                     r
                     for r in exps.iter_rows(named=True)
-                    if r["domain"] == "revenue" and r["variable"] == f"{code}.revenue" and r["issuedLive"] == live
+                    if r["domain"] == "revenue"
+                    and r["variable"] == f"{code}.revenue"
+                    and r["freq"] == "Y"  # 분기 행(issueQuarterlyIs) 혼입 시 연간 캐스케이드 오염
+                    and r["issuedLive"] == live
                 ]
             )
             if not revRows:
@@ -529,6 +537,175 @@ def issueEarnings(
                             + (() if live else ("backfill",)),
                         )
                     )
+        except (ValueError, KeyError, AttributeError, TypeError, RuntimeError, OSError) as exc:
+            skipped[code] = f"{type(exc).__name__}: {exc}"
+    appendExpectations(rows, baseDir=baseDir)
+    appendProformaRows(pfRows, baseDir=baseDir)
+    return rows, skipped
+
+
+def _seriesSeasonality(series, periods: list[str], key: str, years: list[str]) -> list[float]:
+    """_buildFinanceSeries(freq="Q") 시계열에서 Q1~Q4 비중 (panel("is") 는 Q4 열이 없어 부적합)."""
+    vals = (series.get("IS") or {}).get(key) or []
+    byYear: dict[str, list] = {}
+    for p, v in zip(periods, vals):
+        if "-Q" not in p or v is None:
+            continue
+        y, q = p.split("-Q")
+        if y in years:
+            byYear.setdefault(y, [None] * 4)[int(q) - 1] = float(v)
+    complete = {y: qs for y, qs in byYear.items() if all(x is not None for x in qs)}
+    from dartlab.analysis.forecast.scenarioSim import seasonalSharesFromYearQuarters
+
+    return seasonalSharesFromYearQuarters(complete)
+
+
+def _latestAnnualByH(exps, *, domain: str, variable: str, live: bool) -> dict[int, dict]:
+    """최신 발행 연간 기대 행 {horizon: row} (없으면 빈 dict)."""
+    cand = [
+        r
+        for r in exps.iter_rows(named=True)
+        if r["domain"] == domain and r["variable"] == variable and r["freq"] == "Y" and r["issuedLive"] == live
+    ]
+    if not cand:
+        return {}
+    latest = max(r["issuedAt"] for r in cand)
+    return {r["horizon"]: r for r in cand if r["issuedAt"] == latest}
+
+
+def issueQuarterlyIs(
+    codes: list[str],
+    *,
+    live: bool = True,
+    years: tuple[int, ...] = (1, 2),
+    baseDir: Path | None = None,
+    seasonalityByCode: dict[str, tuple[list[float], list[float]]] | None = None,
+    now: str | None = None,
+) -> tuple[list[ExpectationSpec], dict[str, str]]:
+    """Split the sealed Y1 annual quantiles into quarterly IS expectations (매출·영업이익).
+
+    Not a new forecast: each quarterly row is the deterministic seasonal split of the annual
+    quantile row ALREADY sealed in the ledger (parent lineage in sourceRefs). Seasonal shares
+    come from the L2 core ``scenarioSim.seasonalSharesFromYearQuarters`` fed by the company's
+    ``_buildFinanceSeries(freq="Q")`` quarters (3-year Q1~Q4 mean shares; panel("is") is not
+    usable here: its window lacks Q4 columns), so scenario coherence holds: every quantile
+    path is one scenario scaled by the same shares.
+    Metrics follow the scenarioSim precedent (매출·영업이익; 순이익은 분기 부호 요동으로 제외).
+    Live issuance only covers quarters not yet ended at issue time (look-ahead 차단); horizon
+    is the quarter's position in the fiscal year (1~4), so re-sweeps stay idempotent per
+    (variable, horizon, targetPeriod, issuedLive) and the scorecard pools by quarter position.
+    Baselines are sealed as None like issueEarnings (skill 미산출 부채, P4b 트랙).
+
+    Args:
+        codes: stock codes with sealed annual revenue expectations.
+        live: backfill flag (parent rows must match).
+        years: annual parent horizons to split (기본 Y1·Y2 -> 당해 잔여분기 + 차년 4분기).
+        baseDir: ledger root override.
+        seasonalityByCode: injected {code: (revW, oiW)} 4-weights (테스트용, skips Company).
+        now: 'YYYY-MM' clock override (테스트용).
+
+    Returns:
+        (sealed rows, skipped census).
+    """
+    import json as _json
+
+    issuedAt = _nowUtc()
+    nowYm = (now or issuedAt)[:7]
+    existing = _existingKeys(baseDir)
+    exps = readExpectations(baseDir=baseDir)
+    rows: list[ExpectationSpec] = []
+    pfRows: list[dict] = []
+    pfDf = readProforma(baseDir=baseDir)
+    pfExisting: set[tuple[str, str, int]] = (
+        set()
+        if pfDf is None
+        else {
+            (r["parentId"], r["targetPeriod"], r["quantile"])
+            for r in pfDf.select(["parentId", "targetPeriod", "quantile"]).unique().iter_rows(named=True)
+        }
+    )
+    skipped: dict[str, str] = {}
+    if exps is None:
+        return rows, dict.fromkeys(codes, "원장 비어있음(선행 issueRevenue 필요)")
+    for code in codes:
+        try:
+            revByH = _latestAnnualByH(exps, domain="revenue", variable=f"{code}.revenue", live=live)
+            hs = [h for h in years if h in revByH]
+            if not hs:
+                skipped[code] = "연간 매출 기대 없음(h1, 선행 issueRevenue 필요)"
+                continue
+            opByH = _latestAnnualByH(exps, domain="earnings", variable=f"{code}.operatingProfit", live=live)
+            baseFy = int(revByH[hs[0]]["targetPeriod"][2:]) - hs[0]  # "FY2026", h=1 -> 기준 2025
+            if seasonalityByCode is not None:
+                revW, oiW = seasonalityByCode[code]
+            else:
+                import dartlab
+
+                seasonYears = [str(baseFy - i) for i in range(3) if baseFy - i >= 2019]
+                with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
+                    ts = company._buildFinanceSeries(freq="Q")
+                    series = ts[0] if isinstance(ts, tuple) else ts
+                    periods = ts[1] if isinstance(ts, tuple) else []
+                revW = _seriesSeasonality(series, periods, "sales", seasonYears)
+                oiW = _seriesSeasonality(series, periods, "operating_profit", seasonYears)
+            for hy in hs:
+                fy = int(revByH[hy]["targetPeriod"][2:])
+                parentByMetric = {"revenue": (revByH[hy], revW), "operatingProfit": (opByH.get(hy), oiW)}
+                revParentId = revByH[hy]["expectationId"]
+                for q in range(1, 5):
+                    targetPeriod = f"{fy}Q{q}"
+                    if live and _quarterEndYm(targetPeriod) < nowYm:
+                        continue  # 이미 끝난 분기: 라이브 기대가 아니다 (look-ahead 차단)
+                    for metric, domain, pfAccount in _QTR_METRICS:
+                        parent, weights = parentByMetric[metric]
+                        if parent is None:
+                            continue  # 연간 부모 없음(예: 영업이익 미발행) -> 매출만 분해
+                        variable = f"{code}.{metric}"
+                        w = weights[q - 1]
+                        annualQ = {int(k): float(v) for k, v in _json.loads(parent["quantiles"]).items()}
+                        flat = all(abs(x - 0.25) < 1e-9 for x in weights)
+                        if (variable, q, targetPeriod, live) not in existing:
+                            rows.append(
+                                ExpectationSpec(
+                                    expectationId=buildExpectationId(domain, variable, "Q", q, targetPeriod, issuedAt),
+                                    domain=domain,
+                                    variable=variable,
+                                    unit="KRW",
+                                    freq="Q",
+                                    horizon=q,
+                                    targetPeriod=targetPeriod,
+                                    issuedAt=issuedAt,
+                                    issuedLive=live,
+                                    asOf=issuedAt[:10],
+                                    engine=_ENGINE_SEASONAL,
+                                    engineVersion="seasonalShares3y",
+                                    kind="quantiles",
+                                    quantiles={k: v * w for k, v in annualQ.items()},
+                                    baselines={"persistence": None, "seasonalNaive": None, "randomWalk": None},
+                                    sourceRefs=(parent["expectationId"], f"share={w:.4f}"),
+                                    warnings=("seasonalSplitOfAnnual", "scenarioQuantileApprox")
+                                    + (("flatSeasonalityFallback",) if flat else ())
+                                    + (() if live else ("backfill",)),
+                                )
+                            )
+                        # E-3표 분기 행: 계보 앵커 = 해당 연도 매출 부모 (issueEarnings 관례 동일)
+                        for quantile in (25, 50, 75):
+                            if (revParentId, targetPeriod, quantile) in pfExisting:
+                                continue
+                            pfRows.append(
+                                {
+                                    "parentId": revParentId,
+                                    "code": code,
+                                    "issuedAt": issuedAt,
+                                    "issuedLive": live,
+                                    "targetPeriod": targetPeriod,
+                                    "quantile": quantile,
+                                    "statement": "IS",
+                                    "account": pfAccount,
+                                    "value": annualQ[quantile] * w,
+                                    "bsBalanced": True,
+                                }
+                            )
         except (ValueError, KeyError, AttributeError, TypeError, RuntimeError, OSError) as exc:
             skipped[code] = f"{type(exc).__name__}: {exc}"
     appendExpectations(rows, baseDir=baseDir)
@@ -719,6 +896,7 @@ def scoreDue(
     fundamentalsByCode: dict[str, dict[str, dict[int, float]]] | None = None,
     historyByCode: dict[str, list[dict]] | None = None,
     closeByCodeMonth: dict[str, dict[str, float]] | None = None,
+    quarterlyByCode: dict[str, dict[str, dict[str, float]]] | None = None,
 ) -> list[ExpectationScore]:
     """Score due unscored rows against the latest actuals; seal errors past the grace window.
 
@@ -726,6 +904,7 @@ def scoreDue(
         now: 'YYYY-MM' clock override (테스트용). Default = current UTC month.
         baseDir: ledger root override.
         monthlyBySeries: injected latest actuals {seriesId: {ym: value}} (테스트용).
+        quarterlyByCode: injected {code: {metric: {"2026Q3": value}}} 분기 실적 (테스트용).
 
     Returns:
         Appended score rows. A target month is due once it is at least 1 month in the past;
@@ -754,6 +933,7 @@ def scoreDue(
 
     scores: list[ExpectationScore] = []
     fundCache: dict[str, dict[int, float]] = {}
+    qtrCache: dict[str, dict[str, float]] = {}  # f"{code}.{metric}.{year}" -> {"2026Q3": v}
     for row in due.iter_rows(named=True):
         if row["domain"] == "macro":
             age = _ymDiff(nowYm, row["targetPeriod"])
@@ -763,6 +943,35 @@ def scoreDue(
             actual = monthlyBySeries.get(sid, {}).get(row["targetPeriod"])
             if actual is None and age < 1 + _SCORE_GRACE_MONTHS:
                 continue  # publication lag: stay pending, do not seal an error yet
+        elif row["domain"] in ("revenue", "earnings") and row["freq"] == "Q":
+            # 분기 IS 기대 (issueQuarterlyIs): 분기보고서 45일 규정 -> 분기말 +2개월 due
+            dueYm = _ymAdd(_quarterEndYm(row["targetPeriod"]), _QTR_DUE_LAG_MONTHS)
+            if nowYm < dueYm:
+                continue
+            code, metric = row["variable"].split(".", 1)
+            section, key = _METRIC_KEYS.get(metric, (None, None))
+            if section != "IS":
+                continue  # 분기 발행은 IS 지표 한정 (_QTR_METRICS)
+            year = row["targetPeriod"][:4]
+            cacheKey = f"{code}.{metric}.{year}"
+            if cacheKey not in qtrCache:
+                if quarterlyByCode is not None:
+                    qtrCache[cacheKey] = (quarterlyByCode.get(code) or {}).get(metric, {})
+                else:
+                    import dartlab
+                    from dartlab.analysis.forecast.scenarioSim import quarterlyValues
+
+                    try:
+                        with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
+                            isDf = company.panel("is")
+                            for m2, (s2, k2) in _METRIC_KEYS.items():  # 한 번 로드에 IS 지표 전부
+                                if s2 == "IS":
+                                    qtrCache[f"{code}.{m2}.{year}"] = quarterlyValues(isDf, k2, year)
+                    except (ValueError, KeyError, AttributeError, TypeError):
+                        qtrCache[cacheKey] = {}
+            actual = qtrCache.get(cacheKey, {}).get(row["targetPeriod"])
+            if actual is None and _ymDiff(nowYm, dueYm) < _REV_GRACE_MONTHS:
+                continue  # 공시·집계 지연: grace 안 pending
         elif row["domain"] in ("revenue", "earnings"):
             fy = int(row["targetPeriod"][2:])  # "FY2026" -> 2026
             dueYm = f"{fy + 1}-{_REV_DUE_MONTH:02d}"  # annual report deadline passed
@@ -847,7 +1056,7 @@ def buildScorecard(*, baseDir: Path | None = None) -> dict:
 
     Returns:
         dict with generatedAt, totals, and per-group calibration where each group key is
-        ``{domain}.{variable}.h{horizon}.{live|backfill}``. Groups below the sample gate carry
+        ``{domain}.{variable}.{freq}{horizon}.{live|backfill}``. Groups below the sample gate carry
         verified=False; the display contract is that unverified groups render the fixed
         "발행 n건 축적 중 · 캘리브레이션 미검증" label and no performance numbers.
     """
@@ -879,7 +1088,8 @@ def buildScorecard(*, baseDir: Path | None = None) -> dict:
         if m is None:
             continue
         seen.add(row["expectationId"])
-        key = f"{m['domain']}.{m['variable']}.h{m['horizon']}.{'live' if m['issuedLive'] else 'backfill'}"
+        # freq 포함 필수: 분기(h=Q1~4)와 연간(h=1~3)이 같은 variable 을 쓴다
+        key = f"{m['domain']}.{m['variable']}.{m['freq']}{m['horizon']}.{'live' if m['issuedLive'] else 'backfill'}"
         grouped.setdefault(key, []).append((m, row))
     card["totals"]["scored"] = len(seen)
     card["totals"]["unscored"] = exps.height - len(seen)

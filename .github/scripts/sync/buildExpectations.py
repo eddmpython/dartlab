@@ -31,8 +31,13 @@ def main() -> int:
     skipped: dict[str, str] = {}
     if args.cycle == "monthly":
         issued = issueMacro(market=args.market, live=True)
-    else:  # quarterly: 전상장사 매출→손익→credit→주가방향 (순차 스트림, Company 1개씩 로드·해제)
-        from dartlab.simulate.expectationCycle import issueCredit, issueEarnings, issuePriceDirection
+    else:  # quarterly: 전상장사 매출→손익→분기분해→credit→주가방향 (순차 스트림, Company 1개씩 로드·해제)
+        from dartlab.simulate.expectationCycle import (
+            issueCredit,
+            issueEarnings,
+            issuePriceDirection,
+            issueQuarterlyIs,
+        )
 
         if args.codes:
             codes = [c.strip() for c in args.codes.split(",") if c.strip()]
@@ -41,7 +46,12 @@ def main() -> int:
 
             codes = dartlab.listing().get_column("종목코드").to_list()
         issued, skipped = issueRevenue(codes, live=True)
-        for fn, tag in ((issueEarnings, "earnings"), (issueCredit, "credit"), (issuePriceDirection, "price")):
+        for fn, tag in (
+            (issueEarnings, "earnings"),
+            (issueQuarterlyIs, "quarterlyIs"),
+            (issueCredit, "credit"),
+            (issuePriceDirection, "price"),
+        ):
             more, moreSkipped = fn(codes, live=True)
             issued.extend(more)
             skipped.update({f"{c}#{tag}": r for c, r in moreSkipped.items()})

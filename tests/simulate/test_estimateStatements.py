@@ -42,6 +42,30 @@ def test_view_maps_labels_and_orders(tmp_path):
     row = df.filter((df["rowKey"] == "revenue") & (df["quantile"] == 50)).row(0, named=True)
     assert row["labelKr"] == "매출액" and row["statement"] == "IS" and row["sortOrder"] == 10
     assert row["parentId"].startswith("revenue.005930.")
+    assert row["periodKind"] == "FY"  # 연간/분기 분류 = 뷰(라이브러리) 소유
+
+
+def test_view_classifies_quarterly_period(tmp_path):
+    appendProformaRows(
+        [
+            {
+                "parentId": "revenue.005930.revenue.Y1.FY2026@x",
+                "code": "005930",
+                "issuedAt": "2026-07-03T09:00",
+                "issuedLive": True,
+                "targetPeriod": "2026Q3",
+                "quantile": 50,
+                "statement": "IS",
+                "account": "revenue",
+                "value": 5000.0,
+                "bsBalanced": True,
+            }
+        ],
+        baseDir=tmp_path,
+    )
+    df = buildEstimateStatements(baseDir=tmp_path)
+    row = df.row(0, named=True)
+    assert row["periodKind"] == "Q" and row["targetPeriod"] == "2026Q3" and row["rowKey"] == "revenue"
 
 
 def test_view_excludes_backfill(tmp_path):

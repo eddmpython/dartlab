@@ -49,9 +49,10 @@ def buildEstimateStatements(*, baseDir: Path | None = None) -> pl.DataFrame | No
     """Build the aligned estimate-statements view from the sealed proforma ledger.
 
     Returns:
-        pl.DataFrame(code, targetPeriod, quantile, statement, rowKey, labelKr, labelEn,
-        sortOrder, value(원), parentId, issuedAt, issuedLive). live 발행분만,
-        canonical 매핑이 있는 계정만. Ledger 미발간이면 None.
+        pl.DataFrame(code, targetPeriod, periodKind("FY"|"Q"), quantile, statement, rowKey,
+        labelKr, labelEn, sortOrder, value(원), parentId, issuedAt, issuedLive). live 발행분만,
+        canonical 매핑이 있는 계정만. Ledger 미발간이면 None. periodKind 분류는 뷰(라이브러리)
+        소유다: 표면이 targetPeriod 문자열을 파싱하지 않는다.
     """
     pf = readProforma(baseDir=baseDir)
     if pf is None or pf.height == 0:
@@ -65,9 +66,16 @@ def buildEstimateStatements(*, baseDir: Path | None = None) -> pl.DataFrame | No
     return (
         pf.filter(pl.col("issuedLive"))
         .join(canon, on=["statement", "account"], how="inner")
+        .with_columns(
+            pl.when(pl.col("targetPeriod").str.starts_with("FY"))
+            .then(pl.lit("FY"))
+            .otherwise(pl.lit("Q"))
+            .alias("periodKind")
+        )
         .select(
             "code",
             "targetPeriod",
+            "periodKind",
             "quantile",
             "statement",
             "rowKey",

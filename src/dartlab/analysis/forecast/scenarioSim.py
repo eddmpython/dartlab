@@ -138,28 +138,109 @@ def _numericValue(value: Any) -> float:
     return float(parsed) if parsed is not None else 0.0
 
 
-def _quarterlyValues(isDf: Any, snakeId: str, year: str) -> list[float]:
-    """IS DataFrame에서 특정 연도의 Q1~Q4 값 추출."""
+def quarterlyValues(isDf: Any, snakeId: str, year: str) -> dict[str, float]:
+    """분기 IS 패널에서 특정 연도의 발표된 분기 값을 {"YYYYQn": 값} 으로 추출.
+
+    Capabilities:
+        - snakeId(계정 정본 키) 행 매칭 + 해당 연도 Q1~Q4 중 존재하는 열만 수집
+        - 미발표 분기는 키 자체가 없음 (0 채움 없음: 미발표와 0 을 구분)
+
+    Args:
+        isDf: ``company.panel("is")`` 분기 wide DataFrame (열 = "2026Q1" 형).
+        snakeId: 계정 정본 키 ("sales" · "operating_profit" 등).
+        year: 대상 연도 문자열 ("2026").
+
+    Returns:
+        {"2026Q1": 1000.0, ...} 발표된 분기만. 행 미매칭·isDf None 이면 빈 dict.
+
+    Guide:
+        연 4개가 다 필요하면 값 개수를 호출자가 검사한다 (계절성 계산은 4개 강제).
+
+    When:
+        분기 실적 1개 단위가 필요할 때 (기대치 격자 분기 채점 등).
+
+    How:
+        _rowMatchesSnakeId 행 탐색 -> f"{year}Q{q}" 열 존재 검사 -> _numericValue 정규화.
+
+    Requires:
+        panel("is") 의 분기 wide 형태 (행 = 계정, 열 = 분기).
+
+    Raises:
+        없음 (미매칭은 빈 dict).
+
+    Example:
+        >>> quarterlyValues(None, "sales", "2026")
+        {}
+
+    See Also:
+        - computeSeasonality : 이 값들로 Q1~Q4 비중 평균 계산
+
+    AIContext:
+        분기 실적 인용 시 "발표분만" 임을 함께 언급.
+    """
     if isDf is None:
-        return []
+        return {}
 
     row = next((r for r in isDf.iter_rows(named=True) if _rowMatchesSnakeId(r, snakeId)), None)
     if row is None:
-        return []
+        return {}
 
-    vals = []
+    vals: dict[str, float] = {}
     for q in range(1, 5):
         col = f"{year}Q{q}"
         if col in row:
-            vals.append(_numericValue(row.get(col)))
-    return vals if len(vals) == 4 else []
+            vals[col] = _numericValue(row.get(col))
+    return vals
 
 
-def _computeSeasonality(isDf: Any, snakeId: str, years: list[str]) -> list[float]:
-    """과거 N년 Q1~Q4 비중 평균."""
+def _quarterlyValues(isDf: Any, snakeId: str, year: str) -> list[float]:
+    """IS DataFrame에서 특정 연도의 Q1~Q4 값 추출 (4개 완비 시에만, 계절성용)."""
+    vals = quarterlyValues(isDf, snakeId, year)
+    ordered = [vals[f"{year}Q{q}"] for q in range(1, 5) if f"{year}Q{q}" in vals]
+    return ordered if len(ordered) == 4 else []
+
+
+def seasonalSharesFromYearQuarters(byYear: dict[str, list[float]]) -> list[float]:
+    """연도별 [Q1,Q2,Q3,Q4] 값 묶음에서 Q1~Q4 비중 평균(합=1)을 계산하는 계절성 코어.
+
+    Capabilities:
+        - 연도별 |값| 비중 -> 연도 평균 -> 재정규화 (음수 분기는 절대값 비중)
+        - 4개 미완비 연도는 표본 제외 (부분 연도 왜곡 차단)
+
+    Args:
+        byYear: {"2024": [q1, q2, q3, q4], ...}. 값 4개 미만인 연도는 무시.
+
+    Returns:
+        [w1, w2, w3, w4] 합 1.0. 유효 표본 0이면 균등 [0.25]*4.
+
+    Guide:
+        데이터 소스 무관 공용 코어: panel("is") 경로는 computeSeasonality 가,
+        _buildFinanceSeries(freq="Q") 경로는 기대치 격자가 각자 값을 모아 여기로 위임한다.
+
+    When:
+        분기 값 묶음을 이미 손에 들고 비중만 필요할 때.
+
+    How:
+        연도별 절대값 비중 -> 산술평균 -> 합 1 재정규화.
+
+    Requires:
+        없음 (순수 함수).
+
+    Raises:
+        없음.
+
+    Example:
+        >>> seasonalSharesFromYearQuarters({"2024": [1.0, 2.0, 3.0, 4.0]})
+        [0.1, 0.2, 0.3, 0.4]
+
+    See Also:
+        - computeSeasonality : panel("is") 어댑터 (이 코어에 위임)
+
+    AIContext:
+        균등 비중 결과는 "계절성 표본 없음" 신호.
+    """
     all_w: list[list[float]] = []
-    for y in years:
-        qv = _quarterlyValues(isDf, snakeId, y)
+    for _, qv in sorted(byYear.items()):
         if len(qv) == 4:
             total = sum(abs(v) for v in qv)
             if total > 0:
@@ -170,6 +251,50 @@ def _computeSeasonality(isDf: Any, snakeId: str, years: list[str]) -> list[float
     avg = [sum(w[q] for w in all_w) / n for q in range(4)]
     s = sum(avg)
     return [w / s for w in avg] if s > 0 else [0.25] * 4
+
+
+def computeSeasonality(isDf: Any, snakeId: str, years: list[str]) -> list[float]:
+    """과거 N년 분기 실적으로 Q1~Q4 비중 평균(합=1)을 계산.
+
+    Capabilities:
+        - 연도별 |값| 비중 -> 연도 평균 -> 재정규화 (음수 분기는 절대값 비중)
+        - 4분기 완비 연도만 표본 채택 (부분 연도 왜곡 차단)
+
+    Args:
+        isDf: ``company.panel("is")`` 분기 wide DataFrame.
+        snakeId: 계정 정본 키 ("sales" · "operating_profit").
+        years: 표본 연도 리스트 (예 ["2023", "2024", "2025"]).
+
+    Returns:
+        [w1, w2, w3, w4] 합 1.0. 표본 0이면 균등 [0.25]*4 (호출자가 fallback 여부 판단).
+
+    Guide:
+        연간 값 x 비중 = 분기 목표 분해. 시나리오 경로를 깨지 않는 결정적 분해다.
+
+    When:
+        연간 추정을 분기 목표·분기 기대치로 나눌 때 (scenarioSim · 기대치 격자 공용).
+
+    How:
+        _quarterlyValues 로 4분기 완비 연도 수집 -> 절대값 비중 평균 -> 합 1 재정규화.
+
+    Requires:
+        panel("is") 분기 열. 상장 3년 미만이면 표본이 얇아진다.
+
+    Raises:
+        없음 (표본 부재는 균등 비중 반환).
+
+    Example:
+        >>> computeSeasonality(None, "sales", ["2024"])
+        [0.25, 0.25, 0.25, 0.25]
+
+    See Also:
+        - quarterlyValues : 단일 연도 분기 값 추출
+        - createSimulation : 동일 비중으로 분기 목표 분해
+
+    AIContext:
+        균등 비중 결과는 "계절성 표본 없음" 신호로 해석해 인용.
+    """
+    return seasonalSharesFromYearQuarters({y: _quarterlyValues(isDf, snakeId, y) for y in years})
 
 
 def _blendWeight(baseOpMargin: float) -> float:
@@ -395,8 +520,8 @@ def createSimulation(
 
     # 계절성 분해
     seasonYears = [str(int(baseYear) - i) for i in range(3) if int(baseYear) - i >= 2019]
-    revW = _computeSeasonality(isDf, "sales", seasonYears)
-    oiW = _computeSeasonality(isDf, "operating_profit", seasonYears)
+    revW = computeSeasonality(isDf, "sales", seasonYears)
+    oiW = computeSeasonality(isDf, "operating_profit", seasonYears)
 
     # 분기 목표
     qRevTargets: dict[str, list[float]] = {}
