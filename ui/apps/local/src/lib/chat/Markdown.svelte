@@ -50,6 +50,28 @@
 		return out;
 	}
 
+	// 답변 본문 ref 인용 계약 렌더. 엔진 프롬프트 §3-2 가 <kindRef:id> 각괄호 인용을 강행하므로
+	// raw 노출 대신 작은 인용 chip 으로 변환한다 (스트립 아님, 계약 이행).
+	const REF_LABEL: Record<string, string> = {
+		tableRef: '표',
+		valueRef: '값',
+		dateRef: '날짜',
+		docRef: '문서',
+		webRef: '웹',
+		skillRef: '스킬',
+		sessionRef: '세션',
+		artifactRef: '산출물',
+		visualRef: '차트',
+		verifyRef: '검증'
+	};
+	function renderRefChips(t: string): string {
+		return t.replace(
+			/<(tableRef|valueRef|dateRef|docRef|webRef|skillRef|sessionRef|artifactRef|visualRef|verifyRef):([^<>\s"']+)>/g,
+			(_m, kind: string, id: string) =>
+				`<span class="refchip" title="${id}">${REF_LABEL[kind] ?? kind}</span>`
+		);
+	}
+
 	// {@html} 최소 방어. 본문은 자체 Ask 엔진 산출이고 외부 본문은 엔진이 이미 마커로 감싸지만,
 	// 로컬 표면이라도 script/iframe/on* 핸들러/javascript: 는 걷어낸다.
 	function sanitize(html: string): string {
@@ -62,7 +84,7 @@
 	}
 
 	const html = $derived.by(() => {
-		const cleaned = fixCjkBold(normalizeBold(stripRawCallIds(stripThinking(text ?? ''))));
+		const cleaned = renderRefChips(fixCjkBold(normalizeBold(stripRawCallIds(stripThinking(text ?? '')))));
 		return sanitize(marked.parse(cleaned) as string);
 	});
 </script>
@@ -199,5 +221,20 @@
 	}
 	.md :global(tbody tr:hover) {
 		background: color-mix(in srgb, var(--dl-bg-raised, #16171a) 60%, transparent);
+	}
+	/* 본문 ref 인용 chip. <kindRef:id> 계약의 표시형 (hover 시 title 로 풀 id). */
+	.md :global(.refchip) {
+		display: inline-flex;
+		align-items: center;
+		padding: 0 0.35em;
+		margin: 0 0.12em;
+		border: 1px solid var(--dl-line, #2a2c33);
+		border-radius: 5px;
+		background: var(--dl-bg-raised, #16171a);
+		color: var(--dl-ink-dim, #9aa0aa);
+		font-size: 0.68em;
+		line-height: 1.5;
+		vertical-align: 0.08em;
+		cursor: help;
 	}
 </style>
