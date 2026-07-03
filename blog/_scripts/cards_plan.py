@@ -21,10 +21,11 @@ ISSUES_DIR = ROOT / "blog" / "_issues"
 SNS_ASSETS_DIR = ROOT / "sns" / "assets"
 PLAN_FILE = "cards.plan.json"
 
-PLAN_VERSION = 4
-SUPPORTED_PLAN_VERSIONS = {1, 2, 3, PLAN_VERSION}
+PLAN_VERSION = 5
+SUPPORTED_PLAN_VERSIONS = {1, 2, 3, 4, PLAN_VERSION}
 STRICT_FLOW_MIN_VERSION = 3  # 이 버전 이상이면 큰문장 흐름(연결·판단형 종결)을 강제 검사
 INSIGHT_MIN_VERSION = 4  # 이 버전 이상이면 insightContract(통념·반전·렌즈)를 강제
+VISUAL_PLAN_MIN_VERSION = 4  # 이 버전 이상이면 데이터 카드의 visualPlan 과 실제 visual 연결을 강제
 LEGACY_MIN_IMAGES = 5
 MIN_IMAGES = 7
 RECOMMENDED_MAX_IMAGES = 10
@@ -64,6 +65,12 @@ INSIGHT_CONTRACT_RULES = (
     "반전 사실(twistFact): 그 통념과 충돌하는, 공시 직독으로 확인한 단 하나의 사실 + 왜 그게 가능한가(메커니즘)를 적는다. 제목·캡션의 재진술이면 인사이트가 아니다.",
     "그래서 볼 것(whatToWatch): 독자가 이 덱을 본 뒤 앞으로 무엇을 다르게 볼지(렌즈·관전 포인트)를 적는다.",
     "evidenceRefs: 반전·렌즈를 떠받치는 실측 수치나 ref 를 최소 1개 이상 적는다(분모·기간 명시).",
+)
+VISUAL_PLAN_RULES = (
+    "숫자·비교·강한 주장 카드는 어떤 데이터가 그 문장을 증명하는지 dataExplanation 에 적는다.",
+    "evidenceRefs 에 기간·분모·출처가 드러난 실측 ref 를 최소 1개 이상 적는다.",
+    "숫자·비교 카드는 image 배경만으로 통과하지 않는다. finCard 또는 table 같은 실제 visual 계약을 붙인다.",
+    "visualPlan 의 visualKind 는 실제 slide.visual.kind 와 같아야 한다.",
 )
 JARGON_REPLACEMENTS = {
     "ARR": "연간 반복 매출",
@@ -127,6 +134,7 @@ CLOSING_TOKENS = (
     "강해",
 )
 SENTENCE_END_RE = re.compile(r"[다요까죠][.!?…)]*$")
+DATA_CLAIM_RE = re.compile(r"\d|%|조|억|배|대비|마이너스|플러스|순위|점유율|이익|현금|부채|매출|판매|원가|마진|주가")
 
 # ── 렌더링 계약 레지스트리 — 카드가 쓸 수 있는 시각 계약의 공식 카탈로그(정례화) ──
 # 기획이 beat 마다 큰문장 + visual 계약을 선언한다. 부른 계약이 RENDERABLE(렌더러 구현분)이면 통과,
@@ -141,6 +149,7 @@ VISUAL_CONTRACTS_REGISTERED = (
     "finChart",  # 회사 재무 카드(bundle 직독). 렌더러는 확장 루프로
     "priceChart",  # 회사 주가. 렌더러는 확장 루프로
 )
+DATA_VISUAL_KINDS = set(VISUAL_CONTRACTS_REGISTERED)
 # 그래프는 항상 밀도 있게. 시계열 finCard 는 연도별 듬성(3~4점) 금지, 분기급 최소 길이를 강제한다.
 # 운영자 지시 "그래프는 항상 밀도 있게 한다". 6 = 분기 1.5년치 하한(연도별 듬성 차트 차단).
 MIN_VIZ_PERIODS = 6
@@ -230,6 +239,13 @@ def big_sentence_for_slide(slide: dict[str, Any]) -> str:
     return clean_card_text(slide.get("line") or slide.get("sub") or slide.get("context") or slide.get("kicker"))
 
 
+def requires_data_visual(order: int, slide: dict[str, Any]) -> bool:
+    if order == 1:
+        return False
+    text = big_sentence_for_slide(slide)
+    return str(slide.get("layout") or "") == "editorialStat" or DATA_CLAIM_RE.search(text) is not None
+
+
 def big_sentence_strip(slides: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [
         {
@@ -296,19 +312,26 @@ def insight_contract() -> dict[str, Any]:
 
 
 def visual_plan_for_slides(slides: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """기획단계 시각 설계 명세. 카드의 visual 슬롯마다 모양(시리즈 type)·밀도·증명대상을 박제한다.
+    """카드별 데이터 시각 계획.
 
-    운영자 지시: "기획단계에서 그래프 모양까지 필요하면 테이블까지 기획한다". 시각은 글에
-    나중에 덧붙이는 장식이 아니라 기획단계에서 무엇을 어떤 모양으로 증명할지 먼저 설계한다.
-    granularity 가 sparse(연도별 듬성)이면 발행 게이트가 막는다.
+    모든 슬라이드에 계획 줄을 만든다. 숫자, 비교, 마진, 현금 같은 데이터 주장 카드는
+    dataExplanation, evidenceRefs, 실제 visual 계약을 채운 뒤에만 발행할 수 있다.
     """
     out: list[dict[str, Any]] = []
     for idx, slide in enumerate(slides, start=1):
         vis = slide.get("visual")
-        if not isinstance(vis, dict):
-            continue
-        kind = str(vis.get("kind") or "")
-        entry: dict[str, Any] = {"order": idx, "kind": kind}
+        has_visual = isinstance(vis, dict) and bool(vis)
+        kind = str(vis.get("kind") or "") if has_visual else "image"
+        requires_visual = requires_data_visual(idx, slide)
+        entry: dict[str, Any] = {
+            "order": idx,
+            "claim": big_sentence_for_slide(slide),
+            "visualKind": kind,
+            "visualRole": "dataEvidence" if requires_visual else "sceneSupport",
+            "dataExplanation": "",
+            "evidenceRefs": [],
+            "rules": list(VISUAL_PLAN_RULES) if idx == 1 else [],
+        }
         if kind == "finCard":
             series = vis.get("series") if isinstance(vis.get("series"), list) else []
             periods = vis.get("periods") if isinstance(vis.get("periods"), list) else []
@@ -324,7 +347,9 @@ def visual_plan_for_slides(slides: list[dict[str, Any]]) -> list[dict[str, Any]]
             data = vis.get("data") if isinstance(vis.get("data"), list) else []
             entry["shape"] = [str(c) for c in cols]
             entry["rows"] = len(data)
-        entry["proves"] = clean_card_text(vis.get("caption")) or clean_card_text(slide.get("line"))
+        if has_visual:
+            entry["dataExplanation"] = clean_card_text(vis.get("caption"))
+        entry["proves"] = clean_card_text(vis.get("caption")) if has_visual else big_sentence_for_slide(slide)
         out.append(entry)
     return out
 
@@ -608,6 +633,82 @@ def build_issue_plan(issue_dir: Path, *, count: int | None = None) -> dict[str, 
     }
 
 
+def _visual_plan_entries(plan: dict[str, Any]) -> list[dict[str, Any]]:
+    planning = plan.get("planning") if isinstance(plan.get("planning"), dict) else {}
+    visual_plan = planning.get("visualPlan")
+    return [item for item in visual_plan if isinstance(item, dict)] if isinstance(visual_plan, list) else []
+
+
+def _visual_plan_by_order(plan: dict[str, Any]) -> dict[int, dict[str, Any]]:
+    out: dict[int, dict[str, Any]] = {}
+    for item in _visual_plan_entries(plan):
+        try:
+            order = int(item.get("order"))
+        except (TypeError, ValueError):
+            continue
+        out[order] = item
+    return out
+
+
+def _data_visual_orders_from_plan(plan: dict[str, Any]) -> set[int]:
+    planning = plan.get("planning") if isinstance(plan.get("planning"), dict) else {}
+    big_sentence = planning.get("bigSentenceContract") if isinstance(planning.get("bigSentenceContract"), dict) else {}
+    strip = big_sentence.get("strip") if isinstance(big_sentence.get("strip"), list) else []
+    orders: set[int] = set()
+    for item in strip:
+        if not isinstance(item, dict):
+            continue
+        try:
+            order = int(item.get("order"))
+        except (TypeError, ValueError):
+            continue
+        if order == 1:
+            continue
+        layout = str(item.get("layout") or "")
+        text = clean_card_text(item.get("mainText"))
+        if layout == "editorialStat" or DATA_CLAIM_RE.search(text):
+            orders.add(order)
+    return orders
+
+
+def validate_visual_plan(plan: dict[str, Any], *, require_passed: bool) -> list[str]:
+    errors: list[str] = []
+    target = plan.get("target") if isinstance(plan.get("target"), dict) else {}
+    slug = str(target.get("slug") or "<unknown>")
+    version = plan.get("version")
+    if not require_passed or not (isinstance(version, int) and version >= VISUAL_PLAN_MIN_VERSION):
+        return errors
+    planning = plan.get("planning") if isinstance(plan.get("planning"), dict) else {}
+    visual_plan = planning.get("visualPlan")
+    if not isinstance(visual_plan, list) or not visual_plan:
+        errors.append(f"{slug}: planning.visualPlan 누락 - 데이터 카드별 그래프·표·근거 설명 계획이 필요함")
+        return errors
+    carousel = plan.get("carousel") if isinstance(plan.get("carousel"), dict) else {}
+    slide_count = int(carousel.get("slideCount") or 0)
+    if slide_count and len(visual_plan) < slide_count:
+        errors.append(f"{slug}: planning.visualPlan 은 모든 슬라이드를 포함해야 함({len(visual_plan)}/{slide_count})")
+    by_order = _visual_plan_by_order(plan)
+    required_orders = _data_visual_orders_from_plan(plan)
+    for order in sorted(required_orders):
+        entry = by_order.get(order)
+        if not entry:
+            errors.append(f"{slug}: planning.visualPlan[{order}] 누락 - 데이터 주장 카드의 시각 계획 필요")
+            continue
+        kind = str(entry.get("visualKind") or "").strip()
+        if kind not in DATA_VISUAL_KINDS:
+            errors.append(
+                f"{slug}: planning.visualPlan[{order}].visualKind 는 실제 데이터 visual 계약이어야 함"
+                f"(현재 {kind or '없음'})"
+            )
+        explanation = clean_card_text(entry.get("dataExplanation"))
+        if len(re.sub(r"[^0-9A-Za-z가-힣]", "", explanation)) < 20:
+            errors.append(f"{slug}: planning.visualPlan[{order}].dataExplanation 이 너무 약함")
+        refs = entry.get("evidenceRefs")
+        if not isinstance(refs, list) or not [ref for ref in refs if str(ref).strip()]:
+            errors.append(f"{slug}: planning.visualPlan[{order}].evidenceRefs 누락")
+    return errors
+
+
 def validate_plan(plan: dict[str, Any], *, require_passed: bool = True, require_assets: bool = False) -> list[str]:
     errors: list[str] = []
     target = plan.get("target") if isinstance(plan.get("target"), dict) else {}
@@ -692,6 +793,7 @@ def validate_plan(plan: dict[str, Any], *, require_passed: bool = True, require_
                 errors.append(
                     f"{slug}: insightContract.twistFact 가 너무 짧음 — 충돌하는 사실 + 메커니즘을 한 문장으로"
                 )
+    errors.extend(validate_visual_plan(plan, require_passed=require_passed))
     image_plan = plan.get("imagePlan")
     if not isinstance(image_plan, list):
         errors.append(f"{slug}: imagePlan 은 리스트여야 함")
@@ -890,6 +992,31 @@ def validate_contract_visuals(slug: str, contract: dict[str, Any]) -> list[str]:
     return errors
 
 
+def validate_contract_planned_visuals(slug: str, contract: dict[str, Any], plan: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    slides = [s for s in contract.get("slides", []) if isinstance(s, dict)]
+    for order in sorted(_data_visual_orders_from_plan(plan)):
+        entry = _visual_plan_by_order(plan).get(order)
+        if not entry:
+            continue
+        expected_kind = str(entry.get("visualKind") or "").strip()
+        if expected_kind not in DATA_VISUAL_KINDS:
+            continue
+        if order > len(slides):
+            errors.append(f"{slug}: visualPlan[{order}] 이 가리키는 슬라이드가 없음")
+            continue
+        visual = slides[order - 1].get("visual")
+        if not isinstance(visual, dict):
+            errors.append(
+                f"{slug}: slide[{order}] 에 visual 누락 - visualPlan 은 {expected_kind!r} 데이터 visual 을 요구함"
+            )
+            continue
+        actual_kind = str(visual.get("kind") or "")
+        if actual_kind != expected_kind:
+            errors.append(f"{slug}: slide[{order}].visual.kind {actual_kind!r} 이 visualPlan {expected_kind!r} 과 다름")
+    return errors
+
+
 def load_plan_file(path: Path) -> tuple[dict[str, Any] | None, list[str]]:
     try:
         plan = json.loads(path.read_text(encoding="utf-8"))
@@ -949,11 +1076,13 @@ def validate_contract_plan_gate(
         copy_errors = validate_contract_readability(slug, contract)
         flow_errors = validate_contract_big_sentence_flow(slug, contract) if strict_big_sentence else []
         visual_errors = validate_contract_visuals(slug, contract)
-        if plan_errors or copy_errors or flow_errors or visual_errors:
+        planned_visual_errors = validate_contract_planned_visuals(slug, contract, plan) if plan is not None else []
+        if plan_errors or copy_errors or flow_errors or visual_errors or planned_visual_errors:
             errors.extend(f"{rel(plan_path)}: {err}" for err in plan_errors)
             errors.extend(copy_errors)
             errors.extend(flow_errors)
             errors.extend(visual_errors)
+            errors.extend(planned_visual_errors)
         else:
             stats["passed"] += 1
     return errors, stats

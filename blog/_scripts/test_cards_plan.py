@@ -60,13 +60,23 @@ def _mark_passed(plan: dict) -> dict:
     )
     ic["whatToWatch"] = "분기 상품 마진이 아니라 회비 매출과 재방문이 같이 늘어나는지를 본다."
     ic["evidenceRefs"] = ["분기 회비 매출 12억달러, 상품 매출 636억달러 대비 비중"]
+    for item in plan["planning"].setdefault("visualPlan", []):
+        if item.get("visualRole") != "dataEvidence":
+            continue
+        item["visualKind"] = "table"
+        item["dataExplanation"] = "이 카드의 숫자가 어떤 기간과 분모에서 나온 것인지 표로 바로 확인하게 한다."
+        item["evidenceRefs"] = ["2025Q1 회원 매출 12억달러, 상품 매출 636억달러"]
     return plan
 
 
 def _valid_big_sentence_slides() -> list[dict]:
     return [
         {"layout": "editorial", "line": "계산대보다 먼저 회원권이 돈을 만듭니다"},
-        {"layout": "editorialBeat", "line": "이 구조는 낮은 가격을 약속할 때 작동합니다"},
+        {
+            "layout": "editorialBeat",
+            "line": "이 구조는 낮은 가격을 약속할 때 작동합니다",
+            "visual": {"kind": "table", "cols": ["기간", "값"], "data": [{"기간": "2025Q1", "값": "12억달러"}]},
+        },
         {
             "layout": "editorialStat",
             "kicker": "분기 매출",
@@ -100,6 +110,8 @@ def test_build_company_plan_defaults_to_seven_images(tmp_path: Path) -> None:
     assert "전문용어" in " ".join(plan["planning"]["plainLanguageContract"]["rules"])
     assert plan["planning"]["plainLanguageContract"]["preferredRewrites"]["ARR"] == "연간 반복 매출"
     assert "AI" not in plan["planning"]["plainLanguageContract"]["preferredRewrites"]
+    assert len(plan["planning"]["visualPlan"]) == 2
+    assert plan["planning"]["visualPlan"][1]["visualRole"] == "dataEvidence"
     assert len(plan["imagePlan"]) == 7
     assert all("/cards" in row["prompt"] for row in plan["imagePlan"])
     assert all("Asset key:" in row["prompt"] for row in plan["imagePlan"])
@@ -114,6 +126,14 @@ def test_plan_validation_requires_passed_review(tmp_path: Path) -> None:
     errors = cp.validate_plan(planned, require_passed=True)
     assert any("reviewGate.status" in err for err in errors)
     assert cp.validate_plan(_mark_passed(planned), require_passed=True) == []
+
+
+def test_plan_validation_requires_visual_plan_for_data_cards(tmp_path: Path) -> None:
+    post = _write_post(tmp_path / "blog", "01-999999-test", slides=_TWO_SLIDES)
+    planned = _mark_passed(cp.build_company_post_plan(post, count=7))
+    planned["planning"]["visualPlan"] = []
+    errors = cp.validate_plan(planned, require_passed=True)
+    assert any("planning.visualPlan" in err for err in errors)
 
 
 def test_plan_validation_requires_narrative_contract(tmp_path: Path) -> None:

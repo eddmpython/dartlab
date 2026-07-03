@@ -22,6 +22,8 @@
    - 숫자 카드는 숫자만 던지지 않는다. `context` 에 그 숫자가 앞장 주장과 어떻게 이어지는지 완성 문장으로 쓴다.
    - 슬라이드는 체크리스트가 아니다. 각 장은 앞장의 주장이나 숫자를 받아 다음 장으로 넘겨야 하며, "다음에는 이것을 본다"식 나열이면 발행 실패다.
    - `planning.plainLanguageContract` 도 강행 규칙이다. 전문용어·약어를 앞세우지 말고, 독자가 소리 내어 읽어도 자연스러운 한국어로 먼저 쓴다.
+   - `planning.visualPlan` 도 강행 규칙이다. 숫자·비교·현금·마진·주가 같은 데이터 주장 카드는 `dataExplanation`, `evidenceRefs`, 실제 slide `visual` 계약(`finCard` 또는 `table`)이 있어야 한다. 배경 이미지만 붙인 숫자 카드는 발행 실패다.
+   - `visualPlan[].visualKind` 와 실제 `slides[].visual.kind` 는 같아야 한다. 계획만 쓰고 카드에 그래프·표를 안 붙이면 `build_carousel_contracts.py` 가 발행을 중단한다.
    - `imagePlan[]` 은 신규 기획 기준 **7장 이상**이어야 한다. 고정 템플릿이 아니라 카드 흐름에서 의미가 다른 장면만 기획한다.
    - 이미지는 그 글의 회사·사건·장소·시설·제품·운영 질문을 상징하는 **실제 사용용 장면**이어야 한다. 범용 금융 배경은 탈락.
    - 상호/회사명은 프롬프트와 검색 키워드에 써도 된다. 다만 생성형 이미지가 공식 로고·공식 문서·실제 내부시설을 사실처럼 꾸며내면 안 된다.
@@ -29,6 +31,7 @@
    - 생성 뒤 `imagegen.extractCommand` 로 `sns/assets/{code}/{assetKey}.webp` 에 저장하고 `imagegen.checkCommand` 로 프레이밍을 본다.
 3. 작가 패널 토론·평가를 `cards.plan.json` 의 `reviewGate` 에 기록하고 `status: "passed"` 로 닫는다.
    - `planning.insightContract` (v4+ 강행): **통념(commonBelief)·반전(twistFact=충돌 사실+메커니즘)·그래서 볼 것(whatToWatch=렌즈)·evidenceRefs** 를 적는다. 충돌 사실만 던지고 끝나면 인사이트가 아니다. 발행 게이트가 셋이 채워졌고 반전이 제목·캡션의 재진술이 아닌지 검사한다.
+   - `planning.visualPlan` (v5+ 강행): 데이터 주장 카드마다 그래프·표 모양, 데이터 설명, 검증 ref 를 적고 실제 slide `visual` 로 연결한다. "많이 파는데 남기지 못한다" 같은 문장은 판매량·마진·현금이 각각 무엇을 뜻하는지 그래프나 표로 증명하지 않으면 발행 실패다.
    - 카드뉴스 5대 원칙(맥락·인사이트·이미지 정합·쉬움·재미/호기심)과 작가 craft(표지 후크·promise/payoff·구체 장면화·so what·신뢰·정직한 의외성)는 `operation.content` 가 정본이다.
 4. (선택) 검사: `uv run python -X utf8 blog/_scripts/audit_seo.py`  ← 형식·숫자 점검
 5. 발행: `uv run python -X utf8 blog/_scripts/build_carousel_contracts.py`
@@ -186,7 +189,7 @@ Openverse/Commons 검색도 범용 업종어만 넣지 않는다. `queries` 는 
 > 흐름: 신규·개선편은 위 패널(다중 에이전트 토론·평가→수정→재평가)을 거친 뒤에만 `build_carousel_contracts.py` 발행.
 > **이미 발행된 편도 이 루프로 개선한다**(발행본 품질 상향이 기본 운영).
 > `cards.plan.json` 이 있는 글은 `planning.narrativeContract`, `planning.plainLanguageContract`, `reviewGate.status: "passed"` 와 각 required round `status: "passed"` 가
-> 아니면 `build_carousel_contracts.py` 가 발행을 중단한다. legacy 글은 plan 파일이 없으면 허용하되, 신규·개선은 plan 을 만든다.
+> 아니면 `build_carousel_contracts.py` 가 발행을 중단한다. v5+ 는 `planning.visualPlan` 도 필수다. 데이터 주장 카드에 `dataExplanation`·`evidenceRefs`·실제 slide `visual` 이 없으면 중단한다. legacy 글은 plan 파일이 없으면 허용하되, 신규·개선은 plan 을 만든다.
 > 발행 게이트는 실제 카드 문장도 검사한다. `CDMO`, `HBM` 같은 약어와 `다음 질문`류 문구가 남아 있으면 발행을 중단한다. (`AI` 는 일반어로 허용.)
 
 ## 도구

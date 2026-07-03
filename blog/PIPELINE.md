@@ -39,7 +39,8 @@
 
 ## 5. 카드뉴스 루프
 - **3 종 구분**: ① 회사 카드(블로그 글 frontmatter `carousel:`, code 있음) ② 에디토리얼(인스타 톤, Hook Engine 후킹 채점) ③ 이슈 카드(standalone, `blog/_issues/{slug}`, 블로그 글 없음).
-- **기획**: `plan_card_news.py` → `cards.plan.json`(imagePlan 5~10, reviewGate).
+- **기획**: `plan_card_news.py` → `cards.plan.json`(imagePlan 7장 이상, visualPlan, reviewGate).
+- **데이터 시각 게이트**: 숫자·비교·현금·마진·주가 같은 데이터 주장 카드는 `visualPlan.dataExplanation` + `evidenceRefs` + 실제 slide `visual` 계약(`finCard` 또는 `table`)을 붙인다. 배경 이미지만 있는 숫자 카드는 발행 차단.
 - **작가 패널 게이트(공개물 필수, 자동통과 금지)**: 훅 강도·서사 스파인·디자인/이미지 적합성·정직성 독립 검토 → 합의 수정 → 같은 패널 재평가. `reviewGate.status="passed"` + 라운드 passed 전 `build_carousel_contracts.py` 발행 차단.
 - → _scripts/CARDS.md (카드 파이프라인 상세 SSOT)
 
