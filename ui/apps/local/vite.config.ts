@@ -19,6 +19,8 @@ process.env.VITE_DARTLAB_NEWS_PROXY ??= 'https://dartlab-hf-proxy.eddmpython.wor
 process.env.VITE_DARTLAB_MARKET_NEWS_PROXY ??= 'https://dartlab-hf-proxy.eddmpython.workers.dev/market-news';
 // 당일 공시 라이브 오버레이 워커(/market-filings, DART list) — HF 누적 위 머지, 공통 배선 기본값(가역).
 process.env.VITE_DARTLAB_MARKET_FILINGS_PROXY ??= 'https://dartlab-hf-proxy.eddmpython.workers.dev/market-filings';
+// IPO 발굴 라이브 워커(/ipo-filings, DART list corp_cls=E) · 상장 전 발행사(HF bake 부재) 라이브 데이터원.
+process.env.VITE_DARTLAB_IPO_FILINGS_PROXY ??= 'https://dartlab-hf-proxy.eddmpython.workers.dev/ipo-filings';
 
 export default defineConfig({
 	plugins: [sveltekit()],

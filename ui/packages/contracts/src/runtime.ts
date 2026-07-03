@@ -10,6 +10,7 @@ import type { ViewerPort } from './viewer';
 import type { MacroPort } from './macro';
 import type { ReportPort } from './report';
 import type { ScanPort } from './scan';
+import type { IpoPort } from './ipo';
 import type { MapPort } from './map';
 import type { SearchPort } from './search';
 import type { AiPort } from './ai';
@@ -82,6 +83,7 @@ export interface DartLabRuntime {
 	macro: MacroPort;
 	report: ReportPort;
 	scan: ScanPort;
+	ipo: IpoPort;
 	map: MapPort;
 	search: SearchPort;
 	ai: AiPort;

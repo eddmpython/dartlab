@@ -9,6 +9,7 @@ import type {
 	DartLabRuntime,
 	FilingPort,
 	FinancePort,
+	IpoPort,
 	LiveCompanyReportFact,
 	NewsPort,
 	PricePort,
@@ -30,6 +31,7 @@ import { loadIndustryProfitPool } from './sources/industryPoolSource';
 import { loadHfProductIndexMap } from './sources/productIndexSource';
 import { loadCompanyRegularFilings } from './sources/regularFilingsSource';
 import { loadCompanyNonRegularFilings, loadMarketFeed, loadRecentFilingsForCodes } from './sources/nonRegularFilingsSource';
+import { loadIpoFilings } from './sources/ipoFilingsSource';
 import { createDataCore, type DataCore } from '../../data/fetch/request';
 import { createSearchPort } from '../../data/search/filingSearch';
 import { loadCompanyNews } from './sources/newsSource';
@@ -143,6 +145,15 @@ export function publicNewsPort(core?: DataCore): NewsPort {
 	};
 }
 
+// IPO · 발굴 목록은 라이브 워커(/ipo-filings) 공통배선. 단건 리포트는 무거운 본문 런타임 파싱이라
+// 로컬 상위집합(/api) 전용 · surface 가 env.kind==='local' 로 진입을 게이트한다(filing.panel* 동형).
+function publicIpoPort(core: DataCore): IpoPort {
+	return {
+		recent: () => loadIpoFilings(core),
+		report: () => notWiredYet('ipo.report', '로컬 상위집합(/api 런타임 파싱) 전용 · env.kind 게이트')
+	};
+}
+
 function publicScanPort(shared: PublicRuntimeSharedPorts): ScanPort {
 	return {
 		changes: shared.changes,
@@ -167,6 +178,7 @@ export function createPublicRuntime(options: PublicRuntimeOptions): DartLabRunti
 		macro: createHfMacroPort(dataCore),
 		report: createReportSource(dataCore),
 		scan: publicScanPort(options.shared),
+		ipo: publicIpoPort(dataCore),
 		export: publicExportPort(localStoragePort(), options.exportShared),
 		get map() {
 			return notWiredYet('map', '단계-8(map 추출)');

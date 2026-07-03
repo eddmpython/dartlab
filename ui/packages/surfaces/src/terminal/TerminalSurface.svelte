@@ -21,6 +21,7 @@
 	import SupportDialog from './panels/SupportDialog.svelte';
 	import IndustryDialog from './panels/IndustryDialog.svelte';
 	import FilingSearchDialog from './panels/FilingSearchDialog.svelte';
+	import IpoDialog from './panels/IpoDialog.svelte';
 	import { ChartCtl } from './charts/chartState.svelte';
 	import { classifyTailwind, hasNegativeTailwind } from './lib/macroMappings';
 	import { Heart } from 'lucide-svelte';
@@ -68,6 +69,9 @@
 	let industryOpen = $state(false); // 산업 분석 다이얼로그 (좌측 산업 sweep 행 클릭)
 	let industryId = $state('');
 	let filingSearchOpen = $state(false); // 전역 공시 본문 검색 팔레트 (⌘⇧F · statusBar)
+	// IPO 공모 다이얼로그 · ?ipo=1 딥링크(왓처 newIpo 푸시 클릭)로도 열림. 시장 수준 발굴이라 종목 무관.
+	const urlIpo = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('ipo') : null;
+	let ipoOpen = $state(urlIpo === '1');
 	let sectorFilter = $state('');
 	let bottomTab = $state<'screener' | 'watch'>(readStore<string>('dlTerm.bottomTab', 'screener') === 'watch' ? 'watch' : 'screener');
 	const chartCtl = new ChartCtl();
@@ -277,6 +281,7 @@
 							<picture><source srcset="{base}/avatar-detective.webp" type="image/webp" /><img src="{base}/avatar-detective.png" alt="" width="14" height="14" style="border-radius:50%" /></picture>챗
 						</a>
 					{/if}
+					<button class={'hdrLink' + (ipoOpen ? ' on' : '')} onclick={() => (ipoOpen = true)} title={lang === 'en' ? 'IPO offerings · live discovery from registration statements (equity)' : '신규상장 IPO 공모 발굴 · 증권신고서(지분증권) 라이브'}>IPO</button>
 					<button class={'hdrLink' + (discussOpen ? ' on' : '')} onclick={() => (discussOpen = !discussOpen)} title="종목 토론 · giscus(GitHub Discussions) 인-터미널">{lang === 'en' ? 'Discuss' : '토론'}</button>
 					<a class="hdrLink" href="{links.repo}/issues/new" target="_blank" rel="noopener" title="GitHub 이슈 등록 · 버그·요청">{lang === 'en' ? 'Issue' : '이슈'}</a>
 				</div>
@@ -352,6 +357,9 @@
 		<SupportDialog {lang} {links} {base} open={supportOpen} onClose={() => (supportOpen = false)} />
 		{#if filingSearchOpen}
 			<FilingSearchDialog {lang} onPick={pick} onClose={() => (filingSearchOpen = false)} />
+		{/if}
+		{#if ipoOpen}
+			<IpoDialog {lang} onClose={() => (ipoOpen = false)} />
 		{/if}
 		{#if industryOpen}
 			<IndustryDialog {eng} {industryId} {lang} onClose={() => (industryOpen = false)} onPick={(c) => { pick(c); industryOpen = false; }} />

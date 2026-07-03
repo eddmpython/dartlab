@@ -1,6 +1,8 @@
 // 로컬 Python 서버(/api) 응답 타입 · 계약 타입과 다른 원천 형태(정규화 대상).
 // ui/web React 클라이언트(@/features/dashboard/api/client)와 같은 /api 표면이지만 그 패키지를 import 하지 않는다
 // (ui/web 동결·React 결합). 어댑터가 같은 계약을 독립 선언한다.
+// (ipo 리포트는 /api 응답이 계약(IpoReport)과 1:1 이라 별도 Client 타입 없이 계약 타입을 그대로 캐시 키에 쓴다.)
+import type { IpoReport } from '@dartlab/ui-contracts';
 
 export interface CompanyMeta {
 	stockCode: string;
@@ -87,4 +89,6 @@ export interface LocalCaches {
 	priceEvents: Map<string, Promise<PriceEventsPayload | null>>;
 	panelInit: Map<string, Promise<ClientPanelInit | null>>;
 	meta: Map<string, Promise<CompanyMeta | null>>;
+	/** IPO 단건 리포트 · rcept 단위 불변 + 서버 런타임 파싱(수초)이라 재클릭 재파싱 방지. 키 = rcept:확정rcept. */
+	ipoReport: Map<string, Promise<IpoReport | null>>;
 }

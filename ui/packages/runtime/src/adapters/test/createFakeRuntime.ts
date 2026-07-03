@@ -14,6 +14,7 @@ import type {
 	FilingPort,
 	FinancePort,
 	IndexPort,
+	IpoPort,
 	MacroPort,
 	MapPort,
 	NavigationPort,
@@ -407,6 +408,48 @@ function fakeScan(): ScanPort {
 	};
 }
 
+function fakeIpo(): IpoPort {
+	return {
+		async recent() {
+			return [
+				{
+					corpName: '픽스처아이피오',
+					corpCode: '09999999',
+					rceptNo: '20260626000715',
+					rceptDate: '2026-06-26',
+					reportNm: '증권신고서(지분증권)',
+					isSpac: false,
+					corrected: false,
+					confirmationRceptNo: null,
+					confirmationDate: null,
+					url: 'https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260626000715'
+				}
+			];
+		},
+		async report() {
+			return {
+				title: '픽스처아이피오 공모분석',
+				summary: {
+					model: 'PER',
+					priceBand: [8000, 9000],
+					confirmedPrice: null,
+					bandLocation: null,
+					offerTotal: 8e9,
+					marketCap: [8e10, 9e10],
+					subscription: '2026.07.01 ~ 07.02',
+					freeFloatPct: 30,
+					impliedPer: [8, 9],
+					peerPer: 20,
+					isLoss: false,
+					identities: { valuationChain: true }
+				},
+				sections: [{ title: '공모 개요', badge: '✓ 검증', rows: [['희망공모가', '8,000원 ~ 9,000원']] }],
+				markdown: '# 픽스처아이피오 공모분석'
+			};
+		}
+	};
+}
+
 function fakeMap(): MapPort {
 	return {
 		async listIndustries() {
@@ -603,6 +646,7 @@ export function createFakeRuntime(options: FakeRuntimeOptions = {}): DartLabRunt
 		macro: fakeMacro(),
 		report: fakeReport(),
 		scan: fakeScan(),
+		ipo: fakeIpo(),
 		map: fakeMap(),
 		search: fakeSearch(),
 		ai: fakeAi(),

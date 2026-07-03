@@ -132,6 +132,9 @@ jobs:
           # 당일 공시 라이브 오버레이 프록시(같은 hfProxy 워커 /market-filings 라우트). DART list.json 을 당일
           # 전체로 서버사이드 fetch → HF 누적 위에 머지. 배치(14:30) 사이 갭을 조회시점으로 메움. 비우면 HF base 만, 가역.
           VITE_DARTLAB_MARKET_FILINGS_PROXY: https://dartlab-hf-proxy.eddmpython.workers.dev/market-filings
+          # IPO 발굴 라이브 프록시(같은 hfProxy 워커 /ipo-filings 라우트). DART list corp_cls=E + 지분증권 신고를
+          # 서버사이드 fetch(85일). 상장 전 발행사는 HF bake 부재라 이 라이브가 유일 데이터원. 비우면 발굴 빈값, 가역.
+          VITE_DARTLAB_IPO_FILINGS_PROXY: https://dartlab-hf-proxy.eddmpython.workers.dev/ipo-filings
           # 라이브 데이터 API 워커(infra/workers/dataCsv, /v1 라우트). HF parquet→CSV/TSV 온더플라이 → 데이터센터가
           # 구글시트 =IMPORTDATA / 엑셀 Power Query 용 라이브 URL 생성. 비우면 Tier2 비활성·Tier1 다운로드만, 가역.
           VITE_DARTLAB_CSV_PROXY: https://dartlab-data-csv.eddmpython.workers.dev

@@ -24,6 +24,7 @@ import { localAiPort } from './sources/aiSource';
 import { localStoragePort } from './sources/storageSource';
 import { localCompanyPort } from './sources/companySource';
 import { localFilingPort } from './sources/filingSource';
+import { localIpoPort } from './sources/ipoSource';
 import { createDataCore, type DataCore } from '../../data/fetch/request';
 import { createSearchPort } from '../../data/search/filingSearch';
 import { localScanPort } from './sources/scanSource';
@@ -53,7 +54,8 @@ export function createLocalRuntime(options: LocalRuntimeOptions): DartLabRuntime
 	const caches: LocalCaches = {
 		priceEvents: new Map<string, Promise<PriceEventsPayload | null>>(),
 		panelInit: new Map<string, Promise<ClientPanelInit | null>>(),
-		meta: new Map<string, Promise<CompanyMeta | null>>()
+		meta: new Map<string, Promise<CompanyMeta | null>>(),
+		ipoReport: new Map()
 	};
 	const dataCore = createDataCore(); // 데이터 워크벤치 SSOT 코어(어댑터당 1) · RuntimeCache·RequestDedup 실배선
 	// export Port 를 먼저 만들어 서비스 레지스트리(command)와 runtime.export 양쪽이 같은 인스턴스를 공유.
@@ -73,6 +75,8 @@ export function createLocalRuntime(options: LocalRuntimeOptions): DartLabRuntime
 		macro: createHfMacroPort(dataCore),
 		report: createReportSource(dataCore), // 공통배선 · HF parquet 직독(백엔드 0, 어댑터 코어 주입). 옛 localReportPort 는 null 스텁이라 폐기.
 		scan: localScanPort(),
+		// IPO · 발굴은 공개 라이브 워커 공통배선, 단건 리포트만 로컬 /api 런타임 파싱(로컬 상위집합).
+		ipo: localIpoPort(api, caches, dataCore),
 		export: exportPort,
 		get map() {
 			return notWiredYet('map', '단계-8(map 추출)');

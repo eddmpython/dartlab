@@ -18,6 +18,9 @@ const viteEnv = (import.meta as { env?: Record<string, string | boolean | undefi
 const NEWS_PROXY = ((viteEnv?.VITE_DARTLAB_NEWS_PROXY as string | undefined) ?? '').replace(/\/+$/, '');
 const MARKET_NEWS_PROXY = ((viteEnv?.VITE_DARTLAB_MARKET_NEWS_PROXY as string | undefined) ?? '').replace(/\/+$/, '');
 const MARKET_FILINGS_PROXY = ((viteEnv?.VITE_DARTLAB_MARKET_FILINGS_PROXY as string | undefined) ?? '').replace(/\/+$/, '');
+//   ipoFilings = CF 워커 /ipo-filings 라우트(전 환경 동일, DART list corp_cls=E 라이브 · 동형 게이트).
+//     상장 전 발행사는 HF bake(Y/K 한정)에 없어 이 라이브 read-through 가 퍼블릭 유일 데이터원(베이크 0).
+const IPO_FILINGS_PROXY = ((viteEnv?.VITE_DARTLAB_IPO_FILINGS_PROXY as string | undefined) ?? '').replace(/\/+$/, '');
 const NAVER_PROXY = ((viteEnv?.VITE_DARTLAB_NAVER_PROXY as string | undefined) ?? '').replace(/\/+$/, '');
 //   csvWorker = CF 워커 /v1/{dir}/{id}.{csv|tsv} 라우트(라이브 데이터 API, parquet→CSV/TSV 온더플라이).
 //     미설정 → Tier2 비활성, 데이터센터는 Tier1 다운로드만 노출(dev=퍼블릭 기준 무중단). mainPlan/data-download-center 03.
@@ -35,6 +38,7 @@ export type OriginId =
 	| 'newsWorker'
 	| 'marketNewsWorker'
 	| 'marketFilingsWorker'
+	| 'ipoFilingsWorker'
 	| 'naverWorker'
 	| 'duckdbHf'
 	| 'govDev'
@@ -71,6 +75,8 @@ const newsWorkerUrl = (spec: string): string => {
 const marketNewsWorkerUrl = (market: string): string => `${MARKET_NEWS_PROXY}?market=${encodeURIComponent(market)}`;
 // market-filings 워커 · 쿼리 없는 고정 라우트(당일 전체 공시). resolve(path) 의 path 무시.
 const marketFilingsWorkerUrl = (): string => MARKET_FILINGS_PROXY;
+// ipo-filings 워커 · 쿼리 없는 고정 라우트(최근 85일 corp_cls=E 지분증권 신고 목록). path 무시.
+const ipoFilingsWorkerUrl = (): string => IPO_FILINGS_PROXY;
 const naverWorkerUrl = (code: string): string => {
 	const q = `code=${encodeURIComponent(code)}`;
 	return naverDev ? `/__naver?${q}` : `${NAVER_PROXY}?${q}`;
@@ -108,6 +114,12 @@ const ORIGINS: Partial<Record<OriginId, OriginDef>> = {
 		resolve: marketFilingsWorkerUrl,
 		defaultCache: { scope: 'memory', ttlMs: 5 * MIN, maxEntries: 1 },
 		configured: () => Boolean(MARKET_FILINGS_PROXY)
+	},
+	// ipo-filings 라이브 워커 · 상장 전 발행사(E)는 HF base 자체가 없음 → 미설정 = 발굴 목록 빈값([]).
+	ipoFilingsWorker: {
+		resolve: ipoFilingsWorkerUrl,
+		defaultCache: { scope: 'memory', ttlMs: 30 * MIN, maxEntries: 1 },
+		configured: () => Boolean(IPO_FILINGS_PROXY)
 	},
 	naverWorker: {
 		resolve: naverWorkerUrl,
