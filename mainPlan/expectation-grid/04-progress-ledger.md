@@ -28,7 +28,11 @@ KR macro 3변수 x h=1/3/6, 2025-01~2026-04 매월 asOf backfill(issuedLive=Fals
 - 2026-07-03: 이중 기록 방지 결정(01 §5) : forwardTest redirect(A2) · credit adapter 병행 발행 · driverPanel(models)은 범위 밖.
 - 2026-07-03: backfill 정직 규약 확정(02 §5) : `issuedLive=False` 영구 구분, 공개 성적 혼합 금지.
 
+## P0 후속 : 졸업 게이트 ③~⑦ 선행 완료 (2026-07-03)
+
+승인 대기 시간에 P1 이식 원본을 _attempts 안에서 완성: `spec.py`(ExpectationSpec/ExpectationScore frozen 계약 + pinball/PIT/coverage/skill 순수수학, stdlib-only) + `ledgerIo.py`(append-only parquet, 중복 id raise) + `demo.py` 전 항목 PASS(계약 가드 · 채점 골든값 · 원장 불변식 · 실데이터 미니 사이클 발행 12/채점 12/error 0, n<24 → verified=False 라벨 강제 확인). 승인 즉시 P1 = 이식 + 미러 테스트 + re-export 만 남음.
+
 ## NEXT
 
-1. P0 데모 실측 → 결과 수치 본 원장 + _attempts README 박제
-2. 운영자 승인(A1/A2/A3) → P1 착수
+1. ~~P0 데모 실측~~ ✅ → ~~졸업 게이트 ③~⑦~~ ✅
+2. 운영자 승인(00 §9, 최소 A1) → P1 이식 착수 → P2 첫 라이브 발행(완성 정의의 시계 시작)
