@@ -26,6 +26,7 @@ import { loadInitialOHLCV, loadOlderYear, loadedCandles, mergeDedup, seedCandles
 import { createPublicIndexPort } from './sources/indexSource';
 import { loadTerminalFinance } from './sources/financeSource';
 import { createHfMacroPort } from './sources/macroSource';
+import { createExpectationPort } from './sources/expectationSource';
 import { loadCompanyRelations } from './sources/relationsSource';
 import { loadIndustryProfitPool } from './sources/industryPoolSource';
 import { loadHfProductIndexMap } from './sources/productIndexSource';
@@ -176,6 +177,7 @@ export function createPublicRuntime(options: PublicRuntimeOptions): DartLabRunti
 		finance: publicFinancePort(dataCore),
 		viewer: options.viewer,
 		macro: createHfMacroPort(dataCore),
+		expectations: createExpectationPort(dataCore),
 		report: createReportSource(dataCore),
 		scan: publicScanPort(options.shared),
 		ipo: publicIpoPort(dataCore),

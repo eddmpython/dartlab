@@ -9,6 +9,7 @@ export * from './news';
 export * from './finance';
 export * from './viewer';
 export * from './macro';
+export * from './expectations';
 export * from './report';
 export * from './reportModel';
 export * from './scan';

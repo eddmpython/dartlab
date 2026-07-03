@@ -644,6 +644,7 @@ export function createFakeRuntime(options: FakeRuntimeOptions = {}): DartLabRunt
 		finance: fakeFinance(),
 		viewer: fakeViewer(),
 		macro: fakeMacro(),
+		expectations: { getScorecard: async () => null }, // 픽스처 미발간 상태 = 빈 패널 문구
 		report: fakeReport(),
 		scan: fakeScan(),
 		ipo: fakeIpo(),

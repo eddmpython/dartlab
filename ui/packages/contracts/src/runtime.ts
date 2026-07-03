@@ -8,6 +8,7 @@ import type { NewsPort } from './news';
 import type { FinancePort } from './finance';
 import type { ViewerPort } from './viewer';
 import type { MacroPort } from './macro';
+import type { ExpectationsPort } from './expectations';
 import type { ReportPort } from './report';
 import type { ScanPort } from './scan';
 import type { IpoPort } from './ipo';
@@ -81,6 +82,7 @@ export interface DartLabRuntime {
 	finance: FinancePort;
 	viewer: ViewerPort;
 	macro: MacroPort;
+	expectations: ExpectationsPort;
 	report: ReportPort;
 	scan: ScanPort;
 	ipo: IpoPort;

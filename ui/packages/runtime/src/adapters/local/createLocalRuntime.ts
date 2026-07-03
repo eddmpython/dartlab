@@ -10,6 +10,7 @@ import type {
 	RuntimeEnvironment
 } from '@dartlab/ui-contracts';
 import { createHfMacroPort } from '../public/sources/macroSource';
+import { createExpectationPort } from '../public/sources/expectationSource';
 import { createPublicIndexPort } from '../public/sources/indexSource';
 import { loadTerminalFinance } from '../public/sources/financeSource';
 import { publicPricePort, publicNewsPort } from '../public/createPublicRuntime';
@@ -73,6 +74,7 @@ export function createLocalRuntime(options: LocalRuntimeOptions): DartLabRuntime
 		finance: localFinancePort(dataCore),
 		viewer: localViewerPort(),
 		macro: createHfMacroPort(dataCore),
+		expectations: createExpectationPort(dataCore),
 		report: createReportSource(dataCore), // 공통배선 · HF parquet 직독(백엔드 0, 어댑터 코어 주입). 옛 localReportPort 는 null 스텁이라 폐기.
 		scan: localScanPort(),
 		// IPO · 발굴은 공개 라이브 워커 공통배선, 단건 리포트만 로컬 /api 런타임 파싱(로컬 상위집합).

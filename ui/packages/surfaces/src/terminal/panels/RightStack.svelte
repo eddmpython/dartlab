@@ -50,6 +50,51 @@
 	let { co, lang, hosts, repoUrl, onPick, lookupListed, percentileIn }: Props = $props();
 	const rt = useDartLabRuntime();
 	const base = rt.env.basePath;
+
+	// 기대치 성적표 · 시장 전역(회사 무관) 1회 로드. 원장 = HF expectations/ (발행시점 봉인 append-only).
+	// 표시 계약: verified=false 그룹은 성과 숫자 렌더링 금지(미검증 라벨만) · live 발행분만 표시.
+	let scorecard = $state<import('@dartlab/ui-contracts').ExpectationScorecard | null>(null);
+	let scLoaded = $state(false);
+	$effect(() => {
+		void rt.expectations.getScorecard().then((sc) => {
+			scorecard = sc;
+			scLoaded = true;
+		});
+	});
+	const EXP_VAR_LABEL: Record<string, { kr: string; en: string }> = {
+		'KR.CPI': { kr: '물가(CPI)', en: 'CPI' },
+		'KR.BASE_RATE': { kr: '기준금리', en: 'Base rate' },
+		'KR.USDKRW': { kr: '원/달러', en: 'USDKRW' }
+	};
+	const EXP_DOMAIN_LABEL: Record<string, { kr: string; en: string }> = {
+		revenue: { kr: '매출(연간)', en: 'Revenue (FY)' },
+		earnings: { kr: '손익 캐스케이드', en: 'Earnings cascade' },
+		credit: { kr: '신용등급 유지', en: 'Grade retention' },
+		price: { kr: '주가 방향(12M)', en: 'Price direction (12M)' }
+	};
+	// live 그룹 파싱: "macro.KR.CPI.h1.live" -> {domain, varKey, h}. macro 는 변수별, 나머지는 도메인 rollup.
+	const expRows = $derived.by(() => {
+		const sc = scorecard;
+		if (!sc) return null;
+		const macro: { label: { kr: string; en: string }; h: number; g: (typeof sc.groups)[string] }[] = [];
+		const roll: Record<string, { n: number; anyVerified: boolean }> = {};
+		for (const [key, g] of Object.entries(sc.groups)) {
+			if (!key.endsWith('.live')) continue;
+			const parts = key.split('.');
+			const domain = parts[0];
+			const h = Number((parts[parts.length - 2] || '').replace('h', '')) || 0;
+			if (domain === 'macro') {
+				const varKey = parts.slice(1, -2).join('.');
+				macro.push({ label: EXP_VAR_LABEL[varKey] ?? { kr: varKey, en: varKey }, h, g });
+			} else {
+				const r = (roll[domain] ??= { n: 0, anyVerified: false });
+				r.n += g.n;
+				r.anyVerified ||= g.verified;
+			}
+		}
+		macro.sort((a, b) => a.label.kr.localeCompare(b.label.kr) || a.h - b.h);
+		return { macro, roll };
+	});
 	let viewerOpen = $state(false); // 공시뷰어 인터미널 오버레이 (정기공시 패널 ⤢)
 	let holdingsOpen = $state(false); // 출자 관계 분석 전체화면 (타법인 출자 패널 ⤢)
 	let tablesOpen = $state(false); // 재무제표 원표 모달 (재무 패널 ⤢)
@@ -986,6 +1031,39 @@
 			: `dartlab 파생 신용 ${cr.grade} (건전도 ${cr.healthScore}/100, PD ${cr.pd}). 영업이익률 ${co.fundamentals.opm != null ? co.fundamentals.opm.toFixed(1) + '%' : '·'}, ROE ${co.fundamentals.roe != null ? co.fundamentals.roe.toFixed(1) + '%' : '·'}, 부채비율 ${co.fundamentals.dr != null ? co.fundamentals.dr.toFixed(0) + '%' : '·'}. 모두 finance/ecosystem/prices 실데이터 산출.`}</div>
 	</Panel>
 </div>
+
+<!-- 기대치 성적표 · 엔진 자기채점 원장(HF expectations/, 발행시점 봉인 append-only). 회사 무관 시장 전역.
+     정직 규율: 표본<기준 = '미검증' 라벨만(성과 숫자 0) · live 발행분만 · naive 동시봉인 명시. -->
+<Panel {lang} className="eAnalysis" prov="real" title={{ kr: '기대치 성적표', en: 'EXPECTATION SCORECARD' }} sub={{ kr: '엔진 자기채점 · 발행시점 봉인', en: 'engine self-scoring · sealed at issuance' }}>
+	{#if scorecard && expRows}
+		<div class="factGrid">
+			<div class="factRow"><span class="factL">{lang === 'en' ? 'issued / scored / pending' : '발행 / 채점 / 대기'}</span><span class="factV mono">{scorecard.totals.issued} / {scorecard.totals.scored} / {scorecard.totals.unscored}</span></div>
+			{#each expRows.macro as r (r.label.en + r.h)}
+				<div class="factRow">
+					<span class="factL">{lang === 'en' ? r.label.en : r.label.kr} · h{r.h}</span>
+					<span class="factV mono">
+						{#if r.g.verified && r.g.coverage90 != null}
+							cov90 {(r.g.coverage90 * 100).toFixed(0)}%{r.g.meanSkill != null ? ` · skill ${r.g.meanSkill >= 0 ? '+' : ''}${r.g.meanSkill.toFixed(2)}` : ''}
+						{:else}
+							<span class="expUnverified">{r.g.n}{lang === 'en' ? ' scored · unverified' : '건 채점 · 미검증'}</span>
+						{/if}
+					</span>
+				</div>
+			{/each}
+			{#each Object.entries(expRows.roll) as [domain, r] (domain)}
+				<div class="factRow">
+					<span class="factL">{lang === 'en' ? (EXP_DOMAIN_LABEL[domain]?.en ?? domain) : (EXP_DOMAIN_LABEL[domain]?.kr ?? domain)}</span>
+					<span class="factV mono"><span class="expUnverified">{r.n}{lang === 'en' ? ' scored · unverified' : '건 채점 · 미검증'}</span></span>
+				</div>
+			{/each}
+		</div>
+		<div class="finNote">{lang === 'en' ? 'sealed at issuance · naive baselines co-sealed · live issuances only · unverified until sample gate' : '발행시점 봉인 · naive 기준선 동시봉인 · 라이브 발행분만 · 표본 게이트 전 미검증'}</div>
+	{:else if scLoaded}
+		<div class="finNote">{lang === 'en' ? 'scorecard not published yet' : '성적표 미발간'}</div>
+	{:else}
+		<div class="finNote">{lang === 'en' ? 'loading scorecard …' : '성적표 불러오는 중 …'}</div>
+	{/if}
+</Panel>
 
 {#if viewerOpen}
 	<ViewerOverlay
