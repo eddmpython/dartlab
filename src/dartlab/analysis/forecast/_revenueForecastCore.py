@@ -354,44 +354,44 @@ def forecastRevenue(
                 break
 
             # 시계열 성장률
-        tsG = (
-            tsGrowthRates[yrOffset - 1]
-            if yrOffset <= len(tsGrowthRates)
-            else (tsGrowthRates[-1] if tsGrowthRates else 0.0)
-        )
-
-        # 컨센서스 성장률
-        conG = conGrowthRates[yrOffset - 1] if yrOffset <= len(conGrowthRates) else None
-
-        # 가중 성장률 계산
-        blendedGrowth = 0.0
-        if conG is not None and "consensus" in weights:
-            blendedGrowth += conG * weights.get("consensus", 0)
-            blendedGrowth += tsG * weights.get("timeseries", 0)
-        else:
-            # 컨센서스 없는 연도 → 시계열이 컨센서스 몫도 흡수
-            blendedGrowth += tsG * (weights.get("timeseries", 0) + weights.get("consensus", 0))
-
-        blendedGrowth += roicG * weights.get("roic", 0)
-
-        # 세그먼트 Bottom-Up 성장률
-        if segGrowthRates and "segments" in weights:
-            segG = (
-                segGrowthRates[yrOffset - 1]
-                if yrOffset <= len(segGrowthRates)
-                else (segGrowthRates[-1] if segGrowthRates else 0.0)
+            tsG = (
+                tsGrowthRates[yrOffset - 1]
+                if yrOffset <= len(tsGrowthRates)
+                else (tsGrowthRates[-1] if tsGrowthRates else 0.0)
             )
-            blendedGrowth += segG * weights.get("segments", 0)
 
-        # 수주잔고 내재 성장률
-        if backlogSignal and "backlog" in weights:
-            # 수주잔고 신호는 horizon 동안 감쇠
-            decay = max(0.5, 1.0 - (yrOffset - 1) * 0.2)
-            blendedGrowth += backlogSignal.impliedRevenueGrowth * decay * weights.get("backlog", 0)
+            # 컨센서스 성장률
+            conG = conGrowthRates[yrOffset - 1] if yrOffset <= len(conGrowthRates) else None
 
-        projVal = prevRevenue * (1 + blendedGrowth / 100)
-        projected.append(projVal)
-        prevRevenue = projVal
+            # 가중 성장률 계산
+            blendedGrowth = 0.0
+            if conG is not None and "consensus" in weights:
+                blendedGrowth += conG * weights.get("consensus", 0)
+                blendedGrowth += tsG * weights.get("timeseries", 0)
+            else:
+                # 컨센서스 없는 연도 → 시계열이 컨센서스 몫도 흡수
+                blendedGrowth += tsG * (weights.get("timeseries", 0) + weights.get("consensus", 0))
+
+            blendedGrowth += roicG * weights.get("roic", 0)
+
+            # 세그먼트 Bottom-Up 성장률
+            if segGrowthRates and "segments" in weights:
+                segG = (
+                    segGrowthRates[yrOffset - 1]
+                    if yrOffset <= len(segGrowthRates)
+                    else (segGrowthRates[-1] if segGrowthRates else 0.0)
+                )
+                blendedGrowth += segG * weights.get("segments", 0)
+
+            # 수주잔고 내재 성장률
+            if backlogSignal and "backlog" in weights:
+                # 수주잔고 신호는 horizon 동안 감쇠
+                decay = max(0.5, 1.0 - (yrOffset - 1) * 0.2)
+                blendedGrowth += backlogSignal.impliedRevenueGrowth * decay * weights.get("backlog", 0)
+
+            projVal = prevRevenue * (1 + blendedGrowth / 100)
+            projected.append(projVal)
+            prevRevenue = projVal
 
     # ── 스키마 보장: projected가 horizon보다 적으면 패딩 ──
     while len(projected) < horizon:

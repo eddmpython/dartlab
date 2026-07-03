@@ -83,3 +83,10 @@ KR macro 3변수 x h=1/3/6, 2025-01~2026-04 매월 asOf backfill(issuedLive=Fals
 - 종전 게이트(달력: 분기말 경과 = 발행 금지)가 미공시 분기(Q2, 분기보고서 8월)를 부당하게 제외. 전환: **실제값이 SSOT 시계열에 존재하는 분기만 제외** (발행 시점 정보집합 기준). 분기말 경과·미공시 = nowcast 로 발행하되 `quarterEndedAtIssue` 경고 봉인 + 성적표 그룹 `.nowcast` 접미사로 일반 예측과 혼합 집계 금지 (정보우위 오염 차단).
 - 잠복 결함 동시 수리: 분기 채점 실제값 소스가 panel("is") 였는데 분기창에 Q4 열이 없어 Q4 채점이 전부 grace 후 error 봉인될 운명이었음. `_seriesQuarterValues`(_buildFinanceSeries freq=Q) 로 교체, 발행 게이트와 채점이 같은 실제값 소스 공유.
 - 검증: pytest 28 green (데이터 게이트·nowcast 라벨·분리 그룹·Q2 채점) · guard strict PASS. 2026Q2 nowcast 6행(3사) 봉인·HF 재발행 (원장 84행).
+
+## E3 연구 + D1 수리 + UI 재구성 (2026-07-04, 운영자 goal: 전문가 토론 연구 + 테이블 추정 분리 + 추정 패널/상세보기)
+
+- **전문가 5-패널 연구**: 셀사이드·계량·3표정합·매크로크레딧 4관점 + 코드 실측지도. 5개 독립 관점이 최상류 결함을 교차확인. 종합 = [06-estimation-techniques.md](06-estimation-techniques.md). 검증된 결함 6종(D1~D6)·기법 랭킹·착수순서.
+- **D1 버그 수리(검증)**: `_revenueForecastCore.py` 앙상블 다년 경로 루프 본문이 for 밖으로 dedent 돼 있어 1년차만 성장·2·3년차 복제(운영자가 본 367.3 flat의 정체). 재인덴트 수리 + 회귀 3테스트(`tests/analysis/forecast/test_revenueForecastCore.py`: 복리 단조·시나리오 base 비flat·override BC). 다운스트림 19테스트·guard strict 7룰+6게이트 무손상. **봉인 원장은 append-only라 기존 flat 행은 불변 유지(생존편향 금지), 수리 효과는 go-forward 신규 발행분부터**.
+- **UI 재구성**: ①재무제표 표에서 E열 전량 제거(실적 전용, 운영자 규율) ②재무 패널 바로 아래에 밀도 높은 "추정·기대" 패널 신설(연간/분기 봉인 추정 + 시장 팬 + 채점 도착) ③상세보기 다이얼로그 `ExpectationDetailDialog.svelte`(추정 3표 IS/BS/CF 탭 + 연간/분기 + 보수/기준/낙관 시나리오 토글 + 채점 트랙레코드 + 매크로 팬 + 방법·계보). 옛 하단 성적표 패널 삭제. svelte-check 0 err·배선감사 0·스크린샷 눈검수 3장.
+- **연구가 UI로 가시화**: 상세 다이얼로그가 D2(매출액 428 vs 봉인 367.3)·D3(자본총계=이익잉여금)·D5(마진 대칭)를 화면에서 직접 노출 = 검증척추가 결함을 보이게 만듦.
