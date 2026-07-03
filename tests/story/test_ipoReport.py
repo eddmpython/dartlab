@@ -82,6 +82,7 @@ def test_render_summary_typed_values():
     """summary = UI KPI 스트립용 typed 핵심값. 라벨 문자열 파싱 없이 숫자 그대로 소비 가능해야."""
     r = renderIpoReport(_PARSED, corpName="테스트", confirmation={"confirmedPrice": 90000})
     s = r["summary"]
+    assert s["model"] == "PER"
     assert s["priceBand"] == [80000, 90000]
     assert s["confirmedPrice"] == 90000 and s["bandLocation"] == "밴드 상단"
     assert s["marketCap"] == [80e9, 90e9]
@@ -89,3 +90,14 @@ def test_render_summary_typed_values():
     assert s["freeFloatPct"] == 30.0 and s["isLoss"] is False
     assert s["subscription"] == "2026.09.01 ~ 09.02"
     assert s["identities"] == {"valuationChain": True, "financialsBalance": True, "floatBalance": True}
+
+
+def test_render_non_per_model_no_cross_basis_verdict():
+    """EV/EBITDA 등 타 모형 비교배수는 implied PER 와 이종 기준. 고/저평가 좌표 문구 금지(오도 차단)."""
+    parsed = {**_PARSED, "valuation": {**_PARSED["valuation"], "model": "EV/EBITDA"}}
+    r = renderIpoReport(parsed, corpName="이브이")
+    md = r["markdown"]
+    assert "평가 좌표" not in md  # 이종 기준 비교 없음
+    assert "EV/EBITDA 기준 · 직접 비교 아님" in md
+    assert "비교기업 적용 배수: 20.00배" in md  # PER 라벨 아니라 모형 중립 라벨
+    assert r["summary"]["model"] == "EV/EBITDA"

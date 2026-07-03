@@ -62,9 +62,10 @@ def renderIpoReport(
     Returns:
         dict
             title : str. "{회사명} 공모분석".
-            summary : dict. UI KPI 스트립용 typed 핵심값 (priceBand/confirmedPrice/bandLocation/
+            summary : dict. UI KPI 스트립용 typed 핵심값 (model/priceBand/confirmedPrice/bandLocation/
                 offerTotal/marketCap/subscription/freeFloatPct/impliedPer/peerPer/isLoss/identities).
-                숫자는 원값 그대로(포맷은 소비처) · 미산출은 None.
+                숫자는 원값 그대로(포맷은 소비처) · 미산출은 None. peerPer 는 model 기준 배수라
+                PER 모형이 아닐 때 implied PER 와 좌표 비교 금지(소비처 게이트).
             sections : list[dict]. {title, rows[(label,value)], badge}.
             markdown : str. 터미널/랜딩 표시용 전체 리포트.
 
@@ -145,16 +146,22 @@ def renderIpoReport(
     # 3. 밸류에이션 (implied vs 비교기업)
     peer = val.get("peerMultiple")
     impPer = mult.get("per")
+    model = val.get("model") or ""
+    # implied PER 와 비교배수의 좌표 비교는 *동일 기준(PER 모형)* 일 때만. EV/EBITDA 등 타 모형의
+    # 비교배수를 implied PER 와 겹쳐 고/저평가를 말하면 이종 기준 오도(에이치엘지노믹스 실측 케이스).
+    perModel = "PER" in model.upper()
     perCmp = "-"
-    if impPer and peer:
+    if impPer and peer and perModel:
         perCmp = f"{_pair(impPer, fmt=lambda x: f'{x:.1f}배')} (비교기업 {peer:.1f}배 대비 {'저' if max(impPer) < peer else '고'}평가 좌표)"
+    elif impPer:
+        perCmp = f"{_pair(impPer, fmt=lambda x: f'{x:.1f}배')} (비교배수는 {model or '타'} 기준 · 직접 비교 아님)"
     sections.append(
         {
             "title": "밸류에이션",
             "badge": _BADGE.get(ids.get("valuationChain")) if "valuationChain" in ids else None,
             "rows": [
-                ("적용 평가모형", val.get("model") or "-"),
-                ("비교기업 적용 PER", f"{peer:.2f}배" if peer else "-"),
+                ("적용 평가모형", model or "-"),
+                ("비교기업 적용 배수", f"{peer:.2f}배" if peer else "-"),
                 ("주당 평가가액", _price(val.get("perShareValue"))),
                 ("할인율", _pair(val.get("discount"), fmt=lambda x: f"{x:.1f}%")),
                 ("IPO implied PER", perCmp),
@@ -221,6 +228,7 @@ def renderIpoReport(
     # ── summary · UI KPI 스트립용 typed 핵심값 (sections 라벨 문자열 파싱 금지, 소비처가 숫자 직접 포맷) ──
     mc = mult.get("marketCap")
     summary = {
+        "model": model or None,
         "priceBand": [min(band), max(band)] if band else None,
         "confirmedPrice": confirmedPrice,
         "bandLocation": bandLocation,
