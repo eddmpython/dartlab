@@ -14,7 +14,10 @@
 | 2026-06-30 | **P1 수신 스택** — `service-worker.ts` 3리스너 + `NotifyOptIn.svelte`(2단게이트·iOS가드) + subscription/sanitize/platform 공유. **vitest 17/17·svelte-check 0** | ✅ |
 | 2026-06-30 | **P1 발행 러너** — `.github/scripts/notify/`(send·hubClient·authHeaders·payload·sanitize) + notify-publish.yml + pushhub-test.yml + deploy-landing vitest게이트. **pytest** | ✅ |
 | 2026-06-30 | **P2 공개 토픽** — watch.py(`eval_new_ipo`·`eval_new_orders` scan직독·sentNonce=커서) + notify-watch.yml(cron) + TOPIC_ALLOWLIST 4개 + monitorPipeline 등록. **러너 pytest 18/18** | ✅ |
-| — | 운영자 롤아웃: Cloudflare 배포(D1·secret·VAPID·deploy) + GitHub vars/secret | ⏳ 운영자 |
+| 2026-07-03 | **발송위생** . 토픽별 cap(aa57e02ae). 24h dedupe=허브 sentNonce 영구멱등·조용한시간=cron 시각(17시 KST) 구조 회피로 각각 불요 판정(watch.py 주석 박제) | ✅ |
+| 2026-07-03 | **newIpo 딥링크 격상** . 클릭 url `/terminal?ipo=1` = 터미널 IPO 공모 다이얼로그 자동 오픈(발굴 리스트 + 로컬 6카테고리 리포트, 알림→인사이트 루프 완결). 러너 pytest 7/7 | ✅ |
+| 대기 | 운영자 롤아웃: Cloudflare 배포(D1·secret·VAPID·deploy) + GitHub vars/secret | ⏳ 운영자 |
+| 대기 | 운영자 롤아웃: hfProxy 재배포(`infra/workers/hfProxy` 에서 `wrangler deploy`) . `/ipo-filings` 라우트 활성(newIpo 딥링크 목적지 데이터원) | ⏳ 운영자 |
 | — | 운영자 롤아웃: landing UI 눈검수 후 push(자동 push 금지) | ⏳ 운영자 |
 | — | P1 SHIP: 실기기 1대 aes128gcm 수신 확인(Chrome·iOS 16.4+) | ⏳ 운영자 |
 | — | P3 개인 왓처(로컬 소유·브리지) — ≥2 소비자 실증 후 발견적 추출 | ⬜ 의도적 보류(YAGNI) |

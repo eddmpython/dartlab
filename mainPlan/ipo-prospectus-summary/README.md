@@ -18,4 +18,5 @@ GitHub Discussion #70 — IPO 공모 신고서 분석(증권신고서 지분증�
 - v2 반영: 제품·시장 정의 + 이름 정정(수요예측 결과변수=카테고리7 후속트랙) · IPO 4대 시각 primitive · P2 카테고리별 항등식 truth 프레임워크 · 성능 척추(index-first·시의성 SLA) · 원문근거 deep-link.
 
 ## 상태
-개념확립 착수·진행(2026-06-29, `tests/_attempts/ipo/`). 운영자 결정 6건 대기. professional-report-engine·order-flow-scan 동급 활성.
+**구현 완료(2026-07-03)**: 본진 졸업(providers 파서 + scan("ipo") + story 리포트) + 로컬 런타임 서빙(`/api/dart/ipo/{report,scan}`, 베이크 0) + **터미널 IPO 공모 뷰**(IpoPort 계약·라이브 워커 `/ipo-filings` 발굴 공통배선·로컬 6카테고리 리포트 pane·`?ipo=1` 딥링크=왓처 newIpo 푸시 목적지). 실렌더 눈검수: 발굴 9개 발행사·확정가/정정 뱃지·에이치엘지노믹스 리포트(EV/EBITDA 이종기준 가드 포함).
+운영자 잔여 2건: ① hfProxy 재배포(`wrangler deploy`, /ipo-filings 활성) ② landing/ui 커밋 눈검수 후 push.
