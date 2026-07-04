@@ -1,10 +1,10 @@
-"""블로그 전체 — 배경 이미지 없는 글에 CC0/PD 스톡 배경 수급 (FLUX·생성형 안 씀).
+"""블로그 전체: 배경 이미지 없는 글에 CC0/PD 스톡 배경 수급 (FLUX·생성형 안 씀).
 
 `gen_news_cc0.py`(dartlab-news 한정)를 블로그 전 카테고리로 확장한 버전. 이미 배경이 있는 글은
 건드리지 않고(--force 로만 덮어씀), `*thumbnail-bg.webp` 가 없는 글만 채운다. 수급 엔진은
 `fetch_cc0_images.py`(Wikimedia Commons + Openverse, 귀속 의무 없는 PD/CC0 만 + OAuth)를 그대로 재사용.
 
-쿼리 도출(자동) — 썸네일은 흑백 + 다크 스크림이라 "분위기 배경"이면 충분하다.
+쿼리 도출(자동). 썸네일은 흑백 + 다크 스크림이라 "분위기 배경"이면 충분하다.
 - company-reports: 슬러그의 영문 회사명 토큰으로 **업종 추론**(반도체·식음료·제약·중공업·에너지화학·
   금융·소비재유통·엔터·우주항공·물류·IT소프트). 매핑되면 업종 실사 쿼리, 미매핑이면 기업 스카이라인.
   (회사명 직검색은 인물 초상화·로고 오매치가 잦아 안 씀.)
@@ -33,7 +33,7 @@ from fetch_cc0_images import _candidates, _credit_line, _download, _relevant, _s
 ROOT = Path(__file__).resolve().parents[2]
 BLOG = ROOT / "blog"
 
-# 업종 추론 — 영문 회사명/슬러그에 토큰이 있으면 그 업종 쿼리 사용(앞에서부터 우선).
+# 업종 추론: 영문 회사명/슬러그에 토큰이 있으면 그 업종 쿼리 사용(앞에서부터 우선).
 # 각 항목: (탐지 토큰들, [실사 쿼리들], [관련성 키워드])
 SECTORS: list[tuple[list[str], list[str], list[str]]] = [
     (
@@ -230,7 +230,7 @@ DEFAULT_QUERIES = [
 ]
 DEFAULT_KEYWORDS = ["building", "office", "city", "skyline", "tower", "downtown", "architecture", "skyscraper"]
 
-# 모든 카테고리 마지막 안전망 — 깨끗한 기업/금융 스카이라인(흑백+스크림 아래 무난). 느슨한 게이트.
+# 모든 카테고리 마지막 안전망: 깨끗한 기업/금융 스카이라인(흑백+스크림 아래 무난). 느슨한 게이트.
 GENERIC_FALLBACK = [
     ("city financial district skyline", DEFAULT_KEYWORDS),
     ("corporate office building glass facade", DEFAULT_KEYWORDS),
@@ -257,7 +257,7 @@ REJECT_TOKENS = (
     "portrait of",
 )
 
-# 공시 읽기 — 문서·감사·규제·거래소 (글 순서로 변주)
+# 공시 읽기: 문서·감사·규제·거래소 (글 순서로 변주)
 DISCLOSURE_THEMES: list[tuple[list[str], list[str]]] = [
     (["financial documents desk paperwork"], ["document", "paper", "desk", "report", "finance"]),
     (["annual report business documents"], ["report", "document", "business", "paper"]),
@@ -269,7 +269,7 @@ DISCLOSURE_THEMES: list[tuple[list[str], list[str]]] = [
     (["magnifying glass document analysis"], ["magnifying", "document", "analysis", "paper"]),
 ]
 
-# 신용 — 채권·신용·은행·재무
+# 신용: 채권·신용·은행·재무
 CREDIT_THEMES: list[tuple[list[str], list[str]]] = [
     (["bond market financial district"], ["bond", "financial", "district", "market", "bank"]),
     (["bank vault finance"], ["bank", "vault", "finance", "money"]),
@@ -286,14 +286,16 @@ def companyStages(slug_name: str) -> list[tuple[str, list[str]]]:
     hay = slug_name.lower()
     for detect, queries, keywords in SECTORS:
         if any(tok in hay for tok in detect):
-            return [(q, keywords) for q in queries]  # 업종 매핑 — 깨끗·구체. 회사명 직검색은 오매치라 안 씀
-    return [(q, DEFAULT_KEYWORDS) for q in DEFAULT_QUERIES]  # 미매핑 — 안정적 기업 스카이라인
+            return [(q, keywords) for q in queries]  # 업종 매핑: 깨끗·구체. 회사명 직검색은 오매치라 안 씀
+    return [(q, DEFAULT_KEYWORDS) for q in DEFAULT_QUERIES]  # 미매핑: 안정적 기업 스카이라인
 
 
 def themeFor(category: str, slug_name: str, order: int) -> list[tuple[str, list[str]]]:
     """카테고리별 (쿼리, 키워드) 단계 리스트. 마지막에 범용 폴백을 붙여 0매치 최소화."""
     if category == "company-reports":
         stages = companyStages(slug_name)
+    elif category == "tech-story":
+        stages = companyStages(slug_name)  # 슬러그의 기술 토큰(semi·silicon·battery 등)으로 업종 실사 추론
     elif category == "reading-disclosures":
         q, k = DISCLOSURE_THEMES[order % len(DISCLOSURE_THEMES)]
         stages = [(query, k) for query in q]
@@ -337,7 +339,7 @@ def iterImageless():
         yield nn, slug_name, cat, post_dir, order
 
 
-# 한 process 안에서 이미 쓴 이미지 URL — 인접·동업종 중복 방지(전역 1장 1회).
+# 한 process 안에서 이미 쓴 이미지 URL. 인접·동업종 중복 방지(전역 1장 1회).
 USED_URLS: set[str] = set()
 
 
@@ -361,7 +363,7 @@ def run(nn: str, slug_name: str, cat: str, post_dir: Path, order: int, force: bo
                 local.add(url)
                 pool.append((it, query))
     if not pool:
-        return f"MISS {nn}-{slug_name} [{cat}] — PD/CC0 매치 없음 (쿼리 조정 필요)"
+        return f"MISS {nn}-{slug_name} [{cat}]: PD/CC0 매치 없음 (쿼리 조정 필요)"
 
     # 전역 미사용 우선, 다 쓰였으면 재사용 허용(navy 폴백 방지). 둘 다 order 로 회전 → 인접 글과 다른 사진.
     unused = [(it, q) for it, q in pool if (it.get("url") or "") not in USED_URLS]
@@ -377,12 +379,12 @@ def run(nn: str, slug_name: str, cat: str, post_dir: Path, order: int, force: bo
         size = _save_webp(im, out)
         lic = f"{item.get('license', '')} {item.get('license_version', '')}".strip()
         cred = post_dir / "assets" / "CREDITS.md"
-        header = "" if cred.exists() else "# 썸네일 배경 출처 (CC0 / Public Domain — Wikimedia Commons · Openverse)\n\n"
+        header = "" if cred.exists() else "# 썸네일 배경 출처 (CC0 / Public Domain, Wikimedia Commons · Openverse)\n\n"
         with cred.open("a", encoding="utf-8") as fh:
             fh.write(header + _credit_line("thumbnail-bg", query, item) + "\n")
         reused = " (재사용)" if was_used else ""
         return f"OK   {nn}-{slug_name} ({size // 1024} KB) ← [{query}] {lic}{reused}"
-    return f"MISS {nn}-{slug_name} [{cat}] — 다운로드 실패"
+    return f"MISS {nn}-{slug_name} [{cat}]: 다운로드 실패"
 
 
 def main() -> None:
