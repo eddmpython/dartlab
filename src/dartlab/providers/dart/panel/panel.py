@@ -417,7 +417,25 @@ class Panel(pl.DataFrame):
             colExpr = pl.col(c)
             mask = mask | (colExpr == key) | colExpr.str.contains(key, literal=True)
         out = board.filter(mask)
-        return out if not out.is_empty() else None
+        if not out.is_empty():
+            return out
+        # 카탈로그 폴백(additive): key 가 노트 conceptId/bareName/한글라벨이면 canonicalKey 로 재검색.
+        # 기존 경로가 비었을 때만 발동(사용자가 NT_ 코드를 몰라도 이름으로 노트 도달).
+        from dartlab.core.extractionCatalog import resolveNoteKey
+
+        resolved = resolveNoteKey(key)
+        if resolved is not None and resolved != key and "disclosureKey" in board.columns:
+            if code is not None:
+                from . import cell as _cell
+
+                noteOut = _cell.readNoteStatement(
+                    code, statement=resolved, freq=freq or "year", scope=scope, marketNs=self._marketNs
+                )
+                if noteOut is not None:
+                    return noteOut
+            byKey = board.filter(pl.col("disclosureKey") == resolved)
+            return byKey if not byKey.is_empty() else None
+        return None
 
     def search(
         self,

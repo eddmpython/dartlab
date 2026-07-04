@@ -216,7 +216,7 @@
       "dartCov": 0.56,
       "edgarCov": 0.45,
       "edgarHonestNull": false,
-      "registered": false,
+      "registered": true,
       "status": "parity-ok"
     },
     {
@@ -226,7 +226,7 @@
       "dartCov": 0.56,
       "edgarCov": 0.3,
       "edgarHonestNull": false,
-      "registered": false,
+      "registered": true,
       "status": "parity-ok"
     },
     {
@@ -236,7 +236,7 @@
       "dartCov": 0.62,
       "edgarCov": 0.95,
       "edgarHonestNull": false,
-      "registered": false,
+      "registered": true,
       "status": "parity-ok"
     },
     {
@@ -246,7 +246,7 @@
       "dartCov": 0.62,
       "edgarCov": 1.0,
       "edgarHonestNull": false,
-      "registered": false,
+      "registered": true,
       "status": "parity-ok"
     },
     {
@@ -256,7 +256,7 @@
       "dartCov": 0.69,
       "edgarCov": 0.05,
       "edgarHonestNull": false,
-      "registered": false,
+      "registered": true,
       "status": "review"
     },
     {
@@ -266,7 +266,7 @@
       "dartCov": 0.69,
       "edgarCov": 1.0,
       "edgarHonestNull": false,
-      "registered": false,
+      "registered": true,
       "status": "parity-ok"
     },
     {
@@ -276,7 +276,7 @@
       "dartCov": 0.69,
       "edgarCov": 0.45,
       "edgarHonestNull": false,
-      "registered": false,
+      "registered": true,
       "status": "parity-ok"
     },
     {
@@ -286,7 +286,7 @@
       "dartCov": 0.62,
       "edgarCov": 0.9,
       "edgarHonestNull": false,
-      "registered": false,
+      "registered": true,
       "status": "parity-ok"
     },
     {
@@ -296,7 +296,7 @@
       "dartCov": 0.69,
       "edgarCov": 0.95,
       "edgarHonestNull": false,
-      "registered": false,
+      "registered": true,
       "status": "parity-ok"
     },
     {
@@ -306,7 +306,7 @@
       "dartCov": 0.62,
       "edgarCov": 1.0,
       "edgarHonestNull": false,
-      "registered": false,
+      "registered": true,
       "status": "parity-ok"
     },
     {

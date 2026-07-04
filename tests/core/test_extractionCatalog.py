@@ -19,6 +19,7 @@ from dartlab.core.extractionCatalog import (
     getConcept,
     getExtractionConcepts,
     parityMatrix,
+    resolveNoteKey,
 )
 
 
@@ -61,10 +62,24 @@ def test_honestNullHasReason():
             assert c.edgar.reason.strip(), f"{c.conceptId}: HonestNull 사유 누락"
 
 
-def test_registeredNotesAreTwelve():
-    """등록 노트는 정확히 12종(core/_entries notes 레지스트리 미러)."""
-    reg = [c.conceptId for c in getExtractionConcepts(category="note") if c.registered]
-    assert len(reg) == 12, f"등록 노트 12 기대, 실제 {len(reg)}"
+def test_registeredNotesResolveByName():
+    """등록(first-class) 노트는 conceptId/bareName/한글라벨 3형태 모두 canonicalKey 로 해소된다.
+
+    P1: 고가치 노트 10 + 레거시 12 = first-class 이름 접근. resolveNoteKey 가 panel 폴백의 SSOT.
+    """
+    reg = [c for c in getExtractionConcepts(category="note") if c.registered]
+    assert len(reg) >= 22, f"등록 노트 22+ 기대, 실제 {len(reg)}"
+    for c in reg:
+        key = c.dart.key
+        assert resolveNoteKey(c.conceptId) == key, f"{c.conceptId} conceptId 해소 실패"
+        assert resolveNoteKey(c.conceptId.removeprefix("note.")) == key, f"{c.conceptId} bareName 해소 실패"
+        assert resolveNoteKey(c.label) == key, f"{c.conceptId} label({c.label}) 해소 실패"
+
+
+def test_resolveNoteKeyUnknownReturnsNone():
+    """미등록 이름은 None(폴백 무발동, 기존 경로 보존)."""
+    assert resolveNoteKey("존재하지않는노트") is None
+    assert resolveNoteKey("NT_D826380") is None  # canonicalKey 자체는 별칭 아님(무한재귀 방지)
 
 
 def test_toDictRoundtrip():

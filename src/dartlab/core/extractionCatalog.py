@@ -79,7 +79,8 @@ class ExtractionConcept:
     conceptId 는 안정 식별자, category 는 9 대분류, dart/edgar 는 양 provider 표면 또는 부재.
     axisType 는 single|multiAxis|movement|text, valueType 는 amount|rate|text.
     narrativeAnchor 는 (chapterCanonical, sectionCore) 로 narrative 개념만 보유.
-    registered 는 core/_entries notes 레지스트리 등재 여부(노트 개념만 의미).
+    registered 는 first-class 이름 접근 가능 여부(노트 개념만 의미). 레거시 core/_entries notes 12 또는
+    catalog 라우팅(`resolveNoteKey` -> panel canonicalKey 폴백)으로 `c.panel(이름)` 도달 가능하면 True.
     """
 
     conceptId: str
@@ -397,37 +398,48 @@ _NOTES: list[ExtractionConcept] = [
     _note("note.lease", "리스", "NT_D832610", _EDGAR_NOTE_TAGS["lease"], registered=True),
     _note("note.segments", "영업부문(주석)", "NT_D871100", _EDGAR_NOTE_TAGS["segments"], registered=True),
     _note("note.costByNature", "비용의성격별분류", "NT_D834300", _EDGAR_NOTE_TAGS["costByNature"], registered=True),
-    # high-value unregistered 10 (실측 확인: Samsung panel 에 NT_ 실재). 본 카탈로그가 SSOT.
-    _note("note.regionalRevenue", "지역별매출", "NT_D831150", ("RevenueFromContractWithCustomerExcludingAssessedTax",)),
+    # high-value 10 (P1 등록: 실측 확인 Samsung panel NT_ 실재 + canonicalKey 추출 검증). 본 카탈로그가 SSOT.
+    _note(
+        "note.regionalRevenue",
+        "지역별매출",
+        "NT_D831150",
+        ("RevenueFromContractWithCustomerExcludingAssessedTax",),
+        registered=True,
+    ),
     _note(
         "note.sgAndA",
         "판매비와관리비",
         "NT_D834310",
         ("SellingGeneralAndAdministrativeExpense", "GeneralAndAdministrativeExpense"),
+        registered=True,
     ),
     _note(
         "note.employeeBenefits",
         "종업원급여",
         "NT_D834480",
         ("DefinedBenefitPlanBenefitObligation", "DefinedBenefitPlanFairValueOfPlanAssets", "LaborAndRelatedExpense"),
+        registered=True,
     ),
     _note(
         "note.financialIncomeExpense",
         "금융수익금융비용",
         "NT_D834330",
         ("InterestExpense", "InvestmentIncomeInterest", "InterestIncomeExpenseNet"),
+        registered=True,
     ),
     _note(
         "note.relatedParty",
         "특수관계자거래",
         "NT_D818000",
         ("RelatedPartyTransactionAmountsOfTransaction", "RelatedPartyTransactionDueFromToRelatedPartyCurrent"),
+        registered=True,
     ),
     _note(
         "note.tax",
         "법인세",
         "NT_D835110",
         ("IncomeTaxExpenseBenefit", "DeferredTaxAssetsNet", "CurrentIncomeTaxExpenseBenefit"),
+        registered=True,
     ),
     _note(
         "note.contingencies",
@@ -435,12 +447,14 @@ _NOTES: list[ExtractionConcept] = [
         "NT_D827580",
         ("LossContingencyEstimateOfPossibleLoss", "UnrecordedUnconditionalPurchaseObligationBalanceSheetAmount"),
         valueType="text",
+        registered=True,
     ),
     _note(
         "note.financialInstruments",
         "금융상품범주별",
         "NT_D822430",
         ("FinancialInstrumentsOwnedAtFairValue", "AvailableForSaleSecurities"),
+        registered=True,
     ),
     _note(
         "note.capitalReserves",
@@ -448,6 +462,7 @@ _NOTES: list[ExtractionConcept] = [
         "NT_D861200",
         ("AdditionalPaidInCapital", "CommonStockValue"),
         axisType="movement",
+        registered=True,
     ),
     _note(
         "note.retainedEarnings",
@@ -455,7 +470,9 @@ _NOTES: list[ExtractionConcept] = [
         "NT_D861300",
         ("RetainedEarningsAccumulatedDeficit",),
         axisType="movement",
+        registered=True,
     ),
+    # 미등록 유지: dart 표본 커버리지 sparse(NT_D834120 비표준 배치). 정직 보류.
     _note(
         "note.shareBasedComp",
         "주식기준보상",
@@ -657,6 +674,38 @@ _CONCEPTS: list[ExtractionConcept] = (
     _STATEMENTS + _NOTES + _GOVERNANCE + _CAPITAL + _WORKFORCE + _DEBT + _SEGMENT + _NARRATIVE
 )
 _INDEX: dict[str, ExtractionConcept] = {c.conceptId: c for c in _CONCEPTS}
+
+# 노트 별칭 -> canonicalKey(NT_) 역인덱스. conceptId · bareName · 한글 label 3 형태를 받는다.
+# 견고한 접근 경로(panel 폴백)가 소비: 사용자가 NT_ 코드를 몰라도 이름으로 노트 도달.
+_NOTE_ALIAS: dict[str, str] = {}
+for _c in _CONCEPTS:
+    if _c.category == "note" and isinstance(_c.dart, DartSource):
+        _NOTE_ALIAS[_c.conceptId] = _c.dart.key
+        _NOTE_ALIAS[_c.conceptId.removeprefix("note.")] = _c.dart.key
+        _NOTE_ALIAS[_c.label] = _c.dart.key
+
+
+def resolveNoteKey(key: str) -> str | None:
+    """노트 conceptId/bareName/한글라벨 을 canonicalKey(NT_) 로 해소한다.
+
+    panel 표면이 견고한 이름 접근(사용자가 NT_ 코드 미상)을 위해 폴백으로 소비한다.
+
+    Args:
+        key: "note.regionalRevenue" · "regionalRevenue" · "지역별매출" 중 하나.
+
+    Returns:
+        canonicalKey("NT_D831150") 또는 None(미매칭).
+
+    Raises:
+        없음.
+
+    Example:
+        >>> resolveNoteKey("지역별매출")
+        'NT_D831150'
+        >>> resolveNoteKey("note.tax")
+        'NT_D835110'
+    """
+    return _NOTE_ALIAS.get(key)
 
 
 def getExtractionConcepts(*, category: str | None = None) -> list[ExtractionConcept]:
