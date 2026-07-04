@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" font-family="-apple-system, 'Segoe UI', sans-serif">
+  <rect width="880" height="500" fill="#0a0e1a"/>
+  <text x="40" y="48" fill="#f1f5f9" font-size="26" font-weight="700">소형모듈원자로(SMR)와 대형 원전</text>
+  <text x="40" y="76" fill="#64748b" font-size="15">원자로를 잘게 나눠 공장에서 모듈로 찍어내는 방식이 SMR이다</text>
+
+  <!-- 대형원전 -->
+  <text x="230" y="128" fill="#94a3b8" font-size="18" font-weight="700" text-anchor="middle">대형 원전</text>
+  <rect x="110" y="150" width="240" height="250" rx="14" fill="#111827" stroke="#334155" stroke-width="1.5"/>
+  <ellipse cx="230" cy="270" rx="86" ry="110" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+  <rect x="200" y="215" width="60" height="110" rx="8" fill="#334155"/>
+  <text x="230" y="418" fill="#e2e8f0" font-size="14" text-anchor="middle">출력 1,400MW급, 한 기</text>
+  <text x="230" y="440" fill="#94a3b8" font-size="13" text-anchor="middle">현장에서 배관으로 조립</text>
+  <text x="230" y="460" fill="#94a3b8" font-size="13" text-anchor="middle">건설 10년 이상, 수십조 원</text>
+
+  <!-- 화살표 -->
+  <text x="440" y="268" fill="#fbbf24" font-size="30" text-anchor="middle">→</text>
+  <text x="440" y="300" fill="#fbbf24" font-size="12" text-anchor="middle">작게 나눠</text>
+  <text x="440" y="316" fill="#fbbf24" font-size="12" text-anchor="middle">공장에서</text>
+
+  <!-- SMR -->
+  <text x="650" y="128" fill="#fbbf24" font-size="18" font-weight="700" text-anchor="middle">SMR</text>
+  <rect x="530" y="150" width="240" height="250" rx="14" fill="#111827" stroke="#fbbf24" stroke-width="1.5"/>
+  <rect x="560" y="205" width="66" height="150" rx="10" fill="#1e293b" stroke="#fbbf24" stroke-width="2"/>
+  <rect x="576" y="245" width="34" height="70" rx="6" fill="#334155"/>
+  <rect x="660" y="205" width="66" height="150" rx="10" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+  <rect x="676" y="245" width="34" height="70" rx="6" fill="#334155"/>
+  <text x="650" y="418" fill="#e2e8f0" font-size="14" text-anchor="middle">출력 300MW 이하, 여러 기</text>
+  <text x="650" y="440" fill="#94a3b8" font-size="13" text-anchor="middle">공장에서 모듈 제작, 현장은 조립</text>
+  <text x="650" y="460" fill="#94a3b8" font-size="13" text-anchor="middle">피동 안전, 입지 유연</text>
+</svg>

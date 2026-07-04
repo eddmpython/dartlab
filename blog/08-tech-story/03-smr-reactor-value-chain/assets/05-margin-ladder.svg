@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" font-family="-apple-system, 'Segoe UI', sans-serif">
+  <rect width="880" height="420" fill="#0a0e1a"/>
+  <text x="40" y="46" fill="#f1f5f9" font-size="25" font-weight="700">원전 밸류체인 이익률 사다리</text>
+  <text x="40" y="74" fill="#64748b" font-size="15">최근 4개 분기(TTM) 영업이익률(%). 매출이 가장 큰 회사가 사다리 맨 아래에 있다. 우리 데이터 실측</text>
+
+  <!-- 우진 12.4 amber, x from 250, 1%=42px -->
+  <text x="240" y="132" fill="#e2e8f0" font-size="14" text-anchor="end">우진 (계측)</text>
+  <rect x="250" y="112" width="521" height="30" fill="#fbbf24"/>
+  <text x="781" y="133" fill="#fbbf24" font-size="15" font-weight="700">12.4%</text>
+
+  <!-- 비에이치아이 10.7 -->
+  <text x="240" y="182" fill="#e2e8f0" font-size="14" text-anchor="end">비에이치아이 (보조기기)</text>
+  <rect x="250" y="162" width="449" height="30" fill="#38bdf8"/>
+  <text x="709" y="183" fill="#38bdf8" font-size="15" font-weight="700">10.7%</text>
+
+  <!-- 한전KPS 10.3 -->
+  <text x="240" y="232" fill="#e2e8f0" font-size="14" text-anchor="end">한전KPS (정비)</text>
+  <rect x="250" y="212" width="433" height="30" fill="#38bdf8"/>
+  <text x="693" y="233" fill="#38bdf8" font-size="15" font-weight="700">10.3%</text>
+
+  <!-- 한전기술 9.0 -->
+  <text x="240" y="282" fill="#e2e8f0" font-size="14" text-anchor="end">한전기술 (설계)</text>
+  <rect x="250" y="262" width="378" height="30" fill="#38bdf8"/>
+  <text x="638" y="283" fill="#38bdf8" font-size="15" font-weight="700">9.0%</text>
+
+  <!-- 두산 4.9 red -->
+  <text x="240" y="332" fill="#e2e8f0" font-size="14" text-anchor="end">두산에너빌리티 (주기기)</text>
+  <rect x="250" y="312" width="206" height="30" fill="#ef4444"/>
+  <text x="466" y="333" fill="#ef4444" font-size="15" font-weight="700">4.9%</text>
+
+  <text x="560" y="372" fill="#ef4444" font-size="13" font-weight="600">매출 17조로 가장 큰데, 이익률은 사다리 맨 아래</text>
+</svg>

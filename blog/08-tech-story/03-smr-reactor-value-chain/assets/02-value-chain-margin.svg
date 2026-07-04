@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" font-family="-apple-system, 'Segoe UI', sans-serif">
+  <rect width="880" height="500" fill="#0a0e1a"/>
+  <text x="40" y="48" fill="#f1f5f9" font-size="26" font-weight="700">원전 밸류체인 5단계 이익률 지도</text>
+  <text x="40" y="76" fill="#64748b" font-size="15">단계별 대표 상장사 2025년 영업이익률(매출 대비 영업이익, %)과 매출 규모. 우리 데이터 실측</text>
+
+  <line x1="70" y1="430" x2="820" y2="430" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- 설계 6.8 -->
+  <rect x="100" y="246" width="80" height="184" fill="#38bdf8"/>
+  <text x="140" y="234" fill="#38bdf8" font-size="17" font-weight="700" text-anchor="middle">6.8%</text>
+  <text x="140" y="452" fill="#e2e8f0" font-size="13" text-anchor="middle">설계</text>
+  <text x="140" y="470" fill="#64748b" font-size="11" text-anchor="middle">한전기술 · 0.5조</text>
+
+  <!-- 주기기 4.5 -->
+  <rect x="250" y="308" width="80" height="122" fill="#ef4444"/>
+  <text x="290" y="296" fill="#ef4444" font-size="17" font-weight="700" text-anchor="middle">4.5%</text>
+  <text x="290" y="452" fill="#e2e8f0" font-size="13" text-anchor="middle">주기기</text>
+  <text x="290" y="470" fill="#64748b" font-size="11" text-anchor="middle">두산에너빌리티 · 17.1조</text>
+
+  <!-- 보조기기 9.8 -->
+  <rect x="400" y="165" width="80" height="265" fill="#38bdf8"/>
+  <text x="440" y="153" fill="#38bdf8" font-size="17" font-weight="700" text-anchor="middle">9.8%</text>
+  <text x="440" y="452" fill="#e2e8f0" font-size="13" text-anchor="middle">보조기기</text>
+  <text x="440" y="470" fill="#64748b" font-size="11" text-anchor="middle">비에이치아이 · 0.8조</text>
+
+  <!-- 계측 9.4 -->
+  <rect x="550" y="176" width="80" height="254" fill="#fbbf24"/>
+  <text x="590" y="164" fill="#fbbf24" font-size="17" font-weight="700" text-anchor="middle">9.4%</text>
+  <text x="590" y="452" fill="#e2e8f0" font-size="13" text-anchor="middle">계측</text>
+  <text x="590" y="470" fill="#64748b" font-size="11" text-anchor="middle">우진 · 0.15조</text>
+
+  <!-- 정비 8.9 -->
+  <rect x="700" y="190" width="80" height="240" fill="#22c55e"/>
+  <text x="740" y="178" fill="#22c55e" font-size="17" font-weight="700" text-anchor="middle">8.9%</text>
+  <text x="740" y="452" fill="#e2e8f0" font-size="13" text-anchor="middle">정비</text>
+  <text x="740" y="470" fill="#64748b" font-size="11" text-anchor="middle">한전KPS · 1.6조</text>
+
+  <!-- annotation -->
+  <text x="290" y="128" fill="#ef4444" font-size="13" text-anchor="middle" font-weight="600">매출은 가장 큰데</text>
+  <text x="290" y="146" fill="#ef4444" font-size="13" text-anchor="middle" font-weight="600">이익률은 가장 낮다</text>
+</svg>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 480" font-family="-apple-system, 'Segoe UI', sans-serif">
+  <rect width="880" height="480" fill="#0a0e1a"/>
+  <text x="40" y="46" fill="#f1f5f9" font-size="25" font-weight="700">두산에너빌리티: 커지는 매출, 낮아지는 이익률</text>
+  <text x="40" y="74" fill="#64748b" font-size="15">막대는 매출(조원, 왼쪽), 선은 영업이익률(%, 오른쪽). 2021~2025 연간 실측</text>
+
+  <line x1="70" y1="410" x2="820" y2="410" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- 매출 막대 (조원): 12.5 15.5 17.6 16.2 17.1, 1조=12px -->
+  <rect x="110" y="260" width="80" height="150" fill="#1e3a5f"/>
+  <rect x="260" y="224" width="80" height="186" fill="#1e3a5f"/>
+  <rect x="410" y="199" width="80" height="211" fill="#1e3a5f"/>
+  <rect x="560" y="216" width="80" height="194" fill="#1e3a5f"/>
+  <rect x="710" y="205" width="80" height="205" fill="#1e3a5f"/>
+  <text x="150" y="252" fill="#93c5fd" font-size="14" text-anchor="middle">12.5</text>
+  <text x="300" y="216" fill="#93c5fd" font-size="14" text-anchor="middle">15.5</text>
+  <text x="450" y="191" fill="#93c5fd" font-size="14" text-anchor="middle">17.6</text>
+  <text x="600" y="208" fill="#93c5fd" font-size="14" text-anchor="middle">16.2</text>
+  <text x="750" y="197" fill="#93c5fd" font-size="14" text-anchor="middle">17.1</text>
+
+  <!-- OPM 선 (%): 8.0 7.1 8.3 6.3 4.5, y=410-opm*30 -->
+  <polyline points="150,170 300,197 450,161 600,221 750,275" fill="none" stroke="#fbbf24" stroke-width="3"/>
+  <circle cx="150" cy="170" r="5" fill="#fbbf24"/>
+  <circle cx="300" cy="197" r="5" fill="#fbbf24"/>
+  <circle cx="450" cy="161" r="5" fill="#fbbf24"/>
+  <circle cx="600" cy="221" r="5" fill="#fbbf24"/>
+  <circle cx="750" cy="275" r="6" fill="#ef4444"/>
+  <text x="150" y="158" fill="#fbbf24" font-size="13" text-anchor="middle">8.0%</text>
+  <text x="450" y="149" fill="#fbbf24" font-size="13" text-anchor="middle">8.3%</text>
+  <text x="762" y="266" fill="#ef4444" font-size="14" text-anchor="start" font-weight="700">4.5%</text>
+
+  <text x="150" y="434" fill="#94a3b8" font-size="13" text-anchor="middle">2021</text>
+  <text x="300" y="434" fill="#94a3b8" font-size="13" text-anchor="middle">2022</text>
+  <text x="450" y="434" fill="#94a3b8" font-size="13" text-anchor="middle">2023</text>
+  <text x="600" y="434" fill="#94a3b8" font-size="13" text-anchor="middle">2024</text>
+  <text x="750" y="434" fill="#94a3b8" font-size="13" text-anchor="middle">2025</text>
+
+  <text x="620" y="120" fill="#ef4444" font-size="13" text-anchor="middle" font-weight="600">매출은 최대인데</text>
+  <text x="620" y="138" fill="#ef4444" font-size="13" text-anchor="middle" font-weight="600">이익률은 5년 내 최저</text>
+</svg>
