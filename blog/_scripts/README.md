@@ -26,7 +26,7 @@
 | `gen_news_thumbnails.py` | dartlab 소식(news) 썸네일 합성 |
 | `gen_news_cc0.py` | 뉴스 CC0/PD 수급 |
 | `gen_data_thumbnails.py` | 데이터 카테고리 썸네일 |
-| `gen_news_flux.py` · `gen_company_flux.py` | **legacy** FLUX 생성형 hero — 신규 기본 경로 아님(CC0/image_gen 우선) |
+| `gen_news_flux.py` · `gen_company_flux.py` | FLUX 생성형 hero. 운영자 명시 지시 시에만(기본은 CC0/image_gen 우선) |
 
 ## ③ audit · insights
 | 스크립트 | 역할 |

@@ -336,7 +336,7 @@ c.quant("종합"); c.quant("팩터")
 
 **SVG 규칙 (최소 5개, 풍부하게)**: **5개 미만이면 발행 불가**. 다크 `#0a0e1a`, 폰트 `-apple-system, 'Segoe UI', sans-serif`, 타이틀 한국어 필수. 텍스트 `fill=#f1f5f9`, 부제 `#64748b`, 강조 `#fbbf24`. A 등급 `#22c55e`, C/D `#f59e0b/#ef4444`.
 
-**이미지 생성**: 2~3 개. **최우선은 GPT `image_gen`** 이다. `image_gen` 결과는 Codex 세션 JSONL 의 `image_generation_call.result` 에 남으므로, `sns/scripts/extractImagegenAssets.py` 로 WebP 추출 후 `blog/{category}/{folder}/assets/{nn}-{slug}.webp` 로 옮긴다. FLUX/Replicate(`black-forest-labs/flux-1.1-pro`)는 `image_gen` 실패·품질 부적합·운영자 명시 요청 때만 보조 경로로 쓴다. 프롬프트는 영문 + "no text", 사실적 장면을 유지한다.
+**이미지 생성**: 2~3 개. **최우선은 GPT `image_gen`** 이다. `image_gen` 결과는 Codex 세션 JSONL 의 `image_generation_call.result` 에 남으므로, `sns/scripts/extractImagegenAssets.py` 로 WebP 추출 후 `blog/{category}/{folder}/assets/{nn}-{slug}.webp` 로 옮긴다. FLUX/Replicate(`black-forest-labs/flux-1.1-pro`)는 **운영자 명시 지시 때만** 보조로 쓴다(Claude 는 먼저 제안 안 함, 정본 = memory `feedback_image_sourcing_policy`). 프롬프트는 영문 + "no text", 사실적 장면을 유지한다.
 
 ### 이미지는 회사를 딱 보면 알 수 있는 구체 장면으로 뽑는다
 
@@ -376,7 +376,7 @@ c.quant("종합"); c.quant("팩터")
 
 ### Phase 3 실행 순서
 
-SVG **최소 5개** Write → GPT `image_gen` 2~3 + 썸네일 배경 1개 생성 → `extractImagegenAssets.py` 로 WebP 추출 → 본문 참조 → SEO audit → **SVG 5개 미만이면 발행 불가** → **이미지 0 개면 발행 불가** → 자산 완료 후 커밋. 이미지 수급 정책(Openverse 실사 주력 후 GPT `image_gen`, FLUX 폐기)은 `blog/OPERATIONS.md` 2절이 정본이다.
+SVG **최소 5개** Write → GPT `image_gen` 2~3 + 썸네일 배경 1개 생성 → `extractImagegenAssets.py` 로 WebP 추출 → 본문 참조 → SEO audit → **SVG 5개 미만이면 발행 불가** → **이미지 0 개면 발행 불가** → 자산 완료 후 커밋. 이미지 수급 정책(Openverse 실사 주력 후 GPT `image_gen`, FLUX 는 운영자 명시 지시 시에만)은 `blog/OPERATIONS.md` 2절이 정본이다.
 
 ### Phase 4: 독자 루프 (95 점까지 반복)
 

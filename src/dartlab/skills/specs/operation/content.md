@@ -1,14 +1,17 @@
 ---
 id: operation.content
-title: 콘텐츠 파이프라인 — 블로그 + 카드뉴스
+title: 콘텐츠 작업대. 블로그·카드뉴스·팟캐스트 공동 작업대
 category: operation
-purpose: 블로그 글과 라이브 카드뉴스(/cards)를 기획부터 발행까지 만드는 운영 SSOT. 기획(인사이트·스파인 선작성)을 본체로 두고, 평가개선 루프가 재작성을 강제하며, 카드별 이미지 적합성과 숫자 정직성을 구조에 박는다.
+purpose: 블로그 글·라이브 카드뉴스(/cards)·팟캐스트를 하나의 공동 작업대에서 기획부터 발행까지 만드는 운영 SSOT. 세 서피스가 공유 front(주제→데이터 워크벤치 직독→서사 코어→근거검증→자산수급)를 거쳐 StoryCore 를 만들고, 서피스 어댑터가 각 형식으로 투영한다. 데이터는 dartlab 데이터 워크벤치가 SSOT.
 whenToUse:
   - 카드뉴스 제작
   - 읽히는 카드
   - 캐러셀 발행
   - 블로그 글 기획
   - 콘텐츠 파이프라인
+  - 팟캐스트 기획
+  - 공동 작업대
+  - 서피스 추가
   - "/cards 발행"
 runtimeCompatibility:
   server:
@@ -39,12 +42,65 @@ expectedOutputs:
   - 블로그 — 검증된 글 + carousel + hero 이미지
   - 발행 — hfMedia carousels/index.json(라이브 /cards)
 status: observed
-lastUpdated: 2026-06-30
+lastUpdated: 2026-07-04
 ---
 
-# 콘텐츠 파이프라인 — 블로그 + 카드뉴스
+# 콘텐츠 작업대. 블로그·카드뉴스·팟캐스트 공동 작업대
 
 콘텐츠는 게이트 통과물이 아니라 편집물이다. 기계 검사는 바닥(위생)일 뿐, 기획과 반복 개선이 본체다. 이 문서는 그 본체를 잡는다.
+
+## 공동 작업대 (Content Workbench). 세 서피스가 무조건 거치는 공유 front
+블로그·카드뉴스·팟캐스트는 발행 형식만 다를 뿐 **같은 작업대를 거친다**. 블로그만 발행하든 카드만 발행하든, 아래 5단계 공유 front 를 반드시 통과해 하나의 서사 코어(StoryCore)를 만들고, 서피스 어댑터가 그것을 각 형식으로 투영한다. 릴스·쇼츠·비디오는 나중에 **서피스 어댑터만 추가**하면 붙는다(공유 front 재사용).
+
+### 5단계 공유 front
+| 단계 | 하는 일 | 공유/서피스 | 산출 |
+|---|---|---|---|
+| ① 주제·각도 | 고정 주제 또는 토론(`cards_topic_debate`)으로 관통선 1개 + 뽑을 데이터 목록(dataNeeds) 확정 | 완전 공유 | subject{kind,key} + throughline + dataNeeds[] |
+| ② 데이터 직독 | 메인 스레드가 dartlab **데이터 워크벤치를 런타임 직독**(Company.panel·scan·PeerCompareN·macro·credit). 회사 동시 import 2 이하 | 완전 공유 (데이터 SSOT) | 검증 evidence[] |
+| ③ 서사 코어 | 통념·반전·렌즈(insight) + 관통선. idea 수준 beats | 코어 공유 / 서사 실현은 서피스 | insight + beats[] |
+| ④ 근거검증·정직성 | 평가자+회의자 적대 루프. 숫자 전부 메인스레드 재대조 | 완전 공유 | honesty[] + gate |
+| ⑤ 자산 수급 | 의미 장면 확보(Openverse 실사 / image_gen). 공유풀 `sns/assets/{key}` | 개념 공유 / 크롭은 서피스 | assetScenes[] |
+
+경계 한 줄: **공유는 "진실"(subject·evidence·insight·정직성)까지, 투영은 "서피스"(막·슬라이드·소스문서·릴스).**
+
+### 데이터 워크벤치 = 데이터 SSOT
+②의 모든 숫자는 dartlab 데이터 워크벤치에서 **런타임 직독**한다. 에이전트는 숫자를 환각하므로 검증은 항상 메인 스레드(동시 import 2 이하, OOM 가드). 데이터를 굽거나(bake) 사본·별도 인덱스로 만들지 않는다.
+
+### StoryCore. 공유 서사 코어 (개념 계약, 새 파일 아님)
+세 서피스는 이미 같은 코어를 **다른 필드명으로 3벌 들고 있다**(brief.json·cards.plan.json·sourceDoc, 그리고 카드 편집 story_brief.json). StoryCore 는 그 공유 코어의 **표준 어휘**다. 새 아티팩트 `storyBrief` 를 신설하지 않는다(그러면 5번째 이름이라 덕지덕지). 각 서피스의 기존 기획 아티팩트가 StoryCore 의 투영이고, 필드명만 아래로 통일한다. 물리 통합(단일 파일화)은 `mainPlan/content-asset-ssot` PRD 의 점진 경로(StoryManifest, P0~P4)로 승인 후 진행한다.
+
+| StoryCore 표준 필드 | 뜻 | 현 서피스별 이름 |
+|---|---|---|
+| `subject{kind,key}` | 조인 키(회사=stockCode·주제=topicSlug) | (공통) |
+| `throughline{readerQuestion,oneLine}` | 관통선 + 한줄 결론 | readerQuestion / audienceQuestion |
+| `insight{commonBelief,twistFact,whatToWatch}` | 통념·반전·렌즈 | twistFact / coreAnswer, whatToWatch / whereToLook |
+| `evidence[]` | 검증된 근거(아래 표준) | evidenceRefs / dartlab_reproducible |
+| `beats[]{role}` | hook·mechanism·reversal·judgment 골격 | acts / spine / sections |
+| `honesty[]` | 정직성 가드 | honestyGuards / forbiddenAngles / gate |
+| `assetScenes[]` | 의미 장면(피사체) | imagePlan / assetPlan |
+
+서피스를 추가할 때 이 어휘로 새 동의어를 만들지 않는다(스키마 드리프트 금지).
+
+### evidence 표준 (편집 스냅샷, 굽기 아님)
+②의 evidence 각 항목은 아래를 단다. 핵심은 `apiRef`(재현)·`period.basis`(달력/회계연도)·`asOf`(시점)로, 2.6절의 반복 함정(EDGAR 회계연도·누적/TTM 혼입)을 구조로 막는다.
+
+```
+id · claim · apiRef{apiRef,args} · value · period{label,basis,granularity} · unit · tableRef · asOf · origin(mainThread-verified|external-unverified)
+```
+
+런타임-SSOT 경계: evidence 는 "이 시점에 SSOT 가 이렇게 나왔다"는 **편집 스냅샷**이지 데이터 캐시가 아니다. 화면·발행은 여전히 panel/scan 을 **런타임 직독**한다(블로그 `<CompanyFinancials>` 빌드타임 직독, 카드 finChart, /cards `carousels/index.json`). 어떤 화면도 evidence 의 value 를 데이터 소스로 읽지 않는다. 읽는 순간 굽기가 되어 금지.
+
+### 서피스 어댑터 seam (추가만 하면 되게)
+한 서피스가 공동 작업대에 붙으려면 4가지만 구현한다. 공유 적대 루프·데이터·정직성은 재사용한다.
+
+| 메서드 | 책임 | 현행 대응 |
+|---|---|---|
+| `plan(StoryCore)` | 코어를 그 서피스 서사형태로 투영(공유 루프에 rubric·planSchema·killAxes 주입) | acts(블로그)/spine(카드)/sourceDoc(팟캐) |
+| `render` | 물리 산출물 | index.md / carousels index.json / script.md |
+| `publish` | 목적지 전송 | GH Pages / HF / R2 |
+| `gate` | 발행 하드게이트(서피스별 SSOT, 통합 금지) | auditBlog / build_carousel_contracts / publish_podcast |
+
+미래 릴스·쇼츠·비디오 = 이 seam 을 따라 어댑터 추가(현재는 문서 규약. `sns/{track}/README.md` + `sns/assets` 공유풀이 이미 add-only 달성). 발행 경로(GH Pages·HF·R2·Remotion)는 물리적으로 공통분모가 없으니 `publish` 는 얇은 서피스별 드라이버로 두되 **시그니처만 균일**하게. 공통 추상의 실익은 transport 통합이 아니라 크로스링크 조인키(stockCode/topicSlug) + in-place 갱신 규율 + 운영자 눈검수 게이트 세 가지의 공유다.
 
 ## 북극성 — 무엇이 훌륭한가
 - 카드뉴스: ① 각 카드의 가장 큰 글자만 위에서 아래로 훑어도 한 편의 짧은 글로 완결된다. ② 표지가 처음 본 사람을 1초에 멈춘다. ③ 카드마다 그 문장이 말하는 이미지가 붙는다. ④ 모든 숫자가 공시 실측이다. ⑤ 직전 편들과 다른 이야기다.
@@ -123,7 +179,7 @@ lastUpdated: 2026-06-30
 - **CC0 이미지는 절반 이상 폐기(눈검수가 진짜 필터)**: Openverse·Commons 수급분은 키워드만 맞고 실제론 지도 인포그래픽·마네킹 쇼윈도·AI 생성 가짜차트·흰배경 제품샷이 섞인다. 한 장씩 눈으로 대조해 맞는 실사만 남긴다(못 찾으면 그 카드는 다크 텍스트).
 
 ## 3. 제작
-- 이미지(카드별) — 발간 카드는 출처가 깨끗한 CC0/PD 실사로 수급(`blog/_scripts/fetch_cc0_images.py` 헬퍼, Commons·Openverse). 카드마다 그 큰문장이 말하는 피사체로 검색한 뒤 한 장씩 눈으로 그 카드와 대조한다. 키워드 문자열 매칭이 아니라 눈검수가 진짜 필터다(받은 것 절반은 폐기 — 오매치: 식별 인물·일러스트·엉뚱한 피사체). 적합 실사를 못 찾으면 범용 이미지를 억지로 붙이지 말고 이미지 없이(깨끗한 다크 텍스트 카드) 둔다. GPT image_gen은 Codex 세션이 있을 때의 1차 경로, FLUX는 legacy.
+- 이미지(카드별) — 발간 카드는 출처가 깨끗한 CC0/PD 실사로 수급(`blog/_scripts/fetch_cc0_images.py` 헬퍼, Commons·Openverse). 카드마다 그 큰문장이 말하는 피사체로 검색한 뒤 한 장씩 눈으로 그 카드와 대조한다. 키워드 문자열 매칭이 아니라 눈검수가 진짜 필터다(받은 것 절반은 폐기 — 오매치: 식별 인물·일러스트·엉뚱한 피사체). 적합 실사를 못 찾으면 범용 이미지를 억지로 붙이지 말고 이미지 없이(깨끗한 다크 텍스트 카드) 둔다. GPT image_gen은 Codex(GPT) 세션의 1차 경로. **FLUX(Replicate)는 운영자 명시 지시 시에만** 쓰고 Claude 는 먼저 제안하지 않는다(정본 = memory `feedback_image_sourcing_policy`).
 - 숫자 — 본문·캡션의 모든 수치를 메인 스레드 dartlab로 재검증한다(분기/연간·연결/그룹·일회성 분리).
 
 ## 4. 발행

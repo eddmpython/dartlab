@@ -1,5 +1,7 @@
 # 콘텐츠 자산 SSOT 구조화 PRD
 
+> **위치.** 이 PRD 는 Skill OS `operation.content` 가 정의한 **공동 작업대 SSOT** 를 물리로 실현하는 실행 로드맵이다(StoryCore 개념 계약 -> StoryManifest 물리 통합). 설계 정본은 operation.content, 본 PRD 는 P0~P4 마이그레이션 집행. 조인 키 어휘는 `blog/OPERATIONS.md` §5 와 통일한다: **subject**(조인 키, 회사=stockCode·주제=topicSlug) 아래 여러 **story**(관통선 1개 = 생산 단위, `storyId`)가 달린다.
+
 ## 1. 문제
 
 현재 블로그, 랜딩 카드뉴스, 이미지 자산은 같은 콘텐츠를 만들지만 저장 위치와 발행 경로가 나뉘어 있다.

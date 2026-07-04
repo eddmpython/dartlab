@@ -4,6 +4,8 @@
 
 콘텐츠 소스 SSOT 루트 = `blog/`. 여기에 블로그 글·카드(`_issues`)·팟캐스트(`_podcasts`)가 전부 git 추적된다. 주제(subject)는 회사만이 아니라 경제·기술·분석 테마도 1급이다. 블로그만/카드만 개별 발간 가능하고, 나중에 같은 주제로 관련 카드·팟캐스트가 추가 발간된다(슬롯이 채워짐).
 
+**세 서피스(블로그·카드·팟캐스트)는 무조건 하나의 공동 작업대를 거친다.** 주제 -> 데이터 워크벤치(dartlab, 데이터 SSOT) 런타임 직독 -> 서사 코어(StoryCore) -> 근거검증·정직성 -> 자산수급 공유 front 를 통과하고, 서피스 어댑터가 각 형식으로 투영한다. 블로그만/카드만 발행해도 이 공유 front 는 거친다. 릴스·쇼츠·비디오는 나중에 서피스 어댑터만 추가하면 붙는다. **작업대·StoryCore·서피스 seam·evidence 표준 설계 정본 = Skill OS `operation.content`.**
+
 ---
 
 ## 1. Git·추적 정책
@@ -22,7 +24,7 @@
 
 ## 2. 자산·소스·이미지 정책
 
-- 이미지 수급: **Openverse 실사 주력 -> 부족분 GPT image_gen. FLUX 전면 폐기(2026-06-28).** 정본 = memory `feedback_image_sourcing_policy`.
+- 이미지 수급: **Openverse 실사 주력(Claude) -> GPT 세션은 image_gen 1차. FLUX(Replicate)는 운영자 명시 지시 시에만**(Claude 는 먼저 제안 안 함, 2026-07-04 갱신). 정본 = memory `feedback_image_sourcing_policy`.
 - 회사 주제 카드/이미지 배경은 그 회사 실제 로고·제품·상호(간판)를 기본값(generic 산업장면 탈출 금지, 재무·교육 카드라 저작권 무관). 정본 = `feedback_image_sourcing_policy` + memory `feedback_sns_assets`(회사 시그니처).
 - 공유 자산 풀(한 세트): `sns/assets/{code}` 에 회사당 1벌을 모아 블로그·카드·팟캐스트가 공유. 상세 = `sns/assets/README.md`. 포맷마다 재생성 금지.
 - 블로그 포스트 전용 자산은 그 포스트 `assets/` (git 추적). SVG 차트·썸네일 생성 = `blog/_scripts/`(gen_blog_thumbnails.py·gen_blog_cc0.py). 상세 = `blog/BLOG.md`.

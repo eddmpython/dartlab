@@ -119,7 +119,7 @@ uv run python -X utf8 blog/_scripts/audit_carousel_images.py --max 250  # 평면
 ### 이미지 가져오는 곳 — GPT image_gen 1차, CC0/PD 보강
 > **카드 캐러셀 발간 규칙(강행)**: 랜딩 `/cards` 이미지는 블로그·카드 공동 기획의 `cards.plan.json`
 > 에서 먼저 정한다. 기본 경로는 GPT `image_gen` 이고, 실제 장소·공공 사진이 더 적합한 경우만
-> `fetch_cc0_images.py` 로 PD/CC0 스톡을 보강한다. FLUX 스크립트는 legacy/다른 용도다.
+> `fetch_cc0_images.py` 로 PD/CC0 스톡을 보강한다. FLUX 스크립트는 운영자 명시 지시 시에만 쓰는 예외 경로다(정본 = memory `feedback_image_sourcing_policy`).
 
 GPT image_gen 산출물은 `sns/assets/{code}/{assetKey}.webp` 공유자산으로 저장한다. 포스트 폴더에 직접
 넣지 않는다. `cards.plan.json` 의 `imagegen.extractCommand` 가 이 저장 경로를 고정한다.
@@ -202,7 +202,7 @@ Openverse/Commons 검색도 범용 업종어만 넣지 않는다. `queries` 는 
 | `sns/scripts/extractImagegenAssets.py` | GPT `image_gen` 세션 결과 → `sns/assets/{code}/{asset}.webp` 추출 |
 | `sns/scripts/checkImagegenAssets.py` | image_gen 산출물 4:5·밝기·프레이밍 1차 검사 |
 | `sns/scripts/ingest_blog_assets.py` | **블로그 hero ↔ 카드 공유풀 SSOT** — 블로그 회사글 hero → `sns/assets/{code}/`(멱등·손작성 보호) |
-| `blog/_scripts/gen_company_flux.py` | legacy 생성형 hero(4:5) — 신규 `/cards` 기본 경로 아님 |
+| `blog/_scripts/gen_company_flux.py` | 생성형 hero(4:5). 운영자 명시 지시 시에만(신규 `/cards` 기본 경로 아님) |
 | `blog/_scripts/audit_seo.py` | carousel 형식·숫자 검사 |
 | `blog/_scripts/migrate_carousels_to_blog.py` | 1회성 이관(sns/carousels → blog frontmatter, **완료**). 이후 sns 는 **유물**·재동기화 안 함 |
 | `blog/_scripts/test_carousel_contracts.py` | 발행/이관 테스트 |

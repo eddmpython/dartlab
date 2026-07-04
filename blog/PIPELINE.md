@@ -7,6 +7,7 @@
 > 작가 편집 게이트 = [_reference/BLOG_MASTER_WRITER.md](_reference/BLOG_MASTER_WRITER.md) ·
 > 스크립트 인덱스 = [_scripts/README.md](_scripts/README.md) (자산 공유 `sns/scripts` 배선 포함) · SNS 트랙 = [../sns/README.md](../sns/README.md).
 > 메모리는 **인덱스·진행상태만**. 운영 절차(루프·게이트·프로토콜)는 이 문서가 정본.
+> **공동 작업대 설계 정본 = Skill OS `operation.content`** (세 서피스 공유 front -> StoryCore -> 서피스 어댑터, evidence 표준, 데이터 워크벤치=데이터 SSOT). 본 문서는 블로그·카드 **운영 런시트**.
 
 ## 0. 덕지덕지 방지 (전 단계 공통)
 - 추가 전 self-check: "이미 있나? 깎을 수 있나?" 강함은 쌓아서가 아니라 깎아서.
@@ -62,7 +63,7 @@
 - **두 경로**:
   - **GPT = 자체 `image_gen`** (1차). Codex 세션 JSONL → `sns/scripts/extractImagegenAssets.py` → webp. 가짜 공식 로고·공식 문서·식별 인물 금지.
   - **Claude = Openverse·Commons CC0 수급**. 실제 공공 사진이 더 맞는 경우. `fetch_cc0_images.py`(블로그 `gen_blog_cc0.py` · 뉴스 `gen_news_cc0.py`). ⛔ 핀터레스트·구글 이미지 금지(저작권).
-  - **FLUX(Replicate)** = legacy 보조(image_gen 실패·운영자 요청 시만). 잔액 소진 시 프롬프트 적치 후 일괄.
+  - **FLUX(Replicate)** = 운영자 **명시 지시 시에만**(Claude 는 먼저 제안 안 함). 정본 = memory `feedback_image_sourcing_policy` + `blog/OPERATIONS.md` 2절.
 - **평가·개선**: 색복잡도 감사(`audit_carousel_images.py`, 평면 도식·텍스트카드 탐지) + **반드시 눈검수**(자동판정 아님). 회사 특정성·시그니처 ≥ 1. 안 맞으면 다른 검색어 재시도 또는 image_gen 복귀.
 - **공유풀(SSOT)**: `sns/assets/{code}/` → `build_index.py` → `publish_assets_hf.py` → HF. 블로그 hero 도 `ingest_blog_assets.py`로 같은 풀에 합류(멱등·손작성 보호).
 
