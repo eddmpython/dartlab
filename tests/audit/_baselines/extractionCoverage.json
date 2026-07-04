@@ -1,0 +1,673 @@
+{
+  "note": "추출 커버리지 부채 원장. gap-* status 는 신규 증가 시 회귀. --write 로 갱신.",
+  "krSample": [
+    "005930",
+    "000660",
+    "005380",
+    "035420",
+    "051910",
+    "000270",
+    "068270",
+    "006400",
+    "105560",
+    "055550",
+    "012330",
+    "028260",
+    "066570",
+    "003550",
+    "015760",
+    "034730"
+  ],
+  "usSampleN": 20,
+  "rollup": {
+    "parity-ok": 33,
+    "narrative-P2": 11,
+    "dartOnly-ok-edgarUnmeasured": 9,
+    "honestNull-ok": 5,
+    "review": 3,
+    "honestNull-dartSparse": 2,
+    "sparse": 1
+  },
+  "ledger": [
+    {
+      "conceptId": "statement.is",
+      "category": "financialStatement",
+      "label": "손익계산서",
+      "dartCov": 1.0,
+      "edgarCov": 1.0,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "statement.bs",
+      "category": "financialStatement",
+      "label": "재무상태표",
+      "dartCov": 1.0,
+      "edgarCov": 1.0,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "statement.cf",
+      "category": "financialStatement",
+      "label": "현금흐름표",
+      "dartCov": 1.0,
+      "edgarCov": 1.0,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "statement.cis",
+      "category": "financialStatement",
+      "label": "포괄손익계산서",
+      "dartCov": 1.0,
+      "edgarCov": 1.0,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "statement.sce",
+      "category": "financialStatement",
+      "label": "자본변동표",
+      "dartCov": 1.0,
+      "edgarCov": 1.0,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "statement.ratios",
+      "category": "financialStatement",
+      "label": "재무비율",
+      "dartCov": 1.0,
+      "edgarCov": 1.0,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.inventory",
+      "category": "note",
+      "label": "재고자산",
+      "dartCov": 0.62,
+      "edgarCov": 0.15,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "review"
+    },
+    {
+      "conceptId": "note.receivables",
+      "category": "note",
+      "label": "매출채권",
+      "dartCov": 0.69,
+      "edgarCov": 0.8,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.tangibleAsset",
+      "category": "note",
+      "label": "유형자산",
+      "dartCov": 0.69,
+      "edgarCov": 0.9,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.intangibleAsset",
+      "category": "note",
+      "label": "무형자산",
+      "dartCov": 0.69,
+      "edgarCov": 1.0,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.investmentProperty",
+      "category": "note",
+      "label": "투자부동산",
+      "dartCov": 0.44,
+      "edgarCov": 0.1,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "review"
+    },
+    {
+      "conceptId": "note.affiliates",
+      "category": "note",
+      "label": "관계기업",
+      "dartCov": 0.69,
+      "edgarCov": 0.85,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.borrowings",
+      "category": "note",
+      "label": "차입금",
+      "dartCov": 0.69,
+      "edgarCov": 1.0,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.provisions",
+      "category": "note",
+      "label": "충당부채",
+      "dartCov": 0.62,
+      "edgarCov": 0.65,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.eps",
+      "category": "note",
+      "label": "주당이익",
+      "dartCov": 0.62,
+      "edgarCov": 0.95,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.lease",
+      "category": "note",
+      "label": "리스",
+      "dartCov": 0.56,
+      "edgarCov": 1.0,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.segments",
+      "category": "note",
+      "label": "영업부문(주석)",
+      "dartCov": 0.75,
+      "edgarCov": 0.5,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.costByNature",
+      "category": "note",
+      "label": "비용의성격별분류",
+      "dartCov": 0.62,
+      "edgarCov": 1.0,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.regionalRevenue",
+      "category": "note",
+      "label": "지역별매출",
+      "dartCov": 0.56,
+      "edgarCov": 0.45,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.sgAndA",
+      "category": "note",
+      "label": "판매비와관리비",
+      "dartCov": 0.56,
+      "edgarCov": 0.3,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.employeeBenefits",
+      "category": "note",
+      "label": "종업원급여",
+      "dartCov": 0.62,
+      "edgarCov": 0.95,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.financialIncomeExpense",
+      "category": "note",
+      "label": "금융수익금융비용",
+      "dartCov": 0.62,
+      "edgarCov": 1.0,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.relatedParty",
+      "category": "note",
+      "label": "특수관계자거래",
+      "dartCov": 0.69,
+      "edgarCov": 0.05,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "review"
+    },
+    {
+      "conceptId": "note.tax",
+      "category": "note",
+      "label": "법인세",
+      "dartCov": 0.69,
+      "edgarCov": 1.0,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.contingencies",
+      "category": "note",
+      "label": "우발부채약정",
+      "dartCov": 0.69,
+      "edgarCov": 0.45,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.financialInstruments",
+      "category": "note",
+      "label": "금융상품범주별",
+      "dartCov": 0.62,
+      "edgarCov": 0.9,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.capitalReserves",
+      "category": "note",
+      "label": "자본및자본잉여금",
+      "dartCov": 0.69,
+      "edgarCov": 0.95,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.retainedEarnings",
+      "category": "note",
+      "label": "이익잉여금",
+      "dartCov": 0.62,
+      "edgarCov": 1.0,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.shareBasedComp",
+      "category": "note",
+      "label": "주식기준보상",
+      "dartCov": 0.19,
+      "edgarCov": 0.95,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "sparse"
+    },
+    {
+      "conceptId": "governance.majorHolder",
+      "category": "governance",
+      "label": "최대주주현황",
+      "dartCov": 1.0,
+      "edgarCov": null,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "dartOnly-ok-edgarUnmeasured"
+    },
+    {
+      "conceptId": "governance.majorHolderChange",
+      "category": "governance",
+      "label": "최대주주변동",
+      "dartCov": 1.0,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": false,
+      "status": "honestNull-ok"
+    },
+    {
+      "conceptId": "governance.minorityHolder",
+      "category": "governance",
+      "label": "소액주주현황",
+      "dartCov": 1.0,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": false,
+      "status": "honestNull-ok"
+    },
+    {
+      "conceptId": "governance.executive",
+      "category": "governance",
+      "label": "임원현황",
+      "dartCov": 1.0,
+      "edgarCov": null,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "dartOnly-ok-edgarUnmeasured"
+    },
+    {
+      "conceptId": "governance.outsideDirector",
+      "category": "governance",
+      "label": "사외이사현황",
+      "dartCov": 1.0,
+      "edgarCov": null,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "dartOnly-ok-edgarUnmeasured"
+    },
+    {
+      "conceptId": "governance.auditOpinion",
+      "category": "governance",
+      "label": "감사의견",
+      "dartCov": 1.0,
+      "edgarCov": null,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "dartOnly-ok-edgarUnmeasured"
+    },
+    {
+      "conceptId": "governance.auditContract",
+      "category": "governance",
+      "label": "감사용역계약",
+      "dartCov": 1.0,
+      "edgarCov": null,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "dartOnly-ok-edgarUnmeasured"
+    },
+    {
+      "conceptId": "governance.nonAuditContract",
+      "category": "governance",
+      "label": "비감사용역계약",
+      "dartCov": 1.0,
+      "edgarCov": null,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "dartOnly-ok-edgarUnmeasured"
+    },
+    {
+      "conceptId": "capital.dividend",
+      "category": "capital",
+      "label": "배당",
+      "dartCov": 1.0,
+      "edgarCov": 1.0,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "capital.treasuryStock",
+      "category": "capital",
+      "label": "자기주식",
+      "dartCov": 1.0,
+      "edgarCov": 0.95,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "capital.capitalChange",
+      "category": "capital",
+      "label": "증자감자현황",
+      "dartCov": 1.0,
+      "edgarCov": 0.85,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "capital.stockTotal",
+      "category": "capital",
+      "label": "주식총수현황",
+      "dartCov": 1.0,
+      "edgarCov": 1.0,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "workforce.employee",
+      "category": "workforce",
+      "label": "직원현황",
+      "dartCov": 1.0,
+      "edgarCov": null,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "dartOnly-ok-edgarUnmeasured"
+    },
+    {
+      "conceptId": "workforce.executivePayTotal",
+      "category": "workforce",
+      "label": "임원보수총액",
+      "dartCov": 1.0,
+      "edgarCov": null,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "dartOnly-ok-edgarUnmeasured"
+    },
+    {
+      "conceptId": "workforce.executivePayIndividual",
+      "category": "workforce",
+      "label": "임원보수개인별",
+      "dartCov": 1.0,
+      "edgarCov": null,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "dartOnly-ok-edgarUnmeasured"
+    },
+    {
+      "conceptId": "workforce.topPay",
+      "category": "workforce",
+      "label": "개인별보수(5억이상)",
+      "dartCov": 1.0,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": false,
+      "status": "honestNull-ok"
+    },
+    {
+      "conceptId": "workforce.unregisteredExecutivePay",
+      "category": "workforce",
+      "label": "미등기임원보수",
+      "dartCov": 1.0,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": false,
+      "status": "honestNull-ok"
+    },
+    {
+      "conceptId": "debt.corporateBond",
+      "category": "debt",
+      "label": "회사채미상환잔액",
+      "dartCov": 1.0,
+      "edgarCov": 0.85,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "debt.shortTermBond",
+      "category": "debt",
+      "label": "단기사채미상환잔액",
+      "dartCov": 1.0,
+      "edgarCov": 0.7,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "debt.commercialPaper",
+      "category": "debt",
+      "label": "기업어음미상환잔액",
+      "dartCov": 1.0,
+      "edgarCov": 0.35,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "debt.hybridSecurities",
+      "category": "debt",
+      "label": "신종자본증권",
+      "dartCov": 0.06,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": false,
+      "status": "honestNull-dartSparse"
+    },
+    {
+      "conceptId": "debt.contingentCapital",
+      "category": "debt",
+      "label": "조건부자본증권",
+      "dartCov": 0.06,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": false,
+      "status": "honestNull-dartSparse"
+    },
+    {
+      "conceptId": "debt.debtSecurities",
+      "category": "debt",
+      "label": "채무증권발행실적",
+      "dartCov": 1.0,
+      "edgarCov": 0.75,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "segment.salesByProduct",
+      "category": "segment",
+      "label": "제품별매출구성",
+      "dartCov": null,
+      "edgarCov": null,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "narrative-P2"
+    },
+    {
+      "conceptId": "network.investedCompany",
+      "category": "segment",
+      "label": "타법인출자현황",
+      "dartCov": 1.0,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": false,
+      "status": "honestNull-ok"
+    },
+    {
+      "conceptId": "narrative.businessOverview",
+      "category": "narrative",
+      "label": "사업의개요",
+      "dartCov": null,
+      "edgarCov": null,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "narrative-P2"
+    },
+    {
+      "conceptId": "narrative.salesOrder",
+      "category": "narrative",
+      "label": "매출및수주상황",
+      "dartCov": null,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": false,
+      "status": "narrative-P2"
+    },
+    {
+      "conceptId": "narrative.productionCapacity",
+      "category": "narrative",
+      "label": "생산능력및가동률",
+      "dartCov": null,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": false,
+      "status": "narrative-P2"
+    },
+    {
+      "conceptId": "narrative.rawMaterial",
+      "category": "narrative",
+      "label": "원재료및생산설비",
+      "dartCov": null,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": false,
+      "status": "narrative-P2"
+    },
+    {
+      "conceptId": "narrative.riskFactors",
+      "category": "narrative",
+      "label": "위험요소",
+      "dartCov": null,
+      "edgarCov": null,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "narrative-P2"
+    },
+    {
+      "conceptId": "narrative.mdna",
+      "category": "narrative",
+      "label": "경영진단및분석",
+      "dartCov": null,
+      "edgarCov": null,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "narrative-P2"
+    },
+    {
+      "conceptId": "narrative.rnd",
+      "category": "narrative",
+      "label": "연구개발활동",
+      "dartCov": null,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": false,
+      "status": "narrative-P2"
+    },
+    {
+      "conceptId": "narrative.majorContracts",
+      "category": "narrative",
+      "label": "주요계약",
+      "dartCov": null,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": false,
+      "status": "narrative-P2"
+    },
+    {
+      "conceptId": "narrative.governanceText",
+      "category": "narrative",
+      "label": "지배구조서술",
+      "dartCov": null,
+      "edgarCov": null,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "narrative-P2"
+    },
+    {
+      "conceptId": "narrative.environment",
+      "category": "narrative",
+      "label": "환경규제",
+      "dartCov": null,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": false,
+      "status": "narrative-P2"
+    }
+  ]
+}
