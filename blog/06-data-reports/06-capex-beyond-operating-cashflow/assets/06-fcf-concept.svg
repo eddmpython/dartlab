@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 460">
+  <title>영업현금에서 설비투자를 빼면 잉여현금흐름, 벌이보다 크면 마이너스</title>
+  <desc>본업으로 번 현금인 영업활동현금흐름에서 설비투자를 빼면 잉여현금흐름이 된다. 설비투자가 영업현금보다 크면 잉여현금흐름은 마이너스가 되고, 그 부족분을 빚이나 증자로 메운다.</desc>
+  <defs>
+    <linearGradient id="bg06c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="460" fill="url(#bg06c)" rx="16"/>
+  <text x="600" y="50" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="24" font-weight="700">벌이보다 큰 투자 = 잉여현금흐름 마이너스</text>
+  <text x="600" y="80" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">본업은 흑자인데, 그 현금을 넘겨 설비에 넣으면 부족분을 조달해야 한다</text>
+
+  <g font-family="system-ui, sans-serif">
+    <text x="150" y="150" fill="#86efac" font-size="16" font-weight="700">영업활동현금흐름 (본업으로 번 현금)</text>
+    <rect x="150" y="162" width="500" height="48" rx="8" fill="#166534"/>
+    <text x="400" y="192" text-anchor="middle" fill="#ffffff" font-size="17" font-weight="700">100 (플러스)</text>
+
+    <text x="150" y="262" fill="#fca5a5" font-size="16" font-weight="700">유형자산 취득 (설비투자)</text>
+    <rect x="150" y="274" width="850" height="48" rx="8" fill="#b45309"/>
+    <text x="575" y="304" text-anchor="middle" fill="#ffffff" font-size="17" font-weight="700">170 (번 돈보다 큼)</text>
+  </g>
+
+  <line x1="650" y1="150" x2="650" y2="340" stroke="#475569" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="660" y="360" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">벌이(100) 선</text>
+
+  <rect x="650" y="360" width="350" height="60" rx="10" fill="#0f172a" stroke="#7f1d1d" stroke-width="1.5"/>
+  <text x="825" y="386" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="15" font-weight="700">잉여현금흐름 = -70</text>
+  <text x="825" y="408" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">부족분은 빚·증자로 메움</text>
+
+  <text x="325" y="400" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="14">이 글은 영업현금 플러스인 회사만 봤다 (본업 부실 제외)</text>
+</svg>

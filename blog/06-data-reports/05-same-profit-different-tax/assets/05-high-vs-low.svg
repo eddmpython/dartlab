@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 500">
+  <title>LG에너지솔루션 80.5% 대 한화에어로스페이스 0.4%: 같은 대기업, 갈리는 세금</title>
+  <desc>실효세율이 가장 높은 쪽과 낮은 쪽에 각각 우리가 아는 대기업이 있다. LG에너지솔루션은 세전이익의 80.5퍼센트를, 한화에어로스페이스는 0.4퍼센트를 세금으로 인식했다.</desc>
+  <defs>
+    <linearGradient id="bg05h" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="500" fill="url(#bg05h)" rx="16"/>
+  <text x="600" y="50" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="24" font-weight="700">같은 대기업, 실효세율 0.4% 대 80.5%</text>
+  <text x="600" y="80" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">둘 다 명목상 최고세율 구간 · 실제 인식한 세금은 200배 차이</text>
+
+  <g font-family="system-ui, sans-serif">
+    <!-- low: 한화에어로 -->
+    <text x="120" y="180" fill="#86efac" font-size="19" font-weight="700">한화에어로스페이스</text>
+    <text x="120" y="206" fill="#94a3b8" font-size="14">세전이익 2조 2,099억 · 법인세 79억</text>
+    <rect x="120" y="222" width="960" height="34" rx="6" fill="#1e293b"/>
+    <rect x="120" y="222" width="4" height="34" rx="2" fill="#22c55e"/>
+    <text x="140" y="245" fill="#86efac" font-size="17" font-weight="800">실효세율 0.4%</text>
+
+    <!-- high: LG엔솔 -->
+    <text x="120" y="330" fill="#fca5a5" font-size="19" font-weight="700">LG에너지솔루션</text>
+    <text x="120" y="356" fill="#94a3b8" font-size="14">세전이익 4,141억 · 법인세 3,333억</text>
+    <rect x="120" y="372" width="960" height="34" rx="6" fill="#1e293b"/>
+    <rect x="120" y="372" width="773" height="34" rx="6" fill="#7f1d1d"/>
+    <text x="905" y="395" fill="#fca5a5" font-size="17" font-weight="800">80.5%</text>
+  </g>
+
+  <text x="600" y="460" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="15" font-weight="700">낮음은 이월결손금·세액공제, 높음은 해외세금·이연법인세 조정에서 나온다 (둘 다 정상 회계)</text>
+</svg>

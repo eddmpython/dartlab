@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 500">
+  <title>현대건설·한국항공우주·LIG디펜스: 흑자를 냈지만 본업 현금은 크게 마이너스</title>
+  <desc>대형 수주산업은 흑자를 내면서도 준공·인도 전까지 현금이 묶여 영업활동현금흐름이 크게 마이너스가 된다. 순이익(초록)에 견줘 현금 유출(빨강)이 훨씬 크다.</desc>
+  <defs>
+    <linearGradient id="bg04b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="500" fill="url(#bg04b)" rx="16"/>
+  <text x="600" y="48" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="24" font-weight="700">대형주도 예외가 아니다: 흑자 옆의 큰 현금 유출</text>
+  <text x="600" y="78" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">순이익(초록)과 영업활동현금흐름 유출(빨강), 2025년 · 단위 억원</text>
+
+  <g font-family="system-ui, sans-serif">
+    <!-- 현대건설 -->
+    <text x="60" y="150" fill="#e2e8f0" font-size="16" font-weight="600">현대건설</text>
+    <rect x="200" y="132" width="63" height="22" rx="4" fill="#22c55e"/>
+    <text x="273" y="149" fill="#86efac" font-size="13">순이익 +5,591</text>
+    <rect x="200" y="160" width="700" height="22" rx="4" fill="#ef4444"/>
+    <text x="910" y="177" fill="#fca5a5" font-size="13">영업현금 -62,423</text>
+
+    <!-- 한국항공우주 -->
+    <text x="60" y="250" fill="#e2e8f0" font-size="16" font-weight="600">한국항공우주</text>
+    <rect x="200" y="232" width="21" height="22" rx="4" fill="#22c55e"/>
+    <text x="231" y="249" fill="#86efac" font-size="13">순이익 +1,873</text>
+    <rect x="200" y="260" width="234" height="22" rx="4" fill="#ef4444"/>
+    <text x="444" y="277" fill="#fca5a5" font-size="13">영업현금 -20,914</text>
+
+    <!-- LIG디펜스 -->
+    <text x="60" y="350" fill="#e2e8f0" font-size="16" font-weight="600">LIG디펜스</text>
+    <rect x="200" y="332" width="27" height="22" rx="4" fill="#22c55e"/>
+    <text x="237" y="349" fill="#86efac" font-size="13">순이익 +2,375</text>
+    <rect x="200" y="360" width="193" height="22" rx="4" fill="#ef4444"/>
+    <text x="403" y="377" fill="#fca5a5" font-size="13">영업현금 -17,179</text>
+  </g>
+
+  <line x1="200" y1="405" x2="200" y2="430" stroke="#475569" stroke-width="1.5"/>
+  <text x="600" y="452" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="15" font-weight="700">이름값이 아니라 두 숫자의 거리와 그 이유(수주 잔고)를 봐야 한다</text>
+</svg>

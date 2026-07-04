@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480">
+  <title>법인세가 마이너스인 179곳: 세금을 돌려받은 게 아니라 회계상 인식</title>
+  <desc>세전이익은 흑자인데 법인세를 비용이 아니라 수익으로 인식한 179곳. 대부분 현금 환급이 아니라 이연법인세자산 인식이나 이월결손금 환입 같은 회계상 조정이다.</desc>
+  <defs>
+    <linearGradient id="bg05g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="480" fill="url(#bg05g)" rx="16"/>
+  <text x="600" y="50" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="24" font-weight="700">법인세 마이너스 179곳: 헤드라인이 아니라 각주</text>
+  <text x="600" y="80" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">세전흑자인데 법인세를 수익으로 인식 · 현금 환급이 아니라 회계상 조정</text>
+
+  <g font-family="system-ui, sans-serif">
+    <text x="120" y="140" fill="#fbbf24" font-size="17" font-weight="700">실효세율이 마이너스인 대표 회사 (세전이익은 흑자)</text>
+    <text x="140" y="180" fill="#e2e8f0" font-size="16">한화오션</text>
+    <text x="500" y="180" text-anchor="end" fill="#fca5a5" font-size="16" font-weight="700">-47.9%</text>
+    <text x="140" y="216" fill="#e2e8f0" font-size="16">한화시스템</text>
+    <text x="500" y="216" text-anchor="end" fill="#fca5a5" font-size="16" font-weight="700">-74.6%</text>
+    <text x="140" y="252" fill="#e2e8f0" font-size="16">롯데쇼핑</text>
+    <text x="500" y="252" text-anchor="end" fill="#fca5a5" font-size="16" font-weight="700">-22.4%</text>
+    <text x="140" y="288" fill="#e2e8f0" font-size="16">현대백화점</text>
+    <text x="500" y="288" text-anchor="end" fill="#fca5a5" font-size="16" font-weight="700">-14.7%</text>
+    <text x="140" y="324" fill="#e2e8f0" font-size="16">에코프로비엠</text>
+    <text x="500" y="324" text-anchor="end" fill="#fca5a5" font-size="16" font-weight="700">-12.2%</text>
+    <line x1="140" y1="150" x2="500" y2="150" stroke="#334155" stroke-width="1"/>
+
+    <rect x="600" y="150" width="480" height="180" rx="12" fill="#0f172a" stroke="#3f4d63" stroke-width="1.4"/>
+    <text x="624" y="184" fill="#cbd5e1" font-size="16" font-weight="700">왜 마이너스인가</text>
+    <text x="624" y="216" fill="#94a3b8" font-size="14">1. 오랜 적자 끝 흑자 전환 회사가</text>
+    <text x="644" y="238" fill="#94a3b8" font-size="14">그동안 못 잡은 이연법인세자산을 인식</text>
+    <text x="624" y="270" fill="#94a3b8" font-size="14">2. 쌓아둔 이연법인세 항목이</text>
+    <text x="644" y="292" fill="#94a3b8" font-size="14">그해 반대 방향으로 조정</text>
+    <text x="624" y="320" fill="#86efac" font-size="14" font-weight="700">현금을 환급받은 게 아니다</text>
+  </g>
+
+  <text x="600" y="420" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="15" font-weight="700">"법인세 안 내는 179곳"은 자극적이지만 부정확 · 정확한 이야기는 중앙값 18.7%의 분포</text>
+</svg>

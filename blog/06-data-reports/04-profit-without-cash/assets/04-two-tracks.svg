@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560">
+  <title>3년 내리 흑자를 냈지만 3년 내리 영업현금이 마이너스였던 17곳</title>
+  <desc>2023년부터 2025년까지 3년 내리 순이익 흑자이면서 3년 내리 영업활동현금흐름이 마이너스였던 17곳은, 대부분 대금 회수가 느리거나 프로젝트성인 사업구조를 공유한다.</desc>
+  <defs>
+    <linearGradient id="bg04t" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="560" fill="url(#bg04t)" rx="16"/>
+  <text x="600" y="50" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="25" font-weight="700">3년 내리 이익과 현금이 갈린 17곳</text>
+  <text x="600" y="80" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">공통점은 대금 회수가 느리거나 프로젝트성인 사업구조 · 부실 명단이 아니다</text>
+
+  <g font-family="system-ui, sans-serif">
+    <rect x="90" y="120" width="1020" height="88" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1.2"/>
+    <text x="112" y="150" fill="#fbbf24" font-size="16" font-weight="700">방산 · 수주산업</text>
+    <text x="112" y="182" fill="#e2e8f0" font-size="17">한화시스템 · 한국항공우주</text>
+    <text x="1088" y="170" text-anchor="end" fill="#94a3b8" font-size="13">준공·인도까지 현금이 묶임</text>
+
+    <rect x="90" y="222" width="1020" height="88" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1.2"/>
+    <text x="112" y="252" fill="#fbbf24" font-size="16" font-weight="700">상사 · 지주형 IT</text>
+    <text x="112" y="284" fill="#e2e8f0" font-size="17">현대코퍼레이션 · 다우기술 · 다우데이타</text>
+    <text x="1088" y="272" text-anchor="end" fill="#94a3b8" font-size="13">큰 거래 규모, 외상·재고 회전에 현금 출렁</text>
+
+    <rect x="90" y="324" width="1020" height="88" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1.2"/>
+    <text x="112" y="354" fill="#fbbf24" font-size="16" font-weight="700">건설 · 시스템통합</text>
+    <text x="112" y="386" fill="#e2e8f0" font-size="17">HL D&amp;I · 남광토건 · 에스넷 · 오픈베이스 · 케이사인 · 아이티센엔텍</text>
+    <text x="1088" y="374" text-anchor="end" fill="#94a3b8" font-size="13">착수금과 잔금 사이가 길다</text>
+
+    <rect x="90" y="426" width="1020" height="88" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1.2"/>
+    <text x="112" y="456" fill="#fbbf24" font-size="16" font-weight="700">제조 · 유통 · 기타</text>
+    <text x="112" y="488" fill="#e2e8f0" font-size="17">호전실업 · 대원전선 · 동방아그로 · 오리콤 · 기산텔레콤</text>
+    <text x="1088" y="476" text-anchor="end" fill="#94a3b8" font-size="13">이익을 읽을 때 회수 주기를 함께 봐야</text>
+  </g>
+</svg>

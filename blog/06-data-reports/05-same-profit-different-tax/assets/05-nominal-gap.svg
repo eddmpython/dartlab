@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420">
+  <title>명목 최고세율 27.5% 대 실효세율 중앙값 18.7%</title>
+  <desc>명목 법인세 최고세율은 지방소득세를 포함해 약 27.5퍼센트지만, 세전흑자 상장사가 실제 손익에 인식한 실효세율의 중앙값은 18.7퍼센트다. 명목과 현실 사이에 약 9퍼센트포인트의 간극이 있다.</desc>
+  <defs>
+    <linearGradient id="bg05n" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="420" fill="url(#bg05n)" rx="16"/>
+  <text x="600" y="52" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="24" font-weight="700">명목 24~27.5%, 현실은 중앙값 18.7%</text>
+
+  <g font-family="system-ui, sans-serif">
+    <text x="120" y="150" fill="#cbd5e1" font-size="17">명목 최고세율 (지방세 포함)</text>
+    <rect x="120" y="165" width="825" height="46" rx="8" fill="#475569"/>
+    <text x="965" y="197" fill="#e2e8f0" font-size="24" font-weight="800">약 27.5%</text>
+
+    <text x="120" y="270" fill="#fbbf24" font-size="17">실효세율 중앙값 (전상장사 실측)</text>
+    <rect x="120" y="285" width="561" height="46" rx="8" fill="#b45309"/>
+    <text x="701" y="317" fill="#fde68a" font-size="24" font-weight="800">18.7%</text>
+  </g>
+
+  <line x1="681" y1="165" x2="681" y2="331" stroke="#f97316" stroke-width="2" stroke-dasharray="5 4"/>
+  <text x="810" y="365" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">이 간극이 이월결손금·세액공제·이연법인세에서 나온다</text>
+</svg>

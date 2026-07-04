@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 500">
+  <title>배수와 사이클로 정당한 확장과 무리한 베팅을 가른다</title>
+  <desc>벌이보다 큰 투자를 정당한 확장과 무리한 베팅으로 가르려면 두 가지를 본다. 설비투자 배수의 크기와, 몇 년째 이어지는지다. 그리고 그 투자가 겨냥한 수요가 실제로 오는지가 성패를 가른다.</desc>
+  <defs>
+    <linearGradient id="bg06g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="500" fill="url(#bg06g)" rx="16"/>
+  <text x="600" y="50" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="24" font-weight="700">같은 "벌이 초과 투자"를 어떻게 가르나</text>
+
+  <g font-family="system-ui, sans-serif">
+    <rect x="80" y="90" width="500" height="360" rx="12" fill="#0f172a" stroke="#166534" stroke-width="1.5"/>
+    <text x="330" y="128" text-anchor="middle" fill="#86efac" font-size="19" font-weight="700">정당한 확장</text>
+    <text x="104" y="172" fill="#cbd5e1" font-size="15">배수가 1.3배 안팎 (감당 범위)</text>
+    <text x="104" y="208" fill="#cbd5e1" font-size="15">수요가 눈앞에 몰려 있음</text>
+    <text x="104" y="244" fill="#cbd5e1" font-size="15">삼양식품 1.64배 (불닭 수출 대응)</text>
+    <text x="104" y="280" fill="#cbd5e1" font-size="15">POSCO홀딩스 1.35배 (소재 전환)</text>
+    <text x="104" y="332" fill="#86efac" font-size="15" font-weight="700">지금 안 지으면 주문을 놓친다</text>
+    <text x="104" y="368" fill="#94a3b8" font-size="14">= 미래 매출을 당겨오는 선점</text>
+
+    <rect x="620" y="90" width="500" height="360" rx="12" fill="#0f172a" stroke="#7f1d1d" stroke-width="1.5"/>
+    <text x="870" y="128" text-anchor="middle" fill="#fca5a5" font-size="19" font-weight="700">무리한 베팅 위험</text>
+    <text x="644" y="172" fill="#cbd5e1" font-size="15">배수가 3배 이상 (차입 의존)</text>
+    <text x="644" y="208" fill="#cbd5e1" font-size="15">3년 내리 벌이 초과 (구조적)</text>
+    <text x="644" y="244" fill="#cbd5e1" font-size="15">수요가 예상보다 늦게 옴</text>
+    <text x="644" y="280" fill="#cbd5e1" font-size="15">배터리 캐즘 = 2025년 투자 축소</text>
+    <text x="644" y="332" fill="#fca5a5" font-size="15" font-weight="700">수요가 늦으면 과잉설비 + 빚 부담</text>
+    <text x="644" y="368" fill="#94a3b8" font-size="14">= 미래 비용도 함께 당겨온다</text>
+  </g>
+
+  <text x="600" y="484" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="15" font-weight="700">잉여현금흐름의 부호가 아니라, 배수와 업종 사이클과 수요의 확실성을 읽어라</text>
+</svg>

@@ -15,7 +15,7 @@ import re
 from pathlib import Path
 
 import requests
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(r"c:/Users/MSI/OneDrive/Desktop/sideProject/dartlab")
 DATA_DIR = ROOT / "blog/06-data-reports"
@@ -72,6 +72,59 @@ POSTS: list[tuple[str, str, str, list[str], str, list[str], list[str]]] = [
             "bank vault safe",
         ],
         ["banknote", "money", "cash", "currency", "finance", "bank", "vault", "building", "coins", "euro"],
+    ),
+    (
+        "04",
+        "profit-without-cash",
+        "데이터 리포트 · 이익의 질",
+        ["흑자를 냈는데", "통장은 비었다"],
+        "비금융 1,140곳 전수 · 흑자인데 영업현금 마이너스 195곳",
+        [
+            "empty wallet coins",
+            "calculator financial documents desk",
+            "stack of coins accounting",
+            "cash flow finance paper",
+        ],
+        ["wallet", "coin", "cash", "money", "calculator", "finance", "account", "document", "paper", "bank"],
+    ),
+    (
+        "05",
+        "same-profit-different-tax",
+        "데이터 리포트 · 법인세",
+        ["명목 24%는", "어디에도 없다"],
+        "세전흑자 1,149곳 전수 · 실효세율 중앙값 18.7%",
+        [
+            "tax form calculator",
+            "tax documents money desk",
+            "calculator coins finance",
+            "accounting paper calculator",
+        ],
+        ["tax", "calculator", "money", "coin", "finance", "document", "form", "paper", "account", "desk"],
+    ),
+    (
+        "06",
+        "capex-beyond-operating-cashflow",
+        "데이터 리포트 · 설비투자",
+        ["번 돈보다", "더 짓는다"],
+        "영업현금 흑자 1,126곳 전수 · 벌이 초과 투자 235곳",
+        [
+            "factory construction crane",
+            "industrial plant construction site",
+            "manufacturing factory building",
+            "construction crane sky",
+        ],
+        [
+            "factory",
+            "construction",
+            "industrial",
+            "plant",
+            "crane",
+            "building",
+            "machine",
+            "manufacturing",
+            "site",
+            "warehouse",
+        ],
     ),
 ]
 
@@ -239,13 +292,27 @@ def composite(nn: str, slug: str, prefix: str, title_lines: list[str], subtitle:
     print(f"OK   thumb data-{slug} -> {out.stat().st_size // 1024}KB")
 
 
+def _navy_fallback(nn: str, slug: str) -> Path:
+    """CC0 배경을 못 찾았을 때 navy 그라데이션 폴백 배경을 만든다."""
+    dest = DATA_DIR / f"{nn}-{slug}" / "assets" / f"{nn}-thumbnail-bg.webp"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    w, h = 1600, 840
+    im = Image.new("RGB", (w, h), (5, 8, 17))
+    d = ImageDraw.Draw(im)
+    for y in range(h):
+        t = y / h
+        d.line([(0, y), (w, y)], fill=(int(5 + 12 * t), int(8 + 16 * t), int(17 + 30 * t)))
+    d.ellipse([w - 620, h - 620, w + 180, h + 180], fill=(180, 83, 9))
+    im = im.filter(ImageFilter.GaussianBlur(160))
+    im.save(dest, "WEBP", quality=86, method=6)
+    print(f"OK   bg {nn}-{slug} (navy 폴백)")
+    return dest
+
+
 def main() -> None:
     for nn, slug, prefix, title, sub, queries, keywords in POSTS:
         res = fetch_bg(nn, slug, queries, keywords)
-        if not res:
-            print(f"  bg 없음 — {slug} 합성 건너뜀")
-            continue
-        bg_path, _ = res
+        bg_path = res[0] if res else _navy_fallback(nn, slug)
         composite(nn, slug, prefix, title, sub, bg_path)
     print("DONE")
 

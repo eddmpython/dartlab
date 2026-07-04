@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560">
+  <title>발생액비율이 사이클형(낮음)과 만성형(높음)을 가른다</title>
+  <desc>흑자인데 영업현금이 마이너스인 회사도 발생액비율(순이익과 영업현금이 벌어진 폭을 자산으로 나눈 값)로 나뉜다. 낮으면 성장과 사이클의 정상적 유출, 높으면 이익과 현금이 구조적으로 벌어진 신호다.</desc>
+  <defs>
+    <linearGradient id="bg04c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="axis04" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#166534"/>
+      <stop offset="55%" stop-color="#b45309"/>
+      <stop offset="100%" stop-color="#7f1d1d"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="560" fill="url(#bg04c)" rx="16"/>
+  <text x="600" y="50" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="25" font-weight="700">같은 "흑자, 현금 마이너스"도 발생액비율이 가른다</text>
+  <text x="600" y="80" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">발생액비율 = (순이익 - 영업현금) / 자산총계 · 흑자 기업 중앙값은 0.6%</text>
+
+  <!-- axis: 0 at x=140, 0.30 at x=1060 -->
+  <rect x="140" y="300" width="920" height="14" rx="7" fill="url(#axis04)"/>
+  <text x="140" y="345" fill="#86efac" font-family="system-ui, sans-serif" font-size="14" font-weight="700">0 (이익과 현금이 붙음)</text>
+  <text x="600" y="345" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">0.15</text>
+  <text x="1060" y="345" text-anchor="end" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="14" font-weight="700">0.30 (크게 벌어짐)</text>
+
+  <g font-family="system-ui, sans-serif">
+    <!-- low (cycle): 0.03~0.05 near x=232~293 -->
+    <circle cx="232" cy="307" r="10" fill="#22c55e"/>
+    <text x="232" y="228" text-anchor="middle" fill="#cbd5e1" font-size="14" font-weight="600">한화시스템</text>
+    <text x="232" y="248" text-anchor="middle" fill="#86efac" font-size="13">0.03</text>
+    <line x1="232" y1="256" x2="232" y2="298" stroke="#334155" stroke-width="1"/>
+
+    <circle cx="293" cy="307" r="10" fill="#22c55e"/>
+    <text x="320" y="270" text-anchor="middle" fill="#cbd5e1" font-size="14" font-weight="600">두산에너빌리티 · 포스코퓨처엠</text>
+    <text x="320" y="290" text-anchor="middle" fill="#86efac" font-size="13">0.05</text>
+
+    <!-- mid (수주산업) 0.22~0.24 near x=814~876 -->
+    <circle cx="814" cy="307" r="11" fill="#fbbf24"/>
+    <text x="790" y="228" text-anchor="middle" fill="#cbd5e1" font-size="14" font-weight="600">한국항공우주</text>
+    <text x="790" y="248" text-anchor="middle" fill="#fde68a" font-size="13">0.22</text>
+    <line x1="814" y1="256" x2="814" y2="298" stroke="#334155" stroke-width="1"/>
+
+    <circle cx="876" cy="307" r="11" fill="#f59e0b"/>
+    <text x="905" y="270" text-anchor="middle" fill="#cbd5e1" font-size="14" font-weight="600">현대건설 · LIG디펜스</text>
+    <text x="905" y="290" text-anchor="middle" fill="#fde68a" font-size="13">0.24 (수주 잔고)</text>
+
+    <!-- high (주의) 0.25~0.26 near x=907~938 -->
+    <circle cx="907" cy="307" r="12" fill="#ef4444"/>
+    <text x="880" y="395" text-anchor="middle" fill="#cbd5e1" font-size="14" font-weight="600">에스에이엠티 0.25 · 삼지전자 0.26</text>
+    <text x="880" y="415" text-anchor="middle" fill="#fca5a5" font-size="13">유통업, 이익 대비 현금 유출 과대 (주의)</text>
+    <line x1="920" y1="316" x2="920" y2="380" stroke="#334155" stroke-width="1"/>
+  </g>
+
+  <text x="300" y="470" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="15" font-weight="700">사이클 · 성장의 선투입 (베팅의 흔적)</text>
+  <text x="880" y="470" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="15" font-weight="700">이익과 현금이 구조적으로 벌어짐 (확인 필요)</text>
+  <text x="600" y="515" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">이름값이 아니라 발생액비율의 크기와 3년 지속성, 사업구조를 함께 봐야 한다</text>
+</svg>

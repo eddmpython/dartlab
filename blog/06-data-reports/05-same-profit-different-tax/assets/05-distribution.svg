@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560">
+  <title>세전흑자 상장사 실효세율 분포: 중앙값 18.7%, 극과 극으로 갈림</title>
+  <desc>세전이익이 흑자인 비금융 상장사 1,149곳의 실효세율 분포. 마이너스 179곳, 0에서 10퍼센트 147곳, 10에서 20퍼센트 301곳, 20에서 27.5퍼센트 280곳, 27.5퍼센트 초과 242곳. 명목 24퍼센트는 중앙값 어디에도 없다.</desc>
+  <defs>
+    <linearGradient id="bg05d" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="560" fill="url(#bg05d)" rx="16"/>
+  <text x="600" y="50" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="25" font-weight="700">같은 세전흑자, 세금은 완전히 다른 세상</text>
+  <text x="600" y="80" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">세전흑자 비금융 상장사 1,149곳의 실효세율 분포 · 중앙값 18.7%</text>
+
+  <!-- baseline -->
+  <line x1="120" y1="450" x2="1080" y2="450" stroke="#334155" stroke-width="1.5"/>
+
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <!-- 마이너스 179 -->
+    <rect x="150" y="271" width="150" height="179" rx="6" fill="#7f1d1d"/>
+    <text x="225" y="255" fill="#fca5a5" font-size="20" font-weight="800">179</text>
+    <text x="225" y="474" fill="#cbd5e1" font-size="14">마이너스</text>
+    <text x="225" y="494" fill="#94a3b8" font-size="12">세금을 수익 인식</text>
+
+    <!-- 0-10 147 -->
+    <rect x="330" y="303" width="150" height="147" rx="6" fill="#b45309"/>
+    <text x="405" y="287" fill="#fde68a" font-size="20" font-weight="800">147</text>
+    <text x="405" y="474" fill="#cbd5e1" font-size="14">0 ~ 10%</text>
+    <text x="405" y="494" fill="#94a3b8" font-size="12">공제·감면 큼</text>
+
+    <!-- 10-20 301 (median) -->
+    <rect x="510" y="149" width="150" height="301" rx="6" fill="#fbbf24"/>
+    <text x="585" y="133" fill="#fde68a" font-size="20" font-weight="800">301</text>
+    <text x="585" y="474" fill="#f1f5f9" font-size="14" font-weight="700">10 ~ 20%</text>
+    <text x="585" y="494" fill="#fbbf24" font-size="12">중앙값 18.7% 여기</text>
+
+    <!-- 20-27.5 280 -->
+    <rect x="690" y="170" width="150" height="280" rx="6" fill="#3f4d63"/>
+    <text x="765" y="154" fill="#cbd5e1" font-size="20" font-weight="800">280</text>
+    <text x="765" y="474" fill="#cbd5e1" font-size="14">20 ~ 27.5%</text>
+    <text x="765" y="494" fill="#94a3b8" font-size="12">명목 근처</text>
+
+    <!-- >27.5 242 -->
+    <rect x="870" y="208" width="150" height="242" rx="6" fill="#166534"/>
+    <text x="945" y="192" fill="#86efac" font-size="20" font-weight="800">242</text>
+    <text x="945" y="474" fill="#cbd5e1" font-size="14">27.5% 초과</text>
+    <text x="945" y="494" fill="#94a3b8" font-size="12">명목보다 더 냄</text>
+  </g>
+
+  <text x="600" y="534" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">세금 거의 안 낸 회사(326곳)와 명목보다 더 낸 회사(242곳)가 양 끝에 두껍게 쌓여 있다</text>
+</svg>
