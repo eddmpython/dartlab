@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 470" font-family="-apple-system, 'Segoe UI', sans-serif">
+  <rect width="880" height="470" fill="#0a0e1a"/>
+  <text x="40" y="42" fill="#f1f5f9" font-size="26" font-weight="700">기술을 만드는 자 vs 얹은 자</text>
+  <text x="40" y="70" fill="#64748b" font-size="15">영업이익률(%) 5년 추이. 순수 AI는 0선 아래, AI를 얹은 강자는 위. 우리 데이터 실측</text>
+
+  <!-- zero line -->
+  <line x1="70" y1="230" x2="800" y2="230" stroke="#475569" stroke-width="1.2" stroke-dasharray="5 5"/>
+  <text x="60" y="234" fill="#64748b" font-size="12" text-anchor="end">0%</text>
+
+  <!-- year ticks -->
+  <g font-size="12" fill="#64748b" text-anchor="middle">
+    <text x="90" y="450">2021</text><text x="260" y="450">2022</text><text x="430" y="450">2023</text><text x="600" y="450">2024</text><text x="770" y="450">2025</text>
+  </g>
+
+  <!-- incumbents (green, above) -->
+  <polyline points="90,185 260,200 430,191 600,186 770,173" fill="none" stroke="#22c55e" stroke-width="2.8"/>
+  <polyline points="90,191 260,198 430,199 600,193 770,193" fill="none" stroke="#22c55e" stroke-width="2" stroke-dasharray="6 4"/>
+  <circle cx="770" cy="173" r="5" fill="#22c55e"/><text x="782" y="170" fill="#22c55e" font-size="13" font-weight="700">더존 28.6%</text>
+  <circle cx="770" cy="193" r="5" fill="#22c55e"/><text x="782" y="205" fill="#22c55e" font-size="13">네이버 18.3%</text>
+
+  <!-- pure-play (red, below) -->
+  <polyline points="90,413 260,239 430,274 600,280 770,269" fill="none" stroke="#ef4444" stroke-width="2.8"/>
+  <polyline points="260,363 430,305 600,413 770,360" fill="none" stroke="#ef4444" stroke-width="2" stroke-dasharray="6 4"/>
+  <circle cx="770" cy="269" r="5" fill="#ef4444"/><text x="782" y="266" fill="#ef4444" font-size="13" font-weight="700">솔트룩스 -19.3%</text>
+  <circle cx="770" cy="360" r="5" fill="#ef4444"/><text x="782" y="363" fill="#ef4444" font-size="13">마음AI -65.1%</text>
+
+  <text x="180" y="150" fill="#22c55e" font-size="13" font-weight="600">AI를 얹은 강자: 5년 내내 흑자</text>
+  <text x="180" y="405" fill="#ef4444" font-size="13" font-weight="600">순수 AI: 5년 내내 0선 아래</text>
+</svg>
