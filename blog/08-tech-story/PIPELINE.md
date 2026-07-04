@@ -28,7 +28,13 @@ Phase 0 데이터 완주 / Phase 1 적대 토론 기획 / Phase 2.5 마스터라
 
 **Openverse 실사 우선.** 기술 장면(웨이퍼·팹 클린룸·배터리 셀·SMR 모듈·로봇 팔 등)을 Openverse에서 라이선스 깨끗한 실사로 먼저 수급한다.
 
-**적합한 실사가 없으면 GPT 자동 생성으로 넘어가지 않는다.** 운영자에게 "이 글에 필요한 이미지 A·B·C, Openverse에서 적합본 없음"을 알리고 **수급 요청**한다(운영자가 GPT image_gen·직접 촬영·별도 수급 중 결정). 이는 기술이야기 카테고리의 명시 규칙이다. 일반 정책(Openverse 부족분 GPT 자동)의 예외.
+**적합한 실사가 없으면 자동 생성으로 넘어가지 않는다.** 운영자에게 "이 글에 필요한 이미지 A·B·C, Openverse에서 적합본 없음"을 알리고 **수급 요청**한다. 수급 주체별 도구는 정해져 있다.
+
+- **Claude 세션**: Openverse(실사)만 쓴다. 적합본 없으면 pending 처리 후 운영자에게 알린다. 생성 도구(FLUX 등)를 **먼저 언급·제안하지 않는다**.
+- **GPT/Codex 세션**: gpt image_gen 을 쓴다.
+- **FLUX**: 폐기가 기본. **운영자의 명시 지시가 있을 때만** 예외적으로 사용한다(`REPLICATE_API_TOKEN` + `gen_news_flux.py` 배선 재사용). 생성 이미지는 `CREDITS.md`에 "생성 이미지(운영자 명시 지시)"로 주체 중립 기록.
+
+정본 = memory `feedback_image_sourcing_policy`.
 
 - 배경: `assets/{NN}-thumbnail-bg.webp`(`gen_blog_cc0.py` PD/CC0) + `CREDITS.md`. 정본 = `blog/OPERATIONS.md` 2절 + memory `feedback_image_sourcing_policy`.
 
