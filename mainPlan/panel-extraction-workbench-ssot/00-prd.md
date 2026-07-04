@@ -218,4 +218,31 @@ breaking 0(전부 additive·frozen surface 보존). 위험 = (a) census 전종�
 1. **착수 승인 + 시작 단계**: P0(카탈로그+census, 최저위험·성공정의)부터 무중단 실행 권장. 승인?
 2. **워크벤치 표면 명칭**: 데이터 조립 facade = `dossier` 권장(AI `workbench` 충돌 회피). 대안 `dataWorkbench`.
 3. **카탈로그 범위 1차**: note+financialStatement+report 정형(구조화)부터, narrative 는 P2 로 분리(권장) vs 동시.
+
+## 7. 구현 완료 (2026-07-05, P0~P3 전부)
+
+운영자 승인("정공법으로 구현 완료해라") 후 무중단 정공법 실행. 4 단계 전부 커밋(engine, master).
+
+| 단계 | 산출 | commit | 검증 |
+|---|---|---|---|
+| P0 | `core/extractionCatalog.py`(개념 64종 SSOT) + `tests/audit/extractionCoverageCensus.py`(성공 원장) + baseline + 미러 테스트 12 | 2ba5cb33a | census rollup parity-ok 33·narrative-P2 11·dartOnly-ok 9·honestNull-ok 5 |
+| P1 | 고가치 노트 10종 first-class 이름 접근. `resolveNoteKey` + panel `__call__` 카탈로그 폴백(additive) | fa936f568 | 005930 10종 전부 이름 추출(지역별매출 2·법인세 24·종업원급여 19·특수관계자 27) |
+| P2 | `frame/narrative.py` 앵커 구동 단일 메커니즘(덕지덕지 sectionTopic 대체) | c96ea7af8 | 수주 31·생산능력 37·위험 21·경영진단 46·연구개발 17. table-only(backlog) 20 |
+| P3 | `frame/workbench.py` 데이터 공동작업대 + root `dartlab.dossier(code)`. 예측 L2 위임 | 80e8dde7c | 조직맵(재무6/6·노트21/23·거버넌스8/8) + 라우팅 추출(배당 612·최대주주 911) |
+
+**아키텍처 결정 실현**: 새 엔진 0. 카탈로그=core(L0), 조립 view=frame(L1.5), 표면=root facade, 예측=L2 위임.
+`frame↛reference` 회피로 카탈로그 L0 배치가 정합. Guard Index l0-l15 전 rule PASS(신규 위반 0).
+
+**게이트 전량 green**: ruff·camelCase·core-l0-only·l15-cross-import·publicApiCoverage(dartlab=33)·productSmoke
+quick·folderMirror(src↔tests)·cycleScan·providerGate·panel 회귀 5/5. 신규 테스트 22(catalog 13·narrative 4·workbench 5).
+
+**정직 상한(honest-null 기록)**: US 미공시(topPay·수주·신종자본증권 등) + narrative US(SEC Item 별도경로) +
+segmentTable 횡단(scan 경로). 능력부족 포장 아니라 원천 구조 차이로 census 원장에 사유 명시.
+
+**후속(별 트랙, 본 PRD 범위 밖)**: EDGAR report-concept census 로컬 측정(HF scan pull) · sectionTopic ~200 regex
+의 frame.narrative 완전 이관(현재 additive 병존) · `review` 3종(inventory/investmentProperty/relatedParty)
+EDGAR 태그 보강.
+
+**push 상태**: engine 완결·전 게이트 green 이나, 미푸시 history 에 타 세션 블로그·landing(프론트) 커밋이
+조상으로 끼어 있어 자동 push 보류(프론트 변경은 운영자 눈검수 필수). 운영자 push 트리거 대기.
 ```
