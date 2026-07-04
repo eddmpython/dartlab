@@ -455,24 +455,35 @@ def issueEarnings(
             maxH = max(h for h in horizons if h in revByH)
             import json as _json
 
-            pathByQ: dict[int, list[float]] = {}
+            # 봉인된 절대 매출레벨 경로 (D2 앵커): proforma 가 이 레벨을 매출로 직접 사용해
+            # E-3표 매출 == 봉인 매출기대 분위. growth 는 테스트 주입 fn 계약(성장률)용으로만 역산.
+            levelByQ: dict[int, list[float]] = {}
             for q in (25, 50, 75):
-                prev, growth = baseRev, []
+                levels = []
                 for h in range(1, maxH + 1):
                     if h not in revByH:
                         break
-                    qv = _json.loads(revByH[h]["quantiles"])[str(q)]
-                    growth.append((qv / prev - 1.0) * 100.0)
-                    prev = qv
-                pathByQ[q] = growth
+                    levels.append(float(_json.loads(revByH[h]["quantiles"])[str(q)]))
+                levelByQ[q] = levels
             if proformaFn is None:
                 from dartlab.analysis.financial.proforma import buildProforma as proformaLeaf
             else:
                 proformaLeaf = None
             pfByQ = {}
-            for q, growth in pathByQ.items():
-                fn = proformaFn or (lambda s, g, n: proformaLeaf(s, revenueGrowthPath=g, scenarioName=n))
-                pfByQ[q] = fn(series, growth, f"expGrid_p{q}")
+            for q, levels in levelByQ.items():
+                if proformaFn is not None:
+                    prev, growth = baseRev, []
+                    for lv in levels:
+                        growth.append((lv / prev - 1.0) * 100.0 if prev > 0 else 0.0)
+                        prev = lv
+                    pfByQ[q] = proformaFn(series, growth, f"expGrid_p{q}")
+                else:
+                    pfByQ[q] = proformaLeaf(
+                        series,
+                        revenueGrowthPath=[0.0] * len(levels),
+                        revenueLevelPath=levels,
+                        scenarioName=f"expGrid_p{q}",
+                    )
             # E-3표 구조화 봉인 (05 §2): 요약 3숫자와 별개, 자체 존재키로 idempotent.
             for h in range(1, maxH + 1):
                 if h not in revByH:

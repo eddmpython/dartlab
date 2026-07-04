@@ -382,6 +382,7 @@ def buildProforma(
     marketCap: float | None = None,
     scenarioName: str = "base",
     overrides: dict[str, float] | None = None,
+    revenueLevelPath: list[float] | None = None,
 ) -> ProFormaResult:
     """3-statement pro-forma 생성.
 
@@ -393,6 +394,9 @@ def buildProforma(
         market_cap: 시가총액.
         scenario_name: 시나리오 이름.
         overrides: 비율 오버라이드 (예: {"gross_margin": 35.0}).
+        revenueLevelPath: 절대 매출레벨 경로 (원). 주어지면 base 상대성장 대신 이 레벨을
+            매출로 직접 사용 (봉인 매출기대 앵커링, 06 D2 해소). BS 기초잔액은 base(TTM)
+            유지, IS 첫 줄만 절대 앵커. 길이 = revenueGrowthPath 와 동일해야 함.
 
     Capabilities:
         - 과거 비율 + 성장 경로 + WACC 로 IS/BS/CF 3-statement 추정.
@@ -427,6 +431,9 @@ def buildProforma(
     ratios = extractHistoricalRatios(series)
     warnings.extend(ratios.warnings)
 
+    # 영업레버리지 분해 사용 여부: 신뢰가능 + margin override 없음(명시 마진 존중)
+    useOplev = ratios.oplev_reliable and not (overrides and "gross_margin" in overrides)
+
     # 오버라이드 적용
     if overrides:
         for k, v in overrides.items():
@@ -460,7 +467,6 @@ def buildProforma(
     projections: list[ProFormaYear] = []
     prev_revenue = base["revenue"]
     prev_ppe = base["ppe_net"]
-    base["cash"]
     prev_equity = base["total_equity"]
     prev_stb = base["short_term_debt"]
     prev_ltb = base["long_term_debt"]
@@ -482,7 +488,7 @@ def buildProforma(
         val = baseVal + trend * yrIdx
         return max(floor, min(val, ceiling))
 
-    for i, growth_pct in enumerate(revenueGrowthPath):
+    for i, growth_pct_in in enumerate(revenueGrowthPath):
         yr = ProFormaYear(year_offset=i + 1)
 
         # v2: 연도별 비율 (트렌드 반영)
@@ -492,10 +498,22 @@ def buildProforma(
         yr_capex = _ratioForYear(ratios.capex_to_revenue, "capex_to_revenue", i, floor=0.5, ceiling=40.0)
 
         # === IS ===
-        yr.revenue = prev_revenue * (1 + growth_pct / 100)
-        yr.cogs = yr.revenue * (1 - yr_gm / 100)
+        # 매출 앵커: 절대레벨 경로가 있으면 봉인 레벨 직접 사용(D2), 없으면 base 상대성장.
+        # 기타(other_*) 비례에 쓰는 growth_pct 는 어느 경우든 실효 성장률로 통일.
+        if revenueLevelPath is not None and i < len(revenueLevelPath):
+            yr.revenue = revenueLevelPath[i]
+            growth_pct = (yr.revenue / prev_revenue - 1) * 100 if prev_revenue > 0 else 0.0
+        else:
+            growth_pct = growth_pct_in
+            yr.revenue = prev_revenue * (1 + growth_pct / 100)
+        # 원가·판관비: 영업레버리지(고정+변동)면 매출 급변 시 마진 비대칭 반응(D5), 아니면 순변동비.
+        if useOplev:
+            yr.cogs = min(ratios.cogs_fixed + ratios.cogs_var_ratio * yr.revenue, yr.revenue * 0.98)
+            yr.sga = max(ratios.sga_fixed + ratios.sga_var_ratio * yr.revenue, 0.0)
+        else:
+            yr.cogs = yr.revenue * (1 - yr_gm / 100)
+            yr.sga = yr.revenue * yr_sga / 100
         yr.gross_profit = yr.revenue - yr.cogs
-        yr.sga = yr.revenue * yr_sga / 100
         yr.depreciation = yr.revenue * yr_dep / 100
 
         # v3: IS 구조 분기 — D&A가 SGA에 포함된 경우 별도 차감하지 않음

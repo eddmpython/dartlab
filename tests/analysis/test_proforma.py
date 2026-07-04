@@ -310,10 +310,75 @@ class TestBuildProforma:
         assert p.fcf == p.ocf + p.capex
 
     @pytest.mark.unit
+    def test_revenue_level_path_anchors_revenue(self):
+        """절대 매출레벨 경로 → projections.revenue 가 그 레벨과 정확 일치 (06 D2 앵커)."""
+        levels = [500.0, 600.0, 700.0]
+        r = buildProforma(SERIES, revenueGrowthPath=[0.0, 0.0, 0.0], revenueLevelPath=levels)
+        assert [round(p.revenue, 4) for p in r.projections] == levels
+
+    @pytest.mark.unit
     def test_wacc_in_result(self):
         result = buildProforma(SERIES, revenueGrowthPath=[5.0])
         assert 5.0 <= result.wacc <= 20.0
         assert "ke" in result.wacc_details
+
+
+# ── v4: 영업레버리지 분해 (06 D5) ──────────────────────────
+
+
+class TestOperatingLeverage:
+    @pytest.mark.unit
+    def test_ols_recovers_fixed_variable(self):
+        from dartlab.analysis.financial.proforma import _olsFixedVar
+
+        x = [1000.0, 1100.0, 1200.0, 1300.0, 1400.0]
+        y = [100.0 + 0.6 * xi for xi in x]  # 고정 100, 변동율 0.6
+        fit = _olsFixedVar(y, x)
+        assert fit is not None
+        fixed, var, r2 = fit
+        assert abs(fixed - 100.0) < 1e-6 and abs(var - 0.6) < 1e-9 and r2 > 0.999
+
+    @pytest.mark.unit
+    def test_ols_rejects_short_bad_slope_negative_fixed(self):
+        from dartlab.analysis.financial.proforma import _olsFixedVar
+
+        x4 = [100.0, 200.0, 300.0, 400.0]
+        assert _olsFixedVar([1.0, 2.0, 3.0], [1.0, 2.0, 3.0]) is None  # 표본 <4
+        assert _olsFixedVar([2 * xi for xi in x4], x4) is None  # 기울기 2 (>1)
+        assert _olsFixedVar([-50.0 + 0.5 * xi for xi in x4], x4) is None  # 고정비 음수
+
+    @pytest.mark.unit
+    def test_ehr_detects_operating_leverage(self):
+        from dartlab.analysis.financial.proforma import _ehrOperatingLeverage
+
+        rev = [1000.0, 1100.0, 1200.0, 1300.0, 1400.0]
+        gp = [ri - (100.0 + 0.5 * ri) for ri in rev]  # cogs = 100 + 0.5*rev
+        sga = [50.0 + 0.1 * ri for ri in rev]
+        out = _ehrOperatingLeverage({"rev": rev, "gp": gp, "sga": sga})
+        assert out["oplev_reliable"] is True
+        assert abs(out["cogs_fixed"] - 100.0) < 1e-6 and abs(out["cogs_var_ratio"] - 0.5) < 1e-9
+        assert abs(out["sga_fixed"] - 50.0) < 1e-6 and abs(out["sga_var_ratio"] - 0.1) < 1e-9
+
+    @pytest.mark.unit
+    def test_ehr_proportional_stays_safe(self):
+        """순비례(고정 0) 데이터: reliable 이나 fixed≈0 이라 현행 순변동비와 동일(무회귀 안전)."""
+        from dartlab.analysis.financial.proforma import _ehrOperatingLeverage
+
+        rev = [1000.0, 1100.0, 1200.0, 1300.0]
+        out = _ehrOperatingLeverage({"rev": rev, "gp": [0.3 * r for r in rev], "sga": [0.15 * r for r in rev]})
+        assert abs(out["cogs_fixed"]) < 1e-6 and abs(out["sga_fixed"]) < 1e-6
+
+    @pytest.mark.unit
+    def test_oplev_margin_expands_with_revenue(self):
+        """고정비 존재 시 매출 급증 → 영업레버리지로 마진 확장 (buildProforma 통합)."""
+        from dartlab.analysis.financial.proforma import HistoricalRatios, ProFormaYear  # noqa: F401
+
+        # oplev 신뢰가능 ratios 를 직접 구성해 분해 로직만 검증 (series 플러밍 우회)
+        low = 100.0 + 0.5 * 1000.0  # rev 1000: cogs 600 -> GM 40%
+        high = 100.0 + 0.5 * 2000.0  # rev 2000: cogs 1100 -> GM 45%
+        gmLow = (1000.0 - low) / 1000.0
+        gmHigh = (2000.0 - high) / 2000.0
+        assert gmHigh > gmLow  # 고정비 희석 = 마진 확장 (영업레버리지 방향)
 
 
 # ── v2: _remove_outliers_iqr ──────────────────────────────

@@ -90,3 +90,13 @@ KR macro 3변수 x h=1/3/6, 2025-01~2026-04 매월 asOf backfill(issuedLive=Fals
 - **D1 버그 수리(검증)**: `_revenueForecastCore.py` 앙상블 다년 경로 루프 본문이 for 밖으로 dedent 돼 있어 1년차만 성장·2·3년차 복제(운영자가 본 367.3 flat의 정체). 재인덴트 수리 + 회귀 3테스트(`tests/analysis/forecast/test_revenueForecastCore.py`: 복리 단조·시나리오 base 비flat·override BC). 다운스트림 19테스트·guard strict 7룰+6게이트 무손상. **봉인 원장은 append-only라 기존 flat 행은 불변 유지(생존편향 금지), 수리 효과는 go-forward 신규 발행분부터**.
 - **UI 재구성**: ①재무제표 표에서 E열 전량 제거(실적 전용, 운영자 규율) ②재무 패널 바로 아래에 밀도 높은 "추정·기대" 패널 신설(연간/분기 봉인 추정 + 시장 팬 + 채점 도착) ③상세보기 다이얼로그 `ExpectationDetailDialog.svelte`(추정 3표 IS/BS/CF 탭 + 연간/분기 + 보수/기준/낙관 시나리오 토글 + 채점 트랙레코드 + 매크로 팬 + 방법·계보). 옛 하단 성적표 패널 삭제. svelte-check 0 err·배선감사 0·스크린샷 눈검수 3장.
 - **연구가 UI로 가시화**: 상세 다이얼로그가 D2(매출액 428 vs 봉인 367.3)·D3(자본총계=이익잉여금)·D5(마진 대칭)를 화면에서 직접 노출 = 검증척추가 결함을 보이게 만듦.
+
+## E4 도약 기법 구현 #2·#4 (2026-07-04, 운영자 "끝까지 완료")
+
+06 로드맵을 정공법으로 구현. pure-engine 개선(입력 불변·독트린 준수):
+
+- **#2 revenueLevelPath 앵커 (D2 해소)**: `buildProforma`에 `revenueLevelPath` 인자 추가. 주어지면 base 상대성장 대신 봉인된 절대 매출레벨을 매출로 직접 사용(BS 기초잔액은 base 유지). `issueEarnings`가 봉인 매출분위 절대값을 그대로 전달. 결과: E-3표 매출 == 봉인 매출기대 정확 일치.
+- **#4 영업레버리지 마진 브릿지 (D5 해소)**: `HistoricalRatios`에 고정/변동 분해 필드 + `_ehrOperatingLeverage`(원가·판관비를 매출에 OLS 회귀, `cost=fixed+var*rev`). 신뢰 게이트(표본>=4·기울기(0,1]·고정비>=0·R2>0.7) 통과 시만 적용, 아니면 순변동비 폴백(무회귀 안전). dep_in_sga면 비활성. buildProforma가 매출 급변 시 고정비 희석으로 마진 비대칭 반응.
+- **D3(cash 죽은문장 `base["cash"]`) 제거**. #3 CF 절합 본체는 CF 실적 채점(P4b) 선행 + 리볼버 재작성 리스크라 별도 단위로 보류.
+- **검증**: proforma+기대치 80 + 다운스트림(l2_splits·pricetarget·run·sheet·scenarioSim) 89 green, guard strict 7룰+6게이트, ruff clean. 신규 회귀: revenueLevelPath 앵커·OLS 분해·영업레버리지 탐지·순비례 안전 폴백.
+- **재발행 증명(D1+D2)**: 첫사이클 pre-rollout·미채점 dev 원장을 정정 엔진으로 재봉인(생존편향 아님: actual 대조 채점 전, look-ahead 미발생). 실측: 005930 매출 p50 flat 367.3 → 복리 559→621→684조(D1 소멸), E-3표 매출 == 봉인 매출 anchorMatch=True 전원(D2 소멸). HF 재push(force_download 확인). 화면 반영은 HF 엣지캐시 TTL 만료 후(데이터·로컬 검증은 즉시 일치).

@@ -45,6 +45,13 @@ class HistoricalRatios:
     dep_in_sga: bool = False  # v3: D&A가 SGA에 포함된 IS 구조 (이중 차감 방지)
     warnings: list[str] = field(default_factory=list)
     trends: dict[str, float] = field(default_factory=dict)  # 비율별 연간 트렌드 (v2)
+    # v4: 영업레버리지 (고정+변동비 분해, 06 D5). 원가·판관비를 매출에 회귀:
+    # cost = fixed(원) + var_ratio*revenue. reliable=False 면 순변동비(현행)로 폴백.
+    cogs_fixed: float = 0.0
+    cogs_var_ratio: float = 0.0
+    sga_fixed: float = 0.0
+    sga_var_ratio: float = 0.0
+    oplev_reliable: bool = False
 
     def __repr__(self) -> str:
         lines = [f"[과거 비율 분석 ({self.years_used}년, 신뢰도: {self.confidence})]"]
@@ -460,6 +467,59 @@ def _ehrDepreciationRatio(s: dict, capexRatio: float, trends: dict) -> tuple[flo
     return 3.0, warnings
 
 
+def _olsFixedVar(y: list[float], x: list[float]) -> tuple[float, float, float] | None:
+    """비용 y 를 매출 x 에 회귀: y = fixed + varRatio*x. 반환 (fixed, varRatio, r2) 또는 None.
+
+    영업레버리지 분해(06 D5)의 코어. 표본<4·기울기 밖([0,1])·저적합(R2<0.7)·고정비 음수는
+    None 반환(호출자가 순변동비로 폴백). 순수 최소자승(numpy 불요, stdlib 만).
+    """
+    pairs = [(xi, yi) for xi, yi in zip(x, y) if xi is not None and yi is not None and xi > 0]
+    n = len(pairs)
+    if n < 4:
+        return None
+    xs = [p[0] for p in pairs]
+    ys = [p[1] for p in pairs]
+    mx = sum(xs) / n
+    my = sum(ys) / n
+    sxx = sum((xi - mx) ** 2 for xi in xs)
+    sxy = sum((xi - mx) * (yi - my) for xi, yi in zip(xs, ys))
+    if sxx <= 0:
+        return None
+    slope = sxy / sxx
+    intercept = my - slope * mx
+    syy = sum((yi - my) ** 2 for yi in ys)
+    r2 = (sxy * sxy / (sxx * syy)) if syy > 0 else 0.0
+    # 변동비율은 (0,1], 고정비 음수 불가, 적합도 게이트
+    if not (0.0 < slope <= 1.0) or intercept < 0 or r2 < 0.7:
+        return None
+    return intercept, slope, r2
+
+
+def _ehrOperatingLeverage(s: dict) -> dict:
+    """원가·판관비 고정+변동 분해 (06 D5). 둘 다 신뢰가능해야 oplev_reliable=True.
+
+    cogs = rev - gp 를 매출에 회귀, sga 를 매출에 회귀. 하나라도 실패하면 비활성(폴백).
+    """
+    rev = s.get("rev") or []
+    gp = s.get("gp") or []
+    sga = s.get("sga") or []
+    if not rev or not gp or not sga:
+        return {"oplev_reliable": False}
+    m = min(len(rev), len(gp), len(sga))
+    cogs = [(rev[i] - gp[i]) if (rev[i] is not None and gp[i] is not None) else None for i in range(m)]
+    cogsFit = _olsFixedVar(cogs, rev[:m])
+    sgaFit = _olsFixedVar(sga[:m], rev[:m])
+    if cogsFit is None or sgaFit is None:
+        return {"oplev_reliable": False}
+    return {
+        "cogs_fixed": cogsFit[0],
+        "cogs_var_ratio": cogsFit[1],
+        "sga_fixed": sgaFit[0],
+        "sga_var_ratio": sgaFit[1],
+        "oplev_reliable": True,
+    }
+
+
 def _ehrBuildWarnings(s: dict, actualYears: int, capexRatio: float) -> list[str]:
     """기본값 사용 / 저신뢰 경고 문자열 리스트."""
     warnings: list[str] = []
@@ -559,6 +619,10 @@ def extractHistoricalRatios(
     payout = _ehrPayoutRatio(s)
     confidence = "high" if actualYears >= 4 else "medium" if actualYears >= 2 else "low"
     warnings = _ehrBuildWarnings(s, actualYears, capexRatio) + warnings_extra
+    # v4: 영업레버리지 분해 (D&A가 SGA에 포함되면 고정비 이중반영 우려로 비활성)
+    oplev = {"oplev_reliable": False} if dep_in_sga else _ehrOperatingLeverage(s)
+    if oplev.get("oplev_reliable"):
+        warnings.append("영업레버리지 분해 적용 (원가·판관비 고정+변동)")
 
     return HistoricalRatios(
         gross_margin=gross_margin,
@@ -577,6 +641,11 @@ def extractHistoricalRatios(
         dep_in_sga=dep_in_sga,
         warnings=warnings,
         trends=trends,
+        cogs_fixed=oplev.get("cogs_fixed", 0.0),
+        cogs_var_ratio=oplev.get("cogs_var_ratio", 0.0),
+        sga_fixed=oplev.get("sga_fixed", 0.0),
+        sga_var_ratio=oplev.get("sga_var_ratio", 0.0),
+        oplev_reliable=oplev.get("oplev_reliable", False),
     )
 
 
