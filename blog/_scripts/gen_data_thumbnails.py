@@ -59,6 +59,20 @@ POSTS: list[tuple[str, str, str, list[str], str, list[str], list[str]]] = [
         ],
         ["factory", "industrial", "building", "finance", "chart", "market", "business", "office", "skyline", "screen"],
     ),
+    (
+        "03",
+        "net-cash-above-market-cap",
+        "데이터 리포트 · 저평가",
+        ["시총보다 현금이", "많은 상장사 19곳"],
+        "비금융 1,972곳 전수 · 순현금 > 시가총액 · 코리아 디스카운트",
+        [
+            "euro banknotes pile",
+            "stack of banknotes money",
+            "financial district skyscraper night",
+            "bank vault safe",
+        ],
+        ["banknote", "money", "cash", "currency", "finance", "bank", "vault", "building", "coins", "euro"],
+    ),
 ]
 
 

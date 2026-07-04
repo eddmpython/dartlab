@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520">
+  <title>순현금 부자 19곳의 시장·업종 분포</title>
+  <desc>19곳 중 코스닥 13곳, 코스피 6곳. 업종은 자동차부품 4곳, 소프트웨어·IT 3곳, 전자부품 2곳이 많고 나머지는 소주·다이아몬드·의료기기·게임 등으로 흩어져 있다. 오래 벌어 현금 쌓은 제조업과 성장 멈춘 IT가 겹친다.</desc>
+  <defs>
+    <linearGradient id="bg03s" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="520" fill="url(#bg03s)" rx="16"/>
+
+  <text x="600" y="48" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="26" font-weight="700">현금 쌓는 제조업과 성장 멈춘 IT</text>
+  <text x="600" y="78" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">순현금 &gt; 시총 19곳의 시장·업종 분포 · dartlab 전수</text>
+
+  <!-- market split -->
+  <text x="150" y="120" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="14" font-weight="600">시장 구분</text>
+  <rect x="150" y="132" width="616" height="44" rx="6" fill="#b45309"/>
+  <rect x="768" y="132" width="284" height="44" rx="6" fill="#475569"/>
+  <text x="170" y="160" fill="#ffffff" font-family="system-ui, sans-serif" font-size="16" font-weight="700">코스닥 13곳</text>
+  <text x="910" y="160" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="15" font-weight="600">코스피 6곳</text>
+
+  <!-- 업종 bars -->
+  <text x="150" y="222" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="14" font-weight="600">업종</text>
+  <g font-family="system-ui, sans-serif">
+    <text x="150" y="262" fill="#cbd5e1" font-size="13.5">자동차부품 (모토닉·대원산업 등)</text>
+    <rect x="420" y="248" width="440" height="24" rx="4" fill="#c2620a"/><text x="872" y="267" fill="#fbbf24" font-size="14" font-weight="700">4</text>
+
+    <text x="150" y="300" fill="#cbd5e1" font-size="13.5">소프트웨어·IT (핸디소프트 등)</text>
+    <rect x="420" y="286" width="330" height="24" rx="4" fill="#b45309"/><text x="762" y="305" fill="#fbbf24" font-size="14" font-weight="700">3</text>
+
+    <text x="150" y="338" fill="#cbd5e1" font-size="13.5">전자부품 (삼영전자 등)</text>
+    <rect x="420" y="324" width="220" height="24" rx="4" fill="#92400e"/><text x="652" y="343" fill="#fbbf24" font-size="14" font-weight="700">2</text>
+
+    <text x="150" y="376" fill="#cbd5e1" font-size="13.5">그 외 각 1곳</text>
+    <rect x="420" y="362" width="110" height="24" rx="4" fill="#334155"/><text x="542" y="381" fill="#94a3b8" font-size="14" font-weight="700">10</text>
+    <text x="150" y="404" fill="#64748b" font-size="12.5">소주(무학)·공업용 다이아몬드(일진다이아)·의료기기·게임·부동산·가방·아기상어 IP 등</text>
+  </g>
+
+  <rect x="150" y="440" width="900" height="52" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+  <text x="600" y="472" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="15">공통점은 하나: 돈은 있는데 그 돈이 <tspan fill="#fbbf24" font-weight="700">주주에게 흐르지 않는다</tspan></text>
+</svg>
