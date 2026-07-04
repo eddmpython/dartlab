@@ -171,8 +171,51 @@ def _status(concept: ExtractionConcept, dartCov, edgarCov, isNa: bool) -> str:
     return "review"
 
 
+def uncataloguedSignals(krSigs: dict[str, dict]) -> dict:
+    """카탈로그가 놓친 추출 신호(panel NT_ 패밀리 · report apiType)를 탐지한다 = 완전성 측정.
+
+    census 의 생존편향(카탈로그에 넣은 것만 확인)을 깨는 핵심. 표본 panel/report 에 실재하나
+    카탈로그가 커버 안 하는 신호를 빈도순으로 드러낸다. "완전 탈탈털기" 를 측정 가능·추적 가능하게.
+
+    Args:
+        krSigs: {code: krSignals} 프리로드 신호맵.
+
+    Returns:
+        {notePresent, noteCatalogued, noteUncatalogued[(prefix,freq)], apiPresent, apiUncatalogued}.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> uncataloguedSignals({})  # doctest: +SKIP
+    """
+    catNote = {
+        c.dart.key[:-1] for c in getExtractionConcepts() if isinstance(c.dart, DartSource) and c.dart.surface == "note"
+    }
+    catApi = {
+        c.dart.key for c in getExtractionConcepts() if isinstance(c.dart, DartSource) and c.dart.surface == "report"
+    }
+    ntFreq: dict[str, int] = {}
+    apiFreq: dict[str, int] = {}
+    for sig in krSigs.values():
+        for k in {x[:-1] for x in sig["notes"] if x.startswith("NT_")}:
+            ntFreq[k] = ntFreq.get(k, 0) + 1
+        for a in sig["apiTypes"]:
+            apiFreq[a] = apiFreq.get(a, 0) + 1
+    uncatNt = sorted([(k, n) for k, n in ntFreq.items() if k not in catNote], key=lambda x: -x[1])
+    uncatApi = sorted([(a, n) for a, n in apiFreq.items() if a not in catApi], key=lambda x: -x[1])
+    return {
+        "notePresent": len(ntFreq),
+        "noteCatalogued": len(ntFreq) - len(uncatNt),
+        "noteUncatalogued": uncatNt,
+        "apiPresent": len(apiFreq),
+        "apiCatalogued": len(apiFreq) - len(uncatApi),
+        "apiUncatalogued": uncatApi,
+    }
+
+
 def run(krN: int = 16, usN: int = 20) -> dict:
-    """전 개념 대 표본 커버리지 측정 후 개념별 원장 산출."""
+    """전 개념 대 표본 커버리지 측정 후 개념별 원장 산출 + 미카탈로그 완전성 측정."""
     panDir, repDir, efDir = _dirs()
     if not panDir.exists() or not efDir.exists():
         return {"error": f"data dir 부재: panel={panDir.exists()} edgar={efDir.exists()}", "ledger": []}
@@ -190,6 +233,7 @@ def run(krN: int = 16, usN: int = 20) -> dict:
         if (i + 1) % 8 == 0:
             gc.collect()
 
+    completeness = uncataloguedSignals(krSigs)
     ledger = []
     for concept in getExtractionConcepts():
         dHits = [dartHit(concept, krSigs[c]) for c in kr]
@@ -213,7 +257,13 @@ def run(krN: int = 16, usN: int = 20) -> dict:
                 "status": _status(concept, dartCov, edgarCov, isNa),
             }
         )
-    return {"krSample": kr, "usSampleN": len(us), "ledger": ledger, "rollup": _rollup(ledger)}
+    return {
+        "krSample": kr,
+        "usSampleN": len(us),
+        "ledger": ledger,
+        "rollup": _rollup(ledger),
+        "completeness": completeness,
+    }
 
 
 def _rollup(ledger: list[dict]) -> dict:
@@ -240,11 +290,20 @@ def writeBaseline(result: dict) -> Path:
         >>> writeBaseline(run())  # doctest: +SKIP
     """
     _BASELINE.parent.mkdir(parents=True, exist_ok=True)
+    comp = result.get("completeness", {})
     payload = {
         "note": "추출 커버리지 부채 원장. gap-* status 는 신규 증가 시 회귀. --write 로 갱신.",
         "krSample": result.get("krSample", []),
         "usSampleN": result.get("usSampleN", 0),
         "rollup": result.get("rollup", {}),
+        "completeness": {
+            "notePresent": comp.get("notePresent", 0),
+            "noteCatalogued": comp.get("noteCatalogued", 0),
+            "apiPresent": comp.get("apiPresent", 0),
+            "apiCatalogued": comp.get("apiCatalogued", 0),
+            "noteUncatalogued": comp.get("noteUncatalogued", []),
+            "apiUncatalogued": comp.get("apiUncatalogued", []),
+        },
         "ledger": result.get("ledger", []),
     }
     _BASELINE.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -266,6 +325,21 @@ def main() -> None:
 
     print("KR sample:", result["krSample"])
     print("US sample N:", result["usSampleN"])
+    comp = result.get("completeness", {})
+    print("\n=== 완전성 (미카탈로그 탐지, 생존편향 차단) ===")
+    print(
+        f"  note 패밀리: 카탈로그 {comp.get('noteCatalogued', 0)} / 표본실재 {comp.get('notePresent', 0)}"
+        f"  (미카탈로그 {len(comp.get('noteUncatalogued', []))})"
+    )
+    print(
+        f"  report apiType: 카탈로그 {comp.get('apiCatalogued', 0)} / 표본실재 {comp.get('apiPresent', 0)}"
+        f"  (미카탈로그 {len(comp.get('apiUncatalogued', []))})"
+    )
+    top = comp.get("noteUncatalogued", [])[:10]
+    if top:
+        print("  미카탈로그 note 상위(빈도):", ", ".join(f"{k}x({n})" for k, n in top))
+    if comp.get("apiUncatalogued"):
+        print("  미카탈로그 apiType:", ", ".join(f"{a}({n})" for a, n in comp["apiUncatalogued"]))
     print("\n=== rollup ===")
     print(json.dumps(result["rollup"], ensure_ascii=False, indent=2))
     print("\n=== ledger ===")

@@ -484,6 +484,87 @@ _NOTES: list[ExtractionConcept] = [
         "NT_D834120",
         ("ShareBasedCompensation", "AllocatedShareBasedCompensationExpense"),
     ),
+    # 완전성 충전 배치 2 (census 미카탈로그 탐지 -> 실측 라벨링, 표본 다빈도 고가치 IFRS 노트).
+    _note(
+        "note.financialRiskMgmt",
+        "재무위험관리",
+        "NT_D822390",
+        (),
+        valueType="text",
+        edgarNull="US 는 파생상품·공정가치 노트로 분산, 단일 재무위험관리 fact 부재",
+        registered=True,
+    ),
+    _note(
+        "note.cashAndEquivalents",
+        "현금및현금성자산",
+        "NT_D822410",
+        ("CashAndCashEquivalentsAtCarryingValue", "RestrictedCashAndCashEquivalents"),
+        registered=True,
+    ),
+    _note(
+        "note.otherIncomeExpense",
+        "기타수익및기타비용",
+        "NT_D834320",
+        ("OtherNonoperatingIncomeExpense", "OtherOperatingIncomeExpenseNet"),
+        registered=True,
+    ),
+    _note(
+        "note.businessCombination",
+        "사업결합",
+        "NT_D817000",
+        (
+            "BusinessCombinationRecognizedIdentifiableAssetsAcquiredAndLiabilitiesAssumedNet",
+            "BusinessCombinationConsiderationTransferred1",
+        ),
+        registered=True,
+    ),
+    _note(
+        "note.subsequentEvents",
+        "보고기간후사건",
+        "NT_D815000",
+        (),
+        valueType="text",
+        edgarNull="US SubsequentEvents 는 서술 TextBlock(수치 fact 부재)",
+        registered=True,
+    ),
+    _note(
+        "note.otherEquity",
+        "기타자본항목",
+        "NT_D861400",
+        ("AccumulatedOtherComprehensiveIncomeLossNetOfTax",),
+        axisType="movement",
+        registered=True,
+    ),
+    _note(
+        "note.restrictedFinancial",
+        "사용제한금융상품",
+        "NT_D822470",
+        ("RestrictedCashAndCashEquivalents", "RestrictedCash"),
+        registered=True,
+    ),
+    _note(
+        "note.otherAssets",
+        "기타유동및비유동자산",
+        "NT_D822300",
+        ("OtherAssetsCurrent", "OtherAssetsNoncurrent"),
+        registered=True,
+    ),
+    _note(
+        "note.otherLiabilities",
+        "기타유동및비유동부채",
+        "NT_D822310",
+        ("OtherLiabilitiesCurrent", "OtherLiabilitiesNoncurrent"),
+        registered=True,
+    ),
+    _note(
+        "note.accountingPolicies",
+        "유의적회계정책",
+        "NT_D810000",
+        (),
+        valueType="text",
+        edgarNull="US SignificantAccountingPolicies 는 서술 TextBlock(수치 fact 부재)",
+        registered=True,
+    ),
 ]
 
 _GOVERNANCE: list[ExtractionConcept] = [
@@ -595,6 +676,40 @@ _WORKFORCE: list[ExtractionConcept] = [
         "unregisteredExecutivePay",
         HonestNull("US 미등기임원 별도 공시 없음"),
     ),
+    _report(
+        "workforce.executivePayByType",
+        "workforce",
+        "임원보수유형별",
+        "executivePayByType",
+        EdgarSource("proxy", ("SCT",)),
+    ),
+    _report(
+        "workforce.executivePayTotalApproved",
+        "workforce",
+        "임원보수총승인액",
+        "executivePayTotal",
+        HonestNull("US 는 주주 보수 승인총액 별도 공시 없음(say-on-pay 는 찬반 투표)"),
+    ),
+]
+
+# filingMeta (공시 이벤트/자금사용). census 미카탈로그 탐지가 드러낸 apiType 충전.
+_FILING: list[ExtractionConcept] = [
+    _report(
+        "filing.publicOfferingUsage",
+        "filingMeta",
+        "공모자금사용내역",
+        "publicOfferingUsage",
+        HonestNull("US 는 S-1/424B use-of-proceeds 서술, DART 정형표 대응 부재"),
+        valueType="text",
+    ),
+    _report(
+        "filing.privateOfferingUsage",
+        "filingMeta",
+        "사모자금사용내역",
+        "privateOfferingUsage",
+        HonestNull("US 사모 자금사용 정형 공시 없음"),
+        valueType="text",
+    ),
 ]
 
 _DEBT: list[ExtractionConcept] = [
@@ -684,7 +799,7 @@ _NARRATIVE: list[ExtractionConcept] = [
 ]
 
 _CONCEPTS: list[ExtractionConcept] = (
-    _STATEMENTS + _NOTES + _GOVERNANCE + _CAPITAL + _WORKFORCE + _DEBT + _SEGMENT + _NARRATIVE
+    _STATEMENTS + _NOTES + _GOVERNANCE + _CAPITAL + _WORKFORCE + _DEBT + _SEGMENT + _NARRATIVE + _FILING
 )
 _INDEX: dict[str, ExtractionConcept] = {c.conceptId: c for c in _CONCEPTS}
 

@@ -20,13 +20,599 @@
   ],
   "usSampleN": 20,
   "rollup": {
-    "parity-ok": 33,
+    "parity-ok": 37,
     "narrative-P2": 11,
+    "honestNull-ok": 10,
     "dartOnly-ok-edgarUnmeasured": 9,
-    "honestNull-ok": 5,
-    "review": 3,
-    "honestNull-dartSparse": 2,
-    "sparse": 1
+    "review": 6,
+    "honestNull-dartSparse": 3,
+    "sparse": 2
+  },
+  "completeness": {
+    "notePresent": 175,
+    "noteCatalogued": 33,
+    "apiPresent": 30,
+    "apiCatalogued": 28,
+    "noteUncatalogued": [
+      [
+        "NT_D80060",
+        12
+      ],
+      [
+        "NT_C_U80030",
+        12
+      ],
+      [
+        "NT_C_U80020",
+        12
+      ],
+      [
+        "NT_S_U80020",
+        10
+      ],
+      [
+        "NT_C_U80040",
+        10
+      ],
+      [
+        "NT_D85110",
+        10
+      ],
+      [
+        "NT_S_U80040",
+        9
+      ],
+      [
+        "NT_C_U80010",
+        9
+      ],
+      [
+        "NT_D81001",
+        9
+      ],
+      [
+        "NT_D82510",
+        9
+      ],
+      [
+        "NT_S_U80010",
+        8
+      ],
+      [
+        "NT_D82300",
+        8
+      ],
+      [
+        "NT_C_U80050",
+        7
+      ],
+      [
+        "NT_D82238",
+        7
+      ],
+      [
+        "NT_D86131",
+        7
+      ],
+      [
+        "NT_S_U80030",
+        7
+      ],
+      [
+        "NT_D81100",
+        7
+      ],
+      [
+        "NT_C_U80070",
+        7
+      ],
+      [
+        "NT_C_U80080",
+        6
+      ],
+      [
+        "NT_C_U80060",
+        6
+      ],
+      [
+        "NT_S_U80070",
+        6
+      ],
+      [
+        "NT_S_U80060",
+        5
+      ],
+      [
+        "NT_S_U80080",
+        5
+      ],
+      [
+        "NT_D82244",
+        4
+      ],
+      [
+        "NT_D86100",
+        4
+      ],
+      [
+        "NT_C_U80100",
+        4
+      ],
+      [
+        "NT_S_U80100",
+        4
+      ],
+      [
+        "NT_S_U80050",
+        4
+      ],
+      [
+        "NT_C_U80110",
+        4
+      ],
+      [
+        "NT_D82245",
+        3
+      ],
+      [
+        "NT_D82249",
+        3
+      ],
+      [
+        "NT_D82548",
+        3
+      ],
+      [
+        "NT_C_U80090",
+        3
+      ],
+      [
+        "NT_S_U80090",
+        3
+      ],
+      [
+        "NT_D83262",
+        3
+      ],
+      [
+        "NT_C_U80120",
+        3
+      ],
+      [
+        "NT_S_U80110",
+        3
+      ],
+      [
+        "NT_S_U80120",
+        3
+      ],
+      [
+        "NT_D82248",
+        2
+      ],
+      [
+        "NT_C_U80140",
+        2
+      ],
+      [
+        "NT_S_U80140",
+        2
+      ],
+      [
+        "NT_D83241",
+        2
+      ],
+      [
+        "NT_C_U80130",
+        2
+      ],
+      [
+        "NT_D82232",
+        2
+      ],
+      [
+        "NT_S_U80130",
+        2
+      ],
+      [
+        "NT_D82246",
+        2
+      ],
+      [
+        "NT_C_U80190",
+        2
+      ],
+      [
+        "NT_C_U80180",
+        2
+      ],
+      [
+        "NT_D81300",
+        1
+      ],
+      [
+        "NT_C_DX81600",
+        1
+      ],
+      [
+        "NT_C_DX83400",
+        1
+      ],
+      [
+        "NT_C_DX81410",
+        1
+      ],
+      [
+        "NT_C_DX80600",
+        1
+      ],
+      [
+        "NT_C_DX84000",
+        1
+      ],
+      [
+        "NT_C_DX84720",
+        1
+      ],
+      [
+        "NT_S_DX82900",
+        1
+      ],
+      [
+        "NT_C_DX81700",
+        1
+      ],
+      [
+        "NT_C_DX82000",
+        1
+      ],
+      [
+        "NT_S_DX84000",
+        1
+      ],
+      [
+        "NT_C_DX84200",
+        1
+      ],
+      [
+        "NT_C_DX84740",
+        1
+      ],
+      [
+        "NT_C_DX83542",
+        1
+      ],
+      [
+        "NT_C_DX82100",
+        1
+      ],
+      [
+        "NT_C_DX80800",
+        1
+      ],
+      [
+        "NT_C_DX83300",
+        1
+      ],
+      [
+        "NT_C_DX83520",
+        1
+      ],
+      [
+        "NT_S_DX83600",
+        1
+      ],
+      [
+        "NT_C_DX84760",
+        1
+      ],
+      [
+        "NT_C_DX81200",
+        1
+      ],
+      [
+        "NT_S_DX84500",
+        1
+      ],
+      [
+        "NT_C_DX82600",
+        1
+      ],
+      [
+        "NT_C_DX81900",
+        1
+      ],
+      [
+        "NT_C_DX81500",
+        1
+      ],
+      [
+        "NT_C_DX82500",
+        1
+      ],
+      [
+        "NT_S_DX81700",
+        1
+      ],
+      [
+        "NT_C_DX83510",
+        1
+      ],
+      [
+        "NT_S_DX83200",
+        1
+      ],
+      [
+        "NT_C_DX83900",
+        1
+      ],
+      [
+        "NT_S_DX81420",
+        1
+      ],
+      [
+        "NT_S_DX80700",
+        1
+      ],
+      [
+        "NT_S_DX82300",
+        1
+      ],
+      [
+        "NT_S_DX82600",
+        1
+      ],
+      [
+        "NT_S_DX81410",
+        1
+      ],
+      [
+        "NT_C_DX80100",
+        1
+      ],
+      [
+        "NT_S_DX83000",
+        1
+      ],
+      [
+        "NT_S_DX83900",
+        1
+      ],
+      [
+        "NT_C_DX83600",
+        1
+      ],
+      [
+        "NT_S_DX84200",
+        1
+      ],
+      [
+        "NT_S_DX80900",
+        1
+      ],
+      [
+        "NT_C_DX80400",
+        1
+      ],
+      [
+        "NT_C_DX83530",
+        1
+      ],
+      [
+        "NT_C_DX83000",
+        1
+      ],
+      [
+        "NT_C_DX83100",
+        1
+      ],
+      [
+        "NT_C_DX82300",
+        1
+      ],
+      [
+        "NT_C_DX84710",
+        1
+      ],
+      [
+        "NT_S_DX83100",
+        1
+      ],
+      [
+        "NT_C_DX81430",
+        1
+      ],
+      [
+        "NT_C_DX81300",
+        1
+      ],
+      [
+        "NT_S_DX83510",
+        1
+      ],
+      [
+        "NT_C_DX84750",
+        1
+      ],
+      [
+        "NT_C_DX84810",
+        1
+      ],
+      [
+        "NT_C_DX83700",
+        1
+      ],
+      [
+        "NT_C_DX82200",
+        1
+      ],
+      [
+        "NT_S_DX82000",
+        1
+      ],
+      [
+        "NT_C_DX84730",
+        1
+      ],
+      [
+        "NT_C_DX84700",
+        1
+      ],
+      [
+        "NT_S_DX80200",
+        1
+      ],
+      [
+        "NT_C_DX83200",
+        1
+      ],
+      [
+        "NT_C_DX82400",
+        1
+      ],
+      [
+        "NT_S_DX83700",
+        1
+      ],
+      [
+        "NT_C_DX81000",
+        1
+      ],
+      [
+        "NT_C_DX81420",
+        1
+      ],
+      [
+        "NT_S_DX81200",
+        1
+      ],
+      [
+        "NT_S_DX84610",
+        1
+      ],
+      [
+        "NT_C_DX81100",
+        1
+      ],
+      [
+        "NT_S_DX83400",
+        1
+      ],
+      [
+        "NT_C_DX84100",
+        1
+      ],
+      [
+        "NT_C_DX84300",
+        1
+      ],
+      [
+        "NT_S_DX80100",
+        1
+      ],
+      [
+        "NT_S_DX81000",
+        1
+      ],
+      [
+        "NT_S_DX84300",
+        1
+      ],
+      [
+        "NT_C_DX84500",
+        1
+      ],
+      [
+        "NT_C_DX82900",
+        1
+      ],
+      [
+        "NT_S_DX81500",
+        1
+      ],
+      [
+        "NT_C_DX83541",
+        1
+      ],
+      [
+        "NT_S_DX82500",
+        1
+      ],
+      [
+        "NT_C_DX80200",
+        1
+      ],
+      [
+        "NT_C_DX84610",
+        1
+      ],
+      [
+        "NT_S_DX81100",
+        1
+      ],
+      [
+        "NT_S_DX84600",
+        1
+      ],
+      [
+        "NT_C_DX80900",
+        1
+      ],
+      [
+        "NT_C_DX80700",
+        1
+      ],
+      [
+        "NT_S_DX83520",
+        1
+      ],
+      [
+        "NT_S_DX82400",
+        1
+      ],
+      [
+        "NT_S_U80160",
+        1
+      ],
+      [
+        "NT_C_U80170",
+        1
+      ],
+      [
+        "NT_S_U80180",
+        1
+      ],
+      [
+        "NT_S_U80170",
+        1
+      ],
+      [
+        "NT_S_U80190",
+        1
+      ],
+      [
+        "NT_C_U80150",
+        1
+      ],
+      [
+        "NT_S_U80150",
+        1
+      ],
+      [
+        "NT_C_U80160",
+        1
+      ]
+    ],
+    "apiUncatalogued": [
+      [
+        "executivePayType",
+        16
+      ],
+      [
+        "executivePayApproval",
+        16
+      ]
+    ]
   },
   "ledger": [
     {
@@ -320,6 +906,106 @@
       "status": "sparse"
     },
     {
+      "conceptId": "note.financialRiskMgmt",
+      "category": "note",
+      "label": "재무위험관리",
+      "dartCov": 0.62,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": true,
+      "status": "honestNull-ok"
+    },
+    {
+      "conceptId": "note.cashAndEquivalents",
+      "category": "note",
+      "label": "현금및현금성자산",
+      "dartCov": 0.38,
+      "edgarCov": 0.9,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.otherIncomeExpense",
+      "category": "note",
+      "label": "기타수익및기타비용",
+      "dartCov": 0.62,
+      "edgarCov": 0.3,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.businessCombination",
+      "category": "note",
+      "label": "사업결합",
+      "dartCov": 0.56,
+      "edgarCov": 0.15,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "review"
+    },
+    {
+      "conceptId": "note.subsequentEvents",
+      "category": "note",
+      "label": "보고기간후사건",
+      "dartCov": 0.69,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": true,
+      "status": "honestNull-ok"
+    },
+    {
+      "conceptId": "note.otherEquity",
+      "category": "note",
+      "label": "기타자본항목",
+      "dartCov": 0.5,
+      "edgarCov": 1.0,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.restrictedFinancial",
+      "category": "note",
+      "label": "사용제한금융상품",
+      "dartCov": 0.38,
+      "edgarCov": 0.75,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "parity-ok"
+    },
+    {
+      "conceptId": "note.otherAssets",
+      "category": "note",
+      "label": "기타유동및비유동자산",
+      "dartCov": 0.56,
+      "edgarCov": 0.15,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "review"
+    },
+    {
+      "conceptId": "note.otherLiabilities",
+      "category": "note",
+      "label": "기타유동및비유동부채",
+      "dartCov": 0.44,
+      "edgarCov": 0.15,
+      "edgarHonestNull": false,
+      "registered": true,
+      "status": "review"
+    },
+    {
+      "conceptId": "note.accountingPolicies",
+      "category": "note",
+      "label": "유의적회계정책",
+      "dartCov": 0.75,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": true,
+      "status": "honestNull-ok"
+    },
+    {
       "conceptId": "governance.majorHolder",
       "category": "governance",
       "label": "최대주주현황",
@@ -488,6 +1174,26 @@
       "edgarHonestNull": true,
       "registered": false,
       "status": "honestNull-ok"
+    },
+    {
+      "conceptId": "workforce.executivePayByType",
+      "category": "workforce",
+      "label": "임원보수유형별",
+      "dartCov": 0.06,
+      "edgarCov": null,
+      "edgarHonestNull": false,
+      "registered": false,
+      "status": "sparse"
+    },
+    {
+      "conceptId": "workforce.executivePayTotalApproved",
+      "category": "workforce",
+      "label": "임원보수총승인액",
+      "dartCov": 0.06,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": false,
+      "status": "honestNull-dartSparse"
     },
     {
       "conceptId": "debt.corporateBond",
@@ -668,6 +1374,26 @@
       "edgarHonestNull": true,
       "registered": false,
       "status": "narrative-P2"
+    },
+    {
+      "conceptId": "filing.publicOfferingUsage",
+      "category": "filingMeta",
+      "label": "공모자금사용내역",
+      "dartCov": 1.0,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": false,
+      "status": "honestNull-ok"
+    },
+    {
+      "conceptId": "filing.privateOfferingUsage",
+      "category": "filingMeta",
+      "label": "사모자금사용내역",
+      "dartCov": 1.0,
+      "edgarCov": null,
+      "edgarHonestNull": true,
+      "registered": false,
+      "status": "honestNull-ok"
     }
   ]
 }
