@@ -245,4 +245,29 @@ EDGAR 태그 보강.
 
 **push 상태**: engine 완결·전 게이트 green 이나, 미푸시 history 에 타 세션 블로그·landing(프론트) 커밋이
 조상으로 끼어 있어 자동 push 보류(프론트 변경은 운영자 눈검수 필수). 운영자 push 트리거 대기.
+
+## 8. 완전 인벤토리 메커니즘 (2 차 목표: "진심으로 탈탈털기")
+
+운영자 재도전("완벽한가"·"진심으로 탈탈털었나")에 실측으로 답: 카탈로그(78 개념)는 표본 note 패밀리 175 중
+33(~19%)만 커버 = 탈탈털기 아님. 근본 원인 = **손 카탈로그(고정 canonicalKey)는 회사별 노트(NT_C_U/NT_S_U)·
+임베디드 정형표를 구조적으로 못 담는다.** 정공 = panel 이 이미 보고서 전체를 기록하므로 **자동 전수 열거 + 의미
+카탈로그 enrich** 2 층. 전문에이전트 2명(도메인 taxonomy + 아키텍처)과 2 라운드 토론으로 설계.
+
+**산출 (`frame/inventory.py` + `dossier.inventory()/get()/materialize()`, commit 82f295769·afbebb09b):**
+- `reportInventory(code)`: **정규화 Panel wide + report** 에서 전 단위 자동 열거. 표준 노트 + 회사별 노트 +
+  임베디드 정형 ACLASS(TOT_STK·EMPLOYEE·VOT_STK·SUB_*·INS_*) + 내러티브 섹션 + 재무 5표 + OpenDART apiType.
+  각 단위 안정 handle + conceptId 의미 태깅.
+- `dossier.get(handle)`: 어떤 단위든 handle 로 추출(panel canonicalKey/native/sectionLeaf + report 라우팅).
+- `dossier.materialize()`: board 1회 로드로 전 단위 배치 추출(OOM-safe).
+
+**라운드2 핵심 교정(에이전트 감사)**: ① raw parquet 열거 -> **정규화 wide board 열거**(reader 정규화 재사용,
+phantom 중복 제거). ② round-trip 87.8% -> **100%**(206/206, 모든 handle 이 추출로 해소). ③ handle collision 0.
+④ 정직 상한 명시: cover-to-cover 100% 아님. **panel+report BUILD 포착분·unit 입도·KR**. 이미지 바이너리·
+cover 구조메타·해소된 cross-ref·multiaxis cell 분해는 상한 밖.
+
+**실측(005930)**: 206 단위(form 39·note 74·narrative 62·statement 5·report 26), enrich 95/206. round-trip
+머신 게이트 `test_inventory_roundtrip`(모든 handle non-empty + collision 0). Guard Index l0-l15 PASS.
+
+**정직 잔여(Tier-2, 후속 커밋)**: census 를 note+apiType 외 narrative/table 단위까지 열거하도록 확장(완전성
+*측정*을 인벤토리 수준으로), 시총·섹터·era 층화. 인벤토리 *메커니즘* 자체는 완결(전 단위 열거+추출).
 ```
