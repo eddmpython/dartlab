@@ -1,0 +1,75 @@
+# 에피소드 메타데이터 (사람이 작성하는 SSOT).
+# 발행 시 guid/오디오크기/길이/발행일 같은 기계값은 published.json 에 기록된다.
+# 소스 문서는 블로그 글 하나다. 별도 script.md 를 손으로 쓰지 않는다.
+episode:
+  version: 1
+  episodeId: P06-economy-zombie-firms   # 폴더명과 동일. P0N-{lane}-{slug}
+  episodeNo: 6                           # 정수. RSS <itunes:episode> + 정렬
+  slug: zombie-firms                     # 링크/파일 slug
+  title: "이자도 못 내는 좀비기업, 빚만 1,000조: 상장사 713곳 전수 분석"
+  lane: economy                          # dartlab | company | economy | disclosure | quant
+  language: ko
+  status: ready                          # draft | ready | published (ready 이상만 발행)
+
+  # 오디오 소스 (NotebookLM 산출물). 레포에 커밋하지 않는다. 발행 시 --audio 로 경로 전달.
+  audio:
+    generator: notebooklm
+    sourceHint: "Downloads/이자도_못_내는_좀비기업_빚만_1000조.m4a"
+    sourceDoc: https://eddmpython.github.io/dartlab/blog/interest-coverage-zombie-firms
+
+  image:
+    source: cover.jpg                    # 3000x3000 정사각 RSS 커버 (렌더 산출)
+    key: episodes/zombie-firms/cover-3000.jpg
+  staticImage:
+    source: static-video.jpg             # 1280x720 16:9 (팟빵·유튜브 썸네일 규격, 렌더 산출)
+    key: episodes/zombie-firms/static-video.jpg
+  thumbnail:
+    source: static-video.jpg
+    key: episodes/zombie-firms/static-video.jpg
+  sourceAssets:
+    - source: assets/source.webp
+      name: source
+      role: reusable-original
+  visual:
+    source: assets/source.webp
+    kicker: DartLab Podcast
+    titleLines:
+      - 이자도 못 내는
+      - 좀비기업 713곳
+      - 빚만 1,000조
+    subtitle: 비금융 상장사 1,924곳 전수 분석
+    footer: 이자보상배율 · 3년 연속 · 두 갈래
+  caption:
+    hook: 번 돈으로 이자도 못 갚는 회사가 상장사 3곳 중 1곳입니다.
+    body: >-
+      dartlab이 비금융 상장사 1,924곳을 전수 집계했더니, 713곳이 2023년부터 2025년까지 3년 내리
+      영업이익으로 현금 이자조차 못 갚았습니다. 이들이 짊어진 총부채는 1,042조원. 같은 좀비라도
+      롯데케미칼처럼 더 깊어지는 곳과 LG디스플레이처럼 바닥을 치고 오르는 곳으로 갈립니다.
+    cta: 전체 에피소드는 DartLab 팟캐스트에서 들을 수 있습니다.
+    hashtags: ["#DartLab", "#좀비기업", "#한계기업", "#이자보상배율"]
+
+  # 기획 요지
+  audienceQuestion: 3년 내리 영업이익으로 이자도 못 갚는 상장사는 얼마나 되고, 그들은 같은 방향으로 가고 있나?
+  oneLineMessage: >-
+    3년 연속 이자보상배율 1 미만인 좀비가 비금융 상장사의 37%(713곳)이고, 같은 낙인 아래
+    롯데케미칼은 3년째 더 깊어지고 LG디스플레이는 바닥을 치고 오른다. 상태보다 방향을 봐야 한다.
+  summary: >-
+    dartlab이 전상장사 공시에서 영업이익과 현금 이자지급을 꺼내 전수 집계했습니다. 이자를 무는
+    비금융 상장사 1,924곳 중 713곳(37%)이 3년 연속 영업이익으로 이자조차 못 갚았고, 그중 402곳은
+    아예 3년 내리 영업적자였습니다. 한국은행이 상장사 한계기업 27.6%로 경고한 그림을 전수로
+    재현하고, 같은 좀비 명단이 롯데케미칼(심화)과 LG디스플레이·이마트(회복)로 갈리는 두 갈래를 짚습니다.
+  whereToLook:
+    - 매입 발표가 아니라 3년 이자보상배율 궤적(방향)을 보는지
+    - 금융업(이자가 원가)과 지주회사(지분법이익 제외) 왜곡을 걷어냈는지
+  forbiddenAngles: [매수, 매도, 목표가, 수익 보장, 확정 전망]
+
+  # 교차 링크 조인 키 + 역링크 (회사 에피소드가 아니면 빈 값)
+  stockCode: ""
+  corpName: ""
+  topicSlug: zombie-firms                # 항상 존재. 주제축 키
+  cardType: economy                      # company | event | economy | meta
+  youtubeId: ""
+  links:
+    blogSlug: interest-coverage-zombie-firms
+    cardSlug: ""
+    terminalCode: ""
