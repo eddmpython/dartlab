@@ -6,7 +6,7 @@
   <!-- 곧 온다 (원자로) -->
   <rect x="50" y="110" width="250" height="200" rx="14" fill="#111827" stroke="#38bdf8" stroke-width="2"/>
   <text x="175" y="150" fill="#38bdf8" font-size="18" font-weight="700" text-anchor="middle">곧 온다</text>
-  <text x="175" y="178" fill="#e2e8f0" font-size="14" text-anchor="middle">원자로 · SMR (3편)</text>
+  <text x="175" y="178" fill="#e2e8f0" font-size="14" text-anchor="middle">원자로 · SMR</text>
   <text x="175" y="228" fill="#94a3b8" font-size="13" text-anchor="middle">능력은 갖췄으나</text>
   <text x="175" y="248" fill="#94a3b8" font-size="13" text-anchor="middle">이익은 아직 대기</text>
   <text x="175" y="288" fill="#38bdf8" font-size="13" text-anchor="middle">미래의 매출을 기다린다</text>
@@ -14,7 +14,7 @@
   <!-- 지금 터졌다 (변압기) -->
   <rect x="315" y="110" width="250" height="200" rx="14" fill="#111827" stroke="#fbbf24" stroke-width="2"/>
   <text x="440" y="150" fill="#fbbf24" font-size="18" font-weight="700" text-anchor="middle">지금 터졌다</text>
-  <text x="440" y="178" fill="#e2e8f0" font-size="14" text-anchor="middle">변압기 (4편)</text>
+  <text x="440" y="178" fill="#e2e8f0" font-size="14" text-anchor="middle">변압기</text>
   <text x="440" y="222" fill="#fbbf24" font-size="26" text-anchor="middle" font-weight="700">+24.4%</text>
   <text x="440" y="248" fill="#94a3b8" font-size="13" text-anchor="middle">대체 불가능한 자리가</text>
   <text x="440" y="288" fill="#fbbf24" font-size="13" text-anchor="middle">이익을 지금 낸다</text>
@@ -22,7 +22,7 @@
   <!-- 아직 멀었다 (로봇) -->
   <rect x="580" y="110" width="250" height="200" rx="14" fill="#111827" stroke="#ef4444" stroke-width="2"/>
   <text x="705" y="150" fill="#ef4444" font-size="18" font-weight="700" text-anchor="middle">아직 멀었다</text>
-  <text x="705" y="178" fill="#e2e8f0" font-size="14" text-anchor="middle">로봇 (5편)</text>
+  <text x="705" y="178" fill="#e2e8f0" font-size="14" text-anchor="middle">로봇</text>
   <text x="705" y="222" fill="#ef4444" font-size="26" text-anchor="middle" font-weight="700">-180.3%</text>
   <text x="705" y="248" fill="#94a3b8" font-size="13" text-anchor="middle">이익은 도착하지 않았고</text>
   <text x="705" y="288" fill="#ef4444" font-size="13" text-anchor="middle">값은 기대가 만든다</text>

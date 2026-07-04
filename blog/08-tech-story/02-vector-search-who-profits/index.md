@@ -41,33 +41,33 @@ carousel:
       body: "글이나 그림을 의미가 담긴 숫자 묶음(벡터)으로 바꾼 것. 비슷한 뜻일수록 좌표가 가깝습니다."
   slides:
     - layout: editorial
-      line: "벡터 검색은 어떻게 작동하나"
-      sub: "그리고 왜 'AI 회사'일수록 적자인가"
+      line: "왜 'AI 회사'일수록 적자일까"
+      sub: "의미로 검색하는 벡터 기술의 원리부터, 돈은 누가 버는지까지"
     - layout: editorialBeat
-      kicker: "질문"
+      kicker: "간판마다 AI"
       line: "챗봇도 의미 검색도 추천도 같은 엔진을 씁니다. 그럼 이 기술로 돈은 누가 벌까요?"
       sub: "AI를 내세운 상장사를 우리 데이터로 실측했습니다"
     - layout: editorialBeat
-      kicker: "원리 한 줄"
+      kicker: "기술은 이미 상품"
       line: "글을 숫자 벡터로 바꿔 뜻이 가까운 것을 찾습니다. 그런데 그 도구는 대부분 오픈소스라 누구나 며칠이면 붙입니다."
       sub: "기술 자체가 이미 상품이 됐다는 뜻입니다"
     - layout: editorialStat
       kicker: "순수 AI 회사, 직접 만드는 쪽"
       bigNumber: "-19.3%"
       unit: "영업이익률"
-      context: "자체 언어모델을 만드는 솔트룩스는 5년째 영업적자입니다. 기술은 있는데 돈이 안 됩니다."
+      context: "그러니 기술만 파는 회사가 힘듭니다. 자체 언어모델을 만드는 솔트룩스는 5년째 영업적자입니다."
     - layout: editorialStat
       kicker: "AI를 얹은 강자, 네이버"
       bigNumber: "18.3%"
       unit: "영업이익률"
-      context: "네이버는 검색과 커머스에 AI를 얹어 매출 12조에 18.3%를 남깁니다. 파는 건 AI가 아니라 원래 사업입니다."
+      context: "반대로 네이버는 검색과 커머스에 AI를 얹어 매출 12조에 18.3%를 남깁니다. 파는 건 AI가 아니라 원래 사업입니다."
     - layout: editorialStat
       kicker: "그 기술을 돌리는 반도체"
       bigNumber: "48.6%"
       unit: "영업이익률"
       context: "SK하이닉스는 AI 메모리 호황에 48.6%를 냈습니다. 소프트웨어가 대부분 적자일 때 그들이 쓰는 칩이 가장 많이 벌었습니다."
     - layout: editorialBeat
-      kicker: "그래서"
+      kicker: "이익이 가는 곳"
       line: "기술은 상품이 되고, 이익은 독점 데이터와 유통, 반도체를 가진 자에게 갑니다."
       sub: "기술을 만드는 자가 아니라 대체 불가능한 자산을 가진 자가 법니다"
 ---
