@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" font-family="-apple-system, 'Segoe UI', sans-serif">
+  <rect width="880" height="500" fill="#0a0e1a"/>
+  <text x="40" y="48" fill="#f1f5f9" font-size="26" font-weight="700">변압기 밸류체인 5개사 이익률 지도</text>
+  <text x="40" y="76" fill="#64748b" font-size="15">2025년 영업이익률(매출 대비 영업이익, %)과 매출 규모. 우리 데이터 실측</text>
+
+  <line x1="70" y1="430" x2="820" y2="430" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- HD현대일렉트릭 24.4 amber -->
+  <rect x="100" y="186" width="80" height="244" fill="#fbbf24"/>
+  <text x="140" y="174" fill="#fbbf24" font-size="17" font-weight="700" text-anchor="middle">24.4%</text>
+  <text x="140" y="452" fill="#e2e8f0" font-size="12" text-anchor="middle">초고압변압기</text>
+  <text x="140" y="470" fill="#64748b" font-size="11" text-anchor="middle">HD현대일렉트릭 · 4.1조</text>
+
+  <!-- 효성중공업 12.5 -->
+  <rect x="250" y="305" width="80" height="125" fill="#38bdf8"/>
+  <text x="290" y="293" fill="#38bdf8" font-size="17" font-weight="700" text-anchor="middle">12.5%</text>
+  <text x="290" y="452" fill="#e2e8f0" font-size="12" text-anchor="middle">초고압·중공업</text>
+  <text x="290" y="470" fill="#64748b" font-size="11" text-anchor="middle">효성중공업 · 6.0조</text>
+
+  <!-- LS일렉트릭 8.6 -->
+  <rect x="400" y="344" width="80" height="86" fill="#38bdf8"/>
+  <text x="440" y="332" fill="#38bdf8" font-size="17" font-weight="700" text-anchor="middle">8.6%</text>
+  <text x="440" y="452" fill="#e2e8f0" font-size="12" text-anchor="middle">배전·전력기기</text>
+  <text x="440" y="470" fill="#64748b" font-size="11" text-anchor="middle">LS일렉트릭 · 5.0조</text>
+
+  <!-- 일진전기 7.4 red -->
+  <rect x="550" y="356" width="80" height="74" fill="#ef4444"/>
+  <text x="590" y="344" fill="#ef4444" font-size="17" font-weight="700" text-anchor="middle">7.4%</text>
+  <text x="590" y="452" fill="#e2e8f0" font-size="12" text-anchor="middle">전선</text>
+  <text x="590" y="470" fill="#64748b" font-size="11" text-anchor="middle">일진전기 · 2.0조</text>
+
+  <!-- 산일전기 35.6 green -->
+  <rect x="700" y="74" width="80" height="356" fill="#22c55e"/>
+  <text x="740" y="62" fill="#22c55e" font-size="17" font-weight="700" text-anchor="middle">35.6%</text>
+  <text x="740" y="452" fill="#e2e8f0" font-size="12" text-anchor="middle">특수변압기</text>
+  <text x="740" y="470" fill="#64748b" font-size="11" text-anchor="middle">산일전기 · 0.5조</text>
+
+  <text x="740" y="140" fill="#22c55e" font-size="12" text-anchor="middle" font-weight="600">가장 작은데</text>
+  <text x="740" y="156" fill="#22c55e" font-size="12" text-anchor="middle" font-weight="600">가장 높다</text>
+  <text x="590" y="300" fill="#ef4444" font-size="12" text-anchor="middle" font-weight="600">상품이라</text>
+  <text x="590" y="316" fill="#ef4444" font-size="12" text-anchor="middle" font-weight="600">못 번다</text>
+</svg>

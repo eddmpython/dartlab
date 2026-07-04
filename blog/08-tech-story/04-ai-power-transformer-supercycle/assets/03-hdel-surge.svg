@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 480" font-family="-apple-system, 'Segoe UI', sans-serif">
+  <rect width="880" height="480" fill="#0a0e1a"/>
+  <text x="40" y="46" fill="#f1f5f9" font-size="25" font-weight="700">HD현대일렉트릭: 매출도, 이익률도 함께 뛰었다</text>
+  <text x="40" y="74" fill="#64748b" font-size="15">막대는 매출(조원, 왼쪽), 선은 영업이익률(%, 오른쪽). 2021~2025 연간 실측</text>
+
+  <line x1="70" y1="410" x2="820" y2="410" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- 매출 막대 1.8 2.1 2.7 3.3 4.1, 1조=45px -->
+  <rect x="110" y="329" width="80" height="81" fill="#1e3a5f"/>
+  <rect x="260" y="315" width="80" height="95" fill="#1e3a5f"/>
+  <rect x="410" y="288" width="80" height="122" fill="#1e3a5f"/>
+  <rect x="560" y="261" width="80" height="149" fill="#1e3a5f"/>
+  <rect x="710" y="225" width="80" height="185" fill="#1e3a5f"/>
+  <text x="150" y="321" fill="#93c5fd" font-size="14" text-anchor="middle">1.8</text>
+  <text x="300" y="307" fill="#93c5fd" font-size="14" text-anchor="middle">2.1</text>
+  <text x="450" y="280" fill="#93c5fd" font-size="14" text-anchor="middle">2.7</text>
+  <text x="600" y="253" fill="#93c5fd" font-size="14" text-anchor="middle">3.3</text>
+  <text x="750" y="217" fill="#93c5fd" font-size="14" text-anchor="middle">4.1조</text>
+
+  <!-- OPM 선 0.5 6.3 11.7 20.1 24.4, y=410-opm*12 -->
+  <polyline points="150,404 300,334 450,270 600,169 750,117" fill="none" stroke="#fbbf24" stroke-width="3"/>
+  <circle cx="150" cy="404" r="6" fill="#ef4444"/>
+  <circle cx="300" cy="334" r="5" fill="#fbbf24"/>
+  <circle cx="450" cy="270" r="5" fill="#fbbf24"/>
+  <circle cx="600" cy="169" r="5" fill="#fbbf24"/>
+  <circle cx="750" cy="117" r="7" fill="#fbbf24"/>
+  <text x="150" y="394" fill="#ef4444" font-size="14" text-anchor="middle" font-weight="700">0.5%</text>
+  <text x="750" y="104" fill="#fbbf24" font-size="16" text-anchor="middle" font-weight="700">24.4%</text>
+
+  <text x="150" y="434" fill="#94a3b8" font-size="13" text-anchor="middle">2021</text>
+  <text x="300" y="434" fill="#94a3b8" font-size="13" text-anchor="middle">2022</text>
+  <text x="450" y="434" fill="#94a3b8" font-size="13" text-anchor="middle">2023</text>
+  <text x="600" y="434" fill="#94a3b8" font-size="13" text-anchor="middle">2024</text>
+  <text x="750" y="434" fill="#94a3b8" font-size="13" text-anchor="middle">2025</text>
+
+  <text x="320" y="150" fill="#fbbf24" font-size="13" text-anchor="middle" font-weight="600">본전 장사에서 5년 만에 영업이익률 24%로</text>
+</svg>

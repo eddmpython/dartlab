@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" font-family="-apple-system, 'Segoe UI', sans-serif">
+  <rect width="880" height="420" fill="#0a0e1a"/>
+  <text x="40" y="46" fill="#f1f5f9" font-size="25" font-weight="700">이익률을 가르는 것은 자리의 성격이다</text>
+  <text x="40" y="74" fill="#64748b" font-size="15">같은 슈퍼사이클 안에서도, 대체 불가능한 자리가 상품에 가까운 자리보다 훨씬 잘 번다</text>
+
+  <line x1="440" y1="110" x2="440" y2="380" stroke="#334155" stroke-width="1.5" stroke-dasharray="4 4"/>
+
+  <!-- 왼쪽: 대체 불가능 -->
+  <text x="230" y="130" fill="#22c55e" font-size="16" font-weight="700" text-anchor="middle">대체 불가능한 자리</text>
+  <text x="230" y="152" fill="#64748b" font-size="12" text-anchor="middle">미국이 스스로 못 만든다</text>
+  <line x1="70" y1="360" x2="410" y2="360" stroke="#334155"/>
+  <rect x="120" y="116" width="80" height="244" fill="#fbbf24"/>
+  <text x="160" y="106" fill="#fbbf24" font-size="16" font-weight="700" text-anchor="middle">24.4%</text>
+  <text x="160" y="380" fill="#94a3b8" font-size="12" text-anchor="middle">초고압 변압기</text>
+  <rect x="270" y="112" width="80" height="248" fill="#22c55e"/>
+  <text x="310" y="102" fill="#22c55e" font-size="16" font-weight="700" text-anchor="middle">35.6%</text>
+  <text x="310" y="380" fill="#94a3b8" font-size="12" text-anchor="middle">특수 변압기</text>
+
+  <!-- 오른쪽: 상품에 가까움 -->
+  <text x="650" y="130" fill="#ef4444" font-size="16" font-weight="700" text-anchor="middle">상품에 가까운 자리</text>
+  <text x="650" y="152" fill="#64748b" font-size="12" text-anchor="middle">여러 회사가 비슷하게 만든다</text>
+  <line x1="470" y1="360" x2="810" y2="360" stroke="#334155"/>
+  <rect x="610" y="286" width="80" height="74" fill="#ef4444"/>
+  <text x="650" y="276" fill="#ef4444" font-size="16" font-weight="700" text-anchor="middle">7.4%</text>
+  <text x="650" y="380" fill="#94a3b8" font-size="12" text-anchor="middle">전선</text>
+
+  <text x="650" y="220" fill="#64748b" font-size="13" text-anchor="middle">값을 정하는 힘이</text>
+  <text x="650" y="238" fill="#64748b" font-size="13" text-anchor="middle">경쟁에 눌린다</text>
+</svg>
