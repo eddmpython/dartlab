@@ -1,0 +1,250 @@
+"""데이터 공동 작업대 (Dossier): 카탈로그 구동 단일사 조립 view (L1.5 frame).
+
+한 회사의 재무·노트·거버넌스·자본·부채·부문·정성을 카탈로그(`core.extractionCatalog`) 구동으로 한 자리에
+정리·조립하는 read-only 워크벤치다. 손으로 c.panel·report·narrative 를 조합하던 것을 개념 카탈로그 하나로
+통일한다. 무bake: 런타임이 SSOT(panel/report/finance)에서 직독한다.
+
+**계층 (L1.5 frame)**: core(카탈로그·dataLoader)·providers(panel)·frame(narrative) 만 import. 진입점은
+root `dartlab.dossier(code)` 다 (Company(L1)가 frame(L1.5)을 import 하면 상향 위반이라 facade 는 root).
+
+**정리 vs 추출**: `available()` 은 경량 신호맵(어떤 개념이 이 회사에 실재하나, 조직도). `extract()` 은
+개념 1건 실제 추출(요청 시). `category()`/`assemble()` 은 카테고리 조립.
+
+**예측 위임**: 워크벤치는 재료를 정리해 내주고, 예측은 L2(analysis·quant·macro)가 그 위에서 한다. Dossier
+는 예측을 소유하지 않고 위임 힌트만 제공(`forecastHint`). 4계층 단방향 보존.
+"""
+
+from __future__ import annotations
+
+import polars as pl
+
+from dartlab.core.extractionCatalog import (
+    CATEGORIES,
+    DartSource,
+    ExtractionConcept,
+    getConcept,
+    getExtractionConcepts,
+)
+
+
+def _panelKeys(code: str) -> set[str]:
+    """panel disclosureKey 집합(노트 NT_ 신호) 1회 읽기."""
+    from dartlab.core.dataLoader import _dataDir
+
+    path = _dataDir("panel") / f"{code}.parquet"
+    if not path.exists():
+        return set()
+    try:
+        dk = pl.read_parquet(path, columns=["disclosureKey"]).get_column("disclosureKey")
+        return {x for x in dk.drop_nulls().to_list() if x}
+    except (pl.exceptions.PolarsError, OSError):
+        return set()
+
+
+def _panelSections(code: str) -> set[str]:
+    """panel narrative sectionLeaf 집합(정성 신호) 1회 읽기."""
+    from dartlab.core.dataLoader import _dataDir
+
+    path = _dataDir("panel") / f"{code}.parquet"
+    if not path.exists():
+        return set()
+    try:
+        df = pl.read_parquet(path, columns=["disclosureKey", "sectionLeaf"])
+        nar = df.filter(pl.col("disclosureKey").is_null())
+        return {x for x in nar.get_column("sectionLeaf").drop_nulls().to_list() if x}
+    except (pl.exceptions.PolarsError, OSError):
+        return set()
+
+
+def _reportApiTypes(code: str) -> set[str]:
+    """report apiType 집합(정형공시 신호) 1회 읽기."""
+    from dartlab.core.dataLoader import _dataDir
+
+    path = _dataDir("report") / f"{code}.parquet"
+    if not path.exists():
+        return set()
+    try:
+        at = pl.read_parquet(path, columns=["apiType"]).get_column("apiType")
+        return {x for x in at.drop_nulls().to_list() if x}
+    except (pl.exceptions.PolarsError, OSError):
+        return set()
+
+
+def _conceptPresent(concept: ExtractionConcept, notes: set[str], apiTypes: set[str], sections: set[str]) -> bool:
+    """개념의 DART 신호가 이 회사에 있나(경량 판정, 조직맵용)."""
+    d = concept.dart
+    if not isinstance(d, DartSource):
+        return False
+    if d.surface == "note":
+        prefix = d.key[:-1]
+        return any(k.startswith(prefix) for k in notes)
+    if d.surface == "report":
+        return d.key in apiTypes
+    if d.surface == "statement":
+        return bool(notes or sections)  # panel 있으면 재무 5표 상존
+    if d.surface == "narrative" and concept.narrativeAnchor is not None:
+        kw = concept.narrativeAnchor[1]
+        return any(kw in s for s in sections)
+    if d.surface == "segmentTable":
+        return any("매출" in s and "수주" in s for s in sections)
+    return False
+
+
+class Dossier:
+    """한 회사의 카탈로그 구동 데이터 워크벤치(조립 view).
+
+    available/extract/category 로 정리·조립. 예측은 L2 위임(forecastHint).
+    """
+
+    def __init__(self, code: str, *, marketNs: str = "kr"):
+        self.code = code
+        self.marketNs = marketNs
+
+    def available(self) -> dict:
+        """이 회사에서 실재(추출가능)한 개념을 카테고리별로 정리한 조직맵을 반환한다.
+
+        경량 신호(panel NT_ 키 + report apiType + narrative sectionLeaf)만 읽어 무거운 추출 없이
+        "무엇을 뽑을 수 있나" 를 조직한다. 데이터 공동 작업대의 핵심 정리 표면.
+
+        Returns:
+            {category: [{conceptId, label, present, parity}]} (present=신호 있음).
+
+        Raises:
+            없음. 데이터 부재 시 present 전부 False.
+
+        Example:
+            >>> import dartlab
+            >>> dartlab.dossier("005930").available()["note"][0]["conceptId"]  # doctest: +SKIP
+            'note.inventory'
+        """
+        notes = _panelKeys(self.code)
+        apiTypes = _reportApiTypes(self.code)
+        sections = _panelSections(self.code)
+        out: dict[str, list[dict]] = {c: [] for c in CATEGORIES}
+        for concept in getExtractionConcepts():
+            present = _conceptPresent(concept, notes, apiTypes, sections)
+            out.setdefault(concept.category, []).append(
+                {
+                    "conceptId": concept.conceptId,
+                    "label": concept.label,
+                    "present": present,
+                    "parity": concept.parity(),
+                }
+            )
+        return out
+
+    def extract(self, conceptId: str) -> pl.DataFrame | None:
+        """개념 1건을 카탈로그 표면 라우팅으로 실제 추출한다.
+
+        note 는 panel canonicalKey, statement 는 panel native, narrative 는 frame.narrative,
+        report 는 report parquet(apiType 필터). segment(횡단) 은 None(scan 경로).
+
+        Args:
+            conceptId: 카탈로그 conceptId.
+
+        Returns:
+            pl.DataFrame 또는 None(미대상/데이터 부재).
+
+        Raises:
+            없음.
+
+        Example:
+            >>> import dartlab
+            >>> dartlab.dossier("005930").extract("note.tax")  # doctest: +SKIP
+        """
+        concept = getConcept(conceptId)
+        if concept is None or not isinstance(concept.dart, DartSource):
+            return None
+        surface = concept.dart.surface
+        if surface == "narrative":
+            from dartlab.frame.narrative import extractNarrative
+
+            return extractNarrative(self.code, conceptId, marketNs=self.marketNs)
+        if surface in ("note", "statement"):
+            from dartlab.providers.dart.panel import Panel
+
+            p = Panel(self.code, marketNs=self.marketNs)
+            if p is None or getattr(p, "height", 0) == 0:
+                return None
+            return p(concept.dart.key)
+        if surface == "report":
+            return self._extractReport(concept.dart.key)
+        return None  # segmentTable(횡단) 은 scan 경로
+
+    def _extractReport(self, apiType: str) -> pl.DataFrame | None:
+        """report parquet 에서 apiType 행을 직독(정형공시 raw)."""
+        from dartlab.core.dataLoader import _dataDir
+
+        path = _dataDir("report") / f"{self.code}.parquet"
+        if not path.exists():
+            return None
+        try:
+            df = pl.read_parquet(path).filter(pl.col("apiType") == apiType)
+        except (pl.exceptions.PolarsError, OSError):
+            return None
+        return df if not df.is_empty() else None
+
+    def category(self, category: str) -> dict[str, pl.DataFrame | None]:
+        """한 카테고리의 전 개념을 조립해 {conceptId: DataFrame|None} 로 반환한다.
+
+        Args:
+            category: 9 대분류 중 하나.
+
+        Returns:
+            {conceptId: 추출결과}.
+
+        Raises:
+            없음.
+
+        Example:
+            >>> import dartlab
+            >>> list(dartlab.dossier("005930").category("financialStatement"))  # doctest: +SKIP
+        """
+        return {c.conceptId: self.extract(c.conceptId) for c in getExtractionConcepts(category=category)}
+
+    def forecastHint(self) -> dict:
+        """예측 위임 힌트를 반환한다(워크벤치는 예측 소유 X, L2 위임).
+
+        4계층 단방향: 워크벤치는 재료 정리, 예측은 analysis/quant/macro(L2)가 그 위에서.
+
+        Returns:
+            {engine, call, note} 위임 안내.
+
+        Raises:
+            없음.
+
+        Example:
+            >>> import dartlab
+            >>> dartlab.dossier("005930").forecastHint()["engine"]
+            'analysis'
+        """
+        return {
+            "engine": "analysis",
+            "call": f'dartlab.Company("{self.code}").analysis("financial", "전망")',
+            "note": "워크벤치는 재료 정리 전담. 예측/시나리오는 L2(analysis·quant·macro) 위임.",
+        }
+
+    def __repr__(self) -> str:
+        return f"Dossier({self.code!r}, marketNs={self.marketNs!r})"
+
+
+def dossier(code: str, *, marketNs: str = "kr") -> Dossier:
+    """한 회사의 데이터 워크벤치(Dossier)를 연다.
+
+    Args:
+        code: 종목코드/티커.
+        marketNs: 시장 ("kr" 기본).
+
+    Returns:
+        Dossier (available/extract/category/forecastHint).
+
+    Raises:
+        없음.
+
+    Example:
+        >>> import dartlab
+        >>> d = dartlab.dossier("005930")  # doctest: +SKIP
+        >>> d.available()["note"]           # doctest: +SKIP  조직맵
+        >>> d.extract("note.tax")           # doctest: +SKIP  단일 추출
+    """
+    return Dossier(code, marketNs=marketNs)
