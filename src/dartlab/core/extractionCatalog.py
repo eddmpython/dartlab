@@ -304,10 +304,15 @@ def _narr(
     chapter: str,
     section: str,
     edgarItem: str | None,
+    keyword: str,
     *,
     valueType: str = "text",
 ) -> ExtractionConcept:
-    """narrative 개념 생성 헬퍼 (SPINE 앵커 + EDGAR Item, 내부)."""
+    """narrative 개념 생성 헬퍼 (SPINE 앵커 + EDGAR Item, 내부).
+
+    narrativeAnchor = (chapterRoman, sectionLeaf 한글 키워드). keyword 는 panel sectionLeaf 실측
+    매처(era/회사 무관 견고). frame.narrative.extractNarrative 가 이 앵커로 단일 메커니즘 추출.
+    """
     edgar: EdgarSource | HonestNull
     edgar = EdgarSource("item", (edgarItem,)) if edgarItem else HonestNull("대응 SEC Item 없음(P2 앵커추출)")
     return ExtractionConcept(
@@ -318,7 +323,7 @@ def _narr(
         edgar=edgar,
         axisType="text",
         valueType=valueType,
-        narrativeAnchor=(chapter, section),
+        narrativeAnchor=(chapter, keyword),
     )
 
 
@@ -658,16 +663,24 @@ _SEGMENT: list[ExtractionConcept] = [
 ]
 
 _NARRATIVE: list[ExtractionConcept] = [
-    _narr("narrative.businessOverview", "사업의개요", "II", "businessOverview", "Item1Business"),
-    _narr("narrative.salesOrder", "매출및수주상황", "II", "salesOrder", None, valueType="amount"),
-    _narr("narrative.productionCapacity", "생산능력및가동률", "II", "productionCapacity", None, valueType="amount"),
-    _narr("narrative.rawMaterial", "원재료및생산설비", "II", "rawMaterial", None, valueType="amount"),
-    _narr("narrative.riskFactors", "위험요소", "II", "riskFactors", "Item1ARiskFactors"),
-    _narr("narrative.mdna", "경영진단및분석", "III", "mdna", "Item7MDA"),
-    _narr("narrative.rnd", "연구개발활동", "II", "rnd", None),
-    _narr("narrative.majorContracts", "주요계약", "II", "majorContracts", None),
-    _narr("narrative.governanceText", "지배구조서술", "VI", "governanceText", "Item10Governance"),
-    _narr("narrative.environment", "환경규제", "II", "environment", None),
+    _narr("narrative.businessOverview", "사업의개요", "II", "businessOverview", "Item1Business", "사업의 개요"),
+    _narr("narrative.salesOrder", "매출및수주상황", "II", "salesOrder", None, "매출 및 수주", valueType="amount"),
+    _narr(
+        "narrative.productionCapacity",
+        "생산능력및가동률",
+        "II",
+        "productionCapacity",
+        None,
+        "생산설비",
+        valueType="amount",
+    ),
+    _narr("narrative.rawMaterial", "원재료및생산설비", "II", "rawMaterial", None, "원재료", valueType="amount"),
+    _narr("narrative.riskFactors", "위험요소", "II", "riskFactors", "Item1ARiskFactors", "위험관리"),
+    _narr("narrative.mdna", "경영진단및분석", "IV", "mdna", "Item7MDA", "경영진단"),
+    _narr("narrative.rnd", "연구개발활동", "II", "rnd", None, "연구개발"),
+    _narr("narrative.majorContracts", "주요계약", "II", "majorContracts", None, "주요계약"),
+    _narr("narrative.governanceText", "지배구조서술", "VI", "governanceText", "Item10Governance", "이사회"),
+    _narr("narrative.environment", "환경규제", "II", "environment", None, "환경"),
 ]
 
 _CONCEPTS: list[ExtractionConcept] = (
