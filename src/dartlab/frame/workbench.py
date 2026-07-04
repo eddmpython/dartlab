@@ -133,6 +133,58 @@ class Dossier:
             )
         return out
 
+    def inventory(self) -> dict:
+        """사업보고서 완전 인벤토리(모든 단위 100% 자동 열거)를 반환한다.
+
+        손 카탈로그가 아니라 panel 전수 열거. 표준 노트 + 회사별 노트(NT_C_U/NT_S_U) + 내러티브 섹션
+        + 재무 5표를 안정 handle 과 함께. 각 단위는 conceptId 로 의미 태깅(카탈로그 enrich 여부).
+
+        Returns:
+            {code, units[...], summary{total, byKind, cataloguedUnits, rawOnlyUnits}}.
+
+        Raises:
+            없음.
+
+        Example:
+            >>> import dartlab
+            >>> dartlab.dossier("005930").inventory()["summary"]["total"]  # doctest: +SKIP
+        """
+        from dartlab.frame.inventory import reportInventory
+
+        return reportInventory(self.code, marketNs=self.marketNs)
+
+    def get(self, handle: str) -> pl.DataFrame | None:
+        """인벤토리 handle(어떤 단위든)로 실제 추출한다.
+
+        handle 은 노트 disclosureKey(NT_...) · 재무표 키(is/bs/cf/cis/sce) · 내러티브 sectionLeaf.
+        panel __call__ 이 canonicalKey exact + native + sectionLeaf substring 을 모두 처리하므로 단일 경로.
+
+        Args:
+            handle: inventory 단위의 handle.
+
+        Returns:
+            pl.DataFrame 또는 None.
+
+        Raises:
+            없음.
+
+        Example:
+            >>> import dartlab
+            >>> dartlab.dossier("005930").get("NT_C_U800100")  # doctest: +SKIP  회사별 노트
+        """
+        # report apiType handle 은 report parquet 직독(panel 밖 병렬 surface).
+        reportKeys = {
+            c.dart.key for c in getExtractionConcepts() if isinstance(c.dart, DartSource) and c.dart.surface == "report"
+        }
+        if handle in reportKeys:
+            return self._extractReport(handle)
+        from dartlab.providers.dart.panel import Panel
+
+        p = Panel(self.code, marketNs=self.marketNs)
+        if p is None or getattr(p, "height", 0) == 0:
+            return None
+        return p(handle)
+
     def extract(self, conceptId: str) -> pl.DataFrame | None:
         """개념 1건을 카탈로그 표면 라우팅으로 실제 추출한다.
 

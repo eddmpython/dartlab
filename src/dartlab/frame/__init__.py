@@ -12,6 +12,7 @@ normalized view 제공. raw 생산 0 — 가공만. 본 단계 (P-CORE A) 에서
 """
 
 from dartlab.core import dataLoader as dataLoader
+from dartlab.frame import inventory as inventory
 from dartlab.frame import narrative as narrative
 
-__all__ = ["dataLoader", "narrative"]
+__all__ = ["dataLoader", "inventory", "narrative"]
