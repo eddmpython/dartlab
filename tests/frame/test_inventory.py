@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import polars as pl
+
 from dartlab.frame.inventory import (
     _narrativeConceptIndex,
     _normalizeTitle,
@@ -13,9 +15,9 @@ from dartlab.frame.inventory import (
 )
 
 
-def test_missingCompanyEmpty():
-    """미존재 회사는 빈 인벤토리(예외 없음)."""
-    inv = reportInventory("000000000")
+def test_emptyBoardEmptyInventory():
+    """빈 board 주입 시 빈 인벤토리(예외 없음, 네트워크 무접촉)."""
+    inv = reportInventory("000000000", board=pl.DataFrame())
     assert inv["summary"]["total"] == 0
     assert inv["units"] == []
 
@@ -43,7 +45,7 @@ def test_narrativeConceptIndexNonEmpty():
 
 
 def test_inventoryShapeContract():
-    """인벤토리 반환 계약(미존재 회사로 shape 검증)."""
-    inv = reportInventory("000000000")
+    """인벤토리 반환 계약(빈 board 로 shape 검증, 네트워크 무접촉)."""
+    inv = reportInventory("000000000", board=pl.DataFrame())
     assert set(inv.keys()) == {"code", "units", "summary"}
     assert set(inv["summary"].keys()) >= {"total", "byKind"}

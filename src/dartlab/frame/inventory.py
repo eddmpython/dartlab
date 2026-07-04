@@ -23,10 +23,13 @@ multi-axis 표의 cell 분해)은 상한 밖. US(EDGAR)는 Part/Item 구조라 �
 from __future__ import annotations
 
 import re
+from typing import Any
 
 import polars as pl
 
 from dartlab.core.extractionCatalog import DartSource, getExtractionConcepts
+
+_PERIOD_COL = re.compile(r"^\d{4}Q[1-4]$")
 
 _NATIVE_STATEMENTS = (
     ("is", "손익계산서"),
@@ -72,18 +75,23 @@ def _narrativeConceptIndex() -> list[tuple[str, str]]:
     return out
 
 
-def reportInventory(code: str, *, marketNs: str = "kr") -> dict:
-    """한 회사 사업보고서의 완전 인벤토리를 panel + report 에서 전수 자동 열거한다.
+def reportInventory(code: str, *, marketNs: str = "kr", board: Any = None) -> dict:
+    """한 회사 사업보고서의 완전 인벤토리를 정규화된 wide board + report 에서 전수 자동 열거한다.
+
+    전문에이전트 감사 반영: raw parquet 이 아니라 **reader 정규화 출력(Panel wide)** 에서 열거한다.
+    Panel(code) 은 alignNotes -> anchorLatest -> absorbAttached -> anchorNarrativeToSpine 을 거친
+    dedup·정규화 뷰라, 인벤토리 handle 이 get()/materialize() 가 검색하는 것과 정확히 일치한다
+    (round-trip 정합·첨부 중복 제거·회사별 코드 표준 흡수). raw 열거의 phantom 단위 문제를 제거한다.
 
     Args:
         code: 종목코드/티커.
         marketNs: "kr"(DART panel) / "us"(EDGAR panel).
+        board: 미리 로드한 Panel wide(materialize 가 1회 로드 재사용). None 이면 여기서 로드.
 
     Returns:
         {"code", "units": [unit...], "summary": {...}}. unit =
-        {handle, kind(note/narrative/statement/detail), title, normalizedTitle, chapter, scope,
-        periods, rows, hasTable, hasText, disclosureKey, conceptId}.
-        데이터 부재 시 units 빈 리스트.
+        {handle, kind(note/form/narrative/statement/report), title, normalizedTitle, chapter, scope,
+        periods, rows, hasTable, hasText, disclosureKey, conceptId, companySpecific}.
 
     Raises:
         없음.
@@ -94,58 +102,71 @@ def reportInventory(code: str, *, marketNs: str = "kr") -> dict:
         >>> inv["summary"]["total"]                       # doctest: +SKIP
 
     Capabilities:
-        - 손 카탈로그 없이 보고서 전 단위(표준·회사별 노트·내러티브·재무표) 열거 = 완전 탈탈털기.
+        - 손 카탈로그 없이 보고서 전 단위(표준·회사별 노트·정형표·내러티브·재무표·apiType) 열거.
 
     Guide:
         - "이 회사 사업보고서에 뭐가 다 있나" -> reportInventory(code)["units"].
-        - 단위 실제 추출 -> dossier.extract(unit["handle"]).
+        - 단위 실제 추출 -> dossier.get(unit["handle"]).
 
     AIContext:
         AI 가 보고서 전체를 탐색할 때 진입. 각 단위 handle 로 필요한 것만 lazy 추출.
 
     Requires:
-        - core.extractionCatalog(의미 태깅), providers panel parquet(열거 원천).
+        - core.extractionCatalog(의미 태깅), providers.dart.panel(정규화 열거 원천).
     """
-    path = _panelPath(code, marketNs)
     units: list[dict] = []
-    if not path.exists():
-        return {"code": code, "units": units, "summary": {"total": 0, "byKind": {}}}
-    try:
-        cols = [c for c in _INV_COLS if c in pl.scan_parquet(path).collect_schema().names()]
-        df = pl.read_parquet(path, columns=cols)
-    except (pl.exceptions.PolarsError, OSError):
-        return {"code": code, "units": units, "summary": {"total": 0, "byKind": {}}}
-    if df.is_empty() or "disclosureKey" not in df.columns:
-        return {"code": code, "units": units, "summary": {"total": 0, "byKind": {}}}
+    empty = {"code": code, "units": units, "summary": {"total": 0, "byKind": {}}}
+    if board is None:
+        board = _loadBoard(code, marketNs)
+    if board is None or getattr(board, "height", 0) == 0 or "disclosureKey" not in board.columns:
+        return empty
 
+    periodCols = [c for c in board.columns if _PERIOD_COL.match(c)]
     noteIdx = _noteConceptIndex()
     narrIdx = _narrativeConceptIndex()
 
-    units += _keyedUnits(df, noteIdx)  # NT_ 노트 + 임베디드 정형 ACLASS(TOT_STK·EMPLOYEE·VOT_STK 등)
-    units += _narrativeUnits(df, narrIdx)  # 내러티브 섹션(text/table)
-    units += _statementUnits(df)  # 재무 5표(native 분해)
+    units += _keyedUnits(board, periodCols, noteIdx)  # NT_ 노트 + 임베디드 정형 ACLASS
+    units += _narrativeUnits(board, periodCols, narrIdx)  # 내러티브 섹션
+    units += _statementUnits(board)  # 재무 5표(native 분해)
     units += _reportUnits(code, marketNs)  # OpenDART 정형공시 apiType(panel 밖 병렬 surface)
 
     byKind: dict[str, int] = {}
     for u in units:
         byKind[u["kind"]] = byKind.get(u["kind"], 0) + 1
     catalogued = sum(1 for u in units if u["conceptId"])
-    summary = {
-        "total": len(units),
-        "byKind": byKind,
-        "cataloguedUnits": catalogued,
-        "rawOnlyUnits": len(units) - catalogued,
+    return {
+        "code": code,
+        "units": units,
+        "summary": {
+            "total": len(units),
+            "byKind": byKind,
+            "cataloguedUnits": catalogued,
+            "rawOnlyUnits": len(units) - catalogued,
+        },
     }
-    return {"code": code, "units": units, "summary": summary}
 
 
-def _keyedUnits(df: pl.DataFrame, noteIdx: dict[str, str]) -> list[dict]:
-    """keyed 행(disclosureKey non-null) 전수 열거 후 분류.
+def _loadBoard(code: str, marketNs: str):
+    """Panel wide(정규화 뷰) 1회 로드. 부재/실패 시 None."""
+    try:
+        if marketNs == "us":
+            from dartlab.providers.edgar.panel import Panel
+        else:
+            from dartlab.providers.dart.panel import Panel
+
+        board = Panel(code, marketNs=marketNs)
+    except (FileNotFoundError, OSError, ValueError, MemoryError):
+        return None
+    return board
+
+
+def _keyedUnits(board: pl.DataFrame, periodCols: list[str], noteIdx: dict[str, str]) -> list[dict]:
+    """keyed 행(disclosureKey non-null) 전수 열거 후 분류 (정규화 wide board).
 
     NT_ -> note(표준 NT_D + 회사별 NT_C_U/NT_S_U), 재무표 키 -> 제외(native 5표가 대표),
     그 외 -> form(임베디드 정형 ACLASS: TOT_STK·DIVIDEND·EMPLOYEE·VOT_STK·SUB_*·INS_* + XII SUB_CMPN 등).
     """
-    keyed = df.filter(pl.col("disclosureKey").is_not_null() & (pl.col("disclosureKey") != ""))
+    keyed = board.filter(pl.col("disclosureKey").is_not_null() & (pl.col("disclosureKey") != ""))
     if keyed.is_empty():
         return []
     units: list[dict] = []
@@ -157,6 +178,7 @@ def _keyedUnits(df: pl.DataFrame, noteIdx: dict[str, str]) -> list[dict]:
         kind = "note" if isNote else "form"
         title = _dominantTitle(sub)
         leaf = set(sub.get_column("leafType").drop_nulls().to_list()) if "leafType" in sub.columns else set()
+        scope = _first(sub, "scope") or (("separate" if dk.endswith("5") else "consolidated") if isNote else None)
         units.append(
             {
                 "handle": dk,
@@ -164,8 +186,8 @@ def _keyedUnits(df: pl.DataFrame, noteIdx: dict[str, str]) -> list[dict]:
                 "title": title,
                 "normalizedTitle": _normalizeTitle(title),
                 "chapter": _first(sub, "chapter"),
-                "scope": ("separate" if dk.endswith("5") else "consolidated") if isNote else None,
-                "periods": _periods(sub),
+                "scope": scope,
+                "periods": _periods(sub, periodCols),
                 "rows": sub.height,
                 "hasTable": "table" in leaf,
                 "hasText": "text" in leaf,
@@ -230,9 +252,13 @@ def _isReport(c) -> bool:
     return isinstance(c.dart, DartSource) and c.dart.surface == "report"
 
 
-def _narrativeUnits(df: pl.DataFrame, narrIdx: list[tuple[str, str]]) -> list[dict]:
-    """내러티브 섹션 단위 열거 (disclosureKey null, chapter+sectionLeaf 그룹)."""
-    nar = df.filter(pl.col("disclosureKey").is_null())
+def _narrativeUnits(board: pl.DataFrame, periodCols: list[str], narrIdx: list[tuple[str, str]]) -> list[dict]:
+    """내러티브 섹션 단위 열거 (disclosureKey null, chapter+sectionLeaf 그룹, 정규화 wide board).
+
+    handle = sectionLeaf(panel sectionLeaf 매칭 라우팅). 정규화 wide board 라 라벨이 수렴되어 있어
+    (chapter,sectionLeaf) 그룹이 distinct 단위. 드문 동일-라벨 다른-chapter 는 get() 이 합집합 반환(무손실).
+    """
+    nar = board.filter(pl.col("disclosureKey").is_null())
     if nar.is_empty() or "sectionLeaf" not in nar.columns:
         return []
     units: list[dict] = []
@@ -251,7 +277,7 @@ def _narrativeUnits(df: pl.DataFrame, narrIdx: list[tuple[str, str]]) -> list[di
                 "normalizedTitle": _normalizeTitle(section),
                 "chapter": chapter,
                 "scope": None,
-                "periods": _periods(sub),
+                "periods": _periods(sub, periodCols),
                 "rows": sub.height,
                 "hasTable": "table" in leaf,
                 "hasText": "text" in leaf,
@@ -303,12 +329,10 @@ def _dominantTitle(sub: pl.DataFrame) -> str:
     return _first(sub, "sectionLeaf") or ""
 
 
-def _periods(sub: pl.DataFrame) -> list[str]:
-    """그룹의 distinct period 최신순."""
-    if "period" not in sub.columns:
-        return []
-    vals = [x for x in sub.get_column("period").drop_nulls().unique().to_list() if x]
-    return sorted(vals, reverse=True)
+def _periods(sub: pl.DataFrame, periodCols: list[str]) -> list[str]:
+    """그룹이 커버하는 period 컬럼(어떤 행이든 non-null) 최신순."""
+    covered = [pc for pc in periodCols if pc in sub.columns and sub.get_column(pc).drop_nulls().len() > 0]
+    return sorted(covered, reverse=True)
 
 
 def _first(sub: pl.DataFrame, col: str):

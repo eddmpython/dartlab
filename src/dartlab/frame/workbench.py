@@ -185,6 +185,64 @@ class Dossier:
             return None
         return p(handle)
 
+    def materialize(self, *, kinds: tuple[str, ...] | None = None) -> dict[str, pl.DataFrame | None]:
+        """인벤토리 전 단위를 Panel 1회 로드로 배치 추출한다 (OOM-safe round-trip).
+
+        get() 는 호출마다 Panel 을 새로 잡아 다수 단위 루프 시 Panel N회 로드(무겁다). materialize 는
+        Panel 을 1회 잡고 in-memory board 를 재사용해 모든 handle 을 추출한다. report apiType 는
+        report parquet 1회 로드로 apiType 필터.
+
+        Args:
+            kinds: 추출할 kind 필터(예 ("note","form")). None 이면 전부.
+
+        Returns:
+            {handle: DataFrame|None}.
+
+        Raises:
+            없음.
+
+        Example:
+            >>> import dartlab
+            >>> mats = dartlab.dossier("005930").materialize(kinds=("note",))  # doctest: +SKIP
+        """
+        from dartlab.frame.inventory import reportInventory
+        from dartlab.providers.dart.panel import Panel
+
+        board = Panel(self.code, marketNs=self.marketNs)  # 정규화 wide board 1회 로드(인벤토리·추출 공유)
+        inv = reportInventory(self.code, marketNs=self.marketNs, board=board)
+        reportDf = None
+        out: dict[str, pl.DataFrame | None] = {}
+        for u in inv.get("units", []):
+            if kinds is not None and u["kind"] not in kinds:
+                continue
+            handle = u["handle"]
+            if u["kind"] == "report":
+                if reportDf is None:
+                    reportDf = self._loadReportDf()
+                out[handle] = self._sliceReport(reportDf, handle)
+                continue
+            out[handle] = board(handle) if board is not None and getattr(board, "height", 0) > 0 else None
+        return out
+
+    def _loadReportDf(self) -> pl.DataFrame | None:
+        """report parquet 1회 로드."""
+        from dartlab.core.dataLoader import _dataDir
+
+        path = _dataDir("report") / f"{self.code}.parquet"
+        if not path.exists():
+            return None
+        try:
+            return pl.read_parquet(path)
+        except (pl.exceptions.PolarsError, OSError):
+            return None
+
+    def _sliceReport(self, reportDf: pl.DataFrame | None, apiType: str) -> pl.DataFrame | None:
+        """로드된 report df 에서 apiType 슬라이스."""
+        if reportDf is None or "apiType" not in reportDf.columns:
+            return None
+        df = reportDf.filter(pl.col("apiType") == apiType)
+        return df if not df.is_empty() else None
+
     def extract(self, conceptId: str) -> pl.DataFrame | None:
         """개념 1건을 카탈로그 표면 라우팅으로 실제 추출한다.
 
@@ -224,17 +282,8 @@ class Dossier:
         return None  # segmentTable(횡단) 은 scan 경로
 
     def _extractReport(self, apiType: str) -> pl.DataFrame | None:
-        """report parquet 에서 apiType 행을 직독(정형공시 raw)."""
-        from dartlab.core.dataLoader import _dataDir
-
-        path = _dataDir("report") / f"{self.code}.parquet"
-        if not path.exists():
-            return None
-        try:
-            df = pl.read_parquet(path).filter(pl.col("apiType") == apiType)
-        except (pl.exceptions.PolarsError, OSError):
-            return None
-        return df if not df.is_empty() else None
+        """report parquet 에서 apiType 행을 직독(정형공시 raw). 단건은 로드+슬라이스 위임."""
+        return self._sliceReport(self._loadReportDf(), apiType)
 
     def category(self, category: str) -> dict[str, pl.DataFrame | None]:
         """한 카테고리의 전 개념을 조립해 {conceptId: DataFrame|None} 로 반환한다.
