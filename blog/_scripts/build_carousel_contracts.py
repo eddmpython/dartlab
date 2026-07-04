@@ -53,6 +53,7 @@ from dartlab.pipeline.hfUpload import _resolveHfToken
 
 ROOT = Path(__file__).resolve().parents[2]
 BLOG_DIR = ROOT / "blog" / "05-company-reports"
+TECH_DIR = ROOT / "blog" / "08-tech-story"  # 기술이야기: frontmatter carousel 블록 있는 글도 카드로 발행
 ISSUES_DIR = ROOT / "blog" / "_issues"  # standalone 이슈 캐러셀(블로그 글 없음) — code 없는 경제/시국 카드
 MEDIA_PREFIX = "carousels"
 ISSUE_MEDIA_PREFIX = "issues"  # 이슈 이미지 hfMedia 네임스페이스(companies/ 와 병렬, 콘텐츠해시 파일명)
@@ -532,6 +533,8 @@ def main() -> None:
     repo_files = _list_repo_files(HfApi(), args.repo)
 
     contracts = build_contracts()  # 회사 계약(블로그 frontmatter)
+    for _slug, _c in build_contracts(TECH_DIR).items():  # 기술이야기 계약(frontmatter carousel)
+        contracts.setdefault(_slug, _c)
     issue_contracts, image_ops = build_issue_contracts(ISSUES_DIR, repo_files)  # standalone 이슈
     for slug, c in issue_contracts.items():
         if slug in contracts:
