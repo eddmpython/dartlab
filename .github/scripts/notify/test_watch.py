@@ -151,3 +151,35 @@ def test_cap_matches_under_cap_keeps_all():
     ms = [{"topic": "newIpo", "slug": "a"}, {"topic": "newOrders", "slug": "b"}]
     kept, dropped = watch.cap_matches(ms)
     assert len(kept) == 2 and dropped == []
+
+
+# ── stateful 라우팅 (threshold_cross /active set-diff) ────────────────
+def test_new_orders_is_stateful():
+    """newOrders 는 stateful(/active 커서), newIpo 는 stateless(/send 영구 nonce)."""
+    assert "newOrders" in watch._STATEFUL_TOPICS
+    assert "newIpo" not in watch._STATEFUL_TOPICS
+
+
+def test_send_stateful_maps_matches_to_active(monkeypatch):
+    """stateful 발송은 전체 매치 set 을 key+notification 으로 /active 에 전달(허브가 diff)."""
+    captured = {}
+
+    def fake_post_active(hub, token, topic, matches, ts):
+        captured["topic"] = topic
+        captured["matches"] = matches
+        return 200, {"entered": 1, "sent": 1, "failed": 0}
+
+    monkeypatch.setattr(watch, "post_active", fake_post_active)
+    problems = watch._send_stateful(
+        "h", "tok", "newOrders", [{"topic": "newOrders", "slug": "005930", "notification": {"title": "x"}}], 123
+    )
+    assert problems == []
+    assert captured["topic"] == "newOrders"
+    assert captured["matches"] == [{"key": "005930", "notification": {"title": "x"}}]
+
+
+def test_send_stateful_total_fail_is_problem(monkeypatch):
+    """전건 발송 실패(entered>0, sent=0, failed>0)는 problem(RED)."""
+    monkeypatch.setattr(watch, "post_active", lambda *a: (200, {"entered": 2, "sent": 0, "failed": 5}))
+    problems = watch._send_stateful("h", "tok", "newOrders", [{"slug": "A", "notification": {}}], 1)
+    assert len(problems) == 1

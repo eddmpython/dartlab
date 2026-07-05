@@ -36,6 +36,31 @@ def post_to_hub(hub: str, token: str, topic: str, slug: str, notification: dict,
         return 0, None
 
 
+def post_active(hub: str, token: str, topic: str, matches: list[dict], ts: int) -> tuple[int, dict | None]:
+    """stateful 토픽(threshold_cross) 활성 매치 set 1 POST. 허브가 직전 set 과 diff 해 신규 진입만 발화.
+
+    per-match /send(영구 nonce) 대신 set-diff 커서 경로(재크로싱, 하락 후 재상승 발화용). (status, body) 반환.
+    """
+    raw = serialize_body({"topic": topic, "matches": matches})
+    headers = {
+        "X-DL-Ts": str(ts),
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+    req = urllib.request.Request(hub + "/active", data=raw, method="POST", headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.status, json.loads(r.read().decode("utf-8") or "{}")
+    except urllib.error.HTTPError as e:
+        try:
+            body = json.loads(e.read().decode("utf-8") or "{}")
+        except Exception:
+            body = None
+        return e.code, body
+    except Exception:
+        return 0, None
+
+
 def classify(status: int) -> str:
     """발송 응답 → 'ok' | 'dup'(409 멱등) | 'problem'(401/5xx/네트워크 = RED)."""
     if status == 0 or status == 401 or status >= 500:

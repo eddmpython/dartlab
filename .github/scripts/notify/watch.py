@@ -6,8 +6,8 @@
 
   - newIpo   = scan('ipo') 신규상장. slug=corpCode(발행사 안정키) 등장 1회 + confirmationRcept 있으면
                확정공모가 1회(청약 임박). 기재정정마다 rcept 가 바뀌어도 재발화 없음(발행사별 1회 보장).
-  - newOrders = scan('orders') book-to-bill >= 1. slug=stockCode 회사별 최초 1회(허브 nonce 영구 dedup).
-               재크로싱(하락 후 재상승)은 현재 미발화. state-diff 커서는 롤아웃 전 후속(01-arch §5).
+  - newOrders = scan('orders') book-to-bill >= 1. 허브 /active set-diff 커서(topicActive)로 신규 진입만
+               발화, 하락 후 재상승(재크로싱)은 재발화(01-arch §5 threshold_cross). slug=stockCode.
 
 설계: mainPlan/watcher-notify-platform/01-architecture.md §2·§5 · 04 §1 P2.
 실행: uv run python -X utf8 .github/scripts/notify/watch.py [--topics newIpo,newOrders] [--dry-run]
@@ -21,7 +21,7 @@ import os
 import sys
 import time
 
-from hubClient import classify, post_to_hub
+from hubClient import classify, post_active, post_to_hub
 from sanitize import sanitize
 
 _TERMINAL = "/terminal"  # 클릭 자기 라우트(피싱 차단).
@@ -119,10 +119,10 @@ def eval_new_ipo(df=None) -> list[dict]:
 
 
 def eval_new_orders(df=None, min_book_to_bill: float = 1.0) -> list[dict]:
-    """scan('orders') book-to-bill>=1 회사별 최초 1회 매치(허브 nonce 영구 dedup). micro-cap/잡음 가드(매출·계약건수).
+    """scan('orders') book-to-bill>=1 레벨 매치 반환. micro-cap/잡음 가드(매출·계약건수).
 
-    현재는 레벨 체크 + 영구 dedup 이라 하락 후 재상승(진짜 재크로싱)은 미발화. 진짜 threshold_cross(직전
-    매치셋 대비 신규 진입만)는 롤아웃 전 후속(01-architecture §5 state-diff 커서, 상태저장 필요).
+    발화 dedup 은 허브 /active 커서(topicActive)가 처리(_send_stateful): 직전 활성 set 과 diff 해 신규
+    진입만 발송하고, 하락으로 이탈한 종목은 set 에서 빠져 재상승(재크로싱) 시 다시 발화(01-arch §5).
     """
     if df is None:
         import dartlab
@@ -160,6 +160,9 @@ def eval_new_orders(df=None, min_book_to_bill: float = 1.0) -> list[dict]:
 
 _EVALUATORS = {"newIpo": eval_new_ipo, "newOrders": eval_new_orders}
 
+# threshold_cross(돌파형) 토픽 = 허브 /active set-diff 커서 경로(재크로싱 발화). new_listing 형은 stateless /send.
+_STATEFUL_TOPICS = {"newOrders"}
+
 # 발송 위생. 토픽별 발송 cap(콜드스타트 폭주 가드). 24h dedupe 는 허브 sentNonce 가 영구 멱등으로 처리(불요).
 # 조용한 시간(22~08)은 cron 발화시각(평일 17시 KST)이 구조적으로 회피(야간 배치 큐 미도입, YAGNI).
 # newIpo=40: 윈도 발행사(~30) + confirmation 신호 여유. 초과분은 로그(newest-first 정렬이라 최신부터 발송,
@@ -186,45 +189,14 @@ def cap_matches(matches: list[dict], caps: dict[str, int] = _TOPIC_CAP) -> tuple
     return kept, dropped
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser(description="공개 왓처 토픽 러너")
-    ap.add_argument("--topics", default="newIpo,newOrders", help="콤마구분 토픽(기본 전체)")
-    ap.add_argument("--dry-run", action="store_true", help="POST 생략(매치만)")
-    args = ap.parse_args()
-
-    hub = os.environ.get("PUSHHUB_URL", "").rstrip("/")
-    token = os.environ.get("PUSHHUB_SEND_TOKEN", "")
-    if not args.dry_run and (not hub or not token):
-        # 허브 미배포/secret 미설정 = 롤아웃 전 = graceful no-op(scan 도 생략, RED 아님). 배포 후 자동 활성.
-        print("[watch] PUSHHUB 미설정 — skip(허브 미배포·롤아웃 전)", flush=True)
-        return 0
-
-    topics = [t.strip() for t in args.topics.split(",") if t.strip() in _EVALUATORS]
-    matches: list[dict] = []
-    for t in topics:
-        found = _EVALUATORS[t]()
-        print(f"[watch] {t}: 매치 {len(found)}건", flush=True)
-        matches += found
-
-    if args.dry_run:
-        for m in matches:
-            print(
-                f"[watch] dry-run {m['topic']}:{m['slug']}: {json.dumps(m['notification'], ensure_ascii=False)}",
-                flush=True,
-            )
-        return 0
-    if not matches:
-        print("[watch] 매치 0 — no-op", flush=True)
-        return 0
-
-    matches, dropped = cap_matches(matches)
-    for m in dropped:  # 조용한 절단 금지 — 드롭 명시 로그
+def _send_stateless(hub, token, matches: list[dict], ts: int) -> list[str]:
+    """new_listing 형 토픽 per-match /send + 토픽 cap. problems 리스트 반환(전건 실패만 RED)."""
+    kept, dropped = cap_matches(matches)
+    for m in dropped:  # 조용한 절단 금지, 드롭 명시 로그
         print(f"[watch] cap 초과 drop: {m['topic']}:{m['slug']}", flush=True)
-
-    ts = int(time.time())
     new_sent = dup = 0
     problems: list[str] = []
-    for m in matches:
+    for m in kept:
         status, body = post_to_hub(hub, token, m["topic"], m["slug"], m["notification"], ts)
         kind = classify(status)
         b = body or {}
@@ -244,11 +216,72 @@ def main() -> int:
                     f"::warning::{m['topic']}:{m['slug']} 부분 발송 실패(sent={sent_n}, failed={failed_n})", flush=True
                 )
             print(f"[watch] {m['topic']}:{m['slug']} → sent={sent_n}", flush=True)
+    print(f"[watch] stateless 신규 {new_sent}건 · dup {dup}건 · 실패 {len(problems)}건", flush=True)
+    return problems
 
-    print(f"[watch] 신규 발송 {new_sent}건 · 기존(dup) {dup}건 · 실패 {len(problems)}건", flush=True)
+
+def _send_stateful(hub, token, topic: str, matches: list[dict], ts: int) -> list[str]:
+    """threshold_cross 토픽 활성 매치 set 전체를 /active 로. 허브가 직전 set 과 diff 해 신규 진입만 발화.
+
+    재크로싱(하락 후 재상승) 발화를 위해 per-match /send(영구 nonce) 대신 set-diff 커서 경로 사용.
+    """
+    active = [{"key": m["slug"], "notification": m["notification"]} for m in matches]
+    status, body = post_active(hub, token, topic, active, ts)
+    b = body or {}
+    if classify(status) == "problem":
+        return [f"{topic} /active 실패(HTTP {status})"]
+    entered = int(b.get("entered") or 0)
+    sent_n = int(b.get("sent") or 0)
+    failed_n = int(b.get("failed") or 0)
+    print(f"[watch] {topic}: 신규진입 {entered}건 · sent={sent_n} · failed={failed_n}", flush=True)
+    if entered and sent_n == 0 and failed_n:
+        return [f"{topic} 전건 발송 실패(failed={failed_n})"]
+    if failed_n:
+        print(f"::warning::{topic} 부분 발송 실패(sent={sent_n}, failed={failed_n})", flush=True)
+    return []
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="공개 왓처 토픽 러너")
+    ap.add_argument("--topics", default="newIpo,newOrders", help="콤마구분 토픽(기본 전체)")
+    ap.add_argument("--dry-run", action="store_true", help="POST 생략(매치만)")
+    args = ap.parse_args()
+
+    hub = os.environ.get("PUSHHUB_URL", "").rstrip("/")
+    token = os.environ.get("PUSHHUB_SEND_TOKEN", "")
+    if not args.dry_run and (not hub or not token):
+        # 허브 미배포/secret 미설정 = 롤아웃 전 = graceful no-op(scan 도 생략, RED 아님). 배포 후 자동 활성.
+        print("[watch] PUSHHUB 미설정 — skip(허브 미배포·롤아웃 전)", flush=True)
+        return 0
+
+    topics = [t.strip() for t in args.topics.split(",") if t.strip() in _EVALUATORS]
+    by_topic: dict[str, list[dict]] = {}
+    for t in topics:
+        found = _EVALUATORS[t]()
+        print(f"[watch] {t}: 매치 {len(found)}건", flush=True)
+        by_topic[t] = found
+
+    if args.dry_run:
+        for found in by_topic.values():
+            for m in found:
+                print(
+                    f"[watch] dry-run {m['topic']}:{m['slug']}: {json.dumps(m['notification'], ensure_ascii=False)}",
+                    flush=True,
+                )
+        return 0
+
+    ts = int(time.time())
+    problems: list[str] = []
+    for t, found in by_topic.items():
+        # threshold_cross 는 /active set-diff(재크로싱 발화), new_listing 형은 per-match /send.
+        if t in _STATEFUL_TOPICS:
+            problems += _send_stateful(hub, token, t, found, ts)
+        else:
+            problems += _send_stateless(hub, token, found, ts)
+
     if problems:
         for p in problems:
-            print(f"::error::왓처 발송 실패 — {p}", flush=True)
+            print(f"::error::왓처 발송 실패: {p}", flush=True)
         return 1
     return 0
 

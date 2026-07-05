@@ -219,7 +219,48 @@ async function handleUnsubscribe(req, env, cors) {
 	return new Response(JSON.stringify({ ok: true }), { headers: { ...cors, 'Content-Type': 'application/json' } });
 }
 
-// ── /send (러너 전용 — Bearer + nonce, CORS 없음) ──────────────────
+// ── fan-out helper (handleSend·handleActive 공유). 토픽 구독자에 notification 1건 암호화 발송 ──
+async function broadcast(env, subs, notification) {
+	const plaintext = enc.encode(JSON.stringify(notification));
+	const privKey = await importVapidPrivKey(env);
+	const jwtByOrigin = {};
+	const vapidK = env.VAPID_PUBLIC_KEY;
+	async function sendOne(sub) {
+		const audOrigin = new URL(sub.endpoint).origin;
+		if (!jwtByOrigin[audOrigin]) jwtByOrigin[audOrigin] = await makeVapidJwt(audOrigin, privKey, env);
+		const cipher = await encryptPayload(plaintext, b64urlToBytes(sub.p256dh), b64urlToBytes(sub.auth));
+		const res = await fetch(sub.endpoint, {
+			method: 'POST',
+			headers: {
+				'Content-Encoding': 'aes128gcm',
+				'Content-Type': 'application/octet-stream',
+				TTL: String(PUSH_TTL_S),
+				Urgency: 'normal',
+				Authorization: `vapid t=${jwtByOrigin[audOrigin]}, k=${vapidK}`
+			},
+			body: cipher
+		});
+		return { endpoint: sub.endpoint, status: res.status };
+	}
+	let sent = 0;
+	let failed = 0;
+	const toPurge = [];
+	for (let i = 0; i < subs.length; i += SEND_CHUNK) {
+		const chunk = subs.slice(i, i + SEND_CHUNK);
+		const settled = await Promise.allSettled(chunk.map((s) => sendOne(s)));
+		for (const r of settled) {
+			if (r.status === 'fulfilled') {
+				const st = r.value.status;
+				if (st >= 200 && st < 300) sent++;
+				else if (st === 404 || st === 410) toPurge.push(r.value.endpoint);
+				else failed++; // 429/5xx 보존(재시도 가능)
+			} else failed++;
+		}
+	}
+	return { sent, failed, toPurge };
+}
+
+// ── /send (러너 전용, Bearer + nonce, CORS 없음) ──────────────────
 async function handleSend(req, env) {
 	const auth = req.headers.get('Authorization') || '';
 	const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
@@ -276,47 +317,7 @@ async function handleSend(req, env) {
 		return new Response(JSON.stringify({ sent: 0, pruned: 0, failed: 0 }), { headers: { 'Content-Type': 'application/json' } });
 	}
 
-	const plaintext = enc.encode(JSON.stringify(notification)); // 평문 = notification 서브객체만(봉투 아님)
-	const privKey = await importVapidPrivKey(env);
-	const jwtByOrigin = {};
-	const vapidK = env.VAPID_PUBLIC_KEY;
-
-	async function sendOne(sub) {
-		const audOrigin = new URL(sub.endpoint).origin;
-		if (!jwtByOrigin[audOrigin]) jwtByOrigin[audOrigin] = await makeVapidJwt(audOrigin, privKey, env);
-		const cipher = await encryptPayload(plaintext, b64urlToBytes(sub.p256dh), b64urlToBytes(sub.auth));
-		const res = await fetch(sub.endpoint, {
-			method: 'POST',
-			headers: {
-				'Content-Encoding': 'aes128gcm',
-				'Content-Type': 'application/octet-stream',
-				TTL: String(PUSH_TTL_S),
-				Urgency: 'normal',
-				Authorization: `vapid t=${jwtByOrigin[audOrigin]}, k=${vapidK}`
-			},
-			body: cipher
-		});
-		return { endpoint: sub.endpoint, status: res.status };
-	}
-
-	let sent = 0;
-	let failed = 0;
-	const toPurge = [];
-	for (let i = 0; i < subs.length; i += SEND_CHUNK) {
-		const chunk = subs.slice(i, i + SEND_CHUNK);
-		const settled = await Promise.allSettled(chunk.map((s) => sendOne(s)));
-		for (let j = 0; j < settled.length; j++) {
-			const r = settled[j];
-			if (r.status === 'fulfilled') {
-				const st = r.value.status;
-				if (st >= 200 && st < 300) sent++;
-				else if (st === 404 || st === 410) toPurge.push(r.value.endpoint);
-				else failed++; // 429/5xx 보존(재시도 가능)
-			} else {
-				failed++;
-			}
-		}
-	}
+	const { sent, failed, toPurge } = await broadcast(env, subs, notification);
 
 	let pruned = 0;
 	if (toPurge.length) {
@@ -337,6 +338,78 @@ async function handleSend(req, env) {
 	return new Response(JSON.stringify({ sent, pruned, failed }), { headers: { 'Content-Type': 'application/json' } });
 }
 
+// ── /active (러너 전용, Bearer + ts). threshold_cross stateful 토픽 set-diff 커서 ──
+// 직전 활성 set 과 현재 매치 set 을 diff 해 신규 진입(entered)만 발화하고 활성 set 을 교체한다.
+// 이탈(하락)한 key 는 set 에서 제거되어 재진입(재크로싱) 시 다시 entered 로 발화(sentNonce 영구 dedup 회피).
+async function handleActive(req, env) {
+	const auth = req.headers.get('Authorization') || '';
+	const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+	if (!env.PUSHHUB_SEND_TOKEN || !timingSafeEqual(token, env.PUSHHUB_SEND_TOKEN)) return new Response('unauthorized', { status: 401 });
+	const ts = parseInt(req.headers.get('X-DL-Ts') || '0', 10);
+	if (!Number.isFinite(ts) || Math.abs(nowSec() - ts) > NONCE_WINDOW_S) return new Response('stale ts', { status: 401 });
+	let body;
+	try {
+		body = await req.json();
+	} catch {
+		return new Response('bad json', { status: 400 });
+	}
+	const topic = String(body?.topic ?? '');
+	if (!TOPIC_ALLOWLIST.has(topic)) return new Response('bad topic', { status: 422 });
+	const matches = Array.isArray(body?.matches) ? body.matches.filter((m) => m && m.key != null) : [];
+
+	let prevRows;
+	try {
+		prevRows = (await env.PUSHHUB_DB.prepare(`SELECT matchKey FROM topicActive WHERE topic=?`).bind(topic).all()).results;
+	} catch {
+		return new Response('db error', { status: 502 });
+	}
+	const prev = new Set(prevRows.map((r) => r.matchKey));
+	const entered = matches.filter((m) => !prev.has(String(m.key)));
+
+	// 활성 set 교체(현재 매치만 남긴다. 이탈 key 는 제거되어 재진입 시 다시 entered).
+	try {
+		await env.PUSHHUB_DB.prepare(`DELETE FROM topicActive WHERE topic=?`).bind(topic).run();
+		for (const m of matches) {
+			await env.PUSHHUB_DB.prepare(`INSERT OR IGNORE INTO topicActive (topic, matchKey) VALUES (?, ?)`).bind(topic, String(m.key)).run();
+		}
+	} catch {
+		return new Response('db error', { status: 502 });
+	}
+
+	if (!entered.length) return new Response(JSON.stringify({ entered: 0, sent: 0, failed: 0, pruned: 0 }), { headers: { 'Content-Type': 'application/json' } });
+
+	let subs;
+	try {
+		subs = (
+			await env.PUSHHUB_DB.prepare(`SELECT s.endpoint, s.p256dh, s.auth FROM topicSubs t JOIN subscriptions s ON s.endpoint=t.endpoint WHERE t.topic=?`).bind(topic).all()
+		).results;
+	} catch {
+		return new Response('db error', { status: 502 });
+	}
+	let sent = 0;
+	let failed = 0;
+	const toPurge = [];
+	for (const m of entered) {
+		if (!m.notification || typeof m.notification !== 'object') continue;
+		const r = await broadcast(env, subs, m.notification);
+		sent += r.sent;
+		failed += r.failed;
+		toPurge.push(...r.toPurge);
+	}
+	let pruned = 0;
+	if (toPurge.length) {
+		try {
+			const uniq = [...new Set(toPurge)];
+			const marks = uniq.map(() => '?').join(',');
+			await env.PUSHHUB_DB.prepare(`DELETE FROM subscriptions WHERE endpoint IN (${marks})`).bind(...uniq).run();
+			pruned = uniq.length;
+		} catch {
+			/* purge 실패 비치명 */
+		}
+	}
+	return new Response(JSON.stringify({ entered: entered.length, sent, failed, pruned }), { headers: { 'Content-Type': 'application/json' } });
+}
+
 // ── 디스패치 ───────────────────────────────────────────────────────
 export default {
 	async fetch(req, env) {
@@ -347,6 +420,12 @@ export default {
 			if (req.method !== 'POST') return new Response('method not allowed', { status: 405 });
 			if (!env.PUSHHUB_DB) return new Response('db not configured', { status: 503 });
 			return handleSend(req, env);
+		}
+
+		if (path === '/active') {
+			if (req.method !== 'POST') return new Response('method not allowed', { status: 405 });
+			if (!env.PUSHHUB_DB) return new Response('db not configured', { status: 503 });
+			return handleActive(req, env);
 		}
 
 		if (path === '/subscribe') {

@@ -9,3 +9,6 @@ CREATE TABLE IF NOT EXISTS topicSubs (
 CREATE INDEX IF NOT EXISTS topicSubsTopicIdx ON topicSubs (topic);
 CREATE TABLE IF NOT EXISTS sentNonce (nonce TEXT PRIMARY KEY, ts INTEGER NOT NULL);
 CREATE INDEX IF NOT EXISTS sentNonceTsIdx ON sentNonce (ts);
+-- threshold_cross 상태 커서 (직전 활성 매치 set). stateful 토픽(newOrders) 재크로싱 감지용.
+-- 원천 데이터 베이크 아님 = 알림 dedup 메타(01-architecture §5). stateless 토픽(newIpo)은 미사용.
+CREATE TABLE IF NOT EXISTS topicActive (topic TEXT NOT NULL, matchKey TEXT NOT NULL, PRIMARY KEY (topic, matchKey));

@@ -35,12 +35,25 @@ async function seedSub(endpoint = FCM, topic = 'blogPublish') {
 }
 
 const NOTIF = { topic: 'blogPublish', notification: { title: '[새 글] 제목', body: '요약', url: '/blog/foo', tag: 'blog:foo' } };
+const ORDERS_NOTIF = { title: '[신규수주] 테스트조선 백로그 확대', body: 'book-to-bill 2.10', url: '/terminal?sym=111111', tag: 'orders:111111' };
+
+async function active({ token = TOKEN, ts = nowSec(), body = null } = {}) {
+	const ctx = createExecutionContext();
+	const headers = { 'Content-Type': 'application/json' };
+	if (token !== null) headers['Authorization'] = `Bearer ${token}`;
+	if (ts !== null) headers['X-DL-Ts'] = String(ts);
+	const req = new Request('https://hub.example/active', { method: 'POST', headers, body: body ? JSON.stringify(body) : '{}' });
+	const res = await worker.fetch(req, env, ctx);
+	await waitOnExecutionContext(ctx);
+	return res;
+}
 
 beforeAll(() => fetchMock.activate());
 beforeEach(async () => {
 	await env.PUSHHUB_DB.exec('DELETE FROM topicSubs');
 	await env.PUSHHUB_DB.exec('DELETE FROM subscriptions');
 	await env.PUSHHUB_DB.exec('DELETE FROM sentNonce');
+	await env.PUSHHUB_DB.exec('DELETE FROM topicActive');
 });
 afterEach(() => fetchMock.assertNoPendingInterceptors());
 
@@ -111,5 +124,39 @@ describe('/send 발송', () => {
 		const retry = await send({ nonce: 'nce-fail', body: NOTIF });
 		expect(retry.status).toBe(200);
 		expect((await retry.json()).sent).toBe(1);
+	});
+});
+
+describe('/active threshold_cross 커서', () => {
+	it('Bearer 누락 → 401', async () => {
+		expect((await active({ token: null, body: { topic: 'newOrders', matches: [] } })).status).toBe(401);
+	});
+	it('알 수 없는 토픽 → 422', async () => {
+		expect((await active({ body: { topic: 'nope', matches: [] } })).status).toBe(422);
+	});
+	it('신규 진입(entered)만 발화', async () => {
+		await seedSub(FCM, 'newOrders');
+		fetchMock.get(FCM_ORIGIN).intercept({ method: 'POST', path: FCM_PATH }).reply(201, '');
+		const j = await (await active({ body: { topic: 'newOrders', matches: [{ key: 'A', notification: ORDERS_NOTIF }] } })).json();
+		expect(j.entered).toBe(1);
+		expect(j.sent).toBe(1);
+	});
+	it('지속 활성은 재발화 안 함(entered 0, fetch 없음)', async () => {
+		await seedSub(FCM, 'newOrders');
+		fetchMock.get(FCM_ORIGIN).intercept({ method: 'POST', path: FCM_PATH }).reply(201, '');
+		await active({ body: { topic: 'newOrders', matches: [{ key: 'A', notification: ORDERS_NOTIF }] } });
+		const j2 = await (await active({ body: { topic: 'newOrders', matches: [{ key: 'A', notification: ORDERS_NOTIF }] } })).json();
+		expect(j2.entered).toBe(0); // 이미 활성 → 재발화 없음(fetch 인터셉터 미소비)
+		expect(j2.sent).toBe(0);
+	});
+	it('재크로싱(하락 후 재상승)은 재발화', async () => {
+		await seedSub(FCM, 'newOrders');
+		fetchMock.get(FCM_ORIGIN).intercept({ method: 'POST', path: FCM_PATH }).reply(201, '');
+		await active({ body: { topic: 'newOrders', matches: [{ key: 'A', notification: ORDERS_NOTIF }] } }); // 최초 진입
+		await active({ body: { topic: 'newOrders', matches: [] } }); // A 하락(이탈) → 활성 set 에서 제거
+		fetchMock.get(FCM_ORIGIN).intercept({ method: 'POST', path: FCM_PATH }).reply(201, '');
+		const j3 = await (await active({ body: { topic: 'newOrders', matches: [{ key: 'A', notification: ORDERS_NOTIF }] } })).json(); // 재크로싱
+		expect(j3.entered).toBe(1); // 재진입 발화(sentNonce 영구 dedup 이었다면 미발화였을 것)
+		expect(j3.sent).toBe(1);
 	});
 });
