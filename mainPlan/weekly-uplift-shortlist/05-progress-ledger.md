@@ -4,6 +4,7 @@
 
 | 일자 | 항목 | 내용 |
 |---|---|---|
+| 2026-07-05 | 설계 v0.6.1 (배치 정정) | 운영자 자기정정("L3 로 올리면 story 가 못 쓴다") + 실측: **시뮬레이터는 이미 L2.5 에 실재·승인됨** (scenario-simulator 결정론 코어 9945f6f1f~ac3905fd9 공개 verb dartlab.simulate + expectation-grid 원장 P1~P6, 2026-07-03 운영자 "진행해 승인"·라이브 발행. dossier 와 달리 정당 이력). 따라서 **L3 신설 폐기 → 기존 L2.5 simulate 확장** (신설 엔진 0, D1 명칭 결정 소멸, story·ai 가 하향 소비 가능). README·01·02 개정 |
 | 2026-07-05 | **설계 v0.6 (토론 종결 합의·백지 재작성)** | 운영자 최종 방향 합의: **story 동급 L3 시뮬레이터 신설** = 한곳에서 전 하위 엔진 호출·성격/카테고리 투영·의견화 + 수백수천 가정 sweep. AI 수정 1건 수용: 선정은 최고성적 가정이 아니라 **가정 강건성(median)**, 가정 자체도 봉인·채점 (다중검정 규율). 판독 표면은 카탈로그 자동 전수 등재(선별 0, 방향화 규칙도 선언, 무방향 등재 허용), 독립성 묶음은 상관이 정함. **개별 데이터 작업대 폐기 방향 확정**: dossier(80e8dde7c, 운영자 불인정) 제거 커밋 df41ee60e (workbench.py·테스트 2종·facade·scenarios 등록 삭제, frame/inventory 열거 능력은 보존). 원칙: 호출계약은 엔진 소유 verb 로만, 프론트 작업대(ui fetch)만 유지. 문서는 패치 누적 난잡으로 백지 재작성 (README·01-design·02-build·03-gaps, 구 00~04 삭제). 잔여 결정: D1 엔진 명칭·D3 갭 승격. v0.2~v0.5 행은 이력 보존 |
 | 2026-07-05 | 설계 v0.1 | PRD 문서군 6종 작성 (엔진 스펙 15종 + quant/scan/simulate 코드 실측 정찰 기반). 착수는 운영자 승인 대기 (00 §8 A1~A4) |
 | 2026-07-05 | 설계 v0.2 | 운영자 지적("단순 랭크로?") 반영 정정: 고정 프리셋 가중 폐기 → 가중 사다리 W0/W1/W2 (정본 = 주간 Fama-MacBeth + shrinkage, purged walk-forward 검증, numpy-only). 신호셋 5d 지평 정합(단기 reversal·수급 지속·PEAD 조건부 추가, FUND 레벨 랭크 우대 제거). family 내 상관 중복 처리(P0 상관 실측 → 대표 등록). 02·03·04 개정 |
@@ -12,13 +13,15 @@
 | 2026-07-05 | 설계 v0.4 | 운영자 지적 2건 반영: ① **panel·finance 심화 활용** 보강 (01 §2.6: fund 를 scan 파생 표면에서 panel 전계정 직독으로 격상. 델타·PEAD 윈도우 신호 6종 + 정정공시 look-ahead 함정 명시) ② **판독기 단위 = 엔진 그 자체** (02 v0.4: 판독기 = 엔진별 공개 verb 작업대의 표준화 어댑터, engine.axisGroup 단위 13종. 독립성은 family 태그로 분리. 라이브 호출 = 그 자체가 PIT 라 전 엔진 즉시 봉인 시작 가능, replay 는 재구성 가능한 엔진만. family 내 메아리 이중가중 통제) |
 | 2026-07-05 | 설계 v0.3 | 운영자 지시 2건 반영 구조 전환: ① "오를 기업 선정기"가 아니라 **엔진별 판독기 시뮬레이터**. 판독기 8종이 매주 전종목에 독립 의견(방향·강도·기권) 발행 → 전량 봉인 → 5거래일 뒤 엔진별 채점 → reader scorecard(시장·산업·레짐·종목, empirical-Bayes 수축) 누적. 메타 가중 = 측정된 신뢰도. 후보 100/10 은 파생 뷰. ② **EDGAR 통합**: 판독기·채점기 시장 파라미터화(KR+US), 시장 내 완결(혼합 순위 금지). US 는 fund/event/text/credit 즉시 가능, price/forecast 는 G9 선결. 갭 G9(US 가격 벌크)·G10(US flow: FINRA·13F·Form4) 추가, 승인 A5 추가. 전 문서 개정 |
 
-## 대기 중 결정
+## 대기 중 결정 (v0.6.1 정리)
 
-- [ ] A1 : L3 `src/dartlab/shortlist/` 신설 승인
-- [ ] A2 : `simulate/expectationCycle.issueReadings` collector 추가 승인 (expectation-grid 진행·볼륨과 조율)
-- [ ] A3 : G1 KR 전종목 수급 벌크 sync 신설 (P4 시점 재상정)
-- [ ] A4 : naverTheme 로컬 전용 사용 범위 확인
-- [ ] A5 : G9 US 전종목 가격 벌크 백본 (P0 소스 실측 후 상정)
+- [x] ~~A1 L3 신설~~ : 소멸 (기존 L2.5 simulate 확장으로 합의, 신설 0)
+- [x] ~~A2 collector 확장~~ : 합의 설계에 포함 (issueReadings = issueMacro 동형 확장)
+- [x] ~~A4 naverTheme~~ : 상시 규약으로 정리 (로컬 전용·공개 산출물 0, 03-gaps 하단)
+- [x] ~~D2 dossier 처분~~ : 폐기 완료 (df41ee60e)
+- [ ] D3-a : G1 KR 전종목 수급 벌크 sync 신설 (P4 시점 상정)
+- [ ] D3-b : G9 US 가격 재bake 복구 패스 실행 (edgarPrices 스테이지 재실행)
+- [ ] D3-c : G5 KRX 시장조치 수집 (P4 시점 상정)
 
 ## P0 실측 기록
 
