@@ -27,7 +27,8 @@ EVENT_WRAPPERS: tuple[str, ...] = (
 )
 
 # 가격 축 신호 (quant/scan guide 파생. 방향 규칙: 고 랭크 = 상방 선언, 성적표가 부호 검증).
-_PRICE_SIGNALS: tuple[str, ...] = ("ret5", "mom20x5", "volShock", "high52")
+# maxRet20 = 복권성(MAX, Bali-Cakici-Whitelaw): 고 MAX 는 회피 신호라 성적표가 음 부호로 검증.
+_PRICE_SIGNALS: tuple[str, ...] = ("ret5", "mom20x5", "volShock", "high52", "maxRet20")
 # 재무 축 비율 (fundDaily 파생. 고 E/P·B/M = 저평가 = 상방 선언).
 _FUND_RATIOS: tuple[str, ...] = ("ep", "bm")
 

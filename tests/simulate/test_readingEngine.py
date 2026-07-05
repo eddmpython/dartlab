@@ -179,6 +179,7 @@ def testAbstainFirstClassAndCompleteness(tmp_path):
             "mom20x5": [0.0] * 5,
             "volShock": [0.0] * 5,
             "high52": [0.9] * 5,
+            "maxRet20": [0.05] * 5,
         }
     )
     fundM = pl.DataFrame({"code": ["a", "b", "c"], "week": [202607] * 3, "ep": [0.01, 0.02, 0.03], "bm": [0.02] * 3})
@@ -189,7 +190,7 @@ def testAbstainFirstClassAndCompleteness(tmp_path):
     )
     led = readingLedger.readReadings(baseDir=tmp_path)
     abstain = led.filter(pl.col("abstainReason").is_not_null())
-    assert abstain.height == 4  # fund.ep + fund.bm 각 2종목(d,e) 기권 = 4행
+    assert abstain.height == 4  # fund.ep + fund.bm 각 2종목(d,e) 기권 = 4행 (price 4신호는 전종목 발행)
     assert set(abstain["abstainReason"].unique().to_list()) == {"noData"}
     # 완전성: fund.ep 표면에 유니버스 5종목 전부 (판독 3 + 기권 2) 기록 = silent 누락 0
     epRows = led.filter(pl.col("surface") == "fund.ep")

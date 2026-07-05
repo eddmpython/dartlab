@@ -177,9 +177,10 @@ def priceWeekly(weekMap: pl.DataFrame, baseDir: Path | None = None) -> pl.DataFr
         mom20x5=(c.shift(5).over("code") / c.shift(25).over("code") - 1),
         volShock=(pl.col("vol") / pl.col("vol").rolling_mean(20).over("code") - 1),
         high52=(c / c.rolling_max(250).over("code")),
+        maxRet20=(c / c.shift(1).over("code") - 1).rolling_max(20).over("code"),  # MAX 복권성(회피)
     )
     return df.join(weekMap.rename({"date": "d0"}), left_on="date", right_on="d0", how="inner").select(
-        "code", "week", "ret5", "mom20x5", "volShock", "high52"
+        "code", "week", "ret5", "mom20x5", "volShock", "high52", "maxRet20"
     )
 
 

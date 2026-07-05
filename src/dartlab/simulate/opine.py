@@ -18,7 +18,13 @@ import polars as pl
 # 연속 표면 극단 방향 임계 (상위 20% = 상방, 하위 20% = 하방, 중간 = 중립).
 _UP_Q, _DOWN_Q = 0.8, 0.2
 # 축별 {입력 컬럼: 표면 id}. table.priceWeekly·fundWeekly 컬럼 → 표면.
-_PRICE_COLS = {"ret5": "price.ret5", "mom20x5": "price.mom20x5", "volShock": "price.volShock", "high52": "price.high52"}
+_PRICE_COLS = {
+    "ret5": "price.ret5",
+    "mom20x5": "price.mom20x5",
+    "volShock": "price.volShock",
+    "high52": "price.high52",
+    "maxRet20": "price.maxRet20",
+}
 _FUND_COLS = {"ep": "fund.ep", "bm": "fund.bm"}
 
 
