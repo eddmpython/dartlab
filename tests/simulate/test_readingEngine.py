@@ -303,6 +303,46 @@ def testRunWeekHashChain(tmp_path):
     assert b2["prevHash"] == b1["hash"]  # 해시체인 연결
     body = {k: v for k, v in b1.items() if k != "hash"}
     assert hashBlock(body) == b1["hash"]  # 결정론 재현 (외부 재검산 가능)
+    assert "codeVersionHash" in b1 and "combinedWeights" in b1  # §7b 봉인 필드
+
+
+def testRunWeekFullWiring(tmp_path):
+    from dartlab.simulate import runweek
+
+    # 25주 x 20종목: fund.ep 진짜 엣지 → AdaHedge 가중 + 인증 요약이 블록에 채워지는지
+    weeks = list(range(202601, 202626))
+    codes = [f"c{i:02d}" for i in range(20)]
+    fundRows, labRows, weRows = [], [], []
+    for w in weeks:
+        weRows.append({"week": w, "date": f"2026{(w - 202600):02d}01"})
+        for i, code in enumerate(codes):
+            bm = 0.01 * (((i * 13 + w) % 20) + 1)  # 변동은 있으나 엣지 없는 노이즈 표면
+            fundRows.append({"code": code, "week": w, "ep": 0.01 * (i + 1), "bm": bm})
+            ex = (i / 19 - 0.5) * 0.03 + (((i * 7 + w) % 5) - 2) * 0.002
+            labRows.append({"code": code, "week": w, "exRaw": ex, "exNeutral": ex})
+    weekEnd = pl.DataFrame(weRows)
+    fundM = pl.DataFrame(fundRows)
+    labels = pl.DataFrame(labRows)
+    priceM = pl.DataFrame(
+        schema={
+            "code": pl.Utf8,
+            "week": pl.Int64,
+            "ret5": pl.Float64,
+            "mom20x5": pl.Float64,
+            "volShock": pl.Float64,
+            "high52": pl.Float64,
+        }
+    )
+    eventM = pl.DataFrame(schema={"code": pl.Utf8, "week": pl.Int64, "reportType": pl.Utf8})
+    weekMap = pl.DataFrame(schema={"date": pl.Utf8, "week": pl.Int64})
+    mats = (weekMap, weekEnd, priceM, fundM, eventM)
+    block = None
+    for w in weeks:
+        block = runweek.runWeek(week=w, baseDir=tmp_path, matrices=mats, labels=labels, nBoot=200)
+    assert set(block["combinedWeights"]) == {"fund.ep", "fund.bm"}  # AdaHedge 가중 배선 (죽은 표면 아님)
+    assert block["certifySummary"] is not None  # 25주 >= 20 → 인증 실행
+    assert block["top10"]  # net 게이트 통과 top10 (주입 경로는 red-flag 만)
+    assert block["combinedWeights"]["fund.ep"] >= block["combinedWeights"]["fund.bm"]  # 엣지 표면 가중 우위
 
 
 def testCascadeDagAsData():
