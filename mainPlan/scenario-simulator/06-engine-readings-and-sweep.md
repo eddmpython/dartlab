@@ -199,10 +199,13 @@ fan 으로 펼쳐진다).
 
 ## 7. 모듈 배치 (전부 `simulate/` 내부, 신설 엔진 0)
 
-reading.py(계약+임계 SSOT) · surfaces.py(자동 열거+방향화 선언) · table.py(상 차리기: 전종목 x
-전표면, 무bake·벌크 우선·Company 루프 0) · opine.py(의견화) · sweep.py(격자+강건성) ·
-board.py(파생 뷰) · runweek.py(주간 오케스트레이션) · readingScorecard.py(수축 성적표) +
-expectationCycle 확장(issueReadings) + entry 확장(기존 `dartlab.simulate` 계열 verb 추가).
+reading.py(계약+임계 SSOT) · surfaces.py(자동 열거+방향화 선언. 정규화는 래퍼 보고서 괄호 내
+하위타입 추출 필수 = 08 실측 함정) · table.py(상 차리기: 전종목 x 전표면, 무bake·벌크 우선·
+Company 루프 0) · **profile.py(회사 프로파일러: PIT 버전드 상태, 깊이 = 전수, 08 §2)** ·
+opine.py(의견화) · sweep.py(격자+강건성) · board.py(파생 뷰) · runweek.py(주간 오케스트레이션) ·
+readingScorecard.py(수축 성적표 + **형질 버킷 축**, 08 §5) + expectationCycle 확장(issueReadings)
++ entry 확장(기존 `dartlab.simulate` 계열 verb 추가). 상류(프로파일러)·하류(연쇄 3~6층·DAG
+가시화) 층 구조 = **08-profiler-and-cascade.md**.
 테스트는 `tests/simulate/` 미러. 상세 파일·단계·런북 = `../weekly-uplift-shortlist/02-build.md`
 를 본 절이 승계 (P0 잔여 → P1 골격 → P2 sweep·파생 뷰 → P3 라이브 → P4 갭 → P5 UI).
 
