@@ -1,46 +1,61 @@
-# Weekly Uplift Shortlist : 주간 상승후보 100 → 근거 10 깔때기 PRD Index
+# L3 시뮬레이터 : 전 엔진 의견화 + 가정 sweep + 봉인 채점 (주간 상승후보는 파생 뷰)
 
-상태: 완전 설계 v0.3 (2026-07-05. v0.1 신호 깔때기 → v0.2 학습 가중 → v0.3 운영자 지시로 **엔진별 전종목 판독기 + EDGAR 통합** 구조 전환). **P0 착수는 운영자 승인 대기** (승인 필요 5건 = 00 §8).
-범위: dartlab 전 엔진이 **매주 모든 회사(KR 전상장사 + EDGAR 커버 US 상장사)에 대해 각자 판독(방향·강도·기권)을 발행**하고, 전량 봉인 후 5거래일 뒤 자동 채점해 엔진별 성적표를 누적하는 시뮬레이터. "상승 후보 100 → 근거 10" 목록은 이 판독 원장의 파생 뷰다.
+상태: **v0.6 (2026-07-05, 토론 종결 합의)**. v0.1~v0.5 문서는 패치 누적으로 난잡해져 백지 재작성.
+이력·판단 근거는 [05-progress-ledger.md](05-progress-ledger.md) 가 보존한다.
 
----
+## 합의된 본질 (운영자 문장이 설계다)
 
-## 한 줄 결정
+> "한곳에서 모든 하위 엔진들을 호출하고, 그들의 데이터를 받아서, 그들의 성격과 카테고리를
+> 투영해서, 한곳에서 의견화한다. 그 의견을 모든 방향과 if(이 방향이라면·이런 상황이라면)의
+> 수백수천 가정으로 시뮬레이터를 돌린다."
 
-이 플랜은 "오를 기업을 고르는 예측기"가 아니라 **판독-채점 시뮬레이터**를 짓는다. 엔진별 판독기 8종이 매주 전종목에 독립 의견을 내고(기권 포함), 전량 발행 시점에 봉인되고, 1주 뒤 전부 채점되어 "어떤 엔진이, 어떤 시장·산업·종목에서, 얼마나 정확한가"가 데이터로 누적된다. 후보 100/10 은 그 측정된 신뢰도로 가중한 합의의 파생 뷰일 뿐이다. 트랙레코드는 과거로 돌아가 만들 수 없으므로, 오늘 봉인을 시작한 쪽만 시간 해자를 가진다 (expectation-grid 와 동일 명제). DART 만이 아니라 EDGAR 를 같은 계약으로 통합한다: 판독기·채점기·성적표는 시장 파라미터화된 단일 코드이고, 시장 간 순위 혼합은 하지 않는다 (시장 내 상대 판독 + 시장별 벤치마크).
+여기에 수용된 수정 1건(다중검정 규율): 수천 가정에서 "최고 성적 가정"을 고르면 행운을 고르는
+것이다. 종목은 **가정 강건성(대다수 가정에서 반복 상위)** 으로 고르고, **가정 자체도 판독처럼
+봉인·채점**되어 살아남는 가정이 가중을 얻는다. 최적은 사전 탐색의 선언이 아니라 원장의 사후
+증명이다.
 
-## 선행 자산 접점 (이 플랜이 새로 짓지 않는 것)
+## 확정 구조 (개념 4개, 루프 1개)
 
-| 기존 자산 | 위치 | 본 플랜의 소비 방식 |
-|---|---|---|
-| 전종목 일별 가격/시총 17년+ (gov/prices, date 샤딩) | `gather/bulkData/hfBulk.py` (category govPrices) | PRICE/유동성 신호의 원천. 런타임 직독, 별도 베이크 없음 |
-| quant 횡단면/신호 자산 (momentum·volume·eventStudy·tripleBarrier·alphas 9종) | `src/dartlab/quant/{signal,alphas,labels}` | 신호 함수 재사용. 재구현 금지 |
-| scan 횡단면 24축 (valuation·growth·disclosureRisk·orders·insider·capital 등) | `src/dartlab/scan/**` | FUND/EVENT family 원천 |
-| 공시 diff 스코어러 (watcher) | `scan/watch/{scanner,scorer,digest}.py` | EVENT family 의 공시 변화 점수 |
-| narrative pulse + regime (Pettitt change-point) | `gather("narrative")` + `scan/narrativeRegime.py` | TEXT family + 레짐 가중 입력 |
-| macro 15축 (cycle·rates·시뮬레이션 BVAR) | `dartlab.macro(...)` | CONTEXT family + 레짐 판정 |
-| expectation ledger (발행 봉인 + 자동 채점 + 성적표) | `simulate/{expectationLedger,expectationCycle}.py` | 매주 100종목 방향 기대를 봉인·채점하는 검증척추 |
-| 유니버스 주간 replay 백테스트 자산 | `mainPlan/_done/terminal-strategy-lab` (U1) | 사전 PIT replay 검증 하네스 재사용 |
-| conformal forecast (5d 점예측 + 90% 구간) | `dartlab.quant("예측", code, horizon=5)` | top10 최종 게이트 (방향 비모순 확인) |
-| EDGAR panel (raw XBRL 자급 파싱) + filings + watcher 10-K topic | `providers/edgar` + `scan/watch` | US fund/event/text reader 의 원천 (01 §2.5) |
+```
+매주:  ① 상 차리기  전종목 x 전수 표면 스냅 (모든 하위 엔진 호출, 무bake 직독)
+       ② 의견화    표면별 판독: +1 / -1 / 중립 / 기권 (전수 등재, 선별 0)
+       ③ 봉인      전량 원장에 (기존 L2.5 simulate ledger 재사용)
+1주뒤: ④ 채점      실현 수익률 → 표면·가정 성적 누적 → 가중 자동 갱신
+sweep: 수백수천 가정(가중·레짐·지평·게이트 조합) 격자 실행 → 강건성 필터
+파생:  board100 = 강건 합의 상위 / top10 = 살아남은 가정들이 동시에 가리키는 곳
+       근거 = 사업보고서 서사(frame·report 직독) + 해당 표면·가정의 성적표 인용
+```
+
+- 배치: **story 동급 L3 신설 엔진** (그 자리는 현재 비어 있음이 실측 확인됨. L2.5 simulate 는
+  원장 부품으로 재사용, scenario-simulator PRD 의 미래 fan 과 한 몸 통합 지향: 과거는 채점,
+  현재는 판독, 미래는 가정으로 펼친다).
+- 시장: KR 전상장사 + US EDGAR (시장 내 완결, 혼합 순위 금지).
+- 프론트 작업대(ui runtime fetch)는 그대로, 나머지 데이터 작업대 소비는 이 엔진으로 모인다.
+
+## 죽은 것들 (v0.1~v0.5 잔해, 재도입 금지)
+
+손 선별 신호 목록 · family 6종 분류(독립성은 채점 데이터의 상관으로 사후 계산) ·
+W0/W1/W2 가중 사다리(가중 규칙은 하나: 수축된 누적 성적) · 판독기 8/13종 어댑터 ·
+엔진별 reading verb 분산(v0.5) · core/reading 신설 · L3 shortlist 별도 모듈 ·
+dossier 앵커 (아래 결정 대기 참조).
 
 ## 문서 지도
 
-1. [00-product-prd.md](00-product-prd.md) : 제품 정의 · 산출물 계약 · 정직 규약(never-claim 상속) · 성공 기준 · 비목표 · **승인 필요 4건**
-2. [01-signal-inventory.md](01-signal-inventory.md) : 전 엔진 신호 전수 인벤토리(엔진 x 신호 x 공개 verb x PIT 주의) + **갭 원장 G1~G8** (부족 데이터·개념)
-3. [02-scoring-and-funnel.md](02-scoring-and-funnel.md) : 6단 깔때기 · 신호 레지스트리 계약 · rank 합성 수학 · 레짐 가중 · 합류(confluence) 룰 · red-flag 게이트
-4. [03-validation-and-honesty.md](03-validation-and-honesty.md) : PIT 공리 · 17년 주간 replay 사전검증 · ledger 봉인 채점 · 표본 게이트 · folk-stat 천장 · 투자자문 아님 규약
-5. [04-architecture-and-phases.md](04-architecture-and-phases.md) : 배치(L3 신설) · import 방향 증명 · 파일/함수/테스트/롤백 · P0~P5 · CI 게이트 체크리스트
-6. [05-progress-ledger.md](05-progress-ledger.md) : 진행원장
+1. [01-design.md](01-design.md) : 계약 · 표면 전수 등재 · 판독·봉인·채점 · 가정 sweep · 정직 규약
+2. [02-build.md](02-build.md) : 배치·import 증명 · 파일/함수 · 테스트 · 단계 P0~P5 · 런북
+3. [03-gaps.md](03-gaps.md) : 갭 원장 G1~G10 (부족 데이터·개념 + 승격 경로)
+4. [05-progress-ledger.md](05-progress-ledger.md) : 진행원장 (v0.1~ 전 이력 + P0 실측 수치)
 
-## 경계 (claim 금지)
+## 결정 대기 (운영자)
 
-- 예측 모델 신설 0. 시계열 모델은 기존 `quant("예측")` conformal 만 소비.
-- 봉인·채점 원장은 `simulate` 가 유일 writer (expectation-grid 계약 준수). 본 플랜은 collector verb 1개만 추가.
-- 백테스트 통계 엄밀성 언어는 `terminal-strategy-lab/04-honesty-and-rigor.md` 의 never-claim 7선을 그대로 상속.
-- 터미널 UI 서피스는 P5 로 격리 (별도 눈검수 + push 승인 게이트). P0~P4 는 라이브러리/CLI 까지만.
-- 매수 추천 아님: 산출물 어디에도 "매수/추천/검증된 팩터" 라벨 0. 이름부터 shortlist(후보 목록)다.
+| # | 결정 | 비고 |
+|---|---|---|
+| D1 | 엔진 명칭 | L3 신설 자체는 합의됨. 가칭 `simulator` 는 기존 L2.5 `simulate` 와 혼동 위험이라 명칭만 확정 필요 |
+| D2 | dossier(80e8dde7c) 처분 | 운영자 불인정 명시(2026-07-05). 제거/이관/개명. 미푸시라 비용 근소. 원칙 확정: 호출계약은 엔진 소유 verb 로만 (엔진 없는 root facade 불인정) |
+| D3 | 갭 승격 승인 | G1 KR 수급 벌크 sync · G9 US 가격 재bake · G5 시장조치 (03-gaps 참조, P4 시점 개별 상정) |
 
-## 완성 정의 (goal 원문 기준)
+## 경계
 
-엔진별 판독기가 매주 전종목(KR 전상장사, US 는 데이터 백본 게이트 통과 판독기부터)에 판독을 발행·봉인하고, 5거래일 뒤 자동 채점되어 엔진 성적표가 누적되며, 그 신뢰도 가중 합의로 "상승 후보 100 → 근거 10"이 evidence(판독기별 의견 + 해당 세그먼트 트랙레코드)와 함께 매주 산출되는 상태. 최소 1회 발행 → 채점 → 성적표 갱신 사이클이 실데이터로 증명되어야 한다. 부족 데이터·개념은 01 갭 원장(G1~G10)에 승격 경로와 함께 전수 기록됨 (이 문서군으로 충족).
+- 투자 추천 아님 (never-claim 상속: 01 §7). 성과 보장·"검증된 팩터" 어휘 0.
+- 미래 fan 생성은 scenario-simulator 구상과의 통합 시점에 (본 사이클은 과거 채점 + 현재 판독 + 가정 sweep 까지).
+- UI 서피스는 P5 별도 (눈검수 + push 승인 게이트).
