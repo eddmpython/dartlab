@@ -50,14 +50,15 @@ dartlab.shortlist(seal=True)                    # ledger 봉인 동반 (기본 F
 | `shortlist/__init__.py` | `shortlist()` 진입 + `__all__` | 공개 verb SSOT |
 | `shortlist/registry.py` | `SignalSpec`, `SIGNAL_REGISTRY` | 신호 선언 정본 (02 §2) |
 | `shortlist/harvest.py` | `harvestBulk(asOf)`, `harvestLazy(codes)` | S1 수확 (벌크 우선 + 2-패스 lazy) |
-| `shortlist/composite.py` | `rankSignals(df)`, `composeFamilies(df, weights)` | S2~S3 합성 수학 |
+| `shortlist/composite.py` | `rankSignals(df)`, `compose(df, weights)` | S2~S3 정규화 + 선형 결합 |
+| `shortlist/weights.py` | `famaMacbethWeekly(panel)`, `shrinkWeights(coefs, lam)`, `purgedWalkForward(...)` | W1 가중 학습 + 검증 (02 §5, numpy-only) |
 | `shortlist/gates.py` | `applyHygiene(df)`, `redFlags(df)`, `confluence(df)` | S0 위생 + S5 게이트 |
 | `shortlist/board.py` | `buildBoard(asOf)`, `BoardResult` | S4 조립 + 스키마 계약 |
 | `shortlist/runbook.py` | `runWeekly(asOf, seal)` | 주간 실행 + 스냅샷 저장 + 봉인 호출 |
 | `simulate/expectationCycle.py` (확장) | `issueShortlist(board, asOf)` | ledger 봉인 (simulate 유일 writer 유지) |
 | `cli` 서브커맨드 | `dartlab shortlist [--asof --seal]` | 운영 진입점 (P2) |
 
-레지스트리·게이트의 임계값(0.80, k≥3, 프리셋 가중)은 `registry.py` 상수 선언 한 곳에만 둔다.
+레지스트리·게이트의 임계값(0.80, k≥3, shrinkage λ·부호안정성 임계)은 `registry.py` 상수 선언 한 곳에만 둔다. 학습된 발행 가중은 fold·protocol 메타와 함께 `data/shortlist/weights_*.parquet` 로 봉인 (재현 가능).
 
 ## 3. 테스트 계획 (src ↔ tests 미러 규약)
 
@@ -65,6 +66,7 @@ dartlab.shortlist(seal=True)                    # ledger 봉인 동반 (기본 F
 |---|---|
 | `tests/shortlist/test_registry.py` | SignalSpec 선언 무결(family·방향·verb 경로 실재), 임계값 SSOT 단일성 |
 | `tests/shortlist/test_composite.py` | rank 수학 (결측 null 보존, 방향 정렬, family null 전파, 참여<2 제외), 합성 결정성(같은 입력 = 같은 순위) |
+| `tests/shortlist/test_weights.py` | Fama-MacBeth 계수 복원(합성 데이터, 알려진 계수 주입 → 회수), shrinkage·부호안정성 게이트, purged embargo 에 라벨 겹침 0 |
 | `tests/shortlist/test_gates.py` | 위생 필터 로그(no-silent-cap), red-flag 각 조건, 합류 k 계산, 10 미만 발행 |
 | `tests/shortlist/test_board_contract.py` | 스키마 계약(Pandera), refs/asOf 동행, 금지 어휘 grep 게이트 |
 | `tests/shortlist/test_pit.py` | pitLagDays 보정, rcept_dt 기준 look-ahead 부재 (합성 fixture) |
@@ -86,8 +88,8 @@ dartlab.shortlist(seal=True)                    # ledger 봉인 동반 (기본 F
 
 | 단계 | 내용 | AC (완료 판정) | 롤백 |
 |---|---|---|---|
-| **P0 개념확립** (_attempts) | `tests/_attempts/shortlist/` 에서 ① gov/prices 벌크 PRICE family 전종목 계산 실측 ② 주간 PIT replay 하네스(G7) ③ TEXT/뉴스 태깅 커버리지 실측(G8) ④ FLOW lazy fetch 소요시간 실측 | 17년 replay 분위 밴드 리포트 재현 가능 + 커버리지 수치 확보 + 결과 docstring/README 기록 | 폴더 삭제 (src 비접촉) |
-| **P1 골격 본진** | 졸업 게이트(모듈화·덕지덕지 제거·클린코드·9섹션 docstring) 후 registry/harvest/composite/gates/board 본진 배치. PRICE+FUND+EVENT 활성 | `dartlab.shortlist(asOf=...)` 가 board100 산출 + §3 테스트 green + §4 게이트 전부 통과 | `shortlist/` 제거 + 게이트 등록 원복 |
+| **P0 개념확립** (_attempts) | `tests/_attempts/shortlist/` 에서 ① gov/prices 벌크 PRICE family 전종목 계산 실측 ② 주간 PIT replay 하네스(G7) ③ 신호 상관 행렬 실측 → 등록 신호 확정(02 §2.2) ④ W1 Fama-MacBeth + purged walk-forward 학습·검증 실측 ⑤ TEXT/뉴스 태깅 커버리지 실측(G8) ⑥ FLOW lazy fetch 소요시간 실측 | 17년 replay OOS 분위 밴드 리포트(학습 가중) 재현 가능 + W0 대비 W1 스프레드 비교 + 커버리지 수치 확보 + 결과 docstring/README 기록 | 폴더 삭제 (src 비접촉) |
+| **P1 골격 본진** | 졸업 게이트(모듈화·덕지덕지 제거·클린코드·9섹션 docstring) 후 registry/harvest/composite/weights/gates/board 본진 배치. PRICE+FUND+EVENT 활성, 발행 가중 = P0 학습본 봉인 | `dartlab.shortlist(asOf=...)` 가 board100 산출 + §3 테스트 green + §4 게이트 전부 통과 | `shortlist/` 제거 + 게이트 등록 원복 |
 | **P2 근거 심화 + CLI** | 2-패스 lazy(FLOW·TEXT 부분 커버), conformal 게이트, top10 dossier, 금지 어휘 grep, CLI | top10 이 합류 룰 전 조건 충족 + dossier refs 완비 + 실행 <30분 | CLI/dossier 모듈만 제거 |
 | **P3 봉인 라이브** | issueShortlist + 주간 채점 + 성적표 + 주간 런북 1p. 최소 1회 봉인→채점 실측 | 실데이터 왕복 1회 증명 + 미검증 라벨 동작 | collector 제거 (ledger 데이터는 append-only 보존) |
 | **P4 갭 승격** | G1 수급 벌크(승인 A3) → FLOW 전종목화 · G3 실적 캘린더 · G5 시장조치 · G6 priceCluster. 각각 독립 사이클 + eventStudy 사전 근거 | 신호별 커버리지 상승이 coverage 리포트로 확인 | 신호 선언 제거 (합성기 비접촉) |

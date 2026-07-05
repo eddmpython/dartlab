@@ -24,7 +24,7 @@ expectation ledger 봉인 (100 전체) → 5거래일 후 자동 채점 → 성�
 
 핵심 설계 사상 3가지:
 
-1. **합성이지 발명이 아니다.** 신호 계산은 전부 기존 엔진 verb 재사용. 본 플랜의 신규 코드는 (a) 신호 레지스트리, (b) rank 합성, (c) 합류/게이트 판정, (d) ledger collector 뿐이다.
+1. **합성이지 발명이 아니다.** 신호 계산은 전부 기존 엔진 verb 재사용. 본 플랜의 신규 코드는 (a) 신호 레지스트리, (b) rank 정규화 + 주간 횡단면 회귀 가중 학습기(Fama-MacBeth + shrinkage, numpy-only), (c) 합류/게이트 판정, (d) ledger collector 뿐이다. 가중치에 임의 상수를 쓰지 않는다: 17년 주간 패널에서 학습하고 purged walk-forward 로 검증한 값만 발행에 쓴다 (02 §5).
 2. **"근거가 높다" = 서로 독립인 신호 family 가 같은 종목에서 합류하고, 반증(red flag)이 없고, 그 판정 방식 자체의 사후 성적이 공개 원장에 쌓인다.** 단일 신호 상위는 근거가 아니다 (quant/scan 스킬의 axis-specific 회피 룰과 정합).
 3. **예측의 정직성은 봉인에서 나온다.** 상승 "예상"은 발행 시점에 불변 봉인되고 실제 5거래일 수익률로 채점된다. 잘 맞는 주만 골라 말하는 selection bias 를 구조적으로 차단하기 위해 top10 이 아니라 board100 전체를 봉인한다.
 
@@ -79,7 +79,7 @@ terminal-strategy-lab 04 never-claim 을 본 제품 언어로 상속:
 | 층 | 기준 |
 |---|---|
 | 시스템 | 전상장사 유니버스에서 주 1회 board100+top10 산출. 실행 1회 완주 < 30분(로컬), peak 메모리 예산 준수(04 §6) |
-| 근거 품질 | top10 전 종목이 합류 룰(독립 family ≥ 3 상위분위 + red flag 0 + forecast 비모순) 충족. evidence table 에 refs 완비 |
+| 근거 품질 | top10 전 종목이 합류 룰(독립 family ≥ 3 상위분위 + red flag 0 + forecast 비모순) 충족. evidence table 에 refs 완비. 합성 가중은 학습·검증 출처(fold·사전등록 protocol) 가 추적 가능 (임의 상수 0건) |
 | 커버리지 정직 | family 별 커버리지 리포트 동행 (예: FLOW family 는 G1 승격 전 부분 커버 명시). 결측 0 대체 0건 |
 | 사전 검증 | 17년 주간 PIT replay 에서 합성점수 분위별 5거래일 forward 스프레드 밴드 리포트 산출 (수치 과장 없이) |
 | 라이브 검증 | 봉인 → 채점 사이클 최소 1회 실측 증명. 이후 매주 자동 누적 |

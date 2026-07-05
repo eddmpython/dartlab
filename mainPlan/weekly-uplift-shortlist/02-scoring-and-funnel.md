@@ -32,7 +32,22 @@ class SignalSpec:
 ```
 
 - 등록·해제는 코드 리뷰를 타는 선언 변경이며, 실행 중 동적 추가 없음.
-- v0 등록 신호(안): PRICE 5 (mom5d·mom20d·mom60d와 52주고가근접·거래량surge z·저변동flag), FLOW 2 (smartMoneyZ60d·flowMomentum20d), EVENT 4 (orders·capital자사주·insider순매수·watcherDiff), FUND 5 (SUE·fundmom·piotroski·산업내valuation percentile·growth 패턴), TEXT 2 (narrative tone z·공시톤변화). 총 ~18개. 추가는 eventStudy 사전 근거 필수 (01 §4).
+
+### 2.1 지평 정합 원칙 (신호 선택의 제1 기준)
+
+5거래일 지평에서 레벨형 재무 랭크는 주간 알파 원천이 아니라 조건(게이트·틸트)이다. 주간 예측력이 문헌·실무에서 반복 확인된 부류를 우선한다: 단기 reversal, 잔차 모멘텀, 거래량 충격, 수급 지속, 이벤트 직후 드리프트(PEAD·수주·자사주). 느린 신호(밸류·퀄리티)는 가중을 학습(§5)에 맡기고 사전 우대하지 않는다.
+
+- v0 등록 신호(안, 총 ~18):
+  - PRICE 6: shortTermReversal5d(direction=-1)·잔차모멘텀20d·mom60d·52주고가근접·거래량충격 z·변동성
+  - FLOW 3: smartMoneyZ60d·수급연속일수(외국인+기관 순매수 streak)·flowMomentum20d
+  - EVENT 5: ordersBookToBill·자사주매입·insider순매수·watcherDiff·PEAD근사(SUE x 공시접수 후 경과일 감쇠, G3 승격 전 rcept_dt 기반)
+  - TEXT 2: narrative tone z·공시톤변화
+  - FUND 2: fundmom·산업내 valuation percentile
+- 추가는 eventStudy 또는 replay 사전 근거 필수 (01 §4).
+
+### 2.2 상관 중복(redundancy) 처리
+
+같은 정보를 여러 이름으로 중복 가중하지 않는다. P0 에서 신호 간 rank 상관 행렬을 실측해, family 내 |ρ| > 0.7 클러스터는 대표 1개만 등록(또는 클러스터 평균을 1개 신호로 취급)한다. 등록 확정본이 레지스트리에 남고, 탈락 신호는 사유와 함께 01 갭 원장에 기록.
 
 ## 3. 벌크 우선 계산 경로 (메모리 강행규칙 정합)
 
@@ -41,27 +56,31 @@ class SignalSpec:
 - bulkCapable=False 신호(FLOW의 smartMoneyZ, TEXT 일부, 종목별 quant 텍스트 축)는 **2-패스**: 1차 합성(벌크 신호만) 상위 ~300 종목에만 lazy fetch 후 재합성. 이 컷은 silent 가 아니라 로그+문서 명시 (전상장사 규약: 1차 패스는 전종목이 계산됨).
 - 실행 프로세스는 단일. 병렬 agent/프로세스 금지 (dartlab import 순차 규약).
 
-## 4. 합성 수학 (전부 rank 기반, 파라미터 최소)
+## 4. 합성 수학 : rank 는 정규화 골격이지 모델이 아니다
 
-1. 신호값 x_i → 방향 정렬 후 percentile rank r_i ∈ [0,1]. rank 는 outlier 에 강건해 winsorize 불필요.
-2. family 점수 F = mean(r_i, 결측 제외). 참여 신호 0개면 F = null.
-3. composite C = Σ w_f·F_f / Σ w_f (null family 제외). 참여 family < 2 이면 후보 제외(coverage 리포트에 집계).
-4. 동점은 유동성(ADTV) 높은 쪽 우선 (임의성 제거, 규칙 명시).
+rank 정규화는 신호를 비교 가능하게 만드는 표준화 층이다 (outlier 강건·산업 중립화 가능·종목별 근거 분해 가능). 예측력은 그 위의 **가중 학습(§5)** 이 담당한다. "단순 랭크 평균" 은 §5 사다리의 최하단 폴백일 뿐 발행 기준이 아니다.
 
-## 5. 레짐 가중 (v0 = 고정 2 프리셋, 적합 금지)
+1. 신호값 x_i → 방향 정렬 후 percentile rank r_i ∈ [0,1] (필요 신호는 산업 내 rank). winsorize 불필요.
+2. 신호 rank 벡터 → §5 에서 학습된 가중으로 선형 결합 = composite C. 선형을 고수하는 이유: 종목별 점수를 신호 기여도로 분해해 evidence dossier 에 그대로 실을 수 있다 (비선형 ML 은 이 근거 분해가 깨져 top10 의 "근거" 정의와 충돌).
+3. family 점수 F 는 발행 표면의 설명 축으로 유지 (합류 룰 §6 입력). F = mean(소속 신호 r_i, 결측 제외), 참여 0개면 null.
+4. 참여 family < 2 이면 후보 제외(coverage 리포트 집계). 동점은 유동성(ADTV) 높은 쪽 우선.
 
-- 판정 입력: `macro("종합", market="KR")` + `quant("레짐", 지수)` + `scanNarrativeRegime`. 3개 중 2개 이상 위험선호면 riskOn.
-- 프리셋 (합 1.0, CONTEXT 는 가중치 선택으로만 작용):
+## 5. 가중 사다리 (weighting ladder) : 임의 상수 금지, 학습은 규율 하에
 
-| family | riskOn | riskOff |
+| 층 | 방법 | 지위 |
 |---|---|---|
-| PRICE | 0.35 | 0.20 |
-| FLOW | 0.20 | 0.15 |
-| EVENT | 0.20 | 0.20 |
-| FUND | 0.15 | 0.35 |
-| TEXT | 0.10 | 0.10 |
+| W0 | 동일가중 rank 평균 | 폴백·디버깅 베이스라인 전용. 단독 발행 금지 |
+| **W1 (정본)** | 주간 Fama-MacBeth 횡단면 회귀 + shrinkage | P0 replay 하네스에서 학습·검증 후 발행 가중 |
+| W2 (이연) | 정규화 선형 랭커 (ridge / top-분위 logistic, numpy-only) | W1 성적 원장 누적 후 승격 검토 |
 
-- 수치는 사전 고정 선언값이다. 과거 데이터로 가중치를 최적화하지 않는다 (과적합 + "검증된 가중치" claim 유혹 차단). replay(03)는 이 고정값의 사후 성적을 측정할 뿐, 역으로 튜닝하지 않는다. 튜닝하려면 held-out 규약을 갖춘 별도 사이클로.
+### W1 상세
+
+- 매주 t (17년 ≈ ~880개 횡단면): 유니버스 초과 fwd 5거래일 수익률을 표준화 신호 rank 벡터에 회귀 → 계수 b_t (numpy lstsq, 신규 의존성 0).
+- 발행 가중 w_j = 부호안정성 게이트(계수 부호 일관률 미달 신호는 0) x shrinkage(rolling mean b_j, λ 사전 선언).
+- 레짐 조건부: riskOn/riskOff 주차 부분집합별 계수 평균으로 산출 (고정 프리셋 표 폐기. 레짐 판정 입력은 기존대로 `macro("종합")` + `quant("레짐")` + `scanNarrativeRegime` 2/3 다수결).
+- 검증: purged walk-forward (embargo ≥ 1주, 5d 라벨 겹침 차단) fold 별 OOS 분위 스프레드 밴드 (03 §2).
+- 라이브 규율: 가중 재추정은 분기 1회·사전등록 protocol 로만. 주중 변경 금지 (레코드 오염). 회귀 계수·t-stat 은 가중 산출 내부용이며 대외 수치 claim 에 쓰지 않는다 (03 §5).
+- 비선형 ML(GBM 등) 을 이연하는 이유: 신규 의존성 + 과적합 표면적 + 근거 분해 불가. W1 성적 원장이 쌓여 선형의 한계가 실측되면 그때 별도 사이클로 상정.
 
 ## 6. top10 합류(confluence) 룰
 
