@@ -2,7 +2,8 @@
 
 > v0.3 구조 전환(운영자 지시): "오를 기업을 선정하는" 신호 깔때기가 아니라, **엔진별 판독기가 매주 모든 회사에 자기 의견을 내고, 1주 뒤 전부 채점되어, 어떤 엔진이 어떤 종목에서 강한 근거인지가 데이터로 누적되는 시뮬레이터**를 짓는다. 후보 100/10 은 이 판독 원장의 파생 뷰다.
 >
-> v0.4 정정(운영자 지시): 판독기 단위 = **dartlab 엔진 그 자체**. 엔진별 공개 verb 작업대(scan 24축·quant 46축·credit·macro·industry·analysis·frame)가 이미 "데이터를 내놓는" 표면이므로, 판독기는 그 verb 출력을 EngineReading 으로 표준화하는 얇은 어댑터다 (신호 재구현 0). 독립성은 판독기 정체성이 아니라 **family 태그**로 관리한다 (§2.1).
+> v0.4 정정(운영자 지시): 판독기 단위 = **dartlab 엔진 그 자체** (engine.axisGroup). 독립성은 판독기 정체성이 아니라 **family 태그**로 관리한다 (§2.1).
+> v0.5 정정(운영자 방향): 판독은 외부 어댑터가 아니라 **각 엔진의 자체판독 verb** 가 발행한다. L1.5 데이터 작업대(scan·frame) 1회 + L2 엔진(quant·analysis·credit·macro·industry) 1회씩. 수집·봉인·채점은 simulate(L2.5)가, board100/top10 파생 뷰는 얇은 L3 shortlist 가 담당 (04 §1).
 
 ## 0. 왜 구조를 바꿨나 (v0.2 의 한계)
 
@@ -35,15 +36,14 @@ class EngineReading:
 - **engine** 이 성적표·메타 가중의 단위다. "어떤 엔진이 강한 근거인가"는 이 축으로 답한다. 엔진 안에서 성격이 다른 축 무리는 `engine.axisGroup` 으로 분리 발행한다 (예: quant 의 가격축과 재무축은 정보원이 달라 quant.momentum / quant.alphas 로 분리).
 - **family** 는 합류(confluence) 카운트의 단위다. 같은 재무제표에서 나온 quant.alphas 와 scan.financial 이 동시에 긍정이어도 독립 2표가 아니라 FUND 1표다. 이 태그가 없으면 같은 데이터의 메아리가 근거로 둔갑한다.
 
-## 2. v0 판독기 목록 (엔진별 어댑터, 전 엔진)
+## 2. v0 판독기 목록 (각 엔진의 자체판독 verb, 전 엔진)
 
 | engine (판독기) | 호출하는 공개 verb 작업대 | family | replay 가능성 | 기권 조건 |
 |---|---|---|---|---|
-| gather.price | gov/prices 벌크 (quant/signal 재사용) | PRICE | ✅ 2016~ (실측 완료) | 상장 20거래일 미만 |
-| gather.flow | `gather("flow")` 수급 | FLOW | ❌ live-only (G1 승격 시 ✅) | 벌크 미커버 = 기권 |
+| quant.price | `quant` 가격축 + gov/prices 벌크 (quant/signal) | PRICE | ✅ 2016~ (실측 완료) | 상장 20거래일 미만 |
+| quant.flow | `quant("수급")` (gather flow 하향 소비) | FLOW | ❌ live-only (G1 승격 시 ✅) | 벌크 미커버 = 기권 |
 | scan.events | `scan("orders"/"capital"/"insider")` + watch diff | EVENT | ⚠ rcept_dt 재구성 실측 (다음 사이클) | 최근 유효 이벤트 없음 = 중립 |
 | scan.financial | `scan("growth"/"quality"/"cashflow"...)` 8축 | FUND | ⚠ 분기+rcept 근사 | 재무 미공시 = 기권 |
-| quant.momentum | `quant("모멘텀"/"거래량"/"변동성")` 가격축 | PRICE | ✅ (gather.price 와 동원천, family 로 중복 통제) | 이력 부족 |
 | quant.alphas | `quant("surprise"/"fundmom"/"piotroski"...)` + panel 심화 (01 §2.6) | FUND | ⚠ rcept 라벨 근사 | 재무 결손 = 기권 |
 | quant.forecast | `quant("예측")` conformal 5d | PRICE | ⚠ bulk 변형 실측 | 데이터 부족 = 기권 |
 | quant.text | `quant("공시심리"/"톤변화")` + `gather("narrative")` | TEXT | ❌ live-only (G8 실측 후) | 태깅 없음 = 기권 |
@@ -53,9 +53,9 @@ class EngineReading:
 | macro | `macro("종합"/"cycle")` 레짐 틸트 (산업 경유) | CONTEXT | ⚠ 지표 이력으로 부분 | 종목 직접 의견 없음 (|score| 상한) |
 | frame.notes | 정기보고서 노트 변화 (frame/narrative·inventory) | TEXT/EVENT | ❌ live-only | 노트 부재 = 기권 |
 
-- 시작 구성은 위 13개 전부가 아니어도 된다: P1 은 replay 가능 4~5개로 출발하고, **live 봉인은 전 엔진 동시 시작** (live 는 어댑터만 있으면 비용이 verb 호출뿐).
+- 판독 주체에 gather(L1)는 없다: 수집 엔진은 원자료만 내고, 가격·수급의 의견화는 quant 소유 (04 §1.1). 시작 구성은 위 12개 전부가 아니어도 된다: P1 은 replay 가능 4~5개로 출발하고, **live 봉인은 전 엔진 동시 시작** (live 는 어댑터만 있으면 비용이 verb 호출뿐).
 - 판독기 내부 신호 구성은 v0.2 의 지평 정합 원칙(단기 reversal·수급 지속·이벤트 드리프트 우선)과 상관 중복 처리(|ρ|>0.7 클러스터 대표 1개, P0 실측 확정)를 그대로 상속한다.
-- 판독기 추가·제거는 레지스트리 선언 변경으로만 (실행 중 동적 추가 없음). 어댑터는 verb 출력 표준화만 하고 엔진 로직 재구현 금지 (공동 작업대 SSOT 규약).
+- 판독기 추가·제거는 선언 변경으로만 (실행 중 동적 추가 없음). 판독 로직은 그 엔진이 소유(자체판독)하고, simulate 수집기와 shortlist 파생 뷰는 발행 0 (공동 작업대 SSOT 규약).
 
 ## 3. 판독기 내부 합성 (reader 는 자기 의견만 낸다)
 
@@ -84,7 +84,7 @@ class EngineReading:
 
 ```
 S0 위생      전상장사, 명시 제외만 (정리매매·스팩·상장 20거래일 미만). no-silent-cap 로그
-S1 판독      8 판독기 x 전종목 EngineReading 발행
+S1 판독      전 엔진 자체판독 x 전종목 EngineReading 발행 (simulate 가 순회 수집)
 S2 봉인      readings 전량 ledger 봉인 (top 선정 전에 봉인 = selection bias 원천 차단)
 S3 메타결합  신뢰도 가중 combined score
 S4 board100  combined 상위 100 + reader 별 의견 분해 동행
