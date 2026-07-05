@@ -39,7 +39,7 @@ jobs:
     timeout-minutes: 180
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -51,28 +51,28 @@ jobs:
         run: uv sync
 
       - name: Restore EDGAR bulk cache (zip + freshness)
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: data/edgar/_bulk
           key: dartlab-edgar-bulk-${{ github.run_id }}
           restore-keys: dartlab-edgar-bulk-
 
       - name: Restore EDGAR finance parquet cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: data/edgar/finance
           key: dartlab-edgar-finance-${{ github.run_id }}
           restore-keys: dartlab-edgar-finance-
 
       - name: Restore EDGAR meta parquet cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: data/edgar/meta
           key: dartlab-edgar-meta-${{ github.run_id }}
           restore-keys: dartlab-edgar-meta-
 
       - name: Restore EDGAR docs cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: data/edgar/docs
           key: dartlab-edgar-docs-${{ github.run_id }}
@@ -81,7 +81,7 @@ jobs:
       # plan delegated-prancing-tower PR-E3 — sections artifact cache.
       # fetchEdgarDocs 가 dual-write 로 sections artifact 도 emit (PR-E2).
       - name: Restore EDGAR sections cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: data/edgar/sections
           key: dartlab-edgar-sections-${{ github.run_id }}
@@ -89,7 +89,7 @@ jobs:
 
       # EDGAR panel 보드 cache — SEC text 메모리 fetch 후 panel 단일 artifact.
       - name: Restore EDGAR panel cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: data/edgar/panel
           key: dartlab-edgar-panel-${{ github.run_id }}
@@ -236,28 +236,28 @@ jobs:
 
       # ── 6. 캐시 저장 ──
       - name: Save EDGAR bulk cache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: always()
         with:
           path: data/edgar/_bulk
           key: dartlab-edgar-bulk-${{ github.run_id }}
 
       - name: Save EDGAR finance cache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: always()
         with:
           path: data/edgar/finance
           key: dartlab-edgar-finance-${{ github.run_id }}
 
       - name: Save EDGAR meta cache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: always()
         with:
           path: data/edgar/meta
           key: dartlab-edgar-meta-${{ github.run_id }}
 
       - name: Save EDGAR docs cache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: always()
         with:
           path: data/edgar/docs
@@ -265,14 +265,14 @@ jobs:
 
       # plan delegated-prancing-tower PR-E3 — sections cache save (dual-write 산출물).
       - name: Save EDGAR sections cache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: always()
         with:
           path: data/edgar/sections
           key: dartlab-edgar-sections-${{ github.run_id }}
 
       - name: Save EDGAR panel cache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: always()
         with:
           path: data/edgar/panel

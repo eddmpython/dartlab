@@ -78,7 +78,7 @@ jobs:
       PRODUCTIZATION_GATE: ${{ (github.event_name == 'workflow_run' || (github.event_name == 'schedule' && github.event.schedule == '0 19 * * *')) && 'ops' || (github.event.inputs.productization_gate || 'release') }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # allFilings(1.3GB)+panel(16GB) → 기본 러너 디스크(~14GB) 압박. 선제 확보.
       - name: Free disk space

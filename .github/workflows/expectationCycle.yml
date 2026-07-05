@@ -37,7 +37,7 @@ jobs:
     timeout-minutes: 360  # quarterly 전상장사 순차 sweep (Company 1개씩 로드·해제) 대비
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7

@@ -45,7 +45,7 @@ jobs:
     timeout-minutes: 120
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -57,7 +57,7 @@ jobs:
         run: uv sync
 
       - name: Restore gov price parquet cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: data/gov/prices
           key: dartlab-gov-prices-${{ github.run_id }}
@@ -83,7 +83,7 @@ jobs:
         run: uv run python -X utf8 .github/scripts/prebuild/buildPricesSnapshot.py
 
       - name: Save gov price parquet cache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: always()
         with:
           path: data/gov/prices

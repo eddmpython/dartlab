@@ -55,7 +55,7 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -70,21 +70,21 @@ jobs:
         run: uv run python -c "import dartlab; print('dartlab', getattr(dartlab, '__version__', 'dev'))"
 
       - name: Restore finance cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: data/dart/finance
           key: dartlab-data-finance-${{ github.run_id }}
           restore-keys: dartlab-data-finance-
 
       - name: Restore report cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: data/dart/report
           key: dartlab-data-report-${{ github.run_id }}
           restore-keys: dartlab-data-report-
 
       - name: Restore collect state (pending.txt) — fr scope
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: data/dart/_collect_state/fr
           key: dartlab-collect-state-fr-${{ github.run_id }}
@@ -144,21 +144,21 @@ jobs:
 
       - name: Save finance cache
         if: always()
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: data/dart/finance
           key: dartlab-data-finance-${{ github.run_id }}
 
       - name: Save report cache
         if: always()
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: data/dart/report
           key: dartlab-data-report-${{ github.run_id }}
 
       - name: Save collect state — fr scope
         if: always()
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: data/dart/_collect_state/fr
           key: dartlab-collect-state-fr-${{ github.run_id }}
@@ -175,7 +175,7 @@ jobs:
         category: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.category == 'all' && 'finance","report' || inputs.category)) || fromJSON('["finance","report"]') }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -190,7 +190,7 @@ jobs:
         run: uv run python -c "import dartlab; print('dartlab', getattr(dartlab, '__version__', 'dev'))"
 
       - name: Restore data cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: data/dart/${{ matrix.category }}
           key: dartlab-data-${{ matrix.category }}-${{ github.run_id }}
@@ -204,7 +204,7 @@ jobs:
           SYNC_MODE: all
 
       - name: Save data cache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: data/dart/${{ matrix.category }}
           key: dartlab-data-${{ matrix.category }}-${{ github.run_id }}
