@@ -281,6 +281,21 @@ def test_corp_name_resolver_fallback(monkeypatch) -> None:
         bcc._KIND_NAME_CACHE = None
 
 
+def test_series_label_strips_stock_identity(tmp_path: Path) -> None:
+    """series_label(기술이야기) 트랙은 종목 정체성을 안 붙인다. stockCode 가 있어도 code=''·배지=시리즈 라벨.
+    규소 밸류체인 글에 SK하이닉스 badge 재발 방지(테마/설명 글을 종목 하나로 오분류 차단)."""
+    blog = tmp_path / "blog"
+    _write_post(blog, "01-000660-sand", code="000660", date="2026-01-01", with_carousel=True, slides_yaml=_SLIDES_A)
+    c = bcc.build_contracts(blog, series_label="기술이야기")["000660-sand"]
+    assert c["code"] == ""  # 종목코드 badge 없음
+    assert c["name"] == "기술이야기"  # 배지 = 시리즈 라벨(회사명·코드 아님)
+    assert c["cardType"] == "tech-story"
+    assert bcc.validate_contracts({"000660-sand": c}) == []  # code 빈 문자열이라 name==code 가드 무관
+    # series_label 없으면 기존 회사카드 그대로(회귀 없음).
+    c2 = bcc.build_contracts(blog)["000660-sand"]
+    assert c2["code"] == "000660" and c2["cardType"] == "company"
+
+
 def test_visual_contract_gate() -> None:
     """하이브리드 visual 렌더링 계약 게이트 + 확장 루프 — 렌더러 구현분만 통과, 나머지는 '추가하라'로 막는다."""
 

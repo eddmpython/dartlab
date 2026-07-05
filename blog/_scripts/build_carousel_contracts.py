@@ -269,8 +269,12 @@ def _attach_caption_context(contract: dict, source: dict) -> None:
         contract["relatedNews"] = related_news
 
 
-def build_contracts(blog_dir: Path = BLOG_DIR) -> dict[str, dict]:
-    """블로그 글 → 슬러그별 계약(`carousel:` 블록 있는 글만). 같은 회사 다른 슬러그 = 각자 계약(1:N)."""
+def build_contracts(blog_dir: Path = BLOG_DIR, *, series_label: str | None = None) -> dict[str, dict]:
+    """블로그 글 → 슬러그별 계약(`carousel:` 블록 있는 글만). 같은 회사 다른 슬러그 = 각자 계약(1:N).
+
+    series_label 이 있으면(기술이야기 등 시리즈/설명 트랙) 종목 정체성을 붙이지 않는다. code="" 라
+    배지에 종목코드가 안 붙고 회사 재무덱도 미첨부, 표시 이름 = 시리즈 라벨(예 '기술이야기'). 테마/설명
+    글을 특정 종목 하나로 오분류하는 것을 원천 차단(규소 밸류체인 글에 SK하이닉스 badge 재발 방지)."""
     contracts: dict[str, dict] = {}
     for md in sorted(blog_dir.glob("*/index.md")):
         fm = _read_frontmatter(md)
@@ -278,10 +282,13 @@ def build_contracts(blog_dir: Path = BLOG_DIR) -> dict[str, dict]:
         if not isinstance(carousel, dict):
             continue
         slug = _slug_from_folder(md.parent.name)
-        code = _code_from(fm, slug)
-        if not code:
-            sys.stderr.write(f"  skip(no code): {md.parent.name}\n")
-            continue
+        if series_label:
+            code = ""  # 시리즈/설명 카드는 종목 정체성 없음(종목코드 badge·회사덱 미첨부)
+        else:
+            code = _code_from(fm, slug)
+            if not code:
+                sys.stderr.write(f"  skip(no code): {md.parent.name}\n")
+                continue
         slides = [s for raw in (carousel.get("slides") or []) if (s := _normalize_slide(raw))]
         if not slides:
             sys.stderr.write(f"  skip(no slides): {md.parent.name}\n")
@@ -289,8 +296,10 @@ def build_contracts(blog_dir: Path = BLOG_DIR) -> dict[str, dict]:
         contract: dict = {
             "code": code,
             "slug": slug,
-            "name": str(fm.get("corpName") or carousel.get("name") or _corp_name_from_code(code) or code),
-            "cardType": str(carousel.get("cardType") or "company"),  # 카드 필터 축 (company|event|economy)
+            "name": series_label
+            or str(fm.get("corpName") or carousel.get("name") or _corp_name_from_code(code) or code),
+            # 카드 필터/식별 축. 시리즈 카드는 frontmatter series/category 와 동일한 'tech-story'.
+            "cardType": "tech-story" if series_label else str(carousel.get("cardType") or "company"),
             "slides": slides,
         }
         sector = carousel.get("sector") or fm.get("sector")
@@ -572,8 +581,9 @@ def main() -> None:
 
     contracts = build_contracts()  # 회사 계약(블로그 frontmatter)
     # 기술이야기(TECH_DIR) 카드 배선 임시 차단. 회사카드 틀에 잘못 얹어(종목코드 강제·논지 배신·기획 미수행)
-    # 라이브에서 내림. 종목 정체성 제거 + 배지 "기술이야기" + 주제 사진 + cards.plan 정식화 후 재배선한다.
-    # for _slug, _c in build_contracts(TECH_DIR).items():
+    # 라이브에서 내림. 재배선은 아래 형태로 = 시리즈 카드(종목 정체성 없음·배지 '기술이야기'). 단
+    # 주제 사진 수급 + cards.plan 정식화(reviewGate passed) 완료 후에만 주석 해제한다.
+    # for _slug, _c in build_contracts(TECH_DIR, series_label="기술이야기").items():
     #     contracts.setdefault(_slug, _c)
     issue_contracts, image_ops = build_issue_contracts(ISSUES_DIR, repo_files)  # standalone 이슈
     for slug, c in issue_contracts.items():
