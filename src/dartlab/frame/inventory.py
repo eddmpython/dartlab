@@ -18,7 +18,7 @@ docs sections(SEC 10-K/10-Q Item, `_itemUnits`). 양 시장 대칭 열거(동급
 회사별 코드(NT_C_U/NT_S_U)는 회사 내 handle 은 disclosureKey, 회사 간 안정 식별은 normalizedTitle.
 
 **계층 (L1.5 frame)**: core(카탈로그·dataLoader)·providers(panel) 만 import. 진입은 root
-`dartlab.dossier(code).inventory()`.
+열거 결과의 handle 은 추출 라우팅의 입력이다 (추출 표면은 L3 시뮬레이터로 이관 예정).
 """
 
 from __future__ import annotations
@@ -99,7 +99,7 @@ def reportInventory(code: str, *, marketNs: str = "kr", board: Any = None) -> di
 
     Example:
         >>> import dartlab
-        >>> inv = dartlab.dossier("005930").inventory()  # doctest: +SKIP
+        >>> inv = reportInventory("005930")  # doctest: +SKIP
         >>> inv["summary"]["total"]                       # doctest: +SKIP
 
     Capabilities:
@@ -107,7 +107,7 @@ def reportInventory(code: str, *, marketNs: str = "kr", board: Any = None) -> di
 
     Guide:
         - "이 회사 사업보고서에 뭐가 다 있나" -> reportInventory(code)["units"].
-        - 단위 실제 추출 -> dossier.get(unit["handle"]).
+        - 단위 실제 추출 -> handle 라우팅 (L3 시뮬레이터 이관 예정).
 
     AIContext:
         AI 가 보고서 전체를 탐색할 때 진입. 각 단위 handle 로 필요한 것만 lazy 추출.

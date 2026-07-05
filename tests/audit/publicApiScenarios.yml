@@ -22,7 +22,6 @@ public_api:
     - config
     - credit
     - dataDir
-    - dossier
     - gather
     - help
     - industry
@@ -103,7 +102,6 @@ scenarios:
       - dartlab.config
       - dartlab.credit
       - dartlab.dataDir
-      - dartlab.dossier
       - dartlab.gather
       - dartlab.help
       - dartlab.industry
