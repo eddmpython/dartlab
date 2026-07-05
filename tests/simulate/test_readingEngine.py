@@ -241,3 +241,25 @@ def testRunWeekHashChain(tmp_path):
     assert b2["prevHash"] == b1["hash"]  # 해시체인 연결
     body = {k: v for k, v in b1.items() if k != "hash"}
     assert hashBlock(body) == b1["hash"]  # 결정론 재현 (외부 재검산 가능)
+
+
+def testCascadeDagAsData():
+    import json
+
+    from dartlab.simulate import cascade
+
+    r = pl.DataFrame(
+        {
+            "code": ["a", "a"],
+            "surface": ["fund.ep", "event.dilutionGovernance"],
+            "direction": [1, -1],
+            "score": [0.9, 0.1],
+        }
+    )
+    prof = {"fund": {"stalenessDays": 47}, "financing": {"유상증자결정": 1}, "market": {"sizePctile": 0.8}}
+    dag = cascade.companyCascade("a", 202607, r, prof, surfaceWeights={"fund.ep": 2.0, "event.dilutionGovernance": 1.0})
+    layers = [n["layer"] for n in dag["nodes"]]
+    assert "profile" in layers and "surface" in layers and "decision" in layers
+    dec = [n for n in dag["nodes"] if n["layer"] == "decision"][0]
+    assert abs(dec["consensus"] - 0.8) < 1e-9  # 2.0*1*0.8 + 1.0*-1*0.8 = 0.8
+    json.dumps(dag, ensure_ascii=False)  # 프론트 소비 계약: 직렬화 가능
