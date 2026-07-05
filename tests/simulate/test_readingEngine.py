@@ -906,3 +906,28 @@ def testSimTypeRegistryAndOtsAnchor():
     # OpenTimestamps 앵커 페이로드
     ots = runweek.otsAnchor({"hash": "abc", "week": 202607})
     assert ots["hash"] == "abc" and ots["algorithm"] == "sha256" and "runbook" in ots
+
+
+def testLeverRefineDerivable():
+    from dartlab.simulate import leverRefine
+
+    ev = pl.DataFrame(
+        {
+            "code": ["a", "a", "a", "b", "c"],
+            "week": [202607, 202607, 202607, 202607, 202607],
+            "reportType": ["임원ㆍ주요주주특정증권등소유상황보고서"] * 4 + ["증권신고서"],
+        }
+    )
+    ins = leverRefine.insiderClusterReadings(ev)
+    byCode = {r["code"]: r for r in ins.iter_rows(named=True)}
+    assert byCode["a"]["score"] > byCode["b"]["score"]  # a 3건 군집 > b 1건 (군집 강도)
+    assert byCode["a"]["surface"] == "lever.insiderCluster"
+    lk = leverRefine.lockupExpiryReadings(ev)
+    assert lk["direction"][0] == -1  # 락업 만료 회피
+    assert lk["week"][0] == 202607 + 26  # 발행주 + 표준 락업 26주 (연내)
+    caps = pl.DataFrame(
+        {"date": ["20260213"] * 5, "code": [f"c{i}" for i in range(5)], "mktcap": [10.0, 20, 30, 40, 50]}
+    )
+    wm = pl.DataFrame({"date": ["20260213"], "week": [202607]})
+    idx = leverRefine.indexInclusionReadings(caps, wm, lowerPct=0.7, upperPct=0.95)
+    assert idx.height >= 1 and idx["surface"][0] == "lever.indexInclusion"  # 경계 밴드 후보
