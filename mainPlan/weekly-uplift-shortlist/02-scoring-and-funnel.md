@@ -1,10 +1,14 @@
 # 02. 엔진 판독기 계약과 메타 결합 : 전종목 x 전엔진 주간 판독
 
 > v0.3 구조 전환(운영자 지시): "오를 기업을 선정하는" 신호 깔때기가 아니라, **엔진별 판독기가 매주 모든 회사에 자기 의견을 내고, 1주 뒤 전부 채점되어, 어떤 엔진이 어떤 종목에서 강한 근거인지가 데이터로 누적되는 시뮬레이터**를 짓는다. 후보 100/10 은 이 판독 원장의 파생 뷰다.
+>
+> v0.4 정정(운영자 지시): 판독기 단위 = **dartlab 엔진 그 자체**. 엔진별 공개 verb 작업대(scan 24축·quant 46축·credit·macro·industry·analysis·frame)가 이미 "데이터를 내놓는" 표면이므로, 판독기는 그 verb 출력을 EngineReading 으로 표준화하는 얇은 어댑터다 (신호 재구현 0). 독립성은 판독기 정체성이 아니라 **family 태그**로 관리한다 (§2.1).
 
 ## 0. 왜 구조를 바꿨나 (v0.2 의 한계)
 
-v0.2 는 엔진 출력을 익명 신호 컬럼으로 합성해 최종 목록만 채점했다. 그 구조에서는 (a) 어느 엔진이 강한 근거인지 알 수 없고, (b) 엔진별·종목별 정확도 프로파일이 안 쌓이며, (c) 학습 표본이 주당 발행 100행에 갇힌다. v0.3 은 판독을 엔진 단위로 보존해 봉인한다: 주당 표본 = 유니버스 x 판독기 수 (~2,800 x 8 ≈ 2만+ 행). 이 원장 자체가 제품의 핵심 자산이다.
+v0.2 는 엔진 출력을 익명 신호 컬럼으로 합성해 최종 목록만 채점했다. 그 구조에서는 (a) 어느 엔진이 강한 근거인지 알 수 없고, (b) 엔진별·종목별 정확도 프로파일이 안 쌓이며, (c) 학습 표본이 주당 발행 100행에 갇힌다. v0.3+ 는 판독을 엔진 단위로 보존해 봉인한다: 주당 표본 = 유니버스 x 판독기 수. 이 원장 자체가 제품의 핵심 자산이다.
+
+v0.4 의 핵심 추가 통찰: **라이브 주간 운영에서는 엔진 verb 호출이 그 자체로 PIT 다.** 매주 호출 시점의 데이터로 판독하고 즉시 봉인하므로, 과거 재구성이 불가능한 엔진도 오늘부터 트랙레코드를 시작할 수 있다 (expectation-grid 의 "오늘 시작한 쪽만 가지는 시간 해자" 그대로). 과거 replay bootstrap 은 가격·재무처럼 PIT 재구성이 가능한 엔진만 하고, 나머지는 live-only 로 정직하게 표기한다.
 
 ## 1. EngineReading 계약 (모든 판독기의 공통 출력)
 
@@ -12,7 +16,8 @@ v0.2 는 엔진 출력을 익명 신호 컬럼으로 합성해 최종 목록만 
 @dataclass(frozen=True)
 class EngineReading:
     stockCode: str
-    reader: str            # 판독기 id (price/flow/event/fund/text/forecast/credit/context)
+    engine: str            # 판독기 id = 엔진(.축그룹). 예: "quant.momentum", "scan.orders", "credit"
+    family: str            # 독립 정보원 태그: PRICE|FLOW|EVENT|FUND|TEXT|CONTEXT (합류 카운트 단위)
     asOf: str              # 판독 기준일 (그 시점까지의 데이터만, PIT)
     direction: int         # +1 상승 / -1 하락 / 0 기권·중립
     score: float | None    # -1~+1 연속 강도 (기권이면 null)
@@ -25,21 +30,32 @@ class EngineReading:
 - **기권(abstain)은 1급 출력이다.** 커버리지 없는 종목을 억지로 판독해 0 으로 채우지 않는다. 기권률·기권 사유 분포도 채점 대상 (기권이 과도한 판독기는 근거 엔진으로서 가치가 낮다는 것 자체가 측정 결과).
 - 모든 회사에 대해 매주 발행한다. "판독함(방향±1) / 중립 / 기권" 셋 중 하나가 반드시 기록된다. 전상장사 규약: 판독 대상에서 시총·규모로 silent 제외 금지.
 
-## 2. v0 판독기 8종 (엔진별 어댑터)
+### 2.1 두 단위의 분업 : engine (성적표 단위) vs family (독립성 단위)
 
-| reader | 원천 엔진 verb (재사용) | bulk 경로 | 기권 조건 |
-|---|---|---|---|
-| price | quant/signal momentum·volume + gov/prices wide | ✅ 전종목 벌크 (Company 루프 0) | 상장 20거래일 미만 |
-| flow | gather("flow")·smartMoneyZ | ⚠ G1 전까지 lazy(1차 결합 상위 ~300 + 직전주 top 유지분) | 벌크 미커버 종목 = 기권 |
-| event | scan orders·capital·insider + watch diff | ✅ scan 축이 이미 횡단면 | 최근 유효 이벤트 없음 = 중립(기권 아님) |
-| fund | quant/alphas(SUE·fundmom·piotroski 등) + scan financial | ✅ prebuilt 횡단면 | 재무 미공시·결손 = 기권 |
-| text | gather("narrative") tone + 공시톤 | ⚠ 태깅 커버리지 실측(G8) 후 확정 | 태깅 없음 = 기권 |
-| forecast | quant("예측") conformal 5d | ⚠ 종목별 호출이라 전종목 불가. P0 에서 bulk 변형(gov/prices 직접 fit) 실측, 불가 시 결합 상위 후보군만 판독 + 나머지 기권 | 데이터 부족 error = 기권 |
-| credit | credit 스코어카드 + scan audit/debt (하락·위험 방향 특화) | ✅ 횡단면 | 금융업 등 산식 밖 = 기권 |
-| context | macro 레짐 + industry lifecycle + customs 수출 사이클 | ✅ 시장·산업 레벨 | 종목 단위 의견 없음: 산업 소속을 통한 틸트 판독 (약한 |score| 상한) |
+- **engine** 이 성적표·메타 가중의 단위다. "어떤 엔진이 강한 근거인가"는 이 축으로 답한다. 엔진 안에서 성격이 다른 축 무리는 `engine.axisGroup` 으로 분리 발행한다 (예: quant 의 가격축과 재무축은 정보원이 달라 quant.momentum / quant.alphas 로 분리).
+- **family** 는 합류(confluence) 카운트의 단위다. 같은 재무제표에서 나온 quant.alphas 와 scan.financial 이 동시에 긍정이어도 독립 2표가 아니라 FUND 1표다. 이 태그가 없으면 같은 데이터의 메아리가 근거로 둔갑한다.
 
+## 2. v0 판독기 목록 (엔진별 어댑터, 전 엔진)
+
+| engine (판독기) | 호출하는 공개 verb 작업대 | family | replay 가능성 | 기권 조건 |
+|---|---|---|---|---|
+| gather.price | gov/prices 벌크 (quant/signal 재사용) | PRICE | ✅ 2016~ (실측 완료) | 상장 20거래일 미만 |
+| gather.flow | `gather("flow")` 수급 | FLOW | ❌ live-only (G1 승격 시 ✅) | 벌크 미커버 = 기권 |
+| scan.events | `scan("orders"/"capital"/"insider")` + watch diff | EVENT | ⚠ rcept_dt 재구성 실측 (다음 사이클) | 최근 유효 이벤트 없음 = 중립 |
+| scan.financial | `scan("growth"/"quality"/"cashflow"...)` 8축 | FUND | ⚠ 분기+rcept 근사 | 재무 미공시 = 기권 |
+| quant.momentum | `quant("모멘텀"/"거래량"/"변동성")` 가격축 | PRICE | ✅ (gather.price 와 동원천, family 로 중복 통제) | 이력 부족 |
+| quant.alphas | `quant("surprise"/"fundmom"/"piotroski"...)` + panel 심화 (01 §2.6) | FUND | ⚠ rcept 라벨 근사 | 재무 결손 = 기권 |
+| quant.forecast | `quant("예측")` conformal 5d | PRICE | ⚠ bulk 변형 실측 | 데이터 부족 = 기권 |
+| quant.text | `quant("공시심리"/"톤변화")` + `gather("narrative")` | TEXT | ❌ live-only (G8 실측 후) | 태깅 없음 = 기권 |
+| analysis | `c.analysis(...)` 재무 인과 요약의 방향화 | FUND | ❌ live-only | 산식 밖 = 기권 |
+| credit | `CreditScorecard` + `scan("audit"/"debt")` | FUND(위험) | ⚠ 재무 기반 부분 재구성 | 금융업 등 산식 밖 = 기권 |
+| industry | `industry()` lifecycle·밸류체인 위치 | CONTEXT | ❌ live-only | 미분류 산업 = 기권 |
+| macro | `macro("종합"/"cycle")` 레짐 틸트 (산업 경유) | CONTEXT | ⚠ 지표 이력으로 부분 | 종목 직접 의견 없음 (|score| 상한) |
+| frame.notes | 정기보고서 노트 변화 (frame/narrative·inventory) | TEXT/EVENT | ❌ live-only | 노트 부재 = 기권 |
+
+- 시작 구성은 위 13개 전부가 아니어도 된다: P1 은 replay 가능 4~5개로 출발하고, **live 봉인은 전 엔진 동시 시작** (live 는 어댑터만 있으면 비용이 verb 호출뿐).
 - 판독기 내부 신호 구성은 v0.2 의 지평 정합 원칙(단기 reversal·수급 지속·이벤트 드리프트 우선)과 상관 중복 처리(|ρ|>0.7 클러스터 대표 1개, P0 실측 확정)를 그대로 상속한다.
-- 판독기 추가·제거는 레지스트리 선언 변경으로만 (실행 중 동적 추가 없음).
+- 판독기 추가·제거는 레지스트리 선언 변경으로만 (실행 중 동적 추가 없음). 어댑터는 verb 출력 표준화만 하고 엔진 로직 재구현 금지 (공동 작업대 SSOT 규약).
 
 ## 3. 판독기 내부 합성 (reader 는 자기 의견만 낸다)
 
@@ -53,13 +69,14 @@ class EngineReading:
 
 - **hit**: 유니버스 초과수익(동일가중 평균 대비)의 부호와 direction 일치. 중립·기권은 hit 계산에서 제외하되 별도 집계.
 - **강도 진단**: score 와 실현 초과수익의 주간 rank-IC (내부 진단 전용, 대외 수치 claim 금지).
-- **분해 축**: reader 전체 → 산업 → 규모 버킷 → 레짐 → 종목. "어떤 엔진이 강한 근거인가"와 "어떤 종목·산업에서 정확한가"가 이 분해에서 나온다.
-- **소표본 규율 (불가침)**: 종목 단위는 연 52관측이라 잡음이 크다. empirical-Bayes 수축: 종목 추정치 ← 산업 추정치 ← reader 전체 추정치로 shrink. 표본 게이트 미달 세그먼트는 "미검증" 라벨 강제 (expectation-grid 02 §4 상속). 수축 전 원시 hit rate 를 근거로 인용 금지.
+- **분해 축**: engine 전체 → 산업 → 규모 버킷 → 레짐 → 종목. "어떤 엔진이 강한 근거인가"(운영자 질문의 단위)와 "어떤 종목·산업에서 정확한가"가 이 분해에서 나온다.
+- **소표본 규율 (불가침)**: 종목 단위는 연 52관측이라 잡음이 크다. empirical-Bayes 수축: 종목 추정치 ← 산업 추정치 ← engine 전체 추정치로 shrink. 표본 게이트 미달 세그먼트는 "미검증" 라벨 강제 (expectation-grid 02 §4 상속). 수축 전 원시 hit rate 를 근거로 인용 금지.
 
 ## 5. 메타 결합 : 측정된 신뢰도가 가중치다
 
-- reader 가중 w_r = shrunk trailing 초과적중률 (지수 감쇠 창, 사전 선언). 산업별 프로파일 (reader x 산업) 을 우선 적용, 종목 단위 프로파일은 표본 게이트 통과 세그먼트에서만.
-- combined score(종목) = Σ w_r(산업) · score_r / Σ w_r (기권 reader 제외, 참여 reader < 2 이면 후보 제외 + coverage 집계).
+- engine 가중 w_e = shrunk trailing 초과적중률 (지수 감쇠 창, 사전 선언). 산업별 프로파일 (engine x 산업) 을 우선 적용, 종목 단위 프로파일은 표본 게이트 통과 세그먼트에서만.
+- **family 내 메아리 통제**: 같은 family 의 엔진들은 먼저 family 점수로 (신뢰도 가중) 평균한 뒤 family 간 결합한다. 같은 재무제표에서 나온 의견 셋이 세 배 가중되는 것을 구조로 차단.
+- combined score(종목) = Σ w_f · familyScore_f / Σ w_f (기권 제외, 참여 family < 2 이면 후보 제외 + coverage 집계).
 - **cold start**: live 원장이 없는 초기엔 17년 주간 PIT replay 로 판독기별 의사-성적을 bootstrap 한다 (전 레코드 issuedLive=False 영구 표기, 03 §3). live 누적이 쌓일수록 지수 감쇠가 replay 성분을 자연 대체.
 - 가중 갱신은 주간 채점 후 자동이되, 게이트·수축 파라미터 변경은 분기 사전등록으로만.
 
@@ -71,7 +88,7 @@ S1 판독      8 판독기 x 전종목 EngineReading 발행
 S2 봉인      readings 전량 ledger 봉인 (top 선정 전에 봉인 = selection bias 원천 차단)
 S3 메타결합  신뢰도 가중 combined score
 S4 board100  combined 상위 100 + reader 별 의견 분해 동행
-S5 top10     합류 룰: 신뢰 상위 독립 reader ≥ 3 이 동일 방향(+1) + red-flag 게이트(credit/audit/
+S5 top10     합류 룰: 긍정(+1) 판독이 서로 다른 family ≥ 3 을 덮음 + red-flag 게이트(credit/audit/
              disclosureRisk/유동성) + forecast reading 비모순. 순위 = (합의 reader 수, combined score).
              통과 < 10 이면 그 수만큼만 발행
 ```

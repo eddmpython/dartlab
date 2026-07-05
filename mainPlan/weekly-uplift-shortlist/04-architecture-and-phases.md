@@ -51,7 +51,7 @@ dartlab.shortlist(seal=True)                    # ledger 봉인 동반 (기본 F
 |---|---|---|
 | `shortlist/__init__.py` | `shortlist()` 진입 + `__all__` | 공개 verb SSOT |
 | `shortlist/contract.py` | `EngineReading`, `ReaderSpec`, `READER_REGISTRY` | 판독 계약 + 판독기 선언 정본 (02 §1~2) |
-| `shortlist/readers/{price,flow,event,fund,text,forecast,credit,context}.py` | `read(universe, asOf, market) -> list[EngineReading]` | 엔진별 bulk 어댑터 8종 (시장 파라미터화, Company 루프 0) |
+| `shortlist/readers/*.py` | `read(universe, asOf, market) -> list[EngineReading]` | 엔진별 어댑터 (engine.axisGroup 단위, 02 §2 표. 공개 verb 표준화만, 엔진 로직 재구현 0, Company 루프 0) |
 | `shortlist/scorecard.py` | `scoreReadings(readings, actuals)`, `shrinkProfile(...)` | 채점 + empirical-Bayes 수축 성적표 (02 §4) |
 | `shortlist/combiner.py` | `combine(readings, scorecard)`, `confluence(df)` | 신뢰도 가중 메타 결합 + 합류 룰 (02 §5~6) |
 | `shortlist/gates.py` | `applyHygiene(df)`, `redFlags(df)` | S0 위생 + red-flag 게이트 |

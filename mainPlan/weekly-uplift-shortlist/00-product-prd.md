@@ -10,22 +10,22 @@
 유니버스 : KR 전상장사 (~2,800) + US EDGAR 커버 상장사 (시장별 완결, 혼합 순위 없음)
    │  위생 필터 (명시 제외만, silent cap 금지)
    ▼
-엔진 판독기 8종 x 전종목 : 각 엔진이 독립 의견 발행 (방향 ±1 / 중립 / 기권 + 강도 + refs)
+엔진 판독기(전 엔진, engine.축그룹 단위) x 전종목 : 각 엔진이 독립 의견 발행 (방향 ±1 / 중립 / 기권 + 강도 + refs)
    │  전량 즉시 expectation ledger 봉인 (top 선정 전에 봉인)
    ▼
-5거래일 후 전 판독 자동 채점 → 엔진 성적표 (reader x 시장 x 산업 x 레짐 x 종목, 수축 추정)
+5거래일 후 전 판독 자동 채점 → 엔진 성적표 (engine x 시장 x 산업 x 레짐 x 종목, 수축 추정)
    │  측정된 신뢰도 = 메타 가중
    ▼
-board100 (시장별) : 신뢰도 가중 합의 상위 100 + reader 별 의견 분해
-   │  합류 룰 (신뢰 상위 독립 reader ≥ 3 동일 방향) + red-flag 게이트 + forecast 비모순
+board100 (시장별) : 신뢰도 가중 합의 상위 100 + engine 별 의견 분해
+   │  합류 룰 (긍정 판독이 독립 family ≥ 3 커버) + red-flag 게이트 + forecast 비모순
    ▼
-top10 (시장별) : 종목별 dossier = reader 의견 + 그 reader 의 해당 세그먼트 트랙레코드
+top10 (시장별) : 종목별 dossier = engine 의견 + 그 engine 의 해당 세그먼트 트랙레코드
 ```
 
 핵심 설계 사상 4가지:
 
 1. **선정기가 아니라 시뮬레이터다.** 목적은 "오를 기업 고르기"가 아니라, 모든 회사에 대한 엔진별 의견을 빠짐없이 발행·채점해 **어떤 엔진이 강한 근거인지, 어떤 시장·산업·종목에서 정확한지**를 데이터로 만드는 것이다. 후보 목록은 그 원장의 파생 뷰다.
-2. **합성이지 발명이 아니다.** 판독기는 전부 기존 엔진 verb 의 어댑터다. 신규 코드는 (a) EngineReading 계약 + 판독기 8종, (b) 채점기·성적표(수축 추정), (c) 신뢰도 가중 메타 결합, (d) ledger collector 뿐이다. 가중치는 임의 상수도 일회성 회귀도 아니라 **누적 성적에서 나온다** (02 §5).
+2. **합성이지 발명이 아니다.** 판독기는 전부 기존 엔진 verb 의 어댑터다. 신규 코드는 (a) EngineReading 계약 + 엔진별 어댑터(02 §2), (b) 채점기·성적표(수축 추정), (c) 신뢰도 가중 메타 결합, (d) ledger collector 뿐이다. 가중치는 임의 상수도 일회성 회귀도 아니라 **누적 성적에서 나온다** (02 §5).
 3. **"근거가 높다" = 트랙레코드 있는 독립 엔진들이 같은 종목에서 합류하고, 반증(red flag)이 없다.** 단일 엔진 의견은 근거가 아니다.
 4. **정직성은 봉인에서 나온다.** 전 판독이 선정 이전에 불변 봉인되므로, 잘 맞은 주만 골라 말하는 selection bias 가 구조적으로 불가능하다. 반복-채점-개선 루프가 누적되면 그 원장 자체가 데이터 자산이다.
 
@@ -40,7 +40,7 @@ terminal-strategy-lab §2 의 교집합 타깃을 상속: "무료 도구를 쓰�
 | 컬럼 | 내용 |
 |---|---|
 | stockCode/ticker · market | 종목 식별 (KR/US) |
-| reader · asOf · horizon | 판독기 id · 판독 기준일 · 5거래일 |
+| engine · family · asOf · horizon | 판독기 id(엔진.축그룹) · 독립성 태그 · 판독 기준일 · 5거래일 |
 | direction · score · coverageOk · abstainReason | 의견 (기권 1급 출력) |
 | refs | 근거 dateRef/datasetRef |
 
@@ -54,14 +54,14 @@ terminal-strategy-lab §2 의 교집합 타깃을 상속: "무료 도구를 쓰�
 | asOf | 판독 기준일 (가격 기준 최종 거래일) |
 | combined | 신뢰도 가중 합의 점수 |
 | rankTotal | 시장 내 순위 (시장 간 혼합 없음) |
-| reader 별 direction·score | 8 판독기 의견 분해 (기권 포함) |
+| engine 별 direction·score | 엔진 의견 분해 (family 태그·기권 포함) |
 | coverage | 참여 reader 수 / 기권 사유 요약 |
 | flags | red flag·결측·한계 (null 유지, 0 대체 금지) |
 | refs | datasetAsOf · reader 별 dateRef (엔진 evidence 규약 준수) |
 
 ### 3.2 top10 dossier (종목당 1건)
 
-- 합의 요약: 동일 방향 독립 reader 목록 + 각 reader 의 의견·강도·dateRef + **그 reader 의 해당 시장·산업 트랙레코드** (수축 추정치·표본 수·미검증 여부).
+- 합의 요약: 동일 방향 engine 목록 (family 태그 병기) + 각 engine 의 의견·강도·dateRef + **그 engine 의 해당 시장·산업 트랙레코드** (수축 추정치·표본 수·미검증 여부).
 - 이벤트 타임라인: 최근 공시/수주/내부자/자사주/리서치 발간 (id·date·url, listing/watch 재사용. US 는 8-K/Form 4).
 - forecast reading: `quant("예측", horizon=5)` 점예측 + 90% 구간 (구간이 방향과 모순이면 top10 탈락 사유 기록).
 - 리스크 패널: disclosureRisk·audit·credit·Altman·유동성 하위 신호 (통과했어도 값 공개).
@@ -90,9 +90,9 @@ terminal-strategy-lab 04 never-claim 을 본 제품 언어로 상속:
 
 | 층 | 기준 |
 |---|---|
-| 시스템 | 전종목 x 8 판독기 주간 발행·봉인·채점이 자동 완주 (KR 먼저, US 는 판독기별 데이터 게이트 통과분부터). 실행 1회 완주 < 30분(로컬, 시장당), peak 메모리 예산 준수(04 §6) |
+| 시스템 | 전종목 x 전 엔진 판독기 주간 발행·봉인·채점이 자동 완주 (KR 먼저, US 는 판독기별 데이터 게이트 통과분부터). 실행 1회 완주 < 30분(로컬, 시장당), peak 메모리 예산 준수(04 §6) |
 | 판독 완전성 | 유니버스 전 종목이 매주 reader 별 "판독/중립/기권" 셋 중 하나로 기록됨. silent 누락 0 |
-| 근거 품질 | top10 전 종목이 합류 룰(신뢰 상위 독립 reader ≥ 3 동일 방향 + red flag 0 + forecast 비모순) 충족. dossier 에 reader 트랙레코드 인용 완비 |
+| 근거 품질 | top10 전 종목이 합류 룰(긍정 판독이 독립 family ≥ 3 커버 + red flag 0 + forecast 비모순) 충족. dossier 에 engine 트랙레코드 인용 완비 |
 | 성적표 | reader scorecard 가 시장·산업·레짐 분해 + 수축 추정 + 표본 게이트("미검증" 라벨)로 산출. 어떤 엔진이 강한 근거인지가 수치로 답해짐 |
 | 사전 검증 | 17년 주간 PIT replay 로 판독기별 bootstrap 성적(issuedLive=False) + 합의 분위 스프레드 밴드 리포트 |
 | 라이브 검증 | 발행 → 봉인 → 채점 → 성적표 갱신 사이클 최소 1회 실측 증명. 이후 매주 자동 누적 |
