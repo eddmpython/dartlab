@@ -4,7 +4,7 @@
 
 콘텐츠 소스 SSOT 루트 = `blog/`. 여기에 블로그 글·카드(`_issues`)·팟캐스트(`_podcasts`)가 전부 git 추적된다. 주제(subject)는 회사만이 아니라 경제·기술·분석 테마도 1급이다. 블로그만/카드만 개별 발간 가능하고, 나중에 같은 주제로 관련 카드·팟캐스트가 추가 발간된다(슬롯이 채워짐).
 
-**세 서피스(블로그·카드·팟캐스트)는 무조건 하나의 공동 작업대를 거친다.** 주제 -> 데이터 워크벤치(dartlab, 데이터 SSOT) 런타임 직독 -> 서사 코어(StoryCore) -> 근거검증·정직성 -> 자산수급 공유 front 를 통과하고, 서피스 어댑터가 각 형식으로 투영한다. 블로그만/카드만 발행해도 이 공유 front 는 거친다. 릴스·쇼츠·비디오는 나중에 서피스 어댑터만 추가하면 붙는다. **작업대·StoryCore·서피스 seam·evidence 표준 설계 정본 = Skill OS `operation.content`.**
+**세 서피스(블로그·카드·팟캐스트)는 무조건 하나의 공동 작업대를 거친다.** 주제 -> 데이터 워크벤치(dartlab, 데이터 SSOT) 런타임 직독 -> 서사 코어(StoryCore) -> 근거검증·정직성 -> 자산수급 공유 front 를 통과하고, 서피스 어댑터가 각 형식으로 투영한다. 블로그만/카드만 발행해도 이 공유 front 는 거친다. **데이터 워크벤치의 유니버스는 DART(국내 상장)와 EDGAR(미국 상장) 전 종목을 함께 쓴다.** 한 이야기가 두 시장을 동시에 근거로 삼을 수 있다(예: 국내사와 미국사 비교, 또는 공급망이 두 시장에 걸친 대상). 릴스·쇼츠·비디오는 나중에 서피스 어댑터만 추가하면 붙는다. **작업대·StoryCore·서피스 seam·evidence 표준 + 양시장 유니버스 설계 정본 = Skill OS `operation.content`.**
 
 ---
 
@@ -63,5 +63,6 @@
 ---
 
 ## 참고 히스토리
+- 2026-07-05 데이터 유니버스 명시: DART(국내)+EDGAR(미국) 전 종목을 한 파이프라인에서 함께 근거로 사용(양시장 비교·크로스 공급망). 정본 = `operation.content` 데이터 워크벤치 절.
 - 2026-07-02 팟캐스트 트랙 blog/_podcasts 로 이관(sns 아님). 콘텐츠 운영 SSOT 이 문서 신설.
 - 정책 정본: git=`CLAUDE.md`+`git_rules`, 이미지수급=`feedback_image_sourcing_policy`, R2=`reference_cloudflare_r2_infra`, HF=`reference_hf_dataset_layout`, 공유풀=`sns/assets/README.md`, 블로그=`BLOG.md`, 카드=`CARDS.md`, 팟캐스트=`blog/_podcasts/README.md`.
