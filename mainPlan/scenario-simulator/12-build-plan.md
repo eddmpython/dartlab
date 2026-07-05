@@ -73,10 +73,18 @@
 채점) ③ 매끈한 분해 곡선 = 표시 전용. 그리고 "분기 데이터인데 일별 신호"의 실체는 **계단 분자
 x 매일 움직이는 분모** (E/P·B/M·재무x가격 괴리는 가격이 움직여서 매일 갱신된다).
 
+**데이터 원천 확정 (2026-07-05 실측, `fundGridKr.py`)**: 재무 그리드 = `data/dart/finance/*.parquet`
+(수치 재무 SSOT, DART 계정 포맷, 556MB). raw `data/dart/panel/`(12.6GB 섹션 원문)은 narrative
+전용으로 덜어냄. **단일 lazy glob scan(streaming) + 조기 계정 필터 = 전종목 3.7초** (2,774사·
+52.3만행, Company 객체 0, 커버리지 99%+·PIT 100%). 4초라 **베이크 불필요, 매주 런타임 재스캔**
+(런타임-SSOT 충족). scanFinance = `pl.scan_parquet(finance/*.parquet, extra_columns='ignore')` +
+account_id 표준매핑/nm 폴백 + rceptDate = rcept_no[:8].
+
 ```
 fundDaily(market, asOf) -> 일별 그리드 (code x date x 재무 피처):
-  1. 분기 이벤트 테이블: panel 분기값 + 실적공시 rcept_dt (R0-4 매핑. 잠정실적 공시가 선행하면
-     그 값·그 날짜가 이벤트, 정기보고서는 확정 이벤트로 별도 행 = 이중 이벤트 둘 다 보존)
+  1. 분기 재무 테이블: scanFinance() (finance parquet glob, 위 실측). period = bsns_year+분기,
+     rceptDate = rcept_no[:8]. 잠정실적 공시가 선행하면 그 값·그 날짜가 이벤트, 정기보고서는
+     확정 이벤트로 별도 행 = 이중 이벤트 둘 다 보존 (allFilings 잠정실적 join 은 본구현)
   2. effective_date = rcept_dt (장후 접수는 익영업일). 정정공시 = 새 vintage 행 append
      (최초 보고값 불변. replay 는 해당 시점 vintage 만 조회)
   3. 일별 격자에 join_asof(backward) + stalenessAge(경과 거래일) 동반
