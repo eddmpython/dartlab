@@ -367,6 +367,60 @@ def testCascadeDagAsData():
     json.dumps(dag, ensure_ascii=False)  # 프론트 소비 계약: 직렬화 가능
 
 
+def testRelationshipPropagate():
+    from dartlab.simulate import cascade
+
+    edges = [{"from": "big", "to": "small", "weight": 0.8}, {"from": "big", "to": "other", "weight": 0.5}]
+    r = cascade.relationshipPropagate({"big": 1.0}, edges, elasticity=0.5)
+    byCode = {row["code"]: row for row in r.iter_rows(named=True)}
+    assert byCode["small"]["direction"] == 1  # 대형 상방 → 계열 추종 상방
+    assert byCode["small"]["score"] > byCode["other"]["score"]  # 강한 엣지 = 강한 전파
+    assert r["surface"][0] == "cascade.groupLeadLag"  # 일반 판독 계약(봉인·채점)
+
+
+def testCascade8LayerAndRecompute():
+    from dartlab.simulate import cascade
+
+    r = pl.DataFrame(
+        {
+            "code": ["a", "a"],
+            "surface": ["fund.ep", "event.dilutionGovernance"],
+            "direction": [1, -1],
+            "score": [0.9, 0.1],
+        }
+    )
+    prof = {"fund": {"stalenessDays": 47}, "financing": {}, "market": {"sizePctile": 0.8}}
+    rel = cascade.relationshipPropagate({"peer": 1.0}, [{"from": "peer", "to": "a", "weight": 0.6}], elasticity=0.5)
+    dag = cascade.assembleCascade(
+        "a",
+        202607,
+        profileState=prof,
+        surfaceReadings=r,
+        economyReading={"score": 0.5},
+        industryReading={"score": 0.5},
+        relationshipReadings=rel,
+        elasticities={"economy->industry": 0.6, "industry->company": 0.5, "relationship": 0.4},
+    )
+    layers = {n["layer"] for n in dag["nodes"]}
+    assert {"economy", "industry", "relationship", "surface", "decision"} <= layers  # 8층 노드
+    assert any(e.get("assumptionId") == "cascade:economy->industry" for e in dag["edges"])  # 층간 탄성=가정 id
+    # 재계산 계약: 경제 노드 편집 → 산업 하류만 dirty 재실행 (결정론)
+    out = cascade.recompute(dag, {"economy": 1.0})
+    assert "economy" in out["dirty"] and "industry:a" in out["dirty"]  # dirty 전파
+    ind = [n for n in out["nodes"] if n["id"] == "industry:a"][0]
+    assert abs(ind["value"] - 0.6) < 1e-9  # 1.0 * weight1 * elasticity0.6
+    assert cascade.recompute(dag, {"economy": 1.0})["nodes"] == out["nodes"]  # 결정론 재현
+
+
+def testInterLayerAssumptions():
+    from dartlab.simulate import cascade
+
+    rows = cascade.interLayerAssumptions({"economy->industry": 0.6, "relationship": 0.4})
+    assert len(rows) == 2
+    assert all(r.unit and r.period and r.falsification for r in rows)  # 가정 계약 필수 필드
+    assert rows[0].dimension == "layerElasticity"
+
+
 def testProfileTraitCatalogIsExhaustive():
     from dartlab.simulate.profile import traitCatalog
 
