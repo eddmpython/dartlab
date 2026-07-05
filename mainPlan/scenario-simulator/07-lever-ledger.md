@@ -21,6 +21,28 @@
 | 10 | 무상증자 사슬 | avoid | 발표 pop(대형, D0~1)은 주간 배치가 못 잡음 = 포기. 권리락 후 다주 fade 가 회피 신호 | 주간 OK (fade 만) | 신흥시장 실증: 발표 후 ~6거래일만 지속 [V]. KR 정밀 수치는 사내 실측 |
 | 11 | **계열회사 lead-lag** | long | 대형 주도주 → 소형 계열·동종 추종, 수주 지속 (lead-lag 계열은 전 목록 중 가장 느려 주간 최적) | 주간 OK | Lo-MacKinlay·Hou·Cohen-Frazzini(고객 모멘텀 +1.55%/월) [K]. KR 계열사 목록 = 사업보고서 직독(frame/inventory) → **KR lead-lag 실측은 미공표 영역 = 고유 자산 후보** |
 
+## 1b. EDGAR parity 매핑 (US 통합: 같은 레버, 다른 폼·다른 판정)
+
+원장 규약 = 시장 파라미터화(KR+US)·시장 내 완결. §1 각 레버의 US 대응:
+
+| §1 레버 | US 대응 원천 (EDGAR 폼) | US 판정 (문헌) |
+|---|---|---|
+| 1 내부자 매수 정제 | **Form 4** (transaction code P=매수 / S=매도, XML 구조화) | 정제 문헌의 **원산지가 미국** (Cohen-Malloy-Pomorski = US 데이터). KR 보다 오히려 직행 |
+| 2 자사주 | 8-K 발표 + 10-Q Rule 10b-18 공시 | 발표 +3% + 장기 드리프트 (Ikenberry 계열) [K] |
+| 3 락업 만료 | S-1/424B 프로스펙터스의 lockup 조항 (표준 180일) | -1.5~2% 만료 주, VC 물량 악화 (Field-Hanka) [K] |
+| 4 CB 사슬 | 8-K + 424B (PIPE·convertible, reset/ratchet 조항) | death-spiral convert 문헌 존재하나 KR 대비 빈도 낮음. 사내 실측 |
+| 5 MAX 회피 | 가격만 (G9 선결) | 원 문헌이 US (Bali-Cakici-Whitelaw >1%/월) |
+| 6 실적 이벤트 | 10-Q/10-K·8-K 접수 타임스탬프 | **PEAD 는 US 대형주 2006~ 사망·2016~ 반전 = do-not-build. EAR 만 생존** (대형주 분기 0.9~1.4%) + 발표 프리미엄은 감쇠 진행 보고 |
+| 7 지수 편입 | Russell 재구성·S&P 편입 | **붕괴 실증 (+7.4%→<1%, Greenwood-Sammon) = US 는 do-not-build** |
+| 9 감사지연 | **NT 10-K / NT 10-Q** (기한 미준수 통지가 1급 폼 타입으로 존재) | KR 보다 신호가 더 구조화됨. 사내 실측 |
+| 10 무상증자 | 주식분할·주식배당 (약한 대응) | 후순위 |
+| 11 계열 lead-lag | 10-K 주요 고객 공시 (SFAS 131) → 고객 모멘텀 | 원 문헌이 US (Cohen-Frazzini +1.55%/월) |
+
+- 선결: **G9 (US 가격 재bake + 폐지사 유니버스)**. 그 전까지 US 레버 실측치는 생존편향 상방
+  왜곡 명시 강제 (06 §6 언어 규율). G10 (US flow: FINRA 공매도·13F·Form 4 집계)은 KR G1 동형.
+- 채점·중립화·비용 바닥도 시장별 분리: US 비용 바닥은 스프레드 추정 동일 + 세율표만 교체
+  (SEC fee 등), 버킷 중립도 시장 내에서만.
+
 ## 2. 짓지 않는다 (do-not-build)
 
 - **단기 reversal 단독**: 문헌의 대표 비용 사망 사례 (앞쪽 1~3일 집중 + 비유동 종목 집중,
