@@ -41,6 +41,14 @@ def _listDf(rows: list[dict]) -> pl.DataFrame:
     )
 
 
+def test_window_matches_scan_ssot():
+    """베이크 윈도가 scan.ipo SSOT 와 동일. 드리프트 시 베이크·scan 폴백 발굴 범위 이원화 방지."""
+    from dartlab.scan.ipo import IPO_WINDOW_DAYS
+
+    mod = _load()
+    assert mod._WINDOW_DAYS == IPO_WINDOW_DAYS
+
+
 def test_discover_groups_full_and_confirmation(monkeypatch):
     mod = _load()
     df = _listDf(

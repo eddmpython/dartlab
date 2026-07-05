@@ -20,6 +20,10 @@ from dartlab.core.logger import getLogger
 
 _log = getLogger(__name__)
 
+# 발굴 윈도(일). list.json 은 corp_code 없으면 3 개월(~90 일) 제한이라 초과는 무의미(status 100).
+# buildIpoReports(베이크 sync) 와 공유하는 SSOT. tests/sync/test_buildIpoReports 가 동치 강제(드리프트 가드).
+IPO_WINDOW_DAYS = 85
+
 _OUTPUT_SCHEMA = {
     "corpName": pl.Utf8,
     "corpCode": pl.Utf8,
@@ -59,7 +63,7 @@ def _latestFullProspectuses(client, dateFrom: str | None, verbose: bool) -> tupl
         client = DartClient()
 
     end = date.today()
-    start = end - timedelta(days=85)  # list.json corp_code 없으면 3 개월 제한
+    start = end - timedelta(days=IPO_WINDOW_DAYS)  # list.json corp_code 없으면 3 개월 제한
     if dateFrom and len(dateFrom) == 8:
         cand = date(int(dateFrom[:4]), int(dateFrom[4:6]), int(dateFrom[6:8]))
         start = max(start, cand)

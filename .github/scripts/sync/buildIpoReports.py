@@ -36,7 +36,7 @@ _log = getLogger(__name__)
 
 _KEY = "ipoReports"
 _NAME = "reports.parquet"
-_WINDOW_DAYS = 85  # list.json corp_code 없으면 3 개월 제한(실측 status 100). scan/ipo.py 와 동일.
+_WINDOW_DAYS = 85  # = dartlab.scan.ipo.IPO_WINDOW_DAYS (SSOT). test_buildIpoReports 가 동치 강제(드리프트 가드).
 _MAX_BYTES = 1_536 * 1024  # hfRange WHOLE_FILE_MAX_BYTES. 초과 시 whole-file GET 분기 falldown 가드.
 
 # 알림 스칼라는 scan("ipo") 컬럼명과 동일(왓치 eval_new_ipo 가 df 무변경 소비) + 발굴 메타 + reportJson.
