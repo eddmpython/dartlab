@@ -415,3 +415,73 @@ def testConformalAdaptsToDistributionShift():
     cc = res["coverageCurve"].filter(pl.col("week") >= 202600 + 100)  # 이동 후 안정 구간
     lateCoverage = float(cc["coverage"].mean())
     assert 0.70 <= lateCoverage <= 0.88  # 분산 3배 이동에도 장기 커버리지 선언값 근방 유지
+
+
+def _gridReadingsLabels():
+    codes = [f"c{i:02d}" for i in range(20)]
+    rows, labs = [], []
+    for w in range(202601, 202631):
+        for i, code in enumerate(codes):
+            s = i / 19
+            ex = (s - 0.5) * 0.04 + (((i * 7 + w) % 5) - 2) * 0.002
+            labs.append({"code": code, "week": w, "exNeutral": ex})
+            eDir = 1 if s > 0.6 else (-1 if s < 0.4 else 0)
+            rows.append({"code": code, "week": w, "surface": "edge", "direction": eDir, "score": s})
+            ns = ((i * 13 + w * 3) % 20) / 19
+            nDir = 1 if ns > 0.6 else (-1 if ns < 0.4 else 0)
+            rows.append({"code": code, "week": w, "surface": "noise", "direction": nDir, "score": ns})
+    return pl.DataFrame(rows), pl.DataFrame(labs)
+
+
+def testAssumptionGridContract():
+    from dartlab.simulate import assume
+
+    schemes = {"edge": {"edge": 1.0, "noise": 0.0}, "noise": {"edge": 0.0, "noise": 1.0}}
+    grid = assume.assumptionGrid(schemes, topKs=(5, 10), minSurfaces=(1,), horizons=(5,))
+    assert len(grid) == 2 * 2 * 1 * 1 * 1  # 스킴2 x topK2 x minS1 x hz1 x preset1
+    row = grid[0].rows[0]
+    assert row.unit and row.period and row.source and row.falsification  # 필수 필드 비어있지 않음
+    assert {r.dimension for r in grid[0].rows} == {
+        "weightScheme",
+        "consensusTopK",
+        "minSurfaces",
+        "horizon",
+        "scenarioPreset",
+    }
+
+
+def testApplyGridEdgeBeatsNoiseAndFeedsSweep():
+    from dartlab.simulate import assume, sweep
+
+    readings, labels = _gridReadingsLabels()
+    schemes = {
+        "edge": {"edge": 1.0, "noise": 0.0},
+        "noise": {"edge": 0.0, "noise": 1.0},
+        "equal": {"edge": 1.0, "noise": 1.0},
+    }
+    grid = assume.assumptionGrid(schemes, topKs=(5,), minSurfaces=(1,), horizons=(5,))
+    res = assume.applyGrid(readings, labels, grid)
+    assert res["perf"].shape == (3, 30)  # (nConfigs x nWeeks)
+    byId = {cid: i for i, cid in enumerate(res["configIds"])}
+    edgePerf = np.nanmean(res["perf"][byId["edge|k5|m1|h5|baseline"]])
+    noisePerf = np.nanmean(res["perf"][byId["noise|k5|m1|h5|baseline"]])
+    assert edgePerf > noisePerf  # edge 가중 config 가 노이즈보다 높은 성과
+    pbo = sweep.cscvPbo(res["perf"], sBlocks=6)  # sweep 통합 (성과 행렬 소비)
+    assert "pbo" in pbo and 0 <= pbo["pbo"] <= 1
+
+
+def testSealAssumptions(tmp_path):
+    from dartlab.simulate import assume
+
+    schemes = {"edge": {"edge": 1.0}}
+    grid = assume.assumptionGrid(schemes, topKs=(5,), minSurfaces=(1,))
+    p = assume.sealAssumptions(
+        grid,
+        {"edge|k5|m1|h5|baseline": {"pbo": 0.1, "dsr": 0.9}},
+        week=202607,
+        issuedLive=True,
+        issuedAt="t",
+        baseDir=tmp_path,
+    )
+    got = pl.read_parquet(p)
+    assert got.height == 1 and got["issuedLive"][0]  # 봉인 + issuedLive 권위
