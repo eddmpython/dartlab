@@ -67,6 +67,9 @@ class Reading:
 - **가정도 봉인·채점**: 유망 가정 벌은 매주 라이브 봉인되어 5거래일 채점. 과거 sweep 은 후보
   가정 bootstrap 일 뿐(issuedLive=False 영구 표기), 권위는 라이브 성적만.
 - 가정 격자 자체의 변경(파라미터 범위)은 분기 사전등록으로만.
+- **AssumptionLedger 통합 (중복 신설 금지)**: 가정 벌의 계약은 scenario-simulator 가 설계해 둔
+  AssumptionLedger(if 토글 SSOT) 를 따른다. 본 sweep 이 그 데이터 모델의 첫 실구현이 되고,
+  미래 fan(scenario 잔여 단계)이 같은 원장을 재사용한다. 별도 가정 포맷 신설 = 덕지덕지.
 
 ## 6. 파생 뷰 (제품 표면)
 

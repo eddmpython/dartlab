@@ -56,6 +56,15 @@ W0/W1/W2 가중 사다리(가중 규칙은 하나: 수축된 누적 성적) · �
 | ~~D2~~ | ~~dossier 처분~~ | 완료: 폐기 df41ee60e |
 | D3 | 갭 승격 승인 | G1 KR 수급 벌크 sync · G9 US 가격 재bake · G5 시장조치 (03-gaps 참조, P4 시점 개별 상정) |
 
+## simulate 미완 조각과의 관계 (2026-07-05 실측)
+
+simulate 는 미완 엔진이다: 결정론 코어·expectation 원장은 완료(라이브), Play 리플레이·lens·MC
+노드·AssumptionLedger 는 미착수, 09 부채 원장 청산 진행 중. 본 PRD 는 **완료 조각(원장+collector)만
+의존**하고 미완 조각과 접점이 없다. 오히려 scenario-simulator 의 자기판정("검증 루프 미완이라
+시그니처가 못 됨")의 그 검증 루프를 본 판독-채점이 채운다. 가정 벌은 AssumptionLedger 계약을
+따른다(01 §5). 로드맵 제안: simulate 시간축 단일 로드맵 = 과거 채점(완료) → 현재 판독(본 PRD)
+→ 미래 fan(scenario 잔여). 세 플랜 병합 여부는 운영자 결정.
+
 ## 경계
 
 - 투자 추천 아님 (never-claim 상속: 01 §7). 성과 보장·"검증된 팩터" 어휘 0.
