@@ -527,3 +527,51 @@ def testMmcResidualizeFlagsRedundant():
     assert dupe["redundant"]  # B 는 A 복제 = 증분 t 붕괴 = 중복
     assert not indep["redundant"]  # C 는 독립 = 증분 t 유지
     assert abs(indep["residualT"]) > abs(dupe["residualT"])  # 독립 표면이 더 큰 증분
+
+
+def testRegimeClassifierDeterministicAndVersioned():
+    from dartlab.simulate import regime
+
+    assert len(regime.regimeVersionHash()) == 16  # 분류기 봉인 해시 (변경=새 시리즈)
+    mw = pl.DataFrame({"week": list(range(202601, 202641)), "mktRet": [(-1) ** i * 0.03 for i in range(40)]})
+    reg = regime.classifyRegimes(mw)
+    assert set(reg["regime"].unique().to_list()) <= {"calmUp", "calmDown", "stressUp", "stressDown"}
+    reg2 = regime.classifyRegimes(mw)
+    assert reg["regime"].to_list() == reg2["regime"].to_list()  # 결정론 (같은 입력=같은 태그)
+
+
+def testScoreConditionalMatchesRegimeAndAirtime():
+    from dartlab.simulate import regime
+
+    reg = pl.DataFrame({"week": [202601, 202602, 202603], "regime": ["stressDown", "calmUp", "stressDown"]})
+    readings = pl.DataFrame(
+        {
+            "code": ["a", "a", "a", "b"],
+            "week": [202601, 202602, 202603, 202602],
+            "surface": ["s"] * 4,
+            "condition": ["stressDown", "stressDown", "stressDown", None],
+        }
+    )
+    out = regime.scoreConditional(readings, reg)
+    # 조건 stressDown 판독은 stressDown 주(202601,202603)만 채점, 202602(calmUp)는 미채점
+    condScored = out["scored"].filter(pl.col("condition") == "stressDown")
+    assert set(condScored["week"].to_list()) == {202601, 202603}
+    assert 202602 in out["scored"].filter(pl.col("condition").is_null())["week"].to_list()  # 무조건은 항상
+    air = {r["condition"]: r for r in out["airtime"].iter_rows(named=True)}
+    assert air["stressDown"]["liveWeeks"] == 3 and air["stressDown"]["realizedWeeks"] == 2  # airtime 분모
+
+
+def testGiacominiWhiteDetectsConditionalDifference():
+    from dartlab.simulate import regime
+
+    rng = np.random.default_rng(8)
+    T = 250
+    stress = (rng.random(T) < 0.4).astype(float)
+    inst = np.column_stack([np.ones(T), stress])
+    # B 가 stress 에서 명확히 우월: d = lossA - lossB > 0 (stress 주에)
+    d = 0.02 * stress + rng.normal(0, 0.005, T)
+    lossA, lossB = d, np.zeros(T)
+    gw = regime.giacominiWhite(lossA, lossB, inst)
+    assert gw["pValue"] < 0.05  # 조건부 예측력 차이 검출
+    same = regime.giacominiWhite(np.ones(T), np.ones(T), inst)
+    assert same["pValue"] > 0.5  # 손실 동일 = 기각 불가
