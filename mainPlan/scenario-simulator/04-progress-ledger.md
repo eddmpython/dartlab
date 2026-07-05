@@ -43,9 +43,20 @@
 - `runweek.py`(재작성): 전 모듈 배선 = 발행→채점→AdaHedge 결합가중→certify 인증→비용 net 게이트(회피=red-flag)→레짐태그→board·top10→해시체인. 블록 §7b 필드(비용바닥·레짐·결합가중·인증요약·코드해시). **실데이터 AdaHedge regret 5.27 << 경계 34.0.**
 - `reading.py`/`readingLedger.py`: refs·condition 1급 필드. `readingCycle.py`: 기권행 1급 발행(완전성 강제, silent 누락 0) + refs 채움. `readingScorecard.py`: surfaceWeeklySpreads 노출 + 기권률 채점.
 
-**측정 델타**: 감사 25/223 완전구현 → TIER-1 후 약 62/223(신뢰성 척추 ~37항 closed). 커밋 9개(d4417ecad~53f3cee1d), 유닛별 test-lock + 게이트 동행. tests/simulate/test_readingEngine.py 33 통과.
+**측정 델타(TIER-1)**: 감사 25/223 완전구현 → TIER-1 후 약 62/223(신뢰성 척추 ~37항 closed). 커밋 9개(d4417ecad~53f3cee1d).
 
-**남은 것(정직)**: TIER-2 breadth 미착수 = 레버 원장(10, ~30항)·프로파일러 8축(11, ~12항)·캐스케이드 8층 관계전파(11 §4, ~13항)·nowcast/eventtime 일단위(§5c, ~10항)·US/EDGAR parity(~10항). UI(R6, ~20항) 운영자 보류. **"PRD 완성" 아님. 척추(신호 신뢰성)는 실장·검증, 폭(레버·프로파일·연쇄·시장)은 후속.** push 보류(미푸시 history + UI 인접).
+### 0c-2. TIER-2 breadth 실장 (2026-07-06, "멈추지 말고 끝까지" = 무중단 계속)
+
+TIER-1 후 멈추지 않고 폭(breadth)도 정공법으로 계속. 신규 실코드(전부 test-lock + dartlabGuard strict 7/7):
+- **프로파일러 8축**(profile.py 확장, 11 §2): 사업구조·관계그래프·자본조달·거버넌스·노출벡터(시장 베타 PIT)·시장미시·노동설비·서사(개념 census) 8축 전수 + replayHash/replayIdentical 재현성 가드 + asOf look-ahead. 실데이터: 삼성 베타 1.34·관계엣지 2502·서사 10개념.
+- **캐스케이드 8층**(cascade.py 확장, 11 §3~§4): relationshipPropagate(축2 엣지 위 lead-lag)·assembleCascade(경제→산업→관계→회사→결정 8층)·interLayerAssumptions(층간 탄성=AssumptionLedgerRow)·recompute(dirty 위상 재실행 = 뷰어 아닌 제작기).
+- **분기재무 일단위**(fundDaily.py 신규, §5c): PIT 계단(보간 0)·이벤트타임 SUE/EAR·τ·Chow-Lin 표시전용 가드.
+- **레버 원장**(levers.py 신규 + opine 배선, 10): 17 레버 선언(LEVER_LEDGER), 수확 10종 개별 표면(lever.<id>)으로 발행 = 인증 깔때기 대상. do-not-build(US PEAD·지수) 박제 무발행. 실데이터: insiderBuy 24k·supplyContract 11k·treasury 취득/처분 분리.
+- **시장 파라미터화**(markets.py 신규, 10 §1b): KR wired·US roadmap(스펙 00 §10 명시 phase), requireWired 로 US 판독 차단(데이터 날조 금지), KR 레버 → US EDGAR 폼 매핑 data 화.
+
+**측정 델타(TIER-2)**: 커밋 6개(87c23acaf~d5d29ebe0), simulate 19 실모듈, tests 43 통과. 폭 항목 대량 착수(레버 10 표면·8축·8층·일단위·시장). US 데이터 배선은 스펙이 정한 로드맵 phase 라 스캐폴드까지(날조 안 함).
+
+**남은 것(정직)**: US/EDGAR 실데이터 배선(로드맵 phase)·레버 정제(insider 매수 필터·lockup·MAX·index 데이터 배선)·형질 조건부 성적표(표면 x 형질 버킷 셀)·라이브 채점 누적(시간). UI(R6, ~20항) 운영자 보류. **여전히 "PRD 완성" 단정 안 함. 척추 + 폭 골격은 실장·검증, 정제·라이브·UI 는 후속.** push 보류(미푸시 history + UI 인접).
 
 ---
 
