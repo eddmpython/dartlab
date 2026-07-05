@@ -9,10 +9,11 @@ Covers:
 
 from __future__ import annotations
 
+import numpy as np
 import polars as pl
 import pytest
 
-from dartlab.simulate import opine, readingCycle, readingLedger, readingScorecard
+from dartlab.simulate import opine, readingCycle, readingLedger, readingScorecard, sweep
 from dartlab.simulate.reading import Reading
 
 
@@ -146,3 +147,23 @@ def testIssueAndScoreCycle(tmp_path):
     scored = readingCycle.scoreReadingsDue(baseDir=tmp_path, labels=labels)
     assert scored == 10
     assert readingLedger.unscoredReadings(baseDir=tmp_path).height == 0  # 전부 채점됨
+
+
+def testSweepPboOnNoiseIsHalf():
+    # edge 0 순수 노이즈: PBO ~0.5 (IS 최고 가정이 OOS 동전던지기), 강건 선정 0
+    rng = np.random.default_rng(11)
+    perf = rng.normal(0, 0.01, size=(120, 480))
+    r = sweep.cscvPbo(perf, sBlocks=10)
+    assert 0.3 < r["pbo"] < 0.7  # 노이즈면 0.5 근방
+    assert r["oosDegradeSlope"] < 0.5  # IS 최고가 OOS 로 열화
+    d = sweep.deflatedSharpe(perf, nEff=40)
+    assert d["dsr"] < 0.95  # 노이즈는 발간 승격 불가
+
+
+def testSweepRobustSelectionPrefersConsistent():
+    # 한 종목만 모든 가정에서 최상위 → 강건 선정에 포함, 나머지 노이즈는 배제
+    rng = np.random.default_rng(3)
+    scores = rng.normal(size=(50, 100))
+    scores[0, :] = 10.0  # code0 은 모든 가정 최상위
+    robust = sweep.robustSelection(scores, [f"c{i}" for i in range(50)])
+    assert "c0" in robust and len(robust) < 10
