@@ -91,6 +91,58 @@ def _weeklyT(diff: pl.Series) -> float:
     return float(diff.mean() / (diff.std() / (diff.len() ** 0.5)))
 
 
+def _surfaceSpreadByWeek(d: pl.DataFrame) -> tuple[pl.DataFrame | None, str]:
+    """단일 표면 조인 df → (주별 스프레드 (week, spread), kind). 채점 불가면 (None, kind).
+
+    연속 표면(고유 score > CONTINUOUS_DISTINCT_MIN)은 주별 Q5-Q1 분위 스프레드, 이산 방향 표면은
+    상/하 집단 스프레드. 주별 1값 (Fama-MacBeth 원자) 시계열을 낸다.
+    """
+    if d["score"].n_unique() > CONTINUOUS_DISTINCT_MIN:
+        dq = d.with_columns(q=(pl.col("score").rank() / pl.len()).over("week").mul(5).ceil().clip(1, 5).cast(pl.Int32))
+        wk = dq.group_by(["week", "q"]).agg(ex=pl.col("exNeutral").mean())
+        sp = wk.pivot(values="ex", index="week", on="q").drop_nulls()
+        kind, hi, lo = "분위", "5", "1"
+    else:
+        wk = (
+            d.with_columns(
+                side=pl.when(pl.col("score") > 0.5).then(1).when(pl.col("score") < 0.5).then(0).otherwise(None)
+            )
+            .drop_nulls("side")
+            .group_by(["week", "side"])
+            .agg(ex=pl.col("exNeutral").mean())
+        )
+        sp = wk.pivot(values="ex", index="week", on="side").drop_nulls()
+        kind, hi, lo = "방향", "1", "0"
+    if hi not in sp.columns or lo not in sp.columns:
+        return None, kind
+    return sp.select("week", spread=(pl.col(hi) - pl.col(lo))).sort("week"), kind
+
+
+def surfaceWeeklySpreads(readings: pl.DataFrame, labels: pl.DataFrame, *, valueCol: str = "exNeutral") -> pl.DataFrame:
+    """표면별 주단위 스프레드 시계열 → long (surface, week, spread). certify 부트스트랩 입력.
+
+    Args:
+        readings: (code, week, surface, direction, score) 판독.
+        labels: weeklyLabels 산출.
+        valueCol: 채점 값 컬럼 ("exNeutral" gross 버킷중립 | "netExNeutral" net-of-cost).
+
+    Returns:
+        (surface, week, spread) long. 표면별 주 1값 (Fama-MacBeth 원자). 다중검정 인증(certify)이
+        이 시계열들로 정상성 부트스트랩해 타입 간 상관을 보존한다.
+    """
+    j = readings.join(
+        labels.select("code", "week", pl.col(valueCol).alias("exNeutral")), on=["code", "week"], how="inner"
+    )
+    out = []
+    for surf in j["surface"].unique().sort():
+        series, _ = _surfaceSpreadByWeek(j.filter(pl.col("surface") == surf))
+        if series is not None:
+            out.append(series.with_columns(surface=pl.lit(surf)).select("surface", "week", "spread"))
+    if not out:
+        return pl.DataFrame(schema={"surface": pl.Utf8, "week": pl.Int64, "spread": pl.Float64})
+    return pl.concat(out)
+
+
 def scorecard(readings: pl.DataFrame, labels: pl.DataFrame) -> pl.DataFrame:
     """표면별 버킷 중립 스프레드 + 주단위 t. → (surface, kind, spread, t, weeks, n, verdict).
 
@@ -101,29 +153,12 @@ def scorecard(readings: pl.DataFrame, labels: pl.DataFrame) -> pl.DataFrame:
     rows = []
     for surf in j["surface"].unique().sort():
         d = j.filter(pl.col("surface") == surf)
-        if d["score"].n_unique() > CONTINUOUS_DISTINCT_MIN:
-            dq = d.with_columns(
-                q=(pl.col("score").rank() / pl.len()).over("week").mul(5).ceil().clip(1, 5).cast(pl.Int32)
-            )
-            wk = dq.group_by(["week", "q"]).agg(ex=pl.col("exNeutral").mean())
-            sp = wk.pivot(values="ex", index="week", on="q").drop_nulls()
-            kind, hi, lo = "분위", "5", "1"
-        else:
-            wk = (
-                d.with_columns(
-                    side=pl.when(pl.col("score") > 0.5).then(1).when(pl.col("score") < 0.5).then(0).otherwise(None)
-                )
-                .drop_nulls("side")
-                .group_by(["week", "side"])
-                .agg(ex=pl.col("exNeutral").mean())
-            )
-            sp = wk.pivot(values="ex", index="week", on="side").drop_nulls()
-            kind, hi, lo = "방향", "1", "0"
-        if hi not in sp.columns or lo not in sp.columns:
+        series, kind = _surfaceSpreadByWeek(d)
+        if series is None:
             continue
-        diff = sp[hi] - sp[lo]
+        diff = series["spread"]
         t = _weeklyT(diff)
-        weeks = sp.height
+        weeks = series.height
         verdict = "미검증" if weeks < SCORECARD_MIN_WEEKS else ("통과" if abs(t) >= FACTOR_ZOO_T else "동물원구분불가")
         rows.append(
             {

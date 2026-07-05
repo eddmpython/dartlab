@@ -311,3 +311,58 @@ def testNetPositiveAvoidZeroCost():
     assert passed == {"a"}  # a: 0.02-0.01>0 통과, b: 0.005-0.01<0 탈락
     passedAvoid = costs.netPositive(edge, floor, avoidCodes={"b"})
     assert "b" in passedAvoid  # 회피 종목은 비용 0 이라 작은 엣지도 통과
+
+
+def _panelToLong(W):
+    rows = []
+    T, L = W.shape
+    for t in range(T):
+        for k in range(L):
+            rows.append({"surface": f"s{k:02d}", "week": 202600 + t, "spread": float(W[t, k])})
+    return pl.DataFrame(rows)
+
+
+def testBenjaminiHochbergControlsFdr():
+    from dartlab.simulate import certify
+
+    p = np.array([0.001, 0.2, 0.3, 0.4, 0.5])
+    rej = certify.benjaminiHochberg(p, 0.1)
+    assert rej[0] and not rej[1:].any()  # 유의한 1개만 기각
+    rng = np.random.default_rng(0)
+    pn = rng.uniform(size=1000)  # 전부 null
+    assert certify.benjaminiHochberg(pn, 0.1).sum() < 20  # 거짓 발견 억제
+
+
+def testCertifyNoiseYieldsNoCertification():
+    from dartlab.simulate import certify
+
+    rng = np.random.default_rng(1)
+    W = rng.normal(0, 0.01, size=(120, 30))  # 순수 노이즈 30 표면
+    res = certify.certify(_panelToLong(W), nBoot=300)
+    assert res["spaP"] > 0.10  # 노이즈는 SPA 인증 불가
+    assert (res["surfaces"]["verdict"] == "인증").sum() == 0  # 인증 0 (factor zoo 통제)
+
+
+def testCertifyRealEdgeIsCertified():
+    from dartlab.simulate import certify
+
+    rng = np.random.default_rng(2)
+    W = rng.normal(0, 0.01, size=(120, 30))
+    W[:, 5] += 0.006  # 표면 s05 = 진짜 엣지 (t~6.6)
+    res = certify.certify(_panelToLong(W), nBoot=300)
+    assert res["spaP"] < 0.05  # 진짜 최고표면 = SPA 기각
+    v = {r["surface"]: r["verdict"] for r in res["surfaces"].iter_rows(named=True)}
+    assert v["s05"] == "인증"  # FDR + t허들 + RW 전부 통과
+
+
+def testCorrClusterEffNAndShrink():
+    from dartlab.simulate import certify
+
+    rng = np.random.default_rng(4)
+    base = rng.normal(size=(200, 1))
+    wCorr = np.hstack([base, base, base])  # 3 완전 상관 = 유효 1
+    wIndep = rng.normal(size=(200, 3))  # 독립 3 = 유효 ~3
+    assert certify.corrClusterEffN(wCorr) < 1.2
+    assert 2.4 < certify.corrClusterEffN(wIndep) <= 3.01
+    sh = certify.empiricalBayesShrink(np.array([0.10, 0.0, -0.10, 0.0, 0.0]), np.array([0.05] * 5))
+    assert abs(sh[0]) < 0.10  # 극단 추정이 대평균으로 수축
