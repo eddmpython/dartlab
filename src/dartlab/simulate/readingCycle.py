@@ -29,12 +29,20 @@ def _nowUtc() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="minutes")
 
 
-def _buildMatrices(dataDir: Path | None):
-    weekMap, weekEnd = _table.weekCalendar(dataDir)
-    caps = _table.marketCap(dataDir)
-    priceM = _table.priceWeekly(weekMap, dataDir)
-    fundM = _table.fundWeekly(weekEnd, caps, dataDir)
-    eventM = _table.eventWeekly(weekMap, dataDir)
+def marketTable(market: str):
+    """시장 → 입력 상(床) 모듈 (KR=table, US=tableUs). 미지원 시장은 table(KR) 폴백."""
+    from dartlab.simulate import markets as _markets
+
+    return _markets.tableModule(market) or _table
+
+
+def _buildMatrices(dataDir: Path | None, market: str = "KR"):
+    tbl = marketTable(market)
+    weekMap, weekEnd = tbl.weekCalendar(dataDir)
+    caps = tbl.marketCap(dataDir)
+    priceM = tbl.priceWeekly(weekMap, dataDir)
+    fundM = tbl.fundWeekly(weekEnd, caps, dataDir)
+    eventM = tbl.eventWeekly(weekMap, dataDir)
     return weekMap, weekEnd, priceM, fundM, eventM
 
 
@@ -63,9 +71,9 @@ def issueReadings(
         directionByType: 이벤트 방향화 사전 (None + labels 있으면 여기서 도출).
         labels: 방향화 도출용 라벨 (None 이면 table 에서 계산).
     """
-    weekMap, weekEnd, priceM, fundM, eventM = matrices or _buildMatrices(dataDir)
+    weekMap, weekEnd, priceM, fundM, eventM = matrices or _buildMatrices(dataDir, market)
     if directionByType is None:
-        lab = labels if labels is not None else _sc.weeklyLabels(weekEnd, _table.dailyPrices(dataDir))
+        lab = labels if labels is not None else _sc.weeklyLabels(weekEnd, marketTable(market).dailyPrices(dataDir))
         directionByType = _sc.deriveEventDirections(eventM, lab)
     readings = _opine.opine(priceM, fundM, eventM, directionByType=directionByType)
     if readings.height == 0:
@@ -128,6 +136,7 @@ def _fillAbstain(
 
 def scoreReadingsDue(
     *,
+    market: str = "KR",
     baseDir: Path | None = None,
     dataDir: Path | None = None,
     labels: pl.DataFrame | None = None,
@@ -136,6 +145,7 @@ def scoreReadingsDue(
     """지평 경과·라벨 확보된 판독을 버킷 중립 초과로 채점. 반환 = 채점 행 수.
 
     Args:
+        market: 시장 ("KR"|"US"). 라이브 런 라벨·비용 바닥을 이 시장 상(床)에서 계산.
         baseDir: 원장(출력) 루트 override.
         dataDir: 데이터(읽기전용 SSOT) 루트 override.
         labels: 채점 라벨 (None 이면 table 에서 계산). 라벨 없는(지평 미도래) 주는 pending.
@@ -149,11 +159,12 @@ def scoreReadingsDue(
         due = due.filter(pl.col("abstainReason").is_null())  # 기권행은 채점 대상 아님 (포지션 없음)
     if due.height == 0:
         return 0
+    tbl = marketTable(market)
     liveRun = labels is None  # 라벨 미주입 = 실데이터 라이브 런 (자동 스캔 허용)
     weekEnd = None
     if labels is None:
-        _, weekEnd = _table.weekCalendar(dataDir)
-        labels = _sc.weeklyLabels(weekEnd, _table.dailyPrices(dataDir))
+        _, weekEnd = tbl.weekCalendar(dataDir)
+        labels = _sc.weeklyLabels(weekEnd, tbl.dailyPrices(dataDir))
     lab = labels.select("week", pl.col("code").alias("stockCode"), "exRaw", "exNeutral")
     joined = due.join(lab, on=["week", "stockCode"], how="inner")
     if joined.height == 0:
@@ -162,8 +173,8 @@ def scoreReadingsDue(
     # 라벨 주입 경로(테스트)는 자동 실데이터 스캔을 하지 않는다 (주입 격리 + OOM 회피).
     if costFloorByWeekCode is None and liveRun:
         if weekEnd is None:
-            _, weekEnd = _table.weekCalendar(dataDir)
-        costFloorByWeekCode = _costs.costFloorWeekly(weekEnd, _table.dailyHighLow(dataDir))
+            _, weekEnd = tbl.weekCalendar(dataDir)
+        costFloorByWeekCode = _costs.costFloorWeekly(weekEnd, tbl.dailyHighLow(dataDir), market=market)
     if costFloorByWeekCode is None:
         joined = joined.with_columns(costFloor=pl.lit(None, dtype=pl.Float64))
     else:

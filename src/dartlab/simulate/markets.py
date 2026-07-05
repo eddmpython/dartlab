@@ -27,10 +27,10 @@ MARKET_CONFIG: dict[str, dict] = {
         "instFee": 0.000036,
     },
     "US": {
-        "status": "roadmap",  # 00 §10: US 프리셋·US elasticity 부재로 구조적 KR-only. 07 로드맵 phase.
-        "priceSource": "edgar/prices(미배선)",
-        "financeSource": "edgar/panel",
-        "filingsSource": "edgar/filings",
+        "status": "wired",  # tableUs 로 EDGAR 실배선 완료 (prices·finance XBRL·allFilings). 판독 가능.
+        "priceSource": "edgar/prices",
+        "financeSource": "edgar/finance(XBRL frame)",
+        "filingsSource": "edgar/allFilings",
         "sellTaxNote": "SEC fee 스왑 (매도 $27.80/백만 등, 세율표만 교체)",
         "secFeeNote": "SEC Section 31 fee (매도측). costs 스프레드 추정은 동일.",
     },
@@ -57,6 +57,13 @@ _LEVER_EDGAR_MAP: dict[str, dict] = {
     "bonusIssueFade": {"form": "주식분할/주식배당", "code": "weak", "verdict": "후순위"},
     "majorHolderChange": {"form": "SC 13D/13G", "code": "5%+ 보유", "verdict": "지배구조 [K]"},
 }
+
+
+def tableModule(market: str):
+    """시장 → 입력 상(床) 모듈 (KR=table, US=tableUs). opine·scorecard 는 시장 무관 소비."""
+    from dartlab.simulate import table, tableUs
+
+    return {"KR": table, "US": tableUs}.get(market)
 
 
 def leverSourceMap() -> dict[str, dict]:

@@ -28,7 +28,6 @@ from dartlab.simulate import readingCycle as _cycle
 from dartlab.simulate import readingLedger as _ledger
 from dartlab.simulate import readingScorecard as _sc
 from dartlab.simulate import regime as _regime
-from dartlab.simulate import table as _table
 
 BLOCK_SUBDIR = "readingBlocks"
 CODE_VERSION = "reading-v2"
@@ -195,8 +194,9 @@ def runWeek(
         net 게이트→regime→해시체인. 미발행이면 readingCount=0 블록.
     """
     injected = matrices is not None
-    weekMap, weekEnd, priceM, fundM, eventM = matrices or _cycle._buildMatrices(dataDir)
-    lab = labels if labels is not None else _sc.weeklyLabels(weekEnd, _table.dailyPrices(dataDir))
+    tbl = _cycle.marketTable(market)
+    weekMap, weekEnd, priceM, fundM, eventM = matrices or _cycle._buildMatrices(dataDir, market)
+    lab = labels if labels is not None else _sc.weeklyLabels(weekEnd, tbl.dailyPrices(dataDir))
     directionByType = _sc.deriveEventDirections(eventM, lab)
     _cycle.issueReadings(
         market=market,
@@ -206,7 +206,7 @@ def runWeek(
         matrices=(weekMap, weekEnd, priceM, fundM, eventM),
         directionByType=directionByType,
     )
-    _cycle.scoreReadingsDue(baseDir=baseDir, dataDir=dataDir, labels=labels)
+    _cycle.scoreReadingsDue(market=market, baseDir=baseDir, dataDir=dataDir, labels=labels)
     if week is None:
         led = _ledger.readReadings(baseDir=baseDir)
         week = int(led["week"].max()) if led is not None and led.height else 0
@@ -250,7 +250,7 @@ def runWeek(
     costFloorMedian = None
     netPos = None
     if not injected:  # 라이브 런만 비용 바닥 스캔 (주입 테스트는 net 게이트 생략, OOM 회피)
-        cfWk = _costs.costFloorWeekly(weekEnd, _table.dailyHighLow(dataDir)).filter(pl.col("week") == week)
+        cfWk = _costs.costFloorWeekly(weekEnd, tbl.dailyHighLow(dataDir), market=market).filter(pl.col("week") == week)
         if cfWk.height:
             costFloorMedian = float(cfWk["costFloor"].median())
             edge = _edgeByCode(weekReadings, certifiedNet)
@@ -263,7 +263,7 @@ def runWeek(
 
     regimeTag = None
     if not injected:  # 라이브 런만 레짐 분류 (시장 스캔)
-        mw = _regime.marketWeekly(_table.dailyPrices(dataDir))
+        mw = _regime.marketWeekly(tbl.dailyPrices(dataDir))
         reg = _regime.classifyRegimes(mw).filter(pl.col("week") == week)
         regimeTag = reg["regime"][0] if reg.height else None
 

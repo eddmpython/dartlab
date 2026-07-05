@@ -40,6 +40,8 @@ _TICK_TABLE: tuple[tuple[float, float], ...] = (
 )
 _CS_K = 3 - 2 * math.sqrt(2)  # Corwin-Schultz 상수 3 - 2√2
 _DEFAULT_WINDOW = 20  # 스프레드 추정 트레일링 거래일 창
+_US_MIN_TICK = 0.01  # US 최소 호가 1센트 (KR 원 호가 계단과 다름)
+_US_SEC_FEE = 0.0000278  # US SEC Section 31 매도 수수료 (~$27.80/백만). KR 세율표 대신 스왑.
 
 
 def sellTaxRate(tradeDate: str) -> float:
@@ -101,27 +103,32 @@ def _spreadEstimators(dailyHL: pl.DataFrame, window: int) -> pl.DataFrame:
     return d.with_columns(arSpread=pl.when(pl.col("arMean") > 0).then(2 * pl.col("arMean").sqrt()).otherwise(None))
 
 
-def costFloorWeekly(weekEnd: pl.DataFrame, dailyHL: pl.DataFrame, *, window: int = _DEFAULT_WINDOW) -> pl.DataFrame:
+def costFloorWeekly(
+    weekEnd: pl.DataFrame, dailyHL: pl.DataFrame, *, window: int = _DEFAULT_WINDOW, market: str = "KR"
+) -> pl.DataFrame:
     """주말 as-of 종목별 왕복 비용 바닥 → (week, code, spread, tickFloor, sellTax, costFloor).
 
     Args:
         weekEnd: (week, date=그 주 마지막 거래일).
         dailyHL: table.dailyHighLow 산출 (date, code, high, low, close).
         window: 스프레드 추정 트레일링 거래일 창 (기본 20).
+        market: "KR"(원 호가 계단 + 세율표) | "US"(1센트 틱 + SEC fee). 스프레드 추정은 동일.
 
     Returns:
         (week, code, spreadAr, spreadCs, spread, tickFloor, sellTax, costFloor). costFloor =
-        max(유효스프레드, 1틱) + 매도세(거래일자 기준) + 유관기관비용 x2. spread 는 Abdi-Ranaldo
-        우선, 결측 시 Corwin-Schultz 폴백. 스프레드 = 왕복 유효 (매수·매도 교차 1회씩).
+        max(유효스프레드, 1틱) + 매도세(시장별) + 유관기관비용 x2. spread 는 Abdi-Ranaldo 우선,
+        결측 시 Corwin-Schultz 폴백. 스프레드 = 왕복 유효 (매수·매도 교차 1회씩).
     """
     est = _spreadEstimators(dailyHL, window)
     snap = est.join(weekEnd, on="date", how="inner")
+    tickExpr = (_US_MIN_TICK / pl.col("close")) if market == "US" else _tickFloorExpr("close")
+    taxExpr = pl.lit(_US_SEC_FEE) if market == "US" else _sellTaxExpr("date")
     return (
         snap.with_columns(
             spreadAr=pl.col("arSpread"),
             spreadCs=pl.col("csSpread"),
-            tickFloor=_tickFloorExpr("close"),
-            sellTax=_sellTaxExpr("date"),
+            tickFloor=tickExpr,
+            sellTax=taxExpr,
         )
         .with_columns(spread=pl.coalesce(pl.col("spreadAr"), pl.col("spreadCs"), pl.col("tickFloor")))
         .with_columns(

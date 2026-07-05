@@ -54,7 +54,7 @@ def weekCalendar(baseDir: Path | None = None) -> tuple[pl.DataFrame, pl.DataFram
         .unique()
         .sort("date")
         .with_columns(d=pl.col("date").str.to_date("%Y%m%d"))
-        .with_columns(week=(pl.col("d").dt.iso_year() * 100 + pl.col("d").dt.week()))
+        .with_columns(week=(pl.col("d").dt.iso_year() * 100 + pl.col("d").dt.week()).cast(pl.Int64))
     )
     weekMap = cal.select("date", "week")
     weekEnd = cal.group_by("week").agg(pl.col("date").max().alias("date"))

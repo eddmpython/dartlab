@@ -821,10 +821,12 @@ def testMarketParameterizationAndEdgarMap():
     from dartlab.simulate import markets
 
     assert markets.marketStatus("KR") == "wired"  # KR 배선 완료
-    assert markets.marketStatus("US") == "roadmap"  # US 로드맵 phase (스펙 00 §10)
-    markets.requireWired("KR")  # KR 은 통과
-    with _pytest.raises(ValueError):  # US 판독 요청 = 스펙 게이트로 차단 (데이터 날조 금지)
-        markets.requireWired("US")
+    assert markets.marketStatus("US") == "wired"  # US 도 EDGAR 실배선 완료 (tableUs)
+    markets.requireWired("KR")
+    markets.requireWired("US")  # 둘 다 판독 가능
+    with _pytest.raises(ValueError):  # 미지원 시장은 차단
+        markets.requireWired("JP")
+    assert markets.tableModule("US").__name__.endswith("tableUs")  # US → tableUs 라우팅
     m = markets.leverSourceMap()
     assert m["insiderBuy"]["form"] == "Form 4"  # KR 레버 → US EDGAR 폼 매핑 (10 §1b)
     assert m["auditDelay"]["form"] == "NT 10-K / NT 10-Q"
