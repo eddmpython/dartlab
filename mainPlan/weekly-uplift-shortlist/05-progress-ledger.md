@@ -16,11 +16,15 @@
 - [ ] A4 : naverTheme 로컬 전용 사용 범위 확인
 - [ ] A5 : G9 US 전종목 가격 벌크 백본 (P0 소스 실측 후 상정)
 
-## P0 실측 기록 (착수 후 기입)
+## P0 실측 기록
 
-- [ ] KR 17년 주간 replay 판독기별 bootstrap 성적표 경로:
-- [ ] text/뉴스 종목 태깅 커버리지 (전상장사 대비 %, 소형주 %):
-- [ ] flow lazy fetch 300종목 소요시간:
-- [ ] price reader 벌크 전종목 계산 peak 메모리:
-- [ ] US fund/event reader 시범 판독 결과 (EDGAR 유니버스 커버리지):
-- [ ] G9 무료 US 가격 소스 라이선스·품질 실측 (Stooq 등):
+2026-07-05 운영자 지시로 P0 즉시 착수 (시범 규모 없이 2016~ 전종목, EDGAR 포함, 메모리가드 체크). 상세·스크립트 = `tests/_attempts/shortlist/` (README + weeklyLoopKr/Us.py, gitignore 로컬 샌드박스). 핵심 수치는 본 원장이 영속 기록.
+
+- [x] KR 데이터: gov/prices 2015~2026 로컬 완비. 6.67M행·3,402종목 로드 0.8초
+- [x] 주간 예측→판독→개선 루프 KR 전종목 2016~2026: **543주 전 루프 3.7초** (`weeklyLoopKr.py`). price reader v0 edge 0 (board100 hit 0.428 = base, Q5-Q1 +0.06%/주) = 정직한 기준선
+- [x] 개선 사이클 1 (KR 수정주가 근사, 1,164종목 보정): 무변화 → 가설 기각 기록
+- [x] US EDGAR: HF 에 가격 4,122·panel 7,391·financeStmt 6,442 실재. 1차 2,388 수령분 중 사용가능 1,288 (열화 ~46% 재확인, G9=재bake 복구 패스로 재정의). US 루프 546주 5.0초, Q5-Q1 +1.50%/주 전 연도 양(+) **단 생존편향 상방 왜곡 명시** (현재 유니버스 bake 라 폐지사 부재)
+- [x] Company 메모리가드: 30사 순차 panel 루프 RSS ~900MB 정체 (peak 922MB). "1사당 200~500MB 무한 누적" 미재현 → 순차 한정 완화 근거 확보 (병렬 미검증, CLAUDE.md 문구 변경은 운영자 결정)
+- [ ] US 잔여 다운로드(rate limit 재개) 후 전 4,122 재실측
+- [ ] event/fund reader 의 과거 PIT 재현 실측 (rcept_dt 기반) = 다음 사이클
+- [ ] text/뉴스 종목 태깅 커버리지 실측 = 다음 사이클
