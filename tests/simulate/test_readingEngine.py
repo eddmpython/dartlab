@@ -180,3 +180,22 @@ def testAdaHedgeConvergesToBestSurface():
     r = adaHedge(losses)
     assert r["finalWeights"][0] == r["finalWeights"].max()  # 우월 표면 최대 가중
     assert r["regret"] < (T * np.log(N)) ** 0.5  # 후회 경계 준수
+
+
+def testBoardConsensusAndRedFlagGate():
+    from dartlab.simulate import board
+
+    r = pl.DataFrame(
+        {
+            "code": ["a", "a", "b", "b", "c", "c"],
+            "week": [202607] * 6,
+            "surface": ["fund.ep", "event.dilutionGovernance"] * 3,
+            "direction": [1, 0, 1, -1, -1, 0],
+            "score": [0.9, 0.5, 0.85, 0.1, 0.1, 0.5],
+        }
+    )
+    b = board.board100(r, surfaceWeights={"fund.ep": 2.0, "event.dilutionGovernance": 1.0}, n=3)
+    byCode = {row["code"]: row["consensus"] for row in b.iter_rows(named=True)}
+    assert byCode["a"] == max(byCode.values())  # 재무 상방·이벤트 중립 = 최고 합의
+    top = board.applyGates(b, redFlagCodes={"b"}, n=2)
+    assert "b" not in top["code"].to_list()  # red-flag 제외
