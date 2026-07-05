@@ -199,3 +199,45 @@ def testBoardConsensusAndRedFlagGate():
     assert byCode["a"] == max(byCode.values())  # 재무 상방·이벤트 중립 = 최고 합의
     top = board.applyGates(b, redFlagCodes={"b"}, n=2)
     assert "b" not in top["code"].to_list()  # red-flag 제외
+
+
+def _mats(week):
+    weekEnd = pl.DataFrame({"week": [week], "date": ["20260213"]})
+    fundM = pl.DataFrame(
+        {"code": ["a", "b", "c", "d", "e"], "week": [week] * 5, "ep": [0.01, 0.02, 0.03, 0.04, 0.05], "bm": [0.02] * 5}
+    )
+    priceM = pl.DataFrame(
+        schema={
+            "code": pl.Utf8,
+            "week": pl.Int64,
+            "ret5": pl.Float64,
+            "mom20x5": pl.Float64,
+            "volShock": pl.Float64,
+            "high52": pl.Float64,
+        }
+    )
+    eventM = pl.DataFrame(schema={"code": pl.Utf8, "week": pl.Int64, "reportType": pl.Utf8})
+    weekMap = pl.DataFrame(schema={"date": pl.Utf8, "week": pl.Int64})
+    return (weekMap, weekEnd, priceM, fundM, eventM)
+
+
+def testRunWeekHashChain(tmp_path):
+    from dartlab.simulate import runweek
+    from dartlab.simulate.runweek import hashBlock
+
+    lab = pl.DataFrame(
+        {
+            "code": ["a", "b", "c", "d", "e"],
+            "week": [202607] * 5,
+            "exRaw": [-0.02, -0.01, 0.0, 0.01, 0.02],
+            "exNeutral": [-0.02, -0.01, 0.0, 0.01, 0.02],
+        }
+    )
+    b1 = runweek.runWeek(week=202607, baseDir=tmp_path, matrices=_mats(202607), labels=lab)
+    b2 = runweek.runWeek(
+        week=202608, baseDir=tmp_path, matrices=_mats(202608), labels=lab.with_columns(week=pl.lit(202608))
+    )
+    assert b1["readingCount"] == 10
+    assert b2["prevHash"] == b1["hash"]  # 해시체인 연결
+    body = {k: v for k, v in b1.items() if k != "hash"}
+    assert hashBlock(body) == b1["hash"]  # 결정론 재현 (외부 재검산 가능)
