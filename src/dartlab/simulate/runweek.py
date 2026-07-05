@@ -51,6 +51,20 @@ def hashBlock(block: dict) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+def otsAnchor(block: dict) -> dict:
+    """블록 해시의 OpenTimestamps 앵커 페이로드 (06 §7b, 운영 런북에서 비트코인 블록에 무료 앵커).
+
+    엔진은 앵커 요청(해시·알고리즘)을 낸다. 실제 stamp 제출·.ots 증명 공개는 운영자 독립 런북
+    (외부 서비스 의존이라 엔진 결정론 밖). 앵커되면 봉인 시각이 비트코인 블록타임으로 증명된다.
+    """
+    return {
+        "hash": block.get("hash"),
+        "algorithm": "sha256",
+        "week": block.get("week"),
+        "runbook": "ots stamp <hash> → .ots 증명 저장·공개. 외부인이 비트코인 블록타임으로 봉인 시각 검증.",
+    }
+
+
 def adaHedgeWeights(spreads: pl.DataFrame) -> dict[str, float]:
     """표면 주간 스프레드 시계열 → AdaHedge 결합 가중 (사전 봉인 손실 함수). 부족하면 {} (균등).
 

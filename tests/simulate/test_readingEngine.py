@@ -887,3 +887,22 @@ def testBacktestFullEngineReplay():
     assert "fund.ep" in r["scorecard"]["surface"].to_list()  # 성적표 산출
     assert r["certify"]["surfaces"].height >= 1  # 인증 깔때기 실행
     assert r["sweep"]["nConfigs"] > 0 and r["sweep"]["pbo"] is not None  # sweep 실행 (PBO/DSR/robust)
+
+
+def testSimTypeRegistryAndOtsAnchor():
+    from dartlab.simulate import runweek, simtype
+
+    reg = simtype.listSimTypes()
+    assert {"economy", "finance", "price", "quant", "reading"} <= set(reg)  # 첫 등재 + 판독 엔진
+    assert all(s.sourceLineage and s.assumptionAxis and s.scoringRule for s in reg.values())  # 4계약 충족
+    assert simtype.isScorable("reading") and simtype.isScorable("quant")  # 채점 가능
+    # 새 시뮬 등재 (4계약) + unscorable 라벨
+    simtype.registerSimType(
+        simtype.SimTypeSpec("explore", ("x",), ("y",), simtype.OUTPUT_CROSS_SECTIONAL, "unscorable")
+    )
+    assert not simtype.isScorable("explore")  # 탐색 전용 = 영구 미채점
+    with pytest.raises(ValueError):  # 4계약 미충족 거부
+        simtype.registerSimType(simtype.SimTypeSpec("bad", (), (), simtype.OUTPUT_EXTENSION, ""))
+    # OpenTimestamps 앵커 페이로드
+    ots = runweek.otsAnchor({"hash": "abc", "week": 202607})
+    assert ots["hash"] == "abc" and ots["algorithm"] == "sha256" and "runbook" in ots
