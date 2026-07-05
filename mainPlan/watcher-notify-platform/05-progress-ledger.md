@@ -17,6 +17,7 @@
 | 2026-07-03 | **발송위생** . 토픽별 cap(aa57e02ae). 24h dedupe=허브 sentNonce 영구멱등·조용한시간=cron 시각(17시 KST) 구조 회피로 각각 불요 판정(watch.py 주석 박제) | ✅ |
 | 2026-07-03 | **newIpo 딥링크 격상** . 클릭 url `/terminal?ipo=1` = 터미널 IPO 공모 다이얼로그 자동 오픈(발굴 리스트 + 로컬 6카테고리 리포트, 알림→인사이트 루프 완결). 러너 pytest 7/7 | ✅ |
 | 2026-07-03 | **newOrders 딥링크 파리티** . 옛 클릭 url `/terminal`(기본종목 삼성전자로 dump, 루프 끊김) → `/terminal?sym={code}`(해당 종목 오픈). 제목도 코드→회사명(scan orders `corpName` 컬럼 신설, allFilings corp_name). 러너 pytest 8/8 | ✅ |
+| 2026-07-05 | **★왓치 IPO 리포트 베이크 첫 관문** . cron 이 `buildIpoReports.py`(sync, buildIpoReport 위임) 를 먼저 돌려 6카테고리 리포트를 HF `dart/ipo/reports.parquet` push(퍼블릭 터미널 직독 SSOT, pyodide 0), 그다음 알림(딥링크 목적지 이미 존재). 단일 파싱(watch.py 가 산출 parquet 소비, scan 폴백). 실측 9 발행사 build→push→readback + 퍼블릭 렌더. 전략 E([[project_ipo_prospectus_summary]] 01) | ✅ |
 | 대기 | 운영자 롤아웃: Cloudflare 배포(D1·secret·VAPID·deploy) + GitHub vars/secret | ⏳ 운영자 |
 | 대기 | 운영자 롤아웃: hfProxy 재배포(`infra/workers/hfProxy` 에서 `wrangler deploy`) . `/ipo-filings` 라우트 활성(newIpo 딥링크 목적지 데이터원) | ⏳ 운영자 |
 | — | 운영자 롤아웃: landing UI 눈검수 후 push(자동 push 금지) | ⏳ 운영자 |

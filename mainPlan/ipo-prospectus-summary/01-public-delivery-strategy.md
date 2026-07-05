@@ -1,6 +1,15 @@
-# 01. IPO 단건 리포트 퍼블릭 전달 전략 (탐색 결과 + 결정 대기)
+# 01. IPO 단건 리포트 퍼블릭 전달 전략 (전략 E 승인·구현 완료)
 
-> 운영자 지시("무조건 런타임, 로컬 전용 금지" + "퍼블릭 터미널 속도·버벅임 없이 + 공동작업대 방법 포함 전수 고려")에 따른 5전략 전수 탐색·실측·적대검증 종합. **착수 전 운영자 승인 대기.**
+> 운영자 지시("무조건 런타임, 로컬 전용 금지" + "퍼블릭 터미널 속도·버벅임 없이 + 공동작업대 방법 포함 전수 고려")에 따른 5전략 전수 탐색·실측·적대검증 종합. **운영자 승인("차라리 베이크하자, 체계적으로, actions 자동화, 왓치 첫 관문")으로 전략 E 구현 완료(2026-07-05).**
+
+## ✅ 구현 완료 (전략 E, 2026-07-05)
+
+- **베이크 파이프라인**: `.github/scripts/sync/buildIpoReports.py` (online sync, buildIpoReport 위임·재구현 0, 단일 파싱). dataConfig `ipoReports` 릴리즈 키(dart/ipo). 왓치 cron(`notify-watch.yml`)이 **첫 관문**으로 베이크(리포트 HF push) 후 알림(딥링크 목적지 리포트가 이미 HF에 존재). watch.py 는 베이크 산출 parquet 직독(단일 파싱, scan 폴백).
+- **런타임 직독**: `ipoReportSource.ts`(HF dart/ipo/reports.parquet whole-file + reportJson JSON.parse, reportSource 동형). public report = notWiredYet 제거·HF 직독. local = HF 우선 + 미베이크만 /api 헤드룸. IpoDialog env.kind 게이트 제거(퍼블릭도 렌더), 미베이크는 "준비중".
+- **실측 검증**: 9 발행사 build → HF push → 라이브 readback. 파이썬 2/2·runtime vitest 81/81(ipoReportSource 5/5)·watch 8/8·surfaces svelte-check 0. **퍼블릭 터미널(env.kind=public) 6카테고리 리포트 HF 직독 렌더 스크린샷 확인**(로컬서버·pyodide 0).
+- **운영자 잔여**: ① hfProxy `/ipo-filings` 워커 재배포(발굴 리스트 데이터원, 리포트와 별개). ② GitHub Secret `HF_TOKEN`(왓치 베이크 push용, 기존 있으면 무관). ③ landing/ui 커밋 눈검수 후 push.
+
+---
 
 ## 문제
 
