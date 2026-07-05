@@ -828,3 +828,24 @@ def testMarketParameterizationAndEdgarMap():
     m = markets.leverSourceMap()
     assert m["insiderBuy"]["form"] == "Form 4"  # KR 레버 → US EDGAR 폼 매핑 (10 §1b)
     assert m["auditDelay"]["form"] == "NT 10-K / NT 10-Q"
+
+
+def testTraitConditionalScorecard():
+    # 형질 버킷 A 는 표면에 엣지, B 는 노이즈 → A 셀 통과, B 동물원구분불가 (형질이 표면을 가름)
+    codes = [f"c{i:02d}" for i in range(20)]
+    trait = pl.DataFrame({"code": codes, "traitBucket": ["A" if i < 10 else "B" for i in range(20)]})
+    rows, labs = [], []
+    for w in range(202601, 202641):
+        wkN = ((w % 11) - 5) * 0.003
+        for i, code in enumerate(codes):
+            isA = i < 10
+            rank = (i % 10) / 9
+            ex = ((rank - 0.5) * 0.05 if isA else (((i * 13 + w) % 10) / 9 - 0.5) * 0.002) + wkN
+            labs.append({"code": code, "week": w, "exNeutral": ex})
+            score = rank if isA else ((i * 7 + w * 3) % 10) / 9
+            rows.append({"code": code, "week": w, "surface": "s", "direction": 0, "score": score})
+    card = readingScorecard.traitConditionalScorecard(pl.DataFrame(rows), pl.DataFrame(labs), trait, traitName="hist")
+    byBucket = {r["traitBucket"]: r for r in card.iter_rows(named=True)}
+    assert byBucket["A"]["t"] > byBucket["B"]["t"]  # 형질 A 버킷에서 표면이 더 강함
+    assert byBucket["A"]["verdict"] == "통과"  # A 셀 승격
+    assert card["traitName"][0] == "hist"  # 형질 축 라벨

@@ -154,6 +154,70 @@ def _abstainRateBySurface(readings: pl.DataFrame) -> dict[str, float]:
     return {r["surface"]: float(r["abstainRate"] or 0.0) for r in ar.iter_rows(named=True)}
 
 
+def traitConditionalScorecard(
+    readings: pl.DataFrame, labels: pl.DataFrame, traitByCode: pl.DataFrame, *, traitName: str = "trait"
+) -> pl.DataFrame:
+    """형질 조건부 성적표 (11 §5): 표면 x 형질 버킷 셀 → 어떤 형질이 어떤 표면을 가르는지 측정.
+
+    형질(예 CB 발행 이력 0 vs 1+)이 표면의 예측력을 조건화하는지 셀 단위로 채점한다. 셀 신설은
+    자동(전수)이되 주장 승격은 06 §4 깔때기 그대로 (주단위 t → 표본 게이트 미달 "미검증"). 형질
+    수백 x 표면 수백 = 셀 폭발 주의: 여기서는 셀 성적만 내고, 승격 판정은 certify 로 위임한다.
+
+    Args:
+        readings: (code, week, surface, direction, score).
+        labels: weeklyLabels 산출.
+        traitByCode: (code, traitBucket) 형질 버킷 (예 profile 자금조달 이력 0/1+). 결정론.
+        traitName: 형질 축 이름 (라벨).
+
+    Returns:
+        (surface, traitBucket, traitName, kind, spread, t, weeks, n, verdict). 같은 표면의 버킷 간
+        t 차이가 형질의 조건화 실측(예 유상증자 x CB 이력 = 드리프트 1.5배).
+    """
+    j = (
+        readings.join(labels.select("code", "week", "exNeutral"), on=["code", "week"], how="inner")
+        .join(traitByCode.select("code", "traitBucket"), on="code", how="inner")
+        .filter(pl.col("score").is_not_null())
+    )
+    rows = []
+    for surf in j["surface"].unique().sort():
+        for bucket in j.filter(pl.col("surface") == surf)["traitBucket"].unique().sort():
+            d = j.filter((pl.col("surface") == surf) & (pl.col("traitBucket") == bucket))
+            series, kind = _surfaceSpreadByWeek(d)
+            if series is None:
+                continue
+            diff = series["spread"]
+            t = _weeklyT(diff)
+            weeks = series.height
+            verdict = (
+                "미검증" if weeks < SCORECARD_MIN_WEEKS else ("통과" if abs(t) >= FACTOR_ZOO_T else "동물원구분불가")
+            )
+            rows.append(
+                {
+                    "surface": surf,
+                    "traitBucket": str(bucket),
+                    "traitName": traitName,
+                    "kind": kind,
+                    "spread": float(diff.mean()),
+                    "t": t,
+                    "weeks": weeks,
+                    "n": d.height,
+                    "verdict": verdict,
+                }
+            )
+    schema = {
+        "surface": pl.Utf8,
+        "traitBucket": pl.Utf8,
+        "traitName": pl.Utf8,
+        "kind": pl.Utf8,
+        "spread": pl.Float64,
+        "t": pl.Float64,
+        "weeks": pl.Int64,
+        "n": pl.Int64,
+        "verdict": pl.Utf8,
+    }
+    return pl.DataFrame(rows, schema=schema).sort(["surface", "traitBucket"]) if rows else pl.DataFrame(schema=schema)
+
+
 def scorecard(readings: pl.DataFrame, labels: pl.DataFrame) -> pl.DataFrame:
     """표면별 버킷 중립 스프레드 + 주단위 t + 기권률. → (surface, kind, spread, t, weeks, n, abstainRate, verdict).
 
