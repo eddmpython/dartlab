@@ -105,6 +105,10 @@ _ALLOWLIST_FILES: frozenset[str] = frozenset(
         "providers/dart/panel/build/builder.py",
         # panel 비교 unit hint — 종목별 panel cache 부재면 scale 추정 없음이 정상.
         "providers/dart/panel/compare.py",
+        # frame/inventory.py. 회사별 report parquet(_dataDir("report")/{code}.parquet) 열거. report 없는
+        # 종목은 빈 결과가 정상(종목별 옵셔널 데이터, 번들 리소스 아님). loud-fail 시 전종목 인벤토리 census
+        # 가 깨짐(panel/build/builder 동형 batch-safe skip 이 정공).
+        "frame/inventory.py",
         # search index builders — panel/content index 는 선택적 로컬/HF 산출물.
         # 부재 = 아직 빌드/동기화 대상 0건, 검색 caller 가 "인덱스 없음" 메시지를 반환.
         "providers/dart/search/fieldIndexRebuild.py",
