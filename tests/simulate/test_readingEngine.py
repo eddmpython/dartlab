@@ -813,3 +813,18 @@ def testLeverLedgerAndReadings():
     r2 = levers.leverReadings(ev, directionByType={"자기주식취득결정": -1})
     byS2 = {row["surface"]: row for row in r2.iter_rows(named=True)}
     assert byS2["lever.treasuryAcquire"]["direction"] == -1  # 데이터 방향이 문헌 prior 이김
+
+
+def testMarketParameterizationAndEdgarMap():
+    import pytest as _pytest
+
+    from dartlab.simulate import markets
+
+    assert markets.marketStatus("KR") == "wired"  # KR 배선 완료
+    assert markets.marketStatus("US") == "roadmap"  # US 로드맵 phase (스펙 00 §10)
+    markets.requireWired("KR")  # KR 은 통과
+    with _pytest.raises(ValueError):  # US 판독 요청 = 스펙 게이트로 차단 (데이터 날조 금지)
+        markets.requireWired("US")
+    m = markets.leverSourceMap()
+    assert m["insiderBuy"]["form"] == "Form 4"  # KR 레버 → US EDGAR 폼 매핑 (10 §1b)
+    assert m["auditDelay"]["form"] == "NT 10-K / NT 10-Q"
