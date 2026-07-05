@@ -21,7 +21,9 @@
 | 2026-07-05 | **파이프라인 정합성 감사(5차원 팬아웃 + 적대검증, wf_47c0b9eb)** . 확증 10 / 반증 0. 데이터플로우·스키마·HF직독·렌더는 깨끗. 결함은 모니터링 가시성·왓치 캐치 품질 2 갈래. 아래 §감사 참조 | ✅ |
 | 2026-07-05 | **F1 모니터링 사각 수리** . bake `continue-on-error` 가 genuine-failure 를 job green 으로 삼켜 monitorPipeline 이 못 보던 조용한 실패 봉인. buildIpoReports.main 토큰부재=exit 0(graceful no-op), notify-watch 에 `Assert IPO bake` 스텝 추가(진짜 실패만 job RED). 왓치 첫관문·회복성 보존. monitor 20/20·buildIpo 2/2 green | ✅ |
 | 2026-07-05 | **F5 cron-drop 감지** . monitorPipeline STALE_AFTER_HOURS 에 "Notify Watch"=80h 등록(3일+ 연속 스케줄 누락 시 IPO SSOT 동결 갭 감지). 커버리지 테스트 동행 | ✅ |
-| 대기 | **F2/F3/F6/F7/F8 왓치 캐치 품질**(알림 동작 변경, 롤아웃 전이라 실사용 무해). 운영자 승인 후 정공법 수리. 아래 §감사 | ⏳ 운영자 |
+| 2026-07-06 | **F2·F6·F7·F8 왓치 캐치 품질 정공법 수리** . F2 newIpo slug=corpCode(발행사별 1회)+확정공모가 2신호, F6 cap 40, F8 중립 적용배수 라벨. **F7 재크로싱**: 허브 topicActive 커서 + /active set-diff 엔드포인트 신설(신규 진입만 발화, 이탈 종목 재진입 시 재발화). watch 13/13·worker 24/24 | ✅ |
+| 2026-07-06 | **F3 허브 nonce 롤백 + 러너 body.failed 가시화** . 전건 발송실패·구독0 nonce 롤백(재시도 가능), 러너 전건실패=RED·부분=warning. F9 윈도 상수 SSOT·F10 죽은 CSS 동반 | ✅ |
+| 2026-07-06 | **master red 해소** . 타 세션 frame/inventory.py silent-fail 린트(종목별 옵셔널 report 로더)를 checkSilentFail 화이트리스트 등록(panel/build/builder 동형). lint 게이트 전 체인 green | ✅ |
 | 대기 | 운영자 롤아웃: Cloudflare 배포(D1·secret·VAPID·deploy) + GitHub vars/secret | ⏳ 운영자 |
 | 대기 | 운영자 롤아웃: hfProxy 재배포(`infra/workers/hfProxy` 에서 `wrangler deploy`) . `/ipo-filings` 라우트 활성(newIpo 딥링크 목적지 데이터원) | ⏳ 운영자 |
 | — | 운영자 롤아웃: landing UI 눈검수 후 push(자동 push 금지) | ⏳ 운영자 |
@@ -39,14 +41,14 @@
 - **F1 [medium, 수리됨]** bake `continue-on-error:true` 가 HF push·파싱·사이즈가드 실패를 job conclusion 에서 삼켜 monitorPipeline 이 못 봄(조용한 실패). 토큰부재(롤아웃 전 no-op)와 genuine-failure 미구분. 수리: main 토큰부재 exit 0 + `Assert IPO bake` 스텝(진짜 실패만 RED). 회복성·첫관문 보존.
 - **F5 [low, 수리됨]** "Notify Watch" 가 STALE_AFTER_HOURS 미등록이라 cron drop(스케줄 누락) 미감지. 수리: 80h 등록.
 
-**왓치 캐치 품질 (운영자 승인 대기, 알림 동작 변경, 롤아웃 전이라 실사용 무해)**
+**왓치 캐치 품질 (전부 수리 완료 2026-07-06, 롤아웃 전이라 실사용 무해)**
 - **F2 [medium]** newIpo slug=rcept 라 기재정정마다 rcept 바뀌어 같은 발행사 재발화(중복알림). docstring "발행사별 1회" 허위. 수리안: slug=corpCode(newOrders 동형) + 테스트. (재발화를 확정공모가 알림으로 원하면 별도 토픽으로 명시.)
 - **F3 [medium]** 허브가 fan-out 전에 nonce 등록·롤백 안 함. 전건 발송실패(429/5xx)·구독자0 도 nonce 소각되어 영구 재시도 불가. 러너가 body.failed 무시(조용한 미발화). worker.js "재시도 가능" 주석과 모순. 수리안: 전건실패 시 nonce 롤백 + 러너 body.failed>0 을 RED 승격. (pushHub worker + 러너 + 테스트 변경.)
-- **F7 [low]** newOrders 는 threshold_cross 가 아니라 code 단위 영구 dedup. 하락 후 재상승(진짜 재크로싱)이 영구 미발화. docstring "크로싱" 과장. 수리안: 01-architecture §5 state-diff 커서(직전 매치셋 교체, 상태저장 요). newOrders 롤아웃 전 필수.
+- **F7 [low, 수리됨]** newOrders 가 code 단위 영구 nonce dedup 이라 재크로싱(하락 후 재상승) 영구 미발화였음. 수리: 허브 `topicActive` 커서 테이블 + `/active` set-diff 엔드포인트(직전 활성 set 과 diff, 신규 진입만 발화, 이탈 종목 제거 후 재진입 시 재발화). 러너는 stateful 토픽을 /active 로(`_send_stateful`), stateless(newIpo)는 /send. 01-architecture §5 구현. 배포 시 D1 migration 0002 적용 필요(런북 반영).
 - **F6 [low]** 콜드스타트 시 cap(newIpo=20) < 윈도 발행사(~30) 라 오래된 매치가 nonce 미등록 + newest-first 정렬로 영구 미발화(aging-out). 수리안: cap 을 윈도 최대 초과(~50) 상향, 또는 콜드스타트 절단 명시.
 - **F8 [low]** 알림 본문이 peerMultiple 을 무조건 "적용PER" 라벨. 비-PER 모형(EV/EBITDA)에서 오표기(터미널 IpoDialog 는 perModel 게이트로 정확). 수리안: 중립 "적용배수" 또는 모형 컬럼 추가.
 
-**청결 (운영자 승인 대기, 무동작 변경)**
+**청결 (전부 수리 완료 2026-07-06)**
 - **F9 [low, PARTIAL]** 베이크 `_discover` 가 scan `_latestFullProspectuses` 발굴로직 복제 + 윈도 상수 이원(85 리터럴 2곳). 현재 값 일치라 무해하나 드리프트 위험. 수리안: scan 위임 또는 상수 SSOT 공유.
 - **F10 [low]** IpoDialog.svelte 죽은 CSS(`.ipoErr`·`.ipoPublicNote code`, 옛 로컬설치 잔재). 수리안: 다음 파일 편집 시 제거(UI, push 게이트).
 
