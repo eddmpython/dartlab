@@ -32,6 +32,7 @@
 3. [02-assumption-and-simulation-method.md](02-assumption-and-simulation-method.md) — 가정 장부·vintage·bridge·절차 + §2B DriverRegistry 수렴/확장.
 4. [03-validation-ai-review.md](03-validation-ai-review.md) — look-ahead 차단·walk-forward·품질 게이트·AI 패널·반증·출시 기준.
 5. [04-progress-ledger.md](04-progress-ledger.md) — 현재 결정·문서 상태·워크스페이스 변동·NEXT 닫기 체크리스트.
+5b. [06-engine-readings-and-sweep.md](06-engine-readings-and-sweep.md) — ★"현재" 축 (2026-07-05 합의 탑재): 전 하위 엔진 판독(표면 전수 등재·기권 1급)·전량 봉인·주간 채점·가정 sweep(강건성 median·가정도 봉인·명명 프리셋/AssumptionLedger 정합). 00 §8b 가 지목한 검증 루프 미완을 대규모로 채우는 조각. 파생 뷰 = 주간 상승후보 100→10. P0 실측 완료(KR 543주 replay 3.7초).
 
 **제품 경험 (UI 단면):**
 6. [05-play-future-replay.md](05-play-future-replay.md) — ★중심 산출물. Play 미래 리플레이·미래 캔버스·다중분기·if 토글 실시간·근거 인벤토리·graceful degradation.

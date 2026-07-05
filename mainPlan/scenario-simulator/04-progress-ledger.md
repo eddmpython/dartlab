@@ -159,3 +159,15 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - [ ] 05/06/07 작성 + 00/02/03 v0.2 동기화 (NEXT §4)
 - [ ] 워크스페이스 새 토폴로지(ui/packages/surfaces) 반영 (05/06)
 - [ ] 착수 = mainPlan 완료 후 (조기 진척 중 — 의존성 07에서 확정) + 운영자 go
+
+
+## 2026-07-05 : 06 "현재" 축 탑재 (운영자 합의)
+
+- 신규 문서 06-engine-readings-and-sweep.md: 전 하위 엔진 데이터를 한곳에서 모아 출처·성격별
+  판독(표면 카탈로그 자동 전수 등재, 선별 0) → 전량 봉인(issueReadings, issueMacro 동형) →
+  주간 채점(G16 정합 수축 성적표) → 가정 sweep(상황 가정=명명 프리셋 소비, 결합 가정=
+  AssumptionLedgerRow 규율 첫 적용, 선정=강건성 median, 가정도 봉인·채점).
+- 00 §8b conditional-signature 의 "검증 루프 미완"을 채우는 조각. 09 §10 fatal②(forward-test
+  write 끝단)를 주간 전종목 규모로 실장.
+- 토론 이력(v0.1~v0.6.1)·P0 실측·갭 원장 = ../weekly-uplift-shortlist/ (아카이브 전환).
+- 원칙 확정 반영: 개별 데이터 작업대 폐기(dossier df41ee60e), 호출계약은 엔진 소유 verb 로만.
