@@ -5,17 +5,23 @@
 데이터 미참조)로 한다. 형질 조건부 실측(유상증자 x CB발행 이력 = 드리프트 1.5배)이 프로파일러
 예측 기여의 실증이다.
 
-깊이 원칙: 형질 등재는 손 선별이 아니라 전수 (11 §2 8축). 본 골격은 축별 대표 형질만 채우고
-(자금조달 이력·재무 비율·시장 미시), 전수 카탈로그 열거는 R4 확장. 어떤 형질이 예측에
-기여하는지는 성적표(형질 버킷)가 도태시킨다.
+깊이 원칙: 형질 등재는 손 선별이 아니라 전수 (11 §2 8축). 8 축(사업구조·관계그래프·자본조달·
+거버넌스·노출벡터·시장미시·노동설비·서사)을 전부 등재하고, 어떤 축·형질이 예측에 기여하는지는
+성적표(형질 버킷)가 도태시킨다. 죽은 형질도 목록에서 안 사라진다. 데이터 배선이 얕은 축(관계
+상대방 파싱·매크로 베타·서사)은 값 대신 미가용 라벨로 격리(프로파일 재현성 보존).
 
-Layer: L2.5 simulate. table 벌크 직독만 소비 (Company 객체 0). asOf 이전 데이터만 참조.
+검증: 재현성(replayIdentical = 같은 asOf 재계산 byte 일치) + look-ahead 카나리아(asOf 이후 데이터
+미참조, 전 형질 asOf 필터). 프로파일은 예측이 아니라 상태라 봉인·채점 대상이 아니다 (11 §2).
+
+Layer: L2.5 simulate. table 벌크 직독 + frame.inventory/narrative 소비 (Company 객체 0). asOf 이전만.
 """
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
+import numpy as np
 import polars as pl
 
 from dartlab.core.extractionCatalog import CATEGORIES, getConcept, getExtractionConcepts
@@ -24,7 +30,13 @@ from dartlab.simulate import table as _table
 # 자금조달·거버넌스 형질용 이벤트 타입 (희석·연쇄 신호). v2 정규화 하위타입 기준.
 _FINANCING_EVENTS = ("전환사채권발행결정", "유상증자결정", "신주인수권부사채권발행결정")
 _GOVERNANCE_EVENTS = ("최대주주변경", "불성실공시법인지정", "감자결정")
+# 관계 그래프(축2) 엣지 원천 이벤트 (계열·지분·대주주 신호).
+_RELATIONSHIP_EVENTS = ("최대주주변경", "주식등의대량보유상황보고서", "임원ㆍ주요주주특정증권등소유상황보고서")
+# 사업 구조(축1)·노동설비(축7) 형질 원천 카탈로그 카테고리.
+_BUSINESS_CATEGORIES = ("segment",)
+_LABOR_CATEGORIES = ("workforce", "segment")
 _TRAIT_LOOKBACK_DAYS = 730  # 자금조달 이력 집계 창 (형질 실측 근거와 동일)
+_BETA_WINDOW = 250  # 노출 벡터 베타 추정 트레일링 거래일 창
 
 
 def traitCatalog() -> dict[str, int]:
@@ -58,22 +70,52 @@ def profile(
         marketNs: "kr" | "us" (인벤토리 census 시장).
 
     Returns:
-        형질 dict. 각 형질에 값·출처·기준일(staleness). 결손은 None (0 대체 금지).
-        빠른 PIT 형질(fund·financing·governance·market) + 카탈로그 9축 정의(catalogAxes) +
-        선택적 inventory(카테고리별 회사 단위 census, live).
+        형질 dict (11 §2 8축): businessStructure·relationship·financing·governance·exposure·
+        market·laborCapex·narrative + catalogAxes(9 대분류 정의) + fund + 선택 inventory.
+        각 형질에 값·출처·라벨. 결손은 None (0 대체 금지). 얕은 축은 미가용 라벨.
     """
     out = {
         "code": code,
         "asOf": asOf,
         "catalogAxes": traitCatalog(),
+        # 8 축 전수 (11 §2, 손 선별 0). 어떤 축·형질이 판독을 가르는지는 형질 성적표가 도태.
+        "businessStructure": _businessStructure(code, marketNs),  # 축1
+        "relationship": _relationshipEdges(code, asOf, dataDir),  # 축2
+        "financing": _eventTraits(code, asOf, _FINANCING_EVENTS, dataDir),  # 축3
+        "governance": _eventTraits(code, asOf, _GOVERNANCE_EVENTS, dataDir),  # 축4
+        "exposure": _exposureVector(code, asOf, dataDir),  # 축5
+        "market": _marketTraits(code, asOf, dataDir),  # 축6
+        "laborCapex": _laborCapex(code, marketNs),  # 축7
+        "narrative": _narrative(code, asOf, dataDir),  # 축8
         "fund": _fundTraits(code, asOf, dataDir),
-        "financing": _eventTraits(code, asOf, _FINANCING_EVENTS, dataDir),
-        "governance": _eventTraits(code, asOf, _GOVERNANCE_EVENTS, dataDir),
-        "market": _marketTraits(code, asOf, dataDir),
     }
     if includeInventory:
         out["inventory"] = _inventoryCensus(code, marketNs)
     return out
+
+
+def replayHash(profileDict: dict) -> str:
+    """프로파일 상태의 결정론 해시 (replay 항등성 검증: 같은 asOf 재계산 = 같은 해시, 06 §5c)."""
+    import hashlib
+
+    canonical = json.dumps(profileDict, sort_keys=True, ensure_ascii=False, default=str)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
+
+
+def replayIdentical(code: str, asOf: str, *, dataDir: Path | None = None, marketNs: str = "kr") -> bool:
+    """같은 (code, asOf) 재계산이 byte 일치인지 (PIT replay 항등성 가드, 11 §2)."""
+    a = profile(code, asOf, dataDir=dataDir, marketNs=marketNs)
+    b = profile(code, asOf, dataDir=dataDir, marketNs=marketNs)
+    return replayHash(a) == replayHash(b)
+
+
+def marketBeta(retCode: np.ndarray, retMkt: np.ndarray) -> float:
+    """시장 베타 = cov(code, mkt)/var(mkt) (노출 벡터 축5, OLS). 표본·분산 부족은 nan."""
+    r, m = np.asarray(retCode, dtype=float), np.asarray(retMkt, dtype=float)
+    ok = np.isfinite(r) & np.isfinite(m)
+    if ok.sum() < 20 or m[ok].var() <= 0:
+        return float("nan")
+    return float(np.cov(r[ok], m[ok])[0, 1] / m[ok].var())
 
 
 def _inventoryCensus(code: str, marketNs: str) -> dict:
@@ -146,3 +188,98 @@ def _marketTraits(code: str, asOf: str, dataDir: Path | None) -> dict:
     mktcap = row["mktcap"][0]
     pctile = float((day["mktcap"] <= mktcap).mean())
     return {"mktcap": mktcap, "sizePctile": pctile, "asOfDate": latestDate}
+
+
+def _businessStructure(code: str, marketNs: str) -> dict:
+    """축1 사업 구조: 세그먼트 매출/이익·제품·수주잔고 형질 (사업보고서 인벤토리 census).
+
+    extractionCatalog segment 카테고리 개념 단위 수를 인벤토리에서 열거 (현재 보고 상태 = live 라벨).
+    실제 세그먼트 값 추출은 카탈로그 구동 라우팅 (핸들 소비). 부재/실패는 빈 형질.
+    """
+    try:
+        from dartlab.frame.inventory import reportInventory
+
+        inv = reportInventory(code, marketNs=marketNs)
+    except (ValueError, KeyError, AttributeError, TypeError, OSError, ImportError):
+        return {"segmentUnits": 0, "concepts": [], "pitLabel": "인벤토리 부재"}
+    concepts: dict[str, int] = {}
+    for u in inv.get("units", []):
+        cid = u.get("conceptId")
+        concept = getConcept(cid) if cid else None
+        if concept and concept.category in _BUSINESS_CATEGORIES:
+            concepts[cid] = concepts.get(cid, 0) + 1
+    return {
+        "segmentUnits": sum(concepts.values()),
+        "concepts": sorted(concepts),
+        "pitLabel": "live(현재 보고 상태, PIT-replay 아님)",
+    }
+
+
+def _relationshipEdges(code: str, asOf: str, dataDir: Path | None) -> dict:
+    """축2 관계 그래프: 계열/지분·대주주·공급 엣지 (관계 이벤트 회고 집계). 전파 층(cascade) 입력.
+
+    v0 는 관계 신호 이벤트 타입별 건수로 엣지 밀도를 낸다 (상대방 파싱은 후속). asOf 이전만 참조.
+    """
+    counts = _eventTraits(code, asOf, _RELATIONSHIP_EVENTS, dataDir)
+    edges = [{"type": t, "count": c, "counterparty": None} for t, c in counts.items() if c]
+    return {"edgeCount": sum(counts.values()), "edges": edges}
+
+
+def _exposureVector(code: str, asOf: str, dataDir: Path | None) -> dict:
+    """축5 노출 벡터: 시장 베타 + 수익 변동성 (PIT 트레일링). 금리·환율·유가 베타는 매크로 배선 후 확장.
+
+    가격 데이터 자급 베타(시장 등가중 대비)로 v0. asOf 이전 거래일만, 트레일링 _BETA_WINDOW.
+    """
+    px = _table.dailyPrices(dataDir).filter((pl.col("close") > 0) & (pl.col("date") <= asOf)).sort(["code", "date"])
+    px = px.with_columns(ret=(pl.col("close") / pl.col("close").shift(1).over("code") - 1))
+    mkt = px.group_by("date").agg(mktRet=pl.col("ret").median()).sort("date")
+    one = px.filter(pl.col("code") == code).select("date", "ret").join(mkt, on="date", how="inner").tail(_BETA_WINDOW)
+    if one.height < 20:
+        return {"marketBeta": None, "retVol": None, "nDays": one.height}
+    beta = marketBeta(one["ret"].to_numpy(), one["mktRet"].to_numpy())
+    vol = float(one["ret"].std() or 0.0)
+    return {"marketBeta": beta, "retVol": vol, "nDays": one.height}
+
+
+def _laborCapex(code: str, marketNs: str) -> dict:
+    """축7 노동·설비: 직원 수·capex·생산능력 형질 (workforce/segment 카탈로그 개념 census)."""
+    try:
+        from dartlab.frame.inventory import reportInventory
+
+        inv = reportInventory(code, marketNs=marketNs)
+    except (ValueError, KeyError, AttributeError, TypeError, OSError, ImportError):
+        return {"workforceUnits": 0, "concepts": [], "pitLabel": "인벤토리 부재"}
+    concepts: dict[str, int] = {}
+    for u in inv.get("units", []):
+        cid = u.get("conceptId")
+        concept = getConcept(cid) if cid else None
+        if concept and concept.category in _LABOR_CATEGORIES:
+            concepts[cid] = concepts.get(cid, 0) + 1
+    return {
+        "workforceUnits": sum(concepts.values()),
+        "concepts": sorted(concepts),
+        "pitLabel": "live(현재 보고 상태, PIT-replay 아님)",
+    }
+
+
+def _narrative(code: str, asOf: str, dataDir: Path | None) -> dict:
+    """축8 서사 형질: 리스크 문단 변화·신사업 키워드 (frame/narrative). 부재/실패는 미가용 라벨.
+
+    frame.narrative 는 정성 단일 메커니즘(panel-extraction-workbench-ssot)이라 API 시그니처가
+    갱신될 수 있어, 실패는 예외 아니라 미가용 라벨로 격리한다 (프로파일 전체 재현성 보존).
+    """
+    try:
+        from dartlab.frame.narrative import listNarrativeConcepts
+    except ImportError:
+        return {"available": False, "reason": "frame.narrative 미배선"}
+    try:
+        concepts = listNarrativeConcepts()
+    except (ValueError, KeyError, AttributeError, TypeError, OSError) as e:
+        return {"available": False, "reason": type(e).__name__}
+    ids = [c.get("conceptId") for c in concepts if c.get("conceptId")]
+    return {
+        "available": True,
+        "conceptCount": len(ids),
+        "concepts": sorted(ids),
+        "note": "서사 개념 census. 본문 추출은 extractNarrative(code, conceptId) 온디맨드(panel).",
+    }

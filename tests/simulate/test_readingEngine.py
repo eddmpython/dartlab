@@ -376,6 +376,21 @@ def testProfileTraitCatalogIsExhaustive():
     assert tc["note"] > tc["segment"]  # 노트 개념이 세그먼트보다 많음 (카탈로그 사실)
 
 
+def testProfileMarketBetaAndReplay():
+    from dartlab.simulate import profile
+
+    rng = np.random.default_rng(9)
+    mkt = rng.normal(0, 0.01, 200)
+    codeRet = 2.0 * mkt + rng.normal(0, 0.001, 200)  # 베타 ~2
+    assert abs(profile.marketBeta(codeRet, mkt) - 2.0) < 0.15
+    indep = rng.normal(0, 0.01, 200)
+    assert abs(profile.marketBeta(indep, mkt)) < 0.5  # 독립 = 베타 ~0
+    # replay 항등성: 같은 상태 dict = 같은 해시 (11 §2 재현성 가드)
+    state = {"code": "005930", "asOf": "20260213", "exposure": {"marketBeta": 1.2}}
+    assert profile.replayHash(state) == profile.replayHash(dict(state))
+    assert profile.replayHash(state) != profile.replayHash({**state, "asOf": "20260214"})
+
+
 def testSellTaxAndTickFloor():
     from dartlab.simulate import costs
 
