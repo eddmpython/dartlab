@@ -1,6 +1,8 @@
 # 01. 신호 전수 인벤토리 + 갭 원장
 
 > 원칙: 신호는 전부 **공개 계약(공개 verb + 인자)** 으로 소비한다. 내부 계층(sources/mixins) 직접 호출 금지. 각 신호는 PIT 주의(그 시점에 알 수 있었는가)를 명시한다. 상태 표기: ✅ = 공개 verb 실재(스펙+코드 확인) · ⚠ = 실재하나 커버리지/시차 실측 필요(P0 항목) · ❌ = 갭 원장행.
+>
+> v0.3 매핑: 아래 family 는 판독기(reader) 단위와 1:1 이다 (02 §2). 본 문서는 판독기가 소비할 원천의 전수 지도 + 갭 원장을 유지한다.
 
 ## 1. Family 정의 (독립성 기준)
 
@@ -85,6 +87,24 @@
 | ai/mcp (L4) | Ask Workbench | dossier 를 workbench ref 규약으로 노출 (후속) | ✅ |
 | edgar/mappers/data/panel | 기반 데이터 | KR v0 범위에선 panel 재무 시계열의 원천으로 간접 소비 | ✅ |
 
+### 2.5 EDGAR(US) 대응 원천 : 시장 파라미터화의 실측 근거
+
+같은 판독기 계약을 US 에 적용할 때의 원천 매핑. fund/event/text/credit 은 기존 자산으로 즉시 가능, price/flow/forecast 는 갭(G9·G10)이 선결.
+
+| reader | US 원천 (기존 자산) | 상태 |
+|---|---|---|
+| fund | EDGAR panel (gather raw XBRL 자급 파싱) + scan DART+EDGAR 겸용 축 (account·ratio·capital·debt) + alphas | ✅ |
+| event | `listing("filings", corp=ticker)` (8-K·10-Q 등 form_type) + watcher diff (`_HIGH_WEIGHT_TOPICS` 에 10-K item 이미 등록) + Form 4 내부자 | ✅/⚠ (8-K item 코드 이벤트 분류는 P0 실측) |
+| text | 10-K/10-Q Risk Factors·MD&A 톤 (frame/search) + narrative US | ⚠ 커버리지 실측 |
+| credit | credit 스코어카드 + Altman (US 원산 모델이라 오히려 정합) | ✅ |
+| price | 종목별 `gather("price", "AAPL")` 만 존재. **전종목 일별 벌크 없음** | ❌ → G9 |
+| flow | KR 수급 개념의 US 대응물 = FINRA 공매도 잔고(격주)·13F(분기)·Form 4 | ❌ → G10 |
+| forecast | `quant("예측", "AAPL")` 종목별 가능, 벌크는 G9 종속 | ⚠ |
+| context | macro US (FRED)·regime·산업 lifecycle | ✅ |
+
+- 채점 벤치마크: US 유니버스 동일가중 평균 + S&P500. 시장 간 rank 혼합 금지 (시장 내 완결).
+- US 유니버스 정의: EDGAR panel 커버 상장사 전체 (완전 커버 원칙 KR 과 동일, top-N 컷 금지).
+
 ## 3. 갭 원장 (부족 데이터·개념 전수)
 
 > 각 갭: 무엇 / 왜 1주 지평에 중요한가 / 현재 상태 / 승격 경로 / 게이트.
@@ -145,6 +165,21 @@
 - **현재**: narrative archive ✅, 종목 매핑 정밀도 미실측 ⚠.
 - **승격 경로**: P0 실측 (전상장사 대비 태깅률·소형주 태깅률). 낮으면 TEXT family 를 "커버 종목에만 참여 + coverage 컬럼 정직 표기"로 운영 (0 대체 금지 규약이 편향을 자동 방어).
 - **게이트**: P0 측정 항목.
+
+### G9. US 전종목 일별 가격 벌크 백본 (EDGAR 통합의 선결)
+
+- **무엇**: KR gov/prices 에 대응하는 US 전상장 일별 OHLCV·시총 HF SSOT.
+- **왜**: US price/forecast reader 와 US 주간 채점(실현 수익률 join) 모두 이것에 종속. 종목별 `gather("price", ticker)` 로는 전종목 주간 발행·채점이 불가.
+- **현재**: 종목별 조회 ✅ / 벌크 ❌. EDGAR 는 가격 데이터를 제공하지 않음.
+- **승격 경로**: 무료·재배포 가능 소스 실측 (Stooq EOD 등 후보. 라이선스·재배포 조건 문서 확인이 첫 스텝) → sync 수집기 → DATA_RELEASES 등록. 재배포 불가 소스만 있으면 로컬 캐시 전용 경로로 강등하고 공개 표면 제한 명시.
+- **게이트**: P0 소스 실측 → A5 상정. 그 전까지 US 는 fund/event/text/credit reader 만 활성 (채점은 종목별 가격 조회로 top 후보 한정 병행, 전량 채점은 백본 확보 후).
+
+### G10. US flow 대응물 (FINRA 공매도 잔고·13F·Form 4)
+
+- **왜**: KR 수급 reader 의 US 대응. 공매도 잔고 변화(격주)·기관 보유 변화(13F 분기)·내부자(Form 4)는 전부 무료 공개 소스.
+- **현재**: ❌ (Form 4 는 EDGAR filings 메타로 부분 접근 가능).
+- **승격 경로**: SEC/FINRA 무료 endpoint 실측 → gather 축 또는 sync. 빈도가 주간보다 성겨서(격주·분기) pitLagDays 를 크게 선언하고 이벤트성 reader 로 소비.
+- **게이트**: G9 이후 별도 사이클.
 
 ## 4. 인벤토리 사용 규칙
 

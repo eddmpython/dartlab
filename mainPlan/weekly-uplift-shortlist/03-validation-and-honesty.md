@@ -9,24 +9,24 @@
 - 공표 시차가 있는 신호(수급 T+1 등)는 SignalSpec.pitLagDays 로 asOf 를 보정.
 - look-ahead 점검 없이 어떤 성과 문장도 쓰지 않는다.
 
-## 2. 사전 replay 하네스 (G7 을 닫는 P0 산출물, 가중 학습장 겸용)
+## 2. 사전 replay 하네스 (G7 을 닫는 P0 산출물, 판독기 bootstrap 겸용)
 
-- 데이터: gov/prices 17년+ (가격 보존형, 폐지 사유 미구분 문구 필수).
-- 이 하네스는 성적 측정과 W1 가중 학습(02 §5)을 같은 코드 경로에서 수행한다. 학습 규율:
-  - purged walk-forward: train 구간에서만 Fama-MacBeth 계수 추정, test 구간과 사이에 embargo ≥ 1주 (5거래일 라벨 겹침 차단).
-  - 사전등록: 신호 목록·shrinkage λ·부호안정성 임계·fold 경계를 학습 실행 전에 이 PRD 와 원장에 고정. 결과를 본 뒤 소급 변경 금지 (변경은 새 사이클 + 원장 기록).
-  - 신호별 진단(주간 rank-IC 시계열·부호 일관률)은 신호 등록/탈락 게이트의 내부 근거로만 사용.
-- 프로토콜: 매주 금요일 asOf → S0~S4 실행(라이브와 동일 코드 경로, 가중은 해당 fold 의 train 에서만 학습) → forward 5거래일 가격수익 → composite 5분위 스프레드 + board100/top10(k≥3) 그룹 수익 분포.
-- 벤치마크 2종 병기: 유니버스 동일가중 평균, KOSPI/KOSDAQ 지수.
-- 신호 커버리지의 역사적 한계 정직 표기: FLOW/TEXT family 는 과거 구간 데이터가 없거나 부분적이므로, replay 는 "가용 family 만 참여한 열화판" 임을 리포트 머리에 명시. PRICE+FUND 위주 replay 결과를 전체 깔때기 성능으로 승격 claim 금지.
-- 산출물: 분위별 주간 스프레드 분포 밴드(연도별 소계 포함) + 커버리지 표. IC·t-stat 수치 단정 없음 (folk-stat 천장, 아래 §5).
+- 데이터: KR gov/prices 17년+ (가격 보존형, 폐지 사유 미구분 문구 필수). US replay 는 G9 백본 확보 후 동일 프로토콜.
+- 프로토콜: 매주 금요일 asOf → 판독기별 전종목 reading 생성(라이브와 동일 코드 경로) → forward 5거래일 시장 내 초과수익로 판독기별 채점 → reader scorecard bootstrap (전 레코드 issuedLive=False 영구 표기) + 합의 분위 스프레드 밴드.
+- reader 내부 가중을 v1(주간 횡단면 회귀)로 승격할 때의 학습 규율:
+  - purged walk-forward: train 구간에서만 추정, test 와 embargo ≥ 1주 (5거래일 라벨 겹침 차단).
+  - 사전등록: 신호 목록·수축 파라미터·fold 경계를 실행 전에 원장에 고정. 결과 본 뒤 소급 변경 금지.
+  - 신호·판독기 진단(주간 rank-IC·부호 일관률)은 등록/탈락 게이트의 내부 근거로만 사용.
+- 커버리지의 역사적 한계 정직 표기: flow/text reader 는 과거 구간 데이터가 없거나 부분적이므로, replay bootstrap 은 "가용 reader 의 열화판" 임을 리포트 머리에 명시. price+fund 위주 결과를 전체 시스템 성능으로 승격 claim 금지.
+- 산출물: 판독기별 bootstrap 성적(시장·산업 분해) + 합의 분위 스프레드 밴드(연도별 소계) + 커버리지 표. IC·t-stat 수치 단정 없음 (folk-stat 천장, 아래 §5).
 
 ## 3. 사후 검증 : expectation ledger 통합 (A2)
 
-- 발행 시점에 board100 전 종목을 ExpectationSpec 으로 봉인 (00 §3.3). top10 만 봉인하면 자기 채점에 selection bias 가 생기므로 100 전체 + top10 플래그.
-- writer 는 `simulate` 만 (expectation-grid 계약: L2 엔진은 ledger-blind, collector 가 유일 writer). 본 플랜은 `expectationCycle` 에 `issueShortlist` collector 1개 + 주간 actuals join 채점 경로를 추가한다. 저장·스키마·append-only·재채점 append 규약은 기존 ledger 그대로.
-- 성적표 축: 주별 hitRate(방향, 벤치마크 대비), top10 vs board100 vs 유니버스 스프레드, precision@10. `buildScorecard` 의 표본 게이트 상속: N 미달이면 "미검증" 라벨 강제.
-- issuedLive=True 만 성적 인정. 과거 주차를 소급 발행(백필)해 트랙레코드를 만드는 행위 금지 (레코드는 만들 수 있으나 issuedLive=False 로 영구 구분).
+- 발행 시점에 **readings 전량**(전종목 x reader, 기권 포함)을 ExpectationSpec 으로 봉인 (00 §3.3). 선정 이전 봉인이라 selection bias 가 구조적으로 불가능. board100/top10 소속은 파생 플래그.
+- writer 는 `simulate` 만 (expectation-grid 계약: 엔진은 ledger-blind, collector 가 유일 writer). 본 플랜은 `expectationCycle` 에 `issueReadings` collector + 주간 actuals join 채점 경로를 추가한다. 저장·스키마·append-only·재채점 append 규약은 기존 ledger 그대로 (연 ~3M 행, 연도 샤딩).
+- 성적표 축: reader x 시장 x 산업 x 레짐 (수축 추정, 02 §4) + 파생으로 top10/board100 스프레드·precision@10. `buildScorecard` 의 표본 게이트 상속: N 미달 세그먼트 "미검증" 라벨 강제.
+- issuedLive=True 만 성적 인정. replay bootstrap 레코드는 issuedLive=False 로 영구 구분. 과거 주차 소급 발행으로 라이브 트랙레코드를 만드는 행위 금지.
+- 채점은 시장 내 완결: KR 은 KR 유니버스 초과수익, US 는 US 유니버스 초과수익. 시장 간 성적 혼합 집계 금지.
 
 ## 4. 실패의 기록
 
@@ -51,6 +51,6 @@
 
 ## 7. 자기 개선 루프 (성적이 설계로 돌아오는 길)
 
-- 분기마다: (a) ledger 라이브 성적을 신호 family 별 기여로 분해 리뷰, (b) W1 가중 재추정 (§2 사전등록 규율 그대로, 최신 데이터 포함 재학습).
-- 신호 추가/제거는 이 리뷰 근거 + eventStudy/replay 사전 근거를 거쳐 레지스트리 선언 변경으로만. 주중 임시 변경 금지 (레코드 오염).
+- 메타 가중(판독기 신뢰도)은 주간 채점 후 자동 갱신된다 (02 §5, 지수 감쇠). 이것이 "검증해서 성공여부 판독하고 개선한다. 이걸 반복해서 누적한다"의 기계화다.
+- 분기마다: (a) reader scorecard 를 시장·산업·레짐 분해로 리뷰 (어느 엔진이 어디서 강한 근거인가), (b) reader 내부 가중 v1 재추정 (§2 사전등록 규율), (c) 판독기·신호 추가/제거를 eventStudy/replay 사전 근거와 함께 레지스트리 선언 변경으로. 주중 임시 변경 금지 (레코드 오염).
 - 이 루프 자체가 expectation-grid 의 "시간 해자" 명제의 실행이다: 성적표가 쌓일수록 후발 주자가 복제할 수 없는 자산이 된다.

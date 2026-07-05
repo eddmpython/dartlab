@@ -1,113 +1,90 @@
-# 02. 스코어링과 깔때기 : 6단 설계
+# 02. 엔진 판독기 계약과 메타 결합 : 전종목 x 전엔진 주간 판독
 
-> 원칙: 스코어링 메커니즘은 **하나**다. 신호별 특수 케이스·키워드 규칙 더미·per-signal if 분기를 누적하지 않는다 (덕지덕지 금지). 신호의 개성은 전부 레지스트리 선언(방향·시차·커버리지)으로 표현하고, 합성기는 선언을 기계적으로 실행만 한다.
+> v0.3 구조 전환(운영자 지시): "오를 기업을 선정하는" 신호 깔때기가 아니라, **엔진별 판독기가 매주 모든 회사에 자기 의견을 내고, 1주 뒤 전부 채점되어, 어떤 엔진이 어떤 종목에서 강한 근거인지가 데이터로 누적되는 시뮬레이터**를 짓는다. 후보 100/10 은 이 판독 원장의 파생 뷰다.
 
-## 1. 깔때기 6단
+## 0. 왜 구조를 바꿨나 (v0.2 의 한계)
 
-```
-S0 유니버스     listing("companies") 전상장사. 명시 제외만: 정리매매·스팩(명칭 규칙)·
-               상장 후 20거래일 미만(신호 계산 불능). ADTV 하위 컷 = opt-in(기본 꺼짐).
-               제외 건수·사유를 매 실행 로그로 남김 (no-silent-cap)
-S1 신호 수확    레지스트리의 각 신호를 벌크 우선 경로로 계산 → 종목 x 신호 wide 격자
-S2 rank 정규화  신호별 cross-sectional percentile rank (방향 정렬, 결측 null 유지)
-S3 합성        family 점수 = 소속 신호 rank 평균(결측 제외) →
-               composite = 레짐 가중 Σ w_f · F_f (참여 family ≥ 2 필수)
-S4 board100    composite 상위 100 + family 분해·coverage·flags 동행
-S5 top10       합류 룰 + red-flag 게이트 + conformal 비모순 → 근거 순위화
-```
+v0.2 는 엔진 출력을 익명 신호 컬럼으로 합성해 최종 목록만 채점했다. 그 구조에서는 (a) 어느 엔진이 강한 근거인지 알 수 없고, (b) 엔진별·종목별 정확도 프로파일이 안 쌓이며, (c) 학습 표본이 주당 발행 100행에 갇힌다. v0.3 은 판독을 엔진 단위로 보존해 봉인한다: 주당 표본 = 유니버스 x 판독기 수 (~2,800 x 8 ≈ 2만+ 행). 이 원장 자체가 제품의 핵심 자산이다.
 
-## 2. 신호 레지스트리 계약 (코드가 정본)
+## 1. EngineReading 계약 (모든 판독기의 공통 출력)
 
 ```python
 @dataclass(frozen=True)
-class SignalSpec:
-    signalId: str          # 예: "mom20d", "smartMoneyZ", "ordersBookToBill"
-    family: str            # PRICE | FLOW | EVENT | FUND | TEXT
-    direction: int         # +1 = 높을수록 상승 근거, -1 = 낮을수록
-    horizon: str           # 신호가 겨냥한 지평 명시 (본 제품은 "5d" 정합만 채택)
-    fetch: str             # 공개 verb 경로 문자열 (예: "scan:orders", "quant:momentum")
-    pitLagDays: int        # 데이터 공표 시차 (rank 계산 전 asOf 보정)
-    bulkCapable: bool      # 전종목 벌크 계산 가능 여부 (False = lazy fetch 대상)
-    minCoverage: float     # 이 커버리지 미만이면 해당 주 신호 자체를 비활성(로그)
+class EngineReading:
+    stockCode: str
+    reader: str            # 판독기 id (price/flow/event/fund/text/forecast/credit/context)
+    asOf: str              # 판독 기준일 (그 시점까지의 데이터만, PIT)
+    direction: int         # +1 상승 / -1 하락 / 0 기권·중립
+    score: float | None    # -1~+1 연속 강도 (기권이면 null)
+    horizon: int           # 5 (거래일)
+    coverageOk: bool       # 판독에 필요한 데이터가 충분했는가
+    abstainReason: str | None  # 기권 사유 (데이터 결측·커버리지 밖·신호 상충)
+    refs: dict             # 근거 dateRef/datasetRef (엔진 evidence 규약)
 ```
 
-- 등록·해제는 코드 리뷰를 타는 선언 변경이며, 실행 중 동적 추가 없음.
+- **기권(abstain)은 1급 출력이다.** 커버리지 없는 종목을 억지로 판독해 0 으로 채우지 않는다. 기권률·기권 사유 분포도 채점 대상 (기권이 과도한 판독기는 근거 엔진으로서 가치가 낮다는 것 자체가 측정 결과).
+- 모든 회사에 대해 매주 발행한다. "판독함(방향±1) / 중립 / 기권" 셋 중 하나가 반드시 기록된다. 전상장사 규약: 판독 대상에서 시총·규모로 silent 제외 금지.
 
-### 2.1 지평 정합 원칙 (신호 선택의 제1 기준)
+## 2. v0 판독기 8종 (엔진별 어댑터)
 
-5거래일 지평에서 레벨형 재무 랭크는 주간 알파 원천이 아니라 조건(게이트·틸트)이다. 주간 예측력이 문헌·실무에서 반복 확인된 부류를 우선한다: 단기 reversal, 잔차 모멘텀, 거래량 충격, 수급 지속, 이벤트 직후 드리프트(PEAD·수주·자사주). 느린 신호(밸류·퀄리티)는 가중을 학습(§5)에 맡기고 사전 우대하지 않는다.
+| reader | 원천 엔진 verb (재사용) | bulk 경로 | 기권 조건 |
+|---|---|---|---|
+| price | quant/signal momentum·volume + gov/prices wide | ✅ 전종목 벌크 (Company 루프 0) | 상장 20거래일 미만 |
+| flow | gather("flow")·smartMoneyZ | ⚠ G1 전까지 lazy(1차 결합 상위 ~300 + 직전주 top 유지분) | 벌크 미커버 종목 = 기권 |
+| event | scan orders·capital·insider + watch diff | ✅ scan 축이 이미 횡단면 | 최근 유효 이벤트 없음 = 중립(기권 아님) |
+| fund | quant/alphas(SUE·fundmom·piotroski 등) + scan financial | ✅ prebuilt 횡단면 | 재무 미공시·결손 = 기권 |
+| text | gather("narrative") tone + 공시톤 | ⚠ 태깅 커버리지 실측(G8) 후 확정 | 태깅 없음 = 기권 |
+| forecast | quant("예측") conformal 5d | ⚠ 종목별 호출이라 전종목 불가. P0 에서 bulk 변형(gov/prices 직접 fit) 실측, 불가 시 결합 상위 후보군만 판독 + 나머지 기권 | 데이터 부족 error = 기권 |
+| credit | credit 스코어카드 + scan audit/debt (하락·위험 방향 특화) | ✅ 횡단면 | 금융업 등 산식 밖 = 기권 |
+| context | macro 레짐 + industry lifecycle + customs 수출 사이클 | ✅ 시장·산업 레벨 | 종목 단위 의견 없음: 산업 소속을 통한 틸트 판독 (약한 |score| 상한) |
 
-- v0 등록 신호(안, 총 ~18):
-  - PRICE 6: shortTermReversal5d(direction=-1)·잔차모멘텀20d·mom60d·52주고가근접·거래량충격 z·변동성
-  - FLOW 3: smartMoneyZ60d·수급연속일수(외국인+기관 순매수 streak)·flowMomentum20d
-  - EVENT 5: ordersBookToBill·자사주매입·insider순매수·watcherDiff·PEAD근사(SUE x 공시접수 후 경과일 감쇠, G3 승격 전 rcept_dt 기반)
-  - TEXT 2: narrative tone z·공시톤변화
-  - FUND 2: fundmom·산업내 valuation percentile
-- 추가는 eventStudy 또는 replay 사전 근거 필수 (01 §4).
+- 판독기 내부 신호 구성은 v0.2 의 지평 정합 원칙(단기 reversal·수급 지속·이벤트 드리프트 우선)과 상관 중복 처리(|ρ|>0.7 클러스터 대표 1개, P0 실측 확정)를 그대로 상속한다.
+- 판독기 추가·제거는 레지스트리 선언 변경으로만 (실행 중 동적 추가 없음).
 
-### 2.2 상관 중복(redundancy) 처리
+## 3. 판독기 내부 합성 (reader 는 자기 의견만 낸다)
 
-같은 정보를 여러 이름으로 중복 가중하지 않는다. P0 에서 신호 간 rank 상관 행렬을 실측해, family 내 |ρ| > 0.7 클러스터는 대표 1개만 등록(또는 클러스터 평균을 1개 신호로 취급)한다. 등록 확정본이 레지스트리에 남고, 탈락 신호는 사유와 함께 01 갭 원장에 기록.
+- v0: 소속 신호의 cross-sectional percentile rank 평균 → score ∈ [-1,+1] 스케일. direction = score 부호, |score| < 중립 밴드(사전 선언)면 0.
+- v1 승격 경로: 판독기별 성적이 원장에 쌓이면 reader 내부 가중을 주간 횡단면 회귀(Fama-MacBeth + shrinkage, purged walk-forward 검증)로 승격한다. v0.2 의 가중 사다리는 폐기가 아니라 **reader 내부로 이동**한 것.
+- reader 끼리는 서로의 출력을 보지 않는다 (독립성이 합류 근거의 전제).
 
-## 3. 벌크 우선 계산 경로 (메모리 강행규칙 정합)
+## 4. 채점과 엔진 성적표 (이 제품의 핵심 산출물)
 
-- **PRICE family 는 Company 객체를 만들지 않는다.** gov/prices year shard 를 polars lazy 로 직독해 전종목 wide 계산 (Polars Rust 힙 OOM 가드: Company 1개 200~500MB, 전종목 루프 절대 금지).
-- FUND/EVENT 는 scan 축(이미 전종목 prebuilt/provider 경로) 결과 DataFrame 을 그대로 join.
-- bulkCapable=False 신호(FLOW의 smartMoneyZ, TEXT 일부, 종목별 quant 텍스트 축)는 **2-패스**: 1차 합성(벌크 신호만) 상위 ~300 종목에만 lazy fetch 후 재합성. 이 컷은 silent 가 아니라 로그+문서 명시 (전상장사 규약: 1차 패스는 전종목이 계산됨).
-- 실행 프로세스는 단일. 병렬 agent/프로세스 금지 (dartlab import 순차 규약).
+매주 5거래일 경과 후 전 reading 채점:
 
-## 4. 합성 수학 : rank 는 정규화 골격이지 모델이 아니다
+- **hit**: 유니버스 초과수익(동일가중 평균 대비)의 부호와 direction 일치. 중립·기권은 hit 계산에서 제외하되 별도 집계.
+- **강도 진단**: score 와 실현 초과수익의 주간 rank-IC (내부 진단 전용, 대외 수치 claim 금지).
+- **분해 축**: reader 전체 → 산업 → 규모 버킷 → 레짐 → 종목. "어떤 엔진이 강한 근거인가"와 "어떤 종목·산업에서 정확한가"가 이 분해에서 나온다.
+- **소표본 규율 (불가침)**: 종목 단위는 연 52관측이라 잡음이 크다. empirical-Bayes 수축: 종목 추정치 ← 산업 추정치 ← reader 전체 추정치로 shrink. 표본 게이트 미달 세그먼트는 "미검증" 라벨 강제 (expectation-grid 02 §4 상속). 수축 전 원시 hit rate 를 근거로 인용 금지.
 
-rank 정규화는 신호를 비교 가능하게 만드는 표준화 층이다 (outlier 강건·산업 중립화 가능·종목별 근거 분해 가능). 예측력은 그 위의 **가중 학습(§5)** 이 담당한다. "단순 랭크 평균" 은 §5 사다리의 최하단 폴백일 뿐 발행 기준이 아니다.
+## 5. 메타 결합 : 측정된 신뢰도가 가중치다
 
-1. 신호값 x_i → 방향 정렬 후 percentile rank r_i ∈ [0,1] (필요 신호는 산업 내 rank). winsorize 불필요.
-2. 신호 rank 벡터 → §5 에서 학습된 가중으로 선형 결합 = composite C. 선형을 고수하는 이유: 종목별 점수를 신호 기여도로 분해해 evidence dossier 에 그대로 실을 수 있다 (비선형 ML 은 이 근거 분해가 깨져 top10 의 "근거" 정의와 충돌).
-3. family 점수 F 는 발행 표면의 설명 축으로 유지 (합류 룰 §6 입력). F = mean(소속 신호 r_i, 결측 제외), 참여 0개면 null.
-4. 참여 family < 2 이면 후보 제외(coverage 리포트 집계). 동점은 유동성(ADTV) 높은 쪽 우선.
+- reader 가중 w_r = shrunk trailing 초과적중률 (지수 감쇠 창, 사전 선언). 산업별 프로파일 (reader x 산업) 을 우선 적용, 종목 단위 프로파일은 표본 게이트 통과 세그먼트에서만.
+- combined score(종목) = Σ w_r(산업) · score_r / Σ w_r (기권 reader 제외, 참여 reader < 2 이면 후보 제외 + coverage 집계).
+- **cold start**: live 원장이 없는 초기엔 17년 주간 PIT replay 로 판독기별 의사-성적을 bootstrap 한다 (전 레코드 issuedLive=False 영구 표기, 03 §3). live 누적이 쌓일수록 지수 감쇠가 replay 성분을 자연 대체.
+- 가중 갱신은 주간 채점 후 자동이되, 게이트·수축 파라미터 변경은 분기 사전등록으로만.
 
-## 5. 가중 사다리 (weighting ladder) : 임의 상수 금지, 학습은 규율 하에
+## 6. 깔때기 (파생 뷰로 재정의)
 
-| 층 | 방법 | 지위 |
-|---|---|---|
-| W0 | 동일가중 rank 평균 | 폴백·디버깅 베이스라인 전용. 단독 발행 금지 |
-| **W1 (정본)** | 주간 Fama-MacBeth 횡단면 회귀 + shrinkage | P0 replay 하네스에서 학습·검증 후 발행 가중 |
-| W2 (이연) | 정규화 선형 랭커 (ridge / top-분위 logistic, numpy-only) | W1 성적 원장 누적 후 승격 검토 |
-
-### W1 상세
-
-- 매주 t (17년 ≈ ~880개 횡단면): 유니버스 초과 fwd 5거래일 수익률을 표준화 신호 rank 벡터에 회귀 → 계수 b_t (numpy lstsq, 신규 의존성 0).
-- 발행 가중 w_j = 부호안정성 게이트(계수 부호 일관률 미달 신호는 0) x shrinkage(rolling mean b_j, λ 사전 선언).
-- 레짐 조건부: riskOn/riskOff 주차 부분집합별 계수 평균으로 산출 (고정 프리셋 표 폐기. 레짐 판정 입력은 기존대로 `macro("종합")` + `quant("레짐")` + `scanNarrativeRegime` 2/3 다수결).
-- 검증: purged walk-forward (embargo ≥ 1주, 5d 라벨 겹침 차단) fold 별 OOS 분위 스프레드 밴드 (03 §2).
-- 라이브 규율: 가중 재추정은 분기 1회·사전등록 protocol 로만. 주중 변경 금지 (레코드 오염). 회귀 계수·t-stat 은 가중 산출 내부용이며 대외 수치 claim 에 쓰지 않는다 (03 §5).
-- 비선형 ML(GBM 등) 을 이연하는 이유: 신규 의존성 + 과적합 표면적 + 근거 분해 불가. W1 성적 원장이 쌓여 선형의 한계가 실측되면 그때 별도 사이클로 상정.
-
-## 6. top10 합류(confluence) 룰
-
-board100 안에서:
-
-1. **합류 카운트 k** = F_f ≥ 0.80 (해당 family 유니버스 상위 20%) 인 family 수. k ≥ 3 필수.
-2. **red-flag 게이트 (하나라도 걸리면 top10 자격 박탈, board100 에는 flag 표기 유지)**:
-   - 감사의견 비적정 / 자본잠식 (scan audit·debt)
-   - credit 최하등급 + Altman distress 동시 (교차 확인, 단일 지표 단정 금지 규약 준수)
-   - disclosureRisk 상위 신호 3개 이상 동시
-   - 시장조치·관리종목 (G5 승격 전엔 kindList 근사 + 한계 flag)
-   - 유동성 최하위 분위 (체결 불능 수준)
-3. **conformal 비모순**: `quant("예측", code, horizon=5)` 90% 구간 상단이 0 이하이면 탈락 (점예측이 아니라 구간으로 판정. 구간이 0 을 걸치는 것은 허용하되 dossier 에 그대로 공개).
-4. 순위화: (k 내림차순, C 내림차순). 통과 종목이 10 미만인 주는 **그 수만큼만 발행** (억지로 10 채우기 금지. 부족분은 "이번 주 합류 미달" 로 원장 기록).
+```
+S0 위생      전상장사, 명시 제외만 (정리매매·스팩·상장 20거래일 미만). no-silent-cap 로그
+S1 판독      8 판독기 x 전종목 EngineReading 발행
+S2 봉인      readings 전량 ledger 봉인 (top 선정 전에 봉인 = selection bias 원천 차단)
+S3 메타결합  신뢰도 가중 combined score
+S4 board100  combined 상위 100 + reader 별 의견 분해 동행
+S5 top10     합류 룰: 신뢰 상위 독립 reader ≥ 3 이 동일 방향(+1) + red-flag 게이트(credit/audit/
+             disclosureRisk/유동성) + forecast reading 비모순. 순위 = (합의 reader 수, combined score).
+             통과 < 10 이면 그 수만큼만 발행
+```
 
 ## 7. 출력 스키마와 결측 규약
 
-- board100/top10 스키마는 00 §3. 추가 규약:
-  - 결측은 null 그대로. 0 대체·평균 대체 0건 (scan forbidden 상속).
-  - 모든 수치 컬럼에 asOf/dateRef 동행. 신호별 원천 verb 를 refs 에 기록해 재현 가능.
-  - coverage 컬럼: "18개 중 14개 신호 참여" 식의 정수 쌍. family 단위도 병기.
-- 주간 실행 결과는 로컬 `data/shortlist/`(DATA_RELEASES 등록 후) parquet append. ledger 봉인과 별개로 board 전체 스냅샷 보존 (재현성).
+- readings 테이블(전종목 x reader), board100, top10 dossier, reader scorecard 4종. 모든 수치에 asOf/dateRef, 결측은 null 유지 (0 대체 0건).
+- top10 dossier 의 근거 서술이 바뀐다: "신호 값" 나열이 아니라 **"reader 별 의견 + 그 reader 의 해당 산업 트랙레코드(수축 추정치·표본 수·미검증 여부)"** 를 함께 싣는다. 근거의 강도가 주장이 아니라 성적표 인용이 된다.
+- 주간 스냅샷은 `data/shortlist/` parquet append (재현성).
 
-## 8. 이 설계가 기존 axis 회피 룰을 어기지 않는 근거
+## 8. 기존 axis 회피 룰 정합 (유지)
 
-- "단일 신호로 단정 금지" 계열 룰: 합류 룰 자체가 다신호 종합을 강제.
-- "scan 후보를 검증 없이 투자 결론으로 확정 금지": top10 은 결론이 아니라 조사 착수 목록이며 dossier 에 analysis/credit 검증 동행.
-- "screen 상위를 곧바로 매수 추천 금지": never-claim 문구 봉인 + 추천 어휘 0.
-- "결손 0 대체 금지": §7.
-- "universe·기준일·필터·계산식 없이 후보 발굴 완료 금지": board 스키마가 전부 동행.
+- 단일 신호·단일 reader 단정 금지: 합류 룰이 다엔진 합의를 강제.
+- scan 후보를 검증 없이 투자 결론 확정 금지: top10 은 조사 착수 목록 + dossier 검증 동행.
+- 결손 0 대체 금지: 기권 1급 출력.
+- 성과 보장·"검증된 팩터" 어휘 금지: 성적표는 항상 기간·벤치마크·표본·미검증 라벨 동행.
