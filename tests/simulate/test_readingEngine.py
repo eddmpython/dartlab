@@ -727,3 +727,64 @@ def testGiacominiWhiteDetectsConditionalDifference():
     assert gw["pValue"] < 0.05  # 조건부 예측력 차이 검출
     same = regime.giacominiWhite(np.ones(T), np.ones(T), inst)
     assert same["pValue"] > 0.5  # 손실 동일 = 기각 불가
+
+
+def testFundDailyStepIsPitCarryNoInterpolation():
+    from dartlab.simulate import fundDaily
+
+    grid = pl.DataFrame(
+        {
+            "code": ["a", "a"],
+            "period": ["2026Q1", "2026Q2"],
+            "rceptDate": ["20260101", "20260401"],
+            "account": ["netIncome", "netIncome"],
+            "amount": [100.0, 120.0],
+        }
+    )
+    dates = pl.DataFrame({"date": ["20260110", "20260215", "20260415", "20260515"]})
+    d = fundDaily.fundDailyStep(grid, dates).sort("date")
+    assert d["amount"].to_list() == [100.0, 100.0, 120.0, 120.0]  # 계단(보간 아님): 발효 전 최신값 유지
+    assert d.filter(pl.col("date") == "20260215")["tau"][0] == 45  # 이벤트타임 경과일
+
+
+def testSueSeasonalSurprise():
+    from dartlab.simulate import fundDaily
+
+    amounts = [100.0, 102, 104, 106, 120, 123, 126, 129, 145, 149, 153, 200]  # 마지막 분기 서프라이즈
+    periods = [f"{2023 + i // 4}Q{i % 4 + 1}" for i in range(12)]
+    grid = pl.DataFrame(
+        {
+            "code": ["a"] * 12,
+            "period": periods,
+            "rceptDate": [f"2023{i:02d}01" for i in range(1, 13)],
+            "account": ["netIncome"] * 12,
+            "amount": amounts,
+        }
+    )
+    s = fundDaily.sue(grid).sort("period")
+    last = s.filter(pl.col("period") == "2025Q4")["sue"][0]
+    assert last is not None and last > 2.0  # 큰 계절 서프라이즈 = 높은 양의 SUE
+
+
+def testEarAnnouncementExcess():
+    from dartlab.simulate import fundDaily
+
+    dates = [f"202601{d:02d}" for d in range(9, 20)]
+    rows = []
+    for i, dt in enumerate(dates):
+        rows.append({"date": dt, "code": "a", "close": 100.0 * (1.02**i)})  # a 발표후 +2%/일
+        rows.append({"date": dt, "code": "b", "close": 100.0})  # b 시장 평평
+    px = pl.DataFrame(rows)
+    grid = pl.DataFrame(
+        {"code": ["a"], "period": ["2026Q1"], "rceptDate": ["20260110"], "account": ["netIncome"], "amount": [100.0]}
+    )
+    e = fundDaily.ear(grid, px, window=3)
+    assert e["ear"][0] > 0.02  # 발표창 양의 초과수익
+
+
+def testChowLinIsDisplayOnly():
+    from dartlab.simulate import fundDaily
+
+    out = fundDaily.chowLinDisplay(np.array([100.0, 120, 90, 110]), periodsPerQuarter=3)
+    assert out["displayOnly"] is True and "look-ahead" in out["warning"]  # 피처 금지 라벨
+    assert len(out["series"]) == 12  # 4분기 x 3 = 12 월
