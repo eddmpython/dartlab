@@ -4,6 +4,7 @@
 - 배경: Wikimedia Commons · Openverse 에서 PD/CC0 만 수급 (생성형 FLUX 안 씀, 출처 깨끗한 실사)
   → blog/06-data-reports/{NN}-{slug}/assets/{NN}-thumbnail-bg.webp + CREDITS.md
 - 합성: landing/static/thumbnails/data-{slug}.webp (frontmatter ogImage 와 동일 경로)
+  + data-{slug}-card.webp (텍스트 없는 리스트 카드용. posts.ts 가 ogImage 에서 자동 파생 요청)
 
 실행: uv run python -X utf8 blog/_scripts/gen_data_thumbnails.py
 """
@@ -15,6 +16,7 @@ import re
 from pathlib import Path
 
 import requests
+from gen_blog_thumbnails import renderCard
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(r"c:/Users/MSI/OneDrive/Desktop/sideProject/dartlab")
@@ -328,6 +330,7 @@ def main() -> None:
         res = fetch_bg(nn, slug, queries, keywords)
         bg_path = res[0] if res else _navy_fallback(nn, slug)
         composite(nn, slug, prefix, title, sub, bg_path)
+        renderCard(bg_path, THUMBS / f"data-{slug}-card.webp")
     print("DONE")
 
 
