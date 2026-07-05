@@ -135,6 +135,17 @@ def test_stale_after_hours_covers_gov():
     assert "Gov Index Sync (Bulk)" in mod.STALE_AFTER_HOURS
 
 
+def test_stale_after_hours_covers_notify_watch():
+    """Notify Watch(퍼블릭 IPO SSOT bake + 신규상장 알림)도 cron drop staleness opt-in.
+
+    3일+ 연속 스케줄 누락 시 퍼블릭 reports.parquet 동결·알림 정지가 초록불 뒤에 숨는 것을 방지.
+    임계는 금~월 72h 주말 갭을 넘겨(오탐 방지) 잡는다.
+    """
+    mod = _loadMonitor()
+    assert "Notify Watch" in mod.STALE_AFTER_HOURS
+    assert mod.STALE_AFTER_HOURS["Notify Watch"] > 72
+
+
 # ─── _classifyFailure (시그니처 매칭) ─────────────────────────────────
 
 

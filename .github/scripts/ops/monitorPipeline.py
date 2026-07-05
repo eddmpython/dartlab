@@ -56,9 +56,13 @@ STALE_AFTER_HOURS: dict[str, float] = {
     "Gov Price Sync (Bulk)": 42,
     "Gov Index Sync (Bulk)": 42,
     # 검색 인덱스 = 매일 04:00 KST 증분(+ source sync workflow_run). 정상 최대 간격 ~24h.
-    # 30h = +6h 여유. cron 드랍(성공기록만 남고 며칠 안 돎)을 staleness 로 감지 — 실패(RED)는
+    # 30h = +6h 여유. cron 드랍(성공기록만 남고 며칠 안 돎)을 staleness 로 감지. 실패(RED)는
     # MONITORED_WORKFLOWS 가 이미 잡지만, schedule 드랍은 이 임계 없이는 미탐(2026-06 하루 RED 교훈).
     "Search Index Build": 30,
+    # Notify Watch = 평일(1-5) 17시 KST cron. 일일 감사(05시 KST) 기준 정상 최대 age = 일 감사에 금 run ~57h.
+    # 80h = +여유(금~월 72h 주말 갭 초과) 라 정상 주말 오탐 없음. 3일+ 연속 cron drop(퍼블릭 IPO SSOT bake
+    # 동결 + 신규상장 알림 정지)만 stale 감지·자동 트리거. 트리거는 nonce 멱등이라 오탐이어도 무해(중복알림 0).
+    "Notify Watch": 80,
 }
 
 # 실패 원인 분류 시그니처 (gh run view 출력 = 잡 목록 + ANNOTATIONS, 소문자 매칭).

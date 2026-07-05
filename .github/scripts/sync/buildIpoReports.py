@@ -201,8 +201,10 @@ def main() -> int:
         return 0
     token = _resolveToken()
     if not token:
-        print("[HF up] HF_TOKEN 없음. push skip (빌드만 완료)", file=sys.stderr)
-        return 1
+        # 미설정 = 롤아웃 전 graceful no-op (watch.py·send.py 동형). 로컬 parquet 은 빌드됨(왓치 직독).
+        # genuine-failure(빌드·파싱·사이즈가드·push 예외)만 비-0 종료 → notify-watch assert 스텝이 job RED.
+        print("[HF up] HF_TOKEN 없음. push skip (롤아웃 전 no-op, 로컬 빌드 완료)", file=sys.stderr)
+        return 0
     push(dest, token)
     return 0
 

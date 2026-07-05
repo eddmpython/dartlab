@@ -41,8 +41,10 @@ jobs:
 
       # 왓치가 첫 관문: IPO 를 먼저 잡아 6카테고리 리포트를 파싱·HF push(퍼블릭 터미널 직독 SSOT 생산).
       # 이 스텝이 먼저라 다음 푸시(newIpo)의 딥링크가 여는 리포트가 이미 HF 에 있다. 실패해도 알림은
-      # scan('ipo') 폴백으로 계속(continue-on-error). 같은 runner 라 watch.py 가 여기 산출 parquet 을 직독.
+      # scan('ipo') 폴백으로 계속(continue-on-error 로 watch 스텝 회복성 보존). 같은 runner 라 watch.py 가
+      # 여기 산출 parquet 을 직독. genuine-failure(push·파싱·사이즈가드)는 아래 assert 스텝이 job RED 로 노출.
       - name: Bake IPO reports (parse -> HF, watch first-catch)
+        id: bake
         continue-on-error: true
         run: uv run python -X utf8 .github/scripts/sync/buildIpoReports.py
         env:
@@ -57,3 +59,15 @@ jobs:
           PUSHHUB_URL: ${{ vars.VITE_PUSHHUB_URL }}
           PUSHHUB_SEND_TOKEN: ${{ secrets.PUSHHUB_SEND_TOKEN }}
           PYTHONUNBUFFERED: "1"
+
+      # bake 가시성 가드: continue-on-error 는 알림 회복성 위해 유지하되, 진짜 실패(HF push·파싱·사이즈가드)는
+      # 여기서 job 을 RED 로 만들어 monitorPipeline 이 "Notify Watch" 의 조용한 실패를 잡게 한다. 미설정 no-op 은
+      # buildIpoReports 가 exit 0 이라 outcome=success 로 통과(graceful). watch 는 위에서 이미 실행됨(회복성 보존).
+      - name: Assert IPO bake succeeded (genuine failure to RED)
+        if: always()
+        run: |
+          if [ "${{ steps.bake.outcome }}" = "failure" ]; then
+            echo "::error::IPO bake 실패 (HF reports.parquet 미갱신). 퍼블릭 터미널 리포트 stale 위험"
+            exit 1
+          fi
+          echo "IPO bake ok (outcome=${{ steps.bake.outcome }})"
