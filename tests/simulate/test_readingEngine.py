@@ -263,3 +263,12 @@ def testCascadeDagAsData():
     dec = [n for n in dag["nodes"] if n["layer"] == "decision"][0]
     assert abs(dec["consensus"] - 0.8) < 1e-9  # 2.0*1*0.8 + 1.0*-1*0.8 = 0.8
     json.dumps(dag, ensure_ascii=False)  # 프론트 소비 계약: 직렬화 가능
+
+
+def testProfileTraitCatalogIsExhaustive():
+    from dartlab.simulate.profile import traitCatalog
+
+    tc = traitCatalog()
+    assert len(tc) == 9  # extractionCatalog 9 대분류 전수 (손 선별 0)
+    assert sum(tc.values()) > 50  # 88개념급 (카탈로그 구동)
+    assert tc["note"] > tc["segment"]  # 노트 개념이 세그먼트보다 많음 (카탈로그 사실)

@@ -18,6 +18,7 @@ from pathlib import Path
 
 import polars as pl
 
+from dartlab.core.extractionCatalog import CATEGORIES, getConcept, getExtractionConcepts
 from dartlab.simulate import table as _table
 
 # 자금조달·거버넌스 형질용 이벤트 타입 (희석·연쇄 신호). v2 정규화 하위타입 기준.
@@ -26,7 +27,25 @@ _GOVERNANCE_EVENTS = ("최대주주변경", "불성실공시법인지정", "감�
 _TRAIT_LOOKBACK_DAYS = 730  # 자금조달 이력 집계 창 (형질 실측 근거와 동일)
 
 
-def profile(code: str, asOf: str, *, baseDir: Path | None = None, dataDir: Path | None = None) -> dict:
+def traitCatalog() -> dict[str, int]:
+    """형질 축 카탈로그: extractionCatalog 9 대분류별 개념 수 (전수 축 정의, 손 선별 0).
+
+    Returns:
+        {category: conceptCount}. 프로파일러의 형질 축은 이 카탈로그가 정하며 (11 §2 8축 골격),
+        어떤 축·개념이 예측에 기여하는지는 성적표(형질 버킷)가 도태시킨다.
+    """
+    return {cat: len(getExtractionConcepts(category=cat)) for cat in CATEGORIES}
+
+
+def profile(
+    code: str,
+    asOf: str,
+    *,
+    baseDir: Path | None = None,
+    dataDir: Path | None = None,
+    includeInventory: bool = False,
+    marketNs: str = "kr",
+) -> dict:
     """한 회사의 PIT 형질 상태를 낸다 (asOf 'YYYYMMDD' 기준, 이후 데이터 미참조).
 
     Args:
@@ -34,18 +53,52 @@ def profile(code: str, asOf: str, *, baseDir: Path | None = None, dataDir: Path 
         asOf: 기준일 'YYYYMMDD'. 이 날짜 이하로 공개된 데이터만 참조 (PIT).
         baseDir: (미사용, 시그니처 통일용).
         dataDir: 데이터 SSOT 루트 override.
+        includeInventory: True 면 사업보고서 전수 인벤토리 census 를 카탈로그 9축으로 그룹화해
+            추가한다 (frame.inventory 경유, 현재 보고 상태 = live, PIT-replay 아님. 명시 라벨).
+        marketNs: "kr" | "us" (인벤토리 census 시장).
 
     Returns:
         형질 dict. 각 형질에 값·출처·기준일(staleness). 결손은 None (0 대체 금지).
-        {"code", "asOf", "fund": {...}, "financing": {...}, "governance": {...}, "market": {...}}.
+        빠른 PIT 형질(fund·financing·governance·market) + 카탈로그 9축 정의(catalogAxes) +
+        선택적 inventory(카테고리별 회사 단위 census, live).
     """
-    return {
+    out = {
         "code": code,
         "asOf": asOf,
+        "catalogAxes": traitCatalog(),
         "fund": _fundTraits(code, asOf, dataDir),
         "financing": _eventTraits(code, asOf, _FINANCING_EVENTS, dataDir),
         "governance": _eventTraits(code, asOf, _GOVERNANCE_EVENTS, dataDir),
         "market": _marketTraits(code, asOf, dataDir),
+    }
+    if includeInventory:
+        out["inventory"] = _inventoryCensus(code, marketNs)
+    return out
+
+
+def _inventoryCensus(code: str, marketNs: str) -> dict:
+    """사업보고서 전수 인벤토리를 카탈로그 9 대분류로 그룹화 (현재 보고 상태 = live, PIT 아님).
+
+    frame.inventory.reportInventory 경유. 단위마다 conceptId 태깅을 카테고리로 접어 축별 단위
+    수를 낸다. 실제 값 추출은 table.py 카탈로그 구동 라우팅 (핸들 소비). 실패/부재는 빈 census.
+    """
+    try:
+        from dartlab.frame.inventory import reportInventory
+
+        inv = reportInventory(code, marketNs=marketNs)
+    except (ValueError, KeyError, AttributeError, TypeError, OSError, ImportError):
+        return {"total": 0, "byCategory": {}, "note": "인벤토리 부재/실패"}
+    byCat: dict[str, int] = dict.fromkeys(CATEGORIES, 0)
+    for u in inv.get("units", []):
+        cid = u.get("conceptId")
+        concept = getConcept(cid) if cid else None
+        cat = concept.category if concept else "filingMeta"
+        byCat[cat] = byCat.get(cat, 0) + 1
+    return {
+        "total": inv.get("summary", {}).get("total", 0),
+        "cataloguedUnits": inv.get("summary", {}).get("cataloguedUnits", 0),
+        "byCategory": byCat,
+        "pitLabel": "live(현재 보고 상태, PIT-replay 아님)",
     }
 
 
