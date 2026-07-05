@@ -75,6 +75,7 @@ def issueReadings(
     readings = readings.filter(pl.col("week") == week)
     if readings.height == 0:
         return 0
+    readings = _fillAbstain(readings, priceM, week, directionByType)  # 완전성 강제 (silent 누락 0)
     asOf = weekEnd.filter(pl.col("week") == week)["date"]
     asOfStr = asOf[0] if asOf.len() else str(week)
     # 표면 provenance → refs (근거 참조 자연 기록, 재계산 계약).
@@ -87,6 +88,42 @@ def issueReadings(
     )
     _ledger.appendReadingsFrame(sealed, issuedAt=_nowUtc(), issuedLive=live, baseDir=baseDir)
     return sealed.height
+
+
+def _fillAbstain(
+    readings: pl.DataFrame, priceM: pl.DataFrame, week: int, directionByType: dict[str, int] | None
+) -> pl.DataFrame:
+    """연속 표면(price·fund)에서 거래 유니버스 중 판독 없는 종목을 기권행으로 발행 (완전성 강제).
+
+    opine 이 결손 code-week 를 드롭한 것을 기권(abstainReason="noData")으로 되살린다: 모든 회사가
+    매주 표면마다 판독/중립/기권 셋 중 하나로 기록된다 (silent 누락 0, 0 대체 금지). 이벤트 표면은
+    희소성 설계라 부재=중립(미발화)이므로 기권 대상 아님. 기권행 = direction 0 + score null.
+    """
+    # 거래 유니버스 = 그 주 가격 데이터 종목. 가격 유니버스가 없으면 완전성 강제 대상 미정 → 무발행.
+    if not (priceM.height and "week" in priceM.columns):
+        return readings
+    universe = priceM.filter(pl.col("week") == week).select("code").unique()
+    if universe.height == 0:
+        return readings
+    contSurfaces = [
+        s.surface for s in _surfaces.enumerateSurfaces(directionByType) if s.surface.startswith(("price.", "fund."))
+    ]
+    parts = [readings]
+    for surf in contSurfaces:
+        have = readings.filter(pl.col("surface") == surf).select("code").unique()
+        miss = universe.join(have, on="code", how="anti")
+        if miss.height:
+            parts.append(
+                miss.select(
+                    "code",
+                    week=pl.lit(week, dtype=pl.Int64),
+                    surface=pl.lit(surf),
+                    direction=pl.lit(0, dtype=pl.Int64),
+                    score=pl.lit(None, dtype=pl.Float64),
+                    abstainReason=pl.lit("noData"),
+                ).select(readings.columns)
+            )
+    return pl.concat(parts, how="vertical") if len(parts) > 1 else readings
 
 
 def scoreReadingsDue(
@@ -107,6 +144,10 @@ def scoreReadingsDue(
     """
     due = _ledger.unscoredReadings(baseDir=baseDir)
     if due is None or due.height == 0:
+        return 0
+    if "abstainReason" in due.columns:
+        due = due.filter(pl.col("abstainReason").is_null())  # 기권행은 채점 대상 아님 (포지션 없음)
+    if due.height == 0:
         return 0
     liveRun = labels is None  # 라벨 미주입 = 실데이터 라이브 런 (자동 스캔 허용)
     weekEnd = None

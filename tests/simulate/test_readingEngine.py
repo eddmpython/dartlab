@@ -168,6 +168,49 @@ def testIssueAndScoreCycle(tmp_path):
     assert readingLedger.unscoredReadings(baseDir=tmp_path).height == 0  # 전부 채점됨
 
 
+def testAbstainFirstClassAndCompleteness(tmp_path):
+    # 거래 유니버스 5종목, 재무는 3종목만 → 재무 표면에서 2종목 기권행 발행 (완전성 강제)
+    weekEnd = pl.DataFrame({"week": [202607], "date": ["20260213"]})
+    priceM = pl.DataFrame(
+        {
+            "code": ["a", "b", "c", "d", "e"],
+            "week": [202607] * 5,
+            "ret5": [0.01, 0.02, 0.03, 0.04, 0.05],
+            "mom20x5": [0.0] * 5,
+            "volShock": [0.0] * 5,
+            "high52": [0.9] * 5,
+        }
+    )
+    fundM = pl.DataFrame({"code": ["a", "b", "c"], "week": [202607] * 3, "ep": [0.01, 0.02, 0.03], "bm": [0.02] * 3})
+    eventM = pl.DataFrame(schema={"code": pl.Utf8, "week": pl.Int64, "reportType": pl.Utf8})
+    weekMap = pl.DataFrame(schema={"date": pl.Utf8, "week": pl.Int64})
+    readingCycle.issueReadings(
+        week=202607, baseDir=tmp_path, matrices=(weekMap, weekEnd, priceM, fundM, eventM), directionByType={}
+    )
+    led = readingLedger.readReadings(baseDir=tmp_path)
+    abstain = led.filter(pl.col("abstainReason").is_not_null())
+    assert abstain.height == 4  # fund.ep + fund.bm 각 2종목(d,e) 기권 = 4행
+    assert set(abstain["abstainReason"].unique().to_list()) == {"noData"}
+    # 완전성: fund.ep 표면에 유니버스 5종목 전부 (판독 3 + 기권 2) 기록 = silent 누락 0
+    epRows = led.filter(pl.col("surface") == "fund.ep")
+    assert set(epRows["stockCode"].to_list()) == {"a", "b", "c", "d", "e"}
+    assert epRows.filter(pl.col("score").is_null()).height == 2  # 기권 2 (score null, 0 대체 아님)
+
+
+def testScorecardReportsAbstainRate():
+    rows, labs = [], []
+    for w in range(202601, 202641):
+        for i, code in enumerate([f"c{i:02d}" for i in range(10)]):
+            labs.append({"code": code, "week": w, "exNeutral": (i / 9 - 0.5) * 0.03})
+            if i < 6:  # 6종목 판독, 4종목 기권 → 기권률 0.4
+                rows.append({"code": code, "week": w, "surface": "s", "direction": 0, "score": i / 9})
+            else:
+                rows.append({"code": code, "week": w, "surface": "s", "direction": 0, "score": None})
+    card = readingScorecard.scorecard(pl.DataFrame(rows), pl.DataFrame(labs))
+    r = card.filter(pl.col("surface") == "s").row(0, named=True)
+    assert abs(r["abstainRate"] - 0.4) < 1e-9  # 기권률 채점 (4/10)
+
+
 def testSweepPboOnNoiseIsHalf():
     # edge 0 순수 노이즈: PBO ~0.5 (IS 최고 가정이 OOS 동전던지기), 강건 선정 0
     rng = np.random.default_rng(11)

@@ -95,8 +95,11 @@ def _surfaceSpreadByWeek(d: pl.DataFrame) -> tuple[pl.DataFrame | None, str]:
     """단일 표면 조인 df → (주별 스프레드 (week, spread), kind). 채점 불가면 (None, kind).
 
     연속 표면(고유 score > CONTINUOUS_DISTINCT_MIN)은 주별 Q5-Q1 분위 스프레드, 이산 방향 표면은
-    상/하 집단 스프레드. 주별 1값 (Fama-MacBeth 원자) 시계열을 낸다.
+    상/하 집단 스프레드. 주별 1값 (Fama-MacBeth 원자) 시계열을 낸다. 기권행(score null) 제외.
     """
+    d = d.filter(pl.col("score").is_not_null())  # 기권행은 스프레드에서 제외 (기권률은 별도 채점)
+    if d.height == 0:
+        return None, "미채점"
     if d["score"].n_unique() > CONTINUOUS_DISTINCT_MIN:
         dq = d.with_columns(q=(pl.col("score").rank() / pl.len()).over("week").mul(5).ceil().clip(1, 5).cast(pl.Int32))
         wk = dq.group_by(["week", "q"]).agg(ex=pl.col("exNeutral").mean())
@@ -143,12 +146,22 @@ def surfaceWeeklySpreads(readings: pl.DataFrame, labels: pl.DataFrame, *, valueC
     return pl.concat(out)
 
 
+def _abstainRateBySurface(readings: pl.DataFrame) -> dict[str, float]:
+    """표면별 기권률 = score null 비율 (기권도 채점 대상, 06 §2). score 컬럼 없으면 빈 dict."""
+    if "score" not in readings.columns:
+        return {}
+    ar = readings.group_by("surface").agg(abstainRate=pl.col("score").is_null().mean())
+    return {r["surface"]: float(r["abstainRate"] or 0.0) for r in ar.iter_rows(named=True)}
+
+
 def scorecard(readings: pl.DataFrame, labels: pl.DataFrame) -> pl.DataFrame:
-    """표면별 버킷 중립 스프레드 + 주단위 t. → (surface, kind, spread, t, weeks, n, verdict).
+    """표면별 버킷 중립 스프레드 + 주단위 t + 기권률. → (surface, kind, spread, t, weeks, n, abstainRate, verdict).
 
     연속 표면(고유 score > CONTINUOUS_DISTINCT_MIN)은 주별 Q5-Q1 분위, 이산 방향 표면은 상/하
     집단. verdict = "통과"(|t|>=FACTOR_ZOO_T) | "동물원구분불가" | "미검증"(주<SCORECARD_MIN_WEEKS).
+    기권행(score null)은 스프레드에서 제외하되 기권률로 별도 채점 (silent 누락 0).
     """
+    abstainMap = _abstainRateBySurface(readings)
     j = readings.join(labels.select("code", "week", "exNeutral"), on=["code", "week"], how="inner")
     rows = []
     for surf in j["surface"].unique().sort():
@@ -168,6 +181,7 @@ def scorecard(readings: pl.DataFrame, labels: pl.DataFrame) -> pl.DataFrame:
                 "t": t,
                 "weeks": weeks,
                 "n": d.height,
+                "abstainRate": abstainMap.get(surf, 0.0),
                 "verdict": verdict,
             }
         )
@@ -182,6 +196,7 @@ def scorecard(readings: pl.DataFrame, labels: pl.DataFrame) -> pl.DataFrame:
                 "t": pl.Float64,
                 "weeks": pl.Int64,
                 "n": pl.Int64,
+                "abstainRate": pl.Float64,
                 "verdict": pl.Utf8,
             }
         )
