@@ -101,7 +101,9 @@ def listNarrativeConcepts() -> list[dict]:
     """
     out: list[dict] = []
     for c in getExtractionConcepts(category="narrative"):
-        anchor = c.narrativeAnchor or ("", "")
+        if c.narrativeAnchor is None:
+            continue  # US-only narrative(edgarOnly Item)는 DART 앵커 없음 (extractNarrative 대상 아님)
+        anchor = c.narrativeAnchor
         edgar = None
         keys = getattr(c.edgar, "keys", None)
         if keys:

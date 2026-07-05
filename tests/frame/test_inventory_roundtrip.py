@@ -50,3 +50,60 @@ def test_handleUniqueness(code: str):
     gc.collect()
     dupes = [h for h in set(handles) if handles.count(h) > 1]
     assert not dupes, f"handle collision: {dupes[:10]}"
+
+
+# ── EDGAR(US) parity 게이트: DART 인벤토리와 동급을 기계 강제 (전문에이전트 아키텍트 감사) ──
+def _hasUsData(ticker: str) -> bool:
+    """로컬 edgar sections artifact + panel 존재 여부."""
+    from dartlab.providers.edgar.docs.sections.sectionsStorage import hasSectionsArtifact
+
+    return hasSectionsArtifact(ticker) and (_dataDir("edgarPanel") / f"{ticker.upper()}.parquet").exists()
+
+
+_US_FIXTURE = "AAPL"
+_US_ENABLED = [_US_FIXTURE] if _hasUsData(_US_FIXTURE) else []
+
+
+@pytest.mark.skipif(not _US_ENABLED, reason="로컬 edgar 데이터 없음")
+def test_usItemsEnumerated():
+    """US 인벤토리는 SEC Item 을 15+ 열거(edgar docs 병렬 surface, DART narrative+report 대응)."""
+    inv = reportInventory(_US_FIXTURE, marketNs="us")
+    byKind = inv["summary"]["byKind"]
+    assert byKind.get("item", 0) >= 15, f"US Item 15+ 기대, 실제 {byKind}"
+    assert inv["summary"]["total"] >= 20, f"US 총 20+ 기대(재무 5표 + Item), 실제 {inv['summary']['total']}"
+
+
+@pytest.mark.skipif(not _US_ENABLED, reason="로컬 edgar 데이터 없음")
+def test_usHandleNamespaceAndUniqueness():
+    """US item handle 은 form-namespaced(form::itemId) + 회사 내 유일(collision 0)."""
+    inv = reportInventory(_US_FIXTURE, marketNs="us")
+    handles = [u["handle"] for u in inv["units"]]
+    assert len(handles) == len(set(handles)), "US handle collision"
+    for u in inv["units"]:
+        if u["kind"] == "item":
+            assert u["handle"].split("::", 1)[0] in ("10-K", "10-Q", "20-F", "40-F"), f"bad namespace {u['handle']}"
+
+
+@pytest.mark.skipif(not _US_ENABLED, reason="로컬 edgar 데이터 없음")
+def test_usRoundTripEveryItem():
+    """US parity 크럭스: 모든 item handle 이 get() 으로 non-empty round-trip(enumeration theater 차단)."""
+    d = dossier(_US_FIXTURE, marketNs="us")
+    inv = reportInventory(_US_FIXTURE, marketNs="us")
+    dead = []
+    for u in inv["units"]:
+        if u["kind"] != "item":
+            continue
+        df = d.get(u["handle"])
+        if df is None or getattr(df, "height", 0) == 0:
+            dead.append(u["handle"])
+    gc.collect()
+    assert not dead, f"US round-trip 실패 handle: {dead[:10]}"
+
+
+@pytest.mark.skipif(not _US_ENABLED, reason="로컬 edgar 데이터 없음")
+def test_usMaterializeItemsRoundTrip():
+    """US materialize(items) 배치 경로도 전 item non-empty(sections 1회 로드 slice 정합)."""
+    mat = dossier(_US_FIXTURE, marketNs="us").materialize(kinds=("item",))
+    gc.collect()
+    dead = [h for h, v in mat.items() if v is None or getattr(v, "height", 0) == 0]
+    assert not dead, f"US materialize 실패 handle: {dead[:10]}"

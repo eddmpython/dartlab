@@ -11,9 +11,12 @@ from dartlab.frame.narrative import extractNarrative, listNarrativeConcepts
 
 
 def test_listNarrativeCoversCatalog():
-    """listNarrativeConcepts 는 카탈로그 narrative 개념을 전수 커버한다."""
+    """listNarrativeConcepts 는 DART-anchored narrative 개념을 전수 커버한다.
+
+    US-only narrative(edgarOnly Item, narrativeAnchor 없음)는 extractNarrative(DART 전용) 대상 아니라 제외.
+    """
     listed = {c["conceptId"] for c in listNarrativeConcepts()}
-    catalog = {c.conceptId for c in getExtractionConcepts(category="narrative")}
+    catalog = {c.conceptId for c in getExtractionConcepts(category="narrative") if c.narrativeAnchor is not None}
     assert listed == catalog
 
 

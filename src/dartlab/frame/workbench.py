@@ -90,6 +90,21 @@ def _conceptPresent(concept: ExtractionConcept, notes: set[str], apiTypes: set[s
     return False
 
 
+def _loadBoard(code: str, marketNs: str):
+    """dart/edgar Panel 스위치 SSOT (inventory._loadBoard 재사용, 단일 진실의 원천)."""
+    from dartlab.frame.inventory import _loadBoard as _inventoryLoadBoard
+
+    return _inventoryLoadBoard(code, marketNs)
+
+
+def _sliceSections(sectionsDf, topic: str):
+    """로드된 edgar docs sections df 에서 topic(form::itemId) 슬라이스. 비면 None."""
+    if sectionsDf is None or "topic" not in getattr(sectionsDf, "columns", []):
+        return None
+    df = sectionsDf.filter(pl.col("topic") == topic)
+    return df if not df.is_empty() else None
+
+
 class Dossier:
     """한 회사의 카탈로그 구동 데이터 워크벤치(조립 view).
 
@@ -178,12 +193,13 @@ class Dossier:
         }
         if handle in reportKeys:
             return self._extractReport(handle)
-        from dartlab.providers.dart.panel import Panel
-
-        p = Panel(self.code, marketNs=self.marketNs)
-        if p is None or getattr(p, "height", 0) == 0:
+        # US item handle(form::itemId)은 edgar docs sections 직독(panel 밖 병렬 surface, DART report 대응).
+        if self.marketNs == "us" and "::" in handle:
+            return _sliceSections(self._loadSectionsDf(), handle)
+        board = _loadBoard(self.code, self.marketNs)  # dart/edgar Panel 스위치 SSOT
+        if board is None or getattr(board, "height", 0) == 0:
             return None
-        return p(handle)
+        return board(handle)
 
     def materialize(self, *, kinds: tuple[str, ...] | None = None) -> dict[str, pl.DataFrame | None]:
         """인벤토리 전 단위를 Panel 1회 로드로 배치 추출한다 (OOM-safe round-trip).
@@ -206,11 +222,12 @@ class Dossier:
             >>> mats = dartlab.dossier("005930").materialize(kinds=("note",))  # doctest: +SKIP
         """
         from dartlab.frame.inventory import reportInventory
-        from dartlab.providers.dart.panel import Panel
 
-        board = Panel(self.code, marketNs=self.marketNs)  # 정규화 wide board 1회 로드(인벤토리·추출 공유)
+        board = _loadBoard(self.code, self.marketNs)  # 정규화 wide board 1회 로드(인벤토리·추출 공유)
         inv = reportInventory(self.code, marketNs=self.marketNs, board=board)
         reportDf = None
+        sectionsDf = None
+        loadedSections = False
         out: dict[str, pl.DataFrame | None] = {}
         for u in inv.get("units", []):
             if kinds is not None and u["kind"] not in kinds:
@@ -220,6 +237,12 @@ class Dossier:
                 if reportDf is None:
                     reportDf = self._loadReportDf()
                 out[handle] = self._sliceReport(reportDf, handle)
+                continue
+            if u["kind"] == "item":
+                if not loadedSections:  # sections 1회 로드 후 topic slice (OOM 안전 round-trip)
+                    sectionsDf = self._loadSectionsDf()
+                    loadedSections = True
+                out[handle] = _sliceSections(sectionsDf, handle)
                 continue
             out[handle] = board(handle) if board is not None and getattr(board, "height", 0) > 0 else None
         return out
@@ -234,6 +257,15 @@ class Dossier:
         try:
             return pl.read_parquet(path)
         except (pl.exceptions.PolarsError, OSError):
+            return None
+
+    def _loadSectionsDf(self) -> pl.DataFrame | None:
+        """edgar docs sections wide 1회 로드 (US item handle 추출용, topic x period)."""
+        from dartlab.providers.edgar.docs.sections.pipeline import sections
+
+        try:
+            return sections(self.code)
+        except (pl.exceptions.PolarsError, OSError, ValueError):
             return None
 
     def _sliceReport(self, reportDf: pl.DataFrame | None, apiType: str) -> pl.DataFrame | None:
@@ -271,12 +303,10 @@ class Dossier:
 
             return extractNarrative(self.code, conceptId, marketNs=self.marketNs)
         if surface in ("note", "statement"):
-            from dartlab.providers.dart.panel import Panel
-
-            p = Panel(self.code, marketNs=self.marketNs)
-            if p is None or getattr(p, "height", 0) == 0:
+            board = _loadBoard(self.code, self.marketNs)  # dart/edgar Panel 스위치 SSOT
+            if board is None or getattr(board, "height", 0) == 0:
                 return None
-            return p(concept.dart.key)
+            return board(concept.dart.key)
         if surface == "report":
             return self._extractReport(concept.dart.key)
         return None  # segmentTable(횡단) 은 scan 경로

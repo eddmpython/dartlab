@@ -5,9 +5,10 @@
 VOT_STK·SUB_* 등] · 내러티브 섹션 · 재무 5표 · XII 상세표 · OpenDART 정형공시 apiType)를 안정 handle 과
 함께 인벤토리로 만든다.
 
-**정직 상한(전문에이전트 감사 반영)**: "cover-to-cover 100%" 가 아니라 **panel+report 가 BUILD 로 포착한
-모든 단위, unit 입도, KR(DART)**. panel 이 안 담는 것(이미지 바이너리·cover 구조 메타·해소된 cross-ref·
-multi-axis 표의 cell 분해)은 상한 밖. US(EDGAR)는 Part/Item 구조라 별도 열거.
+**정직 상한(전문에이전트 감사 반영)**: "cover-to-cover 100%" 가 아니라 **BUILD 로 포착한 모든 단위, unit
+입도**. KR(DART) = panel(노트·정형표·내러티브) + report(정형공시). US(EDGAR) = edgar panel(재무 5표) +
+docs sections(SEC 10-K/10-Q Item, `_itemUnits`). 양 시장 대칭 열거(동급). 상한 밖: 이미지 바이너리·cover
+구조 메타·해소된 cross-ref·multi-axis cell 분해(공통), US exhibit(EX-*)·proxy 참조편입 Part III(별도 파일).
 
 **2 층 설계**: (1) 인벤토리 = panel+report 전수 열거(본 모듈). (2) 의미 카탈로그(`core.extractionCatalog`)
 = 고가치 단위에 DART<->EDGAR parity + 타입 추출기 부여(부분 enrich). 각 인벤토리 단위는 매칭 conceptId 로
@@ -126,9 +127,12 @@ def reportInventory(code: str, *, marketNs: str = "kr", board: Any = None) -> di
     narrIdx = _narrativeConceptIndex()
 
     units += _keyedUnits(board, periodCols, noteIdx)  # NT_ 노트 + 임베디드 정형 ACLASS
-    units += _narrativeUnits(board, periodCols, narrIdx)  # 내러티브 섹션
-    units += _statementUnits(board)  # 재무 5표(native 분해)
-    units += _reportUnits(code, marketNs)  # OpenDART 정형공시 apiType(panel 밖 병렬 surface)
+    if marketNs == "us":
+        units += _itemUnits(code)  # EDGAR docs Item(SEC 10-K/10-Q 섹션) = DART narrative+report 대응 surface
+    else:
+        units += _narrativeUnits(board, periodCols, narrIdx)  # DART 내러티브 섹션
+    units += _statementUnits(board, marketNs)  # 재무 5표(native 분해)
+    units += _reportUnits(code, marketNs)  # OpenDART 정형공시 apiType(KR only, US 는 _itemUnits 가 담당)
 
     byKind: dict[str, int] = {}
     for u in units:
@@ -252,6 +256,40 @@ def _isReport(c) -> bool:
     return isinstance(c.dart, DartSource) and c.dart.surface == "report"
 
 
+def _itemUnits(code: str) -> list[dict]:
+    """EDGAR docs Item 단위 열거 (SEC 10-K/10-Q/20-F 섹션, panel 밖 병렬 surface).
+
+    DART report parquet 이 정형표 surface 이듯 EDGAR 는 docs sections 가 Item surface 다. topic(form::itemId)
+    을 handle 로 열거하며 pipeline.sections 로 round-trip 추출된다. 열거는 topic 컬럼만 projection(본문 무접촉,
+    OOM 안전). 얇고 회사별 편차 큰 edgar panel narrative 대신 정규화된 docs 열거가 US narrative parity 정본.
+    """
+    from dartlab.core.extractionCatalog import conceptForEdgarItem
+    from dartlab.providers.edgar.docs.sections.topicUnits import topicUnits
+
+    units: list[dict] = []
+    for u in topicUnits(code):
+        concept = conceptForEdgarItem(u["itemId"])
+        units.append(
+            {
+                "handle": u["topic"],
+                "kind": "item",
+                "title": u["title"],
+                "normalizedTitle": u["title"],
+                "chapter": u["chapter"],
+                "scope": None,
+                "periods": [],
+                "rows": None,
+                "hasTable": u["hasTable"],
+                "hasText": u["hasText"],
+                "disclosureKey": None,
+                "conceptId": concept.conceptId if concept else None,
+                "companySpecific": False,
+            }
+        )
+    units.sort(key=lambda x: x["handle"])
+    return units
+
+
 def _narrativeUnits(board: pl.DataFrame, periodCols: list[str], narrIdx: list[tuple[str, str]]) -> list[dict]:
     """내러티브 섹션 단위 열거 (disclosureKey null, chapter+sectionLeaf 그룹, 정규화 wide board).
 
@@ -290,20 +328,31 @@ def _narrativeUnits(board: pl.DataFrame, periodCols: list[str], narrIdx: list[tu
     return units
 
 
-def _statementUnits(df: pl.DataFrame) -> list[dict]:
-    """재무 5표 단위 (panel 있으면 상존, native 분해 가능)."""
+_US_STATEMENT_LABELS: dict[str, str] = {
+    "is": "Income Statement",
+    "bs": "Balance Sheet",
+    "cf": "Cash Flow",
+    "cis": "Comprehensive Income",
+    "sce": "Statement of Equity",
+}
+
+
+def _statementUnits(df: pl.DataFrame, marketNs: str = "kr") -> list[dict]:
+    """재무 5표 단위 (panel 있으면 상존, native 분해 가능). US 는 영문 라벨."""
     if df.is_empty():
         return []
     concIdx = {c.dart.key: c.conceptId for c in getExtractionConcepts(category="financialStatement") if c.dart}
+    isUs = marketNs == "us"
     units: list[dict] = []
     for key, label in _NATIVE_STATEMENTS:
+        title = _US_STATEMENT_LABELS[key] if isUs else label
         units.append(
             {
                 "handle": key,
                 "kind": "statement",
-                "title": label,
-                "normalizedTitle": label,
-                "chapter": "III",
+                "title": title,
+                "normalizedTitle": title,
+                "chapter": "Financial Statements" if isUs else "III",
                 "scope": "consolidated",
                 "periods": [],
                 "rows": None,

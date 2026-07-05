@@ -50,9 +50,13 @@ def test_noteConceptShape():
 
 
 def test_narrativeConceptShape():
-    """narrative 개념은 narrativeAnchor(chapter, section) 를 가진다."""
+    """DART-anchored narrative 개념은 narrativeAnchor(chapter, section) 를 가진다.
+
+    US-only narrative(edgarOnly Item, dart=HonestNull)는 DART panel 앵커가 없으므로 예외.
+    """
     for c in getExtractionConcepts(category="narrative"):
-        assert c.narrativeAnchor is not None and len(c.narrativeAnchor) == 2
+        if isinstance(c.dart, DartSource):
+            assert c.narrativeAnchor is not None and len(c.narrativeAnchor) == 2
 
 
 def test_honestNullHasReason():
@@ -122,3 +126,60 @@ def test_parityMatrixCoversAll():
     pm = parityMatrix()
     total = sum(len(v) for v in pm.values())
     assert total == len(getExtractionConcepts())
+
+
+def test_edgarItemTaxonomyDriftGuard():
+    """카탈로그 EDGAR Item category map 은 providers 정본 topic 택소노미와 동일 키(SSOT 수렴).
+
+    한쪽만 바뀌면 실패해 drift 차단. 정본(providers.edgar.docs.sections.topics) 갱신 시 양쪽 동시 갱신.
+    """
+    from dartlab.core.extractionCatalog import edgarItemCategory
+    from dartlab.providers.edgar.docs.sections import topics as tp
+
+    ssot = set(tp._10K_ITEM_LABELS) | set(tp._10Q_ITEM_LABELS)
+    cat = set(edgarItemCategory())
+    assert cat == ssot, f"EDGAR Item 택소노미 drift: ssot-cat={ssot - cat}, cat-ssot={cat - ssot}"
+
+
+def test_edgarItemCategoryValid():
+    """모든 EDGAR Item category 는 CATEGORIES 어휘."""
+    from dartlab.core.extractionCatalog import edgarItemCategory
+
+    for topicId, category in edgarItemCategory().items():
+        assert category in CATEGORIES, f"{topicId}: 미등록 category {category}"
+
+
+def test_edgarItemReverseIndexValid():
+    """edgarItemToConcept 의 모든 대표 conceptId 는 실재 개념."""
+    from dartlab.core.extractionCatalog import edgarItemToConcept
+
+    for topicId, conceptId in edgarItemToConcept().items():
+        assert getConcept(conceptId) is not None, f"{topicId} -> 미실재 conceptId {conceptId}"
+
+
+def test_edgarOnlyItemsShape():
+    """US-only Item(8) 은 dart=HonestNull + edgar item surface(EDGAR<->DART 비대칭 정직 기록)."""
+    edgarOnly = [c for c in getExtractionConcepts() if c.conceptId.startswith("edgar.")]
+    assert len(edgarOnly) == 8, f"edgarOnly Item 8 기대, 실제 {len(edgarOnly)}"
+    for c in edgarOnly:
+        assert isinstance(c.dart, HonestNull) and c.dart.reason.strip(), f"{c.conceptId}: dart HonestNull 사유 필요"
+        assert isinstance(c.edgar, EdgarSource) and c.edgar.surface == "item", f"{c.conceptId}: edgar item surface 필요"
+
+
+def test_edgarItemCoverageMeasures():
+    """edgarItemCoverage 는 실재 topicId 대비 카탈로그 커버리지를 측정(생존편향 차단, US side)."""
+    from dartlab.core.extractionCatalog import edgarItemCoverage
+
+    cov = edgarItemCoverage(["item1Business", "item7Mdna", "item999NonStandard"])
+    assert cov["present"] == 3
+    assert cov["catalogued"] == 2
+    assert cov["uncatalogued"] and cov["uncatalogued"][0][0] == "item999NonStandard"
+
+
+def test_conceptForEdgarItemResolves():
+    """conceptForEdgarItem 은 topicId 를 대표 개념으로 해소(inventory Item enrich)."""
+    from dartlab.core.extractionCatalog import conceptForEdgarItem
+
+    assert conceptForEdgarItem("item7Mdna").conceptId == "narrative.mdna"
+    assert conceptForEdgarItem("item1CCybersecurity").conceptId == "edgar.cybersecurity"
+    assert conceptForEdgarItem("item999NonStandard") is None

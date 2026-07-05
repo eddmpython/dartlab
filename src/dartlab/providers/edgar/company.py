@@ -38,6 +38,7 @@ from dartlab.providers._common.filingHelpers import (
 from dartlab.providers.edgar.accessor.docsAccessor import _DocsAccessor
 from dartlab.providers.edgar.accessor.financeAccessor import _FinanceAccessor
 from dartlab.providers.edgar.accessor.profileAccessor import _ProfileAccessor
+from dartlab.providers.edgar.docs.sections.topics import _topicChapterLabel
 
 _PERIOD_COLUMN_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 
@@ -233,61 +234,8 @@ _TOPIC_ALIASES: dict[str, str] = {
     "summary": "fsSummary",
 }
 
-# topic → chapter / label 매핑 (DART index와 구조 통일)
-_FINANCE_LABELS: dict[str, tuple[str, str]] = {
-    "BS": ("Financial Statements", "Balance Sheet"),
-    "IS": ("Financial Statements", "Income Statement"),
-    "CF": ("Financial Statements", "Cash Flow"),
-    "CIS": ("Financial Statements", "Comprehensive Income"),
-    "ratios": ("Financial Statements", "Financial Ratios"),
-}
-
-# 10-K Item → (chapter, label)
-_10K_ITEM_LABELS: dict[str, tuple[str, str]] = {
-    "item1Business": ("Part I", "Business"),
-    "item1ARiskFactors": ("Part I", "Risk Factors"),
-    "item1BUnresolvedStaffComments": ("Part I", "Unresolved Staff Comments"),
-    "item1CCybersecurity": ("Part I", "Cybersecurity"),
-    "item1DExecutiveOfficers": ("Part I", "Executive Officers"),
-    "item2Properties": ("Part I", "Properties"),
-    "item3LegalProceedings": ("Part I", "Legal Proceedings"),
-    "item4MineSafetyDisclosures": ("Part I", "Mine Safety Disclosures"),
-    "item4AExecutiveOfficersOfTheRegistrant": ("Part I", "Executive Officers"),
-    "item5MarketForCommonEquity": ("Part II", "Market for Common Equity"),
-    "item6Reserved": ("Part II", "Reserved"),
-    "item7Mdna": ("Part II", "MD&A"),
-    "item7AMarketRiskDisclosures": ("Part II", "Market Risk Disclosures"),
-    "item8FinancialStatements": ("Part II", "Financial Statements"),
-    "item9ChangesInAccountants": ("Part III", "Changes in Accountants"),
-    "item9AControlsAndProcedures": ("Part III", "Controls and Procedures"),
-    "item9BOtherInformation": ("Part III", "Other Information"),
-    "item9CForeignJurisdictionDisclosures": ("Part III", "Foreign Jurisdiction Disclosures"),
-    "item10DirectorsAndCorporateGovernance": ("Part III", "Directors & Corporate Governance"),
-    "item11ExecutiveCompensation": ("Part III", "Executive Compensation"),
-    "item12SecurityOwnership": ("Part III", "Security Ownership"),
-    "item13RelatedTransactions": ("Part III", "Related Transactions"),
-    "item14PrincipalAccountantFees": ("Part III", "Principal Accountant Fees"),
-    "item15ExhibitsAndSchedules": ("Part IV", "Exhibits & Schedules"),
-    "item16Form10KSummary": ("Part IV", "Form 10-K Summary"),
-    "item103EnvironmentalDisclosure": ("Regulation S-K", "Environmental Disclosure"),
-    "item405RegulationSKDisclosure": ("Regulation S-K", "Regulation S-K Disclosure"),
-    "item406RegulationSKCodeOfEthics": ("Regulation S-K", "Code of Ethics"),
-}
-
-# 10-Q Part/Item → (chapter, label)
-_10Q_ITEM_LABELS: dict[str, tuple[str, str]] = {
-    "partIItem1FinancialStatements": ("Part I", "Financial Statements"),
-    "partIItem2Mdna": ("Part I", "MD&A"),
-    "partIItem3MarketRisk": ("Part I", "Market Risk Disclosures"),
-    "partIItem4ControlsAndProcedures": ("Part I", "Controls and Procedures"),
-    "partIIItem1LegalProceedings": ("Part II", "Legal Proceedings"),
-    "partIIItem1ARiskFactors": ("Part II", "Risk Factors"),
-    "partIIItem2UnregisteredSalesAndUseOfProceeds": ("Part II", "Unregistered Sales"),
-    "partIIItem3DefaultsUponSeniorSecurities": ("Part II", "Defaults Upon Senior Securities"),
-    "partIIItem4MineSafetyDisclosures": ("Part II", "Mine Safety Disclosures"),
-    "partIIItem5OtherInformation": ("Part II", "Other Information"),
-    "partIIItem6Exhibits": ("Part II", "Exhibits"),
-}
+# topic → chapter / label 매핑 SSOT 는 docs.sections.topics 로 이관(중복 제거). 본 파일은
+# _topicChapterLabel 만 import 해 소비한다. _FINANCE_LABELS/_10K_ITEM_LABELS/_10Q_ITEM_LABELS 는 그곳 정본.
 
 
 _FORM_ORDER = {"10-K": 0, "10-Q": 1, "20-F": 2, "40-F": 3}
@@ -372,49 +320,6 @@ def _extractItemNumber(itemId: str) -> int:
             return num * 100 + (ord(subMatch.group(1)) - ord("A") + 1)
         return num * 100
     return 9999
-
-
-def _topicChapterLabel(topic: str) -> tuple[str, str]:
-    """topic에서 chapter와 label을 추출."""
-    if topic in _FINANCE_LABELS:
-        return _FINANCE_LABELS[topic]
-
-    # "10-K::item1Business" → formType="10-K", itemId="item1Business"
-    if "::" in topic:
-        formType, itemId = topic.split("::", 1)
-        if formType == "10-K" and itemId in _10K_ITEM_LABELS:
-            return _10K_ITEM_LABELS[itemId]
-        if formType == "10-Q" and itemId in _10Q_ITEM_LABELS:
-            return _10Q_ITEM_LABELS[itemId]
-        # 20-F, 기타 → sectionMappings.json에서 label 역추출
-        label = _itemIdToLabel(itemId)
-        return (formType, label)
-
-    return ("", topic)
-
-
-def _itemIdToLabel(itemId: str) -> str:
-    """camelCase itemId → 읽기 쉬운 label. "item5AOperatingResults" → "Operating Results"."""
-    # prefix 제거: "item5A" + 대문자시작 or "item1" + 대문자시작
-    # sub-item letter: 숫자 뒤 대문자 1개 + 바로 뒤가 대문자 (item5AO → A는 sub-item)
-    # 단어 시작: 숫자 뒤 대문자 + 소문자 (item1Id → I는 단어 시작)
-    m = re.match(r"^(?:partI{1,2})?[Ii]tem(\d+)([A-Z]?)(.*)$", itemId)
-    if not m:
-        return itemId
-    subLetter = m.group(2)
-    rest = m.group(3)
-    if subLetter and rest and rest[0].isupper():
-        # item5A + OperatingResults → sub-item, rest = OperatingResults
-        pass
-    elif subLetter:
-        # item1I + dentity → I는 단어 시작, 붙여야 함
-        rest = subLetter + rest
-    if not rest:
-        return itemId
-    # camelCase → spaces
-    label = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", rest)
-    label = re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", " ", label)
-    return label
 
 
 _RATIO_FIELD_LABELS: dict[str, str] = {

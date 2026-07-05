@@ -565,6 +565,27 @@ _NOTES: list[ExtractionConcept] = [
         edgarNull="US SignificantAccountingPolicies 는 서술 TextBlock(수치 fact 부재)",
         registered=True,
     ),
+    # 완전성 충전 배치 3 (전 종목 survey 실측: 고빈도 표준 K-IFRS 노트, 카탈로그 생존편향 보정).
+    _note(
+        "note.fairValue",
+        "공정가치측정",
+        "NT_D823000",
+        (
+            "FairValueMeasurementsRecurringMember",
+            "AssetsFairValueDisclosure",
+            "FairValueMeasuredOnRecurringBasisUnobservableInputReconciliationRecurringBasisAssetValue",
+        ),
+        registered=True,
+    ),
+    _note(
+        "note.criticalEstimates",
+        "중요한회계추정및가정",
+        "NT_D810010",
+        (),
+        valueType="text",
+        edgarNull="US 는 critical accounting estimates 를 MD&A(Item 7) 서술로 공시(수치 fact 부재)",
+        registered=True,
+    ),
 ]
 
 _GOVERNANCE: list[ExtractionConcept] = [
@@ -798,8 +819,174 @@ _NARRATIVE: list[ExtractionConcept] = [
     _narr("narrative.environment", "환경규제", "II", "environment", None, "환경"),
 ]
 
+# EDGAR SEC Item 택소노미 category 매핑 (전문에이전트 도메인 감사 반영). topicId -> 9 대분류.
+# providers.edgar.docs.sections.topics 의 _10K/_10Q_ITEM_LABELS 를 mirror 한다. L0 카탈로그는 계층상
+# providers(L1) 를 import 못 하므로 별도 사본 + drift 가드(test_extractionCatalog)로 정본과 일치 강제.
+# 이걸로 US 보고서 Item 을 first-class 로 카테고리화해 EDGAR<->DART 완전성을 대칭 측정한다(census US side).
+_EDGAR_ITEM_CATEGORY: dict[str, str] = {
+    # 10-K
+    "item1Business": "narrative",
+    "item1ARiskFactors": "narrative",
+    "item1BUnresolvedStaffComments": "filingMeta",
+    "item1CCybersecurity": "narrative",
+    "item1DExecutiveOfficers": "governance",
+    "item2Properties": "narrative",
+    "item3LegalProceedings": "narrative",
+    "item4MineSafetyDisclosures": "filingMeta",
+    "item4AExecutiveOfficersOfTheRegistrant": "governance",
+    "item5MarketForCommonEquity": "capital",
+    "item6Reserved": "financialStatement",
+    "item7Mdna": "narrative",
+    "item7AMarketRiskDisclosures": "narrative",
+    "item8FinancialStatements": "financialStatement",
+    "item9ChangesInAccountants": "governance",
+    "item9AControlsAndProcedures": "governance",
+    "item9BOtherInformation": "filingMeta",
+    "item9CForeignJurisdictionDisclosures": "filingMeta",
+    "item10DirectorsAndCorporateGovernance": "governance",
+    "item11ExecutiveCompensation": "workforce",
+    "item12SecurityOwnership": "governance",
+    "item13RelatedTransactions": "governance",
+    "item14PrincipalAccountantFees": "governance",
+    "item15ExhibitsAndSchedules": "filingMeta",
+    "item16Form10KSummary": "filingMeta",
+    "item103EnvironmentalDisclosure": "narrative",
+    "item405RegulationSKDisclosure": "governance",
+    "item406RegulationSKCodeOfEthics": "governance",
+    # 10-Q (10-K category mirror)
+    "partIItem1FinancialStatements": "financialStatement",
+    "partIItem2Mdna": "narrative",
+    "partIItem3MarketRisk": "narrative",
+    "partIItem4ControlsAndProcedures": "governance",
+    "partIIItem1LegalProceedings": "narrative",
+    "partIIItem1ARiskFactors": "narrative",
+    "partIIItem2UnregisteredSalesAndUseOfProceeds": "capital",
+    "partIIItem3DefaultsUponSeniorSecurities": "debt",
+    "partIIItem4MineSafetyDisclosures": "filingMeta",
+    "partIIItem5OtherInformation": "filingMeta",
+    "partIIItem6Exhibits": "filingMeta",
+}
+
+
+def _edgarItem(conceptId: str, category: str, label: str, topicId: str, dartNull: str) -> ExtractionConcept:
+    """US-only SEC Item 개념 생성 헬퍼 (DART 구조 부재, EDGAR docs Item surface)."""
+    return ExtractionConcept(
+        conceptId=conceptId,
+        category=category,
+        label=label,
+        dart=HonestNull(dartNull),
+        edgar=EdgarSource("item", (topicId,)),
+        axisType="text",
+        valueType="text",
+    )
+
+
+# US-only Item (DART 대응 부재). 도메인 감사: 8 개 edgarOnly first-class row. dart=HonestNull(구조부재 사유).
+_EDGAR_ITEMS: list[ExtractionConcept] = [
+    _edgarItem(
+        "edgar.unresolvedComments",
+        "filingMeta",
+        "SEC 미해소 지적사항",
+        "item1BUnresolvedStaffComments",
+        "DART 는 SEC comment-letter 절차 대응 공시 없음",
+    ),
+    _edgarItem(
+        "edgar.cybersecurity",
+        "narrative",
+        "사이버보안(Item 1C)",
+        "item1CCybersecurity",
+        "DART 정형 사이버보안 섹션 부재(사업의 내용에 산발 기재)",
+    ),
+    _edgarItem(
+        "edgar.mineSafety",
+        "filingMeta",
+        "광산안전 공시",
+        "item4MineSafetyDisclosures",
+        "DART 는 Dodd-Frank 광산안전 대응 공시 없음",
+    ),
+    _edgarItem(
+        "edgar.otherInformation",
+        "filingMeta",
+        "기타정보(Item 9B)",
+        "item9BOtherInformation",
+        "DART 대응 catch-all 정형 섹션 부재",
+    ),
+    _edgarItem(
+        "edgar.foreignJurisdiction",
+        "filingMeta",
+        "외국관할 검사방해 공시(HFCAA)",
+        "item9CForeignJurisdictionDisclosures",
+        "DART 는 HFCAA 대응 공시 없음",
+    ),
+    _edgarItem(
+        "edgar.form10kSummary",
+        "filingMeta",
+        "10-K 요약(임의)",
+        "item16Form10KSummary",
+        "DART 대응 임의 요약 섹션 부재",
+    ),
+    _edgarItem(
+        "edgar.section16Compliance",
+        "governance",
+        "내부자 신고 준수(Sec 16)",
+        "item405RegulationSKDisclosure",
+        "DART 는 Section 16 지연신고 정형 공시 없음",
+    ),
+    _edgarItem(
+        "edgar.codeOfEthics",
+        "governance",
+        "윤리강령(Item 406)",
+        "item406RegulationSKCodeOfEthics",
+        "DART 정형 윤리강령 섹션 부재(지배구조에 산발 기재)",
+    ),
+]
+
+# 기존 DART-anchored 개념 -> 대응 SEC Item topicId (도메인 감사 parity map). 본체 body Item 기준 대표 1개.
+# US 보고서 Item 단위의 conceptId enrich + census 대칭 측정에 사용. many-to-many 는 대표 개념으로 축약.
+_EDGAR_ITEM_PRIMARY: dict[str, str] = {
+    "item1Business": "narrative.businessOverview",
+    "item1ARiskFactors": "narrative.riskFactors",
+    "item1CCybersecurity": "edgar.cybersecurity",
+    "item1DExecutiveOfficers": "governance.executive",
+    "item1BUnresolvedStaffComments": "edgar.unresolvedComments",
+    "item2Properties": "narrative.rawMaterial",
+    "item3LegalProceedings": "note.contingencies",
+    "item4MineSafetyDisclosures": "edgar.mineSafety",
+    "item4AExecutiveOfficersOfTheRegistrant": "governance.executive",
+    "item5MarketForCommonEquity": "capital.dividend",
+    "item6Reserved": "statement.ratios",
+    "item7Mdna": "narrative.mdna",
+    "item7AMarketRiskDisclosures": "note.financialRiskMgmt",
+    "item8FinancialStatements": "statement.bs",
+    "item9ChangesInAccountants": "governance.auditContract",
+    "item9AControlsAndProcedures": "governance.auditOpinion",
+    "item9BOtherInformation": "edgar.otherInformation",
+    "item9CForeignJurisdictionDisclosures": "edgar.foreignJurisdiction",
+    "item10DirectorsAndCorporateGovernance": "narrative.governanceText",
+    "item11ExecutiveCompensation": "workforce.executivePayTotal",
+    "item12SecurityOwnership": "governance.majorHolder",
+    "item13RelatedTransactions": "note.relatedParty",
+    "item14PrincipalAccountantFees": "governance.auditContract",
+    "item15ExhibitsAndSchedules": "narrative.majorContracts",
+    "item16Form10KSummary": "edgar.form10kSummary",
+    "item103EnvironmentalDisclosure": "narrative.environment",
+    "item405RegulationSKDisclosure": "edgar.section16Compliance",
+    "item406RegulationSKCodeOfEthics": "edgar.codeOfEthics",
+    # 10-Q 대표 매핑 (10-K 대응)
+    "partIItem1FinancialStatements": "statement.bs",
+    "partIItem2Mdna": "narrative.mdna",
+    "partIItem3MarketRisk": "note.financialRiskMgmt",
+    "partIIItem1ARiskFactors": "narrative.riskFactors",
+    "partIIItem1LegalProceedings": "note.contingencies",
+    "partIIItem2UnregisteredSalesAndUseOfProceeds": "capital.stockTotal",
+    "partIItem4ControlsAndProcedures": "governance.auditOpinion",
+    "partIIItem4MineSafetyDisclosures": "edgar.mineSafety",
+    "partIIItem5OtherInformation": "edgar.otherInformation",
+}
+
+
 _CONCEPTS: list[ExtractionConcept] = (
-    _STATEMENTS + _NOTES + _GOVERNANCE + _CAPITAL + _WORKFORCE + _DEBT + _SEGMENT + _NARRATIVE + _FILING
+    _STATEMENTS + _NOTES + _GOVERNANCE + _CAPITAL + _WORKFORCE + _DEBT + _SEGMENT + _NARRATIVE + _FILING + _EDGAR_ITEMS
 )
 _INDEX: dict[str, ExtractionConcept] = {c.conceptId: c for c in _CONCEPTS}
 
@@ -928,6 +1115,100 @@ def edgarTagsFor(category: str) -> tuple[str, ...]:
         True
     """
     return _EDGAR_NOTE_TAGS.get(category, ())
+
+
+def edgarItemCategory(topicId: str | None = None):
+    """SEC Item topicId 의 catalog category 를 반환한다 (None 이면 전체 매핑).
+
+    Args:
+        topicId: "item1Business" 같은 topicId(None 이면 {topicId: category} 전체).
+
+    Returns:
+        category 문자열(단건) 또는 {topicId: category} dict(전체). 미매핑 topicId 는 None.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> edgarItemCategory("item7Mdna")
+        'narrative'
+        >>> edgarItemCategory("item11ExecutiveCompensation")
+        'workforce'
+    """
+    if topicId is None:
+        return dict(_EDGAR_ITEM_CATEGORY)
+    return _EDGAR_ITEM_CATEGORY.get(topicId)
+
+
+def conceptForEdgarItem(topicId: str) -> ExtractionConcept | None:
+    """SEC Item topicId 에 대응하는 대표 ExtractionConcept 를 반환한다.
+
+    US 보고서 Item 단위의 conceptId enrich 에 사용(inventory _itemUnits). many-to-many 는 대표 1개.
+
+    Args:
+        topicId: "item1Business" / "item11ExecutiveCompensation" 등.
+
+    Returns:
+        ExtractionConcept 또는 None(미매핑 topicId).
+
+    Raises:
+        없음.
+
+    Example:
+        >>> conceptForEdgarItem("item7Mdna").conceptId
+        'narrative.mdna'
+    """
+    cid = _EDGAR_ITEM_PRIMARY.get(topicId)
+    return _INDEX.get(cid) if cid else None
+
+
+def edgarItemToConcept() -> dict[str, str]:
+    """SEC Item topicId -> 대표 conceptId 역인덱스 전체를 반환한다.
+
+    Returns:
+        {topicId: conceptId} dict.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> edgarItemToConcept()["item11ExecutiveCompensation"]
+        'workforce.executivePayTotal'
+    """
+    return dict(_EDGAR_ITEM_PRIMARY)
+
+
+def edgarItemCoverage(presentItemIds) -> dict:
+    """실재 US Item topicId 집합 대비 카탈로그 커버리지를 측정한다 (census US side 대칭 측정).
+
+    카탈로그 생존편향을 깨는 US 판. 실재하나 `_EDGAR_ITEM_CATEGORY` 에 없는 topicId 를 빈도와 함께 드러낸다.
+
+    Args:
+        presentItemIds: 실재 topicId 의 iterable(또는 {topicId: freq} dict).
+
+    Returns:
+        {present, catalogued, uncatalogued[(topicId, freq?)]} dict.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> edgarItemCoverage(["item1Business", "item999Weird"])["catalogued"]
+        1
+    """
+    freq: dict[str, int] = {}
+    if isinstance(presentItemIds, dict):
+        freq = dict(presentItemIds)
+    else:
+        for t in presentItemIds:
+            freq[t] = freq.get(t, 0) + 1
+    catalogued = [t for t in freq if t in _EDGAR_ITEM_CATEGORY]
+    uncatalogued = sorted(((t, n) for t, n in freq.items() if t not in _EDGAR_ITEM_CATEGORY), key=lambda x: -x[1])
+    return {
+        "present": len(freq),
+        "catalogued": len(catalogued),
+        "uncatalogued": uncatalogued,
+    }
 
 
 def parityMatrix() -> dict[str, list[str]]:
