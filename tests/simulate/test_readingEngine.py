@@ -167,3 +167,16 @@ def testSweepRobustSelectionPrefersConsistent():
     scores[0, :] = 10.0  # code0 은 모든 가정 최상위
     robust = sweep.robustSelection(scores, [f"c{i}" for i in range(50)])
     assert "c0" in robust and len(robust) < 10
+
+
+def testAdaHedgeConvergesToBestSurface():
+    # 표면0 이 명확히 우월 → 가중 수렴 + 후회 << sqrt(T ln N) 경계
+    from dartlab.simulate.combine import adaHedge
+
+    rng = np.random.default_rng(7)
+    T, N = 200, 4
+    losses = rng.uniform(0.4, 0.6, size=(T, N))
+    losses[:, 0] = rng.uniform(0.1, 0.3, size=T)
+    r = adaHedge(losses)
+    assert r["finalWeights"][0] == r["finalWeights"].max()  # 우월 표면 최대 가중
+    assert r["regret"] < (T * np.log(N)) ** 0.5  # 후회 경계 준수
