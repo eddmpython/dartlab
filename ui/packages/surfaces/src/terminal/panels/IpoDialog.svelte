@@ -284,11 +284,9 @@
 	.ipoExt { margin-left: auto; font-size: 10px; color: var(--amber, #e3b341); text-decoration: none; white-space: nowrap; }
 	.ipoExt:hover { text-decoration: underline; }
 	.ipoState { padding: 26px 14px; font-size: 12px; color: #c2cad6; text-align: center; }
-	.ipoErr { color: var(--dn, #f85149); }
 	.ipoSpin { display: inline-block; margin-right: 6px; animation: ipospin 0.9s linear infinite; }
 	@keyframes ipospin { to { transform: rotate(360deg); } }
 	.ipoPublicNote { padding: 16px 4px; font-size: 11.5px; color: #aab2bf; line-height: 1.6; }
-	.ipoPublicNote code { display: inline-block; margin-top: 8px; font-size: 10.5px; padding: 3px 8px; border: 1px solid var(--dl-line, #2a3142); border-radius: 4px; color: var(--dl-ink, #c8cfdb); background: rgba(255, 255, 255, 0.04); }
 	.ipoConfNote { margin-top: 10px; }
 	.ipoConfNote a { color: var(--amber, #e3b341); }
 	.ipoKpis { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; }
