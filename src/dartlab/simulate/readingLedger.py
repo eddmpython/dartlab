@@ -110,6 +110,42 @@ def appendReadings(
     return written
 
 
+def appendReadingsFrame(
+    frame: pl.DataFrame, *, issuedAt: str, issuedLive: bool, baseDir: Path | None = None
+) -> list[Path]:
+    """대량 판독을 DataFrame 으로 봉인 (opine 산출 직결). 같은 봉인 키 중복은 거부.
+
+    Args:
+        frame: (week, stockCode|code, market, surface, asOf, horizon, direction, score, abstainReason).
+            opine 산출(code 열)을 받으면 stockCode 로 정규화한다.
+        issuedAt: 발행 봉인 시각.
+        issuedLive: False = backfill.
+        baseDir: 원장 루트 override.
+
+    Raises:
+        ValueError: 봉인 키 중복 (append-only 불변 위반).
+    """
+    if frame.height == 0:
+        return []
+    if "stockCode" not in frame.columns and "code" in frame.columns:
+        frame = frame.rename({"code": "stockCode"})
+    frame = frame.with_columns(issuedAt=pl.lit(issuedAt), issuedLive=pl.lit(issuedLive)).select(list(_READING_SCHEMA))
+    base = ledgerDir(baseDir)
+    base.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
+    for (yyyy,), part in frame.group_by(pl.col("week").floordiv(100).cast(pl.Utf8)):
+        path = base / f"readings_{yyyy}.parquet"
+        if path.exists():
+            old = pl.read_parquet(path, columns=["week", "stockCode", "surface", "issuedLive"])
+            key = pl.struct("week", "stockCode", "surface", "issuedLive")
+            dup = old.with_columns(k=key).join(part.with_columns(k=key), on="k", how="semi")
+            if dup.height:
+                raise ValueError(f"append-only 위반: 봉인 판독 키 중복 x{dup.height}")
+        _writeShard(path, part)
+        written.append(path)
+    return written
+
+
 def appendReadingScores(rows: list[dict], *, baseDir: Path | None = None) -> list[Path]:
     """채점 행(_SCORE_SCHEMA dict)을 연 샤드에 append. 재채점은 새 행 (이력 보존)."""
     if not rows:
