@@ -571,8 +571,10 @@ def main() -> None:
     repo_files = _list_repo_files(HfApi(), args.repo)
 
     contracts = build_contracts()  # 회사 계약(블로그 frontmatter)
-    for _slug, _c in build_contracts(TECH_DIR).items():  # 기술이야기 계약(frontmatter carousel)
-        contracts.setdefault(_slug, _c)
+    # 기술이야기(TECH_DIR) 카드 배선 임시 차단. 회사카드 틀에 잘못 얹어(종목코드 강제·논지 배신·기획 미수행)
+    # 라이브에서 내림. 종목 정체성 제거 + 배지 "기술이야기" + 주제 사진 + cards.plan 정식화 후 재배선한다.
+    # for _slug, _c in build_contracts(TECH_DIR).items():
+    #     contracts.setdefault(_slug, _c)
     issue_contracts, image_ops = build_issue_contracts(ISSUES_DIR, repo_files)  # standalone 이슈
     for slug, c in issue_contracts.items():
         if slug in contracts:
