@@ -37,6 +37,15 @@ class Reading:
 extractionCatalog 개념(사업보고서·재무제표가 주연: 분기 도착 이벤트 + 재무x가격 괴리는 매주
 재발화) · gather 축(price·flow·news·narrative·research) · L2 verb(analysis·credit·industry·macro).
 
+**panel·사업보고서 탈탈털기 카탈로그의 실체 (2026-07-05 가동 확인)**: ① `core/extractionCatalog.py`
+(L0) = 개념 카탈로그 SSOT 88개념·9카테고리(financialStatement·note·governance·capital·workforce·
+debt·segment·narrative·filingMeta), `getExtractionConcepts()/getConcept()/resolveNoteKey()`.
+② `frame/inventory.py` (L1.5) = 회사별 전 단위 전수 열거 `reportInventory(code)` (정규화 Panel
+wide 에서 열거, round-trip 100%·collision 0). 둘 다 dossier 폐기(df41ee60e)에서 **의도 보존**된
+자산이고 simulate(L2.5)가 하향 import 로 직접 소비한다 (계층 위반 0). 단, handle→값 추출
+라우팅은 dossier 와 함께 제거되었으므로 **table.py(상 차리기)가 카탈로그 구동으로 직접 구현**
+한다 (P1 범위. 개별 작업대 부활 아님: 시뮬레이터 내부 소비 전용).
+
 - 방향화 규칙도 표면마다 선언 1줄로 기록. 방향 불가 표면은 빼지 않고 무방향 등재 + 양방향 채점.
 - 죽은 표면은 목록에서 안 사라진다. 성적이 죽었음이 기록되고 가중이 0 으로 갈 뿐.
 - 개별 데이터 작업대 신설 금지 (dossier 폐기 df41ee60e 선례). 호출계약은 엔진 소유 verb 로만.
