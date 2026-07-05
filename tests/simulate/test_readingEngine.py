@@ -504,3 +504,26 @@ def testSealAssumptions(tmp_path):
     )
     got = pl.read_parquet(p)
     assert got.height == 1 and got["issuedLive"][0]  # 봉인 + issuedLive 권위
+
+
+def testMmcResidualizeFlagsRedundant():
+    from dartlab.simulate import residual
+
+    rng = np.random.default_rng(6)
+    codes = [f"c{i:02d}" for i in range(30)]
+    rows, labs = [], []
+    for w in range(202601, 202641):
+        sigA = rng.random(len(codes))  # 독립 신호 A
+        sigC = rng.random(len(codes))  # 독립 신호 C
+        for i, code in enumerate(codes):
+            ex = 0.04 * (sigA[i] - 0.5) + 0.04 * (sigC[i] - 0.5) + rng.normal(0, 0.005)
+            labs.append({"code": code, "week": w, "exNeutral": ex})
+            rows.append({"code": code, "week": w, "surface": "A", "direction": 0, "score": float(sigA[i])})
+            rows.append({"code": code, "week": w, "surface": "B", "direction": 0, "score": float(sigA[i])})  # A 복제
+            rows.append({"code": code, "week": w, "surface": "C", "direction": 0, "score": float(sigC[i])})
+    readings, labels = pl.DataFrame(rows), pl.DataFrame(labs)
+    dupe = residual.mmcContribution(readings, labels, "B", ["A"])
+    indep = residual.mmcContribution(readings, labels, "C", ["A"])
+    assert dupe["redundant"]  # B 는 A 복제 = 증분 t 붕괴 = 중복
+    assert not indep["redundant"]  # C 는 독립 = 증분 t 유지
+    assert abs(indep["residualT"]) > abs(dupe["residualT"])  # 독립 표면이 더 큰 증분
