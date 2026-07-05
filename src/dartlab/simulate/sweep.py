@@ -89,7 +89,8 @@ def deflatedSharpe(perf: np.ndarray, *, nEff: int | None = None) -> dict:
     from math import erf, log, sqrt
 
     def normInv(p: float) -> float:
-        """표준정규 역 CDF (Acklam 근사, scipy 외부 의존 회피)."""
+        """표준정규 역 CDF (Acklam 근사, scipy 외부 의존 회피). p 를 (0,1) 안으로 클램프 (log 0 가드)."""
+        p = min(max(p, 1e-12), 1 - 1e-12)
         a = [
             -39.6968302866538,
             220.946098424521,

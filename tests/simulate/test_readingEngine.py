@@ -852,3 +852,38 @@ def testTraitConditionalScorecard():
     assert byBucket["A"]["t"] > byBucket["B"]["t"]  # 형질 A 버킷에서 표면이 더 강함
     assert byBucket["A"]["verdict"] == "통과"  # A 셀 승격
     assert card["traitName"][0] == "hist"  # 형질 축 라벨
+
+
+def testBacktestFullEngineReplay():
+    from dartlab.simulate import backtest
+
+    # 25주 x 20종목 fund.ep 엣지 → 백테스트가 성적표·인증·sweep 전부 산출
+    weeks = list(range(202601, 202626))
+    codes = [f"c{i:02d}" for i in range(20)]
+    fundRows, labRows, weRows = [], [], []
+    for w in weeks:
+        weRows.append({"week": w, "date": f"2026{(w - 202600):02d}01"})
+        for i, code in enumerate(codes):
+            bm = 0.01 * (((i * 13 + w) % 20) + 1)
+            fundRows.append({"code": code, "week": w, "ep": 0.01 * (i + 1), "bm": bm})
+            ex = (i / 19 - 0.5) * 0.03 + (((i * 7 + w) % 5) - 2) * 0.002
+            labRows.append({"code": code, "week": w, "exRaw": ex, "exNeutral": ex})
+    priceM = pl.DataFrame(
+        schema={
+            "code": pl.Utf8,
+            "week": pl.Int64,
+            "ret5": pl.Float64,
+            "mom20x5": pl.Float64,
+            "volShock": pl.Float64,
+            "high52": pl.Float64,
+            "maxRet20": pl.Float64,
+        }
+    )
+    eventM = pl.DataFrame(schema={"code": pl.Utf8, "week": pl.Int64, "reportType": pl.Utf8})
+    weekMap = pl.DataFrame(schema={"date": pl.Utf8, "week": pl.Int64})
+    mats = (weekMap, pl.DataFrame(weRows), priceM, pl.DataFrame(fundRows), eventM)
+    r = backtest.backtest(matrices=mats, labels=pl.DataFrame(labRows), nBoot=150)
+    assert r["weeks"] == 25 and r["universe"] == 20  # 전 역사 replay
+    assert "fund.ep" in r["scorecard"]["surface"].to_list()  # 성적표 산출
+    assert r["certify"]["surfaces"].height >= 1  # 인증 깔때기 실행
+    assert r["sweep"]["nConfigs"] > 0 and r["sweep"]["pbo"] is not None  # sweep 실행 (PBO/DSR/robust)
