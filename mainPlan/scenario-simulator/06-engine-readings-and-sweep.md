@@ -47,7 +47,7 @@ wide 에서 열거, round-trip 100%·collision 0). 둘 다 dossier 폐기(df41ee
 한다 (P1 범위. 개별 작업대 부활 아님: 시뮬레이터 내부 소비 전용).
 
 - 방향화 규칙도 표면마다 선언 1줄로 기록. 방향 불가 표면은 빼지 않고 무방향 등재 + 양방향 채점.
-- 방향화·정제 선언의 문헌 원장 = **07-lever-ledger.md** (2026-07-05 연구: 내부자 매수 정제
+- 방향화·정제 선언의 문헌 원장 = **10-lever-ledger.md** (2026-07-05 연구: 내부자 매수 정제
   2~3배 기대·자사주 소각/처분 분리·락업 만료 캘린더·CB/BW 사슬 래더·MAX 회피·감사지연·계열
   lead-lag + do-not-build 목록). 등재 게이트가 아니라 방향 선언·실측 우선순위의 근거로만 쓴다.
 - 죽은 표면은 목록에서 안 사라진다. 성적이 죽었음이 기록되고 가중이 0 으로 갈 뿐.
@@ -200,14 +200,15 @@ fan 으로 펼쳐진다).
 ## 7. 모듈 배치 (전부 `simulate/` 내부, 신설 엔진 0)
 
 reading.py(계약+임계 SSOT) · surfaces.py(자동 열거+방향화 선언. 정규화는 래퍼 보고서 괄호 내
-하위타입 추출 필수 = 08 실측 함정) · table.py(상 차리기: 전종목 x 전표면, 무bake·벌크 우선·
-Company 루프 0) · **profile.py(회사 프로파일러: PIT 버전드 상태, 깊이 = 전수, 08 §2)** ·
+하위타입 추출 필수 = 11 실측 함정) · table.py(상 차리기: 전종목 x 전표면, 무bake·벌크 우선·
+Company 루프 0) · **profile.py(회사 프로파일러: PIT 버전드 상태, 깊이 = 전수, 11 §2)** ·
 opine.py(의견화) · sweep.py(격자+강건성) · board.py(파생 뷰) · runweek.py(주간 오케스트레이션) ·
-readingScorecard.py(수축 성적표 + **형질 버킷 축**, 08 §5) + expectationCycle 확장(issueReadings)
+readingScorecard.py(수축 성적표 + **형질 버킷 축**, 11 §5) + expectationCycle 확장(issueReadings)
 + entry 확장(기존 `dartlab.simulate` 계열 verb 추가). 상류(프로파일러)·하류(연쇄 3~6층·DAG
-가시화) 층 구조 = **08-profiler-and-cascade.md**.
-테스트는 `tests/simulate/` 미러. 상세 파일·단계·런북 = `../weekly-uplift-shortlist/02-build.md`
-를 본 절이 승계 (P0 잔여 → P1 골격 → P2 sweep·파생 뷰 → P3 라이브 → P4 갭 → P5 UI).
+가시화) 층 구조 = **11-profiler-and-cascade.md**.
+테스트는 `tests/simulate/` 미러. 상세 파일·단계·런북 = **12-build-plan.md** (R0 실측 잔여 →
+R1 골격 → R2 sweep·결합 → R3 라이브 → R4 프로파일러 전수 → R5 연쇄·DAG → R6 UI. 옛
+02-build.md 참조는 삭제로 소멸, 12 가 후신).
 
 ## 7b. 시그니처 메커니즘 스택 (2026-07-05 연구 반영: 무엇이 이것을 dartlab 의 시그니처로 만드는가)
 
@@ -280,7 +281,7 @@ readingScorecard.py(수축 성적표 + **형질 버킷 축**, 08 §5) + expectat
 으로 재채점) · panel PIT(정정 look-ahead)·fund 표면 실측 · 표면 상관 행렬 → 수축 묶음 · 뉴스
 태깅 커버리지(G8). 메커니즘 스택(§7b)의 P1 편입분: SPA 인증 1회전(322타입 전수, numpy 자급
 부트스트랩) · AdaHedge 결합 프로토타입(후회 곡선 실측) · ACI 커버리지 프로토타입 · 해시체인
-블록 스키마 확정. 레버 원장(07)의 사내 실측 대기: 내부자 **매수/매도 분리 + 비정기 정제**
+블록 스키마 확정. 레버 원장(10)의 사내 실측 대기: 내부자 **매수/매도 분리 + 비정기 정제**
 (무정제 +0.71% 의 2~3배 가설) · 자사주 직접/신탁/소각/처분 분리 · 락업 만료 캘린더 파싱 ·
 감사지연 신호 · 계열 lead-lag (미공표 영역). 데이터 한계: allFilings KR 과거 커버리지 =
 2022-11~ (2016 replay 는 월별 백필 절차 필요, 운영자 트리거 존재).
