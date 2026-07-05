@@ -32,6 +32,8 @@ _READING_SCHEMA: dict[str, pl.DataType] = {
     "direction": pl.Int64,
     "score": pl.Float64,
     "abstainReason": pl.Utf8,
+    "refs": pl.Utf8,
+    "condition": pl.Utf8,
     "issuedAt": pl.Utf8,
     "issuedLive": pl.Boolean,
 }
@@ -91,7 +93,11 @@ def appendReadings(
         return []
     base = ledgerDir(baseDir)
     base.mkdir(parents=True, exist_ok=True)
-    flat = [{**asdict(r), "issuedAt": issuedAt, "issuedLive": issuedLive} for r in rows]
+    flat = []
+    for r in rows:
+        d = asdict(r)
+        d["refs"] = " ".join(d.get("refs") or ())  # 튜플 → 공백 조인 Utf8 (재계산 계약 보존)
+        flat.append({**d, "issuedAt": issuedAt, "issuedLive": issuedLive})
     df = pl.DataFrame(flat, schema=_READING_SCHEMA)
     written: list[Path] = []
     for (yyyy,), part in df.group_by(pl.col("week").floordiv(100).cast(pl.Utf8)):
@@ -129,6 +135,10 @@ def appendReadingsFrame(
         return []
     if "stockCode" not in frame.columns and "code" in frame.columns:
         frame = frame.rename({"code": "stockCode"})
+    if "refs" not in frame.columns:
+        frame = frame.with_columns(refs=pl.lit(""))
+    if "condition" not in frame.columns:
+        frame = frame.with_columns(condition=pl.lit(None, dtype=pl.Utf8))
     frame = frame.with_columns(issuedAt=pl.lit(issuedAt), issuedLive=pl.lit(issuedLive)).select(list(_READING_SCHEMA))
     base = ledgerDir(baseDir)
     base.mkdir(parents=True, exist_ok=True)

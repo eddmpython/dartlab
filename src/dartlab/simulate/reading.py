@@ -49,6 +49,9 @@ class Reading:
         direction: +1 상방 / -1 하방 / 0 중립·기권.
         score: 강도 0~1 (연속 표면 랭크) 또는 None (기권).
         abstainReason: 기권 사유 (0 대체 금지). None = 판독 발행됨.
+        refs: 근거 참조 (소비한 공개 verb·원천 계보. 표면 provenance 자연 기록, 재계산 계약).
+        condition: 레짐/시나리오 조건 태그 (None = 무조건). 조건 태그 판독은 실현 레짐 일치
+            주에만 채점된다 (regime.scoreConditional, 06 §5).
     """
 
     stockCode: str
@@ -60,6 +63,8 @@ class Reading:
     direction: int
     score: float | None = None
     abstainReason: str | None = None
+    refs: tuple[str, ...] = field(default_factory=tuple)
+    condition: str | None = None
 
 
 @dataclass(frozen=True)

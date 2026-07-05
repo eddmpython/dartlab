@@ -32,6 +32,25 @@ def testLedgerRoundtripAndAppendOnly(tmp_path):
     assert readingLedger.unscoredReadings(baseDir=tmp_path).height == 2
 
 
+def testReadingRefsAndConditionRoundtrip(tmp_path):
+    r = Reading(
+        "005930",
+        "KR",
+        "fund.ep",
+        202607,
+        "20260213",
+        5,
+        1,
+        0.9,
+        refs=("dart.finance", "fundDaily"),
+        condition="rate_hike",
+    )
+    readingLedger.appendReadings([r], issuedAt="t", issuedLive=True, baseDir=tmp_path)
+    got = readingLedger.readReadings(baseDir=tmp_path)
+    assert got["refs"][0] == "dart.finance fundDaily"  # 근거 참조 봉인 (재계산 계약)
+    assert got["condition"][0] == "rate_hike"  # 조건 태그 봉인 (레짐 조건부 채점용)
+
+
 def testOpineDirections():
     # 5종목 fund.ep 랭크: 최상위 +1, 최하위 -1, 중간 0
     fundM = pl.DataFrame(

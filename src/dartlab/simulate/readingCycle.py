@@ -21,6 +21,7 @@ from dartlab.simulate import costs as _costs
 from dartlab.simulate import opine as _opine
 from dartlab.simulate import readingLedger as _ledger
 from dartlab.simulate import readingScorecard as _sc
+from dartlab.simulate import surfaces as _surfaces
 from dartlab.simulate import table as _table
 
 
@@ -76,7 +77,14 @@ def issueReadings(
         return 0
     asOf = weekEnd.filter(pl.col("week") == week)["date"]
     asOfStr = asOf[0] if asOf.len() else str(week)
-    sealed = readings.with_columns(market=pl.lit(market), asOf=pl.lit(asOfStr), horizon=pl.lit(horizon, dtype=pl.Int64))
+    # 표면 provenance → refs (근거 참조 자연 기록, 재계산 계약).
+    provBySurface = {s.surface: " ".join(s.provenance) for s in _surfaces.enumerateSurfaces(directionByType)}
+    sealed = readings.with_columns(
+        market=pl.lit(market),
+        asOf=pl.lit(asOfStr),
+        horizon=pl.lit(horizon, dtype=pl.Int64),
+        refs=pl.col("surface").replace_strict(provBySurface, default=""),
+    )
     _ledger.appendReadingsFrame(sealed, issuedAt=_nowUtc(), issuedLive=live, baseDir=baseDir)
     return sealed.height
 
@@ -94,11 +102,13 @@ def scoreReadingsDue(
         baseDir: 원장(출력) 루트 override.
         dataDir: 데이터(읽기전용 SSOT) 루트 override.
         labels: 채점 라벨 (None 이면 table 에서 계산). 라벨 없는(지평 미도래) 주는 pending.
-        costFloorByWeekCode: (week, code, costFloor) net 게이트용 (없으면 costFloor null).
+        costFloorByWeekCode: (week, code, costFloor) net 게이트용. None + 라이브 런(labels None)이면
+            costs 로 직접 생산. 라벨 주입(테스트·백테스트)이면 자동 실데이터 스캔 안 함 (주입만).
     """
     due = _ledger.unscoredReadings(baseDir=baseDir)
     if due is None or due.height == 0:
         return 0
+    liveRun = labels is None  # 라벨 미주입 = 실데이터 라이브 런 (자동 스캔 허용)
     weekEnd = None
     if labels is None:
         _, weekEnd = _table.weekCalendar(dataDir)
@@ -107,17 +117,21 @@ def scoreReadingsDue(
     joined = due.join(lab, on=["week", "stockCode"], how="inner")
     if joined.height == 0:
         return 0
-    # 비용 바닥: 외부 주입 우선, 없으면 costs 로 직접 생산 (생산자 배선 = net 상시 유효).
-    if costFloorByWeekCode is None:
+    # 비용 바닥: 외부 주입 우선. 미주입 + 라이브 런이면 costs 로 직접 생산 (net 상시 유효).
+    # 라벨 주입 경로(테스트)는 자동 실데이터 스캔을 하지 않는다 (주입 격리 + OOM 회피).
+    if costFloorByWeekCode is None and liveRun:
         if weekEnd is None:
             _, weekEnd = _table.weekCalendar(dataDir)
         costFloorByWeekCode = _costs.costFloorWeekly(weekEnd, _table.dailyHighLow(dataDir))
-    cf = (
-        costFloorByWeekCode.rename({"code": "stockCode"})
-        if "code" in costFloorByWeekCode.columns
-        else costFloorByWeekCode
-    ).select("week", "stockCode", "costFloor")
-    joined = joined.join(cf, on=["week", "stockCode"], how="left")
+    if costFloorByWeekCode is None:
+        joined = joined.with_columns(costFloor=pl.lit(None, dtype=pl.Float64))
+    else:
+        cf = (
+            costFloorByWeekCode.rename({"code": "stockCode"})
+            if "code" in costFloorByWeekCode.columns
+            else costFloorByWeekCode
+        ).select("week", "stockCode", "costFloor")
+        joined = joined.join(cf, on=["week", "stockCode"], how="left")
     scoreRows = joined.select(
         "week",
         "stockCode",
