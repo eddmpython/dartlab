@@ -788,3 +788,28 @@ def testChowLinIsDisplayOnly():
     out = fundDaily.chowLinDisplay(np.array([100.0, 120, 90, 110]), periodsPerQuarter=3)
     assert out["displayOnly"] is True and "look-ahead" in out["warning"]  # 피처 금지 라벨
     assert len(out["series"]) == 12  # 4분기 x 3 = 12 월
+
+
+def testLeverLedgerAndReadings():
+    from dartlab.simulate import levers
+
+    ids = {lv.leverId for lv in levers.LEVER_LEDGER}
+    assert "usPead" in ids and "usIndexInclusion" in ids  # do-not-build 원장에 박제
+    surfs = {s.surface for s in levers.leverSurfaces()}
+    assert "lever.treasuryAcquire" in surfs and "lever.usPead" not in surfs  # 수확만 등재
+    ev = pl.DataFrame(
+        {
+            "code": ["a", "b", "c"],
+            "week": [202607] * 3,
+            "reportType": ["자기주식취득결정", "유상증자결정", "전환청구권행사"],
+        }
+    )
+    r = levers.leverReadings(ev)
+    byS = {row["surface"]: row for row in r.iter_rows(named=True)}
+    assert byS["lever.treasuryAcquire"]["direction"] == 1  # 문헌 long prior
+    assert byS["lever.rightsOffering"]["direction"] == -1  # 문헌 avoid prior (희석)
+    assert byS["lever.cbChain"]["direction"] == -1  # CB 사슬 회피
+    assert not any(s.startswith("lever.us") for s in byS)  # do-not-build 무발행
+    r2 = levers.leverReadings(ev, directionByType={"자기주식취득결정": -1})
+    byS2 = {row["surface"]: row for row in r2.iter_rows(named=True)}
+    assert byS2["lever.treasuryAcquire"]["direction"] == -1  # 데이터 방향이 문헌 prior 이김

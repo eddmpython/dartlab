@@ -93,5 +93,20 @@ def opine(
         _continuousReadings(priceMatrix, _PRICE_COLS),
         _continuousReadings(fundMatrix, _FUND_COLS),
         _eventReadings(eventMatrix, directionByType or {}),
+        _leverReadings(eventMatrix, directionByType or {}),
     ]
     return pl.concat([p for p in parts if p.height]) if any(p.height for p in parts) else _empty()
+
+
+def _leverReadings(eventMatrix: pl.DataFrame, directionByType: dict[str, int]) -> pl.DataFrame:
+    """레버 원장(levers)의 개별 레버 표면 판독 (lever.<id>). 각 레버가 인증 깔때기 대상 = 전수 등재."""
+    from dartlab.simulate.levers import leverReadings
+
+    if eventMatrix.height == 0:
+        return _empty()
+    r = leverReadings(eventMatrix, directionByType)
+    if r.height == 0:
+        return _empty()
+    return r.with_columns(abstainReason=pl.lit(None, dtype=pl.Utf8)).select(
+        "code", "week", "surface", "direction", "score", "abstainReason"
+    )
