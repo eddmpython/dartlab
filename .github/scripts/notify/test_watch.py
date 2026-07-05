@@ -1,7 +1,7 @@
 """왓처 토픽 러너 회귀 — eval_new_ipo·eval_new_orders 매치 구조·dedup slug·필터·sanitize.
 
 df 를 주입(FakeDF)해 dartlab.scan 실호출 없이 검증(polars·dartlab 불요). slug = 매치 id(허브 sentNonce
-last-seen set 키): IPO=rcept, orders=stockCode.
+last-seen set 키): IPO=corpCode(발행사 안정키, 기재정정 재발화 방지) + 확정공모가 corpCode:conf, orders=stockCode.
 실행: uv run python -X utf8 -m pytest .github/scripts/notify/
 """
 
@@ -30,6 +30,7 @@ def test_eval_new_ipo_basic():
     df = FakeDF(
         [
             {
+                "corpCode": "00126380",
                 "corpName": "기도산업",
                 "rcept": "20260626000715",
                 "subscription": "2026.08.11 ~ 2026.08.12",
@@ -41,14 +42,14 @@ def test_eval_new_ipo_basic():
         ]
     )
     items = watch.eval_new_ipo(df)
-    assert len(items) == 1
+    assert len(items) == 1  # confirmationRcept 없음 → 등장 신호 1개만
     m = items[0]
     assert m["topic"] == "newIpo"
-    assert m["slug"] == "20260626000715"  # rcept = 매치 id(dedup)
+    assert m["slug"] == "00126380"  # corpCode = 발행사 안정키(기재정정 재발화 방지)
     assert "기도산업" in m["notification"]["title"]
     assert "공모가" in m["notification"]["body"]
     assert "청약" in m["notification"]["body"]
-    assert m["notification"]["tag"] == "ipo:20260626000715"
+    assert m["notification"]["tag"] == "ipo:00126380"
     assert m["notification"]["url"] == "/terminal?ipo=1"  # 자기 라우트 + IPO 다이얼로그 딥링크
 
 
@@ -64,12 +65,27 @@ def test_eval_new_ipo_spac_label_and_skip_no_rcept():
     assert "(스팩)" in items[0]["notification"]["title"]
 
 
-def test_eval_new_ipo_dedup_slug_stable():
-    """같은 rcept = 같은 slug → 허브 nonce 동일 → 재실행 시 409(멱등)."""
-    row = {"corpName": "A", "rcept": "R1"}
-    a = watch.eval_new_ipo(FakeDF([row]))[0]
-    b = watch.eval_new_ipo(FakeDF([row]))[0]
-    assert a["slug"] == b["slug"] == "R1"
+def test_eval_new_ipo_slug_stable_across_amendments():
+    """같은 corpCode = 같은 slug → 기재정정으로 rcept 바뀌어도 재발화 없음(발행사별 1회)."""
+    a = watch.eval_new_ipo(FakeDF([{"corpCode": "C1", "corpName": "A", "rcept": "R1"}]))[0]
+    b = watch.eval_new_ipo(FakeDF([{"corpCode": "C1", "corpName": "A", "rcept": "R2"}]))[0]
+    assert a["slug"] == b["slug"] == "C1"  # rcept R1->R2 바뀌어도 slug 불변
+
+
+def test_eval_new_ipo_no_corpcode_falls_back_to_rcept():
+    """corpCode 결측(scan 폴백 등)이면 rcept 로 안전 폴백."""
+    m = watch.eval_new_ipo(FakeDF([{"corpName": "A", "rcept": "R1"}]))[0]
+    assert m["slug"] == "R1"
+
+
+def test_eval_new_ipo_confirmation_second_signal():
+    """confirmationRcept 있으면 등장 + 확정공모가 2 신호(각 slug 구분, 발행사별 각 1회)."""
+    df = FakeDF([{"corpCode": "C1", "corpName": "레몬", "rcept": "R1", "confirmationRcept": "R9"}])
+    items = watch.eval_new_ipo(df)
+    assert len(items) == 2
+    assert {m["slug"] for m in items} == {"C1", "C1:conf"}
+    titles = " ".join(m["notification"]["title"] for m in items)
+    assert "신규상장" in titles and "공모가확정" in titles
 
 
 # ── eval_new_orders ─────────────────────────────────────────────────

@@ -4,8 +4,10 @@
 중복 억제 = 허브 sentNonce 가 곧 last-seen 매치 id set: 매치별 nonce = sha1(topic:slug) → 이미 보낸 매치는
 허브에서 409(멱등 드롭), 새 매치만 실제 발송. 발행 러너(send.py)와 별개 워크플로(watch.yml cron).
 
-  - newIpo   = scan('ipo') 신규상장(new_listing). slug = rcept(접수번호) — 발행사별 1회.
-  - newOrders = scan('orders') book-to-bill >= 1(threshold_cross). slug = stockCode — 회사별 1회 크로싱.
+  - newIpo   = scan('ipo') 신규상장. slug=corpCode(발행사 안정키) 등장 1회 + confirmationRcept 있으면
+               확정공모가 1회(청약 임박). 기재정정마다 rcept 가 바뀌어도 재발화 없음(발행사별 1회 보장).
+  - newOrders = scan('orders') book-to-bill >= 1. slug=stockCode 회사별 최초 1회(허브 nonce 영구 dedup).
+               재크로싱(하락 후 재상승)은 현재 미발화. state-diff 커서는 롤아웃 전 후속(01-arch §5).
 
 설계: mainPlan/watcher-notify-platform/01-architecture.md §2·§5 · 04 §1 P2.
 실행: uv run python -X utf8 .github/scripts/notify/watch.py [--topics newIpo,newOrders] [--dry-run]
@@ -59,6 +61,8 @@ def _baked_ipo_df():
 def eval_new_ipo(df=None) -> list[dict]:
     """신규상장 알림 매치. df 주입 시 그 df(테스트/베이크 parquet), 없으면 베이크 parquet 후 scan('ipo') 폴백.
 
+    발행사별 의미 있는 2 순간만 발화(노이즈 억제): ① 등장(slug=corpCode 안정키, 기재정정 재발화 0)
+    ② 확정공모가([발행조건확정] doc, confirmationRcept 존재 시, slug=corpCode:conf, 청약 임박 신호).
     항등식 미검증분도 알림(공모 사실은 사실). 데이터원 우선순위: 명시 df > 베이크 parquet > scan('ipo').
     """
     if df is None:
@@ -72,6 +76,7 @@ def eval_new_ipo(df=None) -> list[dict]:
         rcept = r.get("rcept")
         if not rcept:
             continue
+        corp = str(r.get("corpCode") or rcept)  # 발행사 안정키(기재정정에도 불변). 결측 시 rcept 폴백.
         name = r.get("corpName") or "신규상장"
         low, high = _won(r.get("priceBandLow")), _won(r.get("priceBandHigh"))
         parts: list[str] = []
@@ -80,25 +85,45 @@ def eval_new_ipo(df=None) -> list[dict]:
         if r.get("subscription"):
             parts.append(f"청약 {r['subscription']}")
         if r.get("appliedPer") is not None:
-            parts.append(f"적용PER {r['appliedPer']}")
+            parts.append(f"적용배수 {r['appliedPer']}")  # 모형 의존(PER·EV/EBITDA 등), 중립 라벨로 오표기 방지
         spac = " (스팩)" if r.get("isSpac") else ""
+        detail = " · ".join(parts)
+        # 신호 1: 발행사 등장. slug=corpCode 라 기재정정본이 새 rcept 를 받아도 재발화 없음(발행사별 1회).
         items.append(
             {
                 "topic": "newIpo",
-                "slug": str(rcept),
+                "slug": corp,
                 "notification": {
                     "title": sanitize(f"[신규상장] {name}{spac}", 80),
-                    "body": sanitize(" · ".join(parts) or "증권신고서 접수", 120),
+                    "body": sanitize(detail or "증권신고서 접수", 120),
                     "url": _TERMINAL_IPO,
-                    "tag": f"ipo:{rcept}",
+                    "tag": f"ipo:{corp}",
                 },
             }
         )
+        # 신호 2: 확정공모가 공시([발행조건확정] doc). 청약 임박(가장 actionable). 발행사별 1회 추가 발화.
+        if r.get("confirmationRcept"):
+            items.append(
+                {
+                    "topic": "newIpo",
+                    "slug": f"{corp}:conf",
+                    "notification": {
+                        "title": sanitize(f"[공모가확정] {name}{spac}", 80),
+                        "body": sanitize(detail or "확정공모가 공시 · 청약 임박", 120),
+                        "url": _TERMINAL_IPO,
+                        "tag": f"ipo:{corp}:conf",
+                    },
+                }
+            )
     return items
 
 
 def eval_new_orders(df=None, min_book_to_bill: float = 1.0) -> list[dict]:
-    """scan('orders') → book-to-bill>=1 threshold_cross 매치. micro-cap/잡음 가드(매출·계약건수)."""
+    """scan('orders') book-to-bill>=1 회사별 최초 1회 매치(허브 nonce 영구 dedup). micro-cap/잡음 가드(매출·계약건수).
+
+    현재는 레벨 체크 + 영구 dedup 이라 하락 후 재상승(진짜 재크로싱)은 미발화. 진짜 threshold_cross(직전
+    매치셋 대비 신규 진입만)는 롤아웃 전 후속(01-architecture §5 state-diff 커서, 상태저장 필요).
+    """
     if df is None:
         import dartlab
 
@@ -135,9 +160,11 @@ def eval_new_orders(df=None, min_book_to_bill: float = 1.0) -> list[dict]:
 
 _EVALUATORS = {"newIpo": eval_new_ipo, "newOrders": eval_new_orders}
 
-# 발송 위생 — 토픽별 1회 발송 cap(폭주 방지). 24h dedupe 는 허브 sentNonce 가 영구 멱등으로 처리(별도 불요).
-# 조용한 시간(22~08)은 cron 발화시각(평일 17시 KST)이 구조적으로 회피 — 야간 배치 큐는 미도입(YAGNI).
-_TOPIC_CAP = {"newIpo": 20, "newOrders": 15}
+# 발송 위생. 토픽별 발송 cap(콜드스타트 폭주 가드). 24h dedupe 는 허브 sentNonce 가 영구 멱등으로 처리(불요).
+# 조용한 시간(22~08)은 cron 발화시각(평일 17시 KST)이 구조적으로 회피(야간 배치 큐 미도입, YAGNI).
+# newIpo=40: 윈도 발행사(~30) + confirmation 신호 여유. 초과분은 로그(newest-first 정렬이라 최신부터 발송,
+# 절단되는 건 가장 오래된 stale IPO 라 터미널 목록으로 커버. 조용한 절단 금지).
+_TOPIC_CAP = {"newIpo": 40, "newOrders": 15}
 
 
 def cap_matches(matches: list[dict], caps: dict[str, int] = _TOPIC_CAP) -> tuple[list[dict], list[dict]]:
