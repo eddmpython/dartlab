@@ -35,16 +35,16 @@
     <text x="519" y="313" fill="#4ade80" font-weight="600">+5.4%</text>
     <!-- 크라우드스트라이크 -3.5 -->
     <text x="24" y="349" fill="#e2e8f0" font-weight="600">크라우드스트라이크</text>
-    <rect x="437" y="333" width="29" height="22" rx="3" fill="#ef4444"/>
-    <text x="429" y="349" fill="#f87171" font-weight="700" text-anchor="end">-3.5%</text>
+    <rect x="441" y="333" width="25" height="22" rx="3" fill="#ef4444"/>
+    <text x="433" y="349" fill="#f87171" font-weight="700" text-anchor="end">-3.0%</text>
     <!-- 지스케일러 -4.8 -->
     <text x="24" y="385" fill="#cbd5e1">지스케일러</text>
     <rect x="426" y="369" width="40" height="22" rx="3" fill="#ef4444"/>
     <text x="418" y="385" fill="#f87171" font-weight="600" text-anchor="end">-4.8%</text>
-    <!-- 센티넬원 -32.1 -->
+    <!-- 센티넬원 -36 -->
     <text x="24" y="421" fill="#e2e8f0" font-weight="600">센티넬원</text>
-    <rect x="200" y="405" width="266" height="22" rx="3" fill="#ef4444"/>
-    <text x="192" y="421" fill="#f87171" font-weight="700" text-anchor="end">-32.1%</text>
+    <rect x="168" y="405" width="298" height="22" rx="3" fill="#ef4444"/>
+    <text x="160" y="421" fill="#f87171" font-weight="700" text-anchor="end">-36%</text>
   </g>
 
   <text x="450" y="492" fill="#fbbf24" font-size="15" font-weight="600" text-anchor="middle">가장 앞선 3세대(EDR·제로트러스트)가 이익 지도에선 바닥이다</text>

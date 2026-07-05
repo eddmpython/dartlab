@@ -8,9 +8,9 @@
   <text x="212" y="134" fill="#38bdf8" font-size="17" font-weight="700" text-anchor="middle">미국 · 크라우드스트라이크</text>
   <line x1="80" y1="300" x2="344" y2="300" stroke="#334155"/>
   <rect x="95" y="150" width="70" height="150" fill="#1d4ed8" opacity="0.85"/>
-  <text x="130" y="322" fill="#94a3b8" font-size="12.5" text-anchor="middle">매출 약 6.0조원</text>
-  <text x="250" y="196" fill="#f87171" font-size="16" font-weight="700" text-anchor="middle">영업이익률 -3.5%</text>
-  <text x="250" y="224" fill="#e2e8f0" font-size="14" text-anchor="middle">4년 매출 4.3배</text>
+  <text x="130" y="322" fill="#94a3b8" font-size="12.5" text-anchor="middle">매출 약 5.4조원</text>
+  <text x="250" y="196" fill="#f87171" font-size="16" font-weight="700" text-anchor="middle">영업이익률 -3.0%</text>
+  <text x="250" y="224" fill="#e2e8f0" font-size="14" text-anchor="middle">4년 매출 4.5배</text>
   <text x="250" y="256" fill="#fbbf24" font-size="13.5" text-anchor="middle">적자 감수, 초고속 성장</text>
 
   <!-- KR panel -->
@@ -23,6 +23,6 @@
   <text x="645" y="224" fill="#e2e8f0" font-size="14" text-anchor="middle">4년 매출 +29%</text>
   <text x="645" y="256" fill="#fbbf24" font-size="13.5" text-anchor="middle">흑자지만 작고 정체</text>
 
-  <text x="410" y="392" fill="#fbbf24" font-size="19" font-weight="700" text-anchor="middle">매출 규모 약 22배</text>
+  <text x="410" y="392" fill="#fbbf24" font-size="19" font-weight="700" text-anchor="middle">매출 규모 약 20배</text>
   <text x="410" y="420" fill="#94a3b8" font-size="14" text-anchor="middle">한국엔 적자를 감수하고 시장을 삼키는 자본 모델이 없다</text>
 </svg>
