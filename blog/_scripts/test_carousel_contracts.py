@@ -257,6 +257,30 @@ def test_migration_idempotent(tmp_path: Path) -> None:
     assert idx.read_text(encoding="utf-8") == first  # 본문/frontmatter 불변
 
 
+def test_name_equals_code_blocks_publish() -> None:
+    """표시 이름이 종목코드와 같으면(corpName 누락 + kindList 미해석) 발행 가드가 잡는다.
+    '058610 · 058610' 헤더 회귀 차단. code 가 비면(순수 이슈) 면제."""
+    bad = {"058610-x": {"code": "058610", "name": "058610", "slides": []}}
+    v = bcc.validate_contracts(bad)
+    assert v and "종목코드와 동일" in v[0]
+    # 회사명이 채워지면 통과.
+    good = {"058610-x": {"code": "058610", "name": "에스피지", "slides": []}}
+    assert bcc.validate_contracts(good) == []
+    # code 없는 이슈(economy)는 name 이 슬러그여도 면제.
+    issue = {"macro-x": {"code": "", "name": "macro-x", "slides": []}}
+    assert bcc.validate_contracts(issue) == []
+
+
+def test_corp_name_resolver_fallback(monkeypatch) -> None:
+    """corpName·carousel.name 이 비면 kindList(gather SSOT)로 회사명을 해석해 코드 폴백을 막는다."""
+    bcc._KIND_NAME_CACHE = {"058610": "에스피지"}  # getKindList 우회(네트워크 0)
+    try:
+        assert bcc._corp_name_from_code("058610") == "에스피지"
+        assert bcc._corp_name_from_code("999999") == ""  # 미상장 → 빈 문자열(가드가 이어서 차단)
+    finally:
+        bcc._KIND_NAME_CACHE = None
+
+
 def test_visual_contract_gate() -> None:
     """하이브리드 visual 렌더링 계약 게이트 + 확장 루프 — 렌더러 구현분만 통과, 나머지는 '추가하라'로 막는다."""
 

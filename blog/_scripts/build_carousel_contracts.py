@@ -98,6 +98,29 @@ def _code_from(fm: dict, slug: str) -> str:
     return first if (first.isdigit() and len(first) == 6) else ""
 
 
+# 종목코드 → 회사명 안전망. frontmatter corpName·carousel.name 이 비면 kindList(gather SSOT)에서 실이름을
+# 해석해 표시 이름이 종목코드로 폴백되는 것을 막는다("058610 · 058610" 회귀 차단). kindList 는 상장사 SSOT라
+# 하드코딩보다 리네임에 강하고, 이름을 재구현하지 않고 getKindList 에 위임한다(수집=gather 원칙).
+_KIND_NAME_CACHE: dict[str, str] | None = None
+
+
+def _corp_name_from_code(code: str) -> str:
+    """종목코드 → 회사명(kindList SSOT). 못 찾거나 조회 불가면 빈 문자열(호출부가 폴백 판단)."""
+    global _KIND_NAME_CACHE
+    if not code:
+        return ""
+    if _KIND_NAME_CACHE is None:
+        try:
+            from dartlab.gather.krx.listing import getKindList
+
+            df = getKindList()
+            _KIND_NAME_CACHE = dict(zip(df["종목코드"].to_list(), df["회사명"].to_list()))
+        except Exception as exc:  # 네트워크·데이터 부재 등. 빈 문자열 폴백 후 가드가 name==code 를 차단
+            sys.stderr.write(f"  kindList 회사명 해석 불가(코드 폴백 위험): {exc}\n")
+            _KIND_NAME_CACHE = {}
+    return str(_KIND_NAME_CACHE.get(code) or "")
+
+
 def _normalize_slide(raw: object) -> dict | None:
     """frontmatter 슬라이드 → 계약 슬라이드. editorial 3종만(나머지 layout 무시)."""
     if not isinstance(raw, dict):
@@ -149,6 +172,14 @@ def validate_contracts(contracts: dict[str, dict]) -> list[str]:
     """전 계약 슬라이드를 검사해 위반 라인 리스트 반환(슬러그·슬라이드#·layout·사유)."""
     out: list[str] = []
     for slug, c in sorted(contracts.items()):
+        # 표시 이름 == 종목코드 차단. 6자리 코드는 회사명이 아니다("058610 · 058610" 헤더 = 발행 금지 결함).
+        # corpName 누락 + kindList 미해석이 겹칠 때만 도달. 회사명을 채우기 전엔 HF 에 안 올린다.
+        code = str(c.get("code") or "")
+        name = str(c.get("name") or "")
+        if code and name == code:
+            out.append(
+                f"{slug}: 표시 이름이 종목코드와 동일('{code}'). corpName 누락 또는 kindList 미해석(회사명 필요)"
+            )
         for i, s in enumerate(c.get("slides", []), 1):
             for msg in _validate_slide(s.get("layout", ""), s):
                 out.append(f"{slug} #{i}({s.get('layout')}): {msg}")
@@ -258,7 +289,7 @@ def build_contracts(blog_dir: Path = BLOG_DIR) -> dict[str, dict]:
         contract: dict = {
             "code": code,
             "slug": slug,
-            "name": str(fm.get("corpName") or carousel.get("name") or code),
+            "name": str(fm.get("corpName") or carousel.get("name") or _corp_name_from_code(code) or code),
             "cardType": str(carousel.get("cardType") or "company"),  # 카드 필터 축 (company|event|economy)
             "slides": slides,
         }
@@ -440,7 +471,14 @@ def build_issue_contracts(
         contract: dict = {
             "code": code,  # code 있으면 회사 report 조회/차트 첨부, 없으면 순수 이슈 카드
             "slug": slug,
-            "name": str(data.get("corpName") or data.get("name") or data.get("title") or code or slug),
+            "name": str(
+                data.get("corpName")
+                or data.get("name")
+                or data.get("title")
+                or _corp_name_from_code(code)
+                or code
+                or slug
+            ),
             "cardType": card_type,  # company|event|economy — 카드 필터/크로스검색 축
             "standalone": True,  # 블로그 글 없음 → PostModal '블로그 이어 읽기' CTA 숨김(code 유무와 별개)
             "slides": slides,
