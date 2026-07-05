@@ -33,8 +33,36 @@ def _won(v: object) -> str | None:
         return None
 
 
+def _baked_ipo_df():
+    """왓치 첫 관문 베이크(buildIpoReports)가 같은 runner 에 남긴 reports.parquet 직독.
+
+    베이크와 왓치가 같은 IPO 파싱을 두 번 하지 않게(단일 파싱), 왓치는 스스로 scan('ipo')를 돌리는
+    대신 방금 구운 parquet 을 읽는다. 컬럼명이 scan('ipo')와 호환(rcept·corpName·priceBand*·subscription·
+    appliedPer·isSpac)이라 eval_new_ipo 무변경 소비. 부재(베이크 스킵/실패)면 None 이라 scan 폴백.
+    """
+    try:
+        from pathlib import Path
+
+        import polars as pl
+
+        import dartlab.config as _cfg
+        from dartlab.core.dataConfig import DATA_RELEASES
+
+        p = Path(_cfg.dataDir) / DATA_RELEASES["ipoReports"]["dir"] / "reports.parquet"
+        if p.exists():
+            return pl.read_parquet(p)
+    except Exception:  # noqa: BLE001 . 베이크 부재/손상은 scan 폴백(알림 자체는 끊기지 않게)
+        pass
+    return None
+
+
 def eval_new_ipo(df=None) -> list[dict]:
-    """scan('ipo') → 신규상장 알림 매치. df 주입 시 그 df 사용(테스트). 항등식 미검증분도 알림(공모 사실은 사실)."""
+    """신규상장 알림 매치. df 주입 시 그 df(테스트/베이크 parquet), 없으면 베이크 parquet 후 scan('ipo') 폴백.
+
+    항등식 미검증분도 알림(공모 사실은 사실). 데이터원 우선순위: 명시 df > 베이크 parquet > scan('ipo').
+    """
+    if df is None:
+        df = _baked_ipo_df()
     if df is None:
         import dartlab
 

@@ -37,7 +37,18 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv sync # 왓처는 dartlab.scan 직독 — 전체 sync 필요(발행 러너와 달리 무겁다, cron 이라 OK)
+        run: uv sync # 왓처는 dartlab.scan 직독. 전체 sync 필요(발행 러너와 달리 무겁다, cron 이라 OK)
+
+      # 왓치가 첫 관문: IPO 를 먼저 잡아 6카테고리 리포트를 파싱·HF push(퍼블릭 터미널 직독 SSOT 생산).
+      # 이 스텝이 먼저라 다음 푸시(newIpo)의 딥링크가 여는 리포트가 이미 HF 에 있다. 실패해도 알림은
+      # scan('ipo') 폴백으로 계속(continue-on-error). 같은 runner 라 watch.py 가 여기 산출 parquet 을 직독.
+      - name: Bake IPO reports (parse -> HF, watch first-catch)
+        continue-on-error: true
+        run: uv run python -X utf8 .github/scripts/sync/buildIpoReports.py
+        env:
+          DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          PYTHONUNBUFFERED: "1"
 
       - name: Watch public topics (scan SSOT -> /send)
         run: uv run python -X utf8 .github/scripts/notify/watch.py --topics "${{ github.event.inputs.topics || 'newIpo,newOrders' }}" ${{ github.event.inputs.dryRun == 'true' && '--dry-run' || '' }}

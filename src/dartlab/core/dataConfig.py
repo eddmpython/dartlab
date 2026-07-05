@@ -52,6 +52,15 @@ DATA_RELEASES: dict[str, dict] = {
         "label": "전종목 횡단분석 프리빌드 데이터",
         "public": True,
     },
+    "ipoReports": {
+        # 신규상장 IPO 공모분석 리포트 (증권신고서 지분증권 6카테고리). 상장 전 발행사(corp_cls=E)는
+        # allFilings(Y/K 한정)·panel 어디에도 없어 퍼블릭 런타임 파싱 불가(DART키·CORS·파이썬 파서).
+        # 왓치 cron 이 buildIpoReport 로 파싱한 구조화 typed 결과를 rcept 키 단일 whole-file reports.parquet
+        # 로 push(최근 윈도 rebuild, HF 증식 아님). 터미널은 reportJson 직독(reportSource 동형). sync=online.
+        "dir": "dart/ipo",
+        "label": "신규상장 IPO 공모분석 리포트 (증권신고서 6카테고리 파싱본)",
+        "public": True,
+    },
     "brokerageReports": {
         # 증권사 리서치 *메타 인덱스* (본문 0 — 제목·URL·발간일·구분·종목). pub_date 월별
         # flat {YYYYMM}.parquet. 공개 게시판 자체 스크랩(링크아웃), gather.sources.brokerage SSOT.
