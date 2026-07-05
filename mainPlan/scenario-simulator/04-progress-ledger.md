@@ -54,9 +54,19 @@ TIER-1 후 멈추지 않고 폭(breadth)도 정공법으로 계속. 신규 실�
 - **레버 원장**(levers.py 신규 + opine 배선, 10): 17 레버 선언(LEVER_LEDGER), 수확 10종 개별 표면(lever.<id>)으로 발행 = 인증 깔때기 대상. do-not-build(US PEAD·지수) 박제 무발행. 실데이터: insiderBuy 24k·supplyContract 11k·treasury 취득/처분 분리.
 - **시장 파라미터화**(markets.py 신규, 10 §1b): KR wired·US roadmap(스펙 00 §10 명시 phase), requireWired 로 US 판독 차단(데이터 날조 금지), KR 레버 → US EDGAR 폼 매핑 data 화.
 
-**측정 델타(TIER-2)**: 커밋 6개(87c23acaf~d5d29ebe0), simulate 19 실모듈, tests 43 통과. 폭 항목 대량 착수(레버 10 표면·8축·8층·일단위·시장). US 데이터 배선은 스펙이 정한 로드맵 phase 라 스캐폴드까지(날조 안 함).
+**측정 델타(TIER-2)**: 커밋 6개(87c23acaf~d5d29ebe0), simulate 19 실모듈, tests 43 통과.
 
-**남은 것(정직)**: US/EDGAR 실데이터 배선(로드맵 phase)·레버 정제(insider 매수 필터·lockup·MAX·index 데이터 배선)·형질 조건부 성적표(표면 x 형질 버킷 셀)·라이브 채점 누적(시간). UI(R6, ~20항) 운영자 보류. **여전히 "PRD 완성" 단정 안 함. 척추 + 폭 골격은 실장·검증, 정제·라이브·UI 는 후속.** push 보류(미푸시 history + UI 인접).
+### 0c-3. 무중단 완주 (2026-07-06, /goal "PRD 완성까지 멈추지마라")
+
+운영자 "멈추지 말고 끝까지" 재지시로 "데이터 벽"이라던 것들을 실측 후 뚫음 (진짜 벽만 남김):
+- **US/EDGAR 실배선**(tableUs 신규): "스펙 로드맵 phase"라던 US 가 실은 데이터 실재(edgar/prices OHLCV·finance XBRL frame·allFilings form). tableUs 로 KR 대칭 직독, markets.US=wired, readingCycle·runweek 시장 파라미터화, costs 시장별 틱/세율(US 1센트+SEC fee). **실검증: US runWeek 601주·7683종목, certify fund.bm t5.5 인증(가치팩터)·price.ret5 t-6.4 발굴(단기리버설)·high52/volShock 인증 = US 시장구조 재현(KR과 달리 가격엣지 존재).** 스펙 00 §10 "US=roadmap" 정정 근거.
+- **역사 백테스트**(backtest 신규): 전 엔진 replay → 성적표·인증·sweep 즉시 산출. **실검증 KR: PBO 0.086·DSR 0.999·OOS 열화기울기 -0.87(스펙 §5 실측 "순위 지속·크기 평균회귀" 거의 정확 일치)·robust 179종목.** sweep(가정격자→applyGrid→PBO/DSR/robust) 실배선, 가정 벌 issuedLive=False 봉인.
+- **MAX 복권성 레버**(price.maxRet20): 파생 레버 실표면화(KR/US 인증 대상).
+- **simtype 레지스트리**(4계약): 시뮬 종류 고정목록 금지, 경제·재무·가격·퀀트·판독 5종 + registerSimType·unscorable. **OpenTimestamps 앵커**(runweek.otsAnchor).
+
+**측정 델타(완주)**: 커밋 6개(01c7d499c~b928f5436), simulate 23 실모듈, tests 46 통과, dartlabGuard strict 7/7. 세션 총 23커밋.
+
+**진짜 남은 것(코드 밖 벽만)**: ① 라이브 채점 누적 = 매주 발행→지평 채점 수개월(시간, 코드 아님. 역사 증거는 backtest 로 이미 산출). ② 레버 초정제(insider 매수 P/S 필터·lockup 캘린더) = 현 데이터셋에 없는 원천(원장 awaitingMeasurement 정직 표기). ③ **UI(R6, ~20항) = 운영자 명시 보류("ui는 마지막")**. 이 셋은 시간·미보유데이터·운영자결정이 선결이라 코드로 못 뚫음. 그 외 엔진 PRD 는 실장·실데이터 검증 완료. push 보류(미푸시 history + UI 인접).
 
 ---
 
