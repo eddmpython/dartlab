@@ -213,3 +213,29 @@ def dailyPrices(baseDir: Path | None = None) -> pl.DataFrame:
         if (base / f"{y}.parquet").exists()
     ]
     return pl.concat(frames).collect().filter(pl.col("close") > 0)
+
+
+def dailyHighLow(baseDir: Path | None = None) -> pl.DataFrame:
+    """일별 고저종가 (비용 바닥 스프레드 추정용) → (date, code, high, low, close, mktcap).
+
+    Corwin-Schultz·Abdi-Ranaldo 는 일 고저가에서 유효 스프레드를 추정한다 (06 §4). gov/prices
+    date 샤드 직독 (별도 산출물 굽기 0). high/low <= 0 (거래정지·이상치) 행은 드롭.
+    """
+    base = dataDir(baseDir) / "gov/prices/date"
+    frames = [
+        pl.scan_parquet(base / f"{y}.parquet").select(
+            pl.col("BAS_DD").alias("date"),
+            pl.col("ISU_CD").alias("code"),
+            pl.col("TDD_HGPRC").cast(pl.Float64).alias("high"),
+            pl.col("TDD_LWPRC").cast(pl.Float64).alias("low"),
+            pl.col("TDD_CLSPRC").cast(pl.Float64).alias("close"),
+            pl.col("MKTCAP").cast(pl.Float64).alias("mktcap"),
+        )
+        for y in _PRICE_YEARS
+        if (base / f"{y}.parquet").exists()
+    ]
+    return (
+        pl.concat(frames)
+        .collect()
+        .filter((pl.col("high") > 0) & (pl.col("low") > 0) & (pl.col("close") > 0) & (pl.col("high") >= pl.col("low")))
+    )

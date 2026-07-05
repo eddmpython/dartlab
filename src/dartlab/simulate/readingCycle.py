@@ -17,6 +17,7 @@ from pathlib import Path
 
 import polars as pl
 
+from dartlab.simulate import costs as _costs
 from dartlab.simulate import opine as _opine
 from dartlab.simulate import readingLedger as _ledger
 from dartlab.simulate import readingScorecard as _sc
@@ -98,22 +99,25 @@ def scoreReadingsDue(
     due = _ledger.unscoredReadings(baseDir=baseDir)
     if due is None or due.height == 0:
         return 0
+    weekEnd = None
     if labels is None:
-        weekMap, weekEnd = _table.weekCalendar(dataDir)
+        _, weekEnd = _table.weekCalendar(dataDir)
         labels = _sc.weeklyLabels(weekEnd, _table.dailyPrices(dataDir))
     lab = labels.select("week", pl.col("code").alias("stockCode"), "exRaw", "exNeutral")
     joined = due.join(lab, on=["week", "stockCode"], how="inner")
     if joined.height == 0:
         return 0
-    if costFloorByWeekCode is not None:
-        cf = (
-            costFloorByWeekCode.rename({"code": "stockCode"})
-            if "code" in costFloorByWeekCode.columns
-            else costFloorByWeekCode
-        )
-        joined = joined.join(cf, on=["week", "stockCode"], how="left")
-    else:
-        joined = joined.with_columns(costFloor=pl.lit(None, dtype=pl.Float64))
+    # 비용 바닥: 외부 주입 우선, 없으면 costs 로 직접 생산 (생산자 배선 = net 상시 유효).
+    if costFloorByWeekCode is None:
+        if weekEnd is None:
+            _, weekEnd = _table.weekCalendar(dataDir)
+        costFloorByWeekCode = _costs.costFloorWeekly(weekEnd, _table.dailyHighLow(dataDir))
+    cf = (
+        costFloorByWeekCode.rename({"code": "stockCode"})
+        if "code" in costFloorByWeekCode.columns
+        else costFloorByWeekCode
+    ).select("week", "stockCode", "costFloor")
+    joined = joined.join(cf, on=["week", "stockCode"], how="left")
     scoreRows = joined.select(
         "week",
         "stockCode",

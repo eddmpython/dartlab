@@ -272,3 +272,42 @@ def testProfileTraitCatalogIsExhaustive():
     assert len(tc) == 9  # extractionCatalog 9 대분류 전수 (손 선별 0)
     assert sum(tc.values()) > 50  # 88개념급 (카탈로그 구동)
     assert tc["note"] > tc["segment"]  # 노트 개념이 세그먼트보다 많음 (카탈로그 사실)
+
+
+def testSellTaxAndTickFloor():
+    from dartlab.simulate import costs
+
+    assert costs.sellTaxRate("20251231") == 0.0015  # 2026 전 0.15%
+    assert costs.sellTaxRate("20260101") == 0.0020  # 2026-01-01 부터 0.20%
+    assert costs.tickFloorFrac(1500) == pytest.approx(1 / 1500)  # <2000 = 1원 틱
+    assert costs.tickFloorFrac(100000) == pytest.approx(100 / 100000)  # 5만~20만 = 100원 틱
+    assert costs.tickFloorFrac(0) == 0.0  # 이상치 방어
+
+
+def testCostFloorWiderSpreadCostsMore():
+    from dartlab.simulate import costs
+
+    dates = [f"202601{d:02d}" for d in range(1, 26)]
+    rows = []
+    for dt in dates:
+        rows.append({"date": dt, "code": "flat", "high": 10000.0, "low": 10000.0, "close": 10000.0})
+        rows.append({"date": dt, "code": "wide", "high": 10500.0, "low": 9500.0, "close": 10000.0})
+    dhl = pl.DataFrame(rows)
+    weekEnd = pl.DataFrame({"week": [202604], "date": ["20260125"]})
+    cf = costs.costFloorWeekly(weekEnd, dhl)
+    byCode = {r["code"]: r for r in cf.iter_rows(named=True)}
+    floor = 0.0020 + 2 * costs.INST_FEE  # 세율+기관비용 하한 (2026)
+    assert byCode["flat"]["costFloor"] >= floor  # 무스프레드도 세율·기관비용 바닥
+    assert byCode["wide"]["costFloor"] > byCode["flat"]["costFloor"]  # 넓은 스프레드 = 큰 비용
+    assert byCode["wide"]["spread"] > 0  # 스프레드 추정 양수
+
+
+def testNetPositiveAvoidZeroCost():
+    from dartlab.simulate import costs
+
+    edge = pl.DataFrame({"code": ["a", "b"], "edge": [0.02, 0.005]})
+    floor = pl.DataFrame({"code": ["a", "b"], "costFloor": [0.01, 0.01]})
+    passed = costs.netPositive(edge, floor)
+    assert passed == {"a"}  # a: 0.02-0.01>0 통과, b: 0.005-0.01<0 탈락
+    passedAvoid = costs.netPositive(edge, floor, avoidCodes={"b"})
+    assert "b" in passedAvoid  # 회피 종목은 비용 0 이라 작은 엣지도 통과
