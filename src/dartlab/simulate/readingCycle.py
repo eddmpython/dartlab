@@ -27,12 +27,12 @@ def _nowUtc() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="minutes")
 
 
-def _buildMatrices(baseDir: Path | None):
-    weekMap, weekEnd = _table.weekCalendar(baseDir)
-    caps = _table.marketCap(baseDir)
-    priceM = _table.priceWeekly(weekMap, baseDir)
-    fundM = _table.fundWeekly(weekEnd, caps, baseDir)
-    eventM = _table.eventWeekly(weekMap, baseDir)
+def _buildMatrices(dataDir: Path | None):
+    weekMap, weekEnd = _table.weekCalendar(dataDir)
+    caps = _table.marketCap(dataDir)
+    priceM = _table.priceWeekly(weekMap, dataDir)
+    fundM = _table.fundWeekly(weekEnd, caps, dataDir)
+    eventM = _table.eventWeekly(weekMap, dataDir)
     return weekMap, weekEnd, priceM, fundM, eventM
 
 
@@ -43,6 +43,7 @@ def issueReadings(
     live: bool = True,
     horizon: int = 5,
     baseDir: Path | None = None,
+    dataDir: Path | None = None,
     matrices: tuple | None = None,
     directionByType: dict[str, int] | None = None,
     labels: pl.DataFrame | None = None,
@@ -54,14 +55,15 @@ def issueReadings(
         week: 대상 주 iso year*100+week (None = 사용 가능한 최신 주).
         live: False = backfill.
         horizon: 거래일 지평 (v0=5).
-        baseDir: 원장/데이터 루트 override.
+        baseDir: 원장(출력) 루트 override.
+        dataDir: 데이터(읽기전용 SSOT) 루트 override. 원장과 다른 뿌리.
         matrices: 주입 (weekMap, weekEnd, priceM, fundM, eventM) (테스트용, table 스캔 skip).
         directionByType: 이벤트 방향화 사전 (None + labels 있으면 여기서 도출).
         labels: 방향화 도출용 라벨 (None 이면 table 에서 계산).
     """
-    weekMap, weekEnd, priceM, fundM, eventM = matrices or _buildMatrices(baseDir)
+    weekMap, weekEnd, priceM, fundM, eventM = matrices or _buildMatrices(dataDir)
     if directionByType is None:
-        lab = labels if labels is not None else _sc.weeklyLabels(weekEnd, _table.dailyPrices(baseDir))
+        lab = labels if labels is not None else _sc.weeklyLabels(weekEnd, _table.dailyPrices(dataDir))
         directionByType = _sc.deriveEventDirections(eventM, lab)
     readings = _opine.opine(priceM, fundM, eventM, directionByType=directionByType)
     if readings.height == 0:
@@ -81,13 +83,15 @@ def issueReadings(
 def scoreReadingsDue(
     *,
     baseDir: Path | None = None,
+    dataDir: Path | None = None,
     labels: pl.DataFrame | None = None,
     costFloorByWeekCode: pl.DataFrame | None = None,
 ) -> int:
     """지평 경과·라벨 확보된 판독을 버킷 중립 초과로 채점. 반환 = 채점 행 수.
 
     Args:
-        baseDir: 원장/데이터 루트 override.
+        baseDir: 원장(출력) 루트 override.
+        dataDir: 데이터(읽기전용 SSOT) 루트 override.
         labels: 채점 라벨 (None 이면 table 에서 계산). 라벨 없는(지평 미도래) 주는 pending.
         costFloorByWeekCode: (week, code, costFloor) net 게이트용 (없으면 costFloor null).
     """
@@ -95,8 +99,8 @@ def scoreReadingsDue(
     if due is None or due.height == 0:
         return 0
     if labels is None:
-        weekMap, weekEnd = _table.weekCalendar(baseDir)
-        labels = _sc.weeklyLabels(weekEnd, _table.dailyPrices(baseDir))
+        weekMap, weekEnd = _table.weekCalendar(dataDir)
+        labels = _sc.weeklyLabels(weekEnd, _table.dailyPrices(dataDir))
     lab = labels.select("week", pl.col("code").alias("stockCode"), "exRaw", "exNeutral")
     joined = due.join(lab, on=["week", "stockCode"], how="inner")
     if joined.height == 0:
