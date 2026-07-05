@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480">
+  <title>집중해도 시장이 그 성장을 믿을 때만 프리미엄이 붙는다</title>
+  <desc>같은 90퍼센트 이상 집중 기업 안에서도 주가순자산비율은 극과 극이다. 삼성바이오로직스와 에이피알은 높은 프리미엄을 받지만, 똑같이 한 우물인 한국타이어와 에프앤에프는 순자산 근처에서 거래된다. 차이는 그 한 우물이 성장하는 곳인지다.</desc>
+  <defs>
+    <linearGradient id="bg07n" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="480" fill="url(#bg07n)" rx="16"/>
+  <text x="600" y="50" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="24" font-weight="700">집중이 늘 프리미엄은 아니다</text>
+  <text x="600" y="80" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">다 매출 90%+ 한 우물인데, PBR은 극과 극 · 차이는 그 우물이 자라는가</text>
+
+  <g font-family="system-ui, sans-serif">
+    <rect x="80" y="110" width="500" height="330" rx="12" fill="#0f172a" stroke="#b45309" stroke-width="1.5"/>
+    <text x="330" y="146" text-anchor="middle" fill="#fde68a" font-size="18" font-weight="700">성장하는 우물 = 프리미엄</text>
+    <text x="104" y="192" fill="#e2e8f0" font-size="16">삼성바이오로직스 (바이오 100%)</text>
+    <text x="556" y="192" text-anchor="end" fill="#fbbf24" font-size="18" font-weight="800">7.88배</text>
+    <text x="104" y="232" fill="#e2e8f0" font-size="16">에이피알 (K뷰티 97%)</text>
+    <text x="556" y="232" text-anchor="end" fill="#fbbf24" font-size="18" font-weight="800">29.93배</text>
+    <text x="104" y="272" fill="#e2e8f0" font-size="16">두산로보틱스 (로봇 100%)</text>
+    <text x="556" y="272" text-anchor="end" fill="#fbbf24" font-size="18" font-weight="800">30.01배</text>
+    <line x1="104" y1="300" x2="556" y2="300" stroke="#334155" stroke-width="1"/>
+    <text x="104" y="336" fill="#94a3b8" font-size="14">성장 사이클 초입·세계 시장 확장</text>
+    <text x="104" y="362" fill="#94a3b8" font-size="14">집중이 곧 성장 레버리지</text>
+    <text x="104" y="408" fill="#fbbf24" font-size="15" font-weight="700">시장이 그 한 우물의 성장을 믿는다</text>
+
+    <rect x="620" y="110" width="500" height="330" rx="12" fill="#0f172a" stroke="#3f4d63" stroke-width="1.5"/>
+    <text x="870" y="146" text-anchor="middle" fill="#cbd5e1" font-size="18" font-weight="700">저무는 우물 = 디스카운트</text>
+    <text x="644" y="192" fill="#e2e8f0" font-size="16">한국타이어 (타이어 99.9%)</text>
+    <text x="1096" y="192" text-anchor="end" fill="#94a3b8" font-size="18" font-weight="800">0.69배</text>
+    <text x="644" y="232" fill="#e2e8f0" font-size="16">F&amp;F (패션 99.6%)</text>
+    <text x="1096" y="232" text-anchor="end" fill="#94a3b8" font-size="18" font-weight="800">1.36배</text>
+    <line x1="644" y1="260" x2="1096" y2="260" stroke="#334155" stroke-width="1"/>
+    <text x="644" y="296" fill="#94a3b8" font-size="14">성숙 산업이라 폭발적 성장 기대 낮음</text>
+    <text x="644" y="322" fill="#94a3b8" font-size="14">집중해도 다각화 기업과 비슷한 값</text>
+    <text x="644" y="368" fill="#cbd5e1" font-size="15" font-weight="700">프리미엄은 집중이 아니라</text>
+    <text x="644" y="392" fill="#cbd5e1" font-size="15" font-weight="700">성장 기대되는 곳에 집중에 붙는다</text>
+  </g>
+
+  <text x="600" y="466" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">집중도만으로 저평가·고평가를 판단하면 안 된다. 그 다리가 자라는지를 봐야 한다.</text>
+</svg>

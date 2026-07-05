@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560">
+  <title>한국 증시 대장주의 매출 집중도: 반도체부터 불닭까지</title>
+  <desc>지금 시장을 이끄는 성장주는 하나같이 매출의 90에서 100퍼센트를 한 부문에서 낸다. SK하이닉스 반도체 100퍼센트, LG에너지솔루션 배터리 100퍼센트, 삼성바이오로직스 바이오 100퍼센트, 삼양식품 면스낵 95퍼센트 등.</desc>
+  <defs>
+    <linearGradient id="bg07l" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="560" fill="url(#bg07l)" rx="16"/>
+  <text x="600" y="50" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="25" font-weight="700">시장을 이끄는 성장주는 전부 한 우물</text>
+  <text x="600" y="80" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">대표 성장주의 최대 사업부문 매출 비중 · 100% = 매출 전부가 한 부문</text>
+
+  <line x1="330" y1="108" x2="330" y2="500" stroke="#334155" stroke-width="1"/>
+  <line x1="1050" y1="108" x2="1050" y2="500" stroke="#334155" stroke-width="1" stroke-dasharray="4 4"/>
+  <text x="1050" y="524" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">100%</text>
+
+  <g font-family="system-ui, sans-serif" font-size="15">
+    <!-- bar full width 720px = 100% ; x from 330 -->
+    <text x="60" y="132" fill="#e2e8f0">SK하이닉스 (반도체)</text>
+    <rect x="330" y="118" width="720" height="20" rx="4" fill="#fbbf24"/>
+    <text x="1062" y="133" fill="#fde68a" font-weight="700">100%</text>
+
+    <text x="60" y="166" fill="#e2e8f0">LG에너지솔루션 (배터리)</text>
+    <rect x="330" y="152" width="720" height="20" rx="4" fill="#fbbf24"/>
+    <text x="1062" y="167" fill="#fde68a" font-weight="700">100%</text>
+
+    <text x="60" y="200" fill="#e2e8f0">삼성바이오로직스 (바이오)</text>
+    <rect x="330" y="186" width="720" height="20" rx="4" fill="#fbbf24"/>
+    <text x="1062" y="201" fill="#fde68a" font-weight="700">100%</text>
+
+    <text x="60" y="234" fill="#e2e8f0">두산로보틱스 (로봇)</text>
+    <rect x="330" y="220" width="720" height="20" rx="4" fill="#fbbf24"/>
+    <text x="1062" y="235" fill="#fde68a" font-weight="700">100%</text>
+
+    <text x="60" y="268" fill="#e2e8f0">한국타이어 (타이어)</text>
+    <rect x="330" y="254" width="719" height="20" rx="4" fill="#f59e0b"/>
+    <text x="1062" y="269" fill="#fde68a" font-weight="700">99.9%</text>
+
+    <text x="60" y="302" fill="#e2e8f0">F&amp;F (패션)</text>
+    <rect x="330" y="288" width="717" height="20" rx="4" fill="#f59e0b"/>
+    <text x="1058" y="303" fill="#fde68a" font-weight="700">99.6%</text>
+
+    <text x="60" y="336" fill="#e2e8f0">에이피알 (K뷰티)</text>
+    <rect x="330" y="322" width="700" height="20" rx="4" fill="#f59e0b"/>
+    <text x="1042" y="337" fill="#fde68a" font-weight="700">97.2%</text>
+
+    <text x="60" y="370" fill="#e2e8f0">삼양식품 (라면·불닭)</text>
+    <rect x="330" y="356" width="687" height="20" rx="4" fill="#22c55e"/>
+    <text x="1029" y="371" fill="#86efac" font-weight="700">95.4%</text>
+
+    <text x="60" y="404" fill="#e2e8f0">셀트리온 (바이오의약품)</text>
+    <rect x="330" y="390" width="677" height="20" rx="4" fill="#d97706"/>
+    <text x="1019" y="405" fill="#fde68a" font-weight="700">94.0%</text>
+
+    <text x="60" y="438" fill="#e2e8f0">삼성SDI (배터리)</text>
+    <rect x="330" y="424" width="672" height="20" rx="4" fill="#d97706"/>
+    <text x="1014" y="439" fill="#fde68a" font-weight="700">93.3%</text>
+  </g>
+
+  <text x="600" y="500" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">반도체·배터리·바이오·로봇·K뷰티·K푸드, 성장 테마의 대표주가 하나같이 집중형이다</text>
+</svg>

@@ -126,6 +126,20 @@ POSTS: list[tuple[str, str, str, list[str], str, list[str], list[str]]] = [
             "warehouse",
         ],
     ),
+    (
+        "07",
+        "single-segment-concentration",
+        "데이터 리포트 · 사업 집중도",
+        ["문어발은 옛말", "상장사 절반이 한 우물"],
+        "부문 매출 공시 1,245곳 전수 · 매출 90%+ 한 부문 654곳",
+        [
+            "stock market chart screen",
+            "financial district skyscraper night",
+            "trading floor screen",
+            "stock exchange board",
+        ],
+        ["stock", "market", "chart", "finance", "building", "screen", "trading", "exchange", "board", "business"],
+    ),
 ]
 
 

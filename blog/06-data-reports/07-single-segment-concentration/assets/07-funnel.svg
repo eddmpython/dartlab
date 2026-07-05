@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 540">
+  <title>상장사 절반이 매출 92%를 한 부문에서, 다각화는 8%뿐</title>
+  <desc>사업부문 매출을 공시한 상장사 1,245곳 중 매출 90퍼센트 이상이 한 부문에서 나오는 곳이 654곳으로 절반이 넘고, 어느 부문도 매출의 절반을 넘지 않는 진짜 다각화 기업은 101곳으로 8퍼센트에 불과하다.</desc>
+  <defs>
+    <linearGradient id="bg07f" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="540" fill="url(#bg07f)" rx="16"/>
+  <text x="600" y="52" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="26" font-weight="700">문어발은 옛말: 상장사 절반이 매출 92%를 한 부문에서</text>
+  <text x="600" y="84" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">사업부문 매출 공시 1,245곳 · 최대부문 매출 비중 · dartlab 전수</text>
+
+  <rect x="150" y="122" width="900" height="54" rx="8" fill="#334155"/>
+  <text x="170" y="156" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="17" font-weight="600">부문 매출 공시 상장사</text>
+  <text x="1030" y="156" text-anchor="end" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="20" font-weight="700">1,245곳</text>
+
+  <rect x="150" y="196" width="640" height="60" rx="8" fill="#b45309"/>
+  <text x="170" y="224" fill="#fde68a" font-family="system-ui, sans-serif" font-size="15">매출 90% 이상이 한 부문 (사실상 단일사업)</text>
+  <text x="170" y="248" fill="#ffffff" font-family="system-ui, sans-serif" font-size="22" font-weight="800">654곳</text>
+  <text x="770" y="234" text-anchor="end" fill="#fde68a" font-family="system-ui, sans-serif" font-size="15" font-weight="700">표본의 53%</text>
+
+  <rect x="150" y="270" width="240" height="50" rx="8" fill="#166534"/>
+  <text x="170" y="296" fill="#bbf7d0" font-family="system-ui, sans-serif" font-size="14">최대부문 50% 미만 (진짜 다각화)</text>
+  <text x="170" y="314" fill="#ffffff" font-family="system-ui, sans-serif" font-size="14" font-weight="700">101곳 · 단 8%</text>
+
+  <rect x="150" y="352" width="900" height="118" rx="12" fill="#0f172a" stroke="#7f1d1d" stroke-width="1.5"/>
+  <text x="180" y="388" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="17" font-weight="700">그런데 소형사만 그런 게 아니다</text>
+  <text x="180" y="422" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">시가총액 1조원 이상 대형주 156곳 중</text>
+  <text x="1020" y="422" text-anchor="end" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="15">매출 90%+ 한 부문</text>
+  <text x="180" y="452" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="15" font-weight="700">대장주의 44%가 한 우물</text>
+  <text x="1020" y="452" text-anchor="end" fill="#ef4444" font-family="system-ui, sans-serif" font-size="22" font-weight="800">68곳</text>
+
+  <text x="600" y="510" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">지금 시장을 이끄는 성장주일수록 매출이 한 부문에 쏠려 있다</text>
+</svg>
