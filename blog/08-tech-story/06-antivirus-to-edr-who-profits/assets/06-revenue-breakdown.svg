@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 500" font-family="-apple-system, 'Segoe UI', sans-serif">
+  <rect width="820" height="500" fill="#0a0e1a"/>
+  <text x="410" y="44" fill="#f1f5f9" font-size="25" font-weight="700" text-anchor="middle">벌어들인 총이익 vs 써버린 영업비용</text>
+  <text x="410" y="72" fill="#64748b" font-size="14" text-anchor="middle">매출 100원 기준. 둘의 차이가 곧 영업이익</text>
+
+  <!-- legend -->
+  <rect x="250" y="88" width="13" height="13" rx="2" fill="#22c55e"/><text x="270" y="99" fill="#94a3b8" font-size="12">총이익</text>
+  <rect x="335" y="88" width="13" height="13" rx="2" fill="#475569"/><text x="355" y="99" fill="#94a3b8" font-size="12">영업비용</text>
+  <rect x="435" y="88" width="13" height="13" rx="2" fill="#fbbf24"/><text x="455" y="99" fill="#94a3b8" font-size="12">그중 주식보상(비현금)</text>
+
+  <!-- baseline -->
+  <line x1="120" y1="410" x2="700" y2="410" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- CrowdStrike -->
+  <text x="232" y="128" fill="#f1f5f9" font-size="17" font-weight="700" text-anchor="middle">크라우드스트라이크</text>
+  <rect x="150" y="185" width="72" height="225" rx="3" fill="#22c55e"/>
+  <text x="186" y="209" fill="#052e16" font-size="14" font-weight="700" text-anchor="middle">75.1</text>
+  <rect x="235" y="174" width="72" height="236" rx="3" fill="#475569"/>
+  <rect x="235" y="346" width="72" height="64" fill="#fbbf24" opacity="0.9"/>
+  <text x="271" y="168" fill="#e2e8f0" font-size="14" font-weight="700" text-anchor="middle">78.5</text>
+  <text x="271" y="384" fill="#1a1204" font-size="12" font-weight="700" text-anchor="middle">21.4</text>
+  <text x="186" y="430" fill="#94a3b8" font-size="12.5" text-anchor="middle">총이익</text>
+  <text x="271" y="430" fill="#94a3b8" font-size="12.5" text-anchor="middle">영업비용</text>
+  <text x="232" y="462" fill="#f87171" font-size="14.5" font-weight="700" text-anchor="middle">영업비용 &gt; 총이익 = 영업이익 -3.5%</text>
+
+  <!-- Fortinet -->
+  <text x="592" y="128" fill="#f1f5f9" font-size="17" font-weight="700" text-anchor="middle">포티넷</text>
+  <rect x="510" y="168" width="72" height="242" rx="3" fill="#22c55e"/>
+  <text x="546" y="192" fill="#052e16" font-size="14" font-weight="700" text-anchor="middle">80.5</text>
+  <rect x="595" y="261" width="72" height="149" rx="3" fill="#475569"/>
+  <text x="631" y="255" fill="#e2e8f0" font-size="14" font-weight="700" text-anchor="middle">49.8</text>
+  <text x="546" y="430" fill="#94a3b8" font-size="12.5" text-anchor="middle">총이익</text>
+  <text x="631" y="430" fill="#94a3b8" font-size="12.5" text-anchor="middle">영업비용</text>
+  <text x="592" y="462" fill="#4ade80" font-size="14.5" font-weight="700" text-anchor="middle">총이익 &gt; 영업비용 = 영업이익 +30.7%</text>
+
+  <text x="410" y="491" fill="#fbbf24" font-size="14" font-weight="600" text-anchor="middle">같은 보안업, 한쪽은 성장을 사고 한쪽은 이익을 남긴다</text>
+</svg>

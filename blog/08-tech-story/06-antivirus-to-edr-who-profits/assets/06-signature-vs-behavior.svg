@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 430" font-family="-apple-system, 'Segoe UI', sans-serif">
+  <rect width="820" height="430" fill="#0a0e1a"/>
+  <text x="410" y="46" fill="#f1f5f9" font-size="26" font-weight="700" text-anchor="middle">백신은 어떻게 잡나: 전단에서 행동으로</text>
+  <text x="410" y="74" fill="#64748b" font-size="15" text-anchor="middle">아는 얼굴만 잡는 시그니처, 무엇을 하는지 보는 행동탐지</text>
+
+  <!-- left: signature -->
+  <rect x="40" y="100" width="345" height="300" rx="14" fill="#111827" stroke="#1f2937"/>
+  <text x="212" y="134" fill="#fbbf24" font-size="19" font-weight="700" text-anchor="middle">1세대 · 시그니처</text>
+  <text x="212" y="157" fill="#94a3b8" font-size="13" text-anchor="middle">지명수배 전단: 아는 지문만 대조</text>
+  <g font-size="14" fill="#e2e8f0">
+    <circle cx="78" cy="192" r="7" fill="#22c55e"/><text x="96" y="197">알려진 악성코드 A ... 일치, 차단</text>
+    <circle cx="78" cy="226" r="7" fill="#22c55e"/><text x="96" y="231">알려진 악성코드 B ... 일치, 차단</text>
+    <circle cx="78" cy="260" r="7" fill="#22c55e"/><text x="96" y="265">알려진 악성코드 C ... 일치, 차단</text>
+    <circle cx="78" cy="300" r="7" fill="#ef4444"/><text x="96" y="305" fill="#fca5a5">변형 · 처음 보는 공격 ... 놓침</text>
+  </g>
+  <text x="212" y="356" fill="#f87171" font-size="14" font-weight="600" text-anchor="middle">전단에 없는 얼굴은 그냥 통과한다</text>
+
+  <!-- right: behavior -->
+  <rect x="435" y="100" width="345" height="300" rx="14" fill="#111827" stroke="#1f2937"/>
+  <text x="607" y="134" fill="#fbbf24" font-size="19" font-weight="700" text-anchor="middle">3세대 · 행동탐지 (EDR)</text>
+  <text x="607" y="157" fill="#94a3b8" font-size="13" text-anchor="middle">무엇을 하는가: 동작을 실시간 감시</text>
+  <g font-size="14" fill="#e2e8f0">
+    <rect x="470" y="184" width="14" height="14" rx="3" fill="#38bdf8"/><text x="496" y="196">문서 수백 개를 갑자기 암호화</text>
+    <rect x="470" y="218" width="14" height="14" rx="3" fill="#38bdf8"/><text x="496" y="230">외부로 대량 전송 시도</text>
+    <rect x="470" y="252" width="14" height="14" rx="3" fill="#38bdf8"/><text x="496" y="264">권한을 몰래 끌어올림</text>
+  </g>
+  <text x="607" y="306" fill="#f1f5f9" font-size="14" font-weight="600" text-anchor="middle">처음 보는 파일이라도 행동으로 잡는다</text>
+  <text x="607" y="356" fill="#fbbf24" font-size="13" text-anchor="middle">감시하려면 커널까지 들어간다: 힘이자 위험</text>
+</svg>
