@@ -153,6 +153,91 @@ def annualValues(row: dict) -> dict[str, float]:
     return grouped
 
 
+def extractBlockCode(codeBlock: str) -> str | None:
+    """코드 블록에서 단일 회사 코드를 뽑는다. tech-story 는 표마다 회사가 다르므로
+    `Company("454910")` 처럼 블록 안에 박힌 코드를 표별로 바인딩한다.
+    코드가 2개 이상(예: for code in [...]) 이면 표-회사 1:1 매칭이 모호해 None."""
+    codes = re.findall(r'Company\(["\'](\d{6})["\']\)', codeBlock)
+    unique = list(dict.fromkeys(codes))
+    return unique[0] if len(unique) == 1 else None
+
+
+def revenueUnit(rowLabel: str) -> float | None:
+    """표 행 라벨(예 '매출 (억원)')에서 매출 표시 단위를 뽑는다."""
+    if "조" in rowLabel:
+        return 1e12
+    if "억" in rowLabel:
+        return 1e8
+    return None
+
+
+def auditTechStoryPost(path: str):
+    """tech-story(다회사) 글의 회사별 매출 행을 표-회사 바인딩으로 실측 대조.
+
+    매출은 raw 값이라 drift 가 바로 잡힌다. 이익률(%) 행은 파생이라 audit_seo 깊이
+    게이트와 사람 검증에 맡기고 여기서는 건너뛴다. 회사보고서용 auditPost 와 달리
+    표마다 Company 코드를 다시 바인딩하는 것이 핵심."""
+    text = Path(path).read_text(encoding="utf-8")
+    tables = findFinanceTables(text)
+    if not tables:
+        return [{"path": path, "warn": "no finance tables found"}]
+
+    companies: dict[str, object] = {}
+    issues = []
+    for t in tables:
+        code = extractBlockCode(t["code"])
+        if not code:
+            continue  # 다회사 for-loop 블록은 표-회사 매칭 모호 → 건너뜀
+        if code not in companies:
+            try:
+                companies[code] = dartlab.Company(code)
+            except Exception as e:  # noqa: BLE001
+                issues.append({"path": path, "code": code, "error": f"load failed: {e}"})
+                companies[code] = None
+        c = companies[code]
+        if c is None:
+            continue
+        try:
+            df = c.select("IS", ["매출액"], freq="Y")
+        except Exception as e:  # noqa: BLE001
+            issues.append({"path": path, "code": code, "error": f"select failed: {e}"})
+            continue
+        actual = {}
+        for r in df.to_dicts():
+            if r.get("항목") == "매출액":
+                actual = {k: v for k, v in r.items() if isinstance(k, str) and k.isdigit() and len(k) == 4}
+        rows, _ = parseTable(t["table"])
+        if not rows:
+            continue
+        for label, yearValues in rows:
+            if "매출" not in label:
+                continue
+            unit = revenueUnit(label)
+            if unit is None:
+                continue
+            for year, tableV in yearValues.items():
+                if tableV is None or not (year.isdigit() and len(year) == 4):
+                    continue
+                actV = actual.get(year)
+                if actV is None:
+                    continue
+                norm = actV / unit
+                tol = max(0.6, abs(norm) * 0.02)
+                if abs(norm - tableV) > tol:
+                    issues.append(
+                        {
+                            "path": Path(path).parent.name,
+                            "code": code,
+                            "line": t["lineApprox"],
+                            "label": label,
+                            "year": year,
+                            "table": tableV,
+                            "actual": round(norm, 1),
+                        }
+                    )
+    return issues
+
+
 def auditPost(code: str, path: str):
     text = Path(path).read_text(encoding="utf-8")
     tables = findFinanceTables(text)
@@ -267,7 +352,11 @@ def main():
     all_issues = []
     for code, path in posts:
         print(f"\n=== {code} {Path(path).parent.name} ===")
-        issues = auditPost(code, path)
+        # tech-story(다회사) 글은 표-회사 바인딩 auditor 로 라우팅. code 인자는 무시(표별로 재바인딩).
+        if "08-tech-story" in path.replace("\\", "/"):
+            issues = auditTechStoryPost(path)
+        else:
+            issues = auditPost(code, path)
         if not issues:
             print("  OK — all values match")
             continue

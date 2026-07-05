@@ -14,7 +14,13 @@ try:
 except ImportError:  # pragma: no cover
     yaml = None
 
-BLOG_DIR = "blog/05-company-reports"
+# 순회 대상 카테고리. 08(기술이야기)·06(데이터리포트)도 스캔한다.
+# (과거 05 만 스캔해 08 이 무검증으로 새던 회귀 가드. 부실한 글이 조용히 발간되지 못하게.)
+BLOG_DIRS = [
+    "blog/05-company-reports",
+    "blog/06-data-reports",
+    "blog/08-tech-story",
+]
 
 # 카드 캐러셀 손글 narration 1줄 권장 최대 길이(슬라이드 가독).
 CAROUSEL_NOTE_MAX = 140
@@ -143,6 +149,68 @@ FORBIDDEN_PATTERNS = [
     r"~하겠습니다$",
     r"분석해 보겠습니다",
 ]
+
+# 2015~2026 사이 연도 토큰. 데이터 표의 시계열 깊이 판정용.
+YEAR_RE = re.compile(r"20(1[5-9]|2[0-6])")
+
+
+def _table_cells(row: str) -> list:
+    return [c.strip() for c in row.strip().strip("|").split("|")]
+
+
+def _iter_tables(body: str):
+    """본문에서 연속된 | 로 시작하는 줄을 표 블록으로 묶어 반환한다."""
+    cur = []
+    for line in body.splitlines():
+        if line.strip().startswith("|"):
+            cur.append(line.strip())
+        else:
+            if len(cur) >= 2:
+                yield cur
+            cur = []
+    if len(cur) >= 2:
+        yield cur
+
+
+def analyze_depth(body: str) -> dict:
+    """데이터 표의 시계열 깊이를 계량한다. 부실(단년 스냅샷) 글 자동 감지.
+
+    trajectory_tables : 헤더에 서로 다른 연도 컬럼이 3개 이상인 표(다년 추이).
+    single_year_tables : 기간 표인데 연도 컬럼이 1개 이하인 단년 스냅샷.
+    mixed_base_year : 한 표 안에서 선언 연도와 다른 연도가 데이터 셀에 섞인 표(기준연도 혼재).
+    검증표(헤더에 'dartlab'/'호출'/'본문 수치')는 계산에서 제외.
+    """
+    trajectory = single_year = mixed = period = 0
+    for tbl in _iter_tables(body):
+        header = _table_cells(tbl[0])
+        if any(("dartlab" in h) or ("호출" in h) or ("본문 수치" in h) for h in header):
+            continue  # 검증표는 데이터 표가 아님
+        header_year_cols = {m.group(0) for h in header[1:] for m in YEAR_RE.finditer(h)}
+        decl_years = {m.group(0) for m in YEAR_RE.finditer(header[0])} if header else set()
+        data_rows = [_table_cells(r) for r in tbl[2:]] if len(tbl) >= 3 else []
+        row_years = {m.group(0) for r in data_rows for cell in r for m in YEAR_RE.finditer(cell)}
+        if not (header_year_cols or decl_years or row_years):
+            continue  # 연도 없는 표(설명·용어·KPI)는 데이터 표 아님
+        period += 1
+        n_years = len(header_year_cols)
+        if n_years >= 3:
+            trajectory += 1
+        elif n_years <= 1:
+            single_year += 1
+        # 기준연도 혼재: 헤더 선언연도와 다른 연도가 셀에 있거나, 셀에 연도가 2개 이상 섞임
+        if (decl_years and (row_years - decl_years)) or len(row_years) >= 2:
+            mixed += 1
+    return {
+        "period_tables": period,
+        "trajectory_tables": trajectory,
+        "single_year_tables": single_year,
+        "mixed_base_year": mixed,
+    }
+
+
+def _category(frontmatter: str) -> str:
+    m = re.search(r"^category:\s*(.+)$", frontmatter, re.MULTILINE)
+    return m.group(1).strip().strip('"').strip("'") if m else ""
 
 
 def score_post(folder_path: str) -> dict:
@@ -305,6 +373,10 @@ def score_post(folder_path: str) -> dict:
     total += code_score
     max_total += code_max
 
+    # 8. 시계열 깊이 (점수 외 진단: 단년 스냅샷 부실 감지)
+    scores["depth"] = analyze_depth(body)
+    scores["category"] = _category(frontmatter)
+
     scores["total"] = total
     scores["max"] = max_total
     scores["pct"] = round(total / max_total * 100) if max_total > 0 else 0
@@ -320,35 +392,65 @@ def score_post(folder_path: str) -> dict:
     return scores
 
 
-def main():
-    if not os.path.isdir(BLOG_DIR):
-        print(f"디렉토리 없음: {BLOG_DIR}")
-        sys.exit(1)
-
-    results = []
-    for folder in sorted(os.listdir(BLOG_DIR)):
-        fp = os.path.join(BLOG_DIR, folder)
-        if not os.path.isdir(fp):
+def _iter_post_dirs():
+    """등록된 모든 카테고리 폴더의 글 폴더를 (경로) 로 순회."""
+    for blog_dir in BLOG_DIRS:
+        if not os.path.isdir(blog_dir):
             continue
+        for folder in sorted(os.listdir(blog_dir)):
+            fp = os.path.join(blog_dir, folder)
+            if os.path.isdir(fp):
+                yield fp
+
+
+def main():
+    results = []
+    for fp in _iter_post_dirs():
         s = score_post(fp)
         if s:
-            results.append((folder, s))
+            results.append((os.path.relpath(fp).replace("\\", "/"), s))
 
     # 콘솔 출력
-    print(f"\n{'=' * 80}")
-    print(f"블로그 SEO 스코어링: {len(results)}편")
-    print(f"{'=' * 80}\n")
+    print(f"\n{'=' * 96}")
+    print(f"블로그 SEO+깊이 스코어링: {len(results)}편  ({', '.join(BLOG_DIRS)})")
+    print(f"{'=' * 96}\n")
 
-    print(f"{'글':<45} {'점수':>6} {'건강':>4} {'글자':>7} {'H2':>4} {'링크':>4} {'SVG':>4} {'IMG':>4} {'코드':>4}")
-    print("-" * 90)
+    print(f"{'글':<50} {'점수':>6} {'건강':>4} {'글자':>7} {'H2':>4} {'궤적':>4} {'단년':>4} {'SVG':>4} {'코드':>4}")
+    print("-" * 96)
 
     for folder, s in results:
-        name = folder[:44]
+        name = folder[-49:]
+        d = s.get("depth", {})
         print(
-            f"{name:<45} {s['pct']:>5}% {s['health']:>4} {s['length_chars']:>6} {s['h2_count']:>4} {s['internal_links_count']:>4} {s['svg_count']:>4} {s['img_count']:>4} {s['code_count']:>4}"
+            f"{name:<50} {s['pct']:>5}% {s['health']:>4} {s['length_chars']:>6} {s['h2_count']:>4} "
+            f"{d.get('trajectory_tables', 0):>4} {d.get('single_year_tables', 0):>4} {s['svg_count']:>4} {s['code_count']:>4}"
         )
 
-    # 약한 글 경고
+    # 깊이 미달 감지: 기술이야기 글이 데이터 표를 3개 이상 두고도 다년 추이 표가
+    # 2개 미만이면 단년 스냅샷 부실로 본다 (05 휴머노이드가 샜던 구멍).
+    # 기업보고서(05-company-reports)는 다년 표를 라이브 `<CompanyFinancials>` 태그로
+    # 렌더하므로 마크다운 궤적표 기준이 맞지 않아 하드 게이트에서 제외한다.
+    thin = []
+    for folder, s in results:
+        d = s.get("depth", {})
+        if s.get("category") == "tech-story":
+            if d.get("period_tables", 0) >= 3 and d.get("trajectory_tables", 0) < 2:
+                thin.append((folder, s))
+    mixed = [(f, s) for f, s in results if s.get("depth", {}).get("mixed_base_year", 0) > 0]
+
+    if thin:
+        print(f"\n⚠️ 깊이 미달 후보 ({len(thin)}편): 회사별 다년 추이 표 부족(단년 스냅샷 위주)")
+        for f, s in thin:
+            d = s["depth"]
+            print(
+                f"  🔴 {f}: 궤적표 {d['trajectory_tables']} / 단년 {d['single_year_tables']} / 기간표 {d['period_tables']}"
+            )
+    if mixed:
+        print(f"\n🟡 기준연도 혼재 표 ({len(mixed)}편): 한 표에 서로 다른 연도가 섞임(각주로 명시했는지 확인)")
+        for f, s in mixed:
+            print(f"  🟡 {f}: 혼재 표 {s['depth']['mixed_base_year']}개")
+
+    # 약한 글 경고 (기존 SEO 점수)
     weak = [(f, s) for f, s in results if s["pct"] < 70]
     if weak:
         print(f"\n⚠️ 리라이트 후보 ({len(weak)}편):")
@@ -362,25 +464,30 @@ def main():
                 issues.append(f"글자수 {s['length_chars']}")
             print(f"  🔴 {f}: {s['pct']}%: {', '.join(issues)}")
 
-    print(f"\n평균: {sum(s['pct'] for _, s in results) // len(results)}%")
+    if results:
+        print(f"\n평균: {sum(s['pct'] for _, s in results) // len(results)}%")
 
     # 카드 캐러셀 큐레이션 검증. `carousel:` 블록 있는 글만.
     car_issues = []
-    for folder in sorted(os.listdir(BLOG_DIR)):
-        fp = os.path.join(BLOG_DIR, folder)
-        if os.path.isdir(fp):
-            for level, msg in validate_carousel(fp):
-                car_issues.append((folder, level, msg))
+    for fp in _iter_post_dirs():
+        for level, msg in validate_carousel(fp):
+            car_issues.append((os.path.relpath(fp).replace("\\", "/"), level, msg))
+    car_errs = [c for c in car_issues if c[1] == "error"]
     if car_issues:
-        errs = [c for c in car_issues if c[1] == "error"]
-        print(f"\n🎠 캐러셀 검증: {len(car_issues)}건 ({len(errs)} error):")
+        print(f"\n🎠 캐러셀 검증: {len(car_issues)}건 ({len(car_errs)} error):")
         for folder, level, msg in car_issues:
             mark = "🔴" if level == "error" else "🟡"
             print(f"  {mark} {folder}: {msg}")
-        if errs:
-            sys.exit(1)
     elif yaml is not None:
-        print("🎠 캐러셀 검증: carousel: 블록 없음(자동 투영만) 또는 0 이슈.")
+        print("\n🎠 캐러셀 검증: carousel: 블록 없음(자동 투영만) 또는 0 이슈.")
+
+    # 종료 코드: 캐러셀 error 는 즉시 실패. 깊이 미달은 ALLOW_THIN_TABLES=1 로 우회 가능.
+    fail = bool(car_errs)
+    if thin and os.environ.get("ALLOW_THIN_TABLES") != "1":
+        print(f"\n❌ 깊이 미달 {len(thin)}편. 회사별 다년 추이 표를 보강하거나 ALLOW_THIN_TABLES=1 로 우회.")
+        fail = True
+    if fail:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
