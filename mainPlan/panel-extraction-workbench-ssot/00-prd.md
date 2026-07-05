@@ -271,3 +271,34 @@ cover 구조메타·해소된 cross-ref·multiaxis cell 분해는 상한 밖.
 **정직 잔여(Tier-2, 후속 커밋)**: census 를 note+apiType 외 narrative/table 단위까지 열거하도록 확장(완전성
 *측정*을 인벤토리 수준으로), 시총·섹터·era 층화. 인벤토리 *메커니즘* 자체는 완결(전 단위 열거+추출).
 ```
+
+## 9. EDGAR 동급 + 전 종목 완전성 census (2026-07-05, 운영자 "edgar도 다했나"·"모든 종목 눈으로 훑어라")
+
+운영자 재도전에 실측으로 답: 이전 인벤토리는 KR 전용이고 US 는 얇은 edgar panel(재무 5표 + 회사별 편차 큰 raw
+narrative)만 잡아 동급 아니었다. 원인 = US 보고서 본문(SEC Item 27+11)은 별도 표면 `docs/sections` 에 있는데
+inventory 가 안 읽었고, workbench get 이 dart panel 을 하드코딩해 US 재무제표 추출조차 깨져 있었다.
+
+**전 종목 실측 우선(눈으로 처음부터 끝까지)**: 손 표본 대신 전 우주 survey(2930 KR panel + 7070 US docs) 전수
+열거로 실재 unit 을 빈도로 확인. KR note family 531·narrative 936·form 90·table 7880, US SEC Item topic 753.
+카탈로그(88 개념)는 head 만 = 생존편향 실체 확인. 전문에이전트 2명(도메인 parity·아키텍처 배선) 2 라운드 토론.
+
+**산출 (commit 16294a54e·2114a56a8):**
+- `providers/edgar/docs/sections/topics.py`: topic(form 별 itemId) 라벨 택소노미 SSOT(company 흩어진 dict 이관).
+- `providers/edgar/docs/sections/topicUnits.py`: 경량 열거기(topic 컬럼만 projection, 본문 무접촉, OOM 안전).
+- `frame/inventory.py`: US 는 `_itemUnits`(docs Item) + 재무 5표. handle 을 데이터에서 열거(고정 dict 아님)라
+  round-trip by construction. `frame/workbench.py`: `_loadBoard` dart/edgar 스위치 SSOT + item handle sections slice.
+- `core/extractionCatalog.py`: EDGAR Item first-class(28 category map + reverse index + US 전용 8 edgarOnly) +
+  `edgarItemCoverage`(US side 대칭 측정) + 실측 고빈도 신규 노트 2. `tests/audit/inventoryUniverseCensus.py`:
+  전 종목 unit 전수 census(2-tier 완전성 measured, baseline 부채원장).
+
+**2-tier 완전성 정의(도메인 감사)**: Tier A mechanical = 우주 전 unit 열거·round-trip 100%(KR 9437 distinct·US
+753 topic). Tier B curated head = 고빈도 표준만 카탈로그(≥80% mandatory·30~80% 재량·<30% inventory-only).
+완전 = (Tier A 100%, Tier B head) + 잔여 tail 명시. 손 카탈로그 100% 아님(그건 덕지덕지·불가능).
+
+**실측**: AAPL US 인벤토리 39(item 34 + 재무 5), round-trip 34/34·collision 0·handle form-namespaced.
+KR 005930 206 무회귀. Guard Index l0-l15 PASS. 신규 테스트: test_topics·test_topicUnits·US round-trip 게이트.
+
+**정직 잔여(후속)**: ① US narrative `extract(conceptId)` 는 None(topic-handle 경로가 US 추출 정본, 아키텍트
+후속 판정). ② 20-F Item 택소노미 미카탈로그(census 에 tail 로 정직 노출, ~1216 filer). ③ 변종 노트 코드
+(재무위험관리 D82238 vs D82239 등 동일개념 다른코드)는 mechanism 이 열거하되 census 에 미카탈로그로 노출(2-tier).
+```
