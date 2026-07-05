@@ -227,14 +227,23 @@ def main() -> int:
     for m in matches:
         status, body = post_to_hub(hub, token, m["topic"], m["slug"], m["notification"], ts)
         kind = classify(status)
+        b = body or {}
+        sent_n = int(b.get("sent") or 0)
+        failed_n = int(b.get("failed") or 0)
         if kind == "problem":
             problems.append(f"{m['topic']}:{m['slug']} 발송 실패(HTTP {status})")
         elif kind == "dup":
-            dup += 1  # 이미 보낸 매치(last-seen set) — 정상
+            dup += 1  # 이미 보낸 매치(last-seen set), 정상
+        elif sent_n == 0 and failed_n:
+            # 허브 전건 발송 실패(sent=0). 허브가 nonce 롤백해 다음 cron 재시도. RED 가시화(조용한 영구 미발화 방지).
+            problems.append(f"{m['topic']}:{m['slug']} 전건 발송 실패(failed={failed_n}, nonce 롤백·재시도 예정)")
         else:
             new_sent += 1
-            b = body or {}
-            print(f"[watch] {m['topic']}:{m['slug']} → sent={b.get('sent')}", flush=True)
+            if failed_n:  # 부분 실패: 일부 배송됨(nonce 유지). 조용한 절단 금지로 표면화하되 RED 는 아님.
+                print(
+                    f"::warning::{m['topic']}:{m['slug']} 부분 발송 실패(sent={sent_n}, failed={failed_n})", flush=True
+                )
+            print(f"[watch] {m['topic']}:{m['slug']} → sent={sent_n}", flush=True)
 
     print(f"[watch] 신규 발송 {new_sent}건 · 기존(dup) {dup}건 · 실패 {len(problems)}건", flush=True)
     if problems:

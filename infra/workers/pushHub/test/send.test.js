@@ -89,4 +89,27 @@ describe('/send 발송', () => {
 		const n = await env.PUSHHUB_DB.prepare('SELECT COUNT(*) AS c FROM subscriptions').first();
 		expect(n.c).toBe(0);
 	});
+	it('구독 0 → nonce 롤백(이후 구독자 배송 가능)', async () => {
+		const first = await send({ nonce: 'nce-0sub', body: NOTIF });
+		expect((await first.json()).sent).toBe(0);
+		// 이후 구독자 생김 → 같은 nonce 재-POST 가 409 아니라 배송돼야(nonce 롤백됨).
+		await seedSub();
+		fetchMock.get(FCM_ORIGIN).intercept({ method: 'POST', path: FCM_PATH }).reply(201, '');
+		const second = await send({ nonce: 'nce-0sub', body: NOTIF });
+		expect(second.status).toBe(200);
+		expect((await second.json()).sent).toBe(1);
+	});
+	it('전건 발송 실패(5xx) → nonce 롤백(다음 cron 재시도)', async () => {
+		await seedSub();
+		fetchMock.get(FCM_ORIGIN).intercept({ method: 'POST', path: FCM_PATH }).reply(500, '');
+		const first = await send({ nonce: 'nce-fail', body: NOTIF });
+		const j1 = await first.json();
+		expect(j1.sent).toBe(0);
+		expect(j1.failed).toBe(1);
+		// nonce 롤백됐으니 재-POST 는 409 아님. 이번엔 201 로 배송 성공.
+		fetchMock.get(FCM_ORIGIN).intercept({ method: 'POST', path: FCM_PATH }).reply(201, '');
+		const retry = await send({ nonce: 'nce-fail', body: NOTIF });
+		expect(retry.status).toBe(200);
+		expect((await retry.json()).sent).toBe(1);
+	});
 });

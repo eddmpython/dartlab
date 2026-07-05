@@ -271,6 +271,8 @@ async function handleSend(req, env) {
 	}
 
 	if (!subs.length) {
+		// 구독자 0 = 아직 아무도 못 받음. nonce 롤백해 이후 구독자가 in-window 매치를 받게 한다(영구 소실 방지).
+		try { await env.PUSHHUB_DB.prepare(`DELETE FROM sentNonce WHERE nonce=?`).bind(nonce).run(); } catch {}
 		return new Response(JSON.stringify({ sent: 0, pruned: 0, failed: 0 }), { headers: { 'Content-Type': 'application/json' } });
 	}
 
@@ -327,6 +329,11 @@ async function handleSend(req, env) {
 		}
 	}
 
+	// 전건 실패(sent==0 && failed>0) = 일시 장애(FCM 5xx/429). nonce 롤백해 다음 cron 재시도(영구 미배송 방지).
+	// 부분 성공(sent>0)은 nonce 유지(배송된 구독자 재발송 스팸 방지). failed 는 body 로 러너에 노출.
+	if (sent === 0 && failed > 0) {
+		try { await env.PUSHHUB_DB.prepare(`DELETE FROM sentNonce WHERE nonce=?`).bind(nonce).run(); } catch {}
+	}
 	return new Response(JSON.stringify({ sent, pruned, failed }), { headers: { 'Content-Type': 'application/json' } });
 }
 
