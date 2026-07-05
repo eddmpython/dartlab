@@ -300,6 +300,28 @@ def test_series_strips_stock_identity(tmp_path: Path) -> None:
     assert c2["code"] == "000660" and c2["cardType"] == "company"
 
 
+def test_tech_story_requires_plan(tmp_path: Path) -> None:
+    """기술이야기(설명) 카드는 plan 을 08-tech-story 에서 찾고, plan 없이는 발행 못 한다(기획 강제).
+    회사카드 틀에 얹어 기획을 건너뛴 회귀 봉쇄. 회사(company) 카드는 기존대로 plan 선택."""
+    tech = tmp_path / "tech"
+    (tech / "01-sand-to-semiconductor").mkdir(parents=True)
+    tc = {"code": "", "slug": "sand-to-semiconductor", "cardType": "tech-story", "name": "반도체 공정", "slides": []}
+    # plan 경로 라우팅: tech-story → tech_dir 검색(회사리포트 폴더 아님)
+    p = cp.plan_path_for_contract("sand-to-semiconductor", tc, tech_dir=tech)
+    assert p is not None and p.parent.name == "01-sand-to-semiconductor" and p.name == "cards.plan.json"
+    # 강제: plan 파일 없으면 기획 게이트가 발행 차단(require_plan=False 여도)
+    errs, _ = cp.validate_contract_plan_gate(
+        {"sand-to-semiconductor": tc}, blog_dir=tmp_path / "b", issues_dir=tmp_path / "i", tech_dir=tech
+    )
+    assert any("기획 필수" in e for e in errs)
+    # 회사 카드는 plan 없어도 통과(회귀 없음)
+    comp = {"code": "005930", "slug": "x", "cardType": "company", "name": "삼성전자", "slides": []}
+    errs2, _ = cp.validate_contract_plan_gate(
+        {"x": comp}, blog_dir=tmp_path / "b", issues_dir=tmp_path / "i", tech_dir=tech
+    )
+    assert not any("없음" in e for e in errs2)
+
+
 def test_visual_contract_gate() -> None:
     """하이브리드 visual 렌더링 계약 게이트 + 확장 루프 — 렌더러 구현분만 통과, 나머지는 '추가하라'로 막는다."""
 

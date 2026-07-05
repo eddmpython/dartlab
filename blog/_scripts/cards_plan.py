@@ -18,6 +18,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 BLOG_DIR = ROOT / "blog" / "05-company-reports"
 ISSUES_DIR = ROOT / "blog" / "_issues"
+TECH_DIR = ROOT / "blog" / "08-tech-story"  # 기술이야기(설명 시리즈) 카드 plan 위치. 회사리포트 폴더 아님
 SNS_ASSETS_DIR = ROOT / "sns" / "assets"
 PLAN_FILE = "cards.plan.json"
 
@@ -1036,13 +1037,20 @@ def validate_plan_file(path: Path, *, require_passed: bool = True, require_asset
 
 
 def plan_path_for_contract(
-    slug: str, contract: dict[str, Any], blog_dir: Path = BLOG_DIR, issues_dir: Path = ISSUES_DIR
+    slug: str,
+    contract: dict[str, Any],
+    blog_dir: Path = BLOG_DIR,
+    issues_dir: Path = ISSUES_DIR,
+    tech_dir: Path = TECH_DIR,
 ) -> Path | None:
     if contract.get("standalone"):
         return issues_dir / slug / PLAN_FILE
-    for folder in blog_dir.glob(f"*-{slug}"):
-        if folder.is_dir():
-            return folder / PLAN_FILE
+    # 기술이야기(설명) 시리즈 카드는 08-tech-story 에서 plan 을 찾는다(회사리포트 폴더엔 없다).
+    search_dirs = [tech_dir, blog_dir] if contract.get("cardType") == "tech-story" else [blog_dir]
+    for d in search_dirs:
+        for folder in d.glob(f"*-{slug}"):
+            if folder.is_dir():
+                return folder / PLAN_FILE
     return None
 
 
@@ -1051,6 +1059,7 @@ def validate_contract_plan_gate(
     *,
     blog_dir: Path = BLOG_DIR,
     issues_dir: Path = ISSUES_DIR,
+    tech_dir: Path = TECH_DIR,
     require_plan: bool = False,
     require_passed: bool = True,
     require_assets: bool = False,
@@ -1058,11 +1067,13 @@ def validate_contract_plan_gate(
     errors: list[str] = []
     stats = {"contracts": len(contracts), "plans": 0, "missing": 0, "passed": 0}
     for slug, contract in sorted(contracts.items()):
-        plan_path = plan_path_for_contract(slug, contract, blog_dir=blog_dir, issues_dir=issues_dir)
+        plan_path = plan_path_for_contract(slug, contract, blog_dir=blog_dir, issues_dir=issues_dir, tech_dir=tech_dir)
+        # 기술이야기(설명) 카드는 기획 필수. plan 없이 발행 못 한다(회사카드 틀에 얹어 기획을 건너뛴 회귀 봉쇄).
+        is_tech = contract.get("cardType") == "tech-story"
         if not plan_path or not plan_path.exists():
-            if require_plan:
+            if require_plan or is_tech:
                 stats["missing"] += 1
-                errors.append(f"{slug}: cards.plan.json 없음")
+                errors.append(f"{slug}: cards.plan.json 없음{' (기술이야기는 기획 필수)' if is_tech else ''}")
             continue
         stats["plans"] += 1
         plan, load_errors = load_plan_file(plan_path)
