@@ -366,3 +366,52 @@ def testCorrClusterEffNAndShrink():
     assert 2.4 < certify.corrClusterEffN(wIndep) <= 3.01
     sh = certify.empiricalBayesShrink(np.array([0.10, 0.0, -0.10, 0.0, 0.0]), np.array([0.05] * 5))
     assert abs(sh[0]) < 0.10  # 극단 추정이 대평균으로 수축
+
+
+def _conformalPanel(sigmaByWeek, nWeeks, nCodes, seed):
+    rng = np.random.default_rng(seed)
+    rows = []
+    for t in range(nWeeks):
+        sig = sigmaByWeek(t)
+        for c in range(nCodes):
+            rows.append(
+                {
+                    "week": 202600 + t,
+                    "code": f"c{c:02d}",
+                    "pred": 0.0,
+                    "actual": float(rng.normal(0, sig)),
+                    "scale": 1.0,
+                    "size": float(rng.random()),
+                }
+            )
+    return pl.DataFrame(rows)
+
+
+def testWinklerRewardsTightCoverage():
+    from dartlab.simulate import conformal
+
+    y = np.array([0.0])
+    tight = conformal.winklerScore(np.array([-0.1]), np.array([0.1]), y, 0.2)[0]
+    wide = conformal.winklerScore(np.array([-0.5]), np.array([0.5]), y, 0.2)[0]
+    miss = conformal.winklerScore(np.array([0.2]), np.array([0.4]), y, 0.2)[0]
+    assert tight < wide  # 좁고 적중 = 낮음
+    assert miss > wide  # 미적중 = 페널티
+
+
+def testConformalCoverageConvergesToDeclared():
+    from dartlab.simulate import conformal
+
+    panel = _conformalPanel(lambda t: 0.02, 150, 40, 5)
+    res = conformal.aciBands(panel, alpha0=0.2, gamma=0.1)
+    assert 0.73 <= res["coverage"] <= 0.87  # 선언 80% 에 실측 커버리지 수렴
+    assert res["byBucket"].height == 5  # Mondrian 버킷별 커버리지 병기
+
+
+def testConformalAdaptsToDistributionShift():
+    from dartlab.simulate import conformal
+
+    panel = _conformalPanel(lambda t: 0.02 if t < 75 else 0.06, 150, 40, 9)
+    res = conformal.aciBands(panel, alpha0=0.2, gamma=0.2)
+    cc = res["coverageCurve"].filter(pl.col("week") >= 202600 + 100)  # 이동 후 안정 구간
+    lateCoverage = float(cc["coverage"].mean())
+    assert 0.70 <= lateCoverage <= 0.88  # 분산 3배 이동에도 장기 커버리지 선언값 근방 유지
