@@ -29,6 +29,26 @@
 
 ---
 
+## 0c. ★2026-07-05 TIER-1 신뢰성 척추 실장 (판독 엔진 06 §4~§7b, 설계 아닌 실코드+실데이터 검증)
+
+**배경**: "prd구현 완성한거맞나" 도전에 적대 감사 워크플로(229 에이전트, 223 요구 항목별 채점) 실행 → 완전구현 25 / 부분 75 / 미구현 123 확정. 이전 "R0~R5 완성" 주장은 오버클레임(척추만 있고 규율 메커니즘 다수 미실장) 확인. 이후 정공법으로 신뢰성 척추(anti-overfitting·calibration·cost 규율 = dartlab 시그니처 핵심)를 실코드로 닫음. 00 §8c "최소 검증척추 빌드로 재정박" 권고의 실행이다.
+
+**신규/개선 실코드 (전부 test-lock 통과 + dartlabGuard strict l0-l15 7/7 PASS + 실데이터 검증)**:
+- `costs.py`(신규): Corwin-Schultz·Abdi-Ranaldo 고저가 스프레드 추정(PIT 트레일링) + 거래일자 세율표(2026 0.20%) + KRX 틱 하한 + 기관비용 x2 → 종목별 왕복 비용 바닥. scoreReadingsDue net 생산자 배선. **실데이터: floor 중앙 1.13%/주(스펙 0.9~1.0% 정합), 소형 비쌈 재현.**
+- `certify.py`(신규): BH/BHY FDR + Hansen SPA + Romano-Wolf stepdown(정상성 부트스트랩 주단위, studentized pivotal, seed 결정론) + Galwey 상관클러스터 effN + empirical-Bayes 수축. **실데이터: volShock t6.3·dilution t3.5·E/P t3.2 인증 / B/M·가격모멘텀·리버설 동물원구분불가(KR 가격엣지 0 재현).**
+- `conformal.py`(신규): 횡단면 split conformal x 시간축 ACI(Gibbs-Candes α 피드백) + Winkler + Mondrian 버킷 커버리지. 선언 80% 실측 수렴 + 분산 3배 이동 적응 검증.
+- `assume.py`(신규): AssumptionLedgerRow 계약(단위·기간·source·status·반증조건) + 격자 enumerate + 벡터화 재조합 → perf/configScores(sweep 직결) + 주간 봉인.
+- `regime.py`(신규): 결정론 4상 레짐 분류기(버전 해시 봉인=변경시 새 시리즈) + 조건태그 일치주 채점 + airtime 분모 + Giacomini-White 검정(자급 chi2).
+- `residual.py`(신규): MMC 동형 주별 횡단 OLS 직교화 → 증분 t로 중복 표면 이중계산 차단.
+- `runweek.py`(재작성): 전 모듈 배선 = 발행→채점→AdaHedge 결합가중→certify 인증→비용 net 게이트(회피=red-flag)→레짐태그→board·top10→해시체인. 블록 §7b 필드(비용바닥·레짐·결합가중·인증요약·코드해시). **실데이터 AdaHedge regret 5.27 << 경계 34.0.**
+- `reading.py`/`readingLedger.py`: refs·condition 1급 필드. `readingCycle.py`: 기권행 1급 발행(완전성 강제, silent 누락 0) + refs 채움. `readingScorecard.py`: surfaceWeeklySpreads 노출 + 기권률 채점.
+
+**측정 델타**: 감사 25/223 완전구현 → TIER-1 후 약 62/223(신뢰성 척추 ~37항 closed). 커밋 9개(d4417ecad~53f3cee1d), 유닛별 test-lock + 게이트 동행. tests/simulate/test_readingEngine.py 33 통과.
+
+**남은 것(정직)**: TIER-2 breadth 미착수 = 레버 원장(10, ~30항)·프로파일러 8축(11, ~12항)·캐스케이드 8층 관계전파(11 §4, ~13항)·nowcast/eventtime 일단위(§5c, ~10항)·US/EDGAR parity(~10항). UI(R6, ~20항) 운영자 보류. **"PRD 완성" 아님. 척추(신호 신뢰성)는 실장·검증, 폭(레버·프로파일·연쇄·시장)은 후속.** push 보류(미푸시 history + UI 인접).
+
+---
+
 > ⚠ v0.1 폐기 박제: 이전 04는 "초기 아키텍처 = story 동격 L3 `scenarioWorkbench`, 공개 verb `dartlab.scenario`(미결)"을 현재 결정으로 들고 있었다. **01 §3이 이를 코드로 기각**했다(story=순수 렌더러라 동거 불가, `scenario` 명사형은 `macro.scenarios`/`ScenarioOverlay` 충돌). 본 v0.2가 정본.
 
 ---
