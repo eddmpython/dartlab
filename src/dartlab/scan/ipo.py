@@ -49,10 +49,22 @@ _OUTPUT_SCHEMA = {
 }
 
 
-def _latestFullProspectuses(client, dateFrom: str | None, verbose: bool) -> tuple[list[dict], str]:
-    """listFilings(corp_cls=E) → IPO 통과분 중 발행사별 최신 FULL 신고서 (CORRECTION 제외).
+def _discoverIpoIssuers(
+    client, *, dateFrom: str | None = None, includeConfirmation: bool = False, verbose: bool = True
+) -> tuple[list[dict], str]:
+    """corp_cls=E 증권신고서 발굴 → 발행사별 최신 FULL 신고서 (+ 옵션 발행조건확정 conf doc). 발굴/그룹핑 SSOT.
 
-    client None 이면 내부 생성. 호출측이 API 키 없이 mock 으로 검증 가능하게 지연 생성.
+    listFilings(E, C 발행공시) → classifyIpo 필터 → corp_code 그룹핑. scan("ipo")·buildIpoReports(베이크)가
+    공유하던 로직의 파이썬 단일 소스(파싱은 buildIpoReport 별도 위임). TS groupIpoFilings(워커)는 크로스런타임
+    미러라 별개 유지. client None 이면 내부 지연 생성(mock 검증 편의).
+
+    Args:
+        dateFrom: "YYYYMMDD" 이상만 (None=최근 IPO_WINDOW_DAYS 일).
+        includeConfirmation: True 면 발행사별 최신 [발행조건확정] doc 을 conf 로 붙임(베이크 확정공모가 병합용).
+
+    Returns:
+        (issuers, asOf). issuers = [{"full": meta(+_isSpac), "conf": meta|None}] (FULL 없는 발행사 제외),
+        asOf = 발굴 기준일(YYYYMMDD).
     """
     from dartlab.gather.dart.disclosure import listFilings
     from dartlab.providers.dart.securitiesRegistration import classifyIpo
@@ -67,31 +79,35 @@ def _latestFullProspectuses(client, dateFrom: str | None, verbose: bool) -> tupl
     if dateFrom and len(dateFrom) == 8:
         cand = date(int(dateFrom[:4]), int(dateFrom[4:6]), int(dateFrom[6:8]))
         start = max(start, cand)
-    # filingType="C"(발행공시) index-first — 효력발생안내·non-발행 E 노이즈 제외 (PRD 성능 척추).
-    df = listFilings(
-        client,
-        start=start.strftime("%Y%m%d"),
-        end=end.strftime("%Y%m%d"),
-        corpClass="E",
-        filingType="C",
-        fetchAll=True,
-    )
+    asOf = end.strftime("%Y%m%d")
+    # filingType="C"(발행공시) index-first. 효력발생안내·non-발행 E 노이즈 제외 (PRD 성능 척추).
+    df = listFilings(client, start=start.strftime("%Y%m%d"), end=asOf, corpClass="E", filingType="C", fetchAll=True)
     if df.height == 0:
-        return [], end.strftime("%Y%m%d")
+        return [], asOf
 
     byCorp: dict[str, dict] = {}
     for r in df.iter_rows(named=True):
         reportNm = r.get("report_nm") or ""
         c = classifyIpo(reportNm, r.get("corp_cls") or "", r.get("stock_code") or "", r.get("corp_name") or "")
-        if not c["isIpo"] or c["kind"] != "prospectus" or "발행조건확정" in reportNm:
-            continue  # FULL 신고서만 (발행조건확정=CORRECTION doc, 6 섹션 없음)
-        cc = r["corp_code"]
-        prev = byCorp.get(cc)
-        if prev is None or r["rcept_no"] > prev["rcept_no"]:
-            byCorp[cc] = {**r, "_isSpac": c["isSpac"]}
+        if not c["isIpo"]:
+            continue
+        slot = byCorp.setdefault(r["corp_code"], {"full": None, "conf": None})
+        if "발행조건확정" in reportNm:  # CORRECTION doc(6 섹션 없음). 확정공모가 병합용, FULL 아님.
+            if includeConfirmation and (slot["conf"] is None or r["rcept_no"] > slot["conf"]["rcept_no"]):
+                slot["conf"] = r
+        elif c["kind"] == "prospectus":
+            if slot["full"] is None or r["rcept_no"] > slot["full"]["rcept_no"]:
+                slot["full"] = {**r, "_isSpac": c["isSpac"]}
+    issuers = [v for v in byCorp.values() if v["full"] is not None]
     if verbose:
-        _log.info("IPO 발굴: %s~%s · 발행사 %d 곳", start, end, len(byCorp))
-    return list(byCorp.values()), end.strftime("%Y%m%d")
+        _log.info("IPO 발굴: %s~%s · 발행사 %d 곳", start, end, len(issuers))
+    return issuers, asOf
+
+
+def _latestFullProspectuses(client, dateFrom: str | None, verbose: bool) -> tuple[list[dict], str]:
+    """발행사별 최신 FULL 신고서 meta list + asOf. _discoverIpoIssuers 위임(scan 은 FULL 만 파싱, conf 불요)."""
+    issuers, asOf = _discoverIpoIssuers(client, dateFrom=dateFrom, includeConfirmation=False, verbose=verbose)
+    return [it["full"] for it in issuers], asOf
 
 
 def _parseRow(client, meta: dict, asOf: str) -> dict:

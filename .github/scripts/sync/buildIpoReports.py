@@ -5,8 +5,9 @@
 런타임에 못 돌린다. 그래서 퍼블릭엔 이 리포트의 SSOT 가 *부재*한다. 이 스크립트가 그 SSOT 를 처음
 생산한다. online DART→parse→HF push (allFilings·scan 과 동일 sync 데이터모델, 우회 굽기 아님).
 
-파서·렌더는 story.buildIpoReport 그대로 위임(엔진 재구현 0). 본 스크립트는 발굴·호출·직렬화·push 배관만.
-발굴은 최근 윈도(85 일, list.json 3 개월 제한)만 rebuild. 상장 후 발행사는 일반 Y/K 종목이 되어 윈도 밖으로 나간다.
+발굴/그룹핑은 scan.ipo._discoverIpoIssuers(단일 SSOT), 파서·렌더는 story.buildIpoReport 위임(재구현 0).
+본 스크립트는 호출·직렬화·push 배관만. 발굴 윈도는 최근 85 일(list.json 3 개월 제한). 상장 후 발행사는
+일반 Y/K 종목이 되어 윈도 밖으로 나간다.
 
 산출 2 파일 (buildAllFilingsRecent 의 recent/market_recent 2파일 분리 미러):
   - ``dart/ipo/reports.parquet`` = 라이브 롤링(최근 85 일, 발행사 ~30 곳, 수백KB). 터미널 whole-file 직독 +
@@ -27,7 +28,6 @@ import argparse
 import json
 import os
 import sys
-from datetime import date, timedelta
 from pathlib import Path
 
 import polars as pl
@@ -35,6 +35,8 @@ import polars as pl
 import dartlab.config as _cfg
 from dartlab.core.dataConfig import DATA_RELEASES, repoFor
 from dartlab.core.logger import getLogger
+
+# 발굴/그룹핑은 scan.ipo._discoverIpoIssuers(단일 SSOT) 위임, 파싱은 story.buildIpoReport 위임. datetime 직접 불요.
 
 _log = getLogger(__name__)
 
@@ -114,48 +116,11 @@ def buildHistory(dfLive: pl.DataFrame, *, mergeHf: bool = True) -> Path:
 
 
 def _discover(client, dateFrom: str | None, verbose: bool) -> list[dict]:
-    """listFilings(corp_cls=E, C001) → 발행사별 {full 신고서, 확정공모가 doc}. classifyIpo 위임(재구현 0).
+    """발행사별 {full 신고서, 확정공모가 doc}. scan.ipo._discoverIpoIssuers 위임(발굴/그룹핑 단일 SSOT, 재구현 0)."""
+    from dartlab.scan.ipo import _discoverIpoIssuers
 
-    TS groupIpoFilings 미러의 파이썬본: 발행사(corp_code)별 최신 FULL 신고서(초판·기재정정, 발행조건확정
-    제외) + 최신 [발행조건확정] doc. FULL 이 윈도 밖(확정만 잔존)이면 제외(파싱 대상 없음).
-    """
-    from dartlab.gather.dart.disclosure import listFilings
-    from dartlab.providers.dart.securitiesRegistration import classifyIpo
-
-    end = date.today()
-    start = end - timedelta(days=_WINDOW_DAYS)
-    if dateFrom and len(dateFrom) == 8:
-        cand = date(int(dateFrom[:4]), int(dateFrom[4:6]), int(dateFrom[6:8]))
-        start = max(start, cand)
-    df = listFilings(
-        client,
-        start=start.strftime("%Y%m%d"),
-        end=end.strftime("%Y%m%d"),
-        corpClass="E",
-        filingType="C",
-        fetchAll=True,
-    )
-    if df.height == 0:
-        return []
-
-    byCorp: dict[str, dict] = {}
-    for r in df.iter_rows(named=True):
-        reportNm = r.get("report_nm") or ""
-        c = classifyIpo(reportNm, r.get("corp_cls") or "", r.get("stock_code") or "", r.get("corp_name") or "")
-        if not c["isIpo"]:
-            continue
-        cc = r["corp_code"]
-        slot = byCorp.setdefault(cc, {"full": None, "conf": None})
-        if "발행조건확정" in reportNm:  # CORRECTION doc(6 섹션 없음). 확정공모가 병합용, 파싱 대상 아님.
-            if slot["conf"] is None or r["rcept_no"] > slot["conf"]["rcept_no"]:
-                slot["conf"] = r
-        elif c["kind"] == "prospectus":
-            if slot["full"] is None or r["rcept_no"] > slot["full"]["rcept_no"]:
-                slot["full"] = {**r, "_isSpac": c["isSpac"]}
-    out = [v for v in byCorp.values() if v["full"] is not None]
-    if verbose:
-        _log.info("IPO 발굴: %s~%s · 발행사 %d 곳", start, end, len(out))
-    return out
+    issuers, _asOf = _discoverIpoIssuers(client, dateFrom=dateFrom, includeConfirmation=True, verbose=verbose)
+    return issuers
 
 
 def build(*, dateFrom: str | None = None, verbose: bool = True) -> tuple[Path, Path]:
