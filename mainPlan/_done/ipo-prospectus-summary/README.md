@@ -1,3 +1,5 @@
+> ✅ 완료 (2026-07-03, dev). 엔진(파서·`scan("ipo")`·리포트) + 로컬 서빙 + 터미널 IPO 뷰 + HF 베이크 직독 구현·실렌더 검증. **운영계약 = engines/scan `scan("ipo")` 등록됨(Skill OS `engines.scan` §토픽).** ⏳ 운영자 롤아웃 잔여 2건(hfProxy 재배포·landing 눈검수 push). 베이크→왓치→알림 파이프라인 헬스체크 런북 = `../watcher-notify-platform/05-progress-ledger.md §감사`.
+
 # ipo-prospectus-summary
 
 GitHub Discussion #70 — IPO 공모 신고서 분석(증권신고서 지분증권 6카테고리 구조화 + 원문근거).

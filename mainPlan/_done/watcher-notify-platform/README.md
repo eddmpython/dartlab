@@ -1,3 +1,5 @@
+> ✅ 코드 완료 (2026-06-30, P1+P2 dev, 테스트 green). ⏳ 미배포·운영자 롤아웃 대기(런북 = `05-progress-ledger.md`). `05 §감사` = 현역 파이프라인 헬스체크 런북(하루 1회, 자동 = Data Audit 매일 05시 KST `monitorPipeline`). ⚠ **운영계약 Skill OS operation 스펙 미등록**(선례 `operation.dataDownloadCenter` 대비 갭. 배포 확정 후 `operation.notifyPipeline` 신설 필요. 운영자 결정 대기).
+
 # 왓처·알림 플랫폼 (watcher-notify-platform)
 
 DartLab 을 "보고 끝"이 아니라 "**변화가 생기면 먼저 알려주는**" 플랫폼으로 만든다. PWA 웹 푸시로
