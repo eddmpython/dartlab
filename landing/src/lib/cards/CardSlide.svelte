@@ -71,7 +71,7 @@
 	const photoMode = $derived(
 		card.kind === 'cover'
 			? 'cover'
-			: card.kind === 'editorialBeat' && card.visual
+			: (card.kind === 'editorialBeat' || card.kind === 'editorialStat') && card.visual
 				? 'dim' // 하이브리드(큰문장+시각) · 차트처럼 dim 처리해 증거가 읽히게
 				: EDITORIAL_KINDS.has(card.kind)
 					? 'editorial'
@@ -249,20 +249,29 @@
 				<div class="hybText">
 					{#if card.kicker}<span class="eyebrow">{card.kicker}</span>{/if}
 					<h2 class="hLine">{@render accent(card.line)}</h2>
-					{#if card.sub}<p class="eSub hSub">{stripDots(commaText(card.sub))}</p>{/if}
+					{#if card.sub}<p class="eSub hSub">{@render accent(card.sub)}</p>{/if}
 				</div>
 			</div>
 		{:else if card.kind === 'editorial' || card.kind === 'editorialBeat'}
 			<div class="editorial">
 				{#if card.kind === 'editorialBeat' && card.kicker}<span class="eyebrow">{card.kicker}</span>{/if}
 				<h2 class="eLine">{@render accent(card.line)}</h2>
-				{#if card.sub}<p class="eSub">{stripDots(commaText(card.sub))}</p>{/if}
+				{#if card.sub}<p class="eSub">{@render accent(card.sub)}</p>{/if}
+			</div>
+		{:else if card.kind === 'editorialStat' && card.visual}
+			<div class="hybrid statHybrid">
+				<div class="hViz">{@render visualBlock(card.visual)}</div>
+				<div class="hybText">
+					{#if card.kicker}<span class="eyebrow">{card.kicker}</span>{/if}
+					<div class="eStat" style="--eNumCq:{eStatGeo.numCq};--eUnitCq:{eStatGeo.unitCq}"><span class="eNum">{eStatGeo.big}</span>{#if card.unit}<span class="eUnit">{card.unit}</span>{/if}</div>
+					{#if card.context}<p class="eSub hSub">{@render accent(card.context)}</p>{/if}
+				</div>
 			</div>
 		{:else if card.kind === 'editorialStat'}
 			<div class="editorial">
 				{#if card.kicker}<span class="eyebrow">{card.kicker}</span>{/if}
 				<div class="eStat" style="--eNumCq:{eStatGeo.numCq};--eUnitCq:{eStatGeo.unitCq}"><span class="eNum">{eStatGeo.big}</span>{#if card.unit}<span class="eUnit">{card.unit}</span>{/if}</div>
-				{#if card.context}<p class="eSub">{stripDots(commaText(card.context))}</p>{/if}
+				{#if card.context}<p class="eSub">{@render accent(card.context)}</p>{/if}
 			</div>
 		{:else}
 			{#if card.heading}
@@ -643,6 +652,24 @@
 	}
 	.hSub {
 		flex: 0 0 auto;
+	}
+	.statHybrid .hViz {
+		flex: 1 1 58%;
+		justify-content: flex-start;
+	}
+	.statHybrid .hybText {
+		flex: 0 0 auto;
+	}
+	.statHybrid .eNum {
+		font-size: clamp(26px, calc(var(--eNumCq, 12) * 0.56cqw), 76px);
+		line-height: 0.98;
+	}
+	.statHybrid .eUnit {
+		font-size: clamp(13px, calc(var(--eUnitCq, 5) * 0.6cqw), 30px);
+	}
+	.statHybrid .eSub {
+		font-size: clamp(11px, 2.2cqw, 18px);
+		-webkit-line-clamp: 3;
 	}
 	.vCap {
 		margin: 0.12em 0 0;

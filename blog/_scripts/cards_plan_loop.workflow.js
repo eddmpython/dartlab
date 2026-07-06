@@ -184,7 +184,8 @@ const topic = A.topic
 const evidence = A.evidence
 const cardType = A.cardType || 'theme'
 const typeNote = TYPE_GUIDANCE[cardType] || TYPE_GUIDANCE.theme
-const PASS_MIN = 85
+const PASS_MIN = 92
+const MAX_ROUNDS = 8
 
 phase('기획')
 let plan = await agent(
@@ -217,7 +218,6 @@ const loopLog = []
 let verdict = null
 let skeptic = null
 let passed = false
-const MAX_ROUNDS = 4
 for (let round = 1; round <= MAX_ROUNDS; round++) {
   const [v, s] = await parallel([
     () => agent(
@@ -231,7 +231,7 @@ ${PRINCIPLES}
 ${evidence}
 
 특히 깐다:
-- 제목이 1초에 멈추는가. titleContract 후보 3개 이상, 독자 갭, 표지 약속, 선택 이유가 살아있는가. 설명형·총정리형·반복 템플릿 제목이면 제목훅 85 미만.
+- 제목이 1초에 멈추는가. titleContract 후보 3개 이상, 독자 갭, 표지 약속, 선택 이유가 살아있는가. 설명형·총정리형·반복 템플릿 제목이면 제목훅 92 미만.
 - 인사이트가 통념-반전-렌즈-메커니즘이 다 살아있고 의외인가. (재탕은 감점 요소지 단독 탈락 사유 아님.)
 - 변명해야 하는 억지 수치가 있나. 프레임이 제목 실제 주어와 일치하나.
 - 타입 지침을 어겼는가. 그래프가 주장을 증명하고 밀도 있나(분기 6점+), 큰문장 가려도 긴장이 남나.
@@ -273,7 +273,7 @@ ${JSON.stringify(plan)}`,
     skeptic: skeptic && skeptic.verdict, kills: (skeptic && skeptic.kills) || [], softNotes: (skeptic && skeptic.softNotes) || [],
     findings: (verdict && verdict.findings) || [], rationale: verdict && verdict.rationale, passed,
   })
-  if (passed) break
+  if (passed && round >= 2) break
   if (round === MAX_ROUNDS) break
   plan = await agent(
     `너는 dartlab 카드뉴스 기획작가다. 평가자와 회의자가 약점을 잡았다. 둘 다 모두 반영해 기획안을 다시 쓴다(전체 스키마 재출력). 통과가 목적이 아니라 진짜 좋은 카드가 목적이다. 회의자가 죽인 축은 표면 수정이 아니라 인사이트·프레임·이미지를 실제로 바꿔서 살려라.
@@ -303,6 +303,36 @@ ${JSON.stringify(plan)}
 개선된 전체 기획안을 스키마대로 낸다.`,
     { label: `기획작가 개선 r${round}`, phase: '평가개선', schema: PLAN_SCHEMA }
   )
+}
+
+plan.reviewGate = {
+  status: passed ? 'passed' : 'planned',
+  requiredRounds: [
+    { id: 'titleHook', status: passed ? 'passed' : 'todo' },
+    { id: 'writerPanel', status: passed ? 'passed' : 'todo' },
+    { id: 'honestyEvidence', status: passed ? 'passed' : 'todo' },
+    { id: 'imageFit', status: passed ? 'passed' : 'todo' },
+    { id: 'readerFit', status: passed ? 'passed' : 'todo' },
+    { id: 'reevaluation', status: passed ? 'passed' : 'todo' },
+  ],
+  decisionLog: loopLog.map((r) => ({
+    round: `r${r.round}`,
+    decision: r.passed ? 'passed' : 'revise',
+    note: r.rationale || JSON.stringify(r.findings || []),
+  })),
+  loopEvidence: {
+    workflow: 'cards_plan_loop.workflow.js',
+    rounds: loopLog.map((r) => ({
+      round: r.round,
+      planner: r.round === 1 ? '기획작가 초안' : '기획작가 개선안',
+      evaluator: r.rationale || JSON.stringify(r.findings || []),
+      skeptic: JSON.stringify({ verdict: r.skeptic, kills: r.kills || [], softNotes: r.softNotes || [] }),
+      decision: r.passed ? 'passed' : 'revise',
+      evaluatorScore: r.minScore,
+      plannerRevision: r.passed ? '최종 통과안' : '평가자와 회의자 지적을 반영해 다음 라운드에서 재작성',
+    })),
+    note: '기획작가, 평가자, 회의자 피드백 루프 실행 산물',
+  },
 }
 
 return { plan, loopLog, passed, rounds: loopLog.length, cardType }

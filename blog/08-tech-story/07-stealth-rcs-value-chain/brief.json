@@ -1,0 +1,289 @@
+{
+  "title": "스텔스는 정말 안 보일까",
+  "titleContract": {
+    "workingTitle": "스텔스는 정말 안 보일까",
+    "selectedTitle": "스텔스는 정말 안 보일까",
+    "hookQuestion": "스텔스가 정말 사라지는 기술인지, 아니면 상대 판단 시간을 줄이는 시스템인지 묻게 한다.",
+    "readerGap": "독자는 전투기가 안 보인다고 생각하지만 글은 RCS, 형상, 센서, 정비, 공시 병목으로 설명한다.",
+    "promise": "제목은 투명망토라는 상식을 열고, 결론은 어떤 회사가 어느 병목을 쥐는지 보는 렌즈로 갚는다.",
+    "whySelected": "짧은 질문형이라 첫 화면에서 멈추고, 답을 바로 말하지 않아 기술 원리와 회사 지도까지 읽게 만든다.",
+    "candidates": [
+      {
+        "title": "스텔스는 정말 안 보일까",
+        "hook": "가장 익숙한 오해를 질문으로 걸어 기술 설명으로 들어가게 한다.",
+        "risk": "본문에서 기술 원리와 회사 지도를 충분히 갚아야 한다."
+      },
+      {
+        "title": "스텔스의 진짜 병목은 어디일까",
+        "hook": "기체 사진에서 형상·센서·정비 병목으로 시선을 돌린다.",
+        "risk": "첫 문장 대중성은 선택 제목보다 약하다."
+      },
+      {
+        "title": "보이지 않는 전투기는 공시에 보입니다",
+        "hook": "기술과 공시의 충돌이 새롭다.",
+        "risk": "은유가 강해 쉬운 말로 보강해야 한다."
+      }
+    ],
+    "rejectedPatterns": [
+      "스텔스 기술 총정리",
+      "스텔스 누가 돈을 버나",
+      "방산주는 왜 돈을 못 버나"
+    ]
+  },
+  "description": "스텔스를 투명망토가 아니라 RCS, 형상, 소재, 센서융합, 전자전, 정비가 묶인 저피탐 시스템으로 설명하고 DART·EDGAR 공시로 회사 병목을 연결한다.",
+  "readerQuestion": "스텔스 뉴스에서 왜 전투기 사진보다 공정 병목, 대표 회사, DART·EDGAR 공시 시간표를 먼저 봐야 할까?",
+  "insight": {
+    "commonBelief": "스텔스는 안 보이는 전투기라서 완성기 업체와 멋진 기체 사진만 보면 된다고 여긴다.",
+    "twistFact": "스텔스의 힘은 사라짐이 아니라 상대 판단 시간을 줄이는 시스템이고, 회사 가치는 형상·센서·엔진·전자전·정비 병목이 공시에 언제 찍히는지에서 갈린다.",
+    "whatToWatch": "다음에는 기체 사진보다 각 회사가 잡은 기술 칸, 수주잔고, 개발비, 양산 전환, 정비·업그레이드 계약을 함께 본다.",
+    "freshnessArgument": "기술 원리와 DART·EDGAR 손익을 같은 지도에 놓아 성능 비교나 방산주 수혜주 나열과 다른 읽는 순서를 만든다.",
+    "evidenceRefs": [
+      "EDGAR 2025Q1~Q4 미국 방산사 영업이익률",
+      "DART 2025Q1~Q4 KF-21 주변사 영업이익률",
+      "공정/층위 | 대표 회사 | 공시 근거 지도"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "스텔스는 무엇을 숨기나: RCS라는 작은 숫자의 의미",
+      "purpose": "메커니즘공개",
+      "scene": "레이더가 보낸 전파와 되돌아오는 반사 신호를 RCS로 바꿔 설명하는 장면",
+      "keyNumbers": [
+        "-10dB는 반사 전력 10분의 1",
+        "-20dB는 반사 전력 100분의 1"
+      ],
+      "causalBridge": "RCS가 작아지는 원리를 이해해야 왜 형상과 소재가 먼저 나오는지 알 수 있다."
+    },
+    {
+      "order": 2,
+      "heading": "전투기는 왜 각지게 생겼나: 형상이 먼저 숨긴다",
+      "purpose": "메커니즘공개",
+      "scene": "기체 표면, 내부 무장창, 흡입구가 레이더 전파를 다른 방향으로 튕기는 장면",
+      "keyNumbers": [
+        "RCS는 각도와 주파수에 따라 달라짐"
+      ],
+      "causalBridge": "형상으로 줄인 신호는 소재와 코팅이 다시 다루어야 한다."
+    },
+    {
+      "order": 3,
+      "heading": "흡수재와 코팅: 보이지 않는 기술의 손이 많이 가는 부분",
+      "purpose": "리스크반전",
+      "scene": "정비사가 코팅 흠집과 패널 경계를 점검하는 격납고 장면",
+      "keyNumbers": [
+        "F-35 유지·가동률 맥락",
+        "장기 군수지원 계약"
+      ],
+      "causalBridge": "출고 뒤 정비 부담을 보아야 스텔스가 장기 계약으로 이어지는 이유가 보인다."
+    },
+    {
+      "order": 4,
+      "heading": "센서융합과 전자전: 작게 보이는 것만으로는 부족하다",
+      "purpose": "메커니즘공개",
+      "scene": "AESA 레이더, 전자전, 데이터링크가 교전 사슬을 끊는 장면",
+      "keyNumbers": [
+        "탐지·분류·추적·교전·재탐지 사슬"
+      ],
+      "causalBridge": "교전 사슬을 회사 지도로 옮기면 완성기 외의 병목 회사가 보인다."
+    },
+    {
+      "order": 5,
+      "heading": "공정·회사·근거 지도: 어느 회사가 어느 칸을 쥐나",
+      "purpose": "판단닫힘",
+      "scene": "플랫폼, AESA, 엔진, 전자전, 정비가 대표 회사와 공시 근거로 배치되는 표",
+      "keyNumbers": [
+        "LMT 2025 영업이익률 10.3%",
+        "NOC 2025 영업이익률 10.8%",
+        "KAI 2025 영업이익률 7.3%"
+      ],
+      "causalBridge": "회사 위치를 본 뒤에는 미국 조달 구조와 한국 KF-21 라인의 손익 시차를 봐야 한다."
+    },
+    {
+      "order": 6,
+      "heading": "공시를 어떻게 읽나: EDGAR와 DART는 같은 표가 아니다",
+      "purpose": "오해방지",
+      "scene": "EDGAR 10-K와 DART 사업보고서의 사업 설명, 세그먼트, 손익, 현금흐름을 대조하는 장면",
+      "keyNumbers": [
+        "미국 방산 5사는 12월 결산 기준 2025Q1~Q4 합산",
+        "EDGAR는 fiscal year와 period 확인 필수"
+      ],
+      "causalBridge": "공시 읽는 법을 닫아야 다음 스텔스 뉴스에서도 같은 렌즈를 재사용할 수 있다."
+    }
+  ],
+  "visuals": [
+    {
+      "actOrder": 1,
+      "kind": "svg",
+      "title": "RCS는 실제 크기가 아니라 되돌아오는 전파의 크기다",
+      "proves": "스텔스는 안 보임이 아니라 탐지거리와 판단 시간을 줄이는 기술임을 보여준다.",
+      "seriesHint": "RCS 정의와 레이더 방정식"
+    },
+    {
+      "actOrder": 4,
+      "kind": "table",
+      "title": "교전 사슬과 스텔스가 흔드는 지점",
+      "proves": "형상, 센서, 전자전, 무장, 소프트웨어가 한 시스템으로 작동함을 보여준다.",
+      "seriesHint": "탐지·분류·추적·교전·재탐지"
+    },
+    {
+      "actOrder": 5,
+      "kind": "table",
+      "title": "공정·회사·공시 근거 지도",
+      "proves": "완성기만 보면 스텔스 밸류체인의 절반을 놓친다는 주장을 증명한다.",
+      "seriesHint": "플랫폼, AESA, 엔진, 전자전, 정비"
+    },
+    {
+      "actOrder": 5,
+      "kind": "bar",
+      "title": "미국 방산 대표사의 2025 영업이익률",
+      "proves": "기술 난도가 곧바로 초고마진이 아니라 조달 구조와 장기 원가 안에서 10% 안팎으로 모임을 보여준다.",
+      "seriesHint": "EDGAR 2025Q1~Q4"
+    },
+    {
+      "actOrder": 6,
+      "kind": "table",
+      "title": "EDGAR와 DART에서 읽을 위치",
+      "proves": "같은 숫자라도 회계연도, 기간, 사업부 설명을 확인해야 함을 보여준다.",
+      "seriesHint": "10-K, 10-Q, 사업보고서, 분기보고서"
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "hero",
+      "subject": "저피탐 형상, 레이더 시험 장비, 코팅 점검이 함께 보이는 항공우주 통합 격납고",
+      "query": "stealth aircraft hangar radar test coating inspection maintenance",
+      "keywords": [
+        "stealth",
+        "hangar",
+        "radar",
+        "maintenance"
+      ]
+    },
+    {
+      "slot": "inline",
+      "subject": "스텔스 코팅과 패널 경계를 점검하는 정비 장면",
+      "query": "aircraft stealth coating maintenance panel inspection hangar",
+      "keywords": [
+        "coating",
+        "panel",
+        "inspection"
+      ]
+    },
+    {
+      "slot": "inline",
+      "subject": "AESA 레이더와 항공전자 시험 장비",
+      "query": "aesa radar avionics test bench aircraft electronics",
+      "keywords": [
+        "aesa",
+        "radar",
+        "avionics"
+      ]
+    }
+  ],
+  "honestyGuards": [
+    "RCS는 각도와 주파수에 따라 달라지므로 절대값처럼 쓰지 않는다.",
+    "KF-21을 F-35 같은 완전한 5세대 스텔스기로 표현하지 않는다.",
+    "EDGAR는 fiscal year end와 10-K/10-Q period를 확인한다.",
+    "DART는 연결과 별도, 분기와 누적 표시를 분리한다.",
+    "기술 난도와 회사 전체 영업이익률을 바로 동일시하지 않는다."
+  ],
+  "evidenceMap": [
+    {
+      "claim": "미국 방산 대표사의 2025 영업이익률은 10% 안팎에 모인다.",
+      "sourceType": "EDGAR",
+      "period": "2025Q1~2025Q4, 12월 결산사 FY2025",
+      "sourceRef": "Company(\"LMT\"), Company(\"NOC\"), Company(\"RTX\"), Company(\"GD\"), Company(\"BA\").select(\"IS\")",
+      "howUsed": "미국 조달 구조와 기술 난도·마진 분리 설명"
+    },
+    {
+      "claim": "한국 KF-21 주변사는 역할별 손익과 시간표가 다르다.",
+      "sourceType": "DART",
+      "period": "2025Q1~2025Q4",
+      "sourceRef": "Company(\"047810\"), Company(\"272210\"), Company(\"012450\"), Company(\"079550\").select(\"IS\")",
+      "howUsed": "KF-21 라인 역할별 비교 표"
+    },
+    {
+      "claim": "스텔스 밸류체인은 플랫폼, 센서, 엔진, 전자전, 정비로 나뉜다.",
+      "sourceType": "external",
+      "period": "기술 설명 기준",
+      "sourceRef": "Lockheed Martin F-35, F-35 sensor fusion, Northrop Grumman B-21, GAO F-35 sustainment",
+      "howUsed": "기술 원리와 공정·회사 지도"
+    },
+    {
+      "claim": "EDGAR 수치는 결산월과 10-K/10-Q period를 먼저 확인해야 한다.",
+      "sourceType": "EDGAR",
+      "period": "FY2025 and quarterly periods",
+      "sourceRef": "SEC EDGAR 원문, dartlab fiscalYearEnd",
+      "howUsed": "공시 오독 방지 섹션"
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "requiredRounds": [
+      {
+        "id": "titleHook",
+        "status": "passed"
+      },
+      {
+        "id": "writerPanel",
+        "status": "passed"
+      },
+      {
+        "id": "honestyEvidence",
+        "status": "passed"
+      },
+      {
+        "id": "visualStoryPlan",
+        "status": "passed"
+      },
+      {
+        "id": "imageFit",
+        "status": "passed"
+      },
+      {
+        "id": "readerFit",
+        "status": "passed"
+      },
+      {
+        "id": "reevaluation",
+        "status": "passed"
+      }
+    ],
+    "decisionLog": [
+      {
+        "round": "r1",
+        "decision": "revise",
+        "note": "초안은 기체 설명과 미국 10%대 숫자가 분리되어 기술 지도와 공시 렌즈가 약했다."
+      },
+      {
+        "round": "r2",
+        "decision": "passed",
+        "note": "공정·회사·근거 지도, EDGAR/DART 기간 가드, 이미지·비주얼 계획이 제목 약속과 연결되었다."
+      }
+    ],
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": 1,
+          "planner": "기획작가는 RCS 원리, 미국 방산사 수익성, 한국 KF-21 라인을 한 글에 배치했다.",
+          "evaluator": "기술 원리와 회사 지도가 분리되어 독자가 왜 이 회사가 병목인지 끝까지 이해하기 어렵고, EDGAR 기간 가드가 약하다고 평가했다.",
+          "skeptic": "스텔스 수혜주 나열과 기체 사진 중심으로 흐르면 기술이야기가 아니라 방산 테마 요약이 된다고 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 83,
+          "plannerRevision": "공정·회사·공시 근거 지도를 앞당기고, EDGAR 결산월·분기 라벨 가드와 기술 성숙도 섹션을 보강했다."
+        },
+        {
+          "round": 2,
+          "planner": "개선안은 RCS 원리에서 교전 사슬, 공정 지도, 미국·한국 손익 시간표, EDGAR/DART 읽는 법으로 이어지게 재기획했다.",
+          "evaluator": "독자 질문이 끝까지 살아 있고, 기술 원리와 회사 배치와 공시 근거가 같은 이야기로 읽히며, 이미지와 비주얼 계획도 본문 주장에 붙어 있다.",
+          "skeptic": "제목 템플릿, 일반 이미지 도피, EDGAR 기간 오독, 기술 난도와 마진의 과잉 연결 문제가 남지 않았다.",
+          "decision": "passed",
+          "evaluatorScore": 94,
+          "plannerRevision": "평가 피드백을 반영한 최종안이다."
+        }
+      ],
+      "note": "작가기획, 평가 피드백, 작가 재기획, 재평가 루프 실행 산물. 최종 92점 이상만 발행"
+    }
+  }
+}

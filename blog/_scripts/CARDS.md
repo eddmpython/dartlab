@@ -1,4 +1,4 @@
-# 카드(캐러셀) 배포 — 운영 절차
+# 카드(캐러셀) 배포 - 운영 절차
 
 / cards 와 터미널 「카드뉴스」에 뜨는 인스타식 카드. 짧게 정리.
 
@@ -16,11 +16,11 @@
 - 화면은 hfMedia `carousels/index.json` **한 파일**을 읽어 그때그때 그린다(**안 굽는다**·디자인은 코드가 정함).
 - 같은 회사 다른 주제 글이면 각자 `carousel:` → **자동으로 여러 편**(1:N).
 
-> **정본은 /cards(이 파이프라인) 하나다.** 옛 `sns/carousels/`(hook.json→PNG·reel) 는 **유물**이다 —
+> **정본은 /cards(이 파이프라인) 하나다.** 옛 `sns/carousels/`(hook.json→PNG·reel) 는 **유물**이다 -
 > 운영자가 인스타그램에 *직접* 올릴 때만 수동으로 쓰고, 그것도 이제 **/cards 에 있는 걸 그대로 올리면 된다**.
 > frontmatter ↔ hook.json **동기화는 하지 않는다**(sns 분기는 방치). 신규·개선은 전부 frontmatter 에서 한다.
 
-## 카드 새로 올리기 — 5단계
+## 카드 새로 올리기 - 5단계
 1. 블로그 글 frontmatter 에 `carousel:` 쓴다 (아래 형식). **블로그 산문과 카드 기획은 한 번에 잡는다.**
 2. 이미지·토론 계획 생성: `uv run python -X utf8 blog/_scripts/plan_card_news.py --post blog/05-company-reports/{글폴더} --write`
    - 계획 파일 = 같은 글 폴더의 `cards.plan.json`.
@@ -39,7 +39,7 @@
    - 상호/회사명은 프롬프트와 검색 키워드에 써도 된다. 다만 생성형 이미지가 공식 로고·공식 문서·실제 내부시설을 사실처럼 꾸며내면 안 된다.
    - 각 항목의 `prompt` 를 GPT `image_gen` 으로 한 장씩 생성한다.
    - 생성 뒤 `imagegen.extractCommand` 로 `sns/assets/{code}/{assetKey}.webp` 에 저장하고 `imagegen.checkCommand` 로 프레이밍을 본다.
-3. 작가 패널 토론·평가를 `cards.plan.json` 의 `reviewGate` 에 기록하고 `status: "passed"` 로 닫는다.
+3. 작가 패널 토론·평가를 `cards.plan.json` 의 `reviewGate` 에 기록하고 `status: "passed"` 로 닫는다. 작가기획 → 평가 피드백 → 작가 재기획 → 재평가를 최소 2라운드 실행하고, 마지막 `evaluatorScore` 가 92점 이상이어야 한다.
    - `titleHook` 라운드: 제목 후보 3개 이상을 비교하고 선택 제목이 독자의 상식과 글이 갚을 질문 사이에 호기심 갭을 만드는지 본다. 표지와 마지막 카드가 제목의 약속을 갚지 못하면 실패다.
    - `planning.insightContract` (v4+ 강행): **통념(commonBelief)·반전(twistFact=충돌 사실+메커니즘)·그래서 볼 것(whatToWatch=렌즈)·evidenceRefs** 를 적는다. 충돌 사실만 던지고 끝나면 인사이트가 아니다. 발행 게이트가 셋이 채워졌고 반전이 제목·캡션의 재진술이 아닌지 검사한다.
    - `planning.visualPlan` (v5+ 강행): 데이터 주장 카드마다 그래프·표 모양, 데이터 설명, 검증 ref 를 적고 실제 slide `visual` 로 연결한다. "많이 파는데 남기지 못한다" 같은 문장은 판매량·마진·현금이 각각 무엇을 뜻하는지 그래프나 표로 증명하지 않으면 발행 실패다.
@@ -116,18 +116,18 @@ carousel:
 - 로컬 원본 = `sns/assets/{code}/{name}.webp` → `build_index.py` 인덱싱 → `publish_assets_hf.py` 가 hfMedia 업로드.
   파일명에 `card`/`thumbnail`/`og-` 토큰만 없으면 hero 로 자동 채택(별도 등록 불필요).
 - **블로그 hero 공유 (SSOT)**: 블로그 회사 글 hero 사진은 `sns/scripts/ingest_blog_assets.py` 로 같은
-  `sns/assets/{code}/` 공유풀에 합류한다 (블로그·카드 이미지 한 풀). 멱등·손작성 자산 보호 — 절차는 `blog/BLOG.md` "블로그 hero ↔ 카드 공유풀".
+  `sns/assets/{code}/` 공유풀에 합류한다 (블로그·카드 이미지 한 풀). 멱등·손작성 자산 보호 - 절차는 `blog/BLOG.md` "블로그 hero ↔ 카드 공유풀".
 
-### 이미지 점검 — 쓰레기(평면 벡터·도식·인포그래픽) 먼저 잡기
+### 이미지 점검 - 쓰레기(평면 벡터·도식·인포그래픽) 먼저 잡기
 생성형 hero 중 일부가 실사가 아니라 **평면 도식·막대그래프·텍스트 카드**로 나와 흑백 풀블리드 배경으로 깨진다.
 발행 전·수시로 전수 스캔한다. 색복잡도(평면≈수십 색, 실사≈수천 색)로 의심을 잡고 **반드시 눈으로 한 장씩 확정**한다
-(자동 판정 아님 — 야간 정유탑·검은 분말 같은 어두운 실사도 같이 잡힌다).
+(자동 판정 아님 - 야간 정유탑·검은 분말 같은 어두운 실사도 같이 잡힌다).
 ```
 uv run python -X utf8 blog/_scripts/audit_carousel_images.py            # 색<600 또는 이름패턴 의심 목록
 uv run python -X utf8 blog/_scripts/audit_carousel_images.py --max 250  # 평면 벡터/도식에 집중
 ```
 
-### 이미지 가져오는 곳 — GPT image_gen 1차, CC0/PD 보강
+### 이미지 가져오는 곳 - GPT image_gen 1차, CC0/PD 보강
 > **카드 캐러셀 발간 규칙(강행)**: 랜딩 `/cards` 이미지는 블로그·카드 공동 기획의 `cards.plan.json`
 > 에서 먼저 정한다. 기본 경로는 GPT `image_gen` 이고, 실제 장소·공공 사진이 더 적합한 경우만
 > `fetch_cc0_images.py` 로 PD/CC0 스톡을 보강한다. FLUX 스크립트는 운영자 명시 지시 시에만 쓰는 예외 경로다(정본 = memory `feedback_image_sourcing_policy`).
@@ -162,20 +162,20 @@ uv run python -X utf8 blog/_scripts/build_carousel_contracts.py
 - 특정 기업 관전 포인트 이슈는 `stockCode`와 `corpName`을 넣고, 공식 발표 기준 `keyMetrics` 를 함께 넣는다 → 블로그 CTA는 숨기지만 카드 뒤에 회사 report 기반 그래프·테이블이 붙고, 자동 지표 결측 때도 빈 핵심지표를 내보내지 않는다.
 - **주제 카드** (기술이야기·데이터리포트처럼 여러 회사를 다루는 편)는 회사 `code` 를 달지 않는다(달면 그 회사 카드로 오인). 조인 키는 `topicSlug`(= 블로그 URL slug)다. 단 현재 카드 계약(`carousel:` / `CarouselContract`)에는 `topicSlug` 필드가 없어 주제 카드는 아직 standalone 로만 발행된다. topicSlug 조인은 카드 계약 확장(UI 변경)이라 운영자 승인 게이트다. 조인 키 계약 SSOT = `operation.content` "서피스 x 콘텐츠 성격 매트릭스".
 
-⛔ **핀터레스트·구글 이미지 금지** — 거기 올라온 사진은 대부분 **저작권 있음**(긁어온 것)이라 가져다 쓰면 침해다.
+⛔ **핀터레스트·구글 이미지 금지** - 거기 올라온 사진은 대부분 **저작권 있음**(긁어온 것)이라 가져다 쓰면 침해다.
 스톡 보강은 아래 무료 소스만 쓴다.
-- **Wikimedia Commons / Openverse** — PD/CC0 (귀속 의무 0). `fetch_cc0_images.py` 가 이 둘에서만 받는다.
+- **Wikimedia Commons / Openverse** - PD/CC0 (귀속 의무 0). `fetch_cc0_images.py` 가 이 둘에서만 받는다.
 - 보강 여지(필요 시 API 키로 추가): **Unsplash·Pexels·Pixabay**(무료 라이선스·상업 OK), **NASA·각국 공공기관**(PD).
 
 회사 카드 이미지가 모자라거나 부실하면 CC0 스톡으로 받아 `sns/assets/{code}/` 에 채운다.
 받은 뒤 `build_index.py` → `publish_assets_hf.py` 로 올리고, 슬라이드에서 `image: <이름>` 으로 가리키면 끝(별도 배선 없음).
 
-**스톡 (CC0/PD) — `fetch_cc0_images.py`**: Commons(실사 적중률 1순위) + Openverse 에서 PD/CC0 만 받아 `cc0-*.webp` 저장.
+**스톡 (CC0/PD) - `fetch_cc0_images.py`**: Commons(실사 적중률 1순위) + Openverse 에서 PD/CC0 만 받아 `cc0-*.webp` 저장.
 출처는 회사 폴더 `CREDITS.md` 에 자동 기록(의무 아니나 감사 추적).
 ```
 uv run python -X utf8 blog/_scripts/fetch_cc0_images.py --jobs sns/assets/_plans/cc0FetchJobs.json
 ```
-jobs = `[{"code","name","queries":[...],"keywords":[...]}]`. **반드시 받은 이미지를 눈으로 확인** —
+jobs = `[{"code","name","queries":[...],"keywords":[...]}]`. **반드시 받은 이미지를 눈으로 확인** -
 스톡은 특정 피사체(정유탑·병입라인 등) 적중률이 들쭉날쭉해 오매치(엉뚱한 사진·텍스트 광고·도식)가 섞인다(실측: 받은 것 절반 폐기).
 안 맞으면 **다른 검색어(`queries`)로 재시도**한다. 스톡으로 정확히 못 잡는 추상 장면은 `cards.plan.json`
 의 image_gen 프롬프트로 되돌린다.
@@ -188,32 +188,32 @@ Openverse/Commons 검색도 범용 업종어만 넣지 않는다. `queries` 는 
 > 맥락 키워드로 쓸 수 있지만 가짜 공식 로고·가짜 공식 문서·식별 가능한 인물·읽을 수 있는 주장을 만들지 않는다.
 > CC0/PD 스톡은 실제 공공 사진이 필요한 때의 보강 경로다.
 
-## 발행 전 전문가 검토 게이트 — 작가 패널 토론·평가 (cards 정식 게이트)
+## 발행 전 전문가 검토 게이트 - 작가 패널 토론·평가 (cards 정식 게이트)
 **캐러셀은 공개물이라 발행 전에 전문가 루프를 반드시 거친다.** 자동 통과 금지.
-이 루프는 옛 sns 의 `editorial_loop`(기획·작가·평가·재평가) 를 **cards 파이프라인으로 가져온 것**이다 — 신규·기존개선 모두 적용.
-1. **작가 패널 토론(다중 에이전트)** — 서로 다른 렌즈(훅 강도·서사 스파인·앞장-다음장 연결·쉬운 말·디자인/이미지 적합성·정직성)로 독립 검토 후 약점 합의. 나열형 체크리스트와 전문용어 남발은 통과시키지 않는다.
-   - **편 간 다양성(template fatigue) 가드**: 새 편을 쓰기 전 직전 3편의 제목·표지 line·캡션 첫 줄·결론 슬라이드를 펼쳐 비교한다. 표지 훅·전개·결론의 *패턴*이 직전 편들과 겹치면 탈락이다 — 예: `좋은 X는 A보다 [[B]]` 격언형 표지, `좋아 보이지만 진짜는 운영 X` 전개, `~ 더 단단해집니다`/`~ 실력이 된다`식 조건충족형 결론의 반복. 같은 진실도 편마다 시작과 맺음(훅·결론 구조)을 새로 잡는다. 섹터도 직전 편들과 분리한다.
-2. **정직성·근거 평가** — 슬라이드 숫자가 전부 `## 검증표`에 있는가, 외부/실측이 분리·표기됐나, 과장·투자권유 표현 없나.
-3. **이미지 적합성 평가** — 색복잡도 감사 통과 + 주제 적합 + 눈검수 완료(쓰레기·텍스트·도식 0).
-4. **재평가** — 합의된 수정 반영 후 같은 패널이 다시 본다. 기준 미달이면 발행 보류·재수정.
-   (점수는 실가치 proxy 가 아니라 게이트 — 미빌드 점수 인플레 금지.)
+이 루프는 옛 sns 의 `editorial_loop`(기획·작가·평가·재평가) 를 **cards 파이프라인으로 가져온 것**이다 - 신규·기존개선 모두 적용.
+1. **작가 패널 토론(다중 에이전트)** - 서로 다른 렌즈(훅 강도·서사 스파인·앞장-다음장 연결·쉬운 말·디자인/이미지 적합성·정직성)로 독립 검토 후 약점 합의. 나열형 체크리스트와 전문용어 남발은 통과시키지 않는다.
+   - **편 간 다양성(template fatigue) 가드**: 새 편을 쓰기 전 직전 3편의 제목·표지 line·캡션 첫 줄·결론 슬라이드를 펼쳐 비교한다. 표지 훅·전개·결론의 *패턴*이 직전 편들과 겹치면 탈락이다 - 예: `좋은 X는 A보다 [[B]]` 격언형 표지, `좋아 보이지만 진짜는 운영 X` 전개, `~ 더 단단해집니다`/`~ 실력이 된다`식 조건충족형 결론의 반복. 같은 진실도 편마다 시작과 맺음(훅·결론 구조)을 새로 잡는다. 섹터도 직전 편들과 분리한다.
+2. **정직성·근거 평가** - 슬라이드 숫자가 전부 `## 검증표`에 있는가, 외부/실측이 분리·표기됐나, 과장·투자권유 표현 없나.
+3. **이미지 적합성 평가** - 색복잡도 감사 통과 + 주제 적합 + 눈검수 완료(쓰레기·텍스트·도식 0).
+4. **재평가** - 합의된 수정 반영 후 같은 패널이 다시 본다. 기준 미달이면 발행 보류·재수정.
+   (점수는 실가치 proxy 가 아니라 게이트 - 미빌드 점수 인플레 금지.)
 
 > 흐름: 신규·개선편은 위 패널(다중 에이전트 토론·평가→수정→재평가)을 거친 뒤에만 `build_carousel_contracts.py` 발행.
 > **이미 발행된 편도 이 루프로 개선한다**(발행본 품질 상향이 기본 운영).
 > `cards.plan.json` 이 있는 글은 `planning.narrativeContract`, `planning.plainLanguageContract`, `reviewGate.status: "passed"` 와 각 required round `status: "passed"` 가
-> 아니면 `build_carousel_contracts.py` 가 발행을 중단한다. v5+ 는 `planning.visualPlan` 도 필수다. 데이터 주장 카드에 `dataExplanation`·`evidenceRefs`·실제 slide `visual` 이 없으면 중단한다. legacy 글은 plan 파일이 없으면 허용하되, 신규·개선은 plan 을 만든다.
+> 아니면 `build_carousel_contracts.py` 가 발행을 중단한다. v7+ 는 `reviewGate.loopEvidence.workflow="cards_plan_loop.workflow.js"`, `rounds >= 2`, 최종 `evaluatorScore >= 92`, 재기획 흔적, 전 슬라이드 `[[강조]]` 마커도 필수다. v5+ 는 `planning.visualPlan` 도 필수다. 데이터 주장 카드에 `dataExplanation`·`evidenceRefs`·실제 slide `visual` 이 없으면 중단한다. legacy 글은 plan 파일이 없으면 허용하되, 신규·개선은 plan 을 만든다.
 > 발행 게이트는 실제 카드 문장도 검사한다. `CDMO`, `HBM` 같은 약어와 `다음 질문`류 문구가 남아 있으면 발행을 중단한다. (`AI` 는 일반어로 허용.)
 
 ## 도구
 | 파일 | 역할 |
 |---|---|
-| `blog/_scripts/build_carousel_contracts.py` | **발행** — blog frontmatter → hfMedia 단일 파일 |
-| `blog/_scripts/plan_card_news.py` | **블로그+카드+image_gen 기획** — `cards.plan.json` 생성·검사 |
-| `blog/_scripts/audit_carousel_images.py` | **이미지 감사** — 평면 벡터·도식·인포그래픽(쓰레기) 색복잡도로 탐지 |
-| `blog/_scripts/fetch_cc0_images.py` | 무료(PD/CC0) 이미지 수급 — Commons·Openverse |
+| `blog/_scripts/build_carousel_contracts.py` | **발행** - blog frontmatter → hfMedia 단일 파일 |
+| `blog/_scripts/plan_card_news.py` | **블로그+카드+image_gen 기획** - `cards.plan.json` 생성·검사 |
+| `blog/_scripts/audit_carousel_images.py` | **이미지 감사** - 평면 벡터·도식·인포그래픽(쓰레기) 색복잡도로 탐지 |
+| `blog/_scripts/fetch_cc0_images.py` | 무료(PD/CC0) 이미지 수급 - Commons·Openverse |
 | `sns/scripts/extractImagegenAssets.py` | GPT `image_gen` 세션 결과 → `sns/assets/{code}/{asset}.webp` 추출 |
 | `sns/scripts/checkImagegenAssets.py` | image_gen 산출물 4:5·밝기·프레이밍 1차 검사 |
-| `sns/scripts/ingest_blog_assets.py` | **블로그 hero ↔ 카드 공유풀 SSOT** — 블로그 회사글 hero → `sns/assets/{code}/`(멱등·손작성 보호) |
+| `sns/scripts/ingest_blog_assets.py` | **블로그 hero ↔ 카드 공유풀 SSOT** - 블로그 회사글 hero → `sns/assets/{code}/`(멱등·손작성 보호) |
 | `blog/_scripts/gen_company_flux.py` | 생성형 hero(4:5). 운영자 명시 지시 시에만(신규 `/cards` 기본 경로 아님) |
 | `blog/_scripts/audit_seo.py` | carousel 형식·숫자 검사 |
 | `blog/_scripts/migrate_carousels_to_blog.py` | 1회성 이관(sns/carousels → blog frontmatter, **완료**). 이후 sns 는 **유물**·재동기화 안 함 |

@@ -93,6 +93,29 @@ def _mark_passed(plan: dict) -> dict:
     plan["reviewGate"]["status"] = "passed"
     for row in plan["reviewGate"]["requiredRounds"]:
         row["status"] = "passed"
+    plan["reviewGate"]["loopEvidence"] = {
+        "workflow": cp.LOOP_WORKFLOW_NAME,
+        "rounds": [
+            {
+                "round": 1,
+                "planner": "초안에서 낮은 마진과 회비 이익의 충돌을 잡았다.",
+                "evaluator": "숫자와 시각 설명은 있으나 마지막 판단이 약해 revise 로 돌렸다.",
+                "skeptic": "억지 수치와 과장 프레임은 없지만 독자 보상이 약하다고 지적했다.",
+                "decision": "revise",
+                "evaluatorScore": 84,
+                "plannerRevision": "회비와 재방문을 마지막 판단으로 다시 묶었다.",
+            },
+            {
+                "round": 2,
+                "planner": "재작성안에서 회비 구조와 재방문 렌즈를 표지 약속과 연결했다.",
+                "evaluator": "큰문장 흐름과 시각 근거가 통과선에 도달했다.",
+                "skeptic": "하드 kill 축이 남지 않았다.",
+                "decision": "passed",
+                "evaluatorScore": 94,
+                "plannerRevision": "평가 피드백을 반영한 최종안이다.",
+            },
+        ],
+    }
     tc = plan.setdefault("planning", {}).setdefault("titleContract", {})
     selected = plan["target"]["title"]
     tc["workingTitle"] = selected
@@ -137,10 +160,10 @@ def _mark_passed(plan: dict) -> dict:
 
 def _valid_big_sentence_slides() -> list[dict]:
     return [
-        {"layout": "editorial", "line": "계산대보다 먼저 회원권이 돈을 만듭니다"},
+        {"layout": "editorial", "line": "계산대보다 먼저 [[회원권]]이 돈을 만듭니다"},
         {
             "layout": "editorialBeat",
-            "line": "이 구조는 낮은 가격을 약속할 때 작동합니다",
+            "line": "이 구조는 [[낮은 가격]]을 약속할 때 작동합니다",
             "visual": {"kind": "table", "cols": ["기간", "값"], "data": [{"기간": "2025Q1", "값": "12억달러"}]},
         },
         {
@@ -148,12 +171,12 @@ def _valid_big_sentence_slides() -> list[dict]:
             "kicker": "분기 매출",
             "bigNumber": "636",
             "unit": "억달러",
-            "context": "이 숫자는 사람이 계속 매장으로 돌아왔다는 뜻입니다",
+            "context": "이 숫자는 사람이 계속 [[매장으로 돌아왔다는 뜻]]입니다",
             "visual": {"kind": "table", "cols": ["기간", "값"], "data": [{"기간": "2025Q1", "값": "636억달러"}]},
         },
         {
             "layout": "editorialBeat",
-            "line": "그 돈은 낮은 마진을 버틸 시간을 만듭니다",
+            "line": "그 돈은 [[낮은 마진]]을 버틸 시간을 만듭니다",
             "visual": {"kind": "table", "cols": ["구분", "의미"], "data": [{"구분": "마진", "의미": "낮은 가격 전략"}]},
         },
         {
@@ -161,11 +184,11 @@ def _valid_big_sentence_slides() -> list[dict]:
             "kicker": "회비",
             "bigNumber": "12",
             "unit": "억달러",
-            "context": "그 결과 회비가 이익의 중심을 더 선명하게 보여줍니다",
+            "context": "그 결과 [[회비]]가 이익의 중심을 더 선명하게 보여줍니다",
             "visual": {"kind": "table", "cols": ["기간", "값"], "data": [{"기간": "2025Q1", "값": "12억달러"}]},
         },
-        {"layout": "editorialBeat", "line": "하지만 회원이 줄면 낮은 가격 전략도 힘을 잃습니다"},
-        {"layout": "editorialBeat", "line": "결국 힘은 회비와 재방문이 같이 늘어나는지로 봐야 합니다"},
+        {"layout": "editorialBeat", "line": "하지만 [[회원이 줄면]] 낮은 가격 전략도 힘을 잃습니다"},
+        {"layout": "editorialBeat", "line": "결국 힘은 [[회비와 재방문]]이 같이 늘어나는지로 봐야 합니다"},
     ]
 
 
@@ -200,6 +223,22 @@ def test_plan_validation_requires_passed_review(tmp_path: Path) -> None:
     errors = cp.validate_plan(planned, require_passed=True)
     assert any("reviewGate.status" in err for err in errors)
     assert cp.validate_plan(_mark_passed(planned), require_passed=True) == []
+
+
+def test_plan_validation_requires_loop_evidence_after_review(tmp_path: Path) -> None:
+    post = _write_post(tmp_path / "blog", "01-999999-test", slides=_TWO_SLIDES)
+    planned = _mark_passed(cp.build_company_post_plan(post, count=7))
+    planned["reviewGate"].pop("loopEvidence")
+    errors = cp.validate_plan(planned, require_passed=True)
+    assert any("loopEvidence" in err for err in errors)
+
+
+def test_plan_validation_requires_loop_score_92(tmp_path: Path) -> None:
+    post = _write_post(tmp_path / "blog", "01-999999-test", slides=_TWO_SLIDES)
+    planned = _mark_passed(cp.build_company_post_plan(post, count=7))
+    planned["reviewGate"]["loopEvidence"]["rounds"][-1]["evaluatorScore"] = 91
+    errors = cp.validate_plan(planned, require_passed=True)
+    assert any("< 92" in err for err in errors)
 
 
 def test_plan_validation_requires_visual_plan_for_data_cards(tmp_path: Path) -> None:
@@ -299,6 +338,35 @@ def test_contract_plan_gate_blocks_numeric_slide_without_visual(tmp_path: Path) 
     errors, stats = cp.validate_contract_plan_gate(contracts, blog_dir=blog, issues_dir=tmp_path / "_issues")
     assert stats["passed"] == 0
     assert any("배경 image" in err for err in errors)
+
+
+def test_contract_plan_gate_blocks_missing_emphasis_for_new_plans(tmp_path: Path) -> None:
+    blog = tmp_path / "blog"
+    post = _write_post(blog, "01-999999-test", slides=_SEVEN_SLIDES)
+    plan = _mark_passed(cp.build_company_post_plan(post, count=7))
+    (post / cp.PLAN_FILE).write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
+    slides = _valid_big_sentence_slides()
+    slides[0]["line"] = "계산대보다 먼저 회원권이 돈을 만듭니다"
+    contracts = {"999999-test": {"code": "999999", "slug": "999999-test", "slides": slides}}
+    errors, stats = cp.validate_contract_plan_gate(contracts, blog_dir=blog, issues_dir=tmp_path / "_issues")
+    assert stats["passed"] == 0
+    assert any("[[강조]]" in err for err in errors)
+
+
+def test_contract_visual_gate_blocks_array_table_rows() -> None:
+    errors = cp.validate_contract_visuals(
+        "x",
+        {
+            "slides": [
+                {
+                    "layout": "editorialBeat",
+                    "line": "표 행이 배열이면 렌더가 비어 버립니다",
+                    "visual": {"kind": "table", "cols": ["회사", "값"], "data": [["A", "1"]]},
+                }
+            ]
+        },
+    )
+    assert any("배열 행" in err for err in errors)
 
 
 def test_contract_plan_gate_can_require_all_plans(tmp_path: Path) -> None:

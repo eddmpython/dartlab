@@ -23,7 +23,7 @@ export const meta = {
   description: '블로그 심층 리포트 기획 루프: 재무분석가 vs 산업역사가 적대 토론 후 회의론자+독자대리인 격파, 편집장 수렴, 독자평가+회의자 둘 다 통과까지 반복',
   phases: [
     { title: '경합', detail: '재무분석가 vs 산업역사가 관통선 경합 후 회의론자+독자대리인 격파, 편집장 수렴' },
-    { title: '평가개선', detail: '독자 평가자(6항목)+회의자(적대 kill) 동시 심사 후 기획작가 개선, 둘 다 통과까지 반복' },
+    { title: '평가개선', detail: '독자 평가자(6항목)+회의자(적대 kill) 동시 심사 후 기획작가 개선, 둘 다 92점 이상까지 반복' },
   ],
 }
 
@@ -43,7 +43,7 @@ const VISUAL_NOTE = `막별 비주얼: 이야기가 요구하는 차트를 막�
 
 const PLAN_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['title', 'titleContract', 'description', 'readerQuestion', 'insight', 'acts', 'visuals', 'imagePlan', 'honestyGuards'],
+  required: ['title', 'titleContract', 'description', 'readerQuestion', 'insight', 'acts', 'visuals', 'imagePlan', 'honestyGuards', 'evidenceMap'],
   properties: {
     title: { type: 'string', description: '제목(60자 이하, 회사명 앞·궁금증 갭). 예: "오로라월드, 매출은 2배가 됐는데 이익은 왜 널뛸까".' },
     titleContract: {
@@ -125,6 +125,20 @@ const PLAN_SCHEMA = {
       },
     },
     honestyGuards: { type: 'array', items: { type: 'string' }, description: '이 글에 적용할 정직성 가드(영업이익 vs 순이익 분리 등).' },
+    evidenceMap: {
+      type: 'array', minItems: 3,
+      description: '본문에 쓸 DART/EDGAR/dartlab/scan 근거 지도. 숫자·공시 위치·기간·어느 막에서 쓰는지까지 적는다.',
+      items: {
+        type: 'object', additionalProperties: false, required: ['claim', 'sourceType', 'period', 'sourceRef', 'howUsed'],
+        properties: {
+          claim: { type: 'string', description: '이 근거가 받치는 주장.' },
+          sourceType: { type: 'string', enum: ['DART', 'EDGAR', 'dartlab', 'scan', 'external'] },
+          period: { type: 'string', description: '연도·분기·표본 기간. EDGAR는 fiscal year/quarter를 명시.' },
+          sourceRef: { type: 'string', description: 'DART 보고서·EDGAR 10-K/10-Q·dartlab 호출·scan 축.' },
+          howUsed: { type: 'string', description: '어느 막/시각물에서 어떻게 쓰는지.' },
+        },
+      },
+    },
   },
 }
 
@@ -194,19 +208,40 @@ const corpName = A.corpName || ''
 const stockCode = A.stockCode || ''
 const evidence = A.evidence || ''
 const recent = Array.isArray(A.recentTitles) ? A.recentTitles.join(' / ') : (A.recentTitles || '없음')
-const PASS_MIN = 90
-const MAX_ROUNDS = 4
+const contentKind = A.contentKind || (stockCode ? 'company-reports' : 'tech-story')
+const PASS_MIN = 92
+const MAX_ROUNDS = 8
+
+const CONTENT_GUIDANCE = {
+  'company-reports': `기업이야기: 회사 하나의 내러티브를 깊게 판다. 사업 구조, 공시 문장, 제품·고객·수주·원가·자본배치·현금흐름을 한 회사 안에서 연결한다. DART 또는 EDGAR 근거와 dartlab 실측을 분리하고, 다음 공시에서 볼 렌즈로 닫는다.`,
+  'tech-story': `기술이야기: 기술이 주어다. 기술 원리, 공정 파이프라인·네트워크망, 어느 칸에 어떤 회사가 있고 왜 그 회사가 병목·표준·원가·고객 접점을 쥐는지 설명한다. 한국사는 DART, 미국사는 EDGAR를 연결한다. 돈 이야기만 앞세우거나 "누가 돈을 버나" 템플릿이면 실패다.`,
+  'data-reports': `데이터 리포트: scan과 전종목 파서로 전체 시장의 특이점을 찾는다. 개별 회사는 대표 사례일 뿐이다. 표본·분모·제외 조건·정제 전후를 드러내고, DART·EDGAR 전체 유니버스 또는 제외 사유를 명시한다. 순위표 나열로 끝나면 실패다.`,
+}
+
+const LENSES_BY_KIND = {
+  'company-reports': [
+    { role: '재무분석가', lens: '재무제표 안에서 이상한 숫자·전환점·괴리(영업이익 vs 순이익, 이익 vs 현금, 마진 급변, 운전자본·자본배분)를 관통선으로 세운다.' },
+    { role: '산업·역사가', lens: '이 회사의 역사·업종·사업모델의 변곡(사업 전환, 해외·신제품, 사이클, 경쟁구도 이동)을 관통선으로 세운다.' },
+  ],
+  'tech-story': [
+    { role: '기술·공정 아키텍트', lens: '기술 원리, 공정 단계, 병목, 표준, 양산 난도, 네트워크망에서 관통선을 세운다. 회사는 기술 지도의 칸에 배치한다.' },
+    { role: '공시·재무 해석가', lens: 'DART와 EDGAR의 사업 설명·세그먼트·손익·수주·개발비에서 기술이 숫자로 남는 흔적을 관통선으로 세운다.' },
+  ],
+  'data-reports': [
+    { role: '전수 스캔 분석가', lens: 'scan·전종목 파서로 시장 전체에서 튀는 분포, 꼬리값, 제거 전후, 표본 왜곡을 관통선으로 세운다.' },
+    { role: '사례·공시 해석가', lens: '대표 회사의 DART·EDGAR 문장과 다년 숫자로 전수 결과가 왜 그런지 설명할 관통선을 세운다.' },
+  ],
+}
 
 const HEAD = `대상: ${corpName || topic} (${stockCode})
+콘텐츠 종류: ${contentKind}
+장르 지침: ${CONTENT_GUIDANCE[contentKind] || CONTENT_GUIDANCE['company-reports']}
 주제 힌트: ${topic}
 최근 발행 제목(관통선·프레임 겹치면 감점): ${recent}`
 
 // Phase 1: 경합(적대 토론)
 phase('경합')
-const LENSES = [
-  { role: '재무분석가', lens: '재무제표 안에서 이상한 숫자·전환점·괴리(영업이익 vs 순이익, 이익 vs 현금, 마진 급변, 운전자본·자본배분)를 관통선으로 세운다.' },
-  { role: '산업·역사가', lens: '이 회사의 역사·업종·사업모델의 변곡(사업 전환, 해외·신제품, 사이클, 경쟁구도 이동)을 관통선으로 세운다.' },
-]
+const LENSES = LENSES_BY_KIND[contentKind] || LENSES_BY_KIND['company-reports']
 const proposals = await parallel(
   LENSES.map(({ role, lens }) => () =>
     agent(
@@ -253,7 +288,7 @@ ${JSON.stringify(props)}`,
 ])
 
 let plan = await agent(
-  `너는 dartlab 블로그 편집장이다. 재무분석가·산업역사가의 관통선 경합과 회의론자·독자대리인의 격파를 읽고, 발행할 심층 리포트 한 편의 완전한 기획안으로 수렴한다.
+  `너는 dartlab 블로그 편집장이다. 장르별 전문가의 관통선 경합과 회의론자·독자대리인의 격파를 읽고, 발행할 심층 리포트 한 편의 완전한 기획안으로 수렴한다.
 
 ${HEAD}
 
@@ -272,7 +307,7 @@ ${JSON.stringify(props)}
 회의론자·독자대리인 격파:
 ${JSON.stringify(critiques.filter(Boolean))}
 
-단일 관통선 1개로 좁히고(클리셰 격파 반영), 후보 제목 3개 이상을 비교해 최종 제목을 고른 뒤 titleContract 를 채운다. 핵심 인싸이트(관통선의 답)를 세우고, 막 구조(6막+, 관통선이 인싸이트에 착지)·막별 비주얼·이미지 기획(내용 연상, 로고·상징품 허용)·정직성 가드를 확정한다. 통과용 안전한 관통선이 아니라 진짜 의외의 관통선을 고른다. 전체 기획안을 스키마대로 낸다.`,
+단일 관통선 1개로 좁히고(클리셰 격파 반영), 후보 제목 3개 이상을 비교해 최종 제목을 고른 뒤 titleContract 를 채운다. 핵심 인싸이트(관통선의 답)를 세우고, 막 구조(6막+, 관통선이 인싸이트에 착지)·막별 비주얼·이미지 기획(내용 연상, 로고·상징품 허용)·DART/EDGAR/dartlab/scan evidenceMap·정직성 가드를 확정한다. 통과용 안전한 관통선이 아니라 진짜 의외의 관통선을 고른다. 전체 기획안을 스키마대로 낸다.`,
   { label: '편집장 수렴', phase: '경합', schema: PLAN_SCHEMA }
 )
 
@@ -322,7 +357,8 @@ ${JSON.stringify(plan)}`,
     round, score: reader && reader.score, decision: reader && reader.decision, huhCount: reader && reader.huhCount,
     skeptic: skeptic && skeptic.verdict, kills: (skeptic && skeptic.kills) || [], findings: (reader && reader.findings) || [], passed,
   })
-  if (passed || round === MAX_ROUNDS) break
+  if (passed && round >= 2) break
+  if (round === MAX_ROUNDS) break
   plan = await agent(
     `너는 dartlab 블로그 기획작가다. 독자 평가자와 회의자가 약점을 잡았다. 둘 다 모두 반영해 기획안을 다시 쓴다(전체 스키마 재출력). 통과가 목적이 아니라 진짜 좋은 심층 리포트가 목적이다. 회의자가 죽인 축은 표면 수정이 아니라 제목·관통선·프레임·깊이·이미지를 실제로 바꿔 살려라.
 
@@ -351,4 +387,35 @@ ${JSON.stringify(plan)}
   )
 }
 
-return { plan, loopLog, passed, rounds: loopLog.length, corpName, stockCode }
+plan.reviewGate = {
+  status: passed ? 'passed' : 'planned',
+  requiredRounds: [
+    { id: 'titleHook', status: passed ? 'passed' : 'todo' },
+    { id: 'writerPanel', status: passed ? 'passed' : 'todo' },
+    { id: 'honestyEvidence', status: passed ? 'passed' : 'todo' },
+    { id: 'visualStoryPlan', status: passed ? 'passed' : 'todo' },
+    { id: 'imageFit', status: passed ? 'passed' : 'todo' },
+    { id: 'readerFit', status: passed ? 'passed' : 'todo' },
+    { id: 'reevaluation', status: passed ? 'passed' : 'todo' },
+  ],
+  decisionLog: loopLog.map((r) => ({
+    round: `r${r.round}`,
+    decision: r.passed ? 'passed' : 'revise',
+    note: JSON.stringify({ score: r.score, findings: r.findings || [], kills: r.kills || [] }),
+  })),
+  loopEvidence: {
+    workflow: 'blog_plan_loop.workflow.js',
+    rounds: loopLog.map((r) => ({
+      round: r.round,
+      planner: r.round === 1 ? '기획작가 초안' : '기획작가 개선안',
+      evaluator: JSON.stringify({ score: r.score, decision: r.decision, huhCount: r.huhCount, findings: r.findings || [] }),
+      skeptic: JSON.stringify({ verdict: r.skeptic, kills: r.kills || [] }),
+      decision: r.passed ? 'passed' : 'revise',
+      evaluatorScore: r.score || 0,
+      plannerRevision: r.passed ? '최종 통과안' : '평가자와 회의자 지적을 반영해 다음 라운드에서 재작성',
+    })),
+    note: '작가기획, 평가 피드백, 작가 재기획, 재평가 루프 실행 산물. 최종 92점 이상만 발행',
+  },
+}
+
+return { plan, loopLog, passed, rounds: loopLog.length, corpName, stockCode, contentKind }

@@ -22,12 +22,15 @@ TECH_DIR = ROOT / "blog" / "08-tech-story"  # 기술이야기(설명 시리즈) 
 SNS_ASSETS_DIR = ROOT / "sns" / "assets"
 PLAN_FILE = "cards.plan.json"
 
-PLAN_VERSION = 6
-SUPPORTED_PLAN_VERSIONS = {1, 2, 3, 4, 5, PLAN_VERSION}
+PLAN_VERSION = 7
+SUPPORTED_PLAN_VERSIONS = {1, 2, 3, 4, 5, 6, PLAN_VERSION}
 STRICT_FLOW_MIN_VERSION = 3  # 이 버전 이상이면 큰문장 흐름(연결·판단형 종결)을 강제 검사
 INSIGHT_MIN_VERSION = 4  # 이 버전 이상이면 insightContract(통념·반전·렌즈)를 강제
 VISUAL_PLAN_MIN_VERSION = 4  # 이 버전 이상이면 데이터 카드의 visualPlan 과 실제 visual 연결을 강제
 TITLE_CONTRACT_MIN_VERSION = 6  # 이 버전 이상이면 제목 후보·후크 검증을 발행 게이트에서 강제
+LOOP_EVIDENCE_MIN_VERSION = 7  # 이 버전 이상이면 기획자·평가자·회의자 재기획 루프 증거를 강제
+EMPHASIS_MIN_VERSION = 7  # 이 버전 이상이면 모든 슬라이드 핵심 문장에 [[강조]] 마커를 강제
+REVIEW_SCORE_MIN = 92
 LEGACY_MIN_IMAGES = 5
 MIN_IMAGES = 7
 RECOMMENDED_MAX_IMAGES = 10
@@ -42,6 +45,10 @@ REQUIRED_REVIEW_ROUNDS = (
     "readerFit",
     "reevaluation",
 )
+LOOP_WORKFLOW_NAME = "cards_plan_loop.workflow.js"
+LOOP_REQUIRED_ROUND_FIELDS = ("planner", "evaluator", "skeptic")
+LOOP_REVISION_DECISIONS = {"revise", "kill"}
+LOOP_PASS_DECISIONS = {"pass", "passed", "survive"}
 NARRATIVE_RULES = (
     "한 주제 안에서 훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문으로 이어진다.",
     "각 슬라이드는 앞장의 주장이나 숫자를 받아 다음 장으로 넘겨야 한다.",
@@ -164,9 +171,9 @@ WEAK_TITLE_PATTERNS = (
 )
 TITLE_HOOK_CUE_RE = re.compile(r"왜|어떻게|무엇|누가|진짜|반전|문제|핵심|지도|병목|균열|보이지|남는|바뀌|낮|높|안\s")
 
-# ── 렌더링 계약 레지스트리 — 카드가 쓸 수 있는 시각 계약의 공식 카탈로그(정례화) ──
+# ── 렌더링 계약 레지스트리 - 카드가 쓸 수 있는 시각 계약의 공식 카탈로그(정례화) ──
 # 기획이 beat 마다 큰문장 + visual 계약을 선언한다. 부른 계약이 RENDERABLE(렌더러 구현분)이면 통과,
-# REGISTERED 이나 렌더러 미구현(예: finChart)이면 게이트가 "계약 추가(확장 루프)"로 막는다 —
+# REGISTERED 이나 렌더러 미구현(예: finChart)이면 게이트가 "계약 추가(확장 루프)"로 막는다 -
 # 파이프라인이 가장 강한 기획에 맞춰 자라게 하는 닫힌 루프의 기계 게이트. SSOT 표는 operation.content.
 LAYOUT_CONTRACTS = ("editorial", "editorialBeat", "editorialStat")
 # 인라인 차트는 실제 재무그래프(MiniFinChart)와 동일 렌더러로 그린다. finCard(손글 시리즈)·table 구현분.
@@ -246,6 +253,10 @@ def clean_card_text(value: object) -> str:
     return " ".join(str(value or "").replace("[[", "").replace("]]", "").split())
 
 
+def has_emphasis_marker(value: object) -> bool:
+    return "[[" in str(value or "") and "]]" in str(value or "")
+
+
 def slide_line(slide: dict[str, Any]) -> str:
     for key in ("line", "context", "sub", "kicker", "bigNumber"):
         value = clean_card_text(slide.get(key, ""))
@@ -284,6 +295,16 @@ def has_data_explanation(value: object) -> bool:
 
 def has_evidence_refs(value: object) -> bool:
     return isinstance(value, list) and any(str(ref).strip() for ref in value)
+
+
+def is_loop_evidence_required(plan: dict[str, Any]) -> bool:
+    version = plan.get("version")
+    return isinstance(version, int) and version >= LOOP_EVIDENCE_MIN_VERSION
+
+
+def is_emphasis_required(plan: dict[str, Any]) -> bool:
+    version = plan.get("version")
+    return isinstance(version, int) and version >= EMPHASIS_MIN_VERSION
 
 
 def template_copy_hits(value: object) -> list[str]:
@@ -366,7 +387,7 @@ def title_contract(title: str) -> dict[str, Any]:
 
 
 def insight_contract() -> dict[str, Any]:
-    """인사이트 계약 — 빈 스캐폴드. v4+ 발행 게이트는 통념·반전·렌즈가 채워졌는지 강제한다.
+    """인사이트 계약 - 빈 스캐폴드. v4+ 발행 게이트는 통념·반전·렌즈가 채워졌는지 강제한다.
 
     충돌하는 사실에서 멈추지 않고, 왜 가능한가(메커니즘)와 독자가 앞으로 무엇을 다르게
     볼지(렌즈)까지 적게 해 '매끄럽지만 알맹이 없는' 덱을 기획 단계에서 막는다.
@@ -553,6 +574,11 @@ def review_gate(status: str = "planned") -> dict[str, Any]:
             },
         ],
         "decisionLog": [],
+        "loopEvidence": {
+            "workflow": LOOP_WORKFLOW_NAME,
+            "rounds": [],
+            "note": "발행 전 기획자 초안, 평가자·회의자 피드백, 기획자 재작성, 재평가 기록을 채운다.",
+        },
     }
 
 
@@ -857,6 +883,56 @@ def validate_title_contract(plan: dict[str, Any], *, require_passed: bool) -> li
     return errors
 
 
+def validate_loop_evidence(plan: dict[str, Any], *, require_passed: bool) -> list[str]:
+    errors: list[str] = []
+    target = plan.get("target") if isinstance(plan.get("target"), dict) else {}
+    slug = str(target.get("slug") or "<unknown>")
+    if not require_passed or not is_loop_evidence_required(plan):
+        return errors
+
+    gate = plan.get("reviewGate") if isinstance(plan.get("reviewGate"), dict) else {}
+    evidence = gate.get("loopEvidence")
+    if not isinstance(evidence, dict):
+        errors.append(f"{slug}: reviewGate.loopEvidence 누락 - passed 도장이 아니라 실제 기획 루프 증거가 필요함")
+        return errors
+
+    workflow = str(evidence.get("workflow") or "")
+    if LOOP_WORKFLOW_NAME not in workflow:
+        errors.append(f"{slug}: reviewGate.loopEvidence.workflow 는 {LOOP_WORKFLOW_NAME} 를 가리켜야 함")
+    rounds = evidence.get("rounds")
+    if not isinstance(rounds, list) or len(rounds) < 2:
+        errors.append(f"{slug}: reviewGate.loopEvidence.rounds 는 기획자 초안과 재기획을 포함해 2라운드 이상이어야 함")
+        return errors
+
+    saw_revision = False
+    for idx, row in enumerate(rounds, start=1):
+        if not isinstance(row, dict):
+            errors.append(f"{slug}: reviewGate.loopEvidence.rounds[{idx}] 은 객체여야 함")
+            continue
+        for field in LOOP_REQUIRED_ROUND_FIELDS:
+            if compact_text_len(str(row.get(field) or "")) < 6:
+                errors.append(f"{slug}: reviewGate.loopEvidence.rounds[{idx}].{field} 이 너무 약함")
+        decision = clean_card_text(row.get("decision")).lower()
+        if not decision:
+            errors.append(f"{slug}: reviewGate.loopEvidence.rounds[{idx}].decision 누락")
+        if decision in LOOP_REVISION_DECISIONS or compact_text_len(str(row.get("plannerRevision") or "")) >= 8:
+            saw_revision = True
+    final = rounds[-1] if isinstance(rounds[-1], dict) else {}
+    final_decision = clean_card_text(final.get("decision")).lower()
+    final_score_raw = final.get("evaluatorScore", final.get("minScore", final.get("score")))
+    try:
+        final_score = int(final_score_raw)
+    except (TypeError, ValueError):
+        final_score = -1
+    if final_decision not in LOOP_PASS_DECISIONS:
+        errors.append(f"{slug}: reviewGate.loopEvidence 마지막 라운드가 통과로 닫히지 않음({final_decision!r})")
+    if final_score < REVIEW_SCORE_MIN:
+        errors.append(f"{slug}: reviewGate.loopEvidence 마지막 평가 점수 {final_score_raw!r} < {REVIEW_SCORE_MIN}")
+    if not saw_revision:
+        errors.append(f"{slug}: reviewGate.loopEvidence 에 평가 피드백을 반영한 기획자 재작성 기록이 없음")
+    return errors
+
+
 def validate_plan(plan: dict[str, Any], *, require_passed: bool = True, require_assets: bool = False) -> list[str]:
     errors: list[str] = []
     target = plan.get("target") if isinstance(plan.get("target"), dict) else {}
@@ -933,29 +1009,30 @@ def validate_plan(plan: dict[str, Any], *, require_passed: bool = True, require_
         insight = planning.get("insightContract")
         if not isinstance(insight, dict):
             errors.append(
-                f"{slug}: planning.insightContract 누락 — v{INSIGHT_MIN_VERSION}+ 는 통념·반전·렌즈를 적어야 함"
+                f"{slug}: planning.insightContract 누락 - v{INSIGHT_MIN_VERSION}+ 는 통념·반전·렌즈를 적어야 함"
             )
         else:
             for field in INSIGHT_CONTRACT_FIELDS:
                 if not str(insight.get(field, "")).strip():
                     errors.append(
-                        f"{slug}: planning.insightContract.{field} 누락 — 인사이트는 통념·반전·렌즈를 모두 적어야 함"
+                        f"{slug}: planning.insightContract.{field} 누락 - 인사이트는 통념·반전·렌즈를 모두 적어야 함"
                     )
             refs = insight.get("evidenceRefs")
             if not isinstance(refs, list) or not [r for r in refs if str(r).strip()]:
-                errors.append(f"{slug}: planning.insightContract.evidenceRefs 누락 — 반전을 떠받치는 실측 ref 최소 1개")
+                errors.append(f"{slug}: planning.insightContract.evidenceRefs 누락 - 반전을 떠받치는 실측 ref 최소 1개")
             twist = re.sub(r"\s+", "", str(insight.get("twistFact", "")))
             title_norm = re.sub(r"\s+", "", str(target.get("title", "")))
             thesis_norm = re.sub(r"\s+", "", str(planning.get("cardThesis", "")))
             if twist and twist in (title_norm, thesis_norm):
                 errors.append(
-                    f"{slug}: insightContract.twistFact 가 제목/카드주제의 재진술 — 헤드라인 너머의 사실이어야 함"
+                    f"{slug}: insightContract.twistFact 가 제목/카드주제의 재진술 - 헤드라인 너머의 사실이어야 함"
                 )
             elif twist and len(twist) < 20:
                 errors.append(
-                    f"{slug}: insightContract.twistFact 가 너무 짧음 — 충돌하는 사실 + 메커니즘을 한 문장으로"
+                    f"{slug}: insightContract.twistFact 가 너무 짧음 - 충돌하는 사실 + 메커니즘을 한 문장으로"
                 )
     errors.extend(validate_visual_plan(plan, require_passed=require_passed))
+    errors.extend(validate_loop_evidence(plan, require_passed=require_passed))
     image_plan = plan.get("imagePlan")
     if not isinstance(image_plan, list):
         errors.append(f"{slug}: imagePlan 은 리스트여야 함")
@@ -1064,13 +1141,27 @@ def validate_contract_big_sentence_flow(slug: str, contract: dict[str, Any]) -> 
     required_hits = max(3, (len(strip) - 2) // 2)
     if continuity_hits < required_hits:
         errors.append(
-            f"{slug}: 큰문장 사이 연결어/지시어가 부족함({continuity_hits}/{required_hits}) — "
+            f"{slug}: 큰문장 사이 연결어/지시어가 부족함({continuity_hits}/{required_hits}) - "
             "넘겨 읽으면 낱장 메모처럼 끊김"
         )
 
     last_text = strip[-1][2] if strip else ""
     if last_text and not any(token in last_text for token in CLOSING_TOKENS):
         errors.append(f"{slug}: 마지막 큰문장이 앞선 흐름을 판단으로 닫지 못함: {last_text!r}")
+    return errors
+
+
+def validate_contract_emphasis(slug: str, contract: dict[str, Any], plan: dict[str, Any] | None) -> list[str]:
+    errors: list[str] = []
+    if not plan or not is_emphasis_required(plan):
+        return errors
+    for idx, slide in enumerate(contract.get("slides", []), start=1):
+        if not isinstance(slide, dict):
+            continue
+        layout = str(slide.get("layout") or "")
+        keys = ("line", "sub") if layout in {"editorial", "editorialBeat"} else ("context",)
+        if not any(has_emphasis_marker(slide.get(key)) for key in keys):
+            errors.append(f"{slug}: slide[{idx}] 핵심 텍스트에 [[강조]] 마커가 없음")
     return errors
 
 
@@ -1082,13 +1173,13 @@ def validate_contract_readability(slug: str, contract: dict[str, Any]) -> list[s
         kicker = clean_card_text(slide.get("kicker"))
         normalized_kicker = re.sub(r"[^0-9A-Za-z가-힣]", "", kicker)
         if normalized_kicker in STRUCTURE_KICKER_LABELS:
-            errors.append(f"{slug}: slide[{idx}].kicker 구조 라벨 금지: {kicker!r} — 내용 문장 자체에 흐름을 넣어야 함")
+            errors.append(f"{slug}: slide[{idx}].kicker 구조 라벨 금지: {kicker!r} - 내용 문장 자체에 흐름을 넣어야 함")
     for loc, text in _contract_reading_texts(contract):
         for phrase in CHECKLIST_PHRASES:
             if phrase in text:
                 errors.append(f"{slug}: {loc} 체크리스트식 문구 금지: {phrase!r}")
         if "약자입니다" in text:
-            errors.append(f"{slug}: {loc} 약자 설명형 문장 금지 — 쉬운 뜻부터 써야 함")
+            errors.append(f"{slug}: {loc} 약자 설명형 문장 금지 - 쉬운 뜻부터 써야 함")
         for term, replacement in JARGON_REPLACEMENTS.items():
             if _term_in_text(text, term):
                 errors.append(f"{slug}: {loc} 어려운 약어 사용: {term!r} -> {replacement!r}")
@@ -1114,13 +1205,13 @@ def validate_contract_visuals(slug: str, contract: dict[str, Any]) -> list[str]:
         kind = str(vis.get("kind") or "")
         if kind not in VISUAL_CONTRACTS_REGISTERED:
             errors.append(
-                f"{slug}: slide[{idx}].visual.kind {kind!r} 미등록 렌더링 계약 — "
+                f"{slug}: slide[{idx}].visual.kind {kind!r} 미등록 렌더링 계약 - "
                 f"레지스트리에 계약 추가(확장 루프). 등록분: {', '.join(VISUAL_CONTRACTS_REGISTERED)}"
             )
             continue
         if kind not in VISUAL_CONTRACTS_RENDERABLE:
             errors.append(
-                f"{slug}: slide[{idx}].visual.kind {kind!r} 은 등록됐으나 렌더러 미구현 — "
+                f"{slug}: slide[{idx}].visual.kind {kind!r} 은 등록됐으나 렌더러 미구현 - "
                 "CardSlide 에 렌더러 추가(확장 루프) 후 발행"
             )
             continue
@@ -1152,13 +1243,22 @@ def validate_contract_visuals(slug: str, contract: dict[str, Any]) -> list[str]:
                             f"{slug}: slide[{idx}].visual(finCard) '{name}' 데이터 길이({len(data)})가 "
                             f"periods({len(periods)})와 다름"
                         )
-        elif kind == "table" and not (
-            isinstance(vis.get("cols"), list)
-            and vis.get("cols")
-            and isinstance(vis.get("data"), list)
-            and vis.get("data")
-        ):
-            errors.append(f"{slug}: slide[{idx}].visual(table) 는 cols·data 가 필요함")
+        elif kind == "table":
+            cols = vis.get("cols")
+            data = vis.get("data")
+            if not (isinstance(cols, list) and cols and isinstance(data, list) and data):
+                errors.append(f"{slug}: slide[{idx}].visual(table) 는 cols·data 가 필요함")
+                continue
+            clean_cols = [str(c) for c in cols]
+            for row_idx, row in enumerate(data, start=1):
+                if not isinstance(row, dict):
+                    errors.append(
+                        f"{slug}: slide[{idx}].visual(table).data[{row_idx}] 는 객체여야 함. 배열 행은 렌더에서 빈 표가 됨"
+                    )
+                    continue
+                missing = [c for c in clean_cols if c not in row]
+                if missing:
+                    errors.append(f"{slug}: slide[{idx}].visual(table).data[{row_idx}] 누락 컬럼: {', '.join(missing)}")
     return errors
 
 
@@ -1200,6 +1300,36 @@ def validate_contract_planned_visuals(slug: str, contract: dict[str, Any], plan:
             errors.append(f"{slug}: visualPlan[{order}].dataExplanation 이 너무 약함")
         if not has_evidence_refs(entry.get("evidenceRefs")):
             errors.append(f"{slug}: visualPlan[{order}].evidenceRefs 누락")
+    return errors
+
+
+def validate_contract_plan_alignment(slug: str, contract: dict[str, Any], plan: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    planning = plan.get("planning") if isinstance(plan.get("planning"), dict) else {}
+    carousel = plan.get("carousel") if isinstance(plan.get("carousel"), dict) else {}
+    slides = [s for s in contract.get("slides", []) if isinstance(s, dict)]
+    expected_count = int(carousel.get("slideCount") or 0)
+    if expected_count and expected_count != len(slides):
+        errors.append(f"{slug}: plan carousel.slideCount({expected_count}) 와 실제 슬라이드 수({len(slides)})가 다름")
+
+    big_sentence = planning.get("bigSentenceContract") if isinstance(planning.get("bigSentenceContract"), dict) else {}
+    strip = big_sentence.get("strip") if isinstance(big_sentence.get("strip"), list) else []
+    if strip and len(strip) != len(slides):
+        errors.append(
+            f"{slug}: planning.bigSentenceContract.strip 수({len(strip)})와 실제 슬라이드 수({len(slides)})가 다름"
+        )
+    actual = big_sentence_strip(slides)
+    for idx, row in enumerate(strip[: len(slides)], start=1):
+        if not isinstance(row, dict):
+            continue
+        planned_text = clean_card_text(row.get("mainText"))
+        actual_text = actual[idx - 1]["mainText"]
+        if planned_text and planned_text != actual_text:
+            errors.append(f"{slug}: slide[{idx}] 계획 큰문장과 실제 카드 문장이 다름")
+        planned_layout = str(row.get("layout") or "")
+        actual_layout = str(actual[idx - 1]["layout"] or "")
+        if planned_layout and planned_layout != actual_layout:
+            errors.append(f"{slug}: slide[{idx}] 계획 layout({planned_layout})과 실제 layout({actual_layout})이 다름")
     return errors
 
 
@@ -1271,14 +1401,26 @@ def validate_contract_plan_gate(
             )
         copy_errors = validate_contract_readability(slug, contract)
         flow_errors = validate_contract_big_sentence_flow(slug, contract) if strict_big_sentence else []
+        emphasis_errors = validate_contract_emphasis(slug, contract, plan)
         visual_errors = validate_contract_visuals(slug, contract)
         planned_visual_errors = validate_contract_planned_visuals(slug, contract, plan) if plan is not None else []
-        if plan_errors or copy_errors or flow_errors or visual_errors or planned_visual_errors:
+        alignment_errors = validate_contract_plan_alignment(slug, contract, plan) if plan is not None else []
+        if (
+            plan_errors
+            or copy_errors
+            or flow_errors
+            or emphasis_errors
+            or visual_errors
+            or planned_visual_errors
+            or alignment_errors
+        ):
             errors.extend(f"{rel(plan_path)}: {err}" for err in plan_errors)
             errors.extend(copy_errors)
             errors.extend(flow_errors)
+            errors.extend(emphasis_errors)
             errors.extend(visual_errors)
             errors.extend(planned_visual_errors)
+            errors.extend(alignment_errors)
         else:
             stats["passed"] += 1
     return errors, stats

@@ -39,7 +39,8 @@
 - → BLOG.md §Phase 0
 
 ## 2. 기획: 전문 에이전트 적대 토론 (+ 평가·개선 루프)
-- **turnkey 루프(필수, 카드·팟캐스트 파리티)**: `Workflow({ scriptPath: "blog/_scripts/blog_plan_loop.workflow.js", args: { topic, corpName, stockCode, evidence, recentTitles } })`. 단독 작업(에이전트 체인 스킵)은 BLOG.md:158 경고 위반이고 클리셰·얕음·이미지 부실을 부른다. **반드시 이 루프로 기획한다.** 산출 plan(관통선·인싸이트·막구조·막별비주얼·imagePlan·정직성가드)을 `brief.json` 으로 글 폴더에 저장(발행 게이트가 이 산출물을 확인).
+- **turnkey 루프(필수, 카드·팟캐스트 파리티)**: `Workflow({ scriptPath: "blog/_scripts/blog_plan_loop.workflow.js", args: { contentKind, topic, corpName, stockCode, evidence, recentTitles } })`. 단독 작업(에이전트 체인 스킵)은 BLOG.md:158 경고 위반이고 클리셰·얕음·이미지 부실을 부른다. **반드시 이 루프로 기획한다.** 산출 plan(관통선·인싸이트·막구조·막별비주얼·imagePlan·evidenceMap·정직성가드)을 `brief.json` 으로 글 폴더에 저장(발행 게이트가 이 산출물을 확인).
+- **92점 루프 게이트(필수)**: 작가기획 → 평가 피드백 → 작가 재기획 → 재평가를 최소 2라운드 실행한다. `reviewGate.loopEvidence.workflow="blog_plan_loop.workflow.js"`, `rounds >= 2`, 마지막 `evaluatorScore >= 92`, 마지막 `decision=passed`, 재기획 흔적이 없으면 발행 실패다.
 - 병렬 4 에이전트(마찰 0)는 클리셰를 통과시킨다 → **적대 토론**으로: 재무분석가 vs 산업·역사가(서로 다른 관통선 경합) → 회의론자(둘 다 "템플릿 클리셰"로 격파) + 독자대리인(재미) → **단일 관통선 + 정직성 가드**로 수렴.
 - 산출: **독자질문 1(관통선)** + **핵심 인싸이트 1(그 질문의 답)** + 막 구조표 + 막별 테이블 + 제목/description 후보 + **막별 비주얼 기획**(고정 템플릿 아님. 이야기가 요구하는 차트·표·카드를 막마다 정한다: 부문 믹스=도넛, OPM 궤적=라인, peer=바, 수주 runway=런웨이 차트. 카드뉴스 `imagePlan`처럼 블로그 차트도 스토리가 정한다).
 - **핵심 인싸이트 1 (필수·확실히)**: 관통선(질문)의 *답*을 한 문장으로. ① 상식과 다르고 ② 기억되며 ③ 다음 공시에 적용 가능해야 한다. 내러티브가 장면→숫자→반전을 거쳐 **이 한 문장에 필연적으로 착지**한다(요약 박스가 아니라 이야기가 도달하는 결론). 관통선이 재미의 문이라면 인싸이트는 독자가 쥐고 나가는 단백질. 예(HD): "24% 마진은 변압기 비중 61→70% 쏠림이 만든 시간 독점의 가격이고, 그 비중이 지표다".
@@ -57,7 +58,7 @@
 - **인싸이트 도달 게이트 (확실히·필수)**: 독자 에이전트가 글을 덮고 **묻지 않아도** 핵심 인싸이트를 한 문장으로 되뇐다. 그게 기획의 인싸이트와 일치하고 **뻔하지 않으면**(상식·업계 상식이면 실패) 통과. 못 되뇌거나 뻔하면 = 내러티브가 인싸이트를 묻거나 애초에 인싸이트가 얕은 것 → 재작성. 재미있게 읽혔는데 남는 게 없으면(칼로리만·단백질 0) 발행 차단.
 - **적대검증**: 본문 강한 수치 전부 메인 dartlab 재계산(NPM 행 누락 · 연도 귀속 · 배율 오류 사례 다수). 검증표에 없는 숫자 = 발행 차단.
 - **정직성 가드**: 영업이익 vs 순이익 분리 · 분기/연간 라벨 명시 · 일회성 분리 · 매핑 artifact 무시 · 연결 vs 그룹 실체 구분.
-- **발행 하드 게이트(필수, 형식통과 차단)**: `uv run python -X utf8 blog/_scripts/auditBlog.py --gate blog/05-company-reports/<폴더>`. 위반 시 exit 1. 심층 카테고리는 ① 실사 OG 카드(`ogImage: /thumbnails/{slug}.webp`, 기본 아바타 폴백 금지) ② assets 실사 사진 webp ③ 본문 실사 사진 `![](*.webp)` ≥1 ④ 본문 14,000자 ⑤ 기획 루프 산출물 `brief.json` 전부 있어야 통과. SEO 점수만 형식으로 채우던 구멍(손수 SVG·아바타·얕음)을 막는다.
+- **발행 하드 게이트(필수, 형식통과 차단)**: `uv run python -X utf8 blog/_scripts/auditBlog.py --gate blog/<카테고리>/<폴더>`. 위반 시 exit 1. `company-reports`, `tech-story`, `data-reports` 모두 대상이다. 공통으로 ① 실사 OG 카드(`ogImage: /thumbnails/*.webp`, 기본 아바타 폴백 금지) ② assets 실사 사진 webp ③ 본문 실사 사진 `![](*.webp)` 1장 이상 ④ 장르별 깊이 하한 ⑤ `brief.json` 안의 스토리·비주얼·imagePlan·evidenceMap·92점 루프 증거가 있어야 통과. SEO 점수만 형식으로 채우던 구멍(손수 SVG·아바타·얕음·루프 스킵)을 막는다.
 - 게이트: `audit_seo.py` SEO ≥ 95(품질로만. 길이·섹션 패딩 금지, 점수는 부산물).
 - **깊이 게이트(회사 심층 리포트 한정)**: 측정은 **본문 기준**(표·SVG·코드 제외한 읽는 글자수. audit_seo·auditBlog 공통). 하한 **14,000자** 미만이면 `auditBlog.py` 가 "얕음(shallow deep report)"로 리라이트 후보 표시. 심층 완성 목표 **20,000자 이상**(현재 상위 3%만 도달, 최고작 티어), 장기 야심은 4만자. 길이는 막·증거·시나리오의 산물이지 패딩이 아니다(반복도 가드와 짝, 표 복붙·문장 늘리기 차단). 교육·소식·신용 카테고리는 구조상 단문이라 제외.
 - → BLOG.md §Phase 4
@@ -66,7 +67,7 @@
 - **3 종 구분**: ① 회사 카드(블로그 글 frontmatter `carousel:`, code 있음) ② 에디토리얼(인스타 톤, Hook Engine 후킹 채점) ③ 이슈 카드(standalone, `blog/_issues/{slug}`, 블로그 글 없음).
 - **기획**: `plan_card_news.py` → `cards.plan.json`(imagePlan 7장 이상, visualPlan, reviewGate).
 - **데이터 시각 게이트**: 숫자·비교·현금·마진·주가 같은 데이터 주장 카드는 `visualPlan.dataExplanation` + `evidenceRefs` + 실제 slide `visual` 계약(`finCard` 또는 `table`)을 붙인다. 배경 이미지만 있는 숫자 카드는 발행 차단.
-- **작가 패널 게이트(공개물 필수, 자동통과 금지)**: 훅 강도·서사 스파인·디자인/이미지 적합성·정직성 독립 검토 → 합의 수정 → 같은 패널 재평가. `reviewGate.status="passed"` + 라운드 passed 전 `build_carousel_contracts.py` 발행 차단.
+- **작가 패널 게이트(공개물 필수, 자동통과 금지)**: 훅 강도·서사 스파인·디자인/이미지 적합성·정직성 독립 검토 → 합의 수정 → 같은 패널 재평가. `reviewGate.status="passed"` + `reviewGate.loopEvidence.rounds >= 2` + 최종 `evaluatorScore >= 92` 전 `build_carousel_contracts.py` 발행 차단.
 - → _scripts/CARDS.md (카드 파이프라인 상세 SSOT)
 
 ## 6. 이미지: 생성 / 수급 / 평가·개선

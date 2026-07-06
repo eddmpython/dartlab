@@ -78,7 +78,7 @@ export type CarouselCard =
 	// ── 편집 카드(기존 SNS 캐러셀 계약 carousels/{code}.json 손글 카피) · `[[강조]]`=accentImpact ──
 	| (CardHead & { kind: 'editorial'; date?: string; line: string; sub?: string }) // 커버
 	| (CardHead & { kind: 'editorialBeat'; kicker?: string; line: string; sub?: string; visual?: SlideVisual }) // 헤드라인 비트(+선택 시각 증거)
-	| (CardHead & { kind: 'editorialStat'; kicker?: string; bigNumber: string; unit?: string; context?: string }); // 큰 숫자
+	| (CardHead & { kind: 'editorialStat'; kicker?: string; bigNumber: string; unit?: string; context?: string; visual?: SlideVisual }); // 큰 숫자(+선택 시각 증거)
 
 // ── 하이브리드 카드 시각 슬롯(렌더링 계약 레지스트리의 '시각 계약') ──
 // 큰문장(주장)이 주인공, visual 은 그 주장을 증명하는 작은 증거. 기존 차트 shape 재사용(새 엔진 0).
