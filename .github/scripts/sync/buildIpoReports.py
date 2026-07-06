@@ -6,12 +6,16 @@
 생산한다. online DART→parse→HF push (allFilings·scan 과 동일 sync 데이터모델, 우회 굽기 아님).
 
 파서·렌더는 story.buildIpoReport 그대로 위임(엔진 재구현 0). 본 스크립트는 발굴·호출·직렬화·push 배관만.
-최근 윈도(85 일, list.json 3 개월 제한)만 rebuild. 상장 후 발행사는 일반 Y/K 종목이 되어 aging out.
-발행사 ~30 곳이라 파일 KB~수백KB(1.5MB 임계 하). HF 증식 아님(단일 파일 매 cron 덮어씀).
+발굴은 최근 윈도(85 일, list.json 3 개월 제한)만 rebuild. 상장 후 발행사는 일반 Y/K 종목이 되어 윈도 밖으로 나간다.
 
-산출 = ``dart/ipo/reports.parquet`` (rcept 키). 컬럼: 발굴 메타 + 알림용 스칼라(왓치 eval_new_ipo 소비,
-scan("ipo") 컬럼명 호환) + reportJson(터미널 ipoReportSource 직독, 전체 IpoReport). 왓치가 첫 관문:
-notify-watch cron 이 이 베이크를 먼저 돌려(리포트 HF 등재) 그다음 푸시(딥링크 목적지 리포트가 이미 존재).
+산출 2 파일 (buildAllFilingsRecent 의 recent/market_recent 2파일 분리 미러):
+  - ``dart/ipo/reports.parquet`` = 라이브 롤링(최근 85 일, 발행사 ~30 곳, 수백KB). 터미널 whole-file 직독 +
+    왓치 eval_new_ipo 소비(scan("ipo") 컬럼명 호환 스칼라) + reportJson(전체 IpoReport). 매 cron 덮어씀.
+  - ``dart/ipo/history.parquet`` = 누적 아카이브(전 발행사 영구, rcept 키). 기존 HF history 를 baseline 으로
+    merge·dedup·무trim 하여 윈도 밖으로 나간 발행사 리포트도 영구 보존(aging out 소실 방지). corpCode 정렬
+    row-group range-fetch 대상이라 1.5MB whole-file 게이트 미적용. 이력이 커지면 실측 후 연 샤딩 승격.
+
+왓치가 첫 관문: notify-watch cron 이 이 베이크를 먼저 돌려(리포트 HF 등재) 그다음 푸시(딥링크 목적지 리포트가 이미 존재).
 
 Usage:
     uv run python -X utf8 .github/scripts/sync/buildIpoReports.py [--no-push] [--date-from YYYYMMDD]
@@ -35,9 +39,11 @@ from dartlab.core.logger import getLogger
 _log = getLogger(__name__)
 
 _KEY = "ipoReports"
-_NAME = "reports.parquet"
+_NAME = "reports.parquet"  # 라이브 롤링(최근 85일, 터미널 whole-file 직독, 1.5MB 게이트).
+_HISTORY_NAME = "history.parquet"  # 누적 아카이브(전 발행사 영구, rcept 키, HF baseline merge, range-fetch).
 _WINDOW_DAYS = 85  # = dartlab.scan.ipo.IPO_WINDOW_DAYS (SSOT). test_buildIpoReports 가 동치 강제(드리프트 가드).
-_MAX_BYTES = 1_536 * 1024  # hfRange WHOLE_FILE_MAX_BYTES. 초과 시 whole-file GET 분기 falldown 가드.
+_MAX_BYTES = 1_536 * 1024  # hfRange WHOLE_FILE_MAX_BYTES. reports.parquet(라이브) 한정 가드.
+_HISTORY_ROW_GROUP = 1_000  # history 는 corpCode row-group range-fetch 대상. whole-file 1.5MB 게이트 미적용.
 
 # 알림 스칼라는 scan("ipo") 컬럼명과 동일(왓치 eval_new_ipo 가 df 무변경 소비) + 발굴 메타 + reportJson.
 _SCHEMA = {
@@ -61,6 +67,50 @@ def ipoReportsPath() -> Path:
     d = Path(_cfg.dataDir) / DATA_RELEASES[_KEY]["dir"]
     d.mkdir(parents=True, exist_ok=True)
     return d / _NAME
+
+
+def _historyPath() -> Path:
+    """로컬 history.parquet 경로(누적 아카이브). reports 와 같은 DATA_RELEASES dir."""
+    d = Path(_cfg.dataDir) / DATA_RELEASES[_KEY]["dir"]
+    d.mkdir(parents=True, exist_ok=True)
+    return d / _HISTORY_NAME
+
+
+def _hfHistoryBase() -> pl.DataFrame | None:
+    """기존 HF history.parquet (있으면). append 누적의 baseline. buildAllFilingsRecent._hfBaseFrame 미러.
+
+    최초 빌드(파일 부재)·영구 실패면 None(다음 cron 자가복구). transient 는 retryHfCall 이 흡수.
+    """
+    from dartlab.core.hfRetry import retryHfCall
+
+    relDir = DATA_RELEASES[_KEY]["dir"]
+    url = f"https://huggingface.co/datasets/{repoFor(_KEY)}/resolve/main/{relDir}/{_HISTORY_NAME}"
+    try:
+        return retryHfCall(pl.read_parquet, url)
+    except Exception:  # noqa: BLE001 . 부재/영구실패 = None(첫 빌드 또는 다음 cron 복구)
+        return None
+
+
+def buildHistory(dfLive: pl.DataFrame, *, mergeHf: bool = True) -> Path:
+    """라이브 롤링 프레임 + 기존 HF history baseline 을 rcept 로 union·dedup → 무trim 영구 아카이브.
+
+    reports.parquet(85일 라이브, 터미널 직독)은 불변. 윈도 밖으로 나간 발행사 리포트까지 rcept 키로 영구
+    보존(list.json 3개월 제한이라 재발굴 불가, 소실 시 되돌릴 수 없음). buildAllFilingsRecent recent.parquet
+    누적 패턴 미러. corpCode 정렬 row-group range-fetch 대상(whole-file 1.5MB 게이트 없음).
+    """
+    frames = [dfLive]
+    if mergeHf:
+        base = _hfHistoryBase()
+        if base is not None:
+            frames.append(base)
+    hist = pl.concat(frames, how="diagonal_relaxed")
+    # 각 신고서(rcept) 1행. 정정본·확정본도 별 rcept 라 전 lifecycle 보존. dfLive 먼저라 재파싱 개선분 우선.
+    hist = hist.unique(subset=["rcept"], keep="first")
+    hist = hist.sort(["corpCode", "rceptDt"], descending=[False, True])
+    dest = _historyPath()
+    hist.write_parquet(dest, compression="zstd", row_group_size=_HISTORY_ROW_GROUP)
+    _log.info("[history] %d 신고서 누적 -> %s (%.0f KB)", hist.height, dest, dest.stat().st_size / 1024)
+    return dest
 
 
 def _discover(client, dateFrom: str | None, verbose: bool) -> list[dict]:
@@ -108,8 +158,8 @@ def _discover(client, dateFrom: str | None, verbose: bool) -> list[dict]:
     return out
 
 
-def build(*, dateFrom: str | None = None, verbose: bool = True) -> Path:
-    """발굴 → buildIpoReport(단일 파싱) → 구조화 typed reports.parquet(rcept 키). 로컬 경로 반환."""
+def build(*, dateFrom: str | None = None, verbose: bool = True) -> tuple[Path, Path]:
+    """발굴 → buildIpoReport(단일 파싱) → 라이브 reports.parquet + 누적 history.parquet. (라이브, 아카이브) 경로."""
     from dartlab.core.dartClient import DartClient
     from dartlab.story.ipoReport import buildIpoReport
 
@@ -155,12 +205,14 @@ def build(*, dateFrom: str | None = None, verbose: bool = True) -> Path:
             f"[ipo] {dest.name} {size / 1e6:.2f}MB > {_MAX_BYTES / 1e6:.2f}MB 임계. whole-file GET 분기 "
             f"falldown 위험. 윈도(_WINDOW_DAYS={_WINDOW_DAYS}) 축소 또는 reportJson 슬림 필요."
         )
-    _log.info("[build] %d 발행사 → %s (%.0f KB)", dfOut.height, dest, size / 1024)
-    return dest
+    _log.info("[build] %d 발행사 라이브 -> %s (%.0f KB)", dfOut.height, dest, size / 1024)
+    # 누적 아카이브(영구, rcept 키, HF baseline merge). reports.parquet 라이브 경로는 위에서 이미 확정.
+    histDest = buildHistory(dfOut)
+    return dest, histDest
 
 
-def push(dest: Path, token: str) -> None:
-    """reports.parquet → HF dart/ipo/. buildAllFilingsRecent.push 동형(retryHfCall + HfApi)."""
+def push(dest: Path, token: str, name: str = _NAME) -> None:
+    """parquet -> HF dart/ipo/{name}. buildAllFilingsRecent.push 동형(retryHfCall + HfApi, 파일당 name)."""
     from huggingface_hub import HfApi
 
     from dartlab.core.hfRetry import retryHfCall
@@ -170,12 +222,12 @@ def push(dest: Path, token: str) -> None:
     retryHfCall(
         api.upload_file,
         path_or_fileobj=str(dest),
-        path_in_repo=f"{relDir}/{_NAME}",
+        path_in_repo=f"{relDir}/{name}",
         repo_id=repoFor(_KEY),
         repo_type="dataset",
-        commit_message=f"ipo {_NAME}: 신규상장 공모분석 리포트 (증권신고서 6카테고리 파싱본)",
+        commit_message=f"ipo {name}: 신규상장 공모분석 리포트 (증권신고서 6카테고리 파싱본)",
     )
-    _log.info("[HF up] pushed %s/%s -> %s", relDir, _NAME, repoFor(_KEY))
+    _log.info("[HF up] pushed %s/%s -> %s", relDir, name, repoFor(_KEY))
 
 
 def _resolveToken() -> str:
@@ -196,16 +248,17 @@ def main() -> int:
     ap.add_argument("--date-from", default=None, help="YYYYMMDD 이상만(기본 최근 85 일)")
     args = ap.parse_args()
 
-    dest = build(dateFrom=args.date_from)
+    dest, histDest = build(dateFrom=args.date_from)
     if args.no_push:
         return 0
     token = _resolveToken()
     if not token:
         # 미설정 = 롤아웃 전 graceful no-op (watch.py·send.py 동형). 로컬 parquet 은 빌드됨(왓치 직독).
-        # genuine-failure(빌드·파싱·사이즈가드·push 예외)만 비-0 종료 → notify-watch assert 스텝이 job RED.
+        # genuine-failure(빌드·파싱·사이즈가드·push 예외)만 비-0 종료 -> notify-watch assert 스텝이 job RED.
         print("[HF up] HF_TOKEN 없음. push skip (롤아웃 전 no-op, 로컬 빌드 완료)", file=sys.stderr)
         return 0
-    push(dest, token)
+    push(dest, token, _NAME)  # 라이브 롤링(터미널 직독)
+    push(histDest, token, _HISTORY_NAME)  # 누적 아카이브(영구 보존)
     return 0
 
 

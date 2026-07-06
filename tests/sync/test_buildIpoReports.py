@@ -154,8 +154,9 @@ def test_build_emits_scan_compatible_and_reportjson(monkeypatch, tmp_path):
         }
 
     monkeypatch.setattr("dartlab.story.ipoReport.buildIpoReport", _fakeBuild)
+    monkeypatch.setattr(mod, "_hfHistoryBase", lambda: None)  # HF 네트워크 회피(최초 빌드 = baseline 없음)
 
-    dest = mod.build(verbose=False)
+    dest, histDest = mod.build(verbose=False)
     df = pl.read_parquet(dest)
     assert df.height == 1
     row = df.row(0, named=True)
@@ -168,3 +169,35 @@ def test_build_emits_scan_compatible_and_reportjson(monkeypatch, tmp_path):
     report = json.loads(row["reportJson"])
     assert report["title"] == "기도산업 공모분석"
     assert report["sections"][0]["title"] == "공모 개요"
+    # 누적 아카이브도 첫 빌드분 담음(baseline 없어 라이브와 동일)
+    hist = pl.read_parquet(histDest)
+    assert hist.height == 1 and hist.row(0, named=True)["rcept"] == "20260626000715"
+
+
+def test_history_accumulates_and_dedups_by_rcept(monkeypatch, tmp_path):
+    """누적 아카이브가 기존 HF baseline 과 라이브를 rcept union·dedup·무trim 으로 합친다.
+
+    라이브 롤링(reports.parquet)에서 aging out 된 발행사 리포트가 history 에 영구 보존되는지 검증.
+    """
+    mod = _load()
+    monkeypatch.setattr("dartlab.config.dataDir", str(tmp_path))
+    # 라이브 프레임: 신규 발행사 1곳(윈도 안)
+    live = pl.DataFrame(
+        [{"rcept": "R_NEW", "corpCode": "C2", "corpName": "신규사", "rceptDt": "20260626", "reportJson": "{}"}],
+        schema_overrides=mod._SCHEMA,
+    )
+    # 기존 HF history baseline: 이미 상장/aging out 된 발행사 + 라이브와 겹치는 rcept 1건(dedup 대상)
+    base = pl.DataFrame(
+        [
+            {"rcept": "R_OLD", "corpCode": "C1", "corpName": "옛발행사", "rceptDt": "20250101", "reportJson": "{}"},
+            {"rcept": "R_NEW", "corpCode": "C2", "corpName": "신규사(옛본)", "rceptDt": "20260626", "reportJson": "{}"},
+        ],
+        schema_overrides=mod._SCHEMA,
+    )
+    monkeypatch.setattr(mod, "_hfHistoryBase", lambda: base)
+
+    dest = mod.buildHistory(live)
+    hist = pl.read_parquet(dest)
+    by_rcept = {r["rcept"]: r for r in hist.iter_rows(named=True)}
+    assert set(by_rcept) == {"R_OLD", "R_NEW"}  # aging out 된 R_OLD 영구 보존 + dedup 으로 R_NEW 1건
+    assert by_rcept["R_NEW"]["corpName"] == "신규사"  # 라이브가 baseline 보다 우선(keep first)
