@@ -26,6 +26,12 @@ EVENT_WRAPPERS: tuple[str, ...] = (
     "거래정지",
 )
 
+# 자금조달(희석 사슬) 이벤트 타입 SSOT (profile 축3·credit 피드 공유. 시장별 정규화 타입).
+FINANCING_EVENTS: dict[str, tuple[str, ...]] = {
+    "KR": ("전환사채권발행결정", "유상증자결정", "신주인수권부사채권발행결정"),
+    "US": ("securitiesOffering",),
+}
+
 # 가격 축 신호 (quant/scan guide 파생. 방향 규칙: 고 랭크 = 상방 선언, 성적표가 부호 검증).
 # maxRet20 = 복권성(MAX, Bali-Cakici-Whitelaw): 고 MAX 는 회피 신호라 성적표가 음 부호로 검증.
 _PRICE_SIGNALS: tuple[str, ...] = ("ret5", "mom20x5", "volShock", "high52", "maxRet20")

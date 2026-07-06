@@ -65,12 +65,24 @@ def scanFinanceGrid(baseDir: Path | None = None) -> pl.DataFrame:
     """dart/finance 전종목 수치 재무 → (code, period, rceptDate, account, amount) long.
 
     단일 lazy glob 스캔(streaming) + 조기 계정 필터 (파일 루프 대비 ~460배, 실측 3.7초). 같은
-    (code,period,account) 다중 공시는 최신 접수 우선. rceptDate = rcept_no 앞 8자 (PIT 접수일).
+    (code,period,account) 다중 행은 연결(CFS) 우선, 그 안에서 최신 접수 우선 (연결/별도 혼입 =
+    삼성 매출 333조 CFS vs 238조 OFS 가 접수순으로 뒤섞이던 2026-07-06 실측 결함). rceptDate =
+    rcept_no 앞 8자 (PIT 접수일).
     """
     finDir = dataDir(baseDir) / "dart/finance"
     idMap = {aid: k for k, (ids, _) in _ACCOUNT_MAP.items() for aid in ids}
     nmPat = "|".join(nm for _, nms in _ACCOUNT_MAP.values() for nm in nms)
-    cols = ["rcept_no", "reprt_code", "bsns_year", "sj_div", "account_id", "account_nm", "thstrm_amount", "fp"]
+    cols = [
+        "rcept_no",
+        "reprt_code",
+        "bsns_year",
+        "sj_div",
+        "fs_div",
+        "account_id",
+        "account_nm",
+        "thstrm_amount",
+        "fp",
+    ]
     df = (
         pl.scan_parquet(
             str(finDir / "*.parquet"), include_file_paths="fp", extra_columns="ignore", missing_columns="insert"
@@ -99,10 +111,17 @@ def scanFinanceGrid(baseDir: Path | None = None) -> pl.DataFrame:
             account=acct,
         )
         .filter(pl.col("account").is_not_null() & pl.col("quarter").is_not_null())
-        .with_columns(period=pl.col("bsns_year") + pl.col("quarter"))
-        .select("code", "period", "rceptDate", "account", "amount")
+        .with_columns(
+            period=pl.col("bsns_year") + pl.col("quarter"),
+            fsRank=pl.when(pl.col("fs_div") == "CFS").then(0).otherwise(1),  # 연결 우선 (별도는 연결 부재 시만)
+        )
+        .select("code", "period", "rceptDate", "account", "amount", "fsRank")
     )
-    return out.sort("rceptDate", descending=True).unique(subset=["code", "period", "account"], keep="first")
+    return (
+        out.sort(["fsRank", "rceptDate"], descending=[False, True])
+        .unique(subset=["code", "period", "account"], keep="first")
+        .drop("fsRank")
+    )
 
 
 def fundWeekly(weekEnd: pl.DataFrame, mktcap: pl.DataFrame, baseDir: Path | None = None) -> pl.DataFrame:

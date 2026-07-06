@@ -12,12 +12,15 @@ Layer: L2.5 simulate. table·opine·readingScorecard·readingLedger 만 의존 (
 
 from __future__ import annotations
 
+import warnings
 from datetime import datetime, timezone
 from pathlib import Path
 
 import polars as pl
 
 from dartlab.simulate import costs as _costs
+from dartlab.simulate import enginefeeds as _enginefeeds
+from dartlab.simulate import feeds as _feeds
 from dartlab.simulate import opine as _opine
 from dartlab.simulate import readingLedger as _ledger
 from dartlab.simulate import readingScorecard as _sc
@@ -71,17 +74,26 @@ def issueReadings(
         directionByType: 이벤트 방향화 사전 (None + labels 있으면 여기서 도출).
         labels: 방향화 도출용 라벨 (None 이면 table 에서 계산).
     """
+    if matrices is None:  # 라이브 스캔 경로만 기본 엔진 피드 설치 (주입 테스트 격리 유지)
+        _enginefeeds.installEngineFeeds()
     weekMap, weekEnd, priceM, fundM, eventM = matrices or _buildMatrices(dataDir, market)
     if directionByType is None:
         lab = labels if labels is not None else _sc.weeklyLabels(weekEnd, marketTable(market).dailyPrices(dataDir))
         directionByType = _sc.deriveEventDirections(eventM, lab)
     # 작업대 확장축 (feeds 레지스트리): 등록 피드 무조건 소비 (기본 빈 레지스트리 = no-op, 주입
     # 테스트 격리 유지). 등록 1줄 = 라이브 runWeek 까지 표면 자동 등재 (자동흡수).
-    from dartlab.simulate import feeds as _feeds
-
-    extras, _feedErrors = _feeds.extraFeedMatrices(
-        {"weekMap": weekMap, "weekEnd": weekEnd, "dataDir": dataDir, "market": market}
+    extras, feedErrors = _feeds.extraFeedMatrices(
+        {
+            "weekMap": weekMap,
+            "weekEnd": weekEnd,
+            "priceM": priceM,
+            "eventM": eventM,
+            "dataDir": dataDir,
+            "market": market,
+        }
     )
+    for axis, msg in feedErrors.items():  # silent 삼킴 금지: 실패 축은 경고로 명시 (사이클은 계속)
+        warnings.warn(f"엔진 피드 '{axis}' 실패 (그 축 결측 발행): {msg}", stacklevel=2)
     readings = _opine.opine(priceM, fundM, eventM, directionByType=directionByType, extraMatrices=extras or None)
     if readings.height == 0:
         return 0

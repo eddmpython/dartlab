@@ -117,3 +117,101 @@ def testDecisionNetworkEmitsLayeredGraph():
     import json
 
     json.dumps(net)  # GUI fetch 소비 계약: 직렬화 가능
+
+
+def testRateScenarioUnitsMatchSeries():
+    # 2026-07-06 단위 결함 가드: rate 시리즈는 percent 단위(0.5~5.25)라 +100bp = 1.0 (0.01 아님)
+    assert st.DEFAULT_SCENARIOS["rateHike"].shocks["rate"] == 1.0
+    betas = pl.DataFrame({"code": ["a"], "rateBeta": [0.02], "fxBeta": [0.0], "oilBeta": [0.0]})
+    r = st.scenarioResponse(betas, st.DEFAULT_SCENARIOS["rateHike"].shocks)
+    assert abs(r["response"][0] - 0.02) < 1e-12  # +100bp x beta(per %p) = 유효 반응 (0.00% 결함 재발 방지)
+
+
+def _elasticityFixtures():
+    """업종 A = 유가 완전 추종 성장, 업종 B = 반대부호 성장 (공통차감 후에도 차등 노출 잔존)."""
+    import math
+
+    dOil = [
+        0.10,
+        -0.08,
+        0.12,
+        -0.05,
+        0.07,
+        -0.11,
+        0.09,
+        -0.04,
+        0.06,
+        -0.09,
+        0.13,
+        -0.03,
+        0.08,
+        -0.07,
+        0.05,
+        -0.10,
+        0.11,
+        -0.06,
+        0.04,
+        -0.02,
+    ]
+    oilLevel, cur = [], 100.0
+    for d in dOil:
+        cur *= math.exp(d)
+        oilLevel.append(cur)
+    # 분기 첫날 관측 매크로 (2019Q1 ~ 2023Q4 = 20분기)
+    dates, oilSeries = [], []
+    q = 0
+    for y in range(2019, 2024):
+        for qn in range(4):
+            dates.append(f"{y}{qn * 3 + 1:02d}15")
+            oilSeries.append(oilLevel[q])
+            q += 1
+    macro = pl.DataFrame({"date": dates, "rate": [3.0] * 20, "fx": [1300.0] * 20, "oil": oilSeries})
+    rows = []
+    periods = [(y, qn) for y in range(2019, 2024) for qn in range(1, 5)]
+    for ind, sign, codes in (("A", 1.0, [f"a{i}" for i in range(5)]), ("B", -1.0, [f"b{i}" for i in range(5)])):
+        for i, code in enumerate(codes):
+            vals: list[float] = []
+            for q in range(20):
+                if q < 4:
+                    vals.append(100.0 + q)
+                else:
+                    noise = 0.002 * ((q * 7 + i * 3) % 5 - 2)  # 결정론 소음 (완전적합 se=0 방지)
+                    vals.append(vals[q - 4] * math.exp(sign * 0.5 * dOil[q] + noise))
+            for q, (y, qn) in enumerate(periods):
+                rows.append(
+                    {
+                        "code": code,
+                        "period": f"{y}Q{qn}",
+                        "rceptDate": f"{y}{qn * 2 + 3:02d}15",
+                        "account": "revenue",
+                        "amount": vals[q],
+                    }
+                )
+    grid = pl.DataFrame(rows)
+    imap = pl.DataFrame(
+        {"code": [f"a{i}" for i in range(5)] + [f"b{i}" for i in range(5)], "industry": ["A"] * 5 + ["B"] * 5}
+    )
+    return grid, macro, imap
+
+
+def testIndustryElasticityTGateAndConditionalE():
+    grid, macro, imap = _elasticityFixtures()
+    el = st.industryElasticity(grid, macro, imap, minQuarters=10, minFirms=3, tGate=3.0)
+    pairs = {(r["industry"], r["factor"]): r["beta"] for r in el.iter_rows(named=True)}
+    assert ("A", "oil") in pairs and pairs[("A", "oil")] > 0  # 완전 추종 = 통과 + 양 베타
+    assert ("B", "oil") in pairs and pairs[("B", "oil")] < 0  # 반대 노출 = 음 베타
+    assert not any(f == "rate" for _, f in pairs)  # 무변동 팩터 = 무통과 (조작 없음)
+    # 조건부 E: A 만 이동, 비인증 업종/타계정 무변 + conditioned 플래그
+    from dartlab.simulate import estimate as est
+
+    e = est.estimateQuarters(grid, asOf="20240101", horizonQ=1)
+    elA = el.filter(pl.col("industry") == "A")
+    ce = st.conditionalE(e, {"oil": 0.30}, elA, imap)
+    a0 = ce.filter(pl.col("code") == "a0").row(0, named=True)
+    b0 = ce.filter(pl.col("code") == "b0").row(0, named=True)
+    base = e.filter(pl.col("code") == "a0").row(0, named=True)
+    assert a0["conditioned"] and not b0["conditioned"]  # 인증 업종만 조건화 (기권 명시)
+    import math
+
+    assert abs(a0["p50"] - base["p50"] * math.exp(a0["shiftLog"])) < 1e-9  # 분위 exp 이동
+    assert abs(b0["p50"] - e.filter(pl.col("code") == "b0").row(0, named=True)["p50"]) < 1e-12  # 무변

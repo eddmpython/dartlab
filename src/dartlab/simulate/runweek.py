@@ -24,13 +24,14 @@ from dartlab.simulate import board as _board
 from dartlab.simulate import certify as _certify
 from dartlab.simulate import combine as _combine
 from dartlab.simulate import costs as _costs
+from dartlab.simulate import enginefeeds as _enginefeeds
 from dartlab.simulate import readingCycle as _cycle
 from dartlab.simulate import readingLedger as _ledger
 from dartlab.simulate import readingScorecard as _sc
 from dartlab.simulate import regime as _regime
 
 BLOCK_SUBDIR = "readingBlocks"
-CODE_VERSION = "reading-v2"
+CODE_VERSION = "reading-v3"  # v3: 재무 그리드 연결(CFS) 우선 정정 (fund 표면 입력 semantics 변경)
 _LOSS_SCALE = 0.02  # 표면 손실 사전 봉인 함수의 스케일: loss = 1/(1+exp(spread/s0)) (spread>0 → loss<0.5)
 _CERTIFY_MIN_WEEKS = 20  # 인증 최소 채점 주 (미달이면 인증 스킵)
 
@@ -254,6 +255,8 @@ def runWeek(
         net 게이트→regime→해시체인. 미발행이면 readingCount=0 블록.
     """
     injected = matrices is not None
+    if not injected:  # 라이브 런만 기본 엔진 피드 설치 (주입 테스트 격리)
+        _enginefeeds.installEngineFeeds()
     tbl = _cycle.marketTable(market)
     weekMap, weekEnd, priceM, fundM, eventM = matrices or _cycle._buildMatrices(dataDir, market)
     if week is None:

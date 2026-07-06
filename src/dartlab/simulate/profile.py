@@ -25,13 +25,21 @@ import numpy as np
 import polars as pl
 
 from dartlab.core.extractionCatalog import CATEGORIES, getConcept, getExtractionConcepts
+from dartlab.simulate import estimate as _estimate
+from dartlab.simulate import markets as _markets
 from dartlab.simulate import table as _table
+from dartlab.simulate.surfaces import FINANCING_EVENTS
 
 # 자금조달·거버넌스 형질용 이벤트 타입 (희석·연쇄 신호). v2 정규화 하위타입 기준.
-_FINANCING_EVENTS = ("전환사채권발행결정", "유상증자결정", "신주인수권부사채권발행결정")
+_FINANCING_EVENTS = FINANCING_EVENTS["KR"]  # SSOT = surfaces (credit 피드와 공유)
 _GOVERNANCE_EVENTS = ("최대주주변경", "불성실공시법인지정", "감자결정")
 # 관계 그래프(축2) 엣지 원천 이벤트 (계열·지분·대주주 신호).
 _RELATIONSHIP_EVENTS = ("최대주주변경", "주식등의대량보유상황보고서", "임원ㆍ주요주주특정증권등소유상황보고서")
+# 시장별 이벤트 형질 타입 (US = EDGAR form 정규화 타입, tableUs._US_FORM_EVENT 파생).
+_EVENT_TRAIT_TYPES: dict[str, dict[str, tuple[str, ...]]] = {
+    "KR": {"financing": _FINANCING_EVENTS, "governance": _GOVERNANCE_EVENTS, "relationship": _RELATIONSHIP_EVENTS},
+    "US": {"financing": FINANCING_EVENTS["US"], "governance": ("auditDelay",), "relationship": ("largeHolding",)},
+}
 # 사업 구조(축1)·노동설비(축7) 형질 원천 카탈로그 카테고리.
 _BUSINESS_CATEGORIES = ("segment",)
 _LABOR_CATEGORIES = ("workforce", "segment")
@@ -94,48 +102,55 @@ def profile(
     return out
 
 
-def profileAll(asOf: str, *, dataDir: Path | None = None) -> pl.DataFrame:
+def profileAll(asOf: str, *, dataDir: Path | None = None, market: str = "KR") -> pl.DataFrame:
     """전종목 프로파일 벌크 한 방 → (code, industry, mktcap, sizePctile, fundStalenessDays,
-    <factor>Beta..., counterpartyCount, financingCount, governanceCount, relationshipCount).
+    <factor>Beta..., counterpartyCount, financingCount, governanceCount, relationshipCount,
+    revenueE/netIncomeE ± 밴드).
 
     운영자 요구 "기업별 프로파일 모두 바로": per-company profile() 루프(회사당 수 초 + Panel 2GB)
     대신 벌크 스캔 5회로 전 유니버스 형질을 한 번에 세운다 (Company 객체 0, PIT = asOf 이전만).
-    팩터 베타 열은 factors 레지스트리 전수 = 팩터 추가 자동흡수. census 축(inventory·narrative =
+    팩터 베타 열은 factors 레지스트리 전수 = 팩터 추가 자동흡수. E 열 = estimate 다음 분기 연장
+    (p50 + p5/p95 밴드, 실적 뒤에 붙는 연장선의 프로파일 투영). census 축(inventory·narrative =
     Panel 로드 필요)은 미포함 명시 (개별 profile(code) 온디맨드, 정직 라벨).
 
     Args:
         asOf: 기준일 'YYYYMMDD'. dataDir: 데이터 SSOT 루트 override.
+        market: "KR"|"US". US 는 industry(kindList)·베타(KR 가격상)·counterparty(allFilings) 축이
+            미배선이라 그 열이 없다 (정직 부재, 채우면 자동 등장).
 
     Returns:
         전 유니버스(asOf 최근 거래일 시총 보유 종목) wide 형질 행렬. 결측 = null (0 대체 금지).
 
     Guide:
         - 전종목 형질: profileAll("20260612") -> 형질 버킷·조건부 성적표·cascade 입력.
+        - US: profileAll("20260612", market="US").
     """
+    tblM = _markets.tableModule(market) or _table
     # 축6 시장: asOf 최근일 시총 + 분위 (유니버스 정의)
-    caps = _table.marketCap(dataDir).filter(pl.col("date") <= asOf)
+    caps = tblM.marketCap(dataDir).filter(pl.col("date") <= asOf)
     if caps.height == 0:
         return pl.DataFrame(schema={"code": pl.Utf8})
     day = caps.filter(pl.col("date") == caps["date"].max())
     out = day.select("code", "mktcap").with_columns(sizePctile=pl.col("mktcap").rank() / day.height)
-    # 축1 산업 (kindList)
-    out = out.join(_table.industryMap(dataDir), on="code", how="left")
+    if market == "KR":  # 축1 산업 (kindList, US 미배선)
+        out = out.join(_table.industryMap(dataDir), on="code", how="left")
     # 축3·4·2 이벤트 형질: eventWeekly 1 스캔 → 회고창 타입군 카운트 (per-company 루프 0)
-    weekMap, _ = _table.weekCalendar(dataDir)
-    ev = _table.eventWeekly(weekMap, dataDir)
+    weekMap, _ = tblM.weekCalendar(dataDir)
+    ev = tblM.eventWeekly(weekMap, dataDir)
     asOfWeek = weekMap.filter(pl.col("date") <= asOf)["week"]
+    types = _EVENT_TRAIT_TYPES.get(market, _EVENT_TRAIT_TYPES["KR"])
     if asOfWeek.len():
         maxW = int(asOfWeek.max())
         minW = maxW - int(_TRAIT_LOOKBACK_DAYS / 7)
         sub = ev.filter((pl.col("week") <= maxW) & (pl.col("week") >= minW))
         counts = sub.group_by("code").agg(
-            financingCount=pl.col("reportType").is_in(list(_FINANCING_EVENTS)).sum(),
-            governanceCount=pl.col("reportType").is_in(list(_GOVERNANCE_EVENTS)).sum(),
-            relationshipCount=pl.col("reportType").is_in(list(_RELATIONSHIP_EVENTS)).sum(),
+            financingCount=pl.col("reportType").is_in(list(types["financing"])).sum(),
+            governanceCount=pl.col("reportType").is_in(list(types["governance"])).sum(),
+            relationshipCount=pl.col("reportType").is_in(list(types["relationship"])).sum(),
         )
         out = out.join(counts, on="code", how="left")
     # 재무 신선도: scanFinanceGrid 1 스캔 → 종목별 최신 접수 경과일
-    grid = _table.scanFinanceGrid(dataDir).filter(pl.col("rceptDate") <= asOf)
+    grid = tblM.scanFinanceGrid(dataDir).filter(pl.col("rceptDate") <= asOf)
     if grid.height:
         stale = (
             grid.group_by("code")
@@ -148,10 +163,23 @@ def profileAll(asOf: str, *, dataDir: Path | None = None) -> pl.DataFrame:
             .select("code", "fundStalenessDays")
         )
         out = out.join(stale, on="code", how="left")
-    # 축5 노출: 전종목 전팩터 베타 (레지스트리 전수 = 자동흡수)
-    out = out.join(_table.macroBetaByCodeWide(asOf, baseDir=dataDir), on="code", how="left")
-    # 축2 상대방: allFilings 1 스캔 distinct flr_nm
-    out = out.join(_table.counterpartyCountsBulk(asOf, dataDir), on="code", how="left")
+    if market == "KR":
+        # 축5 노출: 전종목 전팩터 베타 (레지스트리 전수 = 자동흡수. US = 가격상 미배선 정직 부재)
+        out = out.join(_table.macroBetaByCodeWide(asOf, baseDir=dataDir), on="code", how="left")
+        # 축2 상대방: allFilings 1 스캔 distinct flr_nm
+        out = out.join(_table.counterpartyCountsBulk(asOf, dataDir), on="code", how="left")
+    # E 연장 투영: 다음 분기(h=1) 매출·순이익 E (p50 + p5/p95). 그리드 재사용 (추가 스캔 0).
+    if grid.height:
+        e = _estimate.estimateQuarters(grid, asOf=asOf, horizonQ=1, accounts=("revenue", "netIncome"))
+        for acct, pfx in (("revenue", "revenueE"), ("netIncome", "netIncomeE")):
+            sub = e.filter(pl.col("account") == acct).select(
+                "code",
+                pl.col("p50").alias(pfx),
+                pl.col("p5").alias(f"{pfx}Lo"),
+                pl.col("p95").alias(f"{pfx}Hi"),
+                pl.col("period").alias(f"{pfx}Period"),
+            )
+            out = out.join(sub, on="code", how="left")
     return out.sort("code")
 
 

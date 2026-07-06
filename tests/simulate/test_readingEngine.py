@@ -307,6 +307,40 @@ def testRunWeekHashChain(tmp_path):
     assert "codeVersionHash" in b1 and "combinedWeights" in b1  # §7b 봉인 필드
 
 
+def testScanFinanceGridPrefersConsolidated(tmp_path):
+    from dartlab.simulate import table
+
+    # 2026-07-06 실측 결함 가드: 같은 (code,period,account)에 연결/별도 공존 시 최신접수가 아니라
+    # 연결(CFS) 우선 (삼성 매출 333조 CFS vs 238조 OFS 혼입 방지)
+    fin = tmp_path / "dart/finance"
+    fin.mkdir(parents=True)
+    rows = [
+        {
+            "rcept_no": "20260601000001",
+            "reprt_code": "11013",
+            "bsns_year": "2026",
+            "sj_div": "IS",
+            "fs_div": "CFS",
+            "account_id": "ifrs-full_Revenue",
+            "account_nm": "매출액",
+            "thstrm_amount": "100",
+        },
+        {
+            "rcept_no": "20260602000001",
+            "reprt_code": "11013",
+            "bsns_year": "2026",
+            "sj_div": "IS",
+            "fs_div": "OFS",
+            "account_id": "ifrs-full_Revenue",
+            "account_nm": "매출액",
+            "thstrm_amount": "70",
+        },
+    ]
+    pl.DataFrame(rows).write_parquet(fin / "000001.parquet")
+    g = table.scanFinanceGrid(tmp_path)
+    assert g.height == 1 and g["amount"][0] == 100.0  # 별도 최신접수가 연결을 못 이김
+
+
 def testNetGateColdStartNotApplied():
     from dartlab.simulate import runweek
 
@@ -601,6 +635,48 @@ def testProfileAllBulkWide(monkeypatch):
     assert row["a"]["fxBeta"] == 1.0 and row["a"]["counterpartyCount"] == 3
     assert row["b"]["industry"] is None and row["b"]["financingCount"] is None  # 결측 = null (0 대체 금지)
     assert row["b"]["sizePctile"] == 1.0  # 시총 최대 = 분위 1.0
+
+
+def testProfileAllUsMarketAndEColumns(monkeypatch):
+    # US 프로파일: EDGAR 床 + US 이벤트 타입 + E 연장 투영. KR 전용 축(업종·베타·상대방)은 정직 부재
+    from dartlab.simulate import profile, tableUs
+
+    monkeypatch.setattr(
+        tableUs,
+        "marketCap",
+        lambda d=None: pl.DataFrame({"date": ["20260110"], "code": ["AAPL"], "mktcap": [3.0e12]}),
+    )
+    monkeypatch.setattr(
+        tableUs,
+        "weekCalendar",
+        lambda d=None: (
+            pl.DataFrame({"date": ["20260110"], "week": [202602]}),
+            pl.DataFrame({"week": [202602], "date": ["20260110"]}),
+        ),
+    )
+    monkeypatch.setattr(
+        tableUs,
+        "eventWeekly",
+        lambda w, d=None: pl.DataFrame({"code": ["AAPL"], "week": [202601], "reportType": ["securitiesOffering"]}),
+    )
+    rows = []
+    for y in (2023, 2024, 2025):
+        for qn, v in zip((1, 2, 3, 4), (10.0, 20.0, 30.0, 40.0)):
+            rows.append(
+                {
+                    "code": "AAPL",
+                    "period": f"{y}Q{qn}",
+                    "rceptDate": f"{y}{qn * 2 + 3:02d}15",
+                    "account": "revenue",
+                    "amount": v,
+                }
+            )
+    monkeypatch.setattr(tableUs, "scanFinanceGrid", lambda d=None: pl.DataFrame(rows))
+    pa = profile.profileAll("20260112", market="US")
+    row = pa.row(0, named=True)
+    assert row["financingCount"] == 1  # securitiesOffering = US 자금조달 형질
+    assert row["revenueE"] == 10.0 and row["revenueEPeriod"] == "2026Q1"  # 완전 계절 = E 정확 재현
+    assert "oilBeta" not in pa.columns and "industry" not in pa.columns  # 미배선 축 정직 부재
 
 
 def testRunweekLatticeOverlayHelper(monkeypatch):

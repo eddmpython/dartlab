@@ -31,8 +31,11 @@ class MacroScenario:
     """매크로 시나리오 = 가정(팩터 충격) + 조건(레짐 태그). 디시전 트리 분기의 원자 정의.
 
     Args:
-        scenarioId: 식별자. label: 사람용 이름. shocks: {factor: change} 팩터 충격
-            (유가·환율 수익률, 금리 %p). condition: 레짐 조건 태그 (조건부 채점 연동, None = 무조건).
+        scenarioId: 식별자. label: 사람용 이름. shocks: {factor: change} 팩터 충격. 단위 = 팩터
+            시리즈 고유 단위 (factors.macroChange 와 동일): price 팩터(oil·fx) = 수익률(0.30 = +30%),
+            level 팩터(rate) = %p (1.0 = +100bp. 시리즈가 percent 단위 0.5~5.25 라 0.01 이 아님.
+            2026-07-06 실측: 0.01 로 금리 시나리오 전반응 0.00% 결함).
+        condition: 레짐 조건 태그 (조건부 채점 연동, None = 무조건).
     """
 
     scenarioId: str
@@ -46,14 +49,14 @@ DEFAULT_SCENARIOS: dict[str, MacroScenario] = {
     "baseline": MacroScenario("baseline", "기준(무충격)", {}, None),
     "oilShockUp": MacroScenario("oilShockUp", "유가 +30%", {"oil": 0.30}, "oilUp"),
     "oilShockDown": MacroScenario("oilShockDown", "유가 -30%", {"oil": -0.30}, "oilDown"),
-    "rateHike": MacroScenario("rateHike", "금리 +100bp", {"rate": 0.01}, "rateHike"),
-    "rateCut": MacroScenario("rateCut", "금리 -100bp", {"rate": -0.01}, "rateCut"),
+    "rateHike": MacroScenario("rateHike", "금리 +100bp", {"rate": 1.0}, "rateHike"),
+    "rateCut": MacroScenario("rateCut", "금리 -100bp", {"rate": -1.0}, "rateCut"),
     "wonWeak": MacroScenario("wonWeak", "원화 -10%(약세)", {"fx": 0.10}, "wonWeak"),
     "wonStrong": MacroScenario("wonStrong", "원화 +10%(강세)", {"fx": -0.10}, "wonStrong"),
     "riskOff": MacroScenario(
-        "riskOff", "리스크오프(유가↓·원화약세·금리↑)", {"oil": -0.15, "fx": 0.08, "rate": 0.005}, "riskOff"
+        "riskOff", "리스크오프(유가↓·원화약세·금리↑)", {"oil": -0.15, "fx": 0.08, "rate": 0.5}, "riskOff"
     ),
-    "reflation": MacroScenario("reflation", "리플레이션(유가↑·금리↑)", {"oil": 0.20, "rate": 0.008}, "reflation"),
+    "reflation": MacroScenario("reflation", "리플레이션(유가↑·금리↑)", {"oil": 0.20, "rate": 0.8}, "reflation"),
 }
 
 
@@ -363,3 +366,136 @@ def decisionNetwork(
             "topK": topK,
         },
     }
+
+
+def industryElasticity(
+    grid: pl.DataFrame,
+    macro: pl.DataFrame,
+    industryMap: pl.DataFrame,
+    *,
+    minQuarters: int = 16,
+    minFirms: int = 5,
+    tGate: float = 3.0,
+) -> pl.DataFrame:
+    """업종 x 팩터 매출 성장 탄성 → (industry, factor, beta, t, n). |t| >= tGate 통과만.
+
+    업종-분기 중앙 YoY 로그성장을 분기 공통효과 차감(전업종 중앙) 후 팩터 분기 변화에 시계열
+    회귀한다. 공통 차감 없으면 공통 명목추세(인플레·경기)가 rate 와 동행해 가짜 탄성이 붙는다
+    (2026-07-06 실측: 차감 전 t>=3 30쌍 전부 rate 양(+) = 교란, 차감 후 7쌍 = 성장주 금리 음(-)
+    듀레이션 채널 등 경제적 정합). 풀링 회귀 금지: 같은 분기 기업들은 팩터를 공유하므로 업종-분기
+    집계 후 시계열 df 가 정직한 검정력이다.
+
+    Args:
+        grid: estimate.quarterGrid 산출. macro: table.macroDaily 산출. industryMap: (code, industry).
+        minQuarters: 회귀 최소 분기 수. minFirms: 업종-분기 최소 기업 수. tGate: 통과 |t| 하한.
+
+    Returns:
+        통과 쌍만 (미통과 = 무행 = 조건부 E 기권 대상). beta 단위 = 팩터 1단위당 로그성장.
+
+    Guide:
+        - 조건부 E 탄성: industryElasticity(quarterGrid(), macroDaily(), industryMap()).
+    """
+    import numpy as np
+
+    from dartlab.simulate import estimate as _est
+    from dartlab.simulate.factors import factorNames, macroChange
+
+    facs = factorNames()
+    mq = (
+        macro.with_columns(
+            qi=pl.col("date").str.slice(0, 4).cast(pl.Int64) * 4
+            + (pl.col("date").str.slice(4, 2).cast(pl.Int64) - 1) // 3
+        )
+        .sort("date")
+        .group_by("qi", maintain_order=True)
+        .agg([pl.col(f).drop_nulls().last() for f in facs])
+        .sort("qi")
+        .with_columns([macroChange(f).alias(f"d_{f}") for f in facs])
+    )
+    rev = _est._withQi(grid.filter(pl.col("account") == "revenue")).sort(["code", "qi"])
+    rev = rev.with_columns(v4=pl.col("amount").shift(4).over("code"), qi4=pl.col("qi").shift(4).over("code")).filter(
+        (pl.col("qi4") == pl.col("qi") - 4) & (pl.col("amount") > 0) & (pl.col("v4") > 0)
+    )
+    rev = rev.with_columns(g=(pl.col("amount") / pl.col("v4")).log()).filter(pl.col("g").abs() < 2.0)
+    ind = (
+        rev.join(industryMap, on="code", how="inner")
+        .group_by(["industry", "qi"])
+        .agg(g=pl.col("g").median(), nFirm=pl.len())
+        .filter(pl.col("nFirm") >= minFirms)
+    )
+    empty = pl.DataFrame(
+        schema={"industry": pl.Utf8, "factor": pl.Utf8, "beta": pl.Float64, "t": pl.Float64, "n": pl.Int64}
+    )
+    if ind.height == 0:
+        return empty
+    common = ind.group_by("qi").agg(gCommon=pl.col("g").median())
+    ind = (
+        ind.join(common, on="qi", how="inner")
+        .with_columns(g=pl.col("g") - pl.col("gCommon"))
+        .join(mq.select(["qi"] + [f"d_{f}" for f in facs]), on="qi", how="inner")
+    )
+    rows: list[dict] = []
+    for (industry,), sub in ind.group_by("industry"):
+        for f in facs:
+            d = sub.select("g", x=pl.col(f"d_{f}")).drop_nulls()
+            n = d.height
+            if n < minQuarters:
+                continue
+            x, y = d["x"].to_numpy(), d["g"].to_numpy()
+            vx = float(x.var())
+            if vx <= 0 or n <= 2:
+                continue
+            beta = float(np.cov(x, y, ddof=0)[0, 1] / vx)
+            resid = y - y.mean() - beta * (x - x.mean())
+            se = float(np.sqrt(resid.var(ddof=2) / (n * vx)))
+            t = beta / se if se > 0 else 0.0
+            if abs(t) >= tGate:
+                rows.append({"industry": industry, "factor": f, "beta": beta, "t": t, "n": n})
+    return pl.DataFrame(rows, schema=empty.schema) if rows else empty
+
+
+def conditionalE(
+    eFrame: pl.DataFrame, shocks: dict[str, float], elasticity: pl.DataFrame, industryMap: pl.DataFrame
+) -> pl.DataFrame:
+    """시나리오 조건부 E: 인증 탄성 업종의 매출 E 분위를 exp(Σ beta x shock) 배 이동 (운영자 개념 4번).
+
+    측정 없는 탄성 조작 금지: industryElasticity 통과(|t|>=게이트) (업종, 팩터) 쌍만 움직이고,
+    나머지 행은 그대로 + conditioned=False (기권 명시). 탄성은 매출 성장에서 측정됐으므로 매출(E)
+    계정만 조건화한다 (다른 계정 무변).
+
+    Args:
+        eFrame: estimate.estimateQuarters 산출. shocks: 시나리오 충격 (MacroScenario.shocks 단위).
+        elasticity: industryElasticity 산출. industryMap: (code, industry).
+
+    Returns:
+        eFrame + (conditioned, shiftLog) 열. 조건 행은 p5~p95 전 분위 x exp(shiftLog) (단조 보존).
+
+    Guide:
+        - 리스크오프 매출 E: conditionalE(e, DEFAULT_SCENARIOS["riskOff"].shocks, elas, imap).
+    """
+    base = eFrame.with_columns(conditioned=pl.lit(False), shiftLog=pl.lit(0.0))
+    if not shocks or elasticity.height == 0 or eFrame.height == 0:
+        return base
+    el = elasticity.filter(pl.col("factor").is_in(list(shocks)))
+    if el.height == 0:
+        return base
+    shift = (
+        el.with_columns(shockV=pl.col("factor").replace_strict({k: float(v) for k, v in shocks.items()}, default=0.0))
+        .with_columns(part=pl.col("beta") * pl.col("shockV"))
+        .group_by("industry")
+        .agg(shiftLog=pl.col("part").sum())
+    )
+    j = (
+        base.drop(["conditioned", "shiftLog"])
+        .join(industryMap, on="code", how="left")
+        .join(shift, on="industry", how="left")
+        .with_columns(
+            conditioned=(pl.col("account") == "revenue") & pl.col("shiftLog").is_not_null(),
+            shiftLog=pl.when((pl.col("account") == "revenue") & pl.col("shiftLog").is_not_null())
+            .then(pl.col("shiftLog"))
+            .otherwise(0.0),
+        )
+        .drop("industry")
+    )
+    mult = pl.col("shiftLog").exp()
+    return j.with_columns([(pl.col(f"p{p}") * mult).alias(f"p{p}") for p in (5, 25, 50, 75, 95)])

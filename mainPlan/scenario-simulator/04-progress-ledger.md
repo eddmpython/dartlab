@@ -131,6 +131,17 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
 - 회귀 가드: testNetGateColdStartNotApplied·testRunWeekRerunSameWeekSafe. tests 152·재실행 판독 중복 0 실측.
 - **정직 잔여**: certify None(채점 이력 20주 미만 = 라이브 누적 시간 문제), 채점 pending(가격 데이터가 202625 주까지라 forward 5일 라벨 미형성 → 다음 sync 후 자동 채점), rate 팩터 불활성(월단위 BASE_RATE 로 rolling 베타 ~0, 일단위 국채 시리즈 필요 = 기록된 기존 갭).
 
+### 0c-11. 4단 파이프 실장 = 작업대→E 연장→프로파일→조건부 시나리오 (2026-07-06, 운영자 개념 승인 "진행해라 정공법으로")
+
+- **개념(운영자)**: ① 전 엔진 데이터 1 포맷 작업대(전상장사=DART+EDGAR) ② 시계열에 E(예측) 연장선 ③ 그것만 봐도 다 아는 회사 프로파일 ④ 시나리오 시뮬. 규율 2: E 는 표식 층(피처 역류 금지)·전부 봉인 채점.
+- **② E 층 `estimate.py`**: 방법은 실측 백테스트로 선택(KR 6.4만 표본/계정): 흐름 계정=전년동기 seasonal(상대오차 0.214 vs carry 0.741, DART 누적 관행 면역), 저량=carry(0.044). 성장 외삽 전 계정 패배 기각(VAR 교훈 동형). 밴드=분위 5점(점 예측 금지 계약), 스케일은 베이크 없이 런타임 PIT 오차분위(자기 이력>=8 else 계정 풀링). 전부 expectationLedger 봉인(pinball/CRPS 채점). **실봉인 KR 62,579·US 108,621행**(e-v2), 같은 vintage 재발행 스킵.
+- **실행이 잡은 결함 3**: (a) **scanFinanceGrid 연결/별도 혼입**(삼성 매출 333조 CFS vs 238조 OFS 접수순 뒤섞임 → CFS 우선 정정, ep/bm 표면 입력까지 정화, CODE_VERSION reading-v3) (b) **E 밴드 |앵커| 분모 폭발**(삼성 순이익 p95 3,791조 → 최근 4분기 평균 규모 분모로 149조 정상화, e-v1 기각 박제) (c) **금리 시나리오 단위 100배 과소**(rate 시리즈 percent 단위 0.5~5.25 인데 shock 0.01 → 1.0 정정. 이래서 금리 시나리오 전반응 0.00% 였음).
+- **① 작업대 채움 `enginefeeds.py`**: industry=업종 동행 모멘텀(159 업종 중앙)·credit=자금조달 52주 압력(surfaces.FINANCING_EVENTS SSOT 승격, KR 3종/US securitiesOffering). 라이브 경로 멱등 설치(주입 테스트 격리). **실봉인 완주: industry.indMom 2,875행·credit.fin52w 2,875행(기권 2,231 = 발화형 희소 설계) = 표면 10개.** 부호 선험 강제 없음(채점이 정함).
+- **③ profileAll E·US**: market 파라미터(KR 20형질·US 15형질, 미배선 축 정직 부재) + E 열(revenueE/netIncomeE ± 밴드 + 대상분기). 실측 KR 2,875 x 20 (11초, revenueE 충전 76%)·US 7,074 x 15 (16초, 45% = XBRL frame 결손 정직).
+- **④ 조건부 E `scenarioTree.industryElasticity/conditionalE`**: 업종-분기 중앙 YoY 를 분기 공통효과 차감 후 팩터 시계열 회귀(풀링 금지 = 가짜 검정력 차단. 차감 전 t>=3 30쌍 전부 rate 양(+) = 인플레 공통추세 교란 실측, 차감 후 7쌍 = 소프트웨어·정보서비스·통신 금리 음(-) 듀레이션 채널로 경제 정합). **인증 쌍만 E 이동, 나머지 기권 명시**: 리스크오프 실측 = 매출 E 2,248행 중 247행 조건화(소프트웨어 -4.3%·전기통신 -5.2%·연료가스 +11.2%).
+- tests 165(신규 15)·dartlabGuard strict 7/7 + 외부 게이트 6 PASS. E 는 판독 피처로 역류하지 않음(06 §5c 보간 금지 유지).
+- **정직 잔여**: E 채점은 다음 분기 실적 도착부터(시간 문제). US 프로파일 industry·베타·counterparty 미배선(채우면 자동 등장). 탄성은 rate 지배(oil/fx 통과 0 = 강제 배선 안 함). Q4 흐름값 = DART 연간누적 관행(seasonal 면역이나 표시 개선 여지 = Q4 단분기 도출은 차기 검토).
+
 ---
 
 > ⚠ v0.1 폐기 박제: 이전 04는 "초기 아키텍처 = story 동격 L3 `scenarioWorkbench`, 공개 verb `dartlab.scenario`(미결)"을 현재 결정으로 들고 있었다. **01 §3이 이를 코드로 기각**했다(story=순수 렌더러라 동거 불가, `scenario` 명사형은 `macro.scenarios`/`ScenarioOverlay` 충돌). 본 v0.2가 정본.
