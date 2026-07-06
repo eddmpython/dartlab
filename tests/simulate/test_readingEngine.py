@@ -422,6 +422,47 @@ def testInterLayerAssumptions():
     assert rows[0].dimension == "layerElasticity"
 
 
+def testIssueReadingsPicksLatestPriceWeek(tmp_path, monkeypatch):
+    # 미래 투영 레버(락업만기 = 공시+26주)가 readings.max 를 미래로 끌어도 가격 커버 최신주를 발행한다.
+    priceM = pl.DataFrame(
+        {
+            "code": ["a", "b"],
+            "week": [202610, 202610],
+            "ret5": [0.01, 0.02],
+            "mom20x5": [0.0, 0.0],
+            "volShock": [0.0, 0.0],
+            "high52": [0.9, 0.9],
+            "maxRet20": [0.05, 0.05],
+        }
+    )
+    fundM = pl.DataFrame({"code": ["a", "b"], "week": [202610, 202610], "ep": [0.01, 0.02], "bm": [0.02, 0.02]})
+    eventM = pl.DataFrame(schema={"code": pl.Utf8, "week": pl.Int64, "reportType": pl.Utf8})
+    weekEnd = pl.DataFrame({"week": [202610], "date": ["20260306"]})
+    weekMap = pl.DataFrame(schema={"date": pl.Utf8, "week": pl.Int64})
+    real = readingCycle._opine.opine
+
+    def fakeOpine(p, f, e, *, directionByType=None):
+        r = real(p, f, e, directionByType=directionByType)
+        future = pl.DataFrame(
+            {
+                "code": ["a"],
+                "week": [202636],  # 202610 + 26주 락업 투영 (가격 없는 미래)
+                "surface": ["lever.lockupExpiry"],
+                "direction": [-1],
+                "score": [0.0],
+                "abstainReason": [None],
+            }
+        )
+        return pl.concat([r, future.select(r.columns)])
+
+    monkeypatch.setattr(readingCycle._opine, "opine", fakeOpine)
+    readingCycle.issueReadings(
+        week=None, baseDir=tmp_path, matrices=(weekMap, weekEnd, priceM, fundM, eventM), directionByType={}
+    )
+    led = readingLedger.readReadings(baseDir=tmp_path)
+    assert led["week"].unique().to_list() == [202610]  # 미래 202636 아닌 가격 최신주 (near-empty 블록 차단)
+
+
 def testRecomputePreservesSurfaceContribution():
     from dartlab.simulate import cascade
 

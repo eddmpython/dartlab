@@ -79,7 +79,9 @@ def issueReadings(
     if readings.height == 0:
         return 0
     if week is None:
-        week = int(readings["week"].max())
+        # 최신 완전주 = 가격 커버(거래 유니버스) 최신 주. 미래 투영 레버(락업만기 = 공시+26주 등)가
+        # readings.max 를 미래로 끌어올려 가격 없는 near-empty 주를 발행하는 것을 차단.
+        week = int(priceM["week"].max()) if "week" in priceM.columns and priceM.height else int(readings["week"].max())
     readings = readings.filter(pl.col("week") == week)
     if readings.height == 0:
         return 0

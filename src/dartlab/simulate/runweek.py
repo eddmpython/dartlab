@@ -210,6 +210,9 @@ def runWeek(
     injected = matrices is not None
     tbl = _cycle.marketTable(market)
     weekMap, weekEnd, priceM, fundM, eventM = matrices or _cycle._buildMatrices(dataDir, market)
+    if week is None:
+        # 최신 완전주 = 가격 커버 최신 주 (미래 투영 레버가 max 를 미래로 끌어 near-empty 블록 되는 것 차단).
+        week = int(priceM["week"].max()) if "week" in priceM.columns and priceM.height else 0
     lab = labels if labels is not None else _sc.weeklyLabels(weekEnd, tbl.dailyPrices(dataDir))
     directionByType = _sc.deriveEventDirections(eventM, lab)
     _cycle.issueReadings(
@@ -221,9 +224,6 @@ def runWeek(
         directionByType=directionByType,
     )
     _cycle.scoreReadingsDue(market=market, baseDir=baseDir, dataDir=dataDir, labels=labels)
-    if week is None:
-        led = _ledger.readReadings(baseDir=baseDir)
-        week = int(led["week"].max()) if led is not None and led.height else 0
     _wk = _ledger.readReadings(week=week, live=True, baseDir=baseDir)
     _all = _ledger.readReadings(live=True, baseDir=baseDir)
     weekReadings = _asCode(_wk if _wk is not None else _emptyReadings())
