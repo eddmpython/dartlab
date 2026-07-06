@@ -617,12 +617,12 @@ def main() -> None:
     repo_files = _list_repo_files(HfApi(), args.repo)
 
     contracts = build_contracts()  # 회사 계약(블로그 frontmatter)
-    # 기술이야기(TECH_DIR) 카드 배선 임시 차단. 회사카드 틀에 잘못 얹어(종목코드 강제·논지 배신·기획 미수행)
-    # 라이브에서 내림. 재배선은 아래 형태로 = 설명 카드(종목 정체성 없음·배지=편별 주제 carousel.name). 단
-    # 주제 사진 수급 + cards.plan 정식화(reviewGate passed) 완료 후에만 주석 해제한다.
-    # for _slug, _c in build_contracts(TECH_DIR, series=True).items():
-    #     contracts.setdefault(_slug, _c)
-    issue_contracts, image_ops = build_issue_contracts(ISSUES_DIR, repo_files)  # standalone 이슈
+    issue_contracts, image_ops = build_issue_contracts(ISSUES_DIR, repo_files)  # standalone 이슈 (+ 이슈 이미지 op)
+    # 기술이야기(설명) 시리즈 카드 = 종목 정체성 없음(code="" · 배지=편별 주제 carousel.name). 글 assets 실사를
+    # hfMedia tech-story/<slug>/ 로 배선(회사 media 풀 비의존). 이미지 op 는 이슈와 같은 image_ops 에 합류.
+    # cards.plan 정식화(reviewGate passed) 안 된 편은 게이트가 발행 차단(기획 필수).
+    for _slug, _c in build_contracts(TECH_DIR, series=True, existing_files=repo_files, image_ops=image_ops).items():
+        contracts.setdefault(_slug, _c)
     for slug, c in issue_contracts.items():
         if slug in contracts:
             sys.stderr.write(f"  dup slug(이슈↔회사 충돌, 회사 우선): {slug}\n")
