@@ -220,19 +220,27 @@ def handlePrice(
         dispatch.AXIS_REGISTRY : axis 메타.
         transforms/indicatorDispatch.addIndicators : 보조지표 후처리.
     """
-    # Sprint 3 PR3 — ISIN/FIGI 자동 감지 → symbology 위임 → ticker 변환
+    interval = kwargs.pop("interval", "1d")
+    from dartlab.gather.mixins.price import _intervalMinutes
+
+    isIntraday = _intervalMinutes(interval) is not None
+
+    # Sprint 3 PR3. ISIN/FIGI 자동 감지 → symbology 위임 → ticker 변환
     target, market = _maybeResolveAssetId(target, market, marketExplicit)
 
     if target and target in INDEX_SYMBOLS:
         result = _fetchNaverIndex(INDEX_SYMBOLS[target])
     else:
-        result = g.price(target, market=market, start=start, end=end)
+        result = g.price(target, market=market, start=start, end=end, interval=interval)
     if result is None or (hasattr(result, "shape") and result.shape == (0, 0)):
         raise ValueError(
             f"gather('price', '{target}') 결과가 비어 있습니다. "
             f"종목코드/티커를 확인하세요 (market={market}). "
             f"네트워크 또는 외부 API 일시적 오류일 수도 있습니다."
         )
+    # 분봉(datetime 축)은 일봉 지표세트를 자동 적용하지 않는다.
+    if isIntraday:
+        return result
     indicators = kwargs.pop("indicators", "basic")
     if indicators == "basic":
         indicators = ["sma5", "sma20", "sma60", "ema12", "ema26", "rsi14", "macd", "atr14", "obv"]

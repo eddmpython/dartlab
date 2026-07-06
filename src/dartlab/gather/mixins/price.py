@@ -13,11 +13,45 @@ from dartlab.core.polarsUtil import isEmptyDf
 from ..infra.http import runAsync
 from ..sources import flow as _flow
 from ..sources import history as _history
+from ..sources import intraday as _intraday
 from ..sources import price as _price
 from ..types import FlowData, PriceSnapshot, RevenueConsensus, SourceUnavailableError
 from .context import GatherMixinContext
 
 log = logging.getLogger(__name__)
+
+
+def _intervalMinutes(interval: str | None) -> int | None:
+    """interval 문자열을 분(int) 으로. 일봉("1d"/None)이면 None.
+
+    ``"1m"``/``"3m"``/``"5m"`` 같은 분봉은 양의 정수, 그 외는 None (일봉 경로).
+    """
+    if interval in (None, "", "1d", "d", "day", "daily"):
+        return None
+    token = str(interval).strip().lower()
+    if token.endswith("m"):
+        token = token[:-1]
+    return int(token) if token.isdigit() and int(token) > 0 else None
+
+
+def _resampleMinutes(df: "pl.DataFrame", minutes: int) -> "pl.DataFrame":
+    """1분봉 DataFrame 을 N분봉으로 리샘플 (OHLCV 집계). minutes<=1 이면 그대로."""
+    import polars as pl
+
+    if minutes <= 1 or "datetime" not in df.columns or df.height == 0:
+        return df
+    return (
+        df.sort("datetime")
+        .group_by_dynamic("datetime", every=f"{minutes}m")
+        .agg(
+            pl.col("open").first(),
+            pl.col("high").max(),
+            pl.col("low").min(),
+            pl.col("close").last(),
+            pl.col("volume").sum(),
+        )
+        .sort("datetime")
+    )
 
 
 class _GatherPriceMixin(GatherMixinContext):
@@ -31,6 +65,7 @@ class _GatherPriceMixin(GatherMixinContext):
         start: str | None = None,
         end: str | None = None,
         snapshot: bool = False,
+        interval: str = "1d",
     ) -> "pl.DataFrame | PriceSnapshot | None":
         """OHLCV 주가 시계열 조회.
 
@@ -39,6 +74,7 @@ class _GatherPriceMixin(GatherMixinContext):
             - US: Yahoo Finance (기본 1년)
             - OHLCV + 거래량 DataFrame
             - snapshot=True 시 현재가 PriceSnapshot 반환
+            - interval="1m"/"3m"/"5m" 시 분봉 (KR Naver, 당일 + 과거 세션 + 휴장일 폴백)
             - 자동 fallback 체인 (Naver -> Yahoo -> FMP)
             - TTL 캐시 (5분, DARTLAB_TTL_PRICE override 가능)
 
@@ -59,12 +95,15 @@ class _GatherPriceMixin(GatherMixinContext):
         Args:
             stock_code: 종목코드 ("005930") 또는 티커 ("AAPL").
             market: "KR" 또는 "US". 기본 "KR".
-            start: 시작일 (YYYY-MM-DD). None이면 1년 전.
+            start: 시작일 (YYYY-MM-DD). None이면 1년 전. interval 이 분봉이면
+                시작 시각 (``"2026-07-03"`` 등), None이면 당일.
             end: 종료일. None이면 오늘.
             snapshot: True면 PriceSnapshot (현재가) 반환.
+            interval: ``"1d"`` (기본, 일봉) 또는 분봉 ``"1m"``/``"3m"``/``"5m"``.
+                분봉은 KR Naver 전용 (당일 + 과거 세션 + 휴장일 폴백), datetime 컬럼.
 
         Returns:
-            pl.DataFrame — date, open, high, low, close, volume 컬럼.
+            pl.DataFrame. 일봉은 date, 분봉은 datetime + open/high/low/close/volume 컬럼.
             snapshot=True 시 PriceSnapshot | None.
 
         Requires:
@@ -92,6 +131,8 @@ class _GatherPriceMixin(GatherMixinContext):
 
         if snapshot:
             return self._priceSnapshot(stockCode, market=market)
+        if _intervalMinutes(interval) is not None:
+            return self._intradayFrame(stockCode, market=market, interval=interval, start=start, end=end)
         from datetime import date, timedelta
 
         if start is None:
@@ -140,6 +181,66 @@ class _GatherPriceMixin(GatherMixinContext):
             return result
         finally:
             emitGatherFetch("price", (time.monotonic() - t0) * 1000, cacheHit=cacheHit, market=market)
+
+    def _intradayFrame(
+        self,
+        stockCode: str,
+        *,
+        market: str = "KR",
+        interval: str = "1m",
+        start: str | None = None,
+        end: str | None = None,
+    ) -> "pl.DataFrame":
+        """분봉 OHLCV DataFrame. KR Naver (당일 + 과거 세션 + 휴장일 폴백).
+
+        price(interval="1m"/"3m"/"5m") 의 내부 경로. sources.intraday 로 1분봉을
+        받아 datetime 을 파싱하고, 3m/5m 은 group_by_dynamic 로 리샘플한다.
+
+        Parameters
+        ----------
+        stock_code : str
+            종목코드 ("005930").
+        market : str
+            "KR" 만 지원. 외 시장은 빈 DataFrame.
+        interval : str
+            "1m"/"3m"/"5m" 등 분봉 단위.
+        start : str | None
+            시작 시각 ("2026-07-03" 등). None이면 당일.
+        end : str | None
+            종료 시각. None이면 start 부터 현재까지.
+
+        Returns
+        -------
+        pl.DataFrame
+            datetime, open, high, low, close, volume 컬럼. 없으면 빈 DataFrame.
+        """
+        import polars as pl
+
+        minutes = _intervalMinutes(interval) or 1
+        cacheKey = f"{stockCode}:intraday:{interval}:{start}:{end}"
+        cached = self._cache.get(cacheKey)
+        if cached is not None:
+            return cached  # type: ignore[return-value]
+        raw = runAsync(
+            _intraday.fetch(
+                stockCode,
+                market=market,
+                start=start or "",
+                end=end or "",
+                client=self._client,
+            )
+        )
+        if not raw:
+            return pl.DataFrame()
+        df = pl.DataFrame(raw)
+        if "datetime" in df.columns and df["datetime"].dtype == pl.Utf8:
+            df = df.with_columns(pl.col("datetime").str.to_datetime("%Y-%m-%dT%H:%M:%S").alias("datetime"))
+        if minutes > 1:
+            df = _resampleMinutes(df, minutes)
+        from ..infra.cache import TTL_PRICE
+
+        self._cache.put(cacheKey, df, TTL_PRICE)
+        return df
 
     def flow(
         self,

@@ -44,9 +44,10 @@ AXIS_REGISTRY: dict[str, GatherAxisEntry] = {
         description=(
             "OHLCV 시계열 (수정주가). "
             "KR: Naver, US: Yahoo. 기본 1년, 최대 6000거래일. "
-            "시장 지수 (KOSPI/KOSDAQ/KPI200) 도 자동 인식."
+            "시장 지수 (KOSPI/KOSDAQ/KPI200) 도 자동 인식. "
+            'interval="1m"/"3m"/"5m" 시 분봉 (KR Naver, 당일 + 과거 세션 + 휴장일 폴백).'
         ),
-        example='gather("price", "005930") / gather("price", "AAPL")',
+        example='gather("price", "005930") / gather("price", "AAPL") / gather("price", "005930", interval="1m")',
         targetType="stockCode",
     ),
     "flow": GatherAxisEntry(
