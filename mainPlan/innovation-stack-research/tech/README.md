@@ -23,10 +23,10 @@
 | --- | --- | --- | --- |
 | [Polars](polars.md) | 예 (`polars>=1.0,<2`, 실사용 1.41.1) | 2026-07-06 | 채택 (코어 엔진). 신 streaming 엔진 = 우리 OOM 문제와 정렬, 관찰하며 pin 상향 검토. GPU/Cloud/Lakehouse는 기각·opt-in. |
 | [DuckDB](duckdb.md) | 예 (`duckdb>=1.0,<2`, 실사용 1.5.3 = 최신) | 2026-07-06 | 채택 (cross-scan 호환 경로). 진짜 레버 = source-native `read_parquet` OOC arm (미구현·`_attempts` 대기). DuckLake/Iceberg 기각. |
+| [Pandera](pandera.md) | 예, dev-only (`pandera[polars]>=0.29,<0.32`) | 2026-07-06 | 채택 (개념, CI/dev 데이터 계약 게이트). 51 정의 중 2 배선(finance·report), 나머지 49 장식. 의존성 하드 승격·not-null 강화·49개 삭제 모두 불필요. enum 강화만 실질 증분(옵션). |
 
 ## 다음 조사 후보 (아직 파일 없음)
 
 - uv / ty / Ruff (파이썬 툴체인, `01-priority-stack-register` P1)
 - Vite Rolldown (UI 빌드, P1)
 - hyparquet / DuckDB-WASM (브라우저 parquet, P0 Browser Parquet Workbench)
-- Pandera (이미 사용 중, `pandera[polars]>=0.29,<0.32` 상한 이유 기록 가치 있음)
