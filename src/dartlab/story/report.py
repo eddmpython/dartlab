@@ -138,14 +138,53 @@ def _scenarioSet(dfv: dict) -> dict | None:
     }
 
 
-def _headlineKpis(card: Any, view: dict | None) -> list[dict]:
-    """헤드라인 KPI — SummaryCard grades + 밸류에이션 콜."""
+def _creditView(company: Any) -> dict | None:
+    """신용 엔진(evaluateCompany, L2) 출력을 계약 CreditView 로 매핑. _valuationView 동형(self-calc 0).
+
+    P1e 신용 라이브배선(02e): 구조화 신용 패킷(등급·축·PD·전망)을 valuationBridge 동형 pro 블록으로
+    노출한다. 금융사·데이터부족은 None (graceful skip). 신용 엔진 0-변경(가드②), 여기선 필드 매핑만.
+    L계층: credit=L2 이므로 L3(story)에서 정방향 lazy import(valuation 동형).
+    """
+    if company is None:
+        return None
+    try:
+        from dartlab.core.confidence import baseScore
+        from dartlab.credit.engine import evaluateCompany
+
+        result = evaluateCompany(company, detail=False)
+    except Exception:  # noqa: BLE001 (신용 실패는 리포트 전체 실패 아님, 블록만 생략)
+        return None
+    if not isinstance(result, dict) or not result.get("grade"):
+        return None
+    axes = [
+        {"name": str(a.get("name") or a.get("label") or ""), "weight": a.get("weight"), "score": a.get("score")}
+        for a in (result.get("axes") or [])
+        if isinstance(a, dict)
+    ]
+    return {
+        "grade": result.get("grade"),
+        "gradeRaw": result.get("gradeRaw"),
+        "score": result.get("score"),
+        "healthScore": result.get("healthScore"),
+        "pdEstimate": result.get("pdEstimate"),
+        "outlook": result.get("outlook"),
+        "investmentGrade": result.get("investmentGrade"),
+        "axes": axes,
+        "confidence": baseScore("ratio"),
+        "confidenceMethod": "ratio",
+    }
+
+
+def _headlineKpis(card: Any, view: dict | None, credit: dict | None = None) -> list[dict]:
+    """헤드라인 KPI: SummaryCard grades + 밸류에이션 콜 + 신용 등급."""
     kpis: list[dict] = []
     grades = getattr(card, "grades", {}) if card else {}
     for label, value in list(grades.items())[:4]:
         kpis.append({"label": str(label), "value": str(value)})
     if view and view.get("intrinsic"):
         kpis.append({"label": "내재가치", "value": f"{view['intrinsic']:,}원"})
+    if credit and credit.get("gradeRaw"):
+        kpis.append({"label": "신용등급", "value": str(credit["gradeRaw"])})
     return kpis
 
 
@@ -202,6 +241,7 @@ def buildReportModel(company: Any, perspective: str = "full", *, basePeriod: str
         dfv = None
     view = _valuationView(dfv) if dfv else None
     scenario = _scenarioSet(dfv) if dfv else None
+    creditView = _creditView(company)
 
     sections: list[dict] = []
     for sec in story.sections:
@@ -233,6 +273,17 @@ def buildReportModel(company: Any, perspective: str = "full", *, basePeriod: str
             }
         )
 
+    if creditView:
+        sections.append(
+            {
+                "key": "credit",
+                "title": "신용: dCR 등급과 부도확률",
+                "sourceEngine": "credit",
+                "blocks": [{"type": "creditPanel", "view": creditView}],
+                "arcStep": 8,
+            }
+        )
+
     from dartlab.story.thesis import buildThesis
 
     thesis = buildThesis(company, card, view, basePeriod=basePeriod)
@@ -254,7 +305,7 @@ def buildReportModel(company: Any, perspective: str = "full", *, basePeriod: str
         "perspectiveKey": perspective,
         "perspectiveLabel": _PERSPECTIVE_LABELS.get(perspective, perspective),
         "conclusion": conclusion,
-        "headlineKpis": _headlineKpis(card, view),
+        "headlineKpis": _headlineKpis(card, view, creditView),
         "narrativeOverview": conclusion,
         "keyFindings": findings,
         "sections": sections,

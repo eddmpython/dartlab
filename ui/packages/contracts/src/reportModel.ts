@@ -23,6 +23,7 @@ export type ReportBlockPro =
   | { type: 'verdict'; noComposite: true; rows: VerdictRow[]; caption?: string }
   | { type: 'scenario'; set: ScenarioSet }
   | { type: 'valuationBridge'; view: ValuationView }
+  | { type: 'creditPanel'; view: CreditView }
   | { type: 'peerScatter'; xLabel: string; yLabel: string; points: PeerPoint[]; subjectCode: string }
   | { type: 'driverTree'; root: DriverNode }
   | { type: 'excerpt'; source: string; rceptNo?: string; text: string; sourceType: 'dart' | 'edgar' | 'external' }
@@ -83,6 +84,22 @@ export interface ValuationView {
 
 export interface DriverNode { label: string; value: string; contribution?: Num; children?: DriverNode[] }
 export interface PeerPoint { code: string; name: string; x: Num; y: Num }
+
+// dCR 신용 패킷 (02e P1e 가드③: grade·gradeRaw·axes·pdEstimate·outlook·confidence 명시 정의).
+// 소스 = Python credit engine(evaluateCompany) 단일. TS 재구현 금지(가드②).
+export interface CreditAxis { name: string; weight: Num; score: Num }
+export interface CreditView {
+  grade: string; // "dCR-AA+"
+  gradeRaw: string; // "AA+" (chip 표시용)
+  score: Num; // 0..100 위험점수 (0 = 최우량)
+  healthScore: Num; // 100 - score (UI 양의 방향)
+  pdEstimate: Num; // 1 년 부도확률 (%)
+  outlook: string; // 안정적/긍정적/부정적
+  investmentGrade: boolean | null;
+  axes: CreditAxis[]; // 7(또는 5) 축 name/weight/score
+  confidence: Num; // 0..100
+  confidenceMethod: string; // "ratio"
+}
 
 // ── ReportModel / Section / Overview (마이그레이션 안전 — 신규 전부 optional) ──
 export type ReportSourceEngine =

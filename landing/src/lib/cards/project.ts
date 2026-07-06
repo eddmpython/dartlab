@@ -148,6 +148,7 @@ export function projectBlock(block: ReportBlock, head: HeadCtx): CarouselCard | 
 		case 'verdict':
 		case 'scenario':
 		case 'valuationBridge':
+		case 'creditPanel':
 		case 'peerScatter':
 		case 'driverTree':
 		case 'excerpt':
