@@ -1,0 +1,78 @@
+# 에피소드 메타데이터 (사람이 작성하는 SSOT).
+# 발행 시 guid/오디오크기/길이/발행일 같은 기계값은 published.json 에 기록된다.
+# 소스 문서는 블로그 글 하나다 (tech-story: 스텔스는 정말 안 보일까).
+episode:
+  version: 1
+  episodeId: P09-economy-stealth-rcs-value-chain
+  episodeNo: 9
+  slug: stealth-rcs-value-chain
+  title: "스텔스 전투기: 10% 마진인데 왜 잉크젯처럼 팔릴까"
+  lane: economy
+  language: ko
+  status: ready
+
+  audio:
+    generator: notebooklm
+    sourceHint: "Downloads/스텔스_전투기는_왜_잉크젯_프린터처럼_팔릴까.m4a"
+    sourceDoc: https://eddmpython.github.io/dartlab/blog/stealth-rcs-value-chain
+
+  image:
+    source: cover.jpg
+    key: episodes/stealth-rcs-value-chain/cover-3000.jpg
+  staticImage:
+    source: static-video.jpg
+    key: episodes/stealth-rcs-value-chain/static-video.jpg
+  thumbnail:
+    source: static-video.jpg
+    key: episodes/stealth-rcs-value-chain/static-video.jpg
+  sourceAssets:
+    - source: assets/source.webp
+      name: source
+      role: reusable-original
+  visual:
+    source: assets/source.webp
+    kicker: DartLab Podcast
+    titleLines:
+      - 스텔스 전투기는
+      - 왜 [[잉크젯처럼]]
+      - 팔릴까
+    subtitle: RCS·코팅·센서융합·정비 계약을 공시로 읽기
+    footer: 스텔스 기술 · RCS · DART·EDGAR 실측
+
+  caption:
+    hook: 스텔스 전투기는 투명망토가 아니라 시간을 사는 저피탐 시스템입니다.
+    body: >-
+      기체 한 대의 가격보다 더 오래 남는 것은 코팅, 정비, 센서, 전자전, 소프트웨어 업그레이드,
+      장기 군수지원입니다. EDGAR와 DART로 2025년 손익을 보면 미국 방산 주계약사는 10% 안팎의
+      영업이익률에 모이고, 한국 KF-21 라인은 KAI, 한화시스템, 한화에어로, LIG넥스원이 서로 다른
+      기술 칸과 회계 시간을 갖습니다. 그래서 스텔스 뉴스는 전투기 사진보다 어느 회사가 병목을
+      쥐고 그 병목이 언제 매출과 이익, 현금으로 바뀌는지를 봐야 합니다.
+    cta: 전체 에피소드는 DartLab 팟캐스트에서 들을 수 있습니다.
+    hashtags: ["#DartLab", "#스텔스", "#RCS", "#KF21", "#방산"]
+
+  audienceQuestion: 스텔스 전투기는 왜 비싼데도 주계약사의 이익률은 10% 안팎에 머물고, 진짜 가치는 어디에 남을까?
+  oneLineMessage: >-
+    스텔스의 핵심은 보이지 않는 마술이 아니라 상대의 탐지와 판단 시간을 깎는 시스템이고, 그 가치는
+    기체 판매 한 번보다 코팅, 정비, 센서, 전자전, 소프트웨어, 군수지원이 반복되는 생애주기 계약에서
+    더 오래 남는다.
+  summary: >-
+    스텔스 전투기는 투명망토가 아니라 RCS를 낮추고 센서융합과 전자전으로 먼저 보는 시간을 사는
+    시스템입니다. EDGAR와 DART 기준 2025년 손익을 보면 미국 방산 주계약사는 대체로 10% 안팎의
+    영업이익률에 모이고, 한국 KF-21 주변 회사들은 체계통합, AESA, 엔진, 전자전이라는 다른 기술 칸에
+    배치됩니다. 이번 편은 왜 스텔스가 전투기 사진보다 코팅, 정비, 센서, 장기 군수지원의 반복 계약으로
+    읽혀야 하는지 설명합니다.
+  whereToLook:
+    - 스텔스 뉴스를 볼 때 기체 사진이 아니라 RCS, 코팅, 센서융합, 전자전, 정비 중 어느 병목이 움직이는지
+    - EDGAR는 회사별 회계연도와 분기 period를 확인하고, DART는 사업보고서와 분기보고서의 누적 표시를 분리해 보는지
+    - 기술 칸이 매출, 이익, 현금으로 바뀌는 시간표가 회사마다 어떻게 다른지
+  forbiddenAngles: [매수, 매도, 목표가, 수익 보장, 확정 전망, 무적 무기 단정]
+
+  stockCode: ""
+  corpName: ""
+  topicSlug: stealth-rcs-value-chain
+  cardType: economy
+  youtubeId: ""
+  links:
+    blogSlug: stealth-rcs-value-chain
+    cardSlug: stealth-rcs-value-chain
+    terminalCode: ""

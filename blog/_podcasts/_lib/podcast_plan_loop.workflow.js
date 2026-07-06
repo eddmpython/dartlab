@@ -41,9 +41,34 @@ const LANE_GUIDANCE = {
 
 const PLAN_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['title', 'oneLineMessage', 'insight', 'sections', 'closingWhereToLook', 'forbiddenAngles'],
+  required: ['title', 'titlePlan', 'oneLineMessage', 'insight', 'sections', 'closingWhereToLook', 'forbiddenAngles'],
   properties: {
     title: { type: 'string', description: '에피소드 제목(RSS·오디오 개요). SEO+궁금증 규율: (1) 검색되는 고유명(회사명·티커·핵심 키워드)을 앞 15자 안에 둔다(모바일 검색은 앞부분만 노출). (2) 상식과 충돌하는 훅 또는 열린 질문("어떻게 ~했나", "~일까")으로 궁금증 갭을 열되 답은 숨긴다. (3) 핵심 숫자 1개(분모·기간 함의)로 구체화한다. (4) 낚시(내용 불일치)·목표가·확정전망·수익보장 금지. em dash 금지, 구분자는 콜론 또는 전각바(ㅣ). 예: "SK하이닉스: 다섯 번 죽을 뻔한 회사가 어떻게 AI 시대 이익률 58%를 찍었나". 유튜브 검색용 변형은 README 제목 규율 참조.' },
+    titlePlan: {
+      type: 'object', additionalProperties: false,
+      required: ['candidates', 'selectedReason', 'rssTitle', 'youtubeTitle', 'uploadSlugCamel'],
+      properties: {
+        candidates: {
+          type: 'array', minItems: 3,
+          description: '제목 후보 3개 이상. 후보마다 훅, 검색 키워드, 버린 이유 또는 채택 이유를 쓴다.',
+          items: {
+            type: 'object', additionalProperties: false,
+            required: ['title', 'hook', 'searchLead', 'verdict', 'reason'],
+            properties: {
+              title: { type: 'string' },
+              hook: { type: 'string', description: '궁금증 갭. 답을 닫으면 실패.' },
+              searchLead: { type: 'string', description: '앞 15자 안에 들어가는 검색 키워드.' },
+              verdict: { type: 'string', enum: ['selected', 'rejected'] },
+              reason: { type: 'string' },
+            },
+          },
+        },
+        selectedReason: { type: 'string', description: '채택 제목이 왜 가장 강한지. 클릭 훅과 정직성 둘 다 설명.' },
+        rssTitle: { type: 'string', description: 'episode.yaml title 로 쓸 제목. 짧고 완결된 궁금증.' },
+        youtubeTitle: { type: 'string', description: 'youtube.md 제목. 검색 키워드 앞, 60자 안팎, 낚시 금지.' },
+        uploadSlugCamel: { type: 'string', description: '_uploads 파일명에 쓸 camelCase 영문 slug. 공백, 하이픈, 밑줄, 한글 금지.' },
+      },
+    },
     oneLineMessage: { type: 'string', description: '이 에피소드가 답하는 질문과 결론을 한 문장으로.' },
     insight: {
       type: 'object', additionalProperties: false,
@@ -133,6 +158,7 @@ ${evidence}
 
 지시:
 - 위 lane 지침을 지킨다.
+- 제목도 기획한다. titlePlan.candidates 는 최소 3개, 채택 1개와 기각 이유를 함께 낸다. rssTitle 은 title 과 같아야 한다. youtubeTitle 은 검색 키워드를 앞에 두고, uploadSlugCamel 은 _uploads 파일명에 바로 쓸 영문 camelCase 로 낸다.
 - sections 는 완결 산문. 예시 흐름: (1) 왜 지금 이 이야기인가(오프닝 훅, 답 숨김) (2) 배경: 알아야 할 최소한 (3) 핵심 사실(반전과 메커니즘, 숫자에 분모·기간) (4) 다르게 보기(렌즈) (5) 정리와 다음(오프닝 약속을 갚고 whereToLook 로 닫음). 주제에 맞으면 뼈대를 바꿔도 된다.
 - 본문 900~1500단어(한국어, 8~15분 오디오). 불릿 금지, 문단 산문. 시각 의존("표를 보면") 금지, 귀로만 이해되게.
 - 약어 풀기(AI는 그대로). em dash 금지. 문장은 다/요/까로 끝냄.
@@ -162,6 +188,7 @@ ${evidence}
 
 특히 깐다:
 - 인사이트가 통념-반전-렌즈-메커니즘이 다 살아있고 의외인가. (재탕은 감점 요소지 단독 탈락 사유 아님.)
+- 제목 후보 루프가 실제로 돌았나. titlePlan.candidates 가 3개 이상이고, rssTitle 이 title 과 일치하며, youtubeTitle 과 uploadSlugCamel 이 표면별 규율을 지키나.
 - 귀로만 들어 이해되나. 시각 의존 표현이 있나. 숫자에 분모·기간·비교대상이 문장으로 붙나.
 - 처음 듣는 사람이 따라오나, 오프닝이 궁금하게 멈추나, 클로징이 오프닝 약속을 갚고 whereToLook 로 닫나.
 - 소제목만 훑어 한 편으로 완결되나. 문서 밖 지식에 기대지 않고 완결되나(NotebookLM 적합).
@@ -224,7 +251,7 @@ ${JSON.stringify(skeptic.softNotes || [])}
 직전 소스 문서:
 ${JSON.stringify(plan)}
 
-개선된 전체 소스 문서를 스키마대로 낸다.`,
+개선된 전체 소스 문서를 스키마대로 낸다. 제목도 다시 기획한다. 기존 제목을 고집하지 말고 후보 3개를 다시 비교한 뒤 채택한다.`,
     { label: `기획작가 개선 r${round}`, phase: '평가개선', schema: PLAN_SCHEMA }
   )
 }

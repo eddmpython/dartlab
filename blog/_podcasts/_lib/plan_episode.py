@@ -201,6 +201,7 @@ def main(argv: list[str]) -> int:
         json.dumps(
             {
                 "title": plan["title"],
+                "titlePlan": plan.get("titlePlan", {}),
                 "oneLineMessage": plan.get("oneLineMessage", ""),
                 "insight": plan.get("insight", {}),
                 "closingWhereToLook": plan.get("closingWhereToLook", []),

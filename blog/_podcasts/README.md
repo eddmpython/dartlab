@@ -102,7 +102,7 @@ uv run python -X utf8 blog/_podcasts/_lib/plan_episode.py --plan plan.json --lan
 # 4. 정적 이미지 렌더 (sourceAssets 원본 -> cover.jpg + static-video.jpg)
 uv run python -X utf8 blog/_podcasts/_lib/render_episode_image.py --episode P0N-...
 
-# 5. 발행 (전사 -> R2 업로드 -> HF 원본 업로드 -> feed.xml + index.json 재생성 -> 업로드)
+# 5. 발행 (전사 -> R2 업로드 -> HF 원본 업로드 -> feed.xml + index.json 재생성 -> _uploads 사본)
 uv run python -X utf8 blog/_podcasts/_lib/publish_podcast.py --episode P0N-... --audio <m4a 경로>
 ```
 
@@ -123,6 +123,10 @@ uv run python -X utf8 blog/_podcasts/_lib/publish_podcast.py --episode P0N-... -
 ## 5-1. 제목 규율 (SEO + 궁금증) · 두 표면 한 규율
 
 제목은 검색으로 발견되고 클릭으로 열려야 한다. RSS(팟캐스트 앱)와 유튜브(검색)는 표면이 달라 제목도 변형되지만, 규율은 하나다.
+
+기획 루프는 `titlePlan` 을 필수 산출한다. 후보 3개 이상을 만들고, 채택 1개와 기각 이유를 남긴다.
+`titlePlan.rssTitle` 은 `episode.yaml` 의 `title` 과 같아야 하고, `titlePlan.youtubeTitle` 은 `youtube.md` 제목의 초안이다.
+`titlePlan.uploadSlugCamel` 은 `_uploads/NN{slug}.m4a` 와 `.jpg` 파일명에 쓰는 영문 camelCase 이름이다.
 
 공통 규칙 (두 표면 모두):
 - **고유명 앞으로**: 검색되는 고유명(회사명·티커·핵심 키워드)을 앞 15자 안에 둔다. 모바일 검색·팟캐스트 목록은 앞부분만 노출한다.
@@ -151,9 +155,10 @@ uv run python -X utf8 blog/_podcasts/_lib/publish_podcast.py --episode P0N-... -
 RSS 자동 연결(YouTube Music·Apple·Spotify)과 별개로, 팟빵(Podbbang)처럼 사람이 오디오를 직접 올려야 하는 플랫폼이 있다. 이걸 위한 순서 아카이브가 `blog/_podcasts/_uploads/` 다. NotebookLM 오디오를 받으면 **항상 여기에 순번대로** 저장한다. 결과물을 저장하는 곳은 이 폴더 하나다.
 
 - **git 비추적.** `_uploads/` 는 `.gitignore` 로 폴더째 제외한다(오디오 + 커버 이미지 모두). 발행 결과물이라 레포에 커밋하지 않는다.
-- **영문 순번 파일명 (공백·기호 전면 금지).** `NN{slug}` 로 **붙여 쓴다**. `NN` 은 에피소드 순번(episodes `P0N` 과 일치), `slug` 는 그 에피소드 `topicSlug` 의 영문을 camelCase 로. **공백·하이픈(`-`)·밑줄(`_`) 등 기호 전부 금지, 한글 금지** (팟빵 등 사람 업로드 플랫폼 호환·정렬 안정). 예: `07netCashAboveMarketCap.m4a`, `08sandToSemiconductor.jpg`.
+- **영문 순번 파일명 (공백·기호 전면 금지).** `NN{slug}` 로 **붙여 쓴다**. `NN` 은 에피소드 순번(episodes `P0N` 과 일치), `slug` 는 그 에피소드 `topicSlug` 의 영문을 camelCase 로. **공백·하이픈(`-`)·밑줄(`_`) 등 기호 전부 금지, 한글 금지** (팟빵 등 사람 업로드 플랫폼 호환·정렬 안정). 예: `07netCashAboveMarketCap.m4a`, `09stealthRcsValueChain.jpg`.
 - **오디오 + 16:9 커버 한 쌍.** 각 회차는 `NN{slug}.m4a` 와 `NN{slug}.jpg` 를 나란히 둔다. 팟빵 썸네일은 정사각이 아니라 **16:9 (1280x720)** 이라 에피소드의 `static-video.jpg` 를 커버로 재사용한다(에피소드 폴더가 아직 없으면 데이터리포트 배경으로 1280x720 생성). 정사각 `cover.jpg` 는 RSS/애플 자동경로 전용이므로 여기 쓰지 않는다.
-- **다운로드 정리.** 아카이브에 넣고 파일 크기로 사본을 검증하면, 원본(다운로드 폴더 등)은 **제거**한다. 완료본을 다운로드에 남기지 않는다. 중복 파일(같은 오디오의 옛 이름 등)도 함께 정리한다.
+- **발행 스크립트가 자동 생성.** `publish_podcast.py --episode ... --audio ...` 는 전사·R2·HF·feed/index 작업 뒤 `_uploads/NN{topicSlugCamel}.m4a` 와 `_uploads/NN{topicSlugCamel}.jpg` 를 복사하고 크기를 검증한다. 특별히 건너뛸 때만 `--no-uploads-archive` 를 쓴다.
+- **다운로드 정리.** 아카이브 사본이 검증되면 다운로드 폴더 원본은 운영자가 정리한다. 스크립트는 사용자 다운로드 파일을 자동 삭제하지 않는다.
 
 이렇게 두면 팟빵에 `01, 02, 03...` 순번대로 오디오 하나와 그 옆 16:9 이미지 하나를 그대로 올리기만 하면 된다.
 

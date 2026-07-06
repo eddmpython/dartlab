@@ -41,7 +41,7 @@
 uv run python -X utf8 blog/_podcasts/_lib/publish_podcast.py --episode P0N-<lane>-<slug> --audio "<내려받은 m4a 경로>"
 ```
 
-자동 처리: m4a -> mp3 전사, 길이·크기 측정, guid 1회 발급(재발행 시 재사용), R2 업로드, feed.xml + index.json 재생성·업로드, 커버 정규화.
+자동 처리: m4a -> mp3 전사, 길이·크기 측정, guid 1회 발급(재발행 시 재사용), R2 업로드, feed.xml + index.json 재생성·업로드, 커버 정규화, 팟빵용 `_uploads/NNenglishCamel.m4a` + `.jpg` 사본 생성.
 - 검증만: `--dry-run`. 오디오 안 바꾸고 feed/index 만: `--rebuild-only`.
 - 출력된 피드 URL 을 castfeedvalidator.com 으로 1회 검증.
 - 플랫폼 최초 1회만 제출: 유튜브 뮤직(YouTube Studio -> 콘텐츠 -> 팟캐스트 -> RSS 연결), Apple Podcasts Connect, Spotify for Creators 에 피드 URL. 소유권 인증 메일은 channel.yaml 의 ownerEmail 로 온다. 이후 에피소드는 발행 명령만으로 자동 반영된다.

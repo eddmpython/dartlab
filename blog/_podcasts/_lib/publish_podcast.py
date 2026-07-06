@@ -48,6 +48,7 @@ PODCAST_DIR = LIB_DIR.parent
 ROOT = PODCAST_DIR.parents[1]
 EPISODES_DIR = PODCAST_DIR / "episodes"
 CHANNEL_YAML = PODCAST_DIR / "channel.yaml"
+UPLOADS_DIR = PODCAST_DIR / "_uploads"
 
 KST = timezone(timedelta(hours=9))
 ITUNES_NS = "http://www.itunes.com/dtds/podcast-1.0.dtd"
@@ -179,6 +180,18 @@ def sha8(path: Path) -> str:
     return h.hexdigest()[:8]
 
 
+def camel_upload_slug(raw: str) -> str:
+    """topicSlug/slug 를 팟빵용 영문 camelCase 파일명 조각으로 변환."""
+    import re
+
+    parts = [p for p in re.split(r"[^0-9A-Za-z]+", raw) if p]
+    if not parts:
+        return "episode"
+    first = parts[0][:1].lower() + parts[0][1:]
+    rest = [p[:1].upper() + p[1:] for p in parts[1:]]
+    return "".join([first, *rest])
+
+
 # --- 커버 ---
 
 
@@ -262,6 +275,17 @@ def resolve_episode_image_source(ep_dir: Path, source: str) -> Path:
     if ep_candidate.exists():
         return ep_candidate
     return PODCAST_DIR / src
+
+
+def resolve_audio_source(raw: str) -> Path:
+    """episode.yaml audio.sourceHint 또는 --audio 값을 실제 파일 경로로 해석."""
+    src = Path(raw)
+    if src.is_absolute():
+        return src
+    cand = ROOT / src
+    if cand.exists():
+        return cand
+    return Path.home() / src
 
 
 def source_asset_key(meta: dict, source_path: Path) -> str:
@@ -707,6 +731,43 @@ def upload_hf_source_assets(records: list[dict], dry_run: bool, repo: str = HF_M
     print(f"[hf-source] {repo} 원본 이미지 {len(ops)}개 업로드 완료")
 
 
+def archive_manual_upload_pair(ep_dir: Path, audio_override: str | None, dry_run: bool) -> None:
+    """팟빵 등 수동 업로드용 m4a + 16:9 jpg 한 쌍을 _uploads 에 저장."""
+    meta = load_yaml(ep_dir / "episode.yaml").get("episode", {})
+    raw_audio = audio_override or meta.get("audio", {}).get("sourceHint", "")
+    if not raw_audio:
+        print(f"[uploads] {ep_dir.name}: 오디오 소스 없음, _uploads 사본 건너뜀")
+        return
+    audio_src = resolve_audio_source(raw_audio)
+    if not audio_src.exists():
+        raise SystemExit(f"[uploads] 오디오 소스 없음: {audio_src}")
+
+    static = meta.get("staticImage") or meta.get("thumbnail") or {}
+    static_source = str(static.get("source") or "").strip()
+    if not static_source:
+        raise SystemExit(f"[uploads] {ep_dir.name}: staticImage.source 없음")
+    static_src = resolve_episode_image_source(ep_dir, static_source)
+    if not static_src.exists():
+        raise SystemExit(f"[uploads] 16:9 이미지 없음: {static_src}")
+
+    name = (
+        f"{int(meta['episodeNo']):02d}{camel_upload_slug(str(meta.get('topicSlug') or meta.get('slug') or 'episode'))}"
+    )
+    audio_out = UPLOADS_DIR / f"{name}{audio_src.suffix.lower() or '.m4a'}"
+    image_out = UPLOADS_DIR / f"{name}.jpg"
+    print(f"[uploads] archive {audio_out.name} + {image_out.name}")
+    if dry_run:
+        print("[uploads] dry-run: 실제 복사 안 함")
+        return
+    UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(audio_src, audio_out)
+    shutil.copy2(static_src, image_out)
+    if audio_out.stat().st_size != audio_src.stat().st_size:
+        raise SystemExit(f"[uploads] 오디오 사본 크기 불일치: {audio_out}")
+    if image_out.stat().st_size <= 0:
+        raise SystemExit(f"[uploads] 이미지 사본 비정상: {image_out}")
+
+
 def main(argv: list[str]) -> int:
     """CLI 진입점."""
     parser = argparse.ArgumentParser(description="DartLab 팟캐스트 발행 (R2 SSOT)")
@@ -715,6 +776,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--rebuild-only", action="store_true", help="오디오 미변경, feed/index/cover 만 재생성")
     parser.add_argument("--no-cover", action="store_true", help="쇼커버 업로드 건너뜀")
     parser.add_argument("--no-hf-source-assets", action="store_true", help="원본 이미지 HF 업로드 건너뜀")
+    parser.add_argument("--no-uploads-archive", action="store_true", help="팟빵용 _uploads 사본 생성 건너뜀")
     parser.add_argument("--hf-source-assets-only", action="store_true", help="R2 없이 원본 이미지만 HF 업로드")
     parser.add_argument("--hf-repo", default=HF_MEDIA_REPO, help="원본 이미지를 올릴 HF dataset repo")
     parser.add_argument(
@@ -757,6 +819,8 @@ def main(argv: list[str]) -> int:
         render_ids = [args.episode] if args.episode else [r["episodeId"] for r in records]
         render_episode_stills([e for e in render_ids if e])
     upload_episode_images(env, channel, records, args.dry_run)
+    if args.episode and not args.rebuild_only and not args.no_uploads_archive:
+        archive_manual_upload_pair(EPISODES_DIR / args.episode, args.audio, args.dry_run)
     if not args.no_hf_source_assets:
         upload_hf_source_assets(records, args.dry_run, args.hf_repo)
 
