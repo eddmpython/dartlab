@@ -260,5 +260,3 @@ c.select("IS", ["매출액", "영업이익"])   # 분기 합산 → 연간
 - **커널 정책 변화 출처(외부, untrusted)**: [Microsoft Windows Resiliency Initiative and the security kernel (Cybersecurity Dive)](https://www.cybersecuritydive.com/news/microsoft-windows-resilience-initiative-security-kernel/813416/). 보안 제품을 커널 밖(사용자 모드)에서 실행하도록 하는 새 플랫폼 방향은 위 출처 기준이다.
 - **재무 수치 출처(외부, 미국사 손익)**: [CrowdStrike FY2025 실적발표](https://ir.crowdstrike.com/news-releases/news-release-details/crowdstrike-reports-fourth-quarter-and-fiscal-year-2025) · [Zscaler FY2025 실적발표](https://ir.zscaler.com/news-releases/news-release-details/zscaler-reports-fourth-quarter-and-fiscal-2025-financial-results) · [SentinelOne FY2025 실적발표](https://www.businesswire.com/news/home/20250312530689/en/SentinelOne-Announces-Fourth-Quarter-and-Fiscal-Year-2025-Financial-Results).
 - 데이터 구분: 한국사·포티넷 손익과 크라우드스트라이크 재무상태표는 dartlab이 DART·EDGAR에서 런타임 직독한 실측이고, 1월·7월 결산 미국사의 손익·유지율·현금흐름은 위 실적발표를 인용했다(dartlab의 회계연도 분기 라벨이 어긋나는 것을 검산으로 잡아 정정). 종목별 출처는 검증표에 명시했다.
-</content>
-</invoke>
