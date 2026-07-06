@@ -168,6 +168,11 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
 - **발간 전 원장 재구축**: 오염 봉인(당일 생성 로컬 원장, 미발간)을 삭제 후 고친 엔진으로 202625~202627 재발행. 중복키 0·주당 ~29.7k~30.3k 판독 x **23표면**(신선한 allFilings 로 레버 전군 발화 + 피드 3).
 - **첫 라이브 성적표(2주 채점 45,958행, 이론 정합)**: treasuryAcquire +612bp(n=21)·lockupExpiry +448bp(n=54)·fund.bm +207bp·**industry.indMom +169bp(신규 피드 첫 성적)**·fund.ep +132bp / maxRet20 -235bp(복권성 회피 = 음수 확인)·ret5 -80bp(단기 반전). 2주 소표본 = 인증은 20주 후 깔때기가 판정.
 
+### 0c-16. 매크로 E = 격자 자신의 성적표 (2026-07-07)
+
+- `lattice.factorMarginals`(잎 분포의 팩터별 가중 분위 5점) → `estimate.sealMacroOutlook/scoreMacroDue`: 격자가 행동 근거로 쓰는 8주 분포를 그대로 기대 원장에 봉인하고 대상일 도래 시 coverage/CRPS 채점 = **격자 분포가 현실을 커버하는지 격자 스스로 채점받는다**. runWeek E 심장박동에 KR 라이브 배선 (estimateSummary.macroSealed/macroScored).
+- 실봉인 4행 (rate ±0.21%p·fx ±5%·oil 71.9 p5 53.9~p95 89.9·rate10y ±0.44%p, 8주 지평). 기존 CI expectationCycle 의 매크로 기대(CPI·기준금리·환율)와 **같은 ExpectationSpec 계약으로 자연 합류** (검증 척추 재사용 실증). tests 170 (신규 2).
+
 ---
 
 > ⚠ v0.1 폐기 박제: 이전 04는 "초기 아키텍처 = story 동격 L3 `scenarioWorkbench`, 공개 verb `dartlab.scenario`(미결)"을 현재 결정으로 들고 있었다. **01 §3이 이를 코드로 기각**했다(story=순수 렌더러라 동거 불가, `scenario` 명사형은 `macro.scenarios`/`ScenarioOverlay` 충돌). 본 v0.2가 정본.

@@ -150,3 +150,20 @@ def testLiquidUniverseFiltersSmallCaps(monkeypatch):
     monkeypatch.setattr(table, "marketCap", lambda baseDir=None: caps)
     u = table.liquidUniverse(d[1], mktcapQuantile=0.3)
     assert "a" not in u and {"c", "d"} <= u  # 하위 30% 컷
+
+
+def testFactorMarginalsWeightedQuantiles():
+    import numpy as np
+
+    from dartlab.simulate import lattice as lt
+
+    # 3상태 격자: -0.1(25%) / 0(50%) / +0.1(25%) → p50=0, p5=-0.1, p95=+0.1 (가중 분위)
+    fake = {
+        "factors": ["oil"],
+        "shocks": np.array([[-0.1], [0.0], [0.1]]),
+        "probs": np.array([0.25, 0.5, 0.25]),
+    }
+    m = lt.factorMarginals(fake)
+    assert m["oil"][50] == 0.0 and m["oil"][5] == -0.1 and m["oil"][95] == 0.1
+    vals = [m["oil"][p] for p in (5, 25, 50, 75, 95)]
+    assert vals == sorted(vals)  # 단조

@@ -218,3 +218,33 @@ def hardenedTopK(
         .join(decision.select("code", "respP5"), on="code", how="left")
     )
     return cand.sort("respP5", descending=True, nulls_last=True).head(topK)["code"].to_list()
+
+
+def factorMarginals(lattice: dict) -> dict[str, dict[int, float]]:
+    """격자 잎 분포의 팩터별 주변 분위 5점 → {factor: {5,25,50,75,95: 누적충격}}.
+
+    격자가 실제로 행동 근거로 쓰는 분포의 주변화라, 이 분위를 기대 원장에 봉인·채점하면 격자
+    자신이 성적표를 받는다 (분포가 현실을 커버하나 = coverage/CRPS). 가지치기 손실 질량은
+    확률 재정규화로 처리 (prunedMass 는 격자 dict 에 정직 보존).
+
+    Args:
+        lattice: growLattice 산출 ({"factors","shocks","probs",...}).
+
+    Returns:
+        {factor: {분위: 누적충격}}. 충격 단위 = 팩터 변화 단위 (price=수익률 합, level=%p 합).
+    """
+    factors, shocks, probs = lattice["factors"], lattice["shocks"], lattice["probs"]
+    total = float(probs.sum())
+    if total <= 0 or len(factors) == 0:
+        return {}
+    p = probs / total
+    out: dict[str, dict[int, float]] = {}
+    for j, f in enumerate(factors):
+        order = np.argsort(shocks[:, j])
+        cum = np.cumsum(p[order])
+        vals = shocks[order, j]
+        out[f] = {
+            q: float(vals[np.searchsorted(cum, q / 100.0, side="left").clip(0, len(vals) - 1)])
+            for q in (5, 25, 50, 75, 95)
+        }
+    return out

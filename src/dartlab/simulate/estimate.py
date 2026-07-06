@@ -342,3 +342,132 @@ def scoreEstimatesDue(
     ]
     _eled.appendScores(scores, baseDir=baseDir)
     return len(scores)
+
+
+def _factorKinds() -> dict[str, str]:
+    """팩터 → kind (price=수익률 누적, level=차분 누적). factors 레지스트리 SSOT."""
+    from dartlab.simulate.factors import macroFactors
+
+    return {mf.factor: mf.kind for mf in macroFactors()}
+
+
+def sealMacroOutlook(
+    macro: pl.DataFrame,
+    marginals: dict[str, dict[int, float]],
+    *,
+    asOf: str,
+    market: str = "KR",
+    horizonWeeks: int = 8,
+    live: bool = True,
+    baseDir: Path | None = None,
+    issuedAt: str | None = None,
+) -> int:
+    """격자 주변분포를 매크로 팩터 레벨 분위 5점으로 봉인 (격자 성적표). 반환 = 신규 봉인 수.
+
+    격자가 행동 근거로 쓰는 분포(lattice.factorMarginals)를 그대로 기대로 등재해 격자 자신이
+    coverage/CRPS 채점을 받게 한다 (E = 봉인·채점 원칙의 매크로 축). 점 예측 아님: 분위 밴드만.
+
+    Args:
+        macro: table.macroDaily 산출 (PIT: date <= asOf 만 사용). marginals: 누적충격 분위.
+        asOf: 발행 vintage (yyyymmdd). market: 변수 접두. horizonWeeks: 지평 (targetPeriod =
+            asOf + 7 x horizonWeeks 일). live/baseDir/issuedAt: 봉인 메타.
+
+    Returns:
+        신규 봉인 수 (같은 variable·targetPeriod·asOf·버전 재발행 스킵).
+    """
+    from datetime import datetime as _dt
+    from datetime import timedelta as _td
+
+    if macro.height == 0 or not marginals:
+        return 0
+    stamp = issuedAt or _nowUtc()
+    target = (_dt.strptime(asOf, "%Y%m%d") + _td(days=7 * horizonWeeks)).strftime("%Y%m%d")
+    kinds = _factorKinds()
+    pit = macro.filter(pl.col("date") <= asOf).sort("date")
+    existing = _eled.readExpectations(baseDir=baseDir)
+    seen: set[tuple] = set()
+    if existing is not None and existing.height:
+        prior = existing.filter((pl.col("engine") == ENGINE) & (pl.col("engineVersion") == ENGINE_VERSION))
+        seen = {
+            (r["variable"], r["targetPeriod"], r["asOf"])
+            for r in prior.select("variable", "targetPeriod", "asOf").iter_rows(named=True)
+        }
+    rows: list[ExpectationSpec] = []
+    for factor, q in marginals.items():
+        if factor not in pit.columns:
+            continue
+        s = pit[factor].drop_nulls()
+        if s.len() == 0:
+            continue
+        current = float(s[-1])
+        variable = f"{market}.{factor}"
+        if (variable, target, asOf) in seen:
+            continue
+        if kinds.get(factor) == "price":
+            if current <= 0:
+                continue
+            quantiles = {p: current * (1.0 + q[p]) for p in (5, 25, 50, 75, 95)}
+        else:
+            quantiles = {p: current + q[p] for p in (5, 25, 50, 75, 95)}
+        rows.append(
+            ExpectationSpec(
+                expectationId=buildExpectationId("macro", variable, "W", horizonWeeks, target, stamp),
+                domain="macro",
+                variable=variable,
+                unit="level",
+                freq="W",
+                horizon=horizonWeeks,
+                targetPeriod=target,
+                issuedAt=stamp,
+                issuedLive=live,
+                asOf=asOf,
+                engine=ENGINE,
+                engineVersion=ENGINE_VERSION,
+                kind="quantiles",
+                quantiles=quantiles,
+                baselines={"carry": current},
+                sourceRefs=("simulate.lattice.factorMarginals",),
+            )
+        )
+    _eled.appendExpectations(rows, baseDir=baseDir)
+    return len(rows)
+
+
+def scoreMacroDue(*, market: str = "KR", baseDir: Path | None = None, macro: pl.DataFrame | None = None) -> int:
+    """대상일 도래한 매크로 분위 기대를 실측 레벨로 채점 (격자 성적표 채점부). 반환 = 채점 수.
+
+    Args:
+        market: 변수 접두. baseDir: 원장 루트. macro: 주입 (None = table.macroDaily 스캔, KR 전용).
+
+    Returns:
+        채점 수. targetPeriod 가 데이터 최신일 이후면 pending (실제치 미도래).
+    """
+    due = _eled.readExpectations(baseDir=baseDir, unscoredOnly=True)
+    if due is None or due.height == 0:
+        return 0
+    due = due.filter(
+        (pl.col("engine") == ENGINE) & (pl.col("domain") == "macro") & pl.col("variable").str.starts_with(f"{market}.")
+    )
+    if due.height == 0:
+        return 0
+    if macro is None:
+        macro = _table.macroDaily(None)
+    if macro.height == 0:
+        return 0
+    maxDate = str(macro["date"].max())
+    stamp = _nowUtc()
+    scores = []
+    for r in due.iter_rows(named=True):
+        target = r["targetPeriod"]
+        if target > maxDate:
+            continue  # 미도래 = pending
+        factor = r["variable"].split(".", 1)[1]
+        if factor not in macro.columns:
+            continue
+        s = macro.filter(pl.col("date") <= target).sort("date")[factor].drop_nulls()
+        if s.len() == 0:
+            continue
+        scores.append(_eled.specFromRow(r))
+        scores[-1] = scoreExpectation(scores[-1], float(s[-1]), scoredAt=stamp, actualAsOf=target)
+    _eled.appendScores(scores, baseDir=baseDir)
+    return len(scores)

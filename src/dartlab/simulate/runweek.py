@@ -355,6 +355,23 @@ def runWeek(
                 sealedE = _estimate.sealEstimates(eFrame, asOf=eAsOf, market=market, baseDir=baseDir)
             scoredE = _estimate.scoreEstimatesDue(market=market, baseDir=baseDir, grid=eGrid)
             estimateSummary = {"sealed": sealedE, "scored": scoredE, "asOf": eAsOf}
+            if market == "KR":  # 매크로 E = 격자 주변분포 봉인·채점 (격자 성적표. macro 축 KR 배선)
+                from dartlab.simulate import lattice as _lt
+                from dartlab.simulate import scenarioSim as _ss
+                from dartlab.simulate import table as _table
+
+                asOfS = weekEnd.filter(pl.col("week") == week)["date"]
+                macroDf = _table.macroDaily(dataDir)
+                if asOfS.len() and macroDf.height:
+                    cov = _ss.factorCovariance(macroDf.filter(pl.col("date") <= asOfS[0]))
+                    kM = len(cov["factors"])
+                    lat = _lt.growLattice(cov, steps=8, stepDays=5, beamWidth=min(1500 * 10 ** max(0, kM - 3), 50000))
+                    estimateSummary["macroSealed"] = _estimate.sealMacroOutlook(
+                        macroDf, _lt.factorMarginals(lat), asOf=asOfS[0], market=market, baseDir=baseDir
+                    )
+                    estimateSummary["macroScored"] = _estimate.scoreMacroDue(
+                        market=market, baseDir=baseDir, macro=macroDf
+                    )
         except Exception as e:  # noqa: BLE001 - E 사이클 실패가 주간 판독 봉인을 못 죽임 (오류는 블록에 명시)
             estimateSummary = {"error": f"{type(e).__name__}: {e}"}
 

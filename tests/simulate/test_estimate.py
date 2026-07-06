@@ -100,3 +100,20 @@ def testSealScoreRoundtrip(tmp_path):
     sc = eled.readScores(baseDir=tmp_path)
     assert sc.height == 2 and sc["crps"].null_count() == 0  # pinball 채점 봉인
     assert est.scoreEstimatesDue(baseDir=tmp_path, grid=actual) == 0  # 채점 완료분 재채점 없음
+
+
+def testSealMacroOutlookAndScoreRoundtrip(tmp_path):
+    # 격자 성적표: 주변분포 봉인 → 대상일 도래 실측 채점 (coverage/CRPS)
+    macro = pl.DataFrame({"date": ["20260601", "20260610", "20260619", "20260814"], "oil": [95.0, 98.0, 100.0, 104.0]})
+    marg = {"oil": {5: -0.10, 25: -0.04, 50: 0.0, 75: 0.04, 95: 0.10}}
+    n = est.sealMacroOutlook(macro, marg, asOf="20260619", baseDir=tmp_path, issuedAt="2026-06-19T00:00+00:00")
+    assert n == 1
+    again = est.sealMacroOutlook(macro, marg, asOf="20260619", baseDir=tmp_path, issuedAt="2026-06-20T00:00+00:00")
+    assert again == 0  # 같은 vintage 재발행 스킵
+    scored = est.scoreMacroDue(baseDir=tmp_path, macro=macro)  # target=20260814, 실측 104 (p95=110 내)
+    assert scored == 1
+    from dartlab.simulate import expectationLedger as eled
+
+    sc = eled.readScores(baseDir=tmp_path)
+    row = sc.row(0, named=True)
+    assert row["coverageHit90"] is True and row["crps"] is not None  # 104 in [90, 110] + pinball 채점
