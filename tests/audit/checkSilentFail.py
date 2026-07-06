@@ -77,6 +77,8 @@ _ALLOWLIST_FILES: frozenset[str] = frozenset(
         "scan/builders/kr/fiscal.py",
         # _scanBuildState.json 증분 ledger 로더 — 부재 = 부트스트랩(전량 seed 회피) semantic, loud-fail 부적합.
         "scan/builders/kr/common.py",
+        # note 횡단 프리빌드 빌더. panel 디렉토리·parquet 부재 = 빌드 대상 0 = 빈 결과 정상(scan 빌더 동형, batch-safe skip).
+        "scan/builders/kr/notes.py",
         "scan/edgar/builder.py",
         "scan/io/parquet.py",
         # AI 런타임 상태 저장 (없으면 첫 실행)
