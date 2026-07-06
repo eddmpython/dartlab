@@ -305,6 +305,7 @@ def testRunWeekHashChain(tmp_path):
     body = {k: v for k, v in b1.items() if k != "hash"}
     assert hashBlock(body) == b1["hash"]  # 결정론 재현 (외부 재검산 가능)
     assert "codeVersionHash" in b1 and "combinedWeights" in b1  # §7b 봉인 필드
+    assert b1["estimateSummary"] is None  # 주입 경로 = E 사이클 미실행 명시 (라이브만 실행)
 
 
 def testScanFinanceGridPrefersConsolidated(tmp_path):

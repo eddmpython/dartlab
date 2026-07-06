@@ -140,6 +140,7 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
 - **③ profileAll E·US**: market 파라미터(KR 20형질·US 15형질, 미배선 축 정직 부재) + E 열(revenueE/netIncomeE ± 밴드 + 대상분기). 실측 KR 2,875 x 20 (11초, revenueE 충전 76%)·US 7,074 x 15 (16초, 45% = XBRL frame 결손 정직).
 - **④ 조건부 E `scenarioTree.industryElasticity/conditionalE`**: 업종-분기 중앙 YoY 를 분기 공통효과 차감 후 팩터 시계열 회귀(풀링 금지 = 가짜 검정력 차단. 차감 전 t>=3 30쌍 전부 rate 양(+) = 인플레 공통추세 교란 실측, 차감 후 7쌍 = 소프트웨어·정보서비스·통신 금리 음(-) 듀레이션 채널로 경제 정합). **인증 쌍만 E 이동, 나머지 기권 명시**: 리스크오프 실측 = 매출 E 2,248행 중 247행 조건화(소프트웨어 -4.3%·전기통신 -5.2%·연료가스 +11.2%).
 - **E 소비 루프 폐합 `estimate.epFwd` 피드**: 전방 E/P(다음 분기 순이익 E p50 / 시총) 를 estimate 피드로 등록 = E 층이 판독 사이클로 소비되는 3번째 피드. E 는 PIT 과거의 결정론 함수라 look-ahead 0 (역류 아님, 별도 표식 표면). trailing fund.ep 대비 전방 정보 유무는 성적표가 측정. 실봉인 2,875행(기권 683) = **표면 11개**. 라이브 누적만(과거 주 backfill 은 주별 vintage 재계산 필요 = 정직 라벨).
+- **runWeek E 심장박동**: 주간 라이브 런이 E 봉인(sealEstimates, 같은 vintage 멱등 스킵)·채점(scoreEstimatesDue)을 자동 실행하고 블록에 `estimateSummary` 봉인 (주입 경로 = None 명시, 실패 = 격리 + 블록에 오류 명시). 실측: week 202625 재실행 = {'sealed': 0, 'scored': 0, 'asOf': '20260619'} (멱등 확인). 운영자 개입 없이 분기 실적 도착 시 자동 채점 누적.
 - tests 166(신규 16)·dartlabGuard strict 7/7 + 외부 게이트 6 PASS. E 는 판독 피처로 역류하지 않음(06 §5c 보간 금지 유지).
 - **정직 잔여**: E 채점은 다음 분기 실적 도착부터(시간 문제). US 프로파일 industry·베타·counterparty 미배선(채우면 자동 등장). 탄성은 rate 지배(oil/fx 통과 0 = 강제 배선 안 함). Q4 흐름값 = DART 연간누적 관행(seasonal 면역이나 표시 개선 여지 = Q4 단분기 도출은 차기 검토).
 

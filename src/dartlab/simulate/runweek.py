@@ -25,6 +25,7 @@ from dartlab.simulate import certify as _certify
 from dartlab.simulate import combine as _combine
 from dartlab.simulate import costs as _costs
 from dartlab.simulate import enginefeeds as _enginefeeds
+from dartlab.simulate import estimate as _estimate
 from dartlab.simulate import readingCycle as _cycle
 from dartlab.simulate import readingLedger as _ledger
 from dartlab.simulate import readingScorecard as _sc
@@ -138,6 +139,7 @@ def buildBlock(
     certifySummary: dict | None = None,
     aciCoverage: float | None = None,
     latticeDropped: list[str] | None = None,
+    estimateSummary: dict | None = None,
 ) -> dict:
     """주간 블록 조립 + 해시 (06 §7b 공개 봉인). 판독은 요약(표면별 수·방향)만 담아 가볍게."""
     surfSummary = (
@@ -172,6 +174,7 @@ def buildBlock(
         "certifySummary": certifySummary,
         "aciCoverage": aciCoverage,
         "latticeDropped": latticeDropped,  # 격자 오버레이 제거 종목 (None = 미적용 명시)
+        "estimateSummary": estimateSummary,  # E 봉인·채점 요약 (None = 주입 경로 미실행 명시)
         "prevHash": prevHash,
         "disclaimer": _board.DISCLAIMER,
     }
@@ -335,6 +338,22 @@ def runWeek(
         reg = _regime.classifyRegimes(mw).filter(pl.col("week") == week)
         regimeTag = reg["regime"][0] if reg.height else None
 
+    # E 연장 봉인·채점 (라이브 런만): 주간 심장박동이 E 원장도 함께 굴린다 (E = 상시 봉인·채점,
+    # 같은 vintage 재발행은 sealEstimates 가 스킵). 실패는 격리 + 블록에 정직 기록 (판독 봉인 우선).
+    estimateSummary: dict | None = None
+    if not injected:
+        try:
+            eGrid = _estimate.quarterGrid(market, dataDir)
+            eAsOf = eGrid["rceptDate"].max() if eGrid.height else None
+            sealedE = 0
+            if eAsOf:
+                eFrame = _estimate.estimateQuarters(eGrid, asOf=eAsOf)
+                sealedE = _estimate.sealEstimates(eFrame, asOf=eAsOf, market=market, baseDir=baseDir)
+            scoredE = _estimate.scoreEstimatesDue(market=market, baseDir=baseDir, grid=eGrid)
+            estimateSummary = {"sealed": sealedE, "scored": scoredE, "asOf": eAsOf}
+        except Exception as e:  # noqa: BLE001 - E 사이클 실패가 주간 판독 봉인을 못 죽임 (오류는 블록에 명시)
+            estimateSummary = {"error": f"{type(e).__name__}: {e}"}
+
     certifySummary = (
         None
         if certifyRes is None
@@ -359,6 +378,7 @@ def runWeek(
         combinedWeights=weights,
         certifySummary=certifySummary,
         latticeDropped=latticeDropped,
+        estimateSummary=estimateSummary,
     )
     (blockDir / f"block_{week}.json").write_text(json.dumps(block, ensure_ascii=False, indent=2), encoding="utf-8")
     return block
