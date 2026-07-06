@@ -24,11 +24,78 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import polars as pl
 
 from dartlab.core.logger import getLogger
 
 _log = getLogger(__name__)
+
+# 저장된 명명 스크린 config 거처 (운영자 수동 저작·review, accountMappings 급). scan 도메인 colocation.
+_SCREENS_DIR = Path(__file__).resolve().parent.parent / "screens"
+
+
+def listScreens() -> list[dict]:
+    """저장된 명명 스크린 목록 (screens/*.json 메타). 미존재/파손 파일은 건너뛴다.
+
+    Returns:
+        [{id, title, tags, evidence, version}, ...] (id 정렬).
+
+    Raises:
+        없음. 디렉토리/파일 부재는 빈 목록으로 흡수.
+
+    Example:
+        >>> [s["id"] for s in listScreens()]  # doctest: +SKIP
+    """
+    out: list[dict] = []
+    if not _SCREENS_DIR.is_dir():
+        return out
+    for p in sorted(_SCREENS_DIR.glob("*.json")):
+        try:
+            d = json.loads(p.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        out.append(
+            {
+                "id": d.get("id", p.stem),
+                "title": d.get("title", ""),
+                "tags": d.get("tags", []),
+                "evidence": d.get("evidence", ""),
+                "version": d.get("version", 1),
+            }
+        )
+    return out
+
+
+def loadScreen(screenId: str) -> dict:
+    """저장된 스크린의 실행 spec(dict)을 반환한다. 미존재/형식오류 시 ValueError.
+
+    Args:
+        screenId: screens/{id}.json 의 id (예 "financialStabilityDrawdown").
+
+    Returns:
+        executeScreenSpec 에 넣는 spec dict (define/where/any/select/sort/limit).
+
+    Raises:
+        ValueError: 미존재 id 또는 spec 누락/형식오류.
+
+    Example:
+        >>> loadScreen("financialStabilityDrawdown")["where"]  # doctest: +SKIP
+    """
+    p = _SCREENS_DIR / f"{screenId}.json"
+    if not p.exists():
+        avail = ", ".join(s["id"] for s in listScreens()) or "(없음)"
+        raise ValueError(f"알 수 없는 저장 스크린: {screenId!r}. 가용: {avail}")
+    try:
+        d = json.loads(p.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as e:
+        raise ValueError(f"스크린 {screenId!r} 파싱 실패: {e}") from e
+    spec = d.get("spec")
+    if not isinstance(spec, dict):
+        raise ValueError(f"스크린 {screenId!r} 에 spec dict 가 없습니다.")
+    return spec
 
 
 _PRESETS = {
@@ -373,19 +440,28 @@ def scanScreen(target: str | None = None, *, spec: dict | None = None, verbose: 
 
     if target is None:
         rows = [{"preset": k, "description": v} for k, v in _PRESETS.items()]
+        rows += [{"preset": s["id"], "description": f"[저장] {s['title']}"} for s in listScreens()]
         return pl.DataFrame(rows)
 
     key = target.lower().strip()
-    if key not in _DISPATCH:
-        available = ", ".join(_PRESETS.keys())
-        raise ValueError(f"알 수 없는 screen 프리셋: '{target}'. 가용: {available}")
+    if key in _DISPATCH:
+        if verbose:
+            _log.info(f"screen({key}): 실행 중...")
+        result = _DISPATCH[key]()
+        if verbose:
+            _log.info(f"screen({key}): {result.shape[0]}종목")
+        return result
 
+    # 프리셋이 아니면 저장된 명명 스크린(id 대소문자 보존) 실행. 미존재면 loadScreen 이 가용목록 포함 ValueError.
+    from dartlab.scan.builders.kr.fields import executeScreenSpec
+
+    savedSpec = loadScreen(target.strip())
     if verbose:
-        _log.info(f"screen({key}): 실행 중...")
-    result = _DISPATCH[key]()
+        _log.info(f"screen({target}): 저장 스크린 실행")
+    result = executeScreenSpec(savedSpec)
     if verbose:
-        _log.info(f"screen({key}): {result.shape[0]}종목")
+        _log.info(f"screen({target}): {result.shape[0]}종목")
     return result
 
 
-__all__ = ["scanScreen"]
+__all__ = ["listScreens", "loadScreen", "scanScreen"]
