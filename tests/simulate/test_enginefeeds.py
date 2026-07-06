@@ -44,13 +44,39 @@ def testCreditFeedRollingWindow():
     assert usOut.height > 0 and usOut["code"].unique().to_list() == ["b"]
 
 
+def testEstimateFeedForwardEp(monkeypatch):
+    from dartlab.simulate import estimate, table
+
+    # E 층 시뮬 소비 루프: 다음 분기 순이익 E(p50) / 시총 = epFwd (최신 주 한정)
+    rows = []
+    for y in (2023, 2024, 2025):
+        for qn, v in zip((1, 2, 3, 4), (10.0, 20.0, 30.0, 40.0)):
+            rows.append(
+                {
+                    "code": "a",
+                    "period": f"{y}Q{qn}",
+                    "rceptDate": f"{y}{qn * 2 + 3:02d}15",
+                    "account": "netIncome",
+                    "amount": v,
+                }
+            )
+    monkeypatch.setattr(estimate, "quarterGrid", lambda market, d=None: pl.DataFrame(rows))
+    monkeypatch.setattr(
+        table, "marketCap", lambda d=None: pl.DataFrame({"date": ["20260110"], "code": ["a"], "mktcap": [1000.0]})
+    )
+    weekEnd = pl.DataFrame({"week": [202602], "date": ["20260110"]})
+    out = ef.estimateFeedProvider({"weekEnd": weekEnd, "market": "KR"})
+    r = out.row(0, named=True)
+    assert r["week"] == 202602 and abs(r["epFwd"] - 10.0 / 1000.0) < 1e-12  # 완전 계절 E=10 / 시총 1000
+
+
 def testInstallEngineFeedsIdempotent():
     before = {f.axis for f in fd.companyFeeds()}
     try:
         ef.installEngineFeeds()
         ef.installEngineFeeds()  # 재설치 = 교체 (중복 없음)
         axes = [f.axis for f in fd.companyFeeds()]
-        assert axes.count("industry") == 1 and axes.count("credit") == 1
+        assert axes.count("industry") == 1 and axes.count("credit") == 1 and axes.count("estimate") == 1
     finally:
-        for axis in {"industry", "credit"} - before:
+        for axis in {"industry", "credit", "estimate"} - before:
             fd.unregisterCompanyFeed(axis)
