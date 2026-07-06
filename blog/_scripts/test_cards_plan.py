@@ -342,3 +342,10 @@ def test_contract_big_sentence_flow_blocks_fragmented_labels() -> None:
 def test_contract_big_sentence_flow_accepts_connected_story() -> None:
     errors = cp.validate_contract_big_sentence_flow("x", {"slides": _valid_big_sentence_slides()})
     assert errors == []
+
+
+def test_contract_big_sentence_flow_accepts_short_cover_question() -> None:
+    slides = _valid_big_sentence_slides()
+    slides[0]["line"] = "회원권은 정말 돈일까?"
+    errors = cp.validate_contract_big_sentence_flow("x", {"slides": slides})
+    assert errors == []

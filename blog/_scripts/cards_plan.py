@@ -827,7 +827,7 @@ def validate_title_contract(plan: dict[str, Any], *, require_passed: bool) -> li
         )
 
     compact_title_len = compact_text_len(target_title)
-    if compact_title_len < 14:
+    if compact_title_len < 8:
         errors.append(f"{slug}: 제목이 너무 짧아 후크가 약함: {target_title!r}")
     if compact_title_len > 80:
         errors.append(f"{slug}: 제목이 너무 길어 표지 후크가 흐려짐: {target_title!r}")
@@ -1054,7 +1054,8 @@ def validate_contract_big_sentence_flow(slug: str, contract: dict[str, Any]) -> 
         compact = re.sub(r"[^0-9A-Za-z가-힣]", "", text)
         if layout == "editorialStat" and not clean_card_text(slide.get("context")):
             errors.append(f"{slug} #{idx}: 숫자 카드도 context 에 큰문장 서사를 써야 함")
-        if len(compact) < 12:
+        min_compact_len = 8 if idx == 1 and text.endswith("?") else 12
+        if len(compact) < min_compact_len:
             errors.append(f"{slug} #{idx}: 큰문장이 너무 짧아 메모처럼 보임: {text!r}")
         if text and not SENTENCE_END_RE.search(text):
             errors.append(f"{slug} #{idx}: 큰문장은 완성 문장으로 끝나야 함: {text!r}")
