@@ -74,7 +74,17 @@ TIER-1 후 멈추지 않고 폭(breadth)도 정공법으로 계속. 신규 실�
 - **지수 편입**: 시총 랭크 편입 경계 밴드 근방 = 후보. lever.indexInclusion 99577.
 opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4 P/S 거래코드 하나뿐이고 그건 군집이 대체**(정제 문헌 핵심이 군집). tests 47·dartlabGuard 7/7·simulate 24 실모듈.
 
-**진짜 남은 것(코드로 못 뚫는 물리 벽)**: ① 라이브 채점 누적 = 매주 발행→지평 채점 수개월(**시간**. 역사 증거는 backtest 로 이미 산출: PBO 0.086·DSR 0.999). ② **UI(R6) = 운영자 명시 보류("ui는 마지막")** = 운영자 결정 선결. ▸레버 정제 데이터 벽은 해제됨(위). 이 둘만 시간·운영자결정이 선결. 그 외 엔진 PRD 는 양시장 실데이터 검증 완료. push 보류(미푸시 history + UI 인접).
+**진짜 남은 것(코드로 못 뚫는 물리 벽)**: ① 라이브 채점 누적 = 매주 발행 후 지평 채점 수개월(**시간**. 역사 증거는 backtest 로 이미 산출: PBO 0.086·DSR 0.999). ② **UI(R6) = 운영자 명시 보류("ui는 마지막")** = 운영자 결정 선결. ▸레버 정제 데이터 벽은 해제됨(위). 이 둘만 시간·운영자결정이 선결. ⚠ **단, "그 외 엔진 PRD 검증 완료"는 R4·R5 깊이에 대해선 과장이었다. §0c-5 정정.**
+
+### 0c-5. ★깊이 감사 정정 (2026-07-06, "진짜 깊이있게 시뮬레이션하나" 도전 후 실측 재대조)
+
+운영자 도전에 cascade·profile 을 실데이터로 재측정한 결과, **§0c-2/§0c-3 의 "완료" 서술이 R4·R5 깊이에 대해 과장**이었음을 확정한다 (검증 전 성공주장 금지, 능력>정직 = 갭은 측정으로 특정). **정직한 실장 지형**:
+
+- **완료·실검증 (dartlab 시그니처 = 신뢰성 척추)**: R1(reading/opine/scorecard)·R2(certify 깔때기·sweep·conformal·regime·residual·AdaHedge)·R3(runweek 해시체인)·비용바닥. **양시장 실데이터로 확인**(KR volShock t6.31·dilution t3.55·E/P t3.20 인증·SPA p=0·PBO 0.10·DSR 0.998 / US high52·volShock·B/M 인증·ret5·maxRet20 발굴). 이 축은 진짜 깊다.
+- **R4 프로파일러 = 골격이지 전수 아님**: §0c-2 "8축 전수"는 *축 열거*이지 *값 깊이*가 아니다. 실측(삼성): 축5 노출=marketBeta 만(11 §2 요구 금리·환율·유가 macroBeta **미배선**), 축1 사업구조=`segmentUnits:1`(매출 구성값 아닌 단위 count), 축2 관계=`edgeCount:2502, counterparty:None`(상대방 미파싱), 축8 서사=`conceptCount:10`(본문 추출 아닌 목록). 즉 **census 카운트(얕고 넓게)**이지 PRD 11 §2 가 요구한 **실값(깊고 넓게)**이 아니다. 빌드플랜 12 의 "R1 골격 후 R4 전수" 중 **R1 골격 상태**.
+- **R5 cascade = 계약이지 실배선 아님**: assembleCascade·recompute 계약은 있으나 (a) 경제·산업 노드는 *주입 지점*일 뿐 실 L2 macro/industry 판독 미배선 (b) recompute 에 **표면기여 드롭 결함**(경제 노드 편집 시 하류 재산출이 표면 노드 value 부재로 7개 표면신호를 0 처리해 결정 consensus 1.60 을 0.03 으로 붕괴, companyCascade contribution 공식과 recompute 공식 불일치). 빌드플랜 12 R5 미완.
+
+**결론**: PRD 핵심(깊은 프로파일러·재계산 제작기)은 *문서엔 충분히 반영*돼 있고, 부족한 건 실장이 R4/R5 깊이까지 안 간 것. **NEXT = R4 실값 배선(축5 금리/환율/유가 베타 우선, 데이터 확정 = ecos BASE_RATE·USDKRW + fred DCOILWTICO daily) + R5 recompute 결함 수정·실 macro/industry 주입.**
 
 ---
 
