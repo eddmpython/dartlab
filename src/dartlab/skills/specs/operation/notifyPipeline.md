@@ -87,8 +87,10 @@ lastUpdated: '2026-07-06'
 |---|---|---|---|
 | `newIpo` | reports.parquet(베이크)·scan("ipo") 폴백 | 발행사 등장(slug=corpCode) + 확정공모가(corpCode:conf) 2신호 | 허브 sentNonce(영구 멱등), slug=corpCode 라 기재정정 재발화 0 |
 | `newOrders` | scan("orders") | book-to-bill>=1 신규 진입 | 허브 `/active` topicActive set-diff 커서(직전 활성셋 대비 entered 만, 이탈 종목 재진입 시 재발화) |
+| `screenAlert` | scan.screen 저장 스크린(`notify: true` opt-in) | 스크린 멤버십 진입(조건 충족) | 허브 `/active` set-diff 커서(직전 멤버셋 대비 entered, 이탈 후 재진입 재발화). newOrders 동형 |
 
-- new_listing 형(newIpo)은 per-match `/send`(영구 nonce), threshold_cross 형(newOrders)은 `/active` set-diff(재크로싱 발화). watch.py `_STATEFUL_TOPICS` 로 분기.
+- new_listing 형(newIpo)은 per-match `/send`(영구 nonce), threshold_cross 형(newOrders·screenAlert)은 `/active` set-diff(재크로싱 발화). watch.py `_STATEFUL_TOPICS` 로 분기.
+- **screenAlert 롤아웃 게이트**: 저장 스크린(`screens/*.json` + `notify:true`) 멤버십을 `evaluateScreenMembers` 로 평가해 진입 알림. 첫 활성화 시 현 멤버 전원이 진입으로 보여 flood 가능하므로 `main` default 토픽에서 제외(운영자가 cron `--topics` 에 추가해 롤아웃). flagship=`financialStabilityDrawdown`(하락장 재무안전).
 - 허브는 전건 발송실패(sent=0 && failed>0)·구독자0 시 nonce 롤백(다음 cron 재시도). 러너는 body.failed 를 전건=RED·부분=warning 으로 표면화(조용한 미발화 종료).
 - 딥링크: newIpo `/terminal?ipo=1`, newOrders `/terminal?sym={code}`.
 
@@ -121,6 +123,6 @@ lastUpdated: '2026-07-06'
 
 ## 검증
 
-- 러너: `.github/scripts/notify/test_watch.py`(13) · 허브 vitest `infra/workers/pushHub`(24, /active 재크로싱 포함) · 베이크 `tests/sync/test_buildIpoReports.py`(4, 누적·dedup) · scan `tests/scan/test_ipo.py`(5) · 모니터 `tests/pipeline/test_monitor_classify.py`(20, Notify Watch staleness).
+- 러너: `.github/scripts/notify/test_watch.py`(16, screenAlert 멤버십 포함) · 허브 vitest `infra/workers/pushHub`(24, /active 재크로싱 포함) · 베이크 `tests/sync/test_buildIpoReports.py`(4, 누적·dedup) · scan `tests/scan/test_ipo.py`(5) · 모니터 `tests/pipeline/test_monitor_classify.py`(20, Notify Watch staleness).
 - 실측: 실 DART 발행사 build 로 reports + history 2파일 산출 확인. 첫 빌드는 baseline 없어 history==live.
 - 감사: 5차원 적대검증(wf_47c0b9eb 확증 10) + 파이프라인 적합성(wf_2af24a25). 상세 원장 05 §감사.

@@ -158,16 +158,57 @@ def eval_new_orders(df=None, min_book_to_bill: float = 1.0) -> list[dict]:
     return items
 
 
-_EVALUATORS = {"newIpo": eval_new_ipo, "newOrders": eval_new_orders}
+def eval_screen_alert(members_by_screen=None) -> list[dict]:
+    """저장 스크린(notify=true) 멤버십 진입 알림. /active set-diff 커서(진입 발화, 이탈 후 재진입 재발화).
+
+    왓처 구독 = scan.screen.watchedScreens() 각각을 evaluateScreenMembers 로 현재 멤버셋 평가. slug=
+    screenId:stockCode 라 허브 /active 가 직전 멤버셋과 diff 해 신규 진입만 발화(newOrders 동형 threshold
+    _cross). members_by_screen 주입 시 dartlab 실호출 없이 검증(테스트). 첫 활성화 시 현 멤버 전원이 진입으로
+    보여 flood 가능해 default 토픽에서 제외(운영자가 --topics 로 롤아웃 게이트).
+    """
+    if members_by_screen is None:
+        from dartlab.scan.screen import evaluateScreenMembers, watchedScreens
+
+        members_by_screen = {}
+        for s in watchedScreens():
+            members_by_screen[s["id"]] = {
+                "title": s.get("title") or s["id"],
+                "members": evaluateScreenMembers(s["id"]),
+            }
+    items: list[dict] = []
+    for sid, info in members_by_screen.items():
+        title = info.get("title") or sid
+        for m in info.get("members", []):
+            code = m.get("stockCode")
+            if not code:
+                continue
+            name = m.get("corpName") or f"종목 {code}"
+            items.append(
+                {
+                    "topic": "screenAlert",
+                    "slug": f"{sid}:{code}",
+                    "notification": {
+                        "title": sanitize(f"[스크린] {name} · {title}", 80),
+                        "body": sanitize(f"{title} 조건 진입", 120),
+                        "url": f"/terminal?sym={code}",
+                        "tag": f"screen:{sid}:{code}",
+                    },
+                }
+            )
+    return items
+
+
+_EVALUATORS = {"newIpo": eval_new_ipo, "newOrders": eval_new_orders, "screenAlert": eval_screen_alert}
 
 # threshold_cross(돌파형) 토픽 = 허브 /active set-diff 커서 경로(재크로싱 발화). new_listing 형은 stateless /send.
-_STATEFUL_TOPICS = {"newOrders"}
+# screenAlert 는 스크린 멤버십 진입(이탈 후 재진입 재발화)이라 newOrders 동형 stateful.
+_STATEFUL_TOPICS = {"newOrders", "screenAlert"}
 
 # 발송 위생. 토픽별 발송 cap(콜드스타트 폭주 가드). 24h dedupe 는 허브 sentNonce 가 영구 멱등으로 처리(불요).
 # 조용한 시간(22~08)은 cron 발화시각(평일 17시 KST)이 구조적으로 회피(야간 배치 큐 미도입, YAGNI).
 # newIpo=40: 윈도 발행사(~30) + confirmation 신호 여유. 초과분은 로그(newest-first 정렬이라 최신부터 발송,
 # 절단되는 건 가장 오래된 stale IPO 라 터미널 목록으로 커버. 조용한 절단 금지).
-_TOPIC_CAP = {"newIpo": 40, "newOrders": 15}
+_TOPIC_CAP = {"newIpo": 40, "newOrders": 15, "screenAlert": 50}
 
 
 def cap_matches(matches: list[dict], caps: dict[str, int] = _TOPIC_CAP) -> tuple[list[dict], list[dict]]:

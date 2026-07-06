@@ -183,3 +183,43 @@ def test_send_stateful_total_fail_is_problem(monkeypatch):
     monkeypatch.setattr(watch, "post_active", lambda *a: (200, {"entered": 2, "sent": 0, "failed": 5}))
     problems = watch._send_stateful("h", "tok", "newOrders", [{"slug": "A", "notification": {}}], 1)
     assert len(problems) == 1
+
+
+# ── eval_screen_alert (저장 스크린 멤버십 구독) ────────────────────────
+def test_eval_screen_alert_membership_matches():
+    """스크린 멤버 종목마다 screenAlert 매치. slug=screenId:stockCode(허브 /active diff 키)."""
+    members = {
+        "financialStabilityDrawdown": {
+            "title": "하락장 재무안전 종목",
+            "members": [{"stockCode": "005930", "corpName": "삼성전자"}, {"stockCode": "000660", "corpName": None}],
+        }
+    }
+    items = watch.eval_screen_alert(members)
+    assert {m["slug"] for m in items} == {
+        "financialStabilityDrawdown:005930",
+        "financialStabilityDrawdown:000660",
+    }
+    m0 = next(m for m in items if m["slug"].endswith("005930"))
+    assert m0["topic"] == "screenAlert"
+    assert "삼성전자" in m0["notification"]["title"] and "재무안전" in m0["notification"]["title"]
+    assert m0["notification"]["url"] == "/terminal?sym=005930"
+    assert m0["notification"]["tag"] == "screen:financialStabilityDrawdown:005930"
+    m1 = next(m for m in items if m["slug"].endswith("000660"))
+    assert "종목 000660" in m1["notification"]["title"]  # corpName 결측 폴백
+
+
+def test_eval_screen_alert_empty():
+    assert watch.eval_screen_alert({}) == []
+    assert watch.eval_screen_alert({"s": {"title": "t", "members": []}}) == []
+
+
+def test_screen_alert_is_stateful_and_registered():
+    """screenAlert 는 멤버십 diff = stateful(/active set-diff), 러너 레지스트리 등록."""
+    assert "screenAlert" in watch._STATEFUL_TOPICS
+    assert "screenAlert" in watch._EVALUATORS
+    # 첫-실행 flood 회피: default 토픽에는 미포함(운영자 롤아웃 게이트)
+    import argparse
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--topics", default="newIpo,newOrders")
+    assert "screenAlert" not in ap.parse_args([]).topics

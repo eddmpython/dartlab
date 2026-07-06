@@ -10,7 +10,14 @@ import json
 import polars as pl
 import pytest
 
-from dartlab.scan.screen import _SCREENS_DIR, listScreens, loadScreen, scanScreen
+from dartlab.scan.screen import (
+    _SCREENS_DIR,
+    evaluateScreenMembers,
+    listScreens,
+    loadScreen,
+    scanScreen,
+    watchedScreens,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -69,3 +76,30 @@ def test_scanScreen_saved_id_executes(monkeypatch):
 def test_scanScreen_unknown_target_raises():
     with pytest.raises(ValueError, match="알 수 없는 저장 스크린"):
         scanScreen("존재하지않는것xyz", verbose=False)
+
+
+def test_watchedScreens_notify_optin():
+    ids = {s["id"] for s in watchedScreens()}
+    assert "financialStabilityDrawdown" in ids  # flagship JSON 의 notify: true
+
+
+def test_evaluateScreenMembers(monkeypatch):
+    import dartlab.scan.builders.kr.report.fields as fmod
+    import dartlab.scan.rename as rmod
+
+    monkeypatch.setattr(fmod, "executeScreenSpec", lambda spec: pl.DataFrame({"stockCode": ["005930", "000660"]}))
+    monkeypatch.setattr(
+        rmod,
+        "_enrichWithKorean",
+        lambda df: df.rename({"stockCode": "종목코드"}).with_columns(pl.lit("이름").alias("종목명")),
+    )
+    out = evaluateScreenMembers("financialStabilityDrawdown")
+    assert len(out) == 2
+    assert out[0]["stockCode"] == "005930" and out[0]["corpName"] == "이름"
+
+
+def test_evaluateScreenMembers_empty(monkeypatch):
+    import dartlab.scan.builders.kr.report.fields as fmod
+
+    monkeypatch.setattr(fmod, "executeScreenSpec", lambda spec: pl.DataFrame({"stockCode": []}))
+    assert evaluateScreenMembers("financialStabilityDrawdown") == []

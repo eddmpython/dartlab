@@ -98,6 +98,69 @@ def loadScreen(screenId: str) -> dict:
     return spec
 
 
+def watchedScreens() -> list[dict]:
+    """왓처 구독 대상 스크린 목록 (JSON 의 ``notify: true`` opt-in). 운영자 제어.
+
+    Returns:
+        [{id, title}, ...] (notify=true 인 스크린만).
+
+    Raises:
+        없음. 디렉토리/파일 부재는 빈 목록.
+
+    Example:
+        >>> [s["id"] for s in watchedScreens()]  # doctest: +SKIP
+    """
+    out: list[dict] = []
+    if not _SCREENS_DIR.is_dir():
+        return out
+    for p in sorted(_SCREENS_DIR.glob("*.json")):
+        try:
+            d = json.loads(p.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        if d.get("notify") is True:
+            out.append({"id": d.get("id", p.stem), "title": d.get("title", "")})
+    return out
+
+
+def evaluateScreenMembers(screenId: str) -> list[dict]:
+    """저장 스크린의 현재 멤버 종목을 평가한다 (왓처 구독 = 멤버십 스냅샷).
+
+    ``executeScreenSpec(loadScreen(id))`` 를 돌려 현재 조건 충족 종목을 반환한다. 왓처가 스케줄마다 호출해
+    직전 멤버셋과 diff(진입/이탈)를 낸다(허브 /active set-diff 커서). scan 은 stateless 평가만, 시간축 diff 는
+    왓처가 소유한다(operation.notifyPipeline).
+
+    Args:
+        screenId: screens/{id}.json 의 id.
+
+    Returns:
+        [{stockCode, corpName}, ...] (현재 멤버). 데이터/스크린 부재 시 빈 목록.
+
+    Raises:
+        ValueError: 미존재 스크린 id (loadScreen 전파).
+
+    Example:
+        >>> evaluateScreenMembers("financialStabilityDrawdown")  # doctest: +SKIP
+    """
+    from dartlab.scan.builders.kr.report.fields import executeScreenSpec
+    from dartlab.scan.rename import _enrichWithKorean
+
+    spec = loadScreen(screenId)
+    df = executeScreenSpec(spec)
+    if df is None or df.is_empty() or "stockCode" not in df.columns:
+        return []
+    df = _enrichWithKorean(df)
+    scCol = "종목코드" if "종목코드" in df.columns else "stockCode"
+    nameCol = "종목명" if "종목명" in df.columns else None
+    out: list[dict] = []
+    for row in df.iter_rows(named=True):
+        code = row.get(scCol)
+        if not code:
+            continue
+        out.append({"stockCode": str(code), "corpName": row.get(nameCol) if nameCol else None})
+    return out
+
+
 _PRESETS = {
     "value": "가치투자 후보 (저PBR + 이익 양호 + 부채 안전)",
     "dividend": "배당 성장 우량주 (연속증가/안정 + 부채 안전)",
@@ -464,4 +527,4 @@ def scanScreen(target: str | None = None, *, spec: dict | None = None, verbose: 
     return result
 
 
-__all__ = ["listScreens", "loadScreen", "scanScreen"]
+__all__ = ["evaluateScreenMembers", "listScreens", "loadScreen", "scanScreen", "watchedScreens"]
