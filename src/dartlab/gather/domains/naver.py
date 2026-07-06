@@ -28,8 +28,14 @@ _FLOW_DEFAULT_LATEST_LIMIT = 5
 _FLOW_MAX_SERVER_PAGE_SIZE = 50
 # 네이버 차트 API (XML) — FDR 방식, 한번에 6000일
 _CHART_URL = "https://fchart.stock.naver.com/sise.nhn"
-# 네이버 분봉 API (JSON) — 당일 1분봉 OHLCV
+# 네이버 분봉 API (JSON). 당일 + startDateTime/endDateTime 로 과거 세션도 조회.
 _INTRADAY_URL = "https://api.stock.naver.com/chart/domestic/item/{code}/minute"
+# 분봉 타임스탬프는 YYYYMMDDHHMM 12 자리만 인식 (8 자리 날짜만은 빈 응답).
+_INTRADAY_OPEN_HHMM = "0900"
+_INTRADAY_CLOSE_HHMM = "1530"
+# 최근 거래일 폴백. 오늘이 휴장/장전이라 빈 응답이면 며칠 뒤로 걸어가 최근 세션을 찾는다.
+_INTRADAY_FALLBACK_DAYS = 8
+_KST = timezone(timedelta(hours=9))
 
 
 def _cleanNumber(text: str | None) -> float | None:
@@ -802,89 +808,33 @@ async def fetchAll(
     return result
 
 
-async def fetchIntraday(
-    stockCode: str,
-    client,
-    *,
-    market: str = "KR",
-    limit: int | None = None,
-    **_: object,
-) -> list[dict]:
-    """네이버 → 당일 1분봉 OHLCV.
+def _intradayStamp(value: str, *, isEnd: bool) -> str:
+    """분봉 조회 파라미터 정규화 → ``YYYYMMDDHHMM`` (12 자리).
 
-    Capabilities: KR Naver api.stock.naver.com 1분봉 list[dict].
-    AIContext: intraday 분석 (gap/spike 분 단위) 의 raw 원천.
-    Guide: 당일 한정. 과거일 1분봉은 별도 source (daily 만).
-    When: intraday 가격 변동 분석 시.
-    How: api.stock.naver.com intraday JSON → list[dict].
-
-    api.stock.naver.com 엔드포인트. minuteType/count 파라미터는 서버가 무시하므로
-    당일분 전체가 한 번에 온다. 5/15/30/60분봉은 이 결과를 Polars로 리샘플하여 얻는다.
-    과거 분봉은 제공하지 않음 (fchart는 OHL=null이라 미사용).
-
-    Parameters
-    ----------
-    stock_code : str
-        종목코드 (예: ``"005930"``).
-    client
-        비동기 HTTP 클라이언트.
-    market : str
-        시장 코드. ``"KR"`` 외에는 빈 리스트 반환.
-    limit : int | None
-        반환 행수 상한 (가장 최근 N분). None이면 당일 전체.
-
-    Returns
-    -------
-    list[dict]
-        당일 1분봉 OHLCV 목록. 각 dict 키:
-
-        - datetime : str — ISO8601 (``YYYY-MM-DDTHH:MM:SS``, KST)
-        - open : float — 시가 (원)
-        - high : float — 고가 (원)
-        - low : float — 저가 (원)
-        - close : float — 종가 (원)
-        - volume : int — 누적 거래량 (주)
-
-        KR 외 시장이거나 조회 실패 시 빈 리스트.
-
-    Raises
-    ------
-    없음
-        Naver intraday API 내부 예외 (SourceUnavailableError/ValueError) 는 흡수.
-
-    Example
-    -------
-    >>> rows = await fetchIntraday("005930", client, market="KR")
-
-    Requires
-    --------
-    네트워크 (``api.stock.naver.com/chart/domestic/item/{code}/minute``) + KR 6 자리
-    종목코드 + 당일 (과거 분봉 미제공).
-
-    See Also
-    --------
-    fetchHistory : 일별 OHLCV (장기).
-    transforms/indicatorDispatch : 분봉 리샘플 + 보조지표.
+    ``"2026-07-03"`` 처럼 날짜만 오면 장 시작(0900)/마감(1530) 시각을 채운다.
+    구분자(``-`` ``:`` ``T`` 공백)는 제거하고, 이미 12 자리면 그대로 통과한다.
+    8 자리 미만이면 빈 문자열 (파라미터 미부착).
     """
-    if market != "KR":
-        return []
-    # KR 종목코드 검증
-    if not (stockCode and stockCode.strip().isdigit() and len(stockCode.strip()) == 6):
-        return []
+    digits = "".join(ch for ch in value if ch.isdigit())
+    if len(digits) >= 12:
+        return digits[:12]
+    if len(digits) >= 8:
+        return digits[:8] + (_INTRADAY_CLOSE_HHMM if isEnd else _INTRADAY_OPEN_HHMM)
+    return ""
 
-    url = _INTRADAY_URL.format(code=stockCode)
-    try:
-        resp = await client.get(url, headers={"Accept": "application/json"})
-        data = resp.json()
-    except (SourceUnavailableError, ValueError) as exc:
-        log.warning("naver intraday API 실패 (%s): %s", stockCode, exc)
-        return []
 
+def _parseIntradayRows(data: object) -> list[dict]:
+    """네이버 분봉 JSON(list) → 정규화 OHLCV list[dict] (datetime 오름차순).
+
+    list 가 아니거나 파싱 불가한 항목은 건너뛴다. 다일 응답이면 세션 경계는
+    ``datetime[:10]`` (날짜) 로 구분된다.
+    """
     if not isinstance(data, list):
         return []
-
     rows: list[dict] = []
     for item in data:
+        if not isinstance(item, dict):
+            continue
         dt = item.get("localDateTime", "")
         if len(dt) < 14:
             continue
@@ -901,8 +851,141 @@ async def fetchIntraday(
                 "volume": int(item.get("accumulatedTradingVolume") or 0),
             }
         )
-    if limit is not None and limit > 0:
-        return rows[-limit:]
+    rows.sort(key=lambda r: r["datetime"])
+    return rows
+
+
+async def _requestIntraday(url: str, client, *, params: dict | None) -> list[dict]:
+    """분봉 엔드포인트 1 회 호출 → 파싱 rows. 내부 예외는 흡수하고 빈 리스트."""
+    try:
+        if params:
+            resp = await client.get(url, params=params, headers={"Accept": "application/json"})
+        else:
+            resp = await client.get(url, headers={"Accept": "application/json"})
+        data = resp.json()
+    except (SourceUnavailableError, ValueError) as exc:
+        log.warning("naver intraday API 실패 (%s %s): %s", url, params or {}, exc)
+        return []
+    return _parseIntradayRows(data)
+
+
+async def fetchIntraday(
+    stockCode: str,
+    client,
+    *,
+    market: str = "KR",
+    start: str = "",
+    end: str = "",
+    limit: int | None = None,
+    fallbackDays: int = _INTRADAY_FALLBACK_DAYS,
+    **_: object,
+) -> list[dict]:
+    """네이버 → 1분봉 OHLCV. 당일 + 과거 세션(start/end) + 최근 거래일 폴백.
+
+    Capabilities: KR Naver api.stock.naver.com 1분봉 list[dict] (당일·과거·폴백).
+    AIContext: intraday 분석 (gap/spike 분 단위) 의 raw 원천.
+    Guide: 기본은 당일. start/end 로 과거 세션, 휴장일엔 최근 거래일로 폴백.
+    When: intraday 가격 변동 분석 시 (당일 실시간 또는 특정 과거 세션).
+    How: api.stock.naver.com minute JSON + startDateTime/endDateTime → list[dict].
+
+    ``minuteType``/``count`` 는 서버가 무시하지만 ``startDateTime``/``endDateTime``
+    (YYYYMMDDHHMM 12 자리) 는 유효해서 과거 세션도 조회된다. 구간이 여러 거래일을
+    걸치면 다일이 한 번에 오며(주말/휴장일은 자동 제외), 세션은 날짜로 구분된다.
+    3/5/15/30/60분봉은 이 1분봉 결과를 Polars 로 리샘플하여 얻는다.
+
+    호출 모드:
+
+    - start/end 미지정 → 당일 세션. 오늘이 휴장/장전이라 빈 응답이면
+      ``fallbackDays`` 범위 내 최근 거래일 세션으로 폴백.
+    - start(또는 end) 지정 → 그 구간(다일 가능)을 그대로 반환. 폴백 없음.
+
+    Parameters
+    ----------
+    stock_code : str
+        종목코드 (예: ``"005930"``).
+    client
+        비동기 HTTP 클라이언트.
+    market : str
+        시장 코드. ``"KR"`` 외에는 빈 리스트 반환.
+    start : str
+        시작 시각. ``"2026-07-03"`` (날짜만이면 0900) 또는
+        ``"2026-07-03T09:30"``/``"202607030930"``. 빈 문자열이면 당일 모드.
+    end : str
+        종료 시각. 날짜만이면 1530. 빈 문자열이면 start 부터 현재까지.
+    limit : int | None
+        반환 행수 상한 (가장 최근 N분). None이면 전체.
+    fallbackDays : int
+        당일 빈 응답 시 최근 거래일을 찾을 소급 일수. 0이면 폴백 비활성.
+
+    Returns
+    -------
+    list[dict]
+        1분봉 OHLCV 목록 (datetime 오름차순). 각 dict 키:
+
+        - datetime : str. ISO8601 (``YYYY-MM-DDTHH:MM:SS``, KST)
+        - open : float. 시가 (원)
+        - high : float. 고가 (원)
+        - low : float. 저가 (원)
+        - close : float. 종가 (원)
+        - volume : int. 누적 거래량 (주)
+
+        KR 외 시장이거나 조회 실패 시 빈 리스트.
+
+    Raises
+    ------
+    없음
+        Naver intraday API 내부 예외 (SourceUnavailableError/ValueError) 는 흡수.
+
+    Example
+    -------
+    >>> rows = await fetchIntraday("005930", client, market="KR")
+    >>> past = await fetchIntraday("005930", client, start="2026-07-03")
+
+    Requires
+    --------
+    네트워크 (``api.stock.naver.com/chart/domestic/item/{code}/minute``) + KR 6 자리
+    종목코드. 과거 세션은 ``startDateTime``/``endDateTime`` (12 자리) 로 조회.
+
+    See Also
+    --------
+    fetchHistory : 일별 OHLCV (장기).
+    transforms/indicatorDispatch : 분봉 리샘플 + 보조지표.
+    """
+    if market != "KR":
+        return []
+    sc = stockCode.strip() if stockCode else ""
+    # KR 종목코드 검증
+    if not (sc.isdigit() and len(sc) == 6):
+        return []
+
+    url = _INTRADAY_URL.format(code=sc)
+
+    def _cap(rows: list[dict]) -> list[dict]:
+        return rows[-limit:] if (limit is not None and limit > 0) else rows
+
+    # 1) 명시 구간 조회. start/end 지정 시 그 구간(다일 가능)을 한 번에.
+    if start or end:
+        params: dict[str, str] = {}
+        s = _intradayStamp(start, isEnd=False)
+        if s:
+            params["startDateTime"] = s
+        e = _intradayStamp(end, isEnd=True)
+        if e:
+            params["endDateTime"] = e
+        return _cap(await _requestIntraday(url, client, params=params))
+
+    # 2) 기본 = 당일 세션 (기존 동작 보존: 파라미터 없는 단일 호출).
+    rows = await _requestIntraday(url, client, params=None)
+    if rows:
+        return _cap(rows)
+
+    # 3) 폴백 = 오늘이 휴장/장전이라 빈 응답이면 최근 거래일 세션으로.
+    if fallbackDays > 0:
+        windowStart = (datetime.now(_KST).date() - timedelta(days=fallbackDays)).strftime("%Y%m%d")
+        spanned = await _requestIntraday(url, client, params={"startDateTime": windowStart + _INTRADAY_OPEN_HHMM})
+        if spanned:
+            latestDay = spanned[-1]["datetime"][:10]
+            return _cap([r for r in spanned if r["datetime"][:10] == latestDay])
     return rows
 
 

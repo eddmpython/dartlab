@@ -300,3 +300,136 @@ def test_fetch_flow_all_history_runs_until_source_exhausted() -> None:
     assert len(rows) == 110
     assert len(client.calls) == 3
     assert [call[1]["pageSize"] for call in client.calls] == [50, 50, 50]
+
+
+# --- fetchIntraday (당일 + 과거 세션 + 최근 거래일 폴백) ---
+
+
+def _minute_item(dt14: str, price: float) -> dict:
+    """네이버 분봉 API 항목 1 개 (localDateTime 14 자리)."""
+    return {
+        "localDateTime": dt14,
+        "currentPrice": price,
+        "openPrice": price,
+        "highPrice": price + 10,
+        "lowPrice": price - 10,
+        "accumulatedTradingVolume": 100,
+    }
+
+
+class _MinuteResponse:
+    def __init__(self, rows):
+        self._rows = rows
+
+    def json(self):
+        return self._rows
+
+
+class _MinuteClient:
+    """호출별 응답을 순서대로 돌려주는 fake. calls 에 (url, params) 기록."""
+
+    def __init__(self, responses):
+        self._responses = list(responses)
+        self.calls = []
+
+    async def get(self, url, **kwargs):
+        self.calls.append((url, kwargs.get("params")))
+        idx = len(self.calls) - 1
+        rows = self._responses[min(idx, len(self._responses) - 1)]
+        return _MinuteResponse(rows)
+
+
+def test_intraday_stamp_fills_and_normalizes() -> None:
+    """날짜만이면 0900/1530 채우고, 구분자 제거, 12 자리는 통과."""
+    from dartlab.gather.domains import naver
+
+    assert naver._intradayStamp("2026-07-03", isEnd=False) == "202607030900"
+    assert naver._intradayStamp("2026-07-03", isEnd=True) == "202607031530"
+    assert naver._intradayStamp("2026-07-03T09:30", isEnd=False) == "202607030930"
+    assert naver._intradayStamp("202607030930", isEnd=False) == "202607030930"
+    assert naver._intradayStamp("bad", isEnd=False) == ""
+
+
+def test_intraday_parse_rows_sorts_and_skips_bad() -> None:
+    """list 파싱 + datetime 오름차순 + 결측/비-dict 스킵."""
+    from dartlab.gather.domains import naver
+
+    rows = naver._parseIntradayRows(
+        [
+            _minute_item("20260703091500", 71000.0),
+            _minute_item("20260703090000", 70000.0),
+            {"localDateTime": "20260703093000", "currentPrice": None},  # close 결측 스킵
+            "not-a-dict",
+        ]
+    )
+    assert [r["datetime"] for r in rows] == ["2026-07-03T09:00:00", "2026-07-03T09:15:00"]
+    assert naver._parseIntradayRows({"not": "list"}) == []
+
+
+def test_intraday_default_uses_plain_call() -> None:
+    """start/end 미지정 = 당일. 파라미터 없는 단일 호출."""
+    from dartlab.gather.domains import naver
+
+    client = _MinuteClient([[_minute_item("20260706090000", 70000.0)]])
+    rows = asyncio.run(naver.fetchIntraday("005930", client))
+
+    assert len(rows) == 1
+    assert len(client.calls) == 1
+    assert client.calls[0][1] is None  # params 미부착
+
+
+def test_intraday_explicit_start_sends_12digit_param() -> None:
+    """start 지정 시 startDateTime 12 자리 파라미터 + 폴백 없이 1 회 호출."""
+    from dartlab.gather.domains import naver
+
+    client = _MinuteClient([[_minute_item("20260703090000", 70000.0)]])
+    rows = asyncio.run(naver.fetchIntraday("005930", client, start="2026-07-03"))
+
+    assert len(rows) == 1
+    assert len(client.calls) == 1
+    assert client.calls[0][1] == {"startDateTime": "202607030900"}
+
+
+def test_intraday_fallback_to_latest_session_when_today_empty() -> None:
+    """당일 빈 응답이면 소급 윈도우 조회 후 최근 거래일 세션만 반환."""
+    from dartlab.gather.domains import naver
+
+    client = _MinuteClient(
+        [
+            [],  # 1) 당일 = 빈 응답 (휴장/장전)
+            [  # 2) 윈도우 조회 = 이전일 + 최근 거래일 섞임
+                _minute_item("20260702093000", 69000.0),
+                _minute_item("20260703090000", 70000.0),
+                _minute_item("20260703091500", 71000.0),
+            ],
+        ]
+    )
+    rows = asyncio.run(naver.fetchIntraday("005930", client, fallbackDays=8))
+
+    assert len(client.calls) == 2
+    assert client.calls[0][1] is None  # 당일 plain
+    assert "startDateTime" in client.calls[1][1]  # 폴백 윈도우
+    # 최근 거래일(07-03) 세션만
+    assert sorted({r["datetime"][:10] for r in rows}) == ["2026-07-03"]
+    assert len(rows) == 2
+
+
+def test_intraday_fallback_disabled_returns_empty() -> None:
+    """fallbackDays=0 이면 당일 빈 응답에서 폴백하지 않는다."""
+    from dartlab.gather.domains import naver
+
+    client = _MinuteClient([[]])
+    rows = asyncio.run(naver.fetchIntraday("005930", client, fallbackDays=0))
+
+    assert rows == []
+    assert len(client.calls) == 1
+
+
+def test_intraday_market_and_code_guards() -> None:
+    """KR 외 시장 / 6 자리 아닌 코드는 네트워크 없이 빈 리스트."""
+    from dartlab.gather.domains import naver
+
+    client = _MinuteClient([[_minute_item("20260706090000", 70000.0)]])
+    assert asyncio.run(naver.fetchIntraday("005930", client, market="US")) == []
+    assert asyncio.run(naver.fetchIntraday("12", client)) == []
+    assert len(client.calls) == 0
