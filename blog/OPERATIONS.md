@@ -55,7 +55,7 @@
 
 ## 5. Subject·발행 모델
 
-- `subjectKey` = stockCode(회사) 또는 topicSlug(경제·기술·분석 테마). **주제 topicSlug = 블로그 URL slug** 로 통일한다(전 서피스 공유 조인 키). 회사 하나가 주인공일 때만 stockCode, 기술·데이터·이슈처럼 여러 회사를 다루면 topicSlug. **조인 키 계약 SSOT = Skill OS `operation.content` "서피스 x 콘텐츠 성격 매트릭스".**
+- `subjectKey` = stockCode(회사) 또는 topicSlug(경제·기술·분석 주제). **주제 topicSlug = 블로그 URL slug** 로 통일한다(전 서피스 공유 조인 키). 회사 하나가 주인공일 때만 stockCode, 기술·데이터·이슈처럼 여러 회사를 다루면 topicSlug. **조인 키 계약 SSOT = Skill OS `operation.content` "서피스 x 콘텐츠 성격 매트릭스".**
 - 각 subject 는 blog/cards/podcast 슬롯을 갖고 시간이 지나며 채워진다(빈 슬롯 = 자리표시자).
 - 개별 발행: 블로그·카드·팟캐스트 각 파이프라인이 독립 발행. 집계(프론트 SubjectHub)는 발행을 막지 않고 현재 상태를 조인해 "이 주제의 블로그/카드/팟캐스트"를 보여준다.
 - 조인 키 = stockCode/topicSlug. 1차는 프론트 클라이언트 조인(`carousels/index.json` + `dartlab-podcast/index.json` + `companies/index.json`), 승격 시 파생 `subjects/index.json`.
