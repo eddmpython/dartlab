@@ -1,6 +1,6 @@
 # 05 — 진행 원장
 
-## 상태: P1+P2 구현 완료(2026-06-30) · 운영자 롤아웃 게이트 대기
+## 상태: P1+P2 구현·백엔드 배포 완료(2026-07-06 라이브) · 잔여 = landing 구독 UI 눈검수 push + 실기기 수신
 
 | 날짜 | 항목 | 상태 |
 |---|---|---|
@@ -24,8 +24,8 @@
 | 2026-07-06 | **F2·F6·F7·F8 왓치 캐치 품질 정공법 수리** . F2 newIpo slug=corpCode(발행사별 1회)+확정공모가 2신호, F6 cap 40, F8 중립 적용배수 라벨. **F7 재크로싱**: 허브 topicActive 커서 + /active set-diff 엔드포인트 신설(신규 진입만 발화, 이탈 종목 재진입 시 재발화). watch 13/13·worker 24/24 | ✅ |
 | 2026-07-06 | **F3 허브 nonce 롤백 + 러너 body.failed 가시화** . 전건 발송실패·구독0 nonce 롤백(재시도 가능), 러너 전건실패=RED·부분=warning. F9 윈도 상수 SSOT·F10 죽은 CSS 동반 | ✅ |
 | 2026-07-06 | **master red 해소** . 타 세션 frame/inventory.py silent-fail 린트(종목별 옵셔널 report 로더)를 checkSilentFail 화이트리스트 등록(panel/build/builder 동형). lint 게이트 전 체인 green | ✅ |
-| 대기 | 운영자 롤아웃: Cloudflare 배포(D1·secret·VAPID·deploy) + GitHub vars/secret | ⏳ 운영자 |
-| 대기 | 운영자 롤아웃: hfProxy 재배포(`infra/workers/hfProxy` 에서 `wrangler deploy`) . `/ipo-filings` 라우트 활성(newIpo 딥링크 목적지 데이터원) | ⏳ 운영자 |
+| 2026-07-06 | **Cloudflare 배포 완료** . pushHub 워커(dartlab-push-hub.eddmpython.workers.dev) + D1(4테이블 topicActive 포함) + VAPID/SEND_TOKEN 시크릿 + GitHub vars/secret(VITE_PUSHHUB_URL·VITE_VAPID_PUBLIC_KEY·PUSHHUB_SEND_TOKEN). /send·/active(entered:1)·/subscribe curl 검증. IPO reports+history HF push 라이브 | ✅ |
+| 2026-07-06 | **hfProxy 재배포 완료** . `/ipo-filings` HTTP 200(newIpo 딥링크 발굴원 라이브) | ✅ |
 | — | 운영자 롤아웃: landing UI 눈검수 후 push(자동 push 금지) | ⏳ 운영자 |
 | — | P1 SHIP: 실기기 1대 aes128gcm 수신 확인(Chrome·iOS 16.4+) | ⏳ 운영자 |
 | — | P3 개인 왓처(로컬 소유·브리지) — ≥2 소비자 실증 후 발견적 추출 | ⬜ 의도적 보류(YAGNI) |
