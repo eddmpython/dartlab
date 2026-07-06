@@ -3,7 +3,7 @@
 - **우리 현재 사용**: 예. cross-company scan 의 backend 옵션. pin `duckdb>=1.0,<2`. 실사용 lock 버전 1.5.3 (조사 시점 최신 1.5.x).
 - **주 사용처**: `src/dartlab/scan/io/cross.py` 의 `DuckDbCrossScan`. `DARTLAB_CROSS_SCAN_ENGINE=duckdb` 또는 large dataset 검출 시 fallback. `scanClass.py::docsSections`가 `engine` 인자로 dispatch.
 - **마지막 조사일**: 2026-07-06
-- **현재 결정**: 채택 (호환 backend). 단 우리가 붙인 "OOC god mode" 주석은 현 구현과 불일치(아래 병목 참고). 진짜 혁신 레버는 source manifest/parquet path 를 DuckDB 가 직접 `read_parquet` 하는 source-native OOC arm 이며, 아직 미구현이고 `tests/_attempts/crossScanOoc/` 실측 대기. DuckLake/Iceberg lakehouse 는 기각. VARIANT/GEOMETRY 신타입은 현재 불필요(보류).
+- **현재 결정**: 채택 (호환 backend). 단 우리가 붙인 "OOC god mode" 주석은 현 구현과 불일치(아래 병목 참고). 진짜 혁신 레버는 source manifest/parquet path 를 DuckDB 가 직접 `read_parquet` 하는 source-native OOC arm. 2026-07-07 `tests/_attempts/crossScanOoc/` 실측으로 **집계(group by) 경로 부분 GO**: native peak RSS 가 행수와 무관하게 ~88MB 로 평평(10M 에서 polars 328MB 의 1/3.7), 결과 동등성 EQUAL. 전종목 집계 OOM 해제 실증. 단 졸업 전 설계 과제 남음(path 기반 surface·sourceRef 보존·실그룹 cardinality·join). DuckLake/Iceberg lakehouse 는 기각. VARIANT/GEOMETRY 신타입은 현재 불필요(보류).
 
 ---
 
@@ -14,6 +14,13 @@
 ---
 
 ## 조사 이력
+
+### 2026-07-07 (crossScanOoc 실측, source-native arm)
+
+- `tests/_attempts/crossScanOoc/` 에 3 팔(polars streaming / 현 DuckDbCrossScan 재현 / source-native `read_parquet`) 마이크로 벤치 작성 + 실행. 합성 parquet 4 파일, 100k~10M 행, projection/filter/groupby, subprocess 격리 peak RSS.
+- 결과: group by 에서 native peak RSS ~88MB 로 행수 무관하게 평평(polars 는 10M 에서 328MB). filter 완만 우위. projection(전행 반환)은 native 불리. 현 DuckDbCrossScan 은 전 케이스 최악(이중 materialize) = 원장의 "현 경로는 OOC 아님" 실증. 동등성 전부 EQUAL.
+- 판정: 집계 경로 부분 GO. 전종목 집계 OOM 해제 근거 확보. 상세/표 = `tests/_attempts/crossScanOoc/README.md`.
+- 남은 과제(졸업 전): path 기반 surface(현 `aggregate(lf)` 는 LazyFrame 수신), sourceRef/manifest 보존, 실그룹 cardinality(회사코드 수천) 재측정, join 미측정.
 
 ### 2026-07-06 (DuckDB 1.5.3, 우리 pin 과 동일 = 최신)
 
