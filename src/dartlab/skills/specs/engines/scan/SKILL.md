@@ -137,7 +137,36 @@ safe = dartlab.scan("screen", spec={
     "where": [{"field": "@netCash", "op": ">", "value": 0},
               {"field": "finance.ratio.debtRatio", "op": "<", "value": 30}],
     "sort": {"field": "@netCash", "desc": True}})
+
+# 시계열(연간 격자) + 상대(업종 횡단) 파생: 꾸준한 흑자 · 성장 · 업종내 상위
+comp = dartlab.scan("screen", spec={
+    "define": {
+        "opMin3y":     {"op": "min",  "field": "finance.account.operating_profit", "years": 3},
+        "salesCagr3y": {"op": "cagr", "field": "finance.account.sales", "years": 3},
+        "roeIndPct":   {"op": "percentile", "field": "finance.ratio.roe", "by": "industry"}},
+    "where": [{"field": "@opMin3y", "op": ">", "value": 0},        # 3년 연속 흑자
+              {"field": "@salesCagr3y", "op": ">", "value": 0.05}, # 매출 CAGR 5%+
+              {"field": "@roeIndPct", "op": ">", "value": 80}],    # 업종내 ROE 상위 20%
+    "sort": {"field": "@roeIndPct", "desc": True}})
+# 저장 스크린으로 등재된 실증본: dartlab.scan("screen", "resilientCompounders")
 ```
+
+**define 노드 문법 (폐쇄 vocabulary, 문자열 eval 없음, 단위 전파)**
+
+| 종류 | op | 노드 형태 | 결과 단위 |
+|---|---|---|---|
+| 산술 | add / sub / mul / div | `{op, left, right}` (필드키·@참조) | 단위대수 (div 동일단위→배, 0나눗셈→null) |
+| 패스스루 | (없음) | `{field}` | 원 필드 단위 |
+| 시계열 | mean / min / max | `{op, field, years}` (연간 격자 축약) | 원 필드 단위 |
+| 시계열 | yoy | `{op, field}` (최근 2년) | 배 (무차원 성장) |
+| 시계열 | cagr | `{op, field, years}` (양 끝 양수 필요) | 배 |
+| 시계열 | slope | `{op, field, years}` (OLS, null 무시) | 원 필드 단위/년 |
+| 상대 | percentile | `{op, field, by?}` (0~100) | 백분위 |
+| 상대 | zscore | `{op, field, by?}` ((v-평균)/표준편차) | 표준편차 |
+
+- 시계열 `field` 는 `finance.account.*` · `finance.ratio.*` 원천만 (연간 격자 보유). valuation/krx/note 는 ValueError.
+- 상대 `field` 는 원천 필드 또는 `@파생참조`. `by` 생략=전체 유니버스, `by:"industry"`=업종(dartlab.listing 업종) 횡단. 단독 업종·표준편차 0 은 null.
+- `@name` 은 define 선언 후 어디서나 (where·select·sort·다른 define) 참조. 위상정렬로 의존 자동 해소, 순환·미정의는 즉시 ValueError.
 
 ## 강행 호출 룰 (agent 답변 품질 회귀 차단)
 
@@ -233,7 +262,7 @@ metric/value/score, rank, basis/source, flags
 | profitability | 산업 분기 무시한 통합 랭킹 X (제조 vs 금융 ROE 직접 비교); 결손 종목 (재무제표 미공시) 을 0 으로 채워 랭킹 하단 배치 X |
 | quality | accrual ratio 임계값 (산업 평균 대비) 명시; 단일 분기 OCF/NI 로 이익품질 단정 X (4 분기 평균) |
 | ratio | 비율 정의 (분자/분모) 명시; 산업별 비율 차이 무시한 통합 랭킹 X |
-| screen | 멀티팩터 spec 의 가중치 / 임계값 명시; preset 결과를 *맞춤형* 으로 단정 X; `spec.define` 로 계정간 파생(순현금·ICR 등, 폐쇄 vocabulary add/sub/mul/div, 단위 인식) 표현 가능, `@name` 은 define 선언 후 참조; 파생 필드가 희소계정(interest_expenses 등) 기반이면 유니버스 축소 인지; note lineitem 은 `note.<concept>@<항목명>` 주소 |
+| screen | 멀티팩터 spec 의 가중치 / 임계값 명시; preset 결과를 *맞춤형* 으로 단정 X; `spec.define` 로 계정간 파생(순현금·ICR 등, 폐쇄 vocabulary add/sub/mul/div, 단위 인식) + 시계열(mean/min/max/yoy/cagr/slope 연간 격자) + 상대(percentile/zscore, `by:"industry"` 업종 횡단) 표현 가능, `@name` 은 define 선언 후 참조; 파생 필드가 희소계정(interest_expenses 등) 기반이면 유니버스 축소 인지; note lineitem 은 `note.<concept>@<항목명>` 주소 |
 | valuation | 단일 멀티플 (PER 만) 로 *저평가* 단정 X (PBR/PSR 교차 검증); 적자 회사에 PER 적용 X (PSR/EV-Sales 권장); 산업 분기 무시 통합 PER 랭킹 X |
 | workforce | 직원수 / 평균급여 / 인건비율 분류 명시; CEO/임원 보수와 평균 직원 보수 동치 처리 X |
 

@@ -780,14 +780,25 @@ def _evalDefineNode(
     values: dict[str, pl.DataFrame],
     units: dict[str, str],
 ) -> tuple[pl.DataFrame, str]:
-    """단일 define 노드를 평가해 ([stockCode, @name] 프레임, 단위)로."""
+    """단일 define 노드를 평가해 ([stockCode, @name] 프레임, 단위)로.
+
+    op 별 분기: 없음+field=패스스루, add/sub/mul/div=이항 산술, yoy/cagr/slope/mean/min/max=
+    시계열(연간 격자), percentile/zscore=상대(전체·업종 횡단).
+    """
     fieldKey = f"@{name}"
-    if "op" not in node and "field" in node:
+    op = node.get("op")
+    if op is None and "field" in node:
         df, unit = _operandFrame(node["field"], spec, values, units)
         return df.rename({"_v": fieldKey}), unit
-    op = node.get("op")
+    if op in _TEMPORAL_OPS:
+        return _evalTemporalNode(name, node, spec)
+    if op in _RELATIVE_OPS:
+        return _evalRelativeNode(name, node, spec, values, units)
     if op not in ("add", "sub", "mul", "div"):
-        raise ValueError(f"@{name}: 지원하지 않는 define op {op!r} (add/sub/mul/div 또는 field).")
+        raise ValueError(
+            f"@{name}: 지원하지 않는 define op {op!r} "
+            "(산술 add/sub/mul/div · 시계열 yoy/cagr/slope/mean/min/max · 상대 percentile/zscore · 또는 field)."
+        )
     if "left" not in node or "right" not in node:
         raise ValueError(f"@{name}: op 노드는 left/right 가 필요합니다.")
     ldf, lu = _operandFrame(node["left"], spec, values, units)
@@ -821,6 +832,172 @@ def _computeDerived(spec: dict[str, Any]) -> tuple[dict[str, pl.DataFrame], dict
         values[name] = df
         units[name] = unit
     return values, units
+
+
+# ── define Phase 3: 시계열(temporal) + 상대(relative) 노드 ──
+# 시계열 = 종목별 연간 격자 위 단항 연산. 상대 = 유니버스(전체·업종) 횡단 순위.
+
+_TEMPORAL_OPS = frozenset({"yoy", "cagr", "slope", "mean", "min", "max"})
+_RELATIVE_OPS = frozenset({"percentile", "zscore"})
+
+
+def _loadFieldSeries(field: str, n: int) -> tuple[pl.DataFrame, int]:
+    """finance.account.* · finance.ratio.* 를 연간 시계열 [stockCode, _t0.._t{k-1}] 로.
+
+    위치 컬럼은 오래된→최신 순(``_t0`` 이 가장 과거). 최근 ``n`` 개 연도만 정규화하며,
+    시계열 격자가 없는 원천(valuation/krx/note)은 ValueError 로 조기 차단(조용한 오답 회피).
+    반환은 (프레임, 실제 기간 수 k). 데이터 부재는 (빈 프레임, 0).
+    """
+    if field.startswith("finance.account."):
+        from dartlab.providers.dart.finance.scanAccount import scanAccount
+
+        df = scanAccount(field.split(".", 2)[2], freq="Y")
+    elif field.startswith("finance.ratio."):
+        from dartlab.providers.dart.finance.scanAccount import scanRatio
+
+        df = scanRatio(field.split(".", 2)[2], freq="Y")
+    else:
+        raise ValueError(
+            f"시계열 연산은 finance.account.* · finance.ratio.* 만 지원합니다 (연간 격자). 받은 field={field!r}."
+        )
+    if df is None or df.is_empty() or "stockCode" not in df.columns:
+        return pl.DataFrame({"stockCode": []}), 0
+    periods = sorted(c for c in df.columns if c != "stockCode")  # 오름차순 = 오래된 먼저
+    if n and n > 0:
+        periods = periods[-n:]
+    if not periods:
+        return pl.DataFrame({"stockCode": []}), 0
+    out = df.select("stockCode", *[_numericExpr(p).alias(f"_t{i}") for i, p in enumerate(periods)])
+    return out, len(periods)
+
+
+def _temporalUnit(op: str, base: str) -> str:
+    """시계열 op 결과 단위. yoy/cagr 는 무차원 성장(배), 축약·기울기는 원 단위."""
+    if op in ("yoy", "cagr"):
+        return "배"
+    return base
+
+
+def _slopeFrame(series: pl.DataFrame, cols: list[str], fieldKey: str) -> pl.DataFrame:
+    """연간 격자의 OLS 회귀 기울기(null 무시). x=연도 위치(0..), y=값."""
+    long = series.unpivot(index="stockCode", on=cols, variable_name="_p", value_name="_v")
+    long = long.with_columns(pl.col("_p").str.slice(2).cast(pl.Int64).alias("_x")).filter(pl.col("_v").is_not_null())
+    agg = long.group_by("stockCode").agg(
+        pl.len().alias("_n"),
+        pl.col("_x").mean().alias("_mx"),
+        pl.col("_v").mean().alias("_mv"),
+        (pl.col("_x") * pl.col("_v")).mean().alias("_mxv"),
+        (pl.col("_x") * pl.col("_x")).mean().alias("_mxx"),
+    )
+    denom = pl.col("_mxx") - pl.col("_mx") ** 2
+    slope = (
+        pl.when((pl.col("_n") < 2) | (denom == 0))
+        .then(None)
+        .otherwise((pl.col("_mxv") - pl.col("_mx") * pl.col("_mv")) / denom)
+    )
+    return agg.select("stockCode", slope.alias(fieldKey))
+
+
+def _evalTemporalNode(name: str, node: dict[str, Any], spec: dict[str, Any]) -> tuple[pl.DataFrame, str]:
+    """시계열 define 노드(단항, 원천 필드의 연간 격자)를 평가."""
+    op = node["op"]
+    field = node.get("field")
+    if not isinstance(field, str) or field.startswith("@"):
+        raise ValueError(f"@{name}: 시계열 op({op}) 의 field 는 원천 시계열 필드 키여야 합니다 (@참조·리터럴 불가).")
+    field = _normalizeField(field)
+    meta = _fieldMeta(field, spec)
+    if meta["kind"] != "number":
+        raise ValueError(f"@{name}: 시계열 op 는 수치 필드만 가능합니다 (field={field!r}, kind={meta['kind']}).")
+    years = int(node.get("years", 3))
+    if years < 2:
+        raise ValueError(f"@{name}: years 는 2 이상이어야 합니다 (받은 값 {years}).")
+    want = 2 if op == "yoy" else years
+    series, k = _loadFieldSeries(field, want)
+    fieldKey = f"@{name}"
+    unit = _temporalUnit(op, meta["unit"])
+    if series.is_empty() or k < 2:
+        if op in ("mean", "min", "max") and k == 1:  # 단일 기간이면 그 값 자체
+            return series.select("stockCode", pl.col("_t0").alias(fieldKey)), unit
+        return pl.DataFrame({"stockCode": [], fieldKey: []}), unit
+    cols = [f"_t{i}" for i in range(k)]
+    if op == "mean":
+        expr = pl.mean_horizontal(cols)
+    elif op == "min":
+        expr = pl.min_horizontal(cols)
+    elif op == "max":
+        expr = pl.max_horizontal(cols)
+    elif op == "yoy":
+        prev, last = pl.col(f"_t{k - 2}"), pl.col(f"_t{k - 1}")
+        expr = pl.when(prev.abs() == 0).then(None).otherwise((last - prev) / prev.abs())
+    elif op == "cagr":
+        first, last = pl.col("_t0"), pl.col(f"_t{k - 1}")
+        expr = pl.when((first <= 0) | (last <= 0)).then(None).otherwise((last / first) ** (1.0 / (k - 1)) - 1.0)
+    else:  # slope (OLS, null 무시)
+        return _slopeFrame(series, cols, fieldKey), unit
+    return series.select("stockCode", expr.alias(fieldKey)), unit
+
+
+def _industryMap() -> pl.DataFrame:
+    """[stockCode, _grp] 업종 매핑 (dartlab.listing 업종 컬럼). 미provision 시 빈 프레임."""
+    try:
+        from dartlab._listingDispatch import listing as _listing
+
+        lst = _listing()
+    except (ImportError, AttributeError, ValueError, RuntimeError):
+        return pl.DataFrame({"stockCode": [], "_grp": []})
+    if lst is None or lst.is_empty():
+        return pl.DataFrame({"stockCode": [], "_grp": []})
+    codeCol = "종목코드" if "종목코드" in lst.columns else ("stockCode" if "stockCode" in lst.columns else None)
+    grpCol = "업종" if "업종" in lst.columns else None
+    if codeCol is None or grpCol is None:
+        return pl.DataFrame({"stockCode": [], "_grp": []})
+    return lst.select(
+        pl.col(codeCol).cast(pl.Utf8).alias("stockCode"),
+        pl.col(grpCol).cast(pl.Utf8).alias("_grp"),
+    ).drop_nulls()
+
+
+def _evalRelativeNode(
+    name: str,
+    node: dict[str, Any],
+    spec: dict[str, Any],
+    values: dict[str, pl.DataFrame],
+    units: dict[str, str],
+) -> tuple[pl.DataFrame, str]:
+    """상대 define 노드(횡단 순위). field=원천 필드 또는 @참조, by=업종/전체."""
+    op = node["op"]
+    ref = node.get("field")
+    if ref is None:
+        raise ValueError(f"@{name}: 상대 op({op}) 는 field(원천 필드 또는 @참조)가 필요합니다.")
+    by = node.get("by")
+    fieldKey = f"@{name}"
+    unit = "백분위" if op == "percentile" else "표준편차"
+    operand, _u = _operandFrame(ref, spec, values, units)
+    operand = operand.filter(pl.col("_v").is_not_null())
+    if operand.is_empty():
+        return pl.DataFrame({"stockCode": [], fieldKey: []}), unit
+    if by in ("industry", "sector", "업종"):
+        imap = _industryMap()
+        if imap.is_empty():
+            raise ValueError(f"@{name}: by=industry 상대순위에 필요한 업종 매핑을 로드할 수 없습니다.")
+        operand = operand.join(imap, on="stockCode", how="inner")
+        if operand.is_empty():
+            return pl.DataFrame({"stockCode": [], fieldKey: []}), unit
+        grp = ["_grp"]
+    elif by is None:
+        operand = operand.with_columns(pl.lit(0).alias("_grp"))
+        grp = ["_grp"]
+    else:
+        raise ValueError(f"@{name}: 지원하지 않는 by={by!r} (industry/sector 또는 생략).")
+    if op == "percentile":
+        cnt = pl.len().over(grp)
+        rank = pl.col("_v").rank(method="average").over(grp)
+        expr = pl.when(cnt < 2).then(None).otherwise((rank - 1.0) / (cnt - 1.0) * 100.0)
+    else:  # zscore
+        mean = pl.col("_v").mean().over(grp)
+        std = pl.col("_v").std().over(grp)
+        expr = pl.when((std == 0) | std.is_null()).then(None).otherwise((pl.col("_v") - mean) / std)
+    return operand.select("stockCode", expr.alias(fieldKey)), unit
 
 
 def _loadNote(field: str) -> pl.DataFrame:

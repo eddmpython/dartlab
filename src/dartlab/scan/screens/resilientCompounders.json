@@ -1,0 +1,28 @@
+{
+  "id": "resilientCompounders",
+  "version": 1,
+  "schemaVersion": 1,
+  "market": "kr",
+  "notify": false,
+  "title": "꾸준한 복리 성장주 (시계열·업종상대)",
+  "tags": ["quality", "growth", "resilience"],
+  "evidence": "3년 연속 흑자(min 영업이익>0) + 3년 매출 CAGR 성장 + 3년 평균 저부채 + 업종내 ROE 상위 = 하락장에도 훼손되지 않는 복리 성장 후보. 시계열(cagr·min·mean)과 업종상대(percentile)를 한 spec 으로 결합한 컴포저블 쿼리 실증. 후보는 Company/analysis 로 재검증, 절대 확정 아님.",
+  "spec": {
+    "define": {
+      "opMin3y": {"op": "min", "field": "finance.account.operating_profit", "years": 3},
+      "salesCagr3y": {"op": "cagr", "field": "finance.account.sales", "years": 3},
+      "debtMean3y": {"op": "mean", "field": "finance.ratio.debtRatio", "years": 3},
+      "roeIndPct": {"op": "percentile", "field": "finance.ratio.roe", "by": "industry"}
+    },
+    "where": [
+      {"field": "@opMin3y", "op": ">", "value": 0},
+      {"field": "@salesCagr3y", "op": ">", "value": 0.03},
+      {"field": "@debtMean3y", "op": "<", "value": 120},
+      {"field": "@roeIndPct", "op": ">", "value": 60},
+      {"field": "finance.account.total_stockholders_equity", "op": ">", "value": 0}
+    ],
+    "select": ["@opMin3y", "@salesCagr3y", "@debtMean3y", "@roeIndPct"],
+    "sort": {"field": "@roeIndPct", "desc": true},
+    "limit": 40
+  }
+}

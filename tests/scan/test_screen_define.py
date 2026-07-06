@@ -179,6 +179,157 @@ class TestExecuteScreenSpecDefine:
         assert "_derivedValues" not in spec  # 원본 spec 무변경
 
 
+# ── Phase 3: 시계열(temporal) 노드 ──
+
+
+def _series(rows: dict[str, list], k: int) -> pl.DataFrame:
+    data: dict[str, list] = {"stockCode": list(rows)}
+    for i in range(k):
+        data[f"_t{i}"] = [rows[s][i] for s in rows]
+    return pl.DataFrame(data)
+
+
+@pytest.fixture
+def temporal(monkeypatch):
+    # 오래된→최신 순 [t0,t1,t2]. 최근 n 개를 슬라이스해 위치 컬럼으로.
+    full = {
+        "finance.account.sales": {"A": [20.0, 30.0, 60.0], "B": [None, None, 50.0], "C": [10.0, 10.0, 10.0]},
+        "finance.account.operating_profit": {"A": [10.0, 20.0, 30.0], "B": [5.0, None, 15.0], "C": [-1.0, 2.0, 3.0]},
+    }
+
+    def fakeSeries(field, n):
+        rows = full[field]
+        k = min(n, 3)
+        sliced = {s: v[-k:] for s, v in rows.items()}
+        return _series(sliced, k), k
+
+    def fakeMeta(field, spec=None):
+        return {"field": field, "kind": "number", "unit": "원", "operatorSet": F._NUMERIC_OPS}
+
+    monkeypatch.setattr(F, "_loadFieldSeries", fakeSeries)
+    monkeypatch.setattr(F, "_fieldMeta", fakeMeta)
+
+
+class TestTemporal:
+    def test_mean_min_max(self, temporal):
+        op = "finance.account.operating_profit"
+        m = _asDict(F._evalTemporalNode("m", {"op": "mean", "field": op, "years": 3}, {})[0], "@m")
+        assert m["A"] == 20.0 and m["B"] == 10.0 and m["C"] == pytest.approx(4 / 3)
+        mn = _asDict(F._evalTemporalNode("m", {"op": "min", "field": op, "years": 3}, {})[0], "@m")
+        assert mn["A"] == 10.0 and mn["B"] == 5.0 and mn["C"] == -1.0
+        mx = _asDict(F._evalTemporalNode("m", {"op": "max", "field": op, "years": 3}, {})[0], "@m")
+        assert mx["A"] == 30.0 and mx["B"] == 15.0 and mx["C"] == 3.0
+
+    def test_cagr_needs_positive_endpoints(self, temporal):
+        df, unit = F._evalTemporalNode("g", {"op": "cagr", "field": "finance.account.sales", "years": 3}, {})
+        g = _asDict(df, "@g")
+        assert unit == "배"
+        assert g["A"] == pytest.approx(3**0.5 - 1)  # (60/20)^(1/2)-1
+        assert g["B"] is None  # 시작 결측
+        assert g["C"] == pytest.approx(0.0)  # 10→10
+
+    def test_yoy_last_two(self, temporal):
+        y = _asDict(F._evalTemporalNode("y", {"op": "yoy", "field": "finance.account.operating_profit"}, {})[0], "@y")
+        assert y["A"] == pytest.approx(0.5)  # (30-20)/20
+        assert y["C"] == pytest.approx(0.5)  # (3-2)/2
+        assert y["B"] is None  # 직전 결측
+
+    def test_slope_ols_skips_null(self, temporal):
+        s = _asDict(
+            F._evalTemporalNode("s", {"op": "slope", "field": "finance.account.operating_profit", "years": 3}, {})[0],
+            "@s",
+        )
+        assert s["A"] == pytest.approx(10.0)  # 10,20,30 완전 직선
+        assert s["B"] == pytest.approx(5.0)  # (5@0, 15@2) → 기울기 5
+        assert s["C"] == pytest.approx(2.0)  # -1,2,3
+
+    def test_years_min_two(self, temporal):
+        with pytest.raises(ValueError, match="years 는 2 이상"):
+            F._evalTemporalNode("x", {"op": "mean", "field": "finance.account.sales", "years": 1}, {})
+
+    def test_field_must_be_source(self, temporal):
+        with pytest.raises(ValueError, match="원천 시계열 필드"):
+            F._evalTemporalNode("x", {"op": "cagr", "field": "@ref"}, {})
+
+    def test_non_series_source_raises(self):
+        with pytest.raises(ValueError, match="finance.account"):
+            F._loadFieldSeries("valuation.pbr", 3)
+
+
+# ── Phase 3: 상대(relative) 노드 ──
+
+
+class TestRelative:
+    def test_percentile_whole_universe(self, patched):
+        df, unit = F._evalRelativeNode("p", {"op": "percentile", "field": "finance.ratio.debtRatio"}, {}, {}, {})
+        d = _asDict(df, "@p")
+        assert unit == "백분위"
+        # 20(C)<50(A)<150(B) → 0 / 50 / 100
+        assert d["C"] == 0.0 and d["A"] == 50.0 and d["B"] == 100.0
+
+    def test_zscore_whole_universe(self, patched):
+        df, unit = F._evalRelativeNode("z", {"op": "zscore", "field": "finance.ratio.debtRatio"}, {}, {}, {})
+        d = _asDict(df, "@z")
+        assert unit == "표준편차"
+        assert d["A"] == pytest.approx(-0.3428, abs=1e-3)
+        assert d["B"] == pytest.approx(1.1263, abs=1e-3)
+        assert d["C"] == pytest.approx(-0.7835, abs=1e-3)
+
+    def test_percentile_by_industry(self, patched, monkeypatch):
+        monkeypatch.setattr(
+            F, "_industryMap", lambda: pl.DataFrame({"stockCode": ["A", "B", "C"], "_grp": ["g1", "g1", "g2"]})
+        )
+        df, _ = F._evalRelativeNode(
+            "p", {"op": "percentile", "field": "finance.ratio.debtRatio", "by": "industry"}, {}, {}, {}
+        )
+        d = _asDict(df, "@p")
+        assert d["A"] == 0.0 and d["B"] == 100.0  # g1: 50<150
+        assert d["C"] is None  # g2 단독 → 순위 불가(null)
+
+    def test_industry_unprovisioned_raises(self, patched, monkeypatch):
+        monkeypatch.setattr(F, "_industryMap", lambda: pl.DataFrame({"stockCode": [], "_grp": []}))
+        with pytest.raises(ValueError, match="업종 매핑"):
+            F._evalRelativeNode(
+                "p", {"op": "percentile", "field": "finance.ratio.debtRatio", "by": "industry"}, {}, {}, {}
+            )
+
+    def test_bad_by_raises(self, patched):
+        with pytest.raises(ValueError, match="지원하지 않는 by"):
+            F._evalRelativeNode("p", {"op": "percentile", "field": "finance.ratio.debtRatio", "by": "대충"}, {}, {}, {})
+
+    def test_missing_field_raises(self, patched):
+        with pytest.raises(ValueError, match="field"):
+            F._evalRelativeNode("p", {"op": "percentile"}, {}, {}, {})
+
+    def test_relative_of_derived_ref(self, patched):
+        # 파생 @nc 위에 상대 백분위 (topo 순 의존 해소).
+        spec = {
+            "define": {
+                "nc": {"op": "sub", "left": "finance.account.cash", "right": "finance.account.debt"},
+                "ncPct": {"op": "percentile", "field": "@nc"},
+            }
+        }
+        vals, units = _computeDerived(spec)
+        assert units["ncPct"] == "백분위"
+        d = _asDict(vals["ncPct"], "@ncPct")
+        # nc: A=60, B=-30, C=null(cash 결측) → 비결측 2점 -30(B)<60(A)
+        assert d["B"] == 0.0 and d["A"] == 100.0
+        assert "C" not in d  # null operand 제외
+
+
+class TestExecuteScreenSpecPhase3:
+    def test_temporal_in_where(self, temporal):
+        spec = {
+            "define": {"opMin": {"op": "min", "field": "finance.account.operating_profit", "years": 3}},
+            "where": [{"field": "@opMin", "op": ">", "value": 0}],
+            "select": ["@opMin"],
+            "sort": {"field": "@opMin", "desc": True},
+        }
+        out = executeScreenSpec(spec)
+        assert set(out["stockCode"].to_list()) == {"A", "B"}  # C min=-1 제외
+        assert out["stockCode"].to_list()[0] == "A"  # min 큰 순 정렬
+
+
 class TestLoadNote:
     def test_note_item_resolution(self, monkeypatch):
         import dartlab.scan.note as notemod
