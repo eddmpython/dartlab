@@ -12,11 +12,11 @@ compatibility_date = "2024-12-01"
 [[d1_databases]]
 binding = "PUSHHUB_DB"
 database_name = "dartlab-push-hub"
-database_id = "replace-with-cloudflare-d1-database-id"
+database_id = "bae665a2-5f0d-4a92-97d2-7ea84c5e4a04"
 
 [vars]
 ALLOW_ORIGIN = "https://eddmpython.github.io"
-VAPID_SUBJECT = "mailto:replace-with-ops-email"
-VAPID_PUBLIC_KEY = "replace-with-base64url-uncompressed-public-key"
+VAPID_SUBJECT = "mailto:eddmpython@gmail.com"
+VAPID_PUBLIC_KEY = "BBcV8hvKW6syE2MruCRU7g_poeHWTYYwmt6g4LFrdXaVCBVXqcHnWocjpgXO69ITOn7gn4h6Z-hQFOmjpq79OR4"
 # secrets (wrangler secret put): VAPID_PRIVATE_KEY(pkcs8 base64url) · PUSHHUB_SEND_TOKEN
 # rate limit = Cloudflare 대시보드 WAF Rule(/subscribe IP/분) — wrangler 코드 0.
