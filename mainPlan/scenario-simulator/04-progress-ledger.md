@@ -173,6 +173,12 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
 - `lattice.factorMarginals`(잎 분포의 팩터별 가중 분위 5점) → `estimate.sealMacroOutlook/scoreMacroDue`: 격자가 행동 근거로 쓰는 8주 분포를 그대로 기대 원장에 봉인하고 대상일 도래 시 coverage/CRPS 채점 = **격자 분포가 현실을 커버하는지 격자 스스로 채점받는다**. runWeek E 심장박동에 KR 라이브 배선 (estimateSummary.macroSealed/macroScored).
 - 실봉인 4행 (rate ±0.21%p·fx ±5%·oil 71.9 p5 53.9~p95 89.9·rate10y ±0.44%p, 8주 지평). 기존 CI expectationCycle 의 매크로 기대(CPI·기준금리·환율)와 **같은 ExpectationSpec 계약으로 자연 합류** (검증 척추 재사용 실증). tests 170 (신규 2).
 
+### 0c-17. 스냅샷 정정 후 KR/US 역사 백테스트 재실행 = 인증 척추 생존·강화 (2026-07-07)
+
+- 0c-15 의 "재실행 권장"을 즉시 이행: `backtest("US")` 599주·`backtest("KR")` 598주 (중복 제거된 주말 스냅샷 판독).
+- **US**: B/M t+5.17(기록 5.5 유지·인증), ret5 t-10.59(기록 -6.4 → 강화·발굴), maxRet20 t-11.26(복권성 회피 최강 발굴), volShock +5.00·high52 +4.21 인증, spaP 0.000·PBO 0.0013. **KR**: volShock t+9.74(기록 6.3 → 강화)·dilutionGovernance +4.15·E/P +3.03(기록 3.2 유지) 인증, spaP 0.000·PBO 0.030·DSR 0.999.
+- **⚠ 미해결**: US 가정 벌 DSR 0.999(중복 기반 기록) → 0.0007 급락 (PBO 는 우수·표면 t 는 강화라 표면 척추는 건재. 가정 벌 구성 성과가 dedup 후 약화된 것인지 nEff 산정 문제인지 sweep 경로 재검 대상 = 차기).
+
 ---
 
 > ⚠ v0.1 폐기 박제: 이전 04는 "초기 아키텍처 = story 동격 L3 `scenarioWorkbench`, 공개 verb `dartlab.scenario`(미결)"을 현재 결정으로 들고 있었다. **01 §3이 이를 코드로 기각**했다(story=순수 렌더러라 동거 불가, `scenario` 명사형은 `macro.scenarios`/`ScenarioOverlay` 충돌). 본 v0.2가 정본.
