@@ -5,7 +5,7 @@ description: "AI가 '의미로 검색'하는 원리(임베딩, 벡터 DB, RAG)�
 category: tech-story
 series: tech-story
 seriesOrder: 2
-stockCode: "304100"
+topicSlug: "vector-search"
 tags:
   - 벡터검색
   - 임베딩

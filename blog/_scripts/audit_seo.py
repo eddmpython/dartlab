@@ -236,12 +236,23 @@ def score_post(folder_path: str) -> dict:
     # 1. Frontmatter 완성도 (20점)
     fm_score = 0
     fm_max = 20
-    required_fields = ["title", "description", "category", "series", "stockCode", "tags", "ogImage"]
-    for field in required_fields:
+    # 공통 필수 6종(+2 each) + subject 조인 키 1종(+2). subject 키는 카테고리별로 다르다:
+    # 회사글(company-reports)=stockCode, 주제글(tech-story·data-reports)=topicSlug.
+    # 주제글에 회사 stockCode 를 달면 블로그 터미널 버튼과 회사(기업이야기) 팟캐스트가 잘못
+    # 조인되므로(operation.content 5절 조인 키 계약) 회사 키로는 보상하지 않고 아래서 경고한다.
+    base_fields = ["title", "description", "category", "series", "tags", "ogImage"]
+    for field in base_fields:
         if field + ":" in frontmatter:
             fm_score += 2
-        else:
-            fm_score += 0
+    _cat = _category(frontmatter)
+    _has_stock = "stockCode:" in frontmatter
+    _has_topic = "topicSlug:" in frontmatter
+    if _cat == "company-reports":
+        subject_ok = _has_stock
+    else:  # 주제글: topicSlug 이거나 최소한 회사 stockCode 를 달지 않음
+        subject_ok = _has_topic or not _has_stock
+    if subject_ok:
+        fm_score += 2
     # description 길이
     desc_match = re.search(r'description:\s*"(.+?)"', frontmatter, re.DOTALL)
     if desc_match:
@@ -376,6 +387,7 @@ def score_post(folder_path: str) -> dict:
     # 8. 시계열 깊이 (점수 외 진단: 단년 스냅샷 부실 감지)
     scores["depth"] = analyze_depth(body)
     scores["category"] = _category(frontmatter)
+    scores["has_stock_code"] = _has_stock
 
     scores["total"] = total
     scores["max"] = max_total
@@ -437,6 +449,12 @@ def main():
             if d.get("period_tables", 0) >= 3 and d.get("trajectory_tables", 0) < 2:
                 thin.append((folder, s))
     mixed = [(f, s) for f, s in results if s.get("depth", {}).get("mixed_base_year", 0) > 0]
+    # 조인 키 오배선 가드: 주제글(tech-story·data-reports)이 회사 stockCode 를 달면 블로그에
+    # 단일 회사 터미널 버튼과 그 회사 기업이야기 팟캐스트가 잘못 조인된다(주어는 기술·테마인데
+    # 한 회사로 오인). operation.content 5절 조인 키 계약 위반이라 topicSlug 로 교체해야 한다.
+    miswired = [
+        (f, s) for f, s in results if s.get("category") in ("tech-story", "data-reports") and s.get("has_stock_code")
+    ]
 
     if thin:
         print(f"\n⚠️ 깊이 미달 후보 ({len(thin)}편): 회사별 다년 추이 표 부족(단년 스냅샷 위주)")
@@ -449,6 +467,12 @@ def main():
         print(f"\n🟡 기준연도 혼재 표 ({len(mixed)}편): 한 표에 서로 다른 연도가 섞임(각주로 명시했는지 확인)")
         for f, s in mixed:
             print(f"  🟡 {f}: 혼재 표 {s['depth']['mixed_base_year']}개")
+    if miswired:
+        print(
+            f"\n⚠️ 조인 키 오배선 ({len(miswired)}편): 주제글에 회사 stockCode. 블로그 터미널·기업이야기 팟캐스트 오조인. topicSlug 로 교체"
+        )
+        for f, s in miswired:
+            print(f"  🔴 {f}")
 
     # 약한 글 경고 (기존 SEO 점수)
     weak = [(f, s) for f, s in results if s["pct"] < 70]

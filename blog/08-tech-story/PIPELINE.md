@@ -20,7 +20,7 @@ Phase 0 데이터 완주 / Phase 1 적대 토론 기획 / Phase 2.5 마스터라
 2. **재무 착지 = dartlab 실측.** 그 기술을 쓰는 대표 기업을 실명으로 짚고, `Company.select`·`analysis`·`scan`으로 그 기술이 남긴 재무 흔적(원가 구조·마진 추이·CAPEX·투자효율)을 실측으로 붙인다. 단일 회사 종속이 아니라 여러 회사를 기술 관점으로 횡단해도 된다.
 3. **서사 구조 = 6막 시간선 대신** `기술 질문 -> 원리 해부 -> 세대·경쟁 지형 -> 재무 흔적(대표 기업) -> 오해 바로잡기 -> 판단 한 줄`.
 4. **오해 방지 단계(필수).** 기술 과대광고·세대 명칭 혼동·"차세대"라는 말의 실체 없음을 짚는다. 기술 성숙도(양산 단계인지 실험 단계인지)를 정직하게 표기한다.
-5. **회사 종속 아님.** frontmatter `stockCode`는 선택(단일 회사 글이면 기입, 기술 횡단 글이면 생략). 회사 심층 하드게이트(`auditBlog.py --gate`의 14,000자·실사 사진·`brief.json`)는 `tech-story`에 적용되지 않는다(`DEEP_GENRE_CATEGORIES` 밖). 대신 기술이야기 자체 체크: (a) 원리 해부 섹션 ≥ 1 (b) 재무 착지(dartlab 실측 표) ≥ 1 (c) "이렇게 오해하면 안 된다" 섹션 (d) SVG ≥ 4 (e) 기술 성숙도·출처 명시 (f) `audit_seo.py` 95 이상.
+5. **회사 종속 아님.** 기술이야기는 주어가 기술·테마라 subject join 키가 **topicSlug**다(`kind: tech`, `OPERATIONS.md` 5절). frontmatter 에 회사 `stockCode` 를 달면 블로그에 그 회사 단일 **터미널 버튼**과 **기업이야기 팟캐스트**가 잘못 조인된다(주어를 한 회사로 오인). 여러 회사를 기술 관점으로 횡단하는 게 기본이므로 `topicSlug` 를 쓰고 `stockCode` 는 **달지 않는다**. 예외적으로 한 회사만 다루는 글일 때만 `stockCode`. `audit_seo.py` 가 주제글의 stockCode 를 오배선으로 경고한다. 회사 심층 하드게이트(`auditBlog.py --gate`의 14,000자·실사 사진·`brief.json`)는 `tech-story`에 적용되지 않는다(`DEEP_GENRE_CATEGORIES` 밖). 대신 기술이야기 자체 체크: (a) 원리 해부 섹션 ≥ 1 (b) 재무 착지(dartlab 실측 표) ≥ 1 (c) "이렇게 오해하면 안 된다" 섹션 (d) SVG ≥ 4 (e) 기술 성숙도·출처 명시 (f) `audit_seo.py` 95 이상.
 6. **길이 = 밀도 우선.** 회사편 20,000자가 아니다. 원리도해·재무 실측표·재현 코드로 근거를 채운 **6,000~12,000자**. 패딩 금지.
 7. **썸네일 = 통합 생성기.** `gen_blog_thumbnails.py`(SSOT, frontmatter 구동)를 쓴다. kicker 라벨은 `PREFIX["tech-story"] = "기술이야기"`. 별도 생성기를 만들지 않는다. `ogImage: /thumbnails/{slug}.webp`.
 

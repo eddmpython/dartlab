@@ -5,7 +5,7 @@ description: "AI 데이터센터가 전기를 삼키자, 발전소에서 서버�
 category: tech-story
 series: tech-story
 seriesOrder: 4
-stockCode: "267260"
+topicSlug: "power-grid"
 tags:
   - 변압기
   - 전력인프라

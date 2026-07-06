@@ -5,7 +5,7 @@ description: "세상을 지킨다는 회사가 2024년 세상을 멈췄다. 백�
 category: tech-story
 series: tech-story
 seriesOrder: 6
-stockCode: "053800"
+topicSlug: "cybersecurity"
 tags:
   - 사이버보안
   - 백신

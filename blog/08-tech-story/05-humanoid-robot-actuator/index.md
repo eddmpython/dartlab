@@ -5,7 +5,7 @@ description: "테슬라와 삼성의 로봇이 헤드라인을 채우지만, 로
 category: tech-story
 series: tech-story
 seriesOrder: 5
-stockCode: "058610"
+topicSlug: "humanoid-robot"
 tags:
   - 휴머노이드
   - 로봇
