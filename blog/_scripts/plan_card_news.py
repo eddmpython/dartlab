@@ -46,6 +46,7 @@ def write_plan(plan: dict, path: Path) -> None:
     print(f"wrote {rel(path)}")
     print(f"imagePlan={len(plan.get('imagePlan', []))} reviewGate={plan.get('reviewGate', {}).get('status')}")
     print("먼저 planning.narrativeContract 기준으로 슬라이드가 한 문장처럼 이어지는지 닫는다.")
+    print("제목도 planning.titleContract 에서 후보 3개 이상, 독자 갭, 선택 이유를 닫은 뒤 발행한다.")
     print("새 계획은 큰문장만 이어 읽어도 이해되는 7장 이상 서사를 발행 게이트에서 다시 검사한다.")
     print("다음: imagePlan[].prompt 를 image_gen 으로 한 장씩 생성하고, imagegen.extractCommand 로 저장한다.")
 

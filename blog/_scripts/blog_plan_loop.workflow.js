@@ -28,6 +28,7 @@ export const meta = {
 }
 
 const PRINCIPLES = `블로그 심층 리포트 원칙(합격선):
+0. 제목 후크: 제목은 본문을 다 쓴 뒤 붙이는 라벨이 아니라 기획의 첫 약속이다. 후보 3개 이상을 비교하고, 독자의 상식과 글이 끝까지 갚을 질문 사이에 호기심 갭을 만든다. "정리", "분석", "이야기", "총정리", "돈을 못 번다"식 반복 템플릿은 실패다.
 1. 단일 관통선: 사람들이 이 회사에서 진짜 궁금해할 이상한 점 1개("매출 2배인데 왜 이익은 널뛰나"류). 회사소개·실적요약·"좋은 회사"는 관통선이 아니다. 좋은 관통선은 이상한 숫자·상식과 다른 결과·갑자기 바뀐 장면·아직 공시로 덜 검증된 서사에서 나온다.
 2. 핵심 인싸이트 1: 관통선의 답을 한 문장으로. (a)통념과 충돌 (b)기억되고 (c)다음 공시에 적용 가능. 제목 재진술이면 실패. 다 읽고도 세계관 그대로면 실패.
 3. 막 구조: 각 막은 궁금증 심화·메커니즘 공개·리스크 반전·판단 닫힘 중 하나를 한다. 막 제목을 나열해 "이 막을 빼면 더 궁금해지나" 안 약해지면 삭제. 매 막은 장면·숫자·반전·판단으로, 끝에 다음 막으로의 인과 다리 1문장.
@@ -42,9 +43,33 @@ const VISUAL_NOTE = `막별 비주얼: 이야기가 요구하는 차트를 막�
 
 const PLAN_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['title', 'description', 'readerQuestion', 'insight', 'acts', 'visuals', 'imagePlan', 'honestyGuards'],
+  required: ['title', 'titleContract', 'description', 'readerQuestion', 'insight', 'acts', 'visuals', 'imagePlan', 'honestyGuards'],
   properties: {
     title: { type: 'string', description: '제목(60자 이하, 회사명 앞·궁금증 갭). 예: "오로라월드, 매출은 2배가 됐는데 이익은 왜 널뛸까".' },
+    titleContract: {
+      type: 'object', additionalProperties: false,
+      required: ['workingTitle', 'selectedTitle', 'hookQuestion', 'readerGap', 'promise', 'whySelected', 'candidates', 'rejectedPatterns'],
+      properties: {
+        workingTitle: { type: 'string' },
+        selectedTitle: { type: 'string', description: '최종 선택 제목. title 과 같아야 한다.' },
+        hookQuestion: { type: 'string', description: '제목이 첫 1초에 만들 독자 질문.' },
+        readerGap: { type: 'string', description: '독자의 기존 상식과 글이 갚을 사실 사이의 간격.' },
+        promise: { type: 'string', description: '제목이 약속하고 결론이 갚을 내용.' },
+        whySelected: { type: 'string', description: '왜 다른 후보보다 이 제목이 더 강한가.' },
+        candidates: {
+          type: 'array', minItems: 3,
+          items: {
+            type: 'object', additionalProperties: false, required: ['title', 'hook', 'risk'],
+            properties: {
+              title: { type: 'string' },
+              hook: { type: 'string' },
+              risk: { type: 'string' },
+            },
+          },
+        },
+        rejectedPatterns: { type: 'array', items: { type: 'string' } },
+      },
+    },
     description: { type: 'string', description: 'SEO description(80~200자). 첫 2줄이 검색 스니펫.' },
     readerQuestion: { type: 'string', description: '관통선 = 독자 질문 1개. 제목 없이 이 질문만으로 읽고 싶어야 함.' },
     insight: {
@@ -153,7 +178,7 @@ const SKEPTIC_SCHEMA = {
       items: {
         type: 'object', additionalProperties: false, required: ['axis', 'why', 'fix'],
         properties: {
-          axis: { type: 'string', enum: ['cliche-template', 'forced-metric', 'misleading-frame', 'shallow', 'generic-image', 'overclaim'] },
+          axis: { type: 'string', enum: ['weak-title', 'cliche-template', 'forced-metric', 'misleading-frame', 'shallow', 'generic-image', 'overclaim'] },
           why: { type: 'string' },
           fix: { type: 'string' },
         },
@@ -247,7 +272,7 @@ ${JSON.stringify(props)}
 회의론자·독자대리인 격파:
 ${JSON.stringify(critiques.filter(Boolean))}
 
-단일 관통선 1개로 좁히고(클리셰 격파 반영), 핵심 인싸이트(관통선의 답)를 세우고, 막 구조(6막+, 관통선이 인싸이트에 착지)·막별 비주얼·이미지 기획(내용 연상, 로고·상징품 허용)·정직성 가드를 확정한다. 통과용 안전한 관통선이 아니라 진짜 의외의 관통선을 고른다. 전체 기획안을 스키마대로 낸다.`,
+단일 관통선 1개로 좁히고(클리셰 격파 반영), 후보 제목 3개 이상을 비교해 최종 제목을 고른 뒤 titleContract 를 채운다. 핵심 인싸이트(관통선의 답)를 세우고, 막 구조(6막+, 관통선이 인싸이트에 착지)·막별 비주얼·이미지 기획(내용 연상, 로고·상징품 허용)·정직성 가드를 확정한다. 통과용 안전한 관통선이 아니라 진짜 의외의 관통선을 고른다. 전체 기획안을 스키마대로 낸다.`,
   { label: '편집장 수렴', phase: '경합', schema: PLAN_SCHEMA }
 )
 
@@ -262,7 +287,7 @@ for (let round = 1; round <= MAX_ROUNDS; round++) {
 
 ${PRINCIPLES}
 
-6항목: 1.재밌나(YES/NO+이유) 2.어디서 집중 끊기나 3.독자질문(관통선)이 끝까지 살아있나 4."어?" 몇 번 5.기억에 남는 문장 6.점수. 특히: 관통선이 끝까지 살아 인싸이트에 착지하나, 막이 궁금증심화·메커니즘·리스크반전·판단닫힘 중 하나를 하나, 깊이가 얕지 않나, 첫 2문단이 긴장으로 시작하나.
+6항목: 1.재밌나(YES/NO+이유) 2.어디서 집중 끊기나 3.독자질문(관통선)이 끝까지 살아있나 4."어?" 몇 번 5.기억에 남는 문장 6.점수. 특히: 제목이 첫 1초에 멈추는가, titleContract 의 후보·독자 갭·선택 이유가 살아있는가, 관통선이 끝까지 살아 인싸이트에 착지하나, 막이 궁금증심화·메커니즘·리스크반전·판단닫힘 중 하나를 하나, 깊이가 얕지 않나, 첫 2문단이 긴장으로 시작하나.
 
 검증 데이터(기획 수치는 이 안에 있어야):
 ${evidence}
@@ -274,6 +299,7 @@ ${JSON.stringify(plan)}`,
     () => agent(
       `너는 dartlab 블로그 회의자(skeptic)다. 임무는 통과가 아니라 이 기획안을 죽이는 것. 기본값 kill. 아래 하드 축 중 하나라도 걸리면 verdict=kill 과 kills[]. 다 깨끗하면 survive.
 
+- weak-title: 제목이 설명형·총정리형·반복 템플릿이거나, 독자가 끝까지 따라갈 질문을 만들지 못하는가.
 - cliche-template: 관통선·프레임이 템플릿 클리셰·동어반복·재탕인가.
 - forced-metric: "이런 뜻은 아니다" 변명해야 하는 억지 비율·지표가 있나.
 - misleading-frame: 주인공이 제목의 실제 주어와 다른가(인프라 회사를 AI 주인공으로 둔갑 등). 영업이익과 순이익, 연결과 그룹을 뭉갰나.
@@ -298,7 +324,7 @@ ${JSON.stringify(plan)}`,
   })
   if (passed || round === MAX_ROUNDS) break
   plan = await agent(
-    `너는 dartlab 블로그 기획작가다. 독자 평가자와 회의자가 약점을 잡았다. 둘 다 모두 반영해 기획안을 다시 쓴다(전체 스키마 재출력). 통과가 목적이 아니라 진짜 좋은 심층 리포트가 목적이다. 회의자가 죽인 축은 표면 수정이 아니라 관통선·프레임·깊이·이미지를 실제로 바꿔 살려라.
+    `너는 dartlab 블로그 기획작가다. 독자 평가자와 회의자가 약점을 잡았다. 둘 다 모두 반영해 기획안을 다시 쓴다(전체 스키마 재출력). 통과가 목적이 아니라 진짜 좋은 심층 리포트가 목적이다. 회의자가 죽인 축은 표면 수정이 아니라 제목·관통선·프레임·깊이·이미지를 실제로 바꿔 살려라.
 
 ${HEAD}
 

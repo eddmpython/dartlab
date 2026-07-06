@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="660" viewBox="0 0 1200 660" role="img" aria-labelledby="title desc">
+  <title id="title">스텔스와 탐지 기술의 맞물림</title>
+  <desc id="desc">스텔스가 낮추는 신호와 그것을 다시 찾으려는 저주파 레이더, 적외선 탐지, 네트워크 센서, 전자전의 관계를 보여준다.</desc>
+  <rect width="1200" height="660" fill="#0a0e1a"/>
+  <text x="58" y="70" fill="#f8fafc" font-family="Malgun Gothic, Arial" font-size="34" font-weight="700">스텔스는 무적이 아니라 탐지 시간을 늦추는 게임이다</text>
+  <text x="58" y="112" fill="#94a3b8" font-family="Malgun Gothic, Arial" font-size="20">저피탐은 표적 신호를 줄이고, 상대는 다른 주파수와 센서망으로 다시 찾는다</text>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#38bdf8"/>
+    </marker>
+  </defs>
+  <g font-family="Malgun Gothic, Arial">
+    <rect x="465" y="260" width="270" height="110" rx="18" fill="#111827" stroke="#fbbf24" stroke-width="2"/>
+    <text x="505" y="305" fill="#fbbf24" font-size="24" font-weight="700">저피탐 항공기</text>
+    <text x="505" y="340" fill="#cbd5e1" font-size="18">작게 보이고, 늦게 보이고,</text>
+    <text x="505" y="366" fill="#cbd5e1" font-size="18">먼저 보기 위해 설계된다</text>
+    <rect x="82" y="170" width="270" height="88" rx="16" fill="#111827" stroke="#334155"/>
+    <text x="108" y="205" fill="#f8fafc" font-size="21" font-weight="700">고주파 사격통제 레이더</text>
+    <text x="108" y="234" fill="#94a3b8" font-size="17">정밀하지만 RCS 저감에 취약</text>
+    <rect x="82" y="388" width="270" height="88" rx="16" fill="#111827" stroke="#334155"/>
+    <text x="108" y="423" fill="#f8fafc" font-size="21" font-weight="700">저주파 조기경보 레이더</text>
+    <text x="108" y="452" fill="#94a3b8" font-size="17">대략적 탐지는 가능, 정밀 교전은 별개</text>
+    <rect x="848" y="170" width="270" height="88" rx="16" fill="#111827" stroke="#334155"/>
+    <text x="874" y="205" fill="#f8fafc" font-size="21" font-weight="700">적외선 탐지</text>
+    <text x="874" y="234" fill="#94a3b8" font-size="17">전파가 아니라 열을 본다</text>
+    <rect x="848" y="388" width="270" height="88" rx="16" fill="#111827" stroke="#334155"/>
+    <text x="874" y="423" fill="#f8fafc" font-size="21" font-weight="700">네트워크 센서와 전자전</text>
+    <text x="874" y="452" fill="#94a3b8" font-size="17">여러 눈을 묶고 송신을 교란한다</text>
+    <path d="M352 214 C420 225 430 280 465 303" stroke="#38bdf8" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+    <path d="M352 432 C420 420 430 360 465 336" stroke="#38bdf8" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+    <path d="M848 214 C782 230 760 282 735 303" stroke="#38bdf8" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+    <path d="M848 432 C785 410 762 356 735 336" stroke="#38bdf8" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+    <text x="205" y="555" fill="#cbd5e1" font-size="20">결론: 탐지 확률과 교전 시간을 바꾸는 시스템이지, 모든 센서에서 사라지는 마술이 아니다.</text>
+  </g>
+</svg>
+

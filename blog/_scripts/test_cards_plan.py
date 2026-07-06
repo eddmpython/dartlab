@@ -21,13 +21,13 @@ def _write_post(blog_dir: Path, folder: str, *, slides: str) -> Path:
     d.mkdir(parents=True, exist_ok=True)
     (d / "index.md").write_text(
         f"""---
-title: "테스트 글"
+title: "테스트회사는 왜 회원권으로 낮은 마진을 버틸까"
 description: "블로그 산문과 카드 흐름을 같이 검토하는 테스트"
 date: 2026-01-02
 stockCode: "999999"
 corpName: "테스트회사"
 carousel:
-  title: "테스트 카드"
+  title: "테스트회사는 왜 회원권으로 낮은 마진을 버틸까"
   caption: |
     카드 캡션.
 {slides}---
@@ -93,6 +93,31 @@ def _mark_passed(plan: dict) -> dict:
     plan["reviewGate"]["status"] = "passed"
     for row in plan["reviewGate"]["requiredRounds"]:
         row["status"] = "passed"
+    tc = plan.setdefault("planning", {}).setdefault("titleContract", {})
+    selected = plan["target"]["title"]
+    tc["workingTitle"] = selected
+    tc["selectedTitle"] = selected
+    tc["hookQuestion"] = "낮은 가격으로 파는 회사가 왜 회원권에서 이익을 만들까?"
+    tc["readerGap"] = "싸게 팔면 마진이 낮아야 한다는 상식과 회비가 이익을 받친다는 구조 사이의 간격을 보여준다."
+    tc["promise"] = "표지는 낮은 마진의 역설을 열고, 마지막은 회비와 재방문을 같이 봐야 한다는 판단으로 갚는다."
+    tc["whySelected"] = "회사명과 왜 질문을 앞에 놓아 첫 장에서 바로 멈추게 하고, 답은 본문 끝까지 남겨 둔다."
+    tc["candidates"] = [
+        {
+            "title": selected,
+            "hook": "낮은 마진과 회비 이익의 충돌을 한 번에 건다.",
+            "risk": "회원권 구조를 모르는 독자는 뒤 설명이 필요하다.",
+        },
+        {
+            "title": "테스트회사는 싸게 팔수록 왜 회원권이 더 중요해질까",
+            "hook": "싸게 판다는 행동과 회원권 이익을 연결해 궁금증을 만든다.",
+            "risk": "마진 숫자의 긴장감은 현재 제목보다 약하다.",
+        },
+        {
+            "title": "테스트회사 이익은 왜 계산대보다 회원권에서 먼저 보일까",
+            "hook": "계산대와 회원권의 위치를 바꿔 의외성을 만든다.",
+            "risk": "회사 전체보다 회비에만 시야가 좁아질 수 있다.",
+        },
+    ]
     # 발행 준비된 plan 은 insightContract(통념·반전·렌즈·근거)도 채워져 있어야 한다(v4+ 발행 게이트).
     ic = plan.setdefault("planning", {}).setdefault("insightContract", {})
     ic["commonBelief"] = "회원제 창고형 매장은 싸게 파니까 이익이 얇을 것이라고 여긴다."
@@ -153,6 +178,8 @@ def test_build_company_plan_defaults_to_seven_images(tmp_path: Path) -> None:
     assert plan["planning"]["narrativeContract"]["spine"] == "훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문"
     assert "체크리스트" in " ".join(plan["planning"]["narrativeContract"]["rules"])
     assert "구조명" in " ".join(plan["planning"]["narrativeContract"]["rules"])
+    assert "제목도 기획 루프" in " ".join(plan["planning"]["titleContract"]["rules"])
+    assert plan["planning"]["titleContract"]["selectedTitle"] == plan["target"]["title"]
     assert "큰문장" in " ".join(plan["planning"]["bigSentenceContract"]["rules"])
     assert "전문용어" in " ".join(plan["planning"]["plainLanguageContract"]["rules"])
     assert plan["planning"]["plainLanguageContract"]["preferredRewrites"]["ARR"] == "연간 반복 매출"
@@ -201,6 +228,24 @@ def test_plan_validation_blocks_template_copy_after_review(tmp_path: Path) -> No
     planned["target"]["title"] = "누가 돈을 버나"
     errors = cp.validate_plan(planned, require_passed=True)
     assert any("템플릿형 문구" in err for err in errors)
+
+
+def test_plan_validation_requires_title_contract_after_review(tmp_path: Path) -> None:
+    post = _write_post(tmp_path / "blog", "01-999999-test", slides=_TWO_SLIDES)
+    planned = _mark_passed(cp.build_company_post_plan(post, count=7))
+    planned["planning"].pop("titleContract")
+    errors = cp.validate_plan(planned, require_passed=True)
+    assert any("planning.titleContract" in err for err in errors)
+
+
+def test_plan_validation_blocks_weak_title_hook(tmp_path: Path) -> None:
+    post = _write_post(tmp_path / "blog", "01-999999-test", slides=_TWO_SLIDES)
+    planned = _mark_passed(cp.build_company_post_plan(post, count=7))
+    planned["target"]["title"] = "테스트회사 분석"
+    planned["planning"]["titleContract"]["selectedTitle"] = "테스트회사 분석"
+    planned["planning"]["titleContract"]["candidates"][0]["title"] = "테스트회사 분석"
+    errors = cp.validate_plan(planned, require_passed=True)
+    assert any("제목에 호기심 갭" in err or "제목이 설명형" in err for err in errors)
 
 
 def test_plan_validation_requires_narrative_contract(tmp_path: Path) -> None:

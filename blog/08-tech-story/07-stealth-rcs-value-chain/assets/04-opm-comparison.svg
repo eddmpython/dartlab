@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">스텔스 관련 방산 대표사의 2025년 영업이익률</title>
+  <desc id="desc">미국 방산 대표사와 한국 KF-21 라인 대표사의 2025년 영업이익률을 비교한다.</desc>
+  <rect width="1200" height="720" fill="#0a0e1a"/>
+  <text x="58" y="70" fill="#f8fafc" font-family="Malgun Gothic, Arial" font-size="34" font-weight="700">스텔스 기술은 비싸지만 주계약사 영업이익률은 10%대에 모인다</text>
+  <text x="58" y="112" fill="#94a3b8" font-family="Malgun Gothic, Arial" font-size="20">2025년 각사 손익계산서 기준. EDGAR는 결산월과 분기 라벨을 원문으로 대조해야 한다</text>
+  <g transform="translate(80 155)" font-family="Malgun Gothic, Arial" font-size="17">
+    <line x1="210" y1="0" x2="210" y2="480" stroke="#334155"/>
+    <line x1="210" y1="480" x2="1040" y2="480" stroke="#334155"/>
+    <text x="198" y="510" fill="#94a3b8">0%</text>
+    <text x="471" y="510" fill="#94a3b8">5%</text>
+    <text x="744" y="510" fill="#94a3b8">10%</text>
+    <text x="1012" y="510" fill="#94a3b8">15%</text>
+    <g fill="#cbd5e1">
+      <text x="0" y="36">LMT</text>
+      <text x="0" y="88">NOC</text>
+      <text x="0" y="140">RTX</text>
+      <text x="0" y="192">GD</text>
+      <text x="0" y="244">BA</text>
+      <text x="0" y="316">KAI</text>
+      <text x="0" y="368">한화시스템</text>
+      <text x="0" y="420">한화에어로</text>
+      <text x="0" y="472">LIG넥스원</text>
+    </g>
+    <g fill="#fbbf24">
+      <rect x="210" y="14" width="562" height="26" rx="8"/>
+      <rect x="210" y="66" width="589" height="26" rx="8"/>
+      <rect x="210" y="118" width="573" height="26" rx="8"/>
+      <rect x="210" y="170" width="556" height="26" rx="8"/>
+      <rect x="210" y="222" width="262" height="26" rx="8" fill="#64748b"/>
+      <rect x="210" y="294" width="399" height="26" rx="8" fill="#38bdf8"/>
+      <rect x="210" y="346" width="180" height="26" rx="8" fill="#38bdf8"/>
+      <rect x="210" y="398" width="633" height="26" rx="8" fill="#38bdf8"/>
+      <rect x="210" y="450" width="404" height="26" rx="8" fill="#38bdf8"/>
+    </g>
+    <g fill="#f8fafc" font-weight="700">
+      <text x="790" y="36">10.3%</text>
+      <text x="817" y="88">10.8%</text>
+      <text x="801" y="140">10.5%</text>
+      <text x="784" y="192">10.2%</text>
+      <text x="491" y="244">4.8%</text>
+      <text x="628" y="316">7.3%</text>
+      <text x="409" y="368">3.3%</text>
+      <text x="862" y="420">11.6%</text>
+      <text x="633" y="472">7.4%</text>
+    </g>
+    <text x="0" y="565" fill="#94a3b8" font-size="18">미국 빅4는 10% 안팎으로 수렴한다. 한국 KF-21 라인은 역할과 사업 믹스에 따라 편차가 크다.</text>
+  </g>
+</svg>

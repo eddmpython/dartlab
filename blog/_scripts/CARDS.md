@@ -24,6 +24,7 @@
 1. 블로그 글 frontmatter 에 `carousel:` 쓴다 (아래 형식). **블로그 산문과 카드 기획은 한 번에 잡는다.**
 2. 이미지·토론 계획 생성: `uv run python -X utf8 blog/_scripts/plan_card_news.py --post blog/05-company-reports/{글폴더} --write`
    - 계획 파일 = 같은 글 폴더의 `cards.plan.json`.
+   - `planning.titleContract` 도 강행 규칙이다. 제목 후보를 3개 이상 만들고, 독자 갭·표지 약속·선택 이유를 닫는다. 제목이 약하면 첫 장 후크도 죽으므로 `정리`, `분석`, `이야기`, `총정리`, `돈을 못 번다`식 반복 템플릿은 발행 실패다.
    - `planning.narrativeContract` 는 강행 규칙이다. 한 주제 안에서 **훅 → 왜 지금 중요한가 → 근거 → 전환 → 판단 질문**으로 이어져야 한다.
    - `기/승/전/결`, `전개`, `결론` 같은 구조명은 내부 기획 용어일 뿐 카드 위 `kicker` 로 노출하면 실패다. 흐름은 큰문장 자체에 들어가야 한다.
    - `planning.bigSentenceContract` 도 강행 규칙이다. **카드를 넘길 때 큰문장만 읽어도 한 편의 짧은 글처럼 이해되어야 한다.** 단어·라벨·메모형 큰글씨는 실패다.
@@ -39,6 +40,7 @@
    - 각 항목의 `prompt` 를 GPT `image_gen` 으로 한 장씩 생성한다.
    - 생성 뒤 `imagegen.extractCommand` 로 `sns/assets/{code}/{assetKey}.webp` 에 저장하고 `imagegen.checkCommand` 로 프레이밍을 본다.
 3. 작가 패널 토론·평가를 `cards.plan.json` 의 `reviewGate` 에 기록하고 `status: "passed"` 로 닫는다.
+   - `titleHook` 라운드: 제목 후보 3개 이상을 비교하고 선택 제목이 독자의 상식과 글이 갚을 질문 사이에 호기심 갭을 만드는지 본다. 표지와 마지막 카드가 제목의 약속을 갚지 못하면 실패다.
    - `planning.insightContract` (v4+ 강행): **통념(commonBelief)·반전(twistFact=충돌 사실+메커니즘)·그래서 볼 것(whatToWatch=렌즈)·evidenceRefs** 를 적는다. 충돌 사실만 던지고 끝나면 인사이트가 아니다. 발행 게이트가 셋이 채워졌고 반전이 제목·캡션의 재진술이 아닌지 검사한다.
    - `planning.visualPlan` (v5+ 강행): 데이터 주장 카드마다 그래프·표 모양, 데이터 설명, 검증 ref 를 적고 실제 slide `visual` 로 연결한다. "많이 파는데 남기지 못한다" 같은 문장은 판매량·마진·현금이 각각 무엇을 뜻하는지 그래프나 표로 증명하지 않으면 발행 실패다.
    - 카드뉴스 5대 원칙(맥락·인사이트·이미지 정합·쉬움·재미/호기심)과 작가 craft(표지 후크·promise/payoff·구체 장면화·so what·신뢰·정직한 의외성)는 `operation.content` 가 정본이다.

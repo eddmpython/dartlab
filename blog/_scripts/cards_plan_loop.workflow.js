@@ -21,6 +21,7 @@ export const meta = {
 }
 
 const PRINCIPLES = `카드뉴스 5대원칙(합격선):
+0. 제목 후크: 제목도 기획 루프의 산물이다. 후보 3개 이상을 비교하고, 독자의 상식과 글이 갚을 질문 사이에 호기심 갭을 만든다. "정리", "분석", "이야기", "총정리", "돈을 못 번다"식 반복 템플릿은 실패다. 제목의 약속은 표지 첫 장과 마지막 판단이 갚아야 한다.
 1. 맥락: 큰문장만 위에서 아래로 읽어도 한 편의 짧은 글로 완결. 각 장은 앞장보다 질문을 하나 얹거나 갚는다. 순서 바꿔도 말 되면 실패.
 2. 인사이트: 통념과 충돌하는 사실 + 왜 가능한가(메커니즘) + 앞으로 무엇을 다르게 볼까(렌즈)까지. 제목 재진술이면 실패. 다 읽고도 세계관 그대로면 실패. 추가 강행:
    (a) 재탕은 최대한 피한다(권고). 이미 널리 도는 서사라도 그것만으로 탈락은 아니다. 닳은 서사 같으면 더 날카로운 각이 있는지 한 번 더 보되, 이미 정한 각이면 그대로 간다. 단 우열·투자권유·단정은 절대 금지.
@@ -47,9 +48,33 @@ const TYPE_GUIDANCE = {
 
 const PLAN_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['title', 'insight', 'spine', 'visuals', 'images', 'renderContracts'],
+  required: ['title', 'titleContract', 'insight', 'spine', 'visuals', 'images', 'renderContracts'],
   properties: {
     title: { type: 'string' },
+    titleContract: {
+      type: 'object', additionalProperties: false,
+      required: ['workingTitle', 'selectedTitle', 'hookQuestion', 'readerGap', 'promise', 'whySelected', 'candidates', 'rejectedPatterns'],
+      properties: {
+        workingTitle: { type: 'string' },
+        selectedTitle: { type: 'string', description: '최종 선택 제목. title 과 같아야 한다.' },
+        hookQuestion: { type: 'string', description: '제목이 첫 1초에 만들 독자 질문.' },
+        readerGap: { type: 'string', description: '독자의 기존 상식과 글이 갚을 사실 사이의 간격.' },
+        promise: { type: 'string', description: '제목과 표지가 약속하고 마지막 장이 갚을 내용.' },
+        whySelected: { type: 'string', description: '왜 다른 후보보다 이 제목이 더 강한가.' },
+        candidates: {
+          type: 'array', minItems: 3,
+          items: {
+            type: 'object', additionalProperties: false, required: ['title', 'hook', 'risk'],
+            properties: {
+              title: { type: 'string' },
+              hook: { type: 'string' },
+              risk: { type: 'string' },
+            },
+          },
+        },
+        rejectedPatterns: { type: 'array', items: { type: 'string' } },
+      },
+    },
     insight: {
       type: 'object', additionalProperties: false,
       required: ['commonBelief', 'twistFact', 'whatToWatch', 'freshnessArgument', 'evidenceRefs'],
@@ -119,8 +144,8 @@ const VERDICT_SCHEMA = {
   properties: {
     decision: { type: 'string', enum: ['pass', 'revise'] },
     scores: {
-      type: 'object', additionalProperties: false, required: ['맥락', '인사이트', '시각정합', '쉬움', '재미'],
-      properties: { 맥락: { type: 'integer' }, 인사이트: { type: 'integer' }, 시각정합: { type: 'integer' }, 쉬움: { type: 'integer' }, 재미: { type: 'integer' } },
+      type: 'object', additionalProperties: false, required: ['제목훅', '맥락', '인사이트', '시각정합', '쉬움', '재미'],
+      properties: { 제목훅: { type: 'integer' }, 맥락: { type: 'integer' }, 인사이트: { type: 'integer' }, 시각정합: { type: 'integer' }, 쉬움: { type: 'integer' }, 재미: { type: 'integer' } },
     },
     findings: {
       type: 'array',
@@ -139,11 +164,11 @@ const SKEPTIC_SCHEMA = {
     verdict: { type: 'string', enum: ['survive', 'kill'] },
     kills: {
       type: 'array',
-      description: 'kill 사유. 네 하드 축만. 재탕(recycled)은 여기 넣지 않는다(소프트 권고).',
+      description: 'kill 사유. 하드 축만. 재탕(recycled)은 여기 넣지 않는다(소프트 권고).',
       items: {
         type: 'object', additionalProperties: false, required: ['axis', 'why', 'fix'],
         properties: {
-          axis: { type: 'string', enum: ['forced-metric', 'misleading-frame', 'generic-image', 'overclaim'] },
+          axis: { type: 'string', enum: ['weak-title', 'forced-metric', 'misleading-frame', 'generic-image', 'overclaim'] },
           why: { type: 'string' },
           fix: { type: 'string' },
         },
@@ -176,6 +201,7 @@ ${evidence}
 
 지시:
 - 위 타입 지침을 지킨다.
+- 제목은 후보 3개 이상을 먼저 만들고, titleContract 에 hookQuestion·readerGap·promise·whySelected 를 채운다. 최종 title 은 titleContract.selectedTitle 과 같아야 한다.
 - 인사이트는 재탕을 최대한 피한다(권고). freshnessArgument 에 새 지점을 적되, 이미 도는 서사라도 그것만으로 탈락은 아니다. 변명해야 하는 억지 비율 금지. 프레임은 제목의 실제 주어와 일치(인프라 회사를 AI 주인공으로 둔갑 금지).
 - 그래프는 기획에서 모양까지 설계. 시계열은 분기로 밀도 있게(6점 이상), 빈 값 금지, data 길이=periods 길이. 추이는 line.
 - images: spine 의 각 장에 배경을 기획한다. 회사명을 말하는 장은 subjectCompany 에 그 회사명, bg 에 그 회사 로고·제품·상호를 박는다(일반 장면 금지). 회사 특정 안 되는 개념 장만 일반 장면. 그래프 장은 "(배경 없음)".
@@ -205,6 +231,7 @@ ${PRINCIPLES}
 ${evidence}
 
 특히 깐다:
+- 제목이 1초에 멈추는가. titleContract 후보 3개 이상, 독자 갭, 표지 약속, 선택 이유가 살아있는가. 설명형·총정리형·반복 템플릿 제목이면 제목훅 85 미만.
 - 인사이트가 통념-반전-렌즈-메커니즘이 다 살아있고 의외인가. (재탕은 감점 요소지 단독 탈락 사유 아님.)
 - 변명해야 하는 억지 수치가 있나. 프레임이 제목 실제 주어와 일치하나.
 - 타입 지침을 어겼는가. 그래프가 주장을 증명하고 밀도 있나(분기 6점+), 큰문장 가려도 긴장이 남나.
@@ -221,6 +248,7 @@ ${JSON.stringify(plan)}`,
       `너는 dartlab 카드뉴스 회의자(skeptic)다. 네 임무는 통과시키는 게 아니라 이 기획안을 죽이는 것이다. 기본값은 kill. 아래 네 하드 축(억지수치·틀린프레임·일반이미지·과장) 중 하나라도 걸리면 verdict=kill 과 kills[](축·이유·고칠방법)를 낸다. 네 축이 다 깨끗하면 survive.
 
 - (소프트 권고) recycled: 인사이트가 이미 널리 도는 서사의 재포장 같으면 softNotes 에 적는다. 단 이것만으로는 kill 하지 않는다. 재탕은 최대한 피하려는 권고일 뿐, 이미 정한 각이면 그대로 간다.
+- weak-title: 제목이 설명형·총정리형·반복 템플릿이거나, 독자가 넘겨볼 질문을 만들지 못하면 kill.
 - forced-metric: 핀 코멘트나 본문에서 "이런 뜻은 아니다"라고 변명해야 하는 억지 비율·지표가 있나. 있으면 kill.
 - misleading-frame: 주인공이 제목의 실제 주어와 다른가. 인프라에 돈 쓰는 회사를 'AI 주인공'으로 둔갑시켰나. 그러면 kill.
 - generic-image: 회사명을 말하는 장의 배경(images[].bg)이 그 회사 로고·제품이 아니라 일반 장면인가. 하나라도 있으면 kill.
@@ -249,6 +277,7 @@ ${JSON.stringify(plan)}`,
   if (round === MAX_ROUNDS) break
   plan = await agent(
     `너는 dartlab 카드뉴스 기획작가다. 평가자와 회의자가 약점을 잡았다. 둘 다 모두 반영해 기획안을 다시 쓴다(전체 스키마 재출력). 통과가 목적이 아니라 진짜 좋은 카드가 목적이다. 회의자가 죽인 축은 표면 수정이 아니라 인사이트·프레임·이미지를 실제로 바꿔서 살려라.
+제목이 약하면 title 과 titleContract 를 함께 갈아엎고, 표지와 마지막 판단의 promise/payoff 도 같이 고쳐라.
 
 타입(${cardType}) 지침: ${typeNote}
 

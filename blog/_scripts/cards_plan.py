@@ -22,11 +22,12 @@ TECH_DIR = ROOT / "blog" / "08-tech-story"  # 기술이야기(설명 시리즈) 
 SNS_ASSETS_DIR = ROOT / "sns" / "assets"
 PLAN_FILE = "cards.plan.json"
 
-PLAN_VERSION = 5
-SUPPORTED_PLAN_VERSIONS = {1, 2, 3, 4, PLAN_VERSION}
+PLAN_VERSION = 6
+SUPPORTED_PLAN_VERSIONS = {1, 2, 3, 4, 5, PLAN_VERSION}
 STRICT_FLOW_MIN_VERSION = 3  # 이 버전 이상이면 큰문장 흐름(연결·판단형 종결)을 강제 검사
 INSIGHT_MIN_VERSION = 4  # 이 버전 이상이면 insightContract(통념·반전·렌즈)를 강제
 VISUAL_PLAN_MIN_VERSION = 4  # 이 버전 이상이면 데이터 카드의 visualPlan 과 실제 visual 연결을 강제
+TITLE_CONTRACT_MIN_VERSION = 6  # 이 버전 이상이면 제목 후보·후크 검증을 발행 게이트에서 강제
 LEGACY_MIN_IMAGES = 5
 MIN_IMAGES = 7
 RECOMMENDED_MAX_IMAGES = 10
@@ -73,6 +74,13 @@ VISUAL_PLAN_RULES = (
     "숫자·비교 카드는 image 배경만으로 통과하지 않는다. finCard 또는 table 같은 실제 visual 계약을 붙인다.",
     "visualPlan 의 visualKind 는 실제 slide.visual.kind 와 같아야 한다.",
 )
+TITLE_HOOK_RULES = (
+    "제목도 기획 루프의 산물이다. 후보 제목을 3개 이상 쓰고, 각 후보의 독자 후크와 약점을 비교한다.",
+    "제목은 독자가 이미 믿는 상식과 글이 갚을 질문 사이에 호기심 갭을 만들어야 한다.",
+    "선택 제목은 표지 첫 장과 같은 약속을 해야 하며, 마지막 카드와 본문 결론이 그 약속을 갚아야 한다.",
+    "정리·분석·이야기·총정리 같은 설명형 제목이나 '돈을 못 번다'식 반복 템플릿은 실패다.",
+)
+TITLE_REQUIRED_FIELDS = ("workingTitle", "selectedTitle", "hookQuestion", "readerGap", "promise", "whySelected")
 JARGON_REPLACEMENTS = {
     "ARR": "연간 반복 매출",
     "EDR": "단말 보안 대응",
@@ -148,6 +156,13 @@ TEMPLATE_COPY_PATTERNS = (
     re.compile(r"돈[은이]\s*안\s*(?:따라오|되|남)"),
     re.compile(r"돈을\s*못\s*번"),
 )
+WEAK_TITLE_PATTERNS = (
+    re.compile(r"(?:정리|분석|리포트|이야기|총정리)$"),
+    re.compile(r"알아보자"),
+    re.compile(r"무엇인가"),
+    re.compile(r"핵심\s*\d+가지"),
+)
+TITLE_HOOK_CUE_RE = re.compile(r"왜|어떻게|무엇|누가|진짜|반전|문제|핵심|지도|병목|균열|보이지|남는|바뀌|낮|높|안\s")
 
 # ── 렌더링 계약 레지스트리 — 카드가 쓸 수 있는 시각 계약의 공식 카탈로그(정례화) ──
 # 기획이 beat 마다 큰문장 + visual 계약을 선언한다. 부른 계약이 RENDERABLE(렌더러 구현분)이면 통과,
@@ -326,6 +341,30 @@ def plain_language_contract() -> dict[str, Any]:
     }
 
 
+def title_contract(title: str) -> dict[str, Any]:
+    """제목 계약 스캐폴드.
+
+    제목은 본문을 다 쓴 뒤 붙이는 라벨이 아니라, 카드 표지와 본문 첫 문단의 약속이다.
+    발행 전 기획 루프가 후보, 후크, 약속, 선택 이유를 채운다.
+    """
+    title = clean_card_text(title)
+    return {
+        "rules": list(TITLE_HOOK_RULES),
+        "workingTitle": title,
+        "selectedTitle": title,
+        "hookQuestion": "",
+        "readerGap": "",
+        "promise": "",
+        "whySelected": "",
+        "candidates": [],
+        "rejectedPatterns": [
+            "정리·분석·이야기 같은 설명형 제목",
+            "돈을 못 번다·누가 돈을 버나 같은 반복 템플릿",
+            "제목에서 답을 다 말해 표지를 넘길 이유가 사라지는 문장",
+        ],
+    }
+
+
 def insight_contract() -> dict[str, Any]:
     """인사이트 계약 — 빈 스캐폴드. v4+ 발행 게이트는 통념·반전·렌즈가 채워졌는지 강제한다.
 
@@ -483,8 +522,13 @@ def review_gate(status: str = "planned") -> dict[str, Any]:
         "status": status,
         "requiredRounds": [
             {
+                "id": "titleHook",
+                "purpose": "제목 후보 3개 이상을 비교하고, 선택 제목이 독자의 상식과 글이 갚을 질문 사이에 호기심 갭을 만드는지 본다. 정리·분석·이야기·돈을 못 번다식 반복 제목이면 실패다.",
+                "status": "todo",
+            },
+            {
                 "id": "writerPanel",
-                "purpose": "표지 후크(호기심 갭), 서사 스파인, 앞장-다음장의 긴장 전진(연결만이 아니라 매 장이 질문을 얹거나 갚는가), 인사이트(통념과 충돌하는 사실 + 메커니즘 + 독자 렌즈), 표지 약속을 마지막이 갚는가(promise·payoff), 쉬운 말·문장 리듬을 본다. 순서를 바꿔도 말이 되는 덱, 충돌 사실만 던지고 끝나는 덱, 체크리스트식 나열은 실패다.",
+                "purpose": "제목과 표지 후크(호기심 갭), 서사 스파인, 앞장-다음장의 긴장 전진(연결만이 아니라 매 장이 질문을 얹거나 갚는가), 인사이트(통념과 충돌하는 사실 + 메커니즘 + 독자 렌즈), 표지 약속을 마지막이 갚는가(promise·payoff), 쉬운 말·문장 리듬을 본다. 순서를 바꿔도 말이 되는 덱, 충돌 사실만 던지고 끝나는 덱, 체크리스트식 나열은 실패다.",
                 "status": "todo",
             },
             {
@@ -540,6 +584,7 @@ def build_company_post_plan(post_dir: Path, *, count: int | None = None) -> dict
             "audienceQuestion": f"{corp_name} 이야기를 /cards에서 넘길 때 첫 장에서 무엇을 궁금해해야 하나?",
             "blogAndCardsTogether": True,
             "narrativeContract": narrative_contract(),
+            "titleContract": title_contract(title),
             "bigSentenceContract": big_sentence_contract(slides),
             "plainLanguageContract": plain_language_contract(),
             "insightContract": insight_contract(),
@@ -627,6 +672,7 @@ def build_issue_plan(issue_dir: Path, *, count: int | None = None) -> dict[str, 
             "audienceQuestion": f"{title} 이슈를 /cards에서 볼 때 마지막에 무엇을 확인해야 하나?",
             "blogAndCardsTogether": False,
             "narrativeContract": narrative_contract(),
+            "titleContract": title_contract(title),
             "bigSentenceContract": big_sentence_contract(slides),
             "plainLanguageContract": plain_language_contract(),
             "insightContract": insight_contract(),
@@ -748,6 +794,69 @@ def validate_visual_plan(plan: dict[str, Any], *, require_passed: bool) -> list[
     return errors
 
 
+def _candidate_title_text(item: object) -> str:
+    if isinstance(item, dict):
+        return clean_card_text(item.get("title"))
+    return clean_card_text(item)
+
+
+def validate_title_contract(plan: dict[str, Any], *, require_passed: bool) -> list[str]:
+    errors: list[str] = []
+    target = plan.get("target") if isinstance(plan.get("target"), dict) else {}
+    planning = plan.get("planning") if isinstance(plan.get("planning"), dict) else {}
+    slug = str(target.get("slug") or "<unknown>")
+    version = plan.get("version")
+    if not require_passed or not (isinstance(version, int) and version >= TITLE_CONTRACT_MIN_VERSION):
+        return errors
+
+    contract = planning.get("titleContract")
+    if not isinstance(contract, dict):
+        errors.append(f"{slug}: planning.titleContract 누락 - 제목도 후보·후크·선택 이유를 기획 루프에서 닫아야 함")
+        return errors
+
+    for field in TITLE_REQUIRED_FIELDS:
+        if compact_text_len(str(contract.get(field) or "")) < 8:
+            errors.append(f"{slug}: planning.titleContract.{field} 이 너무 약함")
+
+    target_title = clean_card_text(target.get("title"))
+    selected_title = clean_card_text(contract.get("selectedTitle"))
+    if selected_title and target_title and selected_title != target_title:
+        errors.append(
+            f"{slug}: planning.titleContract.selectedTitle 이 target.title 과 다름"
+            f"({selected_title!r} != {target_title!r})"
+        )
+
+    compact_title_len = compact_text_len(target_title)
+    if compact_title_len < 14:
+        errors.append(f"{slug}: 제목이 너무 짧아 후크가 약함: {target_title!r}")
+    if compact_title_len > 80:
+        errors.append(f"{slug}: 제목이 너무 길어 표지 후크가 흐려짐: {target_title!r}")
+    if not TITLE_HOOK_CUE_RE.search(target_title):
+        errors.append(f"{slug}: 제목에 호기심 갭이 약함 - 왜/어떻게/진짜/병목 같은 질문 단서가 필요함")
+    if template_copy_hits(target_title):
+        errors.append(f"{slug}: 제목이 반복 템플릿을 닮음: {target_title!r}")
+    weak_hits = [pat.pattern for pat in WEAK_TITLE_PATTERNS if pat.search(target_title)]
+    if weak_hits:
+        errors.append(f"{slug}: 제목이 설명형·총정리형으로 약함: {target_title!r}")
+
+    candidates = contract.get("candidates")
+    if not isinstance(candidates, list) or len([c for c in candidates if _candidate_title_text(c)]) < 3:
+        errors.append(f"{slug}: planning.titleContract.candidates 는 후보 제목 3개 이상이어야 함")
+    else:
+        candidate_titles = [_candidate_title_text(c) for c in candidates]
+        if selected_title and selected_title not in candidate_titles:
+            errors.append(f"{slug}: 선택 제목이 candidates 안에 없음: {selected_title!r}")
+        if len(set(candidate_titles)) != len(candidate_titles):
+            errors.append(f"{slug}: planning.titleContract.candidates 에 중복 후보가 있음")
+        for idx, item in enumerate(candidates, start=1):
+            if not isinstance(item, dict):
+                continue
+            for field in ("hook", "risk"):
+                if compact_text_len(str(item.get(field) or "")) < 6:
+                    errors.append(f"{slug}: planning.titleContract.candidates[{idx}].{field} 이 너무 약함")
+    return errors
+
+
 def validate_plan(plan: dict[str, Any], *, require_passed: bool = True, require_assets: bool = False) -> list[str]:
     errors: list[str] = []
     target = plan.get("target") if isinstance(plan.get("target"), dict) else {}
@@ -779,6 +888,7 @@ def validate_plan(plan: dict[str, Any], *, require_passed: bool = True, require_
         for label, value in copy_sources.items():
             if template_copy_hits(value):
                 errors.append(f"{slug}: {label} 에 템플릿형 문구가 남아 있음: {clean_card_text(value)!r}")
+    errors.extend(validate_title_contract(plan, require_passed=require_passed))
     narrative = planning.get("narrativeContract")
     if not isinstance(narrative, dict):
         errors.append(f"{slug}: planning.narrativeContract 누락")

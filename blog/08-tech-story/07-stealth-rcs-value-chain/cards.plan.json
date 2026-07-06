@@ -1,0 +1,430 @@
+{
+  "version": 6,
+  "generatedAt": "2026-07-06T09:02:28.652502+00:00",
+  "target": {
+    "kind": "companyPost",
+    "slug": "stealth-rcs-value-chain",
+    "stockCode": "",
+    "corpName": "스텔스 기술",
+    "title": "스텔스는 왜 '안 보이는 전투기'가 아닌가",
+    "postPath": "blog/08-tech-story/07-stealth-rcs-value-chain/index.md",
+    "assetRoot": "sns/assets/stealth-rcs-value-chain",
+    "planPath": "blog/08-tech-story/07-stealth-rcs-value-chain/cards.plan.json"
+  },
+  "planning": {
+    "blogThesis": "스텔스는 투명망토가 아니라 레이더 반사면적(RCS), 형상, 흡수재, 열 신호, 센서융합, 전자전, 정비가 묶인 저피탐 시스템이다. F-35·B-21·KF-21 라인을 DART·EDGAR 공시와 2025년 손익으로 연결해 기술이 회사 숫자에 남는 방식을 읽는다.",
+    "cardThesis": "스텔스는 투명망토가 아닙니다. 레이더가 보낸 전파가 얼마나 작게, 늦게, 엉뚱한 방향으로 돌아오게 만들 것인가를 설계하는 공학입니다.",
+    "audienceQuestion": "스텔스 기술 이야기를 /cards에서 넘길 때 첫 장에서 무엇을 궁금해해야 하나?",
+    "blogAndCardsTogether": true,
+    "narrativeContract": {
+      "spine": "훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문",
+      "rules": [
+        "한 주제 안에서 훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문으로 이어진다.",
+        "각 슬라이드는 앞장의 주장이나 숫자를 받아 다음 장으로 넘겨야 한다.",
+        "서로 끊긴 체크리스트, '다음에는 이것을 본다'식 나열, 새 항목만 덧붙이는 끝맺음은 실패다.",
+        "마지막 장은 새 정보를 추가하는 장이 아니라 앞선 주장과 근거를 종합해 독자가 남길 판단 질문으로 닫는다.",
+        "기/승/전/결 같은 구조명은 내부 기획에만 쓰고 카드 위 라벨로 노출하지 않는다."
+      ]
+    },
+    "bigSentenceContract": {
+      "slideRange": "7장 이상(7~10장 권장, 필요하면 초과)",
+      "mainTextFields": {
+        "editorial": "line",
+        "editorialBeat": "line",
+        "editorialStat": "context"
+      },
+      "rules": [
+        "카드는 7장 이상으로 잡고, 큰문장만 이어 읽어도 한 편의 짧은 글처럼 이해되어야 한다.",
+        "각 장의 큰문장은 단어·라벨·메모가 아니라 앞장 뒤에 붙는 완성 문장이어야 한다.",
+        "숫자 카드는 bigNumber만 던지지 말고 context에 그 숫자가 앞장 주장과 어떻게 이어지는지 문장으로 쓴다.",
+        "중간 장은 '이 구조', '그 결과', '하지만', '그래서', '결국'처럼 앞장과의 관계를 자연스럽게 드러낸다.",
+        "마지막 장은 새 항목 소개가 아니라 앞선 흐름에서 나온 판단 문장으로 닫는다."
+      ],
+      "strip": [
+        {
+          "order": 1,
+          "layout": "editorial",
+          "mainText": "스텔스는 '안 보이는 전투기'가 아니라 되돌아오는 신호를 줄이는 기술입니다."
+        },
+        {
+          "order": 2,
+          "layout": "editorialBeat",
+          "mainText": "그래서 첫 단계는 레이더 전파가 돌아오는 길을 꺾고 줄이는 형상 설계입니다."
+        },
+        {
+          "order": 3,
+          "layout": "editorialBeat",
+          "mainText": "그다음 코팅과 소재가 남은 신호를 흡수하고, 센서와 전자전이 탐지 시간을 늦춥니다."
+        },
+        {
+          "order": 4,
+          "layout": "editorialStat",
+          "mainText": "미국 주계약사 10%대 영업이익률: 하지만 이 기술 난도는 곧바로 고마진으로 이어지지 않습니다. LMT 10.3%, NOC 10.8%, RTX 10.5%, GD 10.2%처럼 주계약사의 남는 몫은 정부 조달 구조 안에서 모입니다."
+        },
+        {
+          "order": 5,
+          "layout": "editorialBeat",
+          "mainText": "문제는 저피탐 부담이 출고 뒤 코팅 흠집, 패널 틈, 정비 품질로 더 오래 이어진다는 점입니다."
+        },
+        {
+          "order": 6,
+          "layout": "editorialStat",
+          "mainText": "한국 KF-21 라인 7.3% KAI 영업이익률: 그래서 한국 KF-21 라인은 역할별 손익이 갈립니다. KAI는 체계통합으로 7.3%, 한화시스템은 AESA와 ICT 믹스 때문에 3.3%, 한화에어로는 11.6%, LIG넥스원은 7.4%입니다."
+        },
+        {
+          "order": 7,
+          "layout": "editorialBeat",
+          "mainText": "결국 봐야 할 것은 멋진 기체 사진이 아니라 어느 회사가 형상, 코팅, 레이더, 전자전, 정비 병목을 쥐는가입니다."
+        }
+      ]
+    },
+    "plainLanguageContract": {
+      "rules": [
+        "카드 문장은 독자가 소리 내어 읽어도 자연스러운 한국어 문장이어야 한다.",
+        "전문용어와 약어를 앞세우지 말고 쉬운 말로 먼저 설명한다.",
+        "꼭 필요한 산업 용어는 짧은 설명에 풀어 쓰되, 슬라이드 본문은 가능한 쉬운 말로 쓴다.",
+        "브랜드명과 공식 제품명은 허용하지만, 의미를 설명하지 않은 약어는 실패다."
+      ],
+      "preferredRewrites": {
+        "ARR": "연간 반복 매출",
+        "EDR": "단말 보안 대응",
+        "SOC": "보안 관제",
+        "FCF": "잉여현금흐름",
+        "ID": "계정",
+        "CDMO": "위탁개발생산",
+        "HBM": "고대역폭 메모리",
+        "HBM4E": "차세대 고대역폭 메모리",
+        "GPU": "그래픽처리장치",
+        "MR-MUF": "보호재 충전 패키징",
+        "Gbps": "기가비트/초"
+      }
+    },
+    "insightContract": {
+      "rules": [
+        "통념(commonBelief): 독자가 당연하게 여기는 상식·헤드라인 관점을 한 문장으로 적는다.",
+        "반전 사실(twistFact): 그 통념과 충돌하는, 공시 직독으로 확인한 단 하나의 사실 + 왜 그게 가능한가(메커니즘)를 적는다. 제목·캡션의 재진술이면 인사이트가 아니다.",
+        "그래서 볼 것(whatToWatch): 독자가 이 덱을 본 뒤 앞으로 무엇을 다르게 볼지(렌즈·관전 포인트)를 적는다.",
+        "evidenceRefs: 반전·렌즈를 떠받치는 실측 수치나 ref 를 최소 1개 이상 적는다(분모·기간 명시)."
+      ],
+      "commonBelief": "스텔스 전투기는 레이더에 보이지 않는 고가 플랫폼이고, 비싼 기술일수록 주계약사가 높은 이익을 가져갈 것이라고 보기 쉽다.",
+      "twistFact": "공시 직독으로 보면 미국 스텔스 주계약사 4곳의 2025년 영업이익률은 LMT 10.3%, NOC 10.8%, RTX 10.5%, GD 10.2%로 10% 안팎에 모인다. 기술 난도가 아니라 정부 조달 계약과 장기 원가 구조가 남는 몫을 정한다.",
+      "whatToWatch": "기체 사진보다 형상·코팅·AESA 레이더·전자전·정비 중 어느 회사가 바꾸기 어려운 병목을 잡았는지, 그리고 그 병목이 수주잔고와 영업이익률에 어떻게 남는지를 본다.",
+      "evidenceRefs": [
+        "검증표: LMT/NOC/RTX/GD 2025Q1~Q4 EDGAR 합산 영업이익률",
+        "검증표: KAI/한화시스템/한화에어로/LIG넥스원 2025Q1~Q4 DART 합산 영업이익률",
+        "본문: EDGAR 결산월·분기 라벨 주의 박스"
+      ]
+    },
+    "visualPlan": [
+      {
+        "order": 1,
+        "claim": "스텔스는 '안 보이는 전투기'가 아니라 되돌아오는 신호를 줄이는 기술입니다.",
+        "visualKind": "image",
+        "visualRole": "sceneSupport",
+        "dataExplanation": "",
+        "evidenceRefs": [],
+        "rules": [
+          "숫자·비교·강한 주장 카드는 어떤 데이터가 그 문장을 증명하는지 dataExplanation 에 적는다.",
+          "evidenceRefs 에 기간·분모·출처가 드러난 실측 ref 를 최소 1개 이상 적는다.",
+          "숫자·비교 카드는 image 배경만으로 통과하지 않는다. finCard 또는 table 같은 실제 visual 계약을 붙인다.",
+          "visualPlan 의 visualKind 는 실제 slide.visual.kind 와 같아야 한다."
+        ],
+        "proves": "스텔스는 '안 보이는 전투기'가 아니라 되돌아오는 신호를 줄이는 기술입니다."
+      },
+      {
+        "order": 2,
+        "claim": "그래서 첫 단계는 레이더 전파가 돌아오는 길을 꺾고 줄이는 형상 설계입니다.",
+        "visualKind": "image",
+        "visualRole": "sceneSupport",
+        "dataExplanation": "",
+        "evidenceRefs": [],
+        "rules": [],
+        "proves": "그래서 첫 단계는 레이더 전파가 돌아오는 길을 꺾고 줄이는 형상 설계입니다."
+      },
+      {
+        "order": 3,
+        "claim": "그다음 코팅과 소재가 남은 신호를 흡수하고, 센서와 전자전이 탐지 시간을 늦춥니다.",
+        "visualKind": "image",
+        "visualRole": "sceneSupport",
+        "dataExplanation": "",
+        "evidenceRefs": [
+          "검증표: LMT 2025 매출 750.5억 달러, 영업이익률 10.3%",
+          "검증표: NOC 2025 매출 419.5억 달러, 영업이익률 10.8%",
+          "검증표: RTX 2025 매출 886.0억 달러, 영업이익률 10.5%",
+          "검증표: GD 2025 매출 525.5억 달러, 영업이익률 10.2%"
+        ],
+        "rules": [],
+        "proves": "그다음 코팅과 소재가 남은 신호를 흡수하고, 센서와 전자전이 탐지 시간을 늦춥니다."
+      },
+      {
+        "order": 4,
+        "claim": "미국 주계약사 10%대 영업이익률: 하지만 이 기술 난도는 곧바로 고마진으로 이어지지 않습니다. LMT 10.3%, NOC 10.8%, RTX 10.5%, GD 10.2%처럼 주계약사의 남는 몫은 정부 조달 구조 안에서 모입니다.",
+        "visualKind": "table",
+        "visualRole": "dataEvidence",
+        "dataExplanation": "EDGAR 2025Q1~Q4 합산. 12월 결산 미국 방산 4개사의 영업이익률 비교입니다.",
+        "evidenceRefs": [
+          "검증표: LMT 2025 매출 750.5억 달러, 영업이익률 10.3%",
+          "검증표: NOC 2025 매출 419.5억 달러, 영업이익률 10.8%",
+          "검증표: RTX 2025 매출 886.0억 달러, 영업이익률 10.5%",
+          "검증표: GD 2025 매출 525.5억 달러, 영업이익률 10.2%"
+        ],
+        "rules": [],
+        "shape": [
+          "회사",
+          "2025 영업이익률"
+        ],
+        "rows": 4,
+        "proves": "EDGAR 2025Q1~Q4 합산. 12월 결산 미국 방산 4개사의 영업이익률 비교입니다."
+      },
+      {
+        "order": 5,
+        "claim": "문제는 저피탐 부담이 출고 뒤 코팅 흠집, 패널 틈, 정비 품질로 더 오래 이어진다는 점입니다.",
+        "visualKind": "image",
+        "visualRole": "sceneSupport",
+        "dataExplanation": "",
+        "evidenceRefs": [],
+        "rules": [],
+        "proves": "문제는 저피탐 부담이 출고 뒤 코팅 흠집, 패널 틈, 정비 품질로 더 오래 이어진다는 점입니다."
+      },
+      {
+        "order": 6,
+        "claim": "한국 KF-21 라인 7.3% KAI 영업이익률: 그래서 한국 KF-21 라인은 역할별 손익이 갈립니다. KAI는 체계통합으로 7.3%, 한화시스템은 AESA와 ICT 믹스 때문에 3.3%, 한화에어로는 11.6%, LIG넥스원은 7.4%입니다.",
+        "visualKind": "table",
+        "visualRole": "dataEvidence",
+        "dataExplanation": "DART 2025Q1~Q4 합산. KF-21 주변 대표사의 역할별 영업이익률 비교입니다.",
+        "evidenceRefs": [
+          "검증표: KAI 2025 매출 3.70조원, 영업이익률 7.3%",
+          "검증표: 한화시스템 2025 매출 3.66조원, 영업이익률 3.3%",
+          "검증표: 한화에어로스페이스 2025 매출 26.70조원, 영업이익률 11.6%",
+          "검증표: LIG넥스원 2025 매출 4.31조원, 영업이익률 7.4%"
+        ],
+        "rules": [],
+        "shape": [
+          "회사",
+          "역할",
+          "2025 영업이익률"
+        ],
+        "rows": 4,
+        "proves": "DART 2025Q1~Q4 합산. KF-21 주변 대표사의 역할별 영업이익률 비교입니다."
+      },
+      {
+        "order": 7,
+        "claim": "결국 봐야 할 것은 멋진 기체 사진이 아니라 어느 회사가 형상, 코팅, 레이더, 전자전, 정비 병목을 쥐는가입니다.",
+        "visualKind": "image",
+        "visualRole": "sceneSupport",
+        "dataExplanation": "",
+        "evidenceRefs": [],
+        "rules": [],
+        "proves": "결국 봐야 할 것은 멋진 기체 사진이 아니라 어느 회사가 형상, 코팅, 레이더, 전자전, 정비 병목을 쥐는가입니다."
+      }
+    ],
+    "bodyPreview": "2026년 방산 뉴스를 보면 스텔스 전투기는 늘 \"보이지 않는 전투기\"처럼 소개된다. 그런데 이 표현은 절반만 맞다. 스텔스기는 사라지는 물체가 아니다. 레이더에 **작게 보이고, 늦게 보이고, 어느 방향에서는 더 헷갈리게 보이도록** 설계된 물체다. 투명망토가 아니라 신호를 관리하는 공학이다. 이 차이를 이해하면 전투기가 왜 각지게 생겼는지, 왜 무장을 몸 안에 넣는지, 왜 코팅 정비가 전투력의 일부가 되는지, 왜 한화시스템의 AESA 레이더나 KAI의 KF-21, 록히드마틴의 F-35, 노스롭그루먼의 B-21이 한 지도에 같이 놓이는지가 보인다. 스텔스는 한 회사의 제품명이 아니라 **형상, 소재, 센서, 전자전, 정비가 같은 표적 ",
+    "titleContract": {
+      "rules": [
+        "제목도 기획 루프의 산물이다. 후보 제목을 3개 이상 쓰고, 각 후보의 독자 후크와 약점을 비교한다.",
+        "제목은 독자가 이미 믿는 상식과 글이 갚을 질문 사이에 호기심 갭을 만들어야 한다.",
+        "선택 제목은 표지 첫 장과 같은 약속을 해야 하며, 마지막 카드와 본문 결론이 그 약속을 갚아야 한다.",
+        "정리·분석·이야기·총정리 같은 설명형 제목이나 돈을 못 번다식 반복 템플릿은 실패다."
+      ],
+      "workingTitle": "스텔스는 왜 '안 보이는 전투기'가 아닌가",
+      "selectedTitle": "스텔스는 왜 '안 보이는 전투기'가 아닌가",
+      "hookQuestion": "스텔스가 정말 안 보이는 전투기라면 왜 형상, 코팅, 센서, 정비가 모두 필요한가?",
+      "readerGap": "독자는 스텔스를 보이지 않는 전투기로 기억하지만, 실제 기술은 레이더에 작게 늦게 헷갈리게 보이도록 신호를 관리하는 시스템이다.",
+      "promise": "제목은 안 보인다는 상식을 열고, 마지막은 어느 회사가 형상·코팅·센서·정비 병목을 잡는지가 핵심이라는 판단으로 갚는다.",
+      "whySelected": "대중적 표현인 안 보이는 전투기를 앞에 두어 즉시 멈추게 하고, 답을 RCS·코팅·센서융합의 기술 지도까지 끌고 간다.",
+      "candidates": [
+        {
+          "title": "스텔스는 왜 '안 보이는 전투기'가 아닌가",
+          "hook": "독자가 이미 아는 안 보이는 전투기라는 표현을 뒤집어 첫 장의 질문을 만든다.",
+          "risk": "기술 독자가 보기에는 표현이 쉬워 보일 수 있어 부제에서 RCS·코팅·센서융합을 붙인다."
+        },
+        {
+          "title": "스텔스는 왜 비싼 전투기보다 어려운 정비 기술인가",
+          "hook": "출고 뒤 코팅과 패널 정비 부담을 전면에 세워 의외성을 만든다.",
+          "risk": "RCS와 센서융합까지 포괄하는 글의 범위가 정비로 좁아 보인다."
+        },
+        {
+          "title": "스텔스 전투기는 누가 만들고 누가 남기는가",
+          "hook": "기술 지도와 회사 숫자를 동시에 궁금하게 만든다.",
+          "risk": "누가 남기는가 프레임이 기존 돈 템플릿처럼 보일 수 있어 이번 글의 기술 중심성과 맞지 않는다."
+        }
+      ],
+      "rejectedPatterns": [
+        "스텔스 기술 이야기처럼 설명형으로만 끝나는 제목",
+        "스텔스는 누가 돈을 버나처럼 회사 수익만 앞세우는 반복 제목",
+        "스텔스 총정리처럼 표지를 넘길 질문이 없는 제목"
+      ]
+    }
+  },
+  "carousel": {
+    "slideCount": 7,
+    "layouts": [
+      "editorial",
+      "editorialBeat",
+      "editorialBeat",
+      "editorialStat",
+      "editorialBeat",
+      "editorialStat",
+      "editorialBeat"
+    ]
+  },
+  "imagePlan": [
+    {
+      "order": 1,
+      "assetKey": "scene-01-cover-hook",
+      "slideRefs": [
+        1
+      ],
+      "role": "cover-hook",
+      "scene": "story-specific opening scene for 스텔스 기술, making the article angle '스텔스는 사라지는 기술이 아닙니다.' visible through a concrete asset, place, or operation",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "planned",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/stealth-rcs-value-chain/scene-01-cover-hook.webp\nAsset key: scene-01-cover-hook\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 스텔스는 왜 '안 보이는 전투기'가 아닌가.\nStory title: 스텔스는 왜 '안 보이는 전투기'가 아닌가.\nCarousel role: cover-hook.\nImage subject: story-specific opening scene for 스텔스 기술, making the article angle '스텔스는 사라지는 기술이 아닙니다.' visible through a concrete asset, place, or operation.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 2,
+      "assetKey": "scene-02-narrative-turn",
+      "slideRefs": [
+        2
+      ],
+      "role": "narrative-turn",
+      "scene": "editorial business-news scene tied to 스텔스 기술, showing the turning point '레이더가 보낸 전파가 돌아오는 길을 꺾고 줄이는 것이 스텔스의 첫 원리입니다.' through physical work, demand, location, or operations",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "planned",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/stealth-rcs-value-chain/scene-02-narrative-turn.webp\nAsset key: scene-02-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 스텔스는 왜 '안 보이는 전투기'가 아닌가.\nStory title: 스텔스는 왜 '안 보이는 전투기'가 아닌가.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 스텔스 기술, showing the turning point '레이더가 보낸 전파가 돌아오는 길을 꺾고 줄이는 것이 스텔스의 첫 원리입니다.' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 3,
+      "assetKey": "scene-03-narrative-turn",
+      "slideRefs": [
+        3
+      ],
+      "role": "narrative-turn",
+      "scene": "editorial business-news scene tied to 스텔스 기술, showing the turning point '형상과 소재가 먼저 숨기고, 센서와 전자전이 뒤에서 시간을 삽니다.' through physical work, demand, location, or operations",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "planned",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/stealth-rcs-value-chain/scene-03-narrative-turn.webp\nAsset key: scene-03-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 스텔스는 왜 '안 보이는 전투기'가 아닌가.\nStory title: 스텔스는 왜 '안 보이는 전투기'가 아닌가.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 스텔스 기술, showing the turning point '형상과 소재가 먼저 숨기고, 센서와 전자전이 뒤에서 시간을 삽니다.' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 4,
+      "assetKey": "scene-04-number-evidence",
+      "slideRefs": [
+        4
+      ],
+      "role": "number-evidence",
+      "scene": "real-world 스텔스 기술 operation or evidence scene behind the number 'LMT 10.3%, NOC 10.8%, RTX 10.5%, GD 10.2%입니다. 스텔스 플랫폼은 비싸지만 주계약사의 남는 몫은 정부 조달 구조 안에서 모입니다.', using physical production, facility, customer, or supply-chain context instead of charts",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "planned",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/stealth-rcs-value-chain/scene-04-number-evidence.webp\nAsset key: scene-04-number-evidence\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 스텔스는 왜 '안 보이는 전투기'가 아닌가.\nStory title: 스텔스는 왜 '안 보이는 전투기'가 아닌가.\nCarousel role: number-evidence.\nImage subject: real-world 스텔스 기술 operation or evidence scene behind the number 'LMT 10.3%, NOC 10.8%, RTX 10.5%, GD 10.2%입니다. 스텔스 플랫폼은 비싸지만 주계약사의 남는 몫은 정부 조달 구조 안에서 모입니다.', using physical production, facility, customer, or supply-chain context instead of charts.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 5,
+      "assetKey": "scene-05-narrative-turn",
+      "slideRefs": [
+        5
+      ],
+      "role": "narrative-turn",
+      "scene": "editorial business-news scene tied to 스텔스 기술, showing the turning point '그런데 저피탐의 부담은 출고 뒤에 더 오래갑니다.' through physical work, demand, location, or operations",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "planned",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/stealth-rcs-value-chain/scene-05-narrative-turn.webp\nAsset key: scene-05-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 스텔스는 왜 '안 보이는 전투기'가 아닌가.\nStory title: 스텔스는 왜 '안 보이는 전투기'가 아닌가.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 스텔스 기술, showing the turning point '그런데 저피탐의 부담은 출고 뒤에 더 오래갑니다.' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 6,
+      "assetKey": "scene-06-number-evidence",
+      "slideRefs": [
+        6
+      ],
+      "role": "number-evidence",
+      "scene": "real-world 스텔스 기술 operation or evidence scene behind the number 'KAI는 체계통합으로 7.3%, 한화시스템은 AESA와 ICT 믹스 때문에 3.3%, 한화에어로는 11.6%, LIG넥스원은 7.4%입니다.', using physical production, facility, customer, or supply-chain context instead of charts",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "planned",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/stealth-rcs-value-chain/scene-06-number-evidence.webp\nAsset key: scene-06-number-evidence\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 스텔스는 왜 '안 보이는 전투기'가 아닌가.\nStory title: 스텔스는 왜 '안 보이는 전투기'가 아닌가.\nCarousel role: number-evidence.\nImage subject: real-world 스텔스 기술 operation or evidence scene behind the number 'KAI는 체계통합으로 7.3%, 한화시스템은 AESA와 ICT 믹스 때문에 3.3%, 한화에어로는 11.6%, LIG넥스원은 7.4%입니다.', using physical production, facility, customer, or supply-chain context instead of charts.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 7,
+      "assetKey": "scene-07-closing-checkpoint",
+      "slideRefs": [
+        7
+      ],
+      "role": "closing-checkpoint",
+      "scene": "quiet final-check scene tied to 스텔스 기술 for the reader to verify '스텔스는 형상, 코팅, 레이더, 전자전, 정비가 같은 표적 신호를 줄이는 시스템입니다.', such as documents, equipment, facility context, or customer workflow",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "planned",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/stealth-rcs-value-chain/scene-07-closing-checkpoint.webp\nAsset key: scene-07-closing-checkpoint\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 스텔스는 왜 '안 보이는 전투기'가 아닌가.\nStory title: 스텔스는 왜 '안 보이는 전투기'가 아닌가.\nCarousel role: closing-checkpoint.\nImage subject: quiet final-check scene tied to 스텔스 기술 for the reader to verify '스텔스는 형상, 코팅, 레이더, 전자전, 정비가 같은 표적 신호를 줄이는 시스템입니다.', such as documents, equipment, facility context, or customer workflow.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    }
+  ],
+  "imagegen": {
+    "tool": "GPT image_gen",
+    "generationRule": "각 imagePlan.prompt 를 한 장씩 image_gen 으로 생성한다. 프롬프트는 그 글의 회사·사건·장소·운영 질문을 상징하는 실제 사용용 이미지를 목표로 하며, 범용 금융 배경은 탈락시킨다.",
+    "extractCommand": "uv run python -X utf8 sns/scripts/extractImagegenAssets.py stealth-rcs-value-chain --count 7 --names scene-01-cover-hook,scene-02-narrative-turn,scene-03-narrative-turn,scene-04-number-evidence,scene-05-narrative-turn,scene-06-number-evidence,scene-07-closing-checkpoint --keywords \"스텔스 기술,stealth-rcs-value-chain\"",
+    "checkCommand": "uv run python -X utf8 sns/scripts/checkImagegenAssets.py stealth-rcs-value-chain",
+    "publishCommands": [
+      "uv run python -X utf8 sns/scripts/build_index.py",
+      "uv run python -X utf8 sns/scripts/publish_assets_hf.py",
+      "uv run python -X utf8 blog/_scripts/build_carousel_contracts.py"
+    ]
+  },
+  "reviewGate": {
+    "status": "passed",
+    "requiredRounds": [
+      {
+        "id": "titleHook",
+        "purpose": "제목 후보 3개 이상을 비교하고, 선택 제목이 독자의 상식과 글이 갚을 질문 사이에 호기심 갭을 만드는지 본다. 정리·분석·이야기·돈을 못 번다식 반복 제목이면 실패다.",
+        "status": "passed"
+      },
+      {
+        "id": "writerPanel",
+        "purpose": "표지 후크(호기심 갭), 서사 스파인, 앞장-다음장의 긴장 전진(연결만이 아니라 매 장이 질문을 얹거나 갚는가), 인사이트(통념과 충돌하는 사실 + 메커니즘 + 독자 렌즈), 표지 약속을 마지막이 갚는가(promise·payoff), 쉬운 말·문장 리듬을 본다. 순서를 바꿔도 말이 되는 덱, 충돌 사실만 던지고 끝나는 덱, 체크리스트식 나열은 실패다.",
+        "status": "passed"
+      },
+      {
+        "id": "honestyEvidence",
+        "purpose": "슬라이드 숫자와 주장 근거가 블로그 본문/검증표에 있는지 본다.",
+        "status": "passed"
+      },
+      {
+        "id": "imageFit",
+        "purpose": "글 assets의 대표 실사 2장과 SVG 5장이 스텔스 형상·코팅 정비·RCS 원리·회사 지도·재무 비교를 실제로 설명하는지, 가짜 공식 로고·텍스트·도식 오용이 없는지 본다.",
+        "status": "passed"
+      },
+      {
+        "id": "readerFit",
+        "purpose": "처음 보는 독자가 첫 장부터 마지막 장까지 끊기지 않고 자연스럽게 읽으며 관전 포인트를 이해하는지 본다. 어려운 약어가 남으면 실패다.",
+        "status": "passed"
+      },
+      {
+        "id": "reevaluation",
+        "purpose": "수정 후 같은 패널이 다시 보고 발행 가능 여부를 닫는다.",
+        "status": "passed"
+      }
+    ],
+    "decisionLog": [
+      {
+        "round": "writerPanel",
+        "decision": "passed",
+        "note": "표지의 '사라지는 기술이 아니다'가 RCS 원리, 형상·소재, 미국 주계약사 재무표, 정비 부담, 한국 KF-21 라인으로 이어진다. 구조 라벨 없이 큰문장이 이어진다."
+      },
+      {
+        "round": "honestyEvidence",
+        "decision": "passed",
+        "note": "숫자 슬라이드는 본문 검증표의 DART·EDGAR 합산 수치만 사용했다. EDGAR는 12월 결산 5사에 한정하고, 결산월·분기 라벨 주의사항을 pinnedComment와 검증표에 명시했다."
+      },
+      {
+        "round": "imageFit",
+        "decision": "passed",
+        "note": "대표 실사 이미지는 저피탐 격납고와 코팅 정비 장면으로 글의 기술 질문을 직접 보여준다. SVG 5장은 원리, 스택, 회사 배치, 영업이익률 비교, 탐지 대응을 맡는다."
+      },
+      {
+        "round": "readerFit",
+        "decision": "passed",
+        "note": "RCS와 AESA는 explainers와 본문 첫 등장 설명으로 풀었고, OPM 약어는 카드 문장에서는 영업이익률로 바꿨다."
+      },
+      {
+        "round": "reevaluation",
+        "decision": "passed",
+        "note": "데이터 주장 카드에 table visual과 evidenceRefs를 붙인 뒤 발행 가능으로 닫았다."
+      }
+    ]
+  }
+}
