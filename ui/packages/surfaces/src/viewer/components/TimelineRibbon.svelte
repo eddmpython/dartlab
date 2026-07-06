@@ -70,7 +70,7 @@
 		border: 1px solid #1e2433;
 		border-radius: 5px;
 		background: #050811;
-		color: #94a3b8;
+		color: #cbd5e1;
 		cursor: pointer;
 	}
 	.chev:hover:not(:disabled) {
@@ -101,14 +101,14 @@
 		border-top-color: #1e2433;
 		border-bottom-color: #1e2433;
 		background: transparent;
-		color: #64748b;
+		color: #94a3b8;
 		cursor: pointer;
 		white-space: nowrap;
 		transition: background 0.12s, color 0.12s;
 	}
 	.chip:hover {
 		background: rgba(var(--amber-rgb), 0.06);
-		color: #cbd5e1;
+		color: #e2e8f0;
 	}
 	.chip.in-window {
 		background: rgba(var(--amber-rgb), 0.12);

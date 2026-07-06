@@ -189,7 +189,7 @@
 		border: 1px solid #1e2433;
 		border-radius: 5px;
 		background: #050811;
-		color: #94a3b8;
+		color: #cbd5e1;
 		font: inherit;
 		font-size: 12px;
 		cursor: pointer;
@@ -201,7 +201,7 @@
 	.kbd-hint kbd {
 		font-family: monospace;
 		font-size: 10px;
-		color: #64748b;
+		color: #94a3b8;
 		border: 1px solid #263145;
 		border-radius: 3px;
 		padding: 1px 4px;
@@ -235,7 +235,7 @@
 		gap: 8px;
 		padding: 12px 14px;
 		border-bottom: 1px solid #1e2433;
-		color: #64748b;
+		color: #94a3b8;
 	}
 	.palette-input {
 		flex: 1;
@@ -247,7 +247,7 @@
 		font-size: 14px;
 	}
 	.palette-input::placeholder {
-		color: #475569;
+		color: #64748b;
 	}
 	.exp-toggle {
 		flex-shrink: 0;
@@ -255,7 +255,7 @@
 		border: 1px solid #1e2433;
 		border-radius: 5px;
 		background: transparent;
-		color: #64748b;
+		color: #94a3b8;
 		font: inherit;
 		font-size: 11px;
 		cursor: pointer;
@@ -274,7 +274,7 @@
 	}
 	.chip {
 		font-size: 11px;
-		color: #94a3b8;
+		color: #cbd5e1;
 		background: rgba(148, 163, 184, 0.1);
 		border-radius: 4px;
 		padding: 2px 7px;
@@ -287,11 +287,11 @@
 		padding: 18px 12px;
 		text-align: center;
 		font-size: 12px;
-		color: #64748b;
+		color: #94a3b8;
 	}
 	.hint b {
 		font-family: monospace;
-		color: #94a3b8;
+		color: #cbd5e1;
 	}
 	.row {
 		display: block;
@@ -301,7 +301,7 @@
 		border: none;
 		border-radius: 6px;
 		background: transparent;
-		color: #cbd5e1;
+		color: #e2e8f0;
 		font: inherit;
 		cursor: pointer;
 	}
@@ -329,12 +329,12 @@
 		flex-shrink: 0;
 		font-family: monospace;
 		font-size: 11px;
-		color: #64748b;
+		color: #94a3b8;
 	}
 	.row-snippet {
 		margin-top: 3px;
 		font-size: 11px;
-		color: #64748b;
+		color: #94a3b8;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;

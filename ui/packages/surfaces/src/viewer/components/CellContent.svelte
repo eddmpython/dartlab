@@ -90,7 +90,7 @@
 		overflow-wrap: anywhere;
 		font-size: 13px;
 		line-height: 1.55;
-		color: #cbd5e1;
+		color: #e2e8f0;
 	}
 	.narrative mark {
 		padding: 0 2px;
@@ -115,12 +115,12 @@
 		color: #e2e8f0;
 	}
 	.unit {
-		color: #94a3b8;
+		color: #cbd5e1;
 	}
 	.dartlab-html {
 		overflow-x: auto;
 		font-size: 12px;
-		color: #cbd5e1;
+		color: #e2e8f0;
 	}
 	.dartlab-html :global(table) {
 		border-collapse: collapse;

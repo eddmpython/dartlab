@@ -56,7 +56,7 @@
 		top: 0;
 		z-index: 20;
 		background: var(--fin-bg-raised, #0d1320);
-		color: var(--fin-txt-soft, #cbd5e1);
+		color: var(--fin-txt-soft, #e2e8f0);
 		font-weight: 600;
 		text-align: right;
 	}
@@ -71,7 +71,7 @@
 		left: 0;
 		z-index: 10;
 		background: var(--fin-bg-acct, #070b15);
-		color: var(--fin-txt-soft, #cbd5e1);
+		color: var(--fin-txt-soft, #e2e8f0);
 		font-weight: 400;
 		text-align: left;
 		max-width: 280px;
@@ -100,7 +100,7 @@
 		color: #f87171;
 	}
 	.val.nil {
-		color: #475569;
+		color: #64748b;
 	}
 	/* 구조 · 총계(isTotal) 굵게+상단 보더, 소계(비총계 depth≤1) 굵게. 들여쓰기는 depth(inline padding-left). */
 	tr.total .acct-c,

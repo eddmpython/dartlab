@@ -77,7 +77,7 @@
 		border: 1px solid #1e2433;
 		border-radius: 5px;
 		background: #050811;
-		color: #94a3b8;
+		color: #cbd5e1;
 		font: inherit;
 		font-size: 11px;
 		cursor: pointer;
@@ -113,7 +113,7 @@
 	}
 	.dp-h {
 		font-size: 10px;
-		color: #64748b;
+		color: #94a3b8;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		margin-bottom: 2px;
@@ -137,7 +137,7 @@
 	.dp-sub {
 		margin-top: 4px;
 		font-size: 9px;
-		color: #475569;
+		color: #64748b;
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
 	}
@@ -157,10 +157,10 @@
 	}
 	.dp-ext {
 		font-size: 10px;
-		color: #64748b;
+		color: #94a3b8;
 	}
 	.dp-ds {
-		color: #cbd5e1;
+		color: #e2e8f0;
 	}
 	.dp-policy {
 		display: flex;
@@ -171,10 +171,10 @@
 		border-top: 1px solid #1e2433;
 		font-size: 10px;
 		line-height: 1.5;
-		color: #94a3b8;
+		color: #cbd5e1;
 	}
 	.dp-policy b {
-		color: #cbd5e1;
+		color: #e2e8f0;
 		font-weight: 600;
 	}
 	.dp-warn {

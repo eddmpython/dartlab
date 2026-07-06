@@ -280,29 +280,29 @@
 		white-space: nowrap;
 	}
 	.fp-title span {
-		color: #64748b;
+		color: #94a3b8;
 		font-family: monospace;
 		font-size: 11px;
 	}
 	.fp-title em {
-		color: #94a3b8;
+		color: #cbd5e1;
 		font-size: 12px;
 		font-style: normal;
 	}
 	.fp-title em::before {
 		content: '·';
 		margin-right: 6px;
-		color: #475569;
+		color: #64748b;
 	}
 	.fp-meta {
 		flex-shrink: 0;
-		color: #94a3b8;
+		color: #cbd5e1;
 		font-size: 11px;
 	}
 	.fp-meta span + span::before {
 		content: '·';
 		margin-right: 8px;
-		color: #475569;
+		color: #64748b;
 	}
 	.controls {
 		flex-shrink: 0;
@@ -326,13 +326,13 @@
 		border: 1px solid transparent;
 		border-radius: var(--fin-radius, 6px);
 		background: transparent;
-		color: var(--fin-dim, #94a3b8);
+		color: var(--fin-dim, #cbd5e1);
 		font: inherit;
 		font-size: 12px;
 		cursor: pointer;
 	}
 	.tab:hover {
-		color: #cbd5e1;
+		color: #e2e8f0;
 	}
 	.tab.active {
 		background: rgba(var(--amber-rgb), 0.12);
@@ -352,13 +352,13 @@
 		border: none;
 		border-radius: var(--fin-radius, 4px);
 		background: transparent;
-		color: var(--fin-dim, #94a3b8);
+		color: var(--fin-dim, #cbd5e1);
 		font: inherit;
 		font-size: 11px;
 		cursor: pointer;
 	}
 	.seg-btn:hover {
-		color: #cbd5e1;
+		color: #e2e8f0;
 	}
 	.seg-btn.active {
 		background: rgba(var(--amber-rgb), 0.14);
@@ -377,7 +377,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 12px;
-		color: var(--fin-dim, #94a3b8);
+		color: var(--fin-dim, #cbd5e1);
 		text-align: center;
 	}
 	.state p {

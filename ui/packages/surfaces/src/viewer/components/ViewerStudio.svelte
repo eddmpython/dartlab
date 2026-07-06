@@ -660,13 +660,13 @@
 	.ph-code {
 		flex-shrink: 0;
 		font-size: 11px;
-		color: #64748b;
+		color: #94a3b8;
 		font-family: monospace;
 	}
 	.ph-section {
 		min-width: 0;
 		font-size: 12px;
-		color: #94a3b8;
+		color: #cbd5e1;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -674,7 +674,7 @@
 	.ph-section::before {
 		content: '·';
 		margin-right: 6px;
-		color: #475569;
+		color: #64748b;
 	}
 	.ph-right {
 		display: flex;
@@ -684,7 +684,7 @@
 	}
 	.meta {
 		font-size: 11px;
-		color: #94a3b8;
+		color: #cbd5e1;
 		white-space: nowrap;
 	}
 	.cols {
@@ -694,20 +694,20 @@
 		padding: 2px 4px 2px 6px;
 		border: 1px solid #1e2433;
 		border-radius: 5px;
-		color: #64748b;
+		color: #94a3b8;
 	}
 	.col-btn {
 		padding: 2px 6px;
 		border: none;
 		border-radius: 4px;
 		background: transparent;
-		color: #94a3b8;
+		color: #cbd5e1;
 		font-family: monospace;
 		font-size: 11px;
 		cursor: pointer;
 	}
 	.col-btn:hover {
-		color: #cbd5e1;
+		color: #e2e8f0;
 	}
 	.col-btn.active {
 		background: rgba(var(--amber-rgb), 0.14);
@@ -722,7 +722,7 @@
 		border: 1px solid #1e2433;
 		border-radius: 5px;
 		background: #050811;
-		color: #94a3b8;
+		color: #cbd5e1;
 		font: inherit;
 		font-size: 11px;
 		cursor: pointer;
@@ -762,7 +762,7 @@
 		border-radius: 12px;
 		background: #0a0e18;
 		font-size: 12px;
-		color: #cbd5e1;
+		color: #e2e8f0;
 		white-space: nowrap;
 	}
 	.chip.ref {
@@ -786,7 +786,7 @@
 		border: none;
 		border-radius: 50%;
 		background: transparent;
-		color: #64748b;
+		color: #94a3b8;
 		cursor: pointer;
 		padding: 0;
 	}
@@ -812,14 +812,14 @@
 		border-radius: 6px;
 		font-size: 11px;
 		line-height: 1.55;
-		color: #cbd5e1;
+		color: #e2e8f0;
 	}
 	.add-hint b {
 		color: var(--dl-accent-light);
 		font-weight: 700;
 	}
 	.add-eg {
-		color: #64748b;
+		color: #94a3b8;
 		font-size: 10px;
 	}
 	/* 종목검색 팝오버 · 화면내검색(⌘K)과 분리된 회사전환 입력 */
@@ -839,7 +839,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 12px;
-		color: #94a3b8;
+		color: #cbd5e1;
 		font-size: 13px;
 	}
 	.annual-btn {
@@ -848,7 +848,7 @@
 		border: 1px solid #1e2433;
 		border-radius: 5px;
 		background: #050811;
-		color: #94a3b8;
+		color: #cbd5e1;
 		font: inherit;
 		font-size: 11px;
 		cursor: pointer;
@@ -880,7 +880,7 @@
 		border-bottom: 1px solid rgba(var(--amber-rgb), 0.25);
 		font-size: 11px;
 		line-height: 1.45;
-		color: #cbd5e1;
+		color: #e2e8f0;
 	}
 	.cmp-hint b {
 		color: var(--dl-accent-light);
@@ -893,7 +893,7 @@
 		padding: 2px;
 		background: none;
 		border: none;
-		color: #64748b;
+		color: #94a3b8;
 		cursor: pointer;
 		flex-shrink: 0;
 	}
@@ -916,7 +916,7 @@
 		filter: drop-shadow(0 4px 16px rgba(var(--amber-rgb), 0.18));
 	}
 	.state p {
-		color: #94a3b8;
+		color: #cbd5e1;
 		font-size: 13px;
 		margin: 0;
 	}

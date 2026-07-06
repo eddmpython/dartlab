@@ -122,12 +122,12 @@
 	.dh-sub {
 		flex-shrink: 0;
 		font-size: 11px;
-		color: #94a3b8;
+		color: #cbd5e1;
 	}
 	.dh-sub::before {
 		content: '·';
 		margin-right: 6px;
-		color: #475569;
+		color: #64748b;
 	}
 	.dh-close {
 		flex-shrink: 0;
@@ -139,7 +139,7 @@
 		border: 1px solid #1e2433;
 		border-radius: 6px;
 		background: transparent;
-		color: #94a3b8;
+		color: #cbd5e1;
 		cursor: pointer;
 	}
 	.dh-close:hover {
@@ -156,7 +156,7 @@
 		margin: 14px 2px 0;
 		font-size: 11px;
 		line-height: 1.7;
-		color: #64748b;
+		color: #94a3b8;
 	}
 	.dhint a {
 		color: var(--amber);

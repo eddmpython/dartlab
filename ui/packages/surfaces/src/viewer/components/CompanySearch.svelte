@@ -116,7 +116,7 @@
 		line-height: 1;
 	}
 	.search-input::placeholder {
-		color: #475569;
+		color: #64748b;
 	}
 	.search-input:focus {
 		outline: none;
@@ -168,7 +168,7 @@
 		border: none;
 		border-radius: 4px;
 		background: transparent;
-		color: #cbd5e1;
+		color: #e2e8f0;
 		font: inherit;
 		font-size: 12px;
 		text-align: left;
@@ -183,7 +183,7 @@
 		flex-shrink: 0;
 		font-family: monospace;
 		font-size: 10px;
-		color: #64748b;
+		color: #94a3b8;
 	}
 	.opt.active .opt-code,
 	.opt:hover .opt-code {

@@ -88,7 +88,7 @@
 		padding: 24px;
 		text-align: center;
 		font-size: 12px;
-		color: #64748b;
+		color: #94a3b8;
 	}
 	.matrix-scroll {
 		height: 100%;
@@ -127,7 +127,7 @@
 	.code {
 		font-family: monospace;
 		font-size: 10px;
-		color: #64748b;
+		color: #94a3b8;
 	}
 	.head-actions {
 		margin-left: auto;
@@ -138,7 +138,7 @@
 	}
 	.src-link {
 		font-size: 10px;
-		color: #64748b;
+		color: #94a3b8;
 		text-decoration: none;
 		white-space: nowrap;
 	}
@@ -152,7 +152,7 @@
 		background: none;
 		border: none;
 		border-radius: 3px;
-		color: #475569;
+		color: #64748b;
 		cursor: pointer;
 	}
 	.rm-btn:hover {
@@ -177,7 +177,7 @@
 		}
 	}
 	.body-cell {
-		color: #cbd5e1;
+		color: #e2e8f0;
 		max-height: 520px;
 		overflow: auto;
 	}
@@ -186,7 +186,7 @@
 	}
 	.gap-mark {
 		font-size: 11px;
-		color: #475569;
+		color: #64748b;
 		font-style: italic;
 	}
 </style>

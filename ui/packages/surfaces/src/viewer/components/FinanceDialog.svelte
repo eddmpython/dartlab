@@ -82,12 +82,12 @@
 	}
 	.mh-sub {
 		font-size: 11px;
-		color: var(--fin-dim, #94a3b8);
+		color: var(--fin-dim, #cbd5e1);
 	}
 	.mh-sub::before {
 		content: '·';
 		margin-right: 6px;
-		color: #475569;
+		color: #64748b;
 	}
 	.mh-close {
 		flex-shrink: 0;
@@ -99,7 +99,7 @@
 		border: 1px solid var(--fin-bd, #1e2433);
 		border-radius: var(--fin-radius, 6px);
 		background: transparent;
-		color: var(--fin-dim, #94a3b8);
+		color: var(--fin-dim, #cbd5e1);
 		cursor: pointer;
 	}
 	.mh-close:hover {

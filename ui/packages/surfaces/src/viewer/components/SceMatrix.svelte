@@ -55,7 +55,7 @@
 		top: 0;
 		z-index: 20;
 		background: #0d1320;
-		color: #cbd5e1;
+		color: #e2e8f0;
 		font-weight: 600;
 	}
 	.comp-h {
@@ -68,7 +68,7 @@
 		left: 0;
 		z-index: 10;
 		background: #070b15;
-		color: #cbd5e1;
+		color: #e2e8f0;
 		text-align: left;
 		font-weight: 400;
 		max-width: 240px;
@@ -94,7 +94,7 @@
 		color: #f87171;
 	}
 	.val.nil {
-		color: #475569;
+		color: #64748b;
 	}
 	.comp-h.tot,
 	.val.tot {

@@ -267,7 +267,7 @@
 		border: 1px solid #1e2433;
 		border-radius: 999px;
 		background: #050811;
-		color: #94a3b8;
+		color: #cbd5e1;
 		font-size: 10px;
 		font-weight: 600;
 	}
@@ -280,7 +280,7 @@
 		border: 1px solid #1e2433;
 		border-radius: 6px;
 		background: transparent;
-		color: #94a3b8;
+		color: #cbd5e1;
 		cursor: pointer;
 	}
 	.ed-x:hover {
@@ -319,7 +319,7 @@
 		margin: 0;
 		font-size: 11.5px;
 		line-height: 1.6;
-		color: #94a3b8;
+		color: #cbd5e1;
 	}
 	.ob-sub b {
 		color: var(--dl-accent-light);
@@ -354,7 +354,7 @@
 	.grip {
 		display: inline-flex;
 		align-items: center;
-		color: #475569;
+		color: #64748b;
 		cursor: grab;
 		flex-shrink: 0;
 	}
@@ -362,7 +362,7 @@
 		cursor: grabbing;
 	}
 	.grip:hover {
-		color: #94a3b8;
+		color: #cbd5e1;
 	}
 	.sh-name {
 		flex: 1 1 auto;
@@ -385,7 +385,7 @@
 	.sh-counter {
 		flex-shrink: 0;
 		font-size: 9.5px;
-		color: #475569;
+		color: #64748b;
 		font-variant-numeric: tabular-nums;
 	}
 	.sh-counter.warn {
@@ -400,7 +400,7 @@
 		border: 1px solid #1e2433;
 		border-radius: 5px;
 		background: transparent;
-		color: #64748b;
+		color: #94a3b8;
 		cursor: pointer;
 	}
 	.sh-x:hover {
@@ -427,14 +427,14 @@
 		border: none;
 		border-radius: 4px;
 		background: transparent;
-		color: #94a3b8;
+		color: #cbd5e1;
 		font: inherit;
 		font-size: 11px;
 		cursor: pointer;
 		white-space: nowrap;
 	}
 	.mode-opt:hover {
-		color: #cbd5e1;
+		color: #e2e8f0;
 	}
 	.mode-opt.on {
 		background: rgba(var(--amber-rgb), 0.14);
@@ -447,7 +447,7 @@
 		border: 1px solid #1e2433;
 		border-radius: 999px;
 		background: #050811;
-		color: #94a3b8;
+		color: #cbd5e1;
 		font-size: 10px;
 		font-family: monospace;
 		white-space: nowrap;
@@ -468,13 +468,13 @@
 		padding: 2px 4px;
 		border: none;
 		background: transparent;
-		color: #94a3b8;
+		color: #cbd5e1;
 		font: inherit;
 		font-size: 11.5px;
 		cursor: pointer;
 	}
 	.opt-row:hover {
-		color: #cbd5e1;
+		color: #e2e8f0;
 	}
 	.opt-row.on {
 		color: #34d399;
@@ -516,17 +516,17 @@
 	}
 	.live-count {
 		font-size: 11px;
-		color: #94a3b8;
+		color: #cbd5e1;
 		font-variant-numeric: tabular-nums;
 	}
 	.ed-note {
 		margin: 0;
 		font-size: 10px;
-		color: #475569;
+		color: #64748b;
 		line-height: 1.4;
 	}
 	.ed-tier {
-		color: #64748b;
+		color: #94a3b8;
 		line-height: 1.5;
 	}
 	.ed-install {

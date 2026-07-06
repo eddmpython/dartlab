@@ -138,7 +138,7 @@
 		padding: 24px;
 		text-align: center;
 		font-size: 12px;
-		color: #64748b;
+		color: #94a3b8;
 	}
 	.matrix-scroll {
 		height: 100%;
@@ -182,7 +182,7 @@
 		border: 1px solid #263145;
 		border-radius: 4px;
 		font-size: 10px;
-		color: #94a3b8;
+		color: #cbd5e1;
 		text-decoration: none;
 		white-space: nowrap;
 	}
@@ -192,7 +192,7 @@
 	}
 	.body-cell {
 		position: relative; /* pick-box 오버레이 앵커 (체크박스 absolute, 레이아웃 시프트 0). */
-		color: #cbd5e1;
+		color: #e2e8f0;
 	}
 	/* steady 강조 + 펄스 · 스크롤 도착 시점에 확실히 보이게(옛 t0 fade 레이스 제거). 수명은 JS(glowKey)가 제어. */
 	.body-cell.glow {
@@ -215,7 +215,7 @@
 		width: 20px;
 		height: 20px;
 		padding: 0;
-		border: 1px solid #475569;
+		border: 1px solid #64748b;
 		border-radius: 4px;
 		background: rgba(5, 8, 17, 0.82);
 		color: var(--amber);

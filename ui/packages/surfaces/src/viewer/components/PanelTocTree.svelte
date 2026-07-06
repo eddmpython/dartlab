@@ -69,7 +69,7 @@
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		color: #64748b;
+		color: #94a3b8;
 	}
 	.sections {
 		display: flex;
@@ -86,7 +86,7 @@
 		border: 1px solid transparent;
 		border-radius: 5px;
 		background: transparent;
-		color: #94a3b8;
+		color: #cbd5e1;
 		font: inherit;
 		font-size: 12px;
 		cursor: pointer;
@@ -94,7 +94,7 @@
 	}
 	.section:hover {
 		background: rgba(var(--amber-rgb), 0.06);
-		color: #cbd5e1;
+		color: #e2e8f0;
 	}
 	.section.active {
 		background: rgba(var(--amber-rgb), 0.1);
@@ -103,7 +103,7 @@
 		font-weight: 600;
 	}
 	.section.open:not(.active) {
-		color: #cbd5e1;
+		color: #e2e8f0;
 	}
 	.section-name {
 		flex: 1 1 auto;
@@ -117,7 +117,7 @@
 		padding: 0 5px;
 		border-radius: 9px;
 		background: rgba(148, 163, 184, 0.12);
-		color: #64748b;
+		color: #94a3b8;
 		font-size: 10px;
 		font-weight: 600;
 		text-align: center;
@@ -139,7 +139,7 @@
 		border: 1px solid transparent;
 		border-radius: 5px;
 		background: transparent;
-		color: #748094;
+		color: #94a3b8;
 		font: inherit;
 		font-size: 11.5px;
 		cursor: pointer;
@@ -147,7 +147,7 @@
 	}
 	.block:hover {
 		background: rgba(var(--amber-rgb), 0.06);
-		color: #cbd5e1;
+		color: #e2e8f0;
 	}
 	.block.active {
 		background: rgba(var(--amber-rgb), 0.12);
