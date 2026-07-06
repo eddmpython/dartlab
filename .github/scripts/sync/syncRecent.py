@@ -13,7 +13,6 @@
   DARTLAB_DATA_DIR: 데이터 저장 경로 (기본: ./data)
 """
 
-import hashlib
 import os
 import sys
 import time
@@ -21,22 +20,15 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 
-def _fileHash(path: Path) -> str:
-    """파일 SHA-256 해시 (첫 64KB + 파일크기)."""
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        h.update(f.read(65536))
-        h.update(str(path.stat().st_size).encode())
-    return h.hexdigest()
-
-
 def _snapshotHashes(directory: Path, targets: set[str]) -> dict[str, str]:
-    """특정 종목코드 파일만 해시 스냅샷."""
+    """특정 종목코드 파일만 해시 스냅샷 (pipeline.hashing.partialFileHash SSOT)."""
+    from dartlab.pipeline.hashing import partialFileHash
+
     result = {}
     for sc in targets:
         p = directory / f"{sc}.parquet"
         if p.exists():
-            result[p.name] = _fileHash(p)
+            result[p.name] = partialFileHash(p)
     return result
 
 

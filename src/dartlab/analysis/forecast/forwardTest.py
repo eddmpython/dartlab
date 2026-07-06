@@ -89,7 +89,7 @@ def saveForecast(record: ForwardTestRecord) -> Path:
     Returns
     -------
     Path
-        저장된 파일 경로 (~/.dartlab/forward_tests/{stockCode}.json).
+        저장된 파일 경로 (기록 루트[DARTLAB_DATA_DIR > ./data] 아래 forwardTests/{stockCode}.json).
 
     Guide:
         예측 실행 직후 호출해 사후 평가용 ground truth 와 비교 자료 누적.
@@ -161,7 +161,7 @@ def loadRecords(stockCode: str) -> list[ForwardTestRecord]:
         _loadRaw → dict → dataclass 복원. 깨진 레코드는 debug 로그 후 스킵.
 
     Requires:
-        ~/.dartlab/forward_tests/ 디렉토리 읽기 가능.
+        기록 루트(DARTLAB_DATA_DIR > ./data) 아래 forwardTests/ 디렉토리 읽기 가능.
 
     Raises:
         없음. 파일 없으면 빈 리스트.

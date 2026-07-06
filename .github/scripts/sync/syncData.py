@@ -12,7 +12,6 @@
   DARTLAB_DATA_DIR: 데이터 저장 경로 (기본: ./data)
 """
 
-import hashlib
 import os
 import shutil
 import subprocess
@@ -76,20 +75,13 @@ def _cloneExisting(category: str, dataDir: str) -> int:
     return existing
 
 
-def _fileHash(path: Path) -> str:
-    """파일 SHA-256 해시 (첫 64KB만 — 빠른 변경 감지용)."""
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        h.update(f.read(65536))
-        h.update(str(path.stat().st_size).encode())
-    return h.hexdigest()
-
-
 def _snapshotHashes(directory: Path) -> dict[str, str]:
-    """디렉토리 내 parquet 파일 해시 스냅샷."""
+    """디렉토리 내 parquet 해시 스냅샷 (pipeline.hashing.partialFileHash SSOT, 앞 64KB+크기 빠른 변경감지)."""
+    from dartlab.pipeline.hashing import partialFileHash
+
     if not directory.exists():
         return {}
-    return {f.name: _fileHash(f) for f in directory.glob("*.parquet")}
+    return {f.name: partialFileHash(f) for f in directory.glob("*.parquet")}
 
 
 def main():

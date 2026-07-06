@@ -35,6 +35,35 @@ def fileHash(path: Path, *, chunkSize: int = 1 << 20) -> str:
     return h.hexdigest()
 
 
+def partialFileHash(path: Path, *, headBytes: int = 65536) -> str:
+    """파일 앞부분(headBytes) + 크기의 SHA-256 해시(빠른 변경 감지용, 전체 read 회피).
+
+    대형 parquet 을 매 sync 마다 전량 해시하지 않고 앞 64KB + 파일크기로 변경을 추정한다. 같은 run 의
+    before/after 스냅샷 diff(diffChanged) 전용. 앞부분+크기 동일한 내용변경은 놓칠 수 있으나(설계 트레이드
+    오프) 재빌드 산출은 크기/헤더가 함께 바뀌어 실무상 충분. 영구 무결성엔 fileHash(전체 blake2b) 사용.
+    syncData·syncNewStocks·syncRecent 공유 SSOT(옛 각 스크립트 로컬 _fileHash 복붙 통합).
+
+    Args:
+        path: 대상 파일.
+        headBytes: 해시에 넣을 앞부분 바이트(기본 64KB).
+
+    Returns:
+        hex digest 문자열.
+
+    Raises:
+        OSError: 읽기 실패.
+
+    Example:
+        >>> isinstance(partialFileHash(Path(__file__)), str)
+        True
+    """
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        h.update(f.read(headBytes))
+    h.update(str(path.stat().st_size).encode())
+    return h.hexdigest()
+
+
 def snapshotHashes(root: Path, *, pattern: str = "**/*.parquet") -> dict[str, str]:
     """``root`` 하위 매칭 파일의 {상대경로: 해시} 스냅샷.
 

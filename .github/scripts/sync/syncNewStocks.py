@@ -15,7 +15,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import sys
@@ -28,18 +27,13 @@ import polars as pl
 VALID_CATEGORIES = {"finance", "report"}
 
 
-def _fileHash(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        h.update(f.read(65536))
-        h.update(str(path.stat().st_size).encode())
-    return h.hexdigest()
-
-
 def _snapshotHashes(directory: Path) -> dict[str, str]:
+    """디렉토리 내 parquet 해시 스냅샷 (pipeline.hashing.partialFileHash SSOT)."""
+    from dartlab.pipeline.hashing import partialFileHash
+
     if not directory.exists():
         return {}
-    return {f.name: _fileHash(f) for f in directory.glob("*.parquet")}
+    return {f.name: partialFileHash(f) for f in directory.glob("*.parquet")}
 
 
 def _parseCategories(raw: str) -> list[str]:
