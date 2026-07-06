@@ -758,8 +758,11 @@ def testMacroBetasWiring(monkeypatch):
     # 종목 일수익 = 4.0 x 유가 수익률 (완전 상관) → oilBeta ~ 4.0
     ret = [0.0] + [4.0 * (oil[i] / oil[i - 1] - 1) for i in range(1, len(oil))]
     res = profile._macroBetas(pl.DataFrame({"date": dates, "ret": ret}), None)
-    assert set(res) == {"rateBeta", "fxBeta", "oilBeta"}
+    from dartlab.simulate.factors import factorBetaMap
+
+    assert set(res) == set(factorBetaMap().values())  # 레지스트리 전수 (팩터 추가 자동흡수)
     assert res["rateBeta"] is None  # 금리 평탄(var 0) = None (0 대체 금지)
+    assert res["rate10yBeta"] is None  # 합성 macro 에 데이터 부재 = None (정직 결측)
     assert abs(res["oilBeta"] - 4.0) < 0.05  # 완전 상관 회귀 = 계수 복원
 
 

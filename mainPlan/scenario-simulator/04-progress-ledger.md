@@ -142,7 +142,13 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
 - **E 소비 루프 폐합 `estimate.epFwd` 피드**: 전방 E/P(다음 분기 순이익 E p50 / 시총) 를 estimate 피드로 등록 = E 층이 판독 사이클로 소비되는 3번째 피드. E 는 PIT 과거의 결정론 함수라 look-ahead 0 (역류 아님, 별도 표식 표면). trailing fund.ep 대비 전방 정보 유무는 성적표가 측정. 실봉인 2,875행(기권 683) = **표면 11개**. 라이브 누적만(과거 주 backfill 은 주별 vintage 재계산 필요 = 정직 라벨).
 - **runWeek E 심장박동**: 주간 라이브 런이 E 봉인(sealEstimates, 같은 vintage 멱등 스킵)·채점(scoreEstimatesDue)을 자동 실행하고 블록에 `estimateSummary` 봉인 (주입 경로 = None 명시, 실패 = 격리 + 블록에 오류 명시). 실측: week 202625 재실행 = {'sealed': 0, 'scored': 0, 'asOf': '20260619'} (멱등 확인). 운영자 개입 없이 분기 실적 도착 시 자동 채점 누적.
 - tests 166(신규 16)·dartlabGuard strict 7/7 + 외부 게이트 6 PASS. E 는 판독 피처로 역류하지 않음(06 §5c 보간 금지 유지).
-- **정직 잔여**: E 채점은 다음 분기 실적 도착부터(시간 문제). US 프로파일 industry·베타·counterparty 미배선(채우면 자동 등장). 탄성은 rate 지배(oil/fx 통과 0 = 강제 배선 안 함). Q4 흐름값 = DART 연간누적 관행(seasonal 면역이나 표시 개선 여지 = Q4 단분기 도출은 차기 검토).
+- **정직 잔여**: E 채점은 다음 분기 실적 도착부터(시간 문제). US 프로파일 industry·베타·counterparty 미배선(EDGAR docs 에 SIC 부재 실측 = 별도 소스 필요). 탄성은 rate 지배(oil/fx 통과 0 = 강제 배선 안 함). Q4 흐름값 = DART 연간누적 관행(seasonal 면역이나 표시 개선 여지 = Q4 단분기 도출은 차기 검토).
+
+### 0c-12. rate10y 팩터 1행 등록 = 자동흡수 실전 증명 + 격자 beam 스케일 (2026-07-06)
+
+- **기록된 갭 해소**: "rate 팩터 불활성(월단위 BASE_RATE 계단 = rolling 베타 죽음, 일단위 시리즈 필요)" 갭을 **fred SSOT 에 이미 저장돼 있던 DGS10**(일단위 미국채 10Y)으로 해소. `factors._REGISTRY` 1행 = 하류 수정 0: 베타 충전 **437종목(월단위) → 3,277 전종목 100%**, 공분산 축 4, 금리 시나리오 유효 반응(금리 -100bp = 교육·시설관리 하방 등), 프로파일 축5·탄성 회귀 자동 포함. 금리 시나리오는 rate(정책)+rate10y(장기) 동폭 충격(단순화 명시).
+- **격자 beam 스케일 결함**: k=4 에서 beam 1500 = 손실질량 49% 실측 → beam 을 팩터 수에 스케일(1500 x 10^(k-3), 상한 5만): k=4 beam 15000 = 0.98% (k=3 기준선 0.67% 동급), 5.5초.
+- 관용성 2 정정: industryElasticity 데이터 부재 팩터 스킵(factorChanges 동형), 프로파일 베타 테스트 레지스트리 전수화. tests 166·라이브 runWeek 4팩터 완주(top10 일관).
 
 ---
 

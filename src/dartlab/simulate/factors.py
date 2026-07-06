@@ -39,11 +39,14 @@ class MacroFactor:
     label: str = ""
 
 
-# 핵심 3팩터 (검증 완료: 베타 실측·격자 커널·역사검증). 확장은 registerMacroFactor.
+# 핵심 팩터 (검증 완료: 베타 실측·격자 커널·역사검증). 확장은 registerMacroFactor.
+# rate10y = 일단위 장기금리 (월단위 계단 BASE_RATE 는 rolling 베타가 죽는 기록된 갭의 해소.
+# fred DGS10 이 이미 SSOT 에 저장돼 있어 등록 1행 = 자동흡수 실증, 2026-07-06).
 _REGISTRY: list[MacroFactor] = [
     MacroFactor("rate", "ecos", "BASE_RATE", "level", "한국 기준금리"),
     MacroFactor("fx", "ecos", "USDKRW", "price", "원/달러"),
     MacroFactor("oil", "fred", "DCOILWTICO", "price", "WTI 유가"),
+    MacroFactor("rate10y", "fred", "DGS10", "level", "글로벌 장기금리(미국채 10Y)"),
 ]
 
 

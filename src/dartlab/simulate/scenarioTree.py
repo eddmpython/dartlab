@@ -49,14 +49,19 @@ DEFAULT_SCENARIOS: dict[str, MacroScenario] = {
     "baseline": MacroScenario("baseline", "기준(무충격)", {}, None),
     "oilShockUp": MacroScenario("oilShockUp", "유가 +30%", {"oil": 0.30}, "oilUp"),
     "oilShockDown": MacroScenario("oilShockDown", "유가 -30%", {"oil": -0.30}, "oilDown"),
-    "rateHike": MacroScenario("rateHike", "금리 +100bp", {"rate": 1.0}, "rateHike"),
-    "rateCut": MacroScenario("rateCut", "금리 -100bp", {"rate": -1.0}, "rateCut"),
+    "rateHike": MacroScenario("rateHike", "금리 +100bp", {"rate": 1.0, "rate10y": 1.0}, "rateHike"),
+    "rateCut": MacroScenario("rateCut", "금리 -100bp", {"rate": -1.0, "rate10y": -1.0}, "rateCut"),
     "wonWeak": MacroScenario("wonWeak", "원화 -10%(약세)", {"fx": 0.10}, "wonWeak"),
     "wonStrong": MacroScenario("wonStrong", "원화 +10%(강세)", {"fx": -0.10}, "wonStrong"),
     "riskOff": MacroScenario(
-        "riskOff", "리스크오프(유가↓·원화약세·금리↑)", {"oil": -0.15, "fx": 0.08, "rate": 0.5}, "riskOff"
+        "riskOff",
+        "리스크오프(유가↓·원화약세·금리↑)",
+        {"oil": -0.15, "fx": 0.08, "rate": 0.5, "rate10y": 0.5},
+        "riskOff",
     ),
-    "reflation": MacroScenario("reflation", "리플레이션(유가↑·금리↑)", {"oil": 0.20, "rate": 0.8}, "reflation"),
+    "reflation": MacroScenario(
+        "reflation", "리플레이션(유가↑·금리↑)", {"oil": 0.20, "rate": 0.8, "rate10y": 0.8}, "reflation"
+    ),
 }
 
 
@@ -400,7 +405,7 @@ def industryElasticity(
     from dartlab.simulate import estimate as _est
     from dartlab.simulate.factors import factorNames, macroChange
 
-    facs = factorNames()
+    facs = [f for f in factorNames() if f in macro.columns]  # 데이터 부재 팩터 관용 (factorChanges 동형)
     mq = (
         macro.with_columns(
             qi=pl.col("date").str.slice(0, 4).cast(pl.Int64) * 4
