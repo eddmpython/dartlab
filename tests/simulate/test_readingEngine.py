@@ -446,6 +446,67 @@ def testProfileMarketBetaAndReplay():
     assert profile.replayHash(state) != profile.replayHash({**state, "asOf": "20260214"})
 
 
+def _synthMacro(n: int = 40):
+    """합성 거시(date 'YYYYMMDD', rate 평탄, fx·oil 변동) → 베타 배선 유닛 (R4 축5)."""
+    from datetime import date, timedelta
+
+    dates = [(date(2026, 1, 1) + timedelta(days=i)).strftime("%Y%m%d") for i in range(n)]
+    oil = [100.0 + 5.0 * np.sin(i / 3.0) for i in range(n)]
+    fx = [1300.0 + 10.0 * np.cos(i / 4.0) for i in range(n)]
+    return dates, oil, fx, pl.DataFrame({"date": dates, "rate": [3.0] * n, "fx": fx, "oil": oil})
+
+
+def testMacroBetasWiring(monkeypatch):
+    from dartlab.simulate import profile
+
+    dates, oil, _fx, macro = _synthMacro()
+    monkeypatch.setattr(profile._table, "macroDaily", lambda d=None: macro)
+    # 종목 일수익 = 4.0 x 유가 수익률 (완전 상관) → oilBeta ~ 4.0
+    ret = [0.0] + [4.0 * (oil[i] / oil[i - 1] - 1) for i in range(1, len(oil))]
+    res = profile._macroBetas(pl.DataFrame({"date": dates, "ret": ret}), None)
+    assert set(res) == {"rateBeta", "fxBeta", "oilBeta"}
+    assert res["rateBeta"] is None  # 금리 평탄(var 0) = None (0 대체 금지)
+    assert abs(res["oilBeta"] - 4.0) < 0.05  # 완전 상관 회귀 = 계수 복원
+
+
+def testMacroBetaByCodeBulk(monkeypatch):
+    from dartlab.simulate import table
+
+    dates, oil, _fx, macro = _synthMacro(60)
+    # codeA 일수익 = 5.0 x 유가수익률(누적 종가), codeB = 유가 무관(평탄)
+    closeA, closeB, rows = [1000.0], [1000.0], []
+    for i in range(1, len(oil)):
+        closeA.append(closeA[-1] * (1 + 5.0 * (oil[i] / oil[i - 1] - 1)))
+        closeB.append(closeB[-1] * 1.001)
+    for i, dt in enumerate(dates):
+        rows.append({"date": dt, "code": "A", "close": closeA[i], "shares": 1.0, "mktcap": closeA[i]})
+        rows.append({"date": dt, "code": "B", "close": closeB[i], "shares": 1.0, "mktcap": closeB[i]})
+    px = pl.DataFrame(rows)
+    monkeypatch.setattr(table, "dailyPrices", lambda baseDir=None: px)
+    monkeypatch.setattr(table, "macroDaily", lambda baseDir=None: macro)
+    out = table.macroBetaByCode(dates[-1], factor="oil", window=250)
+    byCode = {r["code"]: r["beta"] for r in out.iter_rows(named=True)}
+    assert abs(byCode["A"] - 5.0) < 0.05  # 벌크 groupby 베타 = 계수 복원 (Company 루프 0)
+    assert abs(byCode.get("B", 0.0)) < 0.5  # 유가 무관 종목 = 베타 ~0
+
+
+def testRelationshipEdgesCounterparty(monkeypatch):
+    from dartlab.simulate import profile
+
+    monkeypatch.setattr(
+        profile, "_eventTraits", lambda c, a, t, d: {"최대주주변경": 2, "주식등의대량보유상황보고서": 1}
+    )
+    monkeypatch.setattr(
+        profile._table,
+        "counterpartyFilings",
+        lambda code, asOf, dataDir=None: pl.DataFrame({"counterparty": ["삼성물산", "국민연금공단"], "count": [71, 9]}),
+    )
+    rel = profile._relationshipEdges("005930", "20260101", None)
+    assert rel["distinctCounterparties"] == 2  # 상대방 실명 파싱 (축2 counterparty, None 아님)
+    assert rel["counterparties"][0]["counterparty"] == "삼성물산"  # 최다 보유자 우선
+    assert rel["edgeCount"] == 3  # 이벤트 엣지 밀도 병존
+
+
 def testSellTaxAndTickFloor():
     from dartlab.simulate import costs
 

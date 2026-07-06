@@ -110,12 +110,16 @@ def replayIdentical(code: str, asOf: str, *, dataDir: Path | None = None, market
 
 
 def marketBeta(retCode: np.ndarray, retMkt: np.ndarray) -> float:
-    """시장 베타 = cov(code, mkt)/var(mkt) (노출 벡터 축5, OLS). 표본·분산 부족은 nan."""
+    """시장 베타 = cov(code, mkt)/var(mkt) (노출 벡터 축5, OLS). 표본·분산 부족은 nan.
+
+    cov·var 동일 ddof=0 = OLS 기울기 불편 (np.cov 기본 ddof=1 과 .var() 기본 ddof=0 혼용 시
+    N/(N-1) 편향이라 명시 통일). 완전 상관이면 계수 정확 복원.
+    """
     r, m = np.asarray(retCode, dtype=float), np.asarray(retMkt, dtype=float)
     ok = np.isfinite(r) & np.isfinite(m)
     if ok.sum() < 20 or m[ok].var() <= 0:
         return float("nan")
-    return float(np.cov(r[ok], m[ok])[0, 1] / m[ok].var())
+    return float(np.cov(r[ok], m[ok], ddof=0)[0, 1] / m[ok].var())
 
 
 def _inventoryCensus(code: str, marketNs: str) -> dict:
@@ -216,29 +220,72 @@ def _businessStructure(code: str, marketNs: str) -> dict:
 
 
 def _relationshipEdges(code: str, asOf: str, dataDir: Path | None) -> dict:
-    """축2 관계 그래프: 계열/지분·대주주·공급 엣지 (관계 이벤트 회고 집계). 전파 층(cascade) 입력.
+    """축2 관계 그래프: 계열/지분·대주주·공급 엣지 + 상대방 실명 (11 §2). 전파 층(cascade) 입력.
 
-    v0 는 관계 신호 이벤트 타입별 건수로 엣지 밀도를 낸다 (상대방 파싱은 후속). asOf 이전만 참조.
+    관계 이벤트 타입별 건수(엣지 밀도) + 대량보유·임원소유·최대주주변경 공시 제출인(flr_nm)을
+    상대방 실명으로 파싱(table.counterpartyFilings). asOf 이전만 참조. cascade 축2 전파의 노드 원천.
     """
     counts = _eventTraits(code, asOf, _RELATIONSHIP_EVENTS, dataDir)
-    edges = [{"type": t, "count": c, "counterparty": None} for t, c in counts.items() if c]
-    return {"edgeCount": sum(counts.values()), "edges": edges}
+    cps = _table.counterpartyFilings(code, asOf, dataDir)
+    counterparties = [
+        {"counterparty": r["counterparty"], "count": int(r["count"])} for r in cps.head(10).iter_rows(named=True)
+    ]
+    edges = [{"type": t, "count": c} for t, c in counts.items() if c]
+    return {
+        "edgeCount": sum(counts.values()),
+        "edges": edges,
+        "counterparties": counterparties,
+        "distinctCounterparties": cps.height,
+    }
+
+
+def _macroBetas(oneRet: pl.DataFrame, dataDir: Path | None) -> dict:
+    """종목 일수익(oneRet: date, ret) vs 금리·환율·유가 변화 단변량 베타 (11 §2 축5 macroBeta).
+
+    거시 팩터(table.macroDaily)를 종목 거래일에 forward-fill 후 팩터별 변화에 대한 OLS 베타.
+    금리는 수준 차분(%p), 환율·유가는 수익률. 표본<20 또는 매크로 부재는 None (0 대체 금지).
+    """
+    macro = _table.macroDaily(dataDir)
+    facMap = {"rate": "rateBeta", "fx": "fxBeta", "oil": "oilBeta"}
+    if macro.height == 0:
+        return dict.fromkeys(facMap.values(), None)
+    ffill = [pl.col(f).forward_fill() for f in ("rate", "fx", "oil") if f in macro.columns]
+    fac = oneRet.join(macro, on="date", how="left").sort("date").with_columns(ffill)
+    out: dict = {}
+    for factor, key in facMap.items():
+        if factor not in fac.columns:
+            out[key] = None
+            continue
+        d = fac.select("ret", dfac=_table._macroChange(factor)).drop_nulls()
+        b = marketBeta(d["ret"].to_numpy(), d["dfac"].to_numpy()) if d.height >= 20 else float("nan")
+        # 팩터 무변동(금리 window flat 등) = var 0 = nan → None (0 대체 금지, replay 결정론 유지).
+        out[key] = None if b != b else b
+    return out
 
 
 def _exposureVector(code: str, asOf: str, dataDir: Path | None) -> dict:
-    """축5 노출 벡터: 시장 베타 + 수익 변동성 (PIT 트레일링). 금리·환율·유가 베타는 매크로 배선 후 확장.
+    """축5 노출 벡터: 시장 베타 + 금리·환율·유가 macroBeta + 수익 변동성 (PIT 트레일링, 11 §2).
 
-    가격 데이터 자급 베타(시장 등가중 대비)로 v0. asOf 이전 거래일만, 트레일링 _BETA_WINDOW.
+    가격 자급 시장 베타(등가중 대비) + 거시 3팩터 단변량 베타(table.macroDaily). asOf 이전 거래일만,
+    트레일링 _BETA_WINDOW. 노출은 상태(형질)라 봉인·채점 아님 = 형질 조건부 성적표가 예측 기여 도태.
     """
     px = _table.dailyPrices(dataDir).filter((pl.col("close") > 0) & (pl.col("date") <= asOf)).sort(["code", "date"])
     px = px.with_columns(ret=(pl.col("close") / pl.col("close").shift(1).over("code") - 1))
     mkt = px.group_by("date").agg(mktRet=pl.col("ret").median()).sort("date")
     one = px.filter(pl.col("code") == code).select("date", "ret").join(mkt, on="date", how="inner").tail(_BETA_WINDOW)
     if one.height < 20:
-        return {"marketBeta": None, "retVol": None, "nDays": one.height}
+        return {
+            "marketBeta": None,
+            "retVol": None,
+            "nDays": one.height,
+            "rateBeta": None,
+            "fxBeta": None,
+            "oilBeta": None,
+        }
     beta = marketBeta(one["ret"].to_numpy(), one["mktRet"].to_numpy())
     vol = float(one["ret"].std() or 0.0)
-    return {"marketBeta": beta, "retVol": vol, "nDays": one.height}
+    macroBetas = _macroBetas(one.select("date", "ret"), dataDir)
+    return {"marketBeta": beta, "retVol": vol, "nDays": one.height, **macroBetas}
 
 
 def _laborCapex(code: str, marketNs: str) -> dict:

@@ -240,3 +240,115 @@ def dailyHighLow(baseDir: Path | None = None) -> pl.DataFrame:
         .collect()
         .filter((pl.col("high") > 0) & (pl.col("low") > 0) & (pl.col("close") > 0) & (pl.col("high") >= pl.col("low")))
     )
+
+
+# 거시 팩터 (노출 벡터 축5 macroBeta 입력): 금리·환율·유가. ecos/fred SSOT parquet 직독.
+_MACRO_FACTORS: tuple[tuple[str, str, str], ...] = (
+    ("rate", "ecos", "BASE_RATE"),  # 한국 기준금리 (일별, %)
+    ("fx", "ecos", "USDKRW"),  # 원/달러 (일별)
+    ("oil", "fred", "DCOILWTICO"),  # WTI 유가 (일별, 글로벌)
+)
+# 지분/대주주 관계 공시 (제출인 flr_nm = 상대방 실명). 축2 counterparty 엣지 원천.
+_RELATIONSHIP_REPORT_PAT = "대량보유|임원ㆍ주요주주|최대주주변경"
+
+
+def macroDaily(baseDir: Path | None = None) -> pl.DataFrame:
+    """거시 팩터 일별 → (date 'YYYYMMDD', rate, fx, oil). 노출 벡터(profile 축5) macroBeta 입력.
+
+    ecos/fred observations SSOT parquet 직독 (床-layer, gather 수집물 소비 = 엔진 로직 재구현 0).
+    Date -> 'YYYYMMDD' 정규화해 거래일(gov/prices)과 정렬 가능. 팩터별 결측은 소비처 forward-fill.
+    """
+    base = dataDir(baseDir) / "macro"
+    out: pl.DataFrame | None = None
+    for factor, src, sid in _MACRO_FACTORS:
+        p = base / src / "observations.parquet"
+        if not p.exists():
+            continue
+        o = (
+            pl.scan_parquet(p)
+            .filter(pl.col("seriesId") == sid)
+            .select(pl.col("date").dt.strftime("%Y%m%d").alias("date"), pl.col("value").cast(pl.Float64).alias(factor))
+            .collect()
+        )
+        out = o if out is None else out.join(o, on="date", how="full", coalesce=True)
+    if out is None:
+        return pl.DataFrame(schema={"date": pl.Utf8, "rate": pl.Float64, "fx": pl.Float64, "oil": pl.Float64})
+    return out.sort("date")
+
+
+def _macroChange(factor: str) -> pl.Expr:
+    """팩터 일별 변화: 금리는 수준 차분(%p), 환율·유가는 수익률. 단변량 베타 회귀항."""
+    if factor == "rate":
+        return pl.col(factor) - pl.col(factor).shift(1)
+    return pl.col(factor) / pl.col(factor).shift(1) - 1
+
+
+def macroBetaByCode(asOf: str, *, factor: str = "oil", window: int = 250, baseDir: Path | None = None) -> pl.DataFrame:
+    """전종목 거시 팩터 베타 → (code, beta). asOf 이전 window 거래일, 벌크 groupby (Company 루프 0).
+
+    노출 형질(profile 축5)의 유니버스 버킷용 = 형질 조건부 성적표(11 §5) 입력. beta = cov(일수익,
+    팩터변화)/var(팩터변화) (단변량 OLS). PIT: asOf 이전 거래일만. 표본<20·분산 0 종목은 드롭.
+    """
+    macro = macroDaily(baseDir)
+    if macro.height == 0 or factor not in macro.columns:
+        return pl.DataFrame(schema={"code": pl.Utf8, "beta": pl.Float64})
+    px = (
+        dailyPrices(baseDir)
+        .filter((pl.col("close") > 0) & (pl.col("date") <= asOf))
+        .sort(["code", "date"])
+        .with_columns(ret=pl.col("close") / pl.col("close").shift(1).over("code") - 1)
+    )
+    dates = px.select("date").unique().sort("date")
+    fac = (
+        dates.join(macro.select("date", factor), on="date", how="left")
+        .sort("date")
+        .with_columns(pl.col(factor).forward_fill())
+        .with_columns(dfac=_macroChange(factor))
+        .select("date", "dfac")
+    )
+    j = (
+        px.select("code", "date", "ret")
+        .join(fac, on="date", how="inner")
+        .drop_nulls(["ret", "dfac"])
+        .sort(["code", "date"])
+    )
+    tail = j.group_by("code", maintain_order=True).tail(window)
+    return (
+        tail.group_by("code")
+        .agg(
+            n=pl.len(),
+            cov=(pl.col("ret") * pl.col("dfac")).mean() - pl.col("ret").mean() * pl.col("dfac").mean(),
+            var=(pl.col("dfac") ** 2).mean() - pl.col("dfac").mean() ** 2,
+        )
+        .filter((pl.col("n") >= 20) & (pl.col("var") > 0))
+        .with_columns(beta=pl.col("cov") / pl.col("var"))
+        .select("code", "beta")
+    )
+
+
+def counterpartyFilings(code: str, asOf: str, baseDir: Path | None = None) -> pl.DataFrame:
+    """한 종목의 지분/대주주 관계 공시에서 제출인(flr_nm) = 상대방 실명 집계 (profile 축2).
+
+    대량보유·임원소유·최대주주변경 공시의 flr_nm 이 보유자/거래자 상대방이다. asOf 이전만.
+    → (counterparty, count) 내림차순. allFilings lazy 스캔 (stock_code 조기 필터, streaming).
+    """
+    base = dataDir(baseDir)
+    paths = sorted(str(p) for p in (base / "dart/allFilings").glob("2*.parquet"))
+    if not paths:
+        return pl.DataFrame(schema={"counterparty": pl.Utf8, "count": pl.UInt32})
+    df = (
+        pl.scan_parquet(paths, extra_columns="ignore", missing_columns="insert")
+        .filter(
+            (pl.col("stock_code") == code)
+            & (pl.col("rcept_dt").cast(pl.Utf8) <= asOf)
+            & pl.col("report_nm").str.contains(_RELATIONSHIP_REPORT_PAT)
+            & pl.col("flr_nm").is_not_null()
+            & (pl.col("flr_nm").str.len_chars() > 0)
+        )
+        .select(pl.col("flr_nm").alias("counterparty"))
+        .collect(engine="streaming")
+    )
+    if df.height == 0:
+        return pl.DataFrame(schema={"counterparty": pl.Utf8, "count": pl.UInt32})
+    # 동점 정렬은 counterparty 명 2차키로 안정화 (replay 항등성: 같은 asOf 재계산 = byte 일치).
+    return df.group_by("counterparty").len(name="count").sort(["count", "counterparty"], descending=[True, False])
