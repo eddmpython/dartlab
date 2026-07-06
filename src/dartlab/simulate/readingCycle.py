@@ -92,6 +92,9 @@ def issueReadings(
     readings = readings.filter(pl.col("week") == week)
     if readings.height == 0:
         return 0
+    already = _ledger.readReadings(week=week, live=live, baseDir=baseDir)
+    if already is not None and already.height:
+        return 0  # 이미 봉인된 주: 재발행 스킵 (append-only 불변 유지 + runWeek 재실행 안전)
     extraSurfaces = [f"{axis}.{c}" for axis, m in extras.items() for c in _opine._numericCols(m)]
     readings = _fillAbstain(readings, priceM, week, directionByType, extraSurfaces)  # 완전성 강제 (silent 누락 0)
     asOf = weekEnd.filter(pl.col("week") == week)["date"]

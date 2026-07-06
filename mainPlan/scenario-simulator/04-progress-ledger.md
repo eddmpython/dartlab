@@ -123,6 +123,14 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
 - **profileAll 전종목 벌크**: 기업 프로파일 "모두 바로" = 벌크 스캔 5회 한 방 (per-company 루프 0). **실측 2,875종목 x 12형질 = 10초** (per-company ~8시간급 대비), 충전율 90%+ (industry 92%·oilBeta 96%·counterparty 90%). census 축(inventory·narrative)은 Panel 로드라 온디맨드 명시.
 - tests 150 (신규 9)·dartlabGuard strict 7/7·기존 무회귀. 커밋 ebc3b081f(강건 3종).
 
+### 0c-10. 라이브 첫 주 실측 = 결함 2건 발견·즉시 수정 (2026-07-06, "실제 데이터 돌리면 결과는?")
+
+- **실행 실측**: `runWeek("KR")` week=202625 = 판독 20,139행(2,875종목 x 8표면, 기권 포함 완전성) 33초. 레짐 stressUp·비용바닥 중앙 1.80%·격자 잎 1,500상태(가지치기 손실질량 0.67%)·오버레이가 후보 20 중 매크로 꼬리 최악 10 제거(에스엘 p5 -13.6%·SK스퀘어 -25.3%·미래산업 -37.0% 등). 시나리오 분기: 리스크오프 = 반도체 -14.7% 피해·에스엘 이탈/EDGC 진입.
+- **결함 ① 콜드스타트 top10 전멸**: 인증 표면 0(채점 20주 미만)일 때 net 게이트에 빈 집합을 넘겨 applyGates 가 전 종목 필터 → top10 공백 블록. 주입 테스트가 net 게이트를 생략해 못 잡던 사각. 수정 = `_netGate()` 분리: 인증 0 = None(게이트 미적용), 인증 있는데 발화 0 = 빈 집합(통과 0 이 정직).
+- **결함 ② 재실행 예외**: 같은 주 재발행이 원장 append-only ValueError 로 runWeek 전체 크래시(봉인 후 크래시 시 블록 복구 불가). 수정 = issueReadings 가 이미 봉인된 주는 스킵(return 0) + `_lastHash(dir, week)` 재발간 자기참조 방지.
+- 회귀 가드: testNetGateColdStartNotApplied·testRunWeekRerunSameWeekSafe. tests 152·재실행 판독 중복 0 실측.
+- **정직 잔여**: certify None(채점 이력 20주 미만 = 라이브 누적 시간 문제), 채점 pending(가격 데이터가 202625 주까지라 forward 5일 라벨 미형성 → 다음 sync 후 자동 채점), rate 팩터 불활성(월단위 BASE_RATE 로 rolling 베타 ~0, 일단위 국채 시리즈 필요 = 기록된 기존 갭).
+
 ---
 
 > ⚠ v0.1 폐기 박제: 이전 04는 "초기 아키텍처 = story 동격 L3 `scenarioWorkbench`, 공개 verb `dartlab.scenario`(미결)"을 현재 결정으로 들고 있었다. **01 §3이 이를 코드로 기각**했다(story=순수 렌더러라 동거 불가, `scenario` 명사형은 `macro.scenarios`/`ScenarioOverlay` 충돌). 본 v0.2가 정본.

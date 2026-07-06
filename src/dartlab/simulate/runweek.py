@@ -108,6 +108,19 @@ def _edgeByCode(weekReadings: pl.DataFrame, certifiedNet: dict[str, float]) -> p
     return r.group_by("code").agg(edge=pl.col("contrib").sum())
 
 
+def _netGate(
+    weekReadings: pl.DataFrame, certifiedNet: dict[str, float], cfWk: pl.DataFrame, redFlag: set[str]
+) -> set[str] | None:
+    """net-of-cost 게이트 종목집합. 인증 표면 0(콜드스타트) = 엣지 계산 불가 → None (게이트 미적용).
+
+    빈 집합을 돌려주면 applyGates 가 전 종목을 걸러 top10 이 공백이 된다 (2026-07-06 라이브 첫 주
+    실측 결함). 인증 표면이 있는데 그 주 발화 엣지가 없으면 빈 집합 (통과 0 이 정직)."""
+    if not certifiedNet:
+        return None
+    edge = _edgeByCode(weekReadings, certifiedNet)
+    return _costs.netPositive(edge, cfWk, avoidCodes=redFlag) if edge.height else set()
+
+
 def buildBlock(
     week: int,
     market: str,
@@ -170,8 +183,10 @@ def _blockDir(baseDir: Path | None) -> Path:
     return root / BLOCK_SUBDIR
 
 
-def _lastHash(blockDir: Path) -> str:
+def _lastHash(blockDir: Path, week: int | None = None) -> str:
     files = sorted(blockDir.glob("block_*.json"))
+    if week is not None:
+        files = [f for f in files if f.stem < f"block_{week}"]  # 같은 주 재발간 시 자기/미래 블록 참조 방지
     if not files:
         return ""
     return json.loads(files[-1].read_text(encoding="utf-8")).get("hash", "")
@@ -298,8 +313,7 @@ def runWeek(
         cfWk = _costs.costFloorWeekly(weekEnd, tbl.dailyHighLow(dataDir), market=market).filter(pl.col("week") == week)
         if cfWk.height:
             costFloorMedian = float(cfWk["costFloor"].median())
-            edge = _edgeByCode(weekReadings, certifiedNet)
-            netPos = _costs.netPositive(edge, cfWk, avoidCodes=redFlag) if edge.height else set()
+            netPos = _netGate(weekReadings, certifiedNet, cfWk, redFlag)
     # top10 = 게이트 통과 후보 20 에서 격자 리스크 오버레이(14 §9 검증: 평균↑·주간 p5 꼬리 40%↓)로
     # 매크로 꼬리 최악 10 제거. 라이브 KR 만 (US 는 macro 축 미배선, 주입 테스트는 스캔 생략).
     candidates = (
@@ -336,7 +350,7 @@ def runWeek(
         card,
         boardTop,
         top10,
-        prevHash=_lastHash(blockDir),
+        prevHash=_lastHash(blockDir, week),
         costFloorMedian=costFloorMedian,
         regimeTag=regimeTag,
         combinedWeights=weights,

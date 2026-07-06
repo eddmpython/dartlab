@@ -307,6 +307,36 @@ def testRunWeekHashChain(tmp_path):
     assert "codeVersionHash" in b1 and "combinedWeights" in b1  # §7b 봉인 필드
 
 
+def testNetGateColdStartNotApplied():
+    from dartlab.simulate import runweek
+
+    # 2026-07-06 라이브 첫 주 실측 결함 가드: 인증 표면 0(콜드스타트)에 빈 집합을 돌려주면
+    # applyGates 가 전 종목을 걸러 top10 이 공백이 된다 → None(게이트 미적용)이 정답.
+    r = pl.DataFrame({"code": ["a"], "week": [202607], "surface": ["fund.ep"], "direction": [1], "score": [0.9]})
+    cf = pl.DataFrame({"week": [202607], "code": ["a"], "costFloor": [0.01]})
+    assert runweek._netGate(r, {}, cf, set()) is None  # 콜드스타트 = 미적용
+    got = runweek._netGate(r, {"fund.ep": 0.05}, cf, set())
+    assert got == {"a"}  # 인증 발화 edge 0.05x0.8 > 비용 0.01 = 통과
+    assert runweek._netGate(r.clear(), {"fund.ep": 0.05}, cf, set()) == set()  # 인증 있는데 발화 0 = 빈 집합
+
+
+def testRunWeekRerunSameWeekSafe(tmp_path):
+    from dartlab.simulate import runweek
+
+    lab = pl.DataFrame(
+        {
+            "code": ["a", "b", "c", "d", "e"],
+            "week": [202607] * 5,
+            "exRaw": [-0.02, -0.01, 0.0, 0.01, 0.02],
+            "exNeutral": [-0.02, -0.01, 0.0, 0.01, 0.02],
+        }
+    )
+    b1 = runweek.runWeek(week=202607, baseDir=tmp_path, matrices=_mats(202607), labels=lab)
+    b1r = runweek.runWeek(week=202607, baseDir=tmp_path, matrices=_mats(202607), labels=lab)  # 재실행 = 예외 0
+    assert b1r["readingCount"] == b1["readingCount"] == 10  # 원장 중복 발행 없이 동일 판독 재조립
+    assert b1r["prevHash"] == ""  # 같은 주 재발간이 자기 블록을 prev 로 참조하지 않음
+
+
 def testRunWeekFullWiring(tmp_path):
     from dartlab.simulate import runweek
 
