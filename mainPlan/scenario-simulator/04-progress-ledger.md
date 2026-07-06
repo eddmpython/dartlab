@@ -113,6 +113,7 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
 - B~D `latticeGrowth` → **`simulate/lattice.py` 졸업**: 재결합 삼항 격자(폭발 억제 1.4e8배·손실질량 0.16%·동반이동 커널) + 잎 확률 정확 가중 결정(top-K 진입확률·확률가중 꼬리·bad worlds 스트레스 생존, RNG 0 결정론) + 정밀도 부채 상환(winsorizeBetas + table.liquidUniverse = top15 시총중앙 691억→2,233억). MC 상관 0.991 상호검증. 스트레스 생존 픽 해석 가능(도시가스 방어주 99%).
 - 테스트: test_lattice 9종 배터리 + simulate 전체 139 통과 + dartlabGuard strict 7/7.
 - 시그니처 지위: 여전히 **후보** (14 §4). 남은 승격 게이트 = 격자 역사 검증(forward 채점 OOS 우위)·라이브 누적·GUI(트리거 대기).
+- **역사 검증(승격 게이트 1) 통과 (`latticeBacktest`, 14 §9 정본)**: 72표본주 x fwd 8주 PIT 3중 판정 = base(인증부호) +1.45%/p5 -7.78% · 격자틸트 +0.47%/p5 -12.3%(**틸트 유해, 기각**) · **경화 오버레이 +1.82%/p5 -4.68%(평균↑·꼬리 40%↓, 통과)**. 격자의 정직 역할 확정 = 알파 틸트 아니라 **리스크 오버레이("덜 죽는 결정")**. 검증 규칙 `lattice.hardenedTopK` 졸업(test 10종). 부수: backtest base 무보정 등가중 구성 시 -5%대 전멸 = 인증부호 규율의 시뮬 상속 필수 재확인. 남은 게이트 = 라이브 누적·Q3 급락조건부(n=14 미검증)·GUI(트리거 대기).
 
 ---
 
