@@ -59,6 +59,9 @@ def _brief(score: int = 94) -> dict:
                 "title": "스텔스 공정 회사 근거 지도",
                 "proves": "기술 병목과 회사 배치가 한눈에 연결된다.",
                 "seriesHint": "공정·회사·공시 근거",
+                "placement": "1막 RCS 개념 설명 뒤 본문 중간",
+                "insertAfter": "RCS가 탐지거리와 판단 시간을 바꾼다는 설명 뒤",
+                "narrativeUse": "독자가 스텔스를 기체 사진이 아니라 공정 지도와 회사 배치로 보게 한다.",
             },
             {
                 "actOrder": 3,
@@ -66,6 +69,9 @@ def _brief(score: int = 94) -> dict:
                 "title": "미국 방산사 영업이익률 비교",
                 "proves": "기술 난도가 곧바로 초고마진으로 이어지지 않는다.",
                 "seriesHint": "FY2025 EDGAR",
+                "placement": "3막 미국 방산사 계약 구조 설명 뒤",
+                "insertAfter": "cost-plus와 고정가 계약이 손익을 제한한다는 문단 뒤",
+                "narrativeUse": "독자가 기술 난도와 회계 이익률을 바로 동일시하지 않게 한다.",
             },
             {
                 "actOrder": 5,
@@ -73,6 +79,9 @@ def _brief(score: int = 94) -> dict:
                 "title": "한국 KF-21 라인 시간표",
                 "proves": "체계통합, 센서, 엔진의 이익 시차가 다르다.",
                 "seriesHint": "DART 2021~2025",
+                "placement": "5막 한국 KF-21 밸류체인 설명 뒤",
+                "insertAfter": "KAI, 한화시스템, 한화에어로, LIG 역할 분해 뒤",
+                "narrativeUse": "독자가 회사별 역할과 이익 시차를 같은 시간축으로 이해하게 한다.",
             },
         ],
         "imagePlan": [
@@ -81,18 +90,26 @@ def _brief(score: int = 94) -> dict:
                 "subject": "스텔스 격납고와 레이더 시험 장비",
                 "query": "stealth aircraft hangar radar test maintenance",
                 "keywords": ["stealth", "hangar", "radar"],
+                "placement": "첫 화면 hero 이미지",
+                "narrativeUse": "글 시작에서 스텔스를 전투 장면이 아니라 시험과 정비 기술로 보이게 한다.",
             },
             {
                 "slot": "inline",
                 "subject": "저피탐 코팅 정비 장면",
                 "query": "aircraft stealth coating maintenance panel inspection",
                 "keywords": ["coating", "maintenance", "panel"],
+                "insertAfterAct": 2,
+                "placement": "2막 코팅 정비 설명 뒤",
+                "narrativeUse": "독자가 저피탐 성능이 출고 뒤 정비 품질에 계속 의존한다는 점을 본다.",
             },
             {
                 "slot": "inline",
                 "subject": "AESA 레이더와 항공전자 시험 장면",
                 "query": "aesa radar avionics test bench aircraft",
                 "keywords": ["aesa", "radar", "avionics"],
+                "insertAfterAct": 4,
+                "placement": "4막 센서융합 설명 뒤",
+                "narrativeUse": "독자가 스텔스를 덜 보이는 기체가 아니라 먼저 보는 센서 네트워크로 이해한다.",
             },
         ],
         "honestyGuards": [
@@ -221,3 +238,15 @@ def test_publish_gate_blocks_missing_loop_evidence(monkeypatch, tmp_path: Path) 
     (post / "brief.json").write_text(json.dumps(brief, ensure_ascii=False, indent=2), encoding="utf-8")
     errors = ab.publish_gate(post)
     assert any("loopEvidence" in err for err in errors)
+
+
+def test_publish_gate_blocks_visuals_without_inline_use(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(ab, "repo_root", lambda: tmp_path)
+    post = _write_tech_post(tmp_path)
+    brief = _brief()
+    brief["visuals"][0].pop("placement")
+    brief["imagePlan"][1].pop("narrativeUse")
+    (post / "brief.json").write_text(json.dumps(brief, ensure_ascii=False, indent=2), encoding="utf-8")
+    errors = ab.publish_gate(post)
+    assert any("visuals[1].placement" in err for err in errors)
+    assert any("imagePlan[2].narrativeUse" in err for err in errors)

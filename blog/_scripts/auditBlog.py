@@ -435,6 +435,11 @@ def _validate_common_plan(plan: dict[str, object], payload: dict[str, object], *
         for field in ("title", "proves"):
             if _compact_len(raw.get(field)) < 8:
                 fails.append(f"{label}: visuals[{idx}].{field} 이 너무 약함")
+        for field in ("placement", "insertAfter", "narrativeUse"):
+            if _compact_len(raw.get(field)) < 8:
+                fails.append(
+                    f"{label}: visuals[{idx}].{field} 누락. 비주얼은 본문 중간에서 어떤 설명을 돕는지 기획해야 함"
+                )
         if not str(raw.get("kind") or "").strip():
             fails.append(f"{label}: visuals[{idx}].kind 누락")
 
@@ -445,7 +450,7 @@ def _validate_common_plan(plan: dict[str, object], payload: dict[str, object], *
         if not isinstance(raw, dict):
             fails.append(f"{label}: imagePlan[{idx}] 은 객체여야 함")
             continue
-        for field in ("slot", "subject", "query", "keywords"):
+        for field in ("slot", "subject", "query", "keywords", "placement", "narrativeUse"):
             if field == "keywords":
                 if not isinstance(raw.get(field), list) or not raw.get(field):
                     fails.append(f"{label}: imagePlan[{idx}].keywords 누락")

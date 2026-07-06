@@ -37,9 +37,9 @@ const PRINCIPLES = `블로그 심층 리포트 원칙(합격선):
 6. 재미: 첫 2문단이 회사 배경이 아니라 이상한 숫자와 긴장으로 시작. "어?" 순간 4번+. 마지막은 요약이 아니라 다음 공시를 보는 기준으로 닫음.
 표기: em dash(긴 줄표) 금지. 부연은 마침표·괄호, 범위는 물결(~). 문장은 다/요/까.`
 
-const IMAGE_NOTE = `이미지 기획(내용 연상 강제): hero 1장 + 본문 inline 2~3장. 각 이미지는 무조건 이 글의 내용·회사·제품·현장을 연상시켜야 한다. 회사 로고·상징품·실제 제품도 허용(주식·재무·교육 맥락이라 저작권 무관). 범용 스카이라인·추상 배경으로 도망가면 실패. query 는 실사 CC0 수급용 영어 검색어(그 회사 제품·현장·상징을 앞에), keywords 는 제목/태그 매칭용(오매치 차단). 예(봉제완구 회사): query "plush stuffed animals teddy bear shelf", keywords ["plush","teddy","stuffed","toy"].`
+const IMAGE_NOTE = `이미지 기획(내용 연상 강제): hero 1장 + 본문 inline 2~3장 이상. inline 이미지는 뒤에 자동으로 붙는 장식이 아니라 어느 막의 어느 설명 뒤에 들어갈지 insertAfterAct·placement·narrativeUse 로 결정한다. 각 이미지는 무조건 이 글의 내용·회사·제품·현장을 연상시켜야 한다. 회사 로고·상징품·실제 제품도 허용(주식·재무·교육 맥락이라 저작권 무관). 범용 스카이라인·추상 배경으로 도망가면 실패. query 는 실사 CC0 수급용 영어 검색어(그 회사 제품·현장·상징을 앞에), keywords 는 제목/태그 매칭용(오매치 차단). 예(봉제완구 회사): query "plush stuffed animals teddy bear shelf", keywords ["plush","teddy","stuffed","toy"].`
 
-const VISUAL_NOTE = `막별 비주얼: 이야기가 요구하는 차트를 막마다 정한다(고정 템플릿 아님). 추이=line, 비교/구성=bar, 부문믹스=도넛/스택, 두 계열 대비=grouped. 각 차트는 그 막의 주장을 증명해야 하고, 큰 숫자를 가려도 차트만으로 같은 긴장이 남아야 한다. 손수 못생긴 차트 금지. kind·title·proves·seriesHint 를 명확히 적어 메인 스레드가 정식 렌더로 그리게 한다.`
+const VISUAL_NOTE = `막별 비주얼: 이야기가 요구하는 차트·표·그래프 세트를 막마다 정한다(고정 템플릿 아님). 추이=line, 비교/구성=bar, 부문믹스=도넛/스택, 두 계열 대비=grouped, 공정·회사·근거 지도=table. 한 막에 하나로 부족하면 같은 actOrder 에 2~4개를 기획한다. 시각물은 글 뒤 자동 부록이 아니라 본문 중간 설명 장치다. placement·insertAfter·narrativeUse 로 어느 문장 뒤에 왜 들어가는지 적는다. 각 차트는 그 막의 주장을 증명해야 하고, 큰 숫자를 가려도 차트만으로 같은 긴장이 남아야 한다. 손수 못생긴 차트 금지. kind·title·proves·seriesHint 를 명확히 적어 메인 스레드가 정식 렌더로 그리게 한다.`
 
 const PLAN_SCHEMA = {
   type: 'object', additionalProperties: false,
@@ -101,13 +101,16 @@ const PLAN_SCHEMA = {
     visuals: {
       type: 'array',
       items: {
-        type: 'object', additionalProperties: false, required: ['actOrder', 'kind', 'title', 'proves'],
+        type: 'object', additionalProperties: false, required: ['actOrder', 'kind', 'title', 'proves', 'placement', 'insertAfter', 'narrativeUse'],
         properties: {
           actOrder: { type: 'integer', description: '어느 막에 붙나.' },
           kind: { type: 'string', description: 'line|bar|grouped|donut|stack|table 등.' },
           title: { type: 'string' },
           proves: { type: 'string', description: '이 차트가 증명하는 주장.' },
           seriesHint: { type: 'string', description: '어떤 계열·기간(evidence 기준).' },
+          placement: { type: 'string', description: '본문 안 위치. 예: act 3 middle, after mechanism paragraph.' },
+          insertAfter: { type: 'string', description: '어떤 설명·문장 뒤에 삽입할지.' },
+          narrativeUse: { type: 'string', description: '독자가 이 시각물을 보고 어떤 이해를 얻어야 하는지.' },
         },
       },
     },
@@ -115,12 +118,15 @@ const PLAN_SCHEMA = {
       type: 'array', minItems: 3,
       description: '내용 연상 이미지 기획(로고·상징품 허용). hero 1 + inline 2~3.',
       items: {
-        type: 'object', additionalProperties: false, required: ['slot', 'subject', 'query', 'keywords'],
+        type: 'object', additionalProperties: false, required: ['slot', 'subject', 'query', 'keywords', 'placement', 'narrativeUse'],
         properties: {
           slot: { type: 'string', enum: ['hero', 'inline'] },
           subject: { type: 'string', description: '무엇을 연상시키나(회사 제품·현장·상징).' },
           query: { type: 'string', description: '실사 CC0 수급용 영어 검색어(그 회사 제품·현장·상징 앞에).' },
           keywords: { type: 'array', items: { type: 'string' }, description: '제목/태그 매칭용 키워드(오매치 차단).' },
+          insertAfterAct: { type: 'integer', description: 'inline 이미지면 어느 막 뒤에 삽입할지. hero 는 0.' },
+          placement: { type: 'string', description: 'hero 또는 본문 안 위치.' },
+          narrativeUse: { type: 'string', description: '이 이미지가 독자의 이해를 어떻게 돕는지.' },
         },
       },
     },
@@ -192,7 +198,7 @@ const SKEPTIC_SCHEMA = {
       items: {
         type: 'object', additionalProperties: false, required: ['axis', 'why', 'fix'],
         properties: {
-          axis: { type: 'string', enum: ['weak-title', 'cliche-template', 'forced-metric', 'misleading-frame', 'shallow', 'generic-image', 'overclaim'] },
+          axis: { type: 'string', enum: ['weak-title', 'cliche-template', 'forced-metric', 'misleading-frame', 'shallow', 'generic-image', 'appendix-visual', 'overclaim'] },
           why: { type: 'string' },
           fix: { type: 'string' },
         },
@@ -307,7 +313,7 @@ ${JSON.stringify(props)}
 회의론자·독자대리인 격파:
 ${JSON.stringify(critiques.filter(Boolean))}
 
-단일 관통선 1개로 좁히고(클리셰 격파 반영), 후보 제목 3개 이상을 비교해 최종 제목을 고른 뒤 titleContract 를 채운다. 핵심 인싸이트(관통선의 답)를 세우고, 막 구조(6막+, 관통선이 인싸이트에 착지)·막별 비주얼·이미지 기획(내용 연상, 로고·상징품 허용)·DART/EDGAR/dartlab/scan evidenceMap·정직성 가드를 확정한다. 통과용 안전한 관통선이 아니라 진짜 의외의 관통선을 고른다. 전체 기획안을 스키마대로 낸다.`,
+단일 관통선 1개로 좁히고(클리셰 격파 반영), 후보 제목 3개 이상을 비교해 최종 제목을 고른 뒤 titleContract 를 채운다. 핵심 인싸이트(관통선의 답)를 세우고, 막 구조(6막+, 관통선이 인싸이트에 착지)·막별 비주얼·이미지 기획(내용 연상, 로고·상징품 허용)·DART/EDGAR/dartlab/scan evidenceMap·정직성 가드를 확정한다. 비주얼과 이미지는 글 뒤 부록이 아니라 본문 중간에서 독자의 이해를 바꾸는 장치로 placement·insertAfter·narrativeUse 까지 결정한다. 통과용 안전한 관통선이 아니라 진짜 의외의 관통선을 고른다. 전체 기획안을 스키마대로 낸다.`,
   { label: '편집장 수렴', phase: '경합', schema: PLAN_SCHEMA }
 )
 
@@ -322,7 +328,7 @@ for (let round = 1; round <= MAX_ROUNDS; round++) {
 
 ${PRINCIPLES}
 
-6항목: 1.재밌나(YES/NO+이유) 2.어디서 집중 끊기나 3.독자질문(관통선)이 끝까지 살아있나 4."어?" 몇 번 5.기억에 남는 문장 6.점수. 특히: 제목이 첫 1초에 멈추는가, titleContract 의 후보·독자 갭·선택 이유가 살아있는가, 관통선이 끝까지 살아 인싸이트에 착지하나, 막이 궁금증심화·메커니즘·리스크반전·판단닫힘 중 하나를 하나, 깊이가 얕지 않나, 첫 2문단이 긴장으로 시작하나.
+6항목: 1.재밌나(YES/NO+이유) 2.어디서 집중 끊기나 3.독자질문(관통선)이 끝까지 살아있나 4."어?" 몇 번 5.기억에 남는 문장 6.점수. 특히: 제목이 첫 1초에 멈추는가, titleContract 의 후보·독자 갭·선택 이유가 살아있는가, 관통선이 끝까지 살아 인싸이트에 착지하나, 막이 궁금증심화·메커니즘·리스크반전·판단닫힘 중 하나를 하나, 깊이가 얕지 않나, 첫 2문단이 긴장으로 시작하나. 비주얼이 본문 중간에서 설명을 실제로 돕나, 아니면 뒤에 자동으로 붙는 부록처럼 보이나.
 
 검증 데이터(기획 수치는 이 안에 있어야):
 ${evidence}
@@ -340,6 +346,7 @@ ${JSON.stringify(plan)}`,
 - misleading-frame: 주인공이 제목의 실제 주어와 다른가(인프라 회사를 AI 주인공으로 둔갑 등). 영업이익과 순이익, 연결과 그룹을 뭉갰나.
 - shallow: 막이 요약 나열이라 메커니즘까지 안 파는가. 심층인 척 얕은가.
 - generic-image: imagePlan 이미지가 내용·회사·제품을 연상시키지 않고 범용 스카이라인·추상인가. 하나라도 있으면 kill.
+- appendix-visual: visuals/imagePlan 이 본문 중간 placement 없이 뒤에 자동으로 붙는 부록처럼 기획됐나. 필요한 표·그래프·테이블 조합을 빼먹었나. 그러면 kill.
 - overclaim: 동행을 인과로 단정, 과장·투자권유·우열 단정이 있나.
 
 검증 데이터:

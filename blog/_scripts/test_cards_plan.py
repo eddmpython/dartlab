@@ -153,8 +153,22 @@ def _mark_passed(plan: dict) -> dict:
         if item.get("visualRole") != "dataEvidence":
             continue
         item["visualKind"] = "table"
+        item["visualKinds"] = ["table"]
+        item["visualCount"] = max(1, int(item.get("visualCount") or 0))
         item["dataExplanation"] = "이 카드의 숫자가 어떤 기간과 분모에서 나온 것인지 표로 바로 확인하게 한다."
         item["evidenceRefs"] = ["2025Q1 회원 매출 12억달러, 상품 매출 636억달러"]
+        visuals = item.get("visuals")
+        if not isinstance(visuals, list) or not visuals:
+            visuals = [{"visualIndex": 1, "visualKind": "table", "proves": item.get("claim", "숫자 근거")}]
+            item["visuals"] = visuals
+        for visual_idx, visual in enumerate(visuals, start=1):
+            if not isinstance(visual, dict):
+                continue
+            visual["visualIndex"] = visual_idx
+            visual["visualKind"] = "table"
+            visual["dataExplanation"] = "이 시각물은 카드의 숫자를 기간과 분모 기준으로 독자가 바로 검산하게 한다."
+            visual["evidenceRefs"] = ["2025Q1 회원 매출 12억달러, 상품 매출 636억달러"]
+            visual["proves"] = visual.get("proves") or item.get("claim", "숫자 근거")
     return plan
 
 
@@ -256,6 +270,9 @@ def test_plan_validation_requires_data_explanation_and_refs(tmp_path: Path) -> N
         if item.get("visualRole") == "dataEvidence":
             item["dataExplanation"] = "짧음"
             item["evidenceRefs"] = []
+            for visual in item.get("visuals", []):
+                visual["dataExplanation"] = "짧음"
+                visual["evidenceRefs"] = []
     errors = cp.validate_plan(planned, require_passed=True)
     assert any("dataExplanation" in err for err in errors)
     assert any("evidenceRefs" in err for err in errors)
@@ -367,6 +384,111 @@ def test_contract_visual_gate_blocks_array_table_rows() -> None:
         },
     )
     assert any("배열 행" in err for err in errors)
+
+
+def test_contract_visual_gate_accepts_multi_visuals() -> None:
+    dense = ["24Q1", "24Q2", "24Q3", "24Q4", "25Q1", "25Q2"]
+    errors = cp.validate_contract_visuals(
+        "x",
+        {
+            "slides": [
+                {
+                    "layout": "editorialStat",
+                    "context": "이 숫자는 [[표와 그래프]]를 같이 봐야 말이 됩니다",
+                    "visuals": [
+                        {
+                            "kind": "table",
+                            "cols": ["구분", "값"],
+                            "data": [{"구분": "매출", "값": "636억달러"}],
+                        },
+                        {
+                            "kind": "finCard",
+                            "periods": dense,
+                            "series": [{"name": "매출", "type": "line", "data": [10, 11, 12, 13, 14, 15]}],
+                        },
+                    ],
+                }
+            ]
+        },
+    )
+    assert errors == []
+
+
+def test_contract_visual_gate_blocks_too_many_visuals() -> None:
+    errors = cp.validate_contract_visuals(
+        "x",
+        {
+            "slides": [
+                {
+                    "layout": "editorialBeat",
+                    "line": "시각물이 너무 많으면 카드가 읽히지 않습니다",
+                    "visuals": [
+                        {"kind": "table", "cols": ["a"], "data": [{"a": "1"}]},
+                        {"kind": "table", "cols": ["a"], "data": [{"a": "2"}]},
+                        {"kind": "table", "cols": ["a"], "data": [{"a": "3"}]},
+                        {"kind": "table", "cols": ["a"], "data": [{"a": "4"}]},
+                        {"kind": "table", "cols": ["a"], "data": [{"a": "5"}]},
+                    ],
+                }
+            ]
+        },
+    )
+    assert any("최대 4개" in err for err in errors)
+
+
+def test_contract_planned_visuals_require_multi_visual_alignment() -> None:
+    dense = ["24Q1", "24Q2", "24Q3", "24Q4", "25Q1", "25Q2"]
+    slides = [
+        {"layout": "editorial", "line": "표지는 질문으로 엽니다"},
+        {"layout": "editorialBeat", "line": "그래서 먼저 흐름을 설명합니다"},
+        {
+            "layout": "editorialStat",
+            "context": "이 숫자는 [[표와 그래프]]를 같이 봐야 말이 됩니다",
+            "bigNumber": "636",
+            "unit": "억달러",
+        },
+        {"layout": "editorialBeat", "line": "결국 판단은 다음 장면으로 이어집니다"},
+    ]
+    slides[2]["visuals"] = [
+        {"kind": "table", "cols": ["기간", "값"], "data": [{"기간": "25Q1", "값": "636억달러"}]},
+        {
+            "kind": "finCard",
+            "periods": dense,
+            "series": [{"name": "매출", "type": "line", "data": [10, 11, 12, 13, 14, 15]}],
+        },
+    ]
+    plan = {
+        "planning": {
+            "bigSentenceContract": {"strip": cp.big_sentence_strip(slides)},
+            "visualPlan": [
+                {
+                    "order": 3,
+                    "visualRole": "dataEvidence",
+                    "visualKind": "table",
+                    "visualKinds": ["table", "finCard"],
+                    "visualCount": 2,
+                    "visuals": [
+                        {
+                            "visualIndex": 1,
+                            "visualKind": "table",
+                            "dataExplanation": "분기 매출의 기간과 단위를 표로 먼저 검산하게 한다.",
+                            "evidenceRefs": ["2025Q1 매출 636억달러"],
+                        },
+                        {
+                            "visualIndex": 2,
+                            "visualKind": "finCard",
+                            "dataExplanation": "같은 매출이 최근 여섯 분기에서 어떤 방향으로 움직였는지 보여준다.",
+                            "evidenceRefs": ["2024Q1~2025Q2 매출 시계열"],
+                        },
+                    ],
+                }
+            ],
+        }
+    }
+    assert cp.validate_contract_planned_visuals("x", {"slides": slides}, plan) == []
+    plan["planning"]["visualPlan"][0]["visualCount"] = 1
+    errors = cp.validate_contract_planned_visuals("x", {"slides": slides}, plan)
+    assert any("visualCount" in err for err in errors)
 
 
 def test_contract_plan_gate_can_require_all_plans(tmp_path: Path) -> None:

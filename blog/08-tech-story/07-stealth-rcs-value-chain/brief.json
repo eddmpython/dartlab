@@ -116,35 +116,50 @@
       "kind": "svg",
       "title": "RCS는 실제 크기가 아니라 되돌아오는 전파의 크기다",
       "proves": "스텔스는 안 보임이 아니라 탐지거리와 판단 시간을 줄이는 기술임을 보여준다.",
-      "seriesHint": "RCS 정의와 레이더 방정식"
+      "seriesHint": "RCS 정의와 레이더 방정식",
+      "placement": "1막 RCS 정의 직후 본문 중간",
+      "insertAfter": "RCS를 물체 크기가 아니라 되돌아오는 전파의 크기로 설명한 문단 뒤",
+      "narrativeUse": "독자가 스텔스를 투명화가 아니라 탐지거리와 판단 시간을 줄이는 신호 공학으로 이해하게 한다."
     },
     {
       "actOrder": 4,
       "kind": "table",
       "title": "교전 사슬과 스텔스가 흔드는 지점",
       "proves": "형상, 센서, 전자전, 무장, 소프트웨어가 한 시스템으로 작동함을 보여준다.",
-      "seriesHint": "탐지·분류·추적·교전·재탐지"
+      "seriesHint": "탐지·분류·추적·교전·재탐지",
+      "placement": "4막 센서융합과 전자전 설명 뒤",
+      "insertAfter": "탐지, 분류, 추적, 교전, 재탐지가 하나의 사슬이라는 문단 뒤",
+      "narrativeUse": "독자가 스텔스를 기체 표면 하나가 아니라 교전 사슬 전체를 흔드는 시스템으로 보게 한다."
     },
     {
       "actOrder": 5,
       "kind": "table",
       "title": "공정·회사·공시 근거 지도",
       "proves": "완성기만 보면 스텔스 밸류체인의 절반을 놓친다는 주장을 증명한다.",
-      "seriesHint": "플랫폼, AESA, 엔진, 전자전, 정비"
+      "seriesHint": "플랫폼, AESA, 엔진, 전자전, 정비",
+      "placement": "5막 밸류체인 회사 배치 설명 앞",
+      "insertAfter": "완성기만 보면 스텔스 가치사슬의 절반을 놓친다는 문단 뒤",
+      "narrativeUse": "독자가 어느 회사가 플랫폼, 센서, 엔진, 전자전, 정비 중 어느 칸을 쥐는지 한눈에 확인한다."
     },
     {
       "actOrder": 5,
       "kind": "bar",
       "title": "미국 방산 대표사의 2025 영업이익률",
       "proves": "기술 난도가 곧바로 초고마진이 아니라 조달 구조와 장기 원가 안에서 10% 안팎으로 모임을 보여준다.",
-      "seriesHint": "EDGAR 2025Q1~Q4"
+      "seriesHint": "EDGAR 2025Q1~Q4",
+      "placement": "6막 미국 방산사 손익 비교 문단 뒤",
+      "insertAfter": "미국 방산 주계약사의 영업이익률이 10% 안팎에 모인다는 설명 뒤",
+      "narrativeUse": "독자가 기술 난도와 회사 전체 영업이익률을 바로 동일시하지 않고 계약 구조를 함께 보게 한다."
     },
     {
       "actOrder": 6,
       "kind": "table",
       "title": "EDGAR와 DART에서 읽을 위치",
       "proves": "같은 숫자라도 회계연도, 기간, 사업부 설명을 확인해야 함을 보여준다.",
-      "seriesHint": "10-K, 10-Q, 사업보고서, 분기보고서"
+      "seriesHint": "10-K, 10-Q, 사업보고서, 분기보고서",
+      "placement": "마지막 막 공시 읽는 법 설명 뒤",
+      "insertAfter": "EDGAR와 DART가 같은 표가 아니라는 경고 문단 뒤",
+      "narrativeUse": "독자가 다음 스텔스 뉴스에서 연도, 분기, 사업부 설명을 먼저 확인하는 검산 순서를 남긴다."
     }
   ],
   "imagePlan": [
@@ -157,7 +172,9 @@
         "hangar",
         "radar",
         "maintenance"
-      ]
+      ],
+      "placement": "첫 화면 hero 이미지",
+      "narrativeUse": "첫 화면에서 스텔스를 전투 장면이 아니라 시험, 조립, 정비가 묶인 기술 시스템으로 보이게 한다."
     },
     {
       "slot": "inline",
@@ -167,7 +184,10 @@
         "coating",
         "panel",
         "inspection"
-      ]
+      ],
+      "insertAfterAct": 3,
+      "placement": "3막 저피탐 코팅 정비 설명 뒤",
+      "narrativeUse": "독자가 스텔스 성능이 출고 뒤에도 코팅과 패널 정비 품질에 계속 의존한다는 점을 본다."
     },
     {
       "slot": "inline",
@@ -177,7 +197,10 @@
         "aesa",
         "radar",
         "avionics"
-      ]
+      ],
+      "insertAfterAct": 4,
+      "placement": "4막 센서융합과 전자전 설명 뒤",
+      "narrativeUse": "독자가 스텔스를 덜 보이는 기체가 아니라 먼저 보고 먼저 판단하는 센서 네트워크로 이해한다."
     }
   ],
   "honestyGuards": [

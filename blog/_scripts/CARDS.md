@@ -32,8 +32,9 @@
    - 숫자 카드는 숫자만 던지지 않는다. `context` 에 그 숫자가 앞장 주장과 어떻게 이어지는지 완성 문장으로 쓴다.
    - 슬라이드는 체크리스트가 아니다. 각 장은 앞장의 주장이나 숫자를 받아 다음 장으로 넘겨야 하며, "다음에는 이것을 본다"식 나열이면 발행 실패다.
    - `planning.plainLanguageContract` 도 강행 규칙이다. 전문용어·약어를 앞세우지 말고, 독자가 소리 내어 읽어도 자연스러운 한국어로 먼저 쓴다.
-   - `planning.visualPlan` 도 강행 규칙이다. 숫자·비교·현금·마진·주가 같은 데이터 주장 카드는 `dataExplanation`, `evidenceRefs`, 실제 slide `visual` 계약(`finCard` 또는 `table`)이 있어야 한다. 배경 이미지만 붙인 숫자 카드는 발행 실패다.
-   - `visualPlan[].visualKind` 와 실제 `slides[].visual.kind` 는 같아야 한다. 계획만 쓰고 카드에 그래프·표를 안 붙이면 `build_carousel_contracts.py` 가 발행을 중단한다.
+   - `planning.visualPlan` 도 강행 규칙이다. 숫자·비교·현금·마진·주가 같은 데이터 주장 카드는 `dataExplanation`, `evidenceRefs`, 실제 slide `visual` 또는 `visuals[]` 계약(`finCard` 또는 `table`)이 있어야 한다. 배경 이미지만 붙인 숫자 카드는 발행 실패다.
+   - 시각물은 한 장으로 제한하지 않는다. 한 카드의 주장을 표와 그래프가 같이 설명해야 하면 `slides[].visuals[]` 에 최대 4개까지 붙인다. 예: `table` 로 분모와 기간을 먼저 보여주고, `finCard` 로 여섯 분기 추이를 이어 붙인다.
+   - `visualPlan[].visualCount`, `visualKinds`, `visuals[].visualKind` 와 실제 `slides[].visual` 또는 `slides[].visuals[].kind` 는 수량과 순서까지 같아야 한다. 계획만 쓰고 카드에 그래프·표를 안 붙이거나, 실제 카드가 계획과 다르면 `build_carousel_contracts.py` 가 발행을 중단한다.
    - `imagePlan[]` 은 신규 기획 기준 **7장 이상**이어야 한다. 고정 템플릿이 아니라 카드 흐름에서 의미가 다른 장면만 기획한다.
    - 이미지는 그 글의 회사·사건·장소·시설·제품·운영 질문을 상징하는 **실제 사용용 장면**이어야 한다. 범용 금융 배경은 탈락.
    - 상호/회사명은 프롬프트와 검색 키워드에 써도 된다. 다만 생성형 이미지가 공식 로고·공식 문서·실제 내부시설을 사실처럼 꾸며내면 안 된다.
@@ -90,6 +91,21 @@ carousel:
       bigNumber: "100"
       unit: "억개"
       context: "이 숫자가 앞장의 주장과 어떻게 연결되는지 완성 문장으로 씁니다"
+      visuals:
+        - kind: table
+          cols: ["기간", "값"]
+          data:
+            - 기간: "2025Q1"
+              값: "100억"
+          caption: "이 표는 숫자의 기간과 분모를 먼저 검산하게 합니다"
+        - kind: finCard
+          title: "최근 여섯 분기 추이"
+          unit: "억"
+          periods: ["24Q1", "24Q2", "24Q3", "24Q4", "25Q1", "25Q2"]
+          series:
+            - name: "매출"
+              type: line
+              data: [70, 74, 81, 88, 95, 100]
     - layout: editorialBeat     # 헤드라인 비트
       kicker: "라벨"
       line: "한 줄"
@@ -201,7 +217,7 @@ Openverse/Commons 검색도 범용 업종어만 넣지 않는다. `queries` 는 
 > 흐름: 신규·개선편은 위 패널(다중 에이전트 토론·평가→수정→재평가)을 거친 뒤에만 `build_carousel_contracts.py` 발행.
 > **이미 발행된 편도 이 루프로 개선한다**(발행본 품질 상향이 기본 운영).
 > `cards.plan.json` 이 있는 글은 `planning.narrativeContract`, `planning.plainLanguageContract`, `reviewGate.status: "passed"` 와 각 required round `status: "passed"` 가
-> 아니면 `build_carousel_contracts.py` 가 발행을 중단한다. v7+ 는 `reviewGate.loopEvidence.workflow="cards_plan_loop.workflow.js"`, `rounds >= 2`, 최종 `evaluatorScore >= 92`, 재기획 흔적, 전 슬라이드 `[[강조]]` 마커도 필수다. v5+ 는 `planning.visualPlan` 도 필수다. 데이터 주장 카드에 `dataExplanation`·`evidenceRefs`·실제 slide `visual` 이 없으면 중단한다. legacy 글은 plan 파일이 없으면 허용하되, 신규·개선은 plan 을 만든다.
+> 아니면 `build_carousel_contracts.py` 가 발행을 중단한다. v7+ 는 `reviewGate.loopEvidence.workflow="cards_plan_loop.workflow.js"`, `rounds >= 2`, 최종 `evaluatorScore >= 92`, 재기획 흔적, 전 슬라이드 `[[강조]]` 마커도 필수다. v8+ 는 `planning.visualPlan` 의 복수 비주얼 계약도 필수다. 데이터 주장 카드에 `dataExplanation`·`evidenceRefs`·실제 slide `visual` 또는 `visuals[]` 가 없거나, 계획 수량과 실제 수량이 다르면 중단한다. legacy 글은 plan 파일이 없으면 허용하되, 신규·개선은 plan 을 만든다.
 > 발행 게이트는 실제 카드 문장도 검사한다. `CDMO`, `HBM` 같은 약어와 `다음 질문`류 문구가 남아 있으면 발행을 중단한다. (`AI` 는 일반어로 허용.)
 
 ## 도구

@@ -22,8 +22,8 @@ TECH_DIR = ROOT / "blog" / "08-tech-story"  # 기술이야기(설명 시리즈) 
 SNS_ASSETS_DIR = ROOT / "sns" / "assets"
 PLAN_FILE = "cards.plan.json"
 
-PLAN_VERSION = 7
-SUPPORTED_PLAN_VERSIONS = {1, 2, 3, 4, 5, 6, PLAN_VERSION}
+PLAN_VERSION = 8
+SUPPORTED_PLAN_VERSIONS = {1, 2, 3, 4, 5, 6, 7, PLAN_VERSION}
 STRICT_FLOW_MIN_VERSION = 3  # 이 버전 이상이면 큰문장 흐름(연결·판단형 종결)을 강제 검사
 INSIGHT_MIN_VERSION = 4  # 이 버전 이상이면 insightContract(통념·반전·렌즈)를 강제
 VISUAL_PLAN_MIN_VERSION = 4  # 이 버전 이상이면 데이터 카드의 visualPlan 과 실제 visual 연결을 강제
@@ -31,6 +31,8 @@ TITLE_CONTRACT_MIN_VERSION = 6  # 이 버전 이상이면 제목 후보·후크 
 LOOP_EVIDENCE_MIN_VERSION = 7  # 이 버전 이상이면 기획자·평가자·회의자 재기획 루프 증거를 강제
 EMPHASIS_MIN_VERSION = 7  # 이 버전 이상이면 모든 슬라이드 핵심 문장에 [[강조]] 마커를 강제
 REVIEW_SCORE_MIN = 92
+MULTI_VISUAL_MIN_VERSION = 8
+MAX_VISUALS_PER_SLIDE = 4
 LEGACY_MIN_IMAGES = 5
 MIN_IMAGES = 7
 RECOMMENDED_MAX_IMAGES = 10
@@ -79,7 +81,8 @@ VISUAL_PLAN_RULES = (
     "숫자·비교·강한 주장 카드는 어떤 데이터가 그 문장을 증명하는지 dataExplanation 에 적는다.",
     "evidenceRefs 에 기간·분모·출처가 드러난 실측 ref 를 최소 1개 이상 적는다.",
     "숫자·비교 카드는 image 배경만으로 통과하지 않는다. finCard 또는 table 같은 실제 visual 계약을 붙인다.",
-    "visualPlan 의 visualKind 는 실제 slide.visual.kind 와 같아야 한다.",
+    "시각물은 한 장으로 제한하지 않는다. 필요한 경우 같은 슬라이드에 table 과 finCard 를 같이 붙이고, 최대 4개까지 기획한다.",
+    "visualPlan 의 visualKinds/visuals 는 실제 slide.visual 또는 slide.visuals[].kind 와 같아야 한다.",
 )
 TITLE_HOOK_RULES = (
     "제목도 기획 루프의 산물이다. 후보 제목을 3개 이상 쓰고, 각 후보의 독자 후크와 약점을 비교한다.",
@@ -239,6 +242,26 @@ def normalize_slide(raw: object) -> dict[str, Any] | None:
     if layout not in {"editorial", "editorialBeat", "editorialStat"}:
         return None
     return {k: v for k, v in raw.items() if v not in (None, "")}
+
+
+def slide_visuals(slide: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return all visual contracts attached to a slide.
+
+    `visual` is the legacy single contract. `visuals` is the current multi-contract
+    form for table + graph or several evidence blocks in one card.
+    """
+    out: list[dict[str, Any]] = []
+    multi = slide.get("visuals")
+    if isinstance(multi, list):
+        out.extend(v for v in multi if isinstance(v, dict) and v)
+    single = slide.get("visual")
+    if isinstance(single, dict) and single:
+        out.append(single)
+    return out[:MAX_VISUALS_PER_SLIDE]
+
+
+def has_slide_visuals(slide: dict[str, Any]) -> bool:
+    return bool(slide_visuals(slide))
 
 
 def requested_image_count(slides: list[dict[str, Any]], count: int | None) -> int:
@@ -409,37 +432,62 @@ def visual_plan_for_slides(slides: list[dict[str, Any]]) -> list[dict[str, Any]]
     """
     out: list[dict[str, Any]] = []
     for idx, slide in enumerate(slides, start=1):
-        vis = slide.get("visual")
-        has_visual = isinstance(vis, dict) and bool(vis)
-        kind = str(vis.get("kind") or "") if has_visual else "image"
+        visuals = slide_visuals(slide)
+        has_visual = bool(visuals)
+        first_visual = visuals[0] if visuals else {}
+        kind = str(first_visual.get("kind") or "") if has_visual else "image"
         requires_visual = requires_data_visual(idx, slide)
+        visual_items: list[dict[str, Any]] = []
+        for visual_idx, vis in enumerate(visuals, start=1):
+            vkind = str(vis.get("kind") or "")
+            item: dict[str, Any] = {
+                "visualIndex": visual_idx,
+                "visualKind": vkind,
+                "dataExplanation": clean_card_text(vis.get("caption")),
+                "evidenceRefs": [],
+                "proves": clean_card_text(vis.get("caption")) or big_sentence_for_slide(slide),
+            }
+            if vkind == "finCard":
+                series = vis.get("series") if isinstance(vis.get("series"), list) else []
+                periods = vis.get("periods") if isinstance(vis.get("periods"), list) else []
+                item["shape"] = [
+                    {"name": str(s.get("name") or ""), "type": str(s.get("type") or "bar")}
+                    for s in series
+                    if isinstance(s, dict)
+                ]
+                item["periods"] = len(periods)
+                item["granularity"] = "quarterly" if len(periods) >= MIN_VIZ_PERIODS else "sparse"
+            elif vkind == "table":
+                cols = vis.get("cols") if isinstance(vis.get("cols"), list) else []
+                data = vis.get("data") if isinstance(vis.get("data"), list) else []
+                item["shape"] = [str(c) for c in cols]
+                item["rows"] = len(data)
+            visual_items.append(item)
         entry: dict[str, Any] = {
             "order": idx,
             "claim": big_sentence_for_slide(slide),
             "visualKind": kind,
+            "visualKinds": [str(v.get("kind") or "") for v in visuals],
+            "visualCount": len(visuals),
+            "visuals": visual_items,
             "visualRole": "dataEvidence" if requires_visual else "sceneSupport",
             "dataExplanation": "",
             "evidenceRefs": [],
             "rules": list(VISUAL_PLAN_RULES) if idx == 1 else [],
         }
-        if kind == "finCard":
-            series = vis.get("series") if isinstance(vis.get("series"), list) else []
-            periods = vis.get("periods") if isinstance(vis.get("periods"), list) else []
-            entry["shape"] = [
-                {"name": str(s.get("name") or ""), "type": str(s.get("type") or "bar")}
-                for s in series
-                if isinstance(s, dict)
-            ]
-            entry["periods"] = len(periods)
-            entry["granularity"] = "quarterly" if len(periods) >= MIN_VIZ_PERIODS else "sparse"
-        elif kind == "table":
-            cols = vis.get("cols") if isinstance(vis.get("cols"), list) else []
-            data = vis.get("data") if isinstance(vis.get("data"), list) else []
-            entry["shape"] = [str(c) for c in cols]
-            entry["rows"] = len(data)
+        if visual_items:
+            entry.update({k: v for k, v in visual_items[0].items() if k not in {"visualIndex"}})
+            merged_refs: list[str] = []
+            for item in visual_items:
+                if isinstance(item.get("evidenceRefs"), list):
+                    merged_refs.extend(str(r) for r in item["evidenceRefs"] if str(r).strip())
+            if merged_refs:
+                entry["evidenceRefs"] = merged_refs
         if has_visual:
-            entry["dataExplanation"] = clean_card_text(vis.get("caption"))
-        entry["proves"] = clean_card_text(vis.get("caption")) if has_visual else big_sentence_for_slide(slide)
+            entry["dataExplanation"] = " / ".join(
+                clean_card_text(v.get("caption")) for v in visuals if clean_card_text(v.get("caption"))
+            )
+        entry["proves"] = entry["dataExplanation"] if has_visual else big_sentence_for_slide(slide)
         out.append(entry)
     return out
 
@@ -752,6 +800,43 @@ def _visual_plan_by_order(plan: dict[str, Any]) -> dict[int, dict[str, Any]]:
     return out
 
 
+def _visual_items_from_entry(entry: dict[str, Any]) -> list[dict[str, Any]]:
+    items = entry.get("visuals")
+    if isinstance(items, list):
+        return [item for item in items if isinstance(item, dict)]
+    kind = str(entry.get("visualKind") or "").strip()
+    if not kind:
+        return []
+    return [
+        {
+            "visualIndex": 1,
+            "visualKind": kind,
+            "dataExplanation": entry.get("dataExplanation"),
+            "evidenceRefs": entry.get("evidenceRefs"),
+            "proves": entry.get("proves"),
+        }
+    ]
+
+
+def _visual_kinds_from_entry(entry: dict[str, Any]) -> list[str]:
+    kinds = entry.get("visualKinds")
+    if isinstance(kinds, list):
+        return [str(kind).strip() for kind in kinds if str(kind).strip()]
+    return [
+        str(item.get("visualKind") or "").strip()
+        for item in _visual_items_from_entry(entry)
+        if str(item.get("visualKind") or "").strip()
+    ]
+
+
+def _has_multi_visual_contract(entry: dict[str, Any]) -> bool:
+    return (
+        isinstance(entry.get("visuals"), list)
+        or isinstance(entry.get("visualKinds"), list)
+        or entry.get("visualCount") not in (None, "")
+    )
+
+
 def _data_visual_orders_from_plan(plan: dict[str, Any]) -> set[int]:
     planning = plan.get("planning") if isinstance(plan.get("planning"), dict) else {}
     big_sentence = planning.get("bigSentenceContract") if isinstance(planning.get("bigSentenceContract"), dict) else {}
@@ -796,27 +881,56 @@ def validate_visual_plan(plan: dict[str, Any], *, require_passed: bool) -> list[
             order = int(entry.get("order"))
         except (TypeError, ValueError):
             continue
-        kind = str(entry.get("visualKind") or "").strip()
+        visual_items = _visual_items_from_entry(entry)
+        kinds = _visual_kinds_from_entry(entry)
+        kind = kinds[0] if kinds else str(entry.get("visualKind") or "").strip()
         role = str(entry.get("visualRole") or "").strip()
-        if role == "dataEvidence" or kind in DATA_VISUAL_KINDS:
+        if role == "dataEvidence" or any(k in DATA_VISUAL_KINDS for k in kinds):
             required_orders.add(order)
+        if isinstance(version, int) and version >= MULTI_VISUAL_MIN_VERSION:
+            count = entry.get("visualCount")
+            if count not in (None, ""):
+                try:
+                    numeric_count = int(count)
+                except (TypeError, ValueError):
+                    errors.append(f"{slug}: planning.visualPlan[{order}].visualCount 는 숫자여야 함")
+                    numeric_count = 0
+                if numeric_count < 0 or numeric_count > MAX_VISUALS_PER_SLIDE:
+                    errors.append(
+                        f"{slug}: planning.visualPlan[{order}].visualCount 는 0~{MAX_VISUALS_PER_SLIDE} 범위여야 함"
+                    )
+                if visual_items and numeric_count != len(visual_items):
+                    errors.append(
+                        f"{slug}: planning.visualPlan[{order}].visualCount({numeric_count}) 와 visuals 수({len(visual_items)})가 다름"
+                    )
     for order in sorted(required_orders):
         entry = by_order.get(order)
         if not entry:
             errors.append(f"{slug}: planning.visualPlan[{order}] 누락 - 데이터 주장 카드의 시각 계획 필요")
             continue
-        kind = str(entry.get("visualKind") or "").strip()
-        if kind not in VISUAL_CONTRACTS_RENDERABLE:
+        visual_items = _visual_items_from_entry(entry)
+        data_visual_items = [
+            item for item in visual_items if str(item.get("visualKind") or "").strip() in VISUAL_CONTRACTS_RENDERABLE
+        ]
+        if not data_visual_items:
             errors.append(
-                f"{slug}: planning.visualPlan[{order}].visualKind 는 렌더 가능한 데이터 visual 계약이어야 함"
-                f"(현재 {kind or '없음'})"
+                f"{slug}: planning.visualPlan[{order}] 는 렌더 가능한 데이터 visual 계약을 최소 1개 가져야 함"
             )
-        explanation = clean_card_text(entry.get("dataExplanation"))
-        if not has_data_explanation(explanation):
-            errors.append(f"{slug}: planning.visualPlan[{order}].dataExplanation 이 너무 약함")
-        refs = entry.get("evidenceRefs")
-        if not has_evidence_refs(refs):
-            errors.append(f"{slug}: planning.visualPlan[{order}].evidenceRefs 누락")
+            continue
+        for item in data_visual_items:
+            idx = int(item.get("visualIndex") or 1)
+            kind = str(item.get("visualKind") or "").strip()
+            if kind not in VISUAL_CONTRACTS_RENDERABLE:
+                errors.append(
+                    f"{slug}: planning.visualPlan[{order}].visuals[{idx}].visualKind 는 렌더 가능한 데이터 visual 계약이어야 함"
+                    f"(현재 {kind or '없음'})"
+                )
+            explanation = clean_card_text(item.get("dataExplanation") or entry.get("dataExplanation"))
+            if not has_data_explanation(explanation):
+                errors.append(f"{slug}: planning.visualPlan[{order}].visuals[{idx}].dataExplanation 이 너무 약함")
+            refs = item.get("evidenceRefs") if isinstance(item.get("evidenceRefs"), list) else entry.get("evidenceRefs")
+            if not has_evidence_refs(refs):
+                errors.append(f"{slug}: planning.visualPlan[{order}].visuals[{idx}].evidenceRefs 누락")
     return errors
 
 
@@ -1193,28 +1307,20 @@ def validate_contract_visuals(slug: str, contract: dict[str, Any]) -> list[str]:
     "CardSlide 렌더러 추가(확장 루프) 후 발행" 으로 막는다. 종류별 필수 필드도 본다.
     """
     errors: list[str] = []
-    for idx, slide in enumerate(contract.get("slides", []), start=1):
-        if not isinstance(slide, dict):
-            continue
-        vis = slide.get("visual")
-        if vis in (None, "", {}):
-            continue
-        if not isinstance(vis, dict):
-            errors.append(f"{slug}: slide[{idx}].visual 은 객체여야 함")
-            continue
+
+    def validate_one_visual(loc: str, vis: dict[str, Any]) -> None:
         kind = str(vis.get("kind") or "")
         if kind not in VISUAL_CONTRACTS_REGISTERED:
             errors.append(
-                f"{slug}: slide[{idx}].visual.kind {kind!r} 미등록 렌더링 계약 - "
+                f"{slug}: {loc}.kind {kind!r} 미등록 렌더링 계약 - "
                 f"레지스트리에 계약 추가(확장 루프). 등록분: {', '.join(VISUAL_CONTRACTS_REGISTERED)}"
             )
-            continue
+            return
         if kind not in VISUAL_CONTRACTS_RENDERABLE:
             errors.append(
-                f"{slug}: slide[{idx}].visual.kind {kind!r} 은 등록됐으나 렌더러 미구현 - "
-                "CardSlide 에 렌더러 추가(확장 루프) 후 발행"
+                f"{slug}: {loc}.kind {kind!r} 은 등록됐으나 렌더러 미구현 - CardSlide 에 렌더러 추가(확장 루프) 후 발행"
             )
-            continue
+            return
         if kind == "finCard":
             series = vis.get("series")
             periods = vis.get("periods")
@@ -1223,10 +1329,10 @@ def validate_contract_visuals(slug: str, contract: dict[str, Any]) -> list[str]:
                 and series
                 and all(isinstance(s, dict) and isinstance(s.get("data"), list) for s in series)
             ):
-                errors.append(f"{slug}: slide[{idx}].visual(finCard) 는 series[].data 가 필요함")
+                errors.append(f"{slug}: {loc}(finCard) 는 series[].data 가 필요함")
             elif not isinstance(periods, list) or len(periods) < MIN_VIZ_PERIODS:
                 errors.append(
-                    f"{slug}: slide[{idx}].visual(finCard) periods 는 최소 {MIN_VIZ_PERIODS}개여야 함"
+                    f"{slug}: {loc}(finCard) periods 는 최소 {MIN_VIZ_PERIODS}개여야 함"
                     f"(현재 {len(periods) if isinstance(periods, list) else 0}). 그래프는 항상 밀도 있게(분기 시계열)"
                 )
             else:
@@ -1235,30 +1341,49 @@ def validate_contract_visuals(slug: str, contract: dict[str, Any]) -> list[str]:
                     name = str(s.get("name") or "")
                     if any(v is None for v in data):
                         errors.append(
-                            f"{slug}: slide[{idx}].visual(finCard) '{name}' 시리즈에 빈 값(구멍) 금지. "
+                            f"{slug}: {loc}(finCard) '{name}' 시리즈에 빈 값(구멍) 금지. "
                             "연도·분기를 건너뛰지 말고 밀도 있게 채운다"
                         )
                     if len(data) != len(periods):
                         errors.append(
-                            f"{slug}: slide[{idx}].visual(finCard) '{name}' 데이터 길이({len(data)})가 "
-                            f"periods({len(periods)})와 다름"
+                            f"{slug}: {loc}(finCard) '{name}' 데이터 길이({len(data)})가 periods({len(periods)})와 다름"
                         )
         elif kind == "table":
             cols = vis.get("cols")
             data = vis.get("data")
             if not (isinstance(cols, list) and cols and isinstance(data, list) and data):
-                errors.append(f"{slug}: slide[{idx}].visual(table) 는 cols·data 가 필요함")
-                continue
+                errors.append(f"{slug}: {loc}(table) 는 cols·data 가 필요함")
+                return
             clean_cols = [str(c) for c in cols]
             for row_idx, row in enumerate(data, start=1):
                 if not isinstance(row, dict):
-                    errors.append(
-                        f"{slug}: slide[{idx}].visual(table).data[{row_idx}] 는 객체여야 함. 배열 행은 렌더에서 빈 표가 됨"
-                    )
+                    errors.append(f"{slug}: {loc}(table).data[{row_idx}] 는 객체여야 함. 배열 행은 렌더에서 빈 표가 됨")
                     continue
                 missing = [c for c in clean_cols if c not in row]
                 if missing:
-                    errors.append(f"{slug}: slide[{idx}].visual(table).data[{row_idx}] 누락 컬럼: {', '.join(missing)}")
+                    errors.append(f"{slug}: {loc}(table).data[{row_idx}] 누락 컬럼: {', '.join(missing)}")
+
+    for idx, slide in enumerate(contract.get("slides", []), start=1):
+        if not isinstance(slide, dict):
+            continue
+        single = slide.get("visual")
+        if single not in (None, "", {}) and not isinstance(single, dict):
+            errors.append(f"{slug}: slide[{idx}].visual 은 객체여야 함")
+        multi = slide.get("visuals")
+        if multi not in (None, "", {}) and not isinstance(multi, list):
+            errors.append(f"{slug}: slide[{idx}].visuals 는 리스트여야 함")
+        if isinstance(multi, list):
+            if len(multi) > MAX_VISUALS_PER_SLIDE:
+                errors.append(
+                    f"{slug}: slide[{idx}].visuals 는 최대 {MAX_VISUALS_PER_SLIDE}개까지 허용(현재 {len(multi)})"
+                )
+            for visual_idx, vis in enumerate(multi, start=1):
+                if not isinstance(vis, dict):
+                    errors.append(f"{slug}: slide[{idx}].visuals[{visual_idx}] 은 객체여야 함")
+                    continue
+                validate_one_visual(f"slide[{idx}].visuals[{visual_idx}]", vis)
+        if isinstance(single, dict) and single:
+            validate_one_visual(f"slide[{idx}].visual", single)
     return errors
 
 
@@ -1278,28 +1403,65 @@ def validate_contract_planned_visuals(slug: str, contract: dict[str, Any], plan:
         if not entry:
             errors.append(f"{slug}: planning.visualPlan[{order}] 누락 - 실제 숫자·비교 슬라이드의 데이터 설명 필요")
             continue
-        expected_kind = str(entry.get("visualKind") or "").strip()
-        if expected_kind not in VISUAL_CONTRACTS_RENDERABLE:
+        expected_items = _visual_items_from_entry(entry)
+        expected_kinds = _visual_kinds_from_entry(entry)
+        if not expected_kinds:
+            expected_kinds = [str(entry.get("visualKind") or "").strip()]
+        for visual_idx, kind in enumerate(expected_kinds, start=1):
+            if kind not in VISUAL_CONTRACTS_RENDERABLE:
+                errors.append(
+                    f"{slug}: visualPlan[{order}].visuals[{visual_idx}].visualKind {kind!r} 은 렌더 가능한 데이터 visual 이 아님"
+                )
+        actual_visuals = slide_visuals(slides[order - 1])
+        if not actual_visuals:
             errors.append(
-                f"{slug}: visualPlan[{order}].visualKind {expected_kind!r} 은 렌더 가능한 데이터 visual 이 아님"
+                f"{slug}: slide[{order}] 에 visual/visuals 누락 - 숫자·비교 카드는 배경 image 만으로 발행할 수 없음"
             )
-        visual = slides[order - 1].get("visual")
-        if not isinstance(visual, dict):
-            errors.append(f"{slug}: slide[{order}] 에 visual 누락 - 숫자·비교 카드는 배경 image 만으로 발행할 수 없음")
-        else:
-            actual_kind = str(visual.get("kind") or "")
+        actual_kinds = [str(visual.get("kind") or "") for visual in actual_visuals]
+        for visual_idx, actual_kind in enumerate(actual_kinds, start=1):
             if actual_kind not in VISUAL_CONTRACTS_RENDERABLE:
                 errors.append(
-                    f"{slug}: slide[{order}].visual.kind {actual_kind!r} 은 렌더 가능한 데이터 visual 이 아님"
+                    f"{slug}: slide[{order}].visuals[{visual_idx}].kind {actual_kind!r} 은 렌더 가능한 데이터 visual 이 아님"
                 )
-            elif actual_kind != expected_kind:
+        if _has_multi_visual_contract(entry):
+            count = entry.get("visualCount")
+            if count not in (None, ""):
+                try:
+                    numeric_count = int(count)
+                except (TypeError, ValueError):
+                    errors.append(f"{slug}: visualPlan[{order}].visualCount 는 숫자여야 함")
+                else:
+                    if numeric_count != len(actual_visuals):
+                        errors.append(
+                            f"{slug}: slide[{order}] 실제 visual 수({len(actual_visuals)})가 visualPlan visualCount({numeric_count})와 다름"
+                        )
+            if expected_kinds and actual_kinds != expected_kinds:
                 errors.append(
-                    f"{slug}: slide[{order}].visual.kind {actual_kind!r} 이 visualPlan {expected_kind!r} 과 다름"
+                    f"{slug}: slide[{order}] 실제 visualKinds({actual_kinds})가 visualPlan({expected_kinds})와 다름"
                 )
-        if not has_data_explanation(entry.get("dataExplanation")):
-            errors.append(f"{slug}: visualPlan[{order}].dataExplanation 이 너무 약함")
-        if not has_evidence_refs(entry.get("evidenceRefs")):
-            errors.append(f"{slug}: visualPlan[{order}].evidenceRefs 누락")
+        elif expected_kinds and actual_kinds and actual_kinds[0] != expected_kinds[0]:
+            errors.append(
+                f"{slug}: slide[{order}].visual.kind {actual_kinds[0]!r} 이 visualPlan {expected_kinds[0]!r} 과 다름"
+            )
+        if expected_items:
+            for visual_idx, item in enumerate(expected_items, start=1):
+                if str(item.get("visualKind") or "").strip() not in VISUAL_CONTRACTS_RENDERABLE:
+                    continue
+                explanation = item.get("dataExplanation") or entry.get("dataExplanation")
+                if not has_data_explanation(explanation):
+                    errors.append(f"{slug}: visualPlan[{order}].visuals[{visual_idx}].dataExplanation 이 너무 약함")
+                refs = (
+                    item.get("evidenceRefs")
+                    if isinstance(item.get("evidenceRefs"), list)
+                    else entry.get("evidenceRefs")
+                )
+                if not has_evidence_refs(refs):
+                    errors.append(f"{slug}: visualPlan[{order}].visuals[{visual_idx}].evidenceRefs 누락")
+        else:
+            if not has_data_explanation(entry.get("dataExplanation")):
+                errors.append(f"{slug}: visualPlan[{order}].dataExplanation 이 너무 약함")
+            if not has_evidence_refs(entry.get("evidenceRefs")):
+                errors.append(f"{slug}: visualPlan[{order}].evidenceRefs 누락")
     return errors
 
 

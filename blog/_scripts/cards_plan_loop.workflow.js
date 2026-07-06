@@ -38,6 +38,7 @@ const PRINCIPLES = `카드뉴스 5대원칙(합격선):
 const CONTRACTS = `렌더 계약 레지스트리(기획에서 그래프 모양까지 설계, 없으면 toBuild에 신설 선언):
 - finCard: 인라인 재무그래프. series[{name,type:'bar'|'line',data:[]}] + periods:[]. 시계열은 항상 밀도 있게(분기 6점 이상, 빈 값/구멍 금지, data 길이=periods 길이). 추이는 line, 비교/구성은 bar.
 - table: cols:[] + data:[{}]. 작은 수치 표.
+- visual set: 한 슬라이드에 시각물이 꼭 하나일 필요는 없다. 필요하면 같은 order 에 visualIndex 1~4를 두고 table+finCard, 표+그래프+비교표까지 기획한다. 모든 visual 은 dataExplanation 과 evidenceRefs 를 가진다.
 - 필요한 시각이 위에 없으면 renderContracts.toBuild 에 '계약명: 무엇을 그리나 + 왜 기존 계약으로 안 되나'를 적는다(파이프라인이 그 계약을 신설하도록).`
 
 const TYPE_GUIDANCE = {
@@ -96,18 +97,21 @@ const PLAN_SCHEMA = {
           bigSentence: { type: 'string' },
           sub: { type: 'string' },
           visualOrder: { type: 'integer' },
+          visualOrders: { type: 'array', items: { type: 'integer' }, description: '이 슬라이드에 붙는 visuals order 목록. 여러 시각물이면 같은 order 를 반복하지 말고 visuals 의 order+visualIndex 로 연결.' },
         },
       },
     },
     visuals: {
       type: 'array',
       items: {
-        type: 'object', additionalProperties: false, required: ['order', 'kind', 'proves'],
+        type: 'object', additionalProperties: false, required: ['order', 'visualIndex', 'kind', 'proves', 'dataExplanation', 'evidenceRefs'],
         properties: {
           order: { type: 'integer' },
+          visualIndex: { type: 'integer', description: '같은 슬라이드 안 순서. 1~4.' },
           kind: { type: 'string' },
           title: { type: 'string' },
           unit: { type: 'string' },
+          placement: { type: 'string', description: '슬라이드 안 배치. 예: top graph, bottom table, side comparison.' },
           periods: { type: 'array', items: { type: 'string' } },
           series: {
             type: 'array',
@@ -116,7 +120,11 @@ const PLAN_SCHEMA = {
               properties: { name: { type: 'string' }, type: { type: 'string', enum: ['bar', 'line'] }, data: { type: 'array', items: { type: 'number' } } },
             },
           },
+          cols: { type: 'array', items: { type: 'string' } },
+          data: { type: 'array', items: { type: 'object', additionalProperties: true } },
           proves: { type: 'string' },
+          dataExplanation: { type: 'string', description: '기간, 분모, 계산식, 이 카드 주장과의 연결.' },
+          evidenceRefs: { type: 'array', items: { type: 'string' }, description: 'DART, EDGAR, dartlab, scan 근거와 기간.' },
         },
       },
     },
@@ -204,7 +212,9 @@ ${evidence}
 - 위 타입 지침을 지킨다.
 - 제목은 후보 3개 이상을 먼저 만들고, titleContract 에 hookQuestion·readerGap·promise·whySelected 를 채운다. 최종 title 은 titleContract.selectedTitle 과 같아야 한다.
 - 인사이트는 재탕을 최대한 피한다(권고). freshnessArgument 에 새 지점을 적되, 이미 도는 서사라도 그것만으로 탈락은 아니다. 변명해야 하는 억지 비율 금지. 프레임은 제목의 실제 주어와 일치(인프라 회사를 AI 주인공으로 둔갑 금지).
-- 그래프는 기획에서 모양까지 설계. 시계열은 분기로 밀도 있게(6점 이상), 빈 값 금지, data 길이=periods 길이. 추이는 line.
+- 그래프와 표는 기획에서 모양까지 설계. 한 슬라이드에 시각물 하나로 제한하지 않는다. 주장에 필요하면 같은 order 에 visualIndex 1~4로 table+finCard, 표+그래프, 표+그래프+근거표를 모두 기획한다.
+- 시계열은 분기로 밀도 있게(6점 이상), 빈 값 금지, data 길이=periods 길이. 추이는 line. 표는 cols 와 data 객체 행을 반드시 채운다.
+- 모든 visuals 항목은 dataExplanation 에 기간·분모·계산식·주장 연결을 쓰고, evidenceRefs 에 검증 데이터 근거를 넣는다.
 - images: spine 의 각 장에 배경을 기획한다. 회사명을 말하는 장은 subjectCompany 에 그 회사명, bg 에 그 회사 로고·제품·상호를 박는다(일반 장면 금지). 회사 특정 안 되는 개념 장만 일반 장면. 그래프 장은 "(배경 없음)".
 - 8~10장. 큰문장만 읽어도 한 편으로 완결. 표지는 호기심 갭, 마지막은 판단으로 닫음.
 - 약어 풀기. em dash 금지. 문장은 다/요/까로 끝냄.
@@ -234,7 +244,8 @@ ${evidence}
 - 제목이 1초에 멈추는가. titleContract 후보 3개 이상, 독자 갭, 표지 약속, 선택 이유가 살아있는가. 설명형·총정리형·반복 템플릿 제목이면 제목훅 92 미만.
 - 인사이트가 통념-반전-렌즈-메커니즘이 다 살아있고 의외인가. (재탕은 감점 요소지 단독 탈락 사유 아님.)
 - 변명해야 하는 억지 수치가 있나. 프레임이 제목 실제 주어와 일치하나.
-- 타입 지침을 어겼는가. 그래프가 주장을 증명하고 밀도 있나(분기 6점+), 큰문장 가려도 긴장이 남나.
+- 타입 지침을 어겼는가. 그래프·표·비교표가 주장을 증명하고 밀도 있나(분기 6점+), 큰문장 가려도 긴장이 남나. 시각물이 하나로 부족한 카드를 한 장으로 때우지 않았나.
+- visuals 가 order+visualIndex 로 카드 안 시각 세트를 기획했나. dataExplanation·evidenceRefs 가 각 visual 마다 살아있나.
 - 큰문장만 읽어 한 편으로 완결되나, 표지가 1초에 멈추나, 마지막이 표지 약속을 갚나.
 - 회사명을 말하는 장의 배경이 그 회사 로고·제품인가(일반 장면이면 시각정합·재미 감점).
 - 숫자가 전부 검증 데이터 안에 있나, 과장·투자권유·단정 없나, 분모·기간 정직한가.
@@ -296,6 +307,11 @@ ${JSON.stringify(verdict.findings)}
 ${JSON.stringify(skeptic.kills)}
 회의자 소프트 권고(가능하면 반영. 재탕은 최대한 줄이되 무리해서 각을 갈아엎지는 말 것):
 ${JSON.stringify(skeptic.softNotes || [])}
+
+복수 비주얼 지시:
+- 카드 한 장의 주장에 시각물이 하나로 부족하면 visuals 에 같은 order 로 visualIndex 1~4를 둔다.
+- table+finCard, 표+그래프, 표+그래프+근거표가 필요하면 반드시 모두 기획한다.
+- 각 visual 은 dataExplanation 과 evidenceRefs 를 별도로 가진다.
 
 직전 기획안:
 ${JSON.stringify(plan)}

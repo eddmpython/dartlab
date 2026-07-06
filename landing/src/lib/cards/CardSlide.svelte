@@ -32,6 +32,13 @@
 		};
 	});
 
+	function editorialVisuals(c: CarouselCard): SlideVisual[] {
+		if (c.kind !== 'editorialBeat' && c.kind !== 'editorialStat') return [];
+		const multi = Array.isArray(c.visuals) ? c.visuals.filter((v): v is SlideVisual => Boolean(v)) : [];
+		return multi.length ? multi.slice(0, 4) : c.visual ? [c.visual] : [];
+	}
+	const cardVisuals = $derived(editorialVisuals(card));
+
 	// 자유텍스트(line/sub/context) 천단위 콤마 · 4자리+ 순수 정수만(소수·기존콤마 보존, 4자리 연도 19xx/20xx 제외).
 	function commaText(s: string): string {
 		return String(s).replace(/\d[\d,]*\.?\d*/g, (m) => {
@@ -71,7 +78,7 @@
 	const photoMode = $derived(
 		card.kind === 'cover'
 			? 'cover'
-			: (card.kind === 'editorialBeat' || card.kind === 'editorialStat') && card.visual
+			: (card.kind === 'editorialBeat' || card.kind === 'editorialStat') && cardVisuals.length
 				? 'dim' // 하이브리드(큰문장+시각) · 차트처럼 dim 처리해 증거가 읽히게
 				: EDITORIAL_KINDS.has(card.kind)
 					? 'editorial'
@@ -207,7 +214,7 @@
 	<span class={cls}>{#each accentParts(stripDots(commaText(text))) as p}<span class:hl={p.accent}>{p.text}</span>{/each}</span>
 {/snippet}
 
-{#snippet visualBlock(v: SlideVisual)}
+{#snippet visualBlock(v: SlideVisual, compact = false)}
 	{#if v.kind === 'finCard'}
 		{@const fc = {
 			key: 'viz',
@@ -218,7 +225,7 @@
 			refLines: v.refLines,
 			series: v.series.map((s, i) => ({ name: s.name, data: s.data, type: s.type ?? 'line', axis: s.axis, color: s.color ?? CARD_SERIES[i % CARD_SERIES.length] }))
 		} as FinCard}
-		<div class="vChart"><MiniFinChart card={fc} periods={v.periods} h={188} /></div>
+		<div class="vChart"><MiniFinChart card={fc} periods={v.periods} h={compact ? 118 : 188} /></div>
 	{:else if v.kind === 'table'}
 		<table class="cT vTable">
 			<thead><tr>{#each v.cols as c, ci (c)}<th class:num={ci !== 0}>{ci === 0 && v.unit ? `${c} · ${v.unit}` : c}</th>{/each}</tr></thead>
@@ -226,6 +233,15 @@
 		</table>
 	{/if}
 	{#if v.caption}<p class="vCap">{stripDots(commaText(v.caption))}</p>{/if}
+{/snippet}
+
+{#snippet visualSet(vs: SlideVisual[])}
+	{@const capped = vs.slice(0, 4)}
+	<div class="visualSet count-{Math.min(capped.length, 4)}">
+		{#each capped as v, i (i)}
+			<div class="visualItem">{@render visualBlock(v, capped.length > 1)}</div>
+		{/each}
+	</div>
 {/snippet}
 
 <article class="slide pm-{photoMode}">
@@ -242,10 +258,10 @@
 				<p class="lead">{@render accent(card.conclusion)}</p>
 				<p class="mono">{card.stockCode} · {card.dataBasis}</p>
 			</div>
-		{:else if card.kind === 'editorialBeat' && card.visual}
+		{:else if card.kind === 'editorialBeat' && cardVisuals.length}
 			<!-- 하이브리드 · 그래프(위, 꽉 차게) + 텍스트(아래, 에디토리얼처럼). 주장을 차트가 받친다. -->
 			<div class="hybrid">
-				<div class="hViz">{@render visualBlock(card.visual)}</div>
+				<div class="hViz">{@render visualSet(cardVisuals)}</div>
 				<div class="hybText">
 					{#if card.kicker}<span class="eyebrow">{card.kicker}</span>{/if}
 					<h2 class="hLine">{@render accent(card.line)}</h2>
@@ -258,9 +274,9 @@
 				<h2 class="eLine">{@render accent(card.line)}</h2>
 				{#if card.sub}<p class="eSub">{@render accent(card.sub)}</p>{/if}
 			</div>
-		{:else if card.kind === 'editorialStat' && card.visual}
+		{:else if card.kind === 'editorialStat' && cardVisuals.length}
 			<div class="hybrid statHybrid">
-				<div class="hViz">{@render visualBlock(card.visual)}</div>
+				<div class="hViz">{@render visualSet(cardVisuals)}</div>
 				<div class="hybText">
 					{#if card.kicker}<span class="eyebrow">{card.kicker}</span>{/if}
 					<div class="eStat" style="--eNumCq:{eStatGeo.numCq};--eUnitCq:{eStatGeo.unitCq}"><span class="eNum">{eStatGeo.big}</span>{#if card.unit}<span class="eUnit">{card.unit}</span>{/if}</div>
@@ -630,6 +646,41 @@
 	.hViz :global(.mfc) {
 		width: 100%;
 	}
+	.visualSet {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.35em;
+	}
+	.visualSet.count-3,
+	.visualSet.count-4 {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		align-content: stretch;
+	}
+	.visualItem {
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		overflow: hidden;
+		background: rgba(5, 8, 17, 0.28);
+		border: 1px solid rgba(30, 36, 51, 0.6);
+		border-radius: 8px;
+		padding: 0.4em;
+		box-sizing: border-box;
+	}
+	.visualItem .vChart {
+		min-height: 0;
+	}
+	.visualItem .vTable {
+		font-size: clamp(7px, 1.55cqw, 11px);
+	}
+	.visualItem .cT th,
+	.visualItem .cT td {
+		padding: 0.26em 0.3em;
+	}
 	.hybText {
 		flex: 0 0 auto;
 		display: flex;
@@ -676,6 +727,10 @@
 		font-size: clamp(10px, 2.2cqw, 14px);
 		color: #9aa7c0;
 		line-height: 1.4;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
 	}
 	.vTable {
 		font-size: clamp(9px, 2cqw, 14px);
