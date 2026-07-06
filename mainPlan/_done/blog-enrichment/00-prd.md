@@ -48,3 +48,8 @@
   - **#3 분기 라이브 재무** = `annual.ts` 에 `buildQuarterlyFromRows`/`loadQuarterlyStatements`/`loadCompanyFinance`(parquet 1회 읽어 연간+분기 동시). flow 단일분기 환산은 financeSource `standalone` 라인 미러(검증 SSOT). BS=시점. `CompanyFinancials.svelte` 상단에 "분기 실적 · 최근 8분기"(IS ComboChart + IS/BS/CF 표) 추가, 연간 5개년은 아래 컨텍스트. `quarterly.test.ts` 7 테스트(YTD 차분·스냅샷·기간순서).
   - 검증: svelte-check 0 errors · runtime tsc 0 · vitest 14 pass · checkUiDataWiring PASS · em dash 0.
   - 남은 P1: `youtubeId` 값 주입(운영·실제 영상ID 필요). 남은 P2: 회사별 라이브 뉴스/증권사 리포트·주가 캔들(사전토론 게이트).
+- 2026-07-06 **P0 파이프라인 규율 명문화 완료 + P1 크로스링크 계약 정합** (subject 조인 키 SSOT):
+  - 근본 버그 정정: 기술이야기 6편이 회사 `stockCode` 를 달아 블로그가 회사글로 오인, 단일 회사 터미널 버튼 + 그 회사 기업이야기 팟캐스트를 잘못 조인하던 것을 제거. tech-story 6 + data-report 7 frontmatter 를 `topicSlug`(= 블로그 URL slug)로 통일, 팟캐스트 P05~P07 `episode.yaml` `topicSlug` 도 블로그 slug 에 정합(크로스서피스 조인 복구).
+  - `operation.content` 에 **"서피스 x 콘텐츠 성격 매트릭스"** 신설: 성격(company/theme/economy)별 조인 키 + 서피스별 소스·게이트·기획루프 + 품질 우선(기획 개선루프 필수·품질 미달 재루프)·없으면 숨김을 단일 SSOT 로 명문화. OPERATIONS 5절·팟캐스트 README 7절·CARDS·tech-story PIPELINE 을 이 매트릭스로 수렴.
+  - 3서피스 게이트 강제: `audit_seo.py`(주제글 stockCode 오배선 경고 + 카테고리 인식 채점), `plan_episode.py`(topicSlug 를 블로그 slug 로 유도), 카드 계약 topicSlug 갭 문서화.
+  - **P0+P1 비게이트 범위 완료 -> `_done` 이관.** 이 플랜의 완료 범위 밖(별도 게이트) 잔여: P2 회사별 라이브 뉴스·증권사 리포트·주가 캔들(사전토론·승인, 신규 데이터), youtubeId 주입(운영 데이터), 카드 계약 topicSlug 필드(UI 변경 승인). 착수 시 신규 게이트로.

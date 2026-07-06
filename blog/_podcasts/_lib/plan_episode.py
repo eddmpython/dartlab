@@ -143,7 +143,9 @@ def render_episode_yaml(
         "",
         f"  stockCode: {json.dumps(stock_code, ensure_ascii=False)}",
         f"  corpName: {json.dumps(corp_name, ensure_ascii=False)}",
-        f"  topicSlug: {slug if lane != 'dartlab' else 'dartlab'}",
+        # topicSlug = 주제축 조인 키 SSOT. 주제글은 블로그 URL slug 와 동일해야 세 서피스가 조인된다
+        # (operation.content 조인 키 계약). 블로그 링크가 있으면 그 slug 를 쓰고, 없으면 에피소드 slug 폴백.
+        f"  topicSlug: {'dartlab' if lane == 'dartlab' else (blog_slug or slug)}",
         f"  cardType: {card_type}",
         "  links:",
         f"    blogSlug: {json.dumps(blog_slug, ensure_ascii=False)}",

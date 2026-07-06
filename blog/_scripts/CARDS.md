@@ -158,6 +158,7 @@ uv run python -X utf8 blog/_scripts/build_carousel_contracts.py
 ```
 - 순수 매크로/제도 이슈는 `stockCode` 없이 둔다 → 손글 카드만 렌더.
 - 특정 기업 관전 포인트 이슈는 `stockCode`와 `corpName`을 넣고, 공식 발표 기준 `keyMetrics` 를 함께 넣는다 → 블로그 CTA는 숨기지만 카드 뒤에 회사 report 기반 그래프·테이블이 붙고, 자동 지표 결측 때도 빈 핵심지표를 내보내지 않는다.
+- **주제(theme) 카드** (기술이야기·데이터리포트처럼 여러 회사를 다루는 편)는 회사 `code` 를 달지 않는다(달면 그 회사 카드로 오인). 조인 키는 `topicSlug`(= 블로그 URL slug)다. 단 현재 카드 계약(`carousel:` / `CarouselContract`)에는 `topicSlug` 필드가 없어 주제 카드는 아직 standalone 로만 발행된다. topicSlug 조인은 카드 계약 확장(UI 변경)이라 운영자 승인 게이트다. 조인 키 계약 SSOT = `operation.content` "서피스 x 콘텐츠 성격 매트릭스".
 
 ⛔ **핀터레스트·구글 이미지 금지** — 거기 올라온 사진은 대부분 **저작권 있음**(긁어온 것)이라 가져다 쓰면 침해다.
 스톡 보강은 아래 무료 소스만 쓴다.

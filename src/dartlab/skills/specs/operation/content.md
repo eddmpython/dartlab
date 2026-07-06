@@ -104,6 +104,41 @@ id · claim · apiRef{apiRef,args} · value · period{label,basis,granularity} �
 
 미래 릴스·쇼츠·비디오 = 이 seam 을 따라 어댑터 추가(현재는 문서 규약. `sns/{track}/README.md` + `sns/assets` 공유풀이 이미 add-only 달성). 발행 경로(GH Pages·HF·R2·Remotion)는 물리적으로 공통분모가 없으니 `publish` 는 얇은 서피스별 드라이버로 두되 **시그니처만 균일**하게. 공통 추상의 실익은 transport 통합이 아니라 크로스링크 조인키(stockCode/topicSlug) + in-place 갱신 규율 + 운영자 눈검수 게이트 세 가지의 공유다.
 
+## 서피스 x 콘텐츠 성격 매트릭스 (조인 키 + 품질 게이트 SSOT)
+
+세 서피스가 같은 작업대를 거치되, **콘텐츠 성격(type)** 에 따라 조인 키와 렌더가 갈린다. 이 매트릭스가 "이 글이 어느 회사·주제에 붙나"의 단일 정본이다. 기술 횡단 글에 회사 코드를 다는 위반이 반복되던 곳이라, 각 서피스 게이트가 이 계약을 강제한다.
+
+### 콘텐츠 성격(type)과 조인 키
+`type` 은 기획 단계에서 박제한다(위 "주제·타입 결정"). type 이 조인 키를 정한다.
+
+| type | 주어 | 조인 키 | 블로그 카테고리 예 |
+|---|---|---|---|
+| **company** | 회사 하나 | `stockCode` (국내 6자리 / 미국 티커) | 기업이야기 (05-company-reports) |
+| **theme** | 특정 주제를 **여러 관련 회사**로 횡단 | `topicSlug` | 기술이야기 (08-tech-story), 데이터리포트 (06-data-reports) |
+| **economy** | 거시·경제 흐름 | `topicSlug` | 이슈·거시 카드 |
+
+규칙 한 줄: **회사 하나가 주인공일 때만 `stockCode`. 나머지(theme·economy)는 `topicSlug`.** 기술이야기·데이터리포트는 정의상 여러 회사를 다루므로 회사 stockCode 를 달지 않는다. 달면 블로그에 그 회사 단일 터미널 버튼과 기업이야기 팟캐스트가 잘못 조인된다.
+
+### 조인 키 표준 (전 서피스 공유 SSOT)
+- **회사** = `stockCode`.
+- **주제** = `topicSlug` = **블로그 URL slug** (예: `sand-to-semiconductor`). 같은 story 의 블로그·카드·팟캐스트가 이 한 값을 공유해 서로 조인한다. 팟캐스트 에피소드 자신의 `slug`(정체성)와 별개로 `topicSlug`(조인 키)는 블로그 slug 에 맞춘다.
+- 아직 카드·팟캐스트가 없는 슬롯은 자리표시자다. 프론트는 **없으면 숨김**(억지 표시 금지).
+
+### 서피스별 (성격 불문 공통 규율)
+| 서피스 | 소스 SSOT | 조인 키 필드 | 발행 게이트 | 기획 개선루프 |
+|---|---|---|---|---|
+| 블로그 | `blog/{cat}/{post}/index.md` frontmatter | `stockCode` / `topicSlug` | `audit_seo.py` (+ 회사 심층 `auditBlog.py --gate`) | `blog_plan_loop.workflow.js` |
+| 카드 | frontmatter `carousel:` · `_issues/*/carousel.yaml` | `code`(회사) · topicSlug(주제, 확장 예정) | `build_carousel_contracts.py` | `cards_plan_loop.workflow.js` |
+| 팟캐스트 | `_podcasts/episodes/*/episode.yaml` | `stockCode` / `topicSlug` | `publish_podcast.py` (status=ready) | `podcast_plan_loop.workflow.js` |
+
+렌더: 터미널 버튼은 **회사(6자리 stockCode)만** 붙는다. 주제글은 터미널 버튼이 없다. 회사 report 덱·회사 팟캐스트는 stockCode 로, 주제 카드·팟캐스트는 topicSlug 로 조인한다.
+
+### 품질 우선(quality-first). 전 서피스·전 성격 필수
+1. **기획안 개선루프 필수**: 각 서피스의 `*_plan_loop` 워크플로로 기획한다. 기획작가 초안 -> 평가자(품질 점수) + 회의자(적대 kill) 동시 심사 -> 개선 -> **통과선까지 반복**. 단독 작성(루프 스킵)은 클리셰·얕음을 부르므로 금지.
+2. **품질 미달이면 나올 때까지 재루프**: 통과선 = 평가자 원칙 각 85+ AND 회의자 survive. 미달 라운드는 발행 불가, 통과까지 다시 돈다. `passed=false` 면 발행 게이트가 막는다.
+3. **데이터는 메인 스레드 검증**: 모든 숫자는 dartlab 런타임 직독 + 메인 스레드 재대조(에이전트 환각 차단, 2.6 함정 규율).
+4. **subject 계약 검증**: 각 서피스 게이트가 조인 키 성격을 확인한다. 블로그 `audit_seo.py`(주제글 stockCode 오배선 경고), 팟캐스트 `plan_episode.py`(topicSlug 를 블로그 slug 로 유도), 카드 계약 검증.
+
 ## 북극성 — 무엇이 훌륭한가
 - 카드뉴스: ① 각 카드의 가장 큰 글자만 위에서 아래로 훑어도 한 편의 짧은 글로 완결된다. ② 표지가 처음 본 사람을 1초에 멈춘다. ③ 카드마다 그 문장이 말하는 이미지가 붙는다. ④ 모든 숫자가 공시 실측이다. ⑤ 직전 편들과 다른 이야기다.
 - 블로그: 첫 두 문단이 비전문가를 계속 읽게 하고, 독자질문 하나로 끝까지 끌고 가며, 끝이 "다음 공시를 어떻게 볼지"를 바꾼다.

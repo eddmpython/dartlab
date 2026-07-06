@@ -5,6 +5,7 @@ description: 자사주 매입은 '주주환원'으로 불리지만, 소각하지
 category: data-reports
 series: data-reports
 seriesOrder: 1
+topicSlug: "treasury-stock-not-cancelled"
 thumbnail: /avatar-chart.png
 ogImage: /thumbnails/data-treasury-stock-not-cancelled.webp
 keywords:

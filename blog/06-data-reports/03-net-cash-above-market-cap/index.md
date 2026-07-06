@@ -5,6 +5,7 @@ description: "언론은 현금이 시총보다 많은 상장사가 100곳을 넘
 category: data-reports
 series: data-reports
 seriesOrder: 3
+topicSlug: "net-cash-above-market-cap"
 thumbnail: /avatar-chart.png
 ogImage: /thumbnails/data-net-cash-above-market-cap.webp
 tags: [순현금, 코리아 디스카운트, 밸류업, 저평가, 현금부자]

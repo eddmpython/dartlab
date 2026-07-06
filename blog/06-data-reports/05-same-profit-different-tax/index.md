@@ -5,6 +5,7 @@ description: "법인세율은 24%(지방세 포함 약 27%)라고들 한다. 그
 category: data-reports
 series: data-reports
 seriesOrder: 5
+topicSlug: "same-profit-different-tax"
 thumbnail: /avatar-chart.png
 ogImage: /thumbnails/data-same-profit-different-tax.webp
 tags: [법인세, 실효세율, 이월결손금, 세액공제, 이연법인세]

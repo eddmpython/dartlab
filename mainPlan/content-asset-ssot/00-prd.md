@@ -147,3 +147,8 @@ companies/index.json       # 회사 hero 호환 산출물
 ## 8. 판단
 
 바로 전체 이관하지 말고, 먼저 `StoryManifest` 내부 모델을 세운 뒤 HF `stories/`를 병행 발행하는 순서가 맞다. 현재 운영 중인 `/cards`는 단일 `carousels/index.json` 덕분에 안정적이므로, 그 파일을 깨지 않고 뒤에서 story SSOT를 키워야 한다.
+
+## 9. 진행 원장
+
+- 2026-07-06 **개념 토대(subject 조인 키 모델) 표준화·강제 완료.** 이 PRD 의 1절(회사·이슈 카드가 `code` 유무로만 갈림)과 3절(subject 단위 추적)을 실현하는 조인 키를 전 서피스에서 통일했다: 회사=`stockCode`, 주제=`topicSlug`(= 블로그 URL slug, 전 서피스 공유). `operation.content` "서피스 x 콘텐츠 성격 매트릭스"로 명문화하고 블로그·팟캐스트·카드 게이트로 강제(상세 = `blog-enrichment` 진행 원장 2026-07-06). 즉 **subject 조인 키 계약은 물리 SSOT 로 살아있고**, 남은 것은 물리 통합뿐이다.
+- **미착수·승인 게이트 유지**: 물리 `StoryManifest` 마이그레이션(P1 manifest 생성기, P2 HF `stories/` 병행 발행, P3 `/cards` 소비자 전환, P4 원본 폴더 통합)은 대형 저장구조 변경 + 랜딩 소비자 전환이라 런타임-SSOT 규율상 사전토론·명시 승인 후에만 착수한다. 현행 `carousels/index.json` 단일 소비가 안정적이라 급하지 않다. 착수 트리거는 운영자 결정.

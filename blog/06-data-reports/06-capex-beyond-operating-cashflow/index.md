@@ -5,6 +5,7 @@ description: "잉여현금흐름이 마이너스면 부실한 회사일까. dart
 category: data-reports
 series: data-reports
 seriesOrder: 6
+topicSlug: "capex-beyond-operating-cashflow"
 thumbnail: /avatar-chart.png
 ogImage: /thumbnails/data-capex-beyond-operating-cashflow.webp
 tags: [설비투자, CAPEX, 잉여현금흐름, 영업활동현금흐름, 사이클]

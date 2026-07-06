@@ -5,6 +5,7 @@ description: "흑자는 곧 돈을 벌었다는 뜻이 아니다. dartlab으로 
 category: data-reports
 series: data-reports
 seriesOrder: 4
+topicSlug: "profit-without-cash"
 thumbnail: /avatar-chart.png
 ogImage: /thumbnails/data-profit-without-cash.webp
 tags: [이익의 질, 영업활동현금흐름, 발생액, 흑자도산, 현금흐름표]

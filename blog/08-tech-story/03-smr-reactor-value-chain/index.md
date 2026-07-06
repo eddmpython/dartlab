@@ -5,7 +5,7 @@ description: "AI 데이터센터가 전기를 삼키며 소형모듈원자로(SM
 category: tech-story
 series: tech-story
 seriesOrder: 3
-topicSlug: "smr-nuclear"
+topicSlug: "smr-reactor-value-chain"
 tags:
   - SMR
   - 소형모듈원자로

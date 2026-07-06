@@ -5,6 +5,7 @@ description: "한국은행은 상장사 27.6%가 한계기업이라 경고했다
 category: data-reports
 series: data-reports
 seriesOrder: 2
+topicSlug: "interest-coverage-zombie-firms"
 thumbnail: /avatar-chart.png
 ogImage: /thumbnails/data-interest-coverage-zombie-firms.webp
 tags: [한계기업, 좀비기업, 이자보상배율, 고금리, 코리아 디스카운트]

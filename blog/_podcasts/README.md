@@ -151,15 +151,15 @@ uv run python -X utf8 blog/_podcasts/_lib/publish_podcast.py --episode P0N-... -
 RSS 자동 연결(YouTube Music·Apple·Spotify)과 별개로, 팟빵(Podbbang)처럼 사람이 오디오를 직접 올려야 하는 플랫폼이 있다. 이걸 위한 순서 아카이브가 `blog/_podcasts/_uploads/` 다. NotebookLM 오디오를 받으면 **항상 여기에 순번대로** 저장한다. 결과물을 저장하는 곳은 이 폴더 하나다.
 
 - **git 비추적.** `_uploads/` 는 `.gitignore` 로 폴더째 제외한다(오디오 + 커버 이미지 모두). 발행 결과물이라 레포에 커밋하지 않는다.
-- **영문 순번 파일명.** `NN-{slug}` 형식. `NN` 은 에피소드 순번(episodes `P0N` 과 일치), `slug` 는 그 에피소드 `topicSlug` 의 영문. 예: `07-net-cash-above-market-cap.m4a`. **한글 파일명 금지** (플랫폼 호환·정렬 안정). 이름을 영문으로 바꿔서 넣는다.
-- **오디오 + 16:9 커버 한 쌍.** 각 회차는 `NN-slug.m4a` 와 `NN-slug.jpg` 를 나란히 둔다. 팟빵 썸네일은 정사각이 아니라 **16:9 (1280x720)** 이라 에피소드의 `static-video.jpg` 를 커버로 재사용한다(에피소드 폴더가 아직 없으면 데이터리포트 배경으로 1280x720 생성). 정사각 `cover.jpg` 는 RSS/애플 자동경로 전용이므로 여기 쓰지 않는다.
+- **영문 순번 파일명 (공백·기호 전면 금지).** `NN{slug}` 로 **붙여 쓴다**. `NN` 은 에피소드 순번(episodes `P0N` 과 일치), `slug` 는 그 에피소드 `topicSlug` 의 영문을 camelCase 로. **공백·하이픈(`-`)·밑줄(`_`) 등 기호 전부 금지, 한글 금지** (팟빵 등 사람 업로드 플랫폼 호환·정렬 안정). 예: `07netCashAboveMarketCap.m4a`, `08sandToSemiconductor.jpg`.
+- **오디오 + 16:9 커버 한 쌍.** 각 회차는 `NN{slug}.m4a` 와 `NN{slug}.jpg` 를 나란히 둔다. 팟빵 썸네일은 정사각이 아니라 **16:9 (1280x720)** 이라 에피소드의 `static-video.jpg` 를 커버로 재사용한다(에피소드 폴더가 아직 없으면 데이터리포트 배경으로 1280x720 생성). 정사각 `cover.jpg` 는 RSS/애플 자동경로 전용이므로 여기 쓰지 않는다.
 - **다운로드 정리.** 아카이브에 넣고 파일 크기로 사본을 검증하면, 원본(다운로드 폴더 등)은 **제거**한다. 완료본을 다운로드에 남기지 않는다. 중복 파일(같은 오디오의 옛 이름 등)도 함께 정리한다.
 
 이렇게 두면 팟빵에 `01, 02, 03...` 순번대로 오디오 하나와 그 옆 16:9 이미지 하나를 그대로 올리기만 하면 된다.
 
 ## 7. 크로스 링크 (회사·주제로 카드/블로그/터미널 연결)
 
-`index.json` 이 조인 레지스트리다. 조인 키는 `stockCode`(회사축)와 `topicSlug`(주제축). 각 에피소드가
+`index.json` 이 조인 레지스트리다. 조인 키는 `stockCode`(회사축)와 `topicSlug`(주제축). **주제 에피소드의 `topicSlug` 는 그 블로그 URL slug(= `links.blogSlug`)와 동일하게 맞춘다** (에피소드 자신의 `slug` 는 정체성, `topicSlug` 는 서피스 공유 조인 키라 별개). 계약 SSOT = Skill OS `operation.content` "서피스 x 콘텐츠 성격 매트릭스". 각 에피소드가
 연결하는 카드 slug, 블로그 slug, 터미널 코드를 `episode.yaml` `links` 에 명시하고 index 에 실린다.
 프론트(Phase 2)는 이 한 파일을 읽어 카드 모달, 블로그, 터미널 회사 화면에 "관련 팟캐스트"를 렌더하고,
 RSS item link 는 회사 에피소드면 터미널 딥링크로 역방향 연결한다.

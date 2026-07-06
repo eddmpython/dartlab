@@ -66,7 +66,7 @@ episode:
   # 교차 링크 조인 키 + 역링크 (회사 에피소드가 아니면 빈 값)
   stockCode: ""
   corpName: ""
-  topicSlug: zombie-firms                # 항상 존재. 주제축 키
+  topicSlug: interest-coverage-zombie-firms  # 블로그 URL slug 와 동일(조인 키 SSOT). 에피소드 slug 와 별개
   cardType: economy                      # company | event | economy | meta
   youtubeId: ""
   links:

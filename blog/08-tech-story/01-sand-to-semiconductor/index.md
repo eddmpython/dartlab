@@ -5,7 +5,7 @@ description: "규사 한 줌이 순도 11N 실리콘, 웨이퍼, 칩이 되며 �
 category: tech-story
 series: tech-story
 seriesOrder: 1
-topicSlug: "semiconductor"
+topicSlug: "sand-to-semiconductor"
 tags:
   - 반도체
   - 실리콘웨이퍼

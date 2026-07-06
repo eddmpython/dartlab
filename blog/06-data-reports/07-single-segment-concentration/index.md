@@ -5,6 +5,7 @@ description: "한국 대기업은 문어발 다각화라는 말은 옛말이다.
 category: data-reports
 series: data-reports
 seriesOrder: 7
+topicSlug: "single-segment-concentration"
 thumbnail: /avatar-chart.png
 ogImage: /thumbnails/data-single-segment-concentration.webp
 tags: [사업 집중도, 단일제품, 다각화, 지주 디스카운트, PBR]
