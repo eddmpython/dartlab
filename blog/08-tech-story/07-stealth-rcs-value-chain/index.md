@@ -49,10 +49,12 @@ carousel:
     - layout: editorial
       line: "스텔스는 정말 안 보일까?"
       sub: "답은 RCS·코팅·센서융합의 저피탐 지도에 있습니다."
+      image: 01-stealth-hangar
     - layout: editorialBeat
       kicker: "레이더의 눈"
       line: "그래서 첫 단계는 레이더 전파가 돌아오는 길을 꺾고 줄이는 형상 설계입니다."
       sub: "보이지 않는 마술이 아니라 되돌아오는 신호를 작게 만드는 공학입니다."
+      image: 01-stealth-hangar
     - layout: editorialBeat
       kicker: "한 겹이 아닙니다"
       line: "그다음 코팅과 소재가 남은 신호를 흡수하고, 센서와 전자전이 탐지 시간을 늦춥니다."
@@ -75,6 +77,7 @@ carousel:
       kicker: "진짜 부담"
       line: "문제는 저피탐 부담이 출고 뒤 코팅 흠집, 패널 틈, 정비 품질로 더 오래 이어진다는 점입니다."
       sub: "코팅 흠집, 패널 틈, 정비 품질이 실제 작전 때 신호를 다시 키울 수 있습니다."
+      image: 02-stealth-maintenance
     - layout: editorialStat
       kicker: "한국 KF-21 라인"
       bigNumber: "7.3%"
@@ -93,6 +96,7 @@ carousel:
       kicker: "결국"
       line: "결국 봐야 할 것은 멋진 기체 사진이 아니라 어느 회사가 형상, 코팅, 레이더, 전자전, 정비 병목을 쥐는가입니다."
       sub: "다음에 봐야 할 것은 멋진 기체 사진이 아니라 어느 회사가 그 시스템의 병목을 쥐는가입니다."
+      image: 02-stealth-maintenance
 ---
 
 2026년 방산 뉴스를 보면 스텔스 전투기는 늘 "보이지 않는 전투기"처럼 소개된다. 그런데 이 표현은 절반만 맞다. 스텔스기는 사라지는 물체가 아니다. 레이더에 **작게 보이고, 늦게 보이고, 어느 방향에서는 더 헷갈리게 보이도록** 설계된 물체다. 투명망토가 아니라 신호를 관리하는 공학이다.

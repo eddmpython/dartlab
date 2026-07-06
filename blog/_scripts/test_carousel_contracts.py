@@ -230,7 +230,7 @@ slides:
 
 
 def test_issue_image_skip_when_already_uploaded(tmp_path: Path) -> None:
-    """이미 같은 해시가 repo 에 있으면 재업로드 안 함(op 0) — 계약 경로는 그대로."""
+    """이미 같은 해시가 repo 에 있으면 재업로드 안 함(op 0). 계약 경로는 그대로."""
     issues = tmp_path / "_issues"
     d = issues / "x"
     (d / "assets").mkdir(parents=True, exist_ok=True)
@@ -253,7 +253,7 @@ def test_migration_idempotent(tmp_path: Path) -> None:
     assert mig._inject(idx, block) is True
     first = idx.read_text(encoding="utf-8")
     assert mig._has_carousel(idx) is True
-    assert mig._inject(idx, block) is False  # 멱등 — 두 번째 주입 안 함
+    assert mig._inject(idx, block) is False  # 멱등. 두 번째 주입 안 함
     assert idx.read_text(encoding="utf-8") == first  # 본문/frontmatter 불변
 
 
@@ -300,6 +300,31 @@ def test_series_strips_stock_identity(tmp_path: Path) -> None:
     assert c2["code"] == "000660" and c2["cardType"] == "company"
 
 
+def test_series_image_upload_ops_dedupes_reused_asset(tmp_path: Path) -> None:
+    """기술이야기에서 같은 이미지가 여러 슬라이드에 쓰여도 업로드 op 는 1개만 만든다."""
+    blog = tmp_path / "blog"
+    slides = """  name: 스텔스 기술
+  slides:
+    - layout: editorial
+      line: "스텔스는 정말 안 보일까?"
+      image: hero
+    - layout: editorialBeat
+      line: "첫 단계는 레이더 전파가 돌아오는 길을 줄이는 일입니다."
+      image: hero
+"""
+    _write_post(blog, "01-000000-stealth", code="000000", date="2026-01-01", with_carousel=True, slides_yaml=slides)
+    assets = blog / "01-000000-stealth" / "assets"
+    assets.mkdir(parents=True)
+    (assets / "hero.webp").write_bytes(b"\x00fakewebp")
+    image_ops: list = []
+    contracts = bcc.build_contracts(blog, series=True, existing_files=set(), image_ops=image_ops)
+    images = [slide["image"] for slide in contracts["000000-stealth"]["slides"]]
+    assert images[0] == images[1]
+    assert images[0].startswith("tech-story/000000-stealth/hero.")
+    assert len(image_ops) == 1
+    assert image_ops[0].path_in_repo == images[0]
+
+
 def test_tech_story_requires_plan(tmp_path: Path) -> None:
     """기술이야기(설명) 카드는 plan 을 08-tech-story 에서 찾고, plan 없이는 발행 못 한다(기획 강제).
     회사카드 틀에 얹어 기획을 건너뛴 회귀 봉쇄. 회사(company) 카드는 기존대로 plan 선택."""
@@ -323,7 +348,7 @@ def test_tech_story_requires_plan(tmp_path: Path) -> None:
 
 
 def test_visual_contract_gate() -> None:
-    """하이브리드 visual 렌더링 계약 게이트 + 확장 루프 — 렌더러 구현분만 통과, 나머지는 '추가하라'로 막는다."""
+    """하이브리드 visual 렌더링 계약 게이트 + 확장 루프. 렌더러 구현분만 통과, 나머지는 '추가하라'로 막는다."""
 
     def contract(visual: dict) -> dict:
         return {"slides": [{"layout": "editorialBeat", "line": "큰문장입니다", "visual": visual}]}

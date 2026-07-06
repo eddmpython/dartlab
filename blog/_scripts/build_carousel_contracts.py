@@ -1,10 +1,10 @@
-"""편집 카드 캐러셀 계약 빌드 — 두 소스 → 단일 `carousels/index.json`.
+"""편집 카드 캐러셀 계약 빌드: 두 소스 → 단일 `carousels/index.json`.
 
 소스 2갈래(저작), 서브 1개(발행):
-  1. 회사 — 블로그 글(`blog/05-company-reports/{NN}-{code}-{slug}/index.md`) frontmatter `carousel:` 블록.
+  1. 회사: 블로그 글(`blog/05-company-reports/{NN}-{code}-{slug}/index.md`) frontmatter `carousel:` 블록.
      한 글 = 한 스토리(회사+주제) = 산문(본문) + 캐러셀(frontmatter). 차트·핵심 지표는 /cards 가
      ReportModel 에서 덧붙인다(code 기반 라이브 조회).
-  2. 이슈(standalone) — `blog/_issues/<slug>/carousel.yaml`. **블로그 글 없이 카드만** 발간(경제/시국 등
+  2. 이슈(standalone): `blog/_issues/<slug>/carousel.yaml`. **블로그 글 없이 카드만** 발간(경제/시국 등
      그때그때 이슈). stockCode 가 있으면 /cards 가 회사 report 를 붙이고, 없으면 손글 editorial 만 렌더.
      슬라이드 image 는 `blog/_issues/<slug>/assets/<name>.webp`(cards.plan.json 기반 image_gen 산출물)
      → hfMedia `issues/<slug>/` 업로드.
@@ -19,15 +19,16 @@
     slides: [ {layout, date?|kicker?, line?, sub?, bigNumber?, unit?, context?, image?} ],
     spec?: { hero?, order?, notes? } }
   layout ∈ editorial(커버) | editorialBeat(헤드라인 비트) | editorialStat(큰 숫자)
-  image = semantic 파일명(확장자·해시 없음) — 렌더가 hfMedia 매니페스트로 해시 파일명 해석.
-  spec = 자동 덱 큐레이션 오버레이(hero/order/notes) — 계약에 실어 /cards 가 blog 번들 비의존.
+  image = semantic 파일명(확장자·해시 없음): 렌더가 hfMedia 매니페스트로 해시 파일명 해석.
+  spec = 자동 덱 큐레이션 오버레이(hero/order/notes): 계약에 실어 /cards 가 blog 번들 비의존.
 
 Serve = HF `eddmpython/dartlab-media` **단일** `carousels/index.json`(posts[]=전 계약, 슬라이드까지·
 date 내림차순). 피드·상세 모두 이 1회 fetch 로(별도 인덱스 파일·per-slug round-trip 0). per-slug 파일
-안 만든다 — 글 추가/삭제는 이 한 파일 재발행. `carousel:` 블록 있는 글만 계약 → /cards 기본 피드 = 이 글들.
+안 만든다. 글 추가/삭제는 이 한 파일 재발행. `carousel:` 블록 있는 글만 계약 → /cards 기본 피드 = 이 글들.
 
 Usage(운영자 로컬·HF_TOKEN=.env):
   uv run python -X utf8 blog/_scripts/build_carousel_contracts.py --dry-run   # 계획만(올리는 것·지울 것)
+  uv run python -X utf8 blog/_scripts/build_carousel_contracts.py --only-slug stealth-rcs-value-chain --no-og
   uv run python -X utf8 blog/_scripts/build_carousel_contracts.py             # hfMedia 에 발행
 """
 
@@ -54,7 +55,7 @@ from dartlab.pipeline.hfUpload import _resolveHfToken
 ROOT = Path(__file__).resolve().parents[2]
 BLOG_DIR = ROOT / "blog" / "05-company-reports"
 TECH_DIR = ROOT / "blog" / "08-tech-story"  # 기술이야기: frontmatter carousel 블록 있는 글도 카드로 발행
-ISSUES_DIR = ROOT / "blog" / "_issues"  # standalone 이슈 캐러셀(블로그 글 없음) — code 없는 경제/시국 카드
+ISSUES_DIR = ROOT / "blog" / "_issues"  # standalone 이슈 캐러셀(블로그 글 없음): code 없는 경제/시국 카드
 MEDIA_PREFIX = "carousels"
 ISSUE_MEDIA_PREFIX = "issues"  # 이슈 이미지 hfMedia 네임스페이스(companies/ 와 병렬, 콘텐츠해시 파일명)
 TECH_MEDIA_PREFIX = "tech-story"  # 기술이야기(설명) 카드 이미지 hfMedia 네임스페이스. 그 글 assets/ 에서 차용
@@ -134,7 +135,7 @@ def _normalize_slide(raw: object) -> dict | None:
         v = raw.get(f)
         if v not in (None, ""):
             slide[f] = v
-    # 하이브리드 시각 슬롯 — 큰문장 아래 증거(렌더링 계약). dict 그대로 통과(종류·필드 검증은 cards_plan 게이트).
+    # 하이브리드 시각 슬롯: 큰문장 아래 증거(렌더링 계약). dict 그대로 통과(종류·필드 검증은 cards_plan 게이트).
     vis = raw.get("visual")
     if isinstance(vis, dict) and vis.get("kind"):
         slide["visual"] = vis
@@ -144,14 +145,14 @@ def _normalize_slide(raw: object) -> dict | None:
 # ── 레이아웃 깨짐 가드(원천 체크) ───────────────────────────────────────────────
 # editorialStat 의 bigNumber 는 거대폰트(최대 200px) 한 줄 펀치 숫자여야 한다. 길거나 공백/화살표가
 # 있으면(예 '1조 4,375억', '641% → 102%') 줄이 쪼개지고 unit 과 충돌한다(렌더는 줄여서 방어하나,
-# 소스에서 잡는 게 정공). unit 도 짧은 라벨만('%','조원','$B (-50%)') — 문장형('% 영업외 흡수율 · 9년
+# 소스에서 잡는 게 정공). unit 도 짧은 라벨만('%','조원','$B (-50%)'). 문장형('% 영업외 흡수율 · 9년
 # 최저')은 context 로 가야 한다.
 _BIGNUM_MAXLEN = 10
 _UNIT_MAXLEN = 12
 
 
 def _validate_slide(layout: str, slide: dict) -> list[str]:
-    """슬라이드 1장의 레이아웃 깨짐 위험 검사 — 위반 메시지 리스트(없으면 빈 리스트)."""
+    """슬라이드 1장의 레이아웃 깨짐 위험 검사. 위반 메시지 리스트(없으면 빈 리스트)."""
     issues: list[str] = []
     if layout == "editorialStat":
         big = str(slide.get("bigNumber", "")).strip()
@@ -159,9 +160,9 @@ def _validate_slide(layout: str, slide: dict) -> list[str]:
         if not big:
             issues.append("bigNumber 누락(editorialStat 필수)")
         elif len(big) > _BIGNUM_MAXLEN or " " in big:
-            issues.append(f"bigNumber 과다/비펀치('{big}' {len(big)}자) — 짧은 한 숫자만(맥락은 context 로)")
+            issues.append(f"bigNumber 과다/비펀치('{big}' {len(big)}자): 짧은 한 숫자만(맥락은 context 로)")
         if len(unit) > _UNIT_MAXLEN:
-            issues.append(f"unit 과다('{unit}' {len(unit)}자) — 짧은 단위만(문장은 context 로)")
+            issues.append(f"unit 과다('{unit}' {len(unit)}자): 짧은 단위만(문장은 context 로)")
     for f in ("line", "sub", "context"):
         v = str(slide.get(f, ""))
         if v.count("[[") != v.count("]]"):
@@ -188,7 +189,7 @@ def validate_contracts(contracts: dict[str, dict]) -> list[str]:
 
 
 def _spec_from(carousel: dict) -> dict | None:
-    """자동 덱 큐레이션 오버레이(hero/order/notes) 추출 — 없으면 None."""
+    """자동 덱 큐레이션 오버레이(hero/order/notes) 추출. 없으면 None."""
     spec: dict = {}
     if carousel.get("hero"):
         spec["hero"] = str(carousel["hero"])
@@ -252,7 +253,7 @@ def _normalize_key_metrics(source: dict) -> list[dict]:
             continue
         label = str(item.get("label") or item.get("term") or "").strip()
         value = str(item.get("value") or item.get("text") or "").strip()
-        if label and value and value not in {"-", "–"}:
+        if label and value and value not in {"-", "\u2013"}:
             out.append({"label": label, "value": value})
     return out
 
@@ -284,7 +285,8 @@ def _attach_series_images(
         if local.exists():
             remote = f"{TECH_MEDIA_PREFIX}/{slug}/{img}.{_content_hash(local)}.webp"
             s["image"] = remote  # 슬래시 포함 → 렌더가 hfMedia 경로로 직접 해석
-            if remote not in existing_files:
+            queued = {op.path_in_repo for op in image_ops}
+            if remote not in existing_files and remote not in queued:
                 image_ops.append(CommitOperationAdd(path_in_repo=remote, path_or_fileobj=str(local)))
         else:
             sys.stderr.write(f"  series {slug}: 이미지 없음 {local.name} (배경 없이 렌더)\n")
@@ -476,7 +478,7 @@ def build_issue_contracts(
     회사 report 카드가 뒤에 붙고, stockCode 가 없으면 손글 editorial 슬라이드만 렌더한다.
     슬라이드 image(semantic 'cover') → 로컬 `assets/<image>.webp` 콘텐츠해시해서 hfMedia
     `issues/<slug>/<image>.<hash8>.webp` 경로로 치환(렌더가 originUrl('hfMedia', path) 로 해석).
-    반환: (슬러그별 계약, 업로드할 이미지 CommitOperationAdd 리스트 — 이미 올라간 해시는 스킵).
+    반환: (슬러그별 계약, 업로드할 이미지 CommitOperationAdd 리스트. 이미 올라간 해시는 스킵).
     """
     contracts: dict[str, dict] = {}
     ops: list[CommitOperationAdd] = []
@@ -503,7 +505,8 @@ def build_issue_contracts(
                 if local.exists():
                     remote = f"{ISSUE_MEDIA_PREFIX}/{slug}/{img}.{_content_hash(local)}.webp"
                     s["image"] = remote  # hfMedia 상대경로(슬래시 포함 → 렌더가 직접 해석)
-                    if remote not in existing_files:
+                    queued = {op.path_in_repo for op in ops}
+                    if remote not in existing_files and remote not in queued:
                         ops.append(CommitOperationAdd(path_in_repo=remote, path_or_fileobj=str(local)))
                 else:
                     sys.stderr.write(f"  issue {slug}: 이미지 없음 {local.name} (배경 없이 렌더)\n")
@@ -525,7 +528,7 @@ def build_issue_contracts(
                 or code
                 or slug
             ),
-            "cardType": card_type,  # company|event|economy — 카드 필터/크로스검색 축
+            "cardType": card_type,  # company|event|economy: 카드 필터/크로스검색 축
             "standalone": True,  # 블로그 글 없음 → PostModal '블로그 이어 읽기' CTA 숨김(code 유무와 별개)
             "slides": slides,
         }
@@ -601,6 +604,13 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="게시 안 함, 요약만")
     parser.add_argument("--repo", default=HF_MEDIA_REPO)
     parser.add_argument("--allow-layout-warn", action="store_true", help="레이아웃 가드 위반이 있어도 발행 강행")
+    parser.add_argument(
+        "--only-slug",
+        help=(
+            "해당 슬러그만 레이아웃/기획 게이트를 검증한다. index.json 은 전체 계약을 유지하므로 "
+            "기존 legacy plan 위반 때문에 단일 개선 발행이 막힐 때 사용한다."
+        ),
+    )
     parser.add_argument("--require-card-plan", action="store_true", help="모든 계약에 cards.plan.json 요구")
     parser.add_argument(
         "--allow-unreviewed-card-plan",
@@ -628,15 +638,21 @@ def main() -> None:
             sys.stderr.write(f"  dup slug(이슈↔회사 충돌, 회사 우선): {slug}\n")
             continue
         contracts[slug] = c
+    scoped_contracts = contracts
+    if args.only_slug:
+        if args.only_slug not in contracts:
+            sys.stderr.write(f"발행 중단: --only-slug 대상 없음: {args.only_slug}\n")
+            sys.exit(1)
+        scoped_contracts = {args.only_slug: contracts[args.only_slug]}
 
-    # 원천 레이아웃 가드 — 거대폰트 editorialStat 줄깨짐/충돌 등을 발행 전에 잡는다.
-    violations = validate_contracts(contracts)
+    # 원천 레이아웃 가드: 거대폰트 editorialStat 줄깨짐/충돌 등을 발행 전에 잡는다.
+    violations = validate_contracts(scoped_contracts)
     if violations:
         sys.stderr.write(f"⚠ 레이아웃 가드 위반 {len(violations)}건:\n")
         for v in violations:
             sys.stderr.write(f"  - {v}\n")
         if not args.dry_run and not args.allow_layout_warn:
-            sys.stderr.write("발행 중단 — 위반 수정 후 재시도(또는 --allow-layout-warn 로 강행).\n")
+            sys.stderr.write("발행 중단: 위반 수정 후 재시도(또는 --allow-layout-warn 로 강행).\n")
             sys.exit(1)
     else:
         print("레이아웃 가드: 위반 0건 ✓")
@@ -644,7 +660,7 @@ def main() -> None:
     # 신규/개선 카드뉴스 운영 게이트. legacy 계약은 plan 파일이 없으면 허용하되, cards.plan.json 이 생긴
     # 글은 작가 패널·정직성·이미지 적합성·재평가를 passed 로 닫아야 발행한다.
     plan_violations, plan_stats = validate_contract_plan_gate(
-        contracts,
+        scoped_contracts,
         require_plan=args.require_card_plan,
         require_passed=not args.allow_unreviewed_card_plan,
         require_assets=args.require_card_assets,
@@ -654,7 +670,7 @@ def main() -> None:
         for v in plan_violations:
             sys.stderr.write(f"  - {v}\n")
         sys.stderr.write(
-            "발행 중단 — plan_card_news.py 로 cards.plan.json 을 만들고 reviewGate 를 passed 로 닫은 뒤 재시도.\n"
+            "발행 중단: plan_card_news.py 로 cards.plan.json 을 만들고 reviewGate 를 passed 로 닫은 뒤 재시도.\n"
         )
         sys.exit(1)
     print(
@@ -665,6 +681,8 @@ def main() -> None:
 
     # 브랜디드 OG 계획. 계약에 ogImage 설정, 렌더 필요분(HF 미보유) 잡 목록. 렌더는 실제 발행에서만.
     og_jobs = plan_og_images(contracts, repo_files, enabled=not args.no_og)
+    if args.only_slug:
+        og_jobs = [job for job in og_jobs if job.get("slug") == args.only_slug]
 
     posts = build_index(contracts)
     n_slides = sum(len(c["slides"]) for c in contracts.values())
@@ -676,6 +694,8 @@ def main() -> None:
     )
 
     if args.dry_run:
+        if args.only_slug:
+            print(f"only-slug: {args.only_slug} 검증만 수행, 발행 index 는 전체 {len(posts)}편 유지")
         for p in posts[:8]:
             c = contracts[p["slug"]]
             layouts = ", ".join(s["layout"] for s in c["slides"][:4])
@@ -688,7 +708,7 @@ def main() -> None:
         stale = _stale_carousel_jsons(repo_files)
         if stale:
             print(f"  옛 파일 {len(stale)}개 삭제 예정(단일 index.json 만 유지): {', '.join(sorted(stale)[:6])} …")
-        print("dry-run — 게시 안 함.")
+        print("dry-run: 게시 안 함.")
         return
 
     api = HfApi(token=_resolveHfToken())
