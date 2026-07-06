@@ -22,11 +22,11 @@
         "dartlab.capabilities"
       ]
     },
-    "elapsedSec": 0.985,
+    "elapsedSec": 0.703,
     "rssBeforeMb": 23.1,
-    "rssAfterMb": 92.9,
-    "rssDeltaMb": 69.8,
-    "rssPeakMb": 97.6,
+    "rssAfterMb": 93.2,
+    "rssDeltaMb": 70.1,
+    "rssPeakMb": 93.2,
     "returnCode": 0,
     "budget": {
       "maxElapsedSec": 20.0,
@@ -46,15 +46,15 @@
     },
     "details": {
       "type": "dict",
-      "height": 213,
+      "height": 222,
       "width": null,
       "columns": []
     },
-    "elapsedSec": 0.907,
-    "rssBeforeMb": 23.2,
-    "rssAfterMb": 93.9,
-    "rssDeltaMb": 70.7,
-    "rssPeakMb": 93.9,
+    "elapsedSec": 0.735,
+    "rssBeforeMb": 23.0,
+    "rssAfterMb": 94.0,
+    "rssDeltaMb": 71.0,
+    "rssPeakMb": 94.0,
     "returnCode": 0,
     "budget": {
       "maxElapsedSec": 20.0,
@@ -74,7 +74,7 @@
     },
     "details": {
       "type": "DataFrame",
-      "height": 21,
+      "height": 23,
       "width": 6,
       "columns": [
         "axis",
@@ -85,11 +85,11 @@
         "apiKey"
       ]
     },
-    "elapsedSec": 0.625,
-    "rssBeforeMb": 23.2,
-    "rssAfterMb": 73.7,
-    "rssDeltaMb": 50.5,
-    "rssPeakMb": 73.7,
+    "elapsedSec": 0.61,
+    "rssBeforeMb": 22.9,
+    "rssAfterMb": 80.2,
+    "rssDeltaMb": 57.2,
+    "rssPeakMb": 80.2,
     "returnCode": 0,
     "budget": {
       "maxElapsedSec": 20.0,
@@ -111,11 +111,11 @@
       "type": "Company",
       "height": 1
     },
-    "elapsedSec": 0.812,
-    "rssBeforeMb": 23.2,
-    "rssAfterMb": 92.7,
-    "rssDeltaMb": 69.5,
-    "rssPeakMb": 92.7,
+    "elapsedSec": 0.687,
+    "rssBeforeMb": 22.9,
+    "rssAfterMb": 99.6,
+    "rssDeltaMb": 76.7,
+    "rssPeakMb": 99.6,
     "returnCode": 0,
     "budget": {
       "maxElapsedSec": 30.0,

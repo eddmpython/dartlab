@@ -60,6 +60,9 @@ tests/_attempts/
 # Node modules (all locations)
 node_modules/
 
+# Cloudflare Wrangler / Miniflare local state
+.wrangler/
+
 # UI build artifacts
 ui/build/
 ui/web/build/

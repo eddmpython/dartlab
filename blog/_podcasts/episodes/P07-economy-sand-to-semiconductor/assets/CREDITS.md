@@ -1,5 +1,5 @@
-# 이미지 출처 (CC0 / Public Domain, Wikimedia Commons)
+# 이미지 출처
 
-- **source.webp** / Silicon wafer researcher (클린룸에서 실리콘 웨이퍼를 든 연구자) / U.S. Department of Energy / Public domain / [silicon wafer researcher] / https://commons.wikimedia.org/wiki/File:Silicon_wafer_researcher.jpg
+- **source.webp** / 규소 웨이퍼를 빛에 비춰 든 장면 / 생성 이미지(운영자 명시 지시로 제작) / 저작권 안전
 
 역할: 에피소드 커버(정사각)와 정적 영상 이미지(16:9)의 재사용 원본 배경. 흑백 editorial 톤으로 렌더된다.

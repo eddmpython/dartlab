@@ -421,6 +421,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://eddmpython.github.io/dartlab/skills/operation.content</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://eddmpython.github.io/dartlab/skills/operation.contributionWorkflow</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -432,6 +437,11 @@
   </url>
   <url>
     <loc>https://eddmpython.github.io/dartlab/skills/operation.dashboardDesign</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/skills/operation.dataDownloadCenter</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -1531,6 +1541,11 @@
     <priority>0.75</priority>
   </url>
   <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/category/tech-story</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
     <loc>https://eddmpython.github.io/dartlab/blog/series/dart-foundations</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
@@ -1602,6 +1617,11 @@
   </url>
   <url>
     <loc>https://eddmpython.github.io/dartlab/blog/series/data-reports</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.72</priority>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/series/tech-story</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
   </url>
@@ -1916,6 +1936,12 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <lastmod>2026-06-25</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/dart-libraries-compared</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-01</lastmod>
   </url>
   <url>
     <loc>https://eddmpython.github.io/dartlab/blog/005930-samsung</loc>
@@ -2458,6 +2484,18 @@
     <lastmod>2026-06-18</lastmod>
   </url>
   <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/039830-aurora-world-two-leaks</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-04</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/079550-lig-nexone-cash-clock</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-04</lastmod>
+  </url>
+  <url>
     <loc>https://eddmpython.github.io/dartlab/blog/018880-hanon-systems</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -2527,7 +2565,7 @@
     <loc>https://eddmpython.github.io/dartlab/blog/005380-hyundai-motor</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-04-13</lastmod>
+    <lastmod>2026-07-03</lastmod>
   </url>
   <url>
     <loc>https://eddmpython.github.io/dartlab/blog/NKE-nike</loc>
@@ -2959,6 +2997,18 @@
     <loc>https://eddmpython.github.io/dartlab/blog/treasury-stock-not-cancelled</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-06-27</lastmod>
+    <lastmod>2026-07-04</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/interest-coverage-zombie-firms</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-04</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/sand-to-semiconductor</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-04</lastmod>
   </url>
 </urlset>

@@ -6,7 +6,7 @@ episode:
   episodeId: P08-economy-humanoid-robot-actuator   # 폴더명과 동일. P0N-{lane}-{slug}
   episodeNo: 8                           # 정수. RSS <itunes:episode> + 정렬
   slug: humanoid-robot-actuator          # 링크/파일 slug
-  title: "휴머노이드 로봇: 관절 만드는 6곳을 실측하니 다 적자, 유일한 흑자마저 착시였다"
+  title: "휴머노이드 로봇: 손·무릎 관절을 움직이는 감속기·액추에이터 밸류체인"
   lane: economy                          # dartlab | company | economy | disclosure | quant
   language: ko
   status: ready                          # draft | ready | published (ready 이상만 발행)
@@ -34,14 +34,14 @@ episode:
     source: assets/source.webp
     kicker: DartLab Podcast
     titleLines:
-      - 로봇도 관절부터
-      - 부품 만드는 6곳
-      - "[[아직 아무도 못 번다]]"
-    subtitle: 완성 로봇 -180% · 유일한 흑자마저 산업용 감속기에서
+      - 휴머노이드 관절의
+      - 진짜 병목은
+      - "[[감속기 국산화]]"
+    subtitle: 완성 로봇 -180% · 감속기·모터·액추에이터 6사 실측
     footer: 휴머노이드 밸류체인 · 감속기 국산화 · 흑자 착시
 
   caption:
-    hook: 로봇이 헤드라인을 채우지만, 관절을 만드는 회사들은 아직 아무도 돈을 못 법니다.
+    hook: 로봇의 헤드라인보다 먼저 볼 것은 손·무릎 관절을 움직이는 감속기와 액추에이터입니다.
     body: >-
       테슬라와 삼성의 로봇이 헤드라인을 채우지만, 로봇이 실제로 움직이려면 관절(감속기)과
       근육(모터·액추에이터)이 필요합니다. 그 부품을 만드는 국내 6개 상장사를 실측하니, 완성품

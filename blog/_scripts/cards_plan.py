@@ -136,6 +136,18 @@ CLOSING_TOKENS = (
 )
 SENTENCE_END_RE = re.compile(r"[다요까죠][.!?…)]*$")
 DATA_CLAIM_RE = re.compile(r"\d|%|조|억|배|대비|마이너스|플러스|순위|점유율|이익|현금|부채|매출|판매|원가|마진|주가")
+DATA_EXPLANATION_MIN_CHARS = 20
+IMAGE_PROMPT_REQUIRED_PHRASES = (
+    "Story specificity:",
+    "Concrete-scene requirement:",
+    "avoid generic stock-finance imagery",
+)
+TEMPLATE_COPY_PATTERNS = (
+    re.compile(r"누가\s*돈을\s*버나"),
+    re.compile(r"왜\s*못\s*버나"),
+    re.compile(r"돈[은이]\s*안\s*(?:따라오|되|남)"),
+    re.compile(r"돈을\s*못\s*번"),
+)
 
 # ── 렌더링 계약 레지스트리 — 카드가 쓸 수 있는 시각 계약의 공식 카탈로그(정례화) ──
 # 기획이 beat 마다 큰문장 + visual 계약을 선언한다. 부른 계약이 RENDERABLE(렌더러 구현분)이면 통과,
@@ -245,6 +257,23 @@ def requires_data_visual(order: int, slide: dict[str, Any]) -> bool:
         return False
     text = big_sentence_for_slide(slide)
     return str(slide.get("layout") or "") == "editorialStat" or DATA_CLAIM_RE.search(text) is not None
+
+
+def compact_text_len(text: str) -> int:
+    return len(re.sub(r"[^0-9A-Za-z가-힣]", "", clean_card_text(text)))
+
+
+def has_data_explanation(value: object) -> bool:
+    return compact_text_len(str(value or "")) >= DATA_EXPLANATION_MIN_CHARS
+
+
+def has_evidence_refs(value: object) -> bool:
+    return isinstance(value, list) and any(str(ref).strip() for ref in value)
+
+
+def template_copy_hits(value: object) -> list[str]:
+    text = clean_card_text(value)
+    return [pat.pattern for pat in TEMPLATE_COPY_PATTERNS if pat.search(text)]
 
 
 def big_sentence_strip(slides: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -690,22 +719,31 @@ def validate_visual_plan(plan: dict[str, Any], *, require_passed: bool) -> list[
         errors.append(f"{slug}: planning.visualPlan 은 모든 슬라이드를 포함해야 함({len(visual_plan)}/{slide_count})")
     by_order = _visual_plan_by_order(plan)
     required_orders = _data_visual_orders_from_plan(plan)
+    for entry in _visual_plan_entries(plan):
+        try:
+            order = int(entry.get("order"))
+        except (TypeError, ValueError):
+            continue
+        kind = str(entry.get("visualKind") or "").strip()
+        role = str(entry.get("visualRole") or "").strip()
+        if role == "dataEvidence" or kind in DATA_VISUAL_KINDS:
+            required_orders.add(order)
     for order in sorted(required_orders):
         entry = by_order.get(order)
         if not entry:
             errors.append(f"{slug}: planning.visualPlan[{order}] 누락 - 데이터 주장 카드의 시각 계획 필요")
             continue
         kind = str(entry.get("visualKind") or "").strip()
-        if kind not in DATA_VISUAL_KINDS:
+        if kind not in VISUAL_CONTRACTS_RENDERABLE:
             errors.append(
-                f"{slug}: planning.visualPlan[{order}].visualKind 는 실제 데이터 visual 계약이어야 함"
+                f"{slug}: planning.visualPlan[{order}].visualKind 는 렌더 가능한 데이터 visual 계약이어야 함"
                 f"(현재 {kind or '없음'})"
             )
         explanation = clean_card_text(entry.get("dataExplanation"))
-        if len(re.sub(r"[^0-9A-Za-z가-힣]", "", explanation)) < 20:
+        if not has_data_explanation(explanation):
             errors.append(f"{slug}: planning.visualPlan[{order}].dataExplanation 이 너무 약함")
         refs = entry.get("evidenceRefs")
-        if not isinstance(refs, list) or not [ref for ref in refs if str(ref).strip()]:
+        if not has_evidence_refs(refs):
             errors.append(f"{slug}: planning.visualPlan[{order}].evidenceRefs 누락")
     return errors
 
@@ -728,6 +766,19 @@ def validate_plan(plan: dict[str, Any], *, require_passed: bool = True, require_
     for field in ("blogThesis", "cardThesis", "audienceQuestion"):
         if not str(planning.get(field, "")).strip():
             errors.append(f"{slug}: planning.{field} 누락")
+    if require_passed:
+        copy_sources = {
+            "target.title": target.get("title"),
+            "planning.cardThesis": planning.get("cardThesis"),
+            "planning.narrativeContract.spine": (
+                planning.get("narrativeContract", {}).get("spine")
+                if isinstance(planning.get("narrativeContract"), dict)
+                else ""
+            ),
+        }
+        for label, value in copy_sources.items():
+            if template_copy_hits(value):
+                errors.append(f"{slug}: {label} 에 템플릿형 문구가 남아 있음: {clean_card_text(value)!r}")
     narrative = planning.get("narrativeContract")
     if not isinstance(narrative, dict):
         errors.append(f"{slug}: planning.narrativeContract 누락")
@@ -815,6 +866,13 @@ def validate_plan(plan: dict[str, Any], *, require_passed: bool = True, require_
         prompt = str(item.get("prompt", ""))
         if "Asset key:" not in prompt or "/cards" not in prompt:
             errors.append(f"{slug}: imagePlan[{idx}].prompt 에 Asset key 또는 /cards 문맥 누락")
+        if require_passed:
+            missing_prompt_bits = [phrase for phrase in IMAGE_PROMPT_REQUIRED_PHRASES if phrase not in prompt]
+            if missing_prompt_bits:
+                errors.append(f"{slug}: imagePlan[{idx}].prompt 구체 장면 지시 누락: {', '.join(missing_prompt_bits)}")
+            for field in ("role", "scene", "reason"):
+                if compact_text_len(str(item.get(field) or "")) < 8:
+                    errors.append(f"{slug}: imagePlan[{idx}].{field} 기획 설명이 너무 약함")
         if require_assets and key and not (asset_root / f"{key}.webp").exists():
             errors.append(f"{slug}: 생성 이미지 없음: {rel(asset_root / f'{key}.webp')}")
     gate = plan.get("reviewGate") if isinstance(plan.get("reviewGate"), dict) else {}
@@ -996,25 +1054,41 @@ def validate_contract_visuals(slug: str, contract: dict[str, Any]) -> list[str]:
 def validate_contract_planned_visuals(slug: str, contract: dict[str, Any], plan: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     slides = [s for s in contract.get("slides", []) if isinstance(s, dict)]
-    for order in sorted(_data_visual_orders_from_plan(plan)):
-        entry = _visual_plan_by_order(plan).get(order)
-        if not entry:
-            continue
-        expected_kind = str(entry.get("visualKind") or "").strip()
-        if expected_kind not in DATA_VISUAL_KINDS:
-            continue
+    by_order = _visual_plan_by_order(plan)
+    required_orders = _data_visual_orders_from_plan(plan)
+    for idx, slide in enumerate(slides, start=1):
+        if requires_data_visual(idx, slide):
+            required_orders.add(idx)
+    for order in sorted(required_orders):
         if order > len(slides):
             errors.append(f"{slug}: visualPlan[{order}] 이 가리키는 슬라이드가 없음")
             continue
+        entry = by_order.get(order)
+        if not entry:
+            errors.append(f"{slug}: planning.visualPlan[{order}] 누락 - 실제 숫자·비교 슬라이드의 데이터 설명 필요")
+            continue
+        expected_kind = str(entry.get("visualKind") or "").strip()
+        if expected_kind not in VISUAL_CONTRACTS_RENDERABLE:
+            errors.append(
+                f"{slug}: visualPlan[{order}].visualKind {expected_kind!r} 은 렌더 가능한 데이터 visual 이 아님"
+            )
         visual = slides[order - 1].get("visual")
         if not isinstance(visual, dict):
-            errors.append(
-                f"{slug}: slide[{order}] 에 visual 누락 - visualPlan 은 {expected_kind!r} 데이터 visual 을 요구함"
-            )
-            continue
-        actual_kind = str(visual.get("kind") or "")
-        if actual_kind != expected_kind:
-            errors.append(f"{slug}: slide[{order}].visual.kind {actual_kind!r} 이 visualPlan {expected_kind!r} 과 다름")
+            errors.append(f"{slug}: slide[{order}] 에 visual 누락 - 숫자·비교 카드는 배경 image 만으로 발행할 수 없음")
+        else:
+            actual_kind = str(visual.get("kind") or "")
+            if actual_kind not in VISUAL_CONTRACTS_RENDERABLE:
+                errors.append(
+                    f"{slug}: slide[{order}].visual.kind {actual_kind!r} 은 렌더 가능한 데이터 visual 이 아님"
+                )
+            elif actual_kind != expected_kind:
+                errors.append(
+                    f"{slug}: slide[{order}].visual.kind {actual_kind!r} 이 visualPlan {expected_kind!r} 과 다름"
+                )
+        if not has_data_explanation(entry.get("dataExplanation")):
+            errors.append(f"{slug}: visualPlan[{order}].dataExplanation 이 너무 약함")
+        if not has_evidence_refs(entry.get("evidenceRefs")):
+            errors.append(f"{slug}: visualPlan[{order}].evidenceRefs 누락")
     return errors
 
 

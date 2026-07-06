@@ -27,6 +27,20 @@ CAROUSEL_NOTE_MAX = 140
 # 캐러셀 hero 로 쓸 수 있는 이미지 확장자.
 HERO_SUFFIXES = (".webp", ".png", ".jpg", ".jpeg")
 
+# 현재 수리 범위에서 제외한 기존 기술 글. 새 기술 글과 나머지 기술 글은 아래 계약을 적용한다.
+TECH_STORY_LEGACY_EXEMPT = {"blog/08-tech-story/01-sand-to-semiconductor"}
+
+TECH_TITLE_TEMPLATE_PATTERNS = [
+    r"누가\s*(?:돈을\s*)?버",
+    r"돈을?\s*못\s*벌",
+    r"못\s*버는",
+    r"못\s*번다",
+    r"왜\s*아직\s*적자",
+    r"적자일까",
+    r"이익은\s*어디",
+    r"팔수록\s*손해",
+]
+
 
 def _numbers(text: str) -> set:
     """문자열에서 숫자 토큰(2자리+ 또는 소수) 추출. 콤마 제거한 digit-core. no-new-number 비교용."""
@@ -213,6 +227,54 @@ def _category(frontmatter: str) -> str:
     return m.group(1).strip().strip('"').strip("'") if m else ""
 
 
+def _frontmatter_scalar(frontmatter: str, key: str) -> str:
+    m = re.search(rf"^{re.escape(key)}:\s*(.+)$", frontmatter, re.MULTILINE)
+    return m.group(1).strip().strip('"').strip("'") if m else ""
+
+
+def _has_process_company_evidence_table(body: str) -> bool:
+    """기술 글의 공정/층위, 대표 회사, 공시 근거 지도가 있는지 확인한다."""
+    process_words = ("공정", "층위", "단계", "자리", "스택", "기술 역할")
+    company_words = ("회사", "대표 회사", "대표사", "기업")
+    evidence_words = ("공시", "근거", "DART", "EDGAR", "10-K", "20-F")
+    for tbl in _iter_tables(body):
+        header_text = " ".join(_table_cells(tbl[0]))
+        if (
+            any(w in header_text for w in process_words)
+            and any(w in header_text for w in company_words)
+            and any(w in header_text for w in evidence_words)
+        ):
+            return True
+    return False
+
+
+def analyze_tech_contract(frontmatter: str, body: str, folder_path: str) -> dict:
+    """기술이야기 전용 계약. 제목 템플릿, 공정 지도, DART/EDGAR 근거, 이미지 특정성을 본다."""
+    title = _frontmatter_scalar(frontmatter, "title")
+    h2s = re.findall(r"^## (.+)$", body, re.MULTILINE)
+    headline_text = "\n".join([title] + h2s)
+    title_hits = [p for p in TECH_TITLE_TEMPLATE_PATTERNS if re.search(p, title)]
+    headline_hits = [p for p in TECH_TITLE_TEMPLATE_PATTERNS if re.search(p, headline_text)]
+    image_refs = re.findall(r"!\[[^\]]+\]\(([^)]+)\)", body)
+    rel = os.path.relpath(folder_path).replace("\\", "/")
+    slug = os.path.basename(folder_path)
+    humanoid_specific_image = True
+    if "humanoid" in slug:
+        joined = " ".join(image_refs).lower()
+        humanoid_specific_image = any(w in joined for w in ("humanoid", "actuator", "reducer", "joint"))
+    return {
+        "title": title,
+        "title_template_hits": title_hits,
+        "headline_template_hits": headline_hits,
+        "has_process_company_map": _has_process_company_evidence_table(body),
+        "has_dart": "DART" in body,
+        "has_edgar": "EDGAR" in body,
+        "has_dart_edgar": ("DART" in body and "EDGAR" in body),
+        "humanoid_specific_image": humanoid_specific_image,
+        "exempt": rel in TECH_STORY_LEGACY_EXEMPT,
+    }
+
+
 def score_post(folder_path: str) -> dict:
     """단일 글의 SEO 점수를 산출한다."""
     index_path = os.path.join(folder_path, "index.md")
@@ -388,6 +450,8 @@ def score_post(folder_path: str) -> dict:
     scores["depth"] = analyze_depth(body)
     scores["category"] = _category(frontmatter)
     scores["has_stock_code"] = _has_stock
+    if scores["category"] == "tech-story":
+        scores["tech_contract"] = analyze_tech_contract(frontmatter, body, folder_path)
 
     scores["total"] = total
     scores["max"] = max_total
@@ -455,6 +519,24 @@ def main():
     miswired = [
         (f, s) for f, s in results if s.get("category") in ("tech-story", "data-reports") and s.get("has_stock_code")
     ]
+    tech_contract_violations = []
+    for f, s in results:
+        if s.get("category") != "tech-story":
+            continue
+        tech = s.get("tech_contract", {})
+        if tech.get("exempt"):
+            continue
+        reasons = []
+        if tech.get("headline_template_hits"):
+            reasons.append("템플릿형 제목·H2")
+        if not tech.get("has_process_company_map"):
+            reasons.append("공정·회사·근거 지도 누락")
+        if not tech.get("has_dart_edgar"):
+            reasons.append("DART·EDGAR 근거 라벨 불균형")
+        if not tech.get("humanoid_specific_image"):
+            reasons.append("휴머노이드 이미지 특정성 부족")
+        if reasons:
+            tech_contract_violations.append((f, reasons, tech))
 
     if thin:
         print(f"\n⚠️ 깊이 미달 후보 ({len(thin)}편): 회사별 다년 추이 표 부족(단년 스냅샷 위주)")
@@ -473,6 +555,12 @@ def main():
         )
         for f, s in miswired:
             print(f"  🔴 {f}")
+    if tech_contract_violations:
+        print(f"\n⚠️ 기술이야기 계약 위반 ({len(tech_contract_violations)}편):")
+        for f, reasons, tech in tech_contract_violations:
+            print(f"  🔴 {f}: {', '.join(reasons)}")
+            if tech.get("headline_template_hits"):
+                print(f"     제목: {tech.get('title')}")
 
     # 약한 글 경고 (기존 SEO 점수)
     weak = [(f, s) for f, s in results if s["pct"] < 70]
@@ -509,6 +597,9 @@ def main():
     fail = bool(car_errs)
     if thin and os.environ.get("ALLOW_THIN_TABLES") != "1":
         print(f"\n❌ 깊이 미달 {len(thin)}편. 회사별 다년 추이 표를 보강하거나 ALLOW_THIN_TABLES=1 로 우회.")
+        fail = True
+    if tech_contract_violations and os.environ.get("ALLOW_WEAK_TECH_STORY") != "1":
+        print(f"\n❌ 기술이야기 계약 위반 {len(tech_contract_violations)}편. 제목·공정 지도·DART/EDGAR·이미지를 보강.")
         fail = True
     if fail:
         sys.exit(1)

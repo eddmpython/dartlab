@@ -46,6 +46,47 @@ _TWO_SLIDES = """  slides:
       bigNumber: "21%"
 """
 
+_SEVEN_SLIDES = """  slides:
+    - layout: editorial
+      line: "계산대보다 먼저 회원권이 돈을 만듭니다"
+    - layout: editorialBeat
+      line: "이 구조는 낮은 가격을 약속할 때 작동합니다"
+    - layout: editorialStat
+      kicker: "분기 매출"
+      bigNumber: "636"
+      unit: "억달러"
+      context: "이 숫자는 사람이 계속 매장으로 돌아왔다는 뜻입니다"
+      visual:
+        kind: table
+        cols: ["기간", "값"]
+        data:
+          - 기간: "2025Q1"
+            값: "636억달러"
+    - layout: editorialBeat
+      line: "그 돈은 낮은 마진을 버틸 시간을 만듭니다"
+      visual:
+        kind: table
+        cols: ["구분", "의미"]
+        data:
+          - 구분: "마진"
+            의미: "낮은 가격 전략을 버티는 이익 구조"
+    - layout: editorialStat
+      kicker: "회비"
+      bigNumber: "12"
+      unit: "억달러"
+      context: "그 결과 회비가 이익의 중심을 더 선명하게 보여줍니다"
+      visual:
+        kind: table
+        cols: ["기간", "값"]
+        data:
+          - 기간: "2025Q1"
+            값: "12억달러"
+    - layout: editorialBeat
+      line: "하지만 회원이 줄면 낮은 가격 전략도 힘을 잃습니다"
+    - layout: editorialBeat
+      line: "결국 힘은 회비와 재방문이 같이 늘어나는지로 봐야 합니다"
+"""
+
 
 def _mark_passed(plan: dict) -> dict:
     plan = json.loads(json.dumps(plan, ensure_ascii=False))
@@ -83,14 +124,20 @@ def _valid_big_sentence_slides() -> list[dict]:
             "bigNumber": "636",
             "unit": "억달러",
             "context": "이 숫자는 사람이 계속 매장으로 돌아왔다는 뜻입니다",
+            "visual": {"kind": "table", "cols": ["기간", "값"], "data": [{"기간": "2025Q1", "값": "636억달러"}]},
         },
-        {"layout": "editorialBeat", "line": "그 돈은 낮은 마진을 버틸 시간을 만듭니다"},
+        {
+            "layout": "editorialBeat",
+            "line": "그 돈은 낮은 마진을 버틸 시간을 만듭니다",
+            "visual": {"kind": "table", "cols": ["구분", "의미"], "data": [{"구분": "마진", "의미": "낮은 가격 전략"}]},
+        },
         {
             "layout": "editorialStat",
             "kicker": "회비",
             "bigNumber": "12",
             "unit": "억달러",
             "context": "그 결과 회비가 이익의 중심을 더 선명하게 보여줍니다",
+            "visual": {"kind": "table", "cols": ["기간", "값"], "data": [{"기간": "2025Q1", "값": "12억달러"}]},
         },
         {"layout": "editorialBeat", "line": "하지만 회원이 줄면 낮은 가격 전략도 힘을 잃습니다"},
         {"layout": "editorialBeat", "line": "결국 힘은 회비와 재방문이 같이 늘어나는지로 봐야 합니다"},
@@ -136,6 +183,26 @@ def test_plan_validation_requires_visual_plan_for_data_cards(tmp_path: Path) -> 
     assert any("planning.visualPlan" in err for err in errors)
 
 
+def test_plan_validation_requires_data_explanation_and_refs(tmp_path: Path) -> None:
+    post = _write_post(tmp_path / "blog", "01-999999-test", slides=_TWO_SLIDES)
+    planned = _mark_passed(cp.build_company_post_plan(post, count=7))
+    for item in planned["planning"]["visualPlan"]:
+        if item.get("visualRole") == "dataEvidence":
+            item["dataExplanation"] = "짧음"
+            item["evidenceRefs"] = []
+    errors = cp.validate_plan(planned, require_passed=True)
+    assert any("dataExplanation" in err for err in errors)
+    assert any("evidenceRefs" in err for err in errors)
+
+
+def test_plan_validation_blocks_template_copy_after_review(tmp_path: Path) -> None:
+    post = _write_post(tmp_path / "blog", "01-999999-test", slides=_TWO_SLIDES)
+    planned = _mark_passed(cp.build_company_post_plan(post, count=7))
+    planned["target"]["title"] = "누가 돈을 버나"
+    errors = cp.validate_plan(planned, require_passed=True)
+    assert any("템플릿형 문구" in err for err in errors)
+
+
 def test_plan_validation_requires_narrative_contract(tmp_path: Path) -> None:
     post = _write_post(tmp_path / "blog", "01-999999-test", slides=_TWO_SLIDES)
     planned = cp.build_company_post_plan(post, count=7)
@@ -167,13 +234,26 @@ def test_contract_readability_blocks_jargon_and_checklist() -> None:
 
 def test_contract_plan_gate_finds_plan_by_slug(tmp_path: Path) -> None:
     blog = tmp_path / "blog"
-    post = _write_post(blog, "01-999999-test", slides=_TWO_SLIDES)
+    post = _write_post(blog, "01-999999-test", slides=_SEVEN_SLIDES)
     plan = _mark_passed(cp.build_company_post_plan(post, count=7))
     (post / cp.PLAN_FILE).write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
     contracts = {"999999-test": {"code": "999999", "slug": "999999-test", "slides": _valid_big_sentence_slides()}}
     errors, stats = cp.validate_contract_plan_gate(contracts, blog_dir=blog, issues_dir=tmp_path / "_issues")
     assert errors == []
     assert stats == {"contracts": 1, "plans": 1, "missing": 0, "passed": 1}
+
+
+def test_contract_plan_gate_blocks_numeric_slide_without_visual(tmp_path: Path) -> None:
+    blog = tmp_path / "blog"
+    post = _write_post(blog, "01-999999-test", slides=_SEVEN_SLIDES)
+    plan = _mark_passed(cp.build_company_post_plan(post, count=7))
+    (post / cp.PLAN_FILE).write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
+    slides = _valid_big_sentence_slides()
+    slides[2].pop("visual")
+    contracts = {"999999-test": {"code": "999999", "slug": "999999-test", "slides": slides}}
+    errors, stats = cp.validate_contract_plan_gate(contracts, blog_dir=blog, issues_dir=tmp_path / "_issues")
+    assert stats["passed"] == 0
+    assert any("배경 image" in err for err in errors)
 
 
 def test_contract_plan_gate_can_require_all_plans(tmp_path: Path) -> None:
