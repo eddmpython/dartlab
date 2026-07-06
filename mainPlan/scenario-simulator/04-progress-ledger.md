@@ -116,6 +116,13 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
 - **역사 검증(승격 게이트 1) 통과 (`latticeBacktest`, 14 §9 정본)**: 72표본주 x fwd 8주 PIT 3중 판정 = base(인증부호) +1.45%/p5 -7.78% · 격자틸트 +0.47%/p5 -12.3%(**틸트 유해, 기각**) · **경화 오버레이 +1.82%/p5 -4.68%(평균↑·꼬리 40%↓, 통과)**. 격자의 정직 역할 확정 = 알파 틸트 아니라 **리스크 오버레이("덜 죽는 결정")**. 검증 규칙 `lattice.hardenedTopK` 졸업(test 10종). 부수: backtest base 무보정 등가중 구성 시 -5%대 전멸 = 인증부호 규율의 시뮬 상속 필수 재확인. 남은 게이트 = 라이브 누적·Q3 급락조건부(n=14 미검증)·GUI(트리거 대기).
 - **라이브 사이클 편입 (70134b2b1)**: runweek top10 = 게이트 후보 20 에서 `_latticeOverlay`(hardenedTopK)로 매크로 꼬리 최악 10 제거. KR 라이브만, 미적용은 블록 `latticeDropped=None` 명시(침묵 금지). 실검증 후보 20→10 결정론. tests 141·가드 7/7. **이로써 14 A~D + 검증 + 라이브 배선까지 엔진측 시그니처 구현 완성. 남은 것 = 시간(라이브 누적)과 GUI(트리거).**
 
+### 0c-9. 강건 아키텍처 3종 = 자동흡수 메커니즘 (2026-07-06, 운영자 "덕지덕지 없는 강건성·작업대·프로파일 바로·자동흡수")
+
+- **factors.py 팩터 SSOT**: 5곳 중복(팩터-베타 매핑 3중복·변화식 2중복·base점수 2중복·시리즈 하드코딩) 전부 접음. **팩터 추가 = 레지스트리 1행** → macroDaily·전종목 베타·격자 커널·시나리오·프로파일 축5 하류 수정 0 자동흡수 (테스트: copper 1행 → 패널 열+copperBeta 자동).
+- **feeds.py 엔진 피드 작업대**: 어떤 엔진이든 (code,week,수치...) provider **등록 1줄** → 발행 사이클 자동 소비 → opine 컬럼 자동 표면("<axis>.<col>", 손 매핑 _PRICE_COLS/_FUND_COLS 삭제) → 성적표·인증·격자 무수정 흡수 + 기권 완전성 상속. 실패 피드 격리+오류 명시(silent 0)·시장 필터. end-to-end 테스트: 등록 → 봉인 원장까지 자동 도달.
+- **profileAll 전종목 벌크**: 기업 프로파일 "모두 바로" = 벌크 스캔 5회 한 방 (per-company 루프 0). **실측 2,875종목 x 12형질 = 10초** (per-company ~8시간급 대비), 충전율 90%+ (industry 92%·oilBeta 96%·counterparty 90%). census 축(inventory·narrative)은 Panel 로드라 온디맨드 명시.
+- tests 150 (신규 9)·dartlabGuard strict 7/7·기존 무회귀. 커밋 ebc3b081f(강건 3종).
+
 ---
 
 > ⚠ v0.1 폐기 박제: 이전 04는 "초기 아키텍처 = story 동격 L3 `scenarioWorkbench`, 공개 verb `dartlab.scenario`(미결)"을 현재 결정으로 들고 있었다. **01 §3이 이를 코드로 기각**했다(story=순수 렌더러라 동거 불가, `scenario` 명사형은 `macro.scenarios`/`ScenarioOverlay` 충돌). 본 v0.2가 정본.
