@@ -179,9 +179,13 @@ def _readAll(base: Path, table: str) -> pl.DataFrame | None:
 
 
 def readReadings(
-    *, week: int | None = None, live: bool | None = None, baseDir: Path | None = None
+    *,
+    week: int | None = None,
+    live: bool | None = None,
+    market: str | None = None,
+    baseDir: Path | None = None,
 ) -> pl.DataFrame | None:
-    """판독 행 읽기 (week·live 필터 선택)."""
+    """판독 행 읽기 (week·live·market 필터 선택. market 무필터 = 전 시장 혼합 주의)."""
     df = _readAll(ledgerDir(baseDir), "readings")
     if df is None:
         return None
@@ -189,6 +193,8 @@ def readReadings(
         df = df.filter(pl.col("week") == week)
     if live is not None:
         df = df.filter(pl.col("issuedLive") == live)
+    if market is not None and "market" in df.columns:
+        df = df.filter(pl.col("market") == market)
     return df
 
 

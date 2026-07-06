@@ -179,6 +179,13 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
 - **US**: B/M t+5.17(기록 5.5 유지·인증), ret5 t-10.59(기록 -6.4 → 강화·발굴), maxRet20 t-11.26(복권성 회피 최강 발굴), volShock +5.00·high52 +4.21 인증, spaP 0.000·PBO 0.0013. **KR**: volShock t+9.74(기록 6.3 → 강화)·dilutionGovernance +4.15·E/P +3.03(기록 3.2 유지) 인증, spaP 0.000·PBO 0.030·DSR 0.999.
 - **US DSR 해석 정정**: 가정 벌 DSR 0.999(기록) → 0.0007. KR 은 dedup 후에도 DSR 0.999 유지 = 계산 경로 정상이므로, **기록된 US 0.999 가 중복 버그(일중복 의사분산)의 산물이었을 가능성이 높다**. 정합적 해석: US 최강 신호 2개가 회피형 음(-) 발굴(maxRet20 -11.3·ret5 -10.6)이라 롱 탑K 결합 포트 Sharpe 가 약한 것 = 표면 정보력(t)과 롱 포트 수익성은 별개. US 결합은 회피/오버레이 용도로 쓰는 게 측정 정합 (수치 과신 기록을 실측으로 강등).
 
+### 0c-18. US 라이브 루프 완성 = 전상장사(DART+EDGAR) 주간 사이클 (2026-07-07)
+
+- **시장 무구분 원장 결함 2 (첫 US 라이브 시도가 실측으로 노출)**: ① readReadings 가 market 무필터라 KR 봉인이 US 같은 주 발행을 막고 보드가 KR 판독을 집음 ② 블록 파일명 `block_{week}` 시장 충돌. 정정 = readReadings(market) 필터·발행/보드/스프레드 시장 스코프·블록 `block_{market}_{week}` 시장별 독립 해시체인 (기존 KR 블록 rename 마이그레이션). 가드 테스트 = 같은 주 KR/US 독립 봉인.
+- **US 베타·격자**: macroBetaByCodeWide 에 가격 주입(prices) 파라미터 = 글로벌 매크로(유가·rate10y 등) x US 가격상 → 격자 오버레이 시장 파라미터화 (KR 전용 게이트 해제) + profileAll US 베타 축 자동 등장.
+- **실측**: US 202625~202626 발행 66,791+69,270행 x 11표면(US 레버 insiderCluster·lockupExpiry + credit=securitiesOffering + estimate.epFwd), 격자 오버레이 각 10종목 제거, **US 첫 라이브 채점 11,963행** (lockupExpiry +364bp n=65·high52 +211bp·ep +189bp / ret5 -51bp). tests 171 (신규 1)·가드 7/7.
+- 운영자 개념 전제("전상장사 = DART + EDGAR") 라이브 충족: 이제 KR·US 모두 주간 한 방 자가 순환. 잔여 = US 업종맵(SIC 로컬 부재 실측, EDGAR submissions 별도 수집 필요 = 외부 데이터 항목)·US 가격 최신화(6/29, edgarPricesDaily CI 가 채움).
+
 ---
 
 > ⚠ v0.1 폐기 박제: 이전 04는 "초기 아키텍처 = story 동격 L3 `scenarioWorkbench`, 공개 verb `dartlab.scenario`(미결)"을 현재 결정으로 들고 있었다. **01 §3이 이를 코드로 기각**했다(story=순수 렌더러라 동거 불가, `scenario` 명사형은 `macro.scenarios`/`ScenarioOverlay` 충돌). 본 v0.2가 정본.

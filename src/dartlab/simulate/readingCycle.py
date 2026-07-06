@@ -104,9 +104,9 @@ def issueReadings(
     readings = readings.filter(pl.col("week") == week)
     if readings.height == 0:
         return 0
-    already = _ledger.readReadings(week=week, live=live, baseDir=baseDir)
+    already = _ledger.readReadings(week=week, live=live, market=market, baseDir=baseDir)
     if already is not None and already.height:
-        return 0  # 이미 봉인된 주: 재발행 스킵 (append-only 불변 유지 + runWeek 재실행 안전)
+        return 0  # 이미 봉인된 (시장, 주): 재발행 스킵 (append-only 유지 + 재실행 안전. 시장별 독립)
     extraSurfaces = [f"{axis}.{c}" for axis, m in extras.items() for c in _opine._numericCols(m)]
     readings = _fillAbstain(readings, priceM, week, directionByType, extraSurfaces)  # 완전성 강제 (silent 누락 0)
     # 불변식 가드: 연속 표면은 (code, surface) 주당 1행 (이벤트·레버는 같은 주 다발 공시 = 다행 허용).

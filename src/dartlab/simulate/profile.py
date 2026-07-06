@@ -163,10 +163,12 @@ def profileAll(asOf: str, *, dataDir: Path | None = None, market: str = "KR") ->
             .select("code", "fundStalenessDays")
         )
         out = out.join(stale, on="code", how="left")
+    # 축5 노출: 전종목 전팩터 베타 (레지스트리 전수 = 자동흡수. 매크로 시리즈 글로벌 공유,
+    # US 는 tableUs 가격 주입으로 동일 베타 축 확보 = 격자 오버레이 입력)
+    pxInject = None if market == "KR" else tblM.dailyPrices(dataDir)
+    out = out.join(_table.macroBetaByCodeWide(asOf, baseDir=dataDir, prices=pxInject), on="code", how="left")
     if market == "KR":
-        # 축5 노출: 전종목 전팩터 베타 (레지스트리 전수 = 자동흡수. US = 가격상 미배선 정직 부재)
-        out = out.join(_table.macroBetaByCodeWide(asOf, baseDir=dataDir), on="code", how="left")
-        # 축2 상대방: allFilings 1 스캔 distinct flr_nm
+        # 축2 상대방: allFilings 1 스캔 distinct flr_nm (US flr 필드 미배선)
         out = out.join(_table.counterpartyCountsBulk(asOf, dataDir), on="code", how="left")
     # E 연장 투영: 다음 분기(h=1) 매출·순이익 E (p50 + p5/p95). 그리드 재사용 (추가 스캔 0).
     if grid.height:

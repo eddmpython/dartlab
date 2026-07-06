@@ -187,10 +187,11 @@ def _blockDir(baseDir: Path | None) -> Path:
     return root / BLOCK_SUBDIR
 
 
-def _lastHash(blockDir: Path, week: int | None = None) -> str:
-    files = sorted(blockDir.glob("block_*.json"))
+def _lastHash(blockDir: Path, week: int | None = None, market: str = "KR") -> str:
+    files = sorted(blockDir.glob(f"block_{market}_*.json"))
     if week is not None:
-        files = [f for f in files if f.stem < f"block_{week}"]  # 같은 주 재발간 시 자기/미래 블록 참조 방지
+        # 같은 주 재발간 시 자기/미래 블록 참조 방지 (시장별 독립 체인)
+        files = [f for f in files if f.stem < f"block_{market}_{week}"]
     if not files:
         return ""
     return json.loads(files[-1].read_text(encoding="utf-8")).get("hash", "")
@@ -204,14 +205,20 @@ def _asCode(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def _latticeOverlay(
-    candidates: pl.DataFrame, weekEnd: pl.DataFrame, week: int, dataDir: Path | None, *, topK: int = 10
+    candidates: pl.DataFrame,
+    weekEnd: pl.DataFrame,
+    week: int,
+    dataDir: Path | None,
+    *,
+    topK: int = 10,
+    market: str = "KR",
 ) -> tuple[pl.DataFrame, list[str]]:
     """격자 리스크 오버레이 (14 §9 역사검증 통과 규칙): 후보에서 매크로 꼬리 최악 제거 → (top-K, 제거목록).
 
     hardenedTopK = base 후보 중 respP5(격자 확률가중 하방 꼬리) 최악을 쳐낸다. 역사 실측: 평균
     +1.45% -> +1.82%, 주간 p5 -7.78% -> -4.68% (알파 틸트 아니라 "덜 죽는 결정"). 베타·격자 실패
     (macro 부재 등)는 오버레이 생략 = 후보 상위 topK 그대로 (fail-open 아님: 제거목록 None 반환으로
-    미적용 명시).
+    미적용 명시). market: 베타 가격상 선택 (매크로 시리즈는 글로벌 공유, US=tableUs 가격 주입).
     """
     from dartlab.simulate import lattice as _lt
     from dartlab.simulate import scenarioSim as _ss
@@ -221,7 +228,8 @@ def _latticeOverlay(
     if asOfS.len() == 0:
         return candidates.head(topK), None
     macro = _table.macroDaily(dataDir)
-    betas = _table.macroBetaByCodeWide(asOfS[0], baseDir=dataDir)
+    pxInject = None if market == "KR" else _cycle.marketTable(market).dailyPrices(dataDir)
+    betas = _table.macroBetaByCodeWide(asOfS[0], baseDir=dataDir, prices=pxInject)
     if macro.height == 0 or betas.height == 0:
         return candidates.head(topK), None
     cov = _ss.factorCovariance(macro)
@@ -280,8 +288,8 @@ def runWeek(
         directionByType=directionByType,
     )
     _cycle.scoreReadingsDue(market=market, baseDir=baseDir, dataDir=dataDir, labels=labels)
-    _wk = _ledger.readReadings(week=week, live=True, baseDir=baseDir)
-    _all = _ledger.readReadings(live=True, baseDir=baseDir)
+    _wk = _ledger.readReadings(week=week, live=True, market=market, baseDir=baseDir)
+    _all = _ledger.readReadings(live=True, market=market, baseDir=baseDir)
     weekReadings = _asCode(_wk if _wk is not None else _emptyReadings())
     allReadings = _asCode(_all if _all is not None else _emptyReadings())
 
@@ -325,7 +333,7 @@ def runWeek(
             costFloorMedian = float(cfWk["costFloor"].median())
             netPos = _netGate(weekReadings, certifiedNet, cfWk, redFlag)
     # top10 = 게이트 통과 후보 20 에서 격자 리스크 오버레이(14 §9 검증: 평균↑·주간 p5 꼬리 40%↓)로
-    # 매크로 꼬리 최악 10 제거. 라이브 KR 만 (US 는 macro 축 미배선, 주입 테스트는 스캔 생략).
+    # 매크로 꼬리 최악 10 제거. 라이브 KR+US (글로벌 매크로 공유, 베타 가격상만 시장별. 주입 테스트는 스캔 생략).
     candidates = (
         _board.applyGates(boardTop, redFlagCodes=redFlag, netPositiveCodes=netPos, n=20)
         if boardTop.height
@@ -333,8 +341,8 @@ def runWeek(
     )
     latticeDropped: list[str] | None = None
     top10 = candidates.head(10)
-    if not injected and market == "KR" and candidates.height > 10:
-        top10, latticeDropped = _latticeOverlay(candidates, weekEnd, week, dataDir, topK=10)
+    if not injected and candidates.height > 10:  # 격자 오버레이 시장 파라미터화 (KR+US, 베타상만 교체)
+        top10, latticeDropped = _latticeOverlay(candidates, weekEnd, week, dataDir, topK=10, market=market)
 
     regimeTag = None
     if not injected:  # 라이브 런만 레짐 분류 (시장 스캔)
@@ -393,7 +401,7 @@ def runWeek(
         card,
         boardTop,
         top10,
-        prevHash=_lastHash(blockDir, week),
+        prevHash=_lastHash(blockDir, week, market),
         costFloorMedian=costFloorMedian,
         regimeTag=regimeTag,
         combinedWeights=weights,
@@ -401,7 +409,10 @@ def runWeek(
         latticeDropped=latticeDropped,
         estimateSummary=estimateSummary,
     )
-    (blockDir / f"block_{week}.json").write_text(json.dumps(block, ensure_ascii=False, indent=2), encoding="utf-8")
+    # 블록 파일 = 시장별 독립 체인 (block_{market}_{week}. 시장 무접두 옛 이름은 KR 체인과 충돌해 폐기)
+    (blockDir / f"block_{market}_{week}.json").write_text(
+        json.dumps(block, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     return block
 
 

@@ -352,13 +352,20 @@ def macroBetaByCode(asOf: str, *, factor: str = "oil", window: int = 250, baseDi
     )
 
 
-def macroBetaByCodeWide(asOf: str, *, window: int = 250, baseDir: Path | None = None) -> pl.DataFrame:
+def macroBetaByCodeWide(
+    asOf: str, *, window: int = 250, baseDir: Path | None = None, prices: pl.DataFrame | None = None
+) -> pl.DataFrame:
     """전종목 전팩터 베타 → (code, <factor>Beta...). 가격 스캔 1회, 팩터 축 = 레지스트리 전수.
 
     시나리오 시뮬레이터 노출 입력 (회사 반응 = Σ 베타 x 충격). **팩터 목록은 factors.macroFactors()
     순회** = 팩터 등록 1행이면 베타 열이 자동 추가 (하류 격자·시나리오·프로파일 무수정 흡수).
     asOf 이전 window 거래일, 벌크 groupby (Company 루프 0). 팩터별 단변량 OLS. 무변동(var 0)·
     표본<20·데이터 부재 팩터는 None (0 대체 금지).
+
+    Args:
+        asOf: 기준일. window: 트레일링 거래일. baseDir: 데이터 루트.
+        prices: 가격 주입 (date, code, close). None = KR dailyPrices. US 는 tableUs.dailyPrices
+            주입으로 같은 글로벌 매크로(유가·rate10y 등) 베타를 얻는다 (시장 파라미터화).
     """
     from dartlab.simulate import factors as _factors
 
@@ -369,7 +376,7 @@ def macroBetaByCodeWide(asOf: str, *, window: int = 250, baseDir: Path | None = 
         return pl.DataFrame(schema=schema)
     factors = [f for f in allFactors if f in macro.columns]
     px = (
-        dailyPrices(baseDir)
+        (prices if prices is not None else dailyPrices(baseDir))
         .filter((pl.col("close") > 0) & (pl.col("date") <= asOf))
         .sort(["code", "date"])
         .with_columns(ret=pl.col("close") / pl.col("close").shift(1).over("code") - 1)

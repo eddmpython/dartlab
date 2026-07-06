@@ -669,7 +669,9 @@ def testProfileAllBulkWide(monkeypatch):
     monkeypatch.setattr(
         t,
         "macroBetaByCodeWide",
-        lambda asOf, baseDir=None: pl.DataFrame({"code": ["a"], "rateBeta": [None], "fxBeta": [1.0], "oilBeta": [0.5]}),
+        lambda asOf, baseDir=None, prices=None: pl.DataFrame(
+            {"code": ["a"], "rateBeta": [None], "fxBeta": [1.0], "oilBeta": [0.5]}
+        ),
     )
     monkeypatch.setattr(
         t, "counterpartyCountsBulk", lambda asOf, d=None: pl.DataFrame({"code": ["a"], "counterpartyCount": [3]})
@@ -720,11 +722,17 @@ def testProfileAllUsMarketAndEColumns(monkeypatch):
                 }
             )
     monkeypatch.setattr(tableUs, "scanFinanceGrid", lambda d=None: pl.DataFrame(rows))
+    monkeypatch.setattr(
+        tableUs,
+        "dailyPrices",
+        lambda d=None: pl.DataFrame(schema={"date": pl.Utf8, "code": pl.Utf8, "close": pl.Float64}),
+    )
     pa = profile.profileAll("20260112", market="US")
     row = pa.row(0, named=True)
     assert row["financingCount"] == 1  # securitiesOffering = US 자금조달 형질
     assert row["revenueE"] == 10.0 and row["revenueEPeriod"] == "2026Q1"  # 완전 계절 = E 정확 재현
-    assert "oilBeta" not in pa.columns and "industry" not in pa.columns  # 미배선 축 정직 부재
+    assert "oilBeta" in pa.columns and row["oilBeta"] is None  # US 베타 축 존재 (가격 주입, 무데이터 = null)
+    assert "industry" not in pa.columns and "counterpartyCount" not in pa.columns  # 미배선 축 정직 부재
 
 
 def testRunweekLatticeOverlayHelper(monkeypatch):
@@ -744,7 +752,7 @@ def testRunweekLatticeOverlayHelper(monkeypatch):
         }
     )
     monkeypatch.setattr(table, "macroDaily", lambda baseDir=None: macro)
-    monkeypatch.setattr(table, "macroBetaByCodeWide", lambda asOf, baseDir=None: betas)
+    monkeypatch.setattr(table, "macroBetaByCodeWide", lambda asOf, baseDir=None, prices=None: betas)
     weekEnd = pl.DataFrame({"week": [202601], "date": [d[-1]]})
     cand = pl.DataFrame({"code": [f"c{i}" for i in range(12)], "consensus": [float(12 - i) for i in range(12)]})
     top, dropped = runweek._latticeOverlay(cand, weekEnd, 202601, None, topK=10)
@@ -1336,3 +1344,39 @@ def testLeverRefineDerivable():
     wm = pl.DataFrame({"date": ["20260213"], "week": [202607]})
     idx = leverRefine.indexInclusionReadings(caps, wm, lowerPct=0.7, upperPct=0.95)
     assert idx.height >= 1 and idx["surface"][0] == "lever.indexInclusion"  # 경계 밴드 후보
+
+
+def testIssueReadingsMarketScopedSealing(tmp_path):
+    from dartlab.simulate import readingCycle, readingLedger
+
+    # 시장 무구분 원장 읽기 결함 가드 (2026-07-07 실측: KR 봉인이 US 같은 주 발행을 막음)
+    weekEnd = pl.DataFrame({"week": [202607], "date": ["20260213"]})
+    weekMap = pl.DataFrame(schema={"date": pl.Utf8, "week": pl.Int64})
+    fundM = pl.DataFrame(schema={"code": pl.Utf8, "week": pl.Int64, "ep": pl.Float64, "bm": pl.Float64})
+    eventM = pl.DataFrame(schema={"code": pl.Utf8, "week": pl.Int64, "reportType": pl.Utf8})
+    krPrice = pl.DataFrame({"code": ["005930"], "week": [202607], "ret5": [0.01]})
+    usPrice = pl.DataFrame({"code": ["AAPL"], "week": [202607], "ret5": [0.02]})
+    n1 = readingCycle.issueReadings(
+        market="KR",
+        week=202607,
+        baseDir=tmp_path,
+        matrices=(weekMap, weekEnd, krPrice, fundM, eventM),
+        directionByType={},
+    )
+    n2 = readingCycle.issueReadings(
+        market="US",
+        week=202607,
+        baseDir=tmp_path,
+        matrices=(weekMap, weekEnd, usPrice, fundM, eventM),
+        directionByType={},
+    )
+    assert n1 > 0 and n2 > 0  # 같은 주라도 시장별 독립 봉인 (KR 봉인이 US 를 못 막음)
+    assert readingLedger.readReadings(baseDir=tmp_path, market="US")["stockCode"].unique().to_list() == ["AAPL"]
+    n3 = readingCycle.issueReadings(
+        market="US",
+        week=202607,
+        baseDir=tmp_path,
+        matrices=(weekMap, weekEnd, usPrice, fundM, eventM),
+        directionByType={},
+    )
+    assert n3 == 0  # 같은 (시장, 주) 재발행은 스킵
