@@ -157,29 +157,45 @@ def _collapseDegenAxis(ap: str | None) -> str:
     return "" if all(m in _DEGEN_AXIS for m in members) else ap
 
 
-def _noteCellsFromPanel(code: str, ntCode: str, marketNs: str = "kr") -> pl.DataFrame | None:
-    """주석(NT_) 가족 contentRaw → CELL_SCHEMA 셀 — ``alignNotes`` 정체성 소스(``_cellsFromPanel`` 깊은과거 짝).
+def _alignedNoteFrame(code: str, marketNs: str = "kr") -> pl.DataFrame | None:
+    """panel long 을 alignNotes, anchorLatest 로 정렬한 aligned frame (회사당 1회, 노트 배치 공유 소스).
 
-    5표 ``_cellsFromPanel`` 은 flat parquet 의 keyed 5표(2023+)만 본다. 주석은 read-time ``alignNotes`` 가
-    null-key 깊은과거 주석행에 NT_ 정체성을 부여(2013~)하므로, 본 함수는 ``readLong→alignNotes→anchorLatest``
-    aligned long 을 소스로 주석가족(ntCode)을 분해한다. XBRL leaf = ``_xbrlCellsFromContent``(+ degenerate axis
-    collapse), 옛 leaf = ``_parseOldNoteTable``(병합행 가드). 연간 deep-history(Q4 사업보고서)만.
+    ``_noteCellsFromPanel`` 의 비싼 전처리(readLong+alignNotes+anchorLatest)를 노트가족 필터와 분리한다.
+    ``readNoteStatements`` 배치가 이 결과를 여러 NT_ 가족에 재사용해 회사당 재정렬(N배)을 피한다.
 
     Args:
         code: 종목코드.
-        ntCode: 주석 표준코드(NT_D######) substring.
         marketNs: 시장 namespace.
+
+    Returns:
+        aligned long DataFrame 또는 None (panel 부재).
+    """
+    from . import read as _read
+
+    long = _read.readLong(code, marketNs=marketNs)  # 전 period. alignNotes 뼈대는 최근 native 주석 필요
+    if long is None:
+        return None
+    return _read.anchorLatest(_read.alignNotes(long))
+
+
+def _noteCellsFromAligned(aligned: pl.DataFrame | None, ntCode: str, code: str) -> pl.DataFrame | None:
+    """aligned note frame 에서 주석가족(ntCode) CELL_SCHEMA 셀 분해 (leaf 파싱, 정렬 소스 재사용).
+
+    XBRL leaf 는 ``_xbrlCellsFromContent``(+ degenerate axis collapse), 옛 leaf 는 ``_parseOldNoteTable``
+    (병합행 가드). 연간 deep-history(Q4 사업보고서)만. aligned 는 :func:`_alignedNoteFrame` 산출.
+
+    Args:
+        aligned: 회사당 1회 정렬된 aligned long (None 이면 None 반환).
+        ntCode: 주석 표준코드(NT_D######) substring.
+        code: 종목코드 (셀 파서 태깅용).
 
     Returns:
         CELL_SCHEMA in-memory DataFrame 또는 None (주석가족/데이터표 부재).
     """
-    from . import read as _read
     from .build.cell import _parseFragment, _parseOldNoteTable, _xbrlCellsFromContent
 
-    long = _read.readLong(code, marketNs=marketNs)  # 전 period — alignNotes 뼈대는 최근 native 주석 필요
-    if long is None:
+    if aligned is None:
         return None
-    aligned = _read.anchorLatest(_read.alignNotes(long))
     fam = aligned.filter(
         pl.col("disclosureKey").fill_null("").str.contains(ntCode)
         & (pl.col("leafType") == "table")
@@ -213,6 +229,25 @@ def _noteCellsFromPanel(code: str, ntCode: str, marketNs: str = "kr") -> pl.Data
     if not rows:
         return None
     return pl.DataFrame(rows, schema=CELL_SCHEMA)
+
+
+def _noteCellsFromPanel(code: str, ntCode: str, marketNs: str = "kr") -> pl.DataFrame | None:
+    """주석(NT_) 가족 contentRaw 를 CELL_SCHEMA 셀로 (``alignNotes`` 정체성 소스, 단일 NT_ 진입점).
+
+    5표 ``_cellsFromPanel`` 은 flat parquet 의 keyed 5표(2023+)만 본다. 주석은 read-time ``alignNotes`` 가
+    null-key 깊은과거 주석행에 NT_ 정체성을 부여(2013~)하므로 aligned long 을 소스로 분해한다. 정렬
+    (:func:`_alignedNoteFrame`) + 파싱(:func:`_noteCellsFromAligned`) 위임. 여러 NT_ 배치는
+    :func:`readNoteStatements`.
+
+    Args:
+        code: 종목코드.
+        ntCode: 주석 표준코드(NT_D######) substring.
+        marketNs: 시장 namespace.
+
+    Returns:
+        CELL_SCHEMA in-memory DataFrame 또는 None (주석가족/데이터표 부재).
+    """
+    return _noteCellsFromAligned(_alignedNoteFrame(code, marketNs), ntCode, code)
 
 
 # ── 영업부문(OperatingSegments) 주석 파싱 — NT_D871100 axisPath 해석 SSOT ──
@@ -673,6 +708,60 @@ def readNoteStatement(
     # keyed era(2023+)는 native per-table NT_ 라 0 오염. 깊은과거 combined-note 에서 인접 tax 표가 같은 제목으로
     # co-tagged 되면 그 period 만 행 혼입 — 큐레이션(content-signal) 없는 honest-gap(구조 정밀화는 alignNotes/dechunk 후속).
     return _resolveStatement(df, variants=(statement,), freq=freq, scope=scope)
+
+
+def readNoteStatements(
+    code: str,
+    statements: "list[str] | tuple[str, ...]",
+    *,
+    freq: str = "year",
+    scope: str | None = None,
+    marketNs: str = "kr",
+) -> dict[str, pl.DataFrame]:
+    """여러 주석(NT_)을 회사당 1회 정렬로 배치 정규화 (scan note 횡단 프리빌드 위임 진입점).
+
+    ``readNoteStatement`` 를 NT_ 마다 부르면 readLong+alignNotes+anchorLatest 정렬이 매번 반복된다. 본
+    함수는 그 정렬을 (:func:`_alignedNoteFrame`) 회사당 1회만 하고 각 NT_ 가족을 재사용 필터로 해소한다.
+    scan ``buildNotes`` 가 전종목 순회 시 회사당 1 read 로 registered 노트를 뽑는 SSOT 경로다. 다축 matrix
+    주석(세그먼트 등)과 순수 서술 주석은 ``readNoteStatement`` 와 동일하게 결과에서 빠진다(정직 gap).
+
+    Args:
+        code: 종목코드.
+        statements: NT_D###### 표준코드 목록.
+        freq: "year"(기본, 사업보고서 당기/전기 연장) / "quarter" / "ytd".
+        scope: None(기본)=연결 우선 자동 / "consolidated" / "standalone".
+        marketNs: 시장 namespace.
+
+    Returns:
+        ``{ntCode: 항목명x기간 wide}`` (데이터 있는 주석만). 정렬/셀 부재 시 빈 dict.
+
+    Raises:
+        없음. 부재는 빈 dict.
+
+    Example:
+        >>> readNoteStatements("005930", ["NT_D834300", "NT_D835110"])  # doctest: +SKIP
+
+    SeeAlso:
+        - ``readNoteStatement`` (단일 NT_ 진입점, 본 함수의 1건 판).
+        - ``dartlab.scan.builders.kr.notes.buildNotes`` (전종목 note 횡단 소비자).
+
+    AIContext:
+        상태 없는 read. valueRaw 그대로(숫자화는 소비자). 회사당 1회 정렬로 대량 순회 메모리/시간 억제.
+    """
+    aligned = _alignedNoteFrame(code, marketNs)
+    if aligned is None:
+        return {}
+    out: dict[str, pl.DataFrame] = {}
+    for st in statements:
+        if not st.startswith("NT_"):
+            continue
+        cells = _noteCellsFromAligned(aligned, st, code)
+        if cells is None:
+            continue
+        resolved = _resolveStatement(cells, variants=(st,), freq=freq, scope=scope)
+        if resolved is not None and not resolved.is_empty():
+            out[st] = resolved
+    return out
 
 
 def _resolveStatement(

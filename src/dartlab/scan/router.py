@@ -97,6 +97,17 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         listModule="dartlab.providers.dart.finance.scanAccount",
         listFn="scanRatioList",
     ),
+    "note": _AxisEntry(
+        module="dartlab.scan.note",
+        fn="scanNote",
+        label="주석",
+        description="전종목 주석 lineitem 횡단 (재고 세분·리스·법인세·판관비 등, 추출 카탈로그 구동)",
+        example='scan("note", "재고자산")',
+        targetParam="conceptId",
+        targetRequired=True,
+        listModule="dartlab.scan.note",
+        listFn="scanNoteList",
+    ),
     "network": _AxisEntry(
         module="dartlab.scan.network",
         fn="buildGraph",
@@ -253,6 +264,10 @@ _ALIASES: dict[str, str] = {
     "계정": "account",
     # ratio
     "비율": "ratio",
+    # note
+    "주석": "note",
+    "노트": "note",
+    "주석항목": "note",
     # network
     "네트워크": "network",
     "관계": "network",

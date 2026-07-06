@@ -61,6 +61,7 @@ public_api:
     - liquidity
     - macroBeta
     - network
+    - note
     - orders
     - profitability
     - quality
@@ -222,6 +223,10 @@ scenarios:
     suites: [nightly]
     budget: scan.axis.default
     covers: [scan.axis.network]
+  scan.axis.note:
+    suites: [nightly]
+    budget: scan.axis.default
+    covers: [scan.axis.note]
   scan.axis.orders:
     suites: [nightly]
     budget: scan.axis.default

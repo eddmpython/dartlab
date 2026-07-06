@@ -20,8 +20,11 @@ from pathlib import Path
 
 import pytest
 
+from dartlab.core.extractionCatalog import getConcept
+from dartlab.scan.builders.kr.notes import SCAN_NOTE_CONCEPTS
 from dartlab.scan.builders.kr.report.build import SCAN_API_TYPES
 from dartlab.scan.io.parquet import _REQUIRED_REPORT_FILES
+from dartlab.scan.note import scanNoteList
 
 pytestmark = pytest.mark.unit
 
@@ -102,4 +105,36 @@ def test_no_orphan_apitype_in_builder() -> None:
     assert not orphan, (
         f"빌더에는 있지만 scan 엔진·landing 터미널 어디서도 쓰지 않는 apiType (cruft): {sorted(orphan)}. "
         f"실제 호출이 있다면 _CALL_RE/_TS_CALL_RE 정규식 점검, 아니면 빌더에서 제거."
+    )
+
+
+# ── note 횡단 프리빌드 SSOT 정합 (카탈로그 구동, drift 차단) ──
+
+
+def test_note_concepts_derive_from_catalog() -> None:
+    """SCAN_NOTE_CONCEPTS 각 항목이 카탈로그 registered 단일축 note 와 정합."""
+    assert SCAN_NOTE_CONCEPTS, "SCAN_NOTE_CONCEPTS 가 비었다 (카탈로그 registered note 도출 실패)"
+    for bare, ntKey, label in SCAN_NOTE_CONCEPTS:
+        concept = getConcept(f"note.{bare}")
+        assert concept is not None, f"카탈로그에 없는 note 개념: note.{bare}"
+        assert concept.registered, f"registered=False note 가 횡단 대상에 포함: note.{bare}"
+        assert concept.valueType in ("amount", "rate"), f"text 주석이 횡단 대상에 포함: note.{bare}"
+        assert concept.dart is not None and concept.dart.key == ntKey, f"ntKey 불일치: note.{bare}"
+        assert label == concept.label, f"label 불일치: note.{bare}"
+
+
+def test_note_bare_names_unique() -> None:
+    """bareName(파일 stem) 충돌 0 (개념별 1 파일 보장)."""
+    bares = [bare for bare, _, _ in SCAN_NOTE_CONCEPTS]
+    dupes = sorted({b for b in bares if bares.count(b) > 1})
+    assert not dupes, f"note bareName 충돌 (파일 덮어씀 위험): {dupes}"
+
+
+def test_note_reader_list_matches_builder() -> None:
+    """scanNoteList (reader) 의 name 집합이 빌더 SCAN_NOTE_CONCEPTS 와 1:1."""
+    fromReader = {row["name"] for row in scanNoteList()}
+    fromBuilder = {bare for bare, _, _ in SCAN_NOTE_CONCEPTS}
+    assert fromReader == fromBuilder, (
+        f"reader/builder note 목록 불일치. reader-only={sorted(fromReader - fromBuilder)}, "
+        f"builder-only={sorted(fromBuilder - fromReader)}"
     )

@@ -122,6 +122,7 @@ cashflow = dartlab.scan("cashflow")
 # primitive
 revenue = dartlab.scan("account", "매출액")
 roe = dartlab.scan("ratio", "roe")
+inventory = dartlab.scan("note", "재고자산")   # 주석 lineitem 횡단 (재고 세분·리스·법인세 등)
 
 # 조건형 스크리닝
 fields = dartlab.scan("fields", "roe")
@@ -156,6 +157,7 @@ custom = dartlab.scan("screen", spec={"filters": []})
 | debt | 부채구조 | DART+EDGAR | `dartlab.scan("debt")` |
 | account | 계정 | DART+EDGAR | `dartlab.scan("account", "매출액")` |
 | ratio | 비율 | DART+EDGAR | `dartlab.scan("ratio", "roe")` |
+| note | 주석 | DART | `dartlab.scan("note", "재고자산")` |
 | network | 네트워크 | DART | `dartlab.scan("network")` |
 | cashflow | 현금흐름 | financial | `dartlab.scan("cashflow")` |
 | audit | 감사리스크 | DART | `dartlab.scan("audit")` |
@@ -218,6 +220,7 @@ metric/value/score, rank, basis/source, flags
 | liquidity | 금융사 (은행·보험) 에 일반 유동비율 적용 X (LCR · NSFR 별도); 유동비율 단일 metric 으로 단정 X (당좌비율 + 사채만기 교차) |
 | macroBeta | 회귀 추정 기간 명시; p-value 낮은 베타를 결론에 사용 X |
 | network | 출자 사슬 단계 명시; 계열사 내부거래 비중 무시한 *독립* 회사 답변 X |
+| note | 노트 항목 절대금액 cross-company 비교 X (단위·통화 이질, 항목/기간 비율·추세로); `account`(정규화명)로 회사 간 동일 항목 join (label 은 회사별 표기차); 다축 matrix 주석(세그먼트·특수관계자)은 대상 아님 (단일축 lineitem 만); value 는 raw, `valueNum` 파생으로 스크리닝 |
 | profitability | 산업 분기 무시한 통합 랭킹 X (제조 vs 금융 ROE 직접 비교); 결손 종목 (재무제표 미공시) 을 0 으로 채워 랭킹 하단 배치 X |
 | quality | accrual ratio 임계값 (산업 평균 대비) 명시; 단일 분기 OCF/NI 로 이익품질 단정 X (4 분기 평균) |
 | ratio | 비율 정의 (분자/분모) 명시; 산업별 비율 차이 무시한 통합 랭킹 X |
