@@ -109,6 +109,18 @@ def issueReadings(
         return 0  # 이미 봉인된 주: 재발행 스킵 (append-only 불변 유지 + runWeek 재실행 안전)
     extraSurfaces = [f"{axis}.{c}" for axis, m in extras.items() for c in _opine._numericCols(m)]
     readings = _fillAbstain(readings, priceM, week, directionByType, extraSurfaces)  # 완전성 강제 (silent 누락 0)
+    # 불변식 가드: 연속 표면은 (code, surface) 주당 1행 (이벤트·레버는 같은 주 다발 공시 = 다행 허용).
+    # 2026-07-06 실측: 일별 raw 에서 주말 스냅샷 누락 시 5배 중복 봉인 → 원장 오염. 여기서 즉시 크래시.
+    contDup = (
+        readings.filter(~pl.col("surface").str.starts_with("event.") & ~pl.col("surface").str.starts_with("lever."))
+        .group_by(["code", "surface"])
+        .len()
+        .filter(pl.col("len") > 1)
+    )
+    if contDup.height:
+        raise ValueError(
+            f"연속 표면 중복 판독 {contDup.height}키 (주말 스냅샷 결함 의심): {contDup.head(3).to_dicts()}"
+        )
     asOf = weekEnd.filter(pl.col("week") == week)["date"]
     asOfStr = asOf[0] if asOf.len() else str(week)
     # 표면 provenance → refs (근거 참조 자연 기록, 재계산 계약).

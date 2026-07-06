@@ -213,7 +213,10 @@ def fundWeekly(weekEnd: pl.DataFrame, mktcap: pl.DataFrame, baseDir: Path | None
 
 
 def priceWeekly(weekMap: pl.DataFrame, baseDir: Path | None = None) -> pl.DataFrame:
-    """가격 표면 입력 → (code, week, ret5, mom20x5, volShock, high52). 종목 내 거래일 shift (look-ahead 0)."""
+    """가격 표면 입력 → (code, week, ret5, mom20x5, volShock, high52). 종목 내 거래일 shift (look-ahead 0).
+
+    주말 스냅샷 = (code, week) 마지막 거래일 1행 (KR priceWeekly 와 동일 결함 동시 정정, 2026-07-06).
+    """
     df = _pricesRaw(baseDir).select("date", "code", "close", "vol", "high").sort(["code", "date"])
     c = pl.col("close")
     df = df.with_columns(
@@ -223,8 +226,12 @@ def priceWeekly(weekMap: pl.DataFrame, baseDir: Path | None = None) -> pl.DataFr
         high52=(c / c.rolling_max(250).over("code")),
         maxRet20=(c / c.shift(1).over("code") - 1).rolling_max(20).over("code"),  # MAX 복권성(회피)
     )
-    return df.join(weekMap.rename({"date": "d0"}), left_on="date", right_on="d0", how="inner").select(
-        "code", "week", "ret5", "mom20x5", "volShock", "high52", "maxRet20"
+    return (
+        df.join(weekMap.rename({"date": "d0"}), left_on="date", right_on="d0", how="inner")
+        .sort(["code", "date"])
+        .group_by(["code", "week"], maintain_order=True)
+        .last()
+        .select("code", "week", "ret5", "mom20x5", "volShock", "high52", "maxRet20")
     )
 
 

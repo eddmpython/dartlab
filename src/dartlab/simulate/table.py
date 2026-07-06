@@ -167,6 +167,8 @@ def priceWeekly(weekMap: pl.DataFrame, baseDir: Path | None = None) -> pl.DataFr
     """가격 표면 입력: 종목별 trailing 신호를 주말 스냅샷 → (code, week, ret5, mom20x5, volShock, high52).
 
     수정주가 근사(분할/병합 연속화) 후 신호 계산, 전부 종목 내 거래일 shift (look-ahead 0).
+    주말 스냅샷 = (code, week) 마지막 거래일 1행 (2026-07-06 실측 결함: 일별 raw 에서 거래일마다
+    행이 나가 주간 판독이 5배 중복 봉인. 옛 로컬 파일이 우연히 주간형이라 잠복했었음).
     """
     import math
 
@@ -198,8 +200,12 @@ def priceWeekly(weekMap: pl.DataFrame, baseDir: Path | None = None) -> pl.DataFr
         high52=(c / c.rolling_max(250).over("code")),
         maxRet20=(c / c.shift(1).over("code") - 1).rolling_max(20).over("code"),  # MAX 복권성(회피)
     )
-    return df.join(weekMap.rename({"date": "d0"}), left_on="date", right_on="d0", how="inner").select(
-        "code", "week", "ret5", "mom20x5", "volShock", "high52", "maxRet20"
+    return (
+        df.join(weekMap.rename({"date": "d0"}), left_on="date", right_on="d0", how="inner")
+        .sort(["code", "date"])
+        .group_by(["code", "week"], maintain_order=True)
+        .last()
+        .select("code", "week", "ret5", "mom20x5", "volShock", "high52", "maxRet20")
     )
 
 

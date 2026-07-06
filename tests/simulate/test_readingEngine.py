@@ -308,6 +308,53 @@ def testRunWeekHashChain(tmp_path):
     assert b1["estimateSummary"] is None  # 주입 경로 = E 사이클 미실행 명시 (라이브만 실행)
 
 
+def testPriceWeeklySnapshotOneRowPerWeek(tmp_path):
+    from dartlab.simulate import table
+
+    # 2026-07-06 실측 결함 가드: 일별 raw 에서 (code, week) 마지막 거래일 1행 스냅샷 (5배 중복 차단)
+    d = tmp_path / "gov/prices/date"
+    d.mkdir(parents=True)
+    days = ["20260105", "20260106", "20260107", "20260112", "20260113"]  # 2주 (202602, 202603)
+    rows = []
+    for i, day in enumerate(days):
+        for code in ("aaa111", "bbb222"):
+            rows.append(
+                {
+                    "BAS_DD": day,
+                    "ISU_CD": code,
+                    "TDD_CLSPRC": str(100 + i),
+                    "LIST_SHRS": "10",
+                    "ACC_TRDVOL": "5",
+                    "TDD_HGPRC": str(101 + i),
+                }
+            )
+    pl.DataFrame(rows).write_parquet(d / "2026.parquet")
+    weekMap, _ = table.weekCalendar(tmp_path)
+    pm = table.priceWeekly(weekMap, tmp_path)
+    per = pm.group_by("code", "week").len()
+    assert per["len"].max() == 1  # 주당 1행 (스냅샷)
+    assert pm.height == 4  # 2종목 x 2주
+
+
+def testIssueReadingsRejectsDuplicateContinuous(tmp_path):
+    import pytest
+
+    from dartlab.simulate import readingCycle
+
+    # 연속 표면 (code, week) 중복 = 원장 오염 전에 즉시 크래시 (silent 봉인 금지)
+    dupPrice = pl.DataFrame(
+        {"code": ["a", "a", "b"], "week": [202607] * 3, "ret5": [0.01, 0.02, 0.03]}  # a 가 2행
+    )
+    weekEnd = pl.DataFrame({"week": [202607], "date": ["20260213"]})
+    weekMap = pl.DataFrame(schema={"date": pl.Utf8, "week": pl.Int64})
+    fundM = pl.DataFrame(schema={"code": pl.Utf8, "week": pl.Int64, "ep": pl.Float64, "bm": pl.Float64})
+    eventM = pl.DataFrame(schema={"code": pl.Utf8, "week": pl.Int64, "reportType": pl.Utf8})
+    with pytest.raises(ValueError, match="중복 판독"):
+        readingCycle.issueReadings(
+            week=202607, baseDir=tmp_path, matrices=(weekMap, weekEnd, dupPrice, fundM, eventM), directionByType={}
+        )
+
+
 def testScanFinanceGridPrefersConsolidated(tmp_path):
     from dartlab.simulate import table
 
