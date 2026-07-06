@@ -1,0 +1,81 @@
+# 에피소드 메타데이터 (사람이 작성하는 SSOT).
+# 발행 시 guid/오디오크기/길이/발행일 같은 기계값은 published.json 에 기록된다.
+# 소스 문서는 블로그 글 하나다 (기술이야기: 휴머노이드가 움직이려면).
+episode:
+  version: 1
+  episodeId: P08-economy-humanoid-robot-actuator   # 폴더명과 동일. P0N-{lane}-{slug}
+  episodeNo: 8                           # 정수. RSS <itunes:episode> + 정렬
+  slug: humanoid-robot-actuator          # 링크/파일 slug
+  title: "휴머노이드 로봇: 관절 만드는 6곳을 실측하니 다 적자, 유일한 흑자마저 착시였다"
+  lane: economy                          # dartlab | company | economy | disclosure | quant
+  language: ko
+  status: ready                          # draft | ready | published (ready 이상만 발행)
+
+  # 오디오 소스 (NotebookLM 산출물). 레포에 커밋하지 않는다. 발행 시 --audio 로 경로 전달.
+  audio:
+    generator: notebooklm
+    sourceHint: "Downloads/로봇_관절_기업의_피투성이_장부와_흑자_착시.m4a"
+    sourceDoc: https://eddmpython.github.io/dartlab/blog/humanoid-robot-actuator
+
+  image:
+    source: cover.jpg                    # 3000x3000 정사각 RSS 커버 (렌더 산출)
+    key: episodes/humanoid-robot-actuator/cover-3000.jpg
+  staticImage:
+    source: static-video.jpg             # 1280x720 16:9 (팟빵·유튜브 썸네일 규격, 렌더 산출)
+    key: episodes/humanoid-robot-actuator/static-video.jpg
+  thumbnail:
+    source: static-video.jpg
+    key: episodes/humanoid-robot-actuator/static-video.jpg
+  sourceAssets:
+    - source: assets/source.webp
+      name: source
+      role: reusable-original
+  visual:
+    source: assets/source.webp
+    kicker: DartLab Podcast
+    titleLines:
+      - 로봇도 관절부터
+      - 부품 만드는 6곳
+      - "[[아직 아무도 못 번다]]"
+    subtitle: 완성 로봇 -180% · 유일한 흑자마저 산업용 감속기에서
+    footer: 휴머노이드 밸류체인 · 감속기 국산화 · 흑자 착시
+
+  caption:
+    hook: 로봇이 헤드라인을 채우지만, 관절을 만드는 회사들은 아직 아무도 돈을 못 법니다.
+    body: >-
+      테슬라와 삼성의 로봇이 헤드라인을 채우지만, 로봇이 실제로 움직이려면 관절(감속기)과
+      근육(모터·액추에이터)이 필요합니다. 그 부품을 만드는 국내 6개 상장사를 실측하니, 완성품
+      두산로보틱스는 영업이익률 -180.3%였고 부품사도 대부분 적자였습니다. 유일한 흑자
+      에스피지(+5.3%)의 이익조차 휴머노이드가 아니라 기존 산업용 감속기에서 나왔습니다.
+      진짜 병목은 관절, 곧 감속기 국산화에 있습니다.
+    cta: 전체 에피소드는 DartLab 팟캐스트에서 들을 수 있습니다.
+    hashtags: ["#DartLab", "#휴머노이드", "#로봇", "#감속기"]
+
+  # 기획 요지
+  audienceQuestion: 로봇을 만드는 회사 중 관절과 근육 부품을 대는 곳은 지금 돈을 벌고 있을까?
+  oneLineMessage: >-
+    휴머노이드 밸류체인은 아직 이익이 도착하지 않은 시장이다. 완성 로봇은 팔수록 적자가
+    깊어지고(두산로보틱스 영업이익률 -180.3%), 부품사도 대부분 적자다. 유일한 흑자
+    에스피지(+5.3%)의 이익조차 휴머노이드가 아니라 기존 산업용 감속기에서 나온다.
+    진짜 병목은 감속기 국산화다.
+  summary: >-
+    dartlab이 휴머노이드 로봇의 관절(감속기)과 근육(모터·액추에이터)을 만드는 국내 6개
+    상장사를 실측했습니다. 완성 로봇 두산로보틱스는 영업이익률 -180.3%로 팔수록 적자가
+    깊어졌고, 감속기 국산화에 도전하는 에스비비테크도 -114.7%였습니다. 유일한 흑자
+    에스피지(+5.3%)의 이익조차 휴머노이드가 아니라 기존 산업용 감속기에서 나왔습니다.
+    이익은 아직 도착하지 않았고, 그 자리는 관절 병목이 풀리는 날 채워질 것입니다.
+  whereToLook:
+    - 완성 로봇의 매출 성장이 아니라 부품 단의 이익률과 감속기 국산화 진척을 보는지
+    - 흑자 회사의 이익이 휴머노이드에서 나온 것인지 기존 산업용 사업에서 나온 것인지 갈라 보는지
+  forbiddenAngles: [매수, 매도, 목표가, 수익 보장, 확정 전망]
+
+  # 교차 링크 조인 키 + 역링크 (회사 에피소드가 아니면 빈 값)
+  stockCode: ""
+  corpName: ""
+  topicSlug: humanoid-robot-actuator     # 블로그 URL slug 와 동일(조인 키 SSOT). 에피소드 slug 와 별개
+  cardType: economy                      # company | event | economy | meta
+  youtubeId: ""
+  links:
+    blogSlug: humanoid-robot-actuator
+    cardSlug: ""
+    terminalCode: ""
