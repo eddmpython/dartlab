@@ -521,6 +521,17 @@ def testEconomyReadingVotesFromMacro(monkeypatch):
     assert cascade.economyReading(d[-1])["score"] == 0.0  # 유가↓·원화약세·금리↑ = 수축
 
 
+def testIndustryReadingFromMomentum():
+    from dartlab.simulate import cascade
+
+    imap = pl.DataFrame({"code": ["a", "b"], "industry": ["energy", "air"]})
+    mom = pl.DataFrame({"industry": ["energy", "air"], "momentum": [0.05, -0.08]})
+    r = cascade.industryReading("a", imap, mom)
+    assert r["available"] and r["industry"] == "energy" and r["direction"] == 1 and r["score"] > 0.5  # 뜨거운 업종
+    assert cascade.industryReading("b", imap, mom)["direction"] == -1  # 식은 업종 = 하방
+    assert cascade.industryReading("z", imap, mom)["available"] is False  # 미매칭 = 중립(0 대체 금지)
+
+
 def testProfileTraitCatalogIsExhaustive():
     from dartlab.simulate.profile import traitCatalog
 

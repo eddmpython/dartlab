@@ -326,6 +326,52 @@ def macroBetaByCode(asOf: str, *, factor: str = "oil", window: int = 250, baseDi
     )
 
 
+def macroBetaByCodeWide(asOf: str, *, window: int = 250, baseDir: Path | None = None) -> pl.DataFrame:
+    """전종목 3팩터 베타 → (code, rateBeta, fxBeta, oilBeta). 가격 스캔 1회 (macroBetaByCode 3회 대비).
+
+    시나리오 시뮬레이터 노출 입력 (회사 반응 = Σ 베타 x 충격). asOf 이전 window 거래일, 벌크 groupby
+    (Company 루프 0). 팩터별 단변량 OLS. 무변동(var 0)·표본<20 팩터는 None (0 대체 금지).
+    """
+    macro = macroDaily(baseDir)
+    schema = {"code": pl.Utf8, "rateBeta": pl.Float64, "fxBeta": pl.Float64, "oilBeta": pl.Float64}
+    if macro.height == 0:
+        return pl.DataFrame(schema=schema)
+    factors = [f for f in ("rate", "fx", "oil") if f in macro.columns]
+    px = (
+        dailyPrices(baseDir)
+        .filter((pl.col("close") > 0) & (pl.col("date") <= asOf))
+        .sort(["code", "date"])
+        .with_columns(ret=pl.col("close") / pl.col("close").shift(1).over("code") - 1)
+    )
+    dates = px.select("date").unique().sort("date")
+    fac = (
+        dates.join(macro, on="date", how="left").sort("date").with_columns([pl.col(f).forward_fill() for f in factors])
+    )
+    fac = fac.with_columns([_macroChange(f).alias(f"d_{f}") for f in factors]).select(
+        "date", *[f"d_{f}" for f in factors]
+    )
+    j = px.select("code", "date", "ret").join(fac, on="date", how="inner").sort(["code", "date"])
+    tail = j.group_by("code", maintain_order=True).tail(window)
+    aggs = [pl.len().alias("n")]
+    for f in factors:
+        aggs.append(
+            ((pl.col("ret") * pl.col(f"d_{f}")).mean() - pl.col("ret").mean() * pl.col(f"d_{f}").mean()).alias(
+                f"cov_{f}"
+            )
+        )
+        aggs.append(((pl.col(f"d_{f}") ** 2).mean() - pl.col(f"d_{f}").mean() ** 2).alias(f"var_{f}"))
+    g = tail.group_by("code").agg(aggs).filter(pl.col("n") >= 20)
+    betaCols = [
+        pl.when(pl.col(f"var_{f}") > 0).then(pl.col(f"cov_{f}") / pl.col(f"var_{f}")).otherwise(None).alias(f"{f}Beta")
+        for f in factors
+    ]
+    out = g.with_columns(betaCols).select("code", *[f"{f}Beta" for f in factors])
+    for col in ("rateBeta", "fxBeta", "oilBeta"):  # 부재 팩터 열 보강 (스키마 안정)
+        if col not in out.columns:
+            out = out.with_columns(pl.lit(None, dtype=pl.Float64).alias(col))
+    return out.select("code", "rateBeta", "fxBeta", "oilBeta")
+
+
 def counterpartyFilings(code: str, asOf: str, baseDir: Path | None = None) -> pl.DataFrame:
     """한 종목의 지분/대주주 관계 공시에서 제출인(flr_nm) = 상대방 실명 집계 (profile 축2).
 
@@ -352,3 +398,42 @@ def counterpartyFilings(code: str, asOf: str, baseDir: Path | None = None) -> pl
         return pl.DataFrame(schema={"counterparty": pl.Utf8, "count": pl.UInt32})
     # 동점 정렬은 counterparty 명 2차키로 안정화 (replay 항등성: 같은 asOf 재계산 = byte 일치).
     return df.group_by("counterparty").len(name="count").sort(["count", "counterparty"], descending=[True, False])
+
+
+def industryMap(baseDir: Path | None = None) -> pl.DataFrame:
+    """종목 → 업종 맵 → (code, industry). kindList corpList(KRX 업종 분류 159종) 직독. 산업층(cascade) 원천.
+
+    시나리오 시뮬레이터 산업 노드의 그룹 정의. 종목코드(6자리)로 가격 유니버스와 조인. 결측/중복 드롭.
+    """
+    p = dataDir(baseDir) / "kindList/corpList.parquet"
+    if not p.exists():
+        return pl.DataFrame(schema={"code": pl.Utf8, "industry": pl.Utf8})
+    df = pl.read_parquet(p, columns=["종목코드", "업종"])
+    return df.rename({"종목코드": "code", "업종": "industry"}).drop_nulls().unique("code", keep="first")
+
+
+def industryMomentum(asOf: str, *, baseDir: Path | None = None, window: int = 20) -> pl.DataFrame:
+    """업종별 피어 모멘텀 → (industry, momentum, breadth, nCodes). 산업 시나리오 판독 baseline (벌크).
+
+    각 업종 소속 종목의 asOf 이전 window 거래일 등가중 수익 + 상승 비율(breadth). Company 루프 0
+    (industryMap 조인 후 groupby). 산업층 cascade 노드의 현재 상태 = 그 업종이 최근 뜨거운가/식었나.
+    """
+    imap = industryMap(baseDir)
+    empty = {"industry": pl.Utf8, "momentum": pl.Float64, "breadth": pl.Float64, "nCodes": pl.UInt32}
+    if imap.height == 0:
+        return pl.DataFrame(schema=empty)
+    px = dailyPrices(baseDir).filter((pl.col("close") > 0) & (pl.col("date") <= asOf)).sort(["code", "date"])
+    tail = px.group_by("code", maintain_order=True).tail(window)
+    perCode = (
+        tail.group_by("code")
+        # 정정주가 미반영 급변(분할/병합)을 ±50%로 캡 (raw 종가라 corp-action 오염 방어).
+        .agg(ret=(pl.col("close").last() / pl.col("close").first() - 1).clip(-0.5, 0.5), n=pl.len())
+        .filter(pl.col("n") >= window // 2)
+    )
+    j = perCode.join(imap, on="code", how="inner")
+    return (
+        # 중앙값 = 소수 종목 업종의 극단 방어. breadth(상승 비율)·nCodes 동반(소비처가 얇은 업종 필터).
+        j.group_by("industry")
+        .agg(momentum=pl.col("ret").median(), breadth=(pl.col("ret") > 0).mean(), nCodes=pl.len())
+        .sort("momentum", descending=True)
+    )

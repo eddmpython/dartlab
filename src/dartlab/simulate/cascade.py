@@ -324,6 +324,42 @@ def economyReading(asOf: str, *, dataDir=None, window: int = 20) -> dict:
     }
 
 
+def industryReading(code: str, industryMap: pl.DataFrame, industryMomentum: pl.DataFrame) -> dict:
+    """회사 → 업종 → 업종 모멘텀 = 실 산업 시나리오 판독 (11 §1 층4, cascade 산업 노드 실배선).
+
+    데모 스칼라 대체 = assembleCascade 산업 노드의 실 주입값. industryMap(code->업종)으로 회사 업종을
+    찾고 industryMomentum(그 업종 최근 등가중 수익)을 산업 상태로 낸다. L2.5-legal (床 소비, L2 import 0).
+
+    Args:
+        code: 종목코드. industryMap: table.industryMap (code, industry).
+        industryMomentum: table.industryMomentum (industry, momentum, ...).
+
+    Returns:
+        {"available", "industry", "momentum", "direction": +1/-1/0, "score": 0~1, "refs"}. score =
+        모멘텀을 ±10% 스케일로 [0,1] clip. 업종 미매칭/부재는 중립(0.5, available=False).
+    """
+    neutral = {"available": False, "industry": None, "score": 0.5, "direction": 0}
+    if industryMap.height == 0:
+        return neutral
+    ind = industryMap.filter(pl.col("code") == code)
+    if ind.height == 0:
+        return neutral
+    industry = ind["industry"][0]
+    mom = industryMomentum.filter(pl.col("industry") == industry)
+    if mom.height == 0:
+        return {**neutral, "industry": industry}
+    m = float(mom["momentum"][0])
+    score = max(0.0, min(1.0, (m / 0.1 + 1) / 2))  # ±10% 모멘텀을 [0,1] 로 clip
+    return {
+        "available": True,
+        "industry": industry,
+        "momentum": m,
+        "direction": int((m > 0) - (m < 0)),
+        "score": score,
+        "refs": ("industryMap", "industryMomentum"),
+    }
+
+
 def recompute(dag: dict, edits: dict[str, float]) -> dict:
     """재계산 계약 (11 §4, "뷰어가 아니라 제작기"): 가정 편집 → 그 노드부터 하류만 dirty 재실행.
 
