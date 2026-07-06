@@ -86,6 +86,15 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
 
 **결론**: PRD 핵심(깊은 프로파일러·재계산 제작기)은 *문서엔 충분히 반영*돼 있고, 부족한 건 실장이 R4/R5 깊이까지 안 간 것. **NEXT = R4 실값 배선(축5 금리/환율/유가 베타 우선, 데이터 확정 = ecos BASE_RATE·USDKRW + fred DCOILWTICO daily) + R5 recompute 결함 수정·실 macro/industry 주입.**
 
+### 0c-6. R4/R5 깊이 실장 (2026-07-06, /goal "순서대로 진행" = §0c-5 NEXT 실행)
+
+§0c-5 감사가 특정한 갭을 정공법으로 닫음 (실코드 + 실데이터 검증 + tests + dartlabGuard strict 7/7):
+
+- **R4 프로파일러 깊이 (census 카운트 → 실값)**: `table.macroDaily`(금리 BASE_RATE·환율 USDKRW·유가 WTI 일별 SSOT 직독)·`macroBetaByCode`(전종목 벌크 베타, Company 루프 0)·`counterpartyFilings`(대량보유·임원 flr_nm=상대방 실명) 신규. profile 축5 노출=marketBeta만에서 **금리/환율/유가 macroBeta** 추가(실측: 삼성 fxBeta-2.89·oilBeta-0.17·rateBeta None[금리 window flat]), 축2 관계=counterparty:None에서 **실명 파싱**(삼성 삼성물산 71건·SK 국민연금 9건 등 1073 상대방). **깊이가 예측에 기여 실증(형질조건부 성적표, 11 §5)**: 유가베타 버킷 x 표면 = E/P가 유가민감주(oilHigh) t5.20 통과 vs 유가둔감(oilLow) t2.02 동물원구분불가(tGap 3.19 = 가치팩터가 유가 민감도로 조건화). 부수: marketBeta ddof 불일치(cov N-1 vs var N=N/(N-1) 편향) 정공법 통일. replayIdentical 유지.
+- **R5 cascade (계약 → 실배선)**: recompute **표면기여 드롭 결함 수정**(표면 노드 value=부호x강도 필드 부재로 경제 편집 시 표면 7신호 0 처리해 결정 1.60→0.03 붕괴하던 것 보존, assembleCascade 층 folding으로 초기==recompute 일관성). **실 경제 판독**(`cascade.economyReading`=거시 팩터 확장표결 도출, 데모 스칼라 대체, 실측 유가-9.2%·원화약세 → 수축 direction-1). 실증: 경제 편집 후 표면 base 1.6 보존·경제는 산업 경유 결정 변경·결정론 재현.
+- **게이트**: tests/simulate 52 통과(신규 5: macroBetas·macroBetaByCode·counterparty·recompute보존·economyReading), dartlabGuard strict l0-l15 7/7 + 외부게이트 전부 PASS. 커밋 3개(1bcc51401 정정·c18591800 R4·ff3b25300 R5).
+- **남은 정직 R4/R5 갭(후속)**: ① 축1 사업구조 세그먼트 **매출값**·축8 서사 **본문 추출**(frame per-company Panel 로드 = 2GB, 벌크 스코어카드 부적합이라 census 유지·정직 라벨) ② 산업 **독립 섹터 판독**(WICS 섹터 맵 SSOT 부재. 경제→산업 전파는 실 경제값으로 구동되나 산업 자체 판독은 미배선) ③ recompute 형질조건(profile→surface) 엣지 편집 경로(경제 편집은 수정됐으나 profile 노드 편집 시 surface 재산출은 별도).
+
 ---
 
 > ⚠ v0.1 폐기 박제: 이전 04는 "초기 아키텍처 = story 동격 L3 `scenarioWorkbench`, 공개 verb `dartlab.scenario`(미결)"을 현재 결정으로 들고 있었다. **01 §3이 이를 코드로 기각**했다(story=순수 렌더러라 동거 불가, `scenario` 명사형은 `macro.scenarios`/`ScenarioOverlay` 충돌). 본 v0.2가 정본.
