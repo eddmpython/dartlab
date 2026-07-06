@@ -14,7 +14,7 @@ _log = getLogger(__name__)
 
 
 from dartlab.scan.debt.risk import classifyRisk, scanIcr
-from dartlab.scan.debt.scanner import scanBonds, scanDebtMix, scanShortDebt
+from dartlab.scan.debt.scanner import scanBonds, scanDebtMix, scanDebtSecurities, scanShortDebt
 
 
 def scanDebt(*, verbose: bool = True) -> pl.DataFrame:
@@ -96,17 +96,22 @@ def scanDebt(*, verbose: bool = True) -> pl.DataFrame:
     debt_map = scanDebtMix()
     _say(f"  -> {len(debt_map)}종목")
 
-    _say("4/4 이자보상배율...")
+    _say("4/5 이자보상배율...")
     icr_map = scanIcr()
     _say(f"  -> {len(icr_map)}종목")
 
-    all_codes = set(bond_map) | set(debt_map) | set(icr_map) | set(short_map)
+    _say("5/5 채무증권 발행...")
+    sec_map = scanDebtSecurities()
+    _say(f"  -> {len(sec_map)}종목")
+
+    all_codes = set(bond_map) | set(debt_map) | set(icr_map) | set(short_map) | set(sec_map)
 
     results = []
     for code in all_codes:
         b = bond_map.get(code, {})
         s = short_map.get(code, {})
         d = debt_map.get(code, {})
+        sec = sec_map.get(code, {})
         icr = icr_map.get(code)
 
         shortRatio = b.get("단기비중")
@@ -122,6 +127,8 @@ def scanDebt(*, verbose: bool = True) -> pl.DataFrame:
                 "단기사채잔액": s.get("단기사채잔액"),
                 "CP잔액": s.get("CP잔액"),
                 "단기채무합계": shortDebtTotal,
+                "채무증권발행액": sec.get("채무증권발행액"),
+                "채무증권평균이자율": sec.get("채무증권평균이자율"),
                 "총부채": d.get("총부채"),
                 "부채비율": d.get("부채비율"),
                 "ICR": icr,

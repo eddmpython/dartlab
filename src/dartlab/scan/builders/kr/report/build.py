@@ -45,6 +45,7 @@ from typing import Iterable
 
 import polars as pl
 
+from dartlab.core.extractionCatalog import DartSource, getExtractionConcepts
 from dartlab.scan.builders.kr.common import BATCH_SIZE as _BATCH
 from dartlab.scan.builders.kr.common import mergeBatchFiles as _mergeBatchFiles
 from dartlab.scan.builders.kr.common import releaseNativeMemory as _releaseNativeMemory
@@ -52,37 +53,39 @@ from dartlab.scan.builders.kr.common import reportDir as _reportDir
 from dartlab.scan.builders.kr.common import say as _say
 from dartlab.scan.builders.kr.common import scanDir as _scanDir
 
-# 실소비자(scan 엔진 scanParquets + landing 터미널 reportSeries.read)가 사용하는 apiType 17개.
-# 정합성은 tests/scan/test_prebuild_contract.py 3종이 강제 — 누락 시 fallback per-file scan
-# path 가 polars streaming concat 단계에서 thrift error 로 axis 전체 실패, 터미널은 카드 비표시.
-# 빠진 apiType 추가 시 본 리스트 + scan/io/parquet._REQUIRED_REPORT_FILES 동시 갱신.
-SCAN_API_TYPES = [
-    "majorHolder",
-    "executive",
-    "employee",
-    "executivePayAllTotal",
-    "executivePayIndividual",
-    "auditOpinion",
-    "auditContract",
-    "nonAuditContract",
-    "dividend",
-    "treasuryStock",
-    "capitalChange",
-    "corporateBond",
-    "outsideDirector",
-    "minorityHolder",
-    "shortTermBond",
-    "commercialPaper",
-    "investedCompany",
-]
+# DART report apiType 중 전종목 실측(2026-07-07) payload 0 인 것. 카탈로그엔 개념이 있으나
+# 수집 응답이 status-only(데이터 컬럼 전무)라 스크리닝 불가. 손 선별이 아니라 측정에 의한 도태
+# (도태는 등재 게이트가 아니라 측정으로: feedback_exhaustive_no_curation). 데이터가 채워지면
+# 본 set 에서 빼면 자동 편입된다.
+_NO_DATA_REPORT_APITYPES: frozenset[str] = frozenset(
+    {"hybridSecurities", "contingentCapital", "executivePayByType", "executivePayTotal"}
+)
+
+
+def _reportApiTypes() -> list[str]:
+    """카탈로그 report-surface 개념에서 데이터 보유 apiType 을 도출한다 (SSOT 구동, 손 리스트 0).
+
+    ``core.extractionCatalog`` 의 report 개념(28)에서 실측 무데이터 4 종을 뺀 순서보존 리스트.
+    """
+    keys = [
+        c.dart.key for c in getExtractionConcepts() if isinstance(c.dart, DartSource) and c.dart.surface == "report"
+    ]
+    return [k for k in keys if k not in _NO_DATA_REPORT_APITYPES]
+
+
+# 실소비자(scan 엔진 scanParquets + landing 터미널)가 사용하는 apiType SSOT. 카탈로그 도출(28)에서
+# 무데이터 4 를 뺀 24. 정합성은 tests/scan/test_prebuild_contract.py 가 강제 (누락 시 fallback
+# per-file scan path 가 polars streaming concat 단계에서 thrift error 로 axis 전체 실패).
+# scan/io/parquet._REQUIRED_REPORT_FILES 가 본 리스트에서 파생되어 자동 동기화된다.
+SCAN_API_TYPES = _reportApiTypes()
 
 
 def buildReport(*, sinceYear: int = 2016, verbose: bool = True, apiTypes: Iterable[str] | None = None) -> list[Path]:
-    """report/*.parquet → apiType별 17개 분리 parquet 프리빌드.
+    """report/*.parquet → apiType별 분리 parquet 프리빌드.
 
-    ``SCAN_API_TYPES`` 17 종 (majorHolder/executive/employee/auditOpinion/dividend/...) 의
-    각 apiType 마다 종목별 raw row 를 모아 별도 parquet 으로 출력. report.parquet 단일
-    합본이 아닌 12개 분할 — apiType 마다 스키마가 다르고 사용 단위가 다르므로.
+    ``SCAN_API_TYPES`` (카탈로그 도출 24 종: majorHolder/executive/employee/dividend/topPay/
+    stockTotal/debtSecurities/...) 의 각 apiType 마다 종목별 raw row 를 모아 별도 parquet 으로
+    출력. 단일 합본이 아닌 apiType별 분할 (apiType 마다 스키마·사용 단위가 다르므로).
 
     Parameters
     ----------
@@ -111,7 +114,7 @@ def buildReport(*, sinceYear: int = 2016, verbose: bool = True, apiTypes: Iterab
     >>> [p.name for p in paths[:3]]
 
     Capabilities:
-        - 종목별 raw report parquet 을 17 apiType 별로 split. ``apiType`` 컬럼 == 카테고리
+        - 종목별 raw report parquet 을 각 apiType 별로 split. ``apiType`` 컬럼 == 카테고리
           매칭으로 종목 row 를 해당 apiType bucket 에 추가. 200 종목 단위 배치 청크 → merge.
         - apiType 마다 다른 컬럼 스키마 흡수 (``diagonal_relaxed`` concat).
 
@@ -123,7 +126,7 @@ def buildReport(*, sinceYear: int = 2016, verbose: bool = True, apiTypes: Iterab
 
     Guide:
         - 출력 경로: ``data/dart/scan/report/{apiType}.parquet``
-        - 17 apiType 중 일부만 raw 에 있으면 그 apiType 만 생성 (나머지 silent skip).
+        - 각 apiType 중 일부만 raw 에 있으면 그 apiType 만 생성 (나머지 silent skip).
         - 파일 크기는 apiType 마다 차이 큰 — employee/executive 가 가장 크다.
 
     When:
@@ -132,16 +135,16 @@ def buildReport(*, sinceYear: int = 2016, verbose: bool = True, apiTypes: Iterab
 
     How:
         ``buildScan`` 의 4 번째 단계. apiType 별 buffer dict (``apiChunks``) 를 유지하면서
-        종목당 raw 를 17 apiType 으로 filter → buffer push. ``_BATCH`` (200) 도달 시 임시
+        종목당 raw 를 각 apiType 으로 filter → buffer push. ``_BATCH`` (200) 도달 시 임시
         청크 flush. 종료 시 잔존 청크 flush + apiType 마다 ``_mergeBatchFiles`` 단일 파일 머지.
-        17 임시 디렉토리 (``_tmp_{apiType}/``) 사용 후 cleanup.
+        apiType별 임시 디렉토리 (``_tmp_{apiType}/``) 사용 후 cleanup.
 
     Requires:
         - 로컬 ``data/dart/report/{stockCode}.parquet`` (Data Sync 가 채움)
         - ``apiType`` 컬럼 (필수, 없으면 종목 skip)
 
     SeeAlso:
-        - :data:`SCAN_API_TYPES` — 처리 대상 17 apiType list
+        - :data:`SCAN_API_TYPES` — 처리 대상 각 apiType list
         - :func:`dartlab.scan.builders.kr.core.buildScan` — 본 함수 포함 통합 호출
         - :func:`dartlab.scan.builders.kr.docs.changes.buildChanges`
         - :func:`dartlab.scan.builders.kr.financeBuild.buildFinance`

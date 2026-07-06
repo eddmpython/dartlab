@@ -506,3 +506,68 @@ def scanMinorityHolder() -> dict[str, float]:
             result[codeVal] = max(vals)
 
     return result
+
+
+def scanMajorHolderChanges() -> dict[str, dict]:
+    """전종목 최대주주 변동 스캔 (경영권 안정성 / 작전 리스크).
+
+    majorHolderChange apiType 에서 종목별 실제 변동 건수(change_cause 기재행)와 최신 최대주주
+    지분율을 집계한다. 변동이 잦으면 경영권 불안정 / 부실 / 작전 신호일 수 있다.
+
+    Returns
+    -------
+    dict[str, dict]
+        {종목코드: {최대주주변동건수(건), 최대주주지분율(%)|None}}. 기록 없는 종목 제외.
+
+    Capabilities:
+        - majorHolderChange 프리빌드에서 종목별 변동건수 + 최신 지분율. scanGovernance sub-scanner.
+
+    AIContext:
+        ``scanGovernance`` 내부. 경영권 변동 잦은 종목 watchlist source.
+
+    Guide:
+        - change_cause 가 "-"/공백인 row 는 실제 변동 아님(제외). 지분율 0~100 범위만.
+
+    When:
+        ``scanGovernance`` 진행 단계 안에서.
+
+    How:
+        report parquet 종목별 group 후 변동사유 기재행 카운트 + 최신연도 지분율.
+
+    Requires:
+        - 로컬 ``data/dart/scan/report/majorHolderChange.parquet`` (``buildReport``)
+
+    SeeAlso:
+        - :func:`dartlab.scan.governance.scanGovernance` (sub-scanner 통합)
+
+    Raises
+    ------
+    polars.PolarsError
+        majorHolderChange report parquet 손상 시.
+
+    Examples
+    --------
+    >>> from dartlab.scan.governance.scanner import scanMajorHolderChanges
+    >>> scanMajorHolderChanges().get("005930", {}).get("최대주주변동건수")
+    """
+    raw = scanParquets("majorHolderChange", ["stockCode", "year", "qota_rt", "change_cause"])
+    if raw.is_empty() or "qota_rt" not in raw.columns:
+        return {}
+    result: dict[str, dict] = {}
+    for code, group in raw.group_by("stockCode"):
+        codeVal = code[0]
+        changeCount = 0
+        latestRate: float | None = None
+        latestY = ""
+        for row in group.iter_rows(named=True):
+            cause = str(row.get("change_cause") or "").strip()
+            if cause and cause != "-":
+                changeCount += 1
+            rate = parseNumStr(str(row.get("qota_rt") or "").rstrip("%"))
+            y = str(row.get("year") or "")
+            if rate is not None and 0 <= rate <= 100 and y >= latestY:
+                latestY = y
+                latestRate = rate
+        if changeCount > 0 or latestRate is not None:
+            result[codeVal] = {"최대주주변동건수": float(changeCount), "최대주주지분율": latestRate}
+    return result

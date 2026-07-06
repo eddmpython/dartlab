@@ -99,30 +99,13 @@ _REQUIRED_SCAN_ROOT_FILES: tuple[str, ...] = (
     "sharesOutstanding.parquet",
 )
 
-# scan/report/ 안 필수 prebuild — 실소비자(scan 엔진 + landing 터미널)가 쓰는 apiType 들 SSOT.
-# 빌더 `scan/builders/kr/report/build.SCAN_API_TYPES` 와 1:1 일치해야 한다 — 정합성은
-# `tests/scan/test_prebuild_contract.py::test_required_report_matches_builder` 가 강제.
-# 한쪽 추가 시 다른 쪽도 동시 갱신 (회귀 사례: shortTermBond/commercialPaper/investedCompany
-# 누락 → dartlab.scan("debt") silent thrift error, 2026-05-17 점검).
-_REQUIRED_REPORT_FILES: tuple[str, ...] = (
-    "auditContract.parquet",
-    "auditOpinion.parquet",
-    "capitalChange.parquet",
-    "commercialPaper.parquet",
-    "corporateBond.parquet",
-    "dividend.parquet",
-    "employee.parquet",
-    "executive.parquet",
-    "executivePayAllTotal.parquet",
-    "executivePayIndividual.parquet",
-    "investedCompany.parquet",
-    "majorHolder.parquet",
-    "minorityHolder.parquet",
-    "nonAuditContract.parquet",
-    "outsideDirector.parquet",
-    "shortTermBond.parquet",
-    "treasuryStock.parquet",
-)
+# scan/report/ 안 필수 prebuild. 빌더 `scan/builders/kr/report/build.SCAN_API_TYPES` 에서
+# 파생(1:1 자동 동기화). 별도 하드리스트 유지 시 drift 회귀(shortTermBond/commercialPaper/
+# investedCompany 누락 -> dartlab.scan("debt") silent thrift error, 2026-05-17)를 원천 차단.
+# 정합성은 tests/scan/test_prebuild_contract.py::test_required_report_matches_builder 가 강제.
+from dartlab.scan.builders.kr.report.build import SCAN_API_TYPES as _SCAN_API_TYPES
+
+_REQUIRED_REPORT_FILES: tuple[str, ...] = tuple(f"{apiType}.parquet" for apiType in _SCAN_API_TYPES)
 
 
 def _isScanRootComplete(scanDir: Path) -> bool:
@@ -259,6 +242,29 @@ def _ensureScanData(*, requireReports: bool = False) -> Path:
     emit("scan:prebuild_ready", fileCount=fileCount)
 
     return scanDir
+
+
+def latestDataRows(group: pl.DataFrame, col: str) -> pl.DataFrame:
+    """종목 group 에서 ``col`` 이 실값(null/'-'/공백 아님)인 행의 **최신 연도** 부분집합을 반환한다.
+
+    이벤트성/희소 report apiType(공모자금사용·5억+보수·채무증권 등)은 최신 연도 filing 이
+    "해당사항없음"(status-only, ``-``)일 수 있어 단순 ``max(year)`` 가 과거 실데이터를 놓친다.
+    본 헬퍼는 실값이 있는 연도 중 최신을 골라 그 오탐을 차단한다. 실값 행이 없으면 빈 DataFrame.
+
+    Args:
+        group: 한 종목의 report 행 group (``year`` 컬럼 필요).
+        col: 실값 존재를 판정할 값 컬럼 이름.
+
+    Returns:
+        최신 실데이터 연도의 행 부분집합. 없으면 ``group.head(0)`` (빈).
+    """
+    if col not in group.columns or "year" not in group.columns:
+        return group.head(0)
+    withData = group.filter(~pl.col(col).cast(pl.Utf8).fill_null("").str.strip_chars().is_in(["", "-"]))
+    years = [y for y in withData["year"].to_list() if y]
+    if not years:
+        return group.head(0)
+    return withData.filter(pl.col("year") == max(years))
 
 
 def scanParquets(apiType: str, keepCols: list[str]) -> pl.DataFrame:

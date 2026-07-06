@@ -8,6 +8,7 @@ import polars as pl
 
 from dartlab.scan.io.parquet import (
     findLatestYear,
+    latestDataRows,
     parseNumStr,
     pickBestQuarter,
     scanParquets,
@@ -693,4 +694,129 @@ def scanValueAdded() -> dict[str, float]:
         if headcount and headcount > 0:
             valueAdded = (opIncome + payroll) / headcount / 1e8
             result[code] = round(valueAdded, 1)
+    return result
+
+
+def scanHighPay() -> dict[str, dict]:
+    """전종목 5억 이상 개인별 보수 스캔 (오너 일가 추출 포착).
+
+    topPay apiType (5억 이상 개인별 보수, 미등기 오너 포함) 에서 종목별 최신 연도 최고
+    개인보수와 공시 인원을 뽑는다. 등기임원 한정 :func:`scanTopPay` (executivePayIndividual)
+    를 보완해 미등기 오너의 실적 역행 보수 같은 거버넌스 신호를 포착한다.
+
+    Returns
+    -------
+    dict[str, dict]
+        {종목코드: {최고개인보수_억(억), 고액보수인원(명)}}. 공시 없는 종목 제외.
+
+    Capabilities:
+        - topPay report 프리빌드에서 종목별 최신연도 최고 mendng_totamt + 인원. scanWorkforce sub-scanner.
+
+    AIContext:
+        ``scanWorkforce`` 내부. 오너 보수 추출 / 보수배수(직원평균 대비) 스크리닝 source.
+
+    Guide:
+        - mendng_totamt 결측/0 row 제외. 억 단위 환산(1e8).
+
+    When:
+        ``scanWorkforce`` 진행 단계 안에서.
+
+    How:
+        report parquet 종목별 최신연도 group 후 최고 보수 + 인원 집계.
+
+    Requires:
+        - 로컬 ``data/dart/scan/report/topPay.parquet`` (``buildReport``)
+
+    SeeAlso:
+        - :func:`dartlab.scan.workforce.scanWorkforce` (sub-scanner 통합)
+
+    Raises
+    ------
+    polars.PolarsError
+        topPay report parquet 손상 시.
+
+    Examples
+    --------
+    >>> from dartlab.scan.workforce.scanner import scanHighPay
+    >>> scanHighPay().get("005930", {}).get("최고개인보수_억")
+    """
+    raw = scanParquets("topPay", ["stockCode", "year", "nm", "ofcps", "mendng_totamt"])
+    if raw.is_empty() or "mendng_totamt" not in raw.columns:
+        return {}
+    result: dict[str, dict] = {}
+    for code, group in raw.group_by("stockCode"):
+        codeVal = code[0]
+        latest = latestDataRows(group, "mendng_totamt")
+        if latest.is_empty():
+            continue
+        best = 0.0
+        cnt = 0
+        for row in latest.iter_rows(named=True):
+            amt = parseNumStr(row.get("mendng_totamt"))
+            if amt and amt > 0:
+                cnt += 1
+                best = max(best, amt)
+        if cnt > 0:
+            result[codeVal] = {"최고개인보수_억": round(best / 1e8, 1), "고액보수인원": float(cnt)}
+    return result
+
+
+def scanUnregExecPay() -> dict[str, float]:
+    """전종목 미등기임원 1인평균 보수 스캔.
+
+    unregisteredExecutivePay apiType 에서 종목별 최신 연도 미등기임원 1인평균 급여(jan_salary_am)
+    를 뽑는다. 등기 이사회 밖에서 실질 지배하는 오너의 보수 노출 신호.
+
+    Returns
+    -------
+    dict[str, float]
+        {종목코드: 미등기임원평균보수_억(억)}. 공시 없는 종목 제외.
+
+    Capabilities:
+        - unregisteredExecutivePay 프리빌드에서 종목별 최신연도 1인평균 급여. scanWorkforce sub-scanner.
+
+    AIContext:
+        ``scanWorkforce`` 내부. 미등기 임원 보수 노출 스크리닝 source.
+
+    Guide:
+        - jan_salary_am 결측/0 제외. 억 단위 환산(1e8).
+
+    When:
+        ``scanWorkforce`` 진행 단계 안에서.
+
+    How:
+        report parquet 종목별 최신연도 group 후 최대 1인평균 급여 선택.
+
+    Requires:
+        - 로컬 ``data/dart/scan/report/unregisteredExecutivePay.parquet`` (``buildReport``)
+
+    SeeAlso:
+        - :func:`dartlab.scan.workforce.scanWorkforce` (sub-scanner 통합)
+
+    Raises
+    ------
+    polars.PolarsError
+        unregisteredExecutivePay report parquet 손상 시.
+
+    Examples
+    --------
+    >>> from dartlab.scan.workforce.scanner import scanUnregExecPay
+    >>> scanUnregExecPay().get("005930")
+    """
+    raw = scanParquets("unregisteredExecutivePay", ["stockCode", "year", "jan_salary_am"])
+    if raw.is_empty() or "jan_salary_am" not in raw.columns:
+        return {}
+    result: dict[str, float] = {}
+    for code, group in raw.group_by("stockCode"):
+        codeVal = code[0]
+        latest = latestDataRows(group, "jan_salary_am")
+        if latest.is_empty():
+            continue
+        best: float | None = None
+        for row in latest.iter_rows(named=True):
+            val = parseNumStr(row.get("jan_salary_am"))
+            if val and val > 0:
+                best = val if best is None else max(best, val)
+        if best is not None:
+            result[codeVal] = round(best / 1e8, 2)
     return result

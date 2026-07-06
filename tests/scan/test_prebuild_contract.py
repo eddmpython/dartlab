@@ -112,12 +112,15 @@ def test_no_orphan_apitype_in_builder() -> None:
 
 
 def test_note_concepts_derive_from_catalog() -> None:
-    """SCAN_NOTE_CONCEPTS 각 항목이 카탈로그 registered 단일축 note 와 정합."""
-    assert SCAN_NOTE_CONCEPTS, "SCAN_NOTE_CONCEPTS 가 비었다 (카탈로그 registered note 도출 실패)"
+    """SCAN_NOTE_CONCEPTS 각 항목이 카탈로그 수치형 DART note 와 정합.
+
+    registered 게이트는 제거됨(P1 de-gate): 카탈로그 자동 전수 등재가 기본이며 registered 는
+    이름-접근 플래그일 뿐 횡단 대상 여부가 아니다. text 주석만 제외(수치형 amount/rate 만).
+    """
+    assert SCAN_NOTE_CONCEPTS, "SCAN_NOTE_CONCEPTS 가 비었다 (카탈로그 수치형 note 도출 실패)"
     for bare, ntKey, label in SCAN_NOTE_CONCEPTS:
         concept = getConcept(f"note.{bare}")
         assert concept is not None, f"카탈로그에 없는 note 개념: note.{bare}"
-        assert concept.registered, f"registered=False note 가 횡단 대상에 포함: note.{bare}"
         assert concept.valueType in ("amount", "rate"), f"text 주석이 횡단 대상에 포함: note.{bare}"
         assert concept.dart is not None and concept.dart.key == ntKey, f"ntKey 불일치: note.{bare}"
         assert label == concept.label, f"label 불일치: note.{bare}"

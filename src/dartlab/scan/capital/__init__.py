@@ -17,6 +17,8 @@ from dartlab.scan.capital.classifier import classifyReturn
 from dartlab.scan.capital.scanner import (
     scanCapitalChange,
     scanDividend,
+    scanOfferingUsage,
+    scanShareTotal,
     scanTreasuryStock,
 )
 
@@ -95,17 +97,27 @@ def scanCapital(*, verbose: bool = True) -> pl.DataFrame:
     treasury_map = scanTreasuryStock()
     _say(f"  → {len(treasury_map)}종목")
 
-    _say("3/3 증자/감자 스캔...")
+    _say("3/5 증자/감자 스캔...")
     cap_map = scanCapitalChange()
     _say(f"  → {len(cap_map)}종목")
 
-    all_codes = set(div_map) | set(treasury_map) | set(cap_map)
+    _say("4/5 주식총수 현황...")
+    share_map = scanShareTotal()
+    _say(f"  → {len(share_map)}종목")
+
+    _say("5/5 공모/사모 자금사용...")
+    offering_map = scanOfferingUsage()
+    _say(f"  → {len(offering_map)}종목")
+
+    all_codes = set(div_map) | set(treasury_map) | set(cap_map) | set(share_map) | set(offering_map)
 
     results = []
     for code in all_codes:
         d = div_map.get(code, {})
         t = treasury_map.get(code, {})
         c = cap_map.get(code, {})
+        sh = share_map.get(code, {})
+        of = offering_map.get(code, {})
 
         hasDividend = d.get("배당여부", False)
         hasBuyback = t.get("당기취득", False)
@@ -144,6 +156,10 @@ def scanCapital(*, verbose: bool = True) -> pl.DataFrame:
                 "환원점수": return_score,
                 "분류": category,
                 "모순형": contradiction,
+                "발행주식총수": sh.get("발행주식총수"),
+                "자기주식비율": sh.get("자기주식비율"),
+                "조달금액": of.get("조달금액"),
+                "목적외사용": of.get("목적외사용", False),
             }
         )
 

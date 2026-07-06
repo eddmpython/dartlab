@@ -5,6 +5,7 @@ from __future__ import annotations
 import polars as pl
 
 from dartlab.scan.io.parquet import (
+    latestDataRows,
     parseDateYear,
     parseNumStr,
     scanParquets,
@@ -309,3 +310,149 @@ def scanCapitalChange() -> dict[str, dict]:
                 break
         result[code_val] = {"최근증자": recentIncrease}
     return result
+
+
+def scanShareTotal() -> dict[str, dict]:
+    """전종목 주식총수 현황 스캔 (발행주식총수 + 자기주식 비율).
+
+    stockTotal apiType 에서 종목별 최신 연도 발행주식총수와 자기주식 수를 뽑아 자기주식 비율을
+    산출한다. ``se`` 구분행 중 합계(없으면 보통주)를 채택. 발행주식총수는 희석 baseline,
+    자기주식비율은 잠재 환원 여력.
+
+    Returns
+    -------
+    dict[str, dict]
+        {종목코드: {발행주식총수(주), 자기주식비율(%)|None}}. 데이터 없는 종목 제외.
+
+    Capabilities:
+        - stockTotal 프리빌드에서 종목별 최신연도 발행주식총수 + 자기주식비율. scanCapital sub-scanner.
+
+    AIContext:
+        ``scanCapital`` 내부. 발행주식 baseline / 자기주식 환원여력 스크리닝 source.
+
+    Guide:
+        - se 우선순위 합계 > 보통주. 발행주식총수 0 종목 제외.
+
+    When:
+        ``scanCapital`` 진행 단계 안에서.
+
+    How:
+        report parquet 종목별 최신연도 group 후 se 구분행 선택, isu_stock_totqy + tesstk_co 파싱.
+
+    Requires:
+        - 로컬 ``data/dart/scan/report/stockTotal.parquet`` (``buildReport``)
+
+    SeeAlso:
+        - :func:`dartlab.scan.capital.scanCapital` (sub-scanner 통합)
+
+    Raises
+    ------
+    polars.PolarsError
+        stockTotal report parquet 손상 시.
+
+    Examples
+    --------
+    >>> from dartlab.scan.capital.scanner import scanShareTotal
+    >>> scanShareTotal().get("005930", {}).get("발행주식총수")
+    """
+    raw = scanParquets("stockTotal", ["stockCode", "year", "se", "isu_stock_totqy", "tesstk_co"])
+    if raw.is_empty() or "isu_stock_totqy" not in raw.columns:
+        return {}
+    result: dict[str, dict] = {}
+    for code, group in raw.group_by("stockCode"):
+        codeVal = code[0]
+        latest = latestDataRows(group, "isu_stock_totqy")
+        if latest.is_empty():
+            continue
+        issued: float | None = None
+        treasury: float | None = None
+        for pref in ("합계", "보통주"):
+            rows = latest.filter(pl.col("se").cast(pl.Utf8).fill_null("").str.contains(pref, literal=True))
+            for row in rows.iter_rows(named=True):
+                v = parseNumStr(row.get("isu_stock_totqy"))
+                if v and v > 0:
+                    issued = v
+                    t = parseNumStr(row.get("tesstk_co"))
+                    treasury = t if (t and t > 0) else treasury
+                    break
+            if issued is not None:
+                break
+        if issued is not None:
+            result[codeVal] = {
+                "발행주식총수": issued,
+                "자기주식비율": round(treasury / issued * 100, 2) if treasury else None,
+            }
+    return result
+
+
+def scanOfferingUsage() -> dict[str, dict]:
+    """전종목 공모/사모 자금사용 스캔 (조달 규모 + 목적외 전용 신호).
+
+    publicOfferingUsage + privateOfferingUsage apiType 에서 종목별 최신 연도 조달금액 합계와
+    목적외 사용(차이발생사유 기재) 여부를 뽑는다. 목적외 전용은 강한 거버넌스 forensic 신호.
+
+    Returns
+    -------
+    dict[str, dict]
+        {종목코드: {조달금액(원), 목적외사용(bool)}}. 조달 기록 없는 종목 제외.
+
+    Capabilities:
+        - public/privateOfferingUsage 프리빌드에서 조달금액 합산 + 목적외사용 플래그. scanCapital sub-scanner.
+
+    AIContext:
+        ``scanCapital`` 내부. 조달 후 목적외 전용 종목 감지 source.
+
+    Guide:
+        - pay_amount 합산(최신연도). dffrnc_occrrnc_resn 이 "-"/공백 아니면 목적외사용 True.
+
+    When:
+        ``scanCapital`` 진행 단계 안에서.
+
+    How:
+        public/private report parquet 종목별 최신연도 group 후 조달금액 합산 + 차이사유 플래그.
+
+    Requires:
+        - 로컬 ``data/dart/scan/report/{publicOfferingUsage,privateOfferingUsage}.parquet`` (``buildReport``)
+
+    SeeAlso:
+        - :func:`dartlab.scan.capital.scanCapital` (sub-scanner 통합)
+
+    Raises
+    ------
+    polars.PolarsError
+        offering usage report parquet 손상 시.
+
+    Examples
+    --------
+    >>> from dartlab.scan.capital.scanner import scanOfferingUsage
+    >>> scanOfferingUsage().get("005930", {}).get("조달금액")
+    """
+    _cols = ["stockCode", "year", "pay_amount", "dffrnc_occrrnc_resn"]
+    result: dict[str, dict] = {}
+    _accumulateOffering(scanParquets("publicOfferingUsage", _cols), result)
+    _accumulateOffering(scanParquets("privateOfferingUsage", _cols), result)
+    return result
+
+
+def _accumulateOffering(raw: pl.DataFrame, result: dict[str, dict]) -> None:
+    """자금사용 raw(공모 또는 사모)를 종목별 최신연도 조달금액 + 목적외사용 플래그로 result 에 누적."""
+    if raw.is_empty() or "pay_amount" not in raw.columns:
+        return
+    for code, group in raw.group_by("stockCode"):
+        codeVal = code[0]
+        latest = latestDataRows(group, "pay_amount")
+        if latest.is_empty():
+            continue
+        raised = 0.0
+        misuse = False
+        for row in latest.iter_rows(named=True):
+            amt = parseNumStr(row.get("pay_amount"))
+            if amt and amt > 0:
+                raised += amt
+            resn = str(row.get("dffrnc_occrrnc_resn") or "").strip()
+            if resn and resn != "-":
+                misuse = True
+        if raised > 0:
+            cur = result.setdefault(codeVal, {"조달금액": 0.0, "목적외사용": False})
+            cur["조달금액"] += raised
+            cur["목적외사용"] = cur["목적외사용"] or misuse

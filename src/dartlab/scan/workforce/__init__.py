@@ -20,8 +20,10 @@ from dartlab.scan.workforce.growth import (
 )
 from dartlab.scan.workforce.scanner import (
     scanEmployee,
+    scanHighPay,
     scanRevenuePerEmployee,
     scanTopPay,
+    scanUnregExecPay,
 )
 
 
@@ -111,12 +113,17 @@ def scanWorkforce(*, verbose: bool = True) -> pl.DataFrame:
         growth_dict[row["stockCode"]] = row
     _say(f"  → {len(growth_dict)}종목")
 
-    _say("4/5 고액 보수...")
+    _say("4/6 고액 보수...")
     top_map = scanTopPay()
     _say(f"  → {len(top_map)}종목")
 
+    _say("5/6 5억+ 개인별 보수...")
+    high_map = scanHighPay()
+    unreg_map = scanUnregExecPay()
+    _say(f"  → {len(high_map)}종목 / 미등기 {len(unreg_map)}종목")
+
     # 합집합
-    all_codes = set(emp_map) | set(rpe_map) | set(growth_dict) | set(top_map)
+    all_codes = set(emp_map) | set(rpe_map) | set(growth_dict) | set(top_map) | set(high_map) | set(unreg_map)
 
     results = []
     for code in all_codes:
@@ -124,6 +131,7 @@ def scanWorkforce(*, verbose: bool = True) -> pl.DataFrame:
         rpe = rpe_map.get(code)
         g = growth_dict.get(code, {})
         tp = top_map.get(code, {})
+        hp = high_map.get(code, {})
 
         results.append(
             {
@@ -138,6 +146,9 @@ def scanWorkforce(*, verbose: bool = True) -> pl.DataFrame:
                 "급여매출괴리": g.get("급여매출괴리"),
                 "최고보수_억": tp.get("최고보수_억"),
                 "공개인원": tp.get("공개인원"),
+                "최고개인보수_억": hp.get("최고개인보수_억"),
+                "고액보수인원": hp.get("고액보수인원"),
+                "미등기임원보수_억": unreg_map.get(code),
             }
         )
 
@@ -153,9 +164,12 @@ def scanWorkforce(*, verbose: bool = True) -> pl.DataFrame:
         "급여매출괴리": pl.Float64,
         "최고보수_억": pl.Float64,
         "공개인원": pl.Float64,
+        "최고개인보수_억": pl.Float64,
+        "고액보수인원": pl.Float64,
+        "미등기임원보수_억": pl.Float64,
     }
     df = pl.DataFrame(results, schema=schema)
-    _say(f"인력 스캔 완료: {df.shape[0]}종목, 5/5")
+    _say(f"인력 스캔 완료: {df.shape[0]}종목, 6/6")
     return df
 
 

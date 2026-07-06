@@ -6,7 +6,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.scan.io.parquet import parseNumStr, scanParquets
+from dartlab.scan.io.parquet import latestDataRows, parseNumStr, scanParquets
 
 
 def scanBonds() -> dict[str, dict]:
@@ -96,6 +96,77 @@ def scanBonds() -> dict[str, dict]:
                 "사채잔액": total_amount,
                 "단기잔액": short_term,
                 "단기비중": round(short_term / total_amount * 100, 1),
+            }
+    return result
+
+
+def scanDebtSecurities() -> dict[str, dict]:
+    """전종목 채무증권 발행실적 스캔 (조달활동 강도 + 조달비용).
+
+    debtSecurities apiType 에서 종목별 최신 연도 채무증권(회사채 등) 발행 액면총액 합계와
+    평균 표면이자율을 집계한다. 발행액이 클수록 시장성 차입 조달 의존이 크고, 이자율은 조달비용.
+
+    Returns
+    -------
+    dict[str, dict]
+        {종목코드: {채무증권발행액(원), 채무증권평균이자율(%)|None}}. 발행 없는 종목 제외.
+
+    Capabilities:
+        - debtSecurities report 프리빌드에서 종목별 최신연도 액면총액 합산 + 이자율 평균. scanDebt sub-scanner.
+
+    AIContext:
+        ``scanDebt`` 내부. 시장성 차입 조달 규모/비용 스크리닝 source.
+
+    Guide:
+        - 액면총액 0 종목 제외. 이자율은 0~30% 범위만 (이상치 방어).
+
+    When:
+        ``scanDebt`` 진행 단계 안에서.
+
+    How:
+        report parquet 종목별 최신연도 group 후 facvalu_totamt 합산 + intrt 평균.
+
+    Requires:
+        - 로컬 ``data/dart/scan/report/debtSecurities.parquet`` (``buildReport``)
+
+    SeeAlso:
+        - :func:`dartlab.scan.debt.scanDebt` (sub-scanner 통합)
+
+    Raises
+    ------
+    polars.PolarsError
+        debtSecurities report parquet 손상 시.
+
+    Examples
+    --------
+    >>> from dartlab.scan.debt.scanner import scanDebtSecurities
+    >>> scanDebtSecurities().get("005930", {}).get("채무증권발행액")
+    """
+    raw = scanParquets(
+        "debtSecurities",
+        ["stockCode", "year", "facvalu_totamt", "intrt", "scrits_knd_nm"],
+    )
+    if raw.is_empty() or "facvalu_totamt" not in raw.columns:
+        return {}
+    result: dict[str, dict] = {}
+    for code, group in raw.group_by("stockCode"):
+        codeVal = code[0]
+        latest = latestDataRows(group, "facvalu_totamt")
+        if latest.is_empty():
+            continue
+        total = 0.0
+        rates: list[float] = []
+        for row in latest.iter_rows(named=True):
+            amt = parseNumStr(row.get("facvalu_totamt"))
+            if amt and amt > 0:
+                total += amt
+            rate = parseNumStr(row.get("intrt"))
+            if rate is not None and 0 < rate < 30:
+                rates.append(rate)
+        if total > 0:
+            result[codeVal] = {
+                "채무증권발행액": total,
+                "채무증권평균이자율": round(sum(rates) / len(rates), 2) if rates else None,
             }
     return result
 

@@ -15,6 +15,7 @@ _log = getLogger(__name__)
 
 from dartlab.scan.governance.scanner import (
     scanAuditOpinion,
+    scanMajorHolderChanges,
     scanMajorHolderPct,
     scanMinorityHolder,
     scanOutsideDirectors,
@@ -116,11 +117,17 @@ def scanGovernance(*, verbose: bool = True) -> pl.DataFrame:
     audit_map = scanAuditOpinion()
     _say(f"  → {len(audit_map)}종목")
 
-    _say("5/5 소액주주 지분율...")
+    _say("5/6 소액주주 지분율...")
     minority_map = scanMinorityHolder()
     _say(f"  → {len(minority_map)}종목")
 
-    all_codes = set(holder_map) | set(outside_map) | set(pay_ratio_map) | set(audit_map) | set(minority_map)
+    _say("6/6 최대주주 변동...")
+    change_map = scanMajorHolderChanges()
+    _say(f"  → {len(change_map)}종목")
+
+    all_codes = (
+        set(holder_map) | set(outside_map) | set(pay_ratio_map) | set(audit_map) | set(minority_map) | set(change_map)
+    )
 
     results = []
     for code in all_codes:
@@ -132,6 +139,7 @@ def scanGovernance(*, verbose: bool = True) -> pl.DataFrame:
         pay_r = pay_ratio_map.get(code)
         audit = audit_map.get(code)
         minority = minority_map.get(code)
+        change = change_map.get(code, {})
 
         s1 = scoreOwnership(ownership)
         s2 = scoreOutsideRatio(outside_ratio, resign=resign, concurrent=concurrent)
@@ -160,6 +168,10 @@ def scanGovernance(*, verbose: bool = True) -> pl.DataFrame:
                 "총점": total,
                 "등급": g,
                 "유효축수": n_valid,
+                "최대주주변동건수": change.get("최대주주변동건수"),
+                "최대주주지분율": round(change["최대주주지분율"], 1)
+                if change.get("최대주주지분율") is not None
+                else None,
             }
         )
 

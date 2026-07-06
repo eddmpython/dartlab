@@ -71,8 +71,11 @@ _NOTE_LONG_SCHEMA = {
 def _noteConceptSpecs() -> list[tuple[str, str, str]]:
     """카탈로그에서 횡단 프리빌드 대상 note 개념을 도출한다: (bareName, ntKey, label).
 
-    registered=True + valueType in (amount, rate) 인 note 개념만 (순수 text 주석 제외). bareName 은
-    conceptId 에서 ``note.`` prefix 를 뗀 것(파일명 + scan target 키). 카탈로그가 SSOT 라 손 선별 0.
+    수치형(valueType in amount/rate) DART note 개념 전부 (순수 text 주석은 P4 docs 라우팅 대상이라
+    제외). ``registered`` 게이트는 걸지 않는다: registered 는 이름-접근(``c.panel(이름)``) 플래그일
+    뿐 횡단 대상 여부가 아니며, 손 선별이 아니라 카탈로그 자동 전수 등재가 기본이다
+    (feedback_exhaustive_no_curation). 데이터 없는 개념(다축 matrix 주석 등)은 buildNotes 가
+    파일을 만들지 않고 census 가 정직 gap 으로 추적한다. bareName 은 conceptId 의 ``note.`` prefix 제거.
 
     Returns:
         ``[(bareName, ntKey, label), ...]`` (conceptId 정의 순서 보존).
@@ -86,7 +89,7 @@ def _noteConceptSpecs() -> list[tuple[str, str, str]]:
     """
     specs: list[tuple[str, str, str]] = []
     for c in getExtractionConcepts(category="note"):
-        if not c.registered or c.valueType not in ("amount", "rate"):
+        if c.valueType not in ("amount", "rate"):
             continue
         if not isinstance(c.dart, DartSource):
             continue
