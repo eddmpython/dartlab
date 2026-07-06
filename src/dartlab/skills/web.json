@@ -2,7 +2,7 @@
   "meta": {
     "entrySkillId": "start.dartlabSkillOs",
     "canonicalSurface": "DartLab Skill OS",
-    "skillCount": 297,
+    "skillCount": 298,
     "categories": [
       {
         "id": "start",
@@ -20,7 +20,7 @@
         "id": "operation",
         "title": "Operation",
         "description": "ops 원문을 skill 절차로 묶어 테스트, 문서, 릴리즈, 확장 규칙을 찾는 운영 지도.",
-        "count": 35
+        "count": 36
       },
       {
         "id": "engines",
@@ -9271,6 +9271,103 @@
       "humanIntro": null,
       "visualRefs": [],
       "bodyHuman": "dartlab 분석 엔진이 주장하는 수치의 근거. 각 엔진이 무엇을 · 어떻게 · 얼마나 검증했는지 투명하게 공개한다.\n\n## Credit — 독립 신용분석\n\n### 방법\n\n외부 신용평가사 (한국기업평가 · NICE신용평가 · 한국신용평가) 등급과 dartlab dCR 등급을 비교. **적중**은 동일 등급 또는 ±1 노치 이내.\n\n### 표본\n\n| 표본 | 적중률 | 비고 |\n|---|---|---|\n| 30 개사 (대기업) | **87%** (26/30) | 정확 일치 10 개+ |\n| 50 개사 (중대형) | **82%** (41/50) | |\n| 79 개사 (전체) | **70%** (55/79) | v5.0 과대평가 수정 후 재측정 예정 |\n\n### 비-적중 원인 분석\n\n- **정량 한계 (3 개)**: 삼성SDI · 고려아연 · 현대제철 — FCF 음수 / CAPEX 집약 기업. 외부 등급은 \"미래 성장성\" 을 정성으로 반영하지만, dartlab 은 정량만 사용한다.\n- **금융 한계 (1 개)**: KB금융 — AAA 는 \"시스템적 중요 은행\" 정성 반영. 정량만으로 AAA 도달 불가.\n- **주가 일시 (1 개)**: SKT — CHS 주가 급락 보정으로 하향됐다가 보호 규칙으로 복원.\n\n### 한계\n\n- 외부 등급 자체가 정성을 포함하므로 정량 모델이 100% 일치 불가.\n- 금융업 (은행 · 증권 · 보험) 은 재무제표 구조가 달라 별도 트랙. 정성 요소 (시스템적 중요성) 미반영.\n- 표본 79 개사는 한국 상장사 중 신평 등급 존재 기업. 비등급 기업 검증 불가.\n\n## Forecast — 매출 방향 예측\n\n### 방법\n\nWalk-forward 검증. 과거 데이터로 다음 분기 매출 방향 (상승 / 하락) 예측 → 실제 결과와 비교. **각 시점에서 과거 데이터만으로 예측**하므로 과적합 불가능 구조.\n\n### 수치\n\n| 조건 | 정확도 | 관측치 | 커버리지 |\n|---|---|---|---|\n| 모멘텀 단독 | 72.1% | 4,825 건 | 100% |\n| 2 연속 모멘텀 | 74.7% | 360 건 | 69% |\n| 모멘텀 + 영업이익률 일치 | 76.1% | 3,660 건 | 76% |\n| 모멘텀 + OLS 일치 | 77.7% | 355 건 | 68% |\n\n### 방법론 핵심\n\n- **사전확률**: 40 개 업종별 모멘텀 지속률 (4,800 건+ 실측에서 도출).\n- **베이즈 갱신**: 2 연속 모멘텀, 영업이익률 수준, OLS 외생변수 일치/불일치로 순차 갱신.\n- **감쇠**: 신호 간 독립성 위반 보정 (damping=0.3).\n- **재보정**: 원시 확률을 실측 기반 재보정 (shrinkage=0.6).\n\n### 시도했지만 효과 없던 것\n\n| 시도 | 결과 | 판단 |\n|---|---|---|\n| Logistic Regression | +0.8%p | 모델 구조 변경 무의미 |\n| 한국 PPI 13 개 추가 | 하락 | 가격 &lt; 생산량 (가격 영향이 생산량 영향보다 약함) |\n| 11 신호 다수결 앙상블 | 61% | static 신호 = 상수 바이어스 |\n| GDP | 기업 매출의 직접 외생변수 아님 | 영구 제외 |\n\n### 정확도를 올리려면 새 데이터가 필요\n\n현재 방법론 내에서의 개선은 천장에 도달. 추가 개선은 새 데이터 소스 (검색량 · 관세청 수출입 · 컨센서스 리비전) 에 의존.\n\n### 학술 근거\n\n- 나이브 베이즈 + 감쇠: van Calster et al. (2021) — 소표본 과적합 방지.\n- M4/M5 Competition: 단순 방법 > 복잡한 ML (100,000 시계열).\n- Sloan 1996: 이익 지속성 → 모멘텀의 이론적 기반.\n\n## Search — 공시 원문 검색 (beta)\n\n> 인덱스 신선도 한계 — 매일 증분 자동화 미완성. 단일 종목 공시는 `Company.disclosure` / `liveFilings` 권장.\n\n### 방법\n\n20 개 테스트 쿼리 (공식 용어 + 비공식 표현 혼합) 에 대해 상위 5 건의 관련성을 수작업 평가.\n\n### 수치\n\n| 방법 | precision@5 | cold start | 속도 |\n|---|---|---|---|\n| **dartlab (Ngram + BM25F)** | **95%** | **0ms** | **1ms** |\n| Trigram 단독 | 88% | 0ms | 1ms |\n| 임베딩 (ko-sroberta) | 83% | 12,700ms | 58ms |\n| BM25 (FTS) | 71% | 0ms | 14ms |\n\n대규모 (400 만 문서) 검증: 인덱스 빌드 218 초, 검색 140ms.\n\n### 왜 임베딩 없이 되는가\n\nDART 공시는 법적 정형 문서다. 공시 유형이 257 개로 고정되고, 용어가 법률로 규정되어 같은 의미를 다른 단어로 표현하지 않는다. 따라서 단어 자체가 의미를 완전히 표현하고, ngram 정확 매칭이 의미 유사도 기반 검색보다 정밀하다.\n\n## AI — 적극적 분석가\n\n### 방법\n\n60 개 이상의 실제 분석 질문을 AI 에게 던지고, 첫 시도에 올바른 도구 선택 + 유의미한 해석을 생성하는지 확인.\n\n### 수치\n\n- 도구 선택 정확도: 95%+ (첫 시도 성공).\n- 검증 질문 유형: 개별 기업 분석 · 매크로 환경 · 시장 비교/순위 · 데이터 직접 조회 · 실시간 이슈.\n\n### 한계\n\n- 평가 셋이 개발자 본인이 구성하고 평가. 독립 제3자 평가가 아님.\n- \"유의미한 해석\" 의 기준이 주관적. 정량적 해석 품질 지표는 아직 없음.\n- provider 별 (gemini · groq · cerebras 등) 성능 차이는 별도 체계적 비교 미실시.\n\n## 공통 원칙\n\n- **코드가 곧 방법론**: 모든 검증 로직은 코드로 재현 가능.\n- **실패도 기록**: 시도했지만 효과 없던 접근을 명시 기록.\n- **한계를 숨기지 않는다**: 정량 모델의 구조적 한계 · 표본 제약 · 주관적 평가 기준을 공개.\n\n## 다음 단계\n\n- [operation.stability](/skills/operation.stability) — API tier 와 deprecation 정책.\n- [operation.testing](/skills/operation.testing) — 테스트 규칙.\n- [engines.credit](/skills/engines.credit) — 신용 분석 엔진 (creditRisk 응용 포함).\n- [engines.analysis](/skills/engines.analysis) — 분석 엔진 (revenueForecast axis 포함)."
+    },
+    {
+      "id": "operation.notifyPipeline",
+      "bodyPreview": "## 역할\n\n공개 왓처-노티파이 파이프라인은 **감지할 만한 공시 이벤트를 cron 이 발굴해 Web Push 로 사용자에게 밀고, 클릭 시 터미널의 인사이트로 잇는다**. 감지 지능은 dartlab(gather·scan SSOT)에 살고, 허브(pushHub Worker)는 구독 보관 + VAPID 서명 + 발송만 한다(런타임-SSOT, `operation.architecture`). 이 문서는 그 파이프라인의 운영 계약이다. 상세 진행 원장·배포 런북은 `mainPlan/_done/watcher-notify-platform/05-progress-ledger.md`.\n\n핵심 원칙: **왓치가 첫 관문**이다. cron 은 알림을 쏘기 전에 IPO 공모분석을 먼저 베이크해 HF 에 올려, 딥링크가 여는 리포트가 이미 존재하게 한다.\n\n## 파이프라인 단계 (notify-watch.yml cron, 평일 17시 KST)\n\n```\n[1] Bake  buildIpoReports.py  발굴→파싱→ reports.parquet(라이브) + history.parquet(누적) → HF push\n[2] Watch watch.py            _baked_ipo_df 직독(없으면 scan 폴백) → 토픽 평가 → 허브 /send·/active\n[3] Assert                    bake genuine-failure(push·파싱·사이즈가드)면 job RED (조용한 실패 가드)\n```\n\n- **첫 관문 순서**: bake 가 watch 앞. 딥링크(`/terminal?ipo=1`) 목적지 리포트가 알림 전에 HF 에 등재된다.\n- **단일 파싱**: watch 는 스스로 scan(\"ipo\") 를 다시 돌리지 않고 방금 구운 parquet 을 같은 runner 에서 직독한다(컬럼 호환). 베이크 부재/실패면 scan 폴백.\n- **회복성 + 가시성**: bake 는 `continue-on-error`(알림은 계속) + 별도 assert 스텝(진짜 실패면 job RED). 미설정(HF_TOKEN 부재)은 graceful no-op(exit 0), genuine-failure 만 RED.\n- **발굴 SSOT**: corp_cls=E 발굴·그룹핑은 `scan.ipo._discoverIpoIssuers` 단일 소스(베이크·scan 공유). 파싱은 `story.buildIpoReport`. 워커 TS `groupIpoFilings` 는 크로스런타임 미러.\n\n## 데이터 산출물 (2파일 모델, buildAllFilingsRecent recent/market_recent 미러)\n\n| 파일 | 모델 | 소비 | 게이트 |\n|---|---|---|---|\n| `dart/ipo/reports.parquet` | 라이브 롤링(최근 85일, 매 cron 덮어씀) | 터미널 whole-file 직독 + 왓치 알림 | 1.5MB whole-file |\n| `dart/ipo/history.parquet` | 누적 아카이브(rcept 키, HF base",
+      "title": "왓처-노티파이 파이프라인 (IPO 베이크 → 왓치 → Web Push + 헬스체크) 운영 SSOT",
+      "category": "operation",
+      "categoryTitle": "Operation",
+      "kind": "curated",
+      "status": "observed",
+      "purpose": "공개 왓처-노티파이 파이프라인의 운영 SSOT. cron 이 IPO 공모분석을 첫 관문으로 베이크(라이브 롤링 + 누적 아카이브)한 뒤 왓치 토픽(newIpo·newOrders)을 평가해 pushHub 로 Web Push 브로드캐스트하고, Data Audit(monitorPipeline)이 매일 건강을 감시한다. 트리거 '왓처 파이프라인', '알림 파이프라인', 'notify-watch', 'IPO 베이크 운영', 'push 헬스체크'.",
+      "whenToUse": [
+        "왓처 파이프라인 운영",
+        "알림 파이프라인",
+        "notify-watch",
+        "IPO 베이크 운영",
+        "push 파이프라인 헬스체크",
+        "파이프라인 배포 런북",
+        "Web Push 운영"
+      ],
+      "inputs": [
+        "DART 증권신고서(corp_cls=E) + scan 축(ipo·orders)",
+        "배포 secret (HF_TOKEN · PUSHHUB_SEND_TOKEN · VAPID · D1)"
+      ],
+      "requiredInputs": [],
+      "outputs": [
+        "HF dart/ipo/reports.parquet (라이브 롤링) + history.parquet (누적 아카이브)",
+        "Web Push 알림 (newIpo·newOrders) 로 /terminal 딥링크",
+        "pipeline-failure Issue (헬스체크)"
+      ],
+      "apiRefs": [],
+      "toolRefs": [],
+      "datasetRefs": [],
+      "knowledgeRefs": [
+        "operation.observability",
+        "operation.architecture",
+        "engines.scan",
+        "operation.terminal"
+      ],
+      "linkedSkills": [],
+      "requires": [],
+      "alternatives": [],
+      "succeededBy": [],
+      "deprecatedBy": [],
+      "sourceRefs": [
+        "dartlab://skills/operation.notifyPipeline"
+      ],
+      "procedure": [
+        "**첫 관문 순서**: bake 가 watch 앞. 딥링크(`/terminal?ipo=1`) 목적지 리포트가 알림 전에 HF 에 등재된다.",
+        "**단일 파싱**: watch 는 스스로 scan(\"ipo\") 를 다시 돌리지 않고 방금 구운 parquet 을 같은 runner 에서 직독한다(컬럼 호환). 베이크 부재/실패면 scan 폴백.",
+        "**회복성 + 가시성**: bake 는 `continue-on-error`(알림은 계속) + 별도 assert 스텝(진짜 실패면 job RED). 미설정(HF_TOKEN 부재)은 graceful no-op(exit 0), genuine-failure 만 RED.",
+        "**발굴 SSOT**: corp_cls=E 발굴·그룹핑은 `scan.ipo._discoverIpoIssuers` 단일 소스(베이크·scan 공유). 파싱은 `story.buildIpoReport`. 워커 TS `groupIpoFilings` 는 크로스런타임 미러.",
+        "corp_cls=E 증권신고서는 allFilings·panel(Y/K 전용)에 없어 이 파이프라인이 그 SSOT 를 처음 생산한다.",
+        "라이브는 aging out(상장·85일 경과)으로 소실되므로, history 가 rcept 키로 영구 보존(list.json 3개월 제한이라 재발굴 불가). reportJson 전블롭 보존. 이력이 커지면 실측 후 연 샤딩(`history_{yyyy}.parquet`) 승격, 선제 샤딩 금지.",
+        "new_listing 형(newIpo)은 per-match `/send`(영구 nonce), threshold_cross 형(newOrders)은 `/active` set-diff(재크로싱 발화). watch.py `_STATEFUL_TOPICS` 로 분기.",
+        "허브는 전건 발송실패(sent=0 && failed>0)·구독자0 시 nonce 롤백(다음 cron 재시도). 러너는 body.failed 를 전건=RED·부분=warning 으로 표면화(조용한 미발화 종료).",
+        "딥링크: newIpo `/terminal?ipo=1`, newOrders `/terminal?sym={code}`.",
+        "**실패 감지**: MONITORED_WORKFLOWS 등록. bake genuine-failure 는 위 assert 스텝이 job RED 로 만들어 여기서 잡힌다.",
+        "**cron drop 감지**: STALE_AFTER_HOURS 80h(금~월 72h 주말 갭 초과) 등록. 3일+ 연속 스케줄 누락(퍼블릭 IPO SSOT 동결) 시 stale 감지·자동 트리거(nonce 멱등이라 오탐 무해).",
+        "첫 관문 순서(bake 먼저, watch 나중) + 단일 파싱 유지. graph 강박(고정 노드) 금지(`ai/agent.py` 본체)."
+      ],
+      "recipeSteps": [],
+      "requiredEvidence": [],
+      "expectedOutputs": [],
+      "visualGuidance": [],
+      "failureModes": [
+        "assert 스텝이 job RED)",
+        "STALE_AFTER_HOURS 80h)",
+        "slug=corpCode)",
+        "nonce 롤백)",
+        "/active set-diff 커서)"
+      ],
+      "forbidden": [
+        "reports.parquet(라이브 whole-file)에 전이력 누적 (1.5MB 게이트 초과, history.parquet 별도)",
+        "graph 회귀 (BRIEF/WORK 고정노드) 또는 파이썬 파서 JS 재구현",
+        "시뮬레이터에 rcept 키 아카이브 직결 (corpCode 에서 stock_code 브리지 없이 orphan)"
+      ],
+      "examples": [],
+      "runtimeCompatibility": {
+        "server": {
+          "status": "supported"
+        },
+        "localPython": {
+          "status": "supported"
+        },
+        "mcp": {
+          "status": "limited"
+        },
+        "webAi": {
+          "status": "limited"
+        },
+        "pyodide": {
+          "status": "unsupported"
+        }
+      },
+      "humanIntro": null,
+      "visualRefs": [],
+      "bodyHuman": "## 역할\n\n공개 왓처-노티파이 파이프라인은 **감지할 만한 공시 이벤트를 cron 이 발굴해 Web Push 로 사용자에게 밀고, 클릭 시 터미널의 인사이트로 잇는다**. 감지 지능은 dartlab(gather·scan SSOT)에 살고, 허브(pushHub Worker)는 구독 보관 + VAPID 서명 + 발송만 한다(런타임-SSOT, `operation.architecture`). 이 문서는 그 파이프라인의 운영 계약이다. 상세 진행 원장·배포 런북은 `mainPlan/_done/watcher-notify-platform/05-progress-ledger.md`.\n\n핵심 원칙: **왓치가 첫 관문**이다. cron 은 알림을 쏘기 전에 IPO 공모분석을 먼저 베이크해 HF 에 올려, 딥링크가 여는 리포트가 이미 존재하게 한다.\n\n## 파이프라인 단계 (notify-watch.yml cron, 평일 17시 KST)\n\n```\n[1] Bake  buildIpoReports.py  발굴→파싱→ reports.parquet(라이브) + history.parquet(누적) → HF push\n[2] Watch watch.py            _baked_ipo_df 직독(없으면 scan 폴백) → 토픽 평가 → 허브 /send·/active\n[3] Assert                    bake genuine-failure(push·파싱·사이즈가드)면 job RED (조용한 실패 가드)\n```\n\n- **첫 관문 순서**: bake 가 watch 앞. 딥링크(`/terminal?ipo=1`) 목적지 리포트가 알림 전에 HF 에 등재된다.\n- **단일 파싱**: watch 는 스스로 scan(\"ipo\") 를 다시 돌리지 않고 방금 구운 parquet 을 같은 runner 에서 직독한다(컬럼 호환). 베이크 부재/실패면 scan 폴백.\n- **회복성 + 가시성**: bake 는 `continue-on-error`(알림은 계속) + 별도 assert 스텝(진짜 실패면 job RED). 미설정(HF_TOKEN 부재)은 graceful no-op(exit 0), genuine-failure 만 RED.\n- **발굴 SSOT**: corp_cls=E 발굴·그룹핑은 `scan.ipo._discoverIpoIssuers` 단일 소스(베이크·scan 공유). 파싱은 `story.buildIpoReport`. 워커 TS `groupIpoFilings` 는 크로스런타임 미러.\n\n## 데이터 산출물 (2파일 모델, buildAllFilingsRecent recent/market_recent 미러)\n\n| 파일 | 모델 | 소비 | 게이트 |\n|---|---|---|---|\n| `dart/ipo/reports.parquet` | 라이브 롤링(최근 85일, 매 cron 덮어씀) | 터미널 whole-file 직독 + 왓치 알림 | 1.5MB whole-file |\n| `dart/ipo/history.parquet` | 누적 아카이브(rcept 키, HF baseline merge + dedup + 무trim) | 역사·백테스트(정적) | corpCode range-fetch (whole-file 게이트 면제) |\n\n- corp_cls=E 증권신고서는 allFilings·panel(Y/K 전용)에 없어 이 파이프라인이 그 SSOT 를 처음 생산한다.\n- 라이브는 aging out(상장·85일 경과)으로 소실되므로, history 가 rcept 키로 영구 보존(list.json 3개월 제한이라 재발굴 불가). reportJson 전블롭 보존. 이력이 커지면 실측 후 연 샤딩(`history_{yyyy}.parquet`) 승격, 선제 샤딩 금지.\n\n## 왓치 토픽 (평가 = plain 함수 1개, 레지스트리 0)\n\n| 토픽 | 데이터원 | 발화 | dedup |\n|---|---|---|---|\n| `newIpo` | reports.parquet(베이크)·scan(\"ipo\") 폴백 | 발행사 등장(slug=corpCode) + 확정공모가(corpCode:conf) 2신호 | 허브 sentNonce(영구 멱등), slug=corpCode 라 기재정정 재발화 0 |\n| `newOrders` | scan(\"orders\") | book-to-bill>=1 신규 진입 | 허브 `/active` topicActive set-diff 커서(직전 활성셋 대비 entered 만, 이탈 종목 재진입 시 재발화) |\n\n- new_listing 형(newIpo)은 per-match `/send`(영구 nonce), threshold_cross 형(newOrders)은 `/active` set-diff(재크로싱 발화). watch.py `_STATEFUL_TOPICS` 로 분기.\n- 허브는 전건 발송실패(sent=0 && failed>0)·구독자0 시 nonce 롤백(다음 cron 재시도). 러너는 body.failed 를 전건=RED·부분=warning 으로 표면화(조용한 미발화 종료).\n- 딥링크: newIpo `/terminal?ipo=1`, newOrders `/terminal?sym={code}`.\n\n## 헬스체크 (Data Audit, 매일 05시 KST)\n\n`monitorPipeline.py`(`operation.observability`)가 scheduled 파이프라인 전체의 실패·cron drop 을 매일 감시해 pipeline-failure Issue 로 알린다. \"Notify Watch\" 등록 상태:\n\n- **실패 감지**: MONITORED_WORKFLOWS 등록. bake genuine-failure 는 위 assert 스텝이 job RED 로 만들어 여기서 잡힌다.\n- **cron drop 감지**: STALE_AFTER_HOURS 80h(금~월 72h 주말 갭 초과) 등록. 3일+ 연속 스케줄 누락(퍼블릭 IPO SSOT 동결) 시 stale 감지·자동 트리거(nonce 멱등이라 오탐 무해).\n\n★ 운영자 상시 규칙: 이 파이프라인은 하루 1회 헬스 체크(자동=Data Audit). 세션 체크 3점: Notify Watch run 초록+assert 통과 / HF reports.parquet 최신 / 열린 pipeline-failure Issue.\n\n## 배포 런북 (운영자 게이트. 코드는 green, 이것만 하면 활성)\n\n전 러너는 미설정 시 graceful no-op(RED 0). 활성 순서:\n\n1. **pushHub Cloudflare**: `infra/workers/pushHub` D1 생성 + schema.sql/migrations(0002 topicActive 포함) 적용 + VAPID·PUSHHUB_SEND_TOKEN secret + `wrangler deploy`.\n2. **GitHub**: `VITE_PUSHHUB_URL`·`VITE_VAPID_PUBLIC_KEY` vars + `PUSHHUB_SEND_TOKEN`·`HF_TOKEN` secret.\n3. **hfProxy 재배포**: `/ipo-filings` 라우트 활성(newIpo 딥링크 발굴 데이터원).\n4. **landing 눈검수 후 push** + 실기기 1대 aes128gcm 수신 확인.\n\n상세 명령·postmortem 은 원장 05 배포 런북 참조.\n\n## 불변식 (회귀 가드)\n\n- 첫 관문 순서(bake 먼저, watch 나중) + 단일 파싱 유지. graph 강박(고정 노드) 금지(`ai/agent.py` 본체).\n- 라이브/아카이브 2파일 분리 불변: reports 는 whole-file 게이트, history 는 누적. 라이브에 전이력 넣지 말 것.\n- 발굴 SSOT `_discoverIpoIssuers` 단일화 유지(재구현 0). 파서 JS 재구현 금지.\n- 밸류 이종기준 가드: 적용모형 EV/EBITDA 면 implied PER 와 좌표 비교 금지(알림 라벨은 중립 \"적용배수\").\n\n## 검증\n\n- 러너: `.github/scripts/notify/test_watch.py`(13) · 허브 vitest `infra/workers/pushHub`(24, /active 재크로싱 포함) · 베이크 `tests/sync/test_buildIpoReports.py`(4, 누적·dedup) · scan `tests/scan/test_ipo.py`(5) · 모니터 `tests/pipeline/test_monitor_classify.py`(20, Notify Watch staleness).\n- 실측: 실 DART 발행사 build 로 reports + history 2파일 산출 확인. 첫 빌드는 baseline 없어 history==live.\n- 감사: 5차원 적대검증(wf_47c0b9eb 확증 10) + 파이프라인 적합성(wf_2af24a25). 상세 원장 05 §감사."
     },
     {
       "id": "operation.observability",

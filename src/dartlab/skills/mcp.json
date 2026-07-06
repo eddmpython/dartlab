@@ -2,7 +2,7 @@
   "meta": {
     "entrySkillId": "start.dartlabSkillOs",
     "canonicalSurface": "DartLab Skill OS",
-    "skillCount": 297,
+    "skillCount": 298,
     "categories": [
       {
         "id": "start",
@@ -20,7 +20,7 @@
         "id": "operation",
         "title": "Operation",
         "description": "ops 원문을 skill 절차로 묶어 테스트, 문서, 릴리즈, 확장 규칙을 찾는 운영 지도.",
-        "count": 35
+        "count": 36
       },
       {
         "id": "engines",
@@ -1868,6 +1868,23 @@
       ],
       "nextSkills": [],
       "bodyPreview": "dartlab 분석 엔진이 주장하는 수치의 근거. 각 엔진이 무엇을 · 어떻게 · 얼마나 검증했는지 투명하게 공개한다.\n\n## Credit — 독립 신용분석\n\n### 방법\n\n외부 신용평가사 (한국기업평가 · NICE신용평가 · 한국신용평가) 등급과 dartlab dCR 등급을 비교. **적중**은 동일 등급 또는 ±1 노치 이내.\n\n### 표본\n\n| 표본 | 적중률 | 비고 |\n|---|---|---|\n| 30 개사 (대기업) | **87%** (26/30) | 정확 일치 10 개+ |\n| 50 개사 (중대형) | **82%** (41/50) | |\n| 79 개사 (전체) | **70%** (55/79) | v5.0 과대평가 수정 후 재측정 예정 |\n\n### 비-적중 원인 분석\n\n- **정량 한계 (3 개)**: 삼성SDI · 고려아연 · 현대제철 — FCF 음수 / CAPEX 집약 기업. 외부 등급은 \"미래 성장성\" 을 정성으로 반영하지만, dartlab 은 정량만 사용한다.\n- **금융 한계 (1 개)**: KB금융 — AAA 는 \"시스템적 중요 은행\" 정성 반영. 정량만으로 AAA 도달 불가.\n- **주가 일시 (1 개)**: SKT — CHS 주가 급"
+    },
+    {
+      "id": "operation.notifyPipeline",
+      "title": "왓처-노티파이 파이프라인 (IPO 베이크 → 왓치 → Web Push + 헬스체크) 운영 SSOT",
+      "category": "operation",
+      "purpose": "공개 왓처-노티파이 파이프라인의 운영 SSOT. cron 이 IPO 공모분석을 첫 관문으로 베이크(라이브 롤링 + 누적 아카이브)한 뒤 왓치 토픽(newIpo·newOrders)을 평가해 pushHub 로 Web Push 브로드캐스트하고, Data Audit(monitorPipeline)이 매일 건강을 감시한다. 트리거 '왓처 파이프라인', '알림 파이프라인', 'notify-watch', 'IPO 베이크 운영', 'push 헬스체크'.",
+      "whenToUse": [
+        "왓처 파이프라인 운영",
+        "알림 파이프라인",
+        "notify-watch",
+        "IPO 베이크 운영",
+        "push 파이프라인 헬스체크",
+        "파이프라인 배포 런북",
+        "Web Push 운영"
+      ],
+      "nextSkills": [],
+      "bodyPreview": "## 역할\n\n공개 왓처-노티파이 파이프라인은 **감지할 만한 공시 이벤트를 cron 이 발굴해 Web Push 로 사용자에게 밀고, 클릭 시 터미널의 인사이트로 잇는다**. 감지 지능은 dartlab(gather·scan SSOT)에 살고, 허브(pushHub Worker)는 구독 보관 + VAPID 서명 + 발송만 한다(런타임-SSOT, `operation.architecture`). 이 문서는 그 파이프라인의 운영 계약이다. 상세 진행 원장·배포 런북은 `mainPlan/_done/watcher-notify-platform/05-progress-ledger.md`.\n\n핵심 원칙: **왓치가 첫 관문**이다. cron 은 알림을 쏘기 전에 IPO 공모분석을 먼저 베이크해 HF 에 올려, 딥링크가 여는 리포트가 이미 존재하게 한다.\n\n## 파이프라인 단계 (notify-watch.yml cron, 평일 17시 KST)\n\n```\n[1] Bake  buildIpoReports.py  발굴→파싱→ reports.parquet(라이브) + history.parquet(누적) → HF push\n[2] Watch watch.py            _baked_ipo_"
     },
     {
       "id": "operation.observability",

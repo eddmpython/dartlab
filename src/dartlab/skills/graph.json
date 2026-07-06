@@ -694,7 +694,7 @@
       "title": "Scan",
       "category": "engines",
       "purpose": "Scan 엔진은 시장/유니버스 횡단면에서 후보를 발굴하고 순위를 계산하는 실행 스킬이다. 트리거 — '스캔', '종목 발굴', '후보 추출', '랭킹'.",
-      "inDegree": 54,
+      "inDegree": 55,
       "outDegree": 6,
       "cluster": "scan",
       "isEntry": false,
@@ -1019,7 +1019,7 @@
       "title": "dartlab 아키텍처 — 전체 청사진",
       "category": "operation",
       "purpose": "dartlab 아키텍처 — 전체 청사진 운영 규칙을 Skill OS에서 확인하고 변경 전후 검증 게이트로 사용한다.",
-      "inDegree": 15,
+      "inDegree": 16,
       "outDegree": 1,
       "cluster": "operation",
       "isEntry": false,
@@ -1236,16 +1236,29 @@
       "audiences": []
     },
     {
-      "id": "operation.observability",
-      "title": "Observability — logging / tracing 표준",
+      "id": "operation.notifyPipeline",
+      "title": "왓처-노티파이 파이프라인 (IPO 베이크 → 왓치 → Web Push + 헬스체크) 운영 SSOT",
       "category": "operation",
-      "purpose": "dartlab 운영 observability 표준 — logging level / structured logs / tracing span / metric emission. CLAUDE.md \"디버그는 stdout, 파일은 /tmp/\" 룰의 production 확장.",
+      "purpose": "공개 왓처-노티파이 파이프라인의 운영 SSOT. cron 이 IPO 공모분석을 첫 관문으로 베이크(라이브 롤링 + 누적 아카이브)한 뒤 왓치 토픽(newIpo·newOrders)을 평가해 pushHub 로 Web Push 브로드캐스트하고, Data Audit(monitorPipeline)이 매일 건강을 감시한다. 트리거 '왓처 파이프라인', '알림 파이프라인', 'notify-watch', 'IPO 베이크 운영', 'push 헬스체크'.",
       "inDegree": 0,
-      "outDegree": 2,
+      "outDegree": 4,
       "cluster": "operation",
       "isEntry": false,
       "isLeaf": false,
       "isOrphan": true,
+      "audiences": []
+    },
+    {
+      "id": "operation.observability",
+      "title": "Observability — logging / tracing 표준",
+      "category": "operation",
+      "purpose": "dartlab 운영 observability 표준 — logging level / structured logs / tracing span / metric emission. CLAUDE.md \"디버그는 stdout, 파일은 /tmp/\" 룰의 production 확장.",
+      "inDegree": 1,
+      "outDegree": 2,
+      "cluster": "operation",
+      "isEntry": false,
+      "isLeaf": false,
+      "isOrphan": false,
       "audiences": []
     },
     {
@@ -1374,12 +1387,12 @@
       "title": "터미널 사상 — 전문가 분석 계기판 (instrument, not document)",
       "category": "operation",
       "purpose": "DartLab 터미널(퍼블릭·로컬)의 기본 개념과 설계 사상 SSOT. 터미널은 전문가가 한눈에 읽는 살아있는 분석 계기판이며, 문서·리포트·뉴스판이 아니다. 터미널 surface 를 만들거나 평가할 때 기준으로 쓴다.",
-      "inDegree": 0,
+      "inDegree": 1,
       "outDegree": 3,
       "cluster": "operation",
       "isEntry": false,
       "isLeaf": false,
-      "isOrphan": true,
+      "isOrphan": false,
       "audiences": []
     },
     {
@@ -5602,6 +5615,26 @@
       "kind": "knowledge"
     },
     {
+      "src": "operation.notifyPipeline",
+      "dst": "operation.observability",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.notifyPipeline",
+      "dst": "operation.architecture",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.notifyPipeline",
+      "dst": "engines.scan",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.notifyPipeline",
+      "dst": "operation.terminal",
+      "kind": "knowledge"
+    },
+    {
       "src": "operation.observability",
       "dst": "operation.code",
       "kind": "linkedRecipe"
@@ -9779,14 +9812,13 @@
     "operation.intentBoosts",
     "operation.issues",
     "operation.methodology",
-    "operation.observability",
+    "operation.notifyPipeline",
     "operation.performanceProfile",
     "operation.recipePromote",
     "operation.refactorChecklist",
     "operation.sixActsAnalysis",
     "operation.skillMarket",
     "operation.stability",
-    "operation.terminal",
     "recipes.fundamental.credit.creditRatingMigration",
     "recipes.fundamental.credit.krCorporateSpreadWidening",
     "recipes.fundamental.credit.usHighYieldSpread",
@@ -9949,6 +9981,7 @@
     "operation.issues",
     "operation.mappingRefresh",
     "operation.methodology",
+    "operation.notifyPipeline",
     "operation.observability",
     "operation.opsAsSkills",
     "operation.performanceProfile",
