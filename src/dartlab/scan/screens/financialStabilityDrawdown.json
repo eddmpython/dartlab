@@ -1,11 +1,11 @@
 {
   "id": "financialStabilityDrawdown",
-  "version": 1,
+  "version": 2,
   "schemaVersion": 1,
   "market": "kr",
   "title": "하락장 재무안전 종목",
   "tags": ["safety", "credit", "drawdown"],
-  "evidence": "순현금 쿠션(현금 > 단기차입) + 저부채 + 유동성 + 자본건전 = 부실회피 1차 게이트. 후보는 Company/analysis 로 재검증. 절대 안전 확정 아님.",
+  "evidence": "순현금 쿠션(현금 > 단기차입) + 이자보상배율(ICR>2) + 저부채 + 유동성 + 자본건전 = 부실회피 1차 게이트. ICR 은 복합축(이자비용+금융비용 넓은 정의). 후보는 Company/analysis 로 재검증. 절대 안전 확정 아님.",
   "spec": {
     "define": {
       "netCash": {
@@ -16,11 +16,12 @@
     },
     "where": [
       {"field": "@netCash", "op": ">", "value": 0},
+      {"field": "axis.debt.icr", "op": ">", "value": 2},
       {"field": "finance.ratio.debtRatio", "op": "<", "value": 80},
       {"field": "finance.ratio.currentRatio", "op": ">", "value": 150},
       {"field": "finance.account.total_stockholders_equity", "op": ">", "value": 0}
     ],
-    "select": ["@netCash", "finance.ratio.debtRatio", "finance.ratio.currentRatio"],
+    "select": ["@netCash", "axis.debt.icr", "finance.ratio.debtRatio", "finance.ratio.currentRatio"],
     "sort": {"field": "@netCash", "desc": true},
     "limit": 40
   }

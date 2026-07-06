@@ -13,6 +13,7 @@ from typing import Any
 
 import polars as pl
 
+from dartlab.scan.builders.kr.report.fieldCatalog import _COMPOSITE_AXIS_FIELDS as _COMPOSITE_AXIS_FIELDS
 from dartlab.scan.builders.kr.report.fieldCatalog import _KRX_FIELDS as _KRX_FIELDS
 from dartlab.scan.builders.kr.report.fieldCatalog import _NUMERIC_OPS as _NUMERIC_OPS
 from dartlab.scan.builders.kr.report.fieldCatalog import _catalog as _catalog
@@ -206,10 +207,13 @@ def executeScreenSpec(spec: dict[str, Any]) -> pl.DataFrame:
     if limit <= 0:
         raise ValueError("limit 은 1 이상이어야 합니다.")
 
-    # 파생 필드(spec.define) 를 위상순으로 계산 후 spec 사본에 stash. where/select/sort 가 @name 참조.
+    # 복합축 캐시(축 스캐너 1회 재사용) + 파생 필드(spec.define) 위상순 계산 후 spec 사본에 stash.
+    # where/select/sort 가 @name(파생)·axis.*(복합축) 참조.
+    spec = {**spec, "_axisCache": {}}
     derivedValues, derivedUnits = _computeDerived(spec)
     if derivedValues:
-        spec = {**spec, "_derivedValues": derivedValues, "_derivedUnits": derivedUnits}
+        spec["_derivedValues"] = derivedValues
+        spec["_derivedUnits"] = derivedUnits
 
     frames: list[pl.DataFrame] = []
     for cond in where:
@@ -352,6 +356,9 @@ def _loadFieldValues(field: str, spec: dict[str, Any]) -> pl.DataFrame:
     if field.startswith("note."):
         _fieldMeta(field, spec)
         return _loadNote(field)
+    if field.startswith("axis."):
+        _fieldMeta(field, spec)
+        return _loadCompositeAxis(field, spec)
     _fieldMeta(field, spec)
     if field.startswith("finance.account."):
         return _loadFinanceAccount(field)
@@ -834,6 +841,36 @@ def _loadNote(field: str) -> pl.DataFrame:
         return pl.DataFrame({"stockCode": [], field: []})
     df = df.sort(["stockCode", "period"]).group_by("stockCode").tail(1)
     return df.select("stockCode", pl.col("valueNum").alias(field))
+
+
+def _loadCompositeAxis(field: str, spec: dict[str, Any]) -> pl.DataFrame:
+    """axis.* 복합축 필드를 raw 스캐너 네이티브 컬럼에서 [stockCode, field] 로.
+
+    ``_COMPOSITE_AXIS_FIELDS`` 정본의 (module, fn, col)로 raw 스캐너를 직접 호출(dispatch 한글 리네임 우회).
+    같은 스캐너 결과는 ``spec['_axisCache']``에 캐시해 회사당 축 1회만 계산한다. 스캐너 실패/컬럼 부재는
+    빈 프레임으로 흡수(축 무회귀).
+    """
+    reg = _COMPOSITE_AXIS_FIELDS.get(field)
+    if reg is None:
+        return pl.DataFrame({"stockCode": [], field: []})
+    cache = spec.get("_axisCache") if isinstance(spec, dict) else None
+    if cache is None:
+        cache = {}
+    key = (reg["module"], reg["fn"])
+    if key not in cache:
+        import importlib
+
+        try:
+            mod = importlib.import_module(reg["module"])
+            cache[key] = getattr(mod, reg["fn"])(verbose=False)
+        except (pl.exceptions.PolarsError, OSError, ValueError, ImportError, AttributeError):
+            cache[key] = pl.DataFrame()
+    df = cache[key]
+    col = reg["col"]
+    scCol = "stockCode" if "stockCode" in df.columns else ("종목코드" if "종목코드" in df.columns else None)
+    if df.is_empty() or scCol is None or col not in df.columns:
+        return pl.DataFrame({"stockCode": [], field: []})
+    return df.select(pl.col(scCol).cast(pl.Utf8).alias("stockCode"), pl.col(col).alias(field))
 
 
 __all__ = ["executeScreenSpec", "scanFields"]

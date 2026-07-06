@@ -9,6 +9,101 @@ import polars as pl
 
 _NUMERIC_OPS = ">,>=,<,<=,==,!=,between,exists,not_exists"
 _CONTEXT_OPS = "context"
+_TEXT_OPS = "contains,==,!=,exists,not_exists"
+
+# 복합축 승격 필드 SSOT. scan 축 스캐너(debt/audit/quality/dividendTrend/liquidity)의 raw 네이티브 컬럼을
+# first-class screen 필드로 등재한다. scan() dispatch 의 한글 리네임(_enrichWithKorean)을 우회해 raw 스캐너를
+# 직접 호출하므로 컬럼이 안정적이다(드리프트 가드: test_composite_axis 가 컬럼 실재 검증). module/fn/col 이 정본.
+_COMPOSITE_AXIS_FIELDS: dict[str, dict[str, str]] = {
+    "axis.debt.icr": {
+        "module": "dartlab.scan.debt",
+        "fn": "scanDebt",
+        "col": "ICR",
+        "label": "이자보상배율(축)",
+        "kind": "number",
+        "unit": "배",
+    },
+    "axis.debt.riskGrade": {
+        "module": "dartlab.scan.debt",
+        "fn": "scanDebt",
+        "col": "위험등급",
+        "label": "부채위험등급(축)",
+        "kind": "text",
+        "unit": "없음",
+    },
+    "axis.debt.debtRatio": {
+        "module": "dartlab.scan.debt",
+        "fn": "scanDebt",
+        "col": "부채비율",
+        "label": "부채비율(축)",
+        "kind": "number",
+        "unit": "%",
+    },
+    "axis.debt.shortRatio": {
+        "module": "dartlab.scan.debt",
+        "fn": "scanDebt",
+        "col": "단기비중",
+        "label": "단기차입비중(축)",
+        "kind": "number",
+        "unit": "%",
+    },
+    "axis.quality.cfToNi": {
+        "module": "dartlab.scan.financial.quality",
+        "fn": "scanQuality",
+        "col": "cfToNi",
+        "label": "영업현금흐름/순이익(축)",
+        "kind": "number",
+        "unit": "배",
+    },
+    "axis.quality.accrualRatio": {
+        "module": "dartlab.scan.financial.quality",
+        "fn": "scanQuality",
+        "col": "accrualRatio",
+        "label": "발생액비율(축)",
+        "kind": "number",
+        "unit": "배",
+    },
+    "axis.quality.grade": {
+        "module": "dartlab.scan.financial.quality",
+        "fn": "scanQuality",
+        "col": "grade",
+        "label": "이익품질등급(축)",
+        "kind": "text",
+        "unit": "없음",
+    },
+    "axis.audit.opinion": {
+        "module": "dartlab.scan.audit",
+        "fn": "scanAudit",
+        "col": "opinion",
+        "label": "감사의견(축)",
+        "kind": "text",
+        "unit": "없음",
+    },
+    "axis.audit.riskLevel": {
+        "module": "dartlab.scan.audit",
+        "fn": "scanAudit",
+        "col": "riskLevel",
+        "label": "감사위험수준(축)",
+        "kind": "number",
+        "unit": "점",
+    },
+    "axis.dividendTrend.pattern": {
+        "module": "dartlab.scan.dividendTrend",
+        "fn": "scanDividendTrend",
+        "col": "pattern",
+        "label": "배당패턴(축)",
+        "kind": "text",
+        "unit": "없음",
+    },
+    "axis.liquidity.grade": {
+        "module": "dartlab.scan.financial.liquidity",
+        "fn": "scanLiquidity",
+        "col": "grade",
+        "label": "유동성등급(축)",
+        "kind": "text",
+        "unit": "없음",
+    },
+}
 
 _KRX_FIELDS: dict[str, tuple[str, str, str]] = {
     "close": ("종가", "원", "latest"),
@@ -94,7 +189,32 @@ def _catalog() -> pl.DataFrame:
     rows.extend(_krxCatalogRows())
     rows.extend(_krxIndexCatalogRows())
     rows.extend(_noteCatalogRows())
+    rows.extend(_compositeAxisCatalogRows())
     return pl.DataFrame(rows).sort(["source", "field"])
+
+
+def _compositeAxisCatalogRows() -> list[dict[str, str]]:
+    """복합축 승격 필드를 screen 필드로 등재 (scan 축 산출을 first-class 로).
+
+    :data:`_COMPOSITE_AXIS_FIELDS` 정본에서 도출. debt.riskGrade/audit.opinion 등 등급/텍스트는 텍스트
+    연산자, icr/cfToNi 등 수치는 numeric 연산자. raw 스캐너 네이티브 컬럼이라 안정적이다.
+    """
+    rows: list[dict[str, str]] = []
+    for field, r in _COMPOSITE_AXIS_FIELDS.items():
+        opset = _NUMERIC_OPS if r["kind"] == "number" else _TEXT_OPS
+        rows.append(
+            _row(
+                field,
+                r["label"],
+                "axis",
+                r["kind"],
+                r["unit"],
+                opset,
+                "composite axis",
+                f"scan 축 {r['fn']} 산출 컬럼 {r['col']!r} 승격. 종목별 최신값. raw 스캐너 직독.",
+            )
+        )
+    return rows
 
 
 def _row(
