@@ -93,7 +93,17 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
 - **R4 프로파일러 깊이 (census 카운트 → 실값)**: `table.macroDaily`(금리 BASE_RATE·환율 USDKRW·유가 WTI 일별 SSOT 직독)·`macroBetaByCode`(전종목 벌크 베타, Company 루프 0)·`counterpartyFilings`(대량보유·임원 flr_nm=상대방 실명) 신규. profile 축5 노출=marketBeta만에서 **금리/환율/유가 macroBeta** 추가(실측: 삼성 fxBeta-2.89·oilBeta-0.17·rateBeta None[금리 window flat]), 축2 관계=counterparty:None에서 **실명 파싱**(삼성 삼성물산 71건·SK 국민연금 9건 등 1073 상대방). **깊이가 예측에 기여 실증(형질조건부 성적표, 11 §5)**: 유가베타 버킷 x 표면 = E/P가 유가민감주(oilHigh) t5.20 통과 vs 유가둔감(oilLow) t2.02 동물원구분불가(tGap 3.19 = 가치팩터가 유가 민감도로 조건화). 부수: marketBeta ddof 불일치(cov N-1 vs var N=N/(N-1) 편향) 정공법 통일. replayIdentical 유지.
 - **R5 cascade (계약 → 실배선)**: recompute **표면기여 드롭 결함 수정**(표면 노드 value=부호x강도 필드 부재로 경제 편집 시 표면 7신호 0 처리해 결정 1.60→0.03 붕괴하던 것 보존, assembleCascade 층 folding으로 초기==recompute 일관성). **실 경제 판독**(`cascade.economyReading`=거시 팩터 확장표결 도출, 데모 스칼라 대체, 실측 유가-9.2%·원화약세 → 수축 direction-1). 실증: 경제 편집 후 표면 base 1.6 보존·경제는 산업 경유 결정 변경·결정론 재현.
 - **게이트**: tests/simulate 52 통과(신규 5: macroBetas·macroBetaByCode·counterparty·recompute보존·economyReading), dartlabGuard strict l0-l15 7/7 + 외부게이트 전부 PASS. 커밋 3개(1bcc51401 정정·c18591800 R4·ff3b25300 R5).
-- **남은 정직 R4/R5 갭(후속)**: ① 축1 사업구조 세그먼트 **매출값**·축8 서사 **본문 추출**(frame per-company Panel 로드 = 2GB, 벌크 스코어카드 부적합이라 census 유지·정직 라벨) ② 산업 **독립 섹터 판독**(WICS 섹터 맵 SSOT 부재. 경제→산업 전파는 실 경제값으로 구동되나 산업 자체 판독은 미배선) ③ recompute 형질조건(profile→surface) 엣지 편집 경로(경제 편집은 수정됐으나 profile 노드 편집 시 surface 재산출은 별도).
+- **남은 정직 R4/R5 갭(후속)**: ① 축1 사업구조 세그먼트 **매출값**·축8 서사 **본문 추출**(frame per-company Panel 로드 = 2GB, 벌크 스코어카드 부적합이라 census 유지·정직 라벨) ② 산업 **독립 섹터 판독**(→ §0c-7 에서 해제) ③ recompute 형질조건(profile→surface) 엣지 편집 경로(경제 편집은 수정됐으나 profile 노드 편집 시 surface 재산출은 별도).
+
+### 0c-7. 시나리오 디시전 트리 = "진짜 시뮬레이터"로 발전 (2026-07-06, 운영자 "산업층 연계·가정조건별·디시전 트리")
+
+운영자 도전 "진짜 도움되는/진짜 시뮬레이터인가" 후 지시 "산업층과 연계해 진짜 시뮬레이터로 발전(가정·조건별·디시전 트리)". PRD 13 §7b ScenarioTree 실장. **핵심 = R4 노출벡터가 열쇠**: 시나리오를 주면 각 회사가 측정 베타만큼 반응 → 산업 집계 → 결정 재편 → 책임 가정 역추적.
+
+- **산업층 실배선 (§0c-6 갭② 해제)**: `table.industryMap`(kindList 업종 159종, 가격 유니버스 매칭 78%)·`industryMomentum`(업종 피어 등가중 수익 중앙값 + breadth, corp-action ±50% 캡)·`macroBetaByCodeWide`(3팩터 1스캔). `cascade.industryReading`(업종 모멘텀 → 산업 노드 실 주입, 데모 스칼라 대체). WICS 맵 없이 KRX 업종 분류로 해제.
+- **시나리오 디시전 트리** (`scenarioTree.py` 신규): `MacroScenario` 레지스트리(유가·금리·환율·리스크오프·리플레이션 = 가정 + 레짐 조건)·`scenarioResponse`(회사 반응 = Σ 노출베타 x 충격, 손 가정 아닌 측정)·`industryResponse`(업종 집계)·`adjustedScores`(base z + macroTilt x 반응 z, 단위무관 랭킹)·`buildDecisionTree`(누적 분기 + 진입/이탈 + **책임 팩터 역추적** = 어느 가정이 결정을 바꿨나).
+- **실증(주 202625)**: 유가+30% → 산업층 석유정제·해상운송·비료 수혜 / 항공여객·반도체 피해(항공유 비용, 교과서 정합). 결정 재편: 유가↑엔 고유가베타주 진입, 리스크오프엔 원화약세 수혜 제약수출주 진입. 책임 팩터(oil/fx 기여) 역추적·결정론 재현.
+- **게이트**: tests 61(신규 8: scenarioTree 7 + industryReading), dartlabGuard strict 7/7(신규 모듈 structureMirror 통과). 커밋 abe786665.
+- **정직 한계**: ① 금리 시나리오 inert(BASE_RATE 평탄 → rateBeta 대부분 None, 국고채 daily obs 부재) ② 극단 베타 소형주 쏠림(liquid 필터·베타 winsorize 미적용) ③ 반응이 선형 노출 기반(비선형·2차효과 없음). → 진짜 시뮬레이터의 척추는 섰고, 정밀도(금리 proxy·유동성 필터)는 후속.
 
 ---
 
