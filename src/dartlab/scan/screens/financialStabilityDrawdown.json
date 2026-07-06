@@ -1,0 +1,27 @@
+{
+  "id": "financialStabilityDrawdown",
+  "version": 1,
+  "schemaVersion": 1,
+  "market": "kr",
+  "title": "하락장 재무안전 종목",
+  "tags": ["safety", "credit", "drawdown"],
+  "evidence": "순현금 쿠션(현금 > 단기차입) + 저부채 + 유동성 + 자본건전 = 부실회피 1차 게이트. 후보는 Company/analysis 로 재검증. 절대 안전 확정 아님.",
+  "spec": {
+    "define": {
+      "netCash": {
+        "op": "sub",
+        "left": "finance.account.cash_and_cash_equivalents",
+        "right": "finance.account.shortterm_borrowings"
+      }
+    },
+    "where": [
+      {"field": "@netCash", "op": ">", "value": 0},
+      {"field": "finance.ratio.debtRatio", "op": "<", "value": 80},
+      {"field": "finance.ratio.currentRatio", "op": ">", "value": 150},
+      {"field": "finance.account.total_stockholders_equity", "op": ">", "value": 0}
+    ],
+    "select": ["@netCash", "finance.ratio.debtRatio", "finance.ratio.currentRatio"],
+    "sort": {"field": "@netCash", "desc": true},
+    "limit": 40
+  }
+}
