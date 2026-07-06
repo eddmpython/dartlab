@@ -78,6 +78,9 @@ def companyCascade(
                 "label": surface,
                 "direction": r["direction"],
                 "score": r["score"],
+                # value = 부호 x 강도. recompute 가 하류(결정) 재산출 시 표면 기여를 읽는 필드
+                # (부재 시 0 처리되어 경제 편집이 표면 신호를 떨어뜨리는 드롭 결함 → 이 필드로 보존).
+                "value": r["direction"] * strength,
                 "scorecard": (scorecardByStanceSurface or {}).get(surface),
             }
         )
@@ -257,7 +260,68 @@ def assembleCascade(
                     "assumptionId": "cascade:relationship",
                 }
             )
+    # 초기 결정 consensus 에 층(산업·관계) 기여 folding: companyCascade 는 표면 기여만 합산하므로
+    # 산업·관계 층 기여를 더해 초기 == recompute 결과 일관성을 만든다 (제작기 계약, 경제는 산업 경유).
+    nodeById = {n["id"]: n for n in base["nodes"]}
+    decNode = nodeById.get(decisionId)
+    if decNode is not None:
+        for e in base["edges"]:
+            if e["to"] == decisionId and e.get("elasticity") is not None:
+                up = nodeById.get(e["from"], {})
+                decNode["consensus"] = decNode.get("consensus", 0.0) + float(up.get("value", 0.0) or 0.0) * float(
+                    e["elasticity"]
+                )
     return base
+
+
+def economyReading(asOf: str, *, dataDir=None, window: int = 20) -> dict:
+    """실 경제 시나리오 판독: 거시 팩터(유가·환율·금리) 최근 모멘텀 → {direction, score, refs} (11 §1 층3).
+
+    데모 스칼라 대체 = assembleCascade 경제 노드의 실 주입값. 경기 확장 표결: 유가 상승·원화 강세
+    (fx 하락)·금리 하락이 각 1표, score = 확장표/3 (0·0.33·0.67·1.0). L2.5-legal: macro SSOT 직독
+    (table.macroDaily, 작음·빠름), L2 매크로 엔진 import 0. 매크로 부재/표본 부족은 중립(0.5).
+
+    Args:
+        asOf: 기준일 'YYYYMMDD' (이 날짜 이하 macro 만 참조, PIT).
+        dataDir: 데이터 SSOT 루트 override.
+        window: 모멘텀 트레일링 거래일 (기본 20).
+
+    Returns:
+        {"direction": +1/-1/0, "score": 0~1, "refs": (...), "factors": {oilMom, fxMom, rateChg},
+        "available": bool}. cascade.assembleCascade(economyReading=...) 에 주입.
+    """
+    from dartlab.simulate import table as _table
+
+    macro = _table.macroDaily(dataDir)
+    neutral = {"direction": 0, "score": 0.5, "refs": ("macroDaily",), "factors": {}, "available": False}
+    if macro.height == 0:
+        return neutral
+    m = macro.filter(pl.col("date") <= asOf).sort("date").tail(window + 1)
+    if m.height < 2:
+        return neutral
+
+    def _mom(col: str, pct: bool) -> float | None:
+        s = m[col].drop_nulls() if col in m.columns else pl.Series([], dtype=pl.Float64)
+        if s.len() < 2 or s[0] in (None, 0):
+            return None
+        return float(s[-1] / s[0] - 1) if pct else float(s[-1] - s[0])
+
+    oilMom, fxMom, rateChg = _mom("oil", True), _mom("fx", True), _mom("rate", False)
+    votes, cast = 0, 0
+    for val, expand in ((oilMom, lambda v: v > 0), (fxMom, lambda v: v < 0), (rateChg, lambda v: v < 0)):
+        if val is not None:
+            cast += 1
+            votes += 1 if expand(val) else 0
+    if cast == 0:
+        return neutral
+    score = votes / cast
+    return {
+        "direction": 1 if score > 0.5 else (-1 if score < 0.5 else 0),
+        "score": score,
+        "refs": ("macroDaily:oil", "macroDaily:fx", "macroDaily:rate"),
+        "factors": {"oilMom": oilMom, "fxMom": fxMom, "rateChg": rateChg},
+        "available": True,
+    }
 
 
 def recompute(dag: dict, edits: dict[str, float]) -> dict:

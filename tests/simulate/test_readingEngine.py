@@ -422,6 +422,64 @@ def testInterLayerAssumptions():
     assert rows[0].dimension == "layerElasticity"
 
 
+def testRecomputePreservesSurfaceContribution():
+    from dartlab.simulate import cascade
+
+    # R5 드롭 결함 수정: 경제 노드 편집이 표면 신호를 0 으로 떨어뜨리지 않는다 (표면 value 필드 보존).
+    r = pl.DataFrame(
+        {"code": ["a", "a"], "surface": ["price.volShock", "fund.ep"], "direction": [1, 1], "score": [0.9, 0.9]}
+    )
+    prof = {"fund": {"stalenessDays": 47}, "financing": {}, "market": {"sizePctile": 0.8}}
+    dag = cascade.assembleCascade(
+        "a",
+        202607,
+        profileState=prof,
+        surfaceReadings=r,
+        economyReading={"score": 0.7},
+        industryReading={"score": 0.6},
+        elasticities={"economy->industry": 0.6, "industry->company": 0.5},
+    )
+    # 표면 base = 2 x (weight1 x dir1 x strength0.8) = 1.6. 초기엔 + 산업 folding(0.6x0.5=0.3) = 1.9
+    dec0 = next(n for n in dag["nodes"] if n["layer"] == "decision")["consensus"]
+    assert abs(dec0 - 1.9) < 1e-9  # 초기 == 표면 + 층 folding (제작기 일관성)
+    out = cascade.recompute(dag, {"economy": 0.0})
+    dec1 = next(n for n in out["nodes"] if n["layer"] == "decision")["consensus"]
+    assert dec1 > 1.0  # 표면 기여 보존 (옛 결함이면 ~0 으로 붕괴)
+    assert abs(dec1 - dec0) > 1e-6  # 경제는 여전히 결정을 바꾼다 (산업 경유 전파)
+    assert cascade.recompute(dag, {"economy": 0.0})["nodes"] == out["nodes"]  # 결정론 재현
+
+
+def testEconomyReadingVotesFromMacro(monkeypatch):
+    from datetime import date, timedelta
+
+    from dartlab.simulate import cascade, table
+
+    d = [(date(2026, 1, 1) + timedelta(days=i)).strftime("%Y%m%d") for i in range(24)]
+    # 확장: 유가 상승·원화 강세(fx 하락)·금리 하락 = 3표 → score 1.0
+    up = pl.DataFrame(
+        {
+            "date": d,
+            "rate": [3.0 - 0.01 * i for i in range(24)],
+            "fx": [1300.0 - i for i in range(24)],
+            "oil": [100.0 + i for i in range(24)],
+        }
+    )
+    monkeypatch.setattr(table, "macroDaily", lambda dataDir=None: up)
+    econ = cascade.economyReading(d[-1])
+    assert econ["available"] and econ["score"] == 1.0 and econ["direction"] == 1  # 실 macro 도출(데모 스칼라 아님)
+    # 수축: 반대 방향 = 0표
+    down = pl.DataFrame(
+        {
+            "date": d,
+            "rate": [3.0 + 0.01 * i for i in range(24)],
+            "fx": [1300.0 + i for i in range(24)],
+            "oil": [100.0 - i for i in range(24)],
+        }
+    )
+    monkeypatch.setattr(table, "macroDaily", lambda dataDir=None: down)
+    assert cascade.economyReading(d[-1])["score"] == 0.0  # 유가↓·원화약세·금리↑ = 수축
+
+
 def testProfileTraitCatalogIsExhaustive():
     from dartlab.simulate.profile import traitCatalog
 
