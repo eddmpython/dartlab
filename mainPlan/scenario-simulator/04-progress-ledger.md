@@ -104,6 +104,7 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
 - **실증(주 202625)**: 유가+30% → 산업층 석유정제·해상운송·비료 수혜 / 항공여객·반도체 피해(항공유 비용, 교과서 정합). 결정 재편: 유가↑엔 고유가베타주 진입, 리스크오프엔 원화약세 수혜 제약수출주 진입. 책임 팩터(oil/fx 기여) 역추적·결정론 재현.
 - **게이트**: tests 61(신규 8: scenarioTree 7 + industryReading), dartlabGuard strict 7/7(신규 모듈 structureMirror 통과). 커밋 abe786665.
 - **정직 한계**: ① 금리 시나리오 inert(BASE_RATE 평탄 → rateBeta 대부분 None, 국고채 daily obs 부재) ② 극단 베타 소형주 쏠림(liquid 필터·베타 winsorize 미적용) ③ 반응이 선형 노출 기반(비선형·2차효과 없음). → 진짜 시뮬레이터의 척추는 섰고, 정밀도(금리 proxy·유동성 필터)는 후속.
+- **상위 모델 (`scenarioSim.py` 신규, 커밋 95a4af008)**: "디시전 트리보다 고급·효율" 요구에 상관 몬테카를로 실장. 매크로 팩터 동반이동 공분산(역사, oil-fx +0.29) → `conditionalShock`(유가 -30% 주면 환율·금리 역사적 동반 조건부 기대로 채운 완결 시나리오 = 더 깊은 시나리오)·`monteCarloDecision`(수천 상관 경로 → top-K 진입 확률 + 반응 꼬리 p5/p95, 이산 분기 대비 공간 전수·확률·강건)·`historicalStressShocks`(실제 위기 동반이동). MC 가 오히려 극단베타 소형주 문제를 명확히 노출(top확률↑이나 꼬리±2.8 = 변동 큼). tests 129·게이트 7/7. 프론티어(베이지안 네트워크 cascade·VAR 시간전개)는 후속.
 
 ---
 
