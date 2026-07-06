@@ -1,0 +1,371 @@
+{
+  "version": 5,
+  "generatedAt": "2026-07-06T02:51:54.466110+00:00",
+  "target": {
+    "kind": "companyPost",
+    "slug": "sand-to-semiconductor",
+    "stockCode": "",
+    "corpName": "반도체 공정",
+    "title": "모래가 반도체가 되기까지: 가장 어려운 공정이 가장 못 버는 역설",
+    "postPath": "blog/08-tech-story/01-sand-to-semiconductor/index.md",
+    "assetRoot": "sns/assets/sand-to-semiconductor",
+    "planPath": "blog/08-tech-story/01-sand-to-semiconductor/cards.plan.json"
+  },
+  "planning": {
+    "blogThesis": "규사 한 줌이 순도 11N 실리콘, 웨이퍼, 칩이 되며 값이 수십만 배로 뛴다. 그런데 8단계 사슬을 우리 데이터로 실측하니, 모래를 정제하는 가장 어려운 맨 앞 공정(영업이익률 0%)이 아니라 칩과 대체 불가능한 장비·소재에서 이익이 터졌다.",
+    "cardThesis": "규사 한 줌이 고순도 실리콘, 웨이퍼, 칩이 되며 값이 수십만 배로 뜁니다.",
+    "audienceQuestion": "반도체 공정 이야기를 /cards에서 넘길 때 첫 장에서 무엇을 궁금해해야 하나?",
+    "blogAndCardsTogether": true,
+    "narrativeContract": {
+      "spine": "훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문",
+      "rules": [
+        "한 주제 안에서 훅 -> 왜 지금 중요한가 -> 근거 -> 전환 -> 판단 질문으로 이어진다.",
+        "각 슬라이드는 앞장의 주장이나 숫자를 받아 다음 장으로 넘겨야 한다.",
+        "서로 끊긴 체크리스트, '다음에는 이것을 본다'식 나열, 새 항목만 덧붙이는 끝맺음은 실패다.",
+        "마지막 장은 새 정보를 추가하는 장이 아니라 앞선 주장과 근거를 종합해 독자가 남길 판단 질문으로 닫는다.",
+        "기/승/전/결 같은 구조명은 내부 기획에만 쓰고 카드 위 라벨로 노출하지 않는다."
+      ]
+    },
+    "bigSentenceContract": {
+      "slideRange": "7장 이상(7~10장 권장, 필요하면 초과)",
+      "mainTextFields": {
+        "editorial": "line",
+        "editorialBeat": "line",
+        "editorialStat": "context"
+      },
+      "rules": [
+        "카드는 7장 이상으로 잡고, 큰문장만 이어 읽어도 한 편의 짧은 글처럼 이해되어야 한다.",
+        "각 장의 큰문장은 단어·라벨·메모가 아니라 앞장 뒤에 붙는 완성 문장이어야 한다.",
+        "숫자 카드는 bigNumber만 던지지 말고 context에 그 숫자가 앞장 주장과 어떻게 이어지는지 문장으로 쓴다.",
+        "중간 장은 '이 구조', '그 결과', '하지만', '그래서', '결국'처럼 앞장과의 관계를 자연스럽게 드러낸다.",
+        "마지막 장은 새 항목 소개가 아니라 앞선 흐름에서 나온 판단 문장으로 닫는다."
+      ],
+      "strip": [
+        {
+          "order": 1,
+          "layout": "editorial",
+          "mainText": "모래 한 줌이 반도체가 되기까지, 값은 엉뚱한 데서 터집니다."
+        },
+        {
+          "order": 2,
+          "layout": "editorialBeat",
+          "mainText": "규사 한 줌은 흔하고 값싼데, 칩이 되면 금보다 비쌉니다. 이 값은 사슬의 어디서 터질까요?"
+        },
+        {
+          "order": 3,
+          "layout": "editorialBeat",
+          "mainText": "맨 앞의 가장 어려운 정제는 남는 게 0에 가깝고, 값은 사슬 중간과 끝에서 터집니다."
+        },
+        {
+          "order": 4,
+          "layout": "editorialBeat",
+          "mainText": "그런데 가장 어려운 정제를 해내고도, 이 맨 앞 공정이 사슬에서 가장 못 법니다."
+        },
+        {
+          "order": 5,
+          "layout": "editorialBeat",
+          "mainText": "반대로 값을 정하는 힘은 대체 불가능성에서 나옵니다. 특정 라인에만 쓰이는 소모품이 원재료보다 훨씬 많이 법니다."
+        },
+        {
+          "order": 6,
+          "layout": "editorialBeat",
+          "mainText": "그래서 곡괭이가 등장합니다. 고대역폭 메모리 장비를 파는 회사가 금을 캐는 회사만큼 벌었습니다."
+        },
+        {
+          "order": 7,
+          "layout": "editorialBeat",
+          "mainText": "사슬 끝의 칩은 값의 정점입니다. 그런데 바로 몇 해 전엔 팔수록 손해였습니다."
+        },
+        {
+          "order": 8,
+          "layout": "editorialBeat",
+          "mainText": "결국 부가가치는 공정 난도가 아니라 대체 불가능성과 사이클 위치, 자본 회수력이 정합니다."
+        }
+      ]
+    },
+    "plainLanguageContract": {
+      "rules": [
+        "카드 문장은 독자가 소리 내어 읽어도 자연스러운 한국어 문장이어야 한다.",
+        "전문용어와 약어를 앞세우지 말고 쉬운 말로 먼저 설명한다.",
+        "꼭 필요한 산업 용어는 짧은 설명에 풀어 쓰되, 슬라이드 본문은 가능한 쉬운 말로 쓴다.",
+        "브랜드명과 공식 제품명은 허용하지만, 의미를 설명하지 않은 약어는 실패다."
+      ],
+      "preferredRewrites": {
+        "ARR": "연간 반복 매출",
+        "EDR": "단말 보안 대응",
+        "SOC": "보안 관제",
+        "FCF": "잉여현금흐름",
+        "ID": "계정",
+        "CDMO": "위탁개발생산",
+        "HBM": "고대역폭 메모리",
+        "HBM4E": "차세대 고대역폭 메모리",
+        "GPU": "그래픽처리장치",
+        "MR-MUF": "보호재 충전 패키징",
+        "Gbps": "기가비트/초"
+      }
+    },
+    "insightContract": {
+      "rules": [
+        "통념(commonBelief): 독자가 당연하게 여기는 상식·헤드라인 관점을 한 문장으로 적는다.",
+        "반전 사실(twistFact): 그 통념과 충돌하는, 공시 직독으로 확인한 단 하나의 사실 + 왜 그게 가능한가(메커니즘)를 적는다. 제목·캡션의 재진술이면 인사이트가 아니다.",
+        "그래서 볼 것(whatToWatch): 독자가 이 덱을 본 뒤 앞으로 무엇을 다르게 볼지(렌즈·관전 포인트)를 적는다.",
+        "evidenceRefs: 반전·렌즈를 떠받치는 실측 수치나 ref 를 최소 1개 이상 적는다(분모·기간 명시)."
+      ],
+      "commonBelief": "반도체는 가장 어려운 공정, 특히 칩을 만드는 대기업이 사슬에서 가장 많이 번다고 여긴다.",
+      "twistFact": "모래에서 칩까지 8단계 상장사 영업이익률을 실측하니 정반대였다. 인류 최고 난도 정제인 맨 앞 폴리실리콘은 영업이익률 0%였고, 특정 라인에 잠긴 소재(포토레지스트 14.3%, 실리콘 부품 18.3%)와 고대역폭 메모리 장비(43.6%)가 원재료보다 서너 배를 벌었다. 칩(48.6%)이 정점이지만 2023년엔 영업이익률 -23.6% 적자였다.",
+      "whatToWatch": "공정 난도가 아니라 대체 불가능성과 사이클 위치, 자본 회수력을 보라. 가장 힘든 곳이 아니라 가장 대체하기 어려운 곳이 번다. 정점도 사이클을 타므로 마진의 지속성은 그 자리를 남이 대체할 수 있는가에서 갈린다.",
+      "evidenceRefs": [
+        "금융감독원 전자공시 직독 2025년 연간 영업이익률. 폴리실리콘 0.0% 포토레지스트 14.3% 실리콘 부품 18.3% 고대역폭 메모리 장비 43.6% 칩 48.6%",
+        "에스케이하이닉스 2023년 -23.6% 적자에서 2025년 48.6%"
+      ]
+    },
+    "visualPlan": [
+      {
+        "order": 1,
+        "claim": "모래 한 줌이 반도체가 되기까지, 값은 엉뚱한 데서 터집니다.",
+        "visualKind": "image",
+        "visualRole": "sceneSupport",
+        "dataExplanation": "",
+        "evidenceRefs": [],
+        "rules": [
+          "숫자·비교·강한 주장 카드는 어떤 데이터가 그 문장을 증명하는지 dataExplanation 에 적는다.",
+          "evidenceRefs 에 기간·분모·출처가 드러난 실측 ref 를 최소 1개 이상 적는다.",
+          "숫자·비교 카드는 image 배경만으로 통과하지 않는다. finCard 또는 table 같은 실제 visual 계약을 붙인다.",
+          "visualPlan 의 visualKind 는 실제 slide.visual.kind 와 같아야 한다."
+        ],
+        "proves": "모래 한 줌이 반도체가 되기까지, 값은 엉뚱한 데서 터집니다."
+      },
+      {
+        "order": 2,
+        "claim": "규사 한 줌은 흔하고 값싼데, 칩이 되면 금보다 비쌉니다. 이 값은 사슬의 어디서 터질까요?",
+        "visualKind": "image",
+        "visualRole": "sceneSupport",
+        "dataExplanation": "",
+        "evidenceRefs": [],
+        "rules": [],
+        "proves": "규사 한 줌은 흔하고 값싼데, 칩이 되면 금보다 비쌉니다. 이 값은 사슬의 어디서 터질까요?"
+      },
+      {
+        "order": 3,
+        "claim": "맨 앞의 가장 어려운 정제는 남는 게 0에 가깝고, 값은 사슬 중간과 끝에서 터집니다.",
+        "visualKind": "table",
+        "visualRole": "dataEvidence",
+        "dataExplanation": "모래 정제(0%)부터 소재, 고대역폭 메모리 장비, 칩까지 8단계 공정별 2025년 영업이익률을 한 표로 본다. 값이 사슬 앞이 아니라 중간과 끝에서 솟구침을 증명한다.",
+        "evidenceRefs": [
+          "금융감독원 전자공시 직독 2025년 연간 영업이익률. 폴리실리콘 0.0% 동진쎄미켐 14.3% 하나머티리얼즈 18.3% 한미반도체 43.6% 에스케이하이닉스 48.6%"
+        ],
+        "rules": [],
+        "shape": [
+          "공정 단계",
+          "영업이익률"
+        ],
+        "rows": 5,
+        "proves": "2025년 연간 실측(dartlab)"
+      },
+      {
+        "order": 4,
+        "claim": "그런데 가장 어려운 정제를 해내고도, 이 맨 앞 공정이 사슬에서 가장 못 법니다.",
+        "visualKind": "image",
+        "visualRole": "sceneSupport",
+        "dataExplanation": "",
+        "evidenceRefs": [],
+        "rules": [],
+        "proves": "그런데 가장 어려운 정제를 해내고도, 이 맨 앞 공정이 사슬에서 가장 못 법니다."
+      },
+      {
+        "order": 5,
+        "claim": "반대로 값을 정하는 힘은 대체 불가능성에서 나옵니다. 특정 라인에만 쓰이는 소모품이 원재료보다 훨씬 많이 법니다.",
+        "visualKind": "image",
+        "visualRole": "sceneSupport",
+        "dataExplanation": "",
+        "evidenceRefs": [],
+        "rules": [],
+        "proves": "반대로 값을 정하는 힘은 대체 불가능성에서 나옵니다. 특정 라인에만 쓰이는 소모품이 원재료보다 훨씬 많이 법니다."
+      },
+      {
+        "order": 6,
+        "claim": "그래서 곡괭이가 등장합니다. 고대역폭 메모리 장비를 파는 회사가 금을 캐는 회사만큼 벌었습니다.",
+        "visualKind": "image",
+        "visualRole": "sceneSupport",
+        "dataExplanation": "",
+        "evidenceRefs": [],
+        "rules": [],
+        "proves": "그래서 곡괭이가 등장합니다. 고대역폭 메모리 장비를 파는 회사가 금을 캐는 회사만큼 벌었습니다."
+      },
+      {
+        "order": 7,
+        "claim": "사슬 끝의 칩은 값의 정점입니다. 그런데 바로 몇 해 전엔 팔수록 손해였습니다.",
+        "visualKind": "image",
+        "visualRole": "sceneSupport",
+        "dataExplanation": "",
+        "evidenceRefs": [],
+        "rules": [],
+        "proves": "사슬 끝의 칩은 값의 정점입니다. 그런데 바로 몇 해 전엔 팔수록 손해였습니다."
+      },
+      {
+        "order": 8,
+        "claim": "결국 부가가치는 공정 난도가 아니라 대체 불가능성과 사이클 위치, 자본 회수력이 정합니다.",
+        "visualKind": "image",
+        "visualRole": "sceneSupport",
+        "dataExplanation": "",
+        "evidenceRefs": [],
+        "rules": [],
+        "proves": "결국 부가가치는 공정 난도가 아니라 대체 불가능성과 사이클 위치, 자본 회수력이 정합니다."
+      }
+    ],
+    "bodyPreview": "바닷가에서 한 줌 쥐면 손가락 사이로 흘러내리는 모래. 그 흔한 알갱이가 며칠 뒤 SK하이닉스의 메모리 칩이 되어, 같은 무게의 금보다 비싼 값에 팔린다. 규사(석영 모래, 이산화규소)는 지각에서 가장 흔한 광물 축에 들고 1kg에 몇 백원이지만, 그것으로 만든 반도체 웨이퍼 한 장은 수십만 원, 그 위에 얹힌 칩의 가치는 다시 수십 배로 뛴다. 그렇다면 질문 하나. **이 어마어마한 부가가치는 사슬의 어디서, 어느 회사가 가져가는가?** 상식대로라면 가장 어려운 일을 하는 회사가 가장 많이 벌어야 한다. 모래를 순도 99.999999999%(원자 10억 개 중 불순물 1개 이하)까지 정제하는 것은 인류가 상업적으로 하는 화학 공정 가운"
+  },
+  "carousel": {
+    "slideCount": 8,
+    "layouts": [
+      "editorial",
+      "editorialBeat",
+      "editorialBeat",
+      "editorialBeat",
+      "editorialBeat",
+      "editorialBeat",
+      "editorialBeat",
+      "editorialBeat"
+    ]
+  },
+  "imagePlan": [
+    {
+      "order": 1,
+      "assetKey": "scene-01-cover-hook",
+      "slideRefs": [
+        1
+      ],
+      "role": "cover-hook",
+      "scene": "story-specific opening scene for 반도체 공정, making the article angle '모래 한 줌이 반도체가 되기까지, 값은 엉뚱한 데서 터집니다.' visible through a concrete asset, place, or operation",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "planned",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/sand-to-semiconductor/scene-01-cover-hook.webp\nAsset key: scene-01-cover-hook\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 모래가 반도체가 되기까지: 가장 어려운 공정이 가장 못 버는 역설.\nStory title: 모래가 반도체가 되기까지: 가장 어려운 공정이 가장 못 버는 역설.\nCarousel role: cover-hook.\nImage subject: story-specific opening scene for 반도체 공정, making the article angle '모래 한 줌이 반도체가 되기까지, 값은 엉뚱한 데서 터집니다.' visible through a concrete asset, place, or operation.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 2,
+      "assetKey": "scene-02-narrative-turn",
+      "slideRefs": [
+        2
+      ],
+      "role": "narrative-turn",
+      "scene": "editorial business-news scene tied to 반도체 공정, showing the turning point '규사 한 줌은 흔하고 값싼데, 칩이 되면 금보다 비쌉니다. 이 값은 사슬의 어디서 터질까요?' through physical work, demand, location, or operations",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "planned",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/sand-to-semiconductor/scene-02-narrative-turn.webp\nAsset key: scene-02-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 모래가 반도체가 되기까지: 가장 어려운 공정이 가장 못 버는 역설.\nStory title: 모래가 반도체가 되기까지: 가장 어려운 공정이 가장 못 버는 역설.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 반도체 공정, showing the turning point '규사 한 줌은 흔하고 값싼데, 칩이 되면 금보다 비쌉니다. 이 값은 사슬의 어디서 터질까요?' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 3,
+      "assetKey": "scene-03-narrative-turn",
+      "slideRefs": [
+        3
+      ],
+      "role": "narrative-turn",
+      "scene": "editorial business-news scene tied to 반도체 공정, showing the turning point '맨 앞의 가장 어려운 정제는 남는 게 0에 가깝고, 값은 사슬 중간과 끝에서 터집니다.' through physical work, demand, location, or operations",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "planned",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/sand-to-semiconductor/scene-03-narrative-turn.webp\nAsset key: scene-03-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 모래가 반도체가 되기까지: 가장 어려운 공정이 가장 못 버는 역설.\nStory title: 모래가 반도체가 되기까지: 가장 어려운 공정이 가장 못 버는 역설.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 반도체 공정, showing the turning point '맨 앞의 가장 어려운 정제는 남는 게 0에 가깝고, 값은 사슬 중간과 끝에서 터집니다.' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 4,
+      "assetKey": "scene-04-narrative-turn",
+      "slideRefs": [
+        4
+      ],
+      "role": "narrative-turn",
+      "scene": "editorial business-news scene tied to 반도체 공정, showing the turning point '그런데 가장 어려운 정제를 해내고도, 이 맨 앞 공정이 사슬에서 가장 못 법니다.' through physical work, demand, location, or operations",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "planned",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/sand-to-semiconductor/scene-04-narrative-turn.webp\nAsset key: scene-04-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 모래가 반도체가 되기까지: 가장 어려운 공정이 가장 못 버는 역설.\nStory title: 모래가 반도체가 되기까지: 가장 어려운 공정이 가장 못 버는 역설.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 반도체 공정, showing the turning point '그런데 가장 어려운 정제를 해내고도, 이 맨 앞 공정이 사슬에서 가장 못 법니다.' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 5,
+      "assetKey": "scene-05-narrative-turn",
+      "slideRefs": [
+        5
+      ],
+      "role": "narrative-turn",
+      "scene": "editorial business-news scene tied to 반도체 공정, showing the turning point '반대로 값을 정하는 힘은 대체 불가능성에서 나옵니다. 특정 라인에만 쓰이는 소모품이 원재료보다 훨씬 많이 법니다.' through physical work, demand, location, or operations",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "planned",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/sand-to-semiconductor/scene-05-narrative-turn.webp\nAsset key: scene-05-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 모래가 반도체가 되기까지: 가장 어려운 공정이 가장 못 버는 역설.\nStory title: 모래가 반도체가 되기까지: 가장 어려운 공정이 가장 못 버는 역설.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 반도체 공정, showing the turning point '반대로 값을 정하는 힘은 대체 불가능성에서 나옵니다. 특정 라인에만 쓰이는 소모품이 원재료보다 훨씬 많이 법니다.' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 6,
+      "assetKey": "scene-06-narrative-turn",
+      "slideRefs": [
+        6
+      ],
+      "role": "narrative-turn",
+      "scene": "editorial business-news scene tied to 반도체 공정, showing the turning point '그래서 곡괭이가 등장합니다. 고대역폭 메모리 장비를 파는 회사가 금을 캐는 회사만큼 벌었습니다.' through physical work, demand, location, or operations",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "planned",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/sand-to-semiconductor/scene-06-narrative-turn.webp\nAsset key: scene-06-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 모래가 반도체가 되기까지: 가장 어려운 공정이 가장 못 버는 역설.\nStory title: 모래가 반도체가 되기까지: 가장 어려운 공정이 가장 못 버는 역설.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 반도체 공정, showing the turning point '그래서 곡괭이가 등장합니다. 고대역폭 메모리 장비를 파는 회사가 금을 캐는 회사만큼 벌었습니다.' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 7,
+      "assetKey": "scene-07-narrative-turn",
+      "slideRefs": [
+        7
+      ],
+      "role": "narrative-turn",
+      "scene": "editorial business-news scene tied to 반도체 공정, showing the turning point '사슬 끝의 칩은 값의 정점입니다. 그런데 바로 몇 해 전엔 팔수록 손해였습니다.' through physical work, demand, location, or operations",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "planned",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/sand-to-semiconductor/scene-07-narrative-turn.webp\nAsset key: scene-07-narrative-turn\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 모래가 반도체가 되기까지: 가장 어려운 공정이 가장 못 버는 역설.\nStory title: 모래가 반도체가 되기까지: 가장 어려운 공정이 가장 못 버는 역설.\nCarousel role: narrative-turn.\nImage subject: editorial business-news scene tied to 반도체 공정, showing the turning point '사슬 끝의 칩은 값의 정점입니다. 그런데 바로 몇 해 전엔 팔수록 손해였습니다.' through physical work, demand, location, or operations.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    },
+    {
+      "order": 8,
+      "assetKey": "scene-08-closing-checkpoint",
+      "slideRefs": [
+        8
+      ],
+      "role": "closing-checkpoint",
+      "scene": "quiet final-check scene tied to 반도체 공정 for the reader to verify '결국 부가가치는 공정 난도가 아니라 대체 불가능성과 사이클 위치, 자본 회수력이 정합니다.', such as documents, equipment, facility context, or customer workflow",
+      "reason": "그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커",
+      "status": "planned",
+      "prompt": "Use case: photorealistic-natural\nAsset type: vertical landing /cards news-card background for sns/assets/sand-to-semiconductor/scene-08-closing-checkpoint.webp\nAsset key: scene-08-closing-checkpoint\nPrimary request: Create a realistic editorial image for DartLab landing /cards about 모래가 반도체가 되기까지: 가장 어려운 공정이 가장 못 버는 역설.\nStory title: 모래가 반도체가 되기까지: 가장 어려운 공정이 가장 못 버는 역설.\nCarousel role: closing-checkpoint.\nImage subject: quiet final-check scene tied to 반도체 공정 for the reader to verify '결국 부가가치는 공정 난도가 아니라 대체 불가능성과 사이클 위치, 자본 회수력이 정합니다.', such as documents, equipment, facility context, or customer workflow.\nImage reason: 그 글의 회사·사건·장소·운영 질문을 한 장면으로 묶는 시각 앵커.\nStory specificity: make the image feel planned for this exact article, company, event, location, facility, product, or operating question; avoid generic stock-finance imagery.\nConcrete-scene requirement: translate abstract business words into physical subjects from the story, such as products, facilities, process equipment, quality tests, logistics, customer workflow, or field operations.\nComposition/framing: strict vertical 4:5 image; keep the main subject in the upper and middle 60%; keep the lower 40% natural but non-critical so text overlays remain readable.\nStyle/medium: realistic business-news photography, not illustration, not a chart, not an infographic.\nLighting/mood: bright enough to survive a dark overlay; real-world depth and contrast; no heavy vignette.\nBrand/name handling: company and trade names may be used as context. Do not fabricate an official logo, official document, real facility interior, or readable claim; incidental public signage is acceptable only when it supports the article and is not the main subject.\nConstraints: no watermark, no recognizable public figure, no fake chart, no fake newspaper, no fabricated official badge, no brand packaging close-up.\nAvoid: collage, split panels, gradients, abstract glow, bokeh-only background, generic financial wallpaper, blacked-out half frame, 9:16 crop, ultra-tall phone wallpaper."
+    }
+  ],
+  "imagegen": {
+    "tool": "GPT image_gen",
+    "generationRule": "각 imagePlan.prompt 를 한 장씩 image_gen 으로 생성한다. 프롬프트는 그 글의 회사·사건·장소·운영 질문을 상징하는 실제 사용용 이미지를 목표로 하며, 범용 금융 배경은 탈락시킨다.",
+    "extractCommand": "uv run python -X utf8 sns/scripts/extractImagegenAssets.py sand-to-semiconductor --count 8 --names scene-01-cover-hook,scene-02-narrative-turn,scene-03-narrative-turn,scene-04-narrative-turn,scene-05-narrative-turn,scene-06-narrative-turn,scene-07-narrative-turn,scene-08-closing-checkpoint --keywords \"반도체 공정,sand-to-semiconductor\"",
+    "checkCommand": "uv run python -X utf8 sns/scripts/checkImagegenAssets.py sand-to-semiconductor",
+    "publishCommands": [
+      "uv run python -X utf8 sns/scripts/build_index.py",
+      "uv run python -X utf8 sns/scripts/publish_assets_hf.py",
+      "uv run python -X utf8 blog/_scripts/build_carousel_contracts.py"
+    ]
+  },
+  "reviewGate": {
+    "status": "passed",
+    "requiredRounds": [
+      {
+        "id": "writerPanel",
+        "purpose": "표지 후크(호기심 갭), 서사 스파인, 앞장-다음장의 긴장 전진(연결만이 아니라 매 장이 질문을 얹거나 갚는가), 인사이트(통념과 충돌하는 사실 + 메커니즘 + 독자 렌즈), 표지 약속을 마지막이 갚는가(promise·payoff), 쉬운 말·문장 리듬을 본다. 순서를 바꿔도 말이 되는 덱, 충돌 사실만 던지고 끝나는 덱, 체크리스트식 나열은 실패다.",
+        "status": "passed"
+      },
+      {
+        "id": "honestyEvidence",
+        "purpose": "슬라이드 숫자와 주장 근거가 블로그 본문/검증표에 있는지 본다.",
+        "status": "passed"
+      },
+      {
+        "id": "imageFit",
+        "purpose": "7장 이상 이미지가 그 글의 회사·사건·장소에 맞는 서로 다른 의미 장면인지, 가짜 공식 로고·텍스트·도식이 없는지 본다.",
+        "status": "passed"
+      },
+      {
+        "id": "readerFit",
+        "purpose": "처음 보는 독자가 첫 장부터 마지막 장까지 끊기지 않고 자연스럽게 읽으며 관전 포인트를 이해하는지 본다. 어려운 약어가 남으면 실패다.",
+        "status": "passed"
+      },
+      {
+        "id": "reevaluation",
+        "purpose": "수정 후 같은 패널이 다시 보고 발행 가능 여부를 닫는다.",
+        "status": "passed"
+      }
+    ],
+    "decisionLog": []
+  }
+}
