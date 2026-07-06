@@ -24,11 +24,14 @@ DartLab의 혁신성은 "새 프레임워크를 붙이는 것"이 아니라, 공
 
 ## 문서 지도
 
-- `00-current-state-and-thesis.md`: 현재 DartLab의 자산, 병목, 조사 thesis.
+- `tech/`: **기술별 살아있는 조사 원장 (SSOT).** 기술 하나당 파일 하나. 마지막 조사일 / 카테고리별 관찰 / 본 자료 / 채택 결정을 누적. 반복 재조사 방지용. 어떤 기술을 조사하기 전에 여기부터 본다.
+- `00-current-state-and-thesis.md`: 현재 DartLab의 자산, 병목, 조사 thesis (2026-06-17 시점 스냅샷).
 - `01-priority-stack-register.md`: 후보 기술 스택별 우선순위, DartLab 흡수 방식, 첫 검증.
 - `02-fit-map-and-kill-list.md`: 기존 mainPlan과 연결, 기각 목록, 과잉 설계 방지.
 - `03-source-ledger-and-next-research.md`: 공식 자료 검증 기록, 다음 실측 질문.
 - `04-progress-ledger.md`: 조사 의사결정 로그.
+
+> 참고: `00~04` 는 한 시점의 thesis 스냅샷이고, `tech/` 가 그 위에 얹는 살아있는 기술별 원장이다. 스냅샷이 낡아도 `tech/` 개별 파일은 조사할 때마다 갱신한다.
 
 ## 운영 규칙
 
