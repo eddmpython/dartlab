@@ -128,6 +128,15 @@ inventory = dartlab.scan("note", "재고자산")   # 주석 lineitem 횡단 (재
 fields = dartlab.scan("fields", "roe")
 value = dartlab.scan("screen", "value")
 custom = dartlab.scan("screen", spec={"filters": []})
+
+# 파생 필드 조합 (spec.define): 순현금 = 현금 - 단기차입, 저부채 교차
+safe = dartlab.scan("screen", spec={
+    "define": {"netCash": {"op": "sub",
+        "left": "finance.account.cash_and_cash_equivalents",
+        "right": "finance.account.shortterm_borrowings"}},
+    "where": [{"field": "@netCash", "op": ">", "value": 0},
+              {"field": "finance.ratio.debtRatio", "op": "<", "value": 30}],
+    "sort": {"field": "@netCash", "desc": True}})
 ```
 
 ## 강행 호출 룰 (agent 답변 품질 회귀 차단)
@@ -224,7 +233,7 @@ metric/value/score, rank, basis/source, flags
 | profitability | 산업 분기 무시한 통합 랭킹 X (제조 vs 금융 ROE 직접 비교); 결손 종목 (재무제표 미공시) 을 0 으로 채워 랭킹 하단 배치 X |
 | quality | accrual ratio 임계값 (산업 평균 대비) 명시; 단일 분기 OCF/NI 로 이익품질 단정 X (4 분기 평균) |
 | ratio | 비율 정의 (분자/분모) 명시; 산업별 비율 차이 무시한 통합 랭킹 X |
-| screen | 멀티팩터 spec 의 가중치 / 임계값 명시; preset 결과를 *맞춤형* 으로 단정 X |
+| screen | 멀티팩터 spec 의 가중치 / 임계값 명시; preset 결과를 *맞춤형* 으로 단정 X; `spec.define` 로 계정간 파생(순현금·ICR 등, 폐쇄 vocabulary add/sub/mul/div, 단위 인식) 표현 가능, `@name` 은 define 선언 후 참조; 파생 필드가 희소계정(interest_expenses 등) 기반이면 유니버스 축소 인지; note lineitem 은 `note.<concept>@<항목명>` 주소 |
 | valuation | 단일 멀티플 (PER 만) 로 *저평가* 단정 X (PBR/PSR 교차 검증); 적자 회사에 PER 적용 X (PSR/EV-Sales 권장); 산업 분기 무시 통합 PER 랭킹 X |
 | workforce | 직원수 / 평균급여 / 인건비율 분류 명시; CEO/임원 보수와 평균 직원 보수 동치 처리 X |
 

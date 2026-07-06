@@ -93,6 +93,7 @@ def _catalog() -> pl.DataFrame:
     rows.extend(_docsCatalogRows())
     rows.extend(_krxCatalogRows())
     rows.extend(_krxIndexCatalogRows())
+    rows.extend(_noteCatalogRows())
     return pl.DataFrame(rows).sort(["source", "field"])
 
 
@@ -299,6 +300,31 @@ def _krxCatalogRows() -> list[dict[str, str]]:
                 "KRX OHLCV 기반 기술지표. start/end 미지정 시 최근 252 거래일 window 를 사용한다.",
             )
         )
+    return rows
+
+
+def _noteCatalogRows() -> list[dict[str, str]]:
+    """추출 카탈로그 registered 단일축 note 개념을 screen 필드로 등재 (개념만, 항목은 on-demand 주소).
+
+    lineitem 수천 행 평탄화 대신 개념당 1행만 등재한다. 실제 항목은 spec 에서 ``note.<concept>@<항목명>``
+    주소로 지정하며 ``scan('note', concept)`` 로 항목을 확인한다. 값은 종목별 최신 valueNum.
+    """
+    from dartlab.scan.builders.kr.notes import SCAN_NOTE_CONCEPTS
+
+    rows: list[dict[str, str]] = []
+    for bare, _ntKey, label in SCAN_NOTE_CONCEPTS:
+        row = _row(
+            f"note.{bare}",
+            f"{label}(주석)",
+            "note",
+            "number",
+            "원",
+            _NUMERIC_OPS,
+            "prebuild",
+            f"주석 lineitem 횡단. 항목 지정 필수: note.{bare}@<항목명>. scan('note', '{bare}') 로 항목 확인.",
+        )
+        row["example"] = f'{{"field": "note.{bare}@<항목명>", "op": ">", "value": 0}}'
+        rows.append(row)
     return rows
 
 

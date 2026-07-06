@@ -14,6 +14,7 @@ from typing import Any
 import polars as pl
 
 from dartlab.scan.builders.kr.report.fieldCatalog import _KRX_FIELDS as _KRX_FIELDS
+from dartlab.scan.builders.kr.report.fieldCatalog import _NUMERIC_OPS as _NUMERIC_OPS
 from dartlab.scan.builders.kr.report.fieldCatalog import _catalog as _catalog
 
 
@@ -205,6 +206,11 @@ def executeScreenSpec(spec: dict[str, Any]) -> pl.DataFrame:
     if limit <= 0:
         raise ValueError("limit 은 1 이상이어야 합니다.")
 
+    # 파생 필드(spec.define) 를 위상순으로 계산 후 spec 사본에 stash. where/select/sort 가 @name 참조.
+    derivedValues, derivedUnits = _computeDerived(spec)
+    if derivedValues:
+        spec = {**spec, "_derivedValues": derivedValues, "_derivedUnits": derivedUnits}
+
     frames: list[pl.DataFrame] = []
     for cond in where:
         frames.append(_conditionFrame(cond, spec))
@@ -276,7 +282,7 @@ def _ensureStrList(value: Any, *, key: str) -> list[str]:
 
 def _conditionFrame(cond: dict[str, Any], spec: dict[str, Any]) -> pl.DataFrame:
     field = _normalizeField(str(cond.get("field", "")))
-    meta = _fieldMeta(field)
+    meta = _fieldMeta(field, spec)
     if meta["kind"] == "context":
         raise ValueError(
             f"{field!r} 는 시장 컨텍스트 필드라 종목 필터 조건으로 사용할 수 없습니다. select 에 넣으세요."
@@ -306,18 +312,47 @@ def _normalizeField(field: str) -> str:
     return aliases.get(f, f)
 
 
-def _fieldMeta(field: str) -> dict[str, str]:
+def _fieldMeta(field: str, spec: dict[str, Any] | None = None) -> dict[str, str]:
+    if field.startswith("@"):
+        name = field[1:]
+        units = (spec or {}).get("_derivedUnits") or {}
+        if name not in units:
+            raise ValueError(f"미정의 파생 필드 {field!r}. spec.define 에 선언하세요.")
+        return {
+            "field": field,
+            "label": field,
+            "source": "derived",
+            "kind": "number",
+            "unit": units[name],
+            "operatorSet": _NUMERIC_OPS,
+            "coverage": "derived",
+            "example": "",
+            "notes": "spec.define 파생 필드",
+        }
     catalog = _catalog()
-    hit = catalog.filter(pl.col("field") == field)
+    # note.<concept>@<항목명> 은 개념(note.<concept>) 메타로 해소 (항목은 값 로더가 처리).
+    lookup = field.split("@", 1)[0] if field.startswith("note.") and "@" in field else field
+    hit = catalog.filter(pl.col("field") == lookup)
     if hit.is_empty():
         examples = ", ".join(catalog["field"].head(8).to_list())
         raise ValueError(f"알 수 없는 scan field: {field!r}. dartlab.scan('fields') 로 확인하세요. 예: {examples}")
-    return hit.row(0, named=True)
+    meta = dict(hit.row(0, named=True))
+    meta["field"] = field
+    return meta
 
 
 def _loadFieldValues(field: str, spec: dict[str, Any]) -> pl.DataFrame:
     field = _normalizeField(field)
-    _fieldMeta(field)
+    if field.startswith("@"):
+        values = (spec or {}).get("_derivedValues") or {}
+        name = field[1:]
+        if name not in values:
+            raise ValueError(f"미해소 파생 필드 {field!r} (spec.define 확인).")
+        return values[name]
+    if field.startswith("note."):
+        _fieldMeta(field, spec)
+        return _loadNote(field)
+    _fieldMeta(field, spec)
     if field.startswith("finance.account."):
         return _loadFinanceAccount(field)
     if field.startswith("finance.ratio."):
@@ -648,6 +683,157 @@ def _finalizeKrxIndexScalar(raw: pl.DataFrame, name: str, spec: dict[str, Any]) 
     if df.is_empty() or name not in df.columns:
         return None
     return df[name][-1]
+
+
+# ── define: 폐쇄 vocabulary 파생 필드 AST (문자열 eval 금지, 단위 전파) ──
+
+
+def _defineRefs(node: dict[str, Any]) -> list[str]:
+    """define 노드가 참조하는 다른 파생 이름(@) 목록."""
+    refs: list[str] = []
+    for key in ("left", "right", "field"):
+        v = node.get(key)
+        if isinstance(v, str) and v.startswith("@"):
+            refs.append(v[1:])
+    return refs
+
+
+def _topoSortDefines(defines: dict[str, Any]) -> list[str]:
+    """define 위상정렬. 순환·미정의 참조는 즉시 ValueError."""
+    order: list[str] = []
+    visiting: set[str] = set()
+    visited: set[str] = set()
+
+    def visit(n: str) -> None:
+        """DFS 방문. 순환·미정의 검출 후 후위순으로 order 에 추가."""
+        if n in visited:
+            return
+        if n in visiting:
+            raise ValueError(f"define 순환 참조: @{n}")
+        if n not in defines:
+            raise ValueError(f"미정의 define 참조: @{n}")
+        node = defines[n]
+        if not isinstance(node, dict):
+            raise ValueError(f"define @{n} 는 dict 노드여야 합니다.")
+        visiting.add(n)
+        for dep in _defineRefs(node):
+            visit(dep)
+        visiting.discard(n)
+        visited.add(n)
+        order.append(n)
+
+    for n in defines:
+        visit(n)
+    return order
+
+
+def _deriveUnit(op: str, lu: str, ru: str, name: str) -> str:
+    """이항 연산 단위 대수. add/sub 동일단위 강제, div 동일단위는 배(무차원)."""
+    if op in ("add", "sub"):
+        if lu != ru:
+            raise ValueError(f"@{name}: {op} 단위 불일치 ({lu} vs {ru}). 동일 단위만 가감 가능.")
+        return lu
+    if op == "mul":
+        if ru in ("배", "무차원"):
+            return lu
+        if lu in ("배", "무차원"):
+            return ru
+        return f"{lu}·{ru}"
+    # div
+    if lu == ru:
+        return "배"
+    return f"{lu}/{ru}"
+
+
+def _operandFrame(
+    ref: Any, spec: dict[str, Any], values: dict[str, pl.DataFrame], units: dict[str, str]
+) -> tuple[pl.DataFrame, str]:
+    """define operand(필드 키 또는 @참조)을 ([stockCode, _v] 프레임, 단위)로. 리터럴 미지원."""
+    if isinstance(ref, bool) or isinstance(ref, (int, float)):
+        raise ValueError("define operand 는 필드 키 또는 @참조만 (리터럴 미지원, 임계값은 where.value 로).")
+    ref = str(ref)
+    if ref.startswith("@"):
+        nm = ref[1:]
+        if nm not in values:
+            raise ValueError(f"미해소 @참조: {ref}")
+        return values[nm].rename({f"@{nm}": "_v"}), units[nm]
+    meta = _fieldMeta(ref, spec)
+    if meta["kind"] != "number":
+        raise ValueError(f"define operand {ref!r} 는 수치 필드가 아닙니다 (kind={meta['kind']}).")
+    vals = _loadFieldValues(ref, spec)
+    if "stockCode" not in vals.columns or ref not in vals.columns:
+        return pl.DataFrame({"stockCode": [], "_v": []}), meta["unit"]
+    return vals.select("stockCode", _numericExpr(ref).alias("_v")), meta["unit"]
+
+
+def _evalDefineNode(
+    name: str,
+    node: dict[str, Any],
+    spec: dict[str, Any],
+    values: dict[str, pl.DataFrame],
+    units: dict[str, str],
+) -> tuple[pl.DataFrame, str]:
+    """단일 define 노드를 평가해 ([stockCode, @name] 프레임, 단위)로."""
+    fieldKey = f"@{name}"
+    if "op" not in node and "field" in node:
+        df, unit = _operandFrame(node["field"], spec, values, units)
+        return df.rename({"_v": fieldKey}), unit
+    op = node.get("op")
+    if op not in ("add", "sub", "mul", "div"):
+        raise ValueError(f"@{name}: 지원하지 않는 define op {op!r} (add/sub/mul/div 또는 field).")
+    if "left" not in node or "right" not in node:
+        raise ValueError(f"@{name}: op 노드는 left/right 가 필요합니다.")
+    ldf, lu = _operandFrame(node["left"], spec, values, units)
+    rdf, ru = _operandFrame(node["right"], spec, values, units)
+    unit = _deriveUnit(op, lu, ru, name)
+    joined = ldf.join(rdf, on="stockCode", how="inner", suffix="_r")
+    lcol, rcol = pl.col("_v"), pl.col("_v_r")
+    if op == "add":
+        expr = lcol + rcol
+    elif op == "sub":
+        expr = lcol - rcol
+    elif op == "mul":
+        expr = lcol * rcol
+    else:  # div (0 나눗셈은 null)
+        expr = pl.when(rcol == 0).then(None).otherwise(lcol / rcol)
+    return joined.select("stockCode", expr.alias(fieldKey)), unit
+
+
+def _computeDerived(spec: dict[str, Any]) -> tuple[dict[str, pl.DataFrame], dict[str, str]]:
+    """spec.define 전체를 위상순으로 평가. ({name: [stockCode, @name]}, {name: unit}) 반환."""
+    defines = spec.get("define")
+    if not defines:
+        return {}, {}
+    if not isinstance(defines, dict):
+        raise ValueError("spec.define 은 {name: node} dict 여야 합니다.")
+    order = _topoSortDefines(defines)
+    values: dict[str, pl.DataFrame] = {}
+    units: dict[str, str] = {}
+    for name in order:
+        df, unit = _evalDefineNode(name, defines[name], spec, values, units)
+        values[name] = df
+        units[name] = unit
+    return values, units
+
+
+def _loadNote(field: str) -> pl.DataFrame:
+    """note.<concept>@<항목명> 을 종목별 최신 valueNum 으로. 항목 미지정 시 ValueError."""
+    from dartlab.scan.note import scanNote
+
+    rest = field.split(".", 1)[1]
+    concept, sep, account = rest.partition("@")
+    if not sep or not account:
+        raise ValueError(
+            f"note 필드는 항목 지정이 필요합니다: note.{concept}@<항목명> (scan('note', '{concept}') 로 항목 확인)."
+        )
+    df = scanNote(concept)
+    if df is None or df.is_empty() or "valueNum" not in df.columns or "account" not in df.columns:
+        return pl.DataFrame({"stockCode": [], field: []})
+    df = df.filter(pl.col("account") == account)
+    if df.is_empty():
+        return pl.DataFrame({"stockCode": [], field: []})
+    df = df.sort(["stockCode", "period"]).group_by("stockCode").tail(1)
+    return df.select("stockCode", pl.col("valueNum").alias(field))
 
 
 __all__ = ["executeScreenSpec", "scanFields"]
