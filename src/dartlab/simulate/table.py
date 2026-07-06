@@ -412,6 +412,26 @@ def industryMap(baseDir: Path | None = None) -> pl.DataFrame:
     return df.rename({"종목코드": "code", "업종": "industry"}).drop_nulls().unique("code", keep="first")
 
 
+def liquidUniverse(asOf: str, *, mktcapQuantile: float = 0.3, baseDir: Path | None = None) -> set[str]:
+    """유동 유니버스: asOf 최근일 시총 분위 컷 통과 종목 집합 (정밀도 부채: 극단베타 잡주 쏠림 완화).
+
+    Args:
+        asOf: 기준일 'YYYYMMDD'. mktcapQuantile: 하위 컷 분위 (기본 0.3 = 하위 30% 제외).
+        baseDir: 데이터 SSOT 루트 override.
+
+    Returns:
+        시총 >= 분위 컷 종목코드 집합. 시나리오 결정(latticeDecision·monteCarloDecision) 입력
+        baseScores 를 이 집합으로 필터하면 top 픽의 잡주 쏠림이 완화된다 (실측: top15 시총중앙
+        691억 -> 2,233억). 데이터 부재 시 빈 집합 (필터 미적용은 소비처 판단).
+    """
+    caps = marketCap(baseDir).filter(pl.col("date") <= asOf)
+    if caps.height == 0:
+        return set()
+    day = caps.filter(pl.col("date") == caps["date"].max())
+    cut = day["mktcap"].quantile(mktcapQuantile)
+    return set(day.filter(pl.col("mktcap") >= cut)["code"].to_list())
+
+
 def industryMomentum(asOf: str, *, baseDir: Path | None = None, window: int = 20) -> pl.DataFrame:
     """업종별 피어 모멘텀 → (industry, momentum, breadth, nCodes). 산업 시나리오 판독 baseline (벌크).
 
