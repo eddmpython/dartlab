@@ -521,6 +521,31 @@ def testEconomyReadingVotesFromMacro(monkeypatch):
     assert cascade.economyReading(d[-1])["score"] == 0.0  # 유가↓·원화약세·금리↑ = 수축
 
 
+def testRunweekLatticeOverlayHelper(monkeypatch):
+    from datetime import date, timedelta
+
+    from dartlab.simulate import runweek, table
+
+    d = [(date(2026, 1, 1) + timedelta(days=i)).strftime("%Y%m%d") for i in range(40)]
+    oil = [100.0 + 3.0 * np.sin(i / 3) for i in range(40)]
+    macro = pl.DataFrame({"date": d, "rate": [3.0] * 40, "fx": [1300.0] * 40, "oil": oil})
+    betas = pl.DataFrame(
+        {
+            "code": [f"c{i}" for i in range(12)],
+            "rateBeta": [None] * 12,
+            "fxBeta": [0.0] * 12,
+            "oilBeta": [0.0] * 11 + [50.0],  # c11 = 매크로 꼬리 최악 (취약)
+        }
+    )
+    monkeypatch.setattr(table, "macroDaily", lambda baseDir=None: macro)
+    monkeypatch.setattr(table, "macroBetaByCodeWide", lambda asOf, baseDir=None: betas)
+    weekEnd = pl.DataFrame({"week": [202601], "date": [d[-1]]})
+    cand = pl.DataFrame({"code": [f"c{i}" for i in range(12)], "consensus": [float(12 - i) for i in range(12)]})
+    top, dropped = runweek._latticeOverlay(cand, weekEnd, 202601, None, topK=10)
+    assert top.height == 10 and dropped is not None
+    assert "c11" in dropped  # 검증된 오버레이(14 §9): 매크로 꼬리 최악 종목이 top10 에서 제거
+
+
 def testIndustryReadingFromMomentum():
     from dartlab.simulate import cascade
 

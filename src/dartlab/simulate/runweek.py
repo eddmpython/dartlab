@@ -123,6 +123,7 @@ def buildBlock(
     combinedWeights: dict[str, float] | None = None,
     certifySummary: dict | None = None,
     aciCoverage: float | None = None,
+    latticeDropped: list[str] | None = None,
 ) -> dict:
     """주간 블록 조립 + 해시 (06 §7b 공개 봉인). 판독은 요약(표면별 수·방향)만 담아 가볍게."""
     surfSummary = (
@@ -156,6 +157,7 @@ def buildBlock(
         "combinedWeights": combinedWeights or {},
         "certifySummary": certifySummary,
         "aciCoverage": aciCoverage,
+        "latticeDropped": latticeDropped,  # 격자 오버레이 제거 종목 (None = 미적용 명시)
         "prevHash": prevHash,
         "disclaimer": _board.DISCLAIMER,
     }
@@ -180,6 +182,35 @@ def _asCode(df: pl.DataFrame) -> pl.DataFrame:
     if "code" not in df.columns and "stockCode" in df.columns:
         return df.rename({"stockCode": "code"})
     return df
+
+
+def _latticeOverlay(
+    candidates: pl.DataFrame, weekEnd: pl.DataFrame, week: int, dataDir: Path | None, *, topK: int = 10
+) -> tuple[pl.DataFrame, list[str]]:
+    """격자 리스크 오버레이 (14 §9 역사검증 통과 규칙): 후보에서 매크로 꼬리 최악 제거 → (top-K, 제거목록).
+
+    hardenedTopK = base 후보 중 respP5(격자 확률가중 하방 꼬리) 최악을 쳐낸다. 역사 실측: 평균
+    +1.45% -> +1.82%, 주간 p5 -7.78% -> -4.68% (알파 틸트 아니라 "덜 죽는 결정"). 베타·격자 실패
+    (macro 부재 등)는 오버레이 생략 = 후보 상위 topK 그대로 (fail-open 아님: 제거목록 None 반환으로
+    미적용 명시).
+    """
+    from dartlab.simulate import lattice as _lt
+    from dartlab.simulate import scenarioSim as _ss
+    from dartlab.simulate import table as _table
+
+    asOfS = weekEnd.filter(pl.col("week") == week)["date"]
+    if asOfS.len() == 0:
+        return candidates.head(topK), None
+    macro = _table.macroDaily(dataDir)
+    betas = _table.macroBetaByCodeWide(asOfS[0], baseDir=dataDir)
+    if macro.height == 0 or betas.height == 0:
+        return candidates.head(topK), None
+    cov = _ss.factorCovariance(macro)
+    lat = _lt.growLattice(cov, steps=8, stepDays=5, beamWidth=1500)
+    dec = _lt.latticeDecision(candidates, _lt.winsorizeBetas(betas), lat, topK=topK)
+    picks = _lt.hardenedTopK(candidates, dec, topK=topK, candidateExtra=max(candidates.height - topK, 0))
+    dropped = [c for c in candidates["code"].to_list() if c not in picks]
+    return candidates.filter(pl.col("code").is_in(picks)), dropped
 
 
 def runWeek(
@@ -269,11 +300,17 @@ def runWeek(
             costFloorMedian = float(cfWk["costFloor"].median())
             edge = _edgeByCode(weekReadings, certifiedNet)
             netPos = _costs.netPositive(edge, cfWk, avoidCodes=redFlag) if edge.height else set()
-    top10 = (
-        _board.applyGates(boardTop, redFlagCodes=redFlag, netPositiveCodes=netPos, n=10)
+    # top10 = 게이트 통과 후보 20 에서 격자 리스크 오버레이(14 §9 검증: 평균↑·주간 p5 꼬리 40%↓)로
+    # 매크로 꼬리 최악 10 제거. 라이브 KR 만 (US 는 macro 축 미배선, 주입 테스트는 스캔 생략).
+    candidates = (
+        _board.applyGates(boardTop, redFlagCodes=redFlag, netPositiveCodes=netPos, n=20)
         if boardTop.height
         else pl.DataFrame(schema={"code": pl.Utf8, "consensus": pl.Float64})
     )
+    latticeDropped: list[str] | None = None
+    top10 = candidates.head(10)
+    if not injected and market == "KR" and candidates.height > 10:
+        top10, latticeDropped = _latticeOverlay(candidates, weekEnd, week, dataDir, topK=10)
 
     regimeTag = None
     if not injected:  # 라이브 런만 레짐 분류 (시장 스캔)
@@ -304,6 +341,7 @@ def runWeek(
         regimeTag=regimeTag,
         combinedWeights=weights,
         certifySummary=certifySummary,
+        latticeDropped=latticeDropped,
     )
     (blockDir / f"block_{week}.json").write_text(json.dumps(block, ensure_ascii=False, indent=2), encoding="utf-8")
     return block
