@@ -192,3 +192,33 @@ def latticeDecision(
         },
         schema=schema,
     ).sort("topKProb", descending=True)
+
+
+def hardenedTopK(
+    baseScores: pl.DataFrame, decision: pl.DataFrame, *, topK: int = 15, candidateExtra: int = 10
+) -> list[str]:
+    """리스크 오버레이 결정규칙: base 상위 (topK+extra) 후보에서 매크로 꼬리(respP5) 최악 extra 개
+    제거 → 경화 top-K (역사 검증 산물, 14 §9).
+
+    역사 실측(2018~2026, 72표본 주 forward 8주): 매크로 틸트로 랭킹을 기울이면 유해(+0.47%·p5
+    -12.3%)하지만, 이 오버레이는 평균을 올리고(+1.45% -> +1.82%) 주간 p5 꼬리를 40% 얕게 한다
+    (-7.78% -> -4.68%). 격자의 정직 역할 = 방향 예측이 아니라 "덜 죽는 결정".
+
+    Args:
+        baseScores: (code, score|consensus) 기저 결정 (인증부호 합의 권장).
+        decision: latticeDecision 산출 (respP5 소비).
+        topK: 최종 종목 수. candidateExtra: 후보 여유분 = 제거 수.
+
+    Returns:
+        경화 top-K 종목코드 리스트 (base 점수순 후보 중 매크로 꼬리 얕은 순 유지). 결정론.
+
+    Guide:
+        - board 경화: hardenedTopK(baseScores, latticeDecision(base, betas, lat)).
+    """
+    cand = (
+        baseScores.select("code", base=_baseCol(baseScores))
+        .sort("base", descending=True)
+        .head(topK + candidateExtra)
+        .join(decision.select("code", "respP5"), on="code", how="left")
+    )
+    return cand.sort("respP5", descending=True, nulls_last=True).head(topK)["code"].to_list()

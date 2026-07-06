@@ -124,6 +124,18 @@ def testWinsorizeBetasClipsExtremes():
     assert w["rateBeta"].null_count() == 100  # 전결측 컬럼 불변 (0 대체 금지)
 
 
+def testHardenedTopKDropsMacroFragile():
+    # base 상위 3 후보 중 매크로 꼬리(respP5) 최악 1개 제거 → 경화 top2 (리스크 오버레이 규칙)
+    base = pl.DataFrame({"code": ["a", "b", "c", "d"], "score": [4.0, 3.0, 2.0, 1.0]})
+    dec = pl.DataFrame(
+        {"code": ["a", "b", "c", "d"], "respP5": [-0.9, -0.1, -0.2, -0.05]}  # a = 가장 취약
+    )
+    picks = lt.hardenedTopK(base, dec, topK=2, candidateExtra=1)
+    assert "a" not in picks  # base 1위여도 매크로 꼬리 최악이면 제거
+    assert set(picks) == {"b", "c"}  # 후보(top3) 중 꼬리 얕은 2개 유지
+    assert picks == lt.hardenedTopK(base, dec, topK=2, candidateExtra=1)  # 결정론
+
+
 def testLiquidUniverseFiltersSmallCaps(monkeypatch):
     from dartlab.simulate import table
 
