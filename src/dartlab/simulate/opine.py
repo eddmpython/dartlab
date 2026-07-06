@@ -17,24 +17,23 @@ import polars as pl
 
 # 연속 표면 극단 방향 임계 (상위 20% = 상방, 하위 20% = 하방, 중간 = 중립).
 _UP_Q, _DOWN_Q = 0.8, 0.2
-# 축별 {입력 컬럼: 표면 id}. table.priceWeekly·fundWeekly 컬럼 → 표면.
-_PRICE_COLS = {
-    "ret5": "price.ret5",
-    "mom20x5": "price.mom20x5",
-    "volShock": "price.volShock",
-    "high52": "price.high52",
-    "maxRet20": "price.maxRet20",
-}
-_FUND_COLS = {"ep": "fund.ep", "bm": "fund.bm"}
 
 
-def _continuousReadings(matrix: pl.DataFrame, colToSurface: dict[str, str]) -> pl.DataFrame:
-    """연속 표면 판독: 주간 랭크 → score, 극단 방향. → (code, week, surface, direction, score)."""
+def _numericCols(matrix: pl.DataFrame) -> list[str]:
+    """행렬의 수치 컬럼 전수 (code·week 제외) = 자동 표면 등재 축. 컬럼 추가 = 표면 추가 (수정 0)."""
+    return [c for c, dt in matrix.schema.items() if c not in ("code", "week") and dt.is_numeric()]
+
+
+def _continuousReadings(matrix: pl.DataFrame, axis: str) -> pl.DataFrame:
+    """연속 표면 판독: 수치 컬럼 자동 전수 등재 (surface = "<axis>.<col>", 손 매핑 0, 06 §3).
+
+    주간 랭크 → score, 극단 방향. → (code, week, surface, direction, score). 새 데이터 컬럼이
+    table/피드에 추가되면 그대로 표면이 되고 도태는 성적표·인증 깔때기가 한다 (자동흡수).
+    """
     out = []
-    for col, surface in colToSurface.items():
-        if col not in matrix.columns:
-            continue
-        r = matrix.select("code", "week", pl.col(col).alias("raw")).filter(pl.col("raw").is_finite())
+    for col in _numericCols(matrix):
+        surface = f"{axis}.{col}"
+        r = matrix.select("code", "week", pl.col(col).cast(pl.Float64).alias("raw")).filter(pl.col("raw").is_finite())
         r = r.with_columns(score=(pl.col("raw").rank() / pl.len()).over("week"))
         r = r.with_columns(
             direction=pl.when(pl.col("score") >= _UP_Q)
@@ -83,24 +82,29 @@ def opine(
     eventMatrix: pl.DataFrame,
     *,
     directionByType: dict[str, int] | None = None,
+    extraMatrices: dict[str, pl.DataFrame] | None = None,
 ) -> pl.DataFrame:
-    """3축 입력 행렬 → 통합 판독 행렬 (code, week, surface, direction, score, abstainReason).
+    """입력 행렬 전수 → 통합 판독 행렬 (code, week, surface, direction, score, abstainReason).
 
     Args:
         priceMatrix: table.priceWeekly 산출 (code, week, ret5, ...).
         fundMatrix: table.fundWeekly 산출 (code, week, ep, bm).
         eventMatrix: table.eventWeekly 산출 (code, week, reportType).
         directionByType: 이벤트 방향화 사전 (없으면 이벤트 표면 무발행 = bootstrap 전).
+        extraMatrices: {axis: (code, week, 수치컬럼...)} 추가 피드 행렬 (feeds 레지스트리 산출).
+            수치 컬럼마다 "<axis>.<col>" 표면 자동 등재 = 새 엔진 데이터 자동흡수.
 
     Returns:
-        통합 판독 행렬. 표면은 자동 등재분 전체, 방향은 06 §2 규칙.
+        통합 판독 행렬. 표면은 컬럼 자동 전수 등재 (손 매핑 0), 방향은 06 §2 규칙, 도태는 성적표.
     """
     parts = [
-        _continuousReadings(priceMatrix, _PRICE_COLS),
-        _continuousReadings(fundMatrix, _FUND_COLS),
+        _continuousReadings(priceMatrix, "price"),
+        _continuousReadings(fundMatrix, "fund"),
         _eventReadings(eventMatrix, directionByType or {}),
         _leverReadings(eventMatrix, directionByType or {}),
     ]
+    for axis, m in (extraMatrices or {}).items():
+        parts.append(_continuousReadings(m, axis))
     return pl.concat([p for p in parts if p.height]) if any(p.height for p in parts) else _empty()
 
 

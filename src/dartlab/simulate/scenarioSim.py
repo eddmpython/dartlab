@@ -18,19 +18,20 @@ from __future__ import annotations
 import numpy as np
 import polars as pl
 
-# 팩터 순서 고정 (공분산 행/열 정합). 유가·환율 = 수익률, 금리 = %p 차분.
-FACTORS = ("oil", "fx", "rate")
-_FACTOR_BETA = {"oil": "oilBeta", "fx": "fxBeta", "rate": "rateBeta"}
+from dartlab.simulate.factors import factorBetaMap, factorNames
+from dartlab.simulate.factors import macroChange as _factorChange
+
+
+def _allFactors() -> tuple[str, ...]:
+    """팩터 축 (factors 레지스트리 SSOT, 호출 시점 순회 = 등록 팩터 자동흡수)."""
+    return tuple(factorNames())
 
 
 def factorChanges(macroDaily: pl.DataFrame) -> pl.DataFrame:
     """매크로 일별 → 팩터 변화 (date, d_oil, d_fx, d_rate). 유가·환율 수익률, 금리 차분."""
     m = macroDaily.sort("date")
-    present = [f for f in FACTORS if f in m.columns]
-    exprs = [
-        ((pl.col(f) - pl.col(f).shift(1)) if f == "rate" else (pl.col(f) / pl.col(f).shift(1) - 1)).alias(f"d_{f}")
-        for f in present
-    ]
+    present = [f for f in _allFactors() if f in m.columns]
+    exprs = [_factorChange(f).alias(f"d_{f}") for f in present]
     return m.with_columns(exprs).select("date", *[f"d_{f}" for f in present])
 
 
@@ -93,7 +94,7 @@ def _alignMatrices(baseScores: pl.DataFrame, betaByCode: pl.DataFrame, factors: 
     j = baseScores.select("code", base=pl.col(baseCol).cast(pl.Float64)).join(betaByCode, on="code", how="inner")
     codes = j["code"].to_list()
     baseArr = j["base"].to_numpy()
-    betaMat = np.column_stack([j[_FACTOR_BETA[f]].fill_null(0.0).to_numpy() for f in factors])
+    betaMat = np.column_stack([j[factorBetaMap()[f]].fill_null(0.0).to_numpy() for f in factors])
     return codes, baseArr, betaMat
 
 
@@ -174,14 +175,14 @@ def historicalStressShocks(macroDaily: pl.DataFrame, *, horizon: int = 20, k: in
         - 역사 스트레스 테스트: historicalStressShocks(macroDaily) -> 실제 위기 구간 시나리오 dict.
     """
     m = macroDaily.sort("date")
-    for f in FACTORS:
+    for f in _allFactors():
         if f in m.columns:
             chg = (pl.col(f) - pl.col(f).shift(horizon)) if f == "rate" else (pl.col(f) / pl.col(f).shift(horizon) - 1)
             m = m.with_columns(chg.alias(f"h_{f}"))
-    hcols = [f"h_{f}" for f in FACTORS if f"h_{f}" in m.columns]
+    hcols = [f"h_{f}" for f in _allFactors() if f"h_{f}" in m.columns]
     m = m.select("date", *hcols).drop_nulls()
     out: dict[str, dict] = {}
-    for f in FACTORS:
+    for f in _allFactors():
         col = f"h_{f}"
         if col not in m.columns:
             continue
@@ -189,5 +190,5 @@ def historicalStressShocks(macroDaily: pl.DataFrame, *, horizon: int = 20, k: in
         for label, rows in (("Crash", srt.head(k)), ("Spike", srt.tail(k))):
             row = rows.tail(1) if label == "Crash" else rows.head(1)  # 가장 극단 1건
             if row.height:
-                out[f"{f}{label}"] = {ff: float(row[f"h_{ff}"][0]) for ff in FACTORS if f"h_{ff}" in m.columns}
+                out[f"{f}{label}"] = {ff: float(row[f"h_{ff}"][0]) for ff in _allFactors() if f"h_{ff}" in m.columns}
     return out

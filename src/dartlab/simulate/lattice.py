@@ -22,8 +22,7 @@ import itertools
 import numpy as np
 import polars as pl
 
-# 팩터 → 노출베타 컬럼 (macroBetaByCodeWide 스키마).
-_FACTOR_BETA = {"oil": "oilBeta", "fx": "fxBeta", "rate": "rateBeta"}
+from dartlab.simulate.factors import baseScoreExpr, factorBetaMap
 
 
 def _moveKernel(cov: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -100,7 +99,7 @@ def winsorizeBetas(betaByCode: pl.DataFrame, *, q: float = 0.01) -> pl.DataFrame
         같은 스키마, 베타 컬럼만 [q, 1-q] 분위로 클립. 전결측 컬럼은 그대로 (0 대체 금지).
     """
     out = betaByCode
-    for col in _FACTOR_BETA.values():
+    for col in factorBetaMap().values():
         if col in out.columns and out[col].null_count() < out.height:
             lo, hi = out[col].quantile(q), out[col].quantile(1 - q)
             out = out.with_columns(pl.col(col).clip(lo, hi).alias(col))
@@ -108,11 +107,8 @@ def winsorizeBetas(betaByCode: pl.DataFrame, *, q: float = 0.01) -> pl.DataFrame
 
 
 def _baseCol(baseScores: pl.DataFrame) -> pl.Expr:
-    """baseScores 의 점수 컬럼 자동 인식 (baseScore|score|consensus)."""
-    for cand in ("baseScore", "score", "consensus"):
-        if cand in baseScores.columns:
-            return pl.col(cand).cast(pl.Float64)
-    raise ValueError("baseScores 에 score/consensus/baseScore 컬럼 필요")
+    """baseScores 점수 컬럼 인식 (factors.baseScoreExpr SSOT 위임)."""
+    return baseScoreExpr(baseScores)
 
 
 def latticeDecision(
@@ -154,7 +150,7 @@ def latticeDecision(
     if not codes:
         return pl.DataFrame(schema=schema)
     baseArr = j["base"].to_numpy()
-    betaMat = np.column_stack([j[_FACTOR_BETA[f]].fill_null(0.0).to_numpy() for f in factors])
+    betaMat = np.column_stack([j[factorBetaMap()[f]].fill_null(0.0).to_numpy() for f in factors])
     probs = lattice["probs"] / lattice["probs"].sum()  # 가지치기 잔여 질량 조건부 정규화
     resp = betaMat @ lattice["shocks"].T  # (nCodes x nStates)
     baseZ = (baseArr - baseArr.mean()) / (baseArr.std() + 1e-12)

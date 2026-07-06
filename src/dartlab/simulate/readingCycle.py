@@ -75,7 +75,14 @@ def issueReadings(
     if directionByType is None:
         lab = labels if labels is not None else _sc.weeklyLabels(weekEnd, marketTable(market).dailyPrices(dataDir))
         directionByType = _sc.deriveEventDirections(eventM, lab)
-    readings = _opine.opine(priceM, fundM, eventM, directionByType=directionByType)
+    # 작업대 확장축 (feeds 레지스트리): 등록 피드 무조건 소비 (기본 빈 레지스트리 = no-op, 주입
+    # 테스트 격리 유지). 등록 1줄 = 라이브 runWeek 까지 표면 자동 등재 (자동흡수).
+    from dartlab.simulate import feeds as _feeds
+
+    extras, _feedErrors = _feeds.extraFeedMatrices(
+        {"weekMap": weekMap, "weekEnd": weekEnd, "dataDir": dataDir, "market": market}
+    )
+    readings = _opine.opine(priceM, fundM, eventM, directionByType=directionByType, extraMatrices=extras or None)
     if readings.height == 0:
         return 0
     if week is None:
@@ -85,7 +92,8 @@ def issueReadings(
     readings = readings.filter(pl.col("week") == week)
     if readings.height == 0:
         return 0
-    readings = _fillAbstain(readings, priceM, week, directionByType)  # 완전성 강제 (silent 누락 0)
+    extraSurfaces = [f"{axis}.{c}" for axis, m in extras.items() for c in _opine._numericCols(m)]
+    readings = _fillAbstain(readings, priceM, week, directionByType, extraSurfaces)  # 완전성 강제 (silent 누락 0)
     asOf = weekEnd.filter(pl.col("week") == week)["date"]
     asOfStr = asOf[0] if asOf.len() else str(week)
     # 표면 provenance → refs (근거 참조 자연 기록, 재계산 계약).
@@ -101,13 +109,18 @@ def issueReadings(
 
 
 def _fillAbstain(
-    readings: pl.DataFrame, priceM: pl.DataFrame, week: int, directionByType: dict[str, int] | None
+    readings: pl.DataFrame,
+    priceM: pl.DataFrame,
+    week: int,
+    directionByType: dict[str, int] | None,
+    extraSurfaces: list[str] | None = None,
 ) -> pl.DataFrame:
-    """연속 표면(price·fund)에서 거래 유니버스 중 판독 없는 종목을 기권행으로 발행 (완전성 강제).
+    """연속 표면(price·fund·피드 확장축)에서 거래 유니버스 중 판독 없는 종목을 기권행으로 발행.
 
     opine 이 결손 code-week 를 드롭한 것을 기권(abstainReason="noData")으로 되살린다: 모든 회사가
     매주 표면마다 판독/중립/기권 셋 중 하나로 기록된다 (silent 누락 0, 0 대체 금지). 이벤트 표면은
     희소성 설계라 부재=중립(미발화)이므로 기권 대상 아님. 기권행 = direction 0 + score null.
+    feeds 확장축 표면(extraSurfaces)도 동일 완전성 강제 (자동흡수 축도 규율 상속).
     """
     # 거래 유니버스 = 그 주 가격 데이터 종목. 가격 유니버스가 없으면 완전성 강제 대상 미정 → 무발행.
     if not (priceM.height and "week" in priceM.columns):
@@ -117,7 +130,7 @@ def _fillAbstain(
         return readings
     contSurfaces = [
         s.surface for s in _surfaces.enumerateSurfaces(directionByType) if s.surface.startswith(("price.", "fund."))
-    ]
+    ] + (extraSurfaces or [])
     parts = [readings]
     for surf in contSurfaces:
         have = readings.filter(pl.col("surface") == surf).select("code").unique()

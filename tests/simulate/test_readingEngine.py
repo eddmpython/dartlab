@@ -441,8 +441,8 @@ def testIssueReadingsPicksLatestPriceWeek(tmp_path, monkeypatch):
     weekMap = pl.DataFrame(schema={"date": pl.Utf8, "week": pl.Int64})
     real = readingCycle._opine.opine
 
-    def fakeOpine(p, f, e, *, directionByType=None):
-        r = real(p, f, e, directionByType=directionByType)
+    def fakeOpine(p, f, e, *, directionByType=None, extraMatrices=None):
+        r = real(p, f, e, directionByType=directionByType, extraMatrices=extraMatrices)
         future = pl.DataFrame(
             {
                 "code": ["a"],
@@ -519,6 +519,58 @@ def testEconomyReadingVotesFromMacro(monkeypatch):
     )
     monkeypatch.setattr(table, "macroDaily", lambda dataDir=None: down)
     assert cascade.economyReading(d[-1])["score"] == 0.0  # 유가↓·원화약세·금리↑ = 수축
+
+
+def testProfileAllBulkWide(monkeypatch):
+    # 전종목 프로파일 한 방: 벌크 스캔 5회 조립 (per-company 루프 0) + 결측 null (0 대체 금지)
+    from dartlab.simulate import profile
+
+    t = profile._table
+    monkeypatch.setattr(
+        t,
+        "marketCap",
+        lambda d=None: pl.DataFrame({"date": ["20260110"] * 2, "code": ["a", "b"], "mktcap": [100.0, 400.0]}),
+    )
+    monkeypatch.setattr(t, "industryMap", lambda d=None: pl.DataFrame({"code": ["a"], "industry": ["반도체 제조업"]}))
+    monkeypatch.setattr(
+        t,
+        "weekCalendar",
+        lambda d=None: (
+            pl.DataFrame({"date": ["20260110"], "week": [202602]}),
+            pl.DataFrame({"week": [202602], "date": ["20260110"]}),
+        ),
+    )
+    monkeypatch.setattr(
+        t,
+        "eventWeekly",
+        lambda w, d=None: pl.DataFrame(
+            {"code": ["a", "a"], "week": [202601, 202602], "reportType": ["유상증자결정", "최대주주변경"]}
+        ),
+    )
+    monkeypatch.setattr(
+        t,
+        "scanFinanceGrid",
+        lambda d=None: pl.DataFrame(
+            {"code": ["a"], "period": ["2025Q4"], "rceptDate": ["20251231"], "account": ["equity"], "amount": [1.0]}
+        ),
+    )
+    monkeypatch.setattr(
+        t,
+        "macroBetaByCodeWide",
+        lambda asOf, baseDir=None: pl.DataFrame({"code": ["a"], "rateBeta": [None], "fxBeta": [1.0], "oilBeta": [0.5]}),
+    )
+    monkeypatch.setattr(
+        t, "counterpartyCountsBulk", lambda asOf, d=None: pl.DataFrame({"code": ["a"], "counterpartyCount": [3]})
+    )
+    pa = profile.profileAll("20260112")
+    assert pa.height == 2  # 유니버스 = 시총 보유 전종목
+    row = {r["code"]: r for r in pa.iter_rows(named=True)}
+    assert row["a"]["financingCount"] == 1  # 유상증자 = 자금조달 형질
+    assert row["a"]["governanceCount"] == 1 and row["a"]["relationshipCount"] == 1  # 최대주주변경 = 둘 다
+    assert row["a"]["fundStalenessDays"] == 12  # 20251231 -> 20260112
+    assert row["a"]["fxBeta"] == 1.0 and row["a"]["counterpartyCount"] == 3
+    assert row["b"]["industry"] is None and row["b"]["financingCount"] is None  # 결측 = null (0 대체 금지)
+    assert row["b"]["sizePctile"] == 1.0  # 시총 최대 = 분위 1.0
 
 
 def testRunweekLatticeOverlayHelper(monkeypatch):

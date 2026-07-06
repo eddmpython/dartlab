@@ -242,45 +242,46 @@ def dailyHighLow(baseDir: Path | None = None) -> pl.DataFrame:
     )
 
 
-# 거시 팩터 (노출 벡터 축5 macroBeta 입력): 금리·환율·유가. ecos/fred SSOT parquet 직독.
-_MACRO_FACTORS: tuple[tuple[str, str, str], ...] = (
-    ("rate", "ecos", "BASE_RATE"),  # 한국 기준금리 (일별, %)
-    ("fx", "ecos", "USDKRW"),  # 원/달러 (일별)
-    ("oil", "fred", "DCOILWTICO"),  # WTI 유가 (일별, 글로벌)
-)
 # 지분/대주주 관계 공시 (제출인 flr_nm = 상대방 실명). 축2 counterparty 엣지 원천.
 _RELATIONSHIP_REPORT_PAT = "대량보유|임원ㆍ주요주주|최대주주변경"
 
 
 def macroDaily(baseDir: Path | None = None) -> pl.DataFrame:
-    """거시 팩터 일별 → (date 'YYYYMMDD', rate, fx, oil). 노출 벡터(profile 축5) macroBeta 입력.
+    """거시 팩터 일별 → (date 'YYYYMMDD', <factor>...). 노출 벡터(profile 축5) macroBeta 입력.
 
-    ecos/fred observations SSOT parquet 직독 (床-layer, gather 수집물 소비 = 엔진 로직 재구현 0).
-    Date -> 'YYYYMMDD' 정규화해 거래일(gov/prices)과 정렬 가능. 팩터별 결측은 소비처 forward-fill.
+    **팩터 축 = factors.macroFactors() 레지스트리 전수** (하드코딩 0): 팩터 등록 1행이면 이 패널·
+    베타·격자·시나리오가 자동흡수. ecos/fred observations SSOT parquet 직독 (床-layer, 엔진 로직
+    재구현 0). Date -> 'YYYYMMDD' 정규화. 소스/시리즈 부재 팩터는 열 자체 생략 (0 대체 금지).
     """
+    from dartlab.simulate import factors as _factors
+
     base = dataDir(baseDir) / "macro"
     out: pl.DataFrame | None = None
-    for factor, src, sid in _MACRO_FACTORS:
-        p = base / src / "observations.parquet"
+    for mf in _factors.macroFactors():
+        p = base / mf.source / "observations.parquet"
         if not p.exists():
             continue
         o = (
             pl.scan_parquet(p)
-            .filter(pl.col("seriesId") == sid)
-            .select(pl.col("date").dt.strftime("%Y%m%d").alias("date"), pl.col("value").cast(pl.Float64).alias(factor))
+            .filter(pl.col("seriesId") == mf.seriesId)
+            .select(
+                pl.col("date").dt.strftime("%Y%m%d").alias("date"), pl.col("value").cast(pl.Float64).alias(mf.factor)
+            )
             .collect()
         )
+        if o.height == 0:
+            continue
         out = o if out is None else out.join(o, on="date", how="full", coalesce=True)
     if out is None:
-        return pl.DataFrame(schema={"date": pl.Utf8, "rate": pl.Float64, "fx": pl.Float64, "oil": pl.Float64})
+        return pl.DataFrame(schema={"date": pl.Utf8})
     return out.sort("date")
 
 
 def _macroChange(factor: str) -> pl.Expr:
-    """팩터 일별 변화: 금리는 수준 차분(%p), 환율·유가는 수익률. 단변량 베타 회귀항."""
-    if factor == "rate":
-        return pl.col(factor) - pl.col(factor).shift(1)
-    return pl.col(factor) / pl.col(factor).shift(1) - 1
+    """팩터 일별 변화 (factors.macroChange 위임, 기존 소비처 호환 얇은 별칭)."""
+    from dartlab.simulate import factors as _factors
+
+    return _factors.macroChange(factor)
 
 
 def macroBetaByCode(asOf: str, *, factor: str = "oil", window: int = 250, baseDir: Path | None = None) -> pl.DataFrame:
@@ -327,16 +328,21 @@ def macroBetaByCode(asOf: str, *, factor: str = "oil", window: int = 250, baseDi
 
 
 def macroBetaByCodeWide(asOf: str, *, window: int = 250, baseDir: Path | None = None) -> pl.DataFrame:
-    """전종목 3팩터 베타 → (code, rateBeta, fxBeta, oilBeta). 가격 스캔 1회 (macroBetaByCode 3회 대비).
+    """전종목 전팩터 베타 → (code, <factor>Beta...). 가격 스캔 1회, 팩터 축 = 레지스트리 전수.
 
-    시나리오 시뮬레이터 노출 입력 (회사 반응 = Σ 베타 x 충격). asOf 이전 window 거래일, 벌크 groupby
-    (Company 루프 0). 팩터별 단변량 OLS. 무변동(var 0)·표본<20 팩터는 None (0 대체 금지).
+    시나리오 시뮬레이터 노출 입력 (회사 반응 = Σ 베타 x 충격). **팩터 목록은 factors.macroFactors()
+    순회** = 팩터 등록 1행이면 베타 열이 자동 추가 (하류 격자·시나리오·프로파일 무수정 흡수).
+    asOf 이전 window 거래일, 벌크 groupby (Company 루프 0). 팩터별 단변량 OLS. 무변동(var 0)·
+    표본<20·데이터 부재 팩터는 None (0 대체 금지).
     """
+    from dartlab.simulate import factors as _factors
+
+    allFactors = _factors.factorNames()
     macro = macroDaily(baseDir)
-    schema = {"code": pl.Utf8, "rateBeta": pl.Float64, "fxBeta": pl.Float64, "oilBeta": pl.Float64}
+    schema = {"code": pl.Utf8, **{_factors.betaCol(f): pl.Float64 for f in allFactors}}
     if macro.height == 0:
         return pl.DataFrame(schema=schema)
-    factors = [f for f in ("rate", "fx", "oil") if f in macro.columns]
+    factors = [f for f in allFactors if f in macro.columns]
     px = (
         dailyPrices(baseDir)
         .filter((pl.col("close") > 0) & (pl.col("date") <= asOf))
@@ -366,10 +372,10 @@ def macroBetaByCodeWide(asOf: str, *, window: int = 250, baseDir: Path | None = 
         for f in factors
     ]
     out = g.with_columns(betaCols).select("code", *[f"{f}Beta" for f in factors])
-    for col in ("rateBeta", "fxBeta", "oilBeta"):  # 부재 팩터 열 보강 (스키마 안정)
-        if col not in out.columns:
-            out = out.with_columns(pl.lit(None, dtype=pl.Float64).alias(col))
-    return out.select("code", "rateBeta", "fxBeta", "oilBeta")
+    for f in allFactors:  # 데이터 부재 팩터 열 보강 (스키마 안정, null = 정직 결측)
+        if _factors.betaCol(f) not in out.columns:
+            out = out.with_columns(pl.lit(None, dtype=pl.Float64).alias(_factors.betaCol(f)))
+    return out.select("code", *[_factors.betaCol(f) for f in allFactors])
 
 
 def counterpartyFilings(code: str, asOf: str, baseDir: Path | None = None) -> pl.DataFrame:
@@ -398,6 +404,30 @@ def counterpartyFilings(code: str, asOf: str, baseDir: Path | None = None) -> pl
         return pl.DataFrame(schema={"counterparty": pl.Utf8, "count": pl.UInt32})
     # 동점 정렬은 counterparty 명 2차키로 안정화 (replay 항등성: 같은 asOf 재계산 = byte 일치).
     return df.group_by("counterparty").len(name="count").sort(["count", "counterparty"], descending=[True, False])
+
+
+def counterpartyCountsBulk(asOf: str, baseDir: Path | None = None) -> pl.DataFrame:
+    """전종목 상대방(flr_nm) distinct 수 → (code, counterpartyCount). counterpartyFilings 벌크 대칭.
+
+    profileAll(전종목 프로파일 한 방)의 축2 입력. allFilings 1 스캔 (per-company 루프 0). asOf 이전만.
+    """
+    base = dataDir(baseDir)
+    paths = sorted(str(p) for p in (base / "dart/allFilings").glob("2*.parquet"))
+    if not paths:
+        return pl.DataFrame(schema={"code": pl.Utf8, "counterpartyCount": pl.UInt32})
+    return (
+        pl.scan_parquet(paths, extra_columns="ignore", missing_columns="insert")
+        .filter(
+            (pl.col("rcept_dt").cast(pl.Utf8) <= asOf)
+            & (pl.col("stock_code").str.len_chars() == 6)
+            & pl.col("report_nm").str.contains(_RELATIONSHIP_REPORT_PAT)
+            & pl.col("flr_nm").is_not_null()
+        )
+        .group_by("stock_code")
+        .agg(counterpartyCount=pl.col("flr_nm").n_unique())
+        .rename({"stock_code": "code"})
+        .collect(engine="streaming")
+    )
 
 
 def industryMap(baseDir: Path | None = None) -> pl.DataFrame:

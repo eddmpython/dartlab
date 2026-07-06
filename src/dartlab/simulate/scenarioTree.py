@@ -18,8 +18,12 @@ from dataclasses import dataclass
 
 import polars as pl
 
-# 팩터 → macroBetaByCodeWide 컬럼. 충격 단위: 유가·환율 = 수익률, 금리 = %p 변화.
-_FACTOR_BETA = {"rate": "rateBeta", "fx": "fxBeta", "oil": "oilBeta"}
+from dartlab.simulate.factors import baseScoreExpr, factorBetaMap
+
+
+def _factorBeta() -> dict[str, str]:
+    """팩터→베타컬럼 (factors 레지스트리 SSOT 소비, 호출 시점 = 등록 팩터 자동흡수)."""
+    return factorBetaMap()
 
 
 @dataclass(frozen=True)
@@ -84,7 +88,7 @@ def scenarioResponse(betaByCode: pl.DataFrame, shocks: dict[str, float]) -> pl.D
         - "유가 +30% 반응" -> scenarioResponse(betas, {"oil": 0.30}).
     """
     expr = pl.lit(0.0)
-    for factor, betaCol in _FACTOR_BETA.items():
+    for factor, betaCol in _factorBeta().items():
         if factor in shocks and betaCol in betaByCode.columns:
             expr = expr + pl.col(betaCol).fill_null(0.0) * float(shocks[factor])
     return betaByCode.select("code", response=expr)
@@ -114,11 +118,8 @@ def industryResponse(betaByCode: pl.DataFrame, industryMap: pl.DataFrame, shocks
 
 
 def _baseScoreCol(baseScores: pl.DataFrame) -> pl.DataFrame:
-    """baseScores 를 (code, baseScore) 로 정규화 (consensus|score|baseScore 컬럼 흡수)."""
-    for cand in ("baseScore", "score", "consensus"):
-        if cand in baseScores.columns:
-            return baseScores.select("code", baseScore=pl.col(cand).cast(pl.Float64))
-    raise ValueError("baseScores 에 score/consensus/baseScore 컬럼 필요")
+    """baseScores 를 (code, baseScore) 로 정규화 (factors.baseScoreExpr SSOT 위임)."""
+    return baseScores.select("code", baseScore=baseScoreExpr(baseScores))
 
 
 def adjustedScores(
@@ -146,7 +147,7 @@ def adjustedScores(
 def _responsibleFactor(betaByCode: pl.DataFrame, shocks: dict[str, float]) -> dict[str, dict]:
     """회사별 지배 팩터(책임 가정) → {code: {"factor", "contribution"}}. |beta x shock| 최대 팩터."""
     parts = []
-    for factor, betaCol in _FACTOR_BETA.items():
+    for factor, betaCol in _factorBeta().items():
         if factor in shocks and betaCol in betaByCode.columns:
             parts.append(
                 betaByCode.select(
@@ -338,7 +339,7 @@ def decisionNetwork(
         )
         b = betaMap.get(code, {})
         for f in shocks:
-            beta = b.get(_FACTOR_BETA.get(f))
+            beta = b.get(_factorBeta().get(f))
             if beta is not None:
                 edges.append({"from": f"macro:{f}", "to": f"company:{code}", "weight": float(beta)})
         ind = codeInd.get(code)

@@ -94,6 +94,67 @@ def profile(
     return out
 
 
+def profileAll(asOf: str, *, dataDir: Path | None = None) -> pl.DataFrame:
+    """전종목 프로파일 벌크 한 방 → (code, industry, mktcap, sizePctile, fundStalenessDays,
+    <factor>Beta..., counterpartyCount, financingCount, governanceCount, relationshipCount).
+
+    운영자 요구 "기업별 프로파일 모두 바로": per-company profile() 루프(회사당 수 초 + Panel 2GB)
+    대신 벌크 스캔 5회로 전 유니버스 형질을 한 번에 세운다 (Company 객체 0, PIT = asOf 이전만).
+    팩터 베타 열은 factors 레지스트리 전수 = 팩터 추가 자동흡수. census 축(inventory·narrative =
+    Panel 로드 필요)은 미포함 명시 (개별 profile(code) 온디맨드, 정직 라벨).
+
+    Args:
+        asOf: 기준일 'YYYYMMDD'. dataDir: 데이터 SSOT 루트 override.
+
+    Returns:
+        전 유니버스(asOf 최근 거래일 시총 보유 종목) wide 형질 행렬. 결측 = null (0 대체 금지).
+
+    Guide:
+        - 전종목 형질: profileAll("20260612") -> 형질 버킷·조건부 성적표·cascade 입력.
+    """
+    # 축6 시장: asOf 최근일 시총 + 분위 (유니버스 정의)
+    caps = _table.marketCap(dataDir).filter(pl.col("date") <= asOf)
+    if caps.height == 0:
+        return pl.DataFrame(schema={"code": pl.Utf8})
+    day = caps.filter(pl.col("date") == caps["date"].max())
+    out = day.select("code", "mktcap").with_columns(sizePctile=pl.col("mktcap").rank() / day.height)
+    # 축1 산업 (kindList)
+    out = out.join(_table.industryMap(dataDir), on="code", how="left")
+    # 축3·4·2 이벤트 형질: eventWeekly 1 스캔 → 회고창 타입군 카운트 (per-company 루프 0)
+    weekMap, _ = _table.weekCalendar(dataDir)
+    ev = _table.eventWeekly(weekMap, dataDir)
+    asOfWeek = weekMap.filter(pl.col("date") <= asOf)["week"]
+    if asOfWeek.len():
+        maxW = int(asOfWeek.max())
+        minW = maxW - int(_TRAIT_LOOKBACK_DAYS / 7)
+        sub = ev.filter((pl.col("week") <= maxW) & (pl.col("week") >= minW))
+        counts = sub.group_by("code").agg(
+            financingCount=pl.col("reportType").is_in(list(_FINANCING_EVENTS)).sum(),
+            governanceCount=pl.col("reportType").is_in(list(_GOVERNANCE_EVENTS)).sum(),
+            relationshipCount=pl.col("reportType").is_in(list(_RELATIONSHIP_EVENTS)).sum(),
+        )
+        out = out.join(counts, on="code", how="left")
+    # 재무 신선도: scanFinanceGrid 1 스캔 → 종목별 최신 접수 경과일
+    grid = _table.scanFinanceGrid(dataDir).filter(pl.col("rceptDate") <= asOf)
+    if grid.height:
+        stale = (
+            grid.group_by("code")
+            .agg(latest=pl.col("rceptDate").max())
+            .with_columns(
+                fundStalenessDays=(
+                    pl.lit(asOf).str.to_date("%Y%m%d") - pl.col("latest").str.to_date("%Y%m%d")
+                ).dt.total_days()
+            )
+            .select("code", "fundStalenessDays")
+        )
+        out = out.join(stale, on="code", how="left")
+    # 축5 노출: 전종목 전팩터 베타 (레지스트리 전수 = 자동흡수)
+    out = out.join(_table.macroBetaByCodeWide(asOf, baseDir=dataDir), on="code", how="left")
+    # 축2 상대방: allFilings 1 스캔 distinct flr_nm
+    out = out.join(_table.counterpartyCountsBulk(asOf, dataDir), on="code", how="left")
+    return out.sort("code")
+
+
 def replayHash(profileDict: dict) -> str:
     """프로파일 상태의 결정론 해시 (replay 항등성 검증: 같은 asOf 재계산 = 같은 해시, 06 §5c)."""
     import hashlib
@@ -245,18 +306,20 @@ def _macroBetas(oneRet: pl.DataFrame, dataDir: Path | None) -> dict:
     거시 팩터(table.macroDaily)를 종목 거래일에 forward-fill 후 팩터별 변화에 대한 OLS 베타.
     금리는 수준 차분(%p), 환율·유가는 수익률. 표본<20 또는 매크로 부재는 None (0 대체 금지).
     """
+    from dartlab.simulate.factors import factorBetaMap, macroChange
+
     macro = _table.macroDaily(dataDir)
-    facMap = {"rate": "rateBeta", "fx": "fxBeta", "oil": "oilBeta"}
+    facMap = factorBetaMap()  # 레지스트리 SSOT (팩터 추가 = 축5 자동흡수)
     if macro.height == 0:
         return dict.fromkeys(facMap.values(), None)
-    ffill = [pl.col(f).forward_fill() for f in ("rate", "fx", "oil") if f in macro.columns]
+    ffill = [pl.col(f).forward_fill() for f in facMap if f in macro.columns]
     fac = oneRet.join(macro, on="date", how="left").sort("date").with_columns(ffill)
     out: dict = {}
     for factor, key in facMap.items():
         if factor not in fac.columns:
             out[key] = None
             continue
-        d = fac.select("ret", dfac=_table._macroChange(factor)).drop_nulls()
+        d = fac.select("ret", dfac=macroChange(factor)).drop_nulls()
         b = marketBeta(d["ret"].to_numpy(), d["dfac"].to_numpy()) if d.height >= 20 else float("nan")
         # 팩터 무변동(금리 window flat 등) = var 0 = nan → None (0 대체 금지, replay 결정론 유지).
         out[key] = None if b != b else b
