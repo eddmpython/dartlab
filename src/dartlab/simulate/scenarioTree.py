@@ -284,3 +284,81 @@ def scenariosToBranches(scenarioIds: list[str], *, registry: dict | None = None)
             continue
         out.append(ScenarioBranch(sc.scenarioId, sc.label, dict(sc.shocks), sc.condition, None))
     return out
+
+
+def decisionNetwork(
+    baseScores: pl.DataFrame,
+    betaByCode: pl.DataFrame,
+    industryMap: pl.DataFrame,
+    shocks: dict[str, float],
+    *,
+    topK: int = 15,
+    macroTilt: float = 1.0,
+) -> dict:
+    """전 유니버스 결정 네트워크를 데이터로 방출 (GUI 표시 계약, 11 §4 DAG-as-data). GUI 미포함.
+
+    "수천 갈래가 발화해 결과로 좁혀지는" 신경망식 그래프의 데이터. 층 = 입력(매크로 팩터) → 회사 →
+    업종 → 결정. 노드 = {id, layer, label, activation}, 엣지 = {from, to, weight}. 활성 = 시나리오
+    하 회사 조정 점수(발화 강도), 매크로→회사 엣지 가중 = 측정 노출 베타. GUI(나중)가 fetch 로 소비해
+    발화·수렴을 렌더한다. 엔진은 데이터·활성만 낸다 (표시 방식은 프론트 선택, 계약 불변).
+
+    Args:
+        baseScores: (code, score|consensus) 기저. betaByCode: table.macroBetaByCodeWide.
+        industryMap: table.industryMap. shocks: 시나리오 충격. topK: 결정 선택 수. macroTilt: 매크로 가중.
+
+    Returns:
+        {"nodes": [...], "edges": [...], "stats": {nNodes, nEdges, nCompanies, nInput, nIndustry, topK}}.
+        노드 layer = input|company|industry|output. 회사 노드 inTopK = 결정 진입 여부. 스케일 =
+        수천 노드·수만 엣지 (전 유니버스 = 신경망식 규모, stats 로 실측). 결정론.
+
+    Guide:
+        - GUI 데이터: net = decisionNetwork(base, betas, imap, {"oil": 0.3}); net["stats"] 로 규모 확인.
+    """
+    adj = adjustedScores(baseScores, betaByCode, shocks, macroTilt=macroTilt)
+    top = set(adj.sort("adjusted", descending=True).head(topK)["code"].to_list())
+    indBy = {
+        r["industry"]: r["response"] for r in industryResponse(betaByCode, industryMap, shocks).iter_rows(named=True)
+    }
+    codeInd = {r["code"]: r["industry"] for r in industryMap.iter_rows(named=True)}
+    betaMap = {r["code"]: r for r in betaByCode.iter_rows(named=True)}
+    nodes: list[dict] = [
+        {"id": f"macro:{f}", "layer": "input", "label": f, "activation": float(v)} for f, v in shocks.items()
+    ]
+    edges: list[dict] = []
+    for r in adj.iter_rows(named=True):
+        code = r["code"]
+        nodes.append(
+            {
+                "id": f"company:{code}",
+                "layer": "company",
+                "label": code,
+                "activation": float(r["adjusted"]),
+                "inTopK": code in top,
+            }
+        )
+        b = betaMap.get(code, {})
+        for f in shocks:
+            beta = b.get(_FACTOR_BETA.get(f))
+            if beta is not None:
+                edges.append({"from": f"macro:{f}", "to": f"company:{code}", "weight": float(beta)})
+        ind = codeInd.get(code)
+        if ind is not None:
+            edges.append({"from": f"company:{code}", "to": f"industry:{ind}", "weight": 1.0})
+    for ind, resp in indBy.items():
+        nodes.append({"id": f"industry:{ind}", "layer": "industry", "label": ind, "activation": float(resp)})
+        edges.append({"from": f"industry:{ind}", "to": "decision", "weight": float(resp)})
+    nodes.append({"id": "decision", "layer": "output", "label": "결정(top-K)", "topK": sorted(top)})
+    for code in sorted(top):
+        edges.append({"from": f"company:{code}", "to": "decision", "weight": 1.0, "channel": "selected"})
+    return {
+        "nodes": nodes,
+        "edges": edges,
+        "stats": {
+            "nNodes": len(nodes),
+            "nEdges": len(edges),
+            "nCompanies": adj.height,
+            "nInput": len(shocks),
+            "nIndustry": len(indBy),
+            "topK": topK,
+        },
+    }

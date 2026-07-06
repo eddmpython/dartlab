@@ -98,3 +98,22 @@ def testScenariosToBranchesSkipsBaseline():
     assert "baseline" not in ids  # 무충격 baseline 은 루트라 분기 제외
     assert ids == {"oilShockUp", "rateHike"}
     assert all(b.parent is None for b in br)  # 단층 = 루트 직속
+
+
+def testDecisionNetworkEmitsLayeredGraph():
+    # GUI 표시 계약: 신경망식 층상 그래프(입력→회사→업종→결정) 데이터 방출 (GUI 미포함)
+    base = pl.DataFrame({"code": ["a", "b"], "score": [1.0, 2.0]})
+    betas = pl.DataFrame({"code": ["a", "b"], "rateBeta": [None, None], "fxBeta": [0.0, 0.0], "oilBeta": [3.0, -1.0]})
+    imap = pl.DataFrame({"code": ["a", "b"], "industry": ["energy", "air"]})
+    net = st.decisionNetwork(base, betas, imap, {"oil": 0.3}, topK=1)
+    layers = {n["layer"] for n in net["nodes"]}
+    assert {"input", "company", "industry", "output"} <= layers  # 4층 신경망식
+    assert net["stats"]["nCompanies"] == 2 and net["stats"]["nInput"] == 1
+    oilEdges = [e for e in net["edges"] if e["from"] == "macro:oil"]
+    assert len(oilEdges) == 2  # 매크로→회사 발화 엣지 (weight=측정 베타)
+    assert abs(next(e["weight"] for e in oilEdges if e["to"] == "company:a") - 3.0) < 1e-9  # 엣지 가중 = oilBeta
+    comp = {n["id"]: n for n in net["nodes"] if n["layer"] == "company"}
+    assert "inTopK" in comp["company:a"] and net["stats"]["nEdges"] > 0  # 회사 노드 결정진입 표시 + 엣지 실재
+    import json
+
+    json.dumps(net)  # GUI fetch 소비 계약: 직렬화 가능
