@@ -106,6 +106,14 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
 - **정직 한계**: ① 금리 시나리오 inert(BASE_RATE 평탄 → rateBeta 대부분 None, 국고채 daily obs 부재) ② 극단 베타 소형주 쏠림(liquid 필터·베타 winsorize 미적용) ③ 반응이 선형 노출 기반(비선형·2차효과 없음). → 진짜 시뮬레이터의 척추는 섰고, 정밀도(금리 proxy·유동성 필터)는 후속.
 - **상위 모델 (`scenarioSim.py` 신규, 커밋 95a4af008)**: "디시전 트리보다 고급·효율" 요구에 상관 몬테카를로 실장. 매크로 팩터 동반이동 공분산(역사, oil-fx +0.29) → `conditionalShock`(유가 -30% 주면 환율·금리 역사적 동반 조건부 기대로 채운 완결 시나리오 = 더 깊은 시나리오)·`monteCarloDecision`(수천 상관 경로 → top-K 진입 확률 + 반응 꼬리 p5/p95, 이산 분기 대비 공간 전수·확률·강건)·`historicalStressShocks`(실제 위기 동반이동). MC 가 오히려 극단베타 소형주 문제를 명확히 노출(top확률↑이나 꼬리±2.8 = 변동 큼). tests 129·게이트 7/7. 프론티어(베이지안 네트워크 cascade·VAR 시간전개)는 후속.
 
+### 0c-8. MCTS형 재결합 격자 본진 졸업 (2026-07-06, /goal "시그니처 구현 완성" = 14 실행)
+
+14-mcts-lattice-idea 의 A~D 를 _attempts 게이트 경유로 완주 (상세·실측 = **14 §7~§8 정본**):
+- A `varDynamics`: 주간 VAR(1) OOS 가 랜덤워크에 패배(비율 1.01x) = **드리프트 기각, RW+Σ 설계 확정**.
+- B~D `latticeGrowth` → **`simulate/lattice.py` 졸업**: 재결합 삼항 격자(폭발 억제 1.4e8배·손실질량 0.16%·동반이동 커널) + 잎 확률 정확 가중 결정(top-K 진입확률·확률가중 꼬리·bad worlds 스트레스 생존, RNG 0 결정론) + 정밀도 부채 상환(winsorizeBetas + table.liquidUniverse = top15 시총중앙 691억→2,233억). MC 상관 0.991 상호검증. 스트레스 생존 픽 해석 가능(도시가스 방어주 99%).
+- 테스트: test_lattice 9종 배터리 + simulate 전체 139 통과 + dartlabGuard strict 7/7.
+- 시그니처 지위: 여전히 **후보** (14 §4). 남은 승격 게이트 = 격자 역사 검증(forward 채점 OOS 우위)·라이브 누적·GUI(트리거 대기).
+
 ---
 
 > ⚠ v0.1 폐기 박제: 이전 04는 "초기 아키텍처 = story 동격 L3 `scenarioWorkbench`, 공개 verb `dartlab.scenario`(미결)"을 현재 결정으로 들고 있었다. **01 §3이 이를 코드로 기각**했다(story=순수 렌더러라 동거 불가, `scenario` 명사형은 `macro.scenarios`/`ScenarioOverlay` 충돌). 본 v0.2가 정본.
