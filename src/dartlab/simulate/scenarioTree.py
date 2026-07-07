@@ -381,6 +381,7 @@ def industryElasticity(
     minQuarters: int = 16,
     minFirms: int = 5,
     tGate: float = 3.0,
+    asOf: str | None = None,
 ) -> pl.DataFrame:
     """업종 x 팩터 매출 성장 탄성 → (industry, factor, beta, t, n). |t| >= tGate 통과만.
 
@@ -393,18 +394,24 @@ def industryElasticity(
     Args:
         grid: estimate.quarterGrid 산출. macro: table.macroDaily 산출. industryMap: (code, industry).
         minQuarters: 회귀 최소 분기 수. minFirms: 업종-분기 최소 기업 수. tGate: 통과 |t| 하한.
+        asOf: vintage 컷 (yyyymmdd. rceptDate·date 이후 행 미참조 = nested PIT. None = 전 구간.
+            재예보는 origin 별로 반드시 지정 = 전표본 발굴 탄성의 자기채점 순환 차단, 15 §4-4).
 
     Returns:
         통과 쌍만 (미통과 = 무행 = 조건부 E 기권 대상). beta 단위 = 팩터 1단위당 로그성장.
 
     Guide:
         - 조건부 E 탄성: industryElasticity(quarterGrid(), macroDaily(), industryMap()).
+        - 재예보 vintage: industryElasticity(grid, macro, imap, asOf=origin).
     """
     import numpy as np
 
     from dartlab.simulate import estimate as _est
     from dartlab.simulate.factors import factorNames, macroChange
 
+    if asOf is not None:  # nested PIT: 법칙도 vintage 데이터로만 측정
+        grid = grid.filter(pl.col("rceptDate") <= asOf)
+        macro = macro.filter(pl.col("date") <= asOf)
     facs = [f for f in factorNames() if f in macro.columns]  # 데이터 부재 팩터 관용 (factorChanges 동형)
     mq = (
         macro.with_columns(
@@ -456,7 +463,8 @@ def industryElasticity(
             t = beta / se if se > 0 else 0.0
             if abs(t) >= tGate:
                 rows.append({"industry": industry, "factor": f, "beta": beta, "t": t, "n": n})
-    return pl.DataFrame(rows, schema=empty.schema) if rows else empty
+    # (industry, factor) 정렬 = 결정론 (group_by 순회 순서 비결정 = replay 항등성 위반, 2026-07-07 실측)
+    return pl.DataFrame(rows, schema=empty.schema).sort(["industry", "factor"]) if rows else empty
 
 
 def conditionalE(

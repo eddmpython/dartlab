@@ -71,6 +71,7 @@ jobs:
         if: ${{ !hashFiles('dist/SKIP') }}
         run: |
           python -c "
+          from datetime import datetime, timezone
           from huggingface_hub import HfApi
           api = HfApi(token='${{ secrets.HF_TOKEN }}')
           api.upload_file(
@@ -80,7 +81,17 @@ jobs:
               path_in_repo='metadata/corpList.parquet',
               commit_message='auto-update kindList',
           )
-          print('KindList HuggingFace 업로드 완료')
+          # vintage 스냅샷: 내용 변경일에만 실행되는 스텝이라 변경분만 축적 (업종맵 과거 귀속의
+          # look-ahead 차단 자산. 소급 불가라 즉시 개시, mainPlan/scenario-simulator/15 §4)
+          stamp = datetime.now(timezone.utc).strftime('%Y%m%d')
+          api.upload_file(
+              repo_id='eddmpython/dartlab-data',
+              repo_type='dataset',
+              path_or_fileobj='dist/corpList.parquet',
+              path_in_repo=f'metadata/corpListVintage/corpList_{stamp}.parquet',
+              commit_message=f'vintage kindList {stamp}',
+          )
+          print('KindList HuggingFace 업로드 완료 (+vintage 스냅샷)')
           "
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}

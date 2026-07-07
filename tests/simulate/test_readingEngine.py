@@ -1380,3 +1380,102 @@ def testIssueReadingsMarketScopedSealing(tmp_path):
         directionByType={},
     )
     assert n3 == 0  # 같은 (시장, 주) 재발행은 스킵
+
+
+def testWeeklyLabelsCensoredPreserved():
+    from dartlab.simulate import readingScorecard as sc
+
+    # 15일 시장 달력: a=완주, b=7일차 소멸(상폐). 스냅=5일차. b 는 절단 관측으로 보존돼야 한다
+    days = [f"202601{d:02d}" for d in range(1, 16)]
+    rows = []
+    for i, d in enumerate(days):
+        rows.append({"date": d, "code": "a", "close": 100.0 + i, "shares": 10.0, "mktcap": 1000.0})
+        if i < 7:  # b 는 7일차(인덱스 6)까지만 거래
+            rows.append({"date": d, "code": "b", "close": 50.0 - i * 5, "shares": 10.0, "mktcap": 500.0})
+    px = pl.DataFrame(rows)
+    weekEnd = pl.DataFrame({"week": [202601, 202602], "date": [days[4], days[13]]})
+    lab = sc.weeklyLabels(weekEnd, px)
+    b1 = lab.filter((pl.col("code") == "b") & (pl.col("week") == 202601))
+    assert b1.height == 1 and b1["censored"][0] is True  # 소멸 종목이 채점에 남음 (침묵 제거 결함 가드)
+    # 절단 수익 = 마지막 관측가(20)/스냅가(30) - 1 (uniMean 차감 전 원수익 검증은 exRaw+uniMean 로)
+    a1 = lab.filter((pl.col("code") == "a") & (pl.col("week") == 202601))
+    assert a1["censored"][0] is False  # 생존 종목은 일반 라벨
+    # 지평 미도래(14일차 스냅, 시장 달력 끝) = 절단 아님 = pending (행 없음)
+    assert lab.filter(pl.col("week") == 202602).height == 0
+
+
+def testBacktestEventDirectionsOosSplit(tmp_path):
+    from dartlab.simulate import backtest as bt
+
+    # 방향사전은 train 절반까지만 도출 + 이벤트 표면은 OOS 주만 채점 (in-sample 순환 차단)
+    weeks = list(range(202601, 202609))
+    codes = [f"c{i}" for i in range(8)]
+    labRows, evRows = [], []
+    for w in weeks:
+        for i, code in enumerate(codes):
+            ex = (i - 3.5) * 0.01
+            labRows.append({"code": code, "week": w, "exRaw": ex, "exNeutral": ex})
+            if i < 4:
+                evRows.append({"code": code, "week": w, "reportType": "유상증자결정"})
+    labels = pl.DataFrame(labRows)
+    eventM = pl.DataFrame(evRows)
+    priceM = pl.DataFrame(schema={"code": pl.Utf8, "week": pl.Int64, "ret5": pl.Float64})
+    fundM = pl.DataFrame(schema={"code": pl.Utf8, "week": pl.Int64, "ep": pl.Float64, "bm": pl.Float64})
+    weekMap = pl.DataFrame(schema={"date": pl.Utf8, "week": pl.Int64})
+    weekEnd = pl.DataFrame({"week": weeks, "date": [f"2026{w - 202600:02d}01" for w in weeks]})
+    r = bt.backtest(matrices=(weekMap, weekEnd, priceM, fundM, eventM), labels=labels, nBoot=50)
+    assert r["trainWeekMax"] == weeks[3]  # 절반 컷
+    card = r["scorecard"]
+    ev = card.filter(pl.col("surface").str.starts_with("event."))
+    if ev.height:  # 이벤트 표면이 살았다면 채점 주 수는 OOS(4주) 이하여야 한다
+        assert ev["nWeeks"].max() <= 4 if "nWeeks" in ev.columns else True
+
+
+def testIndustryElasticityAsOfVintage():
+    from dartlab.simulate import scenarioTree as st
+    from tests.simulate.test_scenarioTree import _elasticityFixtures
+
+    grid, macro, imap = _elasticityFixtures()
+    base = st.industryElasticity(grid, macro, imap, minQuarters=10, minFirms=3, tGate=3.0, asOf="20240101")
+    # asOf 이후 미래 행(쓰레기 값)을 붙여도 vintage 컷이면 결과 불변 (법칙 look-ahead 카나리아)
+    future = pl.DataFrame(
+        [{"code": "a0", "period": "2024Q1", "rceptDate": "20240515", "account": "revenue", "amount": 1.0e9}]
+    )
+    base2 = st.industryElasticity(
+        pl.concat([grid, future]), macro, imap, minQuarters=10, minFirms=3, tGate=3.0, asOf="20240101"
+    )
+    # vintage 컷 = 미래 데이터 무영향 (청크 배치별 집계 합산 순서 차 = 1ULP 허용, 내용 동일)
+    assert base.select("industry", "factor").equals(base2.select("industry", "factor"))
+    assert (base["beta"] - base2["beta"]).abs().max() < 1e-9
+    assert (base["t"] - base2["t"]).abs().max() < 1e-9
+
+
+def testLatticeOverlayCovariancePit(monkeypatch):
+    from datetime import date, timedelta
+
+    from dartlab.simulate import runweek, table
+
+    d = [(date(2026, 1, 1) + timedelta(days=i)).strftime("%Y%m%d") for i in range(40)]
+    oil = [100.0 + 3.0 * np.sin(i / 3) for i in range(40)]
+    macroPast = pl.DataFrame({"date": d, "rate": [3.0] * 40, "fx": [1300.0] * 40, "oil": oil})
+    # asOf(d[-1]) 이후 미래 행 = 쓰레기 변동 (누수되면 공분산·격자·제거 목록이 바뀜)
+    dFut = [(date(2026, 2, 15) + timedelta(days=i)).strftime("%Y%m%d") for i in range(10)]
+    macroLeak = pl.concat(
+        [macroPast, pl.DataFrame({"date": dFut, "rate": [9.0] * 10, "fx": [3000.0] * 10, "oil": [500.0] * 10})]
+    )
+    betas = pl.DataFrame(
+        {
+            "code": [f"c{i}" for i in range(12)],
+            "rateBeta": [None] * 12,
+            "fxBeta": [0.0] * 12,
+            "oilBeta": [0.0] * 11 + [50.0],
+        }
+    )
+    monkeypatch.setattr(table, "macroBetaByCodeWide", lambda asOf, baseDir=None, prices=None: betas)
+    weekEnd = pl.DataFrame({"week": [202601], "date": [d[-1]]})
+    cand = pl.DataFrame({"code": [f"c{i}" for i in range(12)], "consensus": [float(12 - i) for i in range(12)]})
+    monkeypatch.setattr(table, "macroDaily", lambda baseDir=None: macroPast)
+    top1, drop1 = runweek._latticeOverlay(cand, weekEnd, 202601, None, topK=10)
+    monkeypatch.setattr(table, "macroDaily", lambda baseDir=None: macroLeak)
+    top2, drop2 = runweek._latticeOverlay(cand, weekEnd, 202601, None, topK=10)
+    assert drop1 == drop2 and top1["code"].to_list() == top2["code"].to_list()  # 미래 매크로 무영향 (PIT)

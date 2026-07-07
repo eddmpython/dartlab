@@ -46,6 +46,7 @@ def backtest(
     nBoot: int = 500,
     sealDir: Path | None = None,
     issuedAt: str = "backtest",
+    trainFrac: float = 0.5,
 ) -> dict:
     """전 역사 replay → {"scorecard", "certify", "sweep", "weeks", "surfaces", "universe"}.
 
@@ -53,10 +54,14 @@ def backtest(
         market: "KR"|"US". dataDir: 데이터 SSOT 루트.
         matrices/labels: 주입 (테스트). None = 시장 상(床)에서 계산.
         nBoot: 인증 부트스트랩. sealDir: 가정 봉인 루트 (None = 미봉인). issuedAt: 봉인 시각.
+        trainFrac: 이벤트 방향사전(라벨 적합물)의 train 구간 비율. 방향사전은 train 주까지만
+            도출하고 이벤트 표면 채점은 그 이후(OOS)만 한다 (2026-07-07 레드팀 실증: 전표본
+            방향사전 = 이벤트·레버 t 부분 in-sample. 라이브 경로는 자연 PIT 라 무결, 15 §4-1).
 
     Returns:
         scorecard(표면 성적) + certify(2단 깔때기 verdict + spaP + nEff) + sweep(PBO·DSR·robust
-        상위 종목 수) + 메타. 가정 벌은 sealDir 시 issuedLive=False 봉인 (권위 라이브만).
+        상위 종목 수) + 메타 + trainWeekMax. 가정 벌은 sealDir 시 issuedLive=False 봉인 (권위
+        라이브만).
     """
     if matrices is not None:
         weekMap, weekEnd, priceM, fundM, eventM = matrices
@@ -65,9 +70,17 @@ def backtest(
     if labels is None:
         tbl = _cycle.marketTable(market)
         labels = _sc.weeklyLabels(weekEnd, tbl.dailyPrices(dataDir))
-    directionByType = _sc.deriveEventDirections(eventM, labels)
+    # 분할 기준 = 적합물의 데이터 커버리지(이벤트 주). 라벨 전체 기준이면 이벤트 커버리지(KR
+    # 2022-11~)가 전부 OOS 쪽에 몰려 train 이 공집합 = 방향사전 소멸 (2026-07-07 실측). 이벤트
+    # 구간의 앞 절반으로 학습, 뒤 절반 OOS 채점이 공정한 재판정이다.
+    evWeeks = sorted(eventM["week"].unique().to_list()) if eventM.height else []
+    trainWeekMax = evWeeks[max(int(len(evWeeks) * trainFrac) - 1, 0)] if evWeeks else None
+    directionByType = _sc.deriveEventDirections(eventM, labels, trainWeekMax=trainWeekMax)
     readings = _opine.opine(priceM, fundM, eventM, directionByType=directionByType)
     scored = readings.select("code", "week", "surface", "direction", "score")
+    if trainWeekMax is not None:
+        # 적합물(이벤트 방향사전) 표면은 OOS 주만 채점 = 자기채점 순환 차단. 연속 표면은 무적합이라 전 구간.
+        scored = scored.filter(~(pl.col("surface").str.starts_with("event.") & (pl.col("week") <= trainWeekMax)))
     card = _sc.scorecard(scored, labels)
     spreads = _sc.surfaceWeeklySpreads(scored, labels)
     surfaces = spreads["surface"].unique().sort().to_list() if spreads.height else []
@@ -113,4 +126,5 @@ def backtest(
         "weeks": int(spreads["week"].n_unique()) if spreads.height else 0,
         "surfaces": surfaces,
         "universe": int(scored["code"].n_unique()) if scored.height else 0,
+        "trainWeekMax": trainWeekMax,  # 이벤트 방향사전 train 컷 (이벤트 표면 = 그 이후 OOS 만 채점)
     }

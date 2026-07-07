@@ -26,21 +26,33 @@ from dartlab.simulate.reading import (
 
 
 def weeklyLabels(weekEnd: pl.DataFrame, dailyPrices: pl.DataFrame) -> pl.DataFrame:
-    """주간 채점 라벨: forward 5거래일 시장 내 초과 + 사이즈 버킷 중립 잔차.
+    """주간 채점 라벨: forward 5거래일 시장 내 초과 + 사이즈 버킷 중립 잔차 + 절단 관측 보존.
+
+    절단(censored) 관측: 지평 내 종목이 소멸(상폐·장기정지)했는데 시장 달력은 계속되는 경우,
+    마지막 관측가까지의 절단 수익으로 채점에 남긴다 (2026-07-07 레드팀 실증: 기존 scorable 필터가
+    회피 표면이 가장 크게 맞춘 관측을 침묵 제거 + uniMean 생존자 편향. 15 §4-2). 절단 수익은
+    관측 가능한 마지막 가격까지만 = 소멸 후 미관측 손실 미포함(보수적 하한, 날조 금지). 지평
+    미도래(데이터 끝)는 절단이 아니라 pending 유지.
 
     Args:
         weekEnd: (week, date=그 주 마지막 거래일).
         dailyPrices: (date, code, close, shares, mktcap) 일별.
 
     Returns:
-        (code, week, exRaw, exNeutral, scorable). corpAction(주식수 급변·일수익 40%+) 제외.
+        (code, week, exRaw, exNeutral, scorable, censored). corpAction(주식수 급변·일수익 40%+)
+        제외 (절단 행은 면제: 죽음 자체가 채점 대상).
     """
     df = dailyPrices.filter(pl.col("close") > 0).sort(["code", "date"])
+    cal = df.select("date").unique().sort("date").with_row_index("di")
+    marketMaxDi = int(cal["di"].max()) if cal.height else 0
+    df = df.join(cal, on="date", how="left")
     c = pl.col("close")
     df = df.with_columns(
         fwdClose=c.shift(-5).over("code"),
         fwdShares=pl.col("shares").shift(-5).over("code"),
         fwdMaxAbs=(c / c.shift(1).over("code") - 1).abs().shift(-1).rolling_max(5).over("code").shift(-4),
+        lastDi=pl.col("di").max().over("code"),
+        lastClose=c.last().over("code"),
     ).with_columns(
         fwdRet=(pl.col("fwdClose") / c - 1),
         corpAction=(
@@ -48,7 +60,13 @@ def weeklyLabels(weekEnd: pl.DataFrame, dailyPrices: pl.DataFrame) -> pl.DataFra
         ).fill_null(True),
     )
     snap = df.join(weekEnd, on="date", how="inner")
-    scorable = pl.col("fwdRet").is_not_null() & ~pl.col("corpAction")
+    # 절단 = 지평 창이 시장 달력 안(미도래 아님)인데 종목 행이 창 끝 전에 소멸
+    censored = pl.col("fwdClose").is_null() & (pl.col("di") + 5 <= marketMaxDi) & (pl.col("lastDi") < pl.col("di") + 5)
+    snap = snap.with_columns(
+        censored=censored,
+        fwdRet=pl.when(censored).then(pl.col("lastClose") / c - 1).otherwise(pl.col("fwdRet")),
+    )
+    scorable = (pl.col("fwdRet").is_not_null() & ~pl.col("corpAction")) | pl.col("censored")
     snap = snap.with_columns(
         uniMean=pl.col("fwdRet").filter(scorable).mean().over("week"), scorable=scorable
     ).with_columns(exRaw=pl.col("fwdRet") - pl.col("uniMean"))
@@ -57,7 +75,7 @@ def weeklyLabels(weekEnd: pl.DataFrame, dailyPrices: pl.DataFrame) -> pl.DataFra
         .with_columns(sizeBucket=(pl.col("mktcap").rank() / pl.len()).over("week").mul(5).ceil().clip(1, 5))
         .with_columns(exNeutral=pl.col("exRaw") - pl.col("exRaw").mean().over(["week", "sizeBucket"]))
     )
-    return snap.select("code", "week", "exRaw", "exNeutral", pl.lit(True).alias("scorable"))
+    return snap.select("code", "week", "exRaw", "exNeutral", pl.lit(True).alias("scorable"), "censored")
 
 
 def deriveEventDirections(

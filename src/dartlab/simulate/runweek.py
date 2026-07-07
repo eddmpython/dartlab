@@ -227,7 +227,9 @@ def _latticeOverlay(
     asOfS = weekEnd.filter(pl.col("week") == week)["date"]
     if asOfS.len() == 0:
         return candidates.head(topK), None
-    macro = _table.macroDaily(dataDir)
+    # PIT: 공분산도 asOf 이전만 (2026-07-07 레드팀 실증: 무필터면 과거 주 재실행 시 미래 매크로가
+    # 격자에 유입 = 블록 replay 순수함수 위반. 매크로 E 봉인 경로는 이미 필터함, 여기만 구멍이었음).
+    macro = _table.macroDaily(dataDir).filter(pl.col("date") <= asOfS[0])
     pxInject = None if market == "KR" else _cycle.marketTable(market).dailyPrices(dataDir)
     betas = _table.macroBetaByCodeWide(asOfS[0], baseDir=dataDir, prices=pxInject)
     if macro.height == 0 or betas.height == 0:
