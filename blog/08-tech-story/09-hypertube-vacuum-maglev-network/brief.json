@@ -1,0 +1,431 @@
+{
+  "title": "진공 열차는 왜 어렵나",
+  "titleContract": {
+    "workingTitle": "진공 열차는 왜 어렵나",
+    "selectedTitle": "진공 열차는 왜 어렵나",
+    "hookQuestion": "하이퍼튜브를 빠른 열차가 아니라 진공, 부상, 전력, 토목이 동시에 맞아야 하는 시스템으로 보게 만든다.",
+    "readerGap": "독자는 시속 1,200km라는 속도에 먼저 끌리지만 글은 그 속도를 막는 압력, 초전도 전자석, 선형추진, 튜브 시공, 안전 인증과 상장사 배치를 보여준다.",
+    "promise": "제목은 짧은 기술 질문으로 걸고, 결론은 어느 회사가 어느 칸에 연결되는지와 DART, EDGAR에서 무엇을 확인해야 하는지로 갚는다.",
+    "whySelected": "돈 이야기나 관련주 템플릿 없이 기술 병목을 먼저 묻는다. 본문에서 상장사를 다루더라도 주어가 회사가 아니라 하이퍼튜브 시스템이라는 점이 유지된다.",
+    "candidates": [
+      {
+        "title": "진공 열차는 왜 어렵나",
+        "hook": "속도보다 난도가 먼저 궁금해진다. 압력, 부상, 추진, 토목, 안전이 한 질문으로 묶인다.",
+        "risk": "본문에서 회사 지도와 재무 착지까지 연결하지 않으면 과학 교양 글로 끝날 수 있다."
+      },
+      {
+        "title": "튜브가 본체다",
+        "hook": "캡슐보다 인프라가 더 크다는 반전을 바로 건다.",
+        "risk": "하이퍼튜브라는 검색어가 제목에 없어 검색 의도가 약해질 수 있다."
+      },
+      {
+        "title": "바퀴 없는 철도의 병목",
+        "hook": "자기부상과 선형추진의 기술 호기심을 만든다.",
+        "risk": "아진공 튜브와 토목 난도가 제목에 덜 보인다."
+      }
+    ],
+    "rejectedPatterns": [
+      "하이퍼튜브 관련주 총정리",
+      "하이퍼튜브 누가 돈을 버나",
+      "현대로템 수혜 분석",
+      "초전도 테마주 정리"
+    ]
+  },
+  "description": "하이퍼튜브를 시속 1,200km 캡슐이 아니라 아진공 튜브, 초전도 부상, 선형추진, 전력 제어, 토목, 안전 인증이 묶인 공정 네트워크로 설명하고 DART와 EDGAR로 상장사 위치를 읽는다.",
+  "readerQuestion": "하이퍼튜브 뉴스에서 왜 속도보다 진공 튜브, 초전도 전자석, 전력 제어, 토목 시공, 안전 인증을 먼저 봐야 할까?",
+  "insight": {
+    "commonBelief": "하이퍼튜브는 빠른 캡슐 열차라서 차량을 만드는 회사가 주인공이라고 여긴다.",
+    "twistFact": "상용화 난도는 캡슐보다 전체 노선을 0.001~0.01기압으로 유지하고 초전도 부상, 선형추진, 전력 제어, 튜브 구조, 대피 안전을 동시에 맞추는 인프라 시스템에 있다.",
+    "whatToWatch": "다음에는 하이퍼튜브 보도에서 차량 이름보다 전용 선로, 초전도 전자석, 주행 제어, 차체 검증, DART 수주와 매출, EDGAR fiscal quarter 라벨을 같이 본다.",
+    "freshnessArgument": "2025년 4월 국토교통부가 2025~2027년 127억원 규모 핵심기술 개발을 시작했고, DART 2025년 합산과 EDGAR 최신 4개 fiscal quarter를 분리해 상장사 위치를 확인한다.",
+    "evidenceRefs": [
+      "한국철도기술연구원 하이퍼튜브 대표 연구성과",
+      "국토교통부 2025-04-09 하이퍼튜브 핵심기술 개발 보도자료",
+      "DART 2025Q1-Q4 현대로템, 서남, LS ELECTRIC, HD현대일렉트릭, 효성중공업, POSCO홀딩스, 현대제철, GS건설 실측",
+      "EDGAR 최신 4개 fiscal quarter AMSC, Wabtec, AECOM, Jacobs, Quanta Services, Fluor 실측"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "하이퍼튜브는 왜 속도보다 압력인가",
+      "purpose": "메커니즘공개",
+      "scene": "캡슐이 달리는 튜브 내부 압력을 0.001~0.01기압으로 낮추는 이유와 공기저항을 설명한다.",
+      "keyNumbers": [
+        "KRRI 축소모델 아진공 1/1000기압 1,019km/h",
+        "MOLIT 목표 속도 1,200km/h"
+      ],
+      "causalBridge": "압력이 낮아져야 속도가 나오지만, 노선 전체를 압력 설비로 만드는 순간 토목과 운영 난도가 커진다."
+    },
+    {
+      "order": 2,
+      "heading": "부상과 추진은 바퀴를 없애고 전력 제어를 만든다",
+      "purpose": "원리해부",
+      "scene": "초전도 전자석, 가이드웨이 코일, 위치 감지, 극성 전환이 캡슐을 띄우고 미는 원리를 풀어낸다.",
+      "keyNumbers": [
+        "MOLIT 4개 세부 기술",
+        "KRRI 초전도 추진/부상 테스트베드"
+      ],
+      "causalBridge": "바퀴 마찰을 줄이는 대신 전력, 냉각, 제어, 센서가 선로의 일부가 된다."
+    },
+    {
+      "order": 3,
+      "heading": "회사 지도는 캡슐이 아니라 칸으로 봐야 한다",
+      "purpose": "공정지도",
+      "scene": "아진공 튜브, 초전도 전자석, 전력 변환, 차량, 토목, 제어와 안전 인증을 회사 칸으로 나눈다.",
+      "keyNumbers": [
+        "현대로템 2025 매출 5.84조원, OPM 17.2%",
+        "서남 2025 매출 34억원, OPM -113.9%"
+      ],
+      "causalBridge": "상장사는 하이퍼튜브 전체를 보유하기보다 특정 칸에 걸린다. 그래서 관련성의 강도를 구분해야 한다."
+    },
+    {
+      "order": 4,
+      "heading": "왜 순수 하이퍼튜브 상장사는 거의 없나",
+      "purpose": "오해방지",
+      "scene": "민간 하이퍼루프 회사 실패 사례와 정부 연구 단계의 차이를 설명한다.",
+      "keyNumbers": [
+        "MOLIT 2025~2027 핵심기술 연구",
+        "상용 노선 이전 단계"
+      ],
+      "causalBridge": "상용 시장이 없으니 순수 플레이어보다 철도, 초전도, 전력, 토목의 기존 사업자만 보인다."
+    },
+    {
+      "order": 5,
+      "heading": "전력과 토목이 왜 큰 시장인가",
+      "purpose": "병목심화",
+      "scene": "아진공 튜브를 노선으로 만들 때 펌프, 전력, 변전, 구조물, 유지보수, 대피 설비가 커지는 장면을 설명한다.",
+      "keyNumbers": [
+        "LS ELECTRIC 2025 OPM 8.6%",
+        "HD현대일렉트릭 2025 OPM 24.4%",
+        "효성중공업 2025 OPM 12.5%"
+      ],
+      "causalBridge": "하이퍼튜브가 철도가 되려면 캡슐보다 전력망과 구조물이 먼저 돈을 먹는다."
+    },
+    {
+      "order": 6,
+      "heading": "미국장은 순수주가 아니라 인프라 칸이다",
+      "purpose": "EDGAR가드",
+      "scene": "AMSC, Wabtec, AECOM, Jacobs, Quanta Services, Fluor를 각각 초전도/전력, 철도 시스템, 토목 설계, 전력 시공, EPC 칸으로 배치한다.",
+      "keyNumbers": [
+        "AMSC 최신 4개 분기 매출 0.30B달러, OPM 3.8%",
+        "Wabtec 최신 4개 분기 매출 11.51B달러, OPM 16.0%"
+      ],
+      "causalBridge": "EDGAR 회사는 회계연도와 분기 라벨이 달라 기간을 섞으면 오독이 생긴다."
+    },
+    {
+      "order": 7,
+      "heading": "재무제표는 기대를 식힌다",
+      "purpose": "재무착지",
+      "scene": "DART와 EDGAR 표를 놓고 대형 전력사는 이미 돈을 벌지만 초전도 소재는 연구형 위험을 가진다는 차이를 보여준다.",
+      "keyNumbers": [
+        "서남 2025 매출 34억원",
+        "GS건설 2025 매출 12.45조원, OPM 3.5%",
+        "PWR 최신 4개 분기 매출 30.12B달러"
+      ],
+      "causalBridge": "하이퍼튜브 테마는 기술적으로 흥미롭지만, 상장사 손익에서는 기존 주력 사업의 크기가 훨씬 크다."
+    },
+    {
+      "order": 8,
+      "heading": "그래서 무엇을 봐야 하나",
+      "purpose": "판단닫힘",
+      "scene": "속도 보도 대신 연구 단계, 테스트베드, 전용 선로, 초전도 냉각, 전력 제어, 인증, 수주와 CAPEX를 보는 체크리스트로 닫는다.",
+      "keyNumbers": [
+        "기술 성숙도: 축소 실험, 핵심기술 연구, 테스트베드, 상용화",
+        "DART와 EDGAR 기간 라벨 분리"
+      ],
+      "causalBridge": "독자는 하이퍼튜브를 관련주 목록이 아니라 병목이 어느 회사의 수주와 손익으로 내려오는지 확인하는 렌즈로 본다."
+    }
+  ],
+  "visuals": [
+    {
+      "actOrder": 1,
+      "kind": "photo",
+      "title": "하이퍼튜브 테스트 설비 hero",
+      "proves": "하이퍼튜브가 캡슐 디자인보다 튜브와 진공 설비와 계측 장비의 문제임을 첫 화면에서 보여준다.",
+      "seriesHint": "sealed tube, capsule, vacuum guideway, test facility",
+      "placement": "도입부 첫 질문 직후",
+      "insertAfter": "하이퍼튜브를 빠른 열차로만 보면 절반을 놓친다는 문단 뒤",
+      "narrativeUse": "독자가 속도보다 인프라를 먼저 보도록 시선을 바꾼다."
+    },
+    {
+      "actOrder": 1,
+      "kind": "svg",
+      "title": "아진공 튜브와 자기부상 원리",
+      "proves": "낮은 압력, 부상 간격, 가이드웨이 코일, 선형추진이 같은 시스템 안에서 움직인다는 점을 보여준다.",
+      "seriesHint": "pressure, levitation, propulsion, guideway",
+      "placement": "1막 아진공 원리 설명 뒤",
+      "insertAfter": "압력을 낮추는 이유를 설명한 문단 뒤",
+      "narrativeUse": "물리 원리를 잡은 뒤 회사 지도로 넘어가게 한다."
+    },
+    {
+      "actOrder": 2,
+      "kind": "photo",
+      "title": "초전도 부상과 선형추진 실험실",
+      "proves": "바퀴를 없애면 전력, 냉각, 센서, 제어가 선로의 일부가 된다는 주장을 시각화한다.",
+      "seriesHint": "superconducting magnet, cryostat, linear motor, sensor rack",
+      "placement": "2막 부상·추진 원리 설명 직후",
+      "insertAfter": "극성을 짧은 주기로 바꾸며 흡인력과 반발력을 만든다는 문단 뒤",
+      "narrativeUse": "초전도와 전력 제어가 왜 회사 지도의 별도 칸인지 이해시킨다."
+    },
+    {
+      "actOrder": 3,
+      "kind": "svg",
+      "title": "하이퍼튜브 공정별 회사 지도",
+      "proves": "상장사는 전체 하이퍼튜브가 아니라 차량, 초전도, 전력, 토목, 철도 시스템 칸에 배치된다는 점을 증명한다.",
+      "seriesHint": "Hyundai Rotem, SuNAM, LS ELECTRIC, HD Hyundai Electric, GS E&C, AMSC, Wabtec, AECOM, Jacobs",
+      "placement": "공정·회사·근거 표 앞",
+      "insertAfter": "상장사를 칸으로 나눠야 한다는 문단 뒤",
+      "narrativeUse": "독자가 과장된 관련주 목록을 피하고 기술 칸별로 읽게 한다."
+    },
+    {
+      "actOrder": 5,
+      "kind": "photo",
+      "title": "아진공 튜브 시공과 펌프 스테이션",
+      "proves": "상용 노선의 큰 비용이 차량보다 튜브 구조물, 펌프, 유지보수, 대피 설비에 쌓인다는 점을 보여준다.",
+      "seriesHint": "vacuum tube construction, concrete piers, pump station",
+      "placement": "5막 토목과 전력 설명 도입부",
+      "insertAfter": "튜브가 노선이 되는 순간 토목 자산이 된다는 문단 뒤",
+      "narrativeUse": "독자가 하이퍼튜브의 본체를 차량이 아니라 노선 인프라로 본다."
+    },
+    {
+      "actOrder": 5,
+      "kind": "photo",
+      "title": "선형추진 전력 제어실",
+      "proves": "전력 변환, 냉각, 제어 캐비닛, 센서 네트워크가 하이퍼튜브의 숨은 운영 원가가 된다는 점을 보여준다.",
+      "seriesHint": "inverter, converter, busbar, control room",
+      "placement": "전력 제어와 변전 설명 뒤",
+      "insertAfter": "가이드웨이에 전자석을 깔면 선로가 전력 설비가 된다는 문단 뒤",
+      "narrativeUse": "LS ELECTRIC, HD현대일렉트릭, 효성중공업 같은 전력 회사가 왜 인접 칸인지 설명한다."
+    },
+    {
+      "actOrder": 6,
+      "kind": "svg",
+      "title": "상용화 병목이 쌓이는 순서",
+      "proves": "하이퍼튜브의 상용화는 기술 한 가지가 아니라 압력 유지, 냉각, 제어, 구조물, 안전 인증의 동시 통과 문제임을 보여준다.",
+      "seriesHint": "vacuum, HTS, control, tube, evacuation, certification",
+      "placement": "민간 하이퍼루프 실패와 정부 연구 단계 설명 뒤",
+      "insertAfter": "순수 하이퍼튜브 상장사가 거의 없다는 문단 뒤",
+      "narrativeUse": "독자가 왜 순수 플레이어보다 기존 인프라 회사가 먼저 보이는지 이해한다."
+    },
+    {
+      "actOrder": 7,
+      "kind": "svg",
+      "title": "DART와 EDGAR 재무 현실 비교판",
+      "proves": "기술 칸마다 회사 규모와 이익률이 다르고, 순수 하이퍼튜브 매출은 아직 분리되지 않는다는 점을 보여준다.",
+      "seriesHint": "DART 2025Q1-Q4, EDGAR latest four fiscal quarters",
+      "placement": "DART 한국사 표와 EDGAR 미국사 표를 모두 제시한 직후",
+      "insertAfter": "DART와 EDGAR 표를 각각 읽은 뒤",
+      "narrativeUse": "독자가 하이퍼튜브 기대를 기존 사업 손익과 분리해 보게 한다."
+    },
+    {
+      "actOrder": 8,
+      "kind": "svg",
+      "title": "기술 성숙도와 다음 확인 지표",
+      "proves": "축소 실험, 핵심기술 연구, 테스트베드, 상용 노선의 간격을 분리해 과대해석을 막는다.",
+      "seriesHint": "lab, R&D, testbed, certification, commercial line",
+      "placement": "기술 성숙도 섹션 뒤",
+      "insertAfter": "개발 착수와 상용화는 같은 말이 아니라고 설명한 문단 뒤",
+      "narrativeUse": "독자가 다음 보도에서 어느 단계인지 먼저 확인하게 한다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "hero",
+      "subject": "아진공 하이퍼튜브 테스트 설비와 캡슐, 진공 튜브, 연구자 계측 장면",
+      "query": "HyperTube near vacuum guideway capsule test facility engineers no logos",
+      "keywords": [
+        "HyperTube",
+        "vacuum tube",
+        "capsule",
+        "test facility"
+      ],
+      "placement": "첫 화면 hero와 본문 도입부",
+      "narrativeUse": "하이퍼튜브를 속도 이미지가 아니라 튜브와 계측 장비가 있는 연구 설비로 보이게 한다."
+    },
+    {
+      "slot": "inline",
+      "subject": "초전도 전자석과 선형추진 가이드웨이 실험실",
+      "query": "superconducting magnet linear motor HyperTube guideway lab",
+      "keywords": [
+        "superconducting magnet",
+        "linear motor",
+        "guideway",
+        "control"
+      ],
+      "insertAfterAct": 2,
+      "placement": "2막 부상·추진 설명 직후",
+      "narrativeUse": "독자가 부상과 추진을 차량 외형이 아니라 냉각과 전력 제어 문제로 이해한다."
+    },
+    {
+      "slot": "inline",
+      "subject": "대형 아진공 튜브를 교각 위에 올리고 펌프 스테이션을 설치하는 토목 현장",
+      "query": "vacuum tube guideway construction pump station concrete piers HyperTube",
+      "keywords": [
+        "vacuum tube",
+        "pump station",
+        "civil engineering",
+        "guideway"
+      ],
+      "insertAfterAct": 5,
+      "placement": "5막 토목 병목 설명 직후",
+      "narrativeUse": "독자가 하이퍼튜브의 자본 부담이 차량보다 노선 구조물과 유지 설비에 쌓인다는 점을 본다."
+    },
+    {
+      "slot": "inline",
+      "subject": "하이퍼튜브 선형추진용 전력 변환 캐비닛과 제어실",
+      "query": "linear propulsion power electronics inverter control room HyperTube guideway",
+      "keywords": [
+        "power electronics",
+        "inverter",
+        "control room",
+        "linear propulsion"
+      ],
+      "insertAfterAct": 5,
+      "placement": "전력 제어와 변전 장치 설명 뒤",
+      "narrativeUse": "독자가 전력기기 회사와 인프라 시공사가 왜 관련 칸에 놓이는지 본다."
+    }
+  ],
+  "honestyGuards": [
+    "하이퍼튜브 순수 상장사는 사실상 없다고 보고, 각 회사는 관련 기술 칸으로만 배치한다.",
+    "현대로템, 서남, LS ELECTRIC, HD현대일렉트릭, 효성중공업, POSCO홀딩스, 현대제철, GS건설 숫자는 회사 전체 손익이며 하이퍼튜브 매출이 아니다.",
+    "AMSC, Wabtec, AECOM, Jacobs, Quanta Services, Fluor는 EDGAR 회사라 fiscal year와 quarter label을 먼저 확인하고 calendar year처럼 섞지 않는다.",
+    "초전도 테마와 하이퍼튜브 사업화를 동일시하지 않는다. 서남의 2025년 매출과 적자는 연구형 소재 기업의 위험을 함께 보여준다.",
+    "국토교통부 2025~2027 연구는 핵심기술 개발과 검증이지 상용 노선 발주가 아니다.",
+    "민간 하이퍼루프 실패 사례를 근거로 기술 전체를 폐기하지 않고, 상용화 병목을 구분하는 반례로만 쓴다."
+  ],
+  "evidenceMap": [
+    {
+      "claim": "하이퍼튜브는 아진공 0.001~0.01기압 튜브 속에서 자기부상과 전자기 추진으로 이동하는 시스템이다.",
+      "sourceType": "official technical source",
+      "period": "as of 2026-07-07",
+      "sourceRef": "국토교통부 2025-04-09 보도자료, 한국철도기술연구원 대표 연구성과",
+      "howUsed": "기술 정의와 원리 해부"
+    },
+    {
+      "claim": "한국철도기술연구원은 축소모델 아진공 1/1000기압 튜브에서 1,019km/h 주행 실험을 성과로 제시했다.",
+      "sourceType": "official technical source",
+      "period": "KRRI 대표 연구성과",
+      "sourceRef": "KRRI 하이퍼튜브 대표 연구성과",
+      "howUsed": "기술 성숙도와 축소 실험 단계 설명"
+    },
+    {
+      "claim": "국토교통부는 2025~2027년 총사업비 127억원으로 전용 선로, 초전도 전자석, 주행 제어, 차체 검증 4개 세부 기술을 개발한다고 밝혔다.",
+      "sourceType": "official policy source",
+      "period": "2025-04-09",
+      "sourceRef": "MOLIT 보도자료 HWPX/PDF",
+      "howUsed": "현 연구 단계와 세부 병목 지도"
+    },
+    {
+      "claim": "현대로템은 2025년 DART 합산 매출 5.84조원, 영업이익률 17.2%로 철도 차량·방산 대형 제조사지만 하이퍼튜브 순수 매출은 아니다.",
+      "sourceType": "DART",
+      "period": "2025Q1-Q4 calendar annual sum",
+      "sourceRef": "dartlab.Company(\"064350\").select(\"IS\", [\"sales\", \"gross_profit\", \"operating_profit\"])",
+      "howUsed": "차량·시스템 통합 칸의 재무 착지"
+    },
+    {
+      "claim": "서남은 2025년 DART 합산 매출 34억원, 영업이익률 -113.9%로 초전도 소재 기대와 사업 규모 사이의 간격을 보여준다.",
+      "sourceType": "DART",
+      "period": "2025Q1-Q4 calendar annual sum",
+      "sourceRef": "dartlab.Company(\"294630\").select(\"IS\", [\"sales\", \"gross_profit\", \"operating_profit\"])",
+      "howUsed": "초전도 소재 칸의 과대해석 방지"
+    },
+    {
+      "claim": "LS ELECTRIC, HD현대일렉트릭, 효성중공업은 전력 제어와 변전 칸에 걸리지만 회사 전체 손익은 기존 전력 인프라 사이클의 영향이 더 크다.",
+      "sourceType": "DART",
+      "period": "2025Q1-Q4 calendar annual sum",
+      "sourceRef": "dartlab.Company(\"010120\"), dartlab.Company(\"267260\"), dartlab.Company(\"298040\")",
+      "howUsed": "전력 인프라 칸의 재무 착지"
+    },
+    {
+      "claim": "AMSC, Wabtec, AECOM, Jacobs, Quanta Services, Fluor는 EDGAR 최신 4개 fiscal quarter로 비교해야 하며 순수 하이퍼튜브 매출로 읽으면 안 된다.",
+      "sourceType": "EDGAR",
+      "period": "latest four fiscal quarters by issuer label",
+      "sourceRef": "dartlab.Company(\"AMSC\"), dartlab.Company(\"WAB\"), dartlab.Company(\"ACM\"), dartlab.Company(\"J\"), dartlab.Company(\"PWR\"), dartlab.Company(\"FLR\")",
+      "howUsed": "미국 상장사 칸별 재무 착지와 기간 라벨 가드"
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "requiredRounds": [
+      {
+        "id": "titleHook",
+        "status": "passed"
+      },
+      {
+        "id": "writerPanel",
+        "status": "passed"
+      },
+      {
+        "id": "honestyEvidence",
+        "status": "passed"
+      },
+      {
+        "id": "visualStoryPlan",
+        "status": "passed"
+      },
+      {
+        "id": "imageFit",
+        "status": "passed"
+      },
+      {
+        "id": "readerFit",
+        "status": "passed"
+      },
+      {
+        "id": "reevaluation",
+        "status": "passed"
+      }
+    ],
+    "decisionLog": [
+      {
+        "round": "r1",
+        "decision": "revise",
+        "note": "초안은 하이퍼튜브 관련주 목록으로 흐를 위험이 있었고, 아진공 튜브와 전력 제어와 토목이 충분히 앞에 나오지 않았다."
+      },
+      {
+        "round": "r2",
+        "decision": "passed",
+        "note": "기술 주어를 하이퍼튜브 시스템으로 고정하고, 공정별 회사 지도와 DART, EDGAR 기간 라벨을 분리했다."
+      },
+      {
+        "round": "r3",
+        "decision": "passed",
+        "note": "추가 평가에서 순수 상장사 부재, 정부 연구 단계, 민간 실패 사례를 오해 방지 섹션으로 보강했다."
+      }
+    ],
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": 1,
+          "planner": "기획작가는 하이퍼튜브를 현대로템, 서남, 전력기기, 토목 인프라의 상장사 지도 중심으로 배치했다.",
+          "evaluator": "기술 원리보다 관련 회사가 앞서면 사용자가 경계한 템플릿형 관련주 글이 된다. 아진공, 초전도 부상, 선형추진, 튜브 시공, 안전 인증을 먼저 설명해야 한다고 평가했다.",
+          "skeptic": "순수 하이퍼튜브 상장사가 없는데 관련주처럼 쓰면 과장이다. 이미지도 캡슐 hero 한 장이면 인프라 병목이 보이지 않는다고 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 85,
+          "plannerRevision": "공정 지도를 앞당기고, 국토교통부 4개 세부 기술과 KRRI 축소 실험을 기술 축으로 세운 뒤 회사는 각 칸의 인접 플레이어로만 재배치했다."
+        },
+        {
+          "round": 2,
+          "planner": "개선안은 진공 튜브와 자기부상 원리에서 시작해 공정·회사 지도, DART 재무 착지, EDGAR 기간 라벨, 오해 방지, 체크리스트로 이어지게 재기획했다.",
+          "evaluator": "속도보다 병목을 먼저 보게 만드는 제목과 구조가 살아 있다. 사진 4장과 SVG 5장이 본문 중간 위치를 갖고, 상장사 과장도 제한되어 있다.",
+          "skeptic": "순수 플레이어 부재, 상용화 이전 단계, 서남의 작은 매출과 적자, EDGAR fiscal label 함정이 들어가 과장 위험이 줄었다.",
+          "decision": "passed",
+          "evaluatorScore": 94,
+          "plannerRevision": "평가 피드백을 반영해 회사명은 표의 칸으로 낮추고, 기술 성숙도와 다음 지표를 별도 막으로 고정했다."
+        },
+        {
+          "round": 3,
+          "planner": "추가 보강안은 민간 하이퍼루프 실패 사례를 상용화 병목의 반례로 넣고, 전력 제어실과 튜브 시공 이미지를 추가해 캡슐 중심 이미지를 피했다.",
+          "evaluator": "독자가 하이퍼튜브를 속도 테마가 아니라 진공, 전력, 토목, 인증의 결합 시스템으로 이해할 수 있다. 본문은 쉽게 읽히지만 회사별 위치와 재무 착지가 충분히 깊다.",
+          "skeptic": "상장사 이름은 많지만 순수 매출이 아니라는 가드가 반복되고, DART와 EDGAR 기간 기준이 검증표에 남아 있다.",
+          "decision": "passed",
+          "evaluatorScore": 96,
+          "plannerRevision": "최종 보강안이다. 이미지와 SVG의 본문 위치, 공식 출처, 재무 검증표, 오해 방지 조건을 모두 고정했다."
+        }
+      ],
+      "note": "작가기획, 평가 피드백, 작가 재기획, 재평가 루프 실행 산물. 최종 92점 이상만 발행"
+    }
+  }
+}

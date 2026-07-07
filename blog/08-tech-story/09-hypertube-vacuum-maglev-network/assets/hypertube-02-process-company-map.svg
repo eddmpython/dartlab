@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">하이퍼튜브 공정별 회사 지도</title>
+  <desc id="desc">상장사는 하이퍼튜브 전체가 아니라 차량, 초전도, 전력, 토목, 철도 시스템 칸에 배치된다.</desc>
+  <rect width="1200" height="675" fill="#0a0e1a"/>
+  <text x="70" y="68" fill="#f8fafc" font-family="Malgun Gothic, Segoe UI, sans-serif" font-size="34" font-weight="800">회사 지도: 관련주는 한 줄이 아니라 칸으로 나눈다</text>
+  <text x="70" y="105" fill="#94a3b8" font-family="Malgun Gothic, Segoe UI, sans-serif" font-size="17">하이퍼튜브 순수 상장사가 아니라 기존 철도, 초전도, 전력, 토목 회사가 특정 칸에 걸린다.</text>
+  <g font-family="Malgun Gothic, Segoe UI, sans-serif">
+    <g transform="translate(70 160)">
+      <rect width="170" height="330" rx="14" fill="#111827" stroke="#334155"/>
+      <text x="85" y="36" text-anchor="middle" fill="#fbbf24" font-size="19" font-weight="800">차량·시스템</text>
+      <text x="85" y="90" text-anchor="middle" fill="#f8fafc" font-size="18" font-weight="800">현대로템</text>
+      <text x="85" y="118" text-anchor="middle" fill="#94a3b8" font-size="14">DART 064350</text>
+      <text x="85" y="184" text-anchor="middle" fill="#cbd5e1" font-size="14">차체, 대차,</text>
+      <text x="85" y="207" text-anchor="middle" fill="#cbd5e1" font-size="14">철도 시스템 통합</text>
+      <rect x="28" y="260" width="114" height="38" rx="19" fill="#172033"/>
+      <text x="85" y="285" text-anchor="middle" fill="#f8fafc" font-size="14">OPM 17.2%</text>
+    </g>
+    <g transform="translate(258 160)">
+      <rect width="170" height="330" rx="14" fill="#111827" stroke="#334155"/>
+      <text x="85" y="36" text-anchor="middle" fill="#fbbf24" font-size="19" font-weight="800">초전도</text>
+      <text x="85" y="90" text-anchor="middle" fill="#f8fafc" font-size="18" font-weight="800">서남</text>
+      <text x="85" y="118" text-anchor="middle" fill="#94a3b8" font-size="14">DART 294630</text>
+      <text x="85" y="184" text-anchor="middle" fill="#cbd5e1" font-size="14">고온 초전도</text>
+      <text x="85" y="207" text-anchor="middle" fill="#cbd5e1" font-size="14">선재 가능성</text>
+      <rect x="24" y="260" width="122" height="38" rx="19" fill="#3b1520"/>
+      <text x="85" y="285" text-anchor="middle" fill="#fecaca" font-size="14">OPM -113.9%</text>
+    </g>
+    <g transform="translate(446 160)">
+      <rect width="170" height="330" rx="14" fill="#111827" stroke="#334155"/>
+      <text x="85" y="36" text-anchor="middle" fill="#fbbf24" font-size="19" font-weight="800">전력·제어</text>
+      <text x="85" y="83" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="800">LS ELECTRIC</text>
+      <text x="85" y="109" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="800">HD현대일렉트릭</text>
+      <text x="85" y="135" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="800">효성중공업</text>
+      <text x="85" y="184" text-anchor="middle" fill="#cbd5e1" font-size="14">변전, 인버터,</text>
+      <text x="85" y="207" text-anchor="middle" fill="#cbd5e1" font-size="14">전력 안정화</text>
+      <rect x="28" y="260" width="114" height="38" rx="19" fill="#172033"/>
+      <text x="85" y="285" text-anchor="middle" fill="#f8fafc" font-size="14">8.6~24.4%</text>
+    </g>
+    <g transform="translate(634 160)">
+      <rect width="170" height="330" rx="14" fill="#111827" stroke="#334155"/>
+      <text x="85" y="36" text-anchor="middle" fill="#fbbf24" font-size="19" font-weight="800">튜브·소재</text>
+      <text x="85" y="90" text-anchor="middle" fill="#f8fafc" font-size="18" font-weight="800">POSCO</text>
+      <text x="85" y="118" text-anchor="middle" fill="#f8fafc" font-size="18" font-weight="800">현대제철</text>
+      <text x="85" y="184" text-anchor="middle" fill="#cbd5e1" font-size="14">강재, 구조물,</text>
+      <text x="85" y="207" text-anchor="middle" fill="#cbd5e1" font-size="14">플랜지와 지지대</text>
+      <rect x="28" y="260" width="114" height="38" rx="19" fill="#172033"/>
+      <text x="85" y="285" text-anchor="middle" fill="#f8fafc" font-size="14">OPM 1~2.6%</text>
+    </g>
+    <g transform="translate(822 160)">
+      <rect width="170" height="330" rx="14" fill="#111827" stroke="#334155"/>
+      <text x="85" y="36" text-anchor="middle" fill="#fbbf24" font-size="19" font-weight="800">미국 철도·전력</text>
+      <text x="85" y="83" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="800">AMSC</text>
+      <text x="85" y="109" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="800">Wabtec</text>
+      <text x="85" y="135" text-anchor="middle" fill="#94a3b8" font-size="14">EDGAR</text>
+      <text x="85" y="184" text-anchor="middle" fill="#cbd5e1" font-size="14">전력 제어,</text>
+      <text x="85" y="207" text-anchor="middle" fill="#cbd5e1" font-size="14">철도 장비</text>
+      <rect x="28" y="260" width="114" height="38" rx="19" fill="#172033"/>
+      <text x="85" y="285" text-anchor="middle" fill="#f8fafc" font-size="14">3.8~16.0%</text>
+    </g>
+    <g transform="translate(1010 160)">
+      <rect width="120" height="330" rx="14" fill="#111827" stroke="#334155"/>
+      <text x="60" y="36" text-anchor="middle" fill="#fbbf24" font-size="18" font-weight="800">토목·EPC</text>
+      <text x="60" y="78" text-anchor="middle" fill="#f8fafc" font-size="15" font-weight="800">GS건설</text>
+      <text x="60" y="105" text-anchor="middle" fill="#f8fafc" font-size="15" font-weight="800">AECOM</text>
+      <text x="60" y="132" text-anchor="middle" fill="#f8fafc" font-size="15" font-weight="800">Jacobs</text>
+      <text x="60" y="159" text-anchor="middle" fill="#f8fafc" font-size="15" font-weight="800">PWR</text>
+      <text x="60" y="184" text-anchor="middle" fill="#cbd5e1" font-size="13">설계, 시공,</text>
+      <text x="60" y="205" text-anchor="middle" fill="#cbd5e1" font-size="13">전력 공사</text>
+      <rect x="16" y="260" width="88" height="38" rx="19" fill="#172033"/>
+      <text x="60" y="285" text-anchor="middle" fill="#f8fafc" font-size="13">3.5~6.3%</text>
+    </g>
+  </g>
+  <text x="600" y="580" text-anchor="middle" fill="#cbd5e1" font-family="Malgun Gothic, Segoe UI, sans-serif" font-size="19">관련성의 강도는 회사명이 아니라 어느 칸의 병목을 잡는지로 판단한다.</text>
+  <text x="600" y="612" text-anchor="middle" fill="#fbbf24" font-family="Malgun Gothic, Segoe UI, sans-serif" font-size="20" font-weight="800">순수 하이퍼튜브 매출은 아직 분리되지 않는다. 숫자는 기존 사업 손익이다.</text>
+</svg>
