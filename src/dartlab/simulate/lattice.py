@@ -37,7 +37,9 @@ def _moveKernel(cov: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return moves, dens / dens.sum()
 
 
-def growLattice(covariance: dict, *, steps: int = 8, stepDays: int = 5, beamWidth: int = 2000) -> dict:
+def growLattice(
+    covariance: dict, *, steps: int = 8, stepDays: int = 5, beamWidth: int = 2000, perStep: bool = False
+) -> dict:
     """재결합 격자 성장 → 잎 상태 분포. 결정론(RNG 0), 폭발 억제 = 재결합 + beam 가지치기.
 
     Args:
@@ -46,10 +48,13 @@ def growLattice(covariance: dict, *, steps: int = 8, stepDays: int = 5, beamWidt
         steps: 마디 수 (기본 8 = 8주 지평).
         stepDays: 마디당 거래일 (공분산 스케일).
         beamWidth: 상태 상한. 초과 시 저확률 상태 컷 (손실 질량은 prunedMass 로 정직 보고).
+        perStep: True 면 스텝별 주변 분위(factorMarginals)를 "stepMarginals" 로 캡처 (재예보
+            걸음수별 coverage 곡선 입력, 15 §6. 기존 잎 전용 소비는 False 무변).
 
     Returns:
         {"factors", "shocks" (nStates x k 누적 충격), "probs" (nStates, 합 <= 1), "stateCounts"
-        (스텝별 상태 수 곡선), "prunedMass" (가지치기 손실 질량), "unitShock" (그리드 1칸 스케일)}.
+        (스텝별 상태 수 곡선), "prunedMass" (가지치기 손실 질량), "unitShock" (그리드 1칸 스케일),
+        perStep 시 "stepMarginals" (스텝 h=1.. 별 {factor: 분위 dict})}.
         unitShock 은 커널 분산 모멘트 매칭: sqrt(cov_ii x stepDays / v_i).
 
     Guide:
@@ -65,6 +70,7 @@ def growLattice(covariance: dict, *, steps: int = 8, stepDays: int = 5, beamWidt
     states: dict[tuple, float] = {tuple([0] * k): 1.0}
     counts: list[int] = []
     prunedMass = 0.0
+    stepMarginals: list[dict] = []
     for _ in range(steps):
         new: dict[tuple, float] = {}
         for s, p in states.items():
@@ -77,9 +83,20 @@ def growLattice(covariance: dict, *, steps: int = 8, stepDays: int = 5, beamWidt
             new = dict(items)
         states = new
         counts.append(len(states))
+        if perStep:
+            g = np.array(list(states.keys()), dtype=float)
+            stepMarginals.append(
+                factorMarginals(
+                    {
+                        "factors": list(factors),
+                        "shocks": g * unitShock[None, :],
+                        "probs": np.array(list(states.values())),
+                    }
+                )
+            )
     grid = np.array(list(states.keys()), dtype=float)
     probs = np.array(list(states.values()))
-    return {
+    out = {
         "factors": list(factors),
         "shocks": grid * unitShock[None, :],
         "probs": probs,
@@ -87,6 +104,9 @@ def growLattice(covariance: dict, *, steps: int = 8, stepDays: int = 5, beamWidt
         "prunedMass": float(prunedMass),
         "unitShock": unitShock,
     }
+    if perStep:
+        out["stepMarginals"] = stepMarginals
+    return out
 
 
 def winsorizeBetas(betaByCode: pl.DataFrame, *, q: float = 0.01) -> pl.DataFrame:

@@ -25,8 +25,8 @@ from dartlab.simulate.reading import (
 )
 
 
-def weeklyLabels(weekEnd: pl.DataFrame, dailyPrices: pl.DataFrame) -> pl.DataFrame:
-    """주간 채점 라벨: forward 5거래일 시장 내 초과 + 사이즈 버킷 중립 잔차 + 절단 관측 보존.
+def weeklyLabels(weekEnd: pl.DataFrame, dailyPrices: pl.DataFrame, *, horizonDays: int = 5) -> pl.DataFrame:
+    """주간 채점 라벨: forward 지평 거래일 시장 내 초과 + 사이즈 버킷 중립 잔차 + 절단 관측 보존.
 
     절단(censored) 관측: 지평 내 종목이 소멸(상폐·장기정지)했는데 시장 달력은 계속되는 경우,
     마지막 관측가까지의 절단 수익으로 채점에 남긴다 (2026-07-07 레드팀 실증: 기존 scorable 필터가
@@ -37,20 +37,23 @@ def weeklyLabels(weekEnd: pl.DataFrame, dailyPrices: pl.DataFrame) -> pl.DataFra
     Args:
         weekEnd: (week, date=그 주 마지막 거래일).
         dailyPrices: (date, code, close, shares, mktcap) 일별.
+        horizonDays: forward 지평 거래일 (기본 5 = 주간 판독 계약. 재예보 걸음수별 곡선은
+            5·10·...·40 다지평 호출, 15 §6 선결재).
 
     Returns:
         (code, week, exRaw, exNeutral, scorable, censored). corpAction(주식수 급변·일수익 40%+)
         제외 (절단 행은 면제: 죽음 자체가 채점 대상).
     """
+    h = int(horizonDays)
     df = dailyPrices.filter(pl.col("close") > 0).sort(["code", "date"])
     cal = df.select("date").unique().sort("date").with_row_index("di")
     marketMaxDi = int(cal["di"].max()) if cal.height else 0
     df = df.join(cal, on="date", how="left")
     c = pl.col("close")
     df = df.with_columns(
-        fwdClose=c.shift(-5).over("code"),
-        fwdShares=pl.col("shares").shift(-5).over("code"),
-        fwdMaxAbs=(c / c.shift(1).over("code") - 1).abs().shift(-1).rolling_max(5).over("code").shift(-4),
+        fwdClose=c.shift(-h).over("code"),
+        fwdShares=pl.col("shares").shift(-h).over("code"),
+        fwdMaxAbs=(c / c.shift(1).over("code") - 1).abs().shift(-1).rolling_max(h).over("code").shift(-(h - 1)),
         lastDi=pl.col("di").max().over("code"),
         lastClose=c.last().over("code"),
     ).with_columns(
@@ -61,7 +64,7 @@ def weeklyLabels(weekEnd: pl.DataFrame, dailyPrices: pl.DataFrame) -> pl.DataFra
     )
     snap = df.join(weekEnd, on="date", how="inner")
     # 절단 = 지평 창이 시장 달력 안(미도래 아님)인데 종목 행이 창 끝 전에 소멸
-    censored = pl.col("fwdClose").is_null() & (pl.col("di") + 5 <= marketMaxDi) & (pl.col("lastDi") < pl.col("di") + 5)
+    censored = pl.col("fwdClose").is_null() & (pl.col("di") + h <= marketMaxDi) & (pl.col("lastDi") < pl.col("di") + h)
     snap = snap.with_columns(
         censored=censored,
         fwdRet=pl.when(censored).then(pl.col("lastClose") / c - 1).otherwise(pl.col("fwdRet")),
