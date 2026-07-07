@@ -50,3 +50,22 @@
 ## 남은 결정 (운영자)
 
 P1 은 합의·저위험·운영자 원칙(exhaustive) 직접 이행이라 즉시 착수 후보. P2~P4 는 버킷 경계(특히 A/C 사이 salesOrder 류가 scan 수치냐 docs 냐)에 도메인 판단 여지 있음. narrative 를 scan 에 넣지 않는다는 4관점 합의는 확정.
+
+## P1 구현 완료 (2026-07-07, commit 547d7c780)
+
+손 게이트 3겹을 카탈로그 자동 도출로 전환 + 신규 7 apiType 실소비자 배선:
+- `SCAN_API_TYPES` = 카탈로그 report-surface 도출(28) - 실측 무데이터 4 = **24** (`_reportApiTypes()`). `_REQUIRED_REPORT_FILES` 빌더 파생 자동동기화. note `registered` 게이트 제거(shareBasedComp 자동편입, 30).
+- 신규 축 배선: debt(채무증권), workforce(최고개인보수·미등기보수), governance(최대주주변동), capital(발행주식총수·자기주식·조달금액·목적외사용).
+- **측정에 의한 도태**: 무데이터 4(hybridSecurities·contingentCapital·executivePayByType·executivePayTotal)는 전종목 실측 payload 0 → 제외(손 추측 아님).
+- `latestDataRows` 헬퍼: 이벤트-데이터(공모자금·5억보수) status-only 최신연도 오탐 차단.
+- 실측: 채무증권 1335·발행주식 2900·조달 905(목적외 416)·최고보수 1374·미등기 2682. scan 유닛 291+계약 pass·dartlabGuard strict PASS.
+
+## P2 실측 판정 (2026-07-07): 매트릭스·narrative 는 안전한 cross-section 수치화 불가
+
+버킷 A/C 의 매트릭스·정성 항목을 실 데이터로 그라운딩한 결과, **셋 다 scan 수치 축으로 안전 구현 불가하거나 이미 커버**임이 확인됐다. 억지 구현은 조용한 오답 또는 덕지덕지라 정공법상 미착수.
+
+- **relatedParty(특수관계자, NT_D818000)**: 실 panel 셀 검사 결과 `acode=null` · `axisPath=ConsolidatedMember`(degenerate, 거래유형 축 없음) · label 일반적("기타"·"관계기업계"). segments(OperatingSegmentsMember 축 보유)와 달리 관계사매출/매입/채권을 신뢰 있게 유형화할 구조가 **원천 부재**. DART 는 구조화 특수관계자 endpoint 도 없음. 내부거래율 강제 산출 = 조용한 오답(악마의변호인 경고 확증). → 단일종목 포렌식(company/frame)이 정답.
+- **narrative-numeric(수주잔고·가동률)**: `frame/narrative.extractNarrative` 는 raw 서술 블록/표를 반환(넘버 아님). 표 leaf 는 period-wide 이나 회사별 포맷 상이 → cross-company 단일 수치 추출은 fragile NLP(조용한 오답 위험). → 단일종목 read(frame/narrative, 이미 존재)가 정답.
+- **segments(영업부문, NT_D871100)**: 구조화 축 보유(추출 가능)하나 **salesByProduct 축이 이미** 사업 집중도(nSegments·topSharePct·hhi·grade)를 노출 → 재구현 시 중복(덕지덕지).
+
+결론: **P1 이 사업보고서의 안전 추출 가능 구조화 표를 전부 흡수**했고, 잔여 매트릭스·정성은 데이터 구조상 cross-section 스크리닝 부적합(단일종목 read=frame/narrative·company, 이미 존재). scan 축 신설 0 이 정공법. narrative 정량화가 꼭 필요하면 별도 회사별-표 파서 프로젝트(고위험, 조용한 오답 관리 필요)로 격리 승격해야 함(운영자 결정).
