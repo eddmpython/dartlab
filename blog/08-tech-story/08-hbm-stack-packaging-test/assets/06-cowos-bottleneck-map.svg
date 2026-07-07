@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">CoWoS 패키징 병목 지도</title>
+  <desc id="desc">CoWoS는 로직 칩, HBM 스택, 인터포저, 기판, 테스트를 한 패키지로 묶는 병목이다.</desc>
+  <rect width="1200" height="675" fill="#0a0e1a"/>
+  <text x="58" y="64" fill="#f8fafc" font-size="34" font-family="Arial, sans-serif" font-weight="700">HBM이 있어도 CoWoS가 막히면 AI 칩은 안 나온다</text>
+  <text x="58" y="104" fill="#94a3b8" font-size="18" font-family="Arial, sans-serif">큰 인터포저 위에서 로직 다이와 HBM 큐브를 함께 붙이는 단계가 최종 출하량을 잠근다</text>
+  <g font-family="Arial, sans-serif">
+    <rect x="110" y="170" width="980" height="330" rx="26" fill="#111827" stroke="#334155" stroke-width="3"/>
+    <rect x="185" y="245" width="270" height="170" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+    <text x="245" y="337" fill="#e2e8f0" font-size="24" font-weight="700">Logic die</text>
+    <rect x="745" y="245" width="270" height="170" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+    <text x="805" y="337" fill="#e2e8f0" font-size="24" font-weight="700">Logic die</text>
+    <g fill="#475569" stroke="#fbbf24">
+      <rect x="520" y="205" width="60" height="115" rx="5"/>
+      <rect x="610" y="205" width="60" height="115" rx="5"/>
+      <rect x="520" y="350" width="60" height="115" rx="5"/>
+      <rect x="610" y="350" width="60" height="115" rx="5"/>
+    </g>
+    <text x="515" y="188" fill="#fbbf24" font-size="18" font-weight="700">HBM stacks</text>
+    <g stroke="#64748b" stroke-width="2">
+      <line x1="455" y1="300" x2="520" y2="260"/>
+      <line x1="455" y1="360" x2="520" y2="410"/>
+      <line x1="670" y1="260" x2="745" y2="300"/>
+      <line x1="670" y1="410" x2="745" y2="360"/>
+    </g>
+    <text x="500" y="530" fill="#e2e8f0" font-size="21" font-weight="700">Silicon interposer</text>
+    <text x="430" y="558" fill="#94a3b8" font-size="16">배선 밀도, reticle stitching, 수율, substrate 공급이 같이 필요</text>
+    <rect x="70" y="560" width="250" height="70" rx="10" fill="#111827" stroke="#334155"/>
+    <text x="98" y="602" fill="#cbd5e1" font-size="18">HBM 공급</text>
+    <rect x="475" y="560" width="250" height="70" rx="10" fill="#111827" stroke="#334155"/>
+    <text x="505" y="602" fill="#cbd5e1" font-size="18">CoWoS 용량</text>
+    <rect x="880" y="560" width="250" height="70" rx="10" fill="#111827" stroke="#334155"/>
+    <text x="910" y="602" fill="#cbd5e1" font-size="18">최종 GPU 출하</text>
+  </g>
+  <g stroke="#fbbf24" stroke-width="4" fill="none">
+    <path d="M320 595 H475"/>
+    <path d="M725 595 H880"/>
+  </g>
+  <text x="355" y="585" fill="#fbbf24" font-size="15" font-family="Arial, sans-serif">있어도</text>
+  <text x="760" y="585" fill="#fbbf24" font-size="15" font-family="Arial, sans-serif">뚫려야</text>
+</svg>

@@ -157,11 +157,39 @@ HBM 세대가 올라갈수록 헤드라인은 보통 용량과 속도다. 몇 GB
 
 둘째, 베이스 다이다. HBM4부터는 베이스 다이의 역할과 제조 공정이 더 중요해질 수 있다. 베이스 다이는 스택 아래에서 신호를 모으고 제어한다. 이것이 어떤 로직 공정으로 만들어지는지, 메모리 회사가 자체로 할지, 파운드리와 협업할지, 고객별로 어떻게 커스텀할지가 가치사슬을 바꾼다. 이 부분은 기사마다 추정이 많으므로 공시와 공식 발표에서 확인되는 범위만 써야 한다.
 
+![HBM4 베이스 다이와 HBM 스택을 비교하는 설계·패키징 랩. 베이스 다이는 단순 받침대가 아니라 인터페이스와 전력과 테스트 경로를 모으는 로직 다이다](./assets/05-hbm4-base-die.webp)
+
+![HBM4의 베이스 다이는 I/O, 전력, 열, 고객별 인터페이스가 모이는 결정 지점이다](./assets/05-base-die-decision-map.svg)
+
 셋째, 패키징 용량이다. HBM과 GPU 다이가 있어도 CoWoS 또는 동급 패키징 용량이 부족하면 최종 제품은 나오지 않는다. TSMC가 CoWoS 세대를 키우고 더 많은 HBM 스택을 넣는 방향을 공개하는 이유도 여기에 있다. 여기서 Amkor나 ASE 같은 OSAT가 일부 칸을 맡을 수 있지만, 마진 구조는 NVIDIA나 메모리 회사와 다르다. "패키징이 병목"이라는 말과 "패키징 업체가 고마진"이라는 말은 같은 말이 아니다.
+
+![큰 인터포저 위에 로직 다이와 HBM 스택을 배치하는 고급 패키징 조립 장면. HBM 공급이 충분해도 CoWoS 용량이 막히면 최종 AI 칩 출하가 막힌다](./assets/06-cowos-interposer.webp)
+
+![CoWoS는 로직 다이, HBM 스택, 인터포저, 기판, 테스트를 한 패키지로 묶는 최종 병목이다](./assets/06-cowos-bottleneck-map.svg)
 
 넷째, 테스트 시간이다. 적층 수와 패키지 복잡도가 늘면 불량을 찾는 시간이 길어진다. 테스트 병렬화가 안 되면 생산량이 막힌다. 테스트 소켓은 더 높은 전류와 열 조건, 더 많은 접점, 더 짧은 교체 주기를 견뎌야 한다. 그래서 리노공업, ISC, Teradyne 같은 회사는 HBM이라는 단어가 직접 매출 항목에 크지 않게 보여도, 테스트 조건 변화의 수혜와 리스크를 같이 받는다.
 
-## 7. 이렇게 오해하면 안 된다
+## 7. 베이스 다이는 왜 주도권을 바꾸나
+
+HBM4를 이해할 때 가장 중요한 변화 중 하나는 인터페이스 폭이다. SK하이닉스의 HBM4 공식 발표는 HBM4가 이전 세대보다 두 배 넓은 2,048bit I/O를 채택한다고 설명한다. Micron의 HBM4 제품 설명도 2,048핀 인터페이스와 11Gb/s급 속도, 스택당 2.8TB/s 이상의 대역폭을 전면에 둔다. 숫자만 보면 "통로가 넓어졌다"는 이야기다. 하지만 공정으로 내려오면 의미가 커진다. 통로가 넓어질수록 베이스 다이는 더 많은 신호선을 정렬하고, 전력망을 안정화하고, 테스트 경로를 제공하고, GPU 쪽 컨트롤러와 맞아야 한다.
+
+그래서 HBM4의 베이스 다이는 단순 받침대가 아니다. 메모리 회사의 DRAM 기술과 파운드리의 로직 공정, GPU 고객의 인터페이스 요구가 만나는 접점이다. 과거에는 "누가 DRAM을 잘 만드나"가 중심이었다면, HBM4에서는 "누가 고객 GPU와 맞는 베이스 다이를 안정적으로 설계하고 검증하나"가 더 커진다. 이 차이는 회사 지도를 바꾼다. SK하이닉스와 삼성전자, Micron 같은 메모리 회사는 DRAM 적층만이 아니라 베이스 다이와 고객 인증을 관리해야 하고, TSMC 같은 파운드리는 GPU 로직과 패키징뿐 아니라 HBM 베이스 다이 협업의 중요성이 커질 수 있다.
+
+여기서 공시를 볼 때의 질문도 달라진다. DART에서는 연구개발활동, 설비투자, 고객 인증 표현, HBM4 양산 준비 문장을 본다. EDGAR에서는 NVIDIA, AMD, Broadcom 같은 고객 쪽에서 memory capacity, bandwidth, package, supply constraint, purchase obligation 같은 표현을 본다. 베이스 다이가 고객별 사양과 가까워질수록 HBM은 표준 부품에서 반맞춤형 시스템 부품으로 이동한다. 이 이동이 곧 전환비용이다. 한 번 검증된 HBM 스택과 베이스 다이 조합은 고객 GPU 로드맵에 깊게 박히기 때문에, 가격만으로 쉽게 바꾸기 어렵다.
+
+반대로 리스크도 커진다. 베이스 다이 설계가 고객 사양에 가까워질수록 한 고객 로드맵에 묶이는 정도가 강해진다. 특정 GPU 세대가 지연되거나, 패키징 구조가 바뀌거나, 전력과 열 조건이 수정되면 HBM 공급자의 양산 계획도 흔들린다. 그래서 HBM4 뉴스에서 "개발 완료"라는 말은 끝이 아니다. 그 뒤에 샘플, 고객 검증, 양산 램프, 실제 출하, 수율 안정화가 따로 있다. 이 단계를 구분하지 않으면 기술 발표를 매출로 너무 빨리 번역하게 된다.
+
+## 8. CoWoS는 왜 최종 출하량을 잠그나
+
+HBM이 충분해도 최종 AI 칩이 바로 나오는 것은 아니다. GPU 로직 다이, HBM 스택, 인터포저, 패키지 기판, 전원 공급, 방열 구조, 테스트가 모두 맞아야 한다. CoWoS는 이 단계의 대표 기술이다. 로직 칩과 여러 HBM 스택을 큰 실리콘 인터포저 위에 촘촘히 배치하고, 다시 패키지 기판에 올린다. 이때 인터포저 면적, 배선 밀도, 기판 공급, 장비 처리량, 패키지 수율이 모두 출하량을 결정한다.
+
+이 말은 HBM 공급망을 읽을 때 중요한 반전을 만든다. 메모리 공급자가 HBM을 충분히 만들어도 CoWoS 용량이 모자라면 NVIDIA나 AMD의 최종 AI 가속기는 제때 나오지 않는다. 반대로 CoWoS 용량이 늘어도 HBM 스택이나 기판, 테스트가 부족하면 역시 막힌다. 그래서 AI 칩 공급 병목은 하나의 회사가 아니라 여러 병목 중 가장 느린 칸이 결정한다. TSMC가 CoWoS와 3DFabric을 계속 강조하는 이유는, 첨단 공정 웨이퍼를 찍는 것만으로 AI 칩을 완성할 수 없기 때문이다.
+
+재무제표에서도 이 차이는 중요하다. NVIDIA는 fabless라 설비투자 부담이 낮고, 데이터센터 GPU 수요가 폭발하면 60%대 영업이익률이 가능하다. 그러나 패키징과 OSAT는 장비와 인력과 공정 수율 부담이 커서 같은 수요를 받아도 마진이 낮게 남을 수 있다. Amkor의 최신 4개 분기 영업이익률 7.6%가 그 차이를 보여준다. "패키징 병목"과 "패키징 업체 고마진"은 같은 말이 아니다. 병목이어도 계약 구조와 투자 부담이 마진을 누를 수 있다.
+
+CoWoS 병목을 확인하려면 단어 검색보다 일정과 물량을 봐야 한다. TSMC와 OSAT의 advanced packaging capacity, substrate shortage, customer concentration, capital expenditure, equipment lead time, yield ramp가 핵심 표현이다. 한국 회사로 내려오면 하나마이크론 같은 패키징·테스트 서비스 회사의 매출 성장과 영업이익률이 같이 움직이는지 봐야 한다. 서비스 매출이 늘어도 설비 감가상각과 인건비가 앞서면 마진은 낮게 남는다. HBM 공급망의 깊이는 바로 이 차이를 읽는 데 있다.
+
+## 9. 이렇게 오해하면 안 된다
 
 첫 번째 오해는 "HBM은 SK하이닉스만 보면 된다"다. SK하이닉스는 HBM 제조의 핵심 축이고 DART 2025년 숫자도 압도적이다. 그러나 HBM이 GPU 옆에 붙는 순간 TSMC의 패키징, 한미반도체의 본딩 장비, 테스트 부품과 장비, NVIDIA의 제품 로드맵, 클라우드 고객의 CAPEX까지 같이 움직인다. 메모리 회사 하나로 모든 병목을 설명할 수 없다.
 
@@ -171,11 +199,11 @@ HBM 세대가 올라갈수록 헤드라인은 보통 용량과 속도다. 몇 GB
 
 네 번째 오해는 "HBM4가 나오면 기존 병목이 사라진다"는 생각이다. 세대가 올라가면 병목은 사라지기보다 이동한다. HBM3E에서 본딩과 패키징이 막혔다면, HBM4에서는 베이스 다이, 열, 고객별 설계, 테스트 병렬화가 더 커질 수 있다. 기술 성숙도 관점에서 HBM3E는 이미 양산과 고객 인증이 진행된 구간이고, HBM4와 HBM4E는 공식 발표와 샘플, 양산 준비, 고객 검증이 섞인 구간이다. 같은 "완료"라는 단어도 개발 완료인지, 고객 인증인지, 양산 출하인지 분리해야 한다.
 
-## 8. 기술 성숙도와 출처
+## 10. 기술 성숙도와 출처
 
 기술 성숙도는 세 단계로 나눠 읽는다. 첫째, HBM3E는 이미 AI GPU 패키지에서 쓰이는 양산 기술이다. NVIDIA Blackwell 계열이 HBM3E 용량과 대역폭을 제품 설명의 중심에 둔다는 점이 이를 보여준다. 둘째, HBM4는 표준과 개발 완료, 샘플, 양산 준비, 고객 검증이 동시에 언급되는 전환기다. SK하이닉스 HBM4 발표처럼 공식 개발 완료가 나와도 그것이 모든 고객의 최종 인증과 같은 뜻은 아니다. 셋째, HBM4E와 이후 세대는 일부 공식 샘플과 로드맵이 있어도 본격 매출과 수율은 아직 확인해야 할 영역이다.
 
-출처도 분리해야 한다. 기술 원리는 JEDEC 표준, SK하이닉스와 NVIDIA와 TSMC의 공식 설명, IEEE와 Hot Chips류 기술 발표가 우선이다. 회사 숫자는 DART와 EDGAR가 우선이다. 시장점유율, 고객 인증 여부, 특정 고객 물량은 공시보다 보도와 산업 추정이 앞서는 경우가 많다. 그런 자료는 "공시 실측"이 아니라 "업계 추정"으로 표시해야 한다. 기술 블로그가 깊어지려면 이 경계가 분명해야 한다.
+출처도 분리해야 한다. 기술 원리는 JEDEC 표준, SK하이닉스와 Micron의 HBM4 제품 설명, NVIDIA와 TSMC의 공식 설명, IEEE와 Hot Chips류 기술 발표가 우선이다. 회사 숫자는 DART와 EDGAR가 우선이다. 시장점유율, 고객 인증 여부, 특정 고객 물량은 공시보다 보도와 산업 추정이 앞서는 경우가 많다. 그런 자료는 "공시 실측"이 아니라 "업계 추정"으로 표시해야 한다. 기술 블로그가 깊어지려면 이 경계가 분명해야 한다.
 
 ```python
 import dartlab
@@ -187,7 +215,7 @@ docs = dartlab.search("HBM advanced packaging memory test")
 
 한국사는 DART 사업보고서와 분기보고서의 "사업의 내용", "주요 제품", "매출 및 수주상황", "연구개발활동", "위험관리"를 본다. 미국사는 EDGAR 10-K의 Business, Risk Factors, MD&A, 10-Q의 segment와 revenue, inventories, purchase obligations를 본다. 특히 NVIDIA처럼 fabless(직접 제조하지 않는 설계 중심 회사) 구조는 [NVIDIA 기업이야기](/blog/NVDA-nvidia)에서 설명한 것처럼 제조와 패키징 의존이 강하다. [SK하이닉스 기업이야기](/blog/000660-skhynix)는 HBM이 메모리 사이클을 어떻게 바꿨는지 보여주고, [삼성전자 이야기](/blog/005930-samsung)는 전사 숫자와 반도체 부문을 분리해야 하는 이유를 보여준다. [한미반도체 이야기](/blog/042700-hanmi-semi)는 본딩 장비와 고객 집중을, [리노공업 이야기](/blog/058470-rino-industrial)는 테스트 핀의 마진 구조를, [규소에서 반도체까지](/blog/sand-to-semiconductor)는 소재와 장비에서 패키징으로 이어지는 큰 지도를 보완한다.
 
-## 9. 체크리스트: 다음 분기에 볼 신호
+## 11. 체크리스트: 다음 분기에 볼 신호
 
 다음 분기부터 HBM 뉴스를 읽을 때는 이 순서로 보면 된다.
 
@@ -196,13 +224,14 @@ docs = dartlab.search("HBM advanced packaging memory test")
 | 메모리 공급이 정말 늘었나 | SK하이닉스, 삼성전자, Micron의 매출총이익률, 재고, CAPEX | DART, EDGAR, IR | HBM 가격과 범용 DRAM 사이클이 같이 움직이는지 본다 |
 | 본딩 장비 병목이 계속되나 | 한미반도체 수주, 매출, 재고, 고객 집중 | DART 분기보고서 | 장비 출하가 한 번 튄 것인지 다음 세대까지 이어지는지 본다 |
 | 패키징이 막혔나 | TSMC CoWoS 증설, Amkor advanced packaging 언급 | TSMC 공식 자료, EDGAR | GPU 다이와 HBM이 있어도 최종 패키지가 막히는지 본다 |
+| 베이스 다이가 바뀌나 | HBM4 base die, 2,048bit I/O, customer qualification 표현 | SK하이닉스, Micron, DART, EDGAR | 표준 메모리에서 고객별 시스템 부품으로 이동하는지 본다 |
 | 테스트 시간이 늘었나 | 리노공업, ISC, Teradyne의 마진과 수주, 제품 믹스 | DART, EDGAR | 테스트 소켓과 ATE가 HBM 적층 수 증가를 따라가는지 본다 |
 | 고객 인증이 끝났나 | qualified, sampling, mass production, volume shipment 표현 | 공식 발표, 10-K, 10-Q | 개발 완료와 양산 출하를 구분한다 |
 | 수요가 유지되나 | NVIDIA 데이터센터 매출, 클라우드 CAPEX, 재고 | EDGAR, hyperscaler 공시 | HBM 병목이 공급 문제인지 수요 과속인지 분리한다 |
 
 이 체크리스트가 필요한 이유는 HBM이 이미 테마어가 되었기 때문이다. 테마어가 되는 순간 모든 회사가 HBM을 말하고, 모든 기사가 수혜를 말한다. 하지만 실제로는 어느 칸은 고마진이고, 어느 칸은 저마진이며, 어느 칸은 CAPEX가 먼저 들어가고, 어느 칸은 고객 인증이 끝나야 매출이 찍힌다. DART와 EDGAR는 이 차이를 확인하는 도구다.
 
-## 10. FAQ
+## 12. FAQ
 
 **HBM은 그냥 DRAM보다 비싼 메모리인가?**  
 아니다. HBM은 DRAM 다이를 수직으로 쌓고 GPU 옆의 인터포저에 붙이는 시스템 부품이다. 가격이 높은 것은 결과이고, 원인은 대역폭, 적층, 본딩, 열, 패키징, 테스트 난도다.
@@ -236,3 +265,5 @@ docs = dartlab.search("HBM advanced packaging memory test")
 | Teradyne 최신 4개 분기 매출 3.8B 달러, 영업이익률 26.5% | `Company("TER").select("IS", ["revenue", "gross_profit", "operating_income"])` | EDGAR 2026Q1, 2025Q4, 2025Q3, 2025Q2 합산 | 실측 |
 
 기술 원리와 외부 근거는 [NVIDIA Blackwell Ultra 설명](https://developer.nvidia.com/blog/inside-nvidia-blackwell-ultra-the-chip-powering-the-ai-factory-era/), [NVIDIA FY2026 10-K](https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm), [SK hynix HBM4 개발 완료 발표](https://news.skhynix.com/sk-hynix-completes-worlds-first-hbm4-development-and-readies-mass-production/), [SK hynix MR-MUF 설명](https://news.skhynix.com/rulebreaker-revolutions-mr-muf-unlocks-hbm-heat-control/), [TSMC CoWoS 공식 자료](https://3dfabric.tsmc.com/english/dedicatedFoundry/technology/cowos.htm), [Micron EDGAR filings](https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=MU&type=10-Q&dateb=&owner=include&count=10), [Teradyne EDGAR filings](https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=TER&type=10-Q&dateb=&owner=include&count=10)를 확인했다. 외부 자료는 기술 구조와 기간 라벨 확인용이고, 위 표의 매출과 이익률은 dartlab 실측으로 계산했다.
+
+HBM4 베이스 다이와 인터페이스 설명은 [Micron HBM 제품 설명](https://www.micron.com/products/memory/hbm)과 SK하이닉스 HBM4 공식 발표를 함께 참고했다. CoWoS와 인터포저 병목 설명은 TSMC 공식 CoWoS 자료와 NVIDIA 10-K의 외부 제조·조립·테스트·패키징 의존 리스크를 연결했다.

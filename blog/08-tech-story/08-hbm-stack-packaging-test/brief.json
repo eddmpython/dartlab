@@ -103,12 +103,45 @@
     },
     {
       "order": 6,
+      "heading": "HBM3E에서 HBM4로 가면 무엇이 어려워지나",
+      "purpose": "세대전환해부",
+      "scene": "HBM3E에서 HBM4로 넘어갈 때 적층, I/O, 열, 베이스 다이, 패키징, 테스트 병목이 어떻게 커지는지 설명한다.",
+      "keyNumbers": [
+        "SK hynix HBM4 발표의 2,048bit I/O",
+        "Micron HBM4 설명의 11Gb/s급 속도"
+      ],
+      "causalBridge": "세대 전환을 이해해야 개발 완료, 고객 인증, 양산 출하를 구분할 수 있다."
+    },
+    {
+      "order": 7,
+      "heading": "베이스 다이는 왜 주도권을 바꾸나",
+      "purpose": "병목심화",
+      "scene": "HBM4 베이스 다이가 I/O, 전력, 열, 고객별 인터페이스를 모으는 로직 다이로 바뀌는 장면을 설명한다.",
+      "keyNumbers": [
+        "HBM4 2,048bit I/O",
+        "스택당 2.8TB/s 이상 대역폭이라는 제품 설명"
+      ],
+      "causalBridge": "베이스 다이가 고객 GPU 사양과 가까워질수록 HBM은 표준 부품보다 시스템 부품에 가까워진다."
+    },
+    {
+      "order": 8,
+      "heading": "CoWoS는 왜 최종 출하량을 잠그나",
+      "purpose": "패키징병목",
+      "scene": "큰 인터포저 위에 로직 다이와 HBM 스택을 같이 올리는 조립 공정에서 최종 AI 칩 출하량이 결정되는 장면을 보여준다.",
+      "keyNumbers": [
+        "Amkor 최신 4개 분기 영업이익률 7.6%",
+        "NVIDIA 최신 4개 분기 영업이익률 64.0%"
+      ],
+      "causalBridge": "HBM 공급이 충분해도 CoWoS 용량, 기판, 테스트가 막히면 GPU 출하량이 막힌다."
+    },
+    {
+      "order": 9,
       "heading": "그래서 무엇을 봐야 하나",
       "purpose": "판단닫힘",
       "scene": "세대별 병목과 회사별 재무 착지를 놓고 다음 분기에 확인할 수 있는 신호를 닫는다.",
       "keyNumbers": [
-        "Amkor 최신 4개 분기 영업이익률 7.6%",
-        "NVIDIA 최신 4개 분기 영업이익률 64.0%"
+        "DART 2025Q1-Q4 한국 공급망 실측",
+        "EDGAR 최신 4개 분기 미국 공급망 실측"
       ],
       "causalBridge": "HBM의 가치는 한 종목 테마가 아니라 병목이 어느 회사의 가격, 수율, CAPEX, 고객 인증으로 남는지에서 갈린다."
     }
@@ -165,6 +198,46 @@
       "narrativeUse": "독자가 다음 세대 뉴스에서 숫자 스펙보다 양산 병목을 먼저 보게 한다."
     },
     {
+      "actOrder": 7,
+      "kind": "photo",
+      "title": "HBM4 베이스 다이와 스택 공동 설계 장면",
+      "proves": "HBM4에서 베이스 다이가 단순 받침대가 아니라 I/O, 전력, 열, 고객별 인터페이스를 모으는 결정 지점임을 보여준다.",
+      "seriesHint": "base die, 2048-bit I/O, power delivery, customer qualification",
+      "placement": "7막 베이스 다이 설명 도입 직후",
+      "insertAfter": "베이스 다이가 HBM4 가치사슬을 바꾼다는 문단 뒤",
+      "narrativeUse": "독자가 HBM4 경쟁을 DRAM 적층만이 아니라 베이스 로직 다이와 고객 인터페이스 경쟁으로 이해한다."
+    },
+    {
+      "actOrder": 7,
+      "kind": "svg",
+      "title": "HBM4 베이스 다이 결정 지도",
+      "proves": "DRAM 다이, 파운드리 공정, 고객 GPU, 전력, 열, 검증이 베이스 다이에 모인다는 구조를 설명한다.",
+      "seriesHint": "DRAM, foundry, GPU, I/O, power, qualification",
+      "placement": "7막 베이스 다이 사진 뒤",
+      "insertAfter": "베이스 다이가 고객 GPU 사양과 가까워진다는 설명 뒤",
+      "narrativeUse": "독자가 누가 베이스 다이를 잡느냐가 HBM4 주도권을 바꿀 수 있음을 이해한다."
+    },
+    {
+      "actOrder": 8,
+      "kind": "photo",
+      "title": "CoWoS 인터포저와 HBM 스택 조립 장면",
+      "proves": "HBM 공급이 충분해도 인터포저, 기판, 조립 용량이 막히면 최종 AI 칩 출하가 제한된다는 점을 보여준다.",
+      "seriesHint": "CoWoS, interposer, logic die, HBM stack, substrate",
+      "placement": "8막 CoWoS 병목 설명 도입부",
+      "insertAfter": "패키징 용량이 최종 제품을 막을 수 있다는 문단 뒤",
+      "narrativeUse": "독자가 메모리 공급과 GPU 출하 사이에 고급 패키징이라는 별도 병목이 있음을 본다."
+    },
+    {
+      "actOrder": 8,
+      "kind": "svg",
+      "title": "CoWoS 패키징 병목 지도",
+      "proves": "로직 다이, HBM 스택, 인터포저, 기판, 테스트가 한 패키지에서 같이 막힌다는 구조를 보여준다.",
+      "seriesHint": "logic die, HBM, interposer, substrate, final GPU shipment",
+      "placement": "8막 CoWoS 설명 중간",
+      "insertAfter": "CoWoS는 큰 실리콘 인터포저 위에 로직 다이와 HBM을 같이 올리는 단계라는 설명 뒤",
+      "narrativeUse": "독자가 패키징 병목과 패키징 업체 마진을 구분해야 한다는 결론으로 이동한다."
+    },
+    {
       "actOrder": 6,
       "kind": "svg",
       "title": "DART와 EDGAR 재무 착지",
@@ -216,6 +289,34 @@
       "insertAfterAct": 4,
       "placement": "4막 테스트 병목 설명 직후",
       "narrativeUse": "독자가 테스트 장비와 소켓 회사가 HBM 적층 수 증가의 뒤쪽 병목을 잡는다는 점을 본다."
+    },
+    {
+      "slot": "inline",
+      "subject": "HBM4 베이스 다이와 HBM 스택을 설계자가 비교하는 반도체 패키징 랩",
+      "query": "HBM4 base die memory stack co-design lab signal routing power delivery",
+      "keywords": [
+        "base die",
+        "HBM4",
+        "signal routing",
+        "power"
+      ],
+      "insertAfterAct": 7,
+      "placement": "7막 베이스 다이 설명 직후",
+      "narrativeUse": "독자가 베이스 다이를 단순 받침대가 아니라 고객 GPU 사양과 맞물린 로직 설계 문제로 이해한다."
+    },
+    {
+      "slot": "inline",
+      "subject": "CoWoS 스타일 인터포저 위에 로직 다이와 HBM 스택이 배치된 고급 패키징 조립 장면",
+      "query": "CoWoS interposer AI accelerator HBM stacks advanced packaging assembly",
+      "keywords": [
+        "CoWoS",
+        "interposer",
+        "advanced packaging",
+        "HBM stacks"
+      ],
+      "insertAfterAct": 8,
+      "placement": "8막 CoWoS 병목 설명 직후",
+      "narrativeUse": "독자가 HBM 공급과 최종 GPU 출하 사이에 인터포저와 기판과 조립 용량이라는 별도 병목이 있음을 본다."
     }
   ],
   "honestyGuards": [
@@ -268,6 +369,20 @@
       "period": "as of 2026-07-07",
       "sourceRef": "JEDEC HBM4, SK hynix HBM product releases, NVIDIA Blackwell, TSMC CoWoS official materials",
       "howUsed": "기술 성숙도와 다음 지표 설명"
+    },
+    {
+      "claim": "HBM4의 2,048bit I/O와 베이스 다이 중요성은 HBM을 고객 GPU와 맞물린 시스템 부품으로 바꾼다.",
+      "sourceType": "official technical sources",
+      "period": "as of 2026-07-07",
+      "sourceRef": "SK hynix HBM4 official release, Micron HBM product page",
+      "howUsed": "베이스 다이 심화 섹션과 다음 지표 체크리스트"
+    },
+    {
+      "claim": "CoWoS와 인터포저 용량은 HBM 공급과 최종 AI 칩 출하 사이의 별도 병목이다.",
+      "sourceType": "official technical sources and EDGAR",
+      "period": "as of 2026-07-07",
+      "sourceRef": "TSMC CoWoS official materials, NVIDIA FY2026 10-K supply risk",
+      "howUsed": "패키징 병목과 NVIDIA, Amkor 마진 구조 분리 설명"
     }
   ],
   "reviewGate": {
@@ -312,6 +427,11 @@
         "round": "r2",
         "decision": "passed",
         "note": "공정별 회사 지도, 본딩과 테스트 병목, DART와 EDGAR 기간 분리, 본문 중간 비주얼 계획이 제목 약속과 연결되었다."
+      },
+      {
+        "round": "r3",
+        "decision": "passed",
+        "note": "추가 평가에서 HBM4 베이스 다이와 CoWoS 출하 병목이 더 필요하다고 보고, 이미지 2장과 SVG 2장을 추가해 기술 깊이를 보강했다."
       }
     ],
     "loopEvidence": {
@@ -334,6 +454,15 @@
           "decision": "passed",
           "evaluatorScore": 95,
           "plannerRevision": "평가 피드백을 반영한 최종안이다. 기술 원리, 공정 병목, 회사 위치, 기간 라벨, 다음 지표를 모두 본문 구조에 고정했다."
+        },
+        {
+          "round": 3,
+          "planner": "추가 보강안은 HBM4의 2,048bit I/O, 베이스 다이 주도권, CoWoS 인터포저 출하 병목을 별도 막으로 추가하고 사진과 도식의 본문 위치를 재기획했다.",
+          "evaluator": "초판보다 기술 깊이가 커졌다. 독자가 왜 HBM4부터 베이스 다이가 중요해지고 왜 패키징 용량이 최종 GPU 출하량을 잠그는지까지 이해할 수 있다.",
+          "skeptic": "공식 출처와 공시 근거를 분리했고, 패키징 병목과 패키징 업체 고마진을 동일시하지 않는 가드가 들어가 과장이 줄었다.",
+          "decision": "passed",
+          "evaluatorScore": 96,
+          "plannerRevision": "추가 평가 피드백을 반영한 최종 보강안이다. 이미지 2장, SVG 2장, evidenceMap 2건, 체크리스트 1행을 추가했다."
         }
       ],
       "note": "작가기획, 평가 피드백, 작가 재기획, 재평가 루프 실행 산물. 최종 92점 이상만 발행"
