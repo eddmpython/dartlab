@@ -25,6 +25,12 @@ import polars as pl
 from dartlab.simulate.factors import baseScoreExpr, factorBetaMap
 
 
+def beamFor(k: int) -> int:
+    """팩터 수 → beam 폭 SSOT (실측 2026-07-06: k=3 1500=손실질량 0.67%, k=4 15000=0.98%.
+    팩터 1 증가당 ~x10, 상한 5만 = 런타임 가드. 소비처 3곳 공식 중복을 여기로 접음)."""
+    return min(1500 * 10 ** max(0, k - 3), 50000)
+
+
 def _moveKernel(cov: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """3^k 삼항 이동 {-1,0,1}^k 에 상관 정규밀도 가중 → (moves, probs). 동반이동이 커널에 들어감."""
     k = cov.shape[0]

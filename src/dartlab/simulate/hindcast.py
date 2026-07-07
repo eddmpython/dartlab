@@ -80,9 +80,8 @@ def fanCurves(
         if pit.height < 100:
             continue
         cov = _ss.factorCovariance(pit)
-        k = len(cov["factors"])
         lat = _lattice.growLattice(
-            cov, steps=steps, stepDays=5, beamWidth=min(1500 * 10 ** max(0, k - 3), 50000), perStep=True
+            cov, steps=steps, stepDays=5, beamWidth=_lattice.beamFor(len(cov["factors"])), perStep=True
         )
         for h, marg in enumerate(lat["stepMarginals"], 1):
             target = (_dt.strptime(og, "%Y%m%d") + _td(days=7 * h)).strftime("%Y%m%d")

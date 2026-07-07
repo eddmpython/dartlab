@@ -235,11 +235,7 @@ def _latticeOverlay(
     if macro.height == 0 or betas.height == 0:
         return candidates.head(topK), None
     cov = _ss.factorCovariance(macro)
-    # beam 은 팩터 수에 스케일 (실측 2026-07-06: k=3 beam 1500 = 손실질량 0.67%, k=4 는 1500 이
-    # 49% 손실 → 15000 이 0.98%. 팩터 1 증가당 ~x10 필요, 상한 5만 = 런타임 가드).
-    k = len(cov["factors"])
-    beam = min(1500 * 10 ** max(0, k - 3), 50000)
-    lat = _lt.growLattice(cov, steps=8, stepDays=5, beamWidth=beam)
+    lat = _lt.growLattice(cov, steps=8, stepDays=5, beamWidth=_lt.beamFor(len(cov["factors"])))
     dec = _lt.latticeDecision(candidates, _lt.winsorizeBetas(betas), lat, topK=topK)
     picks = _lt.hardenedTopK(candidates, dec, topK=topK, candidateExtra=max(candidates.height - topK, 0))
     dropped = [c for c in candidates["code"].to_list() if c not in picks]
@@ -374,8 +370,7 @@ def runWeek(
                 macroDf = _table.macroDaily(dataDir)
                 if asOfS.len() and macroDf.height:
                     cov = _ss.factorCovariance(macroDf.filter(pl.col("date") <= asOfS[0]))
-                    kM = len(cov["factors"])
-                    lat = _lt.growLattice(cov, steps=8, stepDays=5, beamWidth=min(1500 * 10 ** max(0, kM - 3), 50000))
+                    lat = _lt.growLattice(cov, steps=8, stepDays=5, beamWidth=_lt.beamFor(len(cov["factors"])))
                     estimateSummary["macroSealed"] = _estimate.sealMacroOutlook(
                         macroDf, _lt.factorMarginals(lat), asOf=asOfS[0], market=market, baseDir=baseDir
                     )
