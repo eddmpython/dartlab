@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">HBM 세대별 병목</title>
+  <desc id="desc">HBM3E에서 HBM4로 갈수록 적층 수, I/O 폭, 열, 본딩, 테스트 병목이 커진다.</desc>
+  <rect width="1200" height="675" fill="#0a0e1a"/>
+  <text x="58" y="66" fill="#f8fafc" font-size="34" font-family="Arial, sans-serif" font-weight="700">HBM3E 다음의 병목은 더 많이 쌓는 일이 아니다</text>
+  <text x="58" y="106" fill="#94a3b8" font-size="18" font-family="Arial, sans-serif">더 높게, 더 넓게, 더 차갑게, 더 정확하게 붙이고 검사해야 한다</text>
+  <line x1="120" y1="520" x2="1080" y2="520" stroke="#475569" stroke-width="3"/>
+  <g font-family="Arial, sans-serif">
+    <circle cx="190" cy="520" r="12" fill="#fbbf24"/>
+    <text x="145" y="558" fill="#e2e8f0" font-size="20" font-weight="700">HBM2E</text>
+    <rect x="108" y="390" width="164" height="86" rx="8" fill="#111827" stroke="#334155"/>
+    <text x="132" y="424" fill="#cbd5e1" font-size="16">AI 훈련 초기</text>
+    <text x="132" y="452" fill="#cbd5e1" font-size="16">대역폭 수요 확인</text>
+    <circle cx="410" cy="520" r="12" fill="#fbbf24"/>
+    <text x="370" y="558" fill="#e2e8f0" font-size="20" font-weight="700">HBM3</text>
+    <rect x="328" y="330" width="164" height="146" rx="8" fill="#111827" stroke="#334155"/>
+    <text x="352" y="365" fill="#cbd5e1" font-size="16">GPU 패키지</text>
+    <text x="352" y="393" fill="#cbd5e1" font-size="16">공급 제약</text>
+    <text x="352" y="421" fill="#cbd5e1" font-size="16">CoWoS 병목</text>
+    <text x="352" y="449" fill="#38bdf8" font-size="16">수율이 가격</text>
+    <circle cx="630" cy="520" r="12" fill="#fbbf24"/>
+    <text x="584" y="558" fill="#e2e8f0" font-size="20" font-weight="700">HBM3E</text>
+    <rect x="548" y="260" width="164" height="216" rx="8" fill="#111827" stroke="#334155"/>
+    <text x="572" y="295" fill="#cbd5e1" font-size="16">12단 적층</text>
+    <text x="572" y="323" fill="#cbd5e1" font-size="16">열압착 본딩</text>
+    <text x="572" y="351" fill="#cbd5e1" font-size="16">고객 검증</text>
+    <text x="572" y="379" fill="#38bdf8" font-size="16">테스트 시간</text>
+    <text x="572" y="407" fill="#38bdf8" font-size="16">패키지 열</text>
+    <circle cx="850" cy="520" r="12" fill="#fbbf24"/>
+    <text x="812" y="558" fill="#e2e8f0" font-size="20" font-weight="700">HBM4</text>
+    <rect x="768" y="190" width="164" height="286" rx="8" fill="#111827" stroke="#334155"/>
+    <text x="792" y="225" fill="#cbd5e1" font-size="16">더 넓은 I/O</text>
+    <text x="792" y="253" fill="#cbd5e1" font-size="16">베이스 다이</text>
+    <text x="792" y="281" fill="#cbd5e1" font-size="16">공정 협업</text>
+    <text x="792" y="309" fill="#38bdf8" font-size="16">하이브리드 본딩</text>
+    <text x="792" y="337" fill="#38bdf8" font-size="16">열 확산</text>
+    <text x="792" y="365" fill="#38bdf8" font-size="16">양산 검증</text>
+    <circle cx="1050" cy="520" r="12" fill="#fbbf24"/>
+    <text x="1008" y="558" fill="#e2e8f0" font-size="20" font-weight="700">HBM4E</text>
+    <rect x="968" y="140" width="164" height="336" rx="8" fill="#111827" stroke="#334155"/>
+    <text x="992" y="175" fill="#cbd5e1" font-size="16">용량 확대</text>
+    <text x="992" y="203" fill="#cbd5e1" font-size="16">전력 효율</text>
+    <text x="992" y="231" fill="#cbd5e1" font-size="16">고객별 설계</text>
+    <text x="992" y="259" fill="#38bdf8" font-size="16">공급망 동시성</text>
+    <text x="992" y="287" fill="#38bdf8" font-size="16">검사 병렬화</text>
+    <text x="992" y="315" fill="#38bdf8" font-size="16">불량 비용</text>
+  </g>
+  <rect x="58" y="600" width="1090" height="42" rx="9" fill="#111827" stroke="#334155"/>
+  <text x="80" y="627" fill="#e2e8f0" font-size="18" font-family="Arial, sans-serif">세대가 올라갈수록 병목은 DRAM 셀보다 본딩, 패키징, 열, 테스트, 고객 인증으로 이동한다</text>
+</svg>

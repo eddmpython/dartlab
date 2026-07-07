@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">HBM 재무 착지</title>
+  <desc id="desc">HBM 가치사슬의 대표 회사들을 DART 2025년과 EDGAR 최신 4개 분기 기준으로 비교한다.</desc>
+  <rect width="1200" height="675" fill="#0a0e1a"/>
+  <text x="58" y="65" fill="#f8fafc" font-size="34" font-family="Arial, sans-serif" font-weight="700">같은 HBM이라도 재무제표에 찍히는 위치가 다르다</text>
+  <text x="58" y="105" fill="#94a3b8" font-size="18" font-family="Arial, sans-serif">DART는 2025Q1-Q4 합산, EDGAR는 회사별 fiscal label을 유지한 최신 4개 분기 합산</text>
+  <g font-family="Arial, sans-serif">
+    <text x="90" y="165" fill="#fbbf24" font-size="21" font-weight="700">DART: 한국 제조와 장비</text>
+    <text x="650" y="165" fill="#38bdf8" font-size="21" font-weight="700">EDGAR: GPU 수요와 테스트</text>
+    <g fill="#111827" stroke="#334155">
+      <rect x="80" y="198" width="480" height="70" rx="8"/>
+      <rect x="80" y="282" width="480" height="70" rx="8"/>
+      <rect x="80" y="366" width="480" height="70" rx="8"/>
+      <rect x="80" y="450" width="480" height="70" rx="8"/>
+      <rect x="640" y="198" width="480" height="70" rx="8"/>
+      <rect x="640" y="282" width="480" height="70" rx="8"/>
+      <rect x="640" y="366" width="480" height="70" rx="8"/>
+      <rect x="640" y="450" width="480" height="70" rx="8"/>
+    </g>
+    <g font-size="18" fill="#e2e8f0">
+      <text x="105" y="227">SK하이닉스</text><text x="310" y="227">매출 97.1조</text><text x="455" y="227" fill="#fbbf24">OPM 48.6%</text>
+      <text x="105" y="311">삼성전자</text><text x="310" y="311">매출 333.6조</text><text x="455" y="311" fill="#fbbf24">OPM 13.1%</text>
+      <text x="105" y="395">한미반도체</text><text x="310" y="395">매출 5,767억</text><text x="455" y="395" fill="#fbbf24">OPM 43.6%</text>
+      <text x="105" y="479">리노공업</text><text x="310" y="479">매출 3,725억</text><text x="455" y="479" fill="#fbbf24">OPM 47.5%</text>
+      <text x="665" y="227">NVIDIA</text><text x="845" y="227">매출 $253.5B</text><text x="1000" y="227" fill="#38bdf8">OPM 64.0%</text>
+      <text x="665" y="311">Micron</text><text x="845" y="311">매출 $58.1B</text><text x="1000" y="311" fill="#38bdf8">OPM 48.3%</text>
+      <text x="665" y="395">Amkor</text><text x="845" y="395">매출 $7.1B</text><text x="1000" y="395" fill="#38bdf8">OPM 7.6%</text>
+      <text x="665" y="479">Teradyne</text><text x="845" y="479">매출 $3.8B</text><text x="1000" y="479" fill="#38bdf8">OPM 26.5%</text>
+    </g>
+    <text x="105" y="252" fill="#94a3b8" font-size="14">메모리 공급자, 고마진은 HBM 믹스와 사이클 영향</text>
+    <text x="105" y="336" fill="#94a3b8" font-size="14">전사 기준, DS와 DX가 섞여 HBM만의 숫자가 아님</text>
+    <text x="105" y="420" fill="#94a3b8" font-size="14">본딩 장비, 고객 집중과 장비 사이클 동시 확인</text>
+    <text x="105" y="504" fill="#94a3b8" font-size="14">프로브 핀, 테스트 난도 증가가 마진에 남는지 확인</text>
+    <text x="665" y="252" fill="#94a3b8" font-size="14">수요의 최상단, 제조와 패키징은 외부 의존</text>
+    <text x="665" y="336" fill="#94a3b8" font-size="14">미국 메모리 공급자, fiscal quarter 라벨 주의</text>
+    <text x="665" y="420" fill="#94a3b8" font-size="14">OSAT, 첨단 패키징은 저마진 구간도 많음</text>
+    <text x="665" y="504" fill="#94a3b8" font-size="14">ATE 장비, HBM 테스트 수요는 제품 믹스와 연결</text>
+  </g>
+  <rect x="58" y="565" width="1090" height="55" rx="10" fill="#111827" stroke="#334155"/>
+  <text x="80" y="599" fill="#e2e8f0" font-size="18" font-family="Arial, sans-serif">해석: HBM 수요가 폭발해도 최상단 GPU, 메모리 공급자, 장비, 테스트, 패키징의 마진 구조는 서로 다르다</text>
+</svg>

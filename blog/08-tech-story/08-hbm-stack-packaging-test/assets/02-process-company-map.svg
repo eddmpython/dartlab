@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">HBM 공정별 회사 지도</title>
+  <desc id="desc">HBM 가치사슬을 설계, 메모리 제조, 본딩, 패키징, 테스트, 최종 칩으로 나누고 대표 회사를 배치한다.</desc>
+  <rect width="1200" height="675" fill="#0a0e1a"/>
+  <text x="58" y="64" fill="#f8fafc" font-size="33" font-family="Arial, sans-serif" font-weight="700">HBM은 한 회사가 아니라 공정 네트워크다</text>
+  <text x="58" y="104" fill="#94a3b8" font-size="18" font-family="Arial, sans-serif">DART와 EDGAR에서는 각 회사가 잡은 칸과 기간 라벨을 분리해서 읽어야 한다</text>
+  <g font-family="Arial, sans-serif">
+    <rect x="60" y="160" width="160" height="350" rx="12" fill="#111827" stroke="#334155"/>
+    <text x="90" y="205" fill="#fbbf24" font-size="20" font-weight="700">GPU 설계</text>
+    <text x="88" y="245" fill="#e2e8f0" font-size="17">NVIDIA</text>
+    <text x="88" y="274" fill="#e2e8f0" font-size="17">AMD</text>
+    <text x="88" y="303" fill="#e2e8f0" font-size="17">Broadcom</text>
+    <text x="88" y="360" fill="#94a3b8" font-size="15">EDGAR</text>
+    <text x="88" y="386" fill="#94a3b8" font-size="15">수요, 마진</text>
+    <text x="88" y="412" fill="#94a3b8" font-size="15">고객 집중</text>
+    <rect x="250" y="160" width="160" height="350" rx="12" fill="#111827" stroke="#334155"/>
+    <text x="280" y="205" fill="#fbbf24" font-size="20" font-weight="700">HBM 제조</text>
+    <text x="278" y="245" fill="#e2e8f0" font-size="17">SK하이닉스</text>
+    <text x="278" y="274" fill="#e2e8f0" font-size="17">삼성전자</text>
+    <text x="278" y="303" fill="#e2e8f0" font-size="17">Micron</text>
+    <text x="278" y="360" fill="#94a3b8" font-size="15">DART, EDGAR</text>
+    <text x="278" y="386" fill="#94a3b8" font-size="15">DRAM, HBM</text>
+    <text x="278" y="412" fill="#94a3b8" font-size="15">CAPEX, 수율</text>
+    <rect x="440" y="160" width="160" height="350" rx="12" fill="#111827" stroke="#334155"/>
+    <text x="470" y="205" fill="#fbbf24" font-size="20" font-weight="700">본딩</text>
+    <text x="468" y="245" fill="#e2e8f0" font-size="17">한미반도체</text>
+    <text x="468" y="274" fill="#e2e8f0" font-size="17">ASMPT</text>
+    <text x="468" y="303" fill="#e2e8f0" font-size="17">Besi</text>
+    <text x="468" y="360" fill="#94a3b8" font-size="15">DART</text>
+    <text x="468" y="386" fill="#94a3b8" font-size="15">TC bonder</text>
+    <text x="468" y="412" fill="#94a3b8" font-size="15">고객 집중</text>
+    <rect x="630" y="160" width="160" height="350" rx="12" fill="#111827" stroke="#334155"/>
+    <text x="660" y="205" fill="#fbbf24" font-size="20" font-weight="700">패키징</text>
+    <text x="658" y="245" fill="#e2e8f0" font-size="17">TSMC</text>
+    <text x="658" y="274" fill="#e2e8f0" font-size="17">Amkor</text>
+    <text x="658" y="303" fill="#e2e8f0" font-size="17">ASE</text>
+    <text x="658" y="360" fill="#94a3b8" font-size="15">EDGAR, IR</text>
+    <text x="658" y="386" fill="#94a3b8" font-size="15">CoWoS</text>
+    <text x="658" y="412" fill="#94a3b8" font-size="15">기판, 열</text>
+    <rect x="820" y="160" width="160" height="350" rx="12" fill="#111827" stroke="#334155"/>
+    <text x="850" y="205" fill="#fbbf24" font-size="20" font-weight="700">테스트</text>
+    <text x="848" y="245" fill="#e2e8f0" font-size="17">리노공업</text>
+    <text x="848" y="274" fill="#e2e8f0" font-size="17">ISC</text>
+    <text x="848" y="303" fill="#e2e8f0" font-size="17">Teradyne</text>
+    <text x="848" y="360" fill="#94a3b8" font-size="15">DART, EDGAR</text>
+    <text x="848" y="386" fill="#94a3b8" font-size="15">프로브</text>
+    <text x="848" y="412" fill="#94a3b8" font-size="15">소켓, ATE</text>
+    <rect x="1010" y="160" width="130" height="350" rx="12" fill="#111827" stroke="#334155"/>
+    <text x="1037" y="205" fill="#fbbf24" font-size="20" font-weight="700">고객</text>
+    <text x="1033" y="245" fill="#e2e8f0" font-size="17">클라우드</text>
+    <text x="1033" y="274" fill="#e2e8f0" font-size="17">서버 OEM</text>
+    <text x="1033" y="303" fill="#e2e8f0" font-size="17">AI 랩</text>
+    <text x="1033" y="360" fill="#94a3b8" font-size="15">수요 검증</text>
+    <text x="1033" y="386" fill="#94a3b8" font-size="15">CAPEX</text>
+  </g>
+  <g stroke="#38bdf8" stroke-width="4" fill="none">
+    <path d="M220 335 H250"/>
+    <path d="M410 335 H440"/>
+    <path d="M600 335 H630"/>
+    <path d="M790 335 H820"/>
+    <path d="M980 335 H1010"/>
+  </g>
+  <rect x="58" y="555" width="1090" height="58" rx="10" fill="#111827" stroke="#334155"/>
+  <text x="82" y="590" fill="#e2e8f0" font-size="19" font-family="Arial, sans-serif">읽는 순서: 기술 칸을 먼저 잡고, 그 칸이 DART 또는 EDGAR의 매출, 마진, 투자, 리스크 문장에 어떻게 찍히는지 본다</text>
+</svg>

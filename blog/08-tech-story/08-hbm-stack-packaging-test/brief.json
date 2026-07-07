@@ -1,0 +1,342 @@
+{
+  "title": "HBM은 왜 쌓을까",
+  "titleContract": {
+    "workingTitle": "HBM은 왜 쌓을까",
+    "selectedTitle": "HBM은 왜 쌓을까",
+    "hookQuestion": "AI 칩 옆의 메모리는 왜 옆으로 넓어지는 대신 위로 쌓이는지 묻게 한다.",
+    "readerGap": "독자는 HBM을 비싼 메모리 정도로 알지만 글은 TSV, 본딩, 패키징, 테스트, 고객 인증까지 연결한다.",
+    "promise": "제목은 짧은 기술 질문으로 시작하고, 결론은 어느 회사가 어느 병목을 쥐는지와 DART, EDGAR에서 무엇을 봐야 하는지로 갚는다.",
+    "whySelected": "템플릿형 돈 이야기 없이 기술 원리를 바로 걸고, 본문에서 회사 지도와 재무 착지까지 자연스럽게 확장된다.",
+    "candidates": [
+      {
+        "title": "HBM은 왜 쌓을까",
+        "hook": "짧고 구체적인 기술 질문이다. 쌓는 이유를 알면 TSV, 본딩, 패키징, 테스트 병목까지 따라간다.",
+        "risk": "본문에서 회사와 공시까지 연결하지 않으면 단순 원리 해설로 끝날 수 있다."
+      },
+      {
+        "title": "AI 칩의 진짜 병목",
+        "hook": "GPU보다 메모리와 패키징이 먼저 막힐 수 있다는 반전을 준다.",
+        "risk": "HBM 단어가 제목에 없어 검색 의도가 약해질 수 있다."
+      },
+      {
+        "title": "메모리는 왜 위로 간다",
+        "hook": "기술적 호기심이 강하고 HBM의 본질을 쉽게 연다.",
+        "risk": "너무 은유적이라 HBM 글임을 설명에서 보강해야 한다."
+      }
+    ],
+    "rejectedPatterns": [
+      "HBM 누가 돈을 버나",
+      "HBM 관련주 총정리",
+      "HBM은 왜 돈을 못 벌까",
+      "SK하이닉스 HBM 수혜 분석"
+    ]
+  },
+  "description": "HBM을 GPU 옆의 비싼 메모리가 아니라 TSV, 열압착 본딩, CoWoS 패키징, 테스트, 고객 인증이 묶인 공정 네트워크로 설명하고 DART와 EDGAR 실측으로 회사 위치를 읽는다.",
+  "readerQuestion": "HBM 뉴스에서 왜 메모리 가격보다 적층, 본딩, 패키징, 테스트, 고객 인증이라는 공정 병목을 먼저 봐야 할까?",
+  "insight": {
+    "commonBelief": "HBM은 SK하이닉스와 엔비디아만 보면 되는 고가 메모리라고 여긴다.",
+    "twistFact": "HBM의 진짜 병목은 메모리 셀 하나가 아니라 여러 다이를 수직으로 연결하고 GPU 옆에서 열과 신호와 불량을 관리하는 패키징 네트워크다.",
+    "whatToWatch": "다음에는 HBM 세대명보다 본딩 장비 수주, CoWoS 증설, 테스트 소켓과 프로브 수요, 고객 인증 라벨, EDGAR fiscal quarter를 같이 본다.",
+    "freshnessArgument": "DART 2025년 합산과 EDGAR 최신 4개 분기를 분리해 기술 병목이 회사별 마진과 투자 구조에 다르게 남는다는 점을 보여준다.",
+    "evidenceRefs": [
+      "DART 2025Q1-Q4 SK하이닉스, 삼성전자, 한미반도체, 리노공업, ISC, 하나마이크론 실측",
+      "EDGAR 최신 4개 분기 NVIDIA, Micron, AMD, Broadcom, Amkor, Teradyne 실측",
+      "공정/층위, 대표 회사, 공시 근거 지도",
+      "JEDEC HBM4, NVIDIA Blackwell, TSMC CoWoS, 각사 10-K/10-Q 원문"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "HBM은 왜 옆보다 위로 쌓나",
+      "purpose": "메커니즘공개",
+      "scene": "GPU 옆에 붙은 HBM 스택을 열고 DRAM 다이, TSV, 마이크로범프, 로직 베이스 다이를 순서대로 설명한다.",
+      "keyNumbers": [
+        "DART 2025 SK하이닉스 매출 97.1조원",
+        "DART 2025 SK하이닉스 영업이익률 48.6%"
+      ],
+      "causalBridge": "쌓는 이유를 이해해야 왜 메모리 공급자뿐 아니라 본딩과 패키징 회사가 같이 등장하는지 알 수 있다."
+    },
+    {
+      "order": 2,
+      "heading": "HBM 공정은 어디서 막히나",
+      "purpose": "공정지도",
+      "scene": "DRAM 제조, TSV, 본딩, 인터포저 패키징, 프로브 테스트, 고객 검증을 공정 순서대로 배치한다.",
+      "keyNumbers": [
+        "한미반도체 2025 영업이익률 43.6%",
+        "리노공업 2025 영업이익률 47.5%"
+      ],
+      "causalBridge": "공정 지도가 있어야 각 회사가 왜 핵심인지와 어떤 숫자를 봐야 하는지가 연결된다."
+    },
+    {
+      "order": 3,
+      "heading": "왜 본딩 장비가 핵심인가",
+      "purpose": "병목해부",
+      "scene": "열압착 본딩 헤드가 여러 다이의 미세 범프를 누르고 맞추는 장면에서 수율과 속도 문제를 설명한다.",
+      "keyNumbers": [
+        "한미반도체 2025 매출 5,767억원",
+        "한미반도체 2025 매출총이익률 57.6%"
+      ],
+      "causalBridge": "본딩이 흔들리면 높은 HBM 가격도 불량 비용과 고객 인증 지연으로 사라진다."
+    },
+    {
+      "order": 4,
+      "heading": "테스트는 왜 뒤가 아니라 병목인가",
+      "purpose": "오해방지",
+      "scene": "프로브 카드, 테스트 소켓, 자동 테스트 장비가 HBM 패키지와 GPU 패키지를 검사하는 장면을 보여준다.",
+      "keyNumbers": [
+        "ISC 2025 영업이익률 27.3%",
+        "Teradyne 최신 4개 분기 영업이익률 26.5%"
+      ],
+      "causalBridge": "적층 수가 늘면 불량 위치와 열 조건이 복잡해져 마지막 검사가 아니라 양산 속도의 제약이 된다."
+    },
+    {
+      "order": 5,
+      "heading": "미국 공시는 왜 기간 라벨이 중요하나",
+      "purpose": "증거가드",
+      "scene": "NVIDIA, Micron, AMD, Broadcom, Amkor, Teradyne의 최신 4개 분기를 EDGAR fiscal label 그대로 나눠 본다.",
+      "keyNumbers": [
+        "NVIDIA 최신 4개 분기 매출 253.5B 달러",
+        "Micron 최신 4개 분기 영업이익률 48.3%"
+      ],
+      "causalBridge": "EDGAR는 회사마다 fiscal year와 quarter end가 달라 같은 2025라는 말로 묶으면 오독이 생긴다."
+    },
+    {
+      "order": 6,
+      "heading": "그래서 무엇을 봐야 하나",
+      "purpose": "판단닫힘",
+      "scene": "세대별 병목과 회사별 재무 착지를 놓고 다음 분기에 확인할 수 있는 신호를 닫는다.",
+      "keyNumbers": [
+        "Amkor 최신 4개 분기 영업이익률 7.6%",
+        "NVIDIA 최신 4개 분기 영업이익률 64.0%"
+      ],
+      "causalBridge": "HBM의 가치는 한 종목 테마가 아니라 병목이 어느 회사의 가격, 수율, CAPEX, 고객 인증으로 남는지에서 갈린다."
+    }
+  ],
+  "visuals": [
+    {
+      "actOrder": 1,
+      "kind": "svg",
+      "title": "HBM 스택 원리와 TSV 데이터 고속도로",
+      "proves": "HBM은 옆으로 긴 메모리가 아니라 TSV와 마이크로범프를 통해 위로 쌓은 짧은 데이터 고속도로임을 보여준다.",
+      "seriesHint": "DRAM 다이, TSV, 마이크로범프, 로직 베이스, GPU",
+      "placement": "1막 HBM 정의와 평면 DRAM의 한계 설명 뒤",
+      "insertAfter": "왜 쌓는지 설명한 첫 원리 문단 뒤",
+      "narrativeUse": "독자가 HBM을 가격이 아니라 물리 구조로 이해한 뒤 회사 지도로 넘어가게 한다."
+    },
+    {
+      "actOrder": 2,
+      "kind": "svg",
+      "title": "HBM 공정별 회사 지도",
+      "proves": "HBM 가치사슬이 메모리 회사 하나가 아니라 GPU 설계, 제조, 본딩, 패키징, 테스트, 고객 수요로 나뉜다는 점을 증명한다.",
+      "seriesHint": "NVIDIA, SK하이닉스, 삼성전자, Micron, 한미반도체, TSMC, Amkor, 리노공업, ISC, Teradyne",
+      "placement": "공정 네트워크를 설명하는 2막 앞부분",
+      "insertAfter": "HBM을 제품명보다 공정 순서로 봐야 한다는 문단 뒤",
+      "narrativeUse": "독자가 어느 회사가 어느 칸의 병목인지 한 화면에서 보고 이후 숫자 비교를 따라오게 한다."
+    },
+    {
+      "actOrder": 3,
+      "kind": "photo",
+      "title": "열압착 본딩과 마이크로범프 정렬 장면",
+      "proves": "본딩 장비가 단순 후공정 장비가 아니라 HBM 수율과 인증 속도를 좌우한다는 주장을 시각화한다.",
+      "seriesHint": "TC bonder, micro bump, alignment, yield",
+      "placement": "본딩 장비와 수율 설명 직후",
+      "insertAfter": "마이크로범프가 한 줄만 어긋나도 불량 비용이 커진다는 문단 뒤",
+      "narrativeUse": "독자가 한미반도체 같은 장비 회사가 왜 HBM 공정의 상류 병목으로 거론되는지 본다."
+    },
+    {
+      "actOrder": 4,
+      "kind": "photo",
+      "title": "HBM 프로브와 테스트 장면",
+      "proves": "테스트가 마지막 확인 절차가 아니라 적층 수 증가와 함께 양산 속도를 제한하는 병목임을 보여준다.",
+      "seriesHint": "probe card, socket, ATE, burn-in, thermal test",
+      "placement": "테스트 병목 설명 뒤",
+      "insertAfter": "불량 위치가 스택 내부에 숨어 원인 추적이 어려워진다는 문단 뒤",
+      "narrativeUse": "독자가 리노공업, ISC, Teradyne의 위치를 소모품이나 장비가 아니라 수율 검증 인프라로 이해한다."
+    },
+    {
+      "actOrder": 5,
+      "kind": "svg",
+      "title": "HBM 세대별 병목",
+      "proves": "HBM3E에서 HBM4로 갈수록 병목이 DRAM 셀보다 본딩, 열, 패키징, 테스트, 고객 검증으로 이동한다.",
+      "seriesHint": "HBM2E, HBM3, HBM3E, HBM4, HBM4E",
+      "placement": "세대 전환과 HBM4 설명 뒤",
+      "insertAfter": "세대명이 높아질수록 용량보다 수율과 열이 중요해진다는 문단 뒤",
+      "narrativeUse": "독자가 다음 세대 뉴스에서 숫자 스펙보다 양산 병목을 먼저 보게 한다."
+    },
+    {
+      "actOrder": 6,
+      "kind": "svg",
+      "title": "DART와 EDGAR 재무 착지",
+      "proves": "HBM 수요가 같은 방향이어도 GPU, 메모리, 본딩, 테스트, 패키징 회사의 마진 구조가 다르다는 점을 보여준다.",
+      "seriesHint": "DART 2025Q1-Q4, EDGAR latest four quarters",
+      "placement": "회사별 실측 비교 표 뒤",
+      "insertAfter": "DART와 EDGAR를 한 표로 합치되 기간 라벨을 분리해야 한다는 문단 뒤",
+      "narrativeUse": "독자가 기술 병목이 재무제표에 어느 위치로 남는지 보고 투자 테마식 요약을 피하게 한다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "hero",
+      "subject": "HBM 스택과 AI accelerator 패키지를 엔지니어가 검사하는 고급 반도체 패키징 클린룸",
+      "query": "HBM stack advanced packaging cleanroom AI accelerator interposer inspection",
+      "keywords": [
+        "HBM",
+        "stack",
+        "advanced packaging",
+        "cleanroom"
+      ],
+      "placement": "첫 화면 hero와 본문 도입부",
+      "narrativeUse": "첫 화면에서 HBM을 추상 메모리 가격이 아니라 실제 패키징 공정과 검사 대상인 물리적 제품으로 보이게 한다."
+    },
+    {
+      "slot": "inline",
+      "subject": "HBM 열압착 본딩 장비가 적층 다이를 기판 위에 정렬하는 장면",
+      "query": "HBM thermal compression bonding micro bump alignment semiconductor packaging",
+      "keywords": [
+        "TC bonder",
+        "micro bump",
+        "bonding",
+        "yield"
+      ],
+      "insertAfterAct": 3,
+      "placement": "3막 본딩 장비 설명 직후",
+      "narrativeUse": "독자가 본딩 장비를 후공정 부속품이 아니라 수율과 고객 인증을 좌우하는 병목으로 이해한다."
+    },
+    {
+      "slot": "inline",
+      "subject": "HBM 프로브 카드와 테스트 소켓이 패키지와 웨이퍼를 검사하는 테스트 랩",
+      "query": "HBM probe card test socket semiconductor automated test equipment lab",
+      "keywords": [
+        "probe",
+        "socket",
+        "ATE",
+        "test"
+      ],
+      "insertAfterAct": 4,
+      "placement": "4막 테스트 병목 설명 직후",
+      "narrativeUse": "독자가 테스트 장비와 소켓 회사가 HBM 적층 수 증가의 뒤쪽 병목을 잡는다는 점을 본다."
+    }
+  ],
+  "honestyGuards": [
+    "HBM 시장점유율과 고객 인증은 회사별로 공개 범위가 달라 공시 숫자처럼 단정하지 않는다.",
+    "DART 2025Q1-Q4와 EDGAR 최신 4개 분기는 기간 기준이 다르므로 한 표 안에서도 기간 라벨을 유지한다.",
+    "EDGAR는 fiscal year, quarter end, 10-K와 10-Q 기간을 먼저 확인하고 calendar year처럼 섞지 않는다.",
+    "삼성전자 전사 영업이익률은 HBM만의 수익성이 아니며 DS, DX, SDC 등이 섞인 숫자라고 명시한다.",
+    "한미반도체, 리노공업, ISC의 높은 마진을 HBM 단독 효과로 과장하지 않고 장비와 테스트 제품 믹스의 결과로 제한한다.",
+    "TSMC의 CoWoS는 핵심 병목이지만 ADR 데이터가 dartlab에서 바로 잡히지 않은 경우 공식 IR와 20-F 설명 근거로 분리한다."
+  ],
+  "evidenceMap": [
+    {
+      "claim": "SK하이닉스는 2025년 HBM 믹스와 메모리 사이클을 타고 전사 영업이익률 48.6%를 기록했다.",
+      "sourceType": "DART",
+      "period": "2025Q1-Q4 calendar annual sum",
+      "sourceRef": "dartlab.Company(\"000660\").select(\"IS\", [\"sales\", \"gross_profit\", \"operating_profit\"])",
+      "howUsed": "HBM 제조 칸의 재무 착지와 사이클 민감도 설명"
+    },
+    {
+      "claim": "한미반도체는 본딩 장비 칸에서 2025년 영업이익률 43.6%로 장비 병목의 가격력을 보여준다.",
+      "sourceType": "DART",
+      "period": "2025Q1-Q4 calendar annual sum",
+      "sourceRef": "dartlab.Company(\"042700\").select(\"IS\", [\"sales\", \"gross_profit\", \"operating_profit\"])",
+      "howUsed": "열압착 본딩 장비가 HBM 수율과 고객 인증에 붙는 이유 설명"
+    },
+    {
+      "claim": "리노공업과 ISC는 테스트 핀과 소켓 칸에서 HBM 적층 수 증가의 뒤쪽 병목을 잡는다.",
+      "sourceType": "DART",
+      "period": "2025Q1-Q4 calendar annual sum",
+      "sourceRef": "dartlab.Company(\"058470\"), dartlab.Company(\"095340\")",
+      "howUsed": "테스트를 마지막 절차가 아니라 양산 속도 병목으로 설명"
+    },
+    {
+      "claim": "NVIDIA의 최신 4개 분기 영업이익률 64.0%는 수요 최상단의 가격력이지 HBM 제조 마진과 같은 숫자가 아니다.",
+      "sourceType": "EDGAR",
+      "period": "latest four fiscal quarters: 2027Q1, 2026Q4, 2026Q3, 2026Q2 in dartlab labels",
+      "sourceRef": "dartlab.Company(\"NVDA\").select(\"IS\", [\"revenue\", \"gross_profit\", \"operating_income\"])",
+      "howUsed": "GPU 설계사와 메모리 공급자의 마진 구조 분리"
+    },
+    {
+      "claim": "Micron, Amkor, Teradyne는 EDGAR 회사라 fiscal year와 quarter end를 확인해야 같은 기간처럼 오독하지 않는다.",
+      "sourceType": "EDGAR",
+      "period": "latest four fiscal quarters by each issuer label",
+      "sourceRef": "dartlab.Company(\"MU\"), dartlab.Company(\"AMKR\"), dartlab.Company(\"TER\")",
+      "howUsed": "미국 공시 기간 라벨 가드와 재무 착지 표"
+    },
+    {
+      "claim": "HBM4로 갈수록 적층, I/O, 열, 패키징, 테스트, 고객 인증 난도가 동시에 올라간다.",
+      "sourceType": "official technical sources",
+      "period": "as of 2026-07-07",
+      "sourceRef": "JEDEC HBM4, SK hynix HBM product releases, NVIDIA Blackwell, TSMC CoWoS official materials",
+      "howUsed": "기술 성숙도와 다음 지표 설명"
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "requiredRounds": [
+      {
+        "id": "titleHook",
+        "status": "passed"
+      },
+      {
+        "id": "writerPanel",
+        "status": "passed"
+      },
+      {
+        "id": "honestyEvidence",
+        "status": "passed"
+      },
+      {
+        "id": "visualStoryPlan",
+        "status": "passed"
+      },
+      {
+        "id": "imageFit",
+        "status": "passed"
+      },
+      {
+        "id": "readerFit",
+        "status": "passed"
+      },
+      {
+        "id": "reevaluation",
+        "status": "passed"
+      }
+    ],
+    "decisionLog": [
+      {
+        "round": "r1",
+        "decision": "revise",
+        "note": "초안은 HBM을 SK하이닉스와 NVIDIA 중심의 수혜 서사로 읽을 위험이 있었고, 테스트와 EDGAR 기간 라벨이 약했다."
+      },
+      {
+        "round": "r2",
+        "decision": "passed",
+        "note": "공정별 회사 지도, 본딩과 테스트 병목, DART와 EDGAR 기간 분리, 본문 중간 비주얼 계획이 제목 약속과 연결되었다."
+      }
+    ],
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": 1,
+          "planner": "기획작가는 HBM 원리, SK하이닉스와 NVIDIA 수요, 한미반도체 장비를 한 글에 배치했다.",
+          "evaluator": "기술 원리와 회사 지도가 아직 분리되어 있고 테스트 병목과 EDGAR fiscal label 경고가 약해 독자가 그래서 무엇을 봐야 하는지 끝까지 남지 않는다고 평가했다.",
+          "skeptic": "HBM 관련주 정리처럼 읽히면 기술이야기 실패다. 비주얼도 hero 한 장에 의존하면 본딩, 테스트, 세대별 병목이 설명되지 않는다고 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 84,
+          "plannerRevision": "공정 지도를 2막으로 앞당기고, 본딩과 테스트를 별도 막으로 분리하며, EDGAR 최신 4개 분기의 fiscal label 가드와 비주얼 6개 계획을 반영했다."
+        },
+        {
+          "round": 2,
+          "planner": "개선안은 HBM을 쌓는 물리 원리에서 시작해 공정 네트워크, 본딩 장비, 테스트 병목, DART와 EDGAR 재무 착지, 다음 지표로 이어지게 재기획했다.",
+          "evaluator": "독자 질문이 끝까지 살아 있고, 기술 설명과 회사 배치와 공시 검산이 한 이야기로 읽힌다. hero와 inline 이미지, SVG, 표가 모두 본문 중간 역할을 갖는다.",
+          "skeptic": "제목 템플릿, 범용 반도체 이미지, HBM 단독 수익성 과장, EDGAR 연도 오독 문제가 개선안에서는 차단되었다.",
+          "decision": "passed",
+          "evaluatorScore": 95,
+          "plannerRevision": "평가 피드백을 반영한 최종안이다. 기술 원리, 공정 병목, 회사 위치, 기간 라벨, 다음 지표를 모두 본문 구조에 고정했다."
+        }
+      ],
+      "note": "작가기획, 평가 피드백, 작가 재기획, 재평가 루프 실행 산물. 최종 92점 이상만 발행"
+    }
+  }
+}
