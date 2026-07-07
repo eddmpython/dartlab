@@ -70,8 +70,60 @@ origins(Γ, 시총가중 필수·회사 재배분 금지) · shift-share/Bartik(
 관측 동행, do-언어 금칙) · 생존분석 절단(죽은 회사 = 드롭 아닌 censored) · Giacomini-White(레짐
 조건부 주장 게이트) · CSCV-PBO/DSR(기구현 상속).
 
-## §6. 라우팅
+## §6. 통합 뼈대 (마법의 정체, 2026-07-07 8도메인 개념 발굴 wf_8c58cfd0)
+
+운영자 지시 "개념적으로 찾아라 마법의 시나리오 시뮬레이터"의 산출. 8개 도메인(계량금융·기상·
+RL·확률계획·인과·복잡계·워게이밍·역학)이 서로 모르고도 **같은 5단 하나로 수렴**했다. 이름 =
+**가서·접고·지키고·채점(Visit-Fold-Defend-Certify), 면허 아래**. 세계 정식 명칭 = 예측가능성 면허
+하 분포강건 CVaR 목적의 최소자승 몬테카를로 최적정지. **핵심 한 줄: 미래를 예언하는 마법은 없다.
+진짜 마법은 못 믿는 분포 위에서 지금 최적으로 행동하고 그 최적성 갭을 수학으로 인증하는 결정공학이다.**
+
+**5단 x 도메인 수렴** (독립 재발명이 수렴 = 뼈대의 실재 증거):
+
+| 단 | 하는 일 | 정본 개념 (독립 재발명 도메인) |
+|---|---|---|
+| ① 면허 | 정직하게 얼마나 멀리 | 예측가능성 한계(Lorenz) · h*=9 · SMH 22주 · MSP nonanticipativity |
+| ② 가본다 | 순방향 경로 앙상블 | 입자/SMC · 경로적분(Feynman-Kac) · 시나리오 트리 · GMA 형태분석 |
+| ③ 접는다 | 역귀납 최적정지 | LSM (계량금융·RL·복잡계 3중 합의) · Bellman · deep optimal stopping |
+| ④ 지킨다 | 분포강건 꼬리목적 | CVaR(Rockafellar) · Wasserstein DRO · reverse stress · Kelly |
+| ⑤ 채점 | 적정스코어·갭 인증 | CRPS/Brier/WIS · PIT · primal-dual sandwich · PBO/DSR |
+
+급소 둘: (a) **②가본다와 ③접는다는 방향 반대** (순방향 뿌리기 + 역방향 접기 = §1 "시간전개"의
+정확한 기계). (b) **①면허가 전부 지배** (h* 밖에서는 ②③④가 노이즈 증폭기 = 면허가 곧 기권 트리거).
+
+**4대 기둥 정본 배치**:
+- **상태**: 입자/앙상블 칼만필터. 새 공시·가격 도착 = 관측 = 필터 재수축 = "PIT nowcast=시뮬 등재"의 엔진화.
+- **법칙**: shift-share+탄성+SVAR(연속 25%) + **SPPT 확률 파라미터화**(도달불가 75%를 spread로 정직
+  표현, **격자 붕괴로 사라진 spread를 여기서 복원**). §2 속도제한(전개깊이 ∝ 법칙두께)의 직결점.
+- **개입**: Synthetic Control(전상장사 원장 = 천연 donor pool, 반사실 무데이터 즉시) + do-calculus
+  ID 게이트(식별 실패 시 기권을 코드로 강제) + DebtRank/fire-sale 전파(13F·5%공시·국민연금 = real).
+- **전개**: 비재결합 입자 경로다발. h*=9 절단(밖은 모델클라이맷, 보간금지 정합). 격자는 DAPP tipping
+  노드 옵션 접기 **말단 부품**으로만 정당화(§4 강등의 남은 자리).
+
+**결정층 (접기 + 방어)**:
+- **접기 = LSM 최적정지**. continuation value = f(상태) basis 회귀, 즉시행사값(비용바닥 1.13%/주 차감)
+  vs 연속가치 → 진입·청산·증액·헤지·기권. **붕괴한 격자 빈자리(비선형 반응)를 이 회귀가 메운다.**
+- **방어 = CVaR + Wasserstein DRO**(평균 아님). 반경 ε는 임의 손잡이 아니라 **기존 certify·conformal·
+  PBO OOS 오차로 캘리브레이션(신규 데이터벽 0)**. + Kelly 시간평균 사이징(얇은 법칙과 독립).
+- **인증 = primal-dual gap**. lower(실행정책) sandwich upper(dual martingale) = 최적성 갭 실측 =
+  [[feedback_plan_score_not_signature]] "미검증 점수 금지"의 수학적 충족.
+
+**회피 > alpha (사상 결론)**: 고유 75%는 alpha로 못 쓴다(예언 불가). 회피로는 정직하게 쓴다(SPPT로
+spread에 실어 CVaR·reverse-stress가 소비). **alpha는 "안다" 주장, 회피는 "모른다"를 관리하는 규율.**
+후자가 데이터에 정박.
+
+**magic/real 경계 (박제)**: REAL = 8주 면허 안 분포·최적정지 타이밍·강건사이징·취약점 역산(instanton
+최확경로·DebtRank λmax)·관측된 반사실/전파·GMA 구조공간 전수방문. MAGIC(배제) = 고유 75% 경로별
+예언·h* 밖 점예측·측정안된 간선 확신·DSGE deep params 종목적용·cone wildcard 생성·완전열거·완전예지.
+
+**개념 확립 순서 (전부 미빌드 개념 = _attempts 졸업게이트 대상, 착수 미승인)**: P0 LSM 접기 코어(최소
+부품·저리프트, hindcast 경로다발에 회귀 한 겹) → P1 CVaR/DRO+Kelly 방어(낙관편향 억제) → P2 SPPT
+spread(정직한 분포의 원천) → P3 GMA+CCA 구조방문 + SynthControl/ID 개입방문 → P4 DebtRank/fire-sale
+전파 + gap 인증.
+
+## §7. 라우팅
 
 - 실행 계획(단계 0 수리 → 1 귀속 → 2 hindcast, 승격 게이트 표, 조작 가드): **15 문서가 정본**.
 - 진행·실측 이력: 04 원장 0c 시리즈. 격자 판정 상세: 14 문서 + wf_afb6c135 워크플로 원장.
-- 패널 원문: 세션 워크플로 원장 (wf_dda7e79d, 설계 5 + 레드팀 2 전문).
+- 패널 원문: 격자 3렌즈 wf_afb6c135 · 기획 7인 wf_dda7e79d · **통합 뼈대 8도메인 발굴 wf_8c58cfd0**
+  (§6 정본, 도메인별 concept sweep + 종합 청사진 전문).
