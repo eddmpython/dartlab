@@ -14,12 +14,13 @@ try:
 except ImportError:  # pragma: no cover
     yaml = None
 
-# 순회 대상 카테고리. 08(기술이야기)·06(데이터리포트)도 스캔한다.
+# 순회 대상 카테고리. 08(기술이야기)·06(데이터리포트)·09(투자이야기)도 스캔한다.
 # (과거 05 만 스캔해 08 이 무검증으로 새던 회귀 가드. 부실한 글이 조용히 발간되지 못하게.)
 BLOG_DIRS = [
     "blog/05-company-reports",
     "blog/06-data-reports",
     "blog/08-tech-story",
+    "blog/09-investment-stories",
 ]
 
 # 카드 캐러셀 손글 narration 1줄 권장 최대 길이(슬라이드 가독).
@@ -299,7 +300,7 @@ def score_post(folder_path: str) -> dict:
     fm_score = 0
     fm_max = 20
     # 공통 필수 6종(+2 each) + subject 조인 키 1종(+2). subject 키는 카테고리별로 다르다:
-    # 회사글(company-reports)=stockCode, 주제글(tech-story·data-reports)=topicSlug.
+    # 회사글(company-reports)=stockCode, 주제글(tech-story·data-reports·investment-stories)=topicSlug.
     # 주제글에 회사 stockCode 를 달면 블로그 터미널 버튼과 회사(기업이야기) 팟캐스트가 잘못
     # 조인되므로(operation.content 5절 조인 키 계약) 회사 키로는 보상하지 않고 아래서 경고한다.
     base_fields = ["title", "description", "category", "series", "tags", "ogImage"]
@@ -513,11 +514,13 @@ def main():
             if d.get("period_tables", 0) >= 3 and d.get("trajectory_tables", 0) < 2:
                 thin.append((folder, s))
     mixed = [(f, s) for f, s in results if s.get("depth", {}).get("mixed_base_year", 0) > 0]
-    # 조인 키 오배선 가드: 주제글(tech-story·data-reports)이 회사 stockCode 를 달면 블로그에
+    # 조인 키 오배선 가드: 주제글(tech-story·data-reports·investment-stories)이 회사 stockCode 를 달면 블로그에
     # 단일 회사 터미널 버튼과 그 회사 기업이야기 팟캐스트가 잘못 조인된다(주어는 기술·테마인데
     # 한 회사로 오인). operation.content 5절 조인 키 계약 위반이라 topicSlug 로 교체해야 한다.
     miswired = [
-        (f, s) for f, s in results if s.get("category") in ("tech-story", "data-reports") and s.get("has_stock_code")
+        (f, s)
+        for f, s in results
+        if s.get("category") in ("tech-story", "data-reports", "investment-stories") and s.get("has_stock_code")
     ]
     tech_contract_violations = []
     for f, s in results:

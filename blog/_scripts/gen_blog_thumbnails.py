@@ -49,6 +49,7 @@ PREFIX = {
     "company-reports": "기업이야기",
     "data-reports": "데이터 리포트",
     "tech-story": "기술이야기",
+    "investment-stories": "투자이야기",
 }
 
 # 숫자(+한글 단위) = accent 강조 (카드뉴스 [[구절]] 자동 근사)

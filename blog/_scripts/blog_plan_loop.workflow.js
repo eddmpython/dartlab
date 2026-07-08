@@ -13,7 +13,7 @@
 // 숫자·인과는 메인 스레드 dartlab 직독으로 args.evidence 에 주입(에이전트는 dartlab 호출 안 함, 환각 방지).
 //
 // 실행: Workflow({ scriptPath: "blog/_scripts/blog_plan_loop.workflow.js",
-//                  args: { topic, corpName, stockCode, evidence, recentTitles } })
+//                  args: { contentKind, topic, corpName, stockCode, evidence, recentTitles } })
 // 산물: { plan, loopLog, passed, rounds }
 //   passed=false 면 발행 금지. plan 을 index.md 집필 + imagePlan 수급 + visuals 차트의 입력으로 쓴다.
 // 문서 SSOT: operation.content · BLOG.md Phase 1/2/4 · PIPELINE.md.
@@ -35,6 +35,7 @@ const PRINCIPLES = `블로그 심층 리포트 원칙(합격선):
 4. 정직성: 영업이익 vs 순이익 분리, 분기/연간 라벨 명시, 일회성 분리, 매핑 artifact 무시, 연결 vs 그룹 실체 구분. dartlab 미검증 사실은 외부 맥락으로 분리. 억지 수치("이런 뜻은 아니다" 변명 필요) 금지.
 5. 깊이: 얕은 요약이 아니라 메커니즘까지 판다. 심층 리포트는 본문(표·차트 제외 읽는 글자) 14,000자 이상, 목표 20,000자. 다만 길이는 막·증거·시나리오의 산물이지 패딩이 아니다(반복·표 복붙·문장 늘리기 금지).
 6. 재미: 첫 2문단이 회사 배경이 아니라 이상한 숫자와 긴장으로 시작. "어?" 순간 4번+. 마지막은 요약이 아니라 다음 공시를 보는 기준으로 닫음.
+7. 참고글 연결: 선행 글에 이미 설명한 회사·기술·데이터·투자 개념이 있으면 relatedPosts 에 검색어, 링크, 배치 이유를 남긴다. 본문에서는 반복 설명을 줄이고 필요한 문단 뒤에 참고글을 연결한다.
 표기: em dash(긴 줄표) 금지. 부연은 마침표·괄호, 범위는 물결(~). 문장은 다/요/까.`
 
 const IMAGE_NOTE = `이미지 기획(내용 연상 강제): hero 1장 + 본문 inline 2~3장 이상. inline 이미지는 뒤에 자동으로 붙는 장식이 아니라 어느 막의 어느 설명 뒤에 들어갈지 insertAfterAct·placement·narrativeUse 로 결정한다. 각 이미지는 무조건 이 글의 내용·회사·제품·현장을 연상시켜야 한다. 회사 로고·상징품·실제 제품도 허용(주식·재무·교육 맥락이라 저작권 무관). 범용 스카이라인·추상 배경으로 도망가면 실패. query 는 실사 CC0 수급용 영어 검색어(그 회사 제품·현장·상징을 앞에), keywords 는 제목/태그 매칭용(오매치 차단). 예(봉제완구 회사): query "plush stuffed animals teddy bear shelf", keywords ["plush","teddy","stuffed","toy"].`
@@ -43,7 +44,7 @@ const VISUAL_NOTE = `막별 비주얼: 이야기가 요구하는 차트·표·�
 
 const PLAN_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['title', 'titleContract', 'description', 'readerQuestion', 'insight', 'acts', 'visuals', 'imagePlan', 'honestyGuards', 'evidenceMap'],
+  required: ['title', 'titleContract', 'description', 'readerQuestion', 'insight', 'acts', 'visuals', 'imagePlan', 'relatedPosts', 'honestyGuards', 'evidenceMap'],
   properties: {
     title: { type: 'string', description: '제목(60자 이하, 회사명 앞·궁금증 갭). 예: "오로라월드, 매출은 2배가 됐는데 이익은 왜 널뛸까".' },
     titleContract: {
@@ -130,15 +131,36 @@ const PLAN_SCHEMA = {
         },
       },
     },
+    relatedPosts: {
+      type: 'object', additionalProperties: false,
+      required: ['searches', 'links', 'placementRule'],
+      description: '기존 블로그 참고글 연결 계획. 선행 글에 이미 내용이 있으면 반복하지 말고 링크한다.',
+      properties: {
+        searches: { type: 'array', minItems: 1, items: { type: 'string' }, description: '착수 전 검색할 내부 글 키워드.' },
+        links: {
+          type: 'array',
+          items: {
+            type: 'object', additionalProperties: false, required: ['path', 'title', 'reason', 'placement'],
+            properties: {
+              path: { type: 'string', description: '내부 글 경로. 예: /blog/hbm-stack-packaging-test' },
+              title: { type: 'string' },
+              reason: { type: 'string', description: '왜 이 글을 참고글로 연결하는가.' },
+              placement: { type: 'string', description: '본문 어느 설명 뒤에 연결할지.' },
+            },
+          },
+        },
+        placementRule: { type: 'string', description: '참고글을 본문 어디에, 어떤 요약과 함께 놓을지.' },
+      },
+    },
     honestyGuards: { type: 'array', items: { type: 'string' }, description: '이 글에 적용할 정직성 가드(영업이익 vs 순이익 분리 등).' },
     evidenceMap: {
       type: 'array', minItems: 3,
-      description: '본문에 쓸 DART/EDGAR/dartlab/scan 근거 지도. 숫자·공시 위치·기간·어느 막에서 쓰는지까지 적는다.',
+      description: '본문에 쓸 DART/EDGAR/dartlab/scan/price/macro/internal-blog 근거 지도. 숫자·공시 위치·기간·어느 막에서 쓰는지까지 적는다.',
       items: {
         type: 'object', additionalProperties: false, required: ['claim', 'sourceType', 'period', 'sourceRef', 'howUsed'],
         properties: {
           claim: { type: 'string', description: '이 근거가 받치는 주장.' },
-          sourceType: { type: 'string', enum: ['DART', 'EDGAR', 'dartlab', 'scan', 'external'] },
+          sourceType: { type: 'string', enum: ['DART', 'EDGAR', 'dartlab', 'scan', 'external', 'price', 'macro', 'internal-blog'] },
           period: { type: 'string', description: '연도·분기·표본 기간. EDGAR는 fiscal year/quarter를 명시.' },
           sourceRef: { type: 'string', description: 'DART 보고서·EDGAR 10-K/10-Q·dartlab 호출·scan 축.' },
           howUsed: { type: 'string', description: '어느 막/시각물에서 어떻게 쓰는지.' },
@@ -198,7 +220,7 @@ const SKEPTIC_SCHEMA = {
       items: {
         type: 'object', additionalProperties: false, required: ['axis', 'why', 'fix'],
         properties: {
-          axis: { type: 'string', enum: ['weak-title', 'cliche-template', 'forced-metric', 'misleading-frame', 'shallow', 'generic-image', 'appendix-visual', 'overclaim'] },
+          axis: { type: 'string', enum: ['weak-title', 'cliche-template', 'forced-metric', 'misleading-frame', 'shallow', 'generic-image', 'appendix-visual', 'weak-reference', 'overclaim'] },
           why: { type: 'string' },
           fix: { type: 'string' },
         },
@@ -222,6 +244,7 @@ const CONTENT_GUIDANCE = {
   'company-reports': `기업이야기: 회사 하나의 내러티브를 깊게 판다. 사업 구조, 공시 문장, 제품·고객·수주·원가·자본배치·현금흐름을 한 회사 안에서 연결한다. DART 또는 EDGAR 근거와 dartlab 실측을 분리하고, 다음 공시에서 볼 렌즈로 닫는다.`,
   'tech-story': `기술이야기: 기술이 주어다. 기술 원리, 공정 파이프라인·네트워크망, 어느 칸에 어떤 회사가 있고 왜 그 회사가 병목·표준·원가·고객 접점을 쥐는지 설명한다. 한국사는 DART, 미국사는 EDGAR를 연결한다. 돈 이야기만 앞세우거나 "누가 돈을 버나" 템플릿이면 실패다.`,
   'data-reports': `데이터 리포트: scan과 전종목 파서로 전체 시장의 특이점을 찾는다. 개별 회사는 대표 사례일 뿐이다. 표본·분모·제외 조건·정제 전후를 드러내고, DART·EDGAR 전체 유니버스 또는 제외 사유를 명시한다. 순위표 나열로 끝나면 실패다.`,
+  'investment-stories': `투자이야기: 투자자가 시장을 읽을 때 쓰는 언어와 프레임이 주어다. 주가, 경제 변수, 증권사 표현, 투자 용어, 기술적투자 보조지표, 기술투자 관점을 설명한다. 지지선·목표가·보조지표를 매수·매도 결론으로 쓰면 실패다. 선행 회사·기술·데이터 글이 있으면 relatedPosts 로 연결하고, 독자가 다음 차트·공시·경제지표에서 무엇을 확인할지로 닫는다.`,
 }
 
 const LENSES_BY_KIND = {
@@ -236,6 +259,10 @@ const LENSES_BY_KIND = {
   'data-reports': [
     { role: '전수 스캔 분석가', lens: 'scan·전종목 파서로 시장 전체에서 튀는 분포, 꼬리값, 제거 전후, 표본 왜곡을 관통선으로 세운다.' },
     { role: '사례·공시 해석가', lens: '대표 회사의 DART·EDGAR 문장과 다년 숫자로 전수 결과가 왜 그런지 설명할 관통선을 세운다.' },
+  ],
+  'investment-stories': [
+    { role: '시장언어 해설가', lens: '주가, 금리, 환율, 물가, 컨센서스, 목표주가, 밸류에이션 같은 시장 언어를 독자가 실제로 해석할 질문으로 바꾼다. 결론은 추천이 아니라 다음에 볼 기준이어야 한다.' },
+    { role: '기술적투자·지표 해설가', lens: '지지선, 저항선, 이동평균, RSI, MACD, 거래량, 거래대금 같은 보조지표를 기간·기준·틀리는 조건까지 포함해 관통선으로 세운다.' },
   ],
 }
 
@@ -313,7 +340,7 @@ ${JSON.stringify(props)}
 회의론자·독자대리인 격파:
 ${JSON.stringify(critiques.filter(Boolean))}
 
-단일 관통선 1개로 좁히고(클리셰 격파 반영), 후보 제목 3개 이상을 비교해 최종 제목을 고른 뒤 titleContract 를 채운다. 핵심 인싸이트(관통선의 답)를 세우고, 막 구조(6막+, 관통선이 인싸이트에 착지)·막별 비주얼·이미지 기획(내용 연상, 로고·상징품 허용)·DART/EDGAR/dartlab/scan evidenceMap·정직성 가드를 확정한다. 비주얼과 이미지는 글 뒤 부록이 아니라 본문 중간에서 독자의 이해를 바꾸는 장치로 placement·insertAfter·narrativeUse 까지 결정한다. 통과용 안전한 관통선이 아니라 진짜 의외의 관통선을 고른다. 전체 기획안을 스키마대로 낸다.`,
+단일 관통선 1개로 좁히고(클리셰 격파 반영), 후보 제목 3개 이상을 비교해 최종 제목을 고른 뒤 titleContract 를 채운다. 핵심 인싸이트(관통선의 답)를 세우고, 막 구조(6막+, 관통선이 인싸이트에 착지)·막별 비주얼·이미지 기획(내용 연상, 로고·상징품 허용)·relatedPosts(검색어·링크·배치 규칙)·DART/EDGAR/dartlab/scan/price/macro/internal-blog evidenceMap·정직성 가드를 확정한다. 비주얼과 이미지는 글 뒤 부록이 아니라 본문 중간에서 독자의 이해를 바꾸는 장치로 placement·insertAfter·narrativeUse 까지 결정한다. 통과용 안전한 관통선이 아니라 진짜 의외의 관통선을 고른다. 전체 기획안을 스키마대로 낸다.`,
   { label: '편집장 수렴', phase: '경합', schema: PLAN_SCHEMA }
 )
 
@@ -328,7 +355,7 @@ for (let round = 1; round <= MAX_ROUNDS; round++) {
 
 ${PRINCIPLES}
 
-6항목: 1.재밌나(YES/NO+이유) 2.어디서 집중 끊기나 3.독자질문(관통선)이 끝까지 살아있나 4."어?" 몇 번 5.기억에 남는 문장 6.점수. 특히: 제목이 첫 1초에 멈추는가, titleContract 의 후보·독자 갭·선택 이유가 살아있는가, 관통선이 끝까지 살아 인싸이트에 착지하나, 막이 궁금증심화·메커니즘·리스크반전·판단닫힘 중 하나를 하나, 깊이가 얕지 않나, 첫 2문단이 긴장으로 시작하나. 비주얼이 본문 중간에서 설명을 실제로 돕나, 아니면 뒤에 자동으로 붙는 부록처럼 보이나.
+6항목: 1.재밌나(YES/NO+이유) 2.어디서 집중 끊기나 3.독자질문(관통선)이 끝까지 살아있나 4."어?" 몇 번 5.기억에 남는 문장 6.점수. 특히: 제목이 첫 1초에 멈추는가, titleContract 의 후보·독자 갭·선택 이유가 살아있는가, 관통선이 끝까지 살아 인싸이트에 착지하나, 막이 궁금증심화·메커니즘·리스크반전·판단닫힘 중 하나를 하나, 깊이가 얕지 않나, 첫 2문단이 긴장으로 시작하나. 비주얼이 본문 중간에서 설명을 실제로 돕나, 아니면 뒤에 자동으로 붙는 부록처럼 보이나. relatedPosts 가 선행 글 검색과 자연스러운 참고글 연결을 기획했나.
 
 검증 데이터(기획 수치는 이 안에 있어야):
 ${evidence}
@@ -347,6 +374,7 @@ ${JSON.stringify(plan)}`,
 - shallow: 막이 요약 나열이라 메커니즘까지 안 파는가. 심층인 척 얕은가.
 - generic-image: imagePlan 이미지가 내용·회사·제품을 연상시키지 않고 범용 스카이라인·추상인가. 하나라도 있으면 kill.
 - appendix-visual: visuals/imagePlan 이 본문 중간 placement 없이 뒤에 자동으로 붙는 부록처럼 기획됐나. 필요한 표·그래프·테이블 조합을 빼먹었나. 그러면 kill.
+- weak-reference: relatedPosts 가 비어 있거나, 선행 글 검색어·링크 배치 이유 없이 억지 내부 링크만 붙였나.
 - overclaim: 동행을 인과로 단정, 과장·투자권유·우열 단정이 있나.
 
 검증 데이터:

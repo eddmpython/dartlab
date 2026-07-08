@@ -18,17 +18,19 @@ HIGH_TEMPLATE_REPETITION = 0.5
 
 # 심층 콘텐츠 깊이 게이트 (본문 기준: 표·SVG·코드 제외한 읽는 글자수).
 # 길이는 막·증거·시나리오의 산물이지 패딩이 아니다 (반복도 가드와 짝).
-CONTENT_GENRE_CATEGORIES = {"company-reports", "tech-story", "data-reports"}
+CONTENT_GENRE_CATEGORIES = {"company-reports", "tech-story", "data-reports", "investment-stories"}
 DEEP_GENRE_CATEGORIES = set(CONTENT_GENRE_CATEGORIES)
 GENRE_MIN_PROSE_CHARS = {
     "company-reports": 14000,
     "tech-story": 6000,
     "data-reports": 4000,
+    "investment-stories": 5000,
 }
 GENRE_TARGET_PROSE_CHARS = {
     "company-reports": 20000,
     "tech-story": 9000,
     "data-reports": 6500,
+    "investment-stories": 8000,
 }
 DEEP_MIN_PROSE_CHARS = GENRE_MIN_PROSE_CHARS["company-reports"]
 DEEP_TARGET_PROSE_CHARS = GENRE_TARGET_PROSE_CHARS["company-reports"]
@@ -42,6 +44,7 @@ BLOG_REQUIRED_PLAN_FIELDS = (
     "acts",
     "visuals",
     "imagePlan",
+    "relatedPosts",
     "honestyGuards",
     "evidenceMap",
 )
@@ -460,6 +463,21 @@ def _validate_common_plan(plan: dict[str, object], payload: dict[str, object], *
             elif _compact_len(raw.get(field)) < 8:
                 fails.append(f"{label}: imagePlan[{idx}].{field} 이 너무 약함")
 
+    related = plan.get("relatedPosts") if isinstance(plan.get("relatedPosts"), dict) else {}
+    searches = related.get("searches") if isinstance(related.get("searches"), list) else []
+    links = related.get("links") if isinstance(related.get("links"), list) else []
+    if not searches:
+        fails.append(f"{label}: relatedPosts.searches 누락. 선행 글 검색어와 참고글 연결 계획이 필요함")
+    if _compact_len(related.get("placementRule")) < 12:
+        fails.append(f"{label}: relatedPosts.placementRule 이 너무 약함")
+    for idx, raw in enumerate(links, start=1):
+        if not isinstance(raw, dict):
+            fails.append(f"{label}: relatedPosts.links[{idx}] 은 객체여야 함")
+            continue
+        for field in ("path", "title", "reason", "placement"):
+            if _compact_len(raw.get(field)) < 6:
+                fails.append(f"{label}: relatedPosts.links[{idx}].{field} 이 너무 약함")
+
     guards = plan.get("honestyGuards") if isinstance(plan.get("honestyGuards"), list) else []
     if len(guards) < 3:
         fails.append(f"{label}: honestyGuards 는 3개 이상이어야 함")
@@ -473,8 +491,9 @@ def _validate_common_plan(plan: dict[str, object], payload: dict[str, object], *
             for row in evidence_map
             if isinstance(row, dict)
         ).upper()
-        if "DART" not in evidence_labels and "EDGAR" not in evidence_labels and "SCAN" not in evidence_labels:
-            fails.append(f"{label}: evidenceMap 에 DART/EDGAR/scan 근거 라벨이 없음")
+        evidence_tokens = ("DART", "EDGAR", "SCAN", "DARTLAB", "PRICE", "MACRO", "INTERNAL-BLOG")
+        if not any(token in evidence_labels for token in evidence_tokens):
+            fails.append(f"{label}: evidenceMap 에 DART/EDGAR/scan/dartlab/price/macro/internal-blog 근거 라벨이 없음")
 
     fails.extend(_validate_loop_evidence(plan, payload, label=label))
     return fails
@@ -521,6 +540,27 @@ def _validate_genre_body(raw: str, body: str, category: str) -> list[str]:
             fails.append("데이터 리포트는 DART와 EDGAR 유니버스 또는 제외 사유를 명시해야 함")
         if "분모" not in body or "오해" not in body:
             fails.append("데이터 리포트는 분모·필터와 오독 방지 설명이 필요함")
+    elif category == "investment-stories":
+        internal_links = re.findall(r"\[[^\]]+\]\(/blog/[^)]+\)", body)
+        indicator_topic = re.search(r"지지선|저항선|이동평균|RSI|MACD|볼린저|보조지표|거래량|거래대금", body, re.I)
+        if not topic_slug:
+            fails.append("투자이야기는 frontmatter topicSlug 가 필요함")
+        if stock_code:
+            fails.append("투자이야기는 기본적으로 stockCode 를 달지 않는다. 주어는 회사가 아니라 투자 개념임")
+        if not re.search(
+            r"주가|금리|환율|물가|경기|증권사|컨센서스|목표주가|투자\s*용어|밸류에이션|보조지표|지지선|저항선|이동평균|RSI|MACD|거래량|기술투자",
+            body,
+            re.I,
+        ):
+            fails.append(
+                "투자이야기는 주가·경제·증권사 언어·투자 용어·보조지표·기술투자 중 하나를 본문 주어로 삼아야 함"
+            )
+        if len(internal_links) < 2:
+            fails.append("투자이야기는 선행 참고글 내부 링크가 2개 이상 필요함")
+        if not re.search(r"오해|한계|주의|틀리|깨지|재점검|투자권유|확정", body):
+            fails.append("투자이야기는 오독 방지와 틀리는 조건을 본문에 명시해야 함")
+        if indicator_topic and not re.search(r"기간|분봉|일봉|주봉|월봉|거래량|거래대금|기준선|데이터\s*기준", body):
+            fails.append("투자이야기 보조지표 글은 기간·봉 단위·거래량·기준선 중 최소 하나를 명시해야 함")
     return fails
 
 
@@ -538,7 +578,7 @@ def _validate_plan_file(post_dir: Path) -> list[str]:
 def publish_gate(post_dir: Path) -> list[str]:
     """단일 글 발행 하드 게이트. 위반 리스트 반환(비면 통과).
 
-    기업이야기·기술이야기·데이터리포트 기준으로 (1)실사 OG 카드 (2)실사 hero webp
+    기업이야기·기술이야기·데이터리포트·투자이야기 기준으로 (1)실사 OG 카드 (2)실사 hero webp
     (3)본문 실사 사진 1장 이상 (4)장르별 본문 깊이 (5)기획 루프 산출물(brief.json)을 강제한다.
     손수 SVG·기본 아바타·얕은 본문·루프 스킵을 걸러 "형식만 통과"를 차단한다."""
     idx = post_dir / "index.md"
