@@ -1,0 +1,483 @@
+import { writable, derived, get } from 'svelte/store';
+
+export interface GuideData {
+	mission: string;
+	hints: string[];
+	answer?: string;
+	expectedOutput?: string;
+}
+
+export interface CellOutput {
+	type: 'text' | 'html' | 'image' | 'error' | 'dataframe' | 'widget';
+	data: string;
+	executedAt: string;
+}
+
+export interface StudyData {
+	blockType: string;
+	sectionIndex?: number;
+	block: Record<string, unknown>;
+}
+
+export interface Cell {
+	id: string;
+	type: 'code' | 'markdown' | 'guide' | 'study';
+	content: string;
+	output?: CellOutput;
+	guide?: GuideData;
+	study?: StudyData;
+	executionCount?: number;
+	executionTime?: number;
+}
+
+export interface WorkspaceFile {
+	path: string;
+	content: string;
+	isDir: boolean;
+}
+
+export interface StudyProgressMetadata {
+	category: string;
+	contentId: string;
+	activeCellId: string | null;
+	studyLayout: StudyLayout;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface Notebook {
+	id: string;
+	title: string;
+	cells: Cell[];
+	workspaceFiles?: WorkspaceFile[];
+	metadata: {
+		category?: string;
+		contentId?: string;
+		notebookFilePath?: string;
+		layout?: string;
+		createdAt: string;
+		updatedAt: string;
+	};
+}
+
+function generateId(): string {
+	return crypto.randomUUID();
+}
+
+function createEmptyNotebook(): Notebook {
+	return {
+		id: generateId(),
+		title: 'Untitled',
+		cells: [{ id: generateId(), type: 'code', content: '' }],
+		metadata: {
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString()
+		}
+	};
+}
+
+export type CellWidth = 'compact' | 'medium' | 'full';
+export type StudyLayout = 'vertical' | 'horizontal';
+
+const VALID_LAYOUTS: StudyLayout[] = ['vertical', 'horizontal'];
+const VALID_WIDTHS: CellWidth[] = ['compact', 'medium', 'full'];
+
+function readLocalStorage<T extends string>(key: string, validValues: T[], fallback: T): T {
+	if (typeof localStorage === 'undefined') return fallback;
+	const raw = localStorage.getItem(key);
+	if (raw && (validValues as string[]).includes(raw)) return raw as T;
+	return fallback;
+}
+
+export const notebook = writable<Notebook>(createEmptyNotebook());
+export const activeCellId = writable<string | null>(null);
+export const editMode = writable<boolean>(true);
+export const studyMode = writable<boolean>(false);
+export const studyLayout = writable<StudyLayout>(readLocalStorage('chaniStudyLayout', VALID_LAYOUTS, 'vertical'));
+export const cellWidth = writable<CellWidth>(readLocalStorage('chaniCellWidth', VALID_WIDTHS, 'medium'));
+
+export const cellCount = derived(notebook, ($nb) => $nb.cells.length);
+export const executionCounter = writable<number>(0);
+
+export function setStudyLayout(layout: StudyLayout) {
+	studyLayout.set(layout);
+	if (typeof localStorage !== 'undefined') {
+		localStorage.setItem('chaniStudyLayout', layout);
+	}
+}
+
+export const cellOutputs = writable<Map<string, CellOutput>>(new Map());
+export const cellErrors = writable<Map<string, string[]>>(new Map());
+
+export function setCellErrors(errors: Map<string, string[]>): void {
+	cellErrors.set(errors);
+}
+
+export function getCellOutput(cellId: string): CellOutput | undefined {
+	return get(cellOutputs).get(cellId);
+}
+
+export function setCellOutput(cellId: string, output: CellOutput): void {
+	cellOutputs.update((map) => {
+		const next = new Map(map);
+		next.set(cellId, output);
+		return next;
+	});
+}
+
+export function clearCellOutput(cellId: string): void {
+	cellOutputs.update((map) => {
+		if (!map.has(cellId)) return map;
+		const next = new Map(map);
+		next.delete(cellId);
+		return next;
+	});
+}
+
+export function clearAllCellOutputs(): void {
+	cellOutputs.set(new Map());
+}
+
+let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+export async function loadFromStorage(): Promise<boolean> {
+	try {
+		const res = await fetch('/api/notebook/list', { credentials: 'include' });
+		if (!res.ok) return false;
+		const list = await res.json();
+		if (list.length === 0) return false;
+		const latest = list[0];
+		const loadRes = await fetch(`/api/notebook/${latest.id}`, { credentials: 'include' });
+		if (!loadRes.ok) return false;
+		const data = await loadRes.json();
+		if (data.error) return false;
+		notebook.set(data);
+		if (data.cells?.length > 0) {
+			activeCellId.set(data.cells[0].id);
+			const outputMap = new Map<string, CellOutput>();
+			for (const cell of data.cells) {
+				if (cell.output) outputMap.set(cell.id, cell.output);
+			}
+			cellOutputs.set(outputMap);
+		}
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+function buildSavePayload(): Notebook {
+	const nb = get(notebook);
+	const outputs = get(cellOutputs);
+	const cells = nb.cells.map((c) => {
+		const output = outputs.get(c.id);
+		return output ? { ...c, output } : c;
+	});
+	return {
+		...nb,
+		cells,
+		metadata: { ...nb.metadata, updatedAt: new Date().toISOString() }
+	};
+}
+
+export function saveToStorage(): void {
+	if (get(studyMode)) {
+		saveStudyVertical();
+		return;
+	}
+	// standalone 빌드: 노트북 서버(/api/notebook) 없음. 세션 내 메모리로만 유지.
+	void saveDebounceTimer;
+	void buildSavePayload;
+}
+
+function saveStudyVertical(): void {
+	const nb = get(notebook);
+	const cat = nb.metadata?.category;
+	const cid = nb.metadata?.contentId;
+	if (!cat || !cid) return;
+	const outputs = get(cellOutputs);
+	const codeCells = nb.cells.filter((c) => c.type === 'code' && !c.study);
+	const edited = codeCells
+		.map((c) => ({ ...c, output: outputs.get(c.id) }))
+		.filter((c) => c.content.trim() !== '' || c.output);
+	if (edited.length === 0) return;
+	saveStudyProgress(cat, cid, edited);
+}
+
+export async function saveToServer(): Promise<{ ok: boolean; cloud: boolean }> {
+	const payload = buildSavePayload();
+	try {
+		const res = await fetch('/api/notebook/save', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			credentials: 'include',
+			body: JSON.stringify(payload),
+		});
+		if (!res.ok) return { ok: false, cloud: false };
+		return await res.json();
+	} catch {
+		return { ok: false, cloud: false };
+	}
+}
+
+export function setTitle(title: string): void {
+	notebook.update((nb) => ({ ...nb, title }));
+	saveToStorage();
+}
+
+export function addCell(type: Cell['type'], afterId?: string, beforeId?: string): string {
+	const newCell: Cell = { id: generateId(), type, content: '' };
+
+	if (type === 'guide') {
+		newCell.guide = { mission: '', hints: [] };
+	}
+
+	notebook.update((nb) => {
+		const cells = [...nb.cells];
+		if (beforeId) {
+			const idx = cells.findIndex((c) => c.id === beforeId);
+			if (idx >= 0) {
+				cells.splice(idx, 0, newCell);
+			} else {
+				cells.push(newCell);
+			}
+		} else if (afterId) {
+			const idx = cells.findIndex((c) => c.id === afterId);
+			if (idx >= 0) {
+				cells.splice(idx + 1, 0, newCell);
+			} else {
+				cells.push(newCell);
+			}
+		} else {
+			cells.push(newCell);
+		}
+		return { ...nb, cells };
+	});
+
+	activeCellId.set(newCell.id);
+	saveToStorage();
+	return newCell.id;
+}
+
+export function removeCell(cellId: string): void {
+	let adjacentId: string | null = null;
+
+	notebook.update((nb) => {
+		if (nb.cells.length <= 1) return nb;
+		const idx = nb.cells.findIndex((c) => c.id === cellId);
+		if (idx >= 0) {
+			const cells = nb.cells.filter((c) => c.id !== cellId);
+			adjacentId = cells[Math.min(idx, cells.length - 1)]?.id ?? null;
+			return { ...nb, cells };
+		}
+		return nb;
+	});
+
+	clearCellOutput(cellId);
+
+	if (get(activeCellId) === cellId && adjacentId) {
+		activeCellId.set(adjacentId);
+	}
+	saveToStorage();
+}
+
+export function updateCellContent(cellId: string, content: string): void {
+	notebook.update((nb) => ({
+		...nb,
+		cells: nb.cells.map((c) => (c.id === cellId ? { ...c, content } : c))
+	}));
+	saveToStorage();
+}
+
+export function updateCellOutput(cellId: string, output: CellOutput): void {
+	setCellOutput(cellId, output);
+	saveToStorage();
+}
+
+export interface CellExecutionResult {
+	output: CellOutput;
+	executionCount: number;
+	executionTime: number;
+}
+
+export function applyCellExecutionResult(cellId: string, result: CellExecutionResult): void {
+	setCellOutput(cellId, result.output);
+	notebook.update((nb) => ({
+		...nb,
+		cells: nb.cells.map((c) =>
+			c.id === cellId
+				? { ...c, executionCount: result.executionCount, executionTime: result.executionTime }
+				: c
+		)
+	}));
+	saveToStorage();
+}
+
+export function nextExecutionCount(): number {
+	let count = 0;
+	executionCounter.update((n) => {
+		count = n + 1;
+		return count;
+	});
+	return count;
+}
+
+export function updateCellExecutionCount(cellId: string, count: number): void {
+	notebook.update((nb) => ({
+		...nb,
+		cells: nb.cells.map((c) => (c.id === cellId ? { ...c, executionCount: count } : c))
+	}));
+}
+
+export function updateCellExecutionTime(cellId: string, timeMs: number): void {
+	notebook.update((nb) => ({
+		...nb,
+		cells: nb.cells.map((c) => (c.id === cellId ? { ...c, executionTime: timeMs } : c))
+	}));
+}
+
+export function moveCell(cellId: string, direction: 'up' | 'down'): void {
+	notebook.update((nb) => {
+		const cells = [...nb.cells];
+		const idx = cells.findIndex((c) => c.id === cellId);
+		if (idx < 0) return nb;
+
+		const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+		if (targetIdx < 0 || targetIdx >= cells.length) return nb;
+
+		[cells[idx], cells[targetIdx]] = [cells[targetIdx], cells[idx]];
+		return { ...nb, cells };
+	});
+	saveToStorage();
+}
+
+export function changeCellType(cellId: string, newType: Cell['type']): void {
+	notebook.update((nb) => ({
+		...nb,
+		cells: nb.cells.map((c) => {
+			if (c.id !== cellId) return c;
+			if (c.type === 'study' || newType === 'study') return c;
+			const updated: Cell = { ...c, type: newType };
+			if (newType === 'guide' && !updated.guide) {
+				updated.guide = { mission: '', hints: [] };
+			}
+			if (newType !== 'guide') {
+				delete updated.guide;
+			}
+			return updated;
+		})
+	}));
+	saveToStorage();
+}
+
+export function focusNextCell(currentId: string): void {
+	const nb = get(notebook);
+	const idx = nb.cells.findIndex((c) => c.id === currentId);
+	if (idx < nb.cells.length - 1) {
+		activeCellId.set(nb.cells[idx + 1].id);
+	} else {
+		addCell('code', currentId);
+	}
+}
+
+export function focusPrevCell(currentId: string): void {
+	const nb = get(notebook);
+	const idx = nb.cells.findIndex((c) => c.id === currentId);
+	if (idx > 0) {
+		activeCellId.set(nb.cells[idx - 1].id);
+	}
+}
+
+export function loadNotebook(data: Notebook): void {
+	const isStudy = !!(data.metadata?.category && data.metadata?.contentId);
+	studyMode.set(isStudy);
+
+	const outputMap = new Map<string, CellOutput>();
+	for (const cell of data.cells) {
+		if (cell.output) {
+			outputMap.set(cell.id, cell.output);
+		}
+	}
+	const cleanCells = data.cells.map(({ output: _o, ...rest }) => rest as Cell);
+	notebook.set({ ...data, cells: cleanCells });
+	cellOutputs.set(outputMap);
+
+	if (data.cells.length > 0) {
+		activeCellId.set(data.cells[0].id);
+	}
+	if (!isStudy) saveToStorage();
+}
+
+export function resetNotebook(): void {
+	const nb = createEmptyNotebook();
+	clearAllCellOutputs();
+	notebook.set(nb);
+	activeCellId.set(nb.cells[0].id);
+	saveToStorage();
+}
+
+export function setCellWidth(width: CellWidth): void {
+	cellWidth.set(width);
+	if (typeof localStorage !== 'undefined') {
+		localStorage.setItem('chaniCellWidth', width);
+	}
+}
+
+export interface StudyProgress {
+	userCells: Cell[];
+	activeCellId: string | null;
+	layout: StudyLayout;
+}
+
+function studyNotebookId(category: string, contentId: string): string {
+	return `study:${category}/${contentId}`;
+}
+
+let studySaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function saveStudyProgress(category: string, contentId: string, userCells: Cell[]): void {
+	if (studySaveTimer) clearTimeout(studySaveTimer);
+	studySaveTimer = setTimeout(() => {
+		const meta: StudyProgressMetadata = {
+			category,
+			contentId,
+			activeCellId: get(activeCellId),
+			studyLayout: get(studyLayout),
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+		};
+		const payload = {
+			id: studyNotebookId(category, contentId),
+			title: `study:${category}/${contentId}`,
+			cells: userCells,
+			metadata: meta,
+		};
+		fetch('/api/notebook/save', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			credentials: 'include',
+			body: JSON.stringify(payload),
+		}).catch(() => {});
+	}, 1000);
+}
+
+export async function loadStudyProgress(category: string, contentId: string): Promise<StudyProgress | null> {
+	const id = studyNotebookId(category, contentId);
+	try {
+		const res = await fetch(`/api/notebook/${encodeURIComponent(id)}`, { credentials: 'include' });
+		if (!res.ok) return null;
+		const data = await res.json();
+		if (data.error) return null;
+		const meta = data.metadata as Partial<StudyProgressMetadata> | undefined;
+		const layout = meta?.studyLayout && VALID_LAYOUTS.includes(meta.studyLayout)
+			? meta.studyLayout
+			: 'vertical';
+		return {
+			userCells: data.cells || [],
+			activeCellId: meta?.activeCellId ?? null,
+			layout,
+		};
+	} catch {
+		return null;
+	}
+}

@@ -1,46 +1,39 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import Notebook from '$lib/components/notebook/Notebook.svelte';
+	import NotebookEditor from '$lib/notebook/NotebookEditor.svelte';
+	import type { Notebook } from '$lib/notebook/stores/notebookStore';
+
+	// 정적 seed (SSR 안전한 고정 id). 범용 파이썬 예시 셀.
+	const seed: Notebook = {
+		id: 'notebook-seed',
+		title: 'Notebook',
+		cells: [
+			{ id: 'nb-c1', type: 'code', content: 'print("Hello, notebook")\n21 * 2' },
+			{
+				id: 'nb-c2',
+				type: 'code',
+				content: 'import pandas as pd\n\npd.DataFrame({"n": [1, 2, 3, 4], "square": [1, 4, 9, 16]})'
+			},
+			{
+				id: 'nb-c3',
+				type: 'code',
+				content:
+					'import numpy as np\nimport matplotlib.pyplot as plt\n\nx = np.linspace(0, 2 * np.pi, 200)\nplt.plot(x, np.sin(x))\nplt.title("sin(x)")'
+			}
+		],
+		metadata: {
+			createdAt: '2026-07-08T00:00:00.000Z',
+			updatedAt: '2026-07-08T00:00:00.000Z'
+		}
+	};
 </script>
 
 <svelte:head>
 	<title>Notebook · dartlab</title>
 	<meta
 		name="description"
-		content="브라우저에서 바로 실행하는 범용 파이썬 노트북. 설치 없이 numpy·pandas·matplotlib 을 쓰고 표와 그래프를 셀에서 확인하세요. 어디든 임베드 가능."
+		content="브라우저에서 바로 실행하는 범용 파이썬 노트북. 설치 없이 numpy·pandas·matplotlib 을 쓰고 표와 그래프를 셀에서 확인하세요."
 	/>
 </svelte:head>
 
-<div class="min-h-screen bg-dl-bg-dark text-dl-text">
-	<div class="mx-auto max-w-5xl px-6 pt-16 pb-20">
-		<div class="mb-8">
-			<a
-				href="{base}/"
-				class="text-sm text-dl-text-muted transition-colors hover:text-dl-text">← dartlab</a
-			>
-			<div class="mt-3 flex items-baseline gap-3">
-				<h1 class="text-3xl font-bold">dartlab <span class="text-dl-primary">notebook</span></h1>
-				<span
-					class="rounded border border-dl-border px-2 py-0.5 font-mono text-[11px] text-dl-text-dim"
-					>beta</span
-				>
-			</div>
-			<p class="mt-2 max-w-2xl text-dl-text-muted">
-				브라우저에서 바로 실행하는 범용 파이썬 노트북. 설치 없이 <code
-					class="rounded bg-dl-bg-card px-1.5 py-0.5 font-mono text-sm text-dl-text">numpy</code
-				>, <code class="rounded bg-dl-bg-card px-1.5 py-0.5 font-mono text-sm text-dl-text">pandas</code
-				>, <code class="rounded bg-dl-bg-card px-1.5 py-0.5 font-mono text-sm text-dl-text"
-					>matplotlib</code
-				> 을 그대로 쓰고, 표와 그래프가 셀 안에 렌더됩니다. 코드는 전부 브라우저 안에서만 실행됩니다.
-			</p>
-		</div>
-
-		<Notebook />
-
-		<p class="mt-8 text-xs leading-relaxed text-dl-text-dim">
-			pyodide 배포 패키지(numpy, pandas, matplotlib, polars 등)는 자동 로드되고, <code
-				class="font-mono">micropip</code
-			> 으로 추가 설치도 됩니다. 필요하면 셀에서 dartlab 을 불러 실데이터도 다룰 수 있습니다.
-		</p>
-	</div>
-</div>
+<NotebookEditor showHome homeHref="{base}/" initialNotebook={seed} />
