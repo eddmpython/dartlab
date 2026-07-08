@@ -1,0 +1,480 @@
+{
+  "title": "암모니아 선박은 왜 바다 위 발전소인가",
+  "titleContract": {
+    "workingTitle": "암모니아 선박은 왜 바다 위 발전소인가",
+    "selectedTitle": "암모니아 선박은 왜 바다 위 발전소인가",
+    "hookQuestion": "암모니아 선박을 친환경 선박 한 종류가 아니라 독성 연료, 엔진, 연료전지, 안전 인증, 벙커링이 한 선체 안에 들어오는 시스템으로 보게 만든다.",
+    "readerGap": "독자는 암모니아가 탄소가 없는 연료라는 말까지만 알고 있지만, 실제 병목은 연료를 싣고 태우고 새는 것을 감지하고 배기가스를 처리하고 선급 인증을 받는 통합 설계에 있다.",
+    "promise": "제목은 쉬운 비유로 시작하고, 본문은 한화오션만이 아니라 DART와 EDGAR 회사들을 공정별로 배치해 기술이 어느 회사의 숫자로 내려오는지 보여준다.",
+    "whySelected": "암모니아 선박의 핵심을 연료 교체가 아니라 선박 내부 발전소화로 잡는다. 특정 회사 수혜주 제목을 피하면서 초보자도 기술 난도를 이해할 수 있다.",
+    "candidates": [
+      {
+        "title": "암모니아 선박은 왜 바다 위 발전소인가",
+        "hook": "배가 연료만 바꾸는 게 아니라 발전소, 화학 설비, 안전 시스템을 싣는다는 반전이 바로 보인다.",
+        "risk": "본문에서 회사 지도와 재무 착지를 충분히 연결하지 않으면 비유만 남을 수 있다."
+      },
+      {
+        "title": "배는 언제 화학공장이 되는가",
+        "hook": "독성 암모니아를 선박 연료로 쓰는 난도를 직관적으로 건다.",
+        "risk": "암모니아 선박 검색 의도가 제목에서 약해진다."
+      },
+      {
+        "title": "독성 연료를 싣는 친환경선의 역설",
+        "hook": "탄소가 없는 연료와 독성 안전 병목이 한 문장에 충돌한다.",
+        "risk": "공포감이 앞서 기술 네트워크와 회사 지도가 뒤로 밀릴 수 있다."
+      }
+    ],
+    "rejectedPatterns": [
+      "한화오션 암모니아선 수혜 분석",
+      "암모니아 선박 관련주 총정리",
+      "누가 돈을 버나 암모니아선",
+      "친환경 선박 투자 리포트"
+    ]
+  },
+  "description": "암모니아 선박이 무엇인지, 왜 혁신인지, 독성 안전과 연소, 연료전지, 선급 인증 병목이 DART와 EDGAR 회사 지도에서 어떻게 보이는지 초보자 눈높이로 풀어낸다.",
+  "readerQuestion": "암모니아 선박은 기존 선박의 연료만 바꾼 것일까, 아니면 조선소와 엔진사와 연료사와 연료전지 회사와 선급 기관을 동시에 움직이는 새 시스템일까?",
+  "insight": {
+    "commonBelief": "암모니아 선박은 한화오션 같은 조선사가 친환경 연료 배를 만드는 이야기라고 여긴다.",
+    "twistFact": "실제 병목은 선체 안에 독성 화학물질 저장, 이중 배관, 누출 감지, 환기, 엔진 연소, SCR, 암모니아 크래킹, 연료전지, 배터리, 선급 인증이 함께 들어오는 통합 시스템에 있다.",
+    "whatToWatch": "다음 보도에서는 조선사 이름보다 엔진 방식, 파일럿 오일 비율, NOx와 N2O 처리, 암모니아 슬립, 연료전지 전력 모듈, 벙커링과 선급 인증, 그리고 DART와 EDGAR에서 해당 칸의 회사 손익을 함께 확인한다.",
+    "freshnessArgument": "2026년 4월 EXMAR가 세계 최초급 대양 항해 암모니아 이중연료 선박 명명식을 열었고, Everllence는 첫 ME-LGIA 엔진 인도를 2026년으로 제시했으며, Hanwha-HMM-KR MOU와 HD현대 엔진 인증이 이어졌다. 2026-07-08 로컬 dartlab 기준 DART와 EDGAR 재무 착지를 함께 쓴다.",
+    "evidenceRefs": [
+      "IMO GHG page: 2030 zero or near-zero fuel uptake target and net-zero framework",
+      "Hanwha Group, HMM, KR MOU for ammonia gas turbine and fuel cell propulsion concept",
+      "ABS Ammonia Safety Advisory and EMSA safety study",
+      "Everllence ME-LGIA ammonia engine page",
+      "HD Hyundai H22CDF-LA ammonia dual fuel engine announcement",
+      "EXMAR world first ocean-going ammonia dual-fuel vessels naming",
+      "DART 2025 Hanwha Ocean, HD Hyundai Heavy Industries, HMM, Lotte Fine Chemical, Doosan Fuel Cell and Hanwha Engine panels",
+      "EDGAR 2025 CF Industries, Bloom Energy, Chart Industries, Cummins and Caterpillar panels"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "암모니아 선박은 무엇인가",
+      "purpose": "초보자도입",
+      "scene": "암모니아가 질소와 수소로 된 탄소 없는 분자라는 점, 선박 연료로 쓰면 CO2 직접 배출은 줄지만 독성과 부식과 배기가스 처리가 생긴다는 점을 설명한다.",
+      "keyNumbers": [
+        "IMO 2030 zero or near-zero fuel at least 5%, striving 10%",
+        "ammonia toxicity and exposure limits from EMSA"
+      ],
+      "causalBridge": "연료가 탄소를 갖지 않는다는 장점이 곧 안전 문제와 설계 난도를 만든다."
+    },
+    {
+      "order": 2,
+      "heading": "왜 혁신은 연료가 아니라 시스템인가",
+      "purpose": "원리해부",
+      "scene": "탱크, 연료공급장치, 이중 배관, 누출 감지, 환기, 엔진, SCR, 연료전지, 배터리가 한 선박 안에 묶이는 구조를 보여준다.",
+      "keyNumbers": [
+        "Everllence ME-LGIA 95% ammonia fuel energy target",
+        "Hanwha-HMM-KR 7,000~8,000 TEU container vessel concept"
+      ],
+      "causalBridge": "암모니아 선박은 기존 디젤 엔진 선박에 새 연료만 넣는 게 아니라 선박 내부 에너지 시스템을 재설계한다."
+    },
+    {
+      "order": 3,
+      "heading": "공정 지도는 한화 계열만 보면 좁다",
+      "purpose": "공정지도",
+      "scene": "규제와 선사, 조선 통합, 엔진, 연료, 연료전지, 가스장비, 선급 인증을 나누고 DART와 EDGAR 회사를 각 칸에 배치한다.",
+      "keyNumbers": [
+        "Hanwha Ocean 2025 sales 12.78T KRW, OPM 9.13%",
+        "HD Hyundai Heavy Industries 2025 sales 17.58T KRW, OPM 11.59%",
+        "CF Industries 2025 sales 7.08B USD, OPM 32.47%"
+      ],
+      "causalBridge": "기술 병목은 여러 산업으로 흩어져 있으므로 회사 지도도 한국 DART와 미국 EDGAR를 같이 열어야 한다."
+    },
+    {
+      "order": 4,
+      "heading": "연소 방식과 전기 방식은 다르다",
+      "purpose": "기술분기",
+      "scene": "이중연료 엔진, 가스터빈, SCR 배기가스 처리와 암모니아 크래킹, 수소 연료전지, 배터리 하이브리드 경로를 비교한다.",
+      "keyNumbers": [
+        "HD Hyundai H22CDF-LA 1.4~2.2 MW medium-speed engine",
+        "Bloom Energy 2025 sales 2.02B USD, OPM 3.60%"
+      ],
+      "causalBridge": "같은 암모니아라도 태우는 회사와 전기로 바꾸는 회사는 손익 구조와 기술 위험이 다르다."
+    },
+    {
+      "order": 5,
+      "heading": "안전 병목이 기술의 중심이다",
+      "purpose": "병목심화",
+      "scene": "독성, 부식, 누출 감지, 환기, 크루 교육, 비상 대피, 벙커링, 선급 규칙이 왜 양산 병목인지 설명한다.",
+      "keyNumbers": [
+        "EMSA 20 ppm 8h, 50 ppm 15m, 300 ppm IDLH references",
+        "ABS HAZID, CFD toxic zones and leak detection"
+      ],
+      "causalBridge": "암모니아 선박은 엔진이 돌아간다고 끝나는 기술이 아니라 사람이 탈 수 있어야 끝나는 기술이다."
+    },
+    {
+      "order": 6,
+      "heading": "DART와 EDGAR에서 재무 흔적을 본다",
+      "purpose": "재무착지",
+      "scene": "DART 한국 조선, 해운, 화학, 연료전지 회사와 EDGAR 미국 암모니아, 연료전지, 가스장비, 엔진 회사를 표로 비교한다.",
+      "keyNumbers": [
+        "HMM 2025 sales 10.89T KRW, OPM 13.42%",
+        "Lotte Fine Chemical 2025 sales 1.75T KRW, OPM 4.24%",
+        "Chart Industries 2025 sales 4.26B USD, OPM 8.41%"
+      ],
+      "causalBridge": "기술 기대가 실제 투자 언어가 되려면 어느 칸이 이미 큰 손익을 갖고 있고 어느 칸은 아직 적자인지 확인해야 한다."
+    },
+    {
+      "order": 7,
+      "heading": "기술 성숙도는 첫 배와 대량 보급을 나눈다",
+      "purpose": "성숙도가드",
+      "scene": "암모니아 화물 취급 경험, 엔진 인증, 첫 선박, 선대 발주, 항만 벙커링, 연료 가격과 규제까지 단계별로 나눈다.",
+      "keyNumbers": [
+        "EXMAR 2026 ocean-going ammonia dual-fuel vessels",
+        "Everllence first engine delivery targeted for 2026"
+      ],
+      "causalBridge": "첫 사례는 방향을 보여주지만 대량 보급은 안전, 항만, 연료 공급, 선급 인증이 동시에 맞아야 한다."
+    },
+    {
+      "order": 8,
+      "heading": "오해를 막고 다음 지표를 남긴다",
+      "purpose": "오해방지",
+      "scene": "암모니아면 무조건 무탄소, 조선사만 수혜, 엔진 승인 즉시 양산, 회사 전체 이익이 암모니아선 이익이라는 오해를 정리한다.",
+      "keyNumbers": [
+        "DART and EDGAR company-wide figures are not pure ammonia ship revenue",
+        "local dartlab run date 2026-07-08"
+      ],
+      "causalBridge": "독자는 다음 공시에서 수주, 인증, 벙커링, 연료전지 모듈, 엔진 인도, 안전 규칙을 따로 확인하게 된다."
+    }
+  ],
+  "visuals": [
+    {
+      "actOrder": 1,
+      "kind": "photo",
+      "title": "암모니아 연료 선박 hero",
+      "proves": "암모니아 선박이 단순한 선박 외형이 아니라 탱크와 배관과 안전 모듈을 싣는 시스템임을 첫 화면에서 보여준다.",
+      "seriesHint": "shipyard, ammonia fuel tanks, green safety piping, no logo",
+      "placement": "도입부와 첫 질문 직후",
+      "insertAfter": "한화오션만 보면 좁다는 문단 뒤",
+      "narrativeUse": "독자가 배의 외형보다 탱크와 배관을 보게 만든다."
+    },
+    {
+      "actOrder": 2,
+      "kind": "svg",
+      "title": "암모니아 선박 에너지 시스템",
+      "proves": "NH3 탱크에서 연료공급, 엔진, SCR, 크래킹, 연료전지, 배터리, 추진기로 이어지는 시스템 구조를 보여준다.",
+      "seriesHint": "NH3 tank, fuel supply, engine, SCR, cracker, fuel cell",
+      "placement": "암모니아 선박이 연료만 바꾸는 기술이 아니라 선박 안 에너지 시스템이라는 설명 직후",
+      "insertAfter": "연료만 바꾸는 것이 아니라 발전소를 싣는다는 문단 뒤",
+      "narrativeUse": "연소 경로와 전기 경로가 한 선박 안에서 나뉜다는 점을 잡아준다."
+    },
+    {
+      "actOrder": 3,
+      "kind": "svg",
+      "title": "DART와 EDGAR 공정별 회사 지도",
+      "proves": "한화 계열만이 아니라 조선, 해운, 엔진, 연료, 연료전지, 가스장비, 선급 칸에 여러 회사가 배치된다는 점을 증명한다.",
+      "seriesHint": "Hanwha Ocean, HD Hyundai, HMM, CF, Bloom, Chart, Cummins",
+      "placement": "공정 지도 표 바로 앞에서 독자가 표의 칸을 먼저 시각적으로 이해하게 배치",
+      "insertAfter": "기술 칸을 먼저 나눈다는 문단 뒤",
+      "narrativeUse": "사용자가 요청한 DART 다양한 회사와 EDGAR 다양한 회사 연결을 본문 중심부에 고정한다."
+    },
+    {
+      "actOrder": 4,
+      "kind": "photo",
+      "title": "암모니아 연료 취급 모듈",
+      "proves": "독성 연료가 이중 배관, 누출 감지, 환기, 비상 차단으로 다뤄진다는 점을 시각화한다.",
+      "seriesHint": "ammonia fuel handling module, green pipes, gas detectors",
+      "placement": "안전 병목 섹션 초입에서 독성 연료 취급 장비가 실제로 어떤 모습인지 보여주는 위치",
+      "insertAfter": "암모니아 선박은 사람이 탈 수 있어야 끝나는 기술이라는 문단 뒤",
+      "narrativeUse": "추상적 안전 논의를 실제 장비 이미지로 바꾼다."
+    },
+    {
+      "actOrder": 4,
+      "kind": "photo",
+      "title": "크래킹과 연료전지 전력 모듈",
+      "proves": "암모니아를 직접 태우는 길과 전기로 바꾸는 길이 다른 장비와 회사를 만든다는 점을 보여준다.",
+      "seriesHint": "ammonia cracking, hydrogen fuel cells, batteries, shipboard power room",
+      "placement": "연료전지 경로 설명 뒤",
+      "insertAfter": "크래킹 후 수소 연료전지로 가는 경로를 설명한 문단 뒤",
+      "narrativeUse": "Bloom Energy, Doosan Fuel Cell, Amogy 같은 전력 모듈 회사가 왜 별도 칸인지 설명한다."
+    },
+    {
+      "actOrder": 5,
+      "kind": "svg",
+      "title": "암모니아 선박 안전 병목 스택",
+      "proves": "독성, 부식, 누출, NOx, N2O, 암모니아 슬립, 벙커링, 크루 교육이 모두 양산 병목임을 보여준다.",
+      "seriesHint": "toxicity, corrosion, leak detection, ventilation, SCR, bunkering, crew training",
+      "placement": "안전 설명 중간에서 독성, 부식, 누출, 배출, 벙커링 병목을 한눈에 묶는 위치",
+      "insertAfter": "엔진이 아니라 안전이 양산 조건이라는 문단 뒤",
+      "narrativeUse": "독자가 혁신을 친환경 이미지가 아니라 안전 공학으로 이해하게 한다."
+    },
+    {
+      "actOrder": 6,
+      "kind": "svg",
+      "title": "DART와 EDGAR 재무 착지 비교판",
+      "proves": "암모니아 기술 칸마다 회사 규모와 영업이익률이 다르고 순수 암모니아선 매출과 전사 손익을 구분해야 한다는 점을 보여준다.",
+      "seriesHint": "DART 2025, EDGAR 2025, revenue, operating margin",
+      "placement": "DART와 EDGAR 재무 표를 제시한 직후에 회사별 전사 손익 차이를 정리하는 위치",
+      "insertAfter": "재무 표를 제시한 뒤",
+      "narrativeUse": "기술 서사를 공시 숫자로 착지시킨다."
+    },
+    {
+      "actOrder": 7,
+      "kind": "svg",
+      "title": "기술 성숙도 사다리",
+      "proves": "화물 취급, 엔진 인증, 첫 선박, 선대 발주, 항만 벙커링, 연료 스프레드까지 단계가 다르다는 점을 보여준다.",
+      "seriesHint": "cargo experience, engine approval, first vessel, fleet orders, bunkering, fuel spread",
+      "placement": "기술 성숙도 섹션 뒤",
+      "insertAfter": "첫 배와 대량 보급은 다르다는 문단 뒤",
+      "narrativeUse": "초보 독자가 보도자료의 단계를 과대해석하지 않게 한다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "hero",
+      "subject": "현대식 조선소에 정박한 암모니아 연료 대형 선박, 갑판 위 암모니아 탱크와 녹색 안전 배관",
+      "query": "photorealistic ammonia fueled container ship shipyard green safety piping no logo",
+      "keywords": [
+        "ammonia ship",
+        "shipyard",
+        "fuel tank",
+        "safety piping"
+      ],
+      "placement": "도입부 첫 이미지로 배의 외형보다 탱크와 안전 배관을 먼저 보게 하는 위치",
+      "narrativeUse": "한화오션만의 회사 사진이 아니라 암모니아 선박 시스템 자체를 첫 화면에서 보여준다."
+    },
+    {
+      "slot": "inline-safety",
+      "subject": "선박 내부 암모니아 연료 취급 모듈, 이중 배관, 가스 감지기, 환기 덕트, 비상 차단 밸브",
+      "query": "photorealistic marine ammonia fuel handling module green pipes gas detectors ventilation no logo",
+      "keywords": [
+        "ammonia handling",
+        "gas detector",
+        "ventilation",
+        "engine room"
+      ],
+      "placement": "안전 병목 섹션에서 독성 연료 취급 장치의 실제 장비감을 보여주는 위치",
+      "narrativeUse": "독성 연료를 다루는 장비가 기술의 중심이라는 주장을 보강한다."
+    },
+    {
+      "slot": "inline-power",
+      "subject": "암모니아 크래킹 장치, 수소 연료전지 캐비닛, 배터리 랙이 있는 선박 전력 모듈",
+      "query": "photorealistic shipboard ammonia cracking hydrogen fuel cell battery power module no logo",
+      "keywords": [
+        "ammonia cracking",
+        "fuel cell",
+        "battery",
+        "ship power module"
+      ],
+      "placement": "연소 방식과 전기 방식 비교 섹션",
+      "narrativeUse": "직접 연소와 전력화 경로가 다른 회사 지도를 만든다는 점을 보여준다."
+    }
+  ],
+  "pipelineImagePolicy": "이 글의 파이프라인에서는 필요한 이미지를 기획 단계에서 자유롭게 추가 생성할 수 있다. 단, 실제 회사 로고나 식별 가능한 공식 시설 사진처럼 보이지 않게 하고 CREDITS.md에 생성 이미지임을 기록한다.",
+  "relatedPosts": {
+    "searches": [
+      "한화오션 042660 암모니아 조선",
+      "HMM 011200 해운 사이클",
+      "HD현대중공업 329180 엔진 조선",
+      "두산퓨얼셀 336260 수소연료전지",
+      "HBM 기술이야기 공정 네트워크",
+      "AI 전력망 기술이야기 병목"
+    ],
+    "placementRule": "기술 원리와 공정 지도 사이에는 기술이야기 선행 글을, 회사 재무 착지에는 기업이야기 선행 글을 자연스럽게 연결한다.",
+    "links": [
+      {
+        "path": "/blog/042660-hanwha-ocean",
+        "title": "한화오션 기업이야기",
+        "reason": "한화오션은 암모니아 선박의 입구가 되지만 회사 전체 손익과 기술 칸을 분리해야 한다.",
+        "placement": "조선 통합 칸 설명"
+      },
+      {
+        "path": "/blog/329180-hd-hyundai-heavy",
+        "title": "HD현대중공업",
+        "reason": "HD현대중공업은 조선과 엔진 생태계가 동시에 걸리는 비교 대상이다.",
+        "placement": "엔진과 조선 통합 비교"
+      },
+      {
+        "path": "/blog/011200-hmm",
+        "title": "HMM 해운 사이클 글",
+        "reason": "선사가 실제 운항 데이터와 발주 수요를 제공하는 위치를 설명한다.",
+        "placement": "수요와 운항 데이터 칸"
+      },
+      {
+        "path": "/blog/336260-doosan-fuel-cell",
+        "title": "두산퓨얼셀 연료전지 글",
+        "reason": "연료전지 회사는 암모니아 직접 연소가 아니라 전력화 경로와 연결된다.",
+        "placement": "연료전지 경로 설명"
+      },
+      {
+        "path": "/blog/hbm-stack-packaging-test",
+        "title": "HBM 스택 패키징 테스트",
+        "reason": "기술 하나를 공정 네트워크로 쪼개는 기존 기술이야기 문법과 연결된다.",
+        "placement": "공정 지도 설명"
+      },
+      {
+        "path": "/blog/ai-power-transformer-supercycle",
+        "title": "AI 전력망 병목",
+        "reason": "전력 장비와 인프라 병목을 회사 지도와 재무 착지로 연결한 선행 글이다.",
+        "placement": "전기 방식과 전력 모듈 설명"
+      }
+    ]
+  },
+  "honestyGuards": [
+    "DART와 EDGAR 숫자는 회사 전체 손익이다. 순수 암모니아 선박 매출이나 이익으로 읽지 않는다.",
+    "한화오션, HD현대중공업, 한화엔진, HMM, 롯데정밀화학, 두산퓨얼셀 등 한국 회사는 DART 재무 착지로만 쓰고 특정 기술 수혜를 단정하지 않는다.",
+    "CF, Bloom Energy, Chart Industries, Cummins, Caterpillar 등 미국 회사는 EDGAR 전사 손익으로 쓰며 암모니아 선박 전용 매출로 과장하지 않는다.",
+    "첫 암모니아 이중연료 선박과 엔진 인증은 기술 성숙도 진전이지 대량 양산 완료가 아니다.",
+    "암모니아는 연소 시 CO2 직접 배출이 없지만 NOx, N2O, 암모니아 슬립, 독성, 부식, 안전 교육 문제가 남는다.",
+    "로컬 dartlab 실행일은 2026-07-08이며 일부 로컬 데이터에는 신선도 경고가 있었음을 본문에 남긴다."
+  ],
+  "evidenceMap": [
+    {
+      "claim": "암모니아 선박은 IMO 2030 zero or near-zero fuel target과 2050 net-zero frame 안에서 대체연료 후보로 부상한다.",
+      "sourceType": "official policy source",
+      "period": "as of 2026-07-08",
+      "sourceRef": "IMO Cutting GHG emissions page, DNV IMO GHG vision explainer",
+      "howUsed": "규제 수요와 기술 성숙도 도입"
+    },
+    {
+      "claim": "Hanwha Group, HMM and KR signed an MOU for ammonia gas turbine and fuel cell propulsion concepts for container vessels.",
+      "sourceType": "official company source",
+      "period": "2026",
+      "sourceRef": "Hanwha Group newsroom MOU",
+      "howUsed": "한화오션을 입구로 삼되 조선사, 선사, 선급 협업 구조를 설명"
+    },
+    {
+      "claim": "Hanwha Ocean은 2025년 매출 12.78조원, 영업이익 1.17조원, 영업이익률 9.13%였다.",
+      "sourceType": "DART",
+      "period": "2025 calendar year in local dartlab panel",
+      "sourceRef": "dartlab.Company(\"042660\").panel(\"IS\", \"ratios\")",
+      "howUsed": "조선 통합 칸의 재무 착지"
+    },
+    {
+      "claim": "HD Hyundai Heavy Industries는 2025년 매출 17.58조원, 영업이익 2.04조원, 영업이익률 11.59%였다.",
+      "sourceType": "DART",
+      "period": "2025 calendar year in local dartlab panel",
+      "sourceRef": "dartlab.Company(\"329180\").panel(\"IS\", \"ratios\")",
+      "howUsed": "조선 통합과 엔진 생태계 비교"
+    },
+    {
+      "claim": "Hanwha Engine은 local dartlab panel에서 2025Q4 매출 1.37조원, 영업이익 0.13조원, 영업이익률 9.49%로 확인된다.",
+      "sourceType": "DART",
+      "period": "2025Q4 label in local dartlab panel",
+      "sourceRef": "dartlab.Company(\"082740\").panel(\"IS\", \"ratios\")",
+      "howUsed": "엔진 칸의 재무 착지와 기간 라벨 가드"
+    },
+    {
+      "claim": "HMM은 2025년 매출 10.89조원, 영업이익 1.46조원, 영업이익률 13.42%였다.",
+      "sourceType": "DART",
+      "period": "2025 calendar year in local dartlab panel",
+      "sourceRef": "dartlab.Company(\"011200\").panel(\"IS\", \"ratios\")",
+      "howUsed": "수요와 운항 데이터 칸 설명"
+    },
+    {
+      "claim": "CF Industries states ammonia is one of its primary products and 2025 EDGAR panel shows sales 7.08B USD and operating margin 32.47%.",
+      "sourceType": "EDGAR",
+      "period": "2025 fiscal year in local dartlab panel",
+      "sourceRef": "CF 2025 Form 10-K and dartlab.Company(\"CF\").panel(\"IS\", \"ratios\")",
+      "howUsed": "암모니아 연료 공급 칸의 미국 상장사 연결"
+    },
+    {
+      "claim": "Bloom Energy describes its Energy Server as a solid oxide fuel cell electricity system and 2025 EDGAR panel shows sales 2.02B USD and operating margin 3.60%.",
+      "sourceType": "EDGAR",
+      "period": "2025 fiscal year in local dartlab panel",
+      "sourceRef": "Bloom Energy 2025 Form 10-K and dartlab.Company(\"BE\").panel(\"IS\", \"ratios\")",
+      "howUsed": "연료전지 전력화 경로의 미국 상장사 연결"
+    },
+    {
+      "claim": "Chart Industries, Cummins and Caterpillar are not pure ammonia ship companies but EDGAR panels can anchor gas equipment and engine or power equipment scale.",
+      "sourceType": "EDGAR",
+      "period": "2025 fiscal year in local dartlab panel",
+      "sourceRef": "dartlab.Company(\"GTLS\"), dartlab.Company(\"CMI\"), dartlab.Company(\"CAT\")",
+      "howUsed": "가스장비와 엔진 파워 칸의 전사 손익 가드"
+    },
+    {
+      "claim": "기술이야기의 공정 네트워크 문법은 HBM, AI 전력망, 하이퍼튜브 글에서 이미 사용한 내부 독해 방식과 연결된다.",
+      "sourceType": "INTERNAL-BLOG",
+      "period": "as of 2026-07-08",
+      "sourceRef": "/blog/hbm-stack-packaging-test, /blog/ai-power-transformer-supercycle, /blog/hypertube-vacuum-maglev-network",
+      "howUsed": "기술을 회사명 목록이 아니라 병목 네트워크로 읽는 내부 연결"
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "requiredRounds": [
+      {
+        "id": "titleHook",
+        "status": "passed"
+      },
+      {
+        "id": "writerPanel",
+        "status": "passed"
+      },
+      {
+        "id": "honestyEvidence",
+        "status": "passed"
+      },
+      {
+        "id": "visualStoryPlan",
+        "status": "passed"
+      },
+      {
+        "id": "imageFit",
+        "status": "passed"
+      },
+      {
+        "id": "readerFit",
+        "status": "passed"
+      },
+      {
+        "id": "reevaluation",
+        "status": "passed"
+      }
+    ],
+    "decisionLog": [
+      {
+        "round": "r1",
+        "decision": "revise",
+        "note": "초안은 한화오션과 한화엔진 중심으로 좁아질 위험이 있었고, 사용자가 요구한 특정 기술 중심의 DART와 EDGAR 다회사 연결이 약했다."
+      },
+      {
+        "round": "r2",
+        "decision": "passed",
+        "note": "암모니아 선박을 조선 통합, 선사 수요, 엔진, 연료, 연료전지, 가스장비, 인증으로 나누고 DART와 EDGAR 회사를 각각 배치했다."
+      },
+      {
+        "round": "r3",
+        "decision": "passed",
+        "note": "추가 평가에서 초보자용 초반 설명, 독성 안전 병목, 첫 배와 대량 보급의 차이, 생성 이미지 자유 추가 정책을 보강했다."
+      }
+    ],
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": 1,
+          "planner": "기획작가는 한화오션의 암모니아 추진 MOU와 한화엔진, 한화에어로 계열 기술을 중심으로 글을 시작했다.",
+          "evaluator": "한화 계열만으로 좁히면 기술이야기가 아니라 그룹 수혜 글처럼 보인다. 암모니아 선박이라는 특정 기술을 공정별로 쪼개 DART 한국 회사와 EDGAR 미국 회사를 함께 연결해야 한다고 평가했다.",
+          "skeptic": "암모니아는 엔진만의 문제가 아니라 연료 공급, 누출 감지, 환기, SCR, 크래킹, 연료전지, 선급 인증까지 연결된다. 이 칸들을 놓치면 초보자는 왜 혁신인지 모른다.",
+          "decision": "revise",
+          "evaluatorScore": 84,
+          "plannerRevision": "한화오션은 입구로 낮추고, HMM, HD현대중공업, 한화엔진, 롯데정밀화학, 두산퓨얼셀, CF, Bloom, Chart, Cummins, Caterpillar를 공정 지도에 재배치했다."
+        },
+        {
+          "round": 2,
+          "planner": "개선안은 암모니아 선박의 원리에서 시작해 선박 내부 발전소화, 공정별 회사 지도, DART와 EDGAR 재무 착지, 안전 병목, 기술 성숙도, 오해 방지로 이어지게 재기획했다.",
+          "evaluator": "사용자가 요구한 초보자용 설명과 깊이가 함께 살아 있다. 한화 계열을 넘어서 특정 기술을 DART와 EDGAR 회사로 연결했고, 이미지 계획도 탱크와 배관, 안전 모듈, 전력 모듈을 본문 중간에 배치했다.",
+          "skeptic": "회사별 전사 손익을 순수 암모니아선 매출로 읽지 않는 가드가 반복된다. 첫 선박과 대량 양산을 나누고 독성 안전을 중심에 둔 점도 과장 위험을 낮춘다.",
+          "decision": "passed",
+          "evaluatorScore": 94,
+          "plannerRevision": "평가 피드백을 반영해 공정 지도 표와 재무 착지 표를 본문 중심부에 고정하고, 안전 병목과 기술 성숙도 섹션을 필수 막으로 세웠다."
+        },
+        {
+          "round": 3,
+          "planner": "추가 보강안은 초반에 암모니아 선박이 무엇인지와 왜 혁신인지 쉬운 문단을 넣고, 이미지 생성은 기획 단계에서 필요시 자유롭게 추가 가능하다는 운영 기록을 남겼다.",
+          "evaluator": "독자는 암모니아가 무탄소 분자라는 기초부터 시작해 왜 배 안에 화학 설비와 발전소가 들어오는지 이해할 수 있다. DART와 EDGAR 재무표도 기술 칸의 실제 크기를 보여준다.",
+          "skeptic": "외부 공식 근거, DART, EDGAR, 내부 블로그 연결이 분리되어 있고, 한화오션만의 서사가 아니라 특정 기술의 회사 지도로 읽힌다.",
+          "decision": "passed",
+          "evaluatorScore": 96,
+          "plannerRevision": "최종 보강안이다. 초보자 도입, DART와 EDGAR 공정 지도, 생성 이미지 자유 추가 정책, 오해 방지, 기술 성숙도를 모두 고정했다."
+        }
+      ],
+      "note": "작가기획, 평가 피드백, 작가 재기획, 재평가 루프 실행 산물. 최종 92점 이상만 발행"
+    }
+  }
+}

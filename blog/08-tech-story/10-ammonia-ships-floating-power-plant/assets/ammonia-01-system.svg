@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">암모니아 선박 에너지 시스템</title>
+  <desc id="desc">암모니아 선박은 NH3 탱크, 연료공급장치, 엔진, SCR, 크래킹, 연료전지, 배터리, 추진기가 함께 움직이는 시스템이다.</desc>
+  <rect width="1200" height="675" fill="#0a0e1a"/>
+  <text x="70" y="70" fill="#f8fafc" font-family="Malgun Gothic, Segoe UI, sans-serif" font-size="34" font-weight="800">암모니아 선박: 연료가 아니라 선박 안 에너지 시스템</text>
+  <text x="70" y="108" fill="#94a3b8" font-family="Malgun Gothic, Segoe UI, sans-serif" font-size="18">NH3는 탱크에서 끝나지 않고 안전 배관, 연소, 배기가스 처리, 전력화 경로로 나뉜다.</text>
+  <g font-family="Malgun Gothic, Segoe UI, sans-serif">
+    <g transform="translate(75 178)">
+      <rect width="170" height="120" rx="16" fill="#111827" stroke="#fbbf24" stroke-width="2"/>
+      <text x="85" y="48" text-anchor="middle" fill="#fbbf24" font-size="24" font-weight="800">NH3 탱크</text>
+      <text x="85" y="80" text-anchor="middle" fill="#cbd5e1" font-size="15">저장, 온도, 압력</text>
+      <text x="85" y="103" text-anchor="middle" fill="#94a3b8" font-size="13">독성 연료 시작점</text>
+    </g>
+    <path d="M250 238 L338 238" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
+    <polygon points="338,238 318,226 318,250" fill="#38bdf8"/>
+    <g transform="translate(355 178)">
+      <rect width="180" height="120" rx="16" fill="#111827" stroke="#334155" stroke-width="2"/>
+      <text x="90" y="44" text-anchor="middle" fill="#f8fafc" font-size="22" font-weight="800">연료공급장치</text>
+      <text x="90" y="76" text-anchor="middle" fill="#cbd5e1" font-size="15">이중 배관, 밸브</text>
+      <text x="90" y="101" text-anchor="middle" fill="#fbbf24" font-size="14">누출 감지와 환기</text>
+    </g>
+    <path d="M540 238 L620 238" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
+    <polygon points="620,238 600,226 600,250" fill="#38bdf8"/>
+    <g transform="translate(640 145)">
+      <rect width="195" height="130" rx="16" fill="#172033" stroke="#38bdf8" stroke-width="2"/>
+      <text x="98" y="43" text-anchor="middle" fill="#38bdf8" font-size="22" font-weight="800">직접 연소</text>
+      <text x="98" y="75" text-anchor="middle" fill="#f8fafc" font-size="16">엔진, 가스터빈</text>
+      <text x="98" y="101" text-anchor="middle" fill="#cbd5e1" font-size="14">파일럿 오일, 분사 제어</text>
+    </g>
+    <path d="M840 210 L930 210" stroke="#f59e0b" stroke-width="6" stroke-linecap="round"/>
+    <polygon points="930,210 910,198 910,222" fill="#f59e0b"/>
+    <g transform="translate(955 145)">
+      <rect width="170" height="130" rx="16" fill="#111827" stroke="#f59e0b" stroke-width="2"/>
+      <text x="85" y="42" text-anchor="middle" fill="#f59e0b" font-size="22" font-weight="800">SCR</text>
+      <text x="85" y="74" text-anchor="middle" fill="#f8fafc" font-size="16">NOx 처리</text>
+      <text x="85" y="100" text-anchor="middle" fill="#cbd5e1" font-size="14">암모니아 슬립 관리</text>
+    </g>
+    <path d="M535 270 C600 350, 620 385, 660 405" stroke="#a78bfa" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <polygon points="660,405 637,398 649,419" fill="#a78bfa"/>
+    <g transform="translate(640 380)">
+      <rect width="195" height="120" rx="16" fill="#172033" stroke="#a78bfa" stroke-width="2"/>
+      <text x="98" y="42" text-anchor="middle" fill="#a78bfa" font-size="22" font-weight="800">전력화 경로</text>
+      <text x="98" y="73" text-anchor="middle" fill="#f8fafc" font-size="16">크래킹 - 연료전지</text>
+      <text x="98" y="98" text-anchor="middle" fill="#cbd5e1" font-size="14">배터리 하이브리드</text>
+    </g>
+    <path d="M840 440 L930 440" stroke="#22c55e" stroke-width="6" stroke-linecap="round"/>
+    <polygon points="930,440 910,428 910,452" fill="#22c55e"/>
+    <g transform="translate(955 380)">
+      <rect width="170" height="120" rx="16" fill="#111827" stroke="#22c55e" stroke-width="2"/>
+      <text x="85" y="42" text-anchor="middle" fill="#22c55e" font-size="22" font-weight="800">전기 추진</text>
+      <text x="85" y="74" text-anchor="middle" fill="#f8fafc" font-size="16">모터, 배터리</text>
+      <text x="85" y="99" text-anchor="middle" fill="#cbd5e1" font-size="14">호텔로드와 추진 전력</text>
+    </g>
+    <g transform="translate(75 405)">
+      <rect width="460" height="105" rx="18" fill="#0f172a" stroke="#334155"/>
+      <text x="24" y="38" fill="#fbbf24" font-size="20" font-weight="800">왜 시스템인가</text>
+      <text x="24" y="70" fill="#cbd5e1" font-size="16">엔진 하나가 아니라 탱크, 배관, 센서, 환기, 배기가스, 전력 모듈, 인증이 같이 맞아야 한다.</text>
+    </g>
+    <text x="600" y="590" text-anchor="middle" fill="#f8fafc" font-size="22" font-weight="800">혁신의 핵심은 NH3를 태우는 것이 아니라 사람이 탈 수 있는 선박 시스템으로 통합하는 것이다.</text>
+    <text x="600" y="623" text-anchor="middle" fill="#94a3b8" font-size="16">DART와 EDGAR 회사 지도는 이 시스템의 칸별 공급자를 찾는 작업이다.</text>
+  </g>
+</svg>

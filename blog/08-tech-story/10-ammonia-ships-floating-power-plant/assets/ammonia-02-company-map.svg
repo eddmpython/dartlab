@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">DART와 EDGAR 암모니아 선박 회사 지도</title>
+  <desc id="desc">DART와 EDGAR 회사는 조선 통합, 선사 수요, 엔진, 연료, 연료전지, 가스장비, 인증 칸에 나뉘어 배치된다.</desc>
+  <rect width="1200" height="675" fill="#0a0e1a"/>
+  <text x="64" y="68" fill="#f8fafc" font-family="Malgun Gothic, Segoe UI, sans-serif" font-size="34" font-weight="800">회사 지도: 한화만이 아니라 공정별로 연결한다</text>
+  <text x="64" y="106" fill="#94a3b8" font-family="Malgun Gothic, Segoe UI, sans-serif" font-size="17">암모니아 선박은 조선소, 선사, 엔진, 연료, 연료전지, 가스장비, 선급 인증이 이어지는 네트워크다.</text>
+  <g font-family="Malgun Gothic, Segoe UI, sans-serif">
+    <g transform="translate(65 155)">
+      <rect width="150" height="355" rx="14" fill="#111827" stroke="#334155"/>
+      <text x="75" y="34" text-anchor="middle" fill="#fbbf24" font-size="19" font-weight="800">수요</text>
+      <text x="75" y="86" text-anchor="middle" fill="#f8fafc" font-size="18" font-weight="800">HMM</text>
+      <text x="75" y="113" text-anchor="middle" fill="#94a3b8" font-size="14">DART 011200</text>
+      <text x="75" y="170" text-anchor="middle" fill="#cbd5e1" font-size="14">운항 데이터</text>
+      <text x="75" y="194" text-anchor="middle" fill="#cbd5e1" font-size="14">선대 전환</text>
+      <rect x="28" y="275" width="94" height="36" rx="18" fill="#172033"/>
+      <text x="75" y="298" text-anchor="middle" fill="#f8fafc" font-size="14">OPM 13.42%</text>
+    </g>
+    <g transform="translate(235 155)">
+      <rect width="160" height="355" rx="14" fill="#111827" stroke="#334155"/>
+      <text x="80" y="34" text-anchor="middle" fill="#fbbf24" font-size="19" font-weight="800">선박 통합</text>
+      <text x="80" y="78" text-anchor="middle" fill="#f8fafc" font-size="17" font-weight="800">한화오션</text>
+      <text x="80" y="105" text-anchor="middle" fill="#f8fafc" font-size="17" font-weight="800">HD현대중공업</text>
+      <text x="80" y="133" text-anchor="middle" fill="#94a3b8" font-size="14">DART</text>
+      <text x="80" y="188" text-anchor="middle" fill="#cbd5e1" font-size="14">탱크, 배관</text>
+      <text x="80" y="212" text-anchor="middle" fill="#cbd5e1" font-size="14">추진 통합</text>
+      <rect x="22" y="275" width="116" height="36" rx="18" fill="#172033"/>
+      <text x="80" y="298" text-anchor="middle" fill="#f8fafc" font-size="14">9.13~11.59%</text>
+    </g>
+    <g transform="translate(415 155)">
+      <rect width="150" height="355" rx="14" fill="#111827" stroke="#334155"/>
+      <text x="75" y="34" text-anchor="middle" fill="#fbbf24" font-size="19" font-weight="800">엔진</text>
+      <text x="75" y="78" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="800">한화엔진</text>
+      <text x="75" y="104" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="800">HD현대</text>
+      <text x="75" y="130" text-anchor="middle" fill="#94a3b8" font-size="14">DART</text>
+      <text x="75" y="186" text-anchor="middle" fill="#cbd5e1" font-size="14">이중연료</text>
+      <text x="75" y="210" text-anchor="middle" fill="#cbd5e1" font-size="14">SCR, 분사</text>
+      <rect x="28" y="275" width="94" height="36" rx="18" fill="#172033"/>
+      <text x="75" y="298" text-anchor="middle" fill="#f8fafc" font-size="14">OPM 9.49%</text>
+    </g>
+    <g transform="translate(585 155)">
+      <rect width="150" height="355" rx="14" fill="#111827" stroke="#334155"/>
+      <text x="75" y="34" text-anchor="middle" fill="#fbbf24" font-size="19" font-weight="800">연료</text>
+      <text x="75" y="78" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="800">롯데정밀화학</text>
+      <text x="75" y="104" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="800">CF</text>
+      <text x="75" y="130" text-anchor="middle" fill="#94a3b8" font-size="14">DART + EDGAR</text>
+      <text x="75" y="186" text-anchor="middle" fill="#cbd5e1" font-size="14">암모니아</text>
+      <text x="75" y="210" text-anchor="middle" fill="#cbd5e1" font-size="14">생산, 공급</text>
+      <rect x="18" y="275" width="114" height="36" rx="18" fill="#172033"/>
+      <text x="75" y="298" text-anchor="middle" fill="#f8fafc" font-size="14">4.24~32.47%</text>
+    </g>
+    <g transform="translate(755 155)">
+      <rect width="150" height="355" rx="14" fill="#111827" stroke="#334155"/>
+      <text x="75" y="34" text-anchor="middle" fill="#fbbf24" font-size="19" font-weight="800">전력화</text>
+      <text x="75" y="78" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="800">두산퓨얼셀</text>
+      <text x="75" y="104" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="800">Bloom</text>
+      <text x="75" y="130" text-anchor="middle" fill="#94a3b8" font-size="14">DART + EDGAR</text>
+      <text x="75" y="186" text-anchor="middle" fill="#cbd5e1" font-size="14">크래킹</text>
+      <text x="75" y="210" text-anchor="middle" fill="#cbd5e1" font-size="14">연료전지</text>
+      <rect x="15" y="275" width="120" height="36" rx="18" fill="#3b1520"/>
+      <text x="75" y="298" text-anchor="middle" fill="#fecaca" font-size="14">-23.24~3.60%</text>
+    </g>
+    <g transform="translate(925 155)">
+      <rect width="110" height="355" rx="14" fill="#111827" stroke="#334155"/>
+      <text x="55" y="34" text-anchor="middle" fill="#fbbf24" font-size="18" font-weight="800">가스장비</text>
+      <text x="55" y="84" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="800">Chart</text>
+      <text x="55" y="112" text-anchor="middle" fill="#94a3b8" font-size="14">EDGAR</text>
+      <text x="55" y="186" text-anchor="middle" fill="#cbd5e1" font-size="13">저장</text>
+      <text x="55" y="209" text-anchor="middle" fill="#cbd5e1" font-size="13">압력 장비</text>
+      <rect x="14" y="275" width="82" height="36" rx="18" fill="#172033"/>
+      <text x="55" y="298" text-anchor="middle" fill="#f8fafc" font-size="13">8.41%</text>
+    </g>
+    <g transform="translate(1050 155)">
+      <rect width="90" height="355" rx="14" fill="#111827" stroke="#334155"/>
+      <text x="45" y="34" text-anchor="middle" fill="#fbbf24" font-size="18" font-weight="800">인증</text>
+      <text x="45" y="80" text-anchor="middle" fill="#f8fafc" font-size="15" font-weight="800">KR</text>
+      <text x="45" y="106" text-anchor="middle" fill="#f8fafc" font-size="15" font-weight="800">ABS</text>
+      <text x="45" y="132" text-anchor="middle" fill="#f8fafc" font-size="15" font-weight="800">DNV</text>
+      <text x="45" y="186" text-anchor="middle" fill="#cbd5e1" font-size="13">HAZID</text>
+      <text x="45" y="209" text-anchor="middle" fill="#cbd5e1" font-size="13">선급</text>
+      <rect x="11" y="275" width="68" height="36" rx="18" fill="#172033"/>
+      <text x="45" y="298" text-anchor="middle" fill="#f8fafc" font-size="13">규칙</text>
+    </g>
+    <text x="600" y="580" text-anchor="middle" fill="#f8fafc" font-size="22" font-weight="800">회사명보다 먼저 볼 것은 공정 칸이다.</text>
+    <text x="600" y="614" text-anchor="middle" fill="#fbbf24" font-size="20" font-weight="800">DART와 EDGAR 숫자는 전사 손익이며 순수 암모니아선 매출이 아니다.</text>
+  </g>
+</svg>
