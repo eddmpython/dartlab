@@ -207,6 +207,10 @@ const config = {
 				if (stripped.startsWith('/skills/')) {
 					return;
 				}
+				// /notebooks/[id] = 사용자 로컬(IndexedDB) 노트북. 런타임 uuid 라 prerender 불가 → SPA 셸이 클라 로드.
+				if (stripped.startsWith('/notebooks/')) {
+					return;
+				}
 				throw new Error(`${message} (linked from ${referrer})`);
 			}
 		},

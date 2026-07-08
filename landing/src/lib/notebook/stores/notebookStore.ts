@@ -1,4 +1,5 @@
 import { writable, derived, get } from 'svelte/store';
+import { putNotebook } from '../storage/localStore';
 
 export interface GuideData {
 	mission: string;
@@ -141,29 +142,9 @@ export function clearAllCellOutputs(): void {
 let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 export async function loadFromStorage(): Promise<boolean> {
-	try {
-		const res = await fetch('/api/notebook/list', { credentials: 'include' });
-		if (!res.ok) return false;
-		const list = await res.json();
-		if (list.length === 0) return false;
-		const latest = list[0];
-		const loadRes = await fetch(`/api/notebook/${latest.id}`, { credentials: 'include' });
-		if (!loadRes.ok) return false;
-		const data = await loadRes.json();
-		if (data.error) return false;
-		notebook.set(data);
-		if (data.cells?.length > 0) {
-			activeCellId.set(data.cells[0].id);
-			const outputMap = new Map<string, CellOutput>();
-			for (const cell of data.cells) {
-				if (cell.output) outputMap.set(cell.id, cell.output);
-			}
-			cellOutputs.set(outputMap);
-		}
-		return true;
-	} catch {
-		return false;
-	}
+	// 개별 노트북 로딩은 라우트(/notebooks/[id])가 localStore.getNotebook + loadNotebook 으로 처리.
+	// 이 훅은 initialNotebook 이 없는 경우의 폴백일 뿐이라 no-op(빈 노트북 유지).
+	return false;
 }
 
 function buildSavePayload(): Notebook {
@@ -181,13 +162,11 @@ function buildSavePayload(): Notebook {
 }
 
 export function saveToStorage(): void {
-	if (get(studyMode)) {
-		saveStudyVertical();
-		return;
-	}
-	// standalone 빌드: 노트북 서버(/api/notebook) 없음. 세션 내 메모리로만 유지.
-	void saveDebounceTimer;
-	void buildSavePayload;
+	// 자동저장 = 디바운스 후 IndexedDB put (서버 없음). 셀 편집·실행마다 호출됨.
+	if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+	saveDebounceTimer = setTimeout(() => {
+		void putNotebook(buildSavePayload());
+	}, 800);
 }
 
 function saveStudyVertical(): void {
@@ -205,19 +184,10 @@ function saveStudyVertical(): void {
 }
 
 export async function saveToServer(): Promise<{ ok: boolean; cloud: boolean }> {
-	const payload = buildSavePayload();
-	try {
-		const res = await fetch('/api/notebook/save', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			credentials: 'include',
-			body: JSON.stringify(payload),
-		});
-		if (!res.ok) return { ok: false, cloud: false };
-		return await res.json();
-	} catch {
-		return { ok: false, cloud: false };
-	}
+	// Ctrl+S = 즉시 IndexedDB 저장 (클라우드 없음).
+	if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+	await putNotebook(buildSavePayload());
+	return { ok: true, cloud: false };
 }
 
 export function setTitle(title: string): void {
