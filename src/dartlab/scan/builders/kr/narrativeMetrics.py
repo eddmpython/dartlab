@@ -49,6 +49,58 @@ from dartlab.scan.builders.kr.common import releaseNativeMemory as _releaseNativ
 from dartlab.scan.builders.kr.common import say as _say
 from dartlab.scan.builders.kr.common import scanDir as _scanDir
 
+# 수주잔고/매출 상대 상한. 초과는 단위오류/이상치로 보고 gap 처리 (조선 등 장기수주도 통상 5배 내).
+_BACKLOG_REVENUE_MAX = 30.0
+
+
+def _dropAbsurdBacklog(df: pl.DataFrame, *, verbose: bool = True) -> pl.DataFrame:
+    """매출 대비 수주잔고 상대 sanity. backlog > 매출 x 30 이면 단위오류로 보고 backlog 를 gap 처리한다.
+
+    단위 탐지가 다중단위 leaf 에서 오선택(백만배 오류)할 수 있어, 규모-상대 검증으로 명백한 이상치를
+    high/mid confidence 로 내보내는 것을 차단한다 (missing > wrong). 매출 부재 종목은 검증 불가라 보존.
+
+    Args:
+        df: narrativeMetric 행 DataFrame (backlog 컬럼 유무 무관).
+        verbose: drop 건수 로그.
+
+    Returns:
+        이상치 backlog 를 null 로 만든 DataFrame.
+
+    Raises:
+        없음. finance 로드 실패는 원본 반환.
+    """
+    if "backlog" not in df.columns:
+        return df
+    try:
+        from dartlab.providers.dart.finance.scanAccount import scanAccount
+
+        sales = scanAccount("sales", freq="Y")
+    except (pl.exceptions.PolarsError, OSError, ImportError, ValueError):
+        return df
+    if sales is None or sales.is_empty() or "stockCode" not in sales.columns:
+        return df
+    pcols = sorted([c for c in sales.columns if c != "stockCode"], reverse=True)
+    if not pcols:
+        return df
+    salesLatest = sales.select(
+        "stockCode",
+        pl.coalesce([pl.col(c) for c in pcols]).cast(pl.Float64, strict=False).alias("_sales"),
+    )
+    joined = df.join(salesLatest, on="stockCode", how="left")
+    absurd = (
+        pl.col("_sales").is_not_null()
+        & (pl.col("_sales") > 0)
+        & (pl.col("backlog") > pl.col("_sales") * _BACKLOG_REVENUE_MAX)
+    )
+    nDrop = joined.filter(absurd).height
+    out = joined.with_columns(
+        pl.when(absurd).then(None).otherwise(pl.col("backlog")).alias("backlog"),
+        pl.when(absurd).then(None).otherwise(pl.col("backlog_conf")).alias("backlog_conf"),
+    ).drop("_sales")
+    if verbose and nDrop:
+        _say(f"[narrativeMetric] 매출대비 이상치 backlog {nDrop}건 gap 처리")
+    return out
+
 
 def buildNarrativeMetrics(*, verbose: bool = True) -> Path | None:
     """전종목 panel 서술 표 -> ``scan/narrativeMetrics.parquet`` 횡단 프리빌드.
@@ -139,6 +191,7 @@ def buildNarrativeMetrics(*, verbose: bool = True) -> Path | None:
         return None
 
     df = pl.DataFrame(rows, infer_schema_length=None)
+    df = _dropAbsurdBacklog(df, verbose=verbose)
     outDir = _scanDir()
     outDir.mkdir(parents=True, exist_ok=True)
     out = outDir / "narrativeMetrics.parquet"

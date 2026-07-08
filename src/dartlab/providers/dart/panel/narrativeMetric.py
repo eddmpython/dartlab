@@ -272,8 +272,16 @@ def _resolveMetricOnPanel(p, metricId: str) -> dict | None:
         return None
     pcols = sorted([c for c in leaf.columns if re.match(r"20\d\dQ?\d?", c)], reverse=True)
     allText = " ".join(str(leaf[pc][i] or "") for i in range(leaf.height) for pc in pcols[:3])
-    leafUnits = {normLabel(u) for u in re.findall(r"\(단위\s*[:：]\s*([^\)/]{1,8})", allText)} & set(_UNIT_SCALE)
-    leafScale = _UNIT_SCALE[next(iter(leafUnits))] if len(leafUnits) == 1 else None
+    # leaf 전역 단위 scale 확정: 선언들이 서로 다른 scale 이면(다중단위 leaf) 신뢰 안 함(None).
+    # 한 leaf 에 백만원 표와 원 표가 섞이면 오선택(백만배 오류) 나므로 충돌 시 저신뢰로 강등.
+    scales: set[float] = set()
+    for u in re.findall(r"\(단위\s*[:：]\s*([^\)/]{1,12})", allText):
+        un = normLabel(u)
+        for unit in ("십억원", "억원", "백만원", "천원", "원"):  # 긴 단위 우선(원 이 백만원 부분매칭 방지)
+            if unit in un:
+                scales.add(_UNIT_SCALE[unit])
+                break
+    leafScale = next(iter(scales)) if len(scales) == 1 else None
     syns = mdef.get("synonyms", mdef.get("direct", []))
     for i in range(leaf.height):
         for pc in pcols[:3]:  # 최신 3 기간 시도
