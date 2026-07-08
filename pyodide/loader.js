@@ -53,9 +53,11 @@ export async function initDartlab(options = {}) {
   if (typeof globalThis.loadPyodide === "function") {
     loadPyodide = globalThis.loadPyodide;
   } else {
-    // 동적 import (브라우저에서 CDN script 태그 없이 사용 시)
+    // 동적 import (브라우저에서 CDN script 태그 없이 사용 시).
+    // pyodide.js 는 UMD 라 import 네임스페이스에 loadPyodide 가 없고 side-effect 로
+    // globalThis.loadPyodide 만 설정된다. 첫 호출 레이스 방지로 전역 fallback 을 함께 본다.
     const mod = await import(/* webpackIgnore: true */ PYODIDE_CDN);
-    loadPyodide = mod.loadPyodide;
+    loadPyodide = mod.loadPyodide || globalThis.loadPyodide;
   }
 
   const py = await loadPyodide();
