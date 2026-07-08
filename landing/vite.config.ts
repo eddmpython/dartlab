@@ -319,7 +319,19 @@ export default defineConfig({
 			'@blog': blogDir,
 			'$chart': sharedChartDir,
 			'$skills': skillsDir
-		}
+		},
+		// CodeMirror/lezer 는 단일 인스턴스여야 언어 확장과 syntaxHighlighting 이 연결된다.
+		// (@codemirror/language 가 두 버전 깔리면 python() 트리와 하이라이트 facet 이 어긋나 하이라이트 무력화)
+		dedupe: [
+			'@codemirror/state',
+			'@codemirror/view',
+			'@codemirror/language',
+			'@codemirror/commands',
+			'@codemirror/autocomplete',
+			'@lezer/common',
+			'@lezer/highlight',
+			'@lezer/lr'
+		]
 	},
 	ssr: {
 		// 워크스페이스 @dartlab/* 는 src .ts 를 그대로 export(빌드 dist 없음) → Node ESM 가 확장자 없는
