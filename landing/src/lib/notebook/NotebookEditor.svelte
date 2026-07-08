@@ -8,55 +8,29 @@
 		loadFromStorage,
 		loadNotebook,
 		saveToServer,
-		cellWidth,
-		studyMode,
-		studyLayout,
-		setStudyLayout,
+		cellWidth
 	} from './stores/notebookStore';
 	import type { Notebook, Cell as CellType } from './stores/notebookStore';
 	import { initEngine, executeAllCells, engineStatus } from './stores/executionStore';
 	import NotebookToolbar from './toolbar/NotebookToolbar.svelte';
 	import Cell from './components/Cell.svelte';
-	import StudyRenderer from './components/StudyRenderer.svelte';
-	import StudySplitRenderer from './components/StudySplitRenderer.svelte';
 	import Sidebar from './sidebar/Sidebar.svelte';
-	import StudyTocCard from './components/StudyTocCard.svelte';
-
-	import type { Snippet } from 'svelte';
 
 	interface Props {
 		embedded?: boolean;
-		showHome?: boolean;
 		homeHref?: string;
 		initialNotebook?: Notebook | null;
 		showSidebar?: boolean;
 		showToolbar?: boolean;
-		footer?: Snippet;
 	}
 
 	let {
 		embedded = false,
-		showHome = true,
 		homeHref = '/',
 		initialNotebook = null,
 		showSidebar = true,
-		showToolbar = true,
-		footer,
+		showToolbar = true
 	}: Props = $props();
-
-	let isMobile = $state(false);
-
-	function checkMobile() {
-		isMobile = window.innerWidth <= 640;
-	}
-
-	$effect(() => {
-		if (!$studyMode || $studyLayout !== 'horizontal') return;
-		const hasPractice = $notebook.cells.some(
-			(c) => (c.type === 'code' || c.type === 'guide') && !c.study
-		);
-		if (!hasPractice) setStudyLayout('vertical');
-	});
 
 	let engineStarted = false;
 
@@ -80,15 +54,12 @@
 				}
 			});
 
-			checkMobile();
-			window.addEventListener('resize', checkMobile);
 			document.addEventListener('keydown', handleGlobalKeydown);
 		})();
 
 		return () => {
 			mounted = false;
 			unsubEngine?.();
-			window.removeEventListener('resize', checkMobile);
 			document.removeEventListener('keydown', handleGlobalKeydown);
 		};
 	});
@@ -126,109 +97,58 @@
 		<Sidebar />
 	{/if}
 	{#if showToolbar}
-		<NotebookToolbar {showHome} {homeHref} />
+		<NotebookToolbar {homeHref} />
 	{/if}
-	<div class="desktop-toc-wrapper">
-		<StudyTocCard />
-	</div>
+	<main class="notebook-content width-{$cellWidth}">
+		{#each $notebook.cells as cell (cell.id)}
+			<Cell {cell} />
+		{/each}
 
-	{#if $studyMode && $studyLayout === 'horizontal' && !isMobile}
-		<StudySplitRenderer {footer} />
-	{:else}
-		<main class="notebook-content width-{$cellWidth}">
-			{#if $studyMode}
-				<StudyRenderer />
-			{:else}
-				{#each $notebook.cells as cell (cell.id)}
-					<Cell {cell} />
-				{/each}
-
-				{#if $notebook.cells.length > 0}
-					<div class="add-cell-area">
-						<button class="add-cell-btn" onclick={() => handleAddCell('code')}>+ Code</button>
-						<button class="add-cell-btn" onclick={() => handleAddCell('markdown')}>+ Markdown</button>
-					</div>
-				{/if}
-			{/if}
-
-			{#if $notebook.cells.length === 0}
-				<div class="empty-state">
-					<div class="empty-icon">&#9997;</div>
-					<p class="empty-title">eddmlab</p>
-					<p class="empty-sub">Start coding in Python</p>
-					<div class="empty-actions">
-						<button class="empty-btn" onclick={() => handleAddCell('code')}>+ Code</button>
-						<button class="empty-btn" onclick={() => handleAddCell('markdown')}>+ Markdown</button>
-					</div>
-				</div>
-			{/if}
-		</main>
-		{#if $studyMode && footer}
-			{@render footer()}
+		{#if $notebook.cells.length > 0}
+			<div class="add-cell-area">
+				<button class="add-cell-btn" onclick={() => handleAddCell('code')}>+ Code</button>
+				<button class="add-cell-btn" onclick={() => handleAddCell('markdown')}>+ Markdown</button>
+			</div>
 		{/if}
-	{/if}
+
+		{#if $notebook.cells.length === 0}
+			<div class="empty-state">
+				<div class="empty-icon">&#9997;</div>
+				<p class="empty-title">dartlab notebook</p>
+				<p class="empty-sub">Start coding in Python</p>
+				<div class="empty-actions">
+					<button class="empty-btn" onclick={() => handleAddCell('code')}>+ Code</button>
+					<button class="empty-btn" onclick={() => handleAddCell('markdown')}>+ Markdown</button>
+				</div>
+			</div>
+		{/if}
+	</main>
 </div>
 
 <style>
+	/* 색상 SSOT = dartlab tokens.css(--dl-*) 위임. light/dark 는 --dl-* 가 data-theme 로 자동 처리. */
 	.notebook-editor {
-		--nb-pink: #ff2d95;
-		--nb-pink-bright: #ff5cb0;
-		--nb-pink-dim: rgba(255, 45, 149, 0.25);
-		--nb-pink-subtle: rgba(255, 45, 149, 0.08);
-		--nb-bg: #09090b;
-		--nb-surface: #0c0c0e;
-		--nb-card: #18181b;
-		--nb-border: #27272a;
-		--nb-text: #e8e8f0;
-		--nb-text-secondary: #9898b0;
-		--nb-text-muted: #6b7094;
-		--nb-code-bg: #18181b;
-		--nb-code-text: #e4e4e7;
-		--nb-success: #22c55e;
-		--nb-error: #ff4466;
+		--nb-pink: var(--dl-accent);
+		--nb-pink-bright: var(--dl-accent-dim);
+		--nb-pink-dim: rgba(var(--dl-accent-rgb), 0.25);
+		--nb-pink-subtle: rgba(var(--dl-accent-rgb), 0.1);
+		--nb-bg: var(--dl-bg-deep);
+		--nb-surface: var(--dl-bg-base);
+		--nb-card: var(--dl-bg-raised);
+		--nb-border: var(--dl-line-strong);
+		--nb-text: var(--dl-ink);
+		--nb-text-secondary: var(--dl-ink-mute);
+		--nb-text-muted: var(--dl-ink-dim);
+		--nb-code-bg: var(--dl-bg-raised);
+		--nb-code-text: var(--dl-ink);
+		--nb-success: var(--dl-good);
+		--nb-error: var(--dl-bad);
 		--nb-toc-top: 80px;
 
 		min-height: 100vh;
 		background: var(--nb-bg);
 		color: var(--nb-text);
-		font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
-	}
-
-	:global([data-theme="light"]) .notebook-editor,
-	:global(:not([data-theme="dark"])) .notebook-editor {
-		--nb-pink: #d6336c;
-		--nb-pink-bright: #e8478a;
-		--nb-pink-dim: rgba(214, 51, 108, 0.2);
-		--nb-pink-subtle: rgba(214, 51, 108, 0.06);
-		--nb-bg: #ffffff;
-		--nb-surface: #f8f9fa;
-		--nb-card: #ffffff;
-		--nb-border: #e5e7eb;
-		--nb-text: #1a1a2e;
-		--nb-text-secondary: #4b5563;
-		--nb-text-muted: #9ca3af;
-		--nb-code-bg: #f5f5f5;
-		--nb-code-text: #1f2937;
-		--nb-success: #16a34a;
-		--nb-error: #dc2626;
-	}
-
-	:global([data-theme="dark"]) .notebook-editor {
-		--nb-pink: #ff2d95;
-		--nb-pink-bright: #ff5cb0;
-		--nb-pink-dim: rgba(255, 45, 149, 0.25);
-		--nb-pink-subtle: rgba(255, 45, 149, 0.08);
-		--nb-bg: #09090b;
-		--nb-surface: #0c0c0e;
-		--nb-card: #18181b;
-		--nb-border: #27272a;
-		--nb-text: #e8e8f0;
-		--nb-text-secondary: #9898b0;
-		--nb-text-muted: #6b7094;
-		--nb-code-bg: #18181b;
-		--nb-code-text: #e4e4e7;
-		--nb-success: #22c55e;
-		--nb-error: #ff4466;
+		font-family: var(--dl-font-ui);
 	}
 
 	.notebook-content {

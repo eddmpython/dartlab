@@ -35,7 +35,7 @@ export function toggleTheme(): void {
 
 // 라이트 적용 콘텐츠 표면 · 루트(/)·about·skills·blog(전 트리: index·article·category·series).
 // base(GH Pages /dartlab) 접두 제거 후 판정. 도구 표면(터미널·scan·map·viewer 등)은 항상 다크.
-const CONTENT_RE = /(^\/?$)|(\/(about|skills|blog)(\/|$))/;
+const CONTENT_RE = /(^\/?$)|(\/(about|skills|blog|notebooks)(\/|$))/;
 
 export function isContentPath(pathname: string, base = ''): boolean {
 	let p = pathname;

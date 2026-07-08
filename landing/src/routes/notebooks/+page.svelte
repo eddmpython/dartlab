@@ -36,4 +36,4 @@
 	/>
 </svelte:head>
 
-<NotebookEditor showHome homeHref="{base}/" initialNotebook={seed} />
+<NotebookEditor homeHref="{base}/" initialNotebook={seed} />
