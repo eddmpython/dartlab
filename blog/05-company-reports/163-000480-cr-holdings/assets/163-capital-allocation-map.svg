@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">시알홀딩스 자본배치 지도</title>
+  <desc id="desc">현금, 단기금융자산, 관계기업 투자, 설비투자, 배당, 차입 상환이 지주회사 자본배치 질문으로 이어지는 흐름을 나타낸다.</desc>
+  <rect width="1200" height="720" fill="#fffaf2"/>
+  <text x="80" y="92" font-family="Malgun Gothic, Arial, sans-serif" font-size="34" font-weight="700" fill="#111827">현금 박스가 아니라, 돈의 이동을 봐야 한다</text>
+  <text x="80" y="132" font-family="Malgun Gothic, Arial, sans-serif" font-size="18" fill="#475569">2026Q1 재무상태표와 2025년 현금흐름표를 연결하면 지주회사의 질문은 더 구체적이 된다.</text>
+
+  <g font-family="Malgun Gothic, Arial, sans-serif">
+    <rect x="86" y="196" width="270" height="122" rx="18" fill="#0f172a"/>
+    <text x="221" y="242" text-anchor="middle" font-size="20" font-weight="700" fill="#ffffff">현금및현금성자산</text>
+    <text x="221" y="284" text-anchor="middle" font-size="30" font-weight="700" fill="#fde68a">1,069.9억</text>
+
+    <rect x="86" y="356" width="270" height="122" rx="18" fill="#164e63"/>
+    <text x="221" y="402" text-anchor="middle" font-size="20" font-weight="700" fill="#ffffff">기타단기금융자산</text>
+    <text x="221" y="444" text-anchor="middle" font-size="30" font-weight="700" fill="#a7f3d0">1,355.9억</text>
+
+    <rect x="86" y="516" width="270" height="122" rx="18" fill="#7c2d12"/>
+    <text x="221" y="562" text-anchor="middle" font-size="20" font-weight="700" fill="#ffffff">관계기업 투자</text>
+    <text x="221" y="604" text-anchor="middle" font-size="30" font-weight="700" fill="#fed7aa">868.7억</text>
+
+    <path d="M378 257 H504" stroke="#64748b" stroke-width="5" fill="none"/>
+    <path d="M378 417 H504" stroke="#64748b" stroke-width="5" fill="none"/>
+    <path d="M378 577 H504" stroke="#64748b" stroke-width="5" fill="none"/>
+    <path d="M504 417 H590" stroke="#64748b" stroke-width="5" fill="none"/>
+    <path d="M590 417 l-18 -12 v24 z" fill="#64748b"/>
+
+    <rect x="590" y="282" width="254" height="270" rx="24" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+    <text x="717" y="336" text-anchor="middle" font-size="24" font-weight="700" fill="#111827">지주회사 질문</text>
+    <text x="717" y="374" text-anchor="middle" font-size="17" fill="#475569">어디에 쓸 때 주주가치가 커지는가</text>
+    <text x="717" y="414" text-anchor="middle" font-size="16" fill="#64748b">보유액보다 배치 규칙이 중요하다</text>
+    <text x="717" y="454" text-anchor="middle" font-size="16" fill="#64748b">반복 수요를 반복 현금으로 바꾸는가</text>
+    <text x="717" y="494" text-anchor="middle" font-size="16" fill="#64748b">배당과 투자, 차입을 함께 설명하는가</text>
+
+    <path d="M846 417 H942" stroke="#64748b" stroke-width="5" fill="none"/>
+    <path d="M942 417 l-18 -12 v24 z" fill="#64748b"/>
+
+    <rect x="944" y="196" width="180" height="90" rx="16" fill="#ecfdf5" stroke="#bbf7d0"/>
+    <text x="1034" y="232" text-anchor="middle" font-size="19" font-weight="700" fill="#166534">설비투자</text>
+    <text x="1034" y="260" text-anchor="middle" font-size="15" fill="#166534">2025년 347.5억</text>
+
+    <rect x="944" y="316" width="180" height="90" rx="16" fill="#eef2ff" stroke="#c7d2fe"/>
+    <text x="1034" y="352" text-anchor="middle" font-size="19" font-weight="700" fill="#3730a3">배당</text>
+    <text x="1034" y="380" text-anchor="middle" font-size="15" fill="#4338ca">2025년 249.7억</text>
+
+    <rect x="944" y="436" width="180" height="90" rx="16" fill="#fff7ed" stroke="#fed7aa"/>
+    <text x="1034" y="472" text-anchor="middle" font-size="19" font-weight="700" fill="#9a3412">차입 관리</text>
+    <text x="1034" y="500" text-anchor="middle" font-size="15" fill="#9a3412">단기와 장기 차입</text>
+
+    <rect x="944" y="556" width="180" height="90" rx="16" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="1034" y="592" text-anchor="middle" font-size="19" font-weight="700" fill="#334155">신사업 발굴</text>
+    <text x="1034" y="620" text-anchor="middle" font-size="15" fill="#475569">증거가 쌓여야 함</text>
+  </g>
+</svg>

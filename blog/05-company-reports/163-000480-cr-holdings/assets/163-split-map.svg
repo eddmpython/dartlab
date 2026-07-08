@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 660" role="img" aria-labelledby="title desc">
+  <title id="title">시알홀딩스 분할 이후 구조</title>
+  <desc id="desc">조선내화 인적분할 이후 시알홀딩스가 지주회사로 남고 내화물, 기계부품, 골프장, 부동산 사업을 연결로 품는 구조를 설명한다.</desc>
+  <defs>
+    <linearGradient id="hot" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#f97316"/>
+      <stop offset="1" stop-color="#fb7185"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#111827" flood-opacity=".18"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="660" fill="#f7f3ea"/>
+  <rect x="48" y="44" width="1104" height="572" rx="22" fill="#ffffff" filter="url(#shadow)"/>
+  <text x="90" y="108" font-family="Malgun Gothic, Arial, sans-serif" font-size="34" font-weight="700" fill="#111827">분할 이벤트가 아니라, 분할 이후의 배치 문제</text>
+  <text x="90" y="148" font-family="Malgun Gothic, Arial, sans-serif" font-size="18" fill="#4b5563">2023년 7월 1일 인적분할 이후 시알홀딩스는 지주회사 업무를 맡고, 연결 장부에는 산업 사업과 자산이 함께 남는다.</text>
+
+  <rect x="106" y="218" width="260" height="140" rx="16" fill="#1f2937"/>
+  <text x="236" y="268" text-anchor="middle" font-family="Malgun Gothic, Arial, sans-serif" font-size="24" font-weight="700" fill="#ffffff">분할 전</text>
+  <text x="236" y="306" text-anchor="middle" font-family="Malgun Gothic, Arial, sans-serif" font-size="20" fill="#d1d5db">조선내화</text>
+  <text x="236" y="334" text-anchor="middle" font-family="Malgun Gothic, Arial, sans-serif" font-size="15" fill="#9ca3af">사업과 지배 구조가 한 이름에 묶임</text>
+
+  <path d="M392 288 C450 288 478 288 536 288" fill="none" stroke="#64748b" stroke-width="4"/>
+  <path d="M536 288 l-18 -12 v24 z" fill="#64748b"/>
+  <text x="464" y="260" text-anchor="middle" font-family="Malgun Gothic, Arial, sans-serif" font-size="16" fill="#475569">인적분할</text>
+
+  <rect x="574" y="204" width="246" height="124" rx="18" fill="url(#hot)"/>
+  <text x="697" y="254" text-anchor="middle" font-family="Malgun Gothic, Arial, sans-serif" font-size="24" font-weight="700" fill="#ffffff">시알홀딩스</text>
+  <text x="697" y="286" text-anchor="middle" font-family="Malgun Gothic, Arial, sans-serif" font-size="16" fill="#fff7ed">분할존속회사, 지주회사 업무</text>
+
+  <rect x="860" y="204" width="228" height="124" rx="18" fill="#e0f2fe"/>
+  <text x="974" y="254" text-anchor="middle" font-family="Malgun Gothic, Arial, sans-serif" font-size="22" font-weight="700" fill="#075985">조선내화</text>
+  <text x="974" y="286" text-anchor="middle" font-family="Malgun Gothic, Arial, sans-serif" font-size="16" fill="#0369a1">분할신설회사, 내화물 사업</text>
+
+  <path d="M697 328 v58" fill="none" stroke="#94a3b8" stroke-width="3"/>
+  <path d="M306 386 H1028" fill="none" stroke="#94a3b8" stroke-width="3"/>
+  <path d="M306 386 v46 M548 386 v46 M790 386 v46 M1028 386 v46" fill="none" stroke="#94a3b8" stroke-width="3"/>
+
+  <g font-family="Malgun Gothic, Arial, sans-serif">
+    <rect x="184" y="432" width="244" height="118" rx="16" fill="#fff7ed" stroke="#fed7aa"/>
+    <text x="306" y="478" text-anchor="middle" font-size="22" font-weight="700" fill="#9a3412">내화물 제조업</text>
+    <text x="306" y="510" text-anchor="middle" font-size="15" fill="#7c2d12">고온 설비의 필수 기간소재</text>
+
+    <rect x="426" y="432" width="244" height="118" rx="16" fill="#ecfdf5" stroke="#bbf7d0"/>
+    <text x="548" y="478" text-anchor="middle" font-size="22" font-weight="700" fill="#166534">기계부품 제조업</text>
+    <text x="548" y="510" text-anchor="middle" font-size="15" fill="#166534">소결 부품, 자동차와 가전 고객</text>
+
+    <rect x="668" y="432" width="244" height="118" rx="16" fill="#eef2ff" stroke="#c7d2fe"/>
+    <text x="790" y="478" text-anchor="middle" font-size="22" font-weight="700" fill="#3730a3">골프장업</text>
+    <text x="790" y="510" text-anchor="middle" font-size="15" fill="#4338ca">회원제 27홀 운영</text>
+
+    <rect x="910" y="432" width="244" height="118" rx="16" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="1032" y="478" text-anchor="middle" font-size="22" font-weight="700" fill="#334155">부동산업</text>
+    <text x="1032" y="510" text-anchor="middle" font-size="15" fill="#475569">임대와 투자부동산</text>
+  </g>
+
+  <text x="90" y="590" font-family="Malgun Gothic, Arial, sans-serif" font-size="16" fill="#64748b">읽는 순서: 제품과 고객을 먼저 보고, 그 다음 현금과 지분, 배당과 투자로 넘어간다.</text>
+</svg>

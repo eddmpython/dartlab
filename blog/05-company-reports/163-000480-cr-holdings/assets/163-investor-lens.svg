@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" role="img" aria-labelledby="title desc">
+  <title id="title">시알홀딩스 투자자 렌즈</title>
+  <desc id="desc">다음 공시에서 확인해야 할 다섯 가지 체크포인트를 보여준다.</desc>
+  <rect width="1200" height="680" fill="#f8fafc"/>
+  <text x="78" y="94" font-family="Malgun Gothic, Arial, sans-serif" font-size="34" font-weight="700" fill="#0f172a">좋은 이야기는 다음 공시에서 다시 검산된다</text>
+  <text x="78" y="132" font-family="Malgun Gothic, Arial, sans-serif" font-size="18" fill="#475569">시알홀딩스를 긍정적으로 보려면 감탄보다 확인 순서가 먼저다.</text>
+
+  <g font-family="Malgun Gothic, Arial, sans-serif">
+    <rect x="78" y="190" width="320" height="126" rx="18" fill="#ffffff" stroke="#cbd5e1"/>
+    <circle cx="120" cy="232" r="18" fill="#0f766e"/>
+    <text x="120" y="239" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">1</text>
+    <text x="160" y="226" font-size="21" font-weight="700" fill="#111827">내화물 매출</text>
+    <text x="160" y="260" font-size="15" fill="#475569">철강 경기 둔화에도 물량과 단가가 버티는가</text>
+
+    <rect x="440" y="190" width="320" height="126" rx="18" fill="#ffffff" stroke="#cbd5e1"/>
+    <circle cx="482" cy="232" r="18" fill="#f97316"/>
+    <text x="482" y="239" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">2</text>
+    <text x="522" y="226" font-size="21" font-weight="700" fill="#111827">현금흐름</text>
+    <text x="522" y="260" font-size="15" fill="#475569">영업현금이 CAPEX와 배당을 감당하는가</text>
+
+    <rect x="802" y="190" width="320" height="126" rx="18" fill="#ffffff" stroke="#cbd5e1"/>
+    <circle cx="844" cy="232" r="18" fill="#4338ca"/>
+    <text x="844" y="239" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">3</text>
+    <text x="884" y="226" font-size="21" font-weight="700" fill="#111827">차입과 이자</text>
+    <text x="884" y="260" font-size="15" fill="#475569">단기차입과 금융비용이 이익을 누르지 않는가</text>
+
+    <rect x="256" y="370" width="320" height="126" rx="18" fill="#ffffff" stroke="#cbd5e1"/>
+    <circle cx="298" cy="412" r="18" fill="#be123c"/>
+    <text x="298" y="419" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">4</text>
+    <text x="338" y="406" font-size="21" font-weight="700" fill="#111827">관계기업 성과</text>
+    <text x="338" y="440" font-size="15" fill="#475569">지분법 손익과 투자 처분이 반복 가능한가</text>
+
+    <rect x="620" y="370" width="320" height="126" rx="18" fill="#ffffff" stroke="#cbd5e1"/>
+    <circle cx="662" cy="412" r="18" fill="#334155"/>
+    <text x="662" y="419" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">5</text>
+    <text x="702" y="406" font-size="21" font-weight="700" fill="#111827">주주환원</text>
+    <text x="702" y="440" font-size="15" fill="#475569">배당과 자사주가 일회성 아닌 규칙으로 보이는가</text>
+
+    <rect x="188" y="560" width="824" height="64" rx="18" fill="#111827"/>
+    <text x="600" y="600" text-anchor="middle" font-size="19" font-weight="700" fill="#ffffff">결론: 긍정의 근거는 자산 보유가 아니라 반복 검산 가능한 자본배치다.</text>
+  </g>
+</svg>

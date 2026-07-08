@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">시알홀딩스 매출과 영업이익률 궤적</title>
+  <desc id="desc">2021년부터 2026년 1분기까지 연결 매출, 영업이익률, 순이익의 흐름을 보여준다.</desc>
+  <rect width="1200" height="700" fill="#f5f7fb"/>
+  <rect x="48" y="44" width="1104" height="600" rx="24" fill="#ffffff"/>
+  <text x="90" y="108" font-family="Malgun Gothic, Arial, sans-serif" font-size="34" font-weight="700" fill="#111827">매출 기반은 버티지만, 이익률은 아직 확인형</text>
+  <text x="90" y="146" font-family="Malgun Gothic, Arial, sans-serif" font-size="18" fill="#475569">단위: 억 원, 연결 기준. 2026Q1은 1분기 누적이므로 연간과 직접 비교하지 않는다.</text>
+
+  <g font-family="Malgun Gothic, Arial, sans-serif">
+    <text x="110" y="203" font-size="16" fill="#64748b">매출액</text>
+    <line x1="110" y1="548" x2="1076" y2="548" stroke="#cbd5e1"/>
+    <line x1="110" y1="450" x2="1076" y2="450" stroke="#e2e8f0"/>
+    <line x1="110" y1="352" x2="1076" y2="352" stroke="#e2e8f0"/>
+    <line x1="110" y1="254" x2="1076" y2="254" stroke="#e2e8f0"/>
+
+    <g fill="#0f766e">
+      <rect x="150" y="260" width="80" height="288" rx="8"/>
+      <rect x="300" y="240" width="80" height="308" rx="8"/>
+      <rect x="450" y="232" width="80" height="316" rx="8"/>
+      <rect x="600" y="235" width="80" height="313" rx="8"/>
+      <rect x="750" y="228" width="80" height="320" rx="8"/>
+      <rect x="900" y="468" width="80" height="80" rx="8"/>
+    </g>
+
+    <g fill="#111827" font-size="15" text-anchor="middle">
+      <text x="190" y="588">2021</text>
+      <text x="340" y="588">2022</text>
+      <text x="490" y="588">2023</text>
+      <text x="640" y="588">2024</text>
+      <text x="790" y="588">2025</text>
+      <text x="940" y="588">2026Q1</text>
+    </g>
+
+    <g fill="#0f766e" font-size="14" text-anchor="middle" font-weight="700">
+      <text x="190" y="248">7,463</text>
+      <text x="340" y="228">7,980</text>
+      <text x="490" y="220">8,169</text>
+      <text x="640" y="223">8,108</text>
+      <text x="790" y="216">8,278</text>
+      <text x="940" y="456">2,057</text>
+    </g>
+
+    <polyline points="190,390 340,470 490,370 640,500 790,455 940,360" fill="none" stroke="#f97316" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <g fill="#f97316">
+      <circle cx="190" cy="390" r="7"/>
+      <circle cx="340" cy="470" r="7"/>
+      <circle cx="490" cy="370" r="7"/>
+      <circle cx="640" cy="500" r="7"/>
+      <circle cx="790" cy="455" r="7"/>
+      <circle cx="940" cy="360" r="7"/>
+    </g>
+    <g fill="#9a3412" font-size="14" text-anchor="middle" font-weight="700">
+      <text x="190" y="374">4.4%</text>
+      <text x="340" y="454">2.8%</text>
+      <text x="490" y="354">4.8%</text>
+      <text x="640" y="518">2.2%</text>
+      <text x="790" y="439">3.4%</text>
+      <text x="940" y="344">5.0%</text>
+    </g>
+
+    <rect x="110" y="610" width="18" height="18" rx="4" fill="#0f766e"/>
+    <text x="138" y="625" font-size="16" fill="#334155">매출액 막대</text>
+    <line x1="260" y1="619" x2="310" y2="619" stroke="#f97316" stroke-width="5"/>
+    <text x="322" y="625" font-size="16" fill="#334155">영업이익률 선</text>
+    <text x="520" y="625" font-size="16" fill="#64748b">2025년 순이익은 -188.0억 원, 지배주주 몫은 -274.1억 원이었다.</text>
+  </g>
+</svg>
