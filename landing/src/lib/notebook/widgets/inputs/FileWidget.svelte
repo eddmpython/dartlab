@@ -110,6 +110,6 @@
 		border-radius: 4px;
 		font-size: 11px;
 		color: var(--nb-text);
-		font-family: 'Fira Code', 'Cascadia Code', monospace;
+		font-family: var(--dl-font-mono);
 	}
 </style>

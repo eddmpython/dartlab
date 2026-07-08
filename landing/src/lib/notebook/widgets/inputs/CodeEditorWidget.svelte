@@ -89,7 +89,7 @@
 		border-radius: 4px;
 		background: var(--nb-surface);
 		color: var(--nb-text-muted);
-		font-family: 'Fira Code', 'Cascadia Code', monospace;
+		font-family: var(--dl-font-mono);
 		text-transform: lowercase;
 	}
 
@@ -100,7 +100,7 @@
 		border-radius: 6px;
 		background: var(--nb-code-bg, #18181b);
 		color: var(--nb-text);
-		font-family: 'Fira Code', 'Cascadia Code', monospace;
+		font-family: var(--dl-font-mono);
 		font-size: 13px;
 		line-height: 1.5;
 		resize: vertical;

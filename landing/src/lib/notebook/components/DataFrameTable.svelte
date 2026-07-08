@@ -226,7 +226,7 @@
 
 	.df-stdout {
 		margin: 0 0 6px;
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		font-size: 13px;
 		line-height: 1.5;
 		color: var(--nb-text);
@@ -242,7 +242,7 @@
 	}
 
 	.df-shape {
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		font-size: 11px;
 		color: var(--nb-text-muted);
 	}
@@ -279,7 +279,7 @@
 	}
 
 	.df-page-select {
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		font-size: 10px;
 		padding: 2px 4px;
 		border: 1px solid var(--nb-border);
@@ -307,7 +307,7 @@
 		border: none;
 		background: transparent;
 		color: var(--nb-text);
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		font-size: 11px;
 		outline: none;
 	}
@@ -318,10 +318,12 @@
 
 	.df-table-scroll {
 		overflow-x: auto;
-		max-height: 400px;
+		max-height: 420px;
 		overflow-y: auto;
 		border: 1px solid var(--nb-border);
-		border-radius: 6px;
+		border-radius: var(--dl-r-md);
+		width: fit-content;
+		max-width: 100%;
 	}
 
 	.df-table-scroll::-webkit-scrollbar {
@@ -335,10 +337,10 @@
 	}
 
 	.df-table {
-		width: 100%;
+		width: auto;
 		border-collapse: collapse;
-		font-family: 'Fira Code', monospace;
-		font-size: 12px;
+		font-family: var(--dl-font-mono);
+		font-size: 12.5px;
 	}
 
 	.df-table thead {
@@ -474,7 +476,7 @@
 	}
 
 	.df-page-info {
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		font-size: 10px;
 		color: var(--nb-text-muted);
 	}
@@ -510,7 +512,7 @@
 	}
 
 	.df-page-num {
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		font-size: 10px;
 		color: var(--nb-text-muted);
 		padding: 0 6px;

@@ -1118,7 +1118,7 @@
 		background: var(--nb-card);
 		color: var(--nb-text);
 		font-size: 12px;
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		outline: none;
 		box-sizing: border-box;
 	}
@@ -1243,7 +1243,7 @@
 		background: var(--nb-card);
 		color: var(--nb-text);
 		font-size: 12px;
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		outline: none;
 		box-sizing: border-box;
 	}
@@ -1345,7 +1345,7 @@
 
 	.preview-path {
 		font-size: 10px;
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		color: var(--nb-text-muted);
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -1374,7 +1374,7 @@
 
 	.preview-content {
 		font-size: 11px;
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		color: var(--nb-text);
 		padding: 8px;
 		margin: 0;

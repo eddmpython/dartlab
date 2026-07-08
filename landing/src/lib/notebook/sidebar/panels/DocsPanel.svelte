@@ -93,7 +93,7 @@
 		color: var(--nb-text);
 		font-size: 12px;
 		outline: none;
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 	}
 
 	.doc-input:focus {
@@ -155,14 +155,14 @@
 		font-size: 13px;
 		font-weight: 600;
 		color: var(--nb-pink);
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		padding: 0 4px;
 	}
 
 	.doc-sig {
 		font-size: 11px;
 		color: var(--nb-text-secondary);
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		padding: 4px 8px;
 		background: var(--nb-card);
 		border-radius: 4px;
@@ -173,7 +173,7 @@
 	.doc-body {
 		font-size: 11px;
 		color: var(--nb-text);
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		padding: 8px;
 		background: var(--nb-card);
 		border-radius: 6px;

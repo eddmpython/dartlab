@@ -165,7 +165,7 @@
 		background: var(--nb-surface);
 		border: none;
 		color: var(--nb-text);
-		font-family: 'Fira Code', 'Cascadia Code', monospace;
+		font-family: var(--dl-font-mono);
 		font-size: 14px;
 		line-height: 1.6;
 		resize: none;

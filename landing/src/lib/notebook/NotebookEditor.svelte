@@ -164,15 +164,16 @@
 	}
 
 	.notebook-content.width-compact {
-		max-width: 640px;
+		max-width: 860px;
 	}
 
 	.notebook-content.width-medium {
-		max-width: 800px;
+		max-width: 1120px;
 	}
 
 	.notebook-content.width-full {
-		max-width: 1200px;
+		max-width: none;
+		padding-right: 40px;
 	}
 
 	.notebook-content.split-mode {

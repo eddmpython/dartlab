@@ -87,7 +87,7 @@
 	}
 
 	.dict-key {
-		font-family: 'Fira Code', 'Cascadia Code', monospace;
+		font-family: var(--dl-font-mono);
 		font-size: 12px;
 		font-weight: 500;
 		color: var(--nb-pink);

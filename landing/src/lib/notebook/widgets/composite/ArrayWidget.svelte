@@ -76,7 +76,7 @@
 	}
 
 	.array-index {
-		font-family: 'Fira Code', 'Cascadia Code', monospace;
+		font-family: var(--dl-font-mono);
 		font-size: 11px;
 		color: var(--nb-text-muted);
 		min-width: 20px;

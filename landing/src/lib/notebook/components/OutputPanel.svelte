@@ -148,7 +148,7 @@
 
 	.output-content {
 		margin: 0;
-		font-family: 'Fira Code', 'Cascadia Code', monospace;
+		font-family: var(--dl-font-mono);
 		font-size: 13px;
 		line-height: 1.5;
 		color: var(--nb-text);

@@ -140,13 +140,13 @@
 		font-size: 12px;
 		font-weight: 600;
 		color: var(--nb-text);
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 	}
 
 	.var-type {
 		font-size: 10px;
 		color: var(--nb-pink);
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		background: var(--nb-pink-subtle);
 		padding: 1px 6px;
 		border-radius: 4px;
@@ -155,7 +155,7 @@
 	.var-value {
 		font-size: 11px;
 		color: var(--nb-text-muted);
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		word-break: break-all;
 		line-height: 1.4;
 	}

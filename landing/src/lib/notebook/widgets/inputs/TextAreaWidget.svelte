@@ -56,7 +56,7 @@
 		border-radius: 6px;
 		padding: 8px 10px;
 		font-size: 13px;
-		font-family: 'Fira Code', 'Cascadia Code', monospace;
+		font-family: var(--dl-font-mono);
 		outline: none;
 		resize: vertical;
 		transition: border-color 0.15s ease;

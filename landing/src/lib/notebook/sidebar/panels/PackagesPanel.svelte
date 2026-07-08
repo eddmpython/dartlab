@@ -108,7 +108,7 @@
 		color: var(--nb-text);
 		font-size: 12px;
 		outline: none;
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 	}
 
 	.pkg-input:focus {
@@ -188,12 +188,12 @@
 	.pkg-name {
 		font-size: 12px;
 		color: var(--nb-text);
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 	}
 
 	.pkg-version {
 		font-size: 11px;
 		color: var(--nb-text-muted);
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 	}
 </style>

@@ -24,6 +24,22 @@ interface PyodideInterface {
 
 const PYODIDE_CDN_ESM = 'https://cdn.jsdelivr.net/pyodide/v0.27.5/full/pyodide.mjs';
 
+// matplotlib 을 테마 중립으로: 투명 배경 + 중립 회색 텍스트/축(다크·라이트 양쪽 가독).
+const MATPLOTLIBRC = [
+	'figure.facecolor: none',
+	'axes.facecolor: none',
+	'savefig.facecolor: none',
+	'savefig.transparent: True',
+	'text.color: 8a8f98',
+	'axes.labelcolor: 8a8f98',
+	'axes.edgecolor: 8a8f98',
+	'axes.titlecolor: a8adb8',
+	'xtick.color: 8a8f98',
+	'ytick.color: 8a8f98',
+	'grid.color: 8a8f98',
+	'grid.alpha: 0.15'
+].join('\n');
+
 let pyodide: PyodideInterface | null = null;
 let stdoutBuffer: string[] = [];
 let stderrBuffer: string[] = [];
@@ -65,7 +81,9 @@ async function initialize() {
 	try { pyodide.FS.mkdir('/workspace'); } catch { /* exists */ }
 	// 웹워커에는 DOM(document)이 없으므로 matplotlib 은 non-interactive AGG 백엔드 강제.
 	// (기본 pyodide 백엔드는 wasm_backend 가 js.document 를 import 하려다 워커에서 실패)
-	pyodide.runPython('import os, sys; os.chdir("/workspace")\nif "/workspace" not in sys.path: sys.path.insert(0, "/workspace")\nos.environ["MPLBACKEND"] = "AGG"');
+	// + matplotlibrc 로 테마 중립 색 강제.
+	pyodide.FS.writeFile('/matplotlibrc', MATPLOTLIBRC, { encoding: 'utf8' });
+	pyodide.runPython('import os, sys; os.chdir("/workspace")\nif "/workspace" not in sys.path: sys.path.insert(0, "/workspace")\nos.environ["MPLBACKEND"] = "AGG"\nos.environ["MATPLOTLIBRC"] = "/matplotlibrc"');
 	installMarimoShim();
 }
 

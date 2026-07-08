@@ -46,7 +46,7 @@
 		border-radius: 6px;
 		background: var(--nb-card);
 		color: var(--nb-text);
-		font-family: 'Fira Code', 'Cascadia Code', monospace;
+		font-family: var(--dl-font-mono);
 		font-size: 13px;
 		outline: none;
 		transition: border-color 0.15s ease;

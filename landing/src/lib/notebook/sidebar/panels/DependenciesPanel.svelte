@@ -181,14 +181,14 @@
 		font-size: 10px;
 		font-weight: 700;
 		color: var(--nb-pink);
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		white-space: nowrap;
 	}
 
 	.node-label {
 		font-size: 11px;
 		color: var(--nb-text-muted);
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -218,7 +218,7 @@
 
 	.var-tag {
 		font-size: 10px;
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		padding: 1px 5px;
 		border-radius: 3px;
 	}
@@ -247,7 +247,7 @@
 	}
 
 	.edge-var {
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		color: var(--nb-text-secondary);
 	}
 
@@ -256,7 +256,7 @@
 	}
 
 	.edge-target {
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		color: var(--nb-pink);
 		font-weight: 600;
 	}

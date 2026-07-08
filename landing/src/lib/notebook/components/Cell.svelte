@@ -395,7 +395,7 @@
 		right: -4px;
 		top: 6px;
 		transform: translateX(100%);
-		font-family: 'Fira Code', monospace;
+		font-family: var(--dl-font-mono);
 		font-size: 10px;
 		color: var(--nb-text-muted);
 		user-select: none;

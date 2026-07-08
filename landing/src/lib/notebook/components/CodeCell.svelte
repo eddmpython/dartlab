@@ -35,7 +35,7 @@
 			backgroundColor: 'transparent',
 		},
 		'.cm-content': {
-			fontFamily: "'Fira Code', 'Cascadia Code', monospace",
+			fontFamily: "var(--dl-font-mono)",
 			padding: '8px 0',
 			caretColor: '#ff2d95',
 		},
@@ -71,7 +71,7 @@
 			boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
 		},
 		'.cm-tooltip-autocomplete > ul': {
-			fontFamily: "'Fira Code', 'Cascadia Code', monospace",
+			fontFamily: "var(--dl-font-mono)",
 			fontSize: '13px',
 		},
 		'.cm-tooltip-autocomplete > ul > li': {
@@ -110,7 +110,7 @@
 			backgroundColor: 'transparent',
 		},
 		'.cm-content': {
-			fontFamily: "'Fira Code', 'Cascadia Code', monospace",
+			fontFamily: "var(--dl-font-mono)",
 			padding: '8px 0',
 			caretColor: '#d6336c',
 			color: '#1a1a2e',
@@ -147,7 +147,7 @@
 			boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
 		},
 		'.cm-tooltip-autocomplete > ul': {
-			fontFamily: "'Fira Code', 'Cascadia Code', monospace",
+			fontFamily: "var(--dl-font-mono)",
 			fontSize: '13px',
 		},
 		'.cm-tooltip-autocomplete > ul > li': {

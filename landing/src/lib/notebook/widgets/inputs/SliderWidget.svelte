@@ -98,7 +98,7 @@
 	}
 
 	.slider-value {
-		font-family: 'Fira Code', 'Cascadia Code', monospace;
+		font-family: var(--dl-font-mono);
 		font-size: 13px;
 		color: var(--nb-text);
 		min-width: 40px;

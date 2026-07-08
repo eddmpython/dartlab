@@ -125,7 +125,7 @@
 	}
 
 	.range-val {
-		font-family: 'Fira Code', 'Cascadia Code', monospace;
+		font-family: var(--dl-font-mono);
 		font-size: 12px;
 		color: var(--nb-text);
 		font-variant-numeric: tabular-nums;
