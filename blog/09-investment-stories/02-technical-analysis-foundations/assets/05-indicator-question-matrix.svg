@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">기술적 분석 지표 질문 매트릭스</title>
+  <desc id="desc">기술적 지표는 추세, 모멘텀, 변동성, 거래량이라는 네 가지 질문으로 분류할 수 있다.</desc>
+  <rect width="1200" height="720" fill="#0b1120"/>
+  <text x="70" y="82" fill="#f8fafc" font-size="38" font-weight="700">지표는 이름보다 질문으로 나눈다</text>
+  <text x="70" y="122" fill="#94a3b8" font-size="18">RSI와 MACD가 충돌하는 것이 아니라 서로 다른 질문에 답하는 경우가 많다</text>
+
+  <g transform="translate(70 170)">
+    <rect x="0" y="0" width="505" height="205" rx="20" fill="#172554" stroke="#60a5fa" stroke-width="2"/>
+    <text x="30" y="48" fill="#dbeafe" font-size="28" font-weight="700">추세</text>
+    <text x="30" y="86" fill="#e2e8f0" font-size="20">가격이 평균 위인가 아래인가</text>
+    <text x="30" y="124" fill="#bfdbfe" font-size="18">이동평균, MACD, Supertrend, PSAR</text>
+    <text x="30" y="164" fill="#fbbf24" font-size="17">오해: 평균 위면 무조건 좋다</text>
+  </g>
+  <g transform="translate(625 170)">
+    <rect x="0" y="0" width="505" height="205" rx="20" fill="#14532d" stroke="#4ade80" stroke-width="2"/>
+    <text x="30" y="48" fill="#dcfce7" font-size="28" font-weight="700">모멘텀</text>
+    <text x="30" y="86" fill="#e2e8f0" font-size="20">속도가 어느 쪽으로 쏠렸는가</text>
+    <text x="30" y="124" fill="#bbf7d0" font-size="18">RSI, Stochastic, ROC, CCI</text>
+    <text x="30" y="164" fill="#fbbf24" font-size="17">오해: 과매도면 반드시 반등한다</text>
+  </g>
+  <g transform="translate(70 425)">
+    <rect x="0" y="0" width="505" height="205" rx="20" fill="#4a1d1d" stroke="#fb7185" stroke-width="2"/>
+    <text x="30" y="48" fill="#ffe4e6" font-size="28" font-weight="700">변동성</text>
+    <text x="30" y="86" fill="#e2e8f0" font-size="20">흔들림이 커졌는가 작아졌는가</text>
+    <text x="30" y="124" fill="#fecdd3" font-size="18">볼린저 밴드, ATR, Keltner, Donchian</text>
+    <text x="30" y="164" fill="#fbbf24" font-size="17">오해: 밴드 하단은 자동 매수 구간이다</text>
+  </g>
+  <g transform="translate(625 425)">
+    <rect x="0" y="0" width="505" height="205" rx="20" fill="#422006" stroke="#f97316" stroke-width="2"/>
+    <text x="30" y="48" fill="#ffedd5" font-size="28" font-weight="700">거래량</text>
+    <text x="30" y="86" fill="#e2e8f0" font-size="20">가격 움직임에 힘이 붙었는가</text>
+    <text x="30" y="124" fill="#fed7aa" font-size="18">Volume, OBV, MFI, Force Index</text>
+    <text x="30" y="164" fill="#fbbf24" font-size="17">오해: 거래량 증가를 방향 신호로 본다</text>
+  </g>
+</svg>
