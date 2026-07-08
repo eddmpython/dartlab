@@ -23,6 +23,12 @@
 			ncols={output.ncols}
 			truncated={output.truncated}
 		/>
+	{:else if output.type === 'image'}
+		<img
+			src="data:image/png;base64,{output.data}"
+			alt="cell output"
+			class="max-w-full rounded bg-white"
+		/>
 	{:else if output.type === 'html'}
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 		<div class="nb-html overflow-x-auto text-sm text-dl-text-muted">{@html cleanHtml(output.data)}</div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { pyodideStore, initPyodide, runCell } from '$lib/stores/pyodide.svelte';
+	import { kernelStore, initKernel, runCell } from '$lib/notebook/kernel.svelte';
 	import NotebookCell from './NotebookCell.svelte';
 	import type { NotebookCell as Cell } from '$lib/notebook/types';
 
@@ -13,32 +13,23 @@
 		ran: false
 	});
 
-	// 시드 셀 - 현행 공개 계약 c.panel / c.analysis. 브라우저 런타임(0.10.7)에서 실데이터로 도는 finance 축.
+	// 범용 시드 셀. 일반 파이썬, pandas 표, matplotlib 그래프.
 	let cells = $state<Cell[]>([
-		mkCell('c.panel("IS")'),
-		mkCell('c.analysis("financial", "수익성")'),
-		mkCell('c.analysis()')
+		mkCell('print("Hello, notebook")\n21 * 2'),
+		mkCell('import pandas as pd\npd.DataFrame({"n": [1, 2, 3, 4], "square": [1, 4, 9, 16]})'),
+		mkCell(
+			'import numpy as np\nimport matplotlib.pyplot as plt\n\nx = np.linspace(0, 2 * np.pi, 200)\nplt.plot(x, np.sin(x))\nplt.title("sin(x)")'
+		)
 	]);
 
-	let stockCode = $state('005930');
 	let runningAll = $state(false);
-
-	const stepLabels: Record<string, string> = {
-		pyodide: 'Pyodide 엔진',
-		packages: '패키지 로드',
-		wheel: 'dartlab 설치',
-		data: '데이터 다운로드',
-		init: '초기화',
-		done: '완료'
-	};
-
 	const anyRunning = $derived(cells.some((c) => c.running) || runningAll);
 
 	async function runOne(cell: Cell) {
 		if (cell.running) return;
 		cell.running = true;
 		try {
-			await initPyodide(stockCode.trim() || '005930');
+			await initKernel();
 			const res = await runCell(cell.code);
 			cell.stdout = res.stdout;
 			cell.output = res.output;
@@ -78,17 +69,10 @@
 	<div
 		class="flex flex-wrap items-center gap-3 rounded-lg border border-dl-border bg-dl-bg-card px-4 py-3"
 	>
-		<label class="flex items-center gap-2 text-sm text-dl-text-muted">
-			종목
-			<input
-				type="text"
-				bind:value={stockCode}
-				disabled={anyRunning || pyodideStore.status === 'loading'}
-				class="w-24 rounded border border-dl-border bg-dl-bg-dark px-2.5 py-1.5 font-mono text-sm text-dl-text outline-none focus:border-dl-primary disabled:opacity-50"
-			/>
-		</label>
-		{#if pyodideStore.status === 'ready'}
-			<span class="font-mono text-xs text-dl-text-dim">c = Company("{pyodideStore.currentStock}")</span>
+		{#if kernelStore.status === 'ready'}
+			<span class="font-mono text-xs text-dl-text-dim">Python 커널 준비됨</span>
+		{:else}
+			<span class="text-sm text-dl-text-muted">브라우저 Python 커널</span>
 		{/if}
 		<div class="ml-auto flex items-center gap-2">
 			<button
@@ -109,29 +93,22 @@
 	</div>
 
 	<!-- 부팅 진행 -->
-	{#if pyodideStore.status === 'loading'}
+	{#if kernelStore.status === 'loading'}
 		<div class="rounded-lg border border-dl-border bg-dl-bg-card p-4">
-			<div class="mb-2 flex items-center gap-2 text-sm text-dl-primary">
+			<div class="flex items-center gap-2 text-sm text-dl-primary">
 				<span class="animate-spin">⟳</span>
-				<span>{stepLabels[pyodideStore.step] || pyodideStore.step || '초기화'}</span>
-				<span class="ml-auto text-dl-text-dim">{Math.round(pyodideStore.progress * 100)}%</span>
-			</div>
-			<div class="h-1 overflow-hidden rounded bg-dl-bg-dark">
-				<div
-					class="h-full bg-dl-primary transition-all"
-					style:width="{pyodideStore.progress * 100}%"
-				></div>
+				<span>{kernelStore.step || '초기화'}</span>
 			</div>
 			<p class="mt-2 text-xs text-dl-text-dim">
-				첫 실행은 Pyodide 부팅 + dartlab 설치 + 데이터 다운로드로 8~12초 걸립니다. 이후 셀은 즉시 실행됩니다.
+				첫 실행은 Pyodide 부팅으로 몇 초 걸립니다. 이후 셀은 즉시 실행됩니다.
 			</p>
 		</div>
 	{/if}
 
-	{#if pyodideStore.status === 'error'}
+	{#if kernelStore.status === 'error'}
 		<div class="rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-400">
 			<div class="mb-1 font-medium">커널 초기화 실패</div>
-			<div class="whitespace-pre-wrap text-xs">{pyodideStore.errorMsg}</div>
+			<div class="whitespace-pre-wrap text-xs">{kernelStore.errorMsg}</div>
 		</div>
 	{/if}
 

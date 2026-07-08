@@ -4,10 +4,10 @@
 </script>
 
 <svelte:head>
-	<title>Notebook · dartlab 전자공시 재무분석</title>
+	<title>Notebook · dartlab</title>
 	<meta
 		name="description"
-		content="브라우저에서 바로 실행하는 dartlab 노트북. 설치 없이 셀 단위로 한국 전자공시 재무제표와 분석을 실행하고 결과를 표로 확인하세요."
+		content="브라우저에서 바로 실행하는 범용 파이썬 노트북. 설치 없이 numpy·pandas·matplotlib 을 쓰고 표와 그래프를 셀에서 확인하세요. 어디든 임베드 가능."
 	/>
 </svelte:head>
 
@@ -26,19 +26,21 @@
 				>
 			</div>
 			<p class="mt-2 max-w-2xl text-dl-text-muted">
-				설치 없이 브라우저에서 실행하는 파이썬 노트북. 셀에 <code
-					class="rounded bg-dl-bg-card px-1.5 py-0.5 font-mono text-sm text-dl-text">c.panel("IS")</code
-				> 를 쓰면 실제 전자공시 재무제표가 표로 나옵니다. 커널은 dartlab pyodide, 데이터는 HuggingFace 직독.
+				브라우저에서 바로 실행하는 범용 파이썬 노트북. 설치 없이 <code
+					class="rounded bg-dl-bg-card px-1.5 py-0.5 font-mono text-sm text-dl-text">numpy</code
+				>, <code class="rounded bg-dl-bg-card px-1.5 py-0.5 font-mono text-sm text-dl-text">pandas</code
+				>, <code class="rounded bg-dl-bg-card px-1.5 py-0.5 font-mono text-sm text-dl-text"
+					>matplotlib</code
+				> 을 그대로 쓰고, 표와 그래프가 셀 안에 렌더됩니다. 코드는 전부 브라우저 안에서만 실행됩니다.
 			</p>
 		</div>
 
 		<Notebook />
 
 		<p class="mt-8 text-xs leading-relaxed text-dl-text-dim">
-			브라우저 런타임은 회사 재무제표(<code class="font-mono">c.panel</code>)·재무분석(<code
-				class="font-mono">c.analysis</code
-			>)과 industry / macro 축을 지원합니다. 라이브 수집(실시간 시세·뉴스)과 전종목 대형 scan 은 브라우저
-			범위 밖입니다.
+			pyodide 배포 패키지(numpy, pandas, matplotlib, polars 등)는 자동 로드되고, <code
+				class="font-mono">micropip</code
+			> 으로 추가 설치도 됩니다. 필요하면 셀에서 dartlab 을 불러 실데이터도 다룰 수 있습니다.
 		</p>
 	</div>
 </div>

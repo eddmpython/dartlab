@@ -12,6 +12,7 @@ export type NbOutput =
 			ncols: number;
 			truncated: boolean;
 	  }
+	| { type: 'image'; data: string } // base64 PNG (matplotlib 등)
 	| { type: 'html'; data: string }
 	| { type: 'repr'; data: string }
 	| { type: 'error'; data: string };
