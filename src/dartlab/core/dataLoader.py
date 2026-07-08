@@ -37,25 +37,32 @@ def _clearLoadCache() -> None:
     _LOAD_CACHE.clear()  # 안전 — 항상 empty
 
 
-def readParquetSafe(path) -> pl.DataFrame:
+def readParquetSafe(path, *, columns: list[str] | None = None) -> pl.DataFrame:
     """polars read_parquet with pyarrow fallback (pyodide WASM 호환).
 
-    polars WASM wheel은 read_parquet이 비활성이므로
-    pyarrow.parquet.read_table → pl.from_arrow 로 우회한다.
-    일반 환경에서는 pl.read_parquet 그대로 사용.
+    polars WASM wheel 은 read_parquet 이 비활성(PyLazyFrame.new_from_parquet 부재)
+    이므로 pyarrow.parquet.read_table 로 우회한 뒤 arrowToPolars 로 변환한다.
+    일반 환경에서는 pl.read_parquet 그대로 사용(byte-identical).
+
+    Args:
+        path: 단일 parquet 경로(str/Path/bytes) 또는 경로 리스트(여러 파일 수직 concat).
+        columns: 열 프로젝션. None 이면 전체 열.
     """
     if not _IS_PYODIDE:
-        return pl.read_parquet(path)
+        return pl.read_parquet(path, columns=columns)
     import io
 
     import pyarrow.parquet as pq
 
-    data = Path(path).read_bytes() if not isinstance(path, bytes) else path
-    arrow_table = pq.read_table(io.BytesIO(data))
-    try:
-        return pl.from_arrow(arrow_table)
-    except (ModuleNotFoundError, ImportError):
-        return pl.DataFrame(arrow_table.to_pydict())
+    from dartlab.core.dataLoaderPyodide import arrowToPolars
+
+    paths = list(path) if isinstance(path, (list, tuple)) else [path]
+    frames: list[pl.DataFrame] = []
+    for p in paths:
+        data = Path(p).read_bytes() if not isinstance(p, bytes) else p
+        arrow_table = pq.read_table(io.BytesIO(data), columns=columns)
+        frames.append(arrowToPolars(arrow_table))
+    return frames[0] if len(frames) == 1 else pl.concat(frames, how="vertical_relaxed")
 
 
 if not _IS_PYODIDE:

@@ -107,14 +107,16 @@ def _detectUnitScalesByStatement(
     code: str, marketNs: str, statements: tuple[str, ...] | None = None
 ) -> dict[str, dict[str, int]]:
     """statement×period caption 단위 → 원 배율 map. 미발견=백만원."""
-    from .build.cell import _UNIT_RE, _UNIT_SCALE, CELL_STATEMENTS  # 단위 배율 SSOT — 재정의 금지
+    from dartlab.core.dataLoader import readParquetSafe  # WASM 세이프 read (pyodide=pyarrow 경유)
+
+    from .build.cell import _UNIT_RE, _UNIT_SCALE, CELL_STATEMENTS  # 단위 배율 SSOT (재정의 금지)
     from .read import _panelDir, ensurePanelFromHf
 
     ensurePanelFromHf(code, marketNs)
     flat = _panelDir(code, marketNs).parent / f"{code}.parquet"
     if not flat.exists():
         return {}
-    df = pl.read_parquet(str(flat), columns=["disclosureKey", "contentRaw", "period"])
+    df = readParquetSafe(str(flat), columns=["disclosureKey", "contentRaw", "period"])
     targetStatements = statements or tuple(CELL_STATEMENTS)
     stmt = df.filter(pl.col("disclosureKey").is_in(list(targetStatements)))
     if stmt.is_empty():

@@ -99,6 +99,8 @@ def _cellsFromPanel(code: str, marketNs: str = "kr", periods: list[str] | None =
     Returns:
         CELL_SCHEMA in-memory DataFrame 또는 None (panel.parquet/5표 부재).
     """
+    from dartlab.core.dataLoader import readParquetSafe  # WASM 세이프 read (pyodide=pyarrow 경유)
+
     from . import read as _read
     from .build.cell import CELL_STATEMENTS, cellsFromContent  # lazy: 콜드 0, 호출 시에만 lxml
 
@@ -108,15 +110,15 @@ def _cellsFromPanel(code: str, marketNs: str = "kr", periods: list[str] | None =
     cols = ["disclosureKey", "xbrlClass", "contentRaw", "period", "rceptNo"]
     frames: list[pl.DataFrame] = []
     if flat.exists():
-        df = pl.read_parquet(str(flat), columns=cols)
+        df = readParquetSafe(str(flat), columns=cols)
         if periods is not None:
             df = df.filter(pl.col("period").is_in(list(periods)))  # 1파일 → 행 필터
         frames = [df]
-    elif panelDir.exists():  # 하위호환 — 옛 period-shard 폴더
+    elif panelDir.exists():  # 하위호환(옛 period-shard 폴더)
         files = sorted(panelDir.glob("*.parquet"))
         if periods is not None:
             files = [f for f in files if f.stem in set(periods)]
-        frames = [pl.read_parquet(str(f), columns=cols) for f in files]
+        frames = [readParquetSafe(str(f), columns=cols) for f in files]
     if not frames:
         return None
     rows: list[dict] = []

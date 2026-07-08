@@ -9,6 +9,32 @@ import polars as pl
 from dartlab.core.dataConfig import DATA_RELEASES, hfBaseUrl
 
 
+def arrowToPolars(arrowTable) -> pl.DataFrame:
+    """pyarrow Table 를 polars DataFrame 으로 (WASM 세이프 3-tier).
+
+    polars WASM wheel 은 pl.from_arrow 가 내부에서 pyarrow 를 lazy import 하다
+    실패할 수 있다. from_arrow 우선, 실패 시 polars.dependencies 에 pyarrow 를
+    직접 주입 후 재시도, 최후에는 to_pydict 전량 복제로 강등한다.
+    readParquetSafe 와 loadDataPyodide 가 공유하는 변환 SSOT.
+    """
+    try:
+        return pl.from_arrow(arrowTable)
+    except (ModuleNotFoundError, ImportError):
+        import pyarrow as _pa  # noqa: F811
+
+        try:
+            import polars.dependencies as _pdeps
+
+            _pdeps._lazy_import.cache_clear() if hasattr(_pdeps._lazy_import, "cache_clear") else None
+            _pdeps.pyarrow = _pa  # type: ignore[attr-defined]
+        except (AttributeError, TypeError):
+            pass
+        try:
+            return pl.from_arrow(arrowTable)
+        except (ModuleNotFoundError, ImportError):
+            return pl.DataFrame(arrowTable.to_pydict())
+
+
 def loadDataPyodide(
     stockCode: str,
     category: str,
@@ -28,22 +54,7 @@ def loadDataPyodide(
         pyodideFetchToFS(stockCode, category, dirPath, path)
 
     arrowTable = pq.read_table(io.BytesIO(path.read_bytes()))
-    try:
-        df = pl.from_arrow(arrowTable)
-    except (ModuleNotFoundError, ImportError):
-        import pyarrow as _pa  # noqa: F811
-
-        try:
-            import polars.dependencies as _pdeps
-
-            _pdeps._lazy_import.cache_clear() if hasattr(_pdeps._lazy_import, "cache_clear") else None
-            _pdeps.pyarrow = _pa  # type: ignore[attr-defined]
-        except (AttributeError, TypeError):
-            pass
-        try:
-            df = pl.from_arrow(arrowTable)
-        except (ModuleNotFoundError, ImportError):
-            df = pl.DataFrame(arrowTable.to_pydict())
+    df = arrowToPolars(arrowTable)
 
     if sinceYear is not None:
         for colName in ("year", "bsns_year"):
@@ -163,4 +174,4 @@ def pyodideFetchToFS(stockCode: str, category: str, dirPath: str, path: Path) ->
     path.write_bytes(buf)
 
 
-__all__ = ["loadDataPyodide", "pyodideFetchScanLite", "pyodideFetchToFS"]
+__all__ = ["arrowToPolars", "loadDataPyodide", "pyodideFetchScanLite", "pyodideFetchToFS"]

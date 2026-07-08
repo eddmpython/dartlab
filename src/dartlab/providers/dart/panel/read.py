@@ -913,18 +913,22 @@ def readLong(code: str, *, marketNs: str = "kr", periods: list[str] | None = Non
     ensurePanelFromHf(code, marketNs)  # artifact 부재 시 HF lazy 다운로드 (로컬 우선, 단일 자동로드)
     d = _panelDir(code, marketNs)
     flat = d.parent / f"{code}.parquet"  # flat: data/{dart|edgar}/panel/{code}.parquet (회사당 1파일)
+    # WASM 세이프 read: pyodide 는 pl.read_parquet 비활성이라 pyarrow 경유(readParquetSafe).
+    # 함수 스코프 lazy import (R2 콜드<1s 유지 + core.dataLoader cycle 회피).
+    from dartlab.core.dataLoader import readParquetSafe
+
     try:
         if flat.exists():
-            df = pl.read_parquet(str(flat))
+            df = readParquetSafe(str(flat))
             if periods:
                 df = df.filter(pl.col("period").is_in(list(periods)))  # 1파일 → 행 필터(파일 prune 대체)
-        elif d.exists():  # 하위호환 — 옛 period-shard 폴더
+        elif d.exists():  # 하위호환(옛 period-shard 폴더)
             files = sorted(d.glob("*.parquet"))
             if periods:
                 files = [f for f in files if f.stem in set(periods)]
             if not files:
                 return None
-            df = pl.read_parquet([str(f) for f in files])
+            df = readParquetSafe([str(f) for f in files])
         else:
             return None
     except (pl.exceptions.PolarsError, OSError) as exc:

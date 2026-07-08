@@ -25,9 +25,16 @@ LLM Specifications:
 
 from __future__ import annotations
 
+import re as _re
+import sys as _sys
+
 import polars as pl
 
 from .canonicalData import CANONICAL_L1, CERT_NODE_IDS, NARRATIVE_ERA_ALIASES, REPORT_CHAPTER_LABELS
+
+# pyodide(polars WASM)는 .list.eval() 중첩표현식이 lazy 엔진에서 capacity overflow 패닉을 낸다.
+# 그 경로만 map_elements(Python 포트)로 우회한다(아래 canonicalChapterExpr 분기).
+_IS_PYODIDE = _sys.platform == "emscripten"
 
 # canonical 라벨 → 정부 문서순서(rank). list 순서 = rank.
 CANONICAL_RANK: dict[str, int] = {label: i for i, (_nid, label, _kw) in enumerate(CANONICAL_L1)}
@@ -74,6 +81,42 @@ def _canonLabelExpr(e: pl.Expr) -> pl.Expr:
         branch = pl.when(cond).then(pl.lit(label))
         expr = branch if expr is None else expr.when(cond).then(pl.lit(label))
     return expr.otherwise(None) if expr is not None else pl.lit(None, dtype=pl.Utf8)
+
+
+# ── pyodide 전용 Python 포트 (위 벡터 Expr 과 동일 로직, .list.eval 회피) ──
+_ROMAN_PY = _re.compile(_ROMAN_RE)
+
+
+def _pyNorm(s: str | None) -> str:
+    """chapter/원소 문자열 정규화 (로마숫자 머리 + 전 공백 제거). ``_normExpr`` 파이썬 포트."""
+    return "".join(_ROMAN_PY.sub("", s or "").split())
+
+
+def _pyCanonLabel(s: str | None) -> str | None:
+    """단일 원소 → canonical L1 라벨/None. ``_canonLabelExpr`` 파이썬 포트(순서 키워드 첫 매치)."""
+    norm = _pyNorm(s)
+    if not norm:
+        return None
+    for _nid, label, kws in CANONICAL_L1:
+        for kw in kws:
+            if _normKeyword(kw) in norm:
+                return label
+    return None
+
+
+def _pyCanonChapter(pathVal: str | None, chapterVal: str | None, noteKeyVal: str | None) -> str | None:
+    """canonicalChapterExpr 파이썬 포트. sectionPath 깊은 canonical → chapter 라벨 → NT_ III → 원본."""
+    labels = (
+        [lbl for el in str(pathVal).split(_SECTION_SEP) if (lbl := _pyCanonLabel(el)) is not None] if pathVal else []
+    )
+    if labels:
+        return _DETAIL_LABEL if _DETAIL_LABEL in labels else labels[-1]
+    ch = _pyCanonLabel(chapterVal)
+    if ch is not None:
+        return ch
+    if noteKeyVal is not None and str(noteKeyVal).startswith("NT_"):
+        return _FINANCE_LABEL
+    return chapterVal
 
 
 def canonicalChapterExpr(
@@ -139,6 +182,21 @@ def canonicalChapterExpr(
         TargetMarkets:
             - KR (DART).
     """
+    if _IS_PYODIDE:
+        # polars WASM 은 .list.eval() 이 lazy 엔진에서 capacity overflow 패닉 → 동일 로직을
+        # map_elements(Python 포트)로. panel build 1회라 성능 허용, 벡터 경로와 결과 동일.
+        cols = [pl.col(pathCol).alias("__p__"), pl.col(chapterCol).alias("__c__")]
+        if noteKeyCol is not None:
+            cols.append(pl.col(noteKeyCol).alias("__n__"))
+        _hasNote = noteKeyCol is not None
+        return (
+            pl.struct(cols)
+            .map_elements(
+                lambda r: _pyCanonChapter(r["__p__"], r["__c__"], r["__n__"] if _hasNote else None),
+                return_dtype=pl.Utf8,
+            )
+            .alias("canonicalChapter")
+        )
     pathLabels = (
         pl.col(pathCol).fill_null("").str.split(_SECTION_SEP).list.eval(_canonLabelExpr(pl.element())).list.drop_nulls()
     )
