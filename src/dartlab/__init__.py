@@ -76,24 +76,38 @@ if not _IS_PYODIDE:
     )
 
 
-async def prefetch(*stockCodes: str, categories: list[str] | None = None) -> None:
-    """HF에서 종목 데이터를 미리 다운로드 (Pyodide/브라우저 전용).
+async def prefetch(*stockCodes: str, categories: list[str] | None = None):
+    """HF에서 종목 데이터를 미리 다운로드 + C 확장 로드 (Pyodide/브라우저 전용).
 
-    Company 생성 전에 await로 호출한다.
+    노트북 부트스트랩 한 줄. 종목 하나면 그 ``Company`` 를 바로 돌려준다(데이터·설정 자동).
+    Company 생성 전에 await로 호출한다. dataDir 은 pyodide 에서 ``/data`` 로 자동 고정
+    (config.dataDir, env 불필요).
 
     Example::
 
+        import micropip
+        await micropip.install(".../dartlab-0.10.7-py3-none-any.whl")
         import dartlab
-        await dartlab.prefetch("005930")
-        c = dartlab.Company("005930")
+        c = await dartlab.prefetch("005930")   # 한 줄로 데이터+설정+Company
+
+    Returns:
+        단일 종목이면 ``Company``, 그 외(0개 또는 다중)면 ``None``.
     """
     if not _IS_PYODIDE:
-        return  # 일반 환경에서는 no-op
+        # 일반 환경: 데이터 자동로드가 되므로 종목 하나면 Company 편의 반환, 아니면 no-op.
+        codes = [s.strip() for s in stockCodes if s.strip()]
+        if len(codes) == 1:
+            from dartlab.providers.dart.company import Company
 
-    # pyodide 빌트인 패키지 로드 (C 확장 — micropip으로 설치 불가)
+            return Company(codes[0])
+        return None
+
+    # pyodide 빌트인 C 확장 로드 (dartlab 이 lazy import 하는 것 포함, 노트북이 loadPackage 안 해도 되게).
     import pyodide_js  # type: ignore[import-not-found]
 
-    await pyodide_js.loadPackage(["pyarrow", "lxml", "polars", "numpy", "pydantic"])
+    await pyodide_js.loadPackage(
+        ["pyarrow", "lxml", "polars", "numpy", "pydantic", "httpx", "rich", "beautifulsoup4", "sqlite3"]
+    )
 
     from dartlab.core.dataConfig import DATA_RELEASES, hfBaseUrl
     from dartlab.core.logger import getLogger
@@ -101,7 +115,8 @@ async def prefetch(*stockCodes: str, categories: list[str] | None = None) -> Non
 
     _prefetchLog = getLogger(__name__ + ".prefetch")
 
-    cats = categories or ["docs", "finance", "report"]
+    # panel(공시 수평화 보드·IS/BS/CF) + finance + report 가 노트북 공통 사용분. 옛 docs 는 deprecated.
+    cats = categories or ["panel", "finance", "report"]
     for code in stockCodes:
         code = code.strip()
         for cat in cats:
@@ -126,6 +141,14 @@ async def prefetch(*stockCodes: str, categories: list[str] | None = None) -> Non
                 _prefetchLog.info("  %s/%s: %d KB", cat, code, len(buf) // 1024)
             except Exception as e:
                 _prefetchLog.warning("  ⚠ %s/%s 실패: %s", cat, code, e)
+
+    # 종목 하나면 그 Company 를 바로 반환(노트북 한 줄 완성). 다중/0개면 None.
+    codes = [s.strip() for s in stockCodes if s.strip()]
+    if len(codes) == 1:
+        from dartlab.providers.dart.company import Company
+
+        return Company(codes[0])
+    return None
 
 
 try:

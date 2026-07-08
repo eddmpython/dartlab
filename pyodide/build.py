@@ -26,7 +26,7 @@ def build_wheel() -> Path:
 
 
 _PYODIDE_STRIP = {
-    # server / AI / MCP — pyodide 불필요
+    # server / AI / MCP: pyodide 불필요
     "fastapi",
     "uvicorn",
     "sse-starlette",
@@ -40,6 +40,11 @@ _PYODIDE_STRIP = {
     "google_genai",
     "openai",
     "anthropic",
+    # marimo(노트북 프레임워크): pyodide 데이터분석 wheel 에 불필요 + transitive msgspec(순수휠 없음)이
+    # micropip.install(wheel) 을 깨뜨린다. dartlab core 는 marimo 를 lazy import 라 strip 안전.
+    "marimo",
+    # duckdb: C 확장(pyodide-repo 부재), scan 등 일부 경로만 lazy 사용. 노트북 예제 경로 미사용이라 strip.
+    "duckdb",
 }
 
 # pyodide 빌트인이지만 버전 제약이 맞지 않는 패키지 → 버전 제거 후 유지
