@@ -26,6 +26,30 @@ export const categoryDefinitions = [
 			'숫자 나열이 아니라, "왜?"를 따라가는 기업 이야기.'
 	},
 	{
+		id: 'tech-story',
+		slug: 'tech-story',
+		folder: '08-tech-story',
+		label: '기술이야기',
+		description: '반도체, 2차전지, 원전, 로봇 같은 기술의 원리를 풀고, 그 기술이 기업의 원가·마진·투자에 어떻게 남는지까지 잇는 이야기입니다.',
+		seoTitle: '기술이야기 | 기술의 원리와 재무제표를 잇다',
+		seoDescription:
+			'DartLab 기술이야기. 반도체 HBM, 2차전지 양극재, 원전 SMR 같은 기술의 원리를 풀어내고, 그 기술이 기업의 원가·마진·투자·현금흐름을 어떻게 바꾸는지까지 연결합니다.',
+		brandMessage:
+			'DartLab은 기술을 원리로 끝내지 않고, 그 기술이 기업의 숫자에 남긴 흔적까지 함께 읽습니다.'
+	},
+	{
+		id: 'investment-stories',
+		slug: 'investment-stories',
+		folder: '09-investment-stories',
+		label: '투자이야기',
+		description: '주가, 경제, 증권사 언어, 투자 용어, 보조지표, 기술적 투자처럼 시장을 읽을 때 쓰는 언어와 프레임을 설명합니다.',
+		seoTitle: '투자이야기 | 주가, 경제, 투자 용어와 보조지표 읽기',
+		seoDescription:
+			'DartLab 투자이야기. 주가, 경제, 증권사 표현, 투자 용어, 기술적 투자, 이동평균, RSI, MACD 같은 보조지표를 초보자 기준으로 정리합니다.',
+		brandMessage:
+			'DartLab은 투자 결론을 대신 내리지 않고, 시장을 읽는 언어와 판단 프레임을 분리해 설명합니다.'
+	},
+	{
 		id: 'reading-disclosures',
 		slug: 'reading-disclosures',
 		folder: '01-reading-disclosures',
@@ -61,18 +85,6 @@ export const categoryDefinitions = [
 			'DartLab 데이터 리포트. 전상장사 공시 데이터를 전수 집계해 자사주·주주환원·재무 구조의 시장 전체 패턴을 드러냅니다.',
 		brandMessage:
 			'DartLab은 전상장사 공시 데이터를 한 번에 집계해, 개별 종목이 아니라 시장 전체의 구조를 드러냅니다.'
-	},
-	{
-		id: 'tech-story',
-		slug: 'tech-story',
-		folder: '08-tech-story',
-		label: '기술이야기',
-		description: '반도체, 2차전지, 원전, 로봇 같은 기술의 원리를 풀고, 그 기술이 기업의 원가·마진·투자에 어떻게 남는지까지 잇는 이야기입니다.',
-		seoTitle: '기술이야기 | 기술의 원리와 재무제표를 잇다',
-		seoDescription:
-			'DartLab 기술이야기. 반도체 HBM, 2차전지 양극재, 원전 SMR 같은 기술의 원리를 풀어내고, 그 기술이 기업의 원가·마진·투자·현금흐름을 어떻게 바꾸는지까지 연결합니다.',
-		brandMessage:
-			'DartLab은 기술을 원리로 끝내지 않고, 그 기술이 기업의 숫자에 남긴 흔적까지 함께 읽습니다.'
 	}
 ] as const;
 
@@ -199,6 +211,14 @@ export const seriesDefinitions = {
 		seoTitle: '기술이야기 | 기술의 원리와 재무제표를 잇다',
 		seoDescription: 'DartLab 기술이야기 시리즈. 반도체, 2차전지, 원전, 로봇 같은 기술의 원리를 풀어내고, 그 기술이 기업의 숫자를 어떻게 바꾸는지 연결합니다.',
 		brandMessage: 'DartLab은 기술을 원리로 끝내지 않고, 그 기술이 기업의 숫자에 남긴 흔적까지 함께 읽습니다.'
+	},
+	'investment-stories': {
+		id: 'investment-stories',
+		label: '투자이야기',
+		description: '주가, 경제, 증권사 언어, 투자 용어, 기술적 투자와 보조지표를 초보자 기준으로 정리하는 시리즈입니다.',
+		seoTitle: '투자이야기 | 주가, 경제, 투자 용어와 보조지표 읽기',
+		seoDescription: 'DartLab 투자이야기 시리즈. 주가, 경제, 증권사 표현, 투자 용어, 기술적 투자, 이동평균, RSI, MACD 같은 보조지표를 판단 프레임으로 설명합니다.',
+		brandMessage: 'DartLab은 투자 결론을 대신 내리지 않고, 시장을 읽는 언어와 판단 프레임을 분리해 설명합니다.'
 	}
 } as const;
 
