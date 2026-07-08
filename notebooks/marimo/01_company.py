@@ -6,7 +6,7 @@
 import marimo
 
 __generated_with = "0.23.8"
-app = marimo.App(width="full")
+app = marimo.App(width="medium")
 
 
 @app.cell
@@ -50,6 +50,12 @@ def _(c):
 def _(c):
     # finance 손익 — XBRL 정규화 숫자
     c.panel("IS", freq="year")
+    return
+
+
+@app.cell
+def _(c):
+    c.panel("CF", freq="year")
     return
 
 
