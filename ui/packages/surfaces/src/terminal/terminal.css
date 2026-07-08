@@ -38,6 +38,13 @@
 	--sans: var(--dl-font-ui);
 	--cond: var(--dl-font-ui);
 
+	/* 텍스트 크기 SSOT (타입 스케일). 사람이 읽는 카피(각주·부제·문장·빈상태·안내)는 --fs-note(10px)가 바닥.
+	   임의 px 로 더 줄이지 말고 이 토큰을 써라 (7.5px 각주가 반복 재발한 원인 = 각 자리 임의 px 선택).
+	   --fs-label(9px) = 고밀도 보조 라벨·인라인 수치. 표 헤더·태그·차트 SVG 눈금 등 조밀 데이터는 카피가 아니라
+	   각 자리 값 유지. → feedback_no_editorial_microcopy */
+	--fs-note: 10px;
+	--fs-label: 9px;
+
 	height: 100vh;
 	display: flex;
 	flex-direction: column;
@@ -205,7 +212,7 @@
    완전히 사라지던 회귀 가드). 패널명은 짧아 flex-shrink:0 안전. */
 .dlTerm .panelTitle { font-family: var(--cond); font-weight: 700; font-size: 12px; letter-spacing: 1.2px; color: var(--amberDim); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
 /* sub(메타)가 먼저 양보 · 좁아지면 제목·우측버튼보다 먼저 말줄임 */
-.dlTerm .panelSub { font-family: var(--mono); font-size: 10px; color: var(--dim); letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex-shrink: 1; }
+.dlTerm .panelSub { font-family: var(--mono); font-size: var(--fs-note); color: var(--dim); letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex-shrink: 1; }
 .dlTerm .panelRight { margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--dim); flex-shrink: 0; white-space: nowrap; padding-left: 6px; }
 .dlTerm .panelBody { padding: 5px 6px; flex: 1; min-height: 0; }
 .dlTerm .panelBody.flush { padding: 0; }
@@ -541,7 +548,7 @@
 .dlTerm .cr52Lbl { font-style: normal; font-family: var(--cond); font-size: 8.5px; color: var(--dimmer); letter-spacing: 0.4px; }
 .dlTerm .cr52Track { position: relative; width: 46px; height: 5px; background: var(--dl-line); border-radius: 3px; }
 .dlTerm .cr52Now { position: absolute; top: -2px; width: 2.5px; height: 9px; margin-left: -1px; background: var(--amber); border-radius: 1px; }
-.dlTerm .crNotice { font-family: var(--cond); font-size: 9.5px; color: var(--dim); white-space: nowrap; animation: crNoticeIn 0.18s ease-out; }
+.dlTerm .crNotice { font-family: var(--cond); font-size: var(--fs-note); color: var(--dim); white-space: nowrap; animation: crNoticeIn 0.18s ease-out; }
 @keyframes crNoticeIn { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: none; } }
 
 /* 심볼 점프 팔레트 (전체화면 ⌘K · /) · 차트를 떠나지 않는 종목 전환 */
@@ -916,10 +923,10 @@
 .dlTerm .finTable tr.finKey { background: rgba(var(--amber-rgb), 0.05); }
 .dlTerm .finTable tr.finKey .finAcct { color: var(--amber); font-weight: 600; }
 .dlTerm .finTable tbody tr:hover { background: var(--dl-bg-overlay); }
-.dlTerm .finNote { font-family: var(--mono); font-size: 10px; color: var(--dimmer); padding: 3px 7px; border-top: 1px solid var(--bd); letter-spacing: 0.3px; }
+.dlTerm .finNote { font-family: var(--mono); font-size: var(--fs-note); color: var(--dimmer); padding: 3px 7px; border-top: 1px solid var(--bd); letter-spacing: 0.3px; }
 /* 기대치 성적표 · 섹션 소제목/푸터는 읽히는 크기(운영자 실측: 7.5px 는 숫자 오독 유발) */
-.dlTerm .expSecHead { font-family: var(--mono); font-size: 9.5px; color: var(--dim, #a3a8b3); padding: 6px 7px 2px; letter-spacing: 0.4px; text-transform: uppercase; font-weight: 700; }
-.dlTerm .expNote { font-family: var(--mono); font-size: 9.5px; line-height: 1.55; color: var(--dimmer); padding: 5px 7px; border-top: 1px solid var(--bd); }
+.dlTerm .expSecHead { font-family: var(--mono); font-size: var(--fs-note); color: var(--dim, #a3a8b3); padding: 6px 7px 2px; letter-spacing: 0.4px; text-transform: uppercase; font-weight: 700; }
+.dlTerm .expNote { font-family: var(--mono); font-size: var(--fs-note); line-height: 1.55; color: var(--dimmer); padding: 5px 7px; border-top: 1px solid var(--bd); }
 .dlTerm .expUnverified { color: var(--dimmer); font-weight: 400; }
 /* 성적표 패널 한정: 2열 격자 해제(구간 문자열이 길다) + 값 폰트 상향 */
 .dlTerm .expPanel .factGrid { grid-template-columns: 1fr; }
@@ -934,7 +941,7 @@
 .dlTerm .expTable td b { font-weight: 600; font-size: 11px; }
 .dlTerm .expTable th .eTag { font-style: normal; color: var(--amber); margin-left: 1px; font-size: 8px; vertical-align: super; }
 .dlTerm .expTable .expTLabel { font-family: var(--cond); font-weight: 600; font-size: 10.5px; color: var(--amber); }
-.dlTerm .expBand { display: block; font-size: 9px; color: var(--dimmer); line-height: 1.4; }
+.dlTerm .expBand { display: block; font-size: var(--fs-label); color: var(--dimmer); line-height: 1.4; }
 .dlTerm .expDim { color: var(--dimmer); }
 /* E-3표 추정 컬럼: 실적과 시각 구분(앰버 헤더 + dim 값 + 좌측 구분선) */
 .dlTerm .finTable th.finEHead { color: var(--amber); border-left: 1px dashed var(--bd); }
@@ -959,7 +966,7 @@
 
 /* 도시에 섹션 자기정규화 문장 · 판정 0·형용사 0(lossPct·control-shift·인력 자기이력). 그래프 금지(텍스트만) */
 .dlTerm .secSentBox { padding: 3px 8px 4px; border-bottom: 1px solid var(--dl-line); display: flex; flex-direction: column; gap: 2px; }
-.dlTerm .secSent { font-family: var(--cond); font-size: 9.5px; line-height: 1.35; color: var(--txt); white-space: normal; }
+.dlTerm .secSent { font-family: var(--cond); font-size: var(--fs-note); line-height: 1.35; color: var(--txt); white-space: normal; }
 
 /* SUPPLY CHAIN */
 .dlTerm .scWrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--bd); }
@@ -1036,16 +1043,16 @@
 .dlTerm .storyTitle { font-size: 11px; line-height: 1.35; color: var(--txt); font-weight: 600; text-wrap: pretty; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .dlTerm .storyMeta { font-family: var(--mono); font-size: 9px; color: var(--dimmer); margin-top: 3px; }
 .dlTerm .storyLink { color: var(--amber); text-decoration: none; }
-.dlTerm .storyEmpty { padding: 10px 8px; font-size: 10px; color: var(--dimmer); font-family: var(--mono); line-height: 1.5; }
+.dlTerm .storyEmpty { padding: 10px 8px; font-size: var(--fs-note); color: var(--dimmer); font-family: var(--mono); line-height: 1.5; }
 .dlTerm .factRetry { background: none; border: none; color: var(--amber); font-family: var(--mono); font-size: 10px; cursor: pointer; padding: 0; text-decoration: underline; }
 .dlTerm .factRetry:hover { opacity: 0.8; }
 /* 정기보고서 주석 간단 글랜스 · 비용 체질 real digest 한 줄 + 대시보드 토픽. */
-.dlTerm .noteGlance { padding: 6px 8px; font-family: var(--cond); font-size: 10.5px; color: var(--txt); line-height: 1.4; }
-.dlTerm .noteGlance .ngLabel { color: var(--dimmer); font-size: 9px; margin-right: 5px; }
+.dlTerm .noteGlance { padding: 6px 8px; font-family: var(--cond); font-size: var(--fs-note); color: var(--txt); line-height: 1.4; }
+.dlTerm .noteGlance .ngLabel { color: var(--dimmer); font-size: var(--fs-label); margin-right: 5px; }
 .dlTerm .noteMore { padding: 0 8px 7px; font-family: var(--cond); font-size: 9.5px; color: var(--dim); }
 /* 주석 글랜스 = 비율 적층 막대(바로 보임) + 상위 칩 */
 .dlTerm .noteSeg { padding: 5px 8px 6px; }
-.dlTerm .noteSeg .ngLabel { font-family: var(--cond); font-size: 9px; color: var(--dimmer); letter-spacing: 0.04em; }
+.dlTerm .noteSeg .ngLabel { font-family: var(--cond); font-size: var(--fs-label); color: var(--dimmer); letter-spacing: 0.04em; }
 .dlTerm .noteSegHd { margin-bottom: 3px; }
 .dlTerm .noteBar { display: flex; height: 12px; border-radius: 3px; overflow: hidden; gap: 1px; background: var(--dl-bg-deep); }
 .dlTerm .noteBar i { height: 100%; min-width: 1px; display: block; }
@@ -1074,7 +1081,7 @@
 .dlTerm .pctVal { font-family: var(--mono); font-size: 9px; white-space: nowrap; flex-shrink: 0; display: inline-flex; align-items: baseline; justify-content: flex-end; gap: 6px; }
 .dlTerm .pctVal b { font-weight: 700; min-width: 46px; text-align: right; }
 .dlTerm .pctVal .dim { min-width: 40px; text-align: right; }
-.dlTerm .pctNote { font-family: var(--mono); font-size: 7.5px; color: var(--dimmer); padding: 2px 8px; border-top: 1px solid var(--bd); }
+.dlTerm .pctNote { font-family: var(--mono); font-size: var(--fs-note); color: var(--dimmer); padding: 2px 8px; border-top: 1px solid var(--bd); }
 
 /* RISK FLAGS */
 .dlTerm .riskWrap { padding: 5px 6px; display: flex; flex-wrap: wrap; gap: 4px; }
@@ -1087,7 +1094,7 @@
 .dlTerm .riskDot.yellow { background: var(--warn); }
 .dlTerm .riskDot.green { background: var(--good); }
 .dlTerm .riskName { font-family: var(--cond); font-weight: 600; font-size: 10px; color: var(--txt); }
-.dlTerm .riskDetail { font-family: var(--mono); font-size: 8.5px; color: var(--dim); }
+.dlTerm .riskDetail { font-family: var(--mono); font-size: var(--fs-label); color: var(--dim); }
 
 /* PROVENANCE TAG */
 .dlTerm .provTag { font-family: var(--mono); font-size: 8px; font-weight: 600; letter-spacing: 0.4px; padding: 1px 4px; border-radius: 2px; line-height: 1.5; flex-shrink: 0; cursor: help; }
