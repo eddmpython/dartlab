@@ -12,17 +12,24 @@
 
 즉 변형은 **작고 유한**해 회사별 하드코딩이 아니라 **성장형 라벨 taxonomy** 로 흡수된다.
 
-## 핵심 발명: narrative 표를 재무 셀과 동일하게 격자화
+## 핵심: panel 표 파서 통합 (덕지덕지 정리 + 셀 파싱 완성)
 
-panel 은 이미 셀을 두 층으로 담는다. (1) 재무·주석 셀 = XBRL 앵커(acode/axisPath) 구조화(CELL_SCHEMA). (2) narrative 표 = raw `<TABLE>` XML 방치. **발명 = narrative 표도 (1)과 동일한 격자로 파싱하고, 시맨틱 앵커를 acode 대신 "한글 헤더 라벨"(성장형 taxonomy 로 해소)로 삼는다.** dartlab 사상 "파서는 하나, 카탈로그가 자란다"를 note 표에서 narrative 표로 확장. 외부 LLM/NLP 아님 = 결정적·감사가능·ref.
+배치 정본 = **panel 이 파서 SSOT, scan 이 프리빌드.** 그리고 panel 표 파싱은 이미 덕지덕지다 (표 건드리는 함수 5~6개, 각자 TR/셀 반복 재구현):
+- `build/cell.py`: `_xbrlCellsFromContent`(`<TE ACODE>` 재무 셀) + `_parseOldStatementTable`/`_parseOldNoteTable`(pre-XBRL 구식 표).
+- `build/titleRows.py`: `_tableToMarkdown`(colspan/rowspan **보존만**, 렌더링 HTML. 격자로 펼치진 않음).
+- `build/leafSplit.py`(text/table 분리) · `refScan/aclassExtractor`(TABLE-GROUP ACLASS 정체) · `walker`.
 
-### 부품 (전부 범용, 회사무관)
+즉 재무표는 acode 로 셀화, 서술표(수주·가동률)는 raw 방치, 렌더링은 또 따로. **공용 "표 → 펼친 dense 격자 → 의미 셀" primitive 가 없다.** 그래서 발명은 새 파서 추가가 아니라 **그 공용 primitive 하나를 만들고 전부 그 위로 통합**하는 것이다.
 
-1. **`tableToGrid`**: `<TABLE>` XML 을 COLSPAN/ROWSPAN 확장한 dense 격자로. 멀티행 헤더를 컬럼별 합성라벨로 결합. HTML 표 정규화 표준 알고리즘 1개.
-2. **`headerTaxonomy`** (성장형, NOTE_TAXONOMY 형제): 개념 → 동의어 + **계산전략**. `수주잔고 ← {수주잔고, 기말수주잔고, 계약잔액, 기초계약잔액}`, `가동률 ← 직접라벨 OR 실제가동시간/가동가능시간 OR 생산실적/생산능력`. 단위 어휘 `{백만원:1e6, 억원:1e8}`.
-3. **`resolveCell`** (confidence gate): 합성헤더에서 개념 컬럼 지목(금액 컬럼 우선, 수량 제외) → 합계행 우선(없으면 데이터 합산) → 단위 환산 → (value, confidence, provenance). 저신뢰·다중후보·단위불명 = **정직 gap(추측 금지)**.
-4. **`buildNarrativeMetrics`** (prebuild, buildNotes 형제): 전종목 resolveCell → parquet 횡단. census 커버리지 측정.
-5. **scan 축**: `scan("orders")` 확장 또는 신규. 수주잔고·가동률 등 전종목 스크리닝.
+### 부품 (panel SSOT, 공용 primitive 위로 통합)
+
+1. **`tableToGrid`** (신규 공용 primitive, panel `build/`): `<TABLE>` XML → COLSPAN/ROWSPAN **확장** dense 격자 (row×col) + 멀티행 헤더 합성라벨. **모든 표 파싱의 단일 기반.** POC 의 `_parseGrid` 를 여기로 승격.
+2. **anchor 해소 (격자 위 의미 head, 2 전략)**: 재무/주석 = acode 앵커(기존 정밀 경로 유지, 다운그레이드 금지) · 서술표 = **한글 헤더 앵커** (성장형 `headerTaxonomy`, `NOTE_TAXONOMY` 형제: `수주잔고 ← {수주잔고,기말수주잔고,계약잔액}`, `가동률 ← 직접 OR 실제가동시간/가동가능시간 OR 생산실적/생산능력`).
+3. **`readMetric`** (panel `cell.py`, `readNoteStatement` 형제, confidence gate): tableToGrid → 개념 컬럼 지목(금액 우선) → 합계행 우선 → 단위환산 → sanity → (value, confidence, provenance). 저신뢰·다중후보·단위불명·sanity 실패 = **정직 gap**.
+4. **`buildNarrativeMetrics`** (scan 프리빌드, `buildNotes` 형제): 전종목 readMetric → parquet 횡단 + census.
+5. **scan 축**: `scan("orders")` 확장 또는 신규. 전종목 스크리닝.
+
+**통합 효과**: 표 넣으면서 오히려 덕지덕지가 준다 (격자 엔진 1개, 의미 head 만 다름). 단 렌더링(`_tableToMarkdown`)·재무 acode 경로는 터미널 직결이라 **한 번에 갈아엎지 않는다**: primitive 먼저 신설(무회귀) → 서술표가 첫 소비자 → 기존 경로는 이후 시각/재무 회귀 게이트 두고 조심히 이관.
 
 ## POC 실증 (2026-07-07, scratchpad)
 
@@ -48,7 +55,7 @@ census 가 미커버 회사의 **미매칭 헤더를 surface** → 운영자/AI 
 
 ## 로드맵 (승인 후)
 
-- **R1 `frame/narrativeGrid`**: tableToGrid + headerTaxonomy + resolveCell(confidence) + sanity. 유닛(합성헤더·colspan·단위·gap) 결정적 테스트.
+- **R1 panel 공용 primitive**: `tableToGrid`(colspan 확장 격자) + `headerTaxonomy` + `readMetric`(confidence + sanity), panel `build/`·`cell.py`. 무회귀 신설(기존 경로 미변경). 유닛(합성헤더·colspan·단위·gap·저신뢰) 결정적 테스트.
 - **R2 `buildNarrativeMetrics`**: 수주잔고·가동률 2개념 전종목 prebuild + census(커버리지 + 표본 정확도).
 - **R3 scan 축 배선**: `scan("orders")` 확장(백로그커버=수주잔고/매출) 또는 신규 축. 계약 테스트.
 - **R4 taxonomy 성장**: census gap 상위 회사 헤더 → 동의어 확장, 커버리지 목표(예 수주 있는 회사의 80%+).
