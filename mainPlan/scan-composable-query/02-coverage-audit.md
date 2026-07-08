@@ -93,7 +93,7 @@ P1 은 합의·저위험·운영자 원칙(exhaustive) 직접 이행이라 즉�
 - **note 파이프라인 구조취약**: full 전용 + buildNotesSafe silent-swallow + base-seed 누락 + not-required = 조용한 DARK 회귀 가능. (본 세션 수리 대상)
 - **note 품질**: over-capture 가 0.08%(통화)보다 큼. 지배 account 에 합계/소계/기타 등 일반 집계라벨 혼입, tax/relatedParty 는 단위/의미 이질(경영진보수+거래잔액). reader docstring 은 정직 경고("절대금액 cross-company 금지, finance SSOT"). 리스크 = census 가 이를 clean LIVE 로 셈한 것.
 - **골격 공백(3관점 공통)**: ① 시점정합 PIT(전면 부재, 모든 로더 최신기간 고정=룩어헤드) ② 가중 랭크 스코어 합성(boolean 교집합뿐) ③ 이벤트+펀더멘털 조합(축 사일로) ④ gather 수급 flow 미소비.
-- **gather 사각지대 3(감사)**: (1) 투자자 수급 flow(외국인/기관/개인 순매수) 완전 미소비 = 후행 펀더멘털의 선행 짝, 데이터 완비인데 축 0 (2) 공시 이벤트 스트림(유상증자·자사주·합병 raw 있는데 파서 supplyContract 1종뿐) (3) 컨센서스(research)·뉴스 sentiment.
+- **gather 사각지대 3(감사)**: (1) 투자자 수급 flow(외국인/기관/개인 순매수) 완전 미소비 = 후행 펀더멘털의 선행 짝, 데이터 완비인데 축 0. **단 저작권상 프리빌드·발행 불가 → 로컬 런타임 축으로만 노출** (2) 공시 이벤트 스트림(유상증자·자사주·합병 raw 있는데 파서 supplyContract 1종뿐) (3) 컨센서스(research)·뉴스 sentiment. (2)(3)도 재배포 저작권 확인 필요.
 
 ### 실측 정정 (에이전트 주장 반증)
 
@@ -106,9 +106,11 @@ P1 은 합의·저위험·운영자 원칙(exhaustive) 직접 이행이라 즉�
 
 ### 남은 로드맵 (ROI x 리스크, 운영자 결정)
 
+**★ 수급/가격/지분 = 저작권 로컬전용 (프리빌드·HF 발행 절대 금지).** flow(외국인/기관 순매수)·price(OHLCV)·ownership 은 KRX/Naver DB권·저작권이라 HF 발행 데이터셋(CC BY 4.0)에 구울 수 없다. DART 공개데이터만 프리빌드·발행 대상. 따라서 수급을 scan 에 노출하려면 **valuation·orders 처럼 로컬 런타임 fetch 축**이어야 하며, 전종목 파케를 굽는 안은 원천 금지(가드=gather 핸들러 docstring 에 박음). "gather 탈탈"의 정답은 로컬 런타임 소비이지 발행이 아니다.
+
 | 안 | 가치 | 데이터 | 리스크·게이트 |
 |---|---|---|---|
-| **flow 수급 축** (외국인/기관 순매수 횡단) | 최고(선행 팩터, 후행 보완) | gather flow 완비 | 네트워크 prebuild(2942사 fetch)·cadence 결정 필요 |
+| **flow 수급 = 로컬전용 런타임 축** (외국인/기관 순매수) | 최고(선행 팩터, 후행 보완) | gather flow 완비 | 저작권상 프리빌드·발행 금지. valuation 형 런타임 fetch 축으로만 (전종목 파케 금지). 런타임 횡단은 느려 target 소수·watchlist 한정 |
 | **committed scan-output census 게이트** | 높음(DARK 가시화, 회귀 가드. 적대 #5) | 있음 | 중. `tests/audit` 신설, 유니버스 floor assert |
 | **note temporal 강건화 layer** | 높음(추세 7축 해금) | 있으나 연도간 단위불일치 | 중. per-period 단위정규화 필수(실측 근거) |
 | **이벤트 스트림 축**(유상증자·자사주·합병) | 높음(하드 카탈리스트) | allFilings raw 있음, 파서 1종뿐 | 중. EVENT_SCHEMAS 파서 확장 + prebuild |

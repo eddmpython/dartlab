@@ -185,7 +185,10 @@ def handlePrice(
     marketExplicit: bool,  # noqa: ARG001 — uniform signature
     **kwargs: Any,
 ) -> pl.DataFrame:
-    """price axis dispatch — OHLCV 시계열 + 보조지표 옵션.
+    """price axis dispatch: OHLCV 시계열 + 보조지표 옵션.
+
+    **로컬전용(저작권)**: 가격/OHLCV 는 KRX/Naver DB권·저작권이라 프리빌드·HF 발행·재배포 금지.
+    scan 소비는 valuation 처럼 런타임 fetch 로만 (raw 가격 시계열 파케를 HF 에 굽지 말 것). 로컬 개인용.
 
     Capabilities: target → 종목/지수 자동 인식 → g.price 또는 _fetchNaverIndex.
     AIContext: gather("price", ...) 의 본체 — handler dispatch 진입 첫 axis.
@@ -263,11 +266,15 @@ def handleFlow(
     marketExplicit: bool,  # noqa: ARG001
     **kwargs: Any,
 ) -> pl.DataFrame:
-    """flow axis dispatch — 외국인/기관 수급.
+    """flow axis dispatch: 외국인/기관 수급.
 
-    Capabilities: target → g.flow → 일별 외국인/기관/개인 순매수 DataFrame.
-    AIContext: gather("flow", ...) 본체 — flow mixin 위임 + reshape.
-    Guide: KR 만. 외 시장 target 은 None / 빈 결과.
+    **로컬전용(저작권)**: 수급은 KRX/Naver DB권·저작권이라 산출물의 프리빌드·HF 발행·재배포 절대 금지.
+    scan 축으로 굽지 말 것 (DART 공개데이터와 달리 CC BY 발행 불가). 로컬 개인용 런타임 조회만 허용.
+    scan 소비가 필요하면 valuation·orders 처럼 런타임 fetch 축이어야 하며 HF prebuild 파케 금지.
+
+    Capabilities: target → g.flow → 일별 외국인/기관/개인 순매수 DataFrame (로컬 런타임, 미발행).
+    AIContext: gather("flow", ...) 본체. flow mixin 위임 + reshape.
+    Guide: KR 만. 외 시장 target 은 None / 빈 결과. 산출물 재배포·프리빌드 금지(DB권/저작권).
     When: GatherEntry._run("flow", target, ...) lookup 시.
     How: g.flow(target, market="KR") → list[dict] → pl.DataFrame.
 
@@ -701,10 +708,13 @@ def handleOwnership(
     marketExplicit: bool,  # noqa: ARG001
     **kwargs: Any,  # noqa: ARG001
 ) -> pl.DataFrame:
-    """ownership axis dispatch — 기관/외국인 지분 (list → DataFrame).
+    """ownership axis dispatch: 기관/외국인 지분 (list → DataFrame).
+
+    **로컬전용(저작권)**: Naver 기관/외국인 지분은 DB권·저작권이라 프리빌드·HF 발행·재배포 금지.
+    scan 소비는 런타임 fetch 로만 (파케 굽지 말 것). 로컬 개인용. DART majorHolder(공개)와 혼동 말 것.
 
     Capabilities: target → g.ownership → InstitutionOwnership list → DataFrame.
-    AIContext: gather("ownership", ...) 본체 — 기관/외국인 보유 분포 진입.
+    AIContext: gather("ownership", ...) 본체. 기관/외국인 보유 분포 진입.
     Guide: KR/US 모두 지원. 빈 list 면 빈 DataFrame.
     When: GatherEntry._run("ownership", stockCode, ...) lookup 시.
     How: g.ownership(target, market) → list[InstitutionOwnership] → DataFrame.
