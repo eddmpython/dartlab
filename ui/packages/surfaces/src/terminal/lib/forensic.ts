@@ -9,7 +9,13 @@ export interface ForensicSignal {
 	level: ForensicLevel;
 	kr: string;
 	en: string;
-	val: string; // 핵심 수치 (공시된 사실)
+	val: string; // 핵심 수치 (공시된 사실) · 글랜스 detail
+	// 통합된 리스크 경고등 다이얼로그에서 이 신호를 설명하기 위한 카탈로그 필드(riskRules.RiskRule 와 동형).
+	whatKr: string;
+	whatEn: string;
+	thresholdKr: string;
+	thresholdEn: string;
+	source: string;
 }
 
 const jo = (won: number): string => (won / 1e12).toFixed(2);
@@ -26,7 +32,12 @@ function auditIndependence(af: AuditFeeYear[] | null): ForensicSignal | null {
 		level: ratio >= 1 ? 'red' : 'amber',
 		kr: '감사인 독립성',
 		en: 'Auditor independence',
-		val: `비감사/감사 ${Math.round(ratio * 100)}% · ${last.year}`
+		val: `비감사/감사 ${Math.round(ratio * 100)}% · ${last.year}`,
+		whatKr: '감사인이 컨설팅 수입에 휘둘리지 않는가 · 비감사/감사 보수 비율',
+		whatEn: 'Is the auditor free of consulting-revenue capture · non-audit / audit fee ratio',
+		thresholdKr: '비감사/감사 ≥ 100% → red · 50~100% → yellow',
+		thresholdEn: 'non-audit/audit ≥ 100% → red · 50-100% → yellow',
+		source: '정기보고서 감사·비감사 보수 (ReportPort.auditFees)'
 	};
 }
 
@@ -43,7 +54,12 @@ function debtWall(dp: DebtProfileBundle | null, cashLatestWon: number | null): F
 		level: ratio >= 1 ? 'red' : 'amber',
 		kr: '단기 상환벽',
 		en: 'Near-term debt wall',
-		val: `1년내 ${jo(shortTerm)}조 / 현금 ${jo(cashLatestWon)}조`
+		val: `1년내 ${jo(shortTerm)}조 / 현금 ${jo(cashLatestWon)}조`,
+		whatKr: '1년 내 갚을 사채를 현금으로 덮는가 · 단기사채+CP vs 현금성자산',
+		whatEn: 'Do near-term bonds fit within cash · short-term bonds+CP vs cash',
+		thresholdKr: '단기상환액/현금 ≥ 100% → red · 70~100% → yellow',
+		thresholdEn: 'short-term repayment/cash ≥ 100% → red · 70-100% → yellow',
+		source: '정기보고서 사채 잔존만기 · 현금성자산 (ReportPort.debtProfile)'
 	};
 }
 

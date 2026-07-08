@@ -186,7 +186,7 @@
 					</table></div>
 					<div class="expUnit">{lang === 'en' ? 'unit: KRW trillion · bold = selected scenario · below = 25~75% band' : '단위: 조원 · 굵은 값 = 선택 시나리오 · 아래 = 25~75% 구간'}</div>
 				{:else}
-					<div class="expEmpty">{lang === 'en' ? 'no sealed estimates for this statement/period yet' : '이 표·기간의 봉인 추정 없음 (분기 sweep 대기)'}</div>
+					<div class="expEmpty">{lang === 'en' ? 'no sealed estimates for this statement/period' : '이 표·기간의 봉인 추정 없음'}</div>
 				{/if}
 			</section>
 

@@ -372,7 +372,7 @@
 .dlTerm .feedCorp { display: flex; align-items: center; gap: 2px; overflow: hidden; }
 .dlTerm .feedCorpName { font-family: var(--cond); font-size: 10px; font-weight: 700; color: var(--amber); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .dlTerm .feedNm { font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--dim); }
-.dlTerm .feedInstDot { flex: none; color: var(--amber); font-size: 7px; }
+.dlTerm .feedInstDot { flex: none; color: var(--amber); font-size: 8px; }
 .dlTerm .feedCap { padding: 4px 8px; font-family: var(--cond); font-size: 8px; color: var(--dimmer); text-align: center; }
 /* 뉴스 피드 행(좌측 cross) · 제목 1줄 ellipsis + 우측 메타(출처·날짜). 클릭=기사 원문(<a>). 종목 점프 아님. */
 .dlTerm .newsFeedRow { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 7px; padding: 4px 8px; border-bottom: 1px solid var(--dl-line); text-decoration: none; cursor: pointer; }
@@ -444,7 +444,7 @@
 .dlTerm .poolColName { font-family: var(--cond); font-size: 8.5px; color: var(--dimmer); letter-spacing: 0.2px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dlTerm .poolColOpm { font-size: 13px; line-height: 1.15; font-variant-numeric: tabular-nums; }
 .dlTerm .poolColRev { font-size: 8.5px; color: var(--dim); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 3px; }
-.dlTerm .poolTag { font-family: var(--cond); font-size: 7.5px; color: #fbbf24; border: 1px solid color-mix(in srgb, #fbbf24 40%, transparent); border-radius: 3px; padding: 0 2px; font-style: normal; }
+.dlTerm .poolTag { font-family: var(--cond); font-size: 8px; color: #fbbf24; border: 1px solid color-mix(in srgb, #fbbf24 40%, transparent); border-radius: 3px; padding: 0 2px; font-style: normal; }
 .dlTerm .poolNote { padding: 4px 8px; font-family: var(--cond); font-size: 10px; color: var(--dim); border-top: 1px solid var(--bd); line-height: 1.35; }
 .dlTerm .poolNote b { color: var(--txt); font-weight: 700; }
 
@@ -916,7 +916,7 @@
 .dlTerm .finTable tr.finKey { background: rgba(var(--amber-rgb), 0.05); }
 .dlTerm .finTable tr.finKey .finAcct { color: var(--amber); font-weight: 600; }
 .dlTerm .finTable tbody tr:hover { background: var(--dl-bg-overlay); }
-.dlTerm .finNote { font-family: var(--mono); font-size: 7.5px; color: var(--dimmer); padding: 2px 7px; border-top: 1px solid var(--bd); letter-spacing: 0.3px; }
+.dlTerm .finNote { font-family: var(--mono); font-size: 10px; color: var(--dimmer); padding: 3px 7px; border-top: 1px solid var(--bd); letter-spacing: 0.3px; }
 /* 기대치 성적표 · 섹션 소제목/푸터는 읽히는 크기(운영자 실측: 7.5px 는 숫자 오독 유발) */
 .dlTerm .expSecHead { font-family: var(--mono); font-size: 9.5px; color: var(--dim, #a3a8b3); padding: 6px 7px 2px; letter-spacing: 0.4px; text-transform: uppercase; font-weight: 700; }
 .dlTerm .expNote { font-family: var(--mono); font-size: 9.5px; line-height: 1.55; color: var(--dimmer); padding: 5px 7px; border-top: 1px solid var(--bd); }

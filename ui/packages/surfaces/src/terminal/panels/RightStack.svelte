@@ -638,12 +638,16 @@
 	const conf = $derived(cr.healthScore >= 70 ? 'HIGH' : 'MEDIUM');
 </script>
 
-<!-- RISK FLAGS · 글랜스는 점등(red/yellow)만. 헤더 '상세보기' → 점검 차원 전체 카탈로그·조건·현상태 다이얼로그. -->
+<!-- RISK FLAGS · 글랜스는 점등(red/yellow)만. 헤더 '상세보기' → 점검 차원 전체 카탈로그·조건·현상태 다이얼로그.
+     포렌식 신호(감사인 독립성·단기 상환벽)도 이 패널에 흡수 · 출처만 다른 같은 조기경보라 별 패널로 나누지 않는다. -->
 <Panel {lang} className="eCredit" prov="real" title={{ kr: '리스크 경고등', en: 'RISK FLAGS' }}>
-	{#snippet right()}<span><b class="tDn">{risks.filter((r) => r.lv === 'red').length}</b> <b class="tWarn">{risks.filter((r) => r.lv === 'yellow').length}</b></span><button class="finFullBtn" onclick={() => (riskDlgOpen = true)} title={lang === 'en' ? 'what each light checks · conditions & this company' : '각 경고등이 점검하는 조건 · 이 회사 현상태'}>{lang === 'en' ? 'detail' : '상세보기'}</button>{/snippet}
+	{#snippet right()}<span><b class="tDn">{risks.filter((r) => r.lv === 'red').length + forensic.filter((f) => f.level === 'red').length}</b> <b class="tWarn">{risks.filter((r) => r.lv === 'yellow').length + forensic.filter((f) => f.level === 'amber').length}</b></span><button class="finFullBtn" onclick={() => (riskDlgOpen = true)} title={lang === 'en' ? 'what each light checks · conditions & this company' : '각 경고등이 점검하는 조건 · 이 회사 현상태'}>{lang === 'en' ? 'detail' : '상세보기'}</button>{/snippet}
 	<div class="riskWrap">
 		{#each risks as r, i (i)}
 			<div class={'riskRow ' + r.lv}><span class={'riskDot ' + r.lv}></span><span class="riskName">{lang === 'en' ? r.en : r.kr}</span>{#if r.d}<span class="riskDetail">{r.d}</span>{/if}</div>
+		{/each}
+		{#each forensic as f (f.id)}
+			<div class={'riskRow ' + (f.level === 'red' ? 'red' : 'yellow')}><span class={'riskDot ' + (f.level === 'red' ? 'red' : 'yellow')}></span><span class="riskName">{lang === 'en' ? f.en : f.kr}</span><span class="riskDetail">{f.val}</span></div>
 		{/each}
 	</div>
 </Panel>
@@ -651,25 +655,8 @@
 <!-- 리스크 경고등 설명 · 점검 차원 전체 카탈로그 + 이 회사 현상태(점등/통과/판정불가) + 조건·소스. lazy: 닫혀 있으면 청크 무증가 -->
 {#if riskDlgOpen}
 	{#await import('./RiskFlagsDialog.svelte') then { default: RiskFlagsDialog }}
-		<RiskFlagsDialog {co} {lang} onClose={() => (riskDlgOpen = false)} />
+		<RiskFlagsDialog {co} {lang} {forensic} onClose={() => (riskDlgOpen = false)} />
 	{/await}
-{/if}
-
-<!-- 포렌식 적신호 · 풀스크린 재무탭에 묻힌 결정론 위험지표(감사독립성·단기상환벽) 승격. 임계 초과만 표시(정상=무표시). -->
-{#if forensic.length}
-	<Panel {lang} className="eCredit" prov="real" title={{ kr: '포렌식 적신호', en: 'FORENSIC FLAGS' }} sub={{ kr: '감사·부채 기준', en: 'audit·debt' }} flush>
-		{#snippet right()}<button class="finFullBtn" onclick={() => (tablesOpen = true)} title={lang === 'en' ? 'open financials fullscreen' : '재무 전체화면에서 상세 보기'}>{lang === 'en' ? 'detail' : '상세보기'}</button>{/snippet}
-		<div class="riskWrap">
-			{#each forensic as f (f.id)}
-				<div class={'riskRow ' + (f.level === 'red' ? 'red' : 'yellow')}>
-					<span class={'riskDot ' + (f.level === 'red' ? 'red' : 'yellow')}></span>
-					<span class="riskName">{lang === 'en' ? f.en : f.kr}</span>
-					<span class="riskDetail mono">{f.val}</span>
-				</div>
-			{/each}
-		</div>
-		<div class="finNote">{lang === 'en' ? 'breached thresholds only' : '임계 초과만 표시'}</div>
-	</Panel>
 {/if}
 
 <!-- PERCENTILE -->
@@ -707,7 +694,7 @@
 
 <!-- 이익 풀 · 이 회사 산업의 공정별 영업이익률·매출 (이익은 어느 단계가 버나) -->
 {#if poolRows}
-	<Panel {lang} className="eIndustry" prov="real" title={{ kr: '이익 풀', en: 'PROFIT POOL' }} sub={{ kr: tx(co.sector, lang) + ' · 공정별 이익률·매출', en: tx(co.sector, lang) + ' · margin·rev by stage' }} flush>
+	<Panel {lang} className="eIndustry" prov="real" title={{ kr: '이익 풀', en: 'PROFIT POOL' }} sub={{ kr: tx(co.sector, lang), en: tx(co.sector, lang) }} flush>
 		<div class="poolWrap">
 			{#each poolRows.rows as s (s.key)}
 				<div
@@ -765,7 +752,7 @@
 
 <!-- 추정 · 기대 (재무 바로 아래) · 실적표에서 분리한 추정을 밀도 있게 · 전량 상세는 상세보기 다이얼로그.
      정직 규율: 개별 봉인·채점 사실만 · 집계 성과 숫자는 표본 게이트 전 금지. -->
-<Panel {lang} className="eAnalysis expPanel" prov="derived" title={{ kr: '추정 · 기대', en: 'ESTIMATES' }} sub={{ kr: '엔진 봉인 예측 · 사후 채점', en: 'sealed forecasts · scored after' }}>
+<Panel {lang} className="eAnalysis expPanel" prov="derived" title={{ kr: '추정 · 기대', en: 'ESTIMATES' }}>
 	{#snippet right()}
 		<button class="finFullBtn" onclick={() => (expDetailOpen = true)} title={lang === 'en' ? 'estimates detail · 3-statement E, track record, macro fan' : '추정 상세 · 추정 3표·채점 트랙레코드·매크로 팬'}>{lang === 'en' ? 'detail' : '상세보기'}</button>
 	{/snippet}
@@ -787,7 +774,7 @@
 				</tbody>
 			</table>
 		{:else}
-			<div class="expNote">{lang === 'en' ? 'not issued for this company yet (quarterly sweep pending)' : '이 회사는 아직 미발행 (분기 전상장사 sweep 대기)'}</div>
+			<div class="expNote">{lang === 'en' ? 'no sealed estimate for this company' : '이 회사 봉인 추정 없음'}</div>
 		{/if}
 		{#if expFundTables?.q}
 			<div class="expSecHead">{lang === 'en' ? 'quarterly split (seasonal, sealed)' : '분기 분해 (계절성 · 봉인)'}</div>
@@ -845,11 +832,8 @@
 				</tbody>
 			</table>
 		{/if}
-		<div class="expNote">{lang === 'en'
-			? `Sealed at issuance, never edited. ${scorecard ? `${scorecard.totals.issued} issued, ${scorecard.totals.scored} scored.` : ''} Full 3-statement E, track record and macro fan in detail.`
-			: `발행 순간 봉인 · 사후 수정 불가. ${scorecard ? `발행 ${scorecard.totals.issued} · 채점 ${scorecard.totals.scored}.` : ''} 추정 3표·채점 트랙·매크로 팬은 상세보기.`}</div>
 	{:else if expLoaded}
-		<div class="expNote">{lang === 'en' ? 'no sealed forecasts published yet' : '봉인된 기대 미발간'}</div>
+		<div class="expNote">{lang === 'en' ? 'no sealed estimate for this company' : '이 회사 봉인 추정 없음'}</div>
 	{:else}
 		<div class="expNote">{lang === 'en' ? 'loading …' : '불러오는 중 …'}</div>
 	{/if}
@@ -1101,7 +1085,7 @@
 			<div class="storyEmpty">{lang === 'en' ? 'no regular filings' : '정기공시 없음'}</div>
 		{/if}
 	</Panel>
-	<Panel {lang} className="eChanges" prov="real" title={{ kr: '비정기공시', en: 'OTHER FILINGS' }} sub={{ kr: '수시', en: 'ad-hoc' }} flush>
+	<Panel {lang} className="eChanges" prov="real" title={{ kr: '비정기공시', en: 'OTHER FILINGS' }} flush>
 		{#snippet right()}<span class="dim">{nonRegState === 'ready' ? nonRegFilings.length : ''}</span>{/snippet}
 		{#if nonRegState === 'ready'}
 			<div class="filingList">

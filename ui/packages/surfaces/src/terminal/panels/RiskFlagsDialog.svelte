@@ -5,17 +5,20 @@
 	// 정직: 결정론 · 임계초과만(글랜스) · 완결성 점검 아님 · 매수/매도 신호 아님 · 인과 단정 금지 · "·"=공시 부재.
 	// 등급 *산식 자체*는 '스캔 등급' 다이얼로그 소관 · 여기선 복제하지 않고 참조만(GRADE_GUIDE SSOT 단일소스).
 	import type { Company, Lang } from '../lib/types';
+	import type { ForensicSignal } from '../lib/forensic';
 
 	interface Props {
 		co: Company;
 		lang: Lang;
+		forensic?: ForensicSignal[]; // 감사인 독립성·단기 상환벽 (정기보고서 출처) · 카탈로그에 함께 설명
 		onClose: () => void;
 	}
-	let { co, lang, onClose }: Props = $props();
+	let { co, lang, forensic = [], onClose }: Props = $props();
 
 	const cat = $derived(co.riskCatalog ?? []);
-	const redN = $derived(cat.filter((r) => r.status === 'red').length);
-	const yellowN = $derived(cat.filter((r) => r.status === 'yellow').length);
+	// 포렌식 신호는 임계를 넘은 것만 산출(정상=무표시)이라 항상 점등 상태. red/amber → red/yellow 로 매핑해 카운트·행에 합류.
+	const redN = $derived(cat.filter((r) => r.status === 'red').length + forensic.filter((f) => f.level === 'red').length);
+	const yellowN = $derived(cat.filter((r) => r.status === 'yellow').length + forensic.filter((f) => f.level === 'amber').length);
 
 	// 현상태 표기 · red/yellow 점등 · clear 통과 · na 판정불가. 톤은 터미널 기존 토큰만.
 	const statusMeta: Record<string, { dot: string; cls: string; kr: string; en: string }> = {
@@ -72,10 +75,27 @@
 				</div>
 			{/each}
 
+			{#each forensic as f (f.id)}
+				{@const sm = statusMeta[f.level === 'red' ? 'red' : 'yellow']}
+				<div class={'rfRow rf-' + (f.level === 'red' ? 'red' : 'yellow')}>
+					<span class="rfDim"><b>{lang === 'en' ? f.en : f.kr}</b></span>
+					<span class="rfWhat">{lang === 'en' ? f.whatEn : f.whatKr}</span>
+					<span class="rfCond">
+						<span class="rfCondT">{lang === 'en' ? f.thresholdEn : f.thresholdKr}</span>
+						<span class="rfSrc mono">{f.source}</span>
+					</span>
+					<span class="rfNow">
+						<span class={'rfDot ' + sm.cls}>{sm.dot}</span>
+						<b class={sm.cls}>{lang === 'en' ? sm.en : sm.kr}</b>
+						<span class="rfVal mono">{f.val}</span>
+					</span>
+				</div>
+			{/each}
+
 			<div class="rfCohab">
 				{lang === 'en'
-					? 'RISK FLAGS = scan-ecosystem grades & ratios. FORENSIC FLAGS (separate panel) = audit-fee independence & near-term debt wall from the annual report · different source, so a separate panel.'
-					: 'RISK FLAGS = scan ecosystem 등급·비율. FORENSIC FLAGS(별도 패널) = 정기보고서 감사보수 독립성·단기 상환벽 비율 · 출처가 달라 별 패널.'}
+					? 'Grade & ratio checks come from the scan ecosystem; auditor-independence and near-term debt-wall checks read the annual report directly. Different sources, one warning list.'
+					: '등급·비율 점검은 scan ecosystem 산물이고, 감사인 독립성·단기 상환벽은 정기보고서를 직접 읽는다. 출처는 달라도 경고 목록은 하나.'}
 			</div>
 			<div class="rfNote">
 				{lang === 'en'

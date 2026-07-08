@@ -4,8 +4,12 @@
 	import { themePref, toggleTheme, isContentPath } from '$lib/theme';
 	import GithubIcon from '$lib/components/GithubIcon.svelte';
 	// SNS·후원·브랜드테마 = dartlab 공통 SSOT(surfaces). BrandSwitch 는 터미널·카드·Header 가 동일 컨트롤 공유.
-	import { SupportDialog, DARTLAB_BRAND_LINKS, BrandSwitch } from '@dartlab/ui-surfaces/terminal';
+	import { SupportDialog, DARTLAB_BRAND_LINKS, BrandSwitch, fetchGithubStars, fmtStars } from '@dartlab/ui-surfaces/terminal';
 	import { page } from '$app/state';
+
+	// GitHub 스타 라이브 배지 · 터미널·카드·리포트 우상단 SNS 와 동일(전 라우트 공통). null=미조회/실패(배지 숨김).
+	let ghStars = $state<number | null>(null);
+	fetchGithubStars(DARTLAB_BRAND_LINKS.repo).then((n) => (ghStars = n));
 
 	interface Props {
 		context?: 'landing' | 'default' | 'blog' | 'skills';
@@ -105,6 +109,13 @@
 				title="GitHub">
 				<GithubIcon class="w-[15px] h-[15px]" />
 			</a>
+			{#if ghStars != null}
+				<a href={DARTLAB_BRAND_LINKS.repo} target="_blank" rel="noopener"
+					class="h-7 px-1.5 rounded-md hidden sm:flex items-center gap-0.5 text-[11px] font-semibold text-dl-text-dim hover:text-dl-text hover:bg-white/5 transition-colors no-underline"
+					title="GitHub 스타로 응원">
+					<span class="text-[#f5b301]">★</span>{fmtStars(ghStars)}
+				</a>
+			{/if}
 			<button onclick={() => (supportOpen = true)}
 				class="w-7 h-7 rounded-md flex items-center justify-center text-[#fb7185] hover:text-[#fda4c0] hover:bg-white/5 transition-colors cursor-pointer"
 				title="후원·기여" aria-label="후원·기여">
