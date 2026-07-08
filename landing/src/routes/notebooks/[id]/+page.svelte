@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import NotebookEditor from '$lib/notebook/NotebookEditor.svelte';
@@ -10,15 +9,27 @@
 
 	let initial = $state<Notebook | null>(null);
 	let status = $state<'loading' | 'ready' | 'notfound'>('loading');
+	let loadedId: string | null = null;
 
-	onMount(async () => {
+	// page.params.id 변경마다 로드. 예제 id 직접 진입은 fork 후 같은 라우트(/notebooks/[id])로
+	// redirect 되는데, onMount 는 컴포넌트 재사용 시 재실행 안 돼 "불러오는 중"에서 고착됐다.
+	// $effect 는 uuid 로 바뀐 id 를 감지해 재실행 -> getNotebook 분기로 로드된다.
+	$effect(() => {
 		const id = page.params.id;
+		if (id === loadedId) return;
+		loadedId = id ?? null;
+		void load(id);
+	});
+
+	async function load(id: string | undefined) {
 		if (!id) {
 			status = 'notfound';
 			return;
 		}
+		status = 'loading';
+		initial = null;
 
-		// 1) 예제 id 로 직접 진입 → fork-to-local (예제 원본 불변, 새 로컬 노트북 복제)
+		// 1) 예제 id 직접 진입 -> fork-to-local (예제 원본 불변, 새 로컬 노트북 복제)
 		const ex = getExample(id);
 		if (ex) {
 			const now = new Date().toISOString();
@@ -29,11 +40,12 @@
 				metadata: { createdAt: now, updatedAt: now }
 			};
 			await putNotebook(nb);
+			// goto 가 page.params.id 를 uuid 로 바꿔 위 $effect 가 재실행 -> getNotebook 분기.
 			await goto(`${base}/notebooks/${nb.id}`, { replaceState: true });
 			return;
 		}
 
-		// 2) 로컬 노트북 id → IndexedDB 로드
+		// 2) 로컬 노트북 id -> IndexedDB 로드
 		const found = await getNotebook(id);
 		if (found) {
 			initial = found;
@@ -41,7 +53,7 @@
 			return;
 		}
 		status = 'notfound';
-	});
+	}
 </script>
 
 <svelte:head>
@@ -49,7 +61,9 @@
 </svelte:head>
 
 {#if status === 'ready' && initial}
-	<NotebookEditor homeHref="{base}/notebooks" initialNotebook={initial} />
+	{#key initial.id}
+		<NotebookEditor homeHref="{base}/notebooks" initialNotebook={initial} />
+	{/key}
 {:else}
 	<div class="nb-fallback">
 		{#if status === 'loading'}

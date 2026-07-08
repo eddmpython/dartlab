@@ -101,7 +101,7 @@
 	<title>Notebooks · dartlab</title>
 	<meta
 		name="description"
-		content="브라우저에서 바로 실행하는 dartlab 노트북 허브. 예제로 시작하거나 새 노트북을 만들어 numpy·pandas·matplotlib 을 설치 없이 쓰세요."
+		content="브라우저에서 바로 실행하는 범용 파이썬 노트북 허브. 예제로 dartlab 엔진(공시·재무·신용·감사)을 익히거나 새 노트북을 만들어 설치 없이 파이썬을 쓰세요."
 	/>
 </svelte:head>
 
@@ -127,8 +127,9 @@
 	<section class="hero">
 		<h1>노트북</h1>
 		<p class="hero-sub">
-			브라우저에서 바로 실행하는 파이썬 노트북. 설치 없이 numpy · pandas · matplotlib 을 쓰고, 표와 그래프가
-			셀 안에 렌더됩니다. 노트북은 이 브라우저에 로컬 저장됩니다.
+			브라우저에서 바로 실행하는 범용 파이썬 노트북. 설치 없이 numpy · pandas 를 쓰고, 아래 예제로 dartlab
+			엔진(공시 수평화 · 재무 계정 · 신용등급 · 감사 점검)을 셀 단위로 익힙니다. 노트북은 이 브라우저에 로컬
+			저장됩니다.
 		</p>
 		<div class="hero-actions">
 			<button class="btn-primary" onclick={newNotebook}><Plus size={16} /> 새 노트북</button>

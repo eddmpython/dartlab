@@ -157,6 +157,30 @@ if __eddm_fmt__['widget'] is None and __eddm_r__ is not None:
     except:
         pass
 
+# polars DataFrame(및 .df 로 언랩되는 dartlab SelectResult 등)도 pandas 와 동일한 구조화
+# 'dataframe' 산출물로 뽑아 marimo 표(DataFrameTable)로 렌더. dtype 문자열은 프론트 정규식이
+# 이미 polars 표기(Int64/Float64/String/Utf8/Boolean/Date/Datetime)를 커버. 실패 시 _repr_html_ 폴백.
+if __eddm_fmt__['widget'] is None and __eddm_fmt__['df'] is None and __eddm_r__ is not None:
+    try:
+        import polars as _pl2, math as _math2
+        __pl_df__ = __eddm_r__ if isinstance(__eddm_r__, _pl2.DataFrame) else getattr(__eddm_r__, 'df', None)
+        if isinstance(__pl_df__, _pl2.DataFrame):
+            __pl_num__ = (_pl2.Float64, _pl2.Float32, _pl2.Int64, _pl2.Int32, _pl2.Int16, _pl2.Int8, _pl2.UInt64, _pl2.UInt32, _pl2.UInt16, _pl2.UInt8, _pl2.Boolean)
+            __pl_cols__ = [{'name': str(_c), 'dtype': str(_d)} for _c, _d in zip(__pl_df__.columns, __pl_df__.dtypes)]
+            __pl_slice__ = __pl_df__.head(500)
+            __pl_exprs__ = [(_pl2.col(_c) if _d in __pl_num__ else _pl2.col(_c).cast(_pl2.Utf8, strict=False).alias(_c)) for _c, _d in zip(__pl_slice__.columns, __pl_slice__.dtypes)]
+            __pl_rows__ = (__pl_slice__.with_columns(__pl_exprs__) if __pl_slice__.width else __pl_slice__).rows()
+            __eddm_fmt__['df'] = {
+                'type': 'dataframe',
+                'totalRows': __pl_df__.height,
+                'totalCols': __pl_df__.width,
+                'columns': __pl_cols__,
+                'index': [str(_i) for _i in range(len(__pl_rows__))],
+                'data': [[(None if isinstance(_v, float) and not _math2.isfinite(_v) else _v) for _v in _row] for _row in __pl_rows__],
+            }
+    except:
+        pass
+
 if __eddm_fmt__['widget'] is None and __eddm_fmt__['df'] is None and __eddm_r__ is not None:
     try:
         if hasattr(__eddm_r__, '_repr_html_'):
@@ -239,7 +263,7 @@ async function execute(code: string) {
 		}
 		await pyodide.runPythonAsync(wrappedCode);
 
-		const stdout = stdoutBuffer.join('\n');
+		let stdout = stdoutBuffer.join('\n');
 		// matplotlib 첫 플롯의 "building the font cache" 안내는 stderr 로 나오지만 오류가 아니다.
 		const stderr = stderrBuffer
 			.join('\n')
@@ -248,7 +272,10 @@ async function execute(code: string) {
 			.join('\n')
 			.trim();
 
-		if (stderr) return { type: 'error', data: stderr, executedAt: new Date().toISOString() };
+		// stderr(파이썬 logging.warning 등 경고)는 오류가 아니다. 진짜 예외는 runPythonAsync 가
+		// throw 해 아래 catch 로 잡힌다. 벤인 stderr 는 출력에 합쳐 보이되 셀을 error 로 만들지 않는다
+		// (dartlab 등 라이브러리가 stderr 로 로그를 남겨도 표·그림 결과가 사라지지 않도록).
+		if (stderr) stdout = stdout ? stdout + '\n' + stderr : stderr;
 
 		const hasResult = pyodide.runPython('__eddmlab_result__ is not None') as boolean;
 		const hasFigures = pyodide.runPython(
