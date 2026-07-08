@@ -22,12 +22,12 @@
 	},
 	"dependencies": {
 		"@dartlab/ui-contracts": "*",
-		"hyparquet": "^1.26.0",
+		"hyparquet": "^1.26.2",
 		"hyparquet-compressors": "^1.1.1"
 	},
 	"devDependencies": {
-		"svelte": "5.56.3",
+		"svelte": "5.56.4",
 		"typescript": "^6.0.3",
-		"vitest": "^3.2.4"
+		"vitest": "^4.1.10"
 	}
 }
