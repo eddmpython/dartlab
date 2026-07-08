@@ -800,4 +800,6 @@ c.panel("IS")                   # 손익계산서, 분기 기본
 
 ## 라이선스
 
-[Apache License 2.0](LICENSE). 자유롭게 사용하되, [NOTICE](NOTICE) 파일의 출처 표기를 포함해주세요.
+코드는 [Apache License 2.0](LICENSE), 데이터셋은 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) 입니다. 사용·수정·포크·재배포·인용 모두 자유롭게 하세요.
+
+한 가지만 부탁합니다. 출처를 남겨주세요. dartlab 을 쓴 프로젝트에는 [NOTICE](NOTICE) 의 `Built with dartlab (https://github.com/eddmpython/dartlab)` 한 줄을, 글이나 논문에서 인용한다면 [CITATION.cff](CITATION.cff) 를 그대로 달아주면 됩니다. 그거면 충분합니다.

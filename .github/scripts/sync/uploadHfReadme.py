@@ -10,7 +10,7 @@ for line in open(".env", encoding="utf-8"):
         break
 
 README = r"""---
-license: apache-2.0
+license: cc-by-4.0
 task_categories:
   - table-question-answering
   - text-classification
@@ -224,7 +224,7 @@ GitHub Actions 로 매일 자동 갱신됩니다. 최근 공시를 증분으로 
 
 ## 라이선스
 
-Apache 2.0 · [DartLab](https://github.com/eddmpython/dartlab) 과 동일.
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). 자유롭게 쓰고 재배포하되, 출처(dartlab)만 남겨주세요. 데이터는 공개 정부·공공 공시를 구조화한 편집물이라 데이터 계열 라이선스인 CC BY 4.0 을 씁니다. 라이브러리 코드는 [Apache 2.0](https://github.com/eddmpython/dartlab) 입니다.
 
 ## 더 보기
 
@@ -257,6 +257,6 @@ api.upload_file(
     repo_type="dataset",
     path_or_fileobj=README.encode("utf-8"),
     path_in_repo="README.md",
-    commit_message="데이터셋 카드 한글 전면 개편: 웹 터미널·데이터 센터(CSV·엑셀·라이브 API) + 전체 데이터 surface 반영",
+    commit_message="데이터셋 라이선스 CC BY 4.0 로 전환 (공시 편집물은 CC 계열이 정본, 라이브러리 코드는 Apache 2.0 유지) + 출처 표기 안내",
 )
 print("README.md 업로드 완료")

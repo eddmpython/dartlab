@@ -732,8 +732,10 @@ Three lines — zero API keys, zero environment variables. Korean readers: see [
 
 - **Data contributions** (e.g. `accountMappings.json`, `sectionMappings.json`): accepted when backed by reproducible evidence in the PR description
 - Issues and PRs in Korean or English are both welcome
-- Not sure where to start? Open an issue — we'll help you find the right place
+- Not sure where to start? Open an issue and we'll help you find the right place
 
 ## License
 
-[Apache License 2.0](LICENSE) — free to use, just include the [NOTICE](NOTICE) attribution.
+Code is [Apache License 2.0](LICENSE); the dataset is [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Use it, modify it, fork it, redistribute it, cite it. All fair game.
+
+One ask: keep the credit. If you build on dartlab, carry the [NOTICE](NOTICE) line `Built with dartlab (https://github.com/eddmpython/dartlab)`; if you cite it in writing, use [CITATION.cff](CITATION.cff). That is all we ask.
