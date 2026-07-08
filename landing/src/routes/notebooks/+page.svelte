@@ -2,8 +2,16 @@
 	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { Sun, Moon, Plus, FolderOpen } from 'lucide-svelte';
-	import { themePref, toggleTheme } from '$lib/theme';
+	import { Plus, FolderOpen } from 'lucide-svelte';
+	// 헤더 = 터미널·카드 공통 SSOT(surfaces). BrandSwitch·BrandSocial·SupportDialog 동일 컨트롤 공유.
+	import '@dartlab/ui-surfaces/terminal/terminal.css';
+	import {
+		DARTLAB_BRAND_LINKS,
+		SupportDialog,
+		BrandSwitch,
+		BrandSocial,
+		fetchGithubStars
+	} from '@dartlab/ui-surfaces/terminal';
 	import type { Notebook } from '$lib/notebook/stores/notebookStore';
 	import { EXAMPLES } from '$lib/notebook/examples';
 	import {
@@ -22,6 +30,11 @@
 
 	let mine = $state<NotebookSummary[]>([]);
 	let loading = $state(true);
+
+	const links = DARTLAB_BRAND_LINKS;
+	let ghStars = $state<number | null>(null);
+	fetchGithubStars(links.repo).then((n) => (ghStars = n));
+	let supportOpen = $state(false);
 
 	onMount(async () => {
 		mine = await listNotebooks();
@@ -105,23 +118,31 @@
 	/>
 </svelte:head>
 
-<div class="hub">
-	<header class="hub-top">
-		<a class="brand" href="{base}/" title="dartlab">
-			<picture>
-				<source srcset="{base}/avatar.webp" type="image/webp" />
-				<img src="{base}/avatar.png" alt="dartlab" width="24" height="24" class="brand-avatar" />
-			</picture>
-			<span class="brand-word">dartlab <span class="brand-sub">notebook</span></span>
-		</a>
-		<button
-			class="theme-btn"
-			onclick={toggleTheme}
-			title={$themePref === 'light' ? '다크 모드로' : '라이트 모드로'}
-			aria-label="테마 전환"
-		>
-			{#if $themePref === 'light'}<Moon size={16} />{:else}<Sun size={16} />{/if}
-		</button>
+<div class="dlTerm hubPage">
+	<!-- 헤더 = 터미널·카드 top bar 정본(.dlTerm + terminal.css 재사용). brand · 목적지 · SNS 동일 컨트롤. 경계 없음. -->
+	<header class="nbHeader">
+		<div class="topBar">
+			<a class="brand" href="{base}/" title="DartLab 홈">
+				<picture>
+					<source srcset="{base}/avatar.webp" type="image/webp" />
+					<img class="brandLogo" src="{base}/avatar.png" alt="DartLab" width="22" height="22" />
+				</picture>
+				<span class="brandName">DartLab</span>
+				<span class="brandSlash">/</span>
+				<span class="brandTag">notebook</span>
+			</a>
+			<div class="topRight">
+				<div class="hdrLinks">
+					<a class="hdrLink hdrTerm" href="{base}/terminal" title="터미널 · 데이터 워크벤치">터미널</a>
+					<a class="hdrLink hdrBlog" href="{base}/blog" title="블로그 · 기업 이야기">블로그</a>
+					<a class="hdrLink hdrViewer" href="{base}/cards" title="카드뉴스 · 캐러셀 피드">카드뉴스</a>
+				</div>
+				<nav class="sns" aria-label="dartlab 채널">
+					<BrandSwitch />
+					<BrandSocial {links} {ghStars} onSupport={() => (supportOpen = true)} />
+				</nav>
+			</div>
+		</div>
 	</header>
 
 	<section class="hero">
@@ -181,62 +202,36 @@
 	</section>
 </div>
 
+<SupportDialog lang="kr" {links} {base} open={supportOpen} onClose={() => (supportOpen = false)} />
+
 <style>
-	.hub {
+	/* .dlTerm(terminal.css)은 height:100vh·overflow:hidden·display:flex(고정 풀스크린 앱)이라 덮어쓴다.
+	   허브는 문서형이라 block 흐름이 맞다. flex column 이면 .hero/.gallery 의 margin:0 auto 가 stretch 를
+	   이겨 아이템을 content 폭으로 줄여(그리드 1열) 버린다 -> block 으로 정상 중앙정렬 복원. font-size 도
+	   .dlTerm(11.5px) 대신 문서 기본으로. */
+	.hubPage {
 		min-height: 100vh;
+		height: auto;
+		overflow: visible;
+		display: block;
 		background: var(--dl-bg-deep);
 		color: var(--dl-ink);
 		font-family: var(--dl-font-ui);
+		font-size: 16px;
 	}
-	.hub-top {
+	/* 헤더 내부(topBar·brand·hdrLinks·sns 등)는 terminal.css(.dlTerm 스코프) 정본 그대로. 여기선 sticky 래퍼만. */
+	.nbHeader {
 		position: sticky;
 		top: 0;
 		z-index: 20;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 12px 24px;
-		background: color-mix(in srgb, var(--dl-bg-deep) 88%, transparent);
+		padding: 10px 18px;
+		background: color-mix(in srgb, var(--dl-bg-deep) 92%, transparent);
 		backdrop-filter: blur(8px);
-		border-bottom: 1px solid var(--dl-line);
 	}
-	.brand {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		text-decoration: none;
+	/* 터미널 topBar 정본은 하단 amber 보더를 긋는다. 노트북 허브는 그 경계를 원치 않음(카드와 동일 제거). */
+	.hubPage :global(.topBar) {
+		border-bottom: none;
 	}
-	.brand-avatar {
-		width: 24px;
-		height: 24px;
-		border-radius: 50%;
-	}
-	.brand-word {
-		font-size: 14px;
-		font-weight: 600;
-		color: var(--dl-ink);
-	}
-	.brand-sub {
-		color: var(--dl-accent);
-	}
-	.theme-btn {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 30px;
-		height: 30px;
-		border: none;
-		border-radius: var(--dl-r-md);
-		background: transparent;
-		color: var(--dl-ink-dim);
-		cursor: pointer;
-		transition: all 0.15s ease;
-	}
-	.theme-btn:hover {
-		color: var(--dl-ink);
-		background: var(--dl-bg-raised);
-	}
-
 	.hero {
 		max-width: 1100px;
 		margin: 0 auto;
