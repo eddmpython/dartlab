@@ -1,0 +1,237 @@
+{
+  "passed": true,
+  "titleContract": {
+    "candidates": [
+      "기술적 투자란 무엇을 보는가",
+      "차트가 말해도 초보자가 먼저 의심할 것",
+      "주가 데이터와 보조지표를 처음 읽는 순서"
+    ],
+    "selectedTitle": "기술적 투자란 무엇을 보는가",
+    "hookQuestion": "가격 차트와 보조지표가 보이면 초보 투자자는 무엇부터 확인해야 하는가?",
+    "readerGap": "많은 독자가 RSI나 MACD 이름은 알지만, 가격 데이터가 어떤 순서로 만들어지고 어느 조건에서 틀리는지 모른다.",
+    "promise": "dartlab price 호출법, 터미널 확인법, 보조지표의 초보자용 의미, 오독 방지 조건을 한 글에서 연결한다.",
+    "whySelected": "투자판단 결론이 아니라 읽는 순서를 제목으로 걸어 투자이야기 카테고리의 교육 목적과 맞춘다."
+  },
+  "readerQuestion": "기술적 투자는 차트만 보고 찍는 것인가, 아니면 가격과 거래량의 흔적을 읽는 별도 언어인가?",
+  "insight": {
+    "commonBelief": "초보자는 보조지표를 매수와 매도 신호로 받아들이기 쉽고, 값 하나가 나오면 결론도 하나라고 생각한다.",
+    "twistFact": "같은 RSI와 MACD도 기간, 일봉 기준, 거래량 확인, 이동평균 위치, 뉴스와 공시 맥락에 따라 정반대로 읽힐 수 있다.",
+    "whatToWatch": "닫힌 가격보다 먼저 데이터 기준일, 일봉과 기간, 거래량 동반 여부, 이동평균과 변동성 밴드의 재설정 여부를 확인한다.",
+    "freshnessArgument": "dartlab price 데이터는 로컬 호출로 OHLCV와 기본 보조지표를 같이 확인할 수 있어 글 안의 절차를 재현할 수 있다.",
+    "evidenceRefs": [
+      "README.md price gather 예시",
+      "src/dartlab/providers/dart/company.py Company.gather price 문서",
+      "src/dartlab/quant/screen/axTechnical.py calcIndicators",
+      "ui/packages/surfaces/src/terminal/charts/chartState.svelte.ts terminal indicator defaults"
+    ]
+  },
+  "acts": [
+    {
+      "heading": "기술적 투자의 출발점 다시 잡기",
+      "purpose": "차트 점술이 아니라 가격과 거래량의 기록을 읽는 프레임으로 정의한다.",
+      "scene": "초보자가 주가가 빠진 화면에서 지지선과 보조지표를 동시에 묻는 장면으로 시작한다.",
+      "causalBridge": "기준을 먼저 세우지 않으면 같은 차트가 매수 근거와 회피 근거로 모두 보이기 때문이다."
+    },
+    {
+      "heading": "dartlab price 호출 순서",
+      "purpose": "로컬에서 같은 표를 재현하는 최소 코드를 제시한다.",
+      "scene": "터미널에서 dartlab.gather price와 Company.gather price를 실행하고 반환 컬럼을 확인한다.",
+      "causalBridge": "데이터의 출처와 컬럼을 알아야 보조지표 해석도 같은 출발선에 선다."
+    },
+    {
+      "heading": "터미널 화면에서 보는 방식",
+      "purpose": "코드 호출과 DartLab Terminal의 주가 차트 패널을 연결한다.",
+      "scene": "주가 차트, 보조지표 메뉴, 기본 MA와 RSI 패널을 글 안에서 설명한다.",
+      "causalBridge": "독자가 코드 표와 화면 차트가 같은 질문을 다른 형태로 보여준다는 점을 이해한다."
+    },
+    {
+      "heading": "기본 보조지표 사전과 질문 분류",
+      "purpose": "이동평균, RSI, MACD, 볼린저, ATR, OBV를 초보자 언어로 번역한다.",
+      "scene": "각 지표를 하나씩 투자자의 질문으로 바꾸어 표로 정리한다.",
+      "causalBridge": "지표 이름을 외우는 대신 어떤 행동 흔적을 요약하는지 알면 오독이 줄어든다."
+    },
+    {
+      "heading": "지지선과 저항선의 실제 사용",
+      "purpose": "기술적 투자를 숫자 하나가 아니라 시나리오 분기 도구로 설명한다.",
+      "scene": "주가가 이동평균 아래로 내려갈 때 지지선 후보와 재점검 조건을 구분한다.",
+      "causalBridge": "지지선은 예언이 아니라 가격과 거래량이 기존 가설을 지키는지 보는 기준선이다."
+    },
+    {
+      "heading": "선행 글 연결로 차트 해석 보강",
+      "purpose": "기술 서사, 실적, 재무 데이터가 차트 해석을 어떻게 보강하는지 연결한다.",
+      "scene": "HBM 기술 글과 순현금 데이터 글을 참고글로 배치한다.",
+      "causalBridge": "차트만으로 끝내지 않고 사업과 데이터로 다시 확인해야 투자 판단의 빈칸이 줄어든다."
+    },
+    {
+      "heading": "틀리는 조건과 다음 체크리스트",
+      "purpose": "투자권유가 아니라 재점검 기준으로 글을 마무리한다.",
+      "scene": "뉴스, 공시, 유동성, 거래량 급변, 지표 지연의 한계를 마지막 체크리스트로 묶는다.",
+      "causalBridge": "초보자는 신호보다 신호가 무효가 되는 조건을 먼저 배워야 오래 살아남는다."
+    }
+  ],
+  "visuals": [
+    {
+      "kind": "realistic hero image",
+      "title": "가격 데이터와 보조지표를 보는 작업대",
+      "proves": "기술적 투자가 화려한 예언이 아니라 표와 차트를 같이 보는 반복 작업임을 보여준다.",
+      "placement": "본문 첫 번째 H2 바로 아래 배치",
+      "insertAfter": "기술적 투자라는 말을 들으면 차트만 떠올리기 쉽다.",
+      "narrativeUse": "본문의 추상 용어를 데이터 워크벤치 장면으로 고정한다."
+    },
+    {
+      "kind": "svg flow diagram",
+      "title": "price 호출에서 터미널 차트까지",
+      "proves": "dartlab.gather price, OHLCV, 보조지표, Terminal 주가 차트가 같은 흐름에 있음을 설명한다.",
+      "placement": "price 호출 코드블록 뒤",
+      "insertAfter": "여기서 중요한 점은 price 호출이 종가만 주는 함수가 아니라는 것이다.",
+      "narrativeUse": "초보자가 코드 표와 화면 패널을 분리해서 이해하지 않도록 연결한다."
+    },
+    {
+      "kind": "realistic inline image",
+      "title": "보조지표 패널을 겹쳐 보는 화면",
+      "proves": "MA, RSI, MACD, 거래량처럼 여러 보조지표를 동시에 켜도 결론은 하나가 아닐 수 있음을 보여준다.",
+      "placement": "Terminal 주가 차트 설명 문단 바로 뒤",
+      "insertAfter": "Terminal의 보조지표 메뉴는 여러 패널을 켜는 도구다.",
+      "narrativeUse": "여러 지표를 켰을 때 더 많이 알게 되는 것이 아니라 더 많은 질문을 얻는다는 점을 설명한다."
+    },
+    {
+      "kind": "svg concept map",
+      "title": "초보자를 위한 보조지표 지도",
+      "proves": "추세, 모멘텀, 변동성, 거래량 지표가 서로 다른 질문에 답한다는 점을 한 장으로 보여준다.",
+      "placement": "보조지표 분류 표가 나오기 바로 앞",
+      "insertAfter": "보조지표는 모두 같은 말을 하는 도구가 아니다.",
+      "narrativeUse": "각 지표 설명을 읽기 전에 큰 분류를 먼저 제공한다."
+    },
+    {
+      "kind": "svg checklist",
+      "title": "초보자를 위한 차트 읽는 순서",
+      "proves": "가격, 이동평균, 거래량, RSI, MACD, 틀리는 조건 순서로 읽어야 한다는 흐름을 고정한다.",
+      "placement": "마지막 체크리스트 앞",
+      "insertAfter": "초보자에게 더 필요한 것은 신호 목록보다 읽는 순서다.",
+      "narrativeUse": "글의 결론을 투자 행동이 아니라 다음 확인 질문으로 닫는다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "hero",
+      "subject": "노트북에 가격 차트와 지표 패널이 떠 있고 옆에 노트가 놓인 투자 데이터 작업대",
+      "query": "realistic investment data desk laptop price chart indicators notes",
+      "keywords": ["price chart", "technical indicators", "laptop", "data desk"],
+      "placement": "본문 첫 이미지와 OG 썸네일 배경",
+      "narrativeUse": "기술적 투자를 예측 감각이 아니라 데이터 확인 루틴으로 보이게 한다."
+    },
+    {
+      "slot": "inline",
+      "subject": "태블릿과 모니터에 여러 보조지표 패널이 정돈된 화면",
+      "query": "realistic trading dashboard tablet multiple indicator panels",
+      "keywords": ["RSI", "MACD", "moving average", "indicator panels"],
+      "placement": "터미널 보조지표 메뉴 설명 뒤",
+      "narrativeUse": "여러 보조지표를 동시에 보아도 판단은 조건부라는 점을 강조한다."
+    },
+    {
+      "slot": "inline",
+      "subject": "price 데이터 흐름과 지표 분류를 단순화한 도해",
+      "query": "technical investing price data flow indicator map editorial diagram",
+      "keywords": ["OHLCV", "indicator map", "Terminal", "beginner guide"],
+      "placement": "코드 호출과 지표 사전 사이",
+      "narrativeUse": "기획 단계에서 필요 이미지와 도해를 자유롭게 추가 생성할 수 있음을 실제 산출물로 보여준다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": [
+      "HBM 기술투자 주가 서사",
+      "순현금 시가총액 투자 데이터",
+      "커버리지 이자보상 투자 용어",
+      "삼성전자 랠리 주가",
+      "SK하이닉스 코스피 기여"
+    ],
+    "links": [
+      {
+        "path": "/blog/hbm-stack-packaging-test",
+        "title": "HBM 스택 패키징 테스트",
+        "reason": "기술 서사가 주가 기대와 연결되는 대표 사례다.",
+        "placement": "기술투자 프레임 설명 뒤"
+      },
+      {
+        "path": "/blog/net-cash-above-market-cap",
+        "title": "순현금이 시가총액보다 큰 회사",
+        "reason": "차트 신호를 재무 데이터로 재점검하는 예시다.",
+        "placement": "차트만으로 결론내리지 않는 문단 뒤"
+      },
+      {
+        "path": "/blog/interest-coverage-zombie-firms",
+        "title": "이자보상배율로 보는 좀비기업",
+        "reason": "가격 반등이 재무 체력과 충돌할 수 있음을 보여준다.",
+        "placement": "틀리는 조건 설명 뒤"
+      },
+      {
+        "path": "/blog/005930-samsung-rally",
+        "title": "삼성전자 랠리",
+        "reason": "주가 상승을 단일 보조지표가 아니라 서사와 수급으로 읽는 사례다.",
+        "placement": "선행 참고글 섹션"
+      },
+      {
+        "path": "/blog/000660-skhynix-kospi-driver",
+        "title": "SK하이닉스 시장 견인",
+        "reason": "기술 서사가 개별 주가를 넘어 지수와 수급 언어로 번역되는 사례다.",
+        "placement": "주가 랠리와 산업 서사를 연결하는 문단"
+      }
+    ],
+    "placementRule": "개념을 다시 설명하지 않고 독자가 다음 확인 질문을 갖는 문단 뒤에만 배치한다."
+  },
+  "honestyGuards": [
+    "보조지표는 매수와 매도 지시가 아니라 과거 가격과 거래량을 요약한 후행 도구라고 명시한다.",
+    "지지선과 저항선은 정확한 가격 하나가 아니라 기간과 봉 단위에 따라 달라지는 관찰 구간이라고 쓴다.",
+    "특정 종목 예시는 dartlab 호출법 설명용 샘플이며 투자권유나 목표주가 제시가 아니라고 분리한다.",
+    "뉴스, 공시, 실적, 유동성 변화가 지표를 무효화할 수 있다는 조건을 본문 후반에 둔다."
+  ],
+  "evidenceMap": [
+    {
+      "sourceType": "DARTLAB",
+      "sourceRef": "README.md",
+      "use": "dartlab.gather price 기본 호출법과 국내외 가격 데이터 예시를 확인한다."
+    },
+    {
+      "sourceType": "PRICE",
+      "sourceRef": "local dartlab.gather('price','005930')",
+      "use": "OHLCV와 sma5, sma20, sma60, ema12, ema26, rsi14, macd, atr14, obv 반환을 확인한다."
+    },
+    {
+      "sourceType": "DARTLAB",
+      "sourceRef": "src/dartlab/quant/signal/analyzer.py",
+      "use": "추세, 모멘텀, 변동성, 거래량 지표 묶음을 확인한다."
+    },
+    {
+      "sourceType": "INTERNAL-BLOG",
+      "sourceRef": "blog 선행 글 검색",
+      "use": "기술투자 사례와 데이터 재점검 사례로 내부 참고글을 연결한다."
+    },
+    {
+      "sourceType": "SCAN",
+      "sourceRef": "ui/packages/surfaces/src/terminal/charts/chartState.svelte.ts",
+      "use": "Terminal 보조지표 메뉴의 기본 overlay와 sub indicator 구성을 확인한다."
+    }
+  ],
+  "reviewGate": {
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "planner": "초안은 기술적 투자를 보조지표 사전 중심으로 풀고 dartlab 호출법을 중간에 배치했다.",
+          "evaluator": "점수 86. 초보자에게 필요한 데이터 기준, 터미널 사용 흐름, 오독 조건이 아직 약하다.",
+          "skeptic": "RSI와 MACD 설명이 신호처럼 읽히면 투자권유로 오해될 수 있고 내부 참고글 연결도 부족하다.",
+          "decision": "revise",
+          "evaluatorScore": 86
+        },
+        {
+          "planner": "기획작가 개선안은 price 호출, Terminal 확인, 지표 분류, 틀리는 조건, 선행 글 연결을 재배치했다.",
+          "plannerRevision": "1라운드 지적을 반영해 dartlab 코드블록과 실제 반환 컬럼, 보조지표 오독 방지, 내부 링크 배치를 재작성했다.",
+          "evaluator": "점수 94. 독자 질문과 데이터 기준, 비주얼 계획, 투자권유 방지 장치가 발행 기준을 넘는다.",
+          "skeptic": "특정 종목 샘플은 호출법 설명으로 한정했고 지지선은 확정 가격이 아니라 재점검 구간으로 처리했다.",
+          "decision": "passed",
+          "evaluatorScore": 94
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
+  <title id="title">차트 읽는 순서</title>
+  <desc id="desc">기간, 가격, 이동평균, 거래량, RSI, MACD, 틀리는 조건 순서의 초보자 체크리스트</desc>
+  <rect width="1200" height="560" fill="#f5f7fa"/>
+  <text x="70" y="78" fill="#18202a" font-family="Pretendard, Arial, sans-serif" font-size="38" font-weight="700">초보자는 신호보다 읽는 순서를 고정한다</text>
+  <text x="70" y="120" fill="#596270" font-family="Pretendard, Arial, sans-serif" font-size="20">같은 보조지표도 순서가 바뀌면 해석이 달라진다.</text>
+
+  <line x1="124" y1="274" x2="1076" y2="274" stroke="#b9c4d2" stroke-width="8" stroke-linecap="round"/>
+
+  <g transform="translate(72 190)">
+    <circle cx="52" cy="84" r="52" fill="#276c57"/>
+    <text x="52" y="94" text-anchor="middle" fill="#ffffff" font-family="Pretendard, Arial, sans-serif" font-size="28" font-weight="700">1</text>
+    <text x="52" y="170" text-anchor="middle" fill="#1f2a35" font-family="Pretendard, Arial, sans-serif" font-size="22" font-weight="700">기간</text>
+    <text x="52" y="202" text-anchor="middle" fill="#596270" font-family="Pretendard, Arial, sans-serif" font-size="16">일봉, 주봉</text>
+  </g>
+
+  <g transform="translate(232 190)">
+    <circle cx="52" cy="84" r="52" fill="#366e9f"/>
+    <text x="52" y="94" text-anchor="middle" fill="#ffffff" font-family="Pretendard, Arial, sans-serif" font-size="28" font-weight="700">2</text>
+    <text x="52" y="170" text-anchor="middle" fill="#1f2a35" font-family="Pretendard, Arial, sans-serif" font-size="22" font-weight="700">가격</text>
+    <text x="52" y="202" text-anchor="middle" fill="#596270" font-family="Pretendard, Arial, sans-serif" font-size="16">종가 기준</text>
+  </g>
+
+  <g transform="translate(392 190)">
+    <circle cx="52" cy="84" r="52" fill="#8d6b22"/>
+    <text x="52" y="94" text-anchor="middle" fill="#ffffff" font-family="Pretendard, Arial, sans-serif" font-size="28" font-weight="700">3</text>
+    <text x="52" y="170" text-anchor="middle" fill="#1f2a35" font-family="Pretendard, Arial, sans-serif" font-size="22" font-weight="700">평균선</text>
+    <text x="52" y="202" text-anchor="middle" fill="#596270" font-family="Pretendard, Arial, sans-serif" font-size="16">20일, 60일</text>
+  </g>
+
+  <g transform="translate(552 190)">
+    <circle cx="52" cy="84" r="52" fill="#8a4e37"/>
+    <text x="52" y="94" text-anchor="middle" fill="#ffffff" font-family="Pretendard, Arial, sans-serif" font-size="28" font-weight="700">4</text>
+    <text x="52" y="170" text-anchor="middle" fill="#1f2a35" font-family="Pretendard, Arial, sans-serif" font-size="22" font-weight="700">거래량</text>
+    <text x="52" y="202" text-anchor="middle" fill="#596270" font-family="Pretendard, Arial, sans-serif" font-size="16">힘 확인</text>
+  </g>
+
+  <g transform="translate(712 190)">
+    <circle cx="52" cy="84" r="52" fill="#5f5ca8"/>
+    <text x="52" y="94" text-anchor="middle" fill="#ffffff" font-family="Pretendard, Arial, sans-serif" font-size="28" font-weight="700">5</text>
+    <text x="52" y="170" text-anchor="middle" fill="#1f2a35" font-family="Pretendard, Arial, sans-serif" font-size="22" font-weight="700">RSI</text>
+    <text x="52" y="202" text-anchor="middle" fill="#596270" font-family="Pretendard, Arial, sans-serif" font-size="16">과열, 과매도</text>
+  </g>
+
+  <g transform="translate(872 190)">
+    <circle cx="52" cy="84" r="52" fill="#3d7180"/>
+    <text x="52" y="94" text-anchor="middle" fill="#ffffff" font-family="Pretendard, Arial, sans-serif" font-size="28" font-weight="700">6</text>
+    <text x="52" y="170" text-anchor="middle" fill="#1f2a35" font-family="Pretendard, Arial, sans-serif" font-size="22" font-weight="700">MACD</text>
+    <text x="52" y="202" text-anchor="middle" fill="#596270" font-family="Pretendard, Arial, sans-serif" font-size="16">추세 속도</text>
+  </g>
+
+  <g transform="translate(1032 190)">
+    <circle cx="52" cy="84" r="52" fill="#4c5968"/>
+    <text x="52" y="94" text-anchor="middle" fill="#ffffff" font-family="Pretendard, Arial, sans-serif" font-size="28" font-weight="700">7</text>
+    <text x="52" y="170" text-anchor="middle" fill="#1f2a35" font-family="Pretendard, Arial, sans-serif" font-size="22" font-weight="700">한계</text>
+    <text x="52" y="202" text-anchor="middle" fill="#596270" font-family="Pretendard, Arial, sans-serif" font-size="16">뉴스, 공시</text>
+  </g>
+
+  <rect x="70" y="454" width="1060" height="52" rx="16" fill="#ffffff" stroke="#d4dce6" stroke-width="2"/>
+  <text x="600" y="487" text-anchor="middle" fill="#27323e" font-family="Pretendard, Arial, sans-serif" font-size="21" font-weight="700">결론은 주문이 아니라 다음 확인 질문이어야 한다.</text>
+</svg>

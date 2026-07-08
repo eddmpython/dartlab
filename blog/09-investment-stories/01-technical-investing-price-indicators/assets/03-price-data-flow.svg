@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 1200 640" role="img" aria-labelledby="title desc">
+  <title id="title">dartlab price 호출 흐름</title>
+  <desc id="desc">종목코드에서 dartlab price 호출, OHLCV와 보조지표 반환, Terminal 주가 차트 확인까지 이어지는 흐름</desc>
+  <rect width="1200" height="640" fill="#f7faf8"/>
+  <rect x="52" y="54" width="1096" height="532" rx="24" fill="#ffffff" stroke="#d7e2dc" stroke-width="2"/>
+  <text x="92" y="116" fill="#17231d" font-family="Pretendard, Arial, sans-serif" font-size="34" font-weight="700">price 데이터는 종가 하나가 아니라 읽는 순서 전체를 만든다</text>
+  <text x="92" y="156" fill="#5b6b62" font-family="Pretendard, Arial, sans-serif" font-size="19">초보자는 코드 호출, 반환 컬럼, 화면 차트를 같은 흐름으로 연결해서 본다.</text>
+
+  <g transform="translate(92 232)">
+    <rect width="220" height="142" rx="18" fill="#eaf3ef" stroke="#b9cec4" stroke-width="2"/>
+    <text x="110" y="48" text-anchor="middle" fill="#1d352a" font-family="Pretendard, Arial, sans-serif" font-size="24" font-weight="700">종목코드</text>
+    <text x="110" y="86" text-anchor="middle" fill="#496056" font-family="Pretendard, Arial, sans-serif" font-size="20">005930</text>
+    <text x="110" y="114" text-anchor="middle" fill="#496056" font-family="Pretendard, Arial, sans-serif" font-size="16">AAPL, market="US"</text>
+  </g>
+
+  <path d="M338 303 H430" stroke="#527a68" stroke-width="5" stroke-linecap="round"/>
+  <path d="M430 303 L410 291 M430 303 L410 315" stroke="#527a68" stroke-width="5" stroke-linecap="round"/>
+
+  <g transform="translate(454 214)">
+    <rect width="292" height="178" rx="18" fill="#fff8e8" stroke="#dec37a" stroke-width="2"/>
+    <text x="146" y="48" text-anchor="middle" fill="#352b13" font-family="Pretendard, Arial, sans-serif" font-size="24" font-weight="700">dartlab.gather("price")</text>
+    <text x="146" y="86" text-anchor="middle" fill="#6a5a2d" font-family="Pretendard, Arial, sans-serif" font-size="18">open, high, low, close</text>
+    <text x="146" y="116" text-anchor="middle" fill="#6a5a2d" font-family="Pretendard, Arial, sans-serif" font-size="18">volume, sma20, rsi14</text>
+    <text x="146" y="146" text-anchor="middle" fill="#6a5a2d" font-family="Pretendard, Arial, sans-serif" font-size="18">macd, atr14, obv</text>
+  </g>
+
+  <path d="M774 303 H866" stroke="#527a68" stroke-width="5" stroke-linecap="round"/>
+  <path d="M866 303 L846 291 M866 303 L846 315" stroke="#527a68" stroke-width="5" stroke-linecap="round"/>
+
+  <g transform="translate(890 232)">
+    <rect width="220" height="142" rx="18" fill="#edf1fb" stroke="#bac8ed" stroke-width="2"/>
+    <text x="110" y="48" text-anchor="middle" fill="#1c2d54" font-family="Pretendard, Arial, sans-serif" font-size="24" font-weight="700">Terminal</text>
+    <text x="110" y="86" text-anchor="middle" fill="#4d5e85" font-family="Pretendard, Arial, sans-serif" font-size="18">주가 차트</text>
+    <text x="110" y="116" text-anchor="middle" fill="#4d5e85" font-family="Pretendard, Arial, sans-serif" font-size="18">보조지표 메뉴</text>
+  </g>
+
+  <g transform="translate(122 450)">
+    <circle cx="16" cy="16" r="16" fill="#2f6f57"/>
+    <text x="16" y="23" text-anchor="middle" fill="#ffffff" font-family="Pretendard, Arial, sans-serif" font-size="18" font-weight="700">1</text>
+    <text x="48" y="22" fill="#25362e" font-family="Pretendard, Arial, sans-serif" font-size="19">기간과 일봉 기준을 먼저 고정한다.</text>
+  </g>
+  <g transform="translate(122 498)">
+    <circle cx="16" cy="16" r="16" fill="#2f6f57"/>
+    <text x="16" y="23" text-anchor="middle" fill="#ffffff" font-family="Pretendard, Arial, sans-serif" font-size="18" font-weight="700">2</text>
+    <text x="48" y="22" fill="#25362e" font-family="Pretendard, Arial, sans-serif" font-size="19">가격, 거래량, 지표를 분리하지 않고 같은 질문으로 읽는다.</text>
+  </g>
+  <g transform="translate(656 450)">
+    <circle cx="16" cy="16" r="16" fill="#2f6f57"/>
+    <text x="16" y="23" text-anchor="middle" fill="#ffffff" font-family="Pretendard, Arial, sans-serif" font-size="18" font-weight="700">3</text>
+    <text x="48" y="22" fill="#25362e" font-family="Pretendard, Arial, sans-serif" font-size="19">지표가 주는 결론보다 틀리는 조건을 같이 기록한다.</text>
+  </g>
+</svg>

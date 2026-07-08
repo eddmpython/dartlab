@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">초보자를 위한 보조지표 지도</title>
+  <desc id="desc">추세, 모멘텀, 변동성, 거래량 지표가 각각 다른 질문에 답한다는 설명</desc>
+  <rect width="1200" height="760" fill="#f8f6f1"/>
+  <text x="72" y="86" fill="#1d2522" font-family="Pretendard, Arial, sans-serif" font-size="38" font-weight="700">보조지표는 모두 같은 말을 하지 않는다</text>
+  <text x="72" y="128" fill="#606760" font-family="Pretendard, Arial, sans-serif" font-size="20">지표를 외우기 전에 어떤 질문에 답하는지부터 나눈다.</text>
+
+  <g transform="translate(72 184)">
+    <rect width="500" height="214" rx="20" fill="#ffffff" stroke="#b9d4c8" stroke-width="2"/>
+    <rect x="0" y="0" width="500" height="70" rx="20" fill="#dcefe7"/>
+    <text x="34" y="46" fill="#173a2c" font-family="Pretendard, Arial, sans-serif" font-size="27" font-weight="700">추세</text>
+    <text x="34" y="104" fill="#2b3b34" font-family="Pretendard, Arial, sans-serif" font-size="21">질문: 평균보다 위인가 아래인가</text>
+    <text x="34" y="145" fill="#52635b" font-family="Pretendard, Arial, sans-serif" font-size="20">SMA, EMA, MACD, ADX, PSAR</text>
+    <text x="34" y="181" fill="#52635b" font-family="Pretendard, Arial, sans-serif" font-size="18">주의: 늦게 따라오므로 단독 신호가 아니다.</text>
+  </g>
+
+  <g transform="translate(628 184)">
+    <rect width="500" height="214" rx="20" fill="#ffffff" stroke="#d7c58c" stroke-width="2"/>
+    <rect x="0" y="0" width="500" height="70" rx="20" fill="#fff0bd"/>
+    <text x="34" y="46" fill="#4a3706" font-family="Pretendard, Arial, sans-serif" font-size="27" font-weight="700">모멘텀</text>
+    <text x="34" y="104" fill="#2b3b34" font-family="Pretendard, Arial, sans-serif" font-size="21">질문: 힘이 어느 쪽으로 쏠렸나</text>
+    <text x="34" y="145" fill="#64582f" font-family="Pretendard, Arial, sans-serif" font-size="20">RSI, Stochastic, ROC, CCI, CMO</text>
+    <text x="34" y="181" fill="#64582f" font-family="Pretendard, Arial, sans-serif" font-size="18">주의: 과매도는 반등 보장이 아니다.</text>
+  </g>
+
+  <g transform="translate(72 454)">
+    <rect width="500" height="214" rx="20" fill="#ffffff" stroke="#b8c6e8" stroke-width="2"/>
+    <rect x="0" y="0" width="500" height="70" rx="20" fill="#e2e9ff"/>
+    <text x="34" y="46" fill="#22315f" font-family="Pretendard, Arial, sans-serif" font-size="27" font-weight="700">변동성</text>
+    <text x="34" y="104" fill="#2b3b34" font-family="Pretendard, Arial, sans-serif" font-size="21">질문: 흔들림이 커졌나</text>
+    <text x="34" y="145" fill="#526080" font-family="Pretendard, Arial, sans-serif" font-size="20">Bollinger, ATR, Keltner, Donchian</text>
+    <text x="34" y="181" fill="#526080" font-family="Pretendard, Arial, sans-serif" font-size="18">주의: ATR은 방향이 아니라 폭을 본다.</text>
+  </g>
+
+  <g transform="translate(628 454)">
+    <rect width="500" height="214" rx="20" fill="#ffffff" stroke="#e1bba4" stroke-width="2"/>
+    <rect x="0" y="0" width="500" height="70" rx="20" fill="#ffe2d1"/>
+    <text x="34" y="46" fill="#59301d" font-family="Pretendard, Arial, sans-serif" font-size="27" font-weight="700">거래량</text>
+    <text x="34" y="104" fill="#2b3b34" font-family="Pretendard, Arial, sans-serif" font-size="21">질문: 움직임에 거래가 붙었나</text>
+    <text x="34" y="145" fill="#735342" font-family="Pretendard, Arial, sans-serif" font-size="20">OBV, MFI, Force Index, Volume</text>
+    <text x="34" y="181" fill="#735342" font-family="Pretendard, Arial, sans-serif" font-size="18">주의: 값보다 방향과 괴리를 본다.</text>
+  </g>
+</svg>
