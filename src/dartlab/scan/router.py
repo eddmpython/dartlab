@@ -239,6 +239,13 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="전 상장사 사업부문별 매출 비중·집중도(HHI)·다각화 등급 (사업보고서 매출및수주 표). 단위-불변 mix 지표",
         example='scan("salesByProduct")',
     ),
+    "narrativeMetric": _AxisEntry(
+        module="dartlab.scan.narrativeMetric",
+        fn="scanNarrativeMetric",
+        label="서술표 지표",
+        description="전 상장사 사업보고서 서술 표 정량 지표 (수주잔고·가동률 + confidence). 표준서식 격자 추출, 저신뢰/부재는 정직 gap",
+        example='scan("narrativeMetric")',
+    ),
 }
 
 
@@ -336,6 +343,11 @@ _ALIASES: dict[str, str] = {
     "제품별매출": "salesByProduct",
     "다각화": "salesByProduct",
     "사업다각화": "salesByProduct",
+    # narrativeMetric
+    "수주잔고": "narrativeMetric",
+    "백로그": "narrativeMetric",
+    "가동률": "narrativeMetric",
+    "서술지표": "narrativeMetric",
 }
 
 

@@ -60,6 +60,7 @@ from dartlab.scan.builders.kr.fiscal import _estimateFiscalMonthFromAnnualFiling
 from dartlab.scan.builders.kr.fiscal import _fiscalMonthMap as _fiscalMonthMap
 from dartlab.scan.builders.kr.fiscal import _loadCorpProfileMap as _loadCorpProfileMap
 from dartlab.scan.builders.kr.fiscal import _toCalendarPeriod as _toCalendarPeriod
+from dartlab.scan.builders.kr.narrativeMetrics import buildNarrativeMetricsSafe as _buildNarrativeMetricsSafe
 from dartlab.scan.builders.kr.notes import buildNotesSafe as _buildNotesSafe
 from dartlab.scan.builders.kr.report.build import SCAN_API_TYPES as SCAN_API_TYPES
 from dartlab.scan.builders.kr.report.build import buildReport as buildReport
@@ -175,6 +176,9 @@ def buildScan(
     if not incremental:
         results["notes"] = _buildNotesSafe(verbose=verbose)
         _releaseNativeMemory()
+        # 서술 지표(수주잔고·가동률)도 full 전용 (annual 서술 표).
+        results["narrativeMetrics"] = _buildNarrativeMetricsSafe(verbose=verbose)
+        _releaseNativeMemory()
 
     if verbose:
         _say("=" * 60)
@@ -190,6 +194,7 @@ __all__ = [
     "SCAN_API_TYPES",
     "_BATCH",
     "_FISCAL_Q_MAP",
+    "_buildNarrativeMetricsSafe",
     "_buildNotesSafe",
     "_buildSalesByProductSafe",
     "_buildSharesOutstandingSafe",

@@ -12,7 +12,7 @@ from dartlab.providers.dart.panel.narrativeMetric import (
     METRIC_DEFS,
     _resolveAmount,
     _resolveRate,
-    listMetrics,
+    metricCatalog,
     readMetric,
 )
 
@@ -74,8 +74,8 @@ def test_readMetric_unknown_raises():
         readMetric("005930", "존재하지않는지표")
 
 
-def test_listMetrics():
-    ids = {m["metricId"] for m in listMetrics()}
+def test_metricCatalog():
+    ids = {m["metricId"] for m in metricCatalog()}
     assert "backlog" in ids and "utilizationRate" in ids
 
 

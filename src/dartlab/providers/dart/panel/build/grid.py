@@ -35,7 +35,14 @@ def normLabel(s: str) -> str:
         s: 원본 라벨 문자열.
 
     Returns:
-        정규화 문자열. 예 ``"수주잔고 (*1)"`` 는 ``"수주잔고1"``.
+        정규화 문자열.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> normLabel("수주잔고 (*1)")
+        '수주잔고1'
     """
     return re.sub(r"[\s\*]+", "", s or "").replace("(", "").replace(")", "").lower()
 

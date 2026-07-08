@@ -60,6 +60,7 @@ public_api:
     - ipo
     - liquidity
     - macroBeta
+    - narrativeMetric
     - network
     - note
     - orders
@@ -243,6 +244,10 @@ scenarios:
     suites: [nightly]
     budget: scan.axis.default
     covers: [scan.axis.salesByProduct]
+  scan.axis.narrativeMetric:
+    suites: [nightly]
+    budget: scan.axis.default
+    covers: [scan.axis.narrativeMetric]
   scan.axis.screen:
     suites: [nightly]
     budget: scan.axis.default

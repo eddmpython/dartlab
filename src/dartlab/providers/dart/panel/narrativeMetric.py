@@ -47,11 +47,18 @@ METRIC_DEFS: dict[str, dict] = {
 }
 
 
-def listMetrics() -> list[dict]:
-    """추출 가능한 서술 지표 목록(metricId·label·섹션·종류)을 반환한다.
+def metricCatalog() -> list[dict]:
+    """추출 가능한 서술 지표 카탈로그(metricId·label·섹션·종류)를 반환한다.
 
     Returns:
         ``[{metricId, label, section, kind}]``.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> any(m["metricId"] == "backlog" for m in metricCatalog())
+        True
     """
     return [
         {"metricId": k, "label": v["label"], "section": v["section"], "kind": v["kind"]} for k, v in METRIC_DEFS.items()
@@ -128,6 +135,17 @@ def _resolveAmount(grid: dict, xml: str, mdef: dict, leafScale: float | None) ->
     return {"value": value, "unit": "원", "confidence": conf, "provenance": f"수주표 col{col} rows{n}"}
 
 
+def _colVals(dense: list, dataRows: list[int], c: int) -> list[float]:
+    """데이터 행에서 컬럼 c 의 파싱 가능한 수치 값 목록."""
+    out = []
+    for r in dataRows:
+        if c < len(dense[r]):
+            v = parseNumStr(dense[r][c][0])
+            if v is not None:
+                out.append(v)
+    return out
+
+
 def _resolveRate(grid: dict) -> dict | None:
     """비율 지표(가동률)를 직접 라벨 또는 성분(실제/가능, 실적/능력)에서 계산."""
     mdef = METRIC_DEFS["utilizationRate"]
@@ -135,20 +153,10 @@ def _resolveRate(grid: dict) -> dict | None:
     dense, headerRows = grid["dense"], set(grid["headerRows"])
     dataRows = [r for r in range(grid["nrow"]) if r not in headerRows]
 
-    def colVals(c: int) -> list[float]:
-        """데이터 행에서 컬럼 c 의 파싱 가능한 수치 값 목록."""
-        out = []
-        for r in dataRows:
-            if c < len(dense[r]):
-                v = parseNumStr(dense[r][c][0])
-                if v is not None:
-                    out.append(v)
-        return out
-
     # 1) 직접 라벨
     dc = _pickCol(labels, mdef["direct"], amountPref=False)
     if dc is not None:
-        vals = [v for v in colVals(dc) if 0 <= v <= 150]
+        vals = [v for v in _colVals(dense, dataRows, dc) if 0 <= v <= 150]
         if vals:
             value = sum(vals) / len(vals)
             return {"value": round(value, 1), "unit": "%", "confidence": "high", "provenance": f"가동률 col{dc}"}
@@ -158,8 +166,8 @@ def _resolveRate(grid: dict) -> dict | None:
         dcol = _pickCol(labels, denSyn, amountPref=False)
         if nc is None or dcol is None:
             continue
-        num = colVals(nc)
-        den = colVals(dcol)
+        num = _colVals(dense, dataRows, nc)
+        den = _colVals(dense, dataRows, dcol)
         if num and den and sum(den) > 0:
             value = sum(num) / sum(den) * 100.0
             if 0 <= value <= 150:
@@ -197,14 +205,46 @@ def readMetric(code: str, metricId: str, *, marketNs: str = "kr") -> dict | None
     Requires:
         - 로컬 panel artifact + core.extractionCatalog narrative 개념(narrativeAnchor).
     """
-    mdef = METRIC_DEFS.get(metricId)
-    if mdef is None:
+    if metricId not in METRIC_DEFS:
         raise ValueError(f"미등록 metricId: {metricId!r}. 가용: {sorted(METRIC_DEFS)}")
-    concept = getConcept(mdef["section"])
-    if concept is None or concept.narrativeAnchor is None:
+    p = _loadPanel(code, marketNs)
+    if p is None:
         return None
-    _chapter, keyword = concept.narrativeAnchor
+    return _resolveMetricOnPanel(p, metricId)
 
+
+def readMetrics(code: str, metricIds: list[str] | None = None, *, marketNs: str = "kr") -> dict[str, dict]:
+    """panel 을 1회 로드해 여러 지표를 한 번에 추출한다 (프리빌드용, 회사당 panel 재로드 회피).
+
+    Args:
+        code: 종목코드.
+        metricIds: 추출할 metricId 목록. None 이면 METRIC_DEFS 전체.
+        marketNs: 시장 namespace.
+
+    Returns:
+        ``{metricId: {value, unit, confidence, period, provenance}}``. 추출 실패 지표는 키 없음.
+
+    Raises:
+        없음. 미등록 metricId 는 조용히 제외.
+
+    Example:
+        >>> readMetrics("042660", ["backlog"])  # doctest: +SKIP
+        {'backlog': {'value': 3.5e+16, 'confidence': 'high', ...}}
+    """
+    ids = [m for m in (metricIds or list(METRIC_DEFS)) if m in METRIC_DEFS]
+    p = _loadPanel(code, marketNs)
+    if p is None:
+        return {}
+    out: dict[str, dict] = {}
+    for mid in ids:
+        r = _resolveMetricOnPanel(p, mid)
+        if r is not None:
+            out[mid] = r
+    return out
+
+
+def _loadPanel(code: str, marketNs: str):
+    """panel 로드 + 서술 표 컬럼 유효성 확인. 부재/무효면 None."""
     from dartlab.providers.dart.panel.panel import Panel
 
     p = Panel(code, marketNs=marketNs)
@@ -212,27 +252,34 @@ def readMetric(code: str, metricId: str, *, marketNs: str = "kr") -> dict | None
         return None
     if "sectionLeaf" not in p.columns or "disclosureKey" not in p.columns:
         return None
+    return p
+
+
+def _resolveMetricOnPanel(p, metricId: str) -> dict | None:
+    """로드된 panel 에서 단일 지표를 섹션 앵커로 필터 후 격자 추출. metricId 유효 가정."""
     import polars as pl
 
+    mdef = METRIC_DEFS[metricId]
+    concept = getConcept(mdef["section"])
+    if concept is None or concept.narrativeAnchor is None:
+        return None
+    _chapter, keyword = concept.narrativeAnchor
     mask = pl.col("disclosureKey").is_null() & pl.col("sectionLeaf").fill_null("").str.contains(keyword, literal=True)
     if "leafType" in p.columns:
         mask = mask & (pl.col("leafType") == "table")
     leaf = p.filter(mask)
     if leaf.is_empty():
         return None
-
-    pcols = [c for c in leaf.columns if re.match(r"20\d\dQ?\d?", c)]
-    pcols = sorted(pcols, reverse=True)
-    # leaf 전역 단일단위 확정 (sibling 표의 단위 caption. 모호하면 None 이라 신뢰 안 함)
+    pcols = sorted([c for c in leaf.columns if re.match(r"20\d\dQ?\d?", c)], reverse=True)
     allText = " ".join(str(leaf[pc][i] or "") for i in range(leaf.height) for pc in pcols[:3])
     leafUnits = {normLabel(u) for u in re.findall(r"\(단위\s*[:：]\s*([^\)/]{1,8})", allText)} & set(_UNIT_SCALE)
     leafScale = _UNIT_SCALE[next(iter(leafUnits))] if len(leafUnits) == 1 else None
+    syns = mdef.get("synonyms", mdef.get("direct", []))
     for i in range(leaf.height):
         for pc in pcols[:3]:  # 최신 3 기간 시도
             xml = str(leaf[pc][i] or "")
-            if not any(normLabel(s) in normLabel(xml) for s in mdef.get("synonyms", mdef.get("direct", []))):
-                if "<TABLE" not in xml:
-                    continue
+            if not any(normLabel(s) in normLabel(xml) for s in syns) and "<TABLE" not in xml:
+                continue
             grid = tableToGrid(xml)
             if grid is None:
                 continue
