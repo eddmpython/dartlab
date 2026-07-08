@@ -11,22 +11,13 @@ export interface NotebookExample {
 	cells: Cell[];
 }
 
-// 공유 부트스트랩: pyodide 에 dartlab wheel 설치 + 삼성전자 데이터 prefetch + Company 생성 (약 20초, 최초 1회).
-const SETUP = `# dartlab 부트스트랩 (약 20초). 커널은 범용이라 예제가 스스로 dartlab 을 올린다.
-import os, io
-os.environ["DARTLAB_DATA_DIR"] = "/data"          # pyodide 로컬 데이터 경로를 /data 로 통일
-os.environ["DARTLAB_NO_HF_DOWNLOAD"] = "1"         # 오프라인: 자동 HF 다운로드 차단
-import pyodide_js, micropip, zipfile, site
-from pyodide.http import pyfetch
-await pyodide_js.loadPackage(["polars","pyarrow","micropip","beautifulsoup4","lxml","httpx","pydantic","rich","sqlite3","numpy"])
-await micropip.install(["diff-match-patch","openpyxl"])
-# dartlab wheel 을 HF 에서 받아 site-packages 에 푼다
-_wheel = "https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main/pyodide/dartlab-0.10.7-py3-none-any.whl"
-_resp = await pyfetch(_wheel)
-zipfile.ZipFile(io.BytesIO(await _resp.bytes())).extractall(site.getsitepackages()[0])
+// 공유 부트스트랩: pyodide 표준 micropip 로 dartlab 설치 + 한 줄 prefetch(데이터·설정·Company 자동).
+// 복잡한 부분(loadPackage·데이터경로·offline·wheel 압축해제)은 전부 dartlab 라이브러리가 흡수한다.
+const SETUP = `# dartlab 설치 (pyodide, 최초 1회, 약 20초). 커널은 범용이라 예제가 스스로 dartlab 을 올린다.
+import micropip
+await micropip.install("https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main/pyodide/dartlab-0.10.7-py3-none-any.whl")
 import dartlab
-await dartlab.prefetch("005930", categories=["panel","finance","report"])   # 삼성전자 데이터 미리 받기
-c = dartlab.Company("005930")`;
+c = await dartlab.prefetch("005930")   # 데이터 다운로드 + 설정 + Company 생성, 한 번에`;
 
 function cells(exampleId: string, defs: [Cell['type'], string][]): Cell[] {
 	return defs.map(([type, content], i) => ({ id: `${exampleId}-${i}`, type, content }));
