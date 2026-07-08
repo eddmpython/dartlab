@@ -14,7 +14,7 @@ dartlab을 브라우저에서 실행. 설치 없이 재무분석.
     onLog: console.log,
   });
 
-  await run(`print(c.show("IS"))`);
+  await run(`print(c.panel("IS"))`);
   await run(`print(c.analysis("financial", "수익성"))`);
   await run(`print(c.story("수익성").toMarkdown())`);
 </script>
@@ -26,11 +26,11 @@ dartlab을 브라우저에서 실행. 설치 없이 재무분석.
 import micropip
 await micropip.install(["diff-match-patch", "openpyxl"])
 # dartlab wheel — deps=False (빌트인 패키지는 pyodide가 제공)
-await micropip.install("https://huggingface.co/.../pyodide/dartlab-0.9.10-py3-none-any.whl", deps=False)
+await micropip.install("https://huggingface.co/.../pyodide/dartlab-0.10.7-py3-none-any.whl", deps=False)
 
 import dartlab
 c = dartlab.Company("005930")
-c.show("IS")
+c.panel("IS")
 ```
 
 ## 아키텍처
@@ -49,7 +49,7 @@ Python: pyarrow.parquet.read_table(BytesIO) → pl.from_arrow()
 | 기능 | 상태 |
 |---|---|
 | `Company(code)` | ✅ |
-| `c.show("IS"/"BS"/"CF")` | ✅ |
+| `c.panel("IS"/"BS"/"CF")` | ✅ |
 | `c.analysis("수익성")` | ✅ |
 | `c.story("수익성")` | ✅ |
 | `dartlab.ask(...)` | ✅ (API 키 필요) |

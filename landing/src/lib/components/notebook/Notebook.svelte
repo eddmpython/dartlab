@@ -13,14 +13,11 @@
 		ran: false
 	});
 
-	// 시드 셀 - 현행 공개 계약 c.analysis. 오늘 브라우저 런타임에서 실데이터로 도는 finance 축.
-	// 카탈로그 표 -> 실데이터 표 -> 전체 raw 페이로드 순.
+	// 시드 셀 - 현행 공개 계약 c.panel / c.analysis. 브라우저 런타임(0.10.7)에서 실데이터로 도는 finance 축.
 	let cells = $state<Cell[]>([
-		mkCell('c.analysis()'),
-		mkCell(
-			'import polars as pl\nhist = c.analysis("financial", "수익성")["marginTrend"]["history"]\npl.DataFrame(hist)'
-		),
-		mkCell('c.analysis("financial", "수익성")')
+		mkCell('c.panel("IS")'),
+		mkCell('c.analysis("financial", "수익성")'),
+		mkCell('c.analysis()')
 	]);
 
 	let stockCode = $state('005930');

@@ -55,9 +55,9 @@ except Exception:
 	}
 
 	const commands = [
-		{ label: 'show IS', desc: '손익계산서', code: 'print(c.show("IS"))' },
-		{ label: 'show BS', desc: '재무상태표', code: 'print(c.show("BS"))' },
-		{ label: 'show CF', desc: '현금흐름표', code: 'print(c.show("CF"))' },
+		{ label: 'panel IS', desc: '손익계산서', code: 'print(c.panel("IS"))' },
+		{ label: 'panel BS', desc: '재무상태표', code: 'print(c.panel("BS"))' },
+		{ label: 'panel CF', desc: '현금흐름표', code: 'print(c.panel("CF"))' },
 		{
 			label: 'analysis',
 			desc: '수익성 분석',
