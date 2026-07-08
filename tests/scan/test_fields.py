@@ -158,3 +158,133 @@ def test_krx_index_is_select_context(monkeypatch):
             spec={"where": [{"field": "krxIndex.KOSPI.close", "op": ">", "value": 3000}]},
             verbose=False,
         )
+
+
+def _roeFrame(monkeypatch, values):
+    """finance.ratio.roe 값을 주입하되 @파생 참조는 실제 derivedValues 로 위임하는 헬퍼."""
+    from dartlab.scan.builders.kr import fields as scan_fields
+
+    codes = [f"{i:06d}" for i in range(len(values))]
+    frame = pl.DataFrame({"stockCode": codes, "finance.ratio.roe": [float(v) for v in values]})
+
+    def fake(field, spec):
+        if field.startswith("@"):
+            return (spec or {}).get("_derivedValues", {})[field[1:]]
+        return frame
+
+    monkeypatch.setattr(scan_fields, "_loadFieldValues", fake)
+    return codes
+
+
+def test_define_scalar_weighting_mul(monkeypatch):
+    """리터럴 스칼라 곱은 가중치로 작동하고 base 단위를 보존한다 (가중 팩터 합성 핵심)."""
+    from dartlab.scan.screen import scanScreen
+
+    _roeFrame(monkeypatch, [10.0, 20.0])
+    df = scanScreen(
+        spec={
+            "define": {"w": {"op": "mul", "left": 0.5, "right": "finance.ratio.roe"}},
+            "select": ["@w"],
+            "sort": {"field": "@w", "desc": False},
+        },
+        verbose=False,
+    )
+    assert df["@w"].to_list() == [5.0, 10.0]
+
+
+def test_define_scalar_offset_addsub(monkeypatch):
+    """필드 ± 리터럴 오프셋 (임계 상대화). 필드÷스칼라 도 허용."""
+    from dartlab.scan.screen import scanScreen
+
+    _roeFrame(monkeypatch, [10.0, 15.0])
+    df = scanScreen(
+        spec={
+            "define": {"d": {"op": "sub", "left": "finance.ratio.roe", "right": 15.0}},
+            "select": ["@d"],
+            "sort": {"field": "@d", "desc": False},
+        },
+        verbose=False,
+    )
+    assert df["@d"].to_list() == [-5.0, 0.0]
+
+
+def test_define_scalar_left_div_rejected(monkeypatch):
+    """리터럴 ÷ 필드 는 역수 단위라 거부 (단위 대수 보호)."""
+    from dartlab.scan.screen import scanScreen
+
+    _roeFrame(monkeypatch, [10.0])
+    with pytest.raises(ValueError, match="역수 단위"):
+        scanScreen(
+            spec={"define": {"d": {"op": "div", "left": 1.0, "right": "finance.ratio.roe"}}, "select": ["@d"]},
+            verbose=False,
+        )
+
+
+def test_define_both_literal_rejected(monkeypatch):
+    """양변 리터럴은 무의미하므로 거부."""
+    from dartlab.scan.screen import scanScreen
+
+    _roeFrame(monkeypatch, [10.0])
+    with pytest.raises(ValueError, match="양변 리터럴"):
+        scanScreen(
+            spec={"define": {"d": {"op": "add", "left": 1.0, "right": 2.0}}, "select": ["@d"]},
+            verbose=False,
+        )
+
+
+def test_define_winsorize_clips_universe_tails(monkeypatch):
+    """winsorize 는 유니버스 분위 [lower,upper] 로 꼬리를 절단한다 (아웃라이어 z 지배 방어)."""
+    from dartlab.scan.screen import scanScreen
+
+    _roeFrame(monkeypatch, list(range(101)))  # 0..100
+    df = scanScreen(
+        spec={
+            "define": {"w": {"op": "winsorize", "field": "finance.ratio.roe", "lower": 0.1, "upper": 0.9}},
+            "select": ["@w"],
+        },
+        verbose=False,
+    )
+    vs = df["@w"].to_list()
+    assert min(vs) >= 10.0 - 1e-6
+    assert max(vs) <= 90.0 + 1e-6
+
+
+def test_define_clip_absolute_bounds(monkeypatch):
+    """clip 은 절대 경계 [min,max] 로 제한한다."""
+    from dartlab.scan.screen import scanScreen
+
+    _roeFrame(monkeypatch, [-5.0, 50.0, 200.0])
+    df = scanScreen(
+        spec={
+            "define": {"c": {"op": "clip", "field": "finance.ratio.roe", "min": 0.0, "max": 100.0}},
+            "select": ["@c"],
+            "sort": {"field": "@c", "desc": False},
+        },
+        verbose=False,
+    )
+    assert df["@c"].to_list() == [0.0, 50.0, 100.0]
+
+
+def test_define_abs_and_log(monkeypatch):
+    """abs 는 절대값, log 는 양수만 자연로그 (비양수 null)."""
+    from dartlab.scan.screen import scanScreen
+
+    _roeFrame(monkeypatch, [-4.0, 9.0])
+    dfAbs = scanScreen(
+        spec={
+            "define": {"a": {"op": "abs", "field": "finance.ratio.roe"}},
+            "select": ["@a"],
+            "sort": {"field": "@a", "desc": False},
+        },
+        verbose=False,
+    )
+    assert dfAbs["@a"].to_list() == [4.0, 9.0]
+
+    dfLog = scanScreen(
+        spec={"define": {"l": {"op": "log", "field": "finance.ratio.roe"}}, "select": ["@l"]},
+        verbose=False,
+    )
+    # -4 -> null (비양수), 9 -> ln 9
+    logs = sorted([v for v in dfLog["@l"].to_list() if v is not None])
+    assert len(logs) == 1
+    assert abs(logs[0] - 2.1972245773) < 1e-6

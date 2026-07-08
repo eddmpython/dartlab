@@ -773,6 +773,138 @@ def _operandFrame(
     return vals.select("stockCode", _numericExpr(ref).alias("_v")), meta["unit"]
 
 
+_UNARY_OPS = frozenset({"abs", "log", "clip", "winsorize"})
+
+
+def _asLiteral(operand: Any) -> float | None:
+    """operand 가 수치 리터럴이면 float, 아니면 None (bool 은 리터럴 아님)."""
+    if isinstance(operand, bool):
+        return None
+    if isinstance(operand, (int, float)):
+        return float(operand)
+    return None
+
+
+def _scalarBinary(
+    op: str,
+    name: str,
+    node: dict[str, Any],
+    lLit: float | None,
+    rLit: float | None,
+    spec: dict[str, Any],
+    values: dict[str, pl.DataFrame],
+    units: dict[str, str],
+) -> tuple[pl.DataFrame, str]:
+    """한쪽이 리터럴 스칼라인 이항 연산 ([stockCode, @name], 단위).
+
+    가중 다팩터 스코어 합성의 핵심 (예 ``0.6 * @zRoe``). mul/div 는 스칼라를 무차원 계수로 취급해
+    base 단위를 보존하고, add/sub 는 동일단위 오프셋으로 base 단위를 보존한다. 리터럴/필드 나눗셈
+    (스칼라 ÷ 필드) 은 역수 단위가 되어 단위 대수를 흐리므로 금지 (곱셈·필드÷스칼라 로 표현).
+
+    Args:
+        op: add/sub/mul/div 중 하나.
+        name: 파생 필드 이름 (@name).
+        node: define 노드 (left/right 중 하나가 리터럴).
+        lLit: 좌변 리터럴 값 (좌변이 리터럴 아니면 None).
+        rLit: 우변 리터럴 값 (우변이 리터럴 아니면 None).
+        spec: screen spec.
+        values: 지금까지 평가된 파생 값.
+        units: 지금까지 평가된 파생 단위.
+
+    Returns:
+        ([stockCode, @name] 프레임, 결과 단위).
+
+    Raises:
+        ValueError: 리터럴/필드 나눗셈, 또는 0 으로 나눔.
+    """
+    fieldKey = f"@{name}"
+    v = pl.col("_v")
+    if lLit is not None:  # 리터럴 op 필드
+        base, unit = _operandFrame(node["right"], spec, values, units)
+        s = lLit
+        if op == "add":
+            expr = s + v
+        elif op == "sub":
+            expr = s - v
+        elif op == "mul":
+            expr = s * v
+        else:  # div: 스칼라 ÷ 필드 = 역수 단위, 금지
+            raise ValueError(
+                f"@{name}: 리터럴 ÷ 필드 는 역수 단위라 미지원입니다 (곱셈 또는 필드 ÷ 리터럴 로 표현하세요)."
+            )
+    else:  # 필드 op 리터럴
+        base, unit = _operandFrame(node["left"], spec, values, units)
+        s = rLit if rLit is not None else 0.0
+        if op == "add":
+            expr = v + s
+        elif op == "sub":
+            expr = v - s
+        elif op == "mul":
+            expr = v * s
+        else:  # div by scalar
+            if s == 0:
+                raise ValueError(f"@{name}: 0 으로 나눌 수 없습니다.")
+            expr = v / s
+    return base.select("stockCode", expr.alias(fieldKey)), unit
+
+
+def _evalUnaryNode(
+    name: str,
+    node: dict[str, Any],
+    spec: dict[str, Any],
+    values: dict[str, pl.DataFrame],
+    units: dict[str, str],
+) -> tuple[pl.DataFrame, str]:
+    """단항 변환 define 노드 ([stockCode, @name], 단위). 스코어 아웃라이어 방어·정규화용.
+
+    abs/log 는 원소별 변환, clip 은 절대 경계 [min,max] 로 제한, winsorize 는 유니버스 분위
+    [lower,upper] 로 꼬리 절단 (z-score 를 아웃라이어가 지배하는 것을 막는다). 모두 단조 변환이라
+    base 단위를 보존한다 (랭킹 목적 스케일 의미 유지).
+
+    Args:
+        name: 파생 필드 이름.
+        node: define 노드. field(원천/@참조) 필수. clip=min/max, winsorize=lower/upper.
+        spec: screen spec.
+        values: 평가된 파생 값.
+        units: 평가된 파생 단위.
+
+    Returns:
+        ([stockCode, @name] 프레임, base 단위).
+
+    Raises:
+        ValueError: field 누락, clip 경계 전무, winsorize 분위 범위 오류.
+    """
+    op = node["op"]
+    ref = node.get("field")
+    if ref is None:
+        raise ValueError(f"@{name}: 단항 op({op}) 는 field (원천 필드 또는 @참조) 가 필요합니다.")
+    operand, unit = _operandFrame(ref, spec, values, units)
+    fieldKey = f"@{name}"
+    v = pl.col("_v")
+    if op == "abs":
+        expr = v.abs()
+    elif op == "log":
+        expr = pl.when(v > 0).then(v.log()).otherwise(None)
+    elif op == "clip":
+        lo = node.get("min")
+        hi = node.get("max")
+        if lo is None and hi is None:
+            raise ValueError(f"@{name}: clip 은 min 또는 max 중 하나 이상이 필요합니다.")
+        expr = v.clip(lower_bound=lo, upper_bound=hi)
+    else:  # winsorize (유니버스 분위 절단)
+        lower = float(node.get("lower", 0.01))
+        upper = float(node.get("upper", 0.99))
+        if not (0.0 <= lower < upper <= 1.0):
+            raise ValueError(f"@{name}: winsorize 는 0<=lower<upper<=1 이어야 합니다 (받은 {lower}, {upper}).")
+        clean = operand.filter(pl.col("_v").is_not_null())
+        if clean.is_empty():
+            return pl.DataFrame({"stockCode": [], fieldKey: []}), unit
+        lo = clean["_v"].quantile(lower)
+        hi = clean["_v"].quantile(upper)
+        expr = v.clip(lower_bound=lo, upper_bound=hi)
+    return operand.select("stockCode", expr.alias(fieldKey)), unit
+
+
 def _evalDefineNode(
     name: str,
     node: dict[str, Any],
@@ -782,8 +914,9 @@ def _evalDefineNode(
 ) -> tuple[pl.DataFrame, str]:
     """단일 define 노드를 평가해 ([stockCode, @name] 프레임, 단위)로.
 
-    op 별 분기: 없음+field=패스스루, add/sub/mul/div=이항 산술, yoy/cagr/slope/mean/min/max=
-    시계열(연간 격자), percentile/zscore=상대(전체·업종 횡단).
+    op 별 분기: 없음+field=패스스루, add/sub/mul/div=이항 산술(리터럴 스칼라 가중 포함),
+    abs/log/clip/winsorize=단항 변환, yoy/cagr/slope/mean/min/max=시계열(연간 격자),
+    percentile/zscore=상대(전체·업종 횡단).
     """
     fieldKey = f"@{name}"
     op = node.get("op")
@@ -794,13 +927,22 @@ def _evalDefineNode(
         return _evalTemporalNode(name, node, spec)
     if op in _RELATIVE_OPS:
         return _evalRelativeNode(name, node, spec, values, units)
+    if op in _UNARY_OPS:
+        return _evalUnaryNode(name, node, spec, values, units)
     if op not in ("add", "sub", "mul", "div"):
         raise ValueError(
             f"@{name}: 지원하지 않는 define op {op!r} "
-            "(산술 add/sub/mul/div · 시계열 yoy/cagr/slope/mean/min/max · 상대 percentile/zscore · 또는 field)."
+            "(산술 add/sub/mul/div · 단항 abs/log/clip/winsorize · 시계열 yoy/cagr/slope/mean/min/max · "
+            "상대 percentile/zscore · 또는 field)."
         )
     if "left" not in node or "right" not in node:
         raise ValueError(f"@{name}: op 노드는 left/right 가 필요합니다.")
+    lLit = _asLiteral(node["left"])
+    rLit = _asLiteral(node["right"])
+    if lLit is not None and rLit is not None:
+        raise ValueError(f"@{name}: 양변 리터럴 연산은 미지원입니다 (필드/@참조가 최소 1개 필요).")
+    if lLit is not None or rLit is not None:
+        return _scalarBinary(op, name, node, lLit, rLit, spec, values, units)
     ldf, lu = _operandFrame(node["left"], spec, values, units)
     rdf, ru = _operandFrame(node["right"], spec, values, units)
     unit = _deriveUnit(op, lu, ru, name)
