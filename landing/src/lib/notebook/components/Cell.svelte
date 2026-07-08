@@ -164,16 +164,6 @@
 						onStopEdit={() => (isEditingMarkdown = false)}
 						onShiftEnter={() => focusNextCell(cell.id)}
 					/>
-				{:else if cell.type === 'study' && cell.study}
-					<StudyCell
-						study={cell.study}
-						{isActive}
-					/>
-				{:else if cell.type === 'guide' && cell.guide}
-					<GuideCell
-						guide={cell.guide}
-						{isActive}
-					/>
 				{/if}
 
 				{#if cell.type === 'code'}

@@ -63,7 +63,9 @@ async function initialize() {
 	pyodide.setStderr({ batched: (text) => stderrBuffer.push(text) });
 	await pyodide.loadPackagesFromImports('import micropip');
 	try { pyodide.FS.mkdir('/workspace'); } catch { /* exists */ }
-	pyodide.runPython('import os, sys; os.chdir("/workspace")\nif "/workspace" not in sys.path: sys.path.insert(0, "/workspace")');
+	// 웹워커에는 DOM(document)이 없으므로 matplotlib 은 non-interactive AGG 백엔드 강제.
+	// (기본 pyodide 백엔드는 wasm_backend 가 js.document 를 import 하려다 워커에서 실패)
+	pyodide.runPython('import os, sys; os.chdir("/workspace")\nif "/workspace" not in sys.path: sys.path.insert(0, "/workspace")\nos.environ["MPLBACKEND"] = "AGG"');
 	installMarimoShim();
 }
 
@@ -220,7 +222,13 @@ async function execute(code: string) {
 		await pyodide.runPythonAsync(wrappedCode);
 
 		const stdout = stdoutBuffer.join('\n');
-		const stderr = stderrBuffer.join('\n');
+		// matplotlib 첫 플롯의 "building the font cache" 안내는 stderr 로 나오지만 오류가 아니다.
+		const stderr = stderrBuffer
+			.join('\n')
+			.split('\n')
+			.filter((line) => !/Matplotlib is building the font cache/.test(line))
+			.join('\n')
+			.trim();
 
 		if (stderr) return { type: 'error', data: stderr, executedAt: new Date().toISOString() };
 
