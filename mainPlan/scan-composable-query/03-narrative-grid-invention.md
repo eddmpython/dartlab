@@ -60,6 +60,15 @@ census 가 미커버 회사의 **미매칭 헤더를 surface** → 운영자/AI 
 - **R3 scan 축 배선**: `scan("orders")` 확장(백로그커버=수주잔고/매출) 또는 신규 축. 계약 테스트.
 - **R4 taxonomy 성장**: census gap 상위 회사 헤더 → 동의어 확장, 커버리지 목표(예 수주 있는 회사의 80%+).
 
+## 구현 완료 (2026-07-07, R1~R3)
+
+- **R1** (commit panel grid): `build/grid.py tableToGrid`(colspan/rowspan 확장 dense 격자, 범용 primitive) + `narrativeMetric.py`(성장형 headerTaxonomy + readMetric/readMetrics + confidence gate + sanity). 유닛 24 + requires_data 3.
+- **R2**: `scan/builders/kr/narrativeMetrics.buildNarrativeMetrics`(전종목 프리빌드, buildNotes 형제) + buildScan full 단계 통합.
+- **R3**: `scan/narrativeMetric` 축(reader) + router 등록(별칭 수주잔고/백로그/가동률) + publicApiScenarios + mirror 테스트.
+- **실측 프리빌드**: `narrativeMetrics.parquet` **1102종목** (backlog high 460 + util high 538 = **998 고신뢰**). `scan("narrativeMetric")` 라이브: 한화에어로 116조·HD조선 82조·삼성 가동률 등. 이전 방치 서술 표를 전종목 격자 추출로 탈탈. 저신뢰/부재는 정직 gap.
+- **게이트**: dartlabGuard strict l0-l15 PASS(providerGate 11/11) · publicApiCoverage scanAxes 26 · scan 유닛 303 · productSmoke.
+- **잔여(R4, demand-driven)**: taxonomy 성장(census gap 상위 회사 헤더 흡수로 커버리지↑), 지표 추가(생산능력·연구개발비 등), 기존 표 파서(_tableToMarkdown·구식표)를 tableToGrid 로 이관(시각/재무 회귀 게이트 후).
+
 ## 차별점 (왜 dartlab 발명인가)
 
 - 외부 LLM 아님: 결정적, ref 감사가능, 비용 0, 재현.
