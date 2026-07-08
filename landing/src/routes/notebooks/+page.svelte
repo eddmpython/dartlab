@@ -64,6 +64,7 @@
 		const nb: Notebook = {
 			id: crypto.randomUUID(),
 			title: ex.title,
+			description: ex.description,
 			cells: ex.cells.map((c) => ({ ...c })),
 			metadata: { createdAt: now, updatedAt: now }
 		};
@@ -190,7 +191,7 @@
 					<NotebookCard
 						kind="local"
 						title={nb.title}
-						subtitle=""
+						subtitle={nb.description}
 						metaLeft={`${nb.cellCount} 셀`}
 						metaRight={relTime(nb.updatedAt)}
 						onopen={() => goto(`${base}/notebooks/${nb.id}`)}

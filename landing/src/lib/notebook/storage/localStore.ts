@@ -12,6 +12,7 @@ const VERSION = 1;
 export interface NotebookSummary {
 	id: string;
 	title: string;
+	description: string;
 	updatedAt: string;
 	cellCount: number;
 }
@@ -83,6 +84,7 @@ export async function listNotebooks(): Promise<NotebookSummary[]> {
 		.map((nb) => ({
 			id: nb.id,
 			title: nb.title || 'Untitled',
+			description: nb.description ?? '',
 			updatedAt: nb.metadata?.updatedAt ?? '',
 			cellCount: nb.cells?.length ?? 0
 		}))

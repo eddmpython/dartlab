@@ -33,6 +33,7 @@
 		setCellWidth,
 		loadNotebook,
 		setTitle,
+		setDescription,
 		studyMode
 	} from '../stores/notebookStore';
 	import {
@@ -187,6 +188,26 @@
 		</button>
 		{#if showMenu}
 			<div class="dropdown-menu">
+				<div class="dropdown-meta">
+					<label class="meta-label" for="nb-title-input">제목</label>
+					<input
+						id="nb-title-input"
+						class="meta-input"
+						value={$notebook.title}
+						oninput={(e) => setTitle((e.currentTarget as HTMLInputElement).value)}
+						placeholder="제목 없음"
+					/>
+					<label class="meta-label" for="nb-desc-input">설명</label>
+					<textarea
+						id="nb-desc-input"
+						class="meta-textarea"
+						value={$notebook.description ?? ''}
+						oninput={(e) => setDescription((e.currentTarget as HTMLTextAreaElement).value)}
+						placeholder="짧은 설명 (허브 카드에 표시)"
+						rows="2"
+					></textarea>
+				</div>
+				<div class="dropdown-divider"></div>
 				<button class="dropdown-item" onclick={handleNew}>
 					<FilePlus size={14} /> 새 노트북
 				</button>
@@ -427,8 +448,46 @@
 		border-radius: 10px;
 		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 		padding: 4px;
-		min-width: 200px;
+		min-width: 248px;
 		white-space: nowrap;
+	}
+	.dropdown-meta {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+		padding: 8px 10px 6px;
+		white-space: normal;
+	}
+	.meta-label {
+		font-size: 10px;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--dl-ink-dim);
+	}
+	.meta-label:not(:first-child) {
+		margin-top: 4px;
+	}
+	.meta-input,
+	.meta-textarea {
+		width: 100%;
+		padding: 5px 8px;
+		border: 1px solid var(--nb-border);
+		border-radius: 6px;
+		background: var(--nb-surface);
+		color: var(--nb-text);
+		font-size: 12.5px;
+		font-family: var(--dl-font-ui);
+		outline: none;
+		box-sizing: border-box;
+	}
+	.meta-textarea {
+		resize: vertical;
+		line-height: 1.4;
+	}
+	.meta-input:focus,
+	.meta-textarea:focus {
+		border-color: var(--dl-accent);
 	}
 	.dropdown-item {
 		display: flex;

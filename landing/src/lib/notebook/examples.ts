@@ -34,6 +34,30 @@ function cells(exampleId: string, defs: [Cell['type'], string][]): Cell[] {
 
 export const EXAMPLES: NotebookExample[] = [
 	{
+		id: 'dartlab-panel-statements',
+		title: `panel: 공시 수평화 보드에서 IS·BS·CF 꺼내기`,
+		description: `c.panel 로 회사 공시 보드를 잡고 손익계산서·재무상태표·현금흐름표를 꺼냅니다.`,
+		tags: ['company', 'panel'],
+		cells: cells('dartlab-panel-statements', [
+			['markdown', `# panel: 공시 수평화 보드
+
+\`c.panel\` 은 한 회사의 공시(재무제표·주석·서술)를 '항목 × 기간' 하나의 큰 wide 표로 세워 둔 보드입니다. 잡는 순간 그대로 polars DataFrame 이고, 이름을 주면(예: \`c.panel("IS")\`) 그 표를 강한 정규화 소스(finance)로 꺼내 줍니다.
+
+배우는 것: 보드의 모양 보기, 손익계산서(IS)·재무상태표(BS)·현금흐름표(CF) 호출.
+
+먼저 아래 setup 셀을 실행하세요. 약 20초 걸리며 dartlab 을 브라우저에 올립니다.`],
+			['code', SETUP],
+			['code', `# 공시 수평화 보드: 행 = 공시 항목, 열 = 기간. 잡는 순간 하나의 큰 wide 표
+c.panel.shape`],
+			['code', `# 손익계산서 (분기 연결 기본). 강한 소스(finance)가 자동 주입된다
+c.panel("IS")`],
+			['code', `# 재무상태표
+c.panel("BS")`],
+			['code', `# 현금흐름표
+c.panel("CF")`],
+		])
+	},
+	{
 		id: 'dartlab-select-accounts',
 		title: `select: 특정 계정 시계열만 콕 집어 뽑기`,
 		description: `c.select 로 IS·BS 에서 원하는 계정만 골라 분기·연간·별도 시계열로 뽑습니다.`,
@@ -124,27 +148,6 @@ st = c.story("수익성")
 st`],
 			['code', `# 같은 결과를 마크다운 원문으로 (앞 1200자). Story.toMarkdown() 사용
 print(st.toMarkdown()[:1200])`],
-		])
-	},
-	{
-		id: 'dartlab-audit-redflags',
-		title: `audit: 감사의견·계속기업 red flag 점검`,
-		description: `c.audit 로 감사의견·감사인 변경·계속기업 불확실성 red flag 를 점검합니다.`,
-		tags: ['company', 'audit'],
-		cells: cells('dartlab-audit-redflags', [
-			['markdown', `# audit: 감사 red flag 점검
-
-\`c.audit()\` 은 감사의견·감사인 변경·계속기업 불확실성 같은 회계 위험 신호(Anomaly)를 리스트로 돌려줍니다. 투자 판단의 안전장치로, 이상이 잡히면 목록에 담기고 없으면 빈 리스트입니다.
-
-배우는 것: red flag 목록, 사람이 읽는 문장으로 변환.
-
-참고: 삼성전자 같은 우량 기업은 목록이 비어 있을 수 있습니다(정상). 아래 setup 셀을 먼저 실행하세요 (약 20초).`],
-			['code', SETUP],
-			['code', `# 감사 red flag 목록 (list[Anomaly]): 감사의견 / 감사인 변경 / 계속기업 등
-flags = c.audit()
-flags`],
-			['code', `# 사람이 읽을 문장으로. 비어 있으면 감사 이슈 없음(우량)
-[str(f) for f in flags] or "감사 red flag 없음 (우량)"`],
 		])
 	},
 ];

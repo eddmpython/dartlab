@@ -49,6 +49,7 @@ export interface StudyProgressMetadata {
 export interface Notebook {
 	id: string;
 	title: string;
+	description?: string;
 	cells: Cell[];
 	workspaceFiles?: WorkspaceFile[];
 	metadata: {
@@ -192,6 +193,11 @@ export async function saveToServer(): Promise<{ ok: boolean; cloud: boolean }> {
 
 export function setTitle(title: string): void {
 	notebook.update((nb) => ({ ...nb, title }));
+	saveToStorage();
+}
+
+export function setDescription(description: string): void {
+	notebook.update((nb) => ({ ...nb, description }));
 	saveToStorage();
 }
 

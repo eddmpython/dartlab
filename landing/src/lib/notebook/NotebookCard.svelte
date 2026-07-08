@@ -71,7 +71,6 @@
 		min-height: 150px;
 		padding: 1rem 1.1rem;
 		border: 1px solid var(--dl-line);
-		border-left: 3px solid var(--dl-ink-faint);
 		border-radius: var(--dl-r-md);
 		background: var(--dl-bg-raised);
 		cursor: pointer;
@@ -85,9 +84,6 @@
 	.ncard:focus-visible {
 		background: var(--dl-bg-overlay);
 		transform: translateY(-1px);
-	}
-	.ncard.local {
-		border-left-color: var(--dl-accent);
 	}
 	.ncard.local:hover {
 		border-color: var(--dl-accent);
