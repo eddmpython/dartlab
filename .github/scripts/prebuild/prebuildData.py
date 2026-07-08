@@ -66,9 +66,11 @@ def _categoryFileCount(dataDir: str, category: str) -> int:
 def _knownScanRelPaths() -> list[str]:
     """Return fixed scan artifacts for direct seed without HF tree listing."""
     from dartlab.core.dataConfig import DATA_RELEASES
+    from dartlab.scan.builders.kr.notes import SCAN_NOTE_CONCEPTS
     from dartlab.scan.builders.kr.report.build import SCAN_API_TYPES
 
-    return scanArtifactRelPaths(DATA_RELEASES["scan"]["dir"], SCAN_API_TYPES)
+    noteBares = [bare for bare, _, _ in SCAN_NOTE_CONCEPTS]
+    return scanArtifactRelPaths(DATA_RELEASES["scan"]["dir"], SCAN_API_TYPES, noteBares)
 
 
 def _seedKnownScanArtifacts(dataDir: str) -> tuple[int, int, float]:
