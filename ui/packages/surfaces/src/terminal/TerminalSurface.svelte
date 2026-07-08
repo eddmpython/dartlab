@@ -273,6 +273,7 @@
 				<div class="hdrLinks">
 					{#if co}
 						<DataMenu {runtime} code={co.code} corpName={co.name.kr} {lang} />
+						<a class="hdrLink hdrViewer" href="{base}/viewer/company/{co.code}" target="_blank" rel="noopener" title={lang === 'en' ? 'Disclosure viewer · full filing text with financial reading' : '공시뷰어 · 공시 원문·재무 읽기 전용 뷰'}>{lang === 'en' ? 'Viewer' : '공시뷰어'}</a>
 						<a class="hdrLink hdrReport" href="{base}/report?sym={co.code}" target="_blank" rel="noopener" title={lang === 'en' ? 'Corporate analysis report · printable (PDF)' : '기업분석보고서 · 인쇄 가능 (PDF)'}>{lang === 'en' ? 'Report' : '보고서'}</a>
 						<a class="hdrLink hdrCards" href="{base}/cards" target="_blank" rel="noopener" title={lang === 'en' ? 'Card stories · Instagram-style feed (all companies)' : '카드뉴스 · 인스타그램형 피드(전체 회사)'}>{lang === 'en' ? 'Cards' : '카드뉴스'}</a>
 						<a class="hdrLink hdrBlog" href="{base}/blog" target="_blank" rel="noopener" title={lang === 'en' ? 'Blog · company stories, disclosure reading, dartlab news' : '블로그 · 기업 이야기·공시 읽기·dartlab 소식'}>{lang === 'en' ? 'Blog' : '블로그'}</a>
