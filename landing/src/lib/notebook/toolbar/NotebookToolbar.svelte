@@ -27,15 +27,14 @@
 		cellWidth,
 		setCellWidth,
 		loadNotebook,
+		setTitle,
 		studyMode
 	} from '../stores/notebookStore';
 	import {
 		engineStatus,
 		executeAllCells,
 		destroyEngine,
-		reactiveMode,
-		notebookFilePath,
-		changeNotebookPath
+		reactiveMode
 	} from '../stores/executionStore';
 	import {
 		downloadNotebook,
@@ -98,7 +97,7 @@
 
 	async function startPathEdit() {
 		pathEditing = true;
-		pathDraft = $notebookFilePath;
+		pathDraft = $notebook.title;
 		await tick();
 		const input = document.querySelector('.filepath-input') as HTMLInputElement;
 		if (input) {
@@ -109,8 +108,8 @@
 	function commitPath() {
 		pathEditing = false;
 		const val = pathDraft.trim();
-		if (val && val !== $notebookFilePath) {
-			changeNotebookPath(val);
+		if (val && val !== $notebook.title) {
+			setTitle(val);
 		}
 	}
 	function handlePathKeydown(e: KeyboardEvent) {
@@ -118,7 +117,7 @@
 			(e.target as HTMLInputElement).blur();
 		} else if (e.key === 'Escape') {
 			pathEditing = false;
-			pathDraft = $notebookFilePath;
+			pathDraft = $notebook.title;
 		}
 	}
 </script>
@@ -132,7 +131,7 @@
 	<span class="brand-word">dartlab <span class="brand-sub">notebook</span></span>
 </a>
 
-<!-- 상단 중앙: 파일 경로 -->
+<!-- 상단 중앙: 노트북 제목(클릭 편집) -->
 {#if !$studyMode}
 	<div class="filename-bar">
 		{#if pathEditing}
@@ -143,8 +142,8 @@
 				onkeydown={handlePathKeydown}
 			/>
 		{:else}
-			<button class="filepath-display" onclick={startPathEdit} title="경로 편집">
-				{$notebookFilePath}
+			<button class="filepath-display" onclick={startPathEdit} title="제목 편집">
+				{$notebook.title || 'Untitled'}
 			</button>
 		{/if}
 	</div>
