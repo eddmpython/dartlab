@@ -13,8 +13,7 @@
 story·viz)는 소비/유틸/뷰라 슬롯할 데이터가 원천적으로 0. 기존 8표면(prices·macro·finance·betas·
 industry·priceSig·events·funding)은 **원천 프리미티브만** 담았고, 그 위 분석데이터(계산된 재무비율
 시계열·복합 부실점수·11 팩터 알파·US 재무·산업분류·감성)를 통째로 빠뜨렸다. 빠진 분석데이터 중 벌크로
-실제 슬롯 가능한 정본 경로는 대부분 **scan/edgar 소유**(analysis·credit 아님). 리치 파생(DuPont·신용
-등급·리스크 팩터)은 per-company only 라 메모리 가드가 벌크 루프를 막는다.
+실제 슬롯 가능한 정본 경로는 대부분 **scan/edgar 소유**(analysis·credit 아님). 계산물(비율·점수·팩터)은 순수함수라 패널 벡터로 런타임 벌크 계산이 된다(§5.1 실증: 전종목 재무비율 87,209행 8.8초 1패스, Company 루프 0·사전빌드 0). 이전에 이를 per-company only·사전빌드라 한 것은 **틀렸다**. analysis/credit 엔진 facade 가 Company 객체 하나씩 받는 API 모양일 뿐 계산이 회사별이 아니다. 진짜 벌크 불가는 계산이 아니라 아직 벌크 창고에 없는 데이터(라이브 수급 등)뿐.
 
 ## §2. 분류: 공급 9 vs 소비/유틸 6
 
@@ -76,11 +75,17 @@ env 레인에서 date 조인 broadcast, 산업분류는 dim 에서 code 조인.
 - **전종목 벌크 로딩 가능 (작업대 후보)**: scan 전 축 · edgar scan account/ratio/11축 · gather 벌크
   로더 · quant 11 알파 · industry nodes/edges · search timeline/profile/dna · macro 환경(단 summary
   7632MB peak 중량 주의).
-- **per-company only (작업대 불가, 요청 시 계산)**: analysis 22축 전부 · credit grade/7축 · quant
-  리스크/팩터/기술축 · company.panel · gather 라이브 축.
-- CLAUDE.md Company 루프 금지 위반 없이 채울 수 있는 것 = scan/edgar/quant-alpha/gather-bulk/industry/
-  search-internal/macro-env 뿐. 리치 파생은 (a) 요청 시 단건 또는 (b) 사전빌드인데 후자는 런타임-SSOT
-  무승인 빌드 금지 = 별도 토론·승인 사안.
+- **facade 는 per-company 지만 계산은 벌크 가능**: analysis 22축·credit grade/7축·quant 팩터의 *숫자*는 순수함수라 패널 벡터로 전종목 계산 가능(scan.ratio 가 그 경로, §5.1 실증). Company facade API 만 하나씩 받을 뿐. **진짜 벌크 불가** = 아직 벌크 창고에 없는 라이브 외부 fetch(gather 수급 일별 등)뿐이고, 이는 계산이 아니라 데이터 커버리지 문제(gather 벌크화로 해소, 사전빌드 아님).
+- 채울 수 있는 것 = scan/edgar/quant-alpha/gather-bulk/industry/search-internal/macro-env. **분석 파생(비율·점수·팩터)도 런타임 벡터 벌크 계산으로 채운다(사전빌드 아님, §5.1).** 사전빌드는 불필요할 뿐 아니라 런타임-SSOT 원칙상 기본 금지다.
+
+### §5.1 정정 실증 (2026-07-07): 분석층도 런타임 벌크 (사전빌드 아님)
+
+재무 패널(scan 벌크) 위 벡터 1패스로 ROE·ROA·마진·부채비율 + YoY 점수부품(fScore)을 **전종목
+2,774사 x 전기간 87,209행, 8.8초, Company 루프 0·사전빌드 0**으로 계산 실증
+(`tests/_attempts/workbench/derived_bulk.py`). 재무비율·점수·팩터는 순수함수 r = f(계정)이고 계정
+패널은 이미 벌크라, 패널 위 벡터가 전종목 전기간을 한 방에 낸다. `scan.ratio`/`macroBetaByCodeWide`가
+바로 이 벌크 경로(이미 존재). "per-company only / 사전빌드 필요"는 틀렸고, 사전빌드는 런타임-SSOT
+원칙상 금지. 작업대 분석층 = 런타임 벡터 계산.
 
 ## §6. 정직한 갭 (아직 못 들어가는 것)
 
@@ -101,7 +106,7 @@ env 레인에서 date 조인 broadcast, 산업분류는 dim 에서 code 조인.
 2. edgar us scan = US 커버리지 개통.
 3. gather krx 28+ 기술지표 materialize.
 4. quant 11 알파 + scan 17 단면을 snapshot 레인에.
-5. 리치 파생(analysis/credit/quant risk)은 벌크 불가 = 요청 시 계산 또는 사전빌드 승인 토론.
+5. 분석 파생(비율·점수·팩터)은 런타임 벡터 벌크 계산(scan 경로·§5.1 실증). 사전빌드 아님. 진짜 벌크 불가 = 라이브 수급 등 미벌크 데이터뿐(gather 커버리지 문제).
 
 ## §8. 라우팅
 
