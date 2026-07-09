@@ -215,6 +215,7 @@ comp = dartlab.scan("screen", spec={
 | ipo | 신규상장 | DART | `dartlab.scan("ipo")` |
 | salesByProduct | 사업부문 매출구성 | DART | `dartlab.scan("salesByProduct")` |
 | narrativeMetric | 서술표 지표 | DART | `dartlab.scan("narrativeMetric")` |
+| earningsFlash | 잠정실적 | DART | `dartlab.scan("earningsFlash")` |
 
 ## 대표 반환 형태
 
@@ -251,6 +252,7 @@ metric/value/score, rank, basis/source, flags
 | ipo | `[발행조건확정]` 을 6 섹션 기대 X (CORRECTION doc, FULL 신고서를 봐야); chainOk/financialsOk False 발행사 값 신뢰 X (항등식 위반); 적용 PER 를 절대 고/저평가로 단정 X (발행사 선택 비교군 기준) |
 | salesByProduct | read-time panel 파싱 X (prebuild consolidation SSOT); 부문 절대매출 비교 X (단위-불변 mix 지표만: 비중·HHI·다각화등급) |
 | narrativeMetric | 사업보고서 서술 표에서 뽑은 수주잔고·가동률을 감사받은 재무수치와 동급 취급 X (비표준 서술 항목); 저신뢰(confidence 낮음)·부재 지표를 값으로 인용 X (정직 gap 그대로 표기) |
+| earningsFlash | 잠정치를 확정 실적으로 단정 X (정정·확정에서 바뀜); 대시(-)만 낸 계정을 0 실적으로 오해 X (값 부재, 컬럼 null); 표 단위(조/억/백만/천원) 무시하고 원으로 취급 X; deep=True 로 수개월 dateFrom 조회 X (본문 fetch 폭증) |
 | dividendTrend | 5 패턴 (연속증가/안정/감소/시작/중단) 명시 없이 단정 X; 배당 지속가능성 검증 없이 추세만 인용 X |
 | efficiency | 자산회전 / 재고회전 / 매출채권회전 분류 명시; CCC 분리 식 (DSO + DIO - DPO) 명시 |
 | fields | 필드 카탈로그 결과를 *데이터 자체* 로 인용 X (메타데이터); finance/report/docs/krx 4 source 분리 명시 |
