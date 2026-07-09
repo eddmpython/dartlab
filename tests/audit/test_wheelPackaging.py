@@ -343,3 +343,53 @@ def test_rrCrisisDB_loadRrCrises_loudFail_onMissingData(monkeypatch):
     with pytest.raises(FileNotFoundError) as exc:
         mod._loadRrCrises()
     assert "rrCrises800y.json" in str(exc.value)
+
+
+# ── pyodide wheel 마커 게이트 (옛 pyodide/build.py strip 리스트 대체) ──
+#
+# pyodide(브라우저)는 같은 plain wheel 을 micropip.install(wheel) 로 설치한다. micropip 은 emscripten
+# 에서 Requires-Dist 마커를 평가해 pyodide 비호환 dep 을 건너뛴다. 그래서 pyodide 에서 설치 불가하거나
+# 순수휠 없는 transitive(marimo->msgspec 등)를 끄는 dep 은 반드시 "; sys_platform != 'emscripten'"
+# 마커로 배제돼야 한다. 마커 없이 새 비호환 dep 이 들어오면 micropip.install(wheel) 이 조용히 깨진다
+# (marimo 0.10.7 사고 class). 이 테스트가 그 회귀를 빌드 전에 차단한다. 마커가 유일 SSOT.
+_PYODIDE_INCOMPATIBLE_DEPS = {
+    "marimo",  # transitive msgspec 순수휠 부재 → micropip.install 깨짐
+    "duckdb",
+    "fastapi",
+    "uvicorn",
+    "sse-starlette",
+    "mcp",
+    "openai",
+    "huggingface-hub",
+    "plotly",
+    "qrcode",
+    "pyyaml",
+}
+
+
+def test_pyodideIncompatibleDeps_excludedUnderEmscripten():
+    """pyodide 비호환 dep 이 emscripten 환경 마커로 전부 배제되는지 검증 (strip 리스트 대체 게이트)."""
+    import tomllib
+
+    from packaging.markers import default_environment
+    from packaging.requirements import Requirement
+
+    data = tomllib.loads((_REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    deps = data["project"]["dependencies"]
+
+    env = default_environment()
+    env["sys_platform"] = "emscripten"
+    env["platform_system"] = "Emscripten"
+
+    included = set()
+    for raw in deps:
+        req = Requirement(raw)
+        if req.marker is None or req.marker.evaluate(env):
+            included.add(req.name.lower().replace("_", "-"))
+
+    leaked = _PYODIDE_INCOMPATIBLE_DEPS & included
+    assert not leaked, (
+        f"pyodide 비호환 dep 이 emscripten wheel 에 포함됨: {sorted(leaked)}. "
+        "pyproject.toml 에서 해당 dep 에 \"; sys_platform != 'emscripten'\" 마커를 붙여라 "
+        "(micropip.install(wheel) 이 브라우저에서 조용히 깨지는 회귀 차단)."
+    )

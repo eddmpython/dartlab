@@ -9,7 +9,7 @@ purpose: Pyodide 실행 환경의 제약, 시작 절차, 검증 기준을 Skill 
 whenToUse:
   - Pyodide
   - pyodide
-  - 1. 호출 — `prefetch` 후 Company 로 간다
+  - 1. 호출 단계. `Company` 로 바로 간다 (prefetch 없이, 데이터는 첫 접근 시 lazy fetch)
   - 2. 아키텍처 — 설치·데이터·실행 3 층으로 간다
   - 3. polars WASM 제약 — pyarrow 경유로 우회한다
   - 4. pyodide 분기 패턴 — `sys.platform == "emscripten"` 로 체크한다
@@ -30,7 +30,7 @@ knowledgeRefs:
 sourceRefs:
   - dartlab://skills/runtime.pyodide
 procedure:
-  - 1. 호출 — `prefetch` 후 Company 로 간다 기준을 확인한다.
+  - 1. 호출 단계. `Company` 로 바로 간다 (prefetch 없이, 데이터는 첫 접근 시 lazy fetch) 기준을 확인한다.
   - 2. 아키텍처 — 설치·데이터·실행 3 층으로 간다 기준을 확인한다.
   - 3. polars WASM 제약 — pyarrow 경유로 우회한다 기준을 확인한다.
   - 4. pyodide 분기 패턴 — `sys.platform == "emscripten"` 로 체크한다 기준을 확인한다.
@@ -73,7 +73,7 @@ source:
   type: absorbed_skills
   absorbedKey: pyodide
   format: markdown
-lastUpdated: '2026-05-03'
+lastUpdated: '2026-07-09'
 testUniverse:
   market: KR
   stockCodes:
@@ -88,7 +88,7 @@ testUniverse:
 
 ## 실행 순서
 
-- 1. 호출 — `prefetch` 후 Company 로 간다 기준을 확인한다.
+- 1. 호출 단계. `Company` 로 바로 간다 (prefetch 없이, 데이터는 첫 접근 시 lazy fetch) 기준을 확인한다.
 - 2. 아키텍처 — 설치·데이터·실행 3 층으로 간다 기준을 확인한다.
 - 3. polars WASM 제약 — pyarrow 경유로 우회한다 기준을 확인한다.
 - 4. pyodide 분기 패턴 — `sys.platform == "emscripten"` 로 체크한다 기준을 확인한다.

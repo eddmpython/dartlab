@@ -77,72 +77,25 @@ if not _IS_PYODIDE:
 
 
 async def prefetch(*stockCodes: str, categories: list[str] | None = None):
-    """HF에서 종목 데이터를 미리 다운로드 + C 확장 로드 (Pyodide/브라우저 전용).
+    """[하위호환] 종목 하나면 그 ``Company`` 를 반환. 새 코드는 ``Company`` 를 직접 쓴다.
 
-    노트북 부트스트랩 한 줄. 종목 하나면 그 ``Company`` 를 바로 돌려준다(데이터·설정 자동).
-    Company 생성 전에 await로 호출한다. dataDir 은 pyodide 에서 ``/data`` 로 자동 고정
-    (config.dataDir, env 불필요).
+    옛 Pyodide 부트스트랩이었다. 지금은 라이브러리가 복잡성을 흡수하므로 부트스트랩이 불필요하다.
+    설치는 노트북/로더가 ``micropip.install(wheel)`` 로 자동(C 확장은 wheel 메타데이터의 emscripten
+    Requires-Dist 로 micropip 이 자동 해소), 데이터는 Company 메서드 첫 접근 시 lazy fetch, dataDir 은
+    pyodide 에서 ``/data`` 자동 고정. 그래서 데스크톱과 동일하게 ``dartlab.Company(code)`` 만 하면 된다.
+
+    ``categories`` 는 무시된다(옛 eager 다운로드 인자, 이제 lazy 라 불필요). 이미 발행된 노트북의
+    ``await dartlab.prefetch(code)`` 호환을 위해 thin shim 으로 남긴다.
 
     Example::
 
-        import micropip
-        await micropip.install(".../dartlab-0.10.7-py3-none-any.whl")
         import dartlab
-        c = await dartlab.prefetch("005930")   # 한 줄로 데이터+설정+Company
+        c = dartlab.Company("005930")   # prefetch 불필요, 데이터는 첫 접근 시 lazy fetch
+        c.panel("IS")
 
     Returns:
         단일 종목이면 ``Company``, 그 외(0개 또는 다중)면 ``None``.
     """
-    if not _IS_PYODIDE:
-        # 일반 환경: 데이터 자동로드가 되므로 종목 하나면 Company 편의 반환, 아니면 no-op.
-        codes = [s.strip() for s in stockCodes if s.strip()]
-        if len(codes) == 1:
-            from dartlab.providers.dart.company import Company
-
-            return Company(codes[0])
-        return None
-
-    # pyodide 빌트인 C 확장 로드 (dartlab 이 lazy import 하는 것 포함, 노트북이 loadPackage 안 해도 되게).
-    import pyodide_js  # type: ignore[import-not-found]
-
-    await pyodide_js.loadPackage(
-        ["pyarrow", "lxml", "polars", "numpy", "pydantic", "httpx", "rich", "beautifulsoup4", "sqlite3"]
-    )
-
-    from dartlab.core.dataConfig import DATA_RELEASES, hfBaseUrl
-    from dartlab.core.logger import getLogger
-    from pyodide.http import pyfetch  # type: ignore[import-not-found]
-
-    _prefetchLog = getLogger(__name__ + ".prefetch")
-
-    # panel(공시 수평화 보드·IS/BS/CF) + finance + report 가 노트북 공통 사용분. 옛 docs 는 deprecated.
-    cats = categories or ["panel", "finance", "report"]
-    for code in stockCodes:
-        code = code.strip()
-        for cat in cats:
-            dirPath = DATA_RELEASES[cat]["dir"]
-            path = f"/data/{dirPath}/{code}.parquet"
-
-            import os
-
-            if os.path.exists(path):
-                continue
-
-            url = f"{hfBaseUrl(cat)}/{code}.parquet"
-            try:
-                resp = await pyfetch(url)
-                if resp.status != 200:
-                    _prefetchLog.warning("  ⚠ %s/%s 실패 (HTTP %d)", cat, code, resp.status)
-                    continue
-                buf = await resp.bytes()
-                os.makedirs(f"/data/{dirPath}", exist_ok=True)
-                with open(path, "wb") as f:
-                    f.write(buf)
-                _prefetchLog.info("  %s/%s: %d KB", cat, code, len(buf) // 1024)
-            except Exception as e:
-                _prefetchLog.warning("  ⚠ %s/%s 실패: %s", cat, code, e)
-
-    # 종목 하나면 그 Company 를 바로 반환(노트북 한 줄 완성). 다중/0개면 None.
     codes = [s.strip() for s in stockCodes if s.strip()]
     if len(codes) == 1:
         from dartlab.providers.dart.company import Company

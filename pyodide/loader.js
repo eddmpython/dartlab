@@ -19,8 +19,9 @@ const BUILTIN_PACKAGES = [
 
 const PURE_DEPS = ["diff-match-patch", "openpyxl"];
 
+// finance + report 만 미리 받는다 (작고 흔함). panel 보드는 c.panel 첫 호출 시 lazy fetch.
+// (옛 dart/docs 는 폐기 카테고리라 제거. HF 부재로 404 만 나던 죽은 경로였다.)
 const DATA_CATEGORIES = [
-  { dir: "dart/docs", name: "docs" },
   { dir: "dart/finance", name: "finance" },
   { dir: "dart/report", name: "report" },
 ];

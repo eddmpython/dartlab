@@ -1,13 +1,18 @@
 """dartlab pyodide wheel 빌드 + HF 업로드.
 
-pyodide 전용 wheel: METADATA에서 Requires-Dist를 제거하여
-micropip.install(URL) 한 줄로 설치 가능하게 한다.
-PyPI wheel은 그대로 유지 (full deps).
+옛날엔 METADATA 에서 Requires-Dist 를 손으로 잘라낸 별도 pyodide wheel 을 만들었다. 이제는
+``pyproject.toml`` 의존성이 ``sys_platform != 'emscripten'`` 마커로 pyodide 비호환 dep(marimo·
+duckdb·fastapi·openai·mcp·plotly 등)을 이미 배제한다. micropip 이 emscripten 환경에서 마커를
+평가해 그 dep 들을 자동으로 건너뛰고, 남은 C 확장(polars·pyarrow·lxml·numpy)은 pyodide lockfile
+에서 자동 로드한다. 그래서 별도 strip 수술이 불필요하고, PyPI 와 동일한 plain wheel 하나를 그대로
+HF 에 올리면 ``micropip.install(wheel)`` 한 줄로 브라우저 설치가 끝난다.
+
+새 pyodide 비호환 dep 은 ``pyproject.toml`` 에서 ``sys_platform != 'emscripten'`` 마커를 붙이면
+된다(그게 유일 SSOT). tests/audit 의 wheel 마커 게이트가 빌드 시 검증한다.
 """
 
 import subprocess
 import sys
-import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -25,90 +30,14 @@ def build_wheel() -> Path:
     return wheels[-1]
 
 
-_PYODIDE_STRIP = {
-    # server / AI / MCP: pyodide 불필요
-    "fastapi",
-    "uvicorn",
-    "sse-starlette",
-    "sse_starlette",
-    "mcp",
-    "qrcode",
-    "plotly",
-    "huggingface-hub",
-    "huggingface_hub",
-    "google-genai",
-    "google_genai",
-    "openai",
-    "anthropic",
-    # marimo(노트북 프레임워크): pyodide 데이터분석 wheel 에 불필요 + transitive msgspec(순수휠 없음)이
-    # micropip.install(wheel) 을 깨뜨린다. dartlab core 는 marimo 를 lazy import 라 strip 안전.
-    "marimo",
-    # duckdb: C 확장(pyodide-repo 부재), scan 등 일부 경로만 lazy 사용. 노트북 예제 경로 미사용이라 strip.
-    "duckdb",
-}
-
-# pyodide 빌트인이지만 버전 제약이 맞지 않는 패키지 → 버전 제거 후 유지
-_PYODIDE_RELAX_VERSION = {"lxml", "polars", "numpy"}
-
-# pyodide 빌트인인데 원본 deps에 없는 패키지 → 추가
-_PYODIDE_ADD = ["pyarrow"]
-
-
-def strip_deps(wheel_path: Path) -> Path:
-    """wheel METADATA에서 pyodide 미지원 deps만 제거한 pyodide 전용 wheel 생성.
-
-    httpx, lxml, beautifulsoup4, rich, pydantic, numpy 등
-    pyodide 빌트인으로 설치 가능한 deps는 유지한다.
-    """
-    out_path = wheel_path.parent / wheel_path.name.replace(".whl", ".pyodide.whl")
-
-    with zipfile.ZipFile(wheel_path, "r") as src, zipfile.ZipFile(out_path, "w") as dst:
-        for item in src.infolist():
-            data = src.read(item.filename)
-
-            if item.filename.endswith("/METADATA"):
-                text = data.decode("utf-8")
-                lines = []
-                strip_set = {s.lower().replace("-", "_") for s in _PYODIDE_STRIP}
-                relax_set = {s.lower().replace("-", "_") for s in _PYODIDE_RELAX_VERSION}
-                for line in text.splitlines():
-                    if line.startswith("Requires-Dist:"):
-                        raw = line.split(":")[1].strip()
-                        pkg = raw.split(";")[0].split(">")[0].split("<")[0].split("=")[0].split("[")[0].strip()
-                        pkg_norm = pkg.lower().replace("-", "_")
-                        if pkg_norm in strip_set:
-                            continue  # pyodide 미지원 — 제거
-                        # 환경 마커 제거
-                        if "; sys_platform" in line:
-                            line = line.split(";")[0].strip()
-                        # 버전 제약 완화 (pyodide 빌트인 버전과 충돌 방지)
-                        if pkg_norm in relax_set:
-                            line = f"Requires-Dist: {pkg}"
-                    lines.append(line)
-                # pyodide 전용 추가 deps
-                for add_pkg in _PYODIDE_ADD:
-                    lines.append(f"Requires-Dist: {add_pkg}")
-                data = ("\n".join(lines) + "\n").encode("utf-8")
-
-            if item.filename.endswith("/RECORD"):
-                data = b""
-
-            dst.writestr(item, data)
-
-    print(f"pyodide wheel: {out_path.name} ({out_path.stat().st_size / 1024:.0f} KB)")
-    return out_path
-
-
 def upload_to_hf(wheel_path: Path, token: str | None = None) -> str:
-    """wheel을 HF datasets에 업로드."""
+    """plain wheel 을 HF datasets 의 pyodide/ 로 업로드."""
     from huggingface_hub import HfApi
 
     api = HfApi(token=token)
-    # pyodide wheel은 원래 이름으로 업로드 (.pyodide 접미사 제거)
-    repo_name = wheel_path.name.replace(".pyodide.whl", ".whl")
     url = api.upload_file(
         path_or_fileobj=str(wheel_path),
-        path_in_repo=f"{HF_DIR}/{repo_name}",
+        path_in_repo=f"{HF_DIR}/{wheel_path.name}",
         repo_id=HF_REPO,
         repo_type="dataset",
     )
@@ -125,16 +54,7 @@ def main():
     args = parser.parse_args()
 
     whl = build_wheel()
-    print(f"원본 wheel: {whl} ({whl.stat().st_size / 1024:.0f} KB)")
-
-    # deps 제거한 pyodide 전용 wheel
-    pyodide_whl = strip_deps(whl)
-
-    # 로컬 복사
-    import shutil
-
-    local_copy = Path(__file__).parent / pyodide_whl.name
-    shutil.copy2(pyodide_whl, local_copy)
+    print(f"wheel: {whl} ({whl.stat().st_size / 1024:.0f} KB)")
 
     if args.upload:
         import os
@@ -146,7 +66,7 @@ def main():
         if not token:
             print("⚠ HF_TOKEN 필요: --token 또는 환경변수", file=sys.stderr)
             sys.exit(1)
-        upload_to_hf(pyodide_whl, token)
+        upload_to_hf(whl, token)
 
 
 if __name__ == "__main__":

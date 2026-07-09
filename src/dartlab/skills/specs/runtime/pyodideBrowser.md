@@ -52,7 +52,7 @@ examples:
 source:
   type: curated_markdown
   owner: dartlab
-lastUpdated: "2026-05-02"
+lastUpdated: "2026-07-09"
 testUniverse:
   market: KR
   stockCodes:
@@ -62,7 +62,7 @@ testUniverse:
 ## 절차
 
 - skill search 결과의 `runtimeCompatibility.pyodide.status`를 먼저 확인한다.
-- `supported`는 브라우저 내 파일 또는 prefetch 데이터로 바로 실행할 수 있다.
+- `supported`는 브라우저 내 파일 또는 자동 lazy 로드 데이터로 바로 실행할 수 있다.
 - `limited`는 HF snapshot, 업로드 파일, prebuilt parquet 같은 제한 조건을 함께 표시한다.
 - `unsupported`는 로컬 Python 또는 서버 ask 경로를 안내한다.
 - 브라우저에서 말하는 최신성은 live API가 아니라 사용한 snapshot의 asOf 기준으로만 표현한다.

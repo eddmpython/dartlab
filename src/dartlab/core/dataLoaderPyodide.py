@@ -107,6 +107,7 @@ def pyodideFetchToFS(stockCode: str, category: str, dirPath: str, path: Path) ->
 
     buf = None
 
+    # tier 1 (opportunistic): JSPI stack-switching 되는 브라우저(Chrome 137+)면 sync 로 async fetch.
     try:
         from pyodide.ffi import run_sync  # type: ignore[import-not-found]
         from pyodide.http import pyfetch  # type: ignore[import-not-found]
@@ -117,25 +118,8 @@ def pyodideFetchToFS(stockCode: str, category: str, dirPath: str, path: Path) ->
     except Exception:
         pass
 
-    if buf is None:
-        try:
-            import asyncio
-
-            from pyodide.http import pyfetch  # type: ignore[import-not-found]
-
-            async def _fetch():
-                resp = await pyfetch(url)
-                if resp.status != 200:
-                    raise RuntimeError(f"HTTP {resp.status}")
-                return await resp.bytes()
-
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                raise RuntimeError("event loop running")
-            buf = loop.run_until_complete(_fetch())
-        except Exception:
-            pass
-
+    # tier 2 (reliable): 동기 XMLHttpRequest. 웹워커에서 항상 동작(webloop 실행 중이라 run_until_complete
+    # 경로는 죽어 제거함). x-user-defined mime + byte 재구성으로 바이너리 세이프.
     if buf is None:
         try:
             from js import XMLHttpRequest  # type: ignore[import-not-found]
@@ -170,6 +154,13 @@ def pyodideFetchToFS(stockCode: str, category: str, dirPath: str, path: Path) ->
             "  import os; os.makedirs('/data/{dirPath}', exist_ok=True)\n"
             f"  open('/data/{dirPath}/{stockCode}.parquet', 'wb').write(buf)"
         )
+
+    # open_url tier 는 HTTP status 를 검사하지 않아 404 등의 에러 본문(HTML/JSON)을 buf 로 반환할 수 있다.
+    # 그 garbage 를 FS 에 쓰면 이후 pyarrow read_table 이 ArrowInvalid(ValueError)로 크래시하는데,
+    # 호출부(readLong)의 except 가 그걸 못 잡아 c.panel 까지 전파된다. parquet magic(PAR1 head+tail)으로
+    # 거부해 부재/404 를 RuntimeError 로 승격 → 호출부가 graceful(빈 결과)로 저하하게 한다.
+    if len(buf) < 8 or buf[:4] != b"PAR1" or buf[-4:] != b"PAR1":
+        raise RuntimeError(f"Pyodide fetch: parquet 아님 (부재/404 의심): {url} (size={len(buf)}, head={buf[:4]!r})")
 
     path.write_bytes(buf)
 

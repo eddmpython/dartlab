@@ -623,15 +623,12 @@ def getFinance(code: str):
 
 ```python
 import micropip
-await micropip.install(["diff-match-patch", "openpyxl"])
-await micropip.install(
-    "https://huggingface.co/eddmpython/dartlab-data/resolve/main/pyodide/dartlab-latest-py3-none-any.whl",
-    deps=False,
-)
+# One line. micropip resolves deps (diff-match-patch, openpyxl) and built-in C extensions from the wheel's metadata markers.
+await micropip.install("https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main/pyodide/dartlab-0.10.7-py3-none-any.whl")
 
 import dartlab
 c = dartlab.Company("005930")
-c.show("IS")
+c.panel("IS")
 ```
 
 Or add `dartlab` as a single line to the `requirements.txt` tab in the xlwings Lite sidebar — done. **No local Python, no uv, no venv.**

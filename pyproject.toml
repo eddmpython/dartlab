@@ -85,7 +85,9 @@ dependencies = [
     "PyYAML>=6.0.0,<7; sys_platform != 'emscripten'",
     # viz
     "plotly>=5.0.0,<7; sys_platform != 'emscripten'",
-    "marimo>=0.23.6",
+    # marimo(노트북 프레임워크)는 pyodide 데이터분석 wheel 에 불필요. transitive msgspec(순수휠 없음)이
+    # micropip.install(wheel) 을 깨뜨린다. 다른 서버/AI dep 과 동일하게 emscripten 제외 (build.py strip 불요).
+    "marimo>=0.23.6; sys_platform != 'emscripten'",
 ]
 
 [project.scripts]

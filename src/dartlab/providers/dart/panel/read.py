@@ -38,6 +38,7 @@ LLM Specifications:
 from __future__ import annotations
 
 import logging
+import sys
 from pathlib import Path
 
 import polars as pl
@@ -47,6 +48,10 @@ import dartlab.config as _cfg
 from .period import sortPeriods
 
 _log = logging.getLogger(__name__)
+
+# pyodide(브라우저 WASM)는 huggingface_hub 이 없다(emscripten 제외 dep). panel 보드 lazy 조달은
+# 로더 공용 pyodide fetch(pyodideFetchToFS, pyfetch/XHR)로 우회한다. 데스크톱은 huggingface_hub.
+_IS_PYODIDE = sys.platform == "emscripten"
 
 # pivot row identity (회사내 다기간 정렬 키). scope = read 파생(scopeExpr). chapter 는 readWide 가
 # canonicalChapterExpr 로 접은 canonical 라벨((첨부)→III). leafType = text/table 분리(표↔표 정렬).
@@ -199,19 +204,29 @@ def ensurePanelFromHf(code: str, marketNs: str = "kr") -> None:
     attemptKey = f"{marketNs}:{code}"
     if attemptKey in _HF_PANEL_ATTEMPTED:
         return
+
+    category = "panel" if marketNs == "kr" else "edgarPanel"
+
+    if _IS_PYODIDE:
+        # 브라우저: huggingface_hub 부재. 로더 공용 pyodide fetch(pyfetch/XHR)로 flat parquet 조달.
+        # 부재(404)나 네트워크 실패는 graceful(빈 결과 저하, readWide 가 None 처리). 영구 마킹 안 함(재시도 가능).
+        from dartlab.core.dataConfig import DATA_RELEASES
+        from dartlab.core.dataLoaderPyodide import pyodideFetchToFS
+
+        try:
+            pyodideFetchToFS(code, category, DATA_RELEASES[category]["dir"], flat)
+        except Exception as exc:  # noqa: BLE001 (부재/네트워크: 빈 결과 저하, 다음 호출 재시도)
+            _log.warning("panel %s 브라우저 다운로드 실패(재시도 가능): %s", code, exc)
+        return
+
     try:
         from huggingface_hub import snapshot_download
 
         from dartlab.core.dataConfig import DATA_RELEASES, repoFor
         from dartlab.core.hfRetry import retryHfCall
 
-        if marketNs == "kr":
-            category = "panel"
-            patterns = [f"{DATA_RELEASES['panel']['dir']}/{code}.parquet"]
-        else:  # us — panel 단일 artifact
-            category = "edgarPanel"
-            patterns = [f"{DATA_RELEASES['edgarPanel']['dir']}/{code}.parquet"]
-        retryHfCall(  # HF read SSOT(core.hfRetry) — 429/503/504 단일 백오프
+        patterns = [f"{DATA_RELEASES[category]['dir']}/{code}.parquet"]  # flat 회사당 1파일 (us 는 보드+셀)
+        retryHfCall(  # HF read SSOT(core.hfRetry). 429/503/504 단일 백오프
             snapshot_download,
             repo_id=repoFor(category),
             repo_type="dataset",
