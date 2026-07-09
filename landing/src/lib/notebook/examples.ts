@@ -11,13 +11,12 @@ export interface NotebookExample {
 	cells: Cell[];
 }
 
-// 공유 부트스트랩: pyodide 표준 micropip 로 dartlab 설치 + 한 줄 prefetch(데이터·설정·Company 자동).
-// 복잡한 부분(loadPackage·데이터경로·offline·wheel 압축해제)은 전부 dartlab 라이브러리가 흡수한다.
-const SETUP = `# dartlab 설치 (pyodide, 최초 1회, 약 20초). 커널은 범용이라 예제가 스스로 dartlab 을 올린다.
-import micropip
-await micropip.install("https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main/pyodide/dartlab-0.10.7-py3-none-any.whl")
+// 공유 부트스트랩: import dartlab 만 하면 노트북이 최초 1회 자동 설치(워커가 micropip 로 처리). 그다음은
+// 데스크톱과 완전히 동일하게 Company 를 쓴다. 설치·C 확장·데이터경로·lazy fetch 등 복잡성은 라이브러리가
+// 통째로 흡수하므로 prefetch 나 await, loadPackage 가 필요 없다. 데이터는 메서드 첫 접근 시 자동 다운로드.
+const SETUP = `# dartlab 은 import 하면 노트북이 알아서 설치한다 (최초 1회 약 20초).
 import dartlab
-c = await dartlab.prefetch("005930")   # 데이터 다운로드 + 설정 + Company 생성, 한 번에`;
+c = dartlab.Company("005930")   # 데스크톱과 동일. 데이터는 첫 접근 시 자동 다운로드`;
 
 function cells(exampleId: string, defs: [Cell['type'], string][]): Cell[] {
 	return defs.map(([type, content], i) => ({ id: `${exampleId}-${i}`, type, content }));
