@@ -5299,7 +5299,7 @@
         "노트북 새로 만들거나 기존 노트북 수정"
       ],
       "nextSkills": [],
-      "bodyPreview": "## 노트북 카탈로그\n\nColab 은 브라우저에서 바로 실행 (Google 계정). Molab 은 marimo 클라우드 (무료).\n\n| 기능 | 설명 | Colab | Molab |\n|---|---|---|---|\n| **Company** | `Company(\"005930\")` — sections, show, trace, diff, 재무 | [![Colab](https://img.shields.io/badge/Colab-ea4647?style=flat-square&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) | [![Molab](https://img.shields.io/badge/Molab-38bdf8?style=flat-square)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py) |\n| **Scan** | `scan()` — 13 "
+      "bodyPreview": "## 노트북 카탈로그\n\nColab 은 브라우저에서 바로 실행 (Google 계정). Molab 은 marimo 클라우드 (무료).\n\n노트북 파일명은 `notebooks/colab/{name}.ipynb` 와 `notebooks/marimo/{name}.py` 가 1:1 로 같다.\n축 개수는 각 엔진 카탈로그(인자 없이 호출) 실측값이다.\n\n| 노트북 | 기능 | 설명 |\n|---|---|---|\n| `01_company` | **Company** | `Company(\"005930\")` 로 회사를 잡고 `c.panel` · `c.select` · `c.trace` |\n| `02_gather` | **Gather** | `gather()` 16 축. 주가 · 수급 · 거시 · 뉴스 (네트워크 필요, 로컬 전용) |\n| `03_scan` | **Scan** | `scan()` 27 축 전 종목 횡단 스캔 |\n| `04_quant` | **Quant** | `c.quant()` 48 축. 기술적 지표 · 신호 · 백테스트 |\n| `05_analysis` | **Analysis** | `c.analysis()` 22 축. 수익성 · 성장성 · 안정성 · 밸류에이션 |"
     },
     {
       "id": "runtime.promptingPatterns",
