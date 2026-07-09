@@ -6,7 +6,14 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.scan.io.parquet import _ensureScanData, extractAccount
+from dartlab.scan.io.parquet import (
+    _ensureScanData,
+    collectScan,
+    extractAccount,
+    financeScanPath,
+    lazyParquet,
+    parquetColumns,
+)
 
 # ── 유동자산 ──
 
@@ -93,20 +100,18 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
             grade : str — 유동성 등급
         빈 DataFrame — 데이터 없음
     """
-    schema = pl.scan_parquet(str(scanPath)).collect_schema().names()
+    schema = parquetColumns(scanPath)
     scCol = "stockCode"
 
     allIds = list(CA_IDS | CL_IDS | INV_IDS)
     allNms = list(CA_NMS | CL_NMS | INV_NMS)
 
-    target = (
-        pl.scan_parquet(str(scanPath))
-        .filter(
+    target = collectScan(
+        lazyParquet(scanPath).filter(
             (pl.col("sj_div") == "BS")
             & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
             & (pl.col("account_id").is_in(allIds) | pl.col("account_nm").is_in(allNms))
         )
-        .collect(engine="streaming")
     )
     if target.is_empty():
         return pl.DataFrame()
@@ -282,7 +287,7 @@ def scanLiquidity(*, verbose: bool = True) -> pl.DataFrame:
         - :func:`dartlab.scan.financial.efficiency.scanEfficiency` — CCC 등 운영 효율
     """
     scanDir = _ensureScanData()
-    scanPath = scanDir / "finance.parquet"
+    scanPath = financeScanPath(scanDir)
     if scanPath.exists():
         return _scanFromMerged(scanPath)
     return _scanPerFile()

@@ -288,10 +288,10 @@ def scanRevenuePerEmployee() -> dict[str, float]:
     }
     REVENUE_NMS = {"매출액", "수익(매출액)", "영업수익", "매출", "순영업수익"}
 
-    from dartlab.scan.io.parquet import _ensureScanData
+    from dartlab.scan.io.parquet import _ensureScanData, financeScanPath
 
     scanDir = _ensureScanData()
-    scanPath = scanDir / "finance.parquet"
+    scanPath = financeScanPath(scanDir)
 
     if scanPath.exists():
         try:
@@ -332,13 +332,13 @@ def _revenueFromMerged(scanPath: Path, revIds: set[str], revNms: set[str]) -> di
     """
     scCol = "stockCode"
 
-    target = (
-        pl.scan_parquet(str(scanPath))
-        .filter(
+    from dartlab.scan.io.parquet import collectScan, lazyParquet
+
+    target = collectScan(
+        lazyParquet(scanPath).filter(
             pl.col("sj_div").is_in(["IS", "CIS"])
             & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
         )
-        .collect(engine="streaming")
     )
     if target.is_empty() or "account_id" not in target.columns:
         return {}

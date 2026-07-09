@@ -6,7 +6,14 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.scan.io.parquet import _ensureScanData, extractAccount
+from dartlab.scan.io.parquet import (
+    _ensureScanData,
+    collectScan,
+    extractAccount,
+    financeScanPath,
+    lazyParquet,
+    parquetColumns,
+)
 
 # ── 순이익 ──
 
@@ -97,20 +104,18 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
         - cfToNi : float — 영업CF / 순이익 (배). 극단값(|x|>20) 은 None
         - grade : str — 이익의 질 등급 (우수/양호/보통/주의/위험)
     """
-    schema = pl.scan_parquet(str(scanPath)).collect_schema().names()
+    schema = parquetColumns(scanPath)
     scCol = "stockCode"
 
     allIds = list(NI_IDS | OCF_IDS | TA_IDS)
     allNms = list(NI_NMS | OCF_NMS | TA_NMS)
 
-    target = (
-        pl.scan_parquet(str(scanPath))
-        .filter(
+    target = collectScan(
+        lazyParquet(scanPath).filter(
             pl.col("sj_div").is_in(["IS", "CIS", "CF", "BS"])
             & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
             & (pl.col("account_id").is_in(allIds) | pl.col("account_nm").is_in(allNms))
         )
-        .collect(engine="streaming")
     )
     if target.is_empty():
         return pl.DataFrame()
@@ -310,7 +315,7 @@ def scanQuality(*, verbose: bool = True) -> pl.DataFrame:
         - :func:`dartlab.scan.builders.edgar.scan._scanQuality` — US 종목 (대칭 axis)
     """
     scanDir = _ensureScanData()
-    scanPath = scanDir / "finance.parquet"
+    scanPath = financeScanPath(scanDir)
     if scanPath.exists():
         return _scanFromMerged(scanPath)
     return _scanPerFile()

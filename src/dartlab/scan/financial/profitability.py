@@ -39,8 +39,12 @@ from dartlab.scan.io.parquet import (
 from dartlab.scan.io.parquet import (
     _ensureScanData,
     _loadRawFinanceViaDuckDb,
+    collectScan,
     extractAccount,
     filterLatestPerStock,
+    financeScanPath,
+    lazyParquet,
+    parquetColumns,
 )
 
 _PROFITABILITY_SCHEMA = {
@@ -152,7 +156,7 @@ def scanProfitability(*, verbose: bool = True) -> pl.DataFrame:
         - :func:`dartlab.scan.io.parquet.scanFinanceParquets` — LazyFrame helper
     """
     scanDir = _ensureScanData()
-    scanPath = scanDir / "finance.parquet"
+    scanPath = financeScanPath(scanDir)
 
     if not scanPath.exists():
         return _scanPerFile()
@@ -175,7 +179,7 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
         컬럼 상세는 ``_computeProfitability`` 독스트링 참조.
         데이터가 없으면 빈 DataFrame.
     """
-    schema = pl.scan_parquet(str(scanPath)).collect_schema().names()
+    schema = parquetColumns(scanPath)
     scCol = "stockCode"
     if scCol not in schema:
         return _emptyProfitabilityFrame()
@@ -183,14 +187,12 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
     allIds = list(_REVENUE_IDS | _OP_IDS | _NI_IDS | _TA_IDS | _EQ_IDS)
     allNms = list(_REVENUE_NMS | _OP_NMS | _NI_NMS | _TA_NMS | _EQ_NMS)
 
-    target = (
-        pl.scan_parquet(str(scanPath))
-        .filter(
+    target = collectScan(
+        lazyParquet(scanPath).filter(
             pl.col("sj_div").is_in(["IS", "CIS", "BS"])
             & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
             & (pl.col("account_id").is_in(allIds) | pl.col("account_nm").is_in(allNms))
         )
-        .collect(engine="streaming")
     )
     if target.is_empty() or scCol not in target.columns:
         return _emptyProfitabilityFrame()

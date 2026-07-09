@@ -11,7 +11,13 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.scan.io.parquet import _ensureScanData, parseNumStr
+from dartlab.scan.io.parquet import (
+    _ensureScanData,
+    collectScan,
+    financeScanPath,
+    lazyParquet,
+    parseNumStr,
+)
 
 # ── 영업활동CF ──
 
@@ -114,14 +120,12 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
     allIds = list(OCF_IDS | ICF_IDS | FINCF_IDS)
     allNms = list(OCF_NMS | ICF_NMS | FINCF_NMS)
 
-    target = (
-        pl.scan_parquet(str(scanPath))
-        .filter(
+    target = collectScan(
+        lazyParquet(scanPath).filter(
             pl.col("sj_div").is_in(["CF"])
             & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
             & (pl.col("account_id").is_in(allIds) | pl.col("account_nm").is_in(allNms))
         )
-        .collect(engine="streaming")
     )
     if target.is_empty():
         return pl.DataFrame()
@@ -302,7 +306,7 @@ def scanCashflow(*, verbose: bool = True) -> pl.DataFrame:
         - :func:`dartlab.scan.builders.kr.payload.capitalToInsight` — capital axis 와 결합
     """
     scanDir = _ensureScanData()
-    scanPath = scanDir / "finance.parquet"
+    scanPath = financeScanPath(scanDir)
     if scanPath.exists():
         return _scanFromMerged(scanPath)
     return _scanPerFile()

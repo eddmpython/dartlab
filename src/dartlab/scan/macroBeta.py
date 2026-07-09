@@ -188,13 +188,13 @@ def _loadRevenueSeries(scanDir: Path) -> pl.DataFrame | None:
         {year}A : float — 연도별 매출 (원). 컬럼명 예: "2024A"
         데이터 없으면 None.
     """
-    from dartlab.scan.io.parquet import parseNumStr
+    from dartlab.scan.io.parquet import collectScan, financeScanPath, lazyParquet, parquetColumns, parseNumStr
 
-    scanPath = scanDir / "finance.parquet"
+    scanPath = financeScanPath(scanDir)
     if not scanPath.exists():
         return None
 
-    schema = pl.scan_parquet(str(scanPath)).collect_schema().names()
+    schema = parquetColumns(scanPath)
     scCol = "stockCode"
 
     REVENUE_IDS = {
@@ -208,14 +208,12 @@ def _loadRevenueSeries(scanDir: Path) -> pl.DataFrame | None:
     }
     REVENUE_NMS = {"매출액", "수익(매출액)", "영업수익", "매출", "순영업수익"}
 
-    target = (
-        pl.scan_parquet(str(scanPath))
-        .filter(
+    target = collectScan(
+        lazyParquet(scanPath).filter(
             pl.col("sj_div").is_in(["IS", "CIS"])
             & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
             & (pl.col("account_id").is_in(list(REVENUE_IDS)) | pl.col("account_nm").is_in(list(REVENUE_NMS)))
         )
-        .collect(engine="streaming")
     )
     if target.is_empty():
         return None

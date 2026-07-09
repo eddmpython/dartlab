@@ -315,10 +315,10 @@ def scanDebtMix() -> dict[str, dict]:
     >>> mix = scanDebtMix()
     >>> mix.get("005930", {}).get("부채비율")
     """
-    from dartlab.scan.io.parquet import _ensureScanData
+    from dartlab.scan.io.parquet import _ensureScanData, financeScanPath
 
     scanDir = _ensureScanData()
-    scanPath = scanDir / "finance.parquet"
+    scanPath = financeScanPath(scanDir)
 
     if scanPath.exists():
         try:
@@ -393,13 +393,13 @@ def _debtMixFromMerged(scanPath: Path) -> dict[str, dict]:
     """
     scCol = "stockCode"
 
-    bs = (
-        pl.scan_parquet(str(scanPath))
-        .filter(
+    from dartlab.scan.io.parquet import collectScan, lazyParquet
+
+    bs = collectScan(
+        lazyParquet(scanPath).filter(
             (pl.col("sj_div") == "BS")
             & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
         )
-        .collect(engine="streaming")
     )
     if bs.is_empty() or "account_id" not in bs.columns:
         return {}

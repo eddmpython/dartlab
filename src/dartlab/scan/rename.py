@@ -90,14 +90,17 @@ def _enrichWithKorean(df: pl.DataFrame) -> pl.DataFrame:
             from dartlab._listingDispatch import listing as _listing
 
             listing = _listing()
-            if listing is not None:
+            # 상장사 목록을 못 받는 환경(브라우저/pyodide 는 KRX 로 못 나간다)에서는 0 행 프레임이 온다.
+            # 그때 종목코드 컬럼 dtype 이 Null 이라 join key 가 str 과 안 맞아 SchemaError 로 scan 전체가
+            # 죽었다. 종목명은 부가 정보이므로, 목록이 비면 join 을 건너뛰고 scan 결과를 그대로 돌려준다.
+            if listing is not None and listing.height > 0:
                 name_col = next((c for c in ("종목명", "회사명") if c in listing.columns), None)
                 if name_col and "종목코드" in listing.columns:
                     name_map = listing.select(["종목코드", name_col]).rename(
                         {name_col: "_종목명", "종목코드": "stockCode"}
                     )
                     df = df.join(name_map, on="stockCode", how="left")
-        except (ImportError, AttributeError, KeyError, ValueError, RuntimeError):
+        except (ImportError, AttributeError, KeyError, ValueError, RuntimeError, pl.exceptions.PolarsError):
             pass
 
     # 한글 rename

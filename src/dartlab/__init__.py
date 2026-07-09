@@ -1,5 +1,6 @@
 """DART 공시 데이터 활용 라이브러리."""
 
+import importlib
 import os as _os
 import sys
 from importlib.metadata import PackageNotFoundError
@@ -775,10 +776,13 @@ class _Module(sys.modules[__name__].__class__):
             obj = getattr(_aiEntries, name)
             setattr(self, name, obj)
             return obj
+        # ``import importlib`` 은 함수 밖(모듈 top) 에 있어야 한다. 예전엔 바로 아래 ``if target`` 분기
+        # 안에 있었고, 그러면 파이썬이 ``importlib`` 을 이 함수의 지역변수로 잡아 버린다. scan 은 그 분기를
+        # 타지 않으므로 아래 ``importlib.import_module("dartlab.scan")`` 에서 UnboundLocalError 가 났다.
+        # 데스크톱은 서브모듈 import 가 이미 attribute 를 심어 __getattr__ 자체를 안 타 가려져 있었고,
+        # pyodide 에서만 공개 계약 ``dartlab.scan(...)`` 이 죽었다.
         target = _LAZY_ATTRS.get(name)
         if target is not None:
-            import importlib
-
             mod_path, attr = target
             mod = importlib.import_module(mod_path)
             obj = mod if attr is None else getattr(mod, attr)
@@ -840,7 +844,6 @@ if not _IS_PYODIDE:
     # scan/analysis/credit/quant — 어떤 import 체인이 모듈을 먼저 로드하면
     # 모듈 클래스의 __getattr__이 동작 안 함 (CI에서 발견된 회귀).
     # 해결: 모듈 자체를 callable로 패치 — 모듈 객체에 __call__을 직접 부여.
-    import importlib
     import types as _types
 
     def _makeCallableModule(modName: str, instanceFactory):

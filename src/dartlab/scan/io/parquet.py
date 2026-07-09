@@ -186,6 +186,73 @@ def _isScanComplete(scanDir: Path) -> bool:
     return _isScanRootComplete(scanDir) and _isScanReportComplete(scanDir)
 
 
+def financeScanPath(scanDir: Path) -> Path:
+    """전종목 finance 프리빌드 경로 (환경별 SSOT).
+
+    데스크톱은 전량 ``finance.parquet``(~307MB), 브라우저(pyodide)는 같은 스키마의 경량본
+    ``finance-lite.parquet``(~20MB) 을 쓴다. 축 모듈이 파일명을 각자 하드코딩하면 브라우저에서
+    없는 파일을 보고 조용히 빈 결과로 떨어지므로, 어느 파일을 쓸지는 여기 한 곳이 정한다.
+
+    Args:
+        scanDir: ``_ensureScanData()`` 가 돌려준 scan 프리빌드 디렉토리.
+
+    Returns
+    -------
+    Path
+        환경에 맞는 finance 프리빌드 parquet 경로.
+    """
+    from dartlab.core.dataLoader import _IS_PYODIDE
+
+    return scanDir / ("finance-lite.parquet" if _IS_PYODIDE else "finance.parquet")
+
+
+def lazyParquet(path: Path | str, *, columns: list[str] | None = None) -> pl.LazyFrame:
+    """parquet → LazyFrame (pyodide WASM 호환).
+
+    polars WASM wheel 에는 ``scan_parquet`` 이 없다(``PyLazyFrame.new_from_parquet`` 부재).
+    그 환경에서는 pyarrow 로 전량 읽고 ``.lazy()`` 로 올린다. 뒤따르는 filter/group_by/str 연산은
+    WASM 에서도 동일하게 동작한다(실측). 데스크톱은 ``pl.scan_parquet`` 그대로라 push-down 유지.
+
+    Args:
+        path: parquet 파일 경로.
+        columns: 열 프로젝션. pyodide 경로에서만 읽기 단계에 적용된다.
+    """
+    from dartlab.core.dataLoader import _IS_PYODIDE, readParquetSafe
+
+    if not _IS_PYODIDE:
+        return pl.scan_parquet(str(path))
+    return readParquetSafe(str(path), columns=columns).lazy()
+
+
+def parquetColumns(path: Path | str) -> list[str]:
+    """parquet 열 이름만 읽는다 (본문 미독).
+
+    ``lazyParquet(path).collect_schema()`` 은 pyodide 경로에서 파일 전량을 읽어 버린다(20MB 재독).
+    스키마만 필요한 자리(예: stockCode 열 존재 확인)는 이 함수를 쓴다.
+    """
+    from dartlab.core.dataLoader import _IS_PYODIDE
+
+    if not _IS_PYODIDE:
+        return pl.scan_parquet(str(path)).collect_schema().names()
+    import pyarrow.parquet as pq
+
+    return list(pq.read_schema(str(path)).names)
+
+
+def collectScan(lz: pl.LazyFrame) -> pl.DataFrame:
+    """LazyFrame 수집 (pyodide WASM 호환).
+
+    데스크톱은 streaming 엔진으로 메모리 피크를 눌러 수집한다. polars WASM 은 streaming 엔진이
+    없어(``Invalid engine argument``) 기본 엔진으로 수집한다. 브라우저가 다루는 경량본은 작아서
+    메모리 문제가 없다.
+    """
+    from dartlab.core.dataLoader import _IS_PYODIDE
+
+    if _IS_PYODIDE:
+        return lz.collect()  # polars-streaming-unsupported (WASM 엔진 부재)
+    return lz.collect(engine="streaming")
+
+
 def _ensureScanData(*, requireReports: bool = False) -> Path:
     """scan 프리빌드 디렉토리 확인.
 
@@ -209,13 +276,19 @@ def _ensureScanData(*, requireReports: bool = False) -> Path:
     if _scanDownloaded and (not requireReports or _isScanReportComplete(scanDir)):
         return scanDir
 
-    # Pyodide: finance-lite.parquet 단일 파일만 체크 (전체 프리빌드는 용량상 불가)
+    # Pyodide: finance-lite.parquet 단일 파일만 요구 (전체 프리빌드는 용량상 불가).
+    # 없으면 HF 에서 받는다. 예전엔 여기서 다운로드를 안 하고 곧장 반환해, 브라우저의 scan 이
+    # 늘 프리빌드 없는 상태로 돌아 조용히 0 행을 냈다(전용 로더가 있는데도 호출되지 않았다).
     if _IS_PYODIDE:
         liteParquet = scanDir / "finance-lite.parquet"
         if liteParquet.exists():
             _scanDownloaded = True
             return scanDir
         emit("scan:prebuild_missing")
+        from dartlab.core.dataLoaderPyodide import pyodideFetchScanLite
+
+        pyodideFetchScanLite(_dataDir)
+        _scanDownloaded = True
         return scanDir
 
     if not _missingScanFiles(scanDir, requireReports=requireReports):

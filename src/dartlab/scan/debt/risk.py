@@ -49,14 +49,14 @@ def _scanIcrFromMerged(scanPath: Path) -> dict[str, float]:
     allIds = list(OP_IDS | INTEREST_IDS)
     allNms = list(OP_NMS | INTEREST_NMS)
 
-    target = (
-        pl.scan_parquet(str(scanPath))
-        .filter(
+    from dartlab.scan.io.parquet import collectScan, lazyParquet
+
+    target = collectScan(
+        lazyParquet(scanPath).filter(
             pl.col("sj_div").is_in(["IS", "CIS"])
             & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
             & (pl.col("account_id").is_in(allIds) | pl.col("account_nm").is_in(allNms))
         )
-        .collect(engine="streaming")
     )
     if target.is_empty():
         return {}
@@ -192,10 +192,10 @@ def scanIcr() -> dict[str, float]:
     >>> icrMap = scanIcr()
     >>> icrMap.get("005930")
     """
-    from dartlab.scan.io.parquet import _ensureScanData
+    from dartlab.scan.io.parquet import _ensureScanData, financeScanPath
 
     scanDir = _ensureScanData()
-    scanPath = scanDir / "finance.parquet"
+    scanPath = financeScanPath(scanDir)
     if scanPath.exists():
         return _scanIcrFromMerged(scanPath)
     return _scanIcrPerFile()

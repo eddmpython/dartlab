@@ -27,7 +27,10 @@ from dartlab.scan.io.parquet import (
 )
 from dartlab.scan.io.parquet import (
     _ensureScanData,
+    collectScan,
     extractAccount,
+    financeScanPath,
+    lazyParquet,
 )
 
 _GROWTH_SCHEMA = {
@@ -176,7 +179,7 @@ def scanGrowth(*, verbose: bool = True) -> pl.DataFrame:
         - :func:`dartlab.scan.dividendTrend.scanDividendTrend` — 배당 시계열 (별도 axis)
     """
     scanDir = _ensureScanData()
-    scanPath = scanDir / "finance.parquet"
+    scanPath = financeScanPath(scanDir)
 
     if not scanPath.exists():
         return _scanPerFile()
@@ -199,20 +202,17 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
         컬럼 상세는 ``_computeGrowth`` 독스트링 참조.
         데이터가 없으면 빈 DataFrame.
     """
-    schema = pl.scan_parquet(str(scanPath)).collect_schema().names()
     scCol = "stockCode"
 
     allIds = list(_REVENUE_IDS | _OP_IDS | _NI_IDS)
     allNms = list(_REVENUE_NMS | _OP_NMS | _NI_NMS)
 
-    target = (
-        pl.scan_parquet(str(scanPath))
-        .filter(
+    target = collectScan(
+        lazyParquet(scanPath).filter(
             pl.col("sj_div").is_in(["IS", "CIS"])
             & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
             & (pl.col("account_id").is_in(allIds) | pl.col("account_nm").is_in(allNms))
         )
-        .collect(engine="streaming")
     )
     if target.is_empty() or scCol not in target.columns:
         return _emptyGrowthFrame()
