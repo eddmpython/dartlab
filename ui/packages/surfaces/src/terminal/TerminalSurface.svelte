@@ -10,6 +10,7 @@
 	import type { TerminalHosts, TerminalBrandLinks } from './lib/hosts';
 	import type { Lang } from './lib/types';
 	import { chgClass, fmtNum, sign, sparkPts } from './ui/helpers';
+	import BrandMark from './ui/BrandMark.svelte'; // 브랜드 마크 SSOT (아바타·이름·표면 태그)
 	import BrandSocial from './ui/BrandSocial.svelte'; // SNS 행 SSOT (마크업+간격+별 배지 소유)
 	import BrandSwitch from './ui/BrandSwitch.svelte'; // 브랜드 색 테마 · SNS 행 첫 아이콘(카드·랜딩 Header 와 동일 컨트롤)
 	import DataMenu from './ui/DataMenu.svelte'; // 상단 「데이터」 · 이 회사 데이터 공개 다운로드(viewer DataDownloadMenu 동형)
@@ -228,22 +229,14 @@
 <div class="dlTerm">
 	{#if !co}
 		<div class="bootScreen">
-			<img class="brandLogo" src="{base}/avatar.png" alt="DartLab" width="56" height="56" style="border-radius:50%" />
+			<img src="{base}/avatar.png" alt="DartLab" width="22" height="22" style="width:22px;height:22px;border-radius:50%" />
 			<div class="bootMark">DartLab <span>terminal</span></div>
 			<div class="bootBar"><div class="bootFill"></div></div>
 			<div class="bootMsg">{lang === 'en' ? 'company not found' : '회사 데이터를 찾을 수 없습니다'}</div>
 		</div>
 	{:else}
 		<header class="topBar">
-			<a class="brand" href="{base}/" title="dartlab">
-				<picture>
-					<source srcset="{base}/avatar.webp" type="image/webp" />
-					<img class="brandLogo" src="{base}/avatar.png" alt="DartLab" width="24" height="24" />
-				</picture>
-				<span class="brandName">DartLab</span>
-				<span class="brandSlash">/</span>
-				<span class="brandTag">terminal</span>
-			</a>
+			<BrandMark tag="terminal" href="{base}/" {base} title="dartlab" />
 			<form class="cmdBar" onsubmit={go} role="search">
 				<span class="cmdPrompt">‹GO›</span>
 				<input class="cmdInput" bind:this={cmdInput} bind:value={cmd} spellcheck={false}

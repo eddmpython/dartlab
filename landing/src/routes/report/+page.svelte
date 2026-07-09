@@ -7,7 +7,7 @@
   import { getPublicRuntime } from '$lib/runtime/publicRuntime';
   // 헤더 = 터미널 top bar 디자인 그대로 재사용(.dlTerm 스코프 + 터미널 클래스). 색·아이콘·SNS 동일 SSOT.
   import '@dartlab/ui-surfaces/terminal/terminal.css';
-  import { DARTLAB_BRAND_LINKS, SupportDialog, BrandSwitch, BrandSocial, fetchGithubStars, fmtStars } from '@dartlab/ui-surfaces/terminal';
+  import { DARTLAB_BRAND_LINKS, SupportDialog, BrandMark, BrandSwitch, BrandSocial, fetchGithubStars, fmtStars } from '@dartlab/ui-surfaces/terminal';
   import { buildReport, buildOverview } from '$lib/report/build';
   import { isSkipped, type ReportModel, type OverviewModel } from '$lib/report/model';
   import { PERSPECTIVES, findPerspective } from '$lib/report/perspectives';
@@ -193,15 +193,7 @@
   <!-- ── 헤더 = 터미널 top bar 디자인 그대로(.dlTerm 스코프 + terminal.css 재사용). 단일행: brand · 관점탭 · 종목검색 · 테마/인쇄 · SNS ── -->
   <header class="rptHeader dlTerm">
     <div class="topBar">
-      <a class="brand" href="{base}/" title="DartLab 홈">
-        <picture>
-          <source srcset="{base}/avatar.webp" type="image/webp" />
-          <img class="brandLogo" src="{base}/avatar.png" alt="DartLab" width="22" height="22" />
-        </picture>
-        <span class="brandName">DartLab</span>
-        <span class="brandSlash">/</span>
-        <span class="brandTag">report</span>
-      </a>
+      <BrandMark tag="report" href="{base}/" {base} title="DartLab 홈" />
 
       <form class="cmdBar" role="search" onsubmit={onSearchSubmit}>
         <span class="cmdPrompt">‹GO›</span>

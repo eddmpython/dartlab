@@ -3,11 +3,12 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { Plus, FolderOpen } from 'lucide-svelte';
-	// 헤더 = 터미널·카드 공통 SSOT(surfaces). BrandSwitch·BrandSocial·SupportDialog 동일 컨트롤 공유.
+	// 헤더 = 터미널·카드 공통 SSOT(surfaces). BrandMark·BrandSwitch·BrandSocial·SupportDialog 동일 컨트롤 공유.
 	import '@dartlab/ui-surfaces/terminal/terminal.css';
 	import {
 		DARTLAB_BRAND_LINKS,
 		SupportDialog,
+		BrandMark,
 		BrandSwitch,
 		BrandSocial,
 		fetchGithubStars
@@ -127,15 +128,7 @@
 	<!-- 헤더 = 터미널·카드 top bar 정본(.dlTerm + terminal.css 재사용). brand · 목적지 · SNS 동일 컨트롤. 경계 없음. -->
 	<header class="nbHeader">
 		<div class="topBar">
-			<a class="brand" href="{base}/" title="DartLab 홈">
-				<picture>
-					<source srcset="{base}/avatar.webp" type="image/webp" />
-					<img class="brandLogo" src="{base}/avatar.png" alt="DartLab" width="22" height="22" />
-				</picture>
-				<span class="brandName">DartLab</span>
-				<span class="brandSlash">/</span>
-				<span class="brandTag">notebook</span>
-			</a>
+			<BrandMark tag="notebook" href="{base}/" {base} title="DartLab 홈" />
 			<div class="topRight">
 				<div class="hdrLinks">
 					<a class="hdrLink hdrTerm" href="{base}/terminal" title="터미널 · 데이터 워크벤치">터미널</a>

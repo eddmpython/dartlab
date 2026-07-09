@@ -7,8 +7,10 @@ export { default as SupportDialog } from './panels/SupportDialog.svelte';
 // 브랜드 색 테마 아이콘 · 자기완결(document 직접). 터미널 topbar·카드·랜딩 Header 가 *동일* 컨트롤 공유.
 export { default as BrandSwitch } from './ui/BrandSwitch.svelte';
 // SNS 아이콘 묶음 SSOT · GitHub·후원·YouTube·Threads·Instagram. landing(/cards·/report)·로컬 챗 셸 공유.
-// 스타일은 terminal.css(.dlTerm .sns) 정본 · 소비 셸은 .dlTerm 스코프 안에서 렌더한다.
+// 컴포넌트가 마크업·치수·색을 모두 소유한다(색만 --brandSocial-* 로 열림). `.dlTerm` 스코프 불필요.
 export { default as BrandSocial } from './ui/BrandSocial.svelte';
+// 브랜드 마크 SSOT · 아바타·DartLab·/·표면 태그. 터미널·카드·리포트·노트북 허브가 같은 마크업/치수/색을 쓴다.
+export { default as BrandMark } from './ui/BrandMark.svelte';
 // 재무 추이 미니차트 · finance.bundle 의 FinCard 를 경량 SVG 렌더(klinecharts·백테스트 0 의존).
 // landing /cards 라이브 카드 캐러셀의 백본 슬라이드가 터미널과 동일한 재무 시각을 재현할 때 재사용.
 // (heatmap/bars 등 백테스트 자본곡선 의존 차트는 백본 아님 → export 보류.)

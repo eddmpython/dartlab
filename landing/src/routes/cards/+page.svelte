@@ -6,7 +6,7 @@
 	import { setStaticBase } from '@dartlab/ui-runtime/data/dartlabData';
 	import { getPublicRuntime } from '$lib/runtime/publicRuntime';
 	import '@dartlab/ui-surfaces/terminal/terminal.css';
-	import { DARTLAB_BRAND_LINKS, SupportDialog, BrandSwitch, BrandSocial, fetchGithubStars, fmtStars } from '@dartlab/ui-surfaces/terminal';
+	import { DARTLAB_BRAND_LINKS, SupportDialog, BrandMark, BrandSwitch, BrandSocial, fetchGithubStars, fmtStars } from '@dartlab/ui-surfaces/terminal';
 	import { loadMediaIndex } from '$lib/cards/media';
 	import { loadCarousels, contractToCards } from '$lib/cards/contract';
 	import type { MediaIndex, CarouselContract } from '$lib/cards/model';
@@ -108,15 +108,7 @@
 	<!-- 헤더 = 터미널 top bar 그대로(.dlTerm + terminal.css 재사용). brand · 검색 · SNS 아이콘(터미널 동일 정본). -->
 	<header class="cHeader">
 		<div class="topBar">
-			<a class="brand" href="{base}/" title="DartLab 홈">
-				<picture>
-					<source srcset="{base}/avatar.webp" type="image/webp" />
-					<img class="brandLogo" src="{base}/avatar.png" alt="DartLab" width="22" height="22" />
-				</picture>
-				<span class="brandName">DartLab</span>
-				<span class="brandSlash">/</span>
-				<span class="brandTag">cards</span>
-			</a>
+			<BrandMark tag="cards" href="{base}/" {base} title="DartLab 홈" />
 
 			<form class="cmdBar" role="search" onsubmit={(e) => e.preventDefault()}>
 				<span class="cmdPrompt">‹GO›</span>

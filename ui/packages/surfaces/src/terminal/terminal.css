@@ -77,20 +77,17 @@
 .dlTerm ::-webkit-scrollbar-thumb { background: #2a2c30; border-radius: 3px; }
 .dlTerm ::-webkit-scrollbar-thumb:hover { background: #3a3d42; }
 
-/* TOP BAR */
+/* TOP BAR
+   배경·글자색은 `--topBar-*` 변수를 거친다. 터미널·카드·리포트는 항상 다크(theme.ts 가 data-theme=dark 강제)라
+   기본값 그대로지만, 라이트가 켜지는 콘텐츠 표면(노트북 허브)에서는 아래 [data-theme='light'] 블록이 덮는다.
+   예전엔 여기 배경이 검정 하드코딩이라 라이트 모드에서 본문만 밝고 헤더는 검정으로 남았다. */
 .dlTerm .topBar {
 	display: flex; align-items: center; gap: 14px; height: 36px; flex: 0 0 36px;
-	background: linear-gradient(180deg, #16171a, #0f0f10);
+	background: var(--topBar-bg, linear-gradient(180deg, #16171a, #0f0f10));
 	border-bottom: 1px solid var(--bdAmber); padding: 0 12px;
 }
-.dlTerm .brand { display: flex; align-items: center; gap: 6px; text-decoration: none; flex-shrink: 0; }
-.dlTerm .brandLogo { width: 22px; height: 22px; border-radius: 50%; display: block; }
-.dlTerm .brandName { font-family: var(--cond); font-weight: 700; font-size: 14px; letter-spacing: -0.01em; color: var(--dl-ink-print); }
-.dlTerm .brandSlash { color: #8a93a3; font-weight: 300; font-size: 13px; }
-.dlTerm .brandTag {
-	font-family: var(--mono); font-weight: 600; font-size: 10px; letter-spacing: 0.16em; color: var(--amber);
-	text-transform: uppercase;
-}
+/* brand 마크(.brand/.brandLogo/.brandName/.brandSlash/.brandTag)는 ui/BrandMark.svelte 가 소유한다.
+   옛 전역 규칙은 표면마다 마크업 복붙 + `.dlTerm` 스코프 의존을 강요했다(로고 22 vs 24px 로 갈림). */
 /* SNS · Header.svelte 와 동일 거동 */
 /* SNS 행(.sns/.snsBtn/.snsHeart/.ghStars) 스타일은 ui/BrandSocial.svelte 가 소유한다.
    옛날엔 여기 .dlTerm 스코프에 있어서, 쓰는 표면마다 .dlTerm 래퍼를 재현해야 모양이 같았다
@@ -151,10 +148,22 @@
 .dlTerm .connDot { display: flex; align-items: center; gap: 5px; font-family: var(--cond); font-size: 10px; color: #f1f5f9; letter-spacing: 0.5px; }
 .dlTerm .connDot .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--good); box-shadow: 0 0 6px var(--good); animation: dlTermPulse 2s infinite; }
 .dlTerm .hdrLinks { display: flex; gap: 4px; }
-.dlTerm .hdrLink { font-family: var(--cond); font-size: 10px; font-weight: 600; color: #f1f5f9; text-decoration: none; border: 1px solid var(--bd); border-radius: 3px; padding: 2px 8px; letter-spacing: 0.3px; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+.dlTerm .hdrLink { font-family: var(--cond); font-size: 10px; font-weight: 600; color: var(--topBar-ink, #f1f5f9); text-decoration: none; border: 1px solid var(--topBar-line, var(--bd)); border-radius: 3px; padding: 2px 8px; letter-spacing: 0.3px; transition: color 0.15s, border-color 0.15s, background 0.15s; }
 .dlTerm .hdrLink:hover { color: var(--amber); border-color: var(--bdAmber); background: rgba(var(--amber-rgb), 0.08); }
 .dlTerm button.hdrLink { background: transparent; cursor: pointer; line-height: inherit; }
 .dlTerm .hdrLink.on { color: var(--amber); border-color: var(--bdAmber); background: rgba(var(--amber-rgb), 0.1); }
+/* 라이트 테마 top bar. theme.ts CONTENT_RE 에 든 표면(노트북 허브 등)만 data-theme=light 가 되고,
+   도구 표면(터미널·카드·리포트)은 항상 dark 라 여기 값이 적용될 일이 없다(픽셀 무변경).
+   BrandSocial 은 자기 색을 `--brandSocial-*` 로 열어 두었으므로 여기서 라이트 값만 주입한다. */
+:root[data-theme='light'] .dlTerm .topBar {
+	--topBar-bg: linear-gradient(180deg, #ffffff, #f4f5f7);
+	--topBar-ink: var(--dl-ink);
+	--topBar-line: rgba(0, 0, 0, 0.12);
+	--brandSocial-fg: var(--dl-ink-mute);
+	--brandSocial-fgHover: var(--dl-ink-print);
+	--brandSocial-bgHover: rgba(0, 0, 0, 0.06);
+	--brandSocial-count: var(--dl-ink-dim);
+}
 /* amber 강조 목적지 버튼 SSOT · 보고서·카드뉴스·블로그·공시뷰어(hdrViewer, 터미널 상단) + 터미널(hdrTerm, 카드 페이지 상단).
    형제 콘텐츠·데이터 목적지라 전부 동일 amber. 근-중복 블록을 그룹 셀렉터 한 쌍으로 통합. */
 .dlTerm .hdrReport, .dlTerm .hdrCards, .dlTerm .hdrBlog, .dlTerm .hdrViewer, .dlTerm .hdrTerm { color: var(--amber); border-color: var(--bdAmber); }
