@@ -246,6 +246,13 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         description="전 상장사 사업보고서 서술 표 정량 지표 (수주잔고·가동률 + confidence). 표준서식 격자 추출, 저신뢰/부재는 정직 gap",
         example='scan("narrativeMetric")',
     ),
+    "earningsFlash": _AxisEntry(
+        module="dartlab.scan.earningsFlash",
+        fn="scanEarningsFlash",
+        label="잠정실적",
+        description="최근 잠정실적 횡단 (영업(잠정)실적 공정공시 + 매출액/손익구조 30(15)% 변동). 매출·영업이익·순이익(원) + 전년동기 증감율, live DART 직독",
+        example='scan("earningsFlash")',
+    ),
 }
 
 
@@ -348,6 +355,12 @@ _ALIASES: dict[str, str] = {
     "백로그": "narrativeMetric",
     "가동률": "narrativeMetric",
     "서술지표": "narrativeMetric",
+    # earningsFlash
+    "잠정실적": "earningsFlash",
+    "실적발표": "earningsFlash",
+    "잠정": "earningsFlash",
+    "어닝": "earningsFlash",
+    "영업잠정실적": "earningsFlash",
 }
 
 

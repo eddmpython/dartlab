@@ -1,0 +1,52 @@
+name: Notify Watch Earnings
+
+# 잠정실적 전용 시간당 왓처. 영업(잠정)실적 공정공시 + 매출액/손익구조 30(15)% 변동을
+# live DART 직독(scan("earningsFlash"))으로 매치해 허브 /send 브로드캐스트.
+# notify-watch.yml(일 1회 IPO 베이크 동반)과 별 워크플로: 잠정실적은 시점 이벤트라 시간당
+# 필요하고, 여기엔 HF 굽기 스텝이 없다(list.json + document.xml 직독, HF write 0).
+# 허브 sentNonce 가 멱등 dedup: 이미 보낸 매치(corpCode:rceptDt)는 409 드롭, 새 매치만 발송.
+# 설계: tests/_attempts/earningsFlashWatch/README.md. 롤아웃 게이트 = 허브 배포(secret 미설정 시 no-op).
+
+on:
+  schedule:
+    - cron: '0 * * * 1-5'  # 매시 정각, 평일(UTC). KST 평일 장중+장후 어닝 발표 시각대 커버.
+  workflow_dispatch:
+    inputs:
+      dateFrom:
+        description: '발굴 시작일 YYYYMMDD (미지정=최근 2일)'
+        default: ''
+      dryRun:
+        description: 'dry-run(POST 생략)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notify-watch-earnings  # cancel 0(중복 발화 방지). 시간당 단발.
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync  # scan("earningsFlash") 직독. 굽기 없음(라이브).
+
+      - name: Watch earningsFlash (scan SSOT -> /send)
+        run: uv run python -X utf8 .github/scripts/notify/watch.py --topics earningsFlash ${{ github.event.inputs.dryRun == 'true' && '--dry-run' || '' }}
+        env:
+          DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          DARTLAB_EARNINGS_DATE_FROM: ${{ github.event.inputs.dateFrom }}
+          PUSHHUB_URL: ${{ vars.VITE_PUSHHUB_URL }}
+          PUSHHUB_SEND_TOKEN: ${{ secrets.PUSHHUB_SEND_TOKEN }}
+          PYTHONUNBUFFERED: "1"

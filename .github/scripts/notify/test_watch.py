@@ -213,6 +213,88 @@ def test_eval_screen_alert_empty():
     assert watch.eval_screen_alert({"s": {"title": "t", "members": []}}) == []
 
 
+# ── eval_earnings_flash (잠정실적 본문 숫자 알림) ─────────────────────
+def test_won_short_formatting():
+    assert watch._won_short(23.83e12) == "23.83조"
+    assert watch._won_short(50902e6) == "509억"  # 백만원 환산값
+    assert watch._won_short(-4131994e3) == "-41억"  # 영업손실 음수
+    assert watch._won_short(None) is None
+    assert watch._won_short("x") is None
+
+
+def test_eval_earnings_flash_numbers_in_body():
+    df = FakeDF(
+        [
+            {
+                "corpName": "한미반도체",
+                "corpCode": "042700",
+                "종목코드": "042700",  # scan 프레임워크 리네임(stockCode -> 종목코드)
+                "rceptDt": "20260515",
+                "type": "영업잠정실적",
+                "basis": "연결",
+                "revenue": 50902e6,
+                "revenueYoy": -65.5,
+                "operatingProfit": 8456e6,
+                "operatingProfitYoy": -87.9,
+                "netProfit": 19032e6,
+                "netProfitYoy": -65.2,
+            }
+        ]
+    )
+    items = watch.eval_earnings_flash(df)
+    assert len(items) == 1
+    m = items[0]
+    assert m["topic"] == "earningsFlash"
+    assert m["slug"] == "042700:20260515"  # corpCode:rceptDt (하루 1건)
+    assert "한미반도체" in m["notification"]["title"] and "연결" in m["notification"]["title"]
+    body = m["notification"]["body"]
+    assert "매출 509억(-65.5%)" in body and "영업익" in body and "순익" in body
+    assert m["notification"]["url"] == "/terminal?sym=042700"  # 종목코드 딥링크
+    assert m["notification"]["tag"] == "earnings:042700:20260515"
+
+
+def test_eval_earnings_flash_stockcode_fallback():
+    """FakeDF 가 영문 stockCode 만 줘도 딥링크 (종목코드 폴백의 역방향)."""
+    df = FakeDF([{"corpName": "A", "corpCode": "C1", "stockCode": "005930", "rceptDt": "20260101"}])
+    m = watch.eval_earnings_flash(df)[0]
+    assert m["notification"]["url"] == "/terminal?sym=005930"
+
+
+def test_eval_earnings_flash_prefers_first_per_slug():
+    """같은 corpCode+rceptDt 는 1건만 (scan 이 연결 우선 정렬 → 첫-승이 연결)."""
+    df = FakeDF(
+        [
+            {"corpName": "A", "corpCode": "C1", "rceptDt": "20260101", "basis": "연결", "revenue": 1e12},
+            {"corpName": "A", "corpCode": "C1", "rceptDt": "20260101", "basis": "별도", "revenue": 2e12},
+        ]
+    )
+    items = watch.eval_earnings_flash(df)
+    assert len(items) == 1
+    assert "연결" in items[0]["notification"]["title"]  # 첫 행(연결) 채택
+
+
+def test_eval_earnings_flash_dash_only_fallback_body():
+    """숫자 없는(대시) 공시는 제목+딥링크만, body 는 폴백 문구."""
+    df = FakeDF(
+        [{"corpName": "오리온", "corpCode": "C9", "종목코드": "271560", "rceptDt": "20260515", "basis": "연결"}]
+    )
+    m = watch.eval_earnings_flash(df)[0]
+    assert m["notification"]["body"] == "잠정실적 공시"
+    assert m["notification"]["url"] == "/terminal?sym=271560"
+
+
+def test_earnings_flash_registered_stateless_capped():
+    assert "earningsFlash" in watch._EVALUATORS
+    assert "earningsFlash" not in watch._STATEFUL_TOPICS  # 시점 이벤트 = stateless /send nonce
+    assert watch._TOPIC_CAP.get("earningsFlash")  # cap 설정(콜드스타트 폭주 가드)
+    # 시간당 전용 워크플로가 --topics earningsFlash 명시 → 일 1회 notify-watch default 에는 미포함
+    import argparse
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--topics", default="newIpo,newOrders")
+    assert "earningsFlash" not in ap.parse_args([]).topics
+
+
 def test_screen_alert_is_stateful_and_registered():
     """screenAlert 는 멤버십 diff = stateful(/active set-diff), 러너 레지스트리 등록."""
     assert "screenAlert" in watch._STATEFUL_TOPICS

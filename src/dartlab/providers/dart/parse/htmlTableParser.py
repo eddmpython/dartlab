@@ -82,7 +82,50 @@ def parseHtmlTable(html: str) -> HtmlTable | None:
     tables = list(root.iter("table"))
     if not tables:
         return None
-    table = tables[0]
+    return _tableFromElement(tables[0])
+
+
+def parseHtmlTables(html: str) -> list[HtmlTable]:
+    """본문 내 *모든* ``<table>`` 를 ``HtmlTable`` list 로 (행/ALIGN/span 보존).
+
+    ``parseHtmlTable`` 이 첫 표 1 개만 보는 것과 달리, KRX 수시공시처럼 여러 ``<table>``
+    block 으로 구성된 본문(예 잠정실적: 안내표 + 실적표)에서 실적 행렬표를 골라 쓰려면
+    표별 행 구조를 유지한 채 전부 열거해야 한다. ``flattenTableCells`` 는 행 경계를 잃어
+    행렬표(계정 × 기간)에 부적합하다.
+
+    Args:
+        html: 공시 본문 HTML (다중 ``<table>`` 허용).
+
+    Returns:
+        list[HtmlTable]. 문서 순서. parse 실패/비표는 빈 list.
+
+    Example:
+        >>> ts = parseHtmlTables("<table><tr><td>a</td></tr></table><table><tr><td>b</td></tr></table>")
+        >>> len(ts)
+        2
+
+    Raises:
+        없음. XMLSyntaxError silent 처리 후 빈 list.
+    """
+    if not html or "<table" not in html:
+        return []
+    try:
+        parser = etree.HTMLParser(recover=True)
+        root = etree.fromstring(html, parser)
+    except (etree.XMLSyntaxError, ValueError):
+        return []
+    if root is None:
+        return []
+    out: list[HtmlTable] = []
+    for table in root.iter("table"):
+        parsed = _tableFromElement(table)
+        if parsed is not None:
+            out.append(parsed)
+    return out
+
+
+def _tableFromElement(table) -> HtmlTable | None:
+    """단일 ``<table>`` lxml element 를 ``HtmlTable`` 로 (rows + header 카운트)."""
     out = HtmlTable()
     inHeaderSection = True
     for tr in _findTrs(table):

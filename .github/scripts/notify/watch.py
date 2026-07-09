@@ -198,7 +198,89 @@ def eval_screen_alert(members_by_screen=None) -> list[dict]:
     return items
 
 
-_EVALUATORS = {"newIpo": eval_new_ipo, "newOrders": eval_new_orders, "screenAlert": eval_screen_alert}
+def _won_short(v: object) -> str | None:
+    """원 값 을 조/억 단축 표기로 (알림 body 가독). 소액은 원 그대로."""
+    try:
+        f = float(v)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return None
+    a = abs(f)
+    if a >= 1e12:
+        return f"{f / 1e12:,.2f}조"
+    if a >= 1e8:
+        return f"{f / 1e8:,.0f}억"
+    return f"{f:,.0f}원"
+
+
+def _fmt_flash(label: str, cur: object, yoy: object) -> str | None:
+    """계정 1 개 를 '라벨 값(+증감율%)' 로. 값 없으면(대시) None(조용한 절단 금지, 호출자 skip)."""
+    s = _won_short(cur)
+    if s is None:
+        return None
+    try:
+        s += f"({float(yoy):+.1f}%)"  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        pass
+    return f"{label} {s}"
+
+
+def eval_earnings_flash(df=None) -> list[dict]:
+    """잠정실적 알림 매치. scan("earningsFlash") 직독 후 회사별 당일 1 건(연결 우선).
+
+    본문 숫자(매출·영업익·순이익 + 전년동기 증감율)를 body 에 박아 클릭 없이 actionable.
+    slug=corpCode:rceptDt (하루 1 건). 정정본은 다른 날짜라 갱신 숫자로 재발화(의도된 동작).
+    scan 이 rceptDt desc + basis desc(연결 우선) 정렬이라 같은 slug 첫-승이 연결을 택한다.
+    데이터원: 영업(잠정)실적 공정공시 + 매출액/손익구조 30(15)% 변동, live DART 직독(굽기 0).
+    """
+    if df is None:
+        import dartlab
+
+        date_from = os.environ.get("DARTLAB_EARNINGS_DATE_FROM") or None
+        df = dartlab.scan("earningsFlash", dateFrom=date_from)
+    items: list[dict] = []
+    seen: set[str] = set()
+    for r in df.iter_rows(named=True):
+        corp = str(r.get("corpCode") or r.get("rcept") or "")
+        dt = str(r.get("rceptDt") or "")
+        slug = f"{corp}:{dt}"
+        if not corp or slug in seen:
+            continue
+        seen.add(slug)
+        name = r.get("corpName") or "잠정실적"
+        # scan 프레임워크가 stockCode 를 종목코드 로 리네임(_enrichWithKorean). 테스트 FakeDF 는 stockCode.
+        code = (r.get("stockCode") or r.get("종목코드") or "").strip()
+        parts = [
+            p
+            for p in (
+                _fmt_flash("매출", r.get("revenue"), r.get("revenueYoy")),
+                _fmt_flash("영업익", r.get("operatingProfit"), r.get("operatingProfitYoy")),
+                _fmt_flash("순익", r.get("netProfit"), r.get("netProfitYoy")),
+            )
+            if p
+        ]
+        basis = r.get("basis") or ""
+        head = f"[잠정실적] {name}" + (f" ({basis})" if basis else "")
+        items.append(
+            {
+                "topic": "earningsFlash",
+                "slug": slug,
+                "notification": {
+                    "title": sanitize(head, 80),
+                    "body": sanitize(" · ".join(parts) or "잠정실적 공시", 120),
+                    "url": f"/terminal?sym={code}" if code else _TERMINAL,
+                    "tag": f"earnings:{slug}",
+                },
+            }
+        )
+    return items
+
+
+_EVALUATORS = {
+    "newIpo": eval_new_ipo,
+    "newOrders": eval_new_orders,
+    "screenAlert": eval_screen_alert,
+    "earningsFlash": eval_earnings_flash,
+}
 
 # threshold_cross(돌파형) 토픽 = 허브 /active set-diff 커서 경로(재크로싱 발화). new_listing 형은 stateless /send.
 # screenAlert 는 스크린 멤버십 진입(이탈 후 재진입 재발화)이라 newOrders 동형 stateful.
@@ -208,7 +290,7 @@ _STATEFUL_TOPICS = {"newOrders", "screenAlert"}
 # 조용한 시간(22~08)은 cron 발화시각(평일 17시 KST)이 구조적으로 회피(야간 배치 큐 미도입, YAGNI).
 # newIpo=40: 윈도 발행사(~30) + confirmation 신호 여유. 초과분은 로그(newest-first 정렬이라 최신부터 발송,
 # 절단되는 건 가장 오래된 stale IPO 라 터미널 목록으로 커버. 조용한 절단 금지).
-_TOPIC_CAP = {"newIpo": 40, "newOrders": 15, "screenAlert": 50}
+_TOPIC_CAP = {"newIpo": 40, "newOrders": 15, "screenAlert": 50, "earningsFlash": 60}
 
 
 def cap_matches(matches: list[dict], caps: dict[str, int] = _TOPIC_CAP) -> tuple[list[dict], list[dict]]:
