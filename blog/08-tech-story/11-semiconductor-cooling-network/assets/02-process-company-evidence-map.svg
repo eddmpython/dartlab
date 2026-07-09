@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
+  <title id="title">반도체 냉각 공정과 대표 회사, 공시 근거 지도</title>
+  <desc id="desc">반도체 냉각 거래망을 팹 칠러, 칩 패키지, 서버 랙, CDU, 시설 냉각, 운영 서비스로 나누고 대표 회사와 공시 근거를 연결한다.</desc>
+  <rect width="1280" height="760" fill="#fffaf2"/>
+  <text x="76" y="82" font-family="Malgun Gothic, Arial, sans-serif" font-size="34" font-weight="700" fill="#111827">냉각은 한 시장이 아니라 여섯 칸의 거래망</text>
+  <text x="76" y="122" font-family="Malgun Gothic, Arial, sans-serif" font-size="18" fill="#475569">DART는 팹 장비 칸을 잘 보여주고, EDGAR는 랙과 데이터센터 설비 칸을 잘 보여준다.</text>
+  <g font-family="Malgun Gothic, Arial, sans-serif">
+    <rect x="80" y="188" width="330" height="128" rx="18" fill="#ffffff" stroke="#fed7aa"/>
+    <text x="106" y="228" font-size="22" font-weight="700" fill="#9a3412">팹 공정 온도 제어</text>
+    <text x="106" y="262" font-size="16" fill="#7c2d12">GST, 유니셈</text>
+    <text x="106" y="292" font-size="14" fill="#64748b">DART: Chiller, Scrubber, 수주잔고</text>
+
+    <rect x="474" y="188" width="330" height="128" rx="18" fill="#ffffff" stroke="#bfdbfe"/>
+    <text x="500" y="228" font-size="22" font-weight="700" fill="#075985">칩과 패키지 열원</text>
+    <text x="500" y="262" font-size="16" fill="#0369a1">NVIDIA, SK하이닉스, TSMC</text>
+    <text x="500" y="292" font-size="14" fill="#64748b">공식 자료: HBM, CoWoS, liquid-cooled rack</text>
+
+    <rect x="868" y="188" width="330" height="128" rx="18" fill="#ffffff" stroke="#c7d2fe"/>
+    <text x="894" y="228" font-size="22" font-weight="700" fill="#3730a3">AI 서버와 랙</text>
+    <text x="894" y="262" font-size="16" fill="#4338ca">Supermicro, Dell, HPE</text>
+    <text x="894" y="292" font-size="14" fill="#64748b">EDGAR: 서버 매출과 gross margin</text>
+
+    <rect x="80" y="396" width="330" height="128" rx="18" fill="#ffffff" stroke="#bbf7d0"/>
+    <text x="106" y="436" font-size="22" font-weight="700" fill="#166534">CDU와 열 인프라</text>
+    <text x="106" y="470" font-size="16" fill="#166534">Vertiv, LG전자</text>
+    <text x="106" y="500" font-size="14" fill="#64748b">EDGAR, DART: cooling solutions, ES 부문</text>
+
+    <rect x="474" y="396" width="330" height="128" rx="18" fill="#ffffff" stroke="#fecaca"/>
+    <text x="500" y="436" font-size="22" font-weight="700" fill="#be123c">Chiller와 열교환</text>
+    <text x="500" y="470" font-size="16" fill="#be123c">Modine, Carrier, Johnson Controls</text>
+    <text x="500" y="500" font-size="14" fill="#64748b">EDGAR: HVAC, thermal management</text>
+
+    <rect x="868" y="396" width="330" height="128" rx="18" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="894" y="436" font-size="22" font-weight="700" fill="#334155">운영과 서비스</text>
+    <text x="894" y="470" font-size="16" fill="#475569">설치, 수질, 누수, 유지보수</text>
+    <text x="894" y="500" font-size="14" fill="#64748b">공시: 서비스 매출, backlog, 보증비용</text>
+
+    <path d="M410 252 H466 M804 252 H860 M410 460 H466 M804 460 H860" stroke="#94a3b8" stroke-width="4" fill="none"/>
+    <path d="M466 252 l-16 -10 v20 z M860 252 l-16 -10 v20 z M466 460 l-16 -10 v20 z M860 460 l-16 -10 v20 z" fill="#94a3b8"/>
+    <path d="M1033 316 C1033 360 1033 360 1033 396" stroke="#94a3b8" stroke-width="4" fill="none"/>
+    <path d="M1033 396 l-10 -16 h20 z" fill="#94a3b8"/>
+    <path d="M639 316 C639 360 639 360 639 396" stroke="#94a3b8" stroke-width="4" fill="none"/>
+    <path d="M639 396 l-10 -16 h20 z" fill="#94a3b8"/>
+    <path d="M245 316 C245 360 245 360 245 396" stroke="#94a3b8" stroke-width="4" fill="none"/>
+    <path d="M245 396 l-10 -16 h20 z" fill="#94a3b8"/>
+
+    <rect x="156" y="610" width="968" height="70" rx="18" fill="#111827"/>
+    <text x="640" y="654" text-anchor="middle" font-size="20" font-weight="700" fill="#ffffff">핵심: 냉각은 부품 하나가 아니라 공정, 서버, 설비, 운영 계약이 묶인 거래망이다.</text>
+  </g>
+</svg>

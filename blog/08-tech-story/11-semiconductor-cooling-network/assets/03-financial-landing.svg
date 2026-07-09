@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
+  <title id="title">반도체 냉각 거래망 재무 착지</title>
+  <desc id="desc">GST, 유니셈, LG전자, Vertiv, Supermicro, Dell, Modine의 전사 매출과 영업이익률을 냉각 거래망 칸별로 보여준다.</desc>
+  <rect width="1280" height="760" fill="#f7f3ea"/>
+  <text x="76" y="82" font-family="Malgun Gothic, Arial, sans-serif" font-size="34" font-weight="700" fill="#111827">기술이 같아도 회계는 다르게 남는다</text>
+  <text x="76" y="122" font-family="Malgun Gothic, Arial, sans-serif" font-size="18" fill="#475569">전사 기준 숫자다. 냉각 전용 매출로 읽지 않고, 거래망 위치와 마진 구조를 보는 참고값으로 쓴다.</text>
+  <g font-family="Malgun Gothic, Arial, sans-serif">
+    <line x1="112" y1="586" x2="1160" y2="586" stroke="#cbd5e1"/>
+    <line x1="112" y1="486" x2="1160" y2="486" stroke="#e2e8f0"/>
+    <line x1="112" y1="386" x2="1160" y2="386" stroke="#e2e8f0"/>
+    <line x1="112" y1="286" x2="1160" y2="286" stroke="#e2e8f0"/>
+    <text x="112" y="244" font-size="15" fill="#64748b">영업이익률</text>
+
+    <g fill="#0f766e">
+      <rect x="150" y="416" width="72" height="170" rx="8"/>
+      <rect x="285" y="546" width="72" height="40" rx="8"/>
+      <rect x="420" y="558" width="72" height="28" rx="8"/>
+      <rect x="555" y="407" width="72" height="179" rx="8"/>
+      <rect x="690" y="529" width="72" height="57" rx="8"/>
+      <rect x="825" y="514" width="72" height="72" rx="8"/>
+      <rect x="960" y="478" width="72" height="108" rx="8"/>
+    </g>
+
+    <g font-size="14" fill="#111827" text-anchor="middle">
+      <text x="186" y="616">GST</text>
+      <text x="321" y="616">유니셈</text>
+      <text x="456" y="616">LG전자</text>
+      <text x="591" y="616">Vertiv</text>
+      <text x="726" y="616">Supermicro</text>
+      <text x="861" y="616">Dell</text>
+      <text x="996" y="616">Modine</text>
+    </g>
+
+    <g font-size="13" fill="#0f766e" text-anchor="middle" font-weight="700">
+      <text x="186" y="400">17.0%</text>
+      <text x="321" y="530">4.0%</text>
+      <text x="456" y="542">2.8%</text>
+      <text x="591" y="391">17.9%</text>
+      <text x="726" y="513">5.7%</text>
+      <text x="861" y="498">7.2%</text>
+      <text x="996" y="462">10.8%</text>
+    </g>
+
+    <rect x="128" y="668" width="1024" height="42" rx="14" fill="#111827"/>
+    <text x="640" y="695" text-anchor="middle" font-size="16" fill="#ffffff">같은 냉각 테마라도 장비, 서버, 시설 인프라, HVAC는 매출 인식과 마진 구조가 다르다.</text>
+  </g>
+</svg>
