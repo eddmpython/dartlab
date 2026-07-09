@@ -5349,7 +5349,7 @@
         "수정된 파일"
       ],
       "nextSkills": [],
-      "bodyPreview": "## Skill OS 흡수 규칙\n\n- 이 skill이 공식 진입점이다. 삭제된 운영 문서 경로를 다시 안내하지 않는다.\n- 공개 호출 방식과 대표 반환 형태는 skill에서 확인하고, 세부 필드는 capability/docstring으로 검산한다.\n- 분석이나 변경 결과는 ref, 실행 로그, 테스트 결과로 검증한다.\n\n## 실행 순서\n\n- 1. 호출 단계. `Company` 로 바로 간다 (prefetch 없이, 데이터는 첫 접근 시 lazy fetch) 기준을 확인한다.\n- 2. 아키텍처 — 설치·데이터·실행 3 층으로 간다 기준을 확인한다.\n- 3. polars WASM 제약 — pyarrow 경유로 우회한다 기준을 확인한다.\n- 4. pyodide 분기 패턴 — `sys.platform == \"emscripten\"` 로 체크한다 기준을 확인한다.\n- 수정된 파일 기준을 확인한다.\n- 프리빌드 — `dart/scan/finance-lite.parquet` (~18MB, 30 계정, 2022 년 ~ 분기).\n- 다운로드 — `loader.js::loadScanLite(py)` 또는 파이썬 측 `dartlab.scan(...)` 첫 호출 시 자동.\n- 내부"
+      "bodyPreview": "## Skill OS 흡수 규칙\n\n- 이 skill이 공식 진입점이다. 삭제된 운영 문서 경로를 다시 안내하지 않는다.\n- 공개 호출 방식과 대표 반환 형태는 skill에서 확인하고, 세부 필드는 capability/docstring으로 검산한다.\n- 분석이나 변경 결과는 ref, 실행 로그, 테스트 결과로 검증한다.\n\n## 실행 순서\n\n- 1. 호출 단계. `Company` 로 바로 간다 (prefetch 없이, 데이터는 첫 접근 시 lazy fetch) 기준을 확인한다.\n- 2. 아키텍처 — 설치·데이터·실행 3 층으로 간다 기준을 확인한다.\n- 3. polars WASM 제약 — pyarrow 경유로 우회한다 기준을 확인한다.\n- 4. pyodide 분기 패턴 — `sys.platform == \"emscripten\"` 로 체크한다 기준을 확인한다.\n- 수정된 파일 기준을 확인한다.\n- 프리빌드. `dart/scan/finance-lite.parquet` (~20MB, 30 계정, 2022 년 이후 분기).\n- 다운로드. `dartlab.scan(...)` 첫 호출 시 `scan.io.parquet._ensureScanData` 가 `pyodideFetc"
     },
     {
       "id": "runtime.pyodideBrowser",
