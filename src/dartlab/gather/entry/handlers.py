@@ -187,8 +187,10 @@ def handlePrice(
 ) -> pl.DataFrame:
     """price axis dispatch: OHLCV 시계열 + 보조지표 옵션.
 
-    **로컬전용(저작권)**: 가격/OHLCV 는 KRX/Naver DB권·저작권이라 프리빌드·HF 발행·재배포 금지.
-    scan 소비는 valuation 처럼 런타임 fetch 로만 (raw 가격 시계열 파케를 HF 에 굽지 말 것). 로컬 개인용.
+    **본 축(Naver/Yahoo 스크랩)의 산출물은 재배포·HF 발행 금지(DB권/저작권), 로컬 개인용.**
+    전종목 OHLCV 를 발행/프리빌드해야 하면 본 축이 아니라 **KRX 공식 OpenAPI 벌크**를 쓸 것
+    (``gather("krx", ...)``, HF ``gov/prices/date/{year}.parquet`` 로 이미 공개 발행 중).
+    수급(flow)·지분(ownership) 은 KRX OpenAPI 에 없어 Naver 전용이므로 발행 불가(로컬전용).
 
     Capabilities: target → 종목/지수 자동 인식 → g.price 또는 _fetchNaverIndex.
     AIContext: gather("price", ...) 의 본체 — handler dispatch 진입 첫 axis.
