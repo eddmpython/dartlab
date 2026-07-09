@@ -265,6 +265,33 @@ def test_define_clip_absolute_bounds(monkeypatch):
     assert df["@c"].to_list() == [0.0, 50.0, 100.0]
 
 
+def test_define_nan_does_not_poison_zscore_or_winsorize(monkeypatch):
+    """NaN 1개가 group mean/std·quantile 을 오염시켜 전 종목 NaN 이 되면 안 된다 (조용한 오답 차단).
+
+    polars is_not_null() 은 NaN 을 안 거른다. krx.roc12 처럼 지표 window 부족으로 NaN 이 섞이면
+    zscore/winsorize 가 전멸했었다. _finiteOnly 가 비유한값을 null 로 승격해 해당 종목만 gap 이 된다.
+    """
+    import math
+
+    from dartlab.scan.screen import scanScreen
+
+    _roeFrame(monkeypatch, [1.0, 2.0, 3.0, 4.0, float("nan")])
+    df = scanScreen(
+        spec={
+            "define": {
+                "z": {"op": "zscore", "field": "finance.ratio.roe"},
+                "w": {"op": "winsorize", "field": "@z", "lower": 0.1, "upper": 0.9},
+            },
+            "select": ["@w"],
+        },
+        verbose=False,
+    )
+    vals = df["@w"].to_list()
+    finite = [v for v in vals if v is not None and not math.isnan(v)]
+    assert len(finite) == 4  # NaN 종목만 탈락, 나머지 4개는 유한한 z
+    assert all(math.isfinite(v) for v in finite)
+
+
 def test_define_abs_and_log(monkeypatch):
     """abs 는 절대값, log 는 양수만 자연로그 (비양수 null)."""
     from dartlab.scan.screen import scanScreen

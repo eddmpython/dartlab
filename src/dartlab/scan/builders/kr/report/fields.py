@@ -752,10 +752,36 @@ def _deriveUnit(op: str, lu: str, ru: str, name: str) -> str:
     return f"{lu}/{ru}"
 
 
+def _finiteOnly(df: pl.DataFrame) -> pl.DataFrame:
+    """operand 의 ``_v`` 에서 NaN·무한대를 null 로 정규화한다 (Float64 캐스팅 동반).
+
+    polars 의 ``is_not_null()`` 은 NaN 을 걸러내지 않는다. 지표 window 부족(예 ``krx.roc12`` 2984 종목 중
+    NaN 15)이나 0 나눗셈이 만든 비유한값 하나가 group mean/std 와 quantile 을 통째로 NaN 으로 오염시켜
+    zscore·winsorize 결과가 전 종목 NaN 이 된다(조용한 오답). 통계·순위 연산 전에 비유한값을 결측으로
+    승격해 해당 종목만 정직한 gap 이 되게 한다 (missing > wrong).
+
+    Args:
+        df: ``_v`` 컬럼을 가진 operand 프레임.
+
+    Returns:
+        ``_v`` 가 Float64 이고 NaN/무한대가 null 로 바뀐 프레임. ``_v`` 부재 시 원본.
+
+    Raises:
+        없음.
+    """
+    if "_v" not in df.columns:
+        return df
+    v = pl.col("_v").cast(pl.Float64, strict=False)
+    return df.with_columns(pl.when(v.is_finite()).then(v).otherwise(None).alias("_v"))
+
+
 def _operandFrame(
     ref: Any, spec: dict[str, Any], values: dict[str, pl.DataFrame], units: dict[str, str]
 ) -> tuple[pl.DataFrame, str]:
-    """define operand(필드 키 또는 @참조)을 ([stockCode, _v] 프레임, 단위)로. 리터럴 미지원."""
+    """define operand(필드 키 또는 @참조)을 ([stockCode, _v] 프레임, 단위)로. 리터럴 미지원.
+
+    반환 전 ``_finiteOnly`` 로 NaN/무한대를 null 로 정규화한다 (통계·순위 오염 차단).
+    """
     if isinstance(ref, bool) or isinstance(ref, (int, float)):
         raise ValueError("define operand 는 필드 키 또는 @참조만 (리터럴 미지원, 임계값은 where.value 로).")
     ref = str(ref)
@@ -763,14 +789,14 @@ def _operandFrame(
         nm = ref[1:]
         if nm not in values:
             raise ValueError(f"미해소 @참조: {ref}")
-        return values[nm].rename({f"@{nm}": "_v"}), units[nm]
+        return _finiteOnly(values[nm].rename({f"@{nm}": "_v"})), units[nm]
     meta = _fieldMeta(ref, spec)
     if meta["kind"] != "number":
         raise ValueError(f"define operand {ref!r} 는 수치 필드가 아닙니다 (kind={meta['kind']}).")
     vals = _loadFieldValues(ref, spec)
     if "stockCode" not in vals.columns or ref not in vals.columns:
         return pl.DataFrame({"stockCode": [], "_v": []}), meta["unit"]
-    return vals.select("stockCode", _numericExpr(ref).alias("_v")), meta["unit"]
+    return _finiteOnly(vals.select("stockCode", _numericExpr(ref).alias("_v"))), meta["unit"]
 
 
 _UNARY_OPS = frozenset({"abs", "log", "clip", "winsorize"})
