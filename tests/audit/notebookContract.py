@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -179,6 +180,24 @@ def _loadBaseline() -> dict[str, list[str]]:
     return json.loads(_BASELINE.read_text(encoding="utf-8"))
 
 
+def staleCatalogRefs() -> list[str]:
+    """``runtime.notebooks`` spec 이 존재하지 않는 노트북을 가리키면 그 이름을 돌려준다.
+
+    공개 문서의 Colab/Molab 링크가 실제 파일과 어긋나면 사용자는 404 를 만난다. 실제로
+    ``02_scan`` · ``04_gather`` · ``06_ask`` 를 가리키고 있었고(실파일은 02_gather·03_scan·09_ai)
+    아무도 못 잡았다. 부채 원장 없이 즉시 차단한다(문서와 파일은 늘 일치해야 한다).
+    """
+    spec = _REPO / "src" / "dartlab" / "skills" / "specs" / "runtime" / "notebooks.md"
+    if not spec.is_file():
+        return []
+    named = set(re.findall(r"`(\d{2}_[a-z]+)`", spec.read_text(encoding="utf-8")))
+    colab = {p.stem for p in (_REPO / "notebooks" / "colab").glob("*.ipynb")}
+    marimo = {p.stem for p in (_REPO / "notebooks" / "marimo").glob("*.py")}
+    missing = sorted((named - colab) | (named - marimo))
+    unlisted = sorted(colab - named)
+    return [f"문서가 가리키는 파일 없음: {n}" for n in missing] + [f"실재하는데 문서 미등재: {n}" for n in unlisted]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="노트북 공개 계약 게이트")
     parser.add_argument("--update", action="store_true", help="부채 원장 재기록")
@@ -192,6 +211,13 @@ def main() -> int:
         total = sum(len(v) for v in current.values())
         print(f"[notebookContract] 부채 원장 기록: {len(current)} 파일 / {total} 위반")
         return 0
+
+    stale = staleCatalogRefs()
+    if stale:
+        print("[notebookContract] FAIL. runtime.notebooks 카탈로그가 실제 파일과 어긋난다.", file=sys.stderr)
+        for line in stale:
+            print(f"  {line}", file=sys.stderr)
+        return 1
 
     baseline = _loadBaseline()
     newViolations: dict[str, list[str]] = {}

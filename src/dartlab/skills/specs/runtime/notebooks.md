@@ -89,14 +89,28 @@ testUniverse:
 
 Colab 은 브라우저에서 바로 실행 (Google 계정). Molab 은 marimo 클라우드 (무료).
 
-| 기능 | 설명 | Colab | Molab |
-|---|---|---|---|
-| **Company** | `Company("005930")` — sections, show, trace, diff, 재무 | [![Colab](https://img.shields.io/badge/Colab-ea4647?style=flat-square&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) | [![Molab](https://img.shields.io/badge/Molab-38bdf8?style=flat-square)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py) |
-| **Scan** | `scan()` — 13 축 전 종목 횡단 스캔 | [![Colab](https://img.shields.io/badge/Colab-ea4647?style=flat-square&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_scan.ipynb) | [![Molab](https://img.shields.io/badge/Molab-38bdf8?style=flat-square)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/02_scan.py) |
-| **Story** | `c.story()` — 구조화 보고서 (AI 종합 의견은 `dartlab.ask`) | [![Colab](https://img.shields.io/badge/Colab-ea4647?style=flat-square&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/08_story.ipynb) | [![Molab](https://img.shields.io/badge/Molab-38bdf8?style=flat-square)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/08_story.py) |
-| **Gather** | `gather()` — 주가 · 수급 · 거시 · 뉴스 | [![Colab](https://img.shields.io/badge/Colab-ea4647?style=flat-square&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/04_gather.ipynb) | [![Molab](https://img.shields.io/badge/Molab-38bdf8?style=flat-square)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/04_gather.py) |
-| **Analysis** | `c.analysis()` — 14 축 분석 · 인사이트 · 전망 · 밸류에이션 | [![Colab](https://img.shields.io/badge/Colab-ea4647?style=flat-square&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/05_analysis.ipynb) | [![Molab](https://img.shields.io/badge/Molab-38bdf8?style=flat-square)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/05_analysis.py) |
-| **Ask (AI)** | `ask("...")` — 자연어 LLM 분석 | [![Colab](https://img.shields.io/badge/Colab-ea4647?style=flat-square&logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/06_ask.ipynb) | [![Molab](https://img.shields.io/badge/Molab-38bdf8?style=flat-square)](https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/06_ask.py) |
+노트북 파일명은 `notebooks/colab/{name}.ipynb` 와 `notebooks/marimo/{name}.py` 가 1:1 로 같다.
+축 개수는 각 엔진 카탈로그(인자 없이 호출) 실측값이다.
+
+| 노트북 | 기능 | 설명 |
+|---|---|---|
+| `01_company` | **Company** | `Company("005930")` 로 회사를 잡고 `c.panel` · `c.select` · `c.trace` |
+| `02_gather` | **Gather** | `gather()` 16 축. 주가 · 수급 · 거시 · 뉴스 (네트워크 필요, 로컬 전용) |
+| `03_scan` | **Scan** | `scan()` 27 축 전 종목 횡단 스캔 |
+| `04_quant` | **Quant** | `c.quant()` 48 축. 기술적 지표 · 신호 · 백테스트 |
+| `05_analysis` | **Analysis** | `c.analysis()` 22 축. 수익성 · 성장성 · 안정성 · 밸류에이션 |
+| `06_macro` | **Macro** | `macro()` 15 축. 사이클 · 금리 · 시나리오 |
+| `07_credit` | **Credit** | `c.credit()` dCR 등급 + 7 축 위험 |
+| `08_story` | **Story** | `c.story()` 구조화 보고서 |
+| `09_ai` | **Ask (AI)** | `ask("...")` 자연어 LLM 분석 |
+| `10_search` | **Search** | `search()` 공시 제목 · 본문 검색 |
+| `11_listing` | **Listing** | `listing()` 상장사 · 공시 · 토픽 목록 |
+
+- Colab: `https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/{name}.ipynb`
+- Molab: `https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/{name}.py`
+
+브라우저 노트북(설치 0, `landing` 의 `/notebooks`)은 별도 표면이다. 단계별 커리큘럼 레슨을
+pyodide 로 바로 실행한다. 브라우저에서 되는 것과 안 되는 것은 `runtime.pyodide` 가 정본이다.
 
 ## 로컬 marimo 실행
 
