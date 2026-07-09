@@ -35,10 +35,13 @@ procedure:
   - 3. polars WASM 제약 — pyarrow 경유로 우회한다 기준을 확인한다.
   - 4. pyodide 분기 패턴 — `sys.platform == "emscripten"` 로 체크한다 기준을 확인한다.
   - 수정된 파일 기준을 확인한다.
-  - 프리빌드 — `dart/scan/finance-lite.parquet` (~18MB, 30 계정, 2022 년 ~ 분기).
-  - 다운로드 — `loader.js::loadScanLite(py)` 또는 파이썬 측 `dartlab.scan(...)` 첫 호출 시 자동.
-  - 내부 구현 — `scanAccount._scanAccountFromMerged` 가 `_IS_PYODIDE` 분기에서 `pyarrow.parquet.read_table` + `pl.from_arrow` 로 전환 (polars `scan_parquet` 미지원 우회).
-  - SSOT 계정 리스트 — `src/dartlab/scan/_helpers.py::LITE_ACCOUNTS`.
+  - 프리빌드. `dart/scan/finance-lite.parquet` (~20MB, 30 계정, 2022 년 이후 분기).
+  - 다운로드. `dartlab.scan(...)` 첫 호출 시 `scan.io.parquet._ensureScanData` 가 `pyodideFetchScanLite` 로 자동 수신.
+  - polars WASM 우회 SSOT. `scan.io.parquet` 의 `financeScanPath` (전량본/경량본 선택) · `lazyParquet` (`scan_parquet` 부재) · `collectScan` (streaming 엔진 부재) · `parquetColumns` (본문 미독 스키마).
+  - SSOT 계정 리스트. `src/dartlab/scan/io/lite.py::LITE_ACCOUNTS`.
+  - 브라우저 가용 scan 축 (실측). growth · profitability · liquidity · cashflow · ratio · account · debt.
+  - 브라우저 불가 scan 축. quality (finance-lite 에 `total_assets` 부재로 빈 결과) · workforce (직원수 프리빌드 필요) · screen (KRX 상장사 목록 필요).
+  - 수집 경계. `dartlab.gather(...)` 는 pyodide 에서 callable 패치를 걸지 않는다 (바깥 네트워크·스레드 의존). `Company.gather()` 카탈로그 조회는 브라우저에서도 동작.
 requiredEvidence:
   - skillRef
   - executionRef
@@ -93,8 +96,11 @@ testUniverse:
 - 3. polars WASM 제약 — pyarrow 경유로 우회한다 기준을 확인한다.
 - 4. pyodide 분기 패턴 — `sys.platform == "emscripten"` 로 체크한다 기준을 확인한다.
 - 수정된 파일 기준을 확인한다.
-- 프리빌드 — `dart/scan/finance-lite.parquet` (~18MB, 30 계정, 2022 년 ~ 분기).
-- 다운로드 — `loader.js::loadScanLite(py)` 또는 파이썬 측 `dartlab.scan(...)` 첫 호출 시 자동.
-- 내부 구현 — `scanAccount._scanAccountFromMerged` 가 `_IS_PYODIDE` 분기에서 `pyarrow.parquet.read_table` + `pl.from_arrow` 로 전환 (polars `scan_parquet` 미지원 우회).
-- SSOT 계정 리스트 — `src/dartlab/scan/_helpers.py::LITE_ACCOUNTS`.
+- 프리빌드. `dart/scan/finance-lite.parquet` (~20MB, 30 계정, 2022 년 이후 분기).
+- 다운로드. `dartlab.scan(...)` 첫 호출 시 `scan.io.parquet._ensureScanData` 가 `pyodideFetchScanLite` 로 자동 수신.
+- polars WASM 우회 SSOT. `scan.io.parquet` 의 `financeScanPath` (전량본/경량본 선택) · `lazyParquet` (`scan_parquet` 부재) · `collectScan` (streaming 엔진 부재) · `parquetColumns` (본문 미독 스키마).
+- SSOT 계정 리스트. `src/dartlab/scan/io/lite.py::LITE_ACCOUNTS`.
+- 브라우저 가용 scan 축 (실측). growth · profitability · liquidity · cashflow · ratio · account · debt.
+- 브라우저 불가 scan 축. quality (finance-lite 에 `total_assets` 부재로 빈 결과) · workforce (직원수 프리빌드 필요) · screen (KRX 상장사 목록 필요).
+- 수집 경계. `dartlab.gather(...)` 는 pyodide 에서 callable 패치를 걸지 않는다 (바깥 네트워크·스레드 의존). `Company.gather()` 카탈로그 조회는 브라우저에서도 동작.
 
