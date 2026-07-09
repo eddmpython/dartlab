@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">순매수 공식</title>
+  <desc id="desc">순매수는 매수에서 매도를 뺀 값이며 한 집단의 순매수는 다른 집단의 순매도와 맞물린다는 도해</desc>
+  <rect width="1200" height="700" fill="#f7fafc"/>
+  <rect x="70" y="58" width="1060" height="584" rx="26" fill="#ffffff" stroke="#d8e1ea" stroke-width="2"/>
+  <text x="600" y="126" text-anchor="middle" font-family="Arial, sans-serif" font-size="44" font-weight="700" fill="#172033">순매수는 체결의 한쪽 면이다</text>
+  <g transform="translate(135 205)">
+    <rect width="250" height="150" rx="20" fill="#edf7f1" stroke="#a8cfb6" stroke-width="2"/>
+    <text x="125" y="62" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#1f5135">매수</text>
+    <text x="125" y="108" text-anchor="middle" font-family="Arial, sans-serif" font-size="25" fill="#526477">사들인 금액</text>
+  </g>
+  <text x="445" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="58" font-weight="700" fill="#526477">-</text>
+  <g transform="translate(505 205)">
+    <rect width="250" height="150" rx="20" fill="#fff1ee" stroke="#e2b2a5" stroke-width="2"/>
+    <text x="125" y="62" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#8a3d2b">매도</text>
+    <text x="125" y="108" text-anchor="middle" font-family="Arial, sans-serif" font-size="25" fill="#526477">판 금액</text>
+  </g>
+  <text x="815" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="58" font-weight="700" fill="#526477">=</text>
+  <g transform="translate(875 205)">
+    <rect width="190" height="150" rx="20" fill="#e8f0f8" stroke="#b8c8d9" stroke-width="2"/>
+    <text x="95" y="62" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#19324a">순매수</text>
+    <text x="95" y="108" text-anchor="middle" font-family="Arial, sans-serif" font-size="25" fill="#526477">차이</text>
+  </g>
+  <g transform="translate(165 430)">
+    <rect width="870" height="118" rx="22" fill="#f4f7fb" stroke="#d7e0ea"/>
+    <text x="435" y="45" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#172033">한 집단의 순매수는 반대편 집단의 순매도와 만난다</text>
+    <text x="435" y="86" text-anchor="middle" font-family="Arial, sans-serif" font-size="25" fill="#526477">누가 샀다는 말은 누군가 팔았다는 말과 항상 함께 읽는다</text>
+  </g>
+</svg>

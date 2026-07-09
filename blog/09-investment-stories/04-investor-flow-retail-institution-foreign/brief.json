@@ -1,0 +1,249 @@
+{
+  "passed": true,
+  "title": "수급이란 무엇인가: 개인, 기관, 외국인",
+  "titleContract": {
+    "candidates": [
+      "수급이란 무엇인가: 개인, 기관, 외국인",
+      "외국인이 샀다는 말은 왜 위험할까",
+      "수급은 예언이 아니라 체결의 흔적이다"
+    ],
+    "selectedTitle": "수급이란 무엇인가: 개인, 기관, 외국인",
+    "hookQuestion": "외국인이 샀다, 기관이 팔았다, 개인이 받았다라는 말은 주가를 설명하는 원인일까, 아니면 이미 체결된 거래의 흔적일까?",
+    "readerGap": "초보자는 개인, 기관, 외국인 순매수를 실력 순위표처럼 받아들이지만, 실제 수급은 한 집단의 매수와 다른 집단의 매도가 동시에 만든 체결 기록이다.",
+    "promise": "수급의 정의, 순매수 계산, 개인·기관·외국인의 차이, 기간과 거래대금 기준, 주가와 거래량을 함께 읽는 법, DartLab price 확인 순서까지 설명한다.",
+    "whySelected": "사용자가 지정한 주제어를 그대로 살리면서도 글의 핵심 오해인 투자자 집단 서열화를 막을 수 있는 제목이다."
+  },
+  "readerQuestion": "외국인이 샀다고 하면 따라 사야 하고, 개인이 샀다고 하면 조심해야 한다는 말은 맞을까?",
+  "insight": {
+    "commonBelief": "수급은 외국인과 기관이 사면 좋고 개인이 사면 나쁘다는 단순 신호처럼 받아들이기 쉽다.",
+    "twistFact": "시장에서 매수와 매도는 항상 동시에 체결된다. 어떤 집단의 순매수는 다른 집단의 순매도와 맞물린 결과라서, 수급은 원인 확정이 아니라 거래의 발자국이다.",
+    "whatToWatch": "다음 종목 화면에서는 투자자별 순매수 금액을 주가 방향, 거래량, 거래대금, 시가총액, 유통주식수, 기간 누적으로 나누어 본다.",
+    "freshnessArgument": "KRX 투자자별 거래실적 화면과 DartLab price 표를 함께 보면, 수급을 실시간 소문이 아니라 공식 분류와 가격 데이터가 만나는 해석 프레임으로 읽을 수 있다.",
+    "evidenceRefs": [
+      "KRX 투자자별 거래실적",
+      "KRX 투자자별 거래실적 개별종목",
+      "KRX 투자자별 순매수상위종목",
+      "SEC institutional investor glossary",
+      "FINRA institutional investors education",
+      "DartLab gather price"
+    ]
+  },
+  "acts": [
+    {
+      "heading": "수급은 누가 샀는지가 아니라 누가 누구에게 넘겼는지다",
+      "purpose": "수급을 매수 주체 순위표가 아니라 체결 구조로 재정의한다.",
+      "scene": "주가 화면에서 외국인 순매수 숫자만 보고 바로 호재로 받아들이는 장면으로 시작한다.",
+      "causalBridge": "한 집단이 샀다는 말은 반드시 반대편에서 누군가 팔았다는 뜻이므로 상대 집단과 가격 반응으로 넘어가야 한다."
+    },
+    {
+      "heading": "순매수는 매수에서 매도를 뺀 값이다",
+      "purpose": "수급 표의 가장 기본 계산을 코드와 도해로 고정한다.",
+      "scene": "외국인 매수 1,000억원, 매도 700억원이면 순매수 300억원이라는 단순 예로 시작한다.",
+      "causalBridge": "계산을 알면 전체 시장에서 순매수 합이 왜 서로 맞물리는지 이해할 수 있다."
+    },
+    {
+      "heading": "개인은 하나의 성격이 아니다",
+      "purpose": "개인을 무조건 역지표로 보는 오해를 막는다.",
+      "scene": "단기 매매자, 장기 개인, 고액 자산가, 레버리지 투자자가 모두 개인으로 묶이는 장면을 설명한다.",
+      "causalBridge": "개인 순매수의 의미는 기간, 종목 크기, 가격 위치에 따라 달라진다."
+    },
+    {
+      "heading": "기관은 한 몸이 아니라 여러 운용 규칙이다",
+      "purpose": "기관 수급을 무조건 전문성의 신호로 읽지 않게 한다.",
+      "scene": "연기금, 투신, 금융투자, 보험, 사모펀드가 서로 다른 이유로 사고파는 장면을 나눈다.",
+      "causalBridge": "기관합계라는 단어가 여러 전략을 합친 숫자라면 세부 주체와 이벤트를 확인해야 한다."
+    },
+    {
+      "heading": "외국인은 글로벌 돈의 방향일 수도 있고 기계적 리밸런싱일 수도 있다",
+      "purpose": "외국인 순매수를 가장 똑똑한 돈으로 단정하지 않는다.",
+      "scene": "환율, 글로벌 위험 선호, 지수 편입, 패시브 리밸런싱, 롱쇼트 전략이 모두 외국인 수급에 섞이는 장면을 보여준다.",
+      "causalBridge": "외국인이 샀다는 사실만으로 이유를 확정할 수 없으므로 가격과 거래대금, 지수 맥락을 같이 보아야 한다."
+    },
+    {
+      "heading": "수급은 가격, 거래량, 시가총액과 같이 읽는다",
+      "purpose": "순매수 숫자를 시장 두께로 정규화하는 방법을 설명한다.",
+      "scene": "100억원 순매수가 소형주에는 크지만 대형주에는 작은 흔적일 수 있음을 비교한다.",
+      "causalBridge": "금액의 절대 크기가 아니라 시가총액과 거래대금 대비 크기로 다음 해석이 정해진다."
+    },
+    {
+      "heading": "마지막에는 체크리스트로 닫는다",
+      "purpose": "투자권유가 아닌 재점검 절차로 마무리한다.",
+      "scene": "외국인 순매수 뉴스를 본 독자가 바로 결론 내리지 않고 다섯 질문을 적는 장면으로 닫는다.",
+      "causalBridge": "수급을 제대로 읽으면 매수 신호가 아니라 다음에 확인할 질문이 늘어난다."
+    }
+  ],
+  "visuals": [
+    {
+      "kind": "realistic hero image",
+      "title": "세 투자자 흐름이 주문장에 만나는 장면",
+      "proves": "수급이 한 집단의 독주가 아니라 여러 주체가 한 시장에서 체결을 만드는 흐름임을 보여준다.",
+      "placement": "도입부에서 수급을 체결 흔적으로 정의한 직후",
+      "insertAfter": "수급은 예언이 아니라 체결의 흔적이다.",
+      "narrativeUse": "독자가 개인, 기관, 외국인을 순위표가 아니라 동시에 흐르는 세 물줄기로 보게 만든다."
+    },
+    {
+      "kind": "svg equation diagram",
+      "title": "순매수와 상대편 공식",
+      "proves": "순매수는 매수에서 매도를 뺀 값이며 전체 체결에는 반대편이 있다는 점을 고정한다.",
+      "placement": "순매수 계산을 설명한 직후",
+      "insertAfter": "순매수는 매수 금액에서 매도 금액을 뺀 값이다.",
+      "narrativeUse": "외국인 순매수만 보고 원인을 확정하는 오해를 막는다."
+    },
+    {
+      "kind": "svg investor map",
+      "title": "개인, 기관, 외국인은 한 몸이 아니다",
+      "proves": "세 집단 안에도 서로 다른 목적과 제약이 섞여 있다는 점을 보여준다.",
+      "placement": "개인, 기관, 외국인 정의를 설명하는 중간",
+      "insertAfter": "기관합계라는 말은 하나의 두뇌가 아니라 여러 운용 규칙의 합이다.",
+      "narrativeUse": "집단 이름을 실력 라벨로 받아들이는 습관을 줄인다."
+    },
+    {
+      "kind": "svg interpretation matrix",
+      "title": "수급과 가격 반응 매트릭스",
+      "proves": "같은 순매수도 주가 상승, 하락, 거래량 변화에 따라 다른 질문으로 바뀐다는 점을 보여준다.",
+      "placement": "수급을 가격, 거래량과 함께 읽는 섹션 뒤",
+      "insertAfter": "수급 숫자는 가격 반응과 거래대금이 붙을 때 해석할 수 있다.",
+      "narrativeUse": "독자가 순매수 하나를 결론으로 쓰지 않고 네 칸 질문으로 바꾸게 한다."
+    },
+    {
+      "kind": "realistic inline image",
+      "title": "수급 발자국 작업대",
+      "proves": "수급은 다음 가격을 맞히는 점괘가 아니라 이미 지나간 거래의 발자국이라는 점을 장면화한다.",
+      "placement": "오해와 재점검 조건 직전",
+      "insertAfter": "수급은 원인 확정이 아니라 흔적이다.",
+      "narrativeUse": "마지막 체크리스트로 넘어가기 전에 수급의 한계를 시각적으로 각인한다."
+    },
+    {
+      "kind": "svg checklist",
+      "title": "수급을 볼 때 남길 여섯 줄",
+      "proves": "개인, 기관, 외국인 순매수 화면에서 바로 확인할 질문 순서를 제공한다.",
+      "placement": "마무리에서 다음 수급 화면 확인 순서를 정리하기 직전",
+      "insertAfter": "다음 수급 화면에서는 여섯 줄만 먼저 적어도 오해가 크게 줄어든다.",
+      "narrativeUse": "투자권유 대신 반복 가능한 확인 절차로 글을 닫는다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "hero",
+      "subject": "개인, 기관, 외국인 세 흐름이 중앙 주문장에 들어가 체결되는 투자 교육용 데스크",
+      "query": "educational market flow desk retail institutional foreign investors order book no text",
+      "keywords": ["market flow", "order book", "retail investors", "institutional investors", "foreign investors"],
+      "placement": "본문 첫 이미지와 OG 썸네일 배경",
+      "narrativeUse": "수급을 특정 집단의 승리 신호가 아니라 여러 흐름이 맞물리는 장면으로 보여준다."
+    },
+    {
+      "slot": "inline",
+      "subject": "차트 주변에 투자자 흐름의 발자국과 균형 저울이 놓인 교육용 데스크",
+      "query": "investor flow footprint chart balance scale educational finance no text",
+      "keywords": ["flow footprint", "price chart", "balance scale", "net buying", "volume"],
+      "placement": "오해와 재점검 조건으로 넘어가기 직전",
+      "narrativeUse": "수급이 미래 예측이 아니라 이미 체결된 거래의 흔적이라는 점을 각인한다."
+    },
+    {
+      "slot": "diagram",
+      "subject": "순매수 공식, 투자자 집단 지도, 가격 반응 매트릭스, 체크리스트 SVG 세트",
+      "query": "net buy formula investor type map flow price volume matrix checklist",
+      "keywords": ["net buy", "investor type", "price volume", "market cap", "checklist"],
+      "placement": "공식, 집단 정의, 해석 프레임, 마무리 체크리스트 구간 직후",
+      "narrativeUse": "추상적인 수급 언어를 반복 확인 가능한 계산과 질문 순서로 바꾼다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": [
+      "투자이야기 수급 개인 기관 외국인",
+      "기술적 분석 거래량 주가",
+      "주가 시가총액 거래대금",
+      "SK하이닉스 코스피 시가총액 외국인 기관 수급",
+      "삼성전자 랠리 주가 거래대금"
+    ],
+    "links": [
+      {
+        "path": "/blog/technical-analysis-foundations",
+        "title": "기술적 분석이란 무엇인가",
+        "reason": "수급을 가격과 거래량이라는 행동 흔적으로 읽는 상위 프레임이다.",
+        "placement": "도입부에서 수급을 흔적으로 정의한 뒤"
+      },
+      {
+        "path": "/blog/technical-investing-price-indicators",
+        "title": "기술적 투자란 무엇을 보는가",
+        "reason": "DartLab price 데이터와 거래량, 보조지표 확인 흐름으로 이어진다.",
+        "placement": "DartLab 터미널 확인 섹션 뒤"
+      },
+      {
+        "path": "/blog/price-vs-market-cap",
+        "title": "주가와 시가총액은 왜 다를까",
+        "reason": "수급 금액을 시가총액과 거래대금 대비로 읽어야 하는 이유를 보완한다.",
+        "placement": "수급 정규화 설명 뒤"
+      },
+      {
+        "path": "/blog/000660-skhynix-kospi-driver",
+        "title": "SK하이닉스 시장 견인",
+        "reason": "대형주의 시가총액과 지수 영향이 수급 해석에 왜 중요한지 보여준다.",
+        "placement": "외국인과 패시브 자금 설명 뒤"
+      },
+      {
+        "path": "/blog/005930-samsung-rally",
+        "title": "삼성전자 랠리",
+        "reason": "주가 랠리를 수급만이 아니라 실적 기대와 산업 서사로 함께 읽는 사례다.",
+        "placement": "수급을 원인으로 확정하지 말라는 문단 뒤"
+      }
+    ],
+    "placementRule": "수급 자체 설명을 반복하지 않고, 가격, 거래량, 시가총액, 지수 영향이 필요해지는 문단마다 선행 글로 연결한다."
+  },
+  "honestyGuards": [
+    "본문은 실시간 투자자별 매매 숫자를 싣지 않고, 공식 확인 위치와 해석 프레임만 제공한다.",
+    "개인, 기관, 외국인을 실력 순위표처럼 쓰지 않는다. 각 집단 내부의 목적과 제약이 다르다고 명시한다.",
+    "외국인 순매수, 기관 순매수를 매수 신호로 확정하지 않고 주가, 거래량, 거래대금, 기간, 시가총액과 함께 본다.",
+    "DartLab 예시는 price와 거래량 확인 절차이며 투자자별 수급 데이터를 임의로 재현하거나 현재 수급 결론을 만들지 않는다.",
+    "특정 종목의 매수, 매도, 목표주가를 제시하지 않고 투자권유가 아니라고 본문에서 밝힌다."
+  ],
+  "evidenceMap": [
+    {
+      "sourceType": "price",
+      "sourceRef": "DartLab gather price",
+      "use": "주가, 거래량, 거래대금으로 수급 숫자의 가격 반응을 확인하는 터미널 절차에 쓴다."
+    },
+    {
+      "sourceType": "dartlab",
+      "sourceRef": "investment stories 01, 02, 03",
+      "use": "기술적 분석, price 데이터, 시가총액과 거래대금 설명을 선행 참고글로 연결한다."
+    },
+    {
+      "sourceType": "internal-blog",
+      "sourceRef": "SK하이닉스 시장 견인, 삼성전자 랠리",
+      "use": "대형주와 지수 영향, 랠리를 수급만으로 설명하면 안 되는 사례 연결에 쓴다."
+    },
+    {
+      "sourceType": "external",
+      "sourceRef": "KRX 투자자별 거래실적 and 투자자별 순매수상위종목",
+      "use": "개인, 기관, 외국인 투자자별 거래실적을 확인할 공식 화면으로 안내한다."
+    },
+    {
+      "sourceType": "external",
+      "sourceRef": "SEC glossary and FINRA institutional investor education",
+      "use": "기관투자자가 여러 금융기관과 운용 주체를 포함한다는 교육용 정의를 보강한다."
+    }
+  ],
+  "reviewGate": {
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "planner": "초안은 개인, 기관, 외국인을 각각 설명하고 외국인 수급을 중심 신호처럼 다루는 구조였다.",
+          "evaluator": "점수 82. 초보자가 궁금해하는 주제는 맞지만 외국인 우월 신화와 개인 역지표 클리셰를 강화할 위험이 있다. 순매수의 상대편, 기간, 거래대금 기준이 앞쪽으로 와야 한다.",
+          "skeptic": "수급 글이 매수 신호표처럼 읽히면 투자이야기 카테고리 취지를 깨뜨린다. 실제 현재 수급 숫자를 싣지 말고 공식 확인 위치와 해석 절차로 제한해야 한다.",
+          "decision": "revise",
+          "evaluatorScore": 82
+        },
+        {
+          "planner": "평가를 반영해 수급을 집단 서열이 아니라 체결 흔적으로 재정의하고, 순매수 공식, 상대편, 개인·기관·외국인의 내부 차이, 가격과 거래대금 정규화, DartLab price 확인 순서로 재작성했다.",
+          "plannerRevision": "외국인 순매수 호재 단정, 개인 역지표 단정, 기관 전문성 단정이라는 세 오해를 모두 별도 한계로 두고, 마지막을 여섯 줄 체크리스트로 닫도록 개선했다.",
+          "evaluator": "점수 95. 주제는 쉽고, 오해는 깊게 처리됐고, 공식 KRX 화면과 DartLab price 확인이 분리되어 데이터 발행 위험도 낮다. 선행 투자 글과 지수, 랠리 사례로 연결되는 구조도 충분하다.",
+          "skeptic": "현재 수급 숫자와 투자 결론을 만들지 않고, 수급을 가격과 거래량 옆에 놓는 재점검 언어로 제한했으므로 발행 가능하다.",
+          "decision": "passed",
+          "evaluatorScore": 95
+        }
+      ]
+    }
+  }
+}

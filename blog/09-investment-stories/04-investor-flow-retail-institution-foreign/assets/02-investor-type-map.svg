@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">개인 기관 외국인 지도</title>
+  <desc id="desc">개인, 기관, 외국인 투자자 집단 안에 서로 다른 목적과 제약이 섞여 있음을 보여주는 지도</desc>
+  <rect width="1200" height="760" fill="#f7fafc"/>
+  <text x="600" y="78" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#172033">세 집단은 한 몸이 아니다</text>
+  <g transform="translate(70 140)">
+    <rect width="320" height="500" rx="26" fill="#ffffff" stroke="#d8e1ea" stroke-width="2"/>
+    <circle cx="160" cy="86" r="44" fill="#2f5f73"/>
+    <text x="160" y="96" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#ffffff">개인</text>
+    <text x="40" y="175" font-family="Arial, sans-serif" font-size="24" fill="#172033">단기 매매자</text>
+    <text x="40" y="232" font-family="Arial, sans-serif" font-size="24" fill="#172033">장기 보유자</text>
+    <text x="40" y="289" font-family="Arial, sans-serif" font-size="24" fill="#172033">고액 자산가</text>
+    <text x="40" y="346" font-family="Arial, sans-serif" font-size="24" fill="#172033">레버리지 투자자</text>
+    <text x="40" y="425" font-family="Arial, sans-serif" font-size="22" fill="#526477">개인 합계는</text>
+    <text x="40" y="457" font-family="Arial, sans-serif" font-size="22" fill="#526477">하나의 판단이 아니다</text>
+  </g>
+  <g transform="translate(440 140)">
+    <rect width="320" height="500" rx="26" fill="#ffffff" stroke="#d8e1ea" stroke-width="2"/>
+    <circle cx="160" cy="86" r="44" fill="#b98516"/>
+    <text x="160" y="96" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#ffffff">기관</text>
+    <text x="40" y="175" font-family="Arial, sans-serif" font-size="24" fill="#172033">연기금</text>
+    <text x="40" y="232" font-family="Arial, sans-serif" font-size="24" fill="#172033">투신과 펀드</text>
+    <text x="40" y="289" font-family="Arial, sans-serif" font-size="24" fill="#172033">금융투자</text>
+    <text x="40" y="346" font-family="Arial, sans-serif" font-size="24" fill="#172033">보험과 은행</text>
+    <text x="40" y="425" font-family="Arial, sans-serif" font-size="22" fill="#526477">운용 규칙과</text>
+    <text x="40" y="457" font-family="Arial, sans-serif" font-size="22" fill="#526477">만기가 서로 다르다</text>
+  </g>
+  <g transform="translate(810 140)">
+    <rect width="320" height="500" rx="26" fill="#ffffff" stroke="#d8e1ea" stroke-width="2"/>
+    <circle cx="160" cy="86" r="44" fill="#1f8a70"/>
+    <text x="160" y="96" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#ffffff">외국인</text>
+    <text x="40" y="175" font-family="Arial, sans-serif" font-size="24" fill="#172033">글로벌 펀드</text>
+    <text x="40" y="232" font-family="Arial, sans-serif" font-size="24" fill="#172033">패시브 자금</text>
+    <text x="40" y="289" font-family="Arial, sans-serif" font-size="24" fill="#172033">헤지 전략</text>
+    <text x="40" y="346" font-family="Arial, sans-serif" font-size="24" fill="#172033">환율과 지수</text>
+    <text x="40" y="425" font-family="Arial, sans-serif" font-size="22" fill="#526477">한 방향의 이유로</text>
+    <text x="40" y="457" font-family="Arial, sans-serif" font-size="22" fill="#526477">단정하지 않는다</text>
+  </g>
+  <text x="600" y="704" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#526477">집단 이름은 출발점일 뿐, 기간과 가격 반응이 해석을 완성한다</text>
+</svg>
