@@ -4925,7 +4925,7 @@
     },
     {
       "id": "engines.scan",
-      "bodyPreview": "## 엔진 역할\n\n`scan`은 여러 기업을 한 번에 훑어 후보를 찾는 **L1.5 횡단 엔진**이다. L1 (company · gather) 위에서 전체 종목 universe 를 스캔해 ranking · filter · candidate evidence table 을 만든다. 단일 종목 심층 분석은 L2 (analysis · credit · macro · quant · industry) 의 책임. 질문의 단위가 \"삼성전자를 분석해줘\"이면 `Company`/`analysis`가 우선이고, \"조건에 맞는 종목을 찾아줘\", \"전종목에서 상위 기업을 골라줘\"이면 `scan`이 우선이다.\n\n`account`와 `ratio`는 primitive다. 복합 투자 질문은 `screen` preset/spec 또는 `quality`, `valuation`, `growth`, `profitability` 같은 축으로 시작하고, 최종 판단은 후보별 `analysis`, `credit`, `quant`로 검증한다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\n# 전체 스캔 축 가이드\nguide = dartlab.scan()\n\n# 축 실행\nquality = dartlab.scan(\"quality\")\nvaluation = dartlab.scan(\"valuation\")\ncashflow = dartlab.scan(\"cashflow\")\n\n# primitive\nrevenue = dartlab.scan(\"account\", \"매출액\")\nroe = dartlab.scan(\"ratio\", \"roe\")\ninventory = dartlab.scan(\"note\", \"재고자산\")   # 주석 lineitem 횡단 (재고 세분·리스·법인세 등)\n\n# 조건형 스크리닝\nfields = dartlab.scan(\"fields\", \"roe\")\nvalue = dartlab.scan(\"screen\", \"value\")\ncustom = dartlab.scan(\"screen\", spec={\"filters\": []})\n```\n\n## 강행 호출 룰 (agent 답변 품질 회귀 차단)\n\n22 axis 횡단 스크리닝에서 다음 4 룰 강행 — 메모리 압박 + refs 0 회귀 차단.\n\n1. **1 차 도구는 EngineCall 강제**. `EngineCall(apiRef=\"scan\", args={\"axis\": \"ratio\", \"metric\": \"roe\"})` 양식. RunPython 으로 전 종목 parquet 직접 로드 금지 — Polars Rust 힙 누수 (Company 1 개 ≈ 200~500MB) 로 OOM 가능.\n2. **개별 종목 분석 질문에 scan 호출 금지** — \"삼성전자 수익성\" 처럼 단일 기업이면 `Company.panel`/`Company.analysis` 사용. scan 은 *여러 종목 후보 찾기* 한정.\n3. **scan 결과 후보 → 상위 N (보통 10~20) 만 다음 단계로 전달**. 전종목 결과 그대로 답변 본문 dump 금지.\n4. **본문 숫자에",
+      "bodyPreview": "## 엔진 역할\n\n`scan`은 여러 기업을 한 번에 훑어 후보를 찾는 **L1.5 횡단 엔진**이다. L1 (company · gather) 위에서 전체 종목 universe 를 스캔해 ranking · filter · candidate evidence table 을 만든다. 단일 종목 심층 분석은 L2 (analysis · credit · macro · quant · industry) 의 책임. 질문의 단위가 \"삼성전자를 분석해줘\"이면 `Company`/`analysis`가 우선이고, \"조건에 맞는 종목을 찾아줘\", \"전종목에서 상위 기업을 골라줘\"이면 `scan`이 우선이다.\n\n`account`와 `ratio`는 primitive다. 복합 투자 질문은 `screen` preset/spec 또는 `quality`, `valuation`, `growth`, `profitability` 같은 축으로 시작하고, 최종 판단은 후보별 `analysis`, `credit`, `quant`로 검증한다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\n# 전체 스캔 축 가이드\nguide = dartlab.scan()\n\n# 축 실행\nquality = dartlab.scan(\"quality\")\nvaluation = dartlab.scan(\"valuation\")\ncashflow = dartlab.scan(\"cashflow\")\n\n# primitive\nrevenue = dartlab.scan(\"account\", \"매출액\")\nroe = dartlab.scan(\"ratio\", \"roe\")\ninventory = dartlab.scan(\"note\", \"재고자산\")   # 주석 lineitem 횡단 (재고 세분·리스·법인세 등)\n\n# 조건형 스크리닝\nfields = dartlab.scan(\"fields\", \"roe\")\nvalue = dartlab.scan(\"screen\", \"value\")\ncustom = dartlab.scan(\"screen\", spec={\"filters\": []})\n\n# 파생 필드 조합 (spec.define): 순현금 = 현금 - 단기차입, 저부채 교차\nsafe = dartlab.scan(\"screen\", spec={\n    \"define\": {\"netCash\": {\"op\": \"sub\",\n        \"left\": \"finance.account.cash_and_cash_equivalents\",\n        \"right\": \"finance.account.shortterm_borrowings\"}},\n    \"where\": [{\"field\": \"@netCash\", \"op\": \">\", \"value\": 0},\n              {\"field\": \"finance.ratio.debtRatio\", \"op\": \"<\", \"value\": 30}],\n    \"sort\": {\"field\": \"@netCash\", \"desc\": True}})\n\n# 시계열(연간 격자) + 상대(업종 횡단) 파생: 꾸준한 흑자 · 성장 · 업종내 상위\ncom",
       "title": "Scan",
       "category": "engines",
       "categoryTitle": "Engines",
@@ -9025,12 +9025,12 @@
         "**발굴 SSOT**: corp_cls=E 발굴·그룹핑은 `scan.ipo._discoverIpoIssuers` 단일 소스(베이크·scan 공유). 파싱은 `story.buildIpoReport`. 워커 TS `groupIpoFilings` 는 크로스런타임 미러.",
         "corp_cls=E 증권신고서는 allFilings·panel(Y/K 전용)에 없어 이 파이프라인이 그 SSOT 를 처음 생산한다.",
         "라이브는 aging out(상장·85일 경과)으로 소실되므로, history 가 rcept 키로 영구 보존(list.json 3개월 제한이라 재발굴 불가). reportJson 전블롭 보존. 이력이 커지면 실측 후 연 샤딩(`history_{yyyy}.parquet`) 승격, 선제 샤딩 금지.",
-        "new_listing 형(newIpo)은 per-match `/send`(영구 nonce), threshold_cross 형(newOrders)은 `/active` set-diff(재크로싱 발화). watch.py `_STATEFUL_TOPICS` 로 분기.",
+        "new_listing 형(newIpo)은 per-match `/send`(영구 nonce), threshold_cross 형(newOrders·screenAlert)은 `/active` set-diff(재크로싱 발화). watch.py `_STATEFUL_TOPICS` 로 분기.",
+        "**screenAlert 롤아웃 게이트**: 저장 스크린(`screens/*.json` + `notify:true`) 멤버십을 `evaluateScreenMembers` 로 평가해 진입 알림. 첫 활성화 시 현 멤버 전원이 진입으로 보여 flood 가능하므로 `main` default 토픽에서 제외(운영자가 cron `--topics` 에 추가해 롤아웃). flagship=`financialStabilityDrawdown`(하락장 재무안전).",
         "허브는 전건 발송실패(sent=0 && failed>0)·구독자0 시 nonce 롤백(다음 cron 재시도). 러너는 body.failed 를 전건=RED·부분=warning 으로 표면화(조용한 미발화 종료).",
         "딥링크: newIpo `/terminal?ipo=1`, newOrders `/terminal?sym={code}`.",
         "**실패 감지**: MONITORED_WORKFLOWS 등록. bake genuine-failure 는 위 assert 스텝이 job RED 로 만들어 여기서 잡힌다.",
-        "**cron drop 감지**: STALE_AFTER_HOURS 80h(금~월 72h 주말 갭 초과) 등록. 3일+ 연속 스케줄 누락(퍼블릭 IPO SSOT 동결) 시 stale 감지·자동 트리거(nonce 멱등이라 오탐 무해).",
-        "첫 관문 순서(bake 먼저, watch 나중) + 단일 파싱 유지. graph 강박(고정 노드) 금지(`ai/agent.py` 본체)."
+        "**cron drop 감지**: STALE_AFTER_HOURS 80h(금~월 72h 주말 갭 초과) 등록. 3일+ 연속 스케줄 누락(퍼블릭 IPO SSOT 동결) 시 stale 감지·자동 트리거(nonce 멱등이라 오탐 무해)."
       ],
       "recipeSteps": [],
       "requiredEvidence": [],
@@ -28709,7 +28709,7 @@
     },
     {
       "id": "runtime.pyodide",
-      "bodyPreview": "## Skill OS 흡수 규칙\n\n- 이 skill이 공식 진입점이다. 삭제된 운영 문서 경로를 다시 안내하지 않는다.\n- 공개 호출 방식과 대표 반환 형태는 skill에서 확인하고, 세부 필드는 capability/docstring으로 검산한다.\n- 분석이나 변경 결과는 ref, 실행 로그, 테스트 결과로 검증한다.\n\n## 실행 순서\n\n- 1. 호출 — `prefetch` 후 Company 로 간다 기준을 확인한다.\n- 2. 아키텍처 — 설치·데이터·실행 3 층으로 간다 기준을 확인한다.\n- 3. polars WASM 제약 — pyarrow 경유로 우회한다 기준을 확인한다.\n- 4. pyodide 분기 패턴 — `sys.platform == \"emscripten\"` 로 체크한다 기준을 확인한다.\n- 수정된 파일 기준을 확인한다.\n- 프리빌드 — `dart/scan/finance-lite.parquet` (~18MB, 30 계정, 2022 년 ~ 분기).\n- 다운로드 — `loader.js::loadScanLite(py)` 또는 파이썬 측 `dartlab.scan(...)` 첫 호출 시 자동.\n- 내부 구현 — `scanAccount._scanAccountFromMerged` 가 `_IS_PYODIDE` 분기에서 `pyarrow.parquet.read_table` + `pl.from_arrow` 로 전환 (polars `scan_parquet` 미지원 우회).\n- SSOT 계정 리스트 — `src/dartlab/scan/_helpers.py::LITE_ACCOUNTS`.",
+      "bodyPreview": "## Skill OS 흡수 규칙\n\n- 이 skill이 공식 진입점이다. 삭제된 운영 문서 경로를 다시 안내하지 않는다.\n- 공개 호출 방식과 대표 반환 형태는 skill에서 확인하고, 세부 필드는 capability/docstring으로 검산한다.\n- 분석이나 변경 결과는 ref, 실행 로그, 테스트 결과로 검증한다.\n\n## 실행 순서\n\n- 1. 호출 단계. `Company` 로 바로 간다 (prefetch 없이, 데이터는 첫 접근 시 lazy fetch) 기준을 확인한다.\n- 2. 아키텍처 — 설치·데이터·실행 3 층으로 간다 기준을 확인한다.\n- 3. polars WASM 제약 — pyarrow 경유로 우회한다 기준을 확인한다.\n- 4. pyodide 분기 패턴 — `sys.platform == \"emscripten\"` 로 체크한다 기준을 확인한다.\n- 수정된 파일 기준을 확인한다.\n- 프리빌드 — `dart/scan/finance-lite.parquet` (~18MB, 30 계정, 2022 년 ~ 분기).\n- 다운로드 — `loader.js::loadScanLite(py)` 또는 파이썬 측 `dartlab.scan(...)` 첫 호출 시 자동.\n- 내부 구현 — `scanAccount._scanAccountFromMerged` 가 `_IS_PYODIDE` 분기에서 `pyarrow.parquet.read_table` + `pl.from_arrow` 로 전환 (polars `scan_parquet` 미지원 우회).\n- SSOT 계정 리스트 — `src/dartlab/scan/_helpers.py::LITE_ACCOUNTS`.",
       "title": "Pyodide",
       "category": "runtime",
       "categoryTitle": "Runtime",
@@ -28719,7 +28719,7 @@
       "whenToUse": [
         "Pyodide",
         "pyodide",
-        "1. 호출 — `prefetch` 후 Company 로 간다",
+        "1. 호출 단계. `Company` 로 바로 간다 (prefetch 없이, 데이터는 첫 접근 시 lazy fetch)",
         "2. 아키텍처 — 설치·데이터·실행 3 층으로 간다",
         "3. polars WASM 제약 — pyarrow 경유로 우회한다",
         "4. pyodide 분기 패턴 — `sys.platform == \"emscripten\"` 로 체크한다",
@@ -28753,7 +28753,7 @@
         "dartlab://skills/runtime.pyodide"
       ],
       "procedure": [
-        "1. 호출 — `prefetch` 후 Company 로 간다 기준을 확인한다.",
+        "1. 호출 단계. `Company` 로 바로 간다 (prefetch 없이, 데이터는 첫 접근 시 lazy fetch) 기준을 확인한다.",
         "2. 아키텍처 — 설치·데이터·실행 3 층으로 간다 기준을 확인한다.",
         "3. polars WASM 제약 — pyarrow 경유로 우회한다 기준을 확인한다.",
         "4. pyodide 분기 패턴 — `sys.platform == \"emscripten\"` 로 체크한다 기준을 확인한다.",
@@ -28809,7 +28809,7 @@
     },
     {
       "id": "runtime.pyodideBrowser",
-      "bodyPreview": "## 절차\n\n- skill search 결과의 `runtimeCompatibility.pyodide.status`를 먼저 확인한다.\n- `supported`는 브라우저 내 파일 또는 prefetch 데이터로 바로 실행할 수 있다.\n- `limited`는 HF snapshot, 업로드 파일, prebuilt parquet 같은 제한 조건을 함께 표시한다.\n- `unsupported`는 로컬 Python 또는 서버 ask 경로를 안내한다.\n- 브라우저에서 말하는 최신성은 live API가 아니라 사용한 snapshot의 asOf 기준으로만 표현한다.",
+      "bodyPreview": "## 절차\n\n- skill search 결과의 `runtimeCompatibility.pyodide.status`를 먼저 확인한다.\n- `supported`는 브라우저 내 파일 또는 자동 lazy 로드 데이터로 바로 실행할 수 있다.\n- `limited`는 HF snapshot, 업로드 파일, prebuilt parquet 같은 제한 조건을 함께 표시한다.\n- `unsupported`는 로컬 Python 또는 서버 ask 경로를 안내한다.\n- 브라우저에서 말하는 최신성은 live API가 아니라 사용한 snapshot의 asOf 기준으로만 표현한다.",
       "title": "Pyodide / Web AI 실행 범위",
       "category": "runtime",
       "categoryTitle": "Runtime",
@@ -28845,7 +28845,7 @@
       "sourceRefs": [],
       "procedure": [
         "skill search 결과의 `runtimeCompatibility.pyodide.status`를 먼저 확인한다.",
-        "`supported`는 브라우저 내 파일 또는 prefetch 데이터로 바로 실행할 수 있다.",
+        "`supported`는 브라우저 내 파일 또는 자동 lazy 로드 데이터로 바로 실행할 수 있다.",
         "`limited`는 HF snapshot, 업로드 파일, prebuilt parquet 같은 제한 조건을 함께 표시한다.",
         "`unsupported`는 로컬 Python 또는 서버 ask 경로를 안내한다.",
         "브라우저에서 말하는 최신성은 live API가 아니라 사용한 snapshot의 asOf 기준으로만 표현한다."
