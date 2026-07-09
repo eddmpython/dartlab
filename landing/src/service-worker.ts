@@ -27,6 +27,31 @@ const SHELL = `dartlab-shell-${version}`;
 const SHELL_ASSETS = [...build, ...files];
 const ASSET_SET = new Set(SHELL_ASSETS);
 
+/**
+ * 노트북 런타임 캐시. pyodide 커널(CDN 휠 ~32MB)과 dartlab wheel(~21MB)은 노트북을 여는 순간
+ * 매번 다시 받는다(실측: 같은 프로필 재방문도 12.2초 -> 11.2초로 거의 그대로. HF wheel 은 서명된
+ * xet CDN 으로 302 되어 URL 이 매번 달라 HTTP 캐시가 안 먹는다). 그래서 노트북을 실제로 연 사용자만
+ * 이 캐시를 채운다. 크로스오리진 무간섭이라는 SW 설계 불변은 그대로 두고, 아래 좁은 허용목록만 예외다.
+ * panel/parquet 같은 데이터 Range 요청은 여전히 절대 가로채지 않는다(경로에 /pyodide/ 가 없다).
+ */
+const PYODIDE_CACHE = 'dartlab-pyodide-v1';
+
+/** 버전이 URL 에 박혀 불변인 것(cache-first). */
+function isImmutableRuntimeAsset(url: URL): boolean {
+	return (
+		(url.hostname === 'cdn.jsdelivr.net' && url.pathname.startsWith('/pyodide/')) ||
+		url.hostname === 'files.pythonhosted.org'
+	);
+}
+
+/**
+ * dartlab wheel(stale-while-revalidate). 파일명에 버전이 있지만 같은 버전으로 재발행하는 운영이 있어
+ * cache-first 로 굳히면 옛 wheel 이 영구 고착된다. 캐시를 즉시 주고 뒤에서 갱신한다.
+ */
+function isDartlabWheel(url: URL): boolean {
+	return url.hostname === 'huggingface.co' && url.pathname.includes('/pyodide/') && url.pathname.endsWith('.whl');
+}
+
 self.addEventListener('install', (event) => {
 	event.waitUntil(
 		(async () => {
@@ -44,7 +69,12 @@ self.addEventListener('activate', (event) => {
 			const keys = await caches.keys();
 			await Promise.all(
 				keys
-					.filter((k) => k.startsWith('dartlab-scan-') || (k.startsWith('dartlab-shell-') && k !== SHELL))
+					.filter(
+						(k) =>
+							k.startsWith('dartlab-scan-') ||
+							(k.startsWith('dartlab-shell-') && k !== SHELL) ||
+							(k.startsWith('dartlab-pyodide-') && k !== PYODIDE_CACHE)
+					)
 					.map((k) => caches.delete(k))
 			);
 			await self.clients.claim();
@@ -57,7 +87,43 @@ self.addEventListener('fetch', (event) => {
 	if (req.method !== 'GET') return;
 	const url = new URL(req.url);
 
-	// ⛔ 크로스오리진(HF·프록시·뉴스 등 데이터) · SW 무간섭. 네트워크 그대로.
+	// 노트북 런타임(pyodide 커널 휠 + dartlab wheel)만 크로스오리진 예외. 데이터(parquet Range)는 제외.
+	if (isImmutableRuntimeAsset(url)) {
+		event.respondWith(
+			(async () => {
+				const cache = await caches.open(PYODIDE_CACHE);
+				const hit = await cache.match(req);
+				if (hit) return hit;
+				const res = await fetch(req);
+				if (res.ok) cache.put(req, res.clone());
+				return res;
+			})()
+		);
+		return;
+	}
+	if (isDartlabWheel(url)) {
+		event.respondWith(
+			(async () => {
+				const cache = await caches.open(PYODIDE_CACHE);
+				const hit = await cache.match(req);
+				const fresh = fetch(req)
+					.then((res) => {
+						if (res.ok) cache.put(req, res.clone());
+						return res;
+					})
+					.catch(() => undefined);
+				if (hit) {
+					event.waitUntil(fresh); // 뒤에서 갱신(같은 버전 재발행 대응)
+					return hit;
+				}
+				const res = await fresh;
+				return res ?? Response.error();
+			})()
+		);
+		return;
+	}
+
+	// ⛔ 그 외 크로스오리진(HF parquet·프록시·뉴스 등 데이터) · SW 무간섭. 네트워크 그대로.
 	if (url.origin !== self.location.origin) return;
 
 	// 앱 셸 자산(해시 불변) · 캐시 우선.
