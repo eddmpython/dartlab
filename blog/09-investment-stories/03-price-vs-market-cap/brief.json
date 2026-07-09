@@ -1,0 +1,233 @@
+{
+  "passed": true,
+  "title": "주가와 시가총액은 왜 다를까",
+  "titleContract": {
+    "candidates": [
+      "주가와 시가총액은 왜 다를까",
+      "비싼 주식과 큰 회사는 다르다",
+      "1주 가격과 회사 전체 가격표"
+    ],
+    "selectedTitle": "주가와 시가총액은 왜 다를까",
+    "hookQuestion": "왜 어떤 회사는 주가가 50만원인데 작고, 어떤 회사는 주가가 5만원인데 더 큰 회사일까?",
+    "readerGap": "초보자는 주가의 절대 금액을 비싸고 싸다는 느낌으로 받아들이지만, 시장이 회사 전체에 붙인 가격은 발행주식수까지 곱한 시가총액이다.",
+    "promise": "주가, 발행주식수, 시가총액, 주식분할, 유상증자와 자사주, PER와 PBR까지 한 줄 공식에서 시작해 투자 화면을 다시 읽는 방법을 설명한다.",
+    "whySelected": "투자이야기 기초편으로 가장 먼저 필요한 착시가 주가와 회사 크기의 혼동이므로, 질문형 제목이 초보자의 첫 오해를 바로 붙잡는다."
+  },
+  "readerQuestion": "주가가 높으면 더 비싼 회사이고, 주가가 낮으면 더 싼 회사라고 말해도 될까?",
+  "insight": {
+    "commonBelief": "주가가 높은 종목은 비싸고, 주가가 낮은 종목은 싸며, 만원짜리 주식은 십만원짜리 주식보다 오를 여지가 크다고 생각하기 쉽다.",
+    "twistFact": "주가는 회사 전체가 아니라 1주 가격이다. 시가총액은 주가에 발행주식수를 곱한 값이라서, 1주 가격이 낮아도 발행주식수가 많으면 훨씬 큰 회사가 된다.",
+    "whatToWatch": "다음 종목 화면에서는 주가, 발행주식수, 시가총액, 유통주식수, 거래대금, PER, PBR, 최근 증자와 자사주 소각 여부를 같이 본다.",
+    "freshnessArgument": "DartLab price 표와 DART, EDGAR, KRX 같은 공개 자료를 함께 보면 주가 화면이 단순 숫자가 아니라 회사 전체 가격표와 자본 구조의 변화로 읽힌다.",
+    "evidenceRefs": [
+      "Investor.gov market capitalization glossary",
+      "Investor.gov stock split glossary",
+      "KRX 정보데이터시스템",
+      "DART 전자공시 사업보고서 발행주식수",
+      "DartLab gather price"
+    ]
+  },
+  "acts": [
+    {
+      "heading": "주가는 한 조각의 가격이다",
+      "purpose": "주가와 시가총액을 분리해 초보자의 첫 착시를 푼다.",
+      "scene": "같은 투자 화면에서 50만원 주식과 5만원 주식을 보고 절대 가격만 비교하는 장면으로 시작한다.",
+      "causalBridge": "1주 가격만 보면 회사 전체 가격을 볼 수 없으므로 발행주식수로 넘어가야 한다."
+    },
+    {
+      "heading": "시가총액은 전체 회사 가격표다",
+      "purpose": "시가총액 공식과 발행주식수의 의미를 직관적으로 설명한다.",
+      "scene": "한 조각 가격과 조각 수를 곱해야 피자 전체 가격이 나오는 장면을 회사 주식으로 바꾼다.",
+      "causalBridge": "공식이 잡히면 주가가 낮아도 큰 회사가 되는 이유가 자연스럽게 보인다."
+    },
+    {
+      "heading": "주식 수는 계속 움직인다",
+      "purpose": "상장 후 발행주식수가 고정된다는 오해를 없앤다.",
+      "scene": "유상증자, 전환사채 전환, 스톡옵션, 자사주 소각이 같은 주가에서도 시가총액과 주당 가치를 바꾸는 장면을 보여준다.",
+      "causalBridge": "발행주식수 변화가 곧 희석과 주당 몫 변화로 이어지므로 공시와 연결된다."
+    },
+    {
+      "heading": "분할은 싸지는 일이 아니다",
+      "purpose": "주식분할과 액면분할을 가격 인하로 오해하지 않게 한다.",
+      "scene": "1개 조각을 여러 개 작은 조각으로 자르면 한 조각 가격은 낮아지지만 전체 피자 크기는 그대로인 장면을 넣는다.",
+      "causalBridge": "단위가 바뀌는 일과 가치가 바뀌는 일을 분리하면 분할 뉴스의 진짜 효과를 따로 볼 수 있다."
+    },
+    {
+      "heading": "시가총액은 회사가 받은 돈이 아니다",
+      "purpose": "시장에서 주식을 사고팔 때 회사에 현금이 들어간다는 오해를 바로잡는다.",
+      "scene": "기존 주주끼리 주식을 거래하는 화면과 회사가 새 주식을 발행해 현금을 받는 화면을 대비한다.",
+      "causalBridge": "거래 상대가 누구인지 알아야 주가 상승과 회사 현금흐름을 혼동하지 않는다."
+    },
+    {
+      "heading": "PER와 PBR은 시가총액에서 시작한다",
+      "purpose": "밸류에이션 지표가 주가의 절대 금액이 아니라 회사 전체 가격과 이익, 자본의 관계임을 설명한다.",
+      "scene": "같은 이익을 내는 두 회사가 서로 다른 주식 수를 갖고 있어도 PER 계산은 시가총액 기준으로 같은 질문을 던지는 장면을 만든다.",
+      "causalBridge": "주가가 아니라 시가총액으로 넘어가야 밸류에이션 언어가 자연스럽게 열린다."
+    },
+    {
+      "heading": "마지막에는 체크리스트로 닫는다",
+      "purpose": "투자권유가 아닌 재점검 프레임으로 글을 마무리한다.",
+      "scene": "종목 화면에서 주가만 보던 독자가 시가총액, 유통주식수, 거래대금, 희석, 자사주, PER와 PBR을 차례로 확인한다.",
+      "causalBridge": "주가와 시가총액의 차이를 알면 다음 투자 화면에서 봐야 할 질문이 늘어난다."
+    }
+  ],
+  "visuals": [
+    {
+      "kind": "realistic hero image",
+      "title": "1주에서 회사 전체로 커지는 투자 작업대",
+      "proves": "주가 하나만 보지 말고 발행주식수와 회사 전체 가격표로 확장해야 한다는 점을 장면화한다.",
+      "placement": "도입부에서 주가 숫자 착시를 설명한 직후",
+      "insertAfter": "주가와 시가총액의 차이는 투자 화면을 읽는 첫 번째 문법이다.",
+      "narrativeUse": "독자가 주가 숫자 하나에서 회사 전체 가치로 시야를 넓히게 만든다."
+    },
+    {
+      "kind": "svg formula diagram",
+      "title": "시가총액 한 줄 공식",
+      "proves": "시가총액은 주가와 발행주식수의 곱이라는 가장 중요한 정의를 한 장으로 고정한다.",
+      "placement": "주가와 발행주식수 곱셈을 처음 설명한 직후",
+      "insertAfter": "시가총액은 주가에 발행주식수를 곱한 값이다.",
+      "narrativeUse": "이후 주식분할, 증자, PER 설명의 기준선을 제공한다."
+    },
+    {
+      "kind": "svg comparison map",
+      "title": "비싼 주식과 큰 회사의 차이",
+      "proves": "1주 가격이 높아도 발행주식수가 적으면 작은 회사일 수 있다는 착시를 깬다.",
+      "placement": "절대 주가가 회사 크기를 바로 뜻하지 않는다는 문단 뒤",
+      "insertAfter": "50만원 주식이 5만원 주식보다 항상 큰 회사라는 뜻은 아니다.",
+      "narrativeUse": "초보자가 가격 단위와 회사 규모를 분리해 읽게 만든다."
+    },
+    {
+      "kind": "realistic inline image",
+      "title": "분할 전후 균형 저울",
+      "proves": "주식분할은 한 조각 가격과 조각 수를 동시에 바꾸지만 전체 가치가 자동으로 늘지는 않는다는 점을 보여준다.",
+      "placement": "주식분할이 단위 변화라는 설명을 마친 직후",
+      "insertAfter": "단위가 바뀐다고 회사가 바로 더 커지는 것은 아니다.",
+      "narrativeUse": "액면분할 뉴스를 가치 상승으로 오해하는 순간을 막는다."
+    },
+    {
+      "kind": "svg checklist",
+      "title": "다음 종목 화면 체크리스트",
+      "proves": "주가를 본 뒤 무엇을 더 봐야 하는지 실전 순서로 정리한다.",
+      "placement": "마무리에서 다음 종목 화면 확인 순서를 정리하기 직전",
+      "insertAfter": "다음 종목 화면에서는 다섯 줄만 먼저 적어도 오해가 크게 줄어든다.",
+      "narrativeUse": "글의 개념을 독자의 다음 행동으로 연결한다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "hero",
+      "subject": "한 주식 조각에서 발행주식수 묶음을 지나 회사 전체 모형으로 확장되는 투자 작업대",
+      "query": "educational investment desk one share price market capitalization shares outstanding company blocks",
+      "keywords": ["share price", "market capitalization", "shares outstanding", "company value"],
+      "placement": "본문 첫 이미지와 OG 썸네일 배경",
+      "narrativeUse": "주가 한 숫자에서 회사 전체 가격표로 시야가 확장되는 첫 장면을 만든다."
+    },
+    {
+      "slot": "inline",
+      "subject": "주식분할 전후를 균형 저울로 비교하는 교육용 책상",
+      "query": "stock split equal total value balanced scales many smaller shares few larger shares",
+      "keywords": ["stock split", "shares outstanding", "same total value", "balance scale"],
+      "placement": "주식분할이 단위 변화라는 설명을 마친 직후의 본문 중간",
+      "narrativeUse": "한 조각 가격이 내려가도 전체 가치가 자동으로 늘지 않는다는 점을 직관화한다."
+    },
+    {
+      "slot": "diagram",
+      "subject": "시가총액 공식, 회사 크기 비교, 발행주식수 변화, 체크리스트 SVG 세트",
+      "query": "market cap formula share price shares outstanding valuation checklist diagram",
+      "keywords": ["formula", "valuation", "dilution", "buyback", "PER", "PBR"],
+      "placement": "시가총액 공식, 주가 착시, 분할, 최종 체크리스트를 설명하는 각 본문 구간 직후",
+      "narrativeUse": "본문의 추상 개념을 반복 확인 가능한 공식과 순서로 바꾼다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": [
+      "기술적 분석 주가 시가총액 투자이야기",
+      "기술적 투자 price 보조지표",
+      "삼성전자 랠리 시가총액 주가",
+      "SK하이닉스 코스피 시가총액 가중",
+      "순현금 시가총액 데이터 리포트"
+    ],
+    "links": [
+      {
+        "path": "/blog/technical-analysis-foundations",
+        "title": "기술적 분석이란 무엇인가",
+        "reason": "주가의 절대 숫자를 보조지표보다 먼저 해석하는 기준 글로 연결한다.",
+        "placement": "도입부에서 주가 화면을 보는 법을 설명한 뒤"
+      },
+      {
+        "path": "/blog/technical-investing-price-indicators",
+        "title": "기술적 투자란 무엇을 보는가",
+        "reason": "주가와 거래량을 DartLab price 표로 확인하는 실습 글이다.",
+        "placement": "DartLab 터미널 확인 섹션 뒤"
+      },
+      {
+        "path": "/blog/000660-skhynix-kospi-driver",
+        "title": "SK하이닉스 시장 견인",
+        "reason": "시가총액 가중 지수에서 큰 회사가 시장에 미치는 힘을 보여준다.",
+        "placement": "시가총액이 지도에서 하는 일 섹션 뒤"
+      },
+      {
+        "path": "/blog/net-cash-above-market-cap",
+        "title": "순현금이 시가총액보다 큰 회사",
+        "reason": "시가총액과 재무 체력을 연결하는 데이터 리포트다.",
+        "placement": "PER와 PBR 설명 뒤"
+      }
+    ],
+    "placementRule": "개념 설명 중간에 선행 글을 자연스럽게 붙이되, 목표가나 매수 결론이 아니라 다음 확인 질문으로 연결한다."
+  },
+  "honestyGuards": [
+    "주가와 시가총액 설명은 투자권유가 아니라 투자 화면을 읽는 기초 문법이라고 명시한다.",
+    "주가가 낮다는 이유만으로 싸다고 말하지 않고, 시가총액, 이익, 자본, 희석, 유동성을 함께 봐야 한다고 쓴다.",
+    "주식분할, 액면분할, 무상증자는 단위와 주식 수를 바꾸는 일이며 가치가 자동으로 늘어난다고 확정하지 않는다.",
+    "DartLab 예시는 데이터 확인 절차이며 특정 종목의 매수, 매도, 목표주가를 제시하지 않는다."
+  ],
+  "evidenceMap": [
+    {
+      "sourceType": "price",
+      "sourceRef": "DartLab gather price",
+      "use": "주가, 거래량, 거래대금, 시가총액 열을 같은 표에서 확인하는 터미널 절차에 쓴다."
+    },
+    {
+      "sourceType": "dartlab",
+      "sourceRef": "investment stories 01 and 02",
+      "use": "기술적 분석과 price 데이터 실습 글을 선행 참고글로 연결한다."
+    },
+    {
+      "sourceType": "internal-blog",
+      "sourceRef": "SK하이닉스 시장 견인, 삼성전자 랠리, HBM 기술이야기, 순현금 데이터 리포트",
+      "use": "시가총액이 지수와 기술 서사, 밸류에이션 질문으로 확장되는 사례 연결에 쓴다."
+    },
+    {
+      "sourceType": "external",
+      "sourceRef": "Investor.gov market capitalization and stock split glossary",
+      "use": "시장가치와 주식분할의 교육용 정의를 보강한다."
+    },
+    {
+      "sourceType": "external",
+      "sourceRef": "KRX, DART, SEC EDGAR",
+      "use": "상장 데이터, 발행주식수, 해외 공시 확인 위치를 독자에게 안내한다."
+    }
+  ],
+  "reviewGate": {
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "planner": "초안은 주가와 시가총액의 공식 설명을 중심으로 잡았다.",
+          "evaluator": "점수 83. 공식은 맞지만 글이 사전식으로 흐른다. 주식분할, 증자, 자사주, PER와 PBR까지 연결하지 않으면 투자 화면을 다시 읽는 힘이 약하다.",
+          "skeptic": "주가가 낮으면 싸다는 오해를 깨야 하는데, 현재 초안은 정의만 설명하고 왜 그 오해가 위험한지 충분히 보여주지 못한다.",
+          "decision": "revise",
+          "evaluatorScore": 83
+        },
+        {
+          "planner": "평가를 반영해 주가 착시에서 시작해 발행주식수, 분할, 회사 현금 유입 여부, 밸류에이션, DartLab 확인 순서로 재작성했다.",
+          "plannerRevision": "비싼 주식과 큰 회사는 다르다는 관통선을 중심으로 이미지와 SVG를 본문 중간에 배치하고, 마지막은 체크리스트와 오해 방지로 닫도록 개선했다.",
+          "evaluator": "점수 95. 초보자가 가장 먼저 헷갈리는 가격 단위와 회사 전체 가치의 차이를 깊게 설명하고, 선행 투자 글과 기업, 기술 글로 확장되는 구조가 발행 기준을 넘는다.",
+          "skeptic": "주식분할과 낮은 주가를 호재로 단정하지 않고, 유동성, 희석, 자사주, 이익과 자본을 재점검 조건으로 둔 점이 투자권유 오해를 막는다.",
+          "decision": "passed",
+          "evaluatorScore": 95
+        }
+      ]
+    }
+  }
+}
