@@ -7,11 +7,27 @@
 		metaLeft?: string;
 		metaRight?: string;
 		kind: 'example' | 'local';
+		/** 카드 우상단 상태 배지. 레슨은 '이어하기' 를 띄운다. */
+		badge?: string;
+		/** 삭제·초기화 확인 문구. 레슨은 삭제가 아니라 '처음부터 다시' 다. */
+		deletePrompt?: string;
+		deleteLabel?: string;
 		onopen: () => void;
 		ondelete?: () => void;
 	}
 
-	let { title, subtitle, metaLeft = '', metaRight = '', kind, onopen, ondelete }: Props = $props();
+	let {
+		title,
+		subtitle,
+		metaLeft = '',
+		metaRight = '',
+		kind,
+		badge = '',
+		deletePrompt = '삭제할까요?',
+		deleteLabel = '삭제',
+		onopen,
+		ondelete
+	}: Props = $props();
 	let confirming = $state(false);
 </script>
 
@@ -23,7 +39,8 @@
 	onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && onopen()}
 >
 	<div class="ncard-head">
-		<span class="ncard-kind">{kind === 'example' ? '예제' : '내 노트북'}</span>
+		<span class="ncard-kind">{kind === 'example' ? '레슨' : '내 노트북'}</span>
+		{#if badge}<span class="ncard-badge">{badge}</span>{/if}
 		<ArrowUpRight size={14} class="ncard-arrow" />
 	</div>
 	<h3 class="ncard-title">{title}</h3>
@@ -38,21 +55,21 @@
 			<!-- svelte-ignore a11y_click_events_have_key_events -->
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div class="ncard-confirm" onclick={(e) => e.stopPropagation()}>
-				<span>삭제할까요?</span>
+				<span>{deletePrompt}</span>
 				<button class="cbtn" onclick={() => (confirming = false)}>취소</button>
 				<button
 					class="cbtn danger"
 					onclick={() => {
 						confirming = false;
 						ondelete?.();
-					}}>삭제</button
+					}}>{deleteLabel}</button
 				>
 			</div>
 		{:else}
 			<button
 				class="ncard-del"
-				title="삭제"
-				aria-label="삭제"
+				title={deleteLabel}
+				aria-label={deleteLabel}
 				onclick={(e) => {
 					e.stopPropagation();
 					confirming = true;
@@ -106,6 +123,17 @@
 	}
 	.ncard.local .ncard-kind {
 		color: var(--dl-accent);
+	}
+	/* 이어하기 배지. 이미 시작한 레슨임을 카드에서 바로 알린다. */
+	.ncard-badge {
+		margin-left: 8px;
+		padding: 1px 6px;
+		border-radius: 3px;
+		font-size: 0.62rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		color: var(--dl-accent);
+		background: rgba(var(--dl-accent-rgb), 0.12);
 	}
 	.ncard :global(.ncard-arrow) {
 		margin-left: auto;

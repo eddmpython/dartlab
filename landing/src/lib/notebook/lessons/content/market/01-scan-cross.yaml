@@ -1,0 +1,60 @@
+meta:
+  id: scan-cross
+  title: scan 으로 전종목 한 번에 비교
+  description: 한 회사가 아니라 상장사 전체를 한 표로. ROE · 성장성 · 수익성 횡단 스캔.
+  level: 심화
+  track: market
+  order: 1
+  tags: [scan]
+  prerequisites: [select-accounts]
+  minutes: 12
+
+intro:
+  goal: 회사 하나가 아니라 시장 전체를 가로로 자른다.
+  body: |
+    `Company` 가 회사 **한 개**를 세로로 파고든다면, `scan` 은 상장사 **전체**를 가로로 자릅니다.
+    호출 형식은 `dartlab.scan("축")` 또는 `dartlab.scan("축", "대상")` 입니다.
+
+    첫 호출은 전종목 경량 재무 데이터(약 20MB)를 한 번 내려받습니다. 그다음부터는 빠릅니다.
+
+    브라우저에서 도는 축: growth · profitability · liquidity · cashflow · ratio · account · debt.
+    직원수 프리빌드나 KRX 목록이 필요한 workforce · screen 축은 로컬 설치본에서 쓰세요.
+
+sections:
+  - id: setup
+    title: 시작
+    code: |
+      import dartlab
+      import polars as pl
+
+  - id: roe
+    title: 전종목 ROE
+    body: |
+      첫 호출은 경량 재무 데이터를 내려받아 수 초 걸립니다.
+    code: |
+      roe = dartlab.scan("ratio", "roe")
+      roe.shape
+
+  - id: growth
+    title: 전종목 성장성
+    code: |
+      growth = dartlab.scan("growth")
+      growth.head(10)
+
+  - id: profitability
+    title: 전종목 수익성
+    code: |
+      prof = dartlab.scan("profitability")
+      prof.columns
+
+  - id: rank
+    title: 영업이익률 상위 10곳
+    body: |
+      결과 컬럼은 한글입니다. polars 로 그대로 정렬합니다.
+    code: |
+      prof.filter(pl.col("영업이익률").is_not_null()).sort("영업이익률", descending=True).head(10)
+
+  - id: account
+    title: 계정 하나로 전종목 시계열
+    code: |
+      dartlab.scan("account", "매출액").head(10)

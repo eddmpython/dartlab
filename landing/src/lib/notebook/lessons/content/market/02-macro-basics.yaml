@@ -1,0 +1,36 @@
+meta:
+  id: macro-basics
+  title: 거시 지표 읽기
+  description: macro 카탈로그를 훑고 금리 축을 부릅니다. 회사 밖의 흐름.
+  level: 중급
+  track: market
+  order: 2
+  tags: [macro]
+  prerequisites: [scan-cross]
+  minutes: 8
+
+intro:
+  goal: 거시 축 카탈로그를 보고 금리 축을 읽는다.
+  body: |
+    회사 안을 다 봤다면 이제 회사 **밖**입니다. `dartlab.macro()` 는 거시 지표 엔진입니다.
+
+    여기서도 약속은 같습니다. 인자 없이 부르면 카탈로그, 이름을 주면 그 축입니다.
+    데이터는 HuggingFace 에서 바로 받으므로 브라우저에서도 그대로 돕니다.
+
+sections:
+  - id: setup
+    title: 시작
+    code: |
+      import dartlab
+
+  - id: catalog
+    title: 거시 축 카탈로그
+    code: |
+      dartlab.macro()
+
+  - id: rates
+    title: 금리
+    body: |
+      결과는 dict 로 나옵니다. 첫 호출은 데이터를 받아 수 초 걸립니다.
+    code: |
+      dartlab.macro("금리")

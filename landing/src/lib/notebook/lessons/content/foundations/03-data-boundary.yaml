@@ -1,0 +1,53 @@
+meta:
+  id: data-boundary
+  title: 무엇을 더 가져올 수 있나 (그리고 어디까지)
+  description: gather · quant · analysis 카탈로그를 훑고, 브라우저와 로컬의 경계를 직접 확인합니다.
+  level: 중급
+  track: foundations
+  order: 3
+  tags: [gather, catalog, boundary]
+  company: "005930"
+  prerequisites: [panel-statements]
+  minutes: 10
+
+intro:
+  goal: 카탈로그로 능력을 훑고, 브라우저가 못 하는 일을 눈으로 본다.
+  body: |
+    재무제표 말고도 회사에는 시세 · 수급 · 뉴스 · 업종이 붙습니다. 그것을 모아 오는 일을
+    **gather** 라고 합니다.
+
+    dartlab 에는 어디서나 통하는 약속이 하나 있습니다. **인자 없이 부르면 카탈로그**입니다.
+    `c.gather()` 는 가져올 수 있는 축을, `c.quant()` 는 기술적 지표 축을, `c.analysis()` 는
+    분석 축을 표로 돌려줍니다.
+
+    카탈로그는 브라우저에서도 보입니다. 하지만 실제 시세 수집은 바깥 사이트로 나가야 해서
+    브라우저 보안 정책에 막힙니다. 마지막 셀이 그 경계를 실제로 보여 줍니다.
+
+sections:
+  - id: gather-catalog
+    title: 수집 가능한 축
+    code: |
+      c.gather()
+
+  - id: quant-catalog
+    title: 기술적 지표 축
+    code: |
+      c.quant()
+
+  - id: analysis-catalog
+    title: 분석 축 (22축)
+    code: |
+      c.analysis()
+
+  - id: boundary
+    title: 경계 확인
+    body: |
+      시세 수집은 바깥 네트워크와 스레드가 필요합니다. 브라우저에는 둘 다 없습니다.
+      로컬(`pip install dartlab`)에서는 같은 코드가 그대로 돕니다.
+    expectError: true
+    code: |
+      try:
+          c.gather("price")
+      except Exception as e:
+          print(type(e).__name__, "->", e)
+          print("시세 · 수급 · 뉴스 수집은 로컬 설치본에서 쓰세요.")

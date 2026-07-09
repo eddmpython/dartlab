@@ -16,9 +16,19 @@
 	// 사전 로딩: 노트북을 만들거나 열려는 낌새에 커널+dartlab 을 미리 올린다(에디터 열릴 때 대기 0).
 	import { prewarmEngine } from '$lib/notebook/stores/executionStore';
 	import type { Notebook } from '$lib/notebook/stores/notebookStore';
-	import { EXAMPLES, EXAMPLE_LEVELS, examplesByLevel } from '$lib/notebook/examples';
+	// 레슨 SSOT = lessons/content/**/*.yaml. 레지스트리가 원본을 그대로 읽어 목록·셀을 낸다.
+	import {
+		TRACKS,
+		listLessons,
+		lessonsOfTrack,
+		getLesson,
+		lessonToCells,
+		lessonNotebookId,
+		isLessonNotebook
+	} from '$lib/notebook/lessons/registry';
 	import {
 		listNotebooks,
+		getNotebook,
 		putNotebook,
 		deleteNotebook,
 		type NotebookSummary
@@ -33,14 +43,25 @@
 
 	let mine = $state<NotebookSummary[]>([]);
 	let loading = $state(true);
+	/** 이미 시작한 레슨(=IndexedDB 에 `lesson:` 노트북이 있는 것). 카드에 '이어하기' 를 띄운다. */
+	let startedLessons = $state<Set<string>>(new Set());
 
 	const links = DARTLAB_BRAND_LINKS;
 	let ghStars = $state<number | null>(null);
 	fetchGithubStars(links.repo).then((n) => (ghStars = n));
 	let supportOpen = $state(false);
 
+	async function refresh() {
+		const all = await listNotebooks();
+		// 레슨 진행분은 '내 노트북' 목록에 섞지 않는다. 카드의 '이어하기' 배지로만 드러난다.
+		mine = all.filter((nb) => !isLessonNotebook(nb.id));
+		startedLessons = new Set(
+			all.filter((nb) => isLessonNotebook(nb.id)).map((nb) => nb.id.slice('lesson:'.length))
+		);
+	}
+
 	onMount(async () => {
-		mine = await listNotebooks();
+		await refresh();
 		loading = false;
 	});
 
@@ -61,20 +82,39 @@
 		await goto(`${base}/notebooks/${nb.id}`);
 	}
 
-	async function openExample(exId: string) {
+	/**
+	 * 레슨 열기. 이미 시작한 레슨이면 그대로 이어하고, 처음이면 원본에서 셀을 투영해 만든다.
+	 * 열 때마다 uuid 사본을 만들던 옛 동작은 같은 레슨을 두 번 누르면 사본이 둘 생기고
+	 * 진도가 어디에도 남지 않았다.
+	 */
+	async function openLesson(lessonId: string) {
 		prewarmEngine(); // 커널+dartlab 사전 로딩 시작(대기 안 함)
-		const ex = EXAMPLES.find((e) => e.id === exId);
-		if (!ex) return;
-		const now = nowIso();
-		const nb: Notebook = {
-			id: crypto.randomUUID(),
-			title: ex.title,
-			description: ex.description,
-			cells: ex.cells.map((c) => ({ ...c })),
-			metadata: { createdAt: now, updatedAt: now }
-		};
-		await putNotebook(nb);
-		await goto(`${base}/notebooks/${nb.id}`);
+		const nbId = lessonNotebookId(lessonId);
+		const existing = await getNotebook(nbId);
+		if (!existing) {
+			const lesson = getLesson(lessonId);
+			if (!lesson) return;
+			const now = nowIso();
+			const nb: Notebook = {
+				id: nbId,
+				title: lesson.meta.title,
+				description: lesson.meta.description,
+				cells: lessonToCells(lesson).map((cell) => ({
+					id: cell.id,
+					type: cell.type,
+					content: cell.content
+				})),
+				metadata: { createdAt: now, updatedAt: now }
+			};
+			await putNotebook(nb);
+		}
+		await goto(`${base}/notebooks/${nbId}`);
+	}
+
+	/** 레슨을 순정 상태로. 저장분을 지우면 다음 열기에서 원본이 다시 투영된다. */
+	async function resetLesson(lessonId: string) {
+		await deleteNotebook(lessonNotebookId(lessonId));
+		await refresh();
 	}
 
 	async function openFile() {
@@ -92,7 +132,7 @@
 
 	async function removeMine(id: string) {
 		await deleteNotebook(id);
-		mine = await listNotebooks();
+		await refresh();
 	}
 
 	function relTime(iso: string): string {
@@ -192,22 +232,33 @@
 		</div>
 	</section>
 
-	{#each EXAMPLE_LEVELS as level (level)}
-		<section class="gallery">
-			<h2 class="sec-title">{level}</h2>
-			<div class="grid">
-				{#each examplesByLevel(level) as ex (ex.id)}
-					<NotebookCard
-						kind="example"
-						title={ex.title}
-						subtitle={ex.description}
-						metaLeft={ex.tags.join(' · ')}
-						metaRight={`${ex.cells.length} 셀`}
-						onopen={() => openExample(ex.id)}
-					/>
-				{/each}
-			</div>
-		</section>
+	<!-- 커리큘럼. 트랙 순서가 곧 학습 경로다. 레슨 원본은 lessons/content/**/*.yaml 한 편당 한 파일. -->
+	{#each TRACKS as track (track.id)}
+		{@const lessons = lessonsOfTrack(track.id)}
+		{#if lessons.length}
+			<section class="gallery">
+				<div class="track-head">
+					<h2 class="sec-title">{track.title}</h2>
+					<p class="track-blurb">{track.blurb}</p>
+				</div>
+				<div class="grid">
+					{#each lessons as lesson (lesson.id)}
+						<NotebookCard
+							kind="example"
+							title={lesson.title}
+							subtitle={lesson.description}
+							metaLeft={`${lesson.level} · ${lesson.tags.join(' · ')}`}
+							metaRight={lesson.minutes ? `${lesson.minutes}분` : `${lesson.sectionCount} 단계`}
+							badge={startedLessons.has(lesson.id) ? '이어하기' : ''}
+							deletePrompt="처음부터 다시 시작할까요?"
+							deleteLabel="초기화"
+							onopen={() => openLesson(lesson.id)}
+							ondelete={startedLessons.has(lesson.id) ? () => resetLesson(lesson.id) : undefined}
+						/>
+					{/each}
+				</div>
+			</section>
+		{/if}
 	{/each}
 
 	<section class="gallery">
@@ -399,6 +450,22 @@
 		max-width: 1100px;
 		margin: 0 auto;
 		padding: 12px 24px 32px;
+	}
+	/* 트랙 헤더. 제목 옆에 그 트랙이 무엇을 가르치는지 한 줄. */
+	.track-head {
+		display: flex;
+		align-items: baseline;
+		gap: 10px;
+		flex-wrap: wrap;
+		margin: 0 0 14px;
+	}
+	.track-head .sec-title {
+		margin: 0;
+	}
+	.track-blurb {
+		margin: 0;
+		font-size: 12.5px;
+		color: var(--dl-ink-dim);
 	}
 	.sec-title {
 		margin: 0 0 14px;

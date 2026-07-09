@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 	import NotebookEditor from '$lib/notebook/NotebookEditor.svelte';
 	import type { Notebook } from '$lib/notebook/stores/notebookStore';
-	import { getExample } from '$lib/notebook/examples';
+	import { getLesson, lessonToCells, lessonNotebookId } from '$lib/notebook/lessons/registry';
 	import { getNotebook, putNotebook } from '$lib/notebook/storage/localStore';
 
 	let initial = $state<Notebook | null>(null);
@@ -29,27 +29,38 @@
 		status = 'loading';
 		initial = null;
 
-		// 1) 예제 id 직접 진입 -> fork-to-local (예제 원본 불변, 새 로컬 노트북 복제)
-		const ex = getExample(id);
-		if (ex) {
-			const now = new Date().toISOString();
-			const nb: Notebook = {
-				id: crypto.randomUUID(),
-				title: ex.title,
-				description: ex.description,
-				cells: ex.cells.map((c) => ({ ...c })),
-				metadata: { createdAt: now, updatedAt: now }
-			};
-			await putNotebook(nb);
-			// goto 가 page.params.id 를 uuid 로 바꿔 위 $effect 가 재실행 -> getNotebook 분기.
-			await goto(`${base}/notebooks/${nb.id}`, { replaceState: true });
-			return;
-		}
-
-		// 2) 로컬 노트북 id -> IndexedDB 로드
+		// 1) 저장된 노트북(내 노트북 uuid 또는 진행 중인 `lesson:` 레슨) -> IndexedDB 로드.
 		const found = await getNotebook(id);
 		if (found) {
 			initial = found;
+			status = 'ready';
+			return;
+		}
+
+		// 2) 레슨 id 직접 진입(링크 공유·북마크) -> 안정 id `lesson:<id>` 로 만들고 그 주소로 옮긴다.
+		//    옛 동작은 열 때마다 uuid 사본을 새로 만들어, 같은 레슨을 두 번 열면 사본이 둘 생기고
+		//    진도가 어디에도 남지 않았다.
+		const lessonId = id.startsWith('lesson:') ? id.slice('lesson:'.length) : id;
+		const lesson = getLesson(lessonId);
+		if (lesson) {
+			const now = new Date().toISOString();
+			const nb: Notebook = {
+				id: lessonNotebookId(lessonId),
+				title: lesson.meta.title,
+				description: lesson.meta.description,
+				cells: lessonToCells(lesson).map((cell) => ({
+					id: cell.id,
+					type: cell.type,
+					content: cell.content
+				})),
+				metadata: { createdAt: now, updatedAt: now }
+			};
+			await putNotebook(nb);
+			if (nb.id !== id) {
+				await goto(`${base}/notebooks/${nb.id}`, { replaceState: true });
+				return;
+			}
+			initial = nb;
 			status = 'ready';
 			return;
 		}

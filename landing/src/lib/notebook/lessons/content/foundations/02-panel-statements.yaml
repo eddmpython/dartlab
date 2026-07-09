@@ -1,0 +1,39 @@
+meta:
+  id: panel-statements
+  title: 재무제표 3종 꺼내기
+  description: 손익계산서 · 재무상태표 · 현금흐름표를 이름 하나로 그대로 받습니다.
+  level: 기초
+  track: foundations
+  order: 2
+  tags: [company, panel]
+  company: "005930"
+  prerequisites: [grab-company]
+  minutes: 10
+
+intro:
+  goal: panel 격자에서 재무제표 3종을 꺼낸다.
+  body: |
+    앞 레슨에서 확인한 격자(`panel`)는 그 회사의 공시를 '항목 x 기간' 한 장으로 눕힌 표입니다.
+
+    이름을 주면 그 표를 꺼내 줍니다. `c.panel("IS")` 는 손익계산서, `"BS"` 는 재무상태표,
+    `"CF"` 는 현금흐름표입니다. 대문자 이름은 XBRL 로 정규화된 강한 소스를 뜻합니다.
+
+    배우는 것: 재무제표 3종 호출.
+
+sections:
+  - id: is
+    title: 손익계산서
+    body: |
+      기본은 분기 연결입니다. 처음 부를 때 보드를 내려받아 수 초 걸립니다.
+    code: |
+      c.panel("IS")
+
+  - id: bs
+    title: 재무상태표
+    code: |
+      c.panel("BS")
+
+  - id: cf
+    title: 현금흐름표
+    code: |
+      c.panel("CF")

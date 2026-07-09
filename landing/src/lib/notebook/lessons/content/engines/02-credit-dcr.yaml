@@ -1,0 +1,39 @@
+meta:
+  id: credit-dcr
+  title: 독립 신용등급 dCR 과 7축
+  description: dartlab 자체 신용평가 엔진이 산출하는 dCR 등급과 7축 위험 점수.
+  level: 심화
+  track: engines
+  order: 2
+  tags: [credit]
+  company: "005930"
+  prerequisites: [analysis-axes]
+  minutes: 10
+
+intro:
+  goal: 종합 등급과 개별 위험 축을 읽는다.
+  body: |
+    `c.credit()` 은 dartlab 자체 신용평가 엔진이 산출하는 dCR 등급(AAA~D)과 종합 점수를
+    돌려줍니다. 7축(채무상환 · 자본구조 · 유동성 · 현금흐름 · 사업안정성 · 재무신뢰성 ·
+    공시리스크)을 개별로 부르거나 `detail=True` 로 시계열까지 볼 수 있습니다.
+
+sections:
+  - id: grade
+    title: 종합 등급
+    code: |
+      c.credit()
+
+  - id: debt-service
+    title: 채무상환 축
+    code: |
+      c.credit("채무상환")
+
+  - id: liquidity
+    title: 유동성 축
+    code: |
+      c.credit("유동성")
+
+  - id: detail
+    title: 7축 상세
+    code: |
+      c.credit(detail=True)

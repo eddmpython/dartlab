@@ -1,0 +1,54 @@
+meta:
+  id: grab-company
+  title: 회사 하나를 잡는 것에서 시작한다
+  description: Company 로 회사를 잡고 정체성을 읽습니다. dartlab 의 모든 길이 여기서 열립니다.
+  level: 기초
+  track: foundations
+  order: 1
+  tags: [company]
+  company: "005930"
+  minutes: 8
+
+intro:
+  goal: 회사를 잡고, 그 회사의 공시가 세워지는 격자의 크기를 확인한다.
+  body: |
+    dartlab 의 모든 길은 **회사 하나를 잡는 것**에서 열립니다.
+
+    ```python
+    c = dartlab.Company("005930")   # 삼성전자. 6자리는 한국, 티커는 미국으로 자동 판정
+    ```
+
+    잡는 순간 두 가지가 정해집니다. 하나는 **정체성**(회사명 · 시장), 다른 하나는 그 회사의
+    공시가 세워지는 **하나의 큰 표**입니다. dartlab 은 손익계산서 · 재무상태표 · 주석 · 서술을
+    전부 '항목 x 기간' 격자 한 장으로 눕혀 둡니다. 이 표를 `panel` 이라 부릅니다.
+
+    배우는 것: 회사 잡기, 정체성 읽기, 격자 크기 확인, 코드만 바꿔 다른 회사로.
+
+sections:
+  - id: identity
+    title: 무엇을 잡았나
+    body: |
+      먼저 회사의 정체성을 확인합니다.
+    code: |
+      c.corpName
+
+  - id: market
+    title: 어느 시장인가
+    body: |
+      이 값이 이후 모든 호출의 라우팅을 정합니다. 한국이면 DART, 미국이면 EDGAR 로 갑니다.
+    code: |
+      c.market
+
+  - id: board-shape
+    title: 잡는 순간 서는 격자
+    body: |
+      행은 공시 항목, 열은 기간입니다. 처음 부를 때 보드를 내려받아 수 초 걸립니다.
+    code: |
+      c.panel.shape
+
+  - id: another-company
+    title: 코드만 바꾸면 된다
+    body: |
+      000660 은 SK하이닉스입니다. 회사를 바꾸는 데 필요한 것은 코드 여섯 자리뿐입니다.
+    code: |
+      dartlab.Company("000660").corpName
