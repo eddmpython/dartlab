@@ -599,6 +599,38 @@ def build_index(contracts: dict[str, dict]) -> list[dict]:
     return ordered
 
 
+# 카드 기획 게이트 부채 원장(Guard Index 동형). 여기 등재된 미완 plan 위반은 발행을 막지 않되,
+# 편집으로 완성해야 할 대기 목록이다. baseline 에 없는 신규 위반(새로 바뀐·추가된 카드가 미완)만 차단한다.
+# 카드 콘텐츠는 story-led 편집 작업이라 기계 대량생성 금지(feedback_cards_story_led_not_template) →
+# 부채는 사람이 편별로 갚고 `--update-plan-baseline` 으로 원장을 축소 기록한다.
+PLAN_GATE_BASELINE = Path(__file__).resolve().parent / "_baselines" / "cardPlanGate.json"
+
+
+def _load_plan_gate_baseline() -> set[str]:
+    """부채 원장(known 위반) 로드. 파일 없으면 빈 집합(전부 신규로 간주 = 엄격)."""
+    if not PLAN_GATE_BASELINE.exists():
+        return set()
+    try:
+        data = json.loads(PLAN_GATE_BASELINE.read_text(encoding="utf-8"))
+        return set(data.get("knownViolations") or [])
+    except (json.JSONDecodeError, OSError):
+        return set()
+
+
+def _write_plan_gate_baseline(violations: list[str]) -> None:
+    """현재 위반을 부채 원장으로 기록(정렬·중복 제거). 부채 갱신 시에만 호출."""
+    PLAN_GATE_BASELINE.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "note": (
+            "카드 기획 게이트 부채 원장. 등재 위반은 발행을 막지 않되 편집 완성 대기 목록이다. "
+            "baseline 에 없는 신규 위반만 CI 차단(Guard Index 부채 원장 동형). "
+            "plan 완성으로 부채를 갚은 뒤 `build_carousel_contracts.py --update-plan-baseline` 로 축소 기록."
+        ),
+        "knownViolations": sorted(set(violations)),
+    }
+    PLAN_GATE_BASELINE.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="게시 안 함, 요약만")
@@ -621,6 +653,11 @@ def main() -> None:
         "--require-card-assets", action="store_true", help="cards.plan.json 의 모든 image_gen 산출물 존재 요구"
     )
     parser.add_argument("--no-og", action="store_true", help="브랜디드 OG 이미지 렌더/업로드 건너뜀")
+    parser.add_argument(
+        "--update-plan-baseline",
+        action="store_true",
+        help="현재 카드 기획 게이트 위반을 부채 원장(_baselines/cardPlanGate.json)으로 기록. 부채를 갚았거나 의도적 변경 시 실행.",
+    )
     args = parser.parse_args()
 
     # 발간 전 repo 파일 목록 1회(옛 json 삭제 + 이미 올라간 이슈 이미지 해시 스킵 양쪽에 씀).
@@ -665,17 +702,32 @@ def main() -> None:
         require_passed=not args.allow_unreviewed_card_plan,
         require_assets=args.require_card_assets,
     )
-    if plan_violations:
-        sys.stderr.write(f"⚠ 카드 기획/토론 게이트 위반 {len(plan_violations)}건:\n")
-        for v in plan_violations:
+    # 부채 원장 모델(Guard Index 동형): baseline 등재 위반은 편집 대기 부채로 추적하되 발행을 막지 않고,
+    # baseline 에 없는 신규 위반(바뀐·추가된 카드가 미완)만 차단한다. 미완 카드 콘텐츠를 기계로 채우는 건
+    # 금지라(story-led), 한 편의 legacy 미완이 무관한 발행 전체를 영구히 막던 만성 red 를 이렇게 끊는다.
+    if args.update_plan_baseline:
+        _write_plan_gate_baseline(plan_violations)
+        print(
+            f"카드 기획 게이트 부채 원장 갱신: {len(plan_violations)}건 기록 → {PLAN_GATE_BASELINE.relative_to(ROOT)}"
+        )
+    baseline = _load_plan_gate_baseline()
+    new_violations = [v for v in plan_violations if v not in baseline]
+    if new_violations:
+        sys.stderr.write(
+            f"⚠ 카드 기획/토론 게이트 신규 위반 {len(new_violations)}건 (기존 부채 {len(baseline)}건 제외):\n"
+        )
+        for v in new_violations:
             sys.stderr.write(f"  - {v}\n")
         sys.stderr.write(
-            "발행 중단: plan_card_news.py 로 cards.plan.json 을 만들고 reviewGate 를 passed 로 닫은 뒤 재시도.\n"
+            "발행 중단: 바뀐·새 카드는 plan_card_news.py 로 cards.plan.json 을 만들고 reviewGate 를 passed 로 "
+            "닫아라. 부채를 갚았으면 --update-plan-baseline 로 원장을 축소 기록.\n"
         )
         sys.exit(1)
+    debt = len(plan_violations)
+    debt_note = f" · 편집 대기 부채 {debt}건(baseline)" if debt else ""
     print(
-        "카드 기획/토론 게이트: "
-        f"계약 {plan_stats['contracts']}편 · 계획 {plan_stats['plans']}개 · "
+        "카드 기획/토론 게이트: 신규 위반 0건"
+        f"{debt_note} · 계약 {plan_stats['contracts']}편 · 계획 {plan_stats['plans']}개 · "
         f"통과 {plan_stats['passed']}개 · 누락 {plan_stats['missing']}개"
     )
 

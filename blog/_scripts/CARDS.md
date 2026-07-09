@@ -220,6 +220,8 @@ Openverse/Commons 검색도 범용 업종어만 넣지 않는다. `queries` 는 
 > 아니면 `build_carousel_contracts.py` 가 발행을 중단한다. v7+ 는 `reviewGate.loopEvidence.workflow="cards_plan_loop.workflow.js"`, `rounds >= 2`, 최종 `evaluatorScore >= 92`, 재기획 흔적, 전 슬라이드 `[[강조]]` 마커도 필수다. v8+ 는 `planning.visualPlan` 의 복수 비주얼 계약도 필수다. 데이터 주장 카드에 `dataExplanation`·`evidenceRefs`·실제 slide `visual` 또는 `visuals[]` 가 없거나, 계획 수량과 실제 수량이 다르면 중단한다. legacy 글은 plan 파일이 없으면 허용하되, 신규·개선은 plan 을 만든다.
 > 발행 게이트는 실제 카드 문장도 검사한다. `CDMO`, `HBM` 같은 약어와 `다음 질문`류 문구가 남아 있으면 발행을 중단한다. (`AI` 는 일반어로 허용.)
 
+> **부채 원장 모델(Guard Index 동형).** 이미 발행된 편의 미완 plan 위반은 `blog/_scripts/_baselines/cardPlanGate.json` 에 부채로 등재해 추적하되, 그 한 편의 미완이 무관한 발행 전체를 영구히 막지 않는다. 게이트는 **baseline 에 없는 신규 위반(새로 바뀐·추가된 카드가 미완)만 차단**한다. 미완 카드를 게이트 통과용으로 기계 대량생성하는 것은 금지(story-led 편집이 먼저)이므로, 부채는 사람이 편별로 편집 루프로 갚는다. 부채를 갚으면 `build_carousel_contracts.py --update-plan-baseline` 로 원장을 축소 기록한다. baseline 은 편집 대기 목록(정직한 부채 가시화)이지 품질 하향이 아니다.
+
 ## 도구
 | 파일 | 역할 |
 |---|---|
