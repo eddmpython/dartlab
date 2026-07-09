@@ -53,9 +53,17 @@ function rehypeBaseUrl() {
 				const src = node.properties.src;
 				// 1) 본문의 ./assets/foo.svg|webp|png 상대경로 →
 				//    평면 구조 (skills 본문은 /skills/assets/, 그 외는 /blog/assets/) 로 변환.
-				if (src.startsWith('./assets/')) {
-					const raw = src.slice('./assets/'.length);
-					// 블로그만 누락 자산 폴백(skill 자산은 평면 변환만) — 없는 파일은 같은 글 첫 SVG 로.
+				//    `./` 를 빠뜨린 `assets/foo` 도 같은 규칙으로 정규화한다. 정규화를 안 하면 그 src 가
+				//    그대로 남아 페이지 URL 기준으로 /blog/assets/foo 로 잘못 풀리고, 누락 자산 폴백도
+				//    못 타서 prerender 가 404 로 deploy 를 중단시킨다 (09-investment-stories 사고).
+				const assetPrefix = src.startsWith('./assets/')
+					? './assets/'
+					: src.startsWith('assets/')
+						? 'assets/'
+						: null;
+				if (assetPrefix) {
+					const raw = src.slice(assetPrefix.length);
+					// 블로그만 누락 자산 폴백(skill 자산은 평면 변환만). 없는 파일은 같은 글 첫 SVG 로.
 					const fileName = isSkillFile ? raw : blogAssetFallback(raw);
 					node.properties.src = `${basePath}${assetsBase}${fileName}`;
 					return;
