@@ -12,6 +12,8 @@
 		BrandSocial,
 		fetchGithubStars
 	} from '@dartlab/ui-surfaces/terminal';
+	// 사전 로딩: 노트북을 만들거나 열려는 낌새에 커널+dartlab 을 미리 올린다(에디터 열릴 때 대기 0).
+	import { prewarmEngine } from '$lib/notebook/stores/executionStore';
 	import type { Notebook } from '$lib/notebook/stores/notebookStore';
 	import { EXAMPLES } from '$lib/notebook/examples';
 	import {
@@ -46,6 +48,7 @@
 	}
 
 	async function newNotebook() {
+		prewarmEngine(); // 커널+dartlab 사전 로딩 시작(대기 안 함)
 		const now = nowIso();
 		const nb: Notebook = {
 			id: crypto.randomUUID(),
@@ -58,6 +61,7 @@
 	}
 
 	async function openExample(exId: string) {
+		prewarmEngine(); // 커널+dartlab 사전 로딩 시작(대기 안 함)
 		const ex = EXAMPLES.find((e) => e.id === exId);
 		if (!ex) return;
 		const now = nowIso();
@@ -153,7 +157,7 @@
 			저장됩니다.
 		</p>
 		<div class="hero-actions">
-			<button class="btn-primary" onclick={newNotebook}><Plus size={16} /> 새 노트북</button>
+			<button class="btn-primary" onclick={newNotebook} onpointerenter={prewarmEngine}><Plus size={16} /> 새 노트북</button>
 			<button class="btn-ghost" onclick={openFile}><FolderOpen size={15} /> 파일 열기</button>
 		</div>
 	</section>
@@ -182,7 +186,7 @@
 			<div class="empty">
 				<p class="empty-title">아직 노트북이 없어요</p>
 				<p class="empty-sub">새로 만들거나 위 예제로 시작해보세요.</p>
-				<button class="btn-primary" onclick={newNotebook}><Plus size={16} /> 새 노트북</button>
+				<button class="btn-primary" onclick={newNotebook} onpointerenter={prewarmEngine}><Plus size={16} /> 새 노트북</button>
 			</div>
 		{:else}
 			<div class="grid">

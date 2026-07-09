@@ -46,6 +46,12 @@ export class WorkerEngine implements ExecutionEngine {
 		this.isReady = true;
 	}
 
+	/** dartlab wheel 설치 + import 를 미리 끝낸다(허브에서 사전 호출). 실패는 삼킨다. */
+	async warm(): Promise<void> {
+		if (!this.worker) return;
+		await this.call('warm').catch(() => undefined);
+	}
+
 	private call(cmd: string, ...args: unknown[]): Promise<unknown> {
 		return new Promise((resolve, reject) => {
 			if (!this.worker) { reject(new Error('Worker not started')); return; }

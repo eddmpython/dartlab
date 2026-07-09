@@ -38,6 +38,8 @@ export interface ExecutionEngine {
 	isReady: boolean;
 
 	initialize(): Promise<void>;
+	/** 사전 로딩: dartlab wheel 설치 + import 까지 미리(첫 셀 실행 대기 제거). 실패해도 치명적이지 않다. */
+	warm?(): Promise<void>;
 	execute(code: string): Promise<CellOutput>;
 	interrupt(): void;
 	destroy(): void;

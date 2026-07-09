@@ -347,6 +347,19 @@ self.onmessage = async (e: MessageEvent) => {
 				reply(id, { ok: true });
 				break;
 			}
+			case 'warm': {
+				// 사전 로딩: 커널이 뜬 뒤 dartlab wheel 설치 + import 까지 미리 끝낸다. 사용자가 첫 셀을
+				// 돌릴 때 21MB wheel + C 확장(polars·pyarrow) 다운로드를 기다리지 않게 하는 게 목적.
+				// 실패해도 조용히 넘어간다(첫 import dartlab 셀에서 ensureDartlab 이 다시 시도).
+				try {
+					await ensureDartlab('import dartlab');
+					await pyodide?.runPythonAsync('import dartlab');
+					reply(id, { warmed: true });
+				} catch (err) {
+					reply(id, { warmed: false, error: String(err) });
+				}
+				break;
+			}
 			case 'execute': {
 				const result = await execute(args[0] as string);
 				reply(id, result);

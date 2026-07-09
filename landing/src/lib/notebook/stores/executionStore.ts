@@ -31,13 +31,34 @@ function debouncedSync() {
 	syncTimer = setTimeout(() => { syncNotebookFile(); }, 2000);
 }
 
-export async function initEngine(autoRun = true): Promise<void> {
+let prewarmed: Promise<void> | null = null;
+
+/**
+ * 사전 로딩. 허브에서 사용자가 노트북을 만들거나 열려는 낌새(hover·click)에 미리 커널을 띄우고
+ * dartlab wheel 설치까지 끝낸다. 엔진은 모듈 싱글턴이라 허브 → 에디터 클라이언트 내비게이션에서
+ * 그대로 재사용되므로, 에디터가 열릴 때는 이미 준비돼 있다(첫 셀 실행 전 21MB 대기 제거).
+ * 여러 번 불러도 한 번만 돈다. 실패는 삼킨다(에디터가 정상 경로로 다시 초기화).
+ */
+export function prewarmEngine(): Promise<void> {
+	if (!prewarmed) {
+		prewarmed = (async () => {
+			await bringUpEngine(); // 엔진 기동만. 노트북 부착(autoRun)은 에디터가 한다.
+			await engine?.warm?.();
+		})().catch(() => undefined);
+	}
+	return prewarmed;
+}
+
+let bringUp: Promise<void> | null = null;
+
+/** 워커 기동 + 위젯 브리지. 중복 호출 안전(진행 중이면 그 약속을 공유). 노트북에는 손대지 않는다. */
+async function bringUpEngine(): Promise<void> {
 	if (engine?.isReady) return;
+	if (bringUp) return bringUp;
 
 	engineStatus.set('loading');
 	engineError.set(null);
-
-	try {
+	bringUp = (async () => {
 		engine = new WorkerEngine();
 		await engine.initialize();
 		initWidgetBridge(
@@ -51,11 +72,31 @@ export async function initEngine(autoRun = true): Promise<void> {
 			}
 		);
 		engineStatus.set('ready');
+	})();
+
+	try {
+		await bringUp;
 	} catch (err) {
 		engineStatus.set('error');
 		engineError.set(String(err));
-		return;
+	} finally {
+		bringUp = null;
 	}
+}
+
+/** 이 노트북에 이미 부착(워크스페이스 복원 + autoRun)했는지. 프리워밍으로 엔진만 떠 있는 상태와 구분한다. */
+let attachedNotebookId: string | null = null;
+
+export async function initEngine(autoRun = true): Promise<void> {
+	await bringUpEngine();
+	if (!engine?.isReady) return;
+
+	// 엔진이 이미 떠 있다고 해서 부착까지 끝난 건 아니다. 사전 로딩(prewarmEngine)이 엔진만 올려 둔
+	// 경우 여기서 처음 부착한다. 옛 코드는 `if (engine?.isReady) return` 이라 프리워밍이 autoRun 을
+	// 통째로 건너뛰게 만들었다(첫 셀이 영영 안 돌던 회귀).
+	const nbId = get(notebook).id;
+	if (attachedNotebookId === nbId) return;
+	attachedNotebookId = nbId;
 
 	try {
 		const nb = get(notebook);
@@ -228,6 +269,8 @@ export function destroyEngine(): void {
 	destroyWidgetBridge();
 	engine?.destroy();
 	engine = null;
+	attachedNotebookId = null; // 다음 initEngine 이 다시 부착(복원+autoRun)하도록
+	prewarmed = null; // 워커가 사라졌으니 사전 로딩도 다시 할 수 있게
 	engineStatus.set('idle');
 	runningCellId.set(null);
 	engineError.set(null);
