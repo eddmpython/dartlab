@@ -52,6 +52,43 @@ function isDartlabWheel(url: URL): boolean {
 	return url.hostname === 'huggingface.co' && url.pathname.includes('/pyodide/') && url.pathname.endsWith('.whl');
 }
 
+/**
+ * 노트북 데이터 캐시. pyodide 는 parquet 을 통째로 받아 FS 에 쓴다(005930 panel 보드 12.8MB, 실측 약 5.2초).
+ * Range 요청(hyparquet 의 부분 읽기)은 여기서 절대 다루지 않는다. 부분 응답을 캐시-우선으로 돌려주면
+ * 리더가 깨지고, 첫 방문자의 저장소를 불리지 않겠다는 SW 설계 불변도 그 Range 경로를 두고 한 말이다.
+ * 그래서 Range 헤더가 없는 whole-file GET 만, 그것도 dart 데이터 경로만 캐시한다.
+ */
+const NB_DATA_CACHE = 'dartlab-nbdata-v1';
+const NB_DATA_MAX_ENTRIES = 12; // 회사 몇 곳 분량. 넘으면 가장 오래된 항목부터 버린다.
+const NB_DATA_MAX_BYTES = 32 * 1024 * 1024;
+
+function isNotebookDataWholeGet(url: URL, req: Request): boolean {
+	return (
+		url.hostname === 'huggingface.co' &&
+		url.pathname.includes('/resolve/main/dart/') &&
+		url.pathname.endsWith('.parquet') &&
+		!req.headers.has('range')
+	);
+}
+
+/**
+ * Cache.put 은 `redirected: true` 응답을 TypeError 로 거부한다. HF(huggingface.co)는 서명된 xet CDN 으로
+ * 302 하므로 wheel·parquet 응답이 전부 redirected 다. 그대로 넣으면 조용히 실패해 캐시가 안 찬다.
+ * 본문은 그대로 두고 리다이렉트 표식만 벗긴 사본을 만든다.
+ */
+function cacheable(res: Response): Response {
+	if (!res.redirected) return res;
+	return new Response(res.body, { status: res.status, statusText: res.statusText, headers: res.headers });
+}
+
+async function putBounded(cache: Cache, req: Request, res: Response): Promise<void> {
+	const len = Number(res.headers.get('content-length') || 0);
+	if (len > NB_DATA_MAX_BYTES) return;
+	await cache.put(req, cacheable(res));
+	const keys = await cache.keys();
+	if (keys.length > NB_DATA_MAX_ENTRIES) await cache.delete(keys[0]);
+}
+
 self.addEventListener('install', (event) => {
 	event.waitUntil(
 		(async () => {
@@ -73,7 +110,8 @@ self.addEventListener('activate', (event) => {
 						(k) =>
 							k.startsWith('dartlab-scan-') ||
 							(k.startsWith('dartlab-shell-') && k !== SHELL) ||
-							(k.startsWith('dartlab-pyodide-') && k !== PYODIDE_CACHE)
+							(k.startsWith('dartlab-pyodide-') && k !== PYODIDE_CACHE) ||
+							(k.startsWith('dartlab-nbdata-') && k !== NB_DATA_CACHE)
 					)
 					.map((k) => caches.delete(k))
 			);
@@ -95,7 +133,7 @@ self.addEventListener('fetch', (event) => {
 				const hit = await cache.match(req);
 				if (hit) return hit;
 				const res = await fetch(req);
-				if (res.ok) cache.put(req, res.clone());
+				if (res.ok) event.waitUntil(cache.put(req, cacheable(res.clone())));
 				return res;
 			})()
 		);
@@ -108,7 +146,7 @@ self.addEventListener('fetch', (event) => {
 				const hit = await cache.match(req);
 				const fresh = fetch(req)
 					.then((res) => {
-						if (res.ok) cache.put(req, res.clone());
+						if (res.ok) cache.put(req, cacheable(res.clone()));
 						return res;
 					})
 					.catch(() => undefined);
@@ -123,7 +161,21 @@ self.addEventListener('fetch', (event) => {
 		return;
 	}
 
-	// ⛔ 그 외 크로스오리진(HF parquet·프록시·뉴스 등 데이터) · SW 무간섭. 네트워크 그대로.
+	if (isNotebookDataWholeGet(url, req)) {
+		event.respondWith(
+			(async () => {
+				const cache = await caches.open(NB_DATA_CACHE);
+				const hit = await cache.match(req);
+				if (hit) return hit;
+				const res = await fetch(req);
+				if (res.ok) event.waitUntil(putBounded(cache, req, res.clone()));
+				return res;
+			})()
+		);
+		return;
+	}
+
+	// ⛔ 그 외 크로스오리진(HF parquet Range·프록시·뉴스 등 데이터) · SW 무간섭. 네트워크 그대로.
 	if (url.origin !== self.location.origin) return;
 
 	// 앱 셸 자산(해시 불변) · 캐시 우선.
