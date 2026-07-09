@@ -100,6 +100,24 @@ def pyodideFetchScanLite(dataDirForCategory) -> None:
     emit("scan:prebuild_ready", fileCount=f"{sizeMb:.1f}MB (finance-lite)")
 
 
+def _decodeUserDefined(text: str) -> bytes:
+    """x-user-defined 로 받은 응답 텍스트 → 원본 바이트.
+
+    그 charset 은 바이트 0x00~0xFF 를 코드포인트 U+0000~U+00FF / U+F780~U+F7FF 로 1:1 사상하므로
+    하위 8비트만 취하면 원본이다. 옛 구현은 ``bytes(ord(c) & 0xFF for c in text)`` 로 문자마다 파이썬을
+    돌았고, 12.8MB panel 보드에서만 1,300 만 회라 수 초를 먹었다. 문자열을 UTF-16LE 로 한 번 인코딩하면
+    (C 레벨) 문자당 2바이트 배열이 되고, numpy 로 하위 바이트만 벡터로 뽑는다. 결과는 byte-identical.
+    numpy 부재 등 예외 시 옛 루프로 폴백한다(정확성 우선).
+    """
+    try:
+        import numpy as _np
+
+        codes = _np.frombuffer(text.encode("utf-16-le"), dtype="<u2")
+        return (codes & 0xFF).astype(_np.uint8).tobytes()
+    except Exception:  # noqa: BLE001 (numpy 부재/메모리 등: 느리지만 정확한 경로)
+        return bytes(ord(c) & 0xFF for c in text)
+
+
 def pyodideFetchToFS(stockCode: str, category: str, dirPath: str, path: Path) -> None:
     """Pyodide: HF에서 parquet을 fetch하여 FS에 저장."""
     url = f"{hfBaseUrl(category)}/{stockCode}.parquet"
@@ -119,7 +137,9 @@ def pyodideFetchToFS(stockCode: str, category: str, dirPath: str, path: Path) ->
         pass
 
     # tier 2 (reliable): 동기 XMLHttpRequest. 웹워커에서 항상 동작(webloop 실행 중이라 run_until_complete
-    # 경로는 죽어 제거함). x-user-defined mime + byte 재구성으로 바이너리 세이프.
+    # 경로는 죽어 제거함). 동기 XHR 은 arraybuffer 를 못 받으므로 텍스트로 받아 바이트로 되돌린다.
+    # charset 은 x-user-defined 여야 무손실이다(iso-8859-1 라벨은 브라우저가 windows-1252 로 해석해
+    # 0x8A 가 U+0160 이 되고 latin-1 인코딩이 깨진다. 실측 확인).
     if buf is None:
         try:
             from js import XMLHttpRequest  # type: ignore[import-not-found]
@@ -129,8 +149,7 @@ def pyodideFetchToFS(stockCode: str, category: str, dirPath: str, path: Path) ->
             xhr.overrideMimeType("text/plain; charset=x-user-defined")
             xhr.send()
             if xhr.status == 200:
-                raw = xhr.responseText
-                buf = bytes(ord(c) & 0xFF for c in raw)
+                buf = _decodeUserDefined(xhr.responseText)
         except Exception:
             pass
 
