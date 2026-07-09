@@ -152,15 +152,15 @@ def _scanRevenueGrowthFromMerged(scanPath: Path) -> dict[str, float]:
     """
     scCol = "stockCode"
 
-    from dartlab.scan.io.parquet import collectScan, lazyParquet
-
-    target = collectScan(
-        lazyParquet(scanPath).filter(
+    target = (
+        pl.scan_parquet(str(scanPath))
+        .filter(
             pl.col("sj_div").is_in(["IS", "CIS"])
             & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
             & (pl.col("bsns_year") <= "2024")
             & (pl.col("account_id").is_in(list(REVENUE_IDS)) | pl.col("account_nm").is_in(list(REVENUE_NMS)))
         )
+        .collect(engine="streaming")
     )
     if target.is_empty():
         return {}
@@ -305,10 +305,10 @@ def scanRevenueGrowth() -> dict[str, float]:
     >>> rg = scanRevenueGrowth()
     >>> rg.get("005930")
     """
-    from dartlab.scan.io.parquet import _ensureScanData, financeScanPath
+    from dartlab.scan.io.parquet import _ensureScanData
 
     scanDir = _ensureScanData()
-    scanPath = financeScanPath(scanDir)
+    scanPath = scanDir / "finance.parquet"
     if scanPath.exists():
         return _scanRevenueGrowthFromMerged(scanPath)
     return _scanRevenueGrowthPerFile()
