@@ -131,10 +131,9 @@
 					<a class="hdrLink hdrBlog" href="{base}/blog" title="블로그 · 기업 이야기·공시 읽기·dartlab 소식">블로그</a>
 					<a class="hdrLink hdrViewer" href="{base}/viewer" title="공시뷰어 · 공시 원문·재무 읽기 전용 뷰">공시뷰어</a>
 				</div>
-				<nav class="sns" aria-label="dartlab 채널">
-					<BrandSwitch />
-					<BrandSocial {links} {ghStars} onSupport={() => (supportOpen = true)} />
-				</nav>
+				<BrandSocial {links} {ghStars} onSupport={() => (supportOpen = true)}>
+					{#snippet leading()}<BrandSwitch />{/snippet}
+				</BrandSocial>
 			</div>
 		</div>
 	</header>

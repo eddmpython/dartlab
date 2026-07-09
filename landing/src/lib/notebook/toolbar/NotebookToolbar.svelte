@@ -232,8 +232,9 @@
 		{/if}
 	</div>
 
-	<BrandSwitch />
-	<BrandSocial {links} {ghStars} onSupport={() => (supportOpen = true)} />
+	<BrandSocial {links} {ghStars} onSupport={() => (supportOpen = true)}>
+		{#snippet leading()}<BrandSwitch />{/snippet}
+	</BrandSocial>
 </div>
 
 <SupportDialog lang="kr" {links} {base} open={supportOpen} onClose={() => (supportOpen = false)} />
@@ -605,8 +606,7 @@
 	}
 
 	@media (max-width: 640px) {
-		.brand-word,
-		.sns-lg {
+		.brand-word {
 			display: none;
 		}
 		.floating-controls.bottom-left {

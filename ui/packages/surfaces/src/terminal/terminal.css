@@ -92,22 +92,9 @@
 	text-transform: uppercase;
 }
 /* SNS · Header.svelte 와 동일 거동 */
-.dlTerm .sns { display: flex; align-items: center; gap: 1px; }
-.dlTerm .snsBtn {
-	width: 24px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
-	color: #e2e8f0; text-decoration: none; transition: color 0.15s, background 0.15s;
-	border: 0; background: transparent; padding: 0; cursor: pointer; /* button 으로도 쓰임(후원·기여) */
-}
-.dlTerm .snsBtn:hover { color: #ffffff; background: rgba(255, 255, 255, 0.08); }
-.dlTerm .snsHeart { color: #fb7185; } /* 후원·기여 진입 · 하트 핑크(살짝 채움) */
-.dlTerm .snsHeart:hover { color: #fda4c0; background: rgba(255, 255, 255, 0.08); }
-.dlTerm .ghStars { /* GitHub 스타 라이브 배지 · 사회적 증명(과홍보 아님) */
-	display: inline-flex; align-items: center; gap: 3px; height: 24px; padding: 0 6px; border-radius: 4px;
-	font-family: var(--dl-font-mono); font-variant-numeric: tabular-nums; font-size: 11px;
-	color: var(--dl-ink-mute, #8a93a3); text-decoration: none; transition: color 0.15s, background 0.15s;
-}
-.dlTerm .ghStars:hover { color: #fbbf24; background: rgba(255, 255, 255, 0.08); }
-.dlTerm .ghStars .ghStar { color: #fbbf24; font-size: 10px; line-height: 1; }
+/* SNS 행(.sns/.snsBtn/.snsHeart/.ghStars) 스타일은 ui/BrandSocial.svelte 가 소유한다.
+   옛날엔 여기 .dlTerm 스코프에 있어서, 쓰는 표면마다 .dlTerm 래퍼를 재현해야 모양이 같았다
+   (노트북 툴바에서 별·간격이 어긋난 회귀). 컴포넌트가 자기 모양을 소유하게 회수함. */
 /* 검색 ⌘K + 자동완성 드롭다운 (viewer 식) */
 .dlTerm .cmdKbd {
 	font-family: var(--mono); font-size: 9px; color: #cbd5e1; background: var(--dl-bg-deep);
@@ -151,7 +138,6 @@
 	.dlTerm .topBar { flex-wrap: wrap; height: auto; flex: 0 0 auto; row-gap: 8px; column-gap: 8px; padding: 8px 10px; }
 	.dlTerm .cmdBar { order: 3; flex: 1 1 100%; }
 	.dlTerm .cmdInput { font-size: 16px; } /* iOS 입력 포커스 줌 방지(16px 미만이면 확대) */
-	.dlTerm .ghStars { display: none; } /* 스타수 배지(가장 덜 핵심) 숨김 → brand+SNS 가 한 행에 줄바꿈 없이 들어감 */
 }
 .dlTerm .langSwitch { display: flex; border: 1px solid var(--bd); border-radius: 3px; overflow: hidden; }
 .dlTerm .langBtn {
