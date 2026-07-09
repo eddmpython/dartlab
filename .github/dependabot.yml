@@ -1,5 +1,8 @@
 version: 2
 updates:
+  # pip 만 정기 버전 범프를 유지한다. dartlab 은 lockfile 없이 pyproject 상한 범위로
+  # PyPI 에 배포되므로, 상한이 굳으면 사용자가 의존성 충돌을 맞는다. CI 게이트는
+  # `pip install -e .` 신선 해석이라 PR green = PyPI 사용자와 동일 환경 검증이다.
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
@@ -42,6 +45,9 @@ updates:
           - "anthropic"
           - "mcp*"
 
+  # 정기 버전 범프 중단 (limit 0). 보안 업데이트는 이 설정과 무관하게 계속 흐른다.
+  # 사유: PR 체크가 sync 워크플로(edgarSync·naverNewsSync 등)를 실행하지 않아 검증 없이
+  # 머지되는 구조이고, 낡은 러너는 GitHub 이 강제 폐기하므로 정기 범프의 실익이 낮다.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -55,12 +61,11 @@ updates:
     commit-message:
       prefix: "보안"
       include: "scope"
-    open-pull-requests-limit: 1
-    groups:
-      gh-actions-all:
-        patterns:
-          - "*"
+    open-pull-requests-limit: 0
 
+  # 정기 버전 범프 중단 (limit 0). 보안 업데이트는 이 설정과 무관하게 계속 흐른다.
+  # 사유: landing 은 배포 패키지가 아니라 package-lock 으로 고정되는 사이트이고,
+  # PR 체크에 npm 빌드가 없어 머지 후 Deploy Site 가 첫 검증이 된다 (#64 lucide-svelte 사고).
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -74,8 +79,4 @@ updates:
     commit-message:
       prefix: "보안"
       include: "scope"
-    open-pull-requests-limit: 1
-    groups:
-      landing-all:
-        patterns:
-          - "*"
+    open-pull-requests-limit: 0
