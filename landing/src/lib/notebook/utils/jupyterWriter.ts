@@ -62,20 +62,6 @@ export function writeJupyterFile(cells: Cell[], options: JupyterWriteOptions = {
 				source: cell.content,
 				metadata: {}
 			});
-		} else if (cell.type === 'guide') {
-			jCells.push({
-				cell_type: 'markdown',
-				id: sanitizeCellId(cell.id),
-				source: guideToMarkdown(cell),
-				metadata: {}
-			});
-		} else if (cell.type === 'study') {
-			jCells.push({
-				cell_type: 'markdown',
-				id: sanitizeCellId(cell.id),
-				source: studyToMarkdown(cell),
-				metadata: {}
-			});
 		}
 	}
 
@@ -167,90 +153,6 @@ function convertOutput(output: Cell['output']): JupyterOutput[] {
 	}
 
 	return [];
-}
-
-function guideToMarkdown(cell: Cell): string {
-	const parts: string[] = [];
-	const guide = cell.guide;
-
-	if (guide?.mission) {
-		parts.push(`**Mission:** ${guide.mission}`);
-	}
-
-	if (guide?.hints && guide.hints.length > 0) {
-		parts.push('');
-		parts.push('<details><summary>Hints</summary>');
-		parts.push('');
-		guide.hints.forEach((hint, i) => {
-			parts.push(`${i + 1}. ${hint}`);
-		});
-		parts.push('');
-		parts.push('</details>');
-	}
-
-	if (guide?.answer) {
-		parts.push('');
-		parts.push('<details><summary>Answer</summary>');
-		parts.push('');
-		parts.push('```python');
-		parts.push(guide.answer);
-		parts.push('```');
-		parts.push('');
-		parts.push('</details>');
-	}
-
-	if (cell.content && !guide?.mission) {
-		parts.push(cell.content);
-	}
-
-	return parts.join('\n');
-}
-
-function studyToMarkdown(cell: Cell): string {
-	const study = cell.study;
-	if (!study) return '';
-	const block = study.block;
-	const parts: string[] = [];
-
-	if (study.blockType === 'intro') {
-		const title = (block.title as string) || (block.metaTitle as string) || '';
-		if (title) parts.push(`# ${title}`);
-		if (block.goal) parts.push(`**${block.goal}**`);
-		if (block.description) parts.push(block.description as string);
-	} else if (study.blockType === 'sectionDivider') {
-		const idx = study.sectionIndex ?? 0;
-		parts.push(`## ${idx + 1}. ${block.title || ''}`);
-		if (block.subtitle) parts.push(`*${block.subtitle}*`);
-	} else if (study.blockType === 'code') {
-		if (block.title) parts.push(`**${block.title}**`);
-		if (block.description) parts.push(block.description as string);
-		if (block.content) parts.push(`\`\`\`python\n${block.content}\n\`\`\``);
-	} else if (study.blockType === 'tip') {
-		const emoji = (block.emoji as string) || '💡';
-		if (block.content) parts.push(`> ${emoji} ${block.content}`);
-	} else if (study.blockType === 'list') {
-		const items = (block.items as string[]) || [];
-		parts.push(items.map((item) => `- ${item}`).join('\n'));
-	} else if (study.blockType === 'table') {
-		const headers = (block.headers as string[]) || [];
-		const rows = (block.rows as string[][]) || [];
-		if (headers.length > 0) {
-			parts.push(`| ${headers.join(' | ')} |`);
-			parts.push(`| ${headers.map(() => '---').join(' | ')} |`);
-			for (const row of rows) {
-				parts.push(`| ${row.join(' | ')} |`);
-			}
-		}
-	} else if (study.blockType === 'footer') {
-		if (block.title) parts.push(`## ${block.title}`);
-		if (block.description) parts.push(block.description as string);
-	} else {
-		if (block.title) parts.push(`### ${block.title}`);
-		if (block.content) parts.push(block.content as string);
-		if (block.description) parts.push(block.description as string);
-	}
-
-	return parts.join('\n\n') || `[${study.blockType}]`;
 }
 
 function sanitizeCellId(id: string): string {

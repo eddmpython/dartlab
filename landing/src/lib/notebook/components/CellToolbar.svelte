@@ -15,8 +15,6 @@
 	const typeLabels: Record<Cell['type'], string> = {
 		code: 'Code',
 		markdown: 'Markdown',
-		guide: 'Guide',
-		study: 'Study',
 	};
 </script>
 

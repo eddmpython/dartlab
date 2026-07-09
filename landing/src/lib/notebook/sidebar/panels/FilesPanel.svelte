@@ -4,6 +4,9 @@
 	import { listFiles, readFile, writeFile, mkdirFS, removeFileFS, renamePathFS, engineStatus, executionDoneCounter, loadNotebookFromFile, saveWorkspaceSnapshot, notebookFilePath, notebookPathVersion, destroyEngine } from '../../stores/executionStore';
 	import type { FileEntry } from '../../engine/executionEngine';
 	import { notebook, updateCellContent, activeCellId, loadNotebook, resetNotebook, setTitle, saveToServer } from '../../stores/notebookStore';
+	// 저장소 = 이 브라우저 IndexedDB. 서버 없음(landing = adapter-static).
+	import { listNotebooks, getNotebook, putNotebook, deleteNotebook } from '../../storage/localStore';
+	import { isLessonNotebook } from '../../lessons/registry';
 
 	let expandedDirs = $state<Set<string>>(new Set(['/workspace']));
 	let treeData = $state<Map<string, FileEntry[]>>(new Map());
@@ -28,48 +31,21 @@
 	let wsTitleEditing = $state(false);
 	let wsTitleDraft = $state('');
 
+	// 내 노트북 목록. 레슨 진행분(`lesson:` 접두)은 허브 카드가 '이어하기' 로 보여 주므로 여기선 뺀다.
 	const wsFiltered = $derived.by(() => {
-		const base = wsList.filter((w) => !w.id.startsWith('study:'));
+		const base = wsList.filter((w) => !isLessonNotebook(w.id));
 		return wsSearch.trim()
 			? base.filter((w) => w.title.toLowerCase().includes(wsSearch.trim().toLowerCase()))
 			: base;
 	});
 
-	let studyWsOpen = $state(true);
-	let expandedStudyFolders = $state<Set<string>>(new Set());
-
-	const studyTree = $derived.by(() => {
-		const items = wsList.filter((w) => w.id.startsWith('study:'));
-		const tree = new Map<string, WorkspaceEntry[]>();
-		for (const item of items) {
-			const path = item.id.replace('study:', '');
-			const slashIdx = path.indexOf('/');
-			const category = slashIdx > 0 ? path.substring(0, slashIdx) : path;
-			if (!tree.has(category)) tree.set(category, []);
-			tree.get(category)!.push(item);
-		}
-		return tree;
-	});
-
-	function toggleStudyFolder(cat: string) {
-		const next = new Set(expandedStudyFolders);
-		if (next.has(cat)) next.delete(cat);
-		else next.add(cat);
-		expandedStudyFolders = next;
-	}
-
-	function studyContentName(ws: WorkspaceEntry): string {
-		const path = ws.id.replace('study:', '');
-		const slashIdx = path.indexOf('/');
-		return slashIdx > 0 ? path.substring(slashIdx + 1) : path;
-	}
-
+	// 저장소는 이 브라우저의 IndexedDB 하나뿐이다. 예전엔 `/api/notebook/*` 를 불렀는데 landing 은
+	// adapter-static 무서버라 그 요청이 늘 404 였다. 그래서 이 목록은 항상 비어 보였다.
 	async function loadWsList() {
 		wsLoading = true;
 		try {
-			const res = await fetch('/api/notebook/list', { credentials: 'include' });
-			if (res.ok) wsList = await res.json();
-		} catch { /* silent */ } finally {
+			wsList = await listNotebooks();
+		} finally {
 			wsLoading = false;
 		}
 	}
@@ -77,12 +53,10 @@
 	async function openWs(id: string) {
 		wsOpeningId = id;
 		try {
-			const res = await fetch(`/api/notebook/${encodeURIComponent(id)}`, { credentials: 'include' });
-			if (!res.ok) return;
-			const data = await res.json();
-			if (data.error) return;
+			const found = await getNotebook(id);
+			if (!found) return;
 			destroyEngine();
-			loadNotebook(data);
+			loadNotebook(found);
 		} finally {
 			wsOpeningId = null;
 		}
@@ -95,15 +69,9 @@
 		destroyEngine();
 		resetNotebook();
 		await tick();
-		const nb = $notebook;
-		const titled = { ...nb, title: name };
-		const res = await fetch('/api/notebook/save', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			credentials: 'include',
-			body: JSON.stringify(titled),
-		});
-		if (res.ok) await loadWsList();
+		const titled = { ...$notebook, title: name };
+		await putNotebook(titled);
+		await loadWsList();
 	}
 
 	function requestDeleteWs(id: string, e: MouseEvent) {
@@ -114,7 +82,7 @@
 	async function confirmDeleteWs(id: string, e: MouseEvent) {
 		e.stopPropagation();
 		wsDeleteConfirmId = null;
-		await fetch(`/api/notebook/${encodeURIComponent(id)}`, { method: 'DELETE', credentials: 'include' });
+		await deleteNotebook(id);
 		wsList = wsList.filter((w) => w.id !== id);
 	}
 
@@ -450,67 +418,6 @@
 							{/if}
 						{:else}
 							<button class="ws-del-btn" onclick={(e) => requestDeleteWs(ws.id, e)} aria-label="Delete">✕</button>
-						{/if}
-					</div>
-				{/each}
-			{/if}
-		{/if}
-	</div>
-
-	<div class="section-divider"></div>
-
-	<div class="ws-section">
-		<div class="ws-section-header">
-			<button class="ws-section-toggle" onclick={() => (studyWsOpen = !studyWsOpen)}>
-				<BookOpen size={12} />
-				<span>Study</span>
-				{#if studyWsOpen}
-					<ChevronDown size={11} class="ws-chevron" />
-				{:else}
-					<ChevronRight size={11} class="ws-chevron" />
-				{/if}
-			</button>
-		</div>
-
-		{#if studyWsOpen}
-			{#if wsLoading}
-				<div class="ws-empty">Loading...</div>
-			{:else if studyTree.size === 0}
-				<div class="ws-empty">No study records</div>
-			{:else}
-				{#each [...studyTree.entries()] as [category, items]}
-					<div class="study-folder">
-						<button class="study-folder-btn" onclick={() => toggleStudyFolder(category)}>
-							{#if expandedStudyFolders.has(category)}
-								<ChevronDown size={11} />
-								<FolderOpen size={12} class="study-folder-icon" />
-							{:else}
-								<ChevronRight size={11} />
-								<Folder size={12} class="study-folder-icon" />
-							{/if}
-							<span class="study-folder-name">{category}</span>
-							<span class="study-folder-count">{items.length}</span>
-						</button>
-						{#if expandedStudyFolders.has(category)}
-							{#each items as ws (ws.id)}
-								{@const isOpening = wsOpeningId === ws.id}
-								<div
-									class="ws-item study-ws-item"
-									class:ws-opening={isOpening}
-									onclick={() => !wsOpeningId && openWs(ws.id)}
-									role="button"
-									tabindex="0"
-									onkeydown={(e) => e.key === 'Enter' && !wsOpeningId && openWs(ws.id)}
-								>
-									<div class="ws-item-info">
-										<span class="ws-item-title">{studyContentName(ws)}</span>
-										<span class="ws-item-meta">{ws.cellCount} cells · {wsFormatDate(ws.updatedAt)}</span>
-									</div>
-									{#if isOpening}
-										<Loader2 size={11} class="ws-spin" />
-									{/if}
-								</div>
-							{/each}
 						{/if}
 					</div>
 				{/each}

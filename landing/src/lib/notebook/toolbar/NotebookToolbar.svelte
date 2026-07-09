@@ -33,8 +33,7 @@
 		setCellWidth,
 		loadNotebook,
 		setTitle,
-		setDescription,
-		studyMode
+		setDescription
 	} from '../stores/notebookStore';
 	import {
 		engineStatus,
@@ -143,7 +142,6 @@
 </a>
 
 <!-- 상단 중앙: 노트북 제목(클릭 편집) -->
-{#if !$studyMode}
 	<div class="filename-bar">
 		{#if pathEditing}
 			<input
@@ -158,7 +156,6 @@
 			</button>
 		{/if}
 	</div>
-{/if}
 
 <!-- 우상단: SNS(터미널 동일) + 노트북 설정 + 테마 -->
 <div class="top-right">
@@ -240,7 +237,6 @@
 <SupportDialog lang="kr" {links} {base} open={supportOpen} onClose={() => (supportOpen = false)} />
 
 <!-- 좌하단: 셀 폭 토글 -->
-{#if !$studyMode}
 	<div class="floating-controls bottom-left">
 		<div class="width-toggle">
 			<button
@@ -266,7 +262,6 @@
 			>
 		</div>
 	</div>
-{/if}
 
 <!-- 우하단: 반응형 토글 + 모두 실행 -->
 <div class="floating-controls bottom-right">

@@ -32,10 +32,6 @@
 				<span class="menu-icon">M&#8595;</span>
 				Markdown
 			</button>
-			<button class="menu-item" onclick={() => handleAdd('guide')}>
-				<span class="menu-icon">&#9881;</span>
-				Guide
-			</button>
 		</div>
 	{/if}
 </div>

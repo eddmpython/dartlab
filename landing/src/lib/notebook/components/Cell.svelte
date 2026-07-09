@@ -29,7 +29,6 @@
 	const isRunning = $derived($runningCellId === cell.id);
 	const isQueued = $derived($reactiveQueue.has(cell.id));
 	const isMarkdown = $derived(cell.type === 'markdown');
-	const isStudy = $derived(cell.type === 'study');
 	const multiDefVars = $derived($cellErrors.get(cell.id) ?? []);
 
 	function handleClick() {
@@ -59,7 +58,6 @@
 	class:queued={isQueued}
 	data-cell-id={cell.id}
 >
-	{#if !isStudy}
 	<div class="left-actions" aria-hidden="true">
 		<button
 			class="side-btn add-above"
@@ -76,11 +74,9 @@
 			<Plus size={12} />
 		</button>
 	</div>
-	{/if}
 
 	<div class="cell-body">
 		<div class="cell-card-wrapper">
-			{#if !isStudy}
 			<div class="cell-actions">
 				{#if cell.type === 'code'}
 					<button
@@ -134,12 +130,10 @@
 					<Trash2 size={13} />
 				</button>
 			</div>
-			{/if}
 
 			<div
 				class="cell-card"
 				class:markdown-card={isMarkdown}
-				class:study-card={isStudy}
 				onclick={handleClick}
 				role="button"
 				tabindex="0"
@@ -347,40 +341,23 @@
 		color: var(--nb-pink);
 	}
 
-	.markdown-card,
-	.study-card {
+	.markdown-card {
 		border-color: transparent;
 		background: transparent;
 	}
 
-	.study-card {
-		cursor: default;
-		border: none !important;
-		box-shadow: none !important;
-		border-radius: 0 !important;
-		background: transparent !important;
-		overflow: visible;
-	}
 
 	.cell-row:hover .markdown-card {
 		border-color: var(--nb-border);
 		background: var(--nb-card);
 	}
 
-	.cell-row:hover .study-card {
-		border-color: transparent;
-		background: transparent;
-	}
 
 	.cell-row.active .markdown-card {
 		border-color: var(--nb-pink);
 		background: var(--nb-card);
 	}
 
-	.cell-row.active .study-card {
-		border-color: transparent;
-		background: transparent;
-	}
 
 	.cell-body {
 		position: relative;

@@ -12,7 +12,7 @@ export function writeMarimoFile(cells: Cell[], options: MarimoWriteOptions = {})
 	parts.push(generateHeader(options));
 	parts.push(generateImportCell());
 
-	const codeCells = cells.filter((c) => c.type === 'code' || c.type === 'markdown' || c.type === 'guide' || c.type === 'study');
+	const codeCells = cells.filter((c) => c.type === 'code' || c.type === 'markdown');
 
 	const allDefines = new Map<string, string>();
 	for (const cell of codeCells) {
@@ -26,10 +26,6 @@ export function writeMarimoFile(cells: Cell[], options: MarimoWriteOptions = {})
 	for (const cell of codeCells) {
 		if (cell.type === 'markdown') {
 			parts.push(generateMarkdownCell(cell));
-		} else if (cell.type === 'guide') {
-			parts.push(generateGuideCell(cell));
-		} else if (cell.type === 'study') {
-			parts.push(generateStudyCell(cell));
 		} else {
 			parts.push(generateCodeCell(cell, allDefines));
 		}
@@ -108,88 +104,6 @@ ${indentedContent}
     return`;
 }
 
-function generateGuideCell(cell: Cell): string {
-	const parts: string[] = [];
-	const guide = cell.guide;
-
-	if (guide?.mission) {
-		parts.push(`**Mission:** ${guide.mission}`);
-	}
-
-	if (guide?.hints && guide.hints.length > 0) {
-		parts.push('');
-		guide.hints.forEach((hint, i) => {
-			parts.push(`> **Hint ${i + 1}:** ${hint}`);
-		});
-	}
-
-	if (guide?.answer) {
-		parts.push('');
-		parts.push('<details><summary>Answer</summary>');
-		parts.push('');
-		parts.push('```python');
-		parts.push(guide.answer);
-		parts.push('```');
-		parts.push('');
-		parts.push('</details>');
-	}
-
-	if (cell.content && !guide?.mission) {
-		parts.push(cell.content);
-	}
-
-	const mdContent = parts.join('\n');
-	const escaped = mdContent.replace(/\\/g, '\\\\').replace(/"""/g, '\\"\\"\\"');
-	const indentedContent = escaped.split('\n').map((line) => (line.trim() === '' ? '' : `    ${line}`)).join('\n');
-
-	return `@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        """
-${indentedContent}
-        """
-    )
-    return`;
-}
-
-function generateStudyCell(cell: Cell): string {
-	const study = cell.study;
-	if (!study) return '';
-	const block = study.block;
-	const parts: string[] = [];
-
-	if (study.blockType === 'intro') {
-		const title = (block.title as string) || (block.metaTitle as string) || '';
-		if (title) parts.push(`# ${title}`);
-		if (block.goal) parts.push(`**${block.goal}**`);
-		if (block.description) parts.push(block.description as string);
-	} else if (study.blockType === 'sectionDivider') {
-		const idx = study.sectionIndex ?? 0;
-		parts.push(`## ${idx + 1}. ${block.title || ''}`);
-		if (block.subtitle) parts.push(`*${block.subtitle}*`);
-	} else if (study.blockType === 'code') {
-		if (block.title) parts.push(`**${block.title}**`);
-		if (block.description) parts.push(block.description as string);
-		if (block.content) parts.push(`\`\`\`python\n${block.content}\n\`\`\``);
-	} else {
-		if (block.title) parts.push(`### ${block.title}`);
-		if (block.content) parts.push(block.content as string);
-		if (block.description) parts.push(block.description as string);
-	}
-
-	const mdContent = parts.join('\n\n') || `[${study.blockType}]`;
-	const escaped = mdContent.replace(/\\/g, '\\\\').replace(/"""/g, '\\"\\"\\"');
-	const indentedContent = escaped.split('\n').map((line) => (line.trim() === '' ? '' : `    ${line}`)).join('\n');
-
-	return `@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        """
-${indentedContent}
-        """
-    )
-    return`;
-}
 
 function generateFooter(): string {
 	return `if __name__ == "__main__":

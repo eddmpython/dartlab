@@ -2,24 +2,23 @@
 	import { Box, Variable, FolderTree, TextSearch, Network } from 'lucide-svelte';
 	import { sidebarOpen, activePanel, openPanel, closeSidebar } from '../stores/sidebarStore';
 	import type { PanelId } from '../stores/sidebarStore';
-	import { currentUser } from '../stores/userStore';
 	import PackagesPanel from './panels/PackagesPanel.svelte';
 	import VariablesPanel from './panels/VariablesPanel.svelte';
 	import FilesPanel from './panels/FilesPanel.svelte';
 	import DocsPanel from './panels/DocsPanel.svelte';
 	import DependenciesPanel from './panels/DependenciesPanel.svelte';
 
-	const panels: { id: PanelId; icon: typeof Box; label: string; requiresAuth?: boolean }[] = [
+	// requiresAuth 게이트를 뺐다. 인증은 서버 개념인데 landing 은 adapter-static 무서버라
+	// currentUser 가 영원히 null 이었고, 그래서 Files 패널이 항상 비활성이었다.
+	const panels: { id: PanelId; icon: typeof Box; label: string }[] = [
 		{ id: 'packages', icon: Box, label: 'Packages' },
 		{ id: 'variables', icon: Variable, label: 'Variables' },
-		{ id: 'files', icon: FolderTree, label: 'Files', requiresAuth: true },
+		{ id: 'files', icon: FolderTree, label: 'Files' },
 		{ id: 'docs', icon: TextSearch, label: 'Docs' },
 		{ id: 'dependencies', icon: Network, label: 'Dependencies' },
 	];
 
 	function handleIconClick(id: PanelId) {
-		const panel = panels.find((p) => p.id === id);
-		if (panel?.requiresAuth && !$currentUser) return;
 		if ($activePanel === id && $sidebarOpen) {
 			closeSidebar();
 		} else {
@@ -31,13 +30,11 @@
 <div class="sidebar" class:open={$sidebarOpen}>
 	<div class="sidebar-icons">
 		{#each panels as panel}
-			{@const disabled = panel.requiresAuth && !$currentUser}
 			<button
 				class="icon-btn"
 				class:active={$sidebarOpen && $activePanel === panel.id}
-				class:disabled-auth={disabled}
 				onclick={() => handleIconClick(panel.id)}
-				title={disabled ? 'Login required' : panel.label}
+				title={panel.label}
 				aria-label={panel.label}
 			>
 				<panel.icon size={18} />
@@ -110,15 +107,6 @@
 	.icon-btn.active {
 		color: var(--nb-text);
 		background: var(--nb-surface);
-	}
-
-	.icon-btn.disabled-auth {
-		cursor: not-allowed;
-	}
-
-	.icon-btn.disabled-auth:hover {
-		color: var(--nb-text-muted);
-		background: transparent;
 	}
 
 	.sidebar-panel {

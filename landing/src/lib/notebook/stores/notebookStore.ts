@@ -1,32 +1,20 @@
 import { writable, derived, get } from 'svelte/store';
 import { putNotebook } from '../storage/localStore';
 
-export interface GuideData {
-	mission: string;
-	hints: string[];
-	answer?: string;
-	expectedOutput?: string;
-}
-
 export interface CellOutput {
 	type: 'text' | 'html' | 'image' | 'error' | 'dataframe' | 'widget';
 	data: string;
 	executedAt: string;
 }
 
-export interface StudyData {
-	blockType: string;
-	sectionIndex?: number;
-	block: Record<string, unknown>;
-}
-
+// 셀은 코드와 마크다운 둘뿐이다. 옛 `guide`·`study` 타입은 서버가 있는 다른 학습 플랫폼에서
+// 옮겨온 잔재였다. 렌더러(GuideCell·StudyCell)가 없어 화면에 그려지지 않았고, 진행 저장은
+// 존재하지 않는 `/api/notebook/save` 를 불렀다(landing 은 adapter-static 무서버). 전부 제거했다.
 export interface Cell {
 	id: string;
-	type: 'code' | 'markdown' | 'guide' | 'study';
+	type: 'code' | 'markdown';
 	content: string;
 	output?: CellOutput;
-	guide?: GuideData;
-	study?: StudyData;
 	executionCount?: number;
 	executionTime?: number;
 }
@@ -35,15 +23,6 @@ export interface WorkspaceFile {
 	path: string;
 	content: string;
 	isDir: boolean;
-}
-
-export interface StudyProgressMetadata {
-	category: string;
-	contentId: string;
-	activeCellId: string | null;
-	studyLayout: StudyLayout;
-	createdAt: string;
-	updatedAt: string;
 }
 
 export interface Notebook {
@@ -79,9 +58,7 @@ function createEmptyNotebook(): Notebook {
 }
 
 export type CellWidth = 'compact' | 'medium' | 'full';
-export type StudyLayout = 'vertical' | 'horizontal';
 
-const VALID_LAYOUTS: StudyLayout[] = ['vertical', 'horizontal'];
 const VALID_WIDTHS: CellWidth[] = ['compact', 'medium', 'full'];
 
 function readLocalStorage<T extends string>(key: string, validValues: T[], fallback: T): T {
@@ -94,19 +71,10 @@ function readLocalStorage<T extends string>(key: string, validValues: T[], fallb
 export const notebook = writable<Notebook>(createEmptyNotebook());
 export const activeCellId = writable<string | null>(null);
 export const editMode = writable<boolean>(true);
-export const studyMode = writable<boolean>(false);
-export const studyLayout = writable<StudyLayout>(readLocalStorage('chaniStudyLayout', VALID_LAYOUTS, 'vertical'));
 export const cellWidth = writable<CellWidth>(readLocalStorage('chaniCellWidth', VALID_WIDTHS, 'medium'));
 
 export const cellCount = derived(notebook, ($nb) => $nb.cells.length);
 export const executionCounter = writable<number>(0);
-
-export function setStudyLayout(layout: StudyLayout) {
-	studyLayout.set(layout);
-	if (typeof localStorage !== 'undefined') {
-		localStorage.setItem('chaniStudyLayout', layout);
-	}
-}
 
 export const cellOutputs = writable<Map<string, CellOutput>>(new Map());
 export const cellErrors = writable<Map<string, string[]>>(new Map());
@@ -170,20 +138,6 @@ export function saveToStorage(): void {
 	}, 800);
 }
 
-function saveStudyVertical(): void {
-	const nb = get(notebook);
-	const cat = nb.metadata?.category;
-	const cid = nb.metadata?.contentId;
-	if (!cat || !cid) return;
-	const outputs = get(cellOutputs);
-	const codeCells = nb.cells.filter((c) => c.type === 'code' && !c.study);
-	const edited = codeCells
-		.map((c) => ({ ...c, output: outputs.get(c.id) }))
-		.filter((c) => c.content.trim() !== '' || c.output);
-	if (edited.length === 0) return;
-	saveStudyProgress(cat, cid, edited);
-}
-
 export async function saveToServer(): Promise<{ ok: boolean; cloud: boolean }> {
 	// Ctrl+S = 즉시 IndexedDB 저장 (클라우드 없음).
 	if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
@@ -203,10 +157,6 @@ export function setDescription(description: string): void {
 
 export function addCell(type: Cell['type'], afterId?: string, beforeId?: string): string {
 	const newCell: Cell = { id: generateId(), type, content: '' };
-
-	if (type === 'guide') {
-		newCell.guide = { mission: '', hints: [] };
-	}
 
 	notebook.update((nb) => {
 		const cells = [...nb.cells];
@@ -330,18 +280,7 @@ export function moveCell(cellId: string, direction: 'up' | 'down'): void {
 export function changeCellType(cellId: string, newType: Cell['type']): void {
 	notebook.update((nb) => ({
 		...nb,
-		cells: nb.cells.map((c) => {
-			if (c.id !== cellId) return c;
-			if (c.type === 'study' || newType === 'study') return c;
-			const updated: Cell = { ...c, type: newType };
-			if (newType === 'guide' && !updated.guide) {
-				updated.guide = { mission: '', hints: [] };
-			}
-			if (newType !== 'guide') {
-				delete updated.guide;
-			}
-			return updated;
-		})
+		cells: nb.cells.map((c) => (c.id === cellId ? { ...c, type: newType } : c))
 	}));
 	saveToStorage();
 }
@@ -365,9 +304,6 @@ export function focusPrevCell(currentId: string): void {
 }
 
 export function loadNotebook(data: Notebook): void {
-	const isStudy = !!(data.metadata?.category && data.metadata?.contentId);
-	studyMode.set(isStudy);
-
 	const outputMap = new Map<string, CellOutput>();
 	for (const cell of data.cells) {
 		if (cell.output) {
@@ -381,7 +317,7 @@ export function loadNotebook(data: Notebook): void {
 	if (data.cells.length > 0) {
 		activeCellId.set(data.cells[0].id);
 	}
-	if (!isStudy) saveToStorage();
+	saveToStorage();
 }
 
 export function resetNotebook(): void {
@@ -396,64 +332,5 @@ export function setCellWidth(width: CellWidth): void {
 	cellWidth.set(width);
 	if (typeof localStorage !== 'undefined') {
 		localStorage.setItem('chaniCellWidth', width);
-	}
-}
-
-export interface StudyProgress {
-	userCells: Cell[];
-	activeCellId: string | null;
-	layout: StudyLayout;
-}
-
-function studyNotebookId(category: string, contentId: string): string {
-	return `study:${category}/${contentId}`;
-}
-
-let studySaveTimer: ReturnType<typeof setTimeout> | null = null;
-
-export function saveStudyProgress(category: string, contentId: string, userCells: Cell[]): void {
-	if (studySaveTimer) clearTimeout(studySaveTimer);
-	studySaveTimer = setTimeout(() => {
-		const meta: StudyProgressMetadata = {
-			category,
-			contentId,
-			activeCellId: get(activeCellId),
-			studyLayout: get(studyLayout),
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
-		};
-		const payload = {
-			id: studyNotebookId(category, contentId),
-			title: `study:${category}/${contentId}`,
-			cells: userCells,
-			metadata: meta,
-		};
-		fetch('/api/notebook/save', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			credentials: 'include',
-			body: JSON.stringify(payload),
-		}).catch(() => {});
-	}, 1000);
-}
-
-export async function loadStudyProgress(category: string, contentId: string): Promise<StudyProgress | null> {
-	const id = studyNotebookId(category, contentId);
-	try {
-		const res = await fetch(`/api/notebook/${encodeURIComponent(id)}`, { credentials: 'include' });
-		if (!res.ok) return null;
-		const data = await res.json();
-		if (data.error) return null;
-		const meta = data.metadata as Partial<StudyProgressMetadata> | undefined;
-		const layout = meta?.studyLayout && VALID_LAYOUTS.includes(meta.studyLayout)
-			? meta.studyLayout
-			: 'vertical';
-		return {
-			userCells: data.cells || [],
-			activeCellId: meta?.activeCellId ?? null,
-			layout,
-		};
-	} catch {
-		return null;
 	}
 }
