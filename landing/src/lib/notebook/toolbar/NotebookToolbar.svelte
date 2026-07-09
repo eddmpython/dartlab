@@ -449,7 +449,10 @@
 		border-radius: 10px;
 		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 		padding: 4px;
-		min-width: 248px;
+		/* 제목·설명 입력이 한 줄에 충분히 들어가는 폭. 248px 에선 설명 textarea 가 답답했다.
+		   좁은 화면에서는 뷰포트를 넘지 않도록 상한을 둔다. */
+		min-width: 340px;
+		max-width: calc(100vw - 24px);
 		white-space: nowrap;
 	}
 	.dropdown-meta {

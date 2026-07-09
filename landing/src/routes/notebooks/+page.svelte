@@ -16,7 +16,7 @@
 	// 사전 로딩: 노트북을 만들거나 열려는 낌새에 커널+dartlab 을 미리 올린다(에디터 열릴 때 대기 0).
 	import { prewarmEngine } from '$lib/notebook/stores/executionStore';
 	import type { Notebook } from '$lib/notebook/stores/notebookStore';
-	import { EXAMPLES } from '$lib/notebook/examples';
+	import { EXAMPLES, EXAMPLE_LEVELS, examplesByLevel } from '$lib/notebook/examples';
 	import {
 		listNotebooks,
 		putNotebook,
@@ -143,11 +143,20 @@
 	</header>
 
 	<section class="hero">
-		<h1>노트북</h1>
+		<div class="hero-head">
+			<picture>
+				<source srcset="{base}/avatar.webp" type="image/webp" />
+				<img class="hero-avatar" src="{base}/avatar.png" alt="" width="52" height="52" />
+			</picture>
+			<div>
+				<h1>노트북</h1>
+				<p class="hero-kicker">브라우저에서 바로 실행하는 파이썬 노트북</p>
+			</div>
+		</div>
 		<p class="hero-sub">
-			브라우저에서 바로 실행하는 범용 파이썬 노트북. 설치 없이 numpy · pandas 를 쓰고, 아래 예제로 dartlab
-			엔진(공시 수평화 · 재무 계정 · 신용등급 · 감사 점검)을 셀 단위로 익힙니다. 노트북은 이 브라우저에 로컬
-			저장됩니다.
+			설치 없이 numpy · polars 를 쓰고, 아래 예제로 dartlab 을 기초부터 익힙니다. 회사 하나를 잡는 법에서
+			시작해 재무제표 · 계정 추출 · 22축 분석을 거쳐 전종목 횡단 스캔까지 이어집니다. 노트북은 이 브라우저에
+			로컬 저장됩니다.
 		</p>
 		<div class="hero-actions">
 			<button class="btn-primary" onclick={newNotebook} onpointerenter={prewarmEngine}><Plus size={16} /> 새 노트북</button>
@@ -155,21 +164,51 @@
 		</div>
 	</section>
 
+	<!-- 브라우저(pyodide) 와 로컬 설치본의 차이. 예제를 열기 전에 무엇이 되고 무엇이 안 되는지 먼저 밝힌다. -->
 	<section class="gallery">
-		<h2 class="sec-title">예제 · 템플릿</h2>
-		<div class="grid">
-			{#each EXAMPLES as ex (ex.id)}
-				<NotebookCard
-					kind="example"
-					title={ex.title}
-					subtitle={ex.description}
-					metaLeft={ex.tags.join(' · ')}
-					metaRight={`${ex.cells.length} 셀`}
-					onopen={() => openExample(ex.id)}
-				/>
-			{/each}
+		<div class="modes">
+			<article class="mode">
+				<h3 class="mode-title">이 브라우저에서</h3>
+				<p class="mode-body">
+					파이썬 커널이 브라우저 안에서 돕니다. 공시 · 재무 데이터는 HuggingFace 에서 직접 받아 여기서
+					계산하므로, 설치도 서버도 필요 없고 코드와 결과가 바깥으로 나가지 않습니다.
+				</p>
+				<p class="mode-list">
+					<span class="ok">되는 것</span> 재무제표 3종 · 계정 추출 · 22축 분석 · 신용등급 · 서사 ·
+					전종목 스캔(성장성 · 수익성 · 유동성 · 현금흐름 · 비율 · 계정 · 부채)
+				</p>
+			</article>
+			<article class="mode">
+				<h3 class="mode-title">로컬 설치본에서</h3>
+				<p class="mode-body">
+					<code>pip install dartlab</code> 로 설치하면 같은 코드가 그대로 돌면서, 브라우저가 나갈 수 없는
+					바깥 네트워크까지 씁니다. 예제 코드를 그대로 복사해 옮겨도 됩니다.
+				</p>
+				<p class="mode-list">
+					<span class="only">여기서만</span> 실시간 시세 · 수급 · 뉴스 수집 · KRX 상장사 목록이 필요한
+					스크리닝 · 전량 재무 프리빌드
+				</p>
+			</article>
 		</div>
 	</section>
+
+	{#each EXAMPLE_LEVELS as level (level)}
+		<section class="gallery">
+			<h2 class="sec-title">{level}</h2>
+			<div class="grid">
+				{#each examplesByLevel(level) as ex (ex.id)}
+					<NotebookCard
+						kind="example"
+						title={ex.title}
+						subtitle={ex.description}
+						metaLeft={ex.tags.join(' · ')}
+						metaRight={`${ex.cells.length} 셀`}
+						onopen={() => openExample(ex.id)}
+					/>
+				{/each}
+			</div>
+		</section>
+	{/each}
 
 	<section class="gallery">
 		<h2 class="sec-title">내 노트북</h2>
@@ -234,12 +273,32 @@
 		margin: 0 auto;
 		padding: 40px 24px 24px;
 	}
+	/* 허브다운 정도의 장식. 아바타 + 제목 한 줄 (히어로 배너 아님). */
+	.hero-head {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		margin: 0 0 12px;
+	}
+	.hero-avatar {
+		width: 52px;
+		height: 52px;
+		border-radius: 50%;
+		display: block;
+		flex-shrink: 0;
+		box-shadow: 0 0 0 1px var(--dl-line-strong);
+	}
 	.hero h1 {
-		margin: 0 0 10px;
+		margin: 0;
 		font-size: 30px;
 		font-weight: 700;
 		letter-spacing: -0.02em;
 		color: var(--dl-ink-print);
+	}
+	.hero-kicker {
+		margin: 2px 0 0;
+		font-size: 13px;
+		color: var(--dl-ink-dim);
 	}
 	.hero-sub {
 		margin: 0 0 20px;
@@ -247,6 +306,55 @@
 		font-size: 14px;
 		line-height: 1.6;
 		color: var(--dl-ink-mute);
+	}
+
+	/* 브라우저 vs 로컬 안내 2 단. 예제 갤러리보다 먼저 읽히게 위에 둔다. */
+	.modes {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+		gap: 0.95rem;
+	}
+	.mode {
+		padding: 16px 18px;
+		border: 1px solid var(--dl-line);
+		border-radius: var(--dl-r-md);
+		background: var(--dl-bg-raised);
+	}
+	.mode-title {
+		margin: 0 0 8px;
+		font-size: 14px;
+		font-weight: 700;
+		color: var(--dl-ink-print);
+	}
+	.mode-body {
+		margin: 0 0 10px;
+		font-size: 13px;
+		line-height: 1.6;
+		color: var(--dl-ink-mute);
+	}
+	.mode-body code {
+		font-family: var(--dl-font-mono);
+		font-size: 12px;
+		padding: 1px 5px;
+		border-radius: 3px;
+		background: var(--dl-bg-deep);
+	}
+	.mode-list {
+		margin: 0;
+		font-size: 12.5px;
+		line-height: 1.6;
+		color: var(--dl-ink-dim);
+	}
+	.mode-list .ok,
+	.mode-list .only {
+		display: inline-block;
+		margin-right: 6px;
+		padding: 1px 6px;
+		border-radius: 3px;
+		font-size: 11px;
+		font-weight: 700;
+		color: var(--dl-accent);
+		background: rgba(var(--dl-accent-rgb), 0.12);
 	}
 	.hero-actions {
 		display: flex;
