@@ -244,8 +244,14 @@ GATES: dict[str, Gate] = {
     "notebooks": Gate(
         name="notebooks",
         tier="fast",
+        # notebookContract 는 skill spec frontmatter 를 읽어 pyyaml 이 필요하다. dartlab 자체는
+        # 설치하지 않는다(Company 1 개 = 수백 MB. 게이트는 소스를 ast 로만 읽는다).
+        deps=("pyyaml",),
         install_pkg="none",
-        cmd="python tests/audit/validateNotebooks.py",
+        # validateNotebooks 는 ast.parse(문법)만 본다. notebookContract 는 셀이 부르는 심볼이
+        # 공개 계약(engines capabilityRefs + dartlab.__all__) 안인지 본다. 미등재 내부 메서드가
+        # 공개 노트북으로 새어 나가던 구멍(2026-07-09 c.audit 사건)을 막는다.
+        cmd="python tests/audit/validateNotebooks.py && python -X utf8 tests/audit/notebookContract.py",
     ),
     "snapshot-regression": Gate(
         name="snapshot-regression",

@@ -1,0 +1,29 @@
+{
+  "notebooks/colab/01_company.ipynb": [
+    "Company.filings"
+  ],
+  "notebooks/marimo/01_company.py": [
+    "Company.filings"
+  ],
+  "notebooks/marimo/samples/dartCompany.py": [
+    "Company.BS",
+    "Company.CF",
+    "Company.diff",
+    "Company.filings",
+    "Company.notes",
+    "Company.ratios",
+    "Company.sector",
+    "Company.show",
+    "Company.topics"
+  ],
+  "notebooks/marimo/samples/edgarCompany.py": [
+    "Company.BS",
+    "Company.CF",
+    "Company.IS",
+    "Company.diff",
+    "Company.filings",
+    "Company.ratios",
+    "Company.show",
+    "Company.topics"
+  ]
+}
