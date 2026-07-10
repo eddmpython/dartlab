@@ -1325,6 +1325,21 @@
 
 <style>
 	.scan-page {
+		/* 색 백킹 · 이 표면의 유일한 색 선언부 (terminal.css 의 .dlTerm 로컬 var 패턴).
+		 * 아래 규칙에서 hex 리터럴 금지. terminal.css 통째 import 는 하지 않는다
+		 * (그 파일은 .dlTerm 접두 없는 전역 선택자 다수 보유 = landing 전역 오염). */
+		--scan-bg-sunken: #050811;
+		--scan-bg-panel: #0a0e18;
+		--scan-line: #1e2433;
+		--scan-line-strong: #334155;
+		--scan-ink: #f1f5f9;
+		--scan-ink-2: #cbd5e1;
+		--scan-ink-mute: #94a3b8;
+		--scan-ink-dim: #64748b;
+		--scan-ink-faint: #475569;
+		--scan-warn: var(--dl-warn); /* #fbbf24 · tokens.css --p-amber-400 과 동일값 실측 */
+		--scan-good: #22c55e;
+		--scan-bad: #ef4444;
 		--scan-bottom-panel-height: clamp(244px, 27vh, 278px);
 		--scan-detail-panel-height: clamp(260px, 28vh, 280px);
 		max-width: 100%;
@@ -1350,7 +1365,7 @@
 	}
 	.market-switch {
 		display: inline-flex;
-		border: 1px solid #1e2433;
+		border: 1px solid var(--scan-line);
 		border-radius: 5px;
 		overflow: hidden;
 	}
@@ -1361,18 +1376,18 @@
 		height: 28px;
 		padding: 0 11px;
 		border: 0;
-		background: #050811;
-		color: #94a3b8;
+		background: var(--scan-bg-sunken);
+		color: var(--scan-ink-mute);
 		font-size: 11px;
 		font-family: inherit;
 		line-height: 1;
 		cursor: pointer;
 	}
 	.ms-btn + .ms-btn {
-		border-left: 1px solid #1e2433;
+		border-left: 1px solid var(--scan-line);
 	}
 	.ms-btn:hover {
-		color: #cbd5e1;
+		color: var(--scan-ink-2);
 	}
 	.ms-btn.active {
 		background: rgba(var(--dl-accent-rgb), 0.1);
@@ -1387,7 +1402,7 @@
 	}
 	.ms-error {
 		font-size: 11px;
-		color: #ef4444;
+		color: var(--scan-bad);
 	}
 	.industry-bar.hidden {
 		display: none;
@@ -1395,7 +1410,7 @@
 	.page-title {
 		font-size: 18px;
 		font-weight: 700;
-		color: #f1f5f9;
+		color: var(--scan-ink);
 		letter-spacing: -0.02em;
 		margin: 0;
 	}
@@ -1429,10 +1444,10 @@
 		width: 260px;
 		height: 32px;
 		padding: 0 12px;
-		background: #050811;
-		border: 1px solid #1e2433;
+		background: var(--scan-bg-sunken);
+		border: 1px solid var(--scan-line);
 		border-radius: 5px;
-		color: #f1f5f9;
+		color: var(--scan-ink);
 		font-size: 12px;
 		font-family: inherit;
 		line-height: 1;
@@ -1445,10 +1460,10 @@
 		padding: 0 12px;
 		font-size: 11px;
 		font-family: monospace;
-		border: 1px solid #1e2433;
+		border: 1px solid var(--scan-line);
 		border-radius: 5px;
-		color: #94a3b8;
-		background: #050811;
+		color: var(--scan-ink-mute);
+		background: var(--scan-bg-sunken);
 		white-space: nowrap;
 		line-height: 1;
 	}
@@ -1458,13 +1473,13 @@
 		border-radius: 50%;
 		background: currentColor;
 	}
-	.db-idle, .db-loading, .db-phase { color: #fbbf24; }
+	.db-idle, .db-loading, .db-phase { color: var(--scan-warn); }
 	.db-loading .db-dot, .db-phase .db-dot {
 		animation: pulse 1.4s ease-in-out infinite;
 	}
-	.db-ready { color: #22c55e; border-color: rgba(34, 197, 94, 0.3); }
-	.db-unsupported { color: #94a3b8; }
-	.db-error { color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
+	.db-ready { color: var(--scan-good); border-color: rgba(34, 197, 94, 0.3); }
+	.db-unsupported { color: var(--scan-ink-mute); }
+	.db-error { color: var(--scan-bad); border-color: rgba(239, 68, 68, 0.3); }
 	@keyframes pulse {
 		0%, 100% { opacity: 0.3; }
 		50% { opacity: 1; }
@@ -1479,10 +1494,10 @@
 		gap: 6px;
 		height: 32px;
 		padding: 0 12px;
-		background: #050811;
-		border: 1px solid #334155;
+		background: var(--scan-bg-sunken);
+		border: 1px solid var(--scan-line-strong);
 		border-radius: 5px;
-		color: #cbd5e1;
+		color: var(--scan-ink-2);
 		font-size: 12px;
 		cursor: pointer;
 		font-family: inherit;
@@ -1496,7 +1511,7 @@
 		font-family: monospace;
 		font-size: 10px;
 		padding: 1px 5px;
-		background: #1e2433;
+		background: var(--scan-line);
 		border-radius: 3px;
 	}
 	.cmdk-lbl {
@@ -1532,23 +1547,23 @@
 		align-items: center;
 		gap: 5px;
 		padding: 4px 9px;
-		background: #050811;
-		border: 1px solid #1e2433;
+		background: var(--scan-bg-sunken);
+		border: 1px solid var(--scan-line);
 		border-radius: 4px;
-		color: #94a3b8;
+		color: var(--scan-ink-mute);
 		font-size: 11px;
 		cursor: pointer;
 		flex-shrink: 0;
 		font-family: inherit;
 	}
 	.ind-chip:hover {
-		border-color: #334155;
-		color: #cbd5e1;
+		border-color: var(--scan-line-strong);
+		color: var(--scan-ink-2);
 	}
 	.ind-chip.active {
 		background: rgba(var(--dl-accent-rgb), 0.08);
 		border-color: rgba(var(--dl-accent-rgb), 0.5);
-		color: #f1f5f9;
+		color: var(--scan-ink);
 	}
 	.ind-chip-dot {
 		width: 6px;
@@ -1559,7 +1574,7 @@
 	.ind-chip-count {
 		font-family: monospace;
 		font-size: 9px;
-		color: #475569;
+		color: var(--scan-ink-faint);
 	}
 	.ind-chip.active .ind-chip-count {
 		color: var(--dl-accent);
@@ -1576,13 +1591,13 @@
 		font-size: 11px;
 	}
 	.ap-label {
-		color: #94a3b8;
+		color: var(--scan-ink-mute);
 		font-size: 10px;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 	}
 	.ap-title {
-		color: #f1f5f9;
+		color: var(--scan-ink);
 		font-weight: 600;
 		font-size: 12px;
 	}
@@ -1594,7 +1609,7 @@
 		margin-left: 8px;
 		background: transparent;
 		border: none;
-		color: #64748b;
+		color: var(--scan-ink-dim);
 		cursor: pointer;
 		font-size: 11px;
 	}
@@ -1632,10 +1647,10 @@
 	.panel-loading {
 		flex-shrink: 0;
 		padding: 18px;
-		background: #0a0e18;
-		border: 1px solid #1e2433;
+		background: var(--scan-bg-panel);
+		border: 1px solid var(--scan-line);
 		border-radius: 6px;
-		color: #64748b;
+		color: var(--scan-ink-dim);
 		font-size: 12px;
 		text-align: center;
 	}
@@ -1646,7 +1661,7 @@
 		align-items: center;
 		justify-content: center;
 		background: rgba(0, 0, 0, 0.55);
-		color: #cbd5e1;
+		color: var(--scan-ink-2);
 		font-size: 12px;
 		z-index: 1000;
 	}
