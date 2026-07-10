@@ -80,7 +80,7 @@ dependencies = [
     "fastapi>=0.135.1,<1; sys_platform != 'emscripten'",
     "uvicorn[standard]>=0.30.0,<1; sys_platform != 'emscripten'",
     "sse-starlette>=2.0.0,<4; sys_platform != 'emscripten'",
-    "mcp[cli]>=1.0,!=1.27.1,<1.27.3; sys_platform != 'emscripten'",  # 1.27.1 Linux wheel 의 mcp.server namespace 회귀 — CI Fast 차단 (2026-05-17)
+    "mcp[cli]>=1.0,!=1.27.1,<1.28.2; sys_platform != 'emscripten'",  # 1.27.1 Linux wheel 의 mcp.server namespace 회귀 — CI Fast 차단 (2026-05-17)
     "qrcode>=7.0,<9; sys_platform != 'emscripten'",
     "PyYAML>=6.0.0,<7; sys_platform != 'emscripten'",
     # viz
@@ -397,7 +397,7 @@ dev = [
     "pytest-benchmark>=5.0.0",
     "pytest-cov>=6.0.0",
     "syrupy>=4.7.0",  # CLI 출력 (rich Console export_text) snapshot 동결 — 본 SSOT 통합 acceptance test
-    "pandera[polars]>=0.29.0,<0.32",  # raw finance/report/docs frame 계약 — gather endpoint silent drift 차단. <0.32: 0.32.0 polars 백엔드가 pa.Field(isin=...) 빌트인 체크 미등록 → KeyError 'isin' (class 정의 시점). 업스트림 수정 시 상한 해제.
+    "pandera[polars]>=0.29.0,!=0.32.0,<0.33",  # raw finance/report/docs frame 계약. gather endpoint silent drift 차단. 0.32.0 만 배제: polars 백엔드가 pa.Field(isin=...) 빌트인 체크를 등록하지 않아 class 정의 시점에 KeyError. 0.32.1 에서 수정 확인(2026-07-10 실측).
     "mutmut>=3.0.0",  # mutation testing — "테스트가 깨진 코드 잡나" 측정. core/ 한정 (Polars native 모듈 제외).
     "vcrpy>=6.0.0",  # HTTP record-replay — providers/dart, providers/edgar 외부 호출 회귀.
     "radon>=6.0.0",

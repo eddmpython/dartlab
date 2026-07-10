@@ -80,11 +80,11 @@ class Gate:
 PYTEST_CORE = ("pytest", "pytest-asyncio", "pytest-cov", "hypothesis")
 PYTEST_PARALLEL = (*PYTEST_CORE, "pytest-xdist", "pytest-benchmark")
 DEV_SCHEMA_SNAPSHOT = (
-    "pandera[polars]>=0.29.0,<0.32",
+    "pandera[polars]>=0.29.0,!=0.32.0,<0.33",
     "vcrpy>=6.0.0",
     "syrupy>=4.7.0",
 )  # <0.32: 0.32.0 isin 빌트인 회귀 (pyproject 주석 참조)
-MCP_PIN = ("mcp[cli]>=1.0,<1.27.1",)
+MCP_PIN = ("mcp[cli]>=1.0,!=1.27.1,<1.28.2",)
 
 # Realdata 20 shard — ci-nightly.yml realdata-suite-full matrix 와 1:1.
 REALDATA_SHARDS = (
@@ -265,7 +265,7 @@ GATES: dict[str, Gate] = {
     "schema-drift": Gate(
         name="schema-drift",
         tier="fast",
-        deps=(*PYTEST_CORE, "pandera[polars]>=0.29.0,<0.32"),
+        deps=(*PYTEST_CORE, "pandera[polars]>=0.29.0,!=0.32.0,<0.33"),
         install_pkg="editable",
         env={"DARTLAB_TEST_LOCKED": "1"},
         cmd="pytest tests/_schemas/ -v --tb=short --no-cov",
