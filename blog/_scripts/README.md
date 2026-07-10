@@ -31,9 +31,10 @@
 ## ③ audit · insights
 | 스크립트 | 역할 |
 |---|---|
-| `auditBlog.py` | 글 단위 구조 audit — 단어수·SVG·내부링크·H2 분포·템플릿 반복도 |
+| `auditBlog.py` | 글 단위 구조 audit. 단어수·SVG·내부링크·H2 분포·템플릿 반복도 |
 | `auditBlogFinance.py` | 회사 글 재무 표 ↔ `dartlab.Company().select()` 실측 1:1 정합 |
 | `backfill_blog_insights.py` | 글 `ai:` 블록 → `dartlab.knowledge.insights(source="blog")` 백필 (AI retrieve 인용) |
+| `runCells.mjs` | **브라우저 실행셀 발행 게이트** (dartlab-stories 전용). `auditBlog.py` 가 문자를 본다면 이건 실제 chromium 에서 본문 코드가 도는지 본다. ok / empty(조용히 삼킴) / error 를 가른다. `node blog/_scripts/runCells.mjs --post <폴더>` (dev 5173 전제). playwright 는 repo 설치본을 빌려 쓴다 |
 
 ## ④ 공유 lib (flat 형제 import — **이동 금지**)
 | 스크립트 | import 하는 곳 |
