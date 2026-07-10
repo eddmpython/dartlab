@@ -24,9 +24,9 @@ SIMPLE: dict[str, str] = {
     "collect:exhausted": "\u26a0 DART API 일일 한도 도달. 내일 다시 시도하거나 추가 키를 등록하세요.",
     "edgar:fallback": "사전 수집 데이터에 없음 \u2192 SEC EDGAR API에서 직접 수집 중... (최초 1회, 수 분 소요)",
     "edgar:sec_download": "{cik} (SEC EDGAR 재무 데이터) 로컬에 없음 \u2192 SEC API에서 다운로드 중...",
-    "edgar:bulk_download_start": "[dartlab] SEC EDGAR 재무 데이터 전체 다운로드 중 (~1.37GB, 최초 1회 5~15분) \u2014 companyfacts.zip",
+    "edgar:bulk_download_start": "[dartlab] SEC EDGAR 재무 데이터 전체 다운로드 중 (~1.37GB, 최초 1회 5~15분). companyfacts.zip",
     "edgar:bulk_download_done": "\u2713 companyfacts.zip 다운로드 완료 ({sizeMB:.0f}MB, {elapsedSec:.0f}s)",
-    "edgar:bulk_convert_start": "[dartlab] companyfacts.zip \u2192 종목별 parquet 변환 중 (수 분 소요) \u2014 {totalCiks}개 기업",
+    "edgar:bulk_convert_start": "[dartlab] companyfacts.zip \u2192 종목별 parquet 변환 중 (수 분 소요). {totalCiks}개 기업",
     "edgar:bulk_convert_done": "\u2713 EDGAR 재무 parquet 변환 완료 (converted={converted} / skipped={skipped} / failed={failed}, {elapsedSec:.0f}s)",
     "edgar:bulk_fresh": "\u2713 companyfacts.zip 최신 (TTL {ttlHours}h)",
     "edgar:bulk_quarterly_start": "[dartlab] SEC 분기 메타 벌크 다운로드 중 ({year}Q{quarter}, {sizeMB:.0f}MB)",
@@ -58,17 +58,20 @@ SIMPLE: dict[str, str] = {
     "scan:signal_start": "서술형 시그널 스캔: {count}사",
     "scan:network_health": "그룹 건전성 분석 중...",
     "scan:prebuild_check": "scan 프리빌드 데이터 확인 중... ({dir})",
-    "scan:prebuild_missing": "scan 프리빌드 데이터 없음 — 배치 prebuild 또는 collect 데이터가 필요합니다",
+    "scan:prebuild_missing": "scan 프리빌드 데이터 없음. 배치 prebuild 또는 collect 데이터가 필요합니다",
+    # 브라우저(pyodide)는 첫 호출 때 finance-lite 를 내려받는다. 정상 경로라 "없음" 이 아니라 "받는 중" 이다.
+    "scan:prebuild_download_lite": "전상장사 데이터를 처음 한 번 내려받습니다. 잠시 걸립니다.",
+    "scan:prebuild_ready_lite": "✓ 전상장사 데이터 준비 완료 ({sizeStr})",
     "scan:prebuild_ready": "\u2713 scan 프리빌드 준비 완료 ({fileCount}개 파일)",
-    "scan:prebuild_failed": "\u26a0 scan 프리빌드 다운로드 실패: {error} \u2014 종목별 fallback 사용 (느림)",
+    "scan:prebuild_failed": "\u26a0 scan 프리빌드 다운로드 실패: {error}. 종목별 fallback 사용 (느림)",
     "scan:prebuild_incomplete": (
-        "⚠ scan 프리빌드 불완전 — 누락 파일: {missing}. 배치 prebuild 산출물 또는 collect 데이터가 필요합니다."
+        "⚠ scan 프리빌드 불완전. 누락 파일: {missing}. 배치 prebuild 산출물 또는 collect 데이터가 필요합니다."
     ),
     "scan:fallback_insufficient": (
         "⚠ scan/finance.parquet 프리빌드가 없어 종목별 파일 {count}개만으로 fallback. "
         "전종목(~2700)이 아닌 부분 결과입니다. 배치 prebuild 산출물이 필요합니다."
     ),
-    "edgar:bulk_start": "EDGAR {kind} 배치 수집 시작 \u2014 {total}종목 (시간이 걸릴 수 있습니다)",
+    "edgar:bulk_start": "EDGAR {kind} 배치 수집 시작. {total}종목 (시간이 걸릴 수 있습니다)",
     "edgar:bulk_done": "\u2713 EDGAR {kind} 배치 완료 (성공 {success} / 실패 {failed} / {elapsedSec:.0f}초)",
     "edgar:bulk_partial": "\u26a0 EDGAR {kind} 배치 부분 완료 ({done}/{total}, 오류 {errors})",
     "edgar:bulk_empty": "EDGAR 배치: 수집할 ticker가 없습니다",
@@ -85,7 +88,7 @@ SIMPLE: dict[str, str] = {
     "edgar:universe_update": "SEC listed universe 갱신 중...",
     "edgar:universe_save": "저장 완료: {path}",
     "edgar:sections_save": "EDGAR {ticker} sections 저장: {periodsWritten}개 기간 / {totalRows}행",
-    "edgar:collect_exhausted": "EDGAR 수집 키 소진 — 일부 미수집 (재시도 권장)",
+    "edgar:collect_exhausted": "EDGAR 수집 키 소진. 일부 미수집 (재시도 권장)",
     "edgar:docs_skip_deprecated": "EDGAR {ticker} docs.parquet emit 생략 ({reason})",
     "hint:no_finance": "{stockCode} finance 데이터 없음 \u2192 {prop} 사용 불가. dartlab.collect('{stockCode}') 또는 Company 자동 다운로드 경로를 확인하세요.",
     "hint:no_report": "{stockCode} report 데이터 없음 \u2192 {prop} 사용 불가. dartlab.collect('{stockCode}') 또는 Company 자동 다운로드 경로를 확인하세요.",
@@ -132,7 +135,7 @@ STRUCTURED: dict[str, StructuredMsg] = {
         ],
     ),
     "hint:newFilingsAvailable": StructuredMsg(
-        template="{stockCode} \u2014 새 공시 {count}건 발견 ({latestReport})",
+        template="{stockCode}. 새 공시 {count}건 발견 ({latestReport})",
         actionsWithKey=[
             "증분 수집: dartlab collect --incremental {stockCode}",
             "또는 Python: c.update()",
@@ -185,7 +188,7 @@ KEY_REQUIREMENTS: dict[str, dict[str, str]] = {
         "envKey": "DART_API_KEY",
         "label": "DART OpenAPI",
         "signupUrl": "https://opendart.fss.or.kr",
-        "guide": "전자공시 API 키 — 한국 상장기업 공시 직접 수집에 필요",
+        "guide": "전자공시 API 키 (한국 상장기업 공시 직접 수집에 필요)",
         "setupCmd": 'dartlab.setup("dart-key")',
     },
     "fred": {

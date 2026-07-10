@@ -284,7 +284,7 @@ def _ensureScanData(*, requireReports: bool = False) -> Path:
         if liteParquet.exists():
             _scanDownloaded = True
             return scanDir
-        emit("scan:prebuild_missing")
+        emit("scan:prebuild_download_lite")
         from dartlab.core.dataLoaderPyodide import pyodideFetchScanLite
 
         pyodideFetchScanLite(_dataDir)

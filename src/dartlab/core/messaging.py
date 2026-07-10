@@ -40,6 +40,7 @@ LLM Specifications:
 
 from __future__ import annotations
 
+import sys
 from typing import Any
 
 from dartlab.core.logger import getLogger
@@ -143,7 +144,14 @@ def emit(key: str, *, raiseAs: type | None = None, **kwargs: Any) -> str:
 
 
 def _emitStructured(event: str, **fields: object) -> None:
-    """T1-1 structured log 발급 — emit/format 동행."""
+    """T1-1 structured log 발급. emit/format 동행.
+
+    브라우저(pyodide)에서는 내보내지 않는다. 이벤트 이름을 메시지 본문으로 찍는 구조라
+    stderr 를 그대로 셀 출력에 담는 노트북에서는 ``message_emit`` 이라는 날문자열이
+    사용자에게 보인다. 그 이벤트를 소비할 메트릭 수집기도 브라우저에는 없다.
+    """
+    if sys.platform == "emscripten":
+        return
     try:
         from dartlab.core.logger import logEvent
 
