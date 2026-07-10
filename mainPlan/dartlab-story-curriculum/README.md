@@ -127,18 +127,21 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
 
 - [ ] **5. 항목과 기간이 만나는 넓은 표** `the-grid` `B`
   panel 이 격자라는 사상. `freq="Y"` 와 `"Q"` 로 기간을 바꾼다.
-  ⚠ 설계안의 `freq="year"` 는 **미지원 값**이다. `Y` / `Q` / `YTD` 만 있다. `panel()` 빈 괄호 호출도 미측정.
+  ⚠ 설계안의 `freq="year"` 는 **미지원 값**이다. `Y` / `Q` / `YTD` 만 있다.
+  `panel()` 빈 괄호는 브라우저에서 Panel (1630, 49) 를 돌려준다 (실측 2026-07-10).
 - [ ] **6. 필요한 줄만 이름으로 뽑아낸다** `select-rows` `B` (2편이 일부 흡수. 잔여는 항목명 검색)
 - [ ] **7. 뽑은 숫자로 직접 계산한다** `compute-from-values` `B`
   select 결과를 파이썬으로 다뤄 영업이익률을 직접 구한다. 첫 데이터 가공.
 - [ ] **8. 이 숫자는 어디서 왔나** `trace-the-number` `B`. `Company.trace("IS")` (topic 인자. 계정명을 넣으면 None)
+  브라우저에서 `primarySource='finance'` dict 를 돌려준다 (실측 2026-07-10).
 
 ### interpret
 
 - [ ] **9. 무엇을 물어볼 수 있나** `analysis-catalog` `B`. 인자 없이 부르면 목록이 열린다는 되묻기 패턴
   ⚠ 되묻기는 `scan()`, `credit()`, `macro()` 에서도 된다. analysis 하나로만 시연하면 독자가 일반화를 못 배운다.
-- [ ] **10. 이 회사, 잘 벌고 있나** `is-this-company-good` `B?`. `analysis("financial", "수익성")`
-  ⚠ finance-lite 로 재무 그룹 값이 실제로 채워지는지 **미검증**(`scan("quality")` total_assets 부재 선례). 발행 전 실행 필수.
+  `c.analysis()` 는 브라우저에서 (22, 7) 카탈로그를 돌려준다 (실측 2026-07-10).
+- [ ] **10. 이 회사, 잘 벌고 있나** `is-this-company-good` `B`. `analysis("financial", "수익성")`
+  브라우저에서 값이 찬다. `marginTrend` 에 매출·영업이익·영업이익률 13.07% (실측 2026-07-10).
 - [ ] **11. 돈 떼일 위험은 얼마인가** `credit-risk` `B`. `credit("채무상환능력")`
 - [ ] **12. 사람이 읽는 문장으로 받는다** `story-report` `B`. `story("full")`
 - [ ] **13. 회사 밖 경제를 함께 본다** `macro-backdrop` `B`. `dartlab.macro("rates")`
@@ -216,16 +219,34 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
 
 ## 8. 운영자 판단 대기 (TODO)
 
+미측정이던 넷은 **실측으로 닫혔다** (2026-07-10, 실제 chromium + 현행 wheel).
+하네스는 `tests/_attempts/pyodideCells/` (gitignore 대상, 로컬 전용).
+
+| 호출 | 브라우저 | 결과 |
+|---|---|---|
+| `c.analysis("financial", "수익성")` | 된다 | dict. `marginTrend` 에 실제 값 (영업이익률 13.07%) |
+| `c.analysis()` | 된다 | DataFrame (22, 7). 되묻기 카탈로그 |
+| `c.industry()` | 된다 | dict. `반도체` / `전공정(FAB)` / confidence 0.733 |
+| `c.panel()` | 된다 | Panel (1630, 49). 격자 전체 |
+| `c.trace("IS")` | 된다 | dict. `primarySource='finance'` |
+
+따라서 10·22·24편의 뼈대는 살아 있고, `industry` 는 커버 가능하다. `panel()` 빈 괄호도 쓸 수 있다.
+
+남은 것.
+
 - [ ] **3편 `how-notebook-runs` 를 살릴 것인가.** 새 능력이 0 이고 1·2편과 겹친다. 폐기하거나,
       "셀은 위에서 아래로 커널을 공유한다" 는 진짜 개념 하나로 다시 세워야 한다.
-- [ ] **`Company.industry` 를 커버할 것인가.** industry 는 엔진(폴더 실재)이라 계약이다. 35편 어디에도 없다.
-      업종·동종 시각은 회사 분석의 핵심 각도다. 브라우저 가부 미측정.
+- [ ] **`Company.industry` 를 어느 편에 얹을 것인가.** 브라우저 가부는 확인됐다. `interpret` 트랙의
+      "이 회사는 무슨 업을 하는가" 각도로 세울지, 21편 `where-it-sits` 에 흡수할지가 갈림길이다.
 - [ ] **로컬 전용 편(26~33)의 실행 셀을 어떻게 보일 것인가.** 눌러도 안 도는 셀은 독자에게 고장으로 읽힌다.
       실행 막대를 감출지, 눌렀을 때 "로컬에서만 됩니다" 를 띄울지. 지금은 아무 처리도 없다.
-- [ ] **`analysis("financial", "수익성")` 이 브라우저에서 값을 채우는가.** 미검증.
-      비면 10·22·24편의 뼈대가 무너진다. 발행 전에 반드시 실행해 확인하고, 비면 credit/scan 기반으로 대체한다.
 - [ ] **3편 `how-notebook-runs` 가 폐기되면 4편 이후 번호를 당길 것인가.** 아직 3편 뒤가 발행되지 않았으므로
       커리큘럼 번호만 먼저 당기고, 이미 발행된 1·2편은 그대로 둔다.
+- [ ] **브라우저 wheel 재배포.** `71f18f8dd` 가 고친 세 문구(겁주는 "데이터 없음", 날문자열
+      `message_emit`, 깨진 완료 문구)는 HF wheel 을 다시 올려야 화면에 반영된다. 지금 학습자는
+      1편 scan 셀에서 그 세 줄을 그대로 본다.
+- [ ] **실행셀 하네스를 본진으로 올릴 것인가.** 편당 90 초. 34 편이면 50 분이다. PR 마다는 무리다.
+      야간 전수인지, 바뀐 편만인지, 로컬 전용인지 결정이 필요하다. 상세 = 하네스 README.
 
 ## 9. 회귀 가드
 
@@ -236,4 +257,4 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
 | 6막 인과 템플릿이 교육 연재에 되살아난다 | `GENRE_PLAN_SHAPE["dartlab-stories"] = {acts: 3, visuals: 1, images: 1}` |
 | 브라우저 경계를 안 밝힌 글이 나간다 | `_validate_genre_body` 가 경계·오독 방지 문장을 요구한다 |
 | 주어가 회사로 미끄러진다 | `stockCode` 를 달면 게이트가 막는다 (`topicSlug` 필수) |
-| 노트북 셀 출력이 조용히 사라진다 | 아직 자동 가드 없음. 8절 TODO |
+| 노트북 셀 출력이 조용히 사라진다 | `tests/_attempts/pyodideCells/runCells.mjs` 가 `empty` 로 잡는다. 본진 승격은 8절 TODO |
