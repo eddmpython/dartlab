@@ -125,10 +125,10 @@ for th in theses:
 
     # 신규 evidence 수집 (공시 + 가격 + macro)
     new_filings = [
-        f for f in c.liveFilings()
+        f for f in c.filings()
         if lookback.strftime("%Y%m%d") <= f["rcept_dt"] <= asof.strftime("%Y%m%d")
     ]
-    price_change = c.priceChange(start=lookback.isoformat(), end=asof.isoformat())
+    price_change = dartlab.gather("price", target)  # 기간 필터는 아래에서
 
     # falsifier 조건 평가 (간이 — 실 평가는 pythonCheck eval)
     status = "intact"   # intact / violated / pending
@@ -165,8 +165,8 @@ emit_result(
 ### 2. 핵심 근거 수집
 
 - thesis JSON 외부 저장 (사용자 선택 — repo 안 또는 외부 storage)
-- `Company.liveFilings()` — 신규 공시 (lookback 기간)
-- `Company.priceChange()` — 가격 변동
+- `Company.filings()` — 신규 공시 (lookback 기간)
+- `dartlab.gather("price", code)` 가격 시계열
 - macro update (regime 변화) — `dartlab.macro("cycle"|"rates")`
 
 ### 3. 메커니즘 분석

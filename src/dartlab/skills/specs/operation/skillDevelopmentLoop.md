@@ -165,7 +165,7 @@ gapSpot → dataSanityCheck → protoSkill → selfRun → redTeam → graduate
 ### 2. dataSanityCheck
 
 - protoSkill 작성 *전* 에 사용할 capability 를 1 종목 (대형 안정형, 예: 005930) 으로 호출해 *실제 반환 형태와 시계열 길이* 를 본다.
-- 실행 우선순위는 `EngineCall` → `RunPython fallback` 이다. `Company.panel`, `Company.trace`, `Company.disclosure`, `scan.*`, `gather.*`, `analysis.*`, `quant.*`, `credit.*`, `macro.*`, `viz.*` 처럼 엔진 surface 가 있으면 EngineCall 로 호출한다.
+- 실행 우선순위는 `EngineCall` → `RunPython fallback` 이다. `Company.panel`, `Company.trace`, `Company.filings`, `scan.*`, `gather.*`, `analysis.*`, `quant.*`, `credit.*`, `macro.*`, `viz.*` 처럼 엔진 surface 가 있으면 EngineCall 로 호출한다.
 - RunPython 은 엔진 결과를 결합하거나 L1/L1.5 helper 를 직접 호출해야 하는 경우에만 보조로 쓴다. 이때 protoSkill 본문에 "RunPython fallback" 또는 "RunPython 폴백" 을 명시한다.
 - 검사 항목 — 행 수, 컬럼 존재, None/NaN 비율, 기간 범위, attr 이름 (dataclass docstring 으로 검산).
 - 가정과 어긋나면 후보 폐기 또는 신호 정의 재설계 (예: 시계열이 5 거래일뿐이면 σ 통계 가정 폐기 → 절대값/임계 비교로 재정의).

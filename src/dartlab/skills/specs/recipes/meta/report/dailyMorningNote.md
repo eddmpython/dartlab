@@ -110,7 +110,7 @@ holdings_change = [
 new_filings = []
 for c in holdings:
     company = dartlab.Company(c)
-    live = company.liveFilings()
+    live = company.filings()
     new_filings.extend([f for f in live if f["rcept_dt"] == asof.strftime("%Y%m%d")])
 
 # 4. macro update 4 indicator
@@ -137,7 +137,7 @@ emit_result(
 
 - `dartlab.scan("priceMover")` — 시장 mover universe
 - `dartlab.Company(c).price()` / `priceChange()` — 보유 종목 종가·변동
-- `Company.liveFilings()` — 신규 공시 (search 아닌 정공)
+- `Company.filings()` — 신규 공시 (search 아닌 정공)
 - `dartlab.macro("inflation"|"cycle"|"rates"|"exchange")` — 4 indicator 갱신
 
 ### 3. 메커니즘 분석
@@ -162,7 +162,7 @@ narrative 1 page (≤ 400 단어)
 ### 5. 후속 모니터링
 
 - mover top 10 중 보유 종목 ⊂ → `recipes.fundamental.*` 직접 deep dive.
-- 신규 공시 catalyst 발생 → `Company.readFiling(rcept_no)` 본문 분석.
+- 신규 공시 catalyst 발생 → `Company.filings(rcept_no)` 본문 분석.
 - macro indicator regime 전환 신호 → `recipes.macro.scenarioDiagram`.
 
 ## 대표 반환 형태
@@ -177,6 +177,6 @@ narrative 1 page (≤ 400 단어)
 
 1. 본 recipe → 일일 cadence 단일 페이지.
 2. mover 상위 보유 종목 발견 → `recipes.fundamental.valuation.damodaran.deepDive` deep dive.
-3. 신규 공시 catalyst → `Company.readFiling()` + `recipes.fundamental.disclosure.eventRadar`.
+3. 신규 공시 catalyst → `Company.filings()` + `recipes.fundamental.disclosure.eventRadar`.
 4. macro indicator regime 전환 → `recipes.macro.scenarioDiagram` 또는 `recipes.macro.qualityMacroBeta`.
 5. 주간 합본 → `recipes.meta.report.weeklyDigest` (별 트랙).

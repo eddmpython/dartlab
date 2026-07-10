@@ -30,7 +30,7 @@ inputs:
   - Company.panel BS (이자부 부채·차입금·사채 시계열)
   - Company.panel IS (영업이익·이자비용·EBIT·EBITDA)
   - Company.panel CF (영업현금흐름·CAPEX·FCF·배당)
-  - Company.disclosure (인수·합병·SPC 설립·차입 공시)
+  - Company.filings (인수·합병·SPC 설립·차입 공시)
   - Company.panel notes 차입금 (만기·금리·담보)
 outputs:
   - LBO 거래 구조 분해 ledger
@@ -40,7 +40,7 @@ outputs:
   - 의무상환 일정 vs FCF 매칭
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
 toolRefs:
   - EngineCall
   - RunPython
@@ -110,7 +110,7 @@ visualRefs:
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.disclosure`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — LBO 공정성 — 엔진 후보.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.filings`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — LBO 공정성 — 엔진 후보.
 
 ```python
 import dartlab
@@ -136,7 +136,7 @@ for topic in ("businessOverview", "riskFactors", "mdna", "notesDetail"):
         pass
 
 try:
-    disclosure = c.disclosure()
+    disclosure = c.filings()
     events = disclosure.head(20).to_dicts() if hasattr(disclosure, "head") else list(disclosure)[:20]
 except Exception:
     events = []
@@ -319,7 +319,7 @@ graph LR
 1. `ReadSkill` 에서 LBO·사모펀드·차입매수 질문이면 본 recipe 선정.
 2. target stockCode 확인 (피인수 회사 기준).
 3. `Company.panel("BS","IS","CF",freq="Y")` 시계열 + 분기 보완.
-4. `Company.disclosure("인수","합병")` 거래 공시.
+4. `Company.filings("인수","합병")` 거래 공시.
 5. `Company.panel("차입금")` 만기·금리·담보 주석.
 6. RunPython 으로 3 방식 평가 + 3 비율 시계열 + 영업권 손상 계산.
 7. 답변에 *거래 구조 + 인수가 평가 + 부채부담 시계열 + 의무상환 + 영업권* 5 셋 + 반례·한계 필수.

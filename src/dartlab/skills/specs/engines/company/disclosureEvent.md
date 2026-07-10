@@ -4,7 +4,7 @@ title: Company Disclosure Event
 category: engines
 kind: curated
 status: observed
-purpose: Company.disclosure 응용 — 이벤트 timestamp + 본문 abstract.
+purpose: Company.filings 응용 — 이벤트 timestamp + 본문 abstract.
 sourceRefs:
   - dartlab://skills/engines.company.disclosureEvent
 knowledgeRefs:
@@ -21,7 +21,7 @@ runtimeCompatibility:
   pyodide:
     status: limited
 whenToUse:
-  - Company.disclosure 응용
+  - Company.filings 응용
   - 이벤트 timestamp + 본문 abstract
 ---
 
@@ -37,7 +37,7 @@ whenToUse:
 import dartlab
 
 c = dartlab.Company("005930")
-events = c.disclosure(category="임원변동")
+events = c.filings()
 print(events)  # timestamp + 본문 abstract
 ```
 

@@ -33,7 +33,7 @@ outputs:
 capabilityRefs:
   - Company.panel
   - Company.trace
-  - Company.disclosure
+  - Company.filings
 toolRefs:
   - EngineCall
   - RunPython
@@ -119,7 +119,7 @@ examples:
   - analysis 없이 원표와 공시만으로 이익 품질 검증
   - 매출 증가가 현금으로 따라오는지 포렌식 ledger 작성
 audiences:
-  llm: L2 분석엔진을 쓰지 말고 Company.panel, Company.disclosure, scan primitive는 EngineCall로 우선 호출한 뒤 synth helper RunPython fallback으로 evidence ledger와 falsifier를 만든다.
+  llm: L2 분석엔진을 쓰지 말고 Company.panel, Company.filings, scan primitive는 EngineCall로 우선 호출한 뒤 synth helper RunPython fallback으로 evidence ledger와 falsifier를 만든다.
   agent: ReadSkill 후 GetSkillBody로 본문을 읽고 capabilityRefs는 EngineCall로 먼저 호출한다. L1.5 memo builder가 필요할 때만 공개 호출 블록을 RunPython fallback으로 실행해 tableRef/valueRef/dateRef를 만든다.
   human: 원표와 공시 원문만으로 새 분석법을 실험하고, 유효하면 나중에 엔진으로 환류할 수 있게 만드는 포렌식 인큐베이터다.
 humanIntro: "이 팩은 완성된 L2 분석엔진을 잘 호출하는 조합기가 아니다. BS/IS/CF 원표, 공시 섹션, scan primitive 같은 L1/L1.5 재료만으로 아직 엔진화되지 않은 회계·공시 신호를 발굴하고, 반증 조건과 승격 후보를 함께 남긴다."
@@ -129,7 +129,7 @@ validatedAt: '2026-05-27'
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel`, `Company.disclosure`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 surface 로 호출한다. 아래 Python 블록은 같은 근거를 묶어 `buildEvidenceForensicsMemo` 를 실행해야 하는 **RunPython fallback** 절차다.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel`, `Company.filings`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 surface 로 호출한다. 아래 Python 블록은 같은 근거를 묶어 `buildEvidenceForensicsMemo` 를 실행해야 하는 **RunPython fallback** 절차다.
 
 ```python
 import dartlab

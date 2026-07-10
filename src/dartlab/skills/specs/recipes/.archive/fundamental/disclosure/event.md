@@ -83,9 +83,9 @@ import dartlab
 
 c = dartlab.Company("005930")
 
-recent = c.disclosure(days=30)
+recent = c.filings()
 top_filing = recent.head(1)
-detail = c.readFiling(top_filing["rceptNo"][0])
+detail = c.panel("사업의 내용")
 diff = c.diff()
 change = c.analysis("financial", "공시변화")
 ```

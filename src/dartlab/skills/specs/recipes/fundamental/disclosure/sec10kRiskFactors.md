@@ -72,7 +72,7 @@ import re
 ticker = "AAPL"
 
 try:
-    filings = dartlab.providers.edgar.fetch10kFilings(ticker, limit=2)
+    filings = dartlab.Company(ticker).filings()
 except Exception:
     filings = []
 

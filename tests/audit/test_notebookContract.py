@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from tests.audit.notebookContract import _loadContract, collect, scanSource
+from tests.audit.notebookContract import _loadContract, _targets, collect, scanSource
 
 pytestmark = [pytest.mark.unit]
 
@@ -22,17 +22,19 @@ def contract() -> tuple[set[str], set[str]]:
 def test_loadContract_readsRealSsot(contract: tuple[set[str], set[str]]) -> None:
     """계약 집합이 실제 spec/__all__ 에서 온다 (빈 set 으로 무력화되면 게이트가 죽는다)."""
     companyMethods, rootPublic = contract
-    assert {"panel", "select", "analysis", "credit", "story"} <= companyMethods
+    # providers(dart·edgar) 계열은 panel · select · filings 셋만. 나머지는 엔진명 메서드.
+    assert {"panel", "select", "filings", "analysis", "credit", "story"} <= companyMethods
     assert {"Company", "scan", "macro"} <= rootPublic
-    # 미등재 내부 메서드는 계약에 없어야 한다.
-    assert "audit" not in companyMethods
-    assert "filings" not in companyMethods
+    # 세부 호출계약은 없다. 폴더 없는 spec(dashboard·edgar)이 올린 것도 계약이 아니다.
+    for internal in ("audit", "governance", "topics", "diff", "view", "disclosure", "liveFilings", "readFiling"):
+        assert internal not in companyMethods
 
 
 def test_scanSource_flagsUnregisteredCompanyMethod(contract: tuple[set[str], set[str]]) -> None:
-    """``c.audit()`` 처럼 capabilityRefs 미등재 메서드는 잡힌다."""
+    """``c.audit()`` 처럼 계약 밖 세부 메서드는 잡힌다."""
     assert scanSource("c.audit()", *contract) == ["Company.audit"]
-    assert scanSource("c.filings().head(10)", *contract) == ["Company.filings"]
+    assert scanSource("c.disclosure()", *contract) == ["Company.disclosure"]
+    assert scanSource("c.view()", *contract) == ["Company.view"]
 
 
 def test_scanSource_flagsContractBypass(contract: tuple[set[str], set[str]]) -> None:
@@ -68,7 +70,14 @@ def test_scanSource_syntaxErrorIsNotAViolation(contract: tuple[set[str], set[str
     assert scanSource("this is not python(((", *contract) == []
 
 
-def test_collect_baselineIsNotEmpty() -> None:
-    """지금 repo 에 실제 위반이 남아 있다(부채 원장 대상). 0 이면 스캔 대상이 사라진 것."""
-    current = collect()
-    assert current, "노트북 스캔 대상이 하나도 안 잡혔다. _targets() 경로가 깨졌는지 확인하라."
+def test_targets_areNotEmpty() -> None:
+    """스캔 대상 경로가 살아 있는지. 위반이 0 이어도 대상은 있어야 한다."""
+    targets = _targets()
+    assert len(targets) > 20, "스캔 대상이 사라졌다. _targets() 경로가 깨졌는지 확인하라."
+    assert any("notebooks" in str(p) for p, _ in targets)
+    assert any("skills/specs" in p.as_posix() for p, _ in targets)
+
+
+def test_collect_isCleanNow() -> None:
+    """계약 잔재를 전부 걷어낸 뒤라 현재 위반은 0 이다 (부채 원장도 0)."""
+    assert collect() == {}

@@ -17,7 +17,7 @@ inputs:
 outputs:
   - falsifierLedger table
 capabilityRefs:
-  - Company.disclosure
+  - Company.filings
   - Company.gather
   - scan.market
 toolRefs:
@@ -101,7 +101,7 @@ def rows(value, limit=30):
     return []
 
 try:
-    filings = rows(c.disclosure(), limit=50)
+    filings = rows(c.filings(), limit=50)
 except Exception:
     filings = []
 
@@ -140,7 +140,7 @@ claim 별 open/notTriggered ledger 단정. 예: "5 claim 검증: event(자사주
 
 ### 2. 핵심 근거 수집
 
-- Company.disclosure() filings — capital / governance event
+- Company.filings() filings — capital / governance event
 - Company.gather('price') latest 40 row — reaction 측정
 - Company.gather('flow') latest 40 row — 외인/기관 매매 동조
 - buildEventRadarMemo() → 5 claim (event / reaction / insider / capital / consensus) × 2 column (supporting / counterNeeded)

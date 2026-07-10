@@ -29,7 +29,7 @@ inputs:
   - Company.panel IS (분기·연도 — 일회성 손실 시계열)
   - Company.panel BS (충당부채·이연법인세자산·영업권)
   - Company.panel notes 손상차손·구조조정 (가능 시)
-  - Company.disclosure (경영자 변경·구조조정·합병 timestamp)
+  - Company.filings (경영자 변경·구조조정·합병 timestamp)
 outputs:
   - 일회성 손실 시계열 ledger
   - 경영자 변경 ↔ 손실 인식 timing 매트릭스
@@ -37,7 +37,7 @@ outputs:
   - 차기 분기 인위적 회복 패턴 ledger
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
 toolRefs:
   - EngineCall
   - RunPython
@@ -107,7 +107,7 @@ visualRefs:
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.disclosure`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 빅 배스 — 일회성 손실 + 경영자 변경 ledger.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.filings`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 빅 배스 — 일회성 손실 + 경영자 변경 ledger.
 
 ```python
 import dartlab
@@ -133,7 +133,7 @@ for topic in ("businessOverview", "riskFactors", "mdna", "notesDetail"):
         pass
 
 try:
-    disclosure = c.disclosure()
+    disclosure = c.filings()
     events = disclosure.head(20).to_dicts() if hasattr(disclosure, "head") else list(disclosure)[:20]
 except Exception:
     events = []
@@ -296,7 +296,7 @@ graph LR
 1. `ReadSkill` 에서 빅 배스·신임 경영자 손실 질문이면 본 recipe 선정.
 2. target stockCode 확인.
 3. `Company.panel("IS", freq="Q")` 분기 손익 + `Company.panel("BS", freq="Q")` 충당·영업권.
-4. `Company.disclosure("임원변동")` 경영자 변경 timestamp.
+4. `Company.filings("임원변동")` 경영자 변경 timestamp.
 5. `Company.panel("손상차손")` 또는 `Company.panel("충당부채")` 주석 본문.
 6. RunPython 으로 6 패턴 신호 + 차기 회복 회귀 계산.
 7. 답변에 *분기 손실 시계열 + 경영자 timing + 손상 cluster + 차기 회복 ledger* 4 셋 + 반례·한계 필수.

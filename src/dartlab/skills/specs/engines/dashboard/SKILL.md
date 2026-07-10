@@ -24,7 +24,6 @@ outputs:
   - 클라이언트 런타임 계산 (assembleCompany.ts)
   - SSR 페이지
 capabilityRefs:
-  - Company.view
 knowledgeRefs:
   - start.dartlabSkillOs
   - engines.company
@@ -110,9 +109,11 @@ Dashboard 는 *프론트엔드 SvelteKit 페이지* 다. python API 가 아니�
 ```python
 import dartlab
 
-# 브라우저 뷰어 (localhost:8400)
+# dashboard 는 python API 가 아니다. 공개 호출 계약도 아니다.
+# 같은 데이터를 계약 호출로 직접 얻는다.
 c = dartlab.Company("005930")
-c.view(port=8400)
+c.panel("IS")
+c.analysis("financial", "종합평가")
 ```
 
 ```bash

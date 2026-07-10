@@ -124,7 +124,7 @@ KindList 신규 종목 ──bootstrap─→ 별도 워크플로우
 import dartlab
 
 # 1. 데이터 freshness 확인 (DART API 직접 조회)
-result = dartlab.checkFreshness("005930")
+c = dartlab.Company("005930")   # 신선도는 panel 결과의 dataAsOf / latestPeriod 로 본다
 # → FreshnessResult: isFresh · missingCount · lastLocalDate · lastRemoteDate
 
 # 2. 단일/다종목 직접 수집 (DART_API_KEY 필요)
@@ -133,7 +133,7 @@ dartlab.collect("005930", "000660", categories=["finance"])
 
 # 3. 단일 종목 데이터 조회 (topic 은 BS/IS/CF/CIS/SCE/ratios)
 c = dartlab.Company("005930")
-print(c.topics)                  # 사용 가능한 topic 목록
+print(c.panel.shape)             # 항목 x 기간 격자 크기
 bs = c.panel("BS", freq="Q")      # 분기 재무상태표
 ratios = c.panel("ratios")
 

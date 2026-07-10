@@ -99,7 +99,7 @@ events = []
 # 1. 실적 발표 일정 (DART 공시 schedule + 분기말 +45/90 일 추정)
 for c in holdings:
     company = dartlab.Company(c)
-    earnings = company.upcomingEarnings(end=horizon_90d.isoformat())
+    earnings = rows(company.filings())  # 실적 공시 이력. 예정 일정 추정은 아래 cycle 로직
     events.extend([
         {"eventType": "earnings", "stockCode": c, "eventDate": e["date"], "detail": e["quarter"]}
         for e in earnings
@@ -108,7 +108,7 @@ for c in holdings:
 # 2. 배당락일 (DART 배당결정 공시 추출)
 for c in holdings:
     company = dartlab.Company(c)
-    div = company.upcomingDividends(end=horizon_90d.isoformat())
+    div = rows(company.filings())  # 배당 공시 이력
     events.extend([
         {"eventType": "exDividend", "stockCode": c, "eventDate": d["exDate"], "detail": f"₩{d['amount']}"}
         for d in div
@@ -134,7 +134,7 @@ events.extend([
 # 6. 주총 (DART 주주총회 공시)
 for c in holdings:
     company = dartlab.Company(c)
-    agm = company.upcomingAgm(end=horizon_90d.isoformat())
+    agm = rows(company.filings())  # 주총 소집 공시 이력
     events.extend([
         {"eventType": "agm", "stockCode": c, "eventDate": a["date"], "detail": "주총"}
         for a in agm
@@ -165,7 +165,7 @@ emit_result(
 
 ### 2. 핵심 근거 수집
 
-- `Company.upcomingEarnings()` / `upcomingDividends()` / `upcomingAgm()` — DART 공시 + 분기 cycle 추정
+- `Company.filings()` 공시 이력 + 분기 cycle 추정 (예정 일정 전용 계약 호출은 없다)
 - `dartlab.macro("rates", upcoming=True)` — 한은/Fed 공식 cron
 - MSCI rebalancing 분기 cycle (구현 별도)
 

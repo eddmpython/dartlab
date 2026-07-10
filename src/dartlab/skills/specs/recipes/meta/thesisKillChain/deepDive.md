@@ -25,7 +25,7 @@ outputs:
   - premortem quality gate
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
   - Company.gather
   - scan.market
 toolRefs:
@@ -122,7 +122,7 @@ validatedAt: '2026-05-27'
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel`, `Company.disclosure`, `Company.gather`, `scan.market`, `scan.audit`, `scan.quality`는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildThesisKillChainMemo`로 묶는 **RunPython fallback** 절차다.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel`, `Company.filings`, `Company.gather`, `scan.market`, `scan.audit`, `scan.quality`는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildThesisKillChainMemo`로 묶는 **RunPython fallback** 절차다.
 
 ```python
 import dartlab
@@ -158,7 +158,7 @@ for topic in ("IS", "BS", "CF"):
         pass
 
 try:
-    filings = rows(c.disclosure(), limit=50)
+    filings = rows(c.filings(), limit=50)
 except Exception:
     filings = []
 
@@ -199,7 +199,7 @@ emit_result(
 ### 2. 핵심 근거 수집
 
 - IS/BS/CF 시계열 (Company.panel)
-- 공시 row 50 건 (Company.disclosure)
+- 공시 row 50 건 (Company.filings)
 - L1.5 ledger 11 단계 (thesisIntake → evidenceCoverageAudit → assumptionLedger → fragilityMap → triggerCatalog → propagationPath → tripwireMonitor → falsifierLedger → scenarioStoryboard → visualDecisionPack → premortemQualityGate)
 
 ### 3. 메커니즘 분석

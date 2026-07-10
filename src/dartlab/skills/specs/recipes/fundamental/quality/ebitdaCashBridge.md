@@ -27,7 +27,7 @@ inputs:
   - Company.panel IS (영업이익·EBIT·법인세·이자비용)
   - Company.panel CF (영업현금흐름·CAPEX·운전자본 변동)
   - Company.panel BS (감가상각·무형자산상각·이자부 부채)
-  - Company.disclosure (합병·인수 공시 — EV/EBITDA 산정)
+  - Company.filings (합병·인수 공시 — EV/EBITDA 산정)
 outputs:
   - EBT → EBIT → EBITDA → OCF 4 단계 bridge ledger
   - EV/EBITDA multiple 시계열 + 동종 업종 비교
@@ -35,7 +35,7 @@ outputs:
   - 인수가격 적정성 점수
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
 toolRefs:
   - EngineCall
   - RunPython
@@ -125,7 +125,7 @@ qcf = c.panel("CF", freq="Q")
 ybs = c.panel("BS", freq="Y")
 
 # 4. 인수 공시 (가능 시)
-merger_section = c.disclosure("인수") if hasattr(c, "disclosure") else None
+merger_section = c.filings() if hasattr(c, "disclosure") else None
 
 ledger = {
     "is_years": yis.shape[1] - 2 if yis is not None else 0,
@@ -268,7 +268,7 @@ graph LR
 1. `ReadSkill` 에서 EBITDA·EV multiple·인수가격 질문이면 본 recipe 선정.
 2. target stockCode 확인.
 3. `Company.panel("IS", freq="Y")` + `Company.panel("CF", freq="Y")` + `Company.panel("BS", freq="Y")` 시계열.
-4. `Company.disclosure("인수")` 또는 합병 공시 (EV·EBITDA 산정 본문).
+4. `Company.filings("인수")` 또는 합병 공시 (EV·EBITDA 산정 본문).
 5. RunPython 으로 4 단계 bridge + EV/EBITDA multiple + FCF 분해.
 6. 동종 업종 peer multiple 외부 인용.
 7. 답변에 *bridge ledger + multiple 시계열 + FCF 분해 + 부채상환 능력* 4 셋 + 반례·한계 필수.

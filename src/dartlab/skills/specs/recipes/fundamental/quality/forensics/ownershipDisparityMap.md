@@ -25,7 +25,7 @@ linkedSkills:
 inputs:
   - Company.panel 주주현황 / 지분율 / 특수관계자
   - Company.panel 계열회사 / 종속기업 / 관계기업
-  - Company.disclosure (지분 변동·합병·분할·지주사 전환)
+  - Company.filings (지분 변동·합병·분할·지주사 전환)
   - scan governance (지분율·사외이사·감사)
 outputs:
   - 지배주주 의결권 vs 배당권 매트릭스
@@ -34,7 +34,7 @@ outputs:
   - 지주사 전환 시 지배권 변화 ledger
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
   - scan
 toolRefs:
   - EngineCall
@@ -106,7 +106,7 @@ visualRefs:
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.disclosure`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 지분 불일치 — falsifier.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.filings`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 지분 불일치 — falsifier.
 
 ```python
 import dartlab
@@ -132,7 +132,7 @@ for topic in ("businessOverview", "riskFactors", "mdna", "notesDetail"):
         pass
 
 try:
-    disclosure = c.disclosure()
+    disclosure = c.filings()
     events = disclosure.head(20).to_dicts() if hasattr(disclosure, "head") else list(disclosure)[:20]
 except Exception:
     events = []

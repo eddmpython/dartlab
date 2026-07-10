@@ -114,7 +114,7 @@ dartlab 은 현재 **DART core 가 stable**. 본 문서는 변경 시 적용할 
 
 | API | 설명 |
 |---|---|
-| `dartlab.search()` | DART 공시 ngram/BM25 검색 — 인덱스 신선도 제한 (일별 delta 자동화 보류). 단일 종목 공시는 `Company.disclosure` / `liveFilings` 권장. |
+| `dartlab.search()` | DART 공시 ngram/BM25 검색 — 인덱스 신선도 제한 (일별 delta 자동화 보류). 단일 종목 공시는 `Company.filings` / `liveFilings` 권장. |
 | `engines.edgar.finance.SCE` | 자본변동표 (BS delta + CF) |
 | `engines.edgar.finance.explore()` | XBRL Fact Explorer (tag 단위 history) |
 | `engines.edgar.finance.listTags()` | XBRL tag 인벤토리 |

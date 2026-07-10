@@ -5,7 +5,7 @@
 """EDGAR 미국 상장기업 탐색. panel 중심 흐름.
 
 공개 호출 계약만 쓴다. `dartlab.{engine}("{axis}", ...)` 와 engines skill 의 capabilityRefs 에
-등재된 `Company.{method}` 뿐이다. 내부 메서드(show · topics · diff · filings)는 계약이 아니므로
+등재된 `Company.{method}` 뿐이다. 내부 메서드(show · topics · diff · disclosure · liveFilings · readFiling)는 계약이 아니므로
 예제에 싣지 않는다. 티커를 넣으면 EDGAR 로, 6자리 숫자를 넣으면 DART 로 라우팅된다.
 
 실행: marimo edit notebooks/marimo/samples/edgarCompany.py
@@ -73,15 +73,8 @@ def _(c):
 
 @app.cell
 def _(c):
-    # 최근 filing 목록 (EDGAR 라이브 조회)
-    c.liveFilings()
-    return
-
-
-@app.cell
-def _(c):
-    # 공시 시계열
-    c.disclosure()
+    # 공시 문서 목록 + 원문 링크
+    c.filings()
     return
 
 

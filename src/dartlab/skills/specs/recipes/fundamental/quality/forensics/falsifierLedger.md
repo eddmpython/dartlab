@@ -22,7 +22,7 @@ outputs:
   - status
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
 toolRefs:
   - EngineCall
   - RunPython

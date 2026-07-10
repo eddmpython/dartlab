@@ -22,8 +22,8 @@ outputs:
   - engine candidate memo
   - visual decision pack
 capabilityRefs:
-  - Company.disclosure
-  - Company.liveFilings
+  - Company.filings
+  - Company.filings
   - Company.gather
   - scan.market
 toolRefs:
@@ -116,7 +116,7 @@ validatedAt: '2026-05-27'
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.disclosure`, `Company.liveFilings`, `Company.gather`, `scan.market`, `scan.insider`, `scan.capital`은 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEventRadarMemo`로 묶는 **RunPython fallback** 절차다.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.filings`, `Company.filings`, `Company.gather`, `scan.market`, `scan.insider`, `scan.capital`은 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEventRadarMemo`로 묶는 **RunPython fallback** 절차다.
 
 ```python
 import dartlab
@@ -142,10 +142,10 @@ def gather_rows(axis, limit=30):
             return []
 
 try:
-    filings = rows(c.liveFilings(days=7), limit=20)
+    filings = rows(c.filings(), limit=20)
 except Exception:
     try:
-        filings = rows(c.disclosure(), limit=50)
+        filings = rows(c.filings(), limit=50)
     except Exception:
         filings = []
 
@@ -187,7 +187,7 @@ eventRadar `finalDecision` row 의 `radarScore` + `decisionStatus` 단정. 예: 
 ### 2. 핵심 근거 수집
 
 - IS/BS/CF 시계열 (Company.panel)
-- 공시 row 50 건 (Company.disclosure)
+- 공시 row 50 건 (Company.filings)
 - 가격·수급·컨센서스 row (Company.gather price/flow/consensus)
 - L1.5 ledger 7 단계 (sourceCoverageAudit → eventInbox → priceFlowReaction → consensusReactionAudit → catalystThesisBridge → premortemCheck → visualDecisionPack)
 

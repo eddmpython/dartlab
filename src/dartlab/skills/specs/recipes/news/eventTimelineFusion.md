@@ -19,8 +19,8 @@ inputs:
 outputs:
   - eventTimelineFusion table
 capabilityRefs:
-  - Company.disclosure
-  - Company.liveFilings
+  - Company.filings
+  - Company.filings
   - Company.gather
 toolRefs:
   - EngineCall
@@ -120,7 +120,7 @@ def parseDate(v):
         return None
 
 try:
-    filings = rows(c.liveFilings(days=30), limit=80)
+    filings = rows(c.filings(), limit=80)
 except Exception:
     filings = []
 news_rows = rows(c.gather("news"), limit=120)
@@ -216,7 +216,7 @@ emit_result(
 
 ### 2. 핵심 근거 수집
 
-- 공시 row 80 건 (Company.liveFilings(30d))
+- 공시 row 80 건 (Company.filings(30d))
 - 뉴스 row 120 건 (Company.gather('news'))
 - 가격 row 120 건 (Company.gather('price'), ±3% noise 필터)
 - 시간 window: ±3 day cluster boundary

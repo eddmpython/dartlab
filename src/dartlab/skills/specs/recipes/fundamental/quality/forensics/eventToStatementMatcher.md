@@ -14,7 +14,7 @@ whenToUse:
   - 정정공시와 재무제표 변화
   - 유상증자 전환사채 재무 압력
 inputs:
-  - Company.disclosure rows
+  - Company.filings rows
   - Company.panel BS IS CF
 outputs:
   - event match rows
@@ -22,7 +22,7 @@ outputs:
   - statement period
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
 toolRefs:
   - EngineCall
   - RunPython
@@ -98,7 +98,7 @@ for topic in ("IS", "BS", "CF"):
         pass
 
 try:
-    disclosure = c.disclosure()
+    disclosure = c.filings()
     events = disclosure.head(20).to_dicts() if hasattr(disclosure, "head") else list(disclosure)[:20]
 except Exception:
     events = []
@@ -127,7 +127,7 @@ emit_result(
 
 ### 2. 핵심 근거 수집
 
-Company.disclosure의 report name/date와 Company.panel 원표 최신 회계기간을 함께 둔다.
+Company.filings의 report name/date와 Company.panel 원표 최신 회계기간을 함께 둔다.
 
 ### 3. 메커니즘 분석
 

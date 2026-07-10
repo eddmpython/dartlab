@@ -32,9 +32,8 @@ outputs:
 capabilityRefs:
   - Company
   - Company.panel
-  - Company.liveFilings
-  - Company.readFiling
-  - Company.disclosure
+  - Company.select
+  - Company.filings
   - compare
   - OpenEdgar
 knowledgeRefs:
@@ -87,7 +86,7 @@ examples:
 procedure:
   - dartlab.Company("AAPL") — Company facade 가 ticker 인식해 EDGAR provider 자동 라우팅.
   - c.panel("BS") / c.panel("IS") — DART 와 동일 topic (XBRL 자동 정규화).
-  - 라이브 공시는 c.liveFilings() (최근), 본문은 c.readFiling(accession).
+  - 공시 목록은 c.filings(). 본문 섹션은 c.panel("Risk") 처럼 섹션 검색.
   - 가격은 dartlab.gather("price", "AAPL") 로 ticker 자동 판정, 거시는 gather("macro", "FEDFUNDS") (FRED).
   - 한글 회사명 검색은 dartlab.searchName("인텔") — resolveEnglishAlias 가 EDGAR 재검색 트리거.
 linkedSkills:
@@ -132,9 +131,7 @@ is_y = c.panel("IS", freq="Y")
 ratios = c.panel("ratios")
 
 # 3. 공시
-filings = c.liveFilings()                  # 최근 라이브 공시 (SEC API)
-disclosure = c.disclosure()                # 전체 시계열
-body = c.readFiling(filings[0]["accession"])
+filings = c.filings()                  # 공시 문서 목록 + 링크
 
 # 3.5. 공시 수평화 보드 — engines.panel 의 US 미러 (DART c.panel 과 동일 표면)
 c.panel                                    # item × 기간 wide (pl.DataFrame) — 잡는 순간 보드
@@ -202,14 +199,9 @@ Company("AAPL").panel("BS", freq="Q")
 ```
 
 ```text
-Company("AAPL").liveFilings()
-→ pl.DataFrame (또는 list[dict])
-   accession · form · filedAt · primaryDocUrl · description
-```
-
-```text
-Company("AAPL").readFiling(accession)
-→ str (10-K 본문 텍스트, 외부 본문 — [EXTERNAL CONTENT START/END] 마커로 감싸짐)
+Company("AAPL").filings()
+→ pl.DataFrame
+   공시 문서 목록 + 원문 링크
 ```
 
 ## evidence 기준

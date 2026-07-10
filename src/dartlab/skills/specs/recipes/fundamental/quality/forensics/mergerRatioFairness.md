@@ -27,7 +27,7 @@ outputs:
   - 외부평가 가정 (할인율·성장률) 확인 ledger
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
 toolRefs:
   - EngineCall
   - RunPython
@@ -101,7 +101,7 @@ visualRefs:
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.disclosure`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 합병비율 공정성 — event-statement 매칭.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.filings`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 합병비율 공정성 — event-statement 매칭.
 
 ```python
 import dartlab
@@ -127,7 +127,7 @@ for topic in ("businessOverview", "riskFactors", "mdna", "notesDetail"):
         pass
 
 try:
-    disclosure = c.disclosure()
+    disclosure = c.filings()
     events = disclosure.head(20).to_dicts() if hasattr(disclosure, "head") else list(disclosure)[:20]
 except Exception:
     events = []
@@ -224,7 +224,7 @@ graph LR
 |---|---|---|
 | **NAV** | 자본총계 / 주식수 | `Company.panel("BS").자본총계` + `Company.panel("BS").주식수` |
 | **시장가** | 합병 직전 1M / 1W / 1D 평균 | `Company.gather("price")` 시계열 |
-| **DCF** | 외부평가 보고서 (할인율·성장률·multiple) | 공시 본문 `Company.disclosure("합병")` |
+| **DCF** | 외부평가 보고서 (할인율·성장률·multiple) | 공시 본문 `Company.filings("합병")` |
 | **PER multiple** | 산업 평균 × EPS | `Company.analysis(valuation, 가치평가).relativeValuation` |
 
 **squeeze-out 신호 정량**:
@@ -291,7 +291,7 @@ graph LR
 1. `ReadSkill` 에서 합병·분할 질문이면 본 recipe 선정.
 2. 합병 양쪽 stockCode 확인 — 사용자 명시 또는 공시 검색.
 3. `Company.panel` BS/IS 최근 5 년 양쪽.
-4. `Company.disclosure("합병")` 공시 본문 — 가능 시.
+4. `Company.filings("합병")` 공시 본문 — 가능 시.
 5. RunPython 으로 NAV/시장가/DCF 3 방식 계산.
 6. squeeze-out 신호 점수 산출.
 7. 답변에 *3 방식 비교 표 + 외부평가 가정 ledger + 자기주식 시계열* 3 셋 + 반례·한계 필수.

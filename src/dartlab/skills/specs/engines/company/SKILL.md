@@ -34,6 +34,7 @@ capabilityRefs:
   - Company.panel
   - Company.select
   - Company.trace
+  - Company.filings
   - Company.analysis
   - Company.credit
   - Company.gather
@@ -185,7 +186,7 @@ Company 생성 시 target과 market/provider를 확정한다. 이후 `show/selec
 | method | 담당 | 대표 호출 |
 | --- | --- | --- |
 | search/listing/resolve/codeName/status | 기업 식별/목록 | `dartlab.Company.search("삼성전자")` |
-| filings/disclosure/liveFilings/readFiling | 공시 목록/본문 | `c.disclosure()` |
+| filings/disclosure/liveFilings/readFiling | 공시 목록/본문 | `c.filings()` |
 | rawFinance/rawReport | raw parquet 접근 | `c.rawFinance()` |
 | panel/select/trace/diff | 원자료 조회/추적/비교 | `c.panel("BS")` |
 | keywordTrend/news/watch | 텍스트/뉴스/감시 | `c.news()` |
@@ -665,7 +666,7 @@ print(f"{result.corpName}: {result.allRate:.1%}")  # 매칭률
 import dartlab
 
 c = dartlab.Company("005930")
-c.topics                         # 사용 가능한 topic catalog
+c.panel.shape                    # 항목 x 기간 격자 크기
 c.panel("BS")                    # 단일 topic + source priority
 c.trace("BS")                    # 어떤 source 가 선택됐나
 c.panel("companyOverview")       # 특정 topic 의 실제 데이터
@@ -692,7 +693,7 @@ df = df.filter(pl.col("topic") == "companyOverview")
 
 ## 호출 동작
 
-옛 section 공개 facade 는 폐기됐다. 사용자는 `c.topics` 로 topic catalog 를 확인하고 `c.panel(topic)` 으로 진입한다. 내부 panelTextWide view 는 각 행이 한 topic 블록, 각 열이 한 기간인 검증/파이프라인용 구조다.
+옛 section 공개 facade 는 폐기됐다. 사용자는 `c.panel` 로 격자 전체를 보고 `c.panel(topic)` 으로 진입한다. 내부 panelTextWide view 는 각 행이 한 topic 블록, 각 열이 한 기간인 검증/파이프라인용 구조다.
 
 `c.panel(topic)` 는 source priority 를 적용한다:
 
@@ -747,7 +748,7 @@ EDGAR 도 같은 구조. topic 이름만 SEC form 규약 (`10-K::item1Business`,
 ## 기본 실행 순서
 
 1. `dartlab.Company(code)` 로 회사 객체 생성.
-2. `c.topics` 로 사용 가능한 topic 확인.
+2. 정식 topic 은 IS · BS · CF · CIS · SCE · ratios. 주석은 섹션명 검색.
 3. 분석할 topic 선택 → `c.panel(topic)` 으로 본문 확인.
 4. 기간 비교가 필요하면 `c.diff()` · `c.diff(topic)`.
 5. source 가 의심되면 `c.trace(topic)` 으로 검증.
@@ -770,7 +771,7 @@ EDGAR 도 같은 구조. topic 이름만 SEC form 규약 (`10-K::item1Business`,
 ## 절차
 
 - ticker를 식별하고 EDGAR Company 경로가 가능한지 확인한다.
-- EDGAR prefetched finance/docs snapshot 또는 OpenEdgar/Company.liveFilings 경로가 있는지 먼저 확인한다. 없으면 데이터 부재를 한계로 좁혀 말하고 DART 전용 경로로 대체하지 않는다.
+- EDGAR prefetched finance/docs snapshot 또는 OpenEdgar/Company.filings 경로가 있는지 먼저 확인한다. 없으면 데이터 부재를 한계로 좁혀 말하고 DART 전용 경로로 대체하지 않는다.
 - Company.analysis, Company.panel, Company.filings/readFiling capability를 찾아 재무와 공시 근거를 분리한다.
 - 재무 숫자는 EDGAR finance table/value ref가 있을 때만 말한다. 숫자 claim은 period, metric, value가 들어간 supporting ref에 직접 묶는다.
 - filing claim은 접수일, form, 제목 또는 본문 ref에 묶는다.

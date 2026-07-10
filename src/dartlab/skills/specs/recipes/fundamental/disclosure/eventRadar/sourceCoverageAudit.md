@@ -17,8 +17,8 @@ inputs:
 outputs:
   - sourceCoverageAudit table
 capabilityRefs:
-  - Company.disclosure
-  - Company.liveFilings
+  - Company.filings
+  - Company.filings
   - Company.gather
   - scan.market
 toolRefs:
@@ -112,7 +112,7 @@ def gather_rows(axis, limit=30):
             return []
 
 try:
-    filings = rows(c.disclosure(), limit=50)
+    filings = rows(c.filings(), limit=50)
 except Exception:
     filings = []
 
@@ -147,7 +147,7 @@ emit_result(
 
 ### 2. 핵심 근거 수집
 
-- Company.disclosure() filings (limit 50)
+- Company.filings() filings (limit 50)
 - Company.gather() × 8 axis (news / price / flow / insiderTrading / ownership / dividends / splits / consensus)
 - 각 source rowCount + latestDate 추출
 - buildEventRadarMemo() → sourceCoverageAudit table

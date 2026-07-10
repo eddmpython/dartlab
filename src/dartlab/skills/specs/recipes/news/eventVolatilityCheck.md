@@ -149,7 +149,7 @@ emit_result(
 
 ### 2. 핵심 근거 수집
 
-- 이벤트 시점 (Company.disclosure 또는 liveFilings 의 rcept_dt)
+- 이벤트 시점 (Company.filings 또는 liveFilings 의 rcept_dt)
 - 가격 row ±20거래일 (Company.gather('price') high/low/close)
 - ATR(N) = N일 평균 True Range = avg(max(H-L, |H-prevC|, |L-prevC|))
 

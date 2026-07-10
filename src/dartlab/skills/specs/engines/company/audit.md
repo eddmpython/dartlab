@@ -131,5 +131,5 @@ dartlab.scan("audit")
 - 감사 의견 (적정/한정/부적정/의견거절) 의 4 분류는 한국공인회계사회 표준 SSOT. 영문 unqualified/qualified/adverse/disclaimer 와 1:1 매핑 가능하나 자유 번역 금지.
 - KAM 본문은 한국어 원문 보존 (`wrapExternalInResult` untrusted marker 자동).
 - goingConcernFlag = True 만으로 부도 예측 결론 X — Company.credit 의 Altman Z-score · KMV 모델 추가 호출 필수.
-- 외부감사인 변경 (직전 5 년 내 2 회+) = audit shopping 신호 — Company.disclosure(category="감사인변경") 본문 추가 확인.
+- 외부감사인 변경 (직전 5 년 내 2 회+) = audit shopping 신호 — Company.filings(category="감사인변경") 본문 추가 확인.
 - 감사 파서(providers/dart) 변경 시 본 skill 의 반환 형태 동기화.

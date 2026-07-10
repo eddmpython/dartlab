@@ -25,7 +25,7 @@ linkedSkills:
   - engines.company
   - engines.scan
 inputs:
-  - Company.disclosure (공시 본문·timestamp)
+  - Company.filings (공시 본문·timestamp)
   - Company.panel 주요사항보고 / 자율공시 시계열
   - scan disclosureRisk (정정·지연·반복 패턴 횡단)
   - Company.panel IS / BS (공시-실적 연결)
@@ -36,7 +36,7 @@ outputs:
   - 어닝 서프라이즈 game 신호 (실적 발표 직전 비공식 가이던스 빈도)
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
   - scan
 toolRefs:
   - EngineCall
@@ -107,7 +107,7 @@ visualRefs:
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.disclosure`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 공시 timing 이상 — event-statement 매칭.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.filings`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 공시 timing 이상 — event-statement 매칭.
 
 ```python
 import dartlab
@@ -133,7 +133,7 @@ for topic in ("businessOverview", "riskFactors", "mdna", "notesDetail"):
         pass
 
 try:
-    disclosure = c.disclosure()
+    disclosure = c.filings()
     events = disclosure.head(20).to_dicts() if hasattr(disclosure, "head") else list(disclosure)[:20]
 except Exception:
     events = []
@@ -297,7 +297,7 @@ graph LR
 
 1. `ReadSkill` 에서 공시 timing 질문이면 본 recipe 선정.
 2. target stockCode 확인.
-3. `Company.disclosure(window="3Y")` 공시 시계열.
+3. `Company.filings(window="3Y")` 공시 시계열.
 4. `Company.panel("IS", freq="Q")` 분기 실적 — 어닝 시즌 timing 비교.
 5. `scan("disclosureRisk")` 횡단 비교 — 동종 업종 평균 대비.
 6. RunPython 으로 4 패턴 신호 점수 계산.

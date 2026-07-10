@@ -18,8 +18,8 @@ inputs:
 outputs:
   - disclosureNewsCrosscheck table
 capabilityRefs:
-  - Company.disclosure
-  - Company.liveFilings
+  - Company.filings
+  - Company.filings
   - Company.gather
 toolRefs:
   - EngineCall
@@ -120,10 +120,10 @@ def parseDate(v):
         return None
 
 try:
-    filings = rows(c.liveFilings(days=14), limit=60)
+    filings = rows(c.filings(), limit=60)
 except Exception:
     try:
-        filings = rows(c.disclosure(), limit=60)
+        filings = rows(c.filings(), limit=60)
     except Exception:
         filings = []
 
@@ -230,7 +230,7 @@ DART 공시 ↔ 뉴스 정합성을 *matched / dartOnly / newsOnly 3 분류* + *
 
 ### 2. 핵심 근거 수집
 
-- DART 공시 row 60 건 (Company.liveFilings(14d) 또는 Company.disclosure fallback)
+- DART 공시 row 60 건 (Company.filings(14d) 또는 Company.filings fallback)
 - 뉴스 row 80 건 (Company.gather('news'))
 - 이벤트 키워드 17 종 (유상증자·무상증자·전환사채·신주인수권부사채·감자·합병·분할·지분·취득·처분·배당·실적·공시·정정·주식분할·자사주)
 

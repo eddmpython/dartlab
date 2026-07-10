@@ -7,7 +7,7 @@ scope: builtin
 status: curated
 graphTier: L1.5
 cluster: incubator.eventRadar
-purpose: Company.disclosure/liveFilings와 gather.news 원자료의 제목·본문 키워드만으로 단기 이벤트 inbox를 만드는 L1/L1.5 절차다. 트리거 — 'Event Radar Event Inbox', 'event inbox', 'eventInbox'.
+purpose: Company.filings/liveFilings와 gather.news 원자료의 제목·본문 키워드만으로 단기 이벤트 inbox를 만드는 L1/L1.5 절차다. 트리거 — 'Event Radar Event Inbox', 'event inbox', 'eventInbox'.
 whenToUse:
   - event inbox
   - 공시 뉴스 촉매
@@ -18,8 +18,8 @@ inputs:
 outputs:
   - eventInbox table
 capabilityRefs:
-  - Company.disclosure
-  - Company.liveFilings
+  - Company.filings
+  - Company.filings
   - Company.gather
 toolRefs:
   - EngineCall
@@ -101,10 +101,10 @@ def rows(value, limit=30):
     return []
 
 try:
-    filings = rows(c.liveFilings(days=7), limit=20)
+    filings = rows(c.filings(), limit=20)
 except Exception:
     try:
-        filings = rows(c.disclosure(), limit=50)
+        filings = rows(c.filings(), limit=50)
     except Exception:
         filings = []
 
@@ -137,7 +137,7 @@ emit_result(
 
 ### 2. 핵심 근거 수집
 
-- Company.liveFilings(days=7) 우선 (없으면 disclosure() fallback)
+- Company.filings(days=7) 우선 (없으면 disclosure() fallback)
 - Company.gather('news') latest 20 row
 - buildEventRadarMemo() → 키워드 매칭 7 category 분류
 - 각 row date / source (filing/news) / title / category / status

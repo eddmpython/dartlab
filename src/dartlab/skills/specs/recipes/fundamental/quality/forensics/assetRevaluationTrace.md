@@ -28,7 +28,7 @@ inputs:
   - Company.panel BS (유형자산·재평가잉여금·자본 시계열)
   - Company.panel CIS (기타포괄손익 — 재평가잉여금 증감)
   - Company.panel 주석 (감정평가·재평가 방법)
-  - Company.disclosure (자산재평가 결의 공시)
+  - Company.filings (자산재평가 결의 공시)
   - Company.panel IS (재평가 후 ROE·영업이익 회귀)
 outputs:
   - 재평가 시점 ledger
@@ -38,7 +38,7 @@ outputs:
   - 감정평가 가정 (평가법인·평가일·방법) ledger
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
 toolRefs:
   - EngineCall
   - RunPython
@@ -110,7 +110,7 @@ visualRefs:
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.disclosure`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 자산 재평가 — 계정 추적 ledger.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.filings`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 자산 재평가 — 계정 추적 ledger.
 
 ```python
 import dartlab
@@ -136,7 +136,7 @@ for topic in ("businessOverview", "riskFactors", "mdna", "notesDetail"):
         pass
 
 try:
-    disclosure = c.disclosure()
+    disclosure = c.filings()
     events = disclosure.head(20).to_dicts() if hasattr(disclosure, "head") else list(disclosure)[:20]
 except Exception:
     events = []
@@ -314,7 +314,7 @@ graph LR
 2. target stockCode 확인.
 3. `Company.panel("BS", freq="Y")` 유형자산·재평가잉여금 시계열.
 4. `Company.panel("CIS", freq="Y")` 기타포괄손익 변동.
-5. `Company.disclosure("자산재평가")` 결의 timestamp + 본문.
+5. `Company.filings("자산재평가")` 결의 timestamp + 본문.
 6. `Company.panel("유형자산")` 또는 사업보고서 감정평가 주석 fetch.
 7. RunPython 으로 비율 분자/분모 효과 분해 + 시계열 회귀.
 8. 답변에 *시점 ledger + 증감 시계열 + 비율 변동 + 의도 분류 + 감정평가 가정* 5 셋 + 반례·한계 필수.

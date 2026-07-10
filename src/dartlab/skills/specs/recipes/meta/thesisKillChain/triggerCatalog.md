@@ -19,7 +19,7 @@ inputs:
 outputs:
   - triggerCatalog table
 capabilityRefs:
-  - Company.disclosure
+  - Company.filings
   - scan.market
 toolRefs:
   - EngineCall
@@ -93,7 +93,7 @@ target = "005930"
 thesis = "매출 성장과 현금 전환이 유지되어 valuation discount가 해소된다"
 c = dartlab.Company(target)
 try:
-    filings = c.disclosure().head(50).to_dicts()
+    filings = c.filings().head(50).to_dicts()
 except Exception:
     filings = []
 
@@ -116,7 +116,7 @@ triggerId × source 별 trigger catalog 단정. 예: "catalog 8 row — T1=opmCo
 ### 2. 핵심 근거 수집
 
 - fragilityMap watch/risk metric → triggerId 변환
-- Company.disclosure() filings risk keyword (구조조정 / 감액 / 정정신고 등)
+- Company.filings() filings risk keyword (구조조정 / 감액 / 정정신고 등)
 - scan primitive score (peer 동조 / 시장 stress)
 - buildThesisKillChainMemo() → triggerCatalog table
 

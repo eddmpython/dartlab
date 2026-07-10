@@ -65,9 +65,9 @@ SLASH_COMMANDS = {
 def handle_slash(cmd: str) -> dict:
     type_, target = SLASH_COMMANDS.get(cmd, (None, None))
     if type_ == "recipe":
-        return dartlab.execute_recipe(target)
+        return dartlab.ask(target)
     elif type_ == "engine":
-        return dartlab.execute_engine(target)
+        return dartlab.ask(target)
 ```
 
 ## 강행 룰

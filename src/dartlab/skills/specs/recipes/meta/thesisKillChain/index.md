@@ -8,7 +8,7 @@ status: curated
 entryHint: true
 graphTier: L1.5
 cluster: incubator.thesisKillChain
-purpose: 사용자의 투자 thesis를 지지하는 대신 일부러 깨보는 pre-mortem 시나리오 스킬팩 진입점이다. Company.panel 원표, Company.disclosure, Company.gather, scan primitive만으로 가정, 취약 지표, 촉발 조건, 전파 경로, tripwire, 반증 조건을 만든다. 트리거 - 'thesis kill chain', '프리모템', '투자 논리 깨보기'.
+purpose: 사용자의 투자 thesis를 지지하는 대신 일부러 깨보는 pre-mortem 시나리오 스킬팩 진입점이다. Company.panel 원표, Company.filings, Company.gather, scan primitive만으로 가정, 취약 지표, 촉발 조건, 전파 경로, tripwire, 반증 조건을 만든다. 트리거 - 'thesis kill chain', '프리모템', '투자 논리 깨보기'.
 whenToUse:
   - thesis kill chain
   - 프리모템
@@ -20,7 +20,7 @@ inputs:
   - 기업 코드 또는 ticker
   - 사용자 thesis 또는 명시 assumptions
   - Company.panel 원표 IS BS CF
-  - Company.disclosure filing rows
+  - Company.filings filing rows
   - Company.gather price flow consensus rows
   - optional scan primitive rows
 outputs:
@@ -37,7 +37,7 @@ outputs:
   - premortem quality gate
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
   - Company.gather
   - scan.market
 toolRefs:
@@ -144,7 +144,7 @@ validatedAt: '2026-05-27'
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel`, `Company.disclosure`, `Company.gather`, `scan.market`, `scan.audit`, `scan.quality`는 엔진 surface로 호출한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildThesisKillChainMemo`로 묶는 **RunPython fallback** 절차다.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel`, `Company.filings`, `Company.gather`, `scan.market`, `scan.audit`, `scan.quality`는 엔진 surface로 호출한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildThesisKillChainMemo`로 묶는 **RunPython fallback** 절차다.
 
 ```python
 import dartlab
@@ -180,7 +180,7 @@ for topic in ("IS", "BS", "CF"):
         pass
 
 try:
-    filings = rows(c.disclosure(), limit=50)
+    filings = rows(c.filings(), limit=50)
 except Exception:
     filings = []
 

@@ -26,7 +26,7 @@ linkedSkills:
 inputs:
   - Company.panel treasury / 자기주식 시계열
   - Company.panel BS (자본·자기주식 잔액)
-  - Company.disclosure (자사주 취득·처분·소각·합병)
+  - Company.filings (자사주 취득·처분·소각·합병)
   - Company.panel IS (EPS·ROE 동행 효과)
   - scan capital (자사주 횡단 패턴)
 outputs:
@@ -36,7 +36,7 @@ outputs:
   - 동행 사건 timing (경영권 분쟁·합병·지주사 전환)
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
   - scan
 toolRefs:
   - EngineCall
@@ -107,7 +107,7 @@ visualRefs:
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.disclosure`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 자기주식 사용 — event-statement.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.filings`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 자기주식 사용 — event-statement.
 
 ```python
 import dartlab
@@ -133,7 +133,7 @@ for topic in ("businessOverview", "riskFactors", "mdna", "notesDetail"):
         pass
 
 try:
-    disclosure = c.disclosure()
+    disclosure = c.filings()
     events = disclosure.head(20).to_dicts() if hasattr(disclosure, "head") else list(disclosure)[:20]
 except Exception:
     events = []
@@ -307,7 +307,7 @@ graph LR
 2. target stockCode 확인.
 3. `Company.panel("자기주식")` 또는 `Company.panel("treasury")` 변동 시계열.
 4. `Company.panel("BS", freq="Q")` + `Company.panel("IS", freq="Q")` 자본·EPS 동행.
-5. `Company.disclosure("자기주식")` 거래 timestamp + 처분 상대방.
+5. `Company.filings("자기주식")` 거래 timestamp + 처분 상대방.
 6. `scan("capital")` 횡단 비교.
 7. RunPython 으로 5 의도 매트릭스 + EPS 분해 계산.
 8. 답변에 *자사주 변동 + 의도 매트릭스 + EPS 분해 + 동행 사건 timing* 4 셋 + 반례·한계 필수.

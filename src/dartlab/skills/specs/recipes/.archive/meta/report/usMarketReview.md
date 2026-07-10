@@ -88,7 +88,7 @@ import dartlab
 c = dartlab.Company("AAPL")
 
 filings = c.filings()  # EDGAR 10-K/10-Q 목록
-recent = c.disclosure(days=90)
+recent = c.filings()
 macro = dartlab.macro()
 qverdict = c.quant("판단")
 ```

@@ -29,7 +29,7 @@ inputs:
   - Company.panel 주석 (회계정책·정책 변경 본문)
   - Company.panel IS·BS·CF (변경 전후 비율 비교)
   - Company.panel CIS (전기 재작성 효과)
-  - Company.disclosure (사업보고서 회계정책 섹션·정정공시)
+  - Company.filings (사업보고서 회계정책 섹션·정정공시)
   - scan disclosureRisk (정정·재작성 패턴 횡단)
 outputs:
   - 정책 변경 ledger (정책 vs 추정 vs 오류 분류)
@@ -38,7 +38,7 @@ outputs:
   - 정책 변경 의도 매트릭스 (실적 평탄화·이익 부풀리기·부채비율 개선·법규 준수)
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
   - scan
 toolRefs:
   - EngineCall
@@ -112,7 +112,7 @@ visualRefs:
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.disclosure`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 회계정책 변경 — 주석 본문 신호 추출.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.filings`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 회계정책 변경 — 주석 본문 신호 추출.
 
 ```python
 import dartlab
@@ -138,7 +138,7 @@ for topic in ("businessOverview", "riskFactors", "mdna", "notesDetail"):
         pass
 
 try:
-    disclosure = c.disclosure()
+    disclosure = c.filings()
     events = disclosure.head(20).to_dicts() if hasattr(disclosure, "head") else list(disclosure)[:20]
 except Exception:
     events = []
@@ -322,7 +322,7 @@ graph LR
 2. target stockCode 확인.
 3. `Company.panel("IS","BS","CF","CIS",freq="Y")` 시계열.
 4. `Company.panel("회계정책")` 또는 사업보고서 주석 fetch.
-5. `Company.disclosure("회계정책","정정")` 변경 timestamp.
+5. `Company.filings("회계정책","정정")` 변경 timestamp.
 6. `scan("disclosureRisk")` 횡단 비교.
 7. RunPython 으로 비율 분자/분모 효과 분해 + 시계열 회귀.
 8. 답변에 *정책 변경 ledger + 비율 변동 + IFRS 도입 효과 + 의도 매트릭스* 4 셋 + 반례·한계 필수.

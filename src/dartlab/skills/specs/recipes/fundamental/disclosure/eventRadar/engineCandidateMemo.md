@@ -17,7 +17,7 @@ inputs:
 outputs:
   - engineCandidateMemo table
 capabilityRefs:
-  - Company.disclosure
+  - Company.filings
   - Company.gather
   - scan.market
 toolRefs:
@@ -102,7 +102,7 @@ def rows(value, limit=30):
     return []
 
 try:
-    filings = rows(c.disclosure(), limit=50)
+    filings = rows(c.filings(), limit=50)
 except Exception:
     filings = []
 
@@ -141,7 +141,7 @@ emit_result(
 
 ### 2. 핵심 근거 수집
 
-- Company.disclosure() filings + gather('price') + gather('consensus') 3 source
+- Company.filings() filings + gather('price') + gather('consensus') 3 source
 - buildEventRadarMemo() → 6 signal × (status + recommendedEngineOwner + promotionGate + keepAsSkillAfterPromotion)
 - 각 signal 별 *recipe 검산 경로 유지* 명시 (keepAsSkillAfterPromotion=True)
 
@@ -150,7 +150,7 @@ emit_result(
 ```
 6 signal 후보 → status 분류 + promotion 조건
    signalId               status        promotionGate                    engineOwner
-   eventInbox             ok/watch      ledger 통과 ≥ 4 회                Company.disclosure
+   eventInbox             ok/watch      ledger 통과 ≥ 4 회                Company.filings
    priceFlowReaction      ok            falsifier resolved 비율 ≥ 60%    Company.gather(price/flow)
    insiderOwnershipSignal ok/missing    insider rows ≥ 12 회 (12M+)      Company.gather(insider)
    capitalActionMonitor   ok            action 추세 12M+                  Company.gather(dividend)

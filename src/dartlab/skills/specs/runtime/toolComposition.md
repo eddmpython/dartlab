@@ -53,7 +53,7 @@ linkedSkills:
 
 ### 2. 의존 chain (sequential 강제)
 
-- `EngineCall("Company.panel")` → `EngineCall("Company.readFiling")` (rcept_no 의존).
+- `EngineCall("Company.panel")` → `EngineCall("Company.filings")` (rcept_no 의존).
 - `gather()` → `RunPython` (raw 데이터 변환).
 - `EngineCall` → `EvidenceGate` (결과 검증 강제).
 

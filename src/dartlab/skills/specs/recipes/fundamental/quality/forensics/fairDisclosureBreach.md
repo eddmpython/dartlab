@@ -25,7 +25,7 @@ linkedSkills:
   - recipes.fundamental.quality.forensics.controllingPowerJudgment
   - engines.company
 inputs:
-  - Company.disclosure (공시 timestamp·자율공시·의무공시)
+  - Company.filings (공시 timestamp·자율공시·의무공시)
   - Company.panel 임원거래 / 특수관계자 거래
   - Company.panel IS·BS (잠정실적 vs 확정실적 차이)
   - 외부 출처 (보고서·언론 — webRef 필요)
@@ -37,7 +37,7 @@ outputs:
   - 외부 보도·애널리스트 보고서 timing 동행 (외부 ref)
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
 toolRefs:
   - EngineCall
   - RunPython
@@ -111,7 +111,7 @@ visualRefs:
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.disclosure`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 공정공시 위반 — event-statement 매칭.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.filings`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 공정공시 위반 — event-statement 매칭.
 
 ```python
 import dartlab
@@ -137,7 +137,7 @@ for topic in ("businessOverview", "riskFactors", "mdna", "notesDetail"):
         pass
 
 try:
-    disclosure = c.disclosure()
+    disclosure = c.filings()
     events = disclosure.head(20).to_dicts() if hasattr(disclosure, "head") else list(disclosure)[:20]
 except Exception:
     events = []
@@ -311,7 +311,7 @@ graph LR
 
 1. `ReadSkill` 에서 내부정보·공정공시·사전 매매 질문이면 본 recipe 선정.
 2. target stockCode 확인.
-3. `Company.disclosure(window="3Y")` 공시 시계열 + 임원거래·잠정실적·확정실적 분리.
+3. `Company.filings(window="3Y")` 공시 시계열 + 임원거래·잠정실적·확정실적 분리.
 4. `Company.panel("임원거래")` 또는 `Company.panel("특수관계자거래")` 본문.
 5. `Company.panel("IS", freq="Q")` 잠정 vs 확정 분기 비교.
 6. 외부 보도 timing 필요 시 `WebSearch` 호출 (webRef 마커 + 1 차 검증 의무).

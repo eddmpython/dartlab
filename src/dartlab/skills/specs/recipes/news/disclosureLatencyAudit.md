@@ -183,7 +183,7 @@ emit_result(
 
 ### 2. 핵심 근거 수집
 
-- 공시 row (Company.disclosure 시각 정보)
+- 공시 row (Company.filings 시각 정보)
 - 뉴스 row (Company.gather('news') 시각 정보)
 - 48 시간 window 안 첫 뉴스 1 건 best-match
 

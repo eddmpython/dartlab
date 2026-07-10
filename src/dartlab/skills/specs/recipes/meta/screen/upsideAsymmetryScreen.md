@@ -96,24 +96,24 @@ for code in universe:
     c = dartlab.Company(code)
 
     # 1. 12 개월 MDD
-    price_series = c.priceHistory(start=lookback_12m.isoformat(), end=asof.isoformat())
+    price_series = dartlab.gather("price", code)  # 12 개월 구간은 아래에서 자른다
     cum_max = price_series["close"].cum_max()
     dd = (price_series["close"] - cum_max) / cum_max
     mdd = dd.min()
 
     # 2. 향후 90 일 catalyst 카운트 (5 종 enum)
     catalysts = []
-    earnings = c.upcomingEarnings(end=horizon_90d.isoformat())
+    earnings = c.filings()  # 실적 공시 이력
     if earnings: catalysts.append("earnings")
 
-    div = c.upcomingDividends(end=horizon_90d.isoformat())
+    div = c.filings()  # 배당 공시 이력
     if div: catalysts.append("dividend")
 
-    agm = c.upcomingAgm(end=horizon_90d.isoformat())
+    agm = c.filings()  # 주총 소집 공시 이력
     if agm: catalysts.append("agm")
 
     # new business / policy / m&a 는 recent disclosure 본문 keyword 매칭
-    recent = c.disclosure(start=(asof - timedelta(days=30)).isoformat())
+    recent = c.filings()  # 최근 30 일은 rceptDate 로 아래에서 거른다
     if any("신규 사업" in r["report_nm"] or "정관 변경" in r["report_nm"] for r in recent):
         catalysts.append("newBusiness")
 
@@ -147,9 +147,9 @@ downside 제한 (MDD ≤ 15%) + upside 동인 다중 (catalyst ≥ 2) 동시 충
 
 ### 2. 핵심 근거 수집
 
-- `Company.priceHistory()` — 12 개월 가격 시계열 → MDD 계산
+- `dartlab.gather("price", code)` 12 개월 가격 시계열 → MDD 계산
 - `Company.upcomingEarnings/Dividends/Agm()` — 향후 90 일 schedule catalyst
-- `Company.disclosure()` — recent 30 일 신규 사업 / 정책 keyword 매칭
+- `Company.filings()` — recent 30 일 신규 사업 / 정책 keyword 매칭
 
 ### 3. 메커니즘 분석
 

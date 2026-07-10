@@ -108,7 +108,7 @@ except Exception:
     price_rows = []
 
 try:
-    filings = rows(c.disclosure(), limit=50)
+    filings = rows(c.filings(), limit=50)
 except Exception:
     filings = []
 
@@ -137,7 +137,7 @@ emit_result(
 ### 2. 핵심 근거 수집
 
 - Company.gather('price') latest 40 row — priceChart binding
-- Company.disclosure() filings — kpiRibbon + evidenceCoverage binding
+- Company.filings() filings — kpiRibbon + evidenceCoverage binding
 - buildEventRadarMemo() → visualDecisionPack table (4 viz × status + requiredBinding)
 - viz status (engines.viz.{name}) observed 상태 확인
 

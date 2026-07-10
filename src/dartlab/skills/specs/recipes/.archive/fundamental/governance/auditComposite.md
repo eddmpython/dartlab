@@ -19,8 +19,8 @@ outputs:
   - 한계
 capabilityRefs:
   - Company.analysis
-  - Company.disclosure
-  - Company.readFiling
+  - Company.filings
+  - Company.filings
 toolRefs:
   - search_reference
   - EngineCall

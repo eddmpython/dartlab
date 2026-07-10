@@ -145,7 +145,7 @@ Walk-forward 검증. 과거 데이터로 다음 분기 매출 방향 (상승 / �
 
 ## Search — 공시 원문 검색 (beta)
 
-> 인덱스 신선도 한계 — 매일 증분 자동화 미완성. 단일 종목 공시는 `Company.disclosure` / `liveFilings` 권장.
+> 인덱스 신선도 한계 — 매일 증분 자동화 미완성. 단일 종목 공시는 `Company.filings` / `liveFilings` 권장.
 
 ### 방법
 

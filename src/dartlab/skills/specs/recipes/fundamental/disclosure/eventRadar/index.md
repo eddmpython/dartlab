@@ -8,7 +8,7 @@ status: curated
 entryHint: true
 graphTier: L1.5
 cluster: incubator.eventRadar
-purpose: Company.disclosure, liveFilings, gather 원자료, scan primitive, observed viz skill만으로 단기 이벤트와 시장 반응을 묶어 촉매 후보를 찾는 L1/L1.5 스킬팩 진입점이다. 트리거 - '이벤트 레이더', '촉매 체크', '공시와 주가 반응'.
+purpose: Company.filings, liveFilings, gather 원자료, scan primitive, observed viz skill만으로 단기 이벤트와 시장 반응을 묶어 촉매 후보를 찾는 L1/L1.5 스킬팩 진입점이다. 트리거 - '이벤트 레이더', '촉매 체크', '공시와 주가 반응'.
 whenToUse:
   - 이벤트 레이더
   - 촉매 체크
@@ -19,7 +19,7 @@ whenToUse:
   - consensus drift watch
 inputs:
   - 기업 코드 또는 ticker
-  - Company.disclosure 또는 Company.liveFilings row
+  - Company.filings 또는 Company.filings row
   - Company.gather price flow news dividends splits consensus row
   - optional scan primitive row
 outputs:
@@ -33,8 +33,8 @@ outputs:
   - engine candidate memo
   - visual decision pack
 capabilityRefs:
-  - Company.disclosure
-  - Company.liveFilings
+  - Company.filings
+  - Company.filings
   - Company.gather
   - scan.market
 toolRefs:
@@ -127,7 +127,7 @@ examples:
   - 공시와 주가 반응만으로 단기 이벤트 봐줘
   - analysis 없이 catalyst candidate 정리
 audiences:
-  llm: Company.disclosure/liveFilings/gather와 scan primitive는 EngineCall로 먼저 호출하고, buildEventRadarMemo는 RunPython fallback으로만 실행한다.
+  llm: Company.filings/liveFilings/gather와 scan primitive는 EngineCall로 먼저 호출하고, buildEventRadarMemo는 RunPython fallback으로만 실행한다.
   agent: ReadSkill 후 capabilityRefs를 엔진 호출로 확보한다. helper 결과에는 tableRef/valueRef/dateRef/sourceRef를 붙이고 L2 결론으로 승격하지 않는다.
   human: 새 분석 엔진을 만들기 전, 원자료 이벤트와 시장 반응이 반복 가능한지 확인하는 촉매 인큐베이터다.
 humanIntro: "이 팩은 복잡한 엔진 호출법을 여러 스킬로 쪼개는 대신, 이미 있는 L1/L1.5 표면을 조합해 촉매 후보와 반증 조건을 빠르게 남긴다. 유효한 축은 나중에 엔진으로 환류하되 recipe는 원자료 검산 경로로 유지한다."
@@ -137,7 +137,7 @@ validatedAt: '2026-05-27'
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.disclosure`, `Company.liveFilings`, `Company.gather`, `scan.market`, `scan.insider`, `scan.capital`은 엔진 surface로 호출한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEventRadarMemo`로 묶는 **RunPython fallback** 절차다.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.filings`, `Company.filings`, `Company.gather`, `scan.market`, `scan.insider`, `scan.capital`은 엔진 surface로 호출한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEventRadarMemo`로 묶는 **RunPython fallback** 절차다.
 
 ```python
 import dartlab
@@ -163,14 +163,14 @@ def gather_rows(axis, limit=30):
             return []
 
 try:
-    filings = rows(c.disclosure(days=45), limit=50)
+    filings = rows(c.filings(), limit=50)
 except TypeError:
-    filings = rows(c.disclosure(), limit=50)
+    filings = rows(c.filings(), limit=50)
 except Exception:
     filings = []
 
 try:
-    live_filings = rows(c.liveFilings(days=7), limit=20)
+    live_filings = rows(c.filings(), limit=20)
 except Exception:
     live_filings = []
 

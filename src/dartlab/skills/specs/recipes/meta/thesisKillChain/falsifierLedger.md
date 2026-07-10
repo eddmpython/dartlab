@@ -19,7 +19,7 @@ outputs:
   - falsifierLedger table
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
   - Company.gather
 toolRefs:
   - EngineCall

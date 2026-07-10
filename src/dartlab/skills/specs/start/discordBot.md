@@ -53,7 +53,7 @@ Discord 측 slash command 등록 → dartlab API 호출.
 @bot.event
 async def on_message(message):
     if bot.user.mentioned_in(message):
-        result = await dartlab.chat(message.content)
+        result = dartlab.ask(message.content)
         await message.channel.send(result.text, embeds=result.embeds)
 ```
 
@@ -62,7 +62,7 @@ async def on_message(message):
 ```python
 @tasks.loop(hours=24)
 async def daily_morning_note():
-    result = dartlab.execute_recipe("recipes.meta.report.dailyMorningNote")
+    result = dartlab.ask("오늘 아침 브리핑")
     await channel.send(embed=embed_from_result(result))
 ```
 

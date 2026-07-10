@@ -77,7 +77,7 @@ c = dartlab.Company("005930")
 
 insider = dartlab.scan("insider")
 capital = dartlab.scan("capital")
-events = c.disclosure(days=180, type="자기주식")
+events = c.filings()
 holders = c.show("majorHolder")
 ```
 

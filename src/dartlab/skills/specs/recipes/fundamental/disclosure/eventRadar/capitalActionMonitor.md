@@ -19,7 +19,7 @@ inputs:
 outputs:
   - capitalActionMonitor table
 capabilityRefs:
-  - Company.disclosure
+  - Company.filings
   - Company.gather
 toolRefs:
   - EngineCall
@@ -103,7 +103,7 @@ def rows(value, limit=20):
     return []
 
 try:
-    filings = rows(c.disclosure(), limit=50)
+    filings = rows(c.filings(), limit=50)
 except Exception:
     filings = []
 
@@ -142,7 +142,7 @@ dividend / split / capitalAction action table 단정. 예: "최근 12개월 capi
 
 ### 2. 핵심 근거 수집
 
-- Company.disclosure() filings — capitalAction category (배당결정·무상증자·유상증자·CB·자사주취득/소각)
+- Company.filings() filings — capitalAction category (배당결정·무상증자·유상증자·CB·자사주취득/소각)
 - Company.gather('dividends') — 배당 시계열
 - Company.gather('splits') — 분할 시계열
 - buildEventRadarMemo() → action table 통합

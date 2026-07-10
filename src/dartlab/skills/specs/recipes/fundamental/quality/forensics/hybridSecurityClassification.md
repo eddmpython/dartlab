@@ -20,7 +20,7 @@ whenToUse:
 inputs:
   - Company.panel BS (자본·부채 시계열)
   - Company.panel notes / 차입금 sections (영구채·CB·RCPS 잔액·조건)
-  - Company.disclosure (영구채·전환사채 발행 공시)
+  - Company.filings (영구채·전환사채 발행 공시)
   - scan capital (전종목 자본 변동 횡단)
 outputs:
   - 하이브리드 증권 잔액 + 분류 (부채 vs 자본)
@@ -29,7 +29,7 @@ outputs:
   - 자본 확충 vs 부채 차환 진단
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
   - scan
 toolRefs:
   - EngineCall
@@ -108,7 +108,7 @@ visualRefs:
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.disclosure`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 복합금융상품 분류 — 계정 추적.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.filings`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 복합금융상품 분류 — 계정 추적.
 
 ```python
 import dartlab
@@ -134,7 +134,7 @@ for topic in ("businessOverview", "riskFactors", "mdna", "notesDetail"):
         pass
 
 try:
-    disclosure = c.disclosure()
+    disclosure = c.filings()
     events = disclosure.head(20).to_dicts() if hasattr(disclosure, "head") else list(disclosure)[:20]
 except Exception:
     events = []
@@ -320,6 +320,6 @@ graph LR
 1. `ReadSkill` 에서 영구채·CB·RCPS·전환우선주·하이브리드 증권 질문이면 본 recipe 선정.
 2. `Company.panel("BS", freq="Y")` 5 년 + 자본·부채 행 키워드 검색.
 3. `Company.panel("차입금")` 또는 `c.topics` 으로 차입금·약정 sections 확인.
-4. `Company.disclosure(keyword="영구"/"전환"/"우선주", days=1825)` 발행 공시.
+4. `Company.filings(keyword="영구"/"전환"/"우선주", days=1825)` 발행 공시.
 5. RunPython 으로 IFRS 32 5 기준 매트릭스 + 분류 의문 점수.
 6. 답변에 *증권별 잔액 시계열 + 5 기준 매트릭스 + 신호 점수 + 시장 평가 한계* 4 셋 필수.

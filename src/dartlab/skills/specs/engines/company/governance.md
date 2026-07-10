@@ -132,6 +132,6 @@ c.story(type="governance")
 
 - 답변의 사외이사 비율 · CEO/Chair 분리 · 누적투표제 등 수치 claim 은 모두 rceptNo + section paragraph 에 묶인다.
 - 15 핵심지표 yes/no 만 답변 본문에 박지 말고 미준수 narrative 도 같이 인용 (한국 corporate governance code 의 explain-or-comply 원칙).
-- KOSPI < 1 조 원 기업은 governance 보고서 미의무 → 본 skill 의 fallback = Company.disclosure(category="기업지배구조") · 결과 None 처리.
+- KOSPI < 1 조 원 기업은 governance 보고서 미의무 → 본 skill 의 fallback = Company.filings(category="기업지배구조") · 결과 None 처리.
 - 지배구조 분석 축 변경 시 본 skill 의 examples · 반환 형태 동기화.
 - 외부 본문 (DART 원본 narrative) 은 wrapExternalInResult 의 untrusted marker 강제.

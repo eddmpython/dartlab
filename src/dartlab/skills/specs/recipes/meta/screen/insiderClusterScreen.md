@@ -174,6 +174,6 @@ buyerCount desc 정렬 (강한 cluster 먼저)
 
 1. 본 recipe → 180 일 cluster ≥ 3 universe.
 2. cluster 종목 → `recipes.fundamental.disclosure.insiderEarningsLeading` (Q+1 실적 surprise 결합).
-3. 매수 사유 분석 → `Company.disclosure()` 필터 (5% 보고 본문).
+3. 매수 사유 분석 → `Company.filings()` 필터 (5% 보고 본문).
 4. 산업 cluster 패턴 → `recipes.industry.sectorMomentumLeadership` 결합.
 5. 주 1 회 재실행 → 신규 cluster 진입 종목 알람.

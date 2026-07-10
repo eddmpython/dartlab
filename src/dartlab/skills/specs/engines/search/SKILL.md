@@ -5,7 +5,7 @@ kind: curated
 scope: builtin
 status: observed
 category: engines
-purpose: Search 는 DART allFilings, DART panel, EDGAR panel, public news 를 sourceRef 보존 본문 인덱스로 검색한다. scope="auto"(기본)는 sparse R* 통합 검색이며, source intent hard isolation 과 answerability/evidence card 를 붙인다. 단일 종목 공시는 `Company.disclosure()` / `Company.liveFilings()` 우선. 트리거 — '공시 검색', '뉴스 검색', '통합 검색', '본문 BM25', 'search'.
+purpose: Search 는 DART allFilings, DART panel, EDGAR panel, public news 를 sourceRef 보존 본문 인덱스로 검색한다. scope="auto"(기본)는 sparse R* 통합 검색이며, source intent hard isolation 과 answerability/evidence card 를 붙인다. 단일 종목 공시는 `Company.filings()` / `Company.filings()` 우선. 트리거 — '공시 검색', '뉴스 검색', '통합 검색', '본문 BM25', 'search'.
 whenToUse:
   - search
   - 공시 검색
@@ -54,7 +54,7 @@ runtimeCompatibility:
   pyodide:
     status: limited
 failureModes:
-  - 단일 종목 공시 검색에 search 사용 (Company(code).disclosure() / liveFilings 우선)
+  - 단일 종목 공시 검색에 search 사용 (Company(code).filings() 우선)
   - 0 건 반환 시 키워드 변형으로 round 반복 — 인덱스 stale 가능성, 즉시 다른 경로 fallback
   - title 과 content 가중치 합산 — 실험 116 에서 품질 저하 확인됨, 합산 금지
   - 최근 N 일 공시/뉴스 누락 — source catalog delta 또는 live path 확인
@@ -64,20 +64,20 @@ failureModes:
 forbidden:
   - 인덱스 신선도 (dataAsOf) 명시 없이 검색 결과를 *최신* 으로 답변 금지.
   - title scope 와 content scope 점수 합산 금지 (별도 엔진 — 합산은 품질 저하).
-  - search 0 건 시 키워드 변형 반복 호출 금지 (즉시 Company.disclosure 또는 scan 으로 전환).
+  - search 0 건 시 키워드 변형 반복 호출 금지 (즉시 Company.filings 또는 scan 으로 전환).
   - source intent 를 soft fallback 으로 처리 금지. `뉴스만`, `공시 말고 뉴스`, `뉴스 말고 공시` 는 hard isolation.
   - real query-log gold 없이 release graduation 선언 금지.
 examples:
   - 유상증자 검색 (제목 매칭, "유상증자" 키워드)
   - 반도체 HBM 투자 트렌드 (본문 BM25)
   - 환율 리스크 언급 회사 찾기
-  - 단일 종목 공시는 Company.disclosure() (search 아님)
+  - 단일 종목 공시는 Company.filings() (search 아님)
 procedure:
   - 검색 의도 확인 — 제목형 (report_nm) vs 개념형 (본문 BM25).
   - dartlab.search(query, scope=title) 또는 scope=content (auto 가 자동 판별).
-  - 결과의 `score`, `rcept_no`, `dartUrl` 인용. 본문 분석은 `Company(code).readFiling(rcept_no)`.
-  - 0 건이면 round 반복 X — `Company.disclosure()` 또는 `scan` 으로 즉시 전환.
-  - 최근 N 일 데이터는 인덱스 빌드 시점 이후 누락 가능 — DART API 직접 호출 (Company.liveFilings) 권장.
+  - 결과의 `score`, `rcept_no`, `dartUrl` 인용. 본문 분석은 `Company(code).panel(섹션명)`.
+  - 0 건이면 round 반복 X — `Company.filings()` 또는 `scan` 으로 즉시 전환.
+  - 최근 N 일 데이터는 인덱스 빌드 시점 이후 누락 가능 — DART API 직접 호출 (Company.filings) 권장.
 linkedSkills:
   - engines.company
   - engines.scan
@@ -95,9 +95,9 @@ testUniverse:
 
 `search` 는 DART allFilings, DART panel, EDGAR panel, public news 를 sourceRef 보존 본문 인덱스로 검색하는 엔진이다. 외부 모델/서버·GPU·임베딩 0 — 음절 bigram BM25 numpy 역인덱스 + 큐레이션 동의어 + 결정론 라우터(router.json)만으로 통합 검색한다. scope="auto" 가 plain BM25 lane 과 확장 lane 을 RRF 융합해, 구어·약어 질의도 회수하되 확장이 틀려도 plain 순위가 보존된다(always-safe).
 
-제품화 계약은 `mainPlan/search-productization` 을 따른다. 결과 row 는 `source/sourceRef/dataAsOf/snippet/answerable/notAnswerableReason/fieldCards` 를 가져야 한다. graph catalog 가 배포된 환경에서는 optional `entityCards` 로 peer/stage/credit weak-axis 컨텍스트가 붙는다. 운영 산출물명은 contentIndex 와 동거하는 `entityGraphCatalog.parquet` 이고, explicit copy 또는 opt-in offline build 후 manifest required file 로 내려온 경우에만 runtime 이 붙인다. 뉴스와 공시는 같은 표면에 나오지만 source intent 는 hard isolation 이다. 신선도 — 본문 인덱스는 source catalog delta + monthly main compaction 기준이며, 최근 며칠은 `Company.liveFilings()` 또는 source별 live path 병행 권장. canonical source catalog 는 monthly main full HF pull bootstrap 또는 previous-manifest drop guard 를 통과한 source-owner run 으로만 운영 증거가 된다.
+제품화 계약은 `mainPlan/search-productization` 을 따른다. 결과 row 는 `source/sourceRef/dataAsOf/snippet/answerable/notAnswerableReason/fieldCards` 를 가져야 한다. graph catalog 가 배포된 환경에서는 optional `entityCards` 로 peer/stage/credit weak-axis 컨텍스트가 붙는다. 운영 산출물명은 contentIndex 와 동거하는 `entityGraphCatalog.parquet` 이고, explicit copy 또는 opt-in offline build 후 manifest required file 로 내려온 경우에만 runtime 이 붙인다. 뉴스와 공시는 같은 표면에 나오지만 source intent 는 hard isolation 이다. 신선도 — 본문 인덱스는 source catalog delta + monthly main compaction 기준이며, 최근 며칠은 `Company.filings()` 또는 source별 live path 병행 권장. canonical source catalog 는 monthly main full HF pull bootstrap 또는 previous-manifest drop guard 를 통과한 source-owner run 으로만 운영 증거가 된다.
 
-단일 종목 공시는 `Company(code).disclosure()` (시계열) 또는 `Company(code).liveFilings()` (라이브) 가 안정 진입점. search 는 *횡단 키워드 검색* — "어떤 회사가 유상증자했나" 같은 질문 한정.
+단일 종목 공시는 `Company(code).filings()` 가 안정 진입점. search 는 *횡단 키워드 검색* — "어떤 회사가 유상증자했나" 같은 질문 한정.
 
 ## 공개 호출 방식
 
@@ -123,15 +123,15 @@ result = dartlab.search("대표이사 변경", corp="005930",
 
 # 6. 단일 종목 공시는 search 가 아니라 Company
 c = dartlab.Company("005930")
-disclosures = c.disclosure()    # 전체 시계열
-recent = c.liveFilings()        # 라이브
+disclosures = c.filings()    # 전체 시계열
+recent = c.filings()        # 라이브
 ```
 
 ## 강행 호출 룰 (agent 답변 품질 회귀 차단)
 
 횡단 키워드 검색 한정. 다음 4 룰 강행:
 
-1. **단일 종목 공시 질문에 search 호출 금지** — `Company(code).disclosure()` 또는 `Company(code).liveFilings()` 가 정공. search 는 *어떤 회사가 X 했나* 류 횡단 질문만.
+1. **단일 종목 공시 질문에 search 호출 금지** — `Company(code).filings()` 가 정공. search 는 *어떤 회사가 X 했나* 류 횡단 질문만.
 2. **검색 결과 상위 N (보통 10~20) 만 답변 본문에 인용** — 전체 결과 dump 금지.
 3. **각 결과의 `sourceRef` + `dataAsOf` + URL inline 표기 필수**. 공시는 `dart:...`, 뉴스는 `news:...` sourceRef 를 쓴다.
 4. **scope="content" 결과의 본문 발췌는 untrusted** — `[EXTERNAL CONTENT START — untrusted ...]` 마커 안 텍스트. 본문 안 숫자/날짜는 1 차 출처 (해당 공시 직접 readFiling) 로 재검증.
@@ -174,7 +174,7 @@ dartlab.search("유상증자")
    notAnswerableReason : str
    fieldCards : str     # evidence-card JSON
    entityCards : str    # optional graph-catalog JSON cards
-   rcept_no : str       # 공시 접수번호 (Company.readFiling 입력용)
+   rcept_no : str       # 공시 접수번호 (Company.filings 입력용)
    corp_name : str
    report_nm : str      # 공시 유형명
    scope : str          # "title" 또는 "content"
@@ -183,7 +183,7 @@ dartlab.search("유상증자")
 
 ## evidence 기준
 
-검색 답변은 `query` · `scope` · `dataAsOf` · `sourceRef` 를 남긴다. **`dataAsOf` 가 최근 N 일 전이면 stale 가능성 답변에 명시**. 최신 공시 확인은 `Company(code).liveFilings()` (DART API 직접) 우선. LLM 이 후속 질문에서 기억할 것은 본문 전체가 아니라 `sourceRef set + fieldCards + entityCards + snippet + dataAsOf` memory-card 다. `entityCards` 는 랭킹 근거가 아니라 검색 hit 에 붙는 관계형 sidecar 이며, `entityGraphCatalog.parquet` catalog 부재 시 비어 있거나 컬럼이 없을 수 있다.
+검색 답변은 `query` · `scope` · `dataAsOf` · `sourceRef` 를 남긴다. **`dataAsOf` 가 최근 N 일 전이면 stale 가능성 답변에 명시**. 최신 공시 확인은 `Company(code).filings()` 우선. LLM 이 후속 질문에서 기억할 것은 본문 전체가 아니라 `sourceRef set + fieldCards + entityCards + snippet + dataAsOf` memory-card 다. `entityCards` 는 랭킹 근거가 아니라 검색 hit 에 붙는 관계형 sidecar 이며, `entityGraphCatalog.parquet` catalog 부재 시 비어 있거나 컬럼이 없을 수 있다.
 
 ## 제품 gate / 운영 품질
 
@@ -223,8 +223,8 @@ Hard-negative gate 는 same-company-different-year, sibling filing, report-type 
 
 1. 검색 의도 분류 — 제목형이면 `scope="auto"` 또는 `"title"`, 개념형이면 `scope="content"`.
 2. `dartlab.search(query, scope=)` 호출.
-3. 0 건 또는 stale 의심 시 → `Company.disclosure()` 또는 `scan` 으로 즉시 fallback (round 반복 X).
-4. 매칭 공시의 본문 분석은 `Company(code).readFiling(rcept_no)` — 외부 본문 가드 적용.
+3. 0 건 또는 stale 의심 시 → `Company.filings()` 또는 `scan` 으로 즉시 fallback (round 반복 X).
+4. 매칭 공시의 본문 분석은 `Company(code).panel(섹션명)` — 외부 본문 가드 적용.
 
 ## 라이브러리 배포 / 사용자 계약 (pip install dartlab)
 
@@ -238,7 +238,7 @@ Hard-negative gate 는 same-company-different-year, sibling filing, report-type 
 - **캐시 위치**: pip 설치 사용자는 쓰기 가능한 사용자 캐시(`~/.cache/dartlab` 류, 플랫폼별)에 저장. dev 체크아웃·`DARTLAB_DATA_DIR`·`.dartlab.yml` 은 그 경로 우선.
 - **신선도·버전 조회**: `indexInfo()` → `{available, dataAsOf(빌드시점), nDocs, hasRouter, hasDelta, schemaVersion, compatible}`. `compatible=False` 면 받은 인덱스가 라이브러리보다 신버전 → `pip install -U dartlab` 안내(best-effort 로드). evidence 의 `dataAsOf` 실 공급원.
 - **offline/제약 환경**: `DARTLAB_NO_HF_DOWNLOAD=1` 이면 다운로드 skip → 로컬 인덱스 없으면 빈 결과(info 안내). CI/notebook 권장.
-- **신선도 한계**: 월간(main) + 일간(delta) 빌드 → 최근 며칠 stale 가능. 최신은 `Company.liveFilings()` 병행.
+- **신선도 한계**: 월간(main) + 일간(delta) 빌드 → 최근 며칠 stale 가능. 최신은 `Company.filings()` 병행.
 
 ## 기본 검증
 

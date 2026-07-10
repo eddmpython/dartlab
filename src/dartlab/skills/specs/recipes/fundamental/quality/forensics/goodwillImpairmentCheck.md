@@ -25,7 +25,7 @@ outputs:
   - 손상 위험 점수
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
 toolRefs:
   - EngineCall
   - RunPython
@@ -100,7 +100,7 @@ visualRefs:
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.disclosure`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 영업권 손상 — 계정 추적.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.filings`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 영업권 손상 — 계정 추적.
 
 ```python
 import dartlab
@@ -126,7 +126,7 @@ for topic in ("businessOverview", "riskFactors", "mdna", "notesDetail"):
         pass
 
 try:
-    disclosure = c.disclosure()
+    disclosure = c.filings()
     events = disclosure.head(20).to_dicts() if hasattr(disclosure, "head") else list(disclosure)[:20]
 except Exception:
     events = []
@@ -293,6 +293,6 @@ graph LR
 
 1. `ReadSkill` 에서 영업권·손상·M&A 사후평가 질문이면 본 recipe 선정.
 2. `Company.panel("BS")` 5 년 + 영업권·무형자산·총자산·자본총계 행 추출.
-3. `Company.panel("부문정보")` 또는 `Company.disclosure("영업권")` segment·주석.
+3. `Company.panel("부문정보")` 또는 `Company.filings("영업권")` segment·주석.
 4. RunPython 으로 비중 + 추세 + 민감도 계산.
 5. 답변에 *영업권 시계열 + CGU 분해 + segment 추세 + 민감도* 4 셋 + 반례·한계 필수.

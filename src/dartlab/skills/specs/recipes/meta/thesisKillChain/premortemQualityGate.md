@@ -31,7 +31,7 @@ outputs:
   - qualityGateStatus
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
   - Company.gather
   - scan.market
 toolRefs:
@@ -112,7 +112,7 @@ lastUpdated: "2026-05-17"
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel`, `Company.disclosure`, `Company.gather`, `scan.market`, `scan.audit`, `scan.quality`로 근거를 먼저 확보하고, 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildThesisKillChainMemo`로 묶는 **RunPython fallback** 절차다.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel`, `Company.filings`, `Company.gather`, `scan.market`, `scan.audit`, `scan.quality`로 근거를 먼저 확보하고, 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildThesisKillChainMemo`로 묶는 **RunPython fallback** 절차다.
 
 ```python
 from dartlab.synth.thesisKillChain import buildThesisKillChainMemo

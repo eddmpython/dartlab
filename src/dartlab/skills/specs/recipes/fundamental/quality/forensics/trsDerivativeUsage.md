@@ -30,7 +30,7 @@ inputs:
   - Company.panel BS (파생자산·파생부채 시계열)
   - Company.panel 충당부채 (우발손익·약정)
   - Company.panel notes / 차입금 (파생 본문)
-  - Company.disclosure (TRS·풋옵션·KIKO·집행 공시)
+  - Company.filings (TRS·풋옵션·KIKO·집행 공시)
   - scan disclosureRisk (공시 위험)
 outputs:
   - 파생자산·부채 시계열 ledger
@@ -39,7 +39,7 @@ outputs:
   - 잠재 손실 위험 점수
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
   - scan
 toolRefs:
   - EngineCall
@@ -110,7 +110,7 @@ visualRefs:
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.disclosure`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — TRS 파생 — 계정 추적.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.filings`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — TRS 파생 — 계정 추적.
 
 ```python
 import dartlab
@@ -136,7 +136,7 @@ for topic in ("businessOverview", "riskFactors", "mdna", "notesDetail"):
         pass
 
 try:
-    disclosure = c.disclosure()
+    disclosure = c.filings()
     events = disclosure.head(20).to_dicts() if hasattr(disclosure, "head") else list(disclosure)[:20]
 except Exception:
     events = []
@@ -335,6 +335,6 @@ graph LR
 1. `ReadSkill` 에서 TRS·파생·KIKO·의결권 분리 질문이면 본 recipe 선정.
 2. `Company.panel("BS")` 5+ 년 + 파생 키워드 행 추출.
 3. `Company.panel("충당부채")` `Company.panel("차입금")` 우발·약정 본문.
-4. `Company.disclosure(keyword="TRS"/"풋옵션"/"KIKO"/"통화선도", days=1825)` 거래 공시.
+4. `Company.filings(keyword="TRS"/"풋옵션"/"KIKO"/"통화선도", days=1825)` 거래 공시.
 5. RunPython 으로 거래 구조 분해 + 회계 매트릭스 + 위험 점수.
 6. 답변에 *파생 시계열 + 거래 ledger + 회계 매트릭스 + 경제적 실질 한계* 4 셋 + 법원·공정위 사례 (적용 가능 시) 필수.

@@ -27,7 +27,7 @@ inputs:
   - Company.panel 임원보수 / 주식보상 (가능 시 sections)
   - Company.panel IS (성과 KPI 시계열 — 매출·영업이익·EPS)
   - Company.panel 자기주식 변동 (RSU·자사주 보상 동행)
-  - Company.disclosure (임원변동·스톡옵션 부여·결의)
+  - Company.filings (임원변동·스톡옵션 부여·결의)
   - scan governance (지분율·사외이사·감사)
 outputs:
   - 임원 보수 시계열 ledger
@@ -36,7 +36,7 @@ outputs:
   - 사외이사 독립성 점수
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
   - scan
 toolRefs:
   - EngineCall
@@ -107,7 +107,7 @@ visualRefs:
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.disclosure`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 임원 보수 — 주석 신호.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.filings`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 임원 보수 — 주석 신호.
 
 ```python
 import dartlab
@@ -133,7 +133,7 @@ for topic in ("businessOverview", "riskFactors", "mdna", "notesDetail"):
         pass
 
 try:
-    disclosure = c.disclosure()
+    disclosure = c.filings()
     events = disclosure.head(20).to_dicts() if hasattr(disclosure, "head") else list(disclosure)[:20]
 except Exception:
     events = []
@@ -303,7 +303,7 @@ graph LR
 2. target stockCode 확인.
 3. `Company.panel("임원보수")` 또는 사업보고서 섹션 fetch.
 4. `Company.panel("IS", freq="Y")` 시계열 + EPS / TSR 보완.
-5. `Company.disclosure("스톡옵션")` 부여·행사 timestamp.
+5. `Company.filings("스톡옵션")` 부여·행사 timestamp.
 6. `scan("governance")` 사외이사·지분율 횡단.
 7. RunPython 으로 상관·옵션 차익·독립성 점수 계산.
 8. 답변에 *보수 시계열 + KPI 정합 + 옵션 ledger + 사외이사 독립성* 4 셋 + 반례·한계 필수.

@@ -213,11 +213,11 @@ L1 + L2 는 API 키 없이 동작. L3 는 DART API 키 필요 (`dartlab setup da
 새 공시가 감지되면 안내 메시지만 띄우고 자동 수집은 하지 않는다 (`Company` 생성 시점에는).
 
 ```python
-result = dartlab.checkFreshness("005930")
+c = dartlab.Company("005930")   # 신선도는 panel 결과의 dataAsOf 로 확인
 print(result.isFresh, result.missingCount)
 
 c = dartlab.Company("005930")
-c.update()  # 누락된 공시만 증분 수집
+c.panel("IS")  # 첫 접근 시 필요한 데이터를 자동으로 내려받는다
 ```
 
 ```bash

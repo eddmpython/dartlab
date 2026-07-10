@@ -18,7 +18,7 @@ outputs:
   - evidenceCoverageAudit table
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
   - Company.gather
   - scan.market
 toolRefs:
@@ -118,7 +118,7 @@ emit_result(
 ### 2. 핵심 근거 수집
 
 - Company.panel('IS' / 'BS' / 'CF', freq='Y') × 3 statement
-- Company.disclosure() filings
+- Company.filings() filings
 - Company.gather('price' / 'flow' / 'consensus') × 3 axis
 - scan.market peers
 - assumption list (사용자 입력)

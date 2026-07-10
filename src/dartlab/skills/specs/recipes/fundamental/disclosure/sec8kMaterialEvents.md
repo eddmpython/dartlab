@@ -72,7 +72,7 @@ from datetime import datetime, timedelta
 ticker = "AAPL"
 
 try:
-    filings = dartlab.providers.edgar.fetch8kFilings(ticker, days=60)
+    filings = dartlab.Company(ticker).filings()
 except Exception:
     filings = []
 

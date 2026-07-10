@@ -29,7 +29,7 @@ inputs:
   - Company.panel BS (자기자본·NPL·대손충당금 시계열)
   - Company.panel IS (이자수익·대손비용·NIM)
   - Company.panel 주석 (BIS·유동성·NPL 분류)
-  - Company.disclosure (자본확충·인수·매각 공시)
+  - Company.filings (자본확충·인수·매각 공시)
   - scan financialHealth (금융기관 횡단 부실 지표)
 outputs:
   - BIS·NPL·LCR 시계열 ledger
@@ -39,7 +39,7 @@ outputs:
   - 헐값매각 가능성 점수
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
   - scan
 toolRefs:
   - EngineCall
@@ -113,7 +113,7 @@ visualRefs:
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.disclosure`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 부실 금융기관 — 엔진 후보 메모.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.filings`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 부실 금융기관 — 엔진 후보 메모.
 
 ```python
 import dartlab
@@ -139,7 +139,7 @@ for topic in ("businessOverview", "riskFactors", "mdna", "notesDetail"):
         pass
 
 try:
-    disclosure = c.disclosure()
+    disclosure = c.filings()
     events = disclosure.head(20).to_dicts() if hasattr(disclosure, "head") else list(disclosure)[:20]
 except Exception:
     events = []
@@ -335,7 +335,7 @@ graph LR
 2. target stockCode 확인 (은행·증권·보험·저축은행 분류).
 3. `Company.panel("BS","IS",freq="Y")` 시계열.
 4. `Company.panel("BIS")` 또는 사업보고서 감독 지표 주석 fetch.
-5. `Company.disclosure("자본확충","인수","합병")` 공시.
+5. `Company.filings("자본확충","인수","합병")` 공시.
 6. `scan("financialHealth")` 산업 평균 횡단.
 7. RunPython 으로 5 차원 매트릭스 계산.
 8. 답변에 *감독 지표 시계열 + 부실 분류 + 자본 보강 + 가격 적정성 + 산업 비교* 5 셋 + 반례·한계 필수.

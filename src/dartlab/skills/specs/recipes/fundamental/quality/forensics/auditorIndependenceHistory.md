@@ -25,7 +25,7 @@ linkedSkills:
   - engines.company
 inputs:
   - Company.panel 감사인 / 감사보수 / 사업보고서 감사관련 섹션
-  - Company.disclosure (감사인 변경·감사의견·정정)
+  - Company.filings (감사인 변경·감사의견·정정)
   - Company.panel notes 감사보고서 (의견·강조사항·핵심감사사항)
   - scan disclosureRisk / governance (감사인 횡단)
 outputs:
@@ -36,7 +36,7 @@ outputs:
   - 동행 사건 timing 매칭
 capabilityRefs:
   - Company.panel
-  - Company.disclosure
+  - Company.filings
   - scan
 toolRefs:
   - EngineCall
@@ -109,7 +109,7 @@ visualRefs:
 
 ## 공개 호출 방식
 
-AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.disclosure`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 감사인 독립성 — 주석 패턴.
+AI 도구 실행 순서는 `EngineCall` 우선이다. `Company.panel("IS"|"BS"|"CF")`, `Company.filings`, `scan.quality`, `scan.audit`, `scan.disclosureRisk` 는 엔진 호출로 근거를 먼저 확보한다. 아래 Python 블록은 확보한 L1/L1.5 근거를 `buildEvidenceForensicsMemo` 로 묶는 **RunPython fallback** 절차다 — 감사인 독립성 — 주석 패턴.
 
 ```python
 import dartlab
@@ -135,7 +135,7 @@ for topic in ("businessOverview", "riskFactors", "mdna", "notesDetail"):
         pass
 
 try:
-    disclosure = c.disclosure()
+    disclosure = c.filings()
     events = disclosure.head(20).to_dicts() if hasattr(disclosure, "head") else list(disclosure)[:20]
 except Exception:
     events = []
@@ -300,8 +300,8 @@ graph LR
 1. `ReadSkill` 에서 감사인·감사의견 질문이면 본 recipe 선정.
 2. target stockCode 확인.
 3. `Company.panel("감사인")` 또는 사업보고서 감사 섹션 fetch.
-4. `Company.disclosure("감사인")` 변경 timestamp + 사유.
-5. `Company.disclosure("감사의견")` 의견·강조사항·KAM.
+4. `Company.filings("감사인")` 변경 timestamp + 사유.
+5. `Company.filings("감사의견")` 의견·강조사항·KAM.
 6. `scan("disclosureRisk")` 횡단 비교.
 7. RunPython 으로 시계열 + 동행 timing 계산.
 8. 답변에 *감사인 변경 + 보수 비중 + 의견 이력 + 동행 사건 timing* 4 셋 + 반례·한계 필수.
