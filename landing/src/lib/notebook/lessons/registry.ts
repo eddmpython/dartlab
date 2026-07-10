@@ -23,7 +23,10 @@ export const TRACKS: LessonTrack[] = [
 	{ id: 'foundations', title: '시작', blurb: '회사 하나를 잡는 것에서 시작합니다.', order: 1 },
 	{ id: 'financials', title: '회사 재무', blurb: '재무제표를 꺼내고 계정을 직접 굴립니다.', order: 2 },
 	{ id: 'engines', title: '판독 엔진', blurb: '22축 분석 · 신용등급 · 서사.', order: 3 },
-	{ id: 'market', title: '시장 횡단', blurb: '한 회사가 아니라 상장사 전체를 한 표로.', order: 4 }
+	{ id: 'market', title: '시장 횡단', blurb: '한 회사가 아니라 상장사 전체를 한 표로.', order: 4 },
+	// 도감은 축을 YAML 에 베끼지 않는다. 엔진 카탈로그(axis·label·description·example)를 런타임에 읽는다.
+	// 축이 늘거나 이름이 바뀌면 도감이 저절로 따라간다. 사본이 없으니 어긋날 자리도 없다.
+	{ id: 'catalog', title: '엔진 도감', blurb: '엔진이 무엇을 할 수 있는지 카탈로그로 전수 훑기.', order: 5 }
 ];
 
 export const LEVELS: LessonLevel[] = ['기초', '중급', '심화'];

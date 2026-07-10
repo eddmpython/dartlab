@@ -1,0 +1,34 @@
+meta:
+  id: catalog-macro
+  title: 도감 · macro 15축
+  description: 거시 엔진의 15축을 훑고, 축 하나를 실행합니다.
+  level: 중급
+  track: catalog
+  order: 4
+  tags: [macro, catalog]
+  prerequisites: [macro-basics]
+  minutes: 6
+
+intro:
+  goal: macro 카탈로그를 읽고 축 하나를 부른다.
+  body: |
+    회사 밖의 흐름을 보는 엔진입니다. 사이클 · 금리 · 재고 · 산업집계 · 시나리오 등 15축이
+    카탈로그에 있습니다. 데이터는 HuggingFace 에서 바로 받으므로 브라우저에서 그대로 돕니다.
+
+sections:
+  - id: setup
+    title: 시작
+    code: |
+      import dartlab
+
+  - id: catalog
+    title: 15축 전수
+    code: |
+      dartlab.macro()
+
+  - id: pick
+    title: 축 하나 실행
+    body: |
+      표의 `axis` 를 바꿔 보세요. 첫 호출은 데이터를 받아 수 초 걸립니다.
+    code: |
+      dartlab.macro("사이클")
