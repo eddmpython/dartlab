@@ -51,7 +51,7 @@ const wrapCache = new Map<string, string>();
 // (micropip.install 노출 불필요). 그다음은 데스크톱과 동일하게 `dartlab.Company(code)` 를 쓰면 되고
 // 데이터·C 확장·설정은 라이브러리가 흡수한다 (데이터는 메서드 첫 접근 시 lazy fetch, prefetch 불필요).
 const DARTLAB_WHEEL =
-	'https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main/pyodide/dartlab-0.10.7-py3-none-any.whl';
+	'https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main/pyodide/dartlab-0.10.8-py3-none-any.whl';
 const DARTLAB_IMPORT_RE = /(?:^|\n)[ \t]*(?:import[ \t]+dartlab|from[ \t]+dartlab[ \t.])/;
 let dartlabReady = false;
 

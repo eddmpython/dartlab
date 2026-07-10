@@ -32,7 +32,7 @@ const DATA_CATEGORIES = [
  * @param {Object} options
  * @param {string} options.stockCode - 종목코드 (기본 "005930")
  * @param {string} [options.wheelUrl] - wheel URL override (기본: HF)
- * @param {string} [options.version] - dartlab 버전 (기본: "0.10.7")
+ * @param {string} [options.version] - dartlab 버전 (기본: "0.10.8")
  * @param {(msg: string) => void} [options.onLog] - 로그 콜백
  * @param {(step: string, progress: number) => void} [options.onProgress] - 진행 콜백
  * @returns {{ py: PyodideInterface, run: (code: string) => Promise<any> }}
@@ -40,7 +40,7 @@ const DATA_CATEGORIES = [
 export async function initDartlab(options = {}) {
   const {
     stockCode = "005930",
-    version = "0.10.7",
+    version = "0.10.8",
     wheelUrl = null,
     onLog = () => {},
     onProgress = () => {},
