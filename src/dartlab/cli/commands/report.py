@@ -1,4 +1,8 @@
-"""`dartlab report` command — Markdown 보고서 자동 생성."""
+"""`dartlab report` command. 기본은 Markdown 보고서, `--model` 은 전문 리포트 계약(ReportModel) JSON.
+
+`--model` 은 공개 계약 `Company.reportModel(perspective)` 를 그대로 직렬화한다(self-calc 0).
+기존 Markdown 경로는 불변 (추가형).
+"""
 
 from __future__ import annotations
 
@@ -17,11 +21,21 @@ def configureParser(subparsers) -> None:
         default=None,
         help="포함할 섹션 (overview finance ratios insights). 기본: 전부",
     )
+    parser.add_argument(
+        "--model",
+        action="store_true",
+        help="전문 리포트 계약(ReportModel) JSON 출력. Markdown 대신 c.reportModel() 결과를 낸다",
+    )
+    parser.add_argument(
+        "--perspective",
+        default="full",
+        help="--model 관점 (full/valuation/credit/earnings/growth 등). 기본: full",
+    )
     parser.set_defaults(handler=run)
 
 
 def run(args) -> int:
-    """기업 분석 Markdown 보고서를 생성해 stdout 또는 파일로 출력한다."""
+    """기업 분석 보고서를 stdout 또는 파일로 출력한다 (기본 Markdown, `--model` 은 계약 JSON)."""
     dartlab = configureDartlab()
 
     try:
@@ -34,8 +48,14 @@ def run(args) -> int:
     name = getattr(company, "corpName", args.company) or args.company
     code = getattr(company, "stockCode", "") or ""
 
-    include = set(args.sections) if args.sections else None
-    report = _buildReport(company, name, code, include)
+    if getattr(args, "model", False):
+        import json
+
+        model = company.reportModel(getattr(args, "perspective", "full"))
+        report = json.dumps(model, ensure_ascii=False, indent=2, default=str)
+    else:
+        include = set(args.sections) if args.sections else None
+        report = _buildReport(company, name, code, include)
 
     if args.output:
         from pathlib import Path

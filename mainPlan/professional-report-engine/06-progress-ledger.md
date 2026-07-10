@@ -61,7 +61,11 @@
 - ✅ **버그수정**: `buildSectionSummary` tuple 크래시 가드(NAVER 등 reportModel 복구, `185590894`). 회귀 3 테스트.
 - 🟡 **verdict 블록 = 불필요 결론**(코드검증): `calcScorecard`/SummaryCard 는 {area,grade} thin(headlineKpis 와 중복). 축별 판정(최근값·기준·판정)은 **이미 재무 table 블록의 '판정'·'기준' 컬럼**에 실려 verdictTone 렌더(`+page.svelte:392`). 별도 verdict 블록 = table 중복 → 미추가(덕지덕지 가드). 계약 verdict 타입은 미래용 보존.
 - 🟡 **arc 재정렬 = 보류**: 현 emitter 는 buildStory reportType.sectionOrder(이미 전문 순서) + 밸류에이션 말미 append = 합리적 아크. 강제 재정렬은 회귀 위험·저ROI. transition 블록은 generic 시 fluff → 섹션쌍별 의미 로직 필요(신중).
-- ☐ 소비자 마이그레이션 (CLI·테스트·storyTemplate) + 死코드 삭제(importer 신뢰검증 후)
+- ✅ **소비자 마이그레이션(2026-07-06)**. 04 항목4 "`Company.report()`·`dartlab report` 추가(기존 `story()` 유지)" 를 *추가형* 으로 이행:
+  - `Company.reportModel()` = 라이브러리 진입점(공개계약 등재 완료, 위 항목).
+  - `dartlab report <code> --model [--perspective X]` = CLI 진입점. 등록 계약 `c.reportModel(perspective)` 를 그대로 JSON 직렬화(self-calc 0). **기존 Markdown 경로 불변**(`--model` 미지정 시 옛 동작, `getattr(args,"model",False)` 로 구 namespace 하위호환).
+  - 검증: CLI unit 2 신규(17 pass, 스냅샷 5 불변) + 실 CLI e2e(`report 005930 --model --perspective credit` -> schemaVersion 2·perspectiveKey credit·`creditPanel` 블록). ruff·camelCase clean.
+  - 死코드 삭제는 위 항목에서 완료(importer census 선행).
 
 ## P3 · 랜딩 동일소비
 - ✅ **`model.ts` → 공유 계약 shim**(`47cd8d7e2`): landing ReportModel = @dartlab/ui-contracts 타입(단일 SSOT). 랜딩 전용 소형 보조타입·lastNonNull 유지·import 무변경. project.ts pro블록 10종 skip 케이스(assertNever 보존). **svelte-check 0 errors**. 타입레벨만(렌더 무변경).

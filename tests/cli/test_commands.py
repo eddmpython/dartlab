@@ -276,3 +276,31 @@ def test_report_stdout(monkeypatch, capsys):
         rc = run(_ns(company="999999", sections=None, output=None))
     assert rc == 0
     assert "Report" in capsys.readouterr().out
+
+
+def test_report_model_flag_emits_contract(monkeypatch, capsys):
+    """--model 은 공개 계약 Company.reportModel 결과를 JSON 으로 낸다."""
+    co = _mock_company()
+    co.reportModel = MagicMock(return_value={"stockCode": "999999", "schemaVersion": 2, "sections": []})
+    _patch_dartlab(monkeypatch, company=co)
+    from dartlab.cli.commands.report import run
+
+    rc = run(_ns(company="999999", sections=None, output=None, model=True, perspective="credit"))
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert '"schemaVersion": 2' in out and '"stockCode": "999999"' in out
+    co.reportModel.assert_called_once_with("credit")
+
+
+def test_report_markdown_unchanged_without_model_flag(monkeypatch, capsys):
+    """--model 미지정(구 namespace 포함) 이면 기존 Markdown 경로 그대로 (추가형·회귀 0)."""
+    co = _mock_company()
+    co.reportModel = MagicMock()
+    _patch_dartlab(monkeypatch, company=co)
+    with patch("dartlab.cli.commands.report._buildReport", return_value="# MD\n"):
+        from dartlab.cli.commands.report import run
+
+        rc = run(_ns(company="999999", sections=None, output=None))
+    assert rc == 0
+    assert "MD" in capsys.readouterr().out
+    co.reportModel.assert_not_called()
