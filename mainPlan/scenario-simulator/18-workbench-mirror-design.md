@@ -141,3 +141,62 @@ extraColumns 확장과 `laneHint` 신설은 재발명이었다. 철회한다.**
 - 졸업 게이트 잔여: Step3 지연 물질화 데모 -> 덕지덕지 제거 -> 클린코드 -> 9섹션 docstring -> 본진.
   본진 위치는 새 엔진 신설이 아니라 기존 `scan`/`reference` 하위 (운영자 토론).
 - **검증 전 성공주장 금지**: 본 문서의 설계는 개념확립(§3)까지만 실증됐다. 전 축 물질화·CI 게이트는 미빌드.
+
+## §10. 구현 확정 (2026-07-07, 6안 x 2심사 + 종합 wf_92b5ae40)
+
+**채택 = F(순서) + E(정규화) + D(ratchet 강제). A(중앙 alias 표)·B(Protocol) 기각.**
+
+- **A 기각**: alias 표는 두 번째 SSOT 라 drift 한다. 실측으로 `credit.axis`·`quant.multiStock` 이 A 의
+  alias 7행 어디에도 없어 착수 즉시 자기 게이트가 RED.
+- **B 기각**: `runtime_checkable` Protocol 은 6 dataclass 에 약 22 property 를 강제해 부채원장(선언
+  없는 축은 없는 대로)과 정면충돌.
+
+**§2 정규화 확정 (alias 표 없음, collapse 없음)**: `_injectAxisRegistriesLive` 한 곳에서 ignore 아닌
+필드를 **엔진 네이티브 이름 그대로** 캐리한다. `stockRequired` 는 `stockRequired` 로, `targetType` 은
+`targetType` 으로. 접지 않으므로 alias 표가 존재하지 않고, 새 엔진이 새 필드명을 써도 조용히 버려지지
+않는다. lane·universeScope 같은 **파생 의미는 저장하지 않고 소비측 순수함수**로 계산.
+
+**PR1 실측 (완료)**: `declared` **0/125 -> 125/125**. 필드 분포 group 56 · stockRequired 48 ·
+multiStock 48 · targetRequired 45 · returnType 27 · targetType 27 · hidden 27 · act 15 · targetParam 5 ·
+listFn 3. 전부 JSON-safe primitive. 예) `scan.account` = {targetParam: snakeId, targetRequired: True,
+returnType: DataFrame, listFn: scanAccountList} = 카탈로그 원자(척추)를 추정 없이 식별.
+`quant.altman` = {stockRequired: False} = **벌크 안전을 선언으로 안다** (per-company 추측 불필요).
+동행 테스트 `tests/reference/test_capabilityDeclared.py` 5건 green (조용한 누락 0 · 척추 3축 선언 ·
+False 보존 · 키 불변 · 비-dataclass 가드).
+
+## §11. 실측으로 기각된 내 주장 3건 (문서 자체 정정)
+
+1. **"artifactSync 6 JSON 동기화 승인 게이트 필요"** (§9 옛 기술) = **부정확**. 실증(2026-07-07):
+   `artifactSync --write` 를 돌리면 agent/catalog/web.json 3개가 실제로 drift 한다. 그러나 **내 변경을
+   stash 하고 돌려도 같은 3개가 똑같이 drift** 한다 = **기존 부채이지 `declared` 추가의 기여는 0**.
+   근거: `deriveArtifacts` 는 `listSkills()`(SkillSpec `.md`) 파생이고 `loadCapabilities()` 를 부르지
+   않는다. 따라서 PR1 은 artifactSync 를 동행하지 않는다(남의 부채를 내 PR 에서 고치지 않는다).
+   기존 drift 는 별도 "정리: 산출물 동기화" 사안이며 운영자 수동 관리 규칙을 따른다.
+2. **"simulate = L2.5 라 기존 가드가 강제"** = **거짓**. `tests/architecture/test_import_direction_layers.py`
+   의 `LAYERS` dict 에 `simulate` 가 **없다**. L2.5 배치는 현재 기계 검증도 강제도 안 되는 미매핑 상태다.
+   물질화 드라이버 PR 이 `"dartlab.simulate": 2` 를 등록해야 하며, root facade 호출이 import-direction
+   테스트를 오탐시키는지는 **미검증**.
+3. **"손테이블은 `_AXIS_REGISTRIES` 하나"** = **불완전**. `builder.py:620` 에 `_CALLABLE_MODULE_MAP`
+   (scan·macro·quant·industry **4개뿐**, gather·credit 누락 = 이미 drift 중) 이라는 **둘째 손테이블**이
+   있다. 새 엔진은 두 곳을 손편집해야 한다. 자동흡수는 **새 축엔 기계 보증, 새 엔진엔 2 손테이블**로
+   부분적이다 (과장 금지).
+
+## §12. 남은 PR (순서, 각 단독 되돌림)
+
+- **PR2 부채원장 게이트**: `tests/audit/axisDeclaredCoverage.py` + baseline JSON. 미선언 집합은 축소만,
+  축수 동결(엔진 탈락 = RED). 두 손테이블(`_AXIS_REGISTRIES`·`_CALLABLE_MODULE_MAP`) 완결성 단정 동행.
+  신규 게이트 신설 금지 = `tests/run.py` `GATES["lint"]` 체인에 append.
+- **PR3 순수 커널 졸업**: `_attempts/workbench_mirror` 의 reflect/classify/fold 를
+  `reference/capability/mirror.py`(L1.5) 로. **raw 레지스트리 재반사 금지, `loadCapabilities()` 소비.**
+  엔진 데이터 0 (메모리 가드).
+- **PR4 물질화 드라이버**: `simulate/mirror.py`(L2.5). root facade 함수로컬 호출, BoundedCache,
+  축별 1회 프로브(Company 루프 금지). `LAYERS` 등록 + `tests/audit/workbenchPurity.py`(import allowlist
+  + parquet/Company denylist 이중화).
+- **PR4+ (선택, 미룸)**: 5엔진 `returnType` 백필. 작업대는 이것 없이도 morphology fallback 으로 동작하니
+  **필수 아님**. 성적표 숫자가 생긴 뒤 엔진별 독립 PR.
+
+## §13. 지금 하지 말 것
+
+중앙 alias 표 · Protocol 강제 · universeScope/laneHint 발명(이미 stockRequired·hidden 존재) ·
+PR1 에 artifactSync 승인 게이트(팬텀) · 성적표 전 5엔진 백필 · materialize 를 L1.5 배치(순환) ·
+전축 Company 루프 물질화(OOM) · 새 최상위 verb.
