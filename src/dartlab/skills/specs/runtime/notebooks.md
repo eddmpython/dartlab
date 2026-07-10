@@ -109,8 +109,20 @@ Colab 은 브라우저에서 바로 실행 (Google 계정). Molab 은 marimo 클
 - Colab: `https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/{name}.ipynb`
 - Molab: `https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/{name}.py`
 
-브라우저 노트북(설치 0, `landing` 의 `/notebooks`)은 별도 표면이다. 단계별 커리큘럼 레슨을
-pyodide 로 바로 실행한다. 브라우저에서 되는 것과 안 되는 것은 `runtime.pyodide` 가 정본이다.
+## 브라우저 노트북 (설치 0, 단계별 커리큘럼)
+
+`landing` 의 `/notebooks` 는 pyodide 로 브라우저 안에서 도는 별도 표면이다. Colab/Molab 과 달리
+계정도 설치도 필요 없고, 코드와 결과가 바깥으로 나가지 않는다.
+
+- 레슨 SSOT: `landing/src/lib/notebook/lessons/content/{track}/{NN}-{slug}.yaml` (한 편 = 한 파일).
+  같은 파일을 브라우저 레지스트리와 파이썬 게이트가 함께 읽는다. 파생 산출물을 굽지 않는다.
+- 트랙: 시작 · 회사 재무 · 판독 엔진 · 시장 횡단. 트랙 순서가 곧 학습 경로다.
+- 레슨을 열면 `lesson:<레슨 id>` 안정 키로 IndexedDB 에 저장되어 하던 곳에서 이어진다.
+- 새 레슨 추가 절차와 스키마: `landing/src/lib/notebook/lessons/README.md`.
+- 기계 가드: `tests/audit/lessonSchema.py` (스키마 · prereq 사이클 · 브라우저 경계 정합 · 규모),
+  `tests/audit/notebookContract.py` (공개 호출 계약). CI fast `notebooks` 게이트가 둘 다 돌린다.
+
+브라우저에서 되는 것과 안 되는 것은 `runtime.pyodide` 가 정본이다.
 
 ## 로컬 marimo 실행
 

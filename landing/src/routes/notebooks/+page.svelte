@@ -194,9 +194,9 @@
 			</div>
 		</div>
 		<p class="hero-sub">
-			설치 없이 numpy · polars 를 쓰고, 아래 예제로 dartlab 을 기초부터 익힙니다. 회사 하나를 잡는 법에서
-			시작해 재무제표 · 계정 추출 · 22축 분석을 거쳐 전종목 횡단 스캔까지 이어집니다. 노트북은 이 브라우저에
-			로컬 저장됩니다.
+			설치 없이 numpy · polars 를 쓰고, 아래 레슨으로 dartlab 을 기초부터 익힙니다. 회사 하나를 잡는 법에서
+			시작해 재무제표 · 계정 추출 · 22축 분석을 거쳐 전종목 횡단 스캔까지 이어집니다. 레슨과 노트북은 이
+			브라우저에 로컬 저장되고, 하던 곳에서 이어집니다.
 		</p>
 		<div class="hero-actions">
 			<button class="btn-primary" onclick={newNotebook} onpointerenter={prewarmEngine}><Plus size={16} /> 새 노트북</button>
