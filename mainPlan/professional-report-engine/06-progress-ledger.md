@@ -41,7 +41,10 @@
     - `_sectorPriorFallback()` 신설. `calcMacroRegression` 의 4 개 스킵 경로(IS 파싱 불가·YoY 관측치<6·지표 로드 실패·OLS 실패)가 `None` 대신 섹터 탄성치를 `evidenceLevel="sectorPrior"`·`fallbackReason` 과 함께 반환. 성공 경로는 `evidenceLevel="observed"`.
     - **오독 방지 설계**: 폴백은 `betas=None`·`rSquared=0.0`·`confidence="low"` 라 기존 소비자 게이트(`_predictionSynthesis:366` rSquared>0.1, `:643` >0.3)를 자동으로 통과하지 못한다. 섹터 평균이 기업 고유 베타로 렌더될 수 없다. 섹터 키 미해소 시 `None` 유지(기본 탄성치 날조 금지).
     - 검증: offline 3 테스트 신규(총 20 pass) + 관련 분석 86 pass + **실데이터 라벨 확인**(005930 `observed`·nObs 37·R² 0.7681·high·sectorKey 반도체). ruff·camelCase clean. 회귀 0(폴백은 기존에 아무것도 안 나오던 회사만 채운다).
-    - ⏭ 잔여: β-stability sign-flip<20% 등 OOS 검증은 다회사 데이터라 CI.
+    - ✅ **β-stability 게이트 실측 = FAIL (2026-07-06, `tests/_attempts/macroBetaStability/`)**. 8 사 직렬(RSS 90->232MB, OOM 무관). 겹침 민감도 격자: 20q/4q(겹침 16q) 10.4% **PASS**, 16q/8q 25.0% **FAIL**, 12q/12q(비겹침) 52.1% **FAIL**. 원안의 PASS 는 **윈도 겹침이 만든 착시**(인접 윈도가 16q 공유). 지표 집합을 전체 표본에서 고정(안정성에 유리한 look-ahead 조건)했는데도 독립 윈도에서 부호가 뒤집힌다. 공정 판정선 = 16q/8q 의 25% FAIL(12q 는 자유도 부족 잡음 혼입).
+      - **결론: 리포트 매크로 라우팅 교체 보류가 정답.** 02e 의 "게이트 통과 전 리포트 미탑재" 가 옳았음이 수치로 확인됨. 현행(연간 `macroExposure` + `exposureQuality` 정직 라벨) 유지.
+      - 방법 C(폴백)는 이 결과와 **무관하게 유효**: 폴백은 *회귀가 아예 불가한 회사*를 라벨과 함께 채우는 것이지 불안정한 베타를 밀어넣는 게 아니다.
+      - 베타를 올리려면 선행 **안정화** 필요: 지표 수 축소(다중공선성)·계층 베이즈(섹터 prior 축소추정)·부호 제약·표본 확대. 전 유니버스·다기간 확장은 CI 트랙.
     - ★ **라우팅 실측(2026-07-06)**: `c.analysis("macro","매크로민감도")` -> `_registry` -> **`macroExposure.calcMacroSensitivity`(연간)**. 반환 스키마 `exposureQuality`·`selected`·`optimalIndicators`·`netDirection`(005930 `status=quantCandidate`). 분기·다변량 회귀(nObs 37)는 **예측신호 쪽 `calcMacroRegression`** 에만 존재. 즉 **리포트는 약한 연간 구현을 소비한다**.
       - 따라서 02e A·B 를 리포트에 반영 = *발행되는 리포트 숫자 변경*. PRD 가 "졸업 게이트 통과 전 리포트 미탑재" 로 막아둔 지점이며 게이트(β-stability)는 CI/데이터. **무검증 교체 금지**([[feedback_plan_score_not_signature]] 미검증 확신).
       - `macroExposure` 쪽에 방법 C 를 그대로 이식하는 것도 *순수 additive 아님*: 그쪽은 `None` -> dict 가 되면 터미널·리포트가 곧바로 렌더한다(수치 게이트가 자동 필터해 주던 `calcMacroRegression` 경우와 다름). UI 가시 변경이라 별도 승인 필요.
