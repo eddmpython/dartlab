@@ -200,3 +200,26 @@ False 보존 · 키 불변 · 비-dataclass 가드).
 중앙 alias 표 · Protocol 강제 · universeScope/laneHint 발명(이미 stockRequired·hidden 존재) ·
 PR1 에 artifactSync 승인 게이트(팬텀) · 성적표 전 5엔진 백필 · materialize 를 L1.5 배치(순환) ·
 전축 Company 루프 물질화(OOM) · 새 최상위 verb.
+
+## §14. 구현 완료 (PR1~4 green, 2026-07-11)
+
+- **PR1 (7c113f002)**: `_injectAxisRegistriesLive` 가 선언 필드를 버리지 않게. declared 0/125 -> 125/125.
+  네이티브 이름 캐리(alias 표 없음). 테스트 5건. arch 44·ref 37 green.
+- **부채 청산 (3f9f3d625)**: skill 산출물 stale drift 3파일(runtime/notebooks.md 갱신 미반영) 동기화.
+  내 변경 무관(stash 대조), 결정론·byte-동일 검증 후 별도 "정리" 커밋.
+- **PR2 (a955c9a5c)**: `tests/audit/axisDeclaredCoverage.py` 부채 원장 게이트 + baseline. 세 부채 동결
+  (축수·미선언·손테이블 불일치 credit/gather). 부정테스트로 exit 2 검증. run.py lint 체인 append.
+- **PR3 (0cbaf1b89)**: 순수 커널 `reference/capability/mirror.py`(L1.5) 본진. loadCapabilities 소비
+  (raw 재반사 0). reflectAxes·laneOf·foldToCanonical·universeScopeOf. 테스트 7건, 엔진 데이터 0.
+  9섹션 docstring(Example 실행 검증). universeScope 발명 철회 = stockRequired 선언 사용.
+- **PR4 (3aeac5bb2)**: 물질화 드라이버 `simulate/mirror.py`(L2.5). 공개계약 호출만. bulkSelects(카탈로그
+  무target 전개·per-company 제외)·materialize·runWorkbench(coverage 성적표). simulate LAYERS L2 등록
+  (신규 위반 0 실측, Company.simulate facade 를 _FACADE_PATTERNS 등재). workbenchPurity.py AST 가드
+  (parquet/Company/_AXIS_REGISTRY denylist + import allowlist) run.py append. 테스트 5건.
+
+**자동흡수 실현**: 새 축은 declared 싣기만 = 코드 0. 새 계정(860->900)은 카탈로그 무target 전개라 코드 0.
+새 엔진은 2 손테이블(PR2 가 회귀 감시). laneHint·universeScope·guide extraColumns 발명 전부 철회
+(선언 실재). 정직한 크기 = 데이터 확대 O(1), 엔진 확대 O(엔진).
+
+**잔여**: US(edgar) 물질화(glob 느림, 축별 costTag). 5엔진 returnType 백필(선택, morphology fallback
+동작). 이 둘은 작업대 필수 아님 = 성적표 숫자 근거 후 독립.
