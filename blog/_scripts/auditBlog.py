@@ -63,6 +63,12 @@ BLOG_REQUIRED_PLAN_FIELDS = (
     "honestyGuards",
     "evidenceMap",
 )
+DARTLAB_TITLE_FORBIDDEN_RE = re.compile(r"무엇\s*인가|사용법|총정리|정리$|하는\s*법|꺼내는\s*법|호출\s*방법|소개")
+DARTLAB_TITLE_SEARCH_RE = re.compile(
+    r"DART|EDGAR|공시|재무제표|사업보고서|손익계산서|재무상태표|현금흐름표|계정|데이터",
+    re.I,
+)
+DARTLAB_TITLE_ACTION_RE = re.compile(r"설치|파이썬|코드|브라우저|한\s*줄|조회|불러오|실행|시작|열기|분석")
 
 
 @dataclass
@@ -314,6 +320,22 @@ def _compact_len(value: object) -> int:
     return len(re.sub(r"[^0-9A-Za-z가-힣]", "", str(value or "")))
 
 
+def _validate_dartlab_story_title(value: object, label: str) -> list[str]:
+    title = str(value or "").strip()
+    fails: list[str] = []
+    if not title:
+        return [f"{label}: 제목 누락"]
+    if _compact_len(title) > 24:
+        fails.append(f"{label}: dartlab 이야기 제목은 최대 24자여야 함({title!r})")
+    if DARTLAB_TITLE_FORBIDDEN_RE.search(title):
+        fails.append(f"{label}: 소개형·정리형·긴 방법론 제목은 금지({title!r})")
+    if not DARTLAB_TITLE_SEARCH_RE.search(title):
+        fails.append(f"{label}: 외부 검색어(DART, 공시, 재무제표, 사업보고서 등)가 필요함({title!r})")
+    if not DARTLAB_TITLE_ACTION_RE.search(title):
+        fails.append(f"{label}: 즉시 효용(설치, 파이썬, 코드, 브라우저, 실행 등)이 필요함({title!r})")
+    return fails
+
+
 def _load_json_payload(path: Path) -> tuple[dict[str, object] | None, str | None]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -428,6 +450,15 @@ def _validate_common_plan(
         fails.append(f"{label}: 제목이 설명형 템플릿으로 끝남({selected!r})")
     if re.search(r"돈을\s*못\s*번|누가\s*돈을\s*버나|왜\s*못\s*버나", selected):
         fails.append(f"{label}: 제목이 반복 금융 템플릿임({selected!r})")
+    if category == "dartlab-stories":
+        fails.extend(_validate_dartlab_story_title(selected, f"{label}: titleContract.selectedTitle"))
+        plan_title = str(plan.get("title") or "")
+        fails.extend(_validate_dartlab_story_title(plan_title, f"{label}: title"))
+        for idx, raw in enumerate(candidates, start=1):
+            if isinstance(raw, dict):
+                fails.extend(
+                    _validate_dartlab_story_title(raw.get("title"), f"{label}: titleContract.candidates[{idx}]")
+                )
 
     insight = plan.get("insight") if isinstance(plan.get("insight"), dict) else {}
     for field in ("commonBelief", "twistFact", "whatToWatch", "freshnessArgument"):
@@ -523,6 +554,7 @@ def _validate_common_plan(
 
 def _validate_genre_body(raw: str, body: str, category: str) -> list[str]:
     fails: list[str] = []
+    title = _clean_scalar(frontmatter_value(raw, "title"))
     topic_slug = _clean_scalar(frontmatter_value(raw, "topicSlug"))
     stock_code = _clean_scalar(frontmatter_value(raw, "stockCode"))
     upper_body = body.upper()
@@ -586,6 +618,7 @@ def _validate_genre_body(raw: str, body: str, category: str) -> list[str]:
     elif category == "dartlab-stories":
         # 주어는 회사가 아니라 dartlab 이다. 본문 코드는 독자가 브라우저에서 그대로 실행한다.
         # 계약 밖 호출이 섞이면 tests/audit/notebookContract.py 가 따로 막는다.
+        fails.extend(_validate_dartlab_story_title(title, "frontmatter title"))
         if not topic_slug:
             fails.append("dartlab 이야기는 frontmatter topicSlug 가 필요함")
         if stock_code:

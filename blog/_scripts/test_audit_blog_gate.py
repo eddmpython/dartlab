@@ -268,3 +268,9 @@ def test_publish_gate_blocks_visuals_without_inline_use(monkeypatch, tmp_path: P
     errors = ab.publish_gate(post)
     assert any("visuals[1].placement" in err for err in errors)
     assert any("imagePlan[2].narrativeUse" in err for err in errors)
+
+
+def test_dartlab_story_title_gate_blocks_intro_title() -> None:
+    assert not ab._validate_dartlab_story_title("DART 공시분석, 설치 없이", "title")
+    errors = ab._validate_dartlab_story_title("dartlab이란 무엇인가", "title")
+    assert any("소개형" in err for err in errors)
