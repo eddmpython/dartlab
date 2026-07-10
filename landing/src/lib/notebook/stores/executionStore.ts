@@ -1,5 +1,5 @@
 import { writable, get } from 'svelte/store';
-import type { ExecutionEngine, CompletionItem, VariableInfo, PackageInfo, DocResult, FileEntry } from '../engine/executionEngine';
+import type { CellOutput, ExecutionEngine, CompletionItem, VariableInfo, PackageInfo, DocResult, FileEntry } from '../engine/executionEngine';
 import { WorkerEngine } from '../engine/workerEngine';
 import { notebook, applyCellExecutionResult, setCellOutput, focusNextCell, nextExecutionCount, saveToStorage, cellOutputs, setCellErrors } from './notebookStore';
 import type { WorkspaceFile } from './notebookStore';
@@ -257,6 +257,29 @@ export async function executeAllCells(cells: { id: string; type: string; content
 		if (cell.type === 'code' && cell.content.trim()) {
 			await executeCell(cell.id, cell.content);
 		}
+	}
+}
+
+/**
+ * 노트북 밖(블로그 본문 셀)에서 코드 한 토막을 돌린다.
+ *
+ * `executeCell` 은 노트북 셀 id 를 전제로 출력 저장·반응 그래프·IndexedDB 저장까지 함께 한다.
+ * 블로그 본문에는 노트북이 없으므로 그 배선을 타면 안 된다. 커널만 공유하고 나머지는 안 건드린다.
+ * 같은 페이지의 셀들이 한 커널을 공유하므로 위 셀에서 만든 변수를 아래 셀이 그대로 쓴다.
+ */
+export async function runSnippet(code: string): Promise<CellOutput> {
+	// `if (!engine)` 로 거르면 안 된다. 프리워밍(onpointerenter)이 이미 `engine` 을 대입해 두고 아직
+	// initialize 중일 수 있다. 그러면 준비를 안 기다린 채 "엔진 없음" 으로 끝난다. bringUpEngine 은
+	// 중복 호출이 안전하고, 진행 중이면 그 약속을 공유한다.
+	await bringUpEngine();
+	if (!engine?.isReady) {
+		return { type: 'error', data: '파이썬 엔진을 띄우지 못했습니다.', executedAt: new Date().toISOString() };
+	}
+	engineStatus.set('executing');
+	try {
+		return await engine.execute(code);
+	} finally {
+		engineStatus.set('ready');
 	}
 }
 
