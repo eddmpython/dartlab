@@ -224,7 +224,7 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
 ## 8. 운영자 판단 대기 (TODO)
 
 미측정이던 넷은 **실측으로 닫혔다** (2026-07-10, 실제 chromium + 현행 wheel).
-하네스는 `tests/_attempts/pyodideCells/` (gitignore 대상, 로컬 전용).
+하네스는 본진 `blog/_scripts/runCells.mjs` (auditBlog 의 브라우저 실행 짝).
 
 | 호출 | 브라우저 | 결과 |
 |---|---|---|
@@ -247,11 +247,13 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
       "이 회사는 무슨 업을 하는가" 각도로 세울지, 21편 `where-it-sits` 에 흡수할지가 갈림길이다.
 - [ ] **로컬 전용 편(26~33)의 실행 셀을 어떻게 보일 것인가.** 눌러도 안 도는 셀은 독자에게 고장으로 읽힌다.
       실행 막대를 감출지, 눌렀을 때 "로컬에서만 됩니다" 를 띄울지. 지금은 아무 처리도 없다.
-- [ ] **브라우저 wheel 재배포.** `71f18f8dd` 가 고친 세 문구(겁주는 "데이터 없음", 날문자열
-      `message_emit`, 깨진 완료 문구)는 HF wheel 을 다시 올려야 화면에 반영된다. 지금 학습자는
-      1편 scan 셀에서 그 세 줄을 그대로 본다.
-- [ ] **실행셀 하네스를 본진으로 올릴 것인가.** 편당 90 초. 34 편이면 50 분이다. PR 마다는 무리다.
-      야간 전수인지, 바뀐 편만인지, 로컬 전용인지 결정이 필요하다. 상세 = 하네스 README.
+- [ ] **브라우저 wheel 재배포 (인증 완료, 운영자 단어 대기).** 브라우저는 HF 의 0.10.7 wheel 로 돈다. 그 위에서
+      `Company.credit` 은 축을 뭘 넣든 죽고(`e99896919`), scan 첫 셀은 겁주는 문구를 뱉는다(`71f18f8dd`). 0.10.8 wheel 을
+      브라우저에서 전 표면 13/13 인증했다(panel·select·scan·analysis·credit dCR-AA-·story·industry·trace·macro).
+      go-live = HF 에 wheel 업로드 + `pyodideWorker.ts:54` 포인터 0.10.7 에서 0.10.8 + push. 미발행 코드를 라이브에
+      띄우는 발행이자 UI 변경이라 운영자 단어가 규칙상 필요하다.
+- [x] **실행셀 하네스 본진 승격 완료** (`44ebbe438`). `blog/_scripts/runCells.mjs`, auditBlog 의 브라우저 실행 짝.
+      편당 90 초라 CI-fast 부적합, dartlab-stories 편 발행 전 로컬 게이트. 나머지(야간 전수·바뀐 편만)는 워크플로 결정.
 
 ## 9. 회귀 가드
 
