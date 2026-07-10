@@ -41,7 +41,11 @@
     - `_sectorPriorFallback()` 신설. `calcMacroRegression` 의 4 개 스킵 경로(IS 파싱 불가·YoY 관측치<6·지표 로드 실패·OLS 실패)가 `None` 대신 섹터 탄성치를 `evidenceLevel="sectorPrior"`·`fallbackReason` 과 함께 반환. 성공 경로는 `evidenceLevel="observed"`.
     - **오독 방지 설계**: 폴백은 `betas=None`·`rSquared=0.0`·`confidence="low"` 라 기존 소비자 게이트(`_predictionSynthesis:366` rSquared>0.1, `:643` >0.3)를 자동으로 통과하지 못한다. 섹터 평균이 기업 고유 베타로 렌더될 수 없다. 섹터 키 미해소 시 `None` 유지(기본 탄성치 날조 금지).
     - 검증: offline 3 테스트 신규(총 20 pass) + 관련 분석 86 pass + **실데이터 라벨 확인**(005930 `observed`·nObs 37·R² 0.7681·high·sectorKey 반도체). ruff·camelCase clean. 회귀 0(폴백은 기존에 아무것도 안 나오던 회사만 채운다).
-    - ⏭ 잔여: β-stability sign-flip<20% 등 OOS 검증은 다회사 데이터라 CI. 또한 리포트가 소비하는 쪽은 약한 `macroExposure.calcMacroSensitivity`(연간)라, **두 동명 함수의 라우팅 일원화는 별건 과제**(운영자 판단).
+    - ⏭ 잔여: β-stability sign-flip<20% 등 OOS 검증은 다회사 데이터라 CI.
+    - ★ **라우팅 실측(2026-07-06)**: `c.analysis("macro","매크로민감도")` -> `_registry` -> **`macroExposure.calcMacroSensitivity`(연간)**. 반환 스키마 `exposureQuality`·`selected`·`optimalIndicators`·`netDirection`(005930 `status=quantCandidate`). 분기·다변량 회귀(nObs 37)는 **예측신호 쪽 `calcMacroRegression`** 에만 존재. 즉 **리포트는 약한 연간 구현을 소비한다**.
+      - 따라서 02e A·B 를 리포트에 반영 = *발행되는 리포트 숫자 변경*. PRD 가 "졸업 게이트 통과 전 리포트 미탑재" 로 막아둔 지점이며 게이트(β-stability)는 CI/데이터. **무검증 교체 금지**([[feedback_plan_score_not_signature]] 미검증 확신).
+      - `macroExposure` 쪽에 방법 C 를 그대로 이식하는 것도 *순수 additive 아님*: 그쪽은 `None` -> dict 가 되면 터미널·리포트가 곧바로 렌더한다(수치 게이트가 자동 필터해 주던 `calcMacroRegression` 경우와 다름). UI 가시 변경이라 별도 승인 필요.
+      - **결정 필요(운영자)**: 두 동명 `calcMacroSensitivity`(analysis 연간 회귀 / signals 섹터 탄성치) + `calcMacroRegression`(분기 다변량 회귀) 중 리포트 정본을 무엇으로 둘지. 일원화는 공개 API·리포트 수치·CI 검증이 동시에 걸린 별건 과제.
 
 ## P2 · 리포트 엔진
 - ✅ **삭제 2,419 LOC 완료(2026-07-06)**. import 전수 census 로 死/生 판별 후 실행:
