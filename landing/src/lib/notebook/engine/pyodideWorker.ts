@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
 import { MARIMO_SHIM_FILES } from './marimoShim';
+import { wrapLastExpression } from './lastExpression';
 
 declare const self: DedicatedWorkerGlobalScope;
 
@@ -103,59 +104,6 @@ async function initialize() {
 	pyodide.FS.writeFile('/matplotlibrc', MATPLOTLIBRC, { encoding: 'utf8' });
 	pyodide.runPython('import os, sys; os.chdir("/workspace")\nif "/workspace" not in sys.path: sys.path.insert(0, "/workspace")\nos.environ["MPLBACKEND"] = "AGG"\nos.environ["MATPLOTLIBRC"] = "/matplotlibrc"');
 	installMarimoShim();
-}
-
-/**
- * 마지막 줄이 대입문인가. 괄호 밖·따옴표 밖·주석 밖에 있는 `=` 하나면 대입이다.
- *
- * 예전에는 정규식 넷(단순·주석달린·첨자속성·튜플언팩)으로 갈랐는데 그중 `^[a-zA-Z_]\w*[\[.].*=`
- * 가 **괄호 안 키워드 인자**까지 삼켰다. `c.select("IS", ["매출액"], freq="Y").df` 가 대입문으로
- * 오인되어 결과가 통째로 사라졌다. 오류도 안 나고 빈 출력이라 아무도 몰랐다. 깊이를 세면 그
- * 오인이 원천적으로 없다.
- */
-function isAssignment(line: string): boolean {
-	if (line.startsWith('lambda ')) return false; // `lambda x=1: x` 의 기본값은 대입이 아니다
-	let depth = 0;
-	let quote = '';
-	for (let i = 0; i < line.length; i++) {
-		const ch = line[i];
-		if (quote) {
-			if (ch === '\\') i++;
-			else if (ch === quote) quote = '';
-			continue;
-		}
-		if (ch === '"' || ch === "'") quote = ch;
-		else if (ch === '(' || ch === '[' || ch === '{') depth++;
-		else if (ch === ')' || ch === ']' || ch === '}') depth--;
-		else if (ch === '#') return false;
-		else if (ch === '=' && depth === 0) {
-			const prev = line[i - 1];
-			if (line[i + 1] === '=') return false; // ==
-			if (prev === '=' || prev === '!' || prev === '<' || prev === '>') return false; // 비교 연산
-			if (prev === ':') return false; // walrus
-			return true; // `=` 와 증강대입(`+=` `//=` 등) 둘 다 여기로 온다
-		}
-	}
-	return false;
-}
-
-function wrapLastExpression(code: string): string {
-	const lines = code.trimEnd().split('\n');
-	if (lines.length === 0) return code;
-	const lastLine = lines[lines.length - 1];
-	const trimmed = lastLine.trim();
-	if (!trimmed || trimmed.startsWith('#')) return code;
-	if (/^\s/.test(lastLine)) return code;
-	const statementKeywords = [
-		'import ', 'from ', 'def ', 'class ', 'if ', 'elif ', 'else:',
-		'for ', 'while ', 'try:', 'except', 'finally:', 'with ',
-		'return ', 'yield ', 'raise ', 'pass', 'break', 'continue',
-		'del ', 'assert ', 'global ', 'nonlocal ', 'async ', 'await ',
-	];
-	if (statementKeywords.some((kw) => trimmed.startsWith(kw))) return code;
-	if (isAssignment(trimmed)) return code;
-	lines[lines.length - 1] = `__eddmlab_result__ = ${trimmed}`;
-	return lines.join('\n') + '\n__eddmlab_result__';
 }
 
 const FORMAT_CODE = `
