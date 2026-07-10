@@ -46,10 +46,10 @@
 
 ### start
 
-- [x] **1. dartlab이란 무엇인가** `what-is-dartlab` `B`
+- [x] **1. DART 공시분석, 설치 없이** `what-is-dartlab` `B`
   정체 + 데이터 구조(항목 x 기간 격자) + 수집·가공·배포 3층 운영.
   코드: `Company("005930")`, `panel("IS").head(3)`, `market`, `panel("BS").shape`, `scan("growth").shape`, `select("IS", ["매출액"], freq="Y")`
-- [x] **2. 재무제표를 코드 두 줄로 꺼내는 법** `call-financial-statements` `B`
+- [x] **2. 재무제표, 파이썬 한 줄** `call-financial-statements` `B`
   panel IS/BS/CF, select, 연간과 분기, 계정 이름이 회사마다 다른 문제, 빈칸의 의미.
 - [ ] **3. 코드를 실행한다는 것** `how-notebook-runs` `B`
   셀·실행·결과·재실행, 그리고 "노트북 생성하기" 로 글을 내 것으로 가져오는 루프.
