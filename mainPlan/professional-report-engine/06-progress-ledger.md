@@ -101,7 +101,11 @@
 - ✅ **렌더러 graceful-skip 확인**: `+page.svelte` 블록 if-체인이 8 legacy 후 else 없이 종료 → 신규 pro 블록 자동 skip(크래시 0). 미래호환 충족, 변경 불요.
 - ☐ `build.ts` pro 블록 emit (thesisStruct TS·valuationBridge/scenario **pyodide `c.reportModel()`** §3 (a)) — pyodide 휠에 reportModel 포함(빌드) + 배선 필요
 - ☐ `+page.svelte` pro 블록 렌더 케이스 추가 — **시각 작업·눈검수 필수**
-- ☐ 6상수 golden-parity (N=5, ~20셀)
+- ⛔ 6상수 golden-parity (N=5, ~20셀) . **착수 후 반증: 지금은 성립 불가(2026-07-06 실측)**. 03 §4.1 이 요구한 6 상수 중 **Python 쪽이 존재하는 것은 #5 thesis 하나뿐**이다.
+  - #1 verdict 임계: Python emitter 는 **재무건전성 verdict 표를 생산하지 않는다**(healthTable 은 `landing/src/lib/report/build.ts:620` TS 전용). #2 window guard(`window.ts`) · #3 peer cut(`peer.ts`) 도 **TS 전용**, Python 에 `WINDOW_GUARD`/`PEER_CUTS` 없음. #6 arc 순서는 `story/arc.py` 부재 + arc 재정렬이 이미 🟡 보류. #4 는 설계상 parity 면제. #5 만 양쪽 존재(`story/thesis.py:70` ↔ `build.ts:1487 buildThesisStruct`).
+  - 요구 산출물 `story/constants.py`·`story/arc.py`·`contracts/reportConstants.ts`·`tests/story/test_report_parity.py` **전부 미존재**. Python 쪽에 없는 상수를 새로 만들면 아무도 안 쓰는 死코드가 된다.
+  - ★ **구조적 발견**: 랜딩 TS 빌더는 **Python 계약의 소비자가 아니라 독립 구현**이다(`build.ts` 가 자체 `ReportModel` 을 조립). `model.ts` 는 타입만 re-export 한다. 즉 P3 "랜딩 동일 소비" 는 *타입 수준* 에서만 달성됐고 *계산 수준* 에선 미달이다.
+  - **결정 필요(운영자)**: (a) Python emitter 가 verdict/window/peer 를 흡수한 뒤 핀 · (b) 랜딩이 pyodide 로 Python 산출을 소비 · (c) TS 전용을 인정하고 해당 상수를 핀 대상에서 제외. 셋 중 하나를 정해야 P3-3 이 성립한다.
 - ☐ UI 스크린샷 눈검수 + 운영자 승인 push
 
 ## 결정·이벤트 로그
