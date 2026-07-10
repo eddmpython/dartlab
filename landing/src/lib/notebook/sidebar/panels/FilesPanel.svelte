@@ -6,7 +6,6 @@
 	import { notebook, updateCellContent, activeCellId, loadNotebook, resetNotebook, setTitle, saveToServer } from '../../stores/notebookStore';
 	// 저장소 = 이 브라우저 IndexedDB. 서버 없음(landing = adapter-static).
 	import { listNotebooks, getNotebook, putNotebook, deleteNotebook } from '../../storage/localStore';
-	import { isLessonNotebook } from '../../lessons/registry';
 
 	let expandedDirs = $state<Set<string>>(new Set(['/workspace']));
 	let treeData = $state<Map<string, FileEntry[]>>(new Map());
@@ -31,13 +30,11 @@
 	let wsTitleEditing = $state(false);
 	let wsTitleDraft = $state('');
 
-	// 내 노트북 목록. 레슨 진행분(`lesson:` 접두)은 허브 카드가 '이어하기' 로 보여 주므로 여기선 뺀다.
-	const wsFiltered = $derived.by(() => {
-		const base = wsList.filter((w) => !isLessonNotebook(w.id));
-		return wsSearch.trim()
-			? base.filter((w) => w.title.toLowerCase().includes(wsSearch.trim().toLowerCase()))
-			: base;
-	});
+	const wsFiltered = $derived.by(() =>
+		wsSearch.trim()
+			? wsList.filter((w) => w.title.toLowerCase().includes(wsSearch.trim().toLowerCase()))
+			: wsList
+	);
 
 	// 저장소는 이 브라우저의 IndexedDB 하나뿐이다. 예전엔 `/api/notebook/*` 를 불렀는데 landing 은
 	// adapter-static 무서버라 그 요청이 늘 404 였다. 그래서 이 목록은 항상 비어 보였다.

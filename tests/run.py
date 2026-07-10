@@ -251,11 +251,7 @@ GATES: dict[str, Gate] = {
         # validateNotebooks 는 ast.parse(문법)만 본다. notebookContract 는 셀이 부르는 심볼이
         # 공개 계약(engines capabilityRefs + dartlab.__all__) 안인지 본다. 미등재 내부 메서드가
         # 공개 노트북으로 새어 나가던 구멍(2026-07-09 c.audit 사건)을 막는다.
-        cmd=(
-            "python tests/audit/validateNotebooks.py && "
-            "python -X utf8 tests/audit/notebookContract.py && "
-            "python -X utf8 tests/audit/lessonSchema.py"
-        ),
+        cmd=("python tests/audit/validateNotebooks.py && python -X utf8 tests/audit/notebookContract.py"),
     ),
     "snapshot-regression": Gate(
         name="snapshot-regression",

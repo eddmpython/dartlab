@@ -1,19 +1,16 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
 	import NotebookEditor from '$lib/notebook/NotebookEditor.svelte';
 	import type { Notebook } from '$lib/notebook/stores/notebookStore';
-	import { getLesson, lessonToCells, lessonNotebookId } from '$lib/notebook/lessons/registry';
-	import { getNotebook, putNotebook } from '$lib/notebook/storage/localStore';
+	import { getNotebook } from '$lib/notebook/storage/localStore';
 
 	let initial = $state<Notebook | null>(null);
 	let status = $state<'loading' | 'ready' | 'notfound'>('loading');
 	let loadedId: string | null = null;
 
-	// page.params.id 변경마다 로드. 예제 id 직접 진입은 fork 후 같은 라우트(/notebooks/[id])로
-	// redirect 되는데, onMount 는 컴포넌트 재사용 시 재실행 안 돼 "불러오는 중"에서 고착됐다.
-	// $effect 는 uuid 로 바뀐 id 를 감지해 재실행 -> getNotebook 분기로 로드된다.
+	// onMount 는 같은 라우트 안에서 id 만 바뀔 때 재실행되지 않아 "불러오는 중"에서 고착됐다.
+	// $effect 는 id 변경을 감지해 다시 로드한다.
 	$effect(() => {
 		const id = page.params.id;
 		if (id === loadedId) return;
@@ -28,39 +25,9 @@
 		}
 		status = 'loading';
 		initial = null;
-
-		// 1) 저장된 노트북(내 노트북 uuid 또는 진행 중인 `lesson:` 레슨) -> IndexedDB 로드.
 		const found = await getNotebook(id);
 		if (found) {
 			initial = found;
-			status = 'ready';
-			return;
-		}
-
-		// 2) 레슨 id 직접 진입(링크 공유·북마크) -> 안정 id `lesson:<id>` 로 만들고 그 주소로 옮긴다.
-		//    옛 동작은 열 때마다 uuid 사본을 새로 만들어, 같은 레슨을 두 번 열면 사본이 둘 생기고
-		//    진도가 어디에도 남지 않았다.
-		const lessonId = id.startsWith('lesson:') ? id.slice('lesson:'.length) : id;
-		const lesson = getLesson(lessonId);
-		if (lesson) {
-			const now = new Date().toISOString();
-			const nb: Notebook = {
-				id: lessonNotebookId(lessonId),
-				title: lesson.meta.title,
-				description: lesson.meta.description,
-				cells: lessonToCells(lesson).map((cell) => ({
-					id: cell.id,
-					type: cell.type,
-					content: cell.content
-				})),
-				metadata: { createdAt: now, updatedAt: now }
-			};
-			await putNotebook(nb);
-			if (nb.id !== id) {
-				await goto(`${base}/notebooks/${nb.id}`, { replaceState: true });
-				return;
-			}
-			initial = nb;
 			status = 'ready';
 			return;
 		}

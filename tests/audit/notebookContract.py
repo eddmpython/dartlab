@@ -140,13 +140,16 @@ def _codeCellsOfIpynb(path: Path) -> list[str]:
     return cells
 
 
-def _codeCellsOfLessonYaml(path: Path) -> list[str]:
-    doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    return [s["code"] for s in doc.get("sections", []) if isinstance(s, dict) and s.get("code")]
+_PY_FENCE = re.compile(r"^```(?:python|py)\s*$(.*?)^```\s*$", re.MULTILINE | re.DOTALL)
+
+
+def _codeBlocksOfMarkdown(path: Path) -> list[str]:
+    """마크다운의 python 코드펜스. dartlab 이야기 본문 셀은 독자가 그대로 실행한다."""
+    return [m.group(1) for m in _PY_FENCE.finditer(path.read_text(encoding="utf-8"))]
 
 
 def _targets() -> list[tuple[Path, list[str]]]:
-    """검사 대상 = 사용자에게 노출되는 모든 노트북 표면."""
+    """검사 대상 = 사용자가 그대로 실행하는 모든 코드 표면."""
     out: list[tuple[Path, list[str]]] = []
     for p in sorted((_REPO / "notebooks" / "colab").glob("*.ipynb")):
         out.append((p, _codeCellsOfIpynb(p)))
@@ -154,10 +157,10 @@ def _targets() -> list[tuple[Path, list[str]]]:
         out.append((p, [p.read_text(encoding="utf-8")]))
     for p in sorted((_REPO / "notebooks" / "_scripts").glob("*.py")):
         out.append((p, [p.read_text(encoding="utf-8")]))
-    lessons = _REPO / "landing" / "src" / "lib" / "notebook" / "lessons"
-    if lessons.is_dir():
-        for p in sorted(lessons.rglob("*.yaml")):
-            out.append((p, _codeCellsOfLessonYaml(p)))
+    # dartlab 이야기 본문의 코드펜스는 브라우저 노트북 셀로 그대로 투영된다. 계약 밖 호출이
+    # 실리면 독자의 첫 실행이 AttributeError 로 끝난다. 다른 카테고리는 산문 예시라 제외.
+    for p in sorted((_REPO / "blog" / "03-dartlab-stories").rglob("index.md")):
+        out.append((p, _codeBlocksOfMarkdown(p)))
     return out
 
 

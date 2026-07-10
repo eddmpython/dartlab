@@ -16,19 +16,8 @@
 	// 사전 로딩: 노트북을 만들거나 열려는 낌새에 커널+dartlab 을 미리 올린다(에디터 열릴 때 대기 0).
 	import { prewarmEngine } from '$lib/notebook/stores/executionStore';
 	import type { Notebook } from '$lib/notebook/stores/notebookStore';
-	// 레슨 SSOT = lessons/content/**/*.yaml. 레지스트리가 원본을 그대로 읽어 목록·셀을 낸다.
-	import {
-		TRACKS,
-		listLessons,
-		lessonsOfTrack,
-		getLesson,
-		lessonToCells,
-		lessonNotebookId,
-		isLessonNotebook
-	} from '$lib/notebook/lessons/registry';
 	import {
 		listNotebooks,
-		getNotebook,
 		putNotebook,
 		deleteNotebook,
 		type NotebookSummary
@@ -43,8 +32,6 @@
 
 	let mine = $state<NotebookSummary[]>([]);
 	let loading = $state(true);
-	/** 이미 시작한 레슨(=IndexedDB 에 `lesson:` 노트북이 있는 것). 카드에 '이어하기' 를 띄운다. */
-	let startedLessons = $state<Set<string>>(new Set());
 
 	const links = DARTLAB_BRAND_LINKS;
 	let ghStars = $state<number | null>(null);
@@ -52,17 +39,13 @@
 	let supportOpen = $state(false);
 
 	async function refresh() {
-		const all = await listNotebooks();
-		// 레슨 진행분은 '내 노트북' 목록에 섞지 않는다. 카드의 '이어하기' 배지로만 드러난다.
-		mine = all.filter((nb) => !isLessonNotebook(nb.id));
-		startedLessons = new Set(
-			all.filter((nb) => isLessonNotebook(nb.id)).map((nb) => nb.id.slice('lesson:'.length))
-		);
+		mine = await listNotebooks();
 	}
 
 	onMount(async () => {
 		await refresh();
 		loading = false;
+		nowMs = Date.now();
 	});
 
 	function nowIso() {
@@ -80,41 +63,6 @@
 		};
 		await putNotebook(nb);
 		await goto(`${base}/notebooks/${nb.id}`);
-	}
-
-	/**
-	 * 레슨 열기. 이미 시작한 레슨이면 그대로 이어하고, 처음이면 원본에서 셀을 투영해 만든다.
-	 * 열 때마다 uuid 사본을 만들던 옛 동작은 같은 레슨을 두 번 누르면 사본이 둘 생기고
-	 * 진도가 어디에도 남지 않았다.
-	 */
-	async function openLesson(lessonId: string) {
-		prewarmEngine(); // 커널+dartlab 사전 로딩 시작(대기 안 함)
-		const nbId = lessonNotebookId(lessonId);
-		const existing = await getNotebook(nbId);
-		if (!existing) {
-			const lesson = getLesson(lessonId);
-			if (!lesson) return;
-			const now = nowIso();
-			const nb: Notebook = {
-				id: nbId,
-				title: lesson.meta.title,
-				description: lesson.meta.description,
-				cells: lessonToCells(lesson).map((cell) => ({
-					id: cell.id,
-					type: cell.type,
-					content: cell.content
-				})),
-				metadata: { createdAt: now, updatedAt: now }
-			};
-			await putNotebook(nb);
-		}
-		await goto(`${base}/notebooks/${nbId}`);
-	}
-
-	/** 레슨을 순정 상태로. 저장분을 지우면 다음 열기에서 원본이 다시 투영된다. */
-	async function resetLesson(lessonId: string) {
-		await deleteNotebook(lessonNotebookId(lessonId));
-		await refresh();
 	}
 
 	async function openFile() {
@@ -151,16 +99,13 @@
 	}
 	// nowMs 를 mount 시 고정(Date.now 반복 호출 회피, 상대시각 표시용)
 	let nowMs = $state(0);
-	onMount(() => {
-		nowMs = Date.now();
-	});
 </script>
 
 <svelte:head>
 	<title>Notebooks · dartlab</title>
 	<meta
 		name="description"
-		content="브라우저에서 바로 실행하는 범용 파이썬 노트북 허브. 예제로 dartlab 엔진(공시·재무·신용·감사)을 익히거나 새 노트북을 만들어 설치 없이 파이썬을 쓰세요."
+		content="설치 없이 브라우저에서 바로 실행하는 파이썬 노트북. dartlab 이 들어 있어 회사 이름만 넣으면 공시와 재무제표를 불러옵니다."
 	/>
 </svelte:head>
 
@@ -190,64 +135,36 @@
 			</picture>
 			<div>
 				<h1>노트북</h1>
-				<p class="hero-kicker">브라우저에서 바로 실행하는 파이썬 노트북</p>
+				<p class="hero-kicker">설치 없이 브라우저에서 파이썬을 쓰는 곳</p>
 			</div>
 		</div>
 		<p class="hero-sub">
-			설치 없이 브라우저에서 바로 돕니다. 재무제표 · 계정 · 22축 분석 · 신용등급 · 서사 · 전종목 스캔까지
-			여기서 됩니다. 실시간 시세와 뉴스 수집만 <code>pip install dartlab</code> 로 로컬에서 쓰세요.
-			레슨과 노트북은 이 브라우저에 저장되고, 하던 곳에서 이어집니다.
+			노트북은 글과 코드를 한 장에 섞어 두는 문서입니다. 코드 칸에 파이썬을 적고 실행하면 바로 아래에
+			결과가 나옵니다. 여기서는 그 파이썬이 <a class="hero-link" href="{base}/blog/pyodide-dartlab-lite">Pyodide</a>
+			로 이 브라우저 안에서 돕니다. 설치도 가입도 없습니다.
+		</p>
+		<p class="hero-sub">
+			dartlab 이 이미 들어 있어서, 종목코드 여섯 자리만 넣으면 그 회사의 공시와 재무제표를 바로
+			불러옵니다. 데이터는 내려받고 계산은 전부 이 브라우저에서 끝납니다. 코드도 결과도 밖으로
+			나가지 않고, 만든 노트북은 이 브라우저에 저장됩니다.
 		</p>
 		<div class="hero-actions">
 			<button class="btn-primary" onclick={newNotebook} onpointerenter={prewarmEngine}><Plus size={16} /> 새 노트북</button>
 			<button class="btn-ghost" onclick={openFile}><FolderOpen size={15} /> 파일 열기</button>
 		</div>
+		<!-- 배우는 곳은 블로그다. 허브는 실습장이고, 커리큘럼은 dartlab 이야기가 맡는다. -->
+		<p class="hero-hint">
+			처음이라면 <a class="hero-link" href="{base}/blog/category/dartlab-stories">dartlab 이야기</a>
+			를 보세요. 글을 읽다가 그 자리에서 코드를 돌려 보고, 그대로 노트북으로 가져올 수 있습니다.
+		</p>
 	</section>
 
-	<!-- 커리큘럼. 트랙 순서가 곧 학습 경로다. 레슨 원본은 lessons/content/**/*.yaml 한 편당 한 파일. -->
-	{#each TRACKS as track (track.id)}
-		{@const lessons = lessonsOfTrack(track.id)}
-		{#if lessons.length}
-			<section class="gallery">
-				<div class="track-head">
-					<h2 class="sec-title">{track.title}</h2>
-					<p class="track-blurb">{track.blurb}</p>
-				</div>
-				<div class="grid">
-					{#each lessons as lesson (lesson.id)}
-						<NotebookCard
-							kind="example"
-							title={lesson.title}
-							subtitle={lesson.description}
-							metaLeft={`${lesson.level} · ${lesson.tags.join(' · ')}`}
-							metaRight={lesson.minutes ? `${lesson.minutes}분` : `${lesson.sectionCount} 단계`}
-							badge={startedLessons.has(lesson.id) ? '이어하기' : ''}
-							deletePrompt="처음부터 다시 시작할까요?"
-							deleteLabel="초기화"
-							onopen={() => openLesson(lesson.id)}
-							ondelete={startedLessons.has(lesson.id) ? () => resetLesson(lesson.id) : undefined}
-						/>
-					{/each}
-				</div>
-			</section>
-		{/if}
-	{/each}
-
-	<section class="gallery">
-		<h2 class="sec-title">내 노트북</h2>
-		{#if loading}
-			<p class="muted">불러오는 중...</p>
-		{:else if mine.length === 0}
-			<div class="empty">
-				<p class="empty-title">아직 노트북이 없어요</p>
-				<p class="empty-sub">새로 만들거나 위 예제로 시작해보세요.</p>
-				<button class="btn-primary" onclick={newNotebook} onpointerenter={prewarmEngine}><Plus size={16} /> 새 노트북</button>
-			</div>
-		{:else}
+	{#if !loading && mine.length > 0}
+		<section class="gallery">
+			<h2 class="sec-title">내 노트북</h2>
 			<div class="grid">
 				{#each mine as nb (nb.id)}
 					<NotebookCard
-						kind="local"
 						title={nb.title}
 						subtitle={nb.description}
 						metaLeft={`${nb.cellCount} 셀`}
@@ -257,8 +174,8 @@
 					/>
 				{/each}
 			</div>
-		{/if}
-	</section>
+		</section>
+	{/if}
 </div>
 
 <SupportDialog lang="kr" {links} {base} open={supportOpen} onClose={() => (supportOpen = false)} />
@@ -324,17 +241,28 @@
 		color: var(--dl-ink-mute);
 	}
 	.hero-sub {
-		margin: 0 0 20px;
+		margin: 0 0 10px;
 		font-size: 14px;
 		line-height: 1.7;
 		color: var(--dl-ink);
 	}
-	.hero-sub code {
-		font-family: var(--dl-font-mono);
-		font-size: 12.5px;
-		padding: 1px 5px;
-		border-radius: 3px;
-		background: var(--dl-bg-raised);
+	.hero-sub:last-of-type {
+		margin-bottom: 20px;
+	}
+	/* Pyodide 가 무엇인지는 dartlab 소식 글이 정본. 히어로는 한 단어만 걸고 넘긴다. */
+	.hero-link {
+		color: var(--dl-accent);
+		text-decoration: none;
+		border-bottom: 1px solid rgba(var(--dl-accent-rgb), 0.4);
+	}
+	.hero-link:hover {
+		border-bottom-color: var(--dl-accent);
+	}
+	.hero-hint {
+		margin: 16px 0 0;
+		font-size: 13.5px;
+		line-height: 1.7;
+		color: var(--dl-ink-mute);
 	}
 
 	.hero-actions {
@@ -381,22 +309,6 @@
 		margin: 0 auto;
 		padding: 12px 24px 32px;
 	}
-	/* 트랙 헤더. 제목 옆에 그 트랙이 무엇을 가르치는지 한 줄. */
-	.track-head {
-		display: flex;
-		align-items: baseline;
-		gap: 10px;
-		flex-wrap: wrap;
-		margin: 0 0 14px;
-	}
-	.track-head .sec-title {
-		margin: 0;
-	}
-	.track-blurb {
-		margin: 0;
-		font-size: 13px;
-		color: var(--dl-ink-mute);
-	}
 	.sec-title {
 		margin: 0 0 14px;
 		font-size: 13px;
@@ -409,30 +321,5 @@
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 		gap: 0.95rem;
-	}
-	.muted {
-		color: var(--dl-ink-mute);
-		font-size: 13px;
-	}
-	.empty {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		gap: 6px;
-		padding: 28px;
-		border: 1px dashed var(--dl-line-strong);
-		border-radius: var(--dl-r-md);
-		background: var(--dl-bg-raised);
-	}
-	.empty-title {
-		margin: 0;
-		font-size: 15px;
-		font-weight: 600;
-		color: var(--dl-ink);
-	}
-	.empty-sub {
-		margin: 0 0 8px;
-		font-size: 13px;
-		color: var(--dl-ink-mute);
 	}
 </style>
