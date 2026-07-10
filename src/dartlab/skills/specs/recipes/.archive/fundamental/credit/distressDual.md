@@ -5,7 +5,7 @@ category: recipes
 kind: recipe
 scope: builtin
 status: unverified
-purpose: 단일 회사 부도 위험을 Altman Z″-Score (1968 비제조업 변형) + Ohlson O-Score (1980 logit) 2 학술 모델 동시 적용으로 합의 평가. analysis axis 와 credit 엔진 미사용, L1 raw (`c.show("BS"|"IS"|"CF")`) 만 사용. 트리거 — 'Altman + Ohlson', '부도 위험 2 모델 합의', 'Z-Score O-Score'.
+purpose: 단일 회사 부도 위험을 Altman Z″-Score (1968 비제조업 변형) + Ohlson O-Score (1980 logit) 2 학술 모델 동시 적용으로 합의 평가. analysis axis 와 credit 엔진 미사용, L1 raw (`c.panel("BS"|"IS"|"CF")`) 만 사용. 트리거 — 'Altman + Ohlson', '부도 위험 2 모델 합의', 'Z-Score O-Score'.
 whenToUse:
   - Altman Z-Score 부도 위험
   - Ohlson O-Score 부도 logit
@@ -133,9 +133,9 @@ import math
 
 c = dartlab.Company("005930")
 
-bs_df = c.show("BS", freq="Y")
-is_df = c.show("IS", freq="Y")
-cf_df = c.show("CF", freq="Y")
+bs_df = c.panel("BS", freq="Y")
+is_df = c.panel("IS", freq="Y")
+cf_df = c.panel("CF", freq="Y")
 years = ["2025", "2024", "2023", "2022", "2021"]
 
 def fetchSeries(df: pl.DataFrame, snake: str, years: list[str]) -> list[float]:
@@ -197,7 +197,7 @@ dual = pl.DataFrame({
 
 ## 호출 동작
 
-1. `c.show("BS" | "IS" | "CF", freq="Y")` 3 회.
+1. `c.panel("BS" | "IS" | "CF", freq="Y")` 3 회.
 2. snakeId 로 9 raw 항목 추출.
 3. Altman Z″ — 4 변수 가중합, 5 점 시계열.
 4. Ohlson O — 9 변수 logit, 5 점 중 4 점 시계열 (CHIN 변수가 전년 NI 필요).

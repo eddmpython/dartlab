@@ -104,7 +104,7 @@ beta_rows = []
 for code in all_codes:
     try:
         co = dartlab.Company(code)
-        beta = co.scan("macroBeta") if hasattr(co, "scan") else None
+        beta = dartlab.scan("macroBeta") if hasattr(co, "scan") else None
         if isinstance(beta, dict):
             beta_rows.append({
                 "stockCode": code,
@@ -152,7 +152,7 @@ else:
 ## 호출 동작
 
 1. `c.gather("industryPeers")` — 동종업체 peer set.
-2. 자기 + peer 의 `c.scan("macroBeta")` — rate / FX / oil beta.
+2. 자기 + peer 의 `dartlab.scan("macroBeta")` — rate / FX / oil beta.
 3. 각 beta 별 within-industry z = (value - peer_mean) / peer_stdev.
 4. |z| ≥ 2 인 outlier 만 결과.
 

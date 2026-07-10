@@ -79,8 +79,8 @@ left = dartlab.Company("005930")    # 삼성전자
 right = dartlab.Company("000660")   # SK하이닉스
 
 # 같은 기간 재무제표 + ROE 분해
-left_bs = left.show("BS")
-right_bs = right.show("BS")
+left_bs = left.panel("BS")
+right_bs = right.panel("BS")
 left_roe = left.analysis("financial", "수익성")
 right_roe = right.analysis("financial", "수익성")
 ```

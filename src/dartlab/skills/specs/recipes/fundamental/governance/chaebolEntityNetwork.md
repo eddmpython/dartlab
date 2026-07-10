@@ -79,7 +79,8 @@ except Exception:
     group_name = None
 
 try:
-    affiliates = dartlab.scan("network").to_dicts() if group_name else []
+    net = dartlab.scan("network")   # dict: corp_edges · code_to_group · invest_edges
+    affiliates = net["corp_edges"] if group_name else []
 except Exception:
     affiliates = []
 
@@ -124,7 +125,7 @@ emit_result(
 ### 2. 핵심 근거 수집
 
 - Company.panel('groupAffiliation') → groupName 식별
-- `dartlab.scan("network")` → 출자 사슬 단계와 계열 관계 (전종목 횡단)
+- `dartlab.scan("network")` → dict (corp_edges · invest_edges · code_to_group · cycles). 출자 사슬과 계열 관계
 - 각 affiliate × (ownershipPct + reverseOwnershipPct + sharedDirectorCount) 3 metric
 - crossHolding = outwardPct > 0 AND inwardPct > 0
 

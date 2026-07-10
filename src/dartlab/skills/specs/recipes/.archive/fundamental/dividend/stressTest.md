@@ -93,7 +93,7 @@ payout_ratio = div.get("payoutRatio", 0.3) if isinstance(div, dict) else 0.3
 fcf_coverage = div.get("fcfCoverage", 1.5) if isinstance(div, dict) else 1.5
 
 # 2. P&L baseline — revenue / opMargin
-is_df = c.show("IS", freq="Y")
+is_df = c.panel("IS", freq="Y")
 
 def fetch(df, snake, year="2024"):
     row = df.filter(pl.col("snakeId") == snake).select(year)

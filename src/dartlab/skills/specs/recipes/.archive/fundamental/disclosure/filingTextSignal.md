@@ -103,14 +103,14 @@ def compact(obj):
     return {"type": type(obj).__name__}
 
 try:
-    calendar = c.calendar(horizonDays=30)
+    calendar = c.filings()
 except Exception as exc:
     calendar = {"error": str(exc)}
 try:
     change = c.analysis("disclosureChange")
 except Exception as exc:
     change = {"error": str(exc)}
-bs = c.show("BS", freq="Y")
+bs = c.panel("BS", freq="Y")
 
 if isinstance(calendar, pl.DataFrame) and not calendar.is_empty():
     filing_rows = calendar.head(5).to_dicts()

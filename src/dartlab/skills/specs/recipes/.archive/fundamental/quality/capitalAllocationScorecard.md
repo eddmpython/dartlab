@@ -135,7 +135,7 @@ def compact(obj):
 capital_allocation = c.analysis("capitalAllocation")
 investment_efficiency = c.analysis("investmentEfficiency")
 profitability = c.analysis("profitability")
-cf = c.show("CF", freq="Y")
+cf = c.panel("CF", freq="Y")
 
 emit_result(
     table=[
@@ -150,7 +150,7 @@ emit_result(
 
 ## 호출 동작
 
-1. `c.show("CF" | "BS" | "IS", freq="Y")` 3 회 — 5 년 wide 시계열.
+1. `c.panel("CF" | "BS" | "IS", freq="Y")` 3 회 — 5 년 wide 시계열.
 2. snakeId 로 9 항목 추출 (CFO·CAPEX·배당·자사주·M&A·부채상환·차입·NI·자본).
 3. FCF 계산 + 5 사용처 비중 정규화.
 4. SGR = ROE × (1 − payout) 계산.

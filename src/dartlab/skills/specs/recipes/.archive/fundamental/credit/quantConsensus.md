@@ -107,9 +107,9 @@ def compact(obj):
 repayment = c.credit("repayment")
 leverage = c.credit("leverage")
 liquidity = c.credit("liquidity")
-bs = c.show("BS", freq="Y")
-is_df = c.show("IS", freq="Y")
-cf = c.show("CF", freq="Y")
+bs = c.panel("BS", freq="Y")
+is_df = c.panel("IS", freq="Y")
+cf = c.panel("CF", freq="Y")
 
 period = latest_period(bs)
 consensus_sources = ["dCR.repayment", "dCR.leverage", "balanceSheet", "incomeStatement", "cashFlow"]
@@ -128,7 +128,7 @@ emit_result(
 ## 호출 동작
 
 1. `c.credit(detail=True)` — dCR 등급 + 7 axis. BB- 이하 distress 표시.
-2. `c.show("BS"|"IS", freq="Y")` 로 raw → Altman Z″ 직접 계산.
+2. `c.panel("BS"|"IS", freq="Y")` 로 raw → Altman Z″ 직접 계산.
 3. 동일 raw → Ohlson O logit + 부도 확률.
 4. AR / Sales 비율 변화 → Beneish M-Score 분식 신호.
 5. 4 source 합의 — 3 개 이상 = TripleAgreement.

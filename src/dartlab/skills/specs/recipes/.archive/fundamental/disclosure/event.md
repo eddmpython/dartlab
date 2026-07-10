@@ -86,7 +86,7 @@ c = dartlab.Company("005930")
 recent = c.filings()
 top_filing = recent.head(1)
 detail = c.panel("사업의 내용")
-diff = c.diff()
+diff = c.trace("IS")
 change = c.analysis("financial", "공시변화")
 ```
 

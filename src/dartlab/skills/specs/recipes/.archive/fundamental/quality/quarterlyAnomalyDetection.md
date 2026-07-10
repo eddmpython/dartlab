@@ -100,7 +100,7 @@ c = dartlab.Company(target)
 
 statements = {}
 for topic in ["IS", "CF", "BS"]:
-    statements[topic] = c.show(topic, freq="Q")
+    statements[topic] = c.panel(topic, freq="Q")
 
 def get_value(df, label_substr, period):
     rows = df.filter(pl.col(df.columns[1]).str.contains(label_substr))

@@ -5,7 +5,7 @@ category: recipes
 kind: recipe
 scope: builtin
 status: unverified
-purpose: ROE 변동의 진짜 원인을 5 동인 (세부담·이자부담·영업마진·자산회전·재무레버리지) 으로 분리해 단일 회사 5 년 시계열에서 어떤 요소가 ROE 를 끌고 갔는지 정량화하는 절차. L1 raw (`c.show("BS"|"IS")`) 만 사용. 트리거 — 'ROE 분해', 'DuPont 5 동인', 'ROE 추적'.
+purpose: ROE 변동의 진짜 원인을 5 동인 (세부담·이자부담·영업마진·자산회전·재무레버리지) 으로 분리해 단일 회사 5 년 시계열에서 어떤 요소가 ROE 를 끌고 갔는지 정량화하는 절차. L1 raw (`c.panel("BS"|"IS")`) 만 사용. 트리거 — 'ROE 분해', 'DuPont 5 동인', 'ROE 추적'.
 whenToUse:
   - DuPont 5-step 분해
   - ROE 동인 식별
@@ -99,7 +99,7 @@ ROE 가 같은 두 회사도 5 동인 분포가 다르면 사업 모델이 완�
 
 ## L1 데이터로 직접 계산 (analysis axis 미사용)
 
-dartlab 의 `c.show()` 가 L1 provider 데이터 그대로 노출. analysis 엔진의 `profitability` / `efficiency` axis 결과를 의존하지 않고 raw 시계열에서 직접 분해.
+dartlab 의 `c.panel()` 가 L1 provider 데이터 그대로 노출. analysis 엔진의 `profitability` / `efficiency` axis 결과를 의존하지 않고 raw 시계열에서 직접 분해.
 
 ## 공개 호출 방식
 
@@ -109,8 +109,8 @@ import polars as pl
 
 c = dartlab.Company("005930")
 
-is_df = c.show("IS", freq="Y")   # 손익계산서 (매출·영업이익·세전·순이익)
-bs_df = c.show("BS", freq="Y")   # 재무상태표 (자산·자본 시계열)
+is_df = c.panel("IS", freq="Y")   # 손익계산서 (매출·영업이익·세전·순이익)
+bs_df = c.panel("BS", freq="Y")   # 재무상태표 (자산·자본 시계열)
 
 years = ["2025", "2024", "2023", "2022", "2021"]
 

@@ -157,7 +157,7 @@ pillars = [
 
 # pillar 정량 검증
 c = dartlab.Company(ticker)
-ratios = c.show("ratios")  # 또는 c.analysis(...)
+ratios = c.panel("ratios")  # 또는 c.analysis(...)
 # scorecard 표 만들기
 scorecard = []
 for p in pillars:

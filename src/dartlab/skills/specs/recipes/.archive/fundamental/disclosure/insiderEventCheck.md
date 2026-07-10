@@ -78,7 +78,7 @@ c = dartlab.Company("005930")
 insider = dartlab.scan("insider")
 capital = dartlab.scan("capital")
 events = c.filings()
-holders = c.show("majorHolder")
+holders = c.analysis("governance", "지배구조")
 ```
 
 ## 호출 동작

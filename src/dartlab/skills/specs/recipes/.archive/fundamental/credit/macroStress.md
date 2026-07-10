@@ -127,7 +127,7 @@ leverage = c.credit("leverage")
 liquidity = c.credit("liquidity")
 macro_sensitivity = c.analysis("macroSensitivity")
 rates = dartlab.macro("rates", market="KR")
-bs = c.show("BS", freq="Y")
+bs = c.panel("BS", freq="Y")
 
 rate_shock_bp = 200
 emit_result(

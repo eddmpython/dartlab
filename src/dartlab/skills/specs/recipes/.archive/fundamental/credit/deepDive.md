@@ -112,7 +112,7 @@ credit_cashflow = c.credit("cashflow")
 stability = c.analysis("stability")
 cashflow = c.analysis("cashflow")
 rates = dartlab.macro("rates", market="KR")
-bs = c.show("BS", freq="Y")
+bs = c.panel("BS", freq="Y")
 
 emit_result(
     table=[

@@ -105,7 +105,7 @@ def compact(obj):
 
 peer_comparison = c.analysis("peerComparison")
 valuation = c.analysis("valuation")
-bs = c.show("BS", freq="Y")
+bs = c.panel("BS", freq="Y")
 peer_rows = [{
     "target": target,
     "peerComparison": compact(peer_comparison),

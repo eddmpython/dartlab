@@ -131,7 +131,7 @@ c = dartlab.Company("005930")
 
 raw = c.panel("BS")
 selected = c.select("매출액")
-trace = c.trace("영업이익")
+trace = c.trace("IS")
 
 analysis = c.analysis("financial", "수익성")
 credit = c.credit()

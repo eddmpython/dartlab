@@ -108,7 +108,7 @@ import polars as pl
 # 1) 7 ratio 모두 freq="Y" 로 fetch (당년 + 전년 컬럼 자동)
 def fScore() -> pl.DataFrame:
     ratios = ["roa", "operatingCfMargin", "netMargin", "debtRatio", "currentRatio", "grossMargin"]
-    frames = [dartlab.scanRatio(r, freq="Y").rename({"2025": f"{r}_25", "2024": f"{r}_24"}) for r in ratios]
+    frames = [dartlab.scan("ratio").rename({"2025": f"{r}_25", "2024": f"{r}_24"}) for r in ratios]
     df = frames[0]
     for f in frames[1:]:
         df = df.join(f, on="stockCode", how="inner")

@@ -116,7 +116,7 @@ profitability = c.analysis("profitability")
 valuation = c.analysis("valuation")
 valuation_scan = dartlab.scan("valuation")
 rows = valuation_scan.head(5).to_dicts() if isinstance(valuation_scan, pl.DataFrame) else []
-bs = c.show("BS", freq="Y")
+bs = c.panel("BS", freq="Y")
 
 emit_result(
     table=rows or [
@@ -154,7 +154,7 @@ emit_result(
 ## 한계
 
 - **GP/A 직접 컬럼 부재** — `grossMargin × totalAssetTurnover` 근사. 정확한 GP/A 는 `gross_profit / total_assets` (account 직접) 으로 확장 가능하나 본 recipe 는 ratio 만 사용.
-- **valuation snapshot 은 KR 전용** — `dartlab.scan("valuation")` 은 한국 종목 한정. 미국 EDGAR 종목은 별도 경로 (Company.show("FQ") + market cap 수동 결합) 필요.
+- **valuation snapshot 은 KR 전용** — `dartlab.scan("valuation")` 은 한국 종목 한정. 미국 EDGAR 종목은 별도 경로 (Company.panel("FQ") + market cap 수동 결합) 필요.
 - **임계값 (30/0.5/10) 은 보수적 절대치** — 산업별 분포 차이 큼 (반도체 grossMargin 50% vs 통신 20%). 산업 percentile 기반 게이트로 확장 가능.
 
 ## 한국 / 미국 시장 차이

@@ -128,7 +128,7 @@ c.panel("ratios")   # 47 개 재무비율
 ## 5. 값의 출처 되짚기
 
 ```python
-c.trace("영업이익")   # 이 값이 어느 공시 어느 항목에서 왔나
+c.trace("IS")   # 손익 데이터가 어느 출처(panel/finance/report)에서 왔나
 ```
 
 ## 6. 미국 종목 — 같은 API

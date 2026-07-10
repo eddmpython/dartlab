@@ -100,7 +100,7 @@ top_codes = ["005930", "000660", "373220", "207940", "005380"]
 flows = []
 for code in top_codes:
     c = dartlab.Company(code)
-    is_df = c.show("IS", freq="Q")
+    is_df = c.panel("IS", freq="Q")
     period_cols = [col for col in is_df.columns if str(col)[:4].isdigit()]
     period_cols = sorted(period_cols, reverse=True)[:4]
     row = {"stockCode": code, "periods": period_cols}

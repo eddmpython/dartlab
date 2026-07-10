@@ -87,8 +87,8 @@ import dartlab
 
 c = dartlab.Company("005930")
 
-debt = c.debt()
-debt_peer = c.debt("all")
+debt = dartlab.scan("debt")
+debt_peer = dartlab.scan("debt")
 financing = c.analysis("financial", "자금조달")
 credit = c.credit()
 ```

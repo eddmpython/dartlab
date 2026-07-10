@@ -92,10 +92,10 @@ import dartlab
 target = "005930"
 c = dartlab.Company(target)
 
-workforce = c.workforce()
-capital = c.capital()
-workforce_peer = c.workforce("all")
-capital_peer = c.capital("all")
+workforce = dartlab.scan("workforce")
+capital = dartlab.scan("capital")
+workforce_peer = dartlab.scan("workforce")
+capital_peer = dartlab.scan("capital")
 allocation = c.analysis("financial", "자본배분")
 
 def firstRow(df):
@@ -174,7 +174,7 @@ emit_result(
 
 `requiredEvidence: skillRef + tableRef + valueRef + dateRef` 4 종 명시.
 
-- **skillRef**: `engines.scan` (직원수·인건비 횡단), `engines.scan` (자본 변동 횡단), `engines.analysis` (배분 우선순위), `engines.company.workforce()` + `engines.company.capital()` (개별 회사).
+- **skillRef**: `engines.scan` (직원수·인건비 횡단), `engines.scan` (자본 변동 횡단), `engines.analysis` (배분 우선순위), `engines.dartlab.scan("workforce")` + `engines.dartlab.scan("capital")` (개별 회사).
 - **sourceRef**: DART 사업보고서 — 종업원 명세 (정규/비정규/외주 분리), 임원 보수, 인건비 시계열. 자사주 변동 보고. 분기·연간.
 - **tableRef** (3 표):
   1. workforce — year × (직원수, 인건비 총액, 인당 매출, 인당 영업이익, 인건비/매출)

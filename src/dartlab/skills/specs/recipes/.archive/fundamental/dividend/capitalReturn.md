@@ -137,7 +137,7 @@ c = dartlab.Company("005930")
 capital = c.analysis("financial", "자본배분")
 cashflow = c.analysis("financial", "현금흐름")
 profitability = c.analysis("financial", "수익성")
-dividend = c.show("dividend")
+dividend = dartlab.scan("dividendTrend")
 
 emit_result({
     "target": "005930",

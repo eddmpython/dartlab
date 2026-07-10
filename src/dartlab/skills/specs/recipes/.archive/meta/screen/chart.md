@@ -75,7 +75,8 @@ import dartlab
 candidates = dartlab.scan("growth")
 top10 = candidates.head(10)
 # table-backed chart 로 시각화 (viz 엔진)
-chart = dartlab.viz.bar(top10, x="종목명", y="매출CAGR")
+# 차트 렌더는 공개 호출 계약이 아니다. CompileVisual 도구 또는 내부 viz generator 가 맡는다.
+chart_input = top10.select(["종목명", "매출CAGR"])
 ```
 
 ## 호출 동작

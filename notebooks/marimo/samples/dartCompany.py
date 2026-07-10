@@ -88,8 +88,8 @@ def _(c):
 
 @app.cell
 def _(c):
-    # 한 값이 어느 공시에서 왔는지 되짚기
-    c.trace("영업이익")
+    # 이 topic 데이터가 어느 출처에서 왔는지 되짚기
+    c.trace("IS")
     return
 
 

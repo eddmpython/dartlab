@@ -110,7 +110,7 @@ import dartlab
 c = dartlab.Company("005930")
 c.panel.shape                    # 항목 x 기간 격자 크기
 c.panel("BS")                     # 재무상태표 (source priority 적용)
-c.trace("영업이익")               # 이 값이 어느 공시에서 왔나
+c.trace("IS")                    # 손익 데이터가 어느 출처에서 왔나
 
 # 단계 4 — 분석 축
 result = c.analysis("financial", "수익성")

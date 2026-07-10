@@ -99,7 +99,7 @@ import polars as pl
 
 # 1) ROE 5 년 시계열 freq="Y" — 컬럼 "2025"~"2021"
 years = ["2025", "2024", "2023", "2022", "2021"]
-roeY = dartlab.scanRatio("roe", freq="Y").select(["stockCode", *years])
+roeY = dartlab.scan("ratio").select(["stockCode", *years])
 
 # 2) 5 년 평균 + 표준편차 + 최소값 — Buffett quality
 roeStats = roeY.with_columns([
@@ -109,13 +109,13 @@ roeStats = roeY.with_columns([
 ])
 
 # 3) revenue 5 년 모두 양성장 (역성장 없음)
-revG = dartlab.scanRatio("revenueGrowth", freq="Y").select(["stockCode", *years])
+revG = dartlab.scan("ratio").select(["stockCode", *years])
 revGrowAll = revG.with_columns(
     pl.all_horizontal([pl.col(y) > 0 for y in years]).alias("revGrowAll")
 ).filter(pl.col("revGrowAll"))
 
 # 4) grossMargin 5 년 평균 + 표준편차
-gmY = dartlab.scanRatio("grossMargin", freq="Y").select(["stockCode", *years])
+gmY = dartlab.scan("ratio").select(["stockCode", *years])
 gmStats = gmY.with_columns([
     pl.mean_horizontal(*[pl.col(y) for y in years]).alias("gm5yMean"),
     pl.concat_list([pl.col(y) for y in years]).list.std().alias("gm5yStd"),

@@ -1,25 +1,26 @@
-"""노트북·레슨 코드 셀이 공개 호출 계약만 쓰는지 검사한다.
+"""노트북·블로그·Skill OS 코드 셀이 공개 호출 계약만 쓰는지 검사한다.
 
-공개 계약은 딱 셋이다.
-  1. ``dartlab.{engine}("{axis}", ...)`` (엔진 verb)
-  2. ``engines.{engine}`` skill 의 ``capabilityRefs`` 에 등재된 ``Company.{method}``
-  3. 이미 정의된 provider facade
+**호출계약은 엔진명뿐이다.** 엔진 = ``src/dartlab/<엔진>/`` 폴더가 실재하는 것.
+폴더 없는 spec (dashboard · data · edgar · mappers · panel · search) 은 설명 문서일 뿐이다.
 
-미등재 내부 메서드(``c.audit()`` · ``c.filings()`` · ``c.show()`` 등)를 공개 노트북에 노출하면
-사용자가 그대로 따라 치다 AttributeError 를 만나고, 우리는 계약하지 않은 표면을 지게 된다.
-2026-07-09 노트북 예제에 미등재 ``c.audit()`` 이 실려 나간 사건이 있었고, 그때까지 이 계열을
-막는 기계 게이트가 하나도 없었다. 이 파일이 그 게이트다.
+  1. ``dartlab.{engine}("{axis}", ...)`` (톱레벨 공개 표면 = ``__all__``)
+  2. ``Company`` 파사드. providers(dart · edgar) 계열은 ``panel`` · ``select`` · ``filings`` 셋뿐이고,
+     거기에 ``trace`` 와 엔진명 메서드(analysis · credit · gather · quant · macro · story · industry)가 붙는다.
 
-계약 정본은 문서가 아니라 코드와 spec 이다. 목록을 여기 하드코딩하지 않고 매번 두 곳에서 읽는다.
+**세부 호출계약은 만들지 않는다.** ``c.show()`` · ``c.audit()`` · ``c.governance()`` · ``c.disclosure()`` ·
+``c.liveFilings()`` · ``c.view()`` 같은 것은 계약이 아니다. 하위 spec 페이지가 자기 ``capabilityRefs``
+에 그것을 등재해도 계약이 아니다. 사용자가 그대로 따라 치면 AttributeError 를 만나거나(``show`` 는
+런타임에 아예 없다) 우리가 계약하지 않은 표면을 지게 된다.
 
-  * ``Company.{method}`` 은 **엔진 skill spec frontmatter 의 ``capabilityRefs`` 합집합**
-    (CLAUDE.md 가 "capabilityRefs 등재분만 계약"이라고 못박았다).
-  * 톱레벨 ``dartlab.X`` 는 **``src/dartlab/__init__.py`` 의 ``__all__``** (라이브러리가 스스로
-    선언한 공개 표면). 여기보다 더 엄격한 규칙을 게이트가 발명하지 않는다. 단 ``getDefault*`` ·
-    밑줄 접두 같은 계약 우회 진입점은 ``__all__`` 여부와 무관하게 금지다.
+계약 정본은 문서가 아니라 코드와 spec 이다. 목록을 여기 하드코딩하지 않고 매번 읽는다.
+
+  * ``Company.{method}`` = ``engines/company/SKILL.md`` 의 ``capabilityRefs`` + 엔진이 자기
+    SKILL.md 에 등재한 ``Company.{엔진명}``.
+  * 톱레벨 ``dartlab.X`` = ``src/dartlab/__init__.py`` 의 ``__all__``. ``getDefault*`` · 밑줄 접두
+    같은 계약 우회 진입점은 ``__all__`` 여부와 무관하게 금지다.
 
 기존 위반은 부채 원장(``_baselines/notebookContract.json``)에 담아 두고, **신규 위반 또는 증가만**
-차단한다. 원장을 줄이는 방향의 변경은 언제나 통과한다.
+차단한다. 2026-07-10 잔재를 전부 걷어내 원장은 현재 비어 있다.
 
 사용법::
 
@@ -77,14 +78,20 @@ def _loadContract() -> tuple[set[str], set[str]]:
     tuple[set[str], set[str]]
         (``Company.{method}`` 허용 집합, 톱레벨 ``dartlab.X`` 허용 집합)
     """
-    engines = _engineFolders()
-    companyMethods: set[str] = set(engines)  # Company.{엔진명} (analysis · credit · gather · ...)
-    companySpec = _ENGINE_SPECS / "company" / "SKILL.md"
-    parts = companySpec.read_text(encoding="utf-8").split("---")
-    frontmatter = yaml.safe_load(parts[1]) if len(parts) >= 3 else {}
-    for ref in (frontmatter or {}).get("capabilityRefs") or []:
-        if ref.startswith("Company."):
-            companyMethods.add(ref.split(".", 1)[1])
+
+    def _companyRefs(spec: Path) -> set[str]:
+        parts = spec.read_text(encoding="utf-8").split("---")
+        frontmatter = yaml.safe_load(parts[1]) if len(parts) >= 3 else {}
+        refs = (frontmatter or {}).get("capabilityRefs") or []
+        return {r.split(".", 1)[1] for r in refs if r.startswith("Company.")}
+
+    # 파사드 정본 = engines/company/SKILL.md.
+    companyMethods: set[str] = _companyRefs(_ENGINE_SPECS / "company" / "SKILL.md")
+    # 엔진이 자기 SKILL.md 에 `Company.{엔진명}` 을 등재했으면 그 하나만 더 인정한다.
+    # 폴더명을 통째로 인정하면 `c.scan()` · `c.viz()` 처럼 Company 에 없는 메서드가 새어 나간다.
+    for engine in _engineFolders():
+        if engine in _companyRefs(_ENGINE_SPECS / engine / "SKILL.md"):
+            companyMethods.add(engine)
 
     # 톱레벨 공개 표면 = `__all__`. dartlab 을 import 하면 회사 한 곳당 수백 MB 라
     # (CLAUDE.md 메모리 가드) 게이트는 소스를 ast 로만 읽는다.
@@ -172,13 +179,12 @@ def _targets() -> list[tuple[Path, list[str]]]:
     # 실리면 독자의 첫 실행이 AttributeError 로 끝난다. 다른 카테고리는 산문 예시라 제외.
     for p in sorted((_REPO / "blog" / "03-dartlab-stories").rglob("index.md")):
         out.append((p, _codeBlocksOfMarkdown(p)))
-    # Skill OS spec 의 python 코드펜스. 외부 LLM 과 기여자가 이 코드를 그대로 실행한다.
+    # Skill OS spec 의 python 코드펜스. 외부 도구와 기여자가 이 코드를 그대로 실행한다.
     # 은퇴한 `c.show(...)` 와 실체 없는 `dartlab.flow(...)` 가 여기서 오래 살아 있었다.
-    # `.archive/` 는 drafted·unverified 격리 구역이라 사용자에게 노출되지 않는다(recipes/README.md).
+    # `.archive/` 도 검사한다. 사용자에게 노출되진 않지만, 죽은 API 를 남겨 두면 다음 사람이
+    # 그걸 보고 되살린다. 실제로 그렇게 번졌다.
     specs = _REPO / "src" / "dartlab" / "skills" / "specs"
     for p in sorted(specs.rglob("*.md")):
-        if ".archive" in p.parts:
-            continue
         out.append((p, _codeBlocksOfMarkdown(p)))
     return out
 

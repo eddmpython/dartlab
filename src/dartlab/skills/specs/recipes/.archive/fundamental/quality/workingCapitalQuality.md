@@ -5,7 +5,7 @@ category: recipes
 kind: recipe
 scope: builtin
 status: unverified
-purpose: Cash Conversion Cycle (DSO + DIO − DPO) + 매출채권·재고·매입채무 회전율 5 년 추세를 L1 raw (`c.show("BS"|"IS")`) 에서 직접 계산해 매출 신뢰도와 운전자본 효율을 정량화하는 절차. analysis axis 미사용. 트리거 — '운전자본 quality', '재고 매출채권', 'CCC 진단'.
+purpose: Cash Conversion Cycle (DSO + DIO − DPO) + 매출채권·재고·매입채무 회전율 5 년 추세를 L1 raw (`c.panel("BS"|"IS")`) 에서 직접 계산해 매출 신뢰도와 운전자본 효율을 정량화하는 절차. analysis axis 미사용. 트리거 — '운전자본 quality', '재고 매출채권', 'CCC 진단'.
 whenToUse:
   - 운전자본 효율
   - Cash Conversion Cycle CCC
@@ -101,8 +101,8 @@ import polars as pl
 
 c = dartlab.Company("005930")
 
-bs_df = c.show("BS", freq="Y")
-is_df = c.show("IS", freq="Y")
+bs_df = c.panel("BS", freq="Y")
+is_df = c.panel("IS", freq="Y")
 years = ["2025", "2024", "2023", "2022", "2021"]
 
 def fetchSeries(df: pl.DataFrame, snake: str, years: list[str]) -> list[float]:
@@ -141,7 +141,7 @@ quality = quality.with_columns(
 
 ## 호출 동작
 
-1. `c.show("BS" | "IS", freq="Y")` 2 회 — 5 년 wide 시계열.
+1. `c.panel("BS" | "IS", freq="Y")` 2 회 — 5 년 wide 시계열.
 2. snakeId 로 5 항목 추출 (매출채권·재고·매입채무·매출·매출원가).
 3. DSO / DIO / DPO / CCC 5 기간 계산.
 4. AR Growth − Sales Growth gap 계산 — 매출 신뢰도 시그널.

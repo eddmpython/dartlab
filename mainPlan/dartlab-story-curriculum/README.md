@@ -131,7 +131,7 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
 - [ ] **6. 필요한 줄만 이름으로 뽑아낸다** `select-rows` `B` (2편이 일부 흡수. 잔여는 항목명 검색)
 - [ ] **7. 뽑은 숫자로 직접 계산한다** `compute-from-values` `B`
   select 결과를 파이썬으로 다뤄 영업이익률을 직접 구한다. 첫 데이터 가공.
-- [ ] **8. 이 숫자는 어디서 왔나** `trace-the-number` `B`. `Company.trace("영업이익")`
+- [ ] **8. 이 숫자는 어디서 왔나** `trace-the-number` `B`. `Company.trace("IS")` (topic 인자. 계정명을 넣으면 None)
 
 ### interpret
 

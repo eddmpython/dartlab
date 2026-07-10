@@ -5,7 +5,7 @@ category: recipes
 kind: recipe
 scope: builtin
 status: unverified
-purpose: 매출 변동이 영업이익·순이익에 얼마나 증폭되는지 영업레버리지 (DOL) · 재무레버리지 (DFL) · 결합레버리지 (DCL) 로 정량화하고 매크로 충격 시나리오에서 본 회사가 얼마나 민감한지 평가하는 절차. L1 raw (`c.show("IS")`) 시계열만 사용. 트리거 — '영업레버리지', '재무레버리지', 'DOL DFL DCL', '매크로 충격 민감도'.
+purpose: 매출 변동이 영업이익·순이익에 얼마나 증폭되는지 영업레버리지 (DOL) · 재무레버리지 (DFL) · 결합레버리지 (DCL) 로 정량화하고 매크로 충격 시나리오에서 본 회사가 얼마나 민감한지 평가하는 절차. L1 raw (`c.panel("IS")`) 시계열만 사용. 트리거 — '영업레버리지', '재무레버리지', 'DOL DFL DCL', '매크로 충격 민감도'.
 whenToUse:
   - DOL 영업레버리지
   - DFL 재무레버리지
@@ -101,7 +101,7 @@ import numpy as np
 
 c = dartlab.Company("005930")
 
-is_df = c.show("IS", freq="Y")
+is_df = c.panel("IS", freq="Y")
 years = ["2025", "2024", "2023", "2022", "2021"]
 
 def fetchSeries(df: pl.DataFrame, snake: str, years: list[str]) -> list[float]:
@@ -148,7 +148,7 @@ scenarioTable = pl.DataFrame(scenarios)
 
 ## 호출 동작
 
-1. `c.show("IS", freq="Y")` — 5 년 손익계산서.
+1. `c.panel("IS", freq="Y")` — 5 년 손익계산서.
 2. snakeId 로 4 항목 추출 (sales, operating_profit, net_income, interest_expense).
 3. DOL / DCL — 5 년 회귀 추정 (`np.polyfit` 1 차).
 4. DFL — 단년도 algebraic (OP / (OP − |Interest|)).

@@ -80,8 +80,8 @@ c = dartlab.Company("005930")
 quality = c.analysis("financial", "이익품질")
 cashflow = c.analysis("financial", "현금흐름")
 consistency = c.analysis("financial", "재무정합성")
-bs = c.show("BS")
-is_df = c.show("IS")
+bs = c.panel("BS")
+is_df = c.panel("IS")
 ```
 
 ## 호출 동작

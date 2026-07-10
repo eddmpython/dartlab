@@ -105,7 +105,7 @@ def compact(obj):
 earnings_quality = c.analysis("earningsQuality")
 cashflow = c.analysis("cashflow")
 governance = c.analysis("governance")
-cf = c.show("CF", freq="Y")
+cf = c.panel("CF", freq="Y")
 
 def ready(obj):
     if isinstance(obj, pl.DataFrame):
@@ -128,7 +128,7 @@ emit_result(
 
 1. `c.analysis("earningsQuality")` — accrual ratio + FCF/NI 비율.
 2. `c.analysis("governance")` — 이사회 독립성 + 특수관계자 비중.
-3. `c.scan("audit")` — 최근 2 년 감사인 변경 여부.
+3. `dartlab.scan("audit")` — 최근 2 년 감사인 변경 여부.
 4. 3 신호 boolean 결합 → triple flag.
 
 ## 대표 반환 형태

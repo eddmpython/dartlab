@@ -117,7 +117,7 @@
         "engines.story",
         "engines.credit"
       ],
-      "bodyPreview": "## 엔진 역할\n\n`Company`는 DartLab의 단일 기업 facade다. 사용자는 종목코드나 ticker로 `Company`를 만들고, 이 객체에서 원자료 조회, 공시 탐색, 분석, 신용, gather, quant, macro, story를 호출한다.\n\n한국 DART 회사와 미국 EDGAR 회사 모두 같은 facade 패턴을 따른다. 세부 topic/컬럼은 시장과 provider별로 다를 수 있으므로 반환값의 source와 기준일을 확인한다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n\nraw = c.panel(\"BS\")\nselected = c.select(\"매출액\")\ntrace = c.trace(\"영업이익\")\n\nanalysis = c.analysis(\"financial\", \"수익성\")\ncredit = c.credit()\nprice = c.gather(\"price\")\nquant = c.quant(\"모멘텀\")\nmacro = c.macro(\"사이클\")                          # 시장 매크로 (사이클/위기/시나리오/유동성/심리)\nsensitivity = "
+      "bodyPreview": "## 엔진 역할\n\n`Company`는 DartLab의 단일 기업 facade다. 사용자는 종목코드나 ticker로 `Company`를 만들고, 이 객체에서 원자료 조회, 공시 탐색, 분석, 신용, gather, quant, macro, story를 호출한다.\n\n한국 DART 회사와 미국 EDGAR 회사 모두 같은 facade 패턴을 따른다. 세부 topic/컬럼은 시장과 provider별로 다를 수 있으므로 반환값의 source와 기준일을 확인한다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n\nraw = c.panel(\"BS\")\nselected = c.select(\"매출액\")\ntrace = c.trace(\"IS\")\n\nanalysis = c.analysis(\"financial\", \"수익성\")\ncredit = c.credit()\nprice = c.gather(\"price\")\nquant = c.quant(\"모멘텀\")\nmacro = c.macro(\"사이클\")                          # 시장 매크로 (사이클/위기/시나리오/유동성/심리)\nsensitivity = c."
     },
     {
       "id": "engines.company.audit",
@@ -2329,7 +2329,7 @@
         "engines.scan",
         "engines.analysis"
       ],
-      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\nimport polars as pl\n\ntarget = \"005930\"\nc = dartlab.Company(target)\n\n# 그룹 식별 (reference)\ntry:\n    group_info = c.panel(\"groupAffiliation\").to_dicts()\n    group_name = group_info[0].get(\"groupName\") if group_info else None\nexcept Exception:\n    group_name = None\n\ntry:\n    affiliates = dartlab.scan(\"network\").to_dicts() if group_name else []\nexcept Exception:\n    affiliates = []\n\n# 각 affiliate 와 cross-holding 비율\nnetwork = []\nfor a in affiliates[:15]:\n    code = a.get(\"code\") or a.get(\"stockCode\")\n    if not code:\n        continue\n    holding = float(a.get(\"ow"
+      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\nimport polars as pl\n\ntarget = \"005930\"\nc = dartlab.Company(target)\n\n# 그룹 식별 (reference)\ntry:\n    group_info = c.panel(\"groupAffiliation\").to_dicts()\n    group_name = group_info[0].get(\"groupName\") if group_info else None\nexcept Exception:\n    group_name = None\n\ntry:\n    net = dartlab.scan(\"network\")   # dict: corp_edges · code_to_group · invest_edges\n    affiliates = net[\"corp_edges\"] if group_name else []\nexcept Exception:\n    affiliates = []\n\n# 각 affiliate 와 cross-holding 비율\nnetwork = []\nfor a in affiliates[:15]:\n    code = a.get(\"code\") or a.get(\"stockC"
     },
     {
       "id": "recipes.fundamental.governance.relatedPartyTransactionShare",
@@ -3734,7 +3734,7 @@
         "engines.scan",
         "engines.macro"
       ],
-      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\nimport polars as pl\n\nc = dartlab.Company(\"005930\")\n\n# 1. QMJ quality score\nqmj = c.quant(\"qmj\")\nquality_score = qmj[\"score\"] if isinstance(qmj, dict) else 0\nquality_decile = qmj.get(\"decile\", 5) if isinstance(qmj, dict) else 5\n\n# 2. macro cycle phase (early-recovery / mid-expansion / late-cycle / contraction)\ncycle = dartlab.macro(\"cycle\", market=\"KR\")\nphase = cycle.get(\"phase\", \"unknown\") if isinstance(cycle, dict) else \"unknown\"\n\n# 3. macro beta — 회사 sensitivity 60M rolling\nbeta = dartlab.scan(\"macroBeta\")\nrate_beta = beta.get(\"rateBeta\") if isinstance(b"
+      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\nimport polars as pl\n\nc = dartlab.Company(\"005930\")\n\n# 1. QMJ quality score\nqmj = c.quant(\"qmj\")\nquality_score = qmj[\"score\"] if isinstance(qmj, dict) else 0\nquality_decile = qmj.get(\"decile\", 5) if isinstance(qmj, dict) else 5\n\n# 2. macro cycle phase (early-recovery / mid-expansion / late-cycle / contraction)\ncycle = dartlab.macro(\"cycle\", market=\"KR\")\nphase = cycle.get(\"phase\", \"unknown\") if isinstance(cycle, dict) else \"unknown\"\n\n# 3. macro beta. 회사 단위 민감도\nsens = c.analysis(\"macro\", \"매크로민감도\")\nbeta = sens.get(\"macroSensitivity\", {}) if isinstance(sens, di"
     },
     {
       "id": "recipes.macro.quantScenarioBacktest",

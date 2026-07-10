@@ -110,9 +110,9 @@ def compact(obj):
         return {"type": "dict", "keys": list(obj.keys())[:8]}
     return {"type": type(obj).__name__}
 
-bs = c.show("BS", freq="Y")
-is_df = c.show("IS", freq="Y")
-ratios = c.show("ratios")
+bs = c.panel("BS", freq="Y")
+is_df = c.panel("IS", freq="Y")
+ratios = c.panel("ratios")
 profitability = c.analysis("profitability")
 quality = c.analysis("earningsQuality")
 valuation = c.analysis("valuation")
@@ -136,7 +136,7 @@ emit_result(
 
 1. `dartlab.macro()` — 금리·환율·경기 사이클 한 시점 (datasetRef + tableRef)
 2. `dartlab.scan("profitability")` — peer 5~10 후보 (tableRef)
-3. `Company(code).show("BS")`/`show("IS")` — 재무제표 시계열 (tableRef + dateRef)
+3. `Company(code).panel("BS")`/`show("IS")` — 재무제표 시계열 (tableRef + dateRef)
 4. `Company.analysis("financial", "수익성")` — ROE DuPont 분해 (valueRef × N)
 5. `Company.analysis("financial", "이익품질")` — 회계 quality (valueRef × N)
 6. `Company.analysis("가치평가", "가치평가")` — PER·PBR·EV/EBITDA peer 비교 (valueRef × N + tableRef). 종합 분석에서 가치평가 단계 누락 = 미완료. peer 비교 없는 절대값 단독 노출 금지.

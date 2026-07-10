@@ -82,7 +82,7 @@ c = dartlab.Company("005930")
 
 governance = c.analysis("financial", "지배구조")
 gov_audit = c.analysis("financial", "지배구조감사")
-workforce = c.workforce()
+workforce = dartlab.scan("workforce")
 consistency = c.analysis("financial", "재무정합성")
 ```
 

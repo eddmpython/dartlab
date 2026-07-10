@@ -5,7 +5,7 @@ category: recipes
 kind: recipe
 scope: builtin
 status: unverified
-purpose: 이익 quality 를 3 학술 모델 (Sloan accruals · Beneish M-Score · Novy-Marx GP/A) 동시 적용으로 합의 점수화. analysis axis 미사용, L1 raw (`c.show("BS"|"IS"|"CF")`) 만 사용. 트리거 — 'Sloan accruals', 'Beneish M-Score', 'Novy-Marx GP/A', '이익 quality 3 모델'.
+purpose: 이익 quality 를 3 학술 모델 (Sloan accruals · Beneish M-Score · Novy-Marx GP/A) 동시 적용으로 합의 점수화. analysis axis 미사용, L1 raw (`c.panel("BS"|"IS"|"CF")`) 만 사용. 트리거 — 'Sloan accruals', 'Beneish M-Score', 'Novy-Marx GP/A', '이익 quality 3 모델'.
 whenToUse:
   - Sloan accruals 분식 신호
   - Beneish M-Score 분식 가능성
@@ -136,8 +136,8 @@ def compact(obj):
 earnings_quality = c.analysis("earningsQuality")
 cashflow = c.analysis("cashflow")
 stability = c.analysis("stability")
-cf = c.show("CF", freq="Y")
-is_df = c.show("IS", freq="Y")
+cf = c.panel("CF", freq="Y")
+is_df = c.panel("IS", freq="Y")
 
 emit_result(
     table=[

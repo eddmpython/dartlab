@@ -84,7 +84,7 @@ c = dartlab.Company("005930")
 scorecard = c.analysis("financial", "종합평가")
 story_full = c.story()
 story_section = c.story("수익구조")
-causal = c.causalWeights()
+causal = c.story()  # 6 막 서사 (causalWeights 는 내부 산출물이라 계약이 아니다)
 ```
 
 ## 호출 동작

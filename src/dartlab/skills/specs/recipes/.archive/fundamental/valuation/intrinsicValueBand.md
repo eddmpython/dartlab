@@ -5,7 +5,7 @@ category: recipes
 kind: recipe
 scope: builtin
 status: unverified
-purpose: 단일 회사 본질가치를 Graham 수정공식 + EVA spread + CFROI proxy 3 anchor 로 동시 추정해 시장가와 비교한 가치 판정 band 를 만드는 절차. analysis valuation axis 미사용, L1 raw (`c.show("IS"|"BS"|"CF"|"PRICE"|"FQ")`) 만 사용. 트리거 — '본질가치 band', 'Graham + EVA + CFROI', 'fair value 3 anchor'.
+purpose: 단일 회사 본질가치를 Graham 수정공식 + EVA spread + CFROI proxy 3 anchor 로 동시 추정해 시장가와 비교한 가치 판정 band 를 만드는 절차. analysis valuation axis 미사용, L1 raw (`c.panel("IS"|"BS"|"CF"|"PRICE"|"FQ")`) 만 사용. 트리거 — '본질가치 band', 'Graham + EVA + CFROI', 'fair value 3 anchor'.
 whenToUse:
   - 본질가치 3 anchor
   - Graham 수정공식
@@ -155,7 +155,7 @@ valuation = c.analysis("valuation")
 valuation_band = c.analysis("valuationBand")
 profitability = c.analysis("profitability")
 capital_allocation = c.analysis("capitalAllocation")
-bs = c.show("BS", freq="Y")
+bs = c.panel("BS", freq="Y")
 
 emit_result(
     table=[
@@ -230,7 +230,7 @@ graph LR
 - **EPS CAGR 사이클**: 5 년 CAGR 가 사이클 시작/끝 노이즈 (조선·반도체). 더 긴 (10 년) 또는 정상화 EPS 권장.
 - **음수 영업이익**: 적자 회사는 EVA spread·CFROI 음 무한대 가능 — band 산출 X.
 - **금융업 부적합**: 은행·보험 IC 정의 다름 (예금·보험료). 별도 framework.
-- **시가총액 시계열 결합 X**: `c.show("PRICE")` 마지막 종가만. 추세 비교 별 처리.
+- **시가총액 시계열 결합 X**: `dartlab.gather("price", target)` 마지막 종가만. 추세 비교 별 처리.
 - **failureModes** — AAA yield KR 적합성 / WACC CAPM 가정 / CFROI inflation 누락 / 3 anchor 가정 차이로 band 폭 큼 / 시점 차이.
 
 ### 5. 후속 모니터링
@@ -262,7 +262,7 @@ graph LR
 - `value : float` — 추정값
 - `interpretation : str` — 시장가 비교 해석 1 문장
 
-추가 가능 — 시장가 (`c.show("PRICE")` 마지막 종가) 와 비교한 정량 안전마진 컬럼.
+추가 가능 — 시장가 (`dartlab.gather("price", target)` 마지막 종가) 와 비교한 정량 안전마진 컬럼.
 
 ## 한계
 
@@ -270,7 +270,7 @@ graph LR
 - **EVA WACC proxy 7%** — 산업·국가·회사 별 다름. 정확한 WACC 는 산업 beta + risk-free rate + ERP 결합. 본 recipe 는 단순 가정.
 - **CFROI 단순화** — 원전은 인플레이션 조정 IRR over asset life. 본 recipe 는 현금 ROIC 근사. asset vintage 미반영.
 - **EPS CAGR 5 년** — 사이클 회사는 5 년 CAGR 가 사이클 시작/끝 노이즈. 더 긴 기간 (10 년) 또는 정상화 EPS 권장.
-- **시가총액 시계열 결합 X** — `c.show("PRICE")` 의 마지막 종가만 사용 가능. 추세 비교는 별 처리.
+- **시가총액 시계열 결합 X** — `dartlab.gather("price", target)` 의 마지막 종가만 사용 가능. 추세 비교는 별 처리.
 
 ## 한국 / 미국 시장 차이
 

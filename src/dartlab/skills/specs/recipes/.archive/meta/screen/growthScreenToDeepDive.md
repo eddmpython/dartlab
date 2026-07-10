@@ -88,7 +88,7 @@ top_codes = candidates.head(5)["stockCode"].to_list()
 # 3) 각 회사 sequential 분석 (CLAUDE.md 메모리 안전)
 for code in top_codes:
     c = dartlab.Company(code)
-    bs = c.show("BS")
+    bs = c.panel("BS")
     growth = c.analysis("financial", "성장성")
     quality = c.analysis("financial", "이익품질")
 ```

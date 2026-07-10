@@ -77,7 +77,7 @@ import dartlab
 
 c = dartlab.Company("005930")
 
-dividend = c.show("dividend")
+dividend = dartlab.scan("dividendTrend")
 capital = c.analysis("financial", "자본배분")
 cashflow = c.analysis("financial", "현금흐름")
 return_axis = c.analysis("financial", "배당주주환원")

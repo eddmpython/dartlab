@@ -87,7 +87,7 @@ from datetime import datetime, date
 
 code = "005930"
 c = dartlab.Company(code)
-upcoming = c.calendar(horizonDays=30)
+upcoming = c.filings()
 px = dartlab.gather("price", code)
 
 px_sorted = px.sort("date")

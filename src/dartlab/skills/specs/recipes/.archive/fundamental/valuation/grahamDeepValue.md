@@ -107,7 +107,7 @@ safe = dartlab.scan("screen", spec={"where": [
 ]})
 
 # 2) 5 년 흑자 후처리 — net_income freq="Y" 5 기간 모두 양수
-ni = dartlab.scanAccount("net_income", freq="Y").select(
+ni = dartlab.scan("account").select(
     ["stockCode", "2025", "2024", "2023", "2022", "2021"]
 )
 profit5y = ni.with_columns(

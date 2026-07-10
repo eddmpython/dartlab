@@ -118,7 +118,7 @@ distress = dartlab.scan("screen", spec={"where": [
 ]})
 
 # 2) 추가 시그널 — 3 년 연속 순이익 적자 (Altman X₂ retained earnings 약화 신호)
-ni = dartlab.scanAccount("net_income", freq="Y").select(
+ni = dartlab.scan("account").select(
     ["stockCode", "2025", "2024", "2023"]
 )
 loss3y = ni.with_columns(

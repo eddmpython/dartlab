@@ -76,13 +76,13 @@ except Exception:
     erp_value = 0.05  # historical avg fallback
 
 try:
-    beta_meta = c.show("riskMetrics").to_dicts()[0]
+    beta_meta = c.panel("riskMetrics").to_dicts()[0]
     beta = float(beta_meta.get("beta5y") or 1.0)
 except Exception:
     beta = 1.0
 
 try:
-    eps_rows = c.show("eps").to_dicts()
+    eps_rows = c.panel("eps").to_dicts()
     if len(eps_rows) >= 5 and float(eps_rows[-5].get("eps") or 0) > 0:
         eps_growth_5y = (float(eps_rows[-1].get("eps") or 1) / float(eps_rows[-5].get("eps") or 1)) ** (1/5) - 1
     else:
@@ -95,7 +95,7 @@ terminal_growth = min(rf_value, 0.03) if rf_value is not None else 0.025
 
 # simple gordon growth as shortcut
 try:
-    latest_eps = float(c.show("eps").to_dicts()[-1].get("eps") or 0)
+    latest_eps = float(c.panel("eps").to_dicts()[-1].get("eps") or 0)
 except Exception:
     latest_eps = None
 

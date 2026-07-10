@@ -101,8 +101,8 @@ dscr_floor = covenants.get("dscrFloor", 1.2)
 de_ceiling = covenants.get("debtEquityCeiling", 2.0)
 
 # 2. P&L baseline
-is_df = c.show("IS", freq="Y")
-bs_df = c.show("BS", freq="Y")
+is_df = c.panel("IS", freq="Y")
+bs_df = c.panel("BS", freq="Y")
 
 def fetch(df, snake, year="2024"):
     row = df.filter(pl.col("snakeId") == snake).select(year)
@@ -156,7 +156,7 @@ emit_result(
 ## 호출 동작
 
 1. `c.analysis("financing")` — 차입 schedule + 명시 covenant (DSCR floor / D/E ceiling).
-2. `c.show("IS"|"BS", freq="Y")` — EBIT / interest / borrowings / equity.
+2. `c.panel("IS"|"BS", freq="Y")` — EBIT / interest / borrowings / equity.
 3. base DSCR + base D/E 계산.
 4. Monte Carlo 1000 path — 0~400bp rate shock 균일 분포에서 sampling.
 5. shocked DSCR < floor 인 path 비율 = covenant breach probability.
