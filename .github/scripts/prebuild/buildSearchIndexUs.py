@@ -104,6 +104,11 @@ def build(tickersPath: Path, scanPath: Path, out: Path) -> int:
 
 def main() -> int:
     """CLI 진입 — edgar tickers + scan → search-index-us.json."""
+    # prebuild = offline only.
+    from dartlab.core.offlineGuard import enforceOffline
+
+    enforceOffline()
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--tickers", default=str(TICKERS))
     parser.add_argument("--scan", default=str(SCAN))

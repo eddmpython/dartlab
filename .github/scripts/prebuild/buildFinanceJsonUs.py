@@ -174,6 +174,11 @@ def build(src: Path, out: Path) -> int:
 
 def main() -> int:
     """CLI 진입 — edgar scan finance → finance-us.json."""
+    # prebuild = offline only.
+    from dartlab.core.offlineGuard import enforceOffline
+
+    enforceOffline()
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--src", default=str(SRC), help="edgar scan finance parquet 경로(테스트용 override)")
     parser.add_argument("--out", default=str(OUT), help="출력 finance-us.json 경로")
