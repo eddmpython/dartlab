@@ -24,6 +24,7 @@ export function isTier2Eligible(entry: CatalogEntry): boolean {
 
 export const DOWNLOAD_CATALOG: CatalogEntry[] = [
 	{ dir: 'dart/finance', label: 'DART 재무 숫자', shardKind: 'company' },
+	{ dir: 'dart/ipo', label: '신규상장 IPO 공모분석 리포트 (증권신고서 6카테고리 파싱본)', shardKind: 'bulk' },
 	{ dir: 'dart/panel', label: 'DART 공시 수평화 (회사당, 17-col)', shardKind: 'company' },
 	{ dir: 'dart/report', label: 'DART 정기보고서', shardKind: 'company' },
 	{ dir: 'dart/scan', label: 'DART 전종목 횡단분석 프리빌드', shardKind: 'bulk' },
@@ -33,6 +34,7 @@ export const DOWNLOAD_CATALOG: CatalogEntry[] = [
 	{ dir: 'edgar/panel', label: 'SEC EDGAR 공시 수평화 (회사당, 16-col)', shardKind: 'company' },
 	{ dir: 'edgar/prices/company', label: 'SEC 회사별 일별 OHLCV', shardKind: 'company' },
 	{ dir: 'edgar/tickers', label: 'SEC ticker↔CIK 맵', shardKind: 'bulk' },
+	{ dir: 'expectations', label: '기대치 격자 원장 (발행 봉인 + 사후 채점, append-only, 시뮬레이터 검증척추)', shardKind: 'series' },
 	{ dir: 'gov/indices/date', label: '공공데이터 시장지수 일별 (날짜 샤딩, 대형)', shardKind: 'dateShard' },
 	{ dir: 'gov/indices/index', label: '공공데이터 지수별 일별 시계열', shardKind: 'series' },
 	{ dir: 'gov/prices/company', label: '공공데이터 회사별 일별 OHLCV+시총', shardKind: 'company' },
