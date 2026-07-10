@@ -21,7 +21,6 @@ outputs:
   - 표준 공통 컬럼 (year · filing_date · report_type · period_key · section_order · section_title · section_content)
   - EDGAR 전용 메타 (cik · company_name · ticker · accession_no · form_type · filing_url)
 capabilityRefs:
-  - Company.topics
   - Company.panel
 toolRefs:
   - EngineCall
@@ -100,7 +99,6 @@ from dartlab.frame.dataLoader import loadData
 
 # 사용자 진입점 — Company facade
 c = dartlab.Company("AAPL")
-topics = c.topics                      # 사용 가능한 form_type::topicId catalog
 df = c.panel("10-K::item1Business")    # 단일 EDGAR topic DataFrame
 
 # 내부 진입점 — provider 직접

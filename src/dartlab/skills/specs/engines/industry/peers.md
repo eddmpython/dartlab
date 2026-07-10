@@ -79,7 +79,7 @@ Company("005930").industry().peers
 ```
 
 ```text
-Company("005930").show("IS").data.industryBadge.peers
+Company("005930").industry()["peers"]
 → list[dict]
    stockCode : str          # 6 자리
    corpName : str           # 한글

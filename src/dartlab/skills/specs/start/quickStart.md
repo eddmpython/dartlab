@@ -49,9 +49,9 @@ runtimeCompatibility:
       - scan 과 ask 는 데이터·모델 의존성에 따라 제한될 수 있다.
 procedure:
   - dartlab.Company(code) 로 회사 객체를 만든다.
-  - c.topics 로 사용 가능한 topic 목록을 본다.
-  - c.panel(topic) 으로 개별 topic 본문을 연다 (BS · IS · CF · ratios 등).
-  - c.diff() 로 기간 간 변화 큰 topic 을 찾는다.
+  - c.panel 로 항목 x 기간 wide 격자를 통째로 본다.
+  - c.panel(topic) 으로 개별 topic 을 연다 (IS · BS · CF · CIS · SCE · ratios).
+  - c.trace(항목) 으로 그 값이 어느 공시에서 왔는지 되짚는다.
   - 미국 종목은 같은 API 로 동작한다 (Company("AAPL")).
   - dartlab.scan(group, axis) 로 시장 전체 횡단.
   - dartlab.search(name) 으로 회사 식별.
@@ -104,14 +104,16 @@ c = dartlab.Company("005930")  # 삼성전자
 ## 2. 회사 전체 보기
 
 ```python
-c.topics     # 어떤 topic 이 있나
+c.panel          # 항목 x 기간 wide 격자 그 자체 (pl.DataFrame)
+c.panel.shape    # (항목 수, 기간 열 수)
 ```
 
 ## 3. 개별 topic 열기
 
+정식 topic 은 `IS` · `BS` · `CF` · `CIS` · `SCE` · `ratios` 다. 주석 본문은 섹션명으로 검색한다.
+
 ```python
-c.panel("businessOverview")   # 사업 개요 본문
-c.panel("companyOverview")    # 회사 개요
+c.panel("재고")     # 섹션명·canonicalKey 행 검색 (주석 본문)
 ```
 
 ## 4. 재무제표
@@ -123,11 +125,10 @@ c.panel("CF")       # 현금흐름표
 c.panel("ratios")   # 47 개 재무비율
 ```
 
-## 5. 변화 감지
+## 5. 값의 출처 되짚기
 
 ```python
-c.diff()                    # 어떤 topic 이 가장 많이 바뀌었나
-c.diff("businessOverview")  # 한 topic 깊이 보기
+c.trace("영업이익")   # 이 값이 어느 공시 어느 항목에서 왔나
 ```
 
 ## 6. 미국 종목 — 같은 API

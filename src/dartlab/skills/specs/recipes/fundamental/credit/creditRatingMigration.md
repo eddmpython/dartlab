@@ -14,7 +14,7 @@ whenToUse:
   - dCR rating
 linkedSkills:
   - engines.credit
-  - engines.fixedIncome
+  - engines.scan
 toolRefs:
   - EngineCall
   - RunPython
@@ -30,7 +30,7 @@ visualRefs:
 gap:
   primary:
     - credit
-    - fixedIncome
+    - scan
 testUniverse:
   market: KR
   stockCodes:

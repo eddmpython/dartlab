@@ -83,10 +83,10 @@ dartlab.industry("semiconductor", lifecycle=True)
 ```
 
 ```text
-Company("005930").show("IS").data.industryBadge
+Company("005930").industry()
 → dict
-   ...
-   phase : str              # 5 phase 중 하나
+   industry / industryName / stage / stageName
+   role / stream / confidence / source / peers
 ```
 
 ## 기본 실행 순서

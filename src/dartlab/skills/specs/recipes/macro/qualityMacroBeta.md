@@ -98,7 +98,7 @@ cycle = dartlab.macro("cycle", market="KR")
 phase = cycle.get("phase", "unknown") if isinstance(cycle, dict) else "unknown"
 
 # 3. macro beta — 회사 sensitivity 60M rolling
-beta = c.scan("macroBeta") if hasattr(c, "scan") else None
+beta = dartlab.scan("macroBeta")
 rate_beta = beta.get("rateBeta") if isinstance(beta, dict) else 0
 fx_beta = beta.get("fxBeta") if isinstance(beta, dict) else 0
 
@@ -143,7 +143,7 @@ QMJ × 매크로 사이클 phase 적합도 + macroBeta 단정. 예: "QMJ decile 
 
 - QMJ 종합 점수 + decile (Company.quant('qmj'))
 - 매크로 cycle phase (dartlab.macro('cycle', market='KR'))
-- macroBeta 60M rolling rate / FX (Company.scan('macroBeta'))
+- macroBeta 60M rolling rate / FX (`dartlab.scan("macroBeta")`)
 - 학술 매핑: FPA 2014 phase ↔ quality 적합도
 
 ### 3. 메커니즘 분석

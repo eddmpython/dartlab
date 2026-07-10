@@ -71,23 +71,25 @@ import polars as pl
 target = "005930"
 c = dartlab.Company(target)
 
+# 밸류 지표는 전종목 스캔에서 한 번에 받는다. PER·PBR 의 역수가 각각 earnings yield · book-to-market.
+valuation = dartlab.scan("valuation")   # 종목코드 · 종목명 · 시가총액 · PER · PBR · PSR · 배당수익률
+
 def value_metrics(code):
-    try:
-        comp = dartlab.Company(code)
-        snap = comp.show("snapshot").to_dicts()
-        if not snap:
-            return None
-        s = snap[0]
-        bm = float(s.get("bookToMarket") or s.get("bvps_over_price") or 0)
-        ep = float(s.get("earningsYield") or s.get("eps_over_price") or 0)
-        cfp = float(s.get("cashflowYield") or s.get("ocf_per_share_over_price") or 0)
-        return {"bm": bm, "ep": ep, "cfp": cfp}
-    except Exception:
+    row = valuation.filter(pl.col("종목코드") == code)
+    if row.height == 0:
         return None
+    per = float(row["PER"][0] or 0)
+    pbr = float(row["PBR"][0] or 0)
+    psr = float(row["PSR"][0] or 0)
+    return {
+        "bm": 1 / pbr if pbr > 0 else 0,    # book-to-market
+        "ep": 1 / per if per > 0 else 0,    # earnings yield
+        "sp": 1 / psr if psr > 0 else 0,    # sales yield
+    }
 
 own = value_metrics(target)
 try:
-    peers = c.industry("peers").to_dicts()[:20]
+    peers = c.industry()["peers"][:20]
 except Exception:
     peers = []
 
@@ -111,20 +113,20 @@ def rank(metric, my_val):
 if own:
     rank_bm = rank("bm", own["bm"])
     rank_ep = rank("ep", own["ep"])
-    rank_cfp = rank("cfp", own["cfp"])
-    ranks = [r for r in (rank_bm, rank_ep, rank_cfp) if r is not None]
+    rank_sp = rank("sp", own["sp"])
+    ranks = [r for r in (rank_bm, rank_ep, rank_sp) if r is not None]
     composite = sum(ranks) / len(ranks) if ranks else None
 else:
-    rank_bm = rank_ep = rank_cfp = composite = None
+    rank_bm = rank_ep = rank_sp = composite = None
 
 table = pl.DataFrame([{
     "metric": "valueComposite",
     "ownBm": own["bm"] if own else None,
     "ownEp": own["ep"] if own else None,
-    "ownCfp": own["cfp"] if own else None,
+    "ownSp": own["sp"] if own else None,
     "rankBm": rank_bm,
     "rankEp": rank_ep,
-    "rankCfp": rank_cfp,
+    "rankSp": rank_sp,
     "composite": composite,
     "peerCount": len(peer_rows),
 }])
@@ -133,7 +135,7 @@ emit_result(
     table=table,
     values={"composite": composite, "peerCount": len(peer_rows)},
     date=None,
-    sources=["dartlab://show/snapshot", "dartlab://industry/peers"],
+    sources=["dartlab://scan/valuation", "dartlab://industry/peers"],
 )
 ```
 

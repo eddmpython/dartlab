@@ -71,20 +71,20 @@ import math
 target = "005930"
 c = dartlab.Company(target)
 
+# 시가총액은 전종목 밸류에이션 스캔에서 한 번에 받는다 (종목마다 Company 를 여는 것보다 싸다).
+valuation = dartlab.scan("valuation")   # 종목코드 · 종목명 · 시가총액 · PER · PBR · PSR · 배당수익률
+
 def market_cap(code):
-    try:
-        snap = dartlab.Company(code).show("snapshot").to_dicts()
-        if not snap:
-            return None
-        return float(snap[0].get("marketCap") or 0)
-    except Exception:
+    row = valuation.filter(pl.col("종목코드") == code)
+    if row.height == 0:
         return None
+    return float(row["시가총액"][0] or 0)
 
 own_cap = market_cap(target)
 own_log_cap = math.log(own_cap) if own_cap and own_cap > 0 else None
 
 try:
-    peers = c.industry("peers").to_dicts()[:20]
+    peers = c.industry()["peers"][:20]
 except Exception:
     peers = []
 
@@ -120,7 +120,7 @@ emit_result(
     table=table,
     values={"marketCap": own_cap, "smbRank": own_size_rank, "peerCount": len(peer_rows)},
     date=None,
-    sources=["dartlab://show/snapshot", "dartlab://industry/peers"],
+    sources=["dartlab://scan/valuation", "dartlab://industry/peers"],
 )
 ```
 
@@ -132,8 +132,8 @@ logMarketCap + percentile rank 단정. 예: "005930 시총 460조 (logCap=33.5) 
 
 ### 2. 핵심 근거 수집
 
-- target market_cap (Company.panel('snapshot'))
-- Company.industry('peers') latest 20 종목 × market_cap
+- target market_cap (`dartlab.scan("valuation")` 의 시가총액 컬럼)
+- `Company.industry()["peers"]` 상위 20 종목 × market_cap
 - logCap = ln(marketCap) 변환 후 peer 단면
 - percentile rank: percentileLargeToSmall = below count / N
 

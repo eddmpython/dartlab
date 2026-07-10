@@ -61,8 +61,8 @@ L1: parquet (정규화)
    data/gov/prices/date/*.parquet (공공데이터포털 일별 전종목 — date/company 샤딩)
    ↓
 L2: in-memory
-   Company.show(...) — BoundedCache
-   Company.scan(...) — heap 가드 maxTargets=5
+   Company.panel(...) — BoundedCache
+   scan(...) — heap 가드 maxTargets=5
    ↓
 L3: axis / recipe
    engines.* (15 카테고리 × N axis)

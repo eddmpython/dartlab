@@ -124,7 +124,7 @@ import dartlab
 
 dartlab.gather("price", "005930")          # 최신 raw data 보강 (provider·latestAsOf)
 dartlab.scan("fields")                       # universe·rank 위치 (횡단 비교)
-dartlab.Company("005930").show("finance")    # 단일 종목 원자료 (target·topic·period)
+dartlab.Company("005930").panel("IS")        # 단일 종목 원자료 (항목 x 기간 격자)
 ```
 
 ## 호출 동작

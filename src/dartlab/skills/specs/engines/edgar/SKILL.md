@@ -124,7 +124,7 @@ import dartlab
 # 1. Company facade — ticker 또는 CIK 인식 자동 EDGAR 라우팅
 c = dartlab.Company("AAPL")
 print(c.market)       # "US"
-print(c.topics)       # 사용 가능한 topic — DART 와 거의 동일
+print(c.panel.shape)  # 항목 x 기간 격자 크기 (DART 와 동일 인터페이스)
 
 # 2. DART 와 동등 인터페이스 (XBRL 자동 정규화)
 bs = c.panel("BS", freq="Q")

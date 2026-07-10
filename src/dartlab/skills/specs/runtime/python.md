@@ -59,7 +59,7 @@ forbidden:
   - destructive shell 호출을 우회하려고 __import__ 사용 금지 — 동일 차단.
   - 안전 경로 외 파일 쓰기를 시도하지 않는다 — SaveArtifact 도구 권장.
 examples:
-  - dartlab.Company('005930').show() 실행
+  - dartlab.Company('005930').panel 실행
   - polars 로 dataframe 가공
   - tempfile.gettempdir() 안에 임시 결과 저장
 source:

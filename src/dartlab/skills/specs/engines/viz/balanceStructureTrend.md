@@ -112,7 +112,7 @@ c = dartlab.Company("005930")
 # dashboard/model 경로가 만든 BalanceStructureView 를 우선 사용한다.
 # view 는 periods, totalAssetsSeries, totalFundingSeries,
 # assetTrendParts, fundingTrendParts, equityTrendParts 를 포함해야 한다.
-view = c.dashboard("balanceStructure")  # 프로젝트 런타임에서 노출된 경우
+view = c.view()  # 로컬 대시보드(engines.dashboard 계약)
 
 spec = specBalanceStructureTrend(
     view,

@@ -63,10 +63,10 @@ failureModes:
   - 분석 답변에 latestAsOf 없이 *최신 데이터* 라고 단정
   - HF 업로드 동시 실행 (concurrency.group 미설정 → sliding-window 429)
   - workflow_run 체인 끊김 (dataSync 완료 후 dataPrebuild 트리거 미동작)
-  - Company.panel 의 topic 을 추측 (정식 topic 은 BS/IS/CF/CIS/SCE/ratios + 120+ 주석 — c.topics 로 목록 확인)
+  - Company.panel 의 topic 을 추측 (정식 topic 은 BS/IS/CF/CIS/SCE/ratios. 주석은 섹션명 검색)
 forbidden:
   - latestAsOf · provider · source 없이 데이터 신선도를 *최신* 으로 단정 금지.
-  - Company.panel topic 을 추측 금지 (반드시 c.topics 로 가능 목록 확인).
+  - Company.panel topic 을 추측 금지 (정식 topic 은 BS/IS/CF/CIS/SCE/ratios. 주석은 c.panel("재고") 처럼 섹션명으로).
   - HF 업로드 직렬화 우회 금지 (`concurrency.group: hf-dataset-push` 강제).
 examples:
   - 005930 finance freshness 확인
@@ -76,7 +76,7 @@ examples:
   - scan 프리빌드 트리거
 procedure:
   - python 사용자 진입점은 `dartlab.checkFreshness("005930")` (개별) · `dartlab.collect(...)` · `dartlab.Company(code).panel(topic)`.
-  - 단일 종목 데이터는 `dartlab.Company(code).panel(topic)` — topic 은 `c.topics` 로 확인.
+  - 단일 종목 데이터는 `dartlab.Company(code).panel(topic)`. topic 은 BS/IS/CF/CIS/SCE/ratios.
   - 전종목 횡단은 `dartlab.scan(axis)` — prebuilt parquet 또는 provider scan 함수 자동 라우팅.
   - 운영자 워크플로우는 `.github/workflows/dataSync.yml` (12h) · `dataPrebuild.yml` (workflow_run) · `edgarSync.yml` (일).
   - 수동 backup 은 `dataSync.yml workflow_dispatch mode=full` — 88 분기 차집합.
@@ -131,7 +131,7 @@ result = dartlab.checkFreshness("005930")
 dartlab.collect("005930", "000660", categories=["finance"])
 # → dict: {종목: {카테고리: 수집 건수}}
 
-# 3. 단일 종목 데이터 조회 — topic 은 c.topics 로 확인
+# 3. 단일 종목 데이터 조회 (topic 은 BS/IS/CF/CIS/SCE/ratios)
 c = dartlab.Company("005930")
 print(c.topics)                  # 사용 가능한 topic 목록
 bs = c.panel("BS", freq="Q")      # 분기 재무상태표

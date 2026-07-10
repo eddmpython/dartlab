@@ -61,7 +61,7 @@ linkedSkills:
 ```
 영업이익 21%[^1] 도달.
 
-[^1]: 출처: DART 005930 2024Q3 IS — `dartlab.Company("005930").show("IS", freq="Q")` 결과의 operating_profit / sales 비율
+[^1]: 출처: DART 005930 2024Q3 IS — `dartlab.Company("005930").panel("IS", freq="Q")` 결과의 operating_profit / sales 비율
 ```
 
 ### 3. JSON-LD (외부 통합)

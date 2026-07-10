@@ -4,7 +4,7 @@ title: DartLab Story — 종목 6 막 narrative
 category: engines
 kind: curated
 status: observed
-purpose: dartlab.story(target) 호출 → 6 막 narrative + ref 시간 정렬.
+purpose: Company.story() 호출 → 6 막 narrative + ref 시간 정렬.
 sourceRefs:
   - dartlab://skills/engines.story.dartlabStory
 knowledgeRefs:
@@ -21,7 +21,7 @@ runtimeCompatibility:
   pyodide:
     status: limited
 whenToUse:
-  - dartlab.story(target) 호출
+  - Company.story() 호출
   - 6 막 narrative + ref 시간 정렬
 ---
 
@@ -37,14 +37,14 @@ whenToUse:
 import dartlab
 
 # 종목 6 막 narrative
-story = dartlab.story("005930")
+c = dartlab.Company("005930")
+story = c.story()
 print(story.summaryCard)  # 6 막 + ref 시간 정렬
 ```
 
 
 - `c = dartlab.Company("005930")`
 - `c.story()`
-- `dartlab.story(c)`
 
 ## 호출 동작
 

@@ -72,45 +72,34 @@ import statistics
 target = "005930"
 c = dartlab.Company(target)
 
+# 네 갈래를 전종목 스캔으로 한 번에 받는다. 종목마다 Company 를 여는 것보다 싸고, 같은 기준으로 줄 세운다.
+prof = dartlab.scan("profitability")   # 종목코드 · 영업이익률 · 순이익률 · ROE · ROA · 등급
+grow = dartlab.scan("growth")          # 종목코드 · 매출CAGR · 영업이익CAGR · 순이익CAGR · years
+debt = dartlab.scan("debt")            # 종목코드 · 총부채 · 부채비율 · ICR · 위험등급
+cash = dartlab.scan("cashflow")        # 종목코드 · 영업CF · 투자CF · 재무CF · fcf
+
+def _one(df, code, col):
+    row = df.filter(pl.col("종목코드") == code)
+    return None if row.height == 0 else row[col][0]
+
 def quality_metrics(code):
-    try:
-        comp = dartlab.Company(code)
-        rows = comp.analysis("profitabilityRatios").to_dicts()
-        if not rows:
-            return None
-        recent = rows[-1]
-        roe = float(recent.get("roe") or 0)
-        roa = float(recent.get("roa") or 0)
-        # growth (5y revenue CAGR)
-        try:
-            r5 = comp.show("revenue").to_dicts()
-            if len(r5) >= 5 and float(r5[-5].get("revenue") or 0) > 0:
-                growth = (float(r5[-1].get("revenue") or 1) / float(r5[-5].get("revenue") or 1)) ** (1/5) - 1
-            else:
-                growth = None
-        except Exception:
-            growth = None
-        # safety: debt/equity + earnings vol
-        try:
-            bs = comp.show("bs").to_dicts()[-1]
-            de = float(bs.get("totalLiabilities") or 0) / max(float(bs.get("totalEquity") or 1), 1)
-        except Exception:
-            de = None
-        # payout: FCF / NI
-        try:
-            cf = comp.analysis("capitalAllocation").to_dicts()[-1]
-            fcf = float(cf.get("freeCashFlow") or 0)
-            ni = float(cf.get("netIncome") or 1)
-            payout = fcf / ni if ni else None
-        except Exception:
-            payout = None
-        return {"roeRoa": (roe + roa) / 2, "growth": growth, "safety": -de if de is not None else None, "payout": payout}
-    except Exception:
+    roe = _one(prof, code, "ROE")
+    roa = _one(prof, code, "ROA")
+    if roe is None or roa is None:
         return None
+    growth = _one(grow, code, "매출CAGR")
+    de = _one(debt, code, "부채비율")           # safety: 낮을수록 좋다
+    fcf = _one(cash, code, "fcf")
+    return {
+        "roeRoa": (float(roe) + float(roa)) / 2,
+        "growth": float(growth) if growth is not None else None,
+        "safety": -float(de) if de is not None else None,
+        "payout": float(fcf) if fcf is not None else None,
+    }
 
 own = quality_metrics(target)
 try:
-    peers = c.industry("peers").to_dicts()[:15]
+    peers = c.industry()["peers"][:15]
 except Exception:
     peers = []
 
@@ -146,7 +135,7 @@ emit_result(
     table=table,
     values={"qmjComposite": composite, "peerCount": len(peer_rows)},
     date=None,
-    sources=["dartlab://analysis/profitabilityRatios", "dartlab://show/revenue", "dartlab://show/bs", "dartlab://analysis/capitalAllocation"],
+    sources=["dartlab://scan/profitability", "dartlab://scan/growth", "dartlab://scan/debt", "dartlab://scan/cashflow"],
 )
 ```
 
@@ -158,11 +147,11 @@ QMJ composite z-score 단일값 + 4 축 개별 z-score 단정 + peer 분위. 예
 
 ### 2. 핵심 근거 수집
 
-- Profitability — ROE / ROA (analysis.profitabilityRatios)
-- Growth — 매출 5y CAGR (show revenue 시계열)
-- Safety — debt/equity + earnings volatility (show BS + earnings std)
-- Payout — FCF / NI (analysis.capitalAllocation)
-- peer set (산업 cross-section)
+- Profitability — ROE / ROA (`dartlab.scan("profitability")`)
+- Growth — 매출 CAGR (`dartlab.scan("growth")`)
+- Safety — 부채비율 (`dartlab.scan("debt")`, 낮을수록 좋아 부호 반전)
+- Payout — FCF (`dartlab.scan("cashflow")`)
+- peer set — `Company.industry()["peers"]` (산업 cross-section)
 
 ### 3. 메커니즘 분석
 

@@ -81,9 +81,8 @@ dartlab.industry("semiconductor")
 ```
 
 ```text
-Company("005930").show("IS").data.industryBadge
+Company("005930").industry()
 → dict
-   ...
    stage : str              # 공정 ID
    stageName : str          # 한글 공정명
    role : str               # 역할 (제조 / 설계 / 장비 공급 / ...)
