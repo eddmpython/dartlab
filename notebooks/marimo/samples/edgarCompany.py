@@ -2,9 +2,13 @@
 # requires-python = ">=3.12"
 # dependencies = ["dartlab", "marimo"]
 # ///
-"""EDGAR 미국 상장기업 탐색 — panel 중심 흐름.
+"""EDGAR 미국 상장기업 탐색. panel 중심 흐름.
 
-실행: marimo edit startMarimo/edgarCompany.py
+공개 호출 계약만 쓴다. `dartlab.{engine}("{axis}", ...)` 와 engines skill 의 capabilityRefs 에
+등재된 `Company.{method}` 뿐이다. 내부 메서드(show · topics · diff · filings)는 계약이 아니므로
+예제에 싣지 않는다. 티커를 넣으면 EDGAR 로, 6자리 숫자를 넣으면 DART 로 라우팅된다.
+
+실행: marimo edit notebooks/marimo/samples/edgarCompany.py
 """
 
 import marimo
@@ -24,73 +28,60 @@ def _():
 
 @app.cell
 def _(c):
-    # topic × period 수평화 DataFrame
-    c.panel()
+    c.market  # US 이면 EDGAR 로 라우팅된다
     return
 
 
 @app.cell
 def _(c):
-    # 이 회사의 topic 목록
-    c.topics
+    # 공시를 항목 x 기간으로 눕힌 wide 격자 그 자체
+    c.panel.shape
     return
 
 
 @app.cell
 def _(c):
-    # 10-K riskFactors → 서술형 블록
-    c.show("riskFactors")
+    c.panel("IS")  # Income Statement
     return
 
 
 @app.cell
 def _(c):
-    # 재무제표 topic
-    c.show("IS")
+    c.panel("BS")  # Balance Sheet
     return
 
 
 @app.cell
 def _(c):
-    c.BS  # Balance Sheet
+    c.panel("CF")  # Cash Flow Statement
     return
 
 
 @app.cell
 def _(c):
-    c.IS  # Income Statement
+    # 분기로 묶어 보기
+    c.panel("IS", freq="Q")
     return
 
 
 @app.cell
 def _(c):
-    c.CF  # Cash Flow Statement
+    # 격자에서 원하는 계정만 이름으로 골라내기
+    c.select("IS", ["Revenue"], freq="Y")
     return
 
 
 @app.cell
 def _(c):
-    c.ratios  # 재무비율 시계열
+    # 최근 filing 목록 (EDGAR 라이브 조회)
+    c.liveFilings()
     return
 
 
 @app.cell
 def _(c):
-    # 특정 기간 비교 (항목 × 기간)
-    c.show("IS", period=["2024Q4", "2023Q4"])
-    return
-
-
-@app.cell
-def _(c):
-    c.trace("riskFactors")
-    return
-
-
-@app.cell
-def _(c):
-    # 전체 topic별 텍스트 변경률
-    c.diff()
+    # 공시 시계열
+    c.disclosure()
     return
 
 
@@ -103,7 +94,7 @@ def _(c):
 
 @app.cell
 def _(c):
-    c.filings()
+    c.credit("채무상환능력")
     return
 
 

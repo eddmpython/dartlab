@@ -1,7 +1,4 @@
 {
   "_note": "engine SKILL.md 4 섹션 강제 위반. baseline 증가 = 회귀. 위반 해소 시 본 파일에서 해당 라인 제거.",
-  "violations": [
-    "fixedIncome::frontmatter::examples",
-    "flow::frontmatter::examples"
-  ]
+  "violations": []
 }

@@ -75,7 +75,8 @@ def _(c):
 
 @app.cell
 def _(c):
-    c.filings().head(10)
+    # 한 값이 어느 공시에서 왔는지 되짚기 (filings 는 계약이 아니다)
+    c.trace("영업이익")
     return
 
 

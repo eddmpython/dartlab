@@ -1,29 +1,60 @@
 {
-  "notebooks/colab/01_company.ipynb": [
-    "Company.filings"
-  ],
-  "notebooks/marimo/01_company.py": [
-    "Company.filings"
-  ],
-  "notebooks/marimo/samples/dartCompany.py": [
-    "Company.BS",
-    "Company.CF",
-    "Company.diff",
-    "Company.filings",
-    "Company.notes",
-    "Company.ratios",
-    "Company.sector",
-    "Company.show",
+  "src/dartlab/skills/specs/engines/company/SKILL.md": [
     "Company.topics"
   ],
-  "notebooks/marimo/samples/edgarCompany.py": [
-    "Company.BS",
-    "Company.CF",
-    "Company.IS",
-    "Company.diff",
-    "Company.filings",
-    "Company.ratios",
-    "Company.show",
-    "Company.topics"
+  "src/dartlab/skills/specs/engines/company/audit.md": [
+    "Company.audit"
+  ],
+  "src/dartlab/skills/specs/engines/company/executivePay.md": [
+    "Company.executivePay"
+  ],
+  "src/dartlab/skills/specs/engines/company/governance.md": [
+    "Company.governance"
+  ],
+  "src/dartlab/skills/specs/engines/company/koreanDisclosure.md": [
+    "Company.audit",
+    "Company.governance"
+  ],
+  "src/dartlab/skills/specs/engines/company/notesDetail.md": [
+    "Company.notesDetail"
+  ],
+  "src/dartlab/skills/specs/engines/company/relatedPartyTx.md": [
+    "Company.relatedPartyTx"
+  ],
+  "src/dartlab/skills/specs/engines/data/SKILL.md": [
+    "Company.topics",
+    "dartlab.checkFreshness"
+  ],
+  "src/dartlab/skills/specs/recipes/fundamental/disclosure/sec10kRiskFactors.md": [
+    "dartlab.providers"
+  ],
+  "src/dartlab/skills/specs/recipes/fundamental/disclosure/sec8kMaterialEvents.md": [
+    "dartlab.providers"
+  ],
+  "src/dartlab/skills/specs/recipes/meta/report/catalystCalendar.md": [
+    "Company.upcomingAgm",
+    "Company.upcomingDividends",
+    "Company.upcomingEarnings"
+  ],
+  "src/dartlab/skills/specs/recipes/meta/report/thesisTracker.md": [
+    "Company.priceChange"
+  ],
+  "src/dartlab/skills/specs/recipes/meta/screen/upsideAsymmetryScreen.md": [
+    "Company.priceHistory",
+    "Company.upcomingAgm",
+    "Company.upcomingDividends",
+    "Company.upcomingEarnings"
+  ],
+  "src/dartlab/skills/specs/start/discordBot.md": [
+    "dartlab.chat",
+    "dartlab.execute_recipe"
+  ],
+  "src/dartlab/skills/specs/start/installUv.md": [
+    "Company.update",
+    "dartlab.checkFreshness"
+  ],
+  "src/dartlab/skills/specs/start/slashCommands.md": [
+    "dartlab.execute_engine",
+    "dartlab.execute_recipe"
   ]
 }

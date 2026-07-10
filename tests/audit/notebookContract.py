@@ -43,12 +43,12 @@ _ENGINE_SPECS = _REPO / "src" / "dartlab" / "skills" / "specs" / "engines"
 _ROOT_INIT = _REPO / "src" / "dartlab" / "__init__.py"
 _BASELINE = Path(__file__).resolve().parent / "_baselines" / "notebookContract.json"
 
-# Company 인스턴스가 관례적으로 담기는 변수명. 노트북 전반에서 `c` 로 통일돼 있다.
-_COMPANY_VARS = {"c", "co", "company"}
+# Company 인스턴스가 관례적으로 담기는 변수명. Skill OS recipe 는 `comp` 도 쓴다.
+_COMPANY_VARS = {"c", "co", "comp", "company"}
 
 # 계약이 아니지만 사실상 값 접근(속성)이라 호출 계약과 별개로 허용하는 최소 집합.
 # 메서드 호출(``c.filings()``)은 여기 없으면 위반이다.
-_ALLOWED_ATTRS = {"corpName", "market", "code", "name"}
+_ALLOWED_ATTRS = {"corpName", "market", "code", "name", "stockCode"}
 
 # 절대 금지 패턴. 계약 우회 진입점.
 _BANNED_PREFIXES = ("getDefault", "_")
@@ -160,6 +160,14 @@ def _targets() -> list[tuple[Path, list[str]]]:
     # dartlab 이야기 본문의 코드펜스는 브라우저 노트북 셀로 그대로 투영된다. 계약 밖 호출이
     # 실리면 독자의 첫 실행이 AttributeError 로 끝난다. 다른 카테고리는 산문 예시라 제외.
     for p in sorted((_REPO / "blog" / "03-dartlab-stories").rglob("index.md")):
+        out.append((p, _codeBlocksOfMarkdown(p)))
+    # Skill OS spec 의 python 코드펜스. 외부 LLM 과 기여자가 이 코드를 그대로 실행한다.
+    # 은퇴한 `c.show(...)` 와 실체 없는 `dartlab.flow(...)` 가 여기서 오래 살아 있었다.
+    # `.archive/` 는 drafted·unverified 격리 구역이라 사용자에게 노출되지 않는다(recipes/README.md).
+    specs = _REPO / "src" / "dartlab" / "skills" / "specs"
+    for p in sorted(specs.rglob("*.md")):
+        if ".archive" in p.parts:
+            continue
         out.append((p, _codeBlocksOfMarkdown(p)))
     return out
 

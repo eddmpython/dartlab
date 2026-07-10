@@ -2,9 +2,13 @@
 # requires-python = ">=3.12"
 # dependencies = ["dartlab", "marimo"]
 # ///
-"""DART 한국 상장기업 탐색 — panel 중심 흐름.
+"""DART 한국 상장기업 탐색. panel 중심 흐름.
 
-실행: marimo edit startMarimo/dartCompany.py
+공개 호출 계약만 쓴다. `dartlab.{engine}("{axis}", ...)` 와 engines skill 의 capabilityRefs 에
+등재된 `Company.{method}` 뿐이다. 내부 메서드(show · topics · diff · notes · filings · sector)는
+계약이 아니므로 예제에 싣지 않는다.
+
+실행: marimo edit notebooks/marimo/samples/dartCompany.py
 """
 
 import marimo
@@ -24,103 +28,75 @@ def _():
 
 @app.cell
 def _(c):
-    # 회사의 topic catalog
-    c.topics
+    # 공시를 항목 x 기간으로 눕힌 wide 격자 그 자체
+    c.panel.shape
     return
 
 
 @app.cell
 def _(c):
-    # topic × period panel view
-    c.panel("businessOverview")
+    # 손익계산서 (숫자 authoritative source 주입)
+    c.panel("IS")
     return
 
 
 @app.cell
 def _(c):
-    # 서술형 topic → 블록 목차
-    c.show("overview")
+    c.panel("BS")  # 재무상태표
     return
 
 
 @app.cell
 def _(c):
-    # 블록 번호 지정 → 실제 데이터
-    c.show("companyOverview", 3)
+    c.panel("CF")  # 현금흐름표
     return
 
 
 @app.cell
 def _(c):
-    # 재무제표 topic → finance source (숫자 authoritative)
-    c.show("IS")
+    c.panel("ratios")  # 재무비율 시계열
     return
 
 
 @app.cell
 def _(c):
-    c.BS  # 재무상태표
+    # 연간으로 묶어 보기
+    c.panel("IS", freq="Y")
     return
 
 
 @app.cell
 def _(c):
-    c.CF  # 현금흐름표
+    # 연결이 기본값. 별도 재무제표는 scope 로 지정
+    c.panel("BS", scope="separate")
     return
 
 
 @app.cell
 def _(c):
-    c.ratios  # 재무비율 시계열
+    # 격자에서 원하는 계정만 이름으로 골라내기
+    c.select("IS", ["매출액", "영업이익"], freq="Y")
     return
 
 
 @app.cell
 def _(c):
-    # 특정 기간 비교 (항목 × 기간)
-    c.show("IS", period=["2024Q4", "2023Q4"])
+    # 주석 본문 검색 (섹션명 또는 canonicalKey 행)
+    c.panel("재고")
     return
 
 
 @app.cell
 def _(c):
-    # 배당 데이터
-    c.show("dividend")
+    # 한 값이 어느 공시에서 왔는지 되짚기
+    c.trace("영업이익")
     return
 
 
 @app.cell
 def _(c):
-    # 전체 topic별 텍스트 변경률
-    c.diff()
-    return
-
-
-@app.cell
-def _(c):
-    # 특정 topic 기간별 이력
-    c.diff("businessOverview")
-    return
-
-
-@app.cell
-def _(c):
-    # K-IFRS 주석 — 12가지 항목
-    c.notes.keys()
-    return
-
-
-@app.cell
-def _(c):
-    # 재고자산 주석
-    c.notes.inventory
-    return
-
-
-@app.cell
-def _(c):
-    # 섹터 분류 (WICS 11대 업종)
-    c.sector
+    # 산업 위치 (업종, 공정 단계, 동종사)
+    c.industry()
     return
 
 
@@ -132,7 +108,7 @@ def _(c):
 
 @app.cell
 def _(c):
-    c.filings()
+    c.credit("채무상환능력")
     return
 
 
