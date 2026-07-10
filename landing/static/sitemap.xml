@@ -126,41 +126,6 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://eddmpython.github.io/dartlab/skills/engines.fixedIncome</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://eddmpython.github.io/dartlab/skills/engines.fixedIncome.kgbYieldCurve</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://eddmpython.github.io/dartlab/skills/engines.fixedIncome.krCorporateSpread</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://eddmpython.github.io/dartlab/skills/engines.flow</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://eddmpython.github.io/dartlab/skills/engines.flow.programTrade</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://eddmpython.github.io/dartlab/skills/engines.flow.securitiesLending</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://eddmpython.github.io/dartlab/skills/engines.flow.shortInterest</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://eddmpython.github.io/dartlab/skills/engines.gather</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -566,17 +531,7 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://eddmpython.github.io/dartlab/skills/recipes.fundamental.credit.krCorporateSpreadWidening</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://eddmpython.github.io/dartlab/skills/recipes.fundamental.credit.usHighYieldSpread</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://eddmpython.github.io/dartlab/skills/recipes.fundamental.credit.yieldCurveInversion</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -657,21 +612,6 @@
   </url>
   <url>
     <loc>https://eddmpython.github.io/dartlab/skills/recipes.fundamental.dividend.payoutFcfCoverage</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://eddmpython.github.io/dartlab/skills/recipes.fundamental.flow.foreignVsInstitutional</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://eddmpython.github.io/dartlab/skills/recipes.fundamental.flow.programTradeImbalance</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://eddmpython.github.io/dartlab/skills/recipes.fundamental.flow.shortInterestSpike</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
