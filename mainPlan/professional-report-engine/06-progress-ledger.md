@@ -16,12 +16,12 @@
 
 ## P1 · 능력 격상 (순서: 02a 선행)
 
-> ⛔ **로컬 데이터 벽 (2026-07-06 실측, P1b·P1c·P1d 공통)**. `getKindList()` 등간표본 30 사 중
-> **22 사는 로컬에 재무 자체가 없다**(`select("IS",["매출액"])` 파싱 불가 = 미수집). 매출 8 기간 이상
-> 보유는 **7 사**. ROIC 타임라인 부재도 동일하게 22/30. 따라서 **다회사 백테스트 게이트(P1b MAPE·방향,
-> P1c 세그먼트 MAE, P1d 코호트)는 전부 로컬에서 판정 불가**다. 수집된 회사만 골라 쓰면 시총·생존 편향 +
-> 손 선별 금지 위반([[feedback_exhaustive_no_curation]]) 이라 강행하지 않는다. 이 게이트들은 전 유니버스
-> 수집본이 있는 **CI/데이터 트랙**에서 돌려야 한다. (단일회사·순수로직 게이트는 로컬에서 이미 통과.)
+> ★ **다회사 백테스트 경로 정정 (2026-07-06 실측)**. 처음엔 per-Company 경로(`Company(code).select`)로
+> 시도해 등간표본 30 사 중 22 사가 안 열려 "로컬 데이터 벽" 이라 적었으나 **그 결론은 틀렸다**.
+> 전 종목 연간 재무는 `data/dart/scan/finance.parquet`(**2,799 종목 · 연간 2021~2025**)에 이미 있고,
+> prebuild `buildFinanceJson._extract_annual` 과 같은 계정 매핑으로 **벌크 직독하면 유니버스가 열린다**.
+> 즉 다회사 게이트는 로컬에서 돌릴 수 있다(P1d 실증 완료, 아래). 제약은 커버리지가 아니라 **지평 5 년**과
+> **회사별 WACC 부재**(벌크엔 베타·시장데이터 없음). per-Company 경로가 희소한 것은 별개 사실.
 - ✅ **P1a 밸류에이션 de-gate 완료** (WACC bottom-up·성장 reinvest×ROIC fade·through-cycle 정규화·드라이버·reverse-DCF) — 게이트 전부 통과: G1·G3·G5 offline(12 테스트) + 범위가드 005930·003230·country override + G2 방향 77%(>55%). 보너스: _rimCalc CI 버그 수정·성장클램프 calibration. 잔여=엄밀 G2 point-in-time/full-dFV CI 정제(방향 게이트는 충족). 본진 push 완료(fix·calibration 은 CI 여유창 동기화 대기).
   - ✅ **G1·G3·G5 offline 통과** (`tests/quant/test_valuationUplift.py` **9개**, test-lock): G1 reinvest round-trip·fade 단조수렴·terminal 무료성장 차단·reverse-DCF 항등(오차 0%) · G3 WACC×g 민감도 단조성(WACC↑→가치↓·g↑→가치↑)+TVshare 폭주 차단 · G5 Growth Equation 정합성(g=reinvest×ROIC critical 0, 위반 입력 감점).
   - ✅ **본진 디게이트 완료**: `_estimateWacc` bottom-up β + Damodaran 국가테이블(005930 실측 8.72) · `_calcTwoStageDcf` 펀더멘털 성장(g=reinvest×ROIC fade, naive 매출CAGR 대체) · 신규 `_dFVDrivers.py`(buildReinvestmentPath·buildDriverScenarios·reverseDcfExhibit) · `dFV` ±0.12→드라이버 시나리오 + reverseDcf·reinvestmentCheck 출력(guarded).
@@ -37,9 +37,11 @@
 - ◐ P1b 전망 de-gate — ✅ **핵심 완료**: `_forecastMetric` 지수 fade(임의 선형감속 폐기, λ 0.35/0.5) + 영업레버리지 마진(고정마진 폐기, β 회귀+범위캡+fallback). offline 4 테스트 통과(`test_forecastUplift.py`). 잔여: driver-growth(segment/backlog) 가중 승격·driver 시나리오·walk-forward 백테스트(`_revenueBacktest.py`, data/CI — P1a G2 방법론 동일).
 - ◐ P1c 세그먼트 경제성 — ✅ **핵심 완료**: `_segmentEconomics.reconcileSegmentMargins`(peer 마진 구조 × 연결 OI reconcile, Σ 보존·적자부문 k 제외·범위/method 라벨). offline 5 테스트(`test_segmentEconomics.py`). 잔여: company peer fetch 배선(industryPeers/themes)·calcSegmentComposition hasOpIncome 게이트 해제·SOTP·공시사 백테스트(MAE≤5%p, data/CI).
 - ◐ P1d 정량 moat . ✅ **개념확립 통과**(`tests/_attempts/quantMoat/concept.py`, graduation gate 준수): C1 ROIC−WACC 지속성·C2 마진 CV·등급 논리곱(wide/narrow/none, noComposite)·정성원천(switching/network/brand) unmeasured 명시. offline 5 체크.
-  - ⛔ **G1 코호트 백테스트 = 로컬 판정 불가(데이터 벽, 2026-07-06 실측)**. `cohortBacktest.py` 신설(등간 샘플링·형성 2019~2022·성과 2025 T+3·게이트 wide>none & wide>0). 표본 60 사 -> **유효 7 사**. 원인 진단(30 사 등간표본): `calcRoicTimeline` 자체 부재 **22/30 사**(로컬 미수집), 확보 8 사도 history 2~8 년 산발. 연도별 스프레드 보유 3~6 사.
-  - **창이 과한 게 아니라 데이터가 없다.** 수집된 회사만 골라 쓰면 시총·생존 편향 + 손 선별 금지 위반([[feedback_exhaustive_no_curation]]) -> 강행하지 않음. 02d 가 게이트를 `data/CI` 로 표기한 것이 수치로 옳았음이 확인됨.
-  - 잔여: CI(전 유니버스 수집본)에서 `cohortBacktest.py` 실행 -> 통과 시에만 `moat.py` 본진 졸업 + axis 등록. 상세 = `tests/_attempts/quantMoat/README.md`.
+  - ✅ **G1 코호트 백테스트 = 지시적 PASS (2026-07-06, 전 유니버스 벌크)**. `cohortBacktestBulk.py`. 벌크 연간 5 년(2021~2025)이라 "형성3년+T+3"(6 년 필요) 불가 -> 두 절충 모두 실행, **둘 다 PASS**.
+    - 형성2021~2023·성과2025(T+2), 유효 **1,071 사**: wide(n73) median **+7.63%** · 양(+) 70% vs none(n806) median **−6.01%** · 양(+) 26%.
+    - 형성2021~2022·성과2025(T+3), 유효 **1,432 사**: wide(n133) median **+2.72%** · 양(+) 62% vs none(n1020) median **−6.16%** · 양(+) 25%.
+  - ★ **방법론 발견: 원평균은 이 게이트에 쓸 수 없다.** none 원평균 66.8% > wide 37.1% 로 뒤집히는데, 중앙값은 −6.01% vs +7.63%. ROIC=NOPAT/투하자본 이라 IC≈0 회사가 평균을 오염시킨다. **중앙값 + winsorized(5/95) 평균**으로 판정해야 하며, 원평균 기준으론 두 구성 다 FAIL 오판. 02d 스펙에 로버스트 통계 명문화 필요.
+  - ⏸ **본진 졸업은 아직**: WACC 전사공통 8.5%·세율 22% 고정 근사라 *엔진 정합* 판정이 아니다(벌크에 베타·시장데이터 없음). 회사별 WACC 로 재현 후에만 `moat.py` 배치 + axis 등록. 생존 편향도 잔존. 상세·수치·한계 = `tests/_attempts/quantMoat/README.md`.
 - ◐ P1e 신용 라이브배선 + 매크로 강화. ✅ **리포트 emitter 신용 pro 블록 완료**(`85bc5273d`): reportModel.ts `CreditView`+`creditPanel`(가드③ 패킷 grade·axes·PD·outlook·confidence) + report.py `_creditView`(evaluateCompany L2 직접 매핑, `_valuationView` 동형, L3->L2 정방향) + credit 섹션(arcStep 8) + 헤드라인 신용등급. landing project.ts skip 케이스. 11/11 offline·tsc·svelte-check 0·ruff·camelCase clean. push 보류(landing/src 포함, 운영자 승인 대기). **★실데이터 e2e 검증(2026-07-06)**: `Company("005930").reportModel()` -> 11 섹션(valuation·credit 포함), `creditPanel` 블록 `dCR-AA`·PD 0.02·7 축·confidence 80(ratio), 헤드라인 `신용등급 AA`, provenance engines `story/valuation/credit`. monkeypatch 아닌 실경로 통과. 잔여: buildFinanceJson credit publish(landing bake)·forward PD·매크로 분기/다변량/sector 폴백 + 게이트 parity·79사·β-stability(CI/data). 결정1 ✅ 조건부, 5가드 준수
   - ⚠ **정합성 정정(2026-07-06, 실측)**: 02e Step 1 "buildFinanceJson 루프에 `data["credit"]=getDcrBadge(...)` 한 줄"(가드①)은 **성립하지 않는다**. 그 루프(`buildFinanceJson.py:320-332`)엔 Company 가 없고 `_extract_annual(df, code)` 로 parquet 행만 뽑는다. `macroExposure` 는 순수 데이터(revenue 배열+meta)라 되지만 `getDcrBadge`->`evaluateCompany` 는 **full Company 필요**(`engine.py:189` `Company(stockCode)`, docstring "Requires L1 raw 접근"). prebuild 는 `enforceOffline()` + 3,000 사 Company = 네트워크 차단 + OOM(사당 200~500MB·gc 회수 0). **데이터 전용 신용 진입점 없음**이고, 신설하면 credit 엔진 변경이라 가드② 위반. → 설계 재결정 필요(운영자). **실측으로 옵션 좁힘(2026-07-06, 스크래치 프로브 2 종):**
     - **옵션① (in-process 3,000사 Company 베이크) = 死 (실측 반증).** `enforceOffline()` 아래 `Company("005930")`+`evaluateCompany` 는 **작동함**(grade `dCR-AA`, pd 0.02, 2.6s). 그러나 4 사 직렬(`del c; gc.collect()` 동행) RSS 91MB->986MB, **사당 순증 224MB**(3·4 번째 +181·+274 계속 증가) → 3,000 사 외삽 수백 GB = OOM. CLAUDE.md "gc.collect() 회수 0" 경고가 실측 확인됨.
