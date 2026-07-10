@@ -30,6 +30,8 @@
 	const navLinks = [
 		{ label: 'Skills', href: `${base}/skills` },
 		{ label: 'Blog', href: `${base}/blog` },
+		// 글에서 배우고 노트북에서 실습한다. 배우는 문 옆에 실습하는 문을 둔다.
+		{ label: 'Notebooks', href: `${base}/notebooks` },
 		{ label: 'Cards', href: `${base}/cards` },
 		{ label: 'Scan', href: `${base}/scan` },
 		{ label: 'Viewer', href: `${base}/viewer` },

@@ -59,6 +59,8 @@ async function bringUpEngine(): Promise<void> {
 	engineStatus.set('loading');
 	engineError.set(null);
 	bringUp = (async () => {
+		// 앞선 기동이 실패했으면 죽은 워커가 남아 있다. 붙들고 있지 말고 버린 뒤 새로 띄운다.
+		engine?.destroy();
 		engine = new WorkerEngine();
 		await engine.initialize();
 		initWidgetBridge(
@@ -208,14 +210,17 @@ function refreshCellErrors(): Map<string, string[]> {
 }
 
 export async function executeCell(cellId: string, code: string, moveToNext = false): Promise<void> {
-	if (!engine) {
+	// `if (!engine)` 로 거르면 안 된다. 기동이 한 번 실패하면 engine 은 non-null 인데 isReady 는
+	// false 다. 그러면 이 분기를 건너뛰고 아래에서 영원히 "Engine not ready" 만 돌려준다. 새로고침
+	// 말고는 빠져나갈 길이 없었다. bringUpEngine 은 죽은 워커를 버리고 다시 띄운다.
+	if (!engine?.isReady) {
 		await initEngine(false);
 	}
 
 	if (!engine?.isReady) {
 		setCellOutput(cellId, {
 			type: 'error',
-			data: 'Engine not ready. Please wait for initialization.',
+			data: `파이썬 엔진을 띄우지 못했습니다. ${get(engineError) ?? ''}`.trim(),
 			executedAt: new Date().toISOString()
 		});
 		return;
