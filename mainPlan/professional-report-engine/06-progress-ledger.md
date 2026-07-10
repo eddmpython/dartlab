@@ -37,7 +37,13 @@
 - ◐ P1b 전망 de-gate . ✅ **핵심 완료**: `_forecastMetric` 지수 fade(임의 선형감속 폐기, λ 0.35/0.5) + 영업레버리지 마진(고정마진 폐기, β 회귀+범위캡+fallback). offline 4 테스트 통과(`test_forecastUplift.py`). 잔여: driver-growth(segment/backlog) 가중 승격·driver 시나리오·walk-forward 백테스트.
   - ⛔ **walk-forward 차단 원인 특정(2026-07-06 실측)**: `_revenueBacktest.py` 는 **아직 존재하지 않는다**(미구축). 그리고 벌크 연간(`finance.parquet`, reprt_code 11011)은 **2021~2025 5 년뿐**인데 `calcRevenueForecast` docstring 이 **"Requires: IS 시계열 ≥ 5 년"** 을 명시한다. 즉 앞부분만 train 으로 잘라내면 **엔진이 예측 자체를 거부**한다(train prefix ≤ 4 년). 벽은 "CI" 가 아니라 **지평 = 엔진 최소요건**이다. 분기(11012/13/14)는 벌크에 있으나 이 엔진은 연간 시계열을 소비한다. → 연간 지평 확장(구 연도 수집) 또는 분기 TTM 연간화 설계가 선행.
 - ◐ P1c 세그먼트 경제성 . ✅ **핵심 완료**: `_segmentEconomics.reconcileSegmentMargins`(peer 마진 구조 × 연결 OI reconcile, Σ 보존·적자부문 k 제외·범위/method 라벨). offline 5 테스트(`test_segmentEconomics.py`). 잔여: company peer fetch 배선(industryPeers/themes)·calcSegmentComposition hasOpIncome 게이트 해제·SOTP·공시사 백테스트(MAE≤5%p).
-  - ★ **백테스트 차단 원인 특정(2026-07-06 실측): 데이터가 아니라 peer 배선이다.** 세그먼트 벌크가 이미 있다: `data/dart/scan/note/segments.parquet` (**331,916 행 · 2,136 종목**, 컬럼 stockCode·account·label·period·value). 그리고 `reconcileSegmentMargins(segRevenues, oiTotal, peerMargins, peerRanges)` 는 **Company 불요 순수 데이터 함수**다. 따라서 MAE 백테스트는 로컬 실행 가능하다. 유일한 공백은 **`peerMargins` 를 무엇으로 채우느냐**(원장이 이미 지목한 `industryPeers/themes` 배선). 이걸 먼저 짓고 leave-one-out 으로 공시사 MAE 를 재면 게이트가 닫힌다. (CI 소관이 아니다.)
+  - ⛔ **백테스트 차단 원인 특정(2026-07-06, 실제 착수 후 반증)**. `reconcileSegmentMargins(segRevenues, oiTotal, peerMargins, peerRanges)` 는 **Company 불요 순수 데이터 함수**라 벌크로 백테스트할 수 있어 보였다. 그러나 **입력을 만들 수 없다**: 세그먼트 벌크 `data/dart/scan/note/segments.parquet`(331,916 행·2,136 종목, 컬럼 stockCode·account·label·period·value)에 **(부문 × 계정) 행렬이 없다**.
+    - 005930 2024 = 4 행, 전부 합계(매출액·감가상각비·무형자산상각비·영업이익). **부문 축 소실.**
+    - 010770 2024 = 지역부문(국내·중국·인도·미국·소계·연결조정·합계) 은 있으나 **지표가 하나뿐**. 부문별 영업이익 없음.
+    - 005270 2024 = 행이 미수수익·유가증권할인차금·건물·`300,000주` 등 **부문과 무관한 주석 항목**. 추출 오염.
+    - ⇒ `segRevenues`(부문별 매출)도, 정답인 부문별 OI 도 구성 불가 ⇒ MAE 백테스트 불가.
+  - ★ **상위 결함 보고(별건 이슈감)**: scan 주석 추출기가 주석 표를 **행 라벨만 남기고 열(부문) 차원을 버린다**. 회사에 따라 행이 부문명이기도, 계정명이기도, 아예 **다른 표**이기도 하다(005270). `segments.parquet` 은 현재 세그먼트 경제성에 **사용 불가**. 고치려면 추출기가 (행 × 열) 행렬을 보존해야 하고, 그건 노트 벌크 재생성(승인 대상)을 수반한다.
+  - 잔여 순서: ① 주석 추출기 부문 축 보존 수정 + 노트 벌크 재생성(승인) → ② `peerMargins` 소스 배선(`industryPeers/themes`) → ③ leave-one-out 공시사 MAE 게이트.
 - ◐ P1d 정량 moat . ✅ **개념확립 통과**(`tests/_attempts/quantMoat/concept.py`, graduation gate 준수): C1 ROIC−WACC 지속성·C2 마진 CV·등급 논리곱(wide/narrow/none, noComposite)·정성원천(switching/network/brand) unmeasured 명시. offline 5 체크.
   - ✅ **G1 코호트 백테스트 = 지시적 PASS (2026-07-06, 전 유니버스 벌크)**. `cohortBacktestBulk.py`. 벌크 연간 5 년(2021~2025)이라 "형성3년+T+3"(6 년 필요) 불가 -> 두 절충 모두 실행, **둘 다 PASS**.
     - 형성2021~2023·성과2025(T+2), 유효 **1,071 사**: wide(n73) median **+7.63%** · 양(+) 70% vs none(n806) median **−6.01%** · 양(+) 26%.
