@@ -147,6 +147,7 @@ GATES: dict[str, Gate] = {
             "python -X utf8 tests/audit/deprecationAudit.py && "
             "python -X utf8 tests/audit/staleImports.py --check && "
             "python -X utf8 tests/audit/axisDeclaredCoverage.py --check --quiet && "
+            "python -X utf8 tests/audit/workbenchPurity.py --check && "
             "python -X utf8 tests/audit/untrustedWrapAudit.py --strict && "
             "python -X utf8 tests/audit/checkAgentBoundary.py --strict && "
             # 색상 SSOT 가드 — 브랜드색(#ff3f6f/#fb923c/#ec4899/#ea4647) 토큰 우회 하드코딩 회귀 차단(baseline-ratchet).

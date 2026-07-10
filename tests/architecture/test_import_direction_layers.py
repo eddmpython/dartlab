@@ -23,6 +23,7 @@ LAYERS = {
     "dartlab.industry": 2,
     "dartlab.macro": 2,
     "dartlab.quant": 2,
+    "dartlab.simulate": 2,  # L2.5 시나리오/작업대 (다중 L2 결합 합법, L2_PEERS 미소속). 등록 시 신규 위반 0 실측.
     "dartlab.ai": 3,
 }
 
@@ -109,6 +110,9 @@ _FACADE_PATTERNS = {
     ("dartlab.providers.edgar.company", "dartlab.quant"),
     ("dartlab.providers.dart.company", "dartlab.ai"),
     ("dartlab.providers.edgar.company", "dartlab.ai"),
+    # Company.simulate() dual-access facade → simulate.run.runScenario (L2.5, analysis/credit/quant 와 동형)
+    ("dartlab.providers.dart.company", "dartlab.simulate"),
+    ("dartlab.providers.edgar.company", "dartlab.simulate"),
     # dart/_finance_helpers → sector.types (sector 코드 참조)
     ("dartlab.providers.dart.financeMappers", "dartlab.analysis"),
     # scan/network → rank/screen (벤치마크 데이터 참조)
