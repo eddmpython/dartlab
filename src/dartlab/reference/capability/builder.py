@@ -11,6 +11,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import inspect
 import json
 import re
@@ -282,12 +283,63 @@ _AXIS_REGISTRIES: tuple[tuple[str, str, str], ...] = (
 )
 
 
+# 축 엔트리에서 카탈로그로 실을 필요가 없는 필드. **항목마다 사유 필수** (게으른 덤프 방지).
+_AXIS_IGNORE_FIELDS: frozenset[str] = frozenset(
+    {
+        "label",  # summary 로 이미 투영
+        "description",  # capabilities 로 이미 투영
+        "example",  # 사람용 예시. 기계 판정에 무관
+        "module",  # 구현 위치 (선언이 아님)
+        "fn",  # 구현 위치 (선언이 아님)
+        "listModule",  # 구현 위치 (선언이 아님)
+        "axis",  # credit 전용. "{prefix}.{axis}" 키와 중복
+    }
+)
+
+
+def _declaredAxisFields(entry: Any) -> dict[str, Any]:
+    """축 엔트리가 **이미 선언한** 필드를 네이티브 이름 그대로 캐리 → declared dict.
+
+    6 엔진의 축 엔트리 dataclass 는 필드 이름이 서로 다르다 (scan ``returnType``·``listFn``,
+    quant ``stockRequired``·``multiStock``, gather/industry ``targetType``·``hidden``, macro ``act``,
+    credit ``group``). **alias 표로 접지 않는다.** 접으면 그 표가 두 번째 SSOT 가 되어 drift 하고
+    의미가 손실된다 (예 stockRequired 를 targetRequired 로 흡수). 대신 ignore 아닌 필드를 전부 원명
+    으로 흘려보내므로, 새 엔진이 새 필드명을 써도 조용히 버려지지 않는다.
+
+    lane·universeScope 같은 **파생 의미축은 저장하지 않는다.** 소비측이 순수함수로 계산한다
+    (lane = f(returnType, listFn), universeScope = f(stockRequired, targetRequired, multiStock)).
+
+    Args:
+        entry: 축 엔트리 객체. dataclass 가 아니면 빈 dict (미래 비-dataclass 레지스트리 크래시 가드).
+
+    Returns:
+        {필드명: 값}. ``None`` 은 미선언이라 제외하되 ``False`` 는 유효 선언이라 보존한다
+        (targetRequired=False = 타깃 불요 = 전종목 벌크 안전). primitive 만 캐리 (JSON 소비처 보호).
+    """
+    if not dataclasses.is_dataclass(entry):
+        return {}
+    declared: dict[str, Any] = {}
+    for field in dataclasses.fields(entry):
+        if field.name in _AXIS_IGNORE_FIELDS:
+            continue
+        value = getattr(entry, field.name, None)
+        if value is None:  # 미선언. 0/False 로 대체 금지
+            continue
+        if isinstance(value, (str, bool, int, float)):
+            declared[field.name] = value
+    return declared
+
+
 def _injectAxisRegistriesLive(entries: dict[str, dict[str, Any]]) -> None:
     """scan/macro/gather 축 레지스트리를 라이브 객체에서 직접 주입.
 
     레지스트리 dict 의 각 entry(``label``/``description`` 속성) → ``{prefix}.{axis}`` key.
-    소스파일 AST 파싱 0 — 레지스트리가 모듈 이동해도, 설치 패키지에서도 동작 (옛 AST 방식은
+    소스파일 AST 파싱 0. 레지스트리가 모듈 이동해도, 설치 패키지에서도 동작 (옛 AST 방식은
     ``_AXIS_REGISTRY`` 가 ``scan/__init__``→``scan/router`` 로 옮겨가며 scan 축을 누락했다).
+
+    label/description 외의 **선언 필드도 ``declared`` 로 실는다** (2026-07-07). 이전에는 버려서
+    소비측이 축의 반환형·타깃 필요 여부·카탈로그 원자 여부를 알 수 없었다. 키(``{prefix}.{axis}``)는
+    불변이므로 additive 이며 소비처(engineCall·capabilities·search)는 하위호환이다.
     """
     import importlib as _il
 
@@ -304,6 +356,8 @@ def _injectAxisRegistriesLive(entries: dict[str, dict[str, Any]]) -> None:
                 axisEntry["summary"] = str(label)
             if description := getattr(entry, "description", None):
                 axisEntry["capabilities"] = str(description)
+            if declared := _declaredAxisFields(entry):
+                axisEntry["declared"] = declared
             entries[f"{prefix}.{axisName}"] = axisEntry
 
 
