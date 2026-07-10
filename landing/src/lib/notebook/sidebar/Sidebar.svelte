@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Box, Variable, FolderTree, TextSearch, Network } from 'lucide-svelte';
+	import { Box, Variable, FolderTree, TextSearch, Network, BookOpen } from 'lucide-svelte';
 	import { sidebarOpen, activePanel, openPanel, closeSidebar } from '../stores/sidebarStore';
 	import type { PanelId } from '../stores/sidebarStore';
 	import PackagesPanel from './panels/PackagesPanel.svelte';
@@ -7,10 +7,12 @@
 	import FilesPanel from './panels/FilesPanel.svelte';
 	import DocsPanel from './panels/DocsPanel.svelte';
 	import DependenciesPanel from './panels/DependenciesPanel.svelte';
+	import StoriesPanel from './panels/StoriesPanel.svelte';
 
 	// requiresAuth 게이트를 뺐다. 인증은 서버 개념인데 landing 은 adapter-static 무서버라
 	// currentUser 가 영원히 null 이었고, 그래서 Files 패널이 항상 비활성이었다.
 	const panels: { id: PanelId; icon: typeof Box; label: string }[] = [
+		{ id: 'stories', icon: BookOpen, label: 'dartlab 이야기' },
 		{ id: 'packages', icon: Box, label: 'Packages' },
 		{ id: 'variables', icon: Variable, label: 'Variables' },
 		{ id: 'files', icon: FolderTree, label: 'Files' },
@@ -49,7 +51,9 @@
 				<button class="panel-close" onclick={closeSidebar}>&#215;</button>
 			</div>
 			<div class="panel-body">
-				{#if $activePanel === 'packages'}
+				{#if $activePanel === 'stories'}
+					<StoriesPanel />
+				{:else if $activePanel === 'packages'}
 					<PackagesPanel />
 				{:else if $activePanel === 'variables'}
 					<VariablesPanel />
@@ -66,10 +70,12 @@
 </div>
 
 <style>
+	/* 상단 스트립(--nb-top) 아래에서 시작한다. top:0 이던 시절 패널 헤더가 좌상단 브랜드와
+	   같은 자리에 놓여 글자가 겹쳐 찍혔다. 아이콘 레일의 padding-top 60px 도 그 회피용이었다. */
 	.sidebar {
 		position: fixed;
 		left: 0;
-		top: 0;
+		top: var(--nb-top, 48px);
 		bottom: 0;
 		display: flex;
 		z-index: 25;
@@ -80,9 +86,9 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 2px;
-		padding: 60px 4px 16px;
+		padding: 8px 4px 16px;
 		background: var(--nb-bg);
-		width: 40px;
+		width: var(--nb-rail, 40px);
 	}
 
 	.icon-btn {
@@ -110,7 +116,7 @@
 	}
 
 	.sidebar-panel {
-		width: 260px;
+		width: var(--nb-panel, 260px);
 		background: var(--nb-surface);
 		border-right: 1px solid var(--nb-border);
 		display: flex;

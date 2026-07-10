@@ -15,6 +15,7 @@
 	import NotebookToolbar from './toolbar/NotebookToolbar.svelte';
 	import Cell from './components/Cell.svelte';
 	import Sidebar from './sidebar/Sidebar.svelte';
+	import { sidebarOpen } from './stores/sidebarStore';
 
 	interface Props {
 		embedded?: boolean;
@@ -92,7 +93,7 @@
 	}
 </script>
 
-<div class="notebook-editor" class:embedded>
+<div class="notebook-editor" class:embedded class:sidebar-open={showSidebar && $sidebarOpen}>
 	{#if showSidebar}
 		<Sidebar />
 	{/if}
@@ -145,10 +146,27 @@
 		--nb-error: var(--dl-bad);
 		--nb-toc-top: 80px;
 
+		/* 상단 스트립 높이. 좌상단 브랜드(top 12px + 32px)가 여기 산다.
+		   사이드바는 이 아래에서 시작해야 브랜드와 겹치지 않는다. */
+		--nb-top: 48px;
+		--nb-rail: 40px;
+		--nb-panel: 260px;
+
 		min-height: 100vh;
 		background: var(--nb-bg);
 		color: var(--nb-text);
 		font-family: var(--dl-font-ui);
+		transition: padding-left 0.16s ease;
+	}
+
+	/* 패널이 열리면 본문을 밀어 낸다. 덮으면 코드가 가려진다. */
+	.notebook-editor.sidebar-open {
+		padding-left: var(--nb-panel);
+	}
+	@media (max-width: 640px) {
+		.notebook-editor.sidebar-open {
+			padding-left: 0;
+		}
 	}
 
 	.notebook-content {

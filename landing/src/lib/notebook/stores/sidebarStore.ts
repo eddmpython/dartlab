@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 
-export type PanelId = 'packages' | 'variables' | 'files' | 'docs' | 'dependencies';
+export type PanelId = 'packages' | 'variables' | 'files' | 'docs' | 'dependencies' | 'stories';
 
 export const sidebarOpen = writable<boolean>(false);
 export const activePanel = writable<PanelId>('packages');
