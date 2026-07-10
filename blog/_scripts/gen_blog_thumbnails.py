@@ -214,8 +214,15 @@ def renderCard(bg_path: Path | None, out_path: Path) -> None:
     img.convert("RGB").save(out_path, "WEBP", quality=88)
 
 
-def findBg(post_dir: Path) -> Path | None:
-    """글 폴더 assets/ 에서 *thumbnail-bg.webp 첫 매치(없으면 None)."""
+def findBg(post_dir: Path, fm: dict | None = None) -> Path | None:
+    """frontmatter thumbnailBg 를 우선하고, 없으면 assets/ 의 *thumbnail-bg.webp 첫 매치를 쓴다."""
+    explicit = str((fm or {}).get("thumbnailBg") or "").strip()
+    if explicit:
+        bg = Path(explicit)
+        if not bg.is_absolute():
+            bg = (post_dir / explicit).resolve()
+        if bg.is_file():
+            return bg
     hits = sorted((post_dir / "assets").glob("*thumbnail-bg.webp"))
     return hits[0] if hits else None
 
@@ -230,7 +237,7 @@ def iterPosts():
         fm = parseFrontmatter(md.read_text(encoding="utf-8"))
         if not fm.get("title"):
             continue
-        yield sm.group(1), fm, md.parent, findBg(md.parent)
+        yield sm.group(1), fm, md.parent, findBg(md.parent, fm)
 
 
 def outPathFor(slug: str, fm: dict, preview_dir: Path | None) -> Path | None:

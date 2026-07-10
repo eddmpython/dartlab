@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 360" width="880" height="360" role="img" aria-label="dartlab 데이터 세 덩어리">
+  <rect width="880" height="360" fill="#0a0e1a"/>
+  <text x="440" y="40" text-anchor="middle" fill="#e6edf3" font-family="system-ui, sans-serif" font-size="19" font-weight="700">dartlab 이 다루는 데이터 세 덩어리</text>
+  <text x="440" y="64" text-anchor="middle" fill="#8b949e" font-family="system-ui, sans-serif" font-size="13">모양이 다르고, 부르는 방법도 다르다</text>
+
+  <g>
+    <rect x="40" y="96" width="250" height="200" rx="10" fill="#0f1626" stroke="#fbbf24" stroke-width="1.5"/>
+    <text x="165" y="126" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="14" font-weight="700">회사 한 곳의 격자</text>
+    <text x="165" y="148" text-anchor="middle" fill="#8b949e" font-family="ui-monospace, monospace" font-size="12">c.panel("IS")</text>
+    <g stroke="#30363d" stroke-width="1">
+      <rect x="72" y="166" width="186" height="96" fill="#0a0e1a"/>
+      <line x1="72" y1="190" x2="258" y2="190"/><line x1="72" y1="214" x2="258" y2="214"/><line x1="72" y1="238" x2="258" y2="238"/>
+      <line x1="134" y1="166" x2="134" y2="262"/><line x1="196" y1="166" x2="196" y2="262"/>
+    </g>
+    <text x="103" y="182" text-anchor="middle" fill="#8b949e" font-family="system-ui, sans-serif" font-size="10">계정</text>
+    <text x="165" y="182" text-anchor="middle" fill="#8b949e" font-family="system-ui, sans-serif" font-size="10">2024</text>
+    <text x="227" y="182" text-anchor="middle" fill="#8b949e" font-family="system-ui, sans-serif" font-size="10">2025</text>
+    <text x="165" y="282" text-anchor="middle" fill="#6e7681" font-family="system-ui, sans-serif" font-size="11">세로 = 항목, 가로 = 기간</text>
+  </g>
+
+  <g>
+    <rect x="315" y="96" width="250" height="200" rx="10" fill="#0f1626" stroke="#fbbf24" stroke-width="1.5"/>
+    <text x="440" y="126" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="14" font-weight="700">전상장사의 횡단면</text>
+    <text x="440" y="148" text-anchor="middle" fill="#8b949e" font-family="ui-monospace, monospace" font-size="12">dartlab.scan("growth")</text>
+    <g fill="#1f6feb" opacity="0.55">
+      <rect x="347" y="170" width="186" height="7" rx="2"/><rect x="347" y="182" width="186" height="7" rx="2"/>
+      <rect x="347" y="194" width="186" height="7" rx="2"/><rect x="347" y="206" width="186" height="7" rx="2"/>
+      <rect x="347" y="218" width="186" height="7" rx="2"/><rect x="347" y="230" width="186" height="7" rx="2"/>
+      <rect x="347" y="242" width="186" height="7" rx="2"/><rect x="347" y="254" width="186" height="7" rx="2"/>
+    </g>
+    <text x="440" y="282" text-anchor="middle" fill="#6e7681" font-family="system-ui, sans-serif" font-size="11">한 줄 = 한 회사, 2,241 개</text>
+  </g>
+
+  <g>
+    <rect x="590" y="96" width="250" height="200" rx="10" fill="#0f1626" stroke="#484f58" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <text x="715" y="126" text-anchor="middle" fill="#8b949e" font-family="system-ui, sans-serif" font-size="14" font-weight="700">바깥에서 들어오는 것</text>
+    <text x="715" y="148" text-anchor="middle" fill="#6e7681" font-family="ui-monospace, monospace" font-size="12">주가 · 수급 · 뉴스</text>
+    <g fill="none" stroke="#484f58" stroke-width="1.5">
+      <path d="M628 232 L662 200 L696 214 L730 178 L764 192 L798 166"/>
+    </g>
+    <circle cx="628" cy="232" r="3" fill="#484f58"/><circle cx="730" cy="178" r="3" fill="#484f58"/><circle cx="798" cy="166" r="3" fill="#484f58"/>
+    <text x="715" y="262" text-anchor="middle" fill="#f85149" font-family="system-ui, sans-serif" font-size="11" font-weight="600">브라우저에서는 안 된다</text>
+    <text x="715" y="282" text-anchor="middle" fill="#6e7681" font-family="system-ui, sans-serif" font-size="11">설치본에서만 열린다</text>
+  </g>
+
+  <text x="440" y="332" text-anchor="middle" fill="#6e7681" font-family="system-ui, sans-serif" font-size="12">공시는 한 번 제출되면 안 바뀌고, 주가는 지금도 바뀐다. 그래서 섞지 않고 따로 둔다.</text>
+</svg>

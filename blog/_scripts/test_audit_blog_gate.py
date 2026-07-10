@@ -112,6 +112,24 @@ def _brief(score: int = 94) -> dict:
                 "narrativeUse": "독자가 스텔스를 덜 보이는 기체가 아니라 먼저 보는 센서 네트워크로 이해한다.",
             },
         ],
+        "relatedPosts": {
+            "searches": ["스텔스", "방산", "KF-21", "방산 수주잔고"],
+            "placementRule": "기술 원리 설명 뒤에는 기술이야기, 회사 배치 설명 뒤에는 기업이야기를 연결한다.",
+            "links": [
+                {
+                    "path": "/blog/hanwha-aerospace",
+                    "title": "한화에어로스페이스 기업이야기",
+                    "reason": "엔진과 방산 수주잔고를 회사 단위로 이어 본다.",
+                    "placement": "KF-21 엔진과 방산 수주잔고 설명 뒤",
+                },
+                {
+                    "path": "/blog/lig-nexone-cash-clock",
+                    "title": "LIG넥스원 기업이야기",
+                    "reason": "센서와 미사일 체계의 현금화 시차를 함께 본다.",
+                    "placement": "센서융합과 방산 전자 장비 설명 뒤",
+                },
+            ],
+        },
         "honestyGuards": [
             "EDGAR는 fiscal year와 quarter period를 원문으로 확인한다.",
             "DART는 연결과 별도, 분기와 누적 표시를 분리한다.",

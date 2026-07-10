@@ -39,7 +39,9 @@ Phase 1 적대 토론 기획 92점 루프 / Phase 2.5 마스터라이터 편집 
    설명이 코드보다 길 필요는 없지만, 코드만 던지고 왜를 안 적으면 그건 문서지 이야기가 아니다.
 7. **주어가 회사가 아니다.** `topicSlug` 를 쓰고 `stockCode` 는 달지 않는다. 예제 회사는 예제일 뿐이다.
 8. **썸네일.** `gen_blog_thumbnails.py`(SSOT). kicker 라벨 = `PREFIX["dartlab-stories"] = "dartlab 이야기"`.
-   `ogImage: /thumbnails/{slug}.webp`.
+   `ogImage: /thumbnails/{slug}.webp`. 본문용 이미지를 썸네일 배경으로도 쓰려면 frontmatter 에
+   `thumbnailBg: ./assets/<본문용-이미지>.webp` 를 명시한다. 본문에는 `*thumbnail-bg*.webp` 를 직접
+   걸지 않는다. 그 파일은 OG 합성용 소스라 실제 사이트 본문에서 깨질 수 있다.
 9. **누적이 곧 커리큘럼.** 편 번호가 학습 순서다. 앞 편이 세운 개념을 뒤 편이 딛는다. 새 편을 끼워
    넣을 때는 번호와 `seriesOrder` 를 함께 옮긴다. 전체 지도는 비공개 설계문서
    `mainPlan/dartlab-story-curriculum/` 이 정본이다.

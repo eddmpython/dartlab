@@ -654,10 +654,11 @@ def publish_gate(post_dir: Path) -> list[str]:
 
     slug = re.sub(r"^\d+-", "", post_dir.name)
     assets = post_dir / "assets"
-    photos = []
+    asset_photos = []
     if assets.is_dir():
         for ext in ("*.webp", "*.jpg", "*.jpeg", "*.png"):
-            photos += list(assets.glob(ext))
+            asset_photos += list(assets.glob(ext))
+    served_photos = [path for path in asset_photos if "thumbnail-bg" not in path.name]
 
     # 1. 실사 OG 카드 (리스트/공유 미리보기). 기본 아바타 폴백이면 실패.
     og = _clean_scalar(frontmatter_value(raw, "ogImage"))
@@ -674,21 +675,23 @@ def publish_gate(post_dir: Path) -> list[str]:
     # 0. 본문이 썸네일 합성 소스를 걸면 그 이미지는 화면에 뜨지 않는다. landing/vite.config.ts 의
     #    blogAssetsPlugin 이 `*thumbnail-bg.webp` 를 서빙 대상에서 일부러 뺀다(카테고리마다 NN 이
     #    다시 시작해 basename 이 전역 충돌하기 때문). 발행된 글 여러 편이 이미 이 함정에 빠져 있다.
-    if re.search(r"!\[[^\]]*\]\([^)]*thumbnail-bg\.webp\)", body):
+    if re.search(r"!\[[^\]]*\]\([^)]*thumbnail-bg[^)]*\.webp\)", body):
         fails.append(
-            "본문이 *thumbnail-bg.webp 를 참조함. 서빙되지 않아 이미지가 깨진다. 고유 파일명으로 사본을 두고 그것을 걸어라"
+            "본문이 thumbnail-bg 계열 파일을 참조함. 서빙되지 않아 이미지가 깨진다. 고유 파일명으로 사본을 두고 그것을 걸어라"
         )
 
     # 2·3. 이미지. dartlab 이야기는 기획이 정한 만큼, 나머지 장르는 실사 사진 하한.
     if cat == "dartlab-stories":
         planned = _image_plan(plan)
         inline = [x for x in planned if str(x.get("slot") or "") != "hero"]
-        if len(photos) < len(planned):
-            fails.append(f"기획 imagePlan {len(planned)}장인데 assets 이미지 {len(photos)}장. 기획한 만큼 수급 필요")
+        if len(served_photos) < len(planned):
+            fails.append(
+                f"기획 imagePlan {len(planned)}장인데 본문용 assets 이미지 {len(served_photos)}장. 기획한 만큼 수급 필요"
+            )
         if len(body_photos) < len(inline):
             fails.append(f"기획 inline {len(inline)}장인데 본문 삽입 {len(body_photos)}장")
     else:
-        if not photos:
+        if not served_photos:
             fails.append("assets에 실사 사진 0장(손수 SVG는 실사 아님). gen_blog_cc0/imagePlan 수급 필요")
         if not body_photos:
             fails.append("본문 실사 사진 0장(![](*.webp) 필요). 손수 SVG만으론 시각 부실")

@@ -1,0 +1,185 @@
+{
+  "title": "재무제표 세 장을 코드로 꺼내는 법",
+  "titleContract": {
+    "workingTitle": "재무제표 세 장을 코드로 꺼내는 법",
+    "selectedTitle": "재무제표 세 장을 코드로 꺼내는 법",
+    "hookQuestion": "손익계산서, 재무상태표, 현금흐름표는 왜 코드에서는 같은 방식으로 다뤄질까?",
+    "readerGap": "독자는 재무제표 세 장을 서로 다른 문서로 보지만 글은 세 장을 같은 격자 조작으로 묶어 보여준다.",
+    "promise": "브라우저 코드 칸에서 세 장을 열고, 계정을 고르고, 연결과 별도 차이를 직접 확인하게 한다.",
+    "whySelected": "초보자가 바로 따라 할 수 있는 행동을 제목에 담아 두 번째 편의 실습 성격이 분명하기 때문이다.",
+    "candidates": [
+      {
+        "title": "재무제표 세 장을 코드로 꺼내는 법",
+        "hook": "세 장과 코드의 간극을 줄인다",
+        "risk": "실습 깊이가 부족하면 사용법 글로 보일 수 있다"
+      },
+      {
+        "title": "손익, 재무상태, 현금흐름을 한 표처럼 다루기",
+        "hook": "세 표가 같은 모양이라는 반전을 건다",
+        "risk": "제목이 길고 초보자에게 딱딱하다"
+      },
+      {
+        "title": "panel과 select로 재무제표를 고르는 법",
+        "hook": "핵심 함수가 직접 드러난다",
+        "risk": "처음 보는 독자에게 함수명이 먼저 와 부담스럽다"
+      }
+    ],
+    "rejectedPatterns": [
+      "재무제표 정리",
+      "사용법 총정리",
+      "파이썬 분석"
+    ]
+  },
+  "description": "dartlab으로 손익계산서, 재무상태표, 현금흐름표를 불러오고 원하는 계정만 골라내는 법을 브라우저에서 직접 실행하며 익힌다.",
+  "readerQuestion": "재무제표 세 장을 dartlab에서는 어떻게 같은 격자 조작으로 열고 골라낼 수 있는가?",
+  "insight": {
+    "commonBelief": "재무제표는 손익계산서, 재무상태표, 현금흐름표를 각각 따로 읽어야 한다고 생각한다.",
+    "twistFact": "dartlab에서는 세 장이 모두 계정과 기간의 격자로 누워 있어 panel과 select라는 같은 손잡이로 다룰 수 있다.",
+    "whatToWatch": "다음에는 계정 이름, 기간, 연결과 별도, 빈칸이 결과를 어떻게 바꾸는지 먼저 확인한다.",
+    "freshnessArgument": "설명만이 아니라 브라우저 본문 코드펜스에서 실제 재무제표 호출을 따라 하는 교육 글이다.",
+    "evidenceRefs": [
+      "Company.panel",
+      "Company.select",
+      "notebookContract 게이트"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "세 장은 같은 모양의 격자로 열린다",
+      "purpose": "개념전환",
+      "scene": "사업보고서의 세 재무제표가 브라우저 화면에서 하나의 표 조작법으로 바뀌는 장면",
+      "keyNumbers": [
+        "IS",
+        "BS",
+        "CF"
+      ],
+      "causalBridge": "세 장의 모양이 같다는 이해가 panel 호출 실습으로 이어진다."
+    },
+    {
+      "order": 2,
+      "heading": "panel로 열고 select로 고른다",
+      "purpose": "실습",
+      "scene": "삼성전자 코드로 손익계산서와 재무상태표, 현금흐름표를 차례로 여는 장면",
+      "keyNumbers": [
+        "005930",
+        "freq Y"
+      ],
+      "causalBridge": "표 전체를 여는 경험이 원하는 계정만 골라내는 select 사용으로 이어진다."
+    },
+    {
+      "order": 3,
+      "heading": "연결과 별도, 빈칸을 오해하지 않는다",
+      "purpose": "오독방지",
+      "scene": "같은 회사의 연결과 별도 자본총계 차이를 보고 질문의 기준을 다시 세우는 장면",
+      "keyNumbers": [
+        "scope separate",
+        "null count"
+      ],
+      "causalBridge": "표를 꺼낼 줄 아는 단계에서 숫자의 기준과 빈칸의 의미를 읽는 단계로 넘어간다."
+    }
+  ],
+  "visuals": [
+    {
+      "actOrder": 3,
+      "kind": "diagram",
+      "title": "연결과 별도의 차이",
+      "proves": "같은 계정도 재무제표 범위가 다르면 결과가 달라진다.",
+      "seriesHint": "Company.panel scope 비교",
+      "placement": "연결과 별도 설명 뒤 본문 중간",
+      "insertAfter": "scope=\"separate\" 실행 예제 뒤",
+      "narrativeUse": "독자가 인터넷 숫자와 직접 뽑은 숫자가 다른 이유를 기준 차이로 이해하게 한다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "inline",
+      "subject": "세 재무제표가 하나의 계정과 기간 격자로 합쳐지는 브라우저 데이터 작업대",
+      "query": "financial statements transformed into structured spreadsheet grid browser notebook",
+      "keywords": [
+        "financial statements",
+        "data grid",
+        "notebook"
+      ],
+      "placement": "첫 문단 뒤 본문 hero 이미지",
+      "narrativeUse": "세 장의 재무제표가 같은 격자 조작으로 바뀐다는 글의 핵심을 시각화한다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": [
+      "dartlab이란 무엇인가",
+      "사업보고서",
+      "DART",
+      "EDGAR"
+    ],
+    "placementRule": "첫 편의 개념을 먼저 연결하고, 원천 공시와 사업보고서 읽기 글은 각 설명 뒤에 붙인다.",
+    "links": [
+      {
+        "path": "/blog/what-is-dartlab",
+        "title": "dartlab이란 무엇인가",
+        "reason": "Company와 panel이 왜 필요한지 앞 편에서 세운다.",
+        "placement": "첫 실습 안내 직후"
+      },
+      {
+        "path": "/blog/reading-business-reports",
+        "title": "사업보고서 읽는 법",
+        "reason": "세 재무제표가 공시 원문에서 어디에 있는지 이어 본다.",
+        "placement": "세 장을 각각 불러 보는 설명 뒤"
+      }
+    ]
+  },
+  "honestyGuards": [
+    "연결과 별도 숫자를 같은 기준처럼 비교하지 않는다.",
+    "빈칸을 0으로 채우면 의미가 바뀐다는 점을 본문에 명시한다.",
+    "브라우저에서는 미국 데이터와 대형 스캔이 느릴 수 있음을 과장하지 않는다."
+  ],
+  "evidenceMap": [
+    {
+      "claim": "본문 코드는 공개 계약 안의 Company.panel과 Company.select를 사용한다.",
+      "sourceType": "dartlab",
+      "period": "2026-07-10",
+      "sourceRef": "tests/audit/notebookContract.py",
+      "howUsed": "브라우저 실행 셀 검증"
+    },
+    {
+      "claim": "국내 재무제표 원천은 DART 공시다.",
+      "sourceType": "DART",
+      "period": "current",
+      "sourceRef": "전자공시 사업보고서",
+      "howUsed": "세 재무제표 원천 설명"
+    },
+    {
+      "claim": "미국 기업 예시는 EDGAR 공시 구조와 연결된다.",
+      "sourceType": "EDGAR",
+      "period": "current",
+      "sourceRef": "SEC EDGAR",
+      "howUsed": "국내외 회사 코드 경계 설명"
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": 1,
+          "planner": "초안은 panel과 select 사용법을 설명했지만 세 장이 같은 격자라는 반전이 약했다.",
+          "evaluator": "실습 흐름은 좋지만 연결과 별도, 빈칸의 오독 방지가 뒤로 밀려 초보자 보호가 부족했다.",
+          "skeptic": "함수 사용법만 나열하면 커리큘럼 글이 아니라 API 문서처럼 보일 위험을 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 85,
+          "plannerRevision": "세 장을 같은 격자로 보는 관점과 오독 방지 장면을 본문 중심으로 다시 배치했다."
+        },
+        {
+          "round": 2,
+          "planner": "개선안은 재무제표 세 장을 같은 조작법으로 열고 기준 차이를 확인하는 구조로 정리했다.",
+          "evaluator": "초보자가 실행 순서를 따라가며 표 전체, 선택, 기준 차이를 순서대로 익힐 수 있다.",
+          "skeptic": "사용법 나열 위험이 줄고 빈칸과 연결 범위의 오해를 본문에서 막는다.",
+          "decision": "passed",
+          "evaluatorScore": 95,
+          "plannerRevision": "평가 피드백을 반영해 이미지와 관련 글 연결까지 최종 정리했다."
+        }
+      ]
+    }
+  }
+}

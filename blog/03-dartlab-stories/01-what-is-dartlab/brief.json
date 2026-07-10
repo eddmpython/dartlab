@@ -1,0 +1,184 @@
+{
+  "title": "dartlab이란 무엇인가",
+  "titleContract": {
+    "workingTitle": "dartlab이란 무엇인가",
+    "selectedTitle": "dartlab이란 무엇인가",
+    "hookQuestion": "공시를 열어 본 사람은 왜 다음 단계에서 항상 표와 코드가 필요해질까?",
+    "readerGap": "독자는 dartlab을 설치 패키지로 보지만 글은 공시 문서를 실행 가능한 데이터 작업대로 바꿔 보여준다.",
+    "promise": "브라우저 안에서 회사 격자와 시장 스캔을 직접 실행하게 만들어 dartlab의 정체를 손으로 이해시킨다.",
+    "whySelected": "처음 보는 독자가 가장 먼저 묻는 질문이고, 연재 전체의 입구 역할을 하기 때문이다.",
+    "candidates": [
+      {
+        "title": "dartlab이란 무엇인가",
+        "hook": "정체 질문을 곧바로 연다",
+        "risk": "도구 소개처럼 얕아지지 않게 실행 장면을 앞에 둬야 한다"
+      },
+      {
+        "title": "공시를 코드로 다루는 첫 문",
+        "hook": "문서에서 코드로 넘어가는 전환을 보여준다",
+        "risk": "브랜드명이 약하게 보일 수 있다"
+      },
+      {
+        "title": "전자공시는 왜 표가 되어야 하나",
+        "hook": "공시 문서와 데이터 격자의 차이를 건다",
+        "risk": "dartlab 연재 첫 편이라는 신호가 약하다"
+      }
+    ],
+    "rejectedPatterns": [
+      "사용법 정리",
+      "총정리",
+      "설치 가이드"
+    ]
+  },
+  "description": "설치 없이 브라우저에서 전자공시와 재무제표를 다루는 dartlab의 정체와 데이터 구조를 처음 보는 사람 기준으로 설명한다.",
+  "readerQuestion": "dartlab은 공시 문서를 어떻게 브라우저에서 바로 실행되는 재무 데이터 작업대로 바꾸는가?",
+  "insight": {
+    "commonBelief": "공시는 사람이 읽는 문서이고 코드는 설치한 사람만 쓰는 도구라고 생각한다.",
+    "twistFact": "dartlab은 공시를 항목과 기간의 격자로 바꿔 브라우저 안에서 바로 실행할 수 있게 한다.",
+    "whatToWatch": "다음 글부터는 회사 코드 하나, 표 종류 하나, 계정 이름 하나가 어떤 결과를 바꾸는지 직접 확인한다.",
+    "freshnessArgument": "노트북 허브가 아니라 블로그 본문 코드펜스 자체를 실행 셀로 쓰는 커리큘럼 전환을 설명한다.",
+    "evidenceRefs": [
+      "본문 python 코드펜스",
+      "notebookContract 게이트",
+      "DART와 EDGAR 원천 설명"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "공시 문서에서 데이터 작업대로 넘어가는 이유",
+      "purpose": "문제정의",
+      "scene": "DART 문서를 여러 개 열어 비교하다가 표 작업대로 옮겨 가는 장면",
+      "keyNumbers": [
+        "회사 하나",
+        "표 세 종류"
+      ],
+      "causalBridge": "문서 비교의 불편함이 Company와 panel 호출의 필요로 이어진다."
+    },
+    {
+      "order": 2,
+      "heading": "회사 격자와 시장 스캔을 직접 실행한다",
+      "purpose": "실습",
+      "scene": "브라우저 코드 칸에서 Company, panel, scan을 차례로 실행하는 장면",
+      "keyNumbers": [
+        "005930",
+        "growth scan"
+      ],
+      "causalBridge": "한 회사 격자를 본 뒤 시장 전체 횡단면으로 관찰 단위가 넓어진다."
+    },
+    {
+      "order": 3,
+      "heading": "브라우저에서 되는 것과 안 되는 것을 가른다",
+      "purpose": "경계설정",
+      "scene": "공시 데이터는 브라우저에서 열리고 실시간 수집은 설치본으로 넘어가는 장면",
+      "keyNumbers": [
+        "공시 데이터",
+        "실시간 데이터"
+      ],
+      "causalBridge": "실행 가능한 범위를 분명히 해야 다음 편의 재무제표 실습이 오류 없이 이어진다."
+    }
+  ],
+  "visuals": [
+    {
+      "actOrder": 2,
+      "kind": "diagram",
+      "title": "dartlab 데이터 세 덩어리",
+      "proves": "회사 격자, 시장 스캔, 외부 데이터가 서로 다른 모양으로 존재한다.",
+      "seriesHint": "Company panel, scan, external data",
+      "placement": "시장 전체 스캔 설명 뒤 본문 중간",
+      "insertAfter": "dartlab.scan(\"growth\") 실행 예제 뒤",
+      "narrativeUse": "독자가 dartlab을 하나의 함수가 아니라 세 종류 데이터 작업대로 이해하게 한다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "inline",
+      "subject": "브라우저 안에서 공시 데이터 격자와 차트가 열리는 노트북 작업대",
+      "query": "browser based financial disclosure data grid notebook workbench",
+      "keywords": [
+        "browser",
+        "data grid",
+        "notebook"
+      ],
+      "placement": "첫 문제 정의 뒤 본문 hero 이미지",
+      "narrativeUse": "공시 문서가 코드와 표로 바뀌는 장면을 글 시작에서 바로 보여준다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": [
+      "DART",
+      "EDGAR",
+      "Pyodide",
+      "dartlab 시작"
+    ],
+    "placementRule": "개념을 세운 뒤 원천 공시, 브라우저 실행, 설치본 안내 글을 차례로 연결한다.",
+    "links": [
+      {
+        "path": "/blog/everything-about-dart",
+        "title": "DART 전부 알기",
+        "reason": "한국 공시 원천을 먼저 확인하게 한다.",
+        "placement": "DART 원천 설명 뒤"
+      },
+      {
+        "path": "/blog/pyodide-dartlab-lite",
+        "title": "Pyodide로 만든 브라우저 dartlab",
+        "reason": "브라우저 안에서 파이썬이 도는 이유를 연결한다.",
+        "placement": "브라우저 실행 설명 뒤"
+      }
+    ]
+  },
+  "honestyGuards": [
+    "브라우저에서 실시간 시세와 뉴스 수집이 안 된다는 경계를 본문에 명시한다.",
+    "공시 데이터와 주가 데이터를 같은 성격으로 섞지 않는다.",
+    "dartlab은 투자 판단이 아니라 재현 가능한 데이터 작업대라고 설명한다."
+  ],
+  "evidenceMap": [
+    {
+      "claim": "본문 코드는 공개 계약 안의 Company, panel, select, scan만 사용한다.",
+      "sourceType": "dartlab",
+      "period": "2026-07-10",
+      "sourceRef": "tests/audit/notebookContract.py",
+      "howUsed": "브라우저 실행 셀 검증"
+    },
+    {
+      "claim": "한국 공시 데이터의 원천은 DART다.",
+      "sourceType": "DART",
+      "period": "current",
+      "sourceRef": "전자공시와 OpenDART",
+      "howUsed": "데이터 원천 설명"
+    },
+    {
+      "claim": "미국 공시 데이터의 원천은 EDGAR다.",
+      "sourceType": "EDGAR",
+      "period": "current",
+      "sourceRef": "SEC EDGAR",
+      "howUsed": "양쪽 공시 유니버스 설명"
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": 1,
+          "planner": "초안은 dartlab 정체와 데이터 세 덩어리를 설명했지만 설치 안내처럼 보일 위험이 있었다.",
+          "evaluator": "첫 편의 약속은 있으나 실행 장면과 브라우저 경계가 더 앞에 와야 한다고 판단했다.",
+          "skeptic": "도구 홍보처럼 흐르거나 실시간 데이터까지 되는 것처럼 오해될 수 있다고 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 86,
+          "plannerRevision": "본문 코드 실행, 브라우저 한계, 다음 편 연결을 전면으로 옮겨 개선했다."
+        },
+        {
+          "round": 2,
+          "planner": "개선안은 공시 문서에서 격자로 넘어가는 문제와 실행 셀 경험을 중심에 두었다.",
+          "evaluator": "초보 독자가 첫 코드부터 결과를 보고, 무엇이 안 되는지도 이해할 수 있다.",
+          "skeptic": "설치본과 브라우저 경계가 분리되어 과장 위험이 줄었다.",
+          "decision": "passed",
+          "evaluatorScore": 94,
+          "plannerRevision": "평가 피드백을 반영해 이미지와 관련 글 연결까지 최종 정리했다."
+        }
+      ]
+    }
+  }
+}
