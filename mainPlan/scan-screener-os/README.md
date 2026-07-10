@@ -7,7 +7,8 @@
 
 | 문서 | 내용 | 상태 |
 |---|---|---|
-| **`04-screener-os-prd.md`** | **현행 SSOT 머리.** 판정격자 개념 + universe/asOf/rank/explain + walk 백테스트. P1~P5 | 설계 완료, 승인 대기 |
+| **`05-public-surface-prd.md`** | **현행 SSOT 머리. 여기부터 읽어라.** 퍼블릭 `/scan` 우선 + **P0 저작권 응급 정지** + 3-state 판정격자 + 골든 conformance 벡터 | P0 승인 대기 |
+| `04-screener-os-prd.md` | 판정격자 개념 + universe/asOf/rank/explain + walk. 개념은 유효하나 **실행순서와 사실 3 건을 05 가 정정** | 05 선결 후 |
 | `00-prd.md` | 컴포저블 쿼리 (define AST, 시계열, 업종상대, screens/*.json, 왓처 구독) | Phase 1~3 완료. Phase 4 는 04 의 P5 로 흡수 |
 | `01-phase4-ui-plan.md` | 프론트가 spec 을 소비하는 계획 | 04 의 P5 입력 |
 | `02-coverage-audit.md` | providers/gather/panel 대비 scan 필드 커버리지 감사. 27 갭 3 버킷 | 04 의 P2 (축 전수 등재) 입력 |

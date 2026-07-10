@@ -1,5 +1,6 @@
 # scan 스크리너 OS (승계 SSOT)
 
+> **실행순서 정정됨 (2026-07-10)**: `05-public-surface-prd.md` 를 먼저 읽어라. 본 문서는 퍼블릭 `/scan` 을 P5 로 밀어 순서를 틀렸고, `ecosystem.json` 성격과 `universe/engine.ts` 재무 소켓에 대해 사실 오류가 있다. 판정격자 개념은 유효하며 05 가 그것을 브라우저에 적용한다. 본 문서의 P1~P4 는 05 의 골든 conformance 벡터 통과를 선결로 한다.
 > 상태: 설계 완료, 승인 대기 (2026-07-10). 본 문서가 폴더의 새 SSOT 머리다.
 > 승계: `00-prd.md` (컴포저블 쿼리 Phase 1~3 완료, Phase 4 미착수) 를 흡수한다. Phase 4 는 본 계획의 P5 다.
 > 동반 근거: `02-coverage-audit.md` (필드 커버리지), `03-narrative-grid-invention.md` (서술표 격자).
