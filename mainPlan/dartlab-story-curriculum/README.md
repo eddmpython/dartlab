@@ -105,13 +105,18 @@
 - [ ] **29. 조건으로 전종목을 거르는 진짜 스크리너** `real-screener` `L`. `scan("screen")`
 - [ ] **30. 사람 수로 회사를 본다** `workforce-local` `L`. `scan("workforce")`
 - [ ] **31. 이름으로 회사를 찾는다** `find-by-name` `L`. `search`, `codeToName`
-- [ ] **32. 공시 원문을 직접 읽는다** `raw-filings` `L`. `liveFilings`, `readFiling`
+- [ ] **32. 공시 목록을 직접 연다** `raw-filings` `L`. `c.filings()` (liveFilings·readFiling 은 계약 아님)
 - [ ] **33. 미국 기업도 같은 방식으로** `us-companies-edgar` `L`. `OpenEdgar`
 - [ ] **34. 여기서 어디로 더 가나** `next-steps` `B`. 터미널, MCP, Skill OS, quant 로 이어지는 지도
 
 ## 4. 적대 감사가 잡은 것 (2026-07-10)
 
 이미 반영한 것.
+
+- **호출계약 잔재를 전부 걷어냈다** (2026-07-10). 엔진 = `src/dartlab/<엔진>/` 폴더 실재분 아홉.
+  Company 파사드의 providers 계열은 `panel`·`select`·`filings` 셋. `show`·`audit`·`governance`·
+  `disclosure`·`liveFilings`·`readFiling`·`view`·`topics` 등은 계약이 아니다. `notebookContract`
+  부채 원장이 26 에서 0 이 됐고, 게이트가 Skill OS spec 코드펜스까지 훑는다.
 
 - **1편의 `Company.corpName` 은 계약 미등재**다. 어느 엔진 skill 의 `capabilityRefs` 에도 없다.
   게다가 브라우저에서는 회사명이 아니라 `'005930'` 을 돌려준다(`providers/dart/company.py` pyodide 폴백).
@@ -146,18 +151,12 @@
 
 - [ ] **3편 `how-notebook-runs` 를 살릴 것인가.** 새 능력이 0 이고 1·2편과 겹친다. 폐기하거나,
       "셀은 위에서 아래로 커널을 공유한다" 는 진짜 개념 하나로 다시 세워야 한다.
-- [ ] **`Company.industry` 를 커버할 것인가.** `engines.industry` 의 capabilityRefs 에 등재된 계약인데
-      35편 어디에도 없다. 업종·동종 시각은 회사 분석의 핵심 각도다. 브라우저 가부 미측정.
-- [ ] **`Company.view`(dashboard), `Company.reportModel` 을 커버할 것인가.** 등재 계약이지만 부재.
-      `view` 는 로컬 서버를 띄우는 것이라 브라우저와 개념이 안 맞는다.
+- [ ] **`Company.industry` 를 커버할 것인가.** industry 는 엔진(폴더 실재)이라 계약이다. 35편 어디에도 없다.
+      업종·동종 시각은 회사 분석의 핵심 각도다. 브라우저 가부 미측정.
 - [ ] **로컬 전용 편(26~33)의 실행 셀을 어떻게 보일 것인가.** 눌러도 안 도는 셀은 독자에게 고장으로 읽힌다.
       실행 막대를 감출지, 눌렀을 때 "로컬에서만 됩니다" 를 띄울지. 지금은 아무 처리도 없다.
 - [ ] **`analysis("financial", "수익성")` 이 브라우저에서 값을 채우는가.** 미검증.
       비면 10·22·24편의 뼈대가 무너진다. 발행 전에 반드시 실행해 확인하고, 비면 credit/scan 기반으로 대체한다.
-- [ ] **`notebookContract.py` 의 부채 원장 19 건.** `notebooks/` 의 colab·marimo 예제가 계약 밖 메서드
-      (`c.show`, `c.diff`, `c.topics`, `c.BS/CF/IS` 등)를 부른다. 계약에 등재할지, 예제를 고칠지.
-- [ ] **Skill OS 문서 안의 계약 위반.** `c.show` 40 회, `dartlab.flow` 11 회, `dartlab.fixedIncome` 7 회,
-      `c.topics` 6 회. `c.show` 는 `Company` 에 아예 없는 메서드다. 공개 문서가 이미 깨져 있다.
 
 ## 7. 회귀 가드
 
