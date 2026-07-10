@@ -290,3 +290,37 @@ def test_loadAdaptive_no_customs_for_nonexport(monkeypatch):
     # customs 코드(숫자 HS)가 선택지표에 없어야 함
     if result is not None:
         assert not any(str(v).isdigit() and len(str(v)) <= 4 for v in result["_usedIndicators"].values())
+
+
+# ── 02e Part 2 방법 C: 회귀 불가 시 섹터 prior 위계 폴백 ──
+
+
+def test_sectorPriorFallback_returns_labeled_prior(monkeypatch):
+    from dartlab.analysis.financial import _signalsMacroSensitivity as m
+
+    monkeypatch.setattr(m, "_getSectorKey", lambda c: "IT")
+    r = m._sectorPriorFallback(object(), "YoY 관측치 부족 (3 < 6)")
+    assert r["evidenceLevel"] == "sectorPrior"
+    assert r["fallbackReason"] == "YoY 관측치 부족 (3 < 6)"
+    assert r["betas"] is None, "기업 고유 베타 부재 (섹터 평균이 고유 베타로 오독되면 안 됨)"
+    assert r["rSquared"] == 0.0 and r["nObs"] == 0
+    assert set(r["staticBetas"]) == {"gdp", "rate", "fx"}
+    assert r["sectorKey"] == "IT"
+
+
+def test_sectorPriorFallback_none_without_sector(monkeypatch):
+    from dartlab.analysis.financial import _signalsMacroSensitivity as m
+
+    monkeypatch.setattr(m, "_getSectorKey", lambda c: None)
+    assert m._sectorPriorFallback(object(), "x") is None, "섹터 미해소면 기본 탄성치 날조 금지"
+
+
+def test_sectorPriorFallback_fails_existing_numeric_gates(monkeypatch):
+    """폴백 dict 는 기존 소비자 게이트(rSquared > 0.1 / > 0.3)를 통과하지 않는다 (회귀 0)."""
+    from dartlab.analysis.financial import _signalsMacroSensitivity as m
+
+    monkeypatch.setattr(m, "_getSectorKey", lambda c: "IT")
+    r = m._sectorPriorFallback(object(), "x")
+    assert not (r.get("rSquared", 0) > 0.1), "_predictionSynthesis:366 게이트"
+    assert not (r["rSquared"] > 0.3), "_predictionSynthesis:643 게이트"
+    assert r["confidence"] == "low"

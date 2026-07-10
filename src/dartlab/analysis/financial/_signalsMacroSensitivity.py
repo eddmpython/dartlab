@@ -240,6 +240,51 @@ def calcMacroSensitivity(company, *, basePeriod: str | None = None) -> dict | No
 # ══════════════════════════════════════
 
 
+def _sectorPriorFallback(company, reason: str) -> dict | None:
+    """회사 고유 회귀가 불가할 때 섹터 탄성치로 위계 폴백 (02e Part 2 방법 C).
+
+    스킵(None) 대신 섹터 prior 를 정직 라벨과 함께 낸다. ``betas=None`` · ``rSquared=0.0``
+    이라 기존 소비자의 수치 게이트(rSquared > 0.1 / > 0.3)를 통과하지 못하므로, 섹터 평균이
+    기업 고유 베타로 오독될 수 없다. 섹터 미해소면 ``None`` (기본 탄성치 날조 금지).
+
+    Args:
+        company: dartlab Company 인스턴스.
+        reason: 폴백 사유 (관측치 부족·지표 로드 실패 등).
+
+    Returns:
+        dict | None: 성공 반환과 동일 스키마 + ``evidenceLevel="sectorPrior"`` ·
+        ``fallbackReason``. 섹터 키 미해소 시 None.
+    """
+    sectorKey = _getSectorKey(company)
+    if sectorKey is None:
+        return None
+    from dartlab.synth.scenario import getElasticity
+
+    staticEl = getElasticity(sectorKey)
+    return {
+        "betas": None,
+        "staticBetas": {
+            "gdp": staticEl.revenueToGdp,
+            "rate": staticEl.marginToGdp,
+            "fx": staticEl.revenueToFx,
+        },
+        "usedIndicators": {},
+        "marginBetas": None,
+        "lagEffects": {},
+        "rSquared": 0.0,
+        "marginR2": None,
+        "nObs": 0,
+        "nVars": 0,
+        "degreesOfFreedom": 0,
+        "confidence": "low",
+        "sectorKey": sectorKey,
+        "table": [],
+        "_predictedDirection": None,
+        "evidenceLevel": "sectorPrior",
+        "fallbackReason": reason,
+    }
+
+
 @memoizedCalc
 def calcMacroRegression(company, *, basePeriod: str | None = None) -> dict | None:
     """거시-재무 동적 회귀 — 기업별 거시 베타를 과거 데이터에서 학습.
@@ -270,10 +315,14 @@ def calcMacroRegression(company, *, basePeriod: str | None = None) -> dict | Non
         degreesOfFreedom : int — 자유도
         confidence : str — 신뢰도 ("high" | "medium" | "low")
         sectorKey : str | None — 업종 키
-        table : list[dict] — 기간별 매출 성장률 vs 거시 변화율 시계열
+        table : list[dict] . 기간별 매출 성장률 vs 거시 변화율 시계열
+        evidenceLevel : str . "observed" (기업 고유 OLS) 또는 "sectorPrior" (섹터 탄성치 폴백)
+        fallbackReason : str . sectorPrior 일 때만 존재. 폴백 사유
 
     Guide:
-        nObs ≥ 10 + R² ≥ 0.3 일 때 동적 베타 채택 권장.
+        nObs ≥ 10 + R² ≥ 0.3 일 때 동적 베타 채택 권장. 회귀가 불가하면 None 이 아니라
+        섹터 prior 로 위계 폴백한다 (evidenceLevel="sectorPrior", betas=None, rSquared=0.0).
+        기존 수치 게이트(rSquared > 0.1 / > 0.3)가 자동으로 걸러내므로 오독 위험은 없다.
 
     When:
         섹터 평균 탄성치보다 기업 고유 베타가 필요한 분석.
@@ -295,12 +344,13 @@ def calcMacroRegression(company, *, basePeriod: str | None = None) -> dict | Non
         - calcMacroSensitivity : 정적 탄성치 매핑.
 
     AIContext:
-        R² 낮으면 (< 0.2) 정적 베타 fallback 권장.
+        R² 낮으면 (< 0.2) staticBetas 를 본다. 회귀 자체가 불가한 회사는 evidenceLevel
+        ="sectorPrior" 로 내려오므로 "데이터 없음" 과 "섹터 평균" 을 구분해 답하라.
     """
     isResult = company.select("IS", ["매출액", "영업이익"])
     isParsed = toDictBySnakeId(isResult)
     if isParsed is None:
-        return None
+        return _sectorPriorFallback(company, "IS 시계열 파싱 불가")
     isData, isPeriods = isParsed
     revRow = isData.get("매출액", {})
     oiRow = isData.get("영업이익", {})
@@ -335,18 +385,18 @@ def calcMacroRegression(company, *, basePeriod: str | None = None) -> dict | Non
 
     cols = yoyCols
     if len(cols) < 6:
-        return None
+        return _sectorPriorFallback(company, f"YoY 관측치 부족 ({len(cols)} < 6)")
 
     # 적응형 변수 선택: 매핑 후보 + 범용 후보에서 상관도 기반 최적 3개
     stockCode = _getStockCode(company)
     macroData = _loadAdaptive(revGrowth, cols, stockCode=stockCode)
     if macroData is None:
-        return None
+        return _sectorPriorFallback(company, "매크로 지표 로드 실패")
 
     # OLS 회귀
     betas, rSquared, nObs = _fitOLS(revGrowth, macroData, cols)
     if betas is None:
-        return None
+        return _sectorPriorFallback(company, "OLS 적합 실패")
 
     # 시간차(lag) 상관도 계산
     lagEffects = _calcLagCorrelation(revGrowth, macroData, cols)
@@ -387,6 +437,7 @@ def calcMacroRegression(company, *, basePeriod: str | None = None) -> dict | Non
         "sectorKey": sectorKey,
         "table": table,
         "_predictedDirection": _predictDirection(betas, macroData),
+        "evidenceLevel": "observed",
     }
 
 

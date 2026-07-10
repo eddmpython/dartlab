@@ -37,7 +37,11 @@
     - 남은 실현 경로: **③ 퍼블릭 credit 베이크 포기(런타임/로컬 전용 유지, 퍼블릭은 honest-null)** 또는 **④ 프로세스 격리 청크 베이크(새 빌드 스텝 = 가드① 위반, 빌드 ~2h+)** 또는 **⑤ credit 엔진 데이터전용 리팩토링(가드② 정면 충돌, 대규모)**.
     - ★ **런타임 경로는 이미 작동한다**: 본 세션 emitter 배선으로 `reportModel()` 은 단일 회사 런타임에서 credit 블록을 정상 산출(OOM 무관). 막힌 건 *퍼블릭 베이크* 뿐 → 런타임-SSOT 우선 원칙과 정합.
     - **결론: 무승인 착수 금지 구간**([[feedback_runtime_ssot_no_build_without_approval]] "제안·토론까지만"). 운영자 결정 대기.
-  - ⏸ 매크로 Part 2(A 분기·B 다변량·C 섹터폴백): 코드는 구현 가능하나 졸업 게이트(nObs>=8·adjR²>=0.20·OOS β-stability sign-flip<20%)가 데이터/CI. PRD "게이트 통과 전 리포트 미탑재" 라 로컬 단독 졸업 불가
+  - ✅ **매크로 Part 2 정합성 정정 + 방법 C 완료(2026-07-06)**. 실측 결과 **A(분기 YoY)·B(다변량 OLS)는 이미 구현돼 있었다**: `_signalsMacroSensitivity.calcMacroRegression` 이 분기 YoY(삼성전자 실측 nObs 37)+다변량 `_fitOLS`+`sectorPriors.json` 보유. 02e 가 지목한 연간(n≈3~5) 코드는 **다른 함수**인 `macroExposure.calcMacroSensitivity`(같은 이름 2 곳, 중복 명명). 진짜 공백은 **C(위계 폴백)** 하나였고 구현 완료:
+    - `_sectorPriorFallback()` 신설. `calcMacroRegression` 의 4 개 스킵 경로(IS 파싱 불가·YoY 관측치<6·지표 로드 실패·OLS 실패)가 `None` 대신 섹터 탄성치를 `evidenceLevel="sectorPrior"`·`fallbackReason` 과 함께 반환. 성공 경로는 `evidenceLevel="observed"`.
+    - **오독 방지 설계**: 폴백은 `betas=None`·`rSquared=0.0`·`confidence="low"` 라 기존 소비자 게이트(`_predictionSynthesis:366` rSquared>0.1, `:643` >0.3)를 자동으로 통과하지 못한다. 섹터 평균이 기업 고유 베타로 렌더될 수 없다. 섹터 키 미해소 시 `None` 유지(기본 탄성치 날조 금지).
+    - 검증: offline 3 테스트 신규(총 20 pass) + 관련 분석 86 pass + **실데이터 라벨 확인**(005930 `observed`·nObs 37·R² 0.7681·high·sectorKey 반도체). ruff·camelCase clean. 회귀 0(폴백은 기존에 아무것도 안 나오던 회사만 채운다).
+    - ⏭ 잔여: β-stability sign-flip<20% 등 OOS 검증은 다회사 데이터라 CI. 또한 리포트가 소비하는 쪽은 약한 `macroExposure.calcMacroSensitivity`(연간)라, **두 동명 함수의 라우팅 일원화는 별건 과제**(운영자 판단).
 
 ## P2 · 리포트 엔진
 - ✅ **삭제 2,419 LOC 완료(2026-07-06)**. import 전수 census 로 死/生 판별 후 실행:
