@@ -142,8 +142,12 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
   `c.analysis()` 는 브라우저에서 (22, 7) 카탈로그를 돌려준다 (실측 2026-07-10).
 - [ ] **10. 이 회사, 잘 벌고 있나** `is-this-company-good` `B`. `analysis("financial", "수익성")`
   브라우저에서 값이 찬다. `marginTrend` 에 매출·영업이익·영업이익률 13.07% (실측 2026-07-10).
-- [ ] **11. 돈 떼일 위험은 얼마인가** `credit-risk` `B`. `credit("채무상환능력")`
-- [ ] **12. 사람이 읽는 문장으로 받는다** `story-report` `B`. `story("full")`
+- [ ] **11. 돈 떼일 위험은 얼마인가** `credit-risk` `B`. `credit("등급")` / `credit("채무상환")`
+  ⚠ 인자는 라벨 접두사다. `credit("채무상환능력")` 은 안 먹는다. 브라우저에서 dCR-AA- 를 돌려준다 (실측 2026-07-10,
+  단 `e99896919` 수정 + wheel 재배포 후. 그 전에는 축을 뭘 넣든 TypeError 로 죽는다).
+- [ ] **12. 사람이 읽는 문장으로 받는다** `story-report` `B`. `story("수익성")` 또는 `story(type="executive")`
+  ⚠ `story("full")` 은 없는 섹션이다. 인자는 한글 섹션 키다. `c.story().sections` 가 여덟 개를 준다.
+  수익구조 · 성장성 · 수익성 · 현금흐름 · 안정성 · 자산구조 · 투자효율 · 가치평가 (실측 2026-07-10).
 - [ ] **13. 회사 밖 경제를 함께 본다** `macro-backdrop` `B`. `dartlab.macro("rates")`
 - [ ] **14. 자동 해석을 그대로 믿지 않기** `dont-trust-blindly` `B`. 자동 분석의 한계 + 출처 되짚기
 
