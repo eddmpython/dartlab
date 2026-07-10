@@ -1,0 +1,15 @@
+{
+  "axisCounts": {
+    "credit": 8,
+    "gather": 18,
+    "industry": 9,
+    "macro": 15,
+    "quant": 48,
+    "scan": 27
+  },
+  "undeclared": [],
+  "handTableMismatch": [
+    "credit",
+    "gather"
+  ]
+}
