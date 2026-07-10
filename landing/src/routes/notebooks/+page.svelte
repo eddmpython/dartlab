@@ -194,41 +194,13 @@
 			</div>
 		</div>
 		<p class="hero-sub">
-			설치 없이 numpy · polars 를 쓰고, 아래 레슨으로 dartlab 을 기초부터 익힙니다. 회사 하나를 잡는 법에서
-			시작해 재무제표 · 계정 추출 · 22축 분석을 거쳐 전종목 횡단 스캔까지 이어집니다. 레슨과 노트북은 이
-			브라우저에 로컬 저장되고, 하던 곳에서 이어집니다.
+			설치 없이 브라우저에서 바로 돕니다. 재무제표 · 계정 · 22축 분석 · 신용등급 · 서사 · 전종목 스캔까지
+			여기서 됩니다. 실시간 시세와 뉴스 수집만 <code>pip install dartlab</code> 로 로컬에서 쓰세요.
+			레슨과 노트북은 이 브라우저에 저장되고, 하던 곳에서 이어집니다.
 		</p>
 		<div class="hero-actions">
 			<button class="btn-primary" onclick={newNotebook} onpointerenter={prewarmEngine}><Plus size={16} /> 새 노트북</button>
 			<button class="btn-ghost" onclick={openFile}><FolderOpen size={15} /> 파일 열기</button>
-		</div>
-	</section>
-
-	<!-- 브라우저(pyodide) 와 로컬 설치본의 차이. 예제를 열기 전에 무엇이 되고 무엇이 안 되는지 먼저 밝힌다. -->
-	<section class="gallery">
-		<div class="modes">
-			<article class="mode">
-				<h3 class="mode-title">이 브라우저에서</h3>
-				<p class="mode-body">
-					파이썬 커널이 브라우저 안에서 돕니다. 공시 · 재무 데이터는 HuggingFace 에서 직접 받아 여기서
-					계산하므로, 설치도 서버도 필요 없고 코드와 결과가 바깥으로 나가지 않습니다.
-				</p>
-				<p class="mode-list">
-					<span class="ok">되는 것</span> 재무제표 3종 · 계정 추출 · 22축 분석 · 신용등급 · 서사 ·
-					전종목 스캔(성장성 · 수익성 · 유동성 · 현금흐름 · 비율 · 계정 · 부채)
-				</p>
-			</article>
-			<article class="mode">
-				<h3 class="mode-title">로컬 설치본에서</h3>
-				<p class="mode-body">
-					<code>pip install dartlab</code> 로 설치하면 같은 코드가 그대로 돌면서, 브라우저가 나갈 수 없는
-					바깥 네트워크까지 씁니다. 예제 코드를 그대로 복사해 옮겨도 됩니다.
-				</p>
-				<p class="mode-list">
-					<span class="only">여기서만</span> 실시간 시세 · 수급 · 뉴스 수집 · KRX 상장사 목록이 필요한
-					스크리닝 · 전량 재무 프리빌드
-				</p>
-			</article>
 		</div>
 	</section>
 
@@ -320,9 +292,9 @@
 		border-bottom: none;
 	}
 	.hero {
-		max-width: 1100px;
+		max-width: 1440px;
 		margin: 0 auto;
-		padding: 40px 24px 24px;
+		padding: 40px 32px 24px;
 	}
 	/* 허브다운 정도의 장식. 아바타 + 제목 한 줄 (히어로 배너 아님). */
 	.hero-head {
@@ -349,64 +321,23 @@
 	.hero-kicker {
 		margin: 2px 0 0;
 		font-size: 13px;
-		color: var(--dl-ink-dim);
+		color: var(--dl-ink-mute);
 	}
 	.hero-sub {
 		margin: 0 0 20px;
-		max-width: 640px;
+		max-width: 760px;
 		font-size: 14px;
-		line-height: 1.6;
-		color: var(--dl-ink-mute);
+		line-height: 1.7;
+		color: var(--dl-ink);
 	}
-
-	/* 브라우저 vs 로컬 안내 2 단. 예제 갤러리보다 먼저 읽히게 위에 둔다. */
-	.modes {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-		gap: 0.95rem;
-	}
-	.mode {
-		padding: 16px 18px;
-		border: 1px solid var(--dl-line);
-		border-radius: var(--dl-r-md);
-		background: var(--dl-bg-raised);
-	}
-	.mode-title {
-		margin: 0 0 8px;
-		font-size: 14px;
-		font-weight: 700;
-		color: var(--dl-ink-print);
-	}
-	.mode-body {
-		margin: 0 0 10px;
-		font-size: 13px;
-		line-height: 1.6;
-		color: var(--dl-ink-mute);
-	}
-	.mode-body code {
+	.hero-sub code {
 		font-family: var(--dl-font-mono);
-		font-size: 12px;
+		font-size: 12.5px;
 		padding: 1px 5px;
 		border-radius: 3px;
-		background: var(--dl-bg-deep);
+		background: var(--dl-bg-raised);
 	}
-	.mode-list {
-		margin: 0;
-		font-size: 12.5px;
-		line-height: 1.6;
-		color: var(--dl-ink-dim);
-	}
-	.mode-list .ok,
-	.mode-list .only {
-		display: inline-block;
-		margin-right: 6px;
-		padding: 1px 6px;
-		border-radius: 3px;
-		font-size: 11px;
-		font-weight: 700;
-		color: var(--dl-accent);
-		background: rgba(var(--dl-accent-rgb), 0.12);
-	}
+
 	.hero-actions {
 		display: flex;
 		gap: 10px;
@@ -447,9 +378,9 @@
 	}
 
 	.gallery {
-		max-width: 1100px;
+		max-width: 1440px;
 		margin: 0 auto;
-		padding: 12px 24px 32px;
+		padding: 12px 32px 32px;
 	}
 	/* 트랙 헤더. 제목 옆에 그 트랙이 무엇을 가르치는지 한 줄. */
 	.track-head {
@@ -464,8 +395,8 @@
 	}
 	.track-blurb {
 		margin: 0;
-		font-size: 12.5px;
-		color: var(--dl-ink-dim);
+		font-size: 13px;
+		color: var(--dl-ink-mute);
 	}
 	.sec-title {
 		margin: 0 0 14px;
@@ -473,15 +404,15 @@
 		font-weight: 700;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		color: var(--dl-ink-dim);
+		color: var(--dl-ink);
 	}
 	.grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
 		gap: 0.95rem;
 	}
 	.muted {
-		color: var(--dl-ink-dim);
+		color: var(--dl-ink-mute);
 		font-size: 13px;
 	}
 	.empty {

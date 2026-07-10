@@ -154,8 +154,8 @@
 		margin: 0;
 		flex: 1;
 		font-size: 0.83rem;
-		line-height: 1.5;
-		color: var(--dl-ink-mute);
+		line-height: 1.55;
+		color: var(--dl-ink);
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
@@ -172,8 +172,8 @@
 	}
 	.ncard-meta {
 		font-family: var(--dl-font-mono);
-		font-size: 0.68rem;
-		color: var(--dl-ink-dim);
+		font-size: 0.7rem;
+		color: var(--dl-ink-mute);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
