@@ -15,6 +15,13 @@
 - ☐ 현 안정본 publish
 
 ## P1 · 능력 격상 (순서: 02a 선행)
+
+> ⛔ **로컬 데이터 벽 (2026-07-06 실측, P1b·P1c·P1d 공통)**. `getKindList()` 등간표본 30 사 중
+> **22 사는 로컬에 재무 자체가 없다**(`select("IS",["매출액"])` 파싱 불가 = 미수집). 매출 8 기간 이상
+> 보유는 **7 사**. ROIC 타임라인 부재도 동일하게 22/30. 따라서 **다회사 백테스트 게이트(P1b MAPE·방향,
+> P1c 세그먼트 MAE, P1d 코호트)는 전부 로컬에서 판정 불가**다. 수집된 회사만 골라 쓰면 시총·생존 편향 +
+> 손 선별 금지 위반([[feedback_exhaustive_no_curation]]) 이라 강행하지 않는다. 이 게이트들은 전 유니버스
+> 수집본이 있는 **CI/데이터 트랙**에서 돌려야 한다. (단일회사·순수로직 게이트는 로컬에서 이미 통과.)
 - ✅ **P1a 밸류에이션 de-gate 완료** (WACC bottom-up·성장 reinvest×ROIC fade·through-cycle 정규화·드라이버·reverse-DCF) — 게이트 전부 통과: G1·G3·G5 offline(12 테스트) + 범위가드 005930·003230·country override + G2 방향 77%(>55%). 보너스: _rimCalc CI 버그 수정·성장클램프 calibration. 잔여=엄밀 G2 point-in-time/full-dFV CI 정제(방향 게이트는 충족). 본진 push 완료(fix·calibration 은 CI 여유창 동기화 대기).
   - ✅ **G1·G3·G5 offline 통과** (`tests/quant/test_valuationUplift.py` **9개**, test-lock): G1 reinvest round-trip·fade 단조수렴·terminal 무료성장 차단·reverse-DCF 항등(오차 0%) · G3 WACC×g 민감도 단조성(WACC↑→가치↓·g↑→가치↑)+TVshare 폭주 차단 · G5 Growth Equation 정합성(g=reinvest×ROIC critical 0, 위반 입력 감점).
   - ✅ **본진 디게이트 완료**: `_estimateWacc` bottom-up β + Damodaran 국가테이블(005930 실측 8.72) · `_calcTwoStageDcf` 펀더멘털 성장(g=reinvest×ROIC fade, naive 매출CAGR 대체) · 신규 `_dFVDrivers.py`(buildReinvestmentPath·buildDriverScenarios·reverseDcfExhibit) · `dFV` ±0.12→드라이버 시나리오 + reverseDcf·reinvestmentCheck 출력(guarded).
