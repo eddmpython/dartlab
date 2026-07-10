@@ -259,17 +259,35 @@ def calcMoatFlags(company, *, basePeriod=None) -> list[str]:
 
 ```
 설계:
-  1. 기준연도 T (예: 5년 전, panel 가용 범위). 전상장사 유니버스(scan SSOT).
+  1. 기준연도 T (panel 가용 범위). 전상장사 유니버스(scan SSOT).
   2. T 시점 composeMoatRating 으로 wide / narrow / none 3코호트 분류.
      (T 시점 데이터만 사용 — look-ahead 차단)
-  3. 각 코호트의 T → T+1..T+k(k=3~5) ROIC−WACC spread 궤적 추적.
+  3. 각 코호트의 T → T+1..T+k ROIC−WACC spread 궤적 추적.
   4. 검증 가설:
      H1 (지속성): wide 코호트의 spread 가 T+k 까지 유의하게 > none 코호트.
      H2 (저항): wide 코호트의 ROIC fade 기울기 < none 코호트 (덜 평균회귀).
      H3 (마진): wide 코호트의 후속 마진 CV < none 코호트.
-  5. 통과 기준: wide−none 의 T+3 평균 spread 차이가 부트스트랩 CI 에서 0 초과
-     (단순 p-hacking 회피 — 효과크기 + 표본수 동반 보고).
+  5. 통과 기준(★로버스트 필수): wide−none 의 T+k **중앙값** spread 차이가 0 초과 AND
+     winsorized(5/95) 평균 차이가 0 초과 AND wide 중앙값 > 0.
+     효과크기 + 표본수 + 코호트별 양(+)비율 동반 보고 (p-hacking 회피).
 ```
+
+> ⛔ **원평균(raw mean) 을 통과 기준으로 쓰지 말 것 (2026-07-06 실측 근거).** `ROIC = NOPAT / 투하자본`
+> 이라 투하자본이 0 에 가까운 회사에서 ROIC 가 폭발한다. 전 유니버스 실측에서 `none` 코호트 **원평균
+> 66.8%** 가 `wide` **37.1%** 를 앞질러 게이트가 **FAIL 로 오판**됐다. 같은 표본의 **중앙값은 wide
+> +7.63% vs none −6.01%**, 양(+)비율 70% vs 26% 로 가설이 명백히 지지된다. 따라서 판정은 중앙값 +
+> winsorized 평균으로만 한다.
+>
+> **실측 결과 (지시적 PASS)**: 형성 2021~2023 · 성과 2025(T+2), 유효 1,071 사 → wide(n=73) median
+> +7.63% vs none(n=806) −6.01%. 형성 2021~2022 · 성과 2025(T+3), 유효 1,432 사 → wide(n=133)
+> +2.72% vs none(n=1,020) −6.16%. 두 구성 모두 로버스트 기준 통과.
+> 한계: WACC 전사공통 8.5%·세율 22% 고정 근사(엔진 정합 아님) · 벌크 연간 지평 5 년(2021~2025)이라
+> "형성 3 년 + T+3"(6 년 필요) 동시 충족 불가 · 생존 편향. 상세 = `tests/_attempts/quantMoat/README.md`.
+>
+> **데이터 경로**: per-Company(`Company(code).select`)가 아니라 **벌크 직독**
+> (`data/dart/scan/finance.parquet`, 2,799 종목 × 연간 2021~2025, `buildFinanceJson` 계정 매핑 동형).
+> 엔진 정합 WACC 는 `_estimateWacc` 이 회사당 시총·베타를 네트워크로 개별 fetch(~2.6s)하는 구조라
+> 유니버스 실행이 막힌다 → 가격 벌크(`data/gov/prices`, `data/krx/prices`) 직독 전환이 선행 과제.
 
 거처: `tests/_attempts/quantMoat/` (졸업 게이트 — `feedback_attempts_graduation_gate`). 백테스트 데모(결과 docstring + README) 통과 후에야 `src/dartlab/analysis/financial/moat.py` 본진 배치. **순서**: ① _attempts 개념확립(코호트 분리 시그널 실측) → ② 모듈화 → ③ 데모 → ④ 클린코드 → ⑤ 9섹션 docstring → ⑥ 본진 + axis 등록.
 

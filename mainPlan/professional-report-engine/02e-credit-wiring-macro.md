@@ -268,6 +268,26 @@ calibration 미검증이라 `evaluateCompany` 가 None 반환. UI 는 `credit==n
   beta 부호·크기가 test 구간에서 유지(부호 flip 비율 <20%, beta 비율 0.5~2.0). flip 빈번 = 과적합
   → 게이트 fail → 섹터 폴백. 테스트: `tests/analysis/test_macro_exposure_quality.py`(기존
   `:test_prediction_*` 동반) 에 `test_oos_beta_stability` 추가.
+
+  > ⛔ **G1 실측 = FAIL (2026-07-06, `tests/_attempts/macroBetaStability/`).** 8 사 롤링 윈도로
+  > `calcMacroRegression`(분기 다변량) 베타 부호를 쟀다. **겹침을 줄이면 게이트가 무너진다**:
+  > 20q/4q(겹침 16q) 평균 flip **10.4% PASS** · 16q/8q(겹침 8q) **25.0% FAIL** ·
+  > 12q/12q(비겹침) **52.1% FAIL**.
+  >
+  > ★ **측정 함정**: 겹치는 롤링 윈도는 인접 창이 데이터를 대부분 공유해 flip 을 **구조적으로 과소평가**
+  > 한다. G1 은 **비겹침(또는 겹침 ≤ 절반) 윈도**로 재야 한다. 원안의 10.4% PASS 는 착시였다.
+  > 조건은 오히려 관대했다(지표 집합을 전체 표본에서 고정 = look-ahead 이점). 그런데도 실패한다.
+  > 공정 판정선 = 16q/8q 의 **25% FAIL**(12q 는 자유도 부족 잡음 혼입).
+  >
+  > **귀결**: 리포트의 매크로 민감도를 분기 다변량 회귀로 **라우팅 교체하면 안 된다.** 본 스펙의
+  > "게이트 통과 전 리포트 미탑재" 가 옳았다. 현행(연간 `macroExposure` + `exposureQuality` 정직
+  > 라벨) 유지. 베타 승격 전 **안정화 선행 필요**: 지표 수 축소(다중공선성) · 계층 베이즈(섹터 prior
+  > 축소추정) · 부호 제약 · 표본 확대.
+  >
+  > 부기: §2.3 이 요구한 **방법 A(분기 YoY)·B(다변량 OLS)는 이미 구현되어 있었다**
+  > (`_signalsMacroSensitivity.calcMacroRegression`, 삼성전자 실측 nObs 37). §2.3 이 지목한 연간
+  > 코드는 **동명의 다른 함수** `macroExposure.calcMacroSensitivity` 다. 진짜 공백은 **방법 C(위계
+  > 폴백)** 하나였고 `50804d441` 로 구현·검증 완료.
 - **G2 섹터 폴백 sanity**: 섹터 pooled beta 부호가 도메인 사전(금리↑→차입의존 섹터 매출↓)과
   정합. 위반시 보고(데이터 오염 신호).
 - **G3 prebuild 패리티**: `calcMacroExposureFromAnnualRevenue`(lean) 와 `calcMacroSensitivity`
