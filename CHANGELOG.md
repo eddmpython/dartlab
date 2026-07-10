@@ -7,10 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.8] - 2026-07-10
+
+호출계약 정리 + 브라우저 노트북 릴리즈. 문서와 예제가 오래전에 은퇴한 API 를 계속 싣고 있었고, 그 코드를 따라 친 사용자는 첫 줄에서 `AttributeError` 를 만났다. 이번 릴리즈가 그 표면을 전부 걷어낸다.
+
 ### Changed
 
-- **pip 번들 웹 UI를 공유 터미널 앱으로 전환** — `dartlab ai` 로컬 서버가 서빙하는 웹 UI가 SvelteKit 앱(`ui/apps/local`)으로 바뀐다. 이 앱은 공개 사이트와 동일한 `@dartlab/ui-surfaces` 공유 surface 를 소비하므로, 터미널이 공개(공표)와 로컬(pip·개발)의 단일 공유 자산이 된다 — 같은 코드를 환경별 런타임 포트로 주입한다(로컬=서버 `/api`·AI, 공개=HF·브라우저). 옛 React UI(`ui/web`)는 `DARTLAB_UI_LEGACY=1` 환경변수로 가역 복귀한다.
-- 옛 React UI 전용이던 재무 35카드 대시보드·퀀트 대시보드(`/analysis/{code}/financial`·`/quant`, `/api/viz` 스트리밍)는 공유 터미널로 아직 이관되지 않았다 — 해당 화면이 필요하면 `DARTLAB_UI_LEGACY=1` 로 옛 UI 를 쓴다. 터미널은 자체 재무 심화뷰·스크리너·공시 위치 레일을 제공한다.
+- **공개 호출계약을 엔진명으로 좁혔다.** 엔진은 `src/dartlab/<엔진>/` 폴더가 실재하는 것이고, `analysis` · `credit` · `gather` · `industry` · `macro` · `quant` · `scan` · `story` · `viz` 아홉이다. `Company` 파사드에서 providers(dart · edgar) 계열은 `panel` · `select` · `filings` 셋만 계약이고, 거기에 `trace` 와 엔진명 메서드가 붙는다. 문서 본문 횡단 조회는 `dartlab.search(...)` 가 예외적 계약이다.
+- **세부 호출계약을 만들지 않는다.** `Company.audit` · `governance` · `notesDetail` · `relatedPartyTx` · `executivePay` · `topics` · `diff` · `update` · `view` · `disclosure` · `liveFilings` · `readFiling` 는 계약이 아니다. 하위 skill spec 페이지가 자기 `capabilityRefs` 에 등재해도 계약이 아니다. 같은 능력은 계약 호출로 얻는다. 감사는 `c.panel("감사")` 와 `dartlab.scan("audit")`, 지배구조는 `c.analysis("governance", "지배구조")`, 주석은 `c.panel("주석")`, 관계자 거래는 `c.panel("특수관계자")`, 임원 보수는 `c.panel("임원")` 이다.
+- **pip 번들 웹 UI를 공유 터미널 앱으로 전환.** `dartlab ai` 로컬 서버가 서빙하는 웹 UI가 SvelteKit 앱(`ui/apps/local`)으로 바뀐다. 이 앱은 공개 사이트와 동일한 `@dartlab/ui-surfaces` 공유 surface 를 소비하므로, 터미널이 공개(공표)와 로컬(pip·개발)의 단일 공유 자산이 된다. 같은 코드를 환경별 런타임 포트로 주입한다(로컬=서버 `/api`·AI, 공개=HF·브라우저). 옛 React UI(`ui/web`)는 `DARTLAB_UI_LEGACY=1` 환경변수로 가역 복귀한다.
+- 옛 React UI 전용이던 재무 35카드 대시보드·퀀트 대시보드(`/analysis/{code}/financial`·`/quant`, `/api/viz` 스트리밍)는 공유 터미널로 아직 이관되지 않았다. 해당 화면이 필요하면 `DARTLAB_UI_LEGACY=1` 로 옛 UI 를 쓴다. 터미널은 자체 재무 심화뷰·스크리너·공시 위치 레일을 제공한다.
+
+### Added
+
+- `Company.reportModel` 을 `engines.company` 공개계약에 등재하고 `dartlab report --model` 로 전문 리포트를 노출한다.
+- scan 축 확장. `earningsFlash`(잠정실적 시간당 왓처) · `narrativeMetric`(서술표 지표 전종목) · 사업보고서 커버리지 de-gate 로 7 개 축을 새로 배선했다.
+- scan compose 가중 다팩터 랭킹(리터럴 스칼라 · winsorize · clip · abs · log).
+- panel 서술표 전천후 격자 추출기(`tableToGrid` primitive + `readMetric`).
+- 매크로 회귀 위계 폴백.
+
+### Fixed
+
+- **브라우저(pyodide)에서 `dartlab.scan` 이 죽거나 조용히 빈 결과를 내던 문제.** `growth` · `profitability` · `liquidity` · `cashflow` · `ratio` · `account` · `debt` 일곱 축이 브라우저에서 돈다. polars WASM 에 `scan_parquet` 과 streaming 엔진이 없어 pyarrow 경유로 우회한다.
+- panel 계열 pyodide(polars WASM) 파싱 활성화. pyodide 동기 XHR 바이트 복원을 벡터화해 12.8MB 파일이 1.85 초에서 0.38 초로 줄었다.
+- `define` operand 의 NaN · 무한대 오염 차단(zscore · winsorize 전멸 버그).
+- 서술표 지표 정확도(다중단위 leaf 오판 + 매출대비 이상치 컷).
+- 주말 스냅샷 잠복 결함(일별 raw 에서 주간 판독 5 배 중복, KR/US 동시).
+
+### Removed
+
+- 실체 없는 `flow` · `fixedIncome` 엔진 spec 과 그 위에 세운 레시피 5 편. `investorBalance` · `programTrade` · `shortInterest` · `kgbYieldCurve` 는 어느 엔진에도 없는 축이었다.
+- 전문 리포트 死코드 2,419 LOC(`story.macro` · `story.publisher` · `story.sixAct` · `story.sections`).
+- dossier 데이터 작업대. 호출계약은 엔진 소유 verb 로만 둔다.
+
+### Migration
+
+`c.show(topic)` 을 쓰고 있었다면 `c.panel(topic)` 으로 바꾼다. `show` 는 이미 런타임에 없다. `c.BS` · `c.IS` · `c.CF` · `c.ratios` 는 각각 `c.panel("BS")` · `c.panel("IS")` · `c.panel("CF")` · `c.panel("ratios")` 다. `c.filings()` 는 그대로 계약이고, `c.disclosure()` · `c.liveFilings()` 는 `c.filings()` 로 모인다. panel 섹션 검색은 한글 섹션명을 쓴다(`c.panel("재고")` · `c.panel("차입금")` · `c.panel("충당부채")`). 영문 키(`inventory` · `borrowings` · `provisions`)는 `None` 을 돌려준다.
 
 ## [0.10.7] - 2026-06-13
 
