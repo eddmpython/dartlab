@@ -14,6 +14,18 @@ export const categoryDefinitions = [
 			'DartLab은 누구나 전자공시 분석을 시작할 수 있도록, 설치부터 활용까지 쉽게 안내합니다.'
 	},
 	{
+		id: 'dartlab-stories',
+		slug: 'dartlab-stories',
+		folder: '03-dartlab-stories',
+		label: 'dartlab 이야기',
+		description: 'dartlab 이 무엇이고 어떻게 쓰는지 한 편씩 따라 하는 연재입니다. 본문의 코드를 그 자리에서 실행하고 노트북으로 가져갈 수 있습니다.',
+		seoTitle: 'dartlab 이야기 | 설치 없이 브라우저에서 배우는 전자공시 분석',
+		seoDescription:
+			'dartlab 이야기. dartlab 의 데이터 구조와 호출법을 한 편씩 따라 합니다. 본문 코드를 브라우저에서 바로 실행하고, 그대로 내 노트북으로 가져갈 수 있습니다.',
+		brandMessage:
+			'DartLab 은 읽고 끝나는 문서가 아니라, 읽으면서 직접 돌려 보는 이야기로 가르칩니다.'
+	},
+	{
 		id: 'company-reports',
 		slug: 'company-story',
 		folder: '05-company-reports',
@@ -203,6 +215,14 @@ export const seriesDefinitions = {
 		seoTitle: '데이터 리포트 | 전상장사 전수 집계',
 		seoDescription: 'DartLab 데이터 리포트 시리즈. 자사주, 주주환원, 부채, 현금흐름 등 전상장사 공시 데이터를 전수 집계한 분석.',
 		brandMessage: 'DartLab은 전상장사 데이터를 전수로 집계해 시장 전체의 구조를 드러냅니다.'
+	},
+	'dartlab-stories': {
+		id: 'dartlab-stories',
+		label: 'dartlab 이야기',
+		description: 'dartlab 을 처음부터 한 편씩 따라 하는 시리즈입니다. 본문 코드를 그 자리에서 실행하고 노트북으로 가져갈 수 있습니다.',
+		seoTitle: 'dartlab 이야기 | 설치 없이 브라우저에서 배우는 전자공시 분석',
+		seoDescription: 'DartLab dartlab 이야기 시리즈. 데이터 구조와 호출법을 한 편씩 따라 하고, 본문 코드를 브라우저에서 바로 실행합니다.',
+		brandMessage: 'DartLab 은 읽고 끝나는 문서가 아니라, 읽으면서 직접 돌려 보는 이야기로 가르칩니다.'
 	},
 	'tech-story': {
 		id: 'tech-story',
@@ -407,6 +427,18 @@ export const posts: PostMeta[] = buildPosts();
 
 export function getPost(slug: string): PostMeta | undefined {
 	return posts.find((post) => post.slug === slug);
+}
+
+const rawBySlug = new Map<string, string>(
+	Object.entries(rawModules).flatMap(([path, raw]) => {
+		const parsed = parsePostPath(path);
+		return parsed ? [[parsed.slug, raw] as [string, string]] : [];
+	})
+);
+
+/** 글 원본 markdown. "노트북으로" 가 이 원본을 그 자리에서 셀로 자른다(구운 사본 없음). */
+export function getPostRaw(slug: string): string | undefined {
+	return rawBySlug.get(slug);
 }
 
 /** 종목코드 → 글(큐레이션 캐러셀 오버레이용 역인덱스). frontmatter `stockCode` 가 있는 글만. */

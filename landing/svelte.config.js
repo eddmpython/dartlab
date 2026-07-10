@@ -171,7 +171,10 @@ const config = {
 						lang: safeLang,
 						theme: 'github-dark'
 					});
-					return `{@html \`${html.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`}`;
+					// 언어를 마크업에 남긴다. shiki 는 안 남긴다. dartlab 이야기 본문의 python 블록을
+					// 페이지가 이 표시로 찾아 실행 셀로 승격시킨다(`blog/[slug]/+page.svelte`).
+					const tagged = html.replace('<pre class="shiki', `<pre data-lang="${safeLang}" class="shiki`);
+					return `{@html \`${tagged.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`}`;
 				}
 			}
 		})

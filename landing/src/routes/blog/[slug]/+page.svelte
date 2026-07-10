@@ -3,10 +3,14 @@
 	import { brand } from '$lib/brand';
 	import SubjectHub from '$lib/subjects/SubjectHub.svelte';
 	import BlogActionBar from '$lib/blog/BlogActionBar.svelte';
-	import { findPrevNext, findSeriesPrevNext, getCategoryPath, getPost, getRelatedPostsByCategory, getSeriesPath } from '$lib/blog/posts';
+	import { findPrevNext, findSeriesPrevNext, getCategoryPath, getPost, getPostRaw, getRelatedPostsByCategory, getSeriesPath } from '$lib/blog/posts';
 	import { buildAbsoluteUrl, buildArticleJsonLd, buildBreadcrumbJsonLd, buildFaqJsonLd, parseFaqFromMarkdown } from '$lib/seo';
 	import { Calendar, ChevronLeft, ChevronRight } from 'lucide-svelte';
-	import { onMount, setContext, tick } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { mount, onMount, setContext, tick, unmount } from 'svelte';
+	import RunnableCode from '$lib/blog/RunnableCode.svelte';
+	import { markdownToNotebook, postNotebookId } from '$lib/notebook/fromMarkdown';
+	import { getNotebook, putNotebook } from '$lib/notebook/storage/localStore';
 
 	let { data } = $props();
 
@@ -68,6 +72,44 @@
 		return () => observer.disconnect();
 	}
 
+	/**
+	 * dartlab 이야기 본문의 python 블록을 실행 셀로 승격시킨다.
+	 *
+	 * 코드 원본은 markdown 코드펜스 하나뿐이고, 여기서는 그 아래에 실행 막대만 붙인다. 셀을 따로
+	 * 굽지 않으므로 글을 고치면 실행되는 코드도 함께 바뀐다. 다른 카테고리 글의 코드블록은 읽는
+	 * 예시라 손대지 않는다.
+	 */
+	function mountRunnableCells() {
+		if (!articleEl || postInfo?.category !== 'dartlab-stories') return;
+		articleEl.querySelectorAll<HTMLElement>('pre[data-lang="python"]').forEach((pre, i) => {
+			const host = pre.parentElement as HTMLElement | null;
+			if (!host || host.dataset.runnable) return;
+			host.dataset.runnable = '1';
+			const target = document.createElement('div');
+			host.after(target);
+			runnables.push(
+				mount(RunnableCode, {
+					target,
+					props: {
+						code: pre.textContent ?? '',
+						onOpenNotebook: i === 0 ? openAsNotebook : undefined
+					}
+				})
+			);
+		});
+	}
+
+	/** 이 글을 노트북 하나로. 글마다 안정 id 라 두 번 눌러도 사본이 늘지 않고 하던 곳으로 간다. */
+	async function openAsNotebook() {
+		const raw = getPostRaw(slug);
+		if (!raw) return;
+		const id = postNotebookId(slug);
+		if (!(await getNotebook(id))) {
+			await putNotebook(markdownToNotebook(raw, slug, postInfo?.title ?? slug, postInfo?.description ?? ''));
+		}
+		await goto(`${base}/notebooks/${id}`);
+	}
+
 	function addCopyButtons() {
 		if (!articleEl) return;
 		articleEl.querySelectorAll('pre').forEach((pre) => {
@@ -95,6 +137,7 @@
 	}
 
 	let cleanup: (() => void) | undefined;
+	let runnables: Record<string, unknown>[] = [];
 	let mounted = false;
 	let tocVisible = $state(true);
 	let footerEl: HTMLElement | undefined = $state();
@@ -121,6 +164,8 @@
 			mounted = false;
 			cleanup?.();
 			footerCleanup?.();
+			runnables.forEach((c) => void unmount(c));
+			runnables = [];
 		};
 	});
 
@@ -213,6 +258,9 @@
 		tick().then(() => {
 			if (!mounted) return;
 			addCopyButtons();
+			runnables.forEach((c) => void unmount(c));
+			runnables = [];
+			mountRunnableCells();
 			extractToc();
 			cleanup?.();
 			cleanup = observeHeadings();
