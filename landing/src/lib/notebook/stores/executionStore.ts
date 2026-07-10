@@ -260,14 +260,19 @@ export async function executeAllCells(cells: { id: string; type: string; content
 	}
 }
 
+/** 이 커널에서 이미 돌린 본문 토막. 커널이 죽으면 같이 비운다. */
+const ranSnippets = new Set<string>();
+
 /**
  * 노트북 밖(블로그 본문 셀)에서 코드 한 토막을 돌린다.
  *
  * `executeCell` 은 노트북 셀 id 를 전제로 출력 저장·반응 그래프·IndexedDB 저장까지 함께 한다.
  * 블로그 본문에는 노트북이 없으므로 그 배선을 타면 안 된다. 커널만 공유하고 나머지는 안 건드린다.
  * 같은 페이지의 셀들이 한 커널을 공유하므로 위 셀에서 만든 변수를 아래 셀이 그대로 쓴다.
+ *
+ * `prereq` 는 이 셀보다 위에 있는 본문 코드들이다. 순서대로 먼저 흘린다.
  */
-export async function runSnippet(code: string): Promise<CellOutput> {
+export async function runSnippet(code: string, prereq: string[] = []): Promise<CellOutput> {
 	// `if (!engine)` 로 거르면 안 된다. 프리워밍(onpointerenter)이 이미 `engine` 을 대입해 두고 아직
 	// initialize 중일 수 있다. 그러면 준비를 안 기다린 채 "엔진 없음" 으로 끝난다. bringUpEngine 은
 	// 중복 호출이 안전하고, 진행 중이면 그 약속을 공유한다.
@@ -277,7 +282,19 @@ export async function runSnippet(code: string): Promise<CellOutput> {
 	}
 	engineStatus.set('executing');
 	try {
-		return await engine.execute(code);
+		// 독자는 글 중간 셀을 먼저 누른다. 그때 위 셀이 만든 `c` 가 없어 NameError 를 본다.
+		// 자기 실수도 아닌데 첫 경험이 빨간 traceback 이다. 앞 셀들을 같은 커널에 먼저 흘린다.
+		// 이미 돌린 토막은 건너뛴다. 커널이 살아 있는 한 그 상태도 살아 있다.
+		for (const before of prereq) {
+			const key = before.trim();
+			if (!key || ranSnippets.has(key)) continue;
+			const out = await engine.execute(before);
+			if (out.type === 'error') return out; // 선행이 깨지면 그 오류를 그대로 보여준다
+			ranSnippets.add(key);
+		}
+		const result = await engine.execute(code);
+		if (result.type !== 'error') ranSnippets.add(code.trim());
+		return result;
 	} finally {
 		engineStatus.set('ready');
 	}
@@ -292,6 +309,7 @@ export function destroyEngine(): void {
 	destroyWidgetBridge();
 	engine?.destroy();
 	engine = null;
+	ranSnippets.clear(); // 커널이 사라지면 그 안의 변수도 사라진다
 	attachedNotebookId = null; // 다음 initEngine 이 다시 부착(복원+autoRun)하도록
 	prewarmed = null; // 워커가 사라졌으니 사전 로딩도 다시 할 수 있게
 	engineStatus.set('idle');

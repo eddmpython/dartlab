@@ -5,25 +5,30 @@
 	// 노트북과 같은 pyodide 커널에서 한다. 한 페이지의 셀들이 커널 하나를 공유하므로 위 셀에서
 	// 만든 `c` 를 아래 셀이 그대로 쓴다. 글 읽는 순서가 곧 실행 순서다.
 	import { Play, Loader2, NotebookPen } from 'lucide-svelte';
-	import { runSnippet, prewarmEngine } from '$lib/notebook/stores/executionStore';
+	import { runSnippet, prewarmEngine, engineStatus } from '$lib/notebook/stores/executionStore';
 	import type { CellOutput } from '$lib/notebook/engine/executionEngine';
 	import OutputPanel from '$lib/notebook/components/OutputPanel.svelte';
 
 	interface Props {
 		code: string;
+		/** 이 셀보다 위에 있는 본문 코드들. 커널이 아직 안 돌린 것만 먼저 흘린다. */
+		prereq?: string[];
 		/** 이 글을 노트북으로 가져간다. 첫 셀에만 붙인다. */
 		onOpenNotebook?: () => void;
 	}
-	let { code, onOpenNotebook }: Props = $props();
+	let { code, prereq = [], onOpenNotebook }: Props = $props();
 
 	let output = $state<CellOutput | undefined>(undefined);
 	let running = $state(false);
+
+	/** 파이썬과 dartlab 을 내려받는 중일 때만 오래 걸린다고 말한다. 따뜻한 커널에는 거짓말이다. */
+	let downloading = $derived(running && $engineStatus === 'loading');
 
 	async function run() {
 		running = true;
 		output = undefined;
 		try {
-			output = await runSnippet(code);
+			output = await runSnippet(code, prereq);
 		} finally {
 			running = false;
 		}
@@ -39,7 +44,7 @@
 			<NotebookPen size={13} /> 노트북 생성하기
 		</button>
 	{/if}
-	{#if running && !output}
+	{#if downloading}
 		<span class="rc-note">처음 실행은 파이썬과 dartlab 을 내려받느라 20 초쯤 걸립니다.</span>
 	{/if}
 </div>

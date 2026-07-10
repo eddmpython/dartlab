@@ -81,7 +81,9 @@
 	 */
 	function mountRunnableCells() {
 		if (!articleEl || postInfo?.category !== 'dartlab-stories') return;
-		articleEl.querySelectorAll<HTMLElement>('pre[data-lang="python"]').forEach((pre, i) => {
+		const blocks = [...articleEl.querySelectorAll<HTMLElement>('pre[data-lang="python"]')];
+		const codes = blocks.map((pre) => pre.textContent ?? '');
+		blocks.forEach((pre, i) => {
 			const host = pre.parentElement as HTMLElement | null;
 			if (!host || host.dataset.runnable) return;
 			host.dataset.runnable = '1';
@@ -91,7 +93,9 @@
 				mount(RunnableCode, {
 					target,
 					props: {
-						code: pre.textContent ?? '',
+						code: codes[i],
+						// 글 순서가 곧 실행 순서다. 중간 셀을 먼저 눌러도 앞 셀이 알아서 선행 실행된다.
+						prereq: codes.slice(0, i),
 						onOpenNotebook: i === 0 ? openAsNotebook : undefined
 					}
 				})
