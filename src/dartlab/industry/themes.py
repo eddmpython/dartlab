@@ -102,7 +102,9 @@ def _stockThemes(code: str) -> pl.DataFrame:
     from dartlab._listingDispatch import listing as _listing
 
     df = _listing()
-    row = df.filter(df["종목코드"] == code) if "종목코드" in df.columns else df.head(0)
+    # 컬럼이 있어도 목록이 비면 dtype 이 Null 이라 str 비교가 그 자리에서 TypeError 를 낸다(브라우저).
+    hasCode = df.height > 0 and "종목코드" in df.columns
+    row = df.filter(df["종목코드"] == code) if hasCode else df.head(0)
     product = row["주요제품"][0] if row.height and "주요제품" in row.columns else ""
 
     rows: list[dict] = []

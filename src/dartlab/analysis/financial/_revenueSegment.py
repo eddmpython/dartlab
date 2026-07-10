@@ -111,7 +111,8 @@ def calcCompanyProfile(company, *, basePeriod: str | None = None) -> dict | None
 
             listing = _listing()
             stockCode = getattr(company, "stockCode", "")
-            if stockCode:
+            # 목록이 비면(브라우저) 종목코드 dtype 이 Null 이라 str 비교가 TypeError 를 낸다.
+            if stockCode and listing is not None and listing.height > 0 and "종목코드" in listing.columns:
                 row = listing.filter(listing["종목코드"] == stockCode)
                 if not row.is_empty() and "주요제품" in row.columns:
                     products = row["주요제품"][0]

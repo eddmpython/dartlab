@@ -40,7 +40,13 @@ def _calcCHSAdjustment(company, baseScore: float) -> dict:
     try:
         from dartlab.synth.distress import calcCHS
 
-        priceData = company.gather("price") if hasattr(company, "gather") else None
+        # 시세를 못 얻는 환경이 있다. 브라우저(pyodide)는 스레드를 못 띄워 gather 가 RuntimeError
+        # 를 내고, 오프라인에서는 OSError 가 난다. CHS 보정은 부가 기능이므로 그때는 보정만
+        # 건너뛴다. 여기서 예외가 새면 credit 호출 전체가 죽는다.
+        try:
+            priceData = company.gather("price") if hasattr(company, "gather") else None
+        except (RuntimeError, OSError, ImportError, ValueError, KeyError, AttributeError):
+            return _chsSkip("price_unavailable")
         if priceData is None or len(priceData) < 20:
             return _chsSkip("price_insufficient")
 

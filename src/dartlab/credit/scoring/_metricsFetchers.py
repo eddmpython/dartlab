@@ -36,7 +36,10 @@ def _fetchProfile(company) -> dict | None:
 
         listing = _listing()
         stockCode = getattr(company, "stockCode", "")
-        if stockCode:
+        # 상장목록을 못 받는 환경(브라우저는 KRX 로 못 나간다)에서는 0 행 프레임이 온다. 그때
+        # 종목코드 컬럼 dtype 이 Null 이라 Series 를 str 과 비교하는 순간 TypeError 가 나고,
+        # 그 예외는 아래 except 에 없어 credit 전체가 죽었다. 목록이 비면 맞출 행도 없다.
+        if stockCode and listing is not None and listing.height > 0 and "종목코드" in listing.columns:
             row = listing.filter(listing["종목코드"] == stockCode)
             if not row.is_empty() and "주요제품" in row.columns:
                 products = row["주요제품"][0]
