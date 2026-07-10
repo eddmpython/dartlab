@@ -292,9 +292,9 @@
 		border-bottom: none;
 	}
 	.hero {
-		max-width: 1440px;
+		max-width: 1100px;
 		margin: 0 auto;
-		padding: 40px 32px 24px;
+		padding: 40px 24px 24px;
 	}
 	/* 허브다운 정도의 장식. 아바타 + 제목 한 줄 (히어로 배너 아님). */
 	.hero-head {
@@ -325,7 +325,6 @@
 	}
 	.hero-sub {
 		margin: 0 0 20px;
-		max-width: 760px;
 		font-size: 14px;
 		line-height: 1.7;
 		color: var(--dl-ink);
@@ -378,9 +377,9 @@
 	}
 
 	.gallery {
-		max-width: 1440px;
+		max-width: 1100px;
 		margin: 0 auto;
-		padding: 12px 32px 32px;
+		padding: 12px 24px 32px;
 	}
 	/* 트랙 헤더. 제목 옆에 그 트랙이 무엇을 가르치는지 한 줄. */
 	.track-head {
@@ -408,7 +407,7 @@
 	}
 	.grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 		gap: 0.95rem;
 	}
 	.muted {
