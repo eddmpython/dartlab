@@ -1,0 +1,73 @@
+# 에피소드 메타데이터 (사람이 작성하는 SSOT).
+# 회사 에피소드: 소스 = 블로그 글(SSOT). 별도 script.md 없음. sourceDoc = 블로그 발행 URL.
+# 발행 시 guid/오디오크기/길이/발행일은 published.json 에 기록된다(여기 아님).
+episode:
+  version: 1
+  episodeId: P11-company-hyosung-heavy-electric
+  episodeNo: 11
+  slug: hyosung-heavy-electric
+  title: "효성중공업: AI 전력난에 20조 수주잔고가 깨어났다"
+  lane: company
+  language: ko
+  status: ready
+
+  audio:
+    generator: notebooklm
+    sourceHint: "Downloads/AI_전원_플러그를_쥔_효성중공업의_20조_수주잔고.m4a"
+    sourceDoc: https://eddmpython.github.io/dartlab/blog/298040-hyosung-heavy-electric
+
+  image:
+    source: cover.jpg
+    key: episodes/hyosung-heavy-electric/cover-3000.jpg
+  staticImage:
+    source: static-video.jpg
+    key: episodes/hyosung-heavy-electric/static-video.jpg
+  thumbnail:
+    source: static-video.jpg
+    key: episodes/hyosung-heavy-electric/static-video.jpg
+  sourceAssets:
+    - source: assets/source.webp
+      name: hyosung-transformer-grid
+      role: reusable-original
+  visual:
+    source: assets/source.webp
+    kicker: DartLab Podcast
+    titleLines:
+      - 효성중공업
+      - "AI 전력난에 [[20조]] 수주잔고"
+      - "현금으로 바뀔까"
+    subtitle: 변압기 수주잔고, 건설 믹스, 마진과 현금흐름을 함께 읽기
+    footer: DART 공시 · 재무제표 · 투자권유 아님
+  caption:
+    hook: AI 데이터센터가 전기를 더 먹을수록 효성중공업의 20조 수주잔고가 먼저 보입니다.
+    body: >-
+      효성중공업은 2026년 1분기 중공업 수주잔고 20.2조원을 들고 있지만, 연결 매출에는 건설도
+      섞여 있습니다. 그래서 핵심은 단순한 변압기 수혜가 아니라 이 수주잔고가 매출총이익률,
+      영업현금흐름, 부채비율 개선으로 얼마나 빨리 번역되는지입니다.
+    cta: 전체 에피소드는 DartLab 팟캐스트와 블로그 글에서 들을 수 있습니다.
+    hashtags: ["#효성중공업", "#변압기", "#전력기기", "#AI전력망", "#DartLab"]
+
+  audienceQuestion: AI 전력난이 만든 효성중공업의 20조 수주잔고는 실제 현금으로 얼마나 빨리 바뀔까?
+  oneLineMessage: >-
+    효성중공업의 핵심은 2026년 1분기 중공업 수주잔고 20.2조원이 고마진 매출과 현금으로
+    바뀌는 속도다. 다만 연결 매출의 약 30%가 건설이라, 전력기기 순도와 현금 전환을 함께 봐야 한다.
+  summary: >-
+    효성중공업은 AI 데이터센터와 전력망 투자 흐름 속에서 2026년 1분기 중공업 수주잔고 20.2조원을
+    기록했습니다. 하지만 이 회사는 순수 변압기 회사가 아니라 건설 부문이 섞인 연결 회사입니다.
+    이번 편은 변압기 수주잔고, HICO 미국 거점, 매출총이익률, 영업현금흐름, 부채비율을 함께 보며
+    20조 수주잔고가 진짜 기업 가치로 바뀌는 조건을 설명합니다.
+  whereToLook:
+    - 중공업 수주잔고가 고마진 제품과 고객에서 유지되는지
+    - 중공업 매출 비중이 연결 매출 안에서 70% 안팎을 지키는지
+    - 매출총이익률, 영업현금흐름, 부채비율이 같은 방향으로 좋아지는지
+  forbiddenAngles: [매수, 매도, 목표가, 수익 보장, 확정 전망]
+
+  stockCode: "298040"
+  corpName: 효성중공업
+  topicSlug: hyosung-heavy-electric
+  cardType: company
+  youtubeId: ""
+  links:
+    blogSlug: "298040-hyosung-heavy-electric"
+    cardSlug: "298040-hyosung-heavy-electric"
+    terminalCode: "298040"
