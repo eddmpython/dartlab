@@ -1,0 +1,193 @@
+{
+  "title": "재무제표 기간, Y와 Q 조회",
+  "titleContract": {
+    "workingTitle": "재무제표 기간, Y와 Q 조회",
+    "selectedTitle": "재무제표 기간, Y와 Q 조회",
+    "hookQuestion": "재무제표를 연간과 분기로 조회하면 질문이 어떻게 달라질까?",
+    "readerGap": "초보자는 freq 옵션을 단순 문법으로 보지만 글은 연간과 분기가 서로 다른 투자 질문을 만든다는 점을 가르친다.",
+    "promise": "같은 계정을 Y와 Q로 각각 조회하고 표 모양, 열 수, 해석 기준의 차이를 직접 확인하게 한다.",
+    "whySelected": "재무제표와 기간이라는 검색어에 Y와 Q 조회라는 핵심 행동을 짧게 붙인다.",
+    "candidates": [
+      {
+        "title": "재무제표 기간, Y와 Q 조회",
+        "hook": "검색어와 실행 옵션이 모두 제목에 들어간다.",
+        "risk": "Y와 Q를 모르는 독자에게 본문 초반에서 바로 풀어 줘야 한다."
+      },
+      {
+        "title": "재무제표 연간, 분기 조회",
+        "hook": "연간과 분기라는 쉬운 단어로 진입 장벽이 낮다.",
+        "risk": "코드 옵션의 정확한 키워드가 제목에서 약하다."
+      },
+      {
+        "title": "DART 데이터 기간 조회",
+        "hook": "DART 데이터 검색자를 받을 수 있다.",
+        "risk": "재무제표 계정 실습이라는 본문 핵심이 덜 보인다."
+      }
+    ],
+    "rejectedPatterns": [
+      "재무제표 기간 사용법",
+      "Y Q 총정리",
+      "기간 옵션 정리",
+      "조회하는 법",
+      "긴 문장형 제목"
+    ]
+  },
+  "description": "dartlab에서 같은 재무제표 계정을 연간 Y와 분기 Q로 조회하면 표의 모양과 질문이 어떻게 달라지는지, 초보자가 오해하기 쉬운 기간 기준까지 함께 익힌다.",
+  "readerQuestion": "같은 매출액과 영업이익을 dartlab에서 Y와 Q로 조회하면 표의 모양과 해석 기준이 어떻게 달라질까?",
+  "insight": {
+    "commonBelief": "freq 값은 단순히 표를 조금 다르게 보여 주는 옵션일 뿐이라고 생각한다.",
+    "twistFact": "연간은 회사의 큰 방향을 묻고 분기는 최근 변곡을 묻기 때문에 같은 계정도 다른 질문이 된다.",
+    "whatToWatch": "연간과 분기, 손익계산서와 재무상태표의 기간 의미를 섞어 말하지 않는다.",
+    "freshnessArgument": "실제 브라우저 실행에서 확인한 Y 결과와 Q 결과의 shape 차이를 근거로 초보자용 기간 감각을 만든다.",
+    "evidenceRefs": [
+      "Company.select freq Y",
+      "Company.select freq Q",
+      "Company.panel",
+      "DART reports"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "Y와 Q는 질문을 바꾼다",
+      "purpose": "개념전환",
+      "scene": "같은 매출액과 영업이익을 연간과 분기로 각각 조회해 표 폭이 달라지는 장면",
+      "keyNumbers": [
+        "Y",
+        "Q"
+      ],
+      "causalBridge": "옵션이 아니라 질문의 기준이라는 이해가 연간과 분기 해석으로 이어진다."
+    },
+    {
+      "order": 2,
+      "heading": "연간은 방향, 분기는 변곡을 본다",
+      "purpose": "해석",
+      "scene": "annual과 quarterly 변수를 만들고 shape와 head로 서로 다른 기간 표를 확인하는 장면",
+      "keyNumbers": [
+        "2 x 13",
+        "2 x 43"
+      ],
+      "causalBridge": "표 모양 차이를 확인해야 기간을 섞어 말하는 오해를 막을 수 있다."
+    },
+    {
+      "order": 3,
+      "heading": "재무상태표의 기간 의미도 구분한다",
+      "purpose": "오독방지",
+      "scene": "BS의 자산총계와 자본총계를 Y와 Q로 조회해 손익계산서와 다른 기간 의미를 설명하는 장면",
+      "keyNumbers": [
+        "BS",
+        "shape"
+      ],
+      "causalBridge": "기간 기준을 제대로 잡아야 다음 편의 계정명 선택과 직접 계산으로 넘어갈 수 있다."
+    }
+  ],
+  "visuals": [
+    {
+      "actOrder": 2,
+      "kind": "diagram",
+      "title": "Y와 Q 기간 질문 비교",
+      "proves": "연간과 분기는 같은 계정을 다른 시간 간격으로 보여 주며 해석 질문도 달라진다.",
+      "seriesHint": "Company.select freq comparison",
+      "placement": "재무상태표 기간 설명 뒤 본문 중간",
+      "insertAfter": "bs_y와 bs_q shape 예제 뒤",
+      "narrativeUse": "독자가 Y와 Q를 단순 옵션이 아니라 질문 선택으로 기억하게 한다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "inline",
+      "subject": "재무제표 데이터 격자가 연간 Y 열과 분기 Q 열로 나뉘며 같은 계정이 다른 기간 폭을 가지는 교육용 시각화",
+      "query": "financial statement period grid annual quarterly data columns",
+      "keywords": [
+        "financial statement",
+        "annual",
+        "quarterly"
+      ],
+      "placement": "도입부 뒤 본문 hero 이미지",
+      "narrativeUse": "Y와 Q가 표의 폭과 질문을 바꾼다는 핵심을 첫 화면에서 보여 준다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": [
+      "재무제표 기간",
+      "DART 분기보고서",
+      "재무제표 연간 분기",
+      "dartlab select"
+    ],
+    "placementRule": "2편의 select 학습을 앞에 연결하고, 3편의 실행 순서와 4편의 종목코드 글은 변수와 대상 설명에 배치한다.",
+    "links": [
+      {
+        "path": "/blog/call-financial-statements",
+        "title": "재무제표, 파이썬 한 줄",
+        "reason": "select 호출의 기본 문법을 선행 학습한다.",
+        "placement": "도입부 select 선행 연결"
+      },
+      {
+        "path": "/blog/how-notebook-runs",
+        "title": "공시 코드셀, 실행 순서",
+        "reason": "annual과 quarterly 변수를 다시 쓰는 실행 상태를 설명한다.",
+        "placement": "분기 표 설명 직후"
+      },
+      {
+        "path": "/blog/reading-business-reports",
+        "title": "사업보고서 읽는 법",
+        "reason": "손익계산서와 재무상태표의 기간 의미 차이를 원문 공시로 보강한다.",
+        "placement": "재무상태표 설명 뒤"
+      }
+    ]
+  },
+  "honestyGuards": [
+    "분기 네 개의 합이 항상 연간 값과 같다고 말하지 않는다.",
+    "최근 분기 하나로 회사의 장기 방향을 단정하지 않도록 주의 문장을 둔다.",
+    "주가와 결합한 실시간 분석은 브라우저에서 안 되며 로컬 전용이라고 밝힌다."
+  ],
+  "evidenceMap": [
+    {
+      "claim": "Company.select는 freq Y와 freq Q로 같은 계정을 서로 다른 기간 표로 조회한다.",
+      "sourceType": "DARTLAB",
+      "period": "2026-07-11",
+      "sourceRef": "local execution annual and quarterly shape check",
+      "howUsed": "본문 핵심 실습과 표 모양 설명"
+    },
+    {
+      "claim": "국내 재무제표 기간 데이터 원천은 DART 공시와 OpenDART 자료 구조다.",
+      "sourceType": "DART",
+      "period": "current",
+      "sourceRef": "DART, OpenDART",
+      "howUsed": "연간과 분기 원천 설명"
+    },
+    {
+      "claim": "미국 기업도 EDGAR에서 연간과 분기 공시 리듬을 확인한다.",
+      "sourceType": "EDGAR",
+      "period": "current",
+      "sourceRef": "SEC EDGAR",
+      "howUsed": "국내외 공시 기간 원칙 비교"
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": 1,
+          "planner": "초안은 freq 옵션 설명에 가까워 기능 문서처럼 보였다.",
+          "evaluator": "Y와 Q가 질문을 바꾼다는 해석 중심이 약해 커리큘럼 상승감이 부족했다.",
+          "skeptic": "분기 네 개와 연간 값을 단순 합으로 오해하게 만들 위험이 있다고 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 88,
+          "plannerRevision": "연간은 방향, 분기는 변곡이라는 질문 구조와 재무상태표의 기간 의미를 추가했다."
+        },
+        {
+          "round": 2,
+          "planner": "개선안은 같은 계정을 Y와 Q로 조회하고 shape 차이를 실제 실행 근거로 설명한다.",
+          "evaluator": "초보자가 기간 기준을 먼저 세우고 다음 계정 선택 수업으로 넘어갈 수 있다.",
+          "skeptic": "지원하지 않는 freq year 문법과 브라우저 주가 결합 한계를 분명히 밝혀 오해를 줄인다.",
+          "decision": "passed",
+          "evaluatorScore": 96,
+          "plannerRevision": "DART, OpenDART, EDGAR 링크와 기간 오해 방지 문장을 보강해 최종 통과했다."
+        }
+      ]
+    }
+  }
+}

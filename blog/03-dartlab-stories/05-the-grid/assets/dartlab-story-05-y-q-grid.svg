@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 520" role="img" aria-labelledby="title desc">
+  <title id="title">Y와 Q가 질문을 바꾸는 방식</title>
+  <desc id="desc">연간 Y는 큰 방향을 보고 분기 Q는 최근 변곡을 보는 비교 도식</desc>
+  <rect width="1120" height="520" fill="#0d1b2a"/>
+  <rect x="58" y="56" width="1004" height="408" rx="24" fill="#f8fbff"/>
+  <text x="96" y="116" fill="#14213d" font-family="Arial, sans-serif" font-size="34" font-weight="700">같은 계정, 다른 기간, 다른 질문</text>
+  <g font-family="Arial, sans-serif">
+    <rect x="96" y="160" width="430" height="232" rx="18" fill="#e0f2fe" stroke="#0284c7" stroke-width="3"/>
+    <text x="134" y="214" fill="#075985" font-size="30" font-weight="700">Y 연간 조회</text>
+    <text x="134" y="260" fill="#0c4a6e" font-size="22">몇 년 동안 좋아졌나</text>
+    <text x="134" y="302" fill="#0c4a6e" font-size="22">큰 방향과 구조 변화</text>
+    <rect x="134" y="332" width="312" height="34" rx="8" fill="#bae6fd"/>
+    <text x="154" y="356" fill="#075985" font-size="18">2022 · 2023 · 2024 · 2025</text>
+    <rect x="594" y="160" width="430" height="232" rx="18" fill="#fef3c7" stroke="#d97706" stroke-width="3"/>
+    <text x="632" y="214" fill="#92400e" font-size="30" font-weight="700">Q 분기 조회</text>
+    <text x="632" y="260" fill="#78350f" font-size="22">최근 어디서 꺾였나</text>
+    <text x="632" y="302" fill="#78350f" font-size="22">변곡과 계절성 확인</text>
+    <rect x="632" y="332" width="312" height="34" rx="8" fill="#fde68a"/>
+    <text x="652" y="356" fill="#92400e" font-size="18">2025Q1 · Q2 · Q3 · Q4</text>
+    <rect x="96" y="416" width="928" height="42" rx="12" fill="#14213d"/>
+    <text x="130" y="444" fill="#f8fbff" font-size="21">기간을 먼저 말해야 매출 증가와 이익 둔화를 제대로 구분할 수 있다.</text>
+  </g>
+</svg>

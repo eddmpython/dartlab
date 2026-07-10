@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 520" role="img" aria-labelledby="title desc">
+  <title id="title">종목코드가 공시와 재무제표를 잇는 흐름</title>
+  <desc id="desc">회사명에서 여섯 자리 종목코드로, Company 객체와 재무제표 격자로 이어지는 흐름</desc>
+  <rect width="1120" height="520" fill="#111827"/>
+  <rect x="54" y="58" width="1012" height="404" rx="24" fill="#fbfbf7"/>
+  <text x="92" y="116" fill="#1f2937" font-family="Arial, sans-serif" font-size="34" font-weight="700">이름은 사람이 읽고, 코드는 데이터가 읽는다</text>
+  <g font-family="Arial, sans-serif">
+    <rect x="92" y="172" width="210" height="150" rx="18" fill="#fff7ed" stroke="#f59e0b" stroke-width="3"/>
+    <text x="126" y="226" fill="#5b3413" font-size="25" font-weight="700">회사명</text>
+    <text x="126" y="270" fill="#7a4a18" font-size="22">삼성전자</text>
+    <rect x="352" y="172" width="210" height="150" rx="18" fill="#eef6ff" stroke="#3b82f6" stroke-width="3"/>
+    <text x="386" y="226" fill="#173a66" font-size="25" font-weight="700">종목코드</text>
+    <text x="386" y="270" fill="#173a66" font-size="26">005930</text>
+    <rect x="612" y="172" width="210" height="150" rx="18" fill="#eefdf4" stroke="#22c55e" stroke-width="3"/>
+    <text x="646" y="226" fill="#14532d" font-size="25" font-weight="700">Company</text>
+    <text x="646" y="270" fill="#166534" font-size="20">dartlab.Company</text>
+    <rect x="872" y="172" width="170" height="150" rx="18" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="3"/>
+    <text x="906" y="226" fill="#43306f" font-size="25" font-weight="700">공시 표</text>
+    <text x="906" y="270" fill="#5b4b83" font-size="20">IS · BS · CF</text>
+    <path d="M304 247h42" stroke="#1f2937" stroke-width="5" stroke-linecap="round"/>
+    <path d="M334 234l18 13-18 13" fill="none" stroke="#1f2937" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M564 247h42" stroke="#1f2937" stroke-width="5" stroke-linecap="round"/>
+    <path d="M594 234l18 13-18 13" fill="none" stroke="#1f2937" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M824 247h42" stroke="#1f2937" stroke-width="5" stroke-linecap="round"/>
+    <path d="M854 234l18 13-18 13" fill="none" stroke="#1f2937" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="92" y="366" width="950" height="56" rx="14" fill="#1f2937"/>
+    <text x="126" y="402" fill="#fbfbf7" font-size="22">브라우저에서는 이름 검색을 자동화하지 않는다. 코드를 먼저 정하고 Company로 연다.</text>
+  </g>
+</svg>

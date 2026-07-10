@@ -1,0 +1,193 @@
+{
+  "title": "DART 종목코드, 회사 열기",
+  "titleContract": {
+    "workingTitle": "DART 종목코드, 회사 열기",
+    "selectedTitle": "DART 종목코드, 회사 열기",
+    "hookQuestion": "dartlab 브라우저에서 회사 이름 대신 왜 종목코드를 넣을까?",
+    "readerGap": "초보자는 회사 이름으로 바로 검색되기를 기대하지만 브라우저 글은 여섯 자리 코드로 회사를 먼저 고정해야 한다.",
+    "promise": "DART 종목코드가 Company로 이어지고 같은 코드를 기준으로 손익계산서와 재무상태표를 여는 흐름을 실행하게 한다.",
+    "whySelected": "DART와 종목코드라는 검색어에 회사 열기라는 행동 훅을 짧게 붙인다.",
+    "candidates": [
+      {
+        "title": "DART 종목코드, 회사 열기",
+        "hook": "검색어와 실행 행동이 모두 선명하다.",
+        "risk": "종목코드만 설명하면 투자 데이터 주소라는 깊이가 약해질 수 있다."
+      },
+      {
+        "title": "공시 종목코드, 코드 실행",
+        "hook": "공시와 코드 실행 문제를 직접 겨냥한다.",
+        "risk": "회사 열기라는 구체 행동이 덜 보인다."
+      },
+      {
+        "title": "DART 회사코드, 바로 열기",
+        "hook": "DART 회사코드 검색자를 받을 수 있다.",
+        "risk": "종목코드와 회사코드의 용어 차이를 본문에서 정리해야 한다."
+      }
+    ],
+    "rejectedPatterns": [
+      "종목코드 사용법",
+      "회사 찾는 법",
+      "DART 코드 정리",
+      "회사 검색 소개",
+      "긴 문장형 제목"
+    ]
+  },
+  "description": "dartlab 브라우저에서 회사명을 바로 넣지 않고 DART 종목코드 여섯 자리로 회사를 여는 이유와, 코드 하나를 바꿔 다른 회사 재무제표를 조회하는 흐름을 익힌다.",
+  "readerQuestion": "브라우저 dartlab에서는 회사명을 어떻게 종목코드로 바꾸고, 그 코드로 같은 재무제표 질문을 반복할 수 있을까?",
+  "insight": {
+    "commonBelief": "데이터 도구도 검색창처럼 회사 이름을 바로 넣으면 알아서 찾아 줄 것이라고 생각한다.",
+    "twistFact": "브라우저 실행 글에서는 외부 이름 검색을 자동화하지 않고 여섯 자리 코드를 분석 대상의 안정 주소로 사용한다.",
+    "whatToWatch": "코드를 바꿀 때는 맨 위 셀부터 다시 실행해 모든 표가 같은 회사를 바라보는지 확인한다.",
+    "freshnessArgument": "이름 검색 편의보다 코드로 대상을 고정하는 습관을 먼저 가르쳐 이후 비교와 스캔 수업의 기반을 만든다.",
+    "evidenceRefs": [
+      "Company.market",
+      "Company.panel",
+      "Company.select",
+      "DART 종목코드"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "회사는 이름보다 코드로 고정한다",
+      "purpose": "개념전환",
+      "scene": "삼성전자 이름 대신 005930으로 Company를 만들고 KR 시장을 확인하는 장면",
+      "keyNumbers": [
+        "005930",
+        "KR"
+      ],
+      "causalBridge": "코드가 분석 대상의 주소라는 인식이 같은 질문을 다른 회사에 반복하는 실습으로 이어진다."
+    },
+    {
+      "order": 2,
+      "heading": "코드 하나를 바꾸면 회사가 바뀐다",
+      "purpose": "실습",
+      "scene": "삼성전자, SK하이닉스, NAVER 코드를 바꿔 같은 select 질문을 실행하는 장면",
+      "keyNumbers": [
+        "000660",
+        "035420"
+      ],
+      "causalBridge": "회사 코드북을 만들면 다음 편의 기간 격자 실습에서 대상 회사만 쉽게 바꿀 수 있다."
+    },
+    {
+      "order": 3,
+      "heading": "브라우저 이름 검색의 한계를 밝힌다",
+      "purpose": "오독방지",
+      "scene": "로컬 설치본과 브라우저 실행 글의 경계를 나누고 코드 검산 순서를 세우는 장면",
+      "keyNumbers": [
+        "DART",
+        "로컬 전용"
+      ],
+      "causalBridge": "이름 검색이 안 되는 이유를 알아야 코드 중심 실습을 고장으로 오해하지 않는다."
+    }
+  ],
+  "visuals": [
+    {
+      "actOrder": 1,
+      "kind": "diagram",
+      "title": "회사명에서 Company까지",
+      "proves": "회사명, 종목코드, Company, 재무제표가 순서대로 이어진다는 점을 보여 준다.",
+      "seriesHint": "name to code to Company route",
+      "placement": "브라우저 이름 검색 한계 설명 앞 본문 중간",
+      "insertAfter": "첫 Company.market 실행 예제 뒤",
+      "narrativeUse": "초보자가 회사명과 코드를 섞지 않고 데이터 주소로 분리해 이해하게 한다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "inline",
+      "subject": "회사명 카드가 여섯 자리 DART 종목코드로 바뀌고 Company 객체와 재무제표 격자로 이어지는 교육용 시각화",
+      "query": "company name to stock code to financial statement data grid",
+      "keywords": [
+        "DART",
+        "stock code",
+        "company data"
+      ],
+      "placement": "도입부 뒤 본문 hero 이미지",
+      "narrativeUse": "회사 이름이 아니라 코드가 분석 대상의 주소라는 글의 핵심을 시각적으로 고정한다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": [
+      "DART 종목코드",
+      "회사 종목코드",
+      "DART 공시",
+      "EDGAR 티커"
+    ],
+    "placementRule": "앞 편의 코드셀 상태를 먼저 연결하고, 종목코드 원리와 DART, EDGAR 참고글은 용어 설명 뒤에 붙인다.",
+    "links": [
+      {
+        "path": "/blog/how-notebook-runs",
+        "title": "공시 코드셀, 실행 순서",
+        "reason": "맨 위 회사 코드 셀을 바꾸고 아래를 다시 실행하는 선행 능력이다.",
+        "placement": "첫 Company 실행 직후"
+      },
+      {
+        "path": "/blog/company-one-stock-code",
+        "title": "회사 하나는 종목코드 하나",
+        "reason": "회사 이름과 코드의 차이를 더 깊게 다룬다.",
+        "placement": "코드북 설명 뒤"
+      },
+      {
+        "path": "/blog/everything-about-edgar",
+        "title": "EDGAR 전부 알기",
+        "reason": "미국 회사는 티커로 지목한다는 비교 설명을 보강한다.",
+        "placement": "미국 회사 설명 뒤"
+      }
+    ]
+  },
+  "honestyGuards": [
+    "브라우저에서는 회사 이름을 코드로 자동 변환하는 검색이 안 된다고 명시한다.",
+    "종목코드가 모든 기업 사건에서 영원히 불변인 식별자처럼 보이지 않게 주의 문장을 둔다.",
+    "코드를 맞게 입력해도 투자 판단이 자동으로 맞아지는 것은 아니라고 밝힌다."
+  ],
+  "evidenceMap": [
+    {
+      "claim": "여섯 자리 코드로 Company를 만들면 국내 DART 경로로 판정된다.",
+      "sourceType": "DARTLAB",
+      "period": "2026-07-11",
+      "sourceRef": "Company.market 실행 확인",
+      "howUsed": "첫 코드 예제와 검산 순서"
+    },
+    {
+      "claim": "국내 기업 공시 원천은 DART와 OpenDART에서 확인할 수 있다.",
+      "sourceType": "DART",
+      "period": "current",
+      "sourceRef": "DART, OpenDART",
+      "howUsed": "종목코드와 공시 원천 설명"
+    },
+    {
+      "claim": "미국 기업은 티커와 EDGAR 공시 경로로 설명해야 한다.",
+      "sourceType": "EDGAR",
+      "period": "current",
+      "sourceRef": "SEC EDGAR",
+      "howUsed": "국내 종목코드와 미국 티커의 차이 설명"
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": 1,
+          "planner": "초안은 회사 코드를 넣는 절차에 머물러 검색 사용법 문서처럼 보였다.",
+          "evaluator": "코드를 분석 대상의 주소로 가르치는 관점이 부족해 다음 커리큘럼과 연결이 약했다.",
+          "skeptic": "브라우저에서 이름 검색이 안 되는 이유를 숨기면 사용자가 고장으로 오해할 수 있다고 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 87,
+          "plannerRevision": "회사명, 코드, Company, 재무제표를 잇는 주소 모델과 브라우저 한계를 전면에 배치했다."
+        },
+        {
+          "round": 2,
+          "planner": "개선안은 코드북 실습과 같은 질문 반복으로 다음 편의 기간 격자 수업을 준비한다.",
+          "evaluator": "코드 하나를 바꿔 회사를 바꾸는 행동 검사가 명확하고 브라우저 경계도 정직하다.",
+          "skeptic": "종목코드가 영구 불변처럼 보이는 위험을 기업 사건 주의 문장으로 줄였다.",
+          "decision": "passed",
+          "evaluatorScore": 95,
+          "plannerRevision": "DART, KRX, EDGAR 참고 연결과 코드 검산 순서를 추가해 최종 통과했다."
+        }
+      ]
+    }
+  }
+}

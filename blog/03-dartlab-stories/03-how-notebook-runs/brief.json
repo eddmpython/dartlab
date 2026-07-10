@@ -1,0 +1,193 @@
+{
+  "title": "공시 코드셀, 실행 순서",
+  "titleContract": {
+    "workingTitle": "공시 코드셀, 실행 순서",
+    "selectedTitle": "공시 코드셀, 실행 순서",
+    "hookQuestion": "공시 코드셀을 왜 위에서 아래로 눌러야 할까?",
+    "readerGap": "초보자는 코드셀이 각각 따로 도는 작은 계산기라고 생각하지만 글은 같은 실행 상태를 공유한다는 개념을 알려 준다.",
+    "promise": "브라우저 노트북에서 Company와 표 변수를 만들고 다음 셀이 그 이름을 재사용하는 과정을 직접 실행하게 한다.",
+    "whySelected": "공시와 코드셀이라는 검색어에 실행 순서라는 즉시 효용을 가장 짧게 붙인다.",
+    "candidates": [
+      {
+        "title": "공시 코드셀, 실행 순서",
+        "hook": "코드 실행이 안 될 때 가장 먼저 만나는 문제를 바로 짚는다.",
+        "risk": "공시 데이터 글처럼 보이려면 dartlab 실행 예제가 충분해야 한다."
+      },
+      {
+        "title": "DART 코드셀, 브라우저 실행",
+        "hook": "DART와 브라우저 실행이라는 외부 검색어가 선명하다.",
+        "risk": "순서와 상태 공유라는 핵심이 제목에서 조금 약하다."
+      },
+      {
+        "title": "재무제표 코드셀, 다시 실행",
+        "hook": "재무제표와 재실행 문제를 한 번에 잡는다.",
+        "risk": "공시 전체보다 재무제표로 범위가 좁아 보인다."
+      }
+    ],
+    "rejectedPatterns": [
+      "코드셀 사용법 정리",
+      "노트북 사용법",
+      "브라우저 노트북 소개",
+      "실행하는 법",
+      "긴 문장형 제목"
+    ]
+  },
+  "description": "dartlab 브라우저 노트북에서 공시 코드셀을 위에서 아래로 실행하고, 앞 셀의 회사와 표 변수를 다음 셀이 어떻게 기억하는지 초보자 눈높이로 익힌다.",
+  "readerQuestion": "dartlab 글의 코드셀을 어떤 순서로 눌러야 앞 셀에서 만든 회사와 표를 다음 셀이 제대로 기억할까?",
+  "insight": {
+    "commonBelief": "코드셀은 각각 따로 실행되는 독립 계산기라서 아무 칸이나 눌러도 된다고 생각한다.",
+    "twistFact": "브라우저 노트북의 셀들은 같은 파이썬 실행 상태를 공유하므로 앞 셀에서 만든 이름을 뒤 셀이 이어 쓴다.",
+    "whatToWatch": "분석이 이상하면 데이터보다 먼저 변수 이름, 셀 실행 순서, 다시 실행 범위를 확인한다.",
+    "freshnessArgument": "1편과 2편의 사용 안내를 반복하지 않고 셀 상태 모델이라는 단독 학습 능력으로 재구성한다.",
+    "evidenceRefs": [
+      "Company.market",
+      "Company.panel",
+      "Company.select",
+      "notebookContract 게이트"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "셀은 같은 실행 상태를 공유한다",
+      "purpose": "개념전환",
+      "scene": "첫 셀에서 만든 Company 이름을 다음 셀이 그대로 받아 손익계산서를 여는 장면",
+      "keyNumbers": [
+        "005930",
+        "KR"
+      ],
+      "causalBridge": "독립 계산기라는 오해를 깨야 실행 순서가 왜 중요한지 이해한다."
+    },
+    {
+      "order": 2,
+      "heading": "위에서 아래로 실행하고 바꾸면 다시 누른다",
+      "purpose": "실습",
+      "scene": "is_와 sales 변수를 만들고 shape와 head로 같은 표를 여러 번 확인하는 장면",
+      "keyNumbers": [
+        "36 x 43",
+        "2 x 13"
+      ],
+      "causalBridge": "앞 셀 결과를 재사용하는 경험이 노트북 생성과 자기 분석으로 이어진다."
+    },
+    {
+      "order": 3,
+      "heading": "오류는 데이터보다 순서를 먼저 의심한다",
+      "purpose": "오독방지",
+      "scene": "NameError와 빈 결과, 첫 실행 지연을 구분하며 브라우저 한계를 확인하는 장면",
+      "keyNumbers": [
+        "NameError",
+        "로컬 전용"
+      ],
+      "causalBridge": "실행 모델을 알아야 다음 편에서 회사를 바꾸고 코드를 재사용할 수 있다."
+    }
+  ],
+  "visuals": [
+    {
+      "actOrder": 2,
+      "kind": "diagram",
+      "title": "코드셀 실행 상태 흐름",
+      "proves": "앞 셀의 변수와 결과가 뒤 셀에서 재사용되는 순서를 보여 준다.",
+      "seriesHint": "Company에서 panel, select로 이어지는 브라우저 노트북 상태",
+      "placement": "위에서 아래로 실행해야 하는 이유 설명 뒤 본문 중간",
+      "insertAfter": "is_.shape 실행 예제 뒤",
+      "narrativeUse": "초보자가 NameError를 데이터 문제가 아니라 실행 순서 문제로 구분하게 한다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "inline",
+      "subject": "브라우저 노트북 안에서 세 개의 코드셀이 순서대로 연결되고 재무제표 표가 열리는 교육용 작업대",
+      "query": "browser notebook code cells financial statement data grid execution order",
+      "keywords": [
+        "notebook",
+        "code cell",
+        "financial data"
+      ],
+      "placement": "도입부 뒤 본문 hero 이미지",
+      "narrativeUse": "글이 단순 API 설명이 아니라 셀 실행 흐름을 배우는 수업임을 첫 화면에서 보여 준다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": [
+      "DART 공시분석",
+      "재무제표 파이썬",
+      "Pyodide",
+      "dartlab 설치"
+    ],
+    "placementRule": "1편과 2편을 선행 학습으로 앞에 걸고, 브라우저 원리와 로컬 설치 글은 한계 설명 뒤에 붙인다.",
+    "links": [
+      {
+        "path": "/blog/what-is-dartlab",
+        "title": "DART 공시분석, 설치 없이",
+        "reason": "첫 Company 실행과 데이터 구조를 이미 세운다.",
+        "placement": "도입 첫 문단 선행 연결"
+      },
+      {
+        "path": "/blog/call-financial-statements",
+        "title": "재무제표, 파이썬 한 줄",
+        "reason": "panel과 select를 처음 만지는 선행 실습이다.",
+        "placement": "도입부 두 번째 선행 연결"
+      },
+      {
+        "path": "/blog/pyodide-dartlab-lite",
+        "title": "Pyodide로 만든 브라우저 dartlab",
+        "reason": "브라우저 안에서 파이썬이 도는 원리를 설명한다.",
+        "placement": "노트북 생성 설명 뒤"
+      }
+    ]
+  },
+  "honestyGuards": [
+    "화면 출력과 현재 변수 상태가 다를 수 있음을 본문에서 분명히 말한다.",
+    "주가와 뉴스 수집은 브라우저에서 안 되며 로컬 전용이라고 밝힌다.",
+    "셀 실행 오류를 DART 데이터 오류로 단정하지 않고 실행 순서부터 점검하게 한다."
+  ],
+  "evidenceMap": [
+    {
+      "claim": "삼성전자 Company.market 호출은 브라우저 계약 안의 공개 속성이다.",
+      "sourceType": "dartlab",
+      "period": "2026-07-11",
+      "sourceRef": "tests/audit/notebookContract.py",
+      "howUsed": "본문 첫 코드셀의 공개 호출 검증"
+    },
+    {
+      "claim": "Company.panel과 Company.select는 브라우저에서 실행 가능한 공개 메서드다.",
+      "sourceType": "DARTLAB",
+      "period": "2026-07-11",
+      "sourceRef": "operation code contract",
+      "howUsed": "실행 순서 예제의 핵심 호출"
+    },
+    {
+      "claim": "국내 공시 데이터 원천은 DART이고 미국 공시 원천은 EDGAR다.",
+      "sourceType": "DART EDGAR",
+      "period": "current",
+      "sourceRef": "DART, SEC EDGAR",
+      "howUsed": "브라우저 한계와 원천 설명"
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": 1,
+          "planner": "초안은 노트북 안내를 반복해 1편과 2편의 보조 설명처럼 보였다.",
+          "evaluator": "새 능력이 약하고 사용 안내에 머물러 커리큘럼 3편으로 독립하기 어렵다고 판단했다.",
+          "skeptic": "코드셀 사용법이라는 제목이면 소개형 문서로 퇴행할 위험이 있다고 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 86,
+          "plannerRevision": "셀들이 같은 실행 상태를 공유한다는 개념 하나로 글의 중심을 다시 잡았다."
+        },
+        {
+          "round": 2,
+          "planner": "개선안은 Company, panel, select 변수를 순서대로 만들고 재실행 원칙을 설명한다.",
+          "evaluator": "1편과 2편을 반복하지 않고 실행 상태와 오류 해석을 새 능력으로 제공한다.",
+          "skeptic": "브라우저 한계와 화면 기록, 현재 변수 상태의 차이를 밝히므로 초보자 오해를 줄인다.",
+          "decision": "passed",
+          "evaluatorScore": 94,
+          "plannerRevision": "오류 유형과 노트북 생성 설명을 추가해 다음 편의 종목코드 수업으로 연결했다."
+        }
+      ]
+    }
+  }
+}
