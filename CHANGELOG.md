@@ -33,6 +33,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `define` operand 의 NaN · 무한대 오염 차단(zscore · winsorize 전멸 버그).
 - 서술표 지표 정확도(다중단위 leaf 오판 + 매출대비 이상치 컷).
 - 주말 스냅샷 잠복 결함(일별 raw 에서 주간 판독 5 배 중복, KR/US 동시).
+- 다운로드 카탈로그 미러 드리프트. `dart/ipo` · `expectations` 두 public dir 이 브라우저 미러와 라이브 워커 allowlist 에 빠져 있어 라이브 API 에서 404 였다.
+
+### Security
+
+- `esbuild` 0.28.1 (GHSA-g7r4-m6w7-qqqr, Windows 개발서버 경로 순회) · `dompurify` 3.4.11 (GHSA-cmwh-pvxp-8882).
+- `pandera` 상한을 `<0.33` 으로 풀되 `!=0.32.0` 을 박았다. 0.32.0 은 polars 백엔드가 `pa.Field(isin=...)` 빌트인 체크를 등록하지 않아 class 정의 시점에 `KeyError` 를 낸다. 0.32.1 에서 고쳐졌다.
+- `mcp` 상한 `<1.28.2` · `pyarrow` 24.0.0 · 개발 의존성 6 종 상향. `tests/run.py` 가 따로 박고 있던 pandera · mcp 핀을 pyproject 와 맞춰 CI 가 실제 범위를 검증하게 했다.
 
 ### Removed
 
