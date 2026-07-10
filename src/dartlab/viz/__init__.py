@@ -106,7 +106,6 @@ from dartlab.viz.generators import (  # noqa: F401
     specRevenueScenarioBand,
     specRevenueTrend,
     specSensitivityHeatmap,
-    specSixActRadar,
 )
 from dartlab.viz.layout import (  # noqa: F401
     BLOCKS,

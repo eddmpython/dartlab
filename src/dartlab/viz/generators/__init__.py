@@ -30,7 +30,6 @@ from dartlab.viz.generators.core import (
     specRevenueScenarioBand,
     specRevenueTrend,
     specSensitivityHeatmap,
-    specSixActRadar,
 )
 
 __all__ = [
@@ -58,5 +57,4 @@ __all__ = [
     "specRevenueScenarioBand",
     "specRevenueTrend",
     "specSensitivityHeatmap",
-    "specSixActRadar",
 ]

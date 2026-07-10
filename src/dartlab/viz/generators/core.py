@@ -781,53 +781,6 @@ def specRevenueScenarioBand(history: list[dict], forecasts: dict | None) -> dict
 # ── Phase 1.5 신규 chartType 8 종 ─────────────────────────────────────────
 
 
-def specSixActRadar(
-    score: dict[str, float],
-    *,
-    stockCode: str,
-    corpName: str = "",
-    evidence: dict[str, list[str]] | None = None,
-) -> dict | None:
-    """6 막 인과 (macro·sector·firm·financial·value·risk) 종합 점수 레이더.
-
-    score: ``{"macro": 0..100, "sector": ..., "firm": ..., "financial": ...,
-              "value": ..., "risk": ...}``
-    evidence: 축별 evidenceIds (story.sixActScore 결과의 axis evidence).
-    """
-    if not score:
-        return None
-    axes_order = ["macro", "sector", "firm", "financial", "value", "risk"]
-    labels = {
-        "macro": "거시",
-        "sector": "산업",
-        "firm": "기업",
-        "financial": "재무",
-        "value": "가치",
-        "risk": "리스크",
-    }
-    data = [_safeVal(score.get(k)) for k in axes_order]
-    categories = [labels[k] for k in axes_order]
-    evidence_ids = []
-    for k in axes_order:
-        evidence_ids.extend((evidence or {}).get(k, []))
-    return {
-        "chartType": "six-act-radar",
-        "title": f"{corpName or stockCode} 6 막 종합 점수",
-        "series": [{"name": corpName or stockCode, "data": data, "color": COLORS[0]}],
-        "categories": categories,
-        "options": {"unit": "점", "maxValue": 100},
-        "purpose": "comparison",
-        "evidenceIds": evidence_ids or ["story:sixAct"],
-        "meta": {"source": "story/sixAct", "statement": "RADAR"},
-        "evidenceBinding": chartEvidenceBinding(
-            stockCode=stockCode,
-            source="story",
-            topic="sixAct",
-            extra={"axes": axes_order, "axisLabels": labels},
-        ),
-    }
-
-
 def specPeerMatrix(
     rows: list[dict],
     metrics: list[str],
