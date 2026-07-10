@@ -54,26 +54,37 @@ _ALLOWED_ATTRS = {"corpName", "market", "code", "name", "stockCode"}
 _BANNED_PREFIXES = ("getDefault", "_")
 
 
+def _engineFolders() -> set[str]:
+    """엔진 = ``src/dartlab/<엔진>/`` 폴더가 실재하는 것 (CLAUDE.md 강행규칙).
+
+    폴더 없는 spec (dashboard · data · edgar · mappers · panel · search) 은 설명 문서일 뿐
+    엔진이 아니다. 그 spec 의 capabilityRefs 는 계약이 아니다.
+    """
+    pkg = _REPO / "src" / "dartlab"
+    return {d.name for d in _ENGINE_SPECS.iterdir() if d.is_dir() and (pkg / d.name).is_dir()}
+
+
 def _loadContract() -> tuple[set[str], set[str]]:
     """계약 집합을 정본에서 읽는다 (dartlab import 없이 정적으로).
+
+    Company 파사드의 계약 메서드 = ``engines/company/SKILL.md`` 의 capabilityRefs + 엔진명 메서드.
+    하위 spec 페이지가 자기 capabilityRefs 에 ``Company.audit`` 같은 내부 메서드를 등재해도
+    계약이 아니다 (세부 호출계약 금지). ``Company.view`` (dashboard) 처럼 폴더 없는 spec 이
+    올린 것도 계약이 아니다.
 
     Returns
     -------
     tuple[set[str], set[str]]
         (``Company.{method}`` 허용 집합, 톱레벨 ``dartlab.X`` 허용 집합)
     """
-    companyMethods: set[str] = set()
-    for specDir in sorted(_ENGINE_SPECS.iterdir()):
-        spec = specDir / "SKILL.md"
-        if not spec.is_file():
-            continue
-        parts = spec.read_text(encoding="utf-8").split("---")
-        if len(parts) < 3:
-            continue
-        frontmatter = yaml.safe_load(parts[1]) or {}
-        for ref in frontmatter.get("capabilityRefs") or []:
-            if ref.startswith("Company."):
-                companyMethods.add(ref.split(".", 1)[1])
+    engines = _engineFolders()
+    companyMethods: set[str] = set(engines)  # Company.{엔진명} (analysis · credit · gather · ...)
+    companySpec = _ENGINE_SPECS / "company" / "SKILL.md"
+    parts = companySpec.read_text(encoding="utf-8").split("---")
+    frontmatter = yaml.safe_load(parts[1]) if len(parts) >= 3 else {}
+    for ref in (frontmatter or {}).get("capabilityRefs") or []:
+        if ref.startswith("Company."):
+            companyMethods.add(ref.split(".", 1)[1])
 
     # 톱레벨 공개 표면 = `__all__`. dartlab 을 import 하면 회사 한 곳당 수백 MB 라
     # (CLAUDE.md 메모리 가드) 게이트는 소스를 ast 로만 읽는다.

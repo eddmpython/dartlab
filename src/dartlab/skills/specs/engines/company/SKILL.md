@@ -95,7 +95,7 @@ examples:
   - 기간 간 텍스트 변화 (diff) 추적
 procedure:
   - dartlab.Company(code) 로 종목코드 또는 ticker 로 facade 생성.
-  - c.topics 로 사용 가능한 topic 확인.
+  - 정식 topic 은 IS · BS · CF · CIS · SCE · ratios. 주석은 섹션명으로 검색.
   - c.panel(topic) 으로 단일 topic 본문 (source priority — finance > report > docs).
   - 깊이 분석은 c.analysis · c.credit · c.quant · c.macro · c.story 같은 하위 엔진.
   - 답변에 target · period · topic · tableRef · valueRef · dateRef · executionRef 묶음.
@@ -199,7 +199,7 @@ Company 생성 시 target과 market/provider를 확정한다. 이후 `show/selec
 | table/topics/sources/index/facts | 탐색 메타 | `c.index()` |
 | retrievalBlocks/contextSlices/ask | AI 컨텍스트/질의 | `c.ask("질문")` |
 | sector/rank/audit/market/currency/fiscalYearEnd | 회사 메타/검증 | `c.market()` |
-| network/governance/workforce/capital/debt | scan view 연결 | `c.governance()` |
+| network/governance/workforce/capital/debt | scan view 연결 | `dartlab.scan("governance")` |
 | causalWeights/valuationImpact/industry/view | story/industry/view 연결 | `c.industry()` |
 
 ## 대표 반환 형태
@@ -282,7 +282,7 @@ Polars = 네이티브 Rust 힙, `gc.collect()` 회수 불가, Company 1 개 ≈ 
 
 ## 엔진 역할
 
-Company panel internals 는 DART 본문을 `panel` 산출물로 읽는 내부 추적 skill 이다. 공개 사용자 API 는 `c.topics` / `c.panel(topic)` 이고, 서버/뷰어/AI 는 동일한 panel artifact 를 읽는다.
+Company panel internals 는 DART 본문을 `panel` 산출물로 읽는 내부 추적 skill 이다. 공개 사용자 API 는 `c.panel` / `c.panel(topic)` 이고, 서버/뷰어/AI 는 동일한 panel artifact 를 읽는다.
 
 ## 공개 호출 방식
 

@@ -43,9 +43,9 @@ outputs:
   - 관련 sub-skill 링크
 capabilityRefs:
   - Company.disclosure
-  - Company.governance
-  - Company.topics
-  - Company.audit
+  - Company.analysis
+  - Company.panel
+  - Company.panel
   - Company.readFiling
   - Company.panel
 knowledgeRefs:
@@ -84,7 +84,7 @@ forbidden:
   - apiRef 매핑 없이 한국 공시 질문을 일반 EngineCall 로 처리하지 않는다
   - DART rceptNo 또는 section ref 없이 한국 공시 숫자/본문을 인용하지 않는다
 examples:
-  - 삼성전자 사외이사 비율 - Company.governance
+  - 삼성전자 사외이사 비율 - `c.analysis("governance", "지배구조")`
   - NAVER 임원 5억 이상 보수 - Company.disclosure(category=임원변동) + 후속 panel
   - 삼성그룹 관계자거래 100억 이상 - Company.disclosure(category=대규모기업집단현황공시)
   - 005930 메모리 ASP 분기 추세 - Company.panel("businessOverview") + topic query 사업의 내용
@@ -105,7 +105,7 @@ import dartlab
 c = dartlab.Company("005930")
 
 # 지배구조
-gov = c.governance()
+gov = c.analysis("governance", "지배구조")
 
 # 공시 이벤트 (임원변동 · 주요사항)
 events = c.disclosure(category="임원변동")
@@ -114,7 +114,7 @@ events = c.disclosure(category="임원변동")
 narrative = c.panel("businessOverview")
 
 # 감사보고서
-audit = c.audit()
+audit = c.panel("감사")
 
 # 별도 vs 연결
 sep = c.panel("IS", basis="separate")
@@ -133,10 +133,10 @@ con = c.panel("IS", basis="consolidated")
 
 | 한국 공시 종류 | apiRef | 반환 dtype | 핵심 필드 |
 |---|---|---|---|
-| 기업지배구조보고서 (15 핵심지표) | `Company.governance` | dict | board · audit · disclosure 분기 |
+| 기업지배구조보고서 (15 핵심지표) | `c.analysis("governance", "지배구조")` | dict | board · audit · disclosure 분기 |
 | 임원 변동 · 5억 이상 보수 | `Company.disclosure(category="임원변동")` | DataFrame | rceptNo · filedAt · title · formType |
 | 사업보고서 II 항 segment narrative | `Company.panel("businessOverview")` | DataFrame | period · topic · content · sourceRef |
-| 감사보고서 | `Company.audit` | dict | auditor · opinion · keyAuditMatters |
+| 감사보고서 | `c.panel("감사")` | dict | auditor · opinion · keyAuditMatters |
 | 별도재무제표 (parent-only) | `Company.panel("IS", basis="separate")` | DataFrame | account · value · period |
 | 연결재무제표 | `Company.panel("IS", basis="consolidated")` | DataFrame | account · value · period · subsidiary |
 

@@ -109,10 +109,10 @@ from dartlab.viz.generators import specBalanceStructureTrend
 
 c = dartlab.Company("005930")
 
-# dashboard/model 경로가 만든 BalanceStructureView 를 우선 사용한다.
-# view 는 periods, totalAssetsSeries, totalFundingSeries,
-# assetTrendParts, fundingTrendParts, equityTrendParts 를 포함해야 한다.
-view = c.view()  # 로컬 대시보드(engines.dashboard 계약)
+# view 는 내부 dashboard/model 경로가 만드는 BalanceStructureView 다.
+# periods, totalAssetsSeries, totalFundingSeries, assetTrendParts,
+# fundingTrendParts, equityTrendParts 를 포함해야 한다.
+# 공개 호출 계약이 아니다. 호출자가 이미 손에 쥔 view 를 넘긴다.
 
 spec = specBalanceStructureTrend(
     view,

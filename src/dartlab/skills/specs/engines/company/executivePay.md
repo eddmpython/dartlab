@@ -5,7 +5,7 @@ kind: curated
 scope: builtin
 status: observed
 category: engines
-purpose: Company.executivePay — 임원 보수 ≥ 5억 원 individual 공개 (자본시장법 §159, 2013-11-29 시행). US proxy NEO-5 와 달리 등기/미등기/퇴직 전원 공개. 급여 / 상여 / 주식매수선택권 행사이익 / 기타근로소득 / 퇴직소득 분해.
+purpose: 임원 보수 판독 — 임원 보수 ≥ 5억 원 individual 공개 (자본시장법 §159, 2013-11-29 시행). US proxy NEO-5 와 달리 등기/미등기/퇴직 전원 공개. 급여 / 상여 / 주식매수선택권 행사이익 / 기타근로소득 / 퇴직소득 분해.
 whenToUse:
   - 임원 보수
   - 5억 이상 보수
@@ -24,9 +24,7 @@ outputs:
   - ExecutivePayResult (payByType DataFrame + topPay DataFrame)
   - DART 사업보고서 rceptNo + section sourceRef
 capabilityRefs:
-  - Company.executivePay
-  - Company.disclosure
-  - Company.governance
+  - Company.panel
 knowledgeRefs:
   - engines.company
   - engines.company.koreanDisclosure
@@ -61,15 +59,15 @@ forbidden:
   - rceptNo 또는 section paragraph 의 sourceRef 없이 임원 보수 수치 인용 금지
   - 상위 보수 list 전체 dump (답변 본문 상위 5~10 명만)
 examples:
-  - 삼성전자 임원 보수 - Company.executivePay
-  - 5억 이상 임원 명단 - Company.executivePay + topPay 인용
-  - 퇴직 임원 보수 - Company.executivePay + payByType filter 구분 퇴직
-  - NAVER 미등기 임원 보수 분포 - Company.executivePay + topPay 의 미등기 필터
-  - 카카오 스톡옵션 행사이익 - Company.executivePay + payByType 주식매수선택권 행사이익
-  - 현대차 대표이사 산정기준 narrative - Company.executivePay + topPay 산정기준
+  - 삼성전자 임원 보수 - `c.panel("임원")`
+  - 5억 이상 임원 명단 - `c.panel("임원")` 상위 보수 행
+  - 퇴직 임원 보수 - `c.panel("임원")` 퇴직 보수 행
+  - NAVER 미등기 임원 보수 분포 - `c.panel("임원")` 미등기 임원 행
+  - 카카오 스톡옵션 행사이익 - `c.panel("임원")` 주식매수선택권 행사이익 행
+  - 현대차 대표이사 산정기준 narrative - `c.panel("임원")` 산정기준 행
 procedure:
   - 종목코드 - Company 객체 생성
-  - c.executivePay() 호출
+  - c.panel("임원") 호출
   - payByType (등기/미등기/퇴직) 분해 확인
   - topPay 상위 보수 + 산정기준 narrative 추적
   - rceptNo + section sourceRef 답변 본문 인용
@@ -82,10 +80,8 @@ import dartlab
 
 c = dartlab.Company("005930")
 
-pay = c.executivePay()
-if pay is not None:
-    print(pay.payByType)   # 등기/미등기/퇴직 분해
-    print(pay.topPay)      # 상위 보수 list (성명/직위/총액/산정기준)
+# 임원 보수 본문 (등기/미등기/퇴직 분해 · 상위 보수 · 산정기준)
+c.panel("임원")
 ```
 
 ## 호출 동작
@@ -123,5 +119,5 @@ ExecutivePayResult:
 - 모든 임원 보수 수치 claim 은 DART 사업보고서 rceptNo + section paragraph 의 sourceRef 에 묶는다.
 - 상위 보수 list 전체 dump 금지 — 답변 본문 상위 5~10 명만 인용 + 산정기준 narrative 동반.
 - 등기 vs 미등기 분리 미확인 시 답변 본문에서 "전체 임원 보수" 라 단정 X (한국 unique: 미등기/퇴직 포함 공개).
-- Company.executivePay() docstring 변경 시 본 skill 의 capabilityRefs · examples · 반환 형태 동기화.
+- 임원 보수 파서(providers/dart) 변경 시 본 skill 의 examples · 반환 형태 동기화.
 - 한국 직책 (대표이사/부회장/사장/전무/상무/이사) 정규화 없이 회사 간 보수 비교 금지.

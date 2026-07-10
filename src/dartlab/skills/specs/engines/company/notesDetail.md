@@ -5,7 +5,7 @@ kind: curated
 scope: builtin
 status: observed
 category: engines
-purpose: Company.notesDetail — K-IFRS 주석 세부항목 (리스 약정 · 우발채무 · 퇴직급여 가정 · 파생 등 23 NOTES_KEYWORDS). audit-grade citation 의 핵심 evidence layer. footnote-grade Q&A 의 raw 데이터 (Bloomberg/FactSet 미보유 영역).
+purpose: 주석 세부항목 판독 — K-IFRS 주석 세부항목 (리스 약정 · 우발채무 · 퇴직급여 가정 · 파생 등 23 NOTES_KEYWORDS). audit-grade citation 의 핵심 evidence layer. footnote-grade Q&A 의 raw 데이터 (Bloomberg/FactSet 미보유 영역).
 whenToUse:
   - 주석
   - K-IFRS 주석
@@ -31,9 +31,7 @@ outputs:
   - NotesDetailResult (corpName + tables dict)
   - DART 정기보고서 docs rceptNo + section sourceRef
 capabilityRefs:
-  - Company.notesDetail
   - Company.panel
-  - Company.disclosure
 knowledgeRefs:
   - engines.company
   - engines.company.koreanDisclosure
@@ -71,15 +69,15 @@ forbidden:
   - rceptNo 또는 section paragraph 의 sourceRef 없이 주석 line-item 인용 금지
   - 주석 본문 narrative 는 wrapExternalInResult untrusted marker 강제
 examples:
-  - 삼성전자 리스 약정 - c.notesDetail("리스")
-  - LG에너지솔루션 우발채무 5 년 - c.notesDetail("우발")
-  - 셀트리온 퇴직급여 가정 - c.notesDetail("퇴직급여")
-  - 현대차 파생금융상품 - c.notesDetail("파생")
-  - LG화학 영업권 손상 - c.notesDetail("영업권")
+  - 삼성전자 리스 약정 - c.panel("주석") 에서 리스 섹션
+  - LG에너지솔루션 우발채무 5 년 - c.panel("주석") 에서 우발채무 섹션
+  - 셀트리온 퇴직급여 가정 - c.panel("주석") 에서 퇴직급여 섹션
+  - 현대차 파생금융상품 - c.panel("주석") 에서 파생 섹션
+  - LG화학 영업권 손상 - c.panel("주석") 에서 영업권 섹션
 procedure:
   - 종목코드 - Company 객체 생성
   - keyword 결정 (NOTES_KEYWORDS 23 종 중 하나)
-  - c.notesDetail(keyword, period) 호출
+  - c.panel("주석") 또는 c.panel(섹션명) 호출
   - tables dict 의 keyword 별 NotesPeriod list 확인
   - 최근 5 년 historical panel 추적 + line-item 본문 추출
   - rceptNo + section sourceRef 답변 본문 인용
@@ -92,18 +90,11 @@ import dartlab
 
 c = dartlab.Company("005930")
 
-# 리스 약정 5 년 panel (연간)
-lease = c.notesDetail("리스")
+# 주석 본문 전체 (항목 x 기간 격자의 주석 구획)
+c.panel("주석")
 
-# 우발채무 (분기)
-contingent = c.notesDetail("우발", "q")
-
-# 퇴직급여 가정 (반기)
-pension = c.notesDetail("퇴직급여", "h")
-
-if lease is not None:
-    for period in lease.tables["리스"]:
-        print(period.year, period.items)
+# 섹션명으로 좁히기
+c.panel("재고")
 ```
 
 ## 호출 동작
@@ -138,5 +129,5 @@ NotesDetailResult:
 - 5 년 panel 전체 dump 금지 — 답변 본문 상위 3~5 년만 인용 + 추세 narrative 동반.
 - NOTES_KEYWORDS 23 종 밖 keyword 호출 시 None 반환 — 답변 본문에서 "데이터 없음" 명시 (추정 금지).
 - 주석 양식 분기별 미세 변경 (XBRL tag rename · 항목 통합) 인지 — narrative drift 비교 시 회귀 가드 강제.
-- Company.notesDetail() docstring 변경 시 본 skill 의 capabilityRefs · examples · 반환 형태 동기화.
+- 주석 파서(providers/dart) 변경 시 본 skill 의 examples · 반환 형태 동기화.
 - 주석 본문 narrative 인용 시 wrapExternalInResult 의 untrusted marker 자동 박힘 확인 (외부 본문 untrusted tier).

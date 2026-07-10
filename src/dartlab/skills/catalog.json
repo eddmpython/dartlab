@@ -323,7 +323,7 @@
       ],
       "procedure": [
         "dartlab.Company(code) 로 종목코드 또는 ticker 로 facade 생성.",
-        "c.topics 로 사용 가능한 topic 확인.",
+        "정식 topic 은 IS · BS · CF · CIS · SCE · ratios. 주석은 섹션명으로 검색.",
         "c.panel(topic) 으로 단일 topic 본문 (source priority — finance > report > docs).",
         "깊이 분석은 c.analysis · c.credit · c.quant · c.macro · c.story 같은 하위 엔진.",
         "답변에 target · period · topic · tableRef · valueRef · dateRef · executionRef 묶음."
@@ -386,13 +386,13 @@
     },
     {
       "id": "engines.company.audit",
-      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n\n# 최신 감사보고서\naudit = c.audit()\nprint(audit[\"opinion\"])           # \"적정\" | \"한정\" | \"부적정\" | \"의견거절\"\nprint(audit[\"auditor\"])           # 외부감사인 (삼일·삼정·안진·한영 등)\nprint(audit[\"keyAuditMatters\"])   # KAM 본문 list\nprint(audit[\"goingConcernFlag\"])  # bool — 계속기업 가정 의문\n\n# 5 년 추세\naudits = [c.audit(period=str(y)) for y in range(2020, 2026)]\nopinions = [a[\"opinion\"] for a in audits]\n```\n\n## 호출 동작\n\n- target = DART 종목코드 (KOSPI/KOSDAQ) 또는 ticker (EDGAR — 미국 audit report 도 별도 양식). 한국 감사보고서 = 한국공인회계사회 표준 양식.\n- period 미명시 = 최신 회계연도. 명시 = 해당 회계연도.\n- 반환 dict 의 key 5 종 (auditor · opinion · keyAuditMatters · emphasisOfMatter · goingConcernFlag).\n- KAM (핵심감사사항) 은 K-IFRS 1701 도입 (2018-) 후 의무. 자유 narrative · 표준 카테고리 X.\n- 외부감사인 변경 이력 = audit dict 의 historical sub-key 또는 별도 Company.disclosure(category=\"감사인변경\") 호출.\n\n## 대표 반환 형태\n\n```\n{\n  \"period\": \"2025\",\n  \"auditor\": str,              # \"삼일회계법인\" 등\n  \"opinion\": str,              # \"적정\" | \"한정\" | \"부적정\" | \"의견거절\"\n  \"keyAuditMatters\": [\n    {\n      \"title\": str,\n      \"description\": str,      # 자유 narrative\n      \"auditResponse\": str,\n      \"rceptNo\": str,\n      \"sourceRef\": dict\n    }\n  ],\n  \"emphasisOfMatter\": str | None,\n  \"goingConcernFlag\": bool,\n  \"auditorChange\": dict | None  # 직전 회계연도 변경 시\n}\n```\n\n## 기본 검증\n\n- 감사 의견 (적정/한정/부적정/의견거절) 의 4 분류는 한국공인회계사회 표준 SSOT. 영문 unqualified/qualified/adverse/disclaimer 와 1:1 매핑 가능하나 자유 번역 금지.\n- KAM 본문은 한국어 원문 보존 (`wrapExternalInResult` untrusted marker 자동).\n-",
+      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n\n# 감사보고서 본문 (섹션명 검색)\nc.panel(\"감사\")\n\n# 한 회사의 감사 서사 보고서\nc.story(type=\"audit\")\n\n# 감사 리스크를 전상장사 횡단으로 (감사의견 · 감사인변경 · 특기사항 · 감사독립성비율)\ndartlab.scan(\"audit\")\n```\n\n## 호출 동작\n\n- target = DART 종목코드 (KOSPI/KOSDAQ) 또는 ticker (EDGAR — 미국 audit report 도 별도 양식). 한국 감사보고서 = 한국공인회계사회 표준 양식.\n- period 미명시 = 최신 회계연도. 명시 = 해당 회계연도.\n- 반환 dict 의 key 5 종 (auditor · opinion · keyAuditMatters · emphasisOfMatter · goingConcernFlag).\n- KAM (핵심감사사항) 은 K-IFRS 1701 도입 (2018-) 후 의무. 자유 narrative · 표준 카테고리 X.\n- 외부감사인 변경 이력 = `dartlab.scan(\"audit\")` 의 감사인변경 컬럼.\n\n## 대표 반환 형태\n\n```\n{\n  \"period\": \"2025\",\n  \"auditor\": str,              # \"삼일회계법인\" 등\n  \"opinion\": str,              # \"적정\" | \"한정\" | \"부적정\" | \"의견거절\"\n  \"keyAuditMatters\": [\n    {\n      \"title\": str,\n      \"description\": str,      # 자유 narrative\n      \"auditResponse\": str,\n      \"rceptNo\": str,\n      \"sourceRef\": dict\n    }\n  ],\n  \"emphasisOfMatter\": str | None,\n  \"goingConcernFlag\": bool,\n  \"auditorChange\": dict | None  # 직전 회계연도 변경 시\n}\n```\n\n## 기본 검증\n\n- 감사 의견 (적정/한정/부적정/의견거절) 의 4 분류는 한국공인회계사회 표준 SSOT. 영문 unqualified/qualified/adverse/disclaimer 와 1:1 매핑 가능하나 자유 번역 금지.\n- KAM 본문은 한국어 원문 보존 (`wrapExternalInResult` untrusted marker 자동).\n- goingConcernFlag = True 만으로 부도 예측 결론 X — Company.credit 의 Altman Z-score · KMV 모델 추가 호출 필수.\n- 외부감사인 변경 (직전 5 년 내 2 회+) = audit shopping 신호 — Company.disclosure(category=\"감사인변경\") 본문 추가 확인.\n- 감사 파서(providers/dart) 변경 시 본 skill 의 반환 형태 동기화.",
       "title": "Company Audit (감사보고서)",
       "category": "engines",
       "categoryTitle": "Engines",
       "kind": "curated",
       "status": "observed",
-      "purpose": "Company.audit — DART 감사보고서 (auditor opinion · key audit matters · 강조사항 · 계속기업 가정 의문) 파싱. 외부감사인 의견 + KAM (핵심감사사항) 추출로 부도 위험 사전 감지.",
+      "purpose": "감사 리스크 판독 — DART 감사보고서 (auditor opinion · key audit matters · 강조사항 · 계속기업 가정 의문) 파싱. 외부감사인 의견 + KAM (핵심감사사항) 추출로 부도 위험 사전 감지.",
       "whenToUse": [
         "감사보고서",
         "audit report",
@@ -418,8 +418,9 @@
         "DART rceptNo + section sourceRef"
       ],
       "apiRefs": [
-        "Company.audit",
-        "Company.disclosure"
+        "Company.panel",
+        "Company.story",
+        "scan"
       ],
       "toolRefs": [],
       "datasetRefs": [],
@@ -438,10 +439,10 @@
       ],
       "procedure": [
         "종목코드 → Company 객체 생성",
-        "Company.audit() 호출 (선택 period = 회계연도)",
-        "opinion 확인 (적정/한정/부적정/의견거절 4 분류)",
-        "keyAuditMatters 본문 추적 (자유 narrative)",
-        "goingConcernFlag 확인 — True 면 추가 분석 (Company.credit · Altman Z-score)"
+        "c.panel(\"감사\") 로 감사보고서 본문 열기",
+        "감사의견 확인 (적정/한정/부적정/의견거절 4 분류)",
+        "KAM 본문 추적 (자유 narrative)",
+        "계속기업 가정 의문 확인. 있으면 추가 분석 (Company.credit · Altman Z-score)"
       ],
       "recipeSteps": [],
       "requiredEvidence": [
@@ -467,12 +468,12 @@
         "감사보고서 narrative 는 wrapExternalInResult 의 untrusted marker 강제"
       ],
       "examples": [
-        "005930 최신 감사보고서 의견 - Company.audit + opinion key",
-        "셀트리온 계속기업 가정 의문 flag 5 년 추세 - Company.audit + goingConcernFlag + period loop",
-        "카카오 핵심감사사항 (KAM) 카테고리 분포 - Company.audit + keyAuditMatters",
-        "POSCO 외부감사인 변경 이력 - Company.audit + auditorChange + Company.disclosure 감사인변경",
-        "LG에너지솔루션 KAM 본문 5 년 - Company.audit + keyAuditMatters per period",
-        "한진 한정 의견 종목 스크리닝 - Company.audit + opinion filter"
+        "005930 최신 감사보고서 의견 - `c.panel(\"감사\")` 본문에서 감사의견",
+        "셀트리온 계속기업 가정 의문 flag 5 년 추세 - `c.panel(\"감사\")` 기간별 계속기업 문단",
+        "카카오 핵심감사사항 (KAM) 카테고리 분포 - `c.panel(\"감사\")` KAM 본문",
+        "POSCO 외부감사인 변경 이력 - `dartlab.scan(\"audit\")` 감사인변경 컬럼",
+        "LG에너지솔루션 KAM 본문 5 년 - `c.panel(\"감사\")` 기간별 KAM 본문",
+        "한진 한정 의견 종목 스크리닝 - `dartlab.scan(\"audit\")` 감사의견 필터"
       ],
       "runtimeCompatibility": {
         "server": {
@@ -628,13 +629,13 @@
     },
     {
       "id": "engines.company.executivePay",
-      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n\npay = c.executivePay()\nif pay is not None:\n    print(pay.payByType)   # 등기/미등기/퇴직 분해\n    print(pay.topPay)      # 상위 보수 list (성명/직위/총액/산정기준)\n```\n\n## 호출 동작\n\n- target = DART 종목코드 (KOSPI/KOSDAQ). 한국 공시 한정.\n- DART 사업보고서 의 임원 보수 섹션 자동 파싱.\n- 반환 = ExecutivePayResult dataclass — payByType DataFrame (집계) + topPay DataFrame (개별).\n- 데이터 없거나 5억 미만 회사 (대부분 KOSDAQ 소형주) → None 반환.\n- 산정기준 narrative (스톡옵션 행사 timing · 상여 산정 룰 등) = 보수 메커니즘 추적 evidence.\n\n## 대표 반환 형태\n\n```\nExecutivePayResult:\n  payByType : pl.DataFrame\n    구분 : str              # \"등기\" / \"미등기\" / \"퇴직\"\n    급여 : Float64           # 백만 원\n    상여 : Float64\n    주식매수선택권 행사이익 : Float64\n    기타근로소득 : Float64\n    퇴직소득 : Float64\n    기타 : Float64\n  topPay : pl.DataFrame\n    성명 : str\n    직위 : str               # \"대표이사\" / \"사외이사\" / 등\n    보수총액 : Float64       # 백만 원\n    근로소득 : Float64\n    퇴직소득 : Float64\n    기타 : Float64\n    산정기준 : str           # narrative (스톡옵션 행사 timing · 상여 룰 등)\n```\n\n## 기본 검증\n\n- 모든 임원 보수 수치 claim 은 DART 사업보고서 rceptNo + section paragraph 의 sourceRef 에 묶는다.\n- 상위 보수 list 전체 dump 금지 — 답변 본문 상위 5~10 명만 인용 + 산정기준 narrative 동반.\n- 등기 vs 미등기 분리 미확인 시 답변 본문에서 \"전체 임원 보수\" 라 단정 X (한국 unique: 미등기/퇴직 포함 공개).\n- Company.executivePay() docstring 변경 시 본 skill 의 capabilityRefs · examples · 반환 형태 동기화.\n- 한국 직책 (대표이사/부회장/사장/전무/상무/이사) 정규화 없이 회사 간 보수 비교 금지.",
+      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n\n# 임원 보수 본문 (등기/미등기/퇴직 분해 · 상위 보수 · 산정기준)\nc.panel(\"임원\")\n```\n\n## 호출 동작\n\n- target = DART 종목코드 (KOSPI/KOSDAQ). 한국 공시 한정.\n- DART 사업보고서 의 임원 보수 섹션 자동 파싱.\n- 반환 = ExecutivePayResult dataclass — payByType DataFrame (집계) + topPay DataFrame (개별).\n- 데이터 없거나 5억 미만 회사 (대부분 KOSDAQ 소형주) → None 반환.\n- 산정기준 narrative (스톡옵션 행사 timing · 상여 산정 룰 등) = 보수 메커니즘 추적 evidence.\n\n## 대표 반환 형태\n\n```\nExecutivePayResult:\n  payByType : pl.DataFrame\n    구분 : str              # \"등기\" / \"미등기\" / \"퇴직\"\n    급여 : Float64           # 백만 원\n    상여 : Float64\n    주식매수선택권 행사이익 : Float64\n    기타근로소득 : Float64\n    퇴직소득 : Float64\n    기타 : Float64\n  topPay : pl.DataFrame\n    성명 : str\n    직위 : str               # \"대표이사\" / \"사외이사\" / 등\n    보수총액 : Float64       # 백만 원\n    근로소득 : Float64\n    퇴직소득 : Float64\n    기타 : Float64\n    산정기준 : str           # narrative (스톡옵션 행사 timing · 상여 룰 등)\n```\n\n## 기본 검증\n\n- 모든 임원 보수 수치 claim 은 DART 사업보고서 rceptNo + section paragraph 의 sourceRef 에 묶는다.\n- 상위 보수 list 전체 dump 금지 — 답변 본문 상위 5~10 명만 인용 + 산정기준 narrative 동반.\n- 등기 vs 미등기 분리 미확인 시 답변 본문에서 \"전체 임원 보수\" 라 단정 X (한국 unique: 미등기/퇴직 포함 공개).\n- 임원 보수 파서(providers/dart) 변경 시 본 skill 의 examples · 반환 형태 동기화.\n- 한국 직책 (대표이사/부회장/사장/전무/상무/이사) 정규화 없이 회사 간 보수 비교 금지.",
       "title": "Company Executive Pay",
       "category": "engines",
       "categoryTitle": "Engines",
       "kind": "curated",
       "status": "observed",
-      "purpose": "Company.executivePay — 임원 보수 ≥ 5억 원 individual 공개 (자본시장법 §159, 2013-11-29 시행). US proxy NEO-5 와 달리 등기/미등기/퇴직 전원 공개. 급여 / 상여 / 주식매수선택권 행사이익 / 기타근로소득 / 퇴직소득 분해.",
+      "purpose": "임원 보수 판독 — 임원 보수 ≥ 5억 원 individual 공개 (자본시장법 §159, 2013-11-29 시행). US proxy NEO-5 와 달리 등기/미등기/퇴직 전원 공개. 급여 / 상여 / 주식매수선택권 행사이익 / 기타근로소득 / 퇴직소득 분해.",
       "whenToUse": [
         "임원 보수",
         "5억 이상 보수",
@@ -657,9 +658,7 @@
         "DART 사업보고서 rceptNo + section sourceRef"
       ],
       "apiRefs": [
-        "Company.executivePay",
-        "Company.disclosure",
-        "Company.governance"
+        "Company.panel"
       ],
       "toolRefs": [],
       "datasetRefs": [],
@@ -678,7 +677,7 @@
       ],
       "procedure": [
         "종목코드 - Company 객체 생성",
-        "c.executivePay() 호출",
+        "c.panel(\"임원\") 호출",
         "payByType (등기/미등기/퇴직) 분해 확인",
         "topPay 상위 보수 + 산정기준 narrative 추적",
         "rceptNo + section sourceRef 답변 본문 인용"
@@ -706,12 +705,12 @@
         "상위 보수 list 전체 dump (답변 본문 상위 5~10 명만)"
       ],
       "examples": [
-        "삼성전자 임원 보수 - Company.executivePay",
-        "5억 이상 임원 명단 - Company.executivePay + topPay 인용",
-        "퇴직 임원 보수 - Company.executivePay + payByType filter 구분 퇴직",
-        "NAVER 미등기 임원 보수 분포 - Company.executivePay + topPay 의 미등기 필터",
-        "카카오 스톡옵션 행사이익 - Company.executivePay + payByType 주식매수선택권 행사이익",
-        "현대차 대표이사 산정기준 narrative - Company.executivePay + topPay 산정기준"
+        "삼성전자 임원 보수 - `c.panel(\"임원\")`",
+        "5억 이상 임원 명단 - `c.panel(\"임원\")` 상위 보수 행",
+        "퇴직 임원 보수 - `c.panel(\"임원\")` 퇴직 보수 행",
+        "NAVER 미등기 임원 보수 분포 - `c.panel(\"임원\")` 미등기 임원 행",
+        "카카오 스톡옵션 행사이익 - `c.panel(\"임원\")` 주식매수선택권 행사이익 행",
+        "현대차 대표이사 산정기준 narrative - `c.panel(\"임원\")` 산정기준 행"
       ],
       "runtimeCompatibility": {
         "server": {
@@ -840,13 +839,13 @@
     },
     {
       "id": "engines.company.governance",
-      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n\n# 최신 지배구조보고서\ngov = c.governance()\nprint(gov[\"board\"])               # 이사회 구성 (사외이사 비율 등)\nprint(gov[\"auditCommittee\"])      # 감사위원회 독립성\nprint(gov[\"majorHolder\"])         # 최대주주\nprint(gov[\"disclosure\"])          # 15 핵심지표 yes/no + 미준수 narrative\n\n# 5 년 추세\nimport polars as pl\ntrends = pl.concat([\n    c.governance(period=f\"{y}\").to_frame()\n    for y in range(2020, 2026)\n])\n```\n\n## 호출 동작\n\n- target = 종목코드 (KOSPI/KOSDAQ) 또는 ticker (EDGAR). 한국 강제: KOSPI 시가총액 ≥ 1 조 원 기업은 기업지배구조보고서 의무.\n- period 미명시 = 최신 보고서. 명시 = 해당 회계연도 보고서.\n- 반환 dict 의 key 4 종 (board · auditCommittee · majorHolder · disclosure).\n- 15 핵심지표 disclosure key 안에 yes/no boolean + 미준수 narrative string.\n- DART OpenAPI 의 corp_outline + corp_report 조합으로 추출. rceptNo + section 보존.\n\n## 대표 반환 형태\n\n```\n{\n  \"board\": {\n    \"totalDirectors\": int,\n    \"outsideDirectors\": int,\n    \"outsideRatio\": float,\n    \"ceoChairSeparated\": bool,\n    \"members\": [{\"name\": str, \"role\": str, \"isOutside\": bool, ...}]\n  },\n  \"auditCommittee\": {\n    \"totalMembers\": int,\n    \"outsideMembers\": int,\n    \"independenceScore\": float\n  },\n  \"majorHolder\": {\n    \"topHolder\": str,\n    \"topHolderRatio\": float,\n    \"treasuryRatio\": float,\n    \"foreignRatio\": float\n  },\n  \"disclosure\": {\n    \"indicator1_boardIndependence\": {\"compliant\": bool, \"narrative\": str, \"rceptNo\": str},\n    ...\n    \"indicator15_cumulativeVoting\": {\"compliant\": bool, \"narrative\": str, \"rceptNo\": str}\n  }\n}\n```\n\n## 기본 검증\n\n- 답변의 사",
+      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n\n# 지배구조 분석 (이사회 구성 · 감사위원회 독립성 · 최대주주 · 15 핵심지표)\nc.analysis(\"governance\", \"지배구조\")\n\n# 지배구조 서사 보고서\nc.story(type=\"governance\")\n```\n\n## 호출 동작\n\n- target = 종목코드 (KOSPI/KOSDAQ) 또는 ticker (EDGAR). 한국 강제: KOSPI 시가총액 ≥ 1 조 원 기업은 기업지배구조보고서 의무.\n- period 미명시 = 최신 보고서. 명시 = 해당 회계연도 보고서.\n- 반환 dict 의 key 4 종 (board · auditCommittee · majorHolder · disclosure).\n- 15 핵심지표 disclosure key 안에 yes/no boolean + 미준수 narrative string.\n- DART OpenAPI 의 corp_outline + corp_report 조합으로 추출. rceptNo + section 보존.\n\n## 대표 반환 형태\n\n```\n{\n  \"board\": {\n    \"totalDirectors\": int,\n    \"outsideDirectors\": int,\n    \"outsideRatio\": float,\n    \"ceoChairSeparated\": bool,\n    \"members\": [{\"name\": str, \"role\": str, \"isOutside\": bool, ...}]\n  },\n  \"auditCommittee\": {\n    \"totalMembers\": int,\n    \"outsideMembers\": int,\n    \"independenceScore\": float\n  },\n  \"majorHolder\": {\n    \"topHolder\": str,\n    \"topHolderRatio\": float,\n    \"treasuryRatio\": float,\n    \"foreignRatio\": float\n  },\n  \"disclosure\": {\n    \"indicator1_boardIndependence\": {\"compliant\": bool, \"narrative\": str, \"rceptNo\": str},\n    ...\n    \"indicator15_cumulativeVoting\": {\"compliant\": bool, \"narrative\": str, \"rceptNo\": str}\n  }\n}\n```\n\n## 기본 검증\n\n- 답변의 사외이사 비율 · CEO/Chair 분리 · 누적투표제 등 수치 claim 은 모두 rceptNo + section paragraph 에 묶인다.\n- 15 핵심지표 yes/no 만 답변 본문에 박지 말고 미준수 narrative 도 같이 인용 (한국 corporate governance code 의 explain-or-comply 원칙).\n- KOSPI < 1 조 원 기업은 governance 보고서 미의무 → 본 skill 의 fallbac",
       "title": "Company Governance",
       "category": "engines",
       "categoryTitle": "Engines",
       "kind": "curated",
       "status": "observed",
-      "purpose": "Company.governance — 기업지배구조보고서 (15 핵심지표) · 이사회 구성 · 감사위원회 · 최대주주 분석. 사외이사 비율 · CEO/Chair 분리 · 누적투표제 등 미국 proxy 가 표준화하지 못한 한국 지배구조 깊이.",
+      "purpose": "지배구조 판독 — 기업지배구조보고서 (15 핵심지표) · 이사회 구성 · 감사위원회 · 최대주주 분석. 사외이사 비율 · CEO/Chair 분리 · 누적투표제 등 미국 proxy 가 표준화하지 못한 한국 지배구조 깊이.",
       "whenToUse": [
         "지배구조",
         "기업지배구조보고서",
@@ -870,9 +869,8 @@
         "DART rceptNo + section sourceRef"
       ],
       "apiRefs": [
-        "Company.governance",
-        "Company.disclosure",
-        "Company.panel"
+        "Company.analysis",
+        "Company.story"
       ],
       "toolRefs": [],
       "datasetRefs": [],
@@ -891,7 +889,7 @@
       ],
       "procedure": [
         "종목코드 → Company 객체 생성",
-        "Company.governance() 호출 (선택 period)",
+        "c.analysis(\"governance\", \"지배구조\") 호출 (선택 period)",
         "15 핵심지표 dict 확인 + 미준수 narrative 추적",
         "사외이사/감사위/최대주주 sub-key 별 추가 분석",
         "rceptNo + section sourceRef 답변 본문 인용"
@@ -920,12 +918,12 @@
         "15 핵심지표의 yes/no 만으로 결론짓지 않고 미준수 narrative 까지 확인한다"
       ],
       "examples": [
-        "삼성전자 사외이사 비율 5 년 추세 - Company.governance + period loop",
-        "POSCO 15 핵심지표 yes/no + 미준수 사유 - Company.governance + disclosure key",
-        "카카오 CEO Chair 분리 여부 - Company.governance + board.ceoChairSeparated",
-        "셀트리온 최대주주 변경 이력 - Company.governance + majorHolder",
-        "LG화학 감사위원회 독립성 - Company.governance + auditCommittee.independenceScore",
-        "NAVER 누적투표제 도입 - Company.governance + disclosure.indicator15"
+        "삼성전자 사외이사 비율 5 년 추세 - `c.analysis(\"governance\", \"지배구조\")` 기간 반복",
+        "POSCO 15 핵심지표 yes/no + 미준수 사유 - `c.analysis(\"governance\", \"지배구조\")` governanceFlags",
+        "카카오 CEO Chair 분리 여부 - `c.analysis(\"governance\", \"지배구조\")` boardComposition",
+        "셀트리온 최대주주 변경 이력 - `c.analysis(\"governance\", \"지배구조\")` ownershipTrend",
+        "LG화학 감사위원회 독립성 - `c.analysis(\"governance\", \"지배구조\")` boardComposition",
+        "NAVER 누적투표제 도입 - `c.analysis(\"governance\", \"지배구조\")` governanceFlags"
       ],
       "runtimeCompatibility": {
         "server": {
@@ -947,7 +945,7 @@
     },
     {
       "id": "engines.company.koreanDisclosure",
-      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n\n# 지배구조\ngov = c.governance()\n\n# 공시 이벤트 (임원변동 · 주요사항)\nevents = c.disclosure(category=\"임원변동\")\n\n# 사업보고서 segment narrative\nnarrative = c.panel(\"businessOverview\")\n\n# 감사보고서\naudit = c.audit()\n\n# 별도 vs 연결\nsep = c.panel(\"IS\", basis=\"separate\")\ncon = c.panel(\"IS\", basis=\"consolidated\")\n```\n\n## 호출 동작\n\n- 자연어 한국 공시 질문 → 본 skill 의 examples 표를 보고 적합 apiRef 선택.\n- 종목코드 (DART) 또는 ticker (EDGAR) 를 target 으로 고정 후 Company 객체 생성.\n- 매핑된 apiRef 가 capability registry 에 박혀있는지 확인 (ReadCapability 도구).\n- EngineCall(apiRef=...) 호출 — 자연어 인자 X · 매핑 apiRef 직접 호출.\n- DART 공시 종류는 미국 EDGAR 양식 (8-K · 10-K) 과 1:1 매핑 X — 한국 공시 양식 (사업보고서 · 분기보고서 · 주요사항보고 · 공정공시 · 대규모기업집단현황공시) 의 한국 특화 routing 이다.\n\n## 대표 반환 형태\n\n| 한국 공시 종류 | apiRef | 반환 dtype | 핵심 필드 |\n|---|---|---|---|\n| 기업지배구조보고서 (15 핵심지표) | `Company.governance` | dict | board · audit · disclosure 분기 |\n| 임원 변동 · 5억 이상 보수 | `Company.disclosure(category=\"임원변동\")` | DataFrame | rceptNo · filedAt · title · formType |\n| 사업보고서 II 항 segment narrative | `Company.panel(\"businessOverview\")` | DataFrame | period · topic · content · sourceRef |\n| 감사보고서 | `Company.audit` | dict | auditor · opinion · keyAuditMatters |\n| 별도재무제표 (parent-only) | `Company.panel(\"IS\", basis=\"separate\")` | DataFrame | account · value · period |\n| 연결재무제표 | `Company.panel(\"IS\", basis=\"consolidated\")` | DataFrame | account · value · period · subsidiary |\n\n각 결과는 DART rceptNo + section + paragraph 의 source chain 보존 (wrapExternalInResult).\n\n",
+      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n\n# 지배구조\ngov = c.analysis(\"governance\", \"지배구조\")\n\n# 공시 이벤트 (임원변동 · 주요사항)\nevents = c.disclosure(category=\"임원변동\")\n\n# 사업보고서 segment narrative\nnarrative = c.panel(\"businessOverview\")\n\n# 감사보고서\naudit = c.panel(\"감사\")\n\n# 별도 vs 연결\nsep = c.panel(\"IS\", basis=\"separate\")\ncon = c.panel(\"IS\", basis=\"consolidated\")\n```\n\n## 호출 동작\n\n- 자연어 한국 공시 질문 → 본 skill 의 examples 표를 보고 적합 apiRef 선택.\n- 종목코드 (DART) 또는 ticker (EDGAR) 를 target 으로 고정 후 Company 객체 생성.\n- 매핑된 apiRef 가 capability registry 에 박혀있는지 확인 (ReadCapability 도구).\n- EngineCall(apiRef=...) 호출 — 자연어 인자 X · 매핑 apiRef 직접 호출.\n- DART 공시 종류는 미국 EDGAR 양식 (8-K · 10-K) 과 1:1 매핑 X — 한국 공시 양식 (사업보고서 · 분기보고서 · 주요사항보고 · 공정공시 · 대규모기업집단현황공시) 의 한국 특화 routing 이다.\n\n## 대표 반환 형태\n\n| 한국 공시 종류 | apiRef | 반환 dtype | 핵심 필드 |\n|---|---|---|---|\n| 기업지배구조보고서 (15 핵심지표) | `c.analysis(\"governance\", \"지배구조\")` | dict | board · audit · disclosure 분기 |\n| 임원 변동 · 5억 이상 보수 | `Company.disclosure(category=\"임원변동\")` | DataFrame | rceptNo · filedAt · title · formType |\n| 사업보고서 II 항 segment narrative | `Company.panel(\"businessOverview\")` | DataFrame | period · topic · content · sourceRef |\n| 감사보고서 | `c.panel(\"감사\")` | dict | auditor · opinion · keyAuditMatters |\n| 별도재무제표 (parent-only) | `Company.panel(\"IS\", basis=\"separate\")` | DataFrame | account · value · period |\n| 연결재무제표 | `Company.panel(\"IS\", basis=\"consolidated\")` | DataFrame | account · value · period · subsidiary |\n\n각 결과는 DART rceptNo + section + paragraph 의 sourc",
       "title": "Korean Disclosure Routing",
       "category": "engines",
       "categoryTitle": "Engines",
@@ -995,9 +993,9 @@
       ],
       "apiRefs": [
         "Company.disclosure",
-        "Company.governance",
-        "Company.topics",
-        "Company.audit",
+        "Company.analysis",
+        "Company.panel",
+        "Company.panel",
         "Company.readFiling",
         "Company.panel"
       ],
@@ -1048,7 +1046,7 @@
         "DART rceptNo 또는 section ref 없이 한국 공시 숫자/본문을 인용하지 않는다"
       ],
       "examples": [
-        "삼성전자 사외이사 비율 - Company.governance",
+        "삼성전자 사외이사 비율 - `c.analysis(\"governance\", \"지배구조\")`",
         "NAVER 임원 5억 이상 보수 - Company.disclosure(category=임원변동) + 후속 panel",
         "삼성그룹 관계자거래 100억 이상 - Company.disclosure(category=대규모기업집단현황공시)",
         "005930 메모리 ASP 분기 추세 - Company.panel(\"businessOverview\") + topic query 사업의 내용",
@@ -1074,13 +1072,13 @@
     },
     {
       "id": "engines.company.notesDetail",
-      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n\n# 리스 약정 5 년 panel (연간)\nlease = c.notesDetail(\"리스\")\n\n# 우발채무 (분기)\ncontingent = c.notesDetail(\"우발\", \"q\")\n\n# 퇴직급여 가정 (반기)\npension = c.notesDetail(\"퇴직급여\", \"h\")\n\nif lease is not None:\n    for period in lease.tables[\"리스\"]:\n        print(period.year, period.items)\n```\n\n## 호출 동작\n\n- target = DART 종목코드 (KOSPI/KOSDAQ). 한국 K-IFRS 한정.\n- keyword = NOTES_KEYWORDS 23 종 중 하나 (리스 · 우발 · 퇴직급여 · 파생 · 금융자산 · 금융부채 · 차입금 · 영업권 · 무형자산 · 신종자본증권 등).\n- period = \"y\" 연간 (default) · \"q\" 분기 · \"h\" 반기.\n- 최근 5 년 자동 추출 (year 내림차순).\n- 주석 표 line-item 본문 parser 결과. 단위 (백만 원 · 천 원) auto-normalize.\n- 미박힘 keyword 또는 데이터 부족 시 None 반환.\n- 표 본문 narrative = wrapExternalInResult 의 [EXTERNAL CONTENT START] marker 자동.\n\n## 대표 반환 형태\n\n```\nNotesDetailResult:\n  corpName : str\n  tables : dict[str, list[NotesPeriod]]\n    (key = keyword 정규형, value = 분기별/연간별 NotesPeriod list)\n  NotesPeriod:\n    year : str               # \"2025\"\n    kind : str               # \"annual\" / \"quarterly\" / \"semi-annual\"\n    items : pl.DataFrame     # line-item 표 (계정 · 값 · 비교)\n    unit : float             # 1.0 (백만 원 기준) 또는 0.001 (천 원)\n    rceptNo : str            # DART filing 접수번호\n    sourceRef : dict         # {url, page, paragraph}\n```\n\n## 기본 검증\n\n- 모든 주석 line-item 수치 claim 은 DART 정기보고서 rceptNo + section paragraph 의 sourceRef 에 묶는다.\n- 5 년 panel 전체 dump 금지 — 답변 본문 상위 3~5 년만 인용 + 추세 narrative 동반.\n- NOTES_KEYWORDS 23 종 밖 keyword 호출 시 None 반환 — 답변 본문에서 \"데이터 없음\" 명시 (추정 금지).\n- 주석 양식 분기별 미세 변경",
+      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n\n# 주석 본문 전체 (항목 x 기간 격자의 주석 구획)\nc.panel(\"주석\")\n\n# 섹션명으로 좁히기\nc.panel(\"재고\")\n```\n\n## 호출 동작\n\n- target = DART 종목코드 (KOSPI/KOSDAQ). 한국 K-IFRS 한정.\n- keyword = NOTES_KEYWORDS 23 종 중 하나 (리스 · 우발 · 퇴직급여 · 파생 · 금융자산 · 금융부채 · 차입금 · 영업권 · 무형자산 · 신종자본증권 등).\n- period = \"y\" 연간 (default) · \"q\" 분기 · \"h\" 반기.\n- 최근 5 년 자동 추출 (year 내림차순).\n- 주석 표 line-item 본문 parser 결과. 단위 (백만 원 · 천 원) auto-normalize.\n- 미박힘 keyword 또는 데이터 부족 시 None 반환.\n- 표 본문 narrative = wrapExternalInResult 의 [EXTERNAL CONTENT START] marker 자동.\n\n## 대표 반환 형태\n\n```\nNotesDetailResult:\n  corpName : str\n  tables : dict[str, list[NotesPeriod]]\n    (key = keyword 정규형, value = 분기별/연간별 NotesPeriod list)\n  NotesPeriod:\n    year : str               # \"2025\"\n    kind : str               # \"annual\" / \"quarterly\" / \"semi-annual\"\n    items : pl.DataFrame     # line-item 표 (계정 · 값 · 비교)\n    unit : float             # 1.0 (백만 원 기준) 또는 0.001 (천 원)\n    rceptNo : str            # DART filing 접수번호\n    sourceRef : dict         # {url, page, paragraph}\n```\n\n## 기본 검증\n\n- 모든 주석 line-item 수치 claim 은 DART 정기보고서 rceptNo + section paragraph 의 sourceRef 에 묶는다.\n- 5 년 panel 전체 dump 금지 — 답변 본문 상위 3~5 년만 인용 + 추세 narrative 동반.\n- NOTES_KEYWORDS 23 종 밖 keyword 호출 시 None 반환 — 답변 본문에서 \"데이터 없음\" 명시 (추정 금지).\n- 주석 양식 분기별 미세 변경 (XBRL tag rename · 항목 통합) 인지 — narrative drift 비교 시 회귀 가드 강제.\n- 주석 파서(providers/dart) 변경 시 본 skill 의 examples · 반환 형태 동기화.\n- 주석 본문 narrative 인용 시 wrapExternalInResult 의 untrusted marke",
       "title": "Company K-IFRS Notes Detail",
       "category": "engines",
       "categoryTitle": "Engines",
       "kind": "curated",
       "status": "observed",
-      "purpose": "Company.notesDetail — K-IFRS 주석 세부항목 (리스 약정 · 우발채무 · 퇴직급여 가정 · 파생 등 23 NOTES_KEYWORDS). audit-grade citation 의 핵심 evidence layer. footnote-grade Q&A 의 raw 데이터 (Bloomberg/FactSet 미보유 영역).",
+      "purpose": "주석 세부항목 판독 — K-IFRS 주석 세부항목 (리스 약정 · 우발채무 · 퇴직급여 가정 · 파생 등 23 NOTES_KEYWORDS). audit-grade citation 의 핵심 evidence layer. footnote-grade Q&A 의 raw 데이터 (Bloomberg/FactSet 미보유 영역).",
       "whenToUse": [
         "주석",
         "K-IFRS 주석",
@@ -1110,9 +1108,7 @@
         "DART 정기보고서 docs rceptNo + section sourceRef"
       ],
       "apiRefs": [
-        "Company.notesDetail",
-        "Company.panel",
-        "Company.disclosure"
+        "Company.panel"
       ],
       "toolRefs": [],
       "datasetRefs": [],
@@ -1132,7 +1128,7 @@
       "procedure": [
         "종목코드 - Company 객체 생성",
         "keyword 결정 (NOTES_KEYWORDS 23 종 중 하나)",
-        "c.notesDetail(keyword, period) 호출",
+        "c.panel(\"주석\") 또는 c.panel(섹션명) 호출",
         "tables dict 의 keyword 별 NotesPeriod list 확인",
         "최근 5 년 historical panel 추적 + line-item 본문 추출",
         "rceptNo + section sourceRef 답변 본문 인용"
@@ -1163,11 +1159,11 @@
         "주석 본문 narrative 는 wrapExternalInResult untrusted marker 강제"
       ],
       "examples": [
-        "삼성전자 리스 약정 - c.notesDetail(\"리스\")",
-        "LG에너지솔루션 우발채무 5 년 - c.notesDetail(\"우발\")",
-        "셀트리온 퇴직급여 가정 - c.notesDetail(\"퇴직급여\")",
-        "현대차 파생금융상품 - c.notesDetail(\"파생\")",
-        "LG화학 영업권 손상 - c.notesDetail(\"영업권\")"
+        "삼성전자 리스 약정 - c.panel(\"주석\") 에서 리스 섹션",
+        "LG에너지솔루션 우발채무 5 년 - c.panel(\"주석\") 에서 우발채무 섹션",
+        "셀트리온 퇴직급여 가정 - c.panel(\"주석\") 에서 퇴직급여 섹션",
+        "현대차 파생금융상품 - c.panel(\"주석\") 에서 파생 섹션",
+        "LG화학 영업권 손상 - c.panel(\"주석\") 에서 영업권 섹션"
       ],
       "runtimeCompatibility": {
         "server": {
@@ -1189,13 +1185,13 @@
     },
     {
       "id": "engines.company.relatedPartyTx",
-      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n\nrpt = c.relatedPartyTx()\nif rpt is not None:\n    print(rpt.guarantees)   # 지급보증 list\n    print(rpt.revenue)      # 매출 거래 list\n    # 기타 거래 분류 (자산 양수도 · 임원 거래 등)\n```\n\n## 호출 동작\n\n- target = DART 종목코드 (KOSPI/KOSDAQ). 한국 공시 한정.\n- DART 사업보고서 의 관계자 거래 섹션 자동 파싱.\n- K-IFRS 1024 footnote + 공정거래법 §26 대규모기업집단현황공시 둘 다 source.\n- threshold 100억 원 (2024-01-01 시행). 이전 (10억 원) 룰 = 폐기. 답변 시 정확한 시행 일자 인용 필수.\n- 반환 = RelatedPartyTxResult dataclass — guarantees / revenue / etc DataFrame list.\n- chaebol inter-affiliate 거래 graph 구축 시 dartlab.providers.dart.docs.finance.affiliate 와 join (단일 회사 X · 그룹 전체).\n\n## 대표 반환 형태\n\n```\nRelatedPartyTxResult:\n  guarantees : pl.DataFrame  # 지급보증\n    거래상대방 : str          # 계열사명\n    거래종류 : str            # \"지급보증\"\n    금액 : Int64              # 백만 원\n    기간 : str\n    조건 : str                # 금리 · 담보 · 만기 narrative\n  revenue : pl.DataFrame     # 매출 거래\n    거래상대방 : str\n    거래종류 : str            # \"매출\" / \"매입\"\n    금액 : Int64\n  (기타 거래 분류 별 DataFrame)\n```\n\n## 기본 검증\n\n- 모든 RPT 금액 claim 은 DART 사업보고서 rceptNo + section paragraph 의 sourceRef 에 묶는다.\n- threshold 100억 원 (2024-01-01) 정확히 인용 — 구 룰 (10억 원) 답변 금지.\n- chaebol inter-affiliate 거래 분석 시 단일 회사 X · affiliateGroup 와 join 한 그룹 전체 흐름 확인.\n- RPT 본문 narrative (목적 · 조건 · 금리 · 담보) 생략 후 금액만 답변 금지 — 메커니즘 추적 evidence 동반.\n- Company.relatedPartyTx() docstring 변경 시 본 skill 의 capabilityRefs · examples · 반환 형태 동기화.\n- 2025 FTC 데이터: top-10 chaebol = 193 조 원 = 전체 disclosed RPT 의 70% ",
+      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n\n# 특수관계자 거래 본문 (지급보증 · 매출 거래 · 자산 양수도 등)\nc.panel(\"특수관계자\")\n```\n\n## 호출 동작\n\n- target = DART 종목코드 (KOSPI/KOSDAQ). 한국 공시 한정.\n- DART 사업보고서 의 관계자 거래 섹션 자동 파싱.\n- K-IFRS 1024 footnote + 공정거래법 §26 대규모기업집단현황공시 둘 다 source.\n- threshold 100억 원 (2024-01-01 시행). 이전 (10억 원) 룰 = 폐기. 답변 시 정확한 시행 일자 인용 필수.\n- 반환 = 항목 x 기간 격자의 특수관계자 구획 행(지급보증 · 매출 거래 · 자산 양수도).\n- chaebol inter-affiliate 거래 graph 구축 시 dartlab.providers.dart.docs.finance.affiliate 와 join (단일 회사 X · 그룹 전체).\n\n## 대표 반환 형태\n\n```\nRelatedPartyTxResult:\n  guarantees : pl.DataFrame  # 지급보증\n    거래상대방 : str          # 계열사명\n    거래종류 : str            # \"지급보증\"\n    금액 : Int64              # 백만 원\n    기간 : str\n    조건 : str                # 금리 · 담보 · 만기 narrative\n  revenue : pl.DataFrame     # 매출 거래\n    거래상대방 : str\n    거래종류 : str            # \"매출\" / \"매입\"\n    금액 : Int64\n  (기타 거래 분류 별 DataFrame)\n```\n\n## 기본 검증\n\n- 모든 RPT 금액 claim 은 DART 사업보고서 rceptNo + section paragraph 의 sourceRef 에 묶는다.\n- threshold 100억 원 (2024-01-01) 정확히 인용 — 구 룰 (10억 원) 답변 금지.\n- chaebol inter-affiliate 거래 분석 시 단일 회사 X · affiliateGroup 와 join 한 그룹 전체 흐름 확인.\n- RPT 본문 narrative (목적 · 조건 · 금리 · 담보) 생략 후 금액만 답변 금지 — 메커니즘 추적 evidence 동반.\n- Company.relatedPartyTx() docstring 변경 시 본 skill 의 capabilityRefs · examples · 반환 형태 동기화.\n- 2025 FTC 데이터: top-10 chaebol = 193 조 원 = 전체 disclosed RPT 의 70% 비중 — 이 statistic 인용 시 출처 (FTC 2025 보고서) 명시.",
       "title": "Company Related Party Transactions",
       "category": "engines",
       "categoryTitle": "Engines",
       "kind": "curated",
       "status": "observed",
-      "purpose": "Company.relatedPartyTx — 관계자 거래 (RPT). 공정거래법 §26 chaebol disclosure threshold 100억 원 (2024-01-01 시행). 2025 FTC 데이터 top-10 chaebol = 193 조 원 = 전체 disclosed RPT 의 70%. chaebol inter-affiliate 거래 graph 의 raw input.",
+      "purpose": "관계자 거래 판독 — 관계자 거래 (RPT). 공정거래법 §26 chaebol disclosure threshold 100억 원 (2024-01-01 시행). 2025 FTC 데이터 top-10 chaebol = 193 조 원 = 전체 disclosed RPT 의 70%. chaebol inter-affiliate 거래 graph 의 raw input.",
       "whenToUse": [
         "관계자 거래",
         "RPT",
@@ -1220,9 +1216,7 @@
         "DART 사업보고서 rceptNo + section sourceRef"
       ],
       "apiRefs": [
-        "Company.relatedPartyTx",
-        "Company.disclosure",
-        "Company.governance"
+        "Company.panel"
       ],
       "toolRefs": [],
       "datasetRefs": [],
@@ -1241,7 +1235,7 @@
       ],
       "procedure": [
         "종목코드 - Company 객체 생성",
-        "c.relatedPartyTx() 호출",
+        "c.panel(\"특수관계자\") 호출",
         "거래 분류 별 DataFrame 확인 (guarantees · revenue · etc)",
         "chaebol graph 구축 시 affiliateGroup 와 join (모든 계열사 단위)",
         "rceptNo + section sourceRef 답변 본문 인용"
@@ -1271,12 +1265,12 @@
         "chaebol 전체 흐름 무시 후 단일 회사 RPT 결론"
       ],
       "examples": [
-        "삼성전자 관계자 거래 - Company.relatedPartyTx",
-        "삼성그룹 RPT 흐름 - Company.relatedPartyTx per 계열사 + affiliateGroup join",
-        "100억 이상 지급보증 - Company.relatedPartyTx + guarantees",
-        "매출 거래 inter-affiliate - Company.relatedPartyTx + revenue",
-        "SK이노베이션 자산 양수도 RPT - Company.relatedPartyTx + 자산 양수도 분류",
-        "현대차그룹 chaebol RPT graph - Company.relatedPartyTx + affiliate.affiliateGroup graph 구축"
+        "삼성전자 관계자 거래 - `c.panel(\"특수관계자\")`",
+        "삼성그룹 RPT 흐름 - `c.panel(\"특수관계자\")` 를 계열사마다",
+        "100억 이상 지급보증 - `c.panel(\"특수관계자\")` 지급보증 섹션",
+        "매출 거래 inter-affiliate - `c.panel(\"특수관계자\")` 매출 거래 섹션",
+        "SK이노베이션 자산 양수도 RPT - `c.panel(\"특수관계자\")` 자산 양수도 섹션",
+        "현대차그룹 chaebol RPT graph - `c.panel(\"특수관계자\")` 를 계열사마다 모아 graph 구축"
       ],
       "runtimeCompatibility": {
         "server": {
@@ -5329,7 +5323,7 @@
     },
     {
       "id": "engines.viz.balanceStructureTrend",
-      "bodyPreview": "## 엔진 역할\n\n`engines.viz.balanceStructureTrend` 는 재무상태표를 단순 총액 표로 끝내지 않고, 같은 총자산을 두 관점으로 본다.\n\n- 자산 배치: 현금, 매출채권, 재고, 유형자산, 무형자산, 기타/비영업 자산.\n- 조달 구조: 영업부채, 차입금/사채, 기타부채, 자본.\n- 자본 세부: 자본금, 자본잉여금, 이익잉여금, 자기주식, 기타자본.\n\n렌더러는 `ChartRenderer` 의 `balance-structure-trend` 분기로 들어가며, shared chart 에서는 자산/조달/자본 band 를 연도별 100% stack 으로 표시한다. 회사 대시보드의 원본 `BalanceStructureTrend.svelte` 는 같은 view 로 총자산 추이, 자산 구성 100%, 조달 구성 100%, 최신 자산 증감을 함께 보여준다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\nfrom dartlab.viz import emit_chart\nfrom dartlab.viz.generators import specBalanceStructureTrend\n\nc = dartlab.Company(\"005930\")\n\n# dashboard/model 경로가 만든 BalanceStructureView 를 우선 사용한다.\n# view 는 periods, totalAssetsSeries, totalFundingSeries,\n# assetTrendParts, fundingTrendParts, equityTrendParts 를 포함해야 한다.\nview = c.view()  # 로컬 대시보드(engines.dashboard 계약)\n\nspec = specBalanceStructureTrend(\n    view,\n    stockCode=\"005930\",\n    corpName=\"삼성전자\",\n)\n\nif spec is not None:\n    emit_chart(spec)\n```\n\n대시보드 helper 가 없는 실행 환경에서는 BS 원자료에서 view dict 를 구성한 뒤 같은 generator 로 넘긴다. share 는 반드시 같은 기간의 `assets` 또는 `equity` denominator 로 계산한다.\n\n```python\nview = {\n    \"title\": \"삼성전자 자산 배치와 조달 구조\",\n    \"periods\": [\"2023\", \"2024\", \"2025\"],\n    \"totalAssetsSeries\": [100.0, 120.0, 130.0],\n    \"totalFundingSeries\": [100.0, 120.0, 130.0],\n    \"assetTrendParts\": [\n        {\"id\": \"cash\", \"label\": \"현금\", \"values\": [20, 24, 26], \"shares\": [20, 20, 20]},\n        {\"id\": \"tangible\", \"label\": \"유형자산\", \"values\": [40, 48, 52], \"shares\": [40, 40, 40]},\n",
+      "bodyPreview": "## 엔진 역할\n\n`engines.viz.balanceStructureTrend` 는 재무상태표를 단순 총액 표로 끝내지 않고, 같은 총자산을 두 관점으로 본다.\n\n- 자산 배치: 현금, 매출채권, 재고, 유형자산, 무형자산, 기타/비영업 자산.\n- 조달 구조: 영업부채, 차입금/사채, 기타부채, 자본.\n- 자본 세부: 자본금, 자본잉여금, 이익잉여금, 자기주식, 기타자본.\n\n렌더러는 `ChartRenderer` 의 `balance-structure-trend` 분기로 들어가며, shared chart 에서는 자산/조달/자본 band 를 연도별 100% stack 으로 표시한다. 회사 대시보드의 원본 `BalanceStructureTrend.svelte` 는 같은 view 로 총자산 추이, 자산 구성 100%, 조달 구성 100%, 최신 자산 증감을 함께 보여준다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\nfrom dartlab.viz import emit_chart\nfrom dartlab.viz.generators import specBalanceStructureTrend\n\nc = dartlab.Company(\"005930\")\n\n# view 는 내부 dashboard/model 경로가 만드는 BalanceStructureView 다.\n# periods, totalAssetsSeries, totalFundingSeries, assetTrendParts,\n# fundingTrendParts, equityTrendParts 를 포함해야 한다.\n# 공개 호출 계약이 아니다. 호출자가 이미 손에 쥔 view 를 넘긴다.\n\nspec = specBalanceStructureTrend(\n    view,\n    stockCode=\"005930\",\n    corpName=\"삼성전자\",\n)\n\nif spec is not None:\n    emit_chart(spec)\n```\n\n대시보드 helper 가 없는 실행 환경에서는 BS 원자료에서 view dict 를 구성한 뒤 같은 generator 로 넘긴다. share 는 반드시 같은 기간의 `assets` 또는 `equity` denominator 로 계산한다.\n\n```python\nview = {\n    \"title\": \"삼성전자 자산 배치와 조달 구조\",\n    \"periods\": [\"2023\", \"2024\", \"2025\"],\n    \"totalAssetsSeries\": [100.0, 120.0, 130.0],\n    \"totalFundingSeries\": [100.0, 120.0, 130.0],\n    \"assetTrendParts\": [\n        {\"id\": \"cash\", \"label\": \"현금\", \"values\": [20, 24, 26], \"shares\": [20, 20, 20]},\n        {\"id\": \"tangible\", \"label\": \"유형자산\", \"values\": [40, 48, 52], \"shares\": [40, 40, 40]},\n    ],\n    ",
       "title": "Viz - 자산·조달 구조 추이",
       "category": "engines",
       "categoryTitle": "Engines",

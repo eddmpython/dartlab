@@ -5,7 +5,7 @@ kind: curated
 scope: builtin
 status: observed
 category: engines
-purpose: Company.relatedPartyTx — 관계자 거래 (RPT). 공정거래법 §26 chaebol disclosure threshold 100억 원 (2024-01-01 시행). 2025 FTC 데이터 top-10 chaebol = 193 조 원 = 전체 disclosed RPT 의 70%. chaebol inter-affiliate 거래 graph 의 raw input.
+purpose: 관계자 거래 판독 — 관계자 거래 (RPT). 공정거래법 §26 chaebol disclosure threshold 100억 원 (2024-01-01 시행). 2025 FTC 데이터 top-10 chaebol = 193 조 원 = 전체 disclosed RPT 의 70%. chaebol inter-affiliate 거래 graph 의 raw input.
 whenToUse:
   - 관계자 거래
   - RPT
@@ -26,9 +26,7 @@ outputs:
   - RelatedPartyTxResult (guarantees / revenue / etc DataFrame list)
   - DART 사업보고서 rceptNo + section sourceRef
 capabilityRefs:
-  - Company.relatedPartyTx
-  - Company.disclosure
-  - Company.governance
+  - Company.panel
 knowledgeRefs:
   - engines.company
   - engines.company.koreanDisclosure
@@ -65,15 +63,15 @@ forbidden:
   - threshold 10억 원 답변 금지 (2024-01-01 부터 100억 원 — 10배 차이)
   - chaebol 전체 흐름 무시 후 단일 회사 RPT 결론
 examples:
-  - 삼성전자 관계자 거래 - Company.relatedPartyTx
-  - 삼성그룹 RPT 흐름 - Company.relatedPartyTx per 계열사 + affiliateGroup join
-  - 100억 이상 지급보증 - Company.relatedPartyTx + guarantees
-  - 매출 거래 inter-affiliate - Company.relatedPartyTx + revenue
-  - SK이노베이션 자산 양수도 RPT - Company.relatedPartyTx + 자산 양수도 분류
-  - 현대차그룹 chaebol RPT graph - Company.relatedPartyTx + affiliate.affiliateGroup graph 구축
+  - 삼성전자 관계자 거래 - `c.panel("특수관계자")`
+  - 삼성그룹 RPT 흐름 - `c.panel("특수관계자")` 를 계열사마다
+  - 100억 이상 지급보증 - `c.panel("특수관계자")` 지급보증 섹션
+  - 매출 거래 inter-affiliate - `c.panel("특수관계자")` 매출 거래 섹션
+  - SK이노베이션 자산 양수도 RPT - `c.panel("특수관계자")` 자산 양수도 섹션
+  - 현대차그룹 chaebol RPT graph - `c.panel("특수관계자")` 를 계열사마다 모아 graph 구축
 procedure:
   - 종목코드 - Company 객체 생성
-  - c.relatedPartyTx() 호출
+  - c.panel("특수관계자") 호출
   - 거래 분류 별 DataFrame 확인 (guarantees · revenue · etc)
   - chaebol graph 구축 시 affiliateGroup 와 join (모든 계열사 단위)
   - rceptNo + section sourceRef 답변 본문 인용
@@ -86,11 +84,8 @@ import dartlab
 
 c = dartlab.Company("005930")
 
-rpt = c.relatedPartyTx()
-if rpt is not None:
-    print(rpt.guarantees)   # 지급보증 list
-    print(rpt.revenue)      # 매출 거래 list
-    # 기타 거래 분류 (자산 양수도 · 임원 거래 등)
+# 특수관계자 거래 본문 (지급보증 · 매출 거래 · 자산 양수도 등)
+c.panel("특수관계자")
 ```
 
 ## 호출 동작
@@ -99,7 +94,7 @@ if rpt is not None:
 - DART 사업보고서 의 관계자 거래 섹션 자동 파싱.
 - K-IFRS 1024 footnote + 공정거래법 §26 대규모기업집단현황공시 둘 다 source.
 - threshold 100억 원 (2024-01-01 시행). 이전 (10억 원) 룰 = 폐기. 답변 시 정확한 시행 일자 인용 필수.
-- 반환 = RelatedPartyTxResult dataclass — guarantees / revenue / etc DataFrame list.
+- 반환 = 항목 x 기간 격자의 특수관계자 구획 행(지급보증 · 매출 거래 · 자산 양수도).
 - chaebol inter-affiliate 거래 graph 구축 시 dartlab.providers.dart.docs.finance.affiliate 와 join (단일 회사 X · 그룹 전체).
 
 ## 대표 반환 형태
