@@ -46,13 +46,13 @@ envDict·envFrame=환경 / scoreDict=단면 / scalar=환경스칼라 / nested·g
    (`시장구분`) -> `unknownColumnRole` 시끄럽게 방출. declared unit 부재 축(`valuation`·`governance`)
    -> `AMBIGUOUS` 표면화. **조용한 삼킴 0.**
 
-5. **지연 물질화 end-to-end** (): 반사 -> 선택 -> 공개계약 호출 -> 접기 가 실제 엔진
-   데이터로 끝까지 돈다.  0.7초 ·  0.7초 ·
-    0.4초 -> **정규 롱 50,220행**. 삼성전자 2025 = ROE 10.36% ·
-   부채비율 29.94% · 이익잉여금 402.14조. 없는 축 호출은 값을 지어내지 않고  갭 1행.
+5. **지연 물질화 end-to-end** (`materialize.py`): 반사 -> 선택 -> 공개계약 호출 -> 접기 가 실제 엔진
+   데이터로 끝까지 돈다. `scan.ratio("roe")` 0.7초 · `scan.ratio("debtRatio")` 0.7초 ·
+   `scan.account("retained_earnings")` 0.4초 -> **정규 롱 50,220행**. 삼성전자 2025 = ROE 10.36% ·
+   부채비율 29.94% · 이익잉여금 402.14조. 없는 축 호출은 값을 지어내지 않고 `contractError` 갭 1행.
 6. **실측으로 잡은 결함 1** (2026-07-07): wide 반환은 항목 정보가 열에 없어, 카탈로그 축의 요청 item 을
-   넘기지 않으면 roe 와 debtRatio 가 둘 다  로 찍혀 **구분 불능**이었다. 
-   에  인자 추가로 정정. 데모가 없었으면 조용히 오염될 결함.
+   넘기지 않으면 roe 와 debtRatio 가 둘 다 `item="ratio"` 로 찍혀 **구분 불능**이었다. `foldToCanonical`
+   에 `item` 인자 추가로 정정. 데모가 없었으면 조용히 오염될 결함.
 
 ## §4. 자동흡수의 정직한 범위 (과대포장 정정)
 
