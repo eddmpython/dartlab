@@ -51,6 +51,8 @@
 		mode?: 'screener' | 'table';
 		/** stockCode → 'KOSPI'/'KOSDAQ'/'KONEX' 같은 market 라벨. 노드 자체 market 없을 때 fallback. */
 		markets?: Record<string, string>;
+		/** 근접후보 종목 id. 통과 종목과 시각 격리(좌측 amber 마커)해 "통과했다" 오독을 막는다. */
+		nearMissIds?: Set<string>;
 		onSort: (s: SortKey, append: boolean) => void;
 		onFilterChange?: (metric: string, conds: FilterCond[]) => void;
 		onSelect: (id: string) => void;
@@ -67,6 +69,7 @@
 		selectedId,
 		mode = 'screener',
 		markets,
+		nearMissIds,
 		onSort,
 		onFilterChange,
 		onSelect,
@@ -345,6 +348,7 @@
 			<div
 				class="row"
 				class:selected={isSel}
+				class:nearmiss={nearMissIds?.has(id)}
 				role="row"
 				aria-rowindex={idx + 2}
 				aria-selected={isSel}
@@ -574,6 +578,11 @@
 	}
 	.row.selected {
 		background: color-mix(in srgb, var(--row-tint, var(--amber)) 14%, rgba(var(--amber-rgb), 0.06));
+	}
+	/* 근접후보 = 통과가 아니다. 좌측 마커로 격리해 랭킹과 섞이지 않게 한다. */
+	.row.nearmiss {
+		box-shadow: inset 3px 0 0 var(--dl-warn, #fbbf24);
+		opacity: 0.82;
 	}
 	.row:focus-visible {
 		outline: 1px solid var(--amber);

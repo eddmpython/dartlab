@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Plus, Search, SlidersHorizontal, X } from 'lucide-svelte';
 	import { GROUP_META, METRICS_BY_KEY, METRICS_DEF } from './metrics';
+	import { buildVerdictGrid } from './verdict';
 	import type { FilterCond, MetricDef, ScanNode, SortKey } from './types';
 
 	interface ApplyPayload {
@@ -47,8 +48,9 @@
 	});
 
 	let compiledConds = $derived.by(() => drafts.map(toCond).filter((c): c is FilterCond => Boolean(c)));
+	let previewGrid = $derived(buildVerdictGrid(nodes, compiledConds, METRICS_BY_KEY));
 	let previewNodes = $derived.by(() => {
-		const list = nodes.filter((node) => compiledConds.every((cond) => evalCond(node, cond)));
+		const list = previewGrid.members.slice();
 		const key = sortKey;
 		const dir = sortDir === 'asc' ? 1 : -1;
 		list.sort((a, b) => {
@@ -156,44 +158,10 @@
 		return text;
 	}
 
+	// 판정은 verdict.ts SSOT 한 곳. 이 컴포넌트가 자체 evalCond 를 갖고 있던 동안
+	// 메인 그리드와 미리보기의 결측 처리가 서로 달랐다 (여기는 ==/!= 에 억원 스케일 미적용).
 	function comparableValue(value: unknown): unknown {
 		return value;
-	}
-
-	function numericValue(node: ScanNode, metric: string): number | null {
-		const raw = comparableValue((node as Record<string, unknown>)[metric]);
-		const n = typeof raw === 'number' ? raw : Number(raw);
-		if (!Number.isFinite(n)) return null;
-		return METRICS_BY_KEY[metric]?.unit === '억원' ? n / 1e8 : n;
-	}
-
-	function hasValue(value: unknown): boolean {
-		if (value == null) return false;
-		if (typeof value === 'number') return Number.isFinite(value);
-		if (Array.isArray(value)) return value.length > 0;
-		return String(value).trim().length > 0;
-	}
-
-	function evalCond(node: ScanNode, cond: FilterCond): boolean {
-		const raw = comparableValue((node as Record<string, unknown>)[cond.metric]);
-		if (cond.op === 'exists') return hasValue(raw);
-		if (cond.op === 'contains') {
-			return String(raw ?? '').toLowerCase().includes(String(cond.value ?? '').toLowerCase());
-		}
-		if (cond.op === 'between') {
-			const n = numericValue(node, cond.metric);
-			const a = Number(cond.value);
-			const b = Number(cond.value2);
-			return n !== null && Number.isFinite(a) && Number.isFinite(b) && n >= a && n <= b;
-		}
-		if (cond.op === '==' || cond.op === '!=') {
-			const same = String(raw ?? '') === String(cond.value ?? '');
-			return cond.op === '==' ? same : !same;
-		}
-		const n = numericValue(node, cond.metric);
-		const target = Number(cond.value);
-		if (n === null || !Number.isFinite(target)) return false;
-		return cond.op === '>=' ? n >= target : n <= target;
 	}
 
 	function applyScreen() {
@@ -224,7 +192,7 @@
 					<SlidersHorizontal size={14} />
 					스크린 빌더
 				</div>
-				<div class="sb-sub">필드 검색 → 조건 조합 → 그리드에 적용</div>
+				<div class="sb-sub">{nodes.length.toLocaleString('ko-KR')}사 · 조건 {compiledConds.length}</div>
 			</div>
 			<button type="button" class="sb-apply" onclick={applyScreen}>적용</button>
 		</div>
@@ -318,7 +286,14 @@
 		</div>
 
 		<div class="preview">
-			<div class="section-title">미리보기 {previewNodes.length.toLocaleString('ko-KR')}사</div>
+			<div class="section-title">
+				미리보기 {previewNodes.length.toLocaleString('ko-KR')}사
+				{#if previewGrid.excludedForMissing > 0}
+					<span class="unknown-n" title="조건 미달이 아니라 데이터가 없어 판정하지 못한 종목">
+						결측 {previewGrid.excludedForMissing.toLocaleString('ko-KR')}
+					</span>
+				{/if}
+			</div>
 			<div class="preview-list">
 				{#each previewNodes.slice(0, 12) as node (node.id)}
 					<div class="preview-row">
@@ -478,6 +453,13 @@
 		color: #94a3b8;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
+	}
+	.unknown-n {
+		margin-left: 6px;
+		color: var(--dl-warn, #fbbf24);
+		font-weight: 600;
+		text-transform: none;
+		letter-spacing: 0;
 	}
 	.cond-row {
 		display: grid;

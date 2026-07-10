@@ -12,7 +12,9 @@ export default defineConfig({
 		alias: { $lib: path.resolve(root, 'src/lib') }
 	},
 	test: {
-		include: ['src/lib/**/*.test.ts'],
+		// scan 판정격자·URL 계약은 surfaces 에 살지만 Svelte 비의존 순수 함수라 같은 러너로 검사한다.
+		// (surfaces 는 자체 vitest 를 두지 않는다. 러너 SSOT 는 landing 하나.)
+		include: ['src/lib/**/*.test.ts', '../ui/packages/surfaces/src/scan/**/*.test.ts'],
 		environment: 'node'
 	}
 });

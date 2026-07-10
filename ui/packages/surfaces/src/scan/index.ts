@@ -34,3 +34,22 @@ export { encodeScanPayload, decodeScanPayload } from './url';
 export { DEFAULT_COLUMNS, METRICS_BY_KEY, PINNED_COLUMNS, type MetricGroup } from './metrics';
 export { PRESETS_BY_ID, type Preset, type RuntimeLoader } from './presets';
 export type { SavedColumnSet, ScanNode, FilterCond, SortKey } from './types';
+
+// ── 판정격자 · 조건 x 종목 3-state (PASS/FAIL/UNKNOWN) 판정의 SSOT ──
+export { default as VerdictRibbon } from './VerdictRibbon.svelte';
+export {
+	buildFunnel,
+	buildVerdictGrid,
+	condLabel,
+	coverageStats,
+	evalVerdict,
+	hasValue,
+	nearMiss,
+	normalizeNumeric,
+	relaxThreshold,
+	type CoverageStat,
+	type FunnelStep,
+	type RowVerdict,
+	type Verdict,
+	type VerdictGrid
+} from './verdict';

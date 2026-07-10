@@ -13,12 +13,16 @@
 		Distribution,
 		InsightsFeed,
 		SavedSets,
+		VerdictRibbon,
 		encodeScanPayload,
 		decodeScanPayload,
 		DEFAULT_COLUMNS,
 		METRICS_BY_KEY,
 		PINNED_COLUMNS,
 		PRESETS_BY_ID,
+		buildVerdictGrid,
+		nearMiss,
+		relaxThreshold,
 		type SavedColumnSet,
 		type ScanNode,
 		type FilterCond,
@@ -233,60 +237,14 @@
 	});
 
 	// ── Filter / sort ──────────────────────────────────
+	// 조건 판정은 verdict.ts SSOT 로 이관했다. 옛 로컬 evalCond 는 결측을 비대칭 처리했고
+	// (null 이 >= 에선 FAIL, != 에선 PASS) ==/!= 만 억원 스케일을 우회했다.
 	function comparableValue(value: unknown): unknown {
 		return value;
 	}
 
-	function numericFilterValue(node: ScanNode, metricKey: string): number | null {
-		const raw = comparableValue((node as Record<string, unknown>)[metricKey]);
-		const num = typeof raw === 'number' ? raw : Number(raw);
-		if (!Number.isFinite(num)) return null;
-		const unit = METRICS_BY_KEY[metricKey]?.unit;
-		// 그리드 표시가 억원인 컬럼은 필터 입력도 억원으로 받는다.
-		return unit === '억원' ? num / 1e8 : num;
-	}
-
-	function hasComparableValue(value: unknown): boolean {
-		if (value == null) return false;
-		if (typeof value === 'string') return value.trim().length > 0;
-		if (Array.isArray(value)) return value.length > 0;
-		if (typeof value === 'number') return Number.isFinite(value);
-		return true;
-	}
-
-	function evalCond(node: ScanNode, c: FilterCond): boolean {
-		const v = comparableValue((node as any)[c.metric]);
-		let result: boolean;
-		if (c.op === 'exists') {
-			result = hasComparableValue(v);
-		} else if (c.op === 'contains') {
-			const query = String(c.value ?? '').trim().toLowerCase();
-			result = query.length > 0 && String(v ?? '').toLowerCase().includes(query);
-		} else if (c.op === 'in') {
-			const values = Array.isArray(c.value) ? c.value.map(String) : [];
-			result = values.includes(String(v ?? ''));
-		} else if (c.op === 'between') {
-			const a = typeof c.value === 'number' ? c.value : Number(c.value);
-			const b = typeof c.value2 === 'number' ? c.value2 : Number(c.value2);
-			const num = numericFilterValue(node, c.metric);
-			result = num !== null && !Number.isNaN(a) && !Number.isNaN(b) && num >= a && num <= b;
-		} else {
-			const expected = c.value;
-			if (c.op === '==') result = v == expected;
-			else if (c.op === '!=') result = v != expected;
-			else {
-				const num = numericFilterValue(node, c.metric);
-				const target = typeof expected === 'number' ? expected : Number(expected);
-				if (num === null || Number.isNaN(target)) result = false;
-				else if (c.op === '>=') result = num >= target;
-				else if (c.op === '<=') result = num <= target;
-				else result = false;
-			}
-		}
-		return c.negate ? !result : result;
-	}
-
-	let filteredNodes = $derived.by(() => {
+	/** 검색어 + 산업칩만 적용한 유니버스. 조건(conds)은 판정격자가 맡는다. */
+	let scopedNodes = $derived.by(() => {
 		const q = searchQuery.trim().toLowerCase();
 		return allNodes.filter((node) => {
 			if (selectedIndustries.size > 0 && !selectedIndustries.has(node.industry as string)) {
@@ -299,36 +257,57 @@
 				const productOk = String((node as Record<string, unknown>).product ?? '').toLowerCase().includes(q);
 				if (!lblOk && !codeOk && !indOk && !productOk) return false;
 			}
-			for (const c of conds) {
-				if (!evalCond(node, c)) return false;
-			}
 			return true;
 		});
 	});
 
+	/** 조건 x 종목 판정격자. members / nearMiss / funnel / 결측이 전부 여기서 나온다. */
+	let grid = $derived(buildVerdictGrid(scopedNodes, conds, METRICS_BY_KEY));
+
+	/** 결측 포함 보기 = UNKNOWN 을 탈락시키지 않고 남긴다 (fail 이 하나도 없으면 통과 취급). */
+	let includeUnknown = $state(false);
+	/** 근접후보 보기 = 조건 하나만 놓친 종목을 members 뒤에 amber 로 붙인다. */
+	let showNearMiss = $state(false);
+
+	let nearMissRows = $derived(nearMiss(grid, 1));
+	let nearMissIds = $derived(new Set(showNearMiss ? nearMissRows.map((r) => r.node.id) : []));
+
+	let filteredNodes = $derived.by(() =>
+		includeUnknown ? grid.rows.filter((r) => r.failCount === 0).map((r) => r.node) : grid.members
+	);
+
+	/** 리본의 완화 칩. 조건 임계를 역산값으로 갈아끼운다. */
+	function applyRelax(condIndex: number, value: number) {
+		conds = conds.map((c, i) => (i === condIndex ? { ...c, value } : c));
+	}
+
+	function sortNodes(list: ScanNode[]): ScanNode[] {
+		if (sorts.length === 0) return list;
+		return list.sort((a, b) => {
+			for (const s of sorts) {
+				const key = s.key;
+				const dir = s.dir === 'asc' ? 1 : -1;
+				const va = (a as any)[key];
+				const vb = (b as any)[key];
+				const ca = comparableValue(va);
+				const cb = comparableValue(vb);
+				if (ca == null && cb == null) continue;
+				if (ca == null) return 1;
+				if (cb == null) return -1;
+				let cmp = 0;
+				if (typeof ca === 'number' && typeof cb === 'number') cmp = ca - cb;
+				else cmp = String(ca).localeCompare(String(cb), 'ko-KR', { numeric: true });
+				if (cmp !== 0) return cmp * dir;
+			}
+			return String(a.label).localeCompare(String(b.label), 'ko-KR');
+		});
+	}
+
+	// 근접후보는 통과 종목 뒤에 격리해 붙인다. 랭킹 안으로 섞으면 "통과했다" 는 거짓말이 된다.
 	let sortedNodes = $derived.by(() => {
-		const list = filteredNodes.slice();
-		if (sorts.length > 0) {
-			list.sort((a, b) => {
-				for (const s of sorts) {
-					const key = s.key;
-					const dir = s.dir === 'asc' ? 1 : -1;
-					const va = (a as any)[key];
-					const vb = (b as any)[key];
-					const ca = comparableValue(va);
-					const cb = comparableValue(vb);
-					if (ca == null && cb == null) continue;
-					if (ca == null) return 1;
-					if (cb == null) return -1;
-					let cmp = 0;
-					if (typeof ca === 'number' && typeof cb === 'number') cmp = ca - cb;
-					else cmp = String(ca).localeCompare(String(cb), 'ko-KR', { numeric: true });
-					if (cmp !== 0) return cmp * dir;
-				}
-				return String(a.label).localeCompare(String(b.label), 'ko-KR');
-			});
-		}
-		return list;
+		const list = sortNodes(filteredNodes.slice());
+		if (!showNearMiss || nearMissRows.length === 0) return list;
+		return [...list, ...sortNodes(nearMissRows.map((r) => r.node))];
 	});
 
 	let filterOptions = $derived.by(() => {
@@ -1049,26 +1028,6 @@
 		activePresetId = null;
 	}
 
-	function condLabel(cond: FilterCond): string {
-		const def = METRICS_BY_KEY[cond.metric];
-		const label = def?.label ?? cond.metric;
-		const unit = def?.unit ? def.unit : '';
-		const fmt = (value: unknown) => {
-			if (typeof value !== 'number') return String(value ?? '');
-			const formatted = value.toLocaleString('ko-KR', { maximumFractionDigits: 2 });
-			return unit ? `${formatted}${unit}` : formatted;
-		};
-		const prefix = cond.negate ? '제외 ' : '';
-		if (cond.op === 'between') return `${prefix}${label} ${fmt(cond.value)}~${fmt(cond.value2)}`;
-		if (cond.op === 'contains') return `${prefix}${label} 포함: ${cond.value ?? ''}`;
-		if (cond.op === 'in') {
-			const values = Array.isArray(cond.value) ? cond.value.join(', ') : String(cond.value ?? '');
-			return `${prefix}${label}: ${values}`;
-		}
-		if (cond.op === 'exists') return `${prefix}${label} 값 있음`;
-		return `${prefix}${label} ${cond.op} ${fmt(cond.value)}`;
-	}
-
 	function handleSelect(id: string) {
 		selectedRow = selectedRow === id ? null : id;
 	}
@@ -1167,16 +1126,18 @@
 		{/if}
 	{/if}
 
-	{#if conds.length > 0}
-		<div class="filter-strip" aria-label="적용된 컬럼 필터">
-			<span class="filter-strip-label">필터</span>
-			{#each conds as cond, i (`${cond.metric}-${cond.op}-${i}`)}
-				<button type="button" class="filter-chip" onclick={() => removeCond(i)} title="필터 제거">
-					{condLabel(cond)} <span>×</span>
-				</button>
-			{/each}
-		</div>
-	{/if}
+	<VerdictRibbon
+		{grid}
+		metrics={METRICS_BY_KEY}
+		nearMissCount={nearMissRows.length}
+		{includeUnknown}
+		{showNearMiss}
+		relaxFor={(i, target) => relaxThreshold(scopedNodes, conds, i, target, METRICS_BY_KEY)}
+		onToggleUnknown={() => (includeUnknown = !includeUnknown)}
+		onToggleNearMiss={() => (showNearMiss = !showNearMiss)}
+		onRelax={applyRelax}
+		onRemoveCond={removeCond}
+	/>
 
 	<!-- Column group toggle -->
 	<ColumnGroupBar
@@ -1197,6 +1158,7 @@
 				{percentiles}
 				selectedId={selectedRow}
 				markets={data.markets}
+				{nearMissIds}
 				onSort={handleSort}
 				onFilterChange={setColumnFilters}
 				onSelect={handleSelect}
@@ -1353,11 +1315,6 @@
 		color: #f1f5f9;
 		letter-spacing: -0.02em;
 		margin: 0;
-	}
-	.page-sub {
-		font-size: 12px;
-		color: #64748b;
-		font-family: monospace;
 	}
 	.page-head-right {
 		display: flex;
@@ -1530,8 +1487,8 @@
 		align-items: baseline;
 		gap: 8px;
 		padding: 8px 12px;
-		background: linear-gradient(135deg, rgba(234, 70, 71, 0.08), rgba(var(--dl-accent-rgb), 0.04));
-		border: 1px solid rgba(234, 70, 71, 0.3);
+		background: linear-gradient(135deg, rgba(var(--dl-accent-rgb), 0.1), rgba(var(--dl-accent-rgb), 0.04));
+		border: 1px solid rgba(var(--dl-accent-rgb), 0.3);
 		border-radius: 5px;
 		font-size: 11px;
 	}
@@ -1562,44 +1519,6 @@
 		color: var(--dl-accent);
 	}
 
-	.filter-strip {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		min-height: 28px;
-		overflow-x: auto;
-		padding-bottom: 2px;
-	}
-	.filter-strip-label {
-		flex-shrink: 0;
-		color: #64748b;
-		font-size: 10px;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-	}
-	.filter-chip {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		height: 24px;
-		padding: 0 8px;
-		border: 1px solid rgba(var(--dl-accent-rgb), 0.35);
-		border-radius: 4px;
-		background: rgba(var(--dl-accent-rgb), 0.08);
-		color: #cbd5e1;
-		font-size: 11px;
-		font-family: inherit;
-		white-space: nowrap;
-		cursor: pointer;
-	}
-	.filter-chip:hover {
-		border-color: rgba(var(--dl-accent-rgb), 0.7);
-		color: var(--dl-accent);
-	}
-	.filter-chip span {
-		color: var(--dl-accent);
-	}
 
 	.studio {
 		flex: 1 1 auto;
@@ -1645,57 +1564,7 @@
 		color: #64748b;
 		line-height: 1.5;
 	}
-	.ph-current {
-		font-size: 11px;
-		color: var(--dl-accent);
-		font-family: monospace;
-		margin-top: 4px;
-	}
 
-	.detail-panel {
-		flex-shrink: 0;
-		background: #0a0e18;
-		border: 1px solid #1e2433;
-		border-radius: 6px;
-		overflow: hidden;
-	}
-	.detail-head {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		padding: 10px 14px;
-		background: #0f172a;
-		border-bottom: 1px solid #1e2433;
-	}
-	.d-label {
-		font-size: 14px;
-		font-weight: 600;
-		color: #f1f5f9;
-	}
-	.d-id {
-		font-size: 11px;
-		font-family: monospace;
-		color: #64748b;
-	}
-	.d-ind {
-		font-size: 11px;
-		color: #94a3b8;
-	}
-	.d-close {
-		background: transparent;
-		border: none;
-		color: #64748b;
-		cursor: pointer;
-		font-size: 14px;
-		padding: 4px 6px;
-	}
-	.d-close:hover {
-		color: var(--dl-accent);
-	}
-	.detail-body {
-		padding: 24px;
-		text-align: center;
-	}
 	.panel-loading {
 		flex-shrink: 0;
 		padding: 18px;
