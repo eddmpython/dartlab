@@ -249,7 +249,7 @@
     },
     {
       "id": "engines.company",
-      "bodyPreview": "## 엔진 역할\n\n`Company`는 DartLab의 단일 기업 facade다. 사용자는 종목코드나 ticker로 `Company`를 만들고, 이 객체에서 원자료 조회, 공시 탐색, 분석, 신용, gather, quant, macro, story를 호출한다.\n\n한국 DART 회사와 미국 EDGAR 회사 모두 같은 facade 패턴을 따른다. 세부 topic/컬럼은 시장과 provider별로 다를 수 있으므로 반환값의 source와 기준일을 확인한다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n\nraw = c.panel(\"BS\")\nselected = c.select(\"매출액\")\ntrace = c.trace(\"영업이익\")\n\nanalysis = c.analysis(\"financial\", \"수익성\")\ncredit = c.credit()\nprice = c.gather(\"price\")\nquant = c.quant(\"모멘텀\")\nmacro = c.macro(\"사이클\")                          # 시장 매크로 (사이클/위기/시나리오/유동성/심리)\nsensitivity = c.analysis(\"macro\", \"매크로민감도\")  # 기업 단위 매크로 민감도는 analysis 엔진\nstory = c.story()\nindustry = c.industry()\n```\n\n## 강행 호출 룰 (agent 답변 품질 회귀 차단)\n\n단일 종목 질문은 본 엔진이 1 차 진입점. 다음 4 룰 강행:\n\n1. **`EngineCall(apiRef=\"Company.panel\", args={\"stockCode\": \"...\", \"topic\": \"...\"})` 1 회로 다수 답변 가능** — 응답 `data` dict 에 `dcrBadge` (Track G 7 축 신용) + `industryBadge` (Track E 산업/lifecycle/peers) 자동 부착. 신용·산업 질문은 추가 EngineCall 불필요.\n2. **본문 안 숫자 / 점수 / 등급 / peers 명에 inline ref 표기 필수** — tool result 의 `refs` 배열에 들어온 id 그대로 `table:Company.panel:005930` 또는 `tableRef:id` literal 로 표기한다.\n3. **다중 종목 비교는 `PeerCompareN` 1 회 강제** (2~12 종목) — Company.panel 를 N 회 반복 호출 + RunPython 정렬 패턴 금지. 메모리 압박 + refs 가치체인 약화.\n4. **RunPython 직접 BS/IS/CF 비율 계산 금지** — Company.panel 결과의 `dcrBadge.axes` (7 축 신용) 또는 Company.analysis 결과의 `items` / `history` 인용. 같은 비율 재계산은 raw fallback 만.\n\n## 호출 동작\n\nCompany 생성 시 target과 market/provider를 확정한다. 이후 `s",
+      "bodyPreview": "## 엔진 역할\n\n`Company`는 DartLab의 단일 기업 facade다. 사용자는 종목코드나 ticker로 `Company`를 만들고, 이 객체에서 원자료 조회, 공시 탐색, 분석, 신용, gather, quant, macro, story를 호출한다.\n\n한국 DART 회사와 미국 EDGAR 회사 모두 같은 facade 패턴을 따른다. 세부 topic/컬럼은 시장과 provider별로 다를 수 있으므로 반환값의 source와 기준일을 확인한다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n\nraw = c.panel(\"BS\")\nselected = c.select(\"매출액\")\ntrace = c.trace(\"영업이익\")\n\nanalysis = c.analysis(\"financial\", \"수익성\")\ncredit = c.credit()\nprice = c.gather(\"price\")\nquant = c.quant(\"모멘텀\")\nmacro = c.macro(\"사이클\")                          # 시장 매크로 (사이클/위기/시나리오/유동성/심리)\nsensitivity = c.analysis(\"macro\", \"매크로민감도\")  # 기업 단위 매크로 민감도는 analysis 엔진\nstory = c.story()\nreportModel = c.reportModel()                      # 전문 리포트 계약(ReportModel, schemaVersion=2)\nindustry = c.industry()\n```\n\n## 강행 호출 룰 (agent 답변 품질 회귀 차단)\n\n단일 종목 질문은 본 엔진이 1 차 진입점. 다음 4 룰 강행:\n\n1. **`EngineCall(apiRef=\"Company.panel\", args={\"stockCode\": \"...\", \"topic\": \"...\"})` 1 회로 다수 답변 가능** — 응답 `data` dict 에 `dcrBadge` (Track G 7 축 신용) + `industryBadge` (Track E 산업/lifecycle/peers) 자동 부착. 신용·산업 질문은 추가 EngineCall 불필요.\n2. **본문 안 숫자 / 점수 / 등급 / peers 명에 inline ref 표기 필수** — tool result 의 `refs` 배열에 들어온 id 그대로 `table:Company.panel:005930` 또는 `tableRef:id` literal 로 표기한다.\n3. **다중 종목 비교는 `PeerCompareN` 1 회 강제** (2~12 종목) — Company.panel 를 N 회 반복 호출 + RunPython 정렬 패턴 금지. 메모리 압박 + refs 가치체인 약화.\n4. **RunPython 직접 BS/IS/CF 비율 계산 금지** — Company.panel 결과의 `dcrBadge.axes` (7 축 신용) 또는 Company.analysis 결과의 `items` / `history",
       "title": "Company",
       "category": "engines",
       "categoryTitle": "Engines",
@@ -293,7 +293,8 @@
         "Company.gather",
         "Company.quant",
         "Company.macro",
-        "Company.story"
+        "Company.story",
+        "Company.reportModel"
       ],
       "toolRefs": [],
       "datasetRefs": [],
