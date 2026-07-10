@@ -50,9 +50,8 @@ c.credit("등급", detail=True)   # 7 축 narrative + 지표 시계열 풀
 c.credit("채무상환")            # 한글 alias
 c.credit("repayment")           # 영문 alias
 
-# 4. 보고서 발간 (review publisher 통합)
-from dartlab.story.publisher import publishReport
-publishReport("005930")         # 6 막 보고서, 신용평가 섹션 narrative + audit 자동 포함
+# 4. 신용 관점 리포트 (story 엔진이 조립)
+c.story(type="credit")          # 신용 섹션 narrative + 등급 + 지표 시계열
 ```
 
 다른 분석 엔진 (analysis / macro / quant / scan) 도 동일 패턴 — 무인자 → 가이드, "축이름" → 분석.
@@ -387,7 +386,6 @@ src/dartlab/credit/
 ├── engine.py             # 등급 산출 메인 파이프라인
 ├── metrics.py            # 7 축 정량 지표 산출 (오리지널)
 ├── narrative.py          # 7 축 서사 생성 (조건부 해석 문장)
-├── publisher.py          # 보고서 7 섹션 생성 + 파일 저장 (deprecated → story.publisher)
 ├── audit.py              # 신평사 대조 + 동의/비동의
 ├── history.py            # 등급 이력 JSON + 전이 매트릭스
 ├── scorecard.py          # 점수→등급 매핑 (core 재수출)
@@ -455,7 +453,7 @@ data/credit/              # 내부 데이터 (git 미추적)
 - 이벤트 발간 — 등급 변경 시 즉시
 - 정례 보고서 — 월 1 회 전체 등급 변동 요약 (`data/credit/periodic/`)
 - 저장 경로 — `blog/05-company-reports/{순번}-{slug}/index.md` (review publisher)
-- 발간 명령 — `from dartlab.story.publisher import publishReport; publishReport("005930")`
+- 발간 명령 . `dartlab.Company("005930").story(type="credit")` 로 신용 관점 리포트를 조립한다
 - 레거시 — `blog/04-credit-reports/` 아카이브 (16 개)
 
 ## 변경 이력

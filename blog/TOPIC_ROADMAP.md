@@ -89,10 +89,11 @@
 | 07 | dataset-auto-sync |
 | 08 | pyodide-dartlab-lite |
 
-### 04 신용분석 보고서 (프로그래매틱, publisher.py 관리)
+### 04 신용분석 보고서 (아카이브)
 
-자동 생성 카테고리. `blog/04-credit-reports/_registry.json`으로 번호/slug 관리.
-`publishReport("005930")` → 블로그 포스트 자동 생성.
+`blog/04-credit-reports/_registry.json`으로 번호/slug 관리. 옛 자동 발간기(`story/publisher.py`)는
+전문 리포트 엔진으로 대체되며 폐기됐다(2026-07-06). 신용 관점 리포트는 `Company.story(type="credit")`
+가 조립한다.
 
 현재 발간: 삼성전자, SK하이닉스, NAVER, LG (4개사)
 
