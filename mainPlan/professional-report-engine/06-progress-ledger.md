@@ -42,8 +42,10 @@
     - 010770 2024 = 지역부문(국내·중국·인도·미국·소계·연결조정·합계) 은 있으나 **지표가 하나뿐**. 부문별 영업이익 없음.
     - 005270 2024 = 행이 미수수익·유가증권할인차금·건물·`300,000주` 등 **부문과 무관한 주석 항목**. 추출 오염.
     - ⇒ `segRevenues`(부문별 매출)도, 정답인 부문별 OI 도 구성 불가 ⇒ MAE 백테스트 불가.
-  - ★ **상위 결함 보고(별건 이슈감)**: scan 주석 추출기가 주석 표를 **행 라벨만 남기고 열(부문) 차원을 버린다**. 회사에 따라 행이 부문명이기도, 계정명이기도, 아예 **다른 표**이기도 하다(005270). `segments.parquet` 은 현재 세그먼트 경제성에 **사용 불가**. 고치려면 추출기가 (행 × 열) 행렬을 보존해야 하고, 그건 노트 벌크 재생성(승인 대상)을 수반한다.
-  - 잔여 순서: ① 주석 추출기 부문 축 보존 수정 + 노트 벌크 재생성(승인) → ② `peerMargins` 소스 배선(`industryPeers/themes`) → ③ leave-one-out 공시사 MAE 게이트.
+  - ★ **원인 정정(코드 확인 후, 첫 진단은 부정확했음)**. "추출기가 열 차원을 버린다" 가 아니라 **다축 주석은 애초에 제외 설계**다: `scan/builders/kr/notes.py` docstring "단일축이 아닌 다축 matrix 주석(**세그먼트 등**)은 `readNoteStatements` 가 자동 제외" + `providers/dart/panel/cell.py:154` depth-1 필터가 matrix 주석 배제. 그런데 `core/extractionCatalog.py:404` 는 `note.segments` 를 **`registered=True`** 로 등재해 빌더가 순회한다. 결과로 `segments.parquet`(3.1MB, 타 note 파일과 **동일 프리빌드 런** 타임스탬프)가 **퇴화 행**으로 생성된다. 낡은 산출물이 아니다.
+    - ✅ **공개 표면 영향 없음(실측)**: `dartlab.scan("note","영업부문")` -> **0 행**. 퇴화 parquet 은 사용자에게 노출되지 않는다. (첫 보고에서 사용자 영향을 암시한 것은 과장이었다.)
+    - ⇒ 그래도 **세그먼트 경제성 입력원으로는 쓸 수 없다**. 부문 매트릭스는 런타임 panel(회사별)에서 읽어야 하는데 로컬 panel 은 희소하다.
+  - 잔여 순서: ① `note.segments` 를 단일축 note 벌크에서 해제하거나(오해 유발 산출물 제거) 빌더가 (행 × 열) 행렬을 보존하도록 확장 . **둘 다 프리빌드 산출 변경이라 재생성(승인) 수반** → ② `peerMargins` 소스 배선(`industryPeers/themes`) → ③ leave-one-out 공시사 MAE 게이트.
 - ◐ P1d 정량 moat . ✅ **개념확립 통과**(`tests/_attempts/quantMoat/concept.py`, graduation gate 준수): C1 ROIC−WACC 지속성·C2 마진 CV·등급 논리곱(wide/narrow/none, noComposite)·정성원천(switching/network/brand) unmeasured 명시. offline 5 체크.
   - ✅ **G1 코호트 백테스트 = 지시적 PASS (2026-07-06, 전 유니버스 벌크)**. `cohortBacktestBulk.py`. 벌크 연간 5 년(2021~2025)이라 "형성3년+T+3"(6 년 필요) 불가 -> 두 절충 모두 실행, **둘 다 PASS**.
     - 형성2021~2023·성과2025(T+2), 유효 **1,071 사**: wide(n73) median **+7.63%** · 양(+) 70% vs none(n806) median **−6.01%** · 양(+) 26%.
