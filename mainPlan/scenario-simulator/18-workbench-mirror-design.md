@@ -99,10 +99,45 @@ Feast on-demand feature view · Ibis 지연 IR · tidy data/melt · entry_points
 어댑터 수가 O(축)이 아니라 O(형태)로 붕괴 (2) lane 을 declared 역할 순수함수로 + morphology 는 AMBIGUOUS
 fallback (3) gap 을 행으로 방출해 coverage 강등에 먹임. **relabeling 을 novel 로 포장하지 않는다.**
 
-## §8. 잔여 + 승인 대기
+## §8. 정정 : capability 가 이미 선언한다 (제안 철회, 2026-07-07 실측)
 
-- **엔진 `_guide()` extraColumns 확장**(returnType·targetRequired·universeScope·laneHint·unit)은 6엔진
-  횡단 변경 = **운영자 승인 사안**. 무단 착수 금지. 근거 숫자 = declaredLane 0/125 (§3).
+운영자 지적 "capability 가 있는데 왜 그게 필요하지". **답 = 필요 없다. §2~§7 이 제안한 엔진 `_guide()`
+extraColumns 확장과 `laneHint` 신설은 재발명이었다. 철회한다.**
+
+**실측 증거** (`declared.py`): 축 엔트리 `_AxisEntry` 는 이미 `returnType`·`targetRequired`·`targetParam`·
+`listFn` 을 선언한다. 문제는 `_injectAxisRegistriesLive` 가 `label`/`description` 만 남기고 **나머지를
+버리는 것**이다. 그래서 declared 가 0/125 로 보였다.
+
+| 엔진 | 축 | returnType | targetRequired | listFn |
+|---|---|---|---|---|
+| scan | 27 | **27** | 3 | **3** (account·ratio·note) |
+| gather | 18 | 0 | 9 | 0 |
+| quant | 48 | 0 | 0 | 0 |
+| macro | 15 | 0 | 0 | 0 |
+| industry | 9 | 0 | 0 | 0 |
+| credit | 8 | 0 | 0 | 0 |
+
+버려지던 선언을 싣기만 하면:
+- **declared(returnType) 0/125 -> 27/125**
+- **선언만으로 lane 확정 26/125.** `laneHint` 불필요 = lane 은 `returnType` + `listFn` 의 **순수함수**
+  (listFn 보유 + DataFrame = 카탈로그 원자 = 척추 / DataFrame + target 불요 = 단면 / dict = shape 마무리).
+- 척추로 뽑힌 3축 = `scan.account`·`scan.ratio`·`scan.note` = scanAccount docstring 이 "원자" 라 부른 바로 그것.
+
+**정정된 할 일 (새 메커니즘 0)**:
+1. `_injectAxisRegistriesLive` 가 선언 필드를 **버리지 않게** 한다 (단일 함수, capability SSOT 내부).
+2. 나머지 5엔진은 새 표면이 아니라 **같은 `_AxisEntry.returnType` 을 채운다** (엔진 저자가 `label` 을
+   쓰는 그 자리. 축 등록 시 1회).
+3. 작업대의 `ENTITY_KEYS` 하드코딩도 철회 대상. capability 계약의 `evidenceSchema.targetKeys`
+   (`종목코드`/`stockCode`/`code`) 와 `periodKeys`·`valueKeys`·`unit` 이 이미 SSOT 다.
+
+**교훈(반복 재발)**: 새 메커니즘을 제안하기 전에 기존 자산을 전수 확인하라 (MEMORY §4). 이 세션에서만
+세 번 반복됐다: 손 6계정(카탈로그 860종 실재) · "사전빌드 필요"(런타임 벡터로 됨) · guide 확장(선언 실재).
+
+## §9. 잔여 + 승인 대기
+
+- **`_injectAxisRegistriesLive` 가 선언 필드를 버리지 않게 하는 단일 함수 수정** (capability SSOT 내부).
+  근거 숫자 = §8 (0/125 -> 27/125). 이 변경은 `capabilities()` 산출을 바꾸므로 skill 산출물 동기화
+  (`artifactSync --check`) 동행 필요 = 운영자 승인 사안. 옛 제안(guide extraColumns 6엔진 횡단)은 철회됨.
 - 졸업 게이트 잔여: Step3 지연 물질화 데모 -> 덕지덕지 제거 -> 클린코드 -> 9섹션 docstring -> 본진.
   본진 위치는 새 엔진 신설이 아니라 기존 `scan`/`reference` 하위 (운영자 토론).
 - **검증 전 성공주장 금지**: 본 문서의 설계는 개념확립(§3)까지만 실증됐다. 전 축 물질화·CI 게이트는 미빌드.
