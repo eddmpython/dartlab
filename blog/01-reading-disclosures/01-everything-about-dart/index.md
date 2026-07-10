@@ -823,33 +823,34 @@ c.panel("BS")    # 재무상태표 DataFrame
 c.panel("IS")    # 손익계산서 DataFrame
 c.panel("CF")    # 현금흐름표 DataFrame
 
-# 정기보고서
-c.dividend        # 배당 시계열
-c.majorHolder     # 최대주주 지분율
-c.employee        # 직원 현황
-c.audit           # 감사의견
-c.executive       # 임원 현황
-c.executivePay    # 임원 보수
-c.boardOfDirectors     # 이사회 구성, 출석률
-c.contingentLiability  # 우발부채, 소송
-c.relatedPartyTx       # 특수관계자 거래
-c.sanction             # 제재 현황
+# 정기보고서 본문 — c.panel(섹션명)
+c.panel("배당")          # 배당
+c.panel("직원")          # 직원 현황
+c.panel("감사")          # 감사의견
+c.panel("임원")          # 임원 현황, 보수
+c.panel("이사회")        # 이사회 구성, 출석률
+c.panel("우발")          # 우발부채, 소송
+c.panel("특수관계자")     # 특수관계자 거래
+c.panel("제재")          # 제재 현황
 
-# K-IFRS 주석 — c.panel(topic) 통합
-c.panel("inventory")        # 재고자산
-c.panel("tangibleAsset")    # 유형자산
-c.panel("borrowings")       # 차입금
-c.panel("provisions")       # 충당부채
-c.panel("segments")         # 부문정보
-c.panel("receivables")      # 매출채권
+# 지배구조 판독 (최대주주, 이사회 구성)
+c.analysis("governance", "지배구조")
 
-# 공시 텍스트
-c.business        # 사업의 내용
-c.mdna            # 경영진단의견
-c.overview        # 회사의 개요
+# K-IFRS 주석 — c.panel(섹션명)
+c.panel("재고")          # 재고자산
+c.panel("유형자산")       # 유형자산
+c.panel("차입금")         # 차입금
+c.panel("충당부채")       # 충당부채
+c.panel("부문")          # 부문정보
+c.panel("매출채권")       # 매출채권
 
-# 전체 일괄 추출
-d = c.all()       # 40개 모듈 전체를 dict로
+# 공시 텍스트 — c.panel(섹션명)
+c.panel("사업의 내용")     # 사업의 내용
+c.panel("경영진단")       # 경영진단의견
+c.panel("회사의 개요")     # 회사의 개요
+
+# 격자 전체
+c.panel            # 항목 x 기간 wide DataFrame
 ```
 
 ### 공시 수평 정렬
@@ -858,7 +859,7 @@ d = c.all()       # 40개 모듈 전체를 dict로
 
 ### K-IFRS 주석 통합
 
-12개 주요 주석 항목을 `c.panel(topic)`으로 통합 접근한다.
+주석 항목을 `c.panel(섹션명)`으로 통합 접근한다.
 
 ---
 

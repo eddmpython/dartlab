@@ -88,7 +88,7 @@ DRAM과 NAND는 표준화된 commodity다. 용량과 속도 규격이 정해져 
 # 회사가 통제하지 못하는 값의 결과를, 손익은 OPM 변동으로 기록한다
 import dartlab
 c = dartlab.Company("MU")
-opm = c.ratio("operating_margin", freq="A")  # 영업이익률 시계열
+opm = c.panel("ratios")  # 재무비율 시계열 (영업이익률 포함)
 # 2022: 31.5% / 2023: -37.0% / 2025: 26.1% — 같은 회사, 같은 제품, 다른 값
 ```
 

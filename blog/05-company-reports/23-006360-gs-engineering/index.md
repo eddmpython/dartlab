@@ -357,7 +357,7 @@ gs.analysis("financial", "수익성")
 
 # 매출 대비 일회성 비용 비중 비교
 for company in [hdc, gs]:
-    print(company.show("IS", period=["2022", "2023", "2024"]))
+    print(company.panel("IS", freq="Y"))
 ```
 
 ### "어?" 포인트 ④: 같은 업종, 비슷한 규모, 정반대 전략

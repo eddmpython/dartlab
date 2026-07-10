@@ -272,7 +272,7 @@ recent = (
 # 3. 상위 종목에 대해 재무건전성도 같이 본다
 for code in recent["stock_code"].head(5):
     c = dartlab.Company(code)
-    print(c.insights)   # 7영역 등급
+    print(c.analysis("financial", "종합평가"))   # 종합 스코어카드
 ```
 
 검색이 출발점이고, 검색에서 나온 종목코드가 곧바로 Company 분석으로 이어진다. search → Company → analysis가 한 흐름이다.

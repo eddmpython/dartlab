@@ -101,7 +101,7 @@ c.panel("majorShareholder")     # 최대주주
 120개 이상의 topic이 있다. 뭐가 있는지 모르겠으면:
 
 ```python
-c.topics   # 전체 데이터 지도 — topic, source, 기간, 블록 수
+c.panel    # 전체 데이터 지도 — 항목 x 기간 wide 격자
 ```
 
 기간 필터도 된다.
@@ -162,7 +162,7 @@ c.panel("inventory")        # 재고자산
 c.panel("borrowings")       # 차입금
 ```
 
-뭐가 있는지 모르겠으면 `c.topics`에서 topic 목록을 확인한다.
+정식 topic 은 `IS` · `BS` · `CF` · `CIS` · `SCE` · `ratios` 다. 주석 본문은 섹션명으로 검색한다.
 
 ---
 

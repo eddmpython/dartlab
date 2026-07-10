@@ -246,7 +246,7 @@ from dartlab import Company
 
 c = Company("000480")
 print(c.corpName, c.stockCode)
-print(c.topics)
+print(c.panel.shape)
 print(c.panel("1. 사업의 개요"))
 print(c.panel("2. 주요 제품 및 서비스"))
 print(c.panel("4. 매출 및 수주상황"))

@@ -175,9 +175,10 @@ def _targets() -> list[tuple[Path, list[str]]]:
         out.append((p, [p.read_text(encoding="utf-8")]))
     for p in sorted((_REPO / "notebooks" / "_scripts").glob("*.py")):
         out.append((p, [p.read_text(encoding="utf-8")]))
-    # dartlab 이야기 본문의 코드펜스는 브라우저 노트북 셀로 그대로 투영된다. 계약 밖 호출이
-    # 실리면 독자의 첫 실행이 AttributeError 로 끝난다. 다른 카테고리는 산문 예시라 제외.
-    for p in sorted((_REPO / "blog" / "03-dartlab-stories").rglob("index.md")):
+    # 블로그 전 카테고리. dartlab 이야기 본문은 브라우저 노트북 셀로 그대로 투영되고,
+    # 다른 카테고리의 코드도 독자가 그대로 따라 친다. 발행된 8 편이 실체 없는 메서드
+    # (`c.insights` · `c.mdna` · `c.majorHolder` 등)를 싣고 있었다(2026-07-10 실측).
+    for p in sorted((_REPO / "blog").rglob("index.md")):
         out.append((p, _codeBlocksOfMarkdown(p)))
     # Skill OS spec 의 python 코드펜스. 외부 도구와 기여자가 이 코드를 그대로 실행한다.
     # 은퇴한 `c.show(...)` 와 실체 없는 `dartlab.flow(...)` 가 여기서 오래 살아 있었다.

@@ -257,7 +257,7 @@ print(c.panel("IS"))
 
 ```python
 # 7영역 자동 등급 (A~F)
-print(c.insights)
+print(c.analysis("financial", "종합평가"))
 ```
 
 ```bash
