@@ -25,12 +25,13 @@ dartlab 블로그는 재무제표의 **"왜?"** 를 풀어내는 엔진이다.
 
 `카테고리 폴더 → 번호-slug 폴더 → index.md + assets/` 구조.
 
-### 8 카테고리
+### 9 카테고리
 
 | 카테고리 | 폴더 | 설명 | 관리 |
 |---|---|---|---|
 | 공시 읽기 | `01-reading-disclosures` | DART · EDGAR · 사업보고서 · 감사 · 재무제표 · 지배구조 | 운영자 |
 | DartLab 소식 | `02-dartlab-news` | 설치 · 기능 · 업데이트 | 사용자 직접 |
+| dartlab 이야기 | `03-dartlab-stories` | dartlab 을 한 편씩 따라 하는 교육 연재. 본문 코드가 브라우저에서 실행됨 | audit + 블로그 |
 | 신용분석 보고서 | `04-credit-reports` | **프로그래매틱 생성** - `publisher.py` 관리, `_registry.json` 매핑 | 자동 |
 | 기업분석 보고서 | `05-company-reports` | 6 막 재무 서사, audit 완료 후 발간 | audit + 블로그 + 영상 한 세트 |
 | 데이터 리포트 | `06-data-reports` | scan · 전수 집계 · 시장 전체 특이점 | audit + 블로그 |
@@ -60,7 +61,7 @@ blog/
 title: 글 제목 (60자 이하, 검색형 질문 또는 판단 문장)
 date: YYYY-MM-DD
 description: 1문장 설명 (160자 이하, 검색 스니펫 노출)
-category: reading-disclosures | dartlab-news | credit-reports | company-reports | data-reports | industry-map | tech-story | investment-stories
+category: reading-disclosures | dartlab-news | dartlab-stories | credit-reports | company-reports | data-reports | industry-map | tech-story | investment-stories
 series: 시리즈 id
 seriesOrder: 숫자
 thumbnail: /avatar-*.png
@@ -1090,7 +1091,7 @@ URL : /blog/skhynix  ← 숫자와 종목코드 제거
 ## 요약 - 명제 15 줄
 
 1. dartlab 블로그는 재무제표의 "왜?" 를 풀어내는 엔진이다.
-2. 카테고리 8 종 · 폴더 번호 + slug · Frontmatter(ai 블록 포함) 로 정리한다.
+2. 카테고리 9 종 · 폴더 번호 + slug · Frontmatter(ai 블록 포함) 로 정리한다.
 3. 제작은 6 역할 체인 (Phase 0 탐색 → 1 기획 → 2 집필 → 2.5 마스터라이터 편집 → 3 자산 → 4 독자 루프 → 5 발간 → 6 추적).
 4. 독자가 정말 궁금해할 질문 1 개가 모든 막을 밀고 간다 (병렬 서사 없음).
 5. 막 개수는 고정 아닌 이야기가 요구하는 만큼, 8 풍부함 축 중 3~4 적용.

@@ -42,133 +42,138 @@ const IMAGE_NOTE = `이미지 기획(내용 연상 강제): hero 1장 + 본문 i
 
 const VISUAL_NOTE = `막별 비주얼: 이야기가 요구하는 차트·표·그래프 세트를 막마다 정한다(고정 템플릿 아님). 추이=line, 비교/구성=bar, 부문믹스=도넛/스택, 두 계열 대비=grouped, 공정·회사·근거 지도=table. 한 막에 하나로 부족하면 같은 actOrder 에 2~4개를 기획한다. 시각물은 글 뒤 자동 부록이 아니라 본문 중간 설명 장치다. placement·insertAfter·narrativeUse 로 어느 문장 뒤에 왜 들어가는지 적는다. 각 차트는 그 막의 주장을 증명해야 하고, 큰 숫자를 가려도 차트만으로 같은 긴장이 남아야 한다. 손수 못생긴 차트 금지. kind·title·proves·seriesHint 를 명확히 적어 메인 스레드가 정식 렌더로 그리게 한다.`
 
+// 필드가 무엇을 담아야 하는지는 프롬프트(FIELD_GUIDE)가 말한다. 스키마는 형태만 말한다.
+// 설명문을 스키마에 넣었더니 JSON 이 7KB 를 넘어 구조화 출력이 안전 분류기에 통째로 막혔다
+// ("output schema too large to classify safely", 2026-07-10). 편집장 수렴과 기획작가 개선이
+// 전부 실패해 루프가 어느 카테고리에서도 안 돌았다.
 const PLAN_SCHEMA = {
   type: 'object', additionalProperties: false,
   required: ['title', 'titleContract', 'description', 'readerQuestion', 'insight', 'acts', 'visuals', 'imagePlan', 'relatedPosts', 'honestyGuards', 'evidenceMap'],
   properties: {
-    title: { type: 'string', description: '제목(60자 이하, 회사명 앞·궁금증 갭). 예: "오로라월드, 매출은 2배가 됐는데 이익은 왜 널뛸까".' },
+    title: { type: 'string' },
     titleContract: {
       type: 'object', additionalProperties: false,
       required: ['workingTitle', 'selectedTitle', 'hookQuestion', 'readerGap', 'promise', 'whySelected', 'candidates', 'rejectedPatterns'],
       properties: {
         workingTitle: { type: 'string' },
-        selectedTitle: { type: 'string', description: '최종 선택 제목. title 과 같아야 한다.' },
-        hookQuestion: { type: 'string', description: '제목이 첫 1초에 만들 독자 질문.' },
-        readerGap: { type: 'string', description: '독자의 기존 상식과 글이 갚을 사실 사이의 간격.' },
-        promise: { type: 'string', description: '제목이 약속하고 결론이 갚을 내용.' },
-        whySelected: { type: 'string', description: '왜 다른 후보보다 이 제목이 더 강한가.' },
+        selectedTitle: { type: 'string' },
+        hookQuestion: { type: 'string' },
+        readerGap: { type: 'string' },
+        promise: { type: 'string' },
+        whySelected: { type: 'string' },
         candidates: {
           type: 'array', minItems: 3,
           items: {
             type: 'object', additionalProperties: false, required: ['title', 'hook', 'risk'],
-            properties: {
-              title: { type: 'string' },
-              hook: { type: 'string' },
-              risk: { type: 'string' },
-            },
+            properties: { title: { type: 'string' }, hook: { type: 'string' }, risk: { type: 'string' } },
           },
         },
         rejectedPatterns: { type: 'array', items: { type: 'string' } },
       },
     },
-    description: { type: 'string', description: 'SEO description(80~200자). 첫 2줄이 검색 스니펫.' },
-    readerQuestion: { type: 'string', description: '관통선 = 독자 질문 1개. 제목 없이 이 질문만으로 읽고 싶어야 함.' },
+    description: { type: 'string' },
+    readerQuestion: { type: 'string' },
     insight: {
       type: 'object', additionalProperties: false,
       required: ['commonBelief', 'twistFact', 'whatToWatch', 'freshnessArgument', 'evidenceRefs'],
       properties: {
-        commonBelief: { type: 'string', description: '시장·대중의 통념.' },
-        twistFact: { type: 'string', description: '핵심 인싸이트 = 관통선의 답. 통념과 충돌하는 사실 + 메커니즘. 제목 재진술·억지 수치 금지.' },
-        whatToWatch: { type: 'string', description: '다음 공시에서 볼 지표(이 인싸이트가 맞는지 검증할 곳).' },
-        freshnessArgument: { type: 'string', description: '왜 이미 도는 서사의 재탕이 아닌가.' },
-        evidenceRefs: { type: 'array', items: { type: 'string' }, description: '이 인싸이트를 받치는 dartlab 실측 근거(evidence 안에서).' },
+        commonBelief: { type: 'string' },
+        twistFact: { type: 'string' },
+        whatToWatch: { type: 'string' },
+        freshnessArgument: { type: 'string' },
+        evidenceRefs: { type: 'array', items: { type: 'string' } },
       },
     },
     acts: {
       type: 'array', minItems: 6,
-      description: '막 구조. order 순으로 읽으면 한 편. 관통선이 인싸이트에 필연적으로 착지.',
       items: {
         type: 'object', additionalProperties: false, required: ['order', 'heading', 'purpose', 'scene', 'keyNumbers', 'causalBridge'],
         properties: {
           order: { type: 'integer' },
-          heading: { type: 'string', description: 'H2 소제목(고유·궁금증형).' },
+          heading: { type: 'string' },
           purpose: { type: 'string', enum: ['배경', '궁금증심화', '메커니즘공개', '리스크반전', '판단닫힘'] },
-          scene: { type: 'string', description: '이 막의 장면(제품·공장·공시·자본배분 중 하나). 보고서톤 금지.' },
-          keyNumbers: { type: 'array', items: { type: 'string' }, description: '이 막에서 쓸 dartlab 실측 수치(evidence 안에서).' },
-          causalBridge: { type: 'string', description: '다음 막으로 넘어가는 인과 다리 1문장.' },
+          scene: { type: 'string' },
+          keyNumbers: { type: 'array', items: { type: 'string' } },
+          causalBridge: { type: 'string' },
         },
       },
     },
     visuals: {
-      type: 'array',
+      type: 'array', minItems: 3,
       items: {
         type: 'object', additionalProperties: false, required: ['actOrder', 'kind', 'title', 'proves', 'placement', 'insertAfter', 'narrativeUse'],
         properties: {
-          actOrder: { type: 'integer', description: '어느 막에 붙나.' },
-          kind: { type: 'string', description: 'line|bar|grouped|donut|stack|table 등.' },
+          actOrder: { type: 'integer' },
+          kind: { type: 'string' },
           title: { type: 'string' },
-          proves: { type: 'string', description: '이 차트가 증명하는 주장.' },
-          seriesHint: { type: 'string', description: '어떤 계열·기간(evidence 기준).' },
-          placement: { type: 'string', description: '본문 안 위치. 예: act 3 middle, after mechanism paragraph.' },
-          insertAfter: { type: 'string', description: '어떤 설명·문장 뒤에 삽입할지.' },
-          narrativeUse: { type: 'string', description: '독자가 이 시각물을 보고 어떤 이해를 얻어야 하는지.' },
+          proves: { type: 'string' },
+          seriesHint: { type: 'string' },
+          placement: { type: 'string' },
+          insertAfter: { type: 'string' },
+          narrativeUse: { type: 'string' },
         },
       },
     },
     imagePlan: {
       type: 'array', minItems: 3,
-      description: '내용 연상 이미지 기획(로고·상징품 허용). hero 1 + inline 2~3.',
       items: {
         type: 'object', additionalProperties: false, required: ['slot', 'subject', 'query', 'keywords', 'placement', 'narrativeUse'],
         properties: {
           slot: { type: 'string', enum: ['hero', 'inline'] },
-          subject: { type: 'string', description: '무엇을 연상시키나(회사 제품·현장·상징).' },
-          query: { type: 'string', description: '실사 CC0 수급용 영어 검색어(그 회사 제품·현장·상징 앞에).' },
-          keywords: { type: 'array', items: { type: 'string' }, description: '제목/태그 매칭용 키워드(오매치 차단).' },
-          insertAfterAct: { type: 'integer', description: 'inline 이미지면 어느 막 뒤에 삽입할지. hero 는 0.' },
-          placement: { type: 'string', description: 'hero 또는 본문 안 위치.' },
-          narrativeUse: { type: 'string', description: '이 이미지가 독자의 이해를 어떻게 돕는지.' },
+          subject: { type: 'string' },
+          query: { type: 'string' },
+          keywords: { type: 'array', items: { type: 'string' } },
+          insertAfterAct: { type: 'integer' },
+          placement: { type: 'string' },
+          narrativeUse: { type: 'string' },
         },
       },
     },
     relatedPosts: {
       type: 'object', additionalProperties: false,
       required: ['searches', 'links', 'placementRule'],
-      description: '기존 블로그 참고글 연결 계획. 선행 글에 이미 내용이 있으면 반복하지 말고 링크한다.',
       properties: {
-        searches: { type: 'array', minItems: 1, items: { type: 'string' }, description: '착수 전 검색할 내부 글 키워드.' },
+        searches: { type: 'array', minItems: 1, items: { type: 'string' } },
         links: {
           type: 'array',
           items: {
             type: 'object', additionalProperties: false, required: ['path', 'title', 'reason', 'placement'],
-            properties: {
-              path: { type: 'string', description: '내부 글 경로. 예: /blog/hbm-stack-packaging-test' },
-              title: { type: 'string' },
-              reason: { type: 'string', description: '왜 이 글을 참고글로 연결하는가.' },
-              placement: { type: 'string', description: '본문 어느 설명 뒤에 연결할지.' },
-            },
+            properties: { path: { type: 'string' }, title: { type: 'string' }, reason: { type: 'string' }, placement: { type: 'string' } },
           },
         },
-        placementRule: { type: 'string', description: '참고글을 본문 어디에, 어떤 요약과 함께 놓을지.' },
+        placementRule: { type: 'string' },
       },
     },
-    honestyGuards: { type: 'array', items: { type: 'string' }, description: '이 글에 적용할 정직성 가드(영업이익 vs 순이익 분리 등).' },
+    honestyGuards: { type: 'array', items: { type: 'string' } },
     evidenceMap: {
       type: 'array', minItems: 3,
-      description: '본문에 쓸 DART/EDGAR/dartlab/scan/price/macro/internal-blog 근거 지도. 숫자·공시 위치·기간·어느 막에서 쓰는지까지 적는다.',
       items: {
         type: 'object', additionalProperties: false, required: ['claim', 'sourceType', 'period', 'sourceRef', 'howUsed'],
         properties: {
-          claim: { type: 'string', description: '이 근거가 받치는 주장.' },
+          claim: { type: 'string' },
           sourceType: { type: 'string', enum: ['DART', 'EDGAR', 'dartlab', 'scan', 'external', 'price', 'macro', 'internal-blog'] },
-          period: { type: 'string', description: '연도·분기·표본 기간. EDGAR는 fiscal year/quarter를 명시.' },
-          sourceRef: { type: 'string', description: 'DART 보고서·EDGAR 10-K/10-Q·dartlab 호출·scan 축.' },
-          howUsed: { type: 'string', description: '어느 막/시각물에서 어떻게 쓰는지.' },
+          period: { type: 'string' },
+          sourceRef: { type: 'string' },
+          howUsed: { type: 'string' },
         },
       },
     },
   },
 }
+
+// 스키마에서 뺀 필드 설명. 프롬프트로 준다.
+const FIELD_GUIDE = `필드 정의:
+- title: 60자 이하. 궁금증 갭. 예 "오로라월드, 매출은 2배가 됐는데 이익은 왜 널뛸까".
+- titleContract.selectedTitle 은 title 과 같아야 한다. hookQuestion 은 제목이 첫 1초에 만드는 독자 질문. readerGap 은 독자의 상식과 글이 갚을 사실 사이의 간격. promise 는 제목이 약속하고 결론이 갚을 내용. whySelected 는 왜 다른 후보보다 이 제목이 강한가. candidates 는 후보 3개 이상(title, hook, risk).
+- description: SEO description 80~200자. 첫 2줄이 검색 스니펫.
+- readerQuestion: 관통선 = 독자 질문 1개. 제목 없이 이 질문만으로 읽고 싶어야 한다.
+- insight: commonBelief 통념. twistFact 관통선의 답(통념과 충돌하는 사실 + 메커니즘, 제목 재진술·억지 수치 금지). whatToWatch 다음에 볼 지표. freshnessArgument 왜 재탕이 아닌가. evidenceRefs 이 인싸이트를 받치는 실측 근거(evidence 안에서).
+- acts: order 순으로 읽으면 한 편. heading 은 고유·궁금증형 H2. scene 은 장면(보고서톤 금지). keyNumbers 는 evidence 안의 실측 수치. causalBridge 는 다음 막으로 넘어가는 인과 다리 1문장.
+- visuals: actOrder 어느 막에 붙나. kind 는 line, bar, grouped, donut, stack, table 등. proves 는 이 시각물이 증명하는 주장. seriesHint 는 어떤 계열·기간. placement, insertAfter, narrativeUse 로 본문 어느 문장 뒤에 왜 들어가는지.
+- imagePlan: slot 은 hero 또는 inline. subject 는 무엇을 연상시키나. query 는 실사 CC0 수급용 영어 검색어. keywords 는 오매치 차단용. insertAfterAct 는 inline 이면 어느 막 뒤(hero 는 0). placement, narrativeUse 필수.
+- relatedPosts: searches 는 착수 전 검색할 내부 글 키워드. links 의 path 는 /blog/슬러그. reason 은 왜 연결하는가. placementRule 은 참고글을 본문 어디에 어떤 요약과 함께 놓을지.
+- honestyGuards: 이 글에 적용할 정직성 가드(영업이익 vs 순이익 분리 등).
+- evidenceMap: claim 이 받치는 주장. sourceType 은 DART, EDGAR, dartlab, scan, external, price, macro, internal-blog 중 하나. period 는 연도·분기·표본 기간(EDGAR 는 fiscal 명시). sourceRef 는 DART 보고서·EDGAR 10-K/10-Q·dartlab 호출. howUsed 는 어느 막이나 시각물에서 어떻게 쓰는지.`
 
 const PROPOSAL_SCHEMA = {
   type: 'object', additionalProperties: false, required: ['readerQuestion', 'twistFact', 'why', 'actSketch'],
@@ -240,11 +245,36 @@ const contentKind = A.contentKind || (stockCode ? 'company-reports' : 'tech-stor
 const PASS_MIN = 92
 const MAX_ROUNDS = 8
 
+// 장르별 기획 구조 하한. 6 막 인과와 이미지 3 장은 심층 서사 장르의 골격이지 교육 연재의 골격이
+// 아니다. 하한을 두면 채우기용 막과 채우기용 이미지가 붙는다. 값은 blog/_scripts/auditBlog.py 의
+// GENRE_PLAN_SHAPE 와 같아야 한다(어긋나면 발행 게이트가 잡는다).
+const PLAN_SHAPE = { 'dartlab-stories': { acts: 3, visuals: 1, images: 1 } }
+const shape = PLAN_SHAPE[contentKind] || { acts: 6, visuals: 3, images: 3 }
+PLAN_SCHEMA.properties.acts.minItems = shape.acts
+PLAN_SCHEMA.properties.visuals.minItems = shape.visuals
+PLAN_SCHEMA.properties.imagePlan.minItems = shape.images
+PLAN_SCHEMA.properties.imagePlan.description =
+  `내용 연상 이미지 기획(로고·상징품 허용). 그 편에 정말 필요한 만큼만. 최소 ${shape.images} 장(hero 포함).`
+
+// 이미지·깊이 지침도 장르를 따른다. 교육 연재에 "inline 2~3장 이상"과 "본문 14,000자"를 요구하면
+// 채우기용 이미지와 패딩이 붙는다. 필요한 만큼만 기획하고, 그 자리에서 수급한다.
+const NOTES =
+  contentKind === 'dartlab-stories'
+    ? {
+        principles: `${PRINCIPLES}
+
+[dartlab 이야기 덮어쓰기] 5번 깊이는 본문(코드·표 제외 읽는 글자) **3,000자 이상, 목표 5,000자**다. 14,000자가 아니다. 3번 막 구조는 6막 인과가 아니라 **최소 3단계 학습 흐름**(무엇을 왜 배우나 / 직접 해 본다 / 무엇을 얻었고 다음은 무엇인가)이다. 본문에는 독자가 브라우저에서 그대로 실행할 python 코드블록이 반드시 있어야 하고, 그 코드는 공개 호출 계약만 쓴다.`,
+        image: `이미지 기획: 그 편에 **정말 필요한 그림만** 적는다. 고정 하한 없음(최소 hero 1장). 채우기용 inline 이미지는 실패다. 교육 연재의 피사체는 회사·제품이 아니라 **도구·데이터·코드**다(노트북, 코드 화면, 문서, 서버). 범용 스카이라인·추상 배경으로 도망가면 실패. query 는 실사 CC0 수급용 영어 검색어, keywords 는 오매치 차단용. 각 이미지에 placement·narrativeUse 를 적는다.`,
+        visual: `비주얼: 이 연재의 주된 시각물은 **코드 실행 결과 표** 그 자체다. 별도 차트를 억지로 만들지 않는다. 정말 필요한 표·도해만 최소 1개 기획한다.`,
+      }
+    : { principles: PRINCIPLES, image: IMAGE_NOTE, visual: VISUAL_NOTE }
+
 const CONTENT_GUIDANCE = {
   'company-reports': `기업이야기: 회사 하나의 내러티브를 깊게 판다. 사업 구조, 공시 문장, 제품·고객·수주·원가·자본배치·현금흐름을 한 회사 안에서 연결한다. DART 또는 EDGAR 근거와 dartlab 실측을 분리하고, 다음 공시에서 볼 렌즈로 닫는다.`,
   'tech-story': `기술이야기: 기술이 주어다. 기술 원리, 공정 파이프라인·네트워크망, 어느 칸에 어떤 회사가 있고 왜 그 회사가 병목·표준·원가·고객 접점을 쥐는지 설명한다. 한국사는 DART, 미국사는 EDGAR를 연결한다. 돈 이야기만 앞세우거나 "누가 돈을 버나" 템플릿이면 실패다.`,
   'data-reports': `데이터 리포트: scan과 전종목 파서로 전체 시장의 특이점을 찾는다. 개별 회사는 대표 사례일 뿐이다. 표본·분모·제외 조건·정제 전후를 드러내고, DART·EDGAR 전체 유니버스 또는 제외 사유를 명시한다. 순위표 나열로 끝나면 실패다.`,
   'investment-stories': `투자이야기: 투자자가 시장을 읽을 때 쓰는 언어와 프레임이 주어다. 주가, 경제 변수, 증권사 표현, 투자 용어, 기술적투자 보조지표, 기술투자 관점을 설명한다. 지지선·목표가·보조지표를 매수·매도 결론으로 쓰면 실패다. 선행 회사·기술·데이터 글이 있으면 relatedPosts 로 연결하고, 독자가 다음 차트·공시·경제지표에서 무엇을 확인할지로 닫는다.`,
+  'dartlab-stories': `dartlab 이야기: dartlab 자체가 주어인 교육 연재다. 독자는 아무것도 모른 채 도착한다. 한 편에 개념 하나를 가르치고, 본문 python 코드블록을 독자가 브라우저에서 그대로 실행하게 만든다. 코드는 공개 호출 계약(dartlab.{engine}("{axis}", ...) 과 capabilityRefs 등재 Company 메서드)만 쓴다. 브라우저에서 안 되는 것(실시간 시세·뉴스 수집 등)은 숨기지 말고 그 자리에서 밝힌다. 6 막 인과가 아니라 3 단계 이상의 학습 단계로 짠다: 무엇을 왜 배우나, 직접 해 본다, 무엇을 얻었고 다음은 무엇인가. imagePlan 은 그 편에 정말 필요한 그림만 적는다. 채우기용 이미지, 코드 없는 설명, 실행해 보지 않은 코드는 실패다.`,
 }
 
 const LENSES_BY_KIND = {
@@ -263,6 +293,10 @@ const LENSES_BY_KIND = {
   'investment-stories': [
     { role: '시장언어 해설가', lens: '주가, 금리, 환율, 물가, 컨센서스, 목표주가, 밸류에이션 같은 시장 언어를 독자가 실제로 해석할 질문으로 바꾼다. 결론은 추천이 아니라 다음에 볼 기준이어야 한다.' },
     { role: '기술적투자·지표 해설가', lens: '지지선, 저항선, 이동평균, RSI, MACD, 거래량, 거래대금 같은 보조지표를 기간·기준·틀리는 조건까지 포함해 관통선으로 세운다.' },
+  ],
+  'dartlab-stories': [
+    { role: '교육설계자', lens: '아무것도 모르는 독자가 이 한 편으로 무엇을 할 수 있게 되는지에서 관통선을 세운다. 선수지식은 최소로, 첫 성공 체험은 첫 코드블록 안에 온다.' },
+    { role: 'dartlab 엔지니어', lens: '공개 호출 계약과 브라우저에서 실제로 도는 경계에서 관통선을 세운다. 안 되는 것을 감추지 않고, 되는 것으로 정직하게 가르친다.' },
   ],
 }
 
@@ -283,7 +317,7 @@ const proposals = await parallel(
 ${HEAD}
 배정 렌즈(이 각도로만): ${lens}
 
-${PRINCIPLES}
+${NOTES.principles}
 
 검증된 데이터(숫자는 오직 이 안에서만. 새 숫자 지어내기 금지):
 ${evidence}
@@ -300,7 +334,7 @@ const critiques = await parallel([
     `너는 dartlab 블로그 회의론자다. 아래 두 관통선을 "템플릿 클리셰"로 격파하는 게 임무다. 동어반복("수요 레버리지"), K수출 상투("남이 열어준 문"), "좋은 회사인데 비싸다"류, 이미 널리 도는 서사면 clicheKills 에 적고 verdict=kill. 둘 다 진짜 의외면 survive. 더 강한 각이 보이면 strongerAngle 에 적는다.
 
 ${HEAD}
-${PRINCIPLES}
+${NOTES.principles}
 
 검증 데이터:
 ${evidence}
@@ -325,11 +359,11 @@ let plan = await agent(
 
 ${HEAD}
 
-${PRINCIPLES}
+${NOTES.principles}
 
-${VISUAL_NOTE}
+${NOTES.visual}
 
-${IMAGE_NOTE}
+${NOTES.image}
 
 검증된 데이터(숫자는 오직 이 안에서만):
 ${evidence}
@@ -340,7 +374,9 @@ ${JSON.stringify(props)}
 회의론자·독자대리인 격파:
 ${JSON.stringify(critiques.filter(Boolean))}
 
-단일 관통선 1개로 좁히고(클리셰 격파 반영), 후보 제목 3개 이상을 비교해 최종 제목을 고른 뒤 titleContract 를 채운다. 핵심 인싸이트(관통선의 답)를 세우고, 막 구조(6막+, 관통선이 인싸이트에 착지)·막별 비주얼·이미지 기획(내용 연상, 로고·상징품 허용)·relatedPosts(검색어·링크·배치 규칙)·DART/EDGAR/dartlab/scan/price/macro/internal-blog evidenceMap·정직성 가드를 확정한다. 비주얼과 이미지는 글 뒤 부록이 아니라 본문 중간에서 독자의 이해를 바꾸는 장치로 placement·insertAfter·narrativeUse 까지 결정한다. 통과용 안전한 관통선이 아니라 진짜 의외의 관통선을 고른다. 전체 기획안을 스키마대로 낸다.`,
+단일 관통선 1개로 좁히고(클리셰 격파 반영), 후보 제목 3개 이상을 비교해 최종 제목을 고른 뒤 titleContract 를 채운다. 핵심 인싸이트(관통선의 답)를 세우고, 막 구조(6막+, 관통선이 인싸이트에 착지)·막별 비주얼·이미지 기획(내용 연상, 로고·상징품 허용)·relatedPosts(검색어·링크·배치 규칙)·DART/EDGAR/dartlab/scan/price/macro/internal-blog evidenceMap·정직성 가드를 확정한다. 비주얼과 이미지는 글 뒤 부록이 아니라 본문 중간에서 독자의 이해를 바꾸는 장치로 placement·insertAfter·narrativeUse 까지 결정한다. 통과용 안전한 관통선이 아니라 진짜 의외의 관통선을 고른다. 전체 기획안을 스키마대로 낸다.
+
+${FIELD_GUIDE}`,
   { label: '편집장 수렴', phase: '경합', schema: PLAN_SCHEMA }
 )
 
@@ -353,7 +389,7 @@ for (let round = 1; round <= MAX_ROUNDS; round++) {
     () => agent(
       `너는 dartlab 블로그 독자 에이전트다(비전문가 실독자). 이 기획안이 실제 글이 됐을 때를 상상해 6항목으로 깐다. 도장 찍지 마라. score 0~100, ${PASS_MIN} 미만이면 decision=revise. 약점은 findings 에 구체적으로.
 
-${PRINCIPLES}
+${NOTES.principles}
 
 6항목: 1.재밌나(YES/NO+이유) 2.어디서 집중 끊기나 3.독자질문(관통선)이 끝까지 살아있나 4."어?" 몇 번 5.기억에 남는 문장 6.점수. 특히: 제목이 첫 1초에 멈추는가, titleContract 의 후보·독자 갭·선택 이유가 살아있는가, 관통선이 끝까지 살아 인싸이트에 착지하나, 막이 궁금증심화·메커니즘·리스크반전·판단닫힘 중 하나를 하나, 깊이가 얕지 않나, 첫 2문단이 긴장으로 시작하나. 비주얼이 본문 중간에서 설명을 실제로 돕나, 아니면 뒤에 자동으로 붙는 부록처럼 보이나. relatedPosts 가 선행 글 검색과 자연스러운 참고글 연결을 기획했나.
 
@@ -399,11 +435,11 @@ ${JSON.stringify(plan)}`,
 
 ${HEAD}
 
-${PRINCIPLES}
+${NOTES.principles}
 
-${VISUAL_NOTE}
+${NOTES.visual}
 
-${IMAGE_NOTE}
+${NOTES.image}
 
 검증 데이터(숫자는 이 안에서만):
 ${evidence}
@@ -417,7 +453,9 @@ ${JSON.stringify((skeptic && skeptic.kills) || [])}
 직전 기획안:
 ${JSON.stringify(plan)}
 
-개선된 전체 기획안을 스키마대로 낸다.`,
+개선된 전체 기획안을 스키마대로 낸다.
+
+${FIELD_GUIDE}`,
     { label: `기획작가 개선 r${round}`, phase: '평가개선', schema: PLAN_SCHEMA }
   )
 }

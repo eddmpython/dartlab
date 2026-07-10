@@ -109,18 +109,20 @@ Colab 은 브라우저에서 바로 실행 (Google 계정). Molab 은 marimo 클
 - Colab: `https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/{name}.ipynb`
 - Molab: `https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/{name}.py`
 
-## 브라우저 노트북 (설치 0, 단계별 커리큘럼)
+## 브라우저 노트북 (설치 0)
 
 `landing` 의 `/notebooks` 는 pyodide 로 브라우저 안에서 도는 별도 표면이다. Colab/Molab 과 달리
-계정도 설치도 필요 없고, 코드와 결과가 바깥으로 나가지 않는다.
+계정도 설치도 필요 없고, 코드와 결과가 바깥으로 나가지 않는다. 노트북은 IndexedDB 에 저장된다.
 
-- 레슨 SSOT: `landing/src/lib/notebook/lessons/content/{track}/{NN}-{slug}.yaml` (한 편 = 한 파일).
-  같은 파일을 브라우저 레지스트리와 파이썬 게이트가 함께 읽는다. 파생 산출물을 굽지 않는다.
-- 트랙: 시작 · 회사 재무 · 판독 엔진 · 시장 횡단. 트랙 순서가 곧 학습 경로다.
-- 레슨을 열면 `lesson:<레슨 id>` 안정 키로 IndexedDB 에 저장되어 하던 곳에서 이어진다.
-- 새 레슨 추가 절차와 스키마: `landing/src/lib/notebook/lessons/README.md`.
-- 기계 가드: `tests/audit/lessonSchema.py` (스키마 · prereq 사이클 · 브라우저 경계 정합 · 규모),
-  `tests/audit/notebookContract.py` (공개 호출 계약). CI fast `notebooks` 게이트가 둘 다 돌린다.
+허브에는 예제도 레슨도 없다. **실습장이지 교재가 아니다.** 배우는 곳은 블로그 연재
+`dartlab 이야기`(`blog/03-dartlab-stories/`)다. 그 글의 python 코드펜스는 독자의 브라우저에서
+그대로 실행되고, 첫 블록의 "노트북 생성하기" 가 글 한 편을 노트북 한 권(`post:<slug>`)으로 투영한다.
+사본을 굽지 않는다. 글이 SSOT 이고 노트북은 그 투영이다.
+
+- 연재 운영 규약: `blog/03-dartlab-stories/PIPELINE.md`
+- 노트북 편집 화면 좌측 사이드바의 첫 아이콘이 이 연재 목록과 검색이다.
+- 기계 가드: `tests/audit/notebookContract.py` 가 colab · marimo 예제와 `dartlab 이야기` 본문
+  코드펜스를 AST 로 훑어 공개 호출 계약 밖 심볼을 막는다. CI fast `notebooks` 게이트.
 
 브라우저에서 되는 것과 안 되는 것은 `runtime.pyodide` 가 정본이다.
 

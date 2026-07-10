@@ -18,20 +18,35 @@ HIGH_TEMPLATE_REPETITION = 0.5
 
 # 심층 콘텐츠 깊이 게이트 (본문 기준: 표·SVG·코드 제외한 읽는 글자수).
 # 길이는 막·증거·시나리오의 산물이지 패딩이 아니다 (반복도 가드와 짝).
-CONTENT_GENRE_CATEGORIES = {"company-reports", "tech-story", "data-reports", "investment-stories"}
-DEEP_GENRE_CATEGORIES = set(CONTENT_GENRE_CATEGORIES)
+CONTENT_GENRE_CATEGORIES = {
+    "company-reports",
+    "tech-story",
+    "data-reports",
+    "investment-stories",
+    "dartlab-stories",
+}
+# 심층 = 6 막 인과 서사 장르. dartlab 이야기는 교육 연재라 막이 아니라 단계로 간다.
+DEEP_GENRE_CATEGORIES = CONTENT_GENRE_CATEGORIES - {"dartlab-stories"}
 GENRE_MIN_PROSE_CHARS = {
     "company-reports": 14000,
     "tech-story": 6000,
     "data-reports": 4000,
     "investment-stories": 5000,
+    "dartlab-stories": 3000,
 }
 GENRE_TARGET_PROSE_CHARS = {
     "company-reports": 20000,
     "tech-story": 9000,
     "data-reports": 6500,
     "investment-stories": 8000,
+    "dartlab-stories": 5000,
 }
+
+# 장르별 기획 산출물 최소 구조. 6 막 인과는 회사·기술·시장 글의 골격이지 교육 연재의 골격이 아니다.
+# dartlab 이야기의 이미지는 기획이 정한 만큼만 만든다. 그래서 하한이 1 이고, 실물 개수는
+# imagePlan 길이가 정한다(publish_gate 가 그 정합을 본다).
+_DEFAULT_PLAN_SHAPE = {"acts": 6, "visuals": 3, "images": 3}
+GENRE_PLAN_SHAPE = {"dartlab-stories": {"acts": 3, "visuals": 1, "images": 1}}
 DEEP_MIN_PROSE_CHARS = GENRE_MIN_PROSE_CHARS["company-reports"]
 DEEP_TARGET_PROSE_CHARS = GENRE_TARGET_PROSE_CHARS["company-reports"]
 BLOG_REVIEW_SCORE_MIN = 92
@@ -387,7 +402,14 @@ def _validate_loop_evidence(
     return fails
 
 
-def _validate_common_plan(plan: dict[str, object], payload: dict[str, object], *, label: str) -> list[str]:
+def plan_shape(category: str) -> dict[str, int]:
+    return GENRE_PLAN_SHAPE.get(category, _DEFAULT_PLAN_SHAPE)
+
+
+def _validate_common_plan(
+    plan: dict[str, object], payload: dict[str, object], *, label: str, category: str = ""
+) -> list[str]:
+    shape = plan_shape(category)
     fails: list[str] = []
     missing = [field for field in BLOG_REQUIRED_PLAN_FIELDS if field not in plan]
     if missing:
@@ -416,8 +438,8 @@ def _validate_common_plan(plan: dict[str, object], payload: dict[str, object], *
         fails.append(f"{label}: insight.evidenceRefs 누락")
 
     acts = plan.get("acts") if isinstance(plan.get("acts"), list) else []
-    if len(acts) < 6:
-        fails.append(f"{label}: acts 는 6막 이상이어야 함(현재 {len(acts)})")
+    if len(acts) < shape["acts"]:
+        fails.append(f"{label}: acts 는 {shape['acts']}막 이상이어야 함(현재 {len(acts)})")
     for idx, raw in enumerate(acts, start=1):
         if not isinstance(raw, dict):
             fails.append(f"{label}: acts[{idx}] 은 객체여야 함")
@@ -429,8 +451,8 @@ def _validate_common_plan(plan: dict[str, object], payload: dict[str, object], *
             fails.append(f"{label}: acts[{idx}].purpose 누락")
 
     visuals = plan.get("visuals") if isinstance(plan.get("visuals"), list) else []
-    if len(visuals) < 3:
-        fails.append(f"{label}: visuals 는 막별로 최소 3개 이상 기획해야 함(현재 {len(visuals)})")
+    if len(visuals) < shape["visuals"]:
+        fails.append(f"{label}: visuals 는 최소 {shape['visuals']}개 이상 기획해야 함(현재 {len(visuals)})")
     for idx, raw in enumerate(visuals, start=1):
         if not isinstance(raw, dict):
             fails.append(f"{label}: visuals[{idx}] 은 객체여야 함")
@@ -447,8 +469,8 @@ def _validate_common_plan(plan: dict[str, object], payload: dict[str, object], *
             fails.append(f"{label}: visuals[{idx}].kind 누락")
 
     image_plan = plan.get("imagePlan") if isinstance(plan.get("imagePlan"), list) else []
-    if len(image_plan) < 3:
-        fails.append(f"{label}: imagePlan 은 hero 1장 + inline 2장 이상이어야 함(현재 {len(image_plan)})")
+    if len(image_plan) < shape["images"]:
+        fails.append(f"{label}: imagePlan 은 {shape['images']}장 이상이어야 함(현재 {len(image_plan)})")
     for idx, raw in enumerate(image_plan, start=1):
         if not isinstance(raw, dict):
             fails.append(f"{label}: imagePlan[{idx}] 은 객체여야 함")
@@ -561,18 +583,53 @@ def _validate_genre_body(raw: str, body: str, category: str) -> list[str]:
             fails.append("투자이야기는 오독 방지와 틀리는 조건을 본문에 명시해야 함")
         if indicator_topic and not re.search(r"기간|분봉|일봉|주봉|월봉|거래량|거래대금|기준선|데이터\s*기준", body):
             fails.append("투자이야기 보조지표 글은 기간·봉 단위·거래량·기준선 중 최소 하나를 명시해야 함")
+    elif category == "dartlab-stories":
+        # 주어는 회사가 아니라 dartlab 이다. 본문 코드는 독자가 브라우저에서 그대로 실행한다.
+        # 계약 밖 호출이 섞이면 tests/audit/notebookContract.py 가 따로 막는다.
+        if not topic_slug:
+            fails.append("dartlab 이야기는 frontmatter topicSlug 가 필요함")
+        if stock_code:
+            fails.append("dartlab 이야기는 stockCode 를 달지 않는다. 주어는 회사가 아니라 dartlab 임")
+        if "```python" not in body:
+            fails.append("dartlab 이야기는 독자가 그대로 실행할 python 코드블록이 필요함")
+        if not re.search(r"\bdartlab\b", body):
+            fails.append("dartlab 이야기는 본문에 실제 dartlab 호출이 있어야 함")
+        if not re.search(r"안\s*됩니다|안\s*된다|한계|주의|오해|로컬에서만", body):
+            fails.append("dartlab 이야기는 브라우저에서 안 되는 것과 오독 방지를 본문에 명시해야 함")
     return fails
 
 
-def _validate_plan_file(post_dir: Path) -> list[str]:
+def _load_plan(post_dir: Path) -> tuple[dict[str, object] | None, str, list[str]]:
+    """(plan, label, fails). fails 가 비어야 plan 이 유효하다."""
     plan_path, payload, load_fails = _find_plan_payload(post_dir)
     if load_fails:
-        return load_fails
+        return None, "", load_fails
     assert payload is not None and plan_path is not None
     plan = _plan_from_payload(payload)
     if not isinstance(plan, dict):
-        return [f"{plan_path.name}: plan 이 객체가 아님"]
-    return _validate_common_plan(plan, payload, label=plan_path.name)
+        return None, plan_path.name, [f"{plan_path.name}: plan 이 객체가 아님"]
+    return (
+        plan,
+        plan_path.name,
+        _validate_common_plan(plan, payload, label=plan_path.name, category=_plan_category(post_dir)),
+    )
+
+
+def _plan_category(post_dir: Path) -> str:
+    idx = post_dir / "index.md"
+    if not idx.is_file():
+        return ""
+    return _clean_scalar(frontmatter_value(idx.read_text(encoding="utf-8"), "category"))
+
+
+def _validate_plan_file(post_dir: Path) -> list[str]:
+    _, _, fails = _load_plan(post_dir)
+    return fails
+
+
+def _image_plan(plan: dict[str, object] | None) -> list[dict[str, object]]:
+    raw = plan.get("imagePlan") if isinstance(plan, dict) else None
+    return [x for x in raw if isinstance(x, dict)] if isinstance(raw, list) else []
 
 
 def publish_gate(post_dir: Path) -> list[str]:
@@ -580,7 +637,11 @@ def publish_gate(post_dir: Path) -> list[str]:
 
     기업이야기·기술이야기·데이터리포트·투자이야기 기준으로 (1)실사 OG 카드 (2)실사 hero webp
     (3)본문 실사 사진 1장 이상 (4)장르별 본문 깊이 (5)기획 루프 산출물(brief.json)을 강제한다.
-    손수 SVG·기본 아바타·얕은 본문·루프 스킵을 걸러 "형식만 통과"를 차단한다."""
+    손수 SVG·기본 아바타·얕은 본문·루프 스킵을 걸러 "형식만 통과"를 차단한다.
+
+    dartlab 이야기만 (2)(3)이 다르다. 이미지 개수를 고정 하한으로 요구하지 않고, 기획(imagePlan)이
+    정한 만큼 실물이 있는지를 본다. 교육 연재는 편마다 필요한 그림 수가 다르고, 하한을 두면
+    채우기용 이미지가 붙는다."""
     idx = post_dir / "index.md"
     if not idx.is_file():
         return [f"index.md 없음: {post_dir}"]
@@ -607,13 +668,30 @@ def publish_gate(post_dir: Path) -> list[str]:
         if not og_file.is_file():
             fails.append(f"OG 파일 없음: landing/static{og} (render_og_cards 미실행)")
 
-    # 2. 실사 hero/사진 webp (손수 SVG는 실사 아님)
-    if not photos:
-        fails.append("assets에 실사 사진 0장(손수 SVG는 실사 아님). gen_blog_cc0/imagePlan 수급 필요")
+    plan, _, plan_fails = _load_plan(post_dir)
+    body_photos = re.findall(r"!\[[^\]]*\]\([^)]+\.(?:webp|jpg|jpeg|png)\)", body)
 
-    # 3. 본문에 실사 사진 markdown 이미지 ≥1
-    if not re.search(r"!\[[^\]]*\]\([^)]+\.(?:webp|jpg|jpeg|png)\)", body):
-        fails.append("본문 실사 사진 0장(![](*.webp) 필요). 손수 SVG만으론 시각 부실")
+    # 0. 본문이 썸네일 합성 소스를 걸면 그 이미지는 화면에 뜨지 않는다. landing/vite.config.ts 의
+    #    blogAssetsPlugin 이 `*thumbnail-bg.webp` 를 서빙 대상에서 일부러 뺀다(카테고리마다 NN 이
+    #    다시 시작해 basename 이 전역 충돌하기 때문). 발행된 글 여러 편이 이미 이 함정에 빠져 있다.
+    if re.search(r"!\[[^\]]*\]\([^)]*thumbnail-bg\.webp\)", body):
+        fails.append(
+            "본문이 *thumbnail-bg.webp 를 참조함. 서빙되지 않아 이미지가 깨진다. 고유 파일명으로 사본을 두고 그것을 걸어라"
+        )
+
+    # 2·3. 이미지. dartlab 이야기는 기획이 정한 만큼, 나머지 장르는 실사 사진 하한.
+    if cat == "dartlab-stories":
+        planned = _image_plan(plan)
+        inline = [x for x in planned if str(x.get("slot") or "") != "hero"]
+        if len(photos) < len(planned):
+            fails.append(f"기획 imagePlan {len(planned)}장인데 assets 이미지 {len(photos)}장. 기획한 만큼 수급 필요")
+        if len(body_photos) < len(inline):
+            fails.append(f"기획 inline {len(inline)}장인데 본문 삽입 {len(body_photos)}장")
+    else:
+        if not photos:
+            fails.append("assets에 실사 사진 0장(손수 SVG는 실사 아님). gen_blog_cc0/imagePlan 수급 필요")
+        if not body_photos:
+            fails.append("본문 실사 사진 0장(![](*.webp) 필요). 손수 SVG만으론 시각 부실")
 
     # 4. 장르별 깊이 하드 블록
     pc = prose_char_count(body)
@@ -624,7 +702,7 @@ def publish_gate(post_dir: Path) -> list[str]:
         )
 
     # 5. 기획 루프 산출물(스토리·비주얼·근거·재평가 증거)
-    fails.extend(_validate_plan_file(post_dir))
+    fails.extend(plan_fails)
     fails.extend(_validate_genre_body(raw, body, cat))
 
     return fails

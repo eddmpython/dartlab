@@ -17,11 +17,25 @@ except ImportError:  # pragma: no cover
 # 순회 대상 카테고리. 08(기술이야기)·06(데이터리포트)·09(투자이야기)도 스캔한다.
 # (과거 05 만 스캔해 08 이 무검증으로 새던 회귀 가드. 부실한 글이 조용히 발간되지 못하게.)
 BLOG_DIRS = [
+    "blog/03-dartlab-stories",
     "blog/05-company-reports",
     "blog/06-data-reports",
     "blog/08-tech-story",
     "blog/09-investment-stories",
 ]
+
+# 길이·시각 배점은 장르를 따른다. 1만 자 심층 리포트 기준을 교육 연재에 그대로 들이대면
+# 패딩과 채우기용 이미지가 붙는다(그건 이 게이트가 막으려는 것 그 자체다).
+# dartlab 이야기의 본문 하한 3,000자는 auditBlog.GENRE_MIN_PROSE_CHARS 와 같은 값이다.
+# 이 장르의 주된 시각물은 독자가 실행해서 얻는 결과 표라 이미지 개수를 적게 요구한다.
+LENGTH_TIERS: dict[str, list[tuple[int, int]]] = {
+    "_default": [(10000, 15), (6000, 12), (3500, 8)],
+    "dartlab-stories": [(5000, 15), (4000, 12), (3000, 10)],
+}
+VISUAL_TIERS: dict[str, list[tuple[int, int]]] = {
+    "_default": [(5, 15), (3, 10), (1, 5)],
+    "dartlab-stories": [(2, 15), (1, 12)],
+}
 
 # 카드 캐러셀 손글 narration 1줄 권장 최대 길이(슬라이드 가독).
 CAROUSEL_NOTE_MAX = 140
@@ -343,12 +357,10 @@ def score_post(folder_path: str) -> dict:
     prose = "\n".join(line for line in prose.splitlines() if not line.strip().startswith("|"))
     body_len = len(re.sub(r"\s", "", prose))
     len_max = 15
-    if body_len >= 10000:
-        len_score = 15
-    elif body_len >= 6000:
-        len_score = 12
-    elif body_len >= 3500:
-        len_score = 8
+    for floor, pts in LENGTH_TIERS.get(_category(frontmatter), LENGTH_TIERS["_default"]):
+        if body_len >= floor:
+            len_score = pts
+            break
     else:
         len_score = 3
     scores["length"] = len_score
@@ -419,12 +431,10 @@ def score_post(folder_path: str) -> dict:
     img_count = sum(1 for i in images if ".webp" in i or ".png" in i or ".jpg" in i)
     vis_max = 15
     vis_total = svg_count + img_count
-    if vis_total >= 5:
-        vis_score = 15
-    elif vis_total >= 3:
-        vis_score = 10
-    elif vis_total >= 1:
-        vis_score = 5
+    for floor, pts in VISUAL_TIERS.get(_category(frontmatter), VISUAL_TIERS["_default"]):
+        if vis_total >= floor:
+            vis_score = pts
+            break
     else:
         vis_score = 0
     scores["visuals"] = vis_score

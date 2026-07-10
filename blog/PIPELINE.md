@@ -2,6 +2,7 @@
 
 > **한 장으로 보는 전 과정.** 상세 how-to 는 각 단계의 `→` 링크가 정본(여기선 중복 안 씀).
 > 블로그 상세 = [BLOG.md](BLOG.md) · 카드 상세 = [_scripts/CARDS.md](_scripts/CARDS.md) ·
+> dartlab 이야기(교육 연재 -> 브라우저 실행 셀) 파생 파이프라인 = [03-dartlab-stories/PIPELINE.md](03-dartlab-stories/PIPELINE.md) ·
 > 기업이야기 파생 파이프라인 = [05-company-reports/PIPELINE.md](05-company-reports/PIPELINE.md) ·
 > 데이터 리포트(전상장사 전수) 파생 파이프라인 = [06-data-reports/PIPELINE.md](06-data-reports/PIPELINE.md) ·
 > 기술이야기(기술 원리 -> 재무 착지) 파생 파이프라인 = [08-tech-story/PIPELINE.md](08-tech-story/PIPELINE.md) ·

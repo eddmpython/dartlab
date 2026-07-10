@@ -270,6 +270,21 @@ DISCLOSURE_THEMES: list[tuple[list[str], list[str]]] = [
 ]
 
 # 신용: 채권·신용·은행·재무
+# dartlab 이야기: 도구·데이터·코드가 주어. 회사 스카이라인은 이 연재의 피사체가 아니다.
+# 테마마다 쿼리 하나만 두면 그 하나가 0매치일 때 곧장 범용 폴백(스카이라인)으로 떨어진다.
+# 그래서 편마다 시작점만 돌리고 **풀 전체를 순서대로 시도**한다(2026-07-10 2편이 마천루를 받은 사고).
+# "programming code editor screen" 류는 실사가 아니라 터미널 스크린샷을 준다(Vim 스플래시를 받았다).
+# 여기 쿼리는 전부 실사 사진이 나오는 것만 남긴다.
+STORY_QUERIES: list[str] = [
+    "laptop computer code screen desk",
+    "financial documents desk paperwork",
+    "computer keyboard desk workspace",
+    "library archive documents shelves",
+    "accounting audit calculator spreadsheet",
+    "server room data center racks",
+]
+STORY_KEYWORDS = ["laptop", "computer", "code", "screen", "desk", "keyboard", "document", "paper", "archive", "server"]
+
 CREDIT_THEMES: list[tuple[list[str], list[str]]] = [
     (["bond market financial district"], ["bond", "financial", "district", "market", "bank"]),
     (["bank vault finance"], ["bank", "vault", "finance", "money"]),
@@ -302,6 +317,10 @@ def themeFor(category: str, slug_name: str, order: int) -> list[tuple[str, list[
     elif category == "credit-reports":
         q, k = CREDIT_THEMES[order % len(CREDIT_THEMES)]
         stages = [(query, k) for query in q]
+    elif category == "dartlab-stories":
+        pivot = (order - 1) % len(STORY_QUERIES)  # 편 번호는 1 부터라 1편이 첫 쿼리를 쓴다
+        rotated = STORY_QUERIES[pivot:] + STORY_QUERIES[:pivot]
+        stages = [(query, STORY_KEYWORDS) for query in rotated]
     else:
         stages = [(query, DEFAULT_KEYWORDS) for query in DEFAULT_QUERIES]
     return stages + GENERIC_FALLBACK

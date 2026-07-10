@@ -45,6 +45,7 @@ BRIGHTNESS = 0.92
 PREFIX = {
     "reading-disclosures": "공시 읽기",
     "dartlab-news": "DartLab 소식",
+    "dartlab-stories": "dartlab 이야기",
     "credit-reports": "신용분석 보고서",
     "company-reports": "기업이야기",
     "data-reports": "데이터 리포트",
