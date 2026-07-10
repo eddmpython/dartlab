@@ -1531,6 +1531,11 @@
     <priority>0.75</priority>
   </url>
   <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/category/dartlab-stories</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
     <loc>https://eddmpython.github.io/dartlab/blog/category/credit-reports</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
@@ -1547,6 +1552,11 @@
   </url>
   <url>
     <loc>https://eddmpython.github.io/dartlab/blog/category/tech-story</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/category/investment-stories</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
@@ -1606,6 +1616,11 @@
     <priority>0.72</priority>
   </url>
   <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/series/dartlab-stories</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.72</priority>
+  </url>
+  <url>
     <loc>https://eddmpython.github.io/dartlab/blog/series/company-reports</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
@@ -1627,6 +1642,11 @@
   </url>
   <url>
     <loc>https://eddmpython.github.io/dartlab/blog/series/tech-story</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.72</priority>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/series/investment-stories</loc>
     <changefreq>weekly</changefreq>
     <priority>0.72</priority>
   </url>
@@ -1947,6 +1967,18 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <lastmod>2026-07-01</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/what-is-dartlab</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-10</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/call-financial-statements</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-10</lastmod>
   </url>
   <url>
     <loc>https://eddmpython.github.io/dartlab/blog/005930-samsung</loc>
@@ -2499,6 +2531,24 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <lastmod>2026-07-04</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/000480-cr-holdings</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-09</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/298040-hyosung-heavy-electric</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-10</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/047810-kai-system-integrator</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-10</lastmod>
   </url>
   <url>
     <loc>https://eddmpython.github.io/dartlab/blog/018880-hanon-systems</loc>
@@ -3093,5 +3143,41 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <lastmod>2026-07-07</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/ammonia-ships-floating-power-plant</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-08</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/semiconductor-cooling-network</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-09</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/technical-investing-price-indicators</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-08</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/technical-analysis-foundations</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-08</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/price-vs-market-cap</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-09</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/investor-flow-retail-institution-foreign</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-10</lastmod>
   </url>
 </urlset>
