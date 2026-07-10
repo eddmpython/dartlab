@@ -161,7 +161,7 @@
       "title": "Credit (dCR)",
       "category": "engines",
       "purpose": "Credit (dCR) 엔진은 단일 기업의 신용 위험을 7 축 (채무상환·자본구조·유동성·현금흐름·사업안정성·재무신뢰성·공시리스크) 으로 평가해 종합 등급 (dCR-AA+ ~ dCR-D) 을 산출한다. 트리거 — '신용 분석', '부도 위험', '신용등급', 'dCR'.",
-      "inDegree": 19,
+      "inDegree": 15,
       "outDegree": 7,
       "cluster": "credit",
       "isEntry": false,
@@ -287,97 +287,6 @@
       "audiences": []
     },
     {
-      "id": "engines.fixedIncome",
-      "title": "Fixed Income (KR 회사채 + 국고채)",
-      "category": "engines",
-      "purpose": "KR 채권 시장 분석 엔진 — 회사채 spread (AAA~BBB) + 국고채 yield curve regime + KGB butterfly + 신용등급 migration. credit 폴더 1 장 (usHighYieldSpread) 만 보유의 빈칸 메움. **status=drafted — KIS평가/KOFIA 인프라 선결**.",
-      "inDegree": 5,
-      "outDegree": 7,
-      "cluster": "fixedIncome",
-      "isEntry": false,
-      "isLeaf": false,
-      "isOrphan": false,
-      "audiences": []
-    },
-    {
-      "id": "engines.fixedIncome.kgbYieldCurve",
-      "title": "Fixed Income — KGB Yield Curve Regime",
-      "category": "engines",
-      "purpose": "국고채 (KGB) yield curve regime + butterfly + 역전 신호. 4 phase (steepening/flattening/inversion/normal). recession indicator (10Y-3M / 10Y-2Y). **status=drafted — KOFIA 인프라 선결**.",
-      "inDegree": 2,
-      "outDegree": 3,
-      "cluster": "fixedIncome",
-      "isEntry": false,
-      "isLeaf": false,
-      "isOrphan": false,
-      "audiences": []
-    },
-    {
-      "id": "engines.fixedIncome.krCorporateSpread",
-      "title": "Fixed Income — KR 회사채 Spread",
-      "category": "engines",
-      "purpose": "KR 회사채 spread (회사채 yield - 국고채 yield) 일별 by rating (AAA/AA+/AA/AA-/A+/A/A-/BBB+/BBB/BBB-) × tenor (1Y/3Y/5Y). KIS평가 SSOT. **status=drafted — KIS API 인프라 선결**.",
-      "inDegree": 2,
-      "outDegree": 3,
-      "cluster": "fixedIncome",
-      "isEntry": false,
-      "isLeaf": false,
-      "isOrphan": false,
-      "audiences": []
-    },
-    {
-      "id": "engines.flow",
-      "title": "Flow (공매도·대차·프로그램매매 KR 특화)",
-      "category": "engines",
-      "purpose": "한국 시장 flow factor 5 축 (공매도 잔고 · 대차잔고 · 프로그램매매 · 외국인/기관/개인 매매 · 블록딜) 엔진. quantGap Tier 1 미보유 영역. **status=drafted — KRX/금투협 보조 데이터 수집 인프라 선결**.",
-      "inDegree": 7,
-      "outDegree": 6,
-      "cluster": "flow",
-      "isEntry": false,
-      "isLeaf": false,
-      "isOrphan": false,
-      "audiences": []
-    },
-    {
-      "id": "engines.flow.programTrade",
-      "title": "Flow — 프로그램매매 (programTrade)",
-      "category": "engines",
-      "purpose": "프로그램매매 일별 imbalance (매수 - 매도 / 거래량) + 차익거래 vs 비차익거래 분리. KRX 프로그램매매 통계 SSOT. **status=drafted — KRX `prog` 카테고리 인프라 선결**.",
-      "inDegree": 2,
-      "outDegree": 2,
-      "cluster": "flow",
-      "isEntry": false,
-      "isLeaf": false,
-      "isOrphan": false,
-      "audiences": []
-    },
-    {
-      "id": "engines.flow.securitiesLending",
-      "title": "Flow — 대차잔고 (securitiesLending)",
-      "category": "engines",
-      "purpose": "대차잔고 (주식 대여 잔량) — 공매도 선행 지표 + 차익거래 활용. 예탁원 대차거래 통계 SSOT. **status=drafted — 예탁원 endpoint 인프라 선결**.",
-      "inDegree": 2,
-      "outDegree": 3,
-      "cluster": "flow",
-      "isEntry": false,
-      "isLeaf": false,
-      "isOrphan": false,
-      "audiences": []
-    },
-    {
-      "id": "engines.flow.shortInterest",
-      "title": "Flow — 공매도 잔고 (shortInterest)",
-      "category": "engines",
-      "purpose": "공매도 잔고 z-score + 매도잔고 비율 + 단주 매도 비중. KRX 공매도 잔고 일별 데이터 SSOT. **status=drafted — KRX `srt` 카테고리 인프라 선결**.",
-      "inDegree": 3,
-      "outDegree": 2,
-      "cluster": "flow",
-      "isEntry": false,
-      "isLeaf": false,
-      "isOrphan": false,
-      "audiences": []
-    },
-    {
       "id": "engines.gather",
       "title": "Gather",
       "category": "engines",
@@ -473,7 +382,7 @@
       "title": "Macro",
       "category": "engines",
       "purpose": "Macro 엔진은 경기, 정책, 유동성, 위기, 자산, 심리, 예측, 전파 경로를 6막 구조로 읽는 시장 레벨 분석 스킬이다. 트리거 — '매크로', '거시', '금리', '환율', '전파'.",
-      "inDegree": 46,
+      "inDegree": 44,
       "outDegree": 5,
       "cluster": "macro",
       "isEntry": false,
@@ -499,7 +408,7 @@
       "title": "Macro — 경기 사이클 (cycles)",
       "category": "engines",
       "purpose": "경기 사이클 4 phase (회복·확장·후퇴·수축) 시계열 분류 SSOT — Kitchin (재고 3~5y) · Juglar (설비 7~11y) · Kondratiev (혁신 45~60y) 다층 사이클 어휘. macro cycle axis 의 phase 라벨 정의 + 다층 사이클 결합 패턴.",
-      "inDegree": 6,
+      "inDegree": 4,
       "outDegree": 3,
       "cluster": "macro",
       "isEntry": false,
@@ -629,7 +538,7 @@
       "title": "Quant",
       "category": "engines",
       "purpose": "Quant 엔진은 가격, 기술적 신호, 팩터, 리스크, 텍스트/공시, 횡단면 랭킹, 포트폴리오, 백테스트를 46개 축으로 실행하는 정량 분석 스킬이다. 트리거 — '퀀트', '팩터', '백테스트', '모멘텀', '기술적 신호'.",
-      "inDegree": 34,
+      "inDegree": 32,
       "outDegree": 5,
       "cluster": "quant",
       "isEntry": false,
@@ -797,7 +706,7 @@
       "id": "engines.story.dartlabStory",
       "title": "DartLab Story — 종목 6 막 narrative",
       "category": "engines",
-      "purpose": "dartlab.story(target) 호출 → 6 막 narrative + ref 시간 정렬.",
+      "purpose": "Company.story() 호출 → 6 막 narrative + ref 시간 정렬.",
       "inDegree": 0,
       "outDegree": 1,
       "cluster": "story",
@@ -1435,38 +1344,12 @@
       "audiences": []
     },
     {
-      "id": "recipes.fundamental.credit.krCorporateSpreadWidening",
-      "title": "KR Corporate Spread Widening — by rating",
-      "category": "recipes",
-      "purpose": "KR 회사채 spread (AAA~BBB) widening 신호 — 252 일 z > 1 진입 시 신용 risk regime 진입. risk-off detection. **status=drafted**. 트리거 — '회사채 spread 확대', 'corporate spread widening', '신용 risk regime', 'rating spread'.",
-      "inDegree": 0,
-      "outDegree": 2,
-      "cluster": "recipes",
-      "isEntry": false,
-      "isLeaf": false,
-      "isOrphan": true,
-      "audiences": []
-    },
-    {
       "id": "recipes.fundamental.credit.usHighYieldSpread",
       "title": "미국 High Yield OAS spread regime (BofA HY OAS)",
       "category": "recipes",
       "purpose": "ICE BofA US High Yield OAS spread 시계열 z-score. 4%p 이상 = stress, 8%p 이상 = crisis 임계. 단일 회사가 아닌 *credit market regime* 신호. FRED `BAMLH0A0HYM2` raw. 트리거 — '미국 High Yield OAS spread regime (BofA HY OAS)', 'us high yield spread', 'usHighYieldSpread'.",
       "inDegree": 0,
       "outDegree": 3,
-      "cluster": "recipes",
-      "isEntry": false,
-      "isLeaf": false,
-      "isOrphan": true,
-      "audiences": []
-    },
-    {
-      "id": "recipes.fundamental.credit.yieldCurveInversion",
-      "title": "KGB Yield Curve Inversion — recession indicator",
-      "category": "recipes",
-      "purpose": "KGB 국고채 yield curve 역전 (10Y-2Y < 0 또는 10Y-3M < 0) 신호 — recession 1~2 년 선행 (US 학술 정통). KR 시장 partial 적용. **status=drafted**. 트리거 — 'yield curve 역전', '국고채 inversion', '2s10s', '3m10y', 'recession indicator'.",
-      "inDegree": 0,
-      "outDegree": 2,
       "cluster": "recipes",
       "isEntry": false,
       "isLeaf": false,
@@ -1736,45 +1619,6 @@
         "human",
         "llm"
       ]
-    },
-    {
-      "id": "recipes.fundamental.flow.foreignVsInstitutional",
-      "title": "Foreign vs Institutional Flow Divergence",
-      "category": "recipes",
-      "purpose": "외국인 vs 기관 순매수 divergence — 두 그룹 매매 방향 반대 + cumulative net 누적 z 정량화. 정보 비대칭 신호 (외국인 ahead 가설 학술). **status=drafted — KRX 투자자별 데이터 수집 인프라 선결**. 트리거 — '외국인 vs 기관', 'flow divergence', '투자자별 매매', '외국인 순매수'.",
-      "inDegree": 0,
-      "outDegree": 2,
-      "cluster": "recipes",
-      "isEntry": false,
-      "isLeaf": false,
-      "isOrphan": true,
-      "audiences": []
-    },
-    {
-      "id": "recipes.fundamental.flow.programTradeImbalance",
-      "title": "Program Trade Imbalance — 차익 vs 비차익 z",
-      "category": "recipes",
-      "purpose": "프로그램매매 imbalance (차익거래 net + 비차익 net) z-score — 차익거래 net 신호 (KOSPI200 mispricing 정도) + 비차익 신호 (패시브 flow). **status=drafted**. 트리거 — '프로그램매매', 'program trade imbalance', '차익거래 net', '비차익 net'.",
-      "inDegree": 0,
-      "outDegree": 1,
-      "cluster": "recipes",
-      "isEntry": false,
-      "isLeaf": false,
-      "isOrphan": true,
-      "audiences": []
-    },
-    {
-      "id": "recipes.fundamental.flow.shortInterestSpike",
-      "title": "Short Interest Spike — 공매도 잔고 z>2 detection",
-      "category": "recipes",
-      "purpose": "공매도 잔고 z-score > 2 종목 detection — 단기 squeeze 위험 vs 진짜 하방 신호 구분 (잔고 비율 + 대차잔고 동행 확인). **status=drafted**. 트리거 — '공매도 spike', 'short interest spike', '공매도 잔고 급증', 'short squeeze'.",
-      "inDegree": 0,
-      "outDegree": 2,
-      "cluster": "recipes",
-      "isEntry": false,
-      "isLeaf": false,
-      "isOrphan": true,
-      "audiences": []
     },
     {
       "id": "recipes.fundamental.governance.boardIndependenceTrend",
@@ -3923,7 +3767,7 @@
       "title": "DartLab Skill OS 최초 진입",
       "category": "start",
       "purpose": "사람과 LLM 이 DartLab 을 처음 볼 때 Skills 카탈로그 하나에서 분석 · 엔진 능력 · 운영 규칙 · 확장 절차를 찾는 공식 시작점이다. 외부 API 문서나 흩어진 ops 폴더 대신 skill 검색 → frontmatter 확인 → 본문 절차 → 검증 게이트 순서를 따른다.",
-      "inDegree": 47,
+      "inDegree": 45,
       "outDegree": 7,
       "cluster": "start",
       "isEntry": true,
@@ -4477,136 +4321,6 @@
     {
       "src": "engines.edgar.docs",
       "dst": "engines.panel",
-      "kind": "knowledge"
-    },
-    {
-      "src": "engines.fixedIncome",
-      "dst": "engines.credit",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "engines.fixedIncome",
-      "dst": "engines.macro",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "engines.fixedIncome",
-      "dst": "engines.fixedIncome.krCorporateSpread",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "engines.fixedIncome",
-      "dst": "engines.fixedIncome.kgbYieldCurve",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "engines.fixedIncome",
-      "dst": "start.dartlabSkillOs",
-      "kind": "knowledge"
-    },
-    {
-      "src": "engines.fixedIncome",
-      "dst": "engines.credit",
-      "kind": "knowledge"
-    },
-    {
-      "src": "engines.fixedIncome",
-      "dst": "engines.macro",
-      "kind": "knowledge"
-    },
-    {
-      "src": "engines.fixedIncome.kgbYieldCurve",
-      "dst": "engines.fixedIncome",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "engines.fixedIncome.kgbYieldCurve",
-      "dst": "engines.macro.cycles",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "engines.fixedIncome.kgbYieldCurve",
-      "dst": "engines.fixedIncome",
-      "kind": "knowledge"
-    },
-    {
-      "src": "engines.fixedIncome.krCorporateSpread",
-      "dst": "engines.fixedIncome",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "engines.fixedIncome.krCorporateSpread",
-      "dst": "engines.credit",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "engines.fixedIncome.krCorporateSpread",
-      "dst": "engines.fixedIncome",
-      "kind": "knowledge"
-    },
-    {
-      "src": "engines.flow",
-      "dst": "engines.quant",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "engines.flow",
-      "dst": "engines.flow.shortInterest",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "engines.flow",
-      "dst": "engines.flow.programTrade",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "engines.flow",
-      "dst": "engines.flow.securitiesLending",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "engines.flow",
-      "dst": "start.dartlabSkillOs",
-      "kind": "knowledge"
-    },
-    {
-      "src": "engines.flow",
-      "dst": "engines.quant",
-      "kind": "knowledge"
-    },
-    {
-      "src": "engines.flow.programTrade",
-      "dst": "engines.flow",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "engines.flow.programTrade",
-      "dst": "engines.flow",
-      "kind": "knowledge"
-    },
-    {
-      "src": "engines.flow.securitiesLending",
-      "dst": "engines.flow",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "engines.flow.securitiesLending",
-      "dst": "engines.flow.shortInterest",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "engines.flow.securitiesLending",
-      "dst": "engines.flow",
-      "kind": "knowledge"
-    },
-    {
-      "src": "engines.flow.shortInterest",
-      "dst": "engines.flow",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "engines.flow.shortInterest",
-      "dst": "engines.flow",
       "kind": "knowledge"
     },
     {
@@ -5821,17 +5535,7 @@
     },
     {
       "src": "recipes.fundamental.credit.creditRatingMigration",
-      "dst": "engines.fixedIncome",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "recipes.fundamental.credit.krCorporateSpreadWidening",
-      "dst": "engines.fixedIncome.krCorporateSpread",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "recipes.fundamental.credit.krCorporateSpreadWidening",
-      "dst": "engines.credit",
+      "dst": "engines.scan",
       "kind": "linkedRecipe"
     },
     {
@@ -5847,16 +5551,6 @@
     {
       "src": "recipes.fundamental.credit.usHighYieldSpread",
       "dst": "engines.gather",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "recipes.fundamental.credit.yieldCurveInversion",
-      "dst": "engines.fixedIncome.kgbYieldCurve",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "recipes.fundamental.credit.yieldCurveInversion",
-      "dst": "engines.macro.cycles",
       "kind": "linkedRecipe"
     },
     {
@@ -6287,31 +5981,6 @@
     {
       "src": "recipes.fundamental.dividend.payoutFcfCoverage",
       "dst": "engines.company",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "recipes.fundamental.flow.foreignVsInstitutional",
-      "dst": "engines.flow",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "recipes.fundamental.flow.foreignVsInstitutional",
-      "dst": "engines.scan",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "recipes.fundamental.flow.programTradeImbalance",
-      "dst": "engines.flow.programTrade",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "recipes.fundamental.flow.shortInterestSpike",
-      "dst": "engines.flow.shortInterest",
-      "kind": "linkedRecipe"
-    },
-    {
-      "src": "recipes.fundamental.flow.shortInterestSpike",
-      "dst": "engines.flow.securitiesLending",
       "kind": "linkedRecipe"
     },
     {
@@ -9706,17 +9375,6 @@
       "engines.viz.scenarioVisuals"
     ],
     [
-      "engines.fixedIncome",
-      "engines.fixedIncome.kgbYieldCurve",
-      "engines.fixedIncome.krCorporateSpread"
-    ],
-    [
-      "engines.flow",
-      "engines.flow.programTrade",
-      "engines.flow.securitiesLending",
-      "engines.flow.shortInterest"
-    ],
-    [
       "recipes.fundamental.disclosure.eventRadar.capitalActionMonitor",
       "recipes.fundamental.disclosure.eventRadar.consensusDriftWatch",
       "recipes.fundamental.disclosure.eventRadar.deepDive",
@@ -9820,17 +9478,12 @@
     "operation.skillMarket",
     "operation.stability",
     "recipes.fundamental.credit.creditRatingMigration",
-    "recipes.fundamental.credit.krCorporateSpreadWidening",
     "recipes.fundamental.credit.usHighYieldSpread",
-    "recipes.fundamental.credit.yieldCurveInversion",
     "recipes.fundamental.disclosure.sec10kRiskFactors",
     "recipes.fundamental.disclosure.sec8kMaterialEvents",
     "recipes.fundamental.dividend.buybackVsDividendMix",
     "recipes.fundamental.dividend.foreignOwnershipCorr",
     "recipes.fundamental.dividend.payoutFcfCoverage",
-    "recipes.fundamental.flow.foreignVsInstitutional",
-    "recipes.fundamental.flow.programTradeImbalance",
-    "recipes.fundamental.flow.shortInterestSpike",
     "recipes.fundamental.governance.boardIndependenceTrend",
     "recipes.fundamental.governance.chaebolEntityNetwork",
     "recipes.fundamental.governance.relatedPartyTransactionShare",
@@ -9918,13 +9571,6 @@
     "engines.dashboard.viewerSpec",
     "engines.edgar",
     "engines.edgar.docs",
-    "engines.fixedIncome",
-    "engines.fixedIncome.kgbYieldCurve",
-    "engines.fixedIncome.krCorporateSpread",
-    "engines.flow",
-    "engines.flow.programTrade",
-    "engines.flow.securitiesLending",
-    "engines.flow.shortInterest",
     "engines.gather.listing",
     "engines.industry.lifecycle",
     "engines.industry.peers",
@@ -9995,17 +9641,12 @@
     "operation.testing",
     "operation.ui",
     "recipes.fundamental.credit.creditRatingMigration",
-    "recipes.fundamental.credit.krCorporateSpreadWidening",
     "recipes.fundamental.credit.usHighYieldSpread",
-    "recipes.fundamental.credit.yieldCurveInversion",
     "recipes.fundamental.disclosure.sec10kRiskFactors",
     "recipes.fundamental.disclosure.sec8kMaterialEvents",
     "recipes.fundamental.dividend.buybackVsDividendMix",
     "recipes.fundamental.dividend.foreignOwnershipCorr",
     "recipes.fundamental.dividend.payoutFcfCoverage",
-    "recipes.fundamental.flow.foreignVsInstitutional",
-    "recipes.fundamental.flow.programTradeImbalance",
-    "recipes.fundamental.flow.shortInterestSpike",
     "recipes.fundamental.governance.boardIndependenceTrend",
     "recipes.fundamental.governance.chaebolEntityNetwork",
     "recipes.fundamental.governance.relatedPartyTransactionShare",

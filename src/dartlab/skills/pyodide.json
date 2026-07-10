@@ -204,69 +204,6 @@
       "limitations": []
     },
     {
-      "id": "engines.fixedIncome",
-      "title": "Fixed Income (KR 회사채 + 국고채)",
-      "category": "engines",
-      "status": "limited",
-      "dataSources": [],
-      "requiredSetup": [],
-      "limitations": []
-    },
-    {
-      "id": "engines.fixedIncome.kgbYieldCurve",
-      "title": "Fixed Income — KGB Yield Curve Regime",
-      "category": "engines",
-      "status": "limited",
-      "dataSources": [],
-      "requiredSetup": [],
-      "limitations": []
-    },
-    {
-      "id": "engines.fixedIncome.krCorporateSpread",
-      "title": "Fixed Income — KR 회사채 Spread",
-      "category": "engines",
-      "status": "limited",
-      "dataSources": [],
-      "requiredSetup": [],
-      "limitations": []
-    },
-    {
-      "id": "engines.flow",
-      "title": "Flow (공매도·대차·프로그램매매 KR 특화)",
-      "category": "engines",
-      "status": "limited",
-      "dataSources": [],
-      "requiredSetup": [],
-      "limitations": []
-    },
-    {
-      "id": "engines.flow.programTrade",
-      "title": "Flow — 프로그램매매 (programTrade)",
-      "category": "engines",
-      "status": "limited",
-      "dataSources": [],
-      "requiredSetup": [],
-      "limitations": []
-    },
-    {
-      "id": "engines.flow.securitiesLending",
-      "title": "Flow — 대차잔고 (securitiesLending)",
-      "category": "engines",
-      "status": "limited",
-      "dataSources": [],
-      "requiredSetup": [],
-      "limitations": []
-    },
-    {
-      "id": "engines.flow.shortInterest",
-      "title": "Flow — 공매도 잔고 (shortInterest)",
-      "category": "engines",
-      "status": "limited",
-      "dataSources": [],
-      "requiredSetup": [],
-      "limitations": []
-    },
-    {
       "id": "engines.gather",
       "title": "Gather",
       "category": "engines",
@@ -962,26 +899,8 @@
       "limitations": []
     },
     {
-      "id": "recipes.fundamental.credit.krCorporateSpreadWidening",
-      "title": "KR Corporate Spread Widening — by rating",
-      "category": "recipes",
-      "status": "limited",
-      "dataSources": [],
-      "requiredSetup": [],
-      "limitations": []
-    },
-    {
       "id": "recipes.fundamental.credit.usHighYieldSpread",
       "title": "미국 High Yield OAS spread regime (BofA HY OAS)",
-      "category": "recipes",
-      "status": "limited",
-      "dataSources": [],
-      "requiredSetup": [],
-      "limitations": []
-    },
-    {
-      "id": "recipes.fundamental.credit.yieldCurveInversion",
-      "title": "KGB Yield Curve Inversion — recession indicator",
       "category": "recipes",
       "status": "limited",
       "dataSources": [],
@@ -1128,33 +1047,6 @@
     {
       "id": "recipes.fundamental.dividend.payoutFcfCoverage",
       "title": "배당성향 vs FCF 커버리지 z-score",
-      "category": "recipes",
-      "status": "limited",
-      "dataSources": [],
-      "requiredSetup": [],
-      "limitations": []
-    },
-    {
-      "id": "recipes.fundamental.flow.foreignVsInstitutional",
-      "title": "Foreign vs Institutional Flow Divergence",
-      "category": "recipes",
-      "status": "limited",
-      "dataSources": [],
-      "requiredSetup": [],
-      "limitations": []
-    },
-    {
-      "id": "recipes.fundamental.flow.programTradeImbalance",
-      "title": "Program Trade Imbalance — 차익 vs 비차익 z",
-      "category": "recipes",
-      "status": "limited",
-      "dataSources": [],
-      "requiredSetup": [],
-      "limitations": []
-    },
-    {
-      "id": "recipes.fundamental.flow.shortInterestSpike",
-      "title": "Short Interest Spike — 공매도 잔고 z>2 detection",
       "category": "recipes",
       "status": "limited",
       "dataSources": [],
