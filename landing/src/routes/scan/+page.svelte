@@ -23,6 +23,12 @@
 		buildVerdictGrid,
 		nearMiss,
 		relaxThreshold,
+		loadEdgarNodes,
+		percentilesByMarket,
+		inScope,
+		sortAllowed,
+		MARKET_LABEL,
+		type MarketScope,
 		type SavedColumnSet,
 		type ScanNode,
 		type FilterCond,
@@ -146,28 +152,42 @@
 
 	// ── Distribution panel: bin highlight (양방향) ────
 	let highlightBin = $state<{ x0: number; x1: number } | null>(null);
+	// 숫자 컬럼으로 정렬했을 때만 분포가 있다. 없으면 320px 트랙을 예약하지 않는다
+	// (전에는 placeholder 문구만 띄운 채 가로 320px 를 상시 점유했다).
+	let hasDistribution = $derived(Boolean(sort && METRICS_BY_KEY[sort.key]?.type === 'number'));
 
-	// ── Percentiles (활성 컬럼별 p10/p90) · 셀 분위 색상용 ─
-	let percentiles = $derived.by(() => {
-		const map = new Map<string, { p10: number; p90: number; higherBetter?: boolean }>();
-		for (const key of activeColumns) {
-			const def = METRICS_BY_KEY[key];
-			if (!def || def.type !== 'number') continue;
-			const values: number[] = [];
-			for (const n of allNodes) {
-				const v = (n as Record<string, unknown>)[key];
-				if (typeof v === 'number' && Number.isFinite(v)) values.push(v);
-			}
-			if (values.length < 10) continue;
-			values.sort((a, b) => a - b);
-			map.set(key, {
-				p10: values[Math.floor(values.length * 0.1)],
-				p90: values[Math.floor(values.length * 0.9)],
-				higherBetter: def.higherBetter
-			});
+	// ── DART(KR) + EDGAR(US) ──────────────────────────
+	// 기본은 KR. US 는 요청 시 edgar/scan/finance.parquet 를 브라우저가 직독해 노드를 만든다
+	// (신규 베이크 0). 산업 taxonomy 가 달라 US 는 'SIC:*' 네임스페이스로 격리된다.
+	let marketScope = $state<MarketScope>('KR');
+	let usNodes = $state.raw<ScanNode[]>([]);
+	let usState = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
+	let usError = $state<string | null>(null);
+
+	async function ensureUsNodes() {
+		if (usState === 'loading' || usState === 'ready') return;
+		usState = 'loading';
+		usError = null;
+		try {
+			await bootDuckDbForExplorer();
+			if (!dartDb) throw new Error(dbError ?? '브라우저가 데이터 엔진을 지원하지 않습니다');
+			usNodes = await loadEdgarNodes(dartDb);
+			usState = 'ready';
+		} catch (err) {
+			usState = 'error';
+			usError = err instanceof Error ? err.message : String(err);
+			usNodes = [];
 		}
-		return map;
-	});
+	}
+
+	function setMarketScope(next: MarketScope) {
+		marketScope = next;
+		if (next !== 'KR') void ensureUsNodes();
+		// 통화 단위 컬럼으로 정렬 중이었다면 전체 보기에서 그 정렬은 정직하지 않다. 해제한다.
+		if (next === 'ALL') sorts = sorts.filter((s) => sortAllowed(METRICS_BY_KEY[s.key], 'ALL'));
+		// 산업칩은 KR taxonomy 라 시장이 바뀌면 의미를 잃는다.
+		selectedIndustries = new Set();
+	}
 
 	// ── Data badge · keep infrastructure names out of the user-facing UI ─
 	let dbBadgeKind = $derived.by(() => {
@@ -188,7 +208,7 @@
 	});
 
 	// ── Merge ecosystem with parquet maps ─────────────
-	let allNodes = $derived.by(() => {
+	let krNodes = $derived.by(() => {
 		if (
 			priceMap.size === 0 &&
 			valuationMap.size === 0 &&
@@ -236,6 +256,17 @@
 		});
 	});
 
+	// KR 노드에 parquet 런타임 맵을 병합한 뒤 US 노드를 덧댄다. US 는 자체 로더가 완성형이라
+	// KR 전용 맵을 끼우지 않는다 (없는 개념을 결측처럼 보이게 만들기 때문).
+	let allNodes = $derived(usNodes.length > 0 ? [...krNodes, ...usNodes] : krNodes);
+	/** 조회 시장 범위만 적용한 노드. 분포·발굴 피드·프리셋의 모집단. */
+	let marketNodes = $derived(marketScope === 'KR' ? krNodes : allNodes.filter((n) => inScope(n, marketScope)));
+
+	// ── Percentiles (활성 컬럼별 p10/p90) · 셀 분위 색상용 ─
+	// 시장별로 따로 뽑는다. KR 분포로 US 셀을 칠하면 히트맵이 통화 스케일차와 회계기준 차이를
+	// "좋음/나쁨" 색으로 위조한다. Grid 가 행의 시장에 맞는 분포를 골라 쓴다.
+	let percentilesByMkt = $derived(percentilesByMarket(allNodes, activeColumns, METRICS_BY_KEY));
+
 	// ── Filter / sort ──────────────────────────────────
 	// 조건 판정은 verdict.ts SSOT 로 이관했다. 옛 로컬 evalCond 는 결측을 비대칭 처리했고
 	// (null 이 >= 에선 FAIL, != 에선 PASS) ==/!= 만 억원 스케일을 우회했다.
@@ -243,10 +274,11 @@
 		return value;
 	}
 
-	/** 검색어 + 산업칩만 적용한 유니버스. 조건(conds)은 판정격자가 맡는다. */
+	/** 시장 범위 + 검색어 + 산업칩을 적용한 유니버스. 조건(conds)은 판정격자가 맡는다. */
 	let scopedNodes = $derived.by(() => {
 		const q = searchQuery.trim().toLowerCase();
 		return allNodes.filter((node) => {
+			if (!inScope(node, marketScope)) return false;
 			if (selectedIndustries.size > 0 && !selectedIndustries.has(node.industry as string)) {
 				return false;
 			}
@@ -279,6 +311,22 @@
 	/** 리본의 완화 칩. 조건 임계를 역산값으로 갈아끼운다. */
 	function applyRelax(condIndex: number, value: number) {
 		conds = conds.map((c, i) => (i === condIndex ? { ...c, value } : c));
+	}
+
+	let selectedNode = $derived(selectedRow ? (allNodes.find((n) => n.id === selectedRow) ?? null) : null);
+
+	/** InsightsFeed 카드 적용. 두 벌로 복사돼 있던 핸들러를 한 곳으로. */
+	function applyInsight(p: { conds: FilterCond[]; sort: SortKey; cols?: string[] }) {
+		conds = p.conds;
+		sorts = [p.sort];
+		if (p.cols) {
+			const next = new Set(activeColumns);
+			for (const c of p.cols) next.add(c);
+			activeColumns = Array.from(next);
+			void ensureLoaders(inferLoaders(p.cols));
+		}
+		selectedIndustries = new Set();
+		activePresetId = null;
 	}
 
 	function sortNodes(list: ScanNode[]): ScanNode[] {
@@ -441,9 +489,14 @@
 		if (q) {
 			const payload = decodeScanPayload(q);
 			if (payload) {
+				// 시장부터. US/ALL 이면 EDGAR 노드를 먼저 요청해야 조건이 그 위에서 평가된다.
+				if (payload.m && payload.m !== 'KR') setMarketScope(payload.m);
 				selectedIndustries = new Set(payload.i);
 				conds = payload.c;
-				if (payload.s.length > 0) sorts = payload.s.slice();
+				if (payload.s.length > 0) {
+					// 전체 보기에서 통화 단위 정렬은 정직하지 않다. 옛 링크가 그런 정렬을 실어와도 버린다.
+					sorts = payload.s.filter((s) => sortAllowed(METRICS_BY_KEY[s.key], marketScope));
+				}
 				if (payload.cols.length > 0) {
 					// PINNED 항상 보존 + payload cols
 					const pinned = PINNED_COLUMNS;
@@ -485,7 +538,9 @@
 			s: sorts,
 			cols: activeColumns,
 			p: activePresetId ?? undefined,
-			sel: selectedRow ?? undefined
+			sel: selectedRow ?? undefined,
+			// KR 은 기본값이라 URL 에 싣지 않는다 (옛 링크와 바이트 동일하게 유지).
+			m: marketScope === 'KR' ? undefined : marketScope
 		};
 		const q = encodeScanPayload(payload);
 		if (typeof window === 'undefined') return '';
@@ -1059,6 +1114,24 @@
 	<header class="page-head">
 		<div class="page-head-left">
 			<h1 class="page-title">Scan Studio</h1>
+			<div class="market-switch" role="group" aria-label="조회 시장">
+				{#each ['KR', 'US', 'ALL'] as const as scope (scope)}
+					<button
+						type="button"
+						class="ms-btn"
+						class:active={marketScope === scope}
+						onclick={() => setMarketScope(scope)}
+					>
+						{MARKET_LABEL[scope]}
+						{#if scope !== 'KR' && usState === 'loading'}
+							<span class="ms-dot" aria-label="불러오는 중"></span>
+						{/if}
+					</button>
+				{/each}
+			</div>
+			{#if usState === 'error' && marketScope !== 'KR'}
+				<span class="ms-error">{usError}</span>
+			{/if}
 		</div>
 		<div class="page-head-right">
 			<button type="button" class="explore-btn" onclick={openDataExplorer}>
@@ -1089,8 +1162,8 @@
 		</div>
 	</header>
 
-	<!-- Industry chip bar -->
-	<div class="industry-bar" role="group" aria-label="산업 필터">
+	<!-- 산업칩은 KR 34 KSIC taxonomy 다. US(SIC)와 섞을 수 없어 KR 보기에서만 그린다. -->
+	<div class="industry-bar" role="group" aria-label="산업 필터" class:hidden={marketScope !== 'KR'}>
 		{#if selectedIndustries.size > 0 || conds.length > 0 || searchQuery}
 			<button class="clear-btn" type="button" onclick={clearFilters} title="모든 필터 해제">
 				✕ 초기화
@@ -1147,7 +1220,7 @@
 	/>
 
 	<!-- Main grid + side panels -->
-	<div class="studio">
+	<div class="studio" class:full-width={!hasDistribution}>
 		<div class="grid-area">
 			<Grid
 				nodes={sortedNodes}
@@ -1155,90 +1228,56 @@
 				{sorts}
 				filters={conds}
 				{filterOptions}
-				{percentiles}
 				selectedId={selectedRow}
 				markets={data.markets}
 				{nearMissIds}
+				{marketScope}
+				percentilesByMarket={percentilesByMkt}
 				onSort={handleSort}
 				onFilterChange={setColumnFilters}
 				onSelect={handleSelect}
 				onCellHover={handleCellHover}
 			/>
 		</div>
-		<aside class="distribution-area" aria-label="분포 패널">
-			{#if sort && METRICS_BY_KEY[sort.key]?.type === 'number'}
+		{#if hasDistribution}
+			<aside class="distribution-area" aria-label="분포 패널">
 				<Distribution
-					nodes={allNodes}
+					nodes={marketNodes}
 					filteredNodes={sortedNodes}
-					metricKey={sort.key}
-					sortDir={sort.dir}
+					metricKey={sort!.key}
+					sortDir={sort!.dir}
 					{highlightBin}
 					onBinHover={(b) => (highlightBin = b)}
 					onCompanyClick={handleSelect}
 				/>
-			{:else}
-				<div class="placeholder">
-					<div class="ph-title">분포 패널</div>
-					<div class="ph-desc">숫자 컬럼으로 정렬하면 분포가 표시됩니다.</div>
-				</div>
-			{/if}
-		</aside>
+			</aside>
+		{/if}
 	</div>
 
-	<!-- Detail panel (행 선택 시) 또는 Insights Feed -->
-	{#if selectedRow}
-		{@const node = allNodes.find((n) => n.id === selectedRow)}
-		{#if node}
-			{#if DetailComponent}
-				<DetailComponent
-					{node}
-					db={dartDb}
-					filing={getPublicRuntime().filing}
-					basePath={base}
-					financeLoading={loaderLoading.has('finance5y')}
-					onClose={() => (selectedRow = null)}
-				/>
-			{:else}
-				<div class="panel-loading">상세 패널 로드 중…</div>
-			{/if}
-		{:else}
-			<InsightsFeed
-				nodes={allNodes}
-				onApply={(p) => {
-					conds = p.conds;
-					sorts = [p.sort];
-					if (p.cols) {
-						const next = new Set(activeColumns);
-						for (const c of p.cols) next.add(c);
-						activeColumns = Array.from(next);
-						void ensureLoaders(inferLoaders(p.cols));
-					}
-					selectedIndustries = new Set();
-					activePresetId = null;
-				}}
-				onCompanyClick={handleSelect}
+	<!--
+		하단 도크의 정보 위계.
+		  행 선택 -> 그 회사의 상세가 가장 중요하다.
+		  조건 없음 -> 아직 찾는 중이니 발굴 피드가 출발점이 된다.
+		  조건 있음 -> 결과가 주인공이다. 도크를 접어 그 높이를 표에 돌려준다.
+	-->
+	{#if selectedNode}
+		{#if DetailComponent}
+			<DetailComponent
+				node={selectedNode}
+				db={dartDb}
+				filing={getPublicRuntime().filing}
+				basePath={base}
+				financeLoading={loaderLoading.has('finance5y')}
+				onClose={() => (selectedRow = null)}
 			/>
+		{:else}
+			<div class="panel-loading">상세 패널 로드 중…</div>
 		{/if}
-	{:else}
-		<InsightsFeed
-			nodes={allNodes}
-			onApply={(p) => {
-				conds = p.conds;
-				sorts = [p.sort];
-				if (p.cols) {
-					const next = new Set(activeColumns);
-					for (const c of p.cols) next.add(c);
-					activeColumns = Array.from(next);
-					void ensureLoaders(inferLoaders(p.cols));
-				}
-				selectedIndustries = new Set();
-				activePresetId = null;
-			}}
-			onCompanyClick={handleSelect}
-		/>
+	{:else if conds.length === 0}
+		<InsightsFeed nodes={marketNodes} onApply={applyInsight} onCompanyClick={handleSelect} />
 	{/if}
 
-	<PresetModal bind:open={presetOpen} nodes={allNodes} onClose={() => (presetOpen = false)} onApplyPreset={applyPreset} />
+	<PresetModal bind:open={presetOpen} nodes={marketNodes} onClose={() => (presetOpen = false)} onApplyPreset={applyPreset} />
 
 	{#if dataExplorerOpen}
 		{#if DataExplorerComponent}
@@ -1306,8 +1345,52 @@
 	}
 	.page-head-left {
 		display: flex;
-		align-items: baseline;
+		align-items: center;
 		gap: 12px;
+	}
+	.market-switch {
+		display: inline-flex;
+		border: 1px solid #1e2433;
+		border-radius: 5px;
+		overflow: hidden;
+	}
+	.ms-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		height: 28px;
+		padding: 0 11px;
+		border: 0;
+		background: #050811;
+		color: #94a3b8;
+		font-size: 11px;
+		font-family: inherit;
+		line-height: 1;
+		cursor: pointer;
+	}
+	.ms-btn + .ms-btn {
+		border-left: 1px solid #1e2433;
+	}
+	.ms-btn:hover {
+		color: #cbd5e1;
+	}
+	.ms-btn.active {
+		background: rgba(var(--dl-accent-rgb), 0.1);
+		color: var(--dl-accent);
+	}
+	.ms-dot {
+		width: 5px;
+		height: 5px;
+		border-radius: 50%;
+		background: currentColor;
+		animation: pulse 1.4s ease-in-out infinite;
+	}
+	.ms-error {
+		font-size: 11px;
+		color: #ef4444;
+	}
+	.industry-bar.hidden {
+		display: none;
 	}
 	.page-title {
 		font-size: 18px;
@@ -1528,6 +1611,11 @@
 		gap: 10px;
 		overflow: hidden;
 	}
+	/* 분포가 없으면 320px 트랙을 예약하지 않는다. 표가 그 가로폭을 가져간다. */
+	.studio.full-width {
+		grid-template-columns: 1fr;
+		gap: 0;
+	}
 	.grid-area {
 		min-width: 0;
 		min-height: 0;
@@ -1539,30 +1627,6 @@
 		min-width: 0;
 		min-height: 0;
 		overflow-y: auto;
-	}
-	.placeholder {
-		height: 100%;
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-		justify-content: center;
-		align-items: center;
-		padding: 24px;
-		background: #050811;
-		border: 1px dashed #1e2433;
-		border-radius: 6px;
-		color: #475569;
-		text-align: center;
-	}
-	.ph-title {
-		font-size: 13px;
-		font-weight: 600;
-		color: #94a3b8;
-	}
-	.ph-desc {
-		font-size: 11px;
-		color: #64748b;
-		line-height: 1.5;
 	}
 
 	.panel-loading {

@@ -226,11 +226,15 @@ export function buildFunnel(rows: RowVerdict[], conds: FilterCond[]): FunnelStep
 
 /**
  * FAIL 이 정확히 k 개이고 UNKNOWN 이 0 인 행. 스크리너에서 가장 값진 산출물이다.
- * UNKNOWN 을 배제하는 이유: 데이터가 없어서 못 넘은 것을 "아깝게 놓쳤다" 고 부르면
- * 거짓말이다.
+ *
+ * UNKNOWN 을 배제하는 이유: 데이터가 없어서 못 넘은 것을 "아깝게 놓쳤다" 고 부르면 거짓말이다.
+ *
+ * 조건이 k 개 이하면 빈 목록이다. 조건 1 개에서 "1 개만 놓친 종목" 은 그냥 탈락자 전원이라
+ * (실측: US 단일조건에서 6,028 사) 정보가 0 이다. 조건을 지우면 볼 수 있는 것을 근접후보라
+ * 부르지 않는다.
  */
 export function nearMiss(grid: VerdictGrid, k = 1): RowVerdict[] {
-	if (grid.conds.length === 0) return [];
+	if (grid.conds.length <= k) return [];
 	return grid.rows.filter((r) => r.failCount === k && r.unknownCount === 0);
 }
 

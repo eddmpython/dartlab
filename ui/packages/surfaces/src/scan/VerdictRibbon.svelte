@@ -40,6 +40,7 @@
 	}: Props = $props();
 
 	const num = (n: number) => n.toLocaleString('ko-KR');
+	const fmt = (n: number) => n.toLocaleString('ko-KR', { maximumFractionDigits: 1 });
 
 	/** 결과가 빈약할 때만 완화를 제안한다. 목표는 20 사. */
 	const TARGET = 20;
@@ -99,8 +100,16 @@
 		{/if}
 
 		{#each relaxHints as h (h.i)}
-			<button type="button" class="chip relax" onclick={() => onRelax(h.i, h.value as number)}>
-				{metrics[h.cond.metric]?.label ?? h.cond.metric} {h.cond.op} {h.value}
+			<button
+				type="button"
+				class="chip relax"
+				onclick={() => onRelax(h.i, h.value as number)}
+				title="이 임계로 바꾸면 {TARGET}사가 됩니다"
+			>
+				{metrics[h.cond.metric]?.label ?? h.cond.metric}
+				{h.cond.op}
+				{fmt(h.value as number)}
+				<span class="relax-n">{TARGET}사</span>
 			</button>
 		{/each}
 	</div>
@@ -197,5 +206,10 @@
 	}
 	.chip.relax:hover {
 		background: rgba(251, 191, 36, 0.08);
+	}
+	.relax-n {
+		margin-left: 4px;
+		color: var(--dl-ink-dim, #64748b);
+		font-variant-numeric: tabular-nums;
 	}
 </style>

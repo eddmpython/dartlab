@@ -35,6 +35,24 @@ export { DEFAULT_COLUMNS, METRICS_BY_KEY, PINNED_COLUMNS, type MetricGroup } fro
 export { PRESETS_BY_ID, type Preset, type RuntimeLoader } from './presets';
 export type { SavedColumnSet, ScanNode, FilterCond, SortKey } from './types';
 
+// ── DART(KR) + EDGAR(US) 동시 조회 ──
+// 무차원(비율·등급)만 시장을 가로질러 비교한다. 절대금액·상대지표는 시장 안에서만.
+export { loadEdgarNodes } from './edgarNodes';
+export {
+	MARKET_CURRENCY,
+	MARKET_LABEL,
+	cellApplicability,
+	crossMarketComparable,
+	inScope,
+	nodeMarket,
+	percentilesByMarket,
+	sortAllowed,
+	sortBlockedReason,
+	US_FIELDS,
+	type Market,
+	type MarketScope
+} from './marketScope';
+
 // ── 판정격자 · 조건 x 종목 3-state (PASS/FAIL/UNKNOWN) 판정의 SSOT ──
 export { default as VerdictRibbon } from './VerdictRibbon.svelte';
 export {

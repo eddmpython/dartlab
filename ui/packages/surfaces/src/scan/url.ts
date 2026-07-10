@@ -88,6 +88,9 @@ function sanitizePayload(raw: any): ScanPayload {
 	const cols: string[] = (Array.isArray(raw.cols) ? raw.cols : [])
 		.filter((k: any) => typeof k === 'string' && VALID_METRIC_KEYS.has(k));
 
+	// 시장 범위. 미지정(옛 페이로드) = KR. 알 수 없는 값은 조용히 KR 로 떨어뜨린다.
+	const m = raw.m === 'US' || raw.m === 'ALL' ? raw.m : undefined;
+
 	return {
 		v: 2,
 		i: Array.isArray(raw.i) ? raw.i.filter((x: any) => typeof x === 'string') : [],
@@ -95,6 +98,7 @@ function sanitizePayload(raw: any): ScanPayload {
 		s: sorts,
 		cols,
 		p: typeof raw.p === 'string' ? raw.p : undefined,
-		sel: typeof raw.sel === 'string' ? raw.sel : undefined
+		sel: typeof raw.sel === 'string' ? raw.sel : undefined,
+		m
 	};
 }

@@ -158,6 +158,17 @@ describe('격자 파생', () => {
 		expect(nearMiss(g, 1)).toEqual([]);
 	});
 
+	// 실측(US 단일조건): 근접 6,028 = 탈락자 전원. 조건을 지우면 보이는 것을 근접후보라 부르지 않는다.
+	it('조건이 1 개뿐이면 nearMiss(1) 은 빈 목록 (정보 0)', () => {
+		const g = buildVerdictGrid(nodes, [conds[0]], defs);
+		expect(nearMiss(g, 1)).toEqual([]);
+	});
+
+	it('조건 2 개면 nearMiss(1) 이 의미를 갖는다', () => {
+		const g = buildVerdictGrid(nodes, conds, defs);
+		expect(nearMiss(g, 1).map((r) => r.node.id)).toEqual(['near']);
+	});
+
 	it('coverage 는 유효 표본만 센다', () => {
 		const [roeCov] = coverageStats(nodes, ['roe']);
 		expect(roeCov).toEqual({ metric: 'roe', valid: 3, total: 4 });

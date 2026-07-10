@@ -71,6 +71,33 @@ describe('v2 왕복', () => {
 	});
 });
 
+describe('시장 범위 키(m) 는 additive 여야 한다', () => {
+	const encodeRaw = (obj: unknown) =>
+		Buffer.from(unescape(encodeURIComponent(JSON.stringify(obj))), 'binary').toString('base64');
+
+	it('m 없는 옛 페이로드는 m=undefined (= KR)', () => {
+		const old = { v: 2, i: [], c: [], s: [], cols: [] };
+		expect(decodeScanPayload(encodeRaw(old))!.m).toBeUndefined();
+	});
+
+	it('US / ALL 을 왕복 보존', () => {
+		for (const m of ['US', 'ALL'] as const) {
+			const p: ScanPayload = { v: 2, i: [], c: [], s: [], cols: [], m };
+			expect(decodeScanPayload(encodeScanPayload(p))!.m).toBe(m);
+		}
+	});
+
+	it('알 수 없는 m 은 조용히 버린다 (KR 로 떨어짐)', () => {
+		const p = { v: 2, i: [], c: [], s: [], cols: [], m: 'JP' };
+		expect(decodeScanPayload(encodeRaw(p))!.m).toBeUndefined();
+	});
+
+	it('KR 은 굳이 싣지 않아도 된다 (옛 링크와 동일 바이트 유지)', () => {
+		const withoutM: ScanPayload = { v: 2, i: [], c: [], s: [], cols: [] };
+		expect(encodeScanPayload(withoutM)).toBe(encodeScanPayload({ ...withoutM, m: undefined }));
+	});
+});
+
 describe('v1 (/screener) 하위호환', () => {
 	const encodeRaw = (obj: unknown) =>
 		Buffer.from(unescape(encodeURIComponent(JSON.stringify(obj))), 'binary').toString('base64');

@@ -82,7 +82,11 @@ export interface ScanNode {
 	[key: string]: unknown;
 }
 
-/** URL 쿼리 직렬화 페이로드 (v2). */
+/** URL 쿼리 직렬화 페이로드 (v2).
+ *
+ * 키 추가는 **optional 만** 허용한다. 야생의 옛 공유 링크(sitemap 등재 /scan)가 계속
+ * 해석되어야 하므로 기존 키의 이름·의미는 불변이다.
+ */
 export interface ScanPayload {
 	v: 2;
 	i: string[];
@@ -91,6 +95,8 @@ export interface ScanPayload {
 	cols: string[];
 	p?: string;
 	sel?: string;
+	/** 조회 시장 범위 (KR/US/ALL). 없으면 KR. 옛 페이로드 호환. */
+	m?: 'KR' | 'US' | 'ALL';
 }
 
 /** Workspace · 사용자 저장 컬럼셋 (PR-E 에서 활용). */

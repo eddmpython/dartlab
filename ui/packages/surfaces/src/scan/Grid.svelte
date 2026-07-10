@@ -21,6 +21,14 @@
 	import type { FilterCond, ScanNode, SeriesMetric, SortKey } from './types';
 	import { gradeTone, rowTintColor, toneColor } from './grade';
 	import { marketColor, marketLabel, normalizeMarket } from './marketChip';
+	import {
+		cellApplicability,
+		nodeMarket,
+		sortAllowed,
+		sortBlockedReason,
+		type Market,
+		type MarketScope
+	} from './marketScope';
 
 	interface CellHoverInfo {
 		stockCode: string;
@@ -45,6 +53,8 @@
 		filters?: FilterCond[];
 		filterOptions?: Record<string, string[]>;
 		percentiles?: Map<string, Percentile>;
+		/** 시장별 분포. 주어지면 행의 시장에 맞는 분포로 히트맵을 칠한다(percentiles 보다 우선). */
+		percentilesByMarket?: Map<Market, Map<string, Percentile>>;
 		selectedId: string | null;
 		/** 'screener' = 메인 그리드 (heatmap·hover·등급칩 활성)
 		 *  'table'   = 단순 raw 테이블 (모달 내 · 모두 비활성, 동적 컬럼 width) */
@@ -53,6 +63,8 @@
 		markets?: Record<string, string>;
 		/** 근접후보 종목 id. 통과 종목과 시각 격리(좌측 amber 마커)해 "통과했다" 오독을 막는다. */
 		nearMissIds?: Set<string>;
+		/** 조회 시장 범위. 'ALL' 이면 통화 단위 컬럼 정렬을 차단한다. */
+		marketScope?: MarketScope;
 		onSort: (s: SortKey, append: boolean) => void;
 		onFilterChange?: (metric: string, conds: FilterCond[]) => void;
 		onSelect: (id: string) => void;
@@ -66,10 +78,12 @@
 		filters = [],
 		filterOptions,
 		percentiles,
+		percentilesByMarket,
 		selectedId,
 		mode = 'screener',
 		markets,
 		nearMissIds,
+		marketScope = 'KR',
 		onSort,
 		onFilterChange,
 		onSelect,
@@ -85,9 +99,20 @@
 	let isTable = $derived(mode === 'table');
 
 	/** 셀 분위 배경색 · p10 이하 / p90 이상 강조 (subtle 12%). */
-	function cellHeatmapBg(key: string, v: unknown): string {
+	/**
+	 * 행이 속한 시장의 분포를 쓴다. KR 분포로 US 셀을 칠하면 히트맵이 통화 스케일차와
+	 * 회계기준 차이를 "좋음/나쁨" 색으로 위조한다.
+	 */
+	function percentileFor(rd: RowData, key: string): Percentile | undefined {
+		if (percentilesByMarket) {
+			return percentilesByMarket.get(nodeMarket(rd as unknown as ScanNode))?.get(key);
+		}
+		return percentiles?.get(key);
+	}
+
+	function cellHeatmapBg(rd: RowData, key: string, v: unknown): string {
 		if (typeof v !== 'number' || !Number.isFinite(v)) return 'transparent';
-		const p = percentiles?.get(key);
+		const p = percentileFor(rd, key);
 		if (!p || p.p90 <= p.p10) return 'transparent';
 		const ratio = Math.max(0, Math.min(1, (v - p.p10) / (p.p90 - p.p10)));
 		const inverted = p.higherBetter === false;
@@ -106,7 +131,8 @@
 		return `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 	}
 
-	const ROW_H = 36;
+	// 30px = 한 화면에 보이는 종목 수를 36px 대비 20% 늘린다. 가상스크롤 상수와 .row 높이는 반드시 일치.
+	const ROW_H = 30;
 	const OVERSCAN = 6;
 
 	let viewport: HTMLDivElement | undefined = $state(undefined);
@@ -150,7 +176,16 @@
 		return filters.filter((c) => c.metric === key);
 	}
 
+	/**
+	 * 전체(KR+US) 보기에서 통화 단위 컬럼 정렬은 랭킹이 아니라 통화 목록이다
+	 * (KRW raw 와 USD 는 약 1300 배 차). 그래서 아예 못 누르게 한다.
+	 */
+	function sortableKey(key: string): boolean {
+		return sortAllowed(METRICS_BY_KEY[key], marketScope);
+	}
+
 	function handleSortClick(e: MouseEvent, key: string) {
+		if (!sortableKey(key)) return;
 		const cur = sortEntry(key);
 		if (cur) {
 			onSort({ key, dir: cur.dir === 'asc' ? 'desc' : 'asc' }, e.shiftKey);
@@ -310,11 +345,14 @@
 					class="hcell"
 					class:pinned={isPinned(key)}
 					class:numeric={def?.type === 'number'}
+					class:sort-blocked={!sortableKey(key)}
 					style:left={isPinned(key) ? `${stickyOffsets[key]}px` : ''}
 				>
 					<button
 						type="button"
 						class="hbtn"
+						disabled={!sortableKey(key)}
+						title={def ? (sortBlockedReason(def, marketScope) ?? undefined) : undefined}
 						onclick={(e) => handleSortClick(e, key)}
 						aria-label="{def?.label ?? key} 정렬"
 					>
@@ -363,17 +401,22 @@
 				{#each columns as key (key)}
 					{@const def = METRICS_BY_KEY[key]}
 					{@const v = cellValue(rd, key)}
+					{@const notInMarket = cellApplicability(rd as unknown as ScanNode, key) === 'notInMarket'}
 					{@const formatted = def?.format
 						? def.format(v)
 						: v == null || v === ''
 							? '·'
 							: String(v)}
-					{@const heatBg = !isTable && def?.type === 'number' && !isPinned(key) ? cellHeatmapBg(key, v) : 'transparent'}
+					{@const heatBg =
+						!isTable && !notInMarket && def?.type === 'number' && !isPinned(key)
+							? cellHeatmapBg(rd, key, v)
+							: 'transparent'}
 					<div
 						class="cell"
 						class:pinned={isPinned(key)}
 						class:numeric={def?.type === 'number'}
 						class:enum={!isTable && def?.type === 'enum'}
+						class:not-in-market={notInMarket}
 						class:spark-cell={key === 'spark' || key === 'spark30' || key === 'spark60'}
 						style:left={isPinned(key) ? `${stickyOffsets[key]}px` : ''}
 						style:background={isPinned(key) ? undefined : heatBg}
@@ -383,7 +426,10 @@
 						onmouseenter={(e) => !isTable && onCellMouseEnter(e, rd, key, formatted)}
 						onmouseleave={onCellMouseLeave}
 					>
-						{#if key === 'label'}
+						{#if notInMarket}
+							<!-- 결측('·')이 아니다. 이 시장엔 그 개념이 없다. 언젠가 채워질 값이 아니다. -->
+							<span class="na" title="이 시장에는 없는 지표입니다">NA</span>
+						{:else if key === 'label'}
 							<button
 								type="button"
 								class="company-link"
@@ -514,6 +560,11 @@
 		overflow: visible;
 		position: relative;
 	}
+	/* 전체 보기에서 통화 단위 컬럼. 정렬이 막혔다는 것을 헤더가 스스로 말한다. */
+	.hcell.sort-blocked .hbtn {
+		cursor: not-allowed;
+		opacity: 0.45;
+	}
 	.hcell.numeric {
 		justify-content: flex-end;
 	}
@@ -566,7 +617,8 @@
 		display: grid;
 		width: max-content;
 		min-width: 100%;
-		height: 36px;
+		/* ROW_H 상수와 반드시 동일. 어긋나면 가상스크롤 오프셋이 밀린다. */
+		height: 30px;
 		border-bottom: 1px solid rgba(30, 36, 51, 0.5);
 		position: relative;
 		cursor: pointer;
@@ -648,6 +700,25 @@
 
 	.dim {
 		color: #475569;
+	}
+	/* NA = 이 시장에 없는 지표. 결측('·')과 시각적으로 달라야 오해가 없다. */
+	.na {
+		font-size: 9px;
+		letter-spacing: 0.04em;
+		color: #3f4a5f;
+		border: 1px dashed #2a3346;
+		border-radius: 2px;
+		padding: 0 3px;
+		line-height: 13px;
+	}
+	.cell.not-in-market {
+		background: repeating-linear-gradient(
+			135deg,
+			transparent,
+			transparent 4px,
+			rgba(148, 163, 184, 0.045) 4px,
+			rgba(148, 163, 184, 0.045) 5px
+		);
 	}
 
 	.chip {
