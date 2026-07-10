@@ -8,6 +8,7 @@
 | 문서 | 내용 | 상태 |
 |---|---|---|
 | **`05-public-surface-prd.md`** | **현행 SSOT 머리. 여기부터 읽어라.** 퍼블릭 `/scan` 우선 + **P0 저작권 응급 정지** + 3-state 판정격자 + 골든 conformance 벡터 | P0 승인 대기 |
+| **`06-public-view-rebuild.md`** | **구현 완료(눈검수 대기).** 퍼블릭 /scan 판정격자 + DART/EDGAR 동시조회 + 레이아웃 + 색 백킹 | push 승인 대기 |
 | `04-screener-os-prd.md` | 판정격자 개념 + universe/asOf/rank/explain + walk. 개념은 유효하나 **실행순서와 사실 3 건을 05 가 정정** | 05 선결 후 |
 | `00-prd.md` | 컴포저블 쿼리 (define AST, 시계열, 업종상대, screens/*.json, 왓처 구독) | Phase 1~3 완료. Phase 4 는 04 의 P5 로 흡수 |
 | `01-phase4-ui-plan.md` | 프론트가 spec 을 소비하는 계획 | 04 의 P5 입력 |
