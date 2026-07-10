@@ -1,0 +1,393 @@
+{
+  "plan": {
+    "title": "효성중공업, AI가 전기를 먹자 20조 수주잔고가 깨어났다",
+    "titleContract": {
+      "workingTitle": "효성중공업 단독 기업이야기",
+      "selectedTitle": "효성중공업, AI가 전기를 먹자 20조 수주잔고가 깨어났다",
+      "hookQuestion": "AI 데이터센터 전력난이 왜 효성중공업의 수주잔고와 마진을 바꿨는가",
+      "readerGap": "독자는 효성중공업을 전력기기 수혜주로만 알지만, 실제 숫자는 변압기 호황과 건설 사업이 섞인 복합 회사라는 긴장을 만든다.",
+      "promise": "20조 수주잔고, 69.5% 중공업 매출 비중, 12.5% 영업이익률, 190.3% 부채비율을 한 회사의 구조로 연결한다.",
+      "whySelected": "AI 전력난이라는 대중 관심어와 20조 수주잔고라는 큰 숫자가 즉시 클릭 이유를 만들고, 본문에서 공시 수주표로 갚을 수 있다.",
+      "candidates": [
+        {
+          "title": "효성중공업, AI가 전기를 먹자 20조 수주잔고가 깨어났다",
+          "hook": "AI, 전기, 20조 수주잔고가 한 문장에 들어가 대중 후킹이 가장 강하다.",
+          "risk": "20조가 중공업 수주잔고라는 범위를 본문 첫 부분에서 명확히 해야 한다."
+        },
+        {
+          "title": "효성중공업은 왜 변압기 슈퍼사이클의 숨은 거인인가",
+          "hook": "숨은 거인 프레임은 좋지만 숫자 펀치가 약하다.",
+          "risk": "기존 전력기기 비교글과 겹칠 수 있다."
+        },
+        {
+          "title": "효성중공업, 변압기 호황이 건설회사 얼굴을 바꾸다",
+          "hook": "중공업과 건설의 이중성을 잘 보여준다.",
+          "risk": "AI 전력난 키워드가 제목에서 빠져 검색 후킹이 약하다."
+        }
+      ],
+      "rejectedPatterns": [
+        "재무제표는 왜 무거울까",
+        "효성중공업 분석",
+        "전력기기 수혜주 총정리"
+      ]
+    },
+    "description": "효성중공업은 2025년 매출 5.97조원, 영업이익률 12.5%를 찍었다. 2026년 1분기 중공업 수주잔고 20.2조원이 이 회사의 다음 질문이다.",
+    "readerQuestion": "AI 데이터센터가 전기를 더 먹는다는 말이 효성중공업의 20조 수주잔고와 현금흐름에는 어떻게 찍히는가.",
+    "insight": {
+      "commonBelief": "효성중공업은 HD현대일렉트릭과 같은 변압기 수혜주로 보면 된다.",
+      "twistFact": "효성중공업의 진짜 관전 포인트는 변압기 호황 자체가 아니라 20조 중공업 수주잔고가 건설이 섞인 연결 손익 안에서 얼마나 높은 매출총이익률과 현금으로 바뀌는가다.",
+      "whatToWatch": "다음 공시에서는 중공업 수주잔고, 중공업 매출 비중, 매출총이익률, 영업현금흐름, 부채비율을 같은 순서로 봐야 한다.",
+      "freshnessArgument": "기존 글은 전력기기 4사 비교 안에서 효성중공업을 한 줄로 다뤘지만, 이번 글은 효성중공업 단독의 중공업과 건설 믹스, 해외 생산거점, 원재료와 현금 전환을 분해한다.",
+      "evidenceRefs": [
+        "dartlab Company 298040 IS 2019~2025",
+        "DART 2026Q1 매출 및 수주상황",
+        "DART 2026Q1 원재료 및 생산설비",
+        "dartlab peer 267260 010120 103590 비교"
+      ]
+    },
+    "acts": [
+      {
+        "order": 1,
+        "heading": "AI 전력난이 만든 숫자: 20조 수주잔고",
+        "purpose": "궁금증심화",
+        "scene": "2026년 1분기 DART 수주표에서 중공업 수주잔고 20.2조원이 찍히는 장면.",
+        "keyNumbers": [
+          "2026Q1 중공업 수주잔고 20.196조원",
+          "2026Q1 중공업 수주액 6.233조원",
+          "2026Q1 중공업 매출 1.232조원"
+        ],
+        "causalBridge": "수주잔고가 크면 다음 질문은 이 수주가 어떤 사업부에서 나오고 어떤 마진으로 바뀌는가다."
+      },
+      {
+        "order": 2,
+        "heading": "효성중공업은 변압기 회사이면서 건설 회사다",
+        "purpose": "메커니즘공개",
+        "scene": "주요 제품 표에서 중공업 69.5%, 건설 29.9%가 한 연결 손익에 섞여 있는 장면.",
+        "keyNumbers": [
+          "2025년 중공업 매출 4.149조원",
+          "2025년 건설 매출 1.787조원",
+          "2025년 연결 매출 5.969조원"
+        ],
+        "causalBridge": "사업부 믹스를 이해해야 12.5% 영업이익률의 의미가 보인다."
+      },
+      {
+        "order": 3,
+        "heading": "마진은 2025년에 다른 회사처럼 움직였다",
+        "purpose": "메커니즘공개",
+        "scene": "2019~2025 손익계산서에서 매출총이익률 10.4%가 21.0%로 올라가는 장면.",
+        "keyNumbers": [
+          "2019년 매출총이익률 10.4%",
+          "2025년 매출총이익률 21.0%",
+          "2025년 영업이익률 12.5%"
+        ],
+        "causalBridge": "마진 개선이 진짜라면 현금흐름표와 부채도 같이 움직여야 한다."
+      },
+      {
+        "order": 4,
+        "heading": "좋은 수주는 구리와 재고를 지나야 현금이 된다",
+        "purpose": "리스크반전",
+        "scene": "구리 가격 범위와 재고 1.28조원이 함께 올라온 원재료와 재무제표의 장면.",
+        "keyNumbers": [
+          "2025년 재고자산 1.278조원",
+          "2025년 영업현금흐름 4930억원",
+          "2026Q1 구리 가격 19,386~19,861원/kg"
+        ],
+        "causalBridge": "현금 전환을 보려면 효성중공업을 피어와 비교해야 한다."
+      },
+      {
+        "order": 5,
+        "heading": "HD현대일렉트릭과 다른 점: 더 크지만 덜 순수하다",
+        "purpose": "리스크반전",
+        "scene": "전력기기 4사 비교에서 효성중공업 매출은 크지만 영업이익률은 중간인 장면.",
+        "keyNumbers": [
+          "효성중공업 2025 매출 5.97조원, OPM 12.5%",
+          "HD현대일렉트릭 2025 OPM 24.4%",
+          "LS ELECTRIC 2025 OPM 8.6%"
+        ],
+        "causalBridge": "그래서 효성중공업의 투자 질문은 승자 고르기가 아니라 연결 믹스와 수주 전환이다."
+      },
+      {
+        "order": 6,
+        "heading": "미국 Memphis와 글로벌 생산 지도",
+        "purpose": "메커니즘공개",
+        "scene": "창원, Nantong, Pune, Memphis가 공시 생산설비 표에 동시에 등장하는 장면.",
+        "keyNumbers": [
+          "2026Q1 생산실적 9461억원",
+          "2025년 생산실적 3.128조원",
+          "Hyosung HICO 투자 총액 64.3백만 달러와 156.6백만 달러"
+        ],
+        "causalBridge": "생산능력 확장은 수주잔고를 매출로 바꾸는 병목을 풀 수도 있고 실행 리스크를 만들 수도 있다."
+      },
+      {
+        "order": 7,
+        "heading": "다음 공시에서 볼 다섯 숫자",
+        "purpose": "판단닫힘",
+        "scene": "투자자가 다음 분기보고서에서 순서대로 확인할 숫자를 정리하는 장면.",
+        "keyNumbers": [
+          "중공업 수주잔고",
+          "중공업 매출 비중",
+          "매출총이익률",
+          "영업현금흐름",
+          "부채비율"
+        ],
+        "causalBridge": "글의 결론은 AI 테마가 아니라 수주잔고가 현금으로 바뀌는 속도다."
+      }
+    ],
+    "visuals": [
+      {
+        "actOrder": 1,
+        "kind": "bar",
+        "title": "20조 수주잔고의 위치",
+        "proves": "2026Q1 중공업 수주잔고가 연결 매출보다 훨씬 큰 미래 매출 풀이라는 점.",
+        "seriesHint": "2026Q1 중공업 전기말 잔고, 수주액, 매출, 당기말 잔고",
+        "placement": "1막 중간 수주잔고 표 바로 아래",
+        "insertAfter": "수주잔고 20.2조원을 처음 제시한 문단 뒤",
+        "narrativeUse": "독자가 20조라는 제목 숫자가 어디에서 왔는지 즉시 확인한다."
+      },
+      {
+        "actOrder": 2,
+        "kind": "donut",
+        "title": "2025년 사업부 믹스",
+        "proves": "효성중공업은 중공업 69.5%와 건설 29.9%가 섞인 연결 회사라는 점.",
+        "seriesHint": "DART 주요 제품 및 서비스 표",
+        "placement": "2막 초반 사업부 매출 믹스 소개 위치",
+        "insertAfter": "중공업과 건설 매출 비중을 설명한 문단 뒤",
+        "narrativeUse": "HD현대일렉트릭과 달리 순수 변압기 회사가 아니라는 오해를 줄인다."
+      },
+      {
+        "actOrder": 3,
+        "kind": "line",
+        "title": "2019~2025 마진 개선",
+        "proves": "매출총이익률과 영업이익률이 2025년에 같이 레벨업했다는 점.",
+        "seriesHint": "매출총이익률, 영업이익률",
+        "placement": "3막 중간 손익계산서 추세 설명 위치",
+        "insertAfter": "2019년과 2025년 마진을 비교한 문단 뒤",
+        "narrativeUse": "이야기의 핵심이 매출 성장보다 마진의 질이라는 것을 보여준다."
+      },
+      {
+        "actOrder": 4,
+        "kind": "grouped",
+        "title": "이익과 현금과 부채",
+        "proves": "이익 개선이 현금과 부채 개선으로 동시에 번역되는지 봐야 한다는 점.",
+        "seriesHint": "영업이익, 영업현금흐름, 부채비율",
+        "placement": "4막 후반 현금흐름과 부채 설명 위치",
+        "insertAfter": "영업현금흐름과 부채비율을 연결한 문단 뒤",
+        "narrativeUse": "좋은 수주가 재무제표의 아래쪽으로 내려오는 과정을 보여준다."
+      },
+      {
+        "actOrder": 7,
+        "kind": "table",
+        "title": "다음 공시 체크리스트",
+        "proves": "독자가 다음 분기보고서에서 볼 순서를 남긴다.",
+        "seriesHint": "중공업 수주잔고, 중공업 비중, GPM, OCF, debt ratio",
+        "placement": "결론 직전 다음 공시 점검표 위치",
+        "insertAfter": "이야기가 깨지는 조건을 설명한 뒤",
+        "narrativeUse": "글을 요약하지 않고 다음 공시를 읽는 렌즈로 닫는다."
+      }
+    ],
+    "imagePlan": [
+      {
+        "slot": "hero",
+        "subject": "전력망 변압기와 데이터센터 전력 수요",
+        "query": "electrical grid power transformer substation",
+        "keywords": [
+          "transformer",
+          "substation",
+          "grid",
+          "power"
+        ],
+        "insertAfterAct": 0,
+        "placement": "본문 첫 이미지와 OG 배경",
+        "narrativeUse": "AI 전력난이 물리적 전력 설비로 내려오는 장면을 보여준다."
+      },
+      {
+        "slot": "inline",
+        "subject": "초고압 변압기 생산설비와 시험공정",
+        "query": "industrial power transformer factory",
+        "keywords": [
+          "transformer",
+          "factory",
+          "industrial"
+        ],
+        "insertAfterAct": 3,
+        "placement": "3막 마진 개선 설명 직후 본문 중간 이미지",
+        "narrativeUse": "마진이 추상 숫자가 아니라 생산 슬롯과 납기의 문제임을 보여준다."
+      },
+      {
+        "slot": "inline",
+        "subject": "전력망과 구리 원재료",
+        "query": "copper winding power transformer",
+        "keywords": [
+          "copper",
+          "winding",
+          "transformer"
+        ],
+        "insertAfterAct": 4,
+        "placement": "구리와 재고 리스크 설명 뒤",
+        "narrativeUse": "좋은 수주도 원재료와 운전자본을 통과해야 한다는 점을 시각화한다."
+      }
+    ],
+    "relatedPosts": {
+      "searches": [
+        "전력기기",
+        "HD현대일렉트릭",
+        "LS ELECTRIC",
+        "AI 전력망",
+        "GE Vernova",
+        "반도체 냉각"
+      ],
+      "links": [
+        {
+          "path": "/blog/power-equipment-supercycle",
+          "title": "전력기기 4사 비교",
+          "reason": "효성중공업을 피어 안에서 위치시킨 선행 글이다.",
+          "placement": "6막 전력기기 피어 비교가 시작되는 위치"
+        },
+        {
+          "path": "/blog/267260-hd-hyundai-electric-ai-power",
+          "title": "HD현대일렉트릭 AI 전력 후속",
+          "reason": "순수 변압기 병목주와 효성중공업의 차이를 설명한다.",
+          "placement": "HD현대일렉트릭 비교 문단"
+        },
+        {
+          "path": "/blog/ai-power-transformer-supercycle",
+          "title": "AI 전력망 기술 이야기",
+          "reason": "변압기, 전선, 차단기 병목의 기술 구조를 이미 설명했다.",
+          "placement": "프롤로그에서 AI 전력망 배경을 처음 설명하는 위치"
+        },
+        {
+          "path": "/blog/semiconductor-cooling-network",
+          "title": "반도체 냉각 기술과 전력망",
+          "reason": "AI 인프라가 전력과 냉각을 동시에 요구한다는 연결을 보강한다.",
+          "placement": "결론 함께 읽을 글 문단이 나오는 위치"
+        }
+      ],
+      "placementRule": "선행 글은 같은 내용을 반복하지 않고, 해당 메커니즘이 처음 나오는 문단 뒤에 한 문장으로 연결한다."
+    },
+    "honestyGuards": [
+      "20.2조원은 연결 전체 수주잔고가 아니라 DART 2026Q1 수주표의 중공업 당기말 수주잔고다.",
+      "효성중공업 연결 손익에는 중공업과 건설이 함께 들어가므로 순수 변압기 마진으로 읽지 않는다.",
+      "2026Q1 순이익은 패널에서 결측이므로 본문 강한 숫자로 쓰지 않는다.",
+      "수주잔고는 매출이 아니라 미래 납품 예정 금액이며, 원가와 현금 회수 과정을 통과해야 한다.",
+      "투자 권유와 목표주가 판단으로 닫지 않는다."
+    ],
+    "evidenceMap": [
+      {
+        "claim": "2025년 효성중공업 연결 매출 5.97조원, 영업이익률 12.5%",
+        "sourceType": "dartlab",
+        "period": "2025",
+        "sourceRef": "Company('298040').select('IS', ['sales','gross_profit','operating_profit','net_profit'], freq='Y')",
+        "howUsed": "프롤로그와 3막의 핵심 손익 수치"
+      },
+      {
+        "claim": "2026Q1 중공업 수주잔고 20.2조원",
+        "sourceType": "DART",
+        "period": "2026Q1",
+        "sourceRef": "DART 2026년 1분기보고서 4. 매출 및 수주상황",
+        "howUsed": "제목과 1막의 표지 숫자"
+      },
+      {
+        "claim": "2025년 중공업 매출 비중 69.5%, 건설 29.9%",
+        "sourceType": "DART",
+        "period": "2025",
+        "sourceRef": "DART 2026년 1분기보고서 2. 주요 제품 및 서비스",
+        "howUsed": "2막 사업부 믹스"
+      },
+      {
+        "claim": "구리 가격과 원재료가 수주 마진의 리스크",
+        "sourceType": "DART",
+        "period": "2026Q1",
+        "sourceRef": "DART 2026년 1분기보고서 3. 원재료 및 생산설비",
+        "howUsed": "4막 원재료 리스크"
+      },
+      {
+        "claim": "피어 대비 효성중공업은 매출이 크지만 HD현대일렉트릭보다 마진이 낮다",
+        "sourceType": "dartlab",
+        "period": "2025",
+        "sourceRef": "Company 298040, 267260, 010120, 103590 peer select",
+        "howUsed": "5막 피어 비교"
+      },
+      {
+        "claim": "전력망 병목은 기술 이야기와 기존 기업 글에서 선행 설명됨",
+        "sourceType": "internal-blog",
+        "period": "2026",
+        "sourceRef": "/blog/ai-power-transformer-supercycle, /blog/power-equipment-supercycle",
+        "howUsed": "프롤로그와 피어 비교 연결"
+      }
+    ],
+    "reviewGate": {
+      "status": "passed",
+      "requiredRounds": [
+        {
+          "id": "titleHook",
+          "status": "passed"
+        },
+        {
+          "id": "writerPanel",
+          "status": "passed"
+        },
+        {
+          "id": "honestyEvidence",
+          "status": "passed"
+        },
+        {
+          "id": "visualStoryPlan",
+          "status": "passed"
+        },
+        {
+          "id": "imageFit",
+          "status": "passed"
+        },
+        {
+          "id": "readerFit",
+          "status": "passed"
+        },
+        {
+          "id": "reevaluation",
+          "status": "passed"
+        }
+      ],
+      "decisionLog": [
+        {
+          "round": "r1",
+          "decision": "revise",
+          "note": "초안 제목이 재무제표의 무게를 앞세워 독자 후킹이 약했다. 제목을 20조 수주잔고와 AI 전력난으로 바꾸고, 사업부 믹스와 수주잔고 범위 가드를 강화했다."
+        },
+        {
+          "round": "r2",
+          "decision": "passed",
+          "note": "최종안은 제목 숫자, DART 수주표, 사업부 믹스, 피어 비교, 현금흐름 체크리스트가 한 관통선으로 연결된다."
+        }
+      ],
+      "loopEvidence": {
+        "workflow": "blog_plan_loop.workflow.js",
+        "rounds": [
+          {
+            "round": 1,
+            "planner": "기획작가 초안: 효성중공업은 AI 전력난의 숨은 전력기기 수혜주라는 관통선을 제시",
+            "evaluator": "점수 88. 제목이 약하고 기존 전력기기 비교글과 겹친다. 20조 수주잔고와 중공업, 건설 믹스가 첫 화면에 필요하다.",
+            "skeptic": "verdict kill. weak-title, cliche-template, misleading-frame. 효성중공업을 순수 변압기 회사처럼 보이면 오해다.",
+            "decision": "revise",
+            "evaluatorScore": 88,
+            "plannerRevision": "제목을 20조 수주잔고로 바꾸고, 중공업 수주잔고 범위와 연결 믹스 가드를 전면에 반영"
+          },
+          {
+            "round": 2,
+            "planner": "기획작가 개선안: 20조 수주잔고, 69.5% 중공업 비중, 12.5% OPM, 190.3% 부채비율을 한 이야기로 재작성",
+            "evaluator": "점수 94. 첫 질문이 살아 있고, 기존 글과 겹치지 않는다. 다음 공시 체크리스트가 명확하다.",
+            "skeptic": "verdict survive. 숫자 범위 가드가 있고, 순수 변압기주로 과장하지 않았다.",
+            "decision": "passed",
+            "evaluatorScore": 94,
+            "plannerRevision": "최종 통과안"
+          }
+        ],
+        "note": "메인 스레드에서 DART와 dartlab 실측을 대조해 기획 루프를 수동 기록했다."
+      }
+    }
+  },
+  "passed": true,
+  "rounds": 2,
+  "corpName": "효성중공업",
+  "stockCode": "298040",
+  "contentKind": "company-reports"
+}

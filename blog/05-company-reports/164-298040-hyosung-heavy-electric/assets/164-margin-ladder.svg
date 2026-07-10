@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-labelledby="title desc">
+  <title id="title">효성중공업 마진 개선 추이</title>
+  <desc id="desc">2019년부터 2025년까지 매출총이익률과 영업이익률이 상승한 흐름을 보여준다.</desc>
+  <rect width="960" height="540" fill="#07111f"/>
+  <text x="54" y="62" fill="#f8fafc" font-family="Malgun Gothic, Arial" font-size="30" font-weight="700">마진은 2025년에 다른 회사처럼 움직였다</text>
+  <text x="54" y="96" fill="#9fb3c8" font-family="Malgun Gothic, Arial" font-size="16">매출총이익률과 영업이익률. 단위: %</text>
+  <g stroke="#243447" stroke-width="1">
+    <line x1="86" y1="420" x2="890" y2="420"/>
+    <line x1="86" y1="340" x2="890" y2="340"/>
+    <line x1="86" y1="260" x2="890" y2="260"/>
+    <line x1="86" y1="180" x2="890" y2="180"/>
+    <line x1="86" y1="100" x2="890" y2="100"/>
+  </g>
+  <g font-family="Malgun Gothic, Arial" font-size="13" fill="#8aa1b8" text-anchor="end">
+    <text x="76" y="424">0</text>
+    <text x="76" y="344">5</text>
+    <text x="76" y="264">10</text>
+    <text x="76" y="184">15</text>
+    <text x="76" y="104">20</text>
+  </g>
+  <polyline points="110,254 230,208 350,211 470,218 590,183 710,162 830,84" fill="none" stroke="#38bdf8" stroke-width="5"/>
+  <polyline points="110,365 230,396 350,358 470,346 590,324 710,301 830,220" fill="none" stroke="#f43f5e" stroke-width="5"/>
+  <g fill="#38bdf8">
+    <circle cx="110" cy="254" r="6"/><circle cx="230" cy="208" r="6"/><circle cx="350" cy="211" r="6"/><circle cx="470" cy="218" r="6"/><circle cx="590" cy="183" r="6"/><circle cx="710" cy="162" r="6"/><circle cx="830" cy="84" r="6"/>
+  </g>
+  <g fill="#f43f5e">
+    <circle cx="110" cy="365" r="6"/><circle cx="230" cy="396" r="6"/><circle cx="350" cy="358" r="6"/><circle cx="470" cy="346" r="6"/><circle cx="590" cy="324" r="6"/><circle cx="710" cy="301" r="6"/><circle cx="830" cy="220" r="6"/>
+  </g>
+  <g font-family="Malgun Gothic, Arial" font-size="13" fill="#cbd5e1" text-anchor="middle">
+    <text x="110" y="456">2019</text><text x="230" y="456">2020</text><text x="350" y="456">2021</text><text x="470" y="456">2022</text><text x="590" y="456">2023</text><text x="710" y="456">2024</text><text x="830" y="456">2025</text>
+  </g>
+  <g font-family="Malgun Gothic, Arial" font-size="16">
+    <rect x="610" y="118" width="18" height="18" rx="4" fill="#38bdf8"/>
+    <text x="638" y="133" fill="#f8fafc">매출총이익률 10.4%에서 21.0%</text>
+    <rect x="610" y="150" width="18" height="18" rx="4" fill="#f43f5e"/>
+    <text x="638" y="165" fill="#f8fafc">영업이익률 3.4%에서 12.5%</text>
+  </g>
+</svg>
