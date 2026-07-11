@@ -1,6 +1,6 @@
 # pyproc Runtime SSOT - dartlab 커널을 pyproc 공유 런타임으로
 
-상태: **P0~P3 구현 완료 (플래그 off), 운영자 push 승인 대기** (2026-07-12). P0 파리티 PASS + P1 커널 seam(a1f13c74a) + P3 자동반영 게이트(e4cf4af20). P4 는 봉인(스냅샷 spike SUPPORTED, COEP/호스팅은 별도 PRD). P2 flip 은 운영자 눈검수 게이트. 검증 기반 = [00-verified-facts.md](00-verified-facts.md), 진행 상세 = [06-progress-ledger.md](06-progress-ledger.md).
+상태: **P0~P3 완료 + P2 라이브 배포 (pyproc 기본 커널)** (2026-07-12). P0 파리티 + P1 seam + P3 자동반영 + **P2 flip(`USE_PYPROC_ASGI=true`) 검증 후 push, deploy-landing GREEN 로 라이브 배포됨**. 실패 시 손수 경로 자동 폴백(kill-switch). P4(격리 fork)만 봉인(스냅샷 spike SUPPORTED, COEP/Chromium전용은 별도 PRD). 검증 기반 = [00-verified-facts.md](00-verified-facts.md), 진행 = [06-progress-ledger.md](06-progress-ledger.md).
 
 범위: dartlab 브라우저 노트북의 pyodide 커널을, 저자 동일의 공유 런타임 **pyproc**(github.com/eddmpython/pyproc, "브라우저 파이썬 프로세스 OS")으로 이관한다. 손수 만든 것(pyodide boot, ASGI dispatch, heap 체크포인트, interrupt)을 pyproc 이 흡수하고, dartlab 은 노트북 고유층(postMessage·OPFS·결과 포매팅·SW 배선)만 소유한다. 나아가 멀티코어 fork·터미널·리액티브를 점진 획득한다.
 

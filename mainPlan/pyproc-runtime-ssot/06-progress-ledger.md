@@ -71,7 +71,19 @@
 - **P2 = 코드 준비 완료**: 플래그 flip 1줄. flip 자체는 PRD veto⑤(기본 off 1릴리즈 잔존) + 운영자 눈검수 게이트라 운영자 결정. node 파리티·GATE-A·esbuild 번들로 가능한 만큼 실증.
 - **P4 = 봉인 유지**: 스냅샷 spike SUPPORTED 로 pyodide 측 해소, COEP/호스팅/Chromium전용은 별도 PRD.
 
-### NEXT (세션 재개 지점)
-1. **운영자 push 승인**("푸시해"/"올려") 시 CI(ssh->https 선처리) 로 P1+P3 push.
-2. push 후 P2 flip: 운영자 눈검수 + `USE_PYPROC_ASGI=true`(실브라우저 /pyapi + capability probe 폴백 확인, 손수 경로 1릴리즈 잔존).
-3. P4 착수 결정 시 별도 PRD(COEP credentialless SW 주입 + 벤더링 + GATE-B, Chromium 전용 수용).
+## 2026-07-12 세션 3 (P2 flip: pyproc 기본값 + push)
+
+### 운영자 지시
+- "pyproc 이 기본값이다" + "검증 다했으면 푸시해라" -> `USE_PYPROC_ASGI=true` flip(PRD veto⑤ 오버라이드는 운영자 명시 결정), 검증 후 push.
+
+### P2 검증 + push (커밋 6c6377346 CI + 61080c35a flip, push 완료 e52b10214..61080c35a)
+- **CI ssh->https**: npm 이 pyproc git dep 를 lock 에서 git+ssh 로 정규화 -> deploy-landing·publish 의 npm ci 앞에 `git insteadOf https` 추가(SSH 키 없는 러너 red 방지).
+- **플래그 flip**: `USE_PYPROC_ASGI=true`. 기본 경로 = pyproc AsgiServer. 설치 실패 시 손수 자동 폴백(kill-switch)라 무중단.
+- **빌드 검증**: pyproc 이 워커 청크로 번들됨 실측(`.svelte-kit/output/.../workers/chunks/*.js` 에 `enableAsgiServer`·`_pyproc_asgi_call`). landing 빌드 CLEAN_BUILD_EXIT=0(병렬 세션 미커밋 blog-12 치우면; blog-12 는 CI 체크아웃에 없어 무영향). 로컬 실패는 그 blog-12 깨진 이미지 링크 뿐.
+- push 가 deploy-landing 트리거 -> **GREEN**(run 29159238750, build 6m42s + deploy 16s 전 스텝 ✓). `npm ci` 가 pyproc git dep 로 성공 = ssh->https 수정 실동작 확인. **pyproc 가 라이브 프로덕션 노트북 기본 커널로 배포됨.**
+
+### NEXT
+1. ~~deploy-landing green 확인~~ **완료(GREEN)**. 라이브 배포됨.
+2. 배포 후 라이브 노트북에서 `/pyapi` 가 pyproc 경로로 실동작하는지 확인(현재 tier 헤더 동일이라 구분자 필요 시 추가).
+3. 손수 경로(HandRolledAsgi)는 kill-switch 폴백으로 in-tree 잔존.
+4. P4(격리 fork)는 별도 PRD(스냅샷 SUPPORTED, COEP credentialless + 벤더링 + GATE-B + Chromium 전용).
