@@ -1,4 +1,4 @@
-import type { ExecutionEngine, CellOutput, CompletionItem, VariableInfo, PackageInfo, DocResult, FileEntry } from './executionEngine';
+import type { ExecutionEngine, CellOutput, CompletionItem, VariableInfo, PackageInfo, DocResult, FileEntry, PyApiResponse } from './executionEngine';
 
 let msgId = 0;
 
@@ -50,6 +50,14 @@ export class WorkerEngine implements ExecutionEngine {
 	async warm(): Promise<void> {
 		if (!this.worker) return;
 		await this.call('warm').catch(() => undefined);
+	}
+
+	/**
+	 * browser-as-server: 같은 커널의 dartlab FastAPI 로 HTTP 요청을 보낸다. Service Worker 가
+	 * 페이지 fetch('/pyapi/*')를 이 메서드로 relay 한다. 노트북 execute 와 한 워커 커널을 공유.
+	 */
+	async serveApi(req: { method: string; path: string; body?: string }): Promise<PyApiResponse> {
+		return this.call('pyapi', req) as Promise<PyApiResponse>;
 	}
 
 	private call(cmd: string, ...args: unknown[]): Promise<unknown> {

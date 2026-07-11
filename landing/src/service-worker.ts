@@ -120,10 +120,42 @@ self.addEventListener('activate', (event) => {
 	);
 });
 
+/**
+ * browser-as-server: /pyapi/* 요청을 컨트롤 중인 페이지로 넘겨 pyodide 워커의 dartlab FastAPI 가
+ * 서빙하게 하고, 그 응답을 진짜 HTTP Response 로 돌려준다. codaro-anywhere/10 검증 배선.
+ */
+async function handlePyapi(req: Request, path: string): Promise<Response> {
+	const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
+	const client = clients[0];
+	if (!client) {
+		return new Response(JSON.stringify({ error: 'no client to serve pyapi' }), {
+			status: 503,
+			headers: { 'content-type': 'application/json' }
+		});
+	}
+	const body = req.method === 'GET' || req.method === 'HEAD' ? '' : await req.text();
+	return new Promise<Response>((resolve) => {
+		const channel = new MessageChannel();
+		channel.port1.onmessage = (ev) => {
+			const { status, headers, body: b } = ev.data as { status: number; headers: Record<string, string>; body: string };
+			resolve(new Response(b, { status, headers }));
+		};
+		client.postMessage({ type: 'pyapi', method: req.method, path, body }, [channel.port2]);
+	});
+}
+
 self.addEventListener('fetch', (event) => {
 	const req = event.request;
-	if (req.method !== 'GET') return;
 	const url = new URL(req.url);
+
+	// browser-as-server: /pyapi/* 는 브라우저 안 dartlab FastAPI 로. 컨트롤 페이지의 pyodide 워커가
+	// 서빙한다(mainPlan/browser-as-server-ssot). GET/POST 모두. 캐시하지 않는다(라이브 계산).
+	if (url.pathname.startsWith('/pyapi/')) {
+		event.respondWith(handlePyapi(req, url.pathname + url.search));
+		return;
+	}
+
+	if (req.method !== 'GET') return;
 
 	// 노트북 런타임(pyodide 커널 휠 + dartlab wheel)만 크로스오리진 예외. 데이터(parquet Range)는 제외.
 	if (isImmutableRuntimeAsset(url)) {

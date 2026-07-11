@@ -64,6 +64,45 @@ async function ensureDartlab(code: string): Promise<void> {
 	dartlabReady = true;
 }
 
+// browser-as-server: 이 워커(노트북 execute 커널)에 dartlab FastAPI 를 얹는다. 한 커널, 두 인터페이스.
+// mainPlan/browser-as-server-ssot. fastapi 는 첫 /pyapi 요청 때만 설치(노트북만 쓰면 비용 0).
+// 라우팅 SSOT 는 dartlab.webapi.browserApi(파이썬). 여기선 lazy 설치 + ASGI 직접 dispatch 만.
+let serverReady = false;
+const PYAPI_SETUP = `
+import micropip
+try:
+    import fastapi  # noqa: F401
+except ImportError:
+    await micropip.install("fastapi")
+import dartlab.webapi as _dl_webapi
+_dl_app = _dl_webapi.buildBrowserApi()
+
+async def _dl_dispatch(method, path, body_text):
+    # /pyapi 접두사 제거 + query 분리
+    route = path[6:] if path.startswith("/pyapi") else path
+    qs = b""
+    if "?" in route:
+        route, q = route.split("?", 1); qs = q.encode()
+    scope = {"type": "http", "asgi": {"version": "3.0"}, "http_version": "1.1",
+             "method": method, "path": route or "/", "raw_path": (route or "/").encode(),
+             "query_string": qs, "headers": [(b"content-type", b"application/json")]}
+    sent = {"status": None, "body": []}
+    async def recv():
+        return {"type": "http.request", "body": (body_text or "").encode(), "more_body": False}
+    async def send(msg):
+        if msg["type"] == "http.response.start": sent["status"] = msg["status"]
+        elif msg["type"] == "http.response.body": sent["body"].append(msg.get("body", b""))
+    await _dl_app(scope, recv, send)
+    return [sent["status"] or 500, b"".join(sent["body"]).decode("utf-8")]
+`;
+
+async function ensureServer(): Promise<void> {
+	if (serverReady || !pyodide) return;
+	await ensureDartlab('import dartlab');
+	await pyodide.runPythonAsync(PYAPI_SETUP);
+	serverReady = true;
+}
+
 function reply(id: string, result: unknown, error?: string) {
 	self.postMessage({ id, result, error });
 }
@@ -339,6 +378,19 @@ self.onmessage = async (e: MessageEvent) => {
 			case 'execute': {
 				const result = await execute(args[0] as string);
 				reply(id, result);
+				break;
+			}
+			case 'pyapi': {
+				// browser-as-server: 페이지 fetch('/pyapi/*') 가 SW 를 거쳐 여기로. dartlab FastAPI 서빙.
+				await ensureServer();
+				const req = args[0] as { method: string; path: string; body?: string };
+				const res = (await pyodide!.runPythonAsync(
+					`await _dl_dispatch(${JSON.stringify(req.method)}, ${JSON.stringify(req.path)}, ${JSON.stringify(req.body ?? '')})`
+				)) as { get(i: number): unknown; destroy(): void };
+				const status = res.get(0) as number;
+				const body = res.get(1) as string;
+				res.destroy();
+				reply(id, { status, headers: { 'content-type': 'application/json', 'x-dartlab-tier': 'browser' }, body });
 				break;
 			}
 			case 'getVariableNames': {

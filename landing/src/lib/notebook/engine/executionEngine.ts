@@ -33,6 +33,13 @@ export interface FileEntry {
 	size?: number;
 }
 
+/** browser-as-server: 브라우저 안 dartlab FastAPI 응답. Service Worker 가 진짜 HTTP Response 로 변환. */
+export interface PyApiResponse {
+	status: number;
+	headers: Record<string, string>;
+	body: string;
+}
+
 export interface ExecutionEngine {
 	name: string;
 	isReady: boolean;
@@ -40,6 +47,8 @@ export interface ExecutionEngine {
 	initialize(): Promise<void>;
 	/** 사전 로딩: dartlab wheel 설치 + import 까지 미리(첫 셀 실행 대기 제거). 실패해도 치명적이지 않다. */
 	warm?(): Promise<void>;
+	/** browser-as-server: 같은 커널의 dartlab FastAPI 로 HTTP 요청 서빙(Service Worker relay). */
+	serveApi?(req: { method: string; path: string; body?: string }): Promise<PyApiResponse>;
 	execute(code: string): Promise<CellOutput>;
 	interrupt(): void;
 	destroy(): void;

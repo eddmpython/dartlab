@@ -1,5 +1,5 @@
 import { writable, get } from 'svelte/store';
-import type { CellOutput, ExecutionEngine, CompletionItem, VariableInfo, PackageInfo, DocResult, FileEntry } from '../engine/executionEngine';
+import type { CellOutput, ExecutionEngine, CompletionItem, VariableInfo, PackageInfo, DocResult, FileEntry, PyApiResponse } from '../engine/executionEngine';
 import { WorkerEngine } from '../engine/workerEngine';
 import { notebook, applyCellExecutionResult, setCellOutput, focusNextCell, nextExecutionCount, saveToStorage, cellOutputs, setCellErrors } from './notebookStore';
 import type { WorkspaceFile } from './notebookStore';
@@ -78,6 +78,22 @@ export function takePrewarmedOutput(code: string): CellOutput | undefined {
 	const out = prewarmedOutputs.get(key);
 	if (out) prewarmedOutputs.delete(key);
 	return out;
+}
+
+/**
+ * browser-as-server: 브라우저 안 dartlab FastAPI 로 HTTP 요청을 서빙한다. Service Worker 가 페이지
+ * fetch('/pyapi/*')를 pyapiBridge 를 통해 여기로 relay 한다. 노트북 execute 와 같은 워커 커널 공유.
+ */
+export async function serveApi(req: {
+	method: string;
+	path: string;
+	body?: string;
+}): Promise<PyApiResponse> {
+	await bringUpEngine();
+	if (!engine?.isReady || !engine.serveApi) {
+		return { status: 503, headers: { 'content-type': 'application/json' }, body: '{"error":"engine not ready"}' };
+	}
+	return engine.serveApi(req);
 }
 
 let bringUp: Promise<void> | null = null;

@@ -23,8 +23,13 @@
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import InstallPrompt from '$lib/components/InstallPrompt.svelte';
 	import NotifyOptIn from '$lib/components/NotifyOptIn.svelte';
+	import { onMount } from 'svelte';
+	import { installPyapiBridge } from '$lib/pyapi/pyapiBridge';
 
 	let { children }: { children: Snippet } = $props();
+
+	// browser-as-server: Service Worker 가 /pyapi/* 를 넘기면 pyodide 워커의 dartlab FastAPI 로 relay.
+	onMount(() => installPyapiBridge());
 
 	// 라우트별 테마 적용 · 콘텐츠 표면은 사용자 선호(라이트 가능), 도구 표면은 강제 다크. 네비게이션마다 재평가.
 	$effect(() => {
