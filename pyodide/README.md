@@ -5,7 +5,7 @@ dartlab을 브라우저에서 실행. 설치 없이 재무분석.
 ## 빠른 시작 (브라우저)
 
 ```html
-<script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.5/full/pyodide.js"></script>
 <script type="module">
   import { initDartlab } from "https://raw.githubusercontent.com/.../pyodide/loader.js";
 

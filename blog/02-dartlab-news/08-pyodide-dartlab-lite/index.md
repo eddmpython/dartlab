@@ -235,7 +235,7 @@ xlwings Lite가 아니라도 원리는 같다. Pyodide 런타임 위에 `micropi
 **순수 HTML 페이지에 임베드** — 웹페이지 하나에 dartlab을 얹고 싶다면 dartlab이 준비한 `loader.js`를 불러오면 된다.
 
 ```html
-<script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.5/full/pyodide.js"></script>
 <script type="module">
   import { initDartlab } from "https://raw.githubusercontent.com/eddmpython/dartlab/master/pyodide/loader.js";
 

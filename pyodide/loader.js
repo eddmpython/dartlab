@@ -9,7 +9,7 @@
  */
 
 const HF_BASE = "https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main";
-const PYODIDE_CDN = "https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js";
+const PYODIDE_CDN = "https://cdn.jsdelivr.net/pyodide/v0.27.5/full/pyodide.js";
 
 const BUILTIN_PACKAGES = [
   "polars", "pyarrow", "micropip", "beautifulsoup4", "lxml",
