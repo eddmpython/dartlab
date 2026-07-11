@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * dartlab Pyodide 로더 — 모든 배포 타겟(playground, xlwings lite, JupyterLite)이 공유.
+ * dartlab Pyodide 로더. 모든 배포 타겟(playground, xlwings lite, JupyterLite)이 공유.
  *
  * 사용법:
  *   import { initDartlab } from "./loader.js";

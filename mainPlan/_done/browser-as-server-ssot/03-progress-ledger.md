@@ -1,6 +1,19 @@
 # 03. Progress Ledger - 결정 원장·재개점
 
-상태: 진행 v0.1 (2026-07-11)
+상태: **완료 (2026-07-11 배포 + 프로덕션 e2e 검증)**. Phase 0~2 구현·배포·검증 끝. Phase 3 폐기. `_done` 이관.
+
+---
+
+## 최종 완료 (2026-07-11): PyPI-native 피벗으로 배포
+
+아래 "HF 공개 배포" 계획은 더 나은 방향으로 **대체됐다**. 운영자 결정: "허깅페이스로 하면 진입점이 다르니 단순화해서 본체 릴리즈에 맞추자". 그래서 별도 HF wheel 업로드 대신 **브라우저를 PyPI-native 로** 전환했다.
+
+- **릴리즈**: dartlab **0.10.9 를 PyPI 에 발행**(webapi 포함). 첫 시도는 ci-full red 였는데 원인은 이 작업이 아니라 병렬 "거울 작업대" workstream 의 guard/census 재작업 미완(master CI red)이었다. pickRow 중첩헬퍼 `_pickRow` + guard baseline lazy-import 줄번호 동기화(381->382 등)로 census 복구 후 통과. 커밋 c0ddd6ae0.
+- **스위치**: `pyodideWorker.ts` DARTLAB_WHEEL(HF URL) -> `micropip.install("dartlab")`. README·pyodide/README·loader.js 도 동일. 커밋 f58d3c3aa + 115593381. 진입점이 pip 과 통일되고 버전이 본체 릴리즈에 자동으로 맞는다(HF wheel URL·수동 포인터·3-way 드리프트 제거).
+- **배포 + 프로덕션 검증**: master push -> deploy-landing success. 프로덕션 e2e: `eddmpython.github.io/dartlab/blog/what-is-dartlab` 의 `<LiveData spec="scan/growth">` 가 **전상장사 2,241행 중 20행 라이브 렌더**(browser 배지, 32.5s = 워커 부팅 + PyPI 에서 0.10.9 설치 + webapi + scan).
+- **보너스**: browser-as-server(webapi)가 이 PyPI 릴리즈에 실려 함께 배포됐다. 별도 HF 업로드 게이트가 소멸.
+- **발행 게이트**: `.github/scripts/pyodideSmoke.mjs` + `publish.yml` build 잡. 발행될 wheel 을 node-pyodide 로 `micropip.install` + import 검증. 실측 0.10.7 FAIL(msgspec)/0.10.9 PASS. auto-sync 를 켠 대가로 pyodide-깨는 릴리즈 차단. 커밋 55c5a9b07.
+- **SW 캐시**: `isImmutableRuntimeAsset` 가 `files.pythonhosted.org` 를 cache-first 캐시(PyPI wheel 콜드스타트 회귀 없음). PyPI 는 같은 버전 재발행 없어 cache-first 정확. 옛 HF wheel(`isDartlabWheel`)은 dead code 로 잔존(무해).
 
 ---
 
@@ -30,11 +43,7 @@
 - [x] `uv build --wheel` -> dist/dartlab-0.10.9-py3-none-any.whl(21.4MB, webapi 2파일 포함 확인).
 - [x] 브라우저 실측(로컬 서빙 0.10.9): health 200 version=0.10.9 + panel 200 + scan 200 shape[2241,8]. dispatch 로직은 pyodideWorker PYAPI_SETUP 동일.
 - [x] **엔드투엔드 실측(로컬 0.10.9 wheel + landing dev)**: 블로그 story 01 `<LiveData spec="scan/growth">` -> 전상장사 2,241행 중 20행 라이브 렌더 + browser 배지(눈검수). 노트북(`/notebooks/post:what-is-dartlab`) 투영 마크다운셀 `@[data](scan/growth)` -> 20행 hydrate. typing-extensions 4.11 고정 -> fastapi 설치 막힘 버그를 e2e 로 발견, uninstall 후 재설치로 수정(pyodideWorker PYAPI_SETUP).
-- [ ] **HF 공개 배포(운영자 게이트, 턴키)**: 운영자 "올려"/"발간해" 시 한 묶음으로 실행.
-  1. `dist/dartlab-0.10.9-py3-none-any.whl` 를 HF `eddmpython/dartlab-data` 의 `pyodide/dartlab-0.10.9-py3-none-any.whl` 로 업로드(HF_TOKEN=.env).
-  2. `pyodideWorker.ts:54` DARTLAB_WHEEL 을 `.../dartlab-0.10.9-...whl` 로 bump. `README.md:689` 스니펫도 0.10.9.
-  3. landing build + push. **순서 중요**: 업로드 먼저(안 그러면 포인터가 404). 배포 전엔 포인터 0.10.8 유지.
-  근거: 업로드는 공개 배포 표면이라 auto-mode 분류기가 차단(2026-07-11), UI push 는 운영자 단어 필요.
+- [~] **HF 공개 배포(운영자 게이트, 턴키)**: **대체됨(위 "최종 완료" 참조)**. PyPI-native 로 전환해 별도 HF wheel 업로드가 불필요해졌다. dartlab 을 PyPI 에 발행하면 브라우저가 `micropip.install("dartlab")` 로 그 버전을 자동으로 받는다.
 
 ## Phase 2 (블로그·노트북 소비자, 2026-07-11 토론 수렴)
 
@@ -49,13 +58,13 @@
 
 **폐기(토론 kill)**: Phase 3 노트북 사이드바 데이터 패널(코드셀=직접 import, 마크다운셀=@[data], 세 번째 방법은 덕지덕지) · DataFrameTable 재사용(읽기전용 임베드엔 renderLiveTable) · 블로그 ```data 펜스(두 번째 문법) · @[data] 전용 notebookContract AST 게이트(잉여).
 
-## NEXT (세션 재개점)
-- [ ] **landing push**: Phase 0~2 배선 전부 commit 됨, UI 라 운영자 승인("올려/발간해") 대기. wheel 배포와 한 묶음.
-- [x] **Phase 2 완료**: 위 참조. 블로그 story 01 + 노트북 @[data] + 코어 + 투영.
+## 완료 요약 (재개점 없음, _done)
+- [x] **landing 배포**: master push -> deploy-landing success -> 프로덕션 라이브. UI 눈검수 = 프로덕션 e2e(story 01 라이브 표 20행).
+- [x] **Phase 2 완료**: 블로그 story 01 + 노트북 @[data] + 코어 + 투영.
 - [~] **Phase 3 폐기**: 노트북 사이드바 데이터 패널은 토론 kill(덕지덕지). @[data] 마크다운셀이 정답.
-- [ ] 가드: G1(async) 완료. G5(tier 배지) 완료. G2(한 커널)·G3(노트북 회귀)·G4(계약 무증가)는 코어 유닛테스트·vitest 회귀·resolveEndpoint allowlist 로 충족.
+- [x] 가드: G1(async)·G5(tier 배지) 완료. G2·G3·G4 는 코어 유닛테스트·vitest·resolveEndpoint allowlist 로 충족. + 발행 게이트(pyodideSmoke) 추가.
 
-## 열린 질문
+## 열린 질문 (해소됨)
 
-- `browserApi.py` 를 dartlab wheel 에 넣을 때 fastapi import 를 어떻게 격리하나(wheel 은 fastapi 제외). -> 라우터 정의를 fastapi lazy import 로 함수 안에서, 또는 순수 핸들러 + 워커가 fastapi 라우팅 조립.
-- 노트북과 데이터 API 가 전역을 공유할 때 격리(셀이 만든 c 를 API 가 보면 편의지만 오염 위험). v1 은 분리 네임스페이스 권장.
+- ~~`browserApi.py` fastapi import 격리~~ -> 해소: `buildBrowserApi()` 안에서 fastapi lazy import. wheel(fastapi 제외) import 시점엔 안 당김. PYAPI_SETUP 이 첫 /pyapi 때 typing-extensions 올리고 fastapi 설치.
+- ~~노트북/데이터 API 전역 공유 격리~~ -> 현 구현: /pyapi 는 노트북 execute 커널을 공유하되 라우트가 매번 `dartlab.Company(code)` 를 새로 만들어 셀 전역 오염과 분리. v1 충분.
