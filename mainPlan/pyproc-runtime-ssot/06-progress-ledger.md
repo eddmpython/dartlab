@@ -39,7 +39,26 @@
 ### 문서 완성 (2026-07-12)
 - 00 실측·01 아키텍처·02 자동반영·03 리스크·04 PRD(5섹션)·README·06 원장 전부 작성.
 
+## 2026-07-12 세션 2 (P0 실증 + P1 빌드, 승인 "지어")
+
+### P0 골든 파리티 PASS (node-pyodide 실측)
+- pyproc AsgiServer(asgiServer.js HELPER verbatim) vs 현 `_dl_dispatch`, 4라우트 바이트 동일:
+  `/health` 200/30B, `/openapi.json` 200/6553B, `/company/005930/industry` 200/767B, 404경로 404/22B.
+- 데이터 fetch 라우트(panel/finance)는 node-pyodide 가 dartlab 동기 HF fetch(`run_sync(pyfetch)`) 불가라 제외(실브라우저는 동일 `_dl_app` 경유라 파리티 따라옴). dispatch 래퍼 파리티 확정. **R4 해소.**
+
+### P1 커널 seam 빌드 (플래그 off, 커밋 a1f13c74a + lock bae12a7c6, push 보류)
+- 신규 `kernel/asgiSeam.ts`: `AsgiKernel` + `HandRolledAsgi`(현 `_dl_dispatch` verbatim) + `PyprocAsgi`(`new Runtime(py)`+`enableAsgiServer`, `pyproc/runtime` 동적 import).
+- 신규 `kernel/pyprocRuntime.d.ts`: pyproc/runtime 앰비언트 타입.
+- `pyodideWorker.ts`: `PYAPI_SETUP`/`ensureServer` 제거 -> seam 위임. `USE_PYPROC_ASGI=false` 기본(오늘과 바이트 동일). `globals.set` 타입 보강.
+- `landing/package.json`: pyproc `git+https` SHA 핀(c0e7570).
+- **검증**: 타입체크 내 코드 0에러(richMarkdown 은 기존 debt) · node 가 `pyproc/runtime` `Runtime` export 해소 · esbuild 가 동적 import 번들(22.3kb, SAB 미유입) · P0 파리티.
+
+### 열린 항목
+- **CI ssh->https**: npm 이 lock `resolved` 를 `git+ssh` 로 정규화(package.json 은 https 명시해도). CI `npm ci` 전에 `git config --global url."https://github.com/".insteadOf ssh://git@github.com/` 필요(landing build + pyprocPinBump). P1 push/P3 전제.
+- **richMarkdown.ts 기존 debt**: marked `renderer.link` 타입 에러(HEAD 커밋, @[data] 계열, pyproc 무관). 별건.
+
 ### NEXT (세션 재개 지점)
-1. **운영자 승인 게이트**: 04-prd 로 P0(throwaway parity 선증명) 착수 승인 요청 중.
-2. 승인 시: P0 하네스(tests/_attempts/pyprocKernel) ASGI·체크포인트 골든 diff 실측 -> P1 seam PR(플래그 off, 커밋만, push 는 UI 게이트라 운영자 승인) -> P2 flip -> P3 자동반영(pyprocPinBump.yml).
-3. P4(Tier-2 격리)는 0.27.5 스냅샷 spike + COEP 실측 후 별도 PRD.
+1. **운영자 push 승인 대기**: P1 은 landing/src(UI 게이트)라 커밋만 완료. "푸시해"/"올려" 시 (CI ssh->https 선처리 포함) push.
+2. push 후 P2: 운영자 눈검수 + `USE_PYPROC_ASGI=true` flip(실브라우저 노트북 /pyapi 동작 + capability probe 폴백 확인). 손수 경로 1릴리즈 잔존.
+3. P3: `pyprocPinBump.yml` + `pyprocResolvePin/ApplyPin/Smoke.mjs` 작성(자동반영, ssh->https 포함).
+4. P4(Tier-2 격리)는 0.27.5 스냅샷 spike + COEP 실측 후 별도 PRD.

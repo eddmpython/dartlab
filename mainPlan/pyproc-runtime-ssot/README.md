@@ -1,6 +1,6 @@
 # pyproc Runtime SSOT - dartlab 커널을 pyproc 공유 런타임으로
 
-상태: **기획 중** (PRD 초안, 2026-07-11). 검증 기반 = [00-verified-facts.md](00-verified-facts.md) (COEP 헤더 실측 + pyproc 소스 판독 + Tier-1 엔드투엔드 실증 PASS).
+상태: **P1 빌드 완료 (플래그 off), 운영자 push 승인 대기** (2026-07-12). 검증 기반 = [00-verified-facts.md](00-verified-facts.md) + P0 골든 파리티 PASS + P1 커널 seam(커밋 a1f13c74a). 진행 상세 = [06-progress-ledger.md](06-progress-ledger.md).
 
 범위: dartlab 브라우저 노트북의 pyodide 커널을, 저자 동일의 공유 런타임 **pyproc**(github.com/eddmpython/pyproc, "브라우저 파이썬 프로세스 OS")으로 이관한다. 손수 만든 것(pyodide boot, ASGI dispatch, heap 체크포인트, interrupt)을 pyproc 이 흡수하고, dartlab 은 노트북 고유층(postMessage·OPFS·결과 포매팅·SW 배선)만 소유한다. 나아가 멀티코어 fork·터미널·리액티브를 점진 획득한다.
 
