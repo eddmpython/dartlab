@@ -56,9 +56,31 @@ jobs:
       - name: GATE-A (pyproc Runtime+AsgiServer x dartlab)
         run: node .github/scripts/pyprocSmoke.mjs
 
-  land:
+  # Tier-2(프로세스 OS/JSPI) 경로가 바뀌거나 minor+ 면 실 Chromium 에서 crossOriginIsolated fork +
+  # R1(COEP 하 휠설치)까지 검증. node 로는 못 덮는 경로라 Playwright chromium 필요.
+  gate-b:
     needs: [resolve, gate-a]
-    if: ${{ needs.resolve.outputs.newer == 'true' && needs.gate-a.result == 'success' }}
+    if: ${{ needs.resolve.outputs.newer == 'true' && (needs.resolve.outputs.tier2 == 'true' || needs.resolve.outputs.bump != 'patch') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+      - name: pyproc git dep ssh->https
+        run: git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+      - name: apply pin + install + chromium
+        run: |
+          node .github/scripts/pyprocApplyPin.mjs "${{ needs.resolve.outputs.sha }}"
+          npm install
+          npm install --no-save playwright@1.61.1
+          npx playwright install --with-deps chromium
+      - name: GATE-B (실 Chromium: crossOriginIsolated fork + R1 휠설치)
+        run: node .github/scripts/pyprocForkSmoke.mjs
+
+  land:
+    needs: [resolve, gate-a, gate-b]
+    if: ${{ always() && needs.resolve.outputs.newer == 'true' && needs.gate-a.result == 'success' && (needs.gate-b.result == 'success' || needs.gate-b.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
