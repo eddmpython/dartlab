@@ -231,6 +231,8 @@ DART와 EDGAR 근거를 모두 연결하고, dartlab 실측으로 2025Q1~Q4 손�
 RCS 숫자 하나로 모든 각도와 주파수를 설명하면 안 된다.
 
 {filler}
+
+다음 공시에서는 수주잔고, 개발비, 양산 전환, 정비 계약이 어느 회사에 붙는지 기준으로 다시 확인한다.
 """
     (post / "index.md").write_text(
         f"""---
@@ -292,6 +294,48 @@ def test_publish_gate_blocks_missing_section_flow(monkeypatch, tmp_path: Path) -
     (post / "brief.json").write_text(json.dumps(brief, ensure_ascii=False, indent=2), encoding="utf-8")
     errors = ab.publish_gate(post)
     assert any("sections[1].visualAnchor" in err for err in errors)
+
+
+def test_common_body_gate_blocks_abstract_expert_tone() -> None:
+    body = """
+## 시장을 읽는 프레임
+
+이 구조는 시장의 흐름과 맥락을 관통하는 핵심 프레임이다.
+이 메커니즘은 투자 판단의 시사점과 방향성을 제공한다.
+서사의 레버리지와 모멘텀은 전체 내러티브의 의미를 만든다.
+이 관점은 기업 체력과 퀄리티의 연결을 보여 준다.
+
+OPM과 EBITDA는 밸류에이션 프레임워크의 핵심이다.
+CAPEX와 FCF는 컨센서스와 멀티플에 영향을 준다.
+ROE와 PER은 리레이팅을 설명하는 KPI다.
+"""
+
+    errors = ab._validate_common_body_plainness(body, "investment-stories")
+
+    assert any("추상 문장" in err for err in errors)
+    assert any("전문가 말투" in err for err in errors)
+
+
+def test_common_plan_gate_blocks_missing_reader_arc() -> None:
+    brief = _brief()
+    brief["readerQuestion"] = "시장 프레임을 설명한다."
+    brief["insight"]["whatToWatch"] = "좋은 기준을 기억한다."
+    for act in brief["acts"]:
+        act["heading"] = "시장 프레임"
+        act["scene"] = "프레임과 구조를 설명하는 장면"
+        act["causalBridge"] = "관련 흐름을 설명한다."
+    for section in brief["sections"]:
+        section["subtitle"] = "시장 프레임을 설명한다."
+        section["visualAnchor"] = "개념 도식"
+        section["explanation"] = "구조와 흐름과 맥락을 설명한다."
+        section["example"] = "시사점과 방향성을 예시로 든다."
+        section["support"] = "보완 설명을 붙인다."
+        section["transition"] = "관련 흐름을 설명한다."
+
+    errors = ab._validate_common_plan(brief, brief, label="brief.json", category="investment-stories")
+
+    assert any("전환 지점" in err for err in errors)
+    assert any("실제 숫자·회사·공시·사례" in err for err in errors)
 
 
 def test_dartlab_story_title_gate_blocks_intro_title() -> None:

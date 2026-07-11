@@ -82,12 +82,34 @@ DARTLAB_CONCRETE_ANCHOR_RE = re.compile(
     r"목차|절|블록|문단|head\(|text|table|DART|EDGAR|코드|셀|출력\s*표|DataFrame|테이블|값|계정|기간",
     re.I,
 )
+COMMON_CONCRETE_ANCHOR_RE = re.compile(
+    r"```|!\[[^\]]*\]\([^)]+\)|\|.+\||"
+    r"DART|EDGAR|dartlab|Company|panel|scan|analysis|credit|story|market|공시|사업보고서|10-K|10-Q|"
+    r"[0-9]{4}Q[1-4]|20[0-9]{2}|[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:조원|억원|만원|원|달러|USD|%p?|배|%|명|건|척|대)?|"
+    r"매출|매출액|영업이익|순이익|자산|부채|자본|현금흐름|원가|마진|수주|수주잔고|"
+    r"제품|고객|사업부|부문|공정|장비|소재|원재료|생산|가동률|생산능력|"
+    r"주가|시가총액|거래량|외국인|기관|개인|금리|환율|물가|지지선|저항선|이동평균|RSI|MACD|"
+    r"표|차트|그래프|이미지|도식|코드|계정|기간|값|숫자|검증표",
+    re.I,
+)
 DARTLAB_ACTION_RE = re.compile(
     r"열|넣|누르|실행|확인|찾|고르|좁히|나누|빼|바꾸|비교|적|돌리|꺼내|만들|계산|입력|"
     r"보이|보는|본다|읽|익히|배우|구분|시작|풀|대비|이해|차이|맞추|분리"
 )
 DARTLAB_ABSTRACT_WORD_RE = re.compile(
     r"관통선|표면|정본|맥락|구조|흐름|프레임|층위|사상|메커니즘|의미|핵심|관점|기준|경계|연결|감각|역할"
+)
+COMMON_ABSTRACT_WORD_RE = re.compile(
+    r"관통선|표면|정본|맥락|구조|흐름|프레임|층위|사상|메커니즘|의미|핵심|관점|기준|경계|"
+    r"연결|감각|역할|내러티브|서사|시사점|함의|방향성|체력|퀄리티|스토리|모멘텀|레버리지"
+)
+COMMON_EXPERT_JARGON_RE = re.compile(
+    r"OPM|GPM|NPM|EBITDA|CAPEX|FCF|ROE|ROA|ROIC|PER|PBR|PSR|EV/EBITDA|WACC|DCF|SOTP|KPI|"
+    r"밸류에이션|멀티플|컨센서스|듀레이션|디레이팅|리레이팅|영업\s*레버리지|운전자본|자본배분|"
+    r"스프레드|마진\s*믹스|가이던스|프레임워크|인사이트|아웃퍼폼|언더퍼폼|오버행|"
+    r"파사드|스키마|런타임|정본|호출\s*계약|프로바이더|컨텍스트|아키텍처|레지스트리|"
+    r"어댑터|추상화|인터페이스|axis|facade|schema|runtime|provider|adapter|context|architecture",
+    re.I,
 )
 DARTLAB_EXPERT_JARGON_RE = re.compile(
     r"파사드|스키마|런타임|정본|호출\s*계약|계약|프로바이더|컨텍스트|아키텍처|레지스트리|"
@@ -98,10 +120,19 @@ DARTLAB_BEGINNER_BRIDGE_RE = re.compile(
     r"쉽게\s*말해|말하면|뜻은|여기서는|처음|먼저|헷갈|막히|예를\s*들어|코드|표|값|계정|기간|"
     r"화면|칸|버튼|실행|눌러|보면|확인"
 )
+COMMON_BEGINNER_BRIDGE_RE = re.compile(
+    r"쉽게\s*말해|말하면|뜻은|여기서는|처음|먼저|헷갈|막히|예를\s*들어|예를|"
+    r"숫자로\s*보면|표에서|차트에서|공시에서|보고서에서|코드에서|화면에서|이\s*말은|"
+    r"그래서|즉|풀어\s*쓰면|확인|보면|비교|계산|읽으면|바꾸면"
+)
 DARTLAB_OPENING_ARC_RE = re.compile(r"처음|먼저|왜|어떻게|헷갈|막히|궁금|문제|시작|이\s*편")
 DARTLAB_DO_ARC_RE = re.compile(r"실행|눌러|열|넣|확인|계산|바꾸|찾|고르|본다|보자|해\s*본")
 DARTLAB_TURN_ARC_RE = re.compile(r"오해|한계|주의|다르|틀리|빈칸|안\s*된다|안\s*됩니다|예외|검산")
 DARTLAB_CLOSE_ARC_RE = re.compile(r"이제|다음|바꿔|직접|연결|넘어|남는|닫는다|한\s*줄|다음\s*편")
+COMMON_OPENING_ARC_RE = re.compile(r"처음|먼저|왜|어떻게|궁금|문제|이상|차이|시작|질문|막히|헷갈")
+COMMON_DO_ARC_RE = re.compile(r"확인|비교|계산|읽|보면|찾|따져|나누|연결|검증|표|차트|공시|코드|데이터")
+COMMON_TURN_ARC_RE = re.compile(r"오해|한계|주의|다르|틀리|하지만|그런데|단,|반대로|리스크|조건|깨지|검산")
+COMMON_CLOSE_ARC_RE = re.compile(r"다음|봐야|확인|조건|기준|렌즈|체크|공시|지표|질문|남는|닫|바꿔")
 DARTLAB_TRANSITION_RE = re.compile(
     r"다음|이어|넘어|이제|앞|뒤|그래서|그다음|그러면|마지막|왜|해야|수\s*있|오해|반복|재사용|이해|막을"
 )
@@ -374,6 +405,18 @@ def _has_dartlab_action(value: object) -> bool:
     return bool(DARTLAB_ACTION_RE.search(str(value or "")))
 
 
+def _has_common_concrete_anchor(value: object) -> bool:
+    return bool(COMMON_CONCRETE_ANCHOR_RE.search(str(value or "")))
+
+
+def _has_common_beginner_bridge(value: object) -> bool:
+    return bool(COMMON_BEGINNER_BRIDGE_RE.search(str(value or "")))
+
+
+def _common_jargon_terms(value: object) -> list[str]:
+    return [match.group(0) for match in COMMON_EXPERT_JARGON_RE.finditer(str(value or ""))]
+
+
 def _has_dartlab_beginner_bridge(value: object) -> bool:
     return bool(DARTLAB_BEGINNER_BRIDGE_RE.search(str(value or "")))
 
@@ -523,6 +566,28 @@ def _validate_section_plan(plan: dict[str, object], *, label: str, category: str
             min_len = 8 if field in {"heading", "subtitle"} else 12
             if _compact_len(raw.get(field)) < min_len:
                 fails.append(f"{label}: sections[{idx}].{field} 이 너무 약함")
+        explanation = str(raw.get("explanation") or "")
+        example = str(raw.get("example") or "")
+        support = str(raw.get("support") or "")
+        transition = str(raw.get("transition") or "")
+        beginner_text = " ".join(str(raw.get(field) or "") for field in ("subtitle", "explanation", "support"))
+        if category in CONTENT_GENRE_CATEGORIES and category != "dartlab-stories":
+            if not (_has_common_concrete_anchor(explanation) or _has_common_beginner_bridge(explanation)):
+                fails.append(
+                    f"{label}: sections[{idx}].explanation 은 초보자가 보는 숫자·표·공시·사례나 쉬운 풀이에서 시작해야 함"
+                )
+            if not _has_common_concrete_anchor(example):
+                fails.append(f"{label}: sections[{idx}].example 은 실제 숫자·회사·공시·사례 중 하나를 잡아야 함")
+            if len(set(_common_jargon_terms(beginner_text))) >= 2 and not (
+                _has_common_beginner_bridge(beginner_text) or _has_common_concrete_anchor(beginner_text)
+            ):
+                fails.append(
+                    f"{label}: sections[{idx}] 이 전문가 용어를 쉬운 풀이 없이 씀. 초보자 문장과 실제 근거가 필요함"
+                )
+            if not COMMON_TURN_ARC_RE.search(support):
+                fails.append(f"{label}: sections[{idx}].support 는 오해·한계·주의·조건 중 하나를 명시해야 함")
+            if not DARTLAB_TRANSITION_RE.search(transition):
+                fails.append(f"{label}: sections[{idx}].transition 은 다음 섹션으로 왜 넘어가는지 쉬운 연결문이어야 함")
         if category == "dartlab-stories":
             anchor = str(raw.get("visualAnchor") or "")
             if not re.search(r"코드|출력|표|도식|이미지|화면|panel|DataFrame|차트", anchor, re.I):
@@ -542,11 +607,8 @@ def _validate_section_plan(plan: dict[str, object], *, label: str, category: str
                 fails.append(
                     f"{label}: sections[{idx}] 이 내부 기능 개수나 인증 수를 근거로 씀. 실제 호출 결과와 값을 보여 줘야 함"
                 )
-            support = str(raw.get("support") or "")
             if not re.search(r"오해|주의|한계|브라우저|로컬|틀리|예외|보완|검산", support):
                 fails.append(f"{label}: sections[{idx}].support 는 오해 방지·한계·보완 설명을 명시해야 함")
-            explanation = str(raw.get("explanation") or "")
-            example = str(raw.get("example") or "")
             if not (_has_dartlab_action(explanation) or _has_dartlab_concrete_anchor(explanation)):
                 fails.append(
                     f"{label}: sections[{idx}].explanation 은 독자가 보는 코드·표·값이나 직접 할 행동으로 써야 함"
@@ -555,14 +617,10 @@ def _validate_section_plan(plan: dict[str, object], *, label: str, category: str
                 fails.append(
                     f"{label}: sections[{idx}].example 은 코드·계정·기간·값·공시 문장 중 하나를 실제 예시로 잡아야 함"
                 )
-            beginner_text = " ".join(str(raw.get(field) or "") for field in ("subtitle", "explanation", "support"))
             if len(set(_dartlab_jargon_terms(beginner_text))) >= 2 and not _has_dartlab_beginner_bridge(beginner_text):
                 fails.append(
                     f"{label}: sections[{idx}] 이 전문가 용어를 쉬운 풀이 없이 씀. 초보자 문장과 실제 화면 근거가 필요함"
                 )
-            transition = str(raw.get("transition") or "")
-            if not DARTLAB_TRANSITION_RE.search(transition):
-                fails.append(f"{label}: sections[{idx}].transition 은 다음 섹션으로 왜 넘어가는지 쉬운 연결문이어야 함")
     return fails
 
 
@@ -627,6 +685,36 @@ def _validate_common_plan(
                 fails.append(f"{label}: acts[{idx}].{field} 이 너무 약함")
         if not str(raw.get("purpose") or "").strip():
             fails.append(f"{label}: acts[{idx}].purpose 누락")
+
+    if category in CONTENT_GENRE_CATEGORIES and category != "dartlab-stories":
+        sections = plan.get("sections") if isinstance(plan.get("sections"), list) else []
+        first_arc_text = json.dumps(
+            {
+                "readerQuestion": plan.get("readerQuestion"),
+                "firstAct": acts[0] if acts else {},
+                "firstSection": sections[0] if sections else {},
+            },
+            ensure_ascii=False,
+        )
+        whole_arc_text = json.dumps(
+            {"acts": acts, "sections": sections, "guards": plan.get("honestyGuards")}, ensure_ascii=False
+        )
+        close_arc_text = json.dumps(
+            {
+                "lastAct": acts[-1] if acts else {},
+                "lastSection": sections[-1] if sections else {},
+                "whatToWatch": insight.get("whatToWatch"),
+            },
+            ensure_ascii=False,
+        )
+        if not COMMON_OPENING_ARC_RE.search(first_arc_text):
+            fails.append(f"{label}: 첫 단계는 초보자가 왜 이 글을 읽어야 하는지 먼저 잡아야 함")
+        if not COMMON_DO_ARC_RE.search(whole_arc_text):
+            fails.append(f"{label}: 본문 단계에는 독자가 직접 볼 숫자·표·공시·차트 장면이 필요함")
+        if not COMMON_TURN_ARC_RE.search(whole_arc_text):
+            fails.append(f"{label}: 본문 단계에는 오해·한계·주의·틀리는 조건 같은 전환 지점이 필요함")
+        if not COMMON_CLOSE_ARC_RE.search(close_arc_text):
+            fails.append(f"{label}: 마지막 단계는 다음에 볼 기준·지표·공시 질문으로 닫혀야 함")
 
     if category == "dartlab-stories":
         sections = plan.get("sections") if isinstance(plan.get("sections"), list) else []
@@ -771,12 +859,58 @@ def _validate_dartlab_body_plainness(body: str) -> list[str]:
     return fails
 
 
+def _validate_common_body_plainness(body: str, category: str) -> list[str]:
+    if category not in CONTENT_GENRE_CATEGORIES:
+        return []
+
+    fails: list[str] = []
+    abstract_only_sentences: list[str] = []
+    jargon_sentences: list[str] = []
+    for _, section in _split_h2_sections(body):
+        for sentence in _plain_sentences(section):
+            compact = _compact_len(sentence)
+            if compact < 15:
+                continue
+            if (
+                compact >= 22
+                and len(COMMON_ABSTRACT_WORD_RE.findall(sentence)) >= 2
+                and not _has_common_concrete_anchor(sentence)
+            ):
+                abstract_only_sentences.append(sentence[:90])
+            if _common_jargon_terms(sentence) and not (
+                _has_common_concrete_anchor(sentence) or _has_common_beginner_bridge(sentence)
+            ):
+                jargon_sentences.append(sentence[:90])
+
+    if len(abstract_only_sentences) >= 4:
+        sample = " / ".join(abstract_only_sentences[:3])
+        fails.append(f"본문에 실제 숫자·공시·사례 없이 떠 있는 추상 문장이 많음. 예: {sample}")
+    if len(jargon_sentences) >= 3:
+        sample = " / ".join(jargon_sentences[:3])
+        fails.append(f"본문이 전문가 말투로 흐름. 쉬운 풀이와 실제 근거가 필요함. 예: {sample}")
+
+    if prose_char_count(body) >= 2500:
+        opening = body[:1600]
+        closing = body[-1800:]
+        if not COMMON_OPENING_ARC_RE.search(opening):
+            fails.append("본문 첫 부분은 초보자가 왜 이 글을 읽어야 하는지 먼저 잡아야 함")
+        if not COMMON_DO_ARC_RE.search(body):
+            fails.append("본문에는 독자가 직접 볼 숫자·표·공시·차트 장면이 필요함")
+        if not COMMON_TURN_ARC_RE.search(body):
+            fails.append("본문에는 오해·한계·주의·틀리는 조건 같은 전환 지점이 필요함")
+        if not COMMON_CLOSE_ARC_RE.search(closing):
+            fails.append("본문 마지막은 다음에 볼 기준·지표·공시 질문으로 닫혀야 함")
+    return fails
+
+
 def _validate_genre_body(raw: str, body: str, category: str) -> list[str]:
     fails: list[str] = []
     title = _clean_scalar(frontmatter_value(raw, "title"))
     topic_slug = _clean_scalar(frontmatter_value(raw, "topicSlug"))
     stock_code = _clean_scalar(frontmatter_value(raw, "stockCode"))
     upper_body = body.upper()
+
+    fails.extend(_validate_common_body_plainness(body, category))
 
     if category == "company-reports":
         if not stock_code:
