@@ -42,13 +42,15 @@ const IMAGE_NOTE = `이미지 기획(내용 연상 강제): hero 1장 + 본문 i
 
 const VISUAL_NOTE = `막별 비주얼: 이야기가 요구하는 차트·표·그래프 세트를 막마다 정한다(고정 템플릿 아님). 추이=line, 비교/구성=bar, 부문믹스=도넛/스택, 두 계열 대비=grouped, 공정·회사·근거 지도=table. 한 막에 하나로 부족하면 같은 actOrder 에 2~4개를 기획한다. 시각물은 글 뒤 자동 부록이 아니라 본문 중간 설명 장치다. placement·insertAfter·narrativeUse 로 어느 문장 뒤에 왜 들어가는지 적는다. 각 차트는 그 막의 주장을 증명해야 하고, 큰 숫자를 가려도 차트만으로 같은 긴장이 남아야 한다. 손수 못생긴 차트 금지. kind·title·proves·seriesHint 를 명확히 적어 메인 스레드가 정식 렌더로 그리게 한다.`
 
+const SECTION_NOTE = `섹션별 독해 구조(강제): 모든 주요 H2 섹션은 기획에서 먼저 설계한다. 순서는 1) 섹션 타이틀 2) 한 줄 서브타이틀/훅 3) 이미지·표·도식·코드 출력 같은 시각 앵커 4) 설명적 서술 5) 실제 예시 6) 보완 설명·오해 방지 7) 다음 섹션 연결문이다. 기획안의 sections[] 에 heading, subtitle, visualAnchor, explanation, example, support, transition, evaluation 을 모두 채운다. 평가자는 섹션마다 이 흐름이 끊기면 재기획을 요구한다.`
+
 // 필드가 무엇을 담아야 하는지는 프롬프트(FIELD_GUIDE)가 말한다. 스키마는 형태만 말한다.
 // 설명문을 스키마에 넣었더니 JSON 이 7KB 를 넘어 구조화 출력이 안전 분류기에 통째로 막혔다
 // ("output schema too large to classify safely", 2026-07-10). 편집장 수렴과 기획작가 개선이
 // 전부 실패해 루프가 어느 카테고리에서도 안 돌았다.
 const PLAN_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['title', 'titleContract', 'description', 'readerQuestion', 'insight', 'acts', 'visuals', 'imagePlan', 'relatedPosts', 'honestyGuards', 'evidenceMap'],
+  required: ['title', 'titleContract', 'description', 'readerQuestion', 'insight', 'acts', 'sections', 'visuals', 'imagePlan', 'relatedPosts', 'honestyGuards', 'evidenceMap'],
   properties: {
     title: { type: 'string' },
     titleContract: {
@@ -95,6 +97,24 @@ const PLAN_SCHEMA = {
           scene: { type: 'string' },
           keyNumbers: { type: 'array', items: { type: 'string' } },
           causalBridge: { type: 'string' },
+        },
+      },
+    },
+    sections: {
+      type: 'array', minItems: 6,
+      items: {
+        type: 'object', additionalProperties: false,
+        required: ['order', 'heading', 'subtitle', 'visualAnchor', 'explanation', 'example', 'support', 'transition', 'evaluation'],
+        properties: {
+          order: { type: 'integer' },
+          heading: { type: 'string' },
+          subtitle: { type: 'string' },
+          visualAnchor: { type: 'string' },
+          explanation: { type: 'string' },
+          example: { type: 'string' },
+          support: { type: 'string' },
+          transition: { type: 'string' },
+          evaluation: { type: 'string' },
         },
       },
     },
@@ -169,6 +189,7 @@ const FIELD_GUIDE = `필드 정의:
 - readerQuestion: 관통선 = 독자 질문 1개. 제목 없이 이 질문만으로 읽고 싶어야 한다.
 - insight: commonBelief 통념. twistFact 관통선의 답(통념과 충돌하는 사실 + 메커니즘, 제목 재진술·억지 수치 금지). whatToWatch 다음에 볼 지표. freshnessArgument 왜 재탕이 아닌가. evidenceRefs 이 인싸이트를 받치는 실측 근거(evidence 안에서).
 - acts: order 순으로 읽으면 한 편. heading 은 고유·궁금증형 H2. scene 은 장면(보고서톤 금지). keyNumbers 는 evidence 안의 실측 수치. causalBridge 는 다음 막으로 넘어가는 인과 다리 1문장.
+- sections: 실제 H2별 독해 설계. heading 은 섹션 타이틀. subtitle 은 한 줄 훅. visualAnchor 는 이미지·표·도식·코드 출력 중 무엇을 앞쪽에 둘지. explanation 은 쉬운 설명. example 은 실제 예시. support 는 보완 설명·오해 방지. transition 은 다음 섹션 연결문. evaluation 은 평가·개선 루프에서 확인할 기준.
 - visuals: actOrder 어느 막에 붙나. kind 는 line, bar, grouped, donut, stack, table 등. proves 는 이 시각물이 증명하는 주장. seriesHint 는 어떤 계열·기간. placement, insertAfter, narrativeUse 로 본문 어느 문장 뒤에 왜 들어가는지.
 - imagePlan: slot 은 hero 또는 inline. subject 는 무엇을 연상시키나. query 는 실사 CC0 수급용 영어 검색어. keywords 는 오매치 차단용. insertAfterAct 는 inline 이면 어느 막 뒤(hero 는 0). placement, narrativeUse 필수.
 - relatedPosts: searches 는 착수 전 검색할 내부 글 키워드. links 의 path 는 /blog/슬러그. reason 은 왜 연결하는가. placementRule 은 참고글을 본문 어디에 어떤 요약과 함께 놓을지.
@@ -225,7 +246,7 @@ const SKEPTIC_SCHEMA = {
       items: {
         type: 'object', additionalProperties: false, required: ['axis', 'why', 'fix'],
         properties: {
-          axis: { type: 'string', enum: ['weak-title', 'cliche-template', 'forced-metric', 'misleading-frame', 'shallow', 'generic-image', 'appendix-visual', 'weak-reference', 'overclaim'] },
+          axis: { type: 'string', enum: ['weak-title', 'cliche-template', 'forced-metric', 'misleading-frame', 'shallow', 'weak-section-flow', 'generic-image', 'appendix-visual', 'weak-reference', 'overclaim'] },
           why: { type: 'string' },
           fix: { type: 'string' },
         },
@@ -251,6 +272,7 @@ const MAX_ROUNDS = 8
 const PLAN_SHAPE = { 'dartlab-stories': { acts: 3, visuals: 1, images: 1 } }
 const shape = PLAN_SHAPE[contentKind] || { acts: 6, visuals: 3, images: 3 }
 PLAN_SCHEMA.properties.acts.minItems = shape.acts
+PLAN_SCHEMA.properties.sections.minItems = shape.acts
 PLAN_SCHEMA.properties.visuals.minItems = shape.visuals
 PLAN_SCHEMA.properties.imagePlan.minItems = shape.images
 PLAN_SCHEMA.properties.imagePlan.description =
@@ -271,6 +293,7 @@ const STORY_PRINCIPLES = `dartlab 이야기(교육 연재) 원칙(합격선):
 1. 관통선: 독자가 지금 당장 하고 싶은 일 하나("재무제표를 어떻게 꺼내나"). 회사의 이상한 숫자가 아니다. 이 연재의 주어는 도구이지 회사가 아니다.
 2. 핵심 인싸이트: 이 편이 가르치는 개념 하나. 다 읽고 나면 독자가 그 개념으로 새로운 것을 직접 해 볼 수 있어야 한다. 통념 반전이 아니라 능력 획득이 payoff 다.
 3. 단계 구조: 최소 3단계. 무엇을 왜 배우나, 직접 해 본다, 무엇을 얻었고 다음은 무엇인가. 6막 인과가 아니다. 각 단계는 앞 단계가 준 능력을 딛는다.
+3-1. 섹션 구조: 모든 주요 섹션은 타이틀, 한 줄 훅, 시각 앵커(실제 코드 출력·표·도식·이미지), 쉬운 설명, 실제 예시, 보완 설명, 다음 연결문 순서로 설계한다. sections[] 에 이 구조를 먼저 채우고, 본문은 그 설계를 따라 쓴다.
 4. 정직성: 브라우저에서 안 되는 것을 그 자리에서 밝힌다. 실행해 보지 않은 코드는 싣지 않는다. 본문의 숫자는 실제로 돌려서 얻은 값이다. 코드 줄 수를 세어 말할 때는 화면에 보이는 줄 수와 맞춘다.
 5. 깊이: 본문(코드·표 제외 읽는 글자) 3,000자 이상, 목표 5,000자. 14,000자가 아니다. 코드만 던지고 왜를 안 적으면 문서지 이야기가 아니고, 설명을 늘려 채우면 패딩이다.
 6. 재미: 첫 코드칸에서 결과가 나온다. 성공 체험이 설명보다 먼저다. 회사 실적 미스터리로 낚지 않는다. 마지막은 요약이 아니라 독자가 지금 바꿔 볼 한 줄로 닫는다.
@@ -281,10 +304,11 @@ const NOTES =
   contentKind === 'dartlab-stories'
     ? {
         principles: STORY_PRINCIPLES,
+        section: SECTION_NOTE,
         image: `이미지 기획: 그 편에 정말 필요한 그림만 적는다. 고정 하한 없음(최소 hero 1장). 채우기용 inline 이미지는 실패다. 교육 연재의 피사체는 회사·제품이 아니라 도구·데이터·코드다(노트북, 코드 화면, 문서, 서버). 범용 스카이라인·추상 배경으로 도망가면 실패. query 는 실사 CC0 수급용 영어 검색어, keywords 는 오매치 차단용. 각 이미지에 placement·narrativeUse 를 적는다.`,
         visual: `비주얼: 이 연재의 주된 시각물은 코드 실행 결과 표 그 자체다. 별도 차트를 억지로 만들지 않는다. 개념을 설명하는 도해가 정말 필요할 때만 최소 1개 기획한다.`,
       }
-    : { principles: PRINCIPLES, image: IMAGE_NOTE, visual: VISUAL_NOTE }
+    : { principles: PRINCIPLES, section: SECTION_NOTE, image: IMAGE_NOTE, visual: VISUAL_NOTE }
 
 const CONTENT_GUIDANCE = {
   'company-reports': `기업이야기: 회사 하나의 내러티브를 깊게 판다. 사업 구조, 공시 문장, 제품·고객·수주·원가·자본배치·현금흐름을 한 회사 안에서 연결한다. DART 또는 EDGAR 근거와 dartlab 실측을 분리하고, 다음 공시에서 볼 렌즈로 닫는다.`,
@@ -378,6 +402,8 @@ ${HEAD}
 
 ${NOTES.principles}
 
+${NOTES.section}
+
 ${NOTES.visual}
 
 ${NOTES.image}
@@ -391,7 +417,7 @@ ${JSON.stringify(props)}
 회의론자·독자대리인 격파:
 ${JSON.stringify(critiques.filter(Boolean))}
 
-단일 관통선 1개로 좁히고(클리셰 격파 반영), 후보 제목 3개 이상을 비교해 최종 제목을 고른 뒤 titleContract 를 채운다. 핵심 인싸이트(관통선의 답)를 세우고, 막 구조(6막+, 관통선이 인싸이트에 착지)·막별 비주얼·이미지 기획(내용 연상, 로고·상징품 허용)·relatedPosts(검색어·링크·배치 규칙)·DART/EDGAR/dartlab/scan/price/macro/internal-blog evidenceMap·정직성 가드를 확정한다. 비주얼과 이미지는 글 뒤 부록이 아니라 본문 중간에서 독자의 이해를 바꾸는 장치로 placement·insertAfter·narrativeUse 까지 결정한다. 통과용 안전한 관통선이 아니라 진짜 의외의 관통선을 고른다. 전체 기획안을 스키마대로 낸다.
+단일 관통선 1개로 좁히고(클리셰 격파 반영), 후보 제목 3개 이상을 비교해 최종 제목을 고른 뒤 titleContract 를 채운다. 핵심 인싸이트(관통선의 답)를 세우고, 막 구조(6막+, 관통선이 인싸이트에 착지)·섹션별 독해 구조(sections)·막별 비주얼·이미지 기획(내용 연상, 로고·상징품 허용)·relatedPosts(검색어·링크·배치 규칙)·DART/EDGAR/dartlab/scan/price/macro/internal-blog evidenceMap·정직성 가드를 확정한다. 비주얼과 이미지는 글 뒤 부록이 아니라 본문 중간에서 독자의 이해를 바꾸는 장치로 placement·insertAfter·narrativeUse 까지 결정한다. 통과용 안전한 관통선이 아니라 진짜 의외의 관통선을 고른다. 전체 기획안을 스키마대로 낸다.
 
 ${FIELD_GUIDE}`,
   { label: '편집장 수렴', phase: '경합', schema: PLAN_SCHEMA }
@@ -408,7 +434,9 @@ for (let round = 1; round <= MAX_ROUNDS; round++) {
 
 ${NOTES.principles}
 
-6항목: 1.재밌나(YES/NO+이유) 2.어디서 집중 끊기나 3.독자질문(관통선)이 끝까지 살아있나 4."어?" 몇 번 5.기억에 남는 문장 6.점수. 특히: 제목이 첫 1초에 멈추는가, titleContract 의 후보·독자 갭·선택 이유가 살아있는가, 관통선이 끝까지 살아 인싸이트에 착지하나, 막이 궁금증심화·메커니즘·리스크반전·판단닫힘 중 하나를 하나, 깊이가 얕지 않나, 첫 2문단이 긴장으로 시작하나. 비주얼이 본문 중간에서 설명을 실제로 돕나, 아니면 뒤에 자동으로 붙는 부록처럼 보이나. relatedPosts 가 선행 글 검색과 자연스러운 참고글 연결을 기획했나.
+${NOTES.section}
+
+6항목: 1.재밌나(YES/NO+이유) 2.어디서 집중 끊기나 3.독자질문(관통선)이 끝까지 살아있나 4."어?" 몇 번 5.기억에 남는 문장 6.점수. 특히: 제목이 첫 1초에 멈추는가, titleContract 의 후보·독자 갭·선택 이유가 살아있는가, 관통선이 끝까지 살아 인싸이트에 착지하나, 막이 궁금증심화·메커니즘·리스크반전·판단닫힘 중 하나를 하나, 깊이가 얕지 않나, 첫 2문단이 긴장으로 시작하나. sections[] 가 섹션마다 타이틀, 훅, 시각 앵커, 설명, 예시, 보완, 다음 연결을 실제로 기획했나. 비주얼이 본문 중간에서 설명을 실제로 돕나, 아니면 뒤에 자동으로 붙는 부록처럼 보이나. relatedPosts 가 선행 글 검색과 자연스러운 참고글 연결을 기획했나.
 
 검증 데이터(기획 수치는 이 안에 있어야):
 ${evidence}
@@ -425,6 +453,7 @@ ${JSON.stringify(plan)}`,
 - forced-metric: "이런 뜻은 아니다" 변명해야 하는 억지 비율·지표가 있나.
 - misleading-frame: 주인공이 제목의 실제 주어와 다른가(인프라 회사를 AI 주인공으로 둔갑 등). 영업이익과 순이익, 연결과 그룹을 뭉갰나.
 - shallow: 막이 요약 나열이라 메커니즘까지 안 파는가. 심층인 척 얕은가.
+- weak-section-flow: sections[] 가 없거나, 섹션마다 타이틀, 훅, 시각 앵커, 설명, 예시, 보완, 다음 연결이 기획되지 않았나.
 - generic-image: imagePlan 이미지가 내용·회사·제품을 연상시키지 않고 범용 스카이라인·추상인가. 하나라도 있으면 kill.
 - appendix-visual: visuals/imagePlan 이 본문 중간 placement 없이 뒤에 자동으로 붙는 부록처럼 기획됐나. 필요한 표·그래프·테이블 조합을 빼먹었나. 그러면 kill.
 - weak-reference: relatedPosts 가 비어 있거나, 선행 글 검색어·링크 배치 이유 없이 억지 내부 링크만 붙였나.
@@ -453,6 +482,8 @@ ${JSON.stringify(plan)}`,
 ${HEAD}
 
 ${NOTES.principles}
+
+${NOTES.section}
 
 ${NOTES.visual}
 
@@ -483,6 +514,7 @@ plan.reviewGate = {
     { id: 'titleHook', status: passed ? 'passed' : 'todo' },
     { id: 'writerPanel', status: passed ? 'passed' : 'todo' },
     { id: 'honestyEvidence', status: passed ? 'passed' : 'todo' },
+    { id: 'sectionFlow', status: passed ? 'passed' : 'todo' },
     { id: 'visualStoryPlan', status: passed ? 'passed' : 'todo' },
     { id: 'imageFit', status: passed ? 'passed' : 'todo' },
     { id: 'readerFit', status: passed ? 'passed' : 'todo' },

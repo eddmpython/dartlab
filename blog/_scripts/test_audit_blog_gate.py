@@ -52,6 +52,20 @@ def _brief(score: int = 94) -> dict:
             }
             for i in range(1, 7)
         ],
+        "sections": [
+            {
+                "order": i,
+                "heading": f"{i}막 스텔스 병목을 여는 질문",
+                "subtitle": "기체 사진보다 먼저 공정 병목을 보게 만드는 한 줄 훅이다.",
+                "visualAnchor": "공정 지도 표와 실제 수치 차트를 섹션 앞쪽에 배치한다.",
+                "explanation": "스텔스 기술을 쉬운 말로 풀고 공시 숫자와 연결한다.",
+                "example": "LMT, KAI, 한화시스템 같은 실제 회사와 FY2025 수치를 예로 든다.",
+                "support": "기술 난도와 회사 전체 이익률을 바로 같게 보면 안 된다는 오해 방지를 넣는다.",
+                "transition": "이 섹션의 병목이 다음 섹션의 공시 숫자와 연결된다.",
+                "evaluation": "타이틀, 훅, 시각 앵커, 설명, 예시, 보완, 다음 연결이 모두 살아 있는지 평가한다.",
+            }
+            for i in range(1, 7)
+        ],
         "visuals": [
             {
                 "actOrder": 1,
@@ -268,6 +282,16 @@ def test_publish_gate_blocks_visuals_without_inline_use(monkeypatch, tmp_path: P
     errors = ab.publish_gate(post)
     assert any("visuals[1].placement" in err for err in errors)
     assert any("imagePlan[2].narrativeUse" in err for err in errors)
+
+
+def test_publish_gate_blocks_missing_section_flow(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(ab, "repo_root", lambda: tmp_path)
+    post = _write_tech_post(tmp_path)
+    brief = _brief()
+    brief["sections"][0].pop("visualAnchor")
+    (post / "brief.json").write_text(json.dumps(brief, ensure_ascii=False, indent=2), encoding="utf-8")
+    errors = ab.publish_gate(post)
+    assert any("sections[1].visualAnchor" in err for err in errors)
 
 
 def test_dartlab_story_title_gate_blocks_intro_title() -> None:

@@ -57,6 +57,7 @@ BLOG_REQUIRED_PLAN_FIELDS = (
     "readerQuestion",
     "insight",
     "acts",
+    "sections",
     "visuals",
     "imagePlan",
     "relatedPosts",
@@ -69,6 +70,16 @@ DARTLAB_TITLE_SEARCH_RE = re.compile(
     re.I,
 )
 DARTLAB_TITLE_ACTION_RE = re.compile(r"설치|파이썬|코드|브라우저|한\s*줄|조회|불러오|실행|시작|열기|분석")
+SECTION_PLAN_FIELDS = (
+    "heading",
+    "subtitle",
+    "visualAnchor",
+    "explanation",
+    "example",
+    "support",
+    "transition",
+    "evaluation",
+)
 
 
 @dataclass
@@ -428,6 +439,31 @@ def plan_shape(category: str) -> dict[str, int]:
     return GENRE_PLAN_SHAPE.get(category, _DEFAULT_PLAN_SHAPE)
 
 
+def _validate_section_plan(plan: dict[str, object], *, label: str, category: str, min_sections: int) -> list[str]:
+    fails: list[str] = []
+    sections = plan.get("sections") if isinstance(plan.get("sections"), list) else []
+    if len(sections) < min_sections:
+        fails.append(f"{label}: sections 는 {min_sections}개 이상이어야 함(현재 {len(sections)})")
+    for idx, raw in enumerate(sections, start=1):
+        if not isinstance(raw, dict):
+            fails.append(f"{label}: sections[{idx}] 은 객체여야 함")
+            continue
+        for field in SECTION_PLAN_FIELDS:
+            min_len = 8 if field in {"heading", "subtitle"} else 12
+            if _compact_len(raw.get(field)) < min_len:
+                fails.append(f"{label}: sections[{idx}].{field} 이 너무 약함")
+        if category == "dartlab-stories":
+            anchor = str(raw.get("visualAnchor") or "")
+            if not re.search(r"코드|출력|표|도식|이미지|화면|panel|DataFrame|차트", anchor, re.I):
+                fails.append(
+                    f"{label}: sections[{idx}].visualAnchor 는 실제 코드 출력·표·도식·이미지 중 하나를 명시해야 함"
+                )
+            support = str(raw.get("support") or "")
+            if not re.search(r"오해|주의|한계|브라우저|로컬|틀리|예외|보완|검산", support):
+                fails.append(f"{label}: sections[{idx}].support 는 오해 방지·한계·보완 설명을 명시해야 함")
+    return fails
+
+
 def _validate_common_plan(
     plan: dict[str, object], payload: dict[str, object], *, label: str, category: str = ""
 ) -> list[str]:
@@ -480,6 +516,8 @@ def _validate_common_plan(
                 fails.append(f"{label}: acts[{idx}].{field} 이 너무 약함")
         if not str(raw.get("purpose") or "").strip():
             fails.append(f"{label}: acts[{idx}].purpose 누락")
+
+    fails.extend(_validate_section_plan(plan, label=label, category=category, min_sections=shape["acts"]))
 
     visuals = plan.get("visuals") if isinstance(plan.get("visuals"), list) else []
     if len(visuals) < shape["visuals"]:
