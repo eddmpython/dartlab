@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.9] - 2026-07-11
+
+브라우저 노트북과 dartlab 이야기가 라이브 데이터를 읽는 길을 연다. 그동안 브라우저 안 데이터는 노트북 셀 실행(postMessage)으로만 닿았고, 페이지가 표준 방식으로 dartlab 데이터를 부를 길이 없었다. 이번 릴리즈가 그 데이터 표면을 더한다.
+
+### Added
+
+- **`dartlab.webapi` 브라우저 데이터 라우터.** 브라우저 pyodide 커널 안에서 공개 호출계약(`panel` · `select` · `analysis` · `scan` · `credit` · `story` · `industry` · `trace`)을 async FastAPI(ASGI)로 노출한다. 페이지는 표준 `fetch("/pyapi/company/005930/panel/IS")` 로 브라우저 안 dartlab 을 부른다. 백엔드 서버(:8400) 없이. 노트북 실행 커널과 같은 워커를 공유하므로 커널은 하나다. 새 계약을 만들지 않고 기존 공개 계약을 HTTP 로 노출하는 배송 계층이다. `fastapi` 는 `buildBrowserApi()` 안에서만 지연 import 한다(브라우저 wheel 은 `fastapi` 를 배제하고 최초 호출 때 `micropip` 으로 설치).
+
 ## [0.10.8] - 2026-07-10
 
 호출계약 정리 + 브라우저 노트북 릴리즈. 문서와 예제가 오래전에 은퇴한 API 를 계속 싣고 있었고, 그 코드를 따라 친 사용자는 첫 줄에서 `AttributeError` 를 만났다. 이번 릴리즈가 그 표면을 전부 걷어낸다.
