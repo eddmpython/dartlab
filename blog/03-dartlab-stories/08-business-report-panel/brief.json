@@ -1,0 +1,375 @@
+{
+  "title": "사업보고서, 코드로 열기",
+  "titleContract": {
+    "workingTitle": "사업보고서, panel로 펼치기",
+    "selectedTitle": "사업보고서, 코드로 열기",
+    "hookQuestion": "DART 사업보고서도 재무제표처럼 브라우저 코드에서 바로 표로 열 수 있을까?",
+    "readerGap": "초보자는 사업보고서를 긴 PDF나 원문 페이지로만 생각하고, dartlab에서는 먼저 위치 지도로 열어야 한다는 감각이 약하다.",
+    "promise": "Company(\"005930\")에서 panel()과 panel(\"사업\"), panel(\"주석\"), panel(\"임원\"), panel(\"직원\")을 실행해 큰 목차와 작은 절을 확인하게 한다.",
+    "whySelected": "사업보고서라는 검색어에 코드로 열기라는 즉시 행동을 붙여 짧고 실행 의도가 분명하다.",
+    "candidates": [
+      {
+        "title": "사업보고서, 코드로 열기",
+        "hook": "사업보고서 검색어와 코드 실행 효용이 가장 짧게 붙는다.",
+        "risk": "panel 개념은 첫 코드와 이미지에서 바로 풀어 줘야 한다."
+      },
+      {
+        "title": "DART 사업보고서, 바로 조회",
+        "hook": "DART와 사업보고서 검색어가 모두 보이고 조회 행동이 선명하다.",
+        "risk": "코드 실행형 글이라는 성격은 selectedTitle보다 약하다."
+      },
+      {
+        "title": "사업보고서, panel 실행",
+        "hook": "panel을 배우는 연재 흐름과 실행 효용을 같이 드러낸다.",
+        "risk": "외부 독자에게 panel이라는 말이 낯설 수 있어 본문 첫 문단에서 풀어야 한다."
+      }
+    ],
+    "rejectedPatterns": [
+      "사업보고서란 무엇인가",
+      "사업보고서 사용법 정리",
+      "DART 사업보고서 총정리",
+      "사업보고서 보는 법",
+      "dartlab 사업보고서 소개"
+    ]
+  },
+  "description": "dartlab에서 DART 사업보고서를 panel 코드로 열고 큰 목차, 작은 절, 세부 블록, 글과 표 종류를 따라 사업, 주석, 임원, 직원 구역을 찾는 법을 익힌다.",
+  "readerQuestion": "삼성전자 사업보고서를 긴 원문으로 보기 전에 panel 표에서 어느 장과 절에 있는지 먼저 찾을 수 있을까?",
+  "insight": {
+    "commonBelief": "사업보고서는 긴 문서라서 처음부터 원문을 읽거나 PDF에서 눈으로 찾는 수밖에 없다고 생각한다.",
+    "twistFact": "dartlab에서는 c.panel()이 사업보고서 전체를 위치 지도처럼 열고, c.panel(\"사업\"), c.panel(\"주석\"), c.panel(\"임원\"), c.panel(\"직원\")이 같은 표면의 줄을 좁혀 준다.",
+    "whatToWatch": "topic panel은 자동 요약이 아니라 구역 좁히기다. 큰 목차, 작은 절, 세부 블록, 글과 표 종류를 보고 나서 원문 조각을 읽어야 한다.",
+    "freshnessArgument": "2026-07-11 실행에서 005930 panel()은 큰 목차, 작은 절, 세부 블록, 글과 표 종류, 기간 열을 돌려줬고, 사업, 주석, 임원, 직원 topic도 같은 컬럼 구조로 확인됐다.",
+    "evidenceRefs": [
+      "Company(\"005930\").market = KR",
+      "Company(\"005930\").panel().head(5)에 chapter, sectionLeaf, blockLeaf, leafType 표시",
+      "panel(\"사업\") 결과의 큰 목차 칸에 II. 사업의 내용 표시",
+      "panel(\"주석\") 결과의 큰 목차 칸에 III. 재무에 관한 사항 표시",
+      "panel(\"임원\")과 panel(\"직원\") 결과가 VIII. 임원 및 직원 등에 관한 사항 근처로 좁혀짐"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "사업보고서를 위치 지도로 연다",
+      "purpose": "왜배우나",
+      "scene": "Company(\"005930\")을 만들고 c.panel().head(5)에서 큰 목차, 작은 절, 세부 블록, 글과 표 종류 칸을 확인한다.",
+      "keyNumbers": [
+        "005930",
+        "KR",
+        "panel()",
+        "2026Q1"
+      ],
+      "causalBridge": "전체 위치 지도를 먼저 봐야 사업, 주석, 임원, 직원 구역을 좁힐 수 있다."
+    },
+    {
+      "order": 2,
+      "heading": "topic panel로 구역을 좁힌다",
+      "purpose": "직접해본다",
+      "scene": "panel(\"사업\"), panel(\"주석\"), panel(\"임원\"), panel(\"직원\")의 head 결과를 보고 각각 어느 큰 장으로 좁혀지는지 확인한다.",
+      "keyNumbers": [
+        "사업",
+        "주석",
+        "임원",
+        "직원"
+      ],
+      "causalBridge": "topic은 새 원천이 아니라 같은 사업보고서 표면을 좁힌다는 점을 배워야 다음 편에서 사업 내용을 실제로 읽을 수 있다."
+    },
+    {
+      "order": 3,
+      "heading": "찾기와 해석을 분리한다",
+      "purpose": "경계밝히기",
+      "scene": "원문 태그, 글과 표 종류, DART 원천 페이지, 브라우저 공개 계약 경계를 설명하고 자동 요약으로 오해하지 않게 한다.",
+      "keyNumbers": [
+        "text",
+        "table",
+        "DART",
+        "OpenDART"
+      ],
+      "causalBridge": "찾는 법과 해석을 분리해야 다음 편에서 사업의 내용 본문을 근거로 읽을 수 있다."
+    }
+  ],
+  "visuals": [
+    {
+      "actOrder": 1,
+      "kind": "bitmap diagram",
+      "title": "사업보고서 panel 위치 지도",
+      "proves": "panel() 결과가 재무 숫자표가 아니라 큰 목차, 작은 절, 세부 블록, 글과 표 종류, 기간 열을 가진 위치 지도라는 점을 보여 준다.",
+      "seriesHint": "DART business report panel map",
+      "placement": "panel().head(5) 코드 뒤에 배치한다.",
+      "insertAfter": "사업보고서의 제목, 표, 문단 조각이 기간별로 놓이는 지도에 가깝다 문단 뒤",
+      "narrativeUse": "독자가 사업보고서를 바로 해석하지 말고 먼저 위치 지도로 보게 한다."
+    },
+    {
+      "actOrder": 2,
+      "kind": "topic routing diagram",
+      "title": "사업, 주석, 임원, 직원 topic 좁히기",
+      "proves": "panel(\"사업\"), panel(\"주석\"), panel(\"임원\"), panel(\"직원\")이 새 원천이 아니라 같은 report panel의 줄을 좁힌다는 점을 보여 준다.",
+      "seriesHint": "topic panels narrow report rows",
+      "placement": "세부 블록과 글 종류 설명 뒤에 배치한다.",
+      "insertAfter": "좋은 독자는 지도를 먼저 보고 그다음 필요한 구역으로 들어간다 문단 뒤",
+      "narrativeUse": "초보자가 topic panel을 자동 요약이나 별도 API로 착각하지 않게 한다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "inline",
+      "subject": "DART 사업보고서 전체 panel이 큰 목차, 작은 절, 세부 블록, 글과 표 종류, 기간 열을 가진 위치 지도임을 보여 주는 교육용 bitmap 도식",
+      "query": "DART business report panel chapter section block leaf type table diagram",
+      "keywords": [
+        "DART",
+        "business report",
+        "panel",
+        "chapter",
+        "section"
+      ],
+      "placement": "panel().head(5) 설명 뒤 본문 중간",
+      "narrativeUse": "본문이 내부 컬럼명 설명으로 흐르지 않도록 위치 지도 이미지를 먼저 보여 준다."
+    },
+    {
+      "slot": "inline",
+      "subject": "사업, 주석, 임원, 직원 topic panel이 같은 사업보고서 표면을 좁히는 흐름을 보여 주는 교육용 bitmap 도식",
+      "query": "business report topic panels business notes executives employees routing diagram",
+      "keywords": [
+        "business",
+        "notes",
+        "executives",
+        "employees",
+        "panel"
+      ],
+      "placement": "세부 블록과 글 종류 설명 뒤",
+      "narrativeUse": "topic panel은 해석이 아니라 구역 좁히기라는 오해 방지를 시각적으로 고정한다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": [
+      "사업보고서 코드",
+      "DART 사업보고서",
+      "DART 공시분석",
+      "DART 종목코드",
+      "재무제표 파이썬",
+      "EDGAR 재무제표"
+    ],
+    "placementRule": "7편은 도입부의 전환점으로, 4편과 1편은 Company와 panel 배경으로, 2편과 5편은 재무제표와 기간 감각의 차이를 설명할 때 연결한다.",
+    "links": [
+      {
+        "path": "/blog/edgar-financial-panel",
+        "title": "EDGAR 재무제표, 코드 실행",
+        "reason": "이전 편에서 재무제표 panel을 본 뒤 DART 사업보고서 panel로 넘어오는 연결이다.",
+        "placement": "첫 섹션 도입부"
+      },
+      {
+        "path": "/blog/pick-company-by-code",
+        "title": "DART 종목코드, 회사 열기",
+        "reason": "005930이 Company 입력값이라는 선행 개념을 보충한다.",
+        "placement": "첫 Company 코드가 나오기 전"
+      },
+      {
+        "path": "/blog/what-is-dartlab",
+        "title": "DART 공시분석, 설치 없이",
+        "reason": "panel이 공시를 표면으로 여는 전체 그림을 다시 연결한다.",
+        "placement": "panel 개념 설명"
+      },
+      {
+        "path": "/blog/the-grid",
+        "title": "재무제표 기간, Y와 Q 조회",
+        "reason": "재무제표는 계정과 기간을 먼저 보고 사업보고서는 위치와 종류를 먼저 본다는 차이를 설명한다.",
+        "placement": "큰 목차 칸 설명 뒤"
+      },
+      {
+        "path": "/blog/call-financial-statements",
+        "title": "재무제표, 파이썬 한 줄",
+        "reason": "재무제표 숫자와 주석 구역을 연결하기 위한 선행 글이다.",
+        "placement": "주석이 재무제표 옆 설명이라는 문단"
+      }
+    ]
+  },
+  "honestyGuards": [
+    "panel()을 열었다고 사업보고서를 해석했다고 쓰지 않는다.",
+    "panel(\"사업\")을 자동 요약 함수처럼 설명하지 않는다. 같은 사업보고서 표면에서 구역을 좁힌 것이다.",
+    "공개 계약 밖 내부 호출 이름을 본문 코드나 사용 예시로 노출하지 않는다.",
+    "원문 태그가 보이는 것을 오류로 단정하지 않고, 원문 조각이 표면 위에 올라온 것으로 설명한다.",
+    "EDGAR 본문 섹션까지 DART 사업보고서 panel과 같다고 말하지 않는다."
+  ],
+  "evidenceMap": [
+    {
+      "claim": "005930은 dartlab Company에서 KR 회사로 열린다.",
+      "sourceType": "dartlab",
+      "period": "2026-07-11",
+      "sourceRef": "local execution: Company(\"005930\").market",
+      "howUsed": "첫 코드셀과 DART 회사 출발점 설명"
+    },
+    {
+      "claim": "c.panel().head(5)는 큰 목차, 작은 절, 세부 블록, 글과 표 종류, 기간 열을 보여 준다.",
+      "sourceType": "dartlab",
+      "period": "2026-07-11",
+      "sourceRef": "local execution: Company(\"005930\").panel().head(5)",
+      "howUsed": "사업보고서를 위치 지도로 여는 핵심 실습"
+    },
+    {
+      "claim": "panel(\"사업\"), panel(\"주석\"), panel(\"임원\"), panel(\"직원\")은 같은 컬럼 구조로 관련 구역을 좁힌다.",
+      "sourceType": "dartlab",
+      "period": "2026-07-11",
+      "sourceRef": "local execution: Company(\"005930\").panel(topic).head(5)",
+      "howUsed": "topic panel은 구역 좁히기라는 설명"
+    },
+    {
+      "claim": "DART 전자공시시스템은 국내 공시의 공식 검색 입구다.",
+      "sourceType": "DART",
+      "period": "current",
+      "sourceRef": "DART 전자공시시스템, 회사별 검색",
+      "howUsed": "원천 페이지 설명"
+    },
+    {
+      "claim": "OpenDART는 공시검색, 기업개황, 공시서류원본파일, 고유번호 같은 공시정보 API 안내를 제공한다.",
+      "sourceType": "DART",
+      "period": "current",
+      "sourceRef": "OpenDART 공시정보 개발가이드",
+      "howUsed": "원천과 API 경로 감각 설명"
+    },
+    {
+      "claim": "7편은 EDGAR 재무 panel만 확인했고, 8편은 DART 사업보고서 panel을 확인한다.",
+      "sourceType": "internal-blog",
+      "period": "2026-07-11",
+      "sourceRef": "/blog/edgar-financial-panel",
+      "howUsed": "DART와 EDGAR 확인 범위 분리"
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": 1,
+          "planner": "초안은 chapter, sectionLeaf 같은 컬럼명을 앞세워 설명했고 초보자가 내부 용어부터 외우는 글처럼 보였다.",
+          "evaluator": "실행 코드는 공개 계약 안에 있었지만 쉬운 말보다 컬럼명이 먼저 나와 직관성이 낮고, topic panel을 해석 함수로 오해할 수 있다고 평가했다.",
+          "skeptic": "공개 계약 밖 내부 호출 이름을 예시처럼 언급하면 규칙 위반이며, EDGAR 본문까지 같은 방식이라고 넓히면 과장이라고 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 86,
+          "plannerRevision": "큰 목차 칸, 작은 절 칸, 세부 블록 칸, 글과 표 종류 칸을 먼저 쓰고 컬럼명은 괄호로만 남겼다. 비계약 이름 노출도 제거했다."
+        },
+        {
+          "round": 2,
+          "planner": "개선안은 panel() 전체 지도, topic panel 좁히기, 원천 페이지, 브라우저 경계, 행동 검사 순서로 재작성했다.",
+          "evaluator": "독자가 실제 head 결과에서 위치 열을 읽고, 사업보고서 본문 해석 전에 위치를 찾는 행동을 배운다.",
+          "skeptic": "코드 예시는 Company, market, panel, head만 쓰고 select나 비계약 호출을 섞지 않아 공개 계약 경계가 지켜졌다.",
+          "decision": "passed",
+          "evaluatorScore": 96,
+          "plannerRevision": "이미지 두 장을 기획 단계에서 생성하고 섹션별 시각 앵커와 오해 방지를 반영해 최종 통과했다."
+        }
+      ]
+    }
+  },
+  "sections": [
+    {
+      "order": 1,
+      "heading": "사업보고서를 표로 먼저 연다",
+      "subtitle": "긴 원문을 해석하기 전에 panel()로 사업보고서의 위치 지도를 먼저 연다.",
+      "visualAnchor": "Company(\"005930\"), c.market, c.panel().head(5) 코드 출력과 사업보고서 panel 위치 지도 이미지를 앞쪽에 배치한다.",
+      "explanation": "큰 목차 칸, 작은 절 칸, 세부 블록 칸, 글과 표 종류 칸을 먼저 쉬운 말로 설명하고 컬럼명은 괄호로만 붙인다.",
+      "example": "report = c.panel() 뒤 report.head(5)를 실행해 큰 목차와 작은 절이 보이는지 확인한다.",
+      "support": "오해 방지를 위해 panel()은 해석이 아니라 위치 지도이며, 원문 태그가 보일 수 있다고 보완한다.",
+      "transition": "전체 지도를 봤으므로 다음에는 큰 목차 칸부터 읽는 순서를 익힌다.",
+      "evaluation": "타이틀, 한 줄 훅, 코드 출력, 이미지, 쉬운 설명, 예시, 보완, 다음 연결이 모두 들어갔는지 재평가했다."
+    },
+    {
+      "order": 2,
+      "heading": "큰 목차 칸부터 본다",
+      "subtitle": "사업보고서 panel에서는 오른쪽 기간 열보다 왼쪽 위치 열을 먼저 읽는다.",
+      "visualAnchor": "DataFrame 표의 chapter, sectionLeaf, blockLeaf, leafType 컬럼을 큰 목차, 작은 절, 세부 블록, 글과 표 종류로 풀어 보여 준다.",
+      "explanation": "재무제표는 계정과 기간이 먼저이지만 사업보고서는 위치와 종류가 먼저라는 차이를 설명한다.",
+      "example": "I. 회사의 개요, II. 사업의 내용, III. 재무에 관한 사항, VIII. 임원 및 직원 등에 관한 사항을 예시로 든다.",
+      "support": "오른쪽 기간 열부터 보면 회사 개요인지 주석인지 알 수 없다는 검산 주의를 붙인다.",
+      "transition": "읽는 순서를 배웠으므로 다음에는 사업 구역만 좁힌다.",
+      "evaluation": "내부 용어를 앞세우지 않고 독자가 읽는 순서를 따라갈 수 있는지 재평가했다."
+    },
+    {
+      "order": 3,
+      "heading": "사업 구역은 따로 좁힌다",
+      "subtitle": "panel(\"사업\")은 사업 내용을 요약하는 함수가 아니라 사업 구역 줄을 좁히는 코드다.",
+      "visualAnchor": "panel(\"사업\").head(5) 코드와 II. 사업의 내용이 보이는 표 출력을 시각 앵커로 둔다.",
+      "explanation": "topic panel은 같은 사업보고서 표면에서 관련 줄을 좁히는 것이라고 설명한다.",
+      "example": "business = c.panel(\"사업\") 뒤 business.head(5)를 실행해 II. 사업의 내용 위치를 확인한다.",
+      "support": "원문 태그가 보여도 오류가 아니며, 해석은 다음 편에서 한다는 한계를 붙인다.",
+      "transition": "사업 구역을 찾았으므로 다음에는 세부 블록과 글 종류를 같이 본다.",
+      "evaluation": "topic panel을 자동 요약으로 오해하지 않게 충분히 막았는지 재평가했다."
+    },
+    {
+      "order": 4,
+      "heading": "세부 블록과 글의 종류를 같이 본다",
+      "subtitle": "세부 블록 칸과 글과 표 종류 칸은 원문 조각을 어떻게 읽을지 알려 준다.",
+      "visualAnchor": "세부 블록과 글과 표 종류 칸을 설명하는 DataFrame 표와 topic routing 이미지를 배치한다.",
+      "explanation": "어떤 조각은 문단이고 어떤 조각은 표라서 같은 방식으로 인용하면 안 된다고 설명한다.",
+      "example": "text와 table을 예시로 들어 문장 조각과 표 조각을 구분한다.",
+      "support": "leafType을 보지 않으면 문장과 표를 섞어 인용하는 오해가 생긴다는 주의를 붙인다.",
+      "transition": "원문 조각의 종류를 배웠으므로 다음에는 주석 구역을 찾는다.",
+      "evaluation": "시각 앵커가 단순 장식이 아니라 원문 조각 구분을 돕는지 재평가했다."
+    },
+    {
+      "order": 5,
+      "heading": "주석은 재무제표 옆 설명이다",
+      "subtitle": "panel(\"주석\")으로 재무제표 숫자 옆 설명이 어느 장에 있는지 찾는다.",
+      "visualAnchor": "panel(\"주석\").head(5) 코드 출력과 III. 재무에 관한 사항, 연결재무제표 주석 위치를 표로 보여 준다.",
+      "explanation": "주석은 BS와 CF 숫자의 배경을 찾는 길이지만 이 편에서는 위치만 확인한다고 설명한다.",
+      "example": "notes = c.panel(\"주석\") 뒤 notes.head(5)를 실행한다.",
+      "support": "주석 문장을 사람이 읽기 좋게 정리하고 숫자와 연결하는 일은 뒤 편이라는 한계를 붙인다.",
+      "transition": "재무제표 주변 설명을 찾았으므로 다음에는 사람 정보 구역을 찾는다.",
+      "evaluation": "선행 재무제표 글과 연결하되 이번 편의 범위를 넘지 않는지 재평가했다."
+    },
+    {
+      "order": 6,
+      "heading": "임원과 직원도 같은 표면이다",
+      "subtitle": "panel(\"임원\")과 panel(\"직원\")은 사업보고서 안의 사람 정보 구역을 찾는다.",
+      "visualAnchor": "panel(\"임원\"), panel(\"직원\") 코드 출력과 VIII. 임원 및 직원 등에 관한 사항이 보이는 표를 기준으로 한다.",
+      "explanation": "임원과 직원 정보도 별도 API가 아니라 사업보고서 안의 위치로 읽는다고 설명한다.",
+      "example": "executives = c.panel(\"임원\"), employees = c.panel(\"직원\") 뒤 각각 head(5)를 실행한다.",
+      "support": "같은 큰 장 안에서 두 topic이 비슷한 위치를 가리킬 수 있다는 오해 방지를 붙인다.",
+      "transition": "사업보고서 안의 여러 구역을 찾았으므로 다음에는 DART 원천 페이지를 확인한다.",
+      "evaluation": "독자가 사람 정보 해석으로 뛰지 않고 위치 찾기에 머무는지 재평가했다."
+    },
+    {
+      "order": 7,
+      "heading": "DART 원천 페이지를 같이 둔다",
+      "subtitle": "코드가 표를 열어도 DART와 OpenDART 원천 감각은 유지한다.",
+      "visualAnchor": "DART 전자공시시스템, 회사별 검색, OpenDART 개발가이드 링크 목록과 panel 코드 결과를 함께 배치한다.",
+      "explanation": "dartlab 표는 법정 공시 문서에서 온 것이므로 이상하면 원천 검색 화면으로 돌아가야 한다고 설명한다.",
+      "example": "DART 전자공시시스템, 회사별 검색, OpenDART, 공시정보 개발가이드, 보고서정보, 정기보고서 안내를 연결한다.",
+      "support": "원천 감각 없이 코드 결과만 믿으면 공시 문서의 위치와 제출 맥락을 오해할 수 있다는 주의를 붙인다.",
+      "transition": "원천을 확인했으므로 다음에는 브라우저 공개 계약 경계를 분리한다.",
+      "evaluation": "외부 원천 링크가 본문 흐름을 방해하지 않고 검산 역할을 하는지 재평가했다."
+    },
+    {
+      "order": 8,
+      "heading": "브라우저에서 되는 것과 나중에 할 것",
+      "subtitle": "이번 편의 코드는 Company, market, panel, head만 쓰고 공개 계약 밖 내부 호출은 예시로도 노출하지 않는다.",
+      "visualAnchor": "본문 코드펜스 목록과 공개 호출계약 범위를 시각 앵커로 삼는다.",
+      "explanation": "브라우저 글은 독자가 그대로 실행해야 하므로 공개 계약 안에서만 설명한다고 말한다.",
+      "example": "c.panel(), c.panel(\"사업\"), c.panel(\"주석\"), c.panel(\"임원\"), c.panel(\"직원\")만 코드 예시로 둔다.",
+      "support": "자동 요약, 실시간 시세, 뉴스, 수급, 최신 공시 알림은 이번 글 범위가 아니라는 한계를 붙인다.",
+      "transition": "경계를 분리했으므로 다음에는 오해 방지 목록으로 닫는다.",
+      "evaluation": "비계약 이름이 코드나 사용 예시로 새지 않았는지 재평가했다."
+    },
+    {
+      "order": 9,
+      "heading": "이렇게 오해하면 안 된다",
+      "subtitle": "찾았다, 읽었다, 해석했다는 세 단계를 섞지 않는다.",
+      "visualAnchor": "오해 방지 체크 문장과 panel head 결과의 위치 칸을 함께 되짚는다.",
+      "explanation": "panel()은 전체 위치 지도, panel(\"사업\")은 구역 좁히기, 해석은 다음 단계라고 설명한다.",
+      "example": "삼성전자의 사업 내용을 분석했다 대신 삼성전자 사업보고서에서 사업 구역을 panel(\"사업\")으로 찾았다고 쓰게 한다.",
+      "support": "EDGAR 본문까지 같은 방식이라고 말하지 않는 한계와 원문 태그 오해 방지를 붙인다.",
+      "transition": "오해를 정리했으므로 마지막에는 행동 검사로 넘어간다.",
+      "evaluation": "추상적인 경고가 아니라 독자가 실제로 고쳐 쓸 수 있는 문장 예시가 있는지 재평가했다."
+    },
+    {
+      "order": 10,
+      "heading": "다음 편으로 넘어가기 전 행동 검사",
+      "subtitle": "전체 지도, 사업, 주석, 임원, 직원 구역을 직접 눌러 보고 위치를 말할 수 있어야 한다.",
+      "visualAnchor": "다섯 개 코드 실행 체크리스트와 DataFrame 표의 위치 칸을 섹션의 시각 앵커로 둔다.",
+      "explanation": "행동 검사는 글을 읽었다는 표시가 아니라 같은 결과를 브라우저에서 눌러 봤는지 확인하는 장치라고 설명한다.",
+      "example": "report, business, notes, executives, employees 각각의 head(5)를 실행한다.",
+      "support": "표 범위가 달라도 큰 목차와 작은 절이 보이는지 먼저 검산하라는 보완 설명을 붙인다.",
+      "transition": "행동 검사를 통과하면 다음 편에서 panel(\"사업\") 안의 본문 조각을 실제로 읽는다.",
+      "evaluation": "다음 편을 읽을 자격이 명확하고 실행 가능한지 재평가했다."
+    }
+  ]
+}

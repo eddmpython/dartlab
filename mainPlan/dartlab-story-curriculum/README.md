@@ -10,7 +10,7 @@
 
 | | |
 |---|---|
-| 발행 완료 | 7 편 (1편 what-is-dartlab, 2편 call-financial-statements, 3편 how-notebook-runs, 4편 pick-company-by-code, 5편 the-grid, 6편 dart-edgar-company, 7편 edgar-financial-panel) |
+| 발행 완료 | 8 편 (1편 what-is-dartlab, 2편 call-financial-statements, 3편 how-notebook-runs, 4편 pick-company-by-code, 5편 the-grid, 6편 dart-edgar-company, 7편 edgar-financial-panel, 8편 business-report-panel) |
 | 설계 완료 | 39 편 (전문 에이전트 4 안 경합 + 심사 + 수렴 + 적대 감사, panel 및 EDGAR 중심 재정렬 2026-07-11) |
 | 채점 | pedagogy 78 · coverage 75 · skeptic 71 · seo 66 (인플레 없이) |
 | 승자 | pedagogy 안. 나머지 셋에서 살릴 아이디어를 접목 |
@@ -193,10 +193,11 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
   7편에서는 브라우저 공개 artifact 와 로컬 companyfacts 경로의 차이를 먼저 경계로 둔다.
   `risk`, `mdna`, `item1Business` 는 로컬 실측에서 None 이므로 본문 섹션은 된다고 쓰지 않는다.
   발행 글은 실제 계정과 최근 기간 값이 보이는 `head()` 중심으로 구성하고, 브라우저와 로컬 경로 차이를 본문 경계로 반영했다.
-- [ ] **8. 사업보고서, panel로 펼치기** `business-report-panel` `B`
+- [x] **8. 사업보고서, 코드로 열기** `business-report-panel` `B`
   `c.panel()` 전체 표면, `chapter`, `sectionLeaf`, `blockLeaf` 로 사업보고서 위치를 찾는다.
   로컬 실측 2026-07-11: `panel()` = (1627, 49), `II. 사업의 내용` 290행, `III. 재무에 관한 사항` 516행.
-  발행 전 브라우저에서 `panel("사업")`, `panel("주석")`, `panel("임원")`, `panel("직원")` 을 재실측한다.
+  발행 글은 큰 목차 칸, 작은 절 칸, 세부 블록 칸, 글과 표 종류 칸을 먼저 설명하고 컬럼명은 괄호 안에서만 보조로 다룬다.
+  코드 예시는 공개 계약 안의 `Company`, `market`, `panel`, `head` 만 쓴다.
 - [ ] **9. 사업의 내용, 표로 읽기** `business-content-panel` `B`
   `panel("사업")` 으로 제품, 원재료, 생산설비, 사업 설명을 본다. 재무 숫자가 아닌 공시 본문 근거를 인용하는 편.
   로컬 실측 2026-07-11: `panel("사업")` 156행, `panel("위험")` 25행, `panel("경영진단")` 46행.
@@ -254,7 +255,7 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
 - [ ] **34. 조건으로 전종목을 거르는 진짜 스크리너** `real-screener` `L`. `scan("screen")`
 - [ ] **35. 사람 수로 회사를 본다** `workforce-local` `L`. `scan("workforce")`
 - [ ] **36. 이름으로 회사를 찾는다** `find-by-name` `L`. `search`, `codeToName`
-- [ ] **37. 공시 목록을 직접 연다** `raw-filings` `L`. `c.filings()` (liveFilings·readFiling 은 계약 아님)
+- [ ] **37. 공시 목록을 직접 연다** `raw-filings` `L`. `c.filings()` 만 공개 계약으로 다룬다.
 - [ ] **38. EDGAR 원문, 확인된 만큼만** `edgar-source-boundary` `L`
   EDGAR 재무 panel 은 7편에서 다룬다. 여기서는 10-K/10-Q 원문 섹션 접근, narrative alias, 브라우저와 로컬 차이를 검증한다.
 - [ ] **39. 여기서 어디로 더 가나** `next-steps` `B`. 터미널, MCP, Skill OS, quant 로 이어지는 지도
@@ -264,8 +265,8 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
 이미 반영한 것.
 
 - **호출계약 잔재를 전부 걷어냈다** (2026-07-10). 엔진 = `src/dartlab/<엔진>/` 폴더 실재분 아홉.
-  Company 파사드의 providers 계열은 `panel`·`select`·`filings` 셋. `show`·`audit`·`governance`·
-  `disclosure`·`liveFilings`·`readFiling`·`view`·`topics` 등은 계약이 아니다. `notebookContract`
+  Company 파사드의 providers 계열은 `panel`·`select`·`filings` 셋이다. 공개 계약이 아닌 원문 직접 열기,
+  화면 전용, 내부 감사, 내부 topic 계열은 `notebookContract` 로 전부 막는다.
   부채 원장이 26 에서 0 이 됐고, 게이트가 Skill OS spec 코드펜스까지 훑는다.
 
 - **1편의 `Company.corpName` 은 계약 미등재**다. 어느 엔진 skill 의 `capabilityRefs` 에도 없다.
