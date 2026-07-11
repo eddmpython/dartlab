@@ -2,6 +2,7 @@
 
 import json
 import os
+import socket
 import sys
 import time
 from collections import OrderedDict
@@ -66,7 +67,6 @@ def readParquetSafe(path, *, columns: list[str] | None = None) -> pl.DataFrame:
 
 
 if not _IS_PYODIDE:
-    import socket
     from urllib.error import URLError
     from urllib.request import Request, urlopen, urlretrieve
 

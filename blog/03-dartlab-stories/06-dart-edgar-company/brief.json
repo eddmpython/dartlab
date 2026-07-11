@@ -1,0 +1,251 @@
+{
+  "title": "DART EDGAR, 한 줄로 열기",
+  "titleContract": {
+    "workingTitle": "DART와 EDGAR, 같은 Company",
+    "selectedTitle": "DART EDGAR, 한 줄로 열기",
+    "hookQuestion": "한국 DART 회사와 미국 EDGAR 회사를 같은 코드 흐름으로 열 수 있을까?",
+    "readerGap": "초보자는 DART와 EDGAR를 완전히 다른 도구로 보지만 글은 같은 Company 입구와 다른 원천의 경계를 함께 가르친다.",
+    "promise": "삼성전자와 Apple을 나란히 열고 같은 panel 호출로 손익계산서가 나오는지 직접 확인하게 한다.",
+    "whySelected": "DART와 EDGAR라는 검색어에 한 줄로 열기라는 즉시 효용을 붙여 제목을 짧게 만들었다.",
+    "candidates": [
+      {
+        "title": "DART EDGAR, 한 줄로 열기",
+        "hook": "두 공시 시스템과 실행 효용이 모두 보이고 24자 안에 들어온다.",
+        "risk": "Company라는 내부 개념은 본문 첫 코드에서 바로 풀어 줘야 한다."
+      },
+      {
+        "title": "EDGAR 재무제표, 바로 조회",
+        "hook": "미국 공시 검색자에게 재무제표 조회라는 행동이 선명하다.",
+        "risk": "DART와 같은 입구라는 커리큘럼 핵심이 제목에서 약해진다."
+      },
+      {
+        "title": "DART 공시, 미국도 열기",
+        "hook": "DART 학습자가 미국 공시로 확장한다는 흐름을 만든다.",
+        "risk": "EDGAR 검색어가 직접 보이지 않아 외부 유입 폭이 좁다."
+      }
+    ],
+    "rejectedPatterns": [
+      "DART와 EDGAR란 무엇인가",
+      "EDGAR 사용법 정리",
+      "DART EDGAR 총정리",
+      "미국 공시 보는 법",
+      "dartlab 글로벌 공시 소개"
+    ]
+  },
+  "description": "dartlab에서 삼성전자와 Apple을 같은 Company 입구로 열고, DART와 EDGAR 재무제표가 같은 panel 호출로 나오지만 원천과 통화, 공시 리듬은 다르다는 점을 익힌다.",
+  "readerQuestion": "DART 회사와 EDGAR 회사도 dartlab에서는 같은 방식으로 열고 같은 질문을 던질 수 있을까?",
+  "insight": {
+    "commonBelief": "한국 공시와 미국 공시는 도구도 호출법도 완전히 다르게 배워야 한다고 생각한다.",
+    "twistFact": "dartlab에서는 둘 다 Company로 시작하고 panel(\"IS\")로 손익계산서를 열지만, market, 통화, 공시 리듬은 그대로 다르다.",
+    "whatToWatch": "표 모양이 같다고 숫자의 단위와 기간 기준까지 같다고 말하지 않는다.",
+    "freshnessArgument": "2026-07-11 브라우저 실행에서 삼성전자와 Apple의 IS, BS, CF shape와 trace 결과를 직접 확인했다.",
+    "evidenceRefs": [
+      "Company(\"005930\").market = KR",
+      "Company(\"AAPL\").market = US",
+      "005930 panel(\"IS\") shape (36, 43)",
+      "AAPL panel(\"IS\") shape (20, 67)",
+      "trace(\"IS\") primarySource finance"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "둘 다 Company로 시작한다",
+      "purpose": "왜배우나",
+      "scene": "삼성전자 005930과 Apple AAPL을 나란히 만들고 market 값이 KR과 US로 갈라지는 장면",
+      "keyNumbers": [
+        "005930",
+        "AAPL",
+        "KR",
+        "US"
+      ],
+      "causalBridge": "입구가 같다는 것을 확인해야 다음 단계에서 같은 질문을 던질 수 있다."
+    },
+    {
+      "order": 2,
+      "heading": "같은 panel 질문을 던진다",
+      "purpose": "직접해본다",
+      "scene": "두 회사에 같은 panel(\"IS\") 호출을 던지고 shape와 head가 어떻게 나오는지 비교하는 장면",
+      "keyNumbers": [
+        "005930 IS (36, 43)",
+        "AAPL IS (20, 67)"
+      ],
+      "causalBridge": "표 모양이 비슷해도 원천과 기간 열은 다르다는 다음 오해 방지로 이어진다."
+    },
+    {
+      "order": 3,
+      "heading": "같은 모양은 같은 단위가 아니다",
+      "purpose": "경계밝히기",
+      "scene": "trace(\"IS\")와 BS, CF shape를 확인하고 finance 원천은 같지만 통화와 공시 리듬이 다르다고 정리하는 장면",
+      "keyNumbers": [
+        "finance",
+        "BS",
+        "CF",
+        "10-K",
+        "10-Q"
+      ],
+      "causalBridge": "이 경계를 세워야 다음 편에서 EDGAR 재무 panel을 더 깊게 읽을 수 있다."
+    }
+  ],
+  "visuals": [
+    {
+      "actOrder": 2,
+      "kind": "diagram",
+      "title": "DART와 EDGAR의 같은 Company 입구",
+      "proves": "식별자는 다르지만 두 회사가 같은 Company 객체와 같은 panel 질문으로 이어진다.",
+      "seriesHint": "005930 and AAPL Company bridge",
+      "placement": "market 확인 뒤, panel(\"IS\")를 비교하기 전",
+      "insertAfter": "둘 다 같은 Company로 시작한다는 첫 코드 설명 뒤",
+      "narrativeUse": "독자가 DART와 EDGAR를 다른 세계가 아니라 같은 질문의 다른 원천으로 기억하게 한다."
+    },
+    {
+      "actOrder": 3,
+      "kind": "comparison diagram",
+      "title": "같은 호출과 다른 비교 기준",
+      "proves": "같은 panel 호출로 표를 열어도 market, 통화, 공시 리듬은 별도로 확인해야 한다.",
+      "seriesHint": "same call different basis",
+      "placement": "기간과 통화 차이를 설명한 뒤",
+      "insertAfter": "미국 기업은 회계연도 말이 회사마다 다를 수 있다는 문장 뒤",
+      "narrativeUse": "독자가 바로 비교하지 말고 기간 정렬과 통화 정렬을 먼저 해야 한다는 순서를 기억하게 한다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "inline",
+      "subject": "DART 005930과 EDGAR AAPL이 같은 Company 입구로 들어가 panel(\"IS\") 표로 이어지는 교육용 도식",
+      "query": "financial data workflow DART EDGAR Company panel income statement diagram",
+      "keywords": [
+        "DART",
+        "EDGAR",
+        "Company",
+        "panel"
+      ],
+      "placement": "첫 market 확인 뒤 본문 중간",
+      "narrativeUse": "두 공시 시스템을 같은 질문으로 여는 구조를 코드 전에 시각적으로 고정한다."
+    },
+    {
+      "slot": "inline",
+      "subject": "DART와 EDGAR 재무 panel을 열 때 같은 호출과 다른 기준을 분리하는 비교 도식",
+      "query": "financial statement comparison period currency filing rhythm diagram",
+      "keywords": [
+        "DART",
+        "EDGAR",
+        "currency",
+        "filing rhythm"
+      ],
+      "placement": "기간과 통화가 다르다는 설명 뒤",
+      "narrativeUse": "표가 비슷해도 비교 전 기간과 통화를 맞춰야 한다는 오독 방지 순서를 보여 준다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": [
+      "DART 종목코드",
+      "재무제표 파이썬",
+      "재무제표 기간",
+      "EDGAR",
+      "DART EDGAR"
+    ],
+    "placementRule": "4편의 코드 개념을 도입부에, 2편의 panel 재무제표 개념을 IS 비교 직전에, 5편의 기간 감각을 통화와 공시 리듬 경계 설명에 연결한다.",
+    "links": [
+      {
+        "path": "/blog/what-is-dartlab",
+        "title": "DART 공시분석, 설치 없이",
+        "reason": "panel과 scan으로 공시를 보는 전체 그림을 다시 연결한다.",
+        "placement": "도입부 첫 문단"
+      },
+      {
+        "path": "/blog/pick-company-by-code",
+        "title": "DART 종목코드, 회사 열기",
+        "reason": "005930이 회사의 데이터 주소라는 선행 개념을 연결한다.",
+        "placement": "첫 Company 코드 직전"
+      },
+      {
+        "path": "/blog/call-financial-statements",
+        "title": "재무제표, 파이썬 한 줄",
+        "reason": "panel(\"IS\"), panel(\"BS\"), panel(\"CF\")의 기본 문법을 선행 학습한다.",
+        "placement": "손익계산서 비교 전"
+      },
+      {
+        "path": "/blog/the-grid",
+        "title": "재무제표 기간, Y와 Q 조회",
+        "reason": "기간 열이 표 모양과 해석 질문을 바꾼다는 선행 개념을 연결한다.",
+        "placement": "공시 리듬과 기간 기준 설명 뒤"
+      },
+      {
+        "path": "/blog/dart-edgar-unified-structure",
+        "title": "DART와 EDGAR, 한 구조로 읽기",
+        "reason": "두 공시 시스템의 큰 구조를 더 깊게 읽는 참고글이다.",
+        "placement": "마지막 참고 문단"
+      }
+    ]
+  },
+  "honestyGuards": [
+    "DART와 EDGAR가 같은 Company 입구를 쓴다고 해서 원천, 통화, 회계연도 기준까지 같다고 말하지 않는다.",
+    "Apple의 손익계산서 숫자를 삼성전자 숫자와 바로 크기 비교하지 않는다.",
+    "이번 편은 재무 panel 동형성만 다루고, 미국 공시 본문 섹션까지 확인된 것처럼 쓰지 않는다.",
+    "브라우저에서 느리거나 안 되는 실시간 시세, 뉴스, 수급 수집은 로컬 영역으로 분리한다."
+  ],
+  "evidenceMap": [
+    {
+      "claim": "삼성전자와 Apple은 모두 dartlab.Company로 열 수 있고 market 값은 KR과 US로 갈라진다.",
+      "sourceType": "dartlab",
+      "period": "2026-07-11",
+      "sourceRef": "browser execution: Company(\"005930\").market, Company(\"AAPL\").market",
+      "howUsed": "첫 코드셀과 DART, EDGAR provider 차이 설명"
+    },
+    {
+      "claim": "005930 panel(\"IS\")는 (36, 43), AAPL panel(\"IS\")는 (20, 67) 형태로 열린다.",
+      "sourceType": "dartlab",
+      "period": "2026-07-11",
+      "sourceRef": "browser execution: c.panel(\"IS\").shape",
+      "howUsed": "같은 질문으로 손익계산서를 여는 핵심 실습"
+    },
+    {
+      "claim": "두 회사의 trace(\"IS\") 결과 모두 primarySource가 finance로 잡힌다.",
+      "sourceType": "dartlab",
+      "period": "2026-07-11",
+      "sourceRef": "browser execution: c.trace(\"IS\")",
+      "howUsed": "panel 결과가 원천 우선순위에서 재무 표로 선택된다는 검산"
+    },
+    {
+      "claim": "국내 회사는 DART 사업보고서와 분기보고서, 미국 회사는 EDGAR 10-K와 10-Q 리듬으로 읽는다.",
+      "sourceType": "DART",
+      "period": "current",
+      "sourceRef": "DART and SEC EDGAR filing systems",
+      "howUsed": "표 모양과 원천 리듬이 다르다는 오독 방지"
+    },
+    {
+      "claim": "EDGAR는 미국 공시 원천이고 Apple 재무제표는 EDGAR 기반 데이터로 들어온다.",
+      "sourceType": "EDGAR",
+      "period": "current",
+      "sourceRef": "SEC EDGAR",
+      "howUsed": "미국 회사 예시의 출처 설명"
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": 1,
+          "planner": "초안은 DART와 EDGAR를 모두 소개하는 구조였지만 사용법 요약에 가까웠다.",
+          "evaluator": "독자에게 남는 행동 검사가 약하고, 표 모양이 같아도 원천과 단위가 다르다는 오해 방지가 부족하다고 평가했다.",
+          "skeptic": "미국 공시까지 다 된다고 넓게 말하면 EDGAR 본문 섹션 미확인 범위를 덮는 과장이 된다고 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 89,
+          "plannerRevision": "재무 panel 동형성만 다루고, 통화와 공시 리듬은 다르다는 한계를 중심 질문으로 세웠다."
+        },
+        {
+          "round": 2,
+          "planner": "개선안은 첫 셀에서 KR과 US를 확인하고, 같은 panel(\"IS\") 호출 뒤 trace로 원천을 되짚는 흐름으로 재작성했다.",
+          "evaluator": "초보자가 DART와 EDGAR를 같은 질문으로 열 수 있게 되면서도 숫자 직접 비교의 위험을 배운다.",
+          "skeptic": "본문 섹션 동형성은 주장하지 않고 재무 panel, trace, 공시 리듬으로 범위를 좁혀 과장을 제거했다.",
+          "decision": "passed",
+          "evaluatorScore": 96,
+          "plannerRevision": "관련 선행 글과 이미지 계획을 반영해 최종 통과했다."
+        }
+      ]
+    }
+  }
+}

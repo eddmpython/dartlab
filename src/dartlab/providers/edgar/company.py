@@ -17,6 +17,7 @@ DART Company와 동일한 구조를 제공한다.
 from __future__ import annotations
 
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -657,24 +658,51 @@ class Company:
     def _resolveTickerRow(self, ticker: str) -> dict | None:
         tickerPath = self._getTickerPath()
         tickerUpper = ticker.upper()
+
+        def pickRow(df: pl.DataFrame) -> dict | None:
+            """ticker 또는 CIK로 SEC 회사 식별 행을 하나 고른다."""
+            if "ticker" in df.columns:
+                row = df.filter(pl.col("ticker") == ticker)
+                if row.is_empty():
+                    row = df.filter(pl.col("ticker") == tickerUpper)
+                if not row.is_empty():
+                    r = row.row(0, named=True)
+                    r["cik"] = str(r["cik"]).zfill(10)
+                    return r
+            if tickerUpper.isdigit() and "cik" in df.columns:
+                targetCik = tickerUpper.zfill(10)
+                cols = [
+                    c for c in ("ticker", "cik", "title", "exchange", "is_exchange_listed", "is_otc") if c in df.columns
+                ]
+                for r in df.select(cols).iter_rows(named=True):
+                    if str(r.get("cik") or "").zfill(10) == targetCik:
+                        r["cik"] = targetCik
+                        return r
+            return None
+
         if tickerPath is not None and tickerPath.exists():
             df = pl.read_parquet(tickerPath)
-            row = df.filter(pl.col("ticker") == ticker)
-            if row.is_empty():
-                row = df.filter(pl.col("ticker") == tickerUpper)
-            if not row.is_empty():
-                r = row.row(0, named=True)
-                r["cik"] = str(r["cik"]).zfill(10)
+            r = pickRow(df)
+            if r is not None:
                 return r
+
+        if sys.platform == "emscripten":
+            try:
+                from dartlab.core.dataLoader import loadData
+
+                r = pickRow(loadData("tickers", "edgarTickers"))
+                if r is not None:
+                    return r
+            except Exception:  # noqa: BLE001
+                return None
+            return None
 
         try:
             from dartlab.core.dataLoader import loadEdgarListedUniverse
 
             listed = loadEdgarListedUniverse()
-            row = listed.filter(pl.col("ticker") == tickerUpper)
-            if not row.is_empty():
-                r = row.row(0, named=True)
-                r["cik"] = str(r["cik"]).zfill(10)
+            r = pickRow(listed)
+            if r is not None:
                 return r
         except (FileNotFoundError, OSError, RuntimeError):
             pass

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from typing import TYPE_CHECKING, Any
 
 import polars as pl
@@ -38,6 +39,12 @@ class _FinanceAccessor:
         cacheKey = f"_finance_{stmtKey}_{freq}"
         if cacheKey in self._company._cache:
             return self._company._cache[cacheKey]
+
+        if sys.platform == "emscripten":
+            result = self._stmtDfFromPublishedArtifact(stmtKey, freq=freq)
+            if result is not None:
+                self._company._cache[cacheKey] = result
+                return result
 
         result = self._company._buildFinanceSeries(freq=freq)
         if result is None:
@@ -86,6 +93,61 @@ class _FinanceAccessor:
         result = result.select(["snakeId", "항목"] + nonEmpty[::-1])
         self._company._cache[cacheKey] = result
         return result
+
+    def _stmtDfFromPublishedArtifact(self, stmtKey: str, *, freq: str = "Q") -> pl.DataFrame | None:
+        """Pyodide 브라우저용 공개 ``edgarFinanceStmt`` artifact 를 wide panel 로 변환."""
+        try:
+            from dartlab.core.dataLoader import loadData
+
+            df = loadData(self._company.ticker, category="edgarFinanceStmt")
+        except Exception:  # noqa: BLE001
+            return None
+        if df is None or df.is_empty() or "sj_div" not in df.columns:
+            return None
+
+        valueCol = "thstrm_amount" if "thstrm_amount" in df.columns else None
+        if valueCol is None:
+            return None
+
+        stmt = df.filter(pl.col("sj_div") == stmtKey)
+        if stmt.is_empty():
+            return None
+
+        freqKey = str(freq or "Q").upper()
+        if freqKey == "Y":
+            stmt = stmt.filter(pl.col("reprt_code") == "11011").with_columns(pl.col("bsns_year").alias("period"))
+        else:
+            quarterMap = {"11013": "Q1", "11012": "Q2", "11014": "Q3", "11011": "Q4"}
+            stmt = (
+                stmt.filter(pl.col("reprt_code").is_in(list(quarterMap)))
+                .with_columns(pl.col("reprt_code").replace(quarterMap).alias("__quarter"))
+                .with_columns((pl.col("bsns_year") + pl.col("__quarter")).alias("period"))
+            )
+        if stmt.is_empty():
+            return None
+
+        stmt = stmt.with_columns(
+            pl.when(pl.col("account_id").is_not_null() & (pl.col("account_id").cast(pl.Utf8).str.len_chars() > 0))
+            .then(pl.col("account_id").cast(pl.Utf8))
+            .otherwise(pl.col("account_nm").cast(pl.Utf8))
+            .alias("snakeId"),
+            pl.col("account_nm").cast(pl.Utf8).alias("항목"),
+        )
+        order = stmt.group_by(["snakeId", "항목"]).agg(pl.col("ord").min().alias("__ord"))
+        wide = stmt.select(["snakeId", "항목", "period", valueCol]).pivot(
+            on="period",
+            index=["snakeId", "항목"],
+            values=valueCol,
+            aggregate_function="first",
+        )
+        if wide.is_empty():
+            return None
+
+        wide = order.join(wide, on=["snakeId", "항목"], how="right").sort("__ord").drop("__ord")
+        periodCols = sorted([c for c in wide.columns if c not in ("snakeId", "항목")], reverse=True)
+        if not periodCols:
+            return None
+        return wide.select(["snakeId", "항목"] + periodCols)
 
     @property
     def BS(self) -> pl.DataFrame | None:

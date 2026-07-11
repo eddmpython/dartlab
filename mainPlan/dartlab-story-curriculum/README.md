@@ -10,7 +10,7 @@
 
 | | |
 |---|---|
-| 발행 완료 | 5 편 (1편 what-is-dartlab, 2편 call-financial-statements, 3편 how-notebook-runs, 4편 pick-company-by-code, 5편 the-grid) |
+| 발행 완료 | 6 편 (1편 what-is-dartlab, 2편 call-financial-statements, 3편 how-notebook-runs, 4편 pick-company-by-code, 5편 the-grid, 6편 dart-edgar-company) |
 | 설계 완료 | 39 편 (전문 에이전트 4 안 경합 + 심사 + 수렴 + 적대 감사, panel 및 EDGAR 중심 재정렬 2026-07-11) |
 | 채점 | pedagogy 78 · coverage 75 · skeptic 71 · seo 66 (인플레 없이) |
 | 승자 | pedagogy 안. 나머지 셋에서 살릴 아이디어를 접목 |
@@ -181,12 +181,16 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
   panel 과 select 결과를 기간 격자로 보고, `freq="Y"` 와 `"Q"` 로 질문을 바꾼다.
   ⚠ 설계안의 `freq="year"` 는 **미지원 값**이다. `Y` / `Q` / `YTD` 만 있다.
   `panel()` 빈 괄호는 브라우저에서 Panel (1630, 49) 를 돌려준다 (실측 2026-07-10).
-- [ ] **6. DART와 EDGAR, 같은 Company** `dart-edgar-company` `B`
+- [x] **6. DART EDGAR, 한 줄로 열기** `dart-edgar-company` `B`
   `Company("005930")` 과 `Company("AAPL")` 을 나란히 만들고, market/provider, 통화, 공시 리듬 차이를 가른다.
   핵심은 "한국 회사와 미국 회사를 같은 질문으로 열되, 원천과 단위는 다르다" 는 개념 확립이다.
+  브라우저 실측 2026-07-11: 005930 `panel("IS")` (36, 43), AAPL `panel("IS")` (20, 67),
+  005930 `BS` (63, 43), `CF` (65, 43), AAPL `BS` (49, 71), `CF` (46, 66), `trace("IS").primarySource` = finance.
 - [ ] **7. 미국 재무제표, 같은 panel** `edgar-financial-panel` `B`
   `Company("AAPL").panel("IS"|"BS"|"CF")` 로 EDGAR 재무제표가 DART와 같은 wide panel 로 열리는 것을 확인한다.
-  로컬 실측 2026-07-11: AAPL `panel("IS")` (35, 69), `panel("BS")` (67, 70), `panel("CF")` (53, 68).
+  브라우저 실측 2026-07-11: AAPL `panel("IS")` (20, 67), `panel("BS")` (49, 71), `panel("CF")` (46, 66).
+  로컬 companyfacts 경로 실측은 AAPL `panel("IS")` (35, 69), `panel("BS")` (67, 70), `panel("CF")` (53, 68) 이므로
+  7편에서는 브라우저 공개 artifact 와 로컬 companyfacts 경로의 차이를 먼저 경계로 둔다.
   `risk`, `mdna`, `item1Business` 는 로컬 실측에서 None 이므로 본문 섹션은 된다고 쓰지 않는다. 발행 전 브라우저 재실측.
 - [ ] **8. 사업보고서, panel로 펼치기** `business-report-panel` `B`
   `c.panel()` 전체 표면, `chapter`, `sectionLeaf`, `blockLeaf` 로 사업보고서 위치를 찾는다.
@@ -326,9 +330,9 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
 | `c.panel("재고")` | 된다 | DataFrame (4, 49) |
 | `c.panel("임원")` | 된다 | DataFrame (107, 49) |
 | `c.panel("직원")` | 된다 | DataFrame (37, 49) |
-| `Company("AAPL").panel("IS")` | 된다 | DataFrame (35, 69) |
-| `Company("AAPL").panel("BS")` | 된다 | DataFrame (67, 70) |
-| `Company("AAPL").panel("CF")` | 된다 | DataFrame (53, 68) |
+| `Company("AAPL").panel("IS")` | 된다 | 브라우저 DataFrame (20, 67), 로컬 companyfacts (35, 69) |
+| `Company("AAPL").panel("BS")` | 된다 | 브라우저 DataFrame (49, 71), 로컬 companyfacts (67, 70) |
+| `Company("AAPL").panel("CF")` | 된다 | 브라우저 DataFrame (46, 66), 로컬 companyfacts (53, 68) |
 | `Company("AAPL").panel("risk")` | None | EDGAR narrative alias. 발행 전 재검증 |
 | `Company("AAPL").panel("mdna")` | None | EDGAR narrative alias. 발행 전 재검증 |
 | `Company("AAPL").panel("item1Business")` | None | EDGAR narrative alias. 발행 전 재검증 |

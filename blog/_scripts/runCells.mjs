@@ -17,13 +17,13 @@
  *   node blog/_scripts/runCells.mjs                       # 발행분 전수
  *   node blog/_scripts/runCells.mjs --probe "import dartlab; dartlab.Company('005930').panel('IS').shape"
  *   node blog/_scripts/runCells.mjs --post 02-... --cell 5    # 그 셀만 첫 클릭 (선행 실행 회귀)
- *   node blog/_scripts/runCells.mjs --wheel dist/dartlab-0.10.8-...whl --probe "..."   # 미배포 wheel 심어 검증
+ *   node blog/_scripts/runCells.mjs --wheel dist/dartlab-0.10.8-...whl --post 06-...   # 미배포 wheel 매핑 검증
  *
  * 전제: landing dev 서버가 5173 에 떠 있어야 한다 (cd landing && npm run dev).
  * 편당 약 90 초. 첫 셀이 pyodide + wheel 다운로드를 그 편 전 셀에 상각한다. CI-fast 부적합,
  * dartlab-stories 편을 발행하기 전 로컬에서 돌리는 게이트다.
  */
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -54,6 +54,7 @@ const BASE = process.env.HARNESS_BASE ?? 'http://localhost:5173';
 /** 첫 셀은 pyodide + wheel 을 내려받는다. 그 다음부터는 커널이 살아 있다. */
 const FIRST_CELL_MS = 240_000;
 const NEXT_CELL_MS = 90_000;
+const PAGE_LOAD_MS = 120_000;
 
 function slugOf(folder) {
 	return folder.replace(/^\d+-/, '');
@@ -64,6 +65,29 @@ function allPosts() {
 		.filter((d) => d.isDirectory())
 		.map((d) => d.name)
 		.sort();
+}
+
+function resolveStoryFolder(folder) {
+	const direct = resolve(STORIES, folder);
+	if (existsSync(direct)) return folder;
+	return allPosts().find((f) => slugOf(f) === slugOf(folder)) ?? folder;
+}
+
+function expectedCodeCells(folder) {
+	const resolved = resolveStoryFolder(folder);
+	const indexPath = resolve(STORIES, resolved, 'index.md');
+	if (!existsSync(indexPath)) return 0;
+	const raw = readFileSync(indexPath, 'utf8');
+	return (raw.match(/```python\b/g) ?? []).length;
+}
+
+async function openPost(page, folder) {
+	const url = `${BASE}/blog/${slugOf(folder)}`;
+	// Dev 서버는 폰트, 후원 버튼, 댓글 위젯 같은 외부 요청이 남아 networkidle 이 닫히지 않을 수 있다.
+	// 실행셀 가드는 DOM 과 본문이 뜬 뒤 버튼을 누르는 것이 목적이므로 본문 존재를 진입 조건으로 삼는다.
+	await page.goto(url, { waitUntil: 'domcontentloaded', timeout: PAGE_LOAD_MS });
+	await page.waitForSelector('article, main', { timeout: PAGE_LOAD_MS });
+	return url;
 }
 
 /** 셀 하나를 누르고 결과가 확정될 때까지 기다린다. */
@@ -98,11 +122,44 @@ async function runOneCell(page, index, budgetMs) {
 	return { status: isError ? 'error' : 'ok', text };
 }
 
-async function runPost(page, folder) {
-	const url = `${BASE}/blog/${slugOf(folder)}`;
-	await page.goto(url, { waitUntil: 'networkidle', timeout: 60_000 });
+async function runPost(page, folder, afterOpen = null) {
+	await openPost(page, folder);
+	if (afterOpen) await afterOpen();
+	const expected = expectedCodeCells(folder);
+	if (expected > 0) {
+		try {
+			await page.waitForSelector('.rc-bar', { timeout: FIRST_CELL_MS });
+		} catch {
+			return {
+				folder,
+				cells: 0,
+				results: [
+					{
+						status: 'error',
+						text: `본문 python 코드 ${expected}개지만 실행 막대가 뜨지 않았다`,
+						index: 0,
+						elapsedSec: +(FIRST_CELL_MS / 1000).toFixed(1),
+					},
+				],
+			};
+		}
+	}
 
 	const cells = await page.locator('.rc-bar').count();
+	if (expected > 0 && cells < expected) {
+		return {
+			folder,
+			cells,
+			results: [
+				{
+					status: 'error',
+					text: `본문 python 코드 ${expected}개지만 실행 막대는 ${cells}개다`,
+					index: 0,
+					elapsedSec: 0,
+				},
+			],
+		};
+	}
 	if (cells === 0) {
 		return { folder, cells: 0, results: [], note: '실행 막대가 하나도 없다' };
 	}
@@ -122,54 +179,10 @@ async function runPost(page, folder) {
 	return { folder, cells, results };
 }
 
-/**
- * 아직 HF 에 올리지 않은 로컬 wheel 을 브라우저 커널에 먼저 심는다.
- *
- * 브라우저는 HF 의 wheel 로 돈다. 그래서 src 를 고쳐도 재배포 전에는 확인할 길이 없다.
- * 여기서는 `uv build` 산출물을 CORS 허용 정적 서버로 띄우고, micropip 이 그것을 먼저
- * 설치하게 만든다. 앱 워커는 `import dartlab` 을 보면 HF wheel 을 깔지만, 이미 같은
- * 이름이 설치돼 있으면 그대로 둔다. 즉 수정본이 이긴다.
- */
-async function serveWheel(wheelPath) {
-	const { createServer } = await import('node:http');
-	const { readFileSync, statSync } = await import('node:fs');
-	const { basename } = await import('node:path');
-
-	const name = basename(wheelPath);
-	const bytes = readFileSync(wheelPath);
-	statSync(wheelPath);
-
-	const server = createServer((req, res) => {
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		if (req.url === `/${name}`) {
-			res.writeHead(200, { 'Content-Type': 'application/zip', 'Content-Length': bytes.length });
-			res.end(bytes);
-		} else {
-			res.writeHead(404).end();
-		}
-	});
-	await new Promise((ok) => server.listen(8899, ok));
-	return { url: `http://localhost:8899/${name}`, close: () => server.close() };
-}
-
-async function installWheel(page, url) {
-	return page.evaluate(async (wheelUrl) => {
-		const mod = await import('/src/lib/notebook/stores/executionStore.ts');
-		const src = [
-			'import micropip',
-			`await micropip.install(${JSON.stringify(wheelUrl)})`,
-			'import dartlab',
-			'print("wheel", dartlab.__version__)',
-		].join('\n');
-		const out = await mod.runSnippet(src);
-		return { type: out?.type ?? 'none', data: (out?.data ?? '').slice(0, 800) };
-	}, url);
-}
-
 /** 앱과 같은 커널로 임의 코드를 돌린다. 미측정 능력을 실측할 때 쓴다. */
 async function probe(page, code) {
 	const anyPost = allPosts().find((f) => f !== 'PIPELINE.md');
-	await page.goto(`${BASE}/blog/${slugOf(anyPost)}`, { waitUntil: 'networkidle', timeout: 60_000 });
+	await openPost(page, anyPost);
 	page.setDefaultTimeout(FIRST_CELL_MS);
 	return page.evaluate(async (src) => {
 		const mod = await import('/src/lib/notebook/stores/executionStore.ts');
@@ -187,25 +200,27 @@ async function main() {
 
 	const browser = await chromium.launch();
 	const ctx = await browser.newContext();
+	const wheelPath = arg('--wheel');
+	if (wheelPath) {
+		const localWheel = resolve(REPO, wheelPath);
+		if (!existsSync(localWheel)) throw new Error(`wheel 파일 없음: ${localWheel}`);
+		await ctx.route('**/pyodide/dartlab-*.whl', async (route) => {
+			await route.fulfill({ path: localWheel, contentType: 'application/zip' });
+		});
+		console.log(`[wheel-route] ${localWheel}`);
+	}
 	const page = await ctx.newPage();
 	page.setDefaultTimeout(NEXT_CELL_MS);
 
-	const wheelPath = arg('--wheel');
-	let wheelServer;
+	async function ensureWheelOnCurrentPage() {
+		// --wheel 은 브라우저 컨텍스트 route 로 HF wheel 요청을 로컬 wheel 파일에 매핑한다.
+		// 버튼과 probe 가 같은 worker 자동 설치 경로를 타게 하려면 별도 수동 설치를 하지 않는다.
+	}
 	const probeCode = arg('--probe');
 	if (probeCode) {
 		if (wheelPath) {
-			wheelServer = await serveWheel(wheelPath);
-			const anyPost = allPosts()[0];
-			await page.goto(`${BASE}/blog/${slugOf(anyPost)}`, { waitUntil: 'networkidle', timeout: 60_000 });
-			page.setDefaultTimeout(FIRST_CELL_MS);
-			const installed = await installWheel(page, wheelServer.url);
-			console.log(`[wheel] ${installed.type} :: ${installed.data.trim().split('\n').slice(-2).join(' | ')}`);
-			if (installed.type === 'error') {
-				wheelServer.close();
-				await browser.close();
-				process.exit(1);
-			}
+			await openPost(page, allPosts()[0]);
+			await ensureWheelOnCurrentPage();
 			const r = await page.evaluate(async (src) => {
 				const mod = await import('/src/lib/notebook/stores/executionStore.ts');
 				const out = await mod.runSnippet(src);
@@ -213,7 +228,6 @@ async function main() {
 			}, probeCode);
 			console.log(`[${r.type}]`);
 			console.log(r.data);
-			wheelServer.close();
 			await browser.close();
 			process.exit(r.type === 'error' ? 1 : 0);
 		}
@@ -228,11 +242,12 @@ async function main() {
 	const onlyCell = arg('--cell');
 	if (onlyCell) {
 		const folder = arg('--post') ?? allPosts()[0];
-		await page.goto(`${BASE}/blog/${slugOf(folder)}`, { waitUntil: 'networkidle', timeout: 60_000 });
+		await openPost(page, folder);
+		await ensureWheelOnCurrentPage();
 		const idx = Number(onlyCell) - 1;
 		const r = await runOneCell(page, idx, FIRST_CELL_MS);
 		console.log(`[${r.status}] ${folder} 셀 ${onlyCell} 만 눌렀다`);
-		console.log(r.text.slice(0, 600));
+		console.log(r.text.slice(0, 4000));
 		await browser.close();
 		process.exit(r.status === 'ok' ? 0 : 1);
 	}
@@ -242,7 +257,7 @@ async function main() {
 
 	let bad = 0;
 	for (const folder of folders) {
-		const rep = await runPost(page, folder);
+		const rep = await runPost(page, folder, ensureWheelOnCurrentPage);
 		console.log(`\n=== ${rep.folder} . 셀 ${rep.cells} ===`);
 		if (rep.note) console.log(`  ${rep.note}`);
 		for (const r of rep.results) {

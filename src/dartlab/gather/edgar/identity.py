@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -74,6 +75,13 @@ def loadTickers(
     path = _tickersPath()
     if path.exists() and not refresh:
         return pl.read_parquet(path)
+    if sys.platform == "emscripten" and not refresh:
+        try:
+            from dartlab.core.dataLoader import loadData
+
+            return loadData("tickers", "edgarTickers")
+        except Exception:
+            pass
 
     api = client or EdgarClient()
     payload = api.getJson(_TICKERS_URL)
