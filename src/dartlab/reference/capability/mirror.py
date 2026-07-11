@@ -54,8 +54,8 @@ import polars as pl
 ENTITY_KEYS: tuple[str, ...] = ("종목코드", "stockCode", "code", "ticker")
 ENTITY_NAME_KEYS: tuple[str, ...] = ("종목명", "corpName", "name")
 # 달력 연도(19xx/20xx) + 선택 분기(Q1~4) 또는 월(01~12). ASCII 숫자만(전각 배제). 종목코드(005930)·
-# 계정코드(1000)·무효월(202599)을 period 로 오탐하지 않게 조인다.
-_PERIOD_RE = re.compile(r"^(19|20)\d{2}(Q[1-4]|(0[1-9]|1[0-2]))?$", re.ASCII)
+# 계정코드(1000)·무효월(202599)을 period 로 오탐하지 않게 조인다. \Z (파이썬 $ 는 끝개행 앞도 매칭).
+_PERIOD_RE = re.compile(r"^(19|20)\d{2}(Q[1-4]|(0[1-9]|1[0-2]))?\Z", re.ASCII)
 
 CANON: tuple[str, ...] = (
     "engine",
@@ -83,6 +83,23 @@ _CANON_SCHEMA: dict[str, Any] = {
     "status": pl.Utf8,
     "gapReason": pl.Utf8,
 }
+
+
+def emptyCanonical() -> pl.DataFrame:
+    """빈 정규 롱 (CANON 11열, 올바른 dtype). 성패와 무관하게 스키마 불변식을 지키는 표준 빈 프레임.
+
+    Returns:
+        0행 x CANON 스키마 DataFrame. 전 축 실패 등 결과가 없을 때도 이걸 반환해야 소비자가 value/lane
+        열을 안전히 참조하고 성공분과 concat 할 수 있다.
+
+    Example:
+        >>> list(emptyCanonical().columns) == list(CANON)
+        True
+
+    Raises:
+        없음.
+    """
+    return pl.DataFrame(schema=_CANON_SCHEMA)
 
 
 def reflectAxes() -> pl.DataFrame:
@@ -318,7 +335,7 @@ def foldToCanonical(
     if fam in ("nested", "unclassified"):
         obs = str(sorted(map(str, raw.keys())))[:80] if isinstance(raw, dict) else type(raw).__name__
         gaps.append(emitGap(engine, axis, "nonTabular" if fam == "nested" else "unclassifiedShape", obs))
-        return pl.DataFrame(schema=_CANON_SCHEMA), gaps
+        return emptyCanonical(), gaps
 
     if fam == "scalar":
         num = isinstance(raw, (int, float)) and not isinstance(raw, bool)

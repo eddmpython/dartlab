@@ -46,7 +46,7 @@ from typing import Any
 
 import polars as pl
 
-from dartlab.reference.capability.mirror import foldToCanonical, reflectAxes, universeScopeOf
+from dartlab.reference.capability.mirror import emptyCanonical, foldToCanonical, reflectAxes, universeScopeOf
 
 
 @lru_cache(maxsize=1)
@@ -194,7 +194,7 @@ def runWorkbench(
                 f"  {i + 1}/{len(selects)} ({time.perf_counter() - t0:.0f}s) rows={sum(f.height for f in frames):,}",
                 flush=True,
             )
-    canonical = pl.concat(frames) if frames else pl.DataFrame(schema={c: pl.Utf8 for c in ("engine", "axis", "item")})
+    canonical = pl.concat(frames) if frames else emptyCanonical()  # 전 축 실패도 CANON 스키마 불변
     gapDf = pl.DataFrame(gaps) if gaps else pl.DataFrame()
     coverage = _coverage(canonical, gapDf)
     return canonical, coverage, gapDf
@@ -237,4 +237,7 @@ def _coverage(canonical: pl.DataFrame, gapDf: pl.DataFrame) -> pl.DataFrame:
             .select("engine", "axis", "lane", "종목", "행", "status")
         )
         covRows = pl.concat([covRows, gapOnly]) if covRows.height else gapOnly
-    return covRows.sort("행", descending=True) if covRows.height else covRows
+    # 다중키 정렬: 동점(gap 축 전부 행0)에서도 순서 결정론 (vintage 스냅샷 허위 diff 방지)
+    if covRows.height:
+        return covRows.sort(["행", "engine", "axis", "lane"], descending=[True, False, False, False])
+    return covRows
