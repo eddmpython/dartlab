@@ -21,11 +21,11 @@
       "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:5033",
       "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:5102",
       "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:5368",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:1149",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:1211",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:2043",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:3016",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:381"
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:1177",
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:1239",
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:2071",
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:3044",
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:382"
     ]
   },
   "deferred": {

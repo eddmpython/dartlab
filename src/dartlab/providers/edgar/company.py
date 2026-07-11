@@ -659,7 +659,7 @@ class Company:
         tickerPath = self._getTickerPath()
         tickerUpper = ticker.upper()
 
-        def pickRow(df: pl.DataFrame) -> dict | None:
+        def _pickRow(df: pl.DataFrame) -> dict | None:
             """ticker 또는 CIK로 SEC 회사 식별 행을 하나 고른다."""
             if "ticker" in df.columns:
                 row = df.filter(pl.col("ticker") == ticker)
@@ -682,7 +682,7 @@ class Company:
 
         if tickerPath is not None and tickerPath.exists():
             df = pl.read_parquet(tickerPath)
-            r = pickRow(df)
+            r = _pickRow(df)
             if r is not None:
                 return r
 
@@ -690,7 +690,7 @@ class Company:
             try:
                 from dartlab.core.dataLoader import loadData
 
-                r = pickRow(loadData("tickers", "edgarTickers"))
+                r = _pickRow(loadData("tickers", "edgarTickers"))
                 if r is not None:
                     return r
             except Exception:  # noqa: BLE001
@@ -701,7 +701,7 @@ class Company:
             from dartlab.core.dataLoader import loadEdgarListedUniverse
 
             listed = loadEdgarListedUniverse()
-            r = pickRow(listed)
+            r = _pickRow(listed)
             if r is not None:
                 return r
         except (FileNotFoundError, OSError, RuntimeError):
