@@ -75,7 +75,7 @@ jobs:
           npm install
           npm install --no-save playwright@1.61.1
           npx playwright install --with-deps chromium
-      - name: GATE-B (실 Chromium: crossOriginIsolated fork + R1 휠설치)
+      - name: "GATE-B (실 Chromium, crossOriginIsolated fork + R1 휠설치)"
         run: node .github/scripts/pyprocForkSmoke.mjs
 
   land:
