@@ -67,6 +67,41 @@ describe('markdownToCells', () => {
 	});
 });
 
+describe('라이브 데이터 투영 (블로그 <LiveData> -> 노트북 @[data])', () => {
+	const POST_LIVE = `---
+title: "t"
+category: dartlab-stories
+---
+
+<script>
+	import LiveData from '$lib/components/blog/LiveData.svelte';
+</script>
+
+## 절
+
+시장 표를 본다.
+
+<LiveData spec="scan/growth" caption="전상장사" />
+
+끝.
+`;
+	const cells = markdownToCells(POST_LIVE, 'x');
+	const prose = cells
+		.filter((c) => c.type === 'markdown')
+		.map((c) => c.content)
+		.join('\n');
+
+	it('script 스캐폴드는 셀에 안 남는다', () => {
+		expect(prose).not.toContain('import LiveData');
+		expect(prose).not.toContain('<script>');
+	});
+
+	it('<LiveData spec> 는 노트북 @[data] 로 투영된다(삭제 아님)', () => {
+		expect(prose).toContain('@[data](scan/growth)');
+		expect(prose).not.toContain('<LiveData');
+	});
+});
+
 describe('postNotebookId', () => {
 	it('글 하나에 노트북 하나. 두 번 눌러도 사본이 안 는다', () => {
 		expect(postNotebookId('what-is-dartlab')).toBe('post:what-is-dartlab');

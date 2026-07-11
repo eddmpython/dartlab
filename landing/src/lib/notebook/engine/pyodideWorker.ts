@@ -73,6 +73,14 @@ import micropip
 try:
     import fastapi  # noqa: F401
 except ImportError:
+    # dartlab 을 먼저 설치하면 typing-extensions 4.11 이 고정된다. fastapi(pydantic)는 >=4.12 를 요구해
+    # micropip 재해소가 "이미 4.11 설치됨" 으로 거부한다(실측). 4.12 는 4.11 상위호환이라 dartlab 에 무해.
+    # pyodide 0.27.5 micropip 은 reinstall 인자가 없어 uninstall 후 재설치로 올린다.
+    try:
+        micropip.uninstall("typing-extensions")
+    except Exception:
+        pass
+    await micropip.install("typing-extensions>=4.12.0")
     await micropip.install("fastapi")
 import dartlab.webapi as _dl_webapi
 _dl_app = _dl_webapi.buildBrowserApi()

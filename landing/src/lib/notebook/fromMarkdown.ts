@@ -15,13 +15,25 @@ export function isPostNotebook(notebookId: string): boolean {
 
 const FRONTMATTER = /^---\r?\n[\s\S]*?\r?\n---\r?\n/;
 const PY_FENCE = /^```(?:python|py)[^\n]*\n([\s\S]*?)^```[ \t]*$/gm;
-// 산문에서 걷어 낼 것: 이미지, svelte 컴포넌트 태그, 그 밖의 코드펜스.
+// 산문에서 걷어 낼 것: 블로그 전용 script 스캐폴드, 이미지, svelte 컴포넌트 태그, 그 밖의 코드펜스.
+const SCRIPT = /^<script[\s\S]*?<\/script>\s*$/gim;
 const IMAGE = /^!\[[^\]]*\]\([^)]*\)\s*$/gm;
+// 라이브 데이터 컴포넌트(블로그 문법)는 삭제하지 않고 노트북 문법(@[data])으로 투영한다. 한 번 저술이
+// 블로그(mdsvex <LiveData>)와 노트북(richMarkdown @[data]) 양쪽에서 산다. COMPONENT strip 보다 먼저.
+const LIVEDATA = /^<LiveData\b[^>]*\/>\s*$/gim;
 const COMPONENT = /^<[A-Z][\s\S]*?\/>\s*$/gm;
 const OTHER_FENCE = /^```[\s\S]*?^```[ \t]*$/gm;
 
+/** <LiveData spec="X" .../> -> @[data](X). spec 없으면 버린다. caption 은 노트북에선 산문이 대신한다. */
+function liveDataToDirective(tag: string): string {
+	const spec = /\bspec\s*=\s*"([^"]*)"/.exec(tag)?.[1] ?? '';
+	return spec ? `@[data](${spec})` : '';
+}
+
 function cleanProse(text: string): string {
 	return text
+		.replace(SCRIPT, '')
+		.replace(LIVEDATA, (m) => liveDataToDirective(m))
 		.replace(IMAGE, '')
 		.replace(COMPONENT, '')
 		.replace(OTHER_FENCE, '')

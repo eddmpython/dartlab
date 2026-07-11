@@ -1,0 +1,108 @@
+/* browser-as-server 라이브 데이터 표/배지 스타일. 블로그(LiveData.svelte)와 노트북 마크다운셀이
+   같은 renderLiveTable HTML 을 {@html} 로 흘리므로 전역 셀렉터로 둔다(scoped 는 @html 에 안 먹는다). */
+
+.ld-box {
+	margin: 1rem 0;
+	border: 1px solid var(--dl-border, #1e2a3a);
+	border-radius: 8px;
+	background: var(--dl-surface, #0b111b);
+	overflow: hidden;
+	font-size: 0.86rem;
+}
+.ld-head {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.4rem 0.6rem;
+	border-bottom: 1px solid var(--dl-border, #1e2a3a);
+}
+.ld-tier {
+	font-size: 0.62rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	padding: 0.1rem 0.4rem;
+	border-radius: 999px;
+}
+.ld-tier-browser {
+	color: #7dd3fc;
+	background: rgba(56, 189, 248, 0.12);
+	border: 1px solid rgba(56, 189, 248, 0.35);
+}
+.ld-tier-local {
+	color: #86efac;
+	background: rgba(74, 222, 128, 0.12);
+	border: 1px solid rgba(74, 222, 128, 0.35);
+}
+.ld-cap {
+	padding: 0.45rem 0.6rem 0;
+	font-weight: 600;
+	color: var(--dl-text, #cbd5e1);
+}
+.ld-scroll {
+	overflow-x: auto;
+}
+.ld-box table {
+	width: 100%;
+	border-collapse: collapse;
+	font-variant-numeric: tabular-nums;
+}
+.ld-box th,
+.ld-box td {
+	padding: 0.32rem 0.6rem;
+	text-align: right;
+	white-space: nowrap;
+	border-bottom: 1px solid var(--dl-border-soft, #141d2b);
+}
+.ld-box thead th {
+	position: sticky;
+	top: 0;
+	background: var(--dl-surface-2, #101826);
+	color: var(--dl-text-dim, #94a3b8);
+	font-weight: 600;
+}
+.ld-box tbody th {
+	text-align: left;
+	color: var(--dl-text-dim, #94a3b8);
+	font-weight: 500;
+}
+.ld-box td:first-child,
+.ld-box th:first-child {
+	text-align: left;
+}
+.ld-more {
+	padding: 0.35rem 0.6rem;
+	color: var(--dl-text-dim, #64748b);
+	font-size: 0.72rem;
+	border-top: 1px solid var(--dl-border, #1e2a3a);
+}
+.ld-text {
+	padding: 0.6rem;
+	white-space: pre-wrap;
+	line-height: 1.6;
+	color: var(--dl-text, #cbd5e1);
+}
+.ld-loading {
+	display: inline-block;
+	padding: 0.6rem;
+	color: var(--dl-text-dim, #64748b);
+	font-size: 0.8rem;
+}
+.ld-err {
+	border-color: rgba(248, 113, 113, 0.4);
+}
+.ld-errmsg {
+	color: #fca5a5;
+	font-size: 0.8rem;
+}
+
+/* 라이트 테마(콘텐츠 표면) 대응 */
+:global(:root[data-theme='light']) .ld-box,
+:global(.light) .ld-box {
+	--dl-border: #e2e8f0;
+	--dl-border-soft: #eef2f7;
+	--dl-surface: #ffffff;
+	--dl-surface-2: #f8fafc;
+	--dl-text: #1e293b;
+	--dl-text-dim: #64748b;
+}

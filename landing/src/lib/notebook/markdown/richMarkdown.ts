@@ -7,6 +7,9 @@
  *      정적 호스트라 CSP 헤더가 없으므로 이 정화가 유일한 신뢰경계다.
  *   2. 리치. 유튜브(@[youtube](id|url))·영상(@[video](url))·반응형 이미지 임베드를 붙인다.
  *      유튜브는 youtube-nocookie + sandbox 로만 허용한다.
+ *   3. 라이브. @[data](company/005930/panel/IS) 는 브라우저 안 dartlab(/pyapi)의 최신 표를 붙인다.
+ *      렌더는 sync 인데 데이터는 async 라, 여기선 안전한 placeholder(div.ld-mount[data-spec])만 낸다.
+ *      실제 fetch·표 렌더는 hydrateLiveData(liveData.ts)가 렌더 후에 채운다(블로그·노트북 공유).
  *
  * 렌더는 저장이 아니라 렌더 시점에 매번 정화한다. 오염된 저장 출력도 재렌더마다 재정화된다.
  */
@@ -33,11 +36,16 @@ const embedExtension = {
 				return src.indexOf('@[');
 			},
 			tokenizer(src: string) {
-				const m = /^@\[(youtube|video)\]\(([^)]+)\)/.exec(src);
+				const m = /^@\[(youtube|video|data)\]\(([^)]+)\)/.exec(src);
 				if (!m) return undefined;
 				return { type: 'embed', raw: m[0], kind: m[1], target: m[2].trim() };
 			},
 			renderer(token: { kind: string; target: string }) {
+				if (token.kind === 'data') {
+					// placeholder 만. 계약 검증·fetch·표 렌더는 hydrateLiveData 가 렌더 후 채운다.
+					// data-spec 은 DOMPurify 가 보존(data-* 기본 허용), 텍스트라 script 위험 없음.
+					return `<div class="ld-mount" data-spec="${encodeURI(token.target)}"><span class="ld-loading">라이브 데이터 로딩...</span></div>`;
+				}
 				if (token.kind === 'youtube') {
 					const id = youtubeId(token.target);
 					if (!id) return `<p class="rm-embed-err">유효하지 않은 유튜브: ${token.target}</p>`;

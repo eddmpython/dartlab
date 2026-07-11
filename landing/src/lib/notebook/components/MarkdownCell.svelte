@@ -2,6 +2,8 @@
 	// 마크다운셀은 사용자 입력(untrusted)이라 반드시 정화해 렌더한다. 옛 코드는 marked.parse 를
 	// sanitize 없이 {@html} 로 흘려 공유 노트북 임포트 시 stored-XSS 구멍이었다.
 	import { renderRichMarkdown } from '../markdown/richMarkdown';
+	import { hydrateLiveData } from '$lib/pyapi/liveData';
+	import '$lib/pyapi/liveData.css';
 
 	interface Props {
 		content: string;
@@ -16,8 +18,15 @@
 	let { content, isActive, isEditing, onContentChange, onStartEdit, onStopEdit, onShiftEnter }: Props = $props();
 
 	let textareaEl: HTMLTextAreaElement | null = null;
+	let previewEl: HTMLDivElement | null = null;
 
 	const renderedHtml = $derived(renderRichMarkdown(content || '*Empty markdown cell*'));
+
+	// 렌더된 마크다운 안의 @[data] placeholder 를 라이브 표로 채운다(브라우저 안 dartlab, 멱등).
+	$effect(() => {
+		renderedHtml;
+		if (!isEditing && previewEl) hydrateLiveData(previewEl);
+	});
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
@@ -65,6 +74,7 @@
 		></textarea>
 	{:else}
 		<div
+			bind:this={previewEl}
 			class="markdown-preview"
 			ondblclick={onStartEdit}
 			role="textbox"
