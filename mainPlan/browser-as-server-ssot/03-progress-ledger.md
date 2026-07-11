@@ -29,7 +29,12 @@
 - [x] pyproject 0.10.9 bump + CHANGELOG [0.10.9] Added(dartlab.webapi).
 - [x] `uv build --wheel` -> dist/dartlab-0.10.9-py3-none-any.whl(21.4MB, webapi 2파일 포함 확인).
 - [x] 브라우저 실측(로컬 서빙 0.10.9): health 200 version=0.10.9 + panel 200 + scan 200 shape[2241,8]. dispatch 로직은 pyodideWorker PYAPI_SETUP 동일.
-- [ ] **HF 공개 배포(운영자 게이트)**: `pyodide/dartlab-0.10.9-...whl` 업로드는 공개 배포 표면이라 auto-mode 분류기가 차단(2026-07-11). 운영자 명시 발행 단어("올려"/"발간해") 필요. **이 배포 전엔 pyodideWorker.ts 포인터·README 를 0.10.9 로 올리지 않는다**(올리면 wheel 404). 배포+포인터+README+push 는 한 묶음.
+- [x] **엔드투엔드 실측(로컬 0.10.9 wheel + landing dev)**: 블로그 story 01 `<LiveData spec="scan/growth">` -> 전상장사 2,241행 중 20행 라이브 렌더 + browser 배지(눈검수). 노트북(`/notebooks/post:what-is-dartlab`) 투영 마크다운셀 `@[data](scan/growth)` -> 20행 hydrate. typing-extensions 4.11 고정 -> fastapi 설치 막힘 버그를 e2e 로 발견, uninstall 후 재설치로 수정(pyodideWorker PYAPI_SETUP).
+- [ ] **HF 공개 배포(운영자 게이트, 턴키)**: 운영자 "올려"/"발간해" 시 한 묶음으로 실행.
+  1. `dist/dartlab-0.10.9-py3-none-any.whl` 를 HF `eddmpython/dartlab-data` 의 `pyodide/dartlab-0.10.9-py3-none-any.whl` 로 업로드(HF_TOKEN=.env).
+  2. `pyodideWorker.ts:54` DARTLAB_WHEEL 을 `.../dartlab-0.10.9-...whl` 로 bump. `README.md:689` 스니펫도 0.10.9.
+  3. landing build + push. **순서 중요**: 업로드 먼저(안 그러면 포인터가 404). 배포 전엔 포인터 0.10.8 유지.
+  근거: 업로드는 공개 배포 표면이라 auto-mode 분류기가 차단(2026-07-11), UI push 는 운영자 단어 필요.
 
 ## Phase 2 (블로그·노트북 소비자, 2026-07-11 토론 수렴)
 
