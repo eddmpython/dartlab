@@ -9,6 +9,17 @@
 - **라이브 GitHub Pages 노트북에 crossOriginIsolated(COOP/COEP) = HARD NO-GO.** R1(휠 설치 붕괴)이 별도로 해결·실측되기 전까지. Tier-2 는 별도 승인 프로젝트.
 - **근시 사용자 가시 이득 ~ 0** (Tier-1 은 이미 되는 코드의 통합이지 새 기능 아님). fork 병렬(진짜 새 능력)은 위험 클러스터와 같은 동작이라 지금 태우지 않는다.
 
+## 2026-07-12 실측 갱신 (GATE-B, 격리 Chromium)
+
+봉인 핵심 리스크 R1·R2 가 실브라우저 실측으로 판정됐다(`.github/scripts/pyprocForkSmoke.mjs`, Playwright headless Chromium + COOP/COEP credentialless):
+
+- **R1 (COEP 가 micropip 휠 설치를 깬다) -> 해소.** COEP **`credentialless`** 하에서 micropip 이 dartlab 휠(files.pythonhosted.org)을 정상 설치(`wheelInstall: OK`, dartlab 0.10.9 import). require-corp 가 아니라 credentialless 를 쓰면 크로스오리진 no-cors 서브리소스가 CORP 없이 로드되므로 휠이 안 막힌다. **격리 이동 기각의 근거가 사라졌다.**
+- **R2 (Firefox/Safari 상실) -> feature-detect 로 격리(완화 가능).** credentialless 는 Chromium/Edge 전용이라, COI 주입을 credentialless 지원 브라우저로만 게이트하면 Firefox/Safari 는 오늘 그대로(Tier-1) 유지된다.
+- **fork 실동작 확인**: `PyProc.boot(2)` 스냅샷-fork 2워커/~330ms + `map` 병렬 결과 정확(`[332833500, 2664667000]`).
+- **부수 발견(pyproc 버그)**: pyproc v0.0.4 기본 indexURL 이 `v314.0.2`(부재)라 스냅샷 버전 불일치로 fork 가 깨진다. 소비자는 `PyProc({ indexURL })`·`boot({ indexURL })`로 우리 pyodide(0.27.5)를 반드시 넘겨야 한다(upstream 보고 사안).
+
+**갱신된 판정**: P4 봉인의 make-or-break(R1)가 실측 해소돼 **P4 는 봉인 해제**. 다만 라이브 전체 노트북 페이지 COEP 는 서브리소스(web-llm·transformers·차트 등) 광범위 검증 + fork 소비자(병렬 scan 등) + kill-switch 가 남아, 라이브 flip 은 여전히 scoped 후속. GATE-B 가 이후 fork 경로를 CI 로 지킨다.
+
 ## 리스크 (R1~R9)
 
 | # | 리스크 | 심각도/확률 | 요지·완화 |

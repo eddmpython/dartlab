@@ -87,3 +87,25 @@
 2. 배포 후 라이브 노트북에서 `/pyapi` 가 pyproc 경로로 실동작하는지 확인(현재 tier 헤더 동일이라 구분자 필요 시 추가).
 3. 손수 경로(HandRolledAsgi)는 kill-switch 폴백으로 in-tree 잔존.
 4. P4(격리 fork)는 별도 PRD(스냅샷 SUPPORTED, COEP credentialless + 벤더링 + GATE-B + Chromium 전용).
+
+## 2026-07-12 세션 4 (P4 봉인 해제 - 실브라우저 실측)
+
+### 운영자 지시 "전부 정공법으로 밀어라"
+- 진단 헤더 + P4 를 정공법으로. 정공법 = 라이브 안 깨뜨리며, 실브라우저 검증부터.
+
+### 실브라우저 검증 인프라 확보
+- Playwright(1.61.1) + chromium 캐시 가용 확인. COI probe: headless Chromium + COOP/COEP credentialless -> `crossOriginIsolated:true` + SAB + JSPI 획득 확인.
+
+### GATE-B PASS (봉인 make-or-break 해소)
+- `.github/scripts/pyprocForkSmoke.mjs` (Playwright, 격리 Chromium): pyproc 소스 정적서빙(worker same-origin) + 페이지 credentialless.
+- **R1 해소**: `wheelInstall:OK`, dartlab 0.10.9 import (credentialless 하 micropip 휠 설치 정상). **격리 이동 기각 근거 소멸.**
+- **fork 동작**: `PyProc.boot(2)` 스냅샷-fork 2워커/~330ms + `map` 결과 정확 `[332833500, 2664667000]`.
+- **pyproc 버그 발견**: 기본 indexURL `v314.0.2`(부재) -> 소비자가 `{indexURL}` 필수(upstream 보고).
+
+### 배선 + 커밋
+- GATE-B 를 `pyprocPinBump.yml` 에 배선: tier2/minor+ 핀 범프 시 실 Chromium fork 검증(node 로는 못 덮는 경로). land 는 gate-b 성공 또는 skip(patch+비tier2) 시.
+- 진단 헤더 `x-dartlab-kernel: pyproc|legacy` (asgiSeam + worker) -> 라이브에서 어느 커널이 서빙했는지 devtools 로 확인 가능.
+
+### 판정 + NEXT
+- **P4 봉인 해제**: R1 실측 해소 + fork 실동작 + GATE-B 가 CI 로 보호. 04-prd·03-risk 갱신.
+- **라이브 flip 은 scoped 후속**(best-product): (a) fork 소비자(병렬 scan 등) (b) 전 노트북 페이지 COEP 서브리소스(web-llm·transformers·차트) 검증 (c) credentialless 게이트 feature-detect(Firefox/Safari Tier-1 유지) (d) COI kill-switch. 소비자 없는 격리 강제는 리스크 뿐이라 지금 라이브 강제 안 함.

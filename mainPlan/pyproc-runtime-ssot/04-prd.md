@@ -20,7 +20,7 @@
 | **P1 seam(플래그 off)** | 커널 seam + PyprocAsgi 추가, 기본 손수 경로 | GATE-A green + 격리없음 assertion | landing/src(커밋만, push 운영자 승인) |
 | **P2 flip+soak** | 운영자 승인 후 플래그 on, 손수 경로 1릴리즈 잔존 | capability probe 폴백 확인 | 운영자 push 후 |
 | **P3 자동반영** | pyprocPinBump.yml 주간 게이트 핀 범프 | GATE-A + 봇 PR | .github(봇 PR) |
-| **P4 Tier-2(별도 PRD)** | 프로세스 OS fork + crossOriginIsolated | GATE-B Chromium + R1 실측 | **HARD NO-GO 현재** |
+| **P4 Tier-2** | 프로세스 OS fork + crossOriginIsolated | GATE-B PASS(실 Chromium) | **봉인 해제**(R1 실측 해소·fork 동작). 라이브 flip 은 소비자+전페이지 COEP 검증 후 |
 
 ## 1. 영향 파일/함수
 
@@ -76,7 +76,7 @@
 - **go/no-go**:
   - **GO**: P0(parity 선증명) -> P1(seam, 플래그 off). 지금 착수 가능. 단 P1 은 landing/src 변경이라 **커밋까지 자율, push/배포는 운영자 승인**(UI push 게이트).
   - **조건부 GO**: P2(flip) = P0 골든 diff clean + 운영자 리뷰 후. P3(자동반영) = P2 안정 후.
-  - **HARD NO-GO(현재)**: P4 격리. R1(COEP 휠 붕괴) 별도 실측 + Firefox/Safari 폴백 + 운영자 승인 전까지.
+  - **P4 봉인 해제(2026-07-12)**: R1(COEP 휠 붕괴) 실측 해소(credentialless 하 휠설치 OK) + fork 실동작(GATE-B). GATE-B(`pyprocForkSmoke.mjs`)가 CI 로 fork 경로 보호. 라이브 flip 은 fork 소비자(병렬 scan 등) + 전 노트북 페이지 COEP 서브리소스 검증 + credentialless 게이트 feature-detect + kill-switch 후. Firefox/Safari 는 feature-detect 로 Tier-1 유지.
 - **veto 조건(프로덕션 커널 접촉 전 전부 참, 03 §veto)**: 벤더/핀 소비·라이브 CDN 0, ASGI+체크포인트 골든 패리티, 워커 안 Runtime 시연, 격리없음 증명 + import 가드, 플래그 기본 off + 손수 경로 1릴리즈 잔존.
 
 ## NEXT
