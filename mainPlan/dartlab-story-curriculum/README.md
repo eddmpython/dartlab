@@ -10,7 +10,7 @@
 
 | | |
 |---|---|
-| 발행 완료 | 6 편 (1편 what-is-dartlab, 2편 call-financial-statements, 3편 how-notebook-runs, 4편 pick-company-by-code, 5편 the-grid, 6편 dart-edgar-company) |
+| 발행 완료 | 7 편 (1편 what-is-dartlab, 2편 call-financial-statements, 3편 how-notebook-runs, 4편 pick-company-by-code, 5편 the-grid, 6편 dart-edgar-company, 7편 edgar-financial-panel) |
 | 설계 완료 | 39 편 (전문 에이전트 4 안 경합 + 심사 + 수렴 + 적대 감사, panel 및 EDGAR 중심 재정렬 2026-07-11) |
 | 채점 | pedagogy 78 · coverage 75 · skeptic 71 · seo 66 (인플레 없이) |
 | 승자 | pedagogy 안. 나머지 셋에서 살릴 아이디어를 접목 |
@@ -89,7 +89,7 @@ EDGAR narrative topic 이 브라우저에서 확인되지 않은 경우에는 �
 | 4 | 코드로 회사를 열 수 있음 | DART 6자리 코드와 EDGAR ticker 가 모두 Company 식별자임을 안다 | `Company("005930")` 과 `Company("AAPL")` 의 시장 차이를 설명한다 |
 | 5 | `panel` 이 단일 표면임을 앎 | 항목 x 기간 격자와 `freq="Y"` / `"Q"` 기간 선택 | 같은 계정을 연간과 분기로 열고 질문 차이를 설명한다 |
 | 6 | DART panel 기간 감각이 있음 | DART와 EDGAR가 같은 `Company.panel("IS")` 표면으로 재무제표를 돌려준다는 점 | 삼성전자와 Apple의 IS 모양을 비교한다 |
-| 7 | EDGAR 회사도 열 수 있음 | EDGAR 10-K, 10-Q 리듬과 USD 기준을 재무 panel 위에서 읽는다 | `AAPL` IS, BS, CF shape 를 보고 DART와 같은 점과 다른 점을 말한다 |
+| 7 | EDGAR 회사도 열 수 있음 | EDGAR 10-K, 10-Q 리듬과 USD 기준을 재무 panel 위에서 읽는다 | `AAPL` IS, BS, CF의 앞줄을 보고 DART와 같은 점과 다른 점을 말한다 |
 | 8 | 전체 panel 을 볼 수 있음 | `chapter`, `sectionLeaf`, `blockLeaf` 로 DART 사업보고서 안의 위치를 찾는다 | `panel("사업")`, `panel("주석")`, `panel("임원")` 이 다른 행 묶음임을 확인한다 |
 | 9 | 사업보고서 섹션을 찾을 수 있음 | 사업의 내용, 제품, 원재료, 생산설비, 직원 같은 비재무 본문을 panel 로 읽는다 | 사업 설명 한 문장을 재무 숫자가 아니라 공시 본문 근거로 인용한다 |
 | 10 | 비재무 본문을 읽을 수 있음 | 주석 상세가 재무 숫자의 원인을 설명하는 층임을 안다 | `panel("재고")` 또는 `panel("차입")` 결과를 BS 숫자와 연결한다 |
@@ -155,7 +155,7 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
 
 - [x] **1. DART 공시분석, 설치 없이** `what-is-dartlab` `B`
   정체 + 데이터 구조(항목 x 기간 격자) + 수집·가공·배포 3층 운영.
-  코드: `Company("005930")`, `panel()`, `panel("IS").head(3)`, `market`, `panel("BS").shape`, `scan("growth").shape`
+  코드: `Company("005930")`, `panel()`, `panel("IS").head(3)`, `market`, `panel("BS").head(3)`, `scan("growth").head(3)`
   이미 발행된 `select` 예시는 보조 손잡이로 본다. 이후 글에서 panel-first 로 바로잡는다.
 - [x] **2. 재무제표, 파이썬 한 줄** `call-financial-statements` `B`
   panel IS/BS/CF 중심. select, 연간과 분기, 계정 이름이 회사마다 다른 문제, 빈칸의 의미는 보조로 둔다.
@@ -186,12 +186,13 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
   핵심은 "한국 회사와 미국 회사를 같은 질문으로 열되, 원천과 단위는 다르다" 는 개념 확립이다.
   브라우저 실측 2026-07-11: 005930 `panel("IS")` (36, 43), AAPL `panel("IS")` (20, 67),
   005930 `BS` (63, 43), `CF` (65, 43), AAPL `BS` (49, 71), `CF` (46, 66), `trace("IS").primarySource` = finance.
-- [ ] **7. 미국 재무제표, 같은 panel** `edgar-financial-panel` `B`
+- [x] **7. EDGAR 재무제표, 코드 실행** `edgar-financial-panel` `B`
   `Company("AAPL").panel("IS"|"BS"|"CF")` 로 EDGAR 재무제표가 DART와 같은 wide panel 로 열리는 것을 확인한다.
   브라우저 실측 2026-07-11: AAPL `panel("IS")` (20, 67), `panel("BS")` (49, 71), `panel("CF")` (46, 66).
   로컬 companyfacts 경로 실측은 AAPL `panel("IS")` (35, 69), `panel("BS")` (67, 70), `panel("CF")` (53, 68) 이므로
   7편에서는 브라우저 공개 artifact 와 로컬 companyfacts 경로의 차이를 먼저 경계로 둔다.
-  `risk`, `mdna`, `item1Business` 는 로컬 실측에서 None 이므로 본문 섹션은 된다고 쓰지 않는다. 발행 전 브라우저 재실측.
+  `risk`, `mdna`, `item1Business` 는 로컬 실측에서 None 이므로 본문 섹션은 된다고 쓰지 않는다.
+  발행 글은 실제 계정과 최근 기간 값이 보이는 `head()` 중심으로 구성하고, 브라우저와 로컬 경로 차이를 본문 경계로 반영했다.
 - [ ] **8. 사업보고서, panel로 펼치기** `business-report-panel` `B`
   `c.panel()` 전체 표면, `chapter`, `sectionLeaf`, `blockLeaf` 로 사업보고서 위치를 찾는다.
   로컬 실측 2026-07-11: `panel()` = (1627, 49), `II. 사업의 내용` 290행, `III. 재무에 관한 사항` 516행.
