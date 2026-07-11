@@ -50,7 +50,7 @@ EVENT_TITLE_CANDIDATE_CAP = 5000
 BODY_SEMANTIC_CANDIDATE_FLOOR = 800
 BODY_SEMANTIC_CANDIDATE_MULTIPLIER = 100
 BODY_SEMANTIC_CANDIDATE_CAP = 2000
-_REPORT_SURFACE_CACHE: dict[int, pl.DataFrame] = {}
+_REPORT_SURFACE_CACHE: dict[int, tuple[pl.DataFrame, pl.DataFrame]] = {}
 _EVENT_TITLE_TERMS: tuple[str, ...] = (
     "공시",
     "원문",
@@ -565,8 +565,12 @@ def _concatTextExpr(columns: list[str]) -> pl.Expr:
 def _reportSurfaceFrame(meta: pl.DataFrame, *, titleCols: list[str], evidenceCols: list[str]) -> pl.DataFrame:
     cacheKey = id(meta)
     cached = _REPORT_SURFACE_CACHE.get(cacheKey)
-    if cached is not None and cached.height == meta.height:
-        return cached
+    # id(meta) 는 GC 후 재사용된다. height 만 확인하면, 우연히 크기가 같은 다른 프레임의
+    # stale 결과를 돌려줘 엉뚱한 랭킹이 나온다(로컬 단독은 캐시가 비어 안 터지고 CI xdist 에서만
+    # 교차오염으로 점수가 0 이 되던 버그). meta 참조를 함께 들고 identity 로 검증한다.
+    # 캐시가 참조를 쥐고 있는 동안 그 id 는 재사용되지 않으므로 충돌 자체가 원천 차단된다.
+    if cached is not None and cached[0] is meta:
+        return cached[1]
     columns = set(meta.columns)
     frame = meta.select(
         [
@@ -587,7 +591,7 @@ def _reportSurfaceFrame(meta: pl.DataFrame, *, titleCols: list[str], evidenceCol
     )
     if len(_REPORT_SURFACE_CACHE) > 8:
         _REPORT_SURFACE_CACHE.clear()
-    _REPORT_SURFACE_CACHE[cacheKey] = frame
+    _REPORT_SURFACE_CACHE[cacheKey] = (meta, frame)
     return frame
 
 

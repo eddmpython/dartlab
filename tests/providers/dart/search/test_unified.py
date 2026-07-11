@@ -234,6 +234,33 @@ def test_report_label_candidate_lane_uses_literal_company_overlap() -> None:
     assert scores[1] > scores[0]
 
 
+def test_reportSurfaceCache_survivesIdReuse() -> None:
+    """id(meta) 재사용 교차오염 회귀.
+
+    ``_reportSurfaceFrame`` 은 ``id(meta)`` 를 캐시 키로 썼다. 파이썬 id 는 GC 후
+    재사용되므로, 이전에 캐시된 프레임의 id 를 새 meta 가 물려받고 height 까지 같으면
+    stale 프레임을 돌려줘 랭킹이 0 으로 무너졌다. 로컬 단독 실행은 캐시가 비어 안 터지고
+    CI xdist 에서 이웃 테스트와 충돌할 때만 터지던 버그다. 여기서는 그 조건을 직접 만든다.
+    캐시에 같은 키로 엉뚱한(height 만 같은) 프레임을 심어 두고, 진짜 meta 의 결과가
+    그 stale 값이 아니라 자기 내용으로 나오는지 본다.
+    """
+    import polars as pl
+
+    from dartlab.providers.dart.search import unified
+
+    metaTruth = pl.DataFrame({"report_nm": ["증권신고서", "투자설명서"], "rcept_dt": ["20240101", "20240102"]})
+    stale = pl.DataFrame({"report_nm": ["전혀다른것", "쓰레기값"], "rcept_dt": ["19990101", "19990102"]})
+    staleFrame = unified._reportSurfaceFrame(stale, titleCols=["report_nm"], evidenceCols=[])
+
+    # height 는 같지만 내용이 다른 stale 을 진짜 meta 의 id 키 자리에 심는다.
+    unified._REPORT_SURFACE_CACHE[id(metaTruth)] = (stale, staleFrame)
+
+    frame = unified._reportSurfaceFrame(metaTruth, titleCols=["report_nm"], evidenceCols=[])
+    titles = frame["_title"].to_list()
+    assert "증권신고서" in titles[0], f"stale 프레임이 새어 나왔다: {titles}"
+    assert "전혀다른것" not in "".join(titles)
+
+
 def test_event_title_weights_boost_supply_contract_for_order_query() -> None:
     from dartlab.providers.dart.search.fieldIndex import tokenizeContent
     from dartlab.providers.dart.search.unified import _eventTitleWeights
