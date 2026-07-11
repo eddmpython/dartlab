@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 import { MARIMO_SHIM_FILES } from './marimoShim';
 import { wrapLastExpression } from './lastExpression';
+import { CheckpointGraph } from './checkpointGraph';
 
 declare const self: DedicatedWorkerGlobalScope;
 
@@ -11,6 +12,16 @@ interface PyodideInterface {
 	setStdout: (options: { batched: (text: string) => void }) => void;
 	setStderr: (options: { batched: (text: string) => void }) => void;
 	runPython: (code: string) => unknown;
+	setInterruptBuffer?: (buffer?: Uint8Array) => void;
+	mountNativeFS?: (
+		path: string,
+		handle: FileSystemDirectoryHandle
+	) => Promise<{ syncfs: () => Promise<void> }>;
+	_module: {
+		HEAPU8: Uint8Array;
+		_emscripten_stack_get_current?: () => number;
+		_emscripten_stack_restore?: (pointer: number) => void;
+	};
 	FS: {
 		readdir: (path: string) => string[];
 		stat: (path: string) => { size: number; mode: number };
@@ -45,6 +56,11 @@ let pyodide: PyodideInterface | null = null;
 let stdoutBuffer: string[] = [];
 let stderrBuffer: string[] = [];
 const wrapCache = new Map<string, string>();
+let workspaceSync: (() => Promise<void>) | null = null;
+let persistentWorkspace = false;
+let attachedWorkspaceId: string | null = null;
+let interruptMode: 'soft' | 'hard' = 'hard';
+let checkpointGraph: CheckpointGraph | null = null;
 
 // 노트북 편의: 셀이 dartlab 을 import 하면 최초 1회 자동 설치(HF pyodide wheel). 커널은 범용 그대로.
 // dartlab 안 쓰는 노트북은 이 경로에 안 들어온다. 덕에 셀 코드는 `import dartlab` 한 줄이면 된다
@@ -136,21 +152,55 @@ function installMarimoShim() {
 	}
 }
 
-async function initialize() {
+async function initialize(interruptBuffer?: Uint8Array | null) {
 	const { loadPyodide: _loadPyodide } = await import(/* @vite-ignore */ PYODIDE_CDN_ESM) as { loadPyodide: (config?: Record<string, unknown>) => Promise<PyodideInterface> };
 	pyodide = await _loadPyodide({
 		indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.27.5/full/'
 	});
+	if (interruptBuffer && pyodide.setInterruptBuffer) {
+		pyodide.setInterruptBuffer(interruptBuffer);
+		interruptMode = 'soft';
+	}
 	pyodide.setStdout({ batched: (text) => stdoutBuffer.push(text) });
 	pyodide.setStderr({ batched: (text) => stderrBuffer.push(text) });
 	await pyodide.loadPackagesFromImports('import micropip');
 	try { pyodide.FS.mkdir('/workspace'); } catch { /* exists */ }
+	// 허브 프리워밍 시점에는 대상 ID가 없다. OPFS는 attachWorkspace에서 노트북별로 마운트한다.
 	// 웹워커에는 DOM(document)이 없으므로 matplotlib 은 non-interactive AGG 백엔드 강제.
 	// (기본 pyodide 백엔드는 wasm_backend 가 js.document 를 import 하려다 워커에서 실패)
 	// + matplotlibrc 로 테마 중립 색 강제.
 	pyodide.FS.writeFile('/matplotlibrc', MATPLOTLIBRC, { encoding: 'utf8' });
 	pyodide.runPython('import os, sys; os.chdir("/workspace")\nif "/workspace" not in sys.path: sys.path.insert(0, "/workspace")\nos.environ["MPLBACKEND"] = "AGG"\nos.environ["MATPLOTLIBRC"] = "/matplotlibrc"');
 	installMarimoShim();
+}
+
+async function attachWorkspace(workspaceId: string): Promise<boolean> {
+	if (!pyodide?.mountNativeFS || !self.navigator.storage?.getDirectory) return false;
+	if (attachedWorkspaceId === workspaceId) return persistentWorkspace;
+	if (attachedWorkspaceId) throw new Error('a different notebook workspace is already attached');
+
+	try {
+		const safeId = workspaceId.replace(/[^a-zA-Z0-9_-]/g, '_');
+		const root = await self.navigator.storage.getDirectory();
+		const workspaces = await root.getDirectoryHandle('dartlab-notebook-workspaces', { create: true });
+		const handle = await workspaces.getDirectoryHandle(safeId, { create: true });
+		const mounted = await pyodide.mountNativeFS('/workspace', handle);
+		workspaceSync = mounted.syncfs;
+		await workspaceSync();
+		attachedWorkspaceId = workspaceId;
+		persistentWorkspace = true;
+		return true;
+	} catch {
+		workspaceSync = null;
+		attachedWorkspaceId = null;
+		persistentWorkspace = false;
+		return false;
+	}
+}
+
+async function syncWorkspace(): Promise<void> {
+	if (!workspaceSync) return;
+	try { await workspaceSync(); } catch { /* keep kernel usable when persistence fails */ }
 }
 
 const FORMAT_CODE = `
@@ -357,6 +407,8 @@ async function execute(code: string) {
 		return { type: 'text', data: output || '', executedAt: new Date().toISOString() };
 	} catch (err) {
 		return { type: 'error', data: String(err), executedAt: new Date().toISOString() };
+	} finally {
+		await syncWorkspace();
 	}
 }
 
@@ -366,8 +418,41 @@ self.onmessage = async (e: MessageEvent) => {
 	try {
 		switch (cmd) {
 			case 'initialize': {
-				await initialize();
+				await initialize((args[0] as Uint8Array | null | undefined) ?? null);
 				reply(id, { ok: true });
+				break;
+			}
+			case 'attachWorkspace': {
+				reply(id, await attachWorkspace(args[0] as string));
+				break;
+			}
+			case 'getRuntimeCapabilities': {
+				reply(id, {
+					persistentWorkspace,
+					interrupt: interruptMode,
+					memoryTransactions: 'experimental'
+				});
+				break;
+			}
+			case 'createCheckpoint': {
+				if (!pyodide) throw new Error('Pyodide not initialized');
+				checkpointGraph ??= new CheckpointGraph(pyodide._module);
+				reply(id, checkpointGraph.create((args[0] as string) || 'checkpoint'));
+				break;
+			}
+			case 'restoreCheckpoint': {
+				if (!checkpointGraph) throw new Error('checkpoint graph is empty');
+				reply(id, checkpointGraph.restore(args[0] as string));
+				break;
+			}
+			case 'listCheckpoints': {
+				reply(id, checkpointGraph?.list() ?? []);
+				break;
+			}
+			case 'clearCheckpoints': {
+				checkpointGraph?.clear();
+				checkpointGraph = null;
+				reply(id, null);
 				break;
 			}
 			case 'warm': {
@@ -554,6 +639,7 @@ __UIElem__._set_value('${safeId}', __import__('json').loads('${valueStr.replace(
 			case 'writeFile': {
 				if (!pyodide) { reply(id, null); break; }
 				pyodide.FS.writeFile(args[0] as string, args[1] as string, { encoding: 'utf8' });
+				await syncWorkspace();
 				reply(id, null);
 				break;
 			}
@@ -571,12 +657,14 @@ __UIElem__._set_value('${safeId}', __import__('json').loads('${valueStr.replace(
 						pyodide.FS.writeFile(initPath, '', { encoding: 'utf8' });
 					} catch { /* skip */ }
 				}
+				await syncWorkspace();
 				reply(id, null);
 				break;
 			}
 			case 'removeFile': {
 				if (!pyodide) { reply(id, null); break; }
 				await removeFileRecursive(args[0] as string);
+				await syncWorkspace();
 				reply(id, null);
 				break;
 			}

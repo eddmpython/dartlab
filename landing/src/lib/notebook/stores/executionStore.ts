@@ -1,5 +1,5 @@
 import { writable, get } from 'svelte/store';
-import type { CellOutput, ExecutionEngine, CompletionItem, VariableInfo, PackageInfo, DocResult, FileEntry, PyApiResponse } from '../engine/executionEngine';
+import type { CellOutput, ExecutionEngine, CompletionItem, VariableInfo, PackageInfo, DocResult, FileEntry, PyApiResponse, RuntimeCapabilities, CheckpointInfo } from '../engine/executionEngine';
 import { WorkerEngine } from '../engine/workerEngine';
 import { notebook, applyCellExecutionResult, setCellOutput, focusNextCell, nextExecutionCount, saveToStorage, cellOutputs, setCellErrors } from './notebookStore';
 import type { WorkspaceFile } from './notebookStore';
@@ -144,7 +144,13 @@ export async function initEngine(autoRun = true): Promise<void> {
 	// 경우 여기서 처음 부착한다. 옛 코드는 `if (engine?.isReady) return` 이라 프리워밍이 autoRun 을
 	// 통째로 건너뛰게 만들었다(첫 셀이 영영 안 돌던 회귀).
 	const nbId = get(notebook).id;
+	if (attachedNotebookId && attachedNotebookId !== nbId) {
+		destroyEngine();
+		await bringUpEngine();
+		if (!engine?.isReady) return;
+	}
 	if (attachedNotebookId === nbId) return;
+	await engine.attachWorkspace?.(nbId);
 	attachedNotebookId = nbId;
 
 	try {
@@ -303,6 +309,26 @@ export async function executeCell(cellId: string, code: string, moveToNext = fal
 	});
 }
 
+export async function interruptExecution(): Promise<void> {
+	if (!engine?.isReady || !get(runningCellId)) return;
+	engine.interrupt();
+	if (engine.isReady) return;
+
+	ranSnippets.clear();
+	dataWarmed.clear();
+	prewarmedOutputs.clear();
+	prewarmed = null;
+	destroyWidgetBridge();
+	reactiveQueue.set(new Set());
+	runningCellId.set(null);
+	engineStatus.set('loading');
+	attachedNotebookId = null;
+	bringUp = null;
+	await bringUpEngine();
+	await initEngine(false);
+	if (engine?.isReady) engineStatus.set('ready');
+}
+
 export async function executeAllCells(cells: { id: string; type: string; content: string }[]): Promise<void> {
 	refreshCellErrors();
 	for (const cell of cells) {
@@ -375,6 +401,33 @@ export function destroyEngine(): void {
 export async function getVariableNames(): Promise<string[]> {
 	if (!engine?.isReady) return [];
 	return engine.getVariableNames();
+}
+
+export async function getRuntimeCapabilities(): Promise<RuntimeCapabilities | null> {
+	if (!engine?.isReady || !engine.getRuntimeCapabilities) return null;
+	return engine.getRuntimeCapabilities();
+}
+
+export async function createRuntimeCheckpoint(label: string): Promise<CheckpointInfo | null> {
+	if (!engine?.isReady || !engine.createCheckpoint) return null;
+	return engine.createCheckpoint(label);
+}
+
+export async function restoreRuntimeCheckpoint(
+	id: string
+): Promise<{ id: string; pagesWritten: number; bytesWritten: number } | null> {
+	if (!engine?.isReady || !engine.restoreCheckpoint) return null;
+	return engine.restoreCheckpoint(id);
+}
+
+export async function listRuntimeCheckpoints(): Promise<CheckpointInfo[]> {
+	if (!engine?.isReady || !engine.listCheckpoints) return [];
+	return engine.listCheckpoints();
+}
+
+export async function clearRuntimeCheckpoints(): Promise<void> {
+	if (!engine?.isReady || !engine.clearCheckpoints) return;
+	await engine.clearCheckpoints();
 }
 
 export async function getCompletions(objName: string): Promise<CompletionItem[]> {

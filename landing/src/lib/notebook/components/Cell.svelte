@@ -11,7 +11,7 @@
 		addCell,
 		focusNextCell,
 	} from '../stores/notebookStore';
-	import { executeCell, runningCellId, reactiveQueue } from '../stores/executionStore';
+	import { executeCell, interruptExecution, runningCellId, reactiveQueue } from '../stores/executionStore';
 	import { cellErrors } from '../stores/notebookStore';
 	import CodeCell from './CodeCell.svelte';
 	import MarkdownCell from './MarkdownCell.svelte';
@@ -37,6 +37,14 @@
 
 	function handleRun() {
 		executeCell(cell.id, cell.content);
+	}
+
+	function handleRunAction() {
+		if (isRunning) {
+			void interruptExecution();
+			return;
+		}
+		handleRun();
 	}
 
 	function handleRunAndMove() {
@@ -81,8 +89,8 @@
 				{#if cell.type === 'code'}
 					<button
 						class="action-btn run-btn"
-						onclick={(e) => { e.stopPropagation(); handleRun(); }}
-						aria-label={isRunning ? 'Running...' : 'Run (Ctrl+Enter)'}
+						onclick={(e) => { e.stopPropagation(); handleRunAction(); }}
+						aria-label={isRunning ? 'Stop execution' : 'Run (Ctrl+Enter)'}
 					>
 						{#if isRunning}
 							<Square size={13} />

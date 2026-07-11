@@ -1,4 +1,4 @@
-import type { ExecutionEngine, CellOutput, CompletionItem, VariableInfo, PackageInfo, DocResult, FileEntry, PyApiResponse } from './executionEngine';
+import type { ExecutionEngine, CellOutput, CompletionItem, VariableInfo, PackageInfo, DocResult, FileEntry, PyApiResponse, RuntimeCapabilities, CheckpointInfo } from './executionEngine';
 
 let msgId = 0;
 
@@ -11,6 +11,7 @@ export class WorkerEngine implements ExecutionEngine {
 	isReady = false;
 
 	private worker: Worker | null = null;
+	private interruptBuffer: Uint8Array | null = null;
 	private pending = new Map<string, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
 
 	async initialize(): Promise<void> {
@@ -42,7 +43,10 @@ export class WorkerEngine implements ExecutionEngine {
 			console.error('[WorkerEngine] Message error:', e);
 		};
 
-		await this.call('initialize');
+		if (globalThis.crossOriginIsolated && typeof SharedArrayBuffer !== 'undefined') {
+			this.interruptBuffer = new Uint8Array(new SharedArrayBuffer(1));
+		}
+		await this.call('initialize', this.interruptBuffer);
 		this.isReady = true;
 	}
 
@@ -60,6 +64,30 @@ export class WorkerEngine implements ExecutionEngine {
 		return this.call('pyapi', req) as Promise<PyApiResponse>;
 	}
 
+	async attachWorkspace(workspaceId: string): Promise<boolean> {
+		return this.call('attachWorkspace', workspaceId) as Promise<boolean>;
+	}
+
+	async getRuntimeCapabilities(): Promise<RuntimeCapabilities> {
+		return this.call('getRuntimeCapabilities') as Promise<RuntimeCapabilities>;
+	}
+
+	async createCheckpoint(label: string): Promise<CheckpointInfo> {
+		return this.call('createCheckpoint', label) as Promise<CheckpointInfo>;
+	}
+
+	async restoreCheckpoint(id: string): Promise<{ id: string; pagesWritten: number; bytesWritten: number }> {
+		return this.call('restoreCheckpoint', id) as Promise<{ id: string; pagesWritten: number; bytesWritten: number }>;
+	}
+
+	async listCheckpoints(): Promise<CheckpointInfo[]> {
+		return this.call('listCheckpoints') as Promise<CheckpointInfo[]>;
+	}
+
+	async clearCheckpoints(): Promise<void> {
+		await this.call('clearCheckpoints');
+	}
+
 	private call(cmd: string, ...args: unknown[]): Promise<unknown> {
 		return new Promise((resolve, reject) => {
 			if (!this.worker) { reject(new Error('Worker not started')); return; }
@@ -74,12 +102,21 @@ export class WorkerEngine implements ExecutionEngine {
 	}
 
 	interrupt(): void {
-		// Worker 기반에서는 terminate 후 재시작이 필요 — 현재는 no-op
+		if (this.interruptBuffer) {
+			this.interruptBuffer[0] = 2;
+			return;
+		}
+		this.worker?.terminate();
+		this.worker = null;
+		this.isReady = false;
+		for (const pending of this.pending.values()) pending.reject(new Error('Execution interrupted'));
+		this.pending.clear();
 	}
 
 	destroy(): void {
 		this.worker?.terminate();
 		this.worker = null;
+		this.interruptBuffer = null;
 		this.isReady = false;
 		for (const p of this.pending.values()) {
 			p.reject(new Error('Engine destroyed'));

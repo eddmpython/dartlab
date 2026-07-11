@@ -40,6 +40,22 @@ export interface PyApiResponse {
 	body: string;
 }
 
+export interface RuntimeCapabilities {
+	persistentWorkspace: boolean;
+	interrupt: 'soft' | 'hard';
+	memoryTransactions: 'experimental';
+}
+
+export interface CheckpointInfo {
+	id: string;
+	parentId: string | null;
+	label: string;
+	pageCount: number;
+	changedPages: number;
+	deltaBytes: number;
+	baseBytes: number;
+}
+
 export interface ExecutionEngine {
 	name: string;
 	isReady: boolean;
@@ -49,6 +65,12 @@ export interface ExecutionEngine {
 	warm?(): Promise<void>;
 	/** browser-as-server: 같은 커널의 dartlab FastAPI 로 HTTP 요청 서빙(Service Worker relay). */
 	serveApi?(req: { method: string; path: string; body?: string }): Promise<PyApiResponse>;
+	attachWorkspace?(workspaceId: string): Promise<boolean>;
+	getRuntimeCapabilities?(): Promise<RuntimeCapabilities>;
+	createCheckpoint?(label: string): Promise<CheckpointInfo>;
+	restoreCheckpoint?(id: string): Promise<{ id: string; pagesWritten: number; bytesWritten: number }>;
+	listCheckpoints?(): Promise<CheckpointInfo[]>;
+	clearCheckpoints?(): Promise<void>;
 	execute(code: string): Promise<CellOutput>;
 	interrupt(): void;
 	destroy(): void;
