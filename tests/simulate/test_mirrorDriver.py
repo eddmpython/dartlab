@@ -67,3 +67,15 @@ def testBatchSurvivesOneFailingAxis(monkeypatch):
     canon, cov, gaps = runWorkbench([("scan", "boom", None), ("scan", "ratio", "roe")], freq="Y")
     assert canon.height > 100  # 정상 축은 물질화됨 (배치 안 죽음)
     assert any(g["gapReason"] == "contractError" for g in gaps.to_dicts())
+
+
+def testDeclaredIndexReadOnly():
+    """캐시된 declared 인덱스는 외부/내부 mutate 가 막혀 캐시 오염이 불가능하다."""
+    from dartlab.simulate.mirror import _declaredIndex
+
+    idx = _declaredIndex()
+    k = next(iter(idx))
+    with pytest.raises(TypeError):
+        idx["fake"] = 1  # 외부 dict 읽기전용
+    with pytest.raises(TypeError):
+        idx[k]["x"] = 1  # 내부 declared 읽기전용

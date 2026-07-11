@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import time
 from functools import lru_cache
+from types import MappingProxyType
 from typing import Any
 
 import polars as pl
@@ -49,13 +50,17 @@ from dartlab.reference.capability.mirror import foldToCanonical, reflectAxes, un
 
 
 @lru_cache(maxsize=1)
-def _declaredIndex() -> dict[tuple[str, str], dict]:
+def _declaredIndex() -> MappingProxyType:
     """(engine, axis) -> declared 인덱스. reflectAxes 를 1회만 빌드 (materialize 마다 재빌드 방지).
 
     loadCapabilities 가 lru_cache 라 인덱스도 캐시 안전. runWorkbench 994 루프에서 declared 조회가
-    DataFrame 재빌드가 아니라 dict lookup 이 된다.
+    DataFrame 재빌드가 아니라 dict lookup 이 된다. **읽기전용(MappingProxyType)**: 캐시된 공유
+    구조라 호출자가 mutate 하면 캐시가 영구 오염되므로 외부·내부 dict 를 전부 immutable view 로 막는다.
     """
-    return {(r["engine"], r["axis"]): (r["declared"] or {}) for r in reflectAxes().iter_rows(named=True)}
+    inner = {
+        (r["engine"], r["axis"]): MappingProxyType(r["declared"] or {}) for r in reflectAxes().iter_rows(named=True)
+    }
+    return MappingProxyType(inner)
 
 
 def _call(engine: str, axis: str, item: str | None, **callKw) -> Any:
