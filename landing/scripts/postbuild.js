@@ -16,7 +16,7 @@ const extraPages = [
 
 const docsDir = resolve(buildDir, 'docs');
 
-// docs/index.html — redirect to Skill OS
+// docs/index.html - redirect to Skill OS
 const docsIndex = resolve(docsDir, 'index.html');
 if (!existsSync(docsIndex)) {
 	mkdirSync(docsDir, { recursive: true });
@@ -36,7 +36,7 @@ if (!existsSync(docsIndex)) {
 	console.log(`  -> docs/index.html redirect to ${target}`);
 }
 
-// blog/index.html — copy from blog.html if SvelteKit generated it as blog.html
+// blog/index.html - copy from blog.html if SvelteKit generated it as blog.html
 const blogHtml = resolve(buildDir, 'blog.html');
 const blogDir = resolve(buildDir, 'blog');
 const blogIndex = resolve(blogDir, 'index.html');
@@ -47,7 +47,7 @@ if (existsSync(blogHtml) && !existsSync(blogIndex)) {
 	console.log('  -> blog/index.html copied from blog.html');
 }
 
-// llms.txt + llms-full.txt — auto-generate from docs/ and blog/ markdown
+// llms.txt + llms-full.txt - auto-generate from docs/ and blog/ markdown
 function collectMdFiles(dir, prefix = '', options = {}) {
 	const results = [];
 	if (!existsSync(dir)) return results;
@@ -81,6 +81,10 @@ function stripFrontmatter(content) {
 	return content.replace(/^---\s*\n[\s\S]*?\n---\s*\n/, '').trim();
 }
 
+function normalizeLongDashes(text) {
+	return String(text ?? '').replace(/[\u2014\u2013]/g, '-');
+}
+
 function writeMarkdownMirror(relPath, title, url, description, content) {
 	const outPath = resolve(buildDir, 'markdown', relPath);
 	const body = stripFrontmatter(content);
@@ -111,9 +115,9 @@ const sections = [
 	}
 ];
 
-let llmsTxt = `# DartLab — DART 전자공시 분석 Python 라이브러리
+let llmsTxt = `# DartLab - DART 전자공시 분석 Python 라이브러리
 
-> One company map from electronic disclosure filings — DART (Korea) + EDGAR (US).
+> One company map from electronic disclosure filings - DART (Korea) + EDGAR (US).
 > DART 전자공시와 EDGAR 공시를 하나의 회사 맵으로 바꾸는 Python 라이브러리.
 
 DartLab은 한국 DART 전자공시와 미국 SEC EDGAR 공시 문서를 하나의 회사 맵으로 바꾸는 Python 라이브러리다.
@@ -135,19 +139,19 @@ for (const section of sections) {
 	for (const file of section.files) {
 		const content = readFileSync(file.path, 'utf-8');
 		const fm = extractFrontmatter(content);
-		const title = extractTitle(content) || file.rel;
+		const title = normalizeLongDashes(extractTitle(content) || file.rel);
 		const url = section.urlPrefix + section.pathToUrl(file.rel);
-		const description = fm.description || '';
+		const description = normalizeLongDashes(fm.description || '');
 		const mirrorRelPath = `blog/${section.pathToUrl(file.rel)}.md`;
 		const mirrorUrl = writeMarkdownMirror(mirrorRelPath, title, url, description, content);
-		const detail = description ? ` — ${description}` : '';
+		const detail = description ? ` - ${description}` : '';
 		llmsTxt += `- [${title}](${url})${detail} | Markdown: ${mirrorUrl}\n`;
 		fullParts.push(`# ${title}\n\nSource: ${url}\n\n${stripFrontmatter(content)}`);
 	}
 	llmsTxt += '\n';
 }
 
-// Skills — inject from compiled SSOT catalog.json (src/dartlab/skills/catalog.json)
+// Skills - inject from compiled SSOT catalog.json (src/dartlab/skills/catalog.json)
 const skillsIndexPath = resolve(projectRoot, 'src', 'dartlab', 'skills', 'catalog.json');
 let skillEntries = [];
 if (existsSync(skillsIndexPath)) {
@@ -164,8 +168,9 @@ if (skillEntries.length > 0) {
 	llmsTxt += `사람과 LLM이 같은 절차로 작업하는 실행 문서. 각 skill 은 직접 링크·인용·인덱싱이 가능한 전용 페이지를 가진다.\n\n`;
 	for (const skill of skillEntries) {
 		const url = `${siteUrl}/skills/${skill.id}`;
-		const purpose = (skill.purpose || '').replace(/\s+/g, ' ').trim();
-		llmsTxt += `- [${skill.title}](${url})${purpose ? ` — ${purpose}` : ''}\n`;
+		const title = normalizeLongDashes(skill.title || skill.id);
+		const purpose = normalizeLongDashes(skill.purpose || '').replace(/\s+/g, ' ').trim();
+		llmsTxt += `- [${title}](${url})${purpose ? ` - ${purpose}` : ''}\n`;
 	}
 	llmsTxt += '\n';
 }
@@ -179,7 +184,7 @@ const fullContent = fullParts.join('\n\n---\n\n') + '\n';
 writeFileSync(resolve(buildDir, 'llms-full.txt'), fullContent, 'utf-8');
 console.log(`  -> llms-full.txt generated (${Math.round(fullParts.join('').length / 1024)}KB)`);
 
-// sitemap.xml — auto-generate with blog + skills
+// sitemap.xml - auto-generate with blog + skills
 function extractFrontmatter(content) {
 	const fm = content.match(/^---\s*\n([\s\S]*?)\n---/);
 	if (!fm) return {};
@@ -201,8 +206,8 @@ const blogPosts = blogFiles.map(f => {
 		priority: '0.8',
 		changefreq: 'monthly',
 		lastmod: fm.date || null,
-		title: fm.title || slug,
-		description: fm.description || '',
+		title: normalizeLongDashes(fm.title || slug),
+		description: normalizeLongDashes(fm.description || ''),
 		date: fm.date || null
 	};
 });
@@ -257,7 +262,7 @@ const feedUpdated = blogPosts.length > 0 ? blogPosts[0].date || new Date().toISO
 let atom = `<?xml version="1.0" encoding="UTF-8"?>\n`;
 atom += `<feed xmlns="http://www.w3.org/2005/Atom">\n`;
 atom += `  <title>DartLab Blog</title>\n`;
-atom += `  <subtitle>DART 전자공시 데이터 분석 — Read Beyond the Numbers</subtitle>\n`;
+atom += `  <subtitle>DART 전자공시 데이터 분석 - Read Beyond the Numbers</subtitle>\n`;
 atom += `  <link href="${siteUrl}/feed.xml" rel="self" type="application/atom+xml"/>\n`;
 atom += `  <link href="${siteUrl}/blog/" rel="alternate" type="text/html"/>\n`;
 atom += `  <id>${siteUrl}/blog/</id>\n`;
