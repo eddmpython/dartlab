@@ -8,7 +8,7 @@ seriesOrder: 5
 topicSlug: "the-grid"
 ogImage: /thumbnails/dartlab-the-grid.webp
 thumbnail: /thumbnails/dartlab-the-grid.webp
-thumbnailBg: ./assets/dartlab-story-05-period-grid.webp
+thumbnailBg: ./assets/dartlab-story-05-thumbnail-bg-v2.webp
 tags:
   - dartlab
   - 재무제표

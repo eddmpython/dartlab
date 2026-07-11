@@ -8,7 +8,7 @@ seriesOrder: 3
 topicSlug: "how-notebook-runs"
 ogImage: /thumbnails/dartlab-how-notebook-runs.webp
 thumbnail: /thumbnails/dartlab-how-notebook-runs.webp
-thumbnailBg: ./assets/dartlab-story-03-codecell.webp
+thumbnailBg: ./assets/dartlab-story-03-thumbnail-bg-v2.webp
 tags:
   - dartlab
   - 공시

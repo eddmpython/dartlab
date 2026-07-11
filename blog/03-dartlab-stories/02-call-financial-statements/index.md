@@ -8,7 +8,7 @@ seriesOrder: 2
 topicSlug: "call-financial-statements"
 ogImage: /thumbnails/dartlab-call-financial-statements.webp
 thumbnail: /thumbnails/dartlab-call-financial-statements.webp
-thumbnailBg: ./assets/dartlab-story-02-grid-v2.webp
+thumbnailBg: ./assets/dartlab-story-02-thumbnail-bg-v2.webp
 tags:
   - dartlab
   - 재무제표

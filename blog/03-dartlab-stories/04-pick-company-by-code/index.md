@@ -8,7 +8,7 @@ seriesOrder: 4
 topicSlug: "pick-company-by-code"
 ogImage: /thumbnails/dartlab-pick-company-by-code.webp
 thumbnail: /thumbnails/dartlab-pick-company-by-code.webp
-thumbnailBg: ./assets/dartlab-story-04-code-route.webp
+thumbnailBg: ./assets/dartlab-story-04-thumbnail-bg-v2.webp
 tags:
   - dartlab
   - DART
