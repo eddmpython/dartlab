@@ -10,7 +10,7 @@
 
 | | |
 |---|---|
-| 발행 완료 | 8 편 (1편 what-is-dartlab, 2편 call-financial-statements, 3편 how-notebook-runs, 4편 pick-company-by-code, 5편 the-grid, 6편 dart-edgar-company, 7편 edgar-financial-panel, 8편 business-report-panel) |
+| 발행 완료 | 10 편 (1편 what-is-dartlab, 2편 call-financial-statements, 3편 how-notebook-runs, 4편 pick-company-by-code, 5편 the-grid, 6편 dart-edgar-company, 7편 edgar-financial-panel, 8편 business-report-panel, 9편 business-content-panel, 10편 notes-link-to-numbers) |
 | 설계 완료 | 39 편 (panel, 실제 값, 사업보고서 본문, 직접 계산, 분석 엔진 중심으로 재정렬 2026-07-11) |
 | 채점 | pedagogy 78 · coverage 75 · skeptic 71 · seo 66 (인플레 없이) |
 | 승자 | pedagogy 안. 나머지 셋에서 살릴 아이디어를 접목 |
@@ -202,9 +202,10 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
   `panel("사업")` 으로 제품, 원재료, 생산설비, 사업 설명을 본다. 재무 숫자가 아닌 공시 본문 근거를 인용하는 편.
   로컬 실측 2026-07-11: `panel("사업")` 에서 제품, 원재료, 생산설비, 사업 설명 후보가 확인된다. `panel("위험")` 과 `panel("경영진단")` 도 공시 문장 구역으로 열린다.
   발행 완료 2026-07-11: `panel("사업")`, `panel("제품")`, `panel("원재료")`, `panel("생산설비")` 미리보기로 실제 사업 본문과 표 조각을 보여 주고, 공시 문장 근거와 과장 금지 경계를 함께 닫았다.
-- [ ] **10. 주석과 숫자, 서로 묶기** `notes-link-to-numbers` `B`
+- [x] **10. 주석과 숫자, 서로 묶기** `notes-link-to-numbers` `B`
   `panel("주석")`, `panel("재고")`, `panel("차입")` 같은 상세 주석을 BS/IS/CF 숫자와 연결한다.
   로컬 실측 2026-07-11: `panel("주석")` 에서 재무제표 옆 설명 구역이 확인되고, `panel("재고")` 는 재고 관련 주석 후보를 좁힌다.
+  발행 완료 2026-07-11: `panel("BS")` 재고자산 58.278조원, 단기차입금 19.546조원을 `panel("재고")` 장부금액 58,278,373, `panel("차입")` 단기차입금 합계 19,546,315와 연결하고 단위, 연결/별도 범위, 기간 오해 방지를 함께 닫았다.
 - [ ] **11. 필요한 줄만 이름으로 뽑아낸다** `select-rows` `B` (2편이 일부 흡수. 잔여는 항목명 검색)
   제목과 본문 중심은 `select` 가 아니라 "매출액이 안 보일 때"다. 먼저 panel 에서 계정 후보를 보고, 필요한 순간에만 `select` 를 쓴다.
 - [ ] **12. 뽑은 숫자로 직접 계산한다** `compute-from-values` `B`

@@ -1,0 +1,362 @@
+{
+  "title": "재무제표 주석, 코드로 연결",
+  "titleContract": {
+    "workingTitle": "주석과 숫자, 서로 묶기",
+    "selectedTitle": "재무제표 주석, 코드로 연결",
+    "hookQuestion": "BS의 재고자산과 차입금 숫자를 DART 주석 표의 장부금액, 담보, 이자율 설명과 직접 연결할 수 있을까?",
+    "readerGap": "초보자는 재무제표 숫자와 주석을 따로 읽고, 주석이 숫자의 속을 설명한다는 감각이 약하다.",
+    "promise": "Company(\"005930\")에서 panel(\"BS\"), panel(\"주석\"), panel(\"재고\"), panel(\"차입\")을 실행해 재고자산 58.278조원과 단기차입금 19.546조원이 주석 표의 실제 값과 이어지는 것을 보여 준다.",
+    "whySelected": "재무제표 주석이라는 검색어와 코드로 연결이라는 즉시 행동이 짧게 붙는다.",
+    "candidates": [
+      {
+        "title": "재무제표 주석, 코드로 연결",
+        "hook": "검색어와 코드 행동이 가장 선명하고 짧다.",
+        "risk": "숫자 연결이 추상적으로 흐르지 않도록 첫 실습부터 재고자산과 차입금 실제 값을 보여 준다."
+      },
+      {
+        "title": "DART 주석, 코드 실행",
+        "hook": "DART와 주석 검색어에 코드 실행 효용이 붙는다.",
+        "risk": "재무제표 주석이라는 외부 검색어가 빠져 selectedTitle보다 약하다."
+      },
+      {
+        "title": "재무제표 주석, 파이썬 연결",
+        "hook": "파이썬으로 숫자와 주석을 잇는 행동이 보인다.",
+        "risk": "무엇을 실행해 무엇을 얻는지 selectedTitle보다 덜 구체적이다."
+      }
+    ],
+    "rejectedPatterns": [
+      "재무제표 주석이란 무엇인가",
+      "주석 사용법 정리",
+      "DART 주석 총정리",
+      "재무제표 주석 보는 법",
+      "dartlab 주석 기능 소개"
+    ]
+  },
+  "description": "dartlab에서 BS 숫자를 먼저 고르고 panel(\"재고\"), panel(\"차입\") 주석 표를 열어 재고자산과 차입금 숫자가 어떤 설명으로 이어지는지 초보자 눈높이로 익힌다.",
+  "readerQuestion": "재무제표의 재고자산과 차입금 한 줄을 주석 표의 실제 값과 설명으로 연결할 수 있을까?",
+  "insight": {
+    "commonBelief": "재무제표 숫자는 표에서 보고, 주석은 어려운 부록이라 나중에 읽는 것이라고 생각한다.",
+    "twistFact": "dartlab에서는 panel(\"BS\")로 숫자를 잡고 panel(\"재고\"), panel(\"차입\")으로 같은 숫자의 주석 표를 바로 열 수 있다.",
+    "whatToWatch": "BS 숫자, 주석 표의 합계, 단위, 연결 기준과 별도 기준을 한 문장 안에서 분리한다.",
+    "freshnessArgument": "2026-07-11 실행에서 005930의 BS 재고자산 58.278조원, 단기차입금 19.546조원, 재고 주석 합계 장부금액 58,278,373, 차입 주석 단기차입금 합계 19,546,315가 확인됐다.",
+    "evidenceRefs": [
+      "Company(\"005930\").market = KR",
+      "Company(\"005930\").panel(\"BS\")에서 재고자산 2026Q1 58,278,373,000,000원 표시",
+      "Company(\"005930\").panel(\"재고\")에서 연결 재고자산 합계 장부금액 58,278,373 표시",
+      "Company(\"005930\").panel(\"BS\")에서 단기차입금 2026Q1 19,546,315,000,000원 표시",
+      "Company(\"005930\").panel(\"차입\")에서 연결 차입금 표 단기차입금 합계 19,546,315 표시"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "BS 숫자를 먼저 고른다",
+      "purpose": "왜배우나",
+      "scene": "Company(\"005930\")을 만들고 panel(\"BS\")에서 재고자산과 차입금 숫자를 먼저 찾는다.",
+      "keyNumbers": [
+        "005930",
+        "KR",
+        "2026Q1",
+        "58.278조원"
+      ],
+      "causalBridge": "한 줄 숫자를 먼저 붙잡아야 주석 전체를 헤매지 않고 필요한 설명으로 들어갈 수 있다."
+    },
+    {
+      "order": 2,
+      "heading": "재고와 차입 주석을 연다",
+      "purpose": "직접해본다",
+      "scene": "panel(\"재고\")와 panel(\"차입\")을 실행해 장부금액, 평가충당금, 담보부차입금, 무담보차입금, 이자율을 본다.",
+      "keyNumbers": [
+        "58,278,373",
+        "19,546,315",
+        "평가충당금",
+        "연이자율"
+      ],
+      "causalBridge": "주석은 숫자의 속을 보여 주므로 같은 숫자를 더 작은 이름과 조건으로 나눠 읽어야 한다."
+    },
+    {
+      "order": 3,
+      "heading": "단위와 범위를 검산한다",
+      "purpose": "오해방지",
+      "scene": "BS 원 단위 숫자와 주석의 압축 단위 숫자를 같은 크기로 맞추고, 연결 기준과 별도 기준을 분리한다.",
+      "keyNumbers": [
+        "원",
+        "백만원",
+        "연결",
+        "별도"
+      ],
+      "causalBridge": "단위와 범위를 맞추지 않으면 같은 숫자도 다른 숫자처럼 보이고 잘못된 결론으로 간다."
+    }
+  ],
+  "visuals": [
+    {
+      "actOrder": 1,
+      "kind": "bitmap diagram",
+      "title": "BS 숫자에서 주석 표로 넘어가는 흐름",
+      "proves": "BS의 한 줄 숫자를 먼저 고르고 같은 단어의 주석 panel로 들어가는 순서를 보여 준다.",
+      "seriesHint": "balance sheet number to notes bridge",
+      "placement": "주석 전체 위치 확인 뒤에 배치한다.",
+      "insertAfter": "먼저 BS에서 알고 싶은 숫자 하나를 고른다 문단 뒤",
+      "narrativeUse": "주석 전체를 처음부터 읽지 않고 숫자에서 출발하게 만든다."
+    },
+    {
+      "actOrder": 2,
+      "kind": "bitmap diagram",
+      "title": "재고와 차입 주석이 숫자의 속을 보여 주는 흐름",
+      "proves": "재고자산은 장부금액과 평가충당금으로, 차입금은 담보, 상대방, 이자율, 만기로 나뉜다는 점을 보여 준다.",
+      "seriesHint": "inventory borrowings note detail map",
+      "placement": "차입 주석 설명 뒤에 배치한다.",
+      "insertAfter": "금액, 기간, 상대방, 이자율, 담보 설명을 함께 봐야 한다 문단 뒤",
+      "narrativeUse": "한 줄 금액을 조건과 구성으로 나눠 읽는 습관을 고정한다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "inline",
+      "subject": "BS 재고자산 한 줄에서 재고 주석 표의 장부금액 합계로 이어지는 교육용 bitmap 도식",
+      "query": "financial statement note bridge inventory carrying amount diagram",
+      "keywords": [
+        "balance sheet",
+        "notes",
+        "inventory",
+        "carrying amount",
+        "DART"
+      ],
+      "placement": "주석 전체 위치 확인 뒤",
+      "narrativeUse": "숫자 하나를 먼저 고른 뒤 주석 표로 들어가는 흐름을 시각적으로 고정한다."
+    },
+    {
+      "slot": "inline",
+      "subject": "재고 주석과 차입 주석이 BS 숫자를 장부금액, 평가충당금, 담보, 이자율, 만기로 나누는 교육용 bitmap 도식",
+      "query": "inventory borrowing notes detail map diagram",
+      "keywords": [
+        "inventory",
+        "borrowings",
+        "allowance",
+        "interest rate",
+        "maturity"
+      ],
+      "placement": "차입 주석은 조건을 보여 준다 섹션의 borrowingsNote 코드 출력 설명 뒤",
+      "narrativeUse": "주석은 숫자의 판단이 아니라 숫자의 속이라는 점을 보여 준다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": [
+      "재무제표 주석",
+      "DART 주석",
+      "재무제표 파이썬",
+      "사업보고서 코드",
+      "재고자산 주석",
+      "차입금 주석"
+    ],
+    "placementRule": "2편은 재무제표 선행편, 8편은 주석 위치 지도, 9편은 사업보고서 본문 근거, 7편은 EDGAR 재무 panel 경계로 연결한다.",
+    "links": [
+      {
+        "path": "/blog/call-financial-statements",
+        "title": "재무제표, 파이썬 한 줄",
+        "reason": "BS 숫자를 먼저 여는 선행 글이다.",
+        "placement": "첫 섹션의 재무제표 선행 글 안내 문장"
+      },
+      {
+        "path": "/blog/business-report-panel",
+        "title": "사업보고서, 코드로 열기",
+        "reason": "주석이 사업보고서 안의 어느 위치인지 이미 확인한 선행 글이다.",
+        "placement": "첫 섹션의 주석 위치 지도 선행 글 안내 문장"
+      },
+      {
+        "path": "/blog/business-content-panel",
+        "title": "사업보고서, 코드로 읽기",
+        "reason": "사업 본문 근거에서 재무제표 주석 근거로 넘어오는 연결이다.",
+        "placement": "첫 섹션 첫 문장"
+      },
+      {
+        "path": "/blog/edgar-financial-panel",
+        "title": "EDGAR 재무제표, 코드 실행",
+        "reason": "DART 주석 실습과 EDGAR 재무 panel 확인 범위를 분리한다.",
+        "placement": "DART와 EDGAR를 섞지 않는다 섹션 첫 문장"
+      }
+    ]
+  },
+  "honestyGuards": [
+    "panel(\"주석\")을 실행했다고 모든 주석을 읽었다고 쓰지 않는다.",
+    "재고자산과 차입금 숫자를 보고 바로 투자 판단을 쓰지 않는다.",
+    "연결 기준 주석과 별도 기준 주석을 섞지 않는다.",
+    "BS 원 단위 숫자와 주석 표의 압축 단위를 맞추지 않고 틀렸다고 단정하지 않는다.",
+    "EDGAR 주석까지 DART 주석과 같은 방식이라고 말하지 않는다."
+  ],
+  "evidenceMap": [
+    {
+      "claim": "005930은 dartlab Company에서 KR 회사로 열린다.",
+      "sourceType": "dartlab",
+      "period": "2026-07-11",
+      "sourceRef": "local execution: Company(\"005930\").market",
+      "howUsed": "첫 코드셀과 DART 회사 출발점 설명"
+    },
+    {
+      "claim": "panel(\"BS\")에서 재고자산 2026Q1 값은 58,278,373,000,000원이다.",
+      "sourceType": "DART",
+      "period": "2026Q1",
+      "sourceRef": "local execution: Company(\"005930\").panel(\"BS\")",
+      "howUsed": "BS 재고자산 한 줄 숫자 설명"
+    },
+    {
+      "claim": "panel(\"재고\") 연결 재고자산 표에서 합계 장부금액은 58,278,373으로 보인다.",
+      "sourceType": "DART",
+      "period": "2026Q1",
+      "sourceRef": "local execution: Company(\"005930\").panel(\"재고\")",
+      "howUsed": "BS 재고자산과 주석 장부금액 연결"
+    },
+    {
+      "claim": "panel(\"BS\")에서 단기차입금 2026Q1 값은 19,546,315,000,000원이다.",
+      "sourceType": "DART",
+      "period": "2026Q1",
+      "sourceRef": "local execution: Company(\"005930\").panel(\"BS\")",
+      "howUsed": "BS 차입금 숫자 설명"
+    },
+    {
+      "claim": "panel(\"차입\") 연결 차입금 표에서 단기차입금 합계는 19,546,315로 보인다.",
+      "sourceType": "DART",
+      "period": "2026Q1",
+      "sourceRef": "local execution: Company(\"005930\").panel(\"차입\")",
+      "howUsed": "BS 단기차입금과 차입 주석 연결"
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": 1,
+          "planner": "초안은 주석의 정의와 위치를 설명하는 데 치우쳐 숫자와 실제 주석 값 연결이 약했다.",
+          "evaluator": "초보자에게 쉬운 설명은 있지만 실제 데이터가 충분하지 않으면 또 추상적인 글이 된다고 평가했다.",
+          "skeptic": "BS 원 단위 숫자와 주석 표 숫자의 단위 차이를 설명하지 않으면 틀린 연결처럼 보일 수 있다고 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 88,
+          "plannerRevision": "재고자산 58.278조원과 주석 58,278,373, 단기차입금 19.546조원과 주석 19,546,315를 중심 예시로 다시 세웠다."
+        },
+        {
+          "round": 2,
+          "planner": "개선안은 BS 숫자 고르기, 재고 주석, 차입 주석, 단위와 범위 검산, DART와 EDGAR 경계 순서로 재작성했다.",
+          "evaluator": "각 섹션에 코드 출력, 실제 숫자, 쉬운 설명, 오해 방지, 다음 연결이 있고 panel first 흐름을 지킨다.",
+          "skeptic": "투자 판단으로 과장하지 않고 연결 기준과 별도 기준, 단위 차이, EDGAR 미확인 범위를 차단했다.",
+          "decision": "passed",
+          "evaluatorScore": 96,
+          "plannerRevision": "이미지 두 장과 썸네일 배경을 기획 단계에서 분리하고, 다음 편의 줄 찾기 학습으로 자연스럽게 닫았다."
+        }
+      ]
+    }
+  },
+  "sections": [
+    {
+      "order": 1,
+      "heading": "숫자 하나를 먼저 붙잡는다",
+      "subtitle": "BS 숫자 하나를 고른 뒤 같은 단어의 주석으로 들어간다.",
+      "visualAnchor": "Company(\"005930\"), c.market, 헬퍼 코드, BS 숫자와 주석 표 연결 도식을 배치한다.",
+      "explanation": "주석을 전체로 읽지 말고 숫자에서 출발한다고 쉬운 말로 설명한다.",
+      "example": "삼성전자 2026Q1 재고자산과 단기차입금을 중심 예시로 잡는다.",
+      "support": "헬퍼는 내부 기능 설명이 아니라 화면에 보이는 실제 값을 짧게 닦는 도구라고 한계를 둔다.",
+      "transition": "회사와 헬퍼를 준비했으므로 다음에는 주석 전체 위치를 확인한다.",
+      "evaluation": "제목, 코드, 실제 값, 보완, 다음 연결이 모두 있는지 재평가했다."
+    },
+    {
+      "order": 2,
+      "heading": "주석은 숫자의 옆방이다",
+      "subtitle": "panel(\"주석\")으로 전체 주석 위치만 확인하고 바로 필요한 주석으로 좁힌다.",
+      "visualAnchor": "notesMap 코드 출력과 BS 숫자에서 주석 표로 넘어가는 도식이 시각 앵커다.",
+      "explanation": "주석 전체를 처음부터 읽으면 길을 잃으므로 BS 숫자에서 출발한다고 설명한다.",
+      "example": "연결재무제표 주석 위치를 먼저 보고 재고와 차입으로 들어간다.",
+      "support": "전체 주석 지도만 보고 해석을 끝내면 안 된다는 오해 방지를 붙인다.",
+      "transition": "주석 위치를 봤으므로 다음에는 BS에서 재고자산 숫자를 고른다.",
+      "evaluation": "전체 주석을 나열하지 않고 다음 행동으로 이어지는지 재평가했다."
+    },
+    {
+      "order": 3,
+      "heading": "BS에서 재고자산을 먼저 본다",
+      "subtitle": "panel(\"BS\")에서 재고자산 2026Q1 숫자를 실제로 확인한다.",
+      "visualAnchor": "findAccountRows(bs, \"재고\") 출력의 58.278조원 값이 기준이다.",
+      "explanation": "BS 숫자는 요약이고 주석은 그 요약 숫자의 속이라고 설명한다.",
+      "example": "2026Q1 재고자산 약 58.278조원과 2025Q4 약 52.637조원을 보여 준다.",
+      "support": "재고가 늘었다는 결론만 쓰면 약하다고 보완한다.",
+      "transition": "재고자산 숫자를 잡았으므로 다음에는 재고 주석에서 장부금액을 본다.",
+      "evaluation": "실제 값이 있고 판단보다 연결이 먼저인지 재평가했다."
+    },
+    {
+      "order": 4,
+      "heading": "재고 주석에서 장부금액을 본다",
+      "subtitle": "panel(\"재고\")에서 합계 장부금액과 평가충당금을 확인한다.",
+      "visualAnchor": "inventoryNote 출력의 58,278,373, 제품 및 상품, 반제품 및 재공품, 원재료 및 저장품이 기준이다.",
+      "explanation": "주석의 합계 장부금액이 BS 재고자산과 같은 크기로 이어진다고 설명한다.",
+      "example": "나쁜 문장과 좋은 문장을 비교해 숫자와 주석을 한 문장으로 묶는다.",
+      "support": "단위와 연결 기준을 놓치면 같은 숫자도 다르게 보일 수 있다고 보완한다.",
+      "transition": "재고 연결을 봤으므로 다음에는 차입금도 같은 방식으로 본다.",
+      "evaluation": "추상적인 회계 설명보다 실제 표 값과 문장 고치기가 있는지 재평가했다."
+    },
+    {
+      "order": 5,
+      "heading": "차입금도 같은 방식으로 본다",
+      "subtitle": "BS에서 단기차입금과 장기차입금을 먼저 고른다.",
+      "visualAnchor": "findAccountRows(bs, \"차입\") 출력의 단기차입금 19.546조원과 장기차입금 7.394조원이 기준이다.",
+      "explanation": "차입금은 금액만이 아니라 기간과 조건을 함께 봐야 한다고 설명한다.",
+      "example": "2026Q1 단기차입금 약 19.546조원, 장기차입금 약 7.394조원을 보여 준다.",
+      "support": "많다, 위험하다 같은 판단으로 바로 뛰면 안 된다고 보완한다.",
+      "transition": "BS 차입금 숫자를 봤으므로 다음에는 차입 주석의 조건을 본다.",
+      "evaluation": "판단보다 주석 연결로 넘어가는지 재평가했다."
+    },
+    {
+      "order": 6,
+      "heading": "차입 주석은 조건을 보여 준다",
+      "subtitle": "panel(\"차입\")에서 담보, 상대방, 이자율, 만기 설명을 확인한다.",
+      "visualAnchor": "borrowingsNote 출력의 단기차입금 19,546,315, 담보부차입금, 무담보차입금, 연이자율이 기준이다.",
+      "explanation": "주석은 숫자가 어떤 조건을 갖는지 알려 주는 자리라고 설명한다.",
+      "example": "담보부차입금과 관련해 매출채권을 담보로 제공했다는 설명을 예로 든다.",
+      "support": "별도 재무제표 주석의 장기차입금 표와 연결 주석을 섞지 않도록 주의시킨다.",
+      "transition": "재고와 차입을 봤으므로 다음에는 숫자가 안 맞아 보일 때 검산한다.",
+      "evaluation": "조건 설명이 실제 출력값에서 나온 것인지 재평가했다."
+    },
+    {
+      "order": 7,
+      "heading": "숫자가 안 맞아 보이면 세 가지를 본다",
+      "subtitle": "단위, 범위, 줄 이름을 먼저 검산한다.",
+      "visualAnchor": "BS 원 단위 숫자와 주석 표의 압축 숫자를 나란히 놓은 비교가 기준이다.",
+      "explanation": "같은 크기의 숫자도 단위가 다르면 다르게 보인다고 쉽게 설명한다.",
+      "example": "58,278,373과 58,278,373,000,000을 같은 크기로 맞춘다.",
+      "support": "연결 기준과 별도 기준, 짧은 BS 이름과 긴 주석 이름을 섞지 않는 주의를 붙인다.",
+      "transition": "검산 기준을 세웠으므로 다음에는 DART와 EDGAR 범위를 분리한다.",
+      "evaluation": "오해 방지가 추상 경고가 아니라 실제 숫자 검산인지 재평가했다."
+    },
+    {
+      "order": 8,
+      "heading": "DART와 EDGAR를 섞지 않는다",
+      "subtitle": "이번 편은 DART 주석이고 EDGAR 주석은 별도 확인이 필요하다.",
+      "visualAnchor": "DART 공식 링크 표, OpenDART 가이드 링크 표, SEC 검색 링크 표와 7편 내부 링크를 함께 둔다.",
+      "explanation": "DART 주석 실습과 EDGAR 재무 panel 확인 범위가 다르다고 설명한다.",
+      "example": "Company(\"AAPL\") 재무제표와 Company(\"005930\").panel(\"재고\")를 같은 범위라고 말하지 않는다.",
+      "support": "미국 주석은 뒤에서 따로 확인한 뒤 다룬다는 한계를 붙인다.",
+      "transition": "원천 범위를 분리했으므로 다음에는 브라우저 실행 범위를 닫는다.",
+      "evaluation": "DART와 EDGAR를 함께 언급하되 과장하지 않는지 재평가했다."
+    },
+    {
+      "order": 9,
+      "heading": "브라우저에서 되는 것과 나중에 할 것",
+      "subtitle": "이번 편은 숫자와 주석 연결만 다루고 투자 판단은 뒤로 둔다.",
+      "visualAnchor": "본문 python 코드펜스 목록과 실제 출력값이 시각 앵커다.",
+      "explanation": "브라우저에서 실행되는 범위 안에서만 설명한다고 말한다.",
+      "example": "시세, 뉴스, 수급, 최신 공시 알림은 이 글에서 하지 않는다고 분리한다.",
+      "support": "재고가 좋은지 나쁜지, 차입금이 위험한지 안전한지는 연결 뒤 판단이라고 보완한다.",
+      "transition": "범위를 닫았으므로 다음에는 오해 방지 목록으로 간다.",
+      "evaluation": "기능 홍보나 투자 결론으로 흐르지 않는지 재평가했다."
+    },
+    {
+      "order": 10,
+      "heading": "다음 편으로 넘어가기 전 행동 검사",
+      "subtitle": "재고와 차입 숫자를 주석 표의 실제 값과 연결해 말할 수 있어야 한다.",
+      "visualAnchor": "notesMap, bs, inventoryNote, borrowingsNote 코드 출력 체크리스트 표가 기준이다.",
+      "explanation": "행동 검사는 글을 읽었다는 표시가 아니라 같은 결과를 눌러 봤는지 확인하는 장치라고 설명한다.",
+      "example": "58.278조원과 58,278,373, 19.546조원과 19,546,315를 연결해 말한다.",
+      "support": "마지막 문장 고치기로 숫자와 주석을 한 문장에 묶되, 단위와 범위를 섞는 오해를 다시 막는다.",
+      "transition": "행동 검사를 통과하면 다음 편에서 필요한 줄을 이름으로 더 좁힌다.",
+      "evaluation": "다음 편 학습 목표로 자연스럽게 이어지는지 재평가했다."
+    }
+  ]
+}
