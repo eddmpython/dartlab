@@ -134,6 +134,15 @@ jobs:
           WHL=$(ls dist/*.whl | head -n1)
           python -X utf8 .github/scripts/verifyWheel.py "$WHL"
 
+      # 브라우저 dartlab 은 micropip.install("dartlab") 로 PyPI 최신을 받는다. wheel 의존성 마커가
+      # pyodide 를 깨면(예 marimo transitive msgspec) 브라우저가 조용히 죽는다. 발행 전에 그걸 잡는다.
+      - name: Pyodide smoke (브라우저 micropip.install 게이트)
+        run: |
+          set -euo pipefail
+          npm install --no-save pyodide@0.27.5
+          WHL=$(ls dist/*.whl | head -n1)
+          node .github/scripts/pyodideSmoke.mjs "$WHL"
+
       - name: Generate SBOM
         run: |
           pip install cyclonedx-bom
