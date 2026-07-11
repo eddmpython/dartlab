@@ -1,0 +1,362 @@
+{
+  "title": "재무제표 계정, 코드로 찾기",
+  "titleContract": {
+    "workingTitle": "필요한 줄만 이름으로 찾기",
+    "selectedTitle": "재무제표 계정, 코드로 찾기",
+    "hookQuestion": "매출액, 영업이익, 순이익 같은 재무제표 계정을 코드로 직접 찾아 후보와 오해를 구분할 수 있을까?",
+    "readerGap": "초보자는 계정 이름이 안 보이면 데이터가 없거나 코드가 틀렸다고 생각하고, 표면을 잘못 고른 경우를 구분하지 못한다.",
+    "promise": "Company(\"005930\")에서 panel(\"IS\"), panel(\"BS\"), panel(\"CF\")를 열고 매출, 영업, 순이익, 현금 후보를 실제 값으로 찾게 한다.",
+    "whySelected": "재무제표 계정이라는 검색어와 코드로 찾기라는 즉시 행동이 짧고 명확하다.",
+    "candidates": [
+      {
+        "title": "재무제표 계정, 코드로 찾기",
+        "hook": "검색어와 코드 행동이 가장 선명하다.",
+        "risk": "기능 설명으로 흐르지 않도록 매출액과 매출채권 차이를 실제 값으로 보여 준다."
+      },
+      {
+        "title": "DART 계정, 코드로 찾기",
+        "hook": "DART와 계정 검색어에 코드 행동이 붙는다.",
+        "risk": "재무제표라는 외부 검색어가 빠져 selectedTitle보다 약하다."
+      },
+      {
+        "title": "재무제표 매출, 파이썬 찾기",
+        "hook": "매출 검색어와 파이썬 행동이 보인다.",
+        "risk": "영업이익, 순이익, 현금까지 다루는 범위를 제목이 좁게 보일 수 있다."
+      }
+    ],
+    "rejectedPatterns": [
+      "재무제표 계정이란 무엇인가",
+      "계정 찾기 사용법 정리",
+      "DART 계정 총정리",
+      "매출액 보는 법",
+      "dartlab select 소개"
+    ]
+  },
+  "description": "dartlab에서 panel(\"IS\"), panel(\"BS\"), panel(\"CF\")를 먼저 열고 매출, 영업이익, 순이익, 현금 같은 계정 이름 후보를 실제 값으로 찾아 표면 선택과 빈 결과를 구분한다.",
+  "readerQuestion": "매출액이 안 보일 때 오류라고 단정하지 않고 올바른 표에서 계정 후보를 찾을 수 있을까?",
+  "insight": {
+    "commonBelief": "계정 이름을 검색했는데 바로 원하는 한 줄이 안 나오면 코드나 데이터가 틀렸다고 생각한다.",
+    "twistFact": "같은 단어도 IS, BS, CF에서 뜻이 달라진다. IS의 매출액과 BS의 매출채권은 모두 매출이라는 말을 포함하지만 서로 다른 계정이다.",
+    "whatToWatch": "표면을 먼저 고르고, 단어가 넓은지 좁은지 확인하며, 후보 이름을 읽는다.",
+    "freshnessArgument": "2026-07-11 실행에서 005930의 IS 매출액 133.873조원, 영업이익 57.233조원, BS 매출채권및기타채권 82.285조원, CF 영업활동현금흐름 40.274조원이 확인됐다.",
+    "evidenceRefs": [
+      "Company(\"005930\").market = KR",
+      "Company(\"005930\").panel(\"IS\")에서 매출액, 매출원가, 매출총이익 후보 표시",
+      "Company(\"005930\").panel(\"IS\")에서 영업이익 후보 표시",
+      "Company(\"005930\").panel(\"BS\")에서 매출채권및기타채권 후보 표시",
+      "Company(\"005930\").panel(\"CF\")에서 영업활동현금흐름과 현금 관련 후보 표시"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "IS, BS, CF부터 고른다",
+      "purpose": "왜배우나",
+      "scene": "Company(\"005930\")을 만들고 IS, BS, CF가 서로 다른 질문에 답한다는 점을 확인한다.",
+      "keyNumbers": [
+        "005930",
+        "IS",
+        "BS",
+        "CF"
+      ],
+      "causalBridge": "표면을 잘못 고르면 같은 단어도 다른 뜻의 계정을 돌려준다."
+    },
+    {
+      "order": 2,
+      "heading": "실제 계정 후보를 찾는다",
+      "purpose": "직접해본다",
+      "scene": "IS에서 매출, 영업, 순이익을 찾고 BS와 CF에서 같은 단어가 어떻게 달라지는지 본다.",
+      "keyNumbers": [
+        "133.873조원",
+        "57.233조원",
+        "82.285조원",
+        "40.274조원"
+      ],
+      "causalBridge": "후보를 실제 값과 함께 봐야 계정 이름이 비슷해도 성격이 다르다는 점을 배운다."
+    },
+    {
+      "order": 3,
+      "heading": "빈 결과와 후보 과다를 해석한다",
+      "purpose": "오해방지",
+      "scene": "단어가 너무 넓거나 표가 다를 때 생기는 오해를 정리하고 다음 편 계산으로 연결한다.",
+      "keyNumbers": [
+        "매출",
+        "순이익",
+        "현금",
+        "표면"
+      ],
+      "causalBridge": "찾기 단계가 정확해야 다음 편에서 직접 계산한 숫자가 흔들리지 않는다."
+    }
+  ],
+  "visuals": [
+    {
+      "actOrder": 1,
+      "kind": "bitmap diagram",
+      "title": "IS에서 매출 계정 후보를 찾는 흐름",
+      "proves": "매출이라는 단어가 매출액, 매출원가, 매출총이익 후보를 함께 부른다는 점을 보여 준다.",
+      "seriesHint": "income statement account search flow",
+      "placement": "매출은 IS에서 찾는다 섹션의 코드 출력 설명 뒤",
+      "insertAfter": "셋은 한 묶음으로 가까이 있지만 같은 말이 아니다 문단 뒤",
+      "narrativeUse": "후보가 여러 줄 나오는 것을 실패가 아니라 정상 결과로 받아들이게 한다."
+    },
+    {
+      "actOrder": 2,
+      "kind": "bitmap diagram",
+      "title": "같은 단어라도 표면이 다르면 뜻이 달라지는 흐름",
+      "proves": "IS의 매출액, BS의 매출채권, CF의 현금흐름이 서로 다른 질문에 답한다는 점을 보여 준다.",
+      "seriesHint": "same keyword different financial statement surface",
+      "placement": "다른 표에서 찾으면 다른 뜻이 나온다 섹션의 코드 출력 설명 뒤",
+      "insertAfter": "매출액을 찾고 싶으면 먼저 IS를 열어야 한다 문단 뒤",
+      "narrativeUse": "계정 찾기에서 표면 선택이 단어 선택보다 먼저라는 점을 시각적으로 고정한다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "inline",
+      "subject": "IS에서 매출 단어가 매출액, 매출원가, 매출총이익 후보를 보여 주는 교육용 bitmap 도식",
+      "query": "income statement account search sales cost gross profit diagram",
+      "keywords": [
+        "income statement",
+        "sales",
+        "cost of sales",
+        "gross profit",
+        "account search"
+      ],
+      "placement": "매출은 IS에서 찾는다 섹션의 findRows(isPanel, \"매출\") 코드 출력 설명 뒤",
+      "narrativeUse": "후보가 여러 줄 나오는 것을 실패로 보지 않게 한다."
+    },
+    {
+      "slot": "inline",
+      "subject": "같은 매출 단어가 IS에서는 매출액, BS에서는 매출채권으로 달라지는 교육용 bitmap 도식",
+      "query": "same keyword different financial statement accounts diagram",
+      "keywords": [
+        "IS",
+        "BS",
+        "CF",
+        "sales",
+        "receivables"
+      ],
+      "placement": "다른 표에서 찾으면 다른 뜻이 나온다 섹션의 findRows(bsPanel, \"매출\") 코드 출력 설명 뒤",
+      "narrativeUse": "표면 선택이 먼저라는 핵심을 보여 준다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": [
+      "재무제표 계정",
+      "DART 계정",
+      "재무제표 파이썬",
+      "매출액",
+      "영업이익",
+      "현금흐름표"
+    ],
+    "placementRule": "2편은 재무제표 선행편, 5편은 기간 감각, 10편은 주석 연결 선행편, 7편은 EDGAR 범위 경계로 연결한다.",
+    "links": [
+      {
+        "path": "/blog/notes-link-to-numbers",
+        "title": "재무제표 주석, 코드로 연결",
+        "reason": "10편에서 주석 연결을 마치고 11편에서 계정 찾기로 넘어오기 때문이다.",
+        "placement": "첫 섹션 첫 문장"
+      },
+      {
+        "path": "/blog/call-financial-statements",
+        "title": "재무제표, 파이썬 한 줄",
+        "reason": "IS, BS, CF를 처음 여는 선행 글이다.",
+        "placement": "첫 섹션의 재무제표 세 장 선행 설명 문장"
+      },
+      {
+        "path": "/blog/the-grid",
+        "title": "재무제표 기간, Y와 Q 조회",
+        "reason": "2026Q1과 2025Q1 비교 칸을 읽는 배경이다.",
+        "placement": "첫 섹션의 기간 칸 설명 문장"
+      },
+      {
+        "path": "/blog/edgar-financial-panel",
+        "title": "EDGAR 재무제표, 코드 실행",
+        "reason": "DART 계정명과 EDGAR 계정명을 바로 섞지 않도록 범위를 분리한다.",
+        "placement": "빈 결과는 실패가 아닐 수 있다 섹션의 세 번째 확인 문장"
+      }
+    ]
+  },
+  "honestyGuards": [
+    "계정 후보가 여러 줄 나온 것을 실패라고 쓰지 않는다.",
+    "매출액과 매출채권을 같은 말처럼 쓰지 않는다.",
+    "순이익, 지배주주지분 당기순이익, 주당순이익을 섞지 않는다.",
+    "현금흐름표의 여러 현금 관련 계정을 하나로 합쳐 말하지 않는다.",
+    "이번 편에서 계산이나 투자 판단까지 했다고 쓰지 않는다."
+  ],
+  "evidenceMap": [
+    {
+      "claim": "005930은 dartlab Company에서 KR 회사로 열린다.",
+      "sourceType": "dartlab",
+      "period": "2026-07-11",
+      "sourceRef": "local execution: Company(\"005930\").market",
+      "howUsed": "첫 코드셀과 DART 회사 출발점 설명"
+    },
+    {
+      "claim": "panel(\"IS\")에서 매출액, 매출원가, 매출총이익 후보가 나온다.",
+      "sourceType": "DART",
+      "period": "2026Q1",
+      "sourceRef": "local execution: Company(\"005930\").panel(\"IS\")",
+      "howUsed": "매출 검색 후보 설명"
+    },
+    {
+      "claim": "panel(\"IS\")에서 영업이익 2026Q1 값은 약 57.233조원이다.",
+      "sourceType": "DART",
+      "period": "2026Q1",
+      "sourceRef": "local execution: Company(\"005930\").panel(\"IS\")",
+      "howUsed": "영업이익 찾기 설명"
+    },
+    {
+      "claim": "panel(\"BS\")에서 매출 검색은 매출채권및기타채권을 돌려준다.",
+      "sourceType": "DART",
+      "period": "2026Q1",
+      "sourceRef": "local execution: Company(\"005930\").panel(\"BS\")",
+      "howUsed": "표면 선택 오해 방지"
+    },
+    {
+      "claim": "panel(\"CF\")에서 현금 검색은 영업활동현금흐름, 투자활동현금흐름, 재무활동현금흐름 등 후보를 돌려준다.",
+      "sourceType": "DART",
+      "period": "2026Q1",
+      "sourceRef": "local execution: Company(\"005930\").panel(\"CF\")",
+      "howUsed": "현금흐름표 후보 설명"
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": 1,
+          "planner": "초안은 줄 찾기 기능 설명에 치우쳐 독자가 왜 IS, BS, CF를 먼저 골라야 하는지 약했다.",
+          "evaluator": "select 설명 편처럼 보이면 pipeline 의 panel first 원칙을 깨고 초보자에게 추상적으로 느껴질 수 있다고 평가했다.",
+          "skeptic": "매출액과 매출채권을 같은 단어로 뭉개거나 순이익 후보를 섞으면 잘못된 계산으로 이어진다고 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 87,
+          "plannerRevision": "표면 선택을 중심에 두고 IS 매출, BS 매출채권, CF 현금 후보를 실제 값으로 비교하는 구조로 바꿨다."
+        },
+        {
+          "round": 2,
+          "planner": "개선안은 panel(\"IS\")에서 매출 후보를 찾고, panel(\"BS\")와 panel(\"CF\")에서 같은 단어가 다른 뜻으로 나오는 흐름을 세웠다.",
+          "evaluator": "각 섹션이 코드 출력, 쉬운 설명, 실제 예시, 오해 방지, 다음 연결을 갖추고 계산 전 줄 찾기 단계에 머문다.",
+          "skeptic": "계정 후보가 여러 줄 나오는 것을 실패로 쓰지 않고, DART와 EDGAR 계정명 차이도 경계로 둬 survive 가능하다고 봤다.",
+          "decision": "passed",
+          "evaluatorScore": 96,
+          "plannerRevision": "이미지 두 장과 썸네일 배경을 기획 단계에서 분리하고 다음 편 직접 계산으로 자연스럽게 닫았다."
+        }
+      ]
+    }
+  },
+  "sections": [
+    {
+      "order": 1,
+      "heading": "찾기 전에 표부터 고른다",
+      "subtitle": "매출액을 찾기 전 IS, BS, CF 중 어디를 볼지 먼저 정한다.",
+      "visualAnchor": "Company(\"005930\"), c.market, findRows 헬퍼 코드 출력이 기준이다.",
+      "explanation": "매출액과 매출채권처럼 같은 단어가 들어가도 표면이 다르면 다른 계정이라고 설명한다.",
+      "example": "매출액은 IS, 매출채권은 BS에 있다는 차이를 예로 든다.",
+      "support": "계정을 못 찾았다고 바로 코드 오류로 보면 안 된다는 오해 방지를 붙인다.",
+      "transition": "표면을 고르는 원칙을 세웠으므로 다음에는 IS에서 매출 후보를 찾는다.",
+      "evaluation": "타이틀, 코드, 실제 예시, 보완, 다음 연결이 모두 있는지 재평가했다."
+    },
+    {
+      "order": 2,
+      "heading": "매출은 IS에서 찾는다",
+      "subtitle": "panel(\"IS\")에서 매출액, 매출원가, 매출총이익 후보를 실제 값으로 본다.",
+      "visualAnchor": "findRows(isPanel, \"매출\") 코드 출력과 매출 계정 후보 도식을 배치한다.",
+      "explanation": "매출이라는 단어가 한 줄이 아니라 여러 후보를 부른다고 설명한다.",
+      "example": "2026Q1 매출액 133.873조원, 매출원가 51.960조원, 매출총이익 81.913조원을 보여 준다.",
+      "support": "후보가 여러 줄 나온 것을 오류나 실패로 오해하지 않게 한다.",
+      "transition": "매출 후보를 봤으므로 다음에는 영업이익을 찾는다.",
+      "evaluation": "실제 값과 오해 방지가 함께 있는지 재평가했다."
+    },
+    {
+      "order": 3,
+      "heading": "영업이익은 매출 옆 질문이다",
+      "subtitle": "매출을 본 뒤 같은 IS 안에서 영업이익을 찾는다.",
+      "visualAnchor": "findRows(isPanel, \"영업\") 코드 출력의 영업이익 값이 기준이다.",
+      "explanation": "매출액과 영업이익은 같은 손익계산서 흐름 안에 있다고 설명한다.",
+      "example": "2026Q1 영업이익 약 57.233조원과 2025Q1 약 6.685조원을 보여 준다.",
+      "support": "아직 수익성 분석이나 계산으로 뛰지 않는다는 한계를 붙인다.",
+      "transition": "영업이익을 봤으므로 다음에는 넓은 단어인 순이익을 본다.",
+      "evaluation": "다음 편 계산으로 자연스럽게 이어지는지 재평가했다."
+    },
+    {
+      "order": 4,
+      "heading": "순이익은 단어가 더 넓다",
+      "subtitle": "순이익 검색은 여러 후보를 돌려줄 수 있다.",
+      "visualAnchor": "findRows(isPanel, \"순이익\") 코드 출력의 여러 후보 표가 기준이다.",
+      "explanation": "당기순이익, 지배주주지분 당기순이익, 주당순이익을 나눠 설명한다.",
+      "example": "주당순이익은 조원 단위 금액이 아니라 주당 금액이라고 예시를 둔다.",
+      "support": "이름이 비슷하다고 같은 숫자로 보면 안 된다는 오해 방지를 붙인다.",
+      "transition": "넓은 단어를 봤으므로 다음에는 다른 표에서 같은 단어를 찾아 본다.",
+      "evaluation": "후보 과다를 실패가 아니라 학습으로 전환하는지 재평가했다."
+    },
+    {
+      "order": 5,
+      "heading": "다른 표에서 찾으면 다른 뜻이 나온다",
+      "subtitle": "BS에서 매출을 찾으면 매출액이 아니라 매출채권이 나온다.",
+      "visualAnchor": "findRows(bsPanel, \"매출\") 코드 출력과 표면 선택 도식을 배치한다.",
+      "explanation": "BS의 매출채권은 이미 판 대가를 아직 받지 못한 권리라고 설명한다.",
+      "example": "2026Q1 매출채권및기타채권 약 82.285조원을 보여 준다.",
+      "support": "매출액이 안 보인다고 데이터가 없다고 단정하지 말라는 주의를 붙인다.",
+      "transition": "BS 표면 차이를 봤으므로 다음에는 CF에서 현금 후보를 본다.",
+      "evaluation": "표면 선택 원칙이 실제 값으로 확인되는지 재평가했다."
+    },
+    {
+      "order": 6,
+      "heading": "현금은 CF에서 넓게 나온다",
+      "subtitle": "CF에서 현금을 찾으면 여러 현금흐름 후보가 나온다.",
+      "visualAnchor": "findRows(cfPanel, \"현금\") 코드 출력의 영업, 투자, 재무 현금흐름 후보 표가 기준이다.",
+      "explanation": "현금흐름표는 현금이 움직이는 길을 나누는 표라고 설명한다.",
+      "example": "영업활동현금흐름, 투자활동현금흐름, 재무활동현금흐름을 예로 든다.",
+      "support": "현금 후보가 많다고 이상한 것이 아니라는 오해 방지를 붙인다.",
+      "transition": "후보가 넓어지는 사례를 봤으므로 다음에는 빈 결과 해석으로 넘어간다.",
+      "evaluation": "CF 표면의 성격을 쉽게 설명했는지 재평가했다."
+    },
+    {
+      "order": 7,
+      "heading": "빈 결과는 실패가 아닐 수 있다",
+      "subtitle": "표면, 단어 폭, 회사와 기준을 차례로 확인한다.",
+      "visualAnchor": "IS, BS, CF 코드 출력 후보와 빈 결과 점검표가 기준이다.",
+      "explanation": "빈 결과는 데이터 없음이 아니라 질문이 덜 정확한 것일 수 있다고 설명한다.",
+      "example": "매출액은 IS, 재고자산은 BS, 영업활동현금흐름은 CF에 있다는 예시를 든다.",
+      "support": "DART와 EDGAR 계정명을 바로 섞지 않는 한계를 붙인다.",
+      "transition": "빈 결과 해석을 세웠으므로 다음에는 원천 감각을 닫는다.",
+      "evaluation": "오해 방지가 실제 행동 순서로 정리됐는지 재평가했다."
+    },
+    {
+      "order": 8,
+      "heading": "원천 감각을 유지한다",
+      "subtitle": "계정 이름이 이상하면 DART와 SEC 원천 검색 화면으로 돌아간다.",
+      "visualAnchor": "DART 공식 링크 표, OpenDART 가이드 링크 표, SEC 검색 링크 표가 기준이다.",
+      "explanation": "코드 결과가 빠르게 나오더라도 원천은 법정 공시라고 설명한다.",
+      "example": "DART 회사별 검색과 SEC Search Filings를 예로 든다.",
+      "support": "원천 링크는 외우기용이 아니라 검산용이라는 보완 설명을 붙인다.",
+      "transition": "원천을 닫았으므로 다음에는 브라우저 실행 범위를 분리한다.",
+      "evaluation": "외부 링크가 장식이 아니라 검산 역할을 하는지 재평가했다."
+    },
+    {
+      "order": 9,
+      "heading": "브라우저에서 되는 것과 나중에 할 것",
+      "subtitle": "이번 편은 계정 찾기이고 계산은 다음 편으로 둔다.",
+      "visualAnchor": "본문 python 코드펜스 목록과 실제 코드 출력 표가 기준이다.",
+      "explanation": "브라우저에서 실행되는 범위 안에서만 설명한다고 말한다.",
+      "example": "매출액과 영업이익을 찾았지만 아직 영업이익률을 계산하지 않는다고 쓴다.",
+      "support": "내부 호출 이름이나 로컬 전용 수집 경로를 예시로 꺼내지 않는다는 한계를 붙인다.",
+      "transition": "범위를 닫았으므로 다음에는 오해 방지 목록으로 간다.",
+      "evaluation": "기능 홍보나 계산 편으로 흐르지 않는지 재평가했다."
+    },
+    {
+      "order": 10,
+      "heading": "다음 편으로 넘어가기 전 행동 검사",
+      "subtitle": "매출, 영업, 순이익, 매출채권, 현금 후보를 실제 값으로 구분한다.",
+      "visualAnchor": "isPanel, bsPanel, cfPanel 코드 출력 체크리스트 표가 기준이다.",
+      "explanation": "행동 검사는 글을 읽었다는 표시가 아니라 같은 결과를 눌러 봤는지 확인하는 장치라고 설명한다.",
+      "example": "매출 검색이 이상하다를 후보가 여러 줄 나온다로 고쳐 쓴다.",
+      "support": "표면과 단어 폭을 섞는 오해를 마지막에 다시 막는다.",
+      "transition": "행동 검사를 통과하면 다음 편에서 찾은 숫자로 직접 계산한다.",
+      "evaluation": "다음 편 계산 학습으로 자연스럽게 이어지는지 재평가했다."
+    }
+  ]
+}
