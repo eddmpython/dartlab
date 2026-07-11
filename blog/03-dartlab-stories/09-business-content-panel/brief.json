@@ -1,0 +1,373 @@
+{
+  "title": "사업보고서, 코드로 읽기",
+  "titleContract": {
+    "workingTitle": "사업의 내용, 본문으로 읽기",
+    "selectedTitle": "사업보고서, 코드로 읽기",
+    "hookQuestion": "사업보고서의 사업 설명, 제품, 원재료, 생산설비 문장을 브라우저 코드로 직접 열어 근거 문장으로 바꿀 수 있을까?",
+    "readerGap": "초보자는 사업보고서를 숫자 표나 PDF 원문으로만 보고, 사업 설명 문장도 투자 판단의 근거가 된다는 감각이 약하다.",
+      "promise": "Company(\"005930\")에서 panel(\"사업\"), panel(\"제품\"), panel(\"원재료\"), panel(\"생산설비\")를 실행하고 shortRows 미리보기로 공시 본문 근거 문장을 고르게 한다.",
+    "whySelected": "사업보고서라는 검색어와 코드로 읽기라는 즉시 행동이 붙어 짧고 외부 검색 훅이 선명하다.",
+    "candidates": [
+      {
+        "title": "사업보고서, 코드로 읽기",
+        "hook": "사업보고서 검색어와 코드 실행 효용이 가장 짧게 붙는다.",
+        "risk": "읽기라는 말이 추상적으로 흐르지 않도록 본문 첫 코드에서 실제 사업 문장을 보여 준다."
+      },
+      {
+        "title": "사업보고서 코드, 사업 읽기",
+        "hook": "사업보고서 코드 검색어와 사업 읽기 효용을 동시에 드러낸다.",
+        "risk": "제목이 약간 길고 어순이 딱딱해 selectedTitle보다 덜 자연스럽다."
+      },
+      {
+        "title": "DART 사업보고서, 코드 실행",
+        "hook": "DART와 사업보고서, 코드 실행이 모두 보인다.",
+        "risk": "8편의 코드로 열기와 너무 가까워 9편의 본문 읽기 차이가 약해질 수 있다."
+      }
+    ],
+    "rejectedPatterns": [
+      "사업보고서란 무엇인가",
+      "사업의 내용 사용법 정리",
+      "DART 사업보고서 총정리",
+      "사업보고서 보는 법",
+      "dartlab 사업보고서 본문 소개"
+    ]
+  },
+  "description": "dartlab에서 DART 사업보고서의 사업의 내용, 제품, 원재료, 생산설비 본문을 panel 코드로 열고 재무 숫자가 아닌 공시 문장 근거를 고르는 법을 익힌다.",
+  "readerQuestion": "사업보고서의 사업 설명, 제품, 원재료, 생산설비를 표로 열고 실제 공시 문장을 근거로 쓸 수 있을까?",
+  "insight": {
+    "commonBelief": "사업보고서에서 쓸 만한 근거는 재무제표 숫자뿐이고, 사업 본문은 길어서 사람이 눈으로 읽는 부록이라고 생각한다.",
+    "twistFact": "dartlab에서는 panel(\"사업\"), panel(\"제품\"), panel(\"원재료\"), panel(\"생산설비\")가 사업 본문과 표 조각을 같은 실행 셀에서 보여 준다.",
+    "whatToWatch": "문장과 표를 구분하고, 사업 결론이 아니라 공시 본문 근거 문장을 먼저 고른다.",
+    "freshnessArgument": "2026-07-11 실행에서 005930의 사업, 제품, 원재료, 생산설비 topic이 DART 사업보고서의 II. 사업의 내용 구역과 실제 기간별 본문 조각을 돌려줬다.",
+    "evidenceRefs": [
+      "Company(\"005930\").market = KR",
+      "Company(\"005930\").panel(\"사업\") 미리보기에 II. 사업의 내용, 1. 사업의 개요, 2026Q1 사업 설명 표시",
+      "Company(\"005930\").panel(\"제품\") 미리보기에 주요 제품 및 서비스, 제품 설명, 부문별 매출 표 조각 표시",
+      "Company(\"005930\").panel(\"원재료\") 미리보기에 원재료 및 생산설비, 품목, 용도, 공급처 설명 표시",
+      "Company(\"005930\").panel(\"생산설비\") 미리보기에 생산능력 기준과 가동률 관련 본문 조각 표시"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "사업 본문을 근거 문장으로 연다",
+      "purpose": "왜배우나",
+      "scene": "Company(\"005930\")을 만들고 panel(\"사업\")의 핵심 칸 미리보기에서 II. 사업의 내용과 사업의 개요 문장을 확인한다.",
+      "keyNumbers": [
+        "005930",
+        "KR",
+        "2026Q1",
+        "II. 사업의 내용"
+      ],
+      "causalBridge": "사업보고서 숫자만 보던 독자가 사업 설명 문장도 공시 근거라는 점을 배워야 한다."
+    },
+    {
+      "order": 2,
+      "heading": "제품, 원재료, 생산설비를 나눠 읽는다",
+      "purpose": "직접해본다",
+      "scene": "panel(\"제품\"), panel(\"원재료\"), panel(\"생산설비\")를 실행해 제품 이름, 부문별 매출 표, 원재료 품목, 생산능력 기준을 실제 값 목록으로 본다.",
+      "keyNumbers": [
+        "제품",
+        "원재료",
+        "생산설비",
+        "leafType"
+      ],
+      "causalBridge": "본문 문장과 표 조각을 나눠야 추상적인 사업 해석이 아니라 근거가 보이는 문장을 쓸 수 있다."
+    },
+    {
+      "order": 3,
+      "heading": "사업 결론과 근거 후보를 분리한다",
+      "purpose": "오해방지",
+      "scene": "DART 사업 본문 panel과 EDGAR 재무 panel의 확인 범위를 나누고, 시세와 뉴스 같은 로컬 전용 데이터는 이번 글에서 빼 둔다.",
+      "keyNumbers": [
+        "DART",
+        "EDGAR",
+        "text",
+        "table"
+      ],
+      "causalBridge": "확인한 범위만 말해야 다음 편에서 주석과 재무 숫자를 연결할 때 근거가 흔들리지 않는다."
+    }
+  ],
+  "visuals": [
+    {
+      "actOrder": 1,
+      "kind": "bitmap diagram",
+      "title": "사업 본문을 근거 문장으로 바꾸는 흐름",
+      "proves": "panel(\"사업\") 결과의 위치, text, 기간별 본문 조각이 투자 결론이 아니라 근거 문장 후보라는 점을 보여 준다.",
+      "seriesHint": "business report text to evidence sentence",
+      "placement": "panel(\"사업\").head(5) 코드 설명 뒤에 배치한다.",
+      "insertAfter": "이 근거는 손익계산서 숫자와 다른 종류의 근거다 문단 뒤",
+      "narrativeUse": "독자가 사업 본문을 읽고 곧바로 결론으로 뛰지 않도록 근거 문장 단계에 머물게 한다."
+    },
+    {
+      "actOrder": 2,
+      "kind": "bitmap diagram",
+      "title": "제품과 원재료에서 거래망 힌트를 찾는 흐름",
+      "proves": "제품 표와 원재료 본문이 사업 범위, 돈의 위치, 거래망 힌트를 서로 다르게 제공한다는 점을 보여 준다.",
+      "seriesHint": "product material network evidence map",
+      "placement": "원재료 절 설명 뒤에 배치한다.",
+      "insertAfter": "이 편은 거래망의 힌트를 찾는 데서 멈춘다 문단 뒤",
+      "narrativeUse": "원재료 공급처 이름을 보자마자 공급망 결론으로 과장하는 오해를 막는다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "inline",
+      "subject": "panel(\"사업\") 결과에서 사업의 개요 text를 공시 근거 문장으로 바꾸는 교육용 bitmap 도식",
+      "query": "DART business report text evidence sentence panel diagram",
+      "keywords": [
+        "DART",
+        "business report",
+        "panel",
+        "business text",
+        "evidence"
+      ],
+      "placement": "사업의 개요 첫 코드 설명 뒤 본문 중간",
+      "narrativeUse": "사업 본문은 투자 결론이 아니라 근거 문장 후보라는 점을 시각적으로 고정한다."
+    },
+    {
+      "slot": "inline",
+      "subject": "제품 서비스 표와 원재료 본문에서 사업 거래망 힌트를 찾는 교육용 bitmap 도식",
+      "query": "product service raw material supplier evidence map diagram",
+      "keywords": [
+        "product",
+        "raw material",
+        "supplier",
+        "table",
+        "evidence"
+      ],
+      "placement": "원재료와 거래망 힌트 설명 뒤",
+      "narrativeUse": "제품, 원재료, 생산설비가 서로 다른 질문에 답한다는 점을 보여 준다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": [
+      "사업보고서 코드",
+      "DART 사업보고서",
+      "사업의 내용",
+      "재무제표 파이썬",
+      "DART 종목코드",
+      "EDGAR 재무제표"
+    ],
+    "placementRule": "8편은 위치 지도 선행편으로 도입부에, 4편은 Company 입력 보충으로, 2편은 재무 숫자와 사업 본문 차이 설명으로, 7편은 EDGAR 확인 범위 경계로 연결한다.",
+    "links": [
+      {
+        "path": "/blog/business-report-panel",
+        "title": "사업보고서, 코드로 열기",
+        "reason": "9편이 8편의 위치 지도 개념 위에서 사업 본문 읽기로 넘어가기 때문이다.",
+        "placement": "첫 섹션 도입부"
+      },
+      {
+        "path": "/blog/pick-company-by-code",
+        "title": "DART 종목코드, 회사 열기",
+        "reason": "005930이 Company 입력값이라는 선행 개념을 보충한다.",
+        "placement": "첫 Company 코드가 나오기 전"
+      },
+      {
+        "path": "/blog/call-financial-statements",
+        "title": "재무제표, 파이썬 한 줄",
+        "reason": "재무 숫자와 사업 본문 근거가 서로 다른 종류의 근거라는 점을 대비한다.",
+        "placement": "도입부의 선행 글 안내"
+      },
+      {
+        "path": "/blog/edgar-financial-panel",
+        "title": "EDGAR 재무제표, 코드 실행",
+        "reason": "EDGAR 재무 panel과 DART 사업 본문 panel의 확인 범위를 분리한다.",
+        "placement": "DART와 EDGAR 경계 섹션"
+      }
+    ]
+  },
+  "honestyGuards": [
+    "panel(\"사업\")을 실행했다고 사업 분석이 끝났다고 쓰지 않는다.",
+    "제품 표의 부문별 매출을 회사 전체 매출처럼 단정하지 않는다.",
+    "원재료 공급처 이름을 보고 공급망 중요도나 병목을 바로 결론내리지 않는다.",
+    "생산설비 값은 산식과 단위가 다를 수 있으므로 기준 문장을 먼저 보게 한다.",
+    "EDGAR 재무 panel과 DART 사업 본문 panel을 같은 확인 범위로 말하지 않는다."
+  ],
+  "evidenceMap": [
+    {
+      "claim": "005930은 dartlab Company에서 KR 회사로 열린다.",
+      "sourceType": "dartlab",
+      "period": "2026-07-11",
+      "sourceRef": "local execution: Company(\"005930\").market",
+      "howUsed": "첫 코드셀과 DART 회사 출발점 설명"
+    },
+    {
+      "claim": "panel(\"사업\")은 II. 사업의 내용과 1. 사업의 개요 본문 조각을 보여 준다.",
+      "sourceType": "DART",
+      "period": "2026Q1",
+      "sourceRef": "local execution: Company(\"005930\").panel(\"사업\").head(5)",
+      "howUsed": "사업의 개요에서 회사 주어를 찾는 설명"
+    },
+    {
+      "claim": "panel(\"제품\")은 주요 제품 및 서비스의 text와 부문별 매출 table 조각을 보여 준다.",
+      "sourceType": "DART",
+      "period": "2026Q1",
+      "sourceRef": "local execution: Company(\"005930\").panel(\"제품\").head(5)",
+      "howUsed": "제품 이름과 돈의 지도를 분리하는 설명"
+    },
+    {
+      "claim": "panel(\"원재료\")은 원재료 품목, 용도, 공급처 예시를 보여 준다.",
+      "sourceType": "DART",
+      "period": "2026Q1",
+      "sourceRef": "local execution: Company(\"005930\").panel(\"원재료\").head(5)",
+      "howUsed": "거래망 힌트를 과장 없이 설명"
+    },
+    {
+      "claim": "7편은 EDGAR 재무 panel만 확인했고, DART 사업 본문 panel과 같은 범위라고 말하지 않는다.",
+      "sourceType": "EDGAR",
+      "period": "2026-07-11",
+      "sourceRef": "/blog/edgar-financial-panel",
+      "howUsed": "DART와 EDGAR 확인 범위 분리"
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": 1,
+          "planner": "초안은 사업, 제품, 원재료, 생산설비 topic을 기능 나열처럼 배치했고 독자가 왜 이 문장을 읽는지 약했다.",
+          "evaluator": "코드는 공개 계약 안에 있지만 섹션마다 실제 공시 문장과 행동 검사가 부족해 초보자가 추상 설명으로 읽을 위험이 있다고 평가했다.",
+          "skeptic": "제품 표의 매출을 회사 전체 매출처럼 오해시키거나 원재료 공급처를 곧바로 공급망 결론으로 과장하면 실패라고 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 87,
+          "plannerRevision": "각 섹션을 사업 주어, 돈의 지도, 거래망 힌트, 생산 기준으로 재작성하고 text와 table 구분을 행동 검사에 넣었다."
+        },
+        {
+          "round": 2,
+          "planner": "개선안은 panel(\"사업\")의 실제 본문, panel(\"제품\")의 제품 설명과 부문별 매출 표, panel(\"원재료\")의 품목과 공급처 예시를 중심으로 다시 세웠다.",
+          "evaluator": "섹션마다 코드 출력, 쉬운 설명, 실제 예시, 오해 방지, 다음 연결이 있으며 사업 결론보다 근거 문장 작성에 집중한다.",
+          "skeptic": "EDGAR 범위, 시세와 뉴스의 로컬 경계, 원재료 공급망 과장을 명시적으로 차단해 survive 가능하다고 봤다.",
+          "decision": "passed",
+          "evaluatorScore": 96,
+          "plannerRevision": "본문 이미지 두 장과 썸네일 배경을 기획 단계에서 분리하고, 다음 편 주석 연결까지 닫아 최종 통과했다."
+        }
+      ]
+    }
+  },
+  "sections": [
+    {
+      "order": 1,
+      "heading": "사업보고서에서 문장을 고른다",
+      "subtitle": "panel(\"사업\")으로 사업의 내용 구역을 열고 숫자가 아닌 공시 문장 근거를 잡는다.",
+      "visualAnchor": "Company(\"005930\"), c.market, panel(\"사업\")의 shortRows 코드 출력과 사업 본문 근거 문장 도식을 배치한다.",
+      "explanation": "사업보고서 본문은 재무제표 숫자와 다른 종류의 근거라는 점을 쉬운 말로 설명한다.",
+      "example": "2026Q1 사업의 개요 문장에서 DX, DS, SDC, Harman을 함께 놓는 사업 범위 설명을 예로 든다.",
+      "support": "사업 문장을 읽었다고 곧바로 투자 결론을 쓰면 안 된다는 오해 방지를 붙인다.",
+      "transition": "사업 구역을 열었으므로 다음에는 사업의 개요에서 회사의 주어를 찾는다.",
+      "evaluation": "타이틀, 코드 출력, 이미지, 설명, 실제 예시, 보완, 다음 연결이 모두 있는지 재평가했다."
+    },
+    {
+      "order": 2,
+      "heading": "사업의 개요에서 주어를 찾는다",
+      "subtitle": "사업의 개요 text는 회사가 자기 사업을 어떤 덩어리로 설명하는지 보여 준다.",
+      "visualAnchor": "business 미리보기 코드 출력 표의 II. 사업의 내용, 1. 사업의 개요, text, 2026Q1 본문 조각을 시각 앵커로 둔다.",
+      "explanation": "삼성전자를 반도체 회사 한 단어로 줄이지 않고 공시 본문이 제시한 사업 범위를 먼저 말하게 한다.",
+      "example": "사업 설명은 DX 부문, DS 부문, SDC, Harman을 함께 놓고 시작한다고 쓴다.",
+      "support": "이 문장은 투자 결론이 아니라 공시 본문에 근거한 사업 범위 문장이라는 한계를 붙인다.",
+      "transition": "사업 범위를 봤으므로 다음에는 제품과 서비스에서 돈이 걸린 지도를 본다.",
+      "evaluation": "추상적인 사업 소개가 아니라 본문에서 실제로 보이는 주어를 찾게 하는지 재평가했다."
+    },
+    {
+      "order": 3,
+      "heading": "제품과 서비스는 돈의 지도를 준다",
+      "subtitle": "panel(\"제품\")은 제품 이름 설명과 부문별 매출 표 조각을 함께 보여 준다.",
+      "visualAnchor": "products 미리보기의 주요 제품 및 서비스, text, table, 부문별 매출 값을 코드 출력으로 확인한다.",
+      "explanation": "text는 제품 설명이고 table은 부문, 주요 제품, 매출액, 비중이므로 둘을 나눠 읽는다고 설명한다.",
+      "example": "TV, 스마트폰, DRAM, NAND Flash, 모바일AP, OLED 패널과 DX, DS, SDC, Harman 부문 값을 예로 든다.",
+      "support": "부문간 내부거래 제거 설명을 같이 보지 않으면 제품 표의 매출액을 오해할 수 있다고 주의시킨다.",
+      "transition": "제품을 봤으므로 다음에는 제품을 만들기 위한 원재료와 공급처 예시를 본다.",
+      "evaluation": "제품명과 돈의 위치를 분리해 독자가 표와 문장을 섞지 않는지 재평가했다."
+    },
+    {
+      "order": 4,
+      "heading": "원재료는 거래망의 힌트다",
+      "subtitle": "panel(\"원재료\")는 품목, 용도, 공급처 예시를 보여 주지만 공급망 결론은 아직 아니다.",
+      "visualAnchor": "materials 미리보기의 원재료 및 생산설비 text, table 출력과 제품 원재료 거래망 힌트 도식을 배치한다.",
+      "explanation": "모바일AP, 모바일용 메모리, 카메라 모듈, 디스플레이 패널, Chemical, Wafer 같은 품목을 쉬운 말로 읽는다.",
+      "example": "Qualcomm, Micron, 삼성전기, CSOT, 솔브레인, SILTRONIC 같은 공급처 예시가 보인다고 설명한다.",
+      "support": "공급처 이름이 보인다고 중요도와 병목을 바로 단정하면 안 된다는 오해 방지를 붙인다.",
+      "transition": "원재료를 봤으므로 다음에는 생산설비에서 값보다 기준 문장을 본다.",
+      "evaluation": "거래망이라는 말을 과장하지 않고 힌트 수준으로 묶었는지 재평가했다."
+    },
+    {
+      "order": 5,
+      "heading": "생산설비는 숫자보다 기준을 본다",
+      "subtitle": "panel(\"생산설비\")에서는 생산능력과 가동률 값을 외우기보다 산출 기준 문장을 먼저 읽는다.",
+      "visualAnchor": "facilities 미리보기의 생산능력 설명, 산출 기준 text, 가동률 관련 표 조각을 시각 앵커로 둔다.",
+      "explanation": "평균 라인 수, 시간당 평균 생산실적, 일 평균 가동시간, 표준 가동일수 같은 기준을 설명한다.",
+      "example": "DS 메모리 생산능력은 1Gb 환산 기준이라는 문장을 예시로 든다.",
+      "support": "생산능력과 가동률은 회사마다 산식과 단위가 달라 바로 비교하면 틀릴 수 있다고 보완한다.",
+      "transition": "기준 문장을 배웠으므로 다음에는 text와 table을 섞어 쓰지 않는 법으로 넘어간다.",
+      "evaluation": "값보다 기준을 먼저 보게 해서 숫자 암기로 흐르지 않는지 재평가했다."
+    },
+    {
+      "order": 6,
+      "heading": "문장과 표를 섞어 쓰지 않는다",
+      "subtitle": "leafType이 text인지 table인지에 따라 근거 문장 쓰는 방식이 달라진다.",
+      "visualAnchor": "제품과 원재료 panel의 text 줄과 table 줄을 나란히 놓은 코드 출력과 표 도식이 기준이다.",
+      "explanation": "text는 설명 문장, table은 표 조각이므로 인용할 때 기간, 단위, 표 위치를 분리한다고 설명한다.",
+      "example": "나쁜 문장과 좋은 문장을 비교해 DS 부문 제품 표와 원재료 본문을 따로 적게 한다.",
+      "support": "문장과 표를 섞으면 값의 출처와 설명의 출처가 흐려진다는 검산 주의를 붙인다.",
+      "transition": "근거 종류를 나눴으므로 다음에는 DART와 EDGAR 확인 범위를 분리한다.",
+      "evaluation": "추상 경고가 아니라 실제 문장 고치기 예시가 있는지 재평가했다."
+    },
+    {
+      "order": 7,
+      "heading": "DART와 EDGAR의 경계를 둔다",
+      "subtitle": "이번 편은 DART 사업 본문이고 7편은 EDGAR 재무 panel이라 확인 범위가 다르다.",
+      "visualAnchor": "7편 내부 링크와 Company(\"AAPL\").panel(\"IS\") 대 Company(\"005930\").panel(\"사업\")의 범위 차이를 표로 설명한다.",
+      "explanation": "미국 재무제표가 열린다고 미국 사업 본문까지 같은 방식으로 열린다고 단정하지 않는다.",
+      "example": "Apple의 IS, BS, CF는 확인됐지만 DART 사업 본문 topic과 같은 범위로 말하지 않는다고 쓴다.",
+      "support": "EDGAR 본문 미확인 범위를 DART 본문 확인 범위로 끌어오면 과장이라는 한계를 붙인다.",
+      "transition": "확인 범위를 나눴으므로 다음에는 브라우저에서 되는 것과 나중에 할 것을 분리한다.",
+      "evaluation": "DART 전용 실측과 EDGAR 재무 실측을 혼동하지 않는지 재평가했다."
+    },
+    {
+      "order": 8,
+      "heading": "원천 페이지를 같이 둔다",
+      "subtitle": "DART 사업 본문은 DART와 OpenDART 원천에서 온 조각이고, EDGAR는 SEC 원천으로 따로 확인한다.",
+      "visualAnchor": "DART 전자공시시스템, DART 회사별 검색, OpenDART 개발가이드, SEC Search Filings, EDGAR Full Text Search 링크와 panel 코드 출력 표를 함께 둔다.",
+      "explanation": "코드 결과를 믿기 전에 원천 문서 위치로 돌아갈 수 있어야 공시 문장 근거가 단단해진다고 설명한다.",
+      "example": "DART 사업 본문은 DART 검색 화면으로, 미국 공시는 SEC 검색 화면으로 되돌아간다고 쓴다.",
+      "support": "원천 링크는 외우기용이 아니라 코드 결과가 길거나 이상할 때 검산하는 길이라는 보완 설명을 붙인다.",
+      "transition": "원천을 확인했으므로 다음에는 브라우저 실행 범위와 로컬 전용 데이터를 분리한다.",
+      "evaluation": "외부 링크가 장식이 아니라 원천 검산 역할을 하는지 재평가했다."
+    },
+    {
+      "order": 9,
+      "heading": "브라우저에서 되는 것과 나중에 할 것",
+      "subtitle": "이번 편은 Company, market, panel, head만 쓰고 시세, 뉴스, 수급은 다루지 않는다.",
+      "visualAnchor": "본문 python 코드펜스 목록과 브라우저 실행 가능 호출만 시각 앵커로 둔다.",
+      "explanation": "브라우저 글 안에서 독자가 그대로 실행할 수 있는 범위 안에서만 설명한다고 말한다.",
+      "example": "panel(\"사업\"), panel(\"제품\"), panel(\"원재료\"), panel(\"생산설비\")만 코드 예시로 둔다.",
+      "support": "실시간 시세, 뉴스, 수급, 최신 공시 알림은 로컬 확장 코스라는 한계를 붙인다.",
+      "transition": "실행 범위를 분리했으므로 다음에는 오해 방지 목록으로 닫는다.",
+      "evaluation": "내부 호출 이름이나 로컬 전용 수집 경로가 새지 않았는지 재평가했다."
+    },
+    {
+      "order": 10,
+      "heading": "이렇게 오해하면 안 된다",
+      "subtitle": "사업 구역 열기, 사업 근거 고르기, 사업 분석 완료를 섞지 않는다.",
+      "visualAnchor": "오해 방지 체크 문장과 제품, 원재료, 생산설비 코드 출력의 위치 칸을 함께 되짚는다.",
+      "explanation": "제품 표 매출, 공급처 이름, 생산능력 값, EDGAR 범위를 각각 어디까지 말할 수 있는지 설명한다.",
+      "example": "삼성전자는 반도체가 강하다 대신 사업보고서 제품 절에는 DS 부문 제품과 부문별 매출 표가 함께 나온다고 고쳐 쓴다.",
+      "support": "각 오해가 어떤 과장과 틀린 결론으로 이어지는지 주의 문장을 붙인다.",
+      "transition": "오해를 정리했으므로 마지막에는 다음 편 전 행동 검사로 넘어간다.",
+      "evaluation": "초보자가 바로 고쳐 쓸 수 있는 문장 예시가 있는지 재평가했다."
+    },
+    {
+      "order": 11,
+      "heading": "다음 편으로 넘어가기 전 행동 검사",
+      "subtitle": "사업, 제품, 원재료, 생산설비를 직접 실행하고 각각 다른 근거 문장을 쓸 수 있어야 한다.",
+      "visualAnchor": "네 개 코드 실행 체크리스트와 panel 출력의 text, table 구분을 시각 앵커로 둔다.",
+      "explanation": "행동 검사는 글을 읽었다는 표시가 아니라 같은 결과를 브라우저에서 눌러 봤는지 확인하는 장치라고 설명한다.",
+      "example": "business, products, materials, facilities 각각의 핵심 칸 미리보기를 실행하고 한 문장씩 고친다.",
+      "support": "표 범위가 달라도 위치와 종류가 보이는지 먼저 검산하라는 보완 설명을 붙인다.",
+      "transition": "행동 검사를 통과하면 다음 편에서 주석과 재무 숫자를 연결한다.",
+      "evaluation": "다음 편 주석 연결을 위한 선행 능력이 명확한지 재평가했다."
+    }
+  ]
+}
