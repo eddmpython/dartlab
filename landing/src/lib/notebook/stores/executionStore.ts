@@ -49,6 +49,25 @@ export function prewarmEngine(): Promise<void> {
 	return prewarmed;
 }
 
+const dataWarmed = new Set<string>();
+
+/**
+ * 데이터 사전 로딩. 첫 셀 코드를 조용히 한 번 실행해 그 셀이 여는 회사의 parquet 을 커널 FS 에
+ * 올려 둔다. 설치 프리워밍만으로는 첫 클릭이 데이터 fetch(~12.8MB, 실측 16초) 때문에 여전히
+ * 느리다. 이걸로 사용자의 첫 클릭은 fetch 없이 실행만 한다. 출력은 버린다(눈에 안 보이게).
+ * 멱등. 커널이 죽으면 캐시 표시도 비운다(runSnippet 의 ranSnippets 와 함께 destroyEngine 에서).
+ */
+export async function prewarmData(code: string): Promise<void> {
+	const key = code.trim();
+	if (!key || dataWarmed.has(key)) return;
+	dataWarmed.add(key);
+	try {
+		await runSnippet(code); // 데이터를 FS 로 끌어온다. 결과는 쓰지 않는다.
+	} catch {
+		dataWarmed.delete(key); // 실패면 다음 기회에 다시.
+	}
+}
+
 let bringUp: Promise<void> | null = null;
 
 /** 워커 기동 + 위젯 브리지. 중복 호출 안전(진행 중이면 그 약속을 공유). 노트북에는 손대지 않는다. */
@@ -315,6 +334,7 @@ export function destroyEngine(): void {
 	engine?.destroy();
 	engine = null;
 	ranSnippets.clear(); // 커널이 사라지면 그 안의 변수도 사라진다
+	dataWarmed.clear(); // 데이터 캐시(FS)도 커널과 함께 사라진다
 	attachedNotebookId = null; // 다음 initEngine 이 다시 부착(복원+autoRun)하도록
 	prewarmed = null; // 워커가 사라졌으니 사전 로딩도 다시 할 수 있게
 	engineStatus.set('idle');

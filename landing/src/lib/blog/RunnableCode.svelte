@@ -6,31 +6,37 @@
 	// 만든 `c` 를 아래 셀이 그대로 쓴다. 글 읽는 순서가 곧 실행 순서다.
 	import { Play, Loader2, NotebookPen } from 'lucide-svelte';
 	import { onMount } from 'svelte';
-	import { runSnippet, prewarmEngine, engineStatus } from '$lib/notebook/stores/executionStore';
+	import { runSnippet, prewarmEngine, prewarmData, engineStatus } from '$lib/notebook/stores/executionStore';
 	import type { CellOutput } from '$lib/notebook/engine/executionEngine';
 	import OutputPanel from '$lib/notebook/components/OutputPanel.svelte';
-
-	// 실행 버튼이 느린 유일한 이유는 첫 클릭 때 pyodide + dartlab(21MB + polars) 설치 12~20초다.
-	// prewarmEngine 은 그걸 백그라운드에서 미리 끝낸다(멱등, 첫 호출만 실제 워밍). hover 를 기다리지
-	// 않고 글에 실행셀이 있으면 진입 즉시 idle 에 데운다. 사용자가 글 읽는 동안 끝나 클릭 시 체감 0초.
-	onMount(() => {
-		const w = window as unknown as { requestIdleCallback?: (cb: () => void) => void };
-		const kick = () => void prewarmEngine();
-		if (w.requestIdleCallback) w.requestIdleCallback(kick);
-		else setTimeout(kick, 1200);
-	});
 
 	interface Props {
 		code: string;
 		/** 이 셀보다 위에 있는 본문 코드들. 커널이 아직 안 돌린 것만 먼저 흘린다. */
 		prereq?: string[];
-		/** 이 글을 노트북으로 가져간다. 첫 셀에만 붙인다. */
+		/** 이 글을 노트북으로 가져간다. 첫 셀에만 붙인다(첫 셀 판별에도 쓴다). */
 		onOpenNotebook?: () => void;
 	}
 	let { code, prereq = [], onOpenNotebook }: Props = $props();
 
 	let output = $state<CellOutput | undefined>(undefined);
 	let running = $state(false);
+
+	// 클릭이 느린 두 원인을 진입 즉시 백그라운드로 없앤다.
+	//   (1) 설치: pyodide + dartlab(21MB + polars) 12~20초. prewarmEngine 이 미리 끝낸다(멱등).
+	//   (2) 데이터: 첫 셀이 여는 회사의 panel parquet(~12.8MB) fetch. 설치만 데워도 첫 클릭은 이 fetch
+	//       때문에 여전히 느리다(실측 16초). 그래서 첫 셀은 설치가 끝난 뒤 자기 코드를 조용히 한 번
+	//       실행해 데이터까지 커널 FS 에 올려 둔다. 그러면 사용자의 첫 클릭은 fetch 없이 실행만 한다.
+	// dartlab 이야기는 독자 의도가 코드 실행이라 이 선제 다운로드가 정당하다(카테고리 한정).
+	onMount(() => {
+		const w = window as unknown as { requestIdleCallback?: (cb: (d?: unknown) => void) => void };
+		const kick = async () => {
+			await prewarmEngine();
+			if (onOpenNotebook) await prewarmData(code); // 첫 셀만. 자기 데이터를 선제 캐시.
+		};
+		if (w.requestIdleCallback) w.requestIdleCallback(() => void kick());
+		else setTimeout(() => void kick(), 1200);
+	});
 
 	/** 파이썬과 dartlab 을 내려받는 중일 때만 오래 걸린다고 말한다. 따뜻한 커널에는 거짓말이다. */
 	let downloading = $derived(running && $engineStatus === 'loading');
