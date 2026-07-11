@@ -18,6 +18,10 @@ export interface VariableInfo {
 export interface PackageInfo {
 	name: string;
 	version: string;
+	requested?: boolean;
+	requirement?: string;
+	missing?: boolean;
+	error?: string;
 }
 
 export interface DocResult {
@@ -44,6 +48,7 @@ export interface RuntimeCapabilities {
 	persistentWorkspace: boolean;
 	interrupt: 'soft' | 'hard';
 	memoryTransactions: 'experimental';
+	packagePersistence?: 'workspace-manifest';
 }
 
 export interface CheckpointInfo {
@@ -66,6 +71,7 @@ export interface ExecutionEngine {
 	/** browser-as-server: 같은 커널의 dartlab FastAPI 로 HTTP 요청 서빙(Service Worker relay). */
 	serveApi?(req: { method: string; path: string; body?: string }): Promise<PyApiResponse>;
 	attachWorkspace?(workspaceId: string): Promise<boolean>;
+	restoreWorkspacePackages?(): Promise<void>;
 	getRuntimeCapabilities?(): Promise<RuntimeCapabilities>;
 	createCheckpoint?(label: string): Promise<CheckpointInfo>;
 	restoreCheckpoint?(id: string): Promise<{ id: string; pagesWritten: number; bytesWritten: number }>;

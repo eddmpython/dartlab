@@ -162,6 +162,7 @@ export async function initEngine(autoRun = true): Promise<void> {
 			await restoreWorkspaceFiles(nb.workspaceFiles);
 		}
 		await syncNotebookFile();
+		await engine.restoreWorkspacePackages?.();
 	} catch {
 		// workspace restore failed, engine still usable
 	}

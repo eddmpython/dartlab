@@ -68,6 +68,10 @@ export class WorkerEngine implements ExecutionEngine {
 		return this.call('attachWorkspace', workspaceId) as Promise<boolean>;
 	}
 
+	async restoreWorkspacePackages(): Promise<void> {
+		await this.call('restoreWorkspacePackages');
+	}
+
 	async getRuntimeCapabilities(): Promise<RuntimeCapabilities> {
 		return this.call('getRuntimeCapabilities') as Promise<RuntimeCapabilities>;
 	}

@@ -2,6 +2,14 @@
 import { MARIMO_SHIM_FILES } from './marimoShim';
 import { wrapLastExpression } from './lastExpression';
 import { CheckpointGraph } from './checkpointGraph';
+import {
+	mergePackageSpecs,
+	packageSpecKey,
+	parsePackageManifest,
+	parsePipInstallCommand,
+	parseRequirementsText,
+	serializePackageManifest
+} from './packageManifest';
 
 declare const self: DedicatedWorkerGlobalScope;
 
@@ -61,6 +69,12 @@ let persistentWorkspace = false;
 let attachedWorkspaceId: string | null = null;
 let interruptMode: 'soft' | 'hard' = 'hard';
 let checkpointGraph: CheckpointGraph | null = null;
+let packageRestoreSignature = '';
+let packageRestoreError = '';
+
+const PACKAGE_DIR = '/workspace/.dartlab';
+const PACKAGE_MANIFEST_PATH = `${PACKAGE_DIR}/requirements.json`;
+const WORKSPACE_REQUIREMENTS_PATH = '/workspace/requirements.txt';
 
 // 노트북 편의: 셀이 dartlab 을 import 하면 최초 1회 자동 설치(HF pyodide wheel). 커널은 범용 그대로.
 // dartlab 안 쓰는 노트북은 이 경로에 안 들어온다. 덕에 셀 코드는 `import dartlab` 한 줄이면 된다
@@ -189,6 +203,7 @@ async function attachWorkspace(workspaceId: string): Promise<boolean> {
 		await workspaceSync();
 		attachedWorkspaceId = workspaceId;
 		persistentWorkspace = true;
+		await restoreWorkspacePackages().catch(() => undefined);
 		return true;
 	} catch {
 		workspaceSync = null;
@@ -201,6 +216,90 @@ async function attachWorkspace(workspaceId: string): Promise<boolean> {
 async function syncWorkspace(): Promise<void> {
 	if (!workspaceSync) return;
 	try { await workspaceSync(); } catch { /* keep kernel usable when persistence fails */ }
+}
+
+function fileExists(path: string): boolean {
+	if (!pyodide) return false;
+	try {
+		pyodide.FS.stat(path);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+function readTextFile(path: string): string | null {
+	if (!pyodide || !fileExists(path)) return null;
+	try {
+		return pyodide.FS.readFile(path, { encoding: 'utf8' }) as string;
+	} catch {
+		return null;
+	}
+}
+
+function ensurePackageDir(): void {
+	if (!pyodide || fileExists(PACKAGE_DIR)) return;
+	try {
+		pyodide.FS.mkdir(PACKAGE_DIR);
+	} catch {
+		/* directory may already exist */
+	}
+}
+
+function readManifestPackages(): string[] {
+	const text = readTextFile(PACKAGE_MANIFEST_PATH);
+	if (!text) return [];
+	try {
+		return parsePackageManifest(text).packages;
+	} catch {
+		return [];
+	}
+}
+
+function readWorkspacePackageSpecs(): string[] {
+	let specs = readManifestPackages();
+	const requirements = readTextFile(WORKSPACE_REQUIREMENTS_PATH);
+	if (requirements) {
+		specs = mergePackageSpecs(specs, parseRequirementsText(requirements));
+	}
+	return specs;
+}
+
+async function writePackageManifest(specs: string[]): Promise<void> {
+	if (!pyodide) return;
+	ensurePackageDir();
+	pyodide.FS.writeFile(PACKAGE_MANIFEST_PATH, serializePackageManifest(specs), { encoding: 'utf8' });
+	await syncWorkspace();
+}
+
+async function installPackageSpecs(specs: string[], persist: boolean): Promise<string[]> {
+	if (!pyodide) return [];
+	const normalized = mergePackageSpecs([], specs);
+	if (normalized.length === 0) return [];
+	await pyodide.runPythonAsync(
+		`import micropip\nawait micropip.install(${JSON.stringify(normalized)})\nimport importlib\nimportlib.invalidate_caches()`
+	);
+	packageRestoreError = '';
+	if (persist) {
+		const nextSpecs = mergePackageSpecs(readManifestPackages(), normalized);
+		await writePackageManifest(nextSpecs);
+		packageRestoreSignature = nextSpecs.join('\n');
+	}
+	return normalized;
+}
+
+async function restoreWorkspacePackages(): Promise<void> {
+	const specs = readWorkspacePackageSpecs();
+	const signature = specs.join('\n');
+	if (!signature || signature === packageRestoreSignature) return;
+	try {
+		await installPackageSpecs(specs, false);
+		packageRestoreSignature = signature;
+		packageRestoreError = '';
+	} catch (err) {
+		packageRestoreError = String(err);
+		throw err;
+	}
 }
 
 const FORMAT_CODE = `
@@ -340,6 +439,16 @@ async function execute(code: string) {
 	stderrBuffer = [];
 
 	try {
+		const pipSpecs = parsePipInstallCommand(code);
+		if (pipSpecs) {
+			const installedSpecs = await installPackageSpecs(pipSpecs, true);
+			return {
+				type: 'text',
+				data: installedSpecs.length ? `Installed ${installedSpecs.join(', ')}` : 'No packages installed',
+				executedAt: new Date().toISOString()
+			};
+		}
+
 		// dartlab 을 import 하는 첫 셀이면 자동 설치(그 외 노트북은 미진입, 커널은 범용 유지).
 		await ensureDartlab(code);
 		const hasImport = /(?:^|\n)\s*(?:import |from )\S+/.test(code);
@@ -430,8 +539,14 @@ self.onmessage = async (e: MessageEvent) => {
 				reply(id, {
 					persistentWorkspace,
 					interrupt: interruptMode,
-					memoryTransactions: 'experimental'
+					memoryTransactions: 'experimental',
+					packagePersistence: 'workspace-manifest'
 				});
+				break;
+			}
+			case 'restoreWorkspacePackages': {
+				await restoreWorkspacePackages();
+				reply(id, { ok: true });
 				break;
 			}
 			case 'createCheckpoint': {
@@ -554,13 +669,14 @@ __json__.dumps(__comp_items__)
 			}
 			case 'installPackage': {
 				if (!pyodide) { reply(id, null); break; }
-				const safeName = (args[0] as string).replace(/'/g, "\\'");
-				await pyodide.runPythonAsync(`import micropip; await micropip.install('${safeName}')`);
+				await installPackageSpecs([args[0] as string], true);
 				reply(id, null);
 				break;
 			}
 			case 'getInstalledPackages': {
 				if (!pyodide) { reply(id, []); break; }
+				const requestedSpecs = readWorkspacePackageSpecs();
+				const requestedByKey = new Map(requestedSpecs.map((spec) => [packageSpecKey(spec), spec]));
 				const result = await pyodide.runPythonAsync(`
 import json as __json__
 import micropip
@@ -569,7 +685,33 @@ for __name__, __pkg__ in sorted(micropip.list().items()):
     __pkgs__.append({'name': __name__, 'version': str(__pkg__.version)})
 __json__.dumps(__pkgs__)
 `);
-				reply(id, JSON.parse(String(result)));
+				const installed = JSON.parse(String(result)) as Array<{ name: string; version: string }>;
+				const installedKeys = new Set<string>();
+				const enriched: Array<{
+					name: string;
+					version: string;
+					requested?: boolean;
+					requirement?: string;
+					missing?: boolean;
+					error?: string;
+				}> = installed.map((pkg) => {
+					const key = packageSpecKey(pkg.name);
+					installedKeys.add(key);
+					const requirement = requestedByKey.get(key);
+					return requirement ? { ...pkg, requested: true, requirement } : pkg;
+				});
+				for (const [key, requirement] of requestedByKey) {
+					if (installedKeys.has(key)) continue;
+					enriched.push({
+						name: requirement,
+						version: '',
+						requested: true,
+						requirement,
+						missing: true,
+						error: packageRestoreError || undefined
+					});
+				}
+				reply(id, enriched);
 				break;
 			}
 			case 'getDocstring': {

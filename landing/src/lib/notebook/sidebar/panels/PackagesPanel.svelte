@@ -79,9 +79,14 @@
 	{:else}
 		<div class="pkg-list">
 			{#each packages as pkg}
-				<div class="pkg-item">
-					<span class="pkg-name">{pkg.name}</span>
-					<span class="pkg-version">{pkg.version}</span>
+				<div class="pkg-item" class:pkg-missing={pkg.missing}>
+					<span class="pkg-name">{pkg.requirement || pkg.name}</span>
+					<span class="pkg-meta">
+						{#if pkg.requested}
+							<span class="pkg-source">workspace</span>
+						{/if}
+						<span class="pkg-version">{pkg.missing ? (pkg.error ? 'failed' : 'pending') : pkg.version}</span>
+					</span>
 				</div>
 			{/each}
 		</div>
@@ -176,6 +181,7 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
+		gap: 8px;
 		padding: 4px 4px;
 		border-radius: 4px;
 		transition: background 0.1s ease;
@@ -189,11 +195,35 @@
 		font-size: 12px;
 		color: var(--nb-text);
 		font-family: var(--dl-font-mono);
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.pkg-meta {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		flex-shrink: 0;
+	}
+
+	.pkg-source {
+		font-size: 9px;
+		color: var(--nb-text-muted);
+		border: 1px solid var(--nb-border);
+		border-radius: 4px;
+		padding: 1px 4px;
 	}
 
 	.pkg-version {
 		font-size: 11px;
 		color: var(--nb-text-muted);
 		font-family: var(--dl-font-mono);
+	}
+
+	.pkg-missing .pkg-name,
+	.pkg-missing .pkg-version {
+		color: var(--nb-error);
 	}
 </style>
