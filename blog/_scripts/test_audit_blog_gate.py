@@ -339,3 +339,45 @@ def test_dartlab_story_body_gate_blocks_abstract_only_sentences() -> None:
     errors = ab._validate_dartlab_body_plainness(body)
 
     assert any("추상 문장" in err for err in errors)
+
+
+def test_dartlab_story_gate_blocks_missing_beginner_arc() -> None:
+    brief_path = (
+        Path(__file__).resolve().parents[1] / "03-dartlab-stories" / "02-call-financial-statements" / "brief.json"
+    )
+    brief = json.loads(brief_path.read_text(encoding="utf-8"))
+    brief["readerQuestion"] = "재무제표 파이썬 실행 결과를 읽는다."
+    for act in brief["acts"]:
+        act["heading"] = "재무제표 값 화면"
+        act["scene"] = "코드 출력 표에서 005930 매출액 값을 확인하는 장면"
+        act["causalBridge"] = "관련 값을 계속 확인한다."
+    for section in brief["sections"]:
+        section["subtitle"] = "코드 출력 표에서 005930 매출액 값을 본다."
+        section["visualAnchor"] = "코드 출력 표와 005930 매출액 값을 섹션 앞쪽에 둔다."
+        section["explanation"] = "코드에서 005930 매출액 값을 확인한다."
+        section["example"] = "005930 2026Q1 매출액 133.873조원 값을 예시로 든다."
+        section["support"] = "주의: 빈칸은 0으로 읽지 않는다."
+        section["transition"] = "다음 섹션으로 이어진다."
+
+    errors = ab._validate_common_plan(brief, brief, label="brief.json", category="dartlab-stories")
+
+    assert any("첫 단계" in err for err in errors)
+
+
+def test_dartlab_story_body_gate_blocks_expert_jargon() -> None:
+    body = """
+## 코드를 먼저 본다
+
+```python
+from dartlab import Company
+Company("005930").panel("IS").head()
+```
+
+파사드와 스키마는 런타임 계약의 정본을 구성한다.
+프로바이더와 컨텍스트는 아키텍처의 핵심 계층을 이룬다.
+엔진과 어댑터의 추상화가 인터페이스 경계를 담당한다.
+"""
+
+    errors = ab._validate_dartlab_body_plainness(body)
+
+    assert any("전문가 말투" in err for err in errors)

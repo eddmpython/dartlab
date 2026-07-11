@@ -89,6 +89,22 @@ DARTLAB_ACTION_RE = re.compile(
 DARTLAB_ABSTRACT_WORD_RE = re.compile(
     r"관통선|표면|정본|맥락|구조|흐름|프레임|층위|사상|메커니즘|의미|핵심|관점|기준|경계|연결|감각|역할"
 )
+DARTLAB_EXPERT_JARGON_RE = re.compile(
+    r"파사드|스키마|런타임|정본|호출\s*계약|계약|프로바이더|컨텍스트|아키텍처|레지스트리|"
+    r"어댑터|추상화|인터페이스|엔진|axis|facade|schema|runtime|provider|adapter|context|architecture",
+    re.I,
+)
+DARTLAB_BEGINNER_BRIDGE_RE = re.compile(
+    r"쉽게\s*말해|말하면|뜻은|여기서는|처음|먼저|헷갈|막히|예를\s*들어|코드|표|값|계정|기간|"
+    r"화면|칸|버튼|실행|눌러|보면|확인"
+)
+DARTLAB_OPENING_ARC_RE = re.compile(r"처음|먼저|왜|어떻게|헷갈|막히|궁금|문제|시작|이\s*편")
+DARTLAB_DO_ARC_RE = re.compile(r"실행|눌러|열|넣|확인|계산|바꾸|찾|고르|본다|보자|해\s*본")
+DARTLAB_TURN_ARC_RE = re.compile(r"오해|한계|주의|다르|틀리|빈칸|안\s*된다|안\s*됩니다|예외|검산")
+DARTLAB_CLOSE_ARC_RE = re.compile(r"이제|다음|바꿔|직접|연결|넘어|남는|닫는다|한\s*줄|다음\s*편")
+DARTLAB_TRANSITION_RE = re.compile(
+    r"다음|이어|넘어|이제|앞|뒤|그래서|그다음|그러면|마지막|왜|해야|수\s*있|오해|반복|재사용|이해|막을"
+)
 SECTION_PLAN_FIELDS = (
     "heading",
     "subtitle",
@@ -358,6 +374,14 @@ def _has_dartlab_action(value: object) -> bool:
     return bool(DARTLAB_ACTION_RE.search(str(value or "")))
 
 
+def _has_dartlab_beginner_bridge(value: object) -> bool:
+    return bool(DARTLAB_BEGINNER_BRIDGE_RE.search(str(value or "")))
+
+
+def _dartlab_jargon_terms(value: object) -> list[str]:
+    return [match.group(0) for match in DARTLAB_EXPERT_JARGON_RE.finditer(str(value or ""))]
+
+
 def _split_h2_sections(body: str) -> list[tuple[str, str]]:
     matches = list(re.finditer(r"^##\s+(.+)$", body, re.M))
     if not matches:
@@ -531,6 +555,14 @@ def _validate_section_plan(plan: dict[str, object], *, label: str, category: str
                 fails.append(
                     f"{label}: sections[{idx}].example 은 코드·계정·기간·값·공시 문장 중 하나를 실제 예시로 잡아야 함"
                 )
+            beginner_text = " ".join(str(raw.get(field) or "") for field in ("subtitle", "explanation", "support"))
+            if len(set(_dartlab_jargon_terms(beginner_text))) >= 2 and not _has_dartlab_beginner_bridge(beginner_text):
+                fails.append(
+                    f"{label}: sections[{idx}] 이 전문가 용어를 쉬운 풀이 없이 씀. 초보자 문장과 실제 화면 근거가 필요함"
+                )
+            transition = str(raw.get("transition") or "")
+            if not DARTLAB_TRANSITION_RE.search(transition):
+                fails.append(f"{label}: sections[{idx}].transition 은 다음 섹션으로 왜 넘어가는지 쉬운 연결문이어야 함")
     return fails
 
 
@@ -595,6 +627,36 @@ def _validate_common_plan(
                 fails.append(f"{label}: acts[{idx}].{field} 이 너무 약함")
         if not str(raw.get("purpose") or "").strip():
             fails.append(f"{label}: acts[{idx}].purpose 누락")
+
+    if category == "dartlab-stories":
+        sections = plan.get("sections") if isinstance(plan.get("sections"), list) else []
+        first_arc_text = json.dumps(
+            {
+                "readerQuestion": plan.get("readerQuestion"),
+                "firstAct": acts[0] if acts else {},
+                "firstSection": sections[0] if sections else {},
+            },
+            ensure_ascii=False,
+        )
+        whole_arc_text = json.dumps(
+            {"acts": acts, "sections": sections, "guards": plan.get("honestyGuards")}, ensure_ascii=False
+        )
+        close_arc_text = json.dumps(
+            {
+                "lastAct": acts[-1] if acts else {},
+                "lastSection": sections[-1] if sections else {},
+                "whatToWatch": insight.get("whatToWatch"),
+            },
+            ensure_ascii=False,
+        )
+        if not DARTLAB_OPENING_ARC_RE.search(first_arc_text):
+            fails.append(f"{label}: dartlab 이야기 첫 단계는 초보자가 어디서 막혔는지 또는 왜 시작하는지를 잡아야 함")
+        if not DARTLAB_DO_ARC_RE.search(whole_arc_text):
+            fails.append(f"{label}: dartlab 이야기 단계에는 독자가 직접 실행·확인·계산하는 장면이 필요함")
+        if not DARTLAB_TURN_ARC_RE.search(whole_arc_text):
+            fails.append(f"{label}: dartlab 이야기 단계에는 오해·한계·주의 같은 전환 지점이 필요함")
+        if not DARTLAB_CLOSE_ARC_RE.search(close_arc_text):
+            fails.append(f"{label}: dartlab 이야기 마지막 단계는 다음 행동이나 다음 편으로 닫혀야 함")
 
     fails.extend(_validate_section_plan(plan, label=label, category=category, min_sections=shape["acts"]))
 
@@ -672,10 +734,10 @@ def _validate_common_plan(
 def _validate_dartlab_body_plainness(body: str) -> list[str]:
     fails: list[str] = []
     abstract_only_sentences: list[str] = []
+    jargon_sentences: list[str] = []
     for heading, section in _split_h2_sections(body):
-        if prose_char_count(section) < 100:
-            continue
-        if not _has_dartlab_concrete_anchor(section):
+        section_chars = prose_char_count(section)
+        if section_chars >= 100 and not _has_dartlab_concrete_anchor(section):
             fails.append(
                 f"dartlab 이야기 섹션 {heading!r} 은 코드·표·계정·기간·값 없이 설명만 있음. 화면에 보이는 것을 먼저 둬야 함"
             )
@@ -684,9 +746,28 @@ def _validate_dartlab_body_plainness(body: str) -> list[str]:
                 continue
             if len(DARTLAB_ABSTRACT_WORD_RE.findall(sentence)) >= 2 and not _has_dartlab_concrete_anchor(sentence):
                 abstract_only_sentences.append(sentence[:80])
+            if _dartlab_jargon_terms(sentence) and not (
+                _has_dartlab_concrete_anchor(sentence) or _has_dartlab_beginner_bridge(sentence)
+            ):
+                jargon_sentences.append(sentence[:80])
     if len(abstract_only_sentences) >= 3:
         sample = " / ".join(abstract_only_sentences[:3])
         fails.append(f"dartlab 이야기 본문에 실제 코드·값 없이 떠 있는 추상 문장이 많음. 예: {sample}")
+    if len(jargon_sentences) >= 2:
+        sample = " / ".join(jargon_sentences[:2])
+        fails.append(f"dartlab 이야기 본문이 전문가 말투로 흐름. 쉬운 풀이와 실제 화면 근거가 필요함. 예: {sample}")
+
+    if prose_char_count(body) >= 500:
+        opening = body[:1200]
+        closing = body[-1400:]
+        if not DARTLAB_OPENING_ARC_RE.search(opening):
+            fails.append("dartlab 이야기 본문 첫 부분은 초보자가 왜 이 글을 읽는지 먼저 잡아야 함")
+        if not DARTLAB_DO_ARC_RE.search(body):
+            fails.append("dartlab 이야기 본문에는 독자가 직접 실행·확인·계산하는 장면이 필요함")
+        if not DARTLAB_TURN_ARC_RE.search(body):
+            fails.append("dartlab 이야기 본문에는 오해·한계·주의 같은 전환 지점이 필요함")
+        if not DARTLAB_CLOSE_ARC_RE.search(closing):
+            fails.append("dartlab 이야기 본문 마지막은 다음 행동이나 다음 편 연결로 닫혀야 함")
     return fails
 
 
