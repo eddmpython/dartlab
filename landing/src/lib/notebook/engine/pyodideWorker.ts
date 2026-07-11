@@ -97,11 +97,11 @@ async function ensureDartlab(code: string): Promise<void> {
 }
 
 // browser-as-server: 이 워커(노트북 execute 커널)에 dartlab FastAPI 를 얹는다. 한 커널, 두 인터페이스.
-// ASGI dispatch 는 커널 seam(kernel/asgiSeam.ts)이 소유한다. USE_PYPROC_ASGI=false(기본)면
-// 손수 _dl_dispatch 경로로 오늘과 바이트 동일(P0 파리티 실증). true 로 flip 하면 워커의 pyodide 를
-// new Runtime(py) 로 채택해 pyproc AsgiServer 로 서빙. mainPlan/pyproc-runtime-ssot P1.
+// ASGI dispatch 는 커널 seam(kernel/asgiSeam.ts)이 소유한다. USE_PYPROC_ASGI=true(기본)면 워커의
+// pyodide 를 new Runtime(py) 로 채택해 pyproc AsgiServer 로 서빙(공유 런타임 SSOT). 설치 실패 시 손수
+// _dl_dispatch 경로로 자동 폴백(kill-switch). false 로 되돌리면 손수 경로 고정. mainPlan/pyproc-runtime-ssot.
 // fastapi 는 첫 /pyapi 요청 때만 설치(노트북만 쓰면 비용 0). dartlab 설치는 seam 위 ensureDartlab.
-const USE_PYPROC_ASGI = false;
+const USE_PYPROC_ASGI = true;
 let asgiKernel: AsgiKernel | null = null;
 
 function reply(id: string, result: unknown, error?: string) {
