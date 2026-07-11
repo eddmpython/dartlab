@@ -116,3 +116,35 @@ def testLaneAmbiguousWhenUndeclared():
     frame = pl.DataFrame({"종목코드": ["005930"], "per": [12.4], "pbr": [1.1]})
     lane, status = laneOf("entityMetric", frame, declared={})
     assert status == "ambiguous"
+
+
+def testScoreDictNonNumericIsGapNotCrash():
+    """점수가 None·비수치면 float 크래시 대신 valueText 로 접힌다 (배치 중단 방지)."""
+    df, gaps = foldToCanonical(
+        {"scores": {"005930": None, "000660": "N/A", "005380": 7.4}}, engine="quant", axis="altman"
+    )
+    assert df.height == 3  # 크래시 없음
+    none_row = df.filter(pl.col("entity") == "005930")
+    assert none_row["value"][0] is None and none_row["valueText"][0] is None
+    na_row = df.filter(pl.col("entity") == "000660")
+    assert na_row["value"][0] is None and na_row["valueText"][0] == "N/A"
+    assert df.filter(pl.col("entity") == "005380")["value"][0] == 7.4
+
+
+def testEnvFramePreservesPeriod():
+    """entity 없는 period-wide(envFrame)는 기간을 period 로 보존한다 (item 유출·latest 소실 금지)."""
+    macro = pl.DataFrame({"지표": ["GDP", "CPI"], "2023": [100.0, 2.1], "2024": [105.0, 3.5]})
+    df, gaps = foldToCanonical(macro, engine="macro", axis="series")
+    assert set(df["period"].unique()) == {"2023", "2024"}  # 기간이 latest 로 소실 안 됨
+    assert set(df["item"].unique()) == {"GDP", "CPI"}  # 라벨이 item 으로 보존
+    gdp24 = df.filter((pl.col("item") == "GDP") & (pl.col("period") == "2024"))
+    assert gdp24["value"][0] == 105.0
+
+
+def testEmptyReturnEmitsGap():
+    """빈 반환(빈 dict/scores)도 gap 원장에 남는다 (canonical·coverage·gap 셋에서 사라지는 사각 방지)."""
+    df, gaps = foldToCanonical({}, engine="macro", axis="empty")
+    assert df.height == 0
+    assert len(gaps) == 1 and gaps[0]["gapReason"] == "emptyReturn"
+    df2, gaps2 = foldToCanonical({"scores": {}}, engine="quant", axis="emptyScores")
+    assert len(gaps2) == 1 and gaps2[0]["gapReason"] == "emptyReturn"

@@ -40,11 +40,22 @@ Layer: L2.5 simulate. dartlab 루트 facade + L1.5 커널 배선 (다중 L2 결�
 from __future__ import annotations
 
 import time
+from functools import lru_cache
 from typing import Any
 
 import polars as pl
 
 from dartlab.reference.capability.mirror import foldToCanonical, reflectAxes, universeScopeOf
+
+
+@lru_cache(maxsize=1)
+def _declaredIndex() -> dict[tuple[str, str], dict]:
+    """(engine, axis) -> declared 인덱스. reflectAxes 를 1회만 빌드 (materialize 마다 재빌드 방지).
+
+    loadCapabilities 가 lru_cache 라 인덱스도 캐시 안전. runWorkbench 994 루프에서 declared 조회가
+    DataFrame 재빌드가 아니라 dict lookup 이 된다.
+    """
+    return {(r["engine"], r["axis"]): (r["declared"] or {}) for r in reflectAxes().iter_rows(named=True)}
 
 
 def _call(engine: str, axis: str, item: str | None, **callKw) -> Any:
@@ -101,11 +112,9 @@ def bulkSelects(*, expandCatalog: bool = True) -> list[tuple[str, str, str | Non
         없음.
     """
     selects: list[tuple[str, str, str | None]] = []
-    for row in reflectAxes().iter_rows(named=True):
-        declared = row["declared"] or {}
+    for (engine, axis), declared in _declaredIndex().items():
         if universeScopeOf(declared) == "perCompany":
             continue
-        engine, axis = row["engine"], row["axis"]
         if expandCatalog and declared.get("listFn"):
             items = catalogItems(engine, axis)
             selects.extend((engine, axis, it) for it in items) if items else selects.append((engine, axis, None))
@@ -129,21 +138,19 @@ def materialize(engine: str, axis: str, *, item: str | None = None, **callKw) ->
         True
 
     Raises:
-        없음. 호출 예외는 gapReason=contractError 1행으로 격리된다.
+        없음. 호출 예외는 contractError, 접기 예외는 foldError gap 1행으로 격리된다 (배치 중단 금지).
     """
     from dartlab.reference.capability.mirror import emitGap
 
-    declared = _declaredFor(engine, axis)
+    declared = _declaredIndex().get((engine, axis), {})
     try:
         raw = _call(engine, axis, item, **callKw)
     except Exception as e:
         return pl.DataFrame(), [emitGap(engine, axis, "contractError", f"{type(e).__name__}: {e}"[:70])]
-    return foldToCanonical(raw, engine=engine, axis=axis, item=item, declared=declared)
-
-
-def _declaredFor(engine: str, axis: str) -> dict:
-    cat = reflectAxes().filter((pl.col("engine") == engine) & (pl.col("axis") == axis))
-    return cat["declared"][0] if cat.height else {}
+    try:
+        return foldToCanonical(raw, engine=engine, axis=axis, item=item, declared=declared)
+    except Exception as e:  # 커널은 gap 을 내지만 미지 형태 방어 (한 축 예외가 배치 전체를 죽이지 않게)
+        return pl.DataFrame(), [emitGap(engine, axis, "foldError", f"{type(e).__name__}: {e}"[:70])]
 
 
 def runWorkbench(

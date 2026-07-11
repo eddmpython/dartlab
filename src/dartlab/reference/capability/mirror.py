@@ -28,8 +28,9 @@ Requires:
 
 How:
     shape family 판정(구조만, 값 무지) -> declared 우선 lane 판정 -> family 별 melt/평탄화 어댑터 ->
-    정규 스키마 CANON 으로 select. entity 키는 capability evidenceSchema.targetKeys 우선, 없으면
-    구조 동의어 튜플, 둘 다 실패면 unknownColumnRole gap.
+    정규 스키마 CANON 으로 select. entity 키는 구조 동의어 튜플 ENTITY_KEYS(종목코드/stockCode/
+    code/ticker)로 식별, 실패면 unknownColumnRole gap. (capability evidenceSchema.targetKeys 는 8
+    엔트리에만 있고 그 키가 이미 ENTITY_KEYS 에 포함돼 배선 이득 0 = 미배선.)
 
 Raises:
     없음. 실패는 예외가 아니라 gap 행으로 방출한다 (결손 0 대체 금지).
@@ -49,7 +50,7 @@ from typing import Any
 
 import polars as pl
 
-# entity/period 구조 동의어 = capability evidenceSchema 가 없는 축의 fallback. O(시장) 상수지 O(축) 아님.
+# entity/period 구조 동의어 = 전 축 entity 키 식별의 정본. O(시장 spelling) 상수지 O(축) 아님.
 ENTITY_KEYS: tuple[str, ...] = ("종목코드", "stockCode", "code", "ticker")
 ENTITY_NAME_KEYS: tuple[str, ...] = ("종목명", "corpName", "name")
 _PERIOD_RE = re.compile(r"^\d{4}(Q[1-4]|\d{2})?$")  # 2025 / 2025Q3 / 202503, 국가 무관
@@ -273,7 +274,8 @@ def foldToCanonical(
         'crossSection'
 
     Raises:
-        없음. 접기 불가·역할불명 컬럼·계약위반은 예외 대신 gap 행으로 방출한다 (결손 0 대체 금지).
+        없음. 접기 불가(nonTabular)·역할불명 컬럼(unknownColumnRole)·빈 반환(emptyReturn)은 예외
+        대신 gap 행으로 방출한다. 비수치 값(None·문자)은 valueText 로 접어 float 크래시를 내지 않는다.
     """
     label = item or axis
     fam = classifyShape(raw)
@@ -310,11 +312,43 @@ def foldToCanonical(
             for k, v in raw.items()
         ]
     elif fam == "scoreDict":
-        rows = [
-            {"item": label, "entity": c, "entityName": None, "period": asOf, "value": float(v), "valueText": None}
-            for c, v in raw["scores"].items()
-        ]
-    else:  # yearWide / entityMetric / envFrame (DataFrame)
+        # 점수는 무가드 float 금지: None·비수치(N/A 등)면 valueText 로 (다른 분기와 동일, 크래시 금지)
+        rows = []
+        for c, v in raw["scores"].items():
+            num = isinstance(v, (int, float)) and not isinstance(v, bool)
+            rows.append(
+                {
+                    "item": label,
+                    "entity": c,
+                    "entityName": None,
+                    "period": asOf,
+                    "value": float(v) if num else None,
+                    "valueText": None if num or v is None else str(v),
+                }
+            )
+    elif fam == "envFrame":
+        # entity 없음, period 열 있음(macro 류): 비-period 열 = item 라벨, period 열 -> period.
+        # yearWide 로직으로 접으면 period 가 item 으로 새고 period 가 asOf 로 소실되므로 별도 분기.
+        cols = raw.columns
+        pers = _periodCols(cols)
+        labelCols = [c for c in cols if c not in pers]
+        long = raw.unpivot(index=labelCols, on=pers, variable_name="_k", value_name="_v")
+        rows = []
+        for r in long.iter_rows(named=True):
+            v = r["_v"]
+            num = isinstance(v, (int, float)) and not isinstance(v, bool)
+            lbl = " / ".join(str(r[c]) for c in labelCols) if labelCols else label
+            rows.append(
+                {
+                    "item": lbl,
+                    "entity": None,
+                    "entityName": None,
+                    "period": str(r["_k"]),
+                    "value": float(v) if num else None,
+                    "valueText": None if num or v is None else str(v),
+                }
+            )
+    else:  # yearWide / entityMetric (entity 보유 DataFrame)
         cols = raw.columns
         ent = _entityCol(cols)
         nameCol = next((c for c in cols if c in ENTITY_NAME_KEYS), None)
@@ -340,6 +374,9 @@ def foldToCanonical(
                     "valueText": None if num or v is None else str(v),
                 }
             )
+
+    if not rows and not gaps:  # 빈 반환(envDict={}·scoreDict{scores:{}}·빈 프레임)도 gap 으로 계상 (도태 사각 방지)
+        gaps.append(emitGap(engine, axis, "emptyReturn", fam))
 
     partial = {
         k: v for k, v in _CANON_SCHEMA.items() if k in ("item", "entity", "entityName", "period", "value", "valueText")

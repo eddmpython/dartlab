@@ -50,3 +50,20 @@ def testRunWorkbenchCoverage():
     assert canon.height > 200
     assert cov.height >= 1 and "종목" in cov.columns
     assert set(canon["item"].unique()) == {"roe", "debtRatio"}
+
+
+def testBatchSurvivesOneFailingAxis(monkeypatch):
+    """한 축이 fold/호출에서 예외를 던져도 배치 전체가 죽지 않고 나머지가 계속된다 (격리)."""
+    import dartlab.simulate.mirror as drv
+
+    real = drv._call
+
+    def flaky(engine, axis, item, **kw):
+        if axis == "boom":
+            raise RuntimeError("의도적 폭발")
+        return real(engine, axis, item, **kw)
+
+    monkeypatch.setattr(drv, "_call", flaky)
+    canon, cov, gaps = runWorkbench([("scan", "boom", None), ("scan", "ratio", "roe")], freq="Y")
+    assert canon.height > 100  # 정상 축은 물질화됨 (배치 안 죽음)
+    assert any(g["gapReason"] == "contractError" for g in gaps.to_dicts())
