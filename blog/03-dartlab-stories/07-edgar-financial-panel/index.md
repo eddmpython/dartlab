@@ -1,7 +1,7 @@
 ---
 title: "EDGAR 재무제표, 코드 실행"
 date: "2026-07-11"
-description: "dartlab에서 Apple EDGAR 재무제표를 IS, BS, CF panel 코드로 열고, 손익계산서, 재무상태표, 현금흐름표가 같은 표면에서 어떻게 보이는지 익힌다."
+description: "애플 EDGAR 재무제표를 열면 값이 너무 커 보이는데 달러라 자릿수가 다를 뿐이다. dartlab에서 panel 코드로 IS, BS, CF 세 장을 같은 표면으로 열고 왼쪽 계정, 오른쪽 기간 구조를 잡는다."
 category: dartlab-stories
 series: dartlab-stories
 seriesOrder: 7
@@ -19,13 +19,15 @@ tags:
   - 브라우저
 ---
 
-## Apple 재무제표를 먼저 연다
+## 애플 재무제표는 값이 너무 커 보인다
 
-미국 회사도 첫 문은 똑같다. `Company("AAPL")`을 만들고, 이 회사가 미국 회사로 잡히는지 확인한다.
+애플 손익계산서를 열면 첫 느낌은 "숫자가 너무 크다"다. 착시다. 애플 값은 달러라 자릿수가 원화와 다를 뿐이다. 이 숫자를 한국 회사 원화 매출 옆에 그대로 붙이면 크기 착시가 따라온다. 그래서 이번 편은 애플 하나만 놓고, 매출부터 현금흐름까지 EDGAR 재무제표 세 장이 `panel` 위에서 어떻게 열리는지 감각부터 잡는다.
 
-[DART EDGAR, 한 줄로 열기](/blog/dart-edgar-company)에서 삼성전자와 Apple을 같은 `Company` 입구로 열었다. 이번 편은 그다음 한 걸음이다. 이제 비교하지 않는다. Apple 하나만 놓고 EDGAR 재무제표 세 장이 `panel` 위에서 어떻게 펼쳐지는지 본다.
+그리고 하나 더 정직하게 짚는다. 브라우저 공개본과 로컬 설치본은 계정 후보와 기간 범위가 서로 다를 수 있다. 그래서 이 편의 정답은 실행 결과 숫자를 외우는 게 아니다. 왼쪽에 계정, 오른쪽에 기간 값이 오는 표 구조를 잡는 것이다. 이 구조만 잡으면 나중에 DART 회사와 EDGAR 회사를 같은 질문으로 읽을 수 있다.
 
-아직 `Company`가 낯설다면 [DART 종목코드, 회사 열기](/blog/pick-company-by-code)를 먼저 보면 된다. 국내 회사는 여섯 자리 종목코드로 열고, 미국 회사는 ticker로 연다. 더 큰 그림은 [DART 공시분석, 설치 없이](/blog/what-is-dartlab)에서 본 `panel`과 `scan`의 역할로 이어진다.
+[DART EDGAR, 한 줄로 열기](/blog/dart-edgar-company)에서 삼성전자와 Apple을 같은 `Company` 입구로 열었다. 이번 편은 그다음 한 걸음이고, 비교는 아직 하지 않는다. 아직 `Company`가 낯설다면 [DART 종목코드, 회사 열기](/blog/pick-company-by-code)를 먼저 보면 된다. 국내 회사는 여섯 자리 종목코드로, 미국 회사는 ticker로 연다. 더 큰 그림은 [DART 공시분석, 설치 없이](/blog/what-is-dartlab)에서 본 `panel`과 `scan`의 역할로 이어진다.
+
+미국 회사도 첫 문은 똑같다. `Company("AAPL")`을 만들고 미국 회사로 잡히는지 확인한다.
 
 ```python
 import dartlab
@@ -34,9 +36,7 @@ aapl = dartlab.Company("AAPL")
 aapl.market
 ```
 
-결과가 `US`라면 출발은 맞다. `US`는 "미국 회사로 열렸다"는 표시다. 여기서 중요한 말은 "미국 회사가 열렸다"이지 "한국 회사와 비교할 준비가 끝났다"가 아니다. 비교하려면 통화, 기간, 회계연도 기준을 더 맞춰야 한다.
-
-이번 편의 목적은 단순하다. Apple의 손익계산서, 재무상태표, 현금흐름표를 같은 표면으로 열어 본다. 표의 왼쪽에는 계정이 있고, 오른쪽에는 기간 값이 있다. 이 감각이 생기면 나중에 DART 회사와 EDGAR 회사를 같은 질문으로 읽을 수 있다.
+결과가 `US`면 출발은 맞다. 미국 회사로 열렸다는 표시다. 다만 여기까지가 "미국 회사가 열렸다"이지 "한국 회사와 비교할 준비가 끝났다"는 아니다. 비교하려면 통화, 기간, 회계연도 기준을 더 맞춰야 한다. 지금은 세 표를 같은 표면으로 여는 데까지만 간다.
 
 ![EDGAR 재무제표 세 장을 같은 panel로 여는 흐름](./assets/dartlab-story-07-edgar-financial-panel.webp)
 
@@ -106,45 +106,19 @@ Apple 표의 기간 열은 그냥 달력 열이 아니다. 미국 회사는 EDGA
 
 ## 원천 페이지를 같이 둔다
 
-코드가 잘 돌아도 원천 페이지 감각은 따로 가져야 한다. dartlab은 표를 빨리 열어 주지만, EDGAR가 무엇을 보관하고 어떤 검색 화면을 제공하는지는 SEC 원천에서 확인하는 습관이 필요하다.
+코드가 잘 돌아도 원천 페이지 감각은 따로 가져야 한다. dartlab은 표를 빨리 열어 주지만, EDGAR가 무엇을 보관하고 어떤 검색 화면을 주는지는 SEC 원천에서 확인하는 습관이 필요하다.
 
-가장 먼저 볼 곳은 [SEC Search Filings](https://www.sec.gov/search-filings)다. 회사명, ticker, CIK, filing type 같은 조건으로 EDGAR 공시를 찾는 공식 입구다. 더 넓게 본문 단어까지 찾고 싶으면 [EDGAR Full Text Search](https://www.sec.gov/edgar/search/)를 쓴다. 이 페이지는 공시 문서 안의 문구를 검색하고 기간, 회사, filing category로 좁히는 화면이다.
+공시를 찾는 공식 입구는 [SEC Search Filings](https://www.sec.gov/search-filings)다. 회사명, ticker, CIK, filing type로 찾는다. 본문 단어까지 넓게 찾고 싶으면 [EDGAR Full Text Search](https://www.sec.gov/edgar/search/)로 문구를 검색하고 기간, 회사, filing category로 좁힌다. 데이터로 직접 받고 싶으면 [SEC EDGAR Application Programming Interfaces](https://www.sec.gov/search-filings/edgar-application-programming-interfaces)가 companyfacts 같은 경로를 설명하고, 실제 입구는 [data.sec.gov](https://data.sec.gov/)다. 로컬 companyfacts 경로와 브라우저 공개 artifact가 다를 수 있는 이유도 이 원천 경로를 떠올리면 자연스럽다. 10-K와 10-Q가 헷갈리면 [Investor.gov의 10-K와 10-Q 읽기 안내](https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/how-read)를, EDGAR 자체의 역할은 [About EDGAR](https://www.sec.gov/submit-filings/about-edgar)에서 본다.
 
-데이터 API의 존재도 알아 두면 좋다. [SEC EDGAR Application Programming Interfaces](https://www.sec.gov/search-filings/edgar-application-programming-interfaces)는 companyfacts 같은 EDGAR API 경로를 설명한다. 실제 데이터 API의 입구는 [data.sec.gov](https://data.sec.gov/)다. 이번 편에서 로컬 companyfacts 경로와 브라우저 공개 artifact가 다를 수 있다고 한 이유도 이런 원천 데이터 경로를 생각하면 이해하기 쉽다.
+외울 필요는 없다. 방향만 기억하면 된다. 표는 `panel`로 열고, 원천이 궁금하면 SEC 검색 화면이나 API 설명으로 돌아간다. 표를 여는 도구와 공시를 보관하는 원천을 구분해야 문장이 단단해진다.
 
-10-K와 10-Q의 의미가 헷갈리면 [Investor.gov의 10-K와 10-Q 읽기 안내](https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/how-read)를 같이 본다. 10-K는 연간 보고서이고, 10-Q는 첫 세 분기의 분기 보고서라는 감각을 잡는 데 충분하다. EDGAR 자체의 역할은 [About EDGAR](https://www.sec.gov/submit-filings/about-edgar)에서 확인할 수 있다.
+## 자주 걸리는 함정 셋
 
-이 링크들을 외울 필요는 없다. 중요한 것은 방향이다. 브라우저 글에서는 `panel`로 실제 표를 열고, 원천이 궁금해지면 SEC 검색 화면이나 API 설명으로 돌아간다. 표를 여는 도구와 공시를 제출하고 보관하는 원천을 구분해야 문장이 단단해진다.
+이번 글의 코드는 브라우저에서 그대로 실행되는 범위 안에 있다. `dartlab.Company`, `market`, `panel`, `head`만 쓴다. 표를 연 것은 확인했지만 애플을 분석한 것은 아니다. 숫자의 의미 비교와 기간 정렬은 아직 시작도 안 했다. 그 사이에 자주 걸리는 함정이 셋 있다.
 
-## 브라우저와 로컬 결과는 다를 수 있다
-
-이번 글의 코드는 브라우저에서 그대로 실행되는 범위 안에 있다. `dartlab.Company`, `market`, `panel`, `head`만 쓴다. 독자는 글 안에서 그대로 실행할 수 있다.
-
-다만 브라우저 공개 artifact와 로컬 설치본의 세부 경로가 항상 같은 계정명과 기간 값을 보여 준다고 말하면 안 된다. 커리큘럼 실측에서는 브라우저 쪽 Apple 재무 panel과 로컬 companyfacts 경로의 계정 후보와 기간 범위가 서로 달랐다. 이 차이는 글의 실패가 아니라 데이터 공급 경로의 차이다.
-
-그래서 이 편의 정답은 실행 결과를 외우는 것이 아니다. 더 중요한 것은 표의 구조다. 왼쪽은 계정, 오른쪽은 기간 값이다. IS, BS, CF가 같은 방식으로 열린다. 그리고 원천과 기간 기준은 따로 확인한다.
-
-또 하나 경계를 세운다. 이번 편은 EDGAR 재무제표만 다룬다. `risk`, `mdna`, `item1Business` 같은 EDGAR 본문 섹션이 브라우저에서 DART 사업보고서 본문처럼 모두 열린다고 말하지 않는다. 확인한 것은 Apple의 재무 panel이다. 확인하지 않은 것은 다음 편의 결론으로 끌고 오지 않는다.
-
-## 이렇게 오해하면 안 된다
-
-첫째, Apple 재무제표를 열었다고 Apple을 분석한 것은 아니다. 분석은 숫자의 의미를 비교하고, 기간을 맞추고, 원천을 확인한 뒤에 시작한다. 지금은 표를 제대로 연 것이다.
-
-둘째, Apple 숫자가 달러라는 점을 잊으면 안 된다. 한국 회사의 원화 숫자와 그대로 붙이면 숫자 크기 착시가 생긴다.
-
-셋째, `panel("IS")`, `panel("BS")`, `panel("CF")`가 모두 된다고 EDGAR 본문 전체가 같은 방식으로 된다고 말하면 안 된다. 재무제표와 본문 섹션은 다른 문제다.
-
-넷째, 계정명이 여러 줄로 보인다고 바로 틀렸다고 말하면 안 된다. 공시 원천의 태그와 표준 이름이 겹치면 비슷한 의미의 줄이 여러 개 보일 수 있다. 먼저 표를 보고, 나중에 필요한 줄을 고른다.
-
-## 다음 편으로 넘어가기 전 행동 검사
-
-첫 번째 검사는 시장 확인이다. `aapl.market`을 실행하고 `US`가 나오는지 본다. 이 한 줄을 보고 Apple이 EDGAR 쪽 회사로 열렸다고 말할 수 있어야 한다.
-
-두 번째 검사는 세 표 확인이다. `aapl.panel("IS").head(5)`, `aapl.panel("BS").head(5)`, `aapl.panel("CF").head(5)`를 차례로 실행한다. 세 결과 모두 왼쪽 계정과 오른쪽 기간 값으로 보이는지 확인한다.
-
-세 번째 검사는 문장 고치기다. "Apple과 삼성전자의 매출을 비교했다"라고 쓰지 않는다. "Apple의 EDGAR 손익계산서를 `panel("IS")`로 열었다"라고 쓴다. 비교는 아직 하지 않았다.
-
-네 번째 검사는 기준 적기다. `aapl.panel("IS").head(5)` 옆에 "Apple, EDGAR, 달러, fiscal period"라고 적는다. 이 검사는 표를 열었다는 사실과 투자 비교가 끝났다는 착각을 분리하는 습관이다.
+- 애플 숫자는 달러다. 한국 회사 원화 숫자 옆에 그대로 붙이면 크기 착시가 그대로 따라온다.
+- 계정이 여러 줄로 보여도 바로 틀린 게 아니다. 원천 태그와 표준 이름이 겹치면 같은 의미가 여러 줄로 나온다. 먼저 표를 열고, 필요한 줄은 나중에 좁힌다.
+- `panel("IS")`, `panel("BS")`, `panel("CF")`가 다 된다고 EDGAR 본문(`risk`, `mdna`, `item1Business`)까지 같은 방식으로 열리는 건 아니다. 이번 편이 확인한 것은 재무 panel까지고, 확인하지 않은 것은 다음 편의 결론으로 끌고 오지 않는다.
 
 ## 다음 편에서 할 것
 
