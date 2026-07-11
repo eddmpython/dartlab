@@ -9,7 +9,6 @@
  */
 
 const HF_BASE = "https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main";
-const WHEEL_BASE = HF_BASE + "/pyodide";
 const PYODIDE_CDN = "https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js";
 
 const BUILTIN_PACKAGES = [
@@ -17,7 +16,6 @@ const BUILTIN_PACKAGES = [
   "httpx", "pydantic", "rich", "sqlite3", "numpy",
 ];
 
-const PURE_DEPS = ["diff-match-patch", "openpyxl"];
 
 // finance + report 만 미리 받는다 (작고 흔함). panel 보드는 c.panel 첫 호출 시 lazy fetch.
 // (옛 dart/docs 는 폐기 카테고리라 제거. HF 부재로 404 만 나던 죽은 경로였다.)
@@ -31,8 +29,6 @@ const DATA_CATEGORIES = [
  *
  * @param {Object} options
  * @param {string} options.stockCode - 종목코드 (기본 "005930")
- * @param {string} [options.wheelUrl] - wheel URL override (기본: HF)
- * @param {string} [options.version] - dartlab 버전 (기본: "0.10.8")
  * @param {(msg: string) => void} [options.onLog] - 로그 콜백
  * @param {(step: string, progress: number) => void} [options.onProgress] - 진행 콜백
  * @returns {{ py: PyodideInterface, run: (code: string) => Promise<any> }}
@@ -40,8 +36,6 @@ const DATA_CATEGORIES = [
 export async function initDartlab(options = {}) {
   const {
     stockCode = "005930",
-    version = "0.10.8",
-    wheelUrl = null,
     onLog = () => {},
     onProgress = () => {},
   } = options;
@@ -69,25 +63,15 @@ export async function initDartlab(options = {}) {
   onLog("[2/5] 빌트인 패키지 로드...");
   await py.loadPackage(BUILTIN_PACKAGES);
 
-  // 3. dartlab wheel 설치
+  // 3. dartlab 설치 (PyPI). pip 과 같은 진입점·같은 버전이라 본체 릴리즈에 자동으로 맞는다.
+  // micropip 이 PyPI 최신 wheel 을 받고 deps(diff-match-patch·openpyxl 등)를 자동 해소한다. C 확장은
+  // 위에서 loadPackage 로 미리 올렸고, emscripten 마커로 서버/AI dep(marimo·mcp 등)은 빠진다.
   onProgress("wheel", 0.4);
-  onLog("[3/5] dartlab wheel 설치...");
-
-  const whlUrl = wheelUrl || `${WHEEL_BASE}/dartlab-${version}-py3-none-any.whl`;
-  const wheelResp = await fetch(whlUrl);
-  if (!wheelResp.ok) throw new Error(`wheel fetch 실패: ${wheelResp.status} ${whlUrl}`);
-  const wheelBuf = new Uint8Array(await wheelResp.arrayBuffer());
-  py.FS.writeFile("/tmp/dartlab.whl", wheelBuf);
-  onLog(`    ${(wheelBuf.length / 1024).toFixed(0)} KB`);
+  onLog("[3/5] dartlab 설치 (PyPI)...");
 
   await py.runPythonAsync(`
 import micropip
-await micropip.install(${JSON.stringify(PURE_DEPS)})
-import zipfile, site
-whl = zipfile.ZipFile("/tmp/dartlab.whl")
-sp = site.getsitepackages()[0] if site.getsitepackages() else "/lib/python3.12/site-packages"
-whl.extractall(sp)
-whl.close()
+await micropip.install("dartlab")
   `);
 
   // 4. HF parquet prefetch

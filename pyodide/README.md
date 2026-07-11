@@ -24,9 +24,9 @@ dartlab을 브라우저에서 실행. 설치 없이 재무분석.
 
 ```python
 import micropip
-# dartlab wheel 한 줄. deps(diff-match-patch·openpyxl 등)는 wheel 메타데이터로 micropip 이 자동 해소.
+# PyPI 한 줄. deps(diff-match-patch·openpyxl 등)는 wheel 메타데이터로 micropip 이 자동 해소.
 # 빌트인 C 확장(polars·pyarrow·lxml·numpy)도 emscripten Requires-Dist 마커로 자동 로드된다.
-await micropip.install("https://huggingface.co/.../pyodide/dartlab-0.10.8-py3-none-any.whl")
+await micropip.install("dartlab")
 
 import dartlab
 c = dartlab.Company("005930")

@@ -686,7 +686,7 @@ VLOOKUP과 나란히 **`=GETFINANCE`가 엑셀 네이티브 함수**로 동작�
 ```python
 import micropip
 # 한 줄이면 끝. deps(diff-match-patch·openpyxl 등)와 빌트인 C 확장은 wheel 메타데이터 마커로 자동 해소.
-await micropip.install("https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main/pyodide/dartlab-0.10.7-py3-none-any.whl")
+await micropip.install("dartlab")
 
 import dartlab
 c = dartlab.Company("005930")
