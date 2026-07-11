@@ -461,11 +461,17 @@ export function getPostsByCategory(categoryIdOrSlug: string): PostMeta[] {
 	return posts.filter((post) => post.category === category.id);
 }
 
+export function getDistinctSeriesLabel(post: Pick<PostMeta, 'categoryLabel' | 'seriesLabel'>): string | undefined {
+	const seriesLabel = post.seriesLabel?.trim();
+	if (!seriesLabel) return undefined;
+	return seriesLabel === post.categoryLabel.trim() ? undefined : seriesLabel;
+}
+
 export function getCategoryGroups(): Array<CategoryDefinition & { posts: PostMeta[]; postCount: number; seriesLabels: string[] }> {
 	return categoryDefinitions
 		.map((category) => {
 			const categoryPosts = posts.filter((post) => post.category === category.id);
-			const seriesLabels = [...new Set(categoryPosts.map((post) => post.seriesLabel).filter(Boolean))] as string[];
+			const seriesLabels = [...new Set(categoryPosts.map((post) => getDistinctSeriesLabel(post)).filter(Boolean))] as string[];
 			return {
 				...category,
 				posts: categoryPosts,

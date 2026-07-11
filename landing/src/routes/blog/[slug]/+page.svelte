@@ -3,7 +3,7 @@
 	import { brand } from '$lib/brand';
 	import SubjectHub from '$lib/subjects/SubjectHub.svelte';
 	import BlogActionBar from '$lib/blog/BlogActionBar.svelte';
-	import { findPrevNext, findSeriesPrevNext, getCategoryPath, getPost, getPostRaw, getRelatedPostsByCategory, getSeriesPath } from '$lib/blog/posts';
+	import { findPrevNext, findSeriesPrevNext, getCategoryPath, getDistinctSeriesLabel, getPost, getPostRaw, getRelatedPostsByCategory, getSeriesPath } from '$lib/blog/posts';
 	import { buildAbsoluteUrl, buildArticleJsonLd, buildBreadcrumbJsonLd, buildFaqJsonLd, parseFaqFromMarkdown } from '$lib/seo';
 	import { Calendar, ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
@@ -177,6 +177,7 @@
 	const meta = $derived(data.metadata ?? {});
 	const slug = $derived(data.slug ?? '');
 	const postInfo = $derived(getPost(slug));
+	const distinctSeriesLabel = $derived(postInfo ? getDistinctSeriesLabel(postInfo) : undefined);
 	const prevNext = $derived(findPrevNext(slug));
 	const seriesPrevNext = $derived(findSeriesPrevNext(slug));
 	const relatedCategoryPosts = $derived(getRelatedPostsByCategory(slug, 3));
@@ -353,9 +354,9 @@
 				{#if postInfo}
 					<div class="post-meta-row">
 						<a href="{base}{getCategoryPath(postInfo.category)}" class="post-badge">{postInfo.categoryLabel}</a>
-						{#if postInfo.series}
+						{#if postInfo.series && distinctSeriesLabel}
 							<a href="{base}{getSeriesPath(postInfo.series)}" class="post-series">
-								{postInfo.seriesLabel ?? postInfo.series}
+								{distinctSeriesLabel}
 								{#if postInfo.seriesOrder}
 									<span class="post-series-order">#{postInfo.seriesOrder}</span>
 								{/if}
@@ -435,7 +436,7 @@
 					<div class="brand-loop-links">
 						{#each relatedCategoryPosts as post}
 							<a href="{base}/blog/{post.slug}" class="brand-loop-card">
-								<span class="brand-loop-card-series">{post.seriesLabel ?? post.categoryLabel}</span>
+								<span class="brand-loop-card-series">{getDistinctSeriesLabel(post) ?? post.categoryLabel}</span>
 								<span class="brand-loop-card-title">{post.title}</span>
 							</a>
 						{/each}

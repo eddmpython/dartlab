@@ -2,7 +2,7 @@
 	import { base } from '$app/paths';
 	import { brand } from '$lib/brand';
 	import { ArrowRight, Calendar } from 'lucide-svelte';
-	import { getCategoryGroups, getCategoryPath, getLatestPosts, getSeriesGroups, getSeriesPath } from '$lib/blog/posts';
+	import { getCategoryGroups, getCategoryPath, getDistinctSeriesLabel, getLatestPosts, getSeriesGroups, getSeriesPath } from '$lib/blog/posts';
 	import CardThumb from '$lib/blog/CardThumb.svelte';
 
 	const categoryGroups = getCategoryGroups();
@@ -101,8 +101,8 @@
 								<div class="latest-card-copy">
 									<div class="latest-meta">
 										<span class="latest-badge">{post.categoryLabel}</span>
-										{#if post.seriesLabel}
-											<span class="latest-series">{post.seriesLabel}</span>
+										{#if getDistinctSeriesLabel(post)}
+											<span class="latest-series">{getDistinctSeriesLabel(post)}</span>
 										{/if}
 									</div>
 									<div class="latest-date">

@@ -2,7 +2,7 @@
 	import { base } from '$app/paths';
 	import { brand } from '$lib/brand';
 	import { ArrowRight, Calendar } from 'lucide-svelte';
-	import { getCategory, getPostsByCategory, getSeriesGroupsByCategory, getSeriesPath } from '$lib/blog/posts';
+	import { getCategory, getDistinctSeriesLabel, getPostsByCategory, getSeriesGroupsByCategory, getSeriesPath } from '$lib/blog/posts';
 	import CardThumb from '$lib/blog/CardThumb.svelte';
 
 	let { data } = $props();
@@ -91,8 +91,8 @@
 									<img src="{base}{post.thumbnail}" alt={post.title} class="category-post-avatar" width="52" height="52" loading="lazy" />
 								</picture>
 								<div class="category-post-meta">
-									{#if post.seriesLabel}
-										<span class="category-post-series">{post.seriesLabel}</span>
+									{#if getDistinctSeriesLabel(post)}
+										<span class="category-post-series">{getDistinctSeriesLabel(post)}</span>
 									{/if}
 									<div class="category-post-date">
 										<Calendar size={12} />
