@@ -298,3 +298,15 @@ def test_dartlab_story_title_gate_blocks_intro_title() -> None:
     assert not ab._validate_dartlab_story_title("DART 공시분석, 설치 없이", "title")
     errors = ab._validate_dartlab_story_title("dartlab이란 무엇인가", "title")
     assert any("소개형" in err for err in errors)
+
+
+def test_dartlab_story_gate_blocks_internal_count_terms() -> None:
+    brief_path = (
+        Path(__file__).resolve().parents[1] / "03-dartlab-stories" / "02-call-financial-statements" / "brief.json"
+    )
+    brief = json.loads(brief_path.read_text(encoding="utf-8"))
+    brief["sections"][0]["explanation"] = "axis count 13/13 인증을 보여 주는 내부 점검 설명이다."
+
+    errors = ab._validate_common_plan(brief, brief, label="brief.json", category="dartlab-stories")
+
+    assert any("내부 기능 개수" in err for err in errors)

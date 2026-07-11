@@ -42,7 +42,7 @@
     "evidenceRefs": [
       "Company.market",
       "Company.panel",
-      "Company.select",
+      "Company.head",
       "notebookContract 게이트"
     ]
   },
@@ -62,10 +62,10 @@
       "order": 2,
       "heading": "위에서 아래로 실행하고 바꾸면 다시 누른다",
       "purpose": "실습",
-      "scene": "is_와 sales 변수를 만들고 shape와 head로 같은 표를 여러 번 확인하는 장면",
+      "scene": "is_와 sales 변수를 만들고 head 결과로 같은 표를 여러 번 확인하는 장면",
       "keyNumbers": [
-        "36 x 43",
-        "2 x 13"
+        "계정명",
+        "최근 기간 값"
       ],
       "causalBridge": "앞 셀 결과를 재사용하는 경험이 노트북 생성과 자기 분석으로 이어진다."
     },
@@ -87,9 +87,9 @@
       "kind": "diagram",
       "title": "코드셀 실행 상태 흐름",
       "proves": "앞 셀의 변수와 결과가 뒤 셀에서 재사용되는 순서를 보여 준다.",
-      "seriesHint": "Company에서 panel, select로 이어지는 브라우저 노트북 상태",
+      "seriesHint": "Company에서 panel 결과로 이어지는 브라우저 노트북 상태",
       "placement": "위에서 아래로 실행해야 하는 이유 설명 뒤 본문 중간",
-      "insertAfter": "is_.shape 실행 예제 뒤",
+      "insertAfter": "is_.head(5) 실행 예제 뒤",
       "narrativeUse": "초보자가 NameError를 데이터 문제가 아니라 실행 순서 문제로 구분하게 한다."
     }
   ],
@@ -125,7 +125,7 @@
       {
         "path": "/blog/call-financial-statements",
         "title": "재무제표, 파이썬 한 줄",
-        "reason": "panel과 select를 처음 만지는 선행 실습이다.",
+        "reason": "panel 결과를 처음 만지는 선행 실습이다.",
         "placement": "도입부 두 번째 선행 연결"
       },
       {
@@ -143,14 +143,14 @@
   ],
   "evidenceMap": [
     {
-      "claim": "삼성전자 Company.market 호출은 브라우저 계약 안의 공개 속성이다.",
+      "claim": "삼성전자 Company.market 호출은 브라우저에서 바로 확인할 수 있는 속성이다.",
       "sourceType": "dartlab",
       "period": "2026-07-11",
       "sourceRef": "tests/audit/notebookContract.py",
       "howUsed": "본문 첫 코드셀의 공개 호출 검증"
     },
     {
-      "claim": "Company.panel과 Company.select는 브라우저에서 실행 가능한 공개 메서드다.",
+      "claim": "Company.panel은 브라우저에서 실행 가능한 공개 메서드다.",
       "sourceType": "DARTLAB",
       "period": "2026-07-11",
       "sourceRef": "operation code contract",
@@ -180,7 +180,7 @@
         },
         {
           "round": 2,
-          "planner": "개선안은 Company, panel, select 변수를 순서대로 만들고 재실행 원칙을 설명한다.",
+          "planner": "개선안은 Company, panel, head 출력을 순서대로 만들고 재실행 원칙을 설명한다.",
           "evaluator": "1편과 2편을 반복하지 않고 실행 상태와 오류 해석을 새 능력으로 제공한다.",
           "skeptic": "브라우저 한계와 화면 기록, 현재 변수 상태의 차이를 밝히므로 초보자 오해를 줄인다.",
           "decision": "passed",
@@ -206,9 +206,9 @@
       "order": 2,
       "heading": "위에서 아래로 실행하고 바꾸면 다시 누른다",
       "subtitle": "위에서 아래로 실행하고 바꾸면 다시 누른다에서 독자가 지금 무엇을 보고 어떤 셀을 눌러야 하는지 한 문장으로 먼저 고정한다.",
-      "visualAnchor": "is_와 sales 변수를 만들고 shape와 head로 같은 표를 여러 번 확인하는 장면을 실제 코드 출력, DataFrame 표, 실행 화면, 개념 도식 중 하나로 섹션 앞쪽에 배치한다.",
+      "visualAnchor": "is_와 sales 변수를 만들고 head 결과로 같은 표를 여러 번 확인하는 장면을 실제 코드 출력, DataFrame 표, 실행 화면, 개념 도식 중 하나로 섹션 앞쪽에 배치한다.",
       "explanation": "내부 용어를 줄이고 화면에 보이는 코드, 표, 계정, 기간을 기준으로 쉬운 문장으로 설명한다.",
-      "example": "36 x 43, 2 x 13을 예시로 삼아 독자가 같은 셀을 바꾸어 직접 실행하게 한다.",
+      "example": "계정명과 최근 기간 값을 예시로 삼아 독자가 같은 셀을 바꾸어 직접 실행하게 한다.",
       "support": "브라우저와 로컬 차이, 오해하기 쉬운 입력, 빈칸, 실행 순서, 검산 방법 중 이 섹션에 맞는 보완 설명을 붙인다.",
       "transition": "앞 셀 결과를 재사용하는 경험이 노트북 생성과 자기 분석으로 이어진다.",
       "evaluation": "기획 루프에서 타이틀, 한 줄 훅, 시각 앵커, 설명, 예시, 보완, 다음 연결이 모두 들어갔는지 섹션별로 재평가한다."

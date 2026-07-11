@@ -44,7 +44,7 @@
       "AAPL panel(\"IS\").head(5)에 sales, revenue, cost_of_sales와 최근 기간 값 표시",
       "AAPL panel(\"BS\").head(5)에 assets, current_assets, cash_and_cash_equivalents 표시",
       "AAPL panel(\"CF\").head(5)에 cash_flows_from_operating_activities 표시",
-      "AAPL trace(\"IS\").primarySource = finance"
+      "Apple EDGAR 표는 USD와 fiscal period 기준을 따로 확인"
     ]
   },
   "acts": [
@@ -78,7 +78,7 @@
       "order": 3,
       "heading": "표 열기와 비교를 분리한다",
       "purpose": "경계밝히기",
-      "scene": "trace(\"IS\")로 finance 원천을 확인하고 USD, 10-K, 10-Q, 브라우저와 로컬 차이를 오해 방지로 정리한다.",
+      "scene": "USD, 10-K, 10-Q, 브라우저와 로컬 차이를 오해 방지로 정리한다.",
       "keyNumbers": [
         "finance",
         "USD",
@@ -93,7 +93,7 @@
       "actOrder": 2,
       "kind": "bitmap diagram",
       "title": "EDGAR 재무제표 세 장 panel",
-      "proves": "AAPL의 IS, BS, CF가 모두 account row와 period column이 있는 같은 표면으로 열린다는 점을 보여 준다.",
+      "proves": "AAPL의 IS, BS, CF가 모두 계정 이름과 기간 값이 있는 같은 표면으로 열린다는 점을 보여 준다.",
       "seriesHint": "AAPL financial panel triple surface",
       "placement": "Apple을 연 뒤 손익계산서 설명 전에 배치한다.",
       "insertAfter": "이번 편의 목적은 단순하다 문단 뒤",
@@ -105,7 +105,7 @@
       "title": "EDGAR 공시 리듬과 실행 경계",
       "proves": "같은 panel 표라도 10-K, 10-Q, USD, 브라우저와 로컬 차이를 따로 봐야 한다는 점을 보여 준다.",
       "seriesHint": "EDGAR filing rhythm browser local boundary",
-      "placement": "trace(\"IS\")와 10-K, 10-Q 설명 뒤에 배치한다.",
+      "placement": "10-K, 10-Q 설명 뒤에 배치한다.",
       "insertAfter": "Apple의 최근 분기 열을 볼 때도 fiscal period로 공시했는지 의식해야 한다 문단 뒤",
       "narrativeUse": "초보자가 표 열기와 비교 완료를 섞지 않도록 경계를 시각적으로 고정한다."
     }
@@ -138,7 +138,7 @@
         "browser",
         "local"
       ],
-      "placement": "trace와 공시 리듬 설명 뒤 삽입",
+      "placement": "공시 리듬 설명 뒤 삽입",
       "narrativeUse": "같은 표가 열려도 통화, 기간, 실행 경로 차이를 따로 확인해야 한다는 오해 방지를 강화한다."
     }
   ],
@@ -204,13 +204,6 @@
       "period": "2026-07-11",
       "sourceRef": "local execution: Company(\"AAPL\").panel(topic).head(5)",
       "howUsed": "본문 세 재무제표 실습 코드"
-    },
-    {
-      "claim": "AAPL trace(\"IS\")는 primarySource finance를 돌려준다.",
-      "sourceType": "dartlab",
-      "period": "2026-07-11",
-      "sourceRef": "local execution: Company(\"AAPL\").trace(\"IS\")",
-      "howUsed": "손익계산서 원천 되짚기 설명"
     },
     {
       "claim": "미국 회사는 EDGAR 10-K와 10-Q 공시 리듬을 따르며 통화 기준은 USD로 봐야 한다.",
@@ -309,9 +302,9 @@
       "order": 5,
       "heading": "10-K와 10-Q 리듬을 따로 본다",
       "subtitle": "Apple의 기간 열은 EDGAR 10-K와 10-Q, fiscal period 감각으로 읽어야 한다.",
-      "visualAnchor": "trace(\"IS\") 코드 출력과 10-K, 10-Q, USD, 브라우저 경계를 담은 이미지 도식을 함께 배치한다.",
+      "visualAnchor": "10-K, 10-Q, USD, 브라우저 경계를 담은 이미지 도식을 함께 배치한다.",
       "explanation": "10-K는 연간 보고서, 10-Q는 분기 보고서이며 기간 열이 단순 달력 라벨이 아니라고 설명한다.",
-      "example": "aapl.trace(\"IS\")를 실행해 primarySource가 finance인지 확인한다.",
+      "example": "AAPL의 최근 기간 열이 fiscal period 기준임을 본문 표 옆에서 확인한다.",
       "support": "브라우저 코드가 표를 열어 줘도 fiscal period와 통화 기준은 따로 검산해야 한다는 주의를 붙인다.",
       "transition": "원천과 리듬을 확인했으므로 다음에는 브라우저와 로컬 차이를 분리한다.",
       "evaluation": "시각 앵커가 단순 장식이 아니라 오해 방지 역할을 하는지 재평가했다."
@@ -320,7 +313,7 @@
       "order": 6,
       "heading": "원천 페이지를 같이 둔다",
       "subtitle": "코드가 잘 돌아도 SEC 원천 검색 화면과 API 설명으로 돌아가는 습관을 만든다.",
-      "visualAnchor": "SEC Search Filings, EDGAR Full Text Search, data.sec.gov 링크 목록과 trace 코드 출력을 원천 확인의 시각 앵커로 둔다.",
+      "visualAnchor": "SEC Search Filings, EDGAR Full Text Search, data.sec.gov 화면과 링크 목록을 원천 확인의 시각 앵커로 둔다.",
       "explanation": "dartlab은 표를 여는 도구이고 SEC EDGAR는 공시 원천이라는 차이를 쉬운 문장으로 설명한다.",
       "example": "Search Filings, EDGAR Full Text Search, EDGAR API, data.sec.gov, Investor.gov 10-K와 10-Q 안내, About EDGAR를 연결한다.",
       "support": "브라우저 표가 열려도 원천 페이지 확인을 생략하면 공시 리듬과 데이터 경로를 오해할 수 있음을 보완 설명한다.",
@@ -331,9 +324,9 @@
       "order": 7,
       "heading": "브라우저와 로컬 결과는 다를 수 있다",
       "subtitle": "브라우저 공개 artifact와 로컬 companyfacts 경로의 세부 행과 기간 열은 달라질 수 있다.",
-      "visualAnchor": "브라우저 article과 local can differ를 나눈 이미지 도식, 그리고 본문 코드가 공개 호출 계약 안에 있다는 설명을 연결한다.",
+      "visualAnchor": "브라우저 article과 local can differ를 나눈 이미지 도식, 그리고 본문 코드가 브라우저에서 그대로 실행되는 범위 안에 있다는 설명을 연결한다.",
       "explanation": "같은 AAPL 재무 panel이라도 실행 경로에 따라 세부 표 범위가 달라질 수 있으므로 정답 개수를 외우지 말라고 설명한다.",
-      "example": "글에서는 Company, market, panel, head, trace만 쓰고 로컬 전용 수집 기능은 쓰지 않는다.",
+      "example": "글에서는 Company, market, panel, head만 쓰고 로컬 전용 수집 기능은 쓰지 않는다.",
       "support": "로컬과 브라우저 차이, 미확인 본문 섹션, 실시간 데이터 한계를 모두 오해 방지로 명시한다.",
       "transition": "실행 경계를 분리했으므로 다음에는 독자가 흔히 하는 오해를 정리한다.",
       "evaluation": "브라우저에서 안 되는 것과 확인하지 않은 것을 감추지 않았는지 재평가했다."
@@ -352,10 +345,10 @@
     {
       "order": 9,
       "heading": "다음 편으로 넘어가기 전 행동 검사",
-      "subtitle": "market, 세 재무제표 head, trace, 문장 고치기를 직접 통과해야 다음 편을 읽을 준비가 된다.",
+      "subtitle": "market, 세 재무제표 head, 기준 적기, 문장 고치기를 직접 통과해야 다음 편을 읽을 준비가 된다.",
       "visualAnchor": "네 가지 실행 체크리스트와 실제 코드 출력 흐름을 섹션의 시각 앵커로 삼는다.",
       "explanation": "행동 검사는 글을 읽었다는 표시가 아니라 독자가 브라우저에서 같은 결과를 눌러 봤는지 확인하는 장치라고 설명한다.",
-      "example": "aapl.market, aapl.panel(\"IS\").head(5), aapl.panel(\"BS\").head(5), aapl.panel(\"CF\").head(5), aapl.trace(\"IS\")를 순서대로 확인한다.",
+      "example": "aapl.market, aapl.panel(\"IS\").head(5), aapl.panel(\"BS\").head(5), aapl.panel(\"CF\").head(5)를 순서대로 확인하고 USD와 fiscal period를 적는다.",
       "support": "실행이 느리거나 표 범위가 달라도 먼저 계정과 기간 값이 보이는지 검산하라는 보완 설명을 붙인다.",
       "transition": "행동 검사를 통과하면 다음 편에서 DART 사업보고서 본문 panel로 넘어간다.",
       "evaluation": "다음 편으로 넘어가는 자격이 명확하고 실행 가능한지 재평가했다."

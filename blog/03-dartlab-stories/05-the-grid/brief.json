@@ -38,10 +38,10 @@
     "commonBelief": "freq 값은 단순히 표를 조금 다르게 보여 주는 옵션일 뿐이라고 생각한다.",
     "twistFact": "연간은 회사의 큰 방향을 묻고 분기는 최근 변곡을 묻기 때문에 같은 계정도 다른 질문이 된다.",
     "whatToWatch": "연간과 분기, 손익계산서와 재무상태표의 기간 의미를 섞어 말하지 않는다.",
-    "freshnessArgument": "실제 브라우저 실행에서 확인한 Y 결과와 Q 결과의 shape 차이를 근거로 초보자용 기간 감각을 만든다.",
+    "freshnessArgument": "실제 브라우저 실행에서 확인한 Y 결과와 Q 결과의 계정, 기간 값 차이를 근거로 초보자용 기간 감각을 만든다.",
     "evidenceRefs": [
-      "Company.select freq Y",
-      "Company.select freq Q",
+      "Company.panel freq Y",
+      "Company.panel freq Q",
       "Company.panel",
       "DART reports"
     ]
@@ -62,10 +62,10 @@
       "order": 2,
       "heading": "연간은 방향, 분기는 변곡을 본다",
       "purpose": "해석",
-      "scene": "annual과 quarterly 변수를 만들고 shape와 head로 서로 다른 기간 표를 확인하는 장면",
+      "scene": "annual과 quarterly 변수를 만들고 head 결과로 서로 다른 기간 표를 확인하는 장면",
       "keyNumbers": [
-        "2 x 13",
-        "2 x 43"
+        "연간 기간 값",
+        "분기 기간 값"
       ],
       "causalBridge": "표 모양 차이를 확인해야 기간을 섞어 말하는 오해를 막을 수 있다."
     },
@@ -76,7 +76,7 @@
       "scene": "BS의 자산총계와 자본총계를 Y와 Q로 조회해 손익계산서와 다른 기간 의미를 설명하는 장면",
       "keyNumbers": [
         "BS",
-        "shape"
+        "최근 기간 값"
       ],
       "causalBridge": "기간 기준을 제대로 잡아야 다음 편의 계정명 선택과 직접 계산으로 넘어갈 수 있다."
     }
@@ -87,9 +87,9 @@
       "kind": "diagram",
       "title": "Y와 Q 기간 질문 비교",
       "proves": "연간과 분기는 같은 계정을 다른 시간 간격으로 보여 주며 해석 질문도 달라진다.",
-      "seriesHint": "Company.select freq comparison",
+      "seriesHint": "Company.panel freq comparison",
       "placement": "재무상태표 기간 설명 뒤 본문 중간",
-      "insertAfter": "bs_y와 bs_q shape 예제 뒤",
+      "insertAfter": "bs_y와 bs_q head 예제 뒤",
       "narrativeUse": "독자가 Y와 Q를 단순 옵션이 아니라 질문 선택으로 기억하게 한다."
     }
   ],
@@ -112,15 +112,15 @@
       "재무제표 기간",
       "DART 분기보고서",
       "재무제표 연간 분기",
-      "dartlab select"
+      "dartlab panel"
     ],
-    "placementRule": "2편의 select 학습을 앞에 연결하고, 3편의 실행 순서와 4편의 종목코드 글은 변수와 대상 설명에 배치한다.",
+    "placementRule": "2편의 panel 학습을 앞에 연결하고, 3편의 실행 순서와 4편의 종목코드 글은 변수와 대상 설명에 배치한다.",
     "links": [
       {
         "path": "/blog/call-financial-statements",
         "title": "재무제표, 파이썬 한 줄",
-        "reason": "select 호출의 기본 문법을 선행 학습한다.",
-        "placement": "도입부 select 선행 연결"
+        "reason": "panel 호출의 기본 문법을 선행 학습한다.",
+        "placement": "도입부 panel 선행 연결"
       },
       {
         "path": "/blog/how-notebook-runs",
@@ -143,10 +143,10 @@
   ],
   "evidenceMap": [
     {
-      "claim": "Company.select는 freq Y와 freq Q로 같은 계정을 서로 다른 기간 표로 조회한다.",
+      "claim": "Company.panel은 freq Y와 freq Q로 같은 표를 서로 다른 기간 기준으로 조회한다.",
       "sourceType": "DARTLAB",
       "period": "2026-07-11",
-      "sourceRef": "local execution annual and quarterly shape check",
+      "sourceRef": "local execution annual and quarterly head check",
       "howUsed": "본문 핵심 실습과 표 모양 설명"
     },
     {
@@ -180,7 +180,7 @@
         },
         {
           "round": 2,
-          "planner": "개선안은 같은 계정을 Y와 Q로 조회하고 shape 차이를 실제 실행 근거로 설명한다.",
+          "planner": "개선안은 같은 계정을 Y와 Q로 조회하고 계정과 기간 값 차이를 실제 실행 근거로 설명한다.",
           "evaluator": "초보자가 기간 기준을 먼저 세우고 다음 계정 선택 수업으로 넘어갈 수 있다.",
           "skeptic": "지원하지 않는 freq year 문법과 브라우저 주가 결합 한계를 분명히 밝혀 오해를 줄인다.",
           "decision": "passed",
@@ -206,9 +206,9 @@
       "order": 2,
       "heading": "연간은 방향, 분기는 변곡을 본다",
       "subtitle": "연간은 방향, 분기는 변곡을 본다에서 독자가 지금 무엇을 보고 어떤 셀을 눌러야 하는지 한 문장으로 먼저 고정한다.",
-      "visualAnchor": "annual과 quarterly 변수를 만들고 shape와 head로 서로 다른 기간 표를 확인하는 장면을 실제 코드 출력, DataFrame 표, 실행 화면, 개념 도식 중 하나로 섹션 앞쪽에 배치한다.",
+      "visualAnchor": "annual과 quarterly 변수를 만들고 head 결과로 서로 다른 기간 표를 확인하는 장면을 실제 코드 출력, DataFrame 표, 실행 화면, 개념 도식 중 하나로 섹션 앞쪽에 배치한다.",
       "explanation": "내부 용어를 줄이고 화면에 보이는 코드, 표, 계정, 기간을 기준으로 쉬운 문장으로 설명한다.",
-      "example": "2 x 13, 2 x 43을 예시로 삼아 독자가 같은 셀을 바꾸어 직접 실행하게 한다.",
+      "example": "연간 기간 값과 분기 기간 값을 예시로 삼아 독자가 같은 셀을 바꾸어 직접 실행하게 한다.",
       "support": "브라우저와 로컬 차이, 오해하기 쉬운 입력, 빈칸, 실행 순서, 검산 방법 중 이 섹션에 맞는 보완 설명을 붙인다.",
       "transition": "표 모양 차이를 확인해야 기간을 섞어 말하는 오해를 막을 수 있다.",
       "evaluation": "기획 루프에서 타이틀, 한 줄 훅, 시각 앵커, 설명, 예시, 보완, 다음 연결이 모두 들어갔는지 섹션별로 재평가한다."
@@ -219,7 +219,7 @@
       "subtitle": "재무상태표의 기간 의미도 구분한다에서 독자가 지금 무엇을 보고 어떤 셀을 눌러야 하는지 한 문장으로 먼저 고정한다.",
       "visualAnchor": "BS의 자산총계와 자본총계를 Y와 Q로 조회해 손익계산서와 다른 기간 의미를 설명하는 장면을 실제 코드 출력, DataFrame 표, 실행 화면, 개념 도식 중 하나로 섹션 앞쪽에 배치한다.",
       "explanation": "내부 용어를 줄이고 화면에 보이는 코드, 표, 계정, 기간을 기준으로 쉬운 문장으로 설명한다.",
-      "example": "BS, shape을 예시로 삼아 독자가 같은 셀을 바꾸어 직접 실행하게 한다.",
+      "example": "BS의 계정명과 최근 기간 값을 예시로 삼아 독자가 같은 셀을 바꾸어 직접 실행하게 한다.",
       "support": "브라우저와 로컬 차이, 오해하기 쉬운 입력, 빈칸, 실행 순서, 검산 방법 중 이 섹션에 맞는 보완 설명을 붙인다.",
       "transition": "기간 기준을 제대로 잡아야 다음 편의 계정명 선택과 직접 계산으로 넘어갈 수 있다.",
       "evaluation": "기획 루프에서 타이틀, 한 줄 훅, 시각 앵커, 설명, 예시, 보완, 다음 연결이 모두 들어갔는지 섹션별로 재평가한다."

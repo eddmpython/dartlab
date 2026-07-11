@@ -458,6 +458,19 @@ def _validate_section_plan(plan: dict[str, object], *, label: str, category: str
                 fails.append(
                     f"{label}: sections[{idx}].visualAnchor 는 실제 코드 출력·표·도식·이미지 중 하나를 명시해야 함"
                 )
+            section_text = json.dumps(raw, ensure_ascii=False)
+            if re.search(r"\.shape\b|\bshape\b|[0-9]+\s*x\s*[0-9]+|\([0-9]+\s*,\s*[0-9]+\)", section_text, re.I):
+                fails.append(
+                    f"{label}: sections[{idx}] 이 행열 크기나 shape 를 학습 근거로 씀. 실제 계정·기간·값을 보여 줘야 함"
+                )
+            if re.search(
+                r"축수|축\s*수|축\s*개수|엔진별\s*축|axis\s*count|[0-9]+\s*/\s*[0-9]+\s*(?:인증|통과|표면)",
+                section_text,
+                re.I,
+            ):
+                fails.append(
+                    f"{label}: sections[{idx}] 이 내부 기능 개수나 인증 수를 근거로 씀. 실제 호출 결과와 값을 보여 줘야 함"
+                )
             support = str(raw.get("support") or "")
             if not re.search(r"오해|주의|한계|브라우저|로컬|틀리|예외|보완|검산", support):
                 fails.append(f"{label}: sections[{idx}].support 는 오해 방지·한계·보완 설명을 명시해야 함")
@@ -490,6 +503,15 @@ def _validate_common_plan(
         fails.extend(_validate_dartlab_story_title(selected, f"{label}: titleContract.selectedTitle"))
         plan_title = str(plan.get("title") or "")
         fails.extend(_validate_dartlab_story_title(plan_title, f"{label}: title"))
+        plan_text = json.dumps(plan, ensure_ascii=False)
+        if re.search(r"\.shape\b|\bshape\b|[0-9]+\s*x\s*[0-9]+|\([0-9]+\s*,\s*[0-9]+\)", plan_text, re.I):
+            fails.append(f"{label}: dartlab 이야기 기획은 shape·행열 크기를 근거로 쓰지 않는다")
+        if re.search(
+            r"축수|축\s*수|축\s*개수|엔진별\s*축|axis\s*count|[0-9]+\s*/\s*[0-9]+\s*(?:인증|통과|표면)",
+            plan_text,
+            re.I,
+        ):
+            fails.append(f"{label}: dartlab 이야기 기획은 내부 기능 개수나 인증 수를 근거로 쓰지 않는다")
         for idx, raw in enumerate(candidates, start=1):
             if isinstance(raw, dict):
                 fails.extend(
@@ -665,6 +687,16 @@ def _validate_genre_body(raw: str, body: str, category: str) -> list[str]:
             fails.append("dartlab 이야기는 독자가 그대로 실행할 python 코드블록이 필요함")
         if not re.search(r"\bdartlab\b", body):
             fails.append("dartlab 이야기는 본문에 실제 dartlab 호출이 있어야 함")
+        if re.search(r"\.shape\b|\bshape\b|[0-9]+\s*x\s*[0-9]+|\([0-9]+\s*,\s*[0-9]+\)", body, re.I):
+            fails.append("dartlab 이야기는 shape·행열 크기를 학습 근거로 쓰지 않는다. 실제 계정·기간·값을 보여 줘야 함")
+        if re.search(
+            r"축수|축\s*수|축\s*개수|엔진별\s*축|axis\s*count|[0-9]+\s*/\s*[0-9]+\s*(?:인증|통과|표면)",
+            body,
+            re.I,
+        ):
+            fails.append(
+                "dartlab 이야기는 내부 기능 개수나 인증 수를 학습 근거로 쓰지 않는다. 실제 호출 결과와 값을 보여 줘야 함"
+            )
         if not re.search(r"안\s*됩니다|안\s*된다|한계|주의|오해|로컬에서만", body):
             fails.append("dartlab 이야기는 브라우저에서 안 되는 것과 오독 방지를 본문에 명시해야 함")
     return fails

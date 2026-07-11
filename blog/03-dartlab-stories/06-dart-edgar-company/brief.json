@@ -38,13 +38,13 @@
     "commonBelief": "한국 공시와 미국 공시는 도구도 호출법도 완전히 다르게 배워야 한다고 생각한다.",
     "twistFact": "dartlab에서는 둘 다 Company로 시작하고 panel(\"IS\")로 손익계산서를 열지만, market, 통화, 공시 리듬은 그대로 다르다.",
     "whatToWatch": "표 모양이 같다고 숫자의 단위와 기간 기준까지 같다고 말하지 않는다.",
-    "freshnessArgument": "2026-07-11 브라우저 실행에서 삼성전자와 Apple의 IS, BS, CF shape와 trace 결과를 직접 확인했다.",
+    "freshnessArgument": "2026-07-11 브라우저 실행에서 삼성전자와 Apple의 IS, BS, CF가 실제 계정과 기간 값으로 열리는 것을 직접 확인했다.",
     "evidenceRefs": [
       "Company(\"005930\").market = KR",
       "Company(\"AAPL\").market = US",
-      "005930 panel(\"IS\") shape (36, 43)",
-      "AAPL panel(\"IS\") shape (20, 67)",
-      "trace(\"IS\") primarySource finance"
+      "005930 panel(\"IS\") head에 실제 계정과 기간 값 표시",
+      "AAPL panel(\"IS\") head에 실제 계정과 기간 값 표시",
+      "두 회사의 market, 통화, 공시 리듬 차이"
     ]
   },
   "acts": [
@@ -65,10 +65,10 @@
       "order": 2,
       "heading": "같은 panel 질문을 던진다",
       "purpose": "직접해본다",
-      "scene": "두 회사에 같은 panel(\"IS\") 호출을 던지고 shape와 head가 어떻게 나오는지 비교하는 장면",
+      "scene": "두 회사에 같은 panel(\"IS\") 호출을 던지고 head 결과의 계정과 기간 값을 비교하는 장면",
       "keyNumbers": [
-        "005930 IS (36, 43)",
-        "AAPL IS (20, 67)"
+        "005930 IS 계정",
+        "AAPL IS 계정"
       ],
       "causalBridge": "표 모양이 비슷해도 원천과 기간 열은 다르다는 다음 오해 방지로 이어진다."
     },
@@ -76,7 +76,7 @@
       "order": 3,
       "heading": "같은 모양은 같은 단위가 아니다",
       "purpose": "경계밝히기",
-      "scene": "trace(\"IS\")와 BS, CF shape를 확인하고 finance 원천은 같지만 통화와 공시 리듬이 다르다고 정리하는 장면",
+      "scene": "BS와 CF head 결과를 확인하고 통화와 공시 리듬이 다르다고 정리하는 장면",
       "keyNumbers": [
         "finance",
         "BS",
@@ -194,18 +194,11 @@
       "howUsed": "첫 코드셀과 DART, EDGAR provider 차이 설명"
     },
     {
-      "claim": "005930 panel(\"IS\")는 (36, 43), AAPL panel(\"IS\")는 (20, 67) 형태로 열린다.",
+      "claim": "005930 panel(\"IS\")와 AAPL panel(\"IS\")는 모두 실제 계정과 최근 기간 값을 보여 준다.",
       "sourceType": "dartlab",
       "period": "2026-07-11",
-      "sourceRef": "browser execution: c.panel(\"IS\").shape",
+      "sourceRef": "browser execution: c.panel(\"IS\").head(5)",
       "howUsed": "같은 질문으로 손익계산서를 여는 핵심 실습"
-    },
-    {
-      "claim": "두 회사의 trace(\"IS\") 결과 모두 primarySource가 finance로 잡힌다.",
-      "sourceType": "dartlab",
-      "period": "2026-07-11",
-      "sourceRef": "browser execution: c.trace(\"IS\")",
-      "howUsed": "panel 결과가 원천 우선순위에서 재무 표로 선택된다는 검산"
     },
     {
       "claim": "국내 회사는 DART 사업보고서와 분기보고서, 미국 회사는 EDGAR 10-K와 10-Q 리듬으로 읽는다.",
@@ -238,9 +231,9 @@
         },
         {
           "round": 2,
-          "planner": "개선안은 첫 셀에서 KR과 US를 확인하고, 같은 panel(\"IS\") 호출 뒤 trace로 원천을 되짚는 흐름으로 재작성했다.",
+          "planner": "개선안은 첫 셀에서 KR과 US를 확인하고, 같은 panel(\"IS\") 호출 뒤 계정과 기간 값을 보는 흐름으로 재작성했다.",
           "evaluator": "초보자가 DART와 EDGAR를 같은 질문으로 열 수 있게 되면서도 숫자 직접 비교의 위험을 배운다.",
-          "skeptic": "본문 섹션 동형성은 주장하지 않고 재무 panel, trace, 공시 리듬으로 범위를 좁혀 과장을 제거했다.",
+          "skeptic": "본문 섹션 동형성은 주장하지 않고 재무 panel, 통화, 공시 리듬으로 범위를 좁혀 과장을 제거했다.",
           "decision": "passed",
           "evaluatorScore": 96,
           "plannerRevision": "관련 선행 글과 이미지 계획을 반영해 최종 통과했다."
@@ -264,9 +257,9 @@
       "order": 2,
       "heading": "같은 panel 질문을 던진다",
       "subtitle": "같은 panel 질문을 던진다에서 독자가 지금 무엇을 보고 어떤 셀을 눌러야 하는지 한 문장으로 먼저 고정한다.",
-      "visualAnchor": "두 회사에 같은 panel(\"IS\") 호출을 던지고 shape와 head가 어떻게 나오는지 비교하는 장면을 실제 코드 출력, DataFrame 표, 실행 화면, 개념 도식 중 하나로 섹션 앞쪽에 배치한다.",
+      "visualAnchor": "두 회사에 같은 panel(\"IS\") 호출을 던지고 head 결과의 계정과 기간 값이 어떻게 보이는지 비교하는 장면을 실제 코드 출력, DataFrame 표, 실행 화면, 개념 도식 중 하나로 섹션 앞쪽에 배치한다.",
       "explanation": "내부 용어를 줄이고 화면에 보이는 코드, 표, 계정, 기간을 기준으로 쉬운 문장으로 설명한다.",
-      "example": "005930 IS (36, 43), AAPL IS (20, 67)을 예시로 삼아 독자가 같은 셀을 바꾸어 직접 실행하게 한다.",
+      "example": "005930과 AAPL의 IS 앞줄 계정과 최근 기간 값을 예시로 삼아 독자가 같은 셀을 바꾸어 직접 실행하게 한다.",
       "support": "브라우저와 로컬 차이, 오해하기 쉬운 입력, 빈칸, 실행 순서, 검산 방법 중 이 섹션에 맞는 보완 설명을 붙인다.",
       "transition": "표 모양이 비슷해도 원천과 기간 열은 다르다는 다음 오해 방지로 이어진다.",
       "evaluation": "기획 루프에서 타이틀, 한 줄 훅, 시각 앵커, 설명, 예시, 보완, 다음 연결이 모두 들어갔는지 섹션별로 재평가한다."
@@ -275,9 +268,9 @@
       "order": 3,
       "heading": "같은 모양은 같은 단위가 아니다",
       "subtitle": "같은 모양은 같은 단위가 아니다에서 독자가 지금 무엇을 보고 어떤 셀을 눌러야 하는지 한 문장으로 먼저 고정한다.",
-      "visualAnchor": "trace(\"IS\")와 BS, CF shape를 확인하고 finance 원천은 같지만 통화와 공시 리듬이 다르다고 정리하는 장면을 실제 코드 출력, DataFrame 표, 실행 화면, 개념 도식 중 하나로 섹션 앞쪽에 배치한다.",
+      "visualAnchor": "BS와 CF head 결과를 확인하고 통화와 공시 리듬이 다르다고 정리하는 장면을 실제 코드 출력, DataFrame 표, 실행 화면, 개념 도식 중 하나로 섹션 앞쪽에 배치한다.",
       "explanation": "내부 용어를 줄이고 화면에 보이는 코드, 표, 계정, 기간을 기준으로 쉬운 문장으로 설명한다.",
-      "example": "finance, BS, CF, 10-K, 10-Q을 예시로 삼아 독자가 같은 셀을 바꾸어 직접 실행하게 한다.",
+      "example": "BS, CF, 원화, 달러, 10-K, 10-Q를 예시로 삼아 독자가 같은 셀을 바꾸어 직접 실행하게 한다.",
       "support": "브라우저와 로컬 차이, 오해하기 쉬운 입력, 빈칸, 실행 순서, 검산 방법 중 이 섹션에 맞는 보완 설명을 붙인다.",
       "transition": "이 경계를 세워야 다음 편에서 EDGAR 재무 panel을 더 깊게 읽을 수 있다.",
       "evaluation": "기획 루프에서 타이틀, 한 줄 훅, 시각 앵커, 설명, 예시, 보완, 다음 연결이 모두 들어갔는지 섹션별로 재평가한다."

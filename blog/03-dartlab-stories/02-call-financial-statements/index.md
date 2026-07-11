@@ -1,7 +1,7 @@
 ---
 title: "재무제표, 파이썬 한 줄"
 date: "2026-07-10"
-description: "dartlab으로 손익계산서, 재무상태표, 현금흐름표를 브라우저에서 바로 열고 원하는 계정만 골라내는 재무제표 파이썬 호출법과 오독 방지를 익힌다."
+description: "dartlab으로 손익계산서, 재무상태표, 현금흐름표를 브라우저에서 바로 열고 계정과 기간 숫자를 확인하는 재무제표 파이썬 호출법과 오독 방지를 익힌다."
 category: dartlab-stories
 series: dartlab-stories
 seriesOrder: 2
@@ -173,7 +173,7 @@ sk.panel("IS", freq="Y").head(5)
 
 ## 다음 편에서 할 것
 
-이번 편에서 세 장의 표를 열고, 원하는 계정을 골라내고, 빈칸을 읽는 법을 익혔다. 이제 표를 꺼낼 줄 안다.
+이번 편에서 세 장의 표를 열고, 계정과 기간 숫자를 확인하고, 빈칸을 읽는 법을 익혔다. 이제 표를 꺼낼 줄 안다.
 
 브라우저 밖에서 더 큰 데이터를 다루고 싶으면 [pip install dartlab](https://pypi.org/project/dartlab/) 로 설치본을 쓴다. 그 첫걸음은 [dartlab 쉽게 시작하기](/blog/dartlab-easy-start)에 있다.
 

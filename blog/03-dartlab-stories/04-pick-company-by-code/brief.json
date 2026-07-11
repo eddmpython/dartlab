@@ -42,7 +42,7 @@
     "evidenceRefs": [
       "Company.market",
       "Company.panel",
-      "Company.select",
+      "Company.panel",
       "DART 종목코드"
     ]
   },
@@ -62,7 +62,7 @@
       "order": 2,
       "heading": "코드 하나를 바꾸면 회사가 바뀐다",
       "purpose": "실습",
-      "scene": "삼성전자, SK하이닉스, NAVER 코드를 바꿔 같은 select 질문을 실행하는 장면",
+      "scene": "삼성전자, SK하이닉스, NAVER 코드를 바꿔 같은 panel 질문을 실행하는 장면",
       "keyNumbers": [
         "000660",
         "035420"
@@ -206,7 +206,7 @@
       "order": 2,
       "heading": "코드 하나를 바꾸면 회사가 바뀐다",
       "subtitle": "코드 하나를 바꾸면 회사가 바뀐다에서 독자가 지금 무엇을 보고 어떤 셀을 눌러야 하는지 한 문장으로 먼저 고정한다.",
-      "visualAnchor": "삼성전자, SK하이닉스, NAVER 코드를 바꿔 같은 select 질문을 실행하는 장면을 실제 코드 출력, DataFrame 표, 실행 화면, 개념 도식 중 하나로 섹션 앞쪽에 배치한다.",
+      "visualAnchor": "삼성전자, SK하이닉스, NAVER 코드를 바꿔 같은 panel 질문을 실행하는 장면을 실제 코드 출력, DataFrame 표, 실행 화면, 개념 도식 중 하나로 섹션 앞쪽에 배치한다.",
       "explanation": "내부 용어를 줄이고 화면에 보이는 코드, 표, 계정, 기간을 기준으로 쉬운 문장으로 설명한다.",
       "example": "000660, 035420을 예시로 삼아 독자가 같은 셀을 바꾸어 직접 실행하게 한다.",
       "support": "브라우저와 로컬 차이, 오해하기 쉬운 입력, 빈칸, 실행 순서, 검산 방법 중 이 섹션에 맞는 보완 설명을 붙인다.",
