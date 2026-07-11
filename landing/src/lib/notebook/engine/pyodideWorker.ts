@@ -10,13 +10,14 @@ import {
 	parseRequirementsText,
 	serializePackageManifest
 } from './packageManifest';
+import { HandRolledAsgi, PyprocAsgi, type AsgiKernel } from './kernel/asgiSeam';
 
 declare const self: DedicatedWorkerGlobalScope;
 
 interface PyodideInterface {
 	runPythonAsync: (code: string) => Promise<unknown>;
 	loadPackagesFromImports: (code: string) => Promise<void>;
-	globals: { get: (name: string) => unknown };
+	globals: { get: (name: string) => unknown; set: (name: string, value: unknown) => void };
 	setStdout: (options: { batched: (text: string) => void }) => void;
 	setStderr: (options: { batched: (text: string) => void }) => void;
 	runPython: (code: string) => unknown;
@@ -96,51 +97,12 @@ async function ensureDartlab(code: string): Promise<void> {
 }
 
 // browser-as-server: 이 워커(노트북 execute 커널)에 dartlab FastAPI 를 얹는다. 한 커널, 두 인터페이스.
-// mainPlan/browser-as-server-ssot. fastapi 는 첫 /pyapi 요청 때만 설치(노트북만 쓰면 비용 0).
-// 라우팅 SSOT 는 dartlab.webapi.browserApi(파이썬). 여기선 lazy 설치 + ASGI 직접 dispatch 만.
-let serverReady = false;
-const PYAPI_SETUP = `
-import micropip
-try:
-    import fastapi  # noqa: F401
-except ImportError:
-    # dartlab 을 먼저 설치하면 typing-extensions 4.11 이 고정된다. fastapi(pydantic)는 >=4.12 를 요구해
-    # micropip 재해소가 "이미 4.11 설치됨" 으로 거부한다(실측). 4.12 는 4.11 상위호환이라 dartlab 에 무해.
-    # pyodide 0.27.5 micropip 은 reinstall 인자가 없어 uninstall 후 재설치로 올린다.
-    try:
-        micropip.uninstall("typing-extensions")
-    except Exception:
-        pass
-    await micropip.install("typing-extensions>=4.12.0")
-    await micropip.install("fastapi")
-import dartlab.webapi as _dl_webapi
-_dl_app = _dl_webapi.buildBrowserApi()
-
-async def _dl_dispatch(method, path, body_text):
-    # /pyapi 접두사 제거 + query 분리
-    route = path[6:] if path.startswith("/pyapi") else path
-    qs = b""
-    if "?" in route:
-        route, q = route.split("?", 1); qs = q.encode()
-    scope = {"type": "http", "asgi": {"version": "3.0"}, "http_version": "1.1",
-             "method": method, "path": route or "/", "raw_path": (route or "/").encode(),
-             "query_string": qs, "headers": [(b"content-type", b"application/json")]}
-    sent = {"status": None, "body": []}
-    async def recv():
-        return {"type": "http.request", "body": (body_text or "").encode(), "more_body": False}
-    async def send(msg):
-        if msg["type"] == "http.response.start": sent["status"] = msg["status"]
-        elif msg["type"] == "http.response.body": sent["body"].append(msg.get("body", b""))
-    await _dl_app(scope, recv, send)
-    return [sent["status"] or 500, b"".join(sent["body"]).decode("utf-8")]
-`;
-
-async function ensureServer(): Promise<void> {
-	if (serverReady || !pyodide) return;
-	await ensureDartlab('import dartlab');
-	await pyodide.runPythonAsync(PYAPI_SETUP);
-	serverReady = true;
-}
+// ASGI dispatch 는 커널 seam(kernel/asgiSeam.ts)이 소유한다. USE_PYPROC_ASGI=false(기본)면
+// 손수 _dl_dispatch 경로로 오늘과 바이트 동일(P0 파리티 실증). true 로 flip 하면 워커의 pyodide 를
+// new Runtime(py) 로 채택해 pyproc AsgiServer 로 서빙. mainPlan/pyproc-runtime-ssot P1.
+// fastapi 는 첫 /pyapi 요청 때만 설치(노트북만 쓰면 비용 0). dartlab 설치는 seam 위 ensureDartlab.
+const USE_PYPROC_ASGI = false;
+let asgiKernel: AsgiKernel | null = null;
 
 function reply(id: string, result: unknown, error?: string) {
 	self.postMessage({ id, result, error });
@@ -187,6 +149,7 @@ async function initialize(interruptBuffer?: Uint8Array | null) {
 	pyodide.FS.writeFile('/matplotlibrc', MATPLOTLIBRC, { encoding: 'utf8' });
 	pyodide.runPython('import os, sys; os.chdir("/workspace")\nif "/workspace" not in sys.path: sys.path.insert(0, "/workspace")\nos.environ["MPLBACKEND"] = "AGG"\nos.environ["MATPLOTLIBRC"] = "/matplotlibrc"');
 	installMarimoShim();
+	asgiKernel = USE_PYPROC_ASGI ? new PyprocAsgi(pyodide) : new HandRolledAsgi(pyodide);
 }
 
 async function attachWorkspace(workspaceId: string): Promise<boolean> {
@@ -591,15 +554,12 @@ self.onmessage = async (e: MessageEvent) => {
 			}
 			case 'pyapi': {
 				// browser-as-server: 페이지 fetch('/pyapi/*') 가 SW 를 거쳐 여기로. dartlab FastAPI 서빙.
-				await ensureServer();
+				await ensureDartlab('import dartlab');
+				if (!asgiKernel) throw new Error('kernel not initialized');
+				await asgiKernel.install();
 				const req = args[0] as { method: string; path: string; body?: string };
-				const res = (await pyodide!.runPythonAsync(
-					`await _dl_dispatch(${JSON.stringify(req.method)}, ${JSON.stringify(req.path)}, ${JSON.stringify(req.body ?? '')})`
-				)) as { get(i: number): unknown; destroy(): void };
-				const status = res.get(0) as number;
-				const body = res.get(1) as string;
-				res.destroy();
-				reply(id, { status, headers: { 'content-type': 'application/json', 'x-dartlab-tier': 'browser' }, body });
+				const res = await asgiKernel.serve(req.method, req.path, req.body ?? '');
+				reply(id, { status: res.status, headers: { 'content-type': 'application/json', 'x-dartlab-tier': 'browser' }, body: res.body });
 				break;
 			}
 			case 'getVariableNames': {
