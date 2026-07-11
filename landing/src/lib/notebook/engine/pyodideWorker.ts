@@ -80,16 +80,17 @@ const WORKSPACE_REQUIREMENTS_PATH = '/workspace/requirements.txt';
 // dartlab 안 쓰는 노트북은 이 경로에 안 들어온다. 덕에 셀 코드는 `import dartlab` 한 줄이면 된다
 // (micropip.install 노출 불필요). 그다음은 데스크톱과 동일하게 `dartlab.Company(code)` 를 쓰면 되고
 // 데이터·C 확장·설정은 라이브러리가 흡수한다 (데이터는 메서드 첫 접근 시 lazy fetch, prefetch 불필요).
-const DARTLAB_WHEEL =
-	'https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main/pyodide/dartlab-0.10.8-py3-none-any.whl';
+// PyPI 에서 설치한다 . pip 과 같은 진입점·같은 버전이라 본체 릴리즈에 자동으로 맞는다(HF wheel URL·
+// 수동 버전 포인터 제거). micropip 이 PyPI 최신 wheel 을 받고, emscripten Requires-Dist 마커로 pyodide
+// 빌트인 C 확장(polars·pyarrow·lxml·numpy)을 자동 로드하고 서버/AI dep(marimo·mcp 등)은 뺀다.
+const DARTLAB_PKG = 'dartlab';
 const DARTLAB_IMPORT_RE = /(?:^|\n)[ \t]*(?:import[ \t]+dartlab|from[ \t]+dartlab[ \t.])/;
 let dartlabReady = false;
 
 async function ensureDartlab(code: string): Promise<void> {
 	if (dartlabReady || !pyodide || !DARTLAB_IMPORT_RE.test(code)) return;
-	// pyodide 표준 micropip 로 설치(marimo/duckdb strip 된 wheel 이라 deps 자동 해소).
 	await pyodide.runPythonAsync(
-		`import micropip\nawait micropip.install(${JSON.stringify(DARTLAB_WHEEL)})`
+		`import micropip\nawait micropip.install(${JSON.stringify(DARTLAB_PKG)})`
 	);
 	dartlabReady = true;
 }
