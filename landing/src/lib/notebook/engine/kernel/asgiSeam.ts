@@ -16,6 +16,7 @@ export interface AsgiResult {
 }
 
 export interface AsgiKernel {
+	readonly name: 'pyproc' | 'legacy'; // 실제 서빙한 커널(라이브 확인용 x-dartlab-kernel 헤더)
 	install(): Promise<void>;
 	serve(method: string, path: string, body: string | null): Promise<AsgiResult>;
 }
@@ -61,6 +62,7 @@ async def _dl_dispatch(method, path, body_text):
 
 // 기본 경로: 손수 dispatch. 오늘과 동일한 파이썬을 실행한다.
 export class HandRolledAsgi implements AsgiKernel {
+	readonly name = 'legacy' as const;
 	private ready = false;
 	constructor(private py: PyLike) {}
 
@@ -86,6 +88,7 @@ export class HandRolledAsgi implements AsgiKernel {
 // import 라 플래그 off 면 fetch/eval 0. pyproc/runtime 만 import 하므로 SAB 를 쓰는
 // process-os 모듈은 유입되지 않는다(전 브라우저 안전, 격리 불요).
 export class PyprocAsgi implements AsgiKernel {
+	readonly name = 'pyproc' as const;
 	private ready = false;
 	private asgi:
 		| {

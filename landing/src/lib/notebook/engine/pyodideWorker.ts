@@ -569,7 +569,7 @@ self.onmessage = async (e: MessageEvent) => {
 				}
 				const req = args[0] as { method: string; path: string; body?: string };
 				const res = await asgiKernel.serve(req.method, req.path, req.body ?? '');
-				reply(id, { status: res.status, headers: { 'content-type': 'application/json', 'x-dartlab-tier': 'browser' }, body: res.body });
+				reply(id, { status: res.status, headers: { 'content-type': 'application/json', 'x-dartlab-tier': 'browser', 'x-dartlab-kernel': asgiKernel.name }, body: res.body });
 				break;
 			}
 			case 'getVariableNames': {
