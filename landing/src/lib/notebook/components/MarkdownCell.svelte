@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { marked } from 'marked';
+	// 마크다운셀은 사용자 입력(untrusted)이라 반드시 정화해 렌더한다. 옛 코드는 marked.parse 를
+	// sanitize 없이 {@html} 로 흘려 공유 노트북 임포트 시 stored-XSS 구멍이었다.
+	import { renderRichMarkdown } from '../markdown/richMarkdown';
 
 	interface Props {
 		content: string;
@@ -15,7 +17,7 @@
 
 	let textareaEl: HTMLTextAreaElement | null = null;
 
-	const renderedHtml = $derived(marked.parse(content || '*Empty markdown cell*') as string);
+	const renderedHtml = $derived(renderRichMarkdown(content || '*Empty markdown cell*'));
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
@@ -156,6 +158,50 @@
 	.markdown-preview :global(th) {
 		background: var(--nb-surface);
 		font-weight: 600;
+	}
+
+	/* 임베드: 유튜브 16:9 반응형, 영상, 반응형 이미지. 블로그 아티클과 같은 결. */
+	.markdown-preview :global(.rm-embed) {
+		margin: 12px 0;
+		border-radius: 8px;
+		overflow: hidden;
+	}
+	.markdown-preview :global(.rm-youtube) {
+		position: relative;
+		width: 100%;
+		aspect-ratio: 16 / 9;
+		background: #000;
+	}
+	.markdown-preview :global(.rm-youtube iframe) {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		border: 0;
+	}
+	.markdown-preview :global(.rm-video video) {
+		width: 100%;
+		display: block;
+		border-radius: 8px;
+	}
+	.markdown-preview :global(.rm-figure) {
+		margin: 12px 0;
+	}
+	.markdown-preview :global(.rm-img) {
+		max-width: 100%;
+		height: auto;
+		border-radius: 8px;
+		display: block;
+	}
+	.markdown-preview :global(.rm-figure figcaption) {
+		font-size: 0.8rem;
+		color: var(--nb-text-secondary);
+		margin-top: 4px;
+		text-align: center;
+	}
+	.markdown-preview :global(.rm-embed-err) {
+		color: var(--nb-pink);
+		font-size: 0.85rem;
 	}
 
 	.markdown-editor {

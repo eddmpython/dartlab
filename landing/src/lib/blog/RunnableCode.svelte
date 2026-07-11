@@ -5,9 +5,20 @@
 	// 노트북과 같은 pyodide 커널에서 한다. 한 페이지의 셀들이 커널 하나를 공유하므로 위 셀에서
 	// 만든 `c` 를 아래 셀이 그대로 쓴다. 글 읽는 순서가 곧 실행 순서다.
 	import { Play, Loader2, NotebookPen } from 'lucide-svelte';
+	import { onMount } from 'svelte';
 	import { runSnippet, prewarmEngine, engineStatus } from '$lib/notebook/stores/executionStore';
 	import type { CellOutput } from '$lib/notebook/engine/executionEngine';
 	import OutputPanel from '$lib/notebook/components/OutputPanel.svelte';
+
+	// 실행 버튼이 느린 유일한 이유는 첫 클릭 때 pyodide + dartlab(21MB + polars) 설치 12~20초다.
+	// prewarmEngine 은 그걸 백그라운드에서 미리 끝낸다(멱등, 첫 호출만 실제 워밍). hover 를 기다리지
+	// 않고 글에 실행셀이 있으면 진입 즉시 idle 에 데운다. 사용자가 글 읽는 동안 끝나 클릭 시 체감 0초.
+	onMount(() => {
+		const w = window as unknown as { requestIdleCallback?: (cb: () => void) => void };
+		const kick = () => void prewarmEngine();
+		if (w.requestIdleCallback) w.requestIdleCallback(kick);
+		else setTimeout(kick, 1200);
+	});
 
 	interface Props {
 		code: string;
