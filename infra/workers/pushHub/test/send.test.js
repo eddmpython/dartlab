@@ -1,6 +1,6 @@
-// /send — Bearer 인증·nonce replay·발송 fan-out·404/410 purge. push fetch 는 fetchMock 으로 차단.
-import { env, createExecutionContext, waitOnExecutionContext, fetchMock } from 'cloudflare:test';
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+// /send — Bearer 인증·nonce replay·발송 fan-out·404/410 purge. push fetch 는 테스트 stub 으로 차단.
+import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import worker from '../worker.js';
 
 const TOKEN = 'test-send-token';
@@ -36,6 +36,21 @@ async function seedSub(endpoint = FCM, topic = 'blogPublish') {
 
 const NOTIF = { topic: 'blogPublish', notification: { title: '[새 글] 제목', body: '요약', url: '/blog/foo', tag: 'blog:foo' } };
 const ORDERS_NOTIF = { title: '[신규수주] 테스트조선 백로그 확대', body: 'book-to-bill 2.10', url: '/terminal?sym=111111', tag: 'orders:111111' };
+let pushReplies = [];
+
+function mockPush(status, body = '') {
+	pushReplies.push({ status, body });
+}
+
+async function pushFetch(input, init = {}) {
+	const url = new URL(typeof input === 'string' ? input : input.url);
+	const expected = pushReplies.shift();
+	if (!expected) throw new Error(`unexpected push fetch: ${init?.method ?? 'GET'} ${url.href}`);
+	expect(url.origin).toBe(FCM_ORIGIN);
+	expect(url.pathname).toBe(FCM_PATH);
+	expect(String(init?.method ?? 'GET').toUpperCase()).toBe('POST');
+	return new Response(expected.body, { status: expected.status });
+}
 
 async function active({ token = TOKEN, ts = nowSec(), body = null } = {}) {
 	const ctx = createExecutionContext();
@@ -48,14 +63,18 @@ async function active({ token = TOKEN, ts = nowSec(), body = null } = {}) {
 	return res;
 }
 
-beforeAll(() => fetchMock.activate());
 beforeEach(async () => {
+	pushReplies = [];
+	vi.stubGlobal('fetch', vi.fn(pushFetch));
 	await env.PUSHHUB_DB.exec('DELETE FROM topicSubs');
 	await env.PUSHHUB_DB.exec('DELETE FROM subscriptions');
 	await env.PUSHHUB_DB.exec('DELETE FROM sentNonce');
 	await env.PUSHHUB_DB.exec('DELETE FROM topicActive');
 });
-afterEach(() => fetchMock.assertNoPendingInterceptors());
+afterEach(() => {
+	expect(pushReplies).toHaveLength(0);
+	vi.unstubAllGlobals();
+});
 
 describe('/send 인증', () => {
 	it('Bearer 누락 → 401', async () => {
@@ -69,7 +88,7 @@ describe('/send 인증', () => {
 	});
 	it('nonce replay → 409', async () => {
 		await seedSub();
-		fetchMock.get(FCM_ORIGIN).intercept({ method: 'POST', path: FCM_PATH }).reply(201, '');
+		mockPush(201);
 		const first = await send({ nonce: 'fixed-nonce', body: NOTIF });
 		expect(first.status).toBe(200);
 		const replay = await send({ nonce: 'fixed-nonce', body: NOTIF });
@@ -88,14 +107,14 @@ describe('/send 발송', () => {
 	});
 	it('브로드캐스트 성공(201) → sent:1', async () => {
 		await seedSub();
-		fetchMock.get(FCM_ORIGIN).intercept({ method: 'POST', path: FCM_PATH }).reply(201, '');
+		mockPush(201);
 		const res = await send({ body: NOTIF });
 		expect(res.status).toBe(200);
 		expect((await res.json()).sent).toBe(1);
 	});
 	it('410 응답 → purge(구독 삭제)', async () => {
 		await seedSub();
-		fetchMock.get(FCM_ORIGIN).intercept({ method: 'POST', path: FCM_PATH }).reply(410, '');
+		mockPush(410);
 		const res = await send({ body: NOTIF });
 		const j = await res.json();
 		expect(j.pruned).toBe(1);
@@ -107,20 +126,20 @@ describe('/send 발송', () => {
 		expect((await first.json()).sent).toBe(0);
 		// 이후 구독자 생김 → 같은 nonce 재-POST 가 409 아니라 배송돼야(nonce 롤백됨).
 		await seedSub();
-		fetchMock.get(FCM_ORIGIN).intercept({ method: 'POST', path: FCM_PATH }).reply(201, '');
+		mockPush(201);
 		const second = await send({ nonce: 'nce-0sub', body: NOTIF });
 		expect(second.status).toBe(200);
 		expect((await second.json()).sent).toBe(1);
 	});
 	it('전건 발송 실패(5xx) → nonce 롤백(다음 cron 재시도)', async () => {
 		await seedSub();
-		fetchMock.get(FCM_ORIGIN).intercept({ method: 'POST', path: FCM_PATH }).reply(500, '');
+		mockPush(500);
 		const first = await send({ nonce: 'nce-fail', body: NOTIF });
 		const j1 = await first.json();
 		expect(j1.sent).toBe(0);
 		expect(j1.failed).toBe(1);
 		// nonce 롤백됐으니 재-POST 는 409 아님. 이번엔 201 로 배송 성공.
-		fetchMock.get(FCM_ORIGIN).intercept({ method: 'POST', path: FCM_PATH }).reply(201, '');
+		mockPush(201);
 		const retry = await send({ nonce: 'nce-fail', body: NOTIF });
 		expect(retry.status).toBe(200);
 		expect((await retry.json()).sent).toBe(1);
@@ -136,14 +155,14 @@ describe('/active threshold_cross 커서', () => {
 	});
 	it('신규 진입(entered)만 발화', async () => {
 		await seedSub(FCM, 'newOrders');
-		fetchMock.get(FCM_ORIGIN).intercept({ method: 'POST', path: FCM_PATH }).reply(201, '');
+		mockPush(201);
 		const j = await (await active({ body: { topic: 'newOrders', matches: [{ key: 'A', notification: ORDERS_NOTIF }] } })).json();
 		expect(j.entered).toBe(1);
 		expect(j.sent).toBe(1);
 	});
 	it('지속 활성은 재발화 안 함(entered 0, fetch 없음)', async () => {
 		await seedSub(FCM, 'newOrders');
-		fetchMock.get(FCM_ORIGIN).intercept({ method: 'POST', path: FCM_PATH }).reply(201, '');
+		mockPush(201);
 		await active({ body: { topic: 'newOrders', matches: [{ key: 'A', notification: ORDERS_NOTIF }] } });
 		const j2 = await (await active({ body: { topic: 'newOrders', matches: [{ key: 'A', notification: ORDERS_NOTIF }] } })).json();
 		expect(j2.entered).toBe(0); // 이미 활성 → 재발화 없음(fetch 인터셉터 미소비)
@@ -151,10 +170,10 @@ describe('/active threshold_cross 커서', () => {
 	});
 	it('재크로싱(하락 후 재상승)은 재발화', async () => {
 		await seedSub(FCM, 'newOrders');
-		fetchMock.get(FCM_ORIGIN).intercept({ method: 'POST', path: FCM_PATH }).reply(201, '');
+		mockPush(201);
 		await active({ body: { topic: 'newOrders', matches: [{ key: 'A', notification: ORDERS_NOTIF }] } }); // 최초 진입
 		await active({ body: { topic: 'newOrders', matches: [] } }); // A 하락(이탈) → 활성 set 에서 제거
-		fetchMock.get(FCM_ORIGIN).intercept({ method: 'POST', path: FCM_PATH }).reply(201, '');
+		mockPush(201);
 		const j3 = await (await active({ body: { topic: 'newOrders', matches: [{ key: 'A', notification: ORDERS_NOTIF }] } })).json(); // 재크로싱
 		expect(j3.entered).toBe(1); // 재진입 발화(sentNonce 영구 dedup 이었다면 미발화였을 것)
 		expect(j3.sent).toBe(1);
