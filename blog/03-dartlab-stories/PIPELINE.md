@@ -32,7 +32,8 @@ Phase 1 적대 토론 기획 92점 루프 / Phase 2.5 마스터라이터 편집 
 
 1. **본문 코드 = 실행되는 셀.** ` ```python ` 코드펜스가 곧 실행 셀이다. 별도 문법도 별도 산출물도
    없다. `landing/src/routes/blog/[slug]/+page.svelte` 가 `pre[data-lang="python"]` 를 찾아 실행 막대를
-   붙이고, 첫 블록에 "노트북 생성하기" 를 단다. 글이 SSOT 이고 노트북은 그 투영이다.
+   붙이고, 첫 블록에 "노트북 생성하기" 를 단다. 글이 SSOT 이고 노트북은 그 투영이다. 실행셀은
+   크기만 돌려주는 `.shape` 중심이 아니라 실제 계정, 기간, 값이 보이는 `panel(...).head()` 중심으로 쓴다.
 2. **코드는 공개 호출 계약만.** `dartlab.{engine}("{axis}", ...)` 와 `capabilityRefs` 등재 `Company` 메서드,
    이미 정의된 provider facade 뿐이다. `tests/audit/notebookContract.py` 가 이 카테고리 본문의 python
    코드펜스를 AST 로 훑어 계약 밖 심볼을 차단한다. 통과하지 못하면 발행되지 않는다.
