@@ -556,7 +556,17 @@ self.onmessage = async (e: MessageEvent) => {
 				// browser-as-server: 페이지 fetch('/pyapi/*') 가 SW 를 거쳐 여기로. dartlab FastAPI 서빙.
 				await ensureDartlab('import dartlab');
 				if (!asgiKernel) throw new Error('kernel not initialized');
-				await asgiKernel.install();
+				try {
+					await asgiKernel.install();
+				} catch (err) {
+					// pyproc 경로 설치 실패 시 손수 경로로 자동 폴백(조용한 죽은 커널 금지, PRD kill-switch).
+					if (asgiKernel instanceof PyprocAsgi && pyodide) {
+						asgiKernel = new HandRolledAsgi(pyodide);
+						await asgiKernel.install();
+					} else {
+						throw err;
+					}
+				}
 				const req = args[0] as { method: string; path: string; body?: string };
 				const res = await asgiKernel.serve(req.method, req.path, req.body ?? '');
 				reply(id, { status: res.status, headers: { 'content-type': 'application/json', 'x-dartlab-tier': 'browser' }, body: res.body });
