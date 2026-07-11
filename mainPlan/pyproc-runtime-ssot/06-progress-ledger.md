@@ -57,8 +57,21 @@
 - **CI ssh->https**: npm 이 lock `resolved` 를 `git+ssh` 로 정규화(package.json 은 https 명시해도). CI `npm ci` 전에 `git config --global url."https://github.com/".insteadOf ssh://git@github.com/` 필요(landing build + pyprocPinBump). P1 push/P3 전제.
 - **richMarkdown.ts 기존 debt**: marked `renderer.link` 타입 에러(HEAD 커밋, @[data] 계열, pyproc 무관). 별건.
 
+### P3 자동반영 완료 (커밋 e4cf4af20, push 보류)
+- `.github/scripts/pyprocSmoke.mjs`(GATE-A) + `pyprocResolvePin.mjs` + `pyprocApplyPin.mjs` + `.github/workflows/pyprocPinBump.yml`.
+- 주간 게이트 핀 범프: 최신 semver 태그 -> SHA 고정 -> GATE-A(pyproc Runtime+AsgiServer 가 dartlab /health 200) -> 봇 PR. patch+비tier2+green auto-merge, 그 외 사람 리뷰. npm ssh->https 재작성 포함.
+- **로컬 실측**: GATE-A PASS(dartlab 0.10.9 /health 200, 18.4s, 진짜 pyproc Runtime+AsgiServer 클래스) · resolve `newer=false` 정확 판정 · apply rewrite/no-change 양쪽.
+
+### P4 봉인 판정 spike (실측)
+- **0.27.5 스냅샷 fork SUPPORTED**: `makeMemorySnapshot` 존재, 20MB 스냅샷, fork 자식 `40+2=42` 실행(node-pyodide). 아키텍트 P4 blocker "0.27.5 스냅샷 지원 미확인" 해소.
+- 남은 P4 blocker = **crossOriginIsolated on GitHub Pages(COOP/COEP)** + Chromium 전용 수용. COEP credentialless 로 휠 로드(02 §D5 실측 정정) 감안하면 원리적 가능하나, SW 헤더주입 + 벤더링 + Chromium 전용 트레이드오프 + GATE-B = **별도 PRD 운영자 결정**(PRD 봉인 유지).
+
+### PRD 구현 상태 (이 PRD 범위)
+- **P0 ✓**(파리티) · **P1 ✓**(seam, 커밋 a1f13c74a) · **P3 ✓**(자동반영, 커밋 e4cf4af20).
+- **P2 = 코드 준비 완료**: 플래그 flip 1줄. flip 자체는 PRD veto⑤(기본 off 1릴리즈 잔존) + 운영자 눈검수 게이트라 운영자 결정. node 파리티·GATE-A·esbuild 번들로 가능한 만큼 실증.
+- **P4 = 봉인 유지**: 스냅샷 spike SUPPORTED 로 pyodide 측 해소, COEP/호스팅/Chromium전용은 별도 PRD.
+
 ### NEXT (세션 재개 지점)
-1. **운영자 push 승인 대기**: P1 은 landing/src(UI 게이트)라 커밋만 완료. "푸시해"/"올려" 시 (CI ssh->https 선처리 포함) push.
-2. push 후 P2: 운영자 눈검수 + `USE_PYPROC_ASGI=true` flip(실브라우저 노트북 /pyapi 동작 + capability probe 폴백 확인). 손수 경로 1릴리즈 잔존.
-3. P3: `pyprocPinBump.yml` + `pyprocResolvePin/ApplyPin/Smoke.mjs` 작성(자동반영, ssh->https 포함).
-4. P4(Tier-2 격리)는 0.27.5 스냅샷 spike + COEP 실측 후 별도 PRD.
+1. **운영자 push 승인**("푸시해"/"올려") 시 CI(ssh->https 선처리) 로 P1+P3 push.
+2. push 후 P2 flip: 운영자 눈검수 + `USE_PYPROC_ASGI=true`(실브라우저 /pyapi + capability probe 폴백 확인, 손수 경로 1릴리즈 잔존).
+3. P4 착수 결정 시 별도 PRD(COEP credentialless SW 주입 + 벤더링 + GATE-B, Chromium 전용 수용).

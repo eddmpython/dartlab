@@ -67,7 +67,7 @@
 
 - **강점**: seam 이 깨끗하고 ASGI 는 superset 이 node-pyodide 로 실증됨(00 §6, /health 200). 체크포인트 비교체 판단이 자료모델 실측(분기 DAG vs 선형)에 근거 -> 조용한 correctness 회귀(R5) 사전 차단. package.json 핀 > CDN(same-origin + lockfile integrity + Tier-2 워커 동시 충족).
 - **함정 회피**: pyproc `boot()` 의 두 번째 pyodide 인스턴스 트랩을 `new Runtime(py)` 채택으로 우회(소스 정정). barrel `index.js` 대신 서브모듈 import 로 SAB 모듈 미유입.
-- **잔여 우려**: (a) 0.27.5 스냅샷 지원 미확인 -> Tier-2 spike 필요(fork 15.4배가 우리 pyodide 에서 성립하는지). (b) pre-1.0 pyproc churn -> patch-only auto-merge + GATE-A 의존. (c) node 가 Tier-2 못 덮음 -> GATE-B 필수. (d) index.d.ts 손유지 -> 타입 표류 가능, 우리측 가드가 유일 방어(R6).
+- **잔여 우려**: (a) ~~0.27.5 스냅샷 지원 미확인~~ **해소 (2026-07-12 spike 실측: `makeMemorySnapshot` + `_loadSnapshot` SUPPORTED, 20MB 스냅샷 fork 자식 실행 확인)**. P4 fork 의 pyodide 전제는 성립. (b) pre-1.0 pyproc churn -> patch-only auto-merge + GATE-A 의존. (c) node 가 Tier-2 못 덮음 -> GATE-B 필수. (d) index.d.ts 손유지 -> 타입 표류 가능, 우리측 가드가 유일 방어(R6).
 
 ## 5. PM 이중 평가 + go/no-go
 
