@@ -36,26 +36,35 @@ Phase 1 적대 토론 기획 92점 루프 / Phase 2.5 마스터라이터 편집 
 2. **코드는 공개 호출 계약만.** `dartlab.{engine}("{axis}", ...)` 와 `capabilityRefs` 등재 `Company` 메서드,
    이미 정의된 provider facade 뿐이다. `tests/audit/notebookContract.py` 가 이 카테고리 본문의 python
    코드펜스를 AST 로 훑어 계약 밖 심볼을 차단한다. 통과하지 못하면 발행되지 않는다.
-3. **브라우저 경계를 숨기지 않는다.** 브라우저에서 안 도는 것(실시간 시세·수급·뉴스 수집,
+3. **panel first.** `c.panel(topic)` 이 dartlab 이야기의 기본 표면이다. 재무제표, 사업보고서 본문,
+   주석, 정형공시를 먼저 panel 로 보여 준다. `select` 는 panel 에서 계정만 좁히는 보조 손잡이다.
+   새 글이 `select` 로 시작하거나 panel 원천을 보여 주지 않으면 기획 실패다. 사업보고서 상세내용은
+   `readFiling` 같은 비계약 호출이 아니라 `panel("사업")`, `panel("주석")`, `panel("임원")` 처럼
+   공개 panel 검색으로 다룬다.
+4. **DART와 EDGAR를 함께 세운다.** dartlab 이야기는 DART 전용 사용법이 아니다.
+   `Company("005930")` 과 `Company("AAPL")` 이 같은 facade 로 들어가고, provider, 통화, 공시 리듬,
+   section 이름이 달라진다는 점을 초반부터 가르친다. 단, EDGAR narrative topic 이 실측되지 않은 상태에서
+   DART 사업보고서 본문과 동등하다고 쓰지 않는다. 확인된 재무 panel 동형성과 미확인 본문 경계를 분리한다.
+5. **브라우저 경계를 숨기지 않는다.** 브라우저에서 안 도는 것(실시간 시세·수급·뉴스 수집,
    `dartlab.gather(...)` 최상위 호출, `scan("screen")`·`scan("workforce")`·`scan("quality")`)을 그 자리에서
    밝힌다. 실측 정본은 Skill OS `runtime.pyodide`. 게이트가 본문에 경계·오독 방지 문장을 요구한다.
-4. **막이 아니라 단계.** 6막 인과 서사가 아니다. 최소 3단계: 무엇을 왜 배우나, 직접 해 본다,
+6. **막이 아니라 단계.** 6막 인과 서사가 아니다. 최소 3단계: 무엇을 왜 배우나, 직접 해 본다,
    무엇을 얻었고 다음은 무엇인가. `brief.json` 의 `acts` 는 이 단계를 담는다(하한 3).
-5. **이미지 = 기획이 정한 만큼.** 고정 하한을 두지 않는다. Phase 1 기획 루프가 `imagePlan` 에 그 편에
+7. **이미지 = 기획이 정한 만큼.** 고정 하한을 두지 않는다. Phase 1 기획 루프가 `imagePlan` 에 그 편에
    **정말 필요한 그림만** 적고, **그 자리에서 수급·생성한다**(Phase 3 로 미루지 않는다). 발행 게이트는
    개수 하한이 아니라 **기획과 실물의 정합**을 본다. `assets` 이미지 수가 `imagePlan` 길이 이상, 본문
    삽입 이미지 수가 `inline` 슬롯 수 이상. 채우기용 이미지는 실패다. 본문 설명용 도식과 썸네일 배경은
    역할이 다르다. 썸네일용 장면 이미지가 필요하면 `*thumbnail-bg*.webp` 로 따로 만든다.
-6. **길이 = 밀도 우선.** 하한 3,000자, 목표 5,000자. 코드·표·SVG 를 뺀 읽는 글자수 기준이다.
+8. **길이 = 밀도 우선.** 하한 3,000자, 목표 5,000자. 코드·표·SVG 를 뺀 읽는 글자수 기준이다.
    설명이 코드보다 길 필요는 없지만, 코드만 던지고 왜를 안 적으면 그건 문서지 이야기가 아니다.
-7. **주어가 회사가 아니다.** `topicSlug` 를 쓰고 `stockCode` 는 달지 않는다. 예제 회사는 예제일 뿐이다.
-8. **썸네일.** `gen_blog_thumbnails.py`(SSOT). kicker 라벨 = `PREFIX["dartlab-stories"] = "dartlab 이야기"`.
+9. **주어가 회사가 아니다.** `topicSlug` 를 쓰고 `stockCode` 는 달지 않는다. 예제 회사는 예제일 뿐이다.
+10. **썸네일.** `gen_blog_thumbnails.py`(SSOT). kicker 라벨 = `PREFIX["dartlab-stories"] = "dartlab 이야기"`.
    `ogImage: /thumbnails/{slug}.webp`. 본문용 이미지를 썸네일 배경으로도 쓰려면 frontmatter 에
    `thumbnailBg: ./assets/<본문용-이미지>.webp` 를 명시한다. 본문에는 `*thumbnail-bg*.webp` 를 직접
    걸지 않는다. 그 파일은 OG 합성용 소스라 실제 사이트 본문에서 깨질 수 있다. 연속 편의 `thumbnailBg`
    는 같은 UI 카드, 같은 노트북 화면, 같은 도식 구도를 반복하지 않는다. 앞 두 편과 비교해 시점, 물성,
    주 피사체 중 적어도 하나가 달라야 한다.
-9. **누적이 곧 커리큘럼.** 편 번호가 학습 순서다. 앞 편이 세운 개념을 뒤 편이 딛는다. 새 편을 끼워
+11. **누적이 곧 커리큘럼.** 편 번호가 학습 순서다. 앞 편이 세운 개념을 뒤 편이 딛는다. 새 편을 끼워
    넣을 때는 비공개 설계문서의 중간 삽입 정책을 먼저 따른다. 필수 선행편이면 번호와 `seriesOrder` 를
    함께 옮기고, 보충편이면 뒤에 붙인 뒤 내부 링크로 해당 지점에 건다. 전체 지도는 비공개 설계문서
    `mainPlan/dartlab-story-curriculum/` 이 정본이다.
