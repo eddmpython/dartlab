@@ -53,7 +53,9 @@ import polars as pl
 # entity/period 구조 동의어 = 전 축 entity 키 식별의 정본. O(시장 spelling) 상수지 O(축) 아님.
 ENTITY_KEYS: tuple[str, ...] = ("종목코드", "stockCode", "code", "ticker")
 ENTITY_NAME_KEYS: tuple[str, ...] = ("종목명", "corpName", "name")
-_PERIOD_RE = re.compile(r"^\d{4}(Q[1-4]|\d{2})?$")  # 2025 / 2025Q3 / 202503, 국가 무관
+# 달력 연도(19xx/20xx) + 선택 분기(Q1~4) 또는 월(01~12). ASCII 숫자만(전각 배제). 종목코드(005930)·
+# 계정코드(1000)·무효월(202599)을 period 로 오탐하지 않게 조인다.
+_PERIOD_RE = re.compile(r"^(19|20)\d{2}(Q[1-4]|(0[1-9]|1[0-2]))?$", re.ASCII)
 
 CANON: tuple[str, ...] = (
     "engine",
@@ -141,6 +143,37 @@ def _entityCol(cols: list[str]) -> str | None:
 
 def _periodCols(cols: list[str]) -> list[str]:
     return [c for c in cols if _PERIOD_RE.match(str(c))]
+
+
+def _isNumericDtype(dt: Any) -> bool:
+    """수치 컬럼 판정 (Boolean 제외). polars unpivot 후가 아니라 원본 dtype 로 판정해야 정확."""
+    try:
+        return bool(dt.is_numeric()) and dt != pl.Boolean
+    except AttributeError:
+        return dt in (pl.Float64, pl.Float32, pl.Int64, pl.Int32, pl.Int16, pl.Int8, pl.UInt64, pl.UInt32)
+
+
+def _foldFrameRows(raw: pl.DataFrame, idx: list[str], valueCols: list[str], rowFn) -> list[dict]:
+    """value 열을 dtype 로 분리 unpivot 해 rows 생성. 혼합 dtype String 승격의 숫자 소실 방지.
+
+    polars unpivot 은 on 열들을 공통 상위형으로 승격한다. 숫자+문자 혼합 프레임을 한 번에 unpivot 하면
+    Float64 가 String 이 돼 숫자가 valueText 로 강등된다(2026-07-11 실측: scan.profitability 272K 값
+    소실). 숫자군·문자군을 나눠 각각 unpivot 해 dtype 를 보존한다. rowFn(r) 는 item/entity/entityName/
+    period 를 담은 base dict 를 반환한다 (value/valueText 는 여기서 채운다).
+    """
+    numCols = [c for c in valueCols if _isNumericDtype(raw.schema[c])]
+    txtCols = [c for c in valueCols if c not in numCols]
+    rows: list[dict] = []
+    for group, isNum in ((numCols, True), (txtCols, False)):
+        if not group:
+            continue
+        for r in raw.unpivot(index=idx, on=group, variable_name="_k", value_name="_v").iter_rows(named=True):
+            v = r["_v"]
+            base = rowFn(r)
+            base["value"] = float(v) if isNum and v is not None else None
+            base["valueText"] = None if isNum or v is None else str(v)
+            rows.append(base)
+    return rows
 
 
 def classifyShape(raw: Any) -> str:
@@ -283,7 +316,7 @@ def foldToCanonical(
     gaps: list[dict] = []
 
     if fam in ("nested", "unclassified"):
-        obs = str(sorted(raw.keys()))[:80] if isinstance(raw, dict) else type(raw).__name__
+        obs = str(sorted(map(str, raw.keys())))[:80] if isinstance(raw, dict) else type(raw).__name__
         gaps.append(emitGap(engine, axis, "nonTabular" if fam == "nested" else "unclassifiedShape", obs))
         return pl.DataFrame(schema=_CANON_SCHEMA), gaps
 
@@ -332,22 +365,17 @@ def foldToCanonical(
         cols = raw.columns
         pers = _periodCols(cols)
         labelCols = [c for c in cols if c not in pers]
-        long = raw.unpivot(index=labelCols, on=pers, variable_name="_k", value_name="_v")
-        rows = []
-        for r in long.iter_rows(named=True):
-            v = r["_v"]
-            num = isinstance(v, (int, float)) and not isinstance(v, bool)
-            lbl = " / ".join(str(r[c]) for c in labelCols) if labelCols else label
-            rows.append(
-                {
-                    "item": lbl,
-                    "entity": None,
-                    "entityName": None,
-                    "period": str(r["_k"]),
-                    "value": float(v) if num else None,
-                    "valueText": None if num or v is None else str(v),
-                }
-            )
+        rows = _foldFrameRows(
+            raw,
+            labelCols,
+            pers,
+            lambda r: {
+                "item": " / ".join(str(r[c]) for c in labelCols) if labelCols else label,
+                "entity": None,
+                "entityName": None,
+                "period": str(r["_k"]),
+            },
+        )
     else:  # yearWide / entityMetric (entity 보유 DataFrame)
         cols = raw.columns
         ent = _entityCol(cols)
@@ -359,21 +387,17 @@ def foldToCanonical(
         if unknown:
             gaps.append(emitGap(engine, axis, "unknownColumnRole", ",".join(map(str, unknown))[:80]))
         idx = [c for c in (ent, nameCol) if c]
-        long = raw.unpivot(index=idx, on=valueCols, variable_name="_k", value_name="_v")
-        rows = []
-        for r in long.iter_rows(named=True):
-            v = r["_v"]
-            num = isinstance(v, (int, float)) and not isinstance(v, bool)
-            rows.append(
-                {
-                    "item": label if itemIsAxis else str(r["_k"]),
-                    "entity": r.get(ent) if ent else None,
-                    "entityName": r.get(nameCol) if nameCol else None,
-                    "period": str(r["_k"]) if itemIsAxis else asOf,
-                    "value": float(v) if num else None,
-                    "valueText": None if num or v is None else str(v),
-                }
-            )
+        rows = _foldFrameRows(
+            raw,
+            idx,
+            valueCols,
+            lambda r: {
+                "item": label if itemIsAxis else str(r["_k"]),
+                "entity": r.get(ent) if ent else None,
+                "entityName": r.get(nameCol) if nameCol else None,
+                "period": str(r["_k"]) if itemIsAxis else asOf,
+            },
+        )
 
     if not rows and not gaps:  # 빈 반환(envDict={}·scoreDict{scores:{}}·빈 프레임)도 gap 으로 계상 (도태 사각 방지)
         gaps.append(emitGap(engine, axis, "emptyReturn", fam))

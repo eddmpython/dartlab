@@ -11,6 +11,7 @@ Covers:
 
 from __future__ import annotations
 
+import polars as pl
 import pytest
 
 from dartlab.simulate.mirror import bulkSelects, catalogItems, materialize, runWorkbench
@@ -79,3 +80,30 @@ def testDeclaredIndexReadOnly():
         idx["fake"] = 1  # 외부 dict 읽기전용
     with pytest.raises(TypeError):
         idx[k]["x"] = 1  # 내부 declared 읽기전용
+
+
+def testCoverageIncludesGapOnlyAxis():
+    """gap 만 나온 축(canonical 0행)도 coverage 성적표에 행0 으로 남는다 (도태 측정 사각 방지)."""
+    from dartlab.simulate.mirror import _coverage
+
+    canon = pl.DataFrame(
+        {"engine": ["scan"], "axis": ["ratio"], "entity": ["005930"], "lane": ["spine"], "status": ["declared"]}
+    )
+    gaps = pl.DataFrame(
+        {"engine": ["scan", "quant"], "axis": ["boom", "altman"], "gapReason": ["contractError", "emptyReturn"]}
+    )
+    cov = _coverage(canon, gaps)
+    covKeys = set(zip(cov["engine"].to_list(), cov["axis"].to_list()))
+    assert ("scan", "boom") in covKeys and ("quant", "altman") in covKeys  # gap 축이 성적표에 있음
+    assert cov.filter(pl.col("axis") == "boom")["행"][0] == 0
+
+
+def testCoverageDoesNotCountNullEntityAsCompany():
+    """환경 축의 null entity 는 회사 1개로 세지 않는다."""
+    from dartlab.simulate.mirror import _coverage
+
+    canon = pl.DataFrame(
+        {"engine": ["macro"], "axis": ["cycle"], "entity": [None], "lane": ["env"], "status": ["inferred"]}
+    )
+    cov = _coverage(canon, pl.DataFrame())
+    assert cov["종목"][0] == 0

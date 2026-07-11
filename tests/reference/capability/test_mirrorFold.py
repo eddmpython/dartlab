@@ -148,3 +148,29 @@ def testEmptyReturnEmitsGap():
     assert len(gaps) == 1 and gaps[0]["gapReason"] == "emptyReturn"
     df2, gaps2 = foldToCanonical({"scores": {}}, engine="quant", axis="emptyScores")
     assert len(gaps2) == 1 and gaps2[0]["gapReason"] == "emptyReturn"
+
+
+def testMixedDtypeFramePreservesNumerics():
+    """숫자+문자 혼합 프레임(등급+ROE)에서 숫자값이 String 승격으로 죽지 않는다 (272K 소실 회귀)."""
+    mixed = pl.DataFrame(
+        {"종목코드": ["005930"], "종목명": ["삼성"], "영업이익률": [21.1], "ROE": [10.4], "등급": ["A"]}
+    )
+    df, _ = foldToCanonical(mixed, engine="scan", axis="profitability", declared={"returnType": "DataFrame"})
+    roe = df.filter(pl.col("item") == "ROE")
+    assert roe["value"][0] == 10.4 and roe["valueText"][0] is None  # 숫자 보존
+    grade = df.filter(pl.col("item") == "등급")
+    assert grade["valueText"][0] == "A" and grade["value"][0] is None  # 문자는 valueText
+
+
+def testPeriodRegexRejectsNonYears():
+    """period 정규식이 종목코드·무효월·계정코드를 period 로 오탐하지 않는다."""
+    from dartlab.reference.capability.mirror import _periodCols
+
+    assert _periodCols(["005930", "202599", "1000", "2400"]) == []  # 비-period
+    assert _periodCols(["2025", "2025Q3", "202503"]) == ["2025", "2025Q3", "202503"]  # 진짜 period
+
+
+def testNestedMixedKeysNoCrash():
+    """중첩 dict 의 키 타입이 섞여도 지문 생성이 크래시하지 않고 gap 을 낸다."""
+    df, gaps = foldToCanonical({1: {"x": 1}, "a": {"y": 2}}, engine="x", axis="y")
+    assert df.height == 0 and gaps[0]["gapReason"] == "nonTabular"

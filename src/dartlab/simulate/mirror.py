@@ -128,11 +128,14 @@ def bulkSelects(*, expandCatalog: bool = True) -> list[tuple[str, str, str | Non
     return selects
 
 
-def materialize(engine: str, axis: str, *, item: str | None = None, **callKw) -> tuple[pl.DataFrame, list[dict]]:
+def materialize(
+    engine: str, axis: str, *, item: str | None = None, asOf: str = "latest", **callKw
+) -> tuple[pl.DataFrame, list[dict]]:
     """공개계약 호출 1회 -> 순수 커널로 정규 롱. 실패는 값 조작 없이 gap 행.
 
     Args:
-        engine: 엔진 이름. axis: 축 이름. item: 카탈로그 항목 (account/ratio 등). callKw: freq·market 등.
+        engine: 엔진 이름. axis: 축 이름. item: 카탈로그 항목 (account/ratio 등). asOf: 단면/스칼라
+            period 라벨 (커널 fold 로 전달, 엔진 호출엔 안 넘김). callKw: freq·market 등 엔진 인자.
 
     Returns:
         (canonical long df, gap rows). 계약 위반·미지 형태는 df 없이 gap 만 (결손 0 대체 금지).
@@ -153,22 +156,23 @@ def materialize(engine: str, axis: str, *, item: str | None = None, **callKw) ->
     except Exception as e:
         return pl.DataFrame(), [emitGap(engine, axis, "contractError", f"{type(e).__name__}: {e}"[:70])]
     try:
-        return foldToCanonical(raw, engine=engine, axis=axis, item=item, declared=declared)
+        return foldToCanonical(raw, engine=engine, axis=axis, item=item, declared=declared, asOf=asOf)
     except Exception as e:  # 커널은 gap 을 내지만 미지 형태 방어 (한 축 예외가 배치 전체를 죽이지 않게)
         return pl.DataFrame(), [emitGap(engine, axis, "foldError", f"{type(e).__name__}: {e}"[:70])]
 
 
 def runWorkbench(
-    selects: list[tuple[str, str, str | None]], *, progress: bool = False, **callKw
+    selects: list[tuple[str, str, str | None]], *, asOf: str = "latest", progress: bool = False, **callKw
 ) -> tuple[pl.DataFrame, pl.DataFrame, pl.DataFrame]:
     """작업 목록 전수 물질화 -> (정규 롱, coverage 성적표, gap 원장). 도태는 coverage 가 측정.
 
     Args:
-        selects: (engine, axis, item) 목록 (bulkSelects 산출). progress: 진행 인쇄. callKw: freq 등.
+        selects: (engine, axis, item) 목록 (bulkSelects 산출). asOf: 단면/스칼라 period 라벨 (vintage
+            재현·감사용, 리터럴 latest 하드코딩 대신 명시 고정). progress: 진행 인쇄. callKw: freq 등.
 
     Returns:
-        (canonical, coverage, gaps). canonical = 단일 정규 롱. coverage = (engine, axis) 별 종목/행.
-        gaps = 실패/격리 원장.
+        (canonical, coverage, gaps). canonical = 단일 정규 롱. coverage = (engine, axis) 별 종목/행 +
+        **gap-only 축도 행0 으로 포함**(도태 측정 사각 방지). gaps = 실패/격리 원장.
 
     Example:
         >>> canon, cov, gaps = runWorkbench([("scan", "ratio", "roe")], freq="Y")
@@ -181,7 +185,7 @@ def runWorkbench(
     frames, gaps = [], []
     t0 = time.perf_counter()
     for i, (engine, axis, item) in enumerate(selects):
-        df, g = materialize(engine, axis, item=item, **callKw)
+        df, g = materialize(engine, axis, item=item, asOf=asOf, **callKw)
         if df.height:
             frames.append(df)
         gaps.extend(g)
@@ -191,12 +195,46 @@ def runWorkbench(
                 flush=True,
             )
     canonical = pl.concat(frames) if frames else pl.DataFrame(schema={c: pl.Utf8 for c in ("engine", "axis", "item")})
-    coverage = (
+    gapDf = pl.DataFrame(gaps) if gaps else pl.DataFrame()
+    coverage = _coverage(canonical, gapDf)
+    return canonical, coverage, gapDf
+
+
+def _coverage(canonical: pl.DataFrame, gapDf: pl.DataFrame) -> pl.DataFrame:
+    """(engine, axis) 별 성적표. 정규 행 집계 + gap-only 축(행0)도 포함해 도태를 빠짐없이 계상.
+
+    종목 카운트는 null entity(환경 축)를 회사로 세지 않는다 (drop_nulls). gap 축은 canonical 에서
+    빠지므로 별도로 합류해야 성적표가 진짜 도태 원장이 된다.
+    """
+    if not canonical.height and not gapDf.height:
+        return pl.DataFrame()
+    covRows = (
         canonical.group_by(["engine", "axis", "lane"]).agg(
-            종목=pl.col("entity").n_unique(), 행=pl.len(), status=pl.col("status").first()
+            종목=pl.col("entity").drop_nulls().n_unique(), 행=pl.len(), status=pl.col("status").first()
         )
         if canonical.height
-        else pl.DataFrame()
+        else pl.DataFrame(
+            schema={
+                "engine": pl.Utf8,
+                "axis": pl.Utf8,
+                "lane": pl.Utf8,
+                "종목": pl.UInt32,
+                "행": pl.UInt32,
+                "status": pl.Utf8,
+            }
+        )
     )
-    gapDf = pl.DataFrame(gaps) if gaps else pl.DataFrame()
-    return canonical, coverage.sort("행", descending=True) if coverage.height else coverage, gapDf
+    if gapDf.height:
+        gapAgg = gapDf.group_by(["engine", "axis"]).agg(pl.len().alias("_g"))
+        gapOnly = (
+            gapAgg.join(covRows.select("engine", "axis"), on=["engine", "axis"], how="anti")  # canonical 에 없는 축만
+            .with_columns(
+                lane=pl.lit("quarantine"),
+                종목=pl.lit(0, dtype=pl.UInt32),
+                행=pl.lit(0, dtype=pl.UInt32),
+                status=pl.lit("gap"),
+            )
+            .select("engine", "axis", "lane", "종목", "행", "status")
+        )
+        covRows = pl.concat([covRows, gapOnly]) if covRows.height else gapOnly
+    return covRows.sort("행", descending=True) if covRows.height else covRows
