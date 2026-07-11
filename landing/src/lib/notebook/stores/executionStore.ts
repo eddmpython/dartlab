@@ -50,22 +50,34 @@ export function prewarmEngine(): Promise<void> {
 }
 
 const dataWarmed = new Set<string>();
+const prewarmedOutputs = new Map<string, CellOutput>();
 
 /**
- * 데이터 사전 로딩. 첫 셀 코드를 조용히 한 번 실행해 그 셀이 여는 회사의 parquet 을 커널 FS 에
- * 올려 둔다. 설치 프리워밍만으로는 첫 클릭이 데이터 fetch(~12.8MB, 실측 16초) 때문에 여전히
- * 느리다. 이걸로 사용자의 첫 클릭은 fetch 없이 실행만 한다. 출력은 버린다(눈에 안 보이게).
- * 멱등. 커널이 죽으면 캐시 표시도 비운다(runSnippet 의 ranSnippets 와 함께 destroyEngine 에서).
+ * 데이터 + 결과 사전 계산. 첫 셀 코드를 조용히 한 번 실행한다. 이때 두 가지가 미리 끝난다.
+ *   (1) 그 셀이 여는 회사의 parquet 이 커널 FS 로 올라온다(다음 실행은 fetch 없음).
+ *   (2) panel 의 polars WASM 계산 결과(표)까지 나온다. 그 결과를 버리지 않고 캐시한다.
+ * 사용자가 글 읽는 동안 이 계산이 끝나 있으면, 첫 클릭은 fetch 도 계산도 없이 캐시된 결과를
+ * 즉시 보여준다(체감 0초). 캐시 결과는 이번 세션에서 방금 같은 커널이 낸 것이라 정확하다.
+ * 멱등. 커널이 죽으면 FS·결과 캐시 모두 무효라 destroyEngine 에서 비운다.
  */
 export async function prewarmData(code: string): Promise<void> {
 	const key = code.trim();
 	if (!key || dataWarmed.has(key)) return;
 	dataWarmed.add(key);
 	try {
-		await runSnippet(code); // 데이터를 FS 로 끌어온다. 결과는 쓰지 않는다.
+		const out = await runSnippet(code); // 데이터 fetch + 계산. 결과를 캐시한다.
+		if (out.type !== 'error') prewarmedOutputs.set(key, out);
 	} catch {
 		dataWarmed.delete(key); // 실패면 다음 기회에 다시.
 	}
+}
+
+/** 프리페치가 미리 낸 결과를 한 번 꺼내 쓴다(꺼내면 지워, 재클릭은 실제 재실행). */
+export function takePrewarmedOutput(code: string): CellOutput | undefined {
+	const key = code.trim();
+	const out = prewarmedOutputs.get(key);
+	if (out) prewarmedOutputs.delete(key);
+	return out;
 }
 
 let bringUp: Promise<void> | null = null;
@@ -335,6 +347,7 @@ export function destroyEngine(): void {
 	engine = null;
 	ranSnippets.clear(); // 커널이 사라지면 그 안의 변수도 사라진다
 	dataWarmed.clear(); // 데이터 캐시(FS)도 커널과 함께 사라진다
+	prewarmedOutputs.clear(); // 미리 낸 결과도 커널이 죽으면 무효
 	attachedNotebookId = null; // 다음 initEngine 이 다시 부착(복원+autoRun)하도록
 	prewarmed = null; // 워커가 사라졌으니 사전 로딩도 다시 할 수 있게
 	engineStatus.set('idle');

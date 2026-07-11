@@ -6,7 +6,7 @@
 	// 만든 `c` 를 아래 셀이 그대로 쓴다. 글 읽는 순서가 곧 실행 순서다.
 	import { Play, Loader2, NotebookPen } from 'lucide-svelte';
 	import { onMount } from 'svelte';
-	import { runSnippet, prewarmEngine, prewarmData, engineStatus } from '$lib/notebook/stores/executionStore';
+	import { runSnippet, prewarmEngine, prewarmData, takePrewarmedOutput, engineStatus } from '$lib/notebook/stores/executionStore';
 	import type { CellOutput } from '$lib/notebook/engine/executionEngine';
 	import OutputPanel from '$lib/notebook/components/OutputPanel.svelte';
 
@@ -42,6 +42,12 @@
 	let downloading = $derived(running && $engineStatus === 'loading');
 
 	async function run() {
+		// 프리페치가 읽는 동안 이 셀 결과를 미리 냈으면 fetch 도 계산도 없이 즉시 보여준다(체감 0초).
+		const pre = takePrewarmedOutput(code);
+		if (pre) {
+			output = pre;
+			return;
+		}
 		running = true;
 		output = undefined;
 		try {
