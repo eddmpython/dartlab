@@ -310,3 +310,32 @@ def test_dartlab_story_gate_blocks_internal_count_terms() -> None:
     errors = ab._validate_common_plan(brief, brief, label="brief.json", category="dartlab-stories")
 
     assert any("내부 기능 개수" in err for err in errors)
+
+
+def test_dartlab_story_gate_blocks_abstract_section_plan() -> None:
+    brief_path = (
+        Path(__file__).resolve().parents[1] / "03-dartlab-stories" / "02-call-financial-statements" / "brief.json"
+    )
+    brief = json.loads(brief_path.read_text(encoding="utf-8"))
+    brief["sections"][0]["explanation"] = "구조와 흐름과 표면의 의미를 설명한다."
+    brief["sections"][0]["example"] = "중요한 기준과 맥락을 예시로 든다."
+
+    errors = ab._validate_common_plan(brief, brief, label="brief.json", category="dartlab-stories")
+
+    assert any("직접 할 행동" in err for err in errors)
+    assert any("실제 예시로 잡아야 함" in err for err in errors)
+
+
+def test_dartlab_story_body_gate_blocks_abstract_only_sentences() -> None:
+    body = """
+## 허공에 도는 설명
+
+이 구조는 전체 흐름과 기준을 이해하게 한다. 표면의 맥락과 역할이 중요하다.
+이런 연결 감각이 핵심이다. 그래서 좋은 분석이 된다.
+독자는 이 설명을 통해 구조와 흐름의 의미를 자연스럽게 파악한다.
+결국 맥락과 기준이 서로 연결된다는 점이 이 섹션의 역할이다.
+"""
+
+    errors = ab._validate_dartlab_body_plainness(body)
+
+    assert any("추상 문장" in err for err in errors)

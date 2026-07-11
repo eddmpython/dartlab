@@ -70,6 +70,25 @@ DARTLAB_TITLE_SEARCH_RE = re.compile(
     re.I,
 )
 DARTLAB_TITLE_ACTION_RE = re.compile(r"설치|파이썬|코드|브라우저|한\s*줄|조회|불러오|실행|시작|열기|분석")
+DARTLAB_CONCRETE_ANCHOR_RE = re.compile(
+    r"```python|!\[[^\]]*\]\([^)]+\)|"
+    r"`[^`]*(?:Company|panel|scan|analysis|credit|story|market|head|005930|AAPL|IS|BS|CF)[^`]*`|"
+    r"Company\(|panel\(|scan\(|analysis\(|credit\(|story\(|market|"
+    r"005930|AAPL|[0-9]{4}Q[1-4]|[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:조원|억원|만원|원|달러|USD|%p?|배)?|"
+    r"매출|매출액|매출원가|매출총이익|매출채권|영업이익|순이익|자산|부채|자본|현금흐름|"
+    r"영업활동현금흐름|재고|재고자산|차입|주석|사업|임원|직원|숫자|단위|빈\s*결과|후보|검색|"
+    r"시세|뉴스|수급|최신\s*공시|공시\s*알림|"
+    r"제품|원재료|생산설비|공급처|부문|가동|생산능력|business|products|materials|facilities|"
+    r"목차|절|블록|문단|head\(|text|table|DART|EDGAR|코드|셀|출력\s*표|DataFrame|테이블|값|계정|기간",
+    re.I,
+)
+DARTLAB_ACTION_RE = re.compile(
+    r"열|넣|누르|실행|확인|찾|고르|좁히|나누|빼|바꾸|비교|적|돌리|꺼내|만들|계산|입력|"
+    r"보이|보는|본다|읽|익히|배우|구분|시작|풀|대비|이해|차이|맞추|분리"
+)
+DARTLAB_ABSTRACT_WORD_RE = re.compile(
+    r"관통선|표면|정본|맥락|구조|흐름|프레임|층위|사상|메커니즘|의미|핵심|관점|기준|경계|연결|감각|역할"
+)
 SECTION_PLAN_FIELDS = (
     "heading",
     "subtitle",
@@ -331,6 +350,34 @@ def _compact_len(value: object) -> int:
     return len(re.sub(r"[^0-9A-Za-z가-힣]", "", str(value or "")))
 
 
+def _has_dartlab_concrete_anchor(value: object) -> bool:
+    return bool(DARTLAB_CONCRETE_ANCHOR_RE.search(str(value or "")))
+
+
+def _has_dartlab_action(value: object) -> bool:
+    return bool(DARTLAB_ACTION_RE.search(str(value or "")))
+
+
+def _split_h2_sections(body: str) -> list[tuple[str, str]]:
+    matches = list(re.finditer(r"^##\s+(.+)$", body, re.M))
+    if not matches:
+        return [("", body)]
+    sections: list[tuple[str, str]] = []
+    for idx, match in enumerate(matches):
+        start = match.end()
+        end = matches[idx + 1].start() if idx + 1 < len(matches) else len(body)
+        sections.append((match.group(1).strip(), body[start:end]))
+    return sections
+
+
+def _plain_sentences(text: str) -> list[str]:
+    text = re.sub(r"```[\s\S]*?```", " ", text)
+    text = re.sub(r"!\[[^\]]*\]\([^)]+\)", " ", text)
+    text = re.sub(r"\[[^\]]+\]\([^)]+\)", " ", text)
+    text = re.sub(r"\s+", " ", text)
+    return [part.strip() for part in re.split(r"(?<=[.!?다요까])\s+", text) if part.strip()]
+
+
 def _validate_dartlab_story_title(value: object, label: str) -> list[str]:
     title = str(value or "").strip()
     fails: list[str] = []
@@ -474,6 +521,16 @@ def _validate_section_plan(plan: dict[str, object], *, label: str, category: str
             support = str(raw.get("support") or "")
             if not re.search(r"오해|주의|한계|브라우저|로컬|틀리|예외|보완|검산", support):
                 fails.append(f"{label}: sections[{idx}].support 는 오해 방지·한계·보완 설명을 명시해야 함")
+            explanation = str(raw.get("explanation") or "")
+            example = str(raw.get("example") or "")
+            if not (_has_dartlab_action(explanation) or _has_dartlab_concrete_anchor(explanation)):
+                fails.append(
+                    f"{label}: sections[{idx}].explanation 은 독자가 보는 코드·표·값이나 직접 할 행동으로 써야 함"
+                )
+            if not _has_dartlab_concrete_anchor(example):
+                fails.append(
+                    f"{label}: sections[{idx}].example 은 코드·계정·기간·값·공시 문장 중 하나를 실제 예시로 잡아야 함"
+                )
     return fails
 
 
@@ -612,6 +669,27 @@ def _validate_common_plan(
     return fails
 
 
+def _validate_dartlab_body_plainness(body: str) -> list[str]:
+    fails: list[str] = []
+    abstract_only_sentences: list[str] = []
+    for heading, section in _split_h2_sections(body):
+        if prose_char_count(section) < 100:
+            continue
+        if not _has_dartlab_concrete_anchor(section):
+            fails.append(
+                f"dartlab 이야기 섹션 {heading!r} 은 코드·표·계정·기간·값 없이 설명만 있음. 화면에 보이는 것을 먼저 둬야 함"
+            )
+        for sentence in _plain_sentences(section):
+            if _compact_len(sentence) < 18:
+                continue
+            if len(DARTLAB_ABSTRACT_WORD_RE.findall(sentence)) >= 2 and not _has_dartlab_concrete_anchor(sentence):
+                abstract_only_sentences.append(sentence[:80])
+    if len(abstract_only_sentences) >= 3:
+        sample = " / ".join(abstract_only_sentences[:3])
+        fails.append(f"dartlab 이야기 본문에 실제 코드·값 없이 떠 있는 추상 문장이 많음. 예: {sample}")
+    return fails
+
+
 def _validate_genre_body(raw: str, body: str, category: str) -> list[str]:
     fails: list[str] = []
     title = _clean_scalar(frontmatter_value(raw, "title"))
@@ -699,6 +777,7 @@ def _validate_genre_body(raw: str, body: str, category: str) -> list[str]:
             )
         if not re.search(r"안\s*됩니다|안\s*된다|한계|주의|오해|로컬에서만", body):
             fails.append("dartlab 이야기는 브라우저에서 안 되는 것과 오독 방지를 본문에 명시해야 함")
+        fails.extend(_validate_dartlab_body_plainness(body))
     return fails
 
 

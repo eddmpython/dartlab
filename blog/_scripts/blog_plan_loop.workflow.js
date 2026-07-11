@@ -44,6 +44,14 @@ const VISUAL_NOTE = `막별 비주얼: 이야기가 요구하는 차트·표·�
 
 const SECTION_NOTE = `섹션별 독해 구조(강제): 모든 주요 H2 섹션은 기획에서 먼저 설계한다. 순서는 1) 섹션 타이틀 2) 한 줄 서브타이틀/훅 3) 이미지·표·도식·코드 출력 같은 시각 앵커 4) 설명적 서술 5) 실제 예시 6) 보완 설명·오해 방지 7) 다음 섹션 연결문이다. 기획안의 sections[] 에 heading, subtitle, visualAnchor, explanation, example, support, transition, evaluation 을 모두 채운다. 평가자는 섹션마다 이 흐름이 끊기면 재기획을 요구한다.`
 
+const DARTLAB_PLAIN_NOTE = `dartlab 이야기 직관성 게이트:
+1. 화면 먼저, 설명 나중. 각 H2는 독자가 보는 코드, 출력 표, 계정명, 기간, 값, 공시 문장 중 하나를 앞쪽에 둔다.
+2. 한 문단은 "무엇을 본다 -> 그게 무슨 뜻이다 -> 그래서 다음에 무엇을 한다" 순서로 쓴다.
+3. "구조", "흐름", "표면", "경계", "맥락", "감각", "역할" 같은 말은 실제 코드나 값 없이 혼자 서면 실패다.
+4. "중요하다", "핵심이다", "연결된다"로 끝내지 않는다. 무엇이 어디에 보이고, 독자가 어떤 칸을 확인해야 하는지까지 쓴다.
+5. 예시는 반드시 실제 호출, 실제 계정, 실제 기간, 실제 값, 실제 공시 문장 중 하나를 담는다.
+6. 앞 섹션의 결과를 다음 섹션 첫 문장에 다시 잡아 준다. 독자가 글 사이에서 길을 잃으면 실패다.`
+
 // 필드가 무엇을 담아야 하는지는 프롬프트(FIELD_GUIDE)가 말한다. 스키마는 형태만 말한다.
 // 설명문을 스키마에 넣었더니 JSON 이 7KB 를 넘어 구조화 출력이 안전 분류기에 통째로 막혔다
 // ("output schema too large to classify safely", 2026-07-10). 편집장 수렴과 기획작가 개선이
@@ -246,7 +254,7 @@ const SKEPTIC_SCHEMA = {
       items: {
         type: 'object', additionalProperties: false, required: ['axis', 'why', 'fix'],
         properties: {
-          axis: { type: 'string', enum: ['weak-title', 'cliche-template', 'forced-metric', 'misleading-frame', 'shallow', 'weak-section-flow', 'generic-image', 'appendix-visual', 'weak-reference', 'overclaim'] },
+          axis: { type: 'string', enum: ['weak-title', 'cliche-template', 'forced-metric', 'misleading-frame', 'shallow', 'abstract-writing', 'weak-section-flow', 'generic-image', 'appendix-visual', 'weak-reference', 'overclaim'] },
           why: { type: 'string' },
           fix: { type: 'string' },
         },
@@ -301,13 +309,14 @@ const STORY_PRINCIPLES = `dartlab 이야기(교육 연재) 원칙(합격선):
 8. 출력 기준: .shape, 행열 크기, 몇 행 몇 열 같은 디버그 신호는 기획 근거가 아니다. 독자가 봐야 할 것은 실제 계정명, 기간 열, 값, 공시 문장이다.
 9. 도구 비중: select 자체를 설명하는 편은 만들지 않는다. 필요한 줄을 좁힐 때만 짧게 쓴다. trace 는 출처가 헷갈릴 때 쓰는 점검 도구이며 독립 학습 목표가 아니다.
 10. 내부 점검어 금지: 내부 기능 개수, 인증 개수, n/n 점검 표현은 독자에게 중요하지 않다. 실제로 무엇을 열고 어떤 값이 보이는지만 쓴다.
+11. 직관성: 추상 설명이 화면보다 먼저 오면 실패다. 각 섹션은 코드, 출력 표, 계정, 기간, 값, 공시 문장 중 하나를 먼저 붙잡고 그다음 쉬운 말로 푼다. "구조", "흐름", "표면", "경계", "맥락", "감각", "역할" 같은 단어는 실제 코드나 값 없이 혼자 서면 허공 설명으로 본다.
 표기: em dash(긴 줄표) 금지. 부연은 마침표·괄호, 범위는 물결(~). 문장은 다/요/까. 독자용 문구에 "축"(axis) 이라는 내부 용어를 쓰지 않는다.`
 
 const NOTES =
   contentKind === 'dartlab-stories'
     ? {
         principles: STORY_PRINCIPLES,
-        section: SECTION_NOTE,
+        section: `${SECTION_NOTE}\n\n${DARTLAB_PLAIN_NOTE}`,
         image: `이미지 기획: 그 편에 정말 필요한 그림만 적는다. 고정 하한 없음(최소 hero 1장). 채우기용 inline 이미지는 실패다. 교육 연재의 피사체는 회사·제품이 아니라 도구·데이터·코드다(노트북, 코드 화면, 문서, 서버). 범용 스카이라인·추상 배경으로 도망가면 실패. query 는 실사 CC0 수급용 영어 검색어, keywords 는 오매치 차단용. 각 이미지에 placement·narrativeUse 를 적는다.`,
         visual: `비주얼: 이 연재의 주된 시각물은 코드 실행 결과 표 그 자체다. 별도 차트를 억지로 만들지 않는다. 표를 보여 줄 때는 .shape 나 행열 크기가 아니라 실제 계정명, 기간 열, 값, 공시 문장을 시각 앵커로 삼는다. 개념을 설명하는 도해가 정말 필요할 때만 최소 1개 기획한다.`,
       }
@@ -439,7 +448,7 @@ ${NOTES.principles}
 
 ${NOTES.section}
 
-6항목: 1.재밌나(YES/NO+이유) 2.어디서 집중 끊기나 3.독자질문(관통선)이 끝까지 살아있나 4."어?" 몇 번 5.기억에 남는 문장 6.점수. 특히: 제목이 첫 1초에 멈추는가, titleContract 의 후보·독자 갭·선택 이유가 살아있는가, 관통선이 끝까지 살아 인싸이트에 착지하나, 막이 궁금증심화·메커니즘·리스크반전·판단닫힘 중 하나를 하나, 깊이가 얕지 않나, 첫 2문단이 긴장으로 시작하나. sections[] 가 섹션마다 타이틀, 훅, 시각 앵커, 설명, 예시, 보완, 다음 연결을 실제로 기획했나. 비주얼이 본문 중간에서 설명을 실제로 돕나, 아니면 뒤에 자동으로 붙는 부록처럼 보이나. relatedPosts 가 선행 글 검색과 자연스러운 참고글 연결을 기획했나.
+7항목: 1.재밌나(YES/NO+이유) 2.어디서 집중 끊기나 3.독자질문(관통선)이 끝까지 살아있나 4."어?" 몇 번 5.기억에 남는 문장 6.직관적으로 읽히나 7.점수. 특히: 제목이 첫 1초에 멈추는가, titleContract 의 후보·독자 갭·선택 이유가 살아있는가, 관통선이 끝까지 살아 인싸이트에 착지하나, 막이 궁금증심화·메커니즘·리스크반전·판단닫힘 중 하나를 하나, 깊이가 얕지 않나, 첫 2문단이 긴장으로 시작하나. sections[] 가 섹션마다 타이틀, 훅, 시각 앵커, 설명, 예시, 보완, 다음 연결을 실제로 기획했나. dartlab 이야기는 각 섹션이 코드·출력 표·계정·기간·값 중 하나에서 출발하나. "구조", "흐름", "표면", "경계", "맥락", "감각" 같은 말이 실제 화면 없이 떠 있지 않나. 비주얼이 본문 중간에서 설명을 실제로 돕나, 아니면 뒤에 자동으로 붙는 부록처럼 보이나. relatedPosts 가 선행 글 검색과 자연스러운 참고글 연결을 기획했나.
 
 검증 데이터(기획 수치는 이 안에 있어야):
 ${evidence}
@@ -456,6 +465,7 @@ ${JSON.stringify(plan)}`,
 - forced-metric: "이런 뜻은 아니다" 변명해야 하는 억지 비율·지표가 있나.
 - misleading-frame: 주인공이 제목의 실제 주어와 다른가(인프라 회사를 AI 주인공으로 둔갑 등). 영업이익과 순이익, 연결과 그룹을 뭉갰나.
 - shallow: 막이 요약 나열이라 메커니즘까지 안 파는가. 심층인 척 얕은가.
+- abstract-writing: 설명이 코드·표·값보다 먼저 오거나, "구조", "흐름", "표면", "경계", "맥락", "감각", "역할" 같은 말이 실제 화면 없이 떠 있나.
 - weak-section-flow: sections[] 가 없거나, 섹션마다 타이틀, 훅, 시각 앵커, 설명, 예시, 보완, 다음 연결이 기획되지 않았나.
 - generic-image: imagePlan 이미지가 내용·회사·제품을 연상시키지 않고 범용 스카이라인·추상인가. 하나라도 있으면 kill.
 - appendix-visual: visuals/imagePlan 이 본문 중간 placement 없이 뒤에 자동으로 붙는 부록처럼 기획됐나. 필요한 표·그래프·테이블 조합을 빼먹었나. 그러면 kill.
