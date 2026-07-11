@@ -1,0 +1,92 @@
+# pyproc 핀 자동 반영(게이트). vision 정책이 float 을 금지하므로 라이브 float 이 아니라
+# "최신 태그 -> SHA 고정 -> PYPROC 게이트 통과 -> 봇 PR" 로 반영한다.
+# patch + 비 tier2(격리 경로 무접촉) + GATE-A green 만 auto-merge, 그 외는 사람 리뷰.
+# mainPlan/pyproc-runtime-ssot 02-auto-update. Tier-2(fork) 브라우저 게이트(GATE-B)는 P4 에서 추가.
+name: pyproc pin bump (gated)
+
+on:
+  schedule:
+    - cron: "0 0 * * 1" # 매주 월 00:00 UTC(09:00 KST), dependabot 케이던스 정렬
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: pyproc-pin
+  cancel-in-progress: false # 자기 자신과 레이스 금지
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      newer: ${{ steps.r.outputs.newer }}
+      tier2: ${{ steps.r.outputs.tier2 }}
+      bump: ${{ steps.r.outputs.bump }}
+      sha: ${{ steps.r.outputs.sha }}
+      tag: ${{ steps.r.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+      - id: r
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/scripts/pyprocResolvePin.mjs
+
+  gate-a:
+    needs: resolve
+    if: ${{ needs.resolve.outputs.newer == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+      # npm 이 github git dep 를 git+ssh 로 정규화 -> npm 이 SSH 를 타지 않게 https 로 재작성.
+      - name: pyproc git dep ssh->https
+        run: git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+      - name: apply pin + install
+        run: |
+          node .github/scripts/pyprocApplyPin.mjs "${{ needs.resolve.outputs.sha }}"
+          npm install
+          npm install --no-save pyodide@0.27.5
+      - name: GATE-A (pyproc Runtime+AsgiServer x dartlab)
+        run: node .github/scripts/pyprocSmoke.mjs
+
+  land:
+    needs: [resolve, gate-a]
+    if: ${{ needs.resolve.outputs.newer == 'true' && needs.gate-a.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+      - name: apply pin + lock 갱신
+        run: |
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          node .github/scripts/pyprocApplyPin.mjs "${{ needs.resolve.outputs.sha }}"
+          npm install
+      - name: 봇 PR (patch+비tier2 -> auto-merge, 그 외 리뷰)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BR="pyproc-pin-${{ needs.resolve.outputs.tag }}"
+          git config user.name "dartlab-bot"
+          git config user.email "dartlab-bot@users.noreply.github.com"
+          git switch -c "$BR"
+          git commit -o landing/package.json package-lock.json \
+            -m "보안: pyproc 핀 ${{ needs.resolve.outputs.tag }} (SHA 고정, GATE-A green)"
+          git push -u origin "$BR"
+          gh pr create -B master -H "$BR" \
+            -t "pyproc 핀 -> ${{ needs.resolve.outputs.tag }}" \
+            -b "SHA ${{ needs.resolve.outputs.sha }} / bump=${{ needs.resolve.outputs.bump }} / tier2=${{ needs.resolve.outputs.tier2 }} / GATE-A PASS"
+          if [ "${{ needs.resolve.outputs.bump }}" = "patch" ] && [ "${{ needs.resolve.outputs.tier2 }}" != "true" ]; then
+            gh pr merge --squash --auto
+          else
+            gh pr edit --add-label pyproc-tier2-review || true
+          fi
