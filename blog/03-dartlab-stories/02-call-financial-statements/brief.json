@@ -5,7 +5,7 @@
     "selectedTitle": "재무제표, 파이썬 한 줄",
     "hookQuestion": "재무제표를 파이썬 한 줄로 열면 무엇이 달라질까?",
     "readerGap": "검색자는 재무제표를 PDF나 엑셀로 옮겨 읽는다고 생각하지만 글은 한 줄 호출로 격자를 여는 경험을 준다.",
-    "promise": "브라우저 코드 칸에서 세 장을 열고, 계정을 고르고, 연결과 별도 차이를 직접 확인하게 한다.",
+    "promise": "브라우저 코드 칸에서 세 장을 열고, 연간과 분기 기준을 바꾸고, 연결과 별도 차이를 직접 확인하게 한다.",
     "whySelected": "재무제표와 파이썬이라는 외부 검색어에 한 줄 실행이라는 행동 훅을 가장 짧게 붙인다.",
     "candidates": [
       {
@@ -137,7 +137,7 @@
   ],
   "evidenceMap": [
     {
-      "claim": "본문 코드는 브라우저에서 바로 실행되는 Company.panel을 중심으로 쓰고, 필요한 줄만 좁힐 때 Company.select를 보조로 사용한다.",
+      "claim": "본문 코드는 브라우저에서 바로 실행되는 Company.panel을 중심으로 쓰고, 계정 고르기는 뒤의 전용 편으로 넘긴다.",
       "sourceType": "dartlab",
       "period": "2026-07-10",
       "sourceRef": "tests/audit/notebookContract.py",
@@ -165,7 +165,7 @@
       "rounds": [
         {
           "round": 1,
-          "planner": "초안은 panel 사용법과 필요한 줄 좁히기를 설명했지만 세 장이 같은 격자라는 반전이 약했다.",
+          "planner": "초안은 panel 사용법과 기간 기준을 설명했지만 세 장이 같은 격자라는 반전이 약했다.",
           "evaluator": "실습 흐름은 좋지만 연결과 별도, 빈칸의 오독 방지가 뒤로 밀려 초보자 보호가 부족했다.",
           "skeptic": "함수 사용법만 나열하면 커리큘럼 글이 아니라 API 문서처럼 보일 위험을 지적했다.",
           "decision": "revise",
