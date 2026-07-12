@@ -10,7 +10,7 @@
 
 | | |
 |---|---|
-| 발행 완료 | 11 편 (1편 what-is-dartlab, 2편 call-financial-statements, 3편 how-notebook-runs, 4편 pick-company-by-code, 5편 the-grid, 6편 dart-edgar-company, 7편 edgar-financial-panel, 8편 business-report-panel, 9편 business-content-panel, 10편 notes-link-to-numbers, 11편 select-rows) |
+| 발행 완료 | 12 편 (1편 what-is-dartlab, 2편 call-financial-statements, 3편 how-notebook-runs, 4편 pick-company-by-code, 5편 the-grid, 6편 dart-edgar-company, 7편 edgar-financial-panel, 8편 business-report-panel, 9편 business-content-panel, 10편 notes-link-to-numbers, 11편 select-rows, 12편 compute-from-values) |
 | 설계 완료 | 39 편 (panel, 실제 값, 사업보고서 본문, 직접 계산, 분석 엔진 중심으로 재정렬 2026-07-11) |
 | 채점 | pedagogy 78 · coverage 75 · skeptic 71 · seo 66 (인플레 없이) |
 | 승자 | pedagogy 안. 나머지 셋에서 살릴 아이디어를 접목 |
@@ -31,6 +31,11 @@
 기능 하나를 한 편으로 소개하지 않는다. 한 편은 독자가 실제로 막히는 오해, 실패, 기준 차이 하나를 깊게 푼다.
 각 편은 반드시 초보자의 오해, 코드나 표에서 보이는 증상, 원인, 확인 방법, 고치는 순서, 행동 검사를 가진다.
 세밀함은 긴 설명이 아니라 실패 지점의 원인과 고치는 순서를 분해하는 것이다.
+
+전편 공통의 고질 문제는 "기능은 나열되는데 독자가 무엇을 보고 무엇을 하면 되는지 안 보이는 글"이다.
+새 편과 보완 편은 첫 문단에서 독자의 막힌 지점을 잡고, 각 H2마다 실제 코드 출력이나 표의 한 칸을 먼저 보여 준다.
+그다음 쉬운 말, 실제 예시, 오해 방지, 다음 섹션 연결문으로 이어야 한다.
+추상어가 코드나 값보다 앞서면 실패다. 전문가처럼 들리는 문장보다 초보자가 같은 화면을 다시 따라 할 수 있는 문장이 우선이다.
 
 `panel` 이 dartlab 사상의 정본이다.
 재무제표, 정형공시, 사업보고서 본문을 모두 `c.panel(topic)` 이라는 한 표면으로 눕힌다.
@@ -209,8 +214,9 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
 - [x] **11. 필요한 줄만 이름으로 뽑아낸다** `select-rows` `B` (2편이 일부 흡수. 잔여는 항목명 검색)
   제목과 본문 중심은 `select` 가 아니라 "매출액이 안 보일 때"다. 먼저 panel 에서 계정 후보를 보고, 필요한 순간에만 `select` 를 쓴다.
   발행 완료 2026-07-11: `panel("IS")` 에서 매출액 133.873조원, 영업이익 57.233조원, 순이익 후보를 실제 값으로 찾고, `panel("BS")` 매출채권및기타채권과 `panel("CF")` 현금흐름 후보를 비교해 표면 선택 오해를 닫았다.
-- [ ] **12. 뽑은 숫자로 직접 계산한다** `compute-from-values` `B`
+- [x] **12. 뽑은 숫자로 직접 계산한다** `compute-from-values` `B`
   select 결과를 파이썬으로 다뤄 영업이익률을 직접 구한다. 첫 데이터 가공.
+  발행 완료 2026-07-12: `panel("IS")` 매출액 133.873조원과 영업이익 57.233조원으로 2026Q1 영업이익률 42.75%, 2025Q1 8.45%, 차이 34.30%p를 직접 계산하고 분모, 기간, 계산 불가, 투자 판단 한계를 닫았다.
 - [ ] **13. 표에서 문장으로 바꾸기** `table-to-sentence` `B`
   직접 계산한 마진, 기간, 연결/별도 기준을 한 문장으로 쓴다. `trace` 는 독립 편이 아니라 19편 검산 문맥으로 미룬다.
 

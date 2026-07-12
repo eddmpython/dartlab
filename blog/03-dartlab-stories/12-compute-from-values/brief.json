@@ -1,0 +1,363 @@
+{
+  "title": "재무제표 이익률, 코드 계산",
+  "titleContract": {
+    "workingTitle": "뽑은 숫자로 직접 계산한다",
+    "selectedTitle": "재무제표 이익률, 코드 계산",
+    "hookQuestion": "매출액과 영업이익을 직접 나눠 영업이익률과 퍼센트포인트 차이를 코드로 계산할 수 있을까?",
+    "readerGap": "초보자는 숫자를 찾은 뒤 바로 결론으로 뛰거나, 분모와 기간을 남기지 않아 계산 근거가 흐려진다.",
+    "promise": "Company(\"005930\")에서 panel(\"IS\")로 매출액과 영업이익을 가져오고 2026Q1 영업이익률 42.75%, 2025Q1 8.45%, 차이 34.30%p를 직접 계산하게 한다.",
+    "whySelected": "재무제표 이익률이라는 검색어와 코드 계산이라는 즉시 행동이 짧고 선명하다.",
+    "candidates": [
+      {
+        "title": "재무제표 이익률, 코드 계산",
+        "hook": "검색어와 코드 행동이 가장 선명하다.",
+        "risk": "계산 기능 소개가 아니라 분모와 기간 검산을 중심으로 써야 한다."
+      },
+      {
+        "title": "재무제표 이익률, 파이썬 계산",
+        "hook": "재무제표 검색어와 파이썬 계산 의도가 직접 보인다.",
+        "risk": "selectedTitle보다 두 글자 길어 검색 화면에서 힘이 조금 약하다."
+      },
+      {
+        "title": "DART 이익률, 코드 계산",
+        "hook": "DART와 코드 계산 효용을 짧게 붙인다.",
+        "risk": "영업이익률이라는 실제 계산 대상이 제목에서 덜 보인다."
+      }
+    ],
+    "rejectedPatterns": [
+      "영업이익률이란 무엇인가",
+      "이익률 사용법 정리",
+      "재무제표 계산 총정리",
+      "이익률 보는 법",
+      "dartlab 계산 기능 소개"
+    ]
+  },
+  "description": "dartlab에서 panel(\"IS\")로 매출액과 영업이익을 찾고 파이썬 코드로 영업이익률을 직접 계산해 기간, 분모, 퍼센트포인트 차이를 초보자 눈높이로 익힌다.",
+  "readerQuestion": "찾은 재무제표 숫자로 영업이익률을 직접 계산하고, 그 계산 근거를 흔들리지 않게 남길 수 있을까?",
+  "insight": {
+    "commonBelief": "이익률은 이미 누군가 계산해 둔 숫자를 보면 되고, 직접 계산은 어려운 분석이라고 생각한다.",
+    "twistFact": "dartlab에서는 panel(\"IS\")에서 매출액과 영업이익을 꺼내 파이썬 나눗셈으로 영업이익률을 바로 계산할 수 있다.",
+    "whatToWatch": "계정 이름, 기간, 분모, 분자, 퍼센트포인트 차이를 함께 적는다.",
+    "freshnessArgument": "2026-07-11 실행에서 005930의 2026Q1 매출액 133.873조원, 영업이익 57.233조원, 영업이익률 42.75%, 2025Q1 영업이익률 8.45%가 확인됐다.",
+    "evidenceRefs": [
+      "Company(\"005930\").market = KR",
+      "Company(\"005930\").panel(\"IS\")에서 매출액과 영업이익 표시",
+      "2026Q1 영업이익률 = 57.233조원 / 133.873조원 * 100 = 42.75%",
+      "2025Q1 영업이익률 = 6.685조원 / 79.141조원 * 100 = 8.45%",
+      "두 기간 이익률 차이 = 34.30%p"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "매출액과 영업이익을 다시 꺼낸다",
+      "purpose": "왜배우나",
+      "scene": "panel(\"IS\")에서 매출액과 영업이익을 계정 이름과 기간 값으로 다시 확인한다.",
+      "keyNumbers": [
+        "133.873조원",
+        "57.233조원",
+        "79.141조원",
+        "6.685조원"
+      ],
+      "causalBridge": "계산 전 재료를 확인해야 다음 나눗셈의 분모와 분자가 흔들리지 않는다."
+    },
+    {
+      "order": 2,
+      "heading": "영업이익률을 직접 계산한다",
+      "purpose": "직접해본다",
+      "scene": "영업이익을 매출액으로 나누고 100을 곱해 2026Q1과 2025Q1 영업이익률을 만든다.",
+      "keyNumbers": [
+        "42.75%",
+        "8.45%",
+        "34.30%p",
+        "100"
+      ],
+      "causalBridge": "계산은 어려운 모델이 아니라 정확한 계정과 기간을 나누는 일임을 배운다."
+    },
+    {
+      "order": 3,
+      "heading": "분모와 계산 한계를 말한다",
+      "purpose": "오해방지",
+      "scene": "분모가 매출액이라는 점, 값이 없으면 계산하지 않는 점, 계산 하나로 투자 결론을 쓰지 않는 점을 닫는다.",
+      "keyNumbers": [
+        "매출액",
+        "영업이익",
+        "계산 불가",
+        "기간"
+      ],
+      "causalBridge": "계산 결과를 문장으로 바꾸는 다음 편에서 근거가 흔들리지 않게 한다."
+    }
+  ],
+  "visuals": [
+    {
+      "actOrder": 1,
+      "kind": "bitmap diagram",
+      "title": "매출액과 영업이익에서 영업이익률을 계산하는 흐름",
+      "proves": "영업이익률 계산의 분모, 분자, 곱하기 100을 시각적으로 보여 준다.",
+      "seriesHint": "operating margin formula from sales and operating profit",
+      "placement": "매출액과 영업이익을 다시 꺼낸다 섹션의 코드 출력 설명 뒤",
+      "insertAfter": "계산 전에는 항상 계정 이름과 기간을 숫자 옆에 둔다 문단 뒤",
+      "narrativeUse": "계산식보다 분모와 분자가 중요하다는 점을 고정한다."
+    },
+    {
+      "actOrder": 2,
+      "kind": "bitmap diagram",
+      "title": "영업이익률 두 기간 비교와 퍼센트포인트",
+      "proves": "42.75%와 8.45%의 차이를 34.30%p로 읽는 법을 보여 준다.",
+      "seriesHint": "operating margin comparison percentage point",
+      "placement": "숫자 하나로 결론을 쓰지 않는다 섹션의 원천 링크 설명 뒤",
+      "insertAfter": "미국 공시는 SEC Search Filings와 EDGAR Full Text Search에서 찾는다 문단 뒤",
+      "narrativeUse": "퍼센트와 퍼센트포인트를 섞는 오해를 막는다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "inline",
+      "subject": "매출액과 영업이익을 나눠 영업이익률을 계산하는 교육용 bitmap 도식",
+      "query": "operating margin formula sales operating profit diagram",
+      "keywords": [
+        "operating margin",
+        "sales",
+        "operating profit",
+        "formula",
+        "financial statement"
+      ],
+      "placement": "매출액과 영업이익을 다시 꺼낸다 섹션의 계정 값 코드 출력 설명 뒤",
+      "narrativeUse": "영업이익률은 영업이익을 매출액으로 나눈 값이라는 분모 감각을 고정한다."
+    },
+    {
+      "slot": "inline",
+      "subject": "2026Q1 42.75%와 2025Q1 8.45%를 비교해 34.30%p 차이를 보여 주는 교육용 bitmap 도식",
+      "query": "operating margin comparison percentage point diagram",
+      "keywords": [
+        "operating margin",
+        "percentage point",
+        "comparison",
+        "2026Q1",
+        "2025Q1"
+      ],
+      "placement": "숫자 하나로 결론을 쓰지 않는다 섹션의 원천 링크 설명 뒤",
+      "narrativeUse": "퍼센트 값의 차이는 퍼센트포인트로 말한다는 점을 보여 준다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": [
+      "재무제표 이익률",
+      "영업이익률",
+      "재무제표 파이썬",
+      "DART 공시",
+      "매출액",
+      "영업이익"
+    ],
+    "placementRule": "11편은 계정 찾기 선행편, 2편은 재무제표 열기, 5편은 기간 감각, 10편은 주석 연결, 9편은 사업 본문 근거, 7편은 EDGAR 경계로 연결한다.",
+    "links": [
+      {
+        "path": "/blog/select-rows",
+        "title": "재무제표 계정, 코드로 찾기",
+        "reason": "12편은 11편에서 찾은 매출액과 영업이익을 계산 재료로 쓰기 때문이다.",
+        "placement": "첫 섹션 첫 문장"
+      },
+      {
+        "path": "/blog/call-financial-statements",
+        "title": "재무제표, 파이썬 한 줄",
+        "reason": "IS를 처음 여는 선행 글이다.",
+        "placement": "첫 섹션의 재무제표 세 장 선행 설명 문장"
+      },
+      {
+        "path": "/blog/the-grid",
+        "title": "재무제표 기간, Y와 Q 조회",
+        "reason": "2026Q1과 2025Q1 기간 비교를 읽는 배경이다.",
+        "placement": "첫 섹션의 기간 칸 설명 문장"
+      },
+      {
+        "path": "/blog/notes-link-to-numbers",
+        "title": "재무제표 주석, 코드로 연결",
+        "reason": "숫자와 근거를 연결하는 선행 감각을 이어받는다.",
+        "placement": "첫 섹션의 주석 연결 선행 설명 문장"
+      },
+      {
+        "path": "/blog/business-content-panel",
+        "title": "사업보고서, 코드로 읽기",
+        "reason": "계산 결과 하나로 결론을 쓰지 않고 사업 본문 근거를 더 봐야 한다는 연결이다.",
+        "placement": "숫자 하나로 결론을 쓰지 않는다 섹션 첫 문장"
+      },
+      {
+        "path": "/blog/edgar-financial-panel",
+        "title": "EDGAR 재무제표, 코드 실행",
+        "reason": "DART 계산 예시와 EDGAR 재무제표 범위를 섞지 않도록 경계를 둔다.",
+        "placement": "숫자 하나로 결론을 쓰지 않는다 섹션의 EDGAR 경계 문장"
+      }
+    ]
+  },
+  "honestyGuards": [
+    "영업이익률을 계산했다고 투자 판단까지 했다고 쓰지 않는다.",
+    "영업이익률의 분모를 매출액이 아닌 다른 계정처럼 흐리지 않는다.",
+    "퍼센트와 퍼센트포인트를 섞지 않는다.",
+    "값이 없거나 분모가 0인 경우 억지로 숫자를 만들지 않는다.",
+    "DART 계산 예시와 EDGAR 재무제표를 같은 기준으로 섞지 않는다."
+  ],
+  "evidenceMap": [
+    {
+      "claim": "005930은 dartlab Company에서 KR 회사로 열린다.",
+      "sourceType": "dartlab",
+      "period": "2026-07-11",
+      "sourceRef": "local execution: Company(\"005930\").market",
+      "howUsed": "첫 코드셀과 DART 회사 출발점 설명"
+    },
+    {
+      "claim": "panel(\"IS\")에서 2026Q1 매출액은 133,873,444,000,000원이다.",
+      "sourceType": "DART",
+      "period": "2026Q1",
+      "sourceRef": "local execution: Company(\"005930\").panel(\"IS\")",
+      "howUsed": "영업이익률 분모"
+    },
+    {
+      "claim": "panel(\"IS\")에서 2026Q1 영업이익은 57,232,797,000,000원이다.",
+      "sourceType": "DART",
+      "period": "2026Q1",
+      "sourceRef": "local execution: Company(\"005930\").panel(\"IS\")",
+      "howUsed": "영업이익률 분자"
+    },
+    {
+      "claim": "2026Q1 영업이익률은 약 42.75%다.",
+      "sourceType": "calculation",
+      "period": "2026Q1",
+      "sourceRef": "57,232,797,000,000 / 133,873,444,000,000 * 100",
+      "howUsed": "직접 계산 결과"
+    },
+    {
+      "claim": "2025Q1 영업이익률은 약 8.45%이고 두 기간 차이는 34.30%p다.",
+      "sourceType": "calculation",
+      "period": "2025Q1",
+      "sourceRef": "6,685,272,000,000 / 79,140,503,000,000 * 100",
+      "howUsed": "퍼센트포인트 설명"
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": 1,
+          "planner": "초안은 영업이익률 계산식 설명은 있었지만 계정 확인과 분모 검산이 약했다.",
+          "evaluator": "계산만 보여 주면 초보자가 숫자 출처를 잊고 결과 하나로 결론을 쓰는 글이 된다고 평가했다.",
+          "skeptic": "퍼센트와 퍼센트포인트를 섞거나 분모를 흐리면 투자 글에서 오해가 커진다고 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 88,
+          "plannerRevision": "매출액과 영업이익을 계정 이름과 기간으로 다시 꺼낸 뒤 계산하는 구조로 바꿨다."
+        },
+        {
+          "round": 2,
+          "planner": "개선안은 재료 확인, 직접 계산, 퍼센트포인트, 분모 설명, 계산 불가, 판단 한계 순서로 세웠다.",
+          "evaluator": "각 섹션에 실제 코드 출력, 쉬운 설명, 계산값, 오해 방지, 다음 연결이 있다.",
+          "skeptic": "투자 결론을 쓰지 않고 계산 근거를 닫으며 DART와 EDGAR 경계도 분리해 survive 가능하다고 봤다.",
+          "decision": "passed",
+          "evaluatorScore": 96,
+          "plannerRevision": "이미지 두 장과 썸네일 배경을 기획 단계에서 생성하고 다음 편 문장화로 닫았다."
+        }
+      ]
+    }
+  },
+  "sections": [
+    {
+      "order": 1,
+      "heading": "계산은 계정 확인 뒤에 온다",
+      "subtitle": "영업이익률은 영업이익을 매출액으로 나눈 값이므로 계정 확인이 먼저다.",
+      "visualAnchor": "Company(\"005930\"), c.market, rowByName, marginText 코드 출력이 기준이다.",
+      "explanation": "계산에 쓸 숫자를 어떤 계정에서 가져왔는지 남겨야 한다고 설명한다.",
+      "example": "영업이익률 계산식을 오늘의 목표로 제시한다.",
+      "support": "계산 기능 소개가 아니라 계정과 기간 검산이라는 한계를 붙인다.",
+      "transition": "준비 함수를 세웠으므로 다음에는 매출액과 영업이익을 다시 꺼낸다.",
+      "evaluation": "타이틀, 코드, 실제 예시, 보완, 다음 연결이 모두 있는지 재평가했다."
+    },
+    {
+      "order": 2,
+      "heading": "매출액과 영업이익을 다시 꺼낸다",
+      "subtitle": "panel(\"IS\")에서 분모와 분자를 계정 이름과 기간으로 확인한다.",
+      "visualAnchor": "매출액과 영업이익 코드 출력, 영업이익률 공식 도식을 배치한다.",
+      "explanation": "숫자만 보면 나중에 매출액인지 매출총이익인지 헷갈린다고 설명한다.",
+      "example": "2026Q1 매출액 133.873조원, 영업이익 57.233조원을 보여 준다.",
+      "support": "계정 이름과 기간을 숫자 옆에 두지 않으면 계산 근거가 흐려진다는 오해 방지를 붙인다.",
+      "transition": "재료를 확인했으므로 다음에는 영업이익률을 계산한다.",
+      "evaluation": "실제 값과 계산 전 검산이 함께 있는지 재평가했다."
+    },
+    {
+      "order": 3,
+      "heading": "영업이익률을 계산한다",
+      "subtitle": "영업이익을 매출액으로 나누고 100을 곱한다.",
+      "visualAnchor": "영업이익률 계산 코드 출력의 42.75%, 8.45% 표가 기준이다.",
+      "explanation": "코드는 나눗셈을 해 주지만 분모와 분자는 사람이 정한다고 설명한다.",
+      "example": "2026Q1 42.75%, 2025Q1 8.45%를 보여 준다.",
+      "support": "계산 결과 하나로 판단하지 않는 한계를 붙인다.",
+      "transition": "두 기간 이익률을 구했으므로 다음에는 차이를 읽는다.",
+      "evaluation": "계산식과 실제 결과가 직접 연결되는지 재평가했다."
+    },
+    {
+      "order": 4,
+      "heading": "퍼센트와 퍼센트포인트를 나눈다",
+      "subtitle": "두 퍼센트 값의 차이는 퍼센트포인트로 적는다.",
+      "visualAnchor": "margin2026, margin2025 코드 출력의 34.30%p가 기준이다.",
+      "explanation": "42.75%와 8.45%의 차이는 34.30%p라고 설명한다.",
+      "example": "영업이익률이 34.30% 증가했다는 문장이 왜 부족한지 보여 준다.",
+      "support": "증가율은 별도 계산이라는 한계를 붙인다.",
+      "transition": "차이를 읽었으므로 다음에는 분모를 문장에 남기는 법을 본다.",
+      "evaluation": "퍼센트와 퍼센트포인트 오해를 막는지 재평가했다."
+    },
+    {
+      "order": 5,
+      "heading": "분모가 무엇인지 말한다",
+      "subtitle": "영업이익률의 분모는 매출액이라고 문장에 남긴다.",
+      "visualAnchor": "나쁜 문장과 좋은 문장 비교 표가 기준이다.",
+      "explanation": "매출액이 아닌 다른 분모를 쓰면 다른 비율이 된다고 설명한다.",
+      "example": "영업이익 57.233조원을 매출액 133.873조원으로 나눈다고 쓴다.",
+      "support": "짧은 문장으로 분모를 숨기면 계산 근거가 흐려진다는 오해 방지를 붙인다.",
+      "transition": "분모를 세웠으므로 다음에는 계산 불가 상황을 본다.",
+      "evaluation": "문장 고치기 예시가 실제 계산값과 연결되는지 재평가했다."
+    },
+    {
+      "order": 6,
+      "heading": "값이 없거나 0이면 계산하지 않는다",
+      "subtitle": "분모가 없거나 0이면 계산 불가라고 쓴다.",
+      "visualAnchor": "safeMargin 코드 출력의 계산 가능 결과 표가 기준이다.",
+      "explanation": "없는 값을 억지로 나누면 안 된다고 설명한다.",
+      "example": "이번 예시는 두 기간 모두 계산되지만 검사 로직을 남긴다.",
+      "support": "예쁜 숫자보다 계산 불가 표시가 낫다는 한계를 붙인다.",
+      "transition": "계산 안전장치를 봤으므로 다음에는 판단 한계를 닫는다.",
+      "evaluation": "오류 방지가 실제 코드로 들어갔는지 재평가했다."
+    },
+    {
+      "order": 7,
+      "heading": "숫자 하나로 결론을 쓰지 않는다",
+      "subtitle": "영업이익률은 분석 재료이지 투자 결론이 아니다.",
+      "visualAnchor": "사업 본문 내부 링크, DART와 SEC 원천 링크 표, 이익률 비교 도식을 함께 둔다.",
+      "explanation": "높은 이익률의 이유를 보려면 사업 본문과 주석, 여러 기간이 더 필요하다고 설명한다.",
+      "example": "사업보고서 본문과 EDGAR 경계 내부 링크를 연결한다.",
+      "support": "계산 하나로 좋은 회사라고 쓰지 않는 오해 방지를 붙인다.",
+      "transition": "판단 한계를 닫았으므로 다음에는 오해 방지 목록으로 간다.",
+      "evaluation": "투자 결론으로 과장하지 않는지 재평가했다."
+    },
+    {
+      "order": 8,
+      "heading": "이렇게 오해하면 안 된다",
+      "subtitle": "분모, 기간, 퍼센트포인트, 계산 불가, 투자 판단을 구분한다.",
+      "visualAnchor": "오해 방지 체크리스트 표와 계산 코드 출력값이 기준이다.",
+      "explanation": "계산에서 생기는 대표 오해를 짧게 정리한다.",
+      "example": "2026Q1 매출액과 2025Q1 영업이익을 섞으면 안 된다고 쓴다.",
+      "support": "오해 방지가 실제 계산 실수와 연결되도록 보완한다.",
+      "transition": "오해를 정리했으므로 다음에는 행동 검사로 넘어간다.",
+      "evaluation": "추상 경고가 아니라 계산 실수 방지인지 재평가했다."
+    },
+    {
+      "order": 9,
+      "heading": "다음 편으로 넘어가기 전 행동 검사",
+      "subtitle": "재료 확인, 직접 계산, 차이 계산, 문장 고치기, 한계 쓰기를 확인한다.",
+      "visualAnchor": "sales, operatingProfit, marginText, margin2026 코드 출력 체크리스트 표가 기준이다.",
+      "explanation": "행동 검사는 같은 결과를 눌러 봤는지 확인하는 장치라고 설명한다.",
+      "example": "42.75%, 8.45%, 34.30%p를 직접 만든다.",
+      "support": "계산값 하나로 결론을 쓰지 않는 한계를 마지막에 다시 둔다.",
+      "transition": "행동 검사를 통과하면 다음 편에서 계산 결과를 문장으로 바꾼다.",
+      "evaluation": "다음 편 문장화 학습으로 자연스럽게 이어지는지 재평가했다."
+    }
+  ]
+}
