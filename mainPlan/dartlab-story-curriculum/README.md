@@ -10,7 +10,7 @@
 
 | | |
 |---|---|
-| 발행 완료 | 12 편 (1편 what-is-dartlab, 2편 call-financial-statements, 3편 how-notebook-runs, 4편 pick-company-by-code, 5편 the-grid, 6편 dart-edgar-company, 7편 edgar-financial-panel, 8편 business-report-panel, 9편 business-content-panel, 10편 notes-link-to-numbers, 11편 select-rows, 12편 compute-from-values) |
+| 발행 완료 | 13 편 (1편 what-is-dartlab, 2편 call-financial-statements, 3편 how-notebook-runs, 4편 pick-company-by-code, 5편 the-grid, 6편 dart-edgar-company, 7편 edgar-financial-panel, 8편 business-report-panel, 9편 business-content-panel, 10편 notes-link-to-numbers, 11편 select-rows, 12편 compute-from-values, 13편 table-to-sentence) |
 | 설계 완료 | 39 편 (panel, 실제 값, 사업보고서 본문, 직접 계산, 분석 엔진 중심으로 재정렬 2026-07-11) |
 | 채점 | pedagogy 78 · coverage 75 · skeptic 71 · seo 66 (인플레 없이) |
 | 승자 | pedagogy 안. 나머지 셋에서 살릴 아이디어를 접목 |
@@ -217,8 +217,9 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
 - [x] **12. 뽑은 숫자로 직접 계산한다** `compute-from-values` `B`
   select 결과를 파이썬으로 다뤄 영업이익률을 직접 구한다. 첫 데이터 가공.
   발행 완료 2026-07-12: `panel("IS")` 매출액 133.873조원과 영업이익 57.233조원으로 2026Q1 영업이익률 42.75%, 2025Q1 8.45%, 차이 34.30%p를 직접 계산하고 분모, 기간, 계산 불가, 투자 판단 한계를 닫았다.
-- [ ] **13. 표에서 문장으로 바꾸기** `table-to-sentence` `B`
+- [x] **13. 표에서 문장으로 바꾸기** `table-to-sentence` `B`
   직접 계산한 마진, 기간, 연결/별도 기준을 한 문장으로 쓴다. `trace` 는 독립 편이 아니라 19편 검산 문맥으로 미룬다.
+  발행 완료 2026-07-12: 2026Q1 손익계산서 기준 영업이익 57.233조원, 매출액 133.873조원, 영업이익률 42.75%를 기간, 표, 분자, 분모, 결과가 보이는 근거 문장으로 바꾸고 2025Q1 8.45%와의 차이를 34.30%p로 쓰는 비교 문장까지 닫았다.
 
 ### interpret
 

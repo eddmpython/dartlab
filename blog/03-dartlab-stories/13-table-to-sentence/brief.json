@@ -1,0 +1,342 @@
+{
+  "title": "재무제표 문장, 코드로 쓰기",
+  "titleContract": {
+    "workingTitle": "표에서 문장으로 바꾸기",
+    "selectedTitle": "재무제표 문장, 코드로 쓰기",
+    "hookQuestion": "재무제표에서 계산한 숫자를 초보자가 따라 확인할 수 있는 근거 문장으로 바꿀 수 있을까?",
+    "readerGap": "초보자는 42.75% 같은 결과를 바로 복사하지만 기간, 표, 분자, 분모, 한계를 문장에 남기지 못해 글이 흐려진다.",
+    "promise": "Company(\"005930\").panel(\"IS\")에서 2026Q1 매출액 133.873조원과 영업이익 57.233조원을 확인하고, 영업이익률 42.75%를 근거 문장으로 바꾸게 한다.",
+    "whySelected": "재무제표라는 검색어와 코드로 쓰기라는 즉시 행동이 짧고 바로 보인다.",
+    "candidates": [
+      {
+        "title": "재무제표 문장, 코드로 쓰기",
+        "hook": "검색자가 원하는 재무제표와 행동이 같이 보인다.",
+        "risk": "글쓰기 일반론이 되지 않게 실제 출력값과 문장 예시를 먼저 보여 줘야 한다."
+      },
+      {
+        "title": "공시 숫자, 코드로 쓰기",
+        "hook": "공시 숫자와 코드 행동이 함께 보인다.",
+        "risk": "재무제표라는 핵심 검색어가 빠진다."
+      },
+      {
+        "title": "재무제표 문장, 파이썬 쓰기",
+        "hook": "재무제표와 파이썬 행동이 직접 보인다.",
+        "risk": "selectedTitle보다 말맛이 덜 자연스럽다."
+      }
+    ],
+    "rejectedPatterns": [
+      "표에서 문장으로 바꾸기",
+      "재무제표 글쓰기 정리",
+      "공시 문장 작성법 총정리",
+      "dartlab 문장 생성 기능 소개",
+      "재무제표 숫자의 의미"
+    ]
+  },
+  "description": "dartlab panel(\"IS\") 출력에서 기간, 표, 분자, 분모, 결과를 뽑아 삼성전자 2026Q1 영업이익률 42.75%를 초보자가 다시 확인할 수 있는 근거 문장으로 바꾼다.",
+  "readerQuestion": "계산한 영업이익률을 주장처럼 던지지 않고, 기간과 표와 분모가 보이는 문장으로 쓸 수 있을까?",
+  "insight": {
+    "commonBelief": "재무제표 숫자를 알면 문장은 알아서 써진다고 생각한다.",
+    "twistFact": "좋은 재무 문장은 결과보다 확인 경로가 먼저 보인다.",
+    "whatToWatch": "기간, 표, 분자, 분모, 결과, 비교 단위, 판단 한계를 문장에 남긴다.",
+    "freshnessArgument": "2026-07-12 실행 기준 005930의 2026Q1 매출액 133.873조원, 영업이익 57.233조원, 영업이익률 42.75%를 사용했다.",
+    "evidenceRefs": [
+      "Company(\"005930\").market = KR",
+      "panel(\"IS\") 2026Q1 매출액 133.873조원",
+      "panel(\"IS\") 2026Q1 영업이익 57.233조원",
+      "2026Q1 영업이익률 42.75%",
+      "2025Q1 영업이익률 8.45%, 차이 34.30%p"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "panel 값으로 문장 재료를 만든다",
+      "purpose": "왜배우나",
+      "scene": "42.75%만 복사하지 않고 기간, 표, 분자, 분모, 결과를 한 줄로 묶는다.",
+      "keyNumbers": [
+        "133.873조원",
+        "57.233조원",
+        "42.75%"
+      ],
+      "causalBridge": "근거 칸이 차야 초보자가 다시 확인할 수 있는 문장이 된다."
+    },
+    {
+      "order": 2,
+      "heading": "42.75%를 근거 문장으로 쓴다",
+      "purpose": "직접해본다",
+      "scene": "문장 재료 다섯 칸을 이어 2026Q1 손익계산서 기준 문장을 만든다.",
+      "keyNumbers": [
+        "2026Q1",
+        "손익계산서",
+        "42.75%"
+      ],
+      "causalBridge": "결과 숫자가 아니라 재현 가능한 확인 경로를 문장에 남긴다."
+    },
+    {
+      "order": 3,
+      "heading": "34.30%p와 판단 한계를 붙인다",
+      "purpose": "오해방지",
+      "scene": "2025Q1 8.45%와 2026Q1 42.75% 차이를 34.30%p로 쓰고 투자 판단 한계를 닫는다.",
+      "keyNumbers": [
+        "8.45%",
+        "42.75%",
+        "34.30%p"
+      ],
+      "causalBridge": "다음 편의 질문 목록으로 넘어가기 전, 문장 하나가 결론으로 과장되지 않게 한다."
+    }
+  ],
+  "visuals": [
+    {
+      "actOrder": 1,
+      "kind": "bitmap diagram",
+      "title": "표 한 줄에서 문장 재료 다섯 칸으로 넘어가는 흐름",
+      "proves": "재무 문장은 결과값 하나가 아니라 기간, 표, 분자, 분모, 결과가 함께 있어야 함을 보여 준다.",
+      "seriesHint": "table row to evidence sentence parts",
+      "placement": "표 한 줄을 먼저 만든다 섹션의 재료 확인 설명 뒤",
+      "insertAfter": "기간이 빠지면 전년 동기와 직전 분기가 섞인다 문단 뒤",
+      "narrativeUse": "숫자만 복사하지 말고 문장 재료를 먼저 채우라는 행동을 고정한다."
+    },
+    {
+      "actOrder": 3,
+      "kind": "bitmap checklist",
+      "title": "재무 문장 체크리스트",
+      "proves": "좋은 문장에는 기간, 표, 분자, 분모, 결과, 한계가 들어간다.",
+      "seriesHint": "financial sentence checklist",
+      "placement": "한계를 마지막에 붙인다 섹션의 원천 링크 설명 뒤",
+      "insertAfter": "미국 공시는 SEC Search Filings와 EDGAR Full Text Search에서 확인한다 문단 뒤",
+      "narrativeUse": "문장 하나로 투자 판단까지 가지 않도록 마지막 확인 항목을 보여 준다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "inline",
+      "subject": "재무제표 표 한 줄이 기간, 표, 분자, 분모, 결과 다섯 칸으로 나뉘고 근거 문장으로 이어지는 교육용 bitmap 도식",
+      "query": "financial statement table row to evidence sentence diagram",
+      "keywords": [
+        "financial statement",
+        "evidence sentence",
+        "operating margin",
+        "table",
+        "DART"
+      ],
+      "placement": "표 한 줄을 먼저 만든다 섹션의 재료 확인 설명 뒤",
+      "narrativeUse": "문장 재료 다섯 칸을 독자가 눈으로 확인하게 한다."
+    },
+    {
+      "slot": "inline",
+      "subject": "재무 문장에 들어갈 기간, 표, 분자, 분모, 결과, 한계 체크리스트 교육용 bitmap 도식",
+      "query": "financial writing checklist evidence sentence operating margin",
+      "keywords": [
+        "financial writing",
+        "checklist",
+        "operating margin",
+        "evidence",
+        "sentence"
+      ],
+      "placement": "한계를 마지막에 붙인다 섹션의 원천 링크 설명 뒤",
+      "narrativeUse": "문장 마지막에 한계와 원천 확인을 붙이게 한다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": [
+      "재무제표 문장",
+      "재무제표 숫자 쓰기",
+      "영업이익률 문장",
+      "DART 공시 문장",
+      "재무제표 초보"
+    ],
+    "placementRule": "12편은 직접 선행편, 2편은 재무제표 열기, 5편은 기간, 9편은 사업 본문 연결, 7편은 EDGAR 경계로 연결한다.",
+    "links": [
+      {
+        "path": "/blog/compute-from-values",
+        "title": "재무제표 이익률, 코드 계산",
+        "reason": "13편은 12편에서 계산한 영업이익률을 문장으로 바꾸기 때문이다.",
+        "placement": "첫 섹션 첫 문단 뒤"
+      },
+      {
+        "path": "/blog/call-financial-statements",
+        "title": "재무제표, 파이썬 한 줄",
+        "reason": "손익계산서를 처음 여는 선행 글이다.",
+        "placement": "선행 글 연결 문장"
+      },
+      {
+        "path": "/blog/the-grid",
+        "title": "재무제표 기간, Y와 Q 조회",
+        "reason": "2026Q1과 2025Q1 기간 표기를 읽는 배경이다.",
+        "placement": "선행 글 연결 문장"
+      },
+      {
+        "path": "/blog/business-content-panel",
+        "title": "사업의 내용, 표로 읽기",
+        "reason": "계산 문장 뒤에 사업 본문과 연결해야 하는 한계를 설명한다.",
+        "placement": "첫 섹션 연결 문장"
+      },
+      {
+        "path": "/blog/edgar-financial-panel",
+        "title": "EDGAR 재무제표, 코드 실행",
+        "reason": "DART 예시와 EDGAR 원천 경계를 섞지 않도록 연결한다.",
+        "placement": "한계 섹션 또는 다음 편 연결"
+      }
+    ]
+  },
+  "honestyGuards": [
+    "근거 문장을 자동 투자 판단처럼 쓰지 않는다.",
+    "42.75%만 단독으로 쓰지 않고 기간, 표, 분자, 분모를 함께 둔다.",
+    "34.30%p를 34.30% 증가라고 쓰지 않는다.",
+    "DART 예시와 EDGAR 예시를 같은 기간 기준으로 단정하지 않는다.",
+    "문장 생성이라는 표현을 dartlab 자동 생성 기능처럼 보이게 쓰지 않는다."
+  ],
+  "evidenceMap": [
+    {
+      "claim": "005930은 dartlab Company에서 KR 회사로 열린다.",
+      "sourceType": "dartlab",
+      "period": "2026-07-12",
+      "sourceRef": "browser execution: Company(\"005930\").market",
+      "howUsed": "첫 코드셀과 DART 출발점 확인"
+    },
+    {
+      "claim": "panel(\"IS\")에서 2026Q1 매출액은 약 133.873조원이다.",
+      "sourceType": "DART",
+      "period": "2026Q1",
+      "sourceRef": "browser execution: Company(\"005930\").panel(\"IS\")",
+      "howUsed": "근거 문장의 분모"
+    },
+    {
+      "claim": "panel(\"IS\")에서 2026Q1 영업이익은 약 57.233조원이다.",
+      "sourceType": "DART",
+      "period": "2026Q1",
+      "sourceRef": "browser execution: Company(\"005930\").panel(\"IS\")",
+      "howUsed": "근거 문장의 분자"
+    },
+    {
+      "claim": "2026Q1 영업이익률은 약 42.75%다.",
+      "sourceType": "calculation",
+      "period": "2026Q1",
+      "sourceRef": "57.233조원 / 133.873조원 * 100",
+      "howUsed": "첫 근거 문장"
+    },
+    {
+      "claim": "2025Q1 영업이익률 8.45%에서 2026Q1 42.75%로 바뀌어 차이는 34.30%p다.",
+      "sourceType": "calculation",
+      "period": "2025Q1 to 2026Q1",
+      "sourceRef": "42.75 - 8.45",
+      "howUsed": "비교 문장과 퍼센트포인트 오해 방지"
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": 1,
+          "planner": "초안은 문장 쓰기 일반론으로 흐를 위험이 있었다.",
+          "evaluator": "실제 코드 출력과 42.75%, 8.45%, 34.30%p가 각 섹션 앞에 보여야 초보자가 따라온다고 평가했다.",
+          "skeptic": "문장 생성이라는 표현이 자동 분석 기능처럼 오해될 수 있고, 투자 결론으로 과장될 위험이 있다고 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 89,
+          "plannerRevision": "기간, 표, 분자, 분모, 결과 다섯 칸을 먼저 만들고 문장으로 바꾸는 구조로 고쳤다."
+        },
+        {
+          "round": 2,
+          "planner": "개선안은 표 한 줄, 재료 다섯 칸, 근거 문장, 비교 문장, 나쁜 문장 교정, 한계, 체크리스트 순서로 세웠다.",
+          "evaluator": "각 섹션에 코드 출력, 실제 숫자, 쉬운 설명, 오해 방지, 다음 편 연결이 있다.",
+          "skeptic": "34.30%p와 투자 판단 한계를 명시했고 자동 문장 생성 기능처럼 보이지 않게 손으로 쓰는 연습으로 닫았다고 봤다.",
+          "decision": "passed",
+          "evaluatorScore": 96,
+          "plannerRevision": "본문 도식 두 장과 다른 구도의 썸네일 배경을 기획 단계에서 생성하기로 했다."
+        }
+      ]
+    }
+  },
+  "sections": [
+    {
+      "order": 1,
+      "heading": "숫자만 복사하면 문장이 아니다",
+      "subtitle": "42.75%만 쓰면 독자가 같은 계산을 다시 확인할 수 없다.",
+      "visualAnchor": "Company(\"005930\")와 c.market 코드 출력이 기준이다.",
+      "explanation": "좋은 재무 문장은 결과보다 확인 경로가 먼저 보여야 한다고 설명한다.",
+      "example": "2026Q1 손익계산서 기준 문장 예시를 바로 보여 준다.",
+      "support": "12편 계산값을 이어받되 투자 판단으로 과장하지 않는 한계를 붙인다.",
+      "transition": "문장 재료를 잃지 않기 위해 다음 섹션에서 표 한 줄을 만든다.",
+      "evaluation": "독자가 왜 이 글을 읽어야 하는지 첫 문단에서 잡았는지 재평가했다."
+    },
+    {
+      "order": 2,
+      "heading": "표 한 줄을 먼저 만든다",
+      "subtitle": "기간, 표, 분자, 분모, 결과를 한 줄로 묶는다.",
+      "visualAnchor": "sentenceInputs 코드 출력과 table-to-sentence 도식이 기준이다.",
+      "explanation": "기간이나 분모가 빠지면 문장이 흐려진다고 설명한다.",
+      "example": "2026Q1 영업이익 57.233조원, 매출액 133.873조원, 영업이익률 42.75%를 보여 준다.",
+      "support": "숫자만 외우는 습관을 오해로 정리한다.",
+      "transition": "표 한 줄이 생겼으므로 다음에는 문장 재료 다섯 칸으로 나눈다.",
+      "evaluation": "실제 값과 도식이 같은 주장을 증명하는지 재평가했다."
+    },
+    {
+      "order": 3,
+      "heading": "문장 재료를 다섯 칸으로 나눈다",
+      "subtitle": "기간, 표, 분자, 분모, 결과가 빠지면 문장이 약해진다.",
+      "visualAnchor": "sentenceFields 코드 출력의 다섯 칸 표가 기준이다.",
+      "explanation": "sentenceFields 출력표에서 기간, 표, 분자, 분모, 결과 칸을 직접 보고 각 칸이 왜 필요한지 설명한다.",
+      "example": "기간 2026Q1, 표 손익계산서, 분자 영업이익 57.233조원, 분모 매출액 133.873조원을 보여 준다.",
+      "support": "이익률이 높다는 말은 기간과 분모가 없어 오해를 부르므로, 실제 문장에는 기간과 분모를 붙여야 한다.",
+      "transition": "다섯 칸이 찼으므로 다음에는 첫 근거 문장을 만든다.",
+      "evaluation": "추상 설명보다 출력 표가 먼저 보이는지 재평가했다."
+    },
+    {
+      "order": 4,
+      "heading": "첫 문장은 이렇게 쓴다",
+      "subtitle": "다섯 칸을 이어 붙이면 확인 가능한 문장이 된다.",
+      "visualAnchor": "sentenceDrafts 코드 출력의 근거문장이 기준이다.",
+      "explanation": "문장을 예쁘게 만들기보다 다시 확인할 수 있게 쓴다고 설명한다.",
+      "example": "2026Q1 손익계산서 기준 영업이익률 42.75% 문장을 보여 준다.",
+      "support": "설명이 먼저 나오고 근거가 숨는 글을 오해로 다룬다.",
+      "transition": "한 기간 문장을 만들었으므로 다음에는 비교 문장을 만든다.",
+      "evaluation": "문장 예시가 실제 코드 출력과 1대1로 이어지는지 재평가했다."
+    },
+    {
+      "order": 5,
+      "heading": "비교 문장은 기준을 붙인다",
+      "subtitle": "두 퍼센트 값의 차이는 퍼센트포인트로 쓴다.",
+      "visualAnchor": "comparison 코드 출력의 34.30%p 문장이 기준이다.",
+      "explanation": "비교 시작점과 비교 끝점을 함께 써야 한다고 설명한다.",
+      "example": "2025Q1 8.45%에서 2026Q1 42.75%로 바뀌어 차이는 34.30%p라고 쓴다.",
+      "support": "34.30% 증가라는 나쁜 표현을 오해로 정리한다.",
+      "transition": "비교 문장을 만들었으므로 다음에는 나쁜 문장을 바로 고친다.",
+      "evaluation": "퍼센트와 퍼센트포인트 오해를 실제 값으로 막는지 재평가했다."
+    },
+    {
+      "order": 6,
+      "heading": "나쁜 문장을 바로 고친다",
+      "subtitle": "좋은 문장은 꾸밈말보다 근거가 보인다.",
+      "visualAnchor": "badAndGood 코드 출력의 나쁜 문장과 고친 문장이 기준이다.",
+      "explanation": "근거가 없는 판단 문장과 단위가 틀린 문장을 고친다.",
+      "example": "삼성전자는 이익률이 좋다를 2026Q1 손익계산서 기준 문장으로 바꾼다.",
+      "support": "초보자가 짧고 강한 문장으로 도망가는 습관을 오해로 붙인다.",
+      "transition": "문장을 고쳤으므로 다음에는 한계를 붙인다.",
+      "evaluation": "고친 문장이 더 추상적이지 않고 더 확인 가능해졌는지 재평가했다."
+    },
+    {
+      "order": 7,
+      "heading": "한계를 마지막에 붙인다",
+      "subtitle": "근거 문장은 분석 시작점이지 투자 결론이 아니다.",
+      "visualAnchor": "DART와 SEC 원천 링크, 문장 체크리스트 도식이 기준이다.",
+      "explanation": "사업 본문, 주석, 여러 기간을 더 봐야 한다고 설명한다.",
+      "example": "브라우저에서 셀은 돌지만 회사 판단을 자동으로 해 주는 장치가 아니라고 밝힌다.",
+      "support": "자동 투자 판단처럼 읽히는 오해를 막는다.",
+      "transition": "한계를 붙였으므로 마지막에는 체크리스트로 빠진 말을 확인한다.",
+      "evaluation": "브라우저 실행 경계와 오독 방지가 같이 있는지 재평가했다."
+    },
+    {
+      "order": 8,
+      "heading": "문장 체크리스트를 코드로 확인한다",
+      "subtitle": "기간, 표, 영업이익, 매출액, 42.75%가 문장에 있는지 본다.",
+      "visualAnchor": "sentenceCheck 코드 출력의 True 값들이 기준이다.",
+      "explanation": "체크리스트는 빠뜨린 근거를 찾는 장치라고 설명한다.",
+      "example": "2026Q1, 손익계산서, 영업이익, 매출액, 42.75% 포함 여부를 보여 준다.",
+      "support": "성장 판단어는 사업 본문과 여러 기간을 더 본 뒤 써야 한다는 한계를 붙인다.",
+      "transition": "체크를 통과하면 다음 편에서 질문 목록으로 넘어간다.",
+      "evaluation": "다음 편 행동으로 자연스럽게 이어지는지 재평가했다."
+    }
+  ]
+}
