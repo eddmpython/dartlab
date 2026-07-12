@@ -1,0 +1,396 @@
+{
+  "passed": true,
+  "title": "AI 클러스터는 왜 빛을 칩 옆으로 끌어오나",
+  "titleContract": {
+    "selectedTitle": "AI 클러스터는 왜 빛을 칩 옆으로 끌어오나",
+    "hookQuestion": "GPU와 HBM이 빨라질수록 왜 다음 병목이 칩 밖 전기 배선과 광 I/O로 이동하는지 묻는다.",
+    "readerGap": "독자는 CPO를 더 빠른 광트랜시버로 보기 쉽지만, 글은 전기와 광의 경계가 스위치 ASIC 쪽으로 이동하는 공정 변화로 설명한다.",
+    "promise": "아주 쉽게 전기 배선 손실과 빛의 역할을 설명하고, 깊게는 DART와 EDGAR 전사 숫자로 ASIC, 광부품, 조립, 시스템의 회계 구조 차이를 연결한다.",
+    "whySelected": "제목은 빛을 칩 옆으로 당기는 장면을 만들고, 본문은 CPO와 실리콘 포토닉스가 왜 AI 클러스터 병목의 다음 칸인지 공정 지도로 갚는다.",
+    "candidates": [
+      {
+        "title": "AI 클러스터는 왜 빛을 칩 옆으로 끌어오나",
+        "hook": "빛을 칩 옆으로 옮긴다는 낯선 장면이 CPO의 핵심을 직관적으로 보여준다.",
+        "risk": "본문에서 CPO와 실리콘 포토닉스의 차이를 명확히 설명하지 않으면 제목이 시적인 문장으로만 보일 수 있다."
+      },
+      {
+        "title": "전기 배선이 버티지 못할 때, 광엔진은 어디로 가나",
+        "hook": "전기 배선의 한계를 직접 드러내 기술 원인을 선명하게 만든다.",
+        "risk": "제목이 기술자용처럼 보여 초보 독자의 진입성이 떨어질 수 있다."
+      },
+      {
+        "title": "CPO, 광트랜시버가 아니라 패키징의 변화다",
+        "hook": "오해를 바로 찌르는 제목이다.",
+        "risk": "CPO를 이미 아는 독자에게는 좋지만 일반 독자에게는 첫 클릭 장면이 약하다."
+      }
+    ],
+    "rejectedPatterns": [
+      "CPO 관련주 총정리",
+      "실리콘 포토닉스 수혜주 분석",
+      "AI 광통신 대장주",
+      "광트랜시버 투자 포인트"
+    ]
+  },
+  "description": "CPO와 실리콘 포토닉스를 전기 배선 한계, 광엔진, 외부 레이저, 광섬유 조립, 시스템 검증으로 나누고 DART와 EDGAR 전사 숫자로 재무 착지를 읽는다.",
+  "readerQuestion": "AI 클러스터가 커질수록 왜 전기 신호를 더 멀리 보내는 방식이 한계에 부딪히고, CPO와 실리콘 포토닉스가 어떤 회사의 공정 칸과 손익으로 이어지는가.",
+  "insight": {
+    "commonBelief": "CPO는 광트랜시버가 더 빨라지는 기술이고, 광부품 회사 전체가 같은 방향으로 수혜를 받는다고 보기 쉽다.",
+    "twistFact": "CPO의 핵심은 광엔진을 스위치 ASIC 가까이 당겨 전기 구간을 줄이는 배치 변화이며, 이 변화는 ASIC 설계사, 광엔진, 레이저, fiber attach, 조립, 시스템 검증의 손익을 서로 다르게 만든다.",
+    "whatToWatch": "CPO 전용 매출 분리, volume production, 200G/lane과 1.6T 광엔진 로드맵, 외부 레이저 서비스성, 매출총이익률, 연구개발비, 재고와 고객 인증 신호를 함께 봐야 한다.",
+    "freshnessArgument": "2025년 Broadcom은 102.4Tbps CPO 스위치와 70% 광 인터커넥트 전력 절감을 발표했고, Marvell은 1.6T silicon photonics light engine을 공개했다. 2026년 오이솔루션은 ELSFP 샘플링 일정을 제시해 외부 레이저 흐름을 보여준다.",
+    "evidenceRefs": [
+      "Broadcom Tomahawk 6 Davisson CPO 발표",
+      "Broadcom 3세대 CPO 발표",
+      "Marvell 1.6T silicon photonics light engine 발표",
+      "Marvell custom AI accelerator용 CPO 아키텍처 발표",
+      "Coherent 2026 OFC investor presentation",
+      "오이솔루션 ELSFP 발표",
+      "EDGAR와 DART annual panel"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "전기 배선은 왜 AI 클러스터의 다음 병목인가",
+      "purpose": "초보 독자에게 칩 밖 전기 신호의 손실과 보정 비용을 설명한다.",
+      "scene": "GPU와 HBM은 가까워졌지만, 서버와 랙 사이 데이터는 여전히 전기 경로를 지나고 그 거리가 전력과 열로 돌아오는 장면을 연다.",
+      "causalBridge": "전기 구간이 부담이 되면 광 변환 위치가 ASIC 쪽으로 이동한다."
+    },
+    {
+      "order": 2,
+      "heading": "CPO는 광모듈의 위치를 바꾼다",
+      "purpose": "CPO가 더 빠른 모듈 하나가 아니라 배치와 패키징 변화임을 분리한다.",
+      "scene": "스위치 앞면 pluggable optics와 ASIC 옆 CPO를 비교한다.",
+      "causalBridge": "전기 경로는 줄지만 유지보수, 열, 수율, 패키지 검증 난도가 오른다."
+    },
+    {
+      "order": 3,
+      "heading": "공정 지도로 보면 회사가 달라진다",
+      "purpose": "스위치 ASIC, 패키지, 광엔진, 레이저, 조립, 시스템 검증을 나눠 대표 상장사를 배치한다.",
+      "scene": "Broadcom, Marvell, Cisco, Coherent, Lumentum, Corning, Fabrinet, 오이솔루션이 서로 다른 칸에 들어간다.",
+      "causalBridge": "같은 CPO 흐름에서도 가격결정력과 수익성은 공정 칸에 따라 다르게 남는다."
+    },
+    {
+      "order": 4,
+      "heading": "실리콘 포토닉스는 빛을 칩 위에서 다룬다",
+      "purpose": "실리콘 포토닉스와 CPO의 차이를 설명한다.",
+      "scene": "PIC, modulator, detector, fiber array, external laser source가 광엔진 안팎에서 만나는 장면을 보여준다.",
+      "causalBridge": "실리콘 포토닉스는 광 I/O의 제조 방식이고 CPO는 광엔진의 위치 전략이다."
+    },
+    {
+      "order": 5,
+      "heading": "레이저는 왜 밖으로 빠지나",
+      "purpose": "External laser source와 ELSFP의 의미를 서비스성과 열관리 관점에서 설명한다.",
+      "scene": "열에 민감한 레이저를 hot ASIC에서 분리하고 switch faceplate나 외부 모듈에서 관리하는 구조를 소개한다.",
+      "causalBridge": "CPO가 모든 부품을 패키지 안으로 넣는 것이 아니라 전기 경로와 서비스성을 동시에 조정하는 구조임을 보여준다."
+    },
+    {
+      "order": 6,
+      "heading": "DART와 EDGAR 숫자로 착지한다",
+      "purpose": "기술 서사가 전사 손익에서 어떻게 다르게 보이는지 검산한다.",
+      "scene": "Broadcom, Marvell, Cisco, Arista, Coherent, Lumentum, Fabrinet, Corning, Aehr, 오이솔루션의 전사 매출과 마진을 비교한다.",
+      "causalBridge": "CPO 전용 매출이 없을 때는 전사 숫자를 공정 위치와 함께 읽어야 한다."
+    },
+    {
+      "order": 7,
+      "heading": "기술 성숙도와 오해를 분리한다",
+      "purpose": "pluggable, LPO, near package optics, CPO, optical I/O를 같은 단계로 묶는 오류를 막는다.",
+      "scene": "성숙도 사다리와 오해 방지 문단으로 마무리한다.",
+      "causalBridge": "기술 단계가 다르면 고객 검증과 손익 반영 시점도 다르다."
+    },
+    {
+      "order": 8,
+      "heading": "다음 공시에서 봐야 할 신호",
+      "purpose": "독자가 다음 분기와 연간 공시에서 다시 확인할 질문을 얻는다.",
+      "scene": "CPO 매출 분리, gross margin, 연구개발비, 외부 레이저, 표준과 생태계를 체크한다.",
+      "causalBridge": "기술 발표는 시작이고 투자 판단은 공시와 손익으로 끝난다."
+    }
+  ],
+  "sections": [
+    {
+      "heading": "1. 전기 배선은 왜 멀리 가기 어렵나",
+      "subtitle": "AI 클러스터의 첫 병목은 계산이 아니라 칩 밖으로 나가는 신호 거리다.",
+      "visualAnchor": "12-electric-vs-optical-path.svg 도식과 Broadcom 102.4Tbps 발표 숫자를 함께 보여준다.",
+      "explanation": "초보자는 긴 복도 끝까지 말소리를 보내는 비유로 전기 신호 손실을 이해한다. 실제 근거는 Broadcom의 102.4Tbps CPO 발표와 optical interconnect 전력 70% 절감 수치다.",
+      "example": "Broadcom은 2025년 Tomahawk 6 Davisson에서 102.4Tbps Ethernet switch와 CPO 전력 절감 방향을 발표했다.",
+      "support": "주의할 점은 이 숫자가 Broadcom 발표 기준이고, 모든 고객 환경의 확정 전력 절감률은 아니라는 것이다.",
+      "transition": "전기 경로가 왜 부담인지 이해했으니 다음 섹션에서는 광모듈의 위치가 어떻게 바뀌는지 본다.",
+      "evaluation": "독자가 전기 배선 길이, 보정 전력, 열, 광 변환 위치의 관계를 말할 수 있으면 통과다.",
+      "mustCover": ["전기 신호 손실", "retimer와 DSP 전력", "Broadcom 102.4Tbps CPO 발표", "전기 경로 단축 SVG"]
+    },
+    {
+      "heading": "2. CPO는 광모듈의 위치를 바꾼다",
+      "subtitle": "CPO는 더 빠른 모듈이 아니라 광엔진을 ASIC 옆으로 당기는 배치 변화다.",
+      "visualAnchor": "12-pluggable-vs-cpo.svg 비교 도식으로 pluggable optics와 CPO의 전기 경로와 교체성을 비교한다.",
+      "explanation": "초보자는 앞면에 꽂는 부품과 칩 옆에 붙는 부품의 차이로 이해한다. 표와 도식은 교체성, 전기 경로, 열과 수율 부담을 나란히 보여준다.",
+      "example": "Marvell은 1.6T silicon photonics light engine에서 200Gbps/lane과 5pJ/bit 미만 전력 지표를 제시했다.",
+      "support": "오해하면 안 되는 부분은 CPO가 플러그형 모듈을 즉시 모두 대체한다는 뜻이 아니라는 점이다.",
+      "transition": "광모듈의 위치가 바뀌면 다음에는 관련 회사를 한 줄 목록이 아니라 공정 칸으로 나눠 봐야 한다.",
+      "evaluation": "독자가 CPO의 장점과 서비스성 부담을 동시에 설명할 수 있으면 통과다.",
+      "mustCover": ["pluggable optics와 CPO 비교", "서비스성 tradeoff", "Marvell 1.6T 광엔진", "Broadcom 3세대 CPO"]
+    },
+    {
+      "heading": "3. 공정 지도로 보면 회사가 달라진다",
+      "subtitle": "상장사를 나열하지 않고 ASIC, 패키지, 광엔진, 레이저, 조립, 시스템 검증으로 나눈다.",
+      "visualAnchor": "12-company-evidence-map.svg와 공정/층위 표를 같이 배치해 대표 회사와 공시 근거를 연결한다.",
+      "explanation": "초보자는 표의 첫 열인 공정/층위를 따라가면 된다. 실제 회사는 Broadcom, Marvell, Cisco, Coherent, Lumentum, Corning, Fabrinet, 오이솔루션으로 나뉜다.",
+      "example": "EDGAR 공시와 공식 자료 기준 Broadcom은 스위치 ASIC과 CPO 플랫폼, Coherent는 레이저와 PIC, Fabrinet은 광모듈 조립과 제조 서비스 칸에 배치된다.",
+      "support": "주의할 점은 같은 CPO 흐름 안에서도 모든 광부품 회사가 같은 가격결정력을 갖지 않는다는 것이다.",
+      "transition": "공정 칸을 나눴으니 다음에는 그중 광엔진의 핵심인 실리콘 포토닉스를 따로 풀어야 한다.",
+      "evaluation": "독자가 대표 회사가 왜 그 칸의 핵심인지 공시 근거와 함께 말할 수 있으면 통과다.",
+      "mustCover": ["공정/층위 표", "대표 상장사", "공시 근거", "왜 회사가 핵심인지"]
+    },
+    {
+      "heading": "4. 실리콘 포토닉스는 빛을 칩 위에서 다룬다",
+      "subtitle": "실리콘 포토닉스는 CPO와 같은 말이 아니라 광 I/O를 만드는 칩 기술이다.",
+      "visualAnchor": "12-photonic-engine-lab.webp 사진과 Coherent OFC 자료의 PIC, FAU, external laser source 지도를 연결한다.",
+      "explanation": "초보자는 빛의 도로와 신호등을 실리콘 위에 만든다는 쉬운 풀이에서 시작한다. 실제 사례는 Marvell의 광엔진 발표와 Coherent의 CPO 부품 지도다.",
+      "example": "Coherent는 OFC 2026 투자자 자료에서 InP CW laser, silicon photonics PIC, FAU, external laser source를 CPO 구성요소로 제시했다.",
+      "support": "한계는 실리콘이 레이저를 효율적으로 만들기 어렵기 때문에 외부 광원 논의가 계속 남는다는 점이다.",
+      "transition": "실리콘 포토닉스와 레이저가 같은 부품이 아니라면 다음 섹션에서 레이저가 왜 밖으로 빠지는지 봐야 한다.",
+      "evaluation": "독자가 CPO와 실리콘 포토닉스를 구분하고 PIC와 레이저의 역할 차이를 설명하면 통과다.",
+      "mustCover": ["PIC", "external laser source", "Coherent OFC 자료", "실리콘 포토닉스와 CPO 차이"]
+    },
+    {
+      "heading": "5. 레이저는 왜 밖으로 빠지나",
+      "subtitle": "광엔진은 칩 옆으로 가도 열에 민감한 레이저는 서비스성을 위해 분리될 수 있다.",
+      "visualAnchor": "12-external-laser-fiber-lab.webp 사진과 오이솔루션 ELSFP 발표를 연결한다.",
+      "explanation": "초보자는 뜨거운 엔진 옆에 민감한 전구를 붙이지 않는다고 생각하면 된다. 실제 사례는 오이솔루션의 23dBm ELSFP 샘플링 발표다.",
+      "example": "오이솔루션은 2026년 ELSFP 발표에서 external pluggable format과 hot ASIC에서 레이저를 분리하는 장점을 설명했다.",
+      "support": "오해하면 안 되는 부분은 ELSFP 발표가 곧바로 회사의 CPO 전용 매출을 의미하지 않는다는 점이다.",
+      "transition": "레이저와 접속까지 나눠 보면 기술 기대가 회사 손익에 어떻게 다르게 남는지 확인해야 한다.",
+      "evaluation": "독자가 외부 레이저가 전기 경로 절감과 서비스성 사이의 절충이라는 점을 설명하면 통과다.",
+      "mustCover": ["ELSFP", "오이솔루션", "열과 교체성", "fiber attach"]
+    },
+    {
+      "heading": "6. DART와 EDGAR 숫자로 착지하면 다른 그림이 나온다",
+      "subtitle": "CPO 전용 매출이 없을 때는 전사 숫자를 공정 위치와 함께 읽어야 한다.",
+      "visualAnchor": "12-financial-landing.svg와 본문 재무 표로 EDGAR와 DART 전사 숫자를 비교한다.",
+      "explanation": "초보자는 표의 매출총이익률과 영업이익률을 먼저 보면 된다. 실제 숫자는 Broadcom 2025 영업이익률 39.9%, Arista 42.8%, 오이솔루션 2025 영업이익률 -27.9%다.",
+      "example": "Broadcom과 Arista는 ASIC과 시스템 플랫폼 쪽 전사 마진이 높지만, Coherent, Lumentum, Fabrinet, 오이솔루션은 광부품과 조립의 다른 회계 구조를 보인다.",
+      "support": "가장 중요한 주의는 이 표가 CPO 전용 손익표가 아니라 회사 전체 손익표라는 점이다.",
+      "transition": "재무 착지를 봤으니 마지막으로 기술 성숙도와 과장되기 쉬운 오해를 정리한다.",
+      "evaluation": "독자가 기술 수혜와 전사 손익을 분리해서 말할 수 있으면 통과다.",
+      "mustCover": ["전사 숫자 한계", "Broadcom", "Marvell", "Cisco", "Arista", "Coherent", "Lumentum", "Fabrinet", "오이솔루션"]
+    },
+    {
+      "heading": "7. 기술 성숙도와 오해",
+      "subtitle": "pluggable, LPO, near package optics, CPO, optical I/O는 채택 단계가 다르다.",
+      "visualAnchor": "12-maturity-ladder.svg 사다리 도식으로 기술 성숙도와 검증 난도를 나눈다.",
+      "explanation": "초보자는 왼쪽일수록 교체가 쉽고 오른쪽일수록 전기 경로가 짧지만 검증이 어렵다고 보면 된다. 실제 본문은 pluggable, LPO, NPO, CPO, optical I/O 순서로 설명한다.",
+      "example": "현재 데이터센터에는 800G와 1.6T pluggable optics가 확산되는 한편, CPO는 패키지와 서비스성 검증이 더 필요한 단계로 다룬다.",
+      "support": "오해하면 안 되는 부분은 CPO가 모든 플러그형 광모듈을 즉시 대체하거나 모든 광부품 회사에 같은 수익을 준다는 생각이다.",
+      "transition": "기술 단계와 오해를 정리했으니 다음 공시에서 어떤 신호를 확인할지 질문으로 닫는다.",
+      "evaluation": "독자가 기술 단계별 장점, 부담, 검증 시점을 구분하면 통과다.",
+      "mustCover": ["pluggable", "LPO", "near package optics", "CPO", "optical I/O", "오해"]
+    },
+    {
+      "heading": "8. 다음 공시에서 봐야 할 신호",
+      "subtitle": "기술 발표는 시작이고 투자 판단은 다음 공시의 매출, 마진, 고객 검증으로 닫아야 한다.",
+      "visualAnchor": "본문 검증표의 python 코드와 재무 표를 다시 참조해 독자가 직접 dartlab로 확인하는 장면을 만든다.",
+      "explanation": "초보자는 다음 분기 공시에서 CPO 매출 분리, gross margin, 연구개발비, 고객 인증, external laser source 표현을 찾으면 된다.",
+      "example": "Broadcom, Marvell, Cisco, Arista는 EDGAR에서 전사 숫자와 세그먼트를 보고, 오이솔루션은 DART에서 제품 설명과 매출총이익률 변화를 확인한다.",
+      "support": "주의할 점은 기술 발표가 많아져도 고객 인증과 volume production이 손익에 내려오기 전까지는 관망해야 한다는 것이다.",
+      "transition": "마지막 렌즈에서는 HBM, CPO, 냉각을 같은 AI 인프라 안의 서로 다른 병목으로 다시 묶는다.",
+      "evaluation": "독자가 다음 공시에서 확인할 질문 세 가지를 남기면 통과다.",
+      "mustCover": ["CPO 매출 분리", "gross margin", "외부 레이저", "표준과 생태계", "HBM과 냉각 연결"]
+    }
+  ],
+  "visuals": [
+    {
+      "kind": "webp",
+      "title": "CPO 스위치 패키지와 광섬유 리본",
+      "proves": "광엔진이 ASIC 가까이 들어가고 전기 경로를 줄인다는 주제를 첫 장면으로 만든다.",
+      "placement": "프롤로그에서 CPO와 실리콘 포토닉스를 처음 정의한 바로 뒤에 배치한다.",
+      "insertAfter": "CPO와 실리콘 포토닉스가 등장하는 문단 뒤",
+      "narrativeUse": "추상적인 광 I/O를 실제 스위치 패키지 장면으로 바꾼다."
+    },
+    {
+      "kind": "svg",
+      "title": "전기 경로와 광 경로 비교",
+      "proves": "CPO가 속도 장식이 아니라 전기 구간 단축 구조임을 보여준다.",
+      "placement": "전기 배선 한계 섹션에서 Broadcom 102.4Tbps 발표를 설명한 직후에 배치한다.",
+      "insertAfter": "Broadcom 102.4Tbps 발표 설명 뒤",
+      "narrativeUse": "전기 손실, 보정, 광 변환 위치의 인과관계를 한 번에 보여준다."
+    },
+    {
+      "kind": "svg",
+      "title": "pluggable optics와 CPO 비교",
+      "proves": "교체성과 전기 경로 단축 사이의 tradeoff를 설명한다.",
+      "placement": "CPO 위치 변화 섹션에서 pluggable optics와 CPO의 차이를 설명한 뒤에 배치한다.",
+      "insertAfter": "Marvell 1.6T 광엔진 설명 뒤",
+      "narrativeUse": "CPO가 단순 업그레이드가 아니라 배치 변화임을 보여준다."
+    },
+    {
+      "kind": "svg",
+      "title": "공정과 대표 회사, 공시 근거 지도",
+      "proves": "상장사를 역할별로 나누고 DART와 EDGAR 근거를 붙인다.",
+      "placement": "공정 지도 섹션의 공정/층위 표 앞에 배치해 독자가 회사 칸을 먼저 보게 한다.",
+      "insertAfter": "회사 목록이 한 줄에 섞이면 오독이 생긴다는 문단 뒤",
+      "narrativeUse": "수혜주 나열을 공정 네트워크 해석으로 바꾼다."
+    },
+    {
+      "kind": "webp",
+      "title": "실리콘 포토닉스 광엔진",
+      "proves": "PIC, fiber array, 전기 인터페이스가 한 모듈 안에서 만나는 구조를 보여준다.",
+      "placement": "실리콘 포토닉스 섹션에서 PIC와 fiber array를 설명하는 문단 뒤에 배치한다.",
+      "insertAfter": "실리콘 포토닉스가 무엇인지 설명한 뒤",
+      "narrativeUse": "빛을 칩 위에서 다룬다는 문장을 시각화한다."
+    },
+    {
+      "kind": "webp",
+      "title": "외부 레이저와 광섬유 접속 실험실",
+      "proves": "CPO가 모든 광부품을 패키지 안으로 넣는 구조가 아니라 외부 광원과 접속 설계도 포함함을 보여준다.",
+      "placement": "레이저와 ELSFP 섹션에서 오이솔루션 외부 레이저 발표를 설명한 뒤에 배치한다.",
+      "insertAfter": "오이솔루션 ELSFP 설명 뒤",
+      "narrativeUse": "서비스성과 열관리 이슈를 실제 장비 감각으로 바꾼다."
+    },
+    {
+      "kind": "svg",
+      "title": "DART와 EDGAR 숫자 착지표",
+      "proves": "ASIC, 시스템, 광부품, 조립의 전사 손익이 다르게 남는다는 점을 보여준다.",
+      "placement": "DART와 EDGAR 숫자 섹션에서 전사 숫자 한계를 설명한 뒤에 배치한다.",
+      "insertAfter": "전사 숫자 한계 설명 뒤",
+      "narrativeUse": "기술 이야기를 손익 구조로 닫는다."
+    },
+    {
+      "kind": "svg",
+      "title": "기술 성숙도 사다리",
+      "proves": "pluggable, LPO, near package optics, CPO, optical I/O가 같은 단계가 아님을 보여준다.",
+      "placement": "기술 성숙도와 오해 섹션의 첫 문단 뒤에 배치해 단계 차이를 먼저 잡는다.",
+      "insertAfter": "성숙도는 한 줄로 말하기 어렵다는 문단 뒤",
+      "narrativeUse": "오해 방지와 다음 공시 체크리스트로 넘어가는 다리 역할을 한다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "slot": "hero",
+      "subject": "CPO 스위치 ASIC과 짧은 광섬유 리본이 보이는 기술 실험실",
+      "query": "co packaged optics switch ASIC fiber ribbon silicon photonics lab no text no logos",
+      "keywords": ["CPO", "switch ASIC", "fiber ribbon", "silicon photonics"],
+      "placement": "프롤로그와 OG 썸네일에서 CPO 스위치 패키지를 첫 시각 신호로 사용한다.",
+      "narrativeUse": "빛이 칩 옆으로 이동한다는 제목의 장면을 만든다."
+    },
+    {
+      "slot": "inline-photo",
+      "subject": "실리콘 포토닉스 광엔진과 fiber array",
+      "query": "silicon photonics light engine PIC fiber array lab no text no logos",
+      "keywords": ["silicon photonics", "light engine", "PIC", "fiber array"],
+      "placement": "실리콘 포토닉스 섹션 중간에서 PIC와 fiber array 설명을 보강한다.",
+      "narrativeUse": "빛을 칩 위에서 다루는 기술을 실제 부품 감각으로 보여준다."
+    },
+    {
+      "slot": "inline-photo",
+      "subject": "외부 레이저 소스와 광섬유 접속 검증 랙",
+      "query": "external laser source ELSFP fiber connector AI switch validation lab no text no logos",
+      "keywords": ["external laser source", "ELSFP", "fiber connector", "AI switch"],
+      "placement": "레이저와 ELSFP 섹션 중간에서 외부 광원과 서비스성 설명을 보강한다.",
+      "narrativeUse": "CPO에서 레이저와 서비스성이 왜 따로 논의되는지 보여준다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": [
+      "HBM 패키징 테스트 기술이야기",
+      "반도체 냉각 네트워크 기술이야기",
+      "모래에서 반도체까지 기술이야기",
+      "AI 전력난 변압기 기업이야기"
+    ],
+    "placementRule": "HBM은 메모리 병목, 냉각은 열 병목, 이번 글은 네트워크 전기 I/O 병목으로 분리해 내부 링크를 연결한다.",
+    "links": [
+      {
+        "path": "/blog/hbm-stack-packaging-test",
+        "title": "HBM은 왜 쌓을까",
+        "reason": "메모리 병목과 칩 가까이 붙이는 설계 방향을 연결한다.",
+        "placement": "프롤로그에서 HBM이 메모리 병목을 다뤘다는 비교 문단에 배치한다."
+      },
+      {
+        "path": "/blog/semiconductor-cooling-network",
+        "title": "AI 칩의 다음 병목은 열이다",
+        "reason": "네트워크 I/O와 열 병목이 같은 AI 인프라 안에서 이어짐을 보여준다.",
+        "placement": "프롤로그와 마지막 렌즈에서 CPO와 냉각을 서로 다른 AI 인프라 병목으로 묶을 때 배치한다."
+      },
+      {
+        "path": "/blog/sand-to-semiconductor",
+        "title": "모래가 반도체가 되기까지",
+        "reason": "CPO를 공정 지도 변화로 읽는 배경을 제공한다.",
+        "placement": "CPO 배치 변화 설명 뒤에 공정 지도 방식의 배경 링크로 배치한다."
+      }
+    ]
+  },
+  "honestyGuards": [
+    "CPO 전용 매출이 없는 회사의 전사 매출과 마진을 CPO 실적으로 쓰지 않는다.",
+    "CPO와 실리콘 포토닉스를 같은 말로 쓰지 않는다.",
+    "pluggable optics, LPO, near package optics, CPO, optical I/O를 같은 성숙 단계로 묶지 않는다.",
+    "한국 상장사를 국내 CPO 대표주처럼 단정하지 않고 주변부와 보조축으로 표현한다.",
+    "광부품 회사의 기술 발표를 곧바로 수익성 개선으로 연결하지 않고 gross margin과 연구개발비, 수율 부담을 함께 본다."
+  ],
+  "evidenceMap": [
+    {
+      "sourceType": "OFFICIAL",
+      "sourceRef": "Broadcom Tomahawk 6 Davisson CPO 발표",
+      "claim": "Broadcom은 2025년에 102.4Tbps CPO Ethernet switch와 optical interconnect 전력 70% 절감을 발표했다."
+    },
+    {
+      "sourceType": "OFFICIAL",
+      "sourceRef": "Broadcom 3세대 CPO 발표",
+      "claim": "Broadcom은 200G/lane과 100G/lane 볼륨 생산, 생태계 협력을 CPO 로드맵으로 제시했다."
+    },
+    {
+      "sourceType": "OFFICIAL",
+      "sourceRef": "Marvell 1.6T silicon photonics light engine 발표",
+      "claim": "Marvell은 200Gbps/lane 기반 1.6T light engine과 5pJ/bit 미만 전력 지표를 제시했다."
+    },
+    {
+      "sourceType": "OFFICIAL",
+      "sourceRef": "오이솔루션 ELSFP 발표",
+      "claim": "오이솔루션은 external pluggable format과 hot ASIC에서 레이저를 분리하는 ELSFP 구조를 설명했다."
+    },
+    {
+      "sourceType": "EDGAR",
+      "sourceRef": "Broadcom, Marvell, Cisco, Arista, Coherent, Lumentum, Fabrinet, Corning, Aehr annual panels",
+      "claim": "CPO 거래망의 각 칸은 전사 매출과 마진 구조가 서로 다르게 나타난다."
+    },
+    {
+      "sourceType": "DART",
+      "sourceRef": "오이솔루션 annual panel",
+      "claim": "한국 광트랜시버 보조축은 기술 로드맵과 전사 손익을 분리해 읽어야 한다."
+    },
+    {
+      "sourceType": "INTERNAL-BLOG",
+      "sourceRef": "/blog/hbm-stack-packaging-test, /blog/semiconductor-cooling-network",
+      "claim": "HBM, CPO, 냉각은 같은 AI 인프라 안의 서로 다른 병목이다."
+    }
+  ],
+  "visualPolicy": "본문 이해에 필요한 실사형 WebP 3장과 SVG 5장을 사용한다. WebP는 CPO 스위치 패키지, 실리콘 포토닉스 광엔진, 외부 레이저와 광섬유 접속 장면을 맡고, SVG는 전기 경로, 배치 비교, 공정 지도, 재무 착지, 성숙도 사다리를 맡는다.",
+  "reviewGate": {
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "planner": "초안은 CPO 관련 상장사와 광트랜시버 수혜 구조를 중심으로 잡았다.",
+          "evaluator": "수혜주 목록으로 흐르면 기술이야기 기준에서 얕고, CPO와 실리콘 포토닉스를 혼용할 위험이 있다.",
+          "skeptic": "대부분 회사가 CPO 매출을 별도 공시하지 않으므로 전사 숫자를 CPO 실적으로 읽으면 과장이다. 한국 상장사는 직접 CPO보다 주변부가 많다.",
+          "decision": "revise",
+          "evaluatorScore": 84,
+          "plannerRevision": "전기 I/O 손실을 출발점으로 두고, 스위치 ASIC, 광엔진, 외부 레이저, 조립, 시스템 검증의 공정 지도로 재구성한다."
+        },
+        {
+          "planner": "개선안은 CPO를 광모듈 위치 변화로 설명하고, 실리콘 포토닉스와 외부 레이저를 분리한 뒤 DART와 EDGAR 전사 손익으로 착지했다.",
+          "evaluator": "초보자는 전기 배선이 왜 병목인지 이해하고, 숙련 독자는 공정 칸과 회사별 숫자를 검산할 수 있다.",
+          "skeptic": "pluggable, LPO, near package optics, CPO, optical I/O의 성숙도 차이와 서비스성 리스크를 명확히 넣어야 한다.",
+          "decision": "revise",
+          "evaluatorScore": 91,
+          "plannerRevision": "기술 성숙도 사다리와 오해 방지 섹션을 추가하고, ELSFP와 external laser source를 서비스성과 열관리 관점에서 설명한다."
+        },
+        {
+          "planner": "최종안은 HBM, CPO, 냉각을 각각 메모리, 네트워크 I/O, 열 병목으로 분리하고 공식 발표와 공시 숫자를 함께 배치했다.",
+          "evaluator": "기술 설명, 공정 지도, 재무 착지, 오해 방지가 모두 들어갔고 기존 11개 기술이야기와 중복되지 않는다.",
+          "skeptic": "CPO 전용 매출이 아니라 전사 숫자라는 단서가 본문 표와 결론에 반복되어 과장을 제어한다.",
+          "decision": "pass",
+          "evaluatorScore": 96,
+          "plannerRevision": "검증표와 공시 링크를 추가해 독자가 dartlab과 공식 자료로 재현할 수 있게 닫는다."
+        }
+      ]
+    }
+  }
+}
