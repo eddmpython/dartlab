@@ -109,3 +109,22 @@
 ### 판정 + NEXT
 - **P4 봉인 해제**: R1 실측 해소 + fork 실동작 + GATE-B 가 CI 로 보호. 04-prd·03-risk 갱신.
 - **라이브 flip 은 scoped 후속**(best-product): (a) fork 소비자(병렬 scan 등) (b) 전 노트북 페이지 COEP 서브리소스(web-llm·transformers·차트) 검증 (c) credentialless 게이트 feature-detect(Firefox/Safari Tier-1 유지) (d) COI kill-switch. 소비자 없는 격리 강제는 리스크 뿐이라 지금 라이브 강제 안 함.
+
+## 2026-07-13 세션 5 (pyproc npm 전환 + 최신 추적)
+
+### 운영자 통찰 "pyproc 개선 중인데 안 봐도 됨?"
+- 실측: v0.0.4 이후 이틀 새 v0.0.5/6/7(97+커밋). **npm 게시됨**. VirtualOrigin(COI)·WheelCache·Session 등 신규 능력. dartlab 직접 개선(Runtime(py) 회귀복원·`boot({loadPyodide})`·setInterruptBuffer). v314 기본 indexURL 버그는 v0.0.7 에도 잔존(소비자 override 필수).
+- 교훈: pyproc 은 공유 런타임 SSOT 라 dartlab 이 새로 짓지 말고 채택해야. 안 봤으면 pyproc 이 이미 만든 COI SW(VirtualOrigin)를 중복 구현할 뻔.
+
+### 최신 게이트 실측
+- GATE-A/B 둘 다 v0.0.6·v0.0.7 에서 PASS(서빙 + fork + R1). 게이트 기반 자동반영 모델 실증(빠른 릴리즈를 게이트가 검증하니 안전한 것만 채택).
+
+### npm 전환 (github SHA -> npm 0.0.7)
+- `landing/package.json` pyproc `git+https#SHA` -> `"0.0.7"`. lock 이 registry.npmjs.org 해소(git+ssh 소멸).
+- **ssh->https 우회 3워크플로(deploy-landing·publish·pyprocPinBump)에서 통째로 제거**(npm 이라 불필요).
+- 자동반영 재배선: `pyprocResolvePin`(npm 최신 + github compare tier2)·`pyprocApplyPin`(npm 버전)·`pyprocPinBump.yml`(6시간 cron). GATE-A/B 그대로 안전장치. patch+비tier2 auto-merge.
+- 게이트 스크립트 해소 수정: pyproc 이 워크스페이스라 landing/node_modules 로 감 -> createRequire+paths(루트/landing) + '.' 해소(exports 가 package.json 서브패스 막음).
+- 검증: resolve newer=false(0.0.7=최신) · apply no-change · GATE-A/B x 0.0.7 리포루트 PASS · landing 빌드 EXIT 0 · YAML OK.
+
+### NEXT
+- WheelCache(콜드스타트 재다운로드 0)·VirtualOrigin(COI/browser-server) 채택 테스트 -> pyproc 이 이미 만든 걸 dartlab 이 소비(재발명 금지).
