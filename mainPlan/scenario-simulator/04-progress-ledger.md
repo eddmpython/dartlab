@@ -205,6 +205,43 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
   - 회사층(actualPath, **조건부 = 실경로 가정 라벨 영구**): IC +0.048~+0.070, **t 전 걸음 +2.66~+4.26** = **h*_firm = 9**. 횡단면 평균 ~2,470종목.
 - **판정**: 측정된 채널(매크로 분포 + 베타 반응)의 전개 면허 = 8주. 15 §7 walk 승격 게이트의 "h*>1 채널 증명" 충족 (잔여 = net 병기: IC 는 랭크라 비용 직결 아님, walk 의 결정 채점에서 비용바닥 차감으로 이행). fan 봉인 = issuedLive=False 기대 원장 합류 (스텝 분위, 멱등). tests 180 (신규 5)·fan 실행 15분/actualPath 2분.
 
+### 0c-24. 거울 작업대(개념 #1 = 상태층) 완성 + 3중 적대감사 수렴 (2026-07-13)
+
+시뮬레이터 4기둥(상태 x 법칙 x 개입 x 전개)의 **상태층**을 엔진 공개계약만으로 원점 재건. 옛 full.py
+(table.py 내부리더·손10레인·손6계정) 폐기하고 거울 작업대(엔진 자기서술 반사 -> 물질화 -> 접기 -> 정규롱)
+로 대체. 설계·판정 정본 = 18 문서.
+
+**된 것 (DONE, 전부 green):**
+- **작업대 기계 완성**: reflectAxes(loadCapabilities 소비, 손 축목록 0) -> materialize(공개계약 dartlab.
+  {engine}("{axis}",item) 1회) -> foldToCanonical(shape family ~6 어댑터, 단일 정규롱) -> coverage 성적표
+  + gap 원장. 자동흡수 = 새 축/계정 코드0(카탈로그 무target 전개), 새 엔진 손테이블2(_AXIS_REGISTRIES +
+  _CALLABLE_MODULE_MAP, PR2 게이트가 회귀 감시).
+- **5 PR**: PR1 declared 0->125/125(7c113f002) · 부채청산 skill산출물(3f9f3d625) · PR2 부채원장 게이트
+  axisDeclaredCoverage(a955c9a5c) · PR3 순수커널 reference/capability/mirror.py L1.5(0cbaf1b89) · PR4 물질화
+  드라이버 simulate/mirror.py L2.5(3aeac5bb2, simulate LAYERS L2 등록·workbenchPurity AST 가드).
+- **청결 3라운드 = 버그 11 수정**: 1차 리뷰 4(3691d2e80) + 자가공격 1 캐시오염(bcf3c4b66) + 2차 리뷰 6
+  (c8dafd4e5, ★치명=혼합dtype 프레임 unpivot String 승격으로 숫자 272,078개 소실) + 3차 리뷰 버그0 수렴
+  (61e1b1044, inconsistency1+nit3 정리). 버그별 회귀테스트 전부 동행, 테스트 22 green.
+- **실증**: KR 27,850,221행 정규롱(scan 계정860+비율13+17분석축 · quant 알파 · gather krx · macro), 정규
+  스키마 (engine,axis,item,entity,entityName,period,value,valueText,lane,status,gapReason). 치명버그 수정
+  전후 crossSection value(숫자) 724K->903K(문자로 죽었던 18만 되살아남). 사전빌드 0·Company 루프 0.
+- **발명 3건 철회 확정**: laneHint·universeScope·guide extraColumns 는 returnType·stockRequired·_AxisEntry
+  필드로 이미 존재. capability declared SSOT = builder._injectAxisRegistriesLive.
+
+**해야 할 것 (TODO):**
+- **★배선(최우선 결정 대기)**: 시나리오/E 엔진(estimate·hindcast·scenarioSim·scenarioTree·lattice·runweek·
+  profile) **전부 table.py 소비, 워크벤치 0 소비** = 데이터 경로 이원. 작업대는 지어놨으나 시나리오가 아직
+  안 씀. 결정: (1) 워크벤치를 시나리오 단일 상태원으로 통합(정공법, 기존 검증코드 배선 변경) vs (2) 이원
+  공존(안전, 경로 영속 이원화). AI 판단 = 1번.
+- **US(EDGAR) 물질화**: 커버리지 갭이지 기계 미완성 아님. 같은 작업대에 scan(...,market="us") 붙이면 자동
+  흡수(edgar glob 17K파일 느려 KR 먼저 돌림).
+- **나머지 3기둥**: 법칙 = hindcast h*=9 실측했으나 얇음(IC 0.05~0.07·고유75% 도달불가, 16 §6/§7) / 개입 =
+  scenarioTree 탄성·SynthControl 설계만 / 전개 = walk.py 미빌드(16 §7 승격게이트).
+
+**교훈(박제)**: 자평 "깨끗" 2회 틀림. 특히 27M "압도적 데이터"가 실제 오염(숫자 27만 소실)됐고 적대검증이
+잡았지 내가 잡은 게 아님. 청결은 자평이 아니라 loop-until-dry 독립 적대검증이 답한다(3차 만에 버그0 수렴).
+-> [[feedback_capability_over_honesty]] 반례가 아니라 실천: 갭을 검증으로 닫음.
+
 ### 0c-23. 네이티브 시그니처 C vs D 첫 실측 = "직독 마법" 기각, 상태조건 신호만 생존 (2026-07-07, 16 §7 결정적 실험 착수)
 
 - **데모 (_attempts/nativejoint/cvsd.py, 개념확립 stage2)**: 세 앙상블의 per-company 주변분포를 완전동일 고정하고 결합구조만 상이하게 = variogram(결합민감 적정스코어)이 결합종속만 순수 격리. C=상태 analog 코호트 동시실현 직독, Dg=같은 주변+Gaussian copula, Ds=같은 주변+무조건 empirical copula. 우주=전기간 풀커버 상위시총 40종목(600주), origin 비중첩, 블록부트 t(자기상관 보정).
