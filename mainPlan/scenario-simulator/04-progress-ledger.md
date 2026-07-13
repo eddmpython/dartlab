@@ -294,6 +294,26 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
   hindcast admission, EDGAR 실제 회사 수직절편, closed-loop 정책, UI는 아직 미구현이다. 현재 성취는
   "진짜로 걷는 실행기와 KR 1사 연결"이지, 검증된 최적전략이나 예측확률의 완성이 아니다.
 
+### 0c-26. 잠재수요 상태와 마진 충격 의미 정식화 (2026-07-13)
+
+- **죽은 수요 반례 선결**: 기존 전이는 생산능력에 막힌 실현 매출을 다음 기간 수요의 기준으로 다시
+  사용했다. 따라서 수요 150, 생산능력 110인 세계에서 40의 미충족 수요가 사라졌고, 증설해도 이를
+  회수할 수 없었다. `_attempts/financialStateDynamics` 4건이 이 결함과 `marginDelta` 의미 모호성을
+  먼저 재현했다.
+- **상태 전이 정정**: `FinancialState`에 회계상 매출과 별개인 `latentDemandRevenue`를 추가했다.
+  수요 성장은 잠재수요에 적용하고 실현 매출은 `min(잠재수요, 생산능력)`으로 정한다. 다음 기간에도
+  잠재수요를 보존하며 `unmetDemand`를 trace에 노출한다. 잠재수요는 비회계 상태라 balance identity에는
+  넣지 않는다.
+- **전략 의미 복구**: 생산능력 제약 기간의 capex는 당기 매출을 소급 변경하지 않지만, 다음 기간
+  생산능력을 높여 보존된 미충족 수요를 실제 매출로 전환한다. 따라서 증설 전략의 효과가 단순 PPE
+  증가가 아니라 수요 회수, 운전자본, 현금, 이익의 연쇄 전이로 나타난다.
+- **마진 의미 고정**: `marginDelta`를 `marginChange`로 바꾸고 단위를 `ratioPointChangePerYear`로
+  명시했다. 값은 절대 마진 수준이 아니라 직전 기간 대비 가산 증분이다. financial world와 law 버전을
+  2로 올려 이전 실행과 같은 executable hash를 만들 수 없게 했다.
+- **검증**: `_attempts` 4건은 변경 전 4건 실패, 변경 후 4건 통과했다. 본진 leaf에는 잠재수요 보존,
+  증설 후 회수, 기간별 마진 증분, 음수 잠재수요 차단 회귀를 승격했다. simulate 전체와 재무 leaf
+  246건, ruff, Guard Index strict L0-L1.5 7/7과 외부 gate 6종이 통과했다.
+
 ### 0c-25. 실행 신뢰경계 봉인, 공동 경험경로, EDGAR filing-vintage 상태 졸업 (2026-07-13)
 
 - **전문가 3축 재감사**: 경로 계량, DART와 EDGAR PIT, 실행기 적대 검토를 독립 수행했다. 선언하지

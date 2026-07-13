@@ -136,6 +136,7 @@ def test_reduced_financial_state_closes_without_stale_or_zero_fill() -> None:
     )
     assert identity == pytest.approx(state.equity)
     assert state.revenue == 400.0
+    assert state.latentDemandRevenue == 400.0
     assert state.operatingMargin == pytest.approx(0.2)
     assert compiled.revisionPolicy == "asKnown"
 
@@ -174,13 +175,13 @@ def test_real_aapl_has_distinct_filing_vintage_states_when_store_is_installed() 
         buildFinancialPath(
             "base",
             demandGrowth=(0.03, 0.03),
-            marginDelta=(0.0, 0.0),
+            marginChange=(0.0, 0.0),
             debtRate=(0.04, 0.04),
         ),
         buildFinancialPath(
             "stress",
             demandGrowth=(-0.10, -0.05),
-            marginDelta=(-0.02, -0.01),
+            marginChange=(-0.02, -0.01),
             debtRate=(0.06, 0.06),
         ),
     )

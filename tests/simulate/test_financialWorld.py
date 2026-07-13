@@ -64,7 +64,7 @@ def _path(pathId="base", growth=(0.0, 0.0, 0.0, 0.0)):
     return buildFinancialPath(
         pathId,
         demandGrowth=growth,
-        marginDelta=(0.0,) * len(growth),
+        marginChange=(0.0,) * len(growth),
         debtRate=(0.05,) * len(growth),
     )
 
@@ -84,6 +84,7 @@ def testSnapshotCompilesActualBalanceSheetStateWithoutZeroFill():
     inputs = _inputs()
     state = inputs.state
     assert state.revenue == 100.0
+    assert state.latentDemandRevenue == 100.0
     assert state.debt == 30.0
     identity = state.cash + state.receivables + state.inventories + state.ppe + state.otherNetAssets
     assert identity - state.payables - state.debt == pytest.approx(state.equity)
@@ -115,6 +116,30 @@ def testFinancialWorldRunsStepwiseAndClosesEveryPeriod():
     assert len(trace.steps) == 4
     assert all(abs(step.after["identityResidual"]) < 1e-8 for step in trace.steps)
     assert trace.steps[1].before["cash"] == trace.steps[0].after["cash"]
+
+
+def testFinancialWorldExposesUnmetDemandAndPreservesItAcrossSteps():
+    inputs = _inputs()
+    constrainedState = type(inputs.state)(**{**inputs.state.__dict__, "latentDemandRevenue": 150.0})
+    constrainedInputs = type(inputs)(
+        state=constrainedState,
+        parameters=inputs.parameters,
+        asOf=inputs.asOf,
+        refs=inputs.refs,
+        warnings=inputs.warnings,
+    )
+    run = runFinancialStrategies(
+        constrainedInputs,
+        (_path(growth=(0.0, 0.0)),),
+        (_strategy("expand", (0.25, 0.0)),),
+        debtLimit=100.0,
+        maxFinancing=50.0,
+    )
+    steps = run.traces[0].steps
+    assert steps[0].after["unmetDemand"] > 0
+    assert steps[0].after["latentDemandRevenue"] == 150.0
+    assert steps[1].after["unmetDemand"] == 0.0
+    assert steps[1].after["revenue"] == 150.0
 
 
 def testRealAdapterKeepsAssumptionBoundaryAndDoesNotRecommend():
@@ -158,7 +183,7 @@ def testFinancingMustBeExplicitAndConstraintBreachIsVisible():
     stress = buildFinancialPath(
         "stress",
         demandGrowth=(-0.8,) * 4,
-        marginDelta=(-0.1,) * 4,
+        marginChange=(-0.1,) * 4,
         debtRate=(0.20,) * 4,
     )
     run = runFinancialStrategies(
@@ -194,7 +219,7 @@ def testRealDataSamsungSnapshotRunsAuditedFinancialWorld():
         path = buildFinancialPath(
             "stress",
             demandGrowth=(-0.12, -0.08, 0.02, 0.03),
-            marginDelta=(-0.02, -0.01, 0.01, 0.01),
+            marginChange=(-0.02, -0.01, 0.01, 0.01),
             debtRate=(0.06,) * horizon,
         )
         capexRatio = min(

@@ -15,6 +15,7 @@ from dartlab.analysis.financial.stepProjection import (
 def _state():
     return FinancialState(
         revenue=100.0,
+        latentDemandRevenue=100.0,
         operatingMargin=0.15,
         cash=20.0,
         debt=30.0,
@@ -39,7 +40,7 @@ def _params():
 
 
 def _shock(growth=0.05, margin=0.0, rate=0.05):
-    return FinancialShock(growth, margin, rate)
+    return FinancialShock(demandGrowth=growth, marginChange=margin, debtRate=rate)
 
 
 def _action(capex=0.08, inventory=0.10, borrow=0.0, repay=0.0):
@@ -81,6 +82,25 @@ def testCapexAffectsCapacityOnlyFromNextStep():
     assert high2.state.revenue > low2.state.revenue
 
 
+def testCapacityConstraintPreservesLatentDemandForLaterInvestment():
+    latent = FinancialState(**{**_state().__dict__, "latentDemandRevenue": 150.0})
+    constrained = projectFinancialStep(latent, _params(), _shock(growth=0.0), _action(capex=0.25))
+    released = projectFinancialStep(constrained.state, _params(), _shock(growth=0.0), _action(capex=0.0))
+    assert constrained.state.revenue == pytest.approx(110.0)
+    assert constrained.state.latentDemandRevenue == 150.0
+    assert constrained.unmetDemand == pytest.approx(40.0)
+    assert released.capacityRevenue >= 150.0
+    assert released.state.revenue == pytest.approx(150.0)
+    assert released.unmetDemand == 0.0
+
+
+def testMarginChangeIsAnExplicitPeriodInnovation():
+    first = projectFinancialStep(_state(), _params(), _shock(growth=0.0, margin=0.02), _action(capex=0.0))
+    second = projectFinancialStep(first.state, _params(), _shock(growth=0.0, margin=-0.01), _action(capex=0.0))
+    assert first.state.operatingMargin == pytest.approx(0.17)
+    assert second.state.operatingMargin == pytest.approx(0.16)
+
+
 def testInventoryPolicyConsumesCashThroughWorkingCapital():
     lean = projectFinancialStep(_state(), _params(), _shock(), _action(inventory=0.05))
     buffer = projectFinancialStep(_state(), _params(), _shock(), _action(inventory=0.25))
@@ -94,3 +114,6 @@ def testMissingOrImpossibleValuesFailLoudly():
     broken = FinancialState(**{**_state().__dict__, "equity": 999.0})
     with pytest.raises(FinancialStepError, match="does not close"):
         projectFinancialStep(broken, _params(), _shock(), _action())
+    negativeDemand = FinancialState(**{**_state().__dict__, "latentDemandRevenue": -1.0})
+    with pytest.raises(FinancialStepError, match="nonnegative"):
+        projectFinancialStep(negativeDemand, _params(), _shock(), _action())

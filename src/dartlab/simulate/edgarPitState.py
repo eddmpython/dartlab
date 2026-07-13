@@ -355,6 +355,7 @@ def compileEdgarFinancialState(facts: pl.DataFrame, *, knowledgeAsOf: str) -> Co
     otherNetAssets = otherAssets - otherLiabilities
     state = FinancialState(
         revenue=revenueTtm,
+        latentDemandRevenue=revenueTtm,
         operatingMargin=operatingTtm / revenueTtm,
         cash=values["cashAndEquivalents"],
         debt=values["totalDebt"],

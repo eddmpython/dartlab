@@ -1,4 +1,4 @@
-"""Pure one-period financial projection with explicit financing actions.\n\nThe leaf closes the cash bridge, PPE roll-forward, debt roll-forward, and a\nreduced balance sheet without a cash plug or automatic borrowing. Every input\nis explicit. Scenario orchestration and strategy comparison remain owned by\n``dartlab.simulate``.\n\nLayer: L2 analysis.\n"""
+"""Pure one-period financial projection with explicit financing actions.\n\nThe leaf closes the cash bridge, PPE roll-forward, debt roll-forward, and a\nreduced balance sheet without a cash plug or automatic borrowing. Every input\nis explicit. Realized revenue and latent demand are separate state variables,\nso capacity constraints do not erase demand that later investment may serve.\nScenario orchestration and strategy comparison remain owned by\n``dartlab.simulate``.\n\nLayer: L2 analysis.\n"""
 
 from __future__ import annotations
 
@@ -14,9 +14,10 @@ class FinancialStepError(ValueError):
 
 @dataclass(frozen=True)
 class FinancialState:
-    """한 기간 시작점의 축소 재무상태를 보존한다."""
+    """축소 재무상태와 회계 밖의 잠재수요 상태를 함께 보존한다."""
 
     revenue: float
+    latentDemandRevenue: float
     operatingMargin: float
     cash: float
     debt: float
@@ -42,10 +43,10 @@ class FinancialParameters:
 
 @dataclass(frozen=True)
 class FinancialShock:
-    """해당 기간에 주입할 수요, 마진, 차입금리 조건을 보존한다."""
+    """수요 성장률, 기간별 마진 증분, 차입금리 조건을 보존한다."""
 
     demandGrowth: float
-    marginDelta: float
+    marginChange: float
     debtRate: float
 
 
@@ -61,12 +62,13 @@ class FinancialAction:
 
 @dataclass(frozen=True)
 class FinancialStepResult:
-    """다음 재무상태와 회계 폐합을 설명하는 기간별 흐름을 반환한다."""
+    """다음 재무상태, 미충족 수요, 회계 폐합을 설명하는 흐름을 반환한다."""
 
     state: FinancialState
     demandRevenue: float
     capacityRevenue: float
     capacityBound: bool
+    unmetDemand: float
     operatingProfit: float
     depreciation: float
     capex: float
@@ -93,6 +95,7 @@ def _validate(state: FinancialState, params: FinancialParameters, shock: Financi
             _checkFinite(name, getattr(obj, name))
     nonnegative = {
         "revenue": state.revenue,
+        "latentDemandRevenue": state.latentDemandRevenue,
         "debt": state.debt,
         "receivables": state.receivables,
         "inventories": state.inventories,
@@ -142,12 +145,13 @@ def projectFinancialStep(
     """Project one explicit period without a cash plug or automatic borrowing."""
 
     _validate(state, params, shock, action)
-    demandRevenue = max(0.0, state.revenue * (1.0 + shock.demandGrowth))
+    demandRevenue = max(0.0, state.latentDemandRevenue * (1.0 + shock.demandGrowth))
     capacityRevenue = state.ppe * params.revenuePerPpe
     revenue = min(demandRevenue, capacityRevenue)
     capacityBound = demandRevenue > capacityRevenue + 1e-12
+    unmetDemand = max(0.0, demandRevenue - revenue)
 
-    operatingMargin = state.operatingMargin + shock.marginDelta
+    operatingMargin = state.operatingMargin + shock.marginChange
     if operatingMargin < -1 or operatingMargin > 1:
         raise FinancialStepError("operating margin leaves physical range")
     operatingProfit = revenue * operatingMargin
@@ -178,6 +182,7 @@ def projectFinancialStep(
 
     nextState = FinancialState(
         revenue=revenue,
+        latentDemandRevenue=demandRevenue,
         operatingMargin=operatingMargin,
         cash=cash,
         debt=debt,
@@ -193,6 +198,7 @@ def projectFinancialStep(
         demandRevenue=demandRevenue,
         capacityRevenue=capacityRevenue,
         capacityBound=capacityBound,
+        unmetDemand=unmetDemand,
         operatingProfit=operatingProfit,
         depreciation=depreciation,
         capex=capex,

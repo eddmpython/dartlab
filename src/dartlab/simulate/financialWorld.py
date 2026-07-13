@@ -108,6 +108,7 @@ def financialInputsFromSnapshot(snapshot: Mapping, *, capacityHeadroom: float) -
     otherNetAssets = otherAssets - otherLiabilities
     state = FinancialState(
         revenue=revenue,
+        latentDemandRevenue=revenue,
         operatingMargin=operatingMargin,
         cash=cash,
         debt=debt,
@@ -144,6 +145,7 @@ def financialInputsFromSnapshot(snapshot: Mapping, *, capacityHeadroom: float) -
 
 _STATE_IDS = (
     "revenue",
+    "latentDemandRevenue",
     "operatingMargin",
     "cash",
     "debt",
@@ -155,6 +157,9 @@ _STATE_IDS = (
     "equity",
 )
 _METRIC_IDS = (
+    "demandRevenue",
+    "capacityRevenue",
+    "unmetDemand",
     "operatingProfit",
     "depreciation",
     "capex",
@@ -189,7 +194,7 @@ def buildFinancialWorld(
         [VariableSpec(name, "currency" if name != "operatingMargin" else "ratio", "state") for name in _STATE_IDS]
         + [
             VariableSpec("demandGrowth", "ratio", "shock", lower=-1.0),
-            VariableSpec("marginDelta", "ratio", "shock", lower=-1.0, upper=1.0),
+            VariableSpec("marginChange", "ratioPointChangePerYear", "shock", lower=-1.0, upper=1.0),
             VariableSpec("debtRate", "ratio", "shock", lower=0.0, upper=1.0),
         ]
         + [VariableSpec(name, metricUnits.get(name, "currency"), "metric") for name in _METRIC_IDS]
@@ -208,7 +213,7 @@ def buildFinancialWorld(
         state = FinancialState(**{name: ctx.prior[name] for name in _STATE_IDS})
         shock = FinancialShock(
             demandGrowth=ctx.shocks["demandGrowth"],
-            marginDelta=ctx.shocks["marginDelta"],
+            marginChange=ctx.shocks["marginChange"],
             debtRate=ctx.shocks["debtRate"],
         )
         action = FinancialAction(
@@ -220,6 +225,9 @@ def buildFinancialWorld(
         result = projectFinancialStep(state, params, shock, action)
         nextState = {name: getattr(result.state, name) for name in _STATE_IDS}
         metrics = {
+            "demandRevenue": result.demandRevenue,
+            "capacityRevenue": result.capacityRevenue,
+            "unmetDemand": result.unmetDemand,
             "operatingProfit": result.operatingProfit,
             "depreciation": result.depreciation,
             "capex": result.capex,
@@ -241,11 +249,11 @@ def buildFinancialWorld(
         lawId="financialStep",
         outputs=_STATE_IDS + _METRIC_IDS,
         priorInputs=_STATE_IDS,
-        shockInputs=("demandGrowth", "marginDelta", "debtRate"),
+        shockInputs=("demandGrowth", "marginChange", "debtRate"),
         actionInputs=("capexRatio", "inventoryRatio", "borrow", "repay"),
         evidenceKind="explicitAssumption",
         provenance="analysis.financial.stepProjection:projectFinancialStep",
-        version="1",
+        version="2",
         parameters=asdict(params),
         fn=financialStep,
     )
@@ -256,7 +264,7 @@ def buildFinancialWorld(
     )
     return WorldModel(
         "company-financial-world",
-        "1",
+        "2",
         variables,
         actions,
         (law,),
@@ -268,19 +276,23 @@ def buildFinancialPath(
     pathId: str,
     *,
     demandGrowth: Sequence[float],
-    marginDelta: Sequence[float],
+    marginChange: Sequence[float],
     debtRate: Sequence[float],
     weight: float | None = None,
     weightKind: str = "unweighted",
     refs: tuple[str, ...] = (),
 ) -> ScenarioPath:
-    """기간별 수요, 마진, 금리 조건을 하나의 명시적 세계 경로로 만든다."""
+    """연간 수요 성장, 마진 증분, 금리 수준을 명시적 세계 경로로 만든다."""
 
-    lengths = {len(demandGrowth), len(marginDelta), len(debtRate)}
+    lengths = {len(demandGrowth), len(marginChange), len(debtRate)}
     if len(lengths) != 1:
         raise ValueError("financial shock paths must share a horizon")
     steps = tuple(
-        {"demandGrowth": float(demandGrowth[i]), "marginDelta": float(marginDelta[i]), "debtRate": float(debtRate[i])}
+        {
+            "demandGrowth": float(demandGrowth[i]),
+            "marginChange": float(marginChange[i]),
+            "debtRate": float(debtRate[i]),
+        }
         for i in range(len(demandGrowth))
     )
     return ScenarioPath(
