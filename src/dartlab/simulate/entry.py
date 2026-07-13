@@ -1,9 +1,13 @@
-"""Public `simulate` verb — the thin top-level wrapper over `runScenario` (L2.5).
+"""Callable `simulate` preview wrapper over `runScenario` (L2.5).
 
-`dartlab.simulate(code, scenario=..., horizon=..., asOf=...)` is the single public entry point for
+`dartlab.simulate(code, scenario=..., horizon=..., asOf=...)` is the callable preview entry for
 the deterministic scenario-simulator core. It resolves the code to a `Company`, guards the
 KR-only macro presets, and delegates to the internal `simulate.run.runScenario` driver — mirroring
 how `dartlab.compare` wraps `panel.compare` (top-level verb, outside the Company facade).
+
+The function is importable, but `simulate` is not yet registered in the Skill OS / apiContract
+engine list. Until the axis-dispatch contract is decided, callers must treat it as a preview rather
+than a stable public contract.
 
 This is the deterministic subset only (`scenario` + `horizon` + `asOf`). The full
 `mainPlan/scenario-simulator/01` signature also carries `drivers` / `lens` / `mode`; those (the
@@ -45,17 +49,19 @@ def simulate(
         code: 종목코드("005930") 또는 한글 회사명("삼성전자"). 현재 KR(DART) 전용 — 미국 ticker
             는 `ValueError` (매크로 프리셋이 KR 기준이라 US 프리셋 합류 전까지 차단).
         scenario: 시나리오 id — ``synth.scenario.getPresetScenarios("KR")`` 의 키
-            (예: ``"baseline"``, ``"adverse"``, ``"severelyAdverse"``). 모르는 id 는 baseline 으로
-            폴백.
-        horizon: 예측 연수 (기본 3). 매크로 경로는 이 길이로 잘린다.
-        asOf: 명시 데이터 기준시점 라벨. None 이면 회사의 최신 재무 기간을 사용.
+            (예: ``"baseline"``, ``"adverse"``, ``"severelyAdverse"``).
+        horizon: 예측 연수 (기본 3). 선택한 프리셋의 실제 경로 길이를 넘길 수 없다.
+        asOf: 명시 재무 기간(YYYY 또는 YYYY-Qn). 현재는 기간 단위 PIT이며 공시 접수일
+            vintage 복원은 지원하지 않는다.
 
     Returns:
         SimulationResult: 시나리오 매출·마진·FCF 경로 + dcf 주당가치 + 노드별 audit + 전체 품질
         상태(``"ok"`` / ``"partial"``). 필드 상세는 `SimulationResult` docstring.
 
     Raises:
-        ValueError: KR 이 아닌 회사(미국 ticker → EDGAR)거나, 코드를 회사로 해소하지 못할 때.
+        TypeError: scenario 또는 horizon 타입이 잘못됐을 때.
+        ValueError: KR 이 아닌 회사, 코드를 회사로 해소하지 못했거나 scenario/horizon/asOf 가
+            지원 범위 밖일 때.
 
     Example:
         >>> import dartlab

@@ -37,6 +37,7 @@ Layer: L2.5. Forward imports: L0 (core), L1.5 (synth), L2 (analysis.financial).
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from dartlab.analysis.financial._valuationHelpers import (
@@ -85,9 +86,8 @@ def _baseMetrics(series: dict) -> dict[str, float | None]:
             ``Company._buildFinanceSeries`` / ``_getSeriesAndShares``.
 
     Returns:
-        dict[str, float | None]: ``{"revenue", "margin", "netDebt"}``. ``revenue`` / ``margin``
-        are None when the underlying accounts are absent (honest-gap, never 0); ``netDebt``
-        defaults to 0.0 when the debt/cash lines are absent.
+        dict[str, float | None]: ``{"revenue", "margin", "netDebt"}``. Values are None when
+        the underlying accounts are absent (honest-gap, never 0).
 
     Raises:
         None — every lookup is None-tolerant.
@@ -103,13 +103,67 @@ def _baseMetrics(series: dict) -> dict[str, float | None]:
     oi = getTTM(series, "IS", "operating_profit") or getTTM(series, "IS", "operating_income")
     margin = (oi / rev * 100) if rev and oi and rev > 0 else None
 
-    cash = getLatest(series, "BS", "cash_and_cash_equivalents") or 0.0
-    stb = getLatest(series, "BS", "shortterm_borrowings") or 0.0
-    ltb = getLatest(series, "BS", "longterm_borrowings") or 0.0
-    bonds = getLatest(series, "BS", "debentures") or 0.0
-    netDebt = stb + ltb + bonds - cash
+    cash = getLatest(series, "BS", "cash_and_cash_equivalents")
+    stb = getLatest(series, "BS", "shortterm_borrowings")
+    ltb = getLatest(series, "BS", "longterm_borrowings")
+    bonds = getLatest(series, "BS", "debentures")
+    debtInputs = (cash, stb, ltb, bonds)
+    netDebt = (
+        None if all(v is None for v in debtInputs) else (stb or 0.0) + (ltb or 0.0) + (bonds or 0.0) - (cash or 0.0)
+    )
 
     return {"revenue": rev, "margin": margin, "netDebt": netDebt}
+
+
+_PERIOD_RE = re.compile(r"^(?P<year>\d{4})(?:-?Q(?P<quarter>[1-4]))?$")
+
+
+def _periodKey(period: str) -> tuple[int, int]:
+    """재무 기간 문자열을 비교 가능한 ``(year, quarter)`` 로 정규화한다.
+
+    연도만 있으면 연말 Q4 로 취급한다. 공개 ``asOf`` 는 ``YYYY`` 또는 ``YYYY[-]Qn`` 만
+    허용해 날짜 라벨이 데이터 vintage 인 것처럼 보이는 오해를 차단한다.
+    """
+    match = _PERIOD_RE.fullmatch(str(period).strip().upper())
+    if not match:
+        raise ValueError(f"asOf/period 형식 오류: {period!r} (YYYY 또는 YYYY-Qn)")
+    return int(match.group("year")), int(match.group("quarter") or 4)
+
+
+def _periodLabel(key: tuple[int, int]) -> str:
+    """정규 기간 키를 공개 표기 ``YYYY-Qn`` 으로 바꾼다."""
+    return f"{key[0]:04d}-Q{key[1]}"
+
+
+def _sliceSeriesAsOf(series: dict, periods: list[str], asOf: str | None) -> tuple[dict, str, str, str]:
+    """분기 재무 시리즈를 요청 기간까지 절단하고 effective/latest 라벨을 반환한다.
+
+    Returns:
+        ``(slicedSeries, effectiveAsOf, latestAsOf, requestedAsOf)``. 현재 저장소의 재무 시리즈는
+        공시 접수일 vintage 를 보존하지 않으므로 이 함수는 fiscal-period PIT 이며, 정정공시 이전
+        값까지 복원하는 filing-vintage PIT 는 아니다. 호출자가 이 제한을 warnings 로 노출한다.
+    """
+    if not periods:
+        requested = str(asOf) if asOf is not None else "latest"
+        return series, requested, "latest", requested
+
+    keyed = [(_periodKey(period), idx) for idx, period in enumerate(periods)]
+    latestKey = max(key for key, _ in keyed)
+    requestedKey = latestKey if asOf is None else _periodKey(asOf)
+    if requestedKey < min(key for key, _ in keyed) or requestedKey > latestKey:
+        raise ValueError(
+            f"asOf={asOf!r} 는 가용 기간 {_periodLabel(min(key for key, _ in keyed))}~"
+            f"{_periodLabel(latestKey)} 밖입니다."
+        )
+
+    kept = [idx for key, idx in keyed if key <= requestedKey]
+    effectiveKey = max(key for key, _ in keyed if key <= requestedKey)
+    sliced: dict[str, dict[str, list]] = {}
+    for sjDiv, accounts in series.items():
+        sliced[sjDiv] = {}
+        for account, values in accounts.items():
+            sliced[sjDiv][account] = [values[idx] if idx < len(values) else None for idx in kept]
+    return sliced, _periodLabel(effectiveKey), _periodLabel(latestKey), _periodLabel(requestedKey)
 
 
 def buildSnapshot(company: Any, *, asOf: str | None = None) -> dict:
@@ -169,54 +223,94 @@ def buildSnapshot(company: Any, *, asOf: str | None = None) -> dict:
         Dataflow: company -> series + shares -> base metrics + elasticity + WACC -> snapshot dict.
         TargetMarkets: KR (semiconductor elasticity baselines); US needs US baselines.
     """
-    series, shares, _currency = _getSeriesAndShares(company)
-    base = _baseMetrics(series) if series else {"revenue": None, "margin": None, "netDebt": 0.0}
+    # proforma와 TTM 추출기는 분기 시리즈를 소비한다. 과거 구현은 연간 시리즈에 getTTM을 적용해
+    # 최근 4개 연도를 합산하는 오류가 있었다. shares 조회의 기존 fallback만 재사용하고, 계산
+    # 시리즈는 반드시 Q 경로에서 한 번 읽어 asOf 절단한다.
+    _annualSeries, shares, _currency = _getSeriesAndShares(company)
+    try:
+        quarterly = company._buildFinanceSeries(freq="Q")
+    except (ValueError, KeyError, AttributeError):
+        quarterly = None
+    rawSeries = quarterly[0] if isinstance(quarterly, tuple) and len(quarterly) >= 2 else None
+    periods = list(quarterly[1]) if isinstance(quarterly, tuple) and len(quarterly) >= 2 else []
+    if rawSeries:
+        series, effectiveAsOf, latestAsOf, requestedAsOf = _sliceSeriesAsOf(rawSeries, periods, asOf)
+    else:
+        requestedAsOf = str(asOf) if asOf is not None else "latest"
+        effectiveAsOf = requestedAsOf
+        latestAsOf = "latest"
+        series = None
+    base = _baseMetrics(series) if series else {"revenue": None, "margin": None, "netDebt": None}
 
     sectorKey = _resolveSectorKey(company)
     elasticity = getElasticity(sectorKey) if sectorKey else DEFAULT_ELASTICITY
+    assumptions: list[str] = []
+    warnings: list[str] = []
+    if sectorKey is None:
+        assumptions.append("defaultSectorElasticity")
 
     sectorParams = None
     try:
         sectorParams = getattr(company, "sectorParams", None)
     except (AttributeError, ValueError):
         sectorParams = None
-    baseWacc = getattr(sectorParams, "discountRate", None) or _DEFAULT_BASE_WACC
-    terminalGrowth = min(getattr(sectorParams, "growthRate", None) or _TERMINAL_GROWTH_CAP, _TERMINAL_GROWTH_CAP)
+    rawWacc = getattr(sectorParams, "discountRate", None)
+    if rawWacc is None:
+        assumptions.append("baseWacc10Pct")
+    baseWacc = rawWacc if rawWacc is not None else _DEFAULT_BASE_WACC
+    rawTerminalGrowth = getattr(sectorParams, "growthRate", None)
+    if rawTerminalGrowth is None:
+        assumptions.append("terminalGrowth3Pct")
+    terminalGrowth = min(
+        rawTerminalGrowth if rawTerminalGrowth is not None else _TERMINAL_GROWTH_CAP, _TERMINAL_GROWTH_CAP
+    )
+    if base["margin"] is None and base["revenue"] is not None:
+        assumptions.append("baseMargin10Pct")
+    if base["netDebt"] is None:
+        warnings.append("netDebtUnavailable")
 
-    vintage = asOf or _latestPeriod(company) or "latest"
+    # 현재 shares 를 역사 replay 에 섞으면 look-ahead 다. 발행주식수 vintage 원천이 생기기 전에는
+    # 역사 시점 per-share DCF 를 기권하고 enterprise value 까지만 계산한다.
+    if effectiveAsOf != latestAsOf and shares is not None:
+        shares = None
+        warnings.append("historicalSharesUnavailable")
+    if asOf is not None:
+        warnings.append("periodScopedPitOnly")
 
     return {
         "series": series,
         "baseRevenue": base["revenue"],
         "baseMargin": base["margin"],
-        "netDebt": base["netDebt"] or 0.0,
+        "netDebt": base["netDebt"],
         "shares": shares,
         "elasticity": elasticity,
         "sectorKey": sectorKey,
         "baseWacc": float(baseWacc),
         "terminalGrowth": float(terminalGrowth),
-        "asOf": vintage,
-        "latestAsOf": vintage,
+        "asOf": effectiveAsOf,
+        "latestAsOf": latestAsOf,
+        "requestedAsOf": requestedAsOf,
+        "assumptions": tuple(assumptions),
+        "warnings": tuple(warnings),
     }
 
 
-def _latestPeriod(company: Any) -> str | None:
-    """Best-effort latest finance period label for the snapshot vintage (cached, single read).
-
-    Reads the periods axis of the company's annual finance series (cached on the company, so this
-    does not re-fetch). Returns the latest period (e.g. ``"2024"``) or None when unavailable; the
-    caller then falls back to ``"latest"``.
-    """
-    try:
-        ann = company._buildFinanceSeries(freq="Y")
-    except (ValueError, KeyError, AttributeError):
-        return None
-    if not isinstance(ann, tuple) or len(ann) < 2:
-        return None
-    periods = ann[1]
-    if isinstance(periods, (list, tuple)) and periods:
-        return str(periods[0]) if str(periods[0]) >= str(periods[-1]) else str(periods[-1])
-    return None
+def validateScenarioSpec(scenario: str, horizon: int, *, market: str = "KR") -> None:
+    """프리셋에 실제로 존재하는 시나리오와 경로 길이만 허용한다."""
+    if not isinstance(scenario, str):
+        raise TypeError("scenario 는 문자열이어야 합니다.")
+    presets = getPresetScenarios(market)
+    if scenario not in presets:
+        valid = ", ".join(sorted(presets))
+        raise ValueError(f"알 수 없는 scenario={scenario!r}; 유효값: {valid}")
+    if isinstance(horizon, bool) or not isinstance(horizon, int):
+        raise TypeError("horizon 은 정수여야 합니다.")
+    if horizon <= 0:
+        raise ValueError("horizon 은 1 이상이어야 합니다.")
+    preset = presets[scenario]
+    maxHorizon = min(len(preset.gdpGrowth), len(preset.interestRate), len(preset.krwUsd))
+    if horizon > maxHorizon:
+        raise ValueError(f"horizon={horizon} 은 scenario={scenario!r}의 가용 경로 {maxHorizon}년을 초과합니다.")
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -243,7 +337,7 @@ def _fnMacroPath(node: DriverNode, sheet: DriverSheet, depValues: dict):
         with ``provenance = "preset:{scenarioId}"``.
 
     Raises:
-        None — an unknown scenario id falls back to the baseline preset.
+        KeyError: if validation was bypassed and the scenario id is unknown.
 
     Example:
         >>> # wired by buildScenarioSheet; not called directly.
@@ -254,7 +348,7 @@ def _fnMacroPath(node: DriverNode, sheet: DriverSheet, depValues: dict):
     snap = sheet.snapshot
     horizon = snap["horizon"]
     presets = getPresetScenarios("KR")
-    sc = presets.get(node.scenarioId) or presets["baseline"]
+    sc = presets[node.scenarioId]
     gdp = list(sc.gdpGrowth[:horizon])
     rate = list(sc.interestRate[:horizon])
     fx = list(sc.krwUsd[:horizon])
@@ -432,18 +526,23 @@ def _fnDcf(node: DriverNode, sheet: DriverSheet, depValues: dict):
     else:
         pvTv = 0.0
     ev = pvSum + pvTv
-    netDebt = snap["netDebt"] or 0.0
-    equityValue = ev - netDebt
+    netDebt = snap["netDebt"]
+    equityValue = ev - netDebt if netDebt is not None else None
     shares = snap["shares"]
-    perShare = (equityValue / shares) if shares and shares > 0 else None
+    perShare = (equityValue / shares) if equityValue is not None and shares and shares > 0 else None
 
     frozen = {
         "wacc": round(wacc, 9),
         "terminalGrowth": round(terminalGrowth, 9),
-        "netDebt": round(netDebt, 2),
+        "netDebt": round(netDebt, 2) if netDebt is not None else None,
         "shares": shares,
     }
-    gap = "" if perShare is not None else "(shares_absent)"
+    gaps: list[str] = []
+    if netDebt is None:
+        gaps.append("netDebt_absent")
+    if shares is None or shares <= 0:
+        gaps.append("shares_absent")
+    gap = f"({','.join(gaps)})" if gaps else ""
     prov = f"dcf:fcff,wacc={wacc:.2f},g={terminalGrowth:.2f}{gap}"
     refs = ("simulate.registry:fcffDiscount", "analysis.financial.proforma:buildProforma")
     return perShare, (round(ev, 2),), prov, refs, frozen, snap["asOf"], snap["latestAsOf"]
@@ -458,7 +557,7 @@ def _macroFrozen(macroNv, horizon: int) -> dict:
     """
     presets = getPresetScenarios("KR")
     scenarioId = macroNv.provenance.split(":", 1)[1] if ":" in macroNv.provenance else "baseline"
-    sc = presets.get(scenarioId) or presets["baseline"]
+    sc = presets[scenarioId]
     gdp = list(macroNv.vector) if macroNv.vector else list(sc.gdpGrowth[:horizon])
     return {"gdp": gdp, "rate": list(sc.interestRate[:horizon]), "fx": list(sc.krwUsd[:horizon])}
 
@@ -525,6 +624,7 @@ def buildScenarioSheet(snapshot: dict, *, scenario: str, horizon: int) -> Driver
         Dataflow: snapshot+scenario -> register fns -> add macro/rev/proforma/dcf nodes -> sheet.
         TargetMarkets: KR presets (getPresetScenarios("KR")); US needs US presets.
     """
+    validateScenarioSpec(scenario, horizon)
     snap = dict(snapshot)
     snap["horizon"] = horizon
     sheet = DriverSheet(snapshot=snap)

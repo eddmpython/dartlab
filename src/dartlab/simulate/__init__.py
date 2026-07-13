@@ -19,8 +19,8 @@ Layer (operation.architecture SSOT): L2.5.
   siblings, and the L2 analysis/macro/quant/industry/credit leafs (forward, single-direction).
 - not a peer of the L2 analysis engines — calling several L2 leafs from one node is legal.
 
-`runScenario` is INTERNAL — the public `simulate(...)` verb (apiContract / EngineCall), the lens
-path, Play, and DriverRegistry convergence are later phases.
+`runScenario` is internal. A callable top-level / Company preview exists, but Skill OS and
+apiContract registration, the lens path, Play, and DriverRegistry convergence are later phases.
 """
 
 from __future__ import annotations

@@ -1,8 +1,8 @@
-"""Public `simulate` verb — top-level `dartlab.simulate` + `Company.simulate` (L2.5).
+"""Callable `simulate` preview: top-level `dartlab.simulate` + `Company.simulate` (L2.5).
 
-Unit smoke (no Company load) — the verb is importable and registered:
+Unit smoke (no Company load): the preview is importable from the Python package:
 - `dartlab.simulate` resolves through the lazy `__getattr__` map and is callable.
-- `simulate` is in `dartlab.__all__` (so the capability catalog / EngineCall discover it).
+- `simulate` is in `dartlab.__all__`. Skill OS / apiContract registration is a separate gate.
 - `Company.simulate` exists on the DART Company class.
 
 One realData test (serial) — `dartlab.simulate("005930", scenario="baseline")` returns a
@@ -23,7 +23,7 @@ import pytest
 def test_simulate_verb_registered() -> None:
     import dartlab
 
-    # registered in __all__ (capability catalog + apiContract surface).
+    # Python export surface only. This does not prove Skill OS / apiContract registration.
     assert "simulate" in dartlab.__all__
     # `dartlab.simulate` is callable as the top-level verb even though `simulate` is also a
     # subpackage name — the callable-module patch (mirror of scan/macro) delegates to the verb.

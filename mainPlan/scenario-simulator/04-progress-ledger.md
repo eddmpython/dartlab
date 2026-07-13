@@ -5,6 +5,29 @@
 
 ---
 
+## 2026-07-13 P0 제품 진실성 복구
+
+코드 재감사에서 결정론 4노드 코어의 실현 가능성은 확인했지만, 제품 계약과 시점 규율에 치명적인 결함 6개가 확인됐다. 본 단계는 UI 확장이 아니라 잘못된 숫자와 과대 상태표시를 먼저 차단한 복구다.
+
+| 항목 | 감사 전 | 복구 후 | 잔여 한계 |
+|---|---|---|---|
+| 재무 입력 | 연간 시리즈에 TTM을 적용해 최근 4개 연도를 합산 | 분기 시리즈 4개 분기 TTM | 분기 표준화 품질은 finance 엔진에 의존 |
+| `asOf` | 결과 라벨만 변경, 입력값 동일 | 요청 분기까지 시리즈 실제 절단, effective/latest/requested 분리 | 공시 접수일·정정공시 vintage는 원천 부재 |
+| scenario | 모르는 id도 baseline 계산 후 잘못된 id를 결과에 유지 | 유효 프리셋 외 즉시 `ValueError` | 사용자 정의 scenario는 미지원 |
+| horizon | 10년 요청을 3개 벡터로 잘라 결과 horizon과 불일치 | 프리셋 경로 길이 밖 요청 거부 | 현재 프리셋은 최대 3년 |
+| 결손·기본값 | net debt 결손을 0으로 대체, 기본 가정 비노출 | net debt 결손이면 주당 DCF 기권, 기본값을 `assumptions`로 노출하고 quality partial | 기본 가정 자체의 추정 모델은 후속 |
+| 재현 해시 | 같은 수치면 다른 `asOf`도 동일 hash | `asOf/latestAsOf`를 hash 입력에 포함 | filing-vintage가 생기면 receipt-date도 포함 필요 |
+
+**실측 증거**:
+
+- 삼성전자 최신 분기 기준 `baseRevenue=388,338,879,000,000`, `baseMargin=24.24%`, `netDebt=-46,359,125,000,000`, `quality=ok`.
+- baseline 3년 매출 경로 `398.8조 -> 413.2조 -> 429.5조`, 주당 DCF 약 `64,362원`. 이는 목표주가가 아니라 고정 가정의 조건부 변환이다.
+- `tests/simulate` 199개 전부 통과. 신규 회귀는 scenario/horizon 거부, 분기 `asOf` 절단, 과거 shares 기권, net debt honest-gap, vintage hash, assumption/warning 품질 강등을 포함한다.
+
+**현재 판정**: 결정론 계산 코어는 제품화 가능한 수준으로 복구됐다. 그러나 PRD 전체는 미완료다. filing-vintage PIT, 공개 axis/API/Skill OS 계약, Play UI, fan distribution, driver/lens가 남는다. 특히 호출 가능한 Python preview와 등록된 공개 계약을 같은 것으로 취급하지 않는다.
+
+---
+
 ## 0. ★2026-06-20 9인 전문가 패널 uplift . 세 축 planScore 95 도달
 
 **목표**: 각 분야 전문가 + UI/UX 전문가 관점으로 플랜을 *시각화 직관성·분석 전문성·예측 전문성* 95점까지 개선(운영자 지시). **결과: 세 축 모두 planScore 95 도달 확정**(설계 완전성 . 04 §4 #11 systemScore[빌드]와 분리, 코드부재≠감점).

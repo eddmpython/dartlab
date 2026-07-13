@@ -2004,17 +2004,17 @@ class Company:
 
         Args:
             scenario: 시나리오 id — ``synth.scenario.getPresetScenarios("KR")`` 의 키
-                (``"baseline"`` / ``"adverse"`` / ``"severelyAdverse"`` 등). 모르는 id 는 baseline 폴백.
-            horizon: 예측 연수 (기본 3). 매크로 경로가 이 길이로 잘린다.
-            asOf: 명시 데이터 기준시점. None 이면 최신 재무 기간 사용.
+                (``"baseline"`` / ``"adverse"`` / ``"severelyAdverse"`` 등).
+            horizon: 예측 연수 (기본 3). 프리셋의 실제 경로 길이를 넘길 수 없다.
+            asOf: 명시 재무 기간(YYYY 또는 YYYY-Qn). 기간 단위 PIT이며 접수일 vintage 복원 미지원.
 
         Returns:
             ``SimulationResult`` — 시나리오 경로 + dcf 주당가치 + 노드별 audit + 전체 품질
             (``"ok"`` / ``"partial"``).
 
         Raises:
-            ValueError: 평가기가 잘못 배선된 시트(순환/누락 의존)를 만났을 때만 — 여기 배선은
-                비순환이라 데이터 조건이 아닌 프로그래밍 오류 가드.
+            TypeError: scenario 또는 horizon 타입이 잘못됐을 때.
+            ValueError: scenario/horizon/asOf 가 지원 범위 밖이거나 시트 배선이 잘못됐을 때.
 
         Example:
             >>> c = Company("005930")

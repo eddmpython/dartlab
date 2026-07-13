@@ -23,6 +23,7 @@ from dartlab.simulate.registry import (
     DRIVER_PROFORMA,
     DRIVER_REV,
     buildScenarioSheet,
+    buildSnapshot,
 )
 from dartlab.simulate.sheet import evaluateSheet
 from dartlab.synth.scenario import SectorElasticity
@@ -66,13 +67,19 @@ def _syntheticSeries() -> dict:
     }
 
 
-def _snapshot(*, baseRevenue: float | None, withSeries: bool = True, shares: int | None = 1000) -> dict:
+def _snapshot(
+    *,
+    baseRevenue: float | None,
+    withSeries: bool = True,
+    shares: int | None = 1000,
+    netDebt: float | None = 10.0,
+) -> dict:
     """A synthetic frozen snapshot (no Company) matching buildSnapshot's shape."""
     return {
         "series": _syntheticSeries() if withSeries else None,
         "baseRevenue": baseRevenue,
         "baseMargin": 20.0 if baseRevenue is not None else None,
-        "netDebt": 10.0,
+        "netDebt": netDebt,
         "shares": shares,
         "elasticity": _SEMI,
         "sectorKey": "반도체",
@@ -142,6 +149,15 @@ def test_dcf_node_honest_gap_when_shares_absent() -> None:
     assert "shares_absent" in dcf.provenance
 
 
+@pytest.mark.unit
+def test_dcf_node_honest_gap_when_net_debt_absent() -> None:
+    sheet = buildScenarioSheet(_snapshot(baseRevenue=300.0, netDebt=None), scenario="baseline", horizon=3)
+    dcf = evaluateSheet(sheet)["dcf@baseline#all"]
+    assert dcf.value is None
+    assert dcf.vector is not None
+    assert "netDebt_absent" in dcf.provenance
+
+
 # ──────────────────────────────────────────────────────────────────────
 # honest-gap: absent base revenue cascades to None (never 0)
 # ──────────────────────────────────────────────────────────────────────
@@ -188,12 +204,114 @@ def test_synthetic_rerun_byte_identical() -> None:
 
 
 @pytest.mark.unit
+def test_inputs_hash_includes_data_vintage() -> None:
+    latest = _snapshot(baseRevenue=300.0)
+    historical = dict(latest)
+    historical["asOf"] = "2023-Q4"
+    out1 = evaluateSheet(buildScenarioSheet(latest, scenario="baseline", horizon=3))
+    out2 = evaluateSheet(buildScenarioSheet(historical, scenario="baseline", horizon=3))
+    assert out1["macro.path@baseline#all"].inputsHash != out2["macro.path@baseline#all"].inputsHash
+
+
+@pytest.mark.unit
+def test_run_scenario_surfaces_assumptions_and_warnings(monkeypatch) -> None:
+    from dartlab.simulate.run import runScenario
+
+    snapshot = _snapshot(baseRevenue=300.0)
+    snapshot.update(
+        requestedAsOf="2023-Q4",
+        assumptions=("baseWacc10Pct",),
+        warnings=("periodScopedPitOnly",),
+    )
+    monkeypatch.setattr("dartlab.simulate.run.buildSnapshot", lambda company, asOf=None: snapshot)
+
+    result = runScenario(object(), scenario="baseline", horizon=3, asOf="2023Q4")
+
+    assert result.quality == "partial"
+    assert result.assumptions == ("baseWacc10Pct",)
+    assert "periodScopedPitOnly" in result.warnings
+    assert result.requestedAsOf == "2023-Q4"
+
+
+@pytest.mark.unit
 def test_adverse_lower_revenue_than_baseline() -> None:
     base = evaluateSheet(buildScenarioSheet(_snapshot(baseRevenue=300.0), scenario="baseline", horizon=3))
     adv = evaluateSheet(buildScenarioSheet(_snapshot(baseRevenue=300.0), scenario="adverse", horizon=3))
     baseRevTerminal = base["rev.path@baseline#all"].value
     advRevTerminal = adv["rev.path@adverse#all"].value
     assert advRevTerminal < baseRevTerminal  # recession shrinks the revenue path
+
+
+@pytest.mark.unit
+def test_unknown_scenario_is_rejected() -> None:
+    """조용한 baseline 폴백은 입력과 provenance 를 서로 다르게 만들어 금지한다."""
+    with pytest.raises(ValueError, match="scenario"):
+        buildScenarioSheet(_snapshot(baseRevenue=300.0), scenario="not-a-scenario", horizon=3)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("horizon", [0, -1, 4, True])
+def test_horizon_outside_preset_path_is_rejected(horizon) -> None:
+    """결과 horizon 과 실제 벡터 길이가 달라지는 요청은 계산 전에 차단한다."""
+    with pytest.raises((TypeError, ValueError), match="horizon"):
+        buildScenarioSheet(_snapshot(baseRevenue=300.0), scenario="baseline", horizon=horizon)
+
+
+@pytest.mark.unit
+def test_snapshot_asof_slices_quarterly_series_and_keeps_latest_separate(monkeypatch) -> None:
+    """asOf 는 라벨이 아니라 분기 시리즈 절단이며 latestAsOf 와 분리된다."""
+
+    class _FakeCompany:
+        sectorParams = None
+
+        def _buildFinanceSeries(self, *, freq="Q"):
+            assert freq == "Q"
+            periods = ["2019-Q1", "2019-Q2", "2019-Q3", "2019-Q4", "2020-Q1"]
+            series = {
+                "IS": {
+                    "sales": [10.0, 20.0, 30.0, 40.0, 1000.0],
+                    "operating_profit": [1.0, 2.0, 3.0, 4.0, 500.0],
+                },
+                "BS": {
+                    "cash_and_cash_equivalents": [1.0, 2.0, 3.0, 4.0, 999.0],
+                    "shortterm_borrowings": [2.0, 3.0, 4.0, 5.0, 999.0],
+                },
+                "CF": {},
+            }
+            return series, periods
+
+    monkeypatch.setattr("dartlab.simulate.registry._getSeriesAndShares", lambda company: (None, 100, "KRW"))
+    monkeypatch.setattr("dartlab.simulate.registry._resolveSectorKey", lambda company: "반도체")
+
+    snap = buildSnapshot(_FakeCompany(), asOf="2019Q4")
+
+    assert snap["asOf"] == "2019-Q4"
+    assert snap["latestAsOf"] == "2020-Q1"
+    assert snap["requestedAsOf"] == "2019-Q4"
+    assert snap["series"]["IS"]["sales"] == [10.0, 20.0, 30.0, 40.0]
+    assert snap["baseRevenue"] == 100.0
+    assert snap["baseMargin"] == 10.0
+    assert snap["netDebt"] == 1.0
+    # 역사 시점의 발행주식수 vintage 가 없으므로 현재 shares 를 섞지 않고 결손으로 둔다.
+    assert snap["shares"] is None
+    assert "historicalSharesUnavailable" in snap["warnings"]
+
+
+@pytest.mark.unit
+def test_snapshot_rejects_asof_outside_available_periods(monkeypatch) -> None:
+    class _FakeCompany:
+        sectorParams = None
+
+        def _buildFinanceSeries(self, *, freq="Q"):
+            return {"IS": {"sales": [1.0]}, "BS": {}, "CF": {}}, ["2020-Q1"]
+
+    monkeypatch.setattr("dartlab.simulate.registry._getSeriesAndShares", lambda company: (None, 100, "KRW"))
+    monkeypatch.setattr("dartlab.simulate.registry._resolveSectorKey", lambda company: None)
+
+    with pytest.raises(ValueError, match="asOf"):
+        buildSnapshot(_FakeCompany(), asOf="2019Q4")
+    with pytest.raises(ValueError, match="asOf"):
+        buildSnapshot(_FakeCompany(), asOf="2021Q1")
 
 
 # ──────────────────────────────────────────────────────────────────────

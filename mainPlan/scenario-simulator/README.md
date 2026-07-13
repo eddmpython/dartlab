@@ -5,6 +5,18 @@
 
 ---
 
+## 현재 구현 판정 (2026-07-13 코드 재감사)
+
+- **실행 가능**: 회사 단위 결정론 4노드 경로(`macro.path -> rev.path -> proforma -> dcf`)는 KR 실데이터에서 동작한다. 삼성전자 최신 기준 TTM 매출 앵커 388.3조원, baseline 3년 경로와 주당 DCF가 재현됐다.
+- **이번 P0 복구**: 분기 시리즈를 쓰도록 바로잡아 연간 4개년 합산 오류를 제거했다. 알 수 없는 scenario의 baseline 묵시 폴백과 프리셋보다 긴 horizon을 차단했다. net debt 결손의 0 대체를 제거하고, 기본 WACC·성장률·마진·탄성을 `assumptions`로 노출한다. `asOf`와 vintage를 노드 해시에 포함한다.
+- **PIT 한계**: `asOf`는 이제 해당 재무 분기까지 실제 절단하지만, 원천 시리즈가 공시 접수일별 정정 전 값을 보존하지 않는다. 따라서 현재는 **fiscal-period PIT**만 가능하며 filing-vintage PIT는 미완료다. 과거 발행주식수도 없어 과거 주당 DCF는 기권한다.
+- **제품 미완료**: Play UI, fan distribution, driver override, lens, 다중 분기 비교 표면은 아직 없다. 따라서 PRD 전체를 완성 제품으로 부르면 안 된다.
+- **계약 미완료**: `dartlab.simulate(...)`와 `Company.simulate(...)`는 호출 가능하지만 `CLAUDE.md`의 계약 엔진 목록과 Skill OS에는 `simulate`가 없다. axis-dispatch 형태를 결정하고 등록하기 전까지 안정 공개 계약이 아닌 preview다.
+
+상세 변경과 검증 증거는 [04-progress-ledger.md](04-progress-ledger.md)의 2026-07-13 항목을 따른다.
+
+---
+
 ## 한 줄 결정
 
 이 기능은 "주가 예측기"가 아니다. `asOf` 시점에 알려진 근거와 명시 가정을 고정한 뒤, **재생버튼을 누르면 그 가정 하에서 미래가 시간순으로 펼쳐지는(주가·사건·지표·재무) 결정론적 리플레이 퍼포먼스**다. 핵심 명제: *미래를 맞히려는 게 아니라, 명시된 가정 하에서 무슨 일이 벌어질 수 있는지를 확률 분포로 있는 그대로 보여준다.* scenario ≠ forecast.

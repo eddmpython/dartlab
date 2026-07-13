@@ -289,7 +289,7 @@ def evaluateSheet(sheet: DriverSheet) -> dict[str, NodeValue]:
     Capabilities:
         Walks `buildOrder(sheet)`, calls each node's registry fn with its resolved dependency
         values, wraps the result in a `NodeValue` (computing `inputsHash` from the parents' hashes
-        + the fn key + the node's normalized frozen inputs), and writes the value back into the
+        + the fn key + the node's normalized frozen inputs and data vintage), and writes the value back into the
         node's `det`. This is the lens=None (deterministic) path: there is NO lens / AI symbol
         referenced here, so invariant-1 ("deterministic without AI") holds by physical absence of
         an AI entry point, not a runtime branch.
@@ -326,7 +326,7 @@ def evaluateSheet(sheet: DriverSheet) -> dict[str, NodeValue]:
 
     How:
         Walk `buildOrder`; per node call its registry fn with resolved deps, hash parents + fn +
-        frozen inputs into a NodeValue, and write it back into the node's `det`.
+        frozen inputs + vintage into a NodeValue, and write it back into the node's `det`.
 
     SeeAlso:
         - ``buildOrder``: the deterministic order this walks.
@@ -360,7 +360,8 @@ def evaluateSheet(sheet: DriverSheet) -> dict[str, NodeValue]:
         depValues = {dep: out[dep] for dep in node.deps}
         value, vector, provenance, refs, frozenInputs, asOf, latestAsOf = fn(node, sheet, depValues)
         parentHashes = tuple(out[dep].inputsHash for dep in node.deps)
-        ih = computeInputsHash(parentHashes, node.fn, frozenInputs)
+        hashInputs = {"frozenInputs": frozenInputs, "asOf": asOf, "latestAsOf": latestAsOf}
+        ih = computeInputsHash(parentHashes, node.fn, hashInputs)
         nv = NodeValue(
             value=value,
             vector=tuple(vector) if vector is not None else None,

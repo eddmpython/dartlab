@@ -9,7 +9,7 @@ the born-clean foundation into one run:
         -> evaluateSheet(sheet)        # deterministic topo executor (§6.2)
           -> SimulationResult          # ref + quality status + provenance + asOf (§3)
 
-`runScenario` is INTERNAL — not yet a public `Company.simulate(...)` verb. The apiContract /
+`runScenario` is internal. Callable top-level / Company previews exist, but apiContract /
 EngineCall registration, the lens path, Play, and DriverRegistry convergence are later phases
 (see the ledger). honest-gap (§3): a missing leaf or absent base metric leaves the corresponding
 field None and downgrades the node's quality status to ``partial`` — never silently 0.
@@ -32,6 +32,7 @@ from dartlab.simulate.registry import (
     DRIVER_REV,
     buildScenarioSheet,
     buildSnapshot,
+    validateScenarioSpec,
 )
 from dartlab.simulate.sheet import NodeValue, evaluateSheet
 
@@ -81,7 +82,10 @@ class SimulationResult:
         nodes         : driverId -> NodeAudit (provenance / refs / quality status / asOf).
         asOf          : the run's data vintage.
         latestAsOf    : latest available vintage.
+        requestedAsOf : the caller's normalized requested fiscal period.
         quality       : overall ``"ok"`` if every node is ok, else ``"partial"``.
+        assumptions   : explicit defaults used by the run.
+        warnings      : data limitations and honest-gap reasons.
     """
 
     scenarioName: str
@@ -96,7 +100,9 @@ class SimulationResult:
     nodes: dict[str, NodeAudit]
     asOf: str
     latestAsOf: str
+    requestedAsOf: str
     quality: str = "ok"
+    assumptions: tuple[str, ...] = field(default_factory=tuple)
     warnings: tuple[str, ...] = field(default_factory=tuple)
 
 
@@ -137,18 +143,19 @@ def runScenario(
         company: a `Company` (DART/EDGAR) instance to simulate. Read forward via the L2 finance
             accessors (`_buildFinanceSeries`, `sector`, `sectorParams`).
         scenario: the scenario id — a key of `synth.scenario.getPresetScenarios("KR")` (e.g.
-            ``"baseline"``, ``"adverse"``, ``"semiconductor_down"``). Unknown ids fall back to the
-            baseline preset.
-        horizon: number of forecast years (default 3; macro paths are truncated to this length).
-        asOf: explicit data-vintage label; when None, the company's latest finance period is used.
+            ``"baseline"``, ``"adverse"``, ``"semiconductor_down"``).
+        horizon: number of forecast years. It cannot exceed the selected preset path.
+        asOf: explicit fiscal period (YYYY or YYYY-Qn). This is period-scoped PIT, not filing
+            receipt-date vintage reconstruction.
 
     Returns:
         SimulationResult: the scenario's paths + dcf per-share value + per-node audit + overall
         quality status (``"ok"`` / ``"partial"``).
 
     Raises:
-        ValueError: only from the executor on a malformed sheet (cycle / missing dep) — the wiring
-            built here is acyclic, so this is a programming-error guard, not a data condition.
+        TypeError: if scenario or horizon has the wrong type.
+        ValueError: if scenario, horizon, or asOf is outside its supported domain, or from the
+            executor on malformed wiring.
 
     Example:
         >>> from dartlab.providers.dart.company import Company  # doctest: +SKIP
@@ -196,6 +203,7 @@ def runScenario(
         Dataflow: company -> snapshot -> sheet -> evaluateSheet -> SimulationResult.
         TargetMarkets: KR (getPresetScenarios("KR") + KR elasticity); US needs US presets.
     """
+    validateScenarioSpec(scenario, horizon)
     snapshot = buildSnapshot(company, asOf=asOf)
     sheet = buildScenarioSheet(snapshot, scenario=scenario, horizon=horizon)
     out = evaluateSheet(sheet)
@@ -220,9 +228,15 @@ def runScenario(
         DRIVER_PROFORMA: _audit(DRIVER_PROFORMA, proformaNv),
         DRIVER_DCF: _audit(DRIVER_DCF, dcfNv),
     }
-    quality = "ok" if all(a.status == "ok" for a in nodes.values()) else "partial"
+    assumptions = tuple(snapshot.get("assumptions", ()))
+    snapshotWarnings = tuple(snapshot.get("warnings", ()))
+    quality = (
+        "ok"
+        if all(a.status == "ok" for a in nodes.values()) and not assumptions and not snapshotWarnings
+        else "partial"
+    )
 
-    warnings: list[str] = []
+    warnings: list[str] = list(snapshotWarnings)
     if snapshot.get("baseRevenue") is None:
         warnings.append("base revenue absent — scenario path unavailable (honest-gap)")
     if snapshot.get("shares") in (None, 0):
@@ -241,7 +255,9 @@ def runScenario(
         nodes=nodes,
         asOf=snapshot["asOf"],
         latestAsOf=snapshot["latestAsOf"],
+        requestedAsOf=snapshot.get("requestedAsOf", snapshot["asOf"]),
         quality=quality,
+        assumptions=assumptions,
         warnings=tuple(warnings),
     )
 
@@ -262,7 +278,7 @@ def _marginPathFromSnapshot(snapshot: dict, scenario: str, horizon: int) -> tupl
         return None
     baseMargin = snapshot["baseMargin"] if snapshot.get("baseMargin") is not None else 10.0
     presets = getPresetScenarios("KR")
-    sc = presets.get(scenario) or presets["baseline"]
+    sc = presets[scenario]
     _rev, marginPath, _wacc = transferRevenuePath(
         baseRevenue,
         baseMargin,
