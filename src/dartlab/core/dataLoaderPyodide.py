@@ -6,7 +6,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.core.dataConfig import DATA_RELEASES, hfBaseUrl
+from dartlab.core.dataConfig import DATA_RELEASES, HF_BASE_URL, hfBaseUrl
 
 
 def arrowToPolars(arrowTable) -> pl.DataFrame:
@@ -116,6 +116,49 @@ def _decodeUserDefined(text: str) -> bytes:
         return (codes & 0xFF).astype(_np.uint8).tobytes()
     except Exception:  # noqa: BLE001 (numpy 부재/메모리 등: 느리지만 정확한 경로)
         return bytes(ord(c) & 0xFF for c in text)
+
+
+def loadCorpListPyodide() -> pl.DataFrame:
+    """Pyodide: HF ``metadata/corpList.parquet`` (gov 발행 상장사 목록)을 직독한다.
+
+    브라우저에서 KRX API(``kind.krx.co.kr``)는 CORS 로 막혀 회사명↔종목코드 해석이 죽는다.
+    같은 목록이 gov 축으로 HF 에 발행돼 있으므로(회사명·종목코드 포함) 그걸 직독해 노트북에서도
+    ``Company("삼성전자")`` 이름 해석이 되게 한다. fetch 는 데이터 로더와 동일한 tier(JSPI pyfetch →
+    동기 XHR + ``_decodeUserDefined``) 를 쓴다. 실패 시 예외를 던져 호출부가 빈 목록으로 저하한다.
+    """
+    from io import BytesIO
+
+    url = f"{HF_BASE_URL}/metadata/corpList.parquet"
+    buf = None
+
+    # tier 1 (opportunistic): JSPI stack-switching 브라우저면 sync 로 async fetch.
+    try:
+        from pyodide.ffi import run_sync  # type: ignore[import-not-found]
+        from pyodide.http import pyfetch  # type: ignore[import-not-found]
+
+        resp = run_sync(pyfetch(url))
+        if resp.status == 200:
+            buf = bytes(run_sync(resp.bytes()))
+    except Exception:
+        pass
+
+    # tier 2 (reliable): 동기 XHR. 웹워커 항상 동작. x-user-defined 텍스트 → 바이트(벡터 복원).
+    if buf is None:
+        try:
+            from js import XMLHttpRequest  # type: ignore[import-not-found]
+
+            xhr = XMLHttpRequest.new()
+            xhr.open("GET", url, False)
+            xhr.overrideMimeType("text/plain; charset=x-user-defined")
+            xhr.send()
+            if xhr.status == 200:
+                buf = _decodeUserDefined(xhr.responseText)
+        except Exception:
+            pass
+
+    if buf is None:
+        raise RuntimeError(f"corpList fetch 실패: {url}")
+    return pl.read_parquet(BytesIO(buf))
 
 
 def pyodideFetchToFS(stockCode: str, category: str, dirPath: str, path: Path) -> None:

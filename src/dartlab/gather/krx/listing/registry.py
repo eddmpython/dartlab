@@ -315,7 +315,8 @@ def getKindList(*, forceRefresh: bool = False) -> pl.DataFrame:
     Requires
     --------
     네트워크 (``kind.krx.co.kr/corpgeneral/corpList.do``) + 파일 쓰기 (``{dataRoot}/
-    kindList/corpList.parquet``). Pyodide 환경에서는 빈 DataFrame fallback.
+    kindList/corpList.parquet``). Pyodide 환경에서는 KRX API(CORS) 대신 HF
+    ``metadata/corpList.parquet`` (gov 발행) 을 직독한다.
 
     See Also
     --------
@@ -328,9 +329,15 @@ def getKindList(*, forceRefresh: bool = False) -> pl.DataFrame:
     import sys
 
     if sys.platform == "emscripten":
-        # Pyodide: KRX API CORS 차단 → 빈 DataFrame (corpName은 docs에서 추출)
+        # Pyodide: KRX API(kind.krx.co.kr)는 CORS 차단. 같은 목록이 gov 축으로 HF 에 발행돼 있으므로
+        # metadata/corpList.parquet 를 직독한다(회사명↔종목코드 해석이 브라우저 노트북에서도 동작).
         if _memory is None:
-            _memory = pl.DataFrame({"회사명": [], "종목코드": []})
+            try:
+                from dartlab.core.dataLoaderPyodide import loadCorpListPyodide
+
+                _memory = loadCorpListPyodide()
+            except Exception:
+                _memory = pl.DataFrame({"회사명": [], "종목코드": []})
         return _memory
 
     if not forceRefresh and _memory is not None:
