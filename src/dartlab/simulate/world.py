@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import marshal
 import math
+import sqlite3
 from dataclasses import dataclass, field, fields, replace
 from hashlib import sha256
 from types import MappingProxyType
@@ -28,6 +29,70 @@ class SimulationSpecError(ValueError):
 
 class SimulationBlocked(RuntimeError):
     """Raised when a required value is missing instead of silently using zero."""
+
+
+class _CvarSpill:
+    """compact 실행의 경로값을 임시 SQLite 파일에 흘려 exact weighted CVaR을 집계한다."""
+
+    def __init__(self) -> None:
+        self._connection = sqlite3.connect("")
+        self._connection.execute("PRAGMA journal_mode=OFF")
+        self._connection.execute("PRAGMA synchronous=OFF")
+        self._connection.execute(
+            "CREATE TABLE score (strategyIndex INTEGER, objectiveIndex INTEGER, ordinal INTEGER, value REAL, weight REAL)"
+        )
+        self._prepared = False
+
+    def add(self, strategyIndex: int, objectiveIndex: int, ordinal: int, value: float, weight: float) -> None:
+        """경로 목적값과 가중치를 메모리 대신 임시 저장소에 추가한다."""
+
+        self._connection.execute(
+            "INSERT INTO score VALUES (?, ?, ?, ?, ?)",
+            (strategyIndex, objectiveIndex, ordinal, value, weight),
+        )
+
+    def weightedCvar(self, strategyIndex: int, objectiveIndex: int, tailFraction: float) -> float:
+        """낮은 목적값 꼬리를 value와 ordinal 순으로 읽어 exact weighted CVaR을 반환한다."""
+
+        if not self._prepared:
+            self._connection.execute(
+                "CREATE INDEX score_order ON score (strategyIndex, objectiveIndex, value, ordinal)"
+            )
+            self._prepared = True
+        totalWeight = float(
+            self._connection.execute(
+                "SELECT SUM(weight) FROM score WHERE strategyIndex=? AND objectiveIndex=?",
+                (strategyIndex, objectiveIndex),
+            ).fetchone()[0]
+        )
+        target = totalWeight * tailFraction
+        used = 0.0
+        total = 0.0
+        rows = self._connection.execute(
+            "SELECT value, weight FROM score WHERE strategyIndex=? AND objectiveIndex=? ORDER BY value, ordinal",
+            (strategyIndex, objectiveIndex),
+        )
+        for value, weight in rows:
+            take = min(float(weight), target - used)
+            if take > 0:
+                total += float(value) * take
+                used += take
+            if used >= target - 1e-12:
+                break
+        if used <= 0:
+            raise SimulationSpecError("compact cvar spill has no positive weight")
+        return total / used
+
+    def close(self) -> None:
+        """임시 SQLite 저장소를 닫고 운영체제가 파일을 회수하게 한다."""
+
+        connection = getattr(self, "_connection", None)
+        if connection is not None:
+            connection.close()
+            self._connection = None
+
+    def __del__(self) -> None:
+        self.close()
 
 
 def _freezeMapping(values: Mapping) -> Mapping:
@@ -927,8 +992,6 @@ def simulateWorld(
             raise SimulationSpecError(f"invalid objective contract: {objective.metric}")
         if not math.isfinite(float(objective.tailFraction)) or not 0 < objective.tailFraction <= 1:
             raise SimulationSpecError(f"non-finite objective contract: {objective.metric}")
-        if traceLimit is not None and objective.risk == "cvar":
-            raise SimulationSpecError("compact trace retention cannot aggregate exact cvar")
     for constraint in constraints:
         if (
             constraint.metric not in variableIds
@@ -938,6 +1001,7 @@ def simulateWorld(
             raise SimulationSpecError(f"invalid constraint: {constraint.metric}")
 
     actionById = {action.actionId: action for action in model.actions}
+    cvarSpill = _CvarSpill() if traceLimit is not None and any(item.risk == "cvar" for item in objectives) else None
     weights = [1.0 if path.weight is None else float(path.weight) for path in paths]
     traces: list[PathTrace] = []
     traceChain = sha256()
@@ -955,7 +1019,7 @@ def simulateWorld(
         strategy.strategyId: [math.inf for _ in objectives] for strategy in strategies
     }
     breachCounts = {strategy.strategyId: 0 for strategy in strategies}
-    for strategy in strategies:
+    for strategyIndex, strategy in enumerate(strategies):
         for pathIndex, path in enumerate(paths):
             prior = {name: _finite(value, f"initial.{name}") for name, value in initial.values.items()}
             stepTraces: list[StepTrace] = []
@@ -1085,9 +1149,13 @@ def simulateWorld(
                     objectiveWorst[strategy.strategyId][objectiveIndex] = min(
                         objectiveWorst[strategy.strategyId][objectiveIndex], value
                     )
+                elif objective.risk == "cvar" and traceLimit is not None:
+                    if cvarSpill is None:
+                        raise SimulationSpecError("compact cvar spill was not initialized")
+                    cvarSpill.add(strategyIndex, objectiveIndex, pathIndex, value, weight)
 
     evaluations: list[StrategyEvaluation] = []
-    for strategy in strategies:
+    for strategyIndex, strategy in enumerate(strategies):
         objectivePathValues: list[tuple[float, ...]] = []
         objectiveScores: list[float] = []
         for objectiveIndex, objective in enumerate(objectives):
@@ -1101,6 +1169,10 @@ def simulateWorld(
                 objectiveScores.append(numerator / denominator)
             elif objective.risk == "worst":
                 objectiveScores.append(objectiveWorst[strategy.strategyId][objectiveIndex])
+            elif objective.risk == "cvar":
+                if cvarSpill is None:
+                    raise SimulationSpecError("compact cvar spill was not initialized")
+                objectiveScores.append(cvarSpill.weightedCvar(strategyIndex, objectiveIndex, objective.tailFraction))
         breachCount = breachCounts[strategy.strategyId]
         evaluations.append(
             StrategyEvaluation(
@@ -1111,6 +1183,8 @@ def simulateWorld(
                 feasible=breachCount == 0,
             )
         )
+    if cvarSpill is not None:
+        cvarSpill.close()
 
     unqualifiedLaws = [law.lawId for law in model.laws if law.status != "active"]
     actionLaws = [law for law in model.laws if law.actionInputs]

@@ -622,14 +622,27 @@ def testCompactTraceRetentionKeepsExactAverageAndWholeTraceRoot():
     assert all(item.pathValues == () for item in compact.evaluations)
 
 
-def testCompactTraceRetentionRejectsExactCvarUntilSpillAggregationExists():
-    path = ScenarioPath("path", ({"demand": 10.0, "rate": 0.05},) * 2)
-    with pytest.raises(SimulationSpecError, match="compact trace retention.*cvar"):
-        simulateWorld(
-            _model(),
-            _state(),
-            (path,),
-            (_strategy("noop", (0.0,) * 2),),
-            objectives=(ObjectiveSpec("netCash", risk="cvar"),),
-            traceLimit=0,
+def testCompactTraceRetentionSpillsExactWeightedCvar():
+    paths = tuple(
+        ScenarioPath(
+            f"path-{index}",
+            ({"demand": float(5 + index), "rate": 0.05},) * 2,
+            weight=float(index + 1),
+            weightKind="subjective",
         )
+        for index in range(10)
+    )
+    strategy = (_strategy("noop", (0.0,) * 2),)
+    objectives = (ObjectiveSpec("netCash", risk="cvar", tailFraction=0.2),)
+    full = simulateWorld(_model(), _state(), paths, strategy, objectives=objectives)
+    compact = simulateWorld(
+        _model(),
+        _state(),
+        paths,
+        strategy,
+        objectives=objectives,
+        traceLimit=0,
+    )
+    assert compact.evaluations[0].objectiveScores == pytest.approx(full.evaluations[0].objectiveScores)
+    assert compact.traceRoot == full.traceRoot
+    assert compact.traces == ()

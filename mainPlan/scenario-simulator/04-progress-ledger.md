@@ -310,12 +310,17 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
   결속된 chain root에 포함한다. 따라서 compact와 full 실행은 같은 전체 `traceRoot`와 수치적으로 같은
   집계 목적값을 가지며, 반환 trace와 path별 objective 배열만 지정 상한으로 줄어든다. 결과에는 전체와
   보존 trace 수를 함께 기록한다.
-- **정직한 risk 한계**: full 실행의 exact CVaR은 유지한다. compact 실행은 아직 외부정렬 또는
-  disk spill 집계가 없어 exact CVaR을 지원한다고 가장하지 않고 실행 전에 차단한다. 대량 CVaR spill,
-  대표 trace의 stratified retention, 정책 admission과 OOS 평가 인증은 후속이다.
+- **exact compact CVaR**: compact 실행의 경로 목적값과 가중치만 OS 관리 임시 SQLite 파일로 흘리고,
+  `(value, ordinal)` 인덱스 순서로 낮은 꼬리 질량을 읽어 full 실행과 같은 weighted CVaR을 계산한다.
+  path trace와 path별 목적 배열은 메모리에 보존하지 않으며 집계 뒤 임시 연결을 닫는다. 근사 분위로
+  대체하지 않는다. 대표 trace의 stratified retention, 정책 admission과 OOS 평가 인증은 후속이다.
+- **메모리 실측**: 1,000 경로 x 2 전략 x 12기간, exact CVaR 10% 조건에서 Python tracemalloc
+  실행 피크는 full 51.26MiB, compact 4.44MiB로 11.56배 감소했다. 전체 trace 2,000개 중 8개만
+  보존했고 CVaR score는 1e-12 이내 동일했다. 이는 반환 trace 상한과 disk spill이 실제 메모리
+  증가율을 끊는다는 수직절편이며, 더 큰 회사 재무 law 묶음의 처리량 benchmark는 후속이다.
 - **검증**: `_attempts/closedLoopPolicy` 2건과 `_attempts/boundedWorldExecution` 2건을 먼저 통과시킨 뒤
   본진에 폐루프 반응, 현재 shock 비가시성, 실제 발행 행동의 lead 적용, 정책 executable hash,
-  compact 집계와 전체 trace root 동일성, CVaR 기권 회귀를 승격했다.
+  compact 집계와 전체 trace root 동일성, disk-spill exact CVaR 회귀를 승격했다.
 
 ### 0c-29. 분기 전이, 파라미터 불확실성, 실행 인증 P0 보강 (2026-07-13)
 
