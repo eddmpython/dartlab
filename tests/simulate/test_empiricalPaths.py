@@ -124,9 +124,10 @@ def test_certificate_uses_last_fully_valid_step_and_binds_time_and_units() -> No
     )
     assert certificate.status == "admitted"
     assert certificate.maxAdmittedStep == 2
-    admitted = _build(_panel(), horizon=2, certificate=certificate, historyStatus="asKnown")
-    assert admitted.audit.validationStatus == "admitted"
-    assert {path.maxAdmittedStep for path in admitted.paths} == {2}
+    eligible = _build(_panel(), horizon=2, certificate=certificate, historyStatus="asKnown")
+    assert eligible.audit.validationStatus == "retrospectiveOnly"
+    assert {path.maxAdmittedStep for path in eligible.paths} == {2}
+    assert "pathAdmissionReceipt:required" in eligible.audit.warnings
     with pytest.raises(EmpiricalPathError, match="maxAdmittedStep"):
         _build(_panel(), horizon=3, certificate=certificate, historyStatus="asKnown")
     with pytest.raises(EmpiricalPathError, match="step contract mismatch"):

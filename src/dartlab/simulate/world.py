@@ -9,12 +9,22 @@ import sqlite3
 from dataclasses import dataclass, field, fields, replace
 from hashlib import sha256
 from types import MappingProxyType
-from typing import Callable, Mapping
+from typing import TYPE_CHECKING, Callable, Mapping
 
 from dartlab.simulate.parameterDraws import (
     ParameterDrawSetReceipt,
     validateParameterDrawSetReceipt,
 )
+from dartlab.simulate.vintage import (
+    VintageError,
+    VintageRef,
+    isExactAsKnown,
+    validateVintageRef,
+    worldStatePayloadHash,
+)
+
+if TYPE_CHECKING:
+    from dartlab.simulate.admissionRegistry import AdmissionVerifier
 
 ROLE_SET = {"state", "metric", "shock"}
 EVIDENCE_SET = {
@@ -226,6 +236,7 @@ class WorldState:
     refs: tuple[str, ...] = ()
     knowledgeAsOf: str = ""
     decisionAsOf: str = ""
+    vintage: VintageRef | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "values", _freezeMapping(self.values))
@@ -251,6 +262,8 @@ class ScenarioPath:
     parameterDrawReceipt: ParameterDrawSetReceipt | None = None
     knowledgeAsOf: str = ""
     historyStatus: str = ""
+    vintage: VintageRef | None = None
+    admissionReceiptId: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "steps", tuple(_freezeMapping(step) for step in self.steps))
@@ -458,27 +471,50 @@ def _stableHash(payload: Mapping) -> str:
     return sha256(raw.encode("utf-8")).hexdigest()
 
 
+def _pathSetPayload(paths: tuple[ScenarioPath, ...]) -> dict:
+    return {
+        "paths": [
+            {
+                "pathId": path.pathId,
+                "steps": [dict(step) for step in path.steps],
+                "weight": path.weight,
+                "weightKind": path.weightKind,
+                "refs": path.refs,
+                "frequency": path.frequency,
+                "stepSpan": path.stepSpan,
+                "certificateId": path.certificateId,
+                "validationStatus": path.validationStatus,
+                "maxAdmittedStep": path.maxAdmittedStep,
+                "parameterDraws": path.parameterDraws,
+                "parameterDrawReceipt": path.parameterDrawReceipt,
+                "knowledgeAsOf": path.knowledgeAsOf,
+                "historyStatus": path.historyStatus,
+                "vintage": path.vintage,
+            }
+            for path in paths
+        ]
+    }
+
+
+def pathSetAdmissionArtifact(paths: tuple[ScenarioPath, ...]) -> bytes:
+    """서명 대상 경로 집합을 순서 보존 정규 JSON 아티팩트로 직렬화한다."""
+
+    return json.dumps(
+        _canonical(_pathSetPayload(paths)),
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+
+def pathSetAdmissionSubjectHash(paths: tuple[ScenarioPath, ...]) -> str:
+    """경로 admission 영수증이 서명해야 할 정확한 subject hash를 반환한다."""
+
+    return sha256(pathSetAdmissionArtifact(paths)).hexdigest()
+
+
 def _pathSetContentHash(paths: tuple[ScenarioPath, ...]) -> str:
-    payload = [
-        {
-            "pathId": path.pathId,
-            "steps": [dict(step) for step in path.steps],
-            "weight": path.weight,
-            "weightKind": path.weightKind,
-            "refs": path.refs,
-            "frequency": path.frequency,
-            "stepSpan": path.stepSpan,
-            "certificateId": path.certificateId,
-            "validationStatus": path.validationStatus,
-            "maxAdmittedStep": path.maxAdmittedStep,
-            "parameterDraws": path.parameterDraws,
-            "parameterDrawReceipt": path.parameterDrawReceipt,
-            "knowledgeAsOf": path.knowledgeAsOf,
-            "historyStatus": path.historyStatus,
-        }
-        for path in paths
-    ]
-    return _stableHash({"paths": payload})
+    return pathSetAdmissionSubjectHash(paths)
 
 
 def bindAdmittedPathContent(paths: tuple[ScenarioPath, ...]) -> tuple[ScenarioPath, ...]:
@@ -492,6 +528,19 @@ def bindAdmittedPathContent(paths: tuple[ScenarioPath, ...]) -> tuple[ScenarioPa
         raise SimulationSpecError("admitted paths need as-known history")
     contentHash = _pathSetContentHash(paths)
     return tuple(replace(path, admissionContentHash=contentHash) for path in paths)
+
+
+def bindPathAdmissionReceipt(paths: tuple[ScenarioPath, ...], receiptId: str) -> tuple[ScenarioPath, ...]:
+    """내용 결속을 바꾸지 않고 경로 집합 전체에 하나의 서명 영수증을 연결한다."""
+
+    if not _validDigest(receiptId):
+        raise SimulationSpecError("path admission receipt identifier is invalid")
+    if not paths or any(path.validationStatus != "admitted" for path in paths):
+        raise SimulationSpecError("only admitted paths can bind an admission receipt")
+    contentHashes = {path.admissionContentHash for path in paths}
+    if len(contentHashes) != 1 or next(iter(contentHashes)) != _pathSetContentHash(paths):
+        raise SimulationSpecError("path admission receipt needs exact content binding")
+    return tuple(replace(path, admissionReceiptId=receiptId) for path in paths)
 
 
 def _lawContractPayload(law: LawSpec) -> dict:
@@ -804,6 +853,7 @@ def _checkInputs(
     initial: WorldState,
     paths: tuple[ScenarioPath, ...],
     strategies: tuple[StrategySpec, ...],
+    admissionVerifier: AdmissionVerifier | None,
 ) -> int:
     if not paths or not strategies:
         raise SimulationSpecError("at least one path and strategy are required")
@@ -826,6 +876,25 @@ def _checkInputs(
         decisionDate = initialKnowledgeDate
     if initialKnowledgeDate is not None and decisionDate is not None and initialKnowledgeDate > decisionDate:
         raise SimulationSpecError("initial state knowledge is newer than its decision cutoff")
+    if initial.vintage is not None:
+        if decisionDate is None:
+            raise SimulationSpecError("initial state vintage needs a decision cutoff")
+        try:
+            validateVintageRef(
+                initial.vintage,
+                decisionAsOf=decisionDate,
+                expectedArtifactKind="worldState",
+                expectedPayloadHash=worldStatePayloadHash(
+                    initial.values,
+                    step=initial.step,
+                    asOf=initial.asOf,
+                    refs=initial.refs,
+                ),
+            )
+        except VintageError as error:
+            raise SimulationSpecError(str(error)) from error
+        if initial.knowledgeAsOf and initial.vintage.knowledgeAsOf != initialKnowledgeDate:
+            raise SimulationSpecError("initial state vintage knowledge cutoff mismatch")
     for law in model.laws:
         certificate = law.certificate
         if law.evidenceKind in {"measuredAssociation", "identifiedIntervention"}:
@@ -883,6 +952,15 @@ def _checkInputs(
             )
         if path.maxAdmittedStep < 0:
             raise SimulationSpecError(f"negative admitted horizon: {path.pathId}")
+        if path.vintage is not None:
+            if decisionDate is None:
+                raise SimulationSpecError("path vintage needs an initial-state decision cutoff")
+            try:
+                validateVintageRef(path.vintage, decisionAsOf=decisionDate)
+            except VintageError as error:
+                raise SimulationSpecError(str(error)) from error
+            if path.knowledgeAsOf and path.vintage.knowledgeAsOf != path.knowledgeAsOf:
+                raise SimulationSpecError(f"path vintage knowledge cutoff mismatch: {path.pathId}")
         if path.validationStatus == "admitted":
             if not _validDigest(path.certificateId):
                 raise SimulationSpecError(f"admitted path needs a certificate: {path.pathId}")
@@ -893,6 +971,10 @@ def _checkInputs(
                 raise SimulationSpecError(f"admitted path needs a knowledge cutoff: {path.pathId}")
             if path.historyStatus != "asKnown":
                 raise SimulationSpecError(f"admitted path needs as-known history: {path.pathId}")
+            if path.vintage is None or not isExactAsKnown(path.vintage):
+                raise SimulationSpecError(f"admitted path needs an exact as-known vintage: {path.pathId}")
+            if not _validDigest(path.vintage.receiptId):
+                raise SimulationSpecError(f"admitted path needs a signed vintage receipt: {path.pathId}")
             if decisionDate is None:
                 raise SimulationSpecError("admitted paths need an initial-state decision cutoff")
             if pathDate > decisionDate:
@@ -929,8 +1011,67 @@ def _checkInputs(
         contentHashes = {path.admissionContentHash for path in paths}
         if len(contentHashes) != 1 or not _validDigest(next(iter(contentHashes))):
             raise SimulationSpecError("admitted paths need one content binding")
-        if next(iter(contentHashes)) != _pathSetContentHash(paths):
+        contentHash = next(iter(contentHashes))
+        if contentHash != _pathSetContentHash(paths):
             raise SimulationSpecError("admitted path content binding mismatch")
+        receiptIds = {path.admissionReceiptId for path in paths}
+        vintages = {path.vintage for path in paths}
+        if len(receiptIds) != 1 or not _validDigest(next(iter(receiptIds))):
+            raise SimulationSpecError("admitted paths need one signed path-set receipt")
+        if len(vintages) != 1:
+            raise SimulationSpecError("admitted paths must share one typed vintage")
+        if admissionVerifier is None:
+            raise SimulationSpecError("admitted paths need a runtime admission verifier")
+        receiptId = next(iter(receiptIds))
+        vintage = next(iter(vintages))
+        if vintage is None:
+            raise SimulationSpecError("admitted paths need one typed vintage")
+        try:
+            receipt = admissionVerifier.verify(
+                receiptId,
+                expectedSubjectHash=contentHash,
+                expectedKind="pathSet",
+            )
+            vintageReceipt = admissionVerifier.verify(
+                vintage.receiptId,
+                expectedSubjectHash=vintage.payloadHash,
+                expectedKind="dataVintage",
+            )
+        except RuntimeError as error:
+            raise SimulationSpecError(f"path admission verification failed: {error}") from error
+        if receipt.status != "admitted":
+            raise SimulationSpecError("path-set receipt is not admitted")
+        if receipt.artifactHash != contentHash:
+            raise SimulationSpecError("path-set receipt artifact binding mismatch")
+        if vintage.receiptId not in receipt.parentReceiptIds:
+            raise SimulationSpecError("path-set receipt does not inherit its vintage receipt")
+        if (
+            vintageReceipt.status != "verifiedVintage"
+            or vintageReceipt.artifactHash != vintage.artifactHash
+            or vintageReceipt.knowledgeAsOf != vintage.knowledgeAsOf
+            or vintageReceipt.revisionPolicy != vintage.revisionPolicy
+            or vintageReceipt.coverage != vintage.coverage
+        ):
+            raise SimulationSpecError("path vintage receipt contract mismatch")
+        receiptIssued = _comparableDate(receipt.issuedAt)
+        vintageIssued = _comparableDate(vintageReceipt.issuedAt)
+        if (
+            decisionDate is None
+            or receiptIssued is None
+            or vintageIssued is None
+            or receiptIssued > decisionDate
+            or vintageIssued > decisionDate
+        ):
+            raise SimulationSpecError("path admission was not available by decisionAsOf")
+        if (
+            receipt.knowledgeAsOf != next(iter(knowledgeCutoffs))
+            or receipt.frequency != model.stepFrequency
+            or receipt.stepSpan != model.stepSpan
+            or receipt.maxAdmittedStep < horizon
+            or receipt.revisionPolicy != "asKnown"
+            or receipt.coverage != "asOfExact"
+        ):
+            raise SimulationSpecError("path-set receipt execution contract mismatch")
     if weightKinds == {"calibrated"}:
         totalWeight = sum(float(path.weight) for path in paths if path.weight is not None)
         if abs(totalWeight - 1.0) > 1e-9:
@@ -1045,6 +1186,7 @@ def simulateWorld(
     objectives: tuple[ObjectiveSpec, ...] = (),
     inputWarnings: tuple[str, ...] = (),
     traceLimit: int | None = None,
+    admissionVerifier: AdmissionVerifier | None = None,
 ) -> SimulationRun:
     """Evolve every strategy over the same explicit world paths.
 
@@ -1053,7 +1195,7 @@ def simulateWorld(
     outcome.
     """
 
-    horizon = _checkInputs(model, initial, paths, strategies)
+    horizon = _checkInputs(model, initial, paths, strategies, admissionVerifier)
     if traceLimit is not None and (not isinstance(traceLimit, int) or traceLimit < 0):
         raise SimulationSpecError("traceLimit must be a nonnegative integer or None")
     variableIds = {variable.variableId for variable in model.variables}

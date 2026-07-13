@@ -10,7 +10,7 @@ from hashlib import sha256
 import numpy as np
 import polars as pl
 
-from dartlab.simulate.world import ScenarioPath, bindAdmittedPathContent
+from dartlab.simulate.world import ScenarioPath
 
 GENERATOR_VERSION = "joint-moving-block-v1"
 ADMISSION_RULES = (
@@ -295,7 +295,7 @@ def buildJointBlockPaths(
             historyStatus=historyStatus,
             knowledgeAsOf=cutoff,
         )
-    validationStatus = "admitted" if certificate is not None else "retrospectiveOnly"
+    validationStatus = "retrospectiveOnly"
     certificateId = certificate.certificateId if certificate is not None else ""
     maxAdmittedStep = certificate.maxAdmittedStep if certificate is not None else 0
     selected = complete.select("__event", "__available", *valueCols)
@@ -340,8 +340,6 @@ def buildJointBlockPaths(
             )
         )
         sampledBlocks.append(tuple(blocks))
-    if certificate is not None:
-        paths = list(bindAdmittedPathContent(tuple(paths)))
     pathPayload = [
         {
             "pathId": path.pathId,
@@ -362,6 +360,8 @@ def buildJointBlockPaths(
         for path in paths
     ]
     warnings = [f"historyStatus:{historyStatus}"]
+    if certificate is not None:
+        warnings.append("pathAdmissionReceipt:required")
     if dropped:
         warnings.append(f"droppedIncompleteJointRows:{dropped}")
     audit = EmpiricalPathAudit(

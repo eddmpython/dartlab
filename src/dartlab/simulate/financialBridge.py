@@ -6,7 +6,7 @@ import json
 import math
 from dataclasses import dataclass
 from hashlib import sha256
-from typing import Mapping
+from typing import TYPE_CHECKING, Mapping
 
 from dartlab.simulate.world import (
     LawSpec,
@@ -15,9 +15,11 @@ from dartlab.simulate.world import (
     VariableSpec,
     WorldModel,
     WorldState,
-    bindAdmittedPathContent,
     simulateWorld,
 )
+
+if TYPE_CHECKING:
+    from dartlab.simulate.admissionRegistry import AdmissionVerifier
 
 
 @dataclass(frozen=True)
@@ -114,7 +116,12 @@ def buildFinancialBridgeLaw(
     )
 
 
-def bridgeFinancialPaths(paths: tuple[ScenarioPath, ...], law: LawSpec) -> FinancialBridgeResult:
+def bridgeFinancialPaths(
+    paths: tuple[ScenarioPath, ...],
+    law: LawSpec,
+    *,
+    admissionVerifier: AdmissionVerifier | None = None,
+) -> FinancialBridgeResult:
     """동일한 연간 거시 경로를 인증된 회사 재무 충격 경로로 변환한다."""
 
     if not paths:
@@ -150,10 +157,11 @@ def bridgeFinancialPaths(paths: tuple[ScenarioPath, ...], law: LawSpec) -> Finan
         ),
         paths,
         (strategy,),
+        admissionVerifier=admissionVerifier,
     )
     traces = {trace.pathId: trace for trace in run.traces}
     lawCertificate = law.certificate
-    admitted = (
+    admissionEligible = (
         all(path.validationStatus == "admitted" for path in paths)
         and law.status == "active"
         and lawCertificate is not None
@@ -161,26 +169,10 @@ def bridgeFinancialPaths(paths: tuple[ScenarioPath, ...], law: LawSpec) -> Finan
         and sourceHistoryStatus == "asKnown"
         and bool(sourceKnowledgeAsOf)
     )
-    validationStatus = "admitted" if admitted else "retrospectiveOnly"
-    maxAdmittedStep = min(lawCertificate.maxAdmittedStep, *(path.maxAdmittedStep for path in paths)) if admitted else 0
+    validationStatus = "retrospectiveOnly"
+    maxAdmittedStep = 0
     sourceCertificates = tuple(sorted({path.certificateId for path in paths if path.certificateId}))
     sourceContentHashes = tuple(sorted({path.admissionContentHash for path in paths if path.admissionContentHash}))
-    combinedCertificate = (
-        _hash(
-            {
-                "lawCertificate": lawCertificate.certificateId,
-                "sourceCertificates": sourceCertificates,
-                "sourceContentHashes": sourceContentHashes,
-                "sourceKnowledgeAsOf": sourceKnowledgeAsOf,
-                "sourceHistoryStatus": sourceHistoryStatus,
-                "frequency": "year",
-                "stepSpan": 1,
-                "horizon": horizon,
-            }
-        )
-        if admitted
-        else ""
-    )
     bridged: list[ScenarioPath] = []
     for source in paths:
         trace = traces[source.pathId]
@@ -201,17 +193,17 @@ def bridgeFinancialPaths(paths: tuple[ScenarioPath, ...], law: LawSpec) -> Finan
                 refs=source.refs + (law.provenance,),
                 frequency="year",
                 stepSpan=1,
-                certificateId=combinedCertificate,
+                certificateId="",
                 validationStatus=validationStatus,
                 maxAdmittedStep=maxAdmittedStep,
                 knowledgeAsOf=sourceKnowledgeAsOf,
                 historyStatus=sourceHistoryStatus,
             )
         )
-    if admitted:
-        bridged = list(bindAdmittedPathContent(tuple(bridged)))
     warnings = []
-    if not admitted:
+    if admissionEligible:
+        warnings.append("bridgeAdmissionReceipt:required")
+    else:
         warnings.append(f"bridgeEvidence:{law.evidenceKind}")
     payload = [{"pathId": path.pathId, "steps": [dict(step) for step in path.steps]} for path in bridged]
     audit = FinancialBridgeAudit(

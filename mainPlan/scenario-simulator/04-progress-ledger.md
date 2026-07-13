@@ -402,6 +402,41 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
   `PathSetAdmissionReceipt`를 필수로 소비하지 않는다. 다음 단계에서 provider-neutral `VintageRef`와
   path-set receipt를 `simulateWorld` 입력 검증에 연결한 뒤 fake 64hex admitted path를 hard-fail시킨다.
 
+### 0c-34. provider-neutral VintageRef와 서명형 path-set 실행 게이트 (2026-07-13)
+
+- **빈티지 타입 결속**: `vintage.py`에 공급자 중립 `VintageRef`를 추가했다. raw artifact hash와 정규
+  payload hash, `availableAt <= knowledgeAsOf <= decisionAsOf`, fiscal/event/fit through, revision policy,
+  coverage, receipt와 계약 hash를 분리한다. 초기 `WorldState`의 typed vintage는 실제 values·step·asOf·refs를
+  다시 hash하므로 같은 빈티지 표찰 아래 상태값을 바꾸면 실행 전에 차단된다.
+- **provider 능력 차이 보존**: exact admission은 `revisionPolicy=asKnown`과 `coverage=asOfExact`만 허용한다.
+  EDGAR식 historical filing snapshot은 이 계약을 만족할 수 있지만, DART의 현재 보존 능력인
+  `latestRetained + periodOnly`는 typed provenance로는 기록해도 자동 admission으로 승격할 수 없다.
+- **PathSetAdmissionReceipt 런타임 배선**: admitted 경로 집합은 순서, shock, weight/성격, 시간격자,
+  measure certificate, parameter draw receipt, knowledge/history, typed vintage를 canonical artifact 한 개로
+  직렬화한다. 그 artifact hash와 subject hash가 같은 content address가 되며 모든 경로가 하나의
+  `admissionReceiptId`를 공유한다. `simulateWorld`는 runtime public-key allowlist verifier가 없거나 receipt가
+  unknown/revoked/tampered이면 hard-fail한다.
+- **배포 경계 유지**: 공용 `world`와 bridge는 verifier를 runtime 주입 타입으로만 참조하고 서명 구현을
+  import-time에 로드하지 않는다. 따라서 backend 전용 `cryptography`가 없는 Emscripten/Pyodide에서도
+  조건부 실행 코어 import를 막지 않으며, signed admission이 필요한 backend에서만 verifier를 주입한다.
+- **신뢰사슬 재검증**: path-set receipt는 `status=admitted`, exact as-known, model frequency/span/horizon을
+  만족하고 typed data-vintage receipt를 부모로 가져야 한다. runtime은 vintage receipt도 다시 열어
+  signature·artifact bytes·status·artifact/payload/knowledge/revision/coverage를 대조한다. 두 receipt의 발급일이
+  `decisionAsOf` 뒤면 사후 인증이므로 거부한다. fake 64hex certificate나 self content hash는 더 이상 실행
+  권한이 아니다.
+- **자체승격 제거**: OOS `PathMeasureCertificate`를 통과한 empirical path와 인증된 거시→재무 bridge도
+  로컬 SHA만으로 `admitted`를 선언하지 않는다. 둘 다 `retrospectiveOnly`와
+  `pathAdmissionReceipt:required`/`bridgeAdmissionReceipt:required` 상태로 남고 외부 issuer의 새 artifact
+  검토와 서명이 있어야 승격된다.
+- **적대 검증**: `_attempts/pathAdmissionRuntime`에서 정상 서명 체인, verifier 부재, fake receipt id,
+  decision 이후 발급, DART latest-retained/period-only, 상태 payload 변조, path artifact bytes 변조를 먼저
+  죽인 뒤 본진 4건으로 승격했다. simulate 전체 280 통과, ruff clean, Guard Index strict L0-L1.5
+  7/7과 외부 gate 6종 통과.
+- **정직한 잔여**: 초기 회사 상태와 law/intervention의 legacy digest는 아직 같은 signed admission 체계로
+  전부 이관되지 않았다. parameter draw receipt도 documented-only다. 자동 추천은 계속 비활성이고 다음은
+  append-only raw OOS episode ledger와 paired policy evaluation certificate다. DB tail truncation 외부 anchor와
+  issuer private-key OS 보호도 운영 단계 잔여다.
+
 ### 0c-29. 분기 전이, 파라미터 불확실성, 실행 인증 P0 보강 (2026-07-13)
 
 - **전문가 재감사 결론**: 경로모형, DART와 EDGAR PIT, admission 적대검토에서 분기 grid에 연간

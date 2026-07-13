@@ -16,7 +16,7 @@ from dartlab.simulate.world import (
 )
 
 
-def _path(*, frequency: str = "year", admitted: bool = True, knowledgeAsOf: str = "20250101") -> ScenarioPath:
+def _path(*, frequency: str = "year", admitted: bool = False, knowledgeAsOf: str = "20250101") -> ScenarioPath:
     path = ScenarioPath(
         "macro",
         (
@@ -69,18 +69,17 @@ def testBridgeProducesFinancialShocksAndCarriesDebtRate():
     assert steps[1]["debtRate"] == pytest.approx(0.045)
 
 
-def testExplicitAssumptionDowngradesAdmittedSourcePath():
+def testExplicitAssumptionKeepsBridgeConditional():
     result = bridgeFinancialPaths((_path(),), _law())
     assert result.paths[0].validationStatus == "retrospectiveOnly"
     assert "bridgeEvidence:explicitAssumption" in result.audit.warnings
 
 
-def testAdmittedMeasuredBridgePreservesAdmissionWithCombinedCertificate():
+def testMeasuredBridgeCannotSelfIssueAnAdmissionCertificate():
     result = bridgeFinancialPaths((_path(),), _law(evidenceKind="measuredAssociation"))
-    assert result.paths[0].validationStatus == "admitted"
-    assert len(result.paths[0].certificateId) == 64
-    assert result.paths[0].certificateId != _path().certificateId
-    assert result.paths[0].maxAdmittedStep == 2
+    assert result.paths[0].validationStatus == "retrospectiveOnly"
+    assert result.paths[0].certificateId == ""
+    assert result.paths[0].maxAdmittedStep == 0
 
 
 def testWeeklyMacroPathCannotEnterAnnualFinancialBridge():

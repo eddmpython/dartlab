@@ -6,6 +6,7 @@ from dataclasses import replace
 
 import pytest
 
+from dartlab.simulate.vintage import VintageRef
 from dartlab.simulate.world import (
     ActionSpec,
     ConstraintSpec,
@@ -146,16 +147,12 @@ def _state(cash: float = 8.0, debt: float = 2.0):
 
 
 def _path(pathId: str, demand: tuple[float, ...], rate: float = 0.05):
-    path = ScenarioPath(
+    return ScenarioPath(
         pathId,
         tuple({"demand": value, "rate": rate} for value in demand),
-        certificateId=_SYNTHETIC_CERTIFICATE,
-        validationStatus="admitted",
-        maxAdmittedStep=len(demand),
         knowledgeAsOf="20250101",
-        historyStatus="asKnown",
+        historyStatus="synthetic",
     )
-    return bindAdmittedPathContent((path,))[0]
 
 
 def _strategy(strategyId: str, cuts: tuple[float, ...]):
@@ -342,13 +339,9 @@ def testInputAndTraceMappingsAreDeeplyImmutable():
     path = ScenarioPath(
         "base",
         (step,) * 4,
-        certificateId=_SYNTHETIC_CERTIFICATE,
-        validationStatus="admitted",
-        maxAdmittedStep=4,
         knowledgeAsOf="20250101",
-        historyStatus="asKnown",
+        historyStatus="synthetic",
     )
-    path = bindAdmittedPathContent((path,))[0]
     strategy = StrategySpec("noop", (actions,) * 4, isBaseline=True)
     step["demand"] = 999.0
     actions["capexCut"] = 1.0
@@ -500,7 +493,27 @@ def testReferencedMutableGlobalChangesCertificateBinding():
 
 
 def testAdmittedPathContentCannotBeChangedUnderSameCertificate():
-    path = _path("base", (10.0,) * 4)
+    vintage = VintageRef(
+        artifactKind="shockPanel",
+        provider="synthetic-test",
+        artifactId="base",
+        artifactHash="b" * 64,
+        payloadHash="c" * 64,
+        knowledgeAsOf="20250101",
+        availableAt="20250101",
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        receiptId="d" * 64,
+    )
+    path = replace(
+        _path("base", (10.0,) * 4),
+        certificateId=_SYNTHETIC_CERTIFICATE,
+        validationStatus="admitted",
+        maxAdmittedStep=4,
+        historyStatus="asKnown",
+        vintage=vintage,
+    )
+    path = bindAdmittedPathContent((path,))[0]
     tampered = replace(path, steps=({"demand": 999.0, "rate": 0.05},) * 4)
     with pytest.raises(SimulationSpecError, match="content binding mismatch"):
         _run(tampered, _strategy("noop", (0.0,) * 4))
