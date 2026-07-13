@@ -392,6 +392,8 @@ class SimulationRun:
     traceRoot: str
     traceCount: int
     retainedTraceCount: int
+    decisionAsOf: str
+    pathAdmissionReceiptId: str
     status: str
     decisionStatus: str
     weightLabel: str
@@ -469,6 +471,33 @@ def _canonical(value):
 def _stableHash(payload: Mapping) -> str:
     raw = json.dumps(_canonical(payload), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return sha256(raw.encode("utf-8")).hexdigest()
+
+
+def strategyContractHash(strategy: StrategySpec) -> str:
+    """행동 일정 또는 정책 실행물과 버전·근거를 하나의 전략 계약 hash로 묶는다."""
+
+    return _stableHash({"strategy": strategy})
+
+
+def objectiveContractHash(objective: ObjectiveSpec) -> str:
+    """목적 지표, 기간 축약, 방향, 위험 계약을 재사용 가능한 hash로 묶는다."""
+
+    return _stableHash({"objective": objective})
+
+
+def constraintContractHash(constraints: tuple[ConstraintSpec, ...]) -> str:
+    """모든 hard constraint의 순서와 임계 계약을 하나의 hash로 묶는다."""
+
+    return _stableHash({"constraints": constraints})
+
+
+def traceRootFor(traces: tuple[PathTrace, ...]) -> str:
+    """보존된 전체 trace 순서에서 실행기와 동일한 chain root를 다시 계산한다."""
+
+    traceChain = sha256()
+    for trace in traces:
+        traceChain.update(bytes.fromhex(_stableHash({"trace": trace})))
+    return _stableHash({"traceCount": len(traces), "traceChain": traceChain.hexdigest()})
 
 
 def _pathSetPayload(paths: tuple[ScenarioPath, ...]) -> dict:
@@ -1196,6 +1225,13 @@ def simulateWorld(
     """
 
     horizon = _checkInputs(model, initial, paths, strategies, admissionVerifier)
+    decisionAsOf = (
+        _comparableDate(initial.decisionAsOf)
+        or _comparableDate(initial.knowledgeAsOf)
+        or _comparableDate(initial.asOf)
+        or ""
+    )
+    pathAdmissionReceiptId = paths[0].admissionReceiptId if paths[0].validationStatus == "admitted" else ""
     if traceLimit is not None and (not isinstance(traceLimit, int) or traceLimit < 0):
         raise SimulationSpecError("traceLimit must be a nonnegative integer or None")
     variableIds = {variable.variableId for variable in model.variables}
@@ -1531,6 +1567,8 @@ def simulateWorld(
         "traceRoot": traceRoot,
         "traceCount": traceCount,
         "retainedTraceCount": len(traces),
+        "decisionAsOf": decisionAsOf,
+        "pathAdmissionReceiptId": pathAdmissionReceiptId,
         "constraints": constraints,
         "objectives": objectives,
         "warnings": tuple(warnings),
@@ -1544,6 +1582,8 @@ def simulateWorld(
         traceRoot=traceRoot,
         traceCount=traceCount,
         retainedTraceCount=len(traces),
+        decisionAsOf=decisionAsOf,
+        pathAdmissionReceiptId=pathAdmissionReceiptId,
         status="partial" if unqualifiedLaws else "ok",
         decisionStatus=decisionStatus,
         weightLabel=weightLabel,

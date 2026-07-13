@@ -437,6 +437,40 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
   append-only raw OOS episode ledger와 paired policy evaluation certificate다. DB tail truncation 외부 anchor와
   issuer private-key OS 보호도 운영 단계 잔여다.
 
+### 0c-35. raw paired-origin OOS 원장과 정책 통계 시험장 (2026-07-13)
+
+- **원자료 단위 확정**: OOS 표본은 simulation path나 draw 수가 아니라 고유한 historical origin이다.
+  `PolicyOosEpisode`는 한 origin에서 baseline과 candidate를 같은 `SimulationRun`, path 순서·가중치,
+  parameter draw, objective, constraints로 함께 실행한 raw path rows를 보존한다. 각 row는 두 전략의 step별
+  objective primitive, step별 breach 목록, parameter draw hash와 두 trace hash를 가지며 caller의 `passed`,
+  평균, CVaR 요약을 입력으로 받지 않는다.
+- **공식 run 추출 gate**: `buildPolicyOosEpisode`는 full trace가 전부 보존되고 `traceRoot`를 재계산할 수 있는
+  paired run만 받는다. compact run의 root commitment만으로 episode를 복원할 수 없으므로 거부한다. 현재
+  decision-time admitted path receipt는 origin 이전 발급이어야 하고, 사후 outcome은 별도 exact as-known
+  `dataVintage` receipt로 연결한다. 결과 성격은 관측된 정책효과가 아니라 명시적으로 `modelReplay`다.
+- **append-only raw ledger**: SQLite episode 원장은 sequence, canonical payload, previous row hash, row hash와
+  UPDATE/DELETE 차단 trigger를 가진다. semantic `originKey` unique 제약으로 같은 origin을 다른 episode id로
+  복제해 표본수를 늘리지 못한다. 읽을 때 전체 sequence와 chain, payload에서 episode hash를 다시 계산해
+  trigger 제거 뒤 payload를 바꾼 공격도 차단한다.
+- **primary/secondary estimand**: 각 origin 안에서 공통 path 가중평균 candidate-baseline delta를 primary로
+  계산한다. secondary는 각 전략의 exact weighted lower-tail CVaR를 분수 경계질량까지 별도로 계산한 뒤
+  `CVaR(candidate)-CVaR(baseline)`를 쓴다. `CVaR(candidate-baseline)`나 origin delta의 하위 분위는 신뢰하한
+  대체가 아니다. 두 통계는 같은 origin bootstrap index를 공유한다.
+- **시계열 bootstrap과 하한**: `paired-stationary-bootstrap-v1`, one-sided basic lower bound,
+  `method=higher`, 9,999회로 고정했다. seed는 ledger+episode manifest와 spec hash에서 파생해 caller가 고르지
+  못한다. block 길이는 `max(2, ceil(n^(1/3)), ceil(outcomeHorizon/originGap))`이고 최소 고유 origin 40,
+  effective block 8, 모든 origin의 tail ESS 20을 admission floor로 둔다. materiality margin은 0보다 커야 한다.
+- **교집합 gate**: primary LCB가 materiality 이상, separate-CVaR delta LCB가 사전 비열등 margin 이상,
+  candidate hard breach가 전 path·step에서 0인 조건을 모두 통과해야 `statisticallyEligible`다. path 하나를
+  늘려도 origin 수는 늘지 않으며 baseline breach는 candidate breach를 정당화하지 않는다.
+- **검증**: `_attempts/policyOosLedger`에서 duplicate origin, trigger/직접 payload 변조, 표본·block·tail ESS
+  하한, hard breach, 순서 독립 결정론, CVaR 정의 반례를 먼저 통과시킨 뒤 본진 5건으로 승격했다. simulate
+  전체 285 통과, ruff clean, Guard Index strict L0-L1.5 7/7과 외부 gate 6종 통과.
+- **정직한 잔여**: 현재 report의 `admissionStatus`는 강제로 `documented`다. 초기 상태, law/action,
+  baseline/candidate policy, parameter draw의 signed parent와 episode receipt/batch/checkpoint,
+  `PolicyEvaluationCertificate`가 아직 없으므로 통계적으로 적격이어도 자동 추천은 열리지 않는다. 다음
+  수직절편은 typed episode signer와 batch manifest 및 raw artifact 재계산형 signed certificate다.
+
 ### 0c-29. 분기 전이, 파라미터 불확실성, 실행 인증 P0 보강 (2026-07-13)
 
 - **전문가 재감사 결론**: 경로모형, DART와 EDGAR PIT, admission 적대검토에서 분기 grid에 연간
