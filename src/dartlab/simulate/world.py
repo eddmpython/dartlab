@@ -15,6 +15,10 @@ from dartlab.simulate.parameterDraws import (
     ParameterDrawSetReceipt,
     validateParameterDrawSetReceipt,
 )
+from dartlab.simulate.stateCompiler import (
+    CompiledPointInTimeState,
+    validatePointInTimeStateReceipt,
+)
 from dartlab.simulate.stateSupport import (
     INITIAL_STATE_RULE_HASH,
     INITIAL_STATE_RULE_ID,
@@ -36,7 +40,7 @@ if TYPE_CHECKING:
     from dartlab.simulate.admissionRegistry import AdmissionVerifier
     from dartlab.simulate.policyEvaluation import PolicyAdmissionEvidence
 
-ROLE_SET = {"state", "metric", "shock"}
+ROLE_SET = {"state", "observedFeature", "metric", "shock"}
 EVIDENCE_SET = {
     "accountingIdentity",
     "measuredAssociation",
@@ -139,6 +143,10 @@ class VariableSpec:
     role: str
     lower: float | None = None
     upper: float | None = None
+    frequency: str = "step"
+    timing: str = "level"
+    transformId: str = "identity-v1"
+    evidenceRole: str = "model"
 
 
 @dataclass(frozen=True)
@@ -248,6 +256,8 @@ class WorldState:
     decisionAsOf: str = ""
     vintage: VintageRef | None = None
     admissionReceiptId: str = ""
+    stateCompilationContractHash: str = ""
+    stateManifestHash: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "values", _freezeMapping(self.values))
@@ -809,6 +819,14 @@ class WorldModel:
         for variable in self.variables:
             if variable.role not in ROLE_SET:
                 raise SimulationSpecError(f"unknown variable role: {variable.role}")
+            if (
+                not variable.unit
+                or not variable.frequency
+                or not variable.timing
+                or not variable.transformId
+                or not variable.evidenceRole
+            ):
+                raise SimulationSpecError(f"incomplete variable meaning: {variable.variableId}")
             for bound in (variable.lower, variable.upper):
                 if bound is not None and not math.isfinite(float(bound)):
                     raise SimulationSpecError(f"non-finite bounds: {variable.variableId}")
@@ -872,8 +890,8 @@ class WorldModel:
             for output in law.outputs:
                 if output in producer:
                     raise SimulationSpecError(f"duplicate output producer: {output}")
-                if variables[output].role == "shock":
-                    raise SimulationSpecError(f"law cannot produce shock: {output}")
+                if variables[output].role in {"shock", "observedFeature"}:
+                    raise SimulationSpecError(f"law cannot produce external variable: {output}")
                 producer[output] = law.lawId
 
         if any(a.costPerUnit > 0 for a in self.actions) and not any(law.usesActionCost for law in self.laws):
@@ -929,17 +947,72 @@ def initialStatePrimitives(model: WorldModel, initial: WorldState) -> tuple[Stat
     primitives = []
     for variableId in sorted(initial.values):
         spec = byId[variableId]
-        if spec.role == "shock":
-            raise SimulationSpecError(f"initial state cannot contain a shock variable: {variableId}")
+        if spec.role in {"shock", "metric"}:
+            raise SimulationSpecError(f"initial state cannot contain a {spec.role} variable: {variableId}")
         primitives.append(
             StatePrimitive(
                 variableId=variableId,
                 unit=spec.unit,
                 role=spec.role,
                 value=_validateValue(model, variableId, initial.values[variableId], f"initial.{variableId}"),
+                frequency=spec.frequency,
+                timing=spec.timing,
+                transformId=spec.transformId,
+                evidenceRole=spec.evidenceRole,
             )
         )
     return tuple(primitives)
+
+
+def worldStateFromCompiled(compiled: CompiledPointInTimeState) -> WorldState:
+    """Bind a compiled PIT state to the generic world runtime contract.
+
+    Args:
+        compiled: Deterministic state compiled from complete provider batches.
+
+    Returns:
+        World state whose values and aggregate vintage derive from the manifest.
+
+    Raises:
+        SimulationSpecError: If compiled identity or admission fields drift.
+
+    Example:
+        ``initial = worldStateFromCompiled(compiled)``
+    """
+
+    if compiled.schemaVersion != "compiled-point-in-time-state-v1":
+        raise SimulationSpecError("compiled point-in-time state protocol mismatch")
+    if compiled.admissionStatus not in {"documented", "admitted"}:
+        raise SimulationSpecError("compiled point-in-time state admission status is invalid")
+    if compiled.admissionStatus == "admitted" and not _validDigest(compiled.stateReceiptId):
+        raise SimulationSpecError("admitted point-in-time state needs a signed receipt")
+    values = {item.variableId: float(item.value) for item in compiled.statePrimitives}
+    refs = (f"stateManifest:{compiled.manifestHash}",)
+    payloadHash = worldStatePayloadHash(values, step=0, asOf=compiled.decisionAsOf, refs=refs)
+    vintage = VintageRef(
+        artifactKind="worldState",
+        provider="dartlab.stateCompiler",
+        artifactId=compiled.stateId,
+        artifactHash=compiled.manifestHash,
+        payloadHash=payloadHash,
+        knowledgeAsOf=compiled.knowledgeAsOf,
+        availableAt=compiled.knowledgeAsOf,
+        revisionPolicy=compiled.aggregateRevisionPolicy,
+        coverage=compiled.aggregateCoverage,
+        receiptId=compiled.stateReceiptId,
+        contractHash=compiled.stateCompilationContractHash,
+        sourceRefs=compiled.providerBatchIds,
+    )
+    return WorldState(
+        values=values,
+        asOf=compiled.decisionAsOf,
+        refs=refs,
+        knowledgeAsOf=compiled.knowledgeAsOf,
+        decisionAsOf=compiled.decisionAsOf,
+        vintage=vintage,
+        stateCompilationContractHash=compiled.stateCompilationContractHash,
+        stateManifestHash=compiled.manifestHash,
+    )
 
 
 def initialStateAdmissionArtifact(model: WorldModel, initial: WorldState) -> bytes:
@@ -1086,6 +1159,16 @@ def _checkInputs(
             raise SimulationSpecError(str(error)) from error
         if initial.knowledgeAsOf and initial.vintage.knowledgeAsOf != initialKnowledgeDate:
             raise SimulationSpecError("initial state vintage knowledge cutoff mismatch")
+    if initial.stateCompilationContractHash or initial.stateManifestHash:
+        if initial.vintage is None:
+            raise SimulationSpecError("compiled initial state needs an aggregate vintage")
+        if (
+            not _validDigest(initial.stateCompilationContractHash)
+            or not _validDigest(initial.stateManifestHash)
+            or initial.vintage.contractHash != initial.stateCompilationContractHash
+            or initial.vintage.artifactHash != initial.stateManifestHash
+        ):
+            raise SimulationSpecError("compiled initial-state manifest contract mismatch")
     for law in model.laws:
         certificate = law.certificate
         if law.evidenceKind in {"measuredAssociation", "identifiedIntervention"}:
@@ -1440,30 +1523,42 @@ def simulateWorld(
 
             if initial.vintage is None or not isExactAsKnown(initial.vintage):
                 raise SimulationSpecError("policy admission needs an exact as-known current initial state")
-            if not _validDigest(initial.admissionReceiptId) or not _validDigest(initial.vintage.receiptId):
+            if (
+                not _validDigest(initial.admissionReceiptId)
+                or not _validDigest(initial.vintage.receiptId)
+                or not _validDigest(initial.stateCompilationContractHash)
+                or not _validDigest(initial.stateManifestHash)
+            ):
                 raise SimulationSpecError("policy admission needs signed current initial-state lineage")
             initialArtifact = initialStateAdmissionArtifact(model, initial)
             initialSubjectHash = initialStateAdmissionSubjectHash(model, initial)
+            currentPrimitives = initialStatePrimitives(model, initial)
+            pointInTimeReceipt = validatePointInTimeStateReceipt(
+                statePrimitives=currentPrimitives,
+                asOf=initial.asOf,
+                knowledgeAsOf=initial.knowledgeAsOf,
+                decisionAsOf=initial.decisionAsOf,
+                stateCompilationContractHash=initial.stateCompilationContractHash,
+                stateManifestHash=initial.stateManifestHash,
+                stateReceiptId=initial.vintage.receiptId,
+                admissionVerifier=admissionVerifier,
+            )
             initialReceipt = admissionVerifier.verify(
                 initial.admissionReceiptId,
                 expectedSubjectHash=initialSubjectHash,
                 expectedKind="initialState",
-            )
-            vintageReceipt = admissionVerifier.verify(
-                initial.vintage.receiptId,
-                expectedSubjectHash=initial.vintage.payloadHash,
-                expectedKind="dataVintage",
             )
             if (
                 initialReceipt.status != "admitted"
                 or initialReceipt.artifactHash != initialSubjectHash
                 or (initialReceipt.ruleId, initialReceipt.ruleVersion, initialReceipt.ruleHash)
                 != (INITIAL_STATE_RULE_ID, INITIAL_STATE_RULE_VERSION, INITIAL_STATE_RULE_HASH)
-                or initial.vintage.receiptId not in initialReceipt.parentReceiptIds
-                or vintageReceipt.status != "verifiedVintage"
-                or vintageReceipt.revisionPolicy != "asKnown"
-                or vintageReceipt.coverage != "asOfExact"
+                or initialReceipt.parentReceiptIds != (pointInTimeReceipt.receiptId,)
+                or initial.vintage.artifactHash != initial.stateManifestHash
+                or initial.vintage.contractHash != initial.stateCompilationContractHash
+                or pointInTimeReceipt.knowledgeAsOf != initial.knowledgeAsOf
                 or _comparableDate(initialReceipt.issuedAt) > decisionAsOf
+                or _comparableDate(pointInTimeReceipt.issuedAt) > decisionAsOf
                 or artifactPath(admissionVerifier.artifactRoot, initialSubjectHash).read_bytes() != initialArtifact
             ):
                 raise SimulationSpecError("current initial-state admission lineage mismatch")
@@ -1488,7 +1583,8 @@ def simulateWorld(
                 pathFrequency=pathReceipt.frequency,
                 pathStepSpan=pathReceipt.stepSpan,
                 pathHorizon=horizon,
-                currentState=initialStatePrimitives(model, initial),
+                currentState=currentPrimitives,
+                stateCompilationContractHash=initial.stateCompilationContractHash,
             )
         except (OSError, RuntimeError, ValueError) as error:
             raise SimulationSpecError(f"policy admission verification failed: {error}") from error

@@ -36,19 +36,28 @@ from dartlab.simulate.policyEvaluation import (
     validatePolicyEvaluationCertificate,
     weightedLowerCvar,
 )
+from dartlab.simulate.stateCompiler import (
+    StateCompileSpec,
+    buildProviderObservationBatch,
+    compilePointInTimeState,
+    issuePointInTimeState,
+    issueProviderObservationBatch,
+    makeVariableObservation,
+)
 from dartlab.simulate.stateSupport import (
     INITIAL_STATE_RULE_HASH,
     INITIAL_STATE_RULE_ID,
+    INITIAL_STATE_RULE_VERSION,
     StatePrimitive,
     stateAdmissionArtifact,
     stateAdmissionSubjectHash,
     stateContractHash,
 )
+from dartlab.simulate.stateVariables import StateVariableSpec, buildStateVariableRegistry
 from dartlab.simulate.vintage import (
     VintageRef,
     canonicalPayloadBytes,
     canonicalPayloadHash,
-    worldStatePayloadHash,
 )
 from dartlab.simulate.world import (
     ActionSpec,
@@ -70,6 +79,7 @@ from dartlab.simulate.world import (
     pathSetAdmissionSubjectHash,
     simulateWorld,
     strategyContractHash,
+    worldStateFromCompiled,
 )
 
 
@@ -93,12 +103,25 @@ def _episode(
     candidateBreach: bool = False,
 ) -> PolicyOosEpisode:
     origin = date(2020, 1, 3) + timedelta(days=7 * ordinal)
-    initialState = (StatePrimitive("state", "ratio", "state", 1.0 + ordinal / 100.0),)
+    prior = origin - timedelta(days=1)
+    initialState = (
+        StatePrimitive(
+            "state",
+            "ratio",
+            "state",
+            1.0 + ordinal / 100.0,
+            frequency="step",
+            timing="stock",
+            transformId="identity-v1",
+            evidenceRole="observed",
+        ),
+    )
     originText = _stamp(origin)
+    knowledgeText = _stamp(prior)
     initialContentHash = stateAdmissionSubjectHash(
         initialState,
         asOf=originText,
-        knowledgeAsOf=originText,
+        knowledgeAsOf=knowledgeText,
         decisionAsOf=originText,
     )
     objective = ObjectiveSpec("metric", reducer="terminal", direction="maximize", risk="average")
@@ -133,9 +156,12 @@ def _episode(
         parameterHash=canonicalPayloadHash({"parameter": ordinal}),
         dataVintageHash=canonicalPayloadHash({"vintage": ordinal}),
         initialStateAsOf=originText,
-        initialStateKnowledgeAsOf=originText,
+        initialStateKnowledgeAsOf=knowledgeText,
         initialStateContentHash=initialContentHash,
         initialStateReceiptId="",
+        pointInTimeStateReceiptId=canonicalPayloadHash({"pitReceipt": ordinal}),
+        stateManifestHash=canonicalPayloadHash({"stateManifest": ordinal}),
+        stateCompilationContractHash=canonicalPayloadHash({"stateCompiler": "policy-state-v1"}),
         stateContractHash=stateContractHash(initialState),
         initialState=initialState,
         pathAdmissionReceiptId=canonicalPayloadHash({"pathReceipt": ordinal}),
@@ -275,7 +301,15 @@ def _signedRun(tmp_path, *, traceLimit=None):
         "policy-oos-world",
         "1",
         (
-            VariableSpec("state", "ratio", "state"),
+            VariableSpec(
+                "state",
+                "ratio",
+                "state",
+                frequency="step",
+                timing="stock",
+                transformId="identity-v1",
+                evidenceRole="observed",
+            ),
             VariableSpec("shock", "ratio", "shock"),
             VariableSpec("metric", "ratio", "metric"),
         ),
@@ -303,11 +337,10 @@ def _signedRun(tmp_path, *, traceLimit=None):
         policyFn=policy,
     )
     objective = ObjectiveSpec("metric", reducer="terminal", direction="maximize", risk="average")
-    initial = WorldState(
-        {"state": 1.0},
-        asOf="20250101",
-        knowledgeAsOf="20250101",
+    _, initial = _issueCompiledState(
+        (registry, artifacts, privateBytes, trusted),
         decisionAsOf="20250102",
+        value=1.0,
     )
     run = simulateWorld(
         model,
@@ -345,6 +378,7 @@ def _issueTestReceipt(
     knowledgeAsOf="20191231",
     issuedAt="20191231T000000Z",
     ruleId=None,
+    ruleVersion="1",
     ruleHash=None,
     parentReceiptIds=(),
 ):
@@ -359,7 +393,7 @@ def _issueTestReceipt(
         artifactHash=artifactHash,
         parentReceiptIds=parentReceiptIds,
         ruleId=ruleId or f"test-{kind}",
-        ruleVersion="1",
+        ruleVersion=ruleVersion,
         ruleHash=ruleHash or canonicalPayloadHash({"rule": kind}),
         issuerId="test-issuer",
         issuerKeyId="test-key",
@@ -374,6 +408,113 @@ def _issueTestReceipt(
         issuedAt=issuedAt,
         trustedIssuers=trusted,
     )
+
+
+def _issueCompiledState(context, *, decisionAsOf: str, value: float):
+    registryPath, artifacts, privateBytes, trusted = context
+    decision = date(int(decisionAsOf[:4]), int(decisionAsOf[4:6]), int(decisionAsOf[6:8]))
+    availableAt = _stamp(decision - timedelta(days=1))
+    sourceReceipt = _issueTestReceipt(
+        context,
+        kind="dataVintage",
+        content=f"policy state source {decisionAsOf} {value}".encode(),
+        status="verifiedVintage",
+        knowledgeAsOf=availableAt,
+        issuedAt=f"{availableAt}T000000Z",
+    )
+    vintage = VintageRef(
+        artifactKind="providerObservation",
+        provider="fixture",
+        artifactId=f"policy-state-{decisionAsOf}",
+        artifactHash=sourceReceipt.artifactHash,
+        payloadHash=sourceReceipt.subjectHash,
+        knowledgeAsOf=availableAt,
+        availableAt=availableAt,
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        fiscalThrough=availableAt,
+        receiptId=sourceReceipt.receiptId,
+    )
+    observation = makeVariableObservation(
+        providerId="fixture",
+        datasetId="policy-state",
+        entityId="TEST",
+        signalId="state",
+        value=value,
+        unit="ratio",
+        frequency="step",
+        timing="stock",
+        transformId="identity-v1",
+        evidenceRole="observed",
+        eventAt=availableAt,
+        availableAt=availableAt,
+        knowledgeAsOf=availableAt,
+        availabilityPrecision="date",
+        revisionId="original",
+        vintage=vintage,
+        normalizationRuleHash=sha256(b"policy-state-normalization-v1").hexdigest(),
+    )
+    batch = buildProviderObservationBatch(
+        (observation,),
+        providerId="fixture",
+        datasetId="policy-state",
+        entityId="TEST",
+        signalIds=("state",),
+        cutoffAsOf=decisionAsOf,
+    )
+    batch = issueProviderObservationBatch(
+        batch,
+        registryPath,
+        artifacts,
+        privateKey=privateBytes,
+        issuerId="test-issuer",
+        issuerKeyId="test-key",
+        issuedAt=f"{decisionAsOf}T000000Z",
+        trustedIssuers=trusted,
+    )
+    registry = buildStateVariableRegistry(
+        (
+            StateVariableSpec(
+                variableId="state",
+                signalId="state",
+                providerId="fixture",
+                datasetId="policy-state",
+                unit="ratio",
+                role="state",
+                evidenceRole="observed",
+                frequency="step",
+                timing="stock",
+                transformId="identity-v1",
+                maxStalenessDays=400,
+            ),
+        )
+    )
+    verifier = AdmissionVerifier(registryPath, artifacts, trusted)
+    compiled = compilePointInTimeState(
+        registry,
+        (batch,),
+        StateCompileSpec(
+            entityId="TEST",
+            market="TEST",
+            decisionAsOf=decisionAsOf,
+            consumerId="policy-world",
+            consumerVersion="1",
+            variableIds=("state",),
+            requireExact=True,
+        ),
+        admissionVerifier=verifier,
+    )
+    compiled = issuePointInTimeState(
+        compiled,
+        registryPath,
+        artifacts,
+        privateKey=privateBytes,
+        issuerId="test-issuer",
+        issuerKeyId="test-key",
+        issuedAt=f"{decisionAsOf}T000000Z",
+        trustedIssuers=trusted,
+    )
+    return compiled, worldStateFromCompiled(compiled)
 
 
 def _admittedPolicyFixture(
@@ -438,12 +579,6 @@ def _admittedPolicyFixture(
     executableHash = executableHash or canonicalPayloadHash({"executable": "policy-world-v1"})
     baselineHash = baselineHash or canonicalPayloadHash({"strategy": "baseline-v1"})
     candidateHash = candidateHash or canonicalPayloadHash({"strategy": "candidate-v1"})
-    initialVintageReceipt = _issueTestReceipt(
-        context,
-        kind="dataVintage",
-        content=b"historical initial-state source vintage",
-        status="verifiedVintage",
-    )
     modelReceipt = _issueTestReceipt(
         context,
         kind="modelExecutable",
@@ -466,6 +601,11 @@ def _admittedPolicyFixture(
     signedEpisodes = []
     for index in range(40):
         raw = _episode(index)
+        compiled, _ = _issueCompiledState(
+            context,
+            decisionAsOf=raw.originAsOf,
+            value=raw.initialState[0].value,
+        )
         episodeConstraintHash = constraintHash or raw.constraintContractHash
         originKey = canonicalPayloadHash(
             {
@@ -479,6 +619,7 @@ def _admittedPolicyFixture(
                 "constraintContract": episodeConstraintHash,
                 "pathRuleHash": pathRuleHash,
                 "parameterContract": noParameterHash,
+                "stateCompilationContract": compiled.stateCompilationContractHash,
             }
         )
         raw = replace(
@@ -489,6 +630,12 @@ def _admittedPolicyFixture(
             evaluationKnowledgeAsOf="20210101",
             executableHash=executableHash,
             dataVintageHash=dataVintageHash,
+            initialState=compiled.statePrimitives,
+            initialStateContentHash=compiled.stateId,
+            pointInTimeStateReceiptId=compiled.stateReceiptId,
+            stateManifestHash=compiled.manifestHash,
+            stateCompilationContractHash=compiled.stateCompilationContractHash,
+            stateContractHash=compiled.stateContractHash,
             pathAdmissionReceiptId=pathReceipt.receiptId,
             pathContentHash=pathReceipt.subjectHash,
             pathRuleId=pathReceipt.ruleId,
@@ -511,9 +658,12 @@ def _admittedPolicyFixture(
                 decisionAsOf=raw.originAsOf,
             ),
             subjectHash=raw.initialStateContentHash,
-            parentReceiptIds=(initialVintageReceipt.receiptId,),
+            parentReceiptIds=(compiled.stateReceiptId,),
             ruleId=INITIAL_STATE_RULE_ID,
+            ruleVersion=INITIAL_STATE_RULE_VERSION,
             ruleHash=INITIAL_STATE_RULE_HASH,
+            knowledgeAsOf=raw.initialStateKnowledgeAsOf,
+            issuedAt=f"{raw.originAsOf}T000000Z",
         )
         signed = admitPolicyOosEpisode(
             raw,
@@ -686,12 +836,6 @@ def testTypedEpisodeSignerRejectsWrongKeyAndFutureDecisionParent(tmp_path) -> No
         admissionVerifier=verifier,
     )
     receiptContext = (registry, artifacts, privateBytes, trusted)
-    initialVintageReceipt = _issueTestReceipt(
-        receiptContext,
-        kind="dataVintage",
-        content=b"signed initial-state source vintage",
-        status="verifiedVintage",
-    )
     initialReceipt = _issueTestReceipt(
         receiptContext,
         kind="initialState",
@@ -702,9 +846,12 @@ def testTypedEpisodeSignerRejectsWrongKeyAndFutureDecisionParent(tmp_path) -> No
             decisionAsOf=episode.originAsOf,
         ),
         subjectHash=episode.initialStateContentHash,
-        parentReceiptIds=(initialVintageReceipt.receiptId,),
+        parentReceiptIds=(episode.pointInTimeStateReceiptId,),
         ruleId=INITIAL_STATE_RULE_ID,
+        ruleVersion=INITIAL_STATE_RULE_VERSION,
         ruleHash=INITIAL_STATE_RULE_HASH,
+        knowledgeAsOf=episode.initialStateKnowledgeAsOf,
+        issuedAt="20250102T000000Z",
     )
     modelReceipt = _issueTestReceipt(
         receiptContext,
@@ -735,6 +882,42 @@ def testTypedEpisodeSignerRejectsWrongKeyAndFutureDecisionParent(tmp_path) -> No
         "issuedAt": "20250105T120000Z",
         "trustedIssuers": trusted,
     }
+    unrelatedVintageReceipt = _issueTestReceipt(
+        receiptContext,
+        kind="dataVintage",
+        content=b"unrelated exact vintage",
+        status="verifiedVintage",
+        knowledgeAsOf=episode.initialStateKnowledgeAsOf,
+        issuedAt="20250101T000000Z",
+    )
+    unrelatedParentReceipt = _issueTestReceipt(
+        receiptContext,
+        kind="initialState",
+        content=stateAdmissionArtifact(
+            episode.initialState,
+            asOf=episode.initialStateAsOf,
+            knowledgeAsOf=episode.initialStateKnowledgeAsOf,
+            decisionAsOf=episode.originAsOf,
+        ),
+        subjectHash=episode.initialStateContentHash,
+        parentReceiptIds=(unrelatedVintageReceipt.receiptId,),
+        ruleId=INITIAL_STATE_RULE_ID,
+        ruleVersion=INITIAL_STATE_RULE_VERSION,
+        ruleHash=INITIAL_STATE_RULE_HASH,
+        knowledgeAsOf=episode.initialStateKnowledgeAsOf,
+        issuedAt="20250102T000000Z",
+    )
+    with pytest.raises(PolicyEvaluationError, match="compiled PIT manifest"):
+        admitPolicyOosEpisode(
+            episode,
+            registry,
+            artifacts,
+            privateKey=privateBytes,
+            **{
+                **signerArguments,
+                "initialStateReceiptId": unrelatedParentReceipt.receiptId,
+            },
+        )
     wrongRuleInitialReceipt = _issueTestReceipt(
         receiptContext,
         kind="initialState",
@@ -745,7 +928,7 @@ def testTypedEpisodeSignerRejectsWrongKeyAndFutureDecisionParent(tmp_path) -> No
             decisionAsOf=episode.originAsOf,
         ),
         subjectHash=episode.initialStateContentHash,
-        parentReceiptIds=(initialVintageReceipt.receiptId,),
+        parentReceiptIds=(episode.pointInTimeStateReceiptId,),
         ruleId="caller-selected-state-rule",
         ruleHash=canonicalPayloadHash({"rule": "caller-selected-state"}),
     )
@@ -898,6 +1081,7 @@ def testSignedBatchAndRawReplayAreRequiredForPolicyAdmission(tmp_path) -> None:
         "constraintContractHash": first.constraintContractHash,
         "pathRuleHash": fixture["pathRuleHash"],
         "parameterContractHash": fixture["parameterContractHash"],
+        "stateCompilationContractHash": first.stateCompilationContractHash,
         "pathFrequency": "week",
         "pathStepSpan": 1,
         "pathHorizon": 1,
@@ -947,7 +1131,15 @@ def testRuntimeRecommendationOpensOnlyForMatchingPolicyCertificate(tmp_path) -> 
         "admitted-policy-world",
         "1",
         (
-            VariableSpec("state", "ratio", "state"),
+            VariableSpec(
+                "state",
+                "ratio",
+                "state",
+                frequency="step",
+                timing="stock",
+                transformId="identity-v1",
+                evidenceRole="observed",
+            ),
             VariableSpec("shock", "ratio", "shock"),
             VariableSpec("metric", "ratio", "metric"),
         ),
@@ -1033,43 +1225,21 @@ def testRuntimeRecommendationOpensOnlyForMatchingPolicyCertificate(tmp_path) -> 
         fixture["privateKey"],
         fixture["trusted"],
     )
-    initialPayloadHash = worldStatePayloadHash(
-        initial.values,
-        step=initial.step,
-        asOf=initial.asOf,
-        refs=initial.refs,
-    )
-    currentInitialVintageReceipt = _issueTestReceipt(
+    _, initial = _issueCompiledState(
         receiptContext,
-        kind="dataVintage",
-        content=b"current decision initial-state source",
-        subjectHash=initialPayloadHash,
-        status="verifiedVintage",
-        knowledgeAsOf="20210103",
-        issuedAt="20210103T000000Z",
+        decisionAsOf="20210104",
+        value=1.2,
     )
-    currentInitialVintage = VintageRef(
-        artifactKind="worldState",
-        provider="test",
-        artifactId="current-initial-state",
-        artifactHash=currentInitialVintageReceipt.artifactHash,
-        payloadHash=initialPayloadHash,
-        knowledgeAsOf="20210103",
-        availableAt="20210103",
-        revisionPolicy="asKnown",
-        coverage="asOfExact",
-        receiptId=currentInitialVintageReceipt.receiptId,
-    )
-    initial = replace(initial, vintage=currentInitialVintage)
     currentInitialReceipt = _issueTestReceipt(
         receiptContext,
         kind="initialState",
         content=initialStateAdmissionArtifact(model, initial),
         subjectHash=initialStateAdmissionSubjectHash(model, initial),
         knowledgeAsOf="20210103",
-        issuedAt="20210103T000000Z",
-        parentReceiptIds=(currentInitialVintageReceipt.receiptId,),
+        issuedAt="20210104T000000Z",
+        parentReceiptIds=(initial.vintage.receiptId,),
         ruleId=INITIAL_STATE_RULE_ID,
+        ruleVersion=INITIAL_STATE_RULE_VERSION,
         ruleHash=INITIAL_STATE_RULE_HASH,
     )
     initial = replace(initial, admissionReceiptId=currentInitialReceipt.receiptId)
@@ -1153,36 +1323,10 @@ def testRuntimeRecommendationOpensOnlyForMatchingPolicyCertificate(tmp_path) -> 
             admissionVerifier=fixture["verifier"],
             policyAdmissionEvidence=PolicyAdmissionEvidence(fixture["snapshot"], batch, certificate),
         )
-    outside = replace(initial, values={"state": 2.0}, admissionReceiptId="", vintage=None)
-    outsidePayloadHash = worldStatePayloadHash(
-        outside.values,
-        step=outside.step,
-        asOf=outside.asOf,
-        refs=outside.refs,
-    )
-    outsideVintageReceipt = _issueTestReceipt(
+    _, outside = _issueCompiledState(
         receiptContext,
-        kind="dataVintage",
-        content=b"outside-support current state source",
-        subjectHash=outsidePayloadHash,
-        status="verifiedVintage",
-        knowledgeAsOf="20210103",
-        issuedAt="20210103T000000Z",
-    )
-    outside = replace(
-        outside,
-        vintage=VintageRef(
-            artifactKind="worldState",
-            provider="test",
-            artifactId="outside-support-current-state",
-            artifactHash=outsideVintageReceipt.artifactHash,
-            payloadHash=outsidePayloadHash,
-            knowledgeAsOf="20210103",
-            availableAt="20210103",
-            revisionPolicy="asKnown",
-            coverage="asOfExact",
-            receiptId=outsideVintageReceipt.receiptId,
-        ),
+        decisionAsOf="20210104",
+        value=2.0,
     )
     outsideReceipt = _issueTestReceipt(
         receiptContext,
@@ -1190,9 +1334,10 @@ def testRuntimeRecommendationOpensOnlyForMatchingPolicyCertificate(tmp_path) -> 
         content=initialStateAdmissionArtifact(model, outside),
         subjectHash=initialStateAdmissionSubjectHash(model, outside),
         knowledgeAsOf="20210103",
-        issuedAt="20210103T000000Z",
-        parentReceiptIds=(outsideVintageReceipt.receiptId,),
+        issuedAt="20210104T000000Z",
+        parentReceiptIds=(outside.vintage.receiptId,),
         ruleId=INITIAL_STATE_RULE_ID,
+        ruleVersion=INITIAL_STATE_RULE_VERSION,
         ruleHash=INITIAL_STATE_RULE_HASH,
     )
     outside = replace(outside, admissionReceiptId=outsideReceipt.receiptId)

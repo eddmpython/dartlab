@@ -22,6 +22,10 @@ from dartlab.simulate.admissionRegistry import (
     issueAdmissionReceipt,
     putAdmissionArtifact,
 )
+from dartlab.simulate.stateCompiler import (
+    StateCompilerError,
+    validatePointInTimeStateReceipt,
+)
 from dartlab.simulate.stateSupport import (
     INITIAL_STATE_RULE_HASH,
     INITIAL_STATE_RULE_ID,
@@ -56,8 +60,8 @@ from dartlab.simulate.world import (
     traceRootFor,
 )
 
-_EPISODE_SCHEMA = "policy-oos-episode-v2"
-_REPORT_SCHEMA = "policy-evaluation-report-v1"
+_EPISODE_SCHEMA = "policy-oos-episode-v3"
+_REPORT_SCHEMA = "policy-evaluation-report-v2"
 _BOOTSTRAP_METHOD = "paired-stationary-bootstrap-v1"
 _BOOTSTRAP_REPLICATES = 9_999
 _MIN_ORIGINS = 40
@@ -65,16 +69,16 @@ _MIN_EFFECTIVE_BLOCKS = 8
 _MIN_TAIL_EFFECTIVE_PATHS = 20.0
 _NO_PARAMETER_CONTRACT = sha256(b"dartlab.policy-oos.no-parameter-contract.v1").hexdigest()
 _EPISODE_RULE_ID = "paired-origin-policy-oos-episode"
-_EPISODE_RULE_VERSION = "2"
-_EPISODE_RULE_HASH = sha256(b"dartlab.paired-origin-policy-oos-episode.v2").hexdigest()
-_BATCH_SCHEMA = "policy-oos-batch-v2"
+_EPISODE_RULE_VERSION = "3"
+_EPISODE_RULE_HASH = sha256(b"dartlab.paired-origin-policy-oos-episode.v3").hexdigest()
+_BATCH_SCHEMA = "policy-oos-batch-v3"
 _BATCH_RULE_ID = "paired-origin-policy-oos-batch"
-_BATCH_RULE_VERSION = "2"
-_BATCH_RULE_HASH = sha256(b"dartlab.paired-origin-policy-oos-batch.v2").hexdigest()
-_CERTIFICATE_SCHEMA = "policy-evaluation-certificate-v2"
+_BATCH_RULE_VERSION = "3"
+_BATCH_RULE_HASH = sha256(b"dartlab.paired-origin-policy-oos-batch.v3").hexdigest()
+_CERTIFICATE_SCHEMA = "policy-evaluation-certificate-v3"
 _CERTIFICATE_RULE_ID = "paired-origin-policy-evaluation"
-_CERTIFICATE_RULE_VERSION = "2"
-_CERTIFICATE_RULE_HASH = sha256(b"dartlab.paired-origin-policy-evaluation.v2").hexdigest()
+_CERTIFICATE_RULE_VERSION = "3"
+_CERTIFICATE_RULE_HASH = sha256(b"dartlab.paired-origin-policy-evaluation.v3").hexdigest()
 
 
 class PolicyEvaluationError(ValueError):
@@ -135,6 +139,9 @@ class PolicyOosEpisode:
     initialStateKnowledgeAsOf: str
     initialStateContentHash: str
     initialStateReceiptId: str
+    pointInTimeStateReceiptId: str
+    stateManifestHash: str
+    stateCompilationContractHash: str
     stateContractHash: str
     initialState: tuple[StatePrimitive, ...]
     pathAdmissionReceiptId: str
@@ -220,6 +227,7 @@ class PolicyEvaluationReport:
     constraintContractHash: str
     pathRuleHash: str
     parameterContractHash: str
+    stateCompilationContractHash: str
     reasons: tuple[str, ...]
     schemaVersion: str = _REPORT_SCHEMA
 
@@ -245,6 +253,7 @@ class PolicyEpisodeBatch:
     constraintContractHash: str
     pathRuleHash: str
     parameterContractHash: str
+    stateCompilationContractHash: str
     stateSupport: EmpiricalStateSupport
     status: str = "admitted"
     schemaVersion: str = _BATCH_SCHEMA
@@ -266,6 +275,7 @@ class PolicyEvaluationCertificate:
     constraintContractHash: str
     pathRuleHash: str
     parameterContractHash: str
+    stateCompilationContractHash: str
     stateSupport: EmpiricalStateSupport
     spec: PolicyEvaluationSpec
     report: PolicyEvaluationReport
@@ -314,6 +324,8 @@ def _validateEpisode(episode: PolicyOosEpisode) -> None:
         raise PolicyEvaluationError("admitted policy episode needs a signed receipt")
     if episode.admissionStatus == "admitted" and not _validDigest(episode.initialStateReceiptId):
         raise PolicyEvaluationError("admitted policy episode needs a signed initial state")
+    if not _validDigest(episode.pointInTimeStateReceiptId):
+        raise PolicyEvaluationError("policy episode needs a compiled point-in-time state")
     if episode.admissionStatus == "documented" and episode.episodeReceiptId:
         raise PolicyEvaluationError("documented policy episode cannot claim a signed receipt")
     if episode.admissionStatus == "documented" and episode.initialStateReceiptId:
@@ -328,6 +340,8 @@ def _validateEpisode(episode: PolicyOosEpisode) -> None:
         ("parameter", episode.parameterHash),
         ("data vintage", episode.dataVintageHash),
         ("initial state", episode.initialStateContentHash),
+        ("state manifest", episode.stateManifestHash),
+        ("state compilation contract", episode.stateCompilationContractHash),
         ("state contract", episode.stateContractHash),
         ("path receipt", episode.pathAdmissionReceiptId),
         ("path content", episode.pathContentHash),
@@ -450,6 +464,7 @@ def _validateBatch(batch: PolicyEpisodeBatch) -> None:
         ("constraint contract", batch.constraintContractHash),
         ("path rule", batch.pathRuleHash),
         ("parameter contract", batch.parameterContractHash),
+        ("state compilation contract", batch.stateCompilationContractHash),
         ("state support", batch.stateSupport.supportId),
     ):
         if not _validDigest(value):
@@ -471,7 +486,7 @@ def _validateBatch(batch: PolicyEpisodeBatch) -> None:
         <= _dateText(batch.knowledgeAsOf, "batch knowledgeAsOf")
     ):
         raise PolicyEvaluationError("policy episode batch timing mismatch")
-    if batch.stateSupport.schemaVersion != "empirical-state-support-v1":
+    if batch.stateSupport.schemaVersion != "empirical-state-support-v2":
         raise PolicyEvaluationError("policy episode batch state support protocol mismatch")
 
 
@@ -493,13 +508,14 @@ def _validateCertificate(certificate: PolicyEvaluationCertificate) -> None:
         ("constraint contract", certificate.constraintContractHash),
         ("path rule", certificate.pathRuleHash),
         ("parameter contract", certificate.parameterContractHash),
+        ("state compilation contract", certificate.stateCompilationContractHash),
         ("state support", certificate.stateSupport.supportId),
     ):
         if not _validDigest(value):
             raise PolicyEvaluationError(f"policy evaluation certificate {label} hash is invalid")
     if certificate.certificateId != canonicalPayloadHash(_certificatePayload(certificate)):
         raise PolicyEvaluationError("policy evaluation certificate content hash mismatch")
-    if certificate.stateSupport.schemaVersion != "empirical-state-support-v1":
+    if certificate.stateSupport.schemaVersion != "empirical-state-support-v2":
         raise PolicyEvaluationError("policy evaluation certificate state support protocol mismatch")
     _dateText(certificate.knowledgeAsOf, "certificate knowledgeAsOf")
 
@@ -565,6 +581,13 @@ def buildPolicyOosEpisode(
     initialKnowledge = _dateText(initial.knowledgeAsOf or initial.asOf, "initialStateKnowledgeAsOf")
     if _dateText(initial.decisionAsOf or initialKnowledge, "initialStateDecisionAsOf") != origin:
         raise PolicyEvaluationError("policy OOS initial state decision cutoff mismatch")
+    if (
+        initial.vintage is None
+        or not _validDigest(initial.vintage.receiptId)
+        or not _validDigest(initial.stateManifestHash)
+        or not _validDigest(initial.stateCompilationContractHash)
+    ):
+        raise PolicyEvaluationError("policy OOS needs a compiled point-in-time initial state")
     try:
         initialPrimitives = initialStatePrimitives(model, initial)
         initialContentHash = stateAdmissionSubjectHash(
@@ -574,7 +597,17 @@ def buildPolicyOosEpisode(
             decisionAsOf=origin,
         )
         initialContractHash = stateContractHash(initialPrimitives)
-    except (SimulationSpecError, StateSupportError) as error:
+        validatePointInTimeStateReceipt(
+            statePrimitives=initialPrimitives,
+            asOf=initial.asOf,
+            knowledgeAsOf=initialKnowledge,
+            decisionAsOf=origin,
+            stateCompilationContractHash=initial.stateCompilationContractHash,
+            stateManifestHash=initial.stateManifestHash,
+            stateReceiptId=initial.vintage.receiptId,
+            admissionVerifier=admissionVerifier,
+        )
+    except (SimulationSpecError, StateSupportError, StateCompilerError) as error:
         raise PolicyEvaluationError(str(error)) from error
     if pathReceipt.status != "admitted" or _dateText(pathReceipt.issuedAt, "path issuedAt") > origin:
         raise PolicyEvaluationError("policy OOS path was not admitted by the origin")
@@ -632,6 +665,7 @@ def buildPolicyOosEpisode(
             "constraintContract": constraintHash,
             "pathRuleHash": pathReceipt.ruleHash,
             "parameterContract": parameterContract,
+            "stateCompilationContract": initial.stateCompilationContractHash,
         }
     )
     provisional = PolicyOosEpisode(
@@ -653,6 +687,9 @@ def buildPolicyOosEpisode(
         initialStateKnowledgeAsOf=initialKnowledge,
         initialStateContentHash=initialContentHash,
         initialStateReceiptId="",
+        pointInTimeStateReceiptId=initial.vintage.receiptId,
+        stateManifestHash=initial.stateManifestHash,
+        stateCompilationContractHash=initial.stateCompilationContractHash,
         stateContractHash=initialContractHash,
         initialState=initialPrimitives,
         pathAdmissionReceiptId=run.pathAdmissionReceiptId,
@@ -860,17 +897,21 @@ def admitPolicyOosEpisode(
         raise PolicyEvaluationError(str(error)) from error
     if artifactPath(artifactRoot, episode.initialStateContentHash).read_bytes() != expectedStateArtifact:
         raise PolicyEvaluationError("policy initial-state artifact content mismatch")
-    initialParents = tuple(verifier.verify(receiptId) for receiptId in initialReceipt.parentReceiptIds)
-    exactVintageParents = tuple(
-        receipt
-        for receipt in initialParents
-        if receipt.kind == "dataVintage"
-        and receipt.status == "verifiedVintage"
-        and receipt.revisionPolicy == "asKnown"
-        and receipt.coverage == "asOfExact"
-    )
-    if not exactVintageParents:
-        raise PolicyEvaluationError("policy initial state lacks an exact as-known vintage parent")
+    try:
+        pointInTimeReceipt = validatePointInTimeStateReceipt(
+            statePrimitives=episode.initialState,
+            asOf=episode.initialStateAsOf,
+            knowledgeAsOf=episode.initialStateKnowledgeAsOf,
+            decisionAsOf=episode.originAsOf,
+            stateCompilationContractHash=episode.stateCompilationContractHash,
+            stateManifestHash=episode.stateManifestHash,
+            stateReceiptId=episode.pointInTimeStateReceiptId,
+            admissionVerifier=verifier,
+        )
+    except StateCompilerError as error:
+        raise PolicyEvaluationError(str(error)) from error
+    if initialReceipt.parentReceiptIds != (pointInTimeReceipt.receiptId,):
+        raise PolicyEvaluationError("policy initial state parent is not the compiled PIT manifest")
     modelReceipt = _requireReceipt(
         verifier,
         modelReceiptId,
@@ -895,7 +936,7 @@ def admitPolicyOosEpisode(
     decisionParents = [
         pathReceipt,
         initialReceipt,
-        *exactVintageParents,
+        pointInTimeReceipt,
         modelReceipt,
         baselineReceipt,
         candidateReceipt,
@@ -1271,6 +1312,7 @@ def evaluatePolicyOos(snapshot: PolicyOosLedgerSnapshot, spec: PolicyEvaluationS
         "pathRuleVersion",
         "pathRuleHash",
         "parameterContractHash",
+        "stateCompilationContractHash",
         "stateContractHash",
         "baselineStrategyId",
         "baselinePolicyVersion",
@@ -1366,6 +1408,7 @@ def evaluatePolicyOos(snapshot: PolicyOosLedgerSnapshot, spec: PolicyEvaluationS
         constraintContractHash=episodes[0].constraintContractHash,
         pathRuleHash=episodes[0].pathRuleHash,
         parameterContractHash=episodes[0].parameterContractHash,
+        stateCompilationContractHash=episodes[0].stateCompilationContractHash,
         reasons=tuple(reasons),
     )
     return replace(provisional, reportId=canonicalPayloadHash(_reportPayload(provisional)))
@@ -1394,6 +1437,7 @@ def _episodeSeries(snapshot: PolicyOosLedgerSnapshot) -> tuple[PolicyOosEpisode,
         "pathRuleVersion",
         "pathRuleHash",
         "parameterContractHash",
+        "stateCompilationContractHash",
         "stateContractHash",
     )
     for fieldName in contractFields:
@@ -1455,6 +1499,21 @@ def sealPolicyOosBatch(
             )
         ):
             raise PolicyEvaluationError("policy batch initial-state artifact mismatch")
+        try:
+            pointInTimeReceipt = validatePointInTimeStateReceipt(
+                statePrimitives=episode.initialState,
+                asOf=episode.initialStateAsOf,
+                knowledgeAsOf=episode.initialStateKnowledgeAsOf,
+                decisionAsOf=episode.originAsOf,
+                stateCompilationContractHash=episode.stateCompilationContractHash,
+                stateManifestHash=episode.stateManifestHash,
+                stateReceiptId=episode.pointInTimeStateReceiptId,
+                admissionVerifier=verifier,
+            )
+        except StateCompilerError as error:
+            raise PolicyEvaluationError(str(error)) from error
+        if initialReceipt.parentReceiptIds != (pointInTimeReceipt.receiptId,):
+            raise PolicyEvaluationError("policy batch initial-state PIT parent mismatch")
         pathReceipt = _requireReceipt(
             verifier,
             episode.pathAdmissionReceiptId,
@@ -1502,6 +1561,7 @@ def sealPolicyOosBatch(
         constraintContractHash=episodes[0].constraintContractHash,
         pathRuleHash=episodes[0].pathRuleHash,
         parameterContractHash=episodes[0].parameterContractHash,
+        stateCompilationContractHash=episodes[0].stateCompilationContractHash,
         stateSupport=stateSupport,
     )
     batchId = canonicalPayloadHash(_batchPayload(provisional))
@@ -1602,6 +1662,7 @@ def issuePolicyEvaluationCertificate(
         report.constraintContractHash,
         report.pathRuleHash,
         report.parameterContractHash,
+        report.stateCompilationContractHash,
     )
     batchValues = (
         batch.executableHash,
@@ -1611,6 +1672,7 @@ def issuePolicyEvaluationCertificate(
         batch.constraintContractHash,
         batch.pathRuleHash,
         batch.parameterContractHash,
+        batch.stateCompilationContractHash,
     )
     if contractValues != batchValues or report.episodeIds != batch.episodeIds:
         raise PolicyEvaluationError("policy evaluation report drifted from the sealed batch")
@@ -1636,6 +1698,7 @@ def issuePolicyEvaluationCertificate(
         constraintContractHash=batch.constraintContractHash,
         pathRuleHash=batch.pathRuleHash,
         parameterContractHash=batch.parameterContractHash,
+        stateCompilationContractHash=batch.stateCompilationContractHash,
         stateSupport=batch.stateSupport,
         spec=spec,
         report=report,
@@ -1695,6 +1758,7 @@ def validatePolicyEvaluationCertificate(
     constraintContractHash: str,
     pathRuleHash: str,
     parameterContractHash: str,
+    stateCompilationContractHash: str,
     pathFrequency: str,
     pathStepSpan: int,
     pathHorizon: int,
@@ -1751,6 +1815,7 @@ def validatePolicyEvaluationCertificate(
         or certificate.knowledgeAsOf != batch.knowledgeAsOf
         or certificateReceipt.knowledgeAsOf != certificate.knowledgeAsOf
         or certificate.stateSupport != batch.stateSupport
+        or certificate.stateCompilationContractHash != batch.stateCompilationContractHash
         or batchReceipt.frequency != pathFrequency
         or certificateReceipt.frequency != pathFrequency
         or batchReceipt.stepSpan != pathStepSpan
@@ -1770,6 +1835,7 @@ def validatePolicyEvaluationCertificate(
         constraintContractHash,
         pathRuleHash,
         parameterContractHash,
+        stateCompilationContractHash,
     )
     certificateContracts = (
         certificate.executableHash,
@@ -1779,6 +1845,7 @@ def validatePolicyEvaluationCertificate(
         certificate.constraintContractHash,
         certificate.pathRuleHash,
         certificate.parameterContractHash,
+        certificate.stateCompilationContractHash,
     )
     if currentContracts != certificateContracts:
         raise PolicyEvaluationError("policy evaluation certificate does not bind the current decision contract")

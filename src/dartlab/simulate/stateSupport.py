@@ -14,11 +14,11 @@ from hashlib import sha256
 from dartlab.simulate.vintage import canonicalPayloadBytes, canonicalPayloadHash
 
 STATE_SUPPORT_DISTANCE_RULE = "range-scaled-chebyshev-nearest-origin-v1"
-STATE_SUPPORT_SCHEMA = "empirical-state-support-v1"
+STATE_SUPPORT_SCHEMA = "empirical-state-support-v2"
 STATE_SUPPORT_QUANTILE = 0.95
 INITIAL_STATE_RULE_ID = "typed-initial-state"
-INITIAL_STATE_RULE_VERSION = "1"
-INITIAL_STATE_RULE_HASH = sha256(b"dartlab.typed-initial-state.v1").hexdigest()
+INITIAL_STATE_RULE_VERSION = "2"
+INITIAL_STATE_RULE_HASH = sha256(b"dartlab.typed-initial-state.v2").hexdigest()
 
 
 class StateSupportError(ValueError):
@@ -33,6 +33,10 @@ class StatePrimitive:
     unit: str
     role: str
     value: float
+    frequency: str = "step"
+    timing: str = "level"
+    transformId: str = "identity-v1"
+    evidenceRole: str = "model"
 
 
 @dataclass(frozen=True)
@@ -45,6 +49,10 @@ class EmpiricalStateSupport:
     variableIds: tuple[str, ...]
     units: tuple[str, ...]
     roles: tuple[str, ...]
+    frequencies: tuple[str, ...]
+    timings: tuple[str, ...]
+    transformIds: tuple[str, ...]
+    evidenceRoles: tuple[str, ...]
     minimums: tuple[float, ...]
     maximums: tuple[float, ...]
     neighborQuantile: float
@@ -58,7 +66,16 @@ def _normalizeState(state: tuple[StatePrimitive, ...]) -> tuple[StatePrimitive, 
     normalized = tuple(sorted(state, key=lambda item: item.variableId))
     if len({item.variableId for item in normalized}) != len(normalized):
         raise StateSupportError("state needs unique typed primitives")
-    if any(not item.variableId or not item.unit or not item.role for item in normalized):
+    if any(
+        not item.variableId
+        or not item.unit
+        or not item.role
+        or not item.frequency
+        or not item.timing
+        or not item.transformId
+        or not item.evidenceRole
+        for item in normalized
+    ):
         raise StateSupportError("state primitive contract is incomplete")
     if any(not math.isfinite(float(item.value)) for item in normalized):
         raise StateSupportError("state primitive is not finite")
@@ -82,7 +99,20 @@ def stateContractHash(state: tuple[StatePrimitive, ...]) -> str:
     """
 
     normalized = _normalizeState(state)
-    return canonicalPayloadHash(tuple((item.variableId, item.unit, item.role) for item in normalized))
+    return canonicalPayloadHash(
+        tuple(
+            (
+                item.variableId,
+                item.unit,
+                item.role,
+                item.frequency,
+                item.timing,
+                item.transformId,
+                item.evidenceRole,
+            )
+            for item in normalized
+        )
+    )
 
 
 def stateAdmissionArtifact(
@@ -115,7 +145,7 @@ def stateAdmissionArtifact(
         raise StateSupportError("state admission needs knowledge and decision cutoffs")
     return canonicalPayloadBytes(
         {
-            "schemaVersion": "typed-initial-state-v1",
+            "schemaVersion": "typed-initial-state-v2",
             "stateContractHash": stateContractHash(normalized),
             "asOf": str(asOf),
             "knowledgeAsOf": str(knowledgeAsOf),
@@ -152,7 +182,7 @@ def stateAdmissionSubjectHash(
 
     return canonicalPayloadHash(
         {
-            "schemaVersion": "typed-initial-state-v1",
+            "schemaVersion": "typed-initial-state-v2",
             "stateContractHash": stateContractHash(state),
             "asOf": str(asOf),
             "knowledgeAsOf": str(knowledgeAsOf),
@@ -225,6 +255,10 @@ def buildEmpiricalStateSupport(
         variableIds=tuple(item.variableId for item in firstState),
         units=tuple(item.unit for item in firstState),
         roles=tuple(item.role for item in firstState),
+        frequencies=tuple(item.frequency for item in firstState),
+        timings=tuple(item.timing for item in firstState),
+        transformIds=tuple(item.transformId for item in firstState),
+        evidenceRoles=tuple(item.evidenceRole for item in firstState),
         minimums=minimums,
         maximums=maximums,
         neighborQuantile=STATE_SUPPORT_QUANTILE,

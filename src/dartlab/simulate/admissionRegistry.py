@@ -403,10 +403,16 @@ class AdmissionVerifier:
         self.databasePath = Path(databasePath)
         self.artifactRoot = Path(artifactRoot)
         self.trustedIssuers = dict(trustedIssuers)
+        self._verifiedChainCache: dict[str, AdmissionReceipt] | None = None
+        self._verifiedChainStamp: tuple[int, int] | None = None
 
     def _loadVerifiedChain(self) -> dict[str, AdmissionReceipt]:
         if not self.databasePath.exists():
             raise AdmissionRegistryError("admission registry is unavailable")
+        stat = self.databasePath.stat()
+        stamp = (stat.st_mtime_ns, stat.st_size)
+        if self._verifiedChainCache is not None and self._verifiedChainStamp == stamp:
+            return self._verifiedChainCache
         try:
             connection = sqlite3.connect(f"file:{self.databasePath.as_posix()}?mode=ro", uri=True)
             rows = connection.execute(
@@ -431,6 +437,8 @@ class AdmissionVerifier:
                 raise AdmissionRegistryError("admission registry row hash mismatch")
             previousHash = computedRowHash
             receipts[receipt.receiptId] = receipt
+        self._verifiedChainCache = receipts
+        self._verifiedChainStamp = stamp
         return receipts
 
     def verify(

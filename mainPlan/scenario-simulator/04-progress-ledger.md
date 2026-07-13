@@ -542,6 +542,39 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
   strict state compiler다. 그 뒤 가격·물량·단위원가·고정비 분기 운영 전이, 마지막으로 signed product
   manifest를 소비하는 공개 decision verb와 고밀도 GUI를 올린다.
 
+### 0c-38. provider-neutral PIT 상태 컴파일러와 정책 상태 계보 폐쇄 (2026-07-13)
+
+- **재감사 판정**: 시뮬레이터의 본질은 다양한 조건을 넣고 가능한 세계를 시간 전개한 뒤 전략 차이를
+  비교하는 것이다. PRD 방향과 `world.py` 실행기는 이 정의를 충족할 수 있다. 그러나 초기 상태를 caller가
+  직접 쓰고 무관한 exact 빈티지 영수증 하나만 부모로 붙일 수 있던 경로는 전략 도출의 출발점을 증명하지
+  못했다. 실현 가능성은 높지만 이 구멍을 닫기 전 GUI나 추천을 올리는 것은 금지로 판정했다.
+- **변수 의미 계약**: `stateVariables.py`가 변수별 provider, dataset, signal, unit, 실행 role, evidence role,
+  frequency, flow/stock timing, transform, freshness와 bounds를 하나의 registry로 고정한다. 상태 계약과
+  역사 support도 이 의미를 포함하도록 v2로 올렸다. 값이 같아도 flow와 stock, 관측과 명시 가정,
+  transform이 다르면 같은 상태로 취급하지 않는다.
+- **PIT 컴파일러**: `stateCompiler.py`가 고정 query 범위의 complete provider observation batch를 서명하고,
+  decision cutoff 이전 revision만 선택해 실행 상태를 결정론적으로 컴파일한다. 미래 amendment를 뒤에
+  추가해도 과거 상태는 바뀌지 않는다. 결손, stale, 단위나 timing drift, 모호한 revision은 fail closed다.
+  날짜 정밀도만 있는 당일 공개값과 `latestRetained + periodOnly`, 명시 가정은 conditional로 남고 exact
+  PIT 영수증을 발급할 수 없다.
+- **정확한 부모 튜플**: PIT 상태 receipt의 부모는 실제 complete provider batch receipt 전부와 정확히
+  같아야 한다. typed initial-state receipt의 부모도 그 PIT receipt 하나와 정확히 같아야 한다. 정책 episode,
+  batch, evaluation report, certificate와 현재 runtime은 `stateCompilationContractHash`와 manifest를 함께
+  재검증한다. 같은 값의 초기 상태에 무관한 exact dataVintage를 붙인 기존 우회 반례는 이제 거부된다.
+- **공급자 경계**: EDGAR는 as-known source receipt와 filing availability를 보존하는 adapter가 이 계약을
+  만족하면 exact로 승격할 수 있다. DART의 현재 latest-retained period-only 이력은 관측 사실로 기록할 수
+  있지만 exact 역사 상태나 자동 추천 근거로 승격하지 않는다. 실제 EDGAR, DART, 가격, 거시, 산업 adapter
+  배선은 다음 수직절편이다.
+- **검증 비용 수리**: 동일 runtime verifier가 원장이 바뀌지 않은 동안 이미 검증한 서명 chain을 재사용하고,
+  registry 파일 변경 시 즉시 무효화한다. 각 receipt의 reachable parent와 artifact hash 검증은 그대로다.
+- **검증**: attempt 6건을 먼저 통과시킨 뒤 본진 변수 registry 3건, PIT compiler 6건, support 4건,
+  policy 8건을 포함해 `tests/simulate` 301건 전부 통과했다. ruff clean, Guard Index strict l0-l15 7/7과
+  외부 gate 6종도 통과했다.
+- **정직한 잔여와 다음 순서**: 이번 단계는 공급자 중립 컴파일 계약과 추천 계보를 닫은 것이지 실제 전 공급자
+  adapter나 회사 운영모형을 완성한 것이 아니다. 다음은 기존 EDGAR filing-vintage compiler를 이 batch 계약에
+  연결하고 DART를 conditional boundary로 고정한 뒤, 분기 가격, 물량, 단위원가, 고정비, capacity 전이를
+  measured law로 만든다. 그 후에만 공개 decision verb와 고밀도 GUI를 올린다.
+
 ### 0c-29. 분기 전이, 파라미터 불확실성, 실행 인증 P0 보강 (2026-07-13)
 
 - **전문가 재감사 결론**: 경로모형, DART와 EDGAR PIT, admission 적대검토에서 분기 grid에 연간

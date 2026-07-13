@@ -43,6 +43,12 @@ def testUnitDriftAndCallerEditedRadiusFailClosed() -> None:
     support = buildEmpiricalStateSupport(origins)
     with pytest.raises(StateSupportError, match="contract"):
         validateEmpiricalStateSupport(_state(0.5, 0.5, unit="percent"), origins, support)
+    meaningDrift = (
+        replace(origins[20][0], timing="flow", evidenceRole="explicitAssumption"),
+        origins[20][1],
+    )
+    with pytest.raises(StateSupportError, match="contract"):
+        validateEmpiricalStateSupport(meaningDrift, origins, support)
     with pytest.raises(StateSupportError, match="artifact"):
         validateEmpiricalStateSupport(
             _state(0.5, 0.5),
