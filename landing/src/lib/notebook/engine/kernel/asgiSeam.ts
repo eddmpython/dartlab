@@ -2,6 +2,7 @@
 // 커널 seam (ASGI arm). browser-as-server dispatch 를 손수(_dl_dispatch)와 pyproc(AsgiServer)
 // 두 impl 중 플래그로 고른다. USE_PYPROC_ASGI=false(기본)면 오늘 경로와 바이트 동일.
 // mainPlan/pyproc-runtime-ssot P1. dartlab 라우팅(/pyapi 접두·query)·설치는 seam 위 워커 소유.
+import type { Runtime as PyprocRuntime, PyprocAsgiServer } from 'pyproc/runtime';
 
 interface PyLike {
 	runPython: (code: string) => unknown;
@@ -83,27 +84,19 @@ export class HandRolledAsgi implements AsgiKernel {
 	}
 }
 
-// pyproc 경로. 워커의 기존 pyodide 를 new Runtime(py) 로 채택한다(pyproc boot() 는 두 번째
-// pyodide 를 새로 띄우므로 호출하지 않는다). enableAsgiServer 로 dispatch. pyproc 은 동적
-// import 라 플래그 off 면 fetch/eval 0. pyproc/runtime 만 import 하므로 SAB 를 쓰는
-// process-os 모듈은 유입되지 않는다(전 브라우저 안전, 격리 불요).
+// pyproc 경로. 워커가 init 에서 만든 공유 Runtime(rt = new Runtime(pyodide)) 을 그대로 받는다.
+// 워커의 FS·run·출력·인터럽트도 같은 rt 를 쓰므로 커널·셀실행이 단일 런타임 SSOT 를 공유한다.
+// enableAsgiServer 로 dispatch. 설치(fastapi 등) 실패 시 워커가 HandRolledAsgi(raw pyodide) 로 폴백.
 export class PyprocAsgi implements AsgiKernel {
 	readonly name = 'pyproc' as const;
 	private ready = false;
-	private asgi:
-		| {
-				install(): Promise<unknown>;
-				serve(m: string, p: string, b: string | null, q: string): Promise<{ status: number; body: string }>;
-		  }
-		| null = null;
-	constructor(private py: PyLike) {}
+	private asgi: PyprocAsgiServer | null = null;
+	constructor(private rt: PyprocRuntime) {}
 
 	async install(): Promise<void> {
 		if (this.ready) return;
-		const { Runtime } = await import('pyproc/runtime');
-		await this.py.runPythonAsync(APP_SETUP);
-		const rt = new Runtime(this.py);
-		this.asgi = rt.enableAsgiServer({ app: '_dl_app' });
+		await this.rt.runAsync(APP_SETUP);
+		this.asgi = this.rt.enableAsgiServer({ app: '_dl_app' });
 		await this.asgi.install();
 		this.ready = true;
 	}

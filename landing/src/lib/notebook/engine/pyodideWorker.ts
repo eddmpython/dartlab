@@ -11,17 +11,17 @@ import {
 	serializePackageManifest
 } from './packageManifest';
 import { HandRolledAsgi, PyprocAsgi, type AsgiKernel } from './kernel/asgiSeam';
+import { Runtime } from 'pyproc/runtime';
 
 declare const self: DedicatedWorkerGlobalScope;
 
+// pyodide 는 이제 공유 rt(pyproc Runtime) 로 감싸 FS·run·출력·인터럽트를 rt.* 로 쓴다(단일 런타임
+// SSOT). 여기 남는 직접 표면은 pyproc 미담당분뿐: mountNativeFS(OPFS 워크스페이스) + _module(체크포인트
+// 스냅샷). runPython/runPythonAsync/globals 는 pyproc 설치 실패 시 HandRolledAsgi(raw) 폴백용(PyLike 충족).
 interface PyodideInterface {
 	runPythonAsync: (code: string) => Promise<unknown>;
-	loadPackagesFromImports: (code: string) => Promise<void>;
-	globals: { get: (name: string) => unknown; set: (name: string, value: unknown) => void };
-	setStdout: (options: { batched: (text: string) => void }) => void;
-	setStderr: (options: { batched: (text: string) => void }) => void;
 	runPython: (code: string) => unknown;
-	setInterruptBuffer?: (buffer?: Uint8Array) => void;
+	globals: { get: (name: string) => unknown; set: (name: string, value: unknown) => void };
 	mountNativeFS?: (
 		path: string,
 		handle: FileSystemDirectoryHandle
@@ -30,16 +30,6 @@ interface PyodideInterface {
 		HEAPU8: Uint8Array;
 		_emscripten_stack_get_current?: () => number;
 		_emscripten_stack_restore?: (pointer: number) => void;
-	};
-	FS: {
-		readdir: (path: string) => string[];
-		stat: (path: string) => { size: number; mode: number };
-		isDir: (mode: number) => boolean;
-		readFile: (path: string, opts?: { encoding: string }) => string | Uint8Array;
-		writeFile: (path: string, data: string | Uint8Array, opts?: { encoding: string }) => void;
-		mkdir: (path: string) => void;
-		unlink: (path: string) => void;
-		rmdir: (path: string) => void;
 	};
 }
 
@@ -62,6 +52,9 @@ const MATPLOTLIBRC = [
 ].join('\n');
 
 let pyodide: PyodideInterface | null = null;
+// 공유 pyproc Runtime(단일 런타임 SSOT). init 에서 new Runtime(pyodide) 로 만들어 커널(ASGI)·셀실행·
+// 파일 IO 가 같은 rt 를 쓴다. pyodide 가 set 이면 rt 도 항상 set(둘은 init 에서 함께 생성).
+let rt: Runtime | null = null;
 let stdoutBuffer: string[] = [];
 let stderrBuffer: string[] = [];
 const wrapCache = new Map<string, string>();
@@ -89,8 +82,8 @@ const DARTLAB_IMPORT_RE = /(?:^|\n)[ \t]*(?:import[ \t]+dartlab|from[ \t]+dartla
 let dartlabReady = false;
 
 async function ensureDartlab(code: string): Promise<void> {
-	if (dartlabReady || !pyodide || !DARTLAB_IMPORT_RE.test(code)) return;
-	await pyodide.runPythonAsync(
+	if (dartlabReady || !rt || !DARTLAB_IMPORT_RE.test(code)) return;
+	await rt.runAsync(
 		`import micropip\nawait micropip.install(${JSON.stringify(DARTLAB_PKG)})`
 	);
 	dartlabReady = true;
@@ -109,7 +102,7 @@ function reply(id: string, result: unknown, error?: string) {
 }
 
 function installMarimoShim() {
-	if (!pyodide) return;
+	if (!rt) return;
 	const dirs = new Set<string>();
 	for (const path of Object.keys(MARIMO_SHIM_FILES)) {
 		const parts = path.split('/').slice(0, -1);
@@ -122,10 +115,10 @@ function installMarimoShim() {
 	}
 	const sortedDirs = Array.from(dirs).sort((a, b) => a.length - b.length);
 	for (const dir of sortedDirs) {
-		try { pyodide.FS.mkdir(dir); } catch { /* exists */ }
+		try { rt.fs.mkdir(dir); } catch { /* exists */ }
 	}
 	for (const [path, content] of Object.entries(MARIMO_SHIM_FILES)) {
-		pyodide.FS.writeFile(path, content.trim() + '\n', { encoding: 'utf8' });
+		rt.fs.writeFile(path, content.trim() + '\n');
 	}
 }
 
@@ -134,22 +127,24 @@ async function initialize(interruptBuffer?: Uint8Array | null) {
 	pyodide = await _loadPyodide({
 		indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.27.5/full/'
 	});
-	if (interruptBuffer && pyodide.setInterruptBuffer) {
-		pyodide.setInterruptBuffer(interruptBuffer);
+	// 공유 런타임 채택: 이후 FS·run·출력·인터럽트·패키지로드는 전부 rt.* 로(pyproc 단일 SSOT).
+	rt = new Runtime(pyodide);
+	// 인터럽트: rt 는 SAB 를 받아 엔진이 Uint8Array 뷰로 감싼다(공유 유지). 미지원 엔진이면 false.
+	if (interruptBuffer && rt.setInterruptBuffer(interruptBuffer.buffer)) {
 		interruptMode = 'soft';
 	}
-	pyodide.setStdout({ batched: (text) => stdoutBuffer.push(text) });
-	pyodide.setStderr({ batched: (text) => stderrBuffer.push(text) });
-	await pyodide.loadPackagesFromImports('import micropip');
-	try { pyodide.FS.mkdir('/workspace'); } catch { /* exists */ }
+	rt.setStdout((text) => stdoutBuffer.push(text));
+	rt.setStderr((text) => stderrBuffer.push(text));
+	await rt.loadPackagesFromImports('import micropip');
+	try { rt.fs.mkdir('/workspace'); } catch { /* exists */ }
 	// 허브 프리워밍 시점에는 대상 ID가 없다. OPFS는 attachWorkspace에서 노트북별로 마운트한다.
 	// 웹워커에는 DOM(document)이 없으므로 matplotlib 은 non-interactive AGG 백엔드 강제.
 	// (기본 pyodide 백엔드는 wasm_backend 가 js.document 를 import 하려다 워커에서 실패)
 	// + matplotlibrc 로 테마 중립 색 강제.
-	pyodide.FS.writeFile('/matplotlibrc', MATPLOTLIBRC, { encoding: 'utf8' });
-	pyodide.runPython('import os, sys; os.chdir("/workspace")\nif "/workspace" not in sys.path: sys.path.insert(0, "/workspace")\nos.environ["MPLBACKEND"] = "AGG"\nos.environ["MATPLOTLIBRC"] = "/matplotlibrc"');
+	rt.fs.writeFile('/matplotlibrc', MATPLOTLIBRC);
+	rt.run('import os, sys; os.chdir("/workspace")\nif "/workspace" not in sys.path: sys.path.insert(0, "/workspace")\nos.environ["MPLBACKEND"] = "AGG"\nos.environ["MATPLOTLIBRC"] = "/matplotlibrc"');
 	installMarimoShim();
-	asgiKernel = USE_PYPROC_ASGI ? new PyprocAsgi(pyodide) : new HandRolledAsgi(pyodide);
+	asgiKernel = USE_PYPROC_ASGI ? new PyprocAsgi(rt) : new HandRolledAsgi(pyodide);
 }
 
 async function attachWorkspace(workspaceId: string): Promise<boolean> {
@@ -183,28 +178,22 @@ async function syncWorkspace(): Promise<void> {
 }
 
 function fileExists(path: string): boolean {
-	if (!pyodide) return false;
-	try {
-		pyodide.FS.stat(path);
-		return true;
-	} catch {
-		return false;
-	}
+	return rt ? rt.fs.exists(path) : false;
 }
 
 function readTextFile(path: string): string | null {
-	if (!pyodide || !fileExists(path)) return null;
+	if (!rt || !fileExists(path)) return null;
 	try {
-		return pyodide.FS.readFile(path, { encoding: 'utf8' }) as string;
+		return rt.fs.readFile(path, { encoding: 'utf8' }) as string;
 	} catch {
 		return null;
 	}
 }
 
 function ensurePackageDir(): void {
-	if (!pyodide || fileExists(PACKAGE_DIR)) return;
+	if (!rt || fileExists(PACKAGE_DIR)) return;
 	try {
-		pyodide.FS.mkdir(PACKAGE_DIR);
+		rt.fs.mkdir(PACKAGE_DIR);
 	} catch {
 		/* directory may already exist */
 	}
@@ -230,17 +219,17 @@ function readWorkspacePackageSpecs(): string[] {
 }
 
 async function writePackageManifest(specs: string[]): Promise<void> {
-	if (!pyodide) return;
+	if (!rt) return;
 	ensurePackageDir();
-	pyodide.FS.writeFile(PACKAGE_MANIFEST_PATH, serializePackageManifest(specs), { encoding: 'utf8' });
+	rt.fs.writeFile(PACKAGE_MANIFEST_PATH, serializePackageManifest(specs));
 	await syncWorkspace();
 }
 
 async function installPackageSpecs(specs: string[], persist: boolean): Promise<string[]> {
-	if (!pyodide) return [];
+	if (!rt) return [];
 	const normalized = mergePackageSpecs([], specs);
 	if (normalized.length === 0) return [];
-	await pyodide.runPythonAsync(
+	await rt.runAsync(
 		`import micropip\nawait micropip.install(${JSON.stringify(normalized)})\nimport importlib\nimportlib.invalidate_caches()`
 	);
 	packageRestoreError = '';
@@ -397,7 +386,7 @@ __json__.dumps(__eddm_fmt__)
 `;
 
 async function execute(code: string) {
-	if (!pyodide) return { type: 'error', data: 'Pyodide not initialized', executedAt: new Date().toISOString() };
+	if (!rt) return { type: 'error', data: 'Pyodide not initialized', executedAt: new Date().toISOString() };
 
 	stdoutBuffer = [];
 	stderrBuffer = [];
@@ -417,8 +406,8 @@ async function execute(code: string) {
 		await ensureDartlab(code);
 		const hasImport = /(?:^|\n)\s*(?:import |from )\S+/.test(code);
 		if (hasImport) {
-			await pyodide.loadPackagesFromImports(code);
-			pyodide.runPython('import importlib; importlib.invalidate_caches()');
+			await rt.loadPackagesFromImports(code);
+			rt.run('import importlib; importlib.invalidate_caches()');
 		}
 
 		let wrappedCode = wrapCache.get(code);
@@ -427,7 +416,7 @@ async function execute(code: string) {
 			if (wrapCache.size >= 200) wrapCache.delete(wrapCache.keys().next().value!);
 			wrapCache.set(code, wrappedCode);
 		}
-		await pyodide.runPythonAsync(wrappedCode);
+		await rt.runAsync(wrappedCode);
 
 		let stdout = stdoutBuffer.join('\n');
 		// matplotlib 첫 플롯의 "building the font cache" 안내는 stderr 로 나오지만 오류가 아니다.
@@ -443,15 +432,15 @@ async function execute(code: string) {
 		// (dartlab 등 라이브러리가 stderr 로 로그를 남겨도 표·그림 결과가 사라지지 않도록).
 		if (stderr) stdout = stdout ? stdout + '\n' + stderr : stderr;
 
-		const hasResult = pyodide.runPython('__eddmlab_result__ is not None') as boolean;
-		const hasFigures = pyodide.runPython(
+		const hasResult = rt.run('__eddmlab_result__ is not None') as boolean;
+		const hasFigures = rt.run(
 			"__import__('matplotlib.pyplot', fromlist=['pyplot']).get_fignums() if 'matplotlib' in __import__('sys').modules else []"
 		);
 		const needsFormat = hasResult || (hasFigures && (hasFigures as unknown[]).length > 0);
 
 		let fmt = { repr: '', df: null as unknown, img: null as string | null, html: null as string | null, widget: null as string | null };
 		if (needsFormat) {
-			const raw = pyodide.runPython(FORMAT_CODE);
+			const raw = rt.run(FORMAT_CODE);
 			const str = String(raw);
 			if (str && str !== 'None') {
 				const parsed = JSON.parse(str);
@@ -540,7 +529,7 @@ self.onmessage = async (e: MessageEvent) => {
 				// 실패해도 조용히 넘어간다(첫 import dartlab 셀에서 ensureDartlab 이 다시 시도).
 				try {
 					await ensureDartlab('import dartlab');
-					await pyodide?.runPythonAsync('import dartlab');
+					await rt?.runAsync('import dartlab');
 					reply(id, { warmed: true });
 				} catch (err) {
 					reply(id, { warmed: false, error: String(err) });
@@ -573,14 +562,14 @@ self.onmessage = async (e: MessageEvent) => {
 				break;
 			}
 			case 'getVariableNames': {
-				if (!pyodide) { reply(id, []); break; }
-				const result = pyodide.runPython("[k for k in dir() if not k.startswith('_')]");
+				if (!rt) { reply(id, []); break; }
+				const result = rt.run("[k for k in dir() if not k.startswith('_')]");
 				reply(id, Array.from(result as Iterable<string>));
 				break;
 			}
 			case 'getVariablesWithInfo': {
-				if (!pyodide) { reply(id, []); break; }
-				const result = pyodide.runPython(`
+				if (!rt) { reply(id, []); break; }
+				const result = rt.run(`
 import json as __json__
 __vars__ = []
 for __n__ in sorted([k for k in dir() if not k.startswith('_')]):
@@ -599,7 +588,7 @@ __json__.dumps(__vars__)
 				break;
 			}
 			case 'getCompletions': {
-				if (!pyodide) { reply(id, []); break; }
+				if (!rt) { reply(id, []); break; }
 				const objName = args[0] as string;
 				const code = objName ? `
 import json as __json__
@@ -633,22 +622,22 @@ for __comp_n__ in __comp_names__[:100]:
     __comp_items__.append({'label': __comp_n__, 'type': __comp_t__})
 __json__.dumps(__comp_items__)
 `;
-				const result = pyodide.runPython(code);
+				const result = rt.run(code);
 				const str = String(result);
 				reply(id, (!str || str === 'None') ? [] : JSON.parse(str));
 				break;
 			}
 			case 'installPackage': {
-				if (!pyodide) { reply(id, null); break; }
+				if (!rt) { reply(id, null); break; }
 				await installPackageSpecs([args[0] as string], true);
 				reply(id, null);
 				break;
 			}
 			case 'getInstalledPackages': {
-				if (!pyodide) { reply(id, []); break; }
+				if (!rt) { reply(id, []); break; }
 				const requestedSpecs = readWorkspacePackageSpecs();
 				const requestedByKey = new Map(requestedSpecs.map((spec) => [packageSpecKey(spec), spec]));
-				const result = await pyodide.runPythonAsync(`
+				const result = await rt.runAsync(`
 import json as __json__
 import micropip
 __pkgs__ = []
@@ -686,9 +675,9 @@ __json__.dumps(__pkgs__)
 				break;
 			}
 			case 'getDocstring': {
-				if (!pyodide) { reply(id, null); break; }
+				if (!rt) { reply(id, null); break; }
 				const name = args[0] as string;
-				const result = pyodide.runPython(`
+				const result = rt.run(`
 import json as __json__
 import inspect as __inspect__
 __doc_result__ = None
@@ -713,11 +702,11 @@ __doc_result__
 				break;
 			}
 			case 'updateWidgetValue': {
-				if (!pyodide) { reply(id, null); break; }
+				if (!rt) { reply(id, null); break; }
 				const [widgetId, value] = args as [string, unknown];
 				const safeId = widgetId.replace(/'/g, "\\'");
 				const valueStr = JSON.stringify(value);
-				pyodide.runPython(`
+				rt.run(`
 from marimo._ui.base import UIElement as __UIElem__
 __UIElem__._set_value('${safeId}', __import__('json').loads('${valueStr.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'))
 `);
@@ -725,15 +714,15 @@ __UIElem__._set_value('${safeId}', __import__('json').loads('${valueStr.replace(
 				break;
 			}
 			case 'listFiles': {
-				if (!pyodide) { reply(id, []); break; }
+				if (!rt) { reply(id, []); break; }
 				const path = args[0] as string;
 				try {
-					const entries = pyodide.FS.readdir(path).filter((n) => n !== '.' && n !== '..');
+					const entries = rt.fs.readdir(path);
 					const result = entries.map((name) => {
 						const fullPath = path.endsWith('/') ? path + name : path + '/' + name;
 						try {
-							const stat = pyodide!.FS.stat(fullPath);
-							return { name, path: fullPath, isDir: pyodide!.FS.isDir(stat.mode), size: stat.size };
+							const stat = rt!.fs.stat(fullPath);
+							return { name, path: fullPath, isDir: stat.isDir, size: stat.size };
 						} catch {
 							return { name, path: fullPath, isDir: false, size: 0 };
 						}
@@ -743,39 +732,33 @@ __UIElem__._set_value('${safeId}', __import__('json').loads('${valueStr.replace(
 				break;
 			}
 			case 'readFile': {
-				if (!pyodide) { reply(id, ''); break; }
+				if (!rt) { reply(id, ''); break; }
 				try {
-					reply(id, pyodide.FS.readFile(args[0] as string, { encoding: 'utf8' }) as string);
+					reply(id, rt.fs.readFile(args[0] as string, { encoding: 'utf8' }) as string);
 				} catch { reply(id, ''); }
 				break;
 			}
 			case 'writeFile': {
-				if (!pyodide) { reply(id, null); break; }
-				pyodide.FS.writeFile(args[0] as string, args[1] as string, { encoding: 'utf8' });
+				if (!rt) { reply(id, null); break; }
+				rt.fs.writeFile(args[0] as string, args[1] as string);
 				await syncWorkspace();
 				reply(id, null);
 				break;
 			}
 			case 'mkdir': {
-				if (!pyodide) { reply(id, null); break; }
-				try { pyodide.FS.mkdir(args[0] as string); } catch { /* exists */ }
-				try {
-					const p = args[0] as string;
-					const initPath = p.endsWith('/') ? p + '__init__.py' : p + '/__init__.py';
-					pyodide.FS.stat(initPath);
-				} catch {
-					try {
-						const p = args[0] as string;
-						const initPath = p.endsWith('/') ? p + '__init__.py' : p + '/__init__.py';
-						pyodide.FS.writeFile(initPath, '', { encoding: 'utf8' });
-					} catch { /* skip */ }
+				if (!rt) { reply(id, null); break; }
+				const p = args[0] as string;
+				try { rt.fs.mkdir(p); } catch { /* exists */ }
+				const initPath = p.endsWith('/') ? p + '__init__.py' : p + '/__init__.py';
+				if (!rt.fs.exists(initPath)) {
+					try { rt.fs.writeFile(initPath, ''); } catch { /* skip */ }
 				}
 				await syncWorkspace();
 				reply(id, null);
 				break;
 			}
 			case 'removeFile': {
-				if (!pyodide) { reply(id, null); break; }
+				if (!rt) { reply(id, null); break; }
 				await removeFileRecursive(args[0] as string);
 				await syncWorkspace();
 				reply(id, null);
@@ -790,18 +773,19 @@ __UIElem__._set_value('${safeId}', __import__('json').loads('${valueStr.replace(
 };
 
 async function removeFileRecursive(path: string): Promise<void> {
-	if (!pyodide) return;
+	const r = rt;
+	if (!r) return;
 	try {
-		const stat = pyodide.FS.stat(path);
-		if (pyodide.FS.isDir(stat.mode)) {
-			const entries = pyodide.FS.readdir(path).filter((n) => n !== '.' && n !== '..');
+		const stat = r.fs.stat(path);
+		if (stat.isDir) {
+			const entries = r.fs.readdir(path);
 			for (const name of entries) {
 				const child = path.endsWith('/') ? path + name : path + '/' + name;
 				await removeFileRecursive(child);
 			}
-			pyodide.FS.rmdir(path);
+			r.fs.rmdir(path);
 		} else {
-			pyodide.FS.unlink(path);
+			r.fs.unlink(path);
 		}
 	} catch { /* ignore */ }
 }
