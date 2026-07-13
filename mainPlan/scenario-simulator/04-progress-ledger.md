@@ -346,6 +346,33 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
   열지 않는다. DART period-only/latest-retained와 EDGAR as-known의 provider-neutral `VintageRef` 결속도
   다음 단계다.
 
+### 0c-32. 공동 파라미터 draw 빈티지와 documented provenance (2026-07-13)
+
+- **경계 확정**: path별 숫자를 hash에 넣는 것과 그 숫자가 정당한 PIT 공동분포에서 생성됐다는 증명은
+  다르다. 로컬 SHA는 내용 일치만 보장하므로 이번 수직절편은 `admitted`나 `certificate`가 아니라
+  `ParameterDrawSetReceipt(status=documented|retrospectiveOnly)`로 명명했다. trusted issuer 서명이
+  생기기 전까지 결과 warning은 `parameterMeasure:documentedOnly`이며 자동 추천 자격이 아니다.
+- **exact joint draw 결속**: receipt가 path 순서별 parameter vector, weight와 weight kind, 파라미터 이름과
+  단위 schema, 분포 artifact hash, generator version과 seed를 하나의 draw-set hash에 묶는다. 모든 path는
+  같은 parameter 이름과 receipt를 가져야 하고, 값·weight·순서·분포 artifact 중 하나라도 바뀌면 digest나
+  draw-set 검증이 실패한다. law의 `pathParameterInputs`에도 explicit unit을 필수화해 연간·분기 또는 서로
+  다른 의미의 파라미터 재사용을 막았다.
+- **PIT 순서와 의사결정 시점 분리**: 분포 증거는
+  `fitThrough <= availableAt <= knowledgeAsOf <= decisionAsOf`를 만족해야 한다. `WorldState`에
+  `decisionAsOf`를 별도로 추가해 initial-state knowledge cutoff와 의사결정 시점을 더 이상 같은 값으로
+  취급하지 않는다. revision policy와 coverage도 분리해 `asKnown + asOfExact`가 아니면 receipt는 최대
+  `retrospectiveOnly`다.
+- **실행 gate**: receipt field/digest, joint draw matrix, path 시간격자·최대 지평, 소비 law의 parameter unit,
+  decision cutoff를 실행 전에 다시 계산한다. receipt 없는 manual grid는 what-if 실행을 허용하지만
+  `parameterMeasure:undocumented`와 conditional/abstain 상태를 유지한다. 분포 artifact만 바뀌어도
+  `dataVintageHash`가 달라진다.
+- **검증**: `_attempts/parameterDrawVintage`에서 미래 evidence, mixed parameter schema, draw 변조,
+  distribution artifact 교체, undocumented 실행을 먼저 죽인 뒤 본진 5건으로 승격했다. simulate 전체
+  272 통과, ruff clean, Guard Index strict L0-L1.5 7/7과 외부 gate 6종 통과.
+- **정직한 잔여**: caller가 좋은 증거 숫자와 SHA를 직접 만든 self-claim은 여전히 admission이 아니다.
+  다음 P0는 content-addressed artifact store, Ed25519 issuer, append-only SQLite receipt chain과 read-only
+  runtime verifier이며, 이후 provider-neutral `VintageRef`와 path-set admission을 그 신뢰사슬에 연결한다.
+
 ### 0c-29. 분기 전이, 파라미터 불확실성, 실행 인증 P0 보강 (2026-07-13)
 
 - **전문가 재감사 결론**: 경로모형, DART와 EDGAR PIT, admission 적대검토에서 분기 grid에 연간

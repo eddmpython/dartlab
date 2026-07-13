@@ -11,6 +11,11 @@ from hashlib import sha256
 from types import MappingProxyType
 from typing import Callable, Mapping
 
+from dartlab.simulate.parameterDraws import (
+    ParameterDrawSetReceipt,
+    validateParameterDrawSetReceipt,
+)
+
 ROLE_SET = {"state", "metric", "shock"}
 EVIDENCE_SET = {
     "accountingIdentity",
@@ -203,10 +208,12 @@ class LawSpec:
     status: str = "active"
     certificate: LawCertificate | None = None
     parameters: Mapping[str, float | str | bool] = field(default_factory=dict)
+    pathParameterUnits: Mapping[str, str] = field(default_factory=dict)
     fn: LawFn = field(default=lambda _: {}, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "parameters", _freezeMapping(self.parameters))
+        object.__setattr__(self, "pathParameterUnits", _freezeMapping(self.pathParameterUnits))
 
 
 @dataclass(frozen=True)
@@ -218,6 +225,7 @@ class WorldState:
     asOf: str = ""
     refs: tuple[str, ...] = ()
     knowledgeAsOf: str = ""
+    decisionAsOf: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "values", _freezeMapping(self.values))
@@ -240,6 +248,7 @@ class ScenarioPath:
     maxAdmittedStep: int = 0
     admissionContentHash: str = ""
     parameterDraws: Mapping[str, float] = field(default_factory=dict)
+    parameterDrawReceipt: ParameterDrawSetReceipt | None = None
     knowledgeAsOf: str = ""
     historyStatus: str = ""
 
@@ -463,6 +472,7 @@ def _pathSetContentHash(paths: tuple[ScenarioPath, ...]) -> str:
             "validationStatus": path.validationStatus,
             "maxAdmittedStep": path.maxAdmittedStep,
             "parameterDraws": path.parameterDraws,
+            "parameterDrawReceipt": path.parameterDrawReceipt,
             "knowledgeAsOf": path.knowledgeAsOf,
             "historyStatus": path.historyStatus,
         }
@@ -492,6 +502,7 @@ def _lawContractPayload(law: LawSpec) -> dict:
         "shockInputs": law.shockInputs,
         "actionInputs": law.actionInputs,
         "pathParameterInputs": law.pathParameterInputs,
+        "pathParameterUnits": law.pathParameterUnits,
         "usesActionCost": law.usesActionCost,
     }
 
@@ -676,6 +687,7 @@ class WorldModel:
 
         producer: dict[str, str] = {}
         byId: dict[str, LawSpec] = {}
+        parameterUnitByName: dict[str, str] = {}
         for law in self.laws:
             if law.lawId in byId:
                 raise SimulationSpecError("duplicate lawId")
@@ -697,6 +709,14 @@ class WorldModel:
                 not name for name in law.pathParameterInputs
             ):
                 raise SimulationSpecError(f"invalid path parameter input: {law.lawId}")
+            if set(law.pathParameterUnits) != set(law.pathParameterInputs) or any(
+                not unit for unit in law.pathParameterUnits.values()
+            ):
+                raise SimulationSpecError(f"path parameter inputs need explicit units: {law.lawId}")
+            for name, unit in law.pathParameterUnits.items():
+                if name in parameterUnitByName and parameterUnitByName[name] != unit:
+                    raise SimulationSpecError(f"conflicting path parameter unit: {name}")
+                parameterUnitByName[name] = unit
             for name in law.priorInputs + law.currentInputs + law.outputs:
                 if name not in variables:
                     raise SimulationSpecError(f"unknown variable {name}: {law.lawId}")
@@ -793,11 +813,19 @@ def _checkInputs(
     if any(len(strategy.actionsByStep) != horizon for strategy in strategies):
         raise SimulationSpecError("all strategies must share the path horizon")
     if initial.knowledgeAsOf:
-        initialDate = _comparableDate(initial.knowledgeAsOf)
-        if initialDate is None:
+        initialKnowledgeDate = _comparableDate(initial.knowledgeAsOf)
+        if initialKnowledgeDate is None:
             raise SimulationSpecError("initial state has an invalid knowledge cutoff")
     else:
-        initialDate = _comparableDate(initial.asOf)
+        initialKnowledgeDate = _comparableDate(initial.asOf)
+    if initial.decisionAsOf:
+        decisionDate = _comparableDate(initial.decisionAsOf)
+        if decisionDate is None:
+            raise SimulationSpecError("initial state has an invalid decision cutoff")
+    else:
+        decisionDate = initialKnowledgeDate
+    if initialKnowledgeDate is not None and decisionDate is not None and initialKnowledgeDate > decisionDate:
+        raise SimulationSpecError("initial state knowledge is newer than its decision cutoff")
     for law in model.laws:
         certificate = law.certificate
         if law.evidenceKind in {"measuredAssociation", "identifiedIntervention"}:
@@ -805,9 +833,9 @@ def _checkInputs(
         if certificate is not None and certificate.status == "admitted" and certificate.maxAdmittedStep < horizon:
             raise SimulationSpecError(f"law exceeds admitted horizon: {law.lawId}")
         if certificate is not None and certificate.status == "admitted":
-            if initialDate is None:
+            if initialKnowledgeDate is None:
                 raise SimulationSpecError("certified laws need an initial-state knowledge cutoff")
-            if certificate.knowledgeAsOf > initialDate:
+            if certificate.knowledgeAsOf > initialKnowledgeDate:
                 raise SimulationSpecError(f"law certificate is newer than initial state: {law.lawId}")
     if len({p.pathId for p in paths}) != len(paths) or len({s.strategyId for s in strategies}) != len(strategies):
         raise SimulationSpecError("duplicate pathId or strategyId")
@@ -821,6 +849,21 @@ def _checkInputs(
     requiredInitial = {name for law in model.laws for name in law.priorInputs}
     for name in requiredInitial:
         _validateValue(model, name, initial.values.get(name), f"initial.{name}")
+    parameterPaths = tuple(path for path in paths if path.parameterDraws)
+    parameterReceipts = {path.parameterDrawReceipt for path in parameterPaths}
+    if any(receipt is not None for receipt in parameterReceipts):
+        if None in parameterReceipts or len(parameterReceipts) != 1 or len(parameterPaths) != len(paths):
+            raise SimulationSpecError("parameter draw paths must share one provenance receipt")
+        receipt = next(iter(parameterReceipts))
+        validateParameterDrawSetReceipt(paths, receipt, decisionAsOf=decisionDate)
+        expectedUnits = {
+            name: unit
+            for law in model.laws
+            for name, unit in law.pathParameterUnits.items()
+            if name in receipt.parameterNames
+        }
+        if tuple(sorted(expectedUnits.items())) != receipt.parameterUnits:
+            raise SimulationSpecError("parameter draw units do not match their consuming laws")
     for path in paths:
         unknownPathParameters = set(path.parameterDraws) - pathParameterIds
         if unknownPathParameters:
@@ -850,10 +893,10 @@ def _checkInputs(
                 raise SimulationSpecError(f"admitted path needs a knowledge cutoff: {path.pathId}")
             if path.historyStatus != "asKnown":
                 raise SimulationSpecError(f"admitted path needs as-known history: {path.pathId}")
-            if initialDate is None:
-                raise SimulationSpecError("admitted paths need an initial-state knowledge cutoff")
-            if pathDate > initialDate:
-                raise SimulationSpecError(f"path is newer than initial state: {path.pathId}")
+            if decisionDate is None:
+                raise SimulationSpecError("admitted paths need an initial-state decision cutoff")
+            if pathDate > decisionDate:
+                raise SimulationSpecError(f"path is newer than decision state: {path.pathId}")
         if path.weightKind == "unweighted" and path.weight is not None:
             raise SimulationSpecError("unweighted path cannot carry a weight")
         if path.weightKind != "unweighted":
@@ -1232,6 +1275,12 @@ def simulateWorld(
     ]
     policyAdmissionIssues = [action.actionId for action in model.actions]
     pathAdmissionIssues = [path.pathId for path in paths if path.validationStatus != "admitted"]
+    parameterPaths = tuple(path for path in paths if path.parameterDraws)
+    parameterProvenanceIssues = [
+        path.pathId
+        for path in parameterPaths
+        if path.parameterDrawReceipt is None or path.parameterDrawReceipt.status != "admitted"
+    ]
     warnings: list[str] = list(inputWarnings)
     if traceLimit is not None:
         warnings.append(
@@ -1243,6 +1292,11 @@ def simulateWorld(
         warnings.append("unvalidated transition or intervention effects are conditional assumptions")
     if pathAdmissionIssues:
         warnings.append(f"paths are not admitted: {','.join(pathAdmissionIssues)}")
+    undocumentedParameterPaths = [path.pathId for path in parameterPaths if path.parameterDrawReceipt is None]
+    if undocumentedParameterPaths:
+        warnings.append("parameterMeasure:undocumented:" + ",".join(undocumentedParameterPaths))
+    elif parameterProvenanceIssues:
+        warnings.append("parameterMeasure:documentedOnly")
     if policyAdmissionIssues:
         warnings.append("policy evaluation certificate is unavailable; automatic recommendation is disabled")
     baselineIds = [strategy.strategyId for strategy in strategies if strategy.isBaseline]
@@ -1257,6 +1311,7 @@ def simulateWorld(
         or assumedActions
         or assumedActionLaws
         or pathAdmissionIssues
+        or parameterProvenanceIssues
         or policyAdmissionIssues
     ):
         decisionStatus = "conditionalOnly"

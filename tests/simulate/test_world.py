@@ -539,6 +539,7 @@ def testPathParameterDrawIsFixedAcrossStepsAndSharedAcrossStrategies():
                 priorInputs=("value",),
                 shockInputs=("innovation",),
                 pathParameterInputs=("loading",),
+                pathParameterUnits={"loading": "outputPerInnovation"},
                 parameters={"loading": 1.0},
                 fn=transition,
             ),

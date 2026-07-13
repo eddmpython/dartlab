@@ -146,6 +146,7 @@ def bridgeFinancialPaths(paths: tuple[ScenarioPath, ...], law: LawSpec) -> Finan
             {"debtRate": baseDebtRate},
             asOf=sourceKnowledgeAsOf,
             knowledgeAsOf=sourceKnowledgeAsOf,
+            decisionAsOf=sourceKnowledgeAsOf,
         ),
         paths,
         (strategy,),
