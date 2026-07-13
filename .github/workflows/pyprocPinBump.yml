@@ -95,7 +95,7 @@ jobs:
           git config user.email "dartlab-bot@users.noreply.github.com"
           git switch -c "$BR"
           git commit -o landing/package.json package-lock.json \
-            -m "보안: pyproc 핀 ${{ needs.resolve.outputs.latest }} (npm, GATE-A green)"
+            -m "개선: pyproc 핀 ${{ needs.resolve.outputs.latest }} (npm, GATE-A green)"
           git push -u origin "$BR"
           gh pr create -B master -H "$BR" \
             -t "pyproc 핀 -> ${{ needs.resolve.outputs.latest }}" \
