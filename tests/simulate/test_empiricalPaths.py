@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import polars as pl
 import pytest
 
@@ -112,6 +114,7 @@ def test_certificate_uses_last_fully_valid_step_and_binds_time_and_units() -> No
                 {"factor": factor, "h": 3, "cov90": 0.90, "crps": 1.1, "crpsCarry": 1.0, "n": 30},
             ]
         )
+    rows = [{**row, "availableAt": "20201231", "historyStatus": "asKnown"} for row in rows]
     certificate = issuePathMeasureCertificate(
         pl.DataFrame(rows),
         VARIABLES,
@@ -136,6 +139,9 @@ def test_revised_history_cannot_issue_an_admission_certificate() -> None:
             {"factor": factor, "h": 1, "cov90": 0.90, "crps": 0.5, "crpsCarry": 1.0, "n": 30}
             for factor in ("oilShock", "rateShock")
         ]
+    ).with_columns(
+        pl.lit("20201231").alias("availableAt"),
+        pl.lit("revisedHistory").alias("historyStatus"),
     )
     certificate = issuePathMeasureCertificate(
         curves,
@@ -147,3 +153,76 @@ def test_revised_history_cannot_issue_an_admission_certificate() -> None:
     assert certificate.status == "rejected"
     with pytest.raises(EmpiricalPathError, match="not admitted"):
         _build(_panel(), horizon=1, certificate=certificate)
+
+
+def test_certificate_digest_and_knowledge_cutoff_are_recomputed() -> None:
+    curves = pl.DataFrame(
+        [
+            {
+                "factor": factor,
+                "h": 1,
+                "cov90": 0.90,
+                "crps": 0.5,
+                "crpsCarry": 1.0,
+                "n": 30,
+                "availableAt": "20201231",
+                "historyStatus": "asKnown",
+            }
+            for factor in ("oilShock", "rateShock")
+        ]
+    )
+    certificate = issuePathMeasureCertificate(
+        curves,
+        VARIABLES,
+        knowledgeAsOf="20201231",
+        frequency="week",
+        historyStatus="asKnown",
+    )
+    with pytest.raises(EmpiricalPathError, match="digest mismatch"):
+        _build(_panel(), horizon=1, certificate=replace(certificate, maxAdmittedStep=99), historyStatus="asKnown")
+    with pytest.raises(EmpiricalPathError, match="knowledge cutoff mismatch"):
+        _build(
+            _panel(),
+            horizon=1,
+            certificate=certificate,
+            historyStatus="asKnown",
+            knowledgeAsOf="20210101",
+        )
+
+
+def test_certificate_evidence_must_be_available_and_match_history_status() -> None:
+    base = pl.DataFrame(
+        [
+            {
+                "factor": factor,
+                "h": 1,
+                "cov90": 0.90,
+                "crps": 0.5,
+                "crpsCarry": 1.0,
+                "n": 30,
+                "availableAt": "20210101",
+                "historyStatus": "asKnown",
+            }
+            for factor in ("oilShock", "rateShock")
+        ]
+    )
+    with pytest.raises(EmpiricalPathError, match="newer than cutoff"):
+        issuePathMeasureCertificate(
+            base,
+            VARIABLES,
+            knowledgeAsOf="20201231",
+            frequency="week",
+            historyStatus="asKnown",
+        )
+    revised = base.with_columns(
+        pl.lit("20201231").alias("availableAt"),
+        pl.lit("revisedHistory").alias("historyStatus"),
+    )
+    with pytest.raises(EmpiricalPathError, match="history status mismatch"):
+        issuePathMeasureCertificate(
+            revised,
+            VARIABLES,
+            knowledgeAsOf="20201231",
+            frequency="week",
+            historyStatus="asKnown",
+        )

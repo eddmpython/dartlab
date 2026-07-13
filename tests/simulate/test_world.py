@@ -138,7 +138,11 @@ def _model(*, actionEvidence: str = "identifiedIntervention", lawEvidence: str =
 
 
 def _state(cash: float = 8.0, debt: float = 2.0):
-    return WorldState({"capacity": 10.0, "cash": cash, "debt": debt}, asOf="2025-Q4")
+    return WorldState(
+        {"capacity": 10.0, "cash": cash, "debt": debt},
+        asOf="2025-Q4",
+        knowledgeAsOf="20250101",
+    )
 
 
 def _path(pathId: str, demand: tuple[float, ...], rate: float = 0.05):
@@ -148,6 +152,8 @@ def _path(pathId: str, demand: tuple[float, ...], rate: float = 0.05):
         certificateId=_SYNTHETIC_CERTIFICATE,
         validationStatus="admitted",
         maxAdmittedStep=len(demand),
+        knowledgeAsOf="20250101",
+        historyStatus="asKnown",
     )
     return bindAdmittedPathContent((path,))[0]
 
@@ -339,6 +345,8 @@ def testInputAndTraceMappingsAreDeeplyImmutable():
         certificateId=_SYNTHETIC_CERTIFICATE,
         validationStatus="admitted",
         maxAdmittedStep=4,
+        knowledgeAsOf="20250101",
+        historyStatus="asKnown",
     )
     path = bindAdmittedPathContent((path,))[0]
     strategy = StrategySpec("noop", (actions,) * 4, isBaseline=True)
@@ -455,6 +463,17 @@ def testLawCertificateEvaluatorDoesNotTrustCallerPassedClaim():
 def testFutureLawCertificateCannotEnterPastInitialState():
     path = _path("base", (10.0,) * 4)
     state = WorldState({"capacity": 10.0, "cash": 8.0, "debt": 2.0}, asOf="20240101")
+    with pytest.raises(SimulationSpecError, match="newer than initial state"):
+        _run(path, _strategy("noop", (0.0,) * 4), state=state)
+
+
+def testFiscalLabelCannotBypassInitialKnowledgeCutoff():
+    path = _path("base", (10.0,) * 4)
+    state = WorldState(
+        {"capacity": 10.0, "cash": 8.0, "debt": 2.0},
+        asOf="2024-Q4",
+        knowledgeAsOf="20241231",
+    )
     with pytest.raises(SimulationSpecError, match="newer than initial state"):
         _run(path, _strategy("noop", (0.0,) * 4), state=state)
 

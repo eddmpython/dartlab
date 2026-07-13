@@ -16,7 +16,7 @@ from dartlab.simulate.world import (
 )
 
 
-def _path(*, frequency: str = "year", admitted: bool = True) -> ScenarioPath:
+def _path(*, frequency: str = "year", admitted: bool = True, knowledgeAsOf: str = "20250101") -> ScenarioPath:
     path = ScenarioPath(
         "macro",
         (
@@ -27,6 +27,8 @@ def _path(*, frequency: str = "year", admitted: bool = True) -> ScenarioPath:
         validationStatus="admitted" if admitted else "retrospectiveOnly",
         certificateId="a" * 64 if admitted else "",
         maxAdmittedStep=2 if admitted else 0,
+        knowledgeAsOf=knowledgeAsOf,
+        historyStatus="asKnown" if admitted else "revisedHistory",
     )
     return bindAdmittedPathContent((path,))[0] if admitted else path
 
@@ -84,6 +86,11 @@ def testAdmittedMeasuredBridgePreservesAdmissionWithCombinedCertificate():
 def testWeeklyMacroPathCannotEnterAnnualFinancialBridge():
     with pytest.raises(SimulationSpecError, match="step contract mismatch"):
         bridgeFinancialPaths((_path(frequency="week"),), _law())
+
+
+def testBridgeRejectsLawNewerThanSourceDecision():
+    with pytest.raises(SimulationSpecError, match="newer than initial state"):
+        bridgeFinancialPaths((_path(knowledgeAsOf="20200101"),), _law(evidenceKind="measuredAssociation"))
 
 
 def testBridgedPathRunsThroughFinancialStateAndClosesAccounting():

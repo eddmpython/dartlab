@@ -217,6 +217,7 @@ class WorldState:
     step: int = 0
     asOf: str = ""
     refs: tuple[str, ...] = ()
+    knowledgeAsOf: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "values", _freezeMapping(self.values))
@@ -239,6 +240,8 @@ class ScenarioPath:
     maxAdmittedStep: int = 0
     admissionContentHash: str = ""
     parameterDraws: Mapping[str, float] = field(default_factory=dict)
+    knowledgeAsOf: str = ""
+    historyStatus: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "steps", tuple(_freezeMapping(step) for step in self.steps))
@@ -460,6 +463,8 @@ def _pathSetContentHash(paths: tuple[ScenarioPath, ...]) -> str:
             "validationStatus": path.validationStatus,
             "maxAdmittedStep": path.maxAdmittedStep,
             "parameterDraws": path.parameterDraws,
+            "knowledgeAsOf": path.knowledgeAsOf,
+            "historyStatus": path.historyStatus,
         }
         for path in paths
     ]
@@ -471,6 +476,10 @@ def bindAdmittedPathContent(paths: tuple[ScenarioPath, ...]) -> tuple[ScenarioPa
 
     if not paths or any(path.validationStatus != "admitted" for path in paths):
         raise SimulationSpecError("only a nonempty admitted path set can be content-bound")
+    if any(_comparableDate(path.knowledgeAsOf) is None for path in paths):
+        raise SimulationSpecError("admitted paths need a comparable knowledge cutoff")
+    if any(path.historyStatus != "asKnown" for path in paths):
+        raise SimulationSpecError("admitted paths need as-known history")
     contentHash = _pathSetContentHash(paths)
     return tuple(replace(path, admissionContentHash=contentHash) for path in paths)
 
@@ -783,15 +792,23 @@ def _checkInputs(
         raise SimulationSpecError("all paths must share a positive horizon")
     if any(len(strategy.actionsByStep) != horizon for strategy in strategies):
         raise SimulationSpecError("all strategies must share the path horizon")
+    if initial.knowledgeAsOf:
+        initialDate = _comparableDate(initial.knowledgeAsOf)
+        if initialDate is None:
+            raise SimulationSpecError("initial state has an invalid knowledge cutoff")
+    else:
+        initialDate = _comparableDate(initial.asOf)
     for law in model.laws:
         certificate = law.certificate
         if law.evidenceKind in {"measuredAssociation", "identifiedIntervention"}:
             _validateLawCertificate(law)
         if certificate is not None and certificate.status == "admitted" and certificate.maxAdmittedStep < horizon:
             raise SimulationSpecError(f"law exceeds admitted horizon: {law.lawId}")
-        initialDate = _comparableDate(initial.asOf)
-        if certificate is not None and initialDate is not None and certificate.knowledgeAsOf > initialDate:
-            raise SimulationSpecError(f"law certificate is newer than initial state: {law.lawId}")
+        if certificate is not None and certificate.status == "admitted":
+            if initialDate is None:
+                raise SimulationSpecError("certified laws need an initial-state knowledge cutoff")
+            if certificate.knowledgeAsOf > initialDate:
+                raise SimulationSpecError(f"law certificate is newer than initial state: {law.lawId}")
     if len({p.pathId for p in paths}) != len(paths) or len({s.strategyId for s in strategies}) != len(strategies):
         raise SimulationSpecError("duplicate pathId or strategyId")
     if sum(strategy.isBaseline for strategy in strategies) > 1:
@@ -828,6 +845,15 @@ def _checkInputs(
                 raise SimulationSpecError(f"admitted path needs a certificate: {path.pathId}")
             if path.maxAdmittedStep < horizon:
                 raise SimulationSpecError(f"path exceeds admitted horizon: {path.pathId}")
+            pathDate = _comparableDate(path.knowledgeAsOf)
+            if pathDate is None:
+                raise SimulationSpecError(f"admitted path needs a knowledge cutoff: {path.pathId}")
+            if path.historyStatus != "asKnown":
+                raise SimulationSpecError(f"admitted path needs as-known history: {path.pathId}")
+            if initialDate is None:
+                raise SimulationSpecError("admitted paths need an initial-state knowledge cutoff")
+            if pathDate > initialDate:
+                raise SimulationSpecError(f"path is newer than initial state: {path.pathId}")
         if path.weightKind == "unweighted" and path.weight is not None:
             raise SimulationSpecError("unweighted path cannot carry a weight")
         if path.weightKind != "unweighted":
@@ -848,8 +874,15 @@ def _checkInputs(
     if validationStatuses == {"admitted"}:
         certificates = {path.certificateId for path in paths}
         admittedHorizons = {path.maxAdmittedStep for path in paths}
-        if len(certificates) != 1 or len(admittedHorizons) != 1:
-            raise SimulationSpecError("admitted paths must share one certificate and horizon")
+        knowledgeCutoffs = {path.knowledgeAsOf for path in paths}
+        historyStatuses = {path.historyStatus for path in paths}
+        if (
+            len(certificates) != 1
+            or len(admittedHorizons) != 1
+            or len(knowledgeCutoffs) != 1
+            or historyStatuses != {"asKnown"}
+        ):
+            raise SimulationSpecError("admitted paths must share one certificate, horizon, and vintage")
         contentHashes = {path.admissionContentHash for path in paths}
         if len(contentHashes) != 1 or not _validDigest(next(iter(contentHashes))):
             raise SimulationSpecError("admitted paths need one content binding")

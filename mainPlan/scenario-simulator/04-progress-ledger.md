@@ -322,6 +322,30 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
   본진에 폐루프 반응, 현재 shock 비가시성, 실제 발행 행동의 lead 적용, 정책 executable hash,
   compact 집계와 전체 trace root 동일성, disk-spill exact CVaR 회귀를 승격했다.
 
+### 0c-31. 경로 측도와 재무 브리지 PIT 결속 (2026-07-13)
+
+- **전문 검토 3축 판정**: 현 fail-closed 정책 추천은 유지해야 한다. 자동 추천의 최소 계약은 동일 경로와
+  동일 parameter draw를 공유한 baseline 1개와 candidate 1개의 시간순 OOS paired 비교이며, primary 평균
+  목적의 경제적 유의한 하한, secondary weighted-CVaR 비열등, hard constraint를 원시 episode 원장에서
+  재계산해야 한다. simulation path 수는 OOS origin 수가 아니며 caller가 적은 요약행이나 SHA digest는
+  권한 증명이 아니다.
+- **경로 인증 PIT 봉합**: `PathMeasureCertificate`가 `nOrigins`, `minOrigins`, coverage 허용오차,
+  calibration hash, 규칙, 실제 지식 기준일과 이력 상태를 모두 digest에 보존한다. 발급 증거는
+  `availableAt <= knowledgeAsOf`이고 요청한 history status와 일치해야 하며, 실행기는 digest와 exact cutoff를
+  다시 계산한다. 인증서 field 변조, 다른 cutoff 재사용, 미래 또는 revised 증거의 as-known 승격 kill-test를
+  본진에 승격했다.
+- **날짜 우회 차단**: `WorldState`의 회계기간 `asOf`와 실제 `knowledgeAsOf`를 분리했다. admitted 법칙이나
+  경로는 비교 가능한 초기 지식 기준일이 필수이고, 경로 자체도 `knowledgeAsOf`와 `asKnown` 이력을
+  content hash에 포함한다. 따라서 `2024-Q4` 같은 fiscal label로 미래 법칙 인증서 검사를 건너뛸 수 없다.
+- **재무 브리지 결속**: bridge 실행 초기 상태와 출력 경로에 source cutoff와 history status를 전파한다.
+  결합 인증 hash와 audit에는 source certificate뿐 아니라 source path content hash, 빈티지, 시간격자와
+  horizon을 포함한다. 2020 source 경로에 2025 법칙 인증을 끼우는 입력은 실행 전에 거부된다.
+- **검증**: simulate 전체 267 통과, ruff clean, Guard Index strict L0-L1.5 7/7과 외부 gate 6종 통과.
+- **정직한 잔여**: typed issuer와 append-only OOS episode 원장, parameter distribution 빈티지,
+  paired block-bootstrap 정책 인증이 아직 없다. 이 셋이 완성되기 전에는 policy recommendation gate를
+  열지 않는다. DART period-only/latest-retained와 EDGAR as-known의 provider-neutral `VintageRef` 결속도
+  다음 단계다.
+
 ### 0c-29. 분기 전이, 파라미터 불확실성, 실행 인증 P0 보강 (2026-07-13)
 
 - **전문가 재감사 결론**: 경로모형, DART와 EDGAR PIT, admission 적대검토에서 분기 grid에 연간

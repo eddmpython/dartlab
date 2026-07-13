@@ -45,6 +45,8 @@ class PathMeasureCertificate:
     historyStatus: str
     maxAdmittedStep: int
     nOrigins: int
+    minOrigins: int
+    coverageTolerance: float
     calibrationHash: str
     rules: str
 
@@ -101,6 +103,26 @@ def _variableKey(variables: tuple[PathVariable, ...]) -> tuple[tuple[str, str], 
     return tuple((variable.variableId, variable.unit) for variable in variables)
 
 
+def _certificatePayload(certificate: PathMeasureCertificate) -> dict:
+    """인증서 digest를 재계산할 수 있는 모든 admission 계약 필드를 반환한다."""
+
+    return {
+        "status": certificate.status,
+        "generatorVersion": certificate.generatorVersion,
+        "frequency": certificate.frequency,
+        "stepSpan": certificate.stepSpan,
+        "variables": certificate.variables,
+        "knowledgeAsOf": certificate.knowledgeAsOf,
+        "historyStatus": certificate.historyStatus,
+        "maxAdmittedStep": certificate.maxAdmittedStep,
+        "nOrigins": certificate.nOrigins,
+        "minOrigins": certificate.minOrigins,
+        "coverageTolerance": certificate.coverageTolerance,
+        "calibrationHash": certificate.calibrationHash,
+        "rules": certificate.rules,
+    }
+
+
 def issuePathMeasureCertificate(
     curves: pl.DataFrame,
     variables: tuple[PathVariable, ...],
@@ -114,15 +136,29 @@ def issuePathMeasureCertificate(
 ) -> PathMeasureCertificate:
     """Convert complete OOS curves into an explicit last admitted step."""
 
-    required = {"factor", "h", "cov90", "crps", "crpsCarry", "n"}
+    required = {"factor", "h", "cov90", "crps", "crpsCarry", "n", "availableAt", "historyStatus"}
     if not required.issubset(curves.columns):
         raise EmpiricalPathError(f"calibration curves missing columns: {sorted(required - set(curves.columns))}")
     if stepSpan < 1 or not frequency:
         raise EmpiricalPathError("invalid certificate step contract")
+    cutoff = _dateText(knowledgeAsOf)
+    evidenceStatuses = set(curves["historyStatus"].cast(pl.Utf8).to_list())
+    if evidenceStatuses != {historyStatus}:
+        raise EmpiricalPathError("path evidence history status mismatch")
+    cleanDates = curves.with_columns(
+        pl.col("availableAt").cast(pl.Utf8).str.replace_all("-", "").str.slice(0, 8).alias("availableAt")
+    )
+    invalidDates = cleanDates.filter(
+        (pl.col("availableAt").str.len_chars() != 8) | ~pl.col("availableAt").str.contains(r"^\d{8}$")
+    )
+    if invalidDates.height:
+        raise EmpiricalPathError("path evidence has malformed availableAt")
+    if cleanDates.filter(pl.col("availableAt") > cutoff).height:
+        raise EmpiricalPathError("path evidence is newer than cutoff")
     factors = tuple(variable.variableId for variable in variables)
     if not factors or len(set(factors)) != len(factors):
         raise EmpiricalPathError("path variables must be unique")
-    clean = curves.filter(pl.col("factor").is_in(list(factors))).sort(["h", "factor"])
+    clean = cleanDates.filter(pl.col("factor").is_in(list(factors))).sort(["h", "factor"])
     maxObserved = int(clean["h"].max()) if clean.height else 0
     maxAdmitted = 0
     for step in range(1, maxObserved + 1):
@@ -141,33 +177,25 @@ def issuePathMeasureCertificate(
     status = "admitted" if historyStatus == "asKnown" and maxAdmitted >= 1 else "rejected"
     curvePayload = clean.to_dicts()
     calibrationHash = _hash(curvePayload)
-    payload = {
-        "status": status,
-        "generatorVersion": GENERATOR_VERSION,
-        "frequency": frequency,
-        "stepSpan": stepSpan,
-        "variables": _variableKey(variables),
-        "knowledgeAsOf": _dateText(knowledgeAsOf),
-        "historyStatus": historyStatus,
-        "maxAdmittedStep": maxAdmitted,
-        "minOrigins": minOrigins,
-        "coverageTolerance": coverageTolerance,
-        "calibrationHash": calibrationHash,
-        "rules": ADMISSION_RULES,
-    }
-    return PathMeasureCertificate(
-        certificateId=_hash(payload),
+    provisional = PathMeasureCertificate(
+        certificateId="",
         status=status,
         generatorVersion=GENERATOR_VERSION,
         frequency=frequency,
         stepSpan=stepSpan,
         variables=_variableKey(variables),
-        knowledgeAsOf=_dateText(knowledgeAsOf),
+        knowledgeAsOf=cutoff,
         historyStatus=historyStatus,
         maxAdmittedStep=maxAdmitted,
         nOrigins=int(clean["n"].min()) if clean.height else 0,
+        minOrigins=minOrigins,
+        coverageTolerance=coverageTolerance,
         calibrationHash=calibrationHash,
         rules=ADMISSION_RULES,
+    )
+    return PathMeasureCertificate(
+        certificateId=_hash(_certificatePayload(provisional)),
+        **{name: getattr(provisional, name) for name in provisional.__dataclass_fields__ if name != "certificateId"},
     )
 
 
@@ -179,7 +207,10 @@ def _validateCertificate(
     stepSpan: int,
     horizon: int,
     historyStatus: str,
+    knowledgeAsOf: str,
 ) -> None:
+    if certificate.certificateId != _hash(_certificatePayload(certificate)):
+        raise EmpiricalPathError("path certificate digest mismatch")
     if certificate.status != "admitted":
         raise EmpiricalPathError("path certificate is not admitted")
     if certificate.generatorVersion != GENERATOR_VERSION:
@@ -188,6 +219,8 @@ def _validateCertificate(
         raise EmpiricalPathError("path certificate step contract mismatch")
     if certificate.historyStatus != historyStatus:
         raise EmpiricalPathError("path certificate history status mismatch")
+    if certificate.knowledgeAsOf != _dateText(knowledgeAsOf):
+        raise EmpiricalPathError("path certificate knowledge cutoff mismatch")
     if certificate.variables != _variableKey(variables):
         raise EmpiricalPathError("path certificate variable or unit mismatch")
     if certificate.maxAdmittedStep < horizon:
@@ -260,6 +293,7 @@ def buildJointBlockPaths(
             stepSpan=stepSpan,
             horizon=horizon,
             historyStatus=historyStatus,
+            knowledgeAsOf=cutoff,
         )
     validationStatus = "admitted" if certificate is not None else "retrospectiveOnly"
     certificateId = certificate.certificateId if certificate is not None else ""
@@ -301,6 +335,8 @@ def buildJointBlockPaths(
                 certificateId=certificateId,
                 validationStatus=validationStatus,
                 maxAdmittedStep=maxAdmittedStep,
+                knowledgeAsOf=cutoff,
+                historyStatus=historyStatus,
             )
         )
         sampledBlocks.append(tuple(blocks))
@@ -310,11 +346,18 @@ def buildJointBlockPaths(
         {
             "pathId": path.pathId,
             "steps": [dict(step) for step in path.steps],
+            "weight": path.weight,
+            "weightKind": path.weightKind,
             "refs": path.refs,
             "frequency": path.frequency,
             "stepSpan": path.stepSpan,
             "validationStatus": path.validationStatus,
             "certificateId": path.certificateId,
+            "maxAdmittedStep": path.maxAdmittedStep,
+            "admissionContentHash": path.admissionContentHash,
+            "parameterDraws": dict(path.parameterDraws),
+            "knowledgeAsOf": path.knowledgeAsOf,
+            "historyStatus": path.historyStatus,
         }
         for path in paths
     ]

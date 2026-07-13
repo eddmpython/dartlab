@@ -31,6 +31,9 @@ class FinancialBridgeAudit:
     validationStatus: str
     maxAdmittedStep: int
     warnings: tuple[str, ...]
+    sourcePathContentHashes: tuple[str, ...]
+    knowledgeAsOf: str
+    historyStatus: str
 
 
 @dataclass(frozen=True)
@@ -133,7 +136,20 @@ def bridgeFinancialPaths(paths: tuple[ScenarioPath, ...], law: LawSpec) -> Finan
     )
     horizon = len(paths[0].steps)
     strategy = StrategySpec("bridge", ({},) * horizon, isBaseline=True)
-    run = simulateWorld(model, WorldState({"debtRate": baseDebtRate}), paths, (strategy,))
+    sourceCutoffs = {path.knowledgeAsOf for path in paths}
+    sourceHistoryStatuses = {path.historyStatus for path in paths}
+    sourceKnowledgeAsOf = next(iter(sourceCutoffs)) if len(sourceCutoffs) == 1 else ""
+    sourceHistoryStatus = next(iter(sourceHistoryStatuses)) if len(sourceHistoryStatuses) == 1 else "mixed"
+    run = simulateWorld(
+        model,
+        WorldState(
+            {"debtRate": baseDebtRate},
+            asOf=sourceKnowledgeAsOf,
+            knowledgeAsOf=sourceKnowledgeAsOf,
+        ),
+        paths,
+        (strategy,),
+    )
     traces = {trace.pathId: trace for trace in run.traces}
     lawCertificate = law.certificate
     admitted = (
@@ -141,15 +157,23 @@ def bridgeFinancialPaths(paths: tuple[ScenarioPath, ...], law: LawSpec) -> Finan
         and law.status == "active"
         and lawCertificate is not None
         and lawCertificate.status == "admitted"
+        and sourceHistoryStatus == "asKnown"
+        and bool(sourceKnowledgeAsOf)
     )
     validationStatus = "admitted" if admitted else "retrospectiveOnly"
     maxAdmittedStep = min(lawCertificate.maxAdmittedStep, *(path.maxAdmittedStep for path in paths)) if admitted else 0
     sourceCertificates = tuple(sorted({path.certificateId for path in paths if path.certificateId}))
+    sourceContentHashes = tuple(sorted({path.admissionContentHash for path in paths if path.admissionContentHash}))
     combinedCertificate = (
         _hash(
             {
                 "lawCertificate": lawCertificate.certificateId,
                 "sourceCertificates": sourceCertificates,
+                "sourceContentHashes": sourceContentHashes,
+                "sourceKnowledgeAsOf": sourceKnowledgeAsOf,
+                "sourceHistoryStatus": sourceHistoryStatus,
+                "frequency": "year",
+                "stepSpan": 1,
                 "horizon": horizon,
             }
         )
@@ -179,6 +203,8 @@ def bridgeFinancialPaths(paths: tuple[ScenarioPath, ...], law: LawSpec) -> Finan
                 certificateId=combinedCertificate,
                 validationStatus=validationStatus,
                 maxAdmittedStep=maxAdmittedStep,
+                knowledgeAsOf=sourceKnowledgeAsOf,
+                historyStatus=sourceHistoryStatus,
             )
         )
     if admitted:
@@ -195,5 +221,8 @@ def bridgeFinancialPaths(paths: tuple[ScenarioPath, ...], law: LawSpec) -> Finan
         validationStatus=validationStatus,
         maxAdmittedStep=maxAdmittedStep,
         warnings=tuple(warnings),
+        sourcePathContentHashes=sourceContentHashes,
+        knowledgeAsOf=sourceKnowledgeAsOf,
+        historyStatus=sourceHistoryStatus,
     )
     return FinancialBridgeResult(tuple(bridged), audit)
