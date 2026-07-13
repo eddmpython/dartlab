@@ -31,6 +31,16 @@
 	const isMarkdown = $derived(cell.type === 'markdown');
 	const multiDefVars = $derived($cellErrors.get(cell.id) ?? []);
 
+	// 실행 중 경과시간(marimo 식): isRunning 이면 100ms 마다 갱신, 끝나면 최종 executionTime 로 대체.
+	let elapsedMs = $state(0);
+	$effect(() => {
+		if (!isRunning) return;
+		const start = performance.now();
+		elapsedMs = 0;
+		const id = setInterval(() => { elapsedMs = performance.now() - start; }, 100);
+		return () => clearInterval(id);
+	});
+
 	function handleClick() {
 		activeCellId.set(cell.id);
 	}
@@ -177,8 +187,12 @@
 			</div>
 		</div>
 
-		{#if cell.type === 'code' && cell.executionTime != null}
-			<span class="exec-time">{formatTime(cell.executionTime)}</span>
+		{#if cell.type === 'code'}
+			{#if isRunning}
+				<span class="exec-time running-time" aria-label="Elapsed time">{formatTime(elapsedMs)}</span>
+			{:else if cell.executionTime != null}
+				<span class="exec-time">{formatTime(cell.executionTime)}</span>
+			{/if}
 		{/if}
 	</div>
 </div>
@@ -385,6 +399,18 @@
 		color: var(--nb-text-muted);
 		user-select: none;
 		white-space: nowrap;
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* 실행 중: 핀 색 + 은은한 깜빡임(marimo 식 진행 표시). */
+	.running-time {
+		color: var(--nb-pink);
+		animation: running-pulse 1.2s ease-in-out infinite;
+	}
+
+	@keyframes running-pulse {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.45; }
 	}
 
 	@media (max-width: 640px) {
