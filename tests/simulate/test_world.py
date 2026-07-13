@@ -19,16 +19,18 @@ from dartlab.simulate.world import (
     VariableSpec,
     WorldModel,
     WorldState,
+    bindAdmittedPathContent,
     issueLawCertificate,
     simulateWorld,
 )
 
 _SYNTHETIC_CERTIFICATE = "a" * 64
+_GLOBAL_MULTIPLIER = 1.0
 
 
 def _certifyLaw(law: LawSpec, *, steps: int = 8, historyStatus: str = "asKnown") -> LawSpec:
     evidence = tuple(
-        {"step": step, "metric": "syntheticOos", "estimate": 1.0, "threshold": 0.0, "passed": True}
+        {"step": step, "metric": "syntheticOos", "estimate": 1.0, "threshold": 0.0, "operator": "gt"}
         for step in range(1, steps + 1)
     )
     certificate = issueLawCertificate(
@@ -36,6 +38,7 @@ def _certifyLaw(law: LawSpec, *, steps: int = 8, historyStatus: str = "asKnown")
         evidenceRows=evidence,
         knowledgeAsOf="20250101",
         historyStatus=historyStatus,
+        frequency="step",
         rules="synthetic known data generating process",
     )
     return replace(law, certificate=certificate)
@@ -139,13 +142,14 @@ def _state(cash: float = 8.0, debt: float = 2.0):
 
 
 def _path(pathId: str, demand: tuple[float, ...], rate: float = 0.05):
-    return ScenarioPath(
+    path = ScenarioPath(
         pathId,
         tuple({"demand": value, "rate": rate} for value in demand),
         certificateId=_SYNTHETIC_CERTIFICATE,
         validationStatus="admitted",
         maxAdmittedStep=len(demand),
     )
+    return bindAdmittedPathContent((path,))[0]
 
 
 def _strategy(strategyId: str, cuts: tuple[float, ...]):
@@ -213,8 +217,10 @@ def testStrategyRankReversesWhenShockDurationChanges():
     strategies = (_strategy("noop", (0.0,) * 4), _strategy("cut", (1.0,) * 4))
     short = _run(_path("short", (5.0, 5.0, 20.0, 20.0)), *strategies)
     long = _run(_path("long", (5.0, 5.0, 5.0, 5.0)), *strategies)
-    assert short.recommendation == "noop"
-    assert long.recommendation == "cut"
+    assert short.recommendation is None
+    assert long.recommendation is None
+    assert short.decisionStatus == "conditionalOnly"
+    assert long.decisionStatus == "conditionalOnly"
     assert _evaluation(short, "noop").objectiveScores[0] > _evaluation(short, "cut").objectiveScores[0]
     assert _evaluation(long, "cut").objectiveScores[0] > _evaluation(long, "noop").objectiveScores[0]
 
@@ -242,7 +248,7 @@ def testUnvalidatedInterventionCannotProduceRecommendation():
     )
     assert run.decisionStatus == "conditionalOnly"
     assert run.recommendation is None
-    assert "conditional assumptions" in run.warnings[-1]
+    assert any("conditional assumptions" in warning for warning in run.warnings)
 
 
 def testUnvalidatedWorldLawCannotProduceRecommendation():
@@ -334,6 +340,7 @@ def testInputAndTraceMappingsAreDeeplyImmutable():
         validationStatus="admitted",
         maxAdmittedStep=4,
     )
+    path = bindAdmittedPathContent((path,))[0]
     strategy = StrategySpec("noop", (actions,) * 4, isBaseline=True)
     step["demand"] = 999.0
     actions["capexCut"] = 1.0
@@ -393,6 +400,8 @@ def testArbitraryLawCertificateDigestIsRejected():
         evidenceHash=law.certificate.evidenceHash,
         knowledgeAsOf=law.certificate.knowledgeAsOf,
         historyStatus=law.certificate.historyStatus,
+        frequency=law.certificate.frequency,
+        stepSpan=law.certificate.stepSpan,
         maxAdmittedStep=law.certificate.maxAdmittedStep,
         status=law.certificate.status,
         rules=law.certificate.rules,
@@ -417,3 +426,119 @@ def testRevisedHistoryCertificateCannotMakeAnActiveLaw():
     laws = tuple(retrospective if item.lawId == law.lawId else item for item in model.laws)
     with pytest.raises(SimulationSpecError, match="active law needs admitted evidence"):
         WorldModel(model.modelId, model.version, model.variables, model.actions, laws)
+
+
+def testLawCertificateEvaluatorDoesNotTrustCallerPassedClaim():
+    model = _model()
+    law = next(law for law in model.laws if law.lawId == "capacityRollForward")
+    certificate = issueLawCertificate(
+        replace(law, certificate=None),
+        evidenceRows=(
+            {
+                "step": 1,
+                "metric": "trustMe",
+                "estimate": -999.0,
+                "threshold": 999.0,
+                "operator": "gt",
+                "passed": True,
+            },
+        ),
+        knowledgeAsOf="20250101",
+        historyStatus="asKnown",
+        frequency="step",
+        rules="estimate must exceed threshold",
+    )
+    assert certificate.status == "rejected"
+    assert certificate.maxAdmittedStep == 0
+
+
+def testFutureLawCertificateCannotEnterPastInitialState():
+    path = _path("base", (10.0,) * 4)
+    state = WorldState({"capacity": 10.0, "cash": 8.0, "debt": 2.0}, asOf="20240101")
+    with pytest.raises(SimulationSpecError, match="newer than initial state"):
+        _run(path, _strategy("noop", (0.0,) * 4), state=state)
+
+
+def testReferencedMutableGlobalChangesCertificateBinding():
+    global _GLOBAL_MULTIPLIER
+
+    model = _model()
+    original = next(law for law in model.laws if law.lawId == "capacityRollForward")
+
+    def globalLaw(ctx):
+        capex = 2.0 * _GLOBAL_MULTIPLIER
+        return {"capex": capex, "capacity": ctx.prior["capacity"] + capex}
+
+    law = _certifyLaw(replace(original, fn=globalLaw, certificate=None))
+    laws = tuple(law if item.lawId == law.lawId else item for item in model.laws)
+    certifiedModel = WorldModel(model.modelId, model.version, model.variables, model.actions, laws)
+    try:
+        _GLOBAL_MULTIPLIER = 2.0
+        with pytest.raises(SimulationSpecError, match="binding"):
+            _run(_path("base", (10.0,) * 4), _strategy("noop", (0.0,) * 4), model=certifiedModel)
+    finally:
+        _GLOBAL_MULTIPLIER = 1.0
+
+
+def testAdmittedPathContentCannotBeChangedUnderSameCertificate():
+    path = _path("base", (10.0,) * 4)
+    tampered = replace(path, steps=({"demand": 999.0, "rate": 0.05},) * 4)
+    with pytest.raises(SimulationSpecError, match="content binding mismatch"):
+        _run(tampered, _strategy("noop", (0.0,) * 4))
+
+
+def testLawCertificateCannotMoveAcrossTimeGrid():
+    model = _model()
+    with pytest.raises(SimulationSpecError, match="step contract mismatch"):
+        WorldModel(
+            model.modelId,
+            model.version,
+            model.variables,
+            model.actions,
+            model.laws,
+            stepFrequency="year",
+        )
+
+
+def testPathParameterDrawIsFixedAcrossStepsAndSharedAcrossStrategies():
+    def transition(ctx):
+        loading = ctx.pathParameters.get("loading", 1.0)
+        return {"value": ctx.prior["value"] + ctx.shocks["innovation"] * loading}
+
+    model = WorldModel(
+        "parameter-draw",
+        "1",
+        (
+            VariableSpec("value", "index", "state"),
+            VariableSpec("innovation", "indexChange", "shock"),
+        ),
+        (),
+        (
+            LawSpec(
+                "transition",
+                outputs=("value",),
+                priorInputs=("value",),
+                shockInputs=("innovation",),
+                pathParameterInputs=("loading",),
+                parameters={"loading": 1.0},
+                fn=transition,
+            ),
+        ),
+    )
+    paths = (
+        ScenarioPath("low", ({"innovation": 1.0},) * 2, parameterDraws={"loading": 0.5}),
+        ScenarioPath("high", ({"innovation": 1.0},) * 2, parameterDraws={"loading": 2.0}),
+    )
+    strategies = (StrategySpec("a", ({},) * 2), StrategySpec("b", ({},) * 2))
+    run = simulateWorld(model, WorldState({"value": 0.0}), paths, strategies)
+    low = [trace for trace in run.traces if trace.pathId == "low"]
+    high = [trace for trace in run.traces if trace.pathId == "high"]
+    assert {trace.steps[-1].after["value"] for trace in low} == {1.0}
+    assert {trace.steps[-1].after["value"] for trace in high} == {4.0}
+    assert all(step.laws[0].pathParameters == {"loading": 0.5} for trace in low for step in trace.steps)
+
+
+def testUndeclaredPathParameterIsRejected():
+    path = replace(_path("base", (10.0,) * 4), parameterDraws={"unknown": 1.0})
+    with pytest.raises(SimulationSpecError, match="unknown path parameters"):
+        _run(path, _strategy("noop", (0.0,) * 4))

@@ -10,7 +10,7 @@ from hashlib import sha256
 import numpy as np
 import polars as pl
 
-from dartlab.simulate.world import ScenarioPath
+from dartlab.simulate.world import ScenarioPath, bindAdmittedPathContent
 
 GENERATOR_VERSION = "joint-moving-block-v1"
 ADMISSION_RULES = (
@@ -304,6 +304,8 @@ def buildJointBlockPaths(
             )
         )
         sampledBlocks.append(tuple(blocks))
+    if certificate is not None:
+        paths = list(bindAdmittedPathContent(tuple(paths)))
     pathPayload = [
         {
             "pathId": path.pathId,

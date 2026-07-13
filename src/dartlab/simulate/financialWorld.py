@@ -22,6 +22,7 @@ from dartlab.simulate.world import (
     ScenarioPath,
     SimulationBlocked,
     SimulationRun,
+    SimulationSpecError,
     StrategySpec,
     VariableSpec,
     WorldModel,
@@ -39,6 +40,9 @@ class FinancialWorldInputs:
     asOf: str
     refs: tuple[str, ...]
     warnings: tuple[str, ...]
+    stepFrequency: str = "year"
+    stepSpan: int = 1
+    parameterFrequency: str = "year"
 
 
 def _required(value, label: str) -> float:
@@ -186,6 +190,10 @@ def buildFinancialWorld(
 
     if maxFinancing < 0:
         raise ValueError("maxFinancing must be nonnegative")
+    if not inputs.stepFrequency or inputs.stepSpan < 1:
+        raise ValueError("financial world needs a valid step contract")
+    if inputs.parameterFrequency != inputs.stepFrequency:
+        raise SimulationSpecError("financial parameter frequency must match the world step frequency")
     metricUnits = {
         "identityResidualRatio": "ratio",
         "capacityBound": "boolean",
@@ -193,9 +201,9 @@ def buildFinancialWorld(
     variables = tuple(
         [VariableSpec(name, "currency" if name != "operatingMargin" else "ratio", "state") for name in _STATE_IDS]
         + [
-            VariableSpec("demandGrowth", "ratio", "shock", lower=-1.0),
-            VariableSpec("marginChange", "ratioPointChangePerYear", "shock", lower=-1.0, upper=1.0),
-            VariableSpec("debtRate", "ratio", "shock", lower=0.0, upper=1.0),
+            VariableSpec("demandGrowth", "ratioChangePerStep", "shock", lower=-1.0),
+            VariableSpec("marginChange", "ratioPointChangePerStep", "shock", lower=-1.0, upper=1.0),
+            VariableSpec("debtRate", "effectiveRatePerStep", "shock", lower=0.0, upper=1.0),
         ]
         + [VariableSpec(name, metricUnits.get(name, "currency"), "metric") for name in _METRIC_IDS]
     )
@@ -211,6 +219,9 @@ def buildFinancialWorld(
         """한 기간의 세계 입력을 analysis 소유 재무 전이 leaf로 전달한다."""
 
         state = FinancialState(**{name: ctx.prior[name] for name in _STATE_IDS})
+        effectiveParameters = FinancialParameters(
+            **{name: float(ctx.pathParameters.get(name, getattr(params, name))) for name in params.__dataclass_fields__}
+        )
         shock = FinancialShock(
             demandGrowth=ctx.shocks["demandGrowth"],
             marginChange=ctx.shocks["marginChange"],
@@ -222,7 +233,7 @@ def buildFinancialWorld(
             borrow=ctx.actions["borrow"],
             repay=ctx.actions["repay"],
         )
-        result = projectFinancialStep(state, params, shock, action)
+        result = projectFinancialStep(state, effectiveParameters, shock, action)
         nextState = {name: getattr(result.state, name) for name in _STATE_IDS}
         metrics = {
             "demandRevenue": result.demandRevenue,
@@ -251,10 +262,11 @@ def buildFinancialWorld(
         priorInputs=_STATE_IDS,
         shockInputs=("demandGrowth", "marginChange", "debtRate"),
         actionInputs=("capexRatio", "inventoryRatio", "borrow", "repay"),
+        pathParameterInputs=tuple(params.__dataclass_fields__),
         evidenceKind="explicitAssumption",
         provenance="analysis.financial.stepProjection:projectFinancialStep",
         version="2",
-        parameters=asdict(params),
+        parameters={**asdict(params), "parameterFrequency": inputs.parameterFrequency},
         fn=financialStep,
     )
     initial = WorldState(
@@ -268,7 +280,8 @@ def buildFinancialWorld(
         variables,
         actions,
         (law,),
-        stepFrequency="year",
+        stepFrequency=inputs.stepFrequency,
+        stepSpan=inputs.stepSpan,
     ), initial
 
 
@@ -281,6 +294,9 @@ def buildFinancialPath(
     weight: float | None = None,
     weightKind: str = "unweighted",
     refs: tuple[str, ...] = (),
+    frequency: str = "year",
+    stepSpan: int = 1,
+    parameterDraws: Mapping[str, float] | None = None,
 ) -> ScenarioPath:
     """연간 수요 성장, 마진 증분, 금리 수준을 명시적 세계 경로로 만든다."""
 
@@ -301,7 +317,9 @@ def buildFinancialPath(
         weight=weight,
         weightKind=weightKind,
         refs=refs,
-        frequency="year",
+        frequency=frequency,
+        stepSpan=stepSpan,
+        parameterDraws={} if parameterDraws is None else parameterDraws,
     )
 
 

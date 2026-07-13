@@ -15,6 +15,7 @@ from dartlab.simulate.world import (
     VariableSpec,
     WorldModel,
     WorldState,
+    bindAdmittedPathContent,
     simulateWorld,
 )
 
@@ -180,6 +181,8 @@ def bridgeFinancialPaths(paths: tuple[ScenarioPath, ...], law: LawSpec) -> Finan
                 maxAdmittedStep=maxAdmittedStep,
             )
         )
+    if admitted:
+        bridged = list(bindAdmittedPathContent(tuple(bridged)))
     warnings = []
     if not admitted:
         warnings.append(f"bridgeEvidence:{law.evidenceKind}")

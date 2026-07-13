@@ -294,6 +294,41 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
   hindcast admission, EDGAR 실제 회사 수직절편, closed-loop 정책, UI는 아직 미구현이다. 현재 성취는
   "진짜로 걷는 실행기와 KR 1사 연결"이지, 검증된 최적전략이나 예측확률의 완성이 아니다.
 
+### 0c-29. 분기 전이, 파라미터 불확실성, 실행 인증 P0 보강 (2026-07-13)
+
+- **전문가 재감사 결론**: 경로모형, DART와 EDGAR PIT, admission 적대검토에서 분기 grid에 연간
+  파라미터를 네 번 적용할 위험, AAPL commercial paper 누락, 호출자가 성공 여부를 적은 증거행,
+  인증 뒤 전역값 변경, 인증서와 실제 path 내용의 분리, 정책효과 인증 부재인데도 추천 가능한 계약을
+  P0로 확인했다. 현재 실현 가능성은 높지만, 검증기와 예측기를 넘어서 의사결정 시뮬레이터가 되려면
+  이 경계를 먼저 닫아야 한다는 판정이다.
+- **분기 상태 졸업**: `compileEdgarQuarterlyFinancialState`가 최신 단독 분기 흐름을 상태 규모로 쓰고,
+  네 개 연속 분기와 TTM 보조값을 함께 보존한다. 최근 날짜 네 개를 기계적으로 고르지 않고
+  `fiscalThrough`에서 역으로 같은 재무 캘린더의 연속 구간을 찾는다. Q4는 직접 보고값을 우선하고,
+  없으면 같은 연차보고서 cutoff 안의 FY-9M 잔차를 우선 사용하며, 마지막으로 FY-Q1-Q2-Q3를 쓴다.
+  모든 파생값은 accession, tag, 기간의 입력 lineage를 남긴다.
+- **시간단위 계약**: financial world, path, transition parameter에 frequency와 step span을 결속했다.
+  연간 파라미터를 분기 world에 넣으면 실행 전에 차단하고, 단위도 성장률, 마진 증분, 금리를
+  `perStep`으로 명시했다. 분기 파라미터를 명시한 경우에만 분기 상태와 분기 경로가 전개된다.
+- **파라미터 불확실성 수직절편**: `ScenarioPath.parameterDraws`가 세율, 감가상각률, 운전자본 비율,
+  생산능력 계수 등 선언된 전이 파라미터의 경로별 고정 추첨값을 보존한다. 한 경로의 값은 전 기간과
+  모든 전략에 공통으로 적용돼 common random numbers 비교를 유지한다. 미선언 파라미터는 차단하고,
+  실제 추첨값을 law trace, parameter hash, data vintage hash, admitted path content hash에 포함한다.
+  현재는 외부에서 구성한 joint draw를 소비하는 단계이며 분포 추정과 draw generator 인증은 잔여다.
+- **인증 P0 보강**: law evidence의 `passed` 주장을 신뢰하지 않고 수치와 연산자로 재계산한다. 인증서가
+  model frequency와 맞지 않거나 initial state보다 미래 정보이거나, 인증 뒤 closure 또는 참조 전역값이
+  바뀌면 실행 시점 재검증에서 차단한다. admitted path는 실제 shock, weight, 시간계약,
+  parameter draw 전체의 content hash가 일치해야 한다. bridge 출력도 변환 결과 내용에 다시 결속한다.
+- **추천 fail-closed**: 임의 64자리 action digest는 정책 효과 검증이 아니다. typed
+  `PolicyEvaluationCertificate`가 생기기 전까지 자동 추천은 전부 비활성이고, 결과는
+  `conditionalOnly`와 Pareto 비교까지만 허용한다.
+- **실데이터 대조**: AAPL 2026-03-28 filing-vintage에서 최신 분기 매출 111.184B USD,
+  TTM 매출 451.442B, 분기 영업이익 35.885B를 확인했다. 기존 부채 82.714B는 commercial paper
+  1.997B 누락이었고, current와 noncurrent term debt에 이를 비중복 합산한 84.711B로 정정했다.
+- **검증과 정직한 잔여**: parameter uncertainty attempt 2건과 quarterly attempt 2건을 선결한 뒤
+  본진 회귀로 승격했고 `tests/simulate` 259건이 통과했다. DART 과거 revision PIT는 append-only
+  접수 원장 없이는 여전히 불가능하다. joint parameter distribution의 OOS 인증, bounded-memory 대량
+  경로, 관측에 따른 closed-loop policy, typed policy certificate, 공개 verb와 GUI는 다음 단계다.
+
 ### 0c-28. 연간 거시경로에서 회사 재무충격까지 인증 브리지 졸업 (2026-07-13)
 
 - **빈 중간법칙 수리**: financial world는 수요 성장, 마진 증분, 차입금리를 사람이 직접 넣어야 했다.

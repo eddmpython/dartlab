@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import marshal
 import math
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field, fields, replace
 from hashlib import sha256
 from types import MappingProxyType
 from typing import Callable, Mapping
@@ -76,6 +76,7 @@ class StepContext:
     shocks: Mapping[str, float]
     issuedActions: Mapping[str, float]
     actions: Mapping[str, float]
+    pathParameters: Mapping[str, float]
     actionCost: float
 
 
@@ -96,6 +97,8 @@ class LawCertificate:
     evidenceHash: str
     knowledgeAsOf: str
     historyStatus: str
+    frequency: str
+    stepSpan: int
     maxAdmittedStep: int
     status: str
     rules: str
@@ -111,6 +114,7 @@ class LawSpec:
     currentInputs: tuple[str, ...] = ()
     shockInputs: tuple[str, ...] = ()
     actionInputs: tuple[str, ...] = ()
+    pathParameterInputs: tuple[str, ...] = ()
     usesActionCost: bool = False
     evidenceKind: str = "explicitAssumption"
     provenance: str = ""
@@ -152,10 +156,13 @@ class ScenarioPath:
     certificateId: str = ""
     validationStatus: str = "unvalidated"
     maxAdmittedStep: int = 0
+    admissionContentHash: str = ""
+    parameterDraws: Mapping[str, float] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "steps", tuple(_freezeMapping(step) for step in self.steps))
         object.__setattr__(self, "refs", tuple(self.refs))
+        object.__setattr__(self, "parameterDraws", _freezeMapping(self.parameterDraws))
 
 
 @dataclass(frozen=True)
@@ -204,12 +211,14 @@ class LawTrace:
     provenance: str
     version: str
     parameters: Mapping[str, float | str | bool]
+    pathParameters: Mapping[str, float]
     certificateId: str
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "inputs", _freezeMapping(self.inputs))
         object.__setattr__(self, "outputs", _freezeMapping(self.outputs))
         object.__setattr__(self, "parameters", _freezeMapping(self.parameters))
+        object.__setattr__(self, "pathParameters", _freezeMapping(self.pathParameters))
 
 
 @dataclass(frozen=True)
@@ -291,18 +300,40 @@ def _finite(value: float | None, label: str) -> float:
     return number
 
 
+def _comparableDate(value: str) -> str | None:
+    text = str(value).replace("-", "")[:8]
+    return text if len(text) == 8 and text.isdigit() else None
+
+
 def _canonical(value):
     if callable(value):
         code = getattr(value, "__code__", None)
         closure = getattr(value, "__closure__", None) or ()
         closureNames = tuple(getattr(code, "co_freevars", ()))
         captured = {name: _canonical(cell.cell_contents) for name, cell in zip(closureNames, closure, strict=True)}
+        referencedGlobals = {}
+        globalScope = getattr(value, "__globals__", {})
+        for name in sorted(set(getattr(code, "co_names", ()))):
+            if name not in globalScope:
+                continue
+            item = globalScope[name]
+            if isinstance(item, (str, int, float, bool, bytes, tuple, list, dict)) or item is None:
+                referencedGlobals[name] = _canonical(item)
+            elif callable(item) and item is not value:
+                itemCode = getattr(item, "__code__", None)
+                referencedGlobals[name] = {
+                    "callable": f"{getattr(item, '__module__', '')}.{getattr(item, '__qualname__', '')}",
+                    "codeHash": sha256(marshal.dumps(itemCode)).hexdigest() if itemCode is not None else "",
+                }
+            else:
+                referencedGlobals[name] = {"objectType": f"{type(item).__module__}.{type(item).__qualname__}"}
         return {
             "callable": f"{getattr(value, '__module__', '')}.{getattr(value, '__qualname__', '')}",
             "codeHash": sha256(marshal.dumps(code)).hexdigest() if code is not None else "",
             "defaults": _canonical(getattr(value, "__defaults__", None)),
             "kwdefaults": _canonical(getattr(value, "__kwdefaults__", None)),
             "closure": captured,
+            "referencedGlobals": referencedGlobals,
         }
     if hasattr(value, "__dataclass_fields__"):
         return {item.name: _canonical(getattr(value, item.name)) for item in fields(value)}
@@ -327,6 +358,35 @@ def _stableHash(payload: Mapping) -> str:
     return sha256(raw.encode("utf-8")).hexdigest()
 
 
+def _pathSetContentHash(paths: tuple[ScenarioPath, ...]) -> str:
+    payload = [
+        {
+            "pathId": path.pathId,
+            "steps": [dict(step) for step in path.steps],
+            "weight": path.weight,
+            "weightKind": path.weightKind,
+            "refs": path.refs,
+            "frequency": path.frequency,
+            "stepSpan": path.stepSpan,
+            "certificateId": path.certificateId,
+            "validationStatus": path.validationStatus,
+            "maxAdmittedStep": path.maxAdmittedStep,
+            "parameterDraws": path.parameterDraws,
+        }
+        for path in paths
+    ]
+    return _stableHash({"paths": payload})
+
+
+def bindAdmittedPathContent(paths: tuple[ScenarioPath, ...]) -> tuple[ScenarioPath, ...]:
+    """admitted 경로 집합의 실제 내용과 순서를 하나의 공유 hash로 묶는다."""
+
+    if not paths or any(path.validationStatus != "admitted" for path in paths):
+        raise SimulationSpecError("only a nonempty admitted path set can be content-bound")
+    contentHash = _pathSetContentHash(paths)
+    return tuple(replace(path, admissionContentHash=contentHash) for path in paths)
+
+
 def _lawContractPayload(law: LawSpec) -> dict:
     return {
         "outputs": law.outputs,
@@ -334,6 +394,7 @@ def _lawContractPayload(law: LawSpec) -> dict:
         "currentInputs": law.currentInputs,
         "shockInputs": law.shockInputs,
         "actionInputs": law.actionInputs,
+        "pathParameterInputs": law.pathParameterInputs,
         "usesActionCost": law.usesActionCost,
     }
 
@@ -349,6 +410,8 @@ def _lawCertificatePayload(certificate: LawCertificate) -> dict:
         "evidenceHash": certificate.evidenceHash,
         "knowledgeAsOf": certificate.knowledgeAsOf,
         "historyStatus": certificate.historyStatus,
+        "frequency": certificate.frequency,
+        "stepSpan": certificate.stepSpan,
         "maxAdmittedStep": certificate.maxAdmittedStep,
         "status": certificate.status,
         "rules": certificate.rules,
@@ -361,6 +424,8 @@ def issueLawCertificate(
     evidenceRows: tuple[Mapping[str, object], ...],
     knowledgeAsOf: str,
     historyStatus: str,
+    frequency: str,
+    stepSpan: int = 1,
     rules: str,
 ) -> LawCertificate:
     """검증 행의 연속 통과 지평을 계산하고 법칙 실행물 전체에 바인딩한다."""
@@ -368,27 +433,35 @@ def issueLawCertificate(
     if law.evidenceKind not in {"measuredAssociation", "identifiedIntervention"}:
         raise SimulationSpecError("only measured or identified laws can be certified")
     cutoff = str(knowledgeAsOf).replace("-", "")[:8]
-    if len(cutoff) != 8 or not cutoff.isdigit() or not rules:
+    if len(cutoff) != 8 or not cutoff.isdigit() or not rules or not frequency or stepSpan < 1:
         raise SimulationSpecError("law certificate needs a valid cutoff and rules")
     normalized: list[dict] = []
-    required = {"step", "metric", "estimate", "threshold", "passed"}
+    required = {"step", "metric", "estimate", "threshold", "operator"}
     for row in evidenceRows:
         if not required.issubset(row):
             raise SimulationSpecError("law evidence row is incomplete")
         step = int(row["step"])
-        if step < 1 or not str(row["metric"]) or not isinstance(row["passed"], bool):
+        operator = str(row["operator"])
+        if step < 1 or not str(row["metric"]) or operator not in {"gt", "ge", "lt", "le"}:
             raise SimulationSpecError("law evidence row is invalid")
         estimate = float(row["estimate"])
         threshold = float(row["threshold"])
         if not math.isfinite(estimate) or not math.isfinite(threshold):
             raise SimulationSpecError("law evidence row is not finite")
+        passed = {
+            "gt": estimate > threshold,
+            "ge": estimate >= threshold,
+            "lt": estimate < threshold,
+            "le": estimate <= threshold,
+        }[operator]
         normalized.append(
             {
                 "step": step,
                 "metric": str(row["metric"]),
                 "estimate": estimate,
                 "threshold": threshold,
-                "passed": row["passed"],
+                "operator": operator,
+                "passed": passed,
             }
         )
     normalized.sort(key=lambda row: (row["step"], row["metric"]))
@@ -416,6 +489,8 @@ def issueLawCertificate(
         evidenceHash=_stableHash({"rows": normalized}),
         knowledgeAsOf=cutoff,
         historyStatus=historyStatus,
+        frequency=frequency,
+        stepSpan=stepSpan,
         maxAdmittedStep=maxAdmittedStep,
         status=status,
         rules=rules,
@@ -512,11 +587,19 @@ class WorldModel:
                 raise SimulationSpecError(f"invalid law certificate: {law.lawId}")
             if law.evidenceKind in {"measuredAssociation", "identifiedIntervention"}:
                 _validateLawCertificate(law)
+                if law.certificate is not None and (
+                    law.certificate.frequency != self.stepFrequency or law.certificate.stepSpan != self.stepSpan
+                ):
+                    raise SimulationSpecError(f"law certificate step contract mismatch: {law.lawId}")
             elif law.certificate is not None:
                 raise SimulationSpecError(f"non-empirical law cannot carry a certificate: {law.lawId}")
             declared = law.priorInputs + law.currentInputs + law.shockInputs
             if len(set(declared)) != len(declared):
                 raise SimulationSpecError(f"ambiguous law input: {law.lawId}")
+            if len(set(law.pathParameterInputs)) != len(law.pathParameterInputs) or any(
+                not name for name in law.pathParameterInputs
+            ):
+                raise SimulationSpecError(f"invalid path parameter input: {law.lawId}")
             for name in law.priorInputs + law.currentInputs + law.outputs:
                 if name not in variables:
                     raise SimulationSpecError(f"unknown variable {name}: {law.lawId}")
@@ -587,8 +670,13 @@ def _checkInputs(
         raise SimulationSpecError("all strategies must share the path horizon")
     for law in model.laws:
         certificate = law.certificate
+        if law.evidenceKind in {"measuredAssociation", "identifiedIntervention"}:
+            _validateLawCertificate(law)
         if certificate is not None and certificate.status == "admitted" and certificate.maxAdmittedStep < horizon:
             raise SimulationSpecError(f"law exceeds admitted horizon: {law.lawId}")
+        initialDate = _comparableDate(initial.asOf)
+        if certificate is not None and initialDate is not None and certificate.knowledgeAsOf > initialDate:
+            raise SimulationSpecError(f"law certificate is newer than initial state: {law.lawId}")
     if len({p.pathId for p in paths}) != len(paths) or len({s.strategyId for s in strategies}) != len(strategies):
         raise SimulationSpecError("duplicate pathId or strategyId")
     if sum(strategy.isBaseline for strategy in strategies) > 1:
@@ -598,10 +686,16 @@ def _checkInputs(
         raise SimulationSpecError("all paths must share one weight interpretation")
     actionIds = {a.actionId for a in model.actions}
     shockIds = {v.variableId for v in model.variables if v.role == "shock"}
+    pathParameterIds = {name for law in model.laws for name in law.pathParameterInputs}
     requiredInitial = {name for law in model.laws for name in law.priorInputs}
     for name in requiredInitial:
         _validateValue(model, name, initial.values.get(name), f"initial.{name}")
     for path in paths:
+        unknownPathParameters = set(path.parameterDraws) - pathParameterIds
+        if unknownPathParameters:
+            raise SimulationSpecError(f"unknown path parameters for {path.pathId}: {sorted(unknownPathParameters)}")
+        for name, value in path.parameterDraws.items():
+            _finite(value, f"path.{path.pathId}.parameter.{name}")
         if path.weightKind not in WEIGHT_KIND_SET:
             raise SimulationSpecError(f"unknown weight kind: {path.weightKind}")
         if path.validationStatus not in PATH_VALIDATION_SET:
@@ -642,6 +736,11 @@ def _checkInputs(
         admittedHorizons = {path.maxAdmittedStep for path in paths}
         if len(certificates) != 1 or len(admittedHorizons) != 1:
             raise SimulationSpecError("admitted paths must share one certificate and horizon")
+        contentHashes = {path.admissionContentHash for path in paths}
+        if len(contentHashes) != 1 or not _validDigest(next(iter(contentHashes))):
+            raise SimulationSpecError("admitted paths need one content binding")
+        if next(iter(contentHashes)) != _pathSetContentHash(paths):
+            raise SimulationSpecError("admitted path content binding mismatch")
     if weightKinds == {"calibrated"}:
         totalWeight = sum(float(path.weight) for path in paths if path.weight is not None)
         if abs(totalWeight - 1.0) > 1e-9:
@@ -806,6 +905,13 @@ def simulateWorld(
                         inputValues[f"shock.{name}"] = _finite(shocks.get(name), f"{law.lawId}.shock.{name}")
                     for name in law.actionInputs:
                         inputValues[f"action.{name}"] = _finite(effective.get(name), f"{law.lawId}.action.{name}")
+                    lawPathParameters = {
+                        name: _finite(path.parameterDraws[name], f"{law.lawId}.pathParameter.{name}")
+                        for name in law.pathParameterInputs
+                        if name in path.parameterDraws
+                    }
+                    for name, value in lawPathParameters.items():
+                        inputValues[f"pathParameter.{name}"] = value
                     if law.usesActionCost:
                         inputValues["actionCost"] = actionCost
                     lawPrior = {name: prior[name] for name in law.priorInputs}
@@ -819,6 +925,7 @@ def simulateWorld(
                         shocks=_freezeMapping(lawShocks),
                         issuedActions=_freezeMapping({}),
                         actions=_freezeMapping(lawActions),
+                        pathParameters=_freezeMapping(lawPathParameters),
                         actionCost=actionCost if law.usesActionCost else 0.0,
                     )
                     produced = dict(law.fn(ctx))
@@ -838,6 +945,7 @@ def simulateWorld(
                             provenance=law.provenance,
                             version=law.version,
                             parameters=law.parameters,
+                            pathParameters=lawPathParameters,
                             certificateId=law.certificate.certificateId if law.certificate is not None else "",
                         )
                     )
@@ -902,6 +1010,7 @@ def simulateWorld(
     assumedActionLaws = [
         law.lawId for law in actionLaws if law.evidenceKind not in {"identifiedIntervention", "accountingIdentity"}
     ]
+    policyAdmissionIssues = [action.actionId for action in model.actions]
     pathAdmissionIssues = [path.pathId for path in paths if path.validationStatus != "admitted"]
     warnings: list[str] = list(inputWarnings)
     if unqualifiedLaws:
@@ -910,13 +1019,22 @@ def simulateWorld(
         warnings.append("unvalidated transition or intervention effects are conditional assumptions")
     if pathAdmissionIssues:
         warnings.append(f"paths are not admitted: {','.join(pathAdmissionIssues)}")
+    if policyAdmissionIssues:
+        warnings.append("policy evaluation certificate is unavailable; automatic recommendation is disabled")
     baselineIds = [strategy.strategyId for strategy in strategies if strategy.isBaseline]
     if objectives and (len(strategies) < 2 or not baselineIds):
         warnings.append("recommendation needs one baseline and at least one candidate")
     if not objectives:
         decisionStatus = "abstain"
         warnings.append("no objective was declared")
-    elif unqualifiedLaws or assumedLaws or assumedActions or assumedActionLaws or pathAdmissionIssues:
+    elif (
+        unqualifiedLaws
+        or assumedLaws
+        or assumedActions
+        or assumedActionLaws
+        or pathAdmissionIssues
+        or policyAdmissionIssues
+    ):
         decisionStatus = "conditionalOnly"
     elif len(objectives) > 1:
         decisionStatus = "paretoOnly"
@@ -969,6 +1087,7 @@ def simulateWorld(
         {
             "laws": tuple((law.lawId, law.parameters) for law in model.laws),
             "actions": model.actions,
+            "pathParameterDraws": tuple((path.pathId, path.parameterDraws) for path in paths),
             "constraints": constraints,
             "objectives": objectives,
         }

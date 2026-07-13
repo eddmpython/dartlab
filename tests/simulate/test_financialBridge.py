@@ -8,11 +8,16 @@ import pytest
 from dartlab.analysis.financial.stepProjection import FinancialParameters, FinancialState
 from dartlab.simulate.financialBridge import bridgeFinancialPaths, buildFinancialBridgeLaw
 from dartlab.simulate.financialWorld import FinancialWorldInputs, buildFinancialStrategy, runFinancialStrategies
-from dartlab.simulate.world import ScenarioPath, SimulationSpecError, issueLawCertificate
+from dartlab.simulate.world import (
+    ScenarioPath,
+    SimulationSpecError,
+    bindAdmittedPathContent,
+    issueLawCertificate,
+)
 
 
 def _path(*, frequency: str = "year", admitted: bool = True) -> ScenarioPath:
-    return ScenarioPath(
+    path = ScenarioPath(
         "macro",
         (
             {"gdpChange": -0.02, "rateChange": 0.01},
@@ -23,6 +28,7 @@ def _path(*, frequency: str = "year", admitted: bool = True) -> ScenarioPath:
         certificateId="a" * 64 if admitted else "",
         maxAdmittedStep=2 if admitted else 0,
     )
+    return bindAdmittedPathContent((path,))[0] if admitted else path
 
 
 def _law(*, evidenceKind: str = "explicitAssumption"):
@@ -36,7 +42,7 @@ def _law(*, evidenceKind: str = "explicitAssumption"):
     )
     if evidenceKind == "measuredAssociation":
         evidence = tuple(
-            {"step": step, "metric": "oosSkill", "estimate": 0.1, "threshold": 0.0, "passed": True} for step in (1, 2)
+            {"step": step, "metric": "oosSkill", "estimate": 0.1, "threshold": 0.0, "operator": "gt"} for step in (1, 2)
         )
         law = replace(
             law,
@@ -45,6 +51,7 @@ def _law(*, evidenceKind: str = "explicitAssumption"):
                 evidenceRows=evidence,
                 knowledgeAsOf="20250101",
                 historyStatus="asKnown",
+                frequency="year",
                 rules="positive OOS skill",
             ),
         )

@@ -9,7 +9,11 @@ import polars as pl
 import pytest
 
 from dartlab.analysis.financial.stepProjection import FinancialParameters
-from dartlab.simulate.edgarPitState import EdgarStateError, compileEdgarFinancialState
+from dartlab.simulate.edgarPitState import (
+    EdgarStateError,
+    compileEdgarFinancialState,
+    compileEdgarQuarterlyFinancialState,
+)
 from dartlab.simulate.financialWorld import (
     FinancialWorldInputs,
     buildFinancialPath,
@@ -71,6 +75,54 @@ def _filing(accn: str, filed: str, fiscalEnd: str, scale: float = 1.0) -> pl.Dat
     return pl.DataFrame(rows)
 
 
+def _annualWithNineMonthFlow() -> pl.DataFrame:
+    filing = _filing("annual", "2025-01-30", "2024-12-31")
+    flow = filing.filter(pl.col("start").is_not_null()).sort("end")
+    q4End = flow["end"].max()
+    q1Start = flow["start"].min()
+    q3End = flow.filter(pl.col("end") < q4End)["end"].max()
+    base = filing.filter(pl.col("start").is_null() | (pl.col("end") < q4End))
+    annualRows = pl.DataFrame(
+        [
+            {
+                "namespace": "us-gaap",
+                "tag": tag,
+                "unit": "USD",
+                "val": value,
+                "form": "10-K",
+                "filed": "2025-01-30",
+                "start": q1Start,
+                "end": "2024-12-31",
+                "accn": "annual",
+            }
+            for tag, value in (
+                ("RevenueFromContractWithCustomerExcludingAssessedTax", 430.0),
+                ("OperatingIncomeLoss", 86.0),
+            )
+        ]
+    )
+    nineMonthRows = pl.DataFrame(
+        [
+            {
+                "namespace": "us-gaap",
+                "tag": tag,
+                "unit": "USD",
+                "val": value,
+                "form": "10-Q",
+                "filed": "2024-10-30",
+                "start": q1Start,
+                "end": q3End,
+                "accn": "nine-month",
+            }
+            for tag, value in (
+                ("RevenueFromContractWithCustomerExcludingAssessedTax", 300.0),
+                ("OperatingIncomeLoss", 60.0),
+            )
+        ]
+    )
+    return pl.concat([base, annualRows, nineMonthRows])
+
+
 def test_cutoff_selects_original_then_amendment_and_future_append_is_invariant() -> None:
     original = _filing("original", "2025-01-30", "2024-12-31")
     amendment = _filing("amendment", "2025-03-15", "2024-12-31", scale=1.1)
@@ -90,6 +142,70 @@ def test_net_ppe_wins_and_debt_components_do_not_double_count_reported_total() -
     debt = next(item for item in state.evidence if item.conceptId == "totalDebt")
     assert debt.status == "derived"
     assert "reported total excluded" in debt.derivation
+
+
+def test_commercial_paper_is_added_to_term_debt_without_using_reported_total_twice() -> None:
+    filing = pl.concat(
+        [
+            _filing("a", "2025-01-30", "2024-12-31"),
+            pl.DataFrame(
+                [
+                    {
+                        "namespace": "us-gaap",
+                        "tag": "CommercialPaper",
+                        "unit": "USD",
+                        "val": 3.0,
+                        "form": "10-Q",
+                        "filed": "2025-01-30",
+                        "start": None,
+                        "end": "2024-12-31",
+                        "accn": "a",
+                    }
+                ]
+            ),
+        ]
+    )
+    state = compileEdgarFinancialState(filing, knowledgeAsOf="20250228")
+    assert state.state.debt == 23.0
+    debt = next(item for item in state.evidence if item.conceptId == "totalDebt")
+    assert "CommercialPaper" in debt.tag
+
+
+def test_q4_residual_prefers_nine_month_flow_and_ignores_later_revision() -> None:
+    facts = _annualWithNineMonthFlow()
+    compiled = compileEdgarQuarterlyFinancialState(facts, knowledgeAsOf="20250228")
+    latest = compiled.quarters[-1]
+    assert latest.revenue.value == 130.0
+    assert latest.operatingProfit.value == 26.0
+    assert latest.revenue.derivation == "annual minus nine-month year-to-date flow"
+    assert compiled.state.revenue == 130.0
+    assert compiled.ttmRevenue == 430.0
+
+    revision = facts.filter(pl.col("accn") == "nine-month").with_columns(
+        pl.lit("2025-03-01").alias("filed"),
+        pl.lit("nine-month-revised").alias("accn"),
+        (pl.col("val") + 50.0).alias("val"),
+    )
+    afterRevision = compileEdgarQuarterlyFinancialState(
+        pl.concat([facts, revision]),
+        knowledgeAsOf="20250401",
+    )
+    revisedLatest = afterRevision.quarters[-1]
+    assert revisedLatest.revenue.value == latest.revenue.value
+    assert revisedLatest.revenue.derivationInputs == latest.revenue.derivationInputs
+
+
+def test_explicit_fiscal_through_selects_requested_complete_vintage() -> None:
+    old = _filing("old", "2025-01-30", "2024-12-31")
+    new = _filing("new", "2025-04-30", "2025-03-31", scale=2.0)
+    compiled = compileEdgarFinancialState(
+        pl.concat([old, new]),
+        knowledgeAsOf="20250501",
+        fiscalThrough="20241231",
+    )
+    assert compiled.fiscalThrough == "20241231"
+    assert compiled.state.revenue == 400.0
+    assert {item.accession for item in compiled.evidence if item.kind == "stock"} == {"old"}
 
 
 def test_all_stock_accounts_share_one_accession_and_exact_fiscal_end() -> None:
@@ -148,10 +264,15 @@ def test_real_aapl_has_distinct_filing_vintage_states_when_store_is_installed() 
     facts = pl.read_parquet(path)
     old = compileEdgarFinancialState(facts, knowledgeAsOf="20250201")
     current = compileEdgarFinancialState(facts, knowledgeAsOf="20260713")
+    currentQuarter = compileEdgarQuarterlyFinancialState(facts, knowledgeAsOf="20260713")
     assert old.fiscalThrough == "20241228"
     assert current.fiscalThrough == "20260328"
     assert old.stateHash != current.stateHash
     assert old.state.revenue < current.state.revenue
+    assert current.state.debt == 84_711_000_000.0
+    assert currentQuarter.state.revenue == 111_184_000_000.0
+    assert currentQuarter.ttmRevenue == 451_442_000_000.0
+    assert currentQuarter.state.operatingMargin * currentQuarter.state.revenue == 35_885_000_000.0
     stock = [item for item in current.evidence if item.kind == "stock"]
     assert len({item.accession for item in stock}) == 1
     assert next(item for item in stock if item.conceptId == "netPpe").tag == "PropertyPlantAndEquipmentNet"

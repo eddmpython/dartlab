@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import gc
+from dataclasses import replace
 
 import pytest
 
@@ -11,7 +12,7 @@ from dartlab.simulate.financialWorld import (
     financialInputsFromSnapshot,
     runFinancialStrategies,
 )
-from dartlab.simulate.world import SimulationBlocked
+from dartlab.simulate.world import SimulationBlocked, SimulationSpecError
 
 
 def _series():
@@ -116,6 +117,63 @@ def testFinancialWorldRunsStepwiseAndClosesEveryPeriod():
     assert len(trace.steps) == 4
     assert all(abs(step.after["identityResidual"]) < 1e-8 for step in trace.steps)
     assert trace.steps[1].before["cash"] == trace.steps[0].after["cash"]
+
+
+def testQuarterGridRequiresQuarterParametersAndRunsWithoutAnnualCoercion():
+    quarterPath = buildFinancialPath(
+        "quarter",
+        demandGrowth=(0.01, 0.01),
+        marginChange=(0.0, 0.0),
+        debtRate=(0.01, 0.01),
+        frequency="quarter",
+    )
+    strategy = _strategy("steady", (0.08, 0.08))
+    with pytest.raises(SimulationSpecError, match="parameter frequency"):
+        runFinancialStrategies(
+            replace(_inputs(), stepFrequency="quarter"),
+            (quarterPath,),
+            (strategy,),
+            debtLimit=100.0,
+            maxFinancing=50.0,
+        )
+
+    run = runFinancialStrategies(
+        replace(_inputs(), stepFrequency="quarter", parameterFrequency="quarter"),
+        (quarterPath,),
+        (strategy,),
+        debtLimit=100.0,
+        maxFinancing=50.0,
+    )
+    assert len(run.traces[0].steps) == 2
+    assert all(abs(step.after["identityResidual"]) < 1e-8 for step in run.traces[0].steps)
+
+
+def testFinancialParameterUncertaintyUsesOneDrawPerWorldPath():
+    lowCapacity = buildFinancialPath(
+        "low-capacity",
+        demandGrowth=(0.0, 0.0),
+        marginChange=(0.0, 0.0),
+        debtRate=(0.05, 0.05),
+        parameterDraws={"revenuePerPpe": 1.0},
+    )
+    baseCapacity = buildFinancialPath(
+        "base-capacity",
+        demandGrowth=(0.0, 0.0),
+        marginChange=(0.0, 0.0),
+        debtRate=(0.05, 0.05),
+    )
+    run = runFinancialStrategies(
+        _inputs(),
+        (lowCapacity, baseCapacity),
+        (_strategy("steady", (0.08, 0.08)),),
+        debtLimit=100.0,
+        maxFinancing=50.0,
+    )
+    lowTrace = next(trace for trace in run.traces if trace.pathId == "low-capacity")
+    baseTrace = next(trace for trace in run.traces if trace.pathId == "base-capacity")
+    assert lowTrace.steps[0].after["revenue"] == 50.0
+    assert baseTrace.steps[0].after["revenue"] == 100.0
+    assert all(step.laws[0].pathParameters == {"revenuePerPpe": 1.0} for step in lowTrace.steps)
 
 
 def testFinancialWorldExposesUnmetDemandAndPreservesItAcrossSteps():
