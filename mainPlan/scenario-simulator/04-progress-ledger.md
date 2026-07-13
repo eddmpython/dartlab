@@ -294,6 +294,24 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
   hindcast admission, EDGAR 실제 회사 수직절편, closed-loop 정책, UI는 아직 미구현이다. 현재 성취는
   "진짜로 걷는 실행기와 KR 1사 연결"이지, 검증된 최적전략이나 예측확률의 완성이 아니다.
 
+### 0c-28. 연간 거시경로에서 회사 재무충격까지 인증 브리지 졸업 (2026-07-13)
+
+- **빈 중간법칙 수리**: financial world는 수요 성장, 마진 증분, 차입금리를 사람이 직접 넣어야 했다.
+  `simulate/financialBridge.py`가 명시 단위의 연간 거시 혁신을 회사별 demand log-growth,
+  margin point-change, debt-rate change 계수로 옮긴다. 차입금리는 이전 기간 수준에 증분을 누적한다.
+- **동일 실행기 재사용**: 브리지는 별도 계산 우회가 아니라 `LawSpec`과 `WorldModel`로 컴파일되고
+  `simulateWorld`에서 실행된다. 따라서 선언 입력만 읽고 함수, 파라미터, 증거, 지평 인증을 기존
+  세계 실행기와 동일하게 적용하며 결과를 `demandGrowth`, `marginChange`, `debtRate` path로 만든다.
+- **승격 전파**: source macro path와 bridge law가 모두 admitted일 때만 두 인증서를 묶은 새
+  certificate를 발급한다. bridge가 explicit assumption이면 admitted source도 `retrospectiveOnly`로
+  강등한다. 주간 macro path를 연간 financial bridge에 넣으면 step contract에서 즉시 차단한다.
+- **end-to-end**: 합성 연간 GDP와 금리 경로가 회사 재무 충격으로 변환되고, 그 경로가 잠재수요,
+  생산능력, 손익, 현금, 부채 상태를 두 기간 전개하면서 매 기간 balance identity를 닫는 수직절편을
+  본진 테스트로 고정했다.
+- **검증**: `_attempts/financialBridge` 4건은 변경 전 collection 실패, 변경 후 4건 통과했다.
+  본진 5건으로 승격했고 simulate 전체와 재무 leaf 255건, ruff, Guard Index strict L0-L1.5 7/7과
+  외부 gate 6종이 통과했다.
+
 ### 0c-27. 전이법칙 인증서를 실행물과 검증지평에 바인딩 (2026-07-13)
 
 - **임의 digest 반례 선결**: 기존 `LawSpec.certificateId`는 64자리 문자열이면 통과해 실제 함수,
