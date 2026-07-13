@@ -92,6 +92,11 @@ def testSnapshotCompilesActualBalanceSheetStateWithoutZeroFill():
     with pytest.raises(SimulationBlocked, match="inventories"):
         financialInputsFromSnapshot(broken, capacityHeadroom=0.20)
 
+    partialDebt = {"series": _series(), "baseRevenue": 100.0, "baseMargin": 15.0}
+    del partialDebt["series"]["BS"]["debentures"]
+    with pytest.raises(SimulationBlocked, match="incomplete debt"):
+        financialInputsFromSnapshot(partialDebt, capacityHeadroom=0.20)
+
     zeroReceivables = {"series": _series(), "baseRevenue": 100.0, "baseMargin": 15.0, "asOf": "2025-Q4"}
     zeroReceivables["series"]["BS"]["trade_receivables"] = [0.0] * 8
     compiled = financialInputsFromSnapshot(zeroReceivables, capacityHeadroom=0.20)
@@ -126,6 +131,27 @@ def testRealAdapterKeepsAssumptionBoundaryAndDoesNotRecommend():
     assert run.decisionStatus == "conditionalOnly"
     assert run.recommendation is None
     assert set(run.paretoStrategies) <= {"invest", "preserve"}
+
+
+def testSnapshotPitWarningsReachRunAudit():
+    snapshot = {
+        "series": _series(),
+        "baseRevenue": 100.0,
+        "baseMargin": 15.0,
+        "asOf": "2025-Q4",
+        "assumptions": ("baseWacc10Pct",),
+        "warnings": ("periodScopedPitOnly",),
+    }
+    inputs = financialInputsFromSnapshot(snapshot, capacityHeadroom=0.20)
+    run = runFinancialStrategies(
+        inputs,
+        (_path(),),
+        (_strategy("steady", (0.08,) * 4),),
+        debtLimit=100.0,
+        maxFinancing=50.0,
+    )
+    assert "snapshotAssumption:baseWacc10Pct" in run.warnings
+    assert "snapshotWarning:periodScopedPitOnly" in run.warnings
 
 
 def testFinancingMustBeExplicitAndConstraintBreachIsVisible():

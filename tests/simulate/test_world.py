@@ -13,12 +13,15 @@ from dartlab.simulate.world import (
     ObjectiveSpec,
     ScenarioPath,
     SimulationBlocked,
+    SimulationSpecError,
     StrategySpec,
     VariableSpec,
     WorldModel,
     WorldState,
     simulateWorld,
 )
+
+_SYNTHETIC_CERTIFICATE = "a" * 64
 
 
 def _model(*, actionEvidence: str = "identifiedIntervention", lawEvidence: str = "identifiedIntervention"):
@@ -44,6 +47,7 @@ def _model(*, actionEvidence: str = "identifiedIntervention", lawEvidence: str =
             costPerUnit=0.25,
             effectEvidence=actionEvidence,
             provenance="synthetic-randomized-policy",
+            certificateId=_SYNTHETIC_CERTIFICATE if actionEvidence == "identifiedIntervention" else "",
         ),
     )
 
@@ -75,6 +79,7 @@ def _model(*, actionEvidence: str = "identifiedIntervention", lawEvidence: str =
             actionInputs=("capexCut",),
             evidenceKind=lawEvidence,
             provenance="synthetic-known-dgp:capacity",
+            certificateId=_SYNTHETIC_CERTIFICATE if lawEvidence == "identifiedIntervention" else "",
             fn=capacity,
         ),
         LawSpec(
@@ -103,6 +108,7 @@ def _model(*, actionEvidence: str = "identifiedIntervention", lawEvidence: str =
             usesActionCost=True,
             evidenceKind="identifiedIntervention",
             provenance="synthetic-known-dgp:credit-line",
+            certificateId=_SYNTHETIC_CERTIFICATE,
             fn=finance,
         ),
     )
@@ -114,11 +120,21 @@ def _state(cash: float = 8.0, debt: float = 2.0):
 
 
 def _path(pathId: str, demand: tuple[float, ...], rate: float = 0.05):
-    return ScenarioPath(pathId, tuple({"demand": value, "rate": rate} for value in demand))
+    return ScenarioPath(
+        pathId,
+        tuple({"demand": value, "rate": rate} for value in demand),
+        certificateId=_SYNTHETIC_CERTIFICATE,
+        validationStatus="admitted",
+        maxAdmittedStep=len(demand),
+    )
 
 
 def _strategy(strategyId: str, cuts: tuple[float, ...]):
-    return StrategySpec(strategyId, tuple({"capexCut": value} for value in cuts))
+    return StrategySpec(
+        strategyId,
+        tuple({"capexCut": value} for value in cuts),
+        isBaseline=strategyId.startswith("noop"),
+    )
 
 
 def _run(path, *strategies, model=None, state=None):
@@ -244,3 +260,84 @@ def testPartialLawCapsRunQuality():
     assert run.status == "partial"
     assert run.decisionStatus == "conditionalOnly"
     assert run.recommendation is None
+
+
+def testLawContextExposesOnlyDeclaredInputsAndNoIssuedActionBackdoor():
+    model = _model()
+    hiddenShockLaws = tuple(
+        replace(law, shockInputs=()) if law.lawId == "revenueIdentity" else law for law in model.laws
+    )
+    hiddenShock = WorldModel(model.modelId, model.version, model.variables, model.actions, hiddenShockLaws)
+    with pytest.raises(KeyError, match="demand"):
+        _run(_path("base", (10.0,) * 4), _strategy("noop", (0.0,) * 4), model=hiddenShock)
+
+    def issuedReader(ctx):
+        return {"capex": 2.0, "capacity": ctx.prior["capacity"] + ctx.issuedActions["capexCut"]}
+
+    leadBypassLaws = tuple(
+        replace(law, fn=issuedReader) if law.lawId == "capacityRollForward" else law for law in model.laws
+    )
+    leadBypass = WorldModel(model.modelId, model.version, model.variables, model.actions, leadBypassLaws)
+    with pytest.raises(KeyError, match="capexCut"):
+        _run(_path("base", (10.0,) * 4), _strategy("noop", (1.0,) * 4), model=leadBypass)
+
+
+def testExecutableParametersAndResultHaveIndependentDigests():
+    model = _model()
+
+    def changedProfit(ctx):
+        return {"operatingProfit": ctx.current["revenue"] * 0.35 - 2.0}
+
+    changedLaws = tuple(
+        replace(law, fn=changedProfit, parameters={"fixedCost": 2.0}) if law.lawId == "profitIdentity" else law
+        for law in model.laws
+    )
+    changed = WorldModel(model.modelId, model.version, model.variables, model.actions, changedLaws)
+    path = _path("base", (10.0,) * 4)
+    strategy = _strategy("noop", (0.0,) * 4)
+    first = _run(path, strategy, model=model)
+    second = _run(path, strategy, model=changed)
+    assert first.runHash != second.runHash
+    assert first.executableHash != second.executableHash
+    assert first.parameterHash != second.parameterHash
+    assert first.resultHash != second.resultHash
+    assert first.traceRoot != second.traceRoot
+
+
+def testInputAndTraceMappingsAreDeeplyImmutable():
+    step = {"demand": 10.0, "rate": 0.05}
+    actions = {"capexCut": 0.0}
+    path = ScenarioPath(
+        "base",
+        (step,) * 4,
+        certificateId=_SYNTHETIC_CERTIFICATE,
+        validationStatus="admitted",
+        maxAdmittedStep=4,
+    )
+    strategy = StrategySpec("noop", (actions,) * 4, isBaseline=True)
+    step["demand"] = 999.0
+    actions["capexCut"] = 1.0
+    run = _run(path, strategy)
+    assert run.traces[0].steps[0].shocks["demand"] == 10.0
+    assert run.traces[0].steps[0].issuedActions["capexCut"] == 0.0
+    with pytest.raises(TypeError):
+        run.traces[0].steps[0].after["cash"] = 999.0
+
+
+def testCalibratedMeasureNeedsFiniteNormalizedCertifiedPaths():
+    path = ScenarioPath("bad", ({"demand": 10.0, "rate": 0.05},) * 4, weight=1.0, weightKind="calibrated")
+    with pytest.raises(SimulationSpecError, match="certificate"):
+        _run(path, _strategy("noop", (0.0,) * 4))
+    nanPath = replace(
+        _path("nan", (10.0,) * 4),
+        weight=float("nan"),
+        weightKind="calibrated",
+    )
+    with pytest.raises(SimulationSpecError, match="finite"):
+        _run(nanPath, _strategy("noop", (0.0,) * 4))
+
+
+def testPathTimeUnitMustMatchWorldModel():
+    weekly = replace(_path("weekly", (10.0,) * 4), frequency="week")
+    with pytest.raises(SimulationSpecError, match="step contract mismatch"):
+        _run(weekly, _strategy("noop", (0.0,) * 4))

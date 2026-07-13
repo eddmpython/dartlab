@@ -294,6 +294,48 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
   hindcast admission, EDGAR 실제 회사 수직절편, closed-loop 정책, UI는 아직 미구현이다. 현재 성취는
   "진짜로 걷는 실행기와 KR 1사 연결"이지, 검증된 최적전략이나 예측확률의 완성이 아니다.
 
+### 0c-25. 실행 신뢰경계 봉인, 공동 경험경로, EDGAR filing-vintage 상태 졸업 (2026-07-13)
+
+- **전문가 3축 재감사**: 경로 계량, DART와 EDGAR PIT, 실행기 적대 검토를 독립 수행했다. 선언하지
+  않은 충격과 발행 직후 행동을 법칙이 몰래 읽는 우회, 함수와 파라미터가 달라도 같은 run hash,
+  인증서 없는 calibrated probability, 다목적 첫 목적 강제추천, 연간 TTM 상태와 주간 경로의 시간단위
+  혼합이 실제 반례로 재현됐다.
+- **실행 신뢰경계 수리**: `simulate/world.py`가 법칙별 선언 입력만 immutable context로 노출하고
+  `issuedActions` 우회를 차단한다. 입력과 trace mapping을 깊은 복사 후 읽기전용으로 만들었다.
+  `runHash`, `executableHash`, `parameterHash`, `dataVintageHash`, `resultHash`, `traceRoot`를 분리했고,
+  law version과 parameter snapshot을 trace에 남긴다. identified intervention과 admitted path는 64자리
+  certificate digest가 없으면 컴파일되지 않는다. NaN과 Inf weight, bounds, threshold도 차단한다.
+- **추천 과장 차단**: 모든 path가 admitted가 아니면 `conditionalOnly`다. 단일 전략이나 baseline 없는
+  비교는 추천할 수 없고, scalarization 없는 다목적은 `paretoOnly`가 상한이다. bootstrap 경로는
+  `calibratedProbability`가 아니라 `empiricalResamplingMeasure`로 표기한다.
+- **공동 경험경로 졸업**: `_attempts/empiricalWorldPaths`에서 prefix PIT, 공동행 보존, 블록 인접성,
+  seed와 행순서 결정론, path count 확대 prefix, 표본부족 기권, h* 시간단위 결속을 증명한 뒤
+  `simulate/empiricalPaths.py`와 `macroPaths.py`로 승격했다. `eventTime`과 `availableAt`, 변수 단위,
+  frequency와 stepSpan을 필수로 둔다. 현재 macro 저장소는 release vintage가 없어 실제 4팩터 주간
+  경로도 `revisedHistory`, `retrospectiveOnly`다.
+- **h* 의미 정정**: 첫 실패 걸음을 그대로 면허라고 부르지 않고 마지막 전구간 통과 걸음인
+  `maxAdmittedStep`으로 저장한다. 각 걸음에서 모든 필수 팩터가 표본수, 90% coverage, CRPS의 carry
+  우월을 동시에 통과해야 한다. 기존 8주 거시 h*는 연간 TTM financial world에 재사용할 수 없다.
+- **EDGAR as-known 상태 컴파일러 졸업**: `_attempts/edgarPitState`에서 original과 amendment cutoff,
+  미래공시 append 불변, Net PPE 우선, debt total과 components 배타성, 동일 accession과 fiscal end,
+  unit 충돌, balance closure를 증명한 뒤 `simulate/edgarPitState.py`로 승격했다. raw companyfacts를
+  tag 선택 전 `filed <= knowledgeAsOf`로 자르고, stock 전 계정을 동일 accession에서 고르며,
+  standalone 3분기와 FY residual로 Q4를 복원해 TTM을 만든다. 모든 값에 filedAt, accession, form,
+  tag, unit, fiscal start와 end, observed 또는 derived 상태를 보존한다.
+- **AAPL 실제 수직절편**: 2025-02-01 cutoff는 fiscalThrough 2024-12-28, 2026-07-13 cutoff는
+  2026-03-28로 서로 다른 state hash와 accession을 만들었다. 최신 상태는 TTM 매출 451.442B USD,
+  영업마진 32.64%, 현금 45.572B, 부채 82.714B, Net PPE 50.116B, 자본 106.491B다. 이를 연간
+  재무 전이에 투입해 회계 폐합을 확인했지만 transition parameter가 명시 가정이므로 결과는
+  `conditionalOnly`, 추천 `None`이다.
+- **DART 정직성 강화**: snapshot의 assumption과 `periodScopedPitOnly` 경고가 최종 run까지 전달된다.
+  debt 구성요소 일부 누락을 0으로 합산하지 않고 차단한다. 삼성전자 실제 수직절편은 계속 통과한다.
+- **검증**: simulate 전체와 재무 전이 leaf 243건 통과, ruff clean, Guard Index strict L0-L1.5
+  7/7과 외부 gate 6종 통과, public API coverage와 memory budget, product smoke quick 4종 통과.
+- **정직한 잔여**: 현재 경험경로와 financial world 사이의 회사별 shock bridge는 admission이 없어
+  연결하지 않았다. DART 과거 revision은 append-only 접수원장 없이는 복원 불가다. 금융 전이의
+  잠재수요 상태, 분기 native 전이, law별 식별 certificate, parameter uncertainty, closed-loop 정책,
+  bounded-memory 대량경로 실행, 공개 verb 교체, GUI는 후속이다.
+
 ### 0c-23. 네이티브 시그니처 C vs D 첫 실측 = "직독 마법" 기각, 상태조건 신호만 생존 (2026-07-07, 16 §7 결정적 실험 착수)
 
 - **데모 (_attempts/nativejoint/cvsd.py, 개념확립 stage2)**: 세 앙상블의 per-company 주변분포를 완전동일 고정하고 결합구조만 상이하게 = variogram(결합민감 적정스코어)이 결합종속만 순수 격리. C=상태 analog 코호트 동시실현 직독, Dg=같은 주변+Gaussian copula, Ds=같은 주변+무조건 empirical copula. 우주=전기간 풀커버 상위시총 40종목(600주), origin 비중첩, 블록부트 t(자기상관 보정).

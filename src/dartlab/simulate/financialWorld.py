@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Mapping, Sequence
 
 from dartlab.analysis.financial.proforma import extractHistoricalRatios
@@ -96,10 +96,12 @@ def financialInputsFromSnapshot(snapshot: Mapping, *, capacityHeadroom: float) -
     )
     if all(value is None for value in debtParts):
         raise SimulationBlocked("financial snapshot missing: debt")
+    if any(value is None for value in debtParts):
+        raise SimulationBlocked("financial snapshot has incomplete debt components")
     debt = sum(float(value) for value in debtParts if value is not None)
     warnings: list[str] = []
-    if any(value is None for value in debtParts):
-        warnings.append("partialDebtComponents")
+    warnings.extend(f"snapshotAssumption:{item}" for item in snapshot.get("assumptions", ()))
+    warnings.extend(f"snapshotWarning:{item}" for item in snapshot.get("warnings", ()))
 
     otherAssets = totalAssets - cash - receivables - inventories - ppe
     otherLiabilities = totalLiabilities - payables - debt
@@ -174,7 +176,6 @@ def buildFinancialWorld(
     inputs: FinancialWorldInputs,
     *,
     maxFinancing: float,
-    transitionEvidence: str = "explicitAssumption",
 ) -> tuple[WorldModel, WorldState]:
     """Bind the analysis-owned one-step leaf into the generic world executor."""
 
@@ -194,8 +195,8 @@ def buildFinancialWorld(
         + [VariableSpec(name, metricUnits.get(name, "currency"), "metric") for name in _METRIC_IDS]
     )
     actions = (
-        ActionSpec("capexRatio", "ratio", 0.0, 1.0, 0, 0.0, "accountingIdentity", "financial-step:capex"),
-        ActionSpec("inventoryRatio", "ratio", 0.0, 1.0, 0, 0.0, "accountingIdentity", "financial-step:nwc"),
+        ActionSpec("capexRatio", "ratio", 0.0, 1.0, 0, 0.0, "explicitAssumption", "financial-step:capex"),
+        ActionSpec("inventoryRatio", "ratio", 0.0, 1.0, 0, 0.0, "explicitAssumption", "financial-step:nwc"),
         ActionSpec("borrow", "currency", 0.0, maxFinancing, 0, 0.0, "accountingIdentity", "financial-step:debt"),
         ActionSpec("repay", "currency", 0.0, maxFinancing, 0, 0.0, "accountingIdentity", "financial-step:debt"),
     )
@@ -242,9 +243,10 @@ def buildFinancialWorld(
         priorInputs=_STATE_IDS,
         shockInputs=("demandGrowth", "marginDelta", "debtRate"),
         actionInputs=("capexRatio", "inventoryRatio", "borrow", "repay"),
-        evidenceKind=transitionEvidence,
+        evidenceKind="explicitAssumption",
         provenance="analysis.financial.stepProjection:projectFinancialStep",
         version="1",
+        parameters=asdict(params),
         fn=financialStep,
     )
     initial = WorldState(
@@ -252,7 +254,14 @@ def buildFinancialWorld(
         asOf=inputs.asOf,
         refs=inputs.refs,
     )
-    return WorldModel("company-financial-world", "1", variables, actions, (law,)), initial
+    return WorldModel(
+        "company-financial-world",
+        "1",
+        variables,
+        actions,
+        (law,),
+        stepFrequency="year",
+    ), initial
 
 
 def buildFinancialPath(
@@ -274,7 +283,14 @@ def buildFinancialPath(
         {"demandGrowth": float(demandGrowth[i]), "marginDelta": float(marginDelta[i]), "debtRate": float(debtRate[i])}
         for i in range(len(demandGrowth))
     )
-    return ScenarioPath(pathId, steps, weight=weight, weightKind=weightKind, refs=refs)
+    return ScenarioPath(
+        pathId,
+        steps,
+        weight=weight,
+        weightKind=weightKind,
+        refs=refs,
+        frequency="year",
+    )
 
 
 def buildFinancialStrategy(
@@ -285,6 +301,7 @@ def buildFinancialStrategy(
     borrow: Sequence[float],
     repay: Sequence[float],
     refs: tuple[str, ...] = (),
+    isBaseline: bool = False,
 ) -> StrategySpec:
     """기간별 투자, 재고, 차입, 상환 계획을 하나의 전략으로 만든다."""
 
@@ -300,7 +317,7 @@ def buildFinancialStrategy(
         }
         for i in range(len(capexRatio))
     )
-    return StrategySpec(strategyId, actions, refs=refs)
+    return StrategySpec(strategyId, actions, refs=refs, isBaseline=isBaseline)
 
 
 def runFinancialStrategies(
@@ -310,14 +327,12 @@ def runFinancialStrategies(
     *,
     debtLimit: float,
     maxFinancing: float,
-    transitionEvidence: str = "explicitAssumption",
 ) -> SimulationRun:
     """동일한 회사 상태와 세계 경로에서 여러 재무 전략을 비교한다."""
 
     model, initial = buildFinancialWorld(
         inputs,
         maxFinancing=maxFinancing,
-        transitionEvidence=transitionEvidence,
     )
     constraints = (
         ConstraintSpec("cash", "ge", 0.0),
@@ -329,4 +344,12 @@ def runFinancialStrategies(
         ObjectiveSpec("netCash", direction="maximize", risk="worst"),
         ObjectiveSpec("debt", direction="minimize", risk="worst"),
     )
-    return simulateWorld(model, initial, paths, strategies, constraints=constraints, objectives=objectives)
+    return simulateWorld(
+        model,
+        initial,
+        paths,
+        strategies,
+        constraints=constraints,
+        objectives=objectives,
+        inputWarnings=inputs.warnings,
+    )
