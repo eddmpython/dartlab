@@ -294,6 +294,29 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
   hindcast admission, EDGAR 실제 회사 수직절편, closed-loop 정책, UI는 아직 미구현이다. 현재 성취는
   "진짜로 걷는 실행기와 KR 1사 연결"이지, 검증된 최적전략이나 예측확률의 완성이 아니다.
 
+### 0c-30. 관측 상태 기반 폐루프 정책과 compact 대량경로 실행 (2026-07-13)
+
+- **폐루프 정책 수직절편**: `StrategySpec`가 고정 행동 일정뿐 아니라 version과 provenance가 있는
+  `policyFn`을 가질 수 있다. 정책 입력은 현재 step, 직전 기간까지 관측된 state와 직전 발행 행동뿐이다.
+  현재 기간 shock, path 객체, 미래 결과는 구조적으로 전달하지 않는다. 같은 정책도 1기 수요가 달랐다면
+  2기 재고 또는 투자 행동을 다르게 낼 수 있어, 사전에 고정한 전략표 비교를 넘어 feedback control을
+  표현한다.
+- **행동 지연 정합**: lead step이 있는 행동은 고정 schedule을 다시 읽지 않고 정책이 실제로 발행한
+  action history에서 유효 행동을 찾는다. 정책 출력도 정적 전략과 같은 action id, finite, bounds 계약으로
+  매 step 검증한다. 정책 함수와 version은 executable hash에 들어가고 각 path trace에 version과
+  provenance가 남는다.
+- **bounded-memory 실행**: `traceLimit`을 지정하면 전체 `strategy x path` trace를 반환 메모리에 쌓지
+  않는다. 한 trace씩 전개해 평균과 worst 목적값 및 위반 수를 온라인 집계하고, 모든 trace는 순서가
+  결속된 chain root에 포함한다. 따라서 compact와 full 실행은 같은 전체 `traceRoot`와 수치적으로 같은
+  집계 목적값을 가지며, 반환 trace와 path별 objective 배열만 지정 상한으로 줄어든다. 결과에는 전체와
+  보존 trace 수를 함께 기록한다.
+- **정직한 risk 한계**: full 실행의 exact CVaR은 유지한다. compact 실행은 아직 외부정렬 또는
+  disk spill 집계가 없어 exact CVaR을 지원한다고 가장하지 않고 실행 전에 차단한다. 대량 CVaR spill,
+  대표 trace의 stratified retention, 정책 admission과 OOS 평가 인증은 후속이다.
+- **검증**: `_attempts/closedLoopPolicy` 2건과 `_attempts/boundedWorldExecution` 2건을 먼저 통과시킨 뒤
+  본진에 폐루프 반응, 현재 shock 비가시성, 실제 발행 행동의 lead 적용, 정책 executable hash,
+  compact 집계와 전체 trace root 동일성, CVaR 기권 회귀를 승격했다.
+
 ### 0c-29. 분기 전이, 파라미터 불확실성, 실행 인증 P0 보강 (2026-07-13)
 
 - **전문가 재감사 결론**: 경로모형, DART와 EDGAR PIT, admission 적대검토에서 분기 grid에 연간

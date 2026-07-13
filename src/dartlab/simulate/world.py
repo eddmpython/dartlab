@@ -84,6 +84,22 @@ LawFn = Callable[[StepContext], Mapping[str, float]]
 
 
 @dataclass(frozen=True)
+class PolicyContext:
+    """폐루프 정책에 현재 결정시점까지 관측된 상태와 직전 발행 행동만 제공한다."""
+
+    step: int
+    prior: Mapping[str, float]
+    priorActions: Mapping[str, float]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "prior", _freezeMapping(self.prior))
+        object.__setattr__(self, "priorActions", _freezeMapping(self.priorActions))
+
+
+PolicyFn = Callable[[PolicyContext], Mapping[str, float]]
+
+
+@dataclass(frozen=True)
 class LawCertificate:
     """법칙 실행물, 계약, 파라미터, 검증 증거를 하나의 digest로 묶는다."""
 
@@ -167,12 +183,15 @@ class ScenarioPath:
 
 @dataclass(frozen=True)
 class StrategySpec:
-    """미래 결과를 읽지 않는 기간별 행동 일정을 선언한다."""
+    """미래를 읽지 않는 행동 일정 또는 관측 상태 기반 폐루프 정책을 선언한다."""
 
     strategyId: str
     actionsByStep: tuple[Mapping[str, float], ...]
     refs: tuple[str, ...] = ()
     isBaseline: bool = False
+    policyVersion: str = ""
+    policyProvenance: str = ""
+    policyFn: PolicyFn | None = field(default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "actionsByStep", tuple(_freezeMapping(step) for step in self.actionsByStep))
@@ -250,6 +269,8 @@ class PathTrace:
     pathId: str
     initial: Mapping[str, float]
     steps: tuple[StepTrace, ...]
+    policyVersion: str
+    policyProvenance: str
     status: str
     reason: str | None = None
 
@@ -279,6 +300,8 @@ class SimulationRun:
     dataVintageHash: str
     resultHash: str
     traceRoot: str
+    traceCount: int
+    retainedTraceCount: int
     status: str
     decisionStatus: str
     weightLabel: str
@@ -655,6 +678,33 @@ def _validateValue(model: WorldModel, variableId: str, value: float | None, labe
     return number
 
 
+def _cleanIssuedActions(
+    model: WorldModel,
+    strategyId: str,
+    step: int,
+    issued: Mapping[str, float],
+) -> dict[str, float]:
+    """정책 또는 일정이 낸 행동 집합과 범위를 같은 계약으로 검증한다."""
+
+    if not isinstance(issued, Mapping):
+        raise SimulationSpecError(f"strategy {strategyId} step {step} must return an action mapping")
+    actionById = {action.actionId: action for action in model.actions}
+    if set(issued) != set(actionById):
+        missing = sorted(set(actionById) - set(issued))
+        unknown = sorted(set(issued) - set(actionById))
+        raise SimulationSpecError(
+            f"strategy {strategyId} step {step} action mismatch; missing={missing}, unknown={unknown}"
+        )
+    clean: dict[str, float] = {}
+    for name, value in issued.items():
+        action = actionById[name]
+        number = _finite(value, f"strategy.{strategyId}.{step}.{name}")
+        if number < action.lower - 1e-12 or number > action.upper + 1e-12:
+            raise SimulationSpecError(f"action outside bounds: {name}")
+        clean[name] = number
+    return clean
+
+
 def _checkInputs(
     model: WorldModel,
     initial: WorldState,
@@ -684,7 +734,6 @@ def _checkInputs(
     weightKinds = {path.weightKind for path in paths}
     if len(weightKinds) != 1:
         raise SimulationSpecError("all paths must share one weight interpretation")
-    actionIds = {a.actionId for a in model.actions}
     shockIds = {v.variableId for v in model.variables if v.role == "shock"}
     pathParameterIds = {name for law in model.laws for name in law.pathParameterInputs}
     requiredInitial = {name for law in model.laws for name in law.priorInputs}
@@ -745,17 +794,21 @@ def _checkInputs(
         totalWeight = sum(float(path.weight) for path in paths if path.weight is not None)
         if abs(totalWeight - 1.0) > 1e-9:
             raise SimulationSpecError("calibrated path weights must sum to one")
-    actionById = {a.actionId: a for a in model.actions}
     for strategy in strategies:
-        for step, issued in enumerate(strategy.actionsByStep):
-            if set(issued) != actionIds:
-                missing = sorted(actionIds - set(issued))
-                raise SimulationSpecError(f"strategy {strategy.strategyId} step {step} missing actions: {missing}")
-            for name, value in issued.items():
-                action = actionById[name]
-                number = _finite(value, f"strategy.{strategy.strategyId}.{step}.{name}")
-                if number < action.lower - 1e-12 or number > action.upper + 1e-12:
-                    raise SimulationSpecError(f"action outside bounds: {name}")
+        if strategy.policyFn is not None:
+            if not callable(strategy.policyFn):
+                raise SimulationSpecError(f"closed-loop policy must be callable: {strategy.strategyId}")
+            if any(issued for issued in strategy.actionsByStep):
+                raise SimulationSpecError(
+                    f"closed-loop strategy cannot also carry an action schedule: {strategy.strategyId}"
+                )
+            if not strategy.policyVersion or not strategy.policyProvenance:
+                raise SimulationSpecError(
+                    f"closed-loop strategy needs policy version and provenance: {strategy.strategyId}"
+                )
+        else:
+            for step, issued in enumerate(strategy.actionsByStep):
+                _cleanIssuedActions(model, strategy.strategyId, step, issued)
     return horizon
 
 
@@ -850,20 +903,32 @@ def simulateWorld(
     constraints: tuple[ConstraintSpec, ...] = (),
     objectives: tuple[ObjectiveSpec, ...] = (),
     inputWarnings: tuple[str, ...] = (),
+    traceLimit: int | None = None,
 ) -> SimulationRun:
     """Evolve every strategy over the same explicit world paths.
 
-    Strategies contain schedules only.  They receive no path object or future
-    outcome, which makes look-ahead unavailable by construction in this slice.
+    Static strategies contain schedules. Closed-loop policies receive only the
+    state and action known before the current shock, never a path or future
+    outcome.
     """
 
     horizon = _checkInputs(model, initial, paths, strategies)
+    if traceLimit is not None and (not isinstance(traceLimit, int) or traceLimit < 0):
+        raise SimulationSpecError("traceLimit must be a nonnegative integer or None")
     variableIds = {variable.variableId for variable in model.variables}
     for objective in objectives:
         if objective.metric not in variableIds:
             raise SimulationSpecError(f"unknown objective metric: {objective.metric}")
-        if not math.isfinite(float(objective.tailFraction)):
+        if (
+            objective.reducer not in {"terminal", "minimum", "maximum", "cumulative"}
+            or objective.direction not in {"maximize", "minimize"}
+            or objective.risk not in {"worst", "average", "cvar"}
+        ):
+            raise SimulationSpecError(f"invalid objective contract: {objective.metric}")
+        if not math.isfinite(float(objective.tailFraction)) or not 0 < objective.tailFraction <= 1:
             raise SimulationSpecError(f"non-finite objective contract: {objective.metric}")
+        if traceLimit is not None and objective.risk == "cvar":
+            raise SimulationSpecError("compact trace retention cannot aggregate exact cvar")
     for constraint in constraints:
         if (
             constraint.metric not in variableIds
@@ -873,19 +938,45 @@ def simulateWorld(
             raise SimulationSpecError(f"invalid constraint: {constraint.metric}")
 
     actionById = {action.actionId: action for action in model.actions}
+    weights = [1.0 if path.weight is None else float(path.weight) for path in paths]
     traces: list[PathTrace] = []
+    traceChain = sha256()
+    traceCount = 0
+    objectiveValues: dict[str, list[list[float]]] = {
+        strategy.strategyId: [[] for _ in objectives] for strategy in strategies
+    }
+    objectiveNumerators: dict[str, list[float]] = {
+        strategy.strategyId: [0.0 for _ in objectives] for strategy in strategies
+    }
+    objectiveDenominators: dict[str, list[float]] = {
+        strategy.strategyId: [0.0 for _ in objectives] for strategy in strategies
+    }
+    objectiveWorst: dict[str, list[float]] = {
+        strategy.strategyId: [math.inf for _ in objectives] for strategy in strategies
+    }
+    breachCounts = {strategy.strategyId: 0 for strategy in strategies}
     for strategy in strategies:
-        for path in paths:
+        for pathIndex, path in enumerate(paths):
             prior = {name: _finite(value, f"initial.{name}") for name, value in initial.values.items()}
             stepTraces: list[StepTrace] = []
+            issuedHistory: list[dict[str, float]] = []
             for step in range(horizon):
-                issued = {name: float(value) for name, value in strategy.actionsByStep[step].items()}
+                if strategy.policyFn is None:
+                    rawIssued = strategy.actionsByStep[step]
+                else:
+                    priorActions = issuedHistory[-1] if issuedHistory else {name: 0.0 for name in actionById}
+                    policyContext = PolicyContext(
+                        step=step,
+                        prior=_freezeMapping(prior),
+                        priorActions=_freezeMapping(priorActions),
+                    )
+                    rawIssued = strategy.policyFn(policyContext)
+                issued = _cleanIssuedActions(model, strategy.strategyId, step, rawIssued)
+                issuedHistory.append(issued)
                 effective: dict[str, float] = {}
                 for actionId, action in actionById.items():
                     sourceStep = step - action.leadSteps
-                    effective[actionId] = (
-                        float(strategy.actionsByStep[sourceStep][actionId]) if sourceStep >= 0 else 0.0
-                    )
+                    effective[actionId] = issuedHistory[sourceStep][actionId] if sourceStep >= 0 else 0.0
                 actionCost = sum(abs(issued[name]) * actionById[name].costPerUnit for name in issued)
                 shocks = {
                     name: _finite(value, f"path.{path.pathId}.{step}.{name}")
@@ -968,32 +1059,54 @@ def simulateWorld(
                     )
                 )
                 prior = after
-            traces.append(
-                PathTrace(
-                    strategyId=strategy.strategyId,
-                    pathId=path.pathId,
-                    initial={name: _finite(value, f"initial.{name}") for name, value in initial.values.items()},
-                    steps=tuple(stepTraces),
-                    status="ok",
-                )
+            trace = PathTrace(
+                strategyId=strategy.strategyId,
+                pathId=path.pathId,
+                initial={name: _finite(value, f"initial.{name}") for name, value in initial.values.items()},
+                steps=tuple(stepTraces),
+                policyVersion=strategy.policyVersion,
+                policyProvenance=strategy.policyProvenance,
+                status="ok",
             )
+            traceCount += 1
+            traceChain.update(bytes.fromhex(_stableHash({"trace": trace})))
+            if traceLimit is None or len(traces) < traceLimit:
+                traces.append(trace)
+            breachCounts[strategy.strategyId] += sum(len(item.breaches) for item in trace.steps)
+            for objectiveIndex, objective in enumerate(objectives):
+                value = _pathMetric(trace, objective)
+                weight = weights[pathIndex]
+                if traceLimit is None:
+                    objectiveValues[strategy.strategyId][objectiveIndex].append(value)
+                if objective.risk == "average":
+                    objectiveNumerators[strategy.strategyId][objectiveIndex] += value * weight
+                    objectiveDenominators[strategy.strategyId][objectiveIndex] += weight
+                elif objective.risk == "worst":
+                    objectiveWorst[strategy.strategyId][objectiveIndex] = min(
+                        objectiveWorst[strategy.strategyId][objectiveIndex], value
+                    )
 
-    weights = [1.0 if path.weight is None else float(path.weight) for path in paths]
     evaluations: list[StrategyEvaluation] = []
     for strategy in strategies:
-        strategyTraces = [trace for trace in traces if trace.strategyId == strategy.strategyId]
         objectivePathValues: list[tuple[float, ...]] = []
         objectiveScores: list[float] = []
-        for objective in objectives:
-            values = tuple(_pathMetric(trace, objective) for trace in strategyTraces)
-            objectivePathValues.append(values)
-            objectiveScores.append(_aggregate(list(values), weights, objective))
-        breachCount = sum(len(step.breaches) for trace in strategyTraces for step in trace.steps)
+        for objectiveIndex, objective in enumerate(objectives):
+            if traceLimit is None:
+                values = tuple(objectiveValues[strategy.strategyId][objectiveIndex])
+                objectivePathValues.append(values)
+                objectiveScores.append(_aggregate(list(values), weights, objective))
+            elif objective.risk == "average":
+                numerator = objectiveNumerators[strategy.strategyId][objectiveIndex]
+                denominator = objectiveDenominators[strategy.strategyId][objectiveIndex]
+                objectiveScores.append(numerator / denominator)
+            elif objective.risk == "worst":
+                objectiveScores.append(objectiveWorst[strategy.strategyId][objectiveIndex])
+        breachCount = breachCounts[strategy.strategyId]
         evaluations.append(
             StrategyEvaluation(
                 strategyId=strategy.strategyId,
                 objectiveScores=tuple(objectiveScores),
-                pathValues=tuple(objectivePathValues),
+                pathValues=tuple(objectivePathValues) if traceLimit is None else (),
                 breachCount=breachCount,
                 feasible=breachCount == 0,
             )
@@ -1013,6 +1126,10 @@ def simulateWorld(
     policyAdmissionIssues = [action.actionId for action in model.actions]
     pathAdmissionIssues = [path.pathId for path in paths if path.validationStatus != "admitted"]
     warnings: list[str] = list(inputWarnings)
+    if traceLimit is not None:
+        warnings.append(
+            f"compact trace retention: retained {len(traces)} of {traceCount}; path-level objective values omitted"
+        )
     if unqualifiedLaws:
         warnings.append(f"unqualified laws: {','.join(unqualifiedLaws)}")
     if assumedLaws or assumedActions or assumedActionLaws:
@@ -1074,6 +1191,7 @@ def simulateWorld(
         "constraints": constraints,
         "objectives": objectives,
         "inputWarnings": inputWarnings,
+        "traceLimit": traceLimit,
     }
     runHash = _stableHash(payload)
     executableHash = _stableHash(
@@ -1081,6 +1199,11 @@ def simulateWorld(
             "modelId": model.modelId,
             "modelVersion": model.version,
             "laws": tuple((law.lawId, law.version, law.fn) for law in model.laws),
+            "policies": tuple(
+                (strategy.strategyId, strategy.policyVersion, strategy.policyFn)
+                for strategy in strategies
+                if strategy.policyFn is not None
+            ),
         }
     )
     parameterHash = _stableHash(
@@ -1093,7 +1216,7 @@ def simulateWorld(
         }
     )
     dataVintageHash = _stableHash({"initial": initial, "paths": paths})
-    traceRoot = _stableHash({"traces": tuple(traces)})
+    traceRoot = _stableHash({"traceCount": traceCount, "traceChain": traceChain.hexdigest()})
     resultPayload = {
         "status": "partial" if unqualifiedLaws else "ok",
         "decisionStatus": decisionStatus,
@@ -1102,6 +1225,8 @@ def simulateWorld(
         "paretoStrategies": pareto,
         "evaluations": evaluationTuple,
         "traceRoot": traceRoot,
+        "traceCount": traceCount,
+        "retainedTraceCount": len(traces),
         "constraints": constraints,
         "objectives": objectives,
         "warnings": tuple(warnings),
@@ -1113,6 +1238,8 @@ def simulateWorld(
         dataVintageHash=dataVintageHash,
         resultHash=_stableHash(resultPayload),
         traceRoot=traceRoot,
+        traceCount=traceCount,
+        retainedTraceCount=len(traces),
         status="partial" if unqualifiedLaws else "ok",
         decisionStatus=decisionStatus,
         weightLabel=weightLabel,

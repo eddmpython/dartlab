@@ -542,3 +542,94 @@ def testUndeclaredPathParameterIsRejected():
     path = replace(_path("base", (10.0,) * 4), parameterDraws={"unknown": 1.0})
     with pytest.raises(SimulationSpecError, match="unknown path parameters"):
         _run(path, _strategy("noop", (0.0,) * 4))
+
+
+def testClosedLoopPolicyReactsToObservedStateWithoutSeeingCurrentShock():
+    seenKeys: list[set[str]] = []
+
+    def policy(ctx):
+        seenKeys.append(set(ctx.prior))
+        priorRevenue = ctx.prior.get("revenue", 20.0)
+        return {"capexCut": 1.0 if priorRevenue < 10.0 else 0.0}
+
+    paths = (
+        ScenarioPath("calm", ({"demand": 4.0, "rate": 0.05},) * 3),
+        ScenarioPath("surge", ({"demand": 10.0, "rate": 0.05},) * 3),
+    )
+    strategy = StrategySpec(
+        "adaptive",
+        ({},) * 3,
+        policyVersion="1",
+        policyProvenance="test:revenue-threshold",
+        policyFn=policy,
+    )
+    run = simulateWorld(_model(), _state(), paths, (strategy,))
+    calm = next(trace for trace in run.traces if trace.pathId == "calm")
+    surge = next(trace for trace in run.traces if trace.pathId == "surge")
+    assert calm.steps[0].issuedActions == surge.steps[0].issuedActions == {"capexCut": 0.0}
+    assert calm.steps[1].issuedActions == {"capexCut": 1.0}
+    assert surge.steps[1].issuedActions == {"capexCut": 0.0}
+    assert all("demand" not in keys and "rate" not in keys for keys in seenKeys)
+    assert calm.policyVersion == "1"
+    assert calm.policyProvenance == "test:revenue-threshold"
+
+
+def testClosedLoopPolicyExecutableChangesExecutableHash():
+    path = ScenarioPath("path", ({"demand": 10.0, "rate": 0.05},) * 2)
+
+    def preserve(_ctx):
+        return {"capexCut": 0.0}
+
+    def cut(_ctx):
+        return {"capexCut": 1.0}
+
+    common = {
+        "strategyId": "adaptive",
+        "actionsByStep": ({},) * 2,
+        "policyVersion": "1",
+        "policyProvenance": "test:hash",
+    }
+    first = simulateWorld(_model(), _state(), (path,), (StrategySpec(**common, policyFn=preserve),))
+    second = simulateWorld(_model(), _state(), (path,), (StrategySpec(**common, policyFn=cut),))
+    assert first.executableHash != second.executableHash
+    assert first.resultHash != second.resultHash
+
+
+def testCompactTraceRetentionKeepsExactAverageAndWholeTraceRoot():
+    paths = tuple(
+        ScenarioPath(
+            f"path-{index:03d}",
+            ({"demand": float(5 + index % 7), "rate": 0.05},) * 4,
+        )
+        for index in range(50)
+    )
+    strategies = (_strategy("noop", (0.0,) * 4), _strategy("cut", (0.5,) * 4))
+    objectives = (ObjectiveSpec("netCash", risk="average"),)
+    full = simulateWorld(_model(), _state(), paths, strategies, objectives=objectives)
+    compact = simulateWorld(
+        _model(),
+        _state(),
+        paths,
+        strategies,
+        objectives=objectives,
+        traceLimit=3,
+    )
+    assert compact.traceCount == full.traceCount == 100
+    assert compact.retainedTraceCount == len(compact.traces) == 3
+    assert compact.traceRoot == full.traceRoot
+    for compactEvaluation, fullEvaluation in zip(compact.evaluations, full.evaluations, strict=True):
+        assert compactEvaluation.objectiveScores == pytest.approx(fullEvaluation.objectiveScores)
+    assert all(item.pathValues == () for item in compact.evaluations)
+
+
+def testCompactTraceRetentionRejectsExactCvarUntilSpillAggregationExists():
+    path = ScenarioPath("path", ({"demand": 10.0, "rate": 0.05},) * 2)
+    with pytest.raises(SimulationSpecError, match="compact trace retention.*cvar"):
+        simulateWorld(
+            _model(),
+            _state(),
+            (path,),
+            (_strategy("noop", (0.0,) * 2),),
+            objectives=(ObjectiveSpec("netCash", risk="cvar"),),
+            traceLimit=0,
+        )
