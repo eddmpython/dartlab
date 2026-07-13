@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720">
+  <rect width="1200" height="720" fill="#0a0e1a"/>
+
+  <text x="600" y="46" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="22" font-weight="700" fill="#f1f5f9">조선 4사, 같은 사이클 다른 체질 (2026Q1)</text>
+  <text x="600" y="72" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">영업이익률과 재무 체력 한눈 비교</text>
+
+  <!-- OPM 막대: base y=430, 9px per % -->
+  <line x1="90" y1="430" x2="1110" y2="430" stroke="#334155" stroke-width="1"/>
+  <text x="70" y="434" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#64748b">0%</text>
+  <line x1="90" y1="340" x2="1110" y2="340" stroke="#1e2d45" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="70" y="344" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#64748b">10%</text>
+  <line x1="90" y1="250" x2="1110" y2="250" stroke="#1e2d45" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="70" y="254" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#64748b">20%</text>
+
+  <!-- 한화오션 (강조) 13.7 -> 123px -->
+  <rect x="200" y="307" width="120" height="123" rx="4" fill="#fbbf24"/>
+  <text x="260" y="295" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="20" font-weight="700" fill="#fbbf24">13.7%</text>
+
+  <!-- HD현대중공업 15.3 -> 138px -->
+  <rect x="420" y="292" width="120" height="138" rx="4" fill="#3b82f6"/>
+  <text x="480" y="280" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="18" font-weight="700" fill="#93c5fd">15.3%</text>
+
+  <!-- 삼성중공업 9.4 -> 85px -->
+  <rect x="640" y="345" width="120" height="85" rx="4" fill="#64748b"/>
+  <text x="700" y="333" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="18" font-weight="700" fill="#94a3b8">9.4%</text>
+
+  <!-- 대한조선 26.8 -> 241px -->
+  <rect x="860" y="189" width="120" height="241" rx="4" fill="#22c55e"/>
+  <text x="920" y="177" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="18" font-weight="700" fill="#22c55e">26.8%</text>
+
+  <!-- 회사명 -->
+  <text x="260" y="454" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="700" fill="#fbbf24">한화오션</text>
+  <text x="480" y="454" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="600" fill="#e2e8f0">HD현대중공업</text>
+  <text x="700" y="454" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="600" fill="#e2e8f0">삼성중공업</text>
+  <text x="920" y="454" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="600" fill="#e2e8f0">대한조선</text>
+
+  <!-- 메트릭 표 -->
+  <line x1="90" y1="480" x2="1110" y2="480" stroke="#1e2d45" stroke-width="1"/>
+  <text x="110" y="512" font-family="-apple-system,'Segoe UI',sans-serif" font-size="13" fill="#64748b">분기 매출</text>
+  <text x="260" y="512" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">3.21조</text>
+  <text x="480" y="512" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">5.92조</text>
+  <text x="700" y="512" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">2.90조</text>
+  <text x="920" y="512" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">0.31조</text>
+
+  <line x1="90" y1="528" x2="1110" y2="528" stroke="#1e2d45" stroke-width="1"/>
+  <text x="110" y="560" font-family="-apple-system,'Segoe UI',sans-serif" font-size="13" fill="#64748b">부채비율</text>
+  <text x="260" y="560" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#f59e0b">205%</text>
+  <text x="480" y="560" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#f59e0b">184%</text>
+  <text x="700" y="560" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#ef4444">272%</text>
+  <text x="920" y="560" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#22c55e">45%</text>
+
+  <line x1="90" y1="576" x2="1110" y2="576" stroke="#1e2d45" stroke-width="1"/>
+  <text x="110" y="608" font-family="-apple-system,'Segoe UI',sans-serif" font-size="13" fill="#64748b">dartlab 신용등급</text>
+  <text x="260" y="608" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="700" fill="#fbbf24">dCR-BBB+</text>
+  <text x="480" y="608" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="700" fill="#fbbf24">dCR-BBB+</text>
+  <text x="700" y="608" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="700" fill="#94a3b8">dCR-BBB</text>
+  <text x="920" y="608" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="700" fill="#22c55e">dCR-AA</text>
+
+  <!-- 결론 박스 -->
+  <rect x="90" y="636" width="1020" height="56" rx="8" fill="#0f1623" stroke="#334155" stroke-width="1"/>
+  <text x="600" y="662" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#cbd5e1">대형 3사는 두 자릿수 마진에 나란히 올라섰고, 한화오션은 더 이상 꼴찌가 아니다.</text>
+  <text x="600" y="682" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#fbbf24">여전히 다른 건, 한 선종에 올인해 마진 27%에 부채 45%인 대한조선의 체질이다.</text>
+
+  <text x="600" y="712" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#334155">출처: DART 기반 dartlab 실측 (2026Q1) · 2026-07-13</text>
+</svg>

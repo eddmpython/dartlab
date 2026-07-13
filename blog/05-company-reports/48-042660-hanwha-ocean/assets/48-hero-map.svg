@@ -1,107 +1,71 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720">
   <rect width="1200" height="720" fill="#0a0e1a"/>
 
-  <!-- 상단 제목 -->
-  <text x="600" y="48" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">한화오션 (042660) — 방산을 하는 조선소인데</text>
-  <text x="600" y="74" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="20" font-weight="700" fill="#f1f5f9">OPM이 상선 전문 조선소의 절반인 이유</text>
+  <text x="600" y="46" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="21" font-weight="700" fill="#f1f5f9">자본잠식 직전에서 수주 국내 1위로, 3년의 반전</text>
+  <text x="600" y="72" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">그런데 그 흑자를 만든 건 방산이 아니라 상선이었다</text>
 
-  <!-- 한화오션 박스 -->
-  <rect x="60" y="110" width="400" height="460" rx="12" fill="#0f1623" stroke="#fbbf24" stroke-width="2"/>
-  <text x="260" y="148" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="18" font-weight="700" fill="#fbbf24">한화오션</text>
-  <line x1="80" y1="162" x2="440" y2="162" stroke="#fbbf24" stroke-width="1" opacity="0.4"/>
+  <!-- 좌: 대우조선 2022 -->
+  <rect x="60" y="104" width="440" height="410" rx="12" fill="#0f1623" stroke="#ef4444" stroke-width="1.5"/>
+  <text x="280" y="140" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="17" font-weight="700" fill="#ef4444">대우조선해양 (2022)</text>
+  <text x="280" y="162" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">산업은행 관리, 자본잠식 직전</text>
+  <line x1="84" y1="176" x2="476" y2="176" stroke="#ef4444" stroke-width="1" opacity="0.35"/>
 
-  <!-- 한화오션 데이터 행 -->
-  <text x="100" y="198" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">매출</text>
-  <text x="440" y="198" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">12.78조 (2025)</text>
+  <text x="100" y="212" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">영업이익률</text>
+  <text x="476" y="212" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="700" fill="#ef4444">-33.2%</text>
+  <line x1="100" y1="226" x2="476" y2="226" stroke="#1e2d45" stroke-width="1"/>
+  <text x="100" y="258" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">자본총계</text>
+  <text x="476" y="258" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="700" fill="#ef4444">0.74조</text>
+  <line x1="100" y1="272" x2="476" y2="272" stroke="#1e2d45" stroke-width="1"/>
+  <text x="100" y="304" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">부채비율</text>
+  <text x="476" y="304" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="700" fill="#ef4444">1,542%</text>
+  <line x1="100" y1="318" x2="476" y2="318" stroke="#1e2d45" stroke-width="1"/>
+  <text x="100" y="350" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">수주 점유율 (2023)</text>
+  <text x="476" y="350" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="700" fill="#ef4444">5.2%</text>
+  <line x1="100" y1="364" x2="476" y2="364" stroke="#1e2d45" stroke-width="1"/>
+  <text x="100" y="396" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">이익잉여금 (2023)</text>
+  <text x="476" y="396" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="700" fill="#ef4444">-3.03조</text>
 
-  <line x1="80" y1="210" x2="440" y2="210" stroke="#1e2d45" stroke-width="1"/>
+  <rect x="100" y="440" width="376" height="52" rx="6" fill="#ef444415"/>
+  <text x="280" y="463" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#ef4444">저가 수주 충당금 + 분식 5.4조의 상처</text>
+  <text x="280" y="481" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">24년간 세 번 주인을 놓친 회사</text>
 
-  <text x="100" y="242" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">OPM</text>
-  <text x="440" y="242" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#22c55e">9.1% <tspan fill="#64748b" font-size="12">(2021: -39%)</tspan></text>
+  <!-- 중앙 화살표 -->
+  <text x="600" y="290" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="30" fill="#fbbf24">▶</text>
+  <text x="600" y="326" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="700" fill="#fbbf24">3년</text>
+  <text x="600" y="348" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">한화 인수</text>
+  <text x="600" y="366" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">유증 2조</text>
 
-  <line x1="80" y1="254" x2="440" y2="254" stroke="#1e2d45" stroke-width="1"/>
+  <!-- 우: 한화오션 2026Q1 -->
+  <rect x="700" y="104" width="440" height="410" rx="12" fill="#0f1623" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="920" y="140" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="17" font-weight="700" fill="#22c55e">한화오션 (2026Q1)</text>
+  <text x="920" y="162" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">민영화, 수주 국내 1위</text>
+  <line x1="724" y1="176" x2="1116" y2="176" stroke="#22c55e" stroke-width="1" opacity="0.35"/>
 
-  <text x="100" y="286" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">사업 구성</text>
-  <text x="440" y="286" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#f1f5f9">방산 16% + 상선 82%</text>
+  <text x="740" y="212" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">영업이익률</text>
+  <text x="1116" y="212" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="700" fill="#22c55e">+13.7%</text>
+  <line x1="740" y1="226" x2="1116" y2="226" stroke="#1e2d45" stroke-width="1"/>
+  <text x="740" y="258" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">자본총계</text>
+  <text x="1116" y="258" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="700" fill="#22c55e">6.83조</text>
+  <line x1="740" y1="272" x2="1116" y2="272" stroke="#1e2d45" stroke-width="1"/>
+  <text x="740" y="304" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">부채비율</text>
+  <text x="1116" y="304" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="700" fill="#f59e0b">205%</text>
+  <line x1="740" y1="318" x2="1116" y2="318" stroke="#1e2d45" stroke-width="1"/>
+  <text x="740" y="350" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">수주 점유율 (2025)</text>
+  <text x="1116" y="350" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="700" fill="#22c55e">30.9% (1위)</text>
+  <line x1="740" y1="364" x2="1116" y2="364" stroke="#1e2d45" stroke-width="1"/>
+  <text x="740" y="396" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">신용등급</text>
+  <text x="1116" y="396" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="700" fill="#22c55e">dCR-BBB+</text>
 
-  <line x1="80" y1="298" x2="440" y2="298" stroke="#1e2d45" stroke-width="1"/>
-
-  <text x="100" y="330" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">수주잔고</text>
-  <text x="440" y="330" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#fbbf24">34.5조</text>
-
-  <line x1="80" y1="342" x2="440" y2="342" stroke="#1e2d45" stroke-width="1"/>
-
-  <text x="100" y="374" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">부채비율</text>
-  <text x="440" y="374" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#ef4444">226%</text>
-
-  <line x1="80" y1="386" x2="440" y2="386" stroke="#1e2d45" stroke-width="1"/>
-
-  <text x="100" y="418" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">신용등급</text>
-  <text x="440" y="418" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#fbbf24">dCR-BBB</text>
-
-  <!-- 방산 배지 -->
-  <rect x="100" y="450" width="80" height="28" rx="4" fill="#ef444422"/>
-  <text x="140" y="469" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" font-weight="600" fill="#ef4444">방산 보유</text>
-  <rect x="196" y="450" width="110" height="28" rx="4" fill="#fbbf2422"/>
-  <text x="251" y="469" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" font-weight="600" fill="#fbbf24">다각화 포트폴리오</text>
-
-  <!-- 가운데 질문 영역 -->
-  <rect x="490" y="200" width="220" height="340" rx="10" fill="#0f1623" stroke="#334155" stroke-width="1" stroke-dasharray="4,4"/>
-  <text x="600" y="350" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="16" font-weight="700" fill="#fbbf24">방산 프리미엄은</text>
-  <text x="600" y="374" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="16" font-weight="700" fill="#fbbf24">어디로?</text>
-  <!-- 화살표 왼쪽 -->
-  <path d="M490 370 L460 370" stroke="#fbbf24" stroke-width="2" fill="none" marker-end="url(#arrowL)"/>
-  <!-- 화살표 오른쪽 -->
-  <path d="M710 370 L740 370" stroke="#fbbf24" stroke-width="2" fill="none" marker-end="url(#arrowR)"/>
-
-  <defs>
-    <marker id="arrowL" markerWidth="8" markerHeight="8" refX="0" refY="3" orient="auto">
-      <path d="M0,3 L8,0 L8,6 Z" fill="#fbbf24"/>
-    </marker>
-    <marker id="arrowR" markerWidth="8" markerHeight="8" refX="8" refY="3" orient="auto">
-      <path d="M8,3 L0,0 L0,6 Z" fill="#fbbf24"/>
-    </marker>
-  </defs>
-
-  <!-- 대한조선 박스 -->
-  <rect x="740" y="110" width="400" height="460" rx="12" fill="#0f1623" stroke="#64748b" stroke-width="2" stroke-dasharray="8,4"/>
-  <text x="940" y="148" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="18" font-weight="700" fill="#94a3b8">대한조선 (비교)</text>
-  <line x1="760" y1="162" x2="1120" y2="162" stroke="#64748b" stroke-width="1" opacity="0.4"/>
-
-  <text x="780" y="198" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">매출</text>
-  <text x="1120" y="198" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#94a3b8">1.2조</text>
-
-  <line x1="760" y1="210" x2="1120" y2="210" stroke="#1e2d45" stroke-width="1"/>
-
-  <text x="780" y="242" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">OPM</text>
-  <text x="1120" y="242" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#22c55e">24%</text>
-
-  <line x1="760" y1="254" x2="1120" y2="254" stroke="#1e2d45" stroke-width="1"/>
-
-  <text x="780" y="286" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">사업 구성</text>
-  <text x="1120" y="286" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#94a3b8">상선 100%</text>
-
-  <line x1="760" y1="298" x2="1120" y2="298" stroke="#1e2d45" stroke-width="1"/>
-
-  <text x="780" y="330" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">전략</text>
-  <text x="1120" y="330" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#94a3b8">수에즈막스 올인</text>
-
-  <line x1="760" y1="342" x2="1120" y2="342" stroke="#1e2d45" stroke-width="1"/>
-
-  <text x="780" y="374" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">방산</text>
-  <text x="1120" y="374" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#64748b">0%</text>
-
-  <!-- 집중도 배지 -->
-  <rect x="780" y="450" width="120" height="28" rx="4" fill="#22c55e22"/>
-  <text x="840" y="469" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" font-weight="600" fill="#22c55e">선종 집중 전략</text>
-
-  <!-- OPM 격차 표시 -->
-  <text x="940" y="490" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="13" fill="#64748b">OPM 격차</text>
-  <text x="940" y="512" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="22" font-weight="700" fill="#ef4444">×2.6</text>
+  <rect x="740" y="440" width="376" height="52" rx="6" fill="#22c55e15"/>
+  <text x="920" y="463" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#22c55e">수주잔고 34.5조, 매출 2.7년치</text>
+  <text x="920" y="481" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">매출원가율 98.7%(23)에서 80.5%로</text>
 
   <!-- 하단 결론 -->
-  <rect x="60" y="600" width="1080" height="90" rx="8" fill="#0f1623" stroke="#334155" stroke-width="1"/>
-  <text x="600" y="634" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">결론</text>
-  <text x="600" y="660" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="600" fill="#f1f5f9">방산이 마진을 올려주는 게 아니라 —</text>
-  <text x="600" y="682" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="600" fill="#fbbf24">조선업에서 마진을 결정하는 건 선종 집중도와 저가 수주 탈출 속도</text>
+  <rect x="60" y="540" width="1080" height="130" rx="10" fill="#0f1623" stroke="#334155" stroke-width="1"/>
+  <text x="600" y="574" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">반전의 정체</text>
+  <text x="600" y="602" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="16" font-weight="700" fill="#f1f5f9">흑자를 만든 건 방산 프리미엄이 아니라 상선 슈퍼사이클 잔고였다.</text>
+  <text x="600" y="632" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#94a3b8">대한조선 절반의 마진(26.8% 대 13.7%), 부채 205%, 이익 변동계수 4.04.</text>
+  <text x="600" y="654" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#fbbf24">아직 수출로 증명되지 않은, 얇은 얼음 위의 반전.</text>
+
+  <text x="600" y="706" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#334155">출처: DART 기반 dartlab 실측 · 2026-07-13</text>
 </svg>

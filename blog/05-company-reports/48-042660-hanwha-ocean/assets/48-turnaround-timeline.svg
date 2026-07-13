@@ -1,18 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720">
   <rect width="1200" height="720" fill="#0a0e1a"/>
 
-  <!-- 제목 -->
-  <text x="600" y="44" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="22" font-weight="700" fill="#f1f5f9">OPM 턴어라운드 궤적 (2017–2025)</text>
-  <text x="600" y="70" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">한화오션 영업이익률 9개년 흐름</text>
-
-  <!-- 차트 영역 정의 -->
-  <!-- X: 80~1120, Y: 120(top/+15%) ~ 560(bottom/-40%) -->
-  <!-- 총 Y범위: 55%, 1px = 440/55 = 8px per % -->
+  <text x="600" y="44" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="22" font-weight="700" fill="#f1f5f9">영업이익률 턴어라운드 궤적 (2017~2026Q1)</text>
+  <text x="600" y="70" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">한화오션 영업이익률: -39%에서 +13.7%로</text>
 
   <defs>
     <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#3b82f6"/>
-      <stop offset="55%" stop-color="#ef4444"/>
+      <stop offset="50%" stop-color="#ef4444"/>
       <stop offset="100%" stop-color="#22c55e"/>
     </linearGradient>
     <filter id="glow">
@@ -21,122 +16,78 @@
     </filter>
   </defs>
 
-  <!-- 그리드 라인 -->
-  <!-- Y=0% 기준선 계산: top=120, 15%→120px, 0%→120+15*8=240 -->
-  <!-- scale: 440px / 55% = 8px per % point -->
-  <!-- Y_zero = 120 + 15*8 = 240 -->
-
-  <!-- 수평 그리드 -->
+  <!-- Y_zero = 240, 8px per % -->
   <line x1="80" y1="120" x2="1120" y2="120" stroke="#1e2d45" stroke-width="1"/>
   <text x="70" y="124" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#64748b">15%</text>
-
   <line x1="80" y1="200" x2="1120" y2="200" stroke="#1e2d45" stroke-width="1"/>
   <text x="70" y="204" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#64748b">5%</text>
-
-  <!-- 0% 기준선 강조 -->
   <line x1="80" y1="240" x2="1120" y2="240" stroke="#334155" stroke-width="2" stroke-dasharray="6,3"/>
   <text x="70" y="244" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#94a3b8">0%</text>
-
   <line x1="80" y1="280" x2="1120" y2="280" stroke="#1e2d45" stroke-width="1"/>
   <text x="70" y="284" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#64748b">-5%</text>
-
   <line x1="80" y1="360" x2="1120" y2="360" stroke="#1e2d45" stroke-width="1"/>
   <text x="70" y="364" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#64748b">-15%</text>
-
   <line x1="80" y1="440" x2="1120" y2="440" stroke="#1e2d45" stroke-width="1"/>
   <text x="70" y="444" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#64748b">-25%</text>
-
   <line x1="80" y1="520" x2="1120" y2="520" stroke="#1e2d45" stroke-width="1"/>
   <text x="70" y="524" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#64748b">-35%</text>
 
-  <line x1="80" y1="552" x2="1120" y2="552" stroke="#1e2d45" stroke-width="1"/>
-  <text x="70" y="556" text-anchor="end" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#64748b">-40%</text>
+  <!-- 음수 영역 -->
+  <polygon points="427,240 542,553 658,506 773,262 773,240" fill="#ef444410"/>
 
-  <!-- X축 연도 -->
-  <!-- 9개 포인트: 2017~2025, 간격 = 1040/8 = 130px -->
-  <!-- X_i = 80 + i*130 -->
-  <!-- Y_i = 240 - opm_i * 8 -->
-
-  <!-- 2017: 6.6% → Y=240-52.8=187 → X=80 -->
-  <!-- 2018: 10.6% → Y=240-84.8=155 → X=210 -->
-  <!-- 2019: 3.5% → Y=240-28=212 → X=340 -->
-  <!-- 2020: 2.2% → Y=240-17.6=222 → X=470 -->
-  <!-- 2021: -39.1% → Y=240+312.8=553 (clamp 552) → X=600 -->
-  <!-- 2022: -33.2% → Y=240+265.6=506 → X=730 -->
-  <!-- 2023: -2.7% → Y=240+21.6=262 → X=860 -->
-  <!-- 2024: 2.2% → Y=240-17.6=222 → X=990 -->
-  <!-- 2025: 9.1% → Y=240-72.8=167 → X=1120 -->
-
-  <!-- 음수 영역 채우기 -->
-  <polygon points="80,240 470,240 470,222 600,552 730,506 860,262 860,240" fill="#ef444410"/>
-
-  <!-- 라인 -->
-  <polyline points="80,187 210,155 340,212 470,222 600,552 730,506 860,262 990,222 1120,167"
+  <!-- 라인 (10 points 2017~2026Q1) -->
+  <polyline points="80,187 196,155 311,212 427,222 542,553 658,506 773,262 889,222 1004,167 1120,130"
     fill="none" stroke="url(#lineGrad)" stroke-width="3" stroke-linejoin="round"/>
 
-  <!-- 포인트 -->
   <circle cx="80" cy="187" r="5" fill="#3b82f6"/>
-  <circle cx="210" cy="155" r="5" fill="#3b82f6"/>
-  <circle cx="340" cy="212" r="5" fill="#f59e0b"/>
-  <circle cx="470" cy="222" r="5" fill="#f59e0b"/>
-  <circle cx="600" cy="552" r="8" fill="#ef4444" filter="url(#glow)"/>
-  <circle cx="730" cy="506" r="6" fill="#ef4444"/>
-  <circle cx="860" cy="262" r="5" fill="#94a3b8"/>
-  <circle cx="990" cy="222" r="5" fill="#22c55e"/>
-  <circle cx="1120" cy="167" r="8" fill="#22c55e" filter="url(#glow)"/>
+  <circle cx="196" cy="155" r="5" fill="#3b82f6"/>
+  <circle cx="311" cy="212" r="5" fill="#f59e0b"/>
+  <circle cx="427" cy="222" r="5" fill="#f59e0b"/>
+  <circle cx="542" cy="553" r="8" fill="#ef4444" filter="url(#glow)"/>
+  <circle cx="658" cy="506" r="6" fill="#ef4444"/>
+  <circle cx="773" cy="262" r="5" fill="#94a3b8"/>
+  <circle cx="889" cy="222" r="5" fill="#22c55e"/>
+  <circle cx="1004" cy="167" r="6" fill="#22c55e"/>
+  <circle cx="1120" cy="130" r="8" fill="#22c55e" filter="url(#glow)"/>
 
-  <!-- 값 레이블 -->
   <text x="80" y="178" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#94a3b8">6.6%</text>
-  <text x="210" y="146" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#94a3b8">10.6%</text>
-  <text x="340" y="203" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#94a3b8">3.5%</text>
-  <text x="470" y="213" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#94a3b8">2.2%</text>
-  <text x="600" y="575" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="13" font-weight="700" fill="#ef4444">-39.1%</text>
-  <text x="730" y="498" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#ef4444">-33.2%</text>
-  <text x="860" y="253" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#94a3b8">-2.7%</text>
-  <text x="990" y="213" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#22c55e">2.2%</text>
-  <text x="1120" y="158" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="13" font-weight="700" fill="#22c55e">9.1%</text>
+  <text x="196" y="146" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#94a3b8">10.6%</text>
+  <text x="311" y="203" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#94a3b8">3.5%</text>
+  <text x="427" y="213" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#94a3b8">2.2%</text>
+  <text x="542" y="576" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="13" font-weight="700" fill="#ef4444">-39.1%</text>
+  <text x="658" y="498" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#ef4444">-33.2%</text>
+  <text x="773" y="253" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#94a3b8">-2.7%</text>
+  <text x="889" y="213" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#22c55e">2.2%</text>
+  <text x="1004" y="158" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#22c55e">9.1%</text>
+  <text x="1120" y="121" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="700" fill="#22c55e">13.7%</text>
 
-  <!-- X축 연도 레이블 -->
-  <text x="80" y="580" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">2017</text>
-  <text x="210" y="580" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">2018</text>
-  <text x="340" y="580" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">2019</text>
-  <text x="470" y="580" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">2020</text>
-  <text x="600" y="580" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#ef4444" font-weight="700">2021</text>
-  <text x="730" y="580" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#ef4444">2022</text>
-  <text x="860" y="580" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#fbbf24">2023</text>
-  <text x="990" y="580" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#22c55e">2024</text>
-  <text x="1120" y="580" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#22c55e" font-weight="700">2025</text>
+  <text x="80" y="600" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">2017</text>
+  <text x="196" y="600" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">2018</text>
+  <text x="311" y="600" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">2019</text>
+  <text x="427" y="600" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">2020</text>
+  <text x="542" y="600" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#ef4444" font-weight="700">2021</text>
+  <text x="658" y="600" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#ef4444">2022</text>
+  <text x="773" y="600" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#fbbf24">2023</text>
+  <text x="889" y="600" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#22c55e">2024</text>
+  <text x="1004" y="600" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#22c55e">2025</text>
+  <text x="1120" y="600" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#22c55e" font-weight="700">26Q1</text>
 
-  <!-- 이벤트 주석 -->
-  <!-- 2019 -->
-  <line x1="340" y1="212" x2="340" y2="310" stroke="#64748b" stroke-width="1" stroke-dasharray="3,3"/>
-  <rect x="260" y="310" width="160" height="36" rx="4" fill="#0f1623" stroke="#334155" stroke-width="1"/>
-  <text x="340" y="327" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#94a3b8">2019</text>
-  <text x="340" y="342" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#f1f5f9">현대중공업 합병 무산</text>
+  <!-- 주석: 2021 바닥 -->
+  <rect x="432" y="430" width="220" height="52" rx="4" fill="#ef444420" stroke="#ef4444" stroke-width="1"/>
+  <text x="542" y="452" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#ef4444" font-weight="700">2021 저가 수주 충당금 폭탄</text>
+  <text x="542" y="470" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#ef4444">영업손실 -1.75조 일시 반영</text>
 
-  <!-- 2021 바닥 -->
-  <rect x="490" y="430" width="220" height="52" rx="4" fill="#ef444420" stroke="#ef4444" stroke-width="1"/>
-  <text x="600" y="452" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#ef4444" font-weight="700">2021 저가 수주 충당금 폭탄</text>
-  <text x="600" y="470" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#ef4444">-1.75조 일시 반영</text>
+  <!-- 2023 한화 인수 -->
+  <line x1="773" y1="240" x2="773" y2="190" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3,3"/>
+  <rect x="683" y="155" width="180" height="36" rx="4" fill="#0f1623" stroke="#fbbf24" stroke-width="1"/>
+  <text x="773" y="172" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#fbbf24">2023</text>
+  <text x="773" y="186" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#f1f5f9">한화그룹 인수 + 유상증자</text>
 
-  <!-- 2022 -->
-  <line x1="730" y1="380" x2="730" y2="350" stroke="#64748b" stroke-width="1" stroke-dasharray="3,3"/>
-  <rect x="640" y="310" width="180" height="40" rx="4" fill="#0f1623" stroke="#334155" stroke-width="1"/>
-  <text x="730" y="328" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#94a3b8">2022</text>
-  <text x="730" y="344" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#f1f5f9">자본 0.74조, 잠식 직전</text>
+  <!-- 2026Q1 가속 -->
+  <line x1="1120" y1="130" x2="1080" y2="98" stroke="#22c55e" stroke-width="1" stroke-dasharray="3,3"/>
+  <rect x="920" y="72" width="265" height="36" rx="4" fill="#0f1623" stroke="#22c55e" stroke-width="1"/>
+  <text x="1052" y="89" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#22c55e">2026Q1</text>
+  <text x="1052" y="103" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#f1f5f9">13.7%, 두 자릿수 가속</text>
 
-  <!-- 2023 -->
-  <line x1="860" y1="240" x2="860" y2="190" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3,3"/>
-  <rect x="770" y="155" width="180" height="36" rx="4" fill="#0f1623" stroke="#fbbf24" stroke-width="1"/>
-  <text x="860" y="172" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#fbbf24">2023</text>
-  <text x="860" y="186" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#f1f5f9">한화그룹 인수 + 유증</text>
-
-  <!-- 2025 -->
-  <line x1="1120" y1="167" x2="1100" y2="130" stroke="#22c55e" stroke-width="1" stroke-dasharray="3,3"/>
-  <rect x="1000" y="100" width="185" height="36" rx="4" fill="#0f1623" stroke="#22c55e" stroke-width="1"/>
-  <text x="1092" y="117" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#22c55e">2025</text>
-  <text x="1092" y="131" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#f1f5f9">OPM 9.1% 완전 흑자</text>
-
-  <!-- 하단 출처 -->
-  <text x="600" y="710" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#334155">출처: DART 사업보고서 기반 dartlab 산출 · 2026-04-18</text>
+  <text x="600" y="710" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#334155">출처: DART 사업보고서 기반 dartlab 산출 (분기 합산 연환산) · 2026-07-13</text>
 </svg>

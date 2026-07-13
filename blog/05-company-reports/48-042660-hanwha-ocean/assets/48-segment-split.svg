@@ -1,113 +1,83 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720">
   <rect width="1200" height="720" fill="#0a0e1a"/>
 
-  <!-- 제목 -->
-  <text x="600" y="44" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="22" font-weight="700" fill="#f1f5f9">방산 vs 상선 — 매출 구조와 수주잔고</text>
+  <text x="600" y="44" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="22" font-weight="700" fill="#f1f5f9">방산 vs 상선: 매출 구조와 수주잔고</text>
   <text x="600" y="68" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">한화오션 2025년 사업 세그먼트 분해</text>
 
-  <!-- 좌측: 매출 파이차트 영역 -->
+  <!-- 좌: 매출 -->
   <text x="300" y="112" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="16" font-weight="600" fill="#f1f5f9">매출 구성 (12.78조)</text>
 
-  <!-- 스택 바 — 매출 -->
-  <!-- 전체 너비 480px, x=60 -->
-  <!-- 상선 82.3% = 395px, 방산 15.9% = 76px, E&I 6.4% = 31px, 기타 1.1% = 5px -->
-  <!-- 실제: 82.3+15.9+6.4+1.1=105.7 — 정규화: 상선=10.52, 방산=2.03, E&I=0.82, 기타=0.14 합=13.51 -->
-  <!-- 비율: 상선=77.9%, 방산=15.0%, E&I=6.1%, 기타=1.0% -->
-  <!-- 너비: 상선=374, 방산=72, E&I=29, 기타=5 -->
-
-  <rect x="60" y="130" width="374" height="60" rx="0" fill="#3b82f6"/>
-  <rect x="434" y="130" width="72" height="60" rx="0" fill="#ef4444"/>
-  <rect x="506" y="130" width="29" height="60" rx="0" fill="#fbbf24"/>
-  <rect x="535" y="130" width="5" height="60" rx="0" fill="#64748b"/>
+  <rect x="60" y="130" width="374" height="60" fill="#3b82f6"/>
+  <rect x="434" y="130" width="72" height="60" fill="#ef4444"/>
+  <rect x="506" y="130" width="29" height="60" fill="#fbbf24"/>
+  <rect x="535" y="130" width="5" height="60" fill="#64748b"/>
   <rect x="60" y="130" width="480" height="60" rx="6" fill="none" stroke="#1e2d45" stroke-width="1"/>
-
-  <!-- 매출 레이블 -->
   <text x="247" y="165" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="13" font-weight="700" fill="#f1f5f9">상선 82.3%</text>
   <text x="247" y="181" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#bfdbfe">10.52조</text>
 
-  <!-- 범례 -->
   <rect x="60" y="212" width="14" height="14" rx="2" fill="#3b82f6"/>
-  <text x="82" y="224" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">상선 — 10.52조 (82.3%)</text>
-
+  <text x="82" y="224" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">상선 (LNG선, VLCC) · 10.52조 (82.3%)</text>
   <rect x="60" y="234" width="14" height="14" rx="2" fill="#ef4444"/>
-  <text x="82" y="246" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">해양·특수선(방산) — 2.03조 (15.9%)</text>
-
+  <text x="82" y="246" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">해양·특수선 (방산) · 2.03조 (15.9%)</text>
   <rect x="60" y="256" width="14" height="14" rx="2" fill="#fbbf24"/>
-  <text x="82" y="268" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">E&amp;I — 0.82조 (6.4%)</text>
-
+  <text x="82" y="268" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">E&amp;I (플랜트) · 0.82조 (6.4%)</text>
   <rect x="60" y="278" width="14" height="14" rx="2" fill="#64748b"/>
-  <text x="82" y="290" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">기타 — 0.14조 (1.1%)</text>
+  <text x="82" y="290" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">기타 · 0.14조 (1.1%)</text>
 
-  <!-- 우측: 수주잔고 -->
+  <!-- 우: 수주잔고 -->
   <text x="900" y="112" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="16" font-weight="600" fill="#f1f5f9">수주잔고 (34.5조)</text>
 
-  <!-- 수주잔고 스택바 -->
-  <!-- 상선=26.0, 방산=6.3, E&I=2.2 합=34.5 -->
-  <!-- 비율: 상선=75.4%, 방산=18.3%, E&I=6.4% -->
-  <!-- 너비480: 상선=362, 방산=88, E&I=31 -->
-
-  <rect x="660" y="130" width="362" height="60" rx="0" fill="#3b82f6"/>
-  <rect x="1022" y="130" width="88" height="60" rx="0" fill="#ef4444"/>
-  <rect x="1110" y="130" width="30" height="60" rx="0" fill="#fbbf24"/>
+  <rect x="660" y="130" width="362" height="60" fill="#3b82f6"/>
+  <rect x="1022" y="130" width="88" height="60" fill="#ef4444"/>
+  <rect x="1110" y="130" width="30" height="60" fill="#fbbf24"/>
   <rect x="660" y="130" width="480" height="60" rx="6" fill="none" stroke="#1e2d45" stroke-width="1"/>
-
   <text x="841" y="165" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="13" font-weight="700" fill="#f1f5f9">상선 75.4%</text>
   <text x="841" y="181" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#bfdbfe">26.0조</text>
 
-  <!-- 수주잔고 범례 -->
   <rect x="660" y="212" width="14" height="14" rx="2" fill="#3b82f6"/>
-  <text x="682" y="224" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">상선 — 26.0조 (75.4%)</text>
-
+  <text x="682" y="224" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">상선 · 26.0조 (75.4%)</text>
   <rect x="660" y="234" width="14" height="14" rx="2" fill="#ef4444"/>
-  <text x="682" y="246" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">해양·특수선(방산) — 6.3조 (18.3%)</text>
-
+  <text x="682" y="246" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">해양·특수선 (방산) · 6.3조 (18.3%)</text>
   <rect x="660" y="256" width="14" height="14" rx="2" fill="#fbbf24"/>
-  <text x="682" y="268" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">E&amp;I — 2.2조 (6.4%)</text>
+  <text x="682" y="268" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#94a3b8">E&amp;I · 2.2조 (6.4%)</text>
 
-  <!-- 중앙 구분선 -->
-  <line x1="600" y1="100" x2="600" y2="310" stroke="#1e2d45" stroke-width="1"/>
+  <line x1="600" y1="100" x2="600" y2="300" stroke="#1e2d45" stroke-width="1"/>
 
-  <!-- 세그먼트 비교 카드 -->
-  <text x="600" y="340" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" fill="#64748b">세그먼트별 비중 비교</text>
+  <!-- 세그먼트 카드 (수출/내수 텍스처) -->
+  <rect x="60" y="330" width="500" height="96" rx="8" fill="#0f1623" stroke="#3b82f6" stroke-width="1"/>
+  <rect x="60" y="330" width="6" height="96" rx="4" fill="#3b82f6"/>
+  <text x="86" y="358" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#3b82f6">상선</text>
+  <text x="86" y="380" font-family="-apple-system,'Segoe UI',sans-serif" font-size="13" fill="#94a3b8">매출 10.52조 · 수주잔고 26.0조</text>
+  <text x="86" y="402" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">VLCC, LNG선, 컨테이너선. 매출의 99.8%가 수출.</text>
 
-  <!-- 세그먼트 카드 행 -->
-  <!-- 상선 -->
-  <rect x="60" y="356" width="500" height="76" rx="8" fill="#0f1623" stroke="#3b82f6" stroke-width="1"/>
-  <rect x="60" y="356" width="6" height="76" rx="4" fill="#3b82f6"/>
-  <text x="86" y="382" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#3b82f6">상선</text>
-  <text x="86" y="402" font-family="-apple-system,'Segoe UI',sans-serif" font-size="13" fill="#94a3b8">매출 10.52조 · 수주잔고 26.0조</text>
-  <text x="86" y="422" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">VLCC, LNG선, LPG선, 컨테이너선</text>
-
-  <!-- 방산 -->
-  <rect x="640" y="356" width="500" height="76" rx="8" fill="#0f1623" stroke="#ef4444" stroke-width="1"/>
-  <rect x="640" y="356" width="6" height="76" rx="4" fill="#ef4444"/>
-  <text x="666" y="382" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#ef4444">해양·특수선 (방산)</text>
-  <text x="666" y="402" font-family="-apple-system,'Segoe UI',sans-serif" font-size="13" fill="#94a3b8">매출 2.03조 · 수주잔고 6.3조</text>
-  <text x="666" y="422" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">잠수함, 구축함, 해양플랜트</text>
+  <rect x="640" y="330" width="500" height="96" rx="8" fill="#0f1623" stroke="#ef4444" stroke-width="1"/>
+  <rect x="640" y="330" width="6" height="96" rx="4" fill="#ef4444"/>
+  <text x="666" y="358" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#ef4444">해양·특수선 (방산)</text>
+  <text x="666" y="380" font-family="-apple-system,'Segoe UI',sans-serif" font-size="13" fill="#94a3b8">매출 2.03조 · 수주잔고 6.3조</text>
+  <text x="666" y="402" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">잠수함, 함정. 내수(방위사업청)가 수출보다 크다.</text>
 
   <!-- 인사이트 박스 -->
-  <rect x="60" y="456" width="1080" height="100" rx="8" fill="#0f1623" stroke="#fbbf24" stroke-width="1" stroke-dasharray="4,3"/>
-  <text x="600" y="490" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#fbbf24">방산이 매출의 16%인데 수주잔고의 18% — 중기 비중 유지</text>
-  <text x="600" y="514" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="13" fill="#94a3b8">수주잔고 비중이 매출 비중보다 높다 = 방산 수주 파이프라인이 상선보다 상대적으로 강하다는 신호</text>
-  <text x="600" y="534" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="13" fill="#94a3b8">그러나 절대 비중(16%)은 여전히 상선에 비해 작아 마진 희석 효과가 지속</text>
+  <rect x="60" y="446" width="1080" height="96" rx="8" fill="#0f1623" stroke="#fbbf24" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="600" y="478" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="600" fill="#fbbf24">방산은 매출의 16%, 그마저 대부분 내수다</text>
+  <text x="600" y="502" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="13" fill="#94a3b8">상선이 매출의 82%(99.8% 수출)를 책임진다. 흑자의 엔진은 방산이 아니라 상선 수출이라는 뜻.</text>
+  <text x="600" y="524" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="13" fill="#94a3b8">특수선은 내수 방산이라 저마진. 방산 프리미엄은 수출이 성사돼야 마진에 찍힌다.</text>
 
-  <!-- 방산 수주잔고 비중 강조 -->
-  <rect x="60" y="580" width="240" height="80" rx="8" fill="#0f1623" stroke="#ef4444" stroke-width="1"/>
-  <text x="180" y="610" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">방산 수주잔고 비중</text>
-  <text x="180" y="642" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="28" font-weight="700" fill="#ef4444">18.3%</text>
+  <!-- 하단 스탯 -->
+  <rect x="60" y="566" width="255" height="80" rx="8" fill="#0f1623" stroke="#3b82f6" stroke-width="1"/>
+  <text x="187" y="596" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">상선 매출 비중</text>
+  <text x="187" y="628" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="26" font-weight="700" fill="#3b82f6">82.3%</text>
 
-  <rect x="320" y="580" width="240" height="80" rx="8" fill="#0f1623" stroke="#3b82f6" stroke-width="1"/>
-  <text x="440" y="610" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">상선 수주잔고 비중</text>
-  <text x="440" y="642" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="28" font-weight="700" fill="#3b82f6">75.4%</text>
+  <rect x="335" y="566" width="255" height="80" rx="8" fill="#0f1623" stroke="#ef4444" stroke-width="1"/>
+  <text x="462" y="596" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">방산 매출 비중</text>
+  <text x="462" y="628" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="26" font-weight="700" fill="#ef4444">15.9%</text>
 
-  <rect x="580" y="580" width="240" height="80" rx="8" fill="#0f1623" stroke="#22c55e" stroke-width="1"/>
-  <text x="700" y="610" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">총 수주잔고</text>
-  <text x="700" y="642" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="28" font-weight="700" fill="#22c55e">34.5조</text>
+  <rect x="610" y="566" width="255" height="80" rx="8" fill="#0f1623" stroke="#22c55e" stroke-width="1"/>
+  <text x="737" y="596" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">총 수주잔고</text>
+  <text x="737" y="628" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="26" font-weight="700" fill="#22c55e">34.5조</text>
 
-  <rect x="840" y="580" width="300" height="80" rx="8" fill="#0f1623" stroke="#fbbf24" stroke-width="1"/>
-  <text x="990" y="610" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">매출 대비 수주잔고 배율</text>
-  <text x="990" y="642" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="28" font-weight="700" fill="#fbbf24">2.7년치</text>
+  <rect x="885" y="566" width="255" height="80" rx="8" fill="#0f1623" stroke="#fbbf24" stroke-width="1"/>
+  <text x="1012" y="596" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="12" fill="#64748b">매출 대비 수주잔고</text>
+  <text x="1012" y="628" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="26" font-weight="700" fill="#fbbf24">2.7년치</text>
 
-  <!-- 하단 출처 -->
-  <text x="600" y="710" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#334155">출처: DART 사업보고서 기반 dartlab 산출 · 2026-04-18</text>
+  <text x="600" y="700" text-anchor="middle" font-family="-apple-system,'Segoe UI',sans-serif" font-size="11" fill="#334155">출처: DART 사업보고서(세그먼트·수주상황 표) 기반 dartlab 정리 · 2026-07-13</text>
 </svg>
