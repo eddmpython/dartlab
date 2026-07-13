@@ -136,6 +136,12 @@ def testHardenedTopKDropsMacroFragile():
     assert picks == lt.hardenedTopK(base, dec, topK=2, candidateExtra=1)  # 결정론
 
 
+def testHardenedTopKTiesKeepDeterministicBaseOrder():
+    base = pl.DataFrame({"code": ["a", "b", "c", "d"], "score": [4.0, 3.0, 2.0, 1.0]})
+    dec = pl.DataFrame({"code": ["d", "b", "a", "c"], "respP5": [0.0, 0.0, 0.0, 0.0]})
+    assert lt.hardenedTopK(base, dec, topK=2, candidateExtra=2) == ["a", "b"]
+
+
 def testLiquidUniverseFiltersSmallCaps(monkeypatch):
     from dartlab.simulate import table
 

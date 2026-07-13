@@ -48,26 +48,56 @@ def weeklyLabels(weekEnd: pl.DataFrame, dailyPrices: pl.DataFrame, *, horizonDay
     df = dailyPrices.filter(pl.col("close") > 0).sort(["code", "date"])
     cal = df.select("date").unique().sort("date").with_row_index("di")
     marketMaxDi = int(cal["di"].max()) if cal.height else 0
-    df = df.join(cal, on="date", how="left")
-    c = pl.col("close")
-    df = df.with_columns(
-        fwdClose=c.shift(-h).over("code"),
-        fwdShares=pl.col("shares").shift(-h).over("code"),
-        fwdMaxAbs=(c / c.shift(1).over("code") - 1).abs().shift(-1).rolling_max(h).over("code").shift(-(h - 1)),
-        lastDi=pl.col("di").max().over("code"),
-        lastClose=c.last().over("code"),
-    ).with_columns(
-        fwdRet=(pl.col("fwdClose") / c - 1),
-        corpAction=(
-            ((pl.col("fwdShares") / pl.col("shares") - 1).abs() > 0.10) | (pl.col("fwdMaxAbs") > 0.40)
-        ).fill_null(True),
+    df = df.join(cal, on="date", how="left").with_row_index("_ri")
+
+    # Window shift/rolling 조합은 Polars 실행계획에 따라 종목 경계를 넘는 비결정성이 실측됐다.
+    # 정렬된 행의 전일가와 시장달력 di+h 가격을 명시적 self-join으로 붙여 같은 의미를 고정한다.
+    previous = df.select(
+        (pl.col("_ri") + 1).alias("_ri"),
+        pl.col("code").alias("_prevCode"),
+        pl.col("close").alias("_prevClose"),
+    )
+    df = (
+        df.join(previous, on="_ri", how="left")
+        .with_columns(
+            _dailyJump=pl.when(pl.col("code") == pl.col("_prevCode"))
+            .then((pl.col("close") / pl.col("_prevClose") - 1).abs() > 0.40)
+            .otherwise(False)
+            .cast(pl.Int64)
+        )
+        .with_columns(_jumpCum=pl.col("_dailyJump").cum_sum())
+    )
+    future = df.select(
+        "code",
+        pl.col("di").alias("_targetDi"),
+        pl.col("close").alias("fwdClose"),
+        pl.col("shares").alias("fwdShares"),
+        pl.col("_jumpCum").alias("_futureJumpCum"),
+    )
+    last = df.group_by("code").agg(
+        lastDi=pl.col("di").max(),
+        lastClose=pl.col("close").sort_by("di").last(),
+    )
+    df = (
+        df.with_columns(_targetDi=pl.col("di") + h)
+        .join(future, on=["code", "_targetDi"], how="left")
+        .join(last, on="code", how="left")
+        .with_columns(
+            fwdRet=(pl.col("fwdClose") / pl.col("close") - 1),
+            fwdJump=(pl.col("_futureJumpCum") - pl.col("_jumpCum")) > 0,
+        )
+        .with_columns(
+            corpAction=(((pl.col("fwdShares") / pl.col("shares") - 1).abs() > 0.10) | pl.col("fwdJump")).fill_null(
+                True
+            ),
+        )
     )
     snap = df.join(weekEnd, on="date", how="inner")
     # 절단 = 지평 창이 시장 달력 안(미도래 아님)인데 종목 행이 창 끝 전에 소멸
     censored = pl.col("fwdClose").is_null() & (pl.col("di") + h <= marketMaxDi) & (pl.col("lastDi") < pl.col("di") + h)
     snap = snap.with_columns(
         censored=censored,
-        fwdRet=pl.when(censored).then(pl.col("lastClose") / c - 1).otherwise(pl.col("fwdRet")),
+        fwdRet=pl.when(censored).then(pl.col("lastClose") / pl.col("close") - 1).otherwise(pl.col("fwdRet")),
     )
     scorable = (pl.col("fwdRet").is_not_null() & ~pl.col("corpAction")) | pl.col("censored")
     snap = snap.with_columns(

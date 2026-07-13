@@ -265,6 +265,35 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
 잡았지 내가 잡은 게 아님. 청결은 자평이 아니라 loop-until-dry 독립 적대검증이 답한다(3차 만에 버그0 수렴).
 -> [[feedback_capability_over_honesty]] 반례가 아니라 실천: 갭을 검증으로 닫음.
 
+### 0c-24. 실제 상태 전이와 paired 전략 비교 첫 수직절편 졸업 (2026-07-13)
+
+- **전문 검토 3축 합의**: 설계, 계량, 적대 검토가 모두 현 4노드 경로를 "시뮬레이터"가 아니라
+  단일 경로 시나리오 계산기로 판정했다. 핵심 결손은 명시적 `state(t) -> state(t+1)`, 개입 비용과
+  지연, 동일 세계경로 위 전략 비교, 현금과 부채 피드백, 목적과 제약이었다.
+- **개념확립 후 본진 승격**: `_attempts/worldEvolve`와 `_attempts/financialStep`,
+  `_attempts/financialWorld`에서 킬테스트를 통과한 뒤 다음 3개 모듈을 졸업했다.
+  - `simulate/world.py`: Variable, Action, Law, WorldState, ScenarioPath, Strategy, Constraint,
+    Objective 계약과 다기간 전이, common path 전략 비교, step trace, Pareto, 재현 hash, 추천 gate.
+  - `analysis/financial/stepProjection.py`: cash plug와 자동 차입이 없는 순수 1기간 재무 전이 leaf.
+    현금, 부채, 이자, 운전자본, PPE, 자본이 매 기간 폐합된다.
+  - `simulate/financialWorld.py`: 기존 `buildSnapshot`의 실제 재무 상태와 역사비율을 위 실행기에
+    연결한다. CAPEX, 재고목표, 차입, 상환은 모두 명시 행동이다.
+- **직접 증명**: 합성 세계에서 상태 피드백, 행동 lead time과 비용, 결측 차단, 동일 경로 비교,
+  충격 지속기간에 따른 전략 순위 역전을 통과했다. 미검증 법칙이 하나라도 있으면 결과를
+  `conditionalOnly`로 낮추고 자동 추천은 `None`으로 막는다.
+- **실데이터 수직 스모크**: 삼성전자 2026-Q1 snapshot을 매출 388.3조원, 현금 73.3조원, 부채
+  26.9조원의 초기 상태로 컴파일해 2개 경로, 2개 전략, 4기간을 전개했다. 최대 회계 상대잔차
+  `2.1e-16`, 제약 오탐 0, 결과는 `conditionalOnly`, 추천 `None`이다. capacity headroom 20%와
+  역사비율 경고는 assumptions에 남는다.
+- **동반 결정론 수리**: `weeklyLabels`의 미래 기업행동 창이 종목 경계를 넘던 window shift를
+  시장달력 self-join으로 교체했다. 격자 `hardenedTopK`의 동률 순서도 하방값, 기저점수, 종목코드
+  보조키로 고정했다.
+- **검증**: 신규 집중 21 통과, simulate와 신규 analysis leaf 전체 221 통과, ruff clean,
+  Guard Index strict l0-l15 7/7과 외부게이트 6종 통과, public API coverage와 product smoke quick 통과.
+- **정직한 잔여**: 확률 경로 생성과 calibration, filing revision vintage PIT, transition edge의
+  hindcast admission, EDGAR 실제 회사 수직절편, closed-loop 정책, UI는 아직 미구현이다. 현재 성취는
+  "진짜로 걷는 실행기와 KR 1사 연결"이지, 검증된 최적전략이나 예측확률의 완성이 아니다.
+
 ### 0c-23. 네이티브 시그니처 C vs D 첫 실측 = "직독 마법" 기각, 상태조건 신호만 생존 (2026-07-07, 16 §7 결정적 실험 착수)
 
 - **데모 (_attempts/nativejoint/cvsd.py, 개념확립 stage2)**: 세 앙상블의 per-company 주변분포를 완전동일 고정하고 결합구조만 상이하게 = variogram(결합민감 적정스코어)이 결합종속만 순수 격리. C=상태 analog 코호트 동시실현 직독, Dg=같은 주변+Gaussian copula, Ds=같은 주변+무조건 empirical copula. 우주=전기간 풀커버 상위시총 40종목(600주), origin 비중첩, 블록부트 t(자기상관 보정).

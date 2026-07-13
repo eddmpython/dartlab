@@ -243,7 +243,17 @@ def hardenedTopK(
         .head(topK + candidateExtra)
         .join(decision.select("code", "respP5"), on="code", how="left")
     )
-    return cand.sort("respP5", descending=True, nulls_last=True).head(topK)["code"].to_list()
+    # 동일 respP5 가 다수일 때 Polars 단일키 sort 의 tie 순서는 보장되지 않는다. 기저 점수와
+    # code 를 명시적 보조키로 두어 같은 격자 입력의 제거 목록을 byte 재현한다.
+    return (
+        cand.sort(
+            ["respP5", "base", "code"],
+            descending=[True, True, False],
+            nulls_last=True,
+        )
+        .head(topK)["code"]
+        .to_list()
+    )
 
 
 def factorMarginals(lattice: dict) -> dict[str, dict[int, float]]:

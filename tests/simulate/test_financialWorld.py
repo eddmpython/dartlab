@@ -1,0 +1,199 @@
+from __future__ import annotations
+
+import gc
+
+import pytest
+
+from dartlab.simulate.financialWorld import (
+    FinancialWorldInputs,
+    buildFinancialPath,
+    buildFinancialStrategy,
+    financialInputsFromSnapshot,
+    runFinancialStrategies,
+)
+from dartlab.simulate.world import SimulationBlocked
+
+
+def _series():
+    q = 8
+    return {
+        "IS": {
+            "sales": [25.0] * q,
+            "operating_profit": [3.75] * q,
+            "profit_before_tax": [3.0] * q,
+            "income_tax_expense": [0.6] * q,
+            "finance_costs": [0.75] * q,
+            "gross_profit": [10.0] * q,
+            "selling_and_administrative_expenses": [5.0] * q,
+            "net_profit": [2.4] * q,
+        },
+        "BS": {
+            "cash_and_cash_equivalents": [20.0] * q,
+            "shortterm_borrowings": [10.0] * q,
+            "longterm_borrowings": [20.0] * q,
+            "debentures": [0.0] * q,
+            "trade_receivables": [10.0] * q,
+            "inventories": [10.0] * q,
+            "trade_payables": [10.0] * q,
+            "tangible_assets": [50.0] * q,
+            "total_assets": [120.0] * q,
+            "total_liabilities": [70.0] * q,
+            "total_stockholders_equity": [50.0] * q,
+            "current_assets": [50.0] * q,
+            "current_liabilities": [30.0] * q,
+        },
+        "CF": {
+            "depreciation": [1.25] * q,
+            "purchase_of_property_plant_and_equipment": [2.0] * q,
+            "dividends_paid": [0.5] * q,
+        },
+    }
+
+
+def _inputs():
+    snapshot = {
+        "series": _series(),
+        "baseRevenue": 100.0,
+        "baseMargin": 15.0,
+        "asOf": "2025-Q4",
+    }
+    return financialInputsFromSnapshot(snapshot, capacityHeadroom=0.20)
+
+
+def _path(pathId="base", growth=(0.0, 0.0, 0.0, 0.0)):
+    return buildFinancialPath(
+        pathId,
+        demandGrowth=growth,
+        marginDelta=(0.0,) * len(growth),
+        debtRate=(0.05,) * len(growth),
+    )
+
+
+def _strategy(strategyId, capex, inventory=0.10, borrow=0.0, repay=0.0):
+    horizon = len(capex)
+    return buildFinancialStrategy(
+        strategyId,
+        capexRatio=capex,
+        inventoryRatio=(inventory,) * horizon,
+        borrow=(borrow,) * horizon,
+        repay=(repay,) * horizon,
+    )
+
+
+def testSnapshotCompilesActualBalanceSheetStateWithoutZeroFill():
+    inputs = _inputs()
+    state = inputs.state
+    assert state.revenue == 100.0
+    assert state.debt == 30.0
+    identity = state.cash + state.receivables + state.inventories + state.ppe + state.otherNetAssets
+    assert identity - state.payables - state.debt == pytest.approx(state.equity)
+    broken = {"series": _series(), "baseRevenue": 100.0, "baseMargin": 15.0}
+    del broken["series"]["BS"]["inventories"]
+    with pytest.raises(SimulationBlocked, match="inventories"):
+        financialInputsFromSnapshot(broken, capacityHeadroom=0.20)
+
+    zeroReceivables = {"series": _series(), "baseRevenue": 100.0, "baseMargin": 15.0, "asOf": "2025-Q4"}
+    zeroReceivables["series"]["BS"]["trade_receivables"] = [0.0] * 8
+    compiled = financialInputsFromSnapshot(zeroReceivables, capacityHeadroom=0.20)
+    assert compiled.state.receivables == 0.0
+
+
+def testFinancialWorldRunsStepwiseAndClosesEveryPeriod():
+    run = runFinancialStrategies(
+        _inputs(),
+        (_path(),),
+        (_strategy("steady", (0.08,) * 4),),
+        debtLimit=100.0,
+        maxFinancing=50.0,
+    )
+    trace = run.traces[0]
+    assert len(trace.steps) == 4
+    assert all(abs(step.after["identityResidual"]) < 1e-8 for step in trace.steps)
+    assert trace.steps[1].before["cash"] == trace.steps[0].after["cash"]
+
+
+def testRealAdapterKeepsAssumptionBoundaryAndDoesNotRecommend():
+    run = runFinancialStrategies(
+        _inputs(),
+        (_path("down", (-0.1, -0.1, -0.1, -0.1)),),
+        (
+            _strategy("invest", (0.12,) * 4),
+            _strategy("preserve", (0.02,) * 4),
+        ),
+        debtLimit=100.0,
+        maxFinancing=50.0,
+    )
+    assert run.decisionStatus == "conditionalOnly"
+    assert run.recommendation is None
+    assert set(run.paretoStrategies) <= {"invest", "preserve"}
+
+
+def testFinancingMustBeExplicitAndConstraintBreachIsVisible():
+    stress = buildFinancialPath(
+        "stress",
+        demandGrowth=(-0.8,) * 4,
+        marginDelta=(-0.1,) * 4,
+        debtRate=(0.20,) * 4,
+    )
+    run = runFinancialStrategies(
+        _inputs(),
+        (stress,),
+        (
+            _strategy("no-funding", (1.0,) * 4, inventory=1.0),
+            _strategy("funded", (1.0,) * 4, inventory=1.0, borrow=10.0),
+        ),
+        debtLimit=55.0,
+        maxFinancing=20.0,
+    )
+    noFunding = next(trace for trace in run.traces if trace.strategyId == "no-funding")
+    funded = next(trace for trace in run.traces if trace.strategyId == "funded")
+    assert any("cash:ge" in breach for step in noFunding.steps for breach in step.breaches)
+    assert funded.steps[-1].after["debt"] > noFunding.steps[-1].after["debt"]
+    assert funded.steps[-1].after["cash"] > noFunding.steps[-1].after["cash"]
+
+
+@pytest.mark.realData
+@pytest.mark.serial
+def testRealDataSamsungSnapshotRunsAuditedFinancialWorld():
+    from dartlab.providers.dart.company import Company
+    from dartlab.simulate.registry import buildSnapshot
+
+    company = Company("005930")
+    try:
+        snapshot = buildSnapshot(company)
+        if not snapshot.get("series") or snapshot.get("baseRevenue") is None:
+            pytest.skip("005930 finance series unavailable")
+        inputs = financialInputsFromSnapshot(snapshot, capacityHeadroom=0.20)
+        horizon = 4
+        path = buildFinancialPath(
+            "stress",
+            demandGrowth=(-0.12, -0.08, 0.02, 0.03),
+            marginDelta=(-0.02, -0.01, 0.01, 0.01),
+            debtRate=(0.06,) * horizon,
+        )
+        capexRatio = min(
+            0.25,
+            max(0.01, inputs.parameters.depreciationRate * inputs.state.ppe / inputs.state.revenue),
+        )
+        inventoryRatio = inputs.state.inventories / inputs.state.revenue
+        strategy = buildFinancialStrategy(
+            "preserve",
+            capexRatio=(capexRatio * 0.5,) * horizon,
+            inventoryRatio=(inventoryRatio * 0.9,) * horizon,
+            borrow=(0.0,) * horizon,
+            repay=(0.0,) * horizon,
+        )
+        run = runFinancialStrategies(
+            inputs,
+            (path,),
+            (strategy,),
+            debtLimit=max(inputs.state.debt * 2, 1.0),
+            maxFinancing=max(inputs.state.revenue * 0.2, 1.0),
+        )
+        assert inputs.state.revenue > 0
+        assert max(abs(step.after["identityResidualRatio"]) for step in run.traces[0].steps) < 1e-10
+        assert run.decisionStatus == "conditionalOnly"
+        assert run.recommendation is None
+    finally:
+        del company
+        gc.collect()

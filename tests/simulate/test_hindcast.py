@@ -35,6 +35,7 @@ def testWeeklyLabelsHorizonDays():
     we = pl.DataFrame({"week": [202601], "date": [days[4]]})
     lab5 = sc.weeklyLabels(we, px, horizonDays=5)
     lab10 = sc.weeklyLabels(we, px, horizonDays=10)
+    assert set(lab10["code"].to_list()) == {"a", "b"}
     a5 = lab5.filter(pl.col("code") == "a")["exRaw"][0]
     a10 = lab10.filter(pl.col("code") == "a")["exRaw"][0]
     assert a10 > a5 > 0  # 지평이 길수록 누적 초과 커짐 (b 평탄 대비)
