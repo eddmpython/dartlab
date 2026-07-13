@@ -373,6 +373,35 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
   다음 P0는 content-addressed artifact store, Ed25519 issuer, append-only SQLite receipt chain과 read-only
   runtime verifier이며, 이후 provider-neutral `VintageRef`와 path-set admission을 그 신뢰사슬에 연결한다.
 
+### 0c-33. Ed25519 append-only admission registry 기반 (2026-07-13)
+
+- **SHA self-claim에서 신뢰경계로**: `admissionRegistry.py`가 증거 bytes를 SHA-256 주소 디렉터리에
+  원자적으로 저장하고, receipt payload를 domain-separated Ed25519로 서명한다. private key는 registry나
+  runtime에 저장하지 않고 issuer 호출 환경만 받으며, runtime은 앱 설정이 제공한 public-key allowlist만
+  사용한다. 따라서 caller가 올바른 SHA와 좋은 summary를 직접 만들어도 trusted key 서명 없이는 admission이
+  아니다.
+- **append-only 원장**: SQLite receipt row는 sequence, canonical payload, signature, previous row hash,
+  row hash를 가지며 UPDATE/DELETE trigger가 일반 mutation을 차단한다. read-only verifier는 target row만
+  믿지 않고 전체 sequence gap, hash chain, 모든 서명과 key 상태를 다시 확인한다. registry 파일 ACL과
+  private-key 보호는 운영 배포 책임이며, 외부 anchor 없는 로컬 DB tail truncation 방어는 후속이다.
+- **artifact와 부모 재검산**: receipt가 subject, artifact, rule/version, issuer executable, knowledge cutoff,
+  revision/coverage, frequency/span, horizon, 부모 receipt와 발급시각을 서명한다. 검증 때 실제 artifact bytes를
+  다시 hash하고 부모 artifact까지 순회한다. verified/admitted 자식은 exact as-known vintage와 admission 가능한
+  부모만 허용하며 documented/retrospective 부모를 상향 승격할 수 없다.
+- **적대 킬테스트**: unknown key, revoked key, 다른 payload에 signature 복사, artifact bytes 변조,
+  documented 부모의 admitted child, registry 부재, subject/kind 바꿔치기, knowledge 이전 발급시각,
+  row UPDATE/DELETE를 모두 fail-closed로 확인했다. `cryptography`를 backend 직접 의존성으로 명시하고 lock을
+  갱신했다.
+- **동반 결정론 수리**: 전체 회귀에서 기존 `weeklyLabels` 절단 라벨이 간헐적으로 사라지는 결함을 재현했다.
+  calendar join 뒤 `(code,date)`를 재정렬하지 않은 채 row index를 부여했고 jump 누계도 종목 partition이
+  아니어서 Polars join 순서에 의존했다. 명시 재정렬과 `cum_sum().over("code")`로 고쳐 단독 10회와 전체
+  reading 76건에서 안정성을 확인했다.
+- **검증**: signed registry 본진 4건, simulate 전체 276 통과, ruff clean. Guard Index strict L0-L1.5
+  7/7과 외부 gate 6종 통과.
+- **정직한 잔여**: registry가 생겼지만 현재 `ScenarioPath.validationStatus="admitted"`는 아직 typed
+  `PathSetAdmissionReceipt`를 필수로 소비하지 않는다. 다음 단계에서 provider-neutral `VintageRef`와
+  path-set receipt를 `simulateWorld` 입력 검증에 연결한 뒤 fake 64hex admitted path를 hard-fail시킨다.
+
 ### 0c-29. 분기 전이, 파라미터 불확실성, 실행 인증 P0 보강 (2026-07-13)
 
 - **전문가 재감사 결론**: 경로모형, DART와 EDGAR PIT, admission 적대검토에서 분기 grid에 연간

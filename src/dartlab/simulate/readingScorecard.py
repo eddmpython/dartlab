@@ -48,7 +48,7 @@ def weeklyLabels(weekEnd: pl.DataFrame, dailyPrices: pl.DataFrame, *, horizonDay
     df = dailyPrices.filter(pl.col("close") > 0).sort(["code", "date"])
     cal = df.select("date").unique().sort("date").with_row_index("di")
     marketMaxDi = int(cal["di"].max()) if cal.height else 0
-    df = df.join(cal, on="date", how="left").with_row_index("_ri")
+    df = df.join(cal, on="date", how="left").sort(["code", "date"]).with_row_index("_ri")
 
     # Window shift/rolling 조합은 Polars 실행계획에 따라 종목 경계를 넘는 비결정성이 실측됐다.
     # 정렬된 행의 전일가와 시장달력 di+h 가격을 명시적 self-join으로 붙여 같은 의미를 고정한다.
@@ -65,7 +65,7 @@ def weeklyLabels(weekEnd: pl.DataFrame, dailyPrices: pl.DataFrame, *, horizonDay
             .otherwise(False)
             .cast(pl.Int64)
         )
-        .with_columns(_jumpCum=pl.col("_dailyJump").cum_sum())
+        .with_columns(_jumpCum=pl.col("_dailyJump").cum_sum().over("code"))
     )
     future = df.select(
         "code",

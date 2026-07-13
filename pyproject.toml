@@ -63,6 +63,7 @@ dependencies = [
     # LazyFrame ↔ DuckDB relation Arrow zero-copy. 환경변수
     # DARTLAB_CROSS_SCAN_ENGINE=duckdb 또는 large dataset 검출 시 자동 fallback.
     "duckdb>=1.0,<2; sys_platform != 'emscripten'",
+    "cryptography>=46,<50; sys_platform != 'emscripten'",
     "numpy>=1.26.0,<3; sys_platform != 'emscripten'",
     "numpy; sys_platform == 'emscripten'",
     # parquet fallback / pyodide bridge. pyodide 는 빌트인.

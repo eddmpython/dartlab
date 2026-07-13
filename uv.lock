@@ -461,6 +461,7 @@ version = "0.10.9"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
+    { name = "cryptography", marker = "sys_platform != 'emscripten'" },
     { name = "diff-match-patch" },
     { name = "duckdb", marker = "sys_platform != 'emscripten'" },
     { name = "fastapi", marker = "sys_platform != 'emscripten'" },
@@ -509,6 +510,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.14.3,<5" },
+    { name = "cryptography", marker = "sys_platform != 'emscripten'", specifier = ">=46,<50" },
     { name = "diff-match-patch", specifier = ">=20230430" },
     { name = "duckdb", marker = "sys_platform != 'emscripten'", specifier = ">=1.0,<2" },
     { name = "fastapi", marker = "sys_platform != 'emscripten'", specifier = ">=0.135.1,<1" },
