@@ -294,6 +294,24 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
   hindcast admission, EDGAR 실제 회사 수직절편, closed-loop 정책, UI는 아직 미구현이다. 현재 성취는
   "진짜로 걷는 실행기와 KR 1사 연결"이지, 검증된 최적전략이나 예측확률의 완성이 아니다.
 
+### 0c-27. 전이법칙 인증서를 실행물과 검증지평에 바인딩 (2026-07-13)
+
+- **임의 digest 반례 선결**: 기존 `LawSpec.certificateId`는 64자리 문자열이면 통과해 실제 함수,
+  입력과 출력 계약, 파라미터, 검증자료와 무관했다. `_attempts/lawCertificateBinding`에서 임의 digest,
+  인증 후 파라미터 바꿔치기, 검증지평 초과, revised history의 active 승격 4건을 먼저 실패시켰다.
+- **실행물 결속**: `LawCertificate`가 law id와 version, evidence kind, 입출력과 action 계약 hash,
+  parameter hash, 함수 bytecode와 closure hash, 검증행 hash, knowledge cutoff, history status, 연속 통과
+  `maxAdmittedStep`, 규칙을 하나의 `certificateId`로 묶는다. digest와 실제 법칙을 모두 재계산해 비교한다.
+- **승격 규율**: `measuredAssociation`과 `identifiedIntervention` 법칙은 인증서 없이는 컴파일되지 않는다.
+  active 또는 identified 법칙은 `asKnown` 증거의 전 걸음 통과로 발급된 admitted 인증서만 허용한다.
+  revised history는 `retrospectiveOnly`와 partial law까지만 가능하고 rejected는 blocked만 가능하다.
+- **실행 지평 차단**: path 자체의 admitted horizon과 별개로 모든 admitted law의
+  `maxAdmittedStep`을 검사한다. 경로가 길어도 회사 전이법칙이 두 걸음만 검증됐다면 세 번째 걸음은
+  실행 전에 차단된다. 각 `LawTrace`에는 실제 certificate id가 남는다.
+- **검증**: `_attempts` 4건은 변경 전 collection 실패, 변경 후 4건 통과했다. 본진 회귀 4건을
+  승격했고 simulate 전체와 재무 leaf 250건, ruff, Guard Index strict L0-L1.5 7/7과 외부 gate
+  6종이 통과했다.
+
 ### 0c-26. 잠재수요 상태와 마진 충격 의미 정식화 (2026-07-13)
 
 - **죽은 수요 반례 선결**: 기존 전이는 생산능력에 막힌 실현 매출을 다음 기간 수요의 기준으로 다시

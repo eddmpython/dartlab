@@ -19,6 +19,7 @@ EVIDENCE_SET = {
 }
 WEIGHT_KIND_SET = {"unweighted", "empirical", "resampled", "calibrated", "subjective"}
 PATH_VALIDATION_SET = {"unvalidated", "retrospectiveOnly", "admitted", "rejected"}
+LAW_CERTIFICATE_STATUS_SET = {"retrospectiveOnly", "admitted", "rejected"}
 
 
 class SimulationSpecError(ValueError):
@@ -82,6 +83,25 @@ LawFn = Callable[[StepContext], Mapping[str, float]]
 
 
 @dataclass(frozen=True)
+class LawCertificate:
+    """법칙 실행물, 계약, 파라미터, 검증 증거를 하나의 digest로 묶는다."""
+
+    certificateId: str
+    lawId: str
+    lawVersion: str
+    evidenceKind: str
+    contractHash: str
+    parameterHash: str
+    executableHash: str
+    evidenceHash: str
+    knowledgeAsOf: str
+    historyStatus: str
+    maxAdmittedStep: int
+    status: str
+    rules: str
+
+
+@dataclass(frozen=True)
 class LawSpec:
     """한 기간 전이 법칙의 입력, 출력, 근거, 버전을 선언한다."""
 
@@ -96,7 +116,7 @@ class LawSpec:
     provenance: str = ""
     version: str = "1"
     status: str = "active"
-    certificateId: str = ""
+    certificate: LawCertificate | None = None
     parameters: Mapping[str, float | str | bool] = field(default_factory=dict)
     fn: LawFn = field(default=lambda _: {}, repr=False, compare=False)
 
@@ -184,6 +204,7 @@ class LawTrace:
     provenance: str
     version: str
     parameters: Mapping[str, float | str | bool]
+    certificateId: str
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "inputs", _freezeMapping(self.inputs))
@@ -306,6 +327,134 @@ def _stableHash(payload: Mapping) -> str:
     return sha256(raw.encode("utf-8")).hexdigest()
 
 
+def _lawContractPayload(law: LawSpec) -> dict:
+    return {
+        "outputs": law.outputs,
+        "priorInputs": law.priorInputs,
+        "currentInputs": law.currentInputs,
+        "shockInputs": law.shockInputs,
+        "actionInputs": law.actionInputs,
+        "usesActionCost": law.usesActionCost,
+    }
+
+
+def _lawCertificatePayload(certificate: LawCertificate) -> dict:
+    return {
+        "lawId": certificate.lawId,
+        "lawVersion": certificate.lawVersion,
+        "evidenceKind": certificate.evidenceKind,
+        "contractHash": certificate.contractHash,
+        "parameterHash": certificate.parameterHash,
+        "executableHash": certificate.executableHash,
+        "evidenceHash": certificate.evidenceHash,
+        "knowledgeAsOf": certificate.knowledgeAsOf,
+        "historyStatus": certificate.historyStatus,
+        "maxAdmittedStep": certificate.maxAdmittedStep,
+        "status": certificate.status,
+        "rules": certificate.rules,
+    }
+
+
+def issueLawCertificate(
+    law: LawSpec,
+    *,
+    evidenceRows: tuple[Mapping[str, object], ...],
+    knowledgeAsOf: str,
+    historyStatus: str,
+    rules: str,
+) -> LawCertificate:
+    """검증 행의 연속 통과 지평을 계산하고 법칙 실행물 전체에 바인딩한다."""
+
+    if law.evidenceKind not in {"measuredAssociation", "identifiedIntervention"}:
+        raise SimulationSpecError("only measured or identified laws can be certified")
+    cutoff = str(knowledgeAsOf).replace("-", "")[:8]
+    if len(cutoff) != 8 or not cutoff.isdigit() or not rules:
+        raise SimulationSpecError("law certificate needs a valid cutoff and rules")
+    normalized: list[dict] = []
+    required = {"step", "metric", "estimate", "threshold", "passed"}
+    for row in evidenceRows:
+        if not required.issubset(row):
+            raise SimulationSpecError("law evidence row is incomplete")
+        step = int(row["step"])
+        if step < 1 or not str(row["metric"]) or not isinstance(row["passed"], bool):
+            raise SimulationSpecError("law evidence row is invalid")
+        estimate = float(row["estimate"])
+        threshold = float(row["threshold"])
+        if not math.isfinite(estimate) or not math.isfinite(threshold):
+            raise SimulationSpecError("law evidence row is not finite")
+        normalized.append(
+            {
+                "step": step,
+                "metric": str(row["metric"]),
+                "estimate": estimate,
+                "threshold": threshold,
+                "passed": row["passed"],
+            }
+        )
+    normalized.sort(key=lambda row: (row["step"], row["metric"]))
+    maxObserved = max((int(row["step"]) for row in normalized), default=0)
+    maxAdmittedStep = 0
+    for step in range(1, maxObserved + 1):
+        stepRows = [row for row in normalized if row["step"] == step]
+        if not stepRows or not all(bool(row["passed"]) for row in stepRows):
+            break
+        maxAdmittedStep = step
+    if maxAdmittedStep < 1:
+        status = "rejected"
+    elif historyStatus == "asKnown":
+        status = "admitted"
+    else:
+        status = "retrospectiveOnly"
+    provisional = LawCertificate(
+        certificateId="",
+        lawId=law.lawId,
+        lawVersion=law.version,
+        evidenceKind=law.evidenceKind,
+        contractHash=_stableHash(_lawContractPayload(law)),
+        parameterHash=_stableHash({"parameters": law.parameters}),
+        executableHash=_stableHash({"fn": law.fn}),
+        evidenceHash=_stableHash({"rows": normalized}),
+        knowledgeAsOf=cutoff,
+        historyStatus=historyStatus,
+        maxAdmittedStep=maxAdmittedStep,
+        status=status,
+        rules=rules,
+    )
+    return LawCertificate(
+        certificateId=_stableHash(_lawCertificatePayload(provisional)),
+        **{name: getattr(provisional, name) for name in provisional.__dataclass_fields__ if name != "certificateId"},
+    )
+
+
+def _validateLawCertificate(law: LawSpec) -> None:
+    certificate = law.certificate
+    if certificate is None:
+        raise SimulationSpecError(f"empirical law needs a certificate: {law.lawId}")
+    if certificate.status not in LAW_CERTIFICATE_STATUS_SET:
+        raise SimulationSpecError(f"invalid law certificate status: {law.lawId}")
+    expectedDigest = _stableHash(_lawCertificatePayload(certificate))
+    if certificate.certificateId != expectedDigest:
+        raise SimulationSpecError(f"law certificate digest mismatch: {law.lawId}")
+    expected = {
+        "lawId": law.lawId,
+        "lawVersion": law.version,
+        "evidenceKind": law.evidenceKind,
+        "contractHash": _stableHash(_lawContractPayload(law)),
+        "parameterHash": _stableHash({"parameters": law.parameters}),
+        "executableHash": _stableHash({"fn": law.fn}),
+    }
+    if any(getattr(certificate, name) != value for name, value in expected.items()):
+        raise SimulationSpecError(f"law certificate binding mismatch: {law.lawId}")
+    if law.status == "active" and certificate.status != "admitted":
+        raise SimulationSpecError(f"active law needs admitted evidence: {law.lawId}")
+    if law.evidenceKind == "identifiedIntervention" and certificate.status != "admitted":
+        raise SimulationSpecError(f"identified law needs admitted evidence: {law.lawId}")
+    if certificate.status == "retrospectiveOnly" and law.status != "partial":
+        raise SimulationSpecError(f"retrospective law must be partial: {law.lawId}")
+    if certificate.status == "rejected" and law.status != "blocked":
+        raise SimulationSpecError(f"rejected law must be blocked: {law.lawId}")
+
+
 @dataclass(frozen=True)
 class WorldModel:
     """변수와 행동 및 전이 법칙을 검증하고 실행 순서로 컴파일한다."""
@@ -361,8 +510,10 @@ class WorldModel:
             byId[law.lawId] = law
             if law.evidenceKind not in EVIDENCE_SET or law.status not in {"active", "partial", "blocked"}:
                 raise SimulationSpecError(f"invalid law certificate: {law.lawId}")
-            if law.evidenceKind == "identifiedIntervention" and not _validDigest(law.certificateId):
-                raise SimulationSpecError(f"identified law needs a certificate: {law.lawId}")
+            if law.evidenceKind in {"measuredAssociation", "identifiedIntervention"}:
+                _validateLawCertificate(law)
+            elif law.certificate is not None:
+                raise SimulationSpecError(f"non-empirical law cannot carry a certificate: {law.lawId}")
             declared = law.priorInputs + law.currentInputs + law.shockInputs
             if len(set(declared)) != len(declared):
                 raise SimulationSpecError(f"ambiguous law input: {law.lawId}")
@@ -434,6 +585,10 @@ def _checkInputs(
         raise SimulationSpecError("all paths must share a positive horizon")
     if any(len(strategy.actionsByStep) != horizon for strategy in strategies):
         raise SimulationSpecError("all strategies must share the path horizon")
+    for law in model.laws:
+        certificate = law.certificate
+        if certificate is not None and certificate.status == "admitted" and certificate.maxAdmittedStep < horizon:
+            raise SimulationSpecError(f"law exceeds admitted horizon: {law.lawId}")
     if len({p.pathId for p in paths}) != len(paths) or len({s.strategyId for s in strategies}) != len(strategies):
         raise SimulationSpecError("duplicate pathId or strategyId")
     if sum(strategy.isBaseline for strategy in strategies) > 1:
@@ -683,6 +838,7 @@ def simulateWorld(
                             provenance=law.provenance,
                             version=law.version,
                             parameters=law.parameters,
+                            certificateId=law.certificate.certificateId if law.certificate is not None else "",
                         )
                     )
                 after = dict(prior)

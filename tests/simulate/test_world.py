@@ -9,6 +9,7 @@ import pytest
 from dartlab.simulate.world import (
     ActionSpec,
     ConstraintSpec,
+    LawCertificate,
     LawSpec,
     ObjectiveSpec,
     ScenarioPath,
@@ -18,10 +19,26 @@ from dartlab.simulate.world import (
     VariableSpec,
     WorldModel,
     WorldState,
+    issueLawCertificate,
     simulateWorld,
 )
 
 _SYNTHETIC_CERTIFICATE = "a" * 64
+
+
+def _certifyLaw(law: LawSpec, *, steps: int = 8, historyStatus: str = "asKnown") -> LawSpec:
+    evidence = tuple(
+        {"step": step, "metric": "syntheticOos", "estimate": 1.0, "threshold": 0.0, "passed": True}
+        for step in range(1, steps + 1)
+    )
+    certificate = issueLawCertificate(
+        law,
+        evidenceRows=evidence,
+        knowledgeAsOf="20250101",
+        historyStatus=historyStatus,
+        rules="synthetic known data generating process",
+    )
+    return replace(law, certificate=certificate)
 
 
 def _model(*, actionEvidence: str = "identifiedIntervention", lawEvidence: str = "identifiedIntervention"):
@@ -79,7 +96,6 @@ def _model(*, actionEvidence: str = "identifiedIntervention", lawEvidence: str =
             actionInputs=("capexCut",),
             evidenceKind=lawEvidence,
             provenance="synthetic-known-dgp:capacity",
-            certificateId=_SYNTHETIC_CERTIFICATE if lawEvidence == "identifiedIntervention" else "",
             fn=capacity,
         ),
         LawSpec(
@@ -108,9 +124,12 @@ def _model(*, actionEvidence: str = "identifiedIntervention", lawEvidence: str =
             usesActionCost=True,
             evidenceKind="identifiedIntervention",
             provenance="synthetic-known-dgp:credit-line",
-            certificateId=_SYNTHETIC_CERTIFICATE,
             fn=finance,
         ),
+    )
+    laws = tuple(
+        _certifyLaw(law) if law.evidenceKind in {"measuredAssociation", "identifiedIntervention"} else law
+        for law in laws
     )
     return WorldModel("synthetic-company", "1", variables, actions, laws)
 
@@ -275,7 +294,8 @@ def testLawContextExposesOnlyDeclaredInputsAndNoIssuedActionBackdoor():
         return {"capex": 2.0, "capacity": ctx.prior["capacity"] + ctx.issuedActions["capexCut"]}
 
     leadBypassLaws = tuple(
-        replace(law, fn=issuedReader) if law.lawId == "capacityRollForward" else law for law in model.laws
+        _certifyLaw(replace(law, fn=issuedReader, certificate=None)) if law.lawId == "capacityRollForward" else law
+        for law in model.laws
     )
     leadBypass = WorldModel(model.modelId, model.version, model.variables, model.actions, leadBypassLaws)
     with pytest.raises(KeyError, match="capexCut"):
@@ -341,3 +361,59 @@ def testPathTimeUnitMustMatchWorldModel():
     weekly = replace(_path("weekly", (10.0,) * 4), frequency="week")
     with pytest.raises(SimulationSpecError, match="step contract mismatch"):
         _run(weekly, _strategy("noop", (0.0,) * 4))
+
+
+def testLawCertificateBindsContractParametersAndExecutable():
+    first = _model()
+    second = _model()
+    firstLaw = next(law for law in first.laws if law.lawId == "capacityRollForward")
+    secondLaw = next(law for law in second.laws if law.lawId == "capacityRollForward")
+    assert firstLaw.certificate is not None
+    assert secondLaw.certificate is not None
+    assert firstLaw.certificate.certificateId == secondLaw.certificate.certificateId
+
+    changed = replace(firstLaw, parameters={"capacityPerCapex": 3.0})
+    laws = tuple(changed if law.lawId == changed.lawId else law for law in first.laws)
+    with pytest.raises(SimulationSpecError, match="binding"):
+        WorldModel(first.modelId, first.version, first.variables, first.actions, laws)
+
+
+def testArbitraryLawCertificateDigestIsRejected():
+    model = _model()
+    law = next(law for law in model.laws if law.lawId == "capacityRollForward")
+    assert law.certificate is not None
+    fake = LawCertificate(
+        certificateId="a" * 64,
+        lawId=law.lawId,
+        lawVersion=law.version,
+        evidenceKind=law.evidenceKind,
+        contractHash=law.certificate.contractHash,
+        parameterHash=law.certificate.parameterHash,
+        executableHash=law.certificate.executableHash,
+        evidenceHash=law.certificate.evidenceHash,
+        knowledgeAsOf=law.certificate.knowledgeAsOf,
+        historyStatus=law.certificate.historyStatus,
+        maxAdmittedStep=law.certificate.maxAdmittedStep,
+        status=law.certificate.status,
+        rules=law.certificate.rules,
+    )
+    laws = tuple(replace(law, certificate=fake) if item.lawId == law.lawId else item for item in model.laws)
+    with pytest.raises(SimulationSpecError, match="digest"):
+        WorldModel(model.modelId, model.version, model.variables, model.actions, laws)
+
+
+def testLawCannotRunPastAdmittedHorizon():
+    path = _path("too-long", (10.0,) * 9)
+    with pytest.raises(SimulationSpecError, match="law exceeds admitted horizon"):
+        _run(path, _strategy("noop", (0.0,) * 9))
+
+
+def testRevisedHistoryCertificateCannotMakeAnActiveLaw():
+    model = _model()
+    law = next(law for law in model.laws if law.lawId == "capacityRollForward")
+    retrospective = _certifyLaw(replace(law, certificate=None), historyStatus="revisedHistory")
+    assert retrospective.certificate is not None
+    assert retrospective.certificate.status == "retrospectiveOnly"
+    laws = tuple(retrospective if item.lawId == law.lawId else item for item in model.laws)
+    with pytest.raises(SimulationSpecError, match="active law needs admitted evidence"):
+        WorldModel(model.modelId, model.version, model.variables, model.actions, laws)
