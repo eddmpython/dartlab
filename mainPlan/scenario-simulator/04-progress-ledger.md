@@ -471,6 +471,44 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
   `PolicyEvaluationCertificate`가 아직 없으므로 통계적으로 적격이어도 자동 추천은 열리지 않는다. 다음
   수직절편은 typed episode signer와 batch manifest 및 raw artifact 재계산형 signed certificate다.
 
+### 0c-36. 서명형 OOS batch/certificate와 runtime 추천 폐쇄루프 (2026-07-13)
+
+- **typed episode signer**: `admitPolicyOosEpisode`는 documented raw episode를 그대로 신뢰하지 않는다.
+  명시 allowlist의 Ed25519 공개키와 실제 private key가 일치해야 하며, origin 이전에 발급된 admitted
+  path-set·initial-state·model-executable·baseline/candidate strategy와 별도 사후 exact-as-known outcome
+  vintage를 다시 연다. parameter draw가 있으면 동일 계약의 admitted receipt도 필수다. caller가 generic
+  receipt에 임의 rule/status를 넣어 만든 `policyEpisode`는 고정 rule id/version/hash 검증에서 거부한다.
+- **path 원자료 결속**: episode의 path ID·순서·가중치·parameter draw hash·지평은 content-addressed
+  path-set artifact를 직접 JSON 재독해 대조한다. receipt subject만 맞거나 path row를 바꿔 끼운 episode는
+  서명되지 않는다. path-set은 origin 당시 사용 가능했던 `verifiedVintage + asKnown + asOfExact` 부모를
+  가져야 한다. episode receipt는 path/outcome receipt를 실제 부모로 포함하고 evaluation knowledge와
+  발급시점을 결속한다.
+- **append-only signed ledger**: 원장 row hash에 episode receipt id도 포함했다. admitted row는 append/read
+  양쪽에서 runtime verifier와 고정 episode rule을 다시 요구한다. documented raw 시험장은 보존하지만
+  signed batch에는 admitted episode만 들어갈 수 있다.
+- **batch checkpoint**: `PolicyEpisodeBatch`가 정렬된 고유 origin의 episode/receipt manifest, 원장
+  sequence/root, origin 범위, 최대 knowledge, executable·두 strategy·objective·constraints·path rule·parameter
+  contract를 동결한다. 전 episode의 계약, path frequency/span/horizon, typed receipt와 artifact를 다시 확인한
+  뒤 episode receipt 전부를 부모로 가진 `policyEpisodeBatch`를 발급한다. 원장 tail을 줄이거나 manifest를
+  바꾸면 certificate 재계산 전에 차단한다.
+- **raw-replay certificate**: `issuePolicyEvaluationCertificate`는 caller의 성공표시·평균·LCB를 받지 않고
+  동결 batch raw rows에서 9,999회 paired stationary bootstrap과 separate weighted CVaR를 다시 계산한다.
+  `statisticallyEligible`일 때만 `policyAdmitted`, 그 외에는 signed `rejected`다. 인증서는 spec·report와 모든
+  현재 계약을 content hash로 묶고 batch receipt 하나만 부모로 가진다.
+- **runtime 추천 개방**: `simulateWorld(policyAdmissionEvidence=...)`는 기본적으로 항상 policy certificate
+  부재를 issue로 남겨 `conditionalOnly`와 recommendation 없음 상태를 유지한다. 정확히 한 baseline과 한
+  candidate, 한 objective인 실행에서 현재 executable, 두 strategy, objective, hard constraints, path rule,
+  parameter measure, frequency/span/horizon, decision 시점과 raw ledger 재계산이 인증서와 모두 일치할 때만
+  `comparable`과 자동 추천을 연다. 정책·실행물·경로 규칙 하나라도 바뀌면 예외로 fail closed한다.
+- **검증**: `_attempts/policyEvaluationCertificate`에서 40주 origin x origin당 125 common path의 signed raw
+  replay를 먼저 통과시킨 뒤 본진 8건으로 승격했다. wrong key, origin 이후 parent, path primitive 치환,
+  caller-selected generic rule, compact trace, 인증서 spec 변조, decision 이전 사용, 현재 executable 변경을
+  모두 거부했다. simulate 전체 288 통과, ruff clean, Guard Index strict L0-L1.5 7/7과 외부 gate 6종 통과.
+- **정직한 잔여**: SQLite tail truncation의 외부 transparency anchor와 issuer private key의 OS/HSM 운영은
+  여전히 배포 P1이다. 현재 인증은 `modelReplay` 정책 채택 증거이지 관측된 인과적 intervention 효과가
+  아니다. 다음 제품 수직절편은 이 fail-closed 계약을 소비하는 공개 verb와 고밀도 GUI이며, GUI가 인증
+  상태를 우회해 추천 문구를 만들 수 없게 동일 certificate id를 표면화해야 한다.
+
 ### 0c-29. 분기 전이, 파라미터 불확실성, 실행 인증 P0 보강 (2026-07-13)
 
 - **전문가 재감사 결론**: 경로모형, DART와 EDGAR PIT, admission 적대검토에서 분기 grid에 연간

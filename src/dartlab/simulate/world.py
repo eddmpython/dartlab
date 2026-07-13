@@ -25,6 +25,7 @@ from dartlab.simulate.vintage import (
 
 if TYPE_CHECKING:
     from dartlab.simulate.admissionRegistry import AdmissionVerifier
+    from dartlab.simulate.policyEvaluation import PolicyAdmissionEvidence
 
 ROLE_SET = {"state", "metric", "shock"}
 EVIDENCE_SET = {
@@ -394,6 +395,7 @@ class SimulationRun:
     retainedTraceCount: int
     decisionAsOf: str
     pathAdmissionReceiptId: str
+    policyEvaluationCertificateId: str
     status: str
     decisionStatus: str
     weightLabel: str
@@ -1216,6 +1218,7 @@ def simulateWorld(
     inputWarnings: tuple[str, ...] = (),
     traceLimit: int | None = None,
     admissionVerifier: AdmissionVerifier | None = None,
+    policyAdmissionEvidence: PolicyAdmissionEvidence | None = None,
 ) -> SimulationRun:
     """Evolve every strategy over the same explicit world paths.
 
@@ -1253,6 +1256,62 @@ def simulateWorld(
             or not math.isfinite(float(constraint.threshold))
         ):
             raise SimulationSpecError(f"invalid constraint: {constraint.metric}")
+
+    executableHash = _stableHash(
+        {
+            "modelId": model.modelId,
+            "modelVersion": model.version,
+            "laws": tuple((law.lawId, law.version, law.fn) for law in model.laws),
+            "policies": tuple(
+                (strategy.strategyId, strategy.policyVersion, strategy.policyFn)
+                for strategy in strategies
+                if strategy.policyFn is not None
+            ),
+        }
+    )
+    policyAdmissionIssues = ["policyEvaluation"]
+    policyEvaluationCertificateId = ""
+    if policyAdmissionEvidence is not None:
+        if admissionVerifier is None:
+            raise SimulationSpecError("policy admission evidence needs a runtime admission verifier")
+        baselineStrategies = tuple(strategy for strategy in strategies if strategy.isBaseline)
+        candidateStrategies = tuple(strategy for strategy in strategies if not strategy.isBaseline)
+        if len(strategies) != 2 or len(baselineStrategies) != 1 or len(candidateStrategies) != 1:
+            raise SimulationSpecError("policy admission evidence needs exactly one baseline and one candidate")
+        if len(objectives) != 1:
+            raise SimulationSpecError("policy admission evidence needs exactly one objective")
+        try:
+            from dartlab.simulate.policyEvaluation import (
+                parameterContractHashFor,
+                validatePolicyEvaluationCertificate,
+            )
+
+            pathReceipt = admissionVerifier.verify(
+                pathAdmissionReceiptId,
+                expectedSubjectHash=pathSetAdmissionSubjectHash(paths),
+                expectedKind="pathSet",
+            )
+            validatePolicyEvaluationCertificate(
+                policyAdmissionEvidence.snapshot,
+                policyAdmissionEvidence.batch,
+                policyAdmissionEvidence.certificate,
+                admissionVerifier,
+                decisionAsOf=decisionAsOf,
+                executableHash=executableHash,
+                baselineStrategyContractHash=strategyContractHash(baselineStrategies[0]),
+                candidateStrategyContractHash=strategyContractHash(candidateStrategies[0]),
+                objectiveContractHash=objectiveContractHash(objectives[0]),
+                constraintContractHash=constraintContractHash(constraints),
+                pathRuleHash=pathReceipt.ruleHash,
+                parameterContractHash=parameterContractHashFor(paths),
+                pathFrequency=pathReceipt.frequency,
+                pathStepSpan=pathReceipt.stepSpan,
+                pathHorizon=horizon,
+            )
+        except (OSError, RuntimeError, ValueError) as error:
+            raise SimulationSpecError(f"policy admission verification failed: {error}") from error
+        policyAdmissionIssues = []
+        policyEvaluationCertificateId = policyAdmissionEvidence.certificate.certificateId
 
     actionById = {action.actionId: action for action in model.actions}
     cvarSpill = _CvarSpill() if traceLimit is not None and any(item.risk == "cvar" for item in objectives) else None
@@ -1451,7 +1510,6 @@ def simulateWorld(
     assumedActionLaws = [
         law.lawId for law in actionLaws if law.evidenceKind not in {"identifiedIntervention", "accountingIdentity"}
     ]
-    policyAdmissionIssues = [action.actionId for action in model.actions]
     pathAdmissionIssues = [path.pathId for path in paths if path.validationStatus != "admitted"]
     parameterPaths = tuple(path for path in paths if path.parameterDraws)
     parameterProvenanceIssues = [
@@ -1532,20 +1590,9 @@ def simulateWorld(
         "objectives": objectives,
         "inputWarnings": inputWarnings,
         "traceLimit": traceLimit,
+        "policyEvaluationCertificateId": policyEvaluationCertificateId,
     }
     runHash = _stableHash(payload)
-    executableHash = _stableHash(
-        {
-            "modelId": model.modelId,
-            "modelVersion": model.version,
-            "laws": tuple((law.lawId, law.version, law.fn) for law in model.laws),
-            "policies": tuple(
-                (strategy.strategyId, strategy.policyVersion, strategy.policyFn)
-                for strategy in strategies
-                if strategy.policyFn is not None
-            ),
-        }
-    )
     parameterHash = _stableHash(
         {
             "laws": tuple((law.lawId, law.parameters) for law in model.laws),
@@ -1569,6 +1616,7 @@ def simulateWorld(
         "retainedTraceCount": len(traces),
         "decisionAsOf": decisionAsOf,
         "pathAdmissionReceiptId": pathAdmissionReceiptId,
+        "policyEvaluationCertificateId": policyEvaluationCertificateId,
         "constraints": constraints,
         "objectives": objectives,
         "warnings": tuple(warnings),
@@ -1584,6 +1632,7 @@ def simulateWorld(
         retainedTraceCount=len(traces),
         decisionAsOf=decisionAsOf,
         pathAdmissionReceiptId=pathAdmissionReceiptId,
+        policyEvaluationCertificateId=policyEvaluationCertificateId,
         status="partial" if unqualifiedLaws else "ok",
         decisionStatus=decisionStatus,
         weightLabel=weightLabel,

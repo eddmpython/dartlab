@@ -9,10 +9,19 @@ from dataclasses import dataclass, replace
 from datetime import date
 from hashlib import sha256
 from pathlib import Path
+from typing import Mapping
 
 import numpy as np
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from dartlab.simulate.admissionRegistry import AdmissionVerifier
+from dartlab.simulate.admissionRegistry import (
+    AdmissionVerifier,
+    TrustedIssuer,
+    artifactPath,
+    issueAdmissionReceipt,
+    putAdmissionArtifact,
+)
 from dartlab.simulate.vintage import canonicalPayloadBytes, canonicalPayloadHash
 from dartlab.simulate.world import (
     ConstraintSpec,
@@ -36,6 +45,17 @@ _MIN_ORIGINS = 40
 _MIN_EFFECTIVE_BLOCKS = 8
 _MIN_TAIL_EFFECTIVE_PATHS = 20.0
 _NO_PARAMETER_CONTRACT = sha256(b"dartlab.policy-oos.no-parameter-contract.v1").hexdigest()
+_EPISODE_RULE_ID = "paired-origin-policy-oos-episode"
+_EPISODE_RULE_VERSION = "1"
+_EPISODE_RULE_HASH = sha256(b"dartlab.paired-origin-policy-oos-episode.v1").hexdigest()
+_BATCH_SCHEMA = "policy-oos-batch-v1"
+_BATCH_RULE_ID = "paired-origin-policy-oos-batch"
+_BATCH_RULE_VERSION = "1"
+_BATCH_RULE_HASH = sha256(b"dartlab.paired-origin-policy-oos-batch.v1").hexdigest()
+_CERTIFICATE_SCHEMA = "policy-evaluation-certificate-v1"
+_CERTIFICATE_RULE_ID = "paired-origin-policy-evaluation"
+_CERTIFICATE_RULE_VERSION = "1"
+_CERTIFICATE_RULE_HASH = sha256(b"dartlab.paired-origin-policy-evaluation.v1").hexdigest()
 
 
 class PolicyEvaluationError(ValueError):
@@ -109,6 +129,7 @@ class PolicyOosEpisode:
     objectiveContractHash: str
     constraintContractHash: str
     paths: tuple[PolicyPathPrimitive, ...]
+    episodeReceiptId: str = ""
     admissionStatus: str = "documented"
     schemaVersion: str = _EPISODE_SCHEMA
 
@@ -167,6 +188,7 @@ class PolicyEvaluationReport:
     minimumTailEffectivePaths: float
     candidateHardBreachCount: int
     baselineHardBreachCount: int
+    executableHash: str
     candidateStrategyContractHash: str
     baselineStrategyContractHash: str
     objectiveContractHash: str
@@ -177,8 +199,68 @@ class PolicyEvaluationReport:
     schemaVersion: str = _REPORT_SCHEMA
 
 
+@dataclass(frozen=True)
+class PolicyEpisodeBatch:
+    """서명된 episode 전부와 원장 checkpoint를 동결한 batch manifest다."""
+
+    batchId: str
+    batchReceiptId: str
+    ledgerRoot: str
+    checkpointSequence: int
+    checkpointRowHash: str
+    episodeIds: tuple[str, ...]
+    episodeReceiptIds: tuple[str, ...]
+    originStart: str
+    originEnd: str
+    knowledgeAsOf: str
+    executableHash: str
+    baselineStrategyContractHash: str
+    candidateStrategyContractHash: str
+    objectiveContractHash: str
+    constraintContractHash: str
+    pathRuleHash: str
+    parameterContractHash: str
+    status: str = "admitted"
+    schemaVersion: str = _BATCH_SCHEMA
+
+
+@dataclass(frozen=True)
+class PolicyEvaluationCertificate:
+    """raw batch 재계산 결과와 policyAdmitted 서명 receipt를 결속한다."""
+
+    certificateId: str
+    certificateReceiptId: str
+    batchId: str
+    batchReceiptId: str
+    knowledgeAsOf: str
+    executableHash: str
+    baselineStrategyContractHash: str
+    candidateStrategyContractHash: str
+    objectiveContractHash: str
+    constraintContractHash: str
+    pathRuleHash: str
+    parameterContractHash: str
+    spec: PolicyEvaluationSpec
+    report: PolicyEvaluationReport
+    status: str
+    schemaVersion: str = _CERTIFICATE_SCHEMA
+
+
+@dataclass(frozen=True)
+class PolicyAdmissionEvidence:
+    """runtime이 원장 checkpoint부터 인증서까지 함께 재검증하는 입력 묶음이다."""
+
+    snapshot: PolicyOosLedgerSnapshot
+    batch: PolicyEpisodeBatch
+    certificate: PolicyEvaluationCertificate
+
+
 def _episodePayload(episode: PolicyOosEpisode) -> dict:
-    return {name: getattr(episode, name) for name in episode.__dataclass_fields__ if name != "episodeId"}
+    return {
+        name: getattr(episode, name)
+        for name in episode.__dataclass_fields__
+        if name not in {"episodeId", "episodeReceiptId"}
+    }
 
 
 def _validatePathPrimitive(row: PolicyPathPrimitive, horizon: int) -> None:
@@ -199,8 +281,12 @@ def _validatePathPrimitive(row: PolicyPathPrimitive, horizon: int) -> None:
 
 
 def _validateEpisode(episode: PolicyOosEpisode) -> None:
-    if episode.schemaVersion != _EPISODE_SCHEMA or episode.admissionStatus != "documented":
+    if episode.schemaVersion != _EPISODE_SCHEMA or episode.admissionStatus not in {"documented", "admitted"}:
         raise PolicyEvaluationError("policy episode protocol mismatch")
+    if episode.admissionStatus == "admitted" and not _validDigest(episode.episodeReceiptId):
+        raise PolicyEvaluationError("admitted policy episode needs a signed receipt")
+    if episode.admissionStatus == "documented" and episode.episodeReceiptId:
+        raise PolicyEvaluationError("documented policy episode cannot claim a signed receipt")
     for label, value in (
         ("episode", episode.episodeId),
         ("origin", episode.originKey),
@@ -277,8 +363,91 @@ def _parameterContractHash(paths: tuple[ScenarioPath, ...]) -> str:
     )
 
 
+def parameterContractHashFor(paths: tuple[ScenarioPath, ...]) -> str:
+    """현재 경로 집합의 parameter-measure 계약을 policy 인증서와 비교 가능한 hash로 반환한다."""
+
+    return _parameterContractHash(paths)
+
+
 def _reportPayload(report: PolicyEvaluationReport) -> dict:
     return {name: getattr(report, name) for name in report.__dataclass_fields__ if name != "reportId"}
+
+
+def _batchPayload(batch: PolicyEpisodeBatch) -> dict:
+    return {
+        name: getattr(batch, name) for name in batch.__dataclass_fields__ if name not in {"batchId", "batchReceiptId"}
+    }
+
+
+def _certificatePayload(certificate: PolicyEvaluationCertificate) -> dict:
+    return {
+        name: getattr(certificate, name)
+        for name in certificate.__dataclass_fields__
+        if name not in {"certificateId", "certificateReceiptId"}
+    }
+
+
+def _validateBatch(batch: PolicyEpisodeBatch) -> None:
+    if batch.schemaVersion != _BATCH_SCHEMA or batch.status != "admitted":
+        raise PolicyEvaluationError("policy episode batch protocol mismatch")
+    for label, value in (
+        ("batch", batch.batchId),
+        ("batch receipt", batch.batchReceiptId),
+        ("ledger root", batch.ledgerRoot),
+        ("checkpoint row", batch.checkpointRowHash),
+        ("executable", batch.executableHash),
+        ("baseline contract", batch.baselineStrategyContractHash),
+        ("candidate contract", batch.candidateStrategyContractHash),
+        ("objective contract", batch.objectiveContractHash),
+        ("constraint contract", batch.constraintContractHash),
+        ("path rule", batch.pathRuleHash),
+        ("parameter contract", batch.parameterContractHash),
+    ):
+        if not _validDigest(value):
+            raise PolicyEvaluationError(f"policy episode batch {label} hash is invalid")
+    if (
+        batch.batchId != canonicalPayloadHash(_batchPayload(batch))
+        or batch.checkpointSequence < 1
+        or batch.ledgerRoot != batch.checkpointRowHash
+        or len(batch.episodeIds) != batch.checkpointSequence
+        or len(batch.episodeReceiptIds) != batch.checkpointSequence
+        or len(set(batch.episodeIds)) != len(batch.episodeIds)
+        or len(set(batch.episodeReceiptIds)) != len(batch.episodeReceiptIds)
+        or any(not _validDigest(value) for value in (*batch.episodeIds, *batch.episodeReceiptIds))
+    ):
+        raise PolicyEvaluationError("policy episode batch manifest mismatch")
+    if not (
+        _dateText(batch.originStart, "batch originStart")
+        <= _dateText(batch.originEnd, "batch originEnd")
+        <= _dateText(batch.knowledgeAsOf, "batch knowledgeAsOf")
+    ):
+        raise PolicyEvaluationError("policy episode batch timing mismatch")
+
+
+def _validateCertificate(certificate: PolicyEvaluationCertificate) -> None:
+    if certificate.schemaVersion != _CERTIFICATE_SCHEMA or certificate.status not in {
+        "policyAdmitted",
+        "rejected",
+    }:
+        raise PolicyEvaluationError("policy evaluation certificate protocol mismatch")
+    for label, value in (
+        ("certificate", certificate.certificateId),
+        ("certificate receipt", certificate.certificateReceiptId),
+        ("batch", certificate.batchId),
+        ("batch receipt", certificate.batchReceiptId),
+        ("executable", certificate.executableHash),
+        ("baseline contract", certificate.baselineStrategyContractHash),
+        ("candidate contract", certificate.candidateStrategyContractHash),
+        ("objective contract", certificate.objectiveContractHash),
+        ("constraint contract", certificate.constraintContractHash),
+        ("path rule", certificate.pathRuleHash),
+        ("parameter contract", certificate.parameterContractHash),
+    ):
+        if not _validDigest(value):
+            raise PolicyEvaluationError(f"policy evaluation certificate {label} hash is invalid")
+    if certificate.certificateId != canonicalPayloadHash(_certificatePayload(certificate)):
+        raise PolicyEvaluationError("policy evaluation certificate content hash mismatch")
+    _dateText(certificate.knowledgeAsOf, "certificate knowledgeAsOf")
 
 
 def _traceMetric(trace: PathTrace, objective: ObjectiveSpec) -> tuple[float, ...]:
@@ -429,7 +598,260 @@ def buildPolicyOosEpisode(
     return episode
 
 
-def _episodeFromPayload(episodeId: str, payload: dict) -> PolicyOosEpisode:
+def _validateIssuerKey(
+    privateKey: bytes,
+    *,
+    issuerId: str,
+    issuerKeyId: str,
+    trustedIssuers: Mapping[str, TrustedIssuer],
+) -> None:
+    trusted = trustedIssuers.get(issuerKeyId)
+    if trusted is None or trusted.issuerId != issuerId or trusted.status != "trusted":
+        raise PolicyEvaluationError("policy issuer key is not trusted")
+    try:
+        public = (
+            Ed25519PrivateKey.from_private_bytes(privateKey)
+            .public_key()
+            .public_bytes(
+                serialization.Encoding.Raw,
+                serialization.PublicFormat.Raw,
+            )
+        )
+    except ValueError as error:
+        raise PolicyEvaluationError("policy issuer private key is invalid") from error
+    if public != trusted.publicKey:
+        raise PolicyEvaluationError("policy issuer private key does not match the allowlist")
+
+
+def _requireReceipt(
+    verifier: AdmissionVerifier,
+    receiptId: str,
+    *,
+    kind: str,
+    subjectHash: str | None = None,
+    statuses: set[str],
+):
+    receipt = verifier.verify(receiptId, expectedSubjectHash=subjectHash, expectedKind=kind)
+    if receipt.status not in statuses:
+        raise PolicyEvaluationError(f"policy parent is not admitted: {kind}")
+    return receipt
+
+
+def _requireRule(receipt, *, ruleId: str, ruleVersion: str, ruleHash: str) -> None:
+    if (receipt.ruleId, receipt.ruleVersion, receipt.ruleHash) != (ruleId, ruleVersion, ruleHash):
+        raise PolicyEvaluationError(f"typed admission rule mismatch: {receipt.kind}")
+
+
+def _validateEpisodeReceipt(episode: PolicyOosEpisode, receipt) -> None:
+    _requireRule(
+        receipt,
+        ruleId=_EPISODE_RULE_ID,
+        ruleVersion=_EPISODE_RULE_VERSION,
+        ruleHash=_EPISODE_RULE_HASH,
+    )
+    if (
+        receipt.artifactHash != episode.episodeId
+        or receipt.knowledgeAsOf != _dateText(episode.evaluationKnowledgeAsOf, "evaluationKnowledgeAsOf")
+        or episode.pathAdmissionReceiptId not in receipt.parentReceiptIds
+        or episode.outcomeVintageReceiptId not in receipt.parentReceiptIds
+    ):
+        raise PolicyEvaluationError("policy episode receipt contract mismatch")
+
+
+def _validateEpisodePathArtifact(episode: PolicyOosEpisode, pathReceipt, verifier: AdmissionVerifier) -> None:
+    if pathReceipt.artifactHash != episode.pathContentHash:
+        raise PolicyEvaluationError("policy episode path receipt artifact mismatch")
+    horizon = len(episode.paths[0].candidateMetricByStep)
+    if (
+        pathReceipt.ruleId != episode.pathRuleId
+        or pathReceipt.ruleVersion != episode.pathRuleVersion
+        or pathReceipt.ruleHash != episode.pathRuleHash
+        or pathReceipt.maxAdmittedStep != horizon
+    ):
+        raise PolicyEvaluationError("policy episode path admission contract mismatch")
+    try:
+        payload = json.loads(artifactPath(verifier.artifactRoot, pathReceipt.artifactHash).read_text(encoding="utf-8"))
+        artifactRows = payload["paths"]
+    except (OSError, KeyError, TypeError, json.JSONDecodeError) as error:
+        raise PolicyEvaluationError("policy episode path-set artifact is malformed") from error
+    if not isinstance(artifactRows, list) or len(artifactRows) != len(episode.paths):
+        raise PolicyEvaluationError("policy episode raw rows do not match the admitted path set")
+    for primitive, artifactRow in zip(episode.paths, artifactRows, strict=True):
+        if not isinstance(artifactRow, dict):
+            raise PolicyEvaluationError("policy episode path-set artifact row is malformed")
+        weight = 1.0 if artifactRow.get("weight") is None else float(artifactRow["weight"])
+        parameterDraws = artifactRow.get("parameterDraws")
+        steps = artifactRow.get("steps")
+        if (
+            primitive.pathId != artifactRow.get("pathId")
+            or primitive.pathWeight != weight
+            or not isinstance(parameterDraws, dict)
+            or primitive.parameterDrawHash != canonicalPayloadHash(parameterDraws)
+            or not isinstance(steps, list)
+            or len(steps) != horizon
+            or artifactRow.get("frequency") != pathReceipt.frequency
+            or int(artifactRow.get("stepSpan", 0)) != pathReceipt.stepSpan
+            or int(artifactRow.get("maxAdmittedStep", -1)) != horizon
+        ):
+            raise PolicyEvaluationError("policy episode raw path primitive drifted from its admitted artifact")
+    parentReceipts = tuple(verifier.verify(receiptId) for receiptId in pathReceipt.parentReceiptIds)
+    vintageParents = tuple(
+        receipt
+        for receipt in parentReceipts
+        if receipt.kind == "dataVintage"
+        and receipt.status == "verifiedVintage"
+        and receipt.revisionPolicy == "asKnown"
+        and receipt.coverage == "asOfExact"
+    )
+    origin = _dateText(episode.originAsOf, "originAsOf")
+    if not vintageParents or any(
+        _dateText(receipt.issuedAt, "path vintage issuedAt") > origin for receipt in vintageParents
+    ):
+        raise PolicyEvaluationError("policy episode path set lacks an origin-available exact vintage parent")
+
+
+def admitPolicyOosEpisode(
+    episode: PolicyOosEpisode,
+    databasePath: str | Path,
+    artifactRoot: str | Path,
+    *,
+    privateKey: bytes,
+    initialStateReceiptId: str,
+    modelReceiptId: str,
+    baselineStrategyReceiptId: str,
+    candidateStrategyReceiptId: str,
+    parameterDrawReceiptId: str = "",
+    issuerId: str,
+    issuerKeyId: str,
+    issuerExecutableHash: str,
+    issuedAt: str,
+    trustedIssuers: Mapping[str, TrustedIssuer],
+) -> PolicyOosEpisode:
+    """typed parent를 재검증한 documented episode만 서명된 admitted evidence로 승격한다."""
+
+    _validateEpisode(episode)
+    if episode.admissionStatus != "documented":
+        raise PolicyEvaluationError("only documented policy episodes can enter the typed signer")
+    _validateIssuerKey(
+        privateKey,
+        issuerId=issuerId,
+        issuerKeyId=issuerKeyId,
+        trustedIssuers=trustedIssuers,
+    )
+    verifier = AdmissionVerifier(databasePath, artifactRoot, trustedIssuers)
+    pathReceipt = _requireReceipt(
+        verifier,
+        episode.pathAdmissionReceiptId,
+        kind="pathSet",
+        subjectHash=episode.pathContentHash,
+        statuses={"admitted"},
+    )
+    _validateEpisodePathArtifact(episode, pathReceipt, verifier)
+    outcomeReceipt = _requireReceipt(
+        verifier,
+        episode.outcomeVintageReceiptId,
+        kind="dataVintage",
+        statuses={"verifiedVintage"},
+    )
+    initialReceipt = _requireReceipt(
+        verifier,
+        initialStateReceiptId,
+        kind="initialState",
+        subjectHash=episode.dataVintageHash,
+        statuses={"admitted"},
+    )
+    modelReceipt = _requireReceipt(
+        verifier,
+        modelReceiptId,
+        kind="modelExecutable",
+        subjectHash=episode.executableHash,
+        statuses={"admitted"},
+    )
+    baselineReceipt = _requireReceipt(
+        verifier,
+        baselineStrategyReceiptId,
+        kind="strategy",
+        subjectHash=episode.baselineStrategyContractHash,
+        statuses={"admitted"},
+    )
+    candidateReceipt = _requireReceipt(
+        verifier,
+        candidateStrategyReceiptId,
+        kind="strategy",
+        subjectHash=episode.candidateStrategyContractHash,
+        statuses={"admitted"},
+    )
+    decisionParents = [pathReceipt, initialReceipt, modelReceipt, baselineReceipt, candidateReceipt]
+    parentIds = [
+        episode.pathAdmissionReceiptId,
+        episode.outcomeVintageReceiptId,
+        initialStateReceiptId,
+        modelReceiptId,
+        baselineStrategyReceiptId,
+        candidateStrategyReceiptId,
+    ]
+    if episode.parameterContractHash != _NO_PARAMETER_CONTRACT:
+        parameterReceipt = _requireReceipt(
+            verifier,
+            parameterDrawReceiptId,
+            kind="parameterDraw",
+            subjectHash=episode.parameterContractHash,
+            statuses={"admitted"},
+        )
+        decisionParents.append(parameterReceipt)
+        parentIds.append(parameterDrawReceiptId)
+    elif parameterDrawReceiptId:
+        raise PolicyEvaluationError("parameter receipt was supplied to a no-parameter episode")
+    origin = _dateText(episode.originAsOf, "originAsOf")
+    if any(_dateText(receipt.issuedAt, "decision parent issuedAt") > origin for receipt in decisionParents):
+        raise PolicyEvaluationError("policy decision parent was issued after the origin")
+    outcomeThrough = _dateText(episode.outcomeThrough, "outcomeThrough")
+    outcomeKnowledge = _dateText(outcomeReceipt.knowledgeAsOf, "outcome knowledge")
+    if (
+        outcomeKnowledge < outcomeThrough
+        or outcomeKnowledge > _dateText(episode.outcomeAvailableAt, "outcomeAvailableAt")
+        or _dateText(outcomeReceipt.issuedAt, "outcome issuedAt")
+        > _dateText(episode.evaluationKnowledgeAsOf, "evaluationKnowledgeAsOf")
+    ):
+        raise PolicyEvaluationError("policy outcome receipt timing is invalid")
+    if _dateText(issuedAt, "episode issuedAt") < _dateText(episode.evaluationKnowledgeAsOf, "evaluationKnowledgeAsOf"):
+        raise PolicyEvaluationError("policy episode cannot be issued before evaluation knowledge")
+    admitted = replace(episode, episodeId="", admissionStatus="admitted")
+    admitted = replace(admitted, episodeId=canonicalPayloadHash(_episodePayload(admitted)))
+    artifactHash = putAdmissionArtifact(artifactRoot, canonicalPayloadBytes(_episodePayload(admitted)))
+    if artifactHash != admitted.episodeId:
+        raise PolicyEvaluationError("policy episode artifact hash mismatch")
+    receipt = issueAdmissionReceipt(
+        databasePath,
+        artifactRoot,
+        privateKey=privateKey,
+        kind="policyEpisode",
+        subjectHash=admitted.episodeId,
+        artifactHash=artifactHash,
+        parentReceiptIds=tuple(parentIds),
+        ruleId=_EPISODE_RULE_ID,
+        ruleVersion=_EPISODE_RULE_VERSION,
+        ruleHash=_EPISODE_RULE_HASH,
+        issuerId=issuerId,
+        issuerKeyId=issuerKeyId,
+        issuerExecutableHash=issuerExecutableHash,
+        knowledgeAsOf=episode.evaluationKnowledgeAsOf,
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        frequency=pathReceipt.frequency,
+        stepSpan=pathReceipt.stepSpan,
+        maxAdmittedStep=pathReceipt.maxAdmittedStep,
+        status="admitted",
+        issuedAt=issuedAt,
+        trustedIssuers=trustedIssuers,
+    )
+    _validateEpisodeReceipt(admitted, receipt)
+    signed = replace(admitted, episodeReceiptId=receipt.receiptId)
+    _validateEpisode(signed)
+    return signed
+
+
+def _episodeFromPayload(episodeId: str, episodeReceiptId: str, payload: dict) -> PolicyOosEpisode:
     try:
         payload["objective"] = ObjectiveSpec(**payload["objective"])
         payload["paths"] = tuple(
@@ -444,7 +866,7 @@ def _episodeFromPayload(episodeId: str, payload: dict) -> PolicyOosEpisode:
             )
             for row in payload["paths"]
         )
-        return PolicyOosEpisode(episodeId=episodeId, **payload)
+        return PolicyOosEpisode(episodeId=episodeId, episodeReceiptId=episodeReceiptId, **payload)
     except (KeyError, TypeError, ValueError) as error:
         raise PolicyEvaluationError("policy episode row payload is malformed") from error
 
@@ -461,6 +883,7 @@ def initializePolicyOosLedger(databasePath: str | Path) -> None:
                 seq INTEGER PRIMARY KEY AUTOINCREMENT,
                 episode_id TEXT NOT NULL UNIQUE,
                 origin_key TEXT NOT NULL UNIQUE,
+                episode_receipt_id TEXT NOT NULL,
                 payload_json TEXT NOT NULL,
                 previous_row_hash TEXT NOT NULL,
                 row_hash TEXT NOT NULL UNIQUE
@@ -479,22 +902,39 @@ def initializePolicyOosLedger(databasePath: str | Path) -> None:
         )
 
 
-def _rowHash(previousHash: str, episodeId: str, originKey: str) -> str:
+def _rowHash(previousHash: str, episodeId: str, originKey: str, episodeReceiptId: str) -> str:
     return sha256(
         b"dartlab.policy-oos-ledger-row.v1\0"
         + previousHash.encode("ascii")
         + episodeId.encode("ascii")
         + originKey.encode("ascii")
+        + episodeReceiptId.encode("ascii")
     ).hexdigest()
 
 
-def appendPolicyOosEpisode(databasePath: str | Path, episode: PolicyOosEpisode) -> None:
+def appendPolicyOosEpisode(
+    databasePath: str | Path,
+    episode: PolicyOosEpisode,
+    *,
+    admissionVerifier: AdmissionVerifier | None = None,
+) -> None:
     """검증한 raw episode를 중복 origin 없이 append-only 원장에 추가한다."""
 
     _validateEpisode(episode)
     database = Path(databasePath)
     if not database.exists():
         raise PolicyEvaluationError("policy OOS ledger is unavailable")
+    if episode.admissionStatus == "admitted":
+        if admissionVerifier is None:
+            raise PolicyEvaluationError("admitted policy episode needs a runtime verifier")
+        receipt = admissionVerifier.verify(
+            episode.episodeReceiptId,
+            expectedSubjectHash=episode.episodeId,
+            expectedKind="policyEpisode",
+        )
+        if receipt.status != "admitted":
+            raise PolicyEvaluationError("policy episode receipt is not admitted")
+        _validateEpisodeReceipt(episode, receipt)
     with sqlite3.connect(database) as connection:
         connection.execute("BEGIN IMMEDIATE")
         row = connection.execute("SELECT row_hash FROM policy_oos_episodes ORDER BY seq DESC LIMIT 1").fetchone()
@@ -502,20 +942,26 @@ def appendPolicyOosEpisode(databasePath: str | Path, episode: PolicyOosEpisode) 
         try:
             connection.execute(
                 "INSERT INTO policy_oos_episodes "
-                "(episode_id, origin_key, payload_json, previous_row_hash, row_hash) VALUES (?, ?, ?, ?, ?)",
+                "(episode_id, origin_key, episode_receipt_id, payload_json, previous_row_hash, row_hash) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
                 (
                     episode.episodeId,
                     episode.originKey,
+                    episode.episodeReceiptId,
                     canonicalPayloadBytes(_episodePayload(episode)).decode("utf-8"),
                     previousHash,
-                    _rowHash(previousHash, episode.episodeId, episode.originKey),
+                    _rowHash(previousHash, episode.episodeId, episode.originKey, episode.episodeReceiptId),
                 ),
             )
         except sqlite3.IntegrityError as error:
             raise PolicyEvaluationError("duplicate policy OOS episode or origin") from error
 
 
-def readPolicyOosLedger(databasePath: str | Path) -> PolicyOosLedgerSnapshot:
+def readPolicyOosLedger(
+    databasePath: str | Path,
+    *,
+    admissionVerifier: AdmissionVerifier | None = None,
+) -> PolicyOosLedgerSnapshot:
     """전체 sequence와 row chain 및 episode 내용을 다시 계산해 읽는다."""
 
     database = Path(databasePath)
@@ -524,7 +970,7 @@ def readPolicyOosLedger(databasePath: str | Path) -> PolicyOosLedgerSnapshot:
     try:
         connection = sqlite3.connect(f"file:{database.as_posix()}?mode=ro", uri=True)
         rows = connection.execute(
-            "SELECT seq, episode_id, origin_key, payload_json, previous_row_hash, row_hash "
+            "SELECT seq, episode_id, origin_key, episode_receipt_id, payload_json, previous_row_hash, row_hash "
             "FROM policy_oos_episodes ORDER BY seq"
         ).fetchall()
         connection.close()
@@ -533,18 +979,29 @@ def readPolicyOosLedger(databasePath: str | Path) -> PolicyOosLedgerSnapshot:
     episodes: list[PolicyOosEpisode] = []
     previousHash = ""
     for expectedSequence, row in enumerate(rows, start=1):
-        sequence, episodeId, originKey, payloadJson, storedPrevious, storedHash = row
+        sequence, episodeId, originKey, episodeReceiptId, payloadJson, storedPrevious, storedHash = row
         if sequence != expectedSequence or storedPrevious != previousHash:
             raise PolicyEvaluationError("policy OOS ledger chain mismatch")
-        expectedHash = _rowHash(previousHash, str(episodeId), str(originKey))
+        expectedHash = _rowHash(previousHash, str(episodeId), str(originKey), str(episodeReceiptId))
         if storedHash != expectedHash:
             raise PolicyEvaluationError("policy OOS ledger row hash mismatch")
         try:
             payload = json.loads(str(payloadJson))
         except json.JSONDecodeError as error:
             raise PolicyEvaluationError("policy OOS ledger payload is malformed") from error
-        episode = _episodeFromPayload(str(episodeId), payload)
+        episode = _episodeFromPayload(str(episodeId), str(episodeReceiptId), payload)
         _validateEpisode(episode)
+        if episode.admissionStatus == "admitted":
+            if admissionVerifier is None:
+                raise PolicyEvaluationError("admitted policy episode needs a runtime verifier")
+            receipt = admissionVerifier.verify(
+                episode.episodeReceiptId,
+                expectedSubjectHash=episode.episodeId,
+                expectedKind="policyEpisode",
+            )
+            if receipt.status != "admitted":
+                raise PolicyEvaluationError("policy episode receipt is not admitted")
+            _validateEpisodeReceipt(episode, receipt)
         if episode.originKey != originKey:
             raise PolicyEvaluationError("policy OOS ledger origin key mismatch")
         episodes.append(episode)
@@ -777,6 +1234,7 @@ def evaluatePolicyOos(snapshot: PolicyOosLedgerSnapshot, spec: PolicyEvaluationS
         minimumTailEffectivePaths=tailEss,
         candidateHardBreachCount=candidateBreaches,
         baselineHardBreachCount=baselineBreaches,
+        executableHash=episodes[0].executableHash,
         candidateStrategyContractHash=episodes[0].candidateStrategyContractHash,
         baselineStrategyContractHash=episodes[0].baselineStrategyContractHash,
         objectiveContractHash=episodes[0].objectiveContractHash,
@@ -786,3 +1244,393 @@ def evaluatePolicyOos(snapshot: PolicyOosLedgerSnapshot, spec: PolicyEvaluationS
         reasons=tuple(reasons),
     )
     return replace(provisional, reportId=canonicalPayloadHash(_reportPayload(provisional)))
+
+
+def _episodeSeries(snapshot: PolicyOosLedgerSnapshot) -> tuple[PolicyOosEpisode, ...]:
+    if not snapshot.episodes or not _validDigest(snapshot.ledgerRoot):
+        raise PolicyEvaluationError("policy batch needs a non-empty verified ledger snapshot")
+    episodes = tuple(sorted(snapshot.episodes, key=lambda episode: (episode.originAsOf, episode.originOrdinal)))
+    for episode in episodes:
+        _validateEpisode(episode)
+        if episode.admissionStatus != "admitted":
+            raise PolicyEvaluationError("policy batch accepts only admitted episodes")
+    ordinals = [episode.originOrdinal for episode in episodes]
+    if ordinals != list(range(ordinals[0], ordinals[0] + len(ordinals))):
+        raise PolicyEvaluationError("policy batch origin ordinal gap")
+    if len({episode.originAsOf for episode in episodes}) != len(episodes):
+        raise PolicyEvaluationError("policy batch contains duplicate origins")
+    contractFields = (
+        "executableHash",
+        "baselineStrategyContractHash",
+        "candidateStrategyContractHash",
+        "objectiveContractHash",
+        "constraintContractHash",
+        "pathRuleId",
+        "pathRuleVersion",
+        "pathRuleHash",
+        "parameterContractHash",
+    )
+    for fieldName in contractFields:
+        if len({getattr(episode, fieldName) for episode in episodes}) != 1:
+            raise PolicyEvaluationError(f"policy batch contract drift: {fieldName}")
+    return episodes
+
+
+def sealPolicyOosBatch(
+    snapshot: PolicyOosLedgerSnapshot,
+    databasePath: str | Path,
+    artifactRoot: str | Path,
+    *,
+    privateKey: bytes,
+    issuerId: str,
+    issuerKeyId: str,
+    issuerExecutableHash: str,
+    issuedAt: str,
+    trustedIssuers: Mapping[str, TrustedIssuer],
+) -> PolicyEpisodeBatch:
+    """서명된 episode 집합과 append-only 원장의 현재 checkpoint를 하나의 batch로 동결한다."""
+
+    _validateIssuerKey(
+        privateKey,
+        issuerId=issuerId,
+        issuerKeyId=issuerKeyId,
+        trustedIssuers=trustedIssuers,
+    )
+    episodes = _episodeSeries(snapshot)
+    verifier = AdmissionVerifier(databasePath, artifactRoot, trustedIssuers)
+    pathContracts: set[tuple[str, int, int, str, str, str]] = set()
+    episodeReceiptIds: list[str] = []
+    for episode in episodes:
+        receipt = _requireReceipt(
+            verifier,
+            episode.episodeReceiptId,
+            kind="policyEpisode",
+            subjectHash=episode.episodeId,
+            statuses={"admitted"},
+        )
+        _validateEpisodeReceipt(episode, receipt)
+        pathReceipt = _requireReceipt(
+            verifier,
+            episode.pathAdmissionReceiptId,
+            kind="pathSet",
+            subjectHash=episode.pathContentHash,
+            statuses={"admitted"},
+        )
+        _validateEpisodePathArtifact(episode, pathReceipt, verifier)
+        pathContracts.add(
+            (
+                pathReceipt.frequency,
+                pathReceipt.stepSpan,
+                pathReceipt.maxAdmittedStep,
+                pathReceipt.ruleId,
+                pathReceipt.ruleVersion,
+                pathReceipt.ruleHash,
+            )
+        )
+        episodeReceiptIds.append(receipt.receiptId)
+    if len(pathContracts) != 1:
+        raise PolicyEvaluationError("policy batch path frequency or horizon drift")
+    frequency, stepSpan, maxAdmittedStep, _, _, _ = next(iter(pathContracts))
+    knowledgeAsOf = max(_dateText(episode.evaluationKnowledgeAsOf, "evaluationKnowledgeAsOf") for episode in episodes)
+    if _dateText(issuedAt, "batch issuedAt") < knowledgeAsOf:
+        raise PolicyEvaluationError("policy batch cannot be issued before its evidence knowledge")
+    provisional = PolicyEpisodeBatch(
+        batchId="",
+        batchReceiptId="",
+        ledgerRoot=snapshot.ledgerRoot,
+        checkpointSequence=len(episodes),
+        checkpointRowHash=snapshot.ledgerRoot,
+        episodeIds=tuple(episode.episodeId for episode in episodes),
+        episodeReceiptIds=tuple(episodeReceiptIds),
+        originStart=episodes[0].originAsOf,
+        originEnd=episodes[-1].originAsOf,
+        knowledgeAsOf=knowledgeAsOf,
+        executableHash=episodes[0].executableHash,
+        baselineStrategyContractHash=episodes[0].baselineStrategyContractHash,
+        candidateStrategyContractHash=episodes[0].candidateStrategyContractHash,
+        objectiveContractHash=episodes[0].objectiveContractHash,
+        constraintContractHash=episodes[0].constraintContractHash,
+        pathRuleHash=episodes[0].pathRuleHash,
+        parameterContractHash=episodes[0].parameterContractHash,
+    )
+    batchId = canonicalPayloadHash(_batchPayload(provisional))
+    unsigned = replace(provisional, batchId=batchId)
+    artifactHash = putAdmissionArtifact(artifactRoot, canonicalPayloadBytes(_batchPayload(unsigned)))
+    if artifactHash != batchId:
+        raise PolicyEvaluationError("policy batch artifact hash mismatch")
+    receipt = issueAdmissionReceipt(
+        databasePath,
+        artifactRoot,
+        privateKey=privateKey,
+        kind="policyEpisodeBatch",
+        subjectHash=batchId,
+        artifactHash=artifactHash,
+        parentReceiptIds=tuple(episodeReceiptIds),
+        ruleId=_BATCH_RULE_ID,
+        ruleVersion=_BATCH_RULE_VERSION,
+        ruleHash=_BATCH_RULE_HASH,
+        issuerId=issuerId,
+        issuerKeyId=issuerKeyId,
+        issuerExecutableHash=issuerExecutableHash,
+        knowledgeAsOf=knowledgeAsOf,
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        frequency=frequency,
+        stepSpan=stepSpan,
+        maxAdmittedStep=maxAdmittedStep,
+        status="admitted",
+        issuedAt=issuedAt,
+        trustedIssuers=trustedIssuers,
+    )
+    _requireRule(receipt, ruleId=_BATCH_RULE_ID, ruleVersion=_BATCH_RULE_VERSION, ruleHash=_BATCH_RULE_HASH)
+    if receipt.parentReceiptIds != tuple(episodeReceiptIds):
+        raise PolicyEvaluationError("policy batch receipt parent mismatch")
+    batch = replace(unsigned, batchReceiptId=receipt.receiptId)
+    _validateBatch(batch)
+    return batch
+
+
+def issuePolicyEvaluationCertificate(
+    snapshot: PolicyOosLedgerSnapshot,
+    batch: PolicyEpisodeBatch,
+    spec: PolicyEvaluationSpec,
+    databasePath: str | Path,
+    artifactRoot: str | Path,
+    *,
+    privateKey: bytes,
+    issuerId: str,
+    issuerKeyId: str,
+    issuerExecutableHash: str,
+    issuedAt: str,
+    trustedIssuers: Mapping[str, TrustedIssuer],
+) -> PolicyEvaluationCertificate:
+    """동결 batch의 raw rows를 내부 재계산해 채택 또는 기각 인증서를 발행한다."""
+
+    _validateIssuerKey(
+        privateKey,
+        issuerId=issuerId,
+        issuerKeyId=issuerKeyId,
+        trustedIssuers=trustedIssuers,
+    )
+    _validateBatch(batch)
+    episodes = _episodeSeries(snapshot)
+    if (
+        batch.ledgerRoot != snapshot.ledgerRoot
+        or batch.checkpointSequence != len(episodes)
+        or batch.checkpointRowHash != snapshot.ledgerRoot
+        or batch.episodeIds != tuple(episode.episodeId for episode in episodes)
+        or batch.episodeReceiptIds != tuple(episode.episodeReceiptId for episode in episodes)
+    ):
+        raise PolicyEvaluationError("policy batch does not match the ledger checkpoint")
+    verifier = AdmissionVerifier(databasePath, artifactRoot, trustedIssuers)
+    batchReceipt = _requireReceipt(
+        verifier,
+        batch.batchReceiptId,
+        kind="policyEpisodeBatch",
+        subjectHash=batch.batchId,
+        statuses={"admitted"},
+    )
+    _requireRule(
+        batchReceipt,
+        ruleId=_BATCH_RULE_ID,
+        ruleVersion=_BATCH_RULE_VERSION,
+        ruleHash=_BATCH_RULE_HASH,
+    )
+    if (
+        batchReceipt.artifactHash != batch.batchId
+        or batchReceipt.parentReceiptIds != batch.episodeReceiptIds
+        or batchReceipt.knowledgeAsOf != batch.knowledgeAsOf
+    ):
+        raise PolicyEvaluationError("policy batch receipt artifact mismatch")
+    report = evaluatePolicyOos(snapshot, spec)
+    contractValues = (
+        report.executableHash,
+        report.baselineStrategyContractHash,
+        report.candidateStrategyContractHash,
+        report.objectiveContractHash,
+        report.constraintContractHash,
+        report.pathRuleHash,
+        report.parameterContractHash,
+    )
+    batchValues = (
+        batch.executableHash,
+        batch.baselineStrategyContractHash,
+        batch.candidateStrategyContractHash,
+        batch.objectiveContractHash,
+        batch.constraintContractHash,
+        batch.pathRuleHash,
+        batch.parameterContractHash,
+    )
+    if contractValues != batchValues or report.episodeIds != batch.episodeIds:
+        raise PolicyEvaluationError("policy evaluation report drifted from the sealed batch")
+    status = "policyAdmitted" if report.status == "statisticallyEligible" else "rejected"
+    if _dateText(issuedAt, "certificate issuedAt") < batch.knowledgeAsOf:
+        raise PolicyEvaluationError("policy certificate cannot be issued before its batch knowledge")
+    provisional = PolicyEvaluationCertificate(
+        certificateId="",
+        certificateReceiptId="",
+        batchId=batch.batchId,
+        batchReceiptId=batch.batchReceiptId,
+        knowledgeAsOf=batch.knowledgeAsOf,
+        executableHash=batch.executableHash,
+        baselineStrategyContractHash=batch.baselineStrategyContractHash,
+        candidateStrategyContractHash=batch.candidateStrategyContractHash,
+        objectiveContractHash=batch.objectiveContractHash,
+        constraintContractHash=batch.constraintContractHash,
+        pathRuleHash=batch.pathRuleHash,
+        parameterContractHash=batch.parameterContractHash,
+        spec=spec,
+        report=report,
+        status=status,
+    )
+    certificateId = canonicalPayloadHash(_certificatePayload(provisional))
+    unsigned = replace(provisional, certificateId=certificateId)
+    artifactHash = putAdmissionArtifact(artifactRoot, canonicalPayloadBytes(_certificatePayload(unsigned)))
+    if artifactHash != certificateId:
+        raise PolicyEvaluationError("policy certificate artifact hash mismatch")
+    receipt = issueAdmissionReceipt(
+        databasePath,
+        artifactRoot,
+        privateKey=privateKey,
+        kind="policyEvaluation",
+        subjectHash=batch.candidateStrategyContractHash,
+        artifactHash=artifactHash,
+        parentReceiptIds=(batch.batchReceiptId,),
+        ruleId=_CERTIFICATE_RULE_ID,
+        ruleVersion=_CERTIFICATE_RULE_VERSION,
+        ruleHash=_CERTIFICATE_RULE_HASH,
+        issuerId=issuerId,
+        issuerKeyId=issuerKeyId,
+        issuerExecutableHash=issuerExecutableHash,
+        knowledgeAsOf=batch.knowledgeAsOf,
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        frequency=batchReceipt.frequency,
+        stepSpan=batchReceipt.stepSpan,
+        maxAdmittedStep=batchReceipt.maxAdmittedStep,
+        status=status,
+        issuedAt=issuedAt,
+        trustedIssuers=trustedIssuers,
+    )
+    _requireRule(
+        receipt,
+        ruleId=_CERTIFICATE_RULE_ID,
+        ruleVersion=_CERTIFICATE_RULE_VERSION,
+        ruleHash=_CERTIFICATE_RULE_HASH,
+    )
+    certificate = replace(unsigned, certificateReceiptId=receipt.receiptId)
+    _validateCertificate(certificate)
+    return certificate
+
+
+def validatePolicyEvaluationCertificate(
+    snapshot: PolicyOosLedgerSnapshot,
+    batch: PolicyEpisodeBatch,
+    certificate: PolicyEvaluationCertificate,
+    admissionVerifier: AdmissionVerifier,
+    *,
+    decisionAsOf: str,
+    executableHash: str,
+    baselineStrategyContractHash: str,
+    candidateStrategyContractHash: str,
+    objectiveContractHash: str,
+    constraintContractHash: str,
+    pathRuleHash: str,
+    parameterContractHash: str,
+    pathFrequency: str,
+    pathStepSpan: int,
+    pathHorizon: int,
+) -> PolicyEvaluationReport:
+    """현재 의사결정 계약과 원장 raw rows에 대해 policyAdmitted 인증서를 완전 재검증한다."""
+
+    _validateBatch(batch)
+    _validateCertificate(certificate)
+    episodes = _episodeSeries(snapshot)
+    if certificate.status != "policyAdmitted":
+        raise PolicyEvaluationError("policy evaluation certificate is not admitted")
+    if (
+        batch.ledgerRoot != snapshot.ledgerRoot
+        or batch.checkpointSequence != len(episodes)
+        or batch.episodeIds != tuple(episode.episodeId for episode in episodes)
+        or batch.episodeReceiptIds != tuple(episode.episodeReceiptId for episode in episodes)
+    ):
+        raise PolicyEvaluationError("policy evaluation ledger checkpoint mismatch")
+    batchReceipt = _requireReceipt(
+        admissionVerifier,
+        batch.batchReceiptId,
+        kind="policyEpisodeBatch",
+        subjectHash=batch.batchId,
+        statuses={"admitted"},
+    )
+    certificateReceipt = _requireReceipt(
+        admissionVerifier,
+        certificate.certificateReceiptId,
+        kind="policyEvaluation",
+        subjectHash=candidateStrategyContractHash,
+        statuses={"policyAdmitted"},
+    )
+    _requireRule(
+        batchReceipt,
+        ruleId=_BATCH_RULE_ID,
+        ruleVersion=_BATCH_RULE_VERSION,
+        ruleHash=_BATCH_RULE_HASH,
+    )
+    _requireRule(
+        certificateReceipt,
+        ruleId=_CERTIFICATE_RULE_ID,
+        ruleVersion=_CERTIFICATE_RULE_VERSION,
+        ruleHash=_CERTIFICATE_RULE_HASH,
+    )
+    if (
+        batchReceipt.artifactHash != batch.batchId
+        or batchReceipt.parentReceiptIds != batch.episodeReceiptIds
+        or batchReceipt.knowledgeAsOf != batch.knowledgeAsOf
+        or certificateReceipt.artifactHash != certificate.certificateId
+        or certificate.batchId != batch.batchId
+        or certificate.batchReceiptId != batch.batchReceiptId
+        or certificateReceipt.parentReceiptIds != (batch.batchReceiptId,)
+        or certificate.knowledgeAsOf != batch.knowledgeAsOf
+        or certificateReceipt.knowledgeAsOf != certificate.knowledgeAsOf
+        or batchReceipt.frequency != pathFrequency
+        or certificateReceipt.frequency != pathFrequency
+        or batchReceipt.stepSpan != pathStepSpan
+        or certificateReceipt.stepSpan != pathStepSpan
+        or batchReceipt.maxAdmittedStep != pathHorizon
+        or certificateReceipt.maxAdmittedStep != pathHorizon
+    ):
+        raise PolicyEvaluationError("policy evaluation certificate lineage mismatch")
+    decision = _dateText(decisionAsOf, "decisionAsOf")
+    if _dateText(certificateReceipt.issuedAt, "certificate issuedAt") > decision:
+        raise PolicyEvaluationError("policy evaluation certificate was unavailable at the decision")
+    currentContracts = (
+        executableHash,
+        baselineStrategyContractHash,
+        candidateStrategyContractHash,
+        objectiveContractHash,
+        constraintContractHash,
+        pathRuleHash,
+        parameterContractHash,
+    )
+    certificateContracts = (
+        certificate.executableHash,
+        certificate.baselineStrategyContractHash,
+        certificate.candidateStrategyContractHash,
+        certificate.objectiveContractHash,
+        certificate.constraintContractHash,
+        certificate.pathRuleHash,
+        certificate.parameterContractHash,
+    )
+    if currentContracts != certificateContracts:
+        raise PolicyEvaluationError("policy evaluation certificate does not bind the current decision contract")
+    report = evaluatePolicyOos(snapshot, certificate.spec)
+    if report != certificate.report or report.status != "statisticallyEligible":
+        raise PolicyEvaluationError("policy evaluation certificate raw-statistic replay mismatch")
+    if artifactPath(admissionVerifier.artifactRoot, batch.batchId).read_bytes() != canonicalPayloadBytes(
+        _batchPayload(batch)
+    ):
+        raise PolicyEvaluationError("policy episode batch artifact content mismatch")
+    if artifactPath(admissionVerifier.artifactRoot, certificate.certificateId).read_bytes() != canonicalPayloadBytes(
+        _certificatePayload(certificate)
+    ):
+        raise PolicyEvaluationError("policy evaluation certificate artifact content mismatch")
+    return report
