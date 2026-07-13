@@ -142,8 +142,6 @@ jobs:
           # 비우면 analytics beacon 을 로드하지 않음.
           VITE_CLOUDFLARE_WEB_ANALYTICS_TOKEN: ${{ vars.CLOUDFLARE_WEB_ANALYTICS_TOKEN }}
         run: |
-          # pyproc github git dep: npm 이 lock 을 git+ssh 로 정규화 -> SSH 키 없는 러너에서 clone 실패. https 재작성.
-          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
           npm ci
           npm test -w landing
           BASE_PATH=/dartlab npm run build -w landing

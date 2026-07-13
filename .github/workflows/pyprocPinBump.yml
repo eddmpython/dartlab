@@ -1,12 +1,11 @@
-# pyproc 핀 자동 반영(게이트). vision 정책이 float 을 금지하므로 라이브 float 이 아니라
-# "최신 태그 -> SHA 고정 -> PYPROC 게이트 통과 -> 봇 PR" 로 반영한다.
-# patch + 비 tier2(격리 경로 무접촉) + GATE-A green 만 auto-merge, 그 외는 사람 리뷰.
-# mainPlan/pyproc-runtime-ssot 02-auto-update. Tier-2(fork) 브라우저 게이트(GATE-B)는 P4 에서 추가.
+# pyproc 핀 자동 반영(게이트). pyproc 은 npm 에 릴리즈되고 dartlab 은 npm 버전으로 소비한다.
+# 최신 npm 버전 -> 게이트 통과 -> 봇 PR. patch + 비 tier2(격리 경로 무접촉) + GATE-A green 만 auto-merge,
+# 그 외(minor+/tier2)는 사람 리뷰 + 실 Chromium GATE-B. mainPlan/pyproc-runtime-ssot 02-auto-update.
 name: pyproc pin bump (gated)
 
 on:
   schedule:
-    - cron: "0 0 * * 1" # 매주 월 00:00 UTC(09:00 KST), dependabot 케이던스 정렬
+    - cron: "0 */6 * * *" # 6시간마다(pyproc 릴리즈가 잦아 빠르게 따라간다)
   workflow_dispatch: {}
 
 permissions:
@@ -15,7 +14,7 @@ permissions:
 
 concurrency:
   group: pyproc-pin
-  cancel-in-progress: false # 자기 자신과 레이스 금지
+  cancel-in-progress: false
 
 jobs:
   resolve:
@@ -24,8 +23,8 @@ jobs:
       newer: ${{ steps.r.outputs.newer }}
       tier2: ${{ steps.r.outputs.tier2 }}
       bump: ${{ steps.r.outputs.bump }}
-      sha: ${{ steps.r.outputs.sha }}
-      tag: ${{ steps.r.outputs.tag }}
+      latest: ${{ steps.r.outputs.latest }}
+      current: ${{ steps.r.outputs.current }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -45,12 +44,9 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "20"
-      # npm 이 github git dep 를 git+ssh 로 정규화 -> npm 이 SSH 를 타지 않게 https 로 재작성.
-      - name: pyproc git dep ssh->https
-        run: git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
       - name: apply pin + install
         run: |
-          node .github/scripts/pyprocApplyPin.mjs "${{ needs.resolve.outputs.sha }}"
+          node .github/scripts/pyprocApplyPin.mjs "${{ needs.resolve.outputs.latest }}"
           npm install
           npm install --no-save pyodide@0.27.5
       - name: GATE-A (pyproc Runtime+AsgiServer x dartlab)
@@ -67,11 +63,9 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "20"
-      - name: pyproc git dep ssh->https
-        run: git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
       - name: apply pin + install + chromium
         run: |
-          node .github/scripts/pyprocApplyPin.mjs "${{ needs.resolve.outputs.sha }}"
+          node .github/scripts/pyprocApplyPin.mjs "${{ needs.resolve.outputs.latest }}"
           npm install
           npm install --no-save playwright@1.61.1
           npx playwright install --with-deps chromium
@@ -89,24 +83,23 @@ jobs:
           node-version: "20"
       - name: apply pin + lock 갱신
         run: |
-          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
-          node .github/scripts/pyprocApplyPin.mjs "${{ needs.resolve.outputs.sha }}"
+          node .github/scripts/pyprocApplyPin.mjs "${{ needs.resolve.outputs.latest }}"
           npm install
       - name: 봇 PR (patch+비tier2 -> auto-merge, 그 외 리뷰)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          BR="pyproc-pin-${{ needs.resolve.outputs.tag }}"
+          BR="pyproc-pin-${{ needs.resolve.outputs.latest }}"
           git config user.name "dartlab-bot"
           git config user.email "dartlab-bot@users.noreply.github.com"
           git switch -c "$BR"
           git commit -o landing/package.json package-lock.json \
-            -m "보안: pyproc 핀 ${{ needs.resolve.outputs.tag }} (SHA 고정, GATE-A green)"
+            -m "보안: pyproc 핀 ${{ needs.resolve.outputs.latest }} (npm, GATE-A green)"
           git push -u origin "$BR"
           gh pr create -B master -H "$BR" \
-            -t "pyproc 핀 -> ${{ needs.resolve.outputs.tag }}" \
-            -b "SHA ${{ needs.resolve.outputs.sha }} / bump=${{ needs.resolve.outputs.bump }} / tier2=${{ needs.resolve.outputs.tier2 }} / GATE-A PASS"
+            -t "pyproc 핀 -> ${{ needs.resolve.outputs.latest }}" \
+            -b "npm ${{ needs.resolve.outputs.current }} -> ${{ needs.resolve.outputs.latest }} / bump=${{ needs.resolve.outputs.bump }} / tier2=${{ needs.resolve.outputs.tier2 }} / GATE-A PASS"
           if [ "${{ needs.resolve.outputs.bump }}" = "patch" ] && [ "${{ needs.resolve.outputs.tier2 }}" != "true" ]; then
             gh pr merge --squash --auto
           else

@@ -10,10 +10,15 @@
 import { chromium } from 'playwright';
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { join, extname, resolve } from 'node:path';
+import { join, extname, dirname } from 'node:path';
+import { createRequire } from 'node:module';
 
 const PYODIDE_INDEX = 'https://cdn.jsdelivr.net/pyodide/v0.27.5/full/';
-const PYPROC_DIR = resolve('node_modules/pyproc');
+// pyproc 는 landing 워크스페이스 의존이라 npm install 시 landing/node_modules 로 간다. 루트/landing 양쪽 대응.
+// pyproc 은 exports 맵이 있어 package.json 서브패스가 막힌다. '.'(index.js) 를 해소해 패키지 디렉토리를 얻는다.
+const PYPROC_DIR = dirname(
+	createRequire(import.meta.url).resolve('pyproc', { paths: [process.cwd(), join(process.cwd(), 'landing')] })
+);
 const MIME = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.map': 'application/json', '.wasm': 'application/wasm' };
 const FN = 'def _fn(n):\\n    return sum(i*i for i in range(n))';
 

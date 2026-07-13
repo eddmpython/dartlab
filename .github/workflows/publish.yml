@@ -109,8 +109,6 @@ jobs:
         # npm ci 가 필요했다). adapter-static + vite 플러그인이 svelte-kit sync 자동 수행 →
         # build/{index.html,_app}. 옛 React ui/web 은 DARTLAB_UI_LEGACY=1 가역 escape 로 잔존(_ui_path).
         run: |
-          # pyproc github git dep: npm 이 lock 을 git+ssh 로 정규화 -> SSH 키 없는 러너에서 clone 실패. https 재작성.
-          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
           npm ci
           npm run build -w @dartlab/ui-local
 

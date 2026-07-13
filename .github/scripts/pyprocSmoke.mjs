@@ -9,7 +9,16 @@
 // 실측 기대: pyproc Runtime.run + AsgiServer 로 dartlab /health 200. 실패 시 exit 1.
 
 import { loadPyodide } from 'pyodide';
-import { Runtime } from 'pyproc/runtime';
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+import { join } from 'node:path';
+
+// pyproc 는 landing 워크스페이스 의존이라 npm install 시 landing/node_modules 로 간다(루트 아님).
+// 루트/landing 양쪽에서 해소되도록 명시 paths.
+const _ppRuntime = createRequire(import.meta.url).resolve('pyproc/runtime', {
+	paths: [process.cwd(), join(process.cwd(), 'landing')]
+});
+const { Runtime } = await import(pathToFileURL(_ppRuntime).href);
 
 const t0 = Date.now();
 const el = () => ((Date.now() - t0) / 1000).toFixed(1) + 's';
