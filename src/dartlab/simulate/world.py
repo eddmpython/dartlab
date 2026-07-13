@@ -15,6 +15,15 @@ from dartlab.simulate.parameterDraws import (
     ParameterDrawSetReceipt,
     validateParameterDrawSetReceipt,
 )
+from dartlab.simulate.stateSupport import (
+    INITIAL_STATE_RULE_HASH,
+    INITIAL_STATE_RULE_ID,
+    INITIAL_STATE_RULE_VERSION,
+    StatePrimitive,
+    StateSupportError,
+    stateAdmissionArtifact,
+    stateAdmissionSubjectHash,
+)
 from dartlab.simulate.vintage import (
     VintageError,
     VintageRef,
@@ -238,6 +247,7 @@ class WorldState:
     knowledgeAsOf: str = ""
     decisionAsOf: str = ""
     vintage: VintageRef | None = None
+    admissionReceiptId: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "values", _freezeMapping(self.values))
@@ -394,8 +404,10 @@ class SimulationRun:
     traceCount: int
     retainedTraceCount: int
     decisionAsOf: str
+    initialStateAdmissionReceiptId: str
     pathAdmissionReceiptId: str
     policyEvaluationCertificateId: str
+    stateSupportId: str
     status: str
     decisionStatus: str
     weightLabel: str
@@ -491,6 +503,57 @@ def constraintContractHash(constraints: tuple[ConstraintSpec, ...]) -> str:
     """모든 hard constraint의 순서와 임계 계약을 하나의 hash로 묶는다."""
 
     return _stableHash({"constraints": constraints})
+
+
+def executableHashFor(model: WorldModel, strategies: tuple[StrategySpec, ...]) -> str:
+    """Return the executable hash used by policy admission and runtime.
+
+    Args:
+        model: Compiled variable, action, and transition-law contract.
+        strategies: Static schedules or versioned closed-loop policies.
+
+    Returns:
+        SHA-256 digest of law and policy executable identities.
+
+    Raises:
+        SimulationSpecError: Raised later by model construction for malformed inputs.
+
+    Example:
+        ``digest = executableHashFor(model, strategies)``
+    """
+
+    return _stableHash(
+        {
+            "modelId": model.modelId,
+            "modelVersion": model.version,
+            "laws": tuple((law.lawId, law.version, law.fn) for law in model.laws),
+            "policies": tuple(
+                (strategy.strategyId, strategy.policyVersion, strategy.policyFn)
+                for strategy in strategies
+                if strategy.policyFn is not None
+            ),
+        }
+    )
+
+
+def dataVintageHashFor(initial: WorldState, paths: tuple[ScenarioPath, ...]) -> str:
+    """Bind the exact initial state and ordered future path set.
+
+    Args:
+        initial: Current or historical decision-time world state.
+        paths: Ordered common future paths used by every strategy.
+
+    Returns:
+        SHA-256 digest used by ``SimulationRun.dataVintageHash``.
+
+    Raises:
+        SimulationSpecError: Raised by the caller if inputs violate runtime contracts.
+
+    Example:
+        ``digest = dataVintageHashFor(initial, paths)``
+    """
+
+    return _stableHash({"initial": initial, "paths": paths})
 
 
 def traceRootFor(traces: tuple[PathTrace, ...]) -> str:
@@ -842,6 +905,103 @@ class WorldModel:
         object.__setattr__(self, "_orderedLaws", tuple(ordered))
 
 
+def initialStatePrimitives(model: WorldModel, initial: WorldState) -> tuple[StatePrimitive, ...]:
+    """Compile every model-visible initial value into a typed primitive.
+
+    Args:
+        model: Variable registry used by the executable.
+        initial: Initial values visible to transition laws and policies.
+
+    Returns:
+        Variable-id sorted primitives containing unit, role, and finite value.
+
+    Raises:
+        SimulationSpecError: If an input is unknown, a shock, missing, or non-finite.
+
+    Example:
+        ``state = initialStatePrimitives(model, initial)``
+    """
+
+    byId = {variable.variableId: variable for variable in model.variables}
+    unknown = sorted(set(initial.values) - set(byId))
+    if unknown:
+        raise SimulationSpecError(f"unknown initial variables: {unknown}")
+    primitives = []
+    for variableId in sorted(initial.values):
+        spec = byId[variableId]
+        if spec.role == "shock":
+            raise SimulationSpecError(f"initial state cannot contain a shock variable: {variableId}")
+        primitives.append(
+            StatePrimitive(
+                variableId=variableId,
+                unit=spec.unit,
+                role=spec.role,
+                value=_validateValue(model, variableId, initial.values[variableId], f"initial.{variableId}"),
+            )
+        )
+    return tuple(primitives)
+
+
+def initialStateAdmissionArtifact(model: WorldModel, initial: WorldState) -> bytes:
+    """Return canonical bytes for the exact executable-visible initial state.
+
+    Args:
+        model: Variable registry defining identifiers, units, roles, and bounds.
+        initial: Decision-time state with knowledge and decision cutoffs.
+
+    Returns:
+        Canonical JSON bytes for a typed ``initialState`` admission receipt.
+
+    Raises:
+        SimulationSpecError: If the visible state or cutoffs are incomplete.
+
+    Example:
+        ``artifact = initialStateAdmissionArtifact(model, initial)``
+    """
+
+    knowledgeAsOf = initial.knowledgeAsOf or initial.asOf
+    decisionAsOf = initial.decisionAsOf or knowledgeAsOf
+    try:
+        return stateAdmissionArtifact(
+            initialStatePrimitives(model, initial),
+            asOf=initial.asOf,
+            knowledgeAsOf=knowledgeAsOf,
+            decisionAsOf=decisionAsOf,
+        )
+    except StateSupportError as error:
+        raise SimulationSpecError(str(error)) from error
+
+
+def initialStateAdmissionSubjectHash(model: WorldModel, initial: WorldState) -> str:
+    """Return the exact subject hash a typed initial-state receipt must sign.
+
+    Args:
+        model: Variable registry defining the visible state contract.
+        initial: Decision-time state and temporal cutoffs.
+
+    Returns:
+        SHA-256 digest of ``initialStateAdmissionArtifact``.
+
+    Raises:
+        SimulationSpecError: If the state cannot be compiled.
+
+    Example:
+        ``subject = initialStateAdmissionSubjectHash(model, initial)``
+    """
+
+    knowledgeAsOf = initial.knowledgeAsOf or initial.asOf
+    decisionAsOf = initial.decisionAsOf or knowledgeAsOf
+    try:
+        return stateAdmissionSubjectHash(
+            initialStatePrimitives(model, initial),
+            asOf=initial.asOf,
+            knowledgeAsOf=knowledgeAsOf,
+            decisionAsOf=decisionAsOf,
+        )
+    except StateSupportError as error:
+        raise SimulationSpecError(str(error)) from error
+
+
 def _validateValue(model: WorldModel, variableId: str, value: float | None, label: str) -> float:
     number = _finite(value, label)
     spec = next(v for v in model.variables if v.variableId == variableId)
@@ -947,6 +1107,7 @@ def _checkInputs(
     shockIds = {v.variableId for v in model.variables if v.role == "shock"}
     pathParameterIds = {name for law in model.laws for name in law.pathParameterInputs}
     requiredInitial = {name for law in model.laws for name in law.priorInputs}
+    initialStatePrimitives(model, initial)
     for name in requiredInitial:
         _validateValue(model, name, initial.values.get(name), f"initial.{name}")
     parameterPaths = tuple(path for path in paths if path.parameterDraws)
@@ -1257,20 +1418,10 @@ def simulateWorld(
         ):
             raise SimulationSpecError(f"invalid constraint: {constraint.metric}")
 
-    executableHash = _stableHash(
-        {
-            "modelId": model.modelId,
-            "modelVersion": model.version,
-            "laws": tuple((law.lawId, law.version, law.fn) for law in model.laws),
-            "policies": tuple(
-                (strategy.strategyId, strategy.policyVersion, strategy.policyFn)
-                for strategy in strategies
-                if strategy.policyFn is not None
-            ),
-        }
-    )
+    executableHash = executableHashFor(model, strategies)
     policyAdmissionIssues = ["policyEvaluation"]
     policyEvaluationCertificateId = ""
+    stateSupportId = ""
     if policyAdmissionEvidence is not None:
         if admissionVerifier is None:
             raise SimulationSpecError("policy admission evidence needs a runtime admission verifier")
@@ -1281,11 +1432,41 @@ def simulateWorld(
         if len(objectives) != 1:
             raise SimulationSpecError("policy admission evidence needs exactly one objective")
         try:
+            from dartlab.simulate.admissionRegistry import artifactPath
             from dartlab.simulate.policyEvaluation import (
                 parameterContractHashFor,
                 validatePolicyEvaluationCertificate,
             )
 
+            if initial.vintage is None or not isExactAsKnown(initial.vintage):
+                raise SimulationSpecError("policy admission needs an exact as-known current initial state")
+            if not _validDigest(initial.admissionReceiptId) or not _validDigest(initial.vintage.receiptId):
+                raise SimulationSpecError("policy admission needs signed current initial-state lineage")
+            initialArtifact = initialStateAdmissionArtifact(model, initial)
+            initialSubjectHash = initialStateAdmissionSubjectHash(model, initial)
+            initialReceipt = admissionVerifier.verify(
+                initial.admissionReceiptId,
+                expectedSubjectHash=initialSubjectHash,
+                expectedKind="initialState",
+            )
+            vintageReceipt = admissionVerifier.verify(
+                initial.vintage.receiptId,
+                expectedSubjectHash=initial.vintage.payloadHash,
+                expectedKind="dataVintage",
+            )
+            if (
+                initialReceipt.status != "admitted"
+                or initialReceipt.artifactHash != initialSubjectHash
+                or (initialReceipt.ruleId, initialReceipt.ruleVersion, initialReceipt.ruleHash)
+                != (INITIAL_STATE_RULE_ID, INITIAL_STATE_RULE_VERSION, INITIAL_STATE_RULE_HASH)
+                or initial.vintage.receiptId not in initialReceipt.parentReceiptIds
+                or vintageReceipt.status != "verifiedVintage"
+                or vintageReceipt.revisionPolicy != "asKnown"
+                or vintageReceipt.coverage != "asOfExact"
+                or _comparableDate(initialReceipt.issuedAt) > decisionAsOf
+                or artifactPath(admissionVerifier.artifactRoot, initialSubjectHash).read_bytes() != initialArtifact
+            ):
+                raise SimulationSpecError("current initial-state admission lineage mismatch")
             pathReceipt = admissionVerifier.verify(
                 pathAdmissionReceiptId,
                 expectedSubjectHash=pathSetAdmissionSubjectHash(paths),
@@ -1307,11 +1488,13 @@ def simulateWorld(
                 pathFrequency=pathReceipt.frequency,
                 pathStepSpan=pathReceipt.stepSpan,
                 pathHorizon=horizon,
+                currentState=initialStatePrimitives(model, initial),
             )
         except (OSError, RuntimeError, ValueError) as error:
             raise SimulationSpecError(f"policy admission verification failed: {error}") from error
         policyAdmissionIssues = []
         policyEvaluationCertificateId = policyAdmissionEvidence.certificate.certificateId
+        stateSupportId = policyAdmissionEvidence.certificate.stateSupport.supportId
 
     actionById = {action.actionId: action for action in model.actions}
     cvarSpill = _CvarSpill() if traceLimit is not None and any(item.risk == "cvar" for item in objectives) else None
@@ -1602,7 +1785,7 @@ def simulateWorld(
             "objectives": objectives,
         }
     )
-    dataVintageHash = _stableHash({"initial": initial, "paths": paths})
+    dataVintageHash = dataVintageHashFor(initial, paths)
     traceRoot = _stableHash({"traceCount": traceCount, "traceChain": traceChain.hexdigest()})
     resultPayload = {
         "status": "partial" if unqualifiedLaws else "ok",
@@ -1615,8 +1798,10 @@ def simulateWorld(
         "traceCount": traceCount,
         "retainedTraceCount": len(traces),
         "decisionAsOf": decisionAsOf,
+        "initialStateAdmissionReceiptId": initial.admissionReceiptId,
         "pathAdmissionReceiptId": pathAdmissionReceiptId,
         "policyEvaluationCertificateId": policyEvaluationCertificateId,
+        "stateSupportId": stateSupportId,
         "constraints": constraints,
         "objectives": objectives,
         "warnings": tuple(warnings),
@@ -1631,8 +1816,10 @@ def simulateWorld(
         traceCount=traceCount,
         retainedTraceCount=len(traces),
         decisionAsOf=decisionAsOf,
+        initialStateAdmissionReceiptId=initial.admissionReceiptId,
         pathAdmissionReceiptId=pathAdmissionReceiptId,
         policyEvaluationCertificateId=policyEvaluationCertificateId,
+        stateSupportId=stateSupportId,
         status="partial" if unqualifiedLaws else "ok",
         decisionStatus=decisionStatus,
         weightLabel=weightLabel,

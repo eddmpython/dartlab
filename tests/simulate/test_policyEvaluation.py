@@ -36,7 +36,20 @@ from dartlab.simulate.policyEvaluation import (
     validatePolicyEvaluationCertificate,
     weightedLowerCvar,
 )
-from dartlab.simulate.vintage import VintageRef, canonicalPayloadBytes, canonicalPayloadHash
+from dartlab.simulate.stateSupport import (
+    INITIAL_STATE_RULE_HASH,
+    INITIAL_STATE_RULE_ID,
+    StatePrimitive,
+    stateAdmissionArtifact,
+    stateAdmissionSubjectHash,
+    stateContractHash,
+)
+from dartlab.simulate.vintage import (
+    VintageRef,
+    canonicalPayloadBytes,
+    canonicalPayloadHash,
+    worldStatePayloadHash,
+)
 from dartlab.simulate.world import (
     ActionSpec,
     LawSpec,
@@ -50,6 +63,8 @@ from dartlab.simulate.world import (
     bindAdmittedPathContent,
     bindPathAdmissionReceipt,
     constraintContractHash,
+    initialStateAdmissionArtifact,
+    initialStateAdmissionSubjectHash,
     objectiveContractHash,
     pathSetAdmissionArtifact,
     pathSetAdmissionSubjectHash,
@@ -78,6 +93,14 @@ def _episode(
     candidateBreach: bool = False,
 ) -> PolicyOosEpisode:
     origin = date(2020, 1, 3) + timedelta(days=7 * ordinal)
+    initialState = (StatePrimitive("state", "ratio", "state", 1.0 + ordinal / 100.0),)
+    originText = _stamp(origin)
+    initialContentHash = stateAdmissionSubjectHash(
+        initialState,
+        asOf=originText,
+        knowledgeAsOf=originText,
+        decisionAsOf=originText,
+    )
     objective = ObjectiveSpec("metric", reducer="terminal", direction="maximize", risk="average")
     paths = tuple(
         PolicyPathPrimitive(
@@ -98,7 +121,7 @@ def _episode(
         episodeId="",
         originKey=canonicalPayloadHash({"origin": _stamp(origin)}),
         originOrdinal=ordinal,
-        originAsOf=_stamp(origin),
+        originAsOf=originText,
         outcomeThrough=_stamp(origin + timedelta(days=28)),
         outcomeAvailableAt=_stamp(origin + timedelta(days=29)),
         evaluationKnowledgeAsOf=_stamp(origin + timedelta(days=30)),
@@ -109,6 +132,12 @@ def _episode(
         executableHash="a" * 64,
         parameterHash=canonicalPayloadHash({"parameter": ordinal}),
         dataVintageHash=canonicalPayloadHash({"vintage": ordinal}),
+        initialStateAsOf=originText,
+        initialStateKnowledgeAsOf=originText,
+        initialStateContentHash=initialContentHash,
+        initialStateReceiptId="",
+        stateContractHash=stateContractHash(initialState),
+        initialState=initialState,
         pathAdmissionReceiptId=canonicalPayloadHash({"pathReceipt": ordinal}),
         pathContentHash=canonicalPayloadHash({"pathContent": ordinal}),
         pathRuleId="path-rule",
@@ -245,14 +274,19 @@ def _signedRun(tmp_path, *, traceLimit=None):
     model = WorldModel(
         "policy-oos-world",
         "1",
-        (VariableSpec("shock", "ratio", "shock"), VariableSpec("metric", "ratio", "metric")),
+        (
+            VariableSpec("state", "ratio", "state"),
+            VariableSpec("shock", "ratio", "shock"),
+            VariableSpec("metric", "ratio", "metric"),
+        ),
         (),
         (
             LawSpec(
                 "identity",
                 outputs=("metric",),
+                priorInputs=("state",),
                 shockInputs=("shock",),
-                fn=lambda ctx: {"metric": ctx.shocks["shock"]},
+                fn=lambda ctx: {"metric": ctx.shocks["shock"] + 0.0 * ctx.prior["state"]},
             ),
         ),
     )
@@ -269,9 +303,15 @@ def _signedRun(tmp_path, *, traceLimit=None):
         policyFn=policy,
     )
     objective = ObjectiveSpec("metric", reducer="terminal", direction="maximize", risk="average")
+    initial = WorldState(
+        {"state": 1.0},
+        asOf="20250101",
+        knowledgeAsOf="20250101",
+        decisionAsOf="20250102",
+    )
     run = simulateWorld(
         model,
-        WorldState({}, asOf="20250101", knowledgeAsOf="20250101", decisionAsOf="20250102"),
+        initial,
         paths,
         (baseline, candidate),
         objectives=(objective,),
@@ -280,6 +320,8 @@ def _signedRun(tmp_path, *, traceLimit=None):
     )
     return (
         run,
+        model,
+        initial,
         paths,
         baseline,
         candidate,
@@ -396,11 +438,11 @@ def _admittedPolicyFixture(
     executableHash = executableHash or canonicalPayloadHash({"executable": "policy-world-v1"})
     baselineHash = baselineHash or canonicalPayloadHash({"strategy": "baseline-v1"})
     candidateHash = candidateHash or canonicalPayloadHash({"strategy": "candidate-v1"})
-    initialReceipt = _issueTestReceipt(
+    initialVintageReceipt = _issueTestReceipt(
         context,
-        kind="initialState",
-        content=b"initial state",
-        subjectHash=dataVintageHash,
+        kind="dataVintage",
+        content=b"historical initial-state source vintage",
+        status="verifiedVintage",
     )
     modelReceipt = _issueTestReceipt(
         context,
@@ -459,6 +501,20 @@ def _admittedPolicyFixture(
             constraintContractHash=episodeConstraintHash,
         )
         raw = replace(raw, episodeId=canonicalPayloadHash(_episodePayload(raw)))
+        initialReceipt = _issueTestReceipt(
+            context,
+            kind="initialState",
+            content=stateAdmissionArtifact(
+                raw.initialState,
+                asOf=raw.initialStateAsOf,
+                knowledgeAsOf=raw.initialStateKnowledgeAsOf,
+                decisionAsOf=raw.originAsOf,
+            ),
+            subjectHash=raw.initialStateContentHash,
+            parentReceiptIds=(initialVintageReceipt.receiptId,),
+            ruleId=INITIAL_STATE_RULE_ID,
+            ruleHash=INITIAL_STATE_RULE_HASH,
+        )
         signed = admitPolicyOosEpisode(
             raw,
             registry,
@@ -566,9 +622,11 @@ def testCvarNoninferiorityUsesSeparatePolicyCvarsNotCvarOfDelta() -> None:
 
 
 def testEpisodeBuildsOnlyFromFullPairedRunAndKeepsModelReplayLabel(tmp_path) -> None:
-    run, paths, baseline, candidate, objective, outcomeReceiptId, verifier, *_ = _signedRun(tmp_path)
+    run, model, initial, paths, baseline, candidate, objective, outcomeReceiptId, verifier, *_ = _signedRun(tmp_path)
     episode = buildPolicyOosEpisode(
         run,
+        model,
+        initial,
         paths,
         baseline,
         candidate,
@@ -594,21 +652,27 @@ def testEpisodeBuildsOnlyFromFullPairedRunAndKeepsModelReplayLabel(tmp_path) -> 
             compact[2],
             compact[3],
             compact[4],
+            compact[5],
+            compact[6],
             (),
             originOrdinal=0,
             outcomeThrough="20250103",
             outcomeAvailableAt="20250104",
             evaluationKnowledgeAsOf="20250105",
-            outcomeVintageReceiptId=compact[5],
-            admissionVerifier=compact[6],
+            outcomeVintageReceiptId=compact[7],
+            admissionVerifier=compact[8],
         )
 
 
 def testTypedEpisodeSignerRejectsWrongKeyAndFutureDecisionParent(tmp_path) -> None:
-    run, paths, baseline, candidate, objective, outcomeReceiptId, verifier, *context = _signedRun(tmp_path)
+    run, model, initial, paths, baseline, candidate, objective, outcomeReceiptId, verifier, *context = _signedRun(
+        tmp_path
+    )
     registry, artifacts, privateBytes, trusted = context
     episode = buildPolicyOosEpisode(
         run,
+        model,
+        initial,
         paths,
         baseline,
         candidate,
@@ -622,11 +686,25 @@ def testTypedEpisodeSignerRejectsWrongKeyAndFutureDecisionParent(tmp_path) -> No
         admissionVerifier=verifier,
     )
     receiptContext = (registry, artifacts, privateBytes, trusted)
+    initialVintageReceipt = _issueTestReceipt(
+        receiptContext,
+        kind="dataVintage",
+        content=b"signed initial-state source vintage",
+        status="verifiedVintage",
+    )
     initialReceipt = _issueTestReceipt(
         receiptContext,
         kind="initialState",
-        content=b"signed initial state",
-        subjectHash=episode.dataVintageHash,
+        content=stateAdmissionArtifact(
+            episode.initialState,
+            asOf=episode.initialStateAsOf,
+            knowledgeAsOf=episode.initialStateKnowledgeAsOf,
+            decisionAsOf=episode.originAsOf,
+        ),
+        subjectHash=episode.initialStateContentHash,
+        parentReceiptIds=(initialVintageReceipt.receiptId,),
+        ruleId=INITIAL_STATE_RULE_ID,
+        ruleHash=INITIAL_STATE_RULE_HASH,
     )
     modelReceipt = _issueTestReceipt(
         receiptContext,
@@ -657,6 +735,31 @@ def testTypedEpisodeSignerRejectsWrongKeyAndFutureDecisionParent(tmp_path) -> No
         "issuedAt": "20250105T120000Z",
         "trustedIssuers": trusted,
     }
+    wrongRuleInitialReceipt = _issueTestReceipt(
+        receiptContext,
+        kind="initialState",
+        content=stateAdmissionArtifact(
+            episode.initialState,
+            asOf=episode.initialStateAsOf,
+            knowledgeAsOf=episode.initialStateKnowledgeAsOf,
+            decisionAsOf=episode.originAsOf,
+        ),
+        subjectHash=episode.initialStateContentHash,
+        parentReceiptIds=(initialVintageReceipt.receiptId,),
+        ruleId="caller-selected-state-rule",
+        ruleHash=canonicalPayloadHash({"rule": "caller-selected-state"}),
+    )
+    with pytest.raises(PolicyEvaluationError, match="initial-state typed admission rule mismatch"):
+        admitPolicyOosEpisode(
+            episode,
+            registry,
+            artifacts,
+            privateKey=privateBytes,
+            **{
+                **signerArguments,
+                "initialStateReceiptId": wrongRuleInitialReceipt.receiptId,
+            },
+        )
     wrongKey = Ed25519PrivateKey.generate().private_bytes_raw()
     with pytest.raises(PolicyEvaluationError, match="does not match"):
         admitPolicyOosEpisode(
@@ -713,7 +816,12 @@ def testTypedEpisodeSignerRejectsWrongKeyAndFutureDecisionParent(tmp_path) -> No
     with pytest.raises(PolicyEvaluationError, match="runtime verifier"):
         readPolicyOosLedger(ledger)
     assert readPolicyOosLedger(ledger, admissionVerifier=verifier).episodes == (signed,)
-    forged = replace(episode, episodeId="", admissionStatus="admitted")
+    forged = replace(
+        episode,
+        episodeId="",
+        initialStateReceiptId=initialReceipt.receiptId,
+        admissionStatus="admitted",
+    )
     forged = replace(forged, episodeId=canonicalPayloadHash(_episodePayload(forged)))
     forgedArtifact = putAdmissionArtifact(artifacts, canonicalPayloadBytes(_episodePayload(forged)))
     forgedReceipt = issueAdmissionReceipt(
@@ -793,6 +901,7 @@ def testSignedBatchAndRawReplayAreRequiredForPolicyAdmission(tmp_path) -> None:
         "pathFrequency": "week",
         "pathStepSpan": 1,
         "pathHorizon": 1,
+        "currentState": fixture["episodes"][20].initialState,
     }
     report = validatePolicyEvaluationCertificate(
         fixture["snapshot"],
@@ -837,7 +946,11 @@ def testRuntimeRecommendationOpensOnlyForMatchingPolicyCertificate(tmp_path) -> 
     model = WorldModel(
         "admitted-policy-world",
         "1",
-        (VariableSpec("shock", "ratio", "shock"), VariableSpec("metric", "ratio", "metric")),
+        (
+            VariableSpec("state", "ratio", "state"),
+            VariableSpec("shock", "ratio", "shock"),
+            VariableSpec("metric", "ratio", "metric"),
+        ),
         (
             ActionSpec(
                 "invest",
@@ -854,11 +967,12 @@ def testRuntimeRecommendationOpensOnlyForMatchingPolicyCertificate(tmp_path) -> 
             LawSpec(
                 "action-identity",
                 outputs=("metric",),
+                priorInputs=("state",),
                 shockInputs=("shock",),
                 actionInputs=("invest",),
                 evidenceKind="accountingIdentity",
                 provenance="contractual identity",
-                fn=transition,
+                fn=lambda context: {"metric": transition(context)["metric"] + 0.0 * context.prior["state"]},
             ),
         ),
         stepFrequency="week",
@@ -866,7 +980,12 @@ def testRuntimeRecommendationOpensOnlyForMatchingPolicyCertificate(tmp_path) -> 
     baseline = StrategySpec("baseline", ({"invest": 0.0},), isBaseline=True, policyVersion="static-v1")
     candidate = StrategySpec("candidate", ({"invest": 1.0},), policyVersion="policy-v1")
     objective = ObjectiveSpec("metric", reducer="terminal", direction="maximize", risk="average")
-    initial = WorldState({}, asOf="20210103", knowledgeAsOf="20210103", decisionAsOf="20210104")
+    initial = WorldState(
+        {"state": 1.2},
+        asOf="20210103",
+        knowledgeAsOf="20210103",
+        decisionAsOf="20210104",
+    )
     preliminaryPath = ScenarioPath("current", ({"shock": 0.0},), frequency="week")
     preliminary = simulateWorld(
         model,
@@ -914,6 +1033,46 @@ def testRuntimeRecommendationOpensOnlyForMatchingPolicyCertificate(tmp_path) -> 
         fixture["privateKey"],
         fixture["trusted"],
     )
+    initialPayloadHash = worldStatePayloadHash(
+        initial.values,
+        step=initial.step,
+        asOf=initial.asOf,
+        refs=initial.refs,
+    )
+    currentInitialVintageReceipt = _issueTestReceipt(
+        receiptContext,
+        kind="dataVintage",
+        content=b"current decision initial-state source",
+        subjectHash=initialPayloadHash,
+        status="verifiedVintage",
+        knowledgeAsOf="20210103",
+        issuedAt="20210103T000000Z",
+    )
+    currentInitialVintage = VintageRef(
+        artifactKind="worldState",
+        provider="test",
+        artifactId="current-initial-state",
+        artifactHash=currentInitialVintageReceipt.artifactHash,
+        payloadHash=initialPayloadHash,
+        knowledgeAsOf="20210103",
+        availableAt="20210103",
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        receiptId=currentInitialVintageReceipt.receiptId,
+    )
+    initial = replace(initial, vintage=currentInitialVintage)
+    currentInitialReceipt = _issueTestReceipt(
+        receiptContext,
+        kind="initialState",
+        content=initialStateAdmissionArtifact(model, initial),
+        subjectHash=initialStateAdmissionSubjectHash(model, initial),
+        knowledgeAsOf="20210103",
+        issuedAt="20210103T000000Z",
+        parentReceiptIds=(currentInitialVintageReceipt.receiptId,),
+        ruleId=INITIAL_STATE_RULE_ID,
+        ruleHash=INITIAL_STATE_RULE_HASH,
+    )
+    initial = replace(initial, admissionReceiptId=currentInitialReceipt.receiptId)
     currentVintageReceipt = _issueTestReceipt(
         receiptContext,
         kind="dataVintage",
@@ -982,6 +1141,71 @@ def testRuntimeRecommendationOpensOnlyForMatchingPolicyCertificate(tmp_path) -> 
     assert admitted.decisionStatus == "comparable"
     assert admitted.recommendation == "candidate"
     assert admitted.policyEvaluationCertificateId == certificate.certificateId
+    assert admitted.initialStateAdmissionReceiptId == currentInitialReceipt.receiptId
+    assert admitted.stateSupportId == certificate.stateSupport.supportId
+    with pytest.raises(SimulationSpecError, match="signed current initial-state lineage"):
+        simulateWorld(
+            model,
+            replace(initial, admissionReceiptId=""),
+            currentPaths,
+            (baseline, candidate),
+            objectives=(objective,),
+            admissionVerifier=fixture["verifier"],
+            policyAdmissionEvidence=PolicyAdmissionEvidence(fixture["snapshot"], batch, certificate),
+        )
+    outside = replace(initial, values={"state": 2.0}, admissionReceiptId="", vintage=None)
+    outsidePayloadHash = worldStatePayloadHash(
+        outside.values,
+        step=outside.step,
+        asOf=outside.asOf,
+        refs=outside.refs,
+    )
+    outsideVintageReceipt = _issueTestReceipt(
+        receiptContext,
+        kind="dataVintage",
+        content=b"outside-support current state source",
+        subjectHash=outsidePayloadHash,
+        status="verifiedVintage",
+        knowledgeAsOf="20210103",
+        issuedAt="20210103T000000Z",
+    )
+    outside = replace(
+        outside,
+        vintage=VintageRef(
+            artifactKind="worldState",
+            provider="test",
+            artifactId="outside-support-current-state",
+            artifactHash=outsideVintageReceipt.artifactHash,
+            payloadHash=outsidePayloadHash,
+            knowledgeAsOf="20210103",
+            availableAt="20210103",
+            revisionPolicy="asKnown",
+            coverage="asOfExact",
+            receiptId=outsideVintageReceipt.receiptId,
+        ),
+    )
+    outsideReceipt = _issueTestReceipt(
+        receiptContext,
+        kind="initialState",
+        content=initialStateAdmissionArtifact(model, outside),
+        subjectHash=initialStateAdmissionSubjectHash(model, outside),
+        knowledgeAsOf="20210103",
+        issuedAt="20210103T000000Z",
+        parentReceiptIds=(outsideVintageReceipt.receiptId,),
+        ruleId=INITIAL_STATE_RULE_ID,
+        ruleHash=INITIAL_STATE_RULE_HASH,
+    )
+    outside = replace(outside, admissionReceiptId=outsideReceipt.receiptId)
+    with pytest.raises(SimulationSpecError, match="historical marginal range"):
+        simulateWorld(
+            model,
+            outside,
+            currentPaths,
+            (baseline, candidate),
+            objectives=(objective,),
+            admissionVerifier=fixture["verifier"],
+            policyAdmissionEvidence=PolicyAdmissionEvidence(fixture["snapshot"], batch, certificate),
+        )
     with pytest.raises(SimulationSpecError, match="policy admission verification failed"):
         simulateWorld(
             model,

@@ -509,6 +509,39 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
   아니다. 다음 제품 수직절편은 이 fail-closed 계약을 소비하는 공개 verb와 고밀도 GUI이며, GUI가 인증
   상태를 우회해 추천 문구를 만들 수 없게 동일 certificate id를 표면화해야 한다.
 
+### 0c-37. 현재 상태 서명과 역사적 상태공간 support gate 결속 (2026-07-13)
+
+- **재감사 판정**: 0c-36 인증서는 정책이 역사적 origin에서 우수했는지는 증명했지만, 현재
+  `WorldState`가 그 origin들의 상태공간 안에 있는지는 증명하지 않았다. 같은 실행물, 전략, 목적, 경로
+  계약이더라도 전혀 다른 재무·시장 상태에 정책을 외삽해 자동 추천할 수 있는 의미적 구멍이었다.
+- **개념확립 선행**: `tests/_attempts/policyStateSupport/`에서 typed 상태 계약, marginal 범위, joint
+  support, caller 반경 변조 킬테스트 4개를 먼저 통과했다. 상태 support는 예측확률이 아니라 정책 적용
+  가능성 경계로 한정했다.
+- **typed 초기 상태**: `stateSupport.py`의 `StatePrimitive`가 모델에 실제로 보이는 모든 초기값을
+  `(variableId, unit, role, value)`로 고정한다. `initialStateAdmissionArtifact`는 값과 상태 기준일,
+  knowledge cutoff, decision cutoff를 한 content hash로 묶는다. 고정 rule의 `initialState` receipt는
+  exact as-known `dataVintage` 부모가 없으면 정책 인증에 쓸 수 없다.
+- **raw origin 결속**: `buildPolicyOosEpisode`가 이제 `WorldModel`과 실제 `WorldState`를 함께 받아 run의
+  executable hash와 data-vintage hash를 재계산한다. episode v2는 초기 상태 primitive, 상태 계약 hash,
+  상태 artifact hash와 receipt를 보존한다. batch와 certificate도 v2로 올려 옛 state-unbound 인증서가
+  새 runtime 추천을 열지 못하게 했다.
+- **공동 상태공간 gate**: 40개 이상 OOS origin의 변수별 min/max와 범위 정규화 Chebyshev 최근접 거리를
+  계산한다. 임계값은 origin별 leave-one-out 최근접 거리의 고정 95% 분위다. 현재 상태는 모든 marginal
+  범위 안에 있으면서 역사적 공동 상태에도 가까워야 한다. 변수 ID, 단위, 역할이 하나라도 다르면 계약
+  불일치로 거부한다. support artifact는 전체 origin 상태 hash에서 매번 재계산해 caller가 반경만 넓힐 수
+  없다.
+- **runtime 추천 폐쇄**: 정책 증거를 제시한 현재 실행은 exact as-known `WorldState.vintage`, 고정 rule로
+  서명된 `WorldState.admissionReceiptId`, 실제 initial-state artifact, data-vintage 부모, certificate의
+  `EmpiricalStateSupport`를 모두 재검증한다. 하나라도 없거나 current state가 범위 밖이면 hard-fail한다.
+  통과한 `SimulationRun`은 `initialStateAdmissionReceiptId`와 `stateSupportId`를 함께 남긴다.
+- **적대 검증**: 현재 상태 영수증 제거, 상태값을 역사 범위 밖으로 이동, 단위 변경, joint hole,
+  support radius 변조, episode 상태 artifact 변조를 거부한다. 집중 12개, `tests/simulate` 전체 292개,
+  ruff, Guard Index strict L0~L1.5 7/7과 외부 gate 6종을 통과했다.
+- **정직한 잔여와 다음 순서**: 이 수직절편은 model-visible state의 적용 경계를 닫았지 DART·EDGAR·가격·
+  거시·산업을 변수별 availability ledger로 컴파일하지는 않았다. 다음 P0는 변수별 PIT observation manifest와
+  strict state compiler다. 그 뒤 가격·물량·단위원가·고정비 분기 운영 전이, 마지막으로 signed product
+  manifest를 소비하는 공개 decision verb와 고밀도 GUI를 올린다.
+
 ### 0c-29. 분기 전이, 파라미터 불확실성, 실행 인증 P0 보강 (2026-07-13)
 
 - **전문가 재감사 결론**: 경로모형, DART와 EDGAR PIT, admission 적대검토에서 분기 grid에 연간
