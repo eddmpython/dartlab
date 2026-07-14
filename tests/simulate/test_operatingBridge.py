@@ -189,6 +189,27 @@ def testMissingFactorModifierMeaningAndPhysicalBoundsFailClosed():
     with pytest.raises(OperatingBridgeError, match="modifier role"):
         _bridge(statePrimitives=_state(role="metric"))
 
+    dimensionalModifier = OperatingTransmissionExposure(
+        "fx-price-dimensional",
+        "fxChange",
+        "marketPriceChange",
+        0.5,
+        "ratioChangePerStep/simpleReturn",
+        "explicitAssumption",
+        "assumption://fx-price-dimensional",
+        modifierVariableId="business.exportRatio",
+        modifierUnit="USD",
+    )
+    with pytest.raises(OperatingBridgeError, match="modifier must be dimensionless"):
+        bridgeOperatingPath(
+            _sourcePath(),
+            (dimensionalModifier,),
+            factorSpecs=_factorSpecs(),
+            baselines=_baselines(),
+            statePrimitives=_state(unit="USD"),
+            stateRef="pit://state",
+        )
+
     crash = (
         OperatingTransmissionExposure(
             "crash",

@@ -39,6 +39,7 @@ _BASELINE_EVIDENCE_ROLES = {
 }
 _EXECUTABLE_STATE_EVIDENCE = _BASELINE_EVIDENCE_ROLES
 _EXECUTABLE_MODIFIER_ROLES = {"state", "observedFeature"}
+_DIMENSIONLESS_MODIFIER_UNITS = {"ratio"}
 
 
 class OperatingBridgeError(ValueError):
@@ -420,6 +421,8 @@ def _validateExposure(
         raise OperatingBridgeError(f"operating exposure coefficient unit drift: {exposure.exposureId}")
     if bool(exposure.modifierVariableId) != bool(exposure.modifierUnit):
         raise OperatingBridgeError("modifier exposure needs both variableId and unit")
+    if exposure.modifierUnit and exposure.modifierUnit not in _DIMENSIONLESS_MODIFIER_UNITS:
+        raise OperatingBridgeError(f"operating bridge modifier must be dimensionless: {exposure.exposureId}")
     if not isinstance(exposure.lagSteps, int) or exposure.lagSteps < 0:
         raise OperatingBridgeError(f"operating exposure lag is invalid: {exposure.exposureId}")
     if not exposure.responseKernel:

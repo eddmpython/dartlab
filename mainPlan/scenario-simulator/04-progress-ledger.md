@@ -54,17 +54,20 @@
 
 현재 판정: 전쟁 시뮬레이션식 구조에 필요한 두 축 중 하나, 즉 "현재 상태값을 원천 경계와 함께 세계 상태로 세운다"는 축이 닫혔다. 남은 축은 경로 생성이다. 수요, ASP, unit cost, fixed cost, capacity에 대해 실제 관측 가능한 것은 observed로, 관측 불가능한 것은 explicitAssumption 또는 blocked로 라벨링한 뒤, 다중 경로와 전략 후보를 생성하고 OOS policy certificate와 연결해야 한다.
 
-## 2026-07-14 P0 운영 factor 전파 bridge
+## 2026-07-14 P0 조건 경로와 운영 충격 전파 결속
 
-위 잔여 축 중 경로 생성의 첫 접착층을 본진에 넣었다. 목적은 외부 조건 path를 운영 world가 소비하는 shock path로 바꾸되, source status를 과장하지 않는 것이다. 공개 API나 GUI가 아니라 내부 L2.5 bridge다.
+위 잔여 축 중 경로 생성의 첫 접착층을 본진에 넣었다. 목적은 이미 문서화된 외부 조건 path를 운영 world가 소비하는 shock path로 바꾸되, source status와 증거 강도를 과장하지 않는 것이다. 공개 API나 GUI가 아니라 내부 L2.5 bridge다. 이 단계 자체가 factor path 생성기는 아니다.
 
-- `src/dartlab/simulate/operatingBridge.py`: `OperatingTransmissionExposure`가 source factor, target operating shock, coefficient, evidence kind, source ref, optional PIT modifier를 선언한다. `bridgeOperatingPath`는 source path를 `operatingWorld`용 `ScenarioPath`로 바꾸고, `bridgeHash`, exposure id, target shock, source refs, state ref, state contract hash를 audit에 남긴다.
-- PIT modifier: `business.exportRatio` 같은 observed feature가 FX shock의 가격 전가율을 조정할 수 있다. modifier가 없거나 단위가 다르거나 evidence role이 실행 불가면 fail closed다.
-- 물리 경계: ratio shock은 -100% 아래로 내려갈 수 없고, debt rate는 0~1 밖으로 나갈 수 없다. 누락 factor도 0 대체 없이 즉시 차단한다.
-- 비승격 원칙: source path가 admitted이고 coefficient가 measuredAssociation이어도 bridge output은 스스로 admitted가 되지 않는다. 현재 `validationStatus=retrospectiveOnly`이고, explicit assumption이면 `bridgeEvidence:explicitAssumption`을 유지한다. 추천은 계속 `conditionalOnly`가 상한이다.
-- 테스트: `_attempts/operatingTransmission` 킬테스트를 본진 `tests/simulate/test_operatingBridge.py`로 승격했다. factor path 전파, PIT modifier, 누락 factor, modifier unit drift, 물리 하한, measuredAssociation 비승격, operatingWorld 실행 연결을 회귀로 고정했다.
+- typed factor 계약: `OperatingFactorSpec`이 각 source factor의 unit, frequency, timing, transform을 선언한다. source path의 모든 step은 정확한 factor key coverage와 finite value를 만족해야 한다.
+- 명시 baseline: market price, demand, unit cost, fixed cost, capacity, debt rate 여섯 shock channel 모두에 `OperatingShockBaseline`이 필요하다. 미노출 channel도 암묵적 0으로 채우지 않는다.
+- 전파 law: `OperatingTransmissionExposure`가 source factor, target shock, 차원 검증 가능한 coefficient unit, evidence kind, source ref, optional PIT modifier, lag, response kernel, aggregation group을 선언한다. 시차와 분산 반응을 포함한 조건 경로가 operating shock path로 변환된다.
+- 상태와 계보: compiled PIT state의 state receipt, provider batch receipt와 id, observation, limitation을 refs와 warnings에 보존한다. source content, factor 계약, baseline, exposure, state artifact, output steps를 `bridgeHash`에 결속한다.
+- fail closed: rejected source는 즉시 거부하고 unvalidated source는 unvalidated로 유지한다. admitted source도 bridge law 자체가 독립 admission을 얻기 전에는 output을 `retrospectiveOnly`로 낮춘다. modifier role과 unit drift, 중복 exposure aggregation 불명, 물리 하한 위반도 실행 전에 차단한다.
+- parameter draw 경계: source draw receipt는 audit과 hash에 보존하지만 변환된 operating path로 draw를 옮기지 않는다. 기존 receipt가 새 path id를 인증하지 못하므로 명시 warning과 함께 제거한다.
+- 전략 연결: 변환 결과는 `runOperatingStrategies`가 그대로 소비한다. 조건 path가 price, volume, cost, capacity, debt rate를 바꾸고, 그 변화가 전략별 손익, 현금, debt, capacity 상태 차이로 전개된다. admission과 OOS policy certificate가 닫히기 전 추천 상한은 계속 `conditionalOnly`다.
+- 테스트: `_attempts/operatingTransmission`에서 rejected source laundering, baseline 누락, lagged response를 먼저 깨뜨린 뒤 본진 회귀로 승격했다. 본진은 factor 계약, coefficient unit, modifier role과 unit, aggregation, 물리 경계, source status, compiled-state lineage, draw 비전이, operatingWorld 실행을 검증한다.
 
-현재 판정: 전쟁게임식 루프의 다음 접착층이 생겼다. 조건 path가 운영 변수로 전파되고, 그 운영 shock이 전략별 손익, 현금, capacity 상태로 굴러간다. 아직 남은 P0는 source path와 exposure coefficient 자체를 signed admission 체계와 parameter draw 빈티지에 묶는 것이다. 그 전까지는 전략 추천이 아니라 조건부 비교만 허용한다.
+현재 판정: 전쟁게임식 루프의 전파층은 실코드로 닫혔다. 그러나 PRD급 시뮬레이터 전체가 완성된 것은 아니다. 다음 P0는 DART, EDGAR, 가격, 거시, 산업 역사와 explicit assumption을 받아 다수의 typed factor path를 생성하는 DriverRegistry 또는 동등한 path generator다. 이어서 전파 coefficient의 PIT calibration, held-out OOS 검증, signed admission을 닫아야 조건부 비교를 전략 추천으로 승격할 수 있다.
 
 ---
 
