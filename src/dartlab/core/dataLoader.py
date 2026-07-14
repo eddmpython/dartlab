@@ -42,7 +42,9 @@ def readParquetSafe(path, *, columns: list[str] | None = None) -> pl.DataFrame:
     """polars read_parquet with pyarrow fallback (pyodide WASM 호환).
 
     polars WASM wheel 은 read_parquet 이 비활성(PyLazyFrame.new_from_parquet 부재)
-    이므로 pyarrow.parquet.read_table 로 우회한 뒤 arrowToPolars 로 변환한다.
+    이므로 pyarrow 로 우회한 뒤 arrowToPolars 로 변환한다. read_table 이 아니라 저수준
+    ParquetFile.read 를 쓴다(read_table 은 첫 호출에 pyarrow.dataset + pandas 를 lazy import 해
+    브라우저 첫 데이터 로드에 수 초를 먹는다. 단일 파일 읽기라 dataset 스캐너 불요, table 은 동일).
     일반 환경에서는 pl.read_parquet 그대로 사용(byte-identical).
 
     Args:
@@ -61,7 +63,7 @@ def readParquetSafe(path, *, columns: list[str] | None = None) -> pl.DataFrame:
     frames: list[pl.DataFrame] = []
     for p in paths:
         data = Path(p).read_bytes() if not isinstance(p, bytes) else p
-        arrow_table = pq.read_table(io.BytesIO(data), columns=columns)
+        arrow_table = pq.ParquetFile(io.BytesIO(data)).read(columns=columns)
         frames.append(arrowToPolars(arrow_table))
     return frames[0] if len(frames) == 1 else pl.concat(frames, how="vertical_relaxed")
 

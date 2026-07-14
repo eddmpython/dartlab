@@ -53,7 +53,9 @@ def loadDataPyodide(
     if not path.exists():
         pyodideFetchToFS(stockCode, category, dirPath, path)
 
-    arrowTable = pq.read_table(io.BytesIO(path.read_bytes()))
+    # read_table 대신 저수준 ParquetFile.read: 첫 호출에 pyarrow.dataset + pandas 를 lazy import 하는
+    # read_table 을 피한다(브라우저 첫 로드 수 초 절감). 단일 파일이라 dataset 스캐너 불요, table 은 동일.
+    arrowTable = pq.ParquetFile(io.BytesIO(path.read_bytes())).read()
     df = arrowToPolars(arrowTable)
 
     if sinceYear is not None:
