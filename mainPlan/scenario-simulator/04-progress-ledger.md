@@ -131,11 +131,12 @@
 - row-local as-of: 각 target row는 그 row의 `availableAt` 기준으로 이미 알려진 source row만 선택한다. fiscal period end가 아니라 filing receipt 이후 첫 target step부터 값이 채워진다.
 - availability 보존: 변환 row의 `availableAt`은 `max(source.availableAt, targetGrid.availableAt)` 규칙으로 보존하고, source event와 availability는 `transformTrace:<hash>`에 결속한다.
 - semantic 보존: carry-forward는 weekly shock을 만들지 않는다. output factor timing 기본값은 `level`이며, `innovation` 또는 `change` 생성은 차단한다. 별도 diff/return transform 없이는 shock으로 승격할 수 없다.
+- flow measure gate: `sourceMeasureKind`를 carry-forward trace와 refs에 결속했다. `flow`, `periodFlow`, `cumulativeFlow`, `cumulative`, `ytdCumulative`, `annualCumulative`는 실행 가능한 `DriverHistorySource`로 주간 carry-forward할 수 없다. 매출, 영업이익, CFO 같은 기간 flow는 display-only 또는 별도 explicit assumption transform으로 분리되어야 한다.
 - lineage 보존: source의 `historyStatus`, DART conditional warning, price/macro vintage warning 등 약한 상태는 그대로 상속된다. `driverCarryForwardTransform` warning과 source/target frequency ref가 audit에 남는다.
 - stale gate: `maxStalenessDays`를 제공하면 오래된 filing value를 무기한 주입하지 않고, target grid에 남는 row가 없을 때 fail closed 한다. duplicate target event도 별도 aggregation transform 없이는 차단한다.
-- 검증: `_attempts/driverTransforms/test_driverTransforms.py`에서 row-local availability, filing receipt 전 주간 row 비주입, weekly price grid 결합, stale/duplicate/missing grid 차단을 먼저 고정했다. 본진 `tests/simulate/test_driverTransforms.py`로 승격했고, focused 23개, `tests/simulate` 349개, `ruff format --check`, `ruff check`, camelCase audit, docstring audit, em/en dash audit, `dartlabGuard.py strict --scope l0-l15 --providers dart,edgar`가 통과했다.
+- 검증: `_attempts/driverTransforms/test_driverTransforms.py`에서 row-local availability, filing receipt 전 주간 row 비주입, weekly price grid 결합, stale/duplicate/missing grid 차단, flow/cumulative flow 차단, sourceMeasureKind trace 결속을 먼저 고정했다. 본진 `tests/simulate/test_driverTransforms.py`로 승격했고, focused 27개, `tests/simulate` 351개, `ruff format --check`, `ruff check`, camelCase audit, docstring audit, em/en dash audit, `dartlabGuard.py strict --scope l0-l15 --providers dart,edgar`가 통과했다.
 
-현재 판정: 이제 서로 다른 빈도의 driver source를 한 path set으로 묶기 위한 안전한 첫 변환이 생겼다. 하지만 PRD급 시뮬레이터 완료는 아니다. 다음 P0는 자동 전수 source discovery, flow 계정의 display-only 또는 모델 assumption 분리, coefficient PIT calibration, held-out OOS certificate다. 이 단계 전까지 carry-forward filing feature는 상태 조건일 뿐 운영 shock 또는 추천 근거가 아니다.
+현재 판정: 이제 서로 다른 빈도의 driver source를 한 path set으로 묶기 위한 안전한 첫 변환이 생겼다. 하지만 PRD급 시뮬레이터 완료는 아니다. 다음 P0는 자동 전수 source discovery, flow 계정의 별도 display-only 또는 explicit assumption transform, coefficient PIT calibration, held-out OOS certificate다. 이 단계 전까지 carry-forward filing feature는 상태 조건일 뿐 운영 shock 또는 추천 근거가 아니다.
 
 ---
 

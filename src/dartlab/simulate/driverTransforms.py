@@ -18,6 +18,15 @@ from dartlab.simulate.driverPaths import DriverCard, DriverFactorSpec, DriverHis
 from dartlab.simulate.vintage import canonicalPayloadHash
 
 _FACTOR_TIMINGS = {"level", "rate"}
+_STATE_MEASURE_KINDS = {"stock", "ratio", "stateFeature", "level", "rate"}
+_FLOW_MEASURE_KINDS = {
+    "flow",
+    "periodFlow",
+    "cumulative",
+    "cumulativeFlow",
+    "ytdCumulative",
+    "annualCumulative",
+}
 
 
 class DriverTransformError(ValueError):
@@ -45,6 +54,19 @@ def _sourceColumn(factor: DriverFactorSpec) -> str:
 
 def _dedupe(values: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(value for value in values if value))
+
+
+def _sourceMeasureKind(value: str, *, targetTiming: str) -> str:
+    kind = str(value).strip()
+    if not kind:
+        raise DriverTransformError("sourceMeasureKind is required for carry-forward")
+    if kind in _FLOW_MEASURE_KINDS:
+        raise DriverTransformError("flow measures cannot be carry-forwarded as executable driver history")
+    if kind not in _STATE_MEASURE_KINDS:
+        raise DriverTransformError(f"unsupported sourceMeasureKind for carry-forward: {kind}")
+    if targetTiming == "rate" and kind != "rate":
+        raise DriverTransformError("rate carry-forward requires rate sourceMeasureKind")
+    return kind
 
 
 def _validateTargetGrid(
@@ -179,6 +201,7 @@ def carryForwardDriverHistorySource(
     knowledgeAsOf: str,
     transformId: str,
     targetGridRef: str,
+    sourceMeasureKind: str = "stateFeature",
     targetEventTimeColumn: str = "eventTime",
     targetAvailableAtColumn: str = "availableAt",
     targetTiming: str = "level",
@@ -195,6 +218,8 @@ def carryForwardDriverHistorySource(
         knowledgeAsOf: Decision cutoff for both source and target rows.
         transformId: Stable transform identifier for the carry-forward rule.
         targetGridRef: Source reference for the target grid.
+        sourceMeasureKind: Source measure semantics. Flow and cumulative flow
+            measures are not executable carry-forward driver history.
         targetEventTimeColumn: Target grid event time column.
         targetAvailableAtColumn: Target grid availability column.
         targetTiming: Output timing. Carry-forward allows only ``level`` or ``rate``.
@@ -220,6 +245,7 @@ def carryForwardDriverHistorySource(
     card = source.card
     if card.sourceKind != "history" or card.status != "active":
         raise DriverTransformError("carry-forward source must be an active history card")
+    measureKind = _sourceMeasureKind(sourceMeasureKind, targetTiming=targetTiming)
     cutoff = _dateText(knowledgeAsOf, "knowledgeAsOf")
     targetRows = _validateTargetGrid(
         targetGrid,
@@ -243,6 +269,7 @@ def carryForwardDriverHistorySource(
             "knowledgeAsOf": cutoff,
             "transformId": transformId,
             "targetGridRef": targetGridRef,
+            "sourceMeasureKind": measureKind,
             "targetTiming": targetTiming,
             "maxStalenessDays": maxStalenessDays,
             "rows": carried,
@@ -266,6 +293,7 @@ def carryForwardDriverHistorySource(
             f"sourceFrequency:{card.frequency}:{card.stepSpan}",
             f"targetFrequency:{targetFrequency}:{targetStepSpan}",
             f"targetGridRef:{targetGridRef}",
+            f"sourceMeasureKind:{measureKind}",
             f"transformId:{transformId}",
             f"transformTrace:{traceHash}",
             *((f"maxStalenessDays:{maxStalenessDays}",) if maxStalenessDays is not None else ()),

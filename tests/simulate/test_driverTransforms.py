@@ -172,3 +172,48 @@ def testCarryForwardRejectsAmbiguousGridAndStaleRows() -> None:
             targetGridRef="grid:stale",
             maxStalenessDays=30,
         )
+
+
+def testCarryForwardRejectsFlowMeasuresAsExecutableDriverHistory() -> None:
+    grid = pl.DataFrame({"eventTime": _weeklyDates(15), "availableAt": _weeklyDates(15)})
+    for sourceMeasureKind in ("flow", "periodFlow", "cumulativeFlow"):
+        with pytest.raises(DriverTransformError, match="flow measures cannot be carry-forwarded"):
+            carryForwardDriverHistorySource(
+                _filingSource(),
+                targetGrid=grid,
+                targetFrequency="week",
+                targetStepSpan=1,
+                knowledgeAsOf="20201231",
+                transformId="filing-carry-forward-to-week-v1",
+                targetGridRef="grid:weekly-price-close",
+                sourceMeasureKind=sourceMeasureKind,
+            )
+
+
+def testCarryForwardBindsSourceMeasureKindInRefsAndTrace() -> None:
+    grid = pl.DataFrame({"eventTime": _weeklyDates(15), "availableAt": _weeklyDates(15)})
+    ratio = carryForwardDriverHistorySource(
+        _filingSource(),
+        targetGrid=grid,
+        targetFrequency="week",
+        targetStepSpan=1,
+        knowledgeAsOf="20201231",
+        transformId="filing-carry-forward-to-week-v1",
+        targetGridRef="grid:weekly-price-close",
+        sourceMeasureKind="ratio",
+    )
+    state = carryForwardDriverHistorySource(
+        _filingSource(),
+        targetGrid=grid,
+        targetFrequency="week",
+        targetStepSpan=1,
+        knowledgeAsOf="20201231",
+        transformId="filing-carry-forward-to-week-v1",
+        targetGridRef="grid:weekly-price-close",
+        sourceMeasureKind="stateFeature",
+    )
+    ratioTrace = next(ref for ref in ratio.card.sourceRefs if ref.startswith("transformTrace:"))
+    stateTrace = next(ref for ref in state.card.sourceRefs if ref.startswith("transformTrace:"))
+    assert "sourceMeasureKind:ratio" in ratio.card.sourceRefs
+    assert "sourceMeasureKind:stateFeature" in state.card.sourceRefs
+    assert ratioTrace != stateTrace
