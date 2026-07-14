@@ -40,6 +40,7 @@ if TYPE_CHECKING:
 
 SCENARIO_COMPOSITION_VERSION = "scenario-composition-v1"
 ONE_COMPANY_SCENARIO_LOOP_VERSION = "one-company-scenario-loop-v1"
+SCENARIO_PATH_PACKAGE_VERSION = "scenario-path-package-v1"
 SCENARIO_COEFFICIENT_BINDING_VERSION = "scenario-coefficient-binding-v1"
 SCENARIO_EXPOSURE_CONTRACT_VERSION = "scenario-coefficient-exposure-contract-v1"
 _OPERATING_ACTION_IDS = {"priceChange", "capacityInvestment", "borrow", "repay"}
@@ -183,6 +184,17 @@ class OperatingScenarioCaseResult:
     caseId: str
     label: str
     pathSetHash: str
+    scenarioPathPackageHash: str
+    pathHistoryInputHash: str
+    pathAssumptionHash: str
+    basePathSetHash: str
+    pathOverlayHash: str
+    observedHistoryStatus: str
+    futureAdjustmentStatus: str
+    composedPathAdmissionStatus: str
+    pathAdmissionTransferStatus: str
+    pathAdmissionTransferBlockedBy: tuple[str, ...]
+    policyEvaluationEligibility: str
     bridgeHashes: tuple[str, ...]
     runHash: str
     resultHash: str
@@ -206,6 +218,7 @@ class OperatingScenarioCaseResult:
     warnings: tuple[str, ...]
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "pathAdmissionTransferBlockedBy", tuple(self.pathAdmissionTransferBlockedBy))
         object.__setattr__(self, "bridgeHashes", tuple(self.bridgeHashes))
         object.__setattr__(self, "paretoStrategies", tuple(self.paretoStrategies))
         object.__setattr__(self, "strategyScores", tuple(self.strategyScores))
@@ -248,6 +261,21 @@ class OneCompanyScenarioCaseLedger:
     pathSourceRefs: tuple[str, ...]
     providerObservationBatchRefs: tuple[str, ...]
     explicitAssumptionIds: tuple[str, ...]
+    scenarioPathPackageHash: str
+    pathHistoryInputHash: str
+    pathAssumptionHash: str
+    basePathSetHash: str
+    composedPathSetHash: str
+    pathOverlayHash: str
+    observedHistoryStatus: str
+    futureAdjustmentStatus: str
+    basePathAdmissionReceiptId: str
+    basePathAdmissionScope: str
+    composedPathAdmissionStatus: str
+    pathAdmissionTransferStatus: str
+    pathAdmissionTransferBlockedBy: tuple[str, ...]
+    policyEvaluationEligibility: str
+    recommendationCeiling: str
     exposureLedgers: tuple[ScenarioExposureLedger, ...]
     coefficientAdmissionReceiptIds: tuple[str, ...]
     coefficientBindingHashes: tuple[str, ...]
@@ -284,6 +312,7 @@ class OneCompanyScenarioCaseLedger:
         object.__setattr__(self, "pathSourceRefs", tuple(self.pathSourceRefs))
         object.__setattr__(self, "providerObservationBatchRefs", tuple(self.providerObservationBatchRefs))
         object.__setattr__(self, "explicitAssumptionIds", tuple(self.explicitAssumptionIds))
+        object.__setattr__(self, "pathAdmissionTransferBlockedBy", tuple(self.pathAdmissionTransferBlockedBy))
         object.__setattr__(self, "exposureLedgers", tuple(self.exposureLedgers))
         object.__setattr__(self, "coefficientAdmissionReceiptIds", tuple(self.coefficientAdmissionReceiptIds))
         object.__setattr__(self, "coefficientBindingHashes", tuple(self.coefficientBindingHashes))
@@ -349,6 +378,87 @@ def _filterRefs(refs: tuple[str, ...], prefixes: tuple[str, ...]) -> tuple[str, 
 def _explicitAssumptionIds(warnings: tuple[str, ...]) -> tuple[str, ...]:
     prefix = "explicitAssumption:"
     return _dedupe(tuple(warning[len(prefix) :] for warning in warnings if warning.startswith(prefix)))
+
+
+def _scenarioPathPackageHash(pathSet: DriverPathSet) -> str:
+    audit = pathSet.audit
+    return canonicalPayloadHash(
+        {
+            "schemaVersion": SCENARIO_PATH_PACKAGE_VERSION,
+            "pathSetHash": audit.pathSetHash,
+            "pathSetInputHash": audit.inputHash,
+            "pathHistoryInputHash": audit.historyInputHash,
+            "pathAssumptionHash": audit.assumptionHash,
+            "basePathSetHash": audit.basePathSetHash,
+            "pathOverlayHash": audit.overlayHash,
+            "pathRegistryHash": audit.registryHash,
+            "pathFactorContractHash": audit.factorContractHash,
+            "pathSourceRefs": audit.sourceRefs,
+            "providerObservationBatchRefs": _filterRefs(audit.sourceRefs, _PROVIDER_OBSERVATION_REF_PREFIXES),
+            "explicitAssumptionIds": _explicitAssumptionIds(audit.warnings),
+            "observedHistoryStatus": audit.observedHistoryStatus,
+            "historyStatus": audit.historyStatus,
+            "validationStatus": audit.validationStatus,
+            "knowledgeAsOf": audit.knowledgeAsOf,
+            "frequency": audit.frequency,
+            "stepSpan": audit.stepSpan,
+            "horizon": audit.horizon,
+            "pathCount": audit.pathCount,
+            "blockLength": audit.blockLength,
+            "seed": audit.seed,
+            "driverCardIds": audit.driverCardIds,
+        }
+    )
+
+
+def _futureAdjustmentStatus(pathSet: DriverPathSet) -> str:
+    return "explicitAssumption" if pathSet.audit.assumptionHash else ""
+
+
+def _basePathAdmissionReceiptId(pathSet: DriverPathSet) -> str:
+    if pathSet.audit.assumptionHash or not pathSet.paths:
+        return ""
+    receiptIds = {path.admissionReceiptId for path in pathSet.paths}
+    validationStatuses = {path.validationStatus for path in pathSet.paths}
+    if validationStatuses == {"admitted"} and len(receiptIds) == 1:
+        receiptId = next(iter(receiptIds))
+        return receiptId if _validDigest(receiptId) else ""
+    return ""
+
+
+def _basePathAdmissionScope(pathSet: DriverPathSet) -> str:
+    if not pathSet.audit.basePathSetHash:
+        return ""
+    if pathSet.audit.assumptionHash:
+        return "historyOnly"
+    return "composedPath"
+
+
+def _composedPathAdmissionStatus(result: SimulationRun) -> str:
+    return "admitted" if result.pathAdmissionReceiptId else "notAdmitted"
+
+
+def _pathAdmissionTransferStatus(pathSet: DriverPathSet, result: SimulationRun) -> str:
+    if pathSet.audit.assumptionHash:
+        return "notTransferred"
+    if result.pathAdmissionReceiptId:
+        return "composedPathAdmitted"
+    return "notApplicable"
+
+
+def _pathAdmissionTransferBlockedBy(pathSet: DriverPathSet, result: SimulationRun) -> tuple[str, ...]:
+    reasons: list[str] = []
+    if pathSet.audit.assumptionHash:
+        reasons.append("explicitFutureAdjustmentPresent")
+    if pathSet.audit.assumptionHash and pathSet.audit.basePathSetHash:
+        reasons.append("pathAdmissionNotTransferredFromObservedHistory")
+    if not result.pathAdmissionReceiptId:
+        reasons.append("composedPathAdmissionNotGranted")
+    return _dedupe(tuple(reasons))
+
+
+def _policyEvaluationEligibility(result: SimulationRun) -> str:
+    return "eligible" if result.policyEvaluationCertificateId else "blocked"
 
 
 def _exposureContractRows(exposures: tuple[OperatingTransmissionExposure, ...]) -> tuple[dict, ...]:
@@ -842,14 +952,26 @@ def _caseBlockedReasons(result: OperatingScenarioCaseResult) -> tuple[str, ...]:
         reasons.append(f"decisionStatus:{result.decisionStatus}")
     if result.recommendation is None:
         reasons.append("caseRecommendationClosed")
+        if result.strategyScores:
+            reasons.append("scoreLeaderNotRecommendation")
     if result.counts.explicitAssumptionCount:
         reasons.append("explicitAssumptionPresent")
+    if result.pathAssumptionHash:
+        reasons.append("explicitFutureAdjustmentPresent")
     if result.counts.unvalidatedPathCount:
         reasons.append("unvalidatedPathPresent")
     if result.counts.retrospectivePathCount:
         reasons.append("retrospectiveOnlyPathPresent")
     if result.counts.admittedPathCount < result.counts.pathCount:
         reasons.append("pathAdmissionIncomplete")
+    if result.composedPathAdmissionStatus != "admitted":
+        reasons.append("composedPathAdmissionNotGranted")
+    if result.pathAdmissionTransferStatus == "notTransferred":
+        reasons.extend(result.pathAdmissionTransferBlockedBy)
+        if result.basePathSetHash:
+            reasons.append("basePathAdmissionScopeHistoryOnly")
+    if result.policyEvaluationEligibility == "blocked":
+        reasons.append("policyEvaluationRequiresAdmittedComposedPath")
     if result.counts.conditionalWarningCount:
         reasons.append("conditionalWarningPresent")
     if not result.initialStateAdmissionReceiptId:
@@ -886,6 +1008,7 @@ def _caseLedger(
     conditionRefs = _dedupe(result.refs)
     assumptionRefs = _filterRefs(conditionRefs, _ASSUMPTION_REF_PREFIXES)
     stateRefs = _dedupe((*initialStateRefs, *_filterRefs(conditionRefs, _STATE_REF_PREFIXES)))
+    basePathAdmissionReceiptId = _basePathAdmissionReceiptId(case.pathSet)
     return OneCompanyScenarioCaseLedger(
         caseId=result.caseId,
         label=result.label,
@@ -899,6 +1022,21 @@ def _caseLedger(
         pathSourceRefs=case.pathSet.audit.sourceRefs,
         providerObservationBatchRefs=_filterRefs(case.pathSet.audit.sourceRefs, _PROVIDER_OBSERVATION_REF_PREFIXES),
         explicitAssumptionIds=_explicitAssumptionIds(case.pathSet.audit.warnings),
+        scenarioPathPackageHash=result.scenarioPathPackageHash,
+        pathHistoryInputHash=result.pathHistoryInputHash,
+        pathAssumptionHash=result.pathAssumptionHash,
+        basePathSetHash=result.basePathSetHash,
+        composedPathSetHash=result.pathSetHash,
+        pathOverlayHash=result.pathOverlayHash,
+        observedHistoryStatus=result.observedHistoryStatus,
+        futureAdjustmentStatus=result.futureAdjustmentStatus,
+        basePathAdmissionReceiptId=basePathAdmissionReceiptId,
+        basePathAdmissionScope=_basePathAdmissionScope(case.pathSet),
+        composedPathAdmissionStatus=result.composedPathAdmissionStatus,
+        pathAdmissionTransferStatus=result.pathAdmissionTransferStatus,
+        pathAdmissionTransferBlockedBy=result.pathAdmissionTransferBlockedBy,
+        policyEvaluationEligibility=result.policyEvaluationEligibility,
+        recommendationCeiling=result.decisionStatus,
         exposureLedgers=_exposureLedgerRows(case.exposures),
         coefficientAdmissionReceiptIds=tuple(binding.admissionReceiptId for binding in case.coefficientBindings),
         coefficientBindingHashes=tuple(scenarioCoefficientBindingHash(binding) for binding in case.coefficientBindings),
@@ -989,14 +1127,30 @@ def _runCase(
             *case.pathSet.audit.sourceRefs,
             *(ref for item in bridgeResults for ref in item.audit.sourceRefs),
             f"driverPathSet:{case.pathSet.audit.pathSetHash}",
+            f"scenarioPathPackage:{_scenarioPathPackageHash(case.pathSet)}",
             f"scenarioCase:{case.caseId}",
         )
     )
     warnings = tuple(sorted(set((*case.pathSet.audit.warnings, *bridgeWarnings, *run.warnings))))
+    scenarioPathPackageHash = _scenarioPathPackageHash(case.pathSet)
+    composedPathAdmissionStatus = _composedPathAdmissionStatus(run)
+    pathAdmissionTransferStatus = _pathAdmissionTransferStatus(case.pathSet, run)
+    pathAdmissionTransferBlockedBy = _pathAdmissionTransferBlockedBy(case.pathSet, run)
     return OperatingScenarioCaseResult(
         caseId=case.caseId,
         label=case.label,
         pathSetHash=case.pathSet.audit.pathSetHash,
+        scenarioPathPackageHash=scenarioPathPackageHash,
+        pathHistoryInputHash=case.pathSet.audit.historyInputHash,
+        pathAssumptionHash=case.pathSet.audit.assumptionHash,
+        basePathSetHash=case.pathSet.audit.basePathSetHash,
+        pathOverlayHash=case.pathSet.audit.overlayHash,
+        observedHistoryStatus=case.pathSet.audit.observedHistoryStatus,
+        futureAdjustmentStatus=_futureAdjustmentStatus(case.pathSet),
+        composedPathAdmissionStatus=composedPathAdmissionStatus,
+        pathAdmissionTransferStatus=pathAdmissionTransferStatus,
+        pathAdmissionTransferBlockedBy=pathAdmissionTransferBlockedBy,
+        policyEvaluationEligibility=_policyEvaluationEligibility(run),
         bridgeHashes=bridgeHashes,
         runHash=run.runHash,
         resultHash=run.resultHash,

@@ -1709,6 +1709,25 @@ def testProviderHistoryAndExplicitAdjustmentFeedScenarioLoopWithoutPathAdmission
     assert base.pathSetInputHash
     assert base.pathRegistryHash
     assert base.pathFactorContractHash
+    assert base.scenarioPathPackageHash
+    assert base.pathHistoryInputHash
+    assert base.basePathSetHash
+    assert base.pathAssumptionHash
+    assert base.pathOverlayHash
+    assert base.observedHistoryStatus == "asKnown"
+    assert base.futureAdjustmentStatus == "explicitAssumption"
+    assert base.composedPathSetHash == base.pathSetHash
+    assert base.basePathAdmissionReceiptId == ""
+    assert base.basePathAdmissionScope == "historyOnly"
+    assert base.composedPathAdmissionStatus == "notAdmitted"
+    assert base.pathAdmissionTransferStatus == "notTransferred"
+    assert base.pathAdmissionTransferBlockedBy == (
+        "explicitFutureAdjustmentPresent",
+        "pathAdmissionNotTransferredFromObservedHistory",
+        "composedPathAdmissionNotGranted",
+    )
+    assert base.policyEvaluationEligibility == "blocked"
+    assert base.recommendationCeiling == "conditionalOnly"
     assert base.pathAdmissionReceiptId == ""
     assert base.policyEvaluationCertificateId == ""
     assert base.counts.pathCount == 2
@@ -1718,7 +1737,12 @@ def testProviderHistoryAndExplicitAdjustmentFeedScenarioLoopWithoutPathAdmission
     assert any(ref.startswith("providerObservationBatch:") for ref in base.providerObservationBatchRefs)
     assert any(ref.startswith("providerObservationBatchId:") for ref in base.providerObservationBatchRefs)
     assert "assumption://base/explicit-price-adjustment" in base.pathSourceRefs
+    assert "explicitFutureAdjustmentPresent" in base.blockedReasons
     assert "unvalidatedPathPresent" in base.blockedReasons
+    assert "composedPathAdmissionNotGranted" in base.blockedReasons
+    assert "pathAdmissionNotTransferredFromObservedHistory" in base.blockedReasons
+    assert "policyEvaluationRequiresAdmittedComposedPath" in base.blockedReasons
+    assert "scoreLeaderNotRecommendation" in base.blockedReasons
     assert "pathAdmissionMissing" in base.blockedReasons
     assert "policyEvaluationCertificateMissing" in base.blockedReasons
     assert "automaticRecommendationDisabled" in loop.blockedReasons
@@ -1730,6 +1754,42 @@ def testProviderHistoryAndExplicitAdjustmentFeedScenarioLoopWithoutPathAdmission
         "oilChange",
         "explicitPriceAdjustment",
     }
+    changed = compareOneCompanyTwoScenarioStrategies(
+        "005930",
+        _operatingInputs(),
+        (
+            _scenarioCaseWithProviderHistoryAndAdjustment(
+                "base",
+                0.02,
+                fitFx,
+                fitOil,
+                exposures,
+                binding,
+                context[4],
+            ),
+            _scenarioCaseWithProviderHistoryAndAdjustment(
+                "stress",
+                -0.03,
+                fitFx,
+                fitOil,
+                exposures,
+                binding,
+                context[4],
+            ),
+        ),
+        _oneStepStrategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    changedBase = changed.caseLedgers[0]
+    assert changedBase.pathHistoryInputHash == base.pathHistoryInputHash
+    assert changedBase.basePathSetHash == base.basePathSetHash
+    assert changedBase.pathAssumptionHash != base.pathAssumptionHash
+    assert changedBase.pathOverlayHash != base.pathOverlayHash
+    assert changedBase.composedPathSetHash != base.composedPathSetHash
+    assert changedBase.scenarioPathPackageHash != base.scenarioPathPackageHash
+    assert changed.loopHash != loop.loopHash
 
 
 def testAdmittedCurrentStateFeedsScenarioLoopWithoutOpeningRecommendation(tmp_path) -> None:

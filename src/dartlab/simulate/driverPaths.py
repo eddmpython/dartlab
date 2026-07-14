@@ -99,6 +99,10 @@ class DriverPathAudit:
 
     pathSetHash: str
     inputHash: str
+    historyInputHash: str
+    assumptionHash: str
+    basePathSetHash: str
+    overlayHash: str
     registryHash: str
     factorContractHash: str
     generatorVersion: str
@@ -111,6 +115,7 @@ class DriverPathAudit:
     seed: int
     driverCardIds: tuple[str, ...]
     validationStatus: str
+    observedHistoryStatus: str
     historyStatus: str
     sourceRefs: tuple[str, ...]
     warnings: tuple[str, ...]
@@ -369,6 +374,26 @@ def _pathSetHash(paths: tuple[ScenarioPath, ...]) -> str:
     )
 
 
+def _overlayHash(
+    *,
+    assumptionHash: str,
+    assumptionSteps: tuple[dict[str, float], ...],
+    sourceRefs: tuple[str, ...],
+    horizon: int,
+) -> str:
+    if not assumptionHash:
+        return ""
+    return canonicalPayloadHash(
+        {
+            "schemaVersion": "driver-path-explicit-overlay-v1",
+            "assumptionHash": assumptionHash,
+            "assumptionSteps": assumptionSteps,
+            "sourceRefs": sourceRefs,
+            "horizon": horizon,
+        }
+    )
+
+
 def _makeExplicitOnlyPath(
     *,
     steps: tuple[dict[str, float], ...],
@@ -529,6 +554,8 @@ def buildDriverPathSet(
         warnings.extend(f"explicitAssumption:{source.card.assumptionId}" for source in assumptions)
     historyPanel, variables, historyStatus, historyInputHash = _joinedHistoryPanel(histories, knowledgeAsOf=cutoff)
     historySet: EmpiricalPathSet | None = None
+    observedHistoryStatus = historyStatus
+    basePathSetHash = ""
     if historyPanel is not None:
         try:
             historySet = buildJointBlockPaths(
@@ -549,6 +576,7 @@ def buildDriverPathSet(
         except EmpiricalPathError as error:
             raise DriverPathError(str(error)) from error
         warnings.extend(historySet.audit.warnings)
+        basePathSetHash = historySet.audit.pathSetHash
         validationStatus = "unvalidated" if assumptions else historySet.audit.validationStatus
         outputHistoryStatus = "explicitAssumption" if assumptions else historyStatus
         paths = _overlayAssumptions(
@@ -579,11 +607,19 @@ def buildDriverPathSet(
         validationStatus = "unvalidated"
         outputHistoryStatus = "explicitAssumption"
     pathSetHash = _pathSetHash(paths)
+    overlayHash = _overlayHash(
+        assumptionHash=assumptionHash,
+        assumptionSteps=assumptionStepTuple,
+        sourceRefs=sourceRefs,
+        horizon=horizon,
+    )
     inputHash = canonicalPayloadHash(
         {
             "registryHash": registryHash,
             "historyInputHash": historyInputHash,
             "assumptionHash": assumptionHash,
+            "basePathSetHash": basePathSetHash,
+            "overlayHash": overlayHash,
             "certificate": certificate,
             "knowledgeAsOf": cutoff,
             "horizon": horizon,
@@ -596,6 +632,10 @@ def buildDriverPathSet(
     audit = DriverPathAudit(
         pathSetHash=pathSetHash,
         inputHash=inputHash,
+        historyInputHash=historyInputHash,
+        assumptionHash=assumptionHash,
+        basePathSetHash=basePathSetHash,
+        overlayHash=overlayHash,
         registryHash=registryHash,
         factorContractHash=factorContractHash,
         generatorVersion=GENERATOR_VERSION,
@@ -608,6 +648,7 @@ def buildDriverPathSet(
         seed=int(seed),
         driverCardIds=tuple(card.cardId for card in cards),
         validationStatus=validationStatus,
+        observedHistoryStatus=observedHistoryStatus,
         historyStatus=outputHistoryStatus,
         sourceRefs=sourceRefs,
         warnings=tuple(sorted(set(warnings))),
