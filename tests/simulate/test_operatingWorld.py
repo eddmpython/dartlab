@@ -6,9 +6,13 @@ from dartlab.simulate.operatingWorld import (
     OperatingPrimitive,
     buildOperatingPath,
     buildOperatingStrategy,
+    operatingInputsFromCompiledState,
     operatingInputsFromPrimitives,
+    operatingInputsFromStatePrimitives,
     runOperatingStrategies,
 )
+from dartlab.simulate.stateCompiler import CompiledPointInTimeState
+from dartlab.simulate.stateSupport import StatePrimitive
 
 
 def _primitive(variableId: str, value: float, unit: str, sourceRef: str, evidenceRole: str = "explicitAssumption"):
@@ -24,6 +28,65 @@ def _rows():
         _primitive("capacityUnits", 80.0, "units", "assumption://capacity"),
         _primitive("cash", 100.0, "currency", "filing://cash", "observed"),
         _primitive("debt", 20.0, "currency", "filing://debt", "observed"),
+    )
+
+
+def _statePrimitive(
+    variableId: str,
+    value: float,
+    unit: str,
+    evidenceRole: str = "observed",
+    role: str = "state",
+) -> StatePrimitive:
+    return StatePrimitive(
+        variableId=variableId,
+        unit=unit,
+        role=role,
+        value=value,
+        frequency="quarter",
+        timing="stock",
+        transformId="level-v1",
+        evidenceRole=evidenceRole,
+    )
+
+
+def _stateRows():
+    return (
+        _statePrimitive("operating.price", 10.0, "USDPerUnit", "explicitAssumption"),
+        _statePrimitive("operating.demandVolume", 100.0, "units", "explicitAssumption"),
+        _statePrimitive("operating.unitCost", 6.0, "USDPerUnit", "explicitAssumption"),
+        _statePrimitive("operating.fixedCost", 100.0, "USD", "explicitAssumption"),
+        _statePrimitive("operating.capacityUnits", 80.0, "units", "explicitAssumption"),
+        _statePrimitive("financial.cash", 100.0, "USD", "observed"),
+        _statePrimitive("financial.debt", 20.0, "USD", "deterministicDerived"),
+    )
+
+
+def _compiledState(
+    primitives: tuple[StatePrimitive, ...],
+    *,
+    limitations: tuple[str, ...] = ("unsignedProviderBatches",),
+) -> CompiledPointInTimeState:
+    return CompiledPointInTimeState(
+        stateId="state-1",
+        manifestHash="manifest-1",
+        registryHash="registry-1",
+        stateContractHash="contract-1",
+        stateCompilationContractHash="compile-1",
+        entityId="AAPL",
+        market="US",
+        decisionAsOf="20250201",
+        knowledgeAsOf="20250130",
+        statePrimitives=primitives,
+        selectedObservationIds=("obs-cash", "obs-debt"),
+        providerBatchIds=("batch-1",),
+        providerBatchReceiptIds=("receipt-1",),
+        historyStatus="conditional",
+        admissionStatus="documented",
+        aggregateRevisionPolicy="latestRetained",
+        aggregateCoverage="periodOnly",
+        limitations=limitations,
+        manifestArtifact=b"{}",
     )
 
 
@@ -101,6 +164,65 @@ def testOperatingInputsNeedSourceOrExplicitAssumptionBoundary():
         operatingInputsFromPrimitives(
             wrongUnit,
             asOf="2025Q4",
+            priceElasticity=1.0,
+            capacityUnitsPerCurrency=1.0,
+        )
+
+
+def testOperatingInputsCanBindTypedPitStateWithoutLosingLineage():
+    inputs = operatingInputsFromCompiledState(
+        _compiledState(_stateRows()),
+        priceElasticity=1.0,
+        capacityUnitsPerCurrency=1.0,
+    )
+    assert inputs.state["price"] == 10.0
+    assert inputs.state["cash"] == 100.0
+    assert "compiledState:state-1" in inputs.refs
+    assert "providerBatchReceipt:receipt-1" in inputs.refs
+    assert "observation:obs-cash" in inputs.refs
+    assert "compiledStateLimitation:unsignedProviderBatches" in inputs.warnings
+    assert "compiledStateHistory:conditional" in inputs.warnings
+    assert "operatingAssumption:capacityUnits" in inputs.warnings
+
+
+def testOperatingInputsFromPitStateFailClosedOnMeaningDrift():
+    missing = _stateRows()[:-1]
+    with pytest.raises(ValueError, match="operating inputs are missing"):
+        operatingInputsFromStatePrimitives(
+            missing,
+            asOf="20250201",
+            priceElasticity=1.0,
+            capacityUnitsPerCurrency=1.0,
+        )
+
+    wrongUnit = list(_stateRows())
+    wrongUnit[0] = _statePrimitive("operating.price", 10.0, "USD", "explicitAssumption")
+    with pytest.raises(ValueError, match="unit drift"):
+        operatingInputsFromStatePrimitives(
+            wrongUnit,
+            asOf="20250201",
+            priceElasticity=1.0,
+            capacityUnitsPerCurrency=1.0,
+        )
+
+    wrongRole = list(_stateRows())
+    wrongRole[1] = _statePrimitive("operating.demandVolume", 100.0, "units", "explicitAssumption", "observedFeature")
+    with pytest.raises(ValueError, match="role drift"):
+        operatingInputsFromStatePrimitives(
+            wrongRole,
+            asOf="20250201",
+            priceElasticity=1.0,
+            capacityUnitsPerCurrency=1.0,
+        )
+
+
+def testOperatingInputsRejectMixedPitCurrencyFamilies():
+    mixed = list(_stateRows())
+    mixed[5] = _statePrimitive("financial.cash", 100.0, "KRW")
+    with pytest.raises(ValueError, match="mixes monetary units"):
+        operatingInputsFromStatePrimitives(
+            mixed,
+            asOf="20250201",
             priceElasticity=1.0,
             capacityUnitsPerCurrency=1.0,
         )

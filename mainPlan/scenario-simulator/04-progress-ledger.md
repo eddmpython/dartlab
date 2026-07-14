@@ -42,6 +42,18 @@
 
 현재 판정: 이제 "조건과 가정을 넣고 상태가 변한다"는 최소 조건은 충족한다. 하지만 PRD 전체 전략 엔진 완료는 아니다. 다음 P0는 운영 driver 상태를 EDGAR/DART compiled PIT state와 더 직접 결속하고, 실원천 coverage가 없는 volume, ASP, unit cost, fixed cost, capacity 항목에는 `blocked` 또는 `explicitAssumption` 라벨을 끝까지 보존한 채 price bridge와 policy OOS 평가로 연결하는 것이다.
 
+## 2026-07-14 P0 PIT 상태와 운영 world 결속
+
+위 다음 P0의 첫 절단면을 본진에 연결했다. 방향은 새 공개 API나 GUI가 아니라, `CompiledPointInTimeState`가 보존한 typed state primitive를 운영 시뮬레이터의 초기 상태로 안전하게 변환하는 내부 어댑터다.
+
+- `src/dartlab/simulate/operatingWorld.py`: `operatingInputsFromStatePrimitives`와 `operatingInputsFromCompiledState`를 추가했다. `operating.price`, `operating.demandVolume`, `operating.unitCost`, `operating.fixedCost`, `operating.capacityUnits`, `financial.cash`, `financial.debt`를 운영 world의 canonical state로 변환한다.
+- 단위 계약: `USD`, `KRW`, `USDPerUnit`, `KRWPerUnit` 같은 구체 통화 단위는 같은 통화군이면 내부 `currency`, `currencyPerUnit`으로 정규화한다. 서로 다른 통화군이 섞이면 즉시 차단한다.
+- 의미 계약: role은 `state`여야 하고, evidenceRole은 observed, deterministicDerived, admittedEstimate, explicitAssumption만 실행 가능하다. 결손, unit drift, role drift, evidence drift는 값 대체 없이 실패한다.
+- 계보 보존: compiled state id, state receipt, provider batch receipt, provider batch id, selected observation id를 `refs`에 남긴다. compiled limitation과 exact/admitted가 아닌 상태는 `warnings`에 남긴다.
+- 테스트: `_attempts/operatingStateBinding`에서 씨앗 회귀를 만들고, `tests/simulate/test_operatingWorld.py`에 본진 회귀를 추가했다. focused 검증으로 `_attempts` 3개, operatingWorld 10개, stateCompiler와 filingStateAdapters 14개, `tests/simulate` 326개가 통과했다. `ruff check`, camelCase audit, docstring audit, `dartlabGuard.py strict --scope l0-l15 --providers dart,edgar`도 통과했다.
+
+현재 판정: 전쟁 시뮬레이션식 구조에 필요한 두 축 중 하나, 즉 "현재 상태값을 원천 경계와 함께 세계 상태로 세운다"는 축이 닫혔다. 남은 축은 경로 생성이다. 수요, ASP, unit cost, fixed cost, capacity에 대해 실제 관측 가능한 것은 observed로, 관측 불가능한 것은 explicitAssumption 또는 blocked로 라벨링한 뒤, 다중 경로와 전략 후보를 생성하고 OOS policy certificate와 연결해야 한다.
+
 ---
 
 ## 0. ★2026-06-20 9인 전문가 패널 uplift . 세 축 planScore 95 도달

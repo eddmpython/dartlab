@@ -8,9 +8,10 @@ claims a simulation result.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Mapping, Sequence
+from dataclasses import dataclass, replace
+from typing import TYPE_CHECKING, Mapping, Sequence
 
+from dartlab.simulate.stateSupport import StatePrimitive
 from dartlab.simulate.world import (
     ActionSpec,
     ConstraintSpec,
@@ -26,6 +27,9 @@ from dartlab.simulate.world import (
     simulateWorld,
 )
 
+if TYPE_CHECKING:
+    from dartlab.simulate.stateCompiler import CompiledPointInTimeState
+
 _ACCEPTED_EVIDENCE = {"observed", "deterministicDerived", "admittedEstimate", "explicitAssumption"}
 _REQUIRED_INPUTS = {
     "price": ("currencyPerUnit", "price"),
@@ -36,6 +40,24 @@ _REQUIRED_INPUTS = {
     "cash": ("currency", "cash"),
     "debt": ("currency", "debt"),
 }
+_STATE_PRIMITIVE_INPUTS = {
+    "price": "price",
+    "operating.price": "price",
+    "demandVolume": "demandVolume",
+    "operating.demandVolume": "demandVolume",
+    "unitCost": "unitCost",
+    "operating.unitCost": "unitCost",
+    "fixedCost": "fixedCost",
+    "operating.fixedCost": "fixedCost",
+    "capacityUnits": "capacityUnits",
+    "operating.capacityUnits": "capacityUnits",
+    "cash": "cash",
+    "financial.cash": "cash",
+    "debt": "debt",
+    "financial.debt": "debt",
+}
+_CONCRETE_CURRENCY_UNITS = {"KRW", "USD"}
+_CONCRETE_CURRENCY_PER_UNIT_UNITS = {"KRWPerUnit", "USDPerUnit"}
 _STATE_IDS = ("price", "demandVolume", "unitCost", "fixedCost", "capacityUnits", "cash", "debt")
 _METRIC_IDS = (
     "soldVolume",
@@ -111,6 +133,38 @@ def _requireRefs(refs: tuple[str, ...], label: str) -> None:
         raise ValueError(f"{label} needs at least one source or assumption ref")
 
 
+def _dedupeRefs(refs: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(str(ref) for ref in refs if str(ref)))
+
+
+def _operatingUnit(unit: str, expected: str, variableId: str) -> str:
+    if unit == expected:
+        return expected
+    if expected == "currency" and unit in _CONCRETE_CURRENCY_UNITS:
+        return "currency"
+    if expected == "currencyPerUnit" and unit in _CONCRETE_CURRENCY_PER_UNIT_UNITS:
+        return "currencyPerUnit"
+    raise ValueError(f"operating state unit drift: {variableId}")
+
+
+def _currencyFamily(unit: str) -> str:
+    if unit in _CONCRETE_CURRENCY_UNITS:
+        return unit
+    if unit in _CONCRETE_CURRENCY_PER_UNIT_UNITS:
+        return unit.removesuffix("PerUnit")
+    return ""
+
+
+def _compiledStateRefs(compiled: CompiledPointInTimeState) -> tuple[str, ...]:
+    refs = [f"compiledState:{compiled.stateId}"]
+    if compiled.stateReceiptId:
+        refs.append(f"stateReceipt:{compiled.stateReceiptId}")
+    refs.extend(f"providerBatchReceipt:{item}" for item in compiled.providerBatchReceiptIds if item)
+    refs.extend(f"providerBatch:{item}" for item in compiled.providerBatchIds if item)
+    refs.extend(f"observation:{item}" for item in compiled.selectedObservationIds if item)
+    return _dedupeRefs(tuple(refs))
+
+
 def operatingInputsFromPrimitives(
     primitives: Sequence[OperatingPrimitive],
     *,
@@ -183,6 +237,136 @@ def operatingInputsFromPrimitives(
         capacityUnitsPerCurrency=capacityPerCurrency,
         capacityDecayRate=decay,
         taxRate=tax,
+    )
+
+
+def operatingInputsFromStatePrimitives(
+    primitives: Sequence[StatePrimitive],
+    *,
+    asOf: str,
+    priceElasticity: float,
+    capacityUnitsPerCurrency: float,
+    capacityDecayRate: float = 0.0,
+    taxRate: float = 0.0,
+    refs: tuple[str, ...] = (),
+    warnings: tuple[str, ...] = (),
+    sourceRefPrefix: str = "statePrimitive",
+) -> OperatingWorldInputs:
+    """Compile typed PIT state primitives into operating-world inputs.
+
+    Args:
+        primitives: Provider-neutral state primitives from a state compiler or explicit assumption set.
+        asOf: Decision or snapshot label for the operating initial state.
+        priceElasticity: Demand response to strategy price changes.
+        capacityUnitsPerCurrency: Capacity added per investment currency unit.
+        capacityDecayRate: Per-step capacity decay ratio.
+        taxRate: Simple tax rate applied when profit before tax is positive.
+        refs: Additional state, receipt, or provider references to keep on the world state.
+        warnings: Upstream limitations to preserve.
+        sourceRefPrefix: Prefix used when creating per-variable source references.
+
+    Returns:
+        ``OperatingWorldInputs`` with canonical operating variable names.
+
+    Raises:
+        ValueError: If a required operating variable is missing or its state contract drifts.
+
+    Example:
+        ``inputs = operatingInputsFromStatePrimitives(rows, asOf="20250201", priceElasticity=1.0, capacityUnitsPerCurrency=0.01)``
+    """
+
+    byOperatingId: dict[str, StatePrimitive] = {}
+    currencyFamilies: set[str] = set()
+    for item in primitives:
+        operatingId = _STATE_PRIMITIVE_INPUTS.get(item.variableId)
+        if operatingId is None:
+            continue
+        if operatingId in byOperatingId:
+            raise ValueError(f"operating state duplicate input: {operatingId}")
+        if item.role != "state":
+            raise ValueError(f"operating state role drift: {item.variableId}")
+        if item.evidenceRole not in _ACCEPTED_EVIDENCE:
+            raise ValueError(f"operating state evidence role is not executable: {item.variableId}")
+        expectedUnit = _REQUIRED_INPUTS[operatingId][0]
+        canonicalUnit = _operatingUnit(item.unit, expectedUnit, item.variableId)
+        family = _currencyFamily(item.unit)
+        if family:
+            currencyFamilies.add(family)
+        byOperatingId[operatingId] = replace(item, variableId=operatingId, unit=canonicalUnit)
+    if len(currencyFamilies) > 1:
+        raise ValueError("operating state mixes monetary units")
+    prefix = sourceRefPrefix.rstrip(":")
+    operatingPrimitives = tuple(
+        OperatingPrimitive(
+            item.variableId,
+            float(item.value),
+            item.unit,
+            item.evidenceRole,
+            f"{prefix}:{item.variableId}",
+        )
+        for item in byOperatingId.values()
+    )
+    inputs = operatingInputsFromPrimitives(
+        operatingPrimitives,
+        asOf=asOf,
+        priceElasticity=priceElasticity,
+        capacityUnitsPerCurrency=capacityUnitsPerCurrency,
+        capacityDecayRate=capacityDecayRate,
+        taxRate=taxRate,
+        warnings=warnings,
+    )
+    return replace(inputs, refs=_dedupeRefs((*inputs.refs, *refs)))
+
+
+def operatingInputsFromCompiledState(
+    compiled: CompiledPointInTimeState,
+    *,
+    priceElasticity: float,
+    capacityUnitsPerCurrency: float,
+    capacityDecayRate: float = 0.0,
+    taxRate: float = 0.0,
+    warnings: tuple[str, ...] = (),
+) -> OperatingWorldInputs:
+    """Bind a compiled PIT state to the operating world without hiding limitations.
+
+    Args:
+        compiled: Point-in-time state compiled from complete provider batches.
+        priceElasticity: Demand response to strategy price changes.
+        capacityUnitsPerCurrency: Capacity added per investment currency unit.
+        capacityDecayRate: Per-step capacity decay ratio.
+        taxRate: Simple tax rate applied when profit before tax is positive.
+        warnings: Extra caller limitations to preserve.
+
+    Returns:
+        Executable operating-world inputs carrying compiled-state refs and warnings.
+
+    Raises:
+        ValueError: If the compiled state lacks the operating variables needed for execution.
+
+    Example:
+        ``inputs = operatingInputsFromCompiledState(compiled, priceElasticity=1.0, capacityUnitsPerCurrency=0.01)``
+    """
+
+    limitationWarnings = tuple(f"compiledStateLimitation:{item}" for item in compiled.limitations)
+    statusWarnings = tuple(
+        warning
+        for warning in (
+            f"compiledStateHistory:{compiled.historyStatus}" if compiled.historyStatus != "exact" else "",
+            f"compiledStateAdmission:{compiled.admissionStatus}" if compiled.admissionStatus != "admitted" else "",
+        )
+        if warning
+    )
+    refs = _compiledStateRefs(compiled)
+    return operatingInputsFromStatePrimitives(
+        compiled.statePrimitives,
+        asOf=compiled.decisionAsOf,
+        priceElasticity=priceElasticity,
+        capacityUnitsPerCurrency=capacityUnitsPerCurrency,
+        capacityDecayRate=capacityDecayRate,
+        taxRate=taxRate,
+        refs=refs,
+        warnings=(*warnings, *limitationWarnings, *statusWarnings),
+        sourceRefPrefix=f"compiledState:{compiled.stateId}",
     )
 
 
