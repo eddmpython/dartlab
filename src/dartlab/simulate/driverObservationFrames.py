@@ -17,9 +17,12 @@ from dartlab.simulate.stateCompiler import (
 from dartlab.simulate.vintage import canonicalPayloadHash
 
 DRIVER_OBSERVATION_FRAME_VERSION = "driver-coefficient-observation-frame-v1"
+DRIVER_DESIGN_FRAME_VERSION = "driver-coefficient-design-frame-v1"
 SELECTION_RULE_ID = "single-observation-per-signal-event-v1"
 ORIGIN_KNOWLEDGE_POLICY_ID = "sourceObservationKnowledgeAsOf"
+MULTISOURCE_ORIGIN_KNOWLEDGE_POLICY_ID = "maxSourceObservationKnowledgeAsOf"
 SOURCE_REF_POLICY_ID = "observationId"
+DESIGN_MISSING_POLICY_ID = "completeCaseIntersection"
 
 
 class DriverObservationFrameError(ValueError):
@@ -73,6 +76,74 @@ class DriverCoefficientObservationFrame:
     def __post_init__(self) -> None:
         object.__setattr__(self, "sourceParentReceiptIds", tuple(self.sourceParentReceiptIds))
         object.__setattr__(self, "labelParentReceiptIds", tuple(self.labelParentReceiptIds))
+
+
+@dataclass(frozen=True)
+class DriverDesignColumnSpec:
+    """One source column in a multivariable driver design frame."""
+
+    variableId: str
+    signalId: str
+    unit: str
+    frequency: str
+    transformId: str
+    evidenceRoles: tuple[str, ...] = ("observed", "deterministicDerived")
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "evidenceRoles", tuple(self.evidenceRoles))
+
+
+@dataclass(frozen=True)
+class MultivariableDriverCoefficientObservationFrameSpec:
+    """Several source batches and one forward label batch under one design matrix contract."""
+
+    frameId: str
+    sourceColumns: tuple[DriverDesignColumnSpec, ...]
+    labelSignalId: str
+    targetVariableId: str
+    targetUnit: str
+    frequency: str
+    stepSpan: int
+    horizonSteps: int
+    originStart: str = ""
+    originThrough: str = ""
+    labelEvidenceRoles: tuple[str, ...] = ("observed",)
+    selectionRuleId: str = SELECTION_RULE_ID
+    originKnowledgePolicy: str = MULTISOURCE_ORIGIN_KNOWLEDGE_POLICY_ID
+    sourceRefPolicy: str = SOURCE_REF_POLICY_ID
+    missingPolicy: str = DESIGN_MISSING_POLICY_ID
+    schemaVersion: str = DRIVER_DESIGN_FRAME_VERSION
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "sourceColumns", tuple(self.sourceColumns))
+        object.__setattr__(self, "labelEvidenceRoles", tuple(self.labelEvidenceRoles))
+
+
+@dataclass(frozen=True)
+class MultivariableDriverCoefficientObservationFrame:
+    """Exact provider observation batches joined into a replayable multivariable design frame."""
+
+    frameId: str
+    frame: pl.DataFrame
+    frameHash: str
+    sourceBatchReceiptIds: tuple[str, ...]
+    labelBatchReceiptId: str
+    sourceParentReceiptIds: tuple[str, ...]
+    labelParentReceiptIds: tuple[str, ...]
+    rowCount: int
+    droppedOriginCount: int
+    droppedOriginHash: str
+    missingCountByVariable: tuple[tuple[str, int], ...]
+    columnOrderHash: str
+    specHash: str
+    spec: MultivariableDriverCoefficientObservationFrameSpec | None = None
+    schemaVersion: str = DRIVER_DESIGN_FRAME_VERSION
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "sourceBatchReceiptIds", tuple(self.sourceBatchReceiptIds))
+        object.__setattr__(self, "sourceParentReceiptIds", tuple(self.sourceParentReceiptIds))
+        object.__setattr__(self, "labelParentReceiptIds", tuple(self.labelParentReceiptIds))
+        object.__setattr__(self, "missingCountByVariable", tuple(self.missingCountByVariable))
 
 
 def _dateText(value: str, label: str) -> str:
@@ -148,6 +219,48 @@ def _validateSpec(spec: DriverCoefficientObservationFrameSpec) -> None:
         _dateText(spec.originThrough, "originThrough")
     if spec.originStart and spec.originThrough and spec.originStart > spec.originThrough:
         raise DriverObservationFrameError("driver observation origin window is inverted")
+
+
+def _validateDesignSpec(spec: MultivariableDriverCoefficientObservationFrameSpec) -> None:
+    if (
+        spec.schemaVersion != DRIVER_DESIGN_FRAME_VERSION
+        or not spec.frameId
+        or not spec.sourceColumns
+        or not spec.labelSignalId
+        or not spec.targetVariableId
+        or not spec.targetUnit
+        or not spec.frequency
+        or spec.stepSpan < 1
+        or spec.horizonSteps < 1
+        or not spec.labelEvidenceRoles
+    ):
+        raise DriverObservationFrameError("driver design frame spec is incomplete")
+    if (
+        spec.selectionRuleId != SELECTION_RULE_ID
+        or spec.originKnowledgePolicy != MULTISOURCE_ORIGIN_KNOWLEDGE_POLICY_ID
+        or spec.sourceRefPolicy != SOURCE_REF_POLICY_ID
+        or spec.missingPolicy != DESIGN_MISSING_POLICY_ID
+    ):
+        raise DriverObservationFrameError("driver design frame policy is unsupported")
+    variableIds = [column.variableId for column in spec.sourceColumns]
+    if len(set(variableIds)) != len(variableIds):
+        raise DriverObservationFrameError("driver design frame source variables must be unique")
+    for column in spec.sourceColumns:
+        if (
+            not column.variableId
+            or not column.signalId
+            or not column.unit
+            or column.frequency != spec.frequency
+            or not column.transformId
+            or not column.evidenceRoles
+        ):
+            raise DriverObservationFrameError("driver design frame source column is incomplete")
+    if spec.originStart:
+        _dateText(spec.originStart, "originStart")
+    if spec.originThrough:
+        _dateText(spec.originThrough, "originThrough")
+    if spec.originStart and spec.originThrough and spec.originStart > spec.originThrough:
+        raise DriverObservationFrameError("driver design frame origin window is inverted")
 
 
 def _validateBatch(batch: ProviderObservationBatch, *, role: str) -> None:
@@ -244,6 +357,136 @@ def _selectObservations(
     return byPeriod
 
 
+def _sourceValueColumn(variableId: str) -> str:
+    return f"sourceValue__{variableId}"
+
+
+def _sourceRefColumn(variableId: str) -> str:
+    return f"sourceRef__{variableId}"
+
+
+def _sourceAvailableColumn(variableId: str) -> str:
+    return f"sourceAvailableAt__{variableId}"
+
+
+def _sourceKnowledgeColumn(variableId: str) -> str:
+    return f"sourceKnowledgeAsOf__{variableId}"
+
+
+def _sourceEventColumn(variableId: str) -> str:
+    return f"sourceEventTime__{variableId}"
+
+
+def _columnOrderPayload(sourceColumns: tuple[DriverDesignColumnSpec, ...]) -> tuple[dict, ...]:
+    return tuple(
+        {
+            "position": index,
+            "variableId": column.variableId,
+            "signalId": column.signalId,
+            "unit": column.unit,
+            "frequency": column.frequency,
+            "transformId": column.transformId,
+            "evidenceRoles": column.evidenceRoles,
+        }
+        for index, column in enumerate(sourceColumns)
+    )
+
+
+def _multivariableFrameRows(
+    sourceByColumn: tuple[tuple[DriverDesignColumnSpec, dict[int, VariableObservation]], ...],
+    labelByPeriod: dict[int, VariableObservation],
+    spec: MultivariableDriverCoefficientObservationFrameSpec,
+    columnOrderHash: str,
+) -> tuple[tuple[dict, ...], tuple[tuple[str, int], ...], int, str]:
+    horizon = spec.stepSpan * spec.horizonSteps
+    periodSets = [set(byPeriod) for _column, byPeriod in sourceByColumn]
+    commonPeriods = set.intersection(*periodSets) if periodSets else set()
+    if not commonPeriods:
+        raise DriverObservationFrameError("driver design frame has no common source row universe")
+    allPeriods = set.union(*periodSets) if periodSets else set()
+    droppedPayload = []
+    for period in sorted(allPeriods - commonPeriods):
+        droppedPayload.append(
+            {
+                "periodIndex": period,
+                "missingVariableIds": tuple(
+                    column.variableId for column, byPeriod in sourceByColumn if period not in byPeriod
+                ),
+            }
+        )
+    missingCountByVariable = tuple(
+        (column.variableId, len(allPeriods - set(byPeriod))) for column, byPeriod in sourceByColumn
+    )
+    droppedOriginHash = canonicalPayloadHash(
+        {
+            "schemaVersion": DRIVER_DESIGN_FRAME_VERSION,
+            "missingPolicy": spec.missingPolicy,
+            "droppedOrigins": tuple(droppedPayload),
+        }
+    )
+    rows = []
+    for sourcePeriod in sorted(commonPeriods):
+        firstSource = sourceByColumn[0][1][sourcePeriod]
+        targetPeriod = sourcePeriod + horizon
+        label = labelByPeriod.get(targetPeriod)
+        if label is None:
+            raise DriverObservationFrameError("driver design frame missing horizon label")
+        originEventTime = _dateText(firstSource.eventAt, "originEventTime")
+        targetEventTime = _dateText(label.eventAt, "targetEventTime")
+        targetAvailableAt = _dateText(label.availableAt, "targetAvailableAt")
+        distance = _periodIndex(targetEventTime, spec.frequency, "targetEventTime") - _periodIndex(
+            originEventTime,
+            spec.frequency,
+            "originEventTime",
+        )
+        if distance != horizon:
+            raise DriverObservationFrameError("driver design frame horizon mismatch")
+        sourceRefs = []
+        sourceValues = []
+        sourceAvailableDates = []
+        sourceKnowledgeDates = []
+        row = {
+            "originId": "",
+            "originEventTime": originEventTime,
+            "originKnowledgeAsOf": "",
+            "sourceAvailableAt": "",
+            "targetEventTime": targetEventTime,
+            "targetAvailableAt": targetAvailableAt,
+            "targetValue": _finite(label.value, "targetValue"),
+            "labelSourceRef": label.observationId,
+            "columnOrderHash": columnOrderHash,
+        }
+        for column, byPeriod in sourceByColumn:
+            source = byPeriod[sourcePeriod]
+            sourceEventTime = _dateText(source.eventAt, f"{column.variableId}.eventAt")
+            if sourceEventTime != originEventTime:
+                raise DriverObservationFrameError("driver design frame source event grid drift")
+            sourceAvailableAt = _dateText(source.availableAt, f"{column.variableId}.availableAt")
+            sourceKnowledgeAsOf = _dateText(source.knowledgeAsOf, f"{column.variableId}.knowledgeAsOf")
+            if sourceAvailableAt > sourceKnowledgeAsOf:
+                raise DriverObservationFrameError("driver design frame source knowledge policy is invalid")
+            sourceRefs.append(source.observationId)
+            sourceValues.append(_finite(source.value, column.variableId))
+            sourceAvailableDates.append(sourceAvailableAt)
+            sourceKnowledgeDates.append(sourceKnowledgeAsOf)
+            row[_sourceValueColumn(column.variableId)] = _finite(source.value, column.variableId)
+            row[_sourceRefColumn(column.variableId)] = source.observationId
+            row[_sourceAvailableColumn(column.variableId)] = sourceAvailableAt
+            row[_sourceKnowledgeColumn(column.variableId)] = sourceKnowledgeAsOf
+            row[_sourceEventColumn(column.variableId)] = sourceEventTime
+        originKnowledgeAsOf = max(sourceKnowledgeDates)
+        sourceAvailableAt = max(sourceAvailableDates)
+        if targetAvailableAt <= originKnowledgeAsOf:
+            raise DriverObservationFrameError("driver design frame label observation is not forward known")
+        row["originKnowledgeAsOf"] = originKnowledgeAsOf
+        row["sourceAvailableAt"] = sourceAvailableAt
+        row["originId"] = f"{spec.frameId}:{columnOrderHash}:{':'.join(sourceRefs)}:{label.observationId}"
+        rows.append(row)
+    if not rows:
+        raise DriverObservationFrameError("driver design frame needs rows")
+    return tuple(rows), missingCountByVariable, len(droppedPayload), droppedOriginHash
+
+
 def _frameRows(
     sourceByPeriod: dict[int, VariableObservation],
     labelByPeriod: dict[int, VariableObservation],
@@ -309,6 +552,36 @@ def _framePayload(
         "sourceBatchReceiptId": sourceBatch.batchReceiptId,
         "labelBatchId": labelBatch.batchId,
         "labelBatchReceiptId": labelBatch.batchReceiptId,
+        "rows": rows,
+    }
+
+
+def _designFramePayload(
+    *,
+    spec: MultivariableDriverCoefficientObservationFrameSpec,
+    specHash: str,
+    columnOrderHash: str,
+    sourceBatches: tuple[ProviderObservationBatch, ...],
+    labelBatch: ProviderObservationBatch,
+    rows: tuple[dict, ...],
+    missingCountByVariable: tuple[tuple[str, int], ...],
+    droppedOriginCount: int,
+    droppedOriginHash: str,
+) -> dict:
+    return {
+        "schemaVersion": DRIVER_DESIGN_FRAME_VERSION,
+        "frameId": spec.frameId,
+        "spec": spec,
+        "specHash": specHash,
+        "columnOrderHash": columnOrderHash,
+        "sourceBatchIds": tuple(batch.batchId for batch in sourceBatches),
+        "sourceBatchReceiptIds": tuple(batch.batchReceiptId for batch in sourceBatches),
+        "labelBatchId": labelBatch.batchId,
+        "labelBatchReceiptId": labelBatch.batchReceiptId,
+        "missingPolicy": spec.missingPolicy,
+        "missingCountByVariable": missingCountByVariable,
+        "droppedOriginCount": droppedOriginCount,
+        "droppedOriginHash": droppedOriginHash,
         "rows": rows,
     }
 
@@ -381,6 +654,105 @@ def buildDriverCoefficientObservationFrame(
         sourceParentReceiptIds=(sourceBatch.batchReceiptId,),
         labelParentReceiptIds=(labelBatch.batchReceiptId,),
         rowCount=len(rows),
+        specHash=specHash,
+        spec=spec,
+    )
+
+
+def buildMultivariableDriverCoefficientObservationFrame(
+    sourceBatches: tuple[ProviderObservationBatch, ...],
+    labelBatch: ProviderObservationBatch,
+    spec: MultivariableDriverCoefficientObservationFrameSpec,
+) -> MultivariableDriverCoefficientObservationFrame:
+    """Build a replayable multivariable design frame from signed provider observations.
+
+    Args:
+        sourceBatches: Signed exact source batches. Order must match ``spec.sourceColumns``.
+        labelBatch: Signed exact forward label batch.
+        spec: Column order, missing policy, label, and horizon contract.
+
+    Returns:
+        Wide design frame with one source value and source ref column per variable.
+
+    Raises:
+        DriverObservationFrameError: If source batches, column order, missing policy, timing, or label lineage fails.
+
+    Example:
+        ``frame = buildMultivariableDriverCoefficientObservationFrame((fxBatch, priceBatch), labelBatch, spec)``
+    """
+
+    _validateDesignSpec(spec)
+    sourceTuple = tuple(sourceBatches)
+    if len(sourceTuple) != len(spec.sourceColumns):
+        raise DriverObservationFrameError("driver design frame source batch count mismatch")
+    for index, batch in enumerate(sourceTuple):
+        _validateBatch(batch, role=f"source[{index}]")
+    _validateBatch(labelBatch, role="label")
+    entities = {batch.entityId for batch in (*sourceTuple, labelBatch)}
+    if len(entities) != 1:
+        raise DriverObservationFrameError("driver design frame provider batches use different entities")
+    sourceByColumn = []
+    for column, batch in zip(spec.sourceColumns, sourceTuple):
+        sourceByColumn.append(
+            (
+                column,
+                _selectObservations(
+                    batch,
+                    role=f"source[{column.variableId}]",
+                    signalId=column.signalId,
+                    unit=column.unit,
+                    frequency=spec.frequency,
+                    evidenceRoles=column.evidenceRoles,
+                    originStart=spec.originStart,
+                    originThrough=spec.originThrough,
+                ),
+            )
+        )
+    labelByPeriod = _selectObservations(
+        labelBatch,
+        role="label",
+        signalId=spec.labelSignalId,
+        unit=spec.targetUnit,
+        frequency=spec.frequency,
+        evidenceRoles=spec.labelEvidenceRoles,
+        originStart="",
+        originThrough="",
+    )
+    columnOrderHash = canonicalPayloadHash(_columnOrderPayload(spec.sourceColumns))
+    rows, missingCountByVariable, droppedOriginCount, droppedOriginHash = _multivariableFrameRows(
+        tuple(sourceByColumn),
+        labelByPeriod,
+        spec,
+        columnOrderHash,
+    )
+    frame = pl.DataFrame(rows)
+    specHash = canonicalPayloadHash(spec)
+    frameHash = canonicalPayloadHash(
+        _designFramePayload(
+            spec=spec,
+            specHash=specHash,
+            columnOrderHash=columnOrderHash,
+            sourceBatches=sourceTuple,
+            labelBatch=labelBatch,
+            rows=rows,
+            missingCountByVariable=missingCountByVariable,
+            droppedOriginCount=droppedOriginCount,
+            droppedOriginHash=droppedOriginHash,
+        )
+    )
+    return MultivariableDriverCoefficientObservationFrame(
+        frameId=spec.frameId,
+        frame=frame,
+        frameHash=frameHash,
+        sourceBatchReceiptIds=tuple(batch.batchReceiptId for batch in sourceTuple),
+        labelBatchReceiptId=labelBatch.batchReceiptId,
+        sourceParentReceiptIds=tuple(batch.batchReceiptId for batch in sourceTuple),
+        labelParentReceiptIds=(labelBatch.batchReceiptId,),
+        rowCount=len(rows),
+        droppedOriginCount=droppedOriginCount,
+        droppedOriginHash=droppedOriginHash,
+        missingCountByVariable=missingCountByVariable,
+        columnOrderHash=columnOrderHash,
         specHash=specHash,
         spec=spec,
     )

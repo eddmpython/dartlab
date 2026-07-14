@@ -35,8 +35,11 @@ from dartlab.simulate.driverCalibration import (
 from dartlab.simulate.driverObservationBatches import driverHistorySourceFromProviderObservationBatch
 from dartlab.simulate.driverObservationFrames import (
     DriverCoefficientObservationFrameSpec,
+    DriverDesignColumnSpec,
     DriverObservationFrameError,
+    MultivariableDriverCoefficientObservationFrameSpec,
     buildDriverCoefficientObservationFrame,
+    buildMultivariableDriverCoefficientObservationFrame,
 )
 from dartlab.simulate.driverPaths import DriverCard, DriverFactorSpec, DriverHistorySource
 from dartlab.simulate.driverRegistry import DriverRegistryCandidate, compileDriverRegistryPathSet
@@ -184,6 +187,30 @@ def _sourceObservations(context, *, values, events, knowledgeDates):
     )
 
 
+def _sourceObservationsFor(
+    context,
+    *,
+    signalId: str,
+    values,
+    events,
+    knowledgeDates,
+    evidenceRole: str = "observed",
+):
+    return tuple(
+        _observation(
+            context,
+            signalId=signalId,
+            value=value,
+            unit="simpleReturn",
+            eventAt=eventAt,
+            availableAt=availableAt,
+            knowledgeAsOf=knowledgeAsOf,
+            evidenceRole=evidenceRole,
+        )
+        for value, eventAt, availableAt, knowledgeAsOf in zip(values, events, knowledgeDates, knowledgeDates)
+    )
+
+
 def _labelObservations(context, *, values, events, availableDates, knowledgeDates, evidenceRole: str = "observed"):
     return tuple(
         _observation(
@@ -248,6 +275,34 @@ def _frameSpec(frameId: str = "fx-price-frame") -> DriverCoefficientObservationF
         sourceVariableId="fxChange",
         targetVariableId="realizedMarketPriceChange",
         sourceUnit="simpleReturn",
+        targetUnit="ratioChangePerStep",
+        frequency="quarter",
+        stepSpan=1,
+        horizonSteps=1,
+    )
+
+
+def _designSpec(frameId: str = "macro-price-design") -> MultivariableDriverCoefficientObservationFrameSpec:
+    return MultivariableDriverCoefficientObservationFrameSpec(
+        frameId=frameId,
+        sourceColumns=(
+            DriverDesignColumnSpec(
+                variableId="fxChange",
+                signalId="fxChange",
+                unit="simpleReturn",
+                frequency="quarter",
+                transformId="change-v1",
+            ),
+            DriverDesignColumnSpec(
+                variableId="oilChange",
+                signalId="oilChange",
+                unit="simpleReturn",
+                frequency="quarter",
+                transformId="change-v1",
+            ),
+        ),
+        labelSignalId="realizedMarketPriceChange",
+        targetVariableId="realizedMarketPriceChange",
         targetUnit="ratioChangePerStep",
         frequency="quarter",
         stepSpan=1,
@@ -448,6 +503,238 @@ def testProviderObservationBatchesBuildCoefficientFrameAndAdmission(tmp_path) ->
     assert exposure.sourceTiming == receipt.sourceTiming == "change"
     assert exposure.sourceTransformId == receipt.sourceTransformId == "change-v1"
     assert exposure.sourceFactorContractHash == receipt.sourceFactorContractHash
+
+
+def testMultivariableObservationFrameBuildsExactDesignFrame(tmp_path) -> None:
+    context = _trust(tmp_path)
+    events = ("20200331", "20200630", "20200930", "20201231")
+    knowledgeDates = ("20200410", "20200710", "20201010", "20210110")
+    fxBatch = _signedBatch(
+        context,
+        _sourceObservationsFor(
+            context,
+            signalId="fxChange",
+            values=(0.10, -0.20, 0.30, 0.40),
+            events=events,
+            knowledgeDates=knowledgeDates,
+        ),
+        signalId="fxChange",
+        cutoffAsOf="20210430",
+    )
+    oilBatch = _signedBatch(
+        context,
+        _sourceObservationsFor(
+            context,
+            signalId="oilChange",
+            values=(0.05, 0.10, -0.05, 0.20),
+            events=events,
+            knowledgeDates=knowledgeDates,
+        ),
+        signalId="oilChange",
+        cutoffAsOf="20210430",
+    )
+    labelBatch = _signedBatch(
+        context,
+        _labelObservations(
+            context,
+            values=(0.05, -0.10, 0.15, 0.20),
+            events=("20200630", "20200930", "20201231", "20210331"),
+            availableDates=("20200705", "20201005", "20210105", "20210405"),
+            knowledgeDates=("20200710", "20201010", "20210110", "20210410"),
+        ),
+        signalId="realizedMarketPriceChange",
+        cutoffAsOf="20210430",
+    )
+    frame = buildMultivariableDriverCoefficientObservationFrame(
+        (fxBatch, oilBatch),
+        labelBatch,
+        _designSpec(),
+    )
+    assert frame.rowCount == 4
+    assert frame.sourceParentReceiptIds == (fxBatch.batchReceiptId, oilBatch.batchReceiptId)
+    assert frame.labelParentReceiptIds == (labelBatch.batchReceiptId,)
+    assert frame.frame["sourceValue__fxChange"].to_list() == pytest.approx([0.10, -0.20, 0.30, 0.40])
+    assert frame.frame["sourceValue__oilChange"].to_list() == pytest.approx([0.05, 0.10, -0.05, 0.20])
+    assert frame.frame["sourceRef__fxChange"].to_list()[0] == fxBatch.observations[0].observationId
+    assert frame.frame["sourceRef__oilChange"].to_list()[0] == oilBatch.observations[0].observationId
+    assert frame.frame["originKnowledgeAsOf"].to_list()[0] == "20200410"
+    reversedFrame = buildMultivariableDriverCoefficientObservationFrame(
+        (oilBatch, fxBatch),
+        labelBatch,
+        MultivariableDriverCoefficientObservationFrameSpec(
+            **{
+                **{
+                    name: getattr(_designSpec("macro-price-design-reversed"), name)
+                    for name in _designSpec().__dataclass_fields__
+                },
+                "sourceColumns": tuple(reversed(_designSpec().sourceColumns)),
+            }
+        ),
+    )
+    assert reversedFrame.columnOrderHash != frame.columnOrderHash
+    assert reversedFrame.frameHash != frame.frameHash
+
+
+def testMultivariableObservationFrameDropsMissingSourceOriginsWithoutFilling(tmp_path) -> None:
+    context = _trust(tmp_path)
+    fxBatch = _signedBatch(
+        context,
+        _sourceObservationsFor(
+            context,
+            signalId="fxChange",
+            values=(0.10, -0.20, 0.30, 0.40),
+            events=("20200331", "20200630", "20200930", "20201231"),
+            knowledgeDates=("20200410", "20200710", "20201010", "20210110"),
+        ),
+        signalId="fxChange",
+        cutoffAsOf="20210430",
+    )
+    oilBatch = _signedBatch(
+        context,
+        _sourceObservationsFor(
+            context,
+            signalId="oilChange",
+            values=(0.05, -0.05, 0.20),
+            events=("20200331", "20200930", "20201231"),
+            knowledgeDates=("20200410", "20201010", "20210110"),
+        ),
+        signalId="oilChange",
+        cutoffAsOf="20210430",
+    )
+    labelBatch = _signedBatch(
+        context,
+        _labelObservations(
+            context,
+            values=(0.05, -0.10, 0.15, 0.20),
+            events=("20200630", "20200930", "20201231", "20210331"),
+            availableDates=("20200705", "20201005", "20210105", "20210405"),
+            knowledgeDates=("20200710", "20201010", "20210110", "20210410"),
+        ),
+        signalId="realizedMarketPriceChange",
+        cutoffAsOf="20210430",
+    )
+    frame = buildMultivariableDriverCoefficientObservationFrame((fxBatch, oilBatch), labelBatch, _designSpec())
+    assert frame.rowCount == 3
+    assert frame.droppedOriginCount == 1
+    assert dict(frame.missingCountByVariable) == {"fxChange": 0, "oilChange": 1}
+    assert frame.frame["originEventTime"].to_list() == ["20200331", "20200930", "20201231"]
+    assert frame.frame["sourceValue__oilChange"].null_count() == 0
+
+
+def testMultivariableObservationFrameRejectsUnsafeInputs(tmp_path) -> None:
+    context = _trust(tmp_path)
+    fxBatch = _signedBatch(
+        context,
+        _sourceObservationsFor(
+            context,
+            signalId="fxChange",
+            values=(0.10, -0.20, 0.30, 0.40),
+            events=("20200331", "20200630", "20200930", "20201231"),
+            knowledgeDates=("20200410", "20200710", "20201010", "20210110"),
+        ),
+        signalId="fxChange",
+        cutoffAsOf="20210430",
+    )
+    assumptionBatch = _signedBatch(
+        context,
+        _sourceObservationsFor(
+            context,
+            signalId="oilChange",
+            values=(0.05, 0.10, -0.05, 0.20),
+            events=("20200331", "20200630", "20200930", "20201231"),
+            knowledgeDates=("20200410", "20200710", "20201010", "20210110"),
+            evidenceRole="explicitAssumption",
+        ),
+        signalId="oilChange",
+        cutoffAsOf="20210430",
+    )
+    validLabel = _signedBatch(
+        context,
+        _labelObservations(
+            context,
+            values=(0.05, -0.10, 0.15, 0.20),
+            events=("20200630", "20200930", "20201231", "20210331"),
+            availableDates=("20200705", "20201005", "20210105", "20210405"),
+            knowledgeDates=("20200710", "20201010", "20210110", "20210410"),
+        ),
+        signalId="realizedMarketPriceChange",
+        cutoffAsOf="20210430",
+    )
+    with pytest.raises(DriverObservationFrameError, match="evidence role"):
+        buildMultivariableDriverCoefficientObservationFrame((fxBatch, assumptionBatch), validLabel, _designSpec())
+    oilBatch = _signedBatch(
+        context,
+        _sourceObservationsFor(
+            context,
+            signalId="oilChange",
+            values=(0.05, 0.10, -0.05, 0.20),
+            events=("20200331", "20200630", "20200930", "20201231"),
+            knowledgeDates=("20200410", "20200710", "20201010", "20210110"),
+        ),
+        signalId="oilChange",
+        cutoffAsOf="20210430",
+    )
+    delayedFxBatch = _signedBatch(
+        context,
+        _sourceObservationsFor(
+            context,
+            signalId="fxChange",
+            values=(0.10, -0.20, 0.30, 0.40),
+            events=("20200331", "20200630", "20200930", "20201231"),
+            knowledgeDates=("20200710", "20200710", "20201010", "20210110"),
+        ),
+        signalId="fxChange",
+        cutoffAsOf="20210430",
+    )
+    delayedOilBatch = _signedBatch(
+        context,
+        _sourceObservationsFor(
+            context,
+            signalId="oilChange",
+            values=(0.05, 0.10, -0.05, 0.20),
+            events=("20200331", "20200630", "20200930", "20201231"),
+            knowledgeDates=("20200710", "20200710", "20201010", "20210110"),
+        ),
+        signalId="oilChange",
+        cutoffAsOf="20210430",
+    )
+    leakingLabel = _signedBatch(
+        context,
+        _labelObservations(
+            context,
+            values=(0.05, -0.10, 0.15, 0.20),
+            events=("20200630", "20200930", "20201231", "20210331"),
+            availableDates=("20200705", "20201005", "20210105", "20210405"),
+            knowledgeDates=("20200710", "20201010", "20210110", "20210410"),
+        ),
+        signalId="realizedMarketPriceChange",
+        cutoffAsOf="20210430",
+    )
+    with pytest.raises(DriverObservationFrameError, match="not forward known"):
+        buildMultivariableDriverCoefficientObservationFrame(
+            (delayedFxBatch, delayedOilBatch), leakingLabel, _designSpec()
+        )
+    duplicateSpec = MultivariableDriverCoefficientObservationFrameSpec(
+        **{
+            **{name: getattr(_designSpec("duplicate-design"), name) for name in _designSpec().__dataclass_fields__},
+            "sourceColumns": (
+                _designSpec().sourceColumns[0],
+                DriverDesignColumnSpec(
+                    variableId="fxChange",
+                    signalId="oilChange",
+                    unit="simpleReturn",
+                    frequency="quarter",
+                    transformId="change-v1",
+                ),
+            ),
+        }
+    )
+    with pytest.raises(DriverObservationFrameError, match="source variables must be unique"):
+        buildMultivariableDriverCoefficientObservationFrame((fxBatch, oilBatch), leakingLabel, duplicateSpec)
+    with pytest.raises(DriverObservationFrameError, match="must be signed"):
+        buildMultivariableDriverCoefficientObservationFrame(
+            (replace(fxBatch, batchReceiptId=""), oilBatch), leakingLabel, _designSpec()
+        )
 
 
 def testDriverObservationFrameRejectsUnsignedDuplicateMissingAndDrift(tmp_path) -> None:

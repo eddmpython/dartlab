@@ -1198,3 +1198,15 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **coefficient frame 연결**: signed exact price return batch는 projection 시 `asKnown`이 되고, deterministicDerived label을 허용한 frame spec에서는 forward equity return label로 쓸 수 있다. observed-only label spec에서는 거부된다.
 - **검증**: price focused 포함 `test_driverObservationBatches.py` 12건 통과. driver observation frame, registry, source focused 25건 통과. `tests/simulate` 전체 392건 통과. ruff format/check, camelCase strict, docstring4 audit, Guard Index quick, diff check, em/en dash audit 통과.
 - **남은 P0**: macro exact는 release vintage가 필요하고, industry는 snapshot과 time-series 분리가 먼저다. 다음 후보는 macro revised lane의 admission ceiling 또는 다변수 coefficient design frame이며, 둘 다 exact와 revised를 같은 법칙처럼 섞지 않는 장부가 먼저 필요하다.
+
+
+## 2026-07-15 P0 multivariable coefficient design frame
+
+- **판단**: filing exact와 price exact가 생겼으므로 다음 병목은 단일 변수 계수가 아니라 여러 signed exact source batch를 같은 origin row universe에 묶는 장부다. macro exact와 industry time-series가 아직 미완이라도, 다변수 장부가 먼저 있어야 exact와 revised, assumption을 같은 법칙처럼 섞는 일을 막을 수 있다.
+- **구현**: `DriverDesignColumnSpec`, `MultivariableDriverCoefficientObservationFrameSpec`, `MultivariableDriverCoefficientObservationFrame`, `buildMultivariableDriverCoefficientObservationFrame`을 추가했다. fit, OOS, admission, exposure, scenario 연결은 열지 않았다.
+- **row universe 계약**: 여러 source batch는 spec column order대로 들어오며, `completeCaseIntersection`으로 공통 origin만 남긴다. 결측은 0, ffill, bfill로 채우지 않고 `droppedOriginCount`, `droppedOriginHash`, `missingCountByVariable`에 묶는다.
+- **cell-level 계보**: wide frame은 변수별 `sourceValue__<variableId>`, `sourceRef__<variableId>`, `sourceAvailableAt__<variableId>`, `sourceKnowledgeAsOf__<variableId>`, `sourceEventTime__<variableId>`를 보존한다. source ref는 provider observation `observationId`다.
+- **시간 경계**: originKnowledgeAsOf는 모든 source cell knowledgeAsOf의 max다. label availableAt이 이 값 이하이면 forward leakage로 실패한다. source event grid drift, horizon mismatch, entity mismatch, unsigned 또는 non-exact batch도 실패한다.
+- **hash 경계**: column order, variable id, signal id, unit, frequency, transformId, evidence role, missing policy, parent batch receipt, dropped row ledger가 specHash, columnOrderHash, frameHash에 들어간다. column 순서를 바꾸면 frame hash도 바뀐다.
+- **검증**: `test_driverObservationFrames.py` 11건 통과. observation batch, frame, calibration, registry focused 37건 통과. `tests/simulate` 전체 395건 통과. ruff format/check, camelCase strict, docstring4 audit, Guard Index quick, diff check, em/en dash audit 통과.
+- **남은 P0**: 다음에는 이 design frame을 다변수 coefficient fit과 OOS admission으로 연결하거나, 더 얇게는 one-company two-scenario two-strategy 수직 루프를 조건부 비교로 닫아야 한다. 아직 전략 추천을 여는 단계는 아니다.
