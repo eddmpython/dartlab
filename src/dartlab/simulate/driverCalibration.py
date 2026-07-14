@@ -30,7 +30,9 @@ from dartlab.simulate.driverObservationFrames import (
 from dartlab.simulate.driverRegistry import DriverRegistryResult
 from dartlab.simulate.operatingBridge import (
     OPERATING_TARGET_UNITS,
+    OperatingBridgeError,
     OperatingTransmissionExposure,
+    sourceFactorContractHash,
 )
 from dartlab.simulate.stateCompiler import _batchFromArtifact
 from dartlab.simulate.vintage import canonicalPayloadBytes, canonicalPayloadHash
@@ -287,6 +289,10 @@ class DriverCoefficientCalibrationReceipt:
     sourceParentReceiptIds: tuple[str, ...]
     labelParentReceiptIds: tuple[str, ...]
     traceRows: tuple[DriverCoefficientTraceRow, ...]
+    sourceFrequency: str = ""
+    sourceTiming: str = ""
+    sourceTransformId: str = ""
+    sourceFactorContractHash: str = ""
     fitFrameBinding: DriverObservationFrameBinding | None = None
 
     def __post_init__(self) -> None:
@@ -492,6 +498,26 @@ def _finite(value: float | None, label: str) -> float:
 
 def _dedupe(values: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(value for value in values if value))
+
+
+def _driverSourceFactorContractHash(
+    *,
+    variableId: str,
+    unit: str,
+    frequency: str,
+    timing: str,
+    transformId: str,
+) -> str:
+    try:
+        return sourceFactorContractHash(
+            variableId=variableId,
+            unit=unit,
+            frequency=frequency,
+            timing=timing,
+            transformId=transformId,
+        )
+    except OperatingBridgeError as error:
+        raise DriverCalibrationError("coefficient source factor contract is incomplete") from error
 
 
 def _frameSpecFromBinding(binding: DriverObservationFrameBinding) -> DriverCoefficientObservationFrameSpec:
@@ -1004,6 +1030,10 @@ def _calibrationReceiptPayload(receipt: DriverCoefficientCalibrationReceipt) -> 
         "targetVariableId": receipt.targetVariableId,
         "targetShock": receipt.targetShock,
         "sourceUnit": receipt.sourceUnit,
+        "sourceFrequency": receipt.sourceFrequency,
+        "sourceTiming": receipt.sourceTiming,
+        "sourceTransformId": receipt.sourceTransformId,
+        "sourceFactorContractHash": receipt.sourceFactorContractHash,
         "targetUnit": receipt.targetUnit,
         "coefficient": receipt.coefficient,
         "coefficientUnit": receipt.coefficientUnit,
@@ -1053,6 +1083,7 @@ def _validateCalibrationReceipt(receipt: DriverCoefficientCalibrationReceipt) ->
         ("pathSetHash", receipt.pathSetHash),
         ("pathSetInputHash", receipt.pathSetInputHash),
         ("factorContractHash", receipt.factorContractHash),
+        ("sourceFactorContractHash", receipt.sourceFactorContractHash),
         ("calibrationSpecHash", receipt.calibrationSpecHash),
         ("originGridHash", receipt.originGridHash),
         ("targetOutcomeHash", receipt.targetOutcomeHash),
@@ -1060,6 +1091,15 @@ def _validateCalibrationReceipt(receipt: DriverCoefficientCalibrationReceipt) ->
     ):
         if not _validDigest(value):
             raise DriverCalibrationError(f"coefficient calibration receipt {label} is invalid")
+    expectedSourceFactorContractHash = _driverSourceFactorContractHash(
+        variableId=receipt.sourceVariableId,
+        unit=receipt.sourceUnit,
+        frequency=receipt.sourceFrequency,
+        timing=receipt.sourceTiming,
+        transformId=receipt.sourceTransformId,
+    )
+    if receipt.sourceFactorContractHash != expectedSourceFactorContractHash:
+        raise DriverCalibrationError("coefficient calibration receipt source factor contract mismatch")
     if f"driverCoefficientFit:{receipt.receiptHash}" not in receipt.sourceRefs:
         raise DriverCalibrationError("coefficient calibration receipt fit ref is missing")
     if receipt.receiptHash != canonicalPayloadHash(_calibrationReceiptPayload(receipt)):
@@ -1435,6 +1475,13 @@ def fitDriverCoefficientPit(
     _validateSpec(spec)
     cutoff = _dateText(calibrationKnowledgeAsOf, "calibrationKnowledgeAsOf")
     sourceFactor = _sourceFactor(registryResult, spec.sourceVariableId)
+    sourceFactorHash = _driverSourceFactorContractHash(
+        variableId=sourceFactor.variableId,
+        unit=sourceFactor.unit,
+        frequency=sourceFactor.frequency,
+        timing=sourceFactor.timing,
+        transformId=sourceFactor.transformId,
+    )
     coefficientUnit = f"{target.targetUnit}/{sourceFactor.unit}"
     rows, fitStart, fitThrough, labelThrough = _cleanCalibrationRows(
         frame,
@@ -1462,6 +1509,10 @@ def fitDriverCoefficientPit(
             "spec": spec,
             "target": target,
             "sourceUnit": sourceFactor.unit,
+            "sourceFrequency": sourceFactor.frequency,
+            "sourceTiming": sourceFactor.timing,
+            "sourceTransformId": sourceFactor.transformId,
+            "sourceFactorContractHash": sourceFactorHash,
             "coefficientUnit": coefficientUnit,
             "sourceParentReceiptIds": spec.sourceParentReceiptIds,
             "labelParentReceiptIds": target.labelParentReceiptIds,
@@ -1557,6 +1608,10 @@ def fitDriverCoefficientPit(
         "targetVariableId": target.targetVariableId,
         "targetShock": target.targetShock,
         "sourceUnit": sourceFactor.unit,
+        "sourceFrequency": sourceFactor.frequency,
+        "sourceTiming": sourceFactor.timing,
+        "sourceTransformId": sourceFactor.transformId,
+        "sourceFactorContractHash": sourceFactorHash,
         "targetUnit": target.targetUnit,
         "coefficient": coefficient,
         "coefficientUnit": coefficientUnit,
@@ -1600,6 +1655,10 @@ def fitDriverCoefficientPit(
         targetVariableId=target.targetVariableId,
         targetShock=target.targetShock,
         sourceUnit=sourceFactor.unit,
+        sourceFrequency=sourceFactor.frequency,
+        sourceTiming=sourceFactor.timing,
+        sourceTransformId=sourceFactor.transformId,
+        sourceFactorContractHash=sourceFactorHash,
         targetUnit=target.targetUnit,
         coefficient=coefficient,
         coefficientUnit=coefficientUnit,
@@ -1761,6 +1820,10 @@ def calibrationReceiptToOperatingExposure(
         lagSteps=receipt.lagSteps,
         responseKernel=receipt.responseKernel,
         aggregationGroup=aggregationGroup,
+        sourceFrequency=receipt.sourceFrequency,
+        sourceTiming=receipt.sourceTiming,
+        sourceTransformId=receipt.sourceTransformId,
+        sourceFactorContractHash=receipt.sourceFactorContractHash,
     )
 
 

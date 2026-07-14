@@ -1166,3 +1166,13 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **E2E 증명**: provider observation batch를 `driverHistorySourceFromProviderObservationBatch`로 path registry에 투영하고, 같은 signed source와 label batch에서 coefficient frame을 만든 뒤 PIT fit, held-out OOS, signed driverCoefficient admission, `VerifiedDriverCoefficientAdmission`, `calibrationReceiptToOperatingExposure`까지 도달하는 회귀를 추가했다.
 - **검증**: provider observation batch, observation frame, operating bridge focused 24건 통과. `tests/simulate` 전체 385건 통과. ruff format, ruff check, camelCase strict, 변경 src 파일별 docstring audit, Guard Index quick, diff check 통과.
 - **남은 P0**: 이 단위는 evidence chain과 replay wall을 닫은 것이다. 아직 DART, EDGAR, price, macro, industry lane을 실제 런타임 adapter로 묶고, 다변수 coefficient registry와 scenario composition을 연결해 전략 recommendation을 여는 단계는 남아 있다.
+
+
+## 2026-07-15 P0 measured association source factor contract
+
+- **판단**: 전쟁게임식 시뮬레이터는 조건과 가정의 의미가 고정된 상태에서 전략을 비교해야 한다. 같은 변수명과 단위라도 frequency, timing, transform이 달라지면 다른 팩터다. 이 경계가 없으면 과거 fit 계수가 미래 path의 다른 의미 변수에 붙어 전략 결과를 오염시킨다.
+- **구현**: `OperatingTransmissionExposure`의 measuredAssociation은 이제 source frequency, timing, transformId, 단일 source factor contract hash를 요구한다. `DriverCoefficientCalibrationReceipt`도 동일 계약을 보존하고, `calibrationReceiptToOperatingExposure`가 receipt에서 exposure로 그대로 복사한다.
+- **세탁 차단**: operating bridge는 admitted driver coefficient sourceRef만 보는 데서 멈추지 않고, exposure의 source factor 계약이 현재 bridge factor spec과 동일한지 검사한다. 단위만 맞는 계수, 같은 이름이지만 다른 timing 또는 transform으로 학습된 계수는 실행 전에 거부된다.
+- **회귀**: driver calibration receipt가 source factor 계약 hash를 산출하는지 고정했다. provider observation batch에서 admission을 거쳐 만든 exposure도 같은 계약을 보존하는지 확인했다. operating bridge에는 계약 drift kill-test를 추가했다.
+- **검증**: driver calibration, driver observation frame, operating bridge focused 23건 통과. `tests/simulate` 전체 386건 통과. ruff format, ruff check, camelCase strict, Guard Index quick, diff check, em/en dash audit 통과. file 단위 `docstring9Section.py`는 기존 simulate public 함수 baseline 부채까지 잡아 이번 변경 범위 완료 기준으로 쓰지 않았다.
+- **남은 P0**: 의미 경계는 더 단단해졌지만 아직 실제 adapter에서 DART, EDGAR, price, macro, industry 관측 batch를 모두 공급하고, 다변수 coefficient registry와 scenario composition을 연결해 전략 recommendation을 여는 단계가 남아 있다.

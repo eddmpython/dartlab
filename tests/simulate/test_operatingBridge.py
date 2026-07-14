@@ -8,6 +8,7 @@ from dartlab.simulate.operatingBridge import (
     OperatingShockBaseline,
     OperatingTransmissionExposure,
     bridgeOperatingPath,
+    sourceFactorContractHash,
 )
 from dartlab.simulate.operatingWorld import (
     OperatingPrimitive,
@@ -287,6 +288,35 @@ def testMeasuredAssociationRequiresDriverCoefficientAdmissionRef():
         )
 
 
+def testMeasuredAssociationRejectsSourceFactorContractDrift():
+    drifted = OperatingTransmissionExposure(
+        "drifted-measured",
+        "fxChange",
+        "marketPriceChange",
+        0.5,
+        "ratioChangePerStep/simpleReturn",
+        "measuredAssociation",
+        f"driverCoefficientAdmission:{'5' * 64}",
+        sourceFrequency="quarter",
+        sourceTiming="level",
+        sourceTransformId="simple-return-v1",
+        sourceFactorContractHash=sourceFactorContractHash(
+            variableId="fxChange",
+            unit="simpleReturn",
+            frequency="quarter",
+            timing="level",
+            transformId="simple-return-v1",
+        ),
+    )
+    with pytest.raises(OperatingBridgeError, match="source factor contract drift"):
+        bridgeOperatingPath(
+            _sourcePath(),
+            (drifted,),
+            factorSpecs=_factorSpecs(),
+            baselines=_baselines(),
+        )
+
+
 def testSourceStatusCannotBePromotedOrLaundered():
     admitted = _bridge(_admittedPath())
     assert admitted.path.validationStatus == "retrospectiveOnly"
@@ -340,6 +370,16 @@ def testLagKernelAndParameterDrawBoundaryRemainVisible():
         f"driverCoefficientAdmission:{'4' * 64}",
         lagSteps=1,
         responseKernel=(1.0, 0.5),
+        sourceFrequency="quarter",
+        sourceTiming="innovation",
+        sourceTransformId="simple-return-v1",
+        sourceFactorContractHash=sourceFactorContractHash(
+            variableId="fxChange",
+            unit="simpleReturn",
+            frequency="quarter",
+            timing="innovation",
+            transformId="simple-return-v1",
+        ),
     )
     result = bridgeOperatingPath(
         _sourcePath(parameterDraws={"betaDraw": 0.7}),

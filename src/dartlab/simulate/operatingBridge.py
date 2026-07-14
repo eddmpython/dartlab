@@ -121,6 +121,10 @@ class OperatingTransmissionExposure:
         responseKernel: Ordered response weights starting at ``lagSteps``.
         aggregationGroup: Required unique group when one source-target pair is repeated.
         status: Exposure status, currently only ``active`` executes.
+        sourceFrequency: Required source factor frequency for measured associations.
+        sourceTiming: Required source factor timing for measured associations.
+        sourceTransformId: Required transform contract for measured associations.
+        sourceFactorContractHash: Required single-factor contract hash for measured associations.
 
     Returns:
         Dataclass used by ``bridgeOperatingPath``.
@@ -145,6 +149,10 @@ class OperatingTransmissionExposure:
     responseKernel: tuple[float, ...] = (1.0,)
     aggregationGroup: str = ""
     status: str = "active"
+    sourceFrequency: str = ""
+    sourceTiming: str = ""
+    sourceTransformId: str = ""
+    sourceFactorContractHash: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "responseKernel", tuple(self.responseKernel))
@@ -249,6 +257,41 @@ def _validDriverCoefficientAdmissionRef(value: str) -> bool:
     if not value.startswith(_DRIVER_COEFFICIENT_ADMISSION_REF_PREFIX):
         return False
     return _validDigest(value.removeprefix(_DRIVER_COEFFICIENT_ADMISSION_REF_PREFIX))
+
+
+def sourceFactorContractHash(
+    *,
+    variableId: str,
+    unit: str,
+    frequency: str,
+    timing: str,
+    transformId: str,
+) -> str:
+    """Hash one executable source factor meaning contract.
+
+    Args:
+        variableId: Source factor identifier.
+        unit: Source factor unit.
+        frequency: Source factor frequency.
+        timing: Source factor timing role.
+        transformId: Source factor transform identifier.
+
+    Returns:
+        Stable hash over the single-factor operating bridge contract.
+
+    Raises:
+        OperatingBridgeError: If the factor contract is incomplete.
+
+    Requires:
+        Variable id, unit, frequency, timing, and transform id must be the exact factor contract.
+
+    Example:
+        ``digest = sourceFactorContractHash(variableId="fxChange", unit="simpleReturn", frequency="quarter", timing="innovation", transformId="simple-return-v1")``
+    """
+
+    if not variableId or not unit or not frequency or timing not in _FACTOR_TIMINGS or not transformId:
+        raise OperatingBridgeError("source factor contract is incomplete")
+    return canonicalPayloadHash((variableId, unit, frequency, timing, transformId))
 
 
 def _dateText(value: str, label: str) -> str:
@@ -428,6 +471,22 @@ def _validateExposure(
         raise OperatingBridgeError(f"operating exposure coefficient unit drift: {exposure.exposureId}")
     if exposure.evidenceKind == "measuredAssociation" and not _validDriverCoefficientAdmissionRef(exposure.sourceRef):
         raise OperatingBridgeError("measured association exposure requires driver coefficient admission ref")
+    if exposure.evidenceKind == "measuredAssociation":
+        factor = factors[exposure.sourceVariableId]
+        expectedContractHash = sourceFactorContractHash(
+            variableId=factor.variableId,
+            unit=factor.unit,
+            frequency=factor.frequency,
+            timing=factor.timing,
+            transformId=factor.transformId,
+        )
+        if (
+            exposure.sourceFrequency != factor.frequency
+            or exposure.sourceTiming != factor.timing
+            or exposure.sourceTransformId != factor.transformId
+            or exposure.sourceFactorContractHash != expectedContractHash
+        ):
+            raise OperatingBridgeError("measured association source factor contract drift")
     if bool(exposure.modifierVariableId) != bool(exposure.modifierUnit):
         raise OperatingBridgeError("modifier exposure needs both variableId and unit")
     if exposure.modifierUnit and exposure.modifierUnit not in _DIMENSIONLESS_MODIFIER_UNITS:

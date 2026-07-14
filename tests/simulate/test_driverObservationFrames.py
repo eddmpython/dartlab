@@ -444,6 +444,10 @@ def testProviderObservationBatchesBuildCoefficientFrameAndAdmission(tmp_path) ->
     assert exposure.sourceVariableId == receipt.sourceVariableId
     assert exposure.targetShock == receipt.targetShock
     assert exposure.coefficientUnit == "ratioChangePerStep/simpleReturn"
+    assert exposure.sourceFrequency == receipt.sourceFrequency == "quarter"
+    assert exposure.sourceTiming == receipt.sourceTiming == "change"
+    assert exposure.sourceTransformId == receipt.sourceTransformId == "change-v1"
+    assert exposure.sourceFactorContractHash == receipt.sourceFactorContractHash
 
 
 def testDriverObservationFrameRejectsUnsignedDuplicateMissingAndDrift(tmp_path) -> None:

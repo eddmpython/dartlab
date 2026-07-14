@@ -32,6 +32,7 @@ from dartlab.simulate.driverCalibration import (
 )
 from dartlab.simulate.driverPaths import DriverCard, DriverFactorSpec, DriverHistorySource
 from dartlab.simulate.driverRegistry import DriverRegistryCandidate, compileDriverRegistryPathSet
+from dartlab.simulate.operatingBridge import sourceFactorContractHash
 from dartlab.simulate.vintage import canonicalPayloadBytes, canonicalPayloadHash
 
 
@@ -335,6 +336,16 @@ def testDriverCalibrationIssuesRetrospectiveReceiptAndExposureRef() -> None:
     assert receipt.registryHash == registryResult.audit.registryHash
     assert receipt.pathSetInputHash == registryResult.audit.pathSetInputHash
     assert receipt.factorContractHash == registryResult.pathSet.audit.factorContractHash
+    assert receipt.sourceFrequency == "quarter"
+    assert receipt.sourceTiming == "change"
+    assert receipt.sourceTransformId == "fx-change-quarterly-v1"
+    assert receipt.sourceFactorContractHash == sourceFactorContractHash(
+        variableId="fxChange",
+        unit="simpleReturn",
+        frequency="quarter",
+        timing="change",
+        transformId="fx-change-quarterly-v1",
+    )
     assert "coefficientRequiresOosAdmission" in receipt.warnings
 
     with pytest.raises(DriverCalibrationError, match="requires OOS admission"):
@@ -480,6 +491,10 @@ def testDriverCoefficientOosReportCanBeSignedAndVerified(tmp_path) -> None:
     )
     assert exposure.evidenceKind == "measuredAssociation"
     assert exposure.sourceRef == f"driverCoefficientAdmission:{signed.receiptId}"
+    assert exposure.sourceFrequency == receipt.sourceFrequency
+    assert exposure.sourceTiming == receipt.sourceTiming
+    assert exposure.sourceTransformId == receipt.sourceTransformId
+    assert exposure.sourceFactorContractHash == receipt.sourceFactorContractHash
 
 
 def testDriverCoefficientAdmissionRequiresParentRowCoverage(tmp_path) -> None:
