@@ -304,6 +304,10 @@ class OneCompanyScenarioCaseLedger:
     pathAssumptionHash: str
     pathAssumptionStepHashes: tuple[str, ...]
     basePathSetHash: str
+    basePathAdmissionContentHash: str
+    basePathAdmissionSubjectHash: str
+    basePathValidationStatus: str
+    basePathMaxAdmittedStep: int
     composedPathSetHash: str
     pathOverlayHash: str
     observedHistoryStatus: str
@@ -586,7 +590,13 @@ def _scenarioPathPackageHash(pathSet: DriverPathSet) -> str:
             "pathSetInputHash": audit.inputHash,
             "pathHistoryInputHash": audit.historyInputHash,
             "pathAssumptionHash": audit.assumptionHash,
+            "pathAssumptionStepHashes": audit.assumptionStepHashes,
             "basePathSetHash": audit.basePathSetHash,
+            "basePathAdmissionReceiptId": audit.basePathAdmissionReceiptId,
+            "basePathAdmissionContentHash": audit.basePathAdmissionContentHash,
+            "basePathAdmissionSubjectHash": audit.basePathAdmissionSubjectHash,
+            "basePathValidationStatus": audit.basePathValidationStatus,
+            "basePathMaxAdmittedStep": audit.basePathMaxAdmittedStep,
             "pathOverlayHash": audit.overlayHash,
             "pathRegistryHash": audit.registryHash,
             "pathFactorContractHash": audit.factorContractHash,
@@ -613,6 +623,8 @@ def _futureAdjustmentStatus(pathSet: DriverPathSet) -> str:
 
 
 def _basePathAdmissionReceiptId(pathSet: DriverPathSet) -> str:
+    if pathSet.audit.basePathAdmissionReceiptId:
+        return pathSet.audit.basePathAdmissionReceiptId
     if pathSet.audit.assumptionHash or not pathSet.paths:
         return ""
     receiptIds = {path.admissionReceiptId for path in pathSet.paths}
@@ -647,6 +659,8 @@ def _pathAdmissionTransferBlockedBy(pathSet: DriverPathSet, result: SimulationRu
     reasons: list[str] = []
     if pathSet.audit.assumptionHash:
         reasons.append("explicitFutureAdjustmentPresent")
+    if pathSet.audit.assumptionHash and pathSet.audit.basePathAdmissionReceiptId:
+        reasons.append("basePathAdmittedButOverlayConditional")
     if pathSet.audit.assumptionHash and pathSet.audit.basePathSetHash:
         reasons.append("pathAdmissionNotTransferredFromObservedHistory")
     if not result.pathAdmissionReceiptId:
@@ -1099,6 +1113,14 @@ def _validateCases(cases: tuple[OperatingScenarioCase, ...], strategies: tuple[S
             raise ScenarioCompositionError("intervention actions must be strategies, not driver path factors")
         _validateCoefficientBindings(case)
         for path in case.pathSet.paths:
+            if case.pathSet.audit.assumptionHash and (
+                path.validationStatus == "admitted"
+                or path.certificateId
+                or path.admissionReceiptId
+                or path.admissionContentHash
+                or path.maxAdmittedStep
+            ):
+                raise ScenarioCompositionError("explicit overlay cannot carry path admission")
             for step in path.steps:
                 if set(step) & _OPERATING_ACTION_IDS:
                     raise ScenarioCompositionError("intervention actions must be strategies, not scenario paths")
@@ -1464,6 +1486,10 @@ def _caseLedger(
         pathAssumptionHash=result.pathAssumptionHash,
         pathAssumptionStepHashes=case.pathSet.audit.assumptionStepHashes,
         basePathSetHash=result.basePathSetHash,
+        basePathAdmissionContentHash=case.pathSet.audit.basePathAdmissionContentHash,
+        basePathAdmissionSubjectHash=case.pathSet.audit.basePathAdmissionSubjectHash,
+        basePathValidationStatus=case.pathSet.audit.basePathValidationStatus,
+        basePathMaxAdmittedStep=case.pathSet.audit.basePathMaxAdmittedStep,
         composedPathSetHash=result.pathSetHash,
         pathOverlayHash=result.pathOverlayHash,
         observedHistoryStatus=result.observedHistoryStatus,
@@ -1530,6 +1556,10 @@ def _caseLedgerHashes(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> 
                 "pathAssumptionHash": ledger.pathAssumptionHash,
                 "pathAssumptionStepHashes": ledger.pathAssumptionStepHashes,
                 "basePathSetHash": ledger.basePathSetHash,
+                "basePathAdmissionContentHash": ledger.basePathAdmissionContentHash,
+                "basePathAdmissionSubjectHash": ledger.basePathAdmissionSubjectHash,
+                "basePathValidationStatus": ledger.basePathValidationStatus,
+                "basePathMaxAdmittedStep": ledger.basePathMaxAdmittedStep,
                 "composedPathSetHash": ledger.composedPathSetHash,
                 "pathOverlayHash": ledger.pathOverlayHash,
                 "observedHistoryStatus": ledger.observedHistoryStatus,

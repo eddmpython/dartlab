@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+import polars as pl
 import pytest
 
 from dartlab.simulate.driverCalibration import (
@@ -13,7 +14,9 @@ from dartlab.simulate.driverPaths import (
     DriverAssumptionSource,
     DriverCard,
     DriverFactorSpec,
+    DriverHistorySource,
     buildDriverPathSet,
+    composeDriverPathSetWithAssumptions,
 )
 from dartlab.simulate.operatingBridge import (
     OperatingShockBaseline,
@@ -34,6 +37,12 @@ from dartlab.simulate.scenarioComposition import (
     runConditionalScenarioExperiment,
     scenarioCoefficientBindingHash,
     scenarioCoefficientExposureContractHash,
+)
+from dartlab.simulate.vintage import VintageRef
+from dartlab.simulate.world import (
+    bindAdmittedPathContent,
+    bindPathAdmissionReceipt,
+    pathSetAdmissionSubjectHash,
 )
 
 _COEFFICIENT_RECEIPT_ID = "a" * 64
@@ -130,6 +139,104 @@ def _case(caseId: str, demandShock: tuple[float, ...], variableId: str = "demand
                 f"assumption://{caseId}/demand-volume",
             ),
         ),
+        _baselines(),
+        refs=(f"scenario://{caseId}",),
+    )
+
+
+def _admittedBasePathSet():
+    card = DriverCard(
+        cardId="observed-demand-history",
+        sourceKind="history",
+        providerId="fixture",
+        datasetId="driver-history",
+        entityId="005930",
+        frequency="quarter",
+        stepSpan=1,
+        factors=(DriverFactorSpec("observedDemandShock", "simpleReturn", "quarter", "innovation", "history-v1"),),
+        historyStatus="asKnown",
+        sourceRefs=("providerObservationBatch:observed-demand-history",),
+    )
+    panel = pl.DataFrame(
+        {
+            "eventTime": ["20240101", "20240401", "20240701", "20241001"],
+            "availableAt": ["20240102", "20240402", "20240702", "20241002"],
+            "observedDemandShock": [0.01, -0.02, 0.03, 0.02],
+        }
+    )
+    base = buildDriverPathSet(
+        (DriverHistorySource(card, panel),),
+        knowledgeAsOf="20250101",
+        horizon=2,
+        pathCount=2,
+        blockLength=1,
+        seed=5,
+        minObservations=4,
+    )
+    admittedPaths = bindPathAdmissionReceipt(
+        bindAdmittedPathContent(
+            tuple(
+                replace(
+                    path,
+                    validationStatus="admitted",
+                    certificateId="a" * 64,
+                    maxAdmittedStep=2,
+                    historyStatus="asKnown",
+                )
+                for path in base.paths
+            )
+        ),
+        "b" * 64,
+    )
+    return replace(base, paths=admittedPaths)
+
+
+def _conditionalOverlayCase(caseId: str, shock: tuple[float, float]) -> OperatingScenarioCase:
+    card = DriverCard(
+        cardId=f"{caseId}-manual-demand-overlay",
+        sourceKind="explicitAssumption",
+        providerId="user",
+        datasetId="manual-scenario",
+        entityId="005930",
+        frequency="quarter",
+        stepSpan=1,
+        factors=(DriverFactorSpec("manualDemandAdjustment", "simpleReturn", "quarter", "change", "manual-v1"),),
+        historyStatus="explicitAssumption",
+        sourceRefs=(f"assumption://{caseId}/manual-demand-overlay",),
+        assumptionId=f"{caseId}-manual-demand-overlay",
+        claim=f"{caseId} explicit future demand overlay.",
+        falsifier="The manual demand overlay is not the tested scenario.",
+    )
+    pathSet = composeDriverPathSetWithAssumptions(
+        _admittedBasePathSet(),
+        (DriverAssumptionSource(card, tuple({"manualDemandAdjustment": value} for value in shock)),),
+        registryId=f"{caseId}-admitted-base-plus-overlay",
+    )
+    exposures = (
+        OperatingTransmissionExposure(
+            f"{caseId}-observed-demand",
+            "observedDemandShock",
+            "demandChange",
+            1.0,
+            "ratioChangePerStep/simpleReturn",
+            "explicitAssumption",
+            f"assumption://{caseId}/law/observed-demand",
+        ),
+        OperatingTransmissionExposure(
+            f"{caseId}-manual-demand",
+            "manualDemandAdjustment",
+            "demandChange",
+            1.0,
+            "ratioChangePerStep/simpleReturn",
+            "explicitAssumption",
+            f"assumption://{caseId}/law/manual-demand",
+        ),
+    )
+    return OperatingScenarioCase(
+        caseId,
+        caseId.title(),
+        pathSet,
+        exposures,
         _baselines(),
         refs=(f"scenario://{caseId}",),
     )
@@ -634,6 +741,87 @@ def testOneCompanyScenarioLoopSummarizesConditionsStateAndStrategyBlocks() -> No
     assert "pathAdmissionIncomplete" in base.blockedReasons
     assert "pathAdmissionMissing" in base.blockedReasons
     assert "policyEvaluationCertificateMissing" in base.blockedReasons
+
+
+def testAdmittedBasePathReceiptDoesNotTransferToExplicitOverlayScenario() -> None:
+    baseCase = _conditionalOverlayCase("base", (0.01, 0.02))
+    stressCase = _conditionalOverlayCase("stress", (-0.03, -0.02))
+    loop = compareOneCompanyTwoScenarioStrategies(
+        "005930",
+        _inputs(),
+        (baseCase, stressCase),
+        _strategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    base, stress = loop.caseLedgers
+    assert loop.recommendation is None
+    assert base.pathHistoryInputHash == stress.pathHistoryInputHash
+    assert base.basePathSetHash == stress.basePathSetHash
+    assert base.basePathAdmissionReceiptId == "b" * 64
+    assert base.basePathAdmissionReceiptId == stress.basePathAdmissionReceiptId
+    assert base.basePathAdmissionContentHash == pathSetAdmissionSubjectHash(_admittedBasePathSet().paths)
+    assert base.basePathAdmissionSubjectHash == base.basePathAdmissionContentHash
+    assert base.basePathValidationStatus == "admitted"
+    assert base.basePathMaxAdmittedStep == 2
+    assert base.pathAssumptionHash != stress.pathAssumptionHash
+    assert base.pathOverlayHash != stress.pathOverlayHash
+    assert base.composedPathSetHash != base.basePathSetHash
+    assert base.composedPathSetHash != stress.composedPathSetHash
+    assert base.basePathAdmissionScope == "historyOnly"
+    assert base.composedPathAdmissionStatus == "notAdmitted"
+    assert base.pathAdmissionTransferStatus == "notTransferred"
+    assert "basePathAdmittedButOverlayConditional" in base.pathAdmissionTransferBlockedBy
+    assert "explicitFutureAdjustmentPresent" in base.pathAdmissionTransferBlockedBy
+    assert "pathAdmissionNotTransferredFromObservedHistory" in base.pathAdmissionTransferBlockedBy
+    assert base.pathAdmissionReceiptId == ""
+    assert base.policyEvaluationCertificateId == ""
+    assert "basePathAdmittedButOverlayConditional" in base.blockedReasons
+    assert "basePathAdmissionScopeHistoryOnly" in base.blockedReasons
+    assert "composedPathAdmissionNotGranted" in base.blockedReasons
+    assert "pathAdmissionMissing" in base.blockedReasons
+    assert "policyEvaluationRequiresAdmittedComposedPath" in base.blockedReasons
+    assert "policyEvaluationCertificateMissing" in base.blockedReasons
+    assert "automaticRecommendationDisabled" in loop.blockedReasons
+
+    pathVintage = VintageRef(
+        artifactKind="driverPathSet",
+        provider="fixture",
+        artifactId="base-path-vintage",
+        artifactHash="c" * 64,
+        payloadHash="d" * 64,
+        knowledgeAsOf="20250101",
+        availableAt="20250101",
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        eventThrough="20241001",
+        receiptId="e" * 64,
+    )
+    launderedPaths = tuple(
+        replace(
+            path,
+            validationStatus="admitted",
+            certificateId="a" * 64,
+            maxAdmittedStep=2,
+            historyStatus="asKnown",
+            admissionContentHash=base.basePathAdmissionContentHash,
+            admissionReceiptId=base.basePathAdmissionReceiptId,
+            vintage=pathVintage,
+        )
+        for path in baseCase.pathSet.paths
+    )
+    launderedCase = replace(baseCase, pathSet=replace(baseCase.pathSet, paths=launderedPaths))
+    with pytest.raises(ScenarioCompositionError, match="explicit overlay cannot carry path admission"):
+        compareOneCompanyTwoScenarioStrategies(
+            "005930",
+            _inputs(),
+            (launderedCase, stressCase),
+            _strategies(),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
 
 
 def testOneCompanyScenarioLoopCarriesAdmittedCoefficientBindingLedger() -> None:

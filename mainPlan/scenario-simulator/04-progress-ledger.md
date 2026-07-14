@@ -1347,3 +1347,16 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **추천 경계**: multi-step 실험과 리더 변화가 생겨도 composed path admission과 policy evaluation certificate가 없으므로 recommendation은 계속 `None`이다. blocked reason은 `automaticRecommendationDisabled`, `conditionalExperimentNotPolicyRecommendation`, `pathAdmissionMissing`, `policyEvaluationCertificateMissing`를 유지한다.
 - **검증**: step hash 단위 회귀 1건과 EDGAR price macro multi-step experiment 회귀 1건을 추가했다. driverPaths, driverObservationFrames, scenarioComposition focused 40건 통과. `tests/simulate` 전체 419건 통과. ruff format/check 통과.
 - **남은 P0**: 다음은 history-only admitted path와 explicit overlay가 붙은 composed path의 admission 전이가 분리되는 음성 회귀를 강화하고, policy evaluation certificate를 final composed path hash와 strategy set hash에 묶어 공식 추천 승격 조건을 닫는 것이다.
+
+
+## 2026-07-15 P0 admitted base path and explicit overlay separation
+
+- **판단**: 조건부 실험에서 전략 리더가 갈려도, history-only path admission receipt가 explicit future overlay가 붙은 composed path로 전이되면 시뮬레이터가 검증된 경로와 what-if 경로를 세탁하게 된다. 공식 추천으로 가기 전 마지막 큰 경계는 base는 admitted parent, composed는 conditional이라는 분리다.
+- **구현**: `composeDriverPathSetWithAssumptions`를 추가했다. 입력은 history-only `DriverPathSet`과 explicit assumption source이며, admitted base path의 receipt, content hash, subject hash, validation status, admitted step을 audit parent lineage로만 보존한다.
+- **전이 차단**: composed path는 항상 `validationStatus="unvalidated"`, `historyStatus="explicitAssumption"`, `certificateId=""`, `admissionReceiptId=""`, `admissionContentHash=""`, `maxAdmittedStep=0`으로 생성된다. base path의 admission ref는 composed path refs로 복사하지 않는다.
+- **loop 장부**: `OneCompanyScenarioCaseLedger`와 scenario path package hash가 base path admission content hash, subject hash, validation status, admitted step을 남긴다. `basePathAdmissionReceiptId`는 history-only parent 증거로 보존하지만, `pathAdmissionReceiptId`는 final composed path admission이 없으면 계속 빈 값이다.
+- **세탁 차단 회귀**: explicit overlay가 있는 pathSet의 path에 `admitted`, certificate, admission receipt, admission content hash, maxAdmittedStep가 붙으면 scenario validation에서 즉시 실패한다. bridge로 넘어가 admission 정보가 흐려지기 전에 `explicit overlay cannot carry path admission`으로 막는다.
+- **hash 경계**: 같은 admitted base path와 다른 overlay를 쓰면 `pathHistoryInputHash`, `basePathSetHash`, `basePathAdmissionReceiptId`는 유지되고 `pathAssumptionHash`, `pathOverlayHash`, `composedPathSetHash`는 바뀐다. overlay step 하나만 바뀌면 해당 step hash와 composed 결과 hash만 바뀐다.
+- **추천 경계**: base path가 admitted여도 composed path가 admitted가 아니면 `recommendation=None`이다. blocked reason은 `basePathAdmittedButOverlayConditional`, `basePathAdmissionScopeHistoryOnly`, `composedPathAdmissionNotGranted`, `pathAdmissionMissing`, `policyEvaluationRequiresAdmittedComposedPath`, `policyEvaluationCertificateMissing`를 유지한다.
+- **검증**: driver path parent lineage 회귀 1건과 scenario loop admission 전이 차단 회귀 1건을 추가했다. driverPaths, scenarioComposition, pathAdmissionRuntime, policyEvaluation focused 33건 통과. `tests/simulate` 전체 421건 통과. ruff format/check 통과.
+- **남은 P0**: 다음은 final composed path admission 자체를 여는 단계다. 그 뒤 admitted composed path, admitted current state, strategy set, objective, constraints를 policy evaluation certificate에 묶어야 공식 전략 추천으로 승격할 수 있다.

@@ -24,12 +24,13 @@ from dartlab.simulate.empiricalPaths import (
 )
 from dartlab.simulate.operatingBridge import OperatingFactorSpec
 from dartlab.simulate.vintage import canonicalPayloadHash
-from dartlab.simulate.world import ScenarioPath
+from dartlab.simulate.world import ScenarioPath, pathSetAdmissionSubjectHash
 
 GENERATOR_VERSION = "driver-path-registry-v1"
 _SOURCE_KINDS = {"history", "explicitAssumption"}
 _CARD_STATUSES = {"active", "blocked", "rejected"}
 _FACTOR_TIMINGS = {"innovation", "change", "level", "rate"}
+_ADMISSION_REF_PREFIXES = ("pathAdmission:", "pathSetAdmission:", "policyEvaluation:", "policyCertificate:")
 
 
 class DriverPathError(ValueError):
@@ -103,6 +104,11 @@ class DriverPathAudit:
     assumptionHash: str
     assumptionStepHashes: tuple[str, ...]
     basePathSetHash: str
+    basePathAdmissionReceiptId: str
+    basePathAdmissionContentHash: str
+    basePathAdmissionSubjectHash: str
+    basePathValidationStatus: str
+    basePathMaxAdmittedStep: int
     overlayHash: str
     registryHash: str
     factorContractHash: str
@@ -149,6 +155,14 @@ def _finite(value: float | None, label: str) -> float:
 
 def _dedupe(values: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(value for value in values if value))
+
+
+def _validDigest(value: str) -> bool:
+    return len(value) == 64 and all(character in "0123456789abcdef" for character in value.lower())
+
+
+def _dropAdmissionRefs(refs: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(ref for ref in refs if not ref.startswith(_ADMISSION_REF_PREFIXES))
 
 
 def _sourceColumn(factor: DriverFactorSpec) -> str:
@@ -398,6 +412,27 @@ def _pathSetHash(paths: tuple[ScenarioPath, ...]) -> str:
     )
 
 
+def _basePathAdmissionFields(paths: tuple[ScenarioPath, ...]) -> tuple[str, str, str, str, int]:
+    if not paths:
+        return "", "", "", "", 0
+    validationStatuses = {path.validationStatus for path in paths}
+    validationStatus = next(iter(validationStatuses)) if len(validationStatuses) == 1 else "mixed"
+    maxAdmittedSteps = {int(path.maxAdmittedStep) for path in paths}
+    maxAdmittedStep = next(iter(maxAdmittedSteps)) if len(maxAdmittedSteps) == 1 else 0
+    if validationStatuses != {"admitted"}:
+        return "", "", "", validationStatus, maxAdmittedStep
+    receiptIds = {path.admissionReceiptId for path in paths}
+    contentHashes = {path.admissionContentHash for path in paths}
+    if len(receiptIds) != 1 or len(contentHashes) != 1:
+        return "", "", "", validationStatus, maxAdmittedStep
+    receiptId = next(iter(receiptIds))
+    contentHash = next(iter(contentHashes))
+    subjectHash = pathSetAdmissionSubjectHash(paths)
+    if not _validDigest(receiptId) or contentHash != subjectHash or not _validDigest(subjectHash):
+        return "", "", "", validationStatus, maxAdmittedStep
+    return receiptId, contentHash, subjectHash, validationStatus, maxAdmittedStep
+
+
 def _overlayHash(
     *,
     assumptionHash: str,
@@ -441,7 +476,7 @@ def _makeExplicitOnlyPath(
 
 
 def _overlayAssumptions(
-    history: EmpiricalPathSet,
+    paths: tuple[ScenarioPath, ...],
     *,
     assumptionSteps: tuple[dict[str, float], ...],
     refs: tuple[str, ...],
@@ -450,17 +485,17 @@ def _overlayAssumptions(
     validationStatus: str,
     historyStatus: str,
 ) -> tuple[ScenarioPath, ...]:
-    paths: list[ScenarioPath] = []
-    for path in history.paths:
+    out: list[ScenarioPath] = []
+    for path in paths:
         mergedSteps = tuple({**dict(step), **assumptionSteps[index]} for index, step in enumerate(path.steps))
         pathId = f"driver-{path.pathId}" if not assumptionHash else f"driver-{path.pathId}-{assumptionHash[:12]}"
-        paths.append(
+        out.append(
             ScenarioPath(
                 pathId,
                 mergedSteps,
                 weight=path.weight,
                 weightKind=path.weightKind,
-                refs=_dedupe((*path.refs, *refs, f"driverRegistry:{registryHash}")),
+                refs=_dedupe((*_dropAdmissionRefs(path.refs), *refs, f"driverRegistry:{registryHash}")),
                 frequency=path.frequency,
                 stepSpan=path.stepSpan,
                 certificateId="",
@@ -473,7 +508,163 @@ def _overlayAssumptions(
                 vintage=path.vintage,
             )
         )
-    return tuple(paths)
+    return tuple(out)
+
+
+def composeDriverPathSetWithAssumptions(
+    basePathSet: DriverPathSet,
+    assumptions: tuple[DriverAssumptionSource, ...],
+    *,
+    registryId: str = "",
+) -> DriverPathSet:
+    """Overlay explicit future assumptions onto a history-only driver path set.
+
+    Args:
+        basePathSet: History-only path set, optionally already admitted.
+        assumptions: Explicit future assumption sources with the same horizon.
+        registryId: Optional stable id for the composition audit.
+
+    Returns:
+        Conditional composed ``DriverPathSet`` whose base admission remains parent
+        lineage only and never transfers to composed paths.
+
+    Raises:
+        DriverPathError: If the base path set or assumption contracts are unsafe.
+
+    Example:
+        ``composed = composeDriverPathSetWithAssumptions(admittedBase, (assumption,))``
+    """
+
+    if basePathSet.audit.assumptionHash:
+        raise DriverPathError("base path set must be history-only")
+    assumptionTuple = tuple(assumptions)
+    if not assumptionTuple:
+        raise DriverPathError("explicit overlay needs at least one assumption source")
+    if not basePathSet.paths or not basePathSet.factorSpecs:
+        raise DriverPathError("base path set is empty")
+    horizon = len(basePathSet.paths[0].steps)
+    if horizon != basePathSet.audit.horizon or any(len(path.steps) != horizon for path in basePathSet.paths):
+        raise DriverPathError("base path set horizon drift")
+    cards: list[DriverCard] = []
+    for source in assumptionTuple:
+        _validateCard(source.card, "explicitAssumption")
+        cards.append(source.card)
+    if any(
+        card.frequency != basePathSet.audit.frequency or card.stepSpan != basePathSet.audit.stepSpan for card in cards
+    ):
+        raise DriverPathError("explicit overlay step contract mismatch")
+    baseFactorIds = {factor.variableId for factor in basePathSet.factorSpecs}
+    assumptionFactorIds = [factor.variableId for card in cards for factor in card.factors]
+    if len(set(assumptionFactorIds)) != len(assumptionFactorIds) or baseFactorIds.intersection(assumptionFactorIds):
+        raise DriverPathError("explicit overlay factor ids must not overwrite observed history")
+    assumptionStepTuple, assumptionHash, assumptionStepHashes = _assumptionSteps(assumptionTuple, horizon)
+    factorSpecs = (*basePathSet.factorSpecs, *(factor for card in cards for factor in card.factors))
+    factorContractHash = canonicalPayloadHash(
+        tuple(
+            (factor.variableId, factor.unit, factor.frequency, factor.timing, factor.transformId)
+            for factor in sorted(factorSpecs, key=lambda item: item.variableId)
+        )
+    )
+    assumptionRefs = _dedupe(tuple(ref for card in cards for ref in card.sourceRefs))
+    sourceRefs = _dedupe((*basePathSet.audit.sourceRefs, *assumptionRefs))
+    basePathSetHash = _pathSetHash(basePathSet.paths)
+    (
+        basePathAdmissionReceiptId,
+        basePathAdmissionContentHash,
+        basePathAdmissionSubjectHash,
+        basePathValidationStatus,
+        basePathMaxAdmittedStep,
+    ) = _basePathAdmissionFields(basePathSet.paths)
+    registryHash = canonicalPayloadHash(
+        {
+            "generatorVersion": GENERATOR_VERSION,
+            "compositionVersion": "driver-path-explicit-overlay-composition-v1",
+            "registryId": registryId,
+            "baseRegistryHash": basePathSet.audit.registryHash,
+            "basePathSetHash": basePathSetHash,
+            "basePathInputHash": basePathSet.audit.inputHash,
+            "basePathAdmissionReceiptId": basePathAdmissionReceiptId,
+            "assumptionCards": tuple(_cardPayload(card) for card in cards),
+            "factorSpecs": factorSpecs,
+        }
+    )
+    paths = _overlayAssumptions(
+        basePathSet.paths,
+        assumptionSteps=assumptionStepTuple,
+        refs=assumptionRefs,
+        registryHash=registryHash,
+        assumptionHash=assumptionHash,
+        validationStatus="unvalidated",
+        historyStatus="explicitAssumption",
+    )
+    overlayHash = _overlayHash(
+        assumptionHash=assumptionHash,
+        assumptionSteps=assumptionStepTuple,
+        sourceRefs=sourceRefs,
+        horizon=horizon,
+    )
+    pathSetHash = _pathSetHash(paths)
+    inputHash = canonicalPayloadHash(
+        {
+            "registryHash": registryHash,
+            "historyInputHash": basePathSet.audit.historyInputHash,
+            "assumptionHash": assumptionHash,
+            "assumptionStepHashes": assumptionStepHashes,
+            "basePathSetHash": basePathSetHash,
+            "basePathAdmissionReceiptId": basePathAdmissionReceiptId,
+            "basePathAdmissionContentHash": basePathAdmissionContentHash,
+            "basePathAdmissionSubjectHash": basePathAdmissionSubjectHash,
+            "overlayHash": overlayHash,
+            "horizon": horizon,
+            "pathCount": len(paths),
+            "blockLength": basePathSet.audit.blockLength,
+            "seed": basePathSet.audit.seed,
+        }
+    )
+    warnings = tuple(
+        sorted(
+            set(
+                (
+                    *basePathSet.audit.warnings,
+                    *(warning for card in cards for warning in card.warnings),
+                    *(f"explicitAssumption:{source.card.assumptionId}" for source in assumptionTuple),
+                    "basePathAdmittedButOverlayConditional" if basePathAdmissionReceiptId else "",
+                )
+            )
+            - {""}
+        )
+    )
+    audit = DriverPathAudit(
+        pathSetHash=pathSetHash,
+        inputHash=inputHash,
+        historyInputHash=basePathSet.audit.historyInputHash,
+        assumptionHash=assumptionHash,
+        assumptionStepHashes=assumptionStepHashes,
+        basePathSetHash=basePathSetHash,
+        basePathAdmissionReceiptId=basePathAdmissionReceiptId,
+        basePathAdmissionContentHash=basePathAdmissionContentHash,
+        basePathAdmissionSubjectHash=basePathAdmissionSubjectHash,
+        basePathValidationStatus=basePathValidationStatus,
+        basePathMaxAdmittedStep=basePathMaxAdmittedStep,
+        overlayHash=overlayHash,
+        registryHash=registryHash,
+        factorContractHash=factorContractHash,
+        generatorVersion=GENERATOR_VERSION,
+        knowledgeAsOf=basePathSet.audit.knowledgeAsOf,
+        frequency=basePathSet.audit.frequency,
+        stepSpan=basePathSet.audit.stepSpan,
+        horizon=horizon,
+        pathCount=len(paths),
+        blockLength=basePathSet.audit.blockLength,
+        seed=basePathSet.audit.seed,
+        driverCardIds=(*basePathSet.audit.driverCardIds, *(card.cardId for card in cards)),
+        validationStatus="unvalidated",
+        observedHistoryStatus=basePathSet.audit.observedHistoryStatus,
+        historyStatus="explicitAssumption",
+        sourceRefs=sourceRefs,
+        warnings=warnings,
+    )
+    return DriverPathSet(paths=paths, factorSpecs=factorSpecs, audit=audit)
 
 
 def driverFactorsToOperatingSpecs(factors: tuple[DriverFactorSpec, ...]) -> tuple[OperatingFactorSpec, ...]:
@@ -604,7 +795,7 @@ def buildDriverPathSet(
         validationStatus = "unvalidated" if assumptions else historySet.audit.validationStatus
         outputHistoryStatus = "explicitAssumption" if assumptions else historyStatus
         paths = _overlayAssumptions(
-            historySet,
+            historySet.paths,
             assumptionSteps=assumptionStepTuple,
             refs=sourceRefs,
             registryHash=registryHash,
@@ -631,6 +822,13 @@ def buildDriverPathSet(
         validationStatus = "unvalidated"
         outputHistoryStatus = "explicitAssumption"
     pathSetHash = _pathSetHash(paths)
+    (
+        basePathAdmissionReceiptId,
+        basePathAdmissionContentHash,
+        basePathAdmissionSubjectHash,
+        basePathValidationStatus,
+        basePathMaxAdmittedStep,
+    ) = _basePathAdmissionFields(historySet.paths if historySet is not None else ())
     overlayHash = _overlayHash(
         assumptionHash=assumptionHash,
         assumptionSteps=assumptionStepTuple,
@@ -644,6 +842,9 @@ def buildDriverPathSet(
             "assumptionHash": assumptionHash,
             "assumptionStepHashes": assumptionStepHashes,
             "basePathSetHash": basePathSetHash,
+            "basePathAdmissionReceiptId": basePathAdmissionReceiptId,
+            "basePathAdmissionContentHash": basePathAdmissionContentHash,
+            "basePathAdmissionSubjectHash": basePathAdmissionSubjectHash,
             "overlayHash": overlayHash,
             "certificate": certificate,
             "knowledgeAsOf": cutoff,
@@ -661,6 +862,11 @@ def buildDriverPathSet(
         assumptionHash=assumptionHash,
         assumptionStepHashes=assumptionStepHashes,
         basePathSetHash=basePathSetHash,
+        basePathAdmissionReceiptId=basePathAdmissionReceiptId,
+        basePathAdmissionContentHash=basePathAdmissionContentHash,
+        basePathAdmissionSubjectHash=basePathAdmissionSubjectHash,
+        basePathValidationStatus=basePathValidationStatus,
+        basePathMaxAdmittedStep=basePathMaxAdmittedStep,
         overlayHash=overlayHash,
         registryHash=registryHash,
         factorContractHash=factorContractHash,

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import polars as pl
 import pytest
 
@@ -10,6 +12,7 @@ from dartlab.simulate.driverPaths import (
     DriverHistorySource,
     DriverPathError,
     buildDriverPathSet,
+    composeDriverPathSetWithAssumptions,
     driverFactorsToOperatingSpecs,
 )
 from dartlab.simulate.operatingBridge import (
@@ -17,6 +20,7 @@ from dartlab.simulate.operatingBridge import (
     OperatingTransmissionExposure,
     bridgeOperatingPath,
 )
+from dartlab.simulate.world import bindAdmittedPathContent, bindPathAdmissionReceipt, pathSetAdmissionSubjectHash
 
 
 def _historyCard(
@@ -283,3 +287,97 @@ def testDriverPathSetHashBindsAssumptionContentAndRefs() -> None:
     assert first.audit.inputHash != changedValue.audit.inputHash
     assert first.paths[0].historyStatus == "explicitAssumption"
     assert first.paths[0].weightKind == "unweighted"
+
+
+def testComposedDriverPathPreservesAdmittedBaseOnlyAsParentLineage() -> None:
+    history = pl.DataFrame(
+        {
+            "eventTime": ["20200103", "20200110", "20200117", "20200124"],
+            "availableAt": ["20200103", "20200110", "20200117", "20200124"],
+            "fx": [0.01, -0.02, 0.03, 0.04],
+        }
+    )
+    base = buildDriverPathSet(
+        (
+            DriverHistorySource(
+                _historyCard("fx-history", "fxChange", sourceColumn="fx", historyStatus="asKnown"), history
+            ),
+        ),
+        knowledgeAsOf="20201231",
+        horizon=2,
+        pathCount=2,
+        blockLength=1,
+        seed=7,
+        minObservations=4,
+    )
+    receiptId = "b" * 64
+    admittedPaths = bindPathAdmissionReceipt(
+        bindAdmittedPathContent(
+            tuple(
+                replace(
+                    path,
+                    validationStatus="admitted",
+                    certificateId="a" * 64,
+                    maxAdmittedStep=2,
+                    historyStatus="asKnown",
+                )
+                for path in base.paths
+            )
+        ),
+        receiptId,
+    )
+    admittedBase = replace(base, paths=admittedPaths)
+    composed = composeDriverPathSetWithAssumptions(
+        admittedBase,
+        (DriverAssumptionSource(_assumptionCard(), ({"demandShock": -0.05}, {"demandShock": 0.02})),),
+        registryId="base-plus-demand",
+    )
+
+    assert composed.audit.historyInputHash == base.audit.historyInputHash
+    assert composed.audit.basePathSetHash != ""
+    assert composed.audit.basePathAdmissionReceiptId == receiptId
+    assert composed.audit.basePathAdmissionContentHash == pathSetAdmissionSubjectHash(admittedPaths)
+    assert composed.audit.basePathAdmissionSubjectHash == composed.audit.basePathAdmissionContentHash
+    assert composed.audit.basePathValidationStatus == "admitted"
+    assert composed.audit.basePathMaxAdmittedStep == 2
+    assert composed.audit.assumptionHash
+    assert len(composed.audit.assumptionStepHashes) == 2
+    assert composed.audit.overlayHash
+    assert composed.audit.pathSetHash != composed.audit.basePathSetHash
+    assert "basePathAdmittedButOverlayConditional" in composed.audit.warnings
+    assert all(path.validationStatus == "unvalidated" for path in composed.paths)
+    assert all(path.historyStatus == "explicitAssumption" for path in composed.paths)
+    assert all(path.certificateId == "" for path in composed.paths)
+    assert all(path.admissionReceiptId == "" for path in composed.paths)
+    assert all(path.admissionContentHash == "" for path in composed.paths)
+    assert all(path.maxAdmittedStep == 0 for path in composed.paths)
+    assert not any(
+        ref.startswith(("pathAdmission:", "pathSetAdmission:", "policyCertificate:"))
+        for path in composed.paths
+        for ref in path.refs
+    )
+
+    changed = composeDriverPathSetWithAssumptions(
+        admittedBase,
+        (DriverAssumptionSource(_assumptionCard(), ({"demandShock": -0.05}, {"demandShock": 0.03})),),
+        registryId="base-plus-demand",
+    )
+    assert changed.audit.historyInputHash == composed.audit.historyInputHash
+    assert changed.audit.basePathSetHash == composed.audit.basePathSetHash
+    assert changed.audit.basePathAdmissionReceiptId == composed.audit.basePathAdmissionReceiptId
+    assert changed.audit.assumptionStepHashes[0] == composed.audit.assumptionStepHashes[0]
+    assert changed.audit.assumptionStepHashes[1] != composed.audit.assumptionStepHashes[1]
+    assert changed.audit.overlayHash != composed.audit.overlayHash
+    assert changed.audit.pathSetHash != composed.audit.pathSetHash
+
+    overwriteCard = DriverCard(
+        **{
+            **_assumptionCard().__dict__,
+            "factors": (DriverFactorSpec("fxChange", "simpleReturn", "quarter", "innovation", "manual-shock-v1"),),
+        }
+    )
+    with pytest.raises(DriverPathError, match="overwrite observed history"):
+        composeDriverPathSetWithAssumptions(
+            admittedBase,
+            (DriverAssumptionSource(overwriteCard, ({"fxChange": 0.01}, {"fxChange": 0.02})),),
+        )
