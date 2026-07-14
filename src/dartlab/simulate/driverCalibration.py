@@ -42,6 +42,8 @@ _BASE_RECEIPT_WARNINGS = {
     "registryWarning:historyStatus:asKnown",
 }
 _BENIGN_REGISTRY_WARNINGS = {"historyStatus:asKnown"}
+_SOURCE_PARENT_KINDS = {"dataVintage", "providerObservationBatch", "vintage"}
+_LABEL_PARENT_KINDS = {"dataVintage", "providerObservationBatch", "vintage"}
 
 
 class DriverCalibrationError(ValueError):
@@ -60,11 +62,13 @@ class DriverCalibrationTarget:
     labelDatasetId: str
     labelSourceRefs: tuple[str, ...]
     historyStatus: str
+    labelParentReceiptIds: tuple[str, ...] = ()
     semanticRefs: tuple[str, ...] = ()
     targetProxyRef: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "labelSourceRefs", tuple(self.labelSourceRefs))
+        object.__setattr__(self, "labelParentReceiptIds", tuple(self.labelParentReceiptIds))
         object.__setattr__(self, "semanticRefs", tuple(self.semanticRefs))
 
 
@@ -89,9 +93,11 @@ class DriverCoefficientCalibrationSpec:
     targetValueColumn: str = "targetValue"
     sourceRefColumn: str = "sourceRef"
     labelSourceRefColumn: str = "labelSourceRef"
+    sourceParentReceiptIds: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "responseKernel", tuple(self.responseKernel))
+        object.__setattr__(self, "sourceParentReceiptIds", tuple(self.sourceParentReceiptIds))
 
 
 @dataclass(frozen=True)
@@ -152,12 +158,16 @@ class DriverCoefficientCalibrationReceipt:
     coefficientTraceHash: str
     warnings: tuple[str, ...]
     sourceRefs: tuple[str, ...]
+    sourceParentReceiptIds: tuple[str, ...]
+    labelParentReceiptIds: tuple[str, ...]
     traceRows: tuple[DriverCoefficientTraceRow, ...]
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "responseKernel", tuple(self.responseKernel))
         object.__setattr__(self, "warnings", tuple(self.warnings))
         object.__setattr__(self, "sourceRefs", tuple(self.sourceRefs))
+        object.__setattr__(self, "sourceParentReceiptIds", tuple(self.sourceParentReceiptIds))
+        object.__setattr__(self, "labelParentReceiptIds", tuple(self.labelParentReceiptIds))
         object.__setattr__(self, "traceRows", tuple(self.traceRows))
 
 
@@ -184,6 +194,12 @@ class DriverCoefficientOosSpec:
     targetValueColumn: str = "targetValue"
     sourceRefColumn: str = "sourceRef"
     labelSourceRefColumn: str = "labelSourceRef"
+    sourceParentReceiptIds: tuple[str, ...] = ()
+    labelParentReceiptIds: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "sourceParentReceiptIds", tuple(self.sourceParentReceiptIds))
+        object.__setattr__(self, "labelParentReceiptIds", tuple(self.labelParentReceiptIds))
 
 
 @dataclass(frozen=True)
@@ -223,9 +239,12 @@ class DriverCoefficientOosReport:
     targetShock: str
     coefficient: float
     coefficientUnit: str
+    pathSetHash: str
+    factorContractHash: str
     frequency: str
     stepSpan: int
     maxAdmittedStep: int
+    calibrationKnowledgeAsOf: str
     evaluationKnowledgeAsOf: str
     nOosOrigins: int
     oosStart: str
@@ -248,13 +267,34 @@ class DriverCoefficientOosReport:
     reasons: tuple[str, ...]
     warnings: tuple[str, ...]
     sourceRefs: tuple[str, ...]
+    fitSourceParentReceiptIds: tuple[str, ...]
+    fitLabelParentReceiptIds: tuple[str, ...]
+    oosSourceParentReceiptIds: tuple[str, ...]
+    oosLabelParentReceiptIds: tuple[str, ...]
     traceRows: tuple[DriverCoefficientOosTraceRow, ...]
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "reasons", tuple(self.reasons))
         object.__setattr__(self, "warnings", tuple(self.warnings))
         object.__setattr__(self, "sourceRefs", tuple(self.sourceRefs))
+        object.__setattr__(self, "fitSourceParentReceiptIds", tuple(self.fitSourceParentReceiptIds))
+        object.__setattr__(self, "fitLabelParentReceiptIds", tuple(self.fitLabelParentReceiptIds))
+        object.__setattr__(self, "oosSourceParentReceiptIds", tuple(self.oosSourceParentReceiptIds))
+        object.__setattr__(self, "oosLabelParentReceiptIds", tuple(self.oosLabelParentReceiptIds))
         object.__setattr__(self, "traceRows", tuple(self.traceRows))
+
+
+@dataclass(frozen=True)
+class VerifiedDriverCoefficientAdmission:
+    """Driver coefficient admission after report, signature, artifact, and parent role checks."""
+
+    receipt: AdmissionReceipt
+    sourceParentReceiptIds: tuple[str, ...]
+    labelParentReceiptIds: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "sourceParentReceiptIds", tuple(self.sourceParentReceiptIds))
+        object.__setattr__(self, "labelParentReceiptIds", tuple(self.labelParentReceiptIds))
 
 
 def _dateText(value: str, label: str) -> str:
@@ -262,6 +302,15 @@ def _dateText(value: str, label: str) -> str:
     if len(text) != 8 or not text.isdigit():
         raise DriverCalibrationError(f"invalid {label}: {value}")
     return text
+
+
+def _validDigest(value: str) -> bool:
+    return len(value) == 64 and all(character in "0123456789abcdef" for character in value.lower())
+
+
+def _validateReceiptIds(receiptIds: tuple[str, ...], label: str) -> None:
+    if len(set(receiptIds)) != len(receiptIds) or any(not _validDigest(receiptId) for receiptId in receiptIds):
+        raise DriverCalibrationError(f"{label} receipt identifiers are invalid")
 
 
 def _dateParts(value: str, label: str) -> tuple[int, int, int]:
@@ -331,6 +380,7 @@ def _validateTarget(target: DriverCalibrationTarget) -> None:
         raise DriverCalibrationError("coefficient calibration target must be an observable label")
     if target.targetProxyRef:
         raise DriverCalibrationError("proxy target labels cannot fit operating coefficients")
+    _validateReceiptIds(target.labelParentReceiptIds, "label parent")
 
 
 def _validateSpec(spec: DriverCoefficientCalibrationSpec) -> None:
@@ -348,6 +398,7 @@ def _validateSpec(spec: DriverCoefficientCalibrationSpec) -> None:
     kernel = tuple(_finite(value, f"responseKernel.{index}") for index, value in enumerate(spec.responseKernel))
     if all(abs(value) <= 1e-15 for value in kernel):
         raise DriverCalibrationError("coefficient calibration response kernel is zero")
+    _validateReceiptIds(spec.sourceParentReceiptIds, "source parent")
 
 
 def _sourceFactor(registryResult: DriverRegistryResult, variableId: str):
@@ -497,6 +548,8 @@ def _validateOosSpec(spec: DriverCoefficientOosSpec) -> None:
         or spec.maxAdmittedStep < 1
     ):
         raise DriverCalibrationError("coefficient OOS spec is incomplete")
+    _validateReceiptIds(spec.sourceParentReceiptIds, "OOS source parent")
+    _validateReceiptIds(spec.labelParentReceiptIds, "OOS label parent")
 
 
 def _cleanOosRows(
@@ -640,6 +693,8 @@ def _validateCoefficientReport(report: DriverCoefficientOosReport) -> None:
         or report.status not in _OOS_STATUS_SET
         or report.admissionStatus != "unsigned"
         or not report.evaluationId
+        or not report.pathSetHash
+        or not report.factorContractHash
         or report.stepSpan < 1
         or report.maxAdmittedStep < 1
         or report.nOosOrigins < 1
@@ -652,13 +707,30 @@ def _validateCoefficientReport(report: DriverCoefficientOosReport) -> None:
     for label, value in (
         ("receiptHash", report.receiptHash),
         ("receiptId", report.receiptId),
+        ("pathSetHash", report.pathSetHash),
+        ("factorContractHash", report.factorContractHash),
         ("oosSpecHash", report.oosSpecHash),
         ("oosGridHash", report.oosGridHash),
         ("oosOutcomeHash", report.oosOutcomeHash),
         ("predictionTraceHash", report.predictionTraceHash),
     ):
-        if len(value) != 64 or any(character not in "0123456789abcdef" for character in value.lower()):
+        if not _validDigest(value):
             raise DriverCalibrationError(f"coefficient OOS report {label} is invalid")
+    _validateReceiptIds(report.fitSourceParentReceiptIds, "fit source parent")
+    _validateReceiptIds(report.fitLabelParentReceiptIds, "fit label parent")
+    _validateReceiptIds(report.oosSourceParentReceiptIds, "OOS source parent")
+    _validateReceiptIds(report.oosLabelParentReceiptIds, "OOS label parent")
+    if report.status == "oosEligible" and (
+        not report.fitSourceParentReceiptIds
+        or not report.fitLabelParentReceiptIds
+        or not report.oosSourceParentReceiptIds
+        or not report.oosLabelParentReceiptIds
+    ):
+        raise DriverCalibrationError("coefficient OOS report parent receipts are incomplete")
+    calibrationCutoff = _dateText(report.calibrationKnowledgeAsOf, "report.calibrationKnowledgeAsOf")
+    evaluationCutoff = _dateText(report.evaluationKnowledgeAsOf, "report.evaluationKnowledgeAsOf")
+    if calibrationCutoff > evaluationCutoff:
+        raise DriverCalibrationError("coefficient OOS report evaluation precedes calibration")
     if report.nOosOrigins != len(report.traceRows):
         raise DriverCalibrationError("coefficient OOS report origin count mismatch")
     originKeys = tuple((row.originEventTime, row.originId) for row in report.traceRows)
@@ -780,6 +852,8 @@ def fitDriverCoefficientPit(
             "target": target,
             "sourceUnit": sourceFactor.unit,
             "coefficientUnit": coefficientUnit,
+            "sourceParentReceiptIds": spec.sourceParentReceiptIds,
+            "labelParentReceiptIds": target.labelParentReceiptIds,
         }
     )
     originGridHash = canonicalPayloadHash(
@@ -855,6 +929,8 @@ def fitDriverCoefficientPit(
             f"originGrid:{originGridHash}",
             f"targetOutcome:{targetOutcomeHash}",
             f"coefficientTrace:{coefficientTraceHash}",
+            *(f"fitSourceParentReceipt:{receiptId}" for receiptId in spec.sourceParentReceiptIds),
+            *(f"fitLabelParentReceipt:{receiptId}" for receiptId in target.labelParentReceiptIds),
         )
     )
     receiptPayload = {
@@ -892,6 +968,8 @@ def fitDriverCoefficientPit(
         "coefficientTraceHash": coefficientTraceHash,
         "warnings": tuple(sorted(set(warnings))),
         "sourceRefs": baseRefs,
+        "sourceParentReceiptIds": spec.sourceParentReceiptIds,
+        "labelParentReceiptIds": target.labelParentReceiptIds,
     }
     receiptHash = canonicalPayloadHash(receiptPayload)
     sourceRefs = _dedupe((*baseRefs, f"driverCoefficientFit:{receiptHash}"))
@@ -932,6 +1010,8 @@ def fitDriverCoefficientPit(
         coefficientTraceHash=coefficientTraceHash,
         warnings=tuple(sorted(set(warnings))),
         sourceRefs=sourceRefs,
+        sourceParentReceiptIds=spec.sourceParentReceiptIds,
+        labelParentReceiptIds=target.labelParentReceiptIds,
         traceRows=traceRows,
     )
 
@@ -941,7 +1021,7 @@ def calibrationReceiptToOperatingExposure(
     *,
     exposureId: str,
     oosReport: DriverCoefficientOosReport | None = None,
-    admissionReceipt: AdmissionReceipt | None = None,
+    admissionReceipt: VerifiedDriverCoefficientAdmission | None = None,
     modifierVariableId: str = "",
     modifierUnit: str = "",
     aggregationGroup: str = "",
@@ -952,7 +1032,7 @@ def calibrationReceiptToOperatingExposure(
         receipt: Calibration receipt returned by ``fitDriverCoefficientPit``.
         exposureId: Stable exposure identifier for the operating bridge.
         oosReport: Eligible OOS report for the frozen receipt.
-        admissionReceipt: Verified signed admission receipt for the OOS report.
+        admissionReceipt: Verified typed admission wrapper for the OOS report.
         modifierVariableId: Optional PIT state primitive that scales the coefficient.
         modifierUnit: Required unit when a modifier is present.
         aggregationGroup: Optional duplicate source-target aggregation group.
@@ -971,6 +1051,8 @@ def calibrationReceiptToOperatingExposure(
         raise DriverCalibrationError("rejected coefficient receipt cannot become an exposure")
     if oosReport is None or admissionReceipt is None:
         raise DriverCalibrationError("coefficient exposure requires OOS admission")
+    if not isinstance(admissionReceipt, VerifiedDriverCoefficientAdmission):
+        raise DriverCalibrationError("coefficient exposure requires verified coefficient admission")
     expectedUnit = f"{OPERATING_TARGET_UNITS[receipt.targetShock]}/{receipt.sourceUnit}"
     if receipt.coefficientUnit != expectedUnit:
         raise DriverCalibrationError("coefficient receipt unit drift")
@@ -989,19 +1071,21 @@ def calibrationReceiptToOperatingExposure(
         or not math.isclose(oosReport.coefficient, receipt.coefficient, rel_tol=1e-12, abs_tol=1e-12)
     ):
         raise DriverCalibrationError("coefficient OOS report does not match receipt")
+    signedReceipt = admissionReceipt.receipt
     if (
-        admissionReceipt.kind != "driverCoefficient"
-        or admissionReceipt.status != "admitted"
-        or admissionReceipt.subjectHash != subjectHash
-        or admissionReceipt.artifactHash != subjectHash
-        or (admissionReceipt.ruleId, admissionReceipt.ruleVersion, admissionReceipt.ruleHash)
+        signedReceipt.kind != "driverCoefficient"
+        or signedReceipt.status != "admitted"
+        or signedReceipt.subjectHash != subjectHash
+        or signedReceipt.artifactHash != subjectHash
+        or (signedReceipt.ruleId, signedReceipt.ruleVersion, signedReceipt.ruleHash)
         != (DRIVER_COEFFICIENT_RULE_ID, DRIVER_COEFFICIENT_RULE_VERSION, DRIVER_COEFFICIENT_RULE_HASH)
-        or admissionReceipt.knowledgeAsOf != oosReport.evaluationKnowledgeAsOf
-        or admissionReceipt.frequency != oosReport.frequency
-        or admissionReceipt.stepSpan != oosReport.stepSpan
-        or admissionReceipt.maxAdmittedStep != oosReport.maxAdmittedStep
-        or admissionReceipt.revisionPolicy != "asKnown"
-        or admissionReceipt.coverage != "asOfExact"
+        or signedReceipt.knowledgeAsOf != oosReport.evaluationKnowledgeAsOf
+        or signedReceipt.frequency != oosReport.frequency
+        or signedReceipt.stepSpan != oosReport.stepSpan
+        or signedReceipt.maxAdmittedStep != oosReport.maxAdmittedStep
+        or signedReceipt.revisionPolicy != "asKnown"
+        or signedReceipt.coverage != "asOfExact"
+        or signedReceipt.parentReceiptIds != driverCoefficientAdmissionParentReceiptIds(oosReport)
     ):
         raise DriverCalibrationError("coefficient admission receipt does not match OOS report")
     return OperatingTransmissionExposure(
@@ -1011,7 +1095,7 @@ def calibrationReceiptToOperatingExposure(
         coefficient=receipt.coefficient,
         coefficientUnit=receipt.coefficientUnit,
         evidenceKind="measuredAssociation",
-        sourceRef=f"driverCoefficientAdmission:{admissionReceipt.receiptId}",
+        sourceRef=f"driverCoefficientAdmission:{signedReceipt.receiptId}",
         modifierVariableId=modifierVariableId,
         modifierUnit=modifierUnit,
         lagSteps=receipt.lagSteps,
@@ -1114,6 +1198,14 @@ def evaluateDriverCoefficientOos(
         reasons.append("rmseAboveThreshold")
     if abs(bias) > spec.maxAbsBias:
         reasons.append("biasAboveThreshold")
+    if not receipt.sourceParentReceiptIds:
+        reasons.append("fitSourceParentsMissing")
+    if not receipt.labelParentReceiptIds:
+        reasons.append("fitLabelParentsMissing")
+    if not spec.sourceParentReceiptIds:
+        reasons.append("oosSourceParentsMissing")
+    if not spec.labelParentReceiptIds:
+        reasons.append("oosLabelParentsMissing")
     status = "oosEligible" if not reasons else "rejected"
     oosSpecHash = canonicalPayloadHash(
         {"version": COEFFICIENT_OOS_VERSION, "spec": spec, "receipt": receipt.receiptHash}
@@ -1141,6 +1233,10 @@ def evaluateDriverCoefficientOos(
             f"coefficientOosGrid:{oosGridHash}",
             f"coefficientOosOutcome:{oosOutcomeHash}",
             f"coefficientPredictionTrace:{predictionTraceHash}",
+            *(f"fitSourceParentReceipt:{receiptId}" for receiptId in receipt.sourceParentReceiptIds),
+            *(f"fitLabelParentReceipt:{receiptId}" for receiptId in receipt.labelParentReceiptIds),
+            *(f"oosSourceParentReceipt:{receiptId}" for receiptId in spec.sourceParentReceiptIds),
+            *(f"oosLabelParentReceipt:{receiptId}" for receiptId in spec.labelParentReceiptIds),
         )
     )
     provisional = DriverCoefficientOosReport(
@@ -1157,9 +1253,12 @@ def evaluateDriverCoefficientOos(
         targetShock=receipt.targetShock,
         coefficient=receipt.coefficient,
         coefficientUnit=receipt.coefficientUnit,
+        pathSetHash=receipt.pathSetHash,
+        factorContractHash=receipt.factorContractHash,
         frequency=spec.frequency,
         stepSpan=spec.stepSpan,
         maxAdmittedStep=spec.maxAdmittedStep,
+        calibrationKnowledgeAsOf=receipt.calibrationKnowledgeAsOf,
         evaluationKnowledgeAsOf=cutoff,
         nOosOrigins=nOrigins,
         oosStart=oosStart,
@@ -1182,6 +1281,10 @@ def evaluateDriverCoefficientOos(
         reasons=tuple(reasons),
         warnings=("coefficientOosReportUnsigned",),
         sourceRefs=sourceRefs,
+        fitSourceParentReceiptIds=receipt.sourceParentReceiptIds,
+        fitLabelParentReceiptIds=receipt.labelParentReceiptIds,
+        oosSourceParentReceiptIds=spec.sourceParentReceiptIds,
+        oosLabelParentReceiptIds=spec.labelParentReceiptIds,
         traceRows=tuple(traceRows),
     )
     report = DriverCoefficientOosReport(
@@ -1237,13 +1340,118 @@ def driverCoefficientAdmissionSubjectHash(report: DriverCoefficientOosReport) ->
     return canonicalPayloadHash(_oosReportPayload(report))
 
 
+def driverCoefficientAdmissionParentReceiptIds(report: DriverCoefficientOosReport) -> tuple[str, ...]:
+    """Return the exact source and label parents required by a coefficient admission.
+
+    Args:
+        report: OOS report returned by ``evaluateDriverCoefficientOos``.
+
+    Returns:
+        Ordered unique parent receipt identifiers for the signed admission receipt.
+
+    Raises:
+        DriverCalibrationError: If the report protocol or parent identifiers are invalid.
+
+    Example:
+        ``parents = driverCoefficientAdmissionParentReceiptIds(report)``
+    """
+
+    _validateCoefficientReport(report)
+    return _dedupe(
+        (
+            *report.fitSourceParentReceiptIds,
+            *report.fitLabelParentReceiptIds,
+            *report.oosSourceParentReceiptIds,
+            *report.oosLabelParentReceiptIds,
+        )
+    )
+
+
+def _verifyCoefficientParent(
+    admissionVerifier: AdmissionVerifier,
+    receiptId: str,
+    *,
+    role: str,
+    allowedKinds: set[str],
+    maxKnowledgeAsOf: str,
+    decisionAsOf: str,
+) -> AdmissionReceipt:
+    try:
+        parent = admissionVerifier.verify(receiptId)
+    except RuntimeError as error:
+        raise DriverCalibrationError(f"coefficient parent admission verification failed: {error}") from error
+    if (
+        parent.kind not in allowedKinds
+        or parent.status != "verifiedVintage"
+        or parent.revisionPolicy != "asKnown"
+        or parent.coverage != "asOfExact"
+    ):
+        raise DriverCalibrationError(f"coefficient {role} parent receipt must be verified vintage")
+    if _dateText(parent.knowledgeAsOf, f"{role} parent knowledgeAsOf") > _dateText(
+        maxKnowledgeAsOf,
+        f"{role} parent maxKnowledgeAsOf",
+    ):
+        raise DriverCalibrationError(f"coefficient {role} parent knowledge is after coefficient cutoff")
+    if _dateText(parent.issuedAt, f"{role} parent issuedAt") > _dateText(decisionAsOf, "decisionAsOf"):
+        raise DriverCalibrationError(f"coefficient {role} parent is not available by decisionAsOf")
+    return parent
+
+
+def _verifyCoefficientParents(
+    report: DriverCoefficientOosReport,
+    admissionVerifier: AdmissionVerifier,
+    *,
+    decisionAsOf: str,
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    for receiptId in report.fitSourceParentReceiptIds:
+        _verifyCoefficientParent(
+            admissionVerifier,
+            receiptId,
+            role="fit source",
+            allowedKinds=_SOURCE_PARENT_KINDS,
+            maxKnowledgeAsOf=report.calibrationKnowledgeAsOf,
+            decisionAsOf=decisionAsOf,
+        )
+    for receiptId in report.fitLabelParentReceiptIds:
+        _verifyCoefficientParent(
+            admissionVerifier,
+            receiptId,
+            role="fit label",
+            allowedKinds=_LABEL_PARENT_KINDS,
+            maxKnowledgeAsOf=report.calibrationKnowledgeAsOf,
+            decisionAsOf=decisionAsOf,
+        )
+    for receiptId in report.oosSourceParentReceiptIds:
+        _verifyCoefficientParent(
+            admissionVerifier,
+            receiptId,
+            role="OOS source",
+            allowedKinds=_SOURCE_PARENT_KINDS,
+            maxKnowledgeAsOf=report.evaluationKnowledgeAsOf,
+            decisionAsOf=decisionAsOf,
+        )
+    for receiptId in report.oosLabelParentReceiptIds:
+        _verifyCoefficientParent(
+            admissionVerifier,
+            receiptId,
+            role="OOS label",
+            allowedKinds=_LABEL_PARENT_KINDS,
+            maxKnowledgeAsOf=report.evaluationKnowledgeAsOf,
+            decisionAsOf=decisionAsOf,
+        )
+    return (
+        _dedupe((*report.fitSourceParentReceiptIds, *report.oosSourceParentReceiptIds)),
+        _dedupe((*report.fitLabelParentReceiptIds, *report.oosLabelParentReceiptIds)),
+    )
+
+
 def validateDriverCoefficientAdmission(
     report: DriverCoefficientOosReport,
     admissionVerifier: AdmissionVerifier,
     *,
     receiptId: str,
     decisionAsOf: str,
-) -> AdmissionReceipt:
+) -> VerifiedDriverCoefficientAdmission:
     """Verify a signed coefficient OOS report against the admission registry.
 
     Args:
@@ -1253,19 +1461,20 @@ def validateDriverCoefficientAdmission(
         decisionAsOf: Decision date that must be after receipt issuance.
 
     Returns:
-        Verified ``AdmissionReceipt`` for kind ``driverCoefficient``.
+        ``VerifiedDriverCoefficientAdmission`` for a fully parent-checked coefficient.
 
     Raises:
-        DriverCalibrationError: If the report is ineligible, unsigned artifact differs, or receipt drifts.
+        DriverCalibrationError: If the report is ineligible, parent lineage is incomplete, or receipt drifts.
 
     Example:
-        ``receipt = validateDriverCoefficientAdmission(report, verifier, receiptId=rid, decisionAsOf="20251231")``
+        ``admission = validateDriverCoefficientAdmission(report, verifier, receiptId=rid, decisionAsOf="20251231")``
     """
 
     _validateCoefficientReport(report)
     if report.status != "oosEligible":
         raise DriverCalibrationError("coefficient OOS report is not eligible for admission")
     subjectHash = driverCoefficientAdmissionSubjectHash(report)
+    expectedParentReceiptIds = driverCoefficientAdmissionParentReceiptIds(report)
     try:
         receipt = admissionVerifier.verify(
             receiptId,
@@ -1285,13 +1494,23 @@ def validateDriverCoefficientAdmission(
         or receipt.maxAdmittedStep != report.maxAdmittedStep
         or receipt.revisionPolicy != "asKnown"
         or receipt.coverage != "asOfExact"
+        or receipt.parentReceiptIds != expectedParentReceiptIds
         or _dateText(receipt.issuedAt, "coefficient receipt issuedAt") > _dateText(decisionAsOf, "decisionAsOf")
     ):
         raise DriverCalibrationError("coefficient admission receipt contract mismatch")
+    sourceParentReceiptIds, labelParentReceiptIds = _verifyCoefficientParents(
+        report,
+        admissionVerifier,
+        decisionAsOf=decisionAsOf,
+    )
     try:
         artifactBytes = artifactPath(admissionVerifier.artifactRoot, subjectHash).read_bytes()
     except OSError as error:
         raise DriverCalibrationError("coefficient admission artifact is unavailable") from error
     if artifactBytes != driverCoefficientAdmissionArtifact(report):
         raise DriverCalibrationError("coefficient admission artifact content mismatch")
-    return receipt
+    return VerifiedDriverCoefficientAdmission(
+        receipt=receipt,
+        sourceParentReceiptIds=sourceParentReceiptIds,
+        labelParentReceiptIds=labelParentReceiptIds,
+    )

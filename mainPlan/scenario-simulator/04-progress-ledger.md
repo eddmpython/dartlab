@@ -1081,4 +1081,14 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **운영 경계**: `calibrationReceiptToOperatingExposure`는 이제 eligible OOS report와 검증된 admission receipt 없이는 exposure를 만들 수 없다. sourceRef도 fit hash가 아니라 `driverCoefficientAdmission:<receiptId>`로 바뀌어 operating bridge가 admitted coefficient만 소비한다.
 - **무결성 보강**: OOS report 검증 시 grid, outcome, prediction trace hash를 traceRows에서 재계산하고, mse, rmse, mae, bias, skill, residual 일관성을 재검산한다. reportId만 맞춰 위조한 artifact도 admission artifact 단계에서 거부된다.
 - **검증**: attempt plus formal driver calibration 12건 통과. driver admission 주변 집중 회귀 55건 통과. `tests/simulate` 전체 362건 통과. Guard Index strict l0-l15 7/7과 외부 gate 6종 통과.
-- **남은 P0**: source와 label vintage parent receipt 체인을 admission parent로 강제하는 작업은 아직 남았다. ruleHash도 현재 id plus version 수준이라 후속에서 executable rule spec hash로 강화해야 한다.
+- **후속 P0**: source와 label vintage parent receipt 체인은 아래 항목에서 닫았다. ruleHash는 아직 id plus version 수준이라 후속에서 executable rule spec hash로 강화해야 한다.
+
+
+## 2026-07-15 P0 coefficient source and label parent chain
+
+- **판단**: OOS report와 signed `driverCoefficient` receipt만으로는 PRD급 simulator lineage가 닫히지 않는다. source와 label parent가 없으면 검증된 계수가 아니라 검증된 듯 보이는 문자열 ref가 된다.
+- **구현**: `DriverCoefficientCalibrationReceipt`와 `DriverCoefficientOosReport`에 fit source, fit label, OOS source, OOS label parent receipt ids를 role별로 분리해 넣었다. 이 parent ids는 calibrationSpecHash, receiptHash, OOS report artifact hash에 들어가므로 admission 단계에서 decorative parent로 바꿀 수 없다.
+- **검증 경계**: `validateDriverCoefficientAdmission`은 이제 `AdmissionReceipt`가 아니라 `VerifiedDriverCoefficientAdmission`을 반환한다. signed receipt의 `parentReceiptIds`가 report가 요구한 exact parent set과 같아야 하고, 각 parent는 verified vintage, asKnown, asOfExact, allowed kind, cutoff 이하 knowledgeAsOf, decisionAsOf 이하 issuedAt을 통과해야 한다.
+- **운영 경계**: `calibrationReceiptToOperatingExposure`는 raw signed receipt를 받지 않는다. parent role까지 검증된 typed wrapper만 받아 `measuredAssociation` exposure를 만든다. operating bridge와 policy admission은 건드리지 않아 coefficient admission이 path admission으로 전이되지 않게 유지했다.
+- **검증**: attempt plus formal driver calibration 12건 통과. driver admission 주변 집중 회귀 55건 통과. `tests/simulate` 전체 362건 통과.
+- **남은 P0**: `DRIVER_COEFFICIENT_RULE_HASH`가 아직 rule id plus version 해시다. 다음 단위에서 held-out 정의, parent role, horizon, threshold, artifact replay 체크리스트를 canonical rule spec hash로 묶어야 한다.
