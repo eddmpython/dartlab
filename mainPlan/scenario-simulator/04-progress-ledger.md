@@ -1101,4 +1101,14 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **거부 경계**: 옛 shallow hash인 `{"rule": id, "version": "1"}`로 발급한 signed `driverCoefficient` receipt는 ruleId와 ruleVersion이 맞아도 contract mismatch로 거부된다.
 - **검증 의미**: rule hash가 이제 "어떤 parent set과 어떤 OOS replay를 요구하는가"까지 묶는다. 단순히 문자열 rule 이름이 맞는지 보는 단계에서, held-out, parent cutoff, artifact replay, 운영 exposure 전환 조건까지 같은 절차였는지 보는 단계로 올라갔다.
 - **검증**: attempt plus formal driver calibration 12건 통과. driver admission 주변 집중 회귀 55건 통과. `tests/simulate` 전체 362건 통과. Guard Index strict l0-l15 7/7과 외부 gate 6종 통과.
-- **남은 P0**: row-level `sourceRef`와 `labelSourceRef`가 어떤 parent artifact coverage 안에 포함되는지까지는 아직 넓은 parent set 검증이다. 다음 단위는 provider artifact mapping과 row-level coverage 증명이다.
+- **닫힌 후속**: row-level `sourceRef`와 `labelSourceRef`가 어떤 parent artifact coverage 안에 포함되는지는 아래 parent row coverage 단위에서 닫았다.
+
+
+## 2026-07-15 P0 coefficient parent row coverage
+
+- **판단**: parent receipt가 존재하고 verified vintage인 것만으로는 PRD급 simulator lineage가 닫히지 않는다. 전략에 투입할 계수는 fit row와 OOS row의 `sourceRef`, `labelSourceRef`가 실제 parent artifact coverage 안에 있어야 한다.
+- **구현**: `validateDriverCoefficientAdmission`은 이제 원 `calibrationReceipt`를 요구한다. 검증 단계에서 calibration receipt의 receipt hash, fit trace hash, grid hash, row timing을 재검산하고, fit source, fit label, OOS source, OOS label을 role별 parent artifact coverage와 대조한다.
+- **parent artifact 계약**: `driver-coefficient-parent-coverage-v1` canonical coverage manifest를 허용하고, 기존 `provider-observation-batch-v1` artifact는 observationId와 vintage sourceRefs를 coverage ref로 매핑한다. opaque parent bytes는 거부한다.
+- **row match 계약**: ref, role, eventTime, availableAt, value, unit이 모두 맞아야 한다. parent receipt 자체가 정상이어도 artifact rows가 `source:o1` 같은 실제 row ref를 빠뜨리면 admission 검증이 실패한다.
+- **검증**: attempt plus formal driver calibration 13건 통과. driver admission 주변 집중 회귀 56건 통과. `tests/simulate` 전체 363건 통과. Guard Index strict l0-l15 7/7과 외부 gate 6종 통과. ruff format, ruff check, camelcase strict, docstring audit 통과.
+- **남은 P0**: provider batch를 실제 DART, EDGAR, macro 원천에서 coefficient frame으로 자동 연결하는 mapping은 아직 수동 fixture 수준이다. 다음 단위는 provider observation batch에서 driver frame을 만드는 adapter와 실제 data lineage fixture다.

@@ -9,6 +9,7 @@ It does not admit paths, transfer calibrated weights, or recommend policies.
 
 from __future__ import annotations
 
+import json
 import math
 from dataclasses import dataclass
 from datetime import date
@@ -29,6 +30,7 @@ from dartlab.simulate.vintage import canonicalPayloadBytes, canonicalPayloadHash
 
 CALIBRATION_VERSION = "driver-coefficient-calibration-v1"
 COEFFICIENT_OOS_VERSION = "driver-coefficient-oos-v1"
+PARENT_COVERAGE_VERSION = "driver-coefficient-parent-coverage-v1"
 DRIVER_COEFFICIENT_RULE_ID = "driver-coefficient-oos-admission"
 DRIVER_COEFFICIENT_RULE_VERSION = "1"
 _OBSERVABLE_TARGET_KINDS = {"observedOutcome", "realizedOutcome", "observedOperatingShock"}
@@ -93,6 +95,16 @@ DRIVER_COEFFICIENT_RULE_SPEC = {
         "oosParentKnowledgeCutoff": "no later than evaluationKnowledgeAsOf",
         "availabilityCutoff": "parent issuedAt no later than decisionAsOf",
         "receiptParentSet": "exact ordered driverCoefficientAdmissionParentReceiptIds(report)",
+        "parentArtifactCoverageSchema": PARENT_COVERAGE_VERSION,
+        "parentArtifactCanonical": "canonical JSON bytes only",
+        "rowCoverageRequired": (
+            "fit source",
+            "fit label",
+            "OOS source",
+            "OOS label",
+        ),
+        "coverageMatchFields": ("ref", "role", "eventTime", "availableAt", "value", "unit"),
+        "opaqueParentArtifactPolicy": "reject",
     },
     "admissionReceiptContract": {
         "kind": "driverCoefficient",
@@ -759,6 +771,328 @@ def _assertClose(left: float, right: float, label: str) -> None:
         raise DriverCalibrationError(f"coefficient OOS report {label} mismatch")
 
 
+def _calibrationOriginGridHashFromTraceRows(traceRows: tuple[DriverCoefficientTraceRow, ...]) -> str:
+    return canonicalPayloadHash(
+        tuple(
+            {
+                "originId": row.originId,
+                "originEventTime": row.originEventTime,
+                "originKnowledgeAsOf": row.originKnowledgeAsOf,
+                "sourceAvailableAt": row.sourceAvailableAt,
+                "targetEventTime": row.targetEventTime,
+                "targetAvailableAt": row.targetAvailableAt,
+            }
+            for row in traceRows
+        )
+    )
+
+
+def _calibrationCoefficientTraceHash(receipt: DriverCoefficientCalibrationReceipt) -> str:
+    return canonicalPayloadHash(
+        {
+            "registryHash": receipt.registryHash,
+            "pathSetHash": receipt.pathSetHash,
+            "pathSetInputHash": receipt.pathSetInputHash,
+            "factorContractHash": receipt.factorContractHash,
+            "calibrationSpecHash": receipt.calibrationSpecHash,
+            "originGridHash": receipt.originGridHash,
+            "targetOutcomeHash": receipt.targetOutcomeHash,
+            "coefficient": receipt.coefficient,
+            "standardError": receipt.standardError,
+            "rSquared": receipt.rSquared,
+            "traceRows": receipt.traceRows,
+        }
+    )
+
+
+def _calibrationReceiptPayload(receipt: DriverCoefficientCalibrationReceipt) -> dict:
+    fitRef = f"driverCoefficientFit:{receipt.receiptHash}"
+    baseSourceRefs = tuple(item for item in receipt.sourceRefs if item != fitRef)
+    return {
+        "version": CALIBRATION_VERSION,
+        "calibrationId": receipt.calibrationId,
+        "status": receipt.status,
+        "validationStatus": receipt.validationStatus,
+        "historyStatus": receipt.historyStatus,
+        "calibrationKnowledgeAsOf": receipt.calibrationKnowledgeAsOf,
+        "sourceVariableId": receipt.sourceVariableId,
+        "targetVariableId": receipt.targetVariableId,
+        "targetShock": receipt.targetShock,
+        "sourceUnit": receipt.sourceUnit,
+        "targetUnit": receipt.targetUnit,
+        "coefficient": receipt.coefficient,
+        "coefficientUnit": receipt.coefficientUnit,
+        "intercept": receipt.intercept,
+        "standardError": receipt.standardError,
+        "rSquared": receipt.rSquared,
+        "nOrigins": receipt.nOrigins,
+        "droppedRows": receipt.droppedRows,
+        "fitStart": receipt.fitStart,
+        "fitThrough": receipt.fitThrough,
+        "labelThrough": receipt.labelThrough,
+        "lagSteps": receipt.lagSteps,
+        "responseKernel": receipt.responseKernel,
+        "modelFormula": receipt.modelFormula,
+        "registryHash": receipt.registryHash,
+        "pathSetHash": receipt.pathSetHash,
+        "pathSetInputHash": receipt.pathSetInputHash,
+        "factorContractHash": receipt.factorContractHash,
+        "calibrationSpecHash": receipt.calibrationSpecHash,
+        "originGridHash": receipt.originGridHash,
+        "targetOutcomeHash": receipt.targetOutcomeHash,
+        "coefficientTraceHash": receipt.coefficientTraceHash,
+        "warnings": receipt.warnings,
+        "sourceRefs": baseSourceRefs,
+        "sourceParentReceiptIds": receipt.sourceParentReceiptIds,
+        "labelParentReceiptIds": receipt.labelParentReceiptIds,
+    }
+
+
+def _validateCalibrationReceipt(receipt: DriverCoefficientCalibrationReceipt) -> None:
+    if (
+        receipt.generatorVersion != CALIBRATION_VERSION
+        or receipt.status != "retrospectiveOnly"
+        or receipt.validationStatus != "retrospectiveOnly"
+        or receipt.nOrigins < 1
+        or receipt.droppedRows < 0
+        or receipt.intercept != 0.0
+        or not receipt.traceRows
+        or receipt.receiptId != receipt.receiptHash
+        or not receipt.sourceRefs
+    ):
+        raise DriverCalibrationError("coefficient calibration receipt protocol mismatch")
+    for label, value in (
+        ("receiptHash", receipt.receiptHash),
+        ("registryHash", receipt.registryHash),
+        ("pathSetHash", receipt.pathSetHash),
+        ("pathSetInputHash", receipt.pathSetInputHash),
+        ("factorContractHash", receipt.factorContractHash),
+        ("calibrationSpecHash", receipt.calibrationSpecHash),
+        ("originGridHash", receipt.originGridHash),
+        ("targetOutcomeHash", receipt.targetOutcomeHash),
+        ("coefficientTraceHash", receipt.coefficientTraceHash),
+    ):
+        if not _validDigest(value):
+            raise DriverCalibrationError(f"coefficient calibration receipt {label} is invalid")
+    if f"driverCoefficientFit:{receipt.receiptHash}" not in receipt.sourceRefs:
+        raise DriverCalibrationError("coefficient calibration receipt fit ref is missing")
+    if receipt.receiptHash != canonicalPayloadHash(_calibrationReceiptPayload(receipt)):
+        raise DriverCalibrationError("coefficient calibration receipt hash mismatch")
+    if receipt.nOrigins != len(receipt.traceRows):
+        raise DriverCalibrationError("coefficient calibration receipt origin count mismatch")
+    originKeys = tuple((row.originEventTime, row.originId) for row in receipt.traceRows)
+    if originKeys != tuple(sorted(originKeys)) or len({row.originId for row in receipt.traceRows}) != len(
+        receipt.traceRows
+    ):
+        raise DriverCalibrationError("coefficient calibration receipt origin order mismatch")
+    if (
+        receipt.fitStart != receipt.traceRows[0].originEventTime
+        or receipt.fitThrough != receipt.traceRows[-1].originEventTime
+        or receipt.labelThrough != max(row.targetAvailableAt for row in receipt.traceRows)
+    ):
+        raise DriverCalibrationError("coefficient calibration receipt window mismatch")
+    for index, row in enumerate(receipt.traceRows):
+        originEventTime = _dateText(row.originEventTime, f"calibrationReceipt.originEventTime.{index}")
+        originKnowledgeAsOf = _dateText(row.originKnowledgeAsOf, f"calibrationReceipt.originKnowledgeAsOf.{index}")
+        sourceAvailableAt = _dateText(row.sourceAvailableAt, f"calibrationReceipt.sourceAvailableAt.{index}")
+        targetEventTime = _dateText(row.targetEventTime, f"calibrationReceipt.targetEventTime.{index}")
+        targetAvailableAt = _dateText(row.targetAvailableAt, f"calibrationReceipt.targetAvailableAt.{index}")
+        if sourceAvailableAt > originKnowledgeAsOf:
+            raise DriverCalibrationError("coefficient calibration receipt source timing mismatch")
+        if targetEventTime <= originEventTime or targetAvailableAt <= originKnowledgeAsOf:
+            raise DriverCalibrationError("coefficient calibration receipt target timing mismatch")
+        sourceValue = _finite(row.sourceValue, f"calibrationReceipt.sourceValue.{index}")
+        targetValue = _finite(row.targetValue, f"calibrationReceipt.targetValue.{index}")
+        fittedValue = _finite(row.fittedValue, f"calibrationReceipt.fittedValue.{index}")
+        residual = _finite(row.residual, f"calibrationReceipt.residual.{index}")
+        if not row.sourceRef or not row.labelSourceRef:
+            raise DriverCalibrationError("coefficient calibration receipt source refs mismatch")
+        _assertClose(fittedValue, receipt.coefficient * sourceValue, "calibration fitted value")
+        _assertClose(residual, targetValue - fittedValue, "calibration residual")
+    if receipt.originGridHash != _calibrationOriginGridHashFromTraceRows(receipt.traceRows):
+        raise DriverCalibrationError("coefficient calibration receipt grid hash mismatch")
+    if receipt.coefficientTraceHash != _calibrationCoefficientTraceHash(receipt):
+        raise DriverCalibrationError("coefficient calibration receipt trace hash mismatch")
+
+
+def _coverageRow(
+    *,
+    ref: str,
+    role: str,
+    eventTime: str,
+    availableAt: str,
+    value: float,
+    unit: str,
+) -> dict:
+    if not ref or role not in {"source", "label"} or not unit:
+        raise DriverCalibrationError("coefficient parent coverage row is incomplete")
+    return {
+        "ref": ref,
+        "role": role,
+        "eventTime": _dateText(eventTime, "parent coverage eventTime"),
+        "availableAt": _dateText(availableAt, "parent coverage availableAt"),
+        "value": _finite(value, "parent coverage value"),
+        "unit": unit,
+    }
+
+
+def _coverageRowsFromManifest(payload: dict, *, role: str) -> tuple[dict, ...]:
+    rows = payload.get("rows")
+    if not isinstance(rows, list):
+        raise DriverCalibrationError("coefficient parent coverage manifest is malformed")
+    out = []
+    for item in rows:
+        if not isinstance(item, dict):
+            raise DriverCalibrationError("coefficient parent coverage row is malformed")
+        rowRole = str(item.get("role", ""))
+        if rowRole not in {"source", "label"}:
+            raise DriverCalibrationError("coefficient parent coverage row role is invalid")
+        if rowRole != role:
+            continue
+        out.append(
+            _coverageRow(
+                ref=str(item.get("ref", "")),
+                role=rowRole,
+                eventTime=str(item.get("eventTime", "")),
+                availableAt=str(item.get("availableAt", "")),
+                value=item.get("value"),
+                unit=str(item.get("unit", "")),
+            )
+        )
+    return tuple(out)
+
+
+def _coverageRowsFromProviderBatch(payload: dict, *, role: str) -> tuple[dict, ...]:
+    observations = payload.get("observations")
+    if not isinstance(observations, list):
+        raise DriverCalibrationError("coefficient provider batch coverage artifact is malformed")
+    out = []
+    for item in observations:
+        if not isinstance(item, dict):
+            raise DriverCalibrationError("coefficient provider batch observation is malformed")
+        refs = [str(item.get("observationId", ""))]
+        vintage = item.get("vintage")
+        if isinstance(vintage, dict):
+            refs.extend(str(ref) for ref in vintage.get("sourceRefs", ()) if ref)
+        for ref in tuple(dict.fromkeys(ref for ref in refs if ref)):
+            out.append(
+                _coverageRow(
+                    ref=ref,
+                    role=role,
+                    eventTime=str(item.get("eventAt", "")),
+                    availableAt=str(item.get("availableAt", "")),
+                    value=item.get("value"),
+                    unit=str(item.get("unit", "")),
+                )
+            )
+    return tuple(out)
+
+
+def _coverageRowsFromParent(
+    admissionVerifier: AdmissionVerifier,
+    parent: AdmissionReceipt,
+    *,
+    role: str,
+) -> tuple[dict, ...]:
+    try:
+        raw = artifactPath(admissionVerifier.artifactRoot, parent.artifactHash).read_bytes()
+    except OSError as error:
+        raise DriverCalibrationError("coefficient parent coverage artifact is unavailable") from error
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError as error:
+        raise DriverCalibrationError("coefficient parent coverage artifact is not canonical JSON") from error
+    if canonicalPayloadBytes(payload) != raw:
+        raise DriverCalibrationError("coefficient parent coverage artifact is not canonical")
+    if not isinstance(payload, dict):
+        raise DriverCalibrationError("coefficient parent coverage artifact is malformed")
+    schemaVersion = payload.get("schemaVersion")
+    if schemaVersion == PARENT_COVERAGE_VERSION:
+        return _coverageRowsFromManifest(payload, role=role)
+    if schemaVersion == "provider-observation-batch-v1":
+        return _coverageRowsFromProviderBatch(payload, role=role)
+    raise DriverCalibrationError("coefficient parent coverage artifact is unsupported")
+
+
+def _coverageIndex(
+    admissionVerifier: AdmissionVerifier,
+    parents: tuple[AdmissionReceipt, ...],
+    *,
+    role: str,
+) -> dict[str, dict]:
+    index: dict[str, dict] = {}
+    for parent in parents:
+        for row in _coverageRowsFromParent(admissionVerifier, parent, role=role):
+            ref = row["ref"]
+            if ref in index:
+                raise DriverCalibrationError("coefficient parent coverage has duplicate row ref")
+            index[ref] = row
+    return index
+
+
+def _expectedCoverageRowsFromTraceRows(
+    traceRows,
+    *,
+    role: str,
+    sourceUnit: str,
+    targetUnit: str,
+) -> tuple[dict, ...]:
+    rows = []
+    for row in traceRows:
+        if role == "source":
+            rows.append(
+                _coverageRow(
+                    ref=row.sourceRef,
+                    role="source",
+                    eventTime=row.originEventTime,
+                    availableAt=row.sourceAvailableAt,
+                    value=row.sourceValue,
+                    unit=sourceUnit,
+                )
+            )
+        elif role == "label":
+            rows.append(
+                _coverageRow(
+                    ref=row.labelSourceRef,
+                    role="label",
+                    eventTime=row.targetEventTime,
+                    availableAt=row.targetAvailableAt,
+                    value=row.targetValue,
+                    unit=targetUnit,
+                )
+            )
+        else:
+            raise DriverCalibrationError("coefficient coverage role is invalid")
+    return tuple(rows)
+
+
+def _verifyParentCoverage(
+    admissionVerifier: AdmissionVerifier,
+    parents: tuple[AdmissionReceipt, ...],
+    expectedRows: tuple[dict, ...],
+    *,
+    role: str,
+    roleLabel: str,
+) -> None:
+    index = _coverageIndex(admissionVerifier, parents, role=role)
+    missing = tuple(row["ref"] for row in expectedRows if row["ref"] not in index)
+    if missing:
+        raise DriverCalibrationError(f"coefficient {roleLabel} parent coverage missing row refs")
+    for expected in expectedRows:
+        actual = index[expected["ref"]]
+        if (
+            actual["role"] != expected["role"]
+            or actual["eventTime"] != expected["eventTime"]
+            or actual["availableAt"] != expected["availableAt"]
+            or actual["unit"] != expected["unit"]
+        ):
+            raise DriverCalibrationError(f"coefficient {roleLabel} parent coverage row mismatch")
+        try:
+            _assertClose(actual["value"], expected["value"], f"{roleLabel} parent coverage value")
+        except DriverCalibrationError as error:
+            raise DriverCalibrationError(f"coefficient {roleLabel} parent coverage row mismatch") from error
+
+
 def _validateCoefficientReport(report: DriverCoefficientOosReport) -> None:
     if (
         report.generatorVersion != COEFFICIENT_OOS_VERSION
@@ -1125,6 +1459,7 @@ def calibrationReceiptToOperatingExposure(
         raise DriverCalibrationError("coefficient exposure requires OOS admission")
     if not isinstance(admissionReceipt, VerifiedDriverCoefficientAdmission):
         raise DriverCalibrationError("coefficient exposure requires verified coefficient admission")
+    _validateCalibrationReceipt(receipt)
     expectedUnit = f"{OPERATING_TARGET_UNITS[receipt.targetShock]}/{receipt.sourceUnit}"
     if receipt.coefficientUnit != expectedUnit:
         raise DriverCalibrationError("coefficient receipt unit drift")
@@ -1471,11 +1806,12 @@ def _verifyCoefficientParent(
 
 def _verifyCoefficientParents(
     report: DriverCoefficientOosReport,
+    calibrationReceipt: DriverCoefficientCalibrationReceipt,
     admissionVerifier: AdmissionVerifier,
     *,
     decisionAsOf: str,
 ) -> tuple[tuple[str, ...], tuple[str, ...]]:
-    for receiptId in report.fitSourceParentReceiptIds:
+    fitSourceParents = tuple(
         _verifyCoefficientParent(
             admissionVerifier,
             receiptId,
@@ -1484,7 +1820,9 @@ def _verifyCoefficientParents(
             maxKnowledgeAsOf=report.calibrationKnowledgeAsOf,
             decisionAsOf=decisionAsOf,
         )
-    for receiptId in report.fitLabelParentReceiptIds:
+        for receiptId in report.fitSourceParentReceiptIds
+    )
+    fitLabelParents = tuple(
         _verifyCoefficientParent(
             admissionVerifier,
             receiptId,
@@ -1493,7 +1831,9 @@ def _verifyCoefficientParents(
             maxKnowledgeAsOf=report.calibrationKnowledgeAsOf,
             decisionAsOf=decisionAsOf,
         )
-    for receiptId in report.oosSourceParentReceiptIds:
+        for receiptId in report.fitLabelParentReceiptIds
+    )
+    oosSourceParents = tuple(
         _verifyCoefficientParent(
             admissionVerifier,
             receiptId,
@@ -1502,7 +1842,9 @@ def _verifyCoefficientParents(
             maxKnowledgeAsOf=report.evaluationKnowledgeAsOf,
             decisionAsOf=decisionAsOf,
         )
-    for receiptId in report.oosLabelParentReceiptIds:
+        for receiptId in report.oosSourceParentReceiptIds
+    )
+    oosLabelParents = tuple(
         _verifyCoefficientParent(
             admissionVerifier,
             receiptId,
@@ -1511,6 +1853,56 @@ def _verifyCoefficientParents(
             maxKnowledgeAsOf=report.evaluationKnowledgeAsOf,
             decisionAsOf=decisionAsOf,
         )
+        for receiptId in report.oosLabelParentReceiptIds
+    )
+    _verifyParentCoverage(
+        admissionVerifier,
+        fitSourceParents,
+        _expectedCoverageRowsFromTraceRows(
+            calibrationReceipt.traceRows,
+            role="source",
+            sourceUnit=calibrationReceipt.sourceUnit,
+            targetUnit=calibrationReceipt.targetUnit,
+        ),
+        role="source",
+        roleLabel="fit source",
+    )
+    _verifyParentCoverage(
+        admissionVerifier,
+        fitLabelParents,
+        _expectedCoverageRowsFromTraceRows(
+            calibrationReceipt.traceRows,
+            role="label",
+            sourceUnit=calibrationReceipt.sourceUnit,
+            targetUnit=calibrationReceipt.targetUnit,
+        ),
+        role="label",
+        roleLabel="fit label",
+    )
+    _verifyParentCoverage(
+        admissionVerifier,
+        oosSourceParents,
+        _expectedCoverageRowsFromTraceRows(
+            report.traceRows,
+            role="source",
+            sourceUnit=calibrationReceipt.sourceUnit,
+            targetUnit=calibrationReceipt.targetUnit,
+        ),
+        role="source",
+        roleLabel="OOS source",
+    )
+    _verifyParentCoverage(
+        admissionVerifier,
+        oosLabelParents,
+        _expectedCoverageRowsFromTraceRows(
+            report.traceRows,
+            role="label",
+            sourceUnit=calibrationReceipt.sourceUnit,
+            targetUnit=calibrationReceipt.targetUnit,
+        ),
+        role="label",
+        roleLabel="OOS label",
+    )
     return (
         _dedupe((*report.fitSourceParentReceiptIds, *report.oosSourceParentReceiptIds)),
         _dedupe((*report.fitLabelParentReceiptIds, *report.oosLabelParentReceiptIds)),
@@ -1521,6 +1913,7 @@ def validateDriverCoefficientAdmission(
     report: DriverCoefficientOosReport,
     admissionVerifier: AdmissionVerifier,
     *,
+    calibrationReceipt: DriverCoefficientCalibrationReceipt,
     receiptId: str,
     decisionAsOf: str,
 ) -> VerifiedDriverCoefficientAdmission:
@@ -1529,6 +1922,7 @@ def validateDriverCoefficientAdmission(
     Args:
         report: Unsigned OOS report whose artifact is stored in the registry.
         admissionVerifier: Runtime verifier with trusted public keys and artifact root.
+        calibrationReceipt: Original fit receipt whose fit trace must be covered by fit parents.
         receiptId: Admission receipt identifier to verify.
         decisionAsOf: Decision date that must be after receipt issuance.
 
@@ -1539,12 +1933,25 @@ def validateDriverCoefficientAdmission(
         DriverCalibrationError: If the report is ineligible, parent lineage is incomplete, or receipt drifts.
 
     Example:
-        ``admission = validateDriverCoefficientAdmission(report, verifier, receiptId=rid, decisionAsOf="20251231")``
+        ``admission = validateDriverCoefficientAdmission(report, verifier, calibrationReceipt=receipt, receiptId=rid, decisionAsOf="20251231")``
     """
 
+    _validateCalibrationReceipt(calibrationReceipt)
     _validateCoefficientReport(report)
     if report.status != "oosEligible":
         raise DriverCalibrationError("coefficient OOS report is not eligible for admission")
+    if (
+        report.receiptHash != calibrationReceipt.receiptHash
+        or report.receiptId != calibrationReceipt.receiptId
+        or report.calibrationId != calibrationReceipt.calibrationId
+        or report.sourceVariableId != calibrationReceipt.sourceVariableId
+        or report.targetVariableId != calibrationReceipt.targetVariableId
+        or report.targetShock != calibrationReceipt.targetShock
+        or report.coefficientUnit != calibrationReceipt.coefficientUnit
+        or report.calibrationKnowledgeAsOf != calibrationReceipt.calibrationKnowledgeAsOf
+        or not math.isclose(report.coefficient, calibrationReceipt.coefficient, rel_tol=1e-12, abs_tol=1e-12)
+    ):
+        raise DriverCalibrationError("coefficient OOS report does not match calibration receipt")
     subjectHash = driverCoefficientAdmissionSubjectHash(report)
     expectedParentReceiptIds = driverCoefficientAdmissionParentReceiptIds(report)
     try:
@@ -1572,6 +1979,7 @@ def validateDriverCoefficientAdmission(
         raise DriverCalibrationError("coefficient admission receipt contract mismatch")
     sourceParentReceiptIds, labelParentReceiptIds = _verifyCoefficientParents(
         report,
+        calibrationReceipt,
         admissionVerifier,
         decisionAsOf=decisionAsOf,
     )

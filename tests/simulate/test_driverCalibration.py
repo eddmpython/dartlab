@@ -17,6 +17,7 @@ from dartlab.simulate.driverCalibration import (
     DRIVER_COEFFICIENT_RULE_HASH,
     DRIVER_COEFFICIENT_RULE_ID,
     DRIVER_COEFFICIENT_RULE_VERSION,
+    PARENT_COVERAGE_VERSION,
     DriverCalibrationError,
     DriverCalibrationTarget,
     DriverCoefficientCalibrationSpec,
@@ -31,7 +32,7 @@ from dartlab.simulate.driverCalibration import (
 )
 from dartlab.simulate.driverPaths import DriverCard, DriverFactorSpec, DriverHistorySource
 from dartlab.simulate.driverRegistry import DriverRegistryCandidate, compileDriverRegistryPathSet
-from dartlab.simulate.vintage import canonicalPayloadHash
+from dartlab.simulate.vintage import canonicalPayloadBytes, canonicalPayloadHash
 
 
 def _registryResult():
@@ -208,11 +209,18 @@ def _issueParent(
     *,
     name: str,
     knowledgeAsOf: str,
+    coverageRows: tuple[dict, ...] = (),
     kind: str = "dataVintage",
     status: str = "verifiedVintage",
 ):
-    artifactHash = putAdmissionArtifact(artifacts, f"parent:{name}".encode())
-    subjectHash = canonicalPayloadHash({"parent": name, "knowledgeAsOf": knowledgeAsOf})
+    payload = {
+        "schemaVersion": PARENT_COVERAGE_VERSION,
+        "name": name,
+        "knowledgeAsOf": knowledgeAsOf,
+        "rows": coverageRows,
+    }
+    artifactHash = putAdmissionArtifact(artifacts, canonicalPayloadBytes(payload))
+    subjectHash = canonicalPayloadHash(payload)
     return issueAdmissionReceipt(
         database,
         artifacts,
@@ -239,7 +247,39 @@ def _issueParent(
     )
 
 
+def _sourceCoverageRows(frame: pl.DataFrame) -> tuple[dict, ...]:
+    return tuple(
+        {
+            "ref": str(row["sourceRef"]),
+            "role": "source",
+            "variableId": "fxChange",
+            "eventTime": str(row["originEventTime"]),
+            "availableAt": str(row["sourceAvailableAt"]),
+            "value": row["sourceValue"],
+            "unit": "simpleReturn",
+        }
+        for row in frame.to_dicts()
+    )
+
+
+def _labelCoverageRows(frame: pl.DataFrame) -> tuple[dict, ...]:
+    return tuple(
+        {
+            "ref": str(row["labelSourceRef"]),
+            "role": "label",
+            "variableId": "realizedMarketPriceChange",
+            "eventTime": str(row["targetEventTime"]),
+            "availableAt": str(row["targetAvailableAt"]),
+            "value": row["targetValue"],
+            "unit": "ratioChangePerStep",
+        }
+        for row in frame.to_dicts()
+    )
+
+
 def _parentReceipts(database, artifacts, privateBytes, trusted):
+    fitFrame = _frame()
+    oosFrame = _oosFrame()
     fitSource = _issueParent(
         database,
         artifacts,
@@ -247,6 +287,7 @@ def _parentReceipts(database, artifacts, privateBytes, trusted):
         trusted,
         name="fit-source",
         knowledgeAsOf="20210430",
+        coverageRows=_sourceCoverageRows(fitFrame),
     )
     fitLabel = _issueParent(
         database,
@@ -255,6 +296,7 @@ def _parentReceipts(database, artifacts, privateBytes, trusted):
         trusted,
         name="fit-label",
         knowledgeAsOf="20210430",
+        coverageRows=_labelCoverageRows(fitFrame),
     )
     oosSource = _issueParent(
         database,
@@ -263,6 +305,7 @@ def _parentReceipts(database, artifacts, privateBytes, trusted):
         trusted,
         name="oos-source",
         knowledgeAsOf="20220131",
+        coverageRows=_sourceCoverageRows(oosFrame),
     )
     oosLabel = _issueParent(
         database,
@@ -271,6 +314,7 @@ def _parentReceipts(database, artifacts, privateBytes, trusted):
         trusted,
         name="oos-label",
         knowledgeAsOf="20220131",
+        coverageRows=_labelCoverageRows(oosFrame),
     )
     return fitSource, fitLabel, oosSource, oosLabel
 
@@ -356,6 +400,7 @@ def testDriverCoefficientOosReportCanBeSignedAndVerified(tmp_path) -> None:
         validateDriverCoefficientAdmission(
             report,
             verifier,
+            calibrationReceipt=receipt,
             receiptId=missingParentSigned.receiptId,
             decisionAsOf="20220202",
         )
@@ -389,6 +434,7 @@ def testDriverCoefficientOosReportCanBeSignedAndVerified(tmp_path) -> None:
         validateDriverCoefficientAdmission(
             report,
             verifier,
+            calibrationReceipt=receipt,
             receiptId=shallowRuleSigned.receiptId,
             decisionAsOf="20220202",
         )
@@ -419,6 +465,7 @@ def testDriverCoefficientOosReportCanBeSignedAndVerified(tmp_path) -> None:
     verified = validateDriverCoefficientAdmission(
         report,
         verifier,
+        calibrationReceipt=receipt,
         receiptId=signed.receiptId,
         decisionAsOf="20220202",
     )
@@ -433,6 +480,94 @@ def testDriverCoefficientOosReportCanBeSignedAndVerified(tmp_path) -> None:
     )
     assert exposure.evidenceKind == "measuredAssociation"
     assert exposure.sourceRef == f"driverCoefficientAdmission:{signed.receiptId}"
+
+
+def testDriverCoefficientAdmissionRequiresParentRowCoverage(tmp_path) -> None:
+    database, artifacts, privateBytes, trusted, verifier = _trust(tmp_path)
+    fitFrame = _frame()
+    oosFrame = _oosFrame()
+    fitSource = _issueParent(
+        database,
+        artifacts,
+        privateBytes,
+        trusted,
+        name="fit-source-gap",
+        knowledgeAsOf="20210430",
+        coverageRows=tuple(row for row in _sourceCoverageRows(fitFrame) if row["ref"] != "source:o1"),
+    )
+    fitLabel = _issueParent(
+        database,
+        artifacts,
+        privateBytes,
+        trusted,
+        name="fit-label",
+        knowledgeAsOf="20210430",
+        coverageRows=_labelCoverageRows(fitFrame),
+    )
+    oosSource = _issueParent(
+        database,
+        artifacts,
+        privateBytes,
+        trusted,
+        name="oos-source",
+        knowledgeAsOf="20220131",
+        coverageRows=_sourceCoverageRows(oosFrame),
+    )
+    oosLabel = _issueParent(
+        database,
+        artifacts,
+        privateBytes,
+        trusted,
+        name="oos-label",
+        knowledgeAsOf="20220131",
+        coverageRows=_labelCoverageRows(oosFrame),
+    )
+    receipt = _receipt(
+        sourceParentReceiptIds=(fitSource.receiptId,),
+        labelParentReceiptIds=(fitLabel.receiptId,),
+    )
+    report = evaluateDriverCoefficientOos(
+        receipt,
+        oosFrame,
+        _oosSpec(
+            sourceParentReceiptIds=(oosSource.receiptId,),
+            labelParentReceiptIds=(oosLabel.receiptId,),
+        ),
+        evaluationKnowledgeAsOf="20220131",
+    )
+    subject = putAdmissionArtifact(artifacts, driverCoefficientAdmissionArtifact(report))
+    signed = issueAdmissionReceipt(
+        database,
+        artifacts,
+        privateKey=privateBytes,
+        kind="driverCoefficient",
+        subjectHash=subject,
+        artifactHash=subject,
+        parentReceiptIds=driverCoefficientAdmissionParentReceiptIds(report),
+        ruleId=DRIVER_COEFFICIENT_RULE_ID,
+        ruleVersion=DRIVER_COEFFICIENT_RULE_VERSION,
+        ruleHash=DRIVER_COEFFICIENT_RULE_HASH,
+        issuerId="issuer-1",
+        issuerKeyId="key-1",
+        issuerExecutableHash="b" * 64,
+        knowledgeAsOf=report.evaluationKnowledgeAsOf,
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        frequency=report.frequency,
+        stepSpan=report.stepSpan,
+        maxAdmittedStep=report.maxAdmittedStep,
+        status="admitted",
+        issuedAt="20220201T000000Z",
+        trustedIssuers=trusted,
+    )
+    with pytest.raises(DriverCalibrationError, match="fit source parent coverage missing row refs"):
+        validateDriverCoefficientAdmission(
+            report,
+            verifier,
+            calibrationReceipt=receipt,
+            receiptId=signed.receiptId,
+            decisionAsOf="20220202",
+        )
 
 
 def testDriverCoefficientOosRejectsOverlapWeakSkillAndTamper(tmp_path) -> None:
@@ -480,11 +615,12 @@ def testDriverCoefficientOosRejectsOverlapWeakSkillAndTamper(tmp_path) -> None:
 
     database, artifacts, privateBytes, trusted, verifier = _trust(tmp_path)
     fitSource, fitLabel, oosSource, oosLabel = _parentReceipts(database, artifacts, privateBytes, trusted)
+    receipt = _receipt(
+        sourceParentReceiptIds=(fitSource.receiptId,),
+        labelParentReceiptIds=(fitLabel.receiptId,),
+    )
     report = evaluateDriverCoefficientOos(
-        _receipt(
-            sourceParentReceiptIds=(fitSource.receiptId,),
-            labelParentReceiptIds=(fitLabel.receiptId,),
-        ),
+        receipt,
         _oosFrame(),
         _oosSpec(
             sourceParentReceiptIds=(oosSource.receiptId,),
@@ -545,7 +681,11 @@ def testDriverCoefficientOosRejectsOverlapWeakSkillAndTamper(tmp_path) -> None:
     )
     with pytest.raises(DriverCalibrationError, match="contract mismatch"):
         validateDriverCoefficientAdmission(
-            report, verifier, receiptId=sourceOnlySigned.receiptId, decisionAsOf="20220202"
+            report,
+            verifier,
+            calibrationReceipt=receipt,
+            receiptId=sourceOnlySigned.receiptId,
+            decisionAsOf="20220202",
         )
     badDatabase, badArtifacts, badPrivateBytes, badTrusted, badVerifier = _trust(tmp_path / "bad-parent")
     badFitSource = _issueParent(
@@ -582,11 +722,12 @@ def testDriverCoefficientOosRejectsOverlapWeakSkillAndTamper(tmp_path) -> None:
         name="bad-oos-label",
         knowledgeAsOf="20220131",
     )
+    badReceipt = _receipt(
+        sourceParentReceiptIds=(badFitSource.receiptId,),
+        labelParentReceiptIds=(badFitLabel.receiptId,),
+    )
     badReport = evaluateDriverCoefficientOos(
-        _receipt(
-            sourceParentReceiptIds=(badFitSource.receiptId,),
-            labelParentReceiptIds=(badFitLabel.receiptId,),
-        ),
+        badReceipt,
         _oosFrame(),
         _oosSpec(
             sourceParentReceiptIds=(badOosSource.receiptId,),
@@ -623,6 +764,7 @@ def testDriverCoefficientOosRejectsOverlapWeakSkillAndTamper(tmp_path) -> None:
         validateDriverCoefficientAdmission(
             badReport,
             badVerifier,
+            calibrationReceipt=badReceipt,
             receiptId=badSigned.receiptId,
             decisionAsOf="20220202",
         )
@@ -652,7 +794,13 @@ def testDriverCoefficientOosRejectsOverlapWeakSkillAndTamper(tmp_path) -> None:
     )
     artifactPath(artifacts, subject).write_bytes(b"tampered")
     with pytest.raises(DriverCalibrationError, match="artifact hash mismatch"):
-        validateDriverCoefficientAdmission(report, verifier, receiptId=signed.receiptId, decisionAsOf="20220202")
+        validateDriverCoefficientAdmission(
+            report,
+            verifier,
+            calibrationReceipt=receipt,
+            receiptId=signed.receiptId,
+            decisionAsOf="20220202",
+        )
     with pytest.raises(DriverCalibrationError, match="target label availability after calibration knowledge"):
         fitDriverCoefficientPit(
             _registryResult(),
