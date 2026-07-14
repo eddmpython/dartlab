@@ -29,8 +29,11 @@ if TYPE_CHECKING:
 
 SCENARIO_COMPOSITION_VERSION = "scenario-composition-v1"
 ONE_COMPANY_SCENARIO_LOOP_VERSION = "one-company-scenario-loop-v1"
+SCENARIO_COEFFICIENT_BINDING_VERSION = "scenario-coefficient-binding-v1"
+SCENARIO_EXPOSURE_CONTRACT_VERSION = "scenario-coefficient-exposure-contract-v1"
 _OPERATING_ACTION_IDS = {"priceChange", "capacityInvestment", "borrow", "repay"}
 _ASSUMPTION_REF_PREFIXES = ("assumption:", "assumption://")
+_DRIVER_COEFFICIENT_ADMISSION_REF_PREFIX = "driverCoefficientAdmission:"
 _STATE_REF_PREFIXES = (
     "compiledState:",
     "observation:",
@@ -62,6 +65,7 @@ class OperatingScenarioCase:
     compiledState: CompiledPointInTimeState | None = None
     statePrimitives: tuple[StatePrimitive, ...] = ()
     stateRef: str = ""
+    coefficientBindings: tuple["ScenarioCoefficientBinding", ...] = ()
     admissionVerifier: AdmissionVerifier | None = None
 
     def __post_init__(self) -> None:
@@ -69,6 +73,38 @@ class OperatingScenarioCase:
         object.__setattr__(self, "baselines", tuple(self.baselines))
         object.__setattr__(self, "refs", tuple(self.refs))
         object.__setattr__(self, "statePrimitives", tuple(self.statePrimitives))
+        object.__setattr__(self, "coefficientBindings", tuple(self.coefficientBindings))
+
+
+@dataclass(frozen=True)
+class ScenarioCoefficientBinding:
+    """Thin binding from admitted driver coefficient vector to scenario exposures."""
+
+    admissionReceiptId: str
+    subjectHash: str
+    ruleHash: str
+    ruleId: str
+    ruleVersion: str
+    parentReceiptIds: tuple[str, ...]
+    sourceVariableIds: tuple[str, ...]
+    targetShock: str
+    frequency: str
+    stepSpan: int
+    maxAdmittedStep: int
+    coefficientVectorHash: str
+    featureSpecHash: str
+    designFrameHash: str
+    exposureContractHash: str
+    calibrationId: str = ""
+    reportId: str = ""
+    fitDesignFrameHash: str = ""
+    oosDesignFrameHash: str = ""
+    sourceRefs: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "parentReceiptIds", tuple(self.parentReceiptIds))
+        object.__setattr__(self, "sourceVariableIds", tuple(self.sourceVariableIds))
+        object.__setattr__(self, "sourceRefs", tuple(self.sourceRefs))
 
 
 @dataclass(frozen=True)
@@ -98,6 +134,32 @@ class ScenarioBoundaryCounts:
     explicitAssumptionCount: int
     interventionCount: int
     conditionalWarningCount: int
+
+
+@dataclass(frozen=True)
+class ScenarioExposureLedger:
+    """Readable factor to operating shock law row for a scenario case."""
+
+    exposureId: str
+    sourceVariableId: str
+    targetShock: str
+    coefficient: float
+    coefficientUnit: str
+    evidenceKind: str
+    sourceRef: str
+    admissionReceiptId: str
+    modifierVariableId: str
+    modifierUnit: str
+    lagSteps: int
+    responseKernel: tuple[float, ...]
+    aggregationGroup: str
+    sourceFrequency: str
+    sourceTiming: str
+    sourceTransformId: str
+    sourceFactorContractHash: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "responseKernel", tuple(float(value) for value in self.responseKernel))
 
 
 @dataclass(frozen=True)
@@ -166,6 +228,10 @@ class OneCompanyScenarioCaseLedger:
     conditionRefs: tuple[str, ...]
     assumptionRefs: tuple[str, ...]
     stateRefs: tuple[str, ...]
+    exposureLedgers: tuple[ScenarioExposureLedger, ...]
+    coefficientAdmissionReceiptIds: tuple[str, ...]
+    coefficientBindingHashes: tuple[str, ...]
+    coefficientParentReceiptIds: tuple[str, ...]
     pathSetHash: str
     bridgeHashes: tuple[str, ...]
     runHash: str
@@ -195,6 +261,10 @@ class OneCompanyScenarioCaseLedger:
         object.__setattr__(self, "conditionRefs", tuple(self.conditionRefs))
         object.__setattr__(self, "assumptionRefs", tuple(self.assumptionRefs))
         object.__setattr__(self, "stateRefs", tuple(self.stateRefs))
+        object.__setattr__(self, "exposureLedgers", tuple(self.exposureLedgers))
+        object.__setattr__(self, "coefficientAdmissionReceiptIds", tuple(self.coefficientAdmissionReceiptIds))
+        object.__setattr__(self, "coefficientBindingHashes", tuple(self.coefficientBindingHashes))
+        object.__setattr__(self, "coefficientParentReceiptIds", tuple(self.coefficientParentReceiptIds))
         object.__setattr__(self, "bridgeHashes", tuple(self.bridgeHashes))
         object.__setattr__(self, "paretoStrategies", tuple(self.paretoStrategies))
         object.__setattr__(self, "scoreLeaderStrategies", tuple(self.scoreLeaderStrategies))
@@ -238,8 +308,267 @@ def _dedupe(values: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(value for value in values if value))
 
 
+def _validDigest(value: str) -> bool:
+    return len(value) == 64 and all(character in "0123456789abcdef" for character in value.lower())
+
+
+def _driverCoefficientAdmissionReceiptId(sourceRef: str) -> str:
+    if not sourceRef.startswith(_DRIVER_COEFFICIENT_ADMISSION_REF_PREFIX):
+        return ""
+    receiptId = sourceRef[len(_DRIVER_COEFFICIENT_ADMISSION_REF_PREFIX) :]
+    return receiptId if _validDigest(receiptId) else ""
+
+
 def _filterRefs(refs: tuple[str, ...], prefixes: tuple[str, ...]) -> tuple[str, ...]:
     return _dedupe(tuple(ref for ref in refs if ref.startswith(prefixes)))
+
+
+def _exposureContractRows(exposures: tuple[OperatingTransmissionExposure, ...]) -> tuple[dict, ...]:
+    return tuple(
+        {
+            "exposureId": item.exposureId,
+            "sourceVariableId": item.sourceVariableId,
+            "targetShock": item.targetShock,
+            "coefficient": float(item.coefficient),
+            "coefficientUnit": item.coefficientUnit,
+            "evidenceKind": item.evidenceKind,
+            "sourceRef": item.sourceRef,
+            "modifierVariableId": item.modifierVariableId,
+            "modifierUnit": item.modifierUnit,
+            "lagSteps": item.lagSteps,
+            "responseKernel": tuple(float(value) for value in item.responseKernel),
+            "aggregationGroup": item.aggregationGroup,
+            "sourceFrequency": item.sourceFrequency,
+            "sourceTiming": item.sourceTiming,
+            "sourceTransformId": item.sourceTransformId,
+            "sourceFactorContractHash": item.sourceFactorContractHash,
+        }
+        for item in exposures
+    )
+
+
+def scenarioCoefficientExposureContractHash(exposures: tuple[OperatingTransmissionExposure, ...]) -> str:
+    """Hash the scalar exposure contracts covered by one coefficient binding.
+
+    Args:
+        exposures: Ordered measured association exposures produced by one admitted coefficient vector.
+
+    Returns:
+        Canonical contract hash binding exposure coefficients, source refs, kernels, and factor contracts.
+
+    Raises:
+        ScenarioCompositionError: If no exposure is supplied.
+
+    Example:
+        ``contractHash = scenarioCoefficientExposureContractHash(exposures)``
+    """
+
+    exposureTuple = tuple(exposures)
+    if not exposureTuple:
+        raise ScenarioCompositionError("coefficient exposure contract needs exposures")
+    return canonicalPayloadHash(
+        {
+            "schemaVersion": SCENARIO_EXPOSURE_CONTRACT_VERSION,
+            "exposures": _exposureContractRows(exposureTuple),
+        }
+    )
+
+
+def _coefficientBindingPayload(binding: ScenarioCoefficientBinding) -> dict:
+    return {
+        "schemaVersion": SCENARIO_COEFFICIENT_BINDING_VERSION,
+        "admissionReceiptId": binding.admissionReceiptId,
+        "subjectHash": binding.subjectHash,
+        "ruleHash": binding.ruleHash,
+        "ruleId": binding.ruleId,
+        "ruleVersion": binding.ruleVersion,
+        "parentReceiptIds": binding.parentReceiptIds,
+        "sourceVariableIds": binding.sourceVariableIds,
+        "targetShock": binding.targetShock,
+        "frequency": binding.frequency,
+        "stepSpan": binding.stepSpan,
+        "maxAdmittedStep": binding.maxAdmittedStep,
+        "coefficientVectorHash": binding.coefficientVectorHash,
+        "featureSpecHash": binding.featureSpecHash,
+        "designFrameHash": binding.designFrameHash,
+        "exposureContractHash": binding.exposureContractHash,
+        "calibrationId": binding.calibrationId,
+        "reportId": binding.reportId,
+        "fitDesignFrameHash": binding.fitDesignFrameHash,
+        "oosDesignFrameHash": binding.oosDesignFrameHash,
+        "sourceRefs": binding.sourceRefs,
+    }
+
+
+def scenarioCoefficientBindingHash(binding: ScenarioCoefficientBinding) -> str:
+    """Hash a coefficient binding summary carried by a scenario case.
+
+    Args:
+        binding: Thin admitted coefficient vector binding attached to a scenario case.
+
+    Returns:
+        Canonical hash for ledger refs and loop hash binding.
+
+    Raises:
+        No explicit errors are raised by this wrapper.
+
+    Example:
+        ``bindingHash = scenarioCoefficientBindingHash(binding)``
+    """
+
+    return canonicalPayloadHash(_coefficientBindingPayload(binding))
+
+
+def _coefficientBindingRefs(bindings: tuple[ScenarioCoefficientBinding, ...]) -> tuple[str, ...]:
+    refs: list[str] = []
+    for binding in bindings:
+        refs.extend(
+            (
+                f"driverCoefficientAdmission:{binding.admissionReceiptId}",
+                f"driverCoefficientSubject:{binding.subjectHash}",
+                f"driverCoefficientRule:{binding.ruleHash}",
+                f"driverCoefficientRuleId:{binding.ruleId}",
+                f"driverCoefficientRuleVersion:{binding.ruleVersion}",
+                f"coefficientBinding:{scenarioCoefficientBindingHash(binding)}",
+                f"coefficientVector:{binding.coefficientVectorHash}",
+                f"coefficientFeatureSpec:{binding.featureSpecHash}",
+                f"coefficientDesignFrame:{binding.designFrameHash}",
+                f"coefficientExposureContract:{binding.exposureContractHash}",
+            )
+        )
+        if binding.calibrationId:
+            refs.append(f"coefficientCalibration:{binding.calibrationId}")
+        if binding.reportId:
+            refs.append(f"coefficientReport:{binding.reportId}")
+        if binding.fitDesignFrameHash:
+            refs.append(f"coefficientFitDesignFrame:{binding.fitDesignFrameHash}")
+        if binding.oosDesignFrameHash:
+            refs.append(f"coefficientOosDesignFrame:{binding.oosDesignFrameHash}")
+        refs.extend(f"coefficientParentReceipt:{receiptId}" for receiptId in binding.parentReceiptIds)
+        refs.extend(binding.sourceRefs)
+    return _dedupe(tuple(refs))
+
+
+def _exposureLedgerRows(exposures: tuple[OperatingTransmissionExposure, ...]) -> tuple[ScenarioExposureLedger, ...]:
+    return tuple(
+        ScenarioExposureLedger(
+            exposureId=item.exposureId,
+            sourceVariableId=item.sourceVariableId,
+            targetShock=item.targetShock,
+            coefficient=float(item.coefficient),
+            coefficientUnit=item.coefficientUnit,
+            evidenceKind=item.evidenceKind,
+            sourceRef=item.sourceRef,
+            admissionReceiptId=_driverCoefficientAdmissionReceiptId(item.sourceRef),
+            modifierVariableId=item.modifierVariableId,
+            modifierUnit=item.modifierUnit,
+            lagSteps=item.lagSteps,
+            responseKernel=item.responseKernel,
+            aggregationGroup=item.aggregationGroup,
+            sourceFrequency=item.sourceFrequency,
+            sourceTiming=item.sourceTiming,
+            sourceTransformId=item.sourceTransformId,
+            sourceFactorContractHash=item.sourceFactorContractHash,
+        )
+        for item in exposures
+    )
+
+
+def _validateCoefficientBindingShape(binding: ScenarioCoefficientBinding) -> None:
+    optionalDigests = (binding.fitDesignFrameHash, binding.oosDesignFrameHash)
+    if (
+        not _validDigest(binding.admissionReceiptId)
+        or not _validDigest(binding.subjectHash)
+        or not _validDigest(binding.ruleHash)
+        or not binding.ruleId
+        or not binding.ruleVersion
+        or not binding.parentReceiptIds
+        or any(not _validDigest(receiptId) for receiptId in binding.parentReceiptIds)
+        or not binding.sourceVariableIds
+        or len(set(binding.sourceVariableIds)) != len(binding.sourceVariableIds)
+        or not binding.targetShock
+        or not binding.frequency
+        or binding.stepSpan < 1
+        or binding.maxAdmittedStep < 1
+        or not _validDigest(binding.coefficientVectorHash)
+        or not _validDigest(binding.featureSpecHash)
+        or not _validDigest(binding.designFrameHash)
+        or not _validDigest(binding.exposureContractHash)
+        or any(value and not _validDigest(value) for value in optionalDigests)
+    ):
+        raise ScenarioCompositionError("coefficient binding contract is incomplete")
+
+
+def _validateCoefficientReceipt(
+    case: OperatingScenarioCase,
+    binding: ScenarioCoefficientBinding,
+) -> None:
+    if case.admissionVerifier is None:
+        return
+    try:
+        receipt = case.admissionVerifier.verify(
+            binding.admissionReceiptId,
+            expectedSubjectHash=binding.subjectHash,
+            expectedKind="driverCoefficient",
+        )
+    except RuntimeError as error:
+        raise ScenarioCompositionError(f"coefficient admission verification failed: {error}") from error
+    if (
+        receipt.status != "admitted"
+        or receipt.artifactHash != binding.subjectHash
+        or receipt.ruleId != binding.ruleId
+        or receipt.ruleVersion != binding.ruleVersion
+        or receipt.ruleHash != binding.ruleHash
+        or receipt.parentReceiptIds != binding.parentReceiptIds
+        or receipt.frequency != binding.frequency
+        or receipt.stepSpan != binding.stepSpan
+        or receipt.maxAdmittedStep != binding.maxAdmittedStep
+    ):
+        raise ScenarioCompositionError("coefficient admission receipt does not match binding")
+
+
+def _validateCoefficientBindings(case: OperatingScenarioCase) -> None:
+    bindings = tuple(case.coefficientBindings)
+    bindingIds = [binding.admissionReceiptId for binding in bindings]
+    if len(set(bindingIds)) != len(bindingIds):
+        raise ScenarioCompositionError("coefficient bindings need unique admission receipts")
+    bindingById = {binding.admissionReceiptId: binding for binding in bindings}
+    measuredIds = []
+    for exposure in case.exposures:
+        receiptId = _driverCoefficientAdmissionReceiptId(exposure.sourceRef)
+        if receiptId and exposure.evidenceKind != "measuredAssociation":
+            raise ScenarioCompositionError("driver coefficient admission refs are measured associations")
+        if exposure.evidenceKind == "measuredAssociation":
+            if not receiptId:
+                raise ScenarioCompositionError("measured association exposure needs coefficient admission ref")
+            measuredIds.append(receiptId)
+            if receiptId not in bindingById:
+                raise ScenarioCompositionError("measured association exposure needs coefficient binding")
+    factorIds = {factor.variableId for factor in case.pathSet.factorSpecs}
+    for binding in bindings:
+        _validateCoefficientBindingShape(binding)
+        matched = tuple(
+            exposure
+            for exposure in case.exposures
+            if _driverCoefficientAdmissionReceiptId(exposure.sourceRef) == binding.admissionReceiptId
+        )
+        if not matched:
+            raise ScenarioCompositionError("coefficient binding has no matching measured exposure")
+        if tuple(exposure.sourceVariableId for exposure in matched) != binding.sourceVariableIds:
+            raise ScenarioCompositionError("coefficient binding source variable mismatch")
+        if any(exposure.sourceVariableId not in factorIds for exposure in matched):
+            raise ScenarioCompositionError("coefficient binding source variable is missing from scenario factors")
+        if any(exposure.targetShock != binding.targetShock for exposure in matched):
+            raise ScenarioCompositionError("coefficient binding target shock mismatch")
+        if binding.frequency != case.pathSet.audit.frequency or binding.stepSpan != case.pathSet.audit.stepSpan:
+            raise ScenarioCompositionError("coefficient binding timing mismatch")
+        if binding.maxAdmittedStep < case.pathSet.audit.horizon:
+            raise ScenarioCompositionError("coefficient binding admitted horizon is too short")
+        if scenarioCoefficientExposureContractHash(matched) != binding.exposureContractHash:
+            raise ScenarioCompositionError("coefficient binding exposure contract mismatch")
+        _validateCoefficientReceipt(case, binding)
+    if measuredIds and set(measuredIds) != set(bindingById):
+        raise ScenarioCompositionError("measured association coefficient binding coverage mismatch")
 
 
 def _validateCases(cases: tuple[OperatingScenarioCase, ...], strategies: tuple[StrategySpec, ...]) -> None:
@@ -262,6 +591,7 @@ def _validateCases(cases: tuple[OperatingScenarioCase, ...], strategies: tuple[S
         factorIds = {factor.variableId for factor in case.pathSet.factorSpecs}
         if factorIds & _OPERATING_ACTION_IDS:
             raise ScenarioCompositionError("intervention actions must be strategies, not driver path factors")
+        _validateCoefficientBindings(case)
         for path in case.pathSet.paths:
             for step in path.steps:
                 if set(step) & _OPERATING_ACTION_IDS:
@@ -401,6 +731,12 @@ def _caseLedger(
         conditionRefs=conditionRefs,
         assumptionRefs=assumptionRefs,
         stateRefs=stateRefs,
+        exposureLedgers=_exposureLedgerRows(case.exposures),
+        coefficientAdmissionReceiptIds=tuple(binding.admissionReceiptId for binding in case.coefficientBindings),
+        coefficientBindingHashes=tuple(scenarioCoefficientBindingHash(binding) for binding in case.coefficientBindings),
+        coefficientParentReceiptIds=_dedupe(
+            tuple(receiptId for binding in case.coefficientBindings for receiptId in binding.parentReceiptIds)
+        ),
         pathSetHash=result.pathSetHash,
         bridgeHashes=result.bridgeHashes,
         runHash=result.runHash,
@@ -479,6 +815,7 @@ def _runCase(
     refs = _dedupe(
         (
             *case.refs,
+            *_coefficientBindingRefs(case.coefficientBindings),
             *case.pathSet.audit.sourceRefs,
             *(ref for item in bridgeResults for ref in item.audit.sourceRefs),
             f"driverPathSet:{case.pathSet.audit.pathSetHash}",

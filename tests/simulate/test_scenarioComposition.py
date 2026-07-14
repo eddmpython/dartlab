@@ -1,14 +1,25 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
+from dartlab.simulate.driverCalibration import (
+    MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_HASH,
+    MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_ID,
+    MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_VERSION,
+)
 from dartlab.simulate.driverPaths import (
     DriverAssumptionSource,
     DriverCard,
     DriverFactorSpec,
     buildDriverPathSet,
 )
-from dartlab.simulate.operatingBridge import OperatingShockBaseline, OperatingTransmissionExposure
+from dartlab.simulate.operatingBridge import (
+    OperatingShockBaseline,
+    OperatingTransmissionExposure,
+    sourceFactorContractHash,
+)
 from dartlab.simulate.operatingWorld import (
     OperatingPrimitive,
     buildOperatingStrategy,
@@ -16,10 +27,23 @@ from dartlab.simulate.operatingWorld import (
 )
 from dartlab.simulate.scenarioComposition import (
     OperatingScenarioCase,
+    ScenarioCoefficientBinding,
     ScenarioCompositionError,
     compareOneCompanyTwoScenarioStrategies,
     compareOperatingScenarioCases,
+    scenarioCoefficientBindingHash,
+    scenarioCoefficientExposureContractHash,
 )
+
+_COEFFICIENT_RECEIPT_ID = "a" * 64
+_COEFFICIENT_SUBJECT_HASH = "b" * 64
+_COEFFICIENT_RULE_HASH = MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_HASH
+_COEFFICIENT_VECTOR_HASH = "d" * 64
+_COEFFICIENT_FEATURE_SPEC_HASH = "e" * 64
+_COEFFICIENT_DESIGN_FRAME_HASH = "f" * 64
+_COEFFICIENT_FIT_DESIGN_FRAME_HASH = "1" * 64
+_COEFFICIENT_OOS_DESIGN_FRAME_HASH = "2" * 64
+_COEFFICIENT_PARENT_RECEIPTS = ("3" * 64, "4" * 64)
 
 
 def _inputs():
@@ -107,6 +131,123 @@ def _case(caseId: str, demandShock: tuple[float, ...], variableId: str = "demand
         ),
         _baselines(),
         refs=(f"scenario://{caseId}",),
+    )
+
+
+def _measured_case(
+    caseId: str,
+    shocks: tuple[tuple[float, float], ...],
+    *,
+    receiptId: str = _COEFFICIENT_RECEIPT_ID,
+    fxCoefficient: float = 0.4,
+    oilCoefficient: float = -0.2,
+    aggregationGroup: str = "macro-demand-vector",
+) -> OperatingScenarioCase:
+    factors = (
+        DriverFactorSpec("fxChange", "simpleReturn", "quarter", "innovation", "simple-return-v1"),
+        DriverFactorSpec("oilChange", "simpleReturn", "quarter", "innovation", "simple-return-v1"),
+    )
+    card = DriverCard(
+        cardId=f"{caseId}-macro",
+        sourceKind="explicitAssumption",
+        providerId="user",
+        datasetId="manual-scenario",
+        entityId="005930",
+        frequency="quarter",
+        stepSpan=1,
+        factors=factors,
+        historyStatus="explicitAssumption",
+        sourceRefs=(f"assumption://{caseId}/macro",),
+        assumptionId=f"{caseId}-macro",
+        claim=f"{caseId} macro scenario.",
+        falsifier="Macro factor movement does not change demand.",
+    )
+    pathSet = buildDriverPathSet(
+        (
+            DriverAssumptionSource(
+                card,
+                tuple({"fxChange": fx, "oilChange": oil} for fx, oil in shocks),
+            ),
+        ),
+        knowledgeAsOf="20250101",
+        horizon=len(shocks),
+        pathCount=1,
+        blockLength=1,
+        seed=1,
+    )
+    sourceRef = f"driverCoefficientAdmission:{receiptId}"
+    exposures = (
+        OperatingTransmissionExposure(
+            f"{caseId}-fx-demand",
+            "fxChange",
+            "demandChange",
+            fxCoefficient,
+            "ratioChangePerStep/simpleReturn",
+            "measuredAssociation",
+            sourceRef,
+            aggregationGroup=aggregationGroup,
+            sourceFrequency="quarter",
+            sourceTiming="innovation",
+            sourceTransformId="simple-return-v1",
+            sourceFactorContractHash=sourceFactorContractHash(
+                variableId="fxChange",
+                unit="simpleReturn",
+                frequency="quarter",
+                timing="innovation",
+                transformId="simple-return-v1",
+            ),
+        ),
+        OperatingTransmissionExposure(
+            f"{caseId}-oil-demand",
+            "oilChange",
+            "demandChange",
+            oilCoefficient,
+            "ratioChangePerStep/simpleReturn",
+            "measuredAssociation",
+            sourceRef,
+            aggregationGroup=aggregationGroup,
+            sourceFrequency="quarter",
+            sourceTiming="innovation",
+            sourceTransformId="simple-return-v1",
+            sourceFactorContractHash=sourceFactorContractHash(
+                variableId="oilChange",
+                unit="simpleReturn",
+                frequency="quarter",
+                timing="innovation",
+                transformId="simple-return-v1",
+            ),
+        ),
+    )
+    binding = ScenarioCoefficientBinding(
+        admissionReceiptId=receiptId,
+        subjectHash=_COEFFICIENT_SUBJECT_HASH,
+        ruleHash=_COEFFICIENT_RULE_HASH,
+        ruleId=MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_ID,
+        ruleVersion=MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_VERSION,
+        parentReceiptIds=_COEFFICIENT_PARENT_RECEIPTS,
+        sourceVariableIds=("fxChange", "oilChange"),
+        targetShock="demandChange",
+        frequency="quarter",
+        stepSpan=1,
+        maxAdmittedStep=len(shocks),
+        coefficientVectorHash=_COEFFICIENT_VECTOR_HASH,
+        featureSpecHash=_COEFFICIENT_FEATURE_SPEC_HASH,
+        designFrameHash=_COEFFICIENT_DESIGN_FRAME_HASH,
+        exposureContractHash=scenarioCoefficientExposureContractHash(exposures),
+        calibrationId="macro-demand-calibration",
+        reportId="macro-demand-oos",
+        fitDesignFrameHash=_COEFFICIENT_FIT_DESIGN_FRAME_HASH,
+        oosDesignFrameHash=_COEFFICIENT_OOS_DESIGN_FRAME_HASH,
+        sourceRefs=("oosReport://macro-demand",),
+    )
+    return OperatingScenarioCase(
+        caseId,
+        caseId.title(),
+        pathSet,
+        exposures,
+        _baselines(),
+        refs=(f"scenario://{caseId}",),
+        coefficientBindings=(binding,),
     )
 
 
@@ -249,6 +390,128 @@ def testOneCompanyScenarioLoopSummarizesConditionsStateAndStrategyBlocks() -> No
     assert "pathAdmissionIncomplete" in base.blockedReasons
     assert "pathAdmissionMissing" in base.blockedReasons
     assert "policyEvaluationCertificateMissing" in base.blockedReasons
+
+
+def testOneCompanyScenarioLoopCarriesAdmittedCoefficientBindingLedger() -> None:
+    loop = compareOneCompanyTwoScenarioStrategies(
+        "005930",
+        _inputs(),
+        (_measured_case("base", ((0.0, 0.0), (0.1, -0.1))), _measured_case("stress", ((-0.2, 0.3), (-0.1, 0.2)))),
+        _strategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert loop.decisionStatus == "conditionalOnly"
+    assert loop.recommendationCeiling == "conditionalOnly"
+    assert loop.recommendation is None
+    base, _ = loop.caseLedgers
+    binding = _measured_case("base", ((0.0, 0.0), (0.1, -0.1))).coefficientBindings[0]
+    assert base.coefficientAdmissionReceiptIds == (_COEFFICIENT_RECEIPT_ID,)
+    assert base.coefficientBindingHashes == (scenarioCoefficientBindingHash(binding),)
+    assert base.coefficientParentReceiptIds == _COEFFICIENT_PARENT_RECEIPTS
+    assert f"driverCoefficientAdmission:{_COEFFICIENT_RECEIPT_ID}" in base.conditionRefs
+    assert f"coefficientBinding:{scenarioCoefficientBindingHash(binding)}" in base.conditionRefs
+    assert f"coefficientVector:{_COEFFICIENT_VECTOR_HASH}" in base.conditionRefs
+    assert (
+        "coefficientParentReceipt:3333333333333333333333333333333333333333333333333333333333333333"
+        in base.conditionRefs
+    )
+    assert len(base.exposureLedgers) == 2
+    assert {row.evidenceKind for row in base.exposureLedgers} == {"measuredAssociation"}
+    assert {row.admissionReceiptId for row in base.exposureLedgers} == {_COEFFICIENT_RECEIPT_ID}
+    assert {row.aggregationGroup for row in base.exposureLedgers} == {"macro-demand-vector"}
+    assert {row.sourceVariableId for row in base.exposureLedgers} == {"fxChange", "oilChange"}
+    assert all(row.sourceFactorContractHash for row in base.exposureLedgers)
+    assert "pathAdmissionMissing" in base.blockedReasons
+    assert "policyEvaluationCertificateMissing" in base.blockedReasons
+    assert "automaticRecommendationDisabled" in loop.blockedReasons
+
+
+def testOneCompanyScenarioLoopHashBindsCoefficientBindingContent() -> None:
+    first = compareOneCompanyTwoScenarioStrategies(
+        "005930",
+        (_inputs()),
+        (_measured_case("base", ((0.0, 0.0), (0.1, -0.1))), _measured_case("stress", ((-0.2, 0.3), (-0.1, 0.2)))),
+        _strategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    changedCoefficient = compareOneCompanyTwoScenarioStrategies(
+        "005930",
+        _inputs(),
+        (
+            _measured_case("base", ((0.0, 0.0), (0.1, -0.1)), fxCoefficient=0.5),
+            _measured_case("stress", ((-0.2, 0.3), (-0.1, 0.2))),
+        ),
+        _strategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    changedGroup = compareOneCompanyTwoScenarioStrategies(
+        "005930",
+        _inputs(),
+        (
+            _measured_case("base", ((0.0, 0.0), (0.1, -0.1)), aggregationGroup="macro-demand-alt"),
+            _measured_case("stress", ((-0.2, 0.3), (-0.1, 0.2))),
+        ),
+        _strategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    changedReceipt = compareOneCompanyTwoScenarioStrategies(
+        "005930",
+        _inputs(),
+        (
+            _measured_case("base", ((0.0, 0.0), (0.1, -0.1)), receiptId="5" * 64),
+            _measured_case("stress", ((-0.2, 0.3), (-0.1, 0.2))),
+        ),
+        _strategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert first.loopHash != changedCoefficient.loopHash
+    assert first.loopHash != changedGroup.loopHash
+    assert first.loopHash != changedReceipt.loopHash
+
+
+def testOneCompanyScenarioLoopRejectsMeasuredExposureWithoutBinding() -> None:
+    base = _measured_case("base", ((0.0, 0.0), (0.1, -0.1)))
+    with pytest.raises(ScenarioCompositionError, match="coefficient binding"):
+        compareOneCompanyTwoScenarioStrategies(
+            "005930",
+            _inputs(),
+            (
+                replace(base, coefficientBindings=()),
+                _measured_case("stress", ((-0.2, 0.3), (-0.1, 0.2))),
+            ),
+            _strategies(),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
+
+
+def testOneCompanyScenarioLoopRejectsTamperedCoefficientBindingContract() -> None:
+    base = _measured_case("base", ((0.0, 0.0), (0.1, -0.1)))
+    tampered = replace(base.coefficientBindings[0], exposureContractHash="6" * 64)
+    with pytest.raises(ScenarioCompositionError, match="exposure contract"):
+        compareOneCompanyTwoScenarioStrategies(
+            "005930",
+            _inputs(),
+            (
+                replace(base, coefficientBindings=(tampered,)),
+                _measured_case("stress", ((-0.2, 0.3), (-0.1, 0.2))),
+            ),
+            _strategies(),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
 
 
 def testOneCompanyScenarioLoopRequiresTwoCasesAndTwoStrategies() -> None:

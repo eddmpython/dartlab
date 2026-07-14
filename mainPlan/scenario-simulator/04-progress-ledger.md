@@ -1231,3 +1231,15 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **bridge 연결**: scalar operating bridge는 그대로 유지했다. admitted coefficient vector는 변수별 `OperatingTransmissionExposure` 여러 개로 변환되며, 모두 같은 `driverCoefficientAdmission:<receiptId>`를 sourceRef로 공유하고 vector aggregation group을 남긴다.
 - **검증**: driver observation frame, driver calibration, operating bridge focused 31건 통과. `tests/simulate` 전체 402건 통과. ruff format/check, camelCase strict, docstring4 audit, Guard Index quick, diff check, em/en dash audit 통과.
 - **남은 P0**: 이제 엔진은 다변수 조건을 법칙 후보로 검증해 scenario bridge에 넘길 수 있다. 다음 병목은 실제 DART, EDGAR, price, macro, industry adapter를 이 루프로 넣고 one-company scenario loop와 연결하는 것이다. recommendation은 policy certificate와 admitted path가 들어오기 전까지 계속 닫혀 있어야 한다.
+
+
+## 2026-07-15 P0 admitted coefficient scenario loop binding
+
+- **판단**: 다변수 coefficient admission과 one-company scenario loop가 각각 존재해도, loop 안에서 "어떤 승인 계수 벡터가 어떤 source factor를 어떤 operating shock으로 전파했는가"가 보이지 않으면 전쟁게임식 시뮬레이터로 보기 어렵다. 이번 단위는 추천을 여는 것이 아니라, 조건부 전략 비교 루프 안에 admitted law 장부를 남기는 것이다.
+- **구현**: `ScenarioCoefficientBinding`을 추가하고 `OperatingScenarioCase`가 coefficient binding 묶음을 받게 했다. binding은 driverCoefficient admission receipt, subject hash, rule id, rule version, rule hash, parent receipt, source variables, target shock, frequency, stepSpan, maxAdmittedStep, coefficient vector hash, feature spec hash, design frame hash, exposure contract hash를 보존한다.
+- **exposure 계약**: `scenarioCoefficientExposureContractHash`가 vector에서 나온 scalar `OperatingTransmissionExposure`들의 coefficient, sourceRef, kernel, aggregation group, source factor contract를 묶는다. measuredAssociation exposure는 이제 matching coefficient binding 없이는 scenario composition을 통과하지 못한다.
+- **receipt 경계**: case에 admission verifier가 있으면 coefficient binding의 signed receipt를 `driverCoefficient` kind, subject hash, admitted status, artifact hash, rule id, rule version, rule hash, parent receipt, frequency, stepSpan, maxAdmittedStep까지 대조한다. verifier가 없더라도 binding shape, exposure coverage, factor coverage, timing, admitted horizon, exposure contract mismatch는 fail closed 한다.
+- **loop 장부**: `OneCompanyScenarioCaseLedger`가 exposure ledger, coefficient admission receipt ids, coefficient binding hashes, coefficient parent receipt ids를 보존한다. condition refs에는 `driverCoefficientAdmission`, `coefficientBinding`, `coefficientVector`, `coefficientFeatureSpec`, `coefficientDesignFrame`, `coefficientExposureContract`, parent receipt refs가 남는다.
+- **추천 경계**: admitted coefficient law가 들어와도 path admission, initial state admission, policy evaluation certificate가 없으면 recommendation은 계속 닫힌다. score leader는 비교 힌트일 뿐 추천이 아니다.
+- **검증**: scenario composition focused 12건 통과. operating bridge와 driver observation frame까지 묶은 focused 37건 통과. ruff format, ruff check, camelCase strict, docstring4 audit 통과.
+- **남은 P0**: 다음은 실제 DART, EDGAR, price, macro, industry lane adapter가 만든 provider observation batch와 path set을 이 binding 장부까지 자동 공급하는 단계다. 그 뒤 admitted path와 policy evaluation certificate를 닫아야 전략 추천으로 승격된다.
