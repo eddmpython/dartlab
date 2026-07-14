@@ -268,6 +268,25 @@ def testCoefficientUnitsAndDuplicateAggregationGroupsFailClosed():
         )
 
 
+def testMeasuredAssociationRequiresDriverCoefficientAdmissionRef():
+    manual = OperatingTransmissionExposure(
+        "manual-measured",
+        "fxChange",
+        "marketPriceChange",
+        0.5,
+        "ratioChangePerStep/simpleReturn",
+        "measuredAssociation",
+        "fit://fx-price",
+    )
+    with pytest.raises(OperatingBridgeError, match="driver coefficient admission ref"):
+        bridgeOperatingPath(
+            _sourcePath(),
+            (manual,),
+            factorSpecs=_factorSpecs(),
+            baselines=_baselines(),
+        )
+
+
 def testSourceStatusCannotBePromotedOrLaundered():
     admitted = _bridge(_admittedPath())
     assert admitted.path.validationStatus == "retrospectiveOnly"
@@ -318,7 +337,7 @@ def testLagKernelAndParameterDrawBoundaryRemainVisible():
         0.5,
         "ratioChangePerStep/simpleReturn",
         "measuredAssociation",
-        "fit://fx-price",
+        f"driverCoefficientAdmission:{'4' * 64}",
         lagSteps=1,
         responseKernel=(1.0, 0.5),
     )

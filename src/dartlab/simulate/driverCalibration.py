@@ -21,11 +21,18 @@ from dartlab.simulate.admissionRegistry import (
     AdmissionVerifier,
     artifactPath,
 )
+from dartlab.simulate.driverObservationFrames import (
+    DRIVER_OBSERVATION_FRAME_VERSION,
+    DriverCoefficientObservationFrame,
+    DriverCoefficientObservationFrameSpec,
+    buildDriverCoefficientObservationFrame,
+)
 from dartlab.simulate.driverRegistry import DriverRegistryResult
 from dartlab.simulate.operatingBridge import (
     OPERATING_TARGET_UNITS,
     OperatingTransmissionExposure,
 )
+from dartlab.simulate.stateCompiler import _batchFromArtifact
 from dartlab.simulate.vintage import canonicalPayloadBytes, canonicalPayloadHash
 
 CALIBRATION_VERSION = "driver-coefficient-calibration-v1"
@@ -104,6 +111,8 @@ DRIVER_COEFFICIENT_RULE_SPEC = {
             "OOS label",
         ),
         "coverageMatchFields": ("ref", "role", "eventTime", "availableAt", "value", "unit"),
+        "providerBatchFrameReplay": "providerObservationBatch parents require signed observation frame binding replay",
+        "providerBatchRowRefPolicy": "provider observation row refs must be observationId only",
         "opaqueParentArtifactPolicy": "reject",
     },
     "admissionReceiptContract": {
@@ -203,6 +212,39 @@ class DriverCoefficientTraceRow:
 
 
 @dataclass(frozen=True)
+class DriverObservationFrameBinding:
+    """Signed provider observation frame metadata bound into a coefficient receipt."""
+
+    frameId: str
+    frameHash: str
+    specHash: str
+    rowCount: int
+    sourceBatchReceiptId: str
+    labelBatchReceiptId: str
+    sourceSignalId: str
+    labelSignalId: str
+    sourceVariableId: str
+    targetVariableId: str
+    sourceUnit: str
+    targetUnit: str
+    frequency: str
+    stepSpan: int
+    horizonSteps: int
+    originStart: str
+    originThrough: str
+    sourceEvidenceRoles: tuple[str, ...]
+    labelEvidenceRoles: tuple[str, ...]
+    selectionRuleId: str
+    originKnowledgePolicy: str
+    sourceRefPolicy: str
+    schemaVersion: str = DRIVER_OBSERVATION_FRAME_VERSION
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "sourceEvidenceRoles", tuple(self.sourceEvidenceRoles))
+        object.__setattr__(self, "labelEvidenceRoles", tuple(self.labelEvidenceRoles))
+
+
+@dataclass(frozen=True)
 class DriverCoefficientCalibrationReceipt:
     """Fit receipt for one measured association coefficient."""
 
@@ -245,6 +287,7 @@ class DriverCoefficientCalibrationReceipt:
     sourceParentReceiptIds: tuple[str, ...]
     labelParentReceiptIds: tuple[str, ...]
     traceRows: tuple[DriverCoefficientTraceRow, ...]
+    fitFrameBinding: DriverObservationFrameBinding | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "responseKernel", tuple(self.responseKernel))
@@ -356,6 +399,8 @@ class DriverCoefficientOosReport:
     oosSourceParentReceiptIds: tuple[str, ...]
     oosLabelParentReceiptIds: tuple[str, ...]
     traceRows: tuple[DriverCoefficientOosTraceRow, ...]
+    fitFrameBinding: DriverObservationFrameBinding | None = None
+    oosFrameBinding: DriverObservationFrameBinding | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "reasons", tuple(self.reasons))
@@ -447,6 +492,146 @@ def _finite(value: float | None, label: str) -> float:
 
 def _dedupe(values: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(value for value in values if value))
+
+
+def _frameSpecFromBinding(binding: DriverObservationFrameBinding) -> DriverCoefficientObservationFrameSpec:
+    return DriverCoefficientObservationFrameSpec(
+        frameId=binding.frameId,
+        sourceSignalId=binding.sourceSignalId,
+        labelSignalId=binding.labelSignalId,
+        sourceVariableId=binding.sourceVariableId,
+        targetVariableId=binding.targetVariableId,
+        sourceUnit=binding.sourceUnit,
+        targetUnit=binding.targetUnit,
+        frequency=binding.frequency,
+        stepSpan=binding.stepSpan,
+        horizonSteps=binding.horizonSteps,
+        originStart=binding.originStart,
+        originThrough=binding.originThrough,
+        sourceEvidenceRoles=binding.sourceEvidenceRoles,
+        labelEvidenceRoles=binding.labelEvidenceRoles,
+        selectionRuleId=binding.selectionRuleId,
+        originKnowledgePolicy=binding.originKnowledgePolicy,
+        sourceRefPolicy=binding.sourceRefPolicy,
+        schemaVersion=binding.schemaVersion,
+    )
+
+
+def _validateFrameBinding(binding: DriverObservationFrameBinding, label: str) -> None:
+    if (
+        not isinstance(binding, DriverObservationFrameBinding)
+        or binding.schemaVersion != DRIVER_OBSERVATION_FRAME_VERSION
+        or not binding.frameId
+        or binding.rowCount < 1
+        or not binding.sourceSignalId
+        or not binding.labelSignalId
+        or not binding.sourceVariableId
+        or not binding.targetVariableId
+        or not binding.sourceUnit
+        or not binding.targetUnit
+        or not binding.frequency
+        or binding.stepSpan < 1
+        or binding.horizonSteps < 1
+    ):
+        raise DriverCalibrationError(f"coefficient {label} observation frame binding is incomplete")
+    for field, value in (
+        ("frameHash", binding.frameHash),
+        ("specHash", binding.specHash),
+        ("sourceBatchReceiptId", binding.sourceBatchReceiptId),
+        ("labelBatchReceiptId", binding.labelBatchReceiptId),
+    ):
+        if not _validDigest(value):
+            raise DriverCalibrationError(f"coefficient {label} observation frame {field} is invalid")
+    if binding.specHash != canonicalPayloadHash(_frameSpecFromBinding(binding)):
+        raise DriverCalibrationError(f"coefficient {label} observation frame spec hash mismatch")
+
+
+def _frameBindingFromObservationFrame(frame: DriverCoefficientObservationFrame) -> DriverObservationFrameBinding:
+    if not isinstance(frame, DriverCoefficientObservationFrame) or frame.spec is None:
+        raise DriverCalibrationError("coefficient observation frame binding requires typed frame")
+    if canonicalPayloadHash(frame.spec) != frame.specHash:
+        raise DriverCalibrationError("coefficient observation frame spec hash mismatch")
+    if frame.rowCount != frame.frame.height:
+        raise DriverCalibrationError("coefficient observation frame row count mismatch")
+    binding = DriverObservationFrameBinding(
+        frameId=frame.frameId,
+        frameHash=frame.frameHash,
+        specHash=frame.specHash,
+        rowCount=frame.rowCount,
+        sourceBatchReceiptId=frame.sourceBatchReceiptId,
+        labelBatchReceiptId=frame.labelBatchReceiptId,
+        sourceSignalId=frame.spec.sourceSignalId,
+        labelSignalId=frame.spec.labelSignalId,
+        sourceVariableId=frame.spec.sourceVariableId,
+        targetVariableId=frame.spec.targetVariableId,
+        sourceUnit=frame.spec.sourceUnit,
+        targetUnit=frame.spec.targetUnit,
+        frequency=frame.spec.frequency,
+        stepSpan=frame.spec.stepSpan,
+        horizonSteps=frame.spec.horizonSteps,
+        originStart=frame.spec.originStart,
+        originThrough=frame.spec.originThrough,
+        sourceEvidenceRoles=frame.spec.sourceEvidenceRoles,
+        labelEvidenceRoles=frame.spec.labelEvidenceRoles,
+        selectionRuleId=frame.spec.selectionRuleId,
+        originKnowledgePolicy=frame.spec.originKnowledgePolicy,
+        sourceRefPolicy=frame.spec.sourceRefPolicy,
+        schemaVersion=frame.spec.schemaVersion,
+    )
+    _validateFrameBinding(binding, "typed")
+    return binding
+
+
+def _providerBatchFromParent(admissionVerifier: AdmissionVerifier, parent: AdmissionReceipt):
+    try:
+        raw = artifactPath(admissionVerifier.artifactRoot, parent.artifactHash).read_bytes()
+    except OSError as error:
+        raise DriverCalibrationError("coefficient provider batch artifact is unavailable") from error
+    try:
+        return _batchFromArtifact(parent, raw)
+    except ValueError as error:
+        raise DriverCalibrationError("coefficient provider batch artifact does not replay") from error
+
+
+def _verifyObservationFrameReplay(
+    admissionVerifier: AdmissionVerifier,
+    sourceParents: tuple[AdmissionReceipt, ...],
+    labelParents: tuple[AdmissionReceipt, ...],
+    binding: DriverObservationFrameBinding | None,
+    *,
+    roleLabel: str,
+) -> None:
+    providerSourceParents = tuple(parent for parent in sourceParents if parent.kind == "providerObservationBatch")
+    providerLabelParents = tuple(parent for parent in labelParents if parent.kind == "providerObservationBatch")
+    if not providerSourceParents and not providerLabelParents:
+        return
+    if (
+        len(sourceParents) != 1
+        or len(labelParents) != 1
+        or len(providerSourceParents) != 1
+        or len(providerLabelParents) != 1
+    ):
+        raise DriverCalibrationError(f"coefficient {roleLabel} observation frame requires provider batch parents")
+    if binding is None:
+        raise DriverCalibrationError(f"coefficient {roleLabel} observation frame binding is missing")
+    _validateFrameBinding(binding, roleLabel)
+    sourceParent = providerSourceParents[0]
+    labelParent = providerLabelParents[0]
+    if sourceParent.receiptId != binding.sourceBatchReceiptId or labelParent.receiptId != binding.labelBatchReceiptId:
+        raise DriverCalibrationError(f"coefficient {roleLabel} observation frame parent mismatch")
+    rebuilt = buildDriverCoefficientObservationFrame(
+        _providerBatchFromParent(admissionVerifier, sourceParent),
+        _providerBatchFromParent(admissionVerifier, labelParent),
+        _frameSpecFromBinding(binding),
+    )
+    if (
+        rebuilt.frameHash != binding.frameHash
+        or rebuilt.specHash != binding.specHash
+        or rebuilt.rowCount != binding.rowCount
+        or rebuilt.sourceBatchReceiptId != binding.sourceBatchReceiptId
+        or rebuilt.labelBatchReceiptId != binding.labelBatchReceiptId
+    ):
+        raise DriverCalibrationError(f"coefficient {roleLabel} observation frame replay mismatch")
 
 
 def _validateTarget(target: DriverCalibrationTarget) -> None:
@@ -845,6 +1030,7 @@ def _calibrationReceiptPayload(receipt: DriverCoefficientCalibrationReceipt) -> 
         "sourceRefs": baseSourceRefs,
         "sourceParentReceiptIds": receipt.sourceParentReceiptIds,
         "labelParentReceiptIds": receipt.labelParentReceiptIds,
+        "fitFrameBinding": receipt.fitFrameBinding,
     }
 
 
@@ -880,6 +1066,10 @@ def _validateCalibrationReceipt(receipt: DriverCoefficientCalibrationReceipt) ->
         raise DriverCalibrationError("coefficient calibration receipt hash mismatch")
     if receipt.nOrigins != len(receipt.traceRows):
         raise DriverCalibrationError("coefficient calibration receipt origin count mismatch")
+    if receipt.fitFrameBinding is not None:
+        _validateFrameBinding(receipt.fitFrameBinding, "fit")
+        if receipt.fitFrameBinding.rowCount != receipt.nOrigins:
+            raise DriverCalibrationError("coefficient calibration receipt fit frame row count mismatch")
     originKeys = tuple((row.originEventTime, row.originId) for row in receipt.traceRows)
     if originKeys != tuple(sorted(originKeys)) or len({row.originId for row in receipt.traceRows}) != len(
         receipt.traceRows
@@ -970,21 +1160,16 @@ def _coverageRowsFromProviderBatch(payload: dict, *, role: str) -> tuple[dict, .
     for item in observations:
         if not isinstance(item, dict):
             raise DriverCalibrationError("coefficient provider batch observation is malformed")
-        refs = [str(item.get("observationId", ""))]
-        vintage = item.get("vintage")
-        if isinstance(vintage, dict):
-            refs.extend(str(ref) for ref in vintage.get("sourceRefs", ()) if ref)
-        for ref in tuple(dict.fromkeys(ref for ref in refs if ref)):
-            out.append(
-                _coverageRow(
-                    ref=ref,
-                    role=role,
-                    eventTime=str(item.get("eventAt", "")),
-                    availableAt=str(item.get("availableAt", "")),
-                    value=item.get("value"),
-                    unit=str(item.get("unit", "")),
-                )
+        out.append(
+            _coverageRow(
+                ref=str(item.get("observationId", "")),
+                role=role,
+                eventTime=str(item.get("eventAt", "")),
+                availableAt=str(item.get("availableAt", "")),
+                value=item.get("value"),
+                unit=str(item.get("unit", "")),
             )
+        )
     return tuple(out)
 
 
@@ -1139,6 +1324,12 @@ def _validateCoefficientReport(report: DriverCoefficientOosReport) -> None:
         raise DriverCalibrationError("coefficient OOS report evaluation precedes calibration")
     if report.nOosOrigins != len(report.traceRows):
         raise DriverCalibrationError("coefficient OOS report origin count mismatch")
+    if report.fitFrameBinding is not None:
+        _validateFrameBinding(report.fitFrameBinding, "fit")
+    if report.oosFrameBinding is not None:
+        _validateFrameBinding(report.oosFrameBinding, "OOS")
+        if report.oosFrameBinding.rowCount != report.nOosOrigins:
+            raise DriverCalibrationError("coefficient OOS report frame row count mismatch")
     originKeys = tuple((row.originEventTime, row.originId) for row in report.traceRows)
     if originKeys != tuple(sorted(originKeys)) or len({row.originId for row in report.traceRows}) != len(
         report.traceRows
@@ -1218,6 +1409,7 @@ def fitDriverCoefficientPit(
     spec: DriverCoefficientCalibrationSpec,
     *,
     calibrationKnowledgeAsOf: str,
+    fitFrameBinding: DriverObservationFrameBinding | None = None,
 ) -> DriverCoefficientCalibrationReceipt:
     """Fit a PIT source to observable target coefficient receipt.
 
@@ -1227,6 +1419,7 @@ def fitDriverCoefficientPit(
         frame: Origin-level calibration rows with source and target availability dates.
         spec: Source variable, model, row-column, lag, and minimum-origin contract.
         calibrationKnowledgeAsOf: Date when the fit is allowed to know labels.
+        fitFrameBinding: Optional replayable signed provider observation frame binding.
 
     Returns:
         ``DriverCoefficientCalibrationReceipt`` with a retrospective measured association.
@@ -1248,6 +1441,18 @@ def fitDriverCoefficientPit(
         spec,
         calibrationKnowledgeAsOf=cutoff,
     )
+    if fitFrameBinding is not None:
+        _validateFrameBinding(fitFrameBinding, "fit")
+        if (
+            fitFrameBinding.rowCount != len(rows)
+            or fitFrameBinding.sourceBatchReceiptId not in spec.sourceParentReceiptIds
+            or fitFrameBinding.labelBatchReceiptId not in target.labelParentReceiptIds
+            or fitFrameBinding.sourceVariableId != spec.sourceVariableId
+            or fitFrameBinding.targetVariableId != target.targetVariableId
+            or fitFrameBinding.sourceUnit != sourceFactor.unit
+            or fitFrameBinding.targetUnit != target.targetUnit
+        ):
+            raise DriverCalibrationError("coefficient fit observation frame binding mismatch")
     if len(rows) < spec.minOrigins:
         raise DriverCalibrationError("coefficient calibration support below minOrigins")
     coefficient, standardError, rSquared, traceRows = _fitThroughOrigin(rows)
@@ -1335,6 +1540,8 @@ def fitDriverCoefficientPit(
             f"originGrid:{originGridHash}",
             f"targetOutcome:{targetOutcomeHash}",
             f"coefficientTrace:{coefficientTraceHash}",
+            f"fitFrame:{fitFrameBinding.frameHash}" if fitFrameBinding is not None else "",
+            f"fitFrameSpec:{fitFrameBinding.specHash}" if fitFrameBinding is not None else "",
             *(f"fitSourceParentReceipt:{receiptId}" for receiptId in spec.sourceParentReceiptIds),
             *(f"fitLabelParentReceipt:{receiptId}" for receiptId in target.labelParentReceiptIds),
         )
@@ -1376,6 +1583,7 @@ def fitDriverCoefficientPit(
         "sourceRefs": baseRefs,
         "sourceParentReceiptIds": spec.sourceParentReceiptIds,
         "labelParentReceiptIds": target.labelParentReceiptIds,
+        "fitFrameBinding": fitFrameBinding,
     }
     receiptHash = canonicalPayloadHash(receiptPayload)
     sourceRefs = _dedupe((*baseRefs, f"driverCoefficientFit:{receiptHash}"))
@@ -1419,6 +1627,50 @@ def fitDriverCoefficientPit(
         sourceParentReceiptIds=spec.sourceParentReceiptIds,
         labelParentReceiptIds=target.labelParentReceiptIds,
         traceRows=traceRows,
+        fitFrameBinding=fitFrameBinding,
+    )
+
+
+def fitDriverCoefficientPitFromObservationFrame(
+    registryResult: DriverRegistryResult,
+    target: DriverCalibrationTarget,
+    observationFrame: DriverCoefficientObservationFrame,
+    spec: DriverCoefficientCalibrationSpec,
+    *,
+    calibrationKnowledgeAsOf: str,
+) -> DriverCoefficientCalibrationReceipt:
+    """Fit a coefficient only from a typed signed provider observation frame.
+
+    Args:
+        registryResult: Compiled source factor registry result.
+        target: Observable target label contract whose parents match the frame.
+        observationFrame: Typed provider observation frame built from signed exact batches.
+        spec: Source variable, model, lag, and minimum-origin contract.
+        calibrationKnowledgeAsOf: Date when the fit may know labels.
+
+    Returns:
+        ``DriverCoefficientCalibrationReceipt`` carrying replayable fit frame binding.
+
+    Raises:
+        DriverCalibrationError: If the frame parents or meaning drift from the fit contract.
+
+    Example:
+        ``receipt = fitDriverCoefficientPitFromObservationFrame(registry, target, frame, spec, calibrationKnowledgeAsOf="20251231")``
+    """
+
+    binding = _frameBindingFromObservationFrame(observationFrame)
+    if (
+        observationFrame.sourceParentReceiptIds != spec.sourceParentReceiptIds
+        or observationFrame.labelParentReceiptIds != target.labelParentReceiptIds
+    ):
+        raise DriverCalibrationError("coefficient observation frame parent contract mismatch")
+    return fitDriverCoefficientPit(
+        registryResult,
+        target,
+        observationFrame.frame,
+        spec,
+        calibrationKnowledgeAsOf=calibrationKnowledgeAsOf,
+        fitFrameBinding=binding,
     )
 
 
@@ -1475,6 +1727,7 @@ def calibrationReceiptToOperatingExposure(
         or oosReport.targetVariableId != receipt.targetVariableId
         or oosReport.targetShock != receipt.targetShock
         or oosReport.coefficientUnit != receipt.coefficientUnit
+        or oosReport.fitFrameBinding != receipt.fitFrameBinding
         or not math.isclose(oosReport.coefficient, receipt.coefficient, rel_tol=1e-12, abs_tol=1e-12)
     ):
         raise DriverCalibrationError("coefficient OOS report does not match receipt")
@@ -1517,6 +1770,7 @@ def evaluateDriverCoefficientOos(
     spec: DriverCoefficientOosSpec,
     *,
     evaluationKnowledgeAsOf: str,
+    oosFrameBinding: DriverObservationFrameBinding | None = None,
 ) -> DriverCoefficientOosReport:
     """Score a fixed coefficient on held-out PIT origins.
 
@@ -1525,6 +1779,7 @@ def evaluateDriverCoefficientOos(
         frame: Held-out origin rows with source and target availability dates.
         spec: OOS thresholds, baseline, and artifact step contract.
         evaluationKnowledgeAsOf: Date when held-out labels are allowed to be known.
+        oosFrameBinding: Optional replayable signed provider observation frame binding.
 
     Returns:
         Unsigned ``DriverCoefficientOosReport``. It is eligible for signing only when
@@ -1545,6 +1800,18 @@ def evaluateDriverCoefficientOos(
         receipt,
         evaluationKnowledgeAsOf=cutoff,
     )
+    if oosFrameBinding is not None:
+        _validateFrameBinding(oosFrameBinding, "OOS")
+        if (
+            oosFrameBinding.rowCount != len(rows)
+            or oosFrameBinding.sourceBatchReceiptId not in spec.sourceParentReceiptIds
+            or oosFrameBinding.labelBatchReceiptId not in spec.labelParentReceiptIds
+            or oosFrameBinding.sourceVariableId != receipt.sourceVariableId
+            or oosFrameBinding.targetVariableId != receipt.targetVariableId
+            or oosFrameBinding.sourceUnit != receipt.sourceUnit
+            or oosFrameBinding.targetUnit != receipt.targetUnit
+        ):
+            raise DriverCalibrationError("coefficient OOS observation frame binding mismatch")
     if receipt.status == "rejected" or receipt.validationStatus == "rejected":
         raise DriverCalibrationError("rejected coefficient receipt cannot be OOS evaluated")
     expectedUnit = f"{OPERATING_TARGET_UNITS[receipt.targetShock]}/{receipt.sourceUnit}"
@@ -1640,6 +1907,9 @@ def evaluateDriverCoefficientOos(
             f"coefficientOosGrid:{oosGridHash}",
             f"coefficientOosOutcome:{oosOutcomeHash}",
             f"coefficientPredictionTrace:{predictionTraceHash}",
+            f"fitFrame:{receipt.fitFrameBinding.frameHash}" if receipt.fitFrameBinding is not None else "",
+            f"oosFrame:{oosFrameBinding.frameHash}" if oosFrameBinding is not None else "",
+            f"oosFrameSpec:{oosFrameBinding.specHash}" if oosFrameBinding is not None else "",
             *(f"fitSourceParentReceipt:{receiptId}" for receiptId in receipt.sourceParentReceiptIds),
             *(f"fitLabelParentReceipt:{receiptId}" for receiptId in receipt.labelParentReceiptIds),
             *(f"oosSourceParentReceipt:{receiptId}" for receiptId in spec.sourceParentReceiptIds),
@@ -1693,6 +1963,8 @@ def evaluateDriverCoefficientOos(
         oosSourceParentReceiptIds=spec.sourceParentReceiptIds,
         oosLabelParentReceiptIds=spec.labelParentReceiptIds,
         traceRows=tuple(traceRows),
+        fitFrameBinding=receipt.fitFrameBinding,
+        oosFrameBinding=oosFrameBinding,
     )
     report = DriverCoefficientOosReport(
         **{
@@ -1706,6 +1978,46 @@ def evaluateDriverCoefficientOos(
     )
     _validateCoefficientReport(report)
     return report
+
+
+def evaluateDriverCoefficientOosFromObservationFrame(
+    receipt: DriverCoefficientCalibrationReceipt,
+    observationFrame: DriverCoefficientObservationFrame,
+    spec: DriverCoefficientOosSpec,
+    *,
+    evaluationKnowledgeAsOf: str,
+) -> DriverCoefficientOosReport:
+    """Evaluate a coefficient only on a typed signed provider observation frame.
+
+    Args:
+        receipt: Frozen fit receipt whose coefficient is being admitted.
+        observationFrame: Typed provider observation frame built from signed exact held-out batches.
+        spec: OOS thresholds and parent receipt contract matching the frame.
+        evaluationKnowledgeAsOf: Date when held-out labels may be known.
+
+    Returns:
+        ``DriverCoefficientOosReport`` carrying replayable OOS frame binding.
+
+    Raises:
+        DriverCalibrationError: If the OOS frame parents or meaning drift from the report contract.
+
+    Example:
+        ``report = evaluateDriverCoefficientOosFromObservationFrame(receipt, frame, spec, evaluationKnowledgeAsOf="20251231")``
+    """
+
+    binding = _frameBindingFromObservationFrame(observationFrame)
+    if (
+        observationFrame.sourceParentReceiptIds != spec.sourceParentReceiptIds
+        or observationFrame.labelParentReceiptIds != spec.labelParentReceiptIds
+    ):
+        raise DriverCalibrationError("coefficient OOS observation frame parent contract mismatch")
+    return evaluateDriverCoefficientOos(
+        receipt,
+        observationFrame.frame,
+        spec,
+        evaluationKnowledgeAsOf=evaluationKnowledgeAsOf,
+        oosFrameBinding=binding,
+    )
 
 
 def driverCoefficientAdmissionArtifact(report: DriverCoefficientOosReport) -> bytes:
@@ -1854,6 +2166,22 @@ def _verifyCoefficientParents(
             decisionAsOf=decisionAsOf,
         )
         for receiptId in report.oosLabelParentReceiptIds
+    )
+    if report.fitFrameBinding != calibrationReceipt.fitFrameBinding:
+        raise DriverCalibrationError("coefficient fit observation frame binding does not match receipt")
+    _verifyObservationFrameReplay(
+        admissionVerifier,
+        fitSourceParents,
+        fitLabelParents,
+        calibrationReceipt.fitFrameBinding,
+        roleLabel="fit",
+    )
+    _verifyObservationFrameReplay(
+        admissionVerifier,
+        oosSourceParents,
+        oosLabelParents,
+        report.oosFrameBinding,
+        roleLabel="OOS",
     )
     _verifyParentCoverage(
         admissionVerifier,

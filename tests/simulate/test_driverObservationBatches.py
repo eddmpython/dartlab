@@ -23,8 +23,8 @@ from dartlab.simulate.driverCalibration import (
     driverCoefficientAdmissionArtifact,
     driverCoefficientAdmissionParentReceiptIds,
     driverCoefficientAdmissionSubjectHash,
-    evaluateDriverCoefficientOos,
-    fitDriverCoefficientPit,
+    evaluateDriverCoefficientOosFromObservationFrame,
+    fitDriverCoefficientPitFromObservationFrame,
     validateDriverCoefficientAdmission,
 )
 from dartlab.simulate.driverObservationBatches import (
@@ -396,10 +396,10 @@ def testDriverObservationLaneBatchFeedsCoefficientAdmission(tmp_path) -> None:
     )
     fitFrame = buildDriverCoefficientObservationFrame(fitSource, fitLabel, _frameSpec("fit-lane-frame"))
     oosFrame = buildDriverCoefficientObservationFrame(oosSource, oosLabel, _frameSpec("oos-lane-frame"))
-    receipt = fitDriverCoefficientPit(
+    receipt = fitDriverCoefficientPitFromObservationFrame(
         _registryResult(),
         _target(fitFrame.labelParentReceiptIds),
-        fitFrame.frame,
+        fitFrame,
         DriverCoefficientCalibrationSpec(
             calibrationId="fx-to-price-fit",
             sourceVariableId="fxChange",
@@ -408,9 +408,9 @@ def testDriverObservationLaneBatchFeedsCoefficientAdmission(tmp_path) -> None:
         ),
         calibrationKnowledgeAsOf="20210430",
     )
-    report = evaluateDriverCoefficientOos(
+    report = evaluateDriverCoefficientOosFromObservationFrame(
         receipt,
-        oosFrame.frame,
+        oosFrame,
         DriverCoefficientOosSpec(
             evaluationId="fx-to-price-oos",
             minOosOrigins=3,

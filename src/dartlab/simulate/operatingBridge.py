@@ -40,6 +40,7 @@ _BASELINE_EVIDENCE_ROLES = {
 _EXECUTABLE_STATE_EVIDENCE = _BASELINE_EVIDENCE_ROLES
 _EXECUTABLE_MODIFIER_ROLES = {"state", "observedFeature"}
 _DIMENSIONLESS_MODIFIER_UNITS = {"ratio"}
+_DRIVER_COEFFICIENT_ADMISSION_REF_PREFIX = "driverCoefficientAdmission:"
 
 
 class OperatingBridgeError(ValueError):
@@ -244,6 +245,12 @@ def _validDigest(value: str) -> bool:
     return len(value) == 64 and all(character in "0123456789abcdef" for character in value.lower())
 
 
+def _validDriverCoefficientAdmissionRef(value: str) -> bool:
+    if not value.startswith(_DRIVER_COEFFICIENT_ADMISSION_REF_PREFIX):
+        return False
+    return _validDigest(value.removeprefix(_DRIVER_COEFFICIENT_ADMISSION_REF_PREFIX))
+
+
 def _dateText(value: str, label: str) -> str:
     text = str(value).replace("-", "")[:8]
     if len(text) != 8 or not text.isdigit():
@@ -419,6 +426,8 @@ def _validateExposure(
     expectedUnit = f"{OPERATING_TARGET_UNITS[exposure.targetShock]}/{factors[exposure.sourceVariableId].unit}"
     if exposure.coefficientUnit != expectedUnit:
         raise OperatingBridgeError(f"operating exposure coefficient unit drift: {exposure.exposureId}")
+    if exposure.evidenceKind == "measuredAssociation" and not _validDriverCoefficientAdmissionRef(exposure.sourceRef):
+        raise OperatingBridgeError("measured association exposure requires driver coefficient admission ref")
     if bool(exposure.modifierVariableId) != bool(exposure.modifierUnit):
         raise OperatingBridgeError("modifier exposure needs both variableId and unit")
     if exposure.modifierUnit and exposure.modifierUnit not in _DIMENSIONLESS_MODIFIER_UNITS:

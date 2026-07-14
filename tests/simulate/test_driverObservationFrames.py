@@ -22,13 +22,17 @@ from dartlab.simulate.driverCalibration import (
     DriverCalibrationTarget,
     DriverCoefficientCalibrationSpec,
     DriverCoefficientOosSpec,
+    calibrationReceiptToOperatingExposure,
     driverCoefficientAdmissionArtifact,
     driverCoefficientAdmissionParentReceiptIds,
     driverCoefficientAdmissionSubjectHash,
     evaluateDriverCoefficientOos,
+    evaluateDriverCoefficientOosFromObservationFrame,
     fitDriverCoefficientPit,
+    fitDriverCoefficientPitFromObservationFrame,
     validateDriverCoefficientAdmission,
 )
+from dartlab.simulate.driverObservationBatches import driverHistorySourceFromProviderObservationBatch
 from dartlab.simulate.driverObservationFrames import (
     DriverCoefficientObservationFrameSpec,
     DriverObservationFrameError,
@@ -251,39 +255,51 @@ def _frameSpec(frameId: str = "fx-price-frame") -> DriverCoefficientObservationF
     )
 
 
-def _registryResult():
+def _registryResult(sourceBatch=None):
     factor = DriverFactorSpec(
         "fxChange",
         "simpleReturn",
         "quarter",
         "change",
-        "fx-change-quarterly-v1",
+        "change-v1",
     )
-    card = DriverCard(
-        cardId="macro-fx-change",
-        sourceKind="history",
-        providerId="macro",
-        datasetId="driver-observation-fixture",
-        entityId="KR",
-        frequency="quarter",
-        stepSpan=1,
-        factors=(factor,),
-        historyStatus="asKnown",
-        sourceRefs=("providerObservationBatch:fit-source",),
-    )
-    panel = pl.DataFrame(
-        {
-            "eventTime": ["20200331", "20200630", "20200930", "20201231"],
-            "availableAt": ["20200410", "20200710", "20201010", "20210110"],
-            "fxChange": [0.10, -0.20, 0.30, 0.40],
-        }
-    )
+    if sourceBatch is None:
+        card = DriverCard(
+            cardId="macro-fx-change",
+            sourceKind="history",
+            providerId="macro",
+            datasetId="driver-observation-fixture",
+            entityId="KR",
+            frequency="quarter",
+            stepSpan=1,
+            factors=(factor,),
+            historyStatus="asKnown",
+            sourceRefs=("providerObservationBatch:fit-source",),
+        )
+        source = DriverHistorySource(
+            card,
+            pl.DataFrame(
+                {
+                    "eventTime": ["20200331", "20200630", "20200930", "20201231"],
+                    "availableAt": ["20200410", "20200710", "20201010", "20210110"],
+                    "fxChange": [0.10, -0.20, 0.30, 0.40],
+                }
+            ),
+        )
+    else:
+        source = driverHistorySourceFromProviderObservationBatch(
+            sourceBatch,
+            cardId="macro-fx-change",
+            factors=(factor,),
+            stepSpan=1,
+            sourceRefs=("semantics:provider-observation-projection",),
+        )
     return compileDriverRegistryPathSet(
         (
             DriverRegistryCandidate(
                 "macro-fx",
                 "pathHistory",
-                DriverHistorySource(card, panel),
+                source,
                 semanticRefs=("semantics:macro-fx-change-path",),
                 selectionReason="FX quarterly change is an observable macro path.",
             ),
@@ -372,17 +388,17 @@ def _issueCoefficientAdmission(context, report):
     )
 
 
-def _fitAndReport(context, fitFrame, oosFrame):
-    receipt = fitDriverCoefficientPit(
-        _registryResult(),
+def _fitAndReport(context, fitFrame, oosFrame, registryResult=None):
+    receipt = fitDriverCoefficientPitFromObservationFrame(
+        registryResult or _registryResult(),
         _target(fitFrame.labelParentReceiptIds),
-        fitFrame.frame,
+        fitFrame,
         _fitSpec(fitFrame.sourceParentReceiptIds),
         calibrationKnowledgeAsOf="20210430",
     )
-    report = evaluateDriverCoefficientOos(
+    report = evaluateDriverCoefficientOosFromObservationFrame(
         receipt,
-        oosFrame.frame,
+        oosFrame,
         _oosSpec(oosFrame.sourceParentReceiptIds, oosFrame.labelParentReceiptIds),
         evaluationKnowledgeAsOf="20220131",
     )
@@ -403,7 +419,10 @@ def testProviderObservationBatchesBuildCoefficientFrameAndAdmission(tmp_path) ->
     assert fitFrame.labelParentReceiptIds == (fitLabel.batchReceiptId,)
     assert fitFrame.frame.select("sourceRef").to_series().to_list()[0] == fitSource.observations[0].observationId
 
-    receipt, report, signed = _fitAndReport(context, fitFrame, oosFrame)
+    registryResult = _registryResult(fitSource)
+    assert f"providerObservationBatch:{fitSource.batchReceiptId}" in registryResult.audit.sourceRefs
+
+    receipt, report, signed = _fitAndReport(context, fitFrame, oosFrame, registryResult)
     verified = validateDriverCoefficientAdmission(
         report,
         context[4],
@@ -414,6 +433,17 @@ def testProviderObservationBatchesBuildCoefficientFrameAndAdmission(tmp_path) ->
     assert report.status == "oosEligible"
     assert verified.sourceParentReceiptIds == (fitSource.batchReceiptId, oosSource.batchReceiptId)
     assert verified.labelParentReceiptIds == (fitLabel.batchReceiptId, oosLabel.batchReceiptId)
+    exposure = calibrationReceiptToOperatingExposure(
+        receipt,
+        exposureId="fx-price-admitted",
+        oosReport=report,
+        admissionReceipt=verified,
+    )
+    assert exposure.evidenceKind == "measuredAssociation"
+    assert exposure.sourceRef == f"driverCoefficientAdmission:{signed.receiptId}"
+    assert exposure.sourceVariableId == receipt.sourceVariableId
+    assert exposure.targetShock == receipt.targetShock
+    assert exposure.coefficientUnit == "ratioChangePerStep/simpleReturn"
 
 
 def testDriverObservationFrameRejectsUnsignedDuplicateMissingAndDrift(tmp_path) -> None:
@@ -527,6 +557,74 @@ def testDriverObservationFrameTamperedRowFailsParentCoverage(tmp_path) -> None:
         )
 
 
+def testProviderObservationAdmissionRejectsVintageSourceRefAlias(tmp_path) -> None:
+    context = _trust(tmp_path)
+    fitSource, fitLabel = _fitBatches(context)
+    oosSource, oosLabel = _oosBatches(context)
+    fitFrame = buildDriverCoefficientObservationFrame(fitSource, fitLabel, _frameSpec("fit-frame"))
+    oosFrame = buildDriverCoefficientObservationFrame(oosSource, oosLabel, _frameSpec("oos-frame"))
+    rows = fitFrame.frame.to_dicts()
+    rows[0]["sourceRef"] = fitSource.observations[0].vintage.sourceRefs[0]
+    aliasFitFrame = replace(fitFrame, frame=pl.DataFrame(rows))
+    receipt, report, signed = _fitAndReport(context, aliasFitFrame, oosFrame)
+    with pytest.raises(DriverCalibrationError, match="fit source parent coverage missing row refs"):
+        validateDriverCoefficientAdmission(
+            report,
+            context[4],
+            calibrationReceipt=receipt,
+            receiptId=signed.receiptId,
+            decisionAsOf="20220202",
+        )
+
+
+def testProviderObservationAdmissionRejectsRawDataFrameCoefficient(tmp_path) -> None:
+    context = _trust(tmp_path)
+    fitSource, fitLabel = _fitBatches(context)
+    oosSource, oosLabel = _oosBatches(context)
+    fitFrame = buildDriverCoefficientObservationFrame(fitSource, fitLabel, _frameSpec("fit-frame"))
+    oosFrame = buildDriverCoefficientObservationFrame(oosSource, oosLabel, _frameSpec("oos-frame"))
+    receipt = fitDriverCoefficientPit(
+        _registryResult(),
+        _target(fitFrame.labelParentReceiptIds),
+        fitFrame.frame,
+        _fitSpec(fitFrame.sourceParentReceiptIds),
+        calibrationKnowledgeAsOf="20210430",
+    )
+    report = evaluateDriverCoefficientOos(
+        receipt,
+        oosFrame.frame,
+        _oosSpec(oosFrame.sourceParentReceiptIds, oosFrame.labelParentReceiptIds),
+        evaluationKnowledgeAsOf="20220131",
+    )
+    signed = _issueCoefficientAdmission(context, report)
+    with pytest.raises(DriverCalibrationError, match="fit observation frame binding is missing"):
+        validateDriverCoefficientAdmission(
+            report,
+            context[4],
+            calibrationReceipt=receipt,
+            receiptId=signed.receiptId,
+            decisionAsOf="20220202",
+        )
+
+
+def testProviderObservationAdmissionRejectsFrameHashTamper(tmp_path) -> None:
+    context = _trust(tmp_path)
+    fitSource, fitLabel = _fitBatches(context)
+    oosSource, oosLabel = _oosBatches(context)
+    fitFrame = buildDriverCoefficientObservationFrame(fitSource, fitLabel, _frameSpec("fit-frame"))
+    oosFrame = buildDriverCoefficientObservationFrame(oosSource, oosLabel, _frameSpec("oos-frame"))
+    tamperedFitFrame = replace(fitFrame, frameHash="0" * 64)
+    receipt, report, signed = _fitAndReport(context, tamperedFitFrame, oosFrame)
+    with pytest.raises(DriverCalibrationError, match="fit observation frame replay mismatch"):
+        validateDriverCoefficientAdmission(
+            report,
+            context[4],
+            calibrationReceipt=receipt,
+            receiptId=signed.receiptId,
+            decisionAsOf="20220202",
+        )
+
+
 def testDriverObservationFrameRejectsUnderlyingVintageReceiptAsParent(tmp_path) -> None:
     context = _trust(tmp_path)
     fitSource, fitLabel = _fitBatches(context)
@@ -543,12 +641,5 @@ def testDriverObservationFrameRejectsUnderlyingVintageReceiptAsParent(tmp_path) 
         sourceParentReceiptIds=(oosSource.observations[0].vintage.receiptId,),
         labelParentReceiptIds=(oosLabel.observations[0].vintage.receiptId,),
     )
-    receipt, report, signed = _fitAndReport(context, rawFitFrame, rawOosFrame)
-    with pytest.raises(DriverCalibrationError, match="coverage artifact"):
-        validateDriverCoefficientAdmission(
-            report,
-            context[4],
-            calibrationReceipt=receipt,
-            receiptId=signed.receiptId,
-            decisionAsOf="20220202",
-        )
+    with pytest.raises(DriverCalibrationError, match="fit observation frame binding mismatch"):
+        _fitAndReport(context, rawFitFrame, rawOosFrame)

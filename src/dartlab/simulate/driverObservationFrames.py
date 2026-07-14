@@ -67,6 +67,7 @@ class DriverCoefficientObservationFrame:
     labelParentReceiptIds: tuple[str, ...]
     rowCount: int
     specHash: str
+    spec: DriverCoefficientObservationFrameSpec | None = None
     schemaVersion: str = DRIVER_OBSERVATION_FRAME_VERSION
 
     def __post_init__(self) -> None:
@@ -381,4 +382,5 @@ def buildDriverCoefficientObservationFrame(
         labelParentReceiptIds=(labelBatch.batchReceiptId,),
         rowCount=len(rows),
         specHash=specHash,
+        spec=spec,
     )

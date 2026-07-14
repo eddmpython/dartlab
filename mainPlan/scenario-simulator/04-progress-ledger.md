@@ -1155,3 +1155,14 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **상태 계보 보강**: `operatingInputsFromCompiledState`가 compiled PIT state의 `knowledgeAsOf`, `decisionAsOf`, state manifest, compilation contract, world-state vintage를 `runOperatingStrategies`의 initial `WorldState`까지 전달하게 했다. 단 mapped operating state에 원 PIT receipt를 initialState receipt처럼 세탁하지는 않는다.
 - **검증**: scenario composition 4건, operatingWorld lineage 11건, driverPaths, operatingBridge, world 포함 집중 회귀 57건이 통과했다. `tests/simulate` 전체 381건 통과. ruff format/check, camelCase strict, docstring audit, em/en dash audit도 통과했다.
 - **남은 P0**: exact provider observation batch에서 시작해 coefficient admission과 admitted operating exposure까지 도달하는 수직 E2E fixture가 아직 필요하다. 이번 단위는 추천을 여는 단계가 아니라, 다중 case 비교와 값 역할 분리를 기계화한 단계다.
+
+
+## 2026-07-15 P0 provider observation to operating exposure replay
+
+- **판단**: PRD급 시뮬레이터에서 "조건을 넣고 전략을 도출한다"는 말은 raw 값이 곧 법칙이 된다는 뜻이 아니다. signed exact provider observation batch가 path source, coefficient frame, OOS admission, operating exposure까지 같은 증거 사슬로 살아 있어야 한다.
+- **구현**: `DriverCoefficientObservationFrame`이 원 frame spec을 보존하게 하고, `DriverObservationFrameBinding`을 coefficient receipt와 OOS report에 결속했다. provider batch parent를 쓰는 coefficient admission은 이제 fit frame과 OOS frame을 parent artifact에서 다시 만들어 frameHash, specHash, rowCount, source batch, label batch가 모두 맞아야 통과한다.
+- **세탁 차단**: provider batch parent가 있는데 raw `pl.DataFrame`으로 fit 또는 OOS를 만든 report는 admission에서 거부된다. frameHash 조작, row ref alias, dataVintage parent로 provider batch를 대체하는 시도도 실패한다. provider batch coverage는 더 이상 vintage sourceRefs를 row identity로 쓰지 않고 observationId만 인정한다.
+- **운영 경계**: `OperatingTransmissionExposure(evidenceKind="measuredAssociation")`는 이제 `driverCoefficientAdmission:<receiptId>` 형식의 sourceRef가 없으면 bridge에서 거부된다. 따라서 손으로 만든 measuredAssociation exposure를 operating bridge에 넣어 coefficient admission을 흉내 내는 경로가 닫혔다.
+- **E2E 증명**: provider observation batch를 `driverHistorySourceFromProviderObservationBatch`로 path registry에 투영하고, 같은 signed source와 label batch에서 coefficient frame을 만든 뒤 PIT fit, held-out OOS, signed driverCoefficient admission, `VerifiedDriverCoefficientAdmission`, `calibrationReceiptToOperatingExposure`까지 도달하는 회귀를 추가했다.
+- **검증**: provider observation batch, observation frame, operating bridge focused 24건 통과. `tests/simulate` 전체 385건 통과. ruff format, ruff check, camelCase strict, 변경 src 파일별 docstring audit, Guard Index quick, diff check 통과.
+- **남은 P0**: 이 단위는 evidence chain과 replay wall을 닫은 것이다. 아직 DART, EDGAR, price, macro, industry lane을 실제 런타임 adapter로 묶고, 다변수 coefficient registry와 scenario composition을 연결해 전략 recommendation을 여는 단계는 남아 있다.
