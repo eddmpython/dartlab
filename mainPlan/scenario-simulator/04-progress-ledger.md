@@ -54,6 +54,18 @@
 
 현재 판정: 전쟁 시뮬레이션식 구조에 필요한 두 축 중 하나, 즉 "현재 상태값을 원천 경계와 함께 세계 상태로 세운다"는 축이 닫혔다. 남은 축은 경로 생성이다. 수요, ASP, unit cost, fixed cost, capacity에 대해 실제 관측 가능한 것은 observed로, 관측 불가능한 것은 explicitAssumption 또는 blocked로 라벨링한 뒤, 다중 경로와 전략 후보를 생성하고 OOS policy certificate와 연결해야 한다.
 
+## 2026-07-14 P0 운영 factor 전파 bridge
+
+위 잔여 축 중 경로 생성의 첫 접착층을 본진에 넣었다. 목적은 외부 조건 path를 운영 world가 소비하는 shock path로 바꾸되, source status를 과장하지 않는 것이다. 공개 API나 GUI가 아니라 내부 L2.5 bridge다.
+
+- `src/dartlab/simulate/operatingBridge.py`: `OperatingTransmissionExposure`가 source factor, target operating shock, coefficient, evidence kind, source ref, optional PIT modifier를 선언한다. `bridgeOperatingPath`는 source path를 `operatingWorld`용 `ScenarioPath`로 바꾸고, `bridgeHash`, exposure id, target shock, source refs, state ref, state contract hash를 audit에 남긴다.
+- PIT modifier: `business.exportRatio` 같은 observed feature가 FX shock의 가격 전가율을 조정할 수 있다. modifier가 없거나 단위가 다르거나 evidence role이 실행 불가면 fail closed다.
+- 물리 경계: ratio shock은 -100% 아래로 내려갈 수 없고, debt rate는 0~1 밖으로 나갈 수 없다. 누락 factor도 0 대체 없이 즉시 차단한다.
+- 비승격 원칙: source path가 admitted이고 coefficient가 measuredAssociation이어도 bridge output은 스스로 admitted가 되지 않는다. 현재 `validationStatus=retrospectiveOnly`이고, explicit assumption이면 `bridgeEvidence:explicitAssumption`을 유지한다. 추천은 계속 `conditionalOnly`가 상한이다.
+- 테스트: `_attempts/operatingTransmission` 킬테스트를 본진 `tests/simulate/test_operatingBridge.py`로 승격했다. factor path 전파, PIT modifier, 누락 factor, modifier unit drift, 물리 하한, measuredAssociation 비승격, operatingWorld 실행 연결을 회귀로 고정했다.
+
+현재 판정: 전쟁게임식 루프의 다음 접착층이 생겼다. 조건 path가 운영 변수로 전파되고, 그 운영 shock이 전략별 손익, 현금, capacity 상태로 굴러간다. 아직 남은 P0는 source path와 exposure coefficient 자체를 signed admission 체계와 parameter draw 빈티지에 묶는 것이다. 그 전까지는 전략 추천이 아니라 조건부 비교만 허용한다.
+
 ---
 
 ## 0. ★2026-06-20 9인 전문가 패널 uplift . 세 축 planScore 95 도달
