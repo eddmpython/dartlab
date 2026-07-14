@@ -15,7 +15,7 @@ import polars as pl
 
 from dartlab.simulate.driverPaths import DriverCard, DriverFactorSpec, DriverHistorySource
 from dartlab.simulate.empiricalPaths import EmpiricalPathError
-from dartlab.simulate.macroPaths import weeklyMacroInnovations
+from dartlab.simulate.macroPaths import quarterlyMacroInnovations, weeklyMacroInnovations
 from dartlab.simulate.vintage import canonicalPayloadHash
 
 _FACTOR_TIMINGS = {"innovation", "change", "level", "rate"}
@@ -661,11 +661,12 @@ def macroDriverHistorySource(
     datasetId: str = "macro.observations",
     entityId: str = "KR",
     factorIds: tuple[str, ...] = (),
+    frequency: str = "week",
 ) -> DriverHistorySource:
-    """Create a revised-history weekly macro innovation driver source.
+    """Create a revised-history macro innovation driver source.
 
     Args:
-        macroDaily: Daily macro level panel accepted by ``weeklyMacroInnovations``.
+        macroDaily: Daily macro level panel accepted by the macro innovation adapters.
         knowledgeAsOf: Decision cutoff for available macro observations.
         sourceRefs: Macro provider and artifact references.
         cardId: Stable driver card identifier.
@@ -673,9 +674,10 @@ def macroDriverHistorySource(
         datasetId: Dataset identifier.
         entityId: Market or region identifier.
         factorIds: Optional registered macro factor subset.
+        frequency: ``week`` or ``quarter`` output step contract.
 
     Returns:
-        ``DriverHistorySource`` on a weekly grid with innovation factor contracts.
+        ``DriverHistorySource`` on the requested grid with innovation factor contracts.
 
     Raises:
         DriverSourceError: If the macro lane has no requested factors or safe rows.
@@ -686,10 +688,19 @@ def macroDriverHistorySource(
 
     _validateSourceRefs(tuple(sourceRefs), cardId)
     cutoff = _dateText(knowledgeAsOf, "knowledgeAsOf")
+    if frequency not in {"week", "quarter"}:
+        raise DriverSourceError("macro driver frequency must be week or quarter")
     try:
-        panel, variables, warnings = weeklyMacroInnovations(macroDaily, knowledgeAsOf=cutoff)
+        if frequency == "week":
+            panel, variables, warnings = weeklyMacroInnovations(macroDaily, knowledgeAsOf=cutoff)
+            adapterRef = "simulate.macroPaths:weeklyMacroInnovations"
+        else:
+            panel, variables, warnings = quarterlyMacroInnovations(macroDaily, knowledgeAsOf=cutoff)
+            adapterRef = "simulate.macroPaths:quarterlyMacroInnovations"
     except EmpiricalPathError as error:
         raise DriverSourceError(str(error)) from error
+    if frequency == "quarter" and cardId == "macro-weekly-innovations":
+        cardId = "macro-quarterly-innovations"
     variableById = {variable.variableId: variable for variable in variables}
     requested = tuple(factorIds) if factorIds else tuple(variable.variableId for variable in variables)
     if not requested or set(requested) - set(variableById):
@@ -699,9 +710,9 @@ def macroDriverHistorySource(
         DriverFactorSpec(
             variableId,
             variableById[variableId].unit,
-            "week",
+            frequency,
             "innovation",
-            f"macro-weekly-innovation-{variableId}-v1",
+            f"macro-{frequency}-innovation-{variableId}-v1",
             sourceColumn=variableId,
         )
         for variableId in requested
@@ -712,13 +723,13 @@ def macroDriverHistorySource(
         providerId=providerId,
         datasetId=datasetId,
         entityId=entityId,
-        frequency="week",
+        frequency=frequency,
         stepSpan=1,
         factors=factors,
         sourceRefs=tuple(sourceRefs)
         + (
             "simulate.table:macroDaily",
-            "simulate.macroPaths:weeklyMacroInnovations",
+            adapterRef,
             "simulate.driverSources:macroDriverHistorySource",
         ),
         knowledgeAsOf=cutoff,

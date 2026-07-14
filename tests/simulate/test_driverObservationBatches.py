@@ -637,6 +637,67 @@ def testPriceReturnObservationBatchBuildsExactProviderBatchAndProjection(tmp_pat
         )
 
 
+def testPriceReturnObservationBatchBuildsQuarterlyExactReturns(tmp_path) -> None:
+    context = _context(tmp_path)
+    rawPanel = pl.DataFrame(
+        {
+            "code": ["005930", "005930", "005930", "005930"],
+            "date": ["20200331", "20200630", "20200930", "20201231"],
+            "availableAt": ["20200415", "20200715", "20201015", "20210115"],
+            "revisionId": ["q0", "q1", "q2", "q3"],
+            "close": [100.0, 110.0, 99.0, 118.8],
+        }
+    )
+    pricePanel, priceReceipts = _attachPriceSourceReceipts(context, rawPanel)
+    returnReceipts, adjustmentPolicyHash = _priceReturnReceipts(
+        context,
+        pricePanel,
+        priceReceipts,
+        frequency="quarter",
+    )
+    batch = buildPriceReturnDriverObservationBatch(
+        pricePanel,
+        code="005930",
+        knowledgeAsOf="20210131",
+        sourceReceipts=priceReceipts,
+        returnReceipts=returnReceipts,
+        sourceRefs=("source:gov-price-quarterly", "adjustment:split-adjusted-close"),
+        frequency="quarter",
+        adjustmentPolicyHash=adjustmentPolicyHash,
+    )
+    signedBatch = issueProviderObservationBatch(
+        batch,
+        context[0],
+        context[1],
+        privateKey=context[2],
+        issuerId="lane-issuer",
+        issuerKeyId="lane-key",
+        issuedAt="20210131T000000Z",
+        trustedIssuers=context[3],
+    )
+    source = driverHistorySourceFromProviderObservationBatch(
+        signedBatch,
+        cardId="quarterly-equity-return-history",
+        factors=(
+            DriverFactorSpec(
+                "equityReturnShock",
+                "simpleReturn",
+                "quarter",
+                "innovation",
+                "price-simple-return-quarter-1-v1",
+            ),
+        ),
+    )
+    assert signedBatch.historyStatus == "exact"
+    assert [observation.eventAt for observation in signedBatch.observations] == [
+        "20200630",
+        "20200930",
+        "20201231",
+    ]
+    assert source.card.frequency == "quarter"
+    assert source.panel["equityReturnShock"].to_list() == pytest.approx([0.10, -0.10, 0.20])
+
+
 def testPriceReturnObservationBatchBindsBothPriceLegsAndDerivedArtifact(tmp_path) -> None:
     context = _context(tmp_path)
     pricePanel, priceReceipts = _attachPriceSourceReceipts(context, _pricePanel())

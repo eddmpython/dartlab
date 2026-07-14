@@ -1,4 +1,4 @@
-"""Adapt observed macro levels into retrospective weekly joint world paths."""
+"""Adapt observed macro levels into retrospective joint world paths."""
 
 from __future__ import annotations
 
@@ -15,18 +15,14 @@ from dartlab.simulate.empiricalPaths import (
 from dartlab.simulate.factors import macroFactors
 
 
-def weeklyMacroInnovations(
+def _macroInnovations(
     macroDaily: pl.DataFrame,
     *,
     knowledgeAsOf: str,
+    frequency: str,
 ) -> tuple[pl.DataFrame, tuple[PathVariable, ...], tuple[str, ...]]:
-    """Convert factor levels known by a cutoff into native weekly innovations.
-
-    The current macro store has observation dates but no separate release
-    vintage. ``availableAt`` therefore equals the observation date and the
-    output must remain retrospective revised history.
-    """
-
+    if frequency not in {"week", "quarter"}:
+        raise EmpiricalPathError("macro innovations support week or quarter frequency")
     if "date" not in macroDaily.columns:
         raise EmpiricalPathError("macro panel needs a date column")
     cutoff = str(knowledgeAsOf).replace("-", "")[:8]
@@ -42,10 +38,17 @@ def weeklyMacroInnovations(
         .with_columns(
             pl.col("date").str.to_date("%Y%m%d").alias("__date"),
         )
-        .with_columns((pl.col("__date").dt.iso_year() * 100 + pl.col("__date").dt.week()).alias("__week"))
     )
-    weekly = (
-        levels.group_by("__week")
+    if frequency == "week":
+        levels = levels.with_columns(
+            (pl.col("__date").dt.iso_year() * 100 + pl.col("__date").dt.week()).alias("__bucket")
+        )
+    else:
+        levels = levels.with_columns(
+            (pl.col("__date").dt.year() * 10 + pl.col("__date").dt.quarter()).alias("__bucket")
+        )
+    period = (
+        levels.group_by("__bucket")
         .agg(
             pl.col("date").sort_by("date").last().alias("eventTime"),
             *(pl.col(factor.factor).sort_by("date").last().alias(factor.factor) for factor in specs),
@@ -63,7 +66,7 @@ def weeklyMacroInnovations(
             unit = "simpleReturn"
         variables.append(PathVariable(factor.factor, factor.factor, unit))
     panel = (
-        weekly.with_columns(*changes)
+        period.with_columns(*changes)
         .with_columns(pl.col("eventTime").alias("availableAt"))
         .select("eventTime", "availableAt", *(factor.factor for factor in specs))
         .drop_nulls([factor.factor for factor in specs])
@@ -74,6 +77,31 @@ def weeklyMacroInnovations(
         "macroReleaseVintageUnavailable",
     )
     return panel, tuple(variables), warnings
+
+
+def weeklyMacroInnovations(
+    macroDaily: pl.DataFrame,
+    *,
+    knowledgeAsOf: str,
+) -> tuple[pl.DataFrame, tuple[PathVariable, ...], tuple[str, ...]]:
+    """Convert factor levels known by a cutoff into native weekly innovations.
+
+    The current macro store has observation dates but no separate release
+    vintage. ``availableAt`` therefore equals the observation date and the
+    output must remain retrospective revised history.
+    """
+
+    return _macroInnovations(macroDaily, knowledgeAsOf=knowledgeAsOf, frequency="week")
+
+
+def quarterlyMacroInnovations(
+    macroDaily: pl.DataFrame,
+    *,
+    knowledgeAsOf: str,
+) -> tuple[pl.DataFrame, tuple[PathVariable, ...], tuple[str, ...]]:
+    """Convert factor levels known by a cutoff into native quarterly innovations."""
+
+    return _macroInnovations(macroDaily, knowledgeAsOf=knowledgeAsOf, frequency="quarter")
 
 
 def buildHistoricalMacroPaths(

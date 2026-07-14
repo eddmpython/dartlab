@@ -713,7 +713,7 @@ def buildPriceReturnDriverObservationBatch(
         signalId: Output factor id. Must remain an equity/security factor.
         sourceArtifactKind: Derived return artifact kind.
         sourceArtifactId: Optional derived return artifact identity.
-        frequency: ``day`` or ``week`` return grid.
+        frequency: ``day``, ``week``, or ``quarter`` return grid.
         returnWindow: Positive lag window in return-grid steps.
         adjustmentPolicyHash: Hash of the close adjustment policy.
 
@@ -733,7 +733,7 @@ def buildPriceReturnDriverObservationBatch(
         raise DriverObservationBatchError("price return observation needs code and source refs")
     if signalId in _FORBIDDEN_PRICE_RETURN_SIGNALS:
         raise DriverObservationBatchError("price return observation signal cannot be an operating shock")
-    if frequency not in {"day", "week"} or returnWindow < 1:
+    if frequency not in {"day", "week", "quarter"} or returnWindow < 1:
         raise DriverObservationBatchError("price return observation step contract is invalid")
     if not availableAtColumn or not sourceArtifactHashColumn or not revisionIdColumn:
         raise DriverObservationBatchError("exact price return observation needs explicit availability and row hashes")
@@ -792,11 +792,18 @@ def buildPriceReturnDriverObservationBatch(
     if any(not math.isfinite(float(value)) for value in base["__close"].to_list()):
         raise DriverObservationBatchError("price return observation close values must be finite")
     levels = base
-    if frequency == "week":
+    if frequency in {"week", "quarter"}:
+        levels = levels.with_columns(pl.col("__event").str.to_date("%Y%m%d").alias("__date"))
+        if frequency == "week":
+            levels = levels.with_columns(
+                (pl.col("__date").dt.iso_year() * 100 + pl.col("__date").dt.week()).alias("__bucket")
+            )
+        else:
+            levels = levels.with_columns(
+                (pl.col("__date").dt.year() * 10 + pl.col("__date").dt.quarter()).alias("__bucket")
+            )
         levels = (
-            levels.with_columns(pl.col("__event").str.to_date("%Y%m%d").alias("__date"))
-            .with_columns((pl.col("__date").dt.iso_year() * 100 + pl.col("__date").dt.week()).alias("__week"))
-            .group_by("__week")
+            levels.group_by("__bucket")
             .agg(
                 pl.col("__event").sort_by("__event").last().alias("__event"),
                 pl.col("__available").sort_by("__event").last().alias("__available"),

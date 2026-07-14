@@ -19,6 +19,10 @@ def _weeklyDates(n: int) -> list[str]:
     return [(date(2020, 1, 3) + timedelta(days=7 * index)).strftime("%Y%m%d") for index in range(n)]
 
 
+def _quarterDates() -> list[str]:
+    return ["20200331", "20200630", "20200930", "20201231"]
+
+
 def testPanelMetricDriverSourceFiltersByAvailabilityAndCarriesRefs() -> None:
     panel = pl.DataFrame(
         {
@@ -297,6 +301,37 @@ def testMacroDriverSourceKeepsReleaseVintageWarningAndFactorUnits() -> None:
     assert source.card.historyStatus == "revisedHistory"
     assert "macroReleaseVintageUnavailable" in source.card.warnings
     assert source.panel.height == 7
+
+
+def testMacroDriverSourceBuildsQuarterlyInnovationGrid() -> None:
+    dates = _quarterDates()
+    macro = pl.DataFrame(
+        {
+            "date": dates,
+            "oil": [100.0, 110.0, 99.0, 118.8],
+            "rate": [1.0, 1.25, 1.0, 1.5],
+        }
+    )
+    source = macroDriverHistorySource(
+        macro,
+        knowledgeAsOf="20210131",
+        sourceRefs=("data/macro",),
+        factorIds=("oil", "rate"),
+        frequency="quarter",
+    )
+    units = {factor.variableId: factor.unit for factor in source.card.factors}
+    transforms = {factor.variableId: factor.transformId for factor in source.card.factors}
+    assert source.card.cardId == "macro-quarterly-innovations"
+    assert source.card.frequency == "quarter"
+    assert units == {"oil": "simpleReturn", "rate": "percentagePointChange"}
+    assert transforms == {
+        "oil": "macro-quarter-innovation-oil-v1",
+        "rate": "macro-quarter-innovation-rate-v1",
+    }
+    assert "simulate.macroPaths:quarterlyMacroInnovations" in source.card.sourceRefs
+    assert source.panel["eventTime"].to_list() == dates[1:]
+    assert source.panel["oil"].to_list() == pytest.approx([0.10, -0.10, 0.20])
+    assert source.panel["rate"].to_list() == pytest.approx([0.25, -0.25, 0.50])
 
 
 def testPriceReturnDriverSourceBuildsWeeklyEquityReturnsWithoutAsKnownLaundering() -> None:
