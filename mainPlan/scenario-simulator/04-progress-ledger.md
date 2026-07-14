@@ -69,6 +69,20 @@
 
 현재 판정: 전쟁게임식 루프의 전파층은 실코드로 닫혔다. 그러나 PRD급 시뮬레이터 전체가 완성된 것은 아니다. 다음 P0는 DART, EDGAR, 가격, 거시, 산업 역사와 explicit assumption을 받아 다수의 typed factor path를 생성하는 DriverRegistry 또는 동등한 path generator다. 이어서 전파 coefficient의 PIT calibration, held-out OOS 검증, signed admission을 닫아야 조건부 비교를 전략 추천으로 승격할 수 있다.
 
+## 2026-07-14 P0 typed driver path generator
+
+위 다음 P0의 첫 본진 조각을 넣었다. 목적은 거대한 GUI나 새 공개 API가 아니라, 여러 데이터 레인과 명시 가정을 `ScenarioPath`로 컴파일하는 내부 path generator 계약을 닫는 것이다.
+
+- `src/dartlab/simulate/driverPaths.py`: `DriverCard`, `DriverHistorySource`, `DriverAssumptionSource`, `DriverFactorSpec`을 추가했다. 데이터 source는 카드 1장으로 들어오고, factor는 variableId, unit, frequency, timing, transformId를 반드시 가진다.
+- joint support: 여러 history source는 같은 eventTime에 inner join하고, 각 source의 availableAt 중 가장 늦은 값을 path availableAt으로 둔다. 서로 다른 source를 독립 resample한 뒤 joint path라고 부르지 않는다.
+- explicit assumption: 사용자 가정은 sourceRef, assumptionId, claim, falsifier가 없으면 실행 전에 차단된다. history 위에 덮인 가정은 path status를 `unvalidated`로 낮춘다.
+- status 단조성: rejected 또는 blocked card는 path generator에 들어오지 못한다. certificate가 있더라도 path-set admission을 흉내 내지 않고, admissionContentHash와 admissionReceiptId를 만들지 않는다.
+- bridge 결속: `driverFactorsToOperatingSpecs`가 생성 factor 계약을 `OperatingFactorSpec`으로 바꾸며, 결과 path는 `bridgeOperatingPath`가 바로 소비한다.
+- hash와 lineage: registryHash, factorContractHash, inputHash, pathSetHash가 카드, source refs, history rows, assumption content, certificate placeholder, seed, horizon, output steps를 묶는다. sourceRef나 가정값이 바뀌면 pathSetHash도 바뀐다.
+- 테스트: `_attempts/driverRegistry`에서 개념 씨앗을 먼저 통과시킨 뒤 `tests/simulate/test_driverPaths.py`로 joint support, explicit assumption, bridge 소비, status fail closed, hash binding을 본진 회귀로 고정했다.
+
+현재 판정: 이제 "조건과 가정으로 typed factor path를 만든다"는 내부 실행 계약이 생겼다. 다만 아직 DART, EDGAR, 가격, macro, industry의 전 레인을 자동으로 스캔해 카드로 등록하는 전수 DriverRegistry는 아니다. 다음 P0는 실제 workbench 레인별 카드 생성기, 즉 scan/account-ratio, edgar scan, price, macro, industry snapshot을 동일 카드 계약으로 공급하는 단계다. 그 다음에 coefficient calibration과 OOS admission을 닫아야 전략 추천으로 승격된다.
+
 ---
 
 ## 0. ★2026-06-20 9인 전문가 패널 uplift . 세 축 planScore 95 도달
