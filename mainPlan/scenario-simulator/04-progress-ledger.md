@@ -138,6 +138,19 @@
 
 현재 판정: 이제 서로 다른 빈도의 driver source를 한 path set으로 묶기 위한 안전한 첫 변환이 생겼다. 하지만 PRD급 시뮬레이터 완료는 아니다. 다음 P0는 자동 전수 source discovery, flow 계정의 별도 display-only 또는 explicit assumption transform, coefficient PIT calibration, held-out OOS certificate다. 이 단계 전까지 carry-forward filing feature는 상태 조건일 뿐 운영 shock 또는 추천 근거가 아니다.
 
+## 2026-07-15 P0 flow measure explicit assumption boundary
+
+위 다음 P0 중 flow 계정의 합법 실행 경로를 본진에 넣었다. 방향은 flow를 history path로 세탁하는 것이 아니라, 과거 flow 기간을 evidence anchor로 묶고 사용자가 명시한 미래 step만 executable assumption으로 내보내는 내부 변환이다. 새 공개 API나 GUI는 추가하지 않았다.
+
+- `src/dartlab/simulate/driverTransforms.py`: `flowMeasureExplicitAssumptionSource`를 추가했다. DART/EDGAR 매출, 영업이익, CFO 같은 기간 flow는 직접 carry-forward history가 아니라 `DriverAssumptionSource`로만 실행된다.
+- period boundary gate: `periodStart`, `periodEnd`, `periodScope`가 없거나 역전되면 차단한다. `periodEnd`와 일치하는 source flow row가 `knowledgeAsOf`까지 available하지 않으면 차단한다.
+- sourceMeasureKind gate: `flow`, `periodFlow`, `cumulativeFlow`, `cumulative`, `ytdCumulative`, `annualCumulative`만 이 경로에 들어올 수 있다. ratio, stock, stateFeature는 이 flow assumption helper로 들어오지 못한다.
+- assumption contract: output factor, steps, `assumptionId`, claim, falsifier, sourceRef가 모두 필요하다. 결과는 항상 `historyStatus=explicitAssumption`, `validationStatus=unvalidated`로 path generator에 들어가며 추천 admission을 열지 않는다.
+- lineage 보존: source card, selected source flow row, period boundary, sourceMeasureKind, assumption steps, claim, falsifier, transformId를 `transformTrace:<hash>`에 결속한다. source warning과 `flowMeasureExplicitAssumption` warning도 path audit에 남는다.
+- 검증: `_attempts/driverTransforms/test_driverTransforms.py`에서 flow kind, period boundary, source period availability, explicit path build를 먼저 고정했다. 본진 `tests/simulate/test_driverTransforms.py`로 승격했고, focused 31개, `tests/simulate` 353개, `ruff format --check`, `ruff check`, camelCase audit, docstring audit, em/en dash audit, `dartlabGuard.py strict --scope l0-l15 --providers dart,edgar`가 통과했다.
+
+현재 판정: 이제 flow 계정은 막힌 값이 아니라 명시 가정으로만 실행 가능한 값이 됐다. 하지만 PRD급 시뮬레이터 완료는 아니다. 다음 P0는 자동 전수 source discovery와 coefficient PIT calibration이다. 특히 revenue flow assumption을 demandChange, ASP, capacity, unitCost로 어떻게 전파할지는 별도 exposure law와 OOS admission으로 닫아야 한다.
+
 ---
 
 ## 0. ★2026-06-20 9인 전문가 패널 uplift . 세 축 planScore 95 도달

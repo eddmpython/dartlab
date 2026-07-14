@@ -5,10 +5,14 @@ from datetime import date, timedelta
 import polars as pl
 import pytest
 
-from dartlab.simulate.driverPaths import DriverFactorSpec
+from dartlab.simulate.driverPaths import DriverFactorSpec, buildDriverPathSet
 from dartlab.simulate.driverRegistry import DriverRegistryCandidate, compileDriverRegistryPathSet
 from dartlab.simulate.driverSources import filingMetricDriverHistorySource, priceReturnDriverHistorySource
-from dartlab.simulate.driverTransforms import DriverTransformError, carryForwardDriverHistorySource
+from dartlab.simulate.driverTransforms import (
+    DriverTransformError,
+    carryForwardDriverHistorySource,
+    flowMeasureExplicitAssumptionSource,
+)
 
 
 def _weeklyDates(n: int) -> list[str]:
@@ -46,6 +50,42 @@ def _filingSource():
         sourceRefs=("data/dart/finance/005930.parquet", "transform:operating-margin-change"),
         knowledgeAsOf="20201231",
         eventTimeColumn="period",
+        availableAtColumn="rceptDate",
+        filingIdColumn="rceptNo",
+    )
+
+
+def _flowSource():
+    factor = DriverFactorSpec(
+        "reportedRevenue",
+        "currency",
+        "quarter",
+        "level",
+        "dart-revenue-flow-v1",
+        sourceColumn="revenue",
+    )
+    panel = pl.DataFrame(
+        {
+            "code": ["005930", "005930"],
+            "periodEnd": ["20200331", "20200630"],
+            "rceptDate": ["20200515", "20200814"],
+            "rceptNo": ["202005150001", "202008140001"],
+            "revenue": [55_000.0, 58_000.0],
+        }
+    )
+    return filingMetricDriverHistorySource(
+        panel,
+        cardId="dart-revenue-flow",
+        providerId="dart",
+        datasetId="dart.finance.retained",
+        entityId="005930",
+        entityIdColumn="code",
+        frequency="quarter",
+        stepSpan=1,
+        factors=(factor,),
+        sourceRefs=("data/dart/finance/005930.parquet", "xbrl:revenue"),
+        knowledgeAsOf="20201231",
+        eventTimeColumn="periodEnd",
         availableAtColumn="rceptDate",
         filingIdColumn="rceptNo",
     )
@@ -217,3 +257,104 @@ def testCarryForwardBindsSourceMeasureKindInRefsAndTrace() -> None:
     assert "sourceMeasureKind:ratio" in ratio.card.sourceRefs
     assert "sourceMeasureKind:stateFeature" in state.card.sourceRefs
     assert ratioTrace != stateTrace
+
+
+def testFlowMeasureExplicitAssumptionRequiresBoundaryAndFlowKind() -> None:
+    factors = (DriverFactorSpec("demandShock", "simpleReturn", "quarter", "innovation", "flow-to-demand-v1"),)
+    with pytest.raises(DriverTransformError, match="requires flow sourceMeasureKind"):
+        flowMeasureExplicitAssumptionSource(
+            _flowSource(),
+            steps=({"demandShock": -0.05},),
+            targetFrequency="quarter",
+            targetStepSpan=1,
+            factors=factors,
+            knowledgeAsOf="20201231",
+            assumptionId="assumption-revenue-demand",
+            claim="Revenue flow weakness maps to demand decline.",
+            falsifier="Next order-book disclosure does not decline.",
+            periodStart="20200101",
+            periodEnd="20200331",
+            periodScope="quarter",
+            sourceMeasureKind="ratio",
+            transformId="flow-to-explicit-demand-v1",
+            sourceRef="assumption://revenue-demand",
+        )
+    with pytest.raises(DriverTransformError, match="periodStart"):
+        flowMeasureExplicitAssumptionSource(
+            _flowSource(),
+            steps=({"demandShock": -0.05},),
+            targetFrequency="quarter",
+            targetStepSpan=1,
+            factors=factors,
+            knowledgeAsOf="20201231",
+            assumptionId="assumption-revenue-demand",
+            claim="Revenue flow weakness maps to demand decline.",
+            falsifier="Next order-book disclosure does not decline.",
+            periodStart="20200401",
+            periodEnd="20200331",
+            periodScope="quarter",
+            sourceMeasureKind="flow",
+            transformId="flow-to-explicit-demand-v1",
+            sourceRef="assumption://revenue-demand",
+        )
+    with pytest.raises(DriverTransformError, match="source flow period is not available"):
+        flowMeasureExplicitAssumptionSource(
+            _flowSource(),
+            steps=({"demandShock": -0.05},),
+            targetFrequency="quarter",
+            targetStepSpan=1,
+            factors=factors,
+            knowledgeAsOf="20201231",
+            assumptionId="assumption-revenue-demand",
+            claim="Revenue flow weakness maps to demand decline.",
+            falsifier="Next order-book disclosure does not decline.",
+            periodStart="20200701",
+            periodEnd="20200930",
+            periodScope="quarter",
+            sourceMeasureKind="flow",
+            transformId="flow-to-explicit-demand-v1",
+            sourceRef="assumption://revenue-demand",
+        )
+
+
+def testFlowMeasureExplicitAssumptionBindsPeriodRefsAndBuildsPath() -> None:
+    source = flowMeasureExplicitAssumptionSource(
+        _flowSource(),
+        steps=({"demandShock": -0.05}, {"demandShock": 0.02}),
+        targetFrequency="quarter",
+        targetStepSpan=1,
+        factors=(DriverFactorSpec("demandShock", "simpleReturn", "quarter", "innovation", "flow-to-demand-v1"),),
+        knowledgeAsOf="20201231",
+        assumptionId="assumption-revenue-demand",
+        claim="Revenue flow weakness maps to demand decline.",
+        falsifier="Next order-book disclosure does not decline.",
+        periodStart="20200101",
+        periodEnd="20200331",
+        periodScope="quarter",
+        sourceMeasureKind="flow",
+        transformId="flow-to-explicit-demand-v1",
+        sourceRef="assumption://revenue-demand",
+    )
+    assert source.card.sourceKind == "explicitAssumption"
+    assert source.card.historyStatus == "explicitAssumption"
+    assert "flowPeriodStart:20200101" in source.card.sourceRefs
+    assert "flowPeriodEnd:20200331" in source.card.sourceRefs
+    assert "flowPeriodScope:quarter" in source.card.sourceRefs
+    assert "sourceMeasureKind:flow" in source.card.sourceRefs
+    assert "sourceFlowCard:dart-revenue-flow" in source.card.sourceRefs
+    assert "flowMeasureExplicitAssumption" in source.card.warnings
+    assert any(ref.startswith("transformTrace:") for ref in source.card.sourceRefs)
+
+    pathSet = buildDriverPathSet(
+        (source,),
+        knowledgeAsOf="20201231",
+        horizon=2,
+        pathCount=1,
+        blockLength=1,
+        seed=1,
+    )
+    assert pathSet.audit.validationStatus == "unvalidated"
+    assert pathSet.audit.historyStatus == "explicitAssumption"
+    assert "explicitAssumption:assumption-revenue-demand" in pathSet.audit.warnings
+    assert pathSet.paths[0].steps[0]["demandShock"] == pytest.approx(-0.05)
+    assert "sourceMeasureKind:flow" in pathSet.paths[0].refs
