@@ -69,7 +69,10 @@ from dartlab.simulate.driverRegistry import DriverRegistryCandidate, compileDriv
 from dartlab.simulate.operatingBridge import OperatingShockBaseline, OperatingTransmissionExposure
 from dartlab.simulate.operatingWorld import (
     OperatingPrimitive,
+    _buildOperatingWorld,
+    _initialStateFromInputs,
     buildOperatingStrategy,
+    operatingInputsFromCompiledState,
     operatingInputsFromPrimitives,
 )
 from dartlab.simulate.scenarioComposition import (
@@ -81,11 +84,21 @@ from dartlab.simulate.scenarioComposition import (
     scenarioCoefficientExposureContractHash,
 )
 from dartlab.simulate.stateCompiler import (
+    StateCompileSpec,
     buildProviderObservationBatch,
+    compilePointInTimeState,
+    issuePointInTimeState,
     issueProviderObservationBatch,
     makeVariableObservation,
 )
+from dartlab.simulate.stateSupport import INITIAL_STATE_RULE_HASH, INITIAL_STATE_RULE_ID, INITIAL_STATE_RULE_VERSION
+from dartlab.simulate.stateVariables import StateVariableSpec, buildStateVariableRegistry
 from dartlab.simulate.vintage import VintageRef
+from dartlab.simulate.world import (
+    SimulationSpecError,
+    initialStateAdmissionArtifact,
+    initialStateAdmissionSubjectHash,
+)
 
 
 def _trust(tmp_path):
@@ -132,6 +145,171 @@ def _sourceReceipt(context, content: bytes, *, knowledgeAsOf: str, issuedAt: str
         issuedAt=issuedAt,
         trustedIssuers=trusted,
     )
+
+
+def _operatingStateSpecs() -> tuple[StateVariableSpec, ...]:
+    values = (
+        ("price", "currencyPerUnit", 10.0),
+        ("demandVolume", "units", 100.0),
+        ("unitCost", "currencyPerUnit", 6.0),
+        ("fixedCost", "currency", 100.0),
+        ("capacityUnits", "units", 150.0),
+        ("cash", "currency", 500.0),
+        ("debt", "currency", 20.0),
+    )
+    return tuple(
+        StateVariableSpec(
+            variableId=variableId,
+            signalId=variableId,
+            providerId="edgar",
+            datasetId="operating-state-fixture",
+            unit=unit,
+            role="state",
+            evidenceRole="observed",
+            frequency="quarter",
+            timing="stock",
+            transformId="level-v1",
+            maxStalenessDays=400,
+            lower=0.0,
+        )
+        for variableId, unit, _value in values
+    )
+
+
+def _admittedOperatingInputs(context):
+    database, artifacts, privateBytes, trusted, verifier = context
+    decisionAsOf = "20220131"
+    availableAt = "20220115"
+    eventAt = "20211231"
+    observations = []
+    for spec in _operatingStateSpecs():
+        value = {
+            "price": 10.0,
+            "demandVolume": 100.0,
+            "unitCost": 6.0,
+            "fixedCost": 100.0,
+            "capacityUnits": 150.0,
+            "cash": 500.0,
+            "debt": 20.0,
+        }[spec.variableId]
+        sourceReceipt = _sourceReceipt(
+            context,
+            f"operating-state:{spec.variableId}:{value}".encode(),
+            knowledgeAsOf=availableAt,
+            issuedAt=f"{availableAt}T000000Z",
+        )
+        vintage = VintageRef(
+            artifactKind="providerObservation",
+            provider="edgar",
+            artifactId=f"operating-state:{spec.variableId}:original",
+            artifactHash=sourceReceipt.artifactHash,
+            payloadHash=sourceReceipt.artifactHash,
+            knowledgeAsOf=availableAt,
+            availableAt=availableAt,
+            revisionPolicy="asKnown",
+            coverage="asOfExact",
+            fiscalThrough=eventAt,
+            receiptId=sourceReceipt.receiptId,
+        )
+        observations.append(
+            makeVariableObservation(
+                providerId="edgar",
+                datasetId="operating-state-fixture",
+                entityId="005930",
+                signalId=spec.signalId,
+                value=value,
+                unit=spec.unit,
+                frequency=spec.frequency,
+                timing=spec.timing,
+                transformId=spec.transformId,
+                evidenceRole=spec.evidenceRole,
+                eventAt=eventAt,
+                availableAt=availableAt,
+                knowledgeAsOf=availableAt,
+                availabilityPrecision="date",
+                revisionId="original",
+                vintage=vintage,
+                normalizationRuleHash=sha256(b"operating-state-fixture-v1").hexdigest(),
+            )
+        )
+    batch = issueProviderObservationBatch(
+        buildProviderObservationBatch(
+            tuple(observations),
+            providerId="edgar",
+            datasetId="operating-state-fixture",
+            entityId="005930",
+            signalIds=tuple(spec.signalId for spec in _operatingStateSpecs()),
+            cutoffAsOf=decisionAsOf,
+        ),
+        database,
+        artifacts,
+        privateKey=privateBytes,
+        issuerId="provider-issuer",
+        issuerKeyId="provider-key",
+        issuedAt=f"{decisionAsOf}T000000Z",
+        trustedIssuers=trusted,
+    )
+    compiled = compilePointInTimeState(
+        buildStateVariableRegistry(_operatingStateSpecs()),
+        (batch,),
+        StateCompileSpec(
+            entityId="005930",
+            market="KR",
+            decisionAsOf=decisionAsOf,
+            consumerId="one-company-scenario-loop",
+            consumerVersion="1",
+            variableIds=tuple(spec.variableId for spec in _operatingStateSpecs()),
+            requireExact=True,
+        ),
+        admissionVerifier=verifier,
+    )
+    compiled = issuePointInTimeState(
+        compiled,
+        database,
+        artifacts,
+        privateKey=privateBytes,
+        issuerId="provider-issuer",
+        issuerKeyId="provider-key",
+        issuedAt=f"{decisionAsOf}T000000Z",
+        trustedIssuers=trusted,
+    )
+    inputs = operatingInputsFromCompiledState(
+        compiled,
+        priceElasticity=1.0,
+        capacityUnitsPerCurrency=1.0,
+        taxRate=0.0,
+    )
+    model = _buildOperatingWorld(inputs, maxFinancing=200.0, maxInvestment=200.0)
+    initial = _initialStateFromInputs(inputs)
+    initialArtifact = initialStateAdmissionArtifact(model, initial)
+    initialSubjectHash = initialStateAdmissionSubjectHash(model, initial)
+    initialArtifactHash = putAdmissionArtifact(artifacts, initialArtifact)
+    assert initialArtifactHash == initialSubjectHash
+    initialReceipt = issueAdmissionReceipt(
+        database,
+        artifacts,
+        privateKey=privateBytes,
+        kind="initialState",
+        subjectHash=initialSubjectHash,
+        artifactHash=initialArtifactHash,
+        parentReceiptIds=(compiled.stateReceiptId,),
+        ruleId=INITIAL_STATE_RULE_ID,
+        ruleVersion=INITIAL_STATE_RULE_VERSION,
+        ruleHash=INITIAL_STATE_RULE_HASH,
+        issuerId="provider-issuer",
+        issuerKeyId="provider-key",
+        issuerExecutableHash=sha256(b"operating-initial-state-issuer-v1").hexdigest(),
+        knowledgeAsOf=compiled.knowledgeAsOf,
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        frequency=inputs.stepFrequency,
+        stepSpan=inputs.stepSpan,
+        maxAdmittedStep=0,
+        status="admitted",
+        issuedAt=f"{decisionAsOf}T000000Z",
+        trustedIssuers=trusted,
+    )
+    return replace(inputs, initialStateAdmissionReceiptId=initialReceipt.receiptId)
 
 
 def _observation(
@@ -1552,6 +1730,127 @@ def testProviderHistoryAndExplicitAdjustmentFeedScenarioLoopWithoutPathAdmission
         "oilChange",
         "explicitPriceAdjustment",
     }
+
+
+def testAdmittedCurrentStateFeedsScenarioLoopWithoutOpeningRecommendation(tmp_path) -> None:
+    context = _trust(tmp_path)
+    fitFx, fitOil, _fitFrame, _oosFrame, receipt, report, signed, verified, exposures = _multivariableAdmissionBundle(
+        context,
+        fitBatches=_multiFitLaneBatches(context),
+    )
+    binding = buildScenarioCoefficientBindingFromVerifiedMultivariableAdmission(
+        receipt,
+        report,
+        verified,
+        exposures,
+    )
+    inputs = _admittedOperatingInputs(context)
+    loop = compareOneCompanyTwoScenarioStrategies(
+        "005930",
+        inputs,
+        (
+            _scenarioCaseWithProviderHistoryAndAdjustment(
+                "base",
+                0.01,
+                fitFx,
+                fitOil,
+                exposures,
+                binding,
+                context[4],
+            ),
+            _scenarioCaseWithProviderHistoryAndAdjustment(
+                "stress",
+                -0.03,
+                fitFx,
+                fitOil,
+                exposures,
+                binding,
+                context[4],
+            ),
+        ),
+        _oneStepStrategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert loop.recommendation is None
+    base, _stress = loop.caseLedgers
+    assert base.initialStateAdmissionReceiptId == inputs.initialStateAdmissionReceiptId
+    assert f"initialStateAdmission:{inputs.initialStateAdmissionReceiptId}" in base.stateRefs
+    assert any(ref.startswith("stateReceipt:") for ref in base.stateRefs)
+    assert any(ref.startswith("stateManifest:") for ref in base.stateRefs)
+    assert any(ref.startswith("stateCompilationContract:") for ref in base.stateRefs)
+    assert any(ref.startswith("providerBatchReceipt:") for ref in base.stateRefs)
+    assert any(ref.startswith("observation:") for ref in base.stateRefs)
+    assert "initialStateAdmissionMissing" not in base.blockedReasons
+    assert base.pathAdmissionReceiptId == ""
+    assert base.policyEvaluationCertificateId == ""
+    assert "unvalidatedPathPresent" in base.blockedReasons
+    assert "pathAdmissionMissing" in base.blockedReasons
+    assert "policyEvaluationCertificateMissing" in base.blockedReasons
+    assert "automaticRecommendationDisabled" in loop.blockedReasons
+
+    changedState = dict(inputs.state)
+    changedState["cash"] = changedState["cash"] + 1.0
+    with pytest.raises(SimulationSpecError, match="initial-state admission"):
+        compareOneCompanyTwoScenarioStrategies(
+            "005930",
+            replace(inputs, state=changedState),
+            (
+                _scenarioCaseWithProviderHistoryAndAdjustment(
+                    "base",
+                    0.01,
+                    fitFx,
+                    fitOil,
+                    exposures,
+                    binding,
+                    context[4],
+                ),
+                _scenarioCaseWithProviderHistoryAndAdjustment(
+                    "stress",
+                    -0.03,
+                    fitFx,
+                    fitOil,
+                    exposures,
+                    binding,
+                    context[4],
+                ),
+            ),
+            _oneStepStrategies(),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
+
+    with pytest.raises(SimulationSpecError, match="runtime admission verifier"):
+        compareOneCompanyTwoScenarioStrategies(
+            "005930",
+            inputs,
+            (
+                _scenarioCaseWithProviderHistoryAndAdjustment(
+                    "base",
+                    0.01,
+                    fitFx,
+                    fitOil,
+                    exposures,
+                    binding,
+                    None,
+                ),
+                _scenarioCaseWithProviderHistoryAndAdjustment(
+                    "stress",
+                    -0.03,
+                    fitFx,
+                    fitOil,
+                    exposures,
+                    binding,
+                    None,
+                ),
+            ),
+            _oneStepStrategies(),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
 
 
 def testMultivariableAdmissionRejectsTamperedFeatureCellRef(tmp_path) -> None:

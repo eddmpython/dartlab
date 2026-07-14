@@ -1266,3 +1266,14 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **추천 경계**: observed history와 admitted coefficient law가 같이 들어와도 path admission, initial state admission, policy evaluation certificate가 없으면 recommendation은 계속 `None`이다. blocked reason은 `unvalidatedPathPresent`, `pathAdmissionMissing`, `policyEvaluationCertificateMissing`, `automaticRecommendationDisabled`를 유지한다.
 - **검증**: 새 수직 focused 1건 통과, driverObservationFrames + scenarioComposition + driverPaths + operatingBridge focused 43건 통과, `tests/simulate` 전체 408건 통과. ruff format/check, camelCase strict, docstring4 audit, Guard Index quick 통과.
 - **남은 P0**: 이 단위는 실제 관측 lane에서 path set으로 들어가는 seam을 닫은 것이다. 아직 DART, EDGAR, price, macro, industry adapter를 동일 loop에 전수 공급하고, admitted path와 policy evaluation certificate로 추천 ceiling을 여는 단계가 남아 있다.
+
+
+## 2026-07-15 P0 admitted current state scenario loop binding
+
+- **판단**: 전쟁게임식 시뮬레이터의 첫 상태는 손으로 만든 fixture가 아니라 과거 관측값을 point-in-time current state로 컴파일하고 승인한 결과여야 한다. 이번 병목은 path admission이나 policy recommendation이 아니라, 승인된 현재 상태가 실제 one-company loop의 initial state로 들어가는지였다.
+- **구현**: `OperatingWorldInputs`에 `initialStateAdmissionReceiptId`와 state primitive 계약을 추가했다. `operatingInputsFromCompiledState`는 signed point-in-time state receipt를 aggregate vintage에 보존하고, `runOperatingStrategies`는 그 receipt가 붙은 `WorldState`를 `simulateWorld`로 전달한다.
+- **검증 경계**: `simulateWorld`는 initial state admission receipt가 있으면 runtime verifier를 요구하고, exact as-known vintage, signed point-in-time state receipt, state compilation contract hash, state manifest hash, initial state admission artifact와 parent receipt를 모두 대조한다. 상태값을 바꾸면 vintage payload 또는 admission lineage에서 닫힌다.
+- **loop 장부**: `scenarioComposition`은 case의 admission verifier와 policy evidence를 runtime까지 전달한다. `OneCompanyScenarioCaseLedger.stateRefs`에는 `initialStateAdmission`, `stateReceipt`, `stateManifest`, `stateCompilationContract`, `providerBatchReceipt`, `observation` refs가 같이 남는다.
+- **추천 경계**: initial state admission이 들어와도 path admission과 policy evaluation certificate가 없으면 recommendation은 계속 `None`이다. 이번 변경은 `initialStateAdmissionMissing`만 닫고, `unvalidatedPathPresent`, `pathAdmissionMissing`, `policyEvaluationCertificateMissing`, `automaticRecommendationDisabled`는 유지한다.
+- **검증**: 새 수직 focused 1건 통과, driverObservationFrames + scenarioComposition + operatingWorld + policyEvaluation focused 48건 통과, `tests/simulate` 전체 409건 통과. ruff format/check, camelCase strict, docstring4 audit, Guard Index quick, diff check, em/en dash audit 통과.
+- **남은 P0**: 다음은 실제 DART, EDGAR, price, macro, industry adapter가 만든 관측 batch를 현재 상태 컴파일과 path set 양쪽에 전수 공급하는 단계다. 그 뒤 admitted path와 policy evaluation certificate를 닫아야 전략 추천으로 승격된다.

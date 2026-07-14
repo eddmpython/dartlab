@@ -29,6 +29,8 @@ from dartlab.simulate.world import (
 )
 
 if TYPE_CHECKING:
+    from dartlab.simulate.admissionRegistry import AdmissionVerifier
+    from dartlab.simulate.policyEvaluation import PolicyAdmissionEvidence
     from dartlab.simulate.stateCompiler import CompiledPointInTimeState
 
 _ACCEPTED_EVIDENCE = {"observed", "deterministicDerived", "admittedEstimate", "explicitAssumption"}
@@ -125,6 +127,8 @@ class OperatingWorldInputs:
     stateCompilationContractHash: str = ""
     stateManifestHash: str = ""
     stateVintage: VintageRef | None = None
+    initialStateAdmissionReceiptId: str = ""
+    statePrimitiveContracts: tuple[StatePrimitive, ...] = ()
 
 
 def _finite(value: float, label: str) -> float:
@@ -214,6 +218,7 @@ def operatingInputsFromPrimitives(
         raise ValueError(f"operating inputs are missing: {missing}")
     state: dict[str, float] = {}
     refs: list[str] = []
+    stateContracts: list[StatePrimitive] = []
     outWarnings = list(warnings)
     for variableId, (unit, stateName) in _REQUIRED_INPUTS.items():
         item = byId[variableId]
@@ -227,6 +232,15 @@ def operatingInputsFromPrimitives(
         if value < 0:
             raise ValueError(f"operating input must be nonnegative: {variableId}")
         state[stateName] = value
+        stateContracts.append(
+            StatePrimitive(
+                variableId=stateName,
+                unit=unit,
+                role="state",
+                value=value,
+                evidenceRole=item.evidenceRole,
+            )
+        )
         refs.append(item.sourceRef)
         if item.evidenceRole == "explicitAssumption":
             outWarnings.append(f"operatingAssumption:{variableId}")
@@ -247,6 +261,7 @@ def operatingInputsFromPrimitives(
         capacityUnitsPerCurrency=capacityPerCurrency,
         capacityDecayRate=decay,
         taxRate=tax,
+        statePrimitiveContracts=tuple(sorted(stateContracts, key=lambda item: item.variableId)),
     )
 
 
@@ -316,6 +331,7 @@ def operatingInputsFromStatePrimitives(
         )
         for item in byOperatingId.values()
     )
+    stateContracts = tuple(sorted(byOperatingId.values(), key=lambda item: item.variableId))
     inputs = operatingInputsFromPrimitives(
         operatingPrimitives,
         asOf=asOf,
@@ -325,7 +341,7 @@ def operatingInputsFromStatePrimitives(
         taxRate=taxRate,
         warnings=warnings,
     )
-    return replace(inputs, refs=_dedupeRefs((*inputs.refs, *refs)))
+    return replace(inputs, refs=_dedupeRefs((*inputs.refs, *refs)), statePrimitiveContracts=stateContracts)
 
 
 def operatingInputsFromCompiledState(
@@ -391,6 +407,7 @@ def operatingInputsFromCompiledState(
         availableAt=compiled.knowledgeAsOf,
         revisionPolicy=compiled.aggregateRevisionPolicy,
         coverage=compiled.aggregateCoverage,
+        receiptId=compiled.stateReceiptId,
         contractHash=compiled.stateCompilationContractHash,
         sourceRefs=refs,
     )
@@ -407,6 +424,43 @@ def operatingInputsFromCompiledState(
 def _buildOperatingWorld(inputs: OperatingWorldInputs, *, maxFinancing: float, maxInvestment: float) -> WorldModel:
     if maxFinancing < 0 or maxInvestment < 0:
         raise ValueError("operating financing and investment limits must be nonnegative")
+    contracts = {item.variableId: item for item in inputs.statePrimitiveContracts}
+    if len(contracts) != len(inputs.statePrimitiveContracts):
+        raise ValueError("operating state primitive contracts need unique variableIds")
+
+    def stateVariableSpec(name: str) -> VariableSpec:
+        """승인된 상태 primitive 계약을 operating world 변수 계약으로 보존한다.
+
+        Args:
+            name: operating world state variable id.
+
+        Returns:
+            상태 변수의 모델 계약.
+
+        Raises:
+            ValueError: primitive 계약의 unit 또는 role이 operating state와 맞지 않는 경우.
+
+        Example:
+            ``spec = stateVariableSpec("cash")``
+        """
+
+        unit = _REQUIRED_INPUTS[name][0]
+        contract = contracts.get(name)
+        if contract is None:
+            return VariableSpec(name, unit, "state", lower=None if name == "cash" else 0.0)
+        if contract.unit != unit or contract.role != "state":
+            raise ValueError(f"operating state primitive contract drift: {name}")
+        return VariableSpec(
+            name,
+            unit,
+            "state",
+            lower=None if name == "cash" else 0.0,
+            frequency=contract.frequency,
+            timing=contract.timing,
+            transformId=contract.transformId,
+            evidenceRole=contract.evidenceRole,
+        )
+
     metricUnits = {
         "capacityBound": "boolean",
         "capacityUtilization": "ratio",
@@ -416,10 +470,7 @@ def _buildOperatingWorld(inputs: OperatingWorldInputs, *, maxFinancing: float, m
         "availableCapacityUnits": "units",
     }
     variables = tuple(
-        [
-            VariableSpec(name, _REQUIRED_INPUTS[name][0], "state", lower=None if name == "cash" else 0.0)
-            for name in _STATE_IDS
-        ]
+        [stateVariableSpec(name) for name in _STATE_IDS]
         + [
             VariableSpec("marketPriceChange", "ratioChangePerStep", "shock", lower=-1.0),
             VariableSpec("demandChange", "ratioChangePerStep", "shock", lower=-1.0),
@@ -553,6 +604,20 @@ def _buildOperatingWorld(inputs: OperatingWorldInputs, *, maxFinancing: float, m
     )
 
 
+def _initialStateFromInputs(inputs: OperatingWorldInputs) -> WorldState:
+    return WorldState(
+        inputs.state,
+        asOf=inputs.asOf,
+        refs=inputs.refs,
+        knowledgeAsOf=inputs.knowledgeAsOf,
+        decisionAsOf=inputs.decisionAsOf,
+        vintage=inputs.stateVintage,
+        admissionReceiptId=inputs.initialStateAdmissionReceiptId,
+        stateCompilationContractHash=inputs.stateCompilationContractHash,
+        stateManifestHash=inputs.stateManifestHash,
+    )
+
+
 def buildOperatingPath(
     pathId: str,
     *,
@@ -673,6 +738,8 @@ def runOperatingStrategies(
     maxFinancing: float,
     maxInvestment: float,
     traceLimit: int | None = None,
+    admissionVerifier: "AdmissionVerifier | None" = None,
+    policyAdmissionEvidence: "PolicyAdmissionEvidence | None" = None,
 ) -> SimulationRun:
     """Run operating paths and compare policy-specific PnL and solvency.
 
@@ -684,6 +751,8 @@ def runOperatingStrategies(
         maxFinancing: Per-step borrowing and repayment bound.
         maxInvestment: Per-step capacity investment bound.
         traceLimit: Optional retained trace cap for large path sets.
+        admissionVerifier: Optional runtime verifier for admitted initial states, paths, and policy evidence.
+        policyAdmissionEvidence: Optional OOS policy certificate package.
 
     Returns:
         ``SimulationRun`` containing PnL, cash, capacity, and runway traces.
@@ -696,16 +765,7 @@ def runOperatingStrategies(
     """
 
     model = _buildOperatingWorld(inputs, maxFinancing=maxFinancing, maxInvestment=maxInvestment)
-    initial = WorldState(
-        inputs.state,
-        asOf=inputs.asOf,
-        refs=inputs.refs,
-        knowledgeAsOf=inputs.knowledgeAsOf,
-        decisionAsOf=inputs.decisionAsOf,
-        vintage=inputs.stateVintage,
-        stateCompilationContractHash=inputs.stateCompilationContractHash,
-        stateManifestHash=inputs.stateManifestHash,
-    )
+    initial = _initialStateFromInputs(inputs)
     constraints = (
         ConstraintSpec("cash", "ge", 0.0),
         ConstraintSpec("debt", "le", debtLimit),
@@ -725,4 +785,6 @@ def runOperatingStrategies(
         objectives=objectives,
         inputWarnings=inputs.warnings,
         traceLimit=traceLimit,
+        admissionVerifier=admissionVerifier,
+        policyAdmissionEvidence=policyAdmissionEvidence,
     )

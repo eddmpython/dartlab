@@ -73,7 +73,24 @@ class _CvarSpill:
         self._prepared = False
 
     def add(self, strategyIndex: int, objectiveIndex: int, ordinal: int, value: float, weight: float) -> None:
-        """경로 목적값과 가중치를 메모리 대신 임시 저장소에 추가한다."""
+        """경로 목적값과 가중치를 메모리 대신 임시 저장소에 추가한다.
+
+        Args:
+            strategyIndex: 전략의 내부 순번.
+            objectiveIndex: 목적 함수의 내부 순번.
+            ordinal: 같은 값의 안정 정렬을 위한 경로 순번.
+            value: 목적 함수 값.
+            weight: 경로 가중치.
+
+        Returns:
+            없음.
+
+        Raises:
+            sqlite3.Error: 임시 저장소 쓰기에 실패한 경우.
+
+        Example:
+            ``spill.add(0, 0, 3, 12.5, 1.0)``
+        """
 
         self._connection.execute(
             "INSERT INTO score VALUES (?, ?, ?, ?, ?)",
@@ -81,7 +98,23 @@ class _CvarSpill:
         )
 
     def weightedCvar(self, strategyIndex: int, objectiveIndex: int, tailFraction: float) -> float:
-        """낮은 목적값 꼬리를 value와 ordinal 순으로 읽어 exact weighted CVaR을 반환한다."""
+        """낮은 목적값 꼬리를 value와 ordinal 순으로 읽어 exact weighted CVaR을 반환한다.
+
+        Args:
+            strategyIndex: 집계할 전략 순번.
+            objectiveIndex: 집계할 목적 함수 순번.
+            tailFraction: 낮은 꼬리에 포함할 가중 비율.
+
+        Returns:
+            가중 꼬리 평균 값.
+
+        Raises:
+            SimulationSpecError: 양수 가중치가 없어 CVaR을 계산할 수 없는 경우.
+            sqlite3.Error: 임시 저장소 읽기 또는 인덱스 생성에 실패한 경우.
+
+        Example:
+            ``score = spill.weightedCvar(0, 0, 0.05)``
+        """
 
         if not self._prepared:
             self._connection.execute(
@@ -113,7 +146,20 @@ class _CvarSpill:
         return total / used
 
     def close(self) -> None:
-        """임시 SQLite 저장소를 닫고 운영체제가 파일을 회수하게 한다."""
+        """임시 SQLite 저장소를 닫고 운영체제가 파일을 회수하게 한다.
+
+        Args:
+            없음.
+
+        Returns:
+            없음.
+
+        Raises:
+            sqlite3.Error: 연결 종료에 실패한 경우.
+
+        Example:
+            ``spill.close()``
+        """
 
         connection = getattr(self, "_connection", None)
         if connection is not None:
@@ -498,19 +544,58 @@ def _stableHash(payload: Mapping) -> str:
 
 
 def strategyContractHash(strategy: StrategySpec) -> str:
-    """행동 일정 또는 정책 실행물과 버전·근거를 하나의 전략 계약 hash로 묶는다."""
+    """행동 일정 또는 정책 실행물과 버전, 근거를 하나의 전략 계약 hash로 묶는다.
+
+    Args:
+        strategy: 정적 행동 일정 또는 폐루프 정책 명세.
+
+    Returns:
+        전략 계약의 SHA-256 digest.
+
+    Raises:
+        TypeError: 전략 명세를 정규 JSON으로 직렬화할 수 없는 경우.
+
+    Example:
+        ``digest = strategyContractHash(strategy)``
+    """
 
     return _stableHash({"strategy": strategy})
 
 
 def objectiveContractHash(objective: ObjectiveSpec) -> str:
-    """목적 지표, 기간 축약, 방향, 위험 계약을 재사용 가능한 hash로 묶는다."""
+    """목적 지표, 기간 축약, 방향, 위험 계약을 재사용 가능한 hash로 묶는다.
+
+    Args:
+        objective: 평가 목적 명세.
+
+    Returns:
+        목적 계약의 SHA-256 digest.
+
+    Raises:
+        TypeError: 목적 명세를 정규 JSON으로 직렬화할 수 없는 경우.
+
+    Example:
+        ``digest = objectiveContractHash(objective)``
+    """
 
     return _stableHash({"objective": objective})
 
 
 def constraintContractHash(constraints: tuple[ConstraintSpec, ...]) -> str:
-    """모든 hard constraint의 순서와 임계 계약을 하나의 hash로 묶는다."""
+    """모든 hard constraint의 순서와 임계 계약을 하나의 hash로 묶는다.
+
+    Args:
+        constraints: 실행 중 강제할 제약 명세 묶음.
+
+    Returns:
+        제약 계약의 SHA-256 digest.
+
+    Raises:
+        TypeError: 제약 명세를 정규 JSON으로 직렬화할 수 없는 경우.
+
+    Example:
+        ``digest = constraintContractHash(constraints)``
+    """
 
     return _stableHash({"constraints": constraints})
 
@@ -567,7 +652,20 @@ def dataVintageHashFor(initial: WorldState, paths: tuple[ScenarioPath, ...]) -> 
 
 
 def traceRootFor(traces: tuple[PathTrace, ...]) -> str:
-    """보존된 전체 trace 순서에서 실행기와 동일한 chain root를 다시 계산한다."""
+    """보존된 전체 trace 순서에서 실행기와 동일한 chain root를 다시 계산한다.
+
+    Args:
+        traces: 보존된 경로 실행 trace 묶음.
+
+    Returns:
+        trace 개수와 순서 체인을 묶은 SHA-256 digest.
+
+    Raises:
+        TypeError: trace를 정규 JSON으로 직렬화할 수 없는 경우.
+
+    Example:
+        ``root = traceRootFor(run.retainedTraces)``
+    """
 
     traceChain = sha256()
     for trace in traces:
@@ -601,7 +699,20 @@ def _pathSetPayload(paths: tuple[ScenarioPath, ...]) -> dict:
 
 
 def pathSetAdmissionArtifact(paths: tuple[ScenarioPath, ...]) -> bytes:
-    """서명 대상 경로 집합을 순서 보존 정규 JSON 아티팩트로 직렬화한다."""
+    """서명 대상 경로 집합을 순서 보존 정규 JSON 아티팩트로 직렬화한다.
+
+    Args:
+        paths: admission 대상 scenario path 묶음.
+
+    Returns:
+        정규 JSON bytes 아티팩트.
+
+    Raises:
+        TypeError: path payload를 정규 JSON으로 직렬화할 수 없는 경우.
+
+    Example:
+        ``artifact = pathSetAdmissionArtifact(paths)``
+    """
 
     return json.dumps(
         _canonical(_pathSetPayload(paths)),
@@ -612,7 +723,20 @@ def pathSetAdmissionArtifact(paths: tuple[ScenarioPath, ...]) -> bytes:
 
 
 def pathSetAdmissionSubjectHash(paths: tuple[ScenarioPath, ...]) -> str:
-    """경로 admission 영수증이 서명해야 할 정확한 subject hash를 반환한다."""
+    """경로 admission 영수증이 서명해야 할 정확한 subject hash를 반환한다.
+
+    Args:
+        paths: admission 대상 scenario path 묶음.
+
+    Returns:
+        경로 집합 아티팩트의 SHA-256 digest.
+
+    Raises:
+        TypeError: path payload를 정규 JSON으로 직렬화할 수 없는 경우.
+
+    Example:
+        ``subjectHash = pathSetAdmissionSubjectHash(paths)``
+    """
 
     return sha256(pathSetAdmissionArtifact(paths)).hexdigest()
 
@@ -622,7 +746,20 @@ def _pathSetContentHash(paths: tuple[ScenarioPath, ...]) -> str:
 
 
 def bindAdmittedPathContent(paths: tuple[ScenarioPath, ...]) -> tuple[ScenarioPath, ...]:
-    """admitted 경로 집합의 실제 내용과 순서를 하나의 공유 hash로 묶는다."""
+    """admitted 경로 집합의 실제 내용과 순서를 하나의 공유 hash로 묶는다.
+
+    Args:
+        paths: admitted 상태의 경로 집합.
+
+    Returns:
+        같은 admission content hash를 가진 경로 집합.
+
+    Raises:
+        SimulationSpecError: 경로가 비었거나 admitted, cutoff, history 계약을 만족하지 않는 경우.
+
+    Example:
+        ``boundPaths = bindAdmittedPathContent(paths)``
+    """
 
     if not paths or any(path.validationStatus != "admitted" for path in paths):
         raise SimulationSpecError("only a nonempty admitted path set can be content-bound")
@@ -635,7 +772,21 @@ def bindAdmittedPathContent(paths: tuple[ScenarioPath, ...]) -> tuple[ScenarioPa
 
 
 def bindPathAdmissionReceipt(paths: tuple[ScenarioPath, ...], receiptId: str) -> tuple[ScenarioPath, ...]:
-    """내용 결속을 바꾸지 않고 경로 집합 전체에 하나의 서명 영수증을 연결한다."""
+    """내용 결속을 바꾸지 않고 경로 집합 전체에 하나의 서명 영수증을 연결한다.
+
+    Args:
+        paths: content-bound admitted 경로 집합.
+        receiptId: 경로 집합 admission receipt id.
+
+    Returns:
+        같은 admission receipt id를 가진 경로 집합.
+
+    Raises:
+        SimulationSpecError: receipt id 또는 content binding이 유효하지 않은 경우.
+
+    Example:
+        ``boundPaths = bindPathAdmissionReceipt(paths, receiptId)``
+    """
 
     if not _validDigest(receiptId):
         raise SimulationSpecError("path admission receipt identifier is invalid")
@@ -689,7 +840,26 @@ def issueLawCertificate(
     stepSpan: int = 1,
     rules: str,
 ) -> LawCertificate:
-    """검증 행의 연속 통과 지평을 계산하고 법칙 실행물 전체에 바인딩한다."""
+    """검증 행의 연속 통과 지평을 계산하고 법칙 실행물 전체에 바인딩한다.
+
+    Args:
+        law: 인증할 transition law 명세.
+        evidenceRows: step, metric, estimate, threshold, operator를 가진 검증 행.
+        knowledgeAsOf: 증거가 알려진 cutoff.
+        historyStatus: 증거의 as-known 또는 retrospective 상태.
+        frequency: 법칙과 증거의 시간 격자.
+        stepSpan: 한 step이 차지하는 격자 길이.
+        rules: 인증 규칙 설명 또는 식별자.
+
+    Returns:
+        법칙 실행물, 파라미터, 증거, 지평을 묶은 인증서.
+
+    Raises:
+        SimulationSpecError: 법칙 종류, cutoff, 증거 행, 지평 계약이 유효하지 않은 경우.
+
+    Example:
+        ``certificate = issueLawCertificate(law, evidenceRows=rows, knowledgeAsOf="20220131", historyStatus="asKnown", frequency="quarter", rules="oos-rmse")``
+    """
 
     if law.evidenceKind not in {"measuredAssociation", "identifiedIntervention"}:
         raise SimulationSpecError("only measured or identified laws can be certified")
@@ -1075,6 +1245,61 @@ def initialStateAdmissionSubjectHash(model: WorldModel, initial: WorldState) -> 
         raise SimulationSpecError(str(error)) from error
 
 
+def _validateInitialStateAdmission(
+    model: WorldModel,
+    initial: WorldState,
+    admissionVerifier: AdmissionVerifier | None,
+) -> None:
+    if not initial.admissionReceiptId:
+        return
+    if not _validDigest(initial.admissionReceiptId):
+        raise SimulationSpecError("initial-state admission receipt identifier is invalid")
+    if admissionVerifier is None:
+        raise SimulationSpecError("initial-state admission needs a runtime admission verifier")
+    if initial.vintage is None or not isExactAsKnown(initial.vintage):
+        raise SimulationSpecError("initial-state admission needs an exact as-known current state vintage")
+    if not _validDigest(initial.vintage.receiptId):
+        raise SimulationSpecError("initial-state admission needs a signed point-in-time state receipt")
+    if not (_validDigest(initial.stateCompilationContractHash) and _validDigest(initial.stateManifestHash)):
+        raise SimulationSpecError("initial-state admission needs signed current state lineage")
+    knowledgeAsOf = initial.knowledgeAsOf or initial.asOf
+    decisionAsOf = initial.decisionAsOf or knowledgeAsOf
+    initialArtifact = initialStateAdmissionArtifact(model, initial)
+    initialSubjectHash = initialStateAdmissionSubjectHash(model, initial)
+    try:
+        from dartlab.simulate.admissionRegistry import artifactPath
+
+        pointInTimeReceipt = validatePointInTimeStateReceipt(
+            statePrimitives=initialStatePrimitives(model, initial),
+            asOf=initial.asOf,
+            knowledgeAsOf=knowledgeAsOf,
+            decisionAsOf=decisionAsOf,
+            stateCompilationContractHash=initial.stateCompilationContractHash,
+            stateManifestHash=initial.stateManifestHash,
+            stateReceiptId=initial.vintage.receiptId,
+            admissionVerifier=admissionVerifier,
+        )
+        initialReceipt = admissionVerifier.verify(
+            initial.admissionReceiptId,
+            expectedSubjectHash=initialSubjectHash,
+            expectedKind="initialState",
+        )
+    except (OSError, RuntimeError, ValueError) as error:
+        raise SimulationSpecError(f"initial-state admission verification failed: {error}") from error
+    receiptIssuedAt = _comparableDate(initialReceipt.issuedAt)
+    if (
+        initialReceipt.status != "admitted"
+        or initialReceipt.artifactHash != initialSubjectHash
+        or (initialReceipt.ruleId, initialReceipt.ruleVersion, initialReceipt.ruleHash)
+        != (INITIAL_STATE_RULE_ID, INITIAL_STATE_RULE_VERSION, INITIAL_STATE_RULE_HASH)
+        or initialReceipt.parentReceiptIds != (pointInTimeReceipt.receiptId,)
+        or receiptIssuedAt is None
+        or receiptIssuedAt > _comparableDate(decisionAsOf)
+        or artifactPath(admissionVerifier.artifactRoot, initialSubjectHash).read_bytes() != initialArtifact
+    ):
+        raise SimulationSpecError("initial-state admission lineage mismatch")
+
+
 def _validateValue(model: WorldModel, variableId: str, value: float | None, label: str) -> float:
     number = _finite(value, label)
     spec = next(v for v in model.variables if v.variableId == variableId)
@@ -1156,6 +1381,8 @@ def _checkInputs(
                 ),
             )
         except VintageError as error:
+            if initial.admissionReceiptId:
+                raise SimulationSpecError(f"initial-state admission vintage mismatch: {error}") from error
             raise SimulationSpecError(str(error)) from error
         if initial.knowledgeAsOf and initial.vintage.knowledgeAsOf != initialKnowledgeDate:
             raise SimulationSpecError("initial state vintage knowledge cutoff mismatch")
@@ -1169,6 +1396,7 @@ def _checkInputs(
             or initial.vintage.artifactHash != initial.stateManifestHash
         ):
             raise SimulationSpecError("compiled initial-state manifest contract mismatch")
+    _validateInitialStateAdmission(model, initial, admissionVerifier)
     for law in model.laws:
         certificate = law.certificate
         if law.evidenceKind in {"measuredAssociation", "identifiedIntervention"}:
@@ -1469,6 +1697,28 @@ def simulateWorld(
     Static strategies contain schedules. Closed-loop policies receive only the
     state and action known before the current shock, never a path or future
     outcome.
+
+    Args:
+        model: Variable, action, and transition-law contract.
+        initial: Decision-time world state.
+        paths: Common scenario paths shared by every strategy.
+        strategies: Candidate static schedules or closed-loop policies.
+        constraints: Hard constraints checked after each transition.
+        objectives: Metrics used to rank feasible strategy outcomes.
+        inputWarnings: Pre-existing warnings carried into the run.
+        traceLimit: Optional retained trace cap.
+        admissionVerifier: Optional verifier for admitted initial state, paths, and policies.
+        policyAdmissionEvidence: Optional policy evaluation certificate package.
+
+    Returns:
+        Deterministic simulation run ledger and strategy evaluations.
+
+    Raises:
+        SimulationSpecError: Inputs, admission evidence, path contracts, or objective contracts are invalid.
+        SimulationBlocked: Runtime transition or constraint evaluation blocks a path.
+
+    Example:
+        ``run = simulateWorld(model, initial, paths, strategies, constraints=constraints, objectives=objectives)``
     """
 
     horizon = _checkInputs(model, initial, paths, strategies, admissionVerifier)

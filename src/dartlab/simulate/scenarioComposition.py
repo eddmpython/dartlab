@@ -35,6 +35,7 @@ from dartlab.simulate.world import SimulationRun, StrategySpec, strategyContract
 
 if TYPE_CHECKING:
     from dartlab.simulate.admissionRegistry import AdmissionVerifier
+    from dartlab.simulate.policyEvaluation import PolicyAdmissionEvidence
     from dartlab.simulate.stateCompiler import CompiledPointInTimeState
 
 SCENARIO_COMPOSITION_VERSION = "scenario-composition-v1"
@@ -47,6 +48,7 @@ _DRIVER_COEFFICIENT_ADMISSION_REF_PREFIX = "driverCoefficientAdmission:"
 _PROVIDER_OBSERVATION_REF_PREFIXES = ("providerObservationBatch:", "providerObservationBatchId:")
 _STATE_REF_PREFIXES = (
     "compiledState:",
+    "initialStateAdmission:",
     "observation:",
     "providerBatch:",
     "providerBatchReceipt:",
@@ -78,6 +80,7 @@ class OperatingScenarioCase:
     stateRef: str = ""
     coefficientBindings: tuple["ScenarioCoefficientBinding", ...] = ()
     admissionVerifier: AdmissionVerifier | None = None
+    policyAdmissionEvidence: "PolicyAdmissionEvidence | None" = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "exposures", tuple(self.exposures))
@@ -816,6 +819,8 @@ def _boundaryCounts(
 
 def _initialStateRefs(inputs: OperatingWorldInputs) -> tuple[str, ...]:
     refs = list(inputs.refs)
+    if inputs.initialStateAdmissionReceiptId:
+        refs.append(f"initialStateAdmission:{inputs.initialStateAdmissionReceiptId}")
     if inputs.stateCompilationContractHash:
         refs.append(f"stateCompilationContract:{inputs.stateCompilationContractHash}")
     if inputs.stateManifestHash:
@@ -972,6 +977,8 @@ def _runCase(
         maxFinancing=maxFinancing,
         maxInvestment=maxInvestment,
         traceLimit=traceLimit,
+        admissionVerifier=case.admissionVerifier,
+        policyAdmissionEvidence=case.policyAdmissionEvidence,
     )
     bridgeHashes = tuple(item.audit.bridgeHash for item in bridgeResults)
     bridgeWarnings = tuple(warning for item in bridgeResults for warning in item.audit.warnings)
