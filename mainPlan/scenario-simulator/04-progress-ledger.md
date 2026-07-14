@@ -1091,4 +1091,14 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **검증 경계**: `validateDriverCoefficientAdmission`은 이제 `AdmissionReceipt`가 아니라 `VerifiedDriverCoefficientAdmission`을 반환한다. signed receipt의 `parentReceiptIds`가 report가 요구한 exact parent set과 같아야 하고, 각 parent는 verified vintage, asKnown, asOfExact, allowed kind, cutoff 이하 knowledgeAsOf, decisionAsOf 이하 issuedAt을 통과해야 한다.
 - **운영 경계**: `calibrationReceiptToOperatingExposure`는 raw signed receipt를 받지 않는다. parent role까지 검증된 typed wrapper만 받아 `measuredAssociation` exposure를 만든다. operating bridge와 policy admission은 건드리지 않아 coefficient admission이 path admission으로 전이되지 않게 유지했다.
 - **검증**: attempt plus formal driver calibration 12건 통과. driver admission 주변 집중 회귀 55건 통과. `tests/simulate` 전체 362건 통과.
-- **남은 P0**: `DRIVER_COEFFICIENT_RULE_HASH`가 아직 rule id plus version 해시다. 다음 단위에서 held-out 정의, parent role, horizon, threshold, artifact replay 체크리스트를 canonical rule spec hash로 묶어야 한다.
+- **닫힌 후속**: `DRIVER_COEFFICIENT_RULE_HASH`는 아래 rule spec hash 단위에서 held-out 정의, parent role, horizon, threshold, artifact replay 체크리스트를 canonical contract로 묶었다.
+
+
+## 2026-07-15 P0 coefficient rule spec hash
+
+- **판단**: 계수 admission의 rule hash가 id plus version만 묶으면 signed receipt가 어떤 검증 절차를 통과했다는 보장이 약하다. PRD급 시뮬레이터에서는 "전략에 투입 가능한 계수"의 의미가 검증 규칙과 함께 봉인되어야 한다.
+- **구현**: `DRIVER_COEFFICIENT_RULE_SPEC`를 canonical payload로 신설하고 `DRIVER_COEFFICIENT_RULE_HASH`가 그 spec 전체를 해시하도록 바꿨다. spec은 OOS report contract, held-out timing, threshold, parent role, admission receipt, replay contract, exposure boundary를 포함한다.
+- **거부 경계**: 옛 shallow hash인 `{"rule": id, "version": "1"}`로 발급한 signed `driverCoefficient` receipt는 ruleId와 ruleVersion이 맞아도 contract mismatch로 거부된다.
+- **검증 의미**: rule hash가 이제 "어떤 parent set과 어떤 OOS replay를 요구하는가"까지 묶는다. 단순히 문자열 rule 이름이 맞는지 보는 단계에서, held-out, parent cutoff, artifact replay, 운영 exposure 전환 조건까지 같은 절차였는지 보는 단계로 올라갔다.
+- **검증**: attempt plus formal driver calibration 12건 통과. driver admission 주변 집중 회귀 55건 통과. `tests/simulate` 전체 362건 통과. Guard Index strict l0-l15 7/7과 외부 gate 6종 통과.
+- **남은 P0**: row-level `sourceRef`와 `labelSourceRef`가 어떤 parent artifact coverage 안에 포함되는지까지는 아직 넓은 parent set 검증이다. 다음 단위는 provider artifact mapping과 row-level coverage 증명이다.

@@ -31,7 +31,6 @@ CALIBRATION_VERSION = "driver-coefficient-calibration-v1"
 COEFFICIENT_OOS_VERSION = "driver-coefficient-oos-v1"
 DRIVER_COEFFICIENT_RULE_ID = "driver-coefficient-oos-admission"
 DRIVER_COEFFICIENT_RULE_VERSION = "1"
-DRIVER_COEFFICIENT_RULE_HASH = canonicalPayloadHash({"rule": DRIVER_COEFFICIENT_RULE_ID, "version": "1"})
 _OBSERVABLE_TARGET_KINDS = {"observedOutcome", "realizedOutcome", "observedOperatingShock"}
 _CALIBRATION_METHODS = {"olsThroughOrigin"}
 _OOS_STATUS_SET = {"oosEligible", "rejected"}
@@ -44,6 +43,79 @@ _BASE_RECEIPT_WARNINGS = {
 _BENIGN_REGISTRY_WARNINGS = {"historyStatus:asKnown"}
 _SOURCE_PARENT_KINDS = {"dataVintage", "providerObservationBatch", "vintage"}
 _LABEL_PARENT_KINDS = {"dataVintage", "providerObservationBatch", "vintage"}
+DRIVER_COEFFICIENT_RULE_SPEC = {
+    "ruleId": DRIVER_COEFFICIENT_RULE_ID,
+    "ruleVersion": DRIVER_COEFFICIENT_RULE_VERSION,
+    "rulePurpose": "admit a driver coefficient only after held-out PIT replay and signed lineage checks",
+    "reportContract": {
+        "generatorVersion": COEFFICIENT_OOS_VERSION,
+        "requiredStatus": "oosEligible",
+        "requiredAdmissionStatus": "unsigned",
+        "requiredParentRoles": (
+            "fitSourceParentReceiptIds",
+            "fitLabelParentReceiptIds",
+            "oosSourceParentReceiptIds",
+            "oosLabelParentReceiptIds",
+        ),
+        "requiredContentHashes": (
+            "receiptHash",
+            "pathSetHash",
+            "factorContractHash",
+            "oosSpecHash",
+            "oosGridHash",
+            "oosOutcomeHash",
+            "predictionTraceHash",
+            "reportId",
+        ),
+    },
+    "heldOutContract": {
+        "fitOverlap": "originEventTime greater than receipt.fitThrough",
+        "labelLeakage": "targetAvailableAt greater than receipt.calibrationKnowledgeAsOf",
+        "targetDirection": "targetEventTime greater than originEventTime",
+        "sourcePit": "sourceAvailableAt no later than originKnowledgeAsOf",
+        "evaluationCutoff": "targetAvailableAt no later than evaluationKnowledgeAsOf",
+        "horizonPolicy": "period distance must align with stepSpan and not exceed maxAdmittedStep",
+    },
+    "thresholdContract": {
+        "minOosOrigins": "report.nOosOrigins at least spec.minOosOrigins",
+        "skillVsBaseline": "report.skillVsBaseline at least spec.minSkillVsBaseline",
+        "rmse": "report.rmse no greater than spec.maxRmse",
+        "absBias": "absolute report.bias no greater than spec.maxAbsBias",
+        "baselineLoss": "baselineMse must be positive",
+    },
+    "parentContract": {
+        "sourceParentKinds": tuple(sorted(_SOURCE_PARENT_KINDS)),
+        "labelParentKinds": tuple(sorted(_LABEL_PARENT_KINDS)),
+        "requiredParentStatus": "verifiedVintage",
+        "revisionPolicy": "asKnown",
+        "coverage": "asOfExact",
+        "fitParentKnowledgeCutoff": "no later than calibrationKnowledgeAsOf",
+        "oosParentKnowledgeCutoff": "no later than evaluationKnowledgeAsOf",
+        "availabilityCutoff": "parent issuedAt no later than decisionAsOf",
+        "receiptParentSet": "exact ordered driverCoefficientAdmissionParentReceiptIds(report)",
+    },
+    "admissionReceiptContract": {
+        "kind": "driverCoefficient",
+        "status": "admitted",
+        "revisionPolicy": "asKnown",
+        "coverage": "asOfExact",
+        "artifactHash": "driverCoefficientAdmissionSubjectHash(report)",
+        "subjectHash": "driverCoefficientAdmissionSubjectHash(report)",
+        "knowledgeAsOf": "report.evaluationKnowledgeAsOf",
+        "frequency": "report.frequency",
+        "stepSpan": "report.stepSpan",
+        "maxAdmittedStep": "report.maxAdmittedStep",
+    },
+    "replayContract": {
+        "artifactBytes": "canonicalPayloadBytes(_oosReportPayload(report))",
+        "gridHash": "_oosGridHashFromTraceRows(report.traceRows)",
+        "outcomeHash": "_oosOutcomeHashFromTraceRows(report.traceRows)",
+        "predictionTraceHash": "_predictionTraceHash(report trace rows and metrics)",
+        "metrics": ("mse", "baselineMse", "rmse", "mae", "bias", "skillVsBaseline"),
+        "exposureBoundary": "only VerifiedDriverCoefficientAdmission can become measuredAssociation exposure",
+    },
+}
+DRIVER_COEFFICIENT_RULE_HASH = canonicalPayloadHash(DRIVER_COEFFICIENT_RULE_SPEC)
 
 
 class DriverCalibrationError(ValueError):

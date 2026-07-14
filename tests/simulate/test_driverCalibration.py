@@ -359,6 +359,39 @@ def testDriverCoefficientOosReportCanBeSignedAndVerified(tmp_path) -> None:
             receiptId=missingParentSigned.receiptId,
             decisionAsOf="20220202",
         )
+    shallowRuleHash = canonicalPayloadHash({"rule": DRIVER_COEFFICIENT_RULE_ID, "version": "1"})
+    assert DRIVER_COEFFICIENT_RULE_HASH != shallowRuleHash
+    shallowRuleSigned = issueAdmissionReceipt(
+        database,
+        artifacts,
+        privateKey=privateBytes,
+        kind="driverCoefficient",
+        subjectHash=subject,
+        artifactHash=artifactHash,
+        parentReceiptIds=driverCoefficientAdmissionParentReceiptIds(report),
+        ruleId=DRIVER_COEFFICIENT_RULE_ID,
+        ruleVersion=DRIVER_COEFFICIENT_RULE_VERSION,
+        ruleHash=shallowRuleHash,
+        issuerId="issuer-1",
+        issuerKeyId="key-1",
+        issuerExecutableHash="b" * 64,
+        knowledgeAsOf=report.evaluationKnowledgeAsOf,
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        frequency=report.frequency,
+        stepSpan=report.stepSpan,
+        maxAdmittedStep=report.maxAdmittedStep,
+        status="admitted",
+        issuedAt="20220201T000000Z",
+        trustedIssuers=trusted,
+    )
+    with pytest.raises(DriverCalibrationError, match="contract mismatch"):
+        validateDriverCoefficientAdmission(
+            report,
+            verifier,
+            receiptId=shallowRuleSigned.receiptId,
+            decisionAsOf="20220202",
+        )
     signed = issueAdmissionReceipt(
         database,
         artifacts,
