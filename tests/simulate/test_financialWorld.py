@@ -7,8 +7,10 @@ import pytest
 
 from dartlab.simulate.financialWorld import (
     FinancialWorldInputs,
+    OperatingDriverInputs,
     buildFinancialPath,
     buildFinancialStrategy,
+    buildOperatingFinancialPath,
     financialInputsFromSnapshot,
     runFinancialStrategies,
 )
@@ -198,6 +200,99 @@ def testFinancialWorldExposesUnmetDemandAndPreservesItAcrossSteps():
     assert steps[0].after["latentDemandRevenue"] == 150.0
     assert steps[1].after["unmetDemand"] == 0.0
     assert steps[1].after["revenue"] == 150.0
+
+
+def testOperatingDriverPathKeepsPriceVolumeCostAndCapacityVisible():
+    inputs = financialInputsFromSnapshot(
+        {
+            "series": _series(),
+            "baseRevenue": 100.0,
+            "baseMargin": 15.0,
+            "asOf": "2025-Q4",
+        },
+        capacityHeadroom=0.10,
+        operatingDrivers=OperatingDriverInputs(
+            unitPrice=10.0,
+            demandUnits=10.0,
+            unitCost=6.0,
+            fixedCost=25.0,
+            capacityUnits=11.0,
+            refs=("assumption://operating-drivers",),
+        ),
+    )
+    path = buildOperatingFinancialPath(
+        "unit-shock",
+        priceChange=(0.10, 0.0),
+        volumeChange=(0.50, 0.0),
+        unitCostChange=(0.20, 0.0),
+        fixedCostChange=(0.0, 0.0),
+        capacityChange=(0.0, 0.0),
+        debtRate=(0.05, 0.05),
+        frequency="year",
+    )
+    run = runFinancialStrategies(
+        inputs,
+        (path,),
+        (_strategy("expand", (0.30, 0.0)),),
+        debtLimit=100.0,
+        maxFinancing=50.0,
+    )
+    first = run.traces[0].steps[0]
+    second = run.traces[0].steps[1]
+    assert first.shocks["priceChange"] == pytest.approx(0.10)
+    assert first.after["unitPrice"] == pytest.approx(11.0)
+    assert first.after["unitCost"] == pytest.approx(7.2)
+    assert first.after["fixedCost"] == pytest.approx(25.0)
+    assert first.after["demandUnits"] == pytest.approx(15.0)
+    assert first.after["servedUnits"] == pytest.approx(11.0)
+    assert first.after["unmetUnits"] == pytest.approx(4.0)
+    assert first.after["effectiveCapacityUnits"] == pytest.approx(11.0)
+    assert first.after["operatingDriverRevenue"] == pytest.approx(121.0)
+    assert first.after["operatingDriverProfit"] == pytest.approx(16.8)
+    assert first.after["capacityBound"] == pytest.approx(1.0)
+    assert second.after["servedUnits"] > first.after["servedUnits"]
+    assert "operatingDriverInputs:explicitAssumption" in run.warnings
+    assert run.decisionStatus == "conditionalOnly"
+
+
+def testOperatingDriverInputsNeedExecutablePhysicalBoundary():
+    with pytest.raises(ValueError, match="unitPrice"):
+        financialInputsFromSnapshot(
+            {
+                "series": _series(),
+                "baseRevenue": 100.0,
+                "baseMargin": 15.0,
+                "asOf": "2025-Q4",
+            },
+            capacityHeadroom=0.10,
+            operatingDrivers=OperatingDriverInputs(
+                unitPrice=0.0,
+                demandUnits=10.0,
+                unitCost=6.0,
+                fixedCost=25.0,
+                capacityUnits=11.0,
+            ),
+        )
+
+
+def testOperatingDriversMustReconcileWithObservedMargin():
+    with pytest.raises(SimulationSpecError, match="observed margin"):
+        financialInputsFromSnapshot(
+            {
+                "series": _series(),
+                "baseRevenue": 100.0,
+                "baseMargin": 15.0,
+                "asOf": "2025-Q4",
+            },
+            capacityHeadroom=0.10,
+            operatingDrivers=OperatingDriverInputs(
+                unitPrice=10.0,
+                demandUnits=10.0,
+                unitCost=6.0,
+                fixedCost=1.0,
+                capacityUnits=11.0,
+            ),
+        )
 
 
 def testRealAdapterKeepsAssumptionBoundaryAndDoesNotRecommend():

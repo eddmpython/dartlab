@@ -26,6 +26,22 @@
 
 **현재 판정**: 결정론 계산 코어는 제품화 가능한 수준으로 복구됐다. 그러나 PRD 전체는 미완료다. filing-vintage PIT, 공개 axis/API/Skill OS 계약, Play UI, fan distribution, driver/lens가 남는다. 특히 호출 가능한 Python preview와 등록된 공개 계약을 같은 것으로 취급하지 않는다.
 
+## 2026-07-14 P0 운영 변수 전이 law
+
+사용자 재도전의 핵심은 맞았다. 전쟁 시뮬레이션처럼 조건과 가정이 상태 전이를 만들고 전략 결과를 비교해야 한다. 재무제표 상태 전이는 있었지만, PRD 02 §2.6과 §3.7이 말한 price, volume, unitCost, fixedCost, capacity가 직접 굴러가는 운영 세계는 별도 law로 닫혀 있지 않았다.
+
+이번 절단면은 공개 API가 아니라 내부 L2.5 실행 능력이다.
+
+- `src/dartlab/simulate/financialWorld.py` 운영 driver 모드: `OperatingDriverInputs`가 unitPrice, demandUnits, unitCost, fixedCost, capacityUnits를 명시 상태로 받는다. 기준 상태는 snapshot 매출, 영업마진, capacityHeadroom과 reconcile 되지 않으면 실행 전에 차단된다.
+- 운영 경로: `buildOperatingFinancialPath`가 priceChange, volumeChange, unitCostChange, fixedCostChange, capacityChange, debtRate를 path shock으로 받는다. 이 값들은 derivedDemandGrowth와 derivedMarginChange로 변환되어 기존 회계 leaf에 전달된다.
+- 물리 capacity 보존: capacityUnits는 현재 가격으로 역산하지 않는다. capacityChange는 외생 운영 조건으로, capex와 PPE roll-forward는 다음 기간 capacityUnits에 반영된다.
+- trace 노출: servedUnits, unmetUnits, effectiveCapacityUnits, operatingDriverRevenue, operatingDriverProfit, unitGrossProfit, capacityUtilization, cashBurn, cashRunwaySteps가 같은 `SimulationRun` step에 남는다. 전이 근거가 explicitAssumption이면 `decisionStatus=conditionalOnly`라 추천은 열리지 않는다.
+- `src/dartlab/simulate/operatingWorld.py`: 순수 운영 세계가 price, demandVolume, unitCost, fixedCost, capacityUnits, cash, debt를 초기 상태로 받고, 시장 가격, 수요, 원가, 고정비, 생산능력 충격과 가격 정책, capacity 투자, 차입, 상환 전략을 비교한다. capacity 투자는 현재 현금은 소모하지만 판매능력 효과는 다음 step부터 반영된다.
+- 검증: `tests/_attempts/operatingUnitDrivers/test_operatingUnitDrivers.py`의 개념 씨앗을 유지하고, `tests/simulate/test_financialWorld.py`와 `tests/simulate/test_operatingWorld.py`에서 운영 driver 전파, 증설 투자 후행 효과, 입력 경계, snapshot reconciliation, 손익과 런웨이 trace를 회귀로 고정했다. `tests/simulate` 319개가 통과했다.
+- 최종 게이트: `ruff check`, `lint_camelcase_ast.py --strict`, `docstring4Section.py`, `tests/analysis/financial/test_stepProjection.py`, `tests/simulate`, `dartlabGuard.py strict --scope l0-l15 --providers dart,edgar`가 모두 통과했다.
+
+현재 판정: 이제 "조건과 가정을 넣고 상태가 변한다"는 최소 조건은 충족한다. 하지만 PRD 전체 전략 엔진 완료는 아니다. 다음 P0는 운영 driver 상태를 EDGAR/DART compiled PIT state와 더 직접 결속하고, 실원천 coverage가 없는 volume, ASP, unit cost, fixed cost, capacity 항목에는 `blocked` 또는 `explicitAssumption` 라벨을 끝까지 보존한 채 price bridge와 policy OOS 평가로 연결하는 것이다.
+
 ---
 
 ## 0. ★2026-06-20 9인 전문가 패널 uplift . 세 축 planScore 95 도달
