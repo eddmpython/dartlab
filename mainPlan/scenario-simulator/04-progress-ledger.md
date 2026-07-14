@@ -123,6 +123,20 @@
 
 현재 판정: 실제 workbench source adapter들을 하나의 registry gate로 묶는 내부 관문이 생겼다. 이로써 "많은 데이터가 모두 변수와 가정으로 들어온다"는 목표에 한 단계 접근했다. 아직 남은 핵심은 자동 전수 스캔, resample/carry-forward 같은 격자 변환의 명시 transform, coefficient PIT calibration, held-out OOS policy certificate다. 이들이 닫히기 전 전략 추천 승격은 여전히 금지다.
 
+## 2026-07-15 P0 explicit driver grid transform
+
+위 잔여 중 격자 변환의 첫 단위를 본진에 넣었다. 목적은 분기 DART/EDGAR filing metric과 주간 가격·macro driver를 섞을 때 암묵 resample이나 look-ahead를 만들지 않고, 변환 자체를 sourceRefs와 trace hash에 묶는 것이다. 새 공개 API나 GUI는 추가하지 않았다.
+
+- `src/dartlab/simulate/driverTransforms.py`: `carryForwardDriverHistorySource`를 추가했다. lower-frequency `DriverHistorySource`를 target grid의 `eventTime`·`availableAt`에 맞춰 명시 carry-forward 한다.
+- row-local as-of: 각 target row는 그 row의 `availableAt` 기준으로 이미 알려진 source row만 선택한다. fiscal period end가 아니라 filing receipt 이후 첫 target step부터 값이 채워진다.
+- availability 보존: 변환 row의 `availableAt`은 `max(source.availableAt, targetGrid.availableAt)` 규칙으로 보존하고, source event와 availability는 `transformTrace:<hash>`에 결속한다.
+- semantic 보존: carry-forward는 weekly shock을 만들지 않는다. output factor timing 기본값은 `level`이며, `innovation` 또는 `change` 생성은 차단한다. 별도 diff/return transform 없이는 shock으로 승격할 수 없다.
+- lineage 보존: source의 `historyStatus`, DART conditional warning, price/macro vintage warning 등 약한 상태는 그대로 상속된다. `driverCarryForwardTransform` warning과 source/target frequency ref가 audit에 남는다.
+- stale gate: `maxStalenessDays`를 제공하면 오래된 filing value를 무기한 주입하지 않고, target grid에 남는 row가 없을 때 fail closed 한다. duplicate target event도 별도 aggregation transform 없이는 차단한다.
+- 검증: `_attempts/driverTransforms/test_driverTransforms.py`에서 row-local availability, filing receipt 전 주간 row 비주입, weekly price grid 결합, stale/duplicate/missing grid 차단을 먼저 고정했다. 본진 `tests/simulate/test_driverTransforms.py`로 승격했고, focused 23개, `tests/simulate` 349개, `ruff format --check`, `ruff check`, camelCase audit, docstring audit, em/en dash audit, `dartlabGuard.py strict --scope l0-l15 --providers dart,edgar`가 통과했다.
+
+현재 판정: 이제 서로 다른 빈도의 driver source를 한 path set으로 묶기 위한 안전한 첫 변환이 생겼다. 하지만 PRD급 시뮬레이터 완료는 아니다. 다음 P0는 자동 전수 source discovery, flow 계정의 display-only 또는 모델 assumption 분리, coefficient PIT calibration, held-out OOS certificate다. 이 단계 전까지 carry-forward filing feature는 상태 조건일 뿐 운영 shock 또는 추천 근거가 아니다.
+
 ---
 
 ## 0. ★2026-06-20 9인 전문가 패널 uplift . 세 축 planScore 95 도달
