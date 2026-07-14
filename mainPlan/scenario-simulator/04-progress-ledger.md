@@ -1220,3 +1220,14 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **추천 경계**: score leader는 기계적 점수 선두로만 기록하고 추천으로 승격하지 않는다. explicit assumption, unvalidated path, missing path admission, missing initial state admission, missing policy evaluation certificate는 blocked reason으로 남긴다. recommendation ceiling은 기존 decision status 그대로 `conditionalOnly`에 묶인다.
 - **검증**: scenario composition 테스트가 4건에서 8건으로 늘었다. one-company loop positive, case/strategy 개수 제한, assumption과 strategy hash binding, duplicate strategy id 거부를 추가했다. `tests/simulate/test_scenarioComposition.py` 8건 통과. 주변 focused 34건 통과. `tests/simulate` 전체 399건 통과. ruff format/check, camelCase strict, docstring4 audit, Guard Index quick 통과.
 - **남은 P0**: 다음은 이 loop에 실제 signed observation lane에서 올라온 다변수 coefficient fit, held-out OOS admission, admitted exposure를 연결하는 수직 E2E fixture다. 그 전까지 제품 문구는 "조건부 전략 비교"가 맞고, "전략 추천"은 아직 닫혀 있어야 한다.
+
+
+## 2026-07-15 P0 multivariable coefficient admission loop
+
+- **판단**: PRD가 말한 시뮬레이터는 여러 조건을 동시에 넣고 결과 차이를 보는 구조다. 단변수 coefficient는 그 일부일 뿐이라, signed exact source batch 여러 개가 하나의 design frame, 계수 벡터, held-out OOS admission, operating exposure 묶음까지 이어져야 한다.
+- **구현**: `MultivariableDriverDesignFrameBinding`, coefficient term, source cell, vector calibration receipt, vector OOS report, vector admission artifact 함수를 추가했다. raw wide frame만으로는 fit 또는 OOS admission을 열 수 없고, typed multivariable observation frame binding이 필요하다.
+- **계수 벡터 계약**: 각 term은 position, variableId, coefficient, coefficientUnit, source frequency, source timing, transformId, source factor contract hash를 보존한다. receipt는 `featureSpecHash`, `designFrameHash`, `coefficientVectorHash`를 따로 남겨 컬럼 순서, 관측 프레임, 계수값 drift를 분리해서 잡는다.
+- **admission 경계**: vector report는 fit design frame과 OOS design frame을 provider batch artifact에서 replay한다. source cell row ref, value, availableAt, unit이 parent coverage와 맞아야 한다. row ref alias, 결측 장부 tamper, column order drift, rank deficient design은 실패한다.
+- **bridge 연결**: scalar operating bridge는 그대로 유지했다. admitted coefficient vector는 변수별 `OperatingTransmissionExposure` 여러 개로 변환되며, 모두 같은 `driverCoefficientAdmission:<receiptId>`를 sourceRef로 공유하고 vector aggregation group을 남긴다.
+- **검증**: driver observation frame, driver calibration, operating bridge focused 31건 통과. `tests/simulate` 전체 402건 통과. ruff format/check, camelCase strict, docstring4 audit, Guard Index quick, diff check, em/en dash audit 통과.
+- **남은 P0**: 이제 엔진은 다변수 조건을 법칙 후보로 검증해 scenario bridge에 넘길 수 있다. 다음 병목은 실제 DART, EDGAR, price, macro, industry adapter를 이 루프로 넣고 one-company scenario loop와 연결하는 것이다. recommendation은 policy certificate와 admitted path가 들어오기 전까지 계속 닫혀 있어야 한다.

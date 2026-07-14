@@ -87,6 +87,7 @@ class DriverDesignColumnSpec:
     unit: str
     frequency: str
     transformId: str
+    timing: str = "ratio"
     evidenceRoles: tuple[str, ...] = ("observed", "deterministicDerived")
 
     def __post_init__(self) -> None:
@@ -251,6 +252,7 @@ def _validateDesignSpec(spec: MultivariableDriverCoefficientObservationFrameSpec
             or not column.signalId
             or not column.unit
             or column.frequency != spec.frequency
+            or not column.timing
             or not column.transformId
             or not column.evidenceRoles
         ):
@@ -291,11 +293,17 @@ def _validateObservation(
     frequency: str,
     evidenceRoles: tuple[str, ...],
     batchCutoff: str,
+    timing: str = "",
+    transformId: str = "",
 ) -> None:
     if observation.signalId != signalId:
         return
     if observation.unit != unit or observation.frequency != frequency:
         raise DriverObservationFrameError(f"{role} observation meaning drift")
+    if timing and observation.timing != timing:
+        raise DriverObservationFrameError(f"{role} observation timing drift")
+    if transformId and observation.transformId != transformId:
+        raise DriverObservationFrameError(f"{role} observation transform drift")
     if observation.evidenceRole not in evidenceRoles:
         raise DriverObservationFrameError(f"{role} observation evidence role is not allowed")
     eventAt = _dateText(observation.eventAt, f"{role}.eventAt")
@@ -318,6 +326,8 @@ def _selectObservations(
     evidenceRoles: tuple[str, ...],
     originStart: str,
     originThrough: str,
+    timing: str = "",
+    transformId: str = "",
 ) -> dict[int, VariableObservation]:
     selected: list[VariableObservation] = []
     batchCutoff = _dateText(batch.cutoffAsOf, f"{role}.cutoffAsOf")
@@ -332,6 +342,8 @@ def _selectObservations(
             frequency=frequency,
             evidenceRoles=evidenceRoles,
             batchCutoff=batchCutoff,
+            timing=timing,
+            transformId=transformId,
         )
         if observation.signalId != signalId:
             continue
@@ -385,6 +397,7 @@ def _columnOrderPayload(sourceColumns: tuple[DriverDesignColumnSpec, ...]) -> tu
             "signalId": column.signalId,
             "unit": column.unit,
             "frequency": column.frequency,
+            "timing": column.timing,
             "transformId": column.transformId,
             "evidenceRoles": column.evidenceRoles,
         }
@@ -705,6 +718,8 @@ def buildMultivariableDriverCoefficientObservationFrame(
                     evidenceRoles=column.evidenceRoles,
                     originStart=spec.originStart,
                     originThrough=spec.originThrough,
+                    timing=column.timing,
+                    transformId=column.transformId,
                 ),
             )
         )
