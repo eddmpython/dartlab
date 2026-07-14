@@ -575,6 +575,39 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
   연결하고 DART를 conditional boundary로 고정한 뒤, 분기 가격, 물량, 단위원가, 고정비, capacity 전이를
   measured law로 만든다. 그 후에만 공개 decision verb와 고밀도 GUI를 올린다.
 
+### 0c-39. EDGAR source receipt adapter와 DART retained boundary 결속 (2026-07-14)
+
+- **재감사 판정**: PRD가 요구한 시뮬레이터는 변수와 가정을 넣고 가능한 세계를 전개한 뒤 전략 차이를
+  도출하는 장치다. 지금 병목은 실행기가 아니라 입력 세계의 관측 계보였다. EDGAR의 `stateHash`는
+  source vintage가 아니며, DART의 현재 보존 재무 row는 amendment chain과 원문 receipt가 없어 exact
+  PIT 상태로 승격할 수 없다. 따라서 이번 절편은 실제 filing source를 상태 batch 계약에 묶되, 증명 가능한
+  경계 밖은 conditional로 잠그는 쪽으로 닫았다.
+- **EDGAR source artifact**: `filingStateAdapters.py`가 cutoff 이전 `us-gaap` periodic fact 전체를
+  `entityId`, `knowledgeAsOf`, provider, dataset, selection rule과 함께 canonical artifact로 고정한다.
+  source receipt는 이 artifact hash, `asKnown`, `asOfExact`, 고정 rule version, rule hash, executable hash를
+  모두 만족해야만 provider batch 부모로 쓸 수 있다. source receipt가 없거나 rule이 다르면 batch는
+  conditional로 남거나 즉시 거부된다.
+- **재무 상태 batch 결속**: EDGAR adapter는 기존 `compileEdgarQuarterlyFinancialState` 결과를
+  `ProviderObservationBatch`로 바꾸고, revenue, operating margin, cash, debt, receivables, inventories,
+  payables, ppe, equity, other net assets를 변수 registry에 맞춰 발행한다. `availableAt`은 caller cutoff가
+  아니라 선택된 filing 공개일로 둔다. 그래서 날짜 정밀도만 있는 당일 filing은 source receipt가 있어도 exact
+  PIT 상태로 승격되지 않는다. 미래 amendment를 뒤에 추가해도 과거 cutoff artifact와 상태는 바뀌지 않는다.
+- **의미 경계**: `financial.latentDemandRevenue`는 관측값이 아니라 downstream 가정이므로 exact EDGAR
+  registry에서 제외했다. 가격, 물량, 단위원가, 고정비, capacity도 EDGAR 재무 filing만으로 관측된 것처럼
+  만들지 않는다. 다음 단계에서 별도 증거 source나 명시 가정으로 전이 law에 연결해야 한다.
+- **DART retained boundary**: `buildDartRetainedFinanceVintage`는 현재 DART 보존 재무 row를
+  `latestRetained`, `periodOnly`, receipt 없음, 고정 limitation hash로만 표현한다. 따라서 DART retained
+  finance는 관측 후보로는 쓸 수 있지만 exact provider batch, signed PIT state, 자동 추천 근거로는 승격하지
+  않는다. raw filing receipt와 amendment 후보 전체가 생길 때까지 이 경계는 열지 않는다.
+- **검증**: `_attempts/edgarStateAdapter` 3건, `test_filingStateAdapters.py` 8건, `tests/simulate` 전체
+  309건을 통과했다. 실제 AAPL EDGAR store가 설치된 환경에서는 2026-03-28 분기 source artifact와 상태
+  mapping도 smoke로 확인했다. ruff, camelcase AST, docstring section, unicode long dash 검사와 Guard Index
+  strict l0-l15 7/7, 외부 gate 6종을 통과했다.
+- **정직한 잔여와 다음 순서**: 이번 단계는 filing 관측이 상태 batch에 들어오는 길을 연 것이지 아직
+  전략 도출 엔진을 끝낸 것이 아니다. 다음 P0는 분기 price, volume, unit cost, fixed cost, capacity를 관측
+  source 또는 명시 가정으로 묶고, 운영 전이 law가 그 변수들을 굴려 정책별 PnL, solvency, capacity, cash
+  runway 차이를 산출하게 만드는 것이다.
+
 ### 0c-29. 분기 전이, 파라미터 불확실성, 실행 인증 P0 보강 (2026-07-13)
 
 - **전문가 재감사 결론**: 경로모형, DART와 EDGAR PIT, admission 적대검토에서 분기 grid에 연간
