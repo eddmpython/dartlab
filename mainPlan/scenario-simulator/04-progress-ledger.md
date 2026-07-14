@@ -164,6 +164,19 @@
 
 현재 판정: source discovery가 처음으로 코드 계약을 얻었다. 하지만 아직 전수 discovery 원장이나 blocked 후보 감사장은 아니다. 다음 P0는 provider/dataset lane catalog에서 allowed와 blocked 후보를 모두 남기는 discovery audit, 그 다음은 coefficient PIT calibration receipt와 OOS admission이다. 이 단계 전까지 자동으로 찾은 source도 lane spec과 sourceRef gate를 통과한 후보일 뿐 추천 권한은 없다.
 
+## 2026-07-15 P0 source discovery blocked audit
+
+위 다음 P0 중 discovery audit을 본진에 넣었다. 방향은 source를 못 찾거나 실행할 수 없는 경우를 예외 메시지로 잃어버리지 않고, allowed 후보와 blocked 후보를 같은 audit ledger에 남기는 것이다. 새 공개 API나 GUI는 추가하지 않았다.
+
+- `src/dartlab/simulate/driverRegistry.py`: `DriverRegistryDiscoveryRecord`, `DriverRegistryDiscoveryAudit`, `DriverRegistryDiscoveryResult`, `auditDriverRegistryDiscovery`를 추가했다. discoveryId, knowledgeAsOf, laneSpecHash, sourceSetHash, discoveryHash를 기록한다.
+- allowed records: lane spec과 source card가 provider, dataset, entity, factorIds, role, required sourceRefs까지 정확히 맞으면 allowed record와 `DriverRegistryCandidate`가 함께 생성된다.
+- blocked records: source 없음, required sourceRef 누락, ambiguous source, 이미 선택된 source card 재사용, 어떤 lane spec에도 매칭되지 않은 source card를 모두 blocked record로 남긴다.
+- audit shape: allowedLaneIds, blockedLaneIds, unmatchedSourceCardIds, allowedCount, blockedCount, allowedRecords, blockedRecords, warnings가 남는다. blocked 후보가 있으면 `driverDiscoveryBlockedCandidates` warning을 올린다.
+- strict discovery 보존: 기존 `discoverDriverRegistryCandidates`는 그대로 fail closed 한다. 새 audit 함수는 실행 후보를 잃지 않으면서 왜 후보가 차단됐는지 제품과 후속 calibration이 설명할 수 있게 한다.
+- 검증: `_attempts/driverRegistry/test_driverRegistry.py`에서 allowed+blocked 동시 원장, missing source, unmatched source, missing required refs, ambiguity를 먼저 고정했다. 본진 `tests/simulate/test_driverRegistry.py`로 승격했고, focused 36개, `tests/simulate` 357개, `ruff format --check`, `ruff check`, camelCase audit, docstring audit, em/en dash audit, `dartlabGuard.py strict --scope l0-l15 --providers dart,edgar`가 통과했다.
+
+현재 판정: 이제 source discovery는 실행 후보뿐 아니라 차단 후보까지 설명 가능한 엔진 원장을 갖는다. 하지만 PRD급 시뮬레이터 완료는 아니다. 다음 P0는 discovery audit에서 통과한 후보와 관측 가능한 target label을 origin별 PIT로 맞춰 coefficient calibration receipt를 만드는 단계다. demand, ASP, capacity처럼 직접 label이 없는 항목은 여전히 explicit assumption 또는 blocked로 남겨야 한다.
+
 ---
 
 ## 0. ★2026-06-20 9인 전문가 패널 uplift . 세 축 planScore 95 도달

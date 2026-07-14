@@ -81,6 +81,57 @@ class DriverRegistryLaneSpec:
 
 
 @dataclass(frozen=True)
+class DriverRegistryDiscoveryRecord:
+    """One source discovery decision, including blocked lanes and unmatched source cards."""
+
+    laneId: str
+    laneRole: str
+    sourceCardId: str
+    providerId: str
+    datasetId: str
+    entityId: str
+    factorIds: tuple[str, ...]
+    status: str
+    blockedReason: str = ""
+    selectionReason: str = ""
+    semanticRefs: tuple[str, ...] = ()
+    sourceRefs: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "factorIds", tuple(self.factorIds))
+        object.__setattr__(self, "semanticRefs", tuple(self.semanticRefs))
+        object.__setattr__(self, "sourceRefs", tuple(self.sourceRefs))
+
+
+@dataclass(frozen=True)
+class DriverRegistryDiscoveryAudit:
+    """Audit ledger for source discovery before registry path compilation."""
+
+    discoveryId: str
+    discoveryHash: str
+    discoveryVersion: str
+    knowledgeAsOf: str
+    laneSpecHash: str
+    sourceSetHash: str
+    allowedLaneIds: tuple[str, ...]
+    blockedLaneIds: tuple[str, ...]
+    unmatchedSourceCardIds: tuple[str, ...]
+    allowedCount: int
+    blockedCount: int
+    allowedRecords: tuple[DriverRegistryDiscoveryRecord, ...]
+    blockedRecords: tuple[DriverRegistryDiscoveryRecord, ...]
+    warnings: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class DriverRegistryDiscoveryResult:
+    """Discovered executable candidates paired with allowed and blocked audit records."""
+
+    candidates: tuple[DriverRegistryCandidate, ...]
+    audit: DriverRegistryDiscoveryAudit
+
+
+@dataclass(frozen=True)
 class DriverRegistryAudit:
     """Audit ledger for a compiled registry path set."""
 
@@ -179,6 +230,14 @@ def _laneSpecPayload(spec: DriverRegistryLaneSpec) -> dict:
     }
 
 
+def _sourcePayload(source: DriverHistorySource | DriverAssumptionSource) -> dict:
+    card = _sourceCard(source)
+    return {
+        "card": card,
+        "sourceType": type(source).__name__,
+    }
+
+
 def _validateLaneSpec(spec: DriverRegistryLaneSpec) -> None:
     if (
         not spec.laneId
@@ -232,6 +291,67 @@ def _missingRequiredRefs(card, spec: DriverRegistryLaneSpec) -> tuple[str, ...]:
         elif requiredText not in refs:
             missing.append(required)
     return tuple(missing)
+
+
+def _allowedDiscoveryRecord(
+    spec: DriverRegistryLaneSpec,
+    card,
+    *,
+    semanticRefs: tuple[str, ...],
+) -> DriverRegistryDiscoveryRecord:
+    return DriverRegistryDiscoveryRecord(
+        laneId=spec.laneId,
+        laneRole=spec.laneRole,
+        sourceCardId=card.cardId,
+        providerId=card.providerId,
+        datasetId=card.datasetId,
+        entityId=card.entityId,
+        factorIds=_factorIds(card),
+        status="allowed",
+        selectionReason=spec.selectionReason,
+        semanticRefs=semanticRefs,
+        sourceRefs=card.sourceRefs,
+    )
+
+
+def _blockedLaneRecord(
+    spec: DriverRegistryLaneSpec,
+    *,
+    reason: str,
+    card=None,
+) -> DriverRegistryDiscoveryRecord:
+    return DriverRegistryDiscoveryRecord(
+        laneId=spec.laneId,
+        laneRole=spec.laneRole,
+        sourceCardId=card.cardId if card is not None else "",
+        providerId=card.providerId if card is not None else spec.providerId,
+        datasetId=card.datasetId if card is not None else spec.datasetId,
+        entityId=card.entityId if card is not None else spec.entityId,
+        factorIds=_factorIds(card) if card is not None else spec.factorIds,
+        status="blocked",
+        blockedReason=reason,
+        selectionReason=spec.selectionReason,
+        semanticRefs=spec.semanticRefs,
+        sourceRefs=card.sourceRefs if card is not None else (),
+    )
+
+
+def _blockedUnmatchedSourceRecord(
+    source: DriverHistorySource | DriverAssumptionSource,
+) -> DriverRegistryDiscoveryRecord:
+    card = _sourceCard(source)
+    return DriverRegistryDiscoveryRecord(
+        laneId="",
+        laneRole=card.sourceKind,
+        sourceCardId=card.cardId,
+        providerId=card.providerId,
+        datasetId=card.datasetId,
+        entityId=card.entityId,
+        factorIds=_factorIds(card),
+        status="blocked",
+        blockedReason="sourceNotMatchedByLaneSpec",
+        sourceRefs=card.sourceRefs,
+    )
 
 
 def _validateRole(candidate: DriverRegistryCandidate) -> None:
@@ -464,6 +584,139 @@ def discoverDriverRegistryCandidates(
             )
         )
     return tuple(candidates)
+
+
+def auditDriverRegistryDiscovery(
+    sources: tuple[DriverHistorySource | DriverAssumptionSource, ...],
+    laneSpecs: tuple[DriverRegistryLaneSpec, ...],
+    *,
+    discoveryId: str,
+    knowledgeAsOf: str,
+) -> DriverRegistryDiscoveryResult:
+    """Discover executable sources while retaining blocked discovery records.
+
+    Args:
+        sources: Already materialized driver sources from workbench adapters or explicit assumptions.
+        laneSpecs: Lane contracts that declare which source cards may become executable.
+        discoveryId: Stable identifier for this discovery pass.
+        knowledgeAsOf: Decision cutoff recorded in the discovery audit.
+
+    Returns:
+        ``DriverRegistryDiscoveryResult`` with executable candidates and blocked records.
+
+    Raises:
+        DriverRegistryError: If discovery identity, lane spec identity, or source card identity is invalid.
+
+    Example:
+        ``result = auditDriverRegistryDiscovery((source,), (laneSpec,), discoveryId="kr-drivers", knowledgeAsOf="20251231")``
+    """
+
+    if not discoveryId:
+        raise DriverRegistryError("driver registry discovery needs discoveryId")
+    cutoff = _dateText(knowledgeAsOf, "knowledgeAsOf")
+    sourceTuple = tuple(sources)
+    specTuple = tuple(laneSpecs)
+    if not sourceTuple or not specTuple:
+        raise DriverRegistryError("driver registry discovery needs sources and lane specs")
+    laneIds = tuple(spec.laneId for spec in specTuple)
+    if len(set(laneIds)) != len(laneIds):
+        raise DriverRegistryError("driver registry discovery lane ids must be unique")
+    cardIds = tuple(_sourceCard(source).cardId for source in sourceTuple)
+    if len(set(cardIds)) != len(cardIds):
+        raise DriverRegistryError("driver registry discovery source card ids must be unique")
+    for spec in specTuple:
+        _validateLaneSpec(spec)
+    selectedCardIds: set[str] = set()
+    consideredCardIds: set[str] = set()
+    candidates: list[DriverRegistryCandidate] = []
+    allowedRecords: list[DriverRegistryDiscoveryRecord] = []
+    blockedRecords: list[DriverRegistryDiscoveryRecord] = []
+    for spec in specTuple:
+        identityMatches = tuple(source for source in sourceTuple if _matchesLaneIdentity(source, spec))
+        for source in identityMatches:
+            consideredCardIds.add(_sourceCard(source).cardId)
+        if not identityMatches:
+            blockedRecords.append(_blockedLaneRecord(spec, reason="missingSourceForLane"))
+            continue
+        refCompleteMatches = tuple(
+            source for source in identityMatches if not _missingRequiredRefs(_sourceCard(source), spec)
+        )
+        if not refCompleteMatches:
+            blockedRecords.extend(
+                _blockedLaneRecord(spec, reason="missingRequiredSourceRefs", card=_sourceCard(source))
+                for source in identityMatches
+            )
+            continue
+        if len(refCompleteMatches) > 1:
+            blockedRecords.extend(
+                _blockedLaneRecord(spec, reason="ambiguousSourceForLane", card=_sourceCard(source))
+                for source in refCompleteMatches
+            )
+            continue
+        source = refCompleteMatches[0]
+        card = _sourceCard(source)
+        if card.cardId in selectedCardIds:
+            blockedRecords.append(_blockedLaneRecord(spec, reason="sourceCardAlreadySelected", card=card))
+            continue
+        discoveryHash = canonicalPayloadHash(
+            {
+                "discoveryVersion": DISCOVERY_VERSION,
+                "discoveryId": discoveryId,
+                "knowledgeAsOf": cutoff,
+                "laneSpec": _laneSpecPayload(spec),
+                "sourceCard": card,
+            }
+        )
+        semanticRefs = _dedupe((*spec.semanticRefs, f"sourceCard:{card.cardId}", f"driverDiscovery:{discoveryHash}"))
+        candidate = DriverRegistryCandidate(
+            spec.laneId,
+            spec.laneRole,
+            source,
+            semanticRefs=semanticRefs,
+            selectionReason=f"{spec.selectionReason} sourceCard={card.cardId}",
+        )
+        candidates.append(candidate)
+        allowedRecords.append(_allowedDiscoveryRecord(spec, card, semanticRefs=semanticRefs))
+        selectedCardIds.add(card.cardId)
+    unmatched = tuple(
+        source for source in sourceTuple if _sourceCard(source).cardId not in consideredCardIds | selectedCardIds
+    )
+    blockedRecords.extend(_blockedUnmatchedSourceRecord(source) for source in unmatched)
+    blockedLaneIds = _dedupe(tuple(record.laneId for record in blockedRecords if record.laneId))
+    unmatchedSourceCardIds = _dedupe(
+        tuple(record.sourceCardId for record in blockedRecords if record.blockedReason == "sourceNotMatchedByLaneSpec")
+    )
+    laneSpecHash = canonicalPayloadHash(tuple(_laneSpecPayload(spec) for spec in specTuple))
+    sourceSetHash = canonicalPayloadHash(tuple(_sourcePayload(source) for source in sourceTuple))
+    discoveryHash = canonicalPayloadHash(
+        {
+            "discoveryVersion": DISCOVERY_VERSION,
+            "discoveryId": discoveryId,
+            "knowledgeAsOf": cutoff,
+            "laneSpecHash": laneSpecHash,
+            "sourceSetHash": sourceSetHash,
+            "allowedRecords": tuple(allowedRecords),
+            "blockedRecords": tuple(blockedRecords),
+        }
+    )
+    warnings = ("driverDiscoveryBlockedCandidates",) if blockedRecords else ()
+    audit = DriverRegistryDiscoveryAudit(
+        discoveryId=discoveryId,
+        discoveryHash=discoveryHash,
+        discoveryVersion=DISCOVERY_VERSION,
+        knowledgeAsOf=cutoff,
+        laneSpecHash=laneSpecHash,
+        sourceSetHash=sourceSetHash,
+        allowedLaneIds=tuple(record.laneId for record in allowedRecords),
+        blockedLaneIds=blockedLaneIds,
+        unmatchedSourceCardIds=unmatchedSourceCardIds,
+        allowedCount=len(allowedRecords),
+        blockedCount=len(blockedRecords),
+        allowedRecords=tuple(allowedRecords),
+        blockedRecords=tuple(blockedRecords),
+        warnings=warnings,
+    )
+    return DriverRegistryDiscoveryResult(tuple(candidates), audit)
 
 
 def compileDriverRegistryPathSet(

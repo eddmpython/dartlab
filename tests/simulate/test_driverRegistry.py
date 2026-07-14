@@ -10,6 +10,7 @@ from dartlab.simulate.driverRegistry import (
     DriverRegistryCandidate,
     DriverRegistryError,
     DriverRegistryLaneSpec,
+    auditDriverRegistryDiscovery,
     compileDriverRegistryPathSet,
     discoverDriverRegistryCandidates,
 )
@@ -198,6 +199,110 @@ def testDiscoveryRejectsMissingAmbiguousAndUnprovenSourceRefs() -> None:
     missingLaneSpec = replace(ambiguousSpec, providerId="edgar")
     with pytest.raises(DriverRegistryError, match="missing source for lane"):
         discoverDriverRegistryCandidates((source,), (missingLaneSpec,))
+
+
+def testDiscoveryAuditKeepsAllowedAndBlockedRecords() -> None:
+    filing = _filingSource()
+    unmatchedIndustry = DriverHistorySource(
+        replace(
+            _industryTimeSeriesSource().card,
+            cardId="industry-snapshot",
+            datasetId="industry.snapshot",
+            sourceRefs=("data/industry/taxonomy/snapshot",),
+        ),
+        _industryTimeSeriesSource().panel,
+    )
+    result = auditDriverRegistryDiscovery(
+        (filing, unmatchedIndustry),
+        (
+            DriverRegistryLaneSpec(
+                "filing-margin",
+                "pathHistory",
+                "dart",
+                "dart.finance.retained",
+                "005930",
+                ("operatingMarginChange",),
+                semanticRefs=("semantics:financial-filing-change-path",),
+                selectionReason="Quarterly filing metric transformed to ratio change.",
+                requiredSourceRefs=("filingTrace:",),
+            ),
+            DriverRegistryLaneSpec(
+                "industry-orders",
+                "pathHistory",
+                "industry",
+                "industry.metric.quarterly",
+                "semiconductor",
+                ("industryOrderChange",),
+                semanticRefs=("semantics:industry-time-series-path",),
+                selectionReason="Industry metric has real eventTime and availableAt.",
+                requiredSourceRefs=("data/industry/metrics/semiconductor.parquet",),
+            ),
+        ),
+        discoveryId="kr-semiconductor-discovery",
+        knowledgeAsOf="20201231",
+    )
+    assert tuple(candidate.laneId for candidate in result.candidates) == ("filing-margin",)
+    assert result.audit.allowedLaneIds == ("filing-margin",)
+    assert result.audit.blockedLaneIds == ("industry-orders",)
+    assert result.audit.unmatchedSourceCardIds == ("industry-snapshot",)
+    assert result.audit.allowedCount == 1
+    assert result.audit.blockedCount == 2
+    blockedReasons = {record.blockedReason for record in result.audit.blockedRecords}
+    assert blockedReasons == {"missingSourceForLane", "sourceNotMatchedByLaneSpec"}
+    assert result.audit.discoveryHash
+    assert result.audit.laneSpecHash
+    assert result.audit.sourceSetHash
+
+
+def testDiscoveryAuditRecordsMissingRefsAndAmbiguityWithoutSelecting() -> None:
+    filing = _filingSource()
+    filingCopy = DriverHistorySource(replace(filing.card, cardId="dart-operating-margin-change-copy"), filing.panel)
+    result = auditDriverRegistryDiscovery(
+        (filing, filingCopy),
+        (
+            DriverRegistryLaneSpec(
+                "filing-margin",
+                "pathHistory",
+                "dart",
+                "dart.finance.retained",
+                "005930",
+                ("operatingMarginChange",),
+                semanticRefs=("semantics:financial-filing-change-path",),
+                selectionReason="Quarterly filing metric transformed to ratio change.",
+                requiredSourceRefs=("sourceReceiptRef:",),
+            ),
+        ),
+        discoveryId="ambiguous-filing-discovery",
+        knowledgeAsOf="20201231",
+    )
+    assert result.candidates == ()
+    assert result.audit.allowedCount == 0
+    assert result.audit.blockedLaneIds == ("filing-margin",)
+    assert result.audit.blockedCount == 2
+    assert {record.blockedReason for record in result.audit.blockedRecords} == {"missingRequiredSourceRefs"}
+    assert all(record.laneId == "filing-margin" for record in result.audit.blockedRecords)
+
+    ambiguous = auditDriverRegistryDiscovery(
+        (filing, filingCopy),
+        (
+            DriverRegistryLaneSpec(
+                "filing-margin",
+                "pathHistory",
+                "dart",
+                "dart.finance.retained",
+                "005930",
+                ("operatingMarginChange",),
+                semanticRefs=("semantics:financial-filing-change-path",),
+                selectionReason="Quarterly filing metric transformed to ratio change.",
+                requiredSourceRefs=("filingTrace:",),
+            ),
+        ),
+        discoveryId="ambiguous-filing-discovery",
+        knowledgeAsOf="20201231",
+    )
+    assert ambiguous.candidates == ()
+    assert ambiguous.audit.blockedLaneIds == ("filing-margin",)
+    assert {record.blockedReason for record in ambiguous.audit.blockedRecords} == {"ambiguousSourceForLane"}
 
 
 def testRegistryRejectsSnapshotOrObservedFeatureAsPathHistory() -> None:
