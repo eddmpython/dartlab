@@ -12,6 +12,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from dartlab.simulate.driverCalibration import (
+    MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_HASH,
+    MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_ID,
+    MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_VERSION,
+    MultivariableDriverCoefficientCalibrationReceipt,
+    MultivariableDriverCoefficientOosReport,
+    VerifiedDriverCoefficientAdmission,
+    multivariableDriverCoefficientAdmissionParentReceiptIds,
+    multivariableDriverCoefficientAdmissionSubjectHash,
+)
 from dartlab.simulate.driverPaths import DriverPathSet, driverFactorsToOperatingSpecs
 from dartlab.simulate.operatingBridge import (
     OperatingShockBaseline,
@@ -417,6 +427,138 @@ def scenarioCoefficientBindingHash(binding: ScenarioCoefficientBinding) -> str:
     """
 
     return canonicalPayloadHash(_coefficientBindingPayload(binding))
+
+
+def buildScenarioCoefficientBindingFromVerifiedMultivariableAdmission(
+    receipt: MultivariableDriverCoefficientCalibrationReceipt,
+    report: MultivariableDriverCoefficientOosReport,
+    admissionReceipt: VerifiedDriverCoefficientAdmission,
+    exposures: tuple[OperatingTransmissionExposure, ...],
+) -> ScenarioCoefficientBinding:
+    """Create a coefficient-only ledger binding for a scenario case.
+
+    This does not admit scenario paths, initial state, policy evaluation, or
+    recommendation.
+
+    Args:
+        receipt: Fitted multivariable coefficient vector receipt.
+        report: OOS report that became the signed driver coefficient artifact.
+        admissionReceipt: Verified admission wrapper returned by driver calibration.
+        exposures: Scalar measured association exposures generated from the verified coefficient vector.
+
+    Returns:
+        ``ScenarioCoefficientBinding`` that can be attached to an ``OperatingScenarioCase``.
+
+    Raises:
+        ScenarioCompositionError: If receipt, report, admission, or generated exposures drift.
+
+    Example:
+        ``binding = buildScenarioCoefficientBindingFromVerifiedMultivariableAdmission(receipt, report, verified, exposures)``
+    """
+
+    if not isinstance(admissionReceipt, VerifiedDriverCoefficientAdmission):
+        raise ScenarioCompositionError("coefficient binding requires verified driver coefficient admission")
+    exposureTuple = tuple(exposures)
+    if not exposureTuple:
+        raise ScenarioCompositionError("coefficient binding requires generated exposures")
+    if (
+        report.status != "oosEligible"
+        or report.receiptHash != receipt.receiptHash
+        or report.receiptId != receipt.receiptId
+        or report.calibrationId != receipt.calibrationId
+        or report.sourceVariableIds != receipt.sourceVariableIds
+        or report.targetVariableId != receipt.targetVariableId
+        or report.targetShock != receipt.targetShock
+        or report.targetUnit != receipt.targetUnit
+        or report.coefficientTerms != receipt.coefficientTerms
+        or report.featureSpecHash != receipt.featureSpecHash
+        or report.designFrameHash != receipt.designFrameHash
+        or report.coefficientVectorHash != receipt.coefficientVectorHash
+        or report.fitDesignFrameBinding != receipt.fitDesignFrameBinding
+    ):
+        raise ScenarioCompositionError("coefficient vector report does not match receipt")
+    subjectHash = multivariableDriverCoefficientAdmissionSubjectHash(report)
+    parentReceiptIds = multivariableDriverCoefficientAdmissionParentReceiptIds(report)
+    signedReceipt = admissionReceipt.receipt
+    if (
+        signedReceipt.kind != "driverCoefficient"
+        or signedReceipt.status != "admitted"
+        or signedReceipt.receiptId != _driverCoefficientAdmissionReceiptId(exposureTuple[0].sourceRef)
+        or signedReceipt.subjectHash != subjectHash
+        or signedReceipt.artifactHash != subjectHash
+        or (signedReceipt.ruleId, signedReceipt.ruleVersion, signedReceipt.ruleHash)
+        != (
+            MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_ID,
+            MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_VERSION,
+            MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_HASH,
+        )
+        or signedReceipt.parentReceiptIds != parentReceiptIds
+        or signedReceipt.frequency != report.frequency
+        or signedReceipt.stepSpan != report.stepSpan
+        or signedReceipt.maxAdmittedStep != report.maxAdmittedStep
+        or signedReceipt.revisionPolicy != "asKnown"
+        or signedReceipt.coverage != "asOfExact"
+    ):
+        raise ScenarioCompositionError("coefficient admission receipt does not match report")
+    expectedSourceParents = _dedupe((*report.fitSourceParentReceiptIds, *report.oosSourceParentReceiptIds))
+    expectedLabelParents = _dedupe((*report.fitLabelParentReceiptIds, *report.oosLabelParentReceiptIds))
+    if (
+        admissionReceipt.sourceParentReceiptIds != expectedSourceParents
+        or admissionReceipt.labelParentReceiptIds != expectedLabelParents
+    ):
+        raise ScenarioCompositionError("coefficient admission parent lineage does not match report")
+    if tuple(exposure.sourceVariableId for exposure in exposureTuple) != receipt.sourceVariableIds:
+        raise ScenarioCompositionError("coefficient exposure order does not match vector receipt")
+    expectedSourceRef = f"driverCoefficientAdmission:{signedReceipt.receiptId}"
+    if any(exposure.sourceRef != expectedSourceRef for exposure in exposureTuple):
+        raise ScenarioCompositionError("coefficient exposure admission ref does not match verified receipt")
+    for term, exposure in zip(receipt.coefficientTerms, exposureTuple, strict=True):
+        if (
+            exposure.evidenceKind != "measuredAssociation"
+            or exposure.sourceVariableId != term.variableId
+            or exposure.targetShock != receipt.targetShock
+            or abs(float(exposure.coefficient) - float(term.coefficient)) > 1e-12
+            or exposure.coefficientUnit != term.coefficientUnit
+            or exposure.lagSteps != receipt.lagSteps
+            or tuple(float(value) for value in exposure.responseKernel)
+            != tuple(float(value) for value in receipt.responseKernel)
+            or exposure.sourceFrequency != term.sourceFrequency
+            or exposure.sourceTiming != term.sourceTiming
+            or exposure.sourceTransformId != term.sourceTransformId
+            or exposure.sourceFactorContractHash != term.sourceFactorContractHash
+        ):
+            raise ScenarioCompositionError("coefficient exposure does not match vector receipt")
+    sourceRefs = _dedupe(
+        (
+            *report.sourceRefs,
+            f"coefficientTrace:{receipt.coefficientTraceHash}",
+            f"predictionTrace:{report.predictionTraceHash}",
+            f"fitDesignFrame:{receipt.fitDesignFrameBinding.frameHash}",
+            f"oosDesignFrame:{report.oosDesignFrameBinding.frameHash}",
+        )
+    )
+    return ScenarioCoefficientBinding(
+        admissionReceiptId=signedReceipt.receiptId,
+        subjectHash=subjectHash,
+        ruleHash=signedReceipt.ruleHash,
+        ruleId=signedReceipt.ruleId,
+        ruleVersion=signedReceipt.ruleVersion,
+        parentReceiptIds=parentReceiptIds,
+        sourceVariableIds=receipt.sourceVariableIds,
+        targetShock=receipt.targetShock,
+        frequency=report.frequency,
+        stepSpan=report.stepSpan,
+        maxAdmittedStep=report.maxAdmittedStep,
+        coefficientVectorHash=receipt.coefficientVectorHash,
+        featureSpecHash=receipt.featureSpecHash,
+        designFrameHash=receipt.designFrameHash,
+        exposureContractHash=scenarioCoefficientExposureContractHash(exposureTuple),
+        calibrationId=receipt.calibrationId,
+        reportId=report.reportId,
+        fitDesignFrameHash=receipt.fitDesignFrameBinding.frameHash,
+        oosDesignFrameHash=report.oosDesignFrameBinding.frameHash,
+        sourceRefs=sourceRefs,
+    )
 
 
 def _coefficientBindingRefs(bindings: tuple[ScenarioCoefficientBinding, ...]) -> tuple[str, ...]:

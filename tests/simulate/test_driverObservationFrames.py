@@ -53,8 +53,28 @@ from dartlab.simulate.driverObservationFrames import (
     buildDriverCoefficientObservationFrame,
     buildMultivariableDriverCoefficientObservationFrame,
 )
-from dartlab.simulate.driverPaths import DriverCard, DriverFactorSpec, DriverHistorySource
+from dartlab.simulate.driverPaths import (
+    DriverAssumptionSource,
+    DriverCard,
+    DriverFactorSpec,
+    DriverHistorySource,
+    buildDriverPathSet,
+)
 from dartlab.simulate.driverRegistry import DriverRegistryCandidate, compileDriverRegistryPathSet
+from dartlab.simulate.operatingBridge import OperatingShockBaseline
+from dartlab.simulate.operatingWorld import (
+    OperatingPrimitive,
+    buildOperatingStrategy,
+    operatingInputsFromPrimitives,
+)
+from dartlab.simulate.scenarioComposition import (
+    OperatingScenarioCase,
+    ScenarioCompositionError,
+    buildScenarioCoefficientBindingFromVerifiedMultivariableAdmission,
+    compareOneCompanyTwoScenarioStrategies,
+    scenarioCoefficientBindingHash,
+    scenarioCoefficientExposureContractHash,
+)
 from dartlab.simulate.stateCompiler import (
     buildProviderObservationBatch,
     issueProviderObservationBatch,
@@ -720,6 +740,154 @@ def _fitAndReport(context, fitFrame, oosFrame, registryResult=None):
     return receipt, report, signed
 
 
+def _multivariableAdmissionBundle(context):
+    fitFx, fitOil, fitLabel = _multiFitBatches(context)
+    oosFx, oosOil, oosLabel = _multiOosBatches(context)
+    fitFrame = buildMultivariableDriverCoefficientObservationFrame(
+        (fitFx, fitOil),
+        fitLabel,
+        _designSpec("macro-vector-fit"),
+    )
+    oosFrame = buildMultivariableDriverCoefficientObservationFrame(
+        (oosFx, oosOil),
+        oosLabel,
+        _designSpec("macro-vector-oos"),
+    )
+    receipt = fitMultivariableDriverCoefficientPitFromObservationFrame(
+        _multiRegistryResult(fitFx, fitOil),
+        _target(fitFrame.labelParentReceiptIds),
+        fitFrame,
+        _multiFitSpec(fitFrame.sourceParentReceiptIds),
+        calibrationKnowledgeAsOf="20210430",
+    )
+    report = evaluateMultivariableDriverCoefficientOosFromObservationFrame(
+        receipt,
+        oosFrame,
+        _multiOosSpec(oosFrame.sourceParentReceiptIds, oosFrame.labelParentReceiptIds),
+        evaluationKnowledgeAsOf="20220131",
+    )
+    signed = _issueMultivariableCoefficientAdmission(context, report)
+    verified = validateMultivariableDriverCoefficientAdmission(
+        report,
+        context[4],
+        calibrationReceipt=receipt,
+        receiptId=signed.receiptId,
+        decisionAsOf="20220202",
+    )
+    exposures = multivariableCalibrationReceiptToOperatingExposures(
+        receipt,
+        exposureIdPrefix="macro-price",
+        oosReport=report,
+        admissionReceipt=verified,
+    )
+    return fitFrame, oosFrame, receipt, report, signed, verified, exposures
+
+
+def _operatingInputs():
+    return operatingInputsFromPrimitives(
+        (
+            OperatingPrimitive("price", 10.0, "currencyPerUnit", "explicitAssumption", "assumption://price"),
+            OperatingPrimitive("demandVolume", 100.0, "units", "explicitAssumption", "assumption://volume"),
+            OperatingPrimitive("unitCost", 6.0, "currencyPerUnit", "explicitAssumption", "assumption://unit-cost"),
+            OperatingPrimitive("fixedCost", 100.0, "currency", "explicitAssumption", "assumption://fixed-cost"),
+            OperatingPrimitive("capacityUnits", 150.0, "units", "explicitAssumption", "assumption://capacity"),
+            OperatingPrimitive("cash", 500.0, "currency", "observed", "filing://cash"),
+            OperatingPrimitive("debt", 20.0, "currency", "observed", "filing://debt"),
+        ),
+        asOf="20220131",
+        priceElasticity=1.0,
+        capacityUnitsPerCurrency=1.0,
+        taxRate=0.0,
+    )
+
+
+def _operatingBaselines():
+    return tuple(
+        OperatingShockBaseline(
+            target,
+            0.04 if target == "debtRate" else 0.0,
+            "effectiveRatePerStep" if target == "debtRate" else "ratioChangePerStep",
+            "explicitAssumption",
+            f"assumption://baseline/{target}",
+        )
+        for target in (
+            "marketPriceChange",
+            "demandChange",
+            "unitCostChange",
+            "fixedCostChange",
+            "capacityChange",
+            "debtRate",
+        )
+    )
+
+
+def _scenarioCaseWithCoefficientBinding(caseId, shock, exposures, binding, verifier):
+    factorSpecs = (
+        DriverFactorSpec("fxChange", "simpleReturn", "quarter", "change", "change-v1"),
+        DriverFactorSpec("oilChange", "simpleReturn", "quarter", "change", "change-v1"),
+    )
+    card = DriverCard(
+        cardId=f"{caseId}-macro-vector",
+        sourceKind="explicitAssumption",
+        providerId="user",
+        datasetId="manual-scenario",
+        entityId="KR",
+        frequency="quarter",
+        stepSpan=1,
+        factors=factorSpecs,
+        historyStatus="explicitAssumption",
+        sourceRefs=(f"assumption://{caseId}/macro-vector",),
+        assumptionId=f"{caseId}-macro-vector",
+        claim=f"{caseId} macro vector scenario.",
+        falsifier="Macro vector does not move the target operating price shock.",
+    )
+    pathSet = buildDriverPathSet(
+        (
+            DriverAssumptionSource(
+                card,
+                ({"fxChange": shock[0], "oilChange": shock[1]},),
+            ),
+        ),
+        knowledgeAsOf="20220131",
+        horizon=1,
+        pathCount=1,
+        blockLength=1,
+        seed=11,
+    )
+    return OperatingScenarioCase(
+        caseId,
+        caseId.title(),
+        pathSet,
+        exposures,
+        _operatingBaselines(),
+        refs=(f"scenario://{caseId}",),
+        coefficientBindings=(binding,),
+        admissionVerifier=verifier,
+    )
+
+
+def _oneStepStrategies():
+    return (
+        buildOperatingStrategy(
+            "hold",
+            priceChange=(0.0,),
+            capacityInvestment=(0.0,),
+            borrow=(0.0,),
+            repay=(0.0,),
+            refs=("strategy://hold",),
+            isBaseline=True,
+        ),
+        buildOperatingStrategy(
+            "invest",
+            priceChange=(0.0,),
+            capacityInvestment=(25.0,),
+            borrow=(0.0,),
+            repay=(0.0,),
+            refs=("strategy://invest",),
+        ),
+    )
+
+
 def testProviderObservationBatchesBuildCoefficientFrameAndAdmission(tmp_path) -> None:
     context = _trust(tmp_path)
     fitSource, fitLabel = _fitBatches(context)
@@ -1030,37 +1198,12 @@ def testMultivariableObservationFrameRejectsUnsafeInputs(tmp_path) -> None:
 
 def testMultivariableDesignFrameFitsOosAdmissionAndExposures(tmp_path) -> None:
     context = _trust(tmp_path)
-    fitFx, fitOil, fitLabel = _multiFitBatches(context)
-    oosFx, oosOil, oosLabel = _multiOosBatches(context)
-    fitFrame = buildMultivariableDriverCoefficientObservationFrame(
-        (fitFx, fitOil),
-        fitLabel,
-        _designSpec("macro-vector-fit"),
-    )
-    oosFrame = buildMultivariableDriverCoefficientObservationFrame(
-        (oosFx, oosOil),
-        oosLabel,
-        _designSpec("macro-vector-oos"),
-    )
-    receipt = fitMultivariableDriverCoefficientPitFromObservationFrame(
-        _multiRegistryResult(fitFx, fitOil),
-        _target(fitFrame.labelParentReceiptIds),
-        fitFrame,
-        _multiFitSpec(fitFrame.sourceParentReceiptIds),
-        calibrationKnowledgeAsOf="20210430",
-    )
+    fitFrame, oosFrame, receipt, report, signed, verified, exposures = _multivariableAdmissionBundle(context)
     assert tuple(term.variableId for term in receipt.coefficientTerms) == ("fxChange", "oilChange")
     assert tuple(term.coefficient for term in receipt.coefficientTerms) == pytest.approx((0.5, 0.25))
     assert receipt.featureSpecHash
     assert receipt.designFrameHash == fitFrame.frameHash
     assert receipt.coefficientVectorHash
-
-    report = evaluateMultivariableDriverCoefficientOosFromObservationFrame(
-        receipt,
-        oosFrame,
-        _multiOosSpec(oosFrame.sourceParentReceiptIds, oosFrame.labelParentReceiptIds),
-        evaluationKnowledgeAsOf="20220131",
-    )
     assert report.status == "oosEligible"
     with pytest.raises(DriverCalibrationError, match="requires OOS admission"):
         multivariableCalibrationReceiptToOperatingExposures(
@@ -1069,20 +1212,6 @@ def testMultivariableDesignFrameFitsOosAdmissionAndExposures(tmp_path) -> None:
             oosReport=report,
             admissionReceipt=None,
         )
-    signed = _issueMultivariableCoefficientAdmission(context, report)
-    verified = validateMultivariableDriverCoefficientAdmission(
-        report,
-        context[4],
-        calibrationReceipt=receipt,
-        receiptId=signed.receiptId,
-        decisionAsOf="20220202",
-    )
-    exposures = multivariableCalibrationReceiptToOperatingExposures(
-        receipt,
-        exposureIdPrefix="macro-price",
-        oosReport=report,
-        admissionReceipt=verified,
-    )
     assert len(exposures) == 2
     assert {exposure.sourceVariableId for exposure in exposures} == {"fxChange", "oilChange"}
     assert {exposure.evidenceKind for exposure in exposures} == {"measuredAssociation"}
@@ -1091,6 +1220,72 @@ def testMultivariableDesignFrameFitsOosAdmissionAndExposures(tmp_path) -> None:
     assert all(exposure.sourceFrequency == "quarter" for exposure in exposures)
     assert all(exposure.sourceTiming == "change" for exposure in exposures)
     assert all(exposure.sourceTransformId == "change-v1" for exposure in exposures)
+    binding = buildScenarioCoefficientBindingFromVerifiedMultivariableAdmission(
+        receipt,
+        report,
+        verified,
+        exposures,
+    )
+    assert binding.admissionReceiptId == signed.receiptId
+    assert binding.subjectHash == multivariableDriverCoefficientAdmissionSubjectHash(report)
+    assert binding.ruleId == MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_ID
+    assert binding.ruleVersion == MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_VERSION
+    assert binding.ruleHash == MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_HASH
+    assert binding.parentReceiptIds == multivariableDriverCoefficientAdmissionParentReceiptIds(report)
+    assert binding.sourceVariableIds == receipt.sourceVariableIds
+    assert binding.coefficientVectorHash == receipt.coefficientVectorHash
+    assert binding.featureSpecHash == receipt.featureSpecHash
+    assert binding.designFrameHash == fitFrame.frameHash
+    assert binding.fitDesignFrameHash == fitFrame.frameHash
+    assert binding.oosDesignFrameHash == oosFrame.frameHash
+    assert binding.exposureContractHash == scenarioCoefficientExposureContractHash(exposures)
+    with pytest.raises(ScenarioCompositionError, match="exposure does not match"):
+        buildScenarioCoefficientBindingFromVerifiedMultivariableAdmission(
+            receipt,
+            report,
+            verified,
+            (replace(exposures[0], coefficient=0.6), exposures[1]),
+        )
+
+
+def testMultivariableAdmissionBindingRunsOneCompanyScenarioLoop(tmp_path) -> None:
+    context = _trust(tmp_path)
+    _fitFrame, _oosFrame, receipt, report, signed, verified, exposures = _multivariableAdmissionBundle(context)
+    binding = buildScenarioCoefficientBindingFromVerifiedMultivariableAdmission(
+        receipt,
+        report,
+        verified,
+        exposures,
+    )
+    loop = compareOneCompanyTwoScenarioStrategies(
+        "005930",
+        _operatingInputs(),
+        (
+            _scenarioCaseWithCoefficientBinding("base", (0.05, 0.02), exposures, binding, context[4]),
+            _scenarioCaseWithCoefficientBinding("stress", (-0.10, 0.05), exposures, binding, context[4]),
+        ),
+        _oneStepStrategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert loop.decisionStatus == "conditionalOnly"
+    assert loop.recommendationCeiling == "conditionalOnly"
+    assert loop.recommendation is None
+    base, _stress = loop.caseLedgers
+    assert base.coefficientAdmissionReceiptIds == (signed.receiptId,)
+    assert base.coefficientBindingHashes == (scenarioCoefficientBindingHash(binding),)
+    assert base.coefficientParentReceiptIds == multivariableDriverCoefficientAdmissionParentReceiptIds(report)
+    assert len(base.exposureLedgers) == 2
+    assert {row.admissionReceiptId for row in base.exposureLedgers} == {signed.receiptId}
+    assert {row.sourceVariableId for row in base.exposureLedgers} == {"fxChange", "oilChange"}
+    assert base.pathAdmissionReceiptId == ""
+    assert base.initialStateAdmissionReceiptId == ""
+    assert base.policyEvaluationCertificateId == ""
+    assert "pathAdmissionMissing" in base.blockedReasons
+    assert "initialStateAdmissionMissing" in base.blockedReasons
+    assert "policyEvaluationCertificateMissing" in base.blockedReasons
+    assert "automaticRecommendationDisabled" in loop.blockedReasons
 
 
 def testMultivariableAdmissionRejectsTamperedFeatureCellRef(tmp_path) -> None:

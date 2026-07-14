@@ -1243,3 +1243,15 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **추천 경계**: admitted coefficient law가 들어와도 path admission, initial state admission, policy evaluation certificate가 없으면 recommendation은 계속 닫힌다. score leader는 비교 힌트일 뿐 추천이 아니다.
 - **검증**: scenario composition focused 12건 통과. operating bridge와 driver observation frame까지 묶은 focused 37건 통과. ruff format, ruff check, camelCase strict, docstring4 audit 통과.
 - **남은 P0**: 다음은 실제 DART, EDGAR, price, macro, industry lane adapter가 만든 provider observation batch와 path set을 이 binding 장부까지 자동 공급하는 단계다. 그 뒤 admitted path와 policy evaluation certificate를 닫아야 전략 추천으로 승격된다.
+
+
+## 2026-07-15 P0 verified coefficient binding auto-build
+
+- **판단**: one-company loop가 `ScenarioCoefficientBinding`을 받을 수 있어도, binding을 손으로 만든 상수 fixture로 조립하면 실제 시뮬레이터의 핵심 seam이 남는다. PRD 기준으로는 signed multivariable design frame, OOS admission, scalar operating exposure가 자동으로 scenario loop 장부까지 들어가야 한다.
+- **구현**: `buildScenarioCoefficientBindingFromVerifiedMultivariableAdmission`을 추가했다. 입력은 multivariable calibration receipt, OOS report, verified driverCoefficient admission, generated measuredAssociation exposures 네 가지다. 출력은 계수 전용 `ScenarioCoefficientBinding`뿐이며 path, state, policy, recommendation은 만들지 않는다.
+- **검증 경계**: helper는 report와 receipt의 hash, source variable order, coefficient terms, fit design frame binding을 대조한다. signed receipt는 kind, admitted status, subject/artifact hash, rule id, rule version, rule hash, parent receipts, frequency, stepSpan, maxAdmittedStep, asKnown/asOfExact를 대조한다.
+- **exposure 경계**: generated exposure의 sourceRef는 verified receipt id와 같아야 하며, 각 exposure의 source variable, target shock, coefficient, unit, lag, response kernel, source frequency, timing, transform, source factor contract가 coefficient term과 같아야 한다. drift가 있으면 scenario binding 생성 전에 실패한다.
+- **수직 E2E**: `test_driverObservationFrames.py`에서 signed multivariable provider observation frame, vector fit, OOS report, signed admission, verified admission, scalar exposures, 자동 binding, one-company two-scenario two-strategy loop까지 한 번에 통과하는 회귀를 추가했다.
+- **추천 경계**: 실제 coefficient admission verifier를 case에 붙여도 loop는 `conditionalOnly`로 남는다. path admission, initial state admission, policy evaluation certificate가 없으면 recommendation은 계속 `None`이며 blocked reason도 유지된다.
+- **검증**: focused E2E 2건 통과, driverObservationFrames + scenarioComposition + operatingBridge focused 38건 통과, `tests/simulate` 전체 407건 통과. ruff format/check, camelCase strict, docstring4 audit, Guard Index quick, diff check, em/en dash audit 통과.
+- **남은 P0**: 이제 수동 coefficient binding seam은 닫혔다. 다음은 실제 DART, EDGAR, price, macro, industry lane adapter가 provider observation batch와 scenario path set을 전수 공급해 이 자동 binding까지 도달하게 만드는 단계다.
