@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import polars as pl
 import pytest
 
@@ -7,7 +9,9 @@ from dartlab.simulate.driverPaths import DriverCard, DriverFactorSpec, DriverHis
 from dartlab.simulate.driverRegistry import (
     DriverRegistryCandidate,
     DriverRegistryError,
+    DriverRegistryLaneSpec,
     compileDriverRegistryPathSet,
+    discoverDriverRegistryCandidates,
 )
 from dartlab.simulate.driverSources import (
     filingMetricDriverHistorySource,
@@ -118,6 +122,82 @@ def testRegistryCompilesWorkbenchSourcesAndPreservesWeakLineage() -> None:
     assert "filingSourceNotExactAsKnown" in result.audit.warnings
     assert "dartRetainedFinanceRowsAreConditionalUntilRawFilingReceiptsExist" in result.audit.warnings
     assert all(step["operatingMarginChange"] != 9.99 for path in result.pathSet.paths for step in path.steps)
+
+
+def testDiscoveryBuildsRegistryCandidatesFromLaneSpecs() -> None:
+    specs = (
+        DriverRegistryLaneSpec(
+            "filing-margin",
+            "pathHistory",
+            "dart",
+            "dart.finance.retained",
+            "005930",
+            ("operatingMarginChange",),
+            semanticRefs=("semantics:financial-filing-change-path",),
+            selectionReason="Quarterly filing metric transformed to ratio change.",
+            requiredSourceRefs=("filingTrace:", "filingIdColumn:rceptNo"),
+        ),
+        DriverRegistryLaneSpec(
+            "industry-orders",
+            "pathHistory",
+            "industry",
+            "industry.metric.quarterly",
+            "semiconductor",
+            ("industryOrderChange",),
+            semanticRefs=("semantics:industry-time-series-path",),
+            selectionReason="Industry metric has real eventTime and availableAt.",
+            requiredSourceRefs=("data/industry/metrics/semiconductor.parquet",),
+        ),
+    )
+    candidates = discoverDriverRegistryCandidates(
+        (_filingSource(), _industryTimeSeriesSource()),
+        specs,
+    )
+    assert tuple(candidate.laneId for candidate in candidates) == ("filing-margin", "industry-orders")
+    assert all(any(ref.startswith("driverDiscovery:") for ref in candidate.semanticRefs) for candidate in candidates)
+    assert "sourceCard:dart-operating-margin-change" in candidates[0].semanticRefs
+
+    result = compileDriverRegistryPathSet(
+        candidates,
+        registryId="discovered-kr-semiconductor-drivers",
+        knowledgeAsOf="20201231",
+        horizon=2,
+        pathCount=2,
+        blockLength=1,
+        seed=17,
+        minObservations=3,
+    )
+    assert result.audit.commonObservationCount == 3
+    assert any(ref.startswith("driverDiscovery:") for ref in result.audit.semanticRefs)
+    assert result.audit.laneIds == ("filing-margin", "industry-orders")
+
+
+def testDiscoveryRejectsMissingAmbiguousAndUnprovenSourceRefs() -> None:
+    source = _filingSource()
+    missingSpec = DriverRegistryLaneSpec(
+        "filing-margin",
+        "pathHistory",
+        "dart",
+        "dart.finance.retained",
+        "005930",
+        ("operatingMarginChange",),
+        semanticRefs=("semantics:financial-filing-change-path",),
+        selectionReason="Quarterly filing metric transformed to ratio change.",
+        requiredSourceRefs=("sourceReceiptRef:",),
+    )
+    with pytest.raises(DriverRegistryError, match="missing required sourceRefs"):
+        discoverDriverRegistryCandidates((source,), (missingSpec,))
+
+    ambiguousSource = DriverHistorySource(
+        replace(source.card, cardId="dart-operating-margin-change-copy"), source.panel
+    )
+    ambiguousSpec = replace(missingSpec, requiredSourceRefs=("filingTrace:",))
+    with pytest.raises(DriverRegistryError, match="ambiguous driver registry discovery"):
+        discoverDriverRegistryCandidates((source, ambiguousSource), (ambiguousSpec,))
+
+    missingLaneSpec = replace(ambiguousSpec, providerId="edgar")
+    with pytest.raises(DriverRegistryError, match="missing source for lane"):
+        discoverDriverRegistryCandidates((source,), (missingLaneSpec,))
 
 
 def testRegistryRejectsSnapshotOrObservedFeatureAsPathHistory() -> None:

@@ -1,10 +1,11 @@
-"""Register curated driver sources before path generation.
+"""Discover and register safe driver sources before path generation.
 
 The registry is an internal safety gate between workbench source adapters and
-``driverPaths``. It does not discover data, fit coefficients, issue admission,
-or recommend policies. It records why a lane is allowed to behave as a path
-driver, rejects state snapshots and semantic laundering, and then delegates the
-actual path construction to ``buildDriverPathSet``.
+``driverPaths``. Discovery only selects from already materialized source
+objects using explicit lane specs. It does not fetch data, fit coefficients,
+issue admission, or recommend policies. It records why a lane is allowed to
+behave as a path driver, rejects state snapshots and semantic laundering, and
+then delegates the actual path construction to ``buildDriverPathSet``.
 """
 
 from __future__ import annotations
@@ -25,6 +26,7 @@ from dartlab.simulate.empiricalPaths import PathMeasureCertificate
 from dartlab.simulate.vintage import canonicalPayloadHash
 
 REGISTRY_VERSION = "driver-registry-v1"
+DISCOVERY_VERSION = "driver-registry-discovery-v1"
 _EXECUTABLE_ROLES = {"pathHistory", "explicitAssumption"}
 _BLOCKED_ROLES = {"stateSnapshot", "observedFeature", "staticClassification", "unsupported"}
 _OPERATING_SHOCK_TARGETS = {
@@ -54,6 +56,28 @@ class DriverRegistryCandidate:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "semanticRefs", tuple(self.semanticRefs))
+
+
+@dataclass(frozen=True)
+class DriverRegistryLaneSpec:
+    """Explicit discovery contract for selecting one source card as a lane."""
+
+    laneId: str
+    laneRole: str
+    providerId: str
+    datasetId: str
+    entityId: str
+    factorIds: tuple[str, ...]
+    semanticRefs: tuple[str, ...]
+    selectionReason: str
+    requiredSourceRefs: tuple[str, ...] = ()
+    historyStatus: str = ""
+    assumptionId: str = ""
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "factorIds", tuple(self.factorIds))
+        object.__setattr__(self, "semanticRefs", tuple(self.semanticRefs))
+        object.__setattr__(self, "requiredSourceRefs", tuple(self.requiredSourceRefs))
 
 
 @dataclass(frozen=True)
@@ -103,6 +127,10 @@ def _sourceColumn(factor: DriverFactorSpec) -> str:
     return factor.sourceColumn or factor.variableId
 
 
+def _factorIds(card) -> tuple[str, ...]:
+    return tuple(factor.variableId for factor in card.factors)
+
+
 def _sourceCard(source: DriverHistorySource | DriverAssumptionSource):
     if isinstance(source, DriverHistorySource | DriverAssumptionSource):
         return source.card
@@ -133,6 +161,77 @@ def _candidatePayload(candidate: DriverRegistryCandidate) -> dict:
         "semanticRefs": candidate.semanticRefs,
         "selectionReason": candidate.selectionReason,
     }
+
+
+def _laneSpecPayload(spec: DriverRegistryLaneSpec) -> dict:
+    return {
+        "laneId": spec.laneId,
+        "laneRole": spec.laneRole,
+        "providerId": spec.providerId,
+        "datasetId": spec.datasetId,
+        "entityId": spec.entityId,
+        "factorIds": spec.factorIds,
+        "semanticRefs": spec.semanticRefs,
+        "selectionReason": spec.selectionReason,
+        "requiredSourceRefs": spec.requiredSourceRefs,
+        "historyStatus": spec.historyStatus,
+        "assumptionId": spec.assumptionId,
+    }
+
+
+def _validateLaneSpec(spec: DriverRegistryLaneSpec) -> None:
+    if (
+        not spec.laneId
+        or spec.laneRole not in _EXECUTABLE_ROLES
+        or not spec.providerId
+        or not spec.datasetId
+        or not spec.entityId
+        or not spec.factorIds
+        or not spec.semanticRefs
+        or not spec.selectionReason
+        or any(not ref for ref in spec.requiredSourceRefs)
+    ):
+        raise DriverRegistryError(f"driver registry lane spec is incomplete: {spec.laneId}")
+    if len(set(spec.factorIds)) != len(spec.factorIds):
+        raise DriverRegistryError(f"driver registry lane spec factor ids must be unique: {spec.laneId}")
+
+
+def _roleMatches(source: DriverHistorySource | DriverAssumptionSource, laneRole: str) -> bool:
+    return (laneRole == "pathHistory" and isinstance(source, DriverHistorySource)) or (
+        laneRole == "explicitAssumption" and isinstance(source, DriverAssumptionSource)
+    )
+
+
+def _matchesLaneIdentity(source: DriverHistorySource | DriverAssumptionSource, spec: DriverRegistryLaneSpec) -> bool:
+    if not _roleMatches(source, spec.laneRole):
+        return False
+    card = _sourceCard(source)
+    if (
+        card.status != "active"
+        or card.providerId != spec.providerId
+        or card.datasetId != spec.datasetId
+        or card.entityId != spec.entityId
+        or _factorIds(card) != spec.factorIds
+    ):
+        return False
+    if spec.historyStatus and card.historyStatus != spec.historyStatus:
+        return False
+    if spec.assumptionId and card.assumptionId != spec.assumptionId:
+        return False
+    return True
+
+
+def _missingRequiredRefs(card, spec: DriverRegistryLaneSpec) -> tuple[str, ...]:
+    refs = tuple(str(ref).lower() for ref in card.sourceRefs)
+    missing = []
+    for required in spec.requiredSourceRefs:
+        requiredText = str(required).lower()
+        if requiredText.endswith(":"):
+            if not any(ref.startswith(requiredText) for ref in refs):
+                missing.append(required)
+        elif requiredText not in refs:
+            missing.append(required)
+    return tuple(missing)
 
 
 def _validateRole(candidate: DriverRegistryCandidate) -> None:
@@ -295,6 +394,76 @@ def _ensureCertificateEligible(
     hasAssumption = any(isinstance(candidate.source, DriverAssumptionSource) for candidate in candidates)
     if hasAssumption or warnings or any(card.historyStatus != "asKnown" for card in cards):
         raise DriverRegistryError("path certificate requires exact warning-free historical sources")
+
+
+def discoverDriverRegistryCandidates(
+    sources: tuple[DriverHistorySource | DriverAssumptionSource, ...],
+    laneSpecs: tuple[DriverRegistryLaneSpec, ...],
+) -> tuple[DriverRegistryCandidate, ...]:
+    """Select exact source cards for explicit registry lane specs.
+
+    Args:
+        sources: Already materialized driver sources from workbench adapters or explicit assumptions.
+        laneSpecs: Lane contracts that declare provider, dataset, entity, factors, refs, and semantics.
+
+    Returns:
+        Ordered ``DriverRegistryCandidate`` values with discovery trace refs in ``semanticRefs``.
+
+    Raises:
+        DriverRegistryError: If a lane is missing, ambiguous, incomplete, or lacks required refs.
+
+    Example:
+        ``candidates = discoverDriverRegistryCandidates((source,), (laneSpec,))``
+    """
+
+    sourceTuple = tuple(sources)
+    specTuple = tuple(laneSpecs)
+    if not sourceTuple or not specTuple:
+        raise DriverRegistryError("driver registry discovery needs sources and lane specs")
+    laneIds = tuple(spec.laneId for spec in specTuple)
+    if len(set(laneIds)) != len(laneIds):
+        raise DriverRegistryError("driver registry discovery lane ids must be unique")
+    selectedCardIds: set[str] = set()
+    candidates: list[DriverRegistryCandidate] = []
+    for spec in specTuple:
+        _validateLaneSpec(spec)
+        identityMatches = tuple(source for source in sourceTuple if _matchesLaneIdentity(source, spec))
+        if not identityMatches:
+            raise DriverRegistryError(f"driver registry discovery missing source for lane: {spec.laneId}")
+        refCompleteMatches = tuple(
+            source for source in identityMatches if not _missingRequiredRefs(_sourceCard(source), spec)
+        )
+        if not refCompleteMatches:
+            missingRefs = _missingRequiredRefs(_sourceCard(identityMatches[0]), spec)
+            raise DriverRegistryError(
+                f"driver registry discovery missing required sourceRefs: {spec.laneId}: {missingRefs}"
+            )
+        if len(refCompleteMatches) > 1:
+            raise DriverRegistryError(f"ambiguous driver registry discovery for lane: {spec.laneId}")
+        source = refCompleteMatches[0]
+        card = _sourceCard(source)
+        if card.cardId in selectedCardIds:
+            raise DriverRegistryError(f"driver registry discovery reuses one source card: {card.cardId}")
+        selectedCardIds.add(card.cardId)
+        discoveryHash = canonicalPayloadHash(
+            {
+                "discoveryVersion": DISCOVERY_VERSION,
+                "laneSpec": _laneSpecPayload(spec),
+                "sourceCard": card,
+            }
+        )
+        candidates.append(
+            DriverRegistryCandidate(
+                spec.laneId,
+                spec.laneRole,
+                source,
+                semanticRefs=_dedupe(
+                    (*spec.semanticRefs, f"sourceCard:{card.cardId}", f"driverDiscovery:{discoveryHash}")
+                ),
+                selectionReason=f"{spec.selectionReason} sourceCard={card.cardId}",
+            )
+        )
+    return tuple(candidates)
 
 
 def compileDriverRegistryPathSet(

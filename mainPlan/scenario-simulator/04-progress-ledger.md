@@ -151,6 +151,19 @@
 
 현재 판정: 이제 flow 계정은 막힌 값이 아니라 명시 가정으로만 실행 가능한 값이 됐다. 하지만 PRD급 시뮬레이터 완료는 아니다. 다음 P0는 자동 전수 source discovery와 coefficient PIT calibration이다. 특히 revenue flow assumption을 demandChange, ASP, capacity, unitCost로 어떻게 전파할지는 별도 exposure law와 OOS admission으로 닫아야 한다.
 
+## 2026-07-15 P0 lane spec source discovery boundary
+
+위 다음 P0 중 자동 source discovery의 첫 안전한 절단면을 본진에 넣었다. 방향은 모든 dataframe을 휴리스틱으로 실행 등록하는 것이 아니라, 명시된 lane spec에 정확히 맞는 이미 준비된 source card만 `DriverRegistryCandidate`로 후보화하는 내부 discovery다. 새 공개 API나 GUI는 추가하지 않았다.
+
+- `src/dartlab/simulate/driverRegistry.py`: `DriverRegistryLaneSpec`과 `discoverDriverRegistryCandidates`를 추가했다. lane spec은 laneId, laneRole, providerId, datasetId, entityId, factorIds, semanticRefs, selectionReason, requiredSourceRefs를 명시해야 한다.
+- deterministic selection: 각 lane spec은 정확히 하나의 source card와만 매칭된다. source가 없거나 둘 이상이면 fail closed 한다. 같은 source card를 두 lane에 재사용하는 것도 차단한다.
+- lineage gate: `filingTrace:`, `sourceReceiptRef:`, `filingIdColumn:rceptNo` 같은 required sourceRef prefix 또는 exact ref를 spec이 요구할 수 있다. ref가 없으면 discovery 단계에서 실행 후보가 되지 못한다.
+- role boundary: `pathHistory`는 `DriverHistorySource`, `explicitAssumption`은 `DriverAssumptionSource`만 선택한다. provider, dataset, entity, factorIds, optional historyStatus와 assumptionId가 모두 맞아야 한다.
+- discovery trace: 선택된 candidate의 semanticRefs에 `sourceCard:<cardId>`와 `driverDiscovery:<hash>`를 추가한다. lane spec과 source card가 바뀌면 discovery hash도 바뀌며, 이후 registry audit semanticRefs에 전파된다.
+- 검증: `_attempts/driverRegistry/test_driverRegistry.py`에서 spec 기반 후보화, discovery trace, required sourceRef 누락, ambiguous source, missing lane을 먼저 고정했다. 본진 `tests/simulate/test_driverRegistry.py`로 승격했고, focused 32개, `tests/simulate` 355개, `ruff format --check`, `ruff check`, camelCase audit, docstring audit, em/en dash audit, `dartlabGuard.py strict --scope l0-l15 --providers dart,edgar`가 통과했다.
+
+현재 판정: source discovery가 처음으로 코드 계약을 얻었다. 하지만 아직 전수 discovery 원장이나 blocked 후보 감사장은 아니다. 다음 P0는 provider/dataset lane catalog에서 allowed와 blocked 후보를 모두 남기는 discovery audit, 그 다음은 coefficient PIT calibration receipt와 OOS admission이다. 이 단계 전까지 자동으로 찾은 source도 lane spec과 sourceRef gate를 통과한 후보일 뿐 추천 권한은 없다.
+
 ---
 
 ## 0. ★2026-06-20 9인 전문가 패널 uplift . 세 축 planScore 95 도달
