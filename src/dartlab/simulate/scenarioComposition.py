@@ -35,6 +35,7 @@ from dartlab.simulate.world import SimulationRun, StrategySpec, strategyContract
 
 if TYPE_CHECKING:
     from dartlab.simulate.admissionRegistry import AdmissionVerifier
+    from dartlab.simulate.driverRegistry import DriverRegistryAudit
     from dartlab.simulate.policyEvaluation import PolicyAdmissionEvidence
     from dartlab.simulate.stateCompiler import CompiledPointInTimeState
 
@@ -85,6 +86,7 @@ class OperatingScenarioCase:
     coefficientBindings: tuple["ScenarioCoefficientBinding", ...] = ()
     admissionVerifier: AdmissionVerifier | None = None
     policyAdmissionEvidence: "PolicyAdmissionEvidence | None" = None
+    driverRegistryAudit: "DriverRegistryAudit | None" = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "exposures", tuple(self.exposures))
@@ -178,6 +180,37 @@ class ScenarioExposureLedger:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "responseKernel", tuple(float(value) for value in self.responseKernel))
+
+
+@dataclass(frozen=True)
+class ScenarioDriverRegistryLedger:
+    """Readable registry source selection row for a scenario case."""
+
+    registryId: str
+    registryHash: str
+    laneIds: tuple[str, ...]
+    cardIds: tuple[str, ...]
+    factorIds: tuple[str, ...]
+    commonObservationCount: int
+    sourceObservationCounts: tuple[tuple[str, int], ...]
+    eventStart: str
+    eventEnd: str
+    sourceRefs: tuple[str, ...]
+    semanticRefs: tuple[str, ...]
+    warnings: tuple[str, ...]
+    pathSetHash: str
+    pathSetInputHash: str
+    validationStatus: str
+    historyStatus: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "laneIds", tuple(self.laneIds))
+        object.__setattr__(self, "cardIds", tuple(self.cardIds))
+        object.__setattr__(self, "factorIds", tuple(self.factorIds))
+        object.__setattr__(self, "sourceObservationCounts", tuple(tuple(item) for item in self.sourceObservationCounts))
+        object.__setattr__(self, "sourceRefs", tuple(self.sourceRefs))
+        object.__setattr__(self, "semanticRefs", tuple(self.semanticRefs))
+        object.__setattr__(self, "warnings", tuple(self.warnings))
 
 
 @dataclass(frozen=True)
@@ -279,6 +312,7 @@ class OneCompanyScenarioCaseLedger:
     pathAdmissionTransferBlockedBy: tuple[str, ...]
     policyEvaluationEligibility: str
     recommendationCeiling: str
+    driverRegistryLedger: ScenarioDriverRegistryLedger | None
     exposureLedgers: tuple[ScenarioExposureLedger, ...]
     coefficientAdmissionReceiptIds: tuple[str, ...]
     coefficientBindingHashes: tuple[str, ...]
@@ -316,6 +350,10 @@ class OneCompanyScenarioCaseLedger:
         object.__setattr__(self, "providerObservationBatchRefs", tuple(self.providerObservationBatchRefs))
         object.__setattr__(self, "explicitAssumptionIds", tuple(self.explicitAssumptionIds))
         object.__setattr__(self, "pathAdmissionTransferBlockedBy", tuple(self.pathAdmissionTransferBlockedBy))
+        if self.driverRegistryLedger is not None and not isinstance(
+            self.driverRegistryLedger, ScenarioDriverRegistryLedger
+        ):
+            raise TypeError("driverRegistryLedger must be a ScenarioDriverRegistryLedger")
         object.__setattr__(self, "exposureLedgers", tuple(self.exposureLedgers))
         object.__setattr__(self, "coefficientAdmissionReceiptIds", tuple(self.coefficientAdmissionReceiptIds))
         object.__setattr__(self, "coefficientBindingHashes", tuple(self.coefficientBindingHashes))
@@ -463,6 +501,11 @@ class ConditionalScenarioExperiment:
     strategyContractHashes: tuple[str, ...]
     initialStateRefs: tuple[str, ...]
     caseLedgerHashes: tuple[str, ...]
+    driverRegistryHashes: tuple[str, ...]
+    driverRegistryLaneIds: tuple[str, ...]
+    driverRegistrySemanticRefs: tuple[str, ...]
+    driverRegistrySourceRefs: tuple[str, ...]
+    driverRegistryWarnings: tuple[str, ...]
     providerObservationBatchRefs: tuple[str, ...]
     explicitAssumptionIds: tuple[str, ...]
     pathHistoryInputHashes: tuple[str, ...]
@@ -481,6 +524,11 @@ class ConditionalScenarioExperiment:
         object.__setattr__(self, "strategyContractHashes", tuple(self.strategyContractHashes))
         object.__setattr__(self, "initialStateRefs", tuple(self.initialStateRefs))
         object.__setattr__(self, "caseLedgerHashes", tuple(self.caseLedgerHashes))
+        object.__setattr__(self, "driverRegistryHashes", tuple(self.driverRegistryHashes))
+        object.__setattr__(self, "driverRegistryLaneIds", tuple(self.driverRegistryLaneIds))
+        object.__setattr__(self, "driverRegistrySemanticRefs", tuple(self.driverRegistrySemanticRefs))
+        object.__setattr__(self, "driverRegistrySourceRefs", tuple(self.driverRegistrySourceRefs))
+        object.__setattr__(self, "driverRegistryWarnings", tuple(self.driverRegistryWarnings))
         object.__setattr__(self, "providerObservationBatchRefs", tuple(self.providerObservationBatchRefs))
         object.__setattr__(self, "explicitAssumptionIds", tuple(self.explicitAssumptionIds))
         object.__setattr__(self, "pathHistoryInputHashes", tuple(self.pathHistoryInputHashes))
@@ -880,6 +928,45 @@ def _exposureLedgerRows(exposures: tuple[OperatingTransmissionExposure, ...]) ->
             sourceFactorContractHash=item.sourceFactorContractHash,
         )
         for item in exposures
+    )
+
+
+def _driverRegistryLedger(audit) -> ScenarioDriverRegistryLedger | None:
+    if audit is None:
+        return None
+    return ScenarioDriverRegistryLedger(
+        registryId=audit.registryId,
+        registryHash=audit.registryHash,
+        laneIds=audit.laneIds,
+        cardIds=audit.cardIds,
+        factorIds=audit.factorIds,
+        commonObservationCount=audit.commonObservationCount,
+        sourceObservationCounts=audit.sourceObservationCounts,
+        eventStart=audit.eventStart,
+        eventEnd=audit.eventEnd,
+        sourceRefs=audit.sourceRefs,
+        semanticRefs=audit.semanticRefs,
+        warnings=audit.warnings,
+        pathSetHash=audit.pathSetHash,
+        pathSetInputHash=audit.pathSetInputHash,
+        validationStatus=audit.validationStatus,
+        historyStatus=audit.historyStatus,
+    )
+
+
+def _driverRegistryRefs(audit) -> tuple[str, ...]:
+    if audit is None:
+        return ()
+    return _dedupe(
+        (
+            f"driverRegistry:{audit.registryHash}",
+            f"driverRegistryId:{audit.registryId}",
+            *(f"driverRegistryLane:{laneId}" for laneId in audit.laneIds),
+            *(f"driverRegistryCard:{cardId}" for cardId in audit.cardIds),
+            *(f"driverRegistryFactor:{factorId}" for factorId in audit.factorIds),
+            *audit.sourceRefs,
+            *audit.semanticRefs,
+        )
     )
 
 
@@ -1377,6 +1464,7 @@ def _caseLedger(
         pathAdmissionTransferBlockedBy=result.pathAdmissionTransferBlockedBy,
         policyEvaluationEligibility=result.policyEvaluationEligibility,
         recommendationCeiling=result.decisionStatus,
+        driverRegistryLedger=_driverRegistryLedger(case.driverRegistryAudit),
         exposureLedgers=_exposureLedgerRows(case.exposures),
         coefficientAdmissionReceiptIds=tuple(binding.admissionReceiptId for binding in case.coefficientBindings),
         coefficientBindingHashes=tuple(scenarioCoefficientBindingHash(binding) for binding in case.coefficientBindings),
@@ -1440,6 +1528,7 @@ def _caseLedgerHashes(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> 
                 "pathAdmissionTransferStatus": ledger.pathAdmissionTransferStatus,
                 "pathAdmissionTransferBlockedBy": ledger.pathAdmissionTransferBlockedBy,
                 "policyEvaluationEligibility": ledger.policyEvaluationEligibility,
+                "driverRegistryLedger": ledger.driverRegistryLedger,
                 "exposureLedgers": ledger.exposureLedgers,
                 "coefficientAdmissionReceiptIds": ledger.coefficientAdmissionReceiptIds,
                 "coefficientBindingHashes": ledger.coefficientBindingHashes,
@@ -1473,6 +1562,56 @@ def _experimentProviderObservationBatchRefs(
     caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
 ) -> tuple[str, ...]:
     return _dedupe(tuple(ref for ledger in caseLedgers for ref in ledger.providerObservationBatchRefs))
+
+
+def _experimentDriverRegistryHashes(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> tuple[str, ...]:
+    return _dedupe(
+        tuple(ledger.driverRegistryLedger.registryHash for ledger in caseLedgers if ledger.driverRegistryLedger)
+    )
+
+
+def _experimentDriverRegistryLaneIds(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> tuple[str, ...]:
+    return _dedupe(
+        tuple(
+            laneId
+            for ledger in caseLedgers
+            if ledger.driverRegistryLedger
+            for laneId in ledger.driverRegistryLedger.laneIds
+        )
+    )
+
+
+def _experimentDriverRegistrySemanticRefs(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> tuple[str, ...]:
+    return _dedupe(
+        tuple(
+            ref
+            for ledger in caseLedgers
+            if ledger.driverRegistryLedger
+            for ref in ledger.driverRegistryLedger.semanticRefs
+        )
+    )
+
+
+def _experimentDriverRegistrySourceRefs(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> tuple[str, ...]:
+    return _dedupe(
+        tuple(
+            ref
+            for ledger in caseLedgers
+            if ledger.driverRegistryLedger
+            for ref in ledger.driverRegistryLedger.sourceRefs
+        )
+    )
+
+
+def _experimentDriverRegistryWarnings(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> tuple[str, ...]:
+    return _dedupe(
+        tuple(
+            warning
+            for ledger in caseLedgers
+            if ledger.driverRegistryLedger
+            for warning in ledger.driverRegistryLedger.warnings
+        )
+    )
 
 
 def _experimentExplicitAssumptionIds(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> tuple[str, ...]:
@@ -1557,6 +1696,7 @@ def _runCase(
     refs = _dedupe(
         (
             *case.refs,
+            *_driverRegistryRefs(case.driverRegistryAudit),
             *_coefficientBindingRefs(case.coefficientBindings),
             *case.pathSet.audit.sourceRefs,
             *(ref for item in bridgeResults for ref in item.audit.sourceRefs),
@@ -1760,6 +1900,11 @@ def runConditionalScenarioExperiment(
         for case, result in zip(caseTuple, comparison.caseResults, strict=True)
     )
     caseLedgerHashes = _caseLedgerHashes(caseLedgers)
+    driverRegistryHashes = _experimentDriverRegistryHashes(caseLedgers)
+    driverRegistryLaneIds = _experimentDriverRegistryLaneIds(caseLedgers)
+    driverRegistrySemanticRefs = _experimentDriverRegistrySemanticRefs(caseLedgers)
+    driverRegistrySourceRefs = _experimentDriverRegistrySourceRefs(caseLedgers)
+    driverRegistryWarnings = _experimentDriverRegistryWarnings(caseLedgers)
     providerObservationBatchRefs = _experimentProviderObservationBatchRefs(caseLedgers)
     explicitAssumptionIds = _experimentExplicitAssumptionIds(caseLedgers)
     pathHistoryInputHashes = _experimentPathHistoryInputHashes(caseLedgers)
@@ -1789,6 +1934,11 @@ def runConditionalScenarioExperiment(
             "schemaVersion": CONDITIONAL_SCENARIO_EXPERIMENT_VERSION,
             "entityId": entityId,
             "initialStateRefs": initialRefs,
+            "driverRegistryHashes": driverRegistryHashes,
+            "driverRegistryLaneIds": driverRegistryLaneIds,
+            "driverRegistrySemanticRefs": driverRegistrySemanticRefs,
+            "driverRegistrySourceRefs": driverRegistrySourceRefs,
+            "driverRegistryWarnings": driverRegistryWarnings,
             "providerObservationBatchRefs": providerObservationBatchRefs,
             "explicitAssumptionIds": explicitAssumptionIds,
             "pathHistoryInputHashes": pathHistoryInputHashes,
@@ -1815,6 +1965,11 @@ def runConditionalScenarioExperiment(
         "strategyContractHashes": comparison.strategyContractHashes,
         "initialStateRefs": initialRefs,
         "caseLedgerHashes": caseLedgerHashes,
+        "driverRegistryHashes": driverRegistryHashes,
+        "driverRegistryLaneIds": driverRegistryLaneIds,
+        "driverRegistrySemanticRefs": driverRegistrySemanticRefs,
+        "driverRegistrySourceRefs": driverRegistrySourceRefs,
+        "driverRegistryWarnings": driverRegistryWarnings,
         "providerObservationBatchRefs": providerObservationBatchRefs,
         "explicitAssumptionIds": explicitAssumptionIds,
         "pathHistoryInputHashes": pathHistoryInputHashes,
@@ -1846,6 +2001,11 @@ def runConditionalScenarioExperiment(
         strategyContractHashes=comparison.strategyContractHashes,
         initialStateRefs=initialRefs,
         caseLedgerHashes=caseLedgerHashes,
+        driverRegistryHashes=driverRegistryHashes,
+        driverRegistryLaneIds=driverRegistryLaneIds,
+        driverRegistrySemanticRefs=driverRegistrySemanticRefs,
+        driverRegistrySourceRefs=driverRegistrySourceRefs,
+        driverRegistryWarnings=driverRegistryWarnings,
         providerObservationBatchRefs=providerObservationBatchRefs,
         explicitAssumptionIds=explicitAssumptionIds,
         pathHistoryInputHashes=pathHistoryInputHashes,

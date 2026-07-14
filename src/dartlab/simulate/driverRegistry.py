@@ -204,11 +204,10 @@ def _sourceText(candidate: DriverRegistryCandidate) -> str:
 
 
 def _candidatePayload(candidate: DriverRegistryCandidate) -> dict:
-    card = _sourceCard(candidate.source)
     return {
         "laneId": candidate.laneId,
         "laneRole": candidate.laneRole,
-        "card": card,
+        "source": _sourcePayload(candidate.source),
         "semanticRefs": candidate.semanticRefs,
         "selectionReason": candidate.selectionReason,
     }
@@ -232,9 +231,16 @@ def _laneSpecPayload(spec: DriverRegistryLaneSpec) -> dict:
 
 def _sourcePayload(source: DriverHistorySource | DriverAssumptionSource) -> dict:
     card = _sourceCard(source)
+    if isinstance(source, DriverAssumptionSource):
+        contentHash = canonicalPayloadHash({"sourceType": "DriverAssumptionSource", "steps": source.steps})
+    else:
+        columns = tuple(source.panel.columns)
+        rows = tuple(tuple(row[column] for column in columns) for row in source.panel.to_dicts())
+        contentHash = canonicalPayloadHash({"sourceType": "DriverHistorySource", "columns": columns, "rows": rows})
     return {
         "card": card,
         "sourceType": type(source).__name__,
+        "contentHash": contentHash,
     }
 
 
@@ -569,7 +575,7 @@ def discoverDriverRegistryCandidates(
             {
                 "discoveryVersion": DISCOVERY_VERSION,
                 "laneSpec": _laneSpecPayload(spec),
-                "sourceCard": card,
+                "source": _sourcePayload(source),
             }
         )
         candidates.append(
@@ -664,7 +670,7 @@ def auditDriverRegistryDiscovery(
                 "discoveryId": discoveryId,
                 "knowledgeAsOf": cutoff,
                 "laneSpec": _laneSpecPayload(spec),
-                "sourceCard": card,
+                "source": _sourcePayload(source),
             }
         )
         semanticRefs = _dedupe((*spec.semanticRefs, f"sourceCard:{card.cardId}", f"driverDiscovery:{discoveryHash}"))

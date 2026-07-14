@@ -5,7 +5,7 @@ from dataclasses import replace
 import polars as pl
 import pytest
 
-from dartlab.simulate.driverPaths import DriverCard, DriverFactorSpec, DriverHistorySource
+from dartlab.simulate.driverPaths import DriverAssumptionSource, DriverCard, DriverFactorSpec, DriverHistorySource
 from dartlab.simulate.driverRegistry import (
     DriverRegistryCandidate,
     DriverRegistryError,
@@ -87,6 +87,25 @@ def _industryTimeSeriesSource() -> DriverHistorySource:
     )
 
 
+def _manualDemandAssumption(value: float) -> DriverAssumptionSource:
+    card = DriverCard(
+        cardId="manual-demand-adjustment",
+        sourceKind="explicitAssumption",
+        providerId="user",
+        datasetId="manual-scenario",
+        entityId="005930",
+        frequency="quarter",
+        stepSpan=1,
+        factors=(DriverFactorSpec("manualDemandAdjustment", "simpleReturn", "quarter", "change", "manual-demand-v1"),),
+        historyStatus="explicitAssumption",
+        sourceRefs=("assumption://manual-demand-adjustment",),
+        assumptionId="manual-demand-adjustment",
+        claim="Manual demand adjustment for scenario testing.",
+        falsifier="The declared demand adjustment is not the scenario being tested.",
+    )
+    return DriverAssumptionSource(card, ({"manualDemandAdjustment": value},))
+
+
 def testRegistryCompilesWorkbenchSourcesAndPreservesWeakLineage() -> None:
     result = compileDriverRegistryPathSet(
         (
@@ -123,6 +142,63 @@ def testRegistryCompilesWorkbenchSourcesAndPreservesWeakLineage() -> None:
     assert "filingSourceNotExactAsKnown" in result.audit.warnings
     assert "dartRetainedFinanceRowsAreConditionalUntilRawFilingReceiptsExist" in result.audit.warnings
     assert all(step["operatingMarginChange"] != 9.99 for path in result.pathSet.paths for step in path.steps)
+
+
+def testRegistryHashBindsExplicitAssumptionSteps() -> None:
+    base = compileDriverRegistryPathSet(
+        (
+            DriverRegistryCandidate(
+                "filing-margin",
+                "pathHistory",
+                _filingSource(),
+                semanticRefs=("semantics:financial-filing-change-path",),
+                selectionReason="Quarterly filing metric transformed to ratio change.",
+            ),
+            DriverRegistryCandidate(
+                "manual-demand",
+                "explicitAssumption",
+                _manualDemandAssumption(0.01),
+                semanticRefs=("semantics:manual-future-demand-adjustment",),
+                selectionReason="Manual future demand adjustment.",
+            ),
+        ),
+        registryId="assumption-bound-registry",
+        knowledgeAsOf="20201231",
+        horizon=1,
+        pathCount=1,
+        blockLength=1,
+        seed=17,
+        minObservations=3,
+    )
+    changed = compileDriverRegistryPathSet(
+        (
+            DriverRegistryCandidate(
+                "filing-margin",
+                "pathHistory",
+                _filingSource(),
+                semanticRefs=("semantics:financial-filing-change-path",),
+                selectionReason="Quarterly filing metric transformed to ratio change.",
+            ),
+            DriverRegistryCandidate(
+                "manual-demand",
+                "explicitAssumption",
+                _manualDemandAssumption(0.02),
+                semanticRefs=("semantics:manual-future-demand-adjustment",),
+                selectionReason="Manual future demand adjustment.",
+            ),
+        ),
+        registryId="assumption-bound-registry",
+        knowledgeAsOf="20201231",
+        horizon=1,
+        pathCount=1,
+        blockLength=1,
+        seed=17,
+        minObservations=3,
+    )
+    assert base.audit.registryHash != changed.audit.registryHash
+    assert base.pathSet.audit.historyInputHash == changed.pathSet.audit.historyInputHash
+    assert base.pathSet.audit.assumptionHash != changed.pathSet.audit.assumptionHash
+    assert base.pathSet.audit.pathSetHash != changed.pathSet.audit.pathSetHash
 
 
 def testDiscoveryBuildsRegistryCandidatesFromLaneSpecs() -> None:

@@ -66,6 +66,7 @@ from dartlab.simulate.driverPaths import (
     buildDriverPathSet,
 )
 from dartlab.simulate.driverRegistry import DriverRegistryCandidate, compileDriverRegistryPathSet
+from dartlab.simulate.driverSources import filingMetricDriverHistorySource, panelMetricDriverHistorySource
 from dartlab.simulate.operatingBridge import OperatingShockBaseline, OperatingTransmissionExposure
 from dartlab.simulate.operatingWorld import (
     OperatingPrimitive,
@@ -1231,6 +1232,172 @@ def _scenarioCaseWithProviderHistoryAndAdjustment(caseId, shock, fitFx, fitOil, 
     )
 
 
+def _filingMetricRegistrySource() -> DriverHistorySource:
+    factor = DriverFactorSpec(
+        "operatingMarginChange",
+        "ratioChange",
+        "quarter",
+        "change",
+        "dart-operating-margin-change-v1",
+        sourceColumn="opMarginChange",
+    )
+    panel = pl.DataFrame(
+        {
+            "code": ["005930", "005930", "005930", "005930"],
+            "period": ["20200331", "20200331", "20200630", "20200930"],
+            "rceptDate": ["20200515", "20210517", "20200814", "20201116"],
+            "rceptNo": ["202005150001", "202105170009", "202008140001", "202011160001"],
+            "opMarginChange": [0.02, 9.99, -0.01, 0.03],
+        }
+    )
+    return filingMetricDriverHistorySource(
+        panel,
+        cardId="dart-operating-margin-change",
+        providerId="dart",
+        datasetId="dart.finance.retained",
+        entityId="005930",
+        entityIdColumn="code",
+        frequency="quarter",
+        stepSpan=1,
+        factors=(factor,),
+        sourceRefs=("data/dart/finance/005930.parquet", "transform:operating-margin-change"),
+        knowledgeAsOf="20201231",
+        eventTimeColumn="period",
+        availableAtColumn="rceptDate",
+        filingIdColumn="rceptNo",
+    )
+
+
+def _industryTimeSeriesRegistrySource() -> DriverHistorySource:
+    factor = DriverFactorSpec(
+        "industryOrderChange",
+        "simpleReturn",
+        "quarter",
+        "change",
+        "industry-order-change-quarterly-v1",
+        sourceColumn="orderChange",
+    )
+    panel = pl.DataFrame(
+        {
+            "eventTime": ["20200331", "20200630", "20200930"],
+            "availableAt": ["20200410", "20200710", "20201012"],
+            "orderChange": [0.01, -0.03, 0.04],
+        }
+    )
+    return panelMetricDriverHistorySource(
+        panel,
+        cardId="industry-order-change",
+        providerId="industry",
+        datasetId="industry.metric.quarterly",
+        entityId="semiconductor",
+        frequency="quarter",
+        stepSpan=1,
+        factors=(factor,),
+        sourceRefs=("data/industry/metrics/semiconductor.parquet",),
+        knowledgeAsOf="20201231",
+    )
+
+
+def _registryExplicitDemandAdjustment(caseId: str, shock: float) -> DriverAssumptionSource:
+    factor = DriverFactorSpec(
+        "manualDemandAdjustment",
+        "simpleReturn",
+        "quarter",
+        "change",
+        "manual-demand-adjustment-v1",
+    )
+    card = DriverCard(
+        cardId=f"{caseId}-manual-demand-adjustment",
+        sourceKind="explicitAssumption",
+        providerId="user",
+        datasetId="manual-scenario",
+        entityId="005930",
+        frequency="quarter",
+        stepSpan=1,
+        factors=(factor,),
+        historyStatus="explicitAssumption",
+        sourceRefs=(f"assumption://{caseId}/manual-demand-adjustment",),
+        assumptionId=f"{caseId}-manual-demand-adjustment",
+        claim=f"{caseId} manual future demand adjustment.",
+        falsifier="The declared future demand adjustment is not the scenario being tested.",
+    )
+    return DriverAssumptionSource(card, ({"manualDemandAdjustment": shock},))
+
+
+def _registryScenarioCaseWithFilingIndustryAndAdjustment(caseId: str, shock: float, verifier) -> OperatingScenarioCase:
+    registry = compileDriverRegistryPathSet(
+        (
+            DriverRegistryCandidate(
+                "dart-filing-margin",
+                "pathHistory",
+                _filingMetricRegistrySource(),
+                semanticRefs=("semantics:financial-filing-change-path",),
+                selectionReason="Quarterly filing metric transformed to ratio change.",
+            ),
+            DriverRegistryCandidate(
+                "industry-orders",
+                "pathHistory",
+                _industryTimeSeriesRegistrySource(),
+                semanticRefs=("semantics:industry-time-series-path",),
+                selectionReason="Industry metric has real eventTime and availableAt.",
+            ),
+            DriverRegistryCandidate(
+                f"{caseId}-manual-demand",
+                "explicitAssumption",
+                _registryExplicitDemandAdjustment(caseId, shock),
+                semanticRefs=(f"semantics:{caseId}:explicit-future-demand-adjustment",),
+                selectionReason="Manual future demand adjustment for this assumption set.",
+            ),
+        ),
+        registryId=f"{caseId}-dart-industry-demand-registry",
+        knowledgeAsOf="20201231",
+        horizon=1,
+        pathCount=2,
+        blockLength=1,
+        seed=29,
+        minObservations=3,
+    )
+    exposures = (
+        OperatingTransmissionExposure(
+            f"{caseId}-filing-margin-unit-cost",
+            "operatingMarginChange",
+            "unitCostChange",
+            -0.5,
+            "ratioChangePerStep/ratioChange",
+            "explicitAssumption",
+            f"assumption://{caseId}/law/filing-margin-to-unit-cost",
+        ),
+        OperatingTransmissionExposure(
+            f"{caseId}-industry-orders-demand",
+            "industryOrderChange",
+            "demandChange",
+            0.8,
+            "ratioChangePerStep/simpleReturn",
+            "explicitAssumption",
+            f"assumption://{caseId}/law/industry-orders-to-demand",
+        ),
+        OperatingTransmissionExposure(
+            f"{caseId}-manual-demand",
+            "manualDemandAdjustment",
+            "demandChange",
+            1.0,
+            "ratioChangePerStep/simpleReturn",
+            "explicitAssumption",
+            f"assumption://{caseId}/law/manual-demand-adjustment",
+        ),
+    )
+    return OperatingScenarioCase(
+        caseId,
+        caseId.title(),
+        registry.pathSet,
+        exposures,
+        _operatingBaselines(),
+        refs=(f"scenario://{caseId}",),
+        admissionVerifier=verifier,
+        driverRegistryAudit=registry.audit,
+    )
+
+
 def _oneStepStrategies():
     return (
         buildOperatingStrategy(
@@ -2098,6 +2265,119 @@ def testProviderHistoryAdmittedStateAndAdjustmentsFeedConditionalExperiment(tmp_
     assert changed.pathHistoryInputHashes == experiment.pathHistoryInputHashes
     assert changed.pathAssumptionHashes != experiment.pathAssumptionHashes
     assert changed.assumptionSetHashes != experiment.assumptionSetHashes
+    assert changed.simulationSpecHash != experiment.simulationSpecHash
+    assert changed.resultSetHash != experiment.resultSetHash
+    assert changed.experimentHash != experiment.experimentHash
+
+
+def testRegistryFilingIndustryLanesFeedConditionalExperimentWithAdmittedState(tmp_path) -> None:
+    context = _trust(tmp_path)
+    inputs = _admittedOperatingInputs(context)
+    cases = (
+        _registryScenarioCaseWithFilingIndustryAndAdjustment("base", 0.00, context[4]),
+        _registryScenarioCaseWithFilingIndustryAndAdjustment("upside", 0.05, context[4]),
+        _registryScenarioCaseWithFilingIndustryAndAdjustment("stress", -0.04, context[4]),
+        _registryScenarioCaseWithFilingIndustryAndAdjustment("shock", -0.09, context[4]),
+    )
+    experiment = runConditionalScenarioExperiment(
+        "005930",
+        inputs,
+        cases,
+        _oneStepExperimentStrategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert experiment.scenarioCount == 4
+    assert experiment.strategyCount == 3
+    assert experiment.cellCount == 12
+    assert experiment.recommendation is None
+    assert experiment.decisionStatus == "conditionalOnly"
+    assert len(experiment.driverRegistryHashes) == 4
+    assert "dart-filing-margin" in experiment.driverRegistryLaneIds
+    assert "industry-orders" in experiment.driverRegistryLaneIds
+    assert "semantics:financial-filing-change-path" in experiment.driverRegistrySemanticRefs
+    assert "semantics:industry-time-series-path" in experiment.driverRegistrySemanticRefs
+    assert "data/dart/finance/005930.parquet" in experiment.driverRegistrySourceRefs
+    assert "data/industry/metrics/semiconductor.parquet" in experiment.driverRegistrySourceRefs
+    assert "driverRegistryContainsRevisedHistory" in experiment.driverRegistryWarnings
+    assert "driverRegistryContainsExplicitAssumption" in experiment.driverRegistryWarnings
+    assert "filingSourceNotExactAsKnown" in experiment.driverRegistryWarnings
+    assert "dartRetainedFinanceRowsAreConditionalUntilRawFilingReceiptsExist" in experiment.driverRegistryWarnings
+    assert f"initialStateAdmission:{inputs.initialStateAdmissionReceiptId}" in experiment.initialStateRefs
+    assert "initialStateAdmissionMissing" not in experiment.blockedReasons
+    assert "automaticRecommendationDisabled" in experiment.blockedReasons
+    assert "conditionalExperimentNotPolicyRecommendation" in experiment.blockedReasons
+    assert "pathAdmissionMissing" in experiment.blockedReasons
+    assert "policyEvaluationCertificateMissing" in experiment.blockedReasons
+
+    base = experiment.caseLedgers[0]
+    assert base.driverRegistryLedger is not None
+    assert base.driverRegistryLedger.registryHash in experiment.driverRegistryHashes
+    assert base.driverRegistryLedger.laneIds == ("dart-filing-margin", "industry-orders", "base-manual-demand")
+    assert base.driverRegistryLedger.cardIds == (
+        "dart-operating-margin-change",
+        "industry-order-change",
+        "base-manual-demand-adjustment",
+    )
+    assert base.driverRegistryLedger.factorIds == (
+        "operatingMarginChange",
+        "industryOrderChange",
+        "manualDemandAdjustment",
+    )
+    assert base.driverRegistryLedger.commonObservationCount == 3
+    assert base.driverRegistryLedger.sourceObservationCounts == (("dart-filing-margin", 3), ("industry-orders", 3))
+    assert base.driverRegistryLedger.eventStart == "20200331"
+    assert base.driverRegistryLedger.eventEnd == "20200930"
+    assert base.driverRegistryLedger.pathSetHash == base.pathSetHash
+    assert base.driverRegistryLedger.pathSetInputHash == base.pathSetInputHash
+    assert base.driverRegistryLedger.validationStatus == "unvalidated"
+    assert base.driverRegistryLedger.historyStatus == "explicitAssumption"
+    assert f"driverRegistry:{base.driverRegistryLedger.registryHash}" in base.conditionRefs
+    assert "driverRegistryLane:dart-filing-margin" in base.conditionRefs
+    assert "driverRegistryLane:industry-orders" in base.conditionRefs
+    assert "filingTrace:" in " ".join(base.pathSourceRefs)
+    assert "data/industry/metrics/semiconductor.parquet" in base.pathSourceRefs
+    assert "assumption://base/manual-demand-adjustment" in base.assumptionRefs
+    assert base.explicitAssumptionIds == ("base-manual-demand-adjustment",)
+    assert base.pathAdmissionReceiptId == ""
+    assert base.policyEvaluationCertificateId == ""
+    assert base.composedPathAdmissionStatus == "notAdmitted"
+    assert "explicitFutureAdjustmentPresent" in base.blockedReasons
+    assert "scoreLeaderNotRecommendation" in base.blockedReasons
+
+    actionIds = {"priceChange", "capacityInvestment", "borrow", "repay"}
+    for case in cases:
+        assert not set(case.pathSet.audit.driverCardIds) & actionIds
+        for path in case.pathSet.paths:
+            for step in path.steps:
+                assert not set(step) & actionIds
+    assert all(ref.startswith("strategy://") for strategy in _oneStepExperimentStrategies() for ref in strategy.refs)
+    assert len(experiment.strategySummaries) == 3
+    assert len(experiment.fragilityCells) == 4
+    assert any(cell.regret > 0.0 for cell in experiment.cells)
+    assert len({round(row.leaderMargin, 12) for row in experiment.fragilityCells}) > 1
+    assert len(set(experiment.pathHistoryInputHashes)) == 1
+    assert len(set(experiment.pathAssumptionHashes)) == 4
+
+    changedCases = (
+        _registryScenarioCaseWithFilingIndustryAndAdjustment("base", 0.03, context[4]),
+        *cases[1:],
+    )
+    changed = runConditionalScenarioExperiment(
+        "005930",
+        inputs,
+        changedCases,
+        _oneStepExperimentStrategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert changed.driverRegistrySourceRefs == experiment.driverRegistrySourceRefs
+    assert changed.pathHistoryInputHashes == experiment.pathHistoryInputHashes
+    assert changed.pathAssumptionHashes != experiment.pathAssumptionHashes
+    assert changed.assumptionSetHashes != experiment.assumptionSetHashes
+    assert changed.driverRegistryHashes != experiment.driverRegistryHashes
     assert changed.simulationSpecHash != experiment.simulationSpecHash
     assert changed.resultSetHash != experiment.resultSetHash
     assert changed.experimentHash != experiment.experimentHash
