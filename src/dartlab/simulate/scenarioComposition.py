@@ -44,6 +44,7 @@ SCENARIO_EXPOSURE_CONTRACT_VERSION = "scenario-coefficient-exposure-contract-v1"
 _OPERATING_ACTION_IDS = {"priceChange", "capacityInvestment", "borrow", "repay"}
 _ASSUMPTION_REF_PREFIXES = ("assumption:", "assumption://")
 _DRIVER_COEFFICIENT_ADMISSION_REF_PREFIX = "driverCoefficientAdmission:"
+_PROVIDER_OBSERVATION_REF_PREFIXES = ("providerObservationBatch:", "providerObservationBatchId:")
 _STATE_REF_PREFIXES = (
     "compiledState:",
     "observation:",
@@ -238,6 +239,12 @@ class OneCompanyScenarioCaseLedger:
     conditionRefs: tuple[str, ...]
     assumptionRefs: tuple[str, ...]
     stateRefs: tuple[str, ...]
+    pathSetInputHash: str
+    pathRegistryHash: str
+    pathFactorContractHash: str
+    pathSourceRefs: tuple[str, ...]
+    providerObservationBatchRefs: tuple[str, ...]
+    explicitAssumptionIds: tuple[str, ...]
     exposureLedgers: tuple[ScenarioExposureLedger, ...]
     coefficientAdmissionReceiptIds: tuple[str, ...]
     coefficientBindingHashes: tuple[str, ...]
@@ -271,6 +278,9 @@ class OneCompanyScenarioCaseLedger:
         object.__setattr__(self, "conditionRefs", tuple(self.conditionRefs))
         object.__setattr__(self, "assumptionRefs", tuple(self.assumptionRefs))
         object.__setattr__(self, "stateRefs", tuple(self.stateRefs))
+        object.__setattr__(self, "pathSourceRefs", tuple(self.pathSourceRefs))
+        object.__setattr__(self, "providerObservationBatchRefs", tuple(self.providerObservationBatchRefs))
+        object.__setattr__(self, "explicitAssumptionIds", tuple(self.explicitAssumptionIds))
         object.__setattr__(self, "exposureLedgers", tuple(self.exposureLedgers))
         object.__setattr__(self, "coefficientAdmissionReceiptIds", tuple(self.coefficientAdmissionReceiptIds))
         object.__setattr__(self, "coefficientBindingHashes", tuple(self.coefficientBindingHashes))
@@ -331,6 +341,11 @@ def _driverCoefficientAdmissionReceiptId(sourceRef: str) -> str:
 
 def _filterRefs(refs: tuple[str, ...], prefixes: tuple[str, ...]) -> tuple[str, ...]:
     return _dedupe(tuple(ref for ref in refs if ref.startswith(prefixes)))
+
+
+def _explicitAssumptionIds(warnings: tuple[str, ...]) -> tuple[str, ...]:
+    prefix = "explicitAssumption:"
+    return _dedupe(tuple(warning[len(prefix) :] for warning in warnings if warning.startswith(prefix)))
 
 
 def _exposureContractRows(exposures: tuple[OperatingTransmissionExposure, ...]) -> tuple[dict, ...]:
@@ -873,6 +888,12 @@ def _caseLedger(
         conditionRefs=conditionRefs,
         assumptionRefs=assumptionRefs,
         stateRefs=stateRefs,
+        pathSetInputHash=case.pathSet.audit.inputHash,
+        pathRegistryHash=case.pathSet.audit.registryHash,
+        pathFactorContractHash=case.pathSet.audit.factorContractHash,
+        pathSourceRefs=case.pathSet.audit.sourceRefs,
+        providerObservationBatchRefs=_filterRefs(case.pathSet.audit.sourceRefs, _PROVIDER_OBSERVATION_REF_PREFIXES),
+        explicitAssumptionIds=_explicitAssumptionIds(case.pathSet.audit.warnings),
         exposureLedgers=_exposureLedgerRows(case.exposures),
         coefficientAdmissionReceiptIds=tuple(binding.admissionReceiptId for binding in case.coefficientBindings),
         coefficientBindingHashes=tuple(scenarioCoefficientBindingHash(binding) for binding in case.coefficientBindings),

@@ -44,7 +44,12 @@ from dartlab.simulate.driverCalibration import (
     validateDriverCoefficientAdmission,
     validateMultivariableDriverCoefficientAdmission,
 )
-from dartlab.simulate.driverObservationBatches import driverHistorySourceFromProviderObservationBatch
+from dartlab.simulate.driverObservationBatches import (
+    DriverObservationLaneSpec,
+    DriverObservationSignalSpec,
+    buildDriverObservationBatchFromPanel,
+    driverHistorySourceFromProviderObservationBatch,
+)
 from dartlab.simulate.driverObservationFrames import (
     DriverCoefficientObservationFrameSpec,
     DriverDesignColumnSpec,
@@ -61,7 +66,7 @@ from dartlab.simulate.driverPaths import (
     buildDriverPathSet,
 )
 from dartlab.simulate.driverRegistry import DriverRegistryCandidate, compileDriverRegistryPathSet
-from dartlab.simulate.operatingBridge import OperatingShockBaseline
+from dartlab.simulate.operatingBridge import OperatingShockBaseline, OperatingTransmissionExposure
 from dartlab.simulate.operatingWorld import (
     OperatingPrimitive,
     buildOperatingStrategy,
@@ -196,6 +201,73 @@ def _signedBatch(context, observations, *, signalId: str, cutoffAsOf: str):
     )
     return issueProviderObservationBatch(
         unsigned,
+        database,
+        artifacts,
+        privateKey=privateBytes,
+        issuerId="provider-issuer",
+        issuerKeyId="provider-key",
+        issuedAt=f"{cutoffAsOf}T000000Z",
+        trustedIssuers=trusted,
+    )
+
+
+def _signedDriverLaneBatch(context, *, signalId: str, values, events, knowledgeDates, cutoffAsOf: str):
+    rows = []
+    sourceReceipts = {}
+    for index, (value, eventAt, knowledgeAsOf) in enumerate(zip(values, events, knowledgeDates)):
+        revisionId = f"{signalId}-r{index}"
+        receipt = _sourceReceipt(
+            context,
+            f"{signalId}:{eventAt}:{knowledgeAsOf}:{value}:{revisionId}".encode(),
+            knowledgeAsOf=knowledgeAsOf,
+            issuedAt=f"{knowledgeAsOf}T000000Z",
+        )
+        rows.append(
+            {
+                "eventTime": eventAt,
+                "availableAt": knowledgeAsOf,
+                "knowledgeAsOf": knowledgeAsOf,
+                "revisionId": revisionId,
+                "sourceArtifactHash": receipt.artifactHash,
+                signalId: value,
+            }
+        )
+        sourceReceipts[revisionId] = receipt
+    laneHash = sha256(f"driver-lane:{signalId}:{cutoffAsOf}".encode()).hexdigest()
+    batch = buildDriverObservationBatchFromPanel(
+        pl.DataFrame(rows),
+        DriverObservationLaneSpec(
+            providerId="macro",
+            datasetId="driver-observation-lane-fixture",
+            entityId="KR",
+            knowledgeAsOf=cutoffAsOf,
+            eventTimeColumn="eventTime",
+            availableAtColumn="availableAt",
+            revisionIdColumn="revisionId",
+            sourceArtifactKind="driverLaneFixture",
+            sourceArtifactId=f"fixture:{signalId}",
+            sourceArtifactHash=laneHash,
+            signalSpecs=(
+                DriverObservationSignalSpec(
+                    signalId=signalId,
+                    sourceColumn=signalId,
+                    unit="simpleReturn",
+                    frequency="quarter",
+                    timing="ratio",
+                    transformId="change-v1",
+                    evidenceRole="observed",
+                ),
+            ),
+            sourceRefs=(f"source:driver-lane-fixture:{signalId}",),
+            knowledgeAsOfColumn="knowledgeAsOf",
+            sourceArtifactHashColumn="sourceArtifactHash",
+        ),
+        sourceReceipts=sourceReceipts,
+        requireExact=True,
+    )
+    database, artifacts, privateBytes, trusted, _verifier = context
+    return issueProviderObservationBatch(
+        batch,
         database,
         artifacts,
         privateKey=privateBytes,
@@ -586,6 +658,44 @@ def _multiFitBatches(context):
     )
 
 
+def _multiFitLaneBatches(context):
+    events = ("20200331", "20200630", "20200930", "20201231")
+    knowledgeDates = ("20200410", "20200710", "20201010", "20210110")
+    fxValues = (0.10, -0.20, 0.30, 0.40)
+    oilValues = (0.05, 0.10, -0.05, 0.20)
+    labels = tuple(0.5 * fx + 0.25 * oil for fx, oil in zip(fxValues, oilValues))
+    return (
+        _signedDriverLaneBatch(
+            context,
+            signalId="fxChange",
+            values=fxValues,
+            events=events,
+            knowledgeDates=knowledgeDates,
+            cutoffAsOf="20210430",
+        ),
+        _signedDriverLaneBatch(
+            context,
+            signalId="oilChange",
+            values=oilValues,
+            events=events,
+            knowledgeDates=knowledgeDates,
+            cutoffAsOf="20210430",
+        ),
+        _signedBatch(
+            context,
+            _labelObservations(
+                context,
+                values=labels,
+                events=("20200630", "20200930", "20201231", "20210331"),
+                availableDates=("20200705", "20201005", "20210105", "20210405"),
+                knowledgeDates=("20200710", "20201010", "20210110", "20210410"),
+            ),
+            signalId="realizedMarketPriceChange",
+            cutoffAsOf="20210430",
+        ),
+    )
+
+
 def _multiOosBatches(context):
     events = ("20210331", "20210630", "20210930")
     knowledgeDates = ("20210410", "20210710", "20211010")
@@ -740,9 +850,9 @@ def _fitAndReport(context, fitFrame, oosFrame, registryResult=None):
     return receipt, report, signed
 
 
-def _multivariableAdmissionBundle(context):
-    fitFx, fitOil, fitLabel = _multiFitBatches(context)
-    oosFx, oosOil, oosLabel = _multiOosBatches(context)
+def _multivariableAdmissionBundle(context, *, fitBatches=None, oosBatches=None):
+    fitFx, fitOil, fitLabel = fitBatches or _multiFitBatches(context)
+    oosFx, oosOil, oosLabel = oosBatches or _multiOosBatches(context)
     fitFrame = buildMultivariableDriverCoefficientObservationFrame(
         (fitFx, fitOil),
         fitLabel,
@@ -780,7 +890,7 @@ def _multivariableAdmissionBundle(context):
         oosReport=report,
         admissionReceipt=verified,
     )
-    return fitFrame, oosFrame, receipt, report, signed, verified, exposures
+    return fitFx, fitOil, fitFrame, oosFrame, receipt, report, signed, verified, exposures
 
 
 def _operatingInputs():
@@ -859,6 +969,82 @@ def _scenarioCaseWithCoefficientBinding(caseId, shock, exposures, binding, verif
         caseId.title(),
         pathSet,
         exposures,
+        _operatingBaselines(),
+        refs=(f"scenario://{caseId}",),
+        coefficientBindings=(binding,),
+        admissionVerifier=verifier,
+    )
+
+
+def _scenarioCaseWithProviderHistoryAndAdjustment(caseId, shock, fitFx, fitOil, exposures, binding, verifier):
+    fxFactor = DriverFactorSpec("fxChange", "simpleReturn", "quarter", "change", "change-v1")
+    oilFactor = DriverFactorSpec("oilChange", "simpleReturn", "quarter", "change", "change-v1")
+    adjustmentFactor = DriverFactorSpec(
+        "explicitPriceAdjustment",
+        "simpleReturn",
+        "quarter",
+        "change",
+        "manual-price-adjustment-v1",
+    )
+    fxSource = driverHistorySourceFromProviderObservationBatch(
+        fitFx,
+        cardId=f"{caseId}-observed-fx",
+        factors=(fxFactor,),
+        stepSpan=1,
+        sourceRefs=(f"semantics:{caseId}:observed-fx",),
+    )
+    oilSource = driverHistorySourceFromProviderObservationBatch(
+        fitOil,
+        cardId=f"{caseId}-observed-oil",
+        factors=(oilFactor,),
+        stepSpan=1,
+        sourceRefs=(f"semantics:{caseId}:observed-oil",),
+    )
+    adjustmentCard = DriverCard(
+        cardId=f"{caseId}-explicit-price-adjustment",
+        sourceKind="explicitAssumption",
+        providerId="user",
+        datasetId="manual-scenario",
+        entityId="KR",
+        frequency="quarter",
+        stepSpan=1,
+        factors=(adjustmentFactor,),
+        historyStatus="explicitAssumption",
+        sourceRefs=(f"assumption://{caseId}/explicit-price-adjustment",),
+        assumptionId=f"{caseId}-explicit-price-adjustment",
+        claim=f"{caseId} explicit future price adjustment.",
+        falsifier="The declared future price adjustment is not the scenario being tested.",
+    )
+    pathSet = buildDriverPathSet(
+        (
+            fxSource,
+            oilSource,
+            DriverAssumptionSource(
+                adjustmentCard,
+                ({"explicitPriceAdjustment": shock},),
+            ),
+        ),
+        knowledgeAsOf="20220131",
+        horizon=1,
+        pathCount=2,
+        blockLength=1,
+        seed=13,
+        minObservations=4,
+    )
+    adjustmentExposure = OperatingTransmissionExposure(
+        f"{caseId}-explicit-price-adjustment",
+        "explicitPriceAdjustment",
+        "marketPriceChange",
+        1.0,
+        "ratioChangePerStep/simpleReturn",
+        "explicitAssumption",
+        f"assumption://{caseId}/explicit-price-adjustment/exposure",
+    )
+    return OperatingScenarioCase(
+        caseId,
+        caseId.title(),
+        pathSet,
+        (*exposures, adjustmentExposure),
         _operatingBaselines(),
         refs=(f"scenario://{caseId}",),
         coefficientBindings=(binding,),
@@ -1198,7 +1384,9 @@ def testMultivariableObservationFrameRejectsUnsafeInputs(tmp_path) -> None:
 
 def testMultivariableDesignFrameFitsOosAdmissionAndExposures(tmp_path) -> None:
     context = _trust(tmp_path)
-    fitFrame, oosFrame, receipt, report, signed, verified, exposures = _multivariableAdmissionBundle(context)
+    _fitFx, _fitOil, fitFrame, oosFrame, receipt, report, signed, verified, exposures = _multivariableAdmissionBundle(
+        context
+    )
     assert tuple(term.variableId for term in receipt.coefficientTerms) == ("fxChange", "oilChange")
     assert tuple(term.coefficient for term in receipt.coefficientTerms) == pytest.approx((0.5, 0.25))
     assert receipt.featureSpecHash
@@ -1250,7 +1438,17 @@ def testMultivariableDesignFrameFitsOosAdmissionAndExposures(tmp_path) -> None:
 
 def testMultivariableAdmissionBindingRunsOneCompanyScenarioLoop(tmp_path) -> None:
     context = _trust(tmp_path)
-    _fitFrame, _oosFrame, receipt, report, signed, verified, exposures = _multivariableAdmissionBundle(context)
+    (
+        _fitFx,
+        _fitOil,
+        _fitFrame,
+        _oosFrame,
+        receipt,
+        report,
+        signed,
+        verified,
+        exposures,
+    ) = _multivariableAdmissionBundle(context)
     binding = buildScenarioCoefficientBindingFromVerifiedMultivariableAdmission(
         receipt,
         report,
@@ -1286,6 +1484,74 @@ def testMultivariableAdmissionBindingRunsOneCompanyScenarioLoop(tmp_path) -> Non
     assert "initialStateAdmissionMissing" in base.blockedReasons
     assert "policyEvaluationCertificateMissing" in base.blockedReasons
     assert "automaticRecommendationDisabled" in loop.blockedReasons
+
+
+def testProviderHistoryAndExplicitAdjustmentFeedScenarioLoopWithoutPathAdmission(tmp_path) -> None:
+    context = _trust(tmp_path)
+    fitFx, fitOil, _fitFrame, _oosFrame, receipt, report, signed, verified, exposures = _multivariableAdmissionBundle(
+        context,
+        fitBatches=_multiFitLaneBatches(context),
+    )
+    binding = buildScenarioCoefficientBindingFromVerifiedMultivariableAdmission(
+        receipt,
+        report,
+        verified,
+        exposures,
+    )
+    loop = compareOneCompanyTwoScenarioStrategies(
+        "005930",
+        _operatingInputs(),
+        (
+            _scenarioCaseWithProviderHistoryAndAdjustment(
+                "base",
+                0.01,
+                fitFx,
+                fitOil,
+                exposures,
+                binding,
+                context[4],
+            ),
+            _scenarioCaseWithProviderHistoryAndAdjustment(
+                "stress",
+                -0.03,
+                fitFx,
+                fitOil,
+                exposures,
+                binding,
+                context[4],
+            ),
+        ),
+        _oneStepStrategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert loop.recommendation is None
+    base, _stress = loop.caseLedgers
+    assert base.pathSetInputHash
+    assert base.pathRegistryHash
+    assert base.pathFactorContractHash
+    assert base.pathAdmissionReceiptId == ""
+    assert base.policyEvaluationCertificateId == ""
+    assert base.counts.pathCount == 2
+    assert base.counts.providerBatchRefCount == 2
+    assert base.counts.explicitAssumptionCount > 0
+    assert base.explicitAssumptionIds == ("base-explicit-price-adjustment",)
+    assert any(ref.startswith("providerObservationBatch:") for ref in base.providerObservationBatchRefs)
+    assert any(ref.startswith("providerObservationBatchId:") for ref in base.providerObservationBatchRefs)
+    assert "assumption://base/explicit-price-adjustment" in base.pathSourceRefs
+    assert "unvalidatedPathPresent" in base.blockedReasons
+    assert "pathAdmissionMissing" in base.blockedReasons
+    assert "policyEvaluationCertificateMissing" in base.blockedReasons
+    assert "automaticRecommendationDisabled" in loop.blockedReasons
+    forbiddenPrefixes = ("pathAdmission:", "pathSetAdmission:", "policyEvaluation:", "policyCertificate:")
+    assert not any(ref.startswith(forbiddenPrefixes) for ref in base.conditionRefs)
+    assert base.coefficientAdmissionReceiptIds == (signed.receiptId,)
+    assert {row.sourceVariableId for row in base.exposureLedgers} == {
+        "fxChange",
+        "oilChange",
+        "explicitPriceAdjustment",
+    }
 
 
 def testMultivariableAdmissionRejectsTamperedFeatureCellRef(tmp_path) -> None:

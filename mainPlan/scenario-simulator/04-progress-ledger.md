@@ -1255,3 +1255,14 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **추천 경계**: 실제 coefficient admission verifier를 case에 붙여도 loop는 `conditionalOnly`로 남는다. path admission, initial state admission, policy evaluation certificate가 없으면 recommendation은 계속 `None`이며 blocked reason도 유지된다.
 - **검증**: focused E2E 2건 통과, driverObservationFrames + scenarioComposition + operatingBridge focused 38건 통과, `tests/simulate` 전체 407건 통과. ruff format/check, camelCase strict, docstring4 audit, Guard Index quick, diff check, em/en dash audit 통과.
 - **남은 P0**: 이제 수동 coefficient binding seam은 닫혔다. 다음은 실제 DART, EDGAR, price, macro, industry lane adapter가 provider observation batch와 scenario path set을 전수 공급해 이 자동 binding까지 도달하게 만드는 단계다.
+
+
+## 2026-07-15 P0 observed history plus explicit adjustment scenario path
+
+- **판단**: 사용자가 말한 전쟁게임식 시뮬레이터가 되려면 과거 관측 이력과 미래 가정을 같은 변수에 덮어쓰면 안 된다. 과거는 provider observation lane에서 `asKnown` history로 내려오고, 미래 미세조정은 별도 explicit assumption factor로 들어가야 전략 비교 장부가 읽힌다.
+- **구현**: `OneCompanyScenarioCaseLedger`가 path input hash, registry hash, factor contract hash, path source refs, provider observation batch refs, explicit assumption ids를 보존하게 했다. 이제 case 장부에서 관측 이력, 미래 가정, 생성 path, 계수 admission을 분리해 볼 수 있다.
+- **수직 경로**: 새 회귀는 `buildDriverObservationBatchFromPanel`로 만든 signed exact fx/oil provider batch를 다변수 coefficient fit과 `driverHistorySourceFromProviderObservationBatch` path projection 양쪽에 같이 쓴다. 이후 explicit future adjustment factor를 별도로 추가해 `buildDriverPathSet`, verified coefficient binding, one-company two-scenario two-strategy loop까지 실행한다.
+- **세탁 차단**: `explicitPriceAdjustment`는 `fxChange`나 `oilChange`를 덮지 않는 독립 변수다. path source refs에는 `providerObservationBatch`, `providerObservationBatchId`, `assumption://...`가 분리되어 남고, condition refs에는 path admission이나 policy certificate가 없는 상태로 세탁되지 않는다.
+- **추천 경계**: observed history와 admitted coefficient law가 같이 들어와도 path admission, initial state admission, policy evaluation certificate가 없으면 recommendation은 계속 `None`이다. blocked reason은 `unvalidatedPathPresent`, `pathAdmissionMissing`, `policyEvaluationCertificateMissing`, `automaticRecommendationDisabled`를 유지한다.
+- **검증**: 새 수직 focused 1건 통과, driverObservationFrames + scenarioComposition + driverPaths + operatingBridge focused 43건 통과, `tests/simulate` 전체 408건 통과. ruff format/check, camelCase strict, docstring4 audit, Guard Index quick 통과.
+- **남은 P0**: 이 단위는 실제 관측 lane에서 path set으로 들어가는 seam을 닫은 것이다. 아직 DART, EDGAR, price, macro, industry adapter를 동일 loop에 전수 공급하고, admitted path와 policy evaluation certificate로 추천 ceiling을 여는 단계가 남아 있다.
