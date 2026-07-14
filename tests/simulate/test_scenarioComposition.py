@@ -31,6 +31,7 @@ from dartlab.simulate.scenarioComposition import (
     ScenarioCompositionError,
     compareOneCompanyTwoScenarioStrategies,
     compareOperatingScenarioCases,
+    runConditionalScenarioExperiment,
     scenarioCoefficientBindingHash,
     scenarioCoefficientExposureContractHash,
 )
@@ -273,6 +274,130 @@ def _strategies(investment: float = 25.0):
     )
 
 
+def _threeStrategies():
+    return (
+        buildOperatingStrategy(
+            "hold",
+            priceChange=(0.0, 0.0),
+            capacityInvestment=(0.0, 0.0),
+            borrow=(0.0, 0.0),
+            repay=(0.0, 0.0),
+            refs=("strategy://hold",),
+            isBaseline=True,
+        ),
+        buildOperatingStrategy(
+            "invest",
+            priceChange=(0.0, 0.0),
+            capacityInvestment=(35.0, 0.0),
+            borrow=(0.0, 0.0),
+            repay=(0.0, 0.0),
+            refs=("strategy://invest",),
+        ),
+        buildOperatingStrategy(
+            "defend",
+            priceChange=(0.04, 0.04),
+            capacityInvestment=(0.0, 0.0),
+            borrow=(0.0, 0.0),
+            repay=(10.0, 0.0),
+            refs=("strategy://defend",),
+        ),
+    )
+
+
+def _multiVariableCase(
+    caseId: str,
+    demandShock: tuple[float, float],
+    unitCostShock: tuple[float, float],
+    capacityShock: tuple[float, float],
+) -> OperatingScenarioCase:
+    factors = (
+        DriverFactorSpec("demandShock", "simpleReturn", "quarter", "innovation", "manual-shock-v1"),
+        DriverFactorSpec("unitCostShock", "simpleReturn", "quarter", "innovation", "manual-shock-v1"),
+        DriverFactorSpec("capacityShock", "simpleReturn", "quarter", "innovation", "manual-shock-v1"),
+    )
+    card = DriverCard(
+        cardId=f"{caseId}-three-variable",
+        sourceKind="explicitAssumption",
+        providerId="user",
+        datasetId="manual-scenario-grid",
+        entityId="005930",
+        frequency="quarter",
+        stepSpan=1,
+        factors=factors,
+        historyStatus="explicitAssumption",
+        sourceRefs=(f"assumption://{caseId}/three-variable",),
+        assumptionId=f"{caseId}-three-variable",
+        claim=f"{caseId} demand, unit cost, and capacity assumption set.",
+        falsifier="Observed demand, unit cost, or capacity path does not match the assumption set.",
+    )
+    pathSet = buildDriverPathSet(
+        (
+            DriverAssumptionSource(
+                card,
+                tuple(
+                    {
+                        "demandShock": demandShock[index],
+                        "unitCostShock": unitCostShock[index],
+                        "capacityShock": capacityShock[index],
+                    }
+                    for index in range(2)
+                ),
+            ),
+        ),
+        knowledgeAsOf="20250101",
+        horizon=2,
+        pathCount=1,
+        blockLength=1,
+        seed=7,
+    )
+    exposures = (
+        OperatingTransmissionExposure(
+            f"{caseId}-demand",
+            "demandShock",
+            "demandChange",
+            1.0,
+            "ratioChangePerStep/simpleReturn",
+            "explicitAssumption",
+            f"assumption://{caseId}/demand",
+        ),
+        OperatingTransmissionExposure(
+            f"{caseId}-unit-cost",
+            "unitCostShock",
+            "unitCostChange",
+            1.0,
+            "ratioChangePerStep/simpleReturn",
+            "explicitAssumption",
+            f"assumption://{caseId}/unit-cost",
+        ),
+        OperatingTransmissionExposure(
+            f"{caseId}-capacity",
+            "capacityShock",
+            "capacityChange",
+            1.0,
+            "ratioChangePerStep/simpleReturn",
+            "explicitAssumption",
+            f"assumption://{caseId}/capacity",
+        ),
+    )
+    return OperatingScenarioCase(
+        caseId,
+        caseId.title(),
+        pathSet,
+        exposures,
+        _baselines(),
+        refs=(f"scenario://{caseId}",),
+    )
+
+
+def _experimentCases():
+    return (
+        _multiVariableCase("base", (0.0, 0.0), (0.0, 0.0), (0.0, 0.0)),
+        _multiVariableCase("demandUp", (0.12, 0.08), (0.0, 0.0), (0.02, 0.02)),
+        _multiVariableCase("costStress", (-0.04, -0.06), (0.16, 0.12), (-0.03, -0.02)),
+        _multiVariableCase("capacityStress", (0.04, 0.02), (0.05, 0.03), (-0.18, -0.12)),
+    )
+
+
 def _score(result, strategyId: str, objectiveIndex: int = 0) -> float:
     row = next(item for item in result.strategyScores if item.strategyId == strategyId)
     return row.objectiveScores[objectiveIndex]
@@ -321,6 +446,111 @@ def testScenarioCompositionHashBindsCaseAssumptionContent() -> None:
     )
     assert first.comparisonHash != changed.comparisonHash
     assert first.caseResults[0].pathSetHash != changed.caseResults[0].pathSetHash
+
+
+def testConditionalScenarioExperimentSweepsAssumptionsAndStrategies() -> None:
+    experiment = runConditionalScenarioExperiment(
+        "005930",
+        _inputs(),
+        _experimentCases(),
+        _threeStrategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert experiment.schemaVersion == "conditional-scenario-experiment-v1"
+    assert experiment.entityId == "005930"
+    assert experiment.scenarioCount == 4
+    assert experiment.strategyCount == 3
+    assert experiment.cellCount == 12
+    assert experiment.decisionStatus == "conditionalOnly"
+    assert experiment.recommendationCeiling == "conditionalOnly"
+    assert experiment.recommendation is None
+    assert experiment.strategyIds == ("hold", "invest", "defend")
+    assert experiment.assumptionSetIds == ("base", "demandUp", "costStress", "capacityStress")
+    assert len(set(experiment.assumptionSetHashes)) == 4
+    assert experiment.strategySetHash
+    assert experiment.simulationSpecHash
+    assert experiment.resultSetHash
+    assert experiment.experimentHash
+    assert len(experiment.caseLedgers) == 4
+    assert len(experiment.strategySummaries) == 3
+    assert len(experiment.fragilityCells) == 4
+    assert all(summary.totalCellCount == 4 for summary in experiment.strategySummaries)
+    assert sum(summary.leaderCellCount for summary in experiment.strategySummaries) >= 4
+    assert all(cell.regret >= 0.0 for cell in experiment.cells)
+    assert experiment.fragilityCells[0].leaderMargin <= experiment.fragilityCells[-1].leaderMargin
+    assert "assumptionSweepPresent" in experiment.blockedReasons
+    assert "strategySweepPresent" in experiment.blockedReasons
+    assert "automaticRecommendationDisabled" in experiment.blockedReasons
+    assert "conditionalExperimentNotPolicyRecommendation" in experiment.blockedReasons
+    assert "pathAdmissionMissing" in experiment.blockedReasons
+    assert "policyEvaluationCertificateMissing" in experiment.blockedReasons
+
+
+def testConditionalScenarioExperimentHashBindsAssumptionGridAndResults() -> None:
+    first = runConditionalScenarioExperiment(
+        "005930",
+        _inputs(),
+        _experimentCases(),
+        _threeStrategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    repeat = runConditionalScenarioExperiment(
+        "005930",
+        _inputs(),
+        _experimentCases(),
+        _threeStrategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    changedCases = (
+        _multiVariableCase("base", (0.0, 0.0), (0.0, 0.0), (0.0, 0.0)),
+        _multiVariableCase("demandUp", (0.18, 0.12), (0.0, 0.0), (0.02, 0.02)),
+        _multiVariableCase("costStress", (-0.04, -0.06), (0.16, 0.12), (-0.03, -0.02)),
+        _multiVariableCase("capacityStress", (0.04, 0.02), (0.05, 0.03), (-0.18, -0.12)),
+    )
+    changed = runConditionalScenarioExperiment(
+        "005930",
+        _inputs(),
+        changedCases,
+        _threeStrategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert first.experimentHash == repeat.experimentHash
+    assert first.resultSetHash == repeat.resultSetHash
+    assert first.assumptionSetHashes != changed.assumptionSetHashes
+    assert first.resultSetHash != changed.resultSetHash
+    assert first.experimentHash != changed.experimentHash
+    assert first.cells != changed.cells
+
+
+def testConditionalScenarioExperimentRequiresSweepShape() -> None:
+    with pytest.raises(ScenarioCompositionError, match="at least two assumption"):
+        runConditionalScenarioExperiment(
+            "005930",
+            _inputs(),
+            (_experimentCases()[0],),
+            _threeStrategies(),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
+    with pytest.raises(ScenarioCompositionError, match="at least two strategies"):
+        runConditionalScenarioExperiment(
+            "005930",
+            _inputs(),
+            _experimentCases(),
+            (_threeStrategies()[0],),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
 
 
 def testScenarioCompositionRejectsInterventionInsidePath() -> None:

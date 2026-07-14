@@ -40,9 +40,12 @@ if TYPE_CHECKING:
 
 SCENARIO_COMPOSITION_VERSION = "scenario-composition-v1"
 ONE_COMPANY_SCENARIO_LOOP_VERSION = "one-company-scenario-loop-v1"
+CONDITIONAL_SCENARIO_EXPERIMENT_VERSION = "conditional-scenario-experiment-v1"
 SCENARIO_PATH_PACKAGE_VERSION = "scenario-path-package-v1"
+SCENARIO_ASSUMPTION_SET_VERSION = "scenario-assumption-set-v1"
 SCENARIO_COEFFICIENT_BINDING_VERSION = "scenario-coefficient-binding-v1"
 SCENARIO_EXPOSURE_CONTRACT_VERSION = "scenario-coefficient-exposure-contract-v1"
+STRATEGY_SET_VERSION = "strategy-set-v1"
 _OPERATING_ACTION_IDS = {"priceChange", "capacityInvestment", "borrow", "repay"}
 _ASSUMPTION_REF_PREFIXES = ("assumption:", "assumption://")
 _DRIVER_COEFFICIENT_ADMISSION_REF_PREFIX = "driverCoefficientAdmission:"
@@ -352,6 +355,132 @@ class OneCompanyScenarioLoop:
         object.__setattr__(self, "strategyRefs", tuple(self.strategyRefs))
         object.__setattr__(self, "initialStateRefs", tuple(self.initialStateRefs))
         object.__setattr__(self, "caseLedgers", tuple(self.caseLedgers))
+        object.__setattr__(self, "blockedReasons", tuple(self.blockedReasons))
+        object.__setattr__(self, "warnings", tuple(self.warnings))
+
+
+@dataclass(frozen=True)
+class ConditionalScenarioExperimentCell:
+    """One assumption set and strategy score cell in a conditional experiment."""
+
+    caseId: str
+    label: str
+    strategyId: str
+    objectiveScores: tuple[float, ...]
+    score: float
+    feasible: bool
+    breachCount: int
+    regret: float
+    scoreLeader: bool
+    assumptionSetHash: str
+    scenarioPathPackageHash: str
+    pathSetHash: str
+    runHash: str
+    resultHash: str
+    blockedReasons: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "objectiveScores", tuple(float(value) for value in self.objectiveScores))
+        object.__setattr__(self, "score", float(self.score))
+        object.__setattr__(self, "regret", float(self.regret))
+        object.__setattr__(self, "blockedReasons", tuple(self.blockedReasons))
+
+
+@dataclass(frozen=True)
+class ConditionalStrategySummary:
+    """Strategy robustness summary across all assumption sets."""
+
+    strategyId: str
+    scoreMedian: float
+    scoreWorst: float
+    scoreBest: float
+    regretMedian: float
+    regretWorst: float
+    leaderCellCount: int
+    leaderFrequency: float
+    feasibleCellCount: int
+    totalCellCount: int
+    breachCount: int
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "scoreMedian", float(self.scoreMedian))
+        object.__setattr__(self, "scoreWorst", float(self.scoreWorst))
+        object.__setattr__(self, "scoreBest", float(self.scoreBest))
+        object.__setattr__(self, "regretMedian", float(self.regretMedian))
+        object.__setattr__(self, "regretWorst", float(self.regretWorst))
+        object.__setattr__(self, "leaderFrequency", float(self.leaderFrequency))
+
+
+@dataclass(frozen=True)
+class ConditionalAssumptionFragility:
+    """Case-level row showing where strategy leadership is least robust."""
+
+    caseId: str
+    label: str
+    assumptionSetHash: str
+    scenarioPathPackageHash: str
+    leaderStrategies: tuple[str, ...]
+    runnerUpStrategies: tuple[str, ...]
+    leaderScore: float
+    runnerUpScore: float
+    leaderMargin: float
+    scoreSpread: float
+    breachStrategies: tuple[str, ...]
+    assumptionRefs: tuple[str, ...]
+    blockedReasons: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "leaderStrategies", tuple(self.leaderStrategies))
+        object.__setattr__(self, "runnerUpStrategies", tuple(self.runnerUpStrategies))
+        object.__setattr__(self, "leaderScore", float(self.leaderScore))
+        object.__setattr__(self, "runnerUpScore", float(self.runnerUpScore))
+        object.__setattr__(self, "leaderMargin", float(self.leaderMargin))
+        object.__setattr__(self, "scoreSpread", float(self.scoreSpread))
+        object.__setattr__(self, "breachStrategies", tuple(self.breachStrategies))
+        object.__setattr__(self, "assumptionRefs", tuple(self.assumptionRefs))
+        object.__setattr__(self, "blockedReasons", tuple(self.blockedReasons))
+
+
+@dataclass(frozen=True)
+class ConditionalScenarioExperiment:
+    """N assumption sets by N strategies conditional simulation ledger."""
+
+    experimentHash: str
+    schemaVersion: str
+    entityId: str
+    comparisonHash: str
+    strategySetHash: str
+    simulationSpecHash: str
+    resultSetHash: str
+    decisionStatus: str
+    recommendationCeiling: str
+    recommendation: str | None
+    scenarioCount: int
+    strategyCount: int
+    cellCount: int
+    objectiveIndex: int
+    strategyIds: tuple[str, ...]
+    strategyContractHashes: tuple[str, ...]
+    initialStateRefs: tuple[str, ...]
+    assumptionSetIds: tuple[str, ...]
+    assumptionSetHashes: tuple[str, ...]
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]
+    strategySummaries: tuple[ConditionalStrategySummary, ...]
+    cells: tuple[ConditionalScenarioExperimentCell, ...]
+    fragilityCells: tuple[ConditionalAssumptionFragility, ...]
+    blockedReasons: tuple[str, ...]
+    warnings: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "strategyIds", tuple(self.strategyIds))
+        object.__setattr__(self, "strategyContractHashes", tuple(self.strategyContractHashes))
+        object.__setattr__(self, "initialStateRefs", tuple(self.initialStateRefs))
+        object.__setattr__(self, "assumptionSetIds", tuple(self.assumptionSetIds))
+        object.__setattr__(self, "assumptionSetHashes", tuple(self.assumptionSetHashes))
+        object.__setattr__(self, "caseLedgers", tuple(self.caseLedgers))
+        object.__setattr__(self, "strategySummaries", tuple(self.strategySummaries))
+        object.__setattr__(self, "cells", tuple(self.cells))
+        object.__setattr__(self, "fragilityCells", tuple(self.fragilityCells))
         object.__setattr__(self, "blockedReasons", tuple(self.blockedReasons))
         object.__setattr__(self, "warnings", tuple(self.warnings))
 
@@ -946,6 +1075,192 @@ def _strategyRefs(strategies: tuple[StrategySpec, ...]) -> tuple[str, ...]:
     return _dedupe(tuple(ref for strategy in strategies for ref in strategy.refs))
 
 
+def _median(values: tuple[float, ...]) -> float:
+    if not values:
+        raise ScenarioCompositionError("median needs at least one value")
+    ordered = sorted(float(value) for value in values)
+    midpoint = len(ordered) // 2
+    if len(ordered) % 2:
+        return ordered[midpoint]
+    return (ordered[midpoint - 1] + ordered[midpoint]) / 2.0
+
+
+def _scoreForObjective(score: ScenarioStrategyScore, objectiveIndex: int) -> float:
+    if objectiveIndex < 0:
+        raise ScenarioCompositionError("objective index must be nonnegative")
+    if objectiveIndex >= len(score.objectiveScores):
+        raise ScenarioCompositionError("objective index is outside strategy score contract")
+    return float(score.objectiveScores[objectiveIndex])
+
+
+def _objectiveLeaders(
+    scores: tuple[ScenarioStrategyScore, ...],
+    objectiveIndex: int,
+) -> tuple[str, ...]:
+    candidates = tuple(score for score in scores if score.feasible) or tuple(scores)
+    if not candidates:
+        return ()
+    bestScore = max(_scoreForObjective(score, objectiveIndex) for score in candidates)
+    return tuple(
+        sorted(
+            score.strategyId
+            for score in candidates
+            if abs(_scoreForObjective(score, objectiveIndex) - bestScore) <= 1e-12
+        )
+    )
+
+
+def _assumptionSetHash(case: OperatingScenarioCase, result: OperatingScenarioCaseResult) -> str:
+    return canonicalPayloadHash(
+        {
+            "schemaVersion": SCENARIO_ASSUMPTION_SET_VERSION,
+            "caseId": case.caseId,
+            "label": case.label,
+            "caseRefs": case.refs,
+            "factorIds": tuple(factor.variableId for factor in case.pathSet.factorSpecs),
+            "pathSetInputHash": case.pathSet.audit.inputHash,
+            "pathHistoryInputHash": result.pathHistoryInputHash,
+            "pathAssumptionHash": result.pathAssumptionHash,
+            "basePathSetHash": result.basePathSetHash,
+            "pathOverlayHash": result.pathOverlayHash,
+            "scenarioPathPackageHash": result.scenarioPathPackageHash,
+            "coefficientBindingHashes": tuple(
+                scenarioCoefficientBindingHash(binding) for binding in case.coefficientBindings
+            ),
+        }
+    )
+
+
+def _strategySetHash(
+    strategies: tuple[StrategySpec, ...],
+    strategyContractHashes: tuple[str, ...],
+    strategyRefs: tuple[str, ...],
+) -> str:
+    return canonicalPayloadHash(
+        {
+            "schemaVersion": STRATEGY_SET_VERSION,
+            "strategyIds": tuple(strategy.strategyId for strategy in strategies),
+            "strategyContractHashes": strategyContractHashes,
+            "strategyRefs": strategyRefs,
+        }
+    )
+
+
+def _experimentCells(
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+    assumptionSetHashes: tuple[str, ...],
+    objectiveIndex: int,
+) -> tuple[ConditionalScenarioExperimentCell, ...]:
+    cells: list[ConditionalScenarioExperimentCell] = []
+    for ledger, assumptionSetHash in zip(caseLedgers, assumptionSetHashes, strict=True):
+        candidateScores = tuple(score for score in ledger.strategyScores if score.feasible) or ledger.strategyScores
+        if not candidateScores:
+            continue
+        bestScore = max(_scoreForObjective(score, objectiveIndex) for score in candidateScores)
+        leaders = set(_objectiveLeaders(ledger.strategyScores, objectiveIndex))
+        for score in ledger.strategyScores:
+            value = _scoreForObjective(score, objectiveIndex)
+            cells.append(
+                ConditionalScenarioExperimentCell(
+                    caseId=ledger.caseId,
+                    label=ledger.label,
+                    strategyId=score.strategyId,
+                    objectiveScores=score.objectiveScores,
+                    score=value,
+                    feasible=score.feasible,
+                    breachCount=score.breachCount,
+                    regret=max(0.0, bestScore - value),
+                    scoreLeader=score.strategyId in leaders,
+                    assumptionSetHash=assumptionSetHash,
+                    scenarioPathPackageHash=ledger.scenarioPathPackageHash,
+                    pathSetHash=ledger.pathSetHash,
+                    runHash=ledger.runHash,
+                    resultHash=ledger.resultHash,
+                    blockedReasons=ledger.blockedReasons,
+                )
+            )
+    return tuple(cells)
+
+
+def _strategySummaries(
+    cells: tuple[ConditionalScenarioExperimentCell, ...],
+    strategyIds: tuple[str, ...],
+) -> tuple[ConditionalStrategySummary, ...]:
+    summaries: list[ConditionalStrategySummary] = []
+    for strategyId in strategyIds:
+        rows = tuple(cell for cell in cells if cell.strategyId == strategyId)
+        if not rows:
+            continue
+        scores = tuple(cell.score for cell in rows)
+        regrets = tuple(cell.regret for cell in rows)
+        leaderCount = sum(1 for cell in rows if cell.scoreLeader)
+        summaries.append(
+            ConditionalStrategySummary(
+                strategyId=strategyId,
+                scoreMedian=_median(scores),
+                scoreWorst=min(scores),
+                scoreBest=max(scores),
+                regretMedian=_median(regrets),
+                regretWorst=max(regrets),
+                leaderCellCount=leaderCount,
+                leaderFrequency=leaderCount / len(rows),
+                feasibleCellCount=sum(1 for cell in rows if cell.feasible),
+                totalCellCount=len(rows),
+                breachCount=sum(cell.breachCount for cell in rows),
+            )
+        )
+    return tuple(summaries)
+
+
+def _fragilityCells(
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+    assumptionSetHashes: tuple[str, ...],
+    objectiveIndex: int,
+) -> tuple[ConditionalAssumptionFragility, ...]:
+    rows: list[ConditionalAssumptionFragility] = []
+    for ledger, assumptionSetHash in zip(caseLedgers, assumptionSetHashes, strict=True):
+        scores = ledger.strategyScores
+        candidates = tuple(score for score in scores if score.feasible) or scores
+        if not candidates:
+            continue
+        scorePairs = tuple((score.strategyId, _scoreForObjective(score, objectiveIndex)) for score in candidates)
+        leaderScore = max(value for _, value in scorePairs)
+        leaderStrategies = tuple(
+            sorted(strategyId for strategyId, value in scorePairs if abs(value - leaderScore) <= 1e-12)
+        )
+        runnerPairs = tuple(
+            (strategyId, value) for strategyId, value in scorePairs if strategyId not in leaderStrategies
+        )
+        if runnerPairs:
+            runnerUpScore = max(value for _, value in runnerPairs)
+            runnerUpStrategies = tuple(
+                sorted(strategyId for strategyId, value in runnerPairs if abs(value - runnerUpScore) <= 1e-12)
+            )
+        else:
+            runnerUpScore = leaderScore
+            runnerUpStrategies = ()
+        scoreSpread = leaderScore - min(value for _, value in scorePairs)
+        breachStrategies = tuple(sorted(score.strategyId for score in scores if score.breachCount))
+        rows.append(
+            ConditionalAssumptionFragility(
+                caseId=ledger.caseId,
+                label=ledger.label,
+                assumptionSetHash=assumptionSetHash,
+                scenarioPathPackageHash=ledger.scenarioPathPackageHash,
+                leaderStrategies=leaderStrategies,
+                runnerUpStrategies=runnerUpStrategies,
+                leaderScore=leaderScore,
+                runnerUpScore=runnerUpScore,
+                leaderMargin=leaderScore - runnerUpScore,
+                scoreSpread=scoreSpread,
+                breachStrategies=breachStrategies,
+                assumptionRefs=ledger.assumptionRefs,
+                blockedReasons=ledger.blockedReasons,
+            )
+        )
+    return tuple(sorted(rows, key=lambda row: (row.leaderMargin, row.caseId)))
+
+
 def _caseBlockedReasons(result: OperatingScenarioCaseResult) -> tuple[str, ...]:
     reasons = []
     if result.decisionStatus != "comparable":
@@ -996,6 +1311,21 @@ def _loopBlockedReasons(
     if len(leaderSets) > 1:
         reasons.append("scenarioScoreLeadersDiverge")
     reasons.extend(reason for case in caseLedgers for reason in case.blockedReasons)
+    return _dedupe(tuple(reasons))
+
+
+def _experimentBlockedReasons(
+    comparison: OperatingScenarioComparison,
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+) -> tuple[str, ...]:
+    reasons = list(_loopBlockedReasons(comparison, caseLedgers))
+    if "automaticRecommendationDisabled" not in reasons:
+        reasons.append("automaticRecommendationDisabled")
+    reasons.append("conditionalExperimentNotPolicyRecommendation")
+    if len(caseLedgers) > 2:
+        reasons.append("assumptionSweepPresent")
+    if len(comparison.strategyIds) > 2:
+        reasons.append("strategySweepPresent")
     return _dedupe(tuple(reasons))
 
 
@@ -1080,6 +1410,22 @@ def _validateOneCompanyLoop(
         raise ScenarioCompositionError("one-company scenario loop needs exactly two scenario cases")
     if len(strategies) != 2:
         raise ScenarioCompositionError("one-company scenario loop needs exactly two strategies")
+
+
+def _validateConditionalExperiment(
+    entityId: str,
+    cases: tuple[OperatingScenarioCase, ...],
+    strategies: tuple[StrategySpec, ...],
+    objectiveIndex: int,
+) -> None:
+    if not entityId:
+        raise ScenarioCompositionError("conditional scenario experiment needs entityId")
+    if len(cases) < 2:
+        raise ScenarioCompositionError("conditional scenario experiment needs at least two assumption sets")
+    if len(strategies) < 2:
+        raise ScenarioCompositionError("conditional scenario experiment needs at least two strategies")
+    if objectiveIndex < 0:
+        raise ScenarioCompositionError("objective index must be nonnegative")
 
 
 def _runCase(
@@ -1268,6 +1614,143 @@ def compareOperatingScenarioCases(
         strategyIds=tuple(strategy.strategyId for strategy in strategyTuple),
         strategyContractHashes=strategyContracts,
         warnings=cleanWarnings,
+    )
+
+
+def runConditionalScenarioExperiment(
+    entityId: str,
+    inputs: OperatingWorldInputs,
+    cases: tuple[OperatingScenarioCase, ...],
+    strategies: tuple[StrategySpec, ...],
+    *,
+    debtLimit: float,
+    maxFinancing: float,
+    maxInvestment: float,
+    objectiveIndex: int = 0,
+    traceLimit: int | None = None,
+) -> ConditionalScenarioExperiment:
+    """Run an assumption sweep and summarize conditional strategy robustness.
+
+    Args:
+        entityId: Company or security identifier for the experiment subject.
+        inputs: Initial operating state and state lineage refs.
+        cases: Two or more scenario cases. Each case is one assumption set.
+        strategies: Two or more shared strategies evaluated in every assumption set.
+        debtLimit: Hard debt constraint passed to the operating world.
+        maxFinancing: Per-step borrow and repay bound.
+        maxInvestment: Per-step capacity investment bound.
+        objectiveIndex: Objective score column used for scalar sweep summaries.
+        traceLimit: Optional retained trace cap per case.
+
+    Returns:
+        ``ConditionalScenarioExperiment`` with case ledgers, cell regrets, strategy
+        robustness summaries, fragility rows, hashes, and recommendation blockers.
+
+    Raises:
+        ScenarioCompositionError: If the experiment lacks enough assumption sets,
+        enough strategies, safe case contracts, or a valid objective index.
+
+    Example:
+        ``experiment = runConditionalScenarioExperiment("005930", inputs, cases, strategies, debtLimit=1000, maxFinancing=100, maxInvestment=100)``
+    """
+
+    caseTuple = tuple(cases)
+    strategyTuple = tuple(strategies)
+    _validateConditionalExperiment(entityId, caseTuple, strategyTuple, objectiveIndex)
+    comparison = compareOperatingScenarioCases(
+        inputs,
+        caseTuple,
+        strategyTuple,
+        debtLimit=debtLimit,
+        maxFinancing=maxFinancing,
+        maxInvestment=maxInvestment,
+        traceLimit=traceLimit,
+    )
+    initialRefs = _initialStateRefs(inputs)
+    caseLedgers = tuple(
+        _caseLedger(case, result, initialStateRefs=initialRefs)
+        for case, result in zip(caseTuple, comparison.caseResults, strict=True)
+    )
+    assumptionSetHashes = tuple(
+        _assumptionSetHash(case, result) for case, result in zip(caseTuple, comparison.caseResults, strict=True)
+    )
+    strategyRefs = _strategyRefs(strategyTuple)
+    strategySetHash = _strategySetHash(strategyTuple, comparison.strategyContractHashes, strategyRefs)
+    cells = _experimentCells(caseLedgers, assumptionSetHashes, objectiveIndex)
+    strategySummaries = _strategySummaries(cells, comparison.strategyIds)
+    fragilityRows = _fragilityCells(caseLedgers, assumptionSetHashes, objectiveIndex)
+    blockedReasons = _experimentBlockedReasons(comparison, caseLedgers)
+    warnings = tuple(sorted(set((*comparison.warnings, *blockedReasons))))
+    resultSetHash = canonicalPayloadHash(
+        {
+            "schemaVersion": CONDITIONAL_SCENARIO_EXPERIMENT_VERSION,
+            "caseResultHashes": tuple(result.resultHash for result in comparison.caseResults),
+            "runHashes": tuple(result.runHash for result in comparison.caseResults),
+            "cells": cells,
+            "strategySummaries": strategySummaries,
+            "fragilityCells": fragilityRows,
+        }
+    )
+    simulationSpecHash = canonicalPayloadHash(
+        {
+            "schemaVersion": CONDITIONAL_SCENARIO_EXPERIMENT_VERSION,
+            "entityId": entityId,
+            "initialStateRefs": initialRefs,
+            "assumptionSetHashes": assumptionSetHashes,
+            "strategySetHash": strategySetHash,
+            "debtLimit": float(debtLimit),
+            "maxFinancing": float(maxFinancing),
+            "maxInvestment": float(maxInvestment),
+            "objectiveIndex": objectiveIndex,
+            "traceLimit": traceLimit,
+        }
+    )
+    experimentPayload = {
+        "schemaVersion": CONDITIONAL_SCENARIO_EXPERIMENT_VERSION,
+        "entityId": entityId,
+        "strategySetHash": strategySetHash,
+        "simulationSpecHash": simulationSpecHash,
+        "resultSetHash": resultSetHash,
+        "decisionStatus": comparison.decisionStatus,
+        "recommendationCeiling": comparison.decisionStatus,
+        "recommendation": None,
+        "strategyIds": comparison.strategyIds,
+        "strategyContractHashes": comparison.strategyContractHashes,
+        "initialStateRefs": initialRefs,
+        "assumptionSetIds": tuple(case.caseId for case in caseTuple),
+        "assumptionSetHashes": assumptionSetHashes,
+        "strategySummaries": strategySummaries,
+        "cells": cells,
+        "fragilityCells": fragilityRows,
+        "blockedReasons": blockedReasons,
+        "warnings": warnings,
+    }
+    return ConditionalScenarioExperiment(
+        experimentHash=canonicalPayloadHash(experimentPayload),
+        schemaVersion=CONDITIONAL_SCENARIO_EXPERIMENT_VERSION,
+        entityId=entityId,
+        comparisonHash=comparison.comparisonHash,
+        strategySetHash=strategySetHash,
+        simulationSpecHash=simulationSpecHash,
+        resultSetHash=resultSetHash,
+        decisionStatus=comparison.decisionStatus,
+        recommendationCeiling=comparison.decisionStatus,
+        recommendation=None,
+        scenarioCount=len(caseLedgers),
+        strategyCount=len(strategyTuple),
+        cellCount=len(cells),
+        objectiveIndex=objectiveIndex,
+        strategyIds=comparison.strategyIds,
+        strategyContractHashes=comparison.strategyContractHashes,
+        initialStateRefs=initialRefs,
+        assumptionSetIds=tuple(case.caseId for case in caseTuple),
+        assumptionSetHashes=assumptionSetHashes,
+        caseLedgers=caseLedgers,
+        strategySummaries=strategySummaries,
+        cells=cells,
+        fragilityCells=fragilityRows,
+        blockedReasons=blockedReasons,
+        warnings=warnings,
     )
 
 
