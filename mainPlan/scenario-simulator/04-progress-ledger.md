@@ -1210,3 +1210,13 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **hash 경계**: column order, variable id, signal id, unit, frequency, transformId, evidence role, missing policy, parent batch receipt, dropped row ledger가 specHash, columnOrderHash, frameHash에 들어간다. column 순서를 바꾸면 frame hash도 바뀐다.
 - **검증**: `test_driverObservationFrames.py` 11건 통과. observation batch, frame, calibration, registry focused 37건 통과. `tests/simulate` 전체 395건 통과. ruff format/check, camelCase strict, docstring4 audit, Guard Index quick, diff check, em/en dash audit 통과.
 - **남은 P0**: 다음에는 이 design frame을 다변수 coefficient fit과 OOS admission으로 연결하거나, 더 얇게는 one-company two-scenario two-strategy 수직 루프를 조건부 비교로 닫아야 한다. 아직 전략 추천을 여는 단계는 아니다.
+
+
+## 2026-07-15 P0 one-company scenario loop ledger
+
+- **판단**: 사용자가 말한 전쟁게임식 시뮬레이터는 조건, 가정, 상태 전이, 전략 비교, 추천 가능 여부가 한 장부에서 이어져야 한다. 기존 `compareOperatingScenarioCases`는 실제 실행을 했지만, PRD가 읽을 수 있는 최소 수직 루프 객체가 없어 "조건을 넣고 전략을 비교했다"는 증거가 흩어져 있었다.
+- **구현**: `compareOneCompanyTwoScenarioStrategies`와 `OneCompanyScenarioLoop`를 추가했다. 범위는 한 entity, 두 scenario case, 두 strategy로 고정했다. 내부 실행은 기존 `compareOperatingScenarioCases`를 재사용하고, 새 public verb나 추천 로직은 만들지 않았다.
+- **장부 내용**: loop는 `comparisonHash`, `strategyContractHashes`, strategy refs, initial state refs, case별 condition refs, assumption refs, state refs, `pathSetHash`, `bridgeHashes`, `runHash`, `resultHash`, `executableHash`, `parameterHash`, `dataVintageHash`, `traceRoot`를 보존한다.
+- **추천 경계**: score leader는 기계적 점수 선두로만 기록하고 추천으로 승격하지 않는다. explicit assumption, unvalidated path, missing path admission, missing initial state admission, missing policy evaluation certificate는 blocked reason으로 남긴다. recommendation ceiling은 기존 decision status 그대로 `conditionalOnly`에 묶인다.
+- **검증**: scenario composition 테스트가 4건에서 8건으로 늘었다. one-company loop positive, case/strategy 개수 제한, assumption과 strategy hash binding, duplicate strategy id 거부를 추가했다. `tests/simulate/test_scenarioComposition.py` 8건 통과. 주변 focused 34건 통과. `tests/simulate` 전체 399건 통과. ruff format/check, camelCase strict, docstring4 audit, Guard Index quick 통과.
+- **남은 P0**: 다음은 이 loop에 실제 signed observation lane에서 올라온 다변수 coefficient fit, held-out OOS admission, admitted exposure를 연결하는 수직 E2E fixture다. 그 전까지 제품 문구는 "조건부 전략 비교"가 맞고, "전략 추천"은 아직 닫혀 있어야 한다.

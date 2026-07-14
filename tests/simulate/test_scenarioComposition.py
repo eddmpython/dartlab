@@ -17,6 +17,7 @@ from dartlab.simulate.operatingWorld import (
 from dartlab.simulate.scenarioComposition import (
     OperatingScenarioCase,
     ScenarioCompositionError,
+    compareOneCompanyTwoScenarioStrategies,
     compareOperatingScenarioCases,
 )
 
@@ -109,7 +110,7 @@ def _case(caseId: str, demandShock: tuple[float, ...], variableId: str = "demand
     )
 
 
-def _strategies():
+def _strategies(investment: float = 25.0):
     return (
         buildOperatingStrategy(
             "hold",
@@ -123,7 +124,7 @@ def _strategies():
         buildOperatingStrategy(
             "invest",
             priceChange=(0.0, 0.0),
-            capacityInvestment=(25.0, 0.0),
+            capacityInvestment=(investment, 0.0),
             borrow=(0.0, 0.0),
             repay=(0.0, 0.0),
             refs=("strategy://invest",),
@@ -199,6 +200,128 @@ def testScenarioCompositionRejectsDuplicateCaseIds() -> None:
             _inputs(),
             (_case("base", (0.0, 0.0)), _case("base", (-0.1, -0.1))),
             _strategies(),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
+
+
+def testOneCompanyScenarioLoopSummarizesConditionsStateAndStrategyBlocks() -> None:
+    loop = compareOneCompanyTwoScenarioStrategies(
+        "005930",
+        _inputs(),
+        (_case("base", (0.0, 0.0)), _case("stress", (-0.5, -0.5))),
+        _strategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert loop.schemaVersion == "one-company-scenario-loop-v1"
+    assert loop.entityId == "005930"
+    assert loop.scenarioCount == 2
+    assert loop.strategyCount == 2
+    assert loop.decisionStatus == "conditionalOnly"
+    assert loop.recommendationCeiling == "conditionalOnly"
+    assert loop.recommendation is None
+    assert loop.strategyIds == ("hold", "invest")
+    assert "strategy://hold" in loop.strategyRefs
+    assert "filing://cash" in loop.initialStateRefs
+    assert "automaticRecommendationDisabled" in loop.blockedReasons
+    assert "comparisonDecisionStatus:conditionalOnly" in loop.blockedReasons
+    assert loop.loopHash
+    base, stress = loop.caseLedgers
+    assert base.caseId == "base"
+    assert stress.caseId == "stress"
+    assert base.factorIds == ("demandShock",)
+    assert "scenario://base" in base.conditionRefs
+    assert "assumption://base/demand" in base.assumptionRefs
+    assert "filing://debt" in base.stateRefs
+    assert base.bridgeHashes
+    assert base.runHash
+    assert base.resultHash
+    assert base.executableHash
+    assert base.parameterHash
+    assert base.dataVintageHash
+    assert base.traceRoot
+    assert base.strategyScores
+    assert base.scoreLeaderStrategies
+    assert "explicitAssumptionPresent" in base.blockedReasons
+    assert "pathAdmissionIncomplete" in base.blockedReasons
+    assert "pathAdmissionMissing" in base.blockedReasons
+    assert "policyEvaluationCertificateMissing" in base.blockedReasons
+
+
+def testOneCompanyScenarioLoopRequiresTwoCasesAndTwoStrategies() -> None:
+    with pytest.raises(ScenarioCompositionError, match="exactly two scenario"):
+        compareOneCompanyTwoScenarioStrategies(
+            "005930",
+            _inputs(),
+            (_case("base", (0.0, 0.0)),),
+            _strategies(),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
+    with pytest.raises(ScenarioCompositionError, match="exactly two strategies"):
+        compareOneCompanyTwoScenarioStrategies(
+            "005930",
+            _inputs(),
+            (_case("base", (0.0, 0.0)), _case("stress", (-0.5, -0.5))),
+            (_strategies()[0],),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
+
+
+def testOneCompanyScenarioLoopHashBindsAssumptionAndStrategyContent() -> None:
+    first = compareOneCompanyTwoScenarioStrategies(
+        "005930",
+        _inputs(),
+        (_case("base", (0.0, 0.0)), _case("stress", (-0.5, -0.5))),
+        _strategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    changedAssumption = compareOneCompanyTwoScenarioStrategies(
+        "005930",
+        _inputs(),
+        (_case("base", (0.0, 0.0)), _case("stress", (-0.4, -0.4))),
+        _strategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    changedStrategy = compareOneCompanyTwoScenarioStrategies(
+        "005930",
+        _inputs(),
+        (_case("base", (0.0, 0.0)), _case("stress", (-0.5, -0.5))),
+        _strategies(investment=30.0),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert first.loopHash != changedAssumption.loopHash
+    assert first.loopHash != changedStrategy.loopHash
+
+
+def testOneCompanyScenarioLoopRejectsDuplicateStrategyIds() -> None:
+    hold, _ = _strategies()
+    duplicate = buildOperatingStrategy(
+        "hold",
+        priceChange=(0.0, 0.0),
+        capacityInvestment=(10.0, 0.0),
+        borrow=(0.0, 0.0),
+        repay=(0.0, 0.0),
+        refs=("strategy://hold-duplicate",),
+    )
+    with pytest.raises(ScenarioCompositionError, match="strategy ids"):
+        compareOneCompanyTwoScenarioStrategies(
+            "005930",
+            _inputs(),
+            (_case("base", (0.0, 0.0)), _case("stress", (-0.5, -0.5))),
+            (hold, duplicate),
             debtLimit=1_000.0,
             maxFinancing=200.0,
             maxInvestment=200.0,

@@ -28,7 +28,21 @@ if TYPE_CHECKING:
     from dartlab.simulate.stateCompiler import CompiledPointInTimeState
 
 SCENARIO_COMPOSITION_VERSION = "scenario-composition-v1"
+ONE_COMPANY_SCENARIO_LOOP_VERSION = "one-company-scenario-loop-v1"
 _OPERATING_ACTION_IDS = {"priceChange", "capacityInvestment", "borrow", "repay"}
+_ASSUMPTION_REF_PREFIXES = ("assumption:", "assumption://")
+_STATE_REF_PREFIXES = (
+    "compiledState:",
+    "observation:",
+    "providerBatch:",
+    "providerBatchReceipt:",
+    "stateCompilationContract:",
+    "stateManifest:",
+    "statePrimitive:",
+    "stateReceipt:",
+    "worldStatePayload:",
+    "worldStateVintage:",
+)
 
 
 class ScenarioCompositionError(ValueError):
@@ -96,6 +110,15 @@ class OperatingScenarioCaseResult:
     bridgeHashes: tuple[str, ...]
     runHash: str
     resultHash: str
+    executableHash: str
+    parameterHash: str
+    dataVintageHash: str
+    traceRoot: str
+    traceCount: int
+    retainedTraceCount: int
+    initialStateAdmissionReceiptId: str
+    pathAdmissionReceiptId: str
+    policyEvaluationCertificateId: str
     decisionStatus: str
     status: str
     weightLabel: str
@@ -133,8 +156,90 @@ class OperatingScenarioComparison:
         object.__setattr__(self, "warnings", tuple(self.warnings))
 
 
+@dataclass(frozen=True)
+class OneCompanyScenarioCaseLedger:
+    """Readable case row for one company scenario loop."""
+
+    caseId: str
+    label: str
+    factorIds: tuple[str, ...]
+    conditionRefs: tuple[str, ...]
+    assumptionRefs: tuple[str, ...]
+    stateRefs: tuple[str, ...]
+    pathSetHash: str
+    bridgeHashes: tuple[str, ...]
+    runHash: str
+    resultHash: str
+    executableHash: str
+    parameterHash: str
+    dataVintageHash: str
+    traceRoot: str
+    traceCount: int
+    retainedTraceCount: int
+    initialStateAdmissionReceiptId: str
+    pathAdmissionReceiptId: str
+    policyEvaluationCertificateId: str
+    decisionStatus: str
+    status: str
+    weightLabel: str
+    recommendation: str | None
+    paretoStrategies: tuple[str, ...]
+    scoreLeaderStrategies: tuple[str, ...]
+    strategyScores: tuple[ScenarioStrategyScore, ...]
+    counts: ScenarioBoundaryCounts
+    blockedReasons: tuple[str, ...]
+    warnings: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "factorIds", tuple(self.factorIds))
+        object.__setattr__(self, "conditionRefs", tuple(self.conditionRefs))
+        object.__setattr__(self, "assumptionRefs", tuple(self.assumptionRefs))
+        object.__setattr__(self, "stateRefs", tuple(self.stateRefs))
+        object.__setattr__(self, "bridgeHashes", tuple(self.bridgeHashes))
+        object.__setattr__(self, "paretoStrategies", tuple(self.paretoStrategies))
+        object.__setattr__(self, "scoreLeaderStrategies", tuple(self.scoreLeaderStrategies))
+        object.__setattr__(self, "strategyScores", tuple(self.strategyScores))
+        object.__setattr__(self, "blockedReasons", tuple(self.blockedReasons))
+        object.__setattr__(self, "warnings", tuple(self.warnings))
+
+
+@dataclass(frozen=True)
+class OneCompanyScenarioLoop:
+    """One company, two scenario, two strategy conditional experiment ledger."""
+
+    loopHash: str
+    schemaVersion: str
+    entityId: str
+    comparisonHash: str
+    decisionStatus: str
+    recommendationCeiling: str
+    recommendation: str | None
+    scenarioCount: int
+    strategyCount: int
+    strategyIds: tuple[str, ...]
+    strategyContractHashes: tuple[str, ...]
+    strategyRefs: tuple[str, ...]
+    initialStateRefs: tuple[str, ...]
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]
+    blockedReasons: tuple[str, ...]
+    warnings: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "strategyIds", tuple(self.strategyIds))
+        object.__setattr__(self, "strategyContractHashes", tuple(self.strategyContractHashes))
+        object.__setattr__(self, "strategyRefs", tuple(self.strategyRefs))
+        object.__setattr__(self, "initialStateRefs", tuple(self.initialStateRefs))
+        object.__setattr__(self, "caseLedgers", tuple(self.caseLedgers))
+        object.__setattr__(self, "blockedReasons", tuple(self.blockedReasons))
+        object.__setattr__(self, "warnings", tuple(self.warnings))
+
+
 def _dedupe(values: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(value for value in values if value))
+
+
+def _filterRefs(refs: tuple[str, ...], prefixes: tuple[str, ...]) -> tuple[str, ...]:
+    return _dedupe(tuple(ref for ref in refs if ref.startswith(prefixes)))
 
 
 def _validateCases(cases: tuple[OperatingScenarioCase, ...], strategies: tuple[StrategySpec, ...]) -> None:
@@ -175,6 +280,17 @@ def _strategyScores(run: SimulationRun) -> tuple[ScenarioStrategyScore, ...]:
     )
 
 
+def _scoreLeaderStrategies(scores: tuple[ScenarioStrategyScore, ...]) -> tuple[str, ...]:
+    feasible = tuple(score for score in scores if score.feasible)
+    candidates = feasible or scores
+    if not candidates:
+        return ()
+    bestKey = max((score.objectiveScores, -score.breachCount) for score in candidates)
+    return tuple(
+        sorted(score.strategyId for score in candidates if (score.objectiveScores, -score.breachCount) == bestKey)
+    )
+
+
 def _interventionCount(strategies: tuple[StrategySpec, ...]) -> int:
     count = 0
     for strategy in strategies:
@@ -209,6 +325,119 @@ def _boundaryCounts(
             if "conditional" in warning or "unvalidated" in warning or "not admitted" in warning
         ),
     )
+
+
+def _initialStateRefs(inputs: OperatingWorldInputs) -> tuple[str, ...]:
+    refs = list(inputs.refs)
+    if inputs.stateCompilationContractHash:
+        refs.append(f"stateCompilationContract:{inputs.stateCompilationContractHash}")
+    if inputs.stateManifestHash:
+        refs.append(f"stateManifest:{inputs.stateManifestHash}")
+    if inputs.stateVintage is not None:
+        refs.append(f"worldStateVintage:{inputs.stateVintage.artifactId}")
+        refs.append(f"worldStatePayload:{inputs.stateVintage.payloadHash}")
+        refs.extend(inputs.stateVintage.sourceRefs)
+    return _dedupe(tuple(refs))
+
+
+def _strategyRefs(strategies: tuple[StrategySpec, ...]) -> tuple[str, ...]:
+    return _dedupe(tuple(ref for strategy in strategies for ref in strategy.refs))
+
+
+def _caseBlockedReasons(result: OperatingScenarioCaseResult) -> tuple[str, ...]:
+    reasons = []
+    if result.decisionStatus != "comparable":
+        reasons.append(f"decisionStatus:{result.decisionStatus}")
+    if result.recommendation is None:
+        reasons.append("caseRecommendationClosed")
+    if result.counts.explicitAssumptionCount:
+        reasons.append("explicitAssumptionPresent")
+    if result.counts.unvalidatedPathCount:
+        reasons.append("unvalidatedPathPresent")
+    if result.counts.retrospectivePathCount:
+        reasons.append("retrospectiveOnlyPathPresent")
+    if result.counts.admittedPathCount < result.counts.pathCount:
+        reasons.append("pathAdmissionIncomplete")
+    if result.counts.conditionalWarningCount:
+        reasons.append("conditionalWarningPresent")
+    if not result.initialStateAdmissionReceiptId:
+        reasons.append("initialStateAdmissionMissing")
+    if not result.pathAdmissionReceiptId:
+        reasons.append("pathAdmissionMissing")
+    if not result.policyEvaluationCertificateId:
+        reasons.append("policyEvaluationCertificateMissing")
+    return _dedupe(tuple(reasons))
+
+
+def _loopBlockedReasons(
+    comparison: OperatingScenarioComparison,
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+) -> tuple[str, ...]:
+    reasons = []
+    if comparison.decisionStatus != "comparable":
+        reasons.append(f"comparisonDecisionStatus:{comparison.decisionStatus}")
+    if comparison.recommendation is None:
+        reasons.append("automaticRecommendationDisabled")
+    leaderSets = {case.scoreLeaderStrategies for case in caseLedgers}
+    if len(leaderSets) > 1:
+        reasons.append("scenarioScoreLeadersDiverge")
+    reasons.extend(reason for case in caseLedgers for reason in case.blockedReasons)
+    return _dedupe(tuple(reasons))
+
+
+def _caseLedger(
+    case: OperatingScenarioCase,
+    result: OperatingScenarioCaseResult,
+    *,
+    initialStateRefs: tuple[str, ...],
+) -> OneCompanyScenarioCaseLedger:
+    conditionRefs = _dedupe(result.refs)
+    assumptionRefs = _filterRefs(conditionRefs, _ASSUMPTION_REF_PREFIXES)
+    stateRefs = _dedupe((*initialStateRefs, *_filterRefs(conditionRefs, _STATE_REF_PREFIXES)))
+    return OneCompanyScenarioCaseLedger(
+        caseId=result.caseId,
+        label=result.label,
+        factorIds=tuple(factor.variableId for factor in case.pathSet.factorSpecs),
+        conditionRefs=conditionRefs,
+        assumptionRefs=assumptionRefs,
+        stateRefs=stateRefs,
+        pathSetHash=result.pathSetHash,
+        bridgeHashes=result.bridgeHashes,
+        runHash=result.runHash,
+        resultHash=result.resultHash,
+        executableHash=result.executableHash,
+        parameterHash=result.parameterHash,
+        dataVintageHash=result.dataVintageHash,
+        traceRoot=result.traceRoot,
+        traceCount=result.traceCount,
+        retainedTraceCount=result.retainedTraceCount,
+        initialStateAdmissionReceiptId=result.initialStateAdmissionReceiptId,
+        pathAdmissionReceiptId=result.pathAdmissionReceiptId,
+        policyEvaluationCertificateId=result.policyEvaluationCertificateId,
+        decisionStatus=result.decisionStatus,
+        status=result.status,
+        weightLabel=result.weightLabel,
+        recommendation=result.recommendation,
+        paretoStrategies=result.paretoStrategies,
+        scoreLeaderStrategies=_scoreLeaderStrategies(result.strategyScores),
+        strategyScores=result.strategyScores,
+        counts=result.counts,
+        blockedReasons=_caseBlockedReasons(result),
+        warnings=result.warnings,
+    )
+
+
+def _validateOneCompanyLoop(
+    entityId: str,
+    cases: tuple[OperatingScenarioCase, ...],
+    strategies: tuple[StrategySpec, ...],
+) -> None:
+    if not entityId:
+        raise ScenarioCompositionError("one-company scenario loop needs entityId")
+    if len(cases) != 2:
+        raise ScenarioCompositionError("one-company scenario loop needs exactly two scenario cases")
+    if len(strategies) != 2:
+        raise ScenarioCompositionError("one-company scenario loop needs exactly two strategies")
 
 
 def _runCase(
@@ -264,6 +493,15 @@ def _runCase(
         bridgeHashes=bridgeHashes,
         runHash=run.runHash,
         resultHash=run.resultHash,
+        executableHash=run.executableHash,
+        parameterHash=run.parameterHash,
+        dataVintageHash=run.dataVintageHash,
+        traceRoot=run.traceRoot,
+        traceCount=run.traceCount,
+        retainedTraceCount=run.retainedTraceCount,
+        initialStateAdmissionReceiptId=run.initialStateAdmissionReceiptId,
+        pathAdmissionReceiptId=run.pathAdmissionReceiptId,
+        policyEvaluationCertificateId=run.policyEvaluationCertificateId,
         decisionStatus=run.decisionStatus,
         status=run.status,
         weightLabel=run.weightLabel,
@@ -369,4 +607,94 @@ def compareOperatingScenarioCases(
         strategyIds=tuple(strategy.strategyId for strategy in strategyTuple),
         strategyContractHashes=strategyContracts,
         warnings=cleanWarnings,
+    )
+
+
+def compareOneCompanyTwoScenarioStrategies(
+    entityId: str,
+    inputs: OperatingWorldInputs,
+    cases: tuple[OperatingScenarioCase, ...],
+    strategies: tuple[StrategySpec, ...],
+    *,
+    debtLimit: float,
+    maxFinancing: float,
+    maxInvestment: float,
+    traceLimit: int | None = None,
+) -> OneCompanyScenarioLoop:
+    """Run the minimal PRD vertical loop for one company.
+
+    Args:
+        entityId: Company or security identifier for the experiment subject.
+        inputs: Initial operating state and state lineage refs.
+        cases: Exactly two named scenario cases.
+        strategies: Exactly two shared strategies to compare in every case.
+        debtLimit: Hard debt constraint passed to the operating world.
+        maxFinancing: Per-step borrow and repay bound.
+        maxInvestment: Per-step capacity investment bound.
+        traceLimit: Optional retained trace cap per case.
+
+    Returns:
+        ``OneCompanyScenarioLoop`` containing conditions, assumptions, state refs,
+        strategy scores, and recommendation blocking reasons in one object.
+
+    Raises:
+        ScenarioCompositionError: If the loop is not one entity, two cases, and
+        two strategies, or if the underlying composition is unsafe.
+
+    Example:
+        ``loop = compareOneCompanyTwoScenarioStrategies("005930", inputs, cases, strategies, debtLimit=1000, maxFinancing=100, maxInvestment=100)``
+    """
+
+    caseTuple = tuple(cases)
+    strategyTuple = tuple(strategies)
+    _validateOneCompanyLoop(entityId, caseTuple, strategyTuple)
+    comparison = compareOperatingScenarioCases(
+        inputs,
+        caseTuple,
+        strategyTuple,
+        debtLimit=debtLimit,
+        maxFinancing=maxFinancing,
+        maxInvestment=maxInvestment,
+        traceLimit=traceLimit,
+    )
+    initialRefs = _initialStateRefs(inputs)
+    caseLedgers = tuple(
+        _caseLedger(case, result, initialStateRefs=initialRefs)
+        for case, result in zip(caseTuple, comparison.caseResults, strict=True)
+    )
+    strategyRefs = _strategyRefs(strategyTuple)
+    blockedReasons = _loopBlockedReasons(comparison, caseLedgers)
+    warnings = tuple(sorted(set((*comparison.warnings, *blockedReasons))))
+    loopPayload = {
+        "schemaVersion": ONE_COMPANY_SCENARIO_LOOP_VERSION,
+        "entityId": entityId,
+        "comparisonHash": comparison.comparisonHash,
+        "decisionStatus": comparison.decisionStatus,
+        "recommendationCeiling": comparison.decisionStatus,
+        "recommendation": comparison.recommendation,
+        "strategyIds": comparison.strategyIds,
+        "strategyContractHashes": comparison.strategyContractHashes,
+        "strategyRefs": strategyRefs,
+        "initialStateRefs": initialRefs,
+        "caseLedgers": caseLedgers,
+        "blockedReasons": blockedReasons,
+        "warnings": warnings,
+    }
+    return OneCompanyScenarioLoop(
+        loopHash=canonicalPayloadHash(loopPayload),
+        schemaVersion=ONE_COMPANY_SCENARIO_LOOP_VERSION,
+        entityId=entityId,
+        comparisonHash=comparison.comparisonHash,
+        decisionStatus=comparison.decisionStatus,
+        recommendationCeiling=comparison.decisionStatus,
+        recommendation=comparison.recommendation,
+        scenarioCount=len(caseLedgers),
+        strategyCount=len(strategyTuple),
+        strategyIds=comparison.strategyIds,
+        strategyContractHashes=comparison.strategyContractHashes,
+        strategyRefs=strategyRefs,
+        initialStateRefs=initialRefs,
+        caseLedgers=caseLedgers,
+        blockedReasons=blockedReasons,
+        warnings=warnings,
     )
