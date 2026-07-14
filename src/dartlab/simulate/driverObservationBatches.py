@@ -22,6 +22,13 @@ DRIVER_OBSERVATION_BATCH_VERSION = "driver-observation-lane-batch-v1"
 _FORBIDDEN_EVIDENCE_ROLES = {"explicitAssumption", "derivedFromAssumption"}
 _CONDITIONAL_REVISION_POLICIES = {"latestRetained", "revisedHistory"}
 _CONDITIONAL_COVERAGES = {"periodOnly", "latestOnly"}
+_FORBIDDEN_PRICE_RETURN_SIGNALS = {"marketPriceChange", "priceChange", "productPriceChange"}
+_OBSERVATION_FACTOR_TIMING_COMPATIBILITY = {
+    "change": {"flow", "ratio"},
+    "innovation": {"flow", "ratio"},
+    "level": {"stock"},
+    "rate": {"ratio"},
+}
 
 
 class DriverObservationBatchError(ValueError):
@@ -225,6 +232,106 @@ def _resolveSourceReceipt(
         expectedArtifactHash=sourceArtifactHash,
         expectedKnowledgeAsOf=knowledgeAsOf,
         requireExact=requireExact,
+    )
+
+
+def _validatePriceReceipt(
+    receipt: AdmissionReceipt,
+    *,
+    expectedArtifactHash: str,
+    expectedKnowledgeAsOf: str,
+    label: str,
+) -> None:
+    if (
+        receipt.kind != "dataVintage"
+        or receipt.status != "verifiedVintage"
+        or receipt.revisionPolicy != "asKnown"
+        or receipt.coverage != "asOfExact"
+        or receipt.artifactHash != expectedArtifactHash
+        or receipt.subjectHash != expectedArtifactHash
+        or receipt.knowledgeAsOf != expectedKnowledgeAsOf
+    ):
+        raise DriverObservationBatchError(f"price {label} receipt does not match the price leg")
+
+
+def _priceReturnRevisionId(
+    *,
+    previousRevisionId: str,
+    currentRevisionId: str,
+    frequency: str,
+    returnWindow: int,
+) -> str:
+    return f"priceReturn:{previousRevisionId}:{currentRevisionId}:{frequency}:{returnWindow}"
+
+
+def _priceReturnPayload(
+    *,
+    providerId: str,
+    datasetId: str,
+    entityId: str,
+    signalId: str,
+    frequency: str,
+    returnWindow: int,
+    adjustmentPolicyHash: str,
+    previousLeg: dict,
+    currentLeg: dict,
+    eventAt: str,
+    availableAt: str,
+    value: float,
+) -> dict:
+    return {
+        "schemaVersion": DRIVER_OBSERVATION_BATCH_VERSION,
+        "artifactKind": "priceDerivedReturn",
+        "providerId": providerId,
+        "datasetId": datasetId,
+        "entityId": entityId,
+        "signalId": signalId,
+        "unit": "simpleReturn",
+        "frequency": frequency,
+        "observationTiming": "ratio",
+        "factorTiming": "innovation",
+        "transformId": f"price-simple-return-{frequency}-{returnWindow}-v1",
+        "formula": "simpleReturn=currentClose/previousClose-1",
+        "returnWindow": returnWindow,
+        "adjustmentPolicyHash": adjustmentPolicyHash,
+        "eventAt": eventAt,
+        "availableAt": availableAt,
+        "value": value,
+        "previousLeg": previousLeg,
+        "currentLeg": currentLeg,
+    }
+
+
+def _priceReturnArtifactHash(
+    *,
+    providerId: str,
+    datasetId: str,
+    entityId: str,
+    signalId: str,
+    frequency: str,
+    returnWindow: int,
+    adjustmentPolicyHash: str,
+    previousLeg: dict,
+    currentLeg: dict,
+    eventAt: str,
+    availableAt: str,
+    value: float,
+) -> str:
+    return canonicalPayloadHash(
+        _priceReturnPayload(
+            providerId=providerId,
+            datasetId=datasetId,
+            entityId=entityId,
+            signalId=signalId,
+            frequency=frequency,
+            returnWindow=returnWindow,
+            adjustmentPolicyHash=adjustmentPolicyHash,
+            previousLeg=previousLeg,
+            currentLeg=currentLeg,
+            eventAt=eventAt,
+            availableAt=availableAt,
+            value=value,
+        )
     )
 
 
@@ -561,6 +668,298 @@ def buildFilingMetricDriverObservationBatch(
     )
 
 
+def buildPriceReturnDriverObservationBatch(
+    priceDaily: pl.DataFrame,
+    *,
+    code: str,
+    knowledgeAsOf: str,
+    sourceReceipts: Mapping[str, AdmissionReceipt],
+    returnReceipts: Mapping[str, AdmissionReceipt],
+    sourceRefs: tuple[str, ...],
+    providerId: str = "gov",
+    datasetId: str = "gov.prices.returns",
+    entityId: str = "",
+    dateColumn: str = "date",
+    codeColumn: str = "code",
+    closeColumn: str = "close",
+    availableAtColumn: str = "availableAt",
+    revisionIdColumn: str = "revisionId",
+    sourceArtifactHashColumn: str = "sourceArtifactHash",
+    signalId: str = "equityReturnShock",
+    sourceArtifactKind: str = "priceDerivedReturn",
+    sourceArtifactId: str = "",
+    frequency: str = "day",
+    returnWindow: int = 1,
+    adjustmentPolicyHash: str = "",
+) -> ProviderObservationBatch:
+    """Build an exact deterministic price return observation batch.
+
+    Args:
+        priceDaily: Daily price rows with code, event date, availability, revision id, close, and row hash.
+        code: Security identifier to filter.
+        knowledgeAsOf: Batch cutoff. Rows after this cutoff are excluded.
+        sourceReceipts: Exact price-leg ``dataVintage`` receipts keyed by row revision id.
+        returnReceipts: Exact derived-return ``dataVintage`` receipts keyed by deterministic return revision id.
+        sourceRefs: Provider, query, adjustment-policy, and artifact references.
+        providerId: Price provider identity.
+        datasetId: Derived return dataset identity.
+        entityId: Optional entity id. Defaults to ``code``.
+        dateColumn: Price event date column.
+        codeColumn: Security id column.
+        closeColumn: Close or adjusted-close column.
+        availableAtColumn: Explicit row availability column. Required for exact price returns.
+        revisionIdColumn: Unique source row revision id column.
+        sourceArtifactHashColumn: Row source artifact hash column for the close leg.
+        signalId: Output factor id. Must remain an equity/security factor.
+        sourceArtifactKind: Derived return artifact kind.
+        sourceArtifactId: Optional derived return artifact identity.
+        frequency: ``day`` or ``week`` return grid.
+        returnWindow: Positive lag window in return-grid steps.
+        adjustmentPolicyHash: Hash of the close adjustment policy.
+
+    Returns:
+        Unsigned exact ``ProviderObservationBatch`` containing deterministic derived returns.
+
+    Raises:
+        DriverObservationBatchError: If price timing, lineage, return receipt, or factor meaning is unsafe.
+
+    Example:
+        ``batch = buildPriceReturnDriverObservationBatch(prices, code="005930", sourceReceipts=legs, returnReceipts=returns, sourceRefs=("gov:price",), adjustmentPolicyHash=hash)``
+    """
+
+    if isinstance(priceDaily, DriverHistorySource):
+        raise DriverObservationBatchError("DriverHistorySource cannot be promoted to price observations")
+    if not code or not sourceRefs:
+        raise DriverObservationBatchError("price return observation needs code and source refs")
+    if signalId in _FORBIDDEN_PRICE_RETURN_SIGNALS:
+        raise DriverObservationBatchError("price return observation signal cannot be an operating shock")
+    if frequency not in {"day", "week"} or returnWindow < 1:
+        raise DriverObservationBatchError("price return observation step contract is invalid")
+    if not availableAtColumn or not sourceArtifactHashColumn or not revisionIdColumn:
+        raise DriverObservationBatchError("exact price return observation needs explicit availability and row hashes")
+    if not sourceReceipts or not returnReceipts:
+        raise DriverObservationBatchError("exact price return observation needs price leg and derived return receipts")
+    if not _validDigest(adjustmentPolicyHash):
+        raise DriverObservationBatchError("price return adjustment policy hash is invalid")
+    required = {dateColumn, codeColumn, closeColumn, availableAtColumn, revisionIdColumn, sourceArtifactHashColumn}
+    if not required.issubset(priceDaily.columns):
+        raise DriverObservationBatchError(
+            f"price return observation missing columns: {sorted(required - set(priceDaily.columns))}"
+        )
+    cutoff = _dateText(knowledgeAsOf, "knowledgeAsOf")
+    entity = entityId or str(code)
+    base = (
+        priceDaily.with_columns(
+            _dateExpr(dateColumn).alias("__event"),
+            _dateExpr(availableAtColumn).alias("__available"),
+            pl.col(closeColumn).cast(pl.Float64, strict=False).alias("__close"),
+            pl.col(codeColumn).cast(pl.Utf8).alias("__code"),
+            pl.col(revisionIdColumn).cast(pl.Utf8).str.strip_chars().alias("__revisionId"),
+            pl.col(sourceArtifactHashColumn)
+            .cast(pl.Utf8)
+            .str.strip_chars()
+            .str.to_lowercase()
+            .alias("__sourceArtifactHash"),
+        )
+        .filter((pl.col("__code") == str(code)) & (pl.col("__event") <= cutoff) & (pl.col("__available") <= cutoff))
+        .select("__event", "__available", "__close", "__revisionId", "__sourceArtifactHash")
+        .sort(["__event", "__available", "__revisionId"])
+    )
+    malformed = base.filter(
+        pl.col("__event").is_null()
+        | pl.col("__available").is_null()
+        | pl.col("__close").is_null()
+        | pl.col("__revisionId").is_null()
+        | (pl.col("__revisionId").str.len_chars() == 0)
+        | pl.col("__sourceArtifactHash").is_null()
+        | (pl.col("__sourceArtifactHash").str.len_chars() != 64)
+        | (pl.col("__event").str.len_chars() != 8)
+        | (pl.col("__available").str.len_chars() != 8)
+        | ~pl.col("__sourceArtifactHash").str.contains(r"^[0-9a-f]{64}$")
+        | ~pl.col("__event").str.contains(r"^\d{8}$")
+        | ~pl.col("__available").str.contains(r"^\d{8}$")
+    )
+    if malformed.height:
+        raise DriverObservationBatchError("price return observation contains malformed rows")
+    if base.height == 0:
+        raise DriverObservationBatchError("price return observation has no rows available by knowledgeAsOf")
+    if base.filter(pl.col("__event") > pl.col("__available")).height:
+        raise DriverObservationBatchError("price return observation event time cannot be after availability")
+    if base.group_by("__event").len().filter(pl.col("len") > 1).height:
+        raise DriverObservationBatchError("price return observation has duplicate price dates")
+    if base.filter(pl.col("__close") <= 0).height:
+        raise DriverObservationBatchError("price return observation requires positive close values")
+    if any(not math.isfinite(float(value)) for value in base["__close"].to_list()):
+        raise DriverObservationBatchError("price return observation close values must be finite")
+    levels = base
+    if frequency == "week":
+        levels = (
+            levels.with_columns(pl.col("__event").str.to_date("%Y%m%d").alias("__date"))
+            .with_columns((pl.col("__date").dt.iso_year() * 100 + pl.col("__date").dt.week()).alias("__week"))
+            .group_by("__week")
+            .agg(
+                pl.col("__event").sort_by("__event").last().alias("__event"),
+                pl.col("__available").sort_by("__event").last().alias("__available"),
+                pl.col("__close").sort_by("__event").last().alias("__close"),
+                pl.col("__revisionId").sort_by("__event").last().alias("__revisionId"),
+                pl.col("__sourceArtifactHash").sort_by("__event").last().alias("__sourceArtifactHash"),
+            )
+            .sort("__event")
+        )
+    records = levels.to_dicts()
+    rows = []
+    for index in range(returnWindow, len(records)):
+        previous = records[index - returnWindow]
+        current = records[index]
+        previousRevisionId = str(previous["__revisionId"])
+        currentRevisionId = str(current["__revisionId"])
+        previousReceipt = sourceReceipts.get(previousRevisionId)
+        currentReceipt = sourceReceipts.get(currentRevisionId)
+        if previousReceipt is None or currentReceipt is None:
+            raise DriverObservationBatchError("price return observation needs both price leg source receipts")
+        previousAvailable = _dateText(previous["__available"], "previous.availableAt")
+        currentAvailable = _dateText(current["__available"], "current.availableAt")
+        _validatePriceReceipt(
+            previousReceipt,
+            expectedArtifactHash=str(previous["__sourceArtifactHash"]),
+            expectedKnowledgeAsOf=previousAvailable,
+            label="previous leg",
+        )
+        _validatePriceReceipt(
+            currentReceipt,
+            expectedArtifactHash=str(current["__sourceArtifactHash"]),
+            expectedKnowledgeAsOf=currentAvailable,
+            label="current leg",
+        )
+        previousClose = _finite(previous["__close"], "previousClose")
+        currentClose = _finite(current["__close"], "currentClose")
+        value = _finite(currentClose / previousClose - 1.0, signalId)
+        availableAt = max(previousAvailable, currentAvailable)
+        eventAt = _dateText(current["__event"], "eventAt")
+        returnRevisionId = _priceReturnRevisionId(
+            previousRevisionId=previousRevisionId,
+            currentRevisionId=currentRevisionId,
+            frequency=frequency,
+            returnWindow=returnWindow,
+        )
+        previousLeg = {
+            "eventAt": _dateText(previous["__event"], "previous.eventAt"),
+            "availableAt": previousAvailable,
+            "revisionId": previousRevisionId,
+            "close": previousClose,
+            "sourceArtifactHash": str(previous["__sourceArtifactHash"]),
+            "receiptId": previousReceipt.receiptId,
+        }
+        currentLeg = {
+            "eventAt": eventAt,
+            "availableAt": currentAvailable,
+            "revisionId": currentRevisionId,
+            "close": currentClose,
+            "sourceArtifactHash": str(current["__sourceArtifactHash"]),
+            "receiptId": currentReceipt.receiptId,
+        }
+        derivedHash = _priceReturnArtifactHash(
+            providerId=providerId,
+            datasetId=datasetId,
+            entityId=entity,
+            signalId=signalId,
+            frequency=frequency,
+            returnWindow=returnWindow,
+            adjustmentPolicyHash=adjustmentPolicyHash,
+            previousLeg=previousLeg,
+            currentLeg=currentLeg,
+            eventAt=eventAt,
+            availableAt=availableAt,
+            value=value,
+        )
+        returnReceipt = returnReceipts.get(returnRevisionId)
+        if returnReceipt is None:
+            raise DriverObservationBatchError("exact price return observation needs derived return receipts")
+        _validatePriceReceipt(
+            returnReceipt,
+            expectedArtifactHash=derivedHash,
+            expectedKnowledgeAsOf=availableAt,
+            label="derived return",
+        )
+        if returnReceipt.parentReceiptIds != tuple(sorted((previousReceipt.receiptId, currentReceipt.receiptId))):
+            raise DriverObservationBatchError("price return receipt must bind both price legs")
+        rows.append(
+            {
+                "eventTime": eventAt,
+                "availableAt": availableAt,
+                "knowledgeAsOf": availableAt,
+                "revisionId": returnRevisionId,
+                "sourceArtifactHash": derivedHash,
+                signalId: value,
+            }
+        )
+    if not rows:
+        raise DriverObservationBatchError("price return observation has insufficient rows for returnWindow")
+    returnPanel = pl.DataFrame(rows)
+    laneHash = canonicalPayloadHash(
+        {
+            "schemaVersion": DRIVER_OBSERVATION_BATCH_VERSION,
+            "providerId": providerId,
+            "datasetId": datasetId,
+            "entityId": entity,
+            "signalId": signalId,
+            "frequency": frequency,
+            "returnWindow": returnWindow,
+            "adjustmentPolicyHash": adjustmentPolicyHash,
+            "rows": rows,
+        }
+    )
+    refs = _dedupe(
+        (
+            *sourceRefs,
+            "simulate.driverObservationBatches:buildPriceReturnDriverObservationBatch",
+            f"priceCode:{code}",
+            f"dateColumn:{dateColumn}",
+            f"availableAtColumn:{availableAtColumn}",
+            f"revisionIdColumn:{revisionIdColumn}",
+            f"sourceArtifactHashColumn:{sourceArtifactHashColumn}",
+            f"returnWindow:{returnWindow}",
+            f"adjustmentPolicyHash:{adjustmentPolicyHash}",
+            "equityReturnIsSecurityMarketFactor",
+            "equityReturnNotOperatingPrice",
+            "coefficientRequiredForOperatingPriceShock",
+        )
+    )
+    return buildDriverObservationBatchFromPanel(
+        returnPanel,
+        DriverObservationLaneSpec(
+            providerId=providerId,
+            datasetId=datasetId,
+            entityId=entity,
+            knowledgeAsOf=knowledgeAsOf,
+            eventTimeColumn="eventTime",
+            availableAtColumn="availableAt",
+            revisionIdColumn="revisionId",
+            sourceArtifactKind=sourceArtifactKind,
+            sourceArtifactId=sourceArtifactId or f"{entity}:{signalId}:{frequency}:{returnWindow}",
+            sourceArtifactHash=laneHash,
+            signalSpecs=(
+                DriverObservationSignalSpec(
+                    signalId,
+                    signalId,
+                    "simpleReturn",
+                    frequency,
+                    "ratio",
+                    f"price-simple-return-{frequency}-{returnWindow}-v1",
+                    "deterministicDerived",
+                    adjustmentPolicyHash,
+                ),
+            ),
+            sourceRefs=refs,
+            knowledgeAsOfColumn="knowledgeAsOf",
+            sourceArtifactHashColumn="sourceArtifactHash",
+            eventDateRole="eventThrough",
+        ),
+        sourceReceipts=returnReceipts,
+        requireExact=True,
+    )
+
+
 def driverHistorySourceFromProviderObservationBatch(
     batch: ProviderObservationBatch,
     *,
@@ -612,6 +1011,7 @@ def driverHistorySourceFromProviderObservationBatch(
         if (
             observation.unit != factor.unit
             or observation.frequency != factor.frequency
+            or observation.timing not in _OBSERVATION_FACTOR_TIMING_COMPATIBILITY.get(factor.timing, set())
             or observation.transformId != factor.transformId
         ):
             raise DriverObservationBatchError("provider observation projection meaning drift")

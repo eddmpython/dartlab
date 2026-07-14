@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from hashlib import sha256
+from typing import Mapping
 
 import polars as pl
 import pytest
@@ -31,12 +32,16 @@ from dartlab.simulate.driverObservationBatches import (
     DriverObservationBatchError,
     DriverObservationLaneSpec,
     DriverObservationSignalSpec,
+    _priceReturnPayload,
+    _priceReturnRevisionId,
     buildDriverObservationBatchFromPanel,
     buildFilingMetricDriverObservationBatch,
+    buildPriceReturnDriverObservationBatch,
     driverHistorySourceFromProviderObservationBatch,
 )
 from dartlab.simulate.driverObservationFrames import (
     DriverCoefficientObservationFrameSpec,
+    DriverObservationFrameError,
     buildDriverCoefficientObservationFrame,
 )
 from dartlab.simulate.driverPaths import DriverCard, DriverFactorSpec, DriverHistorySource, buildDriverPathSet
@@ -92,6 +97,43 @@ def _sourceReceipt(context, payload: dict, *, knowledgeAsOf: str):
     )
 
 
+def _sourceReceiptWithParents(
+    context,
+    payload: dict,
+    *,
+    knowledgeAsOf: str,
+    parentReceiptIds: tuple[str, ...],
+    frequency: str = "day",
+):
+    database, artifacts, privateBytes, trusted, _verifier = context
+    content = canonicalPayloadBytes(payload)
+    artifactHash = putAdmissionArtifact(artifacts, content)
+    return issueAdmissionReceipt(
+        database,
+        artifacts,
+        privateKey=privateBytes,
+        kind="dataVintage",
+        subjectHash=artifactHash,
+        artifactHash=artifactHash,
+        parentReceiptIds=tuple(sorted(parentReceiptIds)),
+        ruleId="price-derived-return-v1",
+        ruleVersion="1",
+        ruleHash=sha256(b"price-derived-return-v1").hexdigest(),
+        issuerId="lane-issuer",
+        issuerKeyId="lane-key",
+        issuerExecutableHash=sha256(b"price-derived-return-issuer-v1").hexdigest(),
+        knowledgeAsOf=knowledgeAsOf,
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        frequency=frequency,
+        stepSpan=1,
+        maxAdmittedStep=0,
+        status="verifiedVintage",
+        issuedAt=f"{knowledgeAsOf}T000000Z",
+        trustedIssuers=trusted,
+    )
+
+
 def _attachRowSourceReceipts(
     context,
     panel: pl.DataFrame,
@@ -117,6 +159,96 @@ def _attachRowSourceReceipts(
         ),
         receipts,
     )
+
+
+def _pricePanel() -> pl.DataFrame:
+    return pl.DataFrame(
+        {
+            "code": ["005930", "005930", "005930", "005930"],
+            "date": ["20200101", "20200102", "20200103", "20200104"],
+            "availableAt": ["20200102", "20200103", "20200104", "20200105"],
+            "revisionId": ["p0", "p1", "p2", "p3"],
+            "close": [100.0, 110.0, 99.0, 108.9],
+        }
+    )
+
+
+def _attachPriceSourceReceipts(context, panel: pl.DataFrame) -> tuple[pl.DataFrame, dict[str, object]]:
+    receipts = {}
+    artifactHashes = []
+    for row in panel.to_dicts():
+        receipt = _sourceReceipt(context, {"priceRow": row}, knowledgeAsOf=str(row["availableAt"]))
+        receipts[str(row["revisionId"])] = receipt
+        artifactHashes.append(receipt.artifactHash)
+    return panel.with_columns(pl.Series("sourceArtifactHash", artifactHashes)), receipts
+
+
+def _priceReturnReceipts(
+    context,
+    panel: pl.DataFrame,
+    priceReceipts: Mapping[str, object],
+    *,
+    signalId: str = "equityReturnShock",
+    frequency: str = "day",
+    returnWindow: int = 1,
+    adjustmentPolicyHash: str | None = None,
+    parentOverride: tuple[str, ...] | None = None,
+):
+    policyHash = adjustmentPolicyHash or sha256(b"split-adjusted-close-policy-v1").hexdigest()
+    receipts = {}
+    rows = panel.sort("date").to_dicts()
+    for index in range(returnWindow, len(rows)):
+        previous = rows[index - returnWindow]
+        current = rows[index]
+        previousReceipt = priceReceipts[str(previous["revisionId"])]
+        currentReceipt = priceReceipts[str(current["revisionId"])]
+        value = float(current["close"]) / float(previous["close"]) - 1.0
+        availableAt = max(str(previous["availableAt"]), str(current["availableAt"]))
+        revisionId = _priceReturnRevisionId(
+            previousRevisionId=str(previous["revisionId"]),
+            currentRevisionId=str(current["revisionId"]),
+            frequency=frequency,
+            returnWindow=returnWindow,
+        )
+        previousLeg = {
+            "eventAt": str(previous["date"]),
+            "availableAt": str(previous["availableAt"]),
+            "revisionId": str(previous["revisionId"]),
+            "close": float(previous["close"]),
+            "sourceArtifactHash": str(previous["sourceArtifactHash"]),
+            "receiptId": previousReceipt.receiptId,
+        }
+        currentLeg = {
+            "eventAt": str(current["date"]),
+            "availableAt": str(current["availableAt"]),
+            "revisionId": str(current["revisionId"]),
+            "close": float(current["close"]),
+            "sourceArtifactHash": str(current["sourceArtifactHash"]),
+            "receiptId": currentReceipt.receiptId,
+        }
+        payload = _priceReturnPayload(
+            providerId="gov",
+            datasetId="gov.prices.returns",
+            entityId="005930",
+            signalId=signalId,
+            frequency=frequency,
+            returnWindow=returnWindow,
+            adjustmentPolicyHash=policyHash,
+            previousLeg=previousLeg,
+            currentLeg=currentLeg,
+            eventAt=str(current["date"]),
+            availableAt=availableAt,
+            value=value,
+        )
+        parents = parentOverride or (previousReceipt.receiptId, currentReceipt.receiptId)
+        receipts[revisionId] = _sourceReceiptWithParents(
+            context,
+            payload,
+            knowledgeAsOf=availableAt,
+            parentReceiptIds=parents,
+            frequency=frequency,
+        )
+    return receipts, policyHash
 
 
 def _panel(
@@ -436,6 +568,228 @@ def testDriverObservationLaneBatchFeedsCoefficientAdmission(tmp_path) -> None:
     )
     assert report.status == "oosEligible"
     assert verified.sourceParentReceiptIds == (fitSource.batchReceiptId, oosSource.batchReceiptId)
+
+
+def testPriceReturnObservationBatchBuildsExactProviderBatchAndProjection(tmp_path) -> None:
+    context = _context(tmp_path)
+    pricePanel, priceReceipts = _attachPriceSourceReceipts(context, _pricePanel())
+    returnReceipts, adjustmentPolicyHash = _priceReturnReceipts(context, pricePanel, priceReceipts)
+    batch = buildPriceReturnDriverObservationBatch(
+        pricePanel,
+        code="005930",
+        knowledgeAsOf="20200131",
+        sourceReceipts=priceReceipts,
+        returnReceipts=returnReceipts,
+        sourceRefs=("source:gov-price-daily", "adjustment:split-adjusted-close"),
+        adjustmentPolicyHash=adjustmentPolicyHash,
+    )
+    signedBatch = issueProviderObservationBatch(
+        batch,
+        context[0],
+        context[1],
+        privateKey=context[2],
+        issuerId="lane-issuer",
+        issuerKeyId="lane-key",
+        issuedAt="20200131T000000Z",
+        trustedIssuers=context[3],
+    )
+    source = driverHistorySourceFromProviderObservationBatch(
+        signedBatch,
+        cardId="equity-return-history",
+        factors=(
+            DriverFactorSpec(
+                "equityReturnShock",
+                "simpleReturn",
+                "day",
+                "innovation",
+                "price-simple-return-day-1-v1",
+            ),
+        ),
+    )
+    assert signedBatch.historyStatus == "exact"
+    assert signedBatch.sourceReceiptIds == tuple(sorted(receipt.receiptId for receipt in returnReceipts.values()))
+    assert [item.evidenceRole for item in signedBatch.observations] == ["deterministicDerived"] * 3
+    assert signedBatch.observations[0].availableAt == "20200103"
+    assert (
+        signedBatch.observations[0].vintage.receiptId
+        == returnReceipts[
+            _priceReturnRevisionId(previousRevisionId="p0", currentRevisionId="p1", frequency="day", returnWindow=1)
+        ].receiptId
+    )
+    assert any(
+        ref.startswith("equityReturnNotOperatingPrice:") for ref in signedBatch.observations[0].vintage.sourceRefs
+    )
+    assert source.card.historyStatus == "asKnown"
+    assert source.panel["equityReturnShock"].to_list() == pytest.approx([0.10, -0.10, 0.10])
+    with pytest.raises(DriverObservationBatchError, match="meaning drift"):
+        driverHistorySourceFromProviderObservationBatch(
+            signedBatch,
+            cardId="bad-equity-return-history",
+            factors=(
+                DriverFactorSpec(
+                    "equityReturnShock",
+                    "simpleReturn",
+                    "day",
+                    "level",
+                    "price-simple-return-day-1-v1",
+                ),
+            ),
+        )
+
+
+def testPriceReturnObservationBatchBindsBothPriceLegsAndDerivedArtifact(tmp_path) -> None:
+    context = _context(tmp_path)
+    pricePanel, priceReceipts = _attachPriceSourceReceipts(context, _pricePanel())
+    wrongParents = (priceReceipts["p1"].receiptId,)
+    badReturnReceipts, adjustmentPolicyHash = _priceReturnReceipts(
+        context,
+        pricePanel,
+        priceReceipts,
+        parentOverride=wrongParents,
+    )
+    with pytest.raises(DriverObservationBatchError, match="bind both price legs"):
+        buildPriceReturnDriverObservationBatch(
+            pricePanel,
+            code="005930",
+            knowledgeAsOf="20200131",
+            sourceReceipts=priceReceipts,
+            returnReceipts=badReturnReceipts,
+            sourceRefs=("source:gov-price-daily",),
+            adjustmentPolicyHash=adjustmentPolicyHash,
+        )
+    returnReceipts, adjustmentPolicyHash = _priceReturnReceipts(context, pricePanel, priceReceipts)
+    tamperedClose = pricePanel.with_columns(
+        pl.when(pl.col("revisionId") == "p0").then(90.0).otherwise(pl.col("close")).alias("close")
+    )
+    with pytest.raises(DriverObservationBatchError, match="derived return receipt"):
+        buildPriceReturnDriverObservationBatch(
+            tamperedClose,
+            code="005930",
+            knowledgeAsOf="20200131",
+            sourceReceipts=priceReceipts,
+            returnReceipts=returnReceipts,
+            sourceRefs=("source:gov-price-daily",),
+            adjustmentPolicyHash=adjustmentPolicyHash,
+        )
+
+
+def testPriceReturnObservationBatchRejectsUnsafeExactInputs(tmp_path) -> None:
+    context = _context(tmp_path)
+    pricePanel, priceReceipts = _attachPriceSourceReceipts(context, _pricePanel())
+    returnReceipts, adjustmentPolicyHash = _priceReturnReceipts(context, pricePanel, priceReceipts)
+    with pytest.raises(DriverObservationBatchError, match="operating shock"):
+        buildPriceReturnDriverObservationBatch(
+            pricePanel,
+            code="005930",
+            knowledgeAsOf="20200131",
+            sourceReceipts=priceReceipts,
+            returnReceipts=returnReceipts,
+            sourceRefs=("source:gov-price-daily",),
+            signalId="marketPriceChange",
+            adjustmentPolicyHash=adjustmentPolicyHash,
+        )
+    with pytest.raises(DriverObservationBatchError, match="explicit availability"):
+        buildPriceReturnDriverObservationBatch(
+            pricePanel,
+            code="005930",
+            knowledgeAsOf="20200131",
+            sourceReceipts=priceReceipts,
+            returnReceipts=returnReceipts,
+            sourceRefs=("source:gov-price-daily",),
+            availableAtColumn="",
+            adjustmentPolicyHash=adjustmentPolicyHash,
+        )
+    duplicateDate = pl.concat([pricePanel, pricePanel.head(1)])
+    with pytest.raises(DriverObservationBatchError, match="duplicate price dates"):
+        buildPriceReturnDriverObservationBatch(
+            duplicateDate,
+            code="005930",
+            knowledgeAsOf="20200131",
+            sourceReceipts=priceReceipts,
+            returnReceipts=returnReceipts,
+            sourceRefs=("source:gov-price-daily",),
+            adjustmentPolicyHash=adjustmentPolicyHash,
+        )
+    badClose = pricePanel.with_columns(
+        pl.when(pl.col("revisionId") == "p1").then(0.0).otherwise(pl.col("close")).alias("close")
+    )
+    with pytest.raises(DriverObservationBatchError, match="positive close"):
+        buildPriceReturnDriverObservationBatch(
+            badClose,
+            code="005930",
+            knowledgeAsOf="20200131",
+            sourceReceipts=priceReceipts,
+            returnReceipts=returnReceipts,
+            sourceRefs=("source:gov-price-daily",),
+            adjustmentPolicyHash=adjustmentPolicyHash,
+        )
+    with pytest.raises(DriverObservationBatchError, match="derived return receipts"):
+        buildPriceReturnDriverObservationBatch(
+            pricePanel,
+            code="005930",
+            knowledgeAsOf="20200131",
+            sourceReceipts=priceReceipts,
+            returnReceipts={},
+            sourceRefs=("source:gov-price-daily",),
+            adjustmentPolicyHash=adjustmentPolicyHash,
+        )
+
+
+def testPriceReturnObservationBatchCanServeAsDeterministicForwardLabel(tmp_path) -> None:
+    context = _context(tmp_path)
+    pricePanel, priceReceipts = _attachPriceSourceReceipts(context, _pricePanel())
+    returnReceipts, adjustmentPolicyHash = _priceReturnReceipts(context, pricePanel, priceReceipts)
+    batch = buildPriceReturnDriverObservationBatch(
+        pricePanel,
+        code="005930",
+        knowledgeAsOf="20200131",
+        sourceReceipts=priceReceipts,
+        returnReceipts=returnReceipts,
+        sourceRefs=("source:gov-price-daily",),
+        adjustmentPolicyHash=adjustmentPolicyHash,
+    )
+    signedBatch = issueProviderObservationBatch(
+        batch,
+        context[0],
+        context[1],
+        privateKey=context[2],
+        issuerId="lane-issuer",
+        issuerKeyId="lane-key",
+        issuedAt="20200131T000000Z",
+        trustedIssuers=context[3],
+    )
+    observedOnly = DriverCoefficientObservationFrameSpec(
+        frameId="price-forward-return-observed-only",
+        sourceSignalId="equityReturnShock",
+        labelSignalId="equityReturnShock",
+        sourceVariableId="equityReturnShock",
+        targetVariableId="realizedEquityReturn",
+        sourceUnit="simpleReturn",
+        targetUnit="simpleReturn",
+        frequency="day",
+        stepSpan=1,
+        horizonSteps=1,
+        originThrough="20200103",
+    )
+    with pytest.raises(DriverObservationFrameError, match="evidence role"):
+        buildDriverCoefficientObservationFrame(signedBatch, signedBatch, observedOnly)
+    deterministicLabel = DriverCoefficientObservationFrameSpec(
+        frameId="price-forward-return-deterministic-label",
+        sourceSignalId="equityReturnShock",
+        labelSignalId="equityReturnShock",
+        sourceVariableId="equityReturnShock",
+        targetVariableId="realizedEquityReturn",
+        sourceUnit="simpleReturn",
+        targetUnit="simpleReturn",
+        frequency="day",
+        stepSpan=1,
+        horizonSteps=1,
+        originThrough="20200103",
+        labelEvidenceRoles=("deterministicDerived",),
+    )
+    frame = buildDriverCoefficientObservationFrame(signedBatch, signedBatch, deterministicLabel)
+    assert frame.rowCount == 2
+    assert frame.labelParentReceiptIds == (signedBatch.batchReceiptId,)
 
 
 def testFilingMetricObservationBatchBuildsExactProviderBatchAndProjection(tmp_path) -> None:

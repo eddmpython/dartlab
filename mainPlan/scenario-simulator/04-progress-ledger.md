@@ -1186,3 +1186,15 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **scenario 연결**: `OperatingScenarioCase`가 optional admission verifier를 보존하고 bridge에 전달한다. 새 public API나 verb export는 만들지 않았다.
 - **검증**: operating bridge와 scenario composition focused 15건 통과. `tests/simulate` 전체 388건 통과. ruff format, ruff check, camelCase strict, Guard Index quick, diff check, em/en dash audit 통과.
 - **다음 P0 후보**: data lineage와 PRD 검토에서는 price exact observation lane을 다음 우선 후보로 봤다. filing exact lane은 이미 있으므로, 다음에는 주가 return이 explicit availableAt, 양쪽 price leg receipt, derived return artifact hash를 갖춘 signed provider observation batch로 들어오게 해야 한다. macro와 industry는 release vintage와 time-series 경계가 더 필요하므로 price가 먼저다.
+
+
+## 2026-07-15 P0 price exact observation lane
+
+- **판단**: filing exact lane 다음 실제 데이터 병목은 주가다. 가격 return은 실제 시장 변수와 forward label 양쪽에 쓰이지만, close 한 행만 exact로 보거나 `DriverHistorySource`를 provider observation으로 승격하면 PRD가 요구한 as-known 계보를 세탁한다.
+- **구현**: `buildPriceReturnDriverObservationBatch`를 추가했다. daily price row의 explicit `availableAt`, revision id, row artifact hash, price leg `dataVintage` receipt, derived return receipt를 모두 요구하고, return observation은 `deterministicDerived`로만 만든다.
+- **derived return 계약**: return artifact hash는 previous close leg, current close leg, 두 leg receipt, formula, returnWindow, frequency, eventAt, availableAt, adjustmentPolicyHash, value를 묶는다. derived return receipt의 parentReceiptIds가 두 price leg receipt와 정확히 같지 않으면 실패한다.
+- **의미 경계**: 기본 signal은 `equityReturnShock`이고 `marketPriceChange`, `priceChange`, `productPriceChange` 같은 operating shock 이름은 거부한다. 주가 return은 security factor이며 operating price shock으로 쓰려면 admitted coefficient를 거쳐야 한다.
+- **projection 보강**: `driverHistorySourceFromProviderObservationBatch`가 unit, frequency, transformId뿐 아니라 observation timing과 factor timing의 호환성도 확인한다. ratio observation은 innovation, change, rate factor로만 내려가며 level factor로 세탁되지 않는다.
+- **coefficient frame 연결**: signed exact price return batch는 projection 시 `asKnown`이 되고, deterministicDerived label을 허용한 frame spec에서는 forward equity return label로 쓸 수 있다. observed-only label spec에서는 거부된다.
+- **검증**: price focused 포함 `test_driverObservationBatches.py` 12건 통과. driver observation frame, registry, source focused 25건 통과. `tests/simulate` 전체 392건 통과. ruff format/check, camelCase strict, docstring4 audit, Guard Index quick, diff check, em/en dash audit 통과.
+- **남은 P0**: macro exact는 release vintage가 필요하고, industry는 snapshot과 time-series 분리가 먼저다. 다음 후보는 macro revised lane의 admission ceiling 또는 다변수 coefficient design frame이며, 둘 다 exact와 revised를 같은 법칙처럼 섞지 않는 장부가 먼저 필요하다.
