@@ -66,10 +66,12 @@ class DriverCard:
     assumptionId: str = ""
     claim: str = ""
     falsifier: str = ""
+    warnings: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "factors", tuple(self.factors))
         object.__setattr__(self, "sourceRefs", tuple(self.sourceRefs))
+        object.__setattr__(self, "warnings", tuple(self.warnings))
 
 
 @dataclass(frozen=True)
@@ -163,6 +165,7 @@ def _cardPayload(card: DriverCard) -> dict:
         "assumptionId": card.assumptionId,
         "claim": card.claim,
         "falsifier": card.falsifier,
+        "warnings": card.warnings,
     }
 
 
@@ -520,6 +523,7 @@ def buildDriverPathSet(
     )
     sourceRefs = _dedupe(tuple(ref for card in cards for ref in card.sourceRefs))
     warnings: list[str] = []
+    warnings.extend(warning for card in cards for warning in card.warnings)
     assumptionStepTuple, assumptionHash = _assumptionSteps(assumptions, horizon)
     if assumptions:
         warnings.extend(f"explicitAssumption:{source.card.assumptionId}" for source in assumptions)

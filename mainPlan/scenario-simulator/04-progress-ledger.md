@@ -83,6 +83,19 @@
 
 현재 판정: 이제 "조건과 가정으로 typed factor path를 만든다"는 내부 실행 계약이 생겼다. 다만 아직 DART, EDGAR, 가격, macro, industry의 전 레인을 자동으로 스캔해 카드로 등록하는 전수 DriverRegistry는 아니다. 다음 P0는 실제 workbench 레인별 카드 생성기, 즉 scan/account-ratio, edgar scan, price, macro, industry snapshot을 동일 카드 계약으로 공급하는 단계다. 그 다음에 coefficient calibration과 OOS admission을 닫아야 전략 추천으로 승격된다.
 
+## 2026-07-15 P0 workbench driver source adapters
+
+위 다음 P0의 첫 레인 입구를 본진에 넣었다. 목적은 새 공개 API나 GUI가 아니라, 실제 workbench dataframe이 `DriverCard`와 `DriverHistorySource` 계약을 통과해 path generator로 들어가는 안전한 adapter다.
+
+- `src/dartlab/simulate/driverSources.py`: `panelMetricDriverHistorySource`, `priceReturnDriverHistorySource`, `macroDriverHistorySource`를 추가했다. 세 함수 모두 `knowledgeAsOf`를 필수로 받고 `eventTime`과 `availableAt`이 cutoff를 통과한 행만 남긴다.
+- 일반 panel lane: scan/account-ratio, EDGAR scan, industry metric처럼 이미 시간축과 availability가 있는 dataframe을 그대로 카드로 만든다. 정적 industry snapshot처럼 `eventTime`과 `availableAt`이 없는 입력은 history driver로 승격하지 않는다.
+- 가격 lane: 일별 close를 day 또는 week simple return으로 변환한다. `availableAt` 컬럼이 없으면 `asKnown` 승격을 금지하고 `priceVintageUnavailable` 경고를 보존한다. 기본 factor id는 `equityReturnShock`으로 두어 주가 수익률을 제품 가격 충격과 혼동하지 않는다.
+- macro lane: `weeklyMacroInnovations`를 재사용해 level을 weekly innovation으로 바꾸고, release vintage가 없다는 `macroReleaseVintageUnavailable` 경고와 `revisedHistory` 상태를 끝까지 유지한다.
+- `DriverCard.warnings`를 추가해 source adapter의 honest-gap 라벨이 `DriverPathAudit.warnings`까지 전파되게 했다. card payload에도 포함하므로 warning 변경은 path input hash에 묶인다.
+- 검증: `_attempts/driverSources`에서 macro+price joint path 씨앗을 통과시킨 뒤, `tests/simulate/test_driverSources.py`로 availability 필터, macro unit, price vintage, duplicate price date, static snapshot 거부, macro+price common-grid path set을 회귀로 고정했다. `tests/simulate` 339개가 통과했다.
+
+현재 판정: 실제 데이터 레인이 path generator로 들어가는 첫 관문은 닫혔다. 그러나 전수 DriverRegistry는 아직 아니다. 다음 P0는 DART/EDGAR 재무 레인에서 filing acceptance 기반 `availableAt`을 더 강하게 묶고, industry metric lane은 snapshot과 time-series를 분리한 뒤, coefficient calibration과 OOS path admission으로 전략 추천 승격 조건을 닫는 것이다.
+
 ---
 
 ## 0. ★2026-06-20 9인 전문가 패널 uplift . 세 축 planScore 95 도달
