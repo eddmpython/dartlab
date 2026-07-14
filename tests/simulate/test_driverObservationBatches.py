@@ -1,0 +1,548 @@
+from __future__ import annotations
+
+from hashlib import sha256
+
+import polars as pl
+import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+from dartlab.simulate.admissionRegistry import (
+    AdmissionVerifier,
+    TrustedIssuer,
+    initializeAdmissionRegistry,
+    issueAdmissionReceipt,
+    putAdmissionArtifact,
+)
+from dartlab.simulate.driverCalibration import (
+    DRIVER_COEFFICIENT_RULE_HASH,
+    DRIVER_COEFFICIENT_RULE_ID,
+    DRIVER_COEFFICIENT_RULE_VERSION,
+    DriverCalibrationTarget,
+    DriverCoefficientCalibrationSpec,
+    DriverCoefficientOosSpec,
+    driverCoefficientAdmissionArtifact,
+    driverCoefficientAdmissionParentReceiptIds,
+    driverCoefficientAdmissionSubjectHash,
+    evaluateDriverCoefficientOos,
+    fitDriverCoefficientPit,
+    validateDriverCoefficientAdmission,
+)
+from dartlab.simulate.driverObservationBatches import (
+    DriverObservationBatchError,
+    DriverObservationLaneSpec,
+    DriverObservationSignalSpec,
+    buildDriverObservationBatchFromPanel,
+    driverHistorySourceFromProviderObservationBatch,
+)
+from dartlab.simulate.driverObservationFrames import (
+    DriverCoefficientObservationFrameSpec,
+    buildDriverCoefficientObservationFrame,
+)
+from dartlab.simulate.driverPaths import DriverCard, DriverFactorSpec, DriverHistorySource, buildDriverPathSet
+from dartlab.simulate.driverRegistry import DriverRegistryCandidate, compileDriverRegistryPathSet
+from dartlab.simulate.stateCompiler import StateCompilerError, issueProviderObservationBatch
+from dartlab.simulate.vintage import canonicalPayloadBytes
+
+
+def _context(tmp_path):
+    database = tmp_path / "admission.sqlite"
+    artifacts = tmp_path / "artifacts"
+    initializeAdmissionRegistry(database)
+    private = Ed25519PrivateKey.generate()
+    privateBytes = private.private_bytes_raw()
+    trusted = {
+        "lane-key": TrustedIssuer(
+            issuerId="lane-issuer",
+            issuerKeyId="lane-key",
+            publicKey=private.public_key().public_bytes_raw(),
+        )
+    }
+    verifier = AdmissionVerifier(database, artifacts, trusted)
+    return database, artifacts, privateBytes, trusted, verifier
+
+
+def _sourceReceipt(context, payload: dict, *, knowledgeAsOf: str):
+    database, artifacts, privateBytes, trusted, _verifier = context
+    content = canonicalPayloadBytes(payload)
+    artifactHash = putAdmissionArtifact(artifacts, content)
+    return issueAdmissionReceipt(
+        database,
+        artifacts,
+        privateKey=privateBytes,
+        kind="dataVintage",
+        subjectHash=artifactHash,
+        artifactHash=artifactHash,
+        parentReceiptIds=(),
+        ruleId="driver-lane-source-v1",
+        ruleVersion="1",
+        ruleHash=sha256(b"driver-lane-source-v1").hexdigest(),
+        issuerId="lane-issuer",
+        issuerKeyId="lane-key",
+        issuerExecutableHash=sha256(b"driver-lane-source-issuer-v1").hexdigest(),
+        knowledgeAsOf=knowledgeAsOf,
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        frequency="quarter",
+        stepSpan=1,
+        maxAdmittedStep=0,
+        status="verifiedVintage",
+        issuedAt=f"{knowledgeAsOf}T000000Z",
+        trustedIssuers=trusted,
+    )
+
+
+def _attachRowSourceReceipts(context, panel: pl.DataFrame, *, signalId: str):
+    receipts = {}
+    artifactHashes = []
+    knowledgeValues = []
+    for row in panel.to_dicts():
+        knowledgeAsOf = str(row.get("knowledgeAsOf") or row["availableAt"]).replace("-", "")[:8]
+        receipt = _sourceReceipt(context, {"row": row, "signalId": signalId}, knowledgeAsOf=knowledgeAsOf)
+        revisionId = str(row["revisionId"])
+        receipts[revisionId] = receipt
+        artifactHashes.append(receipt.artifactHash)
+        knowledgeValues.append(knowledgeAsOf)
+    return (
+        panel.with_columns(
+            pl.Series("knowledgeAsOf", knowledgeValues),
+            pl.Series("sourceArtifactHash", artifactHashes),
+        ),
+        receipts,
+    )
+
+
+def _panel(
+    values: tuple[float, ...], events: tuple[str, ...], available: tuple[str, ...], *, column: str
+) -> pl.DataFrame:
+    return pl.DataFrame(
+        {
+            "eventTime": list(events),
+            "availableAt": list(available),
+            "revisionId": [f"r{index}" for index in range(len(events))],
+            column: list(values),
+        }
+    )
+
+
+def _laneSpec(
+    *,
+    artifactHash: str,
+    signalId: str,
+    column: str,
+    unit: str,
+    knowledgeAsOf: str = "20220131",
+    evidenceRole: str = "observed",
+    sourceRefs: tuple[str, ...] = ("source:fixture",),
+    knowledgeAsOfColumn: str = "",
+    sourceArtifactHashColumn: str = "",
+    requireAvailableAfterEvent: bool = False,
+) -> DriverObservationLaneSpec:
+    return DriverObservationLaneSpec(
+        providerId="macro",
+        datasetId="driver-lane-fixture",
+        entityId="KR",
+        knowledgeAsOf=knowledgeAsOf,
+        eventTimeColumn="eventTime",
+        availableAtColumn="availableAt",
+        revisionIdColumn="revisionId",
+        sourceArtifactKind="driverLaneFixture",
+        sourceArtifactId=f"fixture:{signalId}",
+        sourceArtifactHash=artifactHash,
+        signalSpecs=(
+            DriverObservationSignalSpec(
+                signalId=signalId,
+                sourceColumn=column,
+                unit=unit,
+                frequency="quarter",
+                timing="ratio",
+                transformId=f"{signalId}-quarterly-change-v1",
+                evidenceRole=evidenceRole,
+            ),
+        ),
+        sourceRefs=sourceRefs,
+        knowledgeAsOfColumn=knowledgeAsOfColumn,
+        sourceArtifactHashColumn=sourceArtifactHashColumn,
+        requireAvailableAfterEvent=requireAvailableAfterEvent,
+    )
+
+
+def _signedBatch(
+    context,
+    panel: pl.DataFrame,
+    *,
+    signalId: str,
+    column: str,
+    unit: str,
+    knowledgeAsOf: str = "20220131",
+):
+    rowPanel, sourceReceipts = _attachRowSourceReceipts(context, panel, signalId=signalId)
+    laneHash = sha256(canonicalPayloadBytes({"rows": rowPanel.to_dicts(), "signalId": signalId})).hexdigest()
+    batch = buildDriverObservationBatchFromPanel(
+        rowPanel,
+        _laneSpec(
+            artifactHash=laneHash,
+            signalId=signalId,
+            column=column,
+            unit=unit,
+            knowledgeAsOf=knowledgeAsOf,
+            knowledgeAsOfColumn="knowledgeAsOf",
+            sourceArtifactHashColumn="sourceArtifactHash",
+        ),
+        sourceReceipts=sourceReceipts,
+        requireExact=True,
+    )
+    database, artifacts, privateBytes, trusted, _verifier = context
+    return issueProviderObservationBatch(
+        batch,
+        database,
+        artifacts,
+        privateKey=privateBytes,
+        issuerId="lane-issuer",
+        issuerKeyId="lane-key",
+        issuedAt=f"{knowledgeAsOf}T000000Z",
+        trustedIssuers=trusted,
+    )
+
+
+def _frameSpec(frameId: str) -> DriverCoefficientObservationFrameSpec:
+    return DriverCoefficientObservationFrameSpec(
+        frameId=frameId,
+        sourceSignalId="fxChange",
+        labelSignalId="realizedMarketPriceChange",
+        sourceVariableId="fxChange",
+        targetVariableId="realizedMarketPriceChange",
+        sourceUnit="simpleReturn",
+        targetUnit="ratioChangePerStep",
+        frequency="quarter",
+        stepSpan=1,
+        horizonSteps=1,
+    )
+
+
+def _registryResult():
+    factor = DriverFactorSpec(
+        "fxChange",
+        "simpleReturn",
+        "quarter",
+        "change",
+        "fxChange-quarterly-change-v1",
+    )
+    card = DriverCard(
+        cardId="fx-change",
+        sourceKind="history",
+        providerId="macro",
+        datasetId="driver-lane-fixture",
+        entityId="KR",
+        frequency="quarter",
+        stepSpan=1,
+        factors=(factor,),
+        historyStatus="asKnown",
+        sourceRefs=("providerObservationBatch:fit-source",),
+    )
+    panel = pl.DataFrame(
+        {
+            "eventTime": ["20200331", "20200630", "20200930", "20201231"],
+            "availableAt": ["20200410", "20200710", "20201010", "20210110"],
+            "fxChange": [0.10, -0.20, 0.30, 0.40],
+        }
+    )
+    return compileDriverRegistryPathSet(
+        (
+            DriverRegistryCandidate(
+                "fx-change",
+                "pathHistory",
+                DriverHistorySource(card, panel),
+                semanticRefs=("semantics:fx-change",),
+                selectionReason="FX change is an observed driver lane.",
+            ),
+        ),
+        registryId="driver-lane-registry",
+        knowledgeAsOf="20210131",
+        horizon=2,
+        pathCount=2,
+        blockLength=1,
+        seed=7,
+        minObservations=4,
+    )
+
+
+def _target(labelParentReceiptIds: tuple[str, ...]) -> DriverCalibrationTarget:
+    return DriverCalibrationTarget(
+        targetVariableId="realizedMarketPriceChange",
+        targetShock="marketPriceChange",
+        targetUnit="ratioChangePerStep",
+        targetEvidenceKind="observedOutcome",
+        labelProviderId="macro",
+        labelDatasetId="driver-lane-fixture",
+        labelSourceRefs=("providerObservationBatch:fit-label",),
+        historyStatus="asKnown",
+        labelParentReceiptIds=labelParentReceiptIds,
+    )
+
+
+def _issueCoefficientAdmission(context, report):
+    database, artifacts, privateBytes, trusted, _verifier = context
+    subject = driverCoefficientAdmissionSubjectHash(report)
+    artifactHash = putAdmissionArtifact(artifacts, driverCoefficientAdmissionArtifact(report))
+    return issueAdmissionReceipt(
+        database,
+        artifacts,
+        privateKey=privateBytes,
+        kind="driverCoefficient",
+        subjectHash=subject,
+        artifactHash=artifactHash,
+        parentReceiptIds=driverCoefficientAdmissionParentReceiptIds(report),
+        ruleId=DRIVER_COEFFICIENT_RULE_ID,
+        ruleVersion=DRIVER_COEFFICIENT_RULE_VERSION,
+        ruleHash=DRIVER_COEFFICIENT_RULE_HASH,
+        issuerId="lane-issuer",
+        issuerKeyId="lane-key",
+        issuerExecutableHash="b" * 64,
+        knowledgeAsOf=report.evaluationKnowledgeAsOf,
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        frequency=report.frequency,
+        stepSpan=report.stepSpan,
+        maxAdmittedStep=report.maxAdmittedStep,
+        status="admitted",
+        issuedAt="20220201T000000Z",
+        trustedIssuers=trusted,
+    )
+
+
+def testDriverObservationLaneBatchFeedsCoefficientAdmission(tmp_path) -> None:
+    context = _context(tmp_path)
+    fitSource = _signedBatch(
+        context,
+        _panel(
+            (0.10, -0.20, 0.30, 0.40),
+            ("20200331", "20200630", "20200930", "20201231"),
+            ("20200410", "20200710", "20201010", "20210110"),
+            column="fx",
+        ),
+        signalId="fxChange",
+        column="fx",
+        unit="simpleReturn",
+        knowledgeAsOf="20210430",
+    )
+    fitLabel = _signedBatch(
+        context,
+        _panel(
+            (0.05, -0.10, 0.15, 0.20),
+            ("20200630", "20200930", "20201231", "20210331"),
+            ("20200705", "20201005", "20210105", "20210405"),
+            column="ret",
+        ),
+        signalId="realizedMarketPriceChange",
+        column="ret",
+        unit="ratioChangePerStep",
+        knowledgeAsOf="20210430",
+    )
+    oosSource = _signedBatch(
+        context,
+        _panel(
+            (0.20, -0.10, 0.30),
+            ("20210331", "20210630", "20210930"),
+            ("20210410", "20210710", "20211010"),
+            column="fx",
+        ),
+        signalId="fxChange",
+        column="fx",
+        unit="simpleReturn",
+    )
+    oosLabel = _signedBatch(
+        context,
+        _panel(
+            (0.10, -0.05, 0.15),
+            ("20210630", "20210930", "20211231"),
+            ("20210705", "20211005", "20220105"),
+            column="ret",
+        ),
+        signalId="realizedMarketPriceChange",
+        column="ret",
+        unit="ratioChangePerStep",
+    )
+    fitFrame = buildDriverCoefficientObservationFrame(fitSource, fitLabel, _frameSpec("fit-lane-frame"))
+    oosFrame = buildDriverCoefficientObservationFrame(oosSource, oosLabel, _frameSpec("oos-lane-frame"))
+    receipt = fitDriverCoefficientPit(
+        _registryResult(),
+        _target(fitFrame.labelParentReceiptIds),
+        fitFrame.frame,
+        DriverCoefficientCalibrationSpec(
+            calibrationId="fx-to-price-fit",
+            sourceVariableId="fxChange",
+            minOrigins=4,
+            sourceParentReceiptIds=fitFrame.sourceParentReceiptIds,
+        ),
+        calibrationKnowledgeAsOf="20210430",
+    )
+    report = evaluateDriverCoefficientOos(
+        receipt,
+        oosFrame.frame,
+        DriverCoefficientOosSpec(
+            evaluationId="fx-to-price-oos",
+            minOosOrigins=3,
+            minSkillVsBaseline=0.1,
+            maxRmse=0.01,
+            maxAbsBias=0.01,
+            baselineValue=0.0,
+            frequency="quarter",
+            stepSpan=1,
+            maxAdmittedStep=1,
+            sourceParentReceiptIds=oosFrame.sourceParentReceiptIds,
+            labelParentReceiptIds=oosFrame.labelParentReceiptIds,
+        ),
+        evaluationKnowledgeAsOf="20220131",
+    )
+    signed = _issueCoefficientAdmission(context, report)
+    verified = validateDriverCoefficientAdmission(
+        report,
+        context[4],
+        calibrationReceipt=receipt,
+        receiptId=signed.receiptId,
+        decisionAsOf="20220202",
+    )
+    assert report.status == "oosEligible"
+    assert verified.sourceParentReceiptIds == (fitSource.batchReceiptId, oosSource.batchReceiptId)
+
+
+def testConditionalDriverObservationLaneCannotIssueExactBatch(tmp_path) -> None:
+    context = _context(tmp_path)
+    panel = _panel((0.10, 0.20), ("20200331", "20200630"), ("20200410", "20200710"), column="fx")
+    artifactHash = sha256(b"conditional").hexdigest()
+    batch = buildDriverObservationBatchFromPanel(
+        panel,
+        _laneSpec(artifactHash=artifactHash, signalId="fxChange", column="fx", unit="simpleReturn"),
+    )
+    assert batch.historyStatus == "conditional"
+    with pytest.raises(StateCompilerError, match="exact provider batch"):
+        issueProviderObservationBatch(
+            batch,
+            context[0],
+            context[1],
+            privateKey=context[2],
+            issuerId="lane-issuer",
+            issuerKeyId="lane-key",
+            issuedAt="20220131T000000Z",
+            trustedIssuers=context[3],
+        )
+
+
+def testDriverObservationLaneRejectsHistorySourcePromotionAndUnsafeInputs(tmp_path) -> None:
+    context = _context(tmp_path)
+    panel = _panel((0.10, 0.20), ("20200331", "20200630"), ("20200410", "20200710"), column="fx")
+    receipt = _sourceReceipt(context, {"rows": panel.to_dicts()}, knowledgeAsOf="20220131")
+    spec = _laneSpec(artifactHash=receipt.artifactHash, signalId="fxChange", column="fx", unit="simpleReturn")
+    historySource = DriverHistorySource(
+        DriverCard(
+            "unsafe-history",
+            "history",
+            "macro",
+            "driver-lane-fixture",
+            "KR",
+            "quarter",
+            1,
+            (DriverFactorSpec("fxChange", "simpleReturn", "quarter", "change", "fxChange-quarterly-change-v1"),),
+            "asKnown",
+            ("historyOnly",),
+        ),
+        pl.DataFrame({"eventTime": ["20200331"], "availableAt": ["20200410"], "fxChange": [0.1]}),
+    )
+    with pytest.raises(DriverObservationBatchError, match="cannot be promoted"):
+        buildDriverObservationBatchFromPanel(historySource, spec, sourceReceipt=receipt, requireExact=True)
+    with pytest.raises(DriverObservationBatchError, match="source dataVintage receipt"):
+        buildDriverObservationBatchFromPanel(panel, spec, requireExact=True)
+    badEvidence = _laneSpec(
+        artifactHash=receipt.artifactHash,
+        signalId="fxChange",
+        column="fx",
+        unit="simpleReturn",
+        evidenceRole="explicitAssumption",
+    )
+    with pytest.raises(DriverObservationBatchError, match="signal contract"):
+        buildDriverObservationBatchFromPanel(panel, badEvidence, sourceReceipt=receipt, requireExact=True)
+    duplicatePanel = pl.concat([panel, panel.head(1)])
+    with pytest.raises(DriverObservationBatchError, match="duplicate event"):
+        buildDriverObservationBatchFromPanel(duplicatePanel, spec, sourceReceipt=receipt, requireExact=True)
+
+
+def testDriverObservationLaneKeepsFilingAvailabilityBoundary(tmp_path) -> None:
+    context = _context(tmp_path)
+    panel = pl.DataFrame(
+        {
+            "period": ["20200331", "20200630"],
+            "rceptDate": ["20200331", "20200814"],
+            "rceptNo": ["202005150001", "202008140001"],
+            "margin": [0.10, 0.20],
+        }
+    )
+    receipt = _sourceReceipt(context, {"rows": panel.to_dicts()}, knowledgeAsOf="20220131")
+    filingSpec = DriverObservationLaneSpec(
+        providerId="dart",
+        datasetId="retained-finance",
+        entityId="005930",
+        knowledgeAsOf="20220131",
+        eventTimeColumn="period",
+        availableAtColumn="rceptDate",
+        revisionIdColumn="rceptNo",
+        sourceArtifactKind="dartRetainedFinanceRows",
+        sourceArtifactId="005930",
+        sourceArtifactHash=receipt.artifactHash,
+        signalSpecs=(
+            DriverObservationSignalSpec(
+                "operatingMarginChange",
+                "margin",
+                "ratioChange",
+                "quarter",
+                "ratio",
+                "dart-operating-margin-change-v1",
+                "deterministicDerived",
+            ),
+        ),
+        sourceRefs=("rceptNo",),
+        eventDateRole="fiscalThrough",
+        requireAvailableAfterEvent=True,
+    )
+    with pytest.raises(DriverObservationBatchError, match="availability must be after event"):
+        buildDriverObservationBatchFromPanel(panel, filingSpec, sourceReceipt=receipt, requireExact=True)
+    with pytest.raises(DriverObservationBatchError, match="separate event"):
+        buildDriverObservationBatchFromPanel(
+            panel,
+            DriverObservationLaneSpec(
+                **{
+                    **{name: getattr(filingSpec, name) for name in filingSpec.__dataclass_fields__},
+                    "availableAtColumn": "period",
+                }
+            ),
+            sourceReceipt=receipt,
+            requireExact=True,
+        )
+
+
+def testProviderObservationBatchProjectsToDriverHistorySource(tmp_path) -> None:
+    context = _context(tmp_path)
+    panel = _panel(
+        (0.10, -0.20, 0.30, 0.40),
+        ("20200331", "20200630", "20200930", "20201231"),
+        ("20200410", "20200710", "20201010", "20210110"),
+        column="fx",
+    )
+    signedBatch = _signedBatch(context, panel, signalId="fxChange", column="fx", unit="simpleReturn")
+    source = driverHistorySourceFromProviderObservationBatch(
+        signedBatch,
+        cardId="fx-change-history",
+        factors=(DriverFactorSpec("fxChange", "simpleReturn", "quarter", "change", "fxChange-quarterly-change-v1"),),
+    )
+    assert source.card.historyStatus == "asKnown"
+    assert source.panel["fxChange"].to_list() == [0.10, -0.20, 0.30, 0.40]
+    pathSet = buildDriverPathSet(
+        (source,),
+        knowledgeAsOf="20220131",
+        horizon=2,
+        pathCount=2,
+        blockLength=1,
+        seed=3,
+        minObservations=4,
+    )
+    assert pathSet.audit.historyStatus == "asKnown"
+    assert pathSet.audit.validationStatus == "retrospectiveOnly"

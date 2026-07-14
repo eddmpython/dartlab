@@ -1122,3 +1122,14 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **lineage**: frame row의 `sourceRef`와 `labelSourceRef`는 provider observation의 `observationId`다. parent ids는 dataVintage가 아니라 provider batch receipt다. 최종 `driverCoefficient` admission은 provider batch artifact 안의 observationId coverage와 row를 대조한다.
 - **검증**: provider batch to frame to fit to OOS to signed admission end-to-end 테스트를 추가했다. unsigned batch, duplicate observation, missing horizon label, unit drift, explicitAssumption label, forward label leakage, row ref tamper, dataVintage receipt 세탁을 kill-test로 고정했다. focused 17건이 통과했다.
 - **남은 P0**: adapter는 원천 batch에서 coefficient frame을 만드는 문을 닫았지만, DART, EDGAR, macro, price의 실제 런타임 adapter가 전수 registry로 자동 공급되는 단계는 아직 남았다. 다음 단위는 actual provider lane별 observation batch 생성과 pooled panel coefficient registry convergence다.
+
+
+## 2026-07-15 P0 driver observation lane batches
+
+- **판단**: PRD급 시뮬레이터는 전쟁게임처럼 실제 관측 변수, 조건, 가정, 전략 결과를 이어야 한다. 그러려면 `DriverHistorySource` 같은 path용 표를 provider observation으로 승격하는 우회가 아니라, raw 또는 normalized provider lane에서 `VariableObservation`과 signed `ProviderObservationBatch`를 먼저 만들어야 한다.
+- **구현**: `src/dartlab/simulate/driverObservationBatches.py`를 추가했다. lane spec은 provider, dataset, entity, event time, availableAt, revision id, source artifact, signal meaning, evidence role을 묶고, dataframe row를 `VariableObservation`으로 변환한다.
+- **row-level PIT**: batch cutoff와 각 관측의 `knowledgeAsOf`를 분리했다. coefficient origin은 행 단위 지식시점을 사용하므로, label이 이미 알려진 상태로 frame에 들어오는 누수를 차단한다. exact batch는 row revision별 `dataVintage` receipt와 row artifact hash가 맞아야 한다.
+- **lineage 경계**: `DriverHistorySource`를 provider observation으로 promote하는 경로는 런타임 guard로 거부한다. `explicitAssumption`과 `derivedFromAssumption`은 provider batch 원천으로 들어올 수 없다. sourceRefs는 관측별 row ref로 정규화해 parent row coverage 중복을 만들지 않는다.
+- **projection 경계**: signed provider batch에서 path generator용 `DriverHistorySource`로 내려가는 one-way projection은 허용했다. 반대로 history source에서 provider batch를 만드는 것은 금지다. conditional provider batch는 projection 시 `revisedHistory`와 warning을 보존한다.
+- **검증**: provider lane batch에서 coefficient frame, PIT fit, held-out OOS, signed `driverCoefficient` admission까지 이어지는 end-to-end 회귀를 추가했다. conditional batch issue 거부, history source promotion 거부, filing availability boundary, provider batch to history projection도 kill-test로 고정했다.
+- **남은 P0**: DART, EDGAR, price, macro, industry의 실제 런타임 lane adapter를 이 batch builder에 연결해야 한다. 그 다음 pooled coefficient registry와 multi-variable scenario composition을 닫아야 조건부 비교가 전략 추천으로 승격된다.
