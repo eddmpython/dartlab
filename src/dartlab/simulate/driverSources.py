@@ -16,6 +16,7 @@ import polars as pl
 from dartlab.simulate.driverPaths import DriverCard, DriverFactorSpec, DriverHistorySource
 from dartlab.simulate.empiricalPaths import EmpiricalPathError
 from dartlab.simulate.macroPaths import weeklyMacroInnovations
+from dartlab.simulate.vintage import canonicalPayloadHash
 
 _FACTOR_TIMINGS = {"innovation", "change", "level", "rate"}
 _HISTORY_STATUSES = {"asKnown", "revisedHistory"}
@@ -117,7 +118,9 @@ def _normalizeHistoryPanel(
         _dateExpr(availableAtColumn).alias("__available"),
     )
     malformed = dated.filter(
-        (pl.col("__event").str.len_chars() != 8)
+        pl.col("__event").is_null()
+        | pl.col("__available").is_null()
+        | (pl.col("__event").str.len_chars() != 8)
         | (pl.col("__available").str.len_chars() != 8)
         | ~pl.col("__event").str.contains(r"^\d{8}$")
         | ~pl.col("__available").str.contains(r"^\d{8}$")
@@ -142,6 +145,264 @@ def _normalizeHistoryPanel(
         if any(not math.isfinite(float(value)) for value in values):
             raise DriverSourceError(f"{label} contains non-finite factor values: {variableId}")
     return out
+
+
+def _normalizeFilingMetricPanel(
+    panel: pl.DataFrame,
+    *,
+    factors: tuple[DriverFactorSpec, ...],
+    entityId: str,
+    entityIdColumn: str,
+    eventTimeColumn: str,
+    availableAtColumn: str,
+    filingIdColumn: str,
+    knowledgeAsOf: str,
+    label: str,
+) -> pl.DataFrame:
+    if not filingIdColumn:
+        raise DriverSourceError(f"{label} needs a filingId column")
+    if eventTimeColumn == availableAtColumn:
+        raise DriverSourceError(f"{label} needs separate eventTime and availableAt columns")
+    required = {eventTimeColumn, availableAtColumn, filingIdColumn, *(_sourceColumn(factor) for factor in factors)}
+    if entityIdColumn:
+        required.add(entityIdColumn)
+    if not required.issubset(panel.columns):
+        raise DriverSourceError(f"{label} missing columns: {sorted(required - set(panel.columns))}")
+    cutoff = _dateText(knowledgeAsOf, "knowledgeAsOf")
+    valueExprs = [
+        pl.col(_sourceColumn(factor)).cast(pl.Float64, strict=False).alias(factor.variableId) for factor in factors
+    ]
+    entityExprs = (pl.col(entityIdColumn).cast(pl.Utf8).alias("__entity"),) if entityIdColumn else ()
+    dated = panel.with_columns(
+        _dateExpr(eventTimeColumn).alias("__event"),
+        _dateExpr(availableAtColumn).alias("__available"),
+        pl.col(filingIdColumn).cast(pl.Utf8).str.strip_chars().alias("__filingId"),
+        *entityExprs,
+        *valueExprs,
+    )
+    malformed = dated.filter(
+        pl.col("__event").is_null()
+        | pl.col("__available").is_null()
+        | (pl.col("__event").str.len_chars() != 8)
+        | (pl.col("__available").str.len_chars() != 8)
+        | ~pl.col("__event").str.contains(r"^\d{8}$")
+        | ~pl.col("__available").str.contains(r"^\d{8}$")
+    )
+    if malformed.height:
+        raise DriverSourceError(f"{label} contains malformed eventTime or availableAt")
+    if entityIdColumn:
+        dated = dated.filter(pl.col("__entity") == str(entityId))
+    variableIds = [factor.variableId for factor in factors]
+    candidates = (
+        dated.filter((pl.col("__event") <= cutoff) & (pl.col("__available") <= cutoff))
+        .select(
+            pl.col("__event").alias("eventTime"), pl.col("__available").alias("availableAt"), "__filingId", *variableIds
+        )
+        .sort(["eventTime", "availableAt", "__filingId"])
+    )
+    if candidates.height == 0:
+        raise DriverSourceError(f"{label} has no filing rows available by knowledgeAsOf")
+    if candidates.filter(pl.col("__filingId").is_null() | (pl.col("__filingId").str.len_chars() == 0)).height:
+        raise DriverSourceError(f"{label} contains filing rows without filingId")
+    if candidates.filter(pl.col("availableAt") <= pl.col("eventTime")).height:
+        raise DriverSourceError(f"{label} filing availableAt must be after eventTime")
+    if candidates.group_by(["eventTime", "availableAt", "__filingId"]).len().filter(pl.col("len") > 1).height:
+        raise DriverSourceError(f"{label} contains duplicate filing metric rows")
+    ambiguous = (
+        candidates.group_by(["eventTime", "availableAt"])
+        .agg(pl.col("__filingId").n_unique().alias("__filingIdCount"))
+        .filter(pl.col("__filingIdCount") > 1)
+    )
+    if ambiguous.height:
+        raise DriverSourceError(f"{label} contains ambiguous filing ids for one availability date")
+    out = (
+        candidates.drop_nulls(variableIds)
+        .unique(subset=["eventTime"], keep="last", maintain_order=True)
+        .select("eventTime", "availableAt", "__filingId", *variableIds)
+    )
+    if out.height == 0:
+        raise DriverSourceError(f"{label} has no finite filing metric rows available by knowledgeAsOf")
+    for variableId in variableIds:
+        values = out[variableId].to_list()
+        if any(not math.isfinite(float(value)) for value in values):
+            raise DriverSourceError(f"{label} contains non-finite factor values: {variableId}")
+    return out
+
+
+def _filingMetricTraceHash(
+    normalized: pl.DataFrame,
+    *,
+    cardId: str,
+    providerId: str,
+    datasetId: str,
+    entityId: str,
+    knowledgeAsOf: str,
+    eventTimeColumn: str,
+    availableAtColumn: str,
+    filingIdColumn: str,
+    entityIdColumn: str,
+    factors: tuple[DriverFactorSpec, ...],
+) -> str:
+    variableIds = [factor.variableId for factor in factors]
+    rows = tuple(normalized.select("eventTime", "availableAt", "__filingId", *variableIds).to_dicts())
+    return canonicalPayloadHash(
+        {
+            "schemaVersion": "filing-metric-driver-trace-v1",
+            "artifactKind": "filingMetricDriverTrace",
+            "cardId": cardId,
+            "providerId": providerId,
+            "datasetId": datasetId,
+            "entityId": entityId,
+            "knowledgeAsOf": knowledgeAsOf,
+            "eventTimeColumn": eventTimeColumn,
+            "availableAtColumn": availableAtColumn,
+            "filingIdColumn": filingIdColumn,
+            "entityIdColumn": entityIdColumn,
+            "factors": tuple(
+                {
+                    "variableId": factor.variableId,
+                    "unit": factor.unit,
+                    "frequency": factor.frequency,
+                    "timing": factor.timing,
+                    "transformId": factor.transformId,
+                    "sourceColumn": _sourceColumn(factor),
+                }
+                for factor in factors
+            ),
+            "rows": rows,
+        }
+    )
+
+
+def filingMetricDriverHistorySource(
+    panel: pl.DataFrame,
+    *,
+    cardId: str,
+    providerId: str,
+    datasetId: str,
+    entityId: str,
+    frequency: str,
+    stepSpan: int,
+    factors: tuple[DriverFactorSpec, ...],
+    sourceRefs: tuple[str, ...],
+    knowledgeAsOf: str,
+    eventTimeColumn: str,
+    availableAtColumn: str,
+    filingIdColumn: str,
+    entityIdColumn: str = "",
+    historyStatus: str = "revisedHistory",
+    sourceReceiptRef: str = "",
+    status: str = "active",
+    warnings: tuple[str, ...] = (),
+) -> DriverHistorySource:
+    """Create a filing-aware financial metric driver source.
+
+    Args:
+        panel: Financial metric frame with fiscal event time, filing availability, filing id, and factors.
+        cardId: Stable driver card identifier.
+        providerId: ``dart`` or ``edgar``.
+        datasetId: Financial dataset or artifact identifier.
+        entityId: Company identifier.
+        frequency: Step frequency shared with the eventual path set.
+        stepSpan: Positive number of frequency units per step.
+        factors: Driver factor contracts, including source columns when renamed.
+        sourceRefs: Provider, artifact, and transform references.
+        knowledgeAsOf: Decision cutoff. Later filings and later periods are removed.
+        eventTimeColumn: Fiscal or metric event date column.
+        availableAtColumn: Filing acceptance or receipt date column.
+        filingIdColumn: DART receipt number, EDGAR accession, or equivalent filing id.
+        entityIdColumn: Optional company column used before cutoff filtering.
+        historyStatus: ``asKnown`` only when a source receipt reference is supplied.
+        sourceReceiptRef: Exact as-known receipt or signed source vintage reference.
+        status: Driver card status.
+        warnings: Honest-gap labels carried into the path audit.
+
+    Returns:
+        ``DriverHistorySource`` with normalized event, availability, and financial factors.
+
+    Raises:
+        DriverSourceError: If filing timing, filing identity, refs, or factors are unsafe.
+
+    Example:
+        ``source = filingMetricDriverHistorySource(panel, cardId="dart-margin", providerId="dart", datasetId="finance", entityId="005930", frequency="quarter", stepSpan=1, factors=factors, sourceRefs=("data/dart/finance",), knowledgeAsOf="20251231", eventTimeColumn="period", availableAtColumn="rceptDate", filingIdColumn="rceptNo")``
+    """
+
+    if providerId not in {"dart", "edgar"}:
+        raise DriverSourceError("filing metric driver provider must be dart or edgar")
+    if not cardId or not datasetId or not entityId or not frequency or stepSpan < 1:
+        raise DriverSourceError("filing metric driver identifiers and step contract are required")
+    cutoff = _dateText(knowledgeAsOf, "knowledgeAsOf")
+    factorTuple = tuple(factors)
+    _validateHistoryStatus(historyStatus, cardId)
+    if historyStatus == "asKnown" and not sourceReceiptRef:
+        raise DriverSourceError("asKnown filing metric history needs a sourceReceiptRef")
+    _validateFactorSpecs(factorTuple, frequency=frequency, label=cardId)
+    _validateSourceRefs(tuple(sourceRefs), cardId)
+    normalized = _normalizeFilingMetricPanel(
+        panel,
+        factors=factorTuple,
+        entityId=entityId,
+        entityIdColumn=entityIdColumn,
+        eventTimeColumn=eventTimeColumn,
+        availableAtColumn=availableAtColumn,
+        filingIdColumn=filingIdColumn,
+        knowledgeAsOf=cutoff,
+        label=cardId,
+    )
+    traceHash = _filingMetricTraceHash(
+        normalized,
+        cardId=cardId,
+        providerId=providerId,
+        datasetId=datasetId,
+        entityId=entityId,
+        knowledgeAsOf=cutoff,
+        eventTimeColumn=eventTimeColumn,
+        availableAtColumn=availableAtColumn,
+        filingIdColumn=filingIdColumn,
+        entityIdColumn=entityIdColumn,
+        factors=factorTuple,
+    )
+    cardFactors = tuple(
+        DriverFactorSpec(
+            factor.variableId,
+            factor.unit,
+            factor.frequency,
+            factor.timing,
+            factor.transformId,
+        )
+        for factor in factorTuple
+    )
+    filingWarnings = tuple(warnings)
+    if historyStatus != "asKnown":
+        filingWarnings += ("filingSourceNotExactAsKnown",)
+    if providerId == "dart" and historyStatus != "asKnown":
+        filingWarnings += ("dartRetainedFinanceRowsAreConditionalUntilRawFilingReceiptsExist",)
+    refs = tuple(sourceRefs) + (
+        "simulate.driverSources:filingMetricDriverHistorySource",
+        f"eventTimeColumn:{eventTimeColumn}",
+        f"availableAtColumn:{availableAtColumn}",
+        f"filingIdColumn:{filingIdColumn}",
+        f"filingTrace:{traceHash}",
+        *(f"sourceColumn:{factor.variableId}:{_sourceColumn(factor)}" for factor in factorTuple),
+        *((f"sourceReceiptRef:{sourceReceiptRef}",) if sourceReceiptRef else ()),
+    )
+    return panelMetricDriverHistorySource(
+        normalized.rename({"__filingId": "filingId"}).select(
+            "eventTime", "availableAt", *[factor.variableId for factor in factorTuple]
+        ),
+        cardId=cardId,
+        providerId=providerId,
+        datasetId=datasetId,
+        entityId=entityId,
+        frequency=frequency,
+        stepSpan=stepSpan,
+        factors=cardFactors,
+        sourceRefs=_dedupe(refs),
+        knowledgeAsOf=cutoff,
+        historyStatus=historyStatus,
+        status=status,
+        warnings=_dedupe(filingWarnings),
+    )
 
 
 def panelMetricDriverHistorySource(

@@ -96,6 +96,19 @@
 
 현재 판정: 실제 데이터 레인이 path generator로 들어가는 첫 관문은 닫혔다. 그러나 전수 DriverRegistry는 아직 아니다. 다음 P0는 DART/EDGAR 재무 레인에서 filing acceptance 기반 `availableAt`을 더 강하게 묶고, industry metric lane은 snapshot과 time-series를 분리한 뒤, coefficient calibration과 OOS path admission으로 전략 추천 승격 조건을 닫는 것이다.
 
+## 2026-07-15 P0 financial filing driver source
+
+위 다음 P0의 재무 공시 관문을 본진에 넣었다. 방향은 GUI나 새 공개 API가 아니라, DART/EDGAR 재무 metric이 driver path로 들어갈 때 fiscal period를 availability로 세탁하지 못하게 막는 내부 adapter다.
+
+- `src/dartlab/simulate/driverSources.py`: `filingMetricDriverHistorySource`를 추가했다. provider는 `dart` 또는 `edgar`로 제한하고, `eventTimeColumn`, `availableAtColumn`, `filingIdColumn`을 모두 필수로 받는다.
+- 재무 시점 계약: fiscal period와 filing acceptance/receipt는 분리되어야 한다. 같은 컬럼이면 차단하고, 공시 사용 가능일이 fiscal event보다 늦지 않으면 차단한다. `knowledgeAsOf` 이후 접수된 정정공시는 같은 fiscal period라도 path 입력에서 제외된다.
+- filing identity 계약: DART `rceptNo`, EDGAR `accn` 같은 filing id가 비어 있으면 실행 전에 실패한다. 공시 id, event, availability, factor 값은 `filingTrace:<hash>`로 sourceRefs에 결속한다.
+- honest status: `asKnown`은 `sourceReceiptRef` 없이는 허용하지 않는다. 기본은 `revisedHistory`이고, DART retained finance는 `dartRetainedFinanceRowsAreConditionalUntilRawFilingReceiptsExist` warning을 path audit까지 보존한다.
+- factor 계약: 재무 metric factor도 기존 `DriverFactorSpec`의 unit, frequency, timing, transformId 검증을 통과해야 한다. source column rename은 trace와 refs에 남는다.
+- 검증: `_attempts/driverSources/test_filingMetricDriverSources.py`에서 미래 정정공시 배제, period-only 세탁 차단, asKnown receipt 요구를 먼저 고정했다. 본진 `tests/simulate/test_driverSources.py`에 같은 회귀를 승격했고, focused 16개, `tests/simulate` 342개, `ruff format --check`, `ruff check`, camelCase audit, docstring audit, em/en dash audit, `dartlabGuard.py strict --scope l0-l15 --providers dart,edgar`가 통과했다.
+
+현재 판정: PRD가 요구한 "조건과 가정으로 다양한 미래를 돌리는" 엔진의 데이터 입구 중 재무 공시 레인은 한 단계 더 정공법에 가까워졌다. 그러나 아직 PRD급 시뮬레이터 완료는 아니다. 다음 P0는 이 adapter를 전수 DriverRegistry에 연결하고, 산업 time-series와 snapshot 분리, coefficient PIT calibration, OOS policy certificate를 닫아야 전략 추천으로 승격된다.
+
 ---
 
 ## 0. ★2026-06-20 9인 전문가 패널 uplift . 세 축 planScore 95 도달

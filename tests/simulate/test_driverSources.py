@@ -8,6 +8,7 @@ import pytest
 from dartlab.simulate.driverPaths import DriverFactorSpec, buildDriverPathSet
 from dartlab.simulate.driverSources import (
     DriverSourceError,
+    filingMetricDriverHistorySource,
     macroDriverHistorySource,
     panelMetricDriverHistorySource,
     priceReturnDriverHistorySource,
@@ -63,6 +64,217 @@ def testPanelMetricDriverSourceFiltersByAvailabilityAndCarriesRefs() -> None:
     assert pathSet.audit.historyStatus == "revisedHistory"
     assert "dartCurrentRetainedMayBeRevised" in pathSet.audit.warnings
     assert all(step["dartMarginChange"] != 9.99 for path in pathSet.paths for step in path.steps)
+
+
+def testFilingMetricDriverUsesReceiptAvailabilityInsteadOfFiscalPeriod() -> None:
+    panel = pl.DataFrame(
+        {
+            "code": ["005930", "005930", "005930", "005930", "005930"],
+            "period": ["20200331", "20200331", "20200630", "20200930", "20201231"],
+            "rceptDate": ["20200515", "20210517", "20200814", "20201116", "20210315"],
+            "rceptNo": ["202005150001", "202105170009", "202008140001", "202011160001", "202103150001"],
+            "opMarginChange": [0.02, 9.99, -0.01, 0.03, 0.04],
+        }
+    )
+    factor = DriverFactorSpec(
+        "operatingMarginChange",
+        "ratioChange",
+        "quarter",
+        "change",
+        "dart-operating-margin-change-v1",
+        sourceColumn="opMarginChange",
+    )
+    source = filingMetricDriverHistorySource(
+        panel,
+        cardId="dart-operating-margin-change",
+        providerId="dart",
+        datasetId="dart.finance.retained",
+        entityId="005930",
+        entityIdColumn="code",
+        frequency="quarter",
+        stepSpan=1,
+        factors=(factor,),
+        sourceRefs=("data/dart/finance/005930.parquet", "transform:operating-margin-change"),
+        knowledgeAsOf="20201231",
+        eventTimeColumn="period",
+        availableAtColumn="rceptDate",
+        filingIdColumn="rceptNo",
+    )
+    assert source.panel["eventTime"].to_list() == ["20200331", "20200630", "20200930"]
+    assert 9.99 not in source.panel["operatingMarginChange"].to_list()
+    assert "filingSourceNotExactAsKnown" in source.card.warnings
+    assert "dartRetainedFinanceRowsAreConditionalUntilRawFilingReceiptsExist" in source.card.warnings
+    assert any(ref.startswith("filingTrace:") for ref in source.card.sourceRefs)
+
+    pathSet = buildDriverPathSet(
+        (source,),
+        knowledgeAsOf="20201231",
+        horizon=2,
+        pathCount=2,
+        blockLength=1,
+        seed=11,
+        minObservations=3,
+    )
+    assert pathSet.audit.historyStatus == "revisedHistory"
+    assert all(step["operatingMarginChange"] != 9.99 for path in pathSet.paths for step in path.steps)
+
+
+def testFilingMetricDriverRejectsPeriodOnlyOrUnidentifiedRows() -> None:
+    panel = pl.DataFrame(
+        {
+            "period": ["20200331", "20200630", "20200930"],
+            "rceptDate": ["20200515", "20200814", "20201116"],
+            "rceptNo": ["202005150001", "", "202011160001"],
+            "opMarginChange": [0.02, -0.01, 0.03],
+        }
+    )
+    factor = DriverFactorSpec(
+        "operatingMarginChange",
+        "ratioChange",
+        "quarter",
+        "change",
+        "dart-operating-margin-change-v1",
+        sourceColumn="opMarginChange",
+    )
+    with pytest.raises(DriverSourceError, match="without filingId"):
+        filingMetricDriverHistorySource(
+            panel,
+            cardId="dart-operating-margin-change",
+            providerId="dart",
+            datasetId="dart.finance.retained",
+            entityId="005930",
+            frequency="quarter",
+            stepSpan=1,
+            factors=(factor,),
+            sourceRefs=("data/dart/finance/005930.parquet",),
+            knowledgeAsOf="20201231",
+            eventTimeColumn="period",
+            availableAtColumn="rceptDate",
+            filingIdColumn="rceptNo",
+        )
+
+    with pytest.raises(DriverSourceError, match="separate eventTime and availableAt"):
+        filingMetricDriverHistorySource(
+            panel.with_columns(pl.col("period").alias("fakeAvailableAt")),
+            cardId="dart-operating-margin-change",
+            providerId="dart",
+            datasetId="dart.finance.retained",
+            entityId="005930",
+            frequency="quarter",
+            stepSpan=1,
+            factors=(factor,),
+            sourceRefs=("data/dart/finance/005930.parquet",),
+            knowledgeAsOf="20201231",
+            eventTimeColumn="period",
+            availableAtColumn="period",
+            filingIdColumn="rceptNo",
+        )
+
+    duplicatePanel = pl.DataFrame(
+        {
+            "period": ["20200331", "20200331", "20200630"],
+            "rceptDate": ["20200515", "20200515", "20200814"],
+            "rceptNo": ["202005150001", "202005150001", "202008140001"],
+            "opMarginChange": [0.02, 0.021, -0.01],
+        }
+    )
+    with pytest.raises(DriverSourceError, match="duplicate filing metric rows"):
+        filingMetricDriverHistorySource(
+            duplicatePanel,
+            cardId="dart-operating-margin-change",
+            providerId="dart",
+            datasetId="dart.finance.retained",
+            entityId="005930",
+            frequency="quarter",
+            stepSpan=1,
+            factors=(factor,),
+            sourceRefs=("data/dart/finance/005930.parquet",),
+            knowledgeAsOf="20201231",
+            eventTimeColumn="period",
+            availableAtColumn="rceptDate",
+            filingIdColumn="rceptNo",
+        )
+
+    malformedPanel = pl.DataFrame(
+        {
+            "period": ["20200331", "20200630"],
+            "rceptDate": ["20200515", None],
+            "rceptNo": ["202005150001", "202008140001"],
+            "opMarginChange": [0.02, -0.01],
+        }
+    )
+    with pytest.raises(DriverSourceError, match="malformed eventTime or availableAt"):
+        filingMetricDriverHistorySource(
+            malformedPanel,
+            cardId="dart-operating-margin-change",
+            providerId="dart",
+            datasetId="dart.finance.retained",
+            entityId="005930",
+            frequency="quarter",
+            stepSpan=1,
+            factors=(factor,),
+            sourceRefs=("data/dart/finance/005930.parquet",),
+            knowledgeAsOf="20201231",
+            eventTimeColumn="period",
+            availableAtColumn="rceptDate",
+            filingIdColumn="rceptNo",
+        )
+
+
+def testAsKnownFilingMetricDriverNeedsReceiptRef() -> None:
+    panel = pl.DataFrame(
+        {
+            "period": ["20200331", "20200630", "20200930"],
+            "filed": ["20200515", "20200814", "20201116"],
+            "accn": ["0001", "0002", "0003"],
+            "opMarginChange": [0.02, -0.01, 0.03],
+        }
+    )
+    factor = DriverFactorSpec(
+        "operatingMarginChange",
+        "ratioChange",
+        "quarter",
+        "change",
+        "dart-operating-margin-change-v1",
+        sourceColumn="opMarginChange",
+    )
+    with pytest.raises(DriverSourceError, match="sourceReceiptRef"):
+        filingMetricDriverHistorySource(
+            panel,
+            cardId="edgar-operating-margin-change",
+            providerId="edgar",
+            datasetId="edgar.companyfacts.quarterly",
+            entityId="0000320193",
+            frequency="quarter",
+            stepSpan=1,
+            factors=(factor,),
+            sourceRefs=("data/edgar/finance/0000320193.parquet",),
+            knowledgeAsOf="20201231",
+            eventTimeColumn="period",
+            availableAtColumn="filed",
+            filingIdColumn="accn",
+            historyStatus="asKnown",
+        )
+
+    source = filingMetricDriverHistorySource(
+        panel,
+        cardId="edgar-operating-margin-change",
+        providerId="edgar",
+        datasetId="edgar.companyfacts.quarterly",
+        entityId="0000320193",
+        frequency="quarter",
+        stepSpan=1,
+        factors=(factor,),
+        sourceRefs=("data/edgar/finance/0000320193.parquet",),
+        knowledgeAsOf="20201231",
+        eventTimeColumn="period",
+        availableAtColumn="filed",
+        filingIdColumn="accn",
+        historyStatus="asKnown",
+        sourceReceiptRef="receipt:edgar-companyfacts-20201231",
+    )
+    assert source.card.historyStatus == "asKnown"
+    assert "filingSourceNotExactAsKnown" not in source.card.warnings
 
 
 def testMacroDriverSourceKeepsReleaseVintageWarningAndFactorUnits() -> None:
