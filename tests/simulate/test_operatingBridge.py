@@ -1,7 +1,18 @@
 from __future__ import annotations
 
-import pytest
+from dataclasses import replace
+from hashlib import sha256
 
+import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+from dartlab.simulate.admissionRegistry import (
+    AdmissionVerifier,
+    TrustedIssuer,
+    initializeAdmissionRegistry,
+    issueAdmissionReceipt,
+    putAdmissionArtifact,
+)
 from dartlab.simulate.operatingBridge import (
     OperatingBridgeError,
     OperatingFactorSpec,
@@ -16,8 +27,17 @@ from dartlab.simulate.operatingWorld import (
     operatingInputsFromPrimitives,
     runOperatingStrategies,
 )
-from dartlab.simulate.stateCompiler import CompiledPointInTimeState
+from dartlab.simulate.stateCompiler import (
+    CompiledPointInTimeState,
+    StateCompileSpec,
+    buildProviderObservationBatch,
+    compilePointInTimeState,
+    issuePointInTimeState,
+    issueProviderObservationBatch,
+    makeVariableObservation,
+)
 from dartlab.simulate.stateSupport import StatePrimitive
+from dartlab.simulate.stateVariables import StateVariableSpec, buildStateVariableRegistry
 from dartlab.simulate.vintage import VintageRef
 from dartlab.simulate.world import ScenarioPath
 
@@ -148,6 +168,175 @@ def _compiledState() -> CompiledPointInTimeState:
         limitations=("conditionalObservation:business.exportRatio",),
         manifestArtifact=b"{}",
     )
+
+
+def _measuredFxPriceExposure(*, modifier: bool = False) -> OperatingTransmissionExposure:
+    return OperatingTransmissionExposure(
+        "fx-price-measured",
+        "fxChange",
+        "marketPriceChange",
+        0.5,
+        "ratioChangePerStep/simpleReturn",
+        "measuredAssociation",
+        f"driverCoefficientAdmission:{'6' * 64}",
+        modifierVariableId="business.exportRatio" if modifier else "",
+        modifierUnit="ratio" if modifier else "",
+        sourceFrequency="quarter",
+        sourceTiming="innovation",
+        sourceTransformId="simple-return-v1",
+        sourceFactorContractHash=sourceFactorContractHash(
+            variableId="fxChange",
+            unit="simpleReturn",
+            frequency="quarter",
+            timing="innovation",
+            transformId="simple-return-v1",
+        ),
+    )
+
+
+def _stateTrust(tmp_path):
+    database = tmp_path / "state-admission.sqlite"
+    artifacts = tmp_path / "state-artifacts"
+    initializeAdmissionRegistry(database)
+    private = Ed25519PrivateKey.generate()
+    privateBytes = private.private_bytes_raw()
+    trusted = {
+        "state-key": TrustedIssuer(
+            issuerId="state-issuer",
+            issuerKeyId="state-key",
+            publicKey=private.public_key().public_bytes_raw(),
+        )
+    }
+    verifier = AdmissionVerifier(database, artifacts, trusted)
+    return database, artifacts, privateBytes, trusted, verifier
+
+
+def _stateSourceReceipt(context):
+    database, artifacts, privateBytes, trusted, _verifier = context
+    artifactHash = putAdmissionArtifact(artifacts, b"export-ratio-source-row")
+    return issueAdmissionReceipt(
+        database,
+        artifacts,
+        privateKey=privateBytes,
+        kind="dataVintage",
+        subjectHash=artifactHash,
+        artifactHash=artifactHash,
+        parentReceiptIds=(),
+        ruleId="provider-source-v1",
+        ruleVersion="1",
+        ruleHash=sha256(b"provider-source-v1").hexdigest(),
+        issuerId="state-issuer",
+        issuerKeyId="state-key",
+        issuerExecutableHash=sha256(b"provider-source-issuer-v1").hexdigest(),
+        knowledgeAsOf="20250102",
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        frequency="quarter",
+        stepSpan=1,
+        maxAdmittedStep=0,
+        status="verifiedVintage",
+        issuedAt="20250102T000000Z",
+        trustedIssuers=trusted,
+    )
+
+
+def _admittedCompiledState(tmp_path, *, value: float = 0.60):
+    context = _stateTrust(tmp_path)
+    database, artifacts, privateBytes, trusted, verifier = context
+    sourceReceipt = _stateSourceReceipt(context)
+    vintage = VintageRef(
+        artifactKind="providerObservation",
+        provider="edgar",
+        artifactId="business.exportRatio:original",
+        artifactHash=sourceReceipt.artifactHash,
+        payloadHash=sourceReceipt.artifactHash,
+        knowledgeAsOf="20250102",
+        availableAt="20250102",
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        fiscalThrough="20241231",
+        receiptId=sourceReceipt.receiptId,
+    )
+    observation = makeVariableObservation(
+        providerId="edgar",
+        datasetId="quarterly-state",
+        entityId="005930",
+        signalId="business.exportRatio",
+        value=value,
+        unit="ratio",
+        frequency="quarter",
+        timing="ratio",
+        transformId="level-v1",
+        evidenceRole="observed",
+        eventAt="20241231",
+        availableAt="20250102",
+        knowledgeAsOf="20250102",
+        availabilityPrecision="date",
+        revisionId="original",
+        vintage=vintage,
+        normalizationRuleHash=sha256(b"business-export-ratio-v1").hexdigest(),
+    )
+    signedBatch = issueProviderObservationBatch(
+        buildProviderObservationBatch(
+            (observation,),
+            providerId="edgar",
+            datasetId="quarterly-state",
+            entityId="005930",
+            signalIds=("business.exportRatio",),
+            cutoffAsOf="20250201",
+        ),
+        database,
+        artifacts,
+        privateKey=privateBytes,
+        issuerId="state-issuer",
+        issuerKeyId="state-key",
+        issuedAt="20250201T000000Z",
+        trustedIssuers=trusted,
+    )
+    registry = buildStateVariableRegistry(
+        (
+            StateVariableSpec(
+                variableId="business.exportRatio",
+                signalId="business.exportRatio",
+                providerId="edgar",
+                datasetId="quarterly-state",
+                unit="ratio",
+                role="observedFeature",
+                evidenceRole="observed",
+                frequency="quarter",
+                timing="ratio",
+                transformId="level-v1",
+                maxStalenessDays=400,
+                lower=0.0,
+                upper=1.0,
+            ),
+        )
+    )
+    compiled = compilePointInTimeState(
+        registry,
+        (signedBatch,),
+        StateCompileSpec(
+            entityId="005930",
+            market="KR",
+            decisionAsOf="20250201",
+            consumerId="operating-bridge",
+            consumerVersion="1",
+            variableIds=("business.exportRatio",),
+            requireExact=True,
+        ),
+        admissionVerifier=verifier,
+    )
+    issued = issuePointInTimeState(
+        compiled,
+        database,
+        artifacts,
+        privateKey=privateBytes,
+        issuerId="state-issuer",
+        issuerKeyId="state-key",
+        issuedAt="20250201T000000Z",
+        trustedIssuers=trusted,
+    )
+    return issued, verifier
 
 
 def _bridge(path: ScenarioPath | None = None, **kwargs):
@@ -314,6 +503,75 @@ def testMeasuredAssociationRejectsSourceFactorContractDrift():
             (drifted,),
             factorSpecs=_factorSpecs(),
             baselines=_baselines(),
+        )
+
+
+def testMeasuredAssociationModifierRejectsManualObservedState():
+    measured = _measuredFxPriceExposure(modifier=True)
+    with pytest.raises(OperatingBridgeError, match="requires admitted state or explicit assumption"):
+        bridgeOperatingPath(
+            _sourcePath(),
+            (measured,),
+            factorSpecs=_factorSpecs(),
+            baselines=_baselines(),
+            statePrimitives=_state(evidenceRole="observed"),
+            stateRef="manual://state",
+        )
+
+    conditional = bridgeOperatingPath(
+        _sourcePath(),
+        (measured,),
+        factorSpecs=_factorSpecs(),
+        baselines=_baselines(),
+        statePrimitives=_state(evidenceRole="explicitAssumption"),
+        stateRef="manual://state",
+    )
+    assert conditional.path.steps[0]["marketPriceChange"] == pytest.approx(0.03)
+    assert "modifierAssumption:business.exportRatio" in conditional.audit.warnings
+
+
+def testMeasuredAssociationModifierRequiresVerifiedCompiledState(tmp_path):
+    measured = _measuredFxPriceExposure(modifier=True)
+    admittedWithoutVerifier = replace(
+        _compiledState(),
+        admissionStatus="admitted",
+        stateReceiptId="7" * 64,
+    )
+    with pytest.raises(OperatingBridgeError, match="requires verified admitted state"):
+        bridgeOperatingPath(
+            _sourcePath(),
+            (measured,),
+            factorSpecs=_factorSpecs(),
+            baselines=_baselines(),
+            compiledState=admittedWithoutVerifier,
+        )
+
+    admitted, verifier = _admittedCompiledState(tmp_path)
+    verified = bridgeOperatingPath(
+        _sourcePath(),
+        (measured,),
+        factorSpecs=_factorSpecs(),
+        baselines=_baselines(),
+        compiledState=admitted,
+        admissionVerifier=verifier,
+    )
+    assert verified.path.steps[0]["marketPriceChange"] == pytest.approx(0.03)
+    assert "compiledStateAdmission:admittedVerified" in verified.audit.warnings
+    assert "compiledStateAdmission:admittedUnverifiedByBridge" not in verified.audit.warnings
+    assert f"verifiedStateReceipt:{admitted.stateReceiptId}" in verified.audit.sourceRefs
+
+    tampered = replace(
+        admitted,
+        statePrimitives=(replace(admitted.statePrimitives[0], value=0.61),),
+    )
+    with pytest.raises(OperatingBridgeError, match="compiled state admission verification failed"):
+        bridgeOperatingPath(
+            _sourcePath(),
+            (measured,),
+            factorSpecs=_factorSpecs(),
+            baselines=_baselines(),
+            compiledState=tampered,
+            admissionVerifier=verifier,
         )
 
 

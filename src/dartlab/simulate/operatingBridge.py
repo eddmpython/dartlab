@@ -13,7 +13,12 @@ import math
 from dataclasses import dataclass
 from typing import Mapping
 
-from dartlab.simulate.stateCompiler import CompiledPointInTimeState
+from dartlab.simulate.admissionRegistry import AdmissionVerifier
+from dartlab.simulate.stateCompiler import (
+    CompiledPointInTimeState,
+    StateCompilerError,
+    validateCompiledPointInTimeState,
+)
 from dartlab.simulate.stateSupport import StatePrimitive, stateContractHash
 from dartlab.simulate.vintage import VintageError, canonicalPayloadHash, isExactAsKnown, validateVintageRef
 from dartlab.simulate.world import PATH_VALIDATION_SET, WEIGHT_KIND_SET, ScenarioPath
@@ -309,6 +314,9 @@ def _compiledPrimitiveState(
     compiledState: CompiledPointInTimeState | None,
     statePrimitives: tuple[StatePrimitive, ...],
     stateRef: str,
+    *,
+    admissionVerifier: AdmissionVerifier | None,
+    requiresAdmittedModifierState: bool,
 ) -> tuple[tuple[StatePrimitive, ...], str, tuple[str, ...], tuple[str, ...]]:
     if compiledState is not None:
         if statePrimitives or stateRef:
@@ -330,7 +338,17 @@ def _compiledPrimitiveState(
         if compiledState.admissionStatus != "admitted":
             warnings += (f"compiledStateAdmission:{compiledState.admissionStatus}",)
         else:
-            warnings += ("compiledStateAdmission:admittedUnverifiedByBridge",)
+            if admissionVerifier is None:
+                if requiresAdmittedModifierState:
+                    raise OperatingBridgeError("measured association modifier requires verified admitted state")
+                warnings += ("compiledStateAdmission:admittedUnverifiedByBridge",)
+            else:
+                try:
+                    receipt = validateCompiledPointInTimeState(compiledState, admissionVerifier)
+                except StateCompilerError as error:
+                    raise OperatingBridgeError(f"compiled state admission verification failed: {error}") from error
+                refs += (f"verifiedStateReceipt:{receipt.receiptId}",)
+                warnings += ("compiledStateAdmission:admittedVerified",)
         return compiledState.statePrimitives, effectiveRef, refs, warnings
     primitives = tuple(statePrimitives)
     if bool(primitives) != bool(stateRef):
@@ -516,10 +534,20 @@ def _validateExposureSet(exposures: tuple[OperatingTransmissionExposure, ...]) -
             raise OperatingBridgeError(f"duplicate operating exposure needs unique aggregation groups: {pair}")
 
 
+def _requiresAdmittedModifierState(exposures: tuple[OperatingTransmissionExposure, ...]) -> bool:
+    return any(
+        item.evidenceKind == "measuredAssociation" and bool(item.modifierVariableId)
+        for item in exposures
+        if isinstance(item, OperatingTransmissionExposure)
+    )
+
+
 def _modifierValue(
     exposure: OperatingTransmissionExposure,
     state: Mapping[str, StatePrimitive],
     warnings: list[str],
+    *,
+    stateOrigin: str,
 ) -> float:
     if not exposure.modifierVariableId:
         return 1.0
@@ -534,6 +562,12 @@ def _modifierValue(
         raise OperatingBridgeError(
             f"operating bridge modifier evidence is not executable: {exposure.modifierVariableId}"
         )
+    if (
+        exposure.evidenceKind == "measuredAssociation"
+        and stateOrigin == "manual"
+        and primitive.evidenceRole not in {"explicitAssumption", "derivedFromAssumption"}
+    ):
+        raise OperatingBridgeError("measured association modifier requires admitted state or explicit assumption")
     if primitive.evidenceRole in {"explicitAssumption", "derivedFromAssumption"}:
         warnings.append(f"modifierAssumption:{primitive.variableId}")
     if primitive.evidenceRole == "admittedEstimate":
@@ -577,6 +611,7 @@ def bridgeOperatingPath(
     compiledState: CompiledPointInTimeState | None = None,
     statePrimitives: tuple[StatePrimitive, ...] = (),
     stateRef: str = "",
+    admissionVerifier: AdmissionVerifier | None = None,
     pathId: str | None = None,
 ) -> OperatingBridgeResult:
     """Translate a typed factor path into an executable operating shock path.
@@ -589,6 +624,7 @@ def bridgeOperatingPath(
         compiledState: Optional PIT state manifest for modifier primitives.
         statePrimitives: Optional explicit primitive tuple when no compiled state is available.
         stateRef: Required reference when passing explicit primitives.
+        admissionVerifier: Optional receipt verifier for admitted compiled state modifiers.
         pathId: Optional output path id. Defaults to ``operating-{sourcePath.pathId}``.
 
     Returns:
@@ -605,11 +641,15 @@ def bridgeOperatingPath(
     sourcePathContentHash = _validateSourcePath(sourcePath, factors)
     baselineByTarget = _validateBaselines(tuple(baselines))
     exposures = tuple(exposures)
+    requiresAdmittedModifierState = _requiresAdmittedModifierState(exposures)
     primitives, effectiveStateRef, stateRefs, stateWarnings = _compiledPrimitiveState(
         compiledState,
         tuple(statePrimitives),
         stateRef,
+        admissionVerifier=admissionVerifier,
+        requiresAdmittedModifierState=requiresAdmittedModifierState,
     )
+    stateOrigin = "compiled" if compiledState is not None else "manual"
     state = _stateById(primitives)
     warnings = list(stateWarnings)
     for exposure in exposures:
@@ -624,7 +664,10 @@ def bridgeOperatingPath(
             warnings.append(f"baselineAssumption:{baseline.targetShock}")
         elif baseline.evidenceRole == "admittedEstimate":
             warnings.append(f"baselineEstimate:{baseline.targetShock}")
-    exposureScales = {exposure.exposureId: _modifierValue(exposure, state, warnings) for exposure in exposures}
+    exposureScales = {
+        exposure.exposureId: _modifierValue(exposure, state, warnings, stateOrigin=stateOrigin)
+        for exposure in exposures
+    }
     usedFactors = {item.sourceVariableId for item in exposures}
     ignoredSourceFactors = tuple(sorted(set(factors) - usedFactors))
     warnings.extend(f"unusedSourceFactor:{item}" for item in ignoredSourceFactors)

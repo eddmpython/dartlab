@@ -24,6 +24,7 @@ from dartlab.simulate.vintage import canonicalPayloadHash
 from dartlab.simulate.world import SimulationRun, StrategySpec, strategyContractHash
 
 if TYPE_CHECKING:
+    from dartlab.simulate.admissionRegistry import AdmissionVerifier
     from dartlab.simulate.stateCompiler import CompiledPointInTimeState
 
 SCENARIO_COMPOSITION_VERSION = "scenario-composition-v1"
@@ -47,6 +48,7 @@ class OperatingScenarioCase:
     compiledState: CompiledPointInTimeState | None = None
     statePrimitives: tuple[StatePrimitive, ...] = ()
     stateRef: str = ""
+    admissionVerifier: AdmissionVerifier | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "exposures", tuple(self.exposures))
@@ -229,6 +231,7 @@ def _runCase(
             compiledState=case.compiledState,
             statePrimitives=case.statePrimitives,
             stateRef=case.stateRef,
+            admissionVerifier=case.admissionVerifier,
             pathId=f"{case.caseId}:{path.pathId}",
         )
         for path in case.pathSet.paths

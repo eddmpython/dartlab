@@ -1176,3 +1176,13 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **회귀**: driver calibration receipt가 source factor 계약 hash를 산출하는지 고정했다. provider observation batch에서 admission을 거쳐 만든 exposure도 같은 계약을 보존하는지 확인했다. operating bridge에는 계약 drift kill-test를 추가했다.
 - **검증**: driver calibration, driver observation frame, operating bridge focused 23건 통과. `tests/simulate` 전체 386건 통과. ruff format, ruff check, camelCase strict, Guard Index quick, diff check, em/en dash audit 통과. file 단위 `docstring9Section.py`는 기존 simulate public 함수 baseline 부채까지 잡아 이번 변경 범위 완료 기준으로 쓰지 않았다.
 - **남은 P0**: 의미 경계는 더 단단해졌지만 아직 실제 adapter에서 DART, EDGAR, price, macro, industry 관측 batch를 모두 공급하고, 다변수 coefficient registry와 scenario composition을 연결해 전략 recommendation을 여는 단계가 남아 있다.
+
+
+## 2026-07-15 P0 measured association state modifier admission
+
+- **판단**: 사용자의 목표는 과거 관측이 현재 상태로 수렴했고, 미래는 그 상태 조건의 미세조정으로 달라지는 시뮬레이터다. 따라서 admitted coefficient가 PIT state modifier로 스케일될 때 그 현재 상태가 진짜 검증된 compiled state인지 확인해야 한다. 수동 observed primitive를 넣어 measuredAssociation을 조정하면 현재 상태 admission wall을 우회한다.
+- **구현**: `bridgeOperatingPath`에 optional `admissionVerifier`를 추가했다. measuredAssociation exposure가 modifier를 쓰면서 compiled state가 admitted라고 주장하면 bridge가 `validateCompiledPointInTimeState`로 pointInTimeState receipt와 manifest를 replay한다. verifier가 없으면 admitted state modifier로 인정하지 않는다.
+- **세탁 차단**: manual `StatePrimitive(evidenceRole="observed")`는 measuredAssociation modifier로 쓸 수 없다. manual explicit assumption modifier는 실행은 가능하지만 `modifierAssumption:<variableId>` warning을 남긴다. admitted compiled state는 verified receipt ref를 bridge refs에 남기고, manifest나 primitive value가 바뀌면 bridge에서 실패한다.
+- **scenario 연결**: `OperatingScenarioCase`가 optional admission verifier를 보존하고 bridge에 전달한다. 새 public API나 verb export는 만들지 않았다.
+- **검증**: operating bridge와 scenario composition focused 15건 통과. `tests/simulate` 전체 388건 통과. ruff format, ruff check, camelCase strict, Guard Index quick, diff check, em/en dash audit 통과.
+- **다음 P0 후보**: data lineage와 PRD 검토에서는 price exact observation lane을 다음 우선 후보로 봤다. filing exact lane은 이미 있으므로, 다음에는 주가 return이 explicit availableAt, 양쪽 price leg receipt, derived return artifact hash를 갖춘 signed provider observation batch로 들어오게 해야 한다. macro와 industry는 release vintage와 time-series 경계가 더 필요하므로 price가 먼저다.
