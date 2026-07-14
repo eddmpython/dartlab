@@ -66,13 +66,15 @@ def _compiledState(
     primitives: tuple[StatePrimitive, ...],
     *,
     limitations: tuple[str, ...] = ("unsignedProviderBatches",),
+    manifestHash: str = "manifest-1",
+    stateCompilationContractHash: str = "compile-1",
 ) -> CompiledPointInTimeState:
     return CompiledPointInTimeState(
         stateId="state-1",
-        manifestHash="manifest-1",
+        manifestHash=manifestHash,
         registryHash="registry-1",
         stateContractHash="contract-1",
-        stateCompilationContractHash="compile-1",
+        stateCompilationContractHash=stateCompilationContractHash,
         entityId="AAPL",
         market="US",
         decisionAsOf="20250201",
@@ -183,6 +185,31 @@ def testOperatingInputsCanBindTypedPitStateWithoutLosingLineage():
     assert "compiledStateLimitation:unsignedProviderBatches" in inputs.warnings
     assert "compiledStateHistory:conditional" in inputs.warnings
     assert "operatingAssumption:capacityUnits" in inputs.warnings
+
+
+def testOperatingRunPreservesCompiledStateTemporalLineage():
+    manifestHash = "a" * 64
+    contractHash = "b" * 64
+    inputs = operatingInputsFromCompiledState(
+        _compiledState(
+            _stateRows(),
+            limitations=(),
+            manifestHash=manifestHash,
+            stateCompilationContractHash=contractHash,
+        ),
+        priceElasticity=1.0,
+        capacityUnitsPerCurrency=1.0,
+    )
+    assert inputs.knowledgeAsOf == "20250130"
+    assert inputs.decisionAsOf == "20250201"
+    assert inputs.stateManifestHash == manifestHash
+    assert inputs.stateCompilationContractHash == contractHash
+    assert inputs.stateVintage is not None
+    assert inputs.stateVintage.contractHash == contractHash
+
+    run = _run(inputs, _path(horizon=1), _strategy("hold", horizon=1))
+    assert run.decisionAsOf == "20250201"
+    assert run.dataVintageHash
 
 
 def testOperatingInputsFromPitStateFailClosedOnMeaningDrift():

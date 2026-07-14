@@ -1144,3 +1144,14 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **projection 경계**: exact signed filing provider batch는 path generator용 `DriverHistorySource`로 내려갈 수 있고 이때 `historyStatus=asKnown`이 보존된다. conditional DART retained metric batch는 provider receipt 발행 단계에서 거부된다.
 - **검증**: EDGAR filing metric exact batch 발행과 projection, row knowledge 누락, observed 세탁, exact row receipt 누락, availability 경계 위반, provider drift, DART conditional issue 거부를 kill-test로 추가했다.
 - **남은 P0**: price exact lane은 explicit availableAt와 price vintage receipt가 있어야 하고, macro exact lane은 release vintage가 있어야 한다. 둘 다 없는 revised history를 coefficient admission parent로 세탁하면 안 된다.
+
+
+## 2026-07-15 P0 scenario composition experiment envelope
+
+- **판단**: 사용자가 말한 전쟁게임식 시뮬레이터에 가까워지려면 새 UI보다 먼저 "여러 가정 case를 같은 전략 묶음으로 실행하고 결과를 비교하는 내부 장부"가 필요하다. 이미 path generator, operating bridge, operating world는 있으나, case별 조립과 비교 envelope가 없어 조건, 가정, intervention, 결과가 흩어져 보였다.
+- **구현**: `src/dartlab/simulate/scenarioComposition.py`를 추가했다. `OperatingScenarioCase`는 `DriverPathSet`, bridge exposure, baseline shock을 묶고, `compareOperatingScenarioCases`가 각 case의 path를 operating shock path로 bridge한 뒤 같은 `StrategySpec` 집합으로 `runOperatingStrategies`를 실행한다.
+- **역할 경계**: `priceChange`, `capacityInvestment`, `borrow`, `repay` 같은 intervention action이 driver path factor나 scenario path step에 들어오면 즉시 거부한다. 미래 외생 조건은 path, 회사가 선택하는 행동은 strategy에만 있어야 한다.
+- **조건부 ceiling**: 각 case 결과는 runHash, resultHash, bridgeHash, pathSetHash, strategy score, Pareto, warning, boundary count를 남긴다. 어느 case라도 unvalidated path, explicit assumption, admission gap을 포함하면 comparison recommendation은 열지 않고 `conditionalOnly`로 남긴다.
+- **상태 계보 보강**: `operatingInputsFromCompiledState`가 compiled PIT state의 `knowledgeAsOf`, `decisionAsOf`, state manifest, compilation contract, world-state vintage를 `runOperatingStrategies`의 initial `WorldState`까지 전달하게 했다. 단 mapped operating state에 원 PIT receipt를 initialState receipt처럼 세탁하지는 않는다.
+- **검증**: scenario composition 4건, operatingWorld lineage 11건, driverPaths, operatingBridge, world 포함 집중 회귀 57건이 통과했다. `tests/simulate` 전체 381건 통과. ruff format/check, camelCase strict, docstring audit, em/en dash audit도 통과했다.
+- **남은 P0**: exact provider observation batch에서 시작해 coefficient admission과 admitted operating exposure까지 도달하는 수직 E2E fixture가 아직 필요하다. 이번 단위는 추천을 여는 단계가 아니라, 다중 case 비교와 값 역할 분리를 기계화한 단계다.

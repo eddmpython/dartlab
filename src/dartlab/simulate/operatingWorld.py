@@ -12,6 +12,7 @@ from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Mapping, Sequence
 
 from dartlab.simulate.stateSupport import StatePrimitive
+from dartlab.simulate.vintage import VintageRef, worldStatePayloadHash
 from dartlab.simulate.world import (
     ActionSpec,
     ConstraintSpec,
@@ -119,6 +120,11 @@ class OperatingWorldInputs:
     taxRate: float
     stepFrequency: str = "quarter"
     stepSpan: int = 1
+    knowledgeAsOf: str = ""
+    decisionAsOf: str = ""
+    stateCompilationContractHash: str = ""
+    stateManifestHash: str = ""
+    stateVintage: VintageRef | None = None
 
 
 def _finite(value: float, label: str) -> float:
@@ -135,6 +141,10 @@ def _requireRefs(refs: tuple[str, ...], label: str) -> None:
 
 def _dedupeRefs(refs: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(str(ref) for ref in refs if str(ref)))
+
+
+def _validDigest(value: str) -> bool:
+    return len(value) == 64 and all(character in "0123456789abcdef" for character in value.lower())
 
 
 def _operatingUnit(unit: str, expected: str, variableId: str) -> str:
@@ -357,7 +367,7 @@ def operatingInputsFromCompiledState(
         if warning
     )
     refs = _compiledStateRefs(compiled)
-    return operatingInputsFromStatePrimitives(
+    inputs = operatingInputsFromStatePrimitives(
         compiled.statePrimitives,
         asOf=compiled.decisionAsOf,
         priceElasticity=priceElasticity,
@@ -367,6 +377,30 @@ def operatingInputsFromCompiledState(
         refs=refs,
         warnings=(*warnings, *limitationWarnings, *statusWarnings),
         sourceRefPrefix=f"compiledState:{compiled.stateId}",
+    )
+    if not (_validDigest(compiled.manifestHash) and _validDigest(compiled.stateCompilationContractHash)):
+        return replace(inputs, knowledgeAsOf=compiled.knowledgeAsOf, decisionAsOf=compiled.decisionAsOf)
+    payloadHash = worldStatePayloadHash(inputs.state, step=0, asOf=compiled.decisionAsOf, refs=inputs.refs)
+    vintage = VintageRef(
+        artifactKind="worldState",
+        provider="dartlab.operatingWorld",
+        artifactId=compiled.stateId,
+        artifactHash=compiled.manifestHash,
+        payloadHash=payloadHash,
+        knowledgeAsOf=compiled.knowledgeAsOf,
+        availableAt=compiled.knowledgeAsOf,
+        revisionPolicy=compiled.aggregateRevisionPolicy,
+        coverage=compiled.aggregateCoverage,
+        contractHash=compiled.stateCompilationContractHash,
+        sourceRefs=refs,
+    )
+    return replace(
+        inputs,
+        knowledgeAsOf=compiled.knowledgeAsOf,
+        decisionAsOf=compiled.decisionAsOf,
+        stateCompilationContractHash=compiled.stateCompilationContractHash,
+        stateManifestHash=compiled.manifestHash,
+        stateVintage=vintage,
     )
 
 
@@ -662,7 +696,16 @@ def runOperatingStrategies(
     """
 
     model = _buildOperatingWorld(inputs, maxFinancing=maxFinancing, maxInvestment=maxInvestment)
-    initial = WorldState(inputs.state, asOf=inputs.asOf, refs=inputs.refs)
+    initial = WorldState(
+        inputs.state,
+        asOf=inputs.asOf,
+        refs=inputs.refs,
+        knowledgeAsOf=inputs.knowledgeAsOf,
+        decisionAsOf=inputs.decisionAsOf,
+        vintage=inputs.stateVintage,
+        stateCompilationContractHash=inputs.stateCompilationContractHash,
+        stateManifestHash=inputs.stateManifestHash,
+    )
     constraints = (
         ConstraintSpec("cash", "ge", 0.0),
         ConstraintSpec("debt", "le", debtLimit),
