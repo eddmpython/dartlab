@@ -462,6 +462,11 @@ class ConditionalScenarioExperiment:
     strategyIds: tuple[str, ...]
     strategyContractHashes: tuple[str, ...]
     initialStateRefs: tuple[str, ...]
+    caseLedgerHashes: tuple[str, ...]
+    providerObservationBatchRefs: tuple[str, ...]
+    explicitAssumptionIds: tuple[str, ...]
+    pathHistoryInputHashes: tuple[str, ...]
+    pathAssumptionHashes: tuple[str, ...]
     assumptionSetIds: tuple[str, ...]
     assumptionSetHashes: tuple[str, ...]
     caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]
@@ -475,6 +480,11 @@ class ConditionalScenarioExperiment:
         object.__setattr__(self, "strategyIds", tuple(self.strategyIds))
         object.__setattr__(self, "strategyContractHashes", tuple(self.strategyContractHashes))
         object.__setattr__(self, "initialStateRefs", tuple(self.initialStateRefs))
+        object.__setattr__(self, "caseLedgerHashes", tuple(self.caseLedgerHashes))
+        object.__setattr__(self, "providerObservationBatchRefs", tuple(self.providerObservationBatchRefs))
+        object.__setattr__(self, "explicitAssumptionIds", tuple(self.explicitAssumptionIds))
+        object.__setattr__(self, "pathHistoryInputHashes", tuple(self.pathHistoryInputHashes))
+        object.__setattr__(self, "pathAssumptionHashes", tuple(self.pathAssumptionHashes))
         object.__setattr__(self, "assumptionSetIds", tuple(self.assumptionSetIds))
         object.__setattr__(self, "assumptionSetHashes", tuple(self.assumptionSetHashes))
         object.__setattr__(self, "caseLedgers", tuple(self.caseLedgers))
@@ -1399,6 +1409,84 @@ def _caseLedger(
     )
 
 
+def _caseLedgerHashes(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> tuple[str, ...]:
+    return tuple(
+        canonicalPayloadHash(
+            {
+                "schemaVersion": CONDITIONAL_SCENARIO_EXPERIMENT_VERSION,
+                "caseId": ledger.caseId,
+                "label": ledger.label,
+                "factorIds": ledger.factorIds,
+                "conditionRefs": ledger.conditionRefs,
+                "assumptionRefs": ledger.assumptionRefs,
+                "stateRefs": ledger.stateRefs,
+                "pathSetInputHash": ledger.pathSetInputHash,
+                "pathRegistryHash": ledger.pathRegistryHash,
+                "pathFactorContractHash": ledger.pathFactorContractHash,
+                "pathSourceRefs": ledger.pathSourceRefs,
+                "providerObservationBatchRefs": ledger.providerObservationBatchRefs,
+                "explicitAssumptionIds": ledger.explicitAssumptionIds,
+                "scenarioPathPackageHash": ledger.scenarioPathPackageHash,
+                "pathHistoryInputHash": ledger.pathHistoryInputHash,
+                "pathAssumptionHash": ledger.pathAssumptionHash,
+                "basePathSetHash": ledger.basePathSetHash,
+                "composedPathSetHash": ledger.composedPathSetHash,
+                "pathOverlayHash": ledger.pathOverlayHash,
+                "observedHistoryStatus": ledger.observedHistoryStatus,
+                "futureAdjustmentStatus": ledger.futureAdjustmentStatus,
+                "basePathAdmissionReceiptId": ledger.basePathAdmissionReceiptId,
+                "basePathAdmissionScope": ledger.basePathAdmissionScope,
+                "composedPathAdmissionStatus": ledger.composedPathAdmissionStatus,
+                "pathAdmissionTransferStatus": ledger.pathAdmissionTransferStatus,
+                "pathAdmissionTransferBlockedBy": ledger.pathAdmissionTransferBlockedBy,
+                "policyEvaluationEligibility": ledger.policyEvaluationEligibility,
+                "exposureLedgers": ledger.exposureLedgers,
+                "coefficientAdmissionReceiptIds": ledger.coefficientAdmissionReceiptIds,
+                "coefficientBindingHashes": ledger.coefficientBindingHashes,
+                "coefficientParentReceiptIds": ledger.coefficientParentReceiptIds,
+                "pathSetHash": ledger.pathSetHash,
+                "bridgeHashes": ledger.bridgeHashes,
+                "runHash": ledger.runHash,
+                "resultHash": ledger.resultHash,
+                "parameterHash": ledger.parameterHash,
+                "dataVintageHash": ledger.dataVintageHash,
+                "initialStateAdmissionReceiptId": ledger.initialStateAdmissionReceiptId,
+                "pathAdmissionReceiptId": ledger.pathAdmissionReceiptId,
+                "policyEvaluationCertificateId": ledger.policyEvaluationCertificateId,
+                "decisionStatus": ledger.decisionStatus,
+                "status": ledger.status,
+                "weightLabel": ledger.weightLabel,
+                "recommendation": ledger.recommendation,
+                "paretoStrategies": ledger.paretoStrategies,
+                "scoreLeaderStrategies": ledger.scoreLeaderStrategies,
+                "strategyScores": ledger.strategyScores,
+                "counts": ledger.counts,
+                "blockedReasons": ledger.blockedReasons,
+                "warnings": ledger.warnings,
+            }
+        )
+        for ledger in caseLedgers
+    )
+
+
+def _experimentProviderObservationBatchRefs(
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+) -> tuple[str, ...]:
+    return _dedupe(tuple(ref for ledger in caseLedgers for ref in ledger.providerObservationBatchRefs))
+
+
+def _experimentExplicitAssumptionIds(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> tuple[str, ...]:
+    return _dedupe(tuple(assumptionId for ledger in caseLedgers for assumptionId in ledger.explicitAssumptionIds))
+
+
+def _experimentPathHistoryInputHashes(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> tuple[str, ...]:
+    return _dedupe(tuple(ledger.pathHistoryInputHash for ledger in caseLedgers))
+
+
+def _experimentPathAssumptionHashes(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> tuple[str, ...]:
+    return _dedupe(tuple(ledger.pathAssumptionHash for ledger in caseLedgers))
+
+
 def _validateOneCompanyLoop(
     entityId: str,
     cases: tuple[OperatingScenarioCase, ...],
@@ -1671,6 +1759,11 @@ def runConditionalScenarioExperiment(
         _caseLedger(case, result, initialStateRefs=initialRefs)
         for case, result in zip(caseTuple, comparison.caseResults, strict=True)
     )
+    caseLedgerHashes = _caseLedgerHashes(caseLedgers)
+    providerObservationBatchRefs = _experimentProviderObservationBatchRefs(caseLedgers)
+    explicitAssumptionIds = _experimentExplicitAssumptionIds(caseLedgers)
+    pathHistoryInputHashes = _experimentPathHistoryInputHashes(caseLedgers)
+    pathAssumptionHashes = _experimentPathAssumptionHashes(caseLedgers)
     assumptionSetHashes = tuple(
         _assumptionSetHash(case, result) for case, result in zip(caseTuple, comparison.caseResults, strict=True)
     )
@@ -1696,6 +1789,10 @@ def runConditionalScenarioExperiment(
             "schemaVersion": CONDITIONAL_SCENARIO_EXPERIMENT_VERSION,
             "entityId": entityId,
             "initialStateRefs": initialRefs,
+            "providerObservationBatchRefs": providerObservationBatchRefs,
+            "explicitAssumptionIds": explicitAssumptionIds,
+            "pathHistoryInputHashes": pathHistoryInputHashes,
+            "pathAssumptionHashes": pathAssumptionHashes,
             "assumptionSetHashes": assumptionSetHashes,
             "strategySetHash": strategySetHash,
             "debtLimit": float(debtLimit),
@@ -1717,6 +1814,11 @@ def runConditionalScenarioExperiment(
         "strategyIds": comparison.strategyIds,
         "strategyContractHashes": comparison.strategyContractHashes,
         "initialStateRefs": initialRefs,
+        "caseLedgerHashes": caseLedgerHashes,
+        "providerObservationBatchRefs": providerObservationBatchRefs,
+        "explicitAssumptionIds": explicitAssumptionIds,
+        "pathHistoryInputHashes": pathHistoryInputHashes,
+        "pathAssumptionHashes": pathAssumptionHashes,
         "assumptionSetIds": tuple(case.caseId for case in caseTuple),
         "assumptionSetHashes": assumptionSetHashes,
         "strategySummaries": strategySummaries,
@@ -1743,6 +1845,11 @@ def runConditionalScenarioExperiment(
         strategyIds=comparison.strategyIds,
         strategyContractHashes=comparison.strategyContractHashes,
         initialStateRefs=initialRefs,
+        caseLedgerHashes=caseLedgerHashes,
+        providerObservationBatchRefs=providerObservationBatchRefs,
+        explicitAssumptionIds=explicitAssumptionIds,
+        pathHistoryInputHashes=pathHistoryInputHashes,
+        pathAssumptionHashes=pathAssumptionHashes,
         assumptionSetIds=tuple(case.caseId for case in caseTuple),
         assumptionSetHashes=assumptionSetHashes,
         caseLedgers=caseLedgers,

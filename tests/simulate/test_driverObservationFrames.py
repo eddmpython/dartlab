@@ -80,6 +80,7 @@ from dartlab.simulate.scenarioComposition import (
     ScenarioCompositionError,
     buildScenarioCoefficientBindingFromVerifiedMultivariableAdmission,
     compareOneCompanyTwoScenarioStrategies,
+    runConditionalScenarioExperiment,
     scenarioCoefficientBindingHash,
     scenarioCoefficientExposureContractHash,
 )
@@ -1252,6 +1253,36 @@ def _oneStepStrategies():
     )
 
 
+def _oneStepExperimentStrategies():
+    return (
+        buildOperatingStrategy(
+            "hold",
+            priceChange=(0.0,),
+            capacityInvestment=(0.0,),
+            borrow=(0.0,),
+            repay=(0.0,),
+            refs=("strategy://hold",),
+            isBaseline=True,
+        ),
+        buildOperatingStrategy(
+            "invest",
+            priceChange=(0.0,),
+            capacityInvestment=(25.0,),
+            borrow=(0.0,),
+            repay=(0.0,),
+            refs=("strategy://invest",),
+        ),
+        buildOperatingStrategy(
+            "defend",
+            priceChange=(0.03,),
+            capacityInvestment=(0.0,),
+            borrow=(0.0,),
+            repay=(10.0,),
+            refs=("strategy://defend",),
+        ),
+    )
+
+
 def testProviderObservationBatchesBuildCoefficientFrameAndAdmission(tmp_path) -> None:
     context = _trust(tmp_path)
     fitSource, fitLabel = _fitBatches(context)
@@ -1911,6 +1942,165 @@ def testAdmittedCurrentStateFeedsScenarioLoopWithoutOpeningRecommendation(tmp_pa
             maxFinancing=200.0,
             maxInvestment=200.0,
         )
+
+
+def testProviderHistoryAdmittedStateAndAdjustmentsFeedConditionalExperiment(tmp_path) -> None:
+    context = _trust(tmp_path)
+    fitFx, fitOil, _fitFrame, _oosFrame, receipt, report, signed, verified, exposures = _multivariableAdmissionBundle(
+        context,
+        fitBatches=_multiFitLaneBatches(context),
+    )
+    binding = buildScenarioCoefficientBindingFromVerifiedMultivariableAdmission(
+        receipt,
+        report,
+        verified,
+        exposures,
+    )
+    inputs = _admittedOperatingInputs(context)
+    cases = (
+        _scenarioCaseWithProviderHistoryAndAdjustment(
+            "base",
+            0.01,
+            fitFx,
+            fitOil,
+            exposures,
+            binding,
+            context[4],
+        ),
+        _scenarioCaseWithProviderHistoryAndAdjustment(
+            "upside",
+            0.04,
+            fitFx,
+            fitOil,
+            exposures,
+            binding,
+            context[4],
+        ),
+        _scenarioCaseWithProviderHistoryAndAdjustment(
+            "stress",
+            -0.03,
+            fitFx,
+            fitOil,
+            exposures,
+            binding,
+            context[4],
+        ),
+        _scenarioCaseWithProviderHistoryAndAdjustment(
+            "shock",
+            -0.08,
+            fitFx,
+            fitOil,
+            exposures,
+            binding,
+            context[4],
+        ),
+    )
+    experiment = runConditionalScenarioExperiment(
+        "005930",
+        inputs,
+        cases,
+        _oneStepExperimentStrategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert experiment.scenarioCount == 4
+    assert experiment.strategyCount == 3
+    assert experiment.cellCount == 12
+    assert experiment.strategyIds == ("hold", "invest", "defend")
+    assert experiment.assumptionSetIds == ("base", "upside", "stress", "shock")
+    assert experiment.recommendation is None
+    assert experiment.decisionStatus == "conditionalOnly"
+    assert experiment.recommendationCeiling == "conditionalOnly"
+    assert len(experiment.caseLedgerHashes) == 4
+    assert len(set(experiment.caseLedgerHashes)) == 4
+    assert f"initialStateAdmission:{inputs.initialStateAdmissionReceiptId}" in experiment.initialStateRefs
+    assert any(ref.startswith("stateReceipt:") for ref in experiment.initialStateRefs)
+    assert any(ref.startswith("stateManifest:") for ref in experiment.initialStateRefs)
+    assert any(ref.startswith("stateCompilationContract:") for ref in experiment.initialStateRefs)
+    assert any(ref.startswith("providerBatchReceipt:") for ref in experiment.initialStateRefs)
+    assert any(ref.startswith("observation:") for ref in experiment.initialStateRefs)
+    providerRefs = tuple(
+        dict.fromkeys(ref for ledger in experiment.caseLedgers for ref in ledger.providerObservationBatchRefs)
+    )
+    explicitAssumptionIds = tuple(
+        dict.fromkeys(
+            assumptionId for ledger in experiment.caseLedgers for assumptionId in ledger.explicitAssumptionIds
+        )
+    )
+    pathHistoryInputHashes = tuple(
+        dict.fromkeys(ledger.pathHistoryInputHash for ledger in experiment.caseLedgers if ledger.pathHistoryInputHash)
+    )
+    pathAssumptionHashes = tuple(
+        dict.fromkeys(ledger.pathAssumptionHash for ledger in experiment.caseLedgers if ledger.pathAssumptionHash)
+    )
+    assert experiment.providerObservationBatchRefs == providerRefs
+    assert experiment.explicitAssumptionIds == explicitAssumptionIds
+    assert experiment.pathHistoryInputHashes == pathHistoryInputHashes
+    assert experiment.pathAssumptionHashes == pathAssumptionHashes
+    assert any(ref.startswith("providerObservationBatch:") for ref in experiment.providerObservationBatchRefs)
+    assert any(ref.startswith("providerObservationBatchId:") for ref in experiment.providerObservationBatchRefs)
+    assert experiment.explicitAssumptionIds == (
+        "base-explicit-price-adjustment",
+        "upside-explicit-price-adjustment",
+        "stress-explicit-price-adjustment",
+        "shock-explicit-price-adjustment",
+    )
+    assert experiment.pathHistoryInputHashes == tuple(ledger.pathHistoryInputHash for ledger in experiment.caseLedgers)
+    assert experiment.pathAssumptionHashes == tuple(ledger.pathAssumptionHash for ledger in experiment.caseLedgers)
+    assert all(experiment.pathHistoryInputHashes)
+    assert all(experiment.pathAssumptionHashes)
+    assert all(
+        ledger.initialStateAdmissionReceiptId == inputs.initialStateAdmissionReceiptId
+        for ledger in experiment.caseLedgers
+    )
+    assert all("initialStateAdmissionMissing" not in ledger.blockedReasons for ledger in experiment.caseLedgers)
+    assert "initialStateAdmissionMissing" not in experiment.blockedReasons
+    assert "assumptionSweepPresent" in experiment.blockedReasons
+    assert "strategySweepPresent" in experiment.blockedReasons
+    assert "automaticRecommendationDisabled" in experiment.blockedReasons
+    assert "conditionalExperimentNotPolicyRecommendation" in experiment.blockedReasons
+    assert "pathAdmissionMissing" in experiment.blockedReasons
+    assert "policyEvaluationCertificateMissing" in experiment.blockedReasons
+    assert "scoreLeaderNotRecommendation" in experiment.blockedReasons
+    assert len(experiment.strategySummaries) == 3
+    assert all(summary.totalCellCount == 4 for summary in experiment.strategySummaries)
+    assert any(summary.leaderCellCount for summary in experiment.strategySummaries)
+    assert len(experiment.fragilityCells) == 4
+    assert {row.caseId for row in experiment.fragilityCells} == {"base", "upside", "stress", "shock"}
+    assert any(cell.regret > 0.0 for cell in experiment.cells)
+    assert len({round(row.leaderMargin, 12) for row in experiment.fragilityCells}) > 1
+    assert signed.receiptId in experiment.caseLedgers[0].coefficientAdmissionReceiptIds
+
+    changedCases = (
+        _scenarioCaseWithProviderHistoryAndAdjustment(
+            "base",
+            0.02,
+            fitFx,
+            fitOil,
+            exposures,
+            binding,
+            context[4],
+        ),
+        *cases[1:],
+    )
+    changed = runConditionalScenarioExperiment(
+        "005930",
+        inputs,
+        changedCases,
+        _oneStepExperimentStrategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert changed.providerObservationBatchRefs == experiment.providerObservationBatchRefs
+    assert changed.explicitAssumptionIds == experiment.explicitAssumptionIds
+    assert changed.pathHistoryInputHashes == experiment.pathHistoryInputHashes
+    assert changed.pathAssumptionHashes != experiment.pathAssumptionHashes
+    assert changed.assumptionSetHashes != experiment.assumptionSetHashes
+    assert changed.simulationSpecHash != experiment.simulationSpecHash
+    assert changed.resultSetHash != experiment.resultSetHash
+    assert changed.experimentHash != experiment.experimentHash
 
 
 def testMultivariableAdmissionRejectsTamperedFeatureCellRef(tmp_path) -> None:

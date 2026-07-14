@@ -474,6 +474,17 @@ def testConditionalScenarioExperimentSweepsAssumptionsAndStrategies() -> None:
     assert experiment.resultSetHash
     assert experiment.experimentHash
     assert len(experiment.caseLedgers) == 4
+    assert len(experiment.caseLedgerHashes) == 4
+    assert len(set(experiment.caseLedgerHashes)) == 4
+    assert experiment.providerObservationBatchRefs == ()
+    assert experiment.explicitAssumptionIds == (
+        "base-three-variable",
+        "demandUp-three-variable",
+        "costStress-three-variable",
+        "capacityStress-three-variable",
+    )
+    assert experiment.pathAssumptionHashes == tuple(ledger.pathAssumptionHash for ledger in experiment.caseLedgers)
+    assert all(experiment.pathAssumptionHashes)
     assert len(experiment.strategySummaries) == 3
     assert len(experiment.fragilityCells) == 4
     assert all(summary.totalCellCount == 4 for summary in experiment.strategySummaries)
@@ -524,7 +535,10 @@ def testConditionalScenarioExperimentHashBindsAssumptionGridAndResults() -> None
     )
     assert first.experimentHash == repeat.experimentHash
     assert first.resultSetHash == repeat.resultSetHash
+    assert first.simulationSpecHash == repeat.simulationSpecHash
     assert first.assumptionSetHashes != changed.assumptionSetHashes
+    assert first.pathAssumptionHashes != changed.pathAssumptionHashes
+    assert first.simulationSpecHash != changed.simulationSpecHash
     assert first.resultSetHash != changed.resultSetHash
     assert first.experimentHash != changed.experimentHash
     assert first.cells != changed.cells
