@@ -112,6 +112,8 @@ def testDriverPathSetJoinsHistoryAndAssumptionsIntoBridgeReadyPath() -> None:
     )
     assert pathSet.audit.validationStatus == "unvalidated"
     assert pathSet.audit.historyStatus == "explicitAssumption"
+    assert len(pathSet.audit.assumptionStepHashes) == 2
+    assert pathSet.audit.assumptionStepHashes[0] != pathSet.audit.assumptionStepHashes[1]
     assert "explicitAssumption:assumption-demand-down" in pathSet.audit.warnings
     assert {path.validationStatus for path in pathSet.paths} == {"unvalidated"}
     assert all("assumption://demand-down" in path.refs for path in pathSet.paths)
@@ -275,5 +277,9 @@ def testDriverPathSetHashBindsAssumptionContentAndRefs() -> None:
     )
     assert first.audit.pathSetHash != changed.audit.pathSetHash
     assert first.audit.pathSetHash != changedValue.audit.pathSetHash
+    assert first.audit.assumptionHash != changedValue.audit.assumptionHash
+    assert first.audit.assumptionStepHashes[0] != changedValue.audit.assumptionStepHashes[0]
+    assert first.audit.assumptionStepHashes[1] == changedValue.audit.assumptionStepHashes[1]
+    assert first.audit.inputHash != changedValue.audit.inputHash
     assert first.paths[0].historyStatus == "explicitAssumption"
     assert first.paths[0].weightKind == "unweighted"

@@ -1796,6 +1796,35 @@ def _quarterlyRegistryExplicitDemandAdjustment(caseId: str, shock: float) -> Dri
     return DriverAssumptionSource(card, ({"manualDemandAdjustment": shock},))
 
 
+def _quarterlyRegistryExplicitDemandAdjustmentPath(
+    caseId: str,
+    shocks: tuple[float, float, float, float],
+) -> DriverAssumptionSource:
+    factor = DriverFactorSpec(
+        "manualDemandAdjustment",
+        "simpleReturn",
+        "quarter",
+        "change",
+        "manual-demand-adjustment-quarterly-v1",
+    )
+    card = DriverCard(
+        cardId=f"{caseId}-manual-demand-adjustment-quarterly-path",
+        sourceKind="explicitAssumption",
+        providerId="user",
+        datasetId="manual-scenario",
+        entityId="005930",
+        frequency="quarter",
+        stepSpan=1,
+        factors=(factor,),
+        historyStatus="explicitAssumption",
+        sourceRefs=(f"assumption://{caseId}/manual-demand-adjustment-quarterly-path",),
+        assumptionId=f"{caseId}-manual-demand-adjustment-quarterly-path",
+        claim=f"{caseId} manual future demand adjustment path on the quarterly grid.",
+        falsifier="The declared future demand adjustment path is not the scenario being tested.",
+    )
+    return DriverAssumptionSource(card, tuple({"manualDemandAdjustment": shock} for shock in shocks))
+
+
 def _registryScenarioCaseWithEdgarPriceMacroAndAdjustment(
     caseId: str,
     shock: float,
@@ -1892,6 +1921,102 @@ def _registryScenarioCaseWithEdgarPriceMacroAndAdjustment(
     )
 
 
+def _registryScenarioCaseWithEdgarPriceMacroAndAdjustmentPath(
+    caseId: str,
+    shocks: tuple[float, float, float, float],
+    verifier,
+    sources: tuple[DriverHistorySource, DriverHistorySource, DriverHistorySource],
+) -> OperatingScenarioCase:
+    edgarSource, priceSource, macroSource = sources
+    registry = compileDriverRegistryPathSet(
+        (
+            DriverRegistryCandidate(
+                "edgar-filing-margin",
+                "pathHistory",
+                edgarSource,
+                semanticRefs=("semantics:edgar-financial-filing-change-path",),
+                selectionReason="Exact EDGAR filing metric is projected from a signed provider batch.",
+            ),
+            DriverRegistryCandidate(
+                "price-return-exact",
+                "pathHistory",
+                priceSource,
+                semanticRefs=("semantics:exact-equity-return-path",),
+                selectionReason="Exact derived equity return keeps source price legs and return receipts.",
+            ),
+            DriverRegistryCandidate(
+                "macro-oil-innovation",
+                "pathHistory",
+                macroSource,
+                semanticRefs=("semantics:macro-quarterly-innovation-path",),
+                selectionReason="Macro level history is transformed to quarterly innovation before admission.",
+            ),
+            DriverRegistryCandidate(
+                f"{caseId}-manual-demand-quarterly-path",
+                "explicitAssumption",
+                _quarterlyRegistryExplicitDemandAdjustmentPath(caseId, shocks),
+                semanticRefs=(f"semantics:{caseId}:explicit-future-demand-adjustment-quarterly-path",),
+                selectionReason="Manual future demand adjustment path for this assumption set.",
+            ),
+        ),
+        registryId=f"{caseId}-edgar-price-macro-demand-path-registry",
+        knowledgeAsOf="20210715",
+        horizon=4,
+        pathCount=4,
+        blockLength=2,
+        seed=41,
+        minObservations=6,
+    )
+    exposures = (
+        OperatingTransmissionExposure(
+            f"{caseId}-edgar-margin-unit-cost",
+            "operatingMarginChange",
+            "unitCostChange",
+            -0.4,
+            "ratioChangePerStep/ratioChange",
+            "explicitAssumption",
+            f"assumption://{caseId}/law/edgar-margin-to-unit-cost",
+        ),
+        OperatingTransmissionExposure(
+            f"{caseId}-equity-return-market-price",
+            "equityReturnShock",
+            "marketPriceChange",
+            0.35,
+            "ratioChangePerStep/simpleReturn",
+            "explicitAssumption",
+            f"assumption://{caseId}/law/equity-return-to-market-price",
+        ),
+        OperatingTransmissionExposure(
+            f"{caseId}-oil-unit-cost",
+            "oil",
+            "unitCostChange",
+            0.25,
+            "ratioChangePerStep/simpleReturn",
+            "explicitAssumption",
+            f"assumption://{caseId}/law/oil-to-unit-cost",
+        ),
+        OperatingTransmissionExposure(
+            f"{caseId}-manual-demand-quarterly-path",
+            "manualDemandAdjustment",
+            "demandChange",
+            1.0,
+            "ratioChangePerStep/simpleReturn",
+            "explicitAssumption",
+            f"assumption://{caseId}/law/manual-demand-adjustment-quarterly-path",
+        ),
+    )
+    return OperatingScenarioCase(
+        caseId,
+        caseId.title(),
+        registry.pathSet,
+        exposures,
+        _operatingBaselines(),
+        refs=(f"scenario://{caseId}",),
+        admissionVerifier=verifier,
+        driverRegistryAudit=registry.audit,
+    )
+
+
 def _oneStepStrategies():
     return (
         buildOperatingStrategy(
@@ -1940,6 +2065,44 @@ def _oneStepExperimentStrategies():
             borrow=(0.0,),
             repay=(10.0,),
             refs=("strategy://defend",),
+        ),
+    )
+
+
+def _fourQuarterExperimentStrategies():
+    return (
+        buildOperatingStrategy(
+            "hold",
+            priceChange=(0.0, 0.0, 0.0, 0.0),
+            capacityInvestment=(0.0, 0.0, 0.0, 0.0),
+            borrow=(0.0, 0.0, 0.0, 0.0),
+            repay=(0.0, 0.0, 0.0, 0.0),
+            refs=("strategy://hold",),
+            isBaseline=True,
+        ),
+        buildOperatingStrategy(
+            "earlyInvest",
+            priceChange=(0.03, 0.03, 0.02, 0.02),
+            capacityInvestment=(100.0, 0.0, 0.0, 0.0),
+            borrow=(40.0, 0.0, 0.0, 0.0),
+            repay=(0.0, 0.0, 0.0, 0.0),
+            refs=("strategy://early-invest",),
+        ),
+        buildOperatingStrategy(
+            "defend",
+            priceChange=(0.03, 0.03, 0.02, 0.02),
+            capacityInvestment=(0.0, 0.0, 0.0, 0.0),
+            borrow=(0.0, 0.0, 0.0, 0.0),
+            repay=(0.0, 5.0, 5.0, 5.0),
+            refs=("strategy://defend",),
+        ),
+        buildOperatingStrategy(
+            "lateInvest",
+            priceChange=(0.03, 0.03, 0.02, 0.02),
+            capacityInvestment=(0.0, 0.0, 100.0, 0.0),
+            borrow=(0.0, 0.0, 40.0, 0.0),
+            repay=(0.0, 0.0, 0.0, 0.0),
+            refs=("strategy://late-invest",),
         ),
     )
 
@@ -3008,6 +3171,130 @@ def testRegistryEdgarExactPriceAndMacroLanesFeedConditionalExperiment(tmp_path) 
     assert changed.providerObservationBatchRefs == experiment.providerObservationBatchRefs
     assert changed.pathHistoryInputHashes == experiment.pathHistoryInputHashes
     assert changed.explicitAssumptionIds == experiment.explicitAssumptionIds
+    assert changed.pathAssumptionHashes != experiment.pathAssumptionHashes
+    assert changed.assumptionSetHashes != experiment.assumptionSetHashes
+    assert changed.simulationSpecHash != experiment.simulationSpecHash
+    assert changed.resultSetHash != experiment.resultSetHash
+    assert changed.experimentHash != experiment.experimentHash
+
+
+def testRegistryEdgarPriceMacroMultiStepExperimentShowsStrategyFragility(tmp_path) -> None:
+    context = _trust(tmp_path)
+    inputs = _admittedOperatingInputs(context)
+    sources = _edgarPriceMacroRegistrySources(context)
+    cases = (
+        _registryScenarioCaseWithEdgarPriceMacroAndAdjustmentPath(
+            "base",
+            (0.00, 0.00, 0.00, 0.00),
+            context[4],
+            sources,
+        ),
+        _registryScenarioCaseWithEdgarPriceMacroAndAdjustmentPath(
+            "upside",
+            (0.25, 0.25, 0.20, 0.15),
+            context[4],
+            sources,
+        ),
+        _registryScenarioCaseWithEdgarPriceMacroAndAdjustmentPath(
+            "stress",
+            (-0.05, -0.08, -0.08, -0.05),
+            context[4],
+            sources,
+        ),
+        _registryScenarioCaseWithEdgarPriceMacroAndAdjustmentPath(
+            "shock",
+            (-0.12, -0.10, -0.08, -0.05),
+            context[4],
+            sources,
+        ),
+    )
+    strategies = _fourQuarterExperimentStrategies()
+    experiment = runConditionalScenarioExperiment(
+        "005930",
+        inputs,
+        cases,
+        strategies,
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+
+    assert experiment.scenarioCount == 4
+    assert experiment.strategyCount == 4
+    assert experiment.cellCount == 16
+    assert experiment.decisionStatus == "conditionalOnly"
+    assert experiment.recommendation is None
+    assert "automaticRecommendationDisabled" in experiment.blockedReasons
+    assert "conditionalExperimentNotPolicyRecommendation" in experiment.blockedReasons
+    assert "pathAdmissionMissing" in experiment.blockedReasons
+    assert "policyEvaluationCertificateMissing" in experiment.blockedReasons
+
+    assert all(case.pathSet.audit.horizon == 4 for case in cases)
+    assert all(len(path.steps) == 4 for case in cases for path in case.pathSet.paths)
+    assert all(len(strategy.actionsByStep) == 4 for strategy in strategies)
+    assert all(len(ledger.pathAssumptionStepHashes) == 4 for ledger in experiment.caseLedgers)
+    assert len(experiment.pathAssumptionStepHashes) == 4
+    assert all(len(stepHashes) == 4 for stepHashes in experiment.pathAssumptionStepHashes)
+    assert len(set(experiment.pathHistoryInputHashes)) == 1
+    assert len(set(experiment.pathAssumptionHashes)) == 4
+    assert len(set(experiment.assumptionSetHashes)) == 4
+
+    actionIds = {"priceChange", "capacityInvestment", "borrow", "repay"}
+    stateIds = {"price", "demandVolume", "unitCost", "fixedCost", "capacityUnits", "cash", "debt"}
+    for case in cases:
+        factorIds = {factor.variableId for factor in case.pathSet.factorSpecs}
+        assert factorIds.isdisjoint(actionIds)
+        assert factorIds.isdisjoint(stateIds)
+        assert all(actionId not in step for path in case.pathSet.paths for step in path.steps for actionId in actionIds)
+        assert all(stateId not in step for path in case.pathSet.paths for step in path.steps for stateId in stateIds)
+    assert all(set(actionRow) == actionIds for strategy in strategies for actionRow in strategy.actionsByStep)
+
+    leaderSets = {ledger.scoreLeaderStrategies for ledger in experiment.caseLedgers}
+    assert len(leaderSets) >= 2
+    assert "scenarioScoreLeadersDiverge" in experiment.blockedReasons
+    assert any(0.0 < summary.leaderFrequency < 1.0 for summary in experiment.strategySummaries)
+    assert len(experiment.fragilityCells) == 4
+    assert any(cell.regret > 0.0 for cell in experiment.cells)
+    assert any(
+        len({score.objectiveScores[0] for score in ledger.strategyScores}) > 1 for ledger in experiment.caseLedgers
+    )
+
+    repeated = runConditionalScenarioExperiment(
+        "005930",
+        inputs,
+        cases,
+        strategies,
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert repeated.experimentHash == experiment.experimentHash
+
+    changedCases = (
+        _registryScenarioCaseWithEdgarPriceMacroAndAdjustmentPath(
+            "base",
+            (0.00, 0.00, 0.07, 0.00),
+            context[4],
+            sources,
+        ),
+        *cases[1:],
+    )
+    changed = runConditionalScenarioExperiment(
+        "005930",
+        inputs,
+        changedCases,
+        strategies,
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert changed.providerObservationBatchRefs == experiment.providerObservationBatchRefs
+    assert changed.pathHistoryInputHashes == experiment.pathHistoryInputHashes
+    assert changed.explicitAssumptionIds == experiment.explicitAssumptionIds
+    assert changed.pathAssumptionStepHashes[0][0] == experiment.pathAssumptionStepHashes[0][0]
+    assert changed.pathAssumptionStepHashes[0][1] == experiment.pathAssumptionStepHashes[0][1]
+    assert changed.pathAssumptionStepHashes[0][2] != experiment.pathAssumptionStepHashes[0][2]
+    assert changed.pathAssumptionStepHashes[0][3] == experiment.pathAssumptionStepHashes[0][3]
     assert changed.pathAssumptionHashes != experiment.pathAssumptionHashes
     assert changed.assumptionSetHashes != experiment.assumptionSetHashes
     assert changed.simulationSpecHash != experiment.simulationSpecHash

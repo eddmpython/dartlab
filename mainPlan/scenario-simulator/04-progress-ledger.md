@@ -1334,3 +1334,16 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **세탁 차단**: exact EDGAR와 exact price는 `asKnown` history로 내려오지만, macro revised history와 explicit future adjustment가 같이 있으므로 composed path는 여전히 admitted path가 아니다. recommendation은 `None`이고 `automaticRecommendationDisabled`, `conditionalExperimentNotPolicyRecommendation`, `pathAdmissionMissing`, `policyEvaluationCertificateMissing`가 유지된다.
 - **검증**: quarterly macro adapter, quarterly exact price return, EDGAR price macro registry experiment 단위 3건 통과. macroPaths, driverSources, driverObservationBatches, driverObservationFrames, driverRegistry focused 55건 통과. `tests/simulate` 전체 418건 통과. ruff format/check, camelCase strict, docstring4 audit, Guard Index strict l0-l15, 긴 줄표 검색 통과.
 - **남은 P0**: 이제 PRD의 “조건과 가정을 넣고 전략을 도출한다”는 형태가 backend에서 보인다. 남은 핵심은 multi-step horizon에서 전략 리더가 실제로 뒤집히는 stress grid, history-only admitted path와 explicit overlay 분리 admission, policy evaluation certificate를 묶어 공식 추천 승격 조건을 여는 것이다.
+
+
+## 2026-07-15 P0 multi-step conditional strategy experiment
+
+- **판단**: PRD가 말한 전쟁게임식 시뮬레이터는 한 step 충격 계산기가 아니라, 여러 분기의 가정 경로와 여러 분기의 전략 행동 경로를 같은 observed history 위에서 돌리고 조건별 전략 리더 변화를 보여야 한다. 이전 단위는 EDGAR, 가격, macro lane을 붙였지만 one step 전략이라 "전략을 도출한다"는 실험성이 약했다.
+- **구현**: `DriverPathAudit`에 `assumptionStepHashes`를 추가했다. explicit future assumption은 전체 set hash와 Q+1, Q+2, Q+3, Q+4 step hash로 나뉘며, `ConditionalScenarioExperiment`와 case ledger가 이 값을 그대로 보존한다.
+- **hash 경계**: 같은 EDGAR, exact price, macro history를 쓰면 `pathHistoryInputHashes`는 하나로 유지된다. 미래 adjustment의 Q+3 값만 바꾸면 Q+1, Q+2, Q+4 step hash와 history hash는 유지되고 Q+3 step hash, `pathAssumptionHashes`, `assumptionSetHashes`, `simulationSpecHash`, `resultSetHash`, `experimentHash`만 바뀐다.
+- **수직 회귀**: 새 회귀는 EDGAR filing metric, exact quarterly price return, quarterly macro oil innovation, 4분기 manual demand adjustment path를 registry로 묶고, admitted current operating state 위에서 4개 assumption case x 4개 strategy를 실행한다. 모든 path와 strategy action은 horizon 4이며, 16개 cell, strategy summary, fragility cell이 생성된다.
+- **전략 리더 변화**: 고수요 upside path에서는 `earlyInvest`가 리더가 되고, base와 하방 path에서는 `defend`가 리더가 된다. experiment는 `scenarioScoreLeadersDiverge`, leader frequency, regret, fragility row를 남긴다. 이것은 조건부 전략 비교이며 공식 추천은 아니다.
+- **세탁 차단**: `priceChange`, `capacityInvestment`, `borrow`, `repay`는 `StrategySpec.actionsByStep`에만 있고 `ScenarioPath.steps`나 factor id에는 들어가지 않는다. current state 변수도 path factor로 들어가지 않는다. EDGAR, price, macro는 history source이고 manual demand adjustment는 explicit assumption source로 남는다.
+- **추천 경계**: multi-step 실험과 리더 변화가 생겨도 composed path admission과 policy evaluation certificate가 없으므로 recommendation은 계속 `None`이다. blocked reason은 `automaticRecommendationDisabled`, `conditionalExperimentNotPolicyRecommendation`, `pathAdmissionMissing`, `policyEvaluationCertificateMissing`를 유지한다.
+- **검증**: step hash 단위 회귀 1건과 EDGAR price macro multi-step experiment 회귀 1건을 추가했다. driverPaths, driverObservationFrames, scenarioComposition focused 40건 통과. `tests/simulate` 전체 419건 통과. ruff format/check 통과.
+- **남은 P0**: 다음은 history-only admitted path와 explicit overlay가 붙은 composed path의 admission 전이가 분리되는 음성 회귀를 강화하고, policy evaluation certificate를 final composed path hash와 strategy set hash에 묶어 공식 추천 승격 조건을 닫는 것이다.

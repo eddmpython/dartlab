@@ -223,6 +223,7 @@ class OperatingScenarioCaseResult:
     scenarioPathPackageHash: str
     pathHistoryInputHash: str
     pathAssumptionHash: str
+    pathAssumptionStepHashes: tuple[str, ...]
     basePathSetHash: str
     pathOverlayHash: str
     observedHistoryStatus: str
@@ -254,6 +255,7 @@ class OperatingScenarioCaseResult:
     warnings: tuple[str, ...]
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "pathAssumptionStepHashes", tuple(self.pathAssumptionStepHashes))
         object.__setattr__(self, "pathAdmissionTransferBlockedBy", tuple(self.pathAdmissionTransferBlockedBy))
         object.__setattr__(self, "bridgeHashes", tuple(self.bridgeHashes))
         object.__setattr__(self, "paretoStrategies", tuple(self.paretoStrategies))
@@ -300,6 +302,7 @@ class OneCompanyScenarioCaseLedger:
     scenarioPathPackageHash: str
     pathHistoryInputHash: str
     pathAssumptionHash: str
+    pathAssumptionStepHashes: tuple[str, ...]
     basePathSetHash: str
     composedPathSetHash: str
     pathOverlayHash: str
@@ -349,6 +352,7 @@ class OneCompanyScenarioCaseLedger:
         object.__setattr__(self, "pathSourceRefs", tuple(self.pathSourceRefs))
         object.__setattr__(self, "providerObservationBatchRefs", tuple(self.providerObservationBatchRefs))
         object.__setattr__(self, "explicitAssumptionIds", tuple(self.explicitAssumptionIds))
+        object.__setattr__(self, "pathAssumptionStepHashes", tuple(self.pathAssumptionStepHashes))
         object.__setattr__(self, "pathAdmissionTransferBlockedBy", tuple(self.pathAdmissionTransferBlockedBy))
         if self.driverRegistryLedger is not None and not isinstance(
             self.driverRegistryLedger, ScenarioDriverRegistryLedger
@@ -510,6 +514,7 @@ class ConditionalScenarioExperiment:
     explicitAssumptionIds: tuple[str, ...]
     pathHistoryInputHashes: tuple[str, ...]
     pathAssumptionHashes: tuple[str, ...]
+    pathAssumptionStepHashes: tuple[tuple[str, ...], ...]
     assumptionSetIds: tuple[str, ...]
     assumptionSetHashes: tuple[str, ...]
     caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]
@@ -533,6 +538,11 @@ class ConditionalScenarioExperiment:
         object.__setattr__(self, "explicitAssumptionIds", tuple(self.explicitAssumptionIds))
         object.__setattr__(self, "pathHistoryInputHashes", tuple(self.pathHistoryInputHashes))
         object.__setattr__(self, "pathAssumptionHashes", tuple(self.pathAssumptionHashes))
+        object.__setattr__(
+            self,
+            "pathAssumptionStepHashes",
+            tuple(tuple(stepHashes) for stepHashes in self.pathAssumptionStepHashes),
+        )
         object.__setattr__(self, "assumptionSetIds", tuple(self.assumptionSetIds))
         object.__setattr__(self, "assumptionSetHashes", tuple(self.assumptionSetHashes))
         object.__setattr__(self, "caseLedgers", tuple(self.caseLedgers))
@@ -1452,6 +1462,7 @@ def _caseLedger(
         scenarioPathPackageHash=result.scenarioPathPackageHash,
         pathHistoryInputHash=result.pathHistoryInputHash,
         pathAssumptionHash=result.pathAssumptionHash,
+        pathAssumptionStepHashes=case.pathSet.audit.assumptionStepHashes,
         basePathSetHash=result.basePathSetHash,
         composedPathSetHash=result.pathSetHash,
         pathOverlayHash=result.pathOverlayHash,
@@ -1517,6 +1528,7 @@ def _caseLedgerHashes(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> 
                 "scenarioPathPackageHash": ledger.scenarioPathPackageHash,
                 "pathHistoryInputHash": ledger.pathHistoryInputHash,
                 "pathAssumptionHash": ledger.pathAssumptionHash,
+                "pathAssumptionStepHashes": ledger.pathAssumptionStepHashes,
                 "basePathSetHash": ledger.basePathSetHash,
                 "composedPathSetHash": ledger.composedPathSetHash,
                 "pathOverlayHash": ledger.pathOverlayHash,
@@ -1626,6 +1638,12 @@ def _experimentPathAssumptionHashes(caseLedgers: tuple[OneCompanyScenarioCaseLed
     return _dedupe(tuple(ledger.pathAssumptionHash for ledger in caseLedgers))
 
 
+def _experimentPathAssumptionStepHashes(
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+) -> tuple[tuple[str, ...], ...]:
+    return tuple(ledger.pathAssumptionStepHashes for ledger in caseLedgers)
+
+
 def _validateOneCompanyLoop(
     entityId: str,
     cases: tuple[OperatingScenarioCase, ...],
@@ -1717,6 +1735,7 @@ def _runCase(
         scenarioPathPackageHash=scenarioPathPackageHash,
         pathHistoryInputHash=case.pathSet.audit.historyInputHash,
         pathAssumptionHash=case.pathSet.audit.assumptionHash,
+        pathAssumptionStepHashes=case.pathSet.audit.assumptionStepHashes,
         basePathSetHash=case.pathSet.audit.basePathSetHash,
         pathOverlayHash=case.pathSet.audit.overlayHash,
         observedHistoryStatus=case.pathSet.audit.observedHistoryStatus,
@@ -1909,6 +1928,7 @@ def runConditionalScenarioExperiment(
     explicitAssumptionIds = _experimentExplicitAssumptionIds(caseLedgers)
     pathHistoryInputHashes = _experimentPathHistoryInputHashes(caseLedgers)
     pathAssumptionHashes = _experimentPathAssumptionHashes(caseLedgers)
+    pathAssumptionStepHashes = _experimentPathAssumptionStepHashes(caseLedgers)
     assumptionSetHashes = tuple(
         _assumptionSetHash(case, result) for case, result in zip(caseTuple, comparison.caseResults, strict=True)
     )
@@ -1943,6 +1963,7 @@ def runConditionalScenarioExperiment(
             "explicitAssumptionIds": explicitAssumptionIds,
             "pathHistoryInputHashes": pathHistoryInputHashes,
             "pathAssumptionHashes": pathAssumptionHashes,
+            "pathAssumptionStepHashes": pathAssumptionStepHashes,
             "assumptionSetHashes": assumptionSetHashes,
             "strategySetHash": strategySetHash,
             "debtLimit": float(debtLimit),
@@ -1974,6 +1995,7 @@ def runConditionalScenarioExperiment(
         "explicitAssumptionIds": explicitAssumptionIds,
         "pathHistoryInputHashes": pathHistoryInputHashes,
         "pathAssumptionHashes": pathAssumptionHashes,
+        "pathAssumptionStepHashes": pathAssumptionStepHashes,
         "assumptionSetIds": tuple(case.caseId for case in caseTuple),
         "assumptionSetHashes": assumptionSetHashes,
         "strategySummaries": strategySummaries,
@@ -2010,6 +2032,7 @@ def runConditionalScenarioExperiment(
         explicitAssumptionIds=explicitAssumptionIds,
         pathHistoryInputHashes=pathHistoryInputHashes,
         pathAssumptionHashes=pathAssumptionHashes,
+        pathAssumptionStepHashes=pathAssumptionStepHashes,
         assumptionSetIds=tuple(case.caseId for case in caseTuple),
         assumptionSetHashes=assumptionSetHashes,
         caseLedgers=caseLedgers,

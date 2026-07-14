@@ -101,6 +101,7 @@ class DriverPathAudit:
     inputHash: str
     historyInputHash: str
     assumptionHash: str
+    assumptionStepHashes: tuple[str, ...]
     basePathSetHash: str
     overlayHash: str
     registryHash: str
@@ -334,9 +335,9 @@ def _assumptionPayload(source: DriverAssumptionSource, horizon: int) -> dict:
 def _assumptionSteps(
     sources: tuple[DriverAssumptionSource, ...],
     horizon: int,
-) -> tuple[tuple[dict[str, float], ...], str]:
+) -> tuple[tuple[dict[str, float], ...], str, tuple[str, ...]]:
     if not sources:
-        return tuple({} for _ in range(horizon)), ""
+        return tuple({} for _ in range(horizon)), "", ()
     payloads = tuple(_assumptionPayload(source, horizon) for source in sources)
     steps: list[dict[str, float]] = []
     for stepIndex in range(horizon):
@@ -344,7 +345,30 @@ def _assumptionSteps(
         for payload in payloads:
             merged.update(payload["steps"][stepIndex])
         steps.append(merged)
-    return tuple(steps), canonicalPayloadHash(payloads)
+    assumptionStepHashes = tuple(
+        canonicalPayloadHash(
+            {
+                "schemaVersion": "driver-path-assumption-step-v1",
+                "stepIndex": stepIndex,
+                "sources": tuple(
+                    {
+                        "card": payload["card"],
+                        "step": payload["steps"][stepIndex],
+                    }
+                    for payload in payloads
+                ),
+            }
+        )
+        for stepIndex in range(horizon)
+    )
+    assumptionHash = canonicalPayloadHash(
+        {
+            "schemaVersion": "driver-path-assumption-set-v1",
+            "assumptionStepHashes": assumptionStepHashes,
+            "payloads": payloads,
+        }
+    )
+    return tuple(steps), assumptionHash, assumptionStepHashes
 
 
 def _pathSetHash(paths: tuple[ScenarioPath, ...]) -> str:
@@ -549,7 +573,7 @@ def buildDriverPathSet(
     sourceRefs = _dedupe(tuple(ref for card in cards for ref in card.sourceRefs))
     warnings: list[str] = []
     warnings.extend(warning for card in cards for warning in card.warnings)
-    assumptionStepTuple, assumptionHash = _assumptionSteps(assumptions, horizon)
+    assumptionStepTuple, assumptionHash, assumptionStepHashes = _assumptionSteps(assumptions, horizon)
     if assumptions:
         warnings.extend(f"explicitAssumption:{source.card.assumptionId}" for source in assumptions)
     historyPanel, variables, historyStatus, historyInputHash = _joinedHistoryPanel(histories, knowledgeAsOf=cutoff)
@@ -618,6 +642,7 @@ def buildDriverPathSet(
             "registryHash": registryHash,
             "historyInputHash": historyInputHash,
             "assumptionHash": assumptionHash,
+            "assumptionStepHashes": assumptionStepHashes,
             "basePathSetHash": basePathSetHash,
             "overlayHash": overlayHash,
             "certificate": certificate,
@@ -634,6 +659,7 @@ def buildDriverPathSet(
         inputHash=inputHash,
         historyInputHash=historyInputHash,
         assumptionHash=assumptionHash,
+        assumptionStepHashes=assumptionStepHashes,
         basePathSetHash=basePathSetHash,
         overlayHash=overlayHash,
         registryHash=registryHash,
