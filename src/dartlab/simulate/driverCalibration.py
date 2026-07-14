@@ -11,19 +11,37 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from datetime import date
 
 import polars as pl
 
+from dartlab.simulate.admissionRegistry import (
+    AdmissionReceipt,
+    AdmissionVerifier,
+    artifactPath,
+)
 from dartlab.simulate.driverRegistry import DriverRegistryResult
 from dartlab.simulate.operatingBridge import (
     OPERATING_TARGET_UNITS,
     OperatingTransmissionExposure,
 )
-from dartlab.simulate.vintage import canonicalPayloadHash
+from dartlab.simulate.vintage import canonicalPayloadBytes, canonicalPayloadHash
 
 CALIBRATION_VERSION = "driver-coefficient-calibration-v1"
+COEFFICIENT_OOS_VERSION = "driver-coefficient-oos-v1"
+DRIVER_COEFFICIENT_RULE_ID = "driver-coefficient-oos-admission"
+DRIVER_COEFFICIENT_RULE_VERSION = "1"
+DRIVER_COEFFICIENT_RULE_HASH = canonicalPayloadHash({"rule": DRIVER_COEFFICIENT_RULE_ID, "version": "1"})
 _OBSERVABLE_TARGET_KINDS = {"observedOutcome", "realizedOutcome", "observedOperatingShock"}
 _CALIBRATION_METHODS = {"olsThroughOrigin"}
+_OOS_STATUS_SET = {"oosEligible", "rejected"}
+_BASE_RECEIPT_WARNINGS = {
+    "coefficientCalibrationNotAdmitted",
+    "coefficientRequiresOosAdmission",
+    "registryValidation:retrospectiveOnly",
+    "registryWarning:historyStatus:asKnown",
+}
+_BENIGN_REGISTRY_WARNINGS = {"historyStatus:asKnown"}
 
 
 class DriverCalibrationError(ValueError):
@@ -143,11 +161,146 @@ class DriverCoefficientCalibrationReceipt:
         object.__setattr__(self, "traceRows", tuple(self.traceRows))
 
 
+@dataclass(frozen=True)
+class DriverCoefficientOosSpec:
+    """Held-out admission thresholds for one coefficient receipt."""
+
+    evaluationId: str
+    minOosOrigins: int
+    minSkillVsBaseline: float
+    maxRmse: float
+    maxAbsBias: float
+    baselineValue: float
+    frequency: str
+    stepSpan: int
+    maxAdmittedStep: int
+    originIdColumn: str = "originId"
+    originEventTimeColumn: str = "originEventTime"
+    originKnowledgeAsOfColumn: str = "originKnowledgeAsOf"
+    sourceAvailableAtColumn: str = "sourceAvailableAt"
+    targetEventTimeColumn: str = "targetEventTime"
+    targetAvailableAtColumn: str = "targetAvailableAt"
+    sourceValueColumn: str = "sourceValue"
+    targetValueColumn: str = "targetValue"
+    sourceRefColumn: str = "sourceRef"
+    labelSourceRefColumn: str = "labelSourceRef"
+
+
+@dataclass(frozen=True)
+class DriverCoefficientOosTraceRow:
+    """One held-out row scored by a fixed coefficient receipt."""
+
+    originId: str
+    originEventTime: str
+    originKnowledgeAsOf: str
+    sourceAvailableAt: str
+    targetEventTime: str
+    targetAvailableAt: str
+    sourceValue: float
+    targetValue: float
+    predictedValue: float
+    baselineValue: float
+    residual: float
+    baselineResidual: float
+    sourceRef: str
+    labelSourceRef: str
+
+
+@dataclass(frozen=True)
+class DriverCoefficientOosReport:
+    """Unsigned OOS report that can become a signed admission artifact."""
+
+    evaluationId: str
+    reportId: str
+    generatorVersion: str
+    status: str
+    admissionStatus: str
+    receiptHash: str
+    receiptId: str
+    calibrationId: str
+    sourceVariableId: str
+    targetVariableId: str
+    targetShock: str
+    coefficient: float
+    coefficientUnit: str
+    frequency: str
+    stepSpan: int
+    maxAdmittedStep: int
+    evaluationKnowledgeAsOf: str
+    nOosOrigins: int
+    oosStart: str
+    oosThrough: str
+    labelThrough: str
+    baselineValue: float
+    mse: float
+    baselineMse: float
+    rmse: float
+    mae: float
+    bias: float
+    skillVsBaseline: float
+    minSkillVsBaseline: float
+    maxRmse: float
+    maxAbsBias: float
+    oosSpecHash: str
+    oosGridHash: str
+    oosOutcomeHash: str
+    predictionTraceHash: str
+    reasons: tuple[str, ...]
+    warnings: tuple[str, ...]
+    sourceRefs: tuple[str, ...]
+    traceRows: tuple[DriverCoefficientOosTraceRow, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "reasons", tuple(self.reasons))
+        object.__setattr__(self, "warnings", tuple(self.warnings))
+        object.__setattr__(self, "sourceRefs", tuple(self.sourceRefs))
+        object.__setattr__(self, "traceRows", tuple(self.traceRows))
+
+
 def _dateText(value: str, label: str) -> str:
     text = str(value).replace("-", "")[:8]
     if len(text) != 8 or not text.isdigit():
         raise DriverCalibrationError(f"invalid {label}: {value}")
     return text
+
+
+def _dateParts(value: str, label: str) -> tuple[int, int, int]:
+    text = _dateText(value, label)
+    year = int(text[:4])
+    month = int(text[4:6])
+    day = int(text[6:8])
+    try:
+        date(year, month, day)
+    except ValueError as error:
+        raise DriverCalibrationError(f"invalid {label}: {value}") from error
+    return year, month, day
+
+
+def _periodIndex(value: str, frequency: str, label: str) -> int:
+    year, month, day = _dateParts(value, label)
+    normalized = frequency.lower()
+    if normalized in {"day", "daily"}:
+        return date(year, month, day).toordinal()
+    if normalized in {"month", "monthly"}:
+        return year * 12 + month - 1
+    if normalized in {"quarter", "quarterly"}:
+        return year * 4 + (month - 1) // 3
+    if normalized in {"year", "yearly", "annual"}:
+        return year
+    raise DriverCalibrationError(f"unsupported coefficient OOS frequency: {frequency}")
+
+
+def _validateOosHorizon(originEventTime: str, targetEventTime: str, spec: DriverCoefficientOosSpec) -> None:
+    originIndex = _periodIndex(originEventTime, spec.frequency, "originEventTime")
+    targetIndex = _periodIndex(targetEventTime, spec.frequency, "targetEventTime")
+    distance = targetIndex - originIndex
+    if distance <= 0:
+        raise DriverCalibrationError("coefficient OOS target event must be after origin event")
+    if distance % spec.stepSpan:
+        raise DriverCalibrationError("coefficient OOS horizon does not align with stepSpan")
+    admittedStep = distance // spec.stepSpan
+    if admittedStep > spec.maxAdmittedStep:
+        raise DriverCalibrationError("coefficient OOS horizon exceeds maxAdmittedStep")
 
 
 def _finite(value: float | None, label: str) -> float:
@@ -205,6 +358,21 @@ def _sourceFactor(registryResult: DriverRegistryResult, variableId: str):
 
 
 def _requiredColumns(spec: DriverCoefficientCalibrationSpec) -> set[str]:
+    return {
+        spec.originIdColumn,
+        spec.originEventTimeColumn,
+        spec.originKnowledgeAsOfColumn,
+        spec.sourceAvailableAtColumn,
+        spec.targetEventTimeColumn,
+        spec.targetAvailableAtColumn,
+        spec.sourceValueColumn,
+        spec.targetValueColumn,
+        spec.sourceRefColumn,
+        spec.labelSourceRefColumn,
+    }
+
+
+def _oosRequiredColumns(spec: DriverCoefficientOosSpec) -> set[str]:
     return {
         spec.originIdColumn,
         spec.originEventTimeColumn,
@@ -314,6 +482,257 @@ def _fitThroughOrigin(rows: tuple[dict, ...]) -> tuple[float, float, float, tupl
     return coefficient, standardError, rSquared, tuple(traceRows)
 
 
+def _validateOosSpec(spec: DriverCoefficientOosSpec) -> None:
+    if (
+        not spec.evaluationId
+        or spec.minOosOrigins < 2
+        or not math.isfinite(float(spec.minSkillVsBaseline))
+        or not math.isfinite(float(spec.maxRmse))
+        or not math.isfinite(float(spec.maxAbsBias))
+        or not math.isfinite(float(spec.baselineValue))
+        or spec.maxRmse < 0.0
+        or spec.maxAbsBias < 0.0
+        or not spec.frequency
+        or spec.stepSpan < 1
+        or spec.maxAdmittedStep < 1
+    ):
+        raise DriverCalibrationError("coefficient OOS spec is incomplete")
+
+
+def _cleanOosRows(
+    frame: pl.DataFrame,
+    spec: DriverCoefficientOosSpec,
+    receipt: DriverCoefficientCalibrationReceipt,
+    *,
+    evaluationKnowledgeAsOf: str,
+) -> tuple[tuple[dict, ...], str, str, str]:
+    missing = _oosRequiredColumns(spec) - set(frame.columns)
+    if missing:
+        raise DriverCalibrationError(f"coefficient OOS frame missing columns: {sorted(missing)}")
+    cutoff = _dateText(evaluationKnowledgeAsOf, "evaluationKnowledgeAsOf")
+    rows: list[dict] = []
+    fitThrough = _dateText(receipt.fitThrough, "receipt.fitThrough")
+    calibrationCutoff = _dateText(receipt.calibrationKnowledgeAsOf, "receipt.calibrationKnowledgeAsOf")
+    for index, raw in enumerate(frame.to_dicts()):
+        originId = str(raw[spec.originIdColumn])
+        sourceRef = str(raw[spec.sourceRefColumn])
+        labelSourceRef = str(raw[spec.labelSourceRefColumn])
+        if not originId or not sourceRef or not labelSourceRef:
+            raise DriverCalibrationError(f"coefficient OOS row needs origin and refs: {index}")
+        originEventTime = _dateText(raw[spec.originEventTimeColumn], "originEventTime")
+        originKnowledgeAsOf = _dateText(raw[spec.originKnowledgeAsOfColumn], "originKnowledgeAsOf")
+        sourceAvailableAt = _dateText(raw[spec.sourceAvailableAtColumn], "sourceAvailableAt")
+        targetEventTime = _dateText(raw[spec.targetEventTimeColumn], "targetEventTime")
+        targetAvailableAt = _dateText(raw[spec.targetAvailableAtColumn], "targetAvailableAt")
+        if originEventTime <= fitThrough:
+            raise DriverCalibrationError("coefficient OOS origin overlaps fit window")
+        if originKnowledgeAsOf > cutoff:
+            raise DriverCalibrationError("coefficient OOS origin knowledge is after evaluation knowledge")
+        if sourceAvailableAt > originKnowledgeAsOf:
+            raise DriverCalibrationError("coefficient OOS source availability after origin knowledge")
+        if targetEventTime <= originEventTime:
+            raise DriverCalibrationError("coefficient OOS target event must be after origin event")
+        if targetAvailableAt <= originKnowledgeAsOf:
+            raise DriverCalibrationError("coefficient OOS target label is not a forward outcome")
+        if targetAvailableAt <= calibrationCutoff:
+            raise DriverCalibrationError("coefficient OOS label was known at calibration knowledge")
+        if targetAvailableAt > cutoff:
+            raise DriverCalibrationError("coefficient OOS label availability after evaluation knowledge")
+        _validateOosHorizon(originEventTime, targetEventTime, spec)
+        rows.append(
+            {
+                "originId": originId,
+                "originEventTime": originEventTime,
+                "originKnowledgeAsOf": originKnowledgeAsOf,
+                "sourceAvailableAt": sourceAvailableAt,
+                "targetEventTime": targetEventTime,
+                "targetAvailableAt": targetAvailableAt,
+                "sourceValue": _finite(raw[spec.sourceValueColumn], f"oos.sourceValue.{index}"),
+                "targetValue": _finite(raw[spec.targetValueColumn], f"oos.targetValue.{index}"),
+                "sourceRef": sourceRef,
+                "labelSourceRef": labelSourceRef,
+            }
+        )
+    rows.sort(key=lambda item: (item["originEventTime"], item["originId"]))
+    originIds = tuple(item["originId"] for item in rows)
+    if len(set(originIds)) != len(originIds):
+        raise DriverCalibrationError("coefficient OOS origin ids must be unique")
+    if not rows:
+        raise DriverCalibrationError("coefficient OOS frame needs origins")
+    return (
+        tuple(rows),
+        rows[0]["originEventTime"],
+        rows[-1]["originEventTime"],
+        max(item["targetAvailableAt"] for item in rows),
+    )
+
+
+def _oosReportPayload(report: DriverCoefficientOosReport) -> dict:
+    return {name: getattr(report, name) for name in report.__dataclass_fields__ if name != "reportId"}
+
+
+def _oosGridHashFromTraceRows(traceRows: tuple[DriverCoefficientOosTraceRow, ...]) -> str:
+    return canonicalPayloadHash(
+        tuple(
+            {
+                "originId": row.originId,
+                "originEventTime": row.originEventTime,
+                "originKnowledgeAsOf": row.originKnowledgeAsOf,
+                "sourceAvailableAt": row.sourceAvailableAt,
+                "targetEventTime": row.targetEventTime,
+                "targetAvailableAt": row.targetAvailableAt,
+            }
+            for row in traceRows
+        )
+    )
+
+
+def _oosOutcomeHashFromTraceRows(traceRows: tuple[DriverCoefficientOosTraceRow, ...]) -> str:
+    return canonicalPayloadHash(
+        tuple(
+            {
+                "originId": row.originId,
+                "targetValue": row.targetValue,
+                "targetEventTime": row.targetEventTime,
+                "targetAvailableAt": row.targetAvailableAt,
+                "labelSourceRef": row.labelSourceRef,
+            }
+            for row in traceRows
+        )
+    )
+
+
+def _predictionTraceHash(
+    *,
+    receiptHash: str,
+    oosSpecHash: str,
+    oosGridHash: str,
+    oosOutcomeHash: str,
+    traceRows: tuple[DriverCoefficientOosTraceRow, ...],
+    mse: float,
+    baselineMse: float,
+    skillVsBaseline: float,
+    bias: float,
+) -> str:
+    return canonicalPayloadHash(
+        {
+            "receiptHash": receiptHash,
+            "oosSpecHash": oosSpecHash,
+            "oosGridHash": oosGridHash,
+            "oosOutcomeHash": oosOutcomeHash,
+            "traceRows": traceRows,
+            "mse": mse,
+            "baselineMse": baselineMse,
+            "skillVsBaseline": skillVsBaseline,
+            "bias": bias,
+        }
+    )
+
+
+def _assertClose(left: float, right: float, label: str) -> None:
+    if not math.isclose(left, right, rel_tol=1e-12, abs_tol=1e-12):
+        raise DriverCalibrationError(f"coefficient OOS report {label} mismatch")
+
+
+def _validateCoefficientReport(report: DriverCoefficientOosReport) -> None:
+    if (
+        report.generatorVersion != COEFFICIENT_OOS_VERSION
+        or report.status not in _OOS_STATUS_SET
+        or report.admissionStatus != "unsigned"
+        or not report.evaluationId
+        or report.stepSpan < 1
+        or report.maxAdmittedStep < 1
+        or report.nOosOrigins < 1
+        or not report.frequency
+        or not report.traceRows
+    ):
+        raise DriverCalibrationError("coefficient OOS report protocol mismatch")
+    if report.reportId != canonicalPayloadHash(_oosReportPayload(report)):
+        raise DriverCalibrationError("coefficient OOS report hash mismatch")
+    for label, value in (
+        ("receiptHash", report.receiptHash),
+        ("receiptId", report.receiptId),
+        ("oosSpecHash", report.oosSpecHash),
+        ("oosGridHash", report.oosGridHash),
+        ("oosOutcomeHash", report.oosOutcomeHash),
+        ("predictionTraceHash", report.predictionTraceHash),
+    ):
+        if len(value) != 64 or any(character not in "0123456789abcdef" for character in value.lower()):
+            raise DriverCalibrationError(f"coefficient OOS report {label} is invalid")
+    if report.nOosOrigins != len(report.traceRows):
+        raise DriverCalibrationError("coefficient OOS report origin count mismatch")
+    originKeys = tuple((row.originEventTime, row.originId) for row in report.traceRows)
+    if originKeys != tuple(sorted(originKeys)) or len({row.originId for row in report.traceRows}) != len(
+        report.traceRows
+    ):
+        raise DriverCalibrationError("coefficient OOS report origin order mismatch")
+    if (
+        report.oosStart != report.traceRows[0].originEventTime
+        or report.oosThrough != report.traceRows[-1].originEventTime
+        or report.labelThrough != max(row.targetAvailableAt for row in report.traceRows)
+    ):
+        raise DriverCalibrationError("coefficient OOS report window mismatch")
+    squared = 0.0
+    baselineSquared = 0.0
+    absolute = 0.0
+    residualTotal = 0.0
+    for index, row in enumerate(report.traceRows):
+        originEventTime = _dateText(row.originEventTime, f"oosReport.originEventTime.{index}")
+        originKnowledgeAsOf = _dateText(row.originKnowledgeAsOf, f"oosReport.originKnowledgeAsOf.{index}")
+        sourceAvailableAt = _dateText(row.sourceAvailableAt, f"oosReport.sourceAvailableAt.{index}")
+        targetEventTime = _dateText(row.targetEventTime, f"oosReport.targetEventTime.{index}")
+        targetAvailableAt = _dateText(row.targetAvailableAt, f"oosReport.targetAvailableAt.{index}")
+        if sourceAvailableAt > originKnowledgeAsOf:
+            raise DriverCalibrationError("coefficient OOS report source availability mismatch")
+        if targetEventTime <= originEventTime or targetAvailableAt <= originKnowledgeAsOf:
+            raise DriverCalibrationError("coefficient OOS report target timing mismatch")
+        sourceValue = _finite(row.sourceValue, f"oosReport.sourceValue.{index}")
+        targetValue = _finite(row.targetValue, f"oosReport.targetValue.{index}")
+        predictedValue = _finite(row.predictedValue, f"oosReport.predictedValue.{index}")
+        baselineValue = _finite(row.baselineValue, f"oosReport.baselineValue.{index}")
+        residual = _finite(row.residual, f"oosReport.residual.{index}")
+        baselineResidual = _finite(row.baselineResidual, f"oosReport.baselineResidual.{index}")
+        if not row.sourceRef or not row.labelSourceRef:
+            raise DriverCalibrationError("coefficient OOS report source refs mismatch")
+        _assertClose(predictedValue, report.coefficient * sourceValue, "prediction")
+        _assertClose(residual, targetValue - predictedValue, "residual")
+        _assertClose(baselineValue, report.baselineValue, "baseline")
+        _assertClose(baselineResidual, targetValue - baselineValue, "baseline residual")
+        squared += residual * residual
+        baselineSquared += baselineResidual * baselineResidual
+        absolute += abs(residual)
+        residualTotal += residual
+    mse = squared / report.nOosOrigins
+    baselineMse = baselineSquared / report.nOosOrigins
+    if baselineMse <= 1e-24:
+        raise DriverCalibrationError("coefficient OOS report baseline loss mismatch")
+    bias = residualTotal / report.nOosOrigins
+    _assertClose(report.mse, mse, "mse")
+    _assertClose(report.baselineMse, baselineMse, "baselineMse")
+    _assertClose(report.rmse, math.sqrt(mse), "rmse")
+    _assertClose(report.mae, absolute / report.nOosOrigins, "mae")
+    _assertClose(report.bias, bias, "bias")
+    _assertClose(report.skillVsBaseline, 1.0 - mse / baselineMse, "skill")
+    if report.oosGridHash != _oosGridHashFromTraceRows(report.traceRows):
+        raise DriverCalibrationError("coefficient OOS report grid hash mismatch")
+    if report.oosOutcomeHash != _oosOutcomeHashFromTraceRows(report.traceRows):
+        raise DriverCalibrationError("coefficient OOS report outcome hash mismatch")
+    if report.predictionTraceHash != _predictionTraceHash(
+        receiptHash=report.receiptHash,
+        oosSpecHash=report.oosSpecHash,
+        oosGridHash=report.oosGridHash,
+        oosOutcomeHash=report.oosOutcomeHash,
+        traceRows=report.traceRows,
+        mse=report.mse,
+        baselineMse=report.baselineMse,
+        skillVsBaseline=report.skillVsBaseline,
+        bias=report.bias,
+    ):
+        raise DriverCalibrationError("coefficient OOS report trace hash mismatch")
+    if (report.status == "oosEligible") != (not report.reasons):
+        raise DriverCalibrationError("coefficient OOS report status mismatch")
+
+
 def fitDriverCoefficientPit(
     registryResult: DriverRegistryResult,
     target: DriverCalibrationTarget,
@@ -414,7 +833,7 @@ def fitDriverCoefficientPit(
     warnings.extend(f"registryWarning:{warning}" for warning in registryResult.audit.warnings)
     if registryResult.audit.historyStatus != "asKnown" or target.historyStatus != "asKnown":
         warnings.append("calibrationContainsRevisedHistory")
-    if registryResult.audit.warnings:
+    if any(warning not in _BENIGN_REGISTRY_WARNINGS for warning in registryResult.audit.warnings):
         warnings.append("calibrationContainsSourceWarnings")
     historyStatus = (
         "asKnown"
@@ -521,35 +940,70 @@ def calibrationReceiptToOperatingExposure(
     receipt: DriverCoefficientCalibrationReceipt,
     *,
     exposureId: str,
+    oosReport: DriverCoefficientOosReport | None = None,
+    admissionReceipt: AdmissionReceipt | None = None,
     modifierVariableId: str = "",
     modifierUnit: str = "",
     aggregationGroup: str = "",
 ) -> OperatingTransmissionExposure:
-    """Convert a coefficient receipt into a measured-association exposure.
+    """Convert an admitted coefficient into a measured-association exposure.
 
     Args:
-        receipt: Non-rejected calibration receipt returned by ``fitDriverCoefficientPit``.
+        receipt: Calibration receipt returned by ``fitDriverCoefficientPit``.
         exposureId: Stable exposure identifier for the operating bridge.
+        oosReport: Eligible OOS report for the frozen receipt.
+        admissionReceipt: Verified signed admission receipt for the OOS report.
         modifierVariableId: Optional PIT state primitive that scales the coefficient.
         modifierUnit: Required unit when a modifier is present.
         aggregationGroup: Optional duplicate source-target aggregation group.
 
     Returns:
-        ``OperatingTransmissionExposure`` with sourceRef bound to the receipt hash.
+        ``OperatingTransmissionExposure`` with sourceRef bound to the admission receipt.
 
     Raises:
-        DriverCalibrationError: If the receipt is rejected or no longer matches target units.
+        DriverCalibrationError: If OOS admission is missing, rejected, or mismatched.
 
     Example:
-        ``exposure = calibrationReceiptToOperatingExposure(receipt, exposureId="fx-price")``
+        ``exposure = calibrationReceiptToOperatingExposure(receipt, exposureId="fx-price", oosReport=report, admissionReceipt=signed)``
     """
 
     if receipt.status == "rejected" or receipt.validationStatus == "rejected":
         raise DriverCalibrationError("rejected coefficient receipt cannot become an exposure")
+    if oosReport is None or admissionReceipt is None:
+        raise DriverCalibrationError("coefficient exposure requires OOS admission")
     expectedUnit = f"{OPERATING_TARGET_UNITS[receipt.targetShock]}/{receipt.sourceUnit}"
     if receipt.coefficientUnit != expectedUnit:
         raise DriverCalibrationError("coefficient receipt unit drift")
     _finite(receipt.coefficient, "receipt.coefficient")
+    _validateCoefficientReport(oosReport)
+    subjectHash = canonicalPayloadHash(_oosReportPayload(oosReport))
+    if (
+        oosReport.status != "oosEligible"
+        or oosReport.receiptHash != receipt.receiptHash
+        or oosReport.receiptId != receipt.receiptId
+        or oosReport.calibrationId != receipt.calibrationId
+        or oosReport.sourceVariableId != receipt.sourceVariableId
+        or oosReport.targetVariableId != receipt.targetVariableId
+        or oosReport.targetShock != receipt.targetShock
+        or oosReport.coefficientUnit != receipt.coefficientUnit
+        or not math.isclose(oosReport.coefficient, receipt.coefficient, rel_tol=1e-12, abs_tol=1e-12)
+    ):
+        raise DriverCalibrationError("coefficient OOS report does not match receipt")
+    if (
+        admissionReceipt.kind != "driverCoefficient"
+        or admissionReceipt.status != "admitted"
+        or admissionReceipt.subjectHash != subjectHash
+        or admissionReceipt.artifactHash != subjectHash
+        or (admissionReceipt.ruleId, admissionReceipt.ruleVersion, admissionReceipt.ruleHash)
+        != (DRIVER_COEFFICIENT_RULE_ID, DRIVER_COEFFICIENT_RULE_VERSION, DRIVER_COEFFICIENT_RULE_HASH)
+        or admissionReceipt.knowledgeAsOf != oosReport.evaluationKnowledgeAsOf
+        or admissionReceipt.frequency != oosReport.frequency
+        or admissionReceipt.stepSpan != oosReport.stepSpan
+        or admissionReceipt.maxAdmittedStep != oosReport.maxAdmittedStep
+        or admissionReceipt.revisionPolicy != "asKnown"
+        or admissionReceipt.coverage != "asOfExact"
+    ):
+        raise DriverCalibrationError("coefficient admission receipt does not match OOS report")
     return OperatingTransmissionExposure(
         exposureId=exposureId,
         sourceVariableId=receipt.sourceVariableId,
@@ -557,10 +1011,287 @@ def calibrationReceiptToOperatingExposure(
         coefficient=receipt.coefficient,
         coefficientUnit=receipt.coefficientUnit,
         evidenceKind="measuredAssociation",
-        sourceRef=f"driverCoefficientFit:{receipt.receiptHash}",
+        sourceRef=f"driverCoefficientAdmission:{admissionReceipt.receiptId}",
         modifierVariableId=modifierVariableId,
         modifierUnit=modifierUnit,
         lagSteps=receipt.lagSteps,
         responseKernel=receipt.responseKernel,
         aggregationGroup=aggregationGroup,
     )
+
+
+def evaluateDriverCoefficientOos(
+    receipt: DriverCoefficientCalibrationReceipt,
+    frame: pl.DataFrame,
+    spec: DriverCoefficientOosSpec,
+    *,
+    evaluationKnowledgeAsOf: str,
+) -> DriverCoefficientOosReport:
+    """Score a fixed coefficient on held-out PIT origins.
+
+    Args:
+        receipt: Calibration receipt whose coefficient is frozen before OOS scoring.
+        frame: Held-out origin rows with source and target availability dates.
+        spec: OOS thresholds, baseline, and artifact step contract.
+        evaluationKnowledgeAsOf: Date when held-out labels are allowed to be known.
+
+    Returns:
+        Unsigned ``DriverCoefficientOosReport``. It is eligible for signing only when
+        ``status`` is ``oosEligible``.
+
+    Raises:
+        DriverCalibrationError: If OOS timing, rows, units, or protocol fields are invalid.
+
+    Example:
+        ``report = evaluateDriverCoefficientOos(receipt, frame, spec, evaluationKnowledgeAsOf="20251231")``
+    """
+
+    _validateOosSpec(spec)
+    cutoff = _dateText(evaluationKnowledgeAsOf, "evaluationKnowledgeAsOf")
+    rows, oosStart, oosThrough, labelThrough = _cleanOosRows(
+        frame,
+        spec,
+        receipt,
+        evaluationKnowledgeAsOf=cutoff,
+    )
+    if receipt.status == "rejected" or receipt.validationStatus == "rejected":
+        raise DriverCalibrationError("rejected coefficient receipt cannot be OOS evaluated")
+    expectedUnit = f"{OPERATING_TARGET_UNITS[receipt.targetShock]}/{receipt.sourceUnit}"
+    if receipt.coefficientUnit != expectedUnit:
+        raise DriverCalibrationError("coefficient receipt unit drift")
+    traceRows: list[DriverCoefficientOosTraceRow] = []
+    squared = 0.0
+    absolute = 0.0
+    residualTotal = 0.0
+    baselineSquared = 0.0
+    baselineValue = _finite(spec.baselineValue, "oos.baselineValue")
+    for item in rows:
+        predicted = receipt.intercept + receipt.coefficient * item["sourceValue"]
+        residual = item["targetValue"] - predicted
+        baselineResidual = item["targetValue"] - baselineValue
+        squared += residual * residual
+        absolute += abs(residual)
+        residualTotal += residual
+        baselineSquared += baselineResidual * baselineResidual
+        traceRows.append(
+            DriverCoefficientOosTraceRow(
+                originId=item["originId"],
+                originEventTime=item["originEventTime"],
+                originKnowledgeAsOf=item["originKnowledgeAsOf"],
+                sourceAvailableAt=item["sourceAvailableAt"],
+                targetEventTime=item["targetEventTime"],
+                targetAvailableAt=item["targetAvailableAt"],
+                sourceValue=item["sourceValue"],
+                targetValue=item["targetValue"],
+                predictedValue=predicted,
+                baselineValue=baselineValue,
+                residual=residual,
+                baselineResidual=baselineResidual,
+                sourceRef=item["sourceRef"],
+                labelSourceRef=item["labelSourceRef"],
+            )
+        )
+    nOrigins = len(traceRows)
+    mse = squared / nOrigins
+    baselineMse = baselineSquared / nOrigins
+    if baselineMse <= 1e-24:
+        raise DriverCalibrationError("coefficient OOS baseline has no loss to beat")
+    rmse = math.sqrt(mse)
+    mae = absolute / nOrigins
+    bias = residualTotal / nOrigins
+    skill = 1.0 - mse / baselineMse
+    reasons: list[str] = []
+    if receipt.historyStatus != "asKnown":
+        reasons.append("receiptHistoryNotAsKnown")
+    disallowedWarnings = tuple(warning for warning in receipt.warnings if warning not in _BASE_RECEIPT_WARNINGS)
+    if disallowedWarnings:
+        reasons.append("receiptHasNonAdmissionWarnings")
+    if nOrigins < spec.minOosOrigins:
+        reasons.append("oosOriginsBelowMinimum")
+    if skill < spec.minSkillVsBaseline:
+        reasons.append("skillBelowThreshold")
+    if rmse > spec.maxRmse:
+        reasons.append("rmseAboveThreshold")
+    if abs(bias) > spec.maxAbsBias:
+        reasons.append("biasAboveThreshold")
+    status = "oosEligible" if not reasons else "rejected"
+    oosSpecHash = canonicalPayloadHash(
+        {"version": COEFFICIENT_OOS_VERSION, "spec": spec, "receipt": receipt.receiptHash}
+    )
+    oosGridHash = _oosGridHashFromTraceRows(tuple(traceRows))
+    oosOutcomeHash = _oosOutcomeHashFromTraceRows(tuple(traceRows))
+    predictionTraceHash = _predictionTraceHash(
+        receiptHash=receipt.receiptHash,
+        oosSpecHash=oosSpecHash,
+        oosGridHash=oosGridHash,
+        oosOutcomeHash=oosOutcomeHash,
+        traceRows=tuple(traceRows),
+        mse=mse,
+        baselineMse=baselineMse,
+        skillVsBaseline=skill,
+        bias=bias,
+    )
+    sourceRefs = _dedupe(
+        (
+            *receipt.sourceRefs,
+            *(row.sourceRef for row in traceRows),
+            *(row.labelSourceRef for row in traceRows),
+            f"driverCoefficientFit:{receipt.receiptHash}",
+            f"coefficientOosSpec:{oosSpecHash}",
+            f"coefficientOosGrid:{oosGridHash}",
+            f"coefficientOosOutcome:{oosOutcomeHash}",
+            f"coefficientPredictionTrace:{predictionTraceHash}",
+        )
+    )
+    provisional = DriverCoefficientOosReport(
+        evaluationId=spec.evaluationId,
+        reportId="",
+        generatorVersion=COEFFICIENT_OOS_VERSION,
+        status=status,
+        admissionStatus="unsigned",
+        receiptHash=receipt.receiptHash,
+        receiptId=receipt.receiptId,
+        calibrationId=receipt.calibrationId,
+        sourceVariableId=receipt.sourceVariableId,
+        targetVariableId=receipt.targetVariableId,
+        targetShock=receipt.targetShock,
+        coefficient=receipt.coefficient,
+        coefficientUnit=receipt.coefficientUnit,
+        frequency=spec.frequency,
+        stepSpan=spec.stepSpan,
+        maxAdmittedStep=spec.maxAdmittedStep,
+        evaluationKnowledgeAsOf=cutoff,
+        nOosOrigins=nOrigins,
+        oosStart=oosStart,
+        oosThrough=oosThrough,
+        labelThrough=labelThrough,
+        baselineValue=baselineValue,
+        mse=mse,
+        baselineMse=baselineMse,
+        rmse=rmse,
+        mae=mae,
+        bias=bias,
+        skillVsBaseline=skill,
+        minSkillVsBaseline=spec.minSkillVsBaseline,
+        maxRmse=spec.maxRmse,
+        maxAbsBias=spec.maxAbsBias,
+        oosSpecHash=oosSpecHash,
+        oosGridHash=oosGridHash,
+        oosOutcomeHash=oosOutcomeHash,
+        predictionTraceHash=predictionTraceHash,
+        reasons=tuple(reasons),
+        warnings=("coefficientOosReportUnsigned",),
+        sourceRefs=sourceRefs,
+        traceRows=tuple(traceRows),
+    )
+    report = DriverCoefficientOosReport(
+        **{
+            name: (
+                canonicalPayloadHash(_oosReportPayload(provisional))
+                if name == "reportId"
+                else getattr(provisional, name)
+            )
+            for name in provisional.__dataclass_fields__
+        }
+    )
+    _validateCoefficientReport(report)
+    return report
+
+
+def driverCoefficientAdmissionArtifact(report: DriverCoefficientOosReport) -> bytes:
+    """Return canonical bytes to store under an admission artifact address.
+
+    Args:
+        report: OOS report returned by ``evaluateDriverCoefficientOos``.
+
+    Returns:
+        Canonical JSON bytes whose SHA-256 is the coefficient admission subject.
+
+    Raises:
+        DriverCalibrationError: If the report protocol or hash is invalid.
+
+    Example:
+        ``artifact = driverCoefficientAdmissionArtifact(report)``
+    """
+
+    _validateCoefficientReport(report)
+    return canonicalPayloadBytes(_oosReportPayload(report))
+
+
+def driverCoefficientAdmissionSubjectHash(report: DriverCoefficientOosReport) -> str:
+    """Return the content hash used as the signed coefficient subject.
+
+    Args:
+        report: OOS report returned by ``evaluateDriverCoefficientOos``.
+
+    Returns:
+        SHA-256 subject hash for an admission registry receipt.
+
+    Raises:
+        DriverCalibrationError: If the report protocol or hash is invalid.
+
+    Example:
+        ``subject = driverCoefficientAdmissionSubjectHash(report)``
+    """
+
+    return canonicalPayloadHash(_oosReportPayload(report))
+
+
+def validateDriverCoefficientAdmission(
+    report: DriverCoefficientOosReport,
+    admissionVerifier: AdmissionVerifier,
+    *,
+    receiptId: str,
+    decisionAsOf: str,
+) -> AdmissionReceipt:
+    """Verify a signed coefficient OOS report against the admission registry.
+
+    Args:
+        report: Unsigned OOS report whose artifact is stored in the registry.
+        admissionVerifier: Runtime verifier with trusted public keys and artifact root.
+        receiptId: Admission receipt identifier to verify.
+        decisionAsOf: Decision date that must be after receipt issuance.
+
+    Returns:
+        Verified ``AdmissionReceipt`` for kind ``driverCoefficient``.
+
+    Raises:
+        DriverCalibrationError: If the report is ineligible, unsigned artifact differs, or receipt drifts.
+
+    Example:
+        ``receipt = validateDriverCoefficientAdmission(report, verifier, receiptId=rid, decisionAsOf="20251231")``
+    """
+
+    _validateCoefficientReport(report)
+    if report.status != "oosEligible":
+        raise DriverCalibrationError("coefficient OOS report is not eligible for admission")
+    subjectHash = driverCoefficientAdmissionSubjectHash(report)
+    try:
+        receipt = admissionVerifier.verify(
+            receiptId,
+            expectedSubjectHash=subjectHash,
+            expectedKind="driverCoefficient",
+        )
+    except RuntimeError as error:
+        raise DriverCalibrationError(f"coefficient admission verification failed: {error}") from error
+    if (
+        receipt.status != "admitted"
+        or receipt.artifactHash != subjectHash
+        or (receipt.ruleId, receipt.ruleVersion, receipt.ruleHash)
+        != (DRIVER_COEFFICIENT_RULE_ID, DRIVER_COEFFICIENT_RULE_VERSION, DRIVER_COEFFICIENT_RULE_HASH)
+        or receipt.knowledgeAsOf != report.evaluationKnowledgeAsOf
+        or receipt.frequency != report.frequency
+        or receipt.stepSpan != report.stepSpan
+        or receipt.maxAdmittedStep != report.maxAdmittedStep
+        or receipt.revisionPolicy != "asKnown"
+        or receipt.coverage != "asOfExact"
+        or _dateText(receipt.issuedAt, "coefficient receipt issuedAt") > _dateText(decisionAsOf, "decisionAsOf")
+    ):
+        raise DriverCalibrationError("coefficient admission receipt contract mismatch")
+    try:
+        artifactBytes = artifactPath(admissionVerifier.artifactRoot, subjectHash).read_bytes()
+    except OSError as error:
+        raise DriverCalibrationError("coefficient admission artifact is unavailable") from error
+    if artifactBytes != driverCoefficientAdmissionArtifact(report):
+        raise DriverCalibrationError("coefficient admission artifact content mismatch")
+    return receipt

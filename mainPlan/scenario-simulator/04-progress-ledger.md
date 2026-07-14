@@ -1072,3 +1072,13 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
   write 끝단)를 주간 전종목 규모로 실장.
 - 토론 이력(v0.1~v0.6.1)·P0 실측·갭 원장 = ../weekly-uplift-shortlist/ (아카이브 전환).
 - 원칙 확정 반영: 개별 데이터 작업대 폐기(dossier df41ee60e), 호출계약은 엔진 소유 verb 로만.
+
+
+## 2026-07-15 P0 coefficient OOS admission boundary
+
+- **판단**: PRD가 요구하는 시뮬레이터는 "조건 입력 후 전략 도출" 수준이 맞다. 그 수준으로 가려면 계수 후보와 운영 전략에 투입 가능한 계수를 분리해야 한다. 이전 상태는 retrospective fit receipt가 곧바로 `measuredAssociation` exposure로 전환될 수 있어 전략 엔진 경계가 약했다.
+- **구현**: `driverCalibration.py`에 held-out OOS report와 signed `driverCoefficient` admission 검증을 붙였다. OOS label이 calibration 시점에 이미 알려진 경우를 차단하고, row별 `originEventTime`과 `targetEventTime` 차이를 `frequency`, `stepSpan`, `maxAdmittedStep`과 연결했다.
+- **운영 경계**: `calibrationReceiptToOperatingExposure`는 이제 eligible OOS report와 검증된 admission receipt 없이는 exposure를 만들 수 없다. sourceRef도 fit hash가 아니라 `driverCoefficientAdmission:<receiptId>`로 바뀌어 operating bridge가 admitted coefficient만 소비한다.
+- **무결성 보강**: OOS report 검증 시 grid, outcome, prediction trace hash를 traceRows에서 재계산하고, mse, rmse, mae, bias, skill, residual 일관성을 재검산한다. reportId만 맞춰 위조한 artifact도 admission artifact 단계에서 거부된다.
+- **검증**: attempt plus formal driver calibration 12건 통과. driver admission 주변 집중 회귀 55건 통과. `tests/simulate` 전체 362건 통과. Guard Index strict l0-l15 7/7과 외부 gate 6종 통과.
+- **남은 P0**: source와 label vintage parent receipt 체인을 admission parent로 강제하는 작업은 아직 남았다. ruleHash도 현재 id plus version 수준이라 후속에서 executable rule spec hash로 강화해야 한다.
