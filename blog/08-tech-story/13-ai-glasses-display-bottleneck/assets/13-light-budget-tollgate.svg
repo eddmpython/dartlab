@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 1200 640" role="img" aria-labelledby="title desc">
+  <title id="title">광원 5,000 nit가 눈까지 가며 어디서 새나</title>
+  <desc id="desc">도파관이 아이박스 확산과 격자 회절 손실로 광원 빛의 대부분을 흘려버려 눈에는 실내 글자 한 줄만 남는 흐름 도식</desc>
+  <rect width="1200" height="640" fill="#0f172a"/>
+  <text x="60" y="66" fill="#f8fafc" font-size="33" font-family="Arial, sans-serif" font-weight="700">광원 5,000 nit가 눈까지 가며 어디서 새나: 빛에 매기는 통행세</text>
+  <text x="60" y="104" fill="#cbd5e1" font-size="18" font-family="Arial, sans-serif">손전등급 광원을 통째로 쏟아부어도, 유리 파이프를 지나 눈에 도착하는 몫은 실내에서 겨우 읽히는 글자 한 줄이다.</text>
+
+  <!-- tapering light wedge: bright left, faint right -->
+  <defs>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fbbf24" stop-opacity="0.95"/>
+      <stop offset="0.5" stop-color="#fbbf24" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#fbbf24" stop-opacity="0.10"/>
+    </linearGradient>
+  </defs>
+  <polygon points="150,300 1055,346 1055,394 150,440" fill="url(#beam)"/>
+
+  <!-- stations -->
+  <g font-family="Arial, sans-serif">
+    <!-- 1 source -->
+    <circle cx="150" cy="370" r="46" fill="#f59e0b"/>
+    <text x="150" y="365" fill="#1f2937" font-size="17" font-weight="700" text-anchor="middle">5,000</text>
+    <text x="150" y="385" fill="#1f2937" font-size="13" text-anchor="middle">nit</text>
+    <text x="150" y="470" fill="#fde68a" font-size="16" font-weight="700" text-anchor="middle">광원 LCoS</text>
+    <text x="150" y="492" fill="#94a3b8" font-size="14" text-anchor="middle">손전등급 출발</text>
+
+    <!-- 2 eyebox -->
+    <rect x="300" y="332" width="150" height="76" rx="12" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+    <text x="375" y="360" fill="#e2e8f0" font-size="16" font-weight="700" text-anchor="middle">아이박스 확산</text>
+    <text x="375" y="384" fill="#94a3b8" font-size="13" text-anchor="middle">넓게 펼수록</text>
+    <text x="375" y="401" fill="#94a3b8" font-size="13" text-anchor="middle">한 방향 광량 급감</text>
+
+    <!-- 3 incoupling -->
+    <rect x="500" y="332" width="150" height="76" rx="12" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+    <text x="575" y="360" fill="#e2e8f0" font-size="16" font-weight="700" text-anchor="middle">인커플링 격자</text>
+    <text x="575" y="384" fill="#94a3b8" font-size="13" text-anchor="middle">넣을 때</text>
+    <text x="575" y="401" fill="#94a3b8" font-size="13" text-anchor="middle">일부만 통과</text>
+
+    <!-- 4 outcoupling -->
+    <rect x="700" y="332" width="150" height="76" rx="12" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+    <text x="775" y="360" fill="#e2e8f0" font-size="16" font-weight="700" text-anchor="middle">아웃커플링 격자</text>
+    <text x="775" y="384" fill="#94a3b8" font-size="13" text-anchor="middle">뺄 때</text>
+    <text x="775" y="401" fill="#94a3b8" font-size="13" text-anchor="middle">일부만 통과</text>
+
+    <!-- 5 eye -->
+    <circle cx="1010" cy="370" r="30" fill="#0b1220" stroke="#22d3ee" stroke-width="2"/>
+    <circle cx="1010" cy="370" r="9" fill="#67e8f9" opacity="0.55"/>
+    <text x="1010" y="452" fill="#67e8f9" font-size="16" font-weight="700" text-anchor="middle">눈에 도착</text>
+    <text x="1010" y="474" fill="#94a3b8" font-size="14" text-anchor="middle">실내 글자 한 줄</text>
+
+    <!-- arrows -->
+    <text x="262" y="376" fill="#64748b" font-size="26">&#8594;</text>
+    <text x="462" y="376" fill="#64748b" font-size="26">&#8594;</text>
+    <text x="662" y="376" fill="#64748b" font-size="26">&#8594;</text>
+    <text x="880" y="376" fill="#64748b" font-size="26">&#8594;</text>
+  </g>
+
+  <rect x="60" y="545" width="1080" height="66" rx="12" fill="#111827" stroke="#334155" stroke-width="1"/>
+  <text x="82" y="574" fill="#cbd5e1" font-size="15" font-family="Arial, sans-serif">양끝만 실측이다. 출발 5,000 nit와 도착은 정성(실내 글자 한 줄). 중간 손실은 방향만 표기하고 배율은 붙이지 않는다.</text>
+  <text x="82" y="597" fill="#fbbf24" font-size="15" font-family="Arial, sans-serif">이 통행세는 실내 이야기다. 한낮 야외 풀컬러를 켜는 문제는 손실이 아니라 밝기의 절대 천장(수천~수백만 nit)이라는 다른 벽이다.</text>
+</svg>
