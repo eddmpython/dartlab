@@ -177,6 +177,20 @@
 
 현재 판정: 이제 source discovery는 실행 후보뿐 아니라 차단 후보까지 설명 가능한 엔진 원장을 갖는다. 하지만 PRD급 시뮬레이터 완료는 아니다. 다음 P0는 discovery audit에서 통과한 후보와 관측 가능한 target label을 origin별 PIT로 맞춰 coefficient calibration receipt를 만드는 단계다. demand, ASP, capacity처럼 직접 label이 없는 항목은 여전히 explicit assumption 또는 blocked로 남겨야 한다.
 
+## 2026-07-15 P0 coefficient PIT calibration receipt
+
+위 다음 P0 중 coefficient calibration receipt를 본진에 넣었다. 방향은 source factor와 operating shock 사이의 계수를 임의 assumption으로 넣는 것이 아니라, 이미 registry gate를 통과한 factor와 실제 관측 target label을 origin별 PIT로 맞춰 fit receipt만 발급하는 내부 law boundary다. 새 공개 API나 GUI는 추가하지 않았다.
+
+- `src/dartlab/simulate/driverCalibration.py`: `DriverCalibrationTarget`, `DriverCoefficientCalibrationSpec`, `DriverCoefficientCalibrationReceipt`, `fitDriverCoefficientPit`, `calibrationReceiptToOperatingExposure`를 추가했다.
+- target label gate: target은 `observedOutcome`, `realizedOutcome`, `observedOperatingShock`만 fit 가능하다. explicit assumption, proxy target, revenue split으로 만든 demand 또는 ASP 대리 label은 coefficient fit 단계에서 차단된다.
+- PIT origin gate: 각 row는 originEventTime, originKnowledgeAsOf, sourceAvailableAt, targetEventTime, targetAvailableAt을 가져야 한다. sourceAvailableAt은 originKnowledgeAsOf 이하여야 하고, target event는 origin 이후여야 하며, targetAvailableAt은 calibrationKnowledgeAsOf 이하여야 한다.
+- unit 계약: source unit은 `DriverRegistryResult.pathSet.factorSpecs`에서 읽고, target unit은 `OPERATING_TARGET_UNITS`와 일치해야 한다. coefficientUnit은 항상 `targetUnit/sourceUnit`로 계산되어 `OperatingTransmissionExposure`의 기대 단위와 맞는다.
+- lineage 결속: registryHash, pathSetHash, pathSetInputHash, factorContractHash, calibrationSpecHash, originGridHash, targetOutcomeHash, coefficientTraceHash, trace row, sourceRef, labelSourceRef가 receipt hash에 묶인다. exposure sourceRef는 `driverCoefficientFit:<receiptHash>` 하나로 안정화된다.
+- admission 경계: 산출 status와 validationStatus는 `retrospectiveOnly`다. 이 receipt는 PathMeasureCertificate가 아니며, calibrated weight, admitted path, policy recommendation을 열지 않는다. registry 또는 target이 revisedHistory이면 warning과 historyStatus에 남는다.
+- 검증: `_attempts/driverCalibration/test_driverCalibration.py` 4개와 `tests/simulate/test_driverCalibration.py` 3개를 추가했다. focused driver+bridge 42개, `tests/simulate` 360개, `ruff format --check`, `ruff check`, camelCase audit, docstring audit, em/en dash audit, `dartlabGuard.py strict --scope l0-l15 --providers dart,edgar`가 통과했다.
+
+현재 판정: 이제 "factor가 operating shock을 얼마나 움직이는가"에 대해 최소한 관측 label 기반 retrospective receipt가 생겼다. 하지만 PRD급 시뮬레이터 완료는 아니다. 다음 P0는 이 receipt를 held-out OOS calibration, baseline skill, path admission, policy certificate와 분리된 admission registry에 연결하는 것이다. 그 전까지 계수는 measuredAssociation일 뿐 identified intervention이나 추천 면허가 아니다.
+
 ---
 
 ## 0. ★2026-06-20 9인 전문가 패널 uplift . 세 축 planScore 95 도달
