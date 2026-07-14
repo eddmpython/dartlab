@@ -109,6 +109,20 @@
 
 현재 판정: PRD가 요구한 "조건과 가정으로 다양한 미래를 돌리는" 엔진의 데이터 입구 중 재무 공시 레인은 한 단계 더 정공법에 가까워졌다. 그러나 아직 PRD급 시뮬레이터 완료는 아니다. 다음 P0는 이 adapter를 전수 DriverRegistry에 연결하고, 산업 time-series와 snapshot 분리, coefficient PIT calibration, OOS policy certificate를 닫아야 전략 추천으로 승격된다.
 
+## 2026-07-15 P0 DriverRegistry semantic gate
+
+위 다음 P0 중 adapter를 전수 registry에 연결하는 첫 내부 gate를 본진에 넣었다. 목적은 많은 데이터 레인을 한꺼번에 묶되, 묶으면 안 되는 state와 path를 분리하고 false confidence를 path generator 앞에서 차단하는 것이다. 새 공개 API나 GUI는 추가하지 않았다.
+
+- `src/dartlab/simulate/driverRegistry.py`: `DriverRegistryCandidate`, `compileDriverRegistryPathSet`, registry audit를 추가했다. 후보 lane은 `laneRole`, `semanticRefs`, `selectionReason`을 들고 들어오며, path 생성은 기존 `buildDriverPathSet`에 위임한다.
+- semantic gate: `stateSnapshot`, `observedFeature`, `staticClassification`은 path driver로 등록할 수 없다. industry taxonomy, snapshot, kindList 계열은 history driver로 승격하지 않는다.
+- factor laundering 차단: equity price history가 `marketPriceChange` 같은 operating shock target으로 직접 등록되는 것을 막고, macro `level`은 change 또는 innovation transform 없이 통과하지 못한다. DART/EDGAR financial ratio level은 state 또는 observedFeature로 남아야 하며 path factor로 등록할 수 없다.
+- lineage gate: DART/EDGAR `asKnown` filing source는 `sourceReceiptRef`, `filingTrace`, filing id column ref 없이는 registry에 들어오지 못한다. warning이 있거나 `revisedHistory`인 lane이 하나라도 있으면 registry audit에 약한 상태가 남는다.
+- support gate: 여러 history lane의 common event support를 registry 단계에서 계산해 `commonObservationCount`, source별 observation count, eventStart, eventEnd를 audit에 남기고, 공통 관측치가 `minObservations` 미만이면 fail closed 한다.
+- admission gate: path certificate는 exact warning-free history에만 허용된다. explicit assumption, revised history, source warning이 있으면 certificate 전달을 막는다.
+- 검증: `_attempts/driverRegistry/test_driverRegistry.py`에서 source 묶기, snapshot 차단, price/macro/ratio semantic laundering 차단, semanticRefs와 common support 부족 차단을 먼저 고정했다. 본진 `tests/simulate/test_driverRegistry.py`로 승격했고, focused 21개, `tests/simulate` 346개, `ruff format --check`, `ruff check`, camelCase audit, docstring audit, em/en dash audit, `dartlabGuard.py strict --scope l0-l15 --providers dart,edgar`가 통과했다.
+
+현재 판정: 실제 workbench source adapter들을 하나의 registry gate로 묶는 내부 관문이 생겼다. 이로써 "많은 데이터가 모두 변수와 가정으로 들어온다"는 목표에 한 단계 접근했다. 아직 남은 핵심은 자동 전수 스캔, resample/carry-forward 같은 격자 변환의 명시 transform, coefficient PIT calibration, held-out OOS policy certificate다. 이들이 닫히기 전 전략 추천 승격은 여전히 금지다.
+
 ---
 
 ## 0. ★2026-06-20 9인 전문가 패널 uplift . 세 축 planScore 95 도달
