@@ -453,6 +453,114 @@ def buildDriverObservationBatchFromPanel(
     )
 
 
+def buildFilingMetricDriverObservationBatch(
+    panel: pl.DataFrame,
+    *,
+    providerId: str,
+    datasetId: str,
+    entityId: str,
+    knowledgeAsOf: str,
+    eventTimeColumn: str,
+    availableAtColumn: str,
+    filingIdColumn: str,
+    sourceArtifactKind: str,
+    sourceArtifactId: str,
+    sourceArtifactHash: str,
+    signalSpecs: tuple[DriverObservationSignalSpec, ...],
+    sourceRefs: tuple[str, ...],
+    entityIdColumn: str = "",
+    knowledgeAsOfColumn: str = "knowledgeAsOf",
+    sourceArtifactHashColumn: str = "",
+    sourceReceipts: Mapping[str, AdmissionReceipt] | None = None,
+    requireExact: bool = False,
+) -> ProviderObservationBatch:
+    """Build a filing metric provider observation batch.
+
+    Args:
+        panel: Filing metric rows with fiscal event, filing availability, filing id, row knowledge, and signals.
+        providerId: Filing provider. Only ``dart`` and ``edgar`` are accepted.
+        datasetId: Provider dataset identity.
+        entityId: Company identity.
+        knowledgeAsOf: Batch cutoff. Rows newer than this are excluded.
+        eventTimeColumn: Fiscal period end or filing metric event column.
+        availableAtColumn: Filing receipt or acceptance date column.
+        filingIdColumn: DART receipt number, EDGAR accession, or equivalent revision id.
+        sourceArtifactKind: Source artifact kind for the metric row.
+        sourceArtifactId: Source artifact identity.
+        sourceArtifactHash: Lane-level source artifact hash.
+        signalSpecs: Deterministic filing metric signal contracts.
+        sourceRefs: Provider and transform audit references.
+        entityIdColumn: Optional company column used to filter rows.
+        knowledgeAsOfColumn: Row-level knowledge cutoff column. Required for filing metrics.
+        sourceArtifactHashColumn: Row-level source artifact hash column. Required for exact filing metrics.
+        sourceReceipts: Exact ``dataVintage`` receipts keyed by filing id.
+        requireExact: If true, require row source artifact hashes and row receipts.
+
+    Returns:
+        Unsigned filing metric ``ProviderObservationBatch``.
+
+    Raises:
+        DriverObservationBatchError: If filing identity, timing, row knowledge, evidence role, or exact receipt fails.
+
+    Example:
+        ``batch = buildFilingMetricDriverObservationBatch(panel, providerId="edgar", ...)``
+    """
+
+    if providerId not in {"dart", "edgar"}:
+        raise DriverObservationBatchError("filing metric observation provider must be dart or edgar")
+    if not filingIdColumn or eventTimeColumn == availableAtColumn:
+        raise DriverObservationBatchError("filing metric observation needs separate event, availability, and filing id")
+    if not knowledgeAsOfColumn or knowledgeAsOfColumn not in panel.columns:
+        raise DriverObservationBatchError("filing metric observation batch needs row knowledgeAsOf")
+    if requireExact and (
+        sourceReceipts is None or not sourceArtifactHashColumn or sourceArtifactHashColumn not in panel.columns
+    ):
+        raise DriverObservationBatchError("exact filing metric observation batch needs row source receipts")
+    signalTuple = tuple(signalSpecs)
+    if not signalTuple or any(signal.evidenceRole != "deterministicDerived" for signal in signalTuple):
+        raise DriverObservationBatchError("filing metric observations must be deterministicDerived")
+    working = panel
+    if entityIdColumn:
+        if entityIdColumn not in working.columns:
+            raise DriverObservationBatchError("filing metric observation entity column is missing")
+        working = working.filter(pl.col(entityIdColumn).cast(pl.Utf8) == str(entityId))
+    refs = _dedupe(
+        (
+            *sourceRefs,
+            "simulate.driverObservationBatches:buildFilingMetricDriverObservationBatch",
+            f"eventTimeColumn:{eventTimeColumn}",
+            f"availableAtColumn:{availableAtColumn}",
+            f"filingIdColumn:{filingIdColumn}",
+            f"knowledgeAsOfColumn:{knowledgeAsOfColumn}",
+            *((f"sourceArtifactHashColumn:{sourceArtifactHashColumn}",) if sourceArtifactHashColumn else ()),
+            *((f"entityIdColumn:{entityIdColumn}",) if entityIdColumn else ()),
+        )
+    )
+    return buildDriverObservationBatchFromPanel(
+        working,
+        DriverObservationLaneSpec(
+            providerId=providerId,
+            datasetId=datasetId,
+            entityId=entityId,
+            knowledgeAsOf=knowledgeAsOf,
+            eventTimeColumn=eventTimeColumn,
+            availableAtColumn=availableAtColumn,
+            revisionIdColumn=filingIdColumn,
+            sourceArtifactKind=sourceArtifactKind,
+            sourceArtifactId=sourceArtifactId,
+            sourceArtifactHash=sourceArtifactHash,
+            signalSpecs=signalTuple,
+            sourceRefs=refs,
+            knowledgeAsOfColumn=knowledgeAsOfColumn,
+            sourceArtifactHashColumn=sourceArtifactHashColumn,
+            eventDateRole="fiscalThrough",
+            requireAvailableAfterEvent=True,
+        ),
+        sourceReceipts=sourceReceipts,
+        requireExact=requireExact,
+    )
+
+
 def driverHistorySourceFromProviderObservationBatch(
     batch: ProviderObservationBatch,
     *,

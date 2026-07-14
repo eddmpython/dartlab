@@ -1133,3 +1133,14 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **projection 경계**: signed provider batch에서 path generator용 `DriverHistorySource`로 내려가는 one-way projection은 허용했다. 반대로 history source에서 provider batch를 만드는 것은 금지다. conditional provider batch는 projection 시 `revisedHistory`와 warning을 보존한다.
 - **검증**: provider lane batch에서 coefficient frame, PIT fit, held-out OOS, signed `driverCoefficient` admission까지 이어지는 end-to-end 회귀를 추가했다. conditional batch issue 거부, history source promotion 거부, filing availability boundary, provider batch to history projection도 kill-test로 고정했다.
 - **남은 P0**: DART, EDGAR, price, macro, industry의 실제 런타임 lane adapter를 이 batch builder에 연결해야 한다. 그 다음 pooled coefficient registry와 multi-variable scenario composition을 닫아야 조건부 비교가 전략 추천으로 승격된다.
+
+
+## 2026-07-15 P0 filing metric exact observation lane
+
+- **판단**: 실제 시뮬레이션으로 가는 첫 admission wall은 generic panel이 아니라 filing metric이다. 재무 공시는 fiscal event, filing availability, filing id, row source receipt의 의미가 가장 명확하므로 PRD의 as-known 조건 재현을 검증하기 좋다.
+- **구현**: `buildFilingMetricDriverObservationBatch`를 추가했다. DART 또는 EDGAR filing metric panel을 `ProviderObservationBatch`로 만들며, fiscal period는 `eventAt`, filing receipt 또는 acceptance date는 `availableAt`, rceptNo 또는 accession은 `revisionId`로 고정한다.
+- **row-level PIT 강제**: filing metric adapter는 row별 `knowledgeAsOf` 컬럼을 필수로 요구한다. batch cutoff를 과거 row의 origin knowledge로 세탁하지 않기 위해서다. exact 요청은 filing id별 `dataVintage` receipt와 row artifact hash가 있어야만 통과한다.
+- **evidence 경계**: 이 adapter는 계산된 filing metric만 다루므로 `deterministicDerived` signal만 허용한다. 원 공시 숫자 자체를 observed로 올리는 adapter는 별도 domain wrapper가 필요하다. `observed` 세탁과 explicit assumption 유입은 즉시 거부된다.
+- **projection 경계**: exact signed filing provider batch는 path generator용 `DriverHistorySource`로 내려갈 수 있고 이때 `historyStatus=asKnown`이 보존된다. conditional DART retained metric batch는 provider receipt 발행 단계에서 거부된다.
+- **검증**: EDGAR filing metric exact batch 발행과 projection, row knowledge 누락, observed 세탁, exact row receipt 누락, availability 경계 위반, provider drift, DART conditional issue 거부를 kill-test로 추가했다.
+- **남은 P0**: price exact lane은 explicit availableAt와 price vintage receipt가 있어야 하고, macro exact lane은 release vintage가 있어야 한다. 둘 다 없는 revised history를 coefficient admission parent로 세탁하면 안 된다.

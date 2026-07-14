@@ -32,6 +32,7 @@ from dartlab.simulate.driverObservationBatches import (
     DriverObservationLaneSpec,
     DriverObservationSignalSpec,
     buildDriverObservationBatchFromPanel,
+    buildFilingMetricDriverObservationBatch,
     driverHistorySourceFromProviderObservationBatch,
 )
 from dartlab.simulate.driverObservationFrames import (
@@ -91,14 +92,21 @@ def _sourceReceipt(context, payload: dict, *, knowledgeAsOf: str):
     )
 
 
-def _attachRowSourceReceipts(context, panel: pl.DataFrame, *, signalId: str):
+def _attachRowSourceReceipts(
+    context,
+    panel: pl.DataFrame,
+    *,
+    signalId: str,
+    revisionColumn: str = "revisionId",
+    availableColumn: str = "availableAt",
+):
     receipts = {}
     artifactHashes = []
     knowledgeValues = []
     for row in panel.to_dicts():
-        knowledgeAsOf = str(row.get("knowledgeAsOf") or row["availableAt"]).replace("-", "")[:8]
+        knowledgeAsOf = str(row.get("knowledgeAsOf") or row[availableColumn]).replace("-", "")[:8]
         receipt = _sourceReceipt(context, {"row": row, "signalId": signalId}, knowledgeAsOf=knowledgeAsOf)
-        revisionId = str(row["revisionId"])
+        revisionId = str(row[revisionColumn])
         receipts[revisionId] = receipt
         artifactHashes.append(receipt.artifactHash)
         knowledgeValues.append(knowledgeAsOf)
@@ -163,6 +171,30 @@ def _laneSpec(
         knowledgeAsOfColumn=knowledgeAsOfColumn,
         sourceArtifactHashColumn=sourceArtifactHashColumn,
         requireAvailableAfterEvent=requireAvailableAfterEvent,
+    )
+
+
+def _filingPanel() -> pl.DataFrame:
+    return pl.DataFrame(
+        {
+            "cik": ["0000320193", "0000320193", "0000320193", "0000320193"],
+            "period": ["20200331", "20200630", "20200930", "20201231"],
+            "acceptedAt": ["20200501", "20200801", "20201101", "20210201"],
+            "accession": ["a1", "a2", "a3", "a4"],
+            "opMarginChange": [0.02, -0.01, 0.03, 0.04],
+        }
+    )
+
+
+def _filingSignal(evidenceRole: str = "deterministicDerived") -> DriverObservationSignalSpec:
+    return DriverObservationSignalSpec(
+        "operatingMarginChange",
+        "opMarginChange",
+        "ratioChange",
+        "quarter",
+        "ratio",
+        "edgar-operating-margin-change-v1",
+        evidenceRole,
     )
 
 
@@ -404,6 +436,190 @@ def testDriverObservationLaneBatchFeedsCoefficientAdmission(tmp_path) -> None:
     )
     assert report.status == "oosEligible"
     assert verified.sourceParentReceiptIds == (fitSource.batchReceiptId, oosSource.batchReceiptId)
+
+
+def testFilingMetricObservationBatchBuildsExactProviderBatchAndProjection(tmp_path) -> None:
+    context = _context(tmp_path)
+    panel, sourceReceipts = _attachRowSourceReceipts(
+        context,
+        _filingPanel(),
+        signalId="operatingMarginChange",
+        revisionColumn="accession",
+        availableColumn="acceptedAt",
+    )
+    laneHash = sha256(
+        canonicalPayloadBytes({"rows": panel.to_dicts(), "signalId": "operatingMarginChange"})
+    ).hexdigest()
+    batch = buildFilingMetricDriverObservationBatch(
+        panel,
+        providerId="edgar",
+        datasetId="edgar.companyfacts.metric",
+        entityId="0000320193",
+        knowledgeAsOf="20210430",
+        eventTimeColumn="period",
+        availableAtColumn="acceptedAt",
+        filingIdColumn="accession",
+        entityIdColumn="cik",
+        sourceArtifactKind="edgarFilingMetricRows",
+        sourceArtifactId="0000320193:operatingMarginChange",
+        sourceArtifactHash=laneHash,
+        signalSpecs=(_filingSignal(),),
+        sourceRefs=("source:edgar-companyfacts",),
+        sourceArtifactHashColumn="sourceArtifactHash",
+        sourceReceipts=sourceReceipts,
+        requireExact=True,
+    )
+    signedBatch = issueProviderObservationBatch(
+        batch,
+        context[0],
+        context[1],
+        privateKey=context[2],
+        issuerId="lane-issuer",
+        issuerKeyId="lane-key",
+        issuedAt="20210430T000000Z",
+        trustedIssuers=context[3],
+    )
+    source = driverHistorySourceFromProviderObservationBatch(
+        signedBatch,
+        cardId="edgar-operating-margin-change-history",
+        factors=(
+            DriverFactorSpec(
+                "operatingMarginChange",
+                "ratioChange",
+                "quarter",
+                "change",
+                "edgar-operating-margin-change-v1",
+            ),
+        ),
+    )
+    assert signedBatch.historyStatus == "exact"
+    assert signedBatch.sourceReceiptIds == tuple(sorted(receipt.receiptId for receipt in sourceReceipts.values()))
+    assert all(observation.vintage.fiscalThrough == observation.eventAt for observation in signedBatch.observations)
+    assert source.card.historyStatus == "asKnown"
+    assert source.panel["operatingMarginChange"].to_list() == [0.02, -0.01, 0.03, 0.04]
+
+
+def testFilingMetricObservationBatchRejectsLaunderingAndMissingPit(tmp_path) -> None:
+    _context(tmp_path)
+    panel = _filingPanel()
+    laneHash = sha256(b"filing-lane").hexdigest()
+    with pytest.raises(DriverObservationBatchError, match="row knowledgeAsOf"):
+        buildFilingMetricDriverObservationBatch(
+            panel,
+            providerId="edgar",
+            datasetId="edgar.companyfacts.metric",
+            entityId="0000320193",
+            knowledgeAsOf="20210430",
+            eventTimeColumn="period",
+            availableAtColumn="acceptedAt",
+            filingIdColumn="accession",
+            sourceArtifactKind="edgarFilingMetricRows",
+            sourceArtifactId="0000320193:operatingMarginChange",
+            sourceArtifactHash=laneHash,
+            signalSpecs=(_filingSignal(),),
+            sourceRefs=("source:edgar-companyfacts",),
+        )
+    panelWithKnowledge = panel.with_columns(pl.col("acceptedAt").alias("knowledgeAsOf"))
+    with pytest.raises(DriverObservationBatchError, match="deterministicDerived"):
+        buildFilingMetricDriverObservationBatch(
+            panelWithKnowledge,
+            providerId="edgar",
+            datasetId="edgar.companyfacts.metric",
+            entityId="0000320193",
+            knowledgeAsOf="20210430",
+            eventTimeColumn="period",
+            availableAtColumn="acceptedAt",
+            filingIdColumn="accession",
+            sourceArtifactKind="edgarFilingMetricRows",
+            sourceArtifactId="0000320193:operatingMarginChange",
+            sourceArtifactHash=laneHash,
+            signalSpecs=(_filingSignal("observed"),),
+            sourceRefs=("source:edgar-companyfacts",),
+        )
+    panelWithHash = panelWithKnowledge.with_columns(pl.lit(laneHash).alias("sourceArtifactHash"))
+    with pytest.raises(DriverObservationBatchError, match="row source receipts"):
+        buildFilingMetricDriverObservationBatch(
+            panelWithHash,
+            providerId="edgar",
+            datasetId="edgar.companyfacts.metric",
+            entityId="0000320193",
+            knowledgeAsOf="20210430",
+            eventTimeColumn="period",
+            availableAtColumn="acceptedAt",
+            filingIdColumn="accession",
+            sourceArtifactKind="edgarFilingMetricRows",
+            sourceArtifactId="0000320193:operatingMarginChange",
+            sourceArtifactHash=laneHash,
+            signalSpecs=(_filingSignal(),),
+            sourceRefs=("source:edgar-companyfacts",),
+            requireExact=True,
+        )
+    badTiming = panelWithKnowledge.with_columns(pl.col("period").alias("acceptedAt"))
+    with pytest.raises(DriverObservationBatchError, match="availability must be after event"):
+        buildFilingMetricDriverObservationBatch(
+            badTiming,
+            providerId="edgar",
+            datasetId="edgar.companyfacts.metric",
+            entityId="0000320193",
+            knowledgeAsOf="20210430",
+            eventTimeColumn="period",
+            availableAtColumn="acceptedAt",
+            filingIdColumn="accession",
+            sourceArtifactKind="edgarFilingMetricRows",
+            sourceArtifactId="0000320193:operatingMarginChange",
+            sourceArtifactHash=laneHash,
+            signalSpecs=(_filingSignal(),),
+            sourceRefs=("source:edgar-companyfacts",),
+        )
+    with pytest.raises(DriverObservationBatchError, match="provider must be dart or edgar"):
+        buildFilingMetricDriverObservationBatch(
+            panelWithKnowledge,
+            providerId="macro",
+            datasetId="macro.metric",
+            entityId="KR",
+            knowledgeAsOf="20210430",
+            eventTimeColumn="period",
+            availableAtColumn="acceptedAt",
+            filingIdColumn="accession",
+            sourceArtifactKind="macroRows",
+            sourceArtifactId="KR:metric",
+            sourceArtifactHash=laneHash,
+            signalSpecs=(_filingSignal(),),
+            sourceRefs=("source:macro",),
+        )
+
+
+def testConditionalFilingMetricObservationBatchCannotIssueExactBatch(tmp_path) -> None:
+    context = _context(tmp_path)
+    panel = _filingPanel().with_columns(pl.col("acceptedAt").alias("knowledgeAsOf"))
+    laneHash = sha256(b"conditional-filing-lane").hexdigest()
+    batch = buildFilingMetricDriverObservationBatch(
+        panel,
+        providerId="dart",
+        datasetId="dart.retained.metric",
+        entityId="005930",
+        knowledgeAsOf="20210430",
+        eventTimeColumn="period",
+        availableAtColumn="acceptedAt",
+        filingIdColumn="accession",
+        sourceArtifactKind="dartRetainedFilingMetricRows",
+        sourceArtifactId="005930:operatingMarginChange",
+        sourceArtifactHash=laneHash,
+        signalSpecs=(_filingSignal("deterministicDerived"),),
+        sourceRefs=("source:dart-retained-finance",),
+    )
+    assert batch.historyStatus == "conditional"
+    with pytest.raises(StateCompilerError, match="exact provider batch"):
+        issueProviderObservationBatch(
+            batch,
+            context[0],
+            context[1],
+            privateKey=context[2],
+            issuerId="lane-issuer",
+            issuerKeyId="lane-key",
+            issuedAt="20210430T000000Z",
+            trustedIssuers=context[3],
+        )
 
 
 def testConditionalDriverObservationLaneCannotIssueExactBatch(tmp_path) -> None:
