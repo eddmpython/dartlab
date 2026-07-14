@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import re as _re
 import sys as _sys
+from functools import lru_cache as _lru_cache
 
 import polars as pl
 
@@ -50,8 +51,16 @@ def _normExpr(col: str) -> pl.Expr:
 
 
 def _normKeyword(kw: str) -> str:
-    """키워드 → 정규화 (공백 제거 — 키워드엔 로마숫자 없음). chapter 정규화와 같은 축."""
+    """키워드 → 정규화 (공백 제거, 키워드엔 로마숫자 없음). chapter 정규화와 같은 축."""
     return "".join(kw.split())
+
+
+# CANONICAL_L1 키워드는 상수라 정규화형(_normKeyword)을 모듈 로드 시 1회만 계산한다. _pyCanonLabel 이
+# 원소마다 라벨과 키워드를 재스캔하며 _normKeyword(kw) 를 매번 재계산하던 것(pyodide panel 한 번에 수십만 회,
+# str.split/join 대부분)을 제거한다. (label, 정규화키워드 tuple) 순서는 CANONICAL_L1 그대로 유지.
+_CANONICAL_L1_NORM: tuple[tuple[str, tuple[str, ...]], ...] = tuple(
+    (label, tuple(_normKeyword(kw) for kw in kws)) for _nid, label, kws in CANONICAL_L1
+)
 
 
 # SECTION-N 경로 구분자 (walker._SECTION_SEP 와 동일). sectionPath = "II␟IV␟2..." depth join.
@@ -92,20 +101,29 @@ def _pyNorm(s: str | None) -> str:
     return "".join(_ROMAN_PY.sub("", s or "").split())
 
 
+@_lru_cache(maxsize=4096)
 def _pyCanonLabel(s: str | None) -> str | None:
-    """단일 원소 → canonical L1 라벨/None. ``_canonLabelExpr`` 파이썬 포트(순서 키워드 첫 매치)."""
+    """단일 원소 → canonical L1 라벨/None. ``_canonLabelExpr`` 파이썬 포트(순서 키워드 첫 매치).
+
+    순수함수라 메모이즈한다(같은 챕터/원소명이 행마다 반복되고 캐논 라벨은 회사 무관 보편). 정규화 키워드는
+    ``_CANONICAL_L1_NORM`` 로 사전계산돼 매 호출 재정규화가 없다. 로직/결과는 옛 구현과 동일.
+    """
     norm = _pyNorm(s)
     if not norm:
         return None
-    for _nid, label, kws in CANONICAL_L1:
-        for kw in kws:
-            if _normKeyword(kw) in norm:
+    for label, normKws in _CANONICAL_L1_NORM:
+        for nkw in normKws:
+            if nkw in norm:
                 return label
     return None
 
 
+@_lru_cache(maxsize=4096)
 def _pyCanonChapter(pathVal: str | None, chapterVal: str | None, noteKeyVal: str | None) -> str | None:
-    """canonicalChapterExpr 파이썬 포트. sectionPath 깊은 canonical → chapter 라벨 → NT_ III → 원본."""
+    """canonicalChapterExpr 파이썬 포트. sectionPath 깊은 canonical → chapter 라벨 → NT_ III → 원본.
+
+    순수함수 + map_elements 로 행마다 호출되나 (path, chapter, noteKey) 조합은 소수라 메모이즈한다.
+    """
     labels = (
         [lbl for el in str(pathVal).split(_SECTION_SEP) if (lbl := _pyCanonLabel(el)) is not None] if pathVal else []
     )
