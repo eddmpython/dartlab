@@ -1112,3 +1112,13 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **row match 계약**: ref, role, eventTime, availableAt, value, unit이 모두 맞아야 한다. parent receipt 자체가 정상이어도 artifact rows가 `source:o1` 같은 실제 row ref를 빠뜨리면 admission 검증이 실패한다.
 - **검증**: attempt plus formal driver calibration 13건 통과. driver admission 주변 집중 회귀 56건 통과. `tests/simulate` 전체 363건 통과. Guard Index strict l0-l15 7/7과 외부 gate 6종 통과. ruff format, ruff check, camelcase strict, docstring audit 통과.
 - **남은 P0**: provider batch를 실제 DART, EDGAR, macro 원천에서 coefficient frame으로 자동 연결하는 mapping은 아직 수동 fixture 수준이다. 다음 단위는 provider observation batch에서 driver frame을 만드는 adapter와 실제 data lineage fixture다.
+
+
+## 2026-07-15 P0 provider observation driver frame adapter
+
+- **판단**: 사용자의 지적처럼 PRD급 시뮬레이터는 수동 fixture 계수 실험이 아니라, 실제 관측 원천에서 조건 변수와 forward label을 만들고 그 조합으로 전략 판단을 해야 한다. 직전까지는 provider batch 검증은 있었지만 coefficient frame을 사람이 수동으로 만든다는 큰 구멍이 남아 있었다.
+- **구현**: `src/dartlab/simulate/driverObservationFrames.py`를 추가했다. signed exact `ProviderObservationBatch` 두 개를 받아 source driver observation과 realized label observation을 horizon 기준으로 결합하고, `fitDriverCoefficientPit`와 `evaluateDriverCoefficientOos`가 그대로 소비하는 DataFrame을 만든다.
+- **계약**: batch는 signed, exact, 재현 가능해야 한다. signal, unit, frequency, evidenceRole이 spec과 달라지면 실패한다. 동일 signal event 또는 동일 period 중복은 거부한다. target period가 `stepSpan * horizonSteps`만큼 앞서야 하고, label availableAt은 source knowledgeAsOf보다 늦어야 한다.
+- **lineage**: frame row의 `sourceRef`와 `labelSourceRef`는 provider observation의 `observationId`다. parent ids는 dataVintage가 아니라 provider batch receipt다. 최종 `driverCoefficient` admission은 provider batch artifact 안의 observationId coverage와 row를 대조한다.
+- **검증**: provider batch to frame to fit to OOS to signed admission end-to-end 테스트를 추가했다. unsigned batch, duplicate observation, missing horizon label, unit drift, explicitAssumption label, forward label leakage, row ref tamper, dataVintage receipt 세탁을 kill-test로 고정했다. focused 17건이 통과했다.
+- **남은 P0**: adapter는 원천 batch에서 coefficient frame을 만드는 문을 닫았지만, DART, EDGAR, macro, price의 실제 런타임 adapter가 전수 registry로 자동 공급되는 단계는 아직 남았다. 다음 단위는 actual provider lane별 observation batch 생성과 pooled panel coefficient registry convergence다.
