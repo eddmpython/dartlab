@@ -92,7 +92,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | U0-V02 | layout이 재현되는가 | live 3 scene, 3 browser, 20 replay | logical hash 일치, 같은 viewport 및 DPR anchor 1px 이하 | layout 교체 | 완료, layout promote |
 | U0-V03 | 밀도에서 생략이 정직한가 | 250, 500, 1,000 node, desktop 및 mobile | collision 2% 이하, receipt 100% | lower LOD | 완료, density promote |
 | U0-V04 | 이중 시간을 이해하는가 | revision task 12개, participant 12명 | validAt, knownAt, combined 판독 90% 이상 | Time Lens 재설계 | 계약 완료, participant 0/12 차단 |
-| U0-V05 | 접근성 표면이 동등한가 | keyboard, reader, low GPU | 핵심 task 100% | renderer 기각 | 대기 |
+| U0-V05 | 접근성 표면이 동등한가 | keyboard, reader, low GPU | 핵심 task 100% | renderer 기각 | 계약 완료, named reader 수동 gate |
 | U0-V06 | 새 renderer가 필요한가 | SVG, Cosmos, DOM, 후보 | task, frame, heap, bundle 개선 | 새 dependency 기각 | 대기 |
 | U0-G01 | release gold를 통과하는가 | positive 300, negative 300 | precision 98%, false accept 1% 이하 | U1 금지 | 대기 |
 | U1-Y01 | workflow가 실제로 더 유용한가 | 5 task, baseline과 Universe | information yield 개선 | revise 또는 reject | 대기 |
@@ -561,6 +561,43 @@ liveReady                              false
 ```
 
 판정: 미래 효력 선공시, 과거 사건 지연 공시, open interval, inclusive boundary, sourcePublishedAt과 availableAt 차이를 포함한 12개 task에서 valid 및 known answer 네 조합을 모두 만들었다. Query validAt과 knownAt은 assertion identity에 들어가지 않고 reality와 knowledge control, DOM fieldset, aria phrase로 독립 표현된다. Synthetic perfect review는 scoring contract test에만 쓰며 live 결과가 아니다. 실제 participant와 response가 0이므로 U0-V04는 `revise`이며 두 축과 combined accuracy가 각각 90%를 넘기 전 production Time Lens admission을 차단한다.
+
+## 4.15 U0-V05 결과
+
+명령:
+
+```powershell
+node --check tests/_attempts/dartlabUniverse/visual/accessibilityEquivalenceProbe.mjs
+node --test tests/_attempts/dartlabUniverse/visual/testAccessibilityEquivalenceProbe.mjs
+node tests/_attempts/dartlabUniverse/visual/accessibilityEquivalenceProbe.mjs
+```
+
+결과:
+
+```text
+coreActionCount                            6
+surfaceCount                               2
+profileCount                               6
+commandParity                            6/6
+uniqueFocusIdCount                     12/12
+keyboardNativeCoverage                 12/12
+screenReaderSummaryCoverage            12/12
+syntheticProfileTask                    36/36
+browserSpatialKeyboardTask                6/6
+browserTableKeyboardTask                  6/6
+reducedMotionDuration                       0s
+highContrastNonColorCoverage              6/6
+zoom200HorizontalOverflow               false
+mobileLowGpuTableTask                      6/6
+mobileLowGpuSpatialSurface                   0
+spatialOnlyActionCount                        0
+machineRegression                        11/11 PASS
+accessibilityContractReady                 true
+namedScreenReaderManualSession       unmeasured
+productionReady                           false
+```
+
+판정: 여섯 핵심 action은 spatial DOM과 relation table에서 같은 command, native keyboard control, screen reader summary와 polite status를 제공했다. 실제 browser keyboard task는 두 surface에서 각각 6/6, reduced motion 0s, high contrast non-color treatment 6/6, 200% zoom horizontal overflow 없음, 390x844 low GPU table fallback 6/6이며 spatial-only action은 0이다. U0-V05 접근성 동등 경로 계약은 `promote`한다. 다만 browser accessibility tree 검증은 실제 named screen reader 수동 session을 대체하지 않으므로 production admission은 `revise`로 차단한다.
 
 ## 5. existing attempts 재사용 지도
 

@@ -1,6 +1,6 @@
 # Visual attempts
 
-> 상태: U0-V01 및 V04 grammar, U0-V02 layout, U0-V03 density contract 완료, reviewed comprehension 차단
+> 상태: U0-V01 및 V04 grammar, U0-V02 layout, U0-V03 density, U0-V05 accessibility contract 완료, reviewed comprehension과 외부 reader 수동 확인 차단
 > 책임: semantic LOD, 상태 문법, layout 결정론, renderer 성능, 접근성, 3D uplift를 반증한다.
 
 ## 가설
@@ -13,7 +13,7 @@
 2. U0-V02: 고정 anchor와 deterministic layout. Contract 완료
 3. U0-V03: 250, 500, 1,000 node density와 omitted receipt. Contract 완료
 4. U0-V04: validAt와 knownAt 이중 시간 comprehension. Grammar contract 완료, participant review 대기
-5. U0-V05: keyboard, screen reader, mobile low GPU
+5. U0-V05: keyboard, screen reader, reduced motion, high contrast, 200% zoom, mobile low GPU. Contract 완료, 외부 reader 수동 확인 대기
 6. U0-V06: SVG, current Cosmos, DOM, 후보 renderer bakeoff
 7. U5-X01: 2D 대비 2.5D 또는 3D uplift
 
@@ -201,6 +201,44 @@ Response file은 participant 1명당 아래 record 하나를 가진 JSON array�
 
 판정은 `revise`다. 미래 효력 선공시, 과거 사건 지연 공시, open interval, inclusive boundary와 source publication 및 availability 차이를 포함한 네 answer 조합을 모두 만들었다. Assertion identity에서 query validAt과 knownAt을 제외하고 reality와 knowledge control 및 DOM fieldset을 분리했다. 그러나 실제 participant가 0명이므로 두 축과 combined 90% 판독을 주장하지 않는다. U0-V04 production Time Lens admission은 participant 12명과 144개 reviewed task response를 채우기 전 차단한다.
 
+## U0-V05 실행
+
+```powershell
+node --check tests/_attempts/dartlabUniverse/visual/accessibilityEquivalenceProbe.mjs
+node --test tests/_attempts/dartlabUniverse/visual/testAccessibilityEquivalenceProbe.mjs
+node tests/_attempts/dartlabUniverse/visual/accessibilityEquivalenceProbe.mjs
+python -m http.server 8767 --bind 127.0.0.1 --directory tests/_attempts/dartlabUniverse/visual
+```
+
+실제 브라우저 audit은 `accessibilityReference.html`을 1280x720과 390x844에서 열어 native keyboard action, semantic accessibility tree, reduced motion, high contrast, 200% zoom reflow, mobile low GPU table fallback을 측정한다. Audit 뒤 viewport를 복원하고 browser session과 local server를 종료한다.
+
+## U0-V05 결과
+
+| 항목 | 실측 |
+|---|---:|
+| Core action | 6 |
+| Equivalent surface | 2 |
+| Accessibility profile | 6 |
+| Spatial 및 table command parity | 6/6 |
+| Unique focus ID | 12/12 |
+| Native keyboard control | 12/12 |
+| Screen reader summary 및 live region | 12/12 |
+| Synthetic profile task | 36/36 |
+| Spatial browser keyboard task | 6/6 |
+| Table browser keyboard task | 6/6 |
+| Reduced motion duration | 0s |
+| High contrast non-color treatment | 6/6 |
+| 200% zoom computed font / horizontal overflow | 32px / false |
+| Mobile low GPU table task | 6/6 |
+| Mobile low GPU spatial surface | 0 |
+| Spatial-only core action | 0 |
+| Machine regression | 11/11 PASS |
+| Accessibility contract ready | true |
+| External named screen reader manual session | 미실행 |
+| Production ready | false |
+
+판정은 접근성 동등 경로 계약 `promote`, production admission `revise`다. Spatial DOM과 relation table이 여섯 핵심 command를 같은 순서로 제공하고 keyboard로 각각 6/6을 완료했다. In-app accessibility tree에서 list, table caption, row header, independent time input, polite status를 확인했다. Reduced motion은 0s, high contrast는 double border와 underline, 200% zoom은 horizontal overflow 없음, 390x844 low GPU에서는 spatial surface 없이 table task 6/6을 완료했다. 다만 실제 NVDA, JAWS, VoiceOver 같은 named screen reader 수동 세션은 실행하지 않았으므로 public UI production 이관 전 별도 manual gate로 남긴다.
+
 ## 합격
 
 - 상태 판독 90% 이상
@@ -219,6 +257,6 @@ Response file은 participant 1명당 아래 record 하나를 가진 JSON array�
 
 ## 다음
 
-U0-V05에서 keyboard, screen reader, reduced motion, high contrast, 200% zoom, mobile low GPU와 table 동등 경로를 검증한다. Participant review가 필요한 U0-V01과 U0-V04를 통과하기 전 production 이관은 불가하다.
+U0-V06에서 SVG, current Cosmos, DOM reference와 후보 adapter의 task, frame, heap, bundle을 같은 fixture로 비교한다. U0-V01과 U0-V04 participant review 및 U0-V05 named screen reader 수동 확인 전 production 이관은 불가하다.
 
 Production dependency는 U0-V06 결론 전에 추가하지 않는다.

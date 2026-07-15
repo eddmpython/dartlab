@@ -208,6 +208,8 @@ UniverseRenderer
 
 2026-07-16 U0-V04 실행 결과: 12개 revision task에서 validAt과 knownAt answer 조합 4/4, separate control과 aria 12/12, combined slider 0, machine regression 9/9을 확인했다. 미래 효력 선공시와 과거 사건 지연 공시를 포함하고 query cutoff가 assertion identity를 바꾸지 않는다. Reviewed participant는 0/12, task response는 0/144이고 validAt, knownAt, combined accuracy는 미측정이다. Time grammar contract는 완료했지만 실제 세 accuracy가 각각 90%를 넘기 전 production Time Lens admission을 차단한다.
 
+2026-07-16 U0-V05 실행 결과: 핵심 action 6개를 spatial DOM과 relation table 두 surface에 동등하게 배치해 command parity 6/6, unique focus ID와 native keyboard 및 screen reader summary coverage 12/12, synthetic profile task 36/36, machine regression 11/11을 확인했다. 실제 browser keyboard는 spatial 및 table 각각 6/6, reduced motion 0s, high contrast non-color treatment 6/6, 200% zoom horizontal overflow 없음, 390x844 low GPU table fallback 6/6이며 spatial-only action은 0이다. 접근성 동등 경로 계약은 promote하지만 실제 named screen reader 수동 session 전 production admission은 차단한다.
+
 ## 12. 유지보수 규칙
 
 - visual grammar token은 renderer package가 아니라 universe contract가 소유한다.

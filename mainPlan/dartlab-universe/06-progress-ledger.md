@@ -37,6 +37,7 @@
 - [x] U0-V02 live 3-scene deterministic logical layout와 cross-browser anchor contract
 - [x] U0-V03 desktop 및 mobile density budget과 exact omission receipt contract
 - [x] U0-V04 validAt 및 knownAt 독립 grammar와 12-task comprehension scoring contract
+- [x] U0-V05 spatial 및 relation table 접근성 동등 경로와 6-profile browser contract
 - [ ] U0 workflow, visual, information yield attempts
 - [ ] U1~U2 implementation
 - [ ] U3 artifact 변경 승인 여부
@@ -78,6 +79,7 @@
 | 2026-07-16 | U0-V02 deterministic layout 실행 | Live Atlas 18, industry 26, company 50 node를 20회씩 순서 교란해 logical hash 60/60, 세 viewport anchor 180/180. Chrome, Firefox, WebKit 180회 실측 hash 180/180, 최대 drift 0px. Valid time 0/94는 합성하지 않고 unknown lane으로 보존해 layout contract promote |
 | 2026-07-16 | U0-V03 density and omission 실행 | 250, 500, 1,000 node의 desktop 및 mobile 6 case에서 mark budget, omission receipt, reverse hash 6/6. 1,000 node는 desktop 500, mobile 250으로 축소하고 생략 500/750을 aggregate receipt로 보존. 실제 DOM collision 0%, density contract promote |
 | 2026-07-16 | U0-V04 bitemporal comprehension 실행 | 12 revision task에서 valid 및 known answer 조합 4/4, separate control과 aria 12/12, combined slider 0, machine test 9/9. 실제 participant 0/12와 task response 0/144라 validAt, knownAt, combined 90%는 미측정, production Time Lens 차단 |
+| 2026-07-16 | U0-V05 accessibility equivalence 실행 | Spatial 및 table command parity 6/6, synthetic profile task 36/36, browser keyboard 각 6/6, semantic summary 12/12, reduced motion 0s, high contrast 6/6, 200% zoom overflow 0, mobile low GPU table 6/6. 실제 named screen reader 수동 session 전 production admission 차단 |
 
 ## 핵심 실측 스냅샷
 
@@ -256,14 +258,15 @@ dart dataAsOf            null
 7. KRX security 130개는 DART issuer exact link가 없고 KR 및 US alias validity field는 0이다. U0-I01 exact ID contract는 통과했지만 historical identity registry는 reference owner 보강 전 금지한다.
 8. Search catalog 381,149행은 section sourceRef와 content hash를 모두 갖지만 exact span, table row/header, publication 및 availability timestamp, row-level immutable source version, predicate와 direction은 0이다. U0-E01 resolver 계약은 통과했지만 reviewed positive 100, hard negative 100과 public transfer 측정 전 live assertion evidence는 금지한다.
 9. Public ecosystem 20,560 relation candidate는 unique하지만 assertion ID, supersedes, exact evidence, source time, validity와 admitted status가 전부 0이다. U0-O01 synthetic contract는 통과했지만 current edge의 fact lane 입장은 계속 0이다.
-10. U0-P01 bounded projection은 live 3-scene에서 통과했지만 fact edge는 0이다. U0-V01~V05 comprehension과 accessibility가 완료되기 전 public UI production 이관은 금지한다.
+10. U0-P01 bounded projection은 live 3-scene에서 통과했지만 fact edge는 0이다. U0-V01 및 V04 comprehension, U0-V05 named screen reader 수동 확인이 완료되기 전 public UI production 이관은 금지한다.
 11. U0-V01 grammar machine contract는 통과했지만 reviewed participant는 0/12, reviewed response는 0/360이고 comprehension accuracy는 미측정이다. 실제 review 전 시각 문법 합격을 주장하지 않는다.
 12. U0-V02 layout contract는 통과했지만 current live node의 valid time은 0/94다. Unknown time lane을 보존하고 U0-V04 전 실제 시간 순서를 주장하지 않는다.
-13. U0-V03 density contract는 통과했지만 FPS, heap, hit-test와 accessibility 동등성은 미측정이다. U0-V05와 U0-V06 전 renderer production 입장을 열지 않는다.
+13. U0-V03 density contract와 U0-V05 accessibility equivalence contract는 통과했지만 FPS, heap, hit-test와 named screen reader 수동 session은 미측정이다. U0-V06과 수동 확인 전 renderer production 입장을 열지 않는다.
 14. U0-V04 time grammar machine contract는 통과했지만 reviewed participant는 0/12, task response는 0/144이고 validAt, knownAt, combined accuracy는 미측정이다. 실제 review 전 Time Lens 합격을 주장하지 않는다.
-15. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
-16. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. U1 production 착수 전에 frontend host가 정상 상태인지 재검해야 한다.
+15. U0-V05는 browser accessibility tree와 keyboard 동등성을 통과했지만 실제 NVDA, JAWS, VoiceOver 같은 named screen reader 수동 session은 실행하지 않았다. Production accessibility 합격은 그 전까지 주장하지 않는다.
+16. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
+17. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. U1 production 착수 전에 frontend host가 정상 상태인지 재검해야 한다.
 
 ## 다음 단일 행동
 
-`tests/_attempts/dartlabUniverse/visual/`에서 U0-V05 accessibility equivalence probe를 구현한다. Keyboard only, screen reader summary, reduced motion, high contrast, 200% zoom, mobile low GPU와 relation table 동등 경로에서 핵심 task를 100% 완료해야 한다. Canvas 또는 spatial scene에서만 가능한 작업이 하나라도 있으면 해당 surface를 기각한다.
+`tests/_attempts/dartlabUniverse/visual/`에서 U0-V06 renderer bakeoff를 구현한다. SVG, current Cosmos, DOM reference와 후보 adapter를 같은 bounded fixture에서 비교하고 task completion, frame, heap, bundle을 측정한다. 새 dependency가 명확한 개선을 만들지 못하면 기각한다.

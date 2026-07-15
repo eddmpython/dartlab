@@ -77,6 +77,7 @@ pytest는 repository test lock을 획득한 뒤 attempt test file 하나씩 실�
 | U0-V02 deterministic layout | Live Atlas 18, industry 26, company 50 node와 3 viewport 및 3 browser | logical hash 60/60, viewport anchor 180/180, browser logical 및 anchor 180/180, max drift 0px, valid time unknown 94/94 | layout contract promote. 시간 합성 금지, U0-V01과 U0-V04 gate 유지 |
 | U0-V03 density and omission | 250, 500, 1,000 node와 desktop 및 mobile 6 case | budget 6/6, omission receipt 6/6, reverse hash 6/6, calculated 및 DOM collision 0%, test 8/8 | density contract promote. FPS와 accessibility 및 renderer gate 유지 |
 | U0-V04 bitemporal comprehension | validAt와 knownAt이 독립인 12 revision task | answer combination 4/4, separate control 및 aria 12/12, combined slider 0, test 9/9. participant 0/12, task response 0/144 | time grammar contract 완료. 실제 validAt, knownAt, combined 90% 전 Time Lens admission 차단 |
+| U0-V05 accessibility equivalence | 핵심 action 6개, spatial 및 relation table, accessibility profile 6개 | command parity 6/6, synthetic task 36/36, browser keyboard spatial 및 table 각 6/6, semantic summary 12/12, reduced motion 0s, high contrast 6/6, 200% zoom overflow 0, mobile low GPU table 6/6, test 11/11 | 접근성 동등 경로 계약 promote. 실제 named screen reader 수동 session 전 production admission 차단 |
 
 ## 금지
 

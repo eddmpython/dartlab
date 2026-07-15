@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<link rel="icon" href="data:," />
+		<title>Universe accessibility equivalence reference</title>
+		<style>
+			* { box-sizing: border-box; }
+			html, body { width: 100%; min-height: 100%; margin: 0; }
+			body { background: Canvas; color: CanvasText; font-family: system-ui, sans-serif; }
+			body[data-profile="zoom200"] { font-size: 200%; }
+			main { width: min(100%, 72rem); margin: 0 auto; padding: 1rem; }
+			.surfaces { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; }
+			section { min-width: 0; border: 2px solid currentColor; padding: 1rem; }
+			.spatial-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .75rem; }
+			.spatial-controls > div { min-width: 0; }
+			button, input { max-width: 100%; min-height: 2.75rem; border: 2px solid currentColor; background: Canvas; color: CanvasText; font: inherit; }
+			button:focus-visible, input:focus-visible { outline: 4px solid Highlight; outline-offset: 2px; }
+			table { width: 100%; border-collapse: collapse; }
+			th, td { border: 1px solid currentColor; padding: .5rem; text-align: left; overflow-wrap: anywhere; }
+			.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+			.status { margin-top: 1rem; min-height: 2rem; border: 1px dashed currentColor; padding: .5rem; }
+			.node-pulse { animation: pulse 1s ease-in-out infinite alternate; }
+			@keyframes pulse { from { outline-offset: 1px; } to { outline-offset: 4px; } }
+			body[data-profile="reducedMotion"] *, body[data-profile="mobileLowGpu"] * { animation-duration: 0s !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+			body[data-profile="highContrast"] button, body[data-profile="highContrast"] input { border-style: double; text-decoration: underline; }
+			@media (forced-colors: active) { button, input, section { forced-color-adjust: auto; border-color: CanvasText; } }
+			@media (max-width: 480px) { main { padding: .5rem; } section { padding: .75rem; } th, td { display: block; width: 100%; } }
+		</style>
+	</head>
+	<body>
+		<main>
+			<h1>Universe 접근성 동등 경로</h1>
+			<div id="surfaces" class="surfaces"></div>
+			<div id="status" class="status" role="status" aria-live="polite" aria-atomic="true">작업 대기</div>
+		</main>
+		<script type="module">
+			import {
+				accessibilityProfiles,
+				coreActions,
+				renderAccessibilitySurface
+			} from './accessibilityEquivalenceProbe.mjs';
+
+			const parameters = new URLSearchParams(window.location.search);
+			const profileName = parameters.get('profile') ?? 'keyboard';
+			const profile = accessibilityProfiles[profileName] ?? accessibilityProfiles.keyboard;
+			const requestedSurface = parameters.get('surface');
+			const surfaces = profile.lowGpu
+				? ['table']
+				: (['spatial', 'table'].includes(requestedSurface) ? [requestedSurface] : ['spatial', 'table']);
+			document.body.dataset.profile = profile.id;
+			const container = document.querySelector('#surfaces');
+			const status = document.querySelector('#status');
+			container.innerHTML = surfaces.map(renderAccessibilitySurface).join('');
+			const completed = new Set();
+
+			function complete(actionId, surface) {
+				const action = coreActions.find((item) => item.id === actionId);
+				if (!action) return;
+				completed.add(`${surface}:${actionId}`);
+				status.textContent = `${surface} ${action.summary}`;
+				status.dataset.lastAction = actionId;
+				status.dataset.completedCount = String(completed.size);
+			}
+
+			for (const element of document.querySelectorAll('[data-action]')) {
+				const surface = element.id.startsWith('spatial-') ? 'spatial' : 'table';
+				if (element instanceof HTMLButtonElement) {
+					element.addEventListener('click', () => complete(element.dataset.action, surface));
+					element.addEventListener('keydown', (event) => {
+						if (event.key === 'Enter' || event.key === ' ') {
+							event.preventDefault();
+							complete(element.dataset.action, surface);
+						}
+					});
+				} else {
+					element.addEventListener('input', () => complete(element.dataset.action, surface));
+				}
+			}
+		</script>
+	</body>
+</html>
