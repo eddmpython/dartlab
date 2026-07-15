@@ -342,6 +342,8 @@ kill: 3D 또는 canvas에서만 가능한 핵심 작업이 생기면 해당 rend
 - candidate가 fact lane에 들어간 사례 0
 - truncation 후 seed 손실 0
 
+2026-07-15 실행 결과: Current atlas 34 node와 50 edge, semiconductor detail 125 node와 85 edge, Samsung egograph 178 node와 218 edge를 같은 compiler에 입력했다. Output은 각각 18/35, 26/34, 50/60 node/edge였고 reverse input scene hash는 3/3 일치했다. Hard bound, seed loss, lane violation은 0이다. Atlas aggregate 50 edge는 derived, industry 및 company relation 303 edge는 candidate로 유지했고 fact는 0이다. Synthetic 8/8도 depth, node, edge budget, omission reason, dangling edge, lane proof를 통과했다. 새 graph bake 없이 runtime projection이 가능하므로 U0-P01은 promote한다. 상세 evidence는 `tests/_attempts/dartlabUniverse/projection/README.md`가 소유한다.
+
 ### U0-G01 reviewed gold graduation
 
 목표: anecdote가 아닌 release 가능한 품질 원장을 만든다.

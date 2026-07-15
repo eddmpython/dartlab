@@ -82,7 +82,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | U0-I01 | canonical legal entity ID가 복원되는가 | KR 50, US 30, security와 filing sample | exact ID 100%, ambiguous auto resolve 0 | reference resolver 우선 보강 | 계약 완료, historical registry 차단 |
 | U0-E01 | edge hint에서 exact source를 찾는가 | search catalog 381,149행과 synthetic positive 및 negative | resolution 95%, false accept 1% 이하 | predicate별 source lane 재설계 | 계약 완료, live source와 reviewed gold 차단 |
 | U0-O01 | revision과 시간을 보존하는가 | synthetic multi-filing correction과 public edge 20,560 | history 손실 0, look-ahead 0 | assertion schema 수정 | 계약 완료, live assertion source 차단 |
-| U0-P01 | bounded scene이 결정론적인가 | atlas, industry, company | bounds 100%, hash 일치 100% | priority/truncation 수정 | 대기 |
+| U0-P01 | bounded scene이 결정론적인가 | live atlas, semiconductor, Samsung egograph와 synthetic graph | bounds 100%, hash 일치 100% | priority/truncation 수정 | 완료, projection promote |
 | U0-S01 | source 전체가 재현 가능한가 | map, search, panel, finance, catalog | source version 또는 unreplayable 100% | exact replay 문구 금지 | 완료, capability unreplayable |
 | U0-P02 | public field가 승인됐는가 | source와 field registry | public mark receipt 100%, false accept 0 | source lane 차단 | 완료, live 0/10 차단 |
 | U0-L01 | lens가 환경에서 실제 가능한가 | 6 output archetype | unavailable 오표시 0, missing 보존 | 해당 lens 숨김 | 완료, live ready 0 |
@@ -400,6 +400,35 @@ liveReady                           false
 ```
 
 판정: Relation ID는 subject, predicate, object, direction의 canonical hash로 고정하고 assertion ID는 filing evidence, source snapshot, source time, validity, event, status, supersedes를 추가로 결속했다. Evidence 입력 순서와 query knownAt은 assertion identity를 바꾸지 않는다. Correction은 predecessor를 ledger에서 삭제하지 않고 같은 relation의 단방향 lineage로만 연결한다. Production `Ref` exact payload와 `VintageRef`의 asKnown 및 asOfExact를 그대로 통과했다. Synthetic contract는 합격이다. 그러나 public 20,560 edge에는 assertion source field가 모두 0이고 self-loop 13개가 남아 있어 live admission은 `revise`다. Current edge는 relation candidate lane에만 둔다.
+
+## 4.10 U0-P01 결과
+
+명령:
+
+```powershell
+uv run python -X utf8 tests/_attempts/dartlabUniverse/projection/boundedProjection.py
+```
+
+결과:
+
+```text
+scene                  input node/edge    bound node/edge    output node/edge
+atlas                          34/50              34/50              18/35
+semiconductor industry       125/85              50/80              26/34
+Samsung company             178/218              50/80              50/60
+
+candidateInputEdges             303
+derivedInputEdges                50
+factInputEdges                    0
+repeatedSceneHash               3/3
+hardBoundViolation                0
+seedLoss                         0
+laneViolation                     0
+syntheticRegression             8/8 PASS
+boundedProjectionLiveReady      true
+```
+
+판정: Current public artifact 3종을 bytes hash로 묶은 SourceSnapshotSet과 같은 generic compiler를 사용해 새 bake 없이 bounded logical scene을 만들었다. Depth, lane, explicit priority와 stable edge ID로 truncation하고 생략 수와 이유를 receipt에 남겼다. Reverse input에서도 scene hash 3/3이 일치했고 hard bound, seed retention, dangling edge, lane admission 위반은 0이었다. Atlas aggregate flow 50개는 derived, industry와 company relation 303개는 candidate로 유지했으며 fact는 0이다. U0-P01은 `promote`다. 이 결론은 bounded projection compiler에만 해당하며 evidence 및 visual gate를 우회하지 않는다.
 
 ## 5. existing attempts 재사용 지도
 

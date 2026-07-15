@@ -48,6 +48,7 @@ uv run python -X utf8 tests/_attempts/dartlabUniverse/workflow/workflowProjectio
 uv run python -X utf8 tests/_attempts/dartlabUniverse/identity/entityIdentityProbe.py
 uv run python -X utf8 tests/_attempts/dartlabUniverse/evidence/exactEvidenceProbe.py
 uv run python -X utf8 tests/_attempts/dartlabUniverse/ontology/assertionContract.py
+uv run python -X utf8 tests/_attempts/dartlabUniverse/projection/boundedProjection.py
 ```
 
 pytest는 repository test lock을 획득한 뒤 attempt test file 하나씩 실행한다.
@@ -66,6 +67,7 @@ pytest는 repository test lock을 획득한 뒤 attempt test file 하나씩 실�
 | U0-I01 canonical identity | DART legal master, KRX security, SEC ticker, KR 50, US 30, filing sample | entity와 filing exact 160/160, KRX ISIN 2,872/2,872, ambiguity auto resolve 0, test 9/9. KRX issuer gap 130, alias validity KR 0 및 US 0, US local filing issuer 2 | canonical ID 계약 완료. reference issuer link, validity, reviewed special-case gold 전까지 live historical registry 차단 |
 | U0-E01 exact evidence | DART panel, EDGAR panel, allFilings search catalog 381,149행과 synthetic text 및 table fixture | document, section, sourceRef, contentHash 381,149/381,149. exact span, table row/header, exact time, row source version, predicate/direction, assertion-ready 0. synthetic test 8/8 | resolver 계약 완료. reviewed positive 및 hard negative, exact source field, public transfer 측정 전 live assertion evidence 차단 |
 | U0-O01 assertion ontology | Public ecosystem 20,560 edge와 synthetic correction fixture | relation candidate 20,560 unique, assertion ID, evidence, source time, validity, admitted status, assertion-ready 0. self-loop 13. synthetic test 9/9, history loss와 future leak 0 | bitemporal identity 계약 완료. live edge는 전부 candidate 유지, exact assertion source 전 fact lane 차단 |
+| U0-P01 bounded projection | Current atlas, semiconductor detail, Samsung egograph와 synthetic graph | live output 18/35, 26/34, 50/60 node/edge. hash 3/3, bound, seed, lane violation 0. candidate 303, derived 50, fact 0. synthetic test 8/8 | projection 계약 promote. 새 bake 불필요. UI comprehension 전 candidate 및 derived scene만 허용 |
 
 ## 금지
 
