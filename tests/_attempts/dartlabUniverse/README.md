@@ -58,6 +58,7 @@ node tests/_attempts/dartlabUniverse/visual/bitemporalComprehensionProbe.mjs
 node tests/_attempts/dartlabUniverse/visual/accessibilityEquivalenceProbe.mjs
 node tests/_attempts/dartlabUniverse/visual/rendererBakeoffProbe.mjs
 uv run python -X utf8 tests/_attempts/dartlabUniverse/fixtures/releaseGoldProbe.py
+uv run python -X utf8 tests/_attempts/dartlabUniverse/fixtures/releaseGoldReviewQueueProbe.py
 ```
 
 pytest는 repository test lock을 획득한 뒤 attempt test file 하나씩 실행한다.
@@ -84,6 +85,7 @@ pytest는 repository test lock을 획득한 뒤 attempt test file 하나씩 실�
 | U0-V05 accessibility equivalence | 핵심 action 6개, spatial 및 relation table, accessibility profile 6개 | command parity 6/6, synthetic task 36/36, browser keyboard spatial 및 table 각 6/6, semantic summary 12/12, reduced motion 0s, high contrast 6/6, 200% zoom overflow 0, mobile low GPU table 6/6, test 11/11 | 접근성 동등 경로 계약 promote. 실제 named screen reader 수동 session 전 production admission 차단 |
 | U0-V06 renderer bakeoff | SVG, current Cosmos 1.6.1, DOM table, Canvas 2D와 desktop 500/1,000 및 mobile 250/500 fixture | 각 3회 task 6/6, desktop 최저 138.889fps, mobile 최저 135.135fps, heap budget 8/8. Built-in 17,438B raw 및 5,770B gzip, Cosmos 포함 328,891B 및 97,633B, test 7/7 | Canvas 2D contract promote, 새 external dependency 기각. Cosmos license admission false, 기존 map은 변경하지 않음 |
 | U0-G01 release gold admission | Positive 300 및 hard negative 300 sampling plan, optional review 및 prediction JSONL | quota 30개 고정, machine test 19/19, docstring audit 위반 0. reviewed positive 0/300, hard negative 0/300, prediction 0/600. 기존 search gold 106건의 Universe relation 필드 0/106 | admission 및 metric contract 완료. Human review와 exact source field 전 U0 graduation 및 U1 차단 |
+| U0-G02 review queue materialization | HF ecosystem graph와 allFilings 및 DART panel catalog 296,856행 | exact mention 182,072개, machine positive 후보 300개, hard-negative challenge 300개. Positive predicate 3/6, negative type 5/12, reviewed 0/600, goldEligible 0/600 | exact catalog locator 검토 큐 완료. Original source version 및 time, US/SEC, 누락 predicate와 negative type, human review 전 gold 승격 차단 |
 
 ## 금지
 

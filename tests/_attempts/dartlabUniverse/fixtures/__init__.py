@@ -6,10 +6,13 @@ from .releaseGoldProbe import (
     inspectReleaseGoldFiles,
     loadSamplingPlan,
 )
+from .releaseGoldReviewQueueProbe import buildReviewQueues, inspectLiveReviewQueue
 
 __all__ = [
     "GoldAdmissionReport",
+    "buildReviewQueues",
     "evaluateReleaseGold",
     "inspectReleaseGoldFiles",
+    "inspectLiveReviewQueue",
     "loadSamplingPlan",
 ]

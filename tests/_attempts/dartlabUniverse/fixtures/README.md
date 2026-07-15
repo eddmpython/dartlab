@@ -1,13 +1,15 @@
 # Release gold attempts
 
-> 상태: U0-G01 admission 및 metric contract 완료, reviewed gold 0/600으로 U1 차단
+> 상태: U0-G02 exact-locator machine review queue 600행 완료, reviewed gold 0/600으로 U1 차단
 > 책임: human-reviewed positive 300건과 hard negative 300건의 exact evidence, 균형, precision, false acceptance를 release 자산으로 고정한다.
 
 ## 실행
 
 ```powershell
 uv run python -X utf8 tests/_attempts/dartlabUniverse/fixtures/releaseGoldProbe.py
+uv run python -X utf8 tests/_attempts/dartlabUniverse/fixtures/releaseGoldReviewQueueProbe.py
 $env:DARTLAB_TEST_LOCKED='1'; uv run python -X utf8 -m pytest tests/_attempts/dartlabUniverse/fixtures/testReleaseGoldProbe.py -q --tb=short --no-cov
+$env:DARTLAB_TEST_LOCKED='1'; uv run python -X utf8 -m pytest tests/_attempts/dartlabUniverse/fixtures/testReleaseGoldReviewQueueProbe.py -q --tb=short --no-cov
 uv run python -X utf8 tests/audit/docstring4Section.py tests/_attempts/dartlabUniverse/fixtures --strict
 uv run python -X utf8 tests/audit/docstring9Section.py tests/_attempts/dartlabUniverse/fixtures --strict
 ```
@@ -18,8 +20,31 @@ uv run python -X utf8 tests/audit/docstring9Section.py tests/_attempts/dartlabUn
 - `hardNegative.jsonl`: 사람이 candidate가 사실이 아님을 확인한 hard negative 300건
 - `admissionPredictions.jsonl`: 같은 600 case에 대한 resolver 및 admission 결과
 - `releaseGoldSamplingPlan.json`: count와 predicate, source, market, language, evidence class, negative type quota
+- `releaseGoldReviewQueue.machine.jsonl`: exact catalog locator가 있는 미검토 positive 후보 300행과 hard-negative challenge 300행
+- `releaseGoldReviewQueueReceipt.json`: graph, catalog, queue content hash와 coverage gap receipt
 
 현재 앞의 세 JSONL은 존재하지 않는다. Missing file은 빈 gold로 간주하지 않고 0건 및 release blocker로 센서스한다. Sampling plan과 test fixture는 review 자산이 아니다.
+
+Machine review queue는 사람 검토의 입력 자산일 뿐 gold가 아니다. 모든 600행은 `reviewState=unreviewed`, `goldEligible=false`, reviewer 및 receipt가 null이다. Positive와 challenge 모두 catalog `sourceRef`, exact `charStart`와 `charEnd`, evidence 및 context hash를 갖는다. 사람은 original document를 열어 locator를 이전하고 entity, predicate, direction, event 및 availability time을 확인해야 한다.
+
+## U0-G02 live queue 실측
+
+| 항목 | 실측 |
+|---|---:|
+| Graph version | 2026-04-14 |
+| Graph node / link | 2,664 / 20,560 |
+| DART catalog scan | 296,856행 |
+| Exact mention before deduplication | 182,072 |
+| Machine positive candidate | 300 |
+| Machine hard-negative challenge | 300 |
+| Positive predicate coverage | 3/6 |
+| Hard-negative type coverage | 5/12 |
+| Reviewed receipt | 0/600 |
+| Gold eligible | 0/600 |
+
+Positive는 `affiliatedWith`, `ownsStakeIn`, `suppliesTo` 각 100행이다. `sellsTo`, `classifiedIn`, `filed`는 현재 source 결합으로 채워지지 않았다. Challenge는 affiliate collision 87, reversed direction 87, self-loop 88, short English common word 35, table header drift 3행이다. 동일 회사명, industry peer, 정정 전후 충돌, 비상장 alias, section title-only, historical ticker, cross-market fuzzy 7개 유형은 별도 source와 사람이 구성해야 한다.
+
+Queue hash는 `sha256:484321d3085209aa2df6de72ea63e749baee2a2a63e38ea62e235b49e075bb12`다. Graph와 catalog snapshot hash, file size 및 행 수는 receipt가 정본이다.
 
 ## Positive 필수 계약
 
@@ -64,7 +89,8 @@ Positive는 KR 및 US, ko 및 en, A 및 B, DART 및 SEC를 각 150건으로 구�
 | False acceptance | 미측정 |
 | SourceRef coverage | 미측정 |
 | Quota violation | 30 |
-| Machine regression | 19/19 PASS |
+| Machine review queue | 600/600 |
+| Machine regression | 27/27 PASS |
 | Contract ready | true |
 | Live ready | false |
 

@@ -364,6 +364,12 @@ kill: 3D 또는 canvas에서만 가능한 핵심 작업이 생기면 해당 rend
 
 2026-07-16 실행 결과: Positive 300건과 hard negative 300건의 exact quota, human review receipt, text 및 table locator, 이중 시간, prediction completeness, positive precision 98%, false acceptance 1% admission contract를 구현했다. OCI, 동일 회사명, 계열사, table header drift, 정정, ticker 변경을 포함한 12개 negative type을 각 25건으로 고정했다. Machine regression 19/19과 4-section 및 9-section docstring audit 위반 0이다. Repository의 Universe reviewed positive는 0/300, hard negative는 0/300, prediction은 0/600이라 precision과 false acceptance는 미측정이다. 기존 search query gold 106건은 subject, predicate, object, exact locator, time, review receipt가 각각 0/106이므로 전용하지 않는다. U0-G01 contract만 완료하고 human review 전 U0 graduation과 U1을 차단한다.
 
+### U0-G02 exact-locator review queue
+
+목표: live source에서 사람이 원문 검토를 시작할 재현 가능한 locator queue를 만들되 자동 gold 승격은 금지한다.
+
+2026-07-16 실행 결과: HF ecosystem graph와 allFilings 및 DART panel catalog 296,856행을 snapshot hash로 고정하고 exact company-name mention 182,072개를 찾았다. Stable candidate hash와 predicate round-robin으로 machine positive 300행, negative type round-robin으로 challenge 300행을 만들었다. Positive는 `affiliatedWith`, `ownsStakeIn`, `suppliesTo` 각 100행이며 challenge는 affiliate collision 87, reversed direction 87, self-loop 88, short English 35, table header drift 3행이다. Queue 600행의 file hash와 source file hash는 receipt에 기록했다. Machine regression 8/8, 모든 행 `unreviewed`, `goldEligible=false`다. Predicate 3/6과 negative type 5/12만 덮고 original source version, sourcePublishedAt, availableAt, human direction 판정, US/SEC가 없어 gold graduation은 계속 차단한다.
+
 U0 졸업 산출:
 
 - `tests/_attempts/dartlabUniverse/README.md` 결론 원장

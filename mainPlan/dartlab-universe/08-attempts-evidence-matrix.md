@@ -95,6 +95,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | U0-V05 | 접근성 표면이 동등한가 | keyboard, reader, low GPU | 핵심 task 100% | renderer 기각 | 계약 완료, named reader 수동 gate |
 | U0-V06 | 새 renderer가 필요한가 | SVG, Cosmos, DOM, 후보 | task, frame, heap, bundle 개선 | 새 dependency 기각 | 완료, Canvas 2D promote |
 | U0-G01 | release gold를 통과하는가 | positive 300, negative 300 | precision 98%, false accept 1% 이하 | U1 금지 | 계약 완료, reviewed 0/600 차단 |
+| U0-G02 | 사람 검토를 시작할 exact locator가 있는가 | live graph와 DART catalog 296,856행 | review queue 300+300, stale locator 0, machine gold 승격 0 | source owner 및 human review | 완료, queue 600 및 reviewed 0 차단 |
 | U1-Y01 | workflow가 실제로 더 유용한가 | 5 task, baseline과 Universe | information yield 개선 | revise 또는 reject | 대기 |
 | U2-R01 | public runtime 예산 안에서 evidence가 열리는가 | reference browsers | cold P95 5초, first cold 4MB provisional, incremental 2MB | runtime 최적화 후 U3 토론 | 대기 |
 | U2-L01 | 엔진 output을 generic lens로 보이는가 | 6 lens fixtures | axis별 adapter 0, 결손 보존 | Ref contract 보강 | 대기 |
@@ -675,6 +676,33 @@ liveReady                                   false
 ```
 
 판정: Positive는 exact relation identity, document, section, sourceRef, immutable hash, text 또는 table locator, event와 validity 및 source time, A 또는 B evidence class, document-opened review receipt를 모두 요구한다. Hard negative는 OCI, 동일 회사명, 계열사, table header drift, 정정, ticker 변경을 포함한 12개 failure type과 review reason을 각 25건으로 고정했다. Prediction 600개가 모두 있어야 positive exact sourceRef precision과 negative false acceptance를 계산한다. Contract test는 합격했지만 실제 reviewed gold와 prediction이 0이므로 U0-G01은 `revise`다. 기존 search query gold 106건은 Universe 필수 relation 및 time field가 0/106이므로 재사용하지 않는다. Human review와 live exact source field 전 U0 graduation 및 U1을 차단한다.
+
+## 4.18 U0-G02 결과
+
+명령:
+
+```powershell
+uv run python -X utf8 tests/_attempts/dartlabUniverse/fixtures/releaseGoldReviewQueueProbe.py --output tests/_attempts/dartlabUniverse/fixtures/releaseGoldReviewQueue.machine.jsonl --receipt tests/_attempts/dartlabUniverse/fixtures/releaseGoldReviewQueueReceipt.json
+$env:DARTLAB_TEST_LOCKED='1'; uv run python -X utf8 -m pytest tests/_attempts/dartlabUniverse/fixtures/testReleaseGoldReviewQueueProbe.py -q --tb=short --no-cov
+```
+
+결과:
+
+```text
+scannedCatalogRowCount                         296856
+exactMentionCountBeforeDeduplication           182072
+uniqueCandidateCount                           182072
+positiveCandidateCount                        300/300
+hardNegativeChallengeCount                    300/300
+positivePredicateCoverage                         3/6
+hardNegativeTypeCoverage                          5/12
+reviewedReceiptCount                            0/600
+goldEligibleCount                               0/600
+machineRegression                                 8/8 PASS
+queueSha256     484321d3085209aa2df6de72ea63e749baee2a2a63e38ea62e235b49e075bb12
+```
+
+판정: HF graph와 allFilings 및 DART panel catalog를 content-addressed snapshot으로 결합해 사람 검토를 시작할 positive 후보 300행과 hard-negative challenge 300행을 만들었다. 모든 행은 exact catalog text locator와 context hash를 가지며 challenge도 source evidence를 자체 포함한다. 그러나 positive는 6개 predicate 중 3개, negative는 12개 type 중 5개만 덮는다. Original source version, 발행 및 공개 가능 시각, predicate와 direction 확인, US 및 SEC가 없고 human review receipt는 0이다. 따라서 U0-G02는 review input materialization만 `promote`하고 gold admission은 계속 `revise`다.
 
 ## 5. existing attempts 재사용 지도
 
