@@ -93,7 +93,9 @@ from dartlab.simulate.scenarioComposition import (
     conditionalPlayControlExecutionSubjectHash,
     conditionalPlayControlSurfaceSubjectHash,
     conditionalPlayReplaySubjectHash,
+    conditionalPlayScenarioDeckSubjectHash,
     executeConditionalPlayControlPatch,
+    executeConditionalPlayScenarioDeck,
     runConditionalScenarioExperiment,
     scenarioCoefficientBindingHash,
     scenarioCoefficientExposureContractHash,
@@ -4465,6 +4467,222 @@ def testConditionalPlayControlPatchExecutesAssumptionAndStrategyReplays(tmp_path
             strategies,
             experiment,
             (assumptionPatch, strategyPatch),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
+
+
+def testConditionalPlayScenarioDeckExecutesMultiPlaneStages(tmp_path) -> None:
+    context = _trust(tmp_path)
+    inputs = _admittedOperatingInputs(context)
+    sources = _multiProviderLaneMatrixSources(context)
+    cases = (
+        _multiProviderLaneMatrixScenarioCase(
+            "base",
+            (0.00, 0.00, 0.00, 0.00),
+            context[4],
+            sources,
+        ),
+        _multiProviderLaneMatrixScenarioCase(
+            "upside",
+            (0.25, 0.25, 0.20, 0.15),
+            context[4],
+            sources,
+        ),
+        _multiProviderLaneMatrixScenarioCase(
+            "stress",
+            (-0.05, -0.08, -0.08, -0.05),
+            context[4],
+            sources,
+        ),
+        _multiProviderLaneMatrixScenarioCase(
+            "shock",
+            (-0.12, -0.10, -0.08, -0.05),
+            context[4],
+            sources,
+        ),
+    )
+    strategies = _fourQuarterExperimentStrategies()
+    experiment = runConditionalScenarioExperiment(
+        "005930",
+        inputs,
+        cases,
+        strategies,
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert experiment.playReplayReport is not None
+    controlSurface = experiment.playReplayReport.controlSurface
+    currentStateControl = next(
+        row for row in controlSurface.rows if row.semanticPlane == "currentState" and row.targetId == "cash"
+    )
+    conditionControl = next(
+        row for row in controlSurface.rows if row.semanticPlane == "conditionFactor" and row.targetId == "oil"
+    )
+    assumptionControl = next(
+        row
+        for row in controlSurface.rows
+        if row.semanticPlane == "assumptionDelta"
+        and row.caseId == "base"
+        and row.targetId == "manualDemandAdjustment"
+        and row.step == 2
+    )
+    lawControl = next(
+        row
+        for row in controlSurface.rows
+        if row.semanticPlane == "lawParameter"
+        and row.caseId == "upside"
+        and row.sourceVariableId == "manualDemandAdjustment"
+        and row.targetVariableId == "demandChange"
+    )
+    strategyControl = next(
+        row
+        for row in controlSurface.rows
+        if row.semanticPlane == "strategyAction"
+        and row.strategyId == "earlyInvest"
+        and row.targetId == "capacityInvestment"
+        and row.step == 0
+    )
+    currentStatePatch = ConditionalPlayControlPatch(
+        controlId=currentStateControl.controlId,
+        baseSurfaceHash=controlSurface.surfaceHash,
+        baseRowHash=currentStateControl.rowHash,
+        value=650.0,
+        patchRef="control://deck/state/cash",
+        reason="deck raises initial cash",
+    )
+    conditionPatch = ConditionalPlayControlPatch(
+        controlId=conditionControl.controlId,
+        baseSurfaceHash=controlSurface.surfaceHash,
+        baseRowHash=conditionControl.rowHash,
+        value=dict(conditionControl.valueSummary)["mean"] + 0.08,
+        patchRef="control://deck/condition/oil",
+        reason="deck adds an oil condition overlay",
+        claim="Oil condition is shifted by an explicit deck overlay.",
+        falsifier="Observed future oil data can reject the overlay.",
+    )
+    assumptionPatch = ConditionalPlayControlPatch(
+        controlId=assumptionControl.controlId,
+        baseSurfaceHash=controlSurface.surfaceHash,
+        baseRowHash=assumptionControl.rowHash,
+        value=0.07,
+        patchRef="control://deck/assumption/manual-demand",
+        reason="deck raises manual demand assumption",
+    )
+    lawPatch = ConditionalPlayControlPatch(
+        controlId=lawControl.controlId,
+        baseSurfaceHash=controlSurface.surfaceHash,
+        baseRowHash=lawControl.rowHash,
+        value=0.5,
+        patchRef="control://deck/law/manual-demand-coefficient",
+        reason="deck lowers manual demand transmission",
+    )
+    strategyPatch = ConditionalPlayControlPatch(
+        controlId=strategyControl.controlId,
+        baseSurfaceHash=controlSurface.surfaceHash,
+        baseRowHash=strategyControl.rowHash,
+        value=60.0,
+        patchRef="control://deck/strategy/early-invest",
+        reason="deck lowers first step investment",
+    )
+    shuffledPatches = (strategyPatch, lawPatch, currentStatePatch, conditionPatch, assumptionPatch)
+    deck = executeConditionalPlayScenarioDeck(
+        "005930",
+        inputs,
+        cases,
+        strategies,
+        experiment,
+        shuffledPatches,
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    finalExperiment = deck.finalExperiment
+    assert conditionalPlayScenarioDeckSubjectHash(deck) == deck.deckHash
+    assert deck.baseExperimentHash == experiment.experimentHash
+    assert deck.finalExperimentHash == finalExperiment.experimentHash
+    assert deck.basePlayReplayHash == experiment.playReplayReport.playReplayHash
+    assert finalExperiment.playReplayReport is not None
+    assert deck.finalPlayReplayHash == finalExperiment.playReplayReport.playReplayHash
+    assert deck.semanticPlanes == (
+        "currentState",
+        "conditionFactor",
+        "assumptionDelta",
+        "lawParameter",
+        "strategyAction",
+    )
+    assert deck.changedControlIds == (
+        currentStatePatch.controlId,
+        conditionPatch.controlId,
+        assumptionPatch.controlId,
+        lawPatch.controlId,
+        strategyPatch.controlId,
+    )
+    assert len(deck.stageReports) == 5
+    assert len(deck.rebaseRows) == 5
+    assert all(row.rebaseStatus in {"direct", "surfaceRebased", "surfaceRebased+rowRebased"} for row in deck.rebaseRows)
+    for index, stage in enumerate(deck.stageReports):
+        assert stage.executionHash == deck.stageExecutionHashes[index]
+        assert stage.impactRows[0].missingExpectedHashImpacts == ()
+        assert stage.impactRows[0].forbiddenHashViolations == ()
+        if index == 0:
+            assert stage.baseExperimentHash == experiment.experimentHash
+        else:
+            assert stage.baseExperimentHash == deck.stageReports[index - 1].patchedExperimentHash
+    assert deck.stageReports[-1].patchedExperimentHash == deck.finalExperimentHash
+    assert finalExperiment.providerLaneLineageHashes == experiment.providerLaneLineageHashes
+    assert finalExperiment.providerObservationBatchReceiptIds == experiment.providerObservationBatchReceiptIds
+    assert finalExperiment.priceSourceLegReceiptIds == experiment.priceSourceLegReceiptIds
+    assert finalExperiment.derivedReturnReceiptIds == experiment.derivedReturnReceiptIds
+    assert finalExperiment.rawSourceRefs == experiment.rawSourceRefs
+    assert finalExperiment.revisedHistoryRefs == experiment.revisedHistoryRefs
+    assert finalExperiment.pathHistoryInputHashes == experiment.pathHistoryInputHashes
+    assert finalExperiment.pathAssumptionHashes != experiment.pathAssumptionHashes
+    assert finalExperiment.assumptionSetHashes != experiment.assumptionSetHashes
+    assert finalExperiment.strategySetHash != experiment.strategySetHash
+    assert finalExperiment.simulationSpecHash != experiment.simulationSpecHash
+    assert finalExperiment.resultSetHash != experiment.resultSetHash
+    assert all(ledger.initialStateAdmissionReceiptId for ledger in experiment.caseLedgers)
+    assert all(not ledger.initialStateAdmissionReceiptId for ledger in finalExperiment.caseLedgers)
+    assert finalExperiment.recommendation is None
+    assert finalExperiment.decisionStatus == "conditionalOnly"
+    repeated = executeConditionalPlayScenarioDeck(
+        "005930",
+        inputs,
+        cases,
+        strategies,
+        experiment,
+        tuple(reversed(shuffledPatches)),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert repeated.deckHash == deck.deckHash
+    assert repeated.finalExperimentHash == deck.finalExperimentHash
+    stalePatch = replace(currentStatePatch, baseRowHash=conditionControl.rowHash)
+    with pytest.raises(ScenarioCompositionError, match="stale conditional play control row hash"):
+        executeConditionalPlayScenarioDeck(
+            "005930",
+            inputs,
+            cases,
+            strategies,
+            experiment,
+            (stalePatch,),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
+    unsafePatch = replace(strategyPatch, patchRef="pathAdmission:pretend")
+    with pytest.raises(ScenarioCompositionError, match="control patch provenance cannot mimic"):
+        executeConditionalPlayScenarioDeck(
+            "005930",
+            inputs,
+            cases,
+            strategies,
+            experiment,
+            (unsafePatch,),
             debtLimit=1_000.0,
             maxFinancing=200.0,
             maxInvestment=200.0,

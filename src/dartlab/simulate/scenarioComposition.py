@@ -175,6 +175,15 @@ CONDITIONAL_PLAY_CONTROL_SURFACE_CONTRACT_HASH = canonicalPayloadHash(
 )
 CONDITIONAL_PLAY_CONTROL_EXECUTION_VERSION = "conditional-play-control-execution-v1"
 CONDITIONAL_PLAY_CONTROL_EXECUTION_KIND = "conditionalPlayControlExecution"
+CONDITIONAL_PLAY_SCENARIO_DECK_VERSION = "conditional-play-scenario-deck-v1"
+CONDITIONAL_PLAY_SCENARIO_DECK_KIND = "conditionalPlayScenarioDeck"
+CONDITIONAL_PLAY_SCENARIO_DECK_PLANE_ORDER = (
+    "currentState",
+    "conditionFactor",
+    "assumptionDelta",
+    "lawParameter",
+    "strategyAction",
+)
 SCENARIO_ASSUMPTION_SET_VERSION = "scenario-assumption-set-v1"
 SCENARIO_COEFFICIENT_BINDING_VERSION = "scenario-coefficient-binding-v1"
 SCENARIO_EXPOSURE_CONTRACT_VERSION = "scenario-coefficient-exposure-contract-v1"
@@ -1415,6 +1424,22 @@ class ConditionalPlayControlImpactRow:
 
 
 @dataclass(frozen=True)
+class ConditionalPlayControlRebaseRow:
+    """Mapping from a base control patch to its staged execution patch."""
+
+    rowHash: str
+    controlId: str
+    semanticPlane: str
+    originalPatchHash: str
+    rebasedPatchHash: str
+    originalSurfaceHash: str
+    originalRowHash: str
+    stageSurfaceHash: str
+    stageRowHash: str
+    rebaseStatus: str
+
+
+@dataclass(frozen=True)
 class ConditionalPlayControlExecutionReport:
     """Internal report for replaying a conditional play after control patches."""
 
@@ -1440,6 +1465,50 @@ class ConditionalPlayControlExecutionReport:
         object.__setattr__(self, "impactRows", tuple(self.impactRows))
         object.__setattr__(self, "blockedReasons", tuple(self.blockedReasons))
         object.__setattr__(self, "warnings", tuple(self.warnings))
+
+
+@dataclass(frozen=True)
+class ConditionalPlayScenarioDeckReport:
+    """Internal report for executing a multi-plane conditional scenario deck."""
+
+    deckHash: str
+    schemaVersion: str
+    kind: str
+    baseExperimentHash: str
+    finalExperimentHash: str
+    basePlayReplayHash: str
+    finalPlayReplayHash: str
+    baseControlSurfaceHash: str
+    finalControlSurfaceHash: str
+    changedControlIds: tuple[str, ...]
+    semanticPlanes: tuple[str, ...]
+    stageExecutionHashes: tuple[str, ...]
+    rebaseRows: tuple[ConditionalPlayControlRebaseRow, ...]
+    stageReports: tuple[ConditionalPlayControlExecutionReport, ...]
+    finalExperiment: "ConditionalScenarioExperiment"
+    blockedReasons: tuple[str, ...]
+    warnings: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "changedControlIds", tuple(self.changedControlIds))
+        object.__setattr__(self, "semanticPlanes", tuple(self.semanticPlanes))
+        object.__setattr__(self, "stageExecutionHashes", tuple(self.stageExecutionHashes))
+        object.__setattr__(self, "rebaseRows", tuple(self.rebaseRows))
+        object.__setattr__(self, "stageReports", tuple(self.stageReports))
+        object.__setattr__(self, "blockedReasons", tuple(self.blockedReasons))
+        object.__setattr__(self, "warnings", tuple(self.warnings))
+
+
+@dataclass(frozen=True)
+class _ConditionalPlayPatchedBundle:
+    inputs: OperatingWorldInputs
+    cases: tuple[OperatingScenarioCase, ...]
+    strategies: tuple[StrategySpec, ...]
+    report: ConditionalPlayControlExecutionReport
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "cases", tuple(self.cases))
+        object.__setattr__(self, "strategies", tuple(self.strategies))
 
 
 def _dedupe(values: tuple[str, ...]) -> tuple[str, ...]:
@@ -3509,9 +3578,11 @@ def _controlRowsById(surface: ConditionalPlayControlSurface) -> dict[str, Condit
     return rows
 
 
-def _validateControlPatches(
+def _validateControlPatchRows(
     surface: ConditionalPlayControlSurface,
     patches: tuple[ConditionalPlayControlPatch, ...],
+    *,
+    allowMixedPlanes: bool,
 ) -> tuple[ConditionalPlayControlRow, ...]:
     if not patches:
         raise ScenarioCompositionError("conditional play control execution needs patches")
@@ -3533,12 +3604,19 @@ def _validateControlPatches(
             raise ScenarioCompositionError("conditional play control patch is a no-op")
         rows.append(row)
     semanticPlanes = {row.semanticPlane for row in rows}
-    if len(semanticPlanes) != 1:
+    if not allowMixedPlanes and len(semanticPlanes) != 1:
         raise ScenarioCompositionError("mixed semantic plane control patches are not supported")
-    semanticPlane = next(iter(semanticPlanes))
-    if semanticPlane not in {"assumptionDelta", "conditionFactor", "currentState", "lawParameter", "strategyAction"}:
-        raise ScenarioCompositionError(f"{semanticPlane} control patch requires a separate overlay route")
+    unknownPlanes = sorted(set(semanticPlanes) - set(CONDITIONAL_PLAY_SCENARIO_DECK_PLANE_ORDER))
+    if unknownPlanes:
+        raise ScenarioCompositionError(f"{unknownPlanes[0]} control patch requires a separate overlay route")
     return tuple(rows)
+
+
+def _validateControlPatches(
+    surface: ConditionalPlayControlSurface,
+    patches: tuple[ConditionalPlayControlPatch, ...],
+) -> tuple[ConditionalPlayControlRow, ...]:
+    return _validateControlPatchRows(surface, patches, allowMixedPlanes=False)
 
 
 def _safeControlIdPart(value: str) -> str:
@@ -3775,6 +3853,33 @@ def _patchLawParameterCases(
     return tuple(patchedCases[case.caseId] for case in cases)
 
 
+def _applyControlPatchBundle(
+    *,
+    inputs: OperatingWorldInputs,
+    cases: tuple[OperatingScenarioCase, ...],
+    strategies: tuple[StrategySpec, ...],
+    semanticPlane: str,
+    rows: tuple[ConditionalPlayControlRow, ...],
+    patches: tuple[ConditionalPlayControlPatch, ...],
+) -> tuple[OperatingWorldInputs, tuple[OperatingScenarioCase, ...], tuple[StrategySpec, ...]]:
+    patchedInputs = inputs
+    patchedCases = tuple(cases)
+    patchedStrategies = tuple(strategies)
+    if semanticPlane == "assumptionDelta":
+        patchedCases = _patchAssumptionDeltaCases(patchedCases, rows, patches)
+    elif semanticPlane == "conditionFactor":
+        patchedCases = _patchConditionFactorCases(patchedCases, rows, patches)
+    elif semanticPlane == "currentState":
+        patchedInputs = _patchCurrentStateInputs(patchedInputs, rows, patches)
+    elif semanticPlane == "lawParameter":
+        patchedCases = _patchLawParameterCases(patchedCases, rows, patches)
+    elif semanticPlane == "strategyAction":
+        patchedStrategies = _patchStrategyActionStrategies(patchedStrategies, rows, patches)
+    else:
+        raise ScenarioCompositionError(f"{semanticPlane} control patch requires a separate overlay route")
+    return patchedInputs, patchedCases, patchedStrategies
+
+
 def _caseLawInputHash(ledger: OneCompanyScenarioCaseLedger) -> str:
     return canonicalPayloadHash(
         {
@@ -3910,6 +4015,97 @@ def conditionalPlayControlExecutionSubjectHash(report: ConditionalPlayControlExe
     return canonicalPayloadHash(conditionalPlayControlExecutionPayload(report))
 
 
+def _executeValidatedControlPatchGroup(
+    entityId: str,
+    inputs: OperatingWorldInputs,
+    cases: tuple[OperatingScenarioCase, ...],
+    strategies: tuple[StrategySpec, ...],
+    baseExperiment: "ConditionalScenarioExperiment",
+    controlSurface: ConditionalPlayControlSurface,
+    rows: tuple[ConditionalPlayControlRow, ...],
+    patches: tuple[ConditionalPlayControlPatch, ...],
+    *,
+    debtLimit: float,
+    maxFinancing: float,
+    maxInvestment: float,
+    objectiveIndex: int = 0,
+    traceLimit: int | None = None,
+) -> _ConditionalPlayPatchedBundle:
+    semanticPlane = rows[0].semanticPlane
+    patchSetHash = _controlPatchSetHash(
+        baseExperiment=baseExperiment,
+        controlSurface=controlSurface,
+        patches=patches,
+    )
+    patchedInputs, patchedCases, patchedStrategies = _applyControlPatchBundle(
+        inputs=inputs,
+        cases=cases,
+        strategies=strategies,
+        semanticPlane=semanticPlane,
+        rows=rows,
+        patches=patches,
+    )
+    patchedExperiment = runConditionalScenarioExperiment(
+        entityId,
+        patchedInputs,
+        patchedCases,
+        patchedStrategies,
+        debtLimit=debtLimit,
+        maxFinancing=maxFinancing,
+        maxInvestment=maxInvestment,
+        objectiveIndex=objectiveIndex,
+        traceLimit=traceLimit,
+    )
+    baseReport = baseExperiment.playReplayReport
+    patchedReport = patchedExperiment.playReplayReport
+    if baseReport is None:
+        raise ScenarioCompositionError("conditional play control execution needs parent replay")
+    if (
+        patchedReport is None
+        or patchedExperiment.decisionStatus != "conditionalOnly"
+        or patchedExperiment.recommendation is not None
+        or patchedReport.recommendation is not None
+        or patchedReport.traceRetention != "full"
+    ):
+        raise ScenarioCompositionError("control patch replay cannot promote a recommendation or drop full trace")
+    impactRows = _controlImpactRows(
+        rows,
+        _controlHashSnapshot(inputs, baseExperiment),
+        _controlHashSnapshot(patchedInputs, patchedExperiment),
+    )
+    missingExpected = tuple(reason for impact in impactRows for reason in impact.missingExpectedHashImpacts)
+    forbiddenViolations = tuple(reason for impact in impactRows for reason in impact.forbiddenHashViolations)
+    if missingExpected:
+        raise ScenarioCompositionError(f"control patch missing expected hash impact: {missingExpected[0]}")
+    if forbiddenViolations:
+        raise ScenarioCompositionError(f"control patch changed forbidden hash: {forbiddenViolations[0]}")
+    draft = ConditionalPlayControlExecutionReport(
+        executionHash="",
+        schemaVersion=CONDITIONAL_PLAY_CONTROL_EXECUTION_VERSION,
+        kind=CONDITIONAL_PLAY_CONTROL_EXECUTION_KIND,
+        patchSetHash=patchSetHash,
+        baseExperimentHash=baseExperiment.experimentHash,
+        patchedExperimentHash=patchedExperiment.experimentHash,
+        basePlayReplayHash=baseReport.playReplayHash,
+        patchedPlayReplayHash=patchedReport.playReplayHash,
+        baseControlSurfaceHash=controlSurface.surfaceHash,
+        patchedControlSurfaceHash=patchedReport.controlSurfaceHash,
+        changedControlIds=tuple(patch.controlId for patch in patches),
+        semanticPlane=semanticPlane,
+        impactRows=impactRows,
+        patchedExperiment=patchedExperiment,
+        blockedReasons=patchedExperiment.blockedReasons,
+        warnings=patchedExperiment.warnings,
+    )
+    report = replace(draft, executionHash=conditionalPlayControlExecutionSubjectHash(draft))
+    return _ConditionalPlayPatchedBundle(
+        inputs=patchedInputs,
+        cases=patchedCases,
+        strategies=patchedStrategies,
+        report=report,
+    )
+
+
 def executeConditionalPlayControlPatch(
     entityId: str,
     inputs: OperatingWorldInputs,
@@ -3957,77 +4153,301 @@ def executeConditionalPlayControlPatch(
     controlSurface = baseReport.controlSurface
     patchTuple = tuple(patches)
     rows = _validateControlPatches(controlSurface, patchTuple)
-    semanticPlane = rows[0].semanticPlane
-    patchSetHash = _controlPatchSetHash(
-        baseExperiment=baseExperiment,
-        controlSurface=controlSurface,
-        patches=patchTuple,
-    )
-    patchedInputs = inputs
-    patchedCases = tuple(cases)
-    patchedStrategies = tuple(strategies)
-    if semanticPlane == "assumptionDelta":
-        patchedCases = _patchAssumptionDeltaCases(patchedCases, rows, patchTuple)
-    elif semanticPlane == "conditionFactor":
-        patchedCases = _patchConditionFactorCases(patchedCases, rows, patchTuple)
-    elif semanticPlane == "currentState":
-        patchedInputs = _patchCurrentStateInputs(patchedInputs, rows, patchTuple)
-    elif semanticPlane == "lawParameter":
-        patchedCases = _patchLawParameterCases(patchedCases, rows, patchTuple)
-    elif semanticPlane == "strategyAction":
-        patchedStrategies = _patchStrategyActionStrategies(patchedStrategies, rows, patchTuple)
-    else:
-        raise ScenarioCompositionError(f"{semanticPlane} control patch requires a separate overlay route")
-    patchedExperiment = runConditionalScenarioExperiment(
+    bundle = _executeValidatedControlPatchGroup(
         entityId,
-        patchedInputs,
-        patchedCases,
-        patchedStrategies,
+        inputs,
+        tuple(cases),
+        tuple(strategies),
+        baseExperiment,
+        controlSurface,
+        rows,
+        patchTuple,
         debtLimit=debtLimit,
         maxFinancing=maxFinancing,
         maxInvestment=maxInvestment,
         objectiveIndex=objectiveIndex,
         traceLimit=traceLimit,
     )
-    patchedReport = patchedExperiment.playReplayReport
-    if (
-        patchedReport is None
-        or patchedExperiment.decisionStatus != "conditionalOnly"
-        or patchedExperiment.recommendation is not None
-        or patchedReport.recommendation is not None
-        or patchedReport.traceRetention != "full"
-    ):
-        raise ScenarioCompositionError("control patch replay cannot promote a recommendation or drop full trace")
-    impactRows = _controlImpactRows(
-        rows,
-        _controlHashSnapshot(inputs, baseExperiment),
-        _controlHashSnapshot(patchedInputs, patchedExperiment),
+    return bundle.report
+
+
+def _controlRebaseRowPayload(row: ConditionalPlayControlRebaseRow) -> dict:
+    return {
+        "controlId": row.controlId,
+        "semanticPlane": row.semanticPlane,
+        "originalPatchHash": row.originalPatchHash,
+        "rebasedPatchHash": row.rebasedPatchHash,
+        "originalSurfaceHash": row.originalSurfaceHash,
+        "originalRowHash": row.originalRowHash,
+        "stageSurfaceHash": row.stageSurfaceHash,
+        "stageRowHash": row.stageRowHash,
+        "rebaseStatus": row.rebaseStatus,
+    }
+
+
+def _controlRebaseRow(
+    *,
+    originalPatch: ConditionalPlayControlPatch,
+    rebasedPatch: ConditionalPlayControlPatch,
+    baseRow: ConditionalPlayControlRow,
+    stageRow: ConditionalPlayControlRow,
+    stageSurface: ConditionalPlayControlSurface,
+) -> ConditionalPlayControlRebaseRow:
+    statusParts = []
+    if originalPatch.baseSurfaceHash != stageSurface.surfaceHash:
+        statusParts.append("surfaceRebased")
+    if originalPatch.baseRowHash != stageRow.rowHash:
+        statusParts.append("rowRebased")
+    status = "+".join(statusParts) if statusParts else "direct"
+    draft = ConditionalPlayControlRebaseRow(
+        rowHash="",
+        controlId=originalPatch.controlId,
+        semanticPlane=baseRow.semanticPlane,
+        originalPatchHash=_controlPatchHash(originalPatch),
+        rebasedPatchHash=_controlPatchHash(rebasedPatch),
+        originalSurfaceHash=originalPatch.baseSurfaceHash,
+        originalRowHash=originalPatch.baseRowHash,
+        stageSurfaceHash=stageSurface.surfaceHash,
+        stageRowHash=stageRow.rowHash,
+        rebaseStatus=status,
     )
-    missingExpected = tuple(reason for impact in impactRows for reason in impact.missingExpectedHashImpacts)
-    forbiddenViolations = tuple(reason for impact in impactRows for reason in impact.forbiddenHashViolations)
-    if missingExpected:
-        raise ScenarioCompositionError(f"control patch missing expected hash impact: {missingExpected[0]}")
-    if forbiddenViolations:
-        raise ScenarioCompositionError(f"control patch changed forbidden hash: {forbiddenViolations[0]}")
-    draft = ConditionalPlayControlExecutionReport(
-        executionHash="",
-        schemaVersion=CONDITIONAL_PLAY_CONTROL_EXECUTION_VERSION,
-        kind=CONDITIONAL_PLAY_CONTROL_EXECUTION_KIND,
-        patchSetHash=patchSetHash,
+    return replace(draft, rowHash=_rowHash("controlRebaseRow", _controlRebaseRowPayload(draft)))
+
+
+_CONTROL_REBASE_IDENTITY_FIELDS = (
+    "controlId",
+    "semanticPlane",
+    "controlKind",
+    "adjustmentMode",
+    "scope",
+    "caseId",
+    "strategyId",
+    "step",
+    "targetId",
+    "sourceVariableId",
+    "targetVariableId",
+    "unit",
+    "frequency",
+    "timing",
+    "transformId",
+    "expectedHashImpacts",
+    "forbiddenHashImpacts",
+)
+
+
+def _assertControlRebaseCompatible(
+    baseRow: ConditionalPlayControlRow,
+    stageRow: ConditionalPlayControlRow,
+) -> None:
+    for fieldName in _CONTROL_REBASE_IDENTITY_FIELDS:
+        if getattr(baseRow, fieldName) != getattr(stageRow, fieldName):
+            raise ScenarioCompositionError("staged control patch target drifted")
+    if stageRow.adjustabilityStatus.startswith("locked"):
+        raise ScenarioCompositionError("locked conditional play control cannot be patched")
+
+
+def _rejectUnsafeControlPatchRef(patchRef: str) -> None:
+    unsafePrefixes = (
+        *_STRUCTURED_PROVIDER_LINEAGE_REF_PREFIXES,
+        "pathAdmission:",
+        "pathSetAdmission:",
+        "driverCoefficientAdmission:",
+        "initialStateAdmission:",
+        "stateReceipt:",
+        "verifiedStateReceipt:",
+    )
+    if patchRef.startswith(unsafePrefixes):
+        raise ScenarioCompositionError("control patch provenance cannot mimic admitted lineage")
+
+
+def _validateScenarioDeckInteractions(rows: tuple[ConditionalPlayControlRow, ...]) -> None:
+    conditionRows = tuple(row for row in rows if row.semanticPlane == "conditionFactor")
+    lawRows = tuple(row for row in rows if row.semanticPlane == "lawParameter")
+    for conditionRow in conditionRows:
+        for lawRow in lawRows:
+            if conditionRow.caseId == lawRow.caseId and conditionRow.targetId == lawRow.sourceVariableId:
+                raise ScenarioCompositionError("scenario deck cannot mix condition and law patches on one exposure")
+
+
+def _deckSourceSealHash(experiment: "ConditionalScenarioExperiment") -> str:
+    return canonicalPayloadHash(
+        {
+            "providerLaneLineageHashes": experiment.providerLaneLineageHashes,
+            "providerObservationBatchReceiptIds": experiment.providerObservationBatchReceiptIds,
+            "providerObservationBatchIds": experiment.providerObservationBatchIds,
+            "providerObservationBatchSourceReceiptIds": experiment.providerObservationBatchSourceReceiptIds,
+            "priceSourceLegReceiptIds": experiment.priceSourceLegReceiptIds,
+            "derivedReturnReceiptIds": experiment.derivedReturnReceiptIds,
+            "adjustmentPolicyHashes": experiment.adjustmentPolicyHashes,
+            "normalizationContractHashes": experiment.normalizationContractHashes,
+            "returnTransformHashes": experiment.returnTransformHashes,
+            "rawSourceRefs": experiment.rawSourceRefs,
+            "revisedHistoryRefs": experiment.revisedHistoryRefs,
+            "pathHistoryInputHashes": experiment.pathHistoryInputHashes,
+            "basePathAdmission": tuple(
+                (
+                    ledger.caseId,
+                    ledger.basePathAdmissionReceiptId,
+                    ledger.basePathAdmissionContentHash,
+                    ledger.basePathAdmissionSubjectHash,
+                    ledger.basePathValidationStatus,
+                    ledger.basePathMaxAdmittedStep,
+                )
+                for ledger in experiment.caseLedgers
+            ),
+        }
+    )
+
+
+def conditionalPlayScenarioDeckPayload(report: ConditionalPlayScenarioDeckReport) -> dict:
+    """Build canonical payload for a multi-plane conditional scenario deck."""
+
+    return {
+        "schemaVersion": report.schemaVersion,
+        "kind": report.kind,
+        "semanticPlaneOrder": CONDITIONAL_PLAY_SCENARIO_DECK_PLANE_ORDER,
+        "baseExperimentHash": report.baseExperimentHash,
+        "finalExperimentHash": report.finalExperimentHash,
+        "basePlayReplayHash": report.basePlayReplayHash,
+        "finalPlayReplayHash": report.finalPlayReplayHash,
+        "baseControlSurfaceHash": report.baseControlSurfaceHash,
+        "finalControlSurfaceHash": report.finalControlSurfaceHash,
+        "changedControlIds": report.changedControlIds,
+        "semanticPlanes": report.semanticPlanes,
+        "stageExecutionHashes": report.stageExecutionHashes,
+        "stagePatchSetHashes": tuple(stage.patchSetHash for stage in report.stageReports),
+        "stageBaseExperimentHashes": tuple(stage.baseExperimentHash for stage in report.stageReports),
+        "stagePatchedExperimentHashes": tuple(stage.patchedExperimentHash for stage in report.stageReports),
+        "rebaseRows": report.rebaseRows,
+        "blockedReasons": report.blockedReasons,
+        "warnings": report.warnings,
+    }
+
+
+def conditionalPlayScenarioDeckSubjectHash(report: ConditionalPlayScenarioDeckReport) -> str:
+    """Return the content hash for a multi-plane conditional scenario deck."""
+
+    return canonicalPayloadHash(conditionalPlayScenarioDeckPayload(report))
+
+
+def executeConditionalPlayScenarioDeck(
+    entityId: str,
+    inputs: OperatingWorldInputs,
+    cases: tuple[OperatingScenarioCase, ...],
+    strategies: tuple[StrategySpec, ...],
+    baseExperiment: "ConditionalScenarioExperiment",
+    patches: tuple[ConditionalPlayControlPatch, ...],
+    *,
+    debtLimit: float,
+    maxFinancing: float,
+    maxInvestment: float,
+    objectiveIndex: int = 0,
+    traceLimit: int | None = None,
+) -> ConditionalPlayScenarioDeckReport:
+    """Execute base-surface control patches as an ordered scenario deck."""
+
+    baseReport = baseExperiment.playReplayReport
+    if baseReport is None:
+        raise ScenarioCompositionError("conditional play scenario deck needs parent replay")
+    baseSurface = baseReport.controlSurface
+    patchTuple = tuple(patches)
+    baseRows = _validateControlPatchRows(baseSurface, patchTuple, allowMixedPlanes=True)
+    for patch in patchTuple:
+        _rejectUnsafeControlPatchRef(patch.patchRef)
+    _validateScenarioDeckInteractions(baseRows)
+    baseRowByControlId = dict(zip((patch.controlId for patch in patchTuple), baseRows, strict=True))
+    patchByPlane = {
+        semanticPlane: tuple(
+            patch for patch, row in zip(patchTuple, baseRows, strict=True) if row.semanticPlane == semanticPlane
+        )
+        for semanticPlane in CONDITIONAL_PLAY_SCENARIO_DECK_PLANE_ORDER
+    }
+    stageInputs = inputs
+    stageCases = tuple(cases)
+    stageStrategies = tuple(strategies)
+    stageExperiment = baseExperiment
+    stageReports: list[ConditionalPlayControlExecutionReport] = []
+    rebaseRows: list[ConditionalPlayControlRebaseRow] = []
+    for semanticPlane in CONDITIONAL_PLAY_SCENARIO_DECK_PLANE_ORDER:
+        planePatches = patchByPlane[semanticPlane]
+        if not planePatches:
+            continue
+        stageReport = stageExperiment.playReplayReport
+        if stageReport is None:
+            raise ScenarioCompositionError("conditional play scenario stage needs parent replay")
+        stageSurface = stageReport.controlSurface
+        stageRowById = _controlRowsById(stageSurface)
+        rebasedPatches = []
+        for patch in planePatches:
+            baseRow = baseRowByControlId[patch.controlId]
+            stageRow = stageRowById.get(patch.controlId)
+            if stageRow is None:
+                raise ScenarioCompositionError("staged control patch target is missing")
+            _assertControlRebaseCompatible(baseRow, stageRow)
+            rebasedPatch = replace(
+                patch,
+                baseSurfaceHash=stageSurface.surfaceHash,
+                baseRowHash=stageRow.rowHash,
+            )
+            rebasedPatches.append(rebasedPatch)
+            rebaseRows.append(
+                _controlRebaseRow(
+                    originalPatch=patch,
+                    rebasedPatch=rebasedPatch,
+                    baseRow=baseRow,
+                    stageRow=stageRow,
+                    stageSurface=stageSurface,
+                )
+            )
+        rebasedPatchTuple = tuple(rebasedPatches)
+        stageRows = _validateControlPatches(stageSurface, rebasedPatchTuple)
+        bundle = _executeValidatedControlPatchGroup(
+            entityId,
+            stageInputs,
+            stageCases,
+            stageStrategies,
+            stageExperiment,
+            stageSurface,
+            stageRows,
+            rebasedPatchTuple,
+            debtLimit=debtLimit,
+            maxFinancing=maxFinancing,
+            maxInvestment=maxInvestment,
+            objectiveIndex=objectiveIndex,
+            traceLimit=traceLimit,
+        )
+        stageInputs = bundle.inputs
+        stageCases = bundle.cases
+        stageStrategies = bundle.strategies
+        stageExperiment = bundle.report.patchedExperiment
+        stageReports.append(bundle.report)
+    if not stageReports:
+        raise ScenarioCompositionError("conditional play scenario deck needs executable stages")
+    if _deckSourceSealHash(baseExperiment) != _deckSourceSealHash(stageExperiment):
+        raise ScenarioCompositionError("scenario deck changed provider history source seal")
+    finalReport = stageExperiment.playReplayReport
+    if finalReport is None:
+        raise ScenarioCompositionError("conditional play scenario deck lost final replay")
+    draft = ConditionalPlayScenarioDeckReport(
+        deckHash="",
+        schemaVersion=CONDITIONAL_PLAY_SCENARIO_DECK_VERSION,
+        kind=CONDITIONAL_PLAY_SCENARIO_DECK_KIND,
         baseExperimentHash=baseExperiment.experimentHash,
-        patchedExperimentHash=patchedExperiment.experimentHash,
+        finalExperimentHash=stageExperiment.experimentHash,
         basePlayReplayHash=baseReport.playReplayHash,
-        patchedPlayReplayHash=patchedReport.playReplayHash,
-        baseControlSurfaceHash=controlSurface.surfaceHash,
-        patchedControlSurfaceHash=patchedReport.controlSurfaceHash,
-        changedControlIds=tuple(patch.controlId for patch in patchTuple),
-        semanticPlane=semanticPlane,
-        impactRows=impactRows,
-        patchedExperiment=patchedExperiment,
-        blockedReasons=patchedExperiment.blockedReasons,
-        warnings=patchedExperiment.warnings,
+        finalPlayReplayHash=finalReport.playReplayHash,
+        baseControlSurfaceHash=baseSurface.surfaceHash,
+        finalControlSurfaceHash=finalReport.controlSurfaceHash,
+        changedControlIds=tuple(controlId for stage in stageReports for controlId in stage.changedControlIds),
+        semanticPlanes=tuple(stage.semanticPlane for stage in stageReports),
+        stageExecutionHashes=tuple(stage.executionHash for stage in stageReports),
+        rebaseRows=tuple(rebaseRows),
+        stageReports=tuple(stageReports),
+        finalExperiment=stageExperiment,
+        blockedReasons=stageExperiment.blockedReasons,
+        warnings=stageExperiment.warnings,
     )
-    return replace(draft, executionHash=conditionalPlayControlExecutionSubjectHash(draft))
+    return replace(draft, deckHash=conditionalPlayScenarioDeckSubjectHash(draft))
 
 
 def _traceRows(
