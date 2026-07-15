@@ -41,6 +41,7 @@
 uv run python -X utf8 tests/_attempts/dartlabUniverse/truth/graphTruthProbe.py
 uv run python -X utf8 tests/_attempts/dartlabUniverse/truth/factualAdmissionProbe.py
 uv run python -X utf8 tests/_attempts/dartlabUniverse/snapshot/sourceSnapshotSetProbe.py
+uv run python -X utf8 tests/_attempts/dartlabUniverse/snapshot/changeReplayProbe.py
 uv run python -X utf8 tests/_attempts/dartlabUniverse/policy/redistributionReceiptProbe.py
 uv run python -X utf8 tests/_attempts/dartlabUniverse/policy/lensAvailabilityProbe.py
 ```
@@ -56,6 +57,7 @@ pytest는 repository test lock을 획득한 뒤 attempt test file 하나씩 실�
 | U0-S01 SourceSnapshotSet | HF 8 source, capability, recipe catalog | source 10, immutable 9, capability catalog unreplayable 1, panel dataAsOf 결손 1, receipt 결손 10, hash 반복 2/2, unit 8/8 | source identity 계약 완료. capability manifest 전까지 public exact replay 금지, U0-P02로 진행 |
 | U0-P02 RedistributionReceipt | U0-S01 source 10개와 synthetic policy fixture | live receipt 0/10, publicReady false, synthetic 12/12 PASS, unknown, localOnly, blocked, expired, prohibited, mixed upstream false accept 0 | policy admission 계약 완료. 운영자 reviewed receipt와 upstream field lineage 전까지 live source lane 차단 |
 | U0-L01 LensAvailability | capability 226, Skill OS 286, 6 archetype fixture | capability lens semantic 및 runtime 선언 0, Skill OS publicBrowser 0, current public lens ready 0, synthetic 8/8 PASS | generic lens 계약 완료. explicit LensSpec registry와 receipt 전까지 public lens 0 유지 |
+| U0-W01 change replay | append-only revision 8개와 DART finance 정렬 앞 30개 | synthetic 다섯 변화 각 1, revision 8/8, look-ahead 0, evidence 100%, test 8/8. live 359,115 row에서 rcept_no 30/30, exact time, revisionId, rowKey 0/30, revision group 0 | replay 계약 완료. live exact 변화 재생은 source field와 reviewed multi-filing fixture 전까지 차단 |
 
 ## 금지
 

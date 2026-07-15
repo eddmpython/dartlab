@@ -190,6 +190,8 @@ uv run python -X utf8 tests/_attempts/dartlabUniverse/truth/graphTruthProbe.py
 
 kill: 현재값의 과거 역주입 1건이면 변화 우주 production 이관을 금지한다.
 
+2026-07-15 실행 결과: append-only synthetic revision 8개에서 created, corrected, retracted, newlyKnown, stale가 각 1개였고 revision 보존 8/8, look-ahead 0, before 및 after evidence 결속 5/5, 같은 input replayHash 일치를 달성했다. 미래 revision은 diff뿐 아니라 VintageRef artifactHash와 sourceRefs에서도 제외됐다. 반면 local DART finance의 파일명 정렬 앞 30개, 359,115 row는 rcept_no만 30/30이고 sourcePublishedAt, availableAt, revisionId, rowKey가 모두 0/30이며 observed multi-receipt group도 0이었다. U0-W01 계약은 완료했지만 live exact replay gate는 실패다. timestamp를 rcept_no에서 추정하지 않으며 reviewed multi-filing fixture와 source time이 생길 때까지 변화 우주 공개 이관을 차단한다. 상세 evidence는 `tests/_attempts/dartlabUniverse/snapshot/README.md`가 소유한다.
+
 ### U0-W02 workflow projection probe
 
 목표: tested recipe 10개의 procedure, requiredEvidence, falsifier를 `SceneBeat[]`로 유실 없이 컴파일한다.

@@ -86,7 +86,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | U0-S01 | source 전체가 재현 가능한가 | map, search, panel, finance, catalog | source version 또는 unreplayable 100% | exact replay 문구 금지 | 완료, capability unreplayable |
 | U0-P02 | public field가 승인됐는가 | source와 field registry | public mark receipt 100%, false accept 0 | source lane 차단 | 완료, live 0/10 차단 |
 | U0-L01 | lens가 환경에서 실제 가능한가 | 6 output archetype | unavailable 오표시 0, missing 보존 | 해당 lens 숨김 | 완료, live ready 0 |
-| U0-W01 | 변화를 look-ahead 없이 재생하는가 | DART 30사, cutoff 2개 | revision 100%, look-ahead 0, evidence 95% | 변화 우주 범위 축소 | 대기 |
+| U0-W01 | 변화를 look-ahead 없이 재생하는가 | synthetic 8 revision과 DART 30개 deterministic schema sample | revision 100%, look-ahead 0, evidence 95% | 변화 우주 범위 축소 | 계약 완료, live source 차단 |
 | U0-W02 | recipe를 반증 workflow로 만드는가 | tested recipe 10개 | 단계, 근거, falsifier 유실 0 | Kill-Chain 보류 | 대기 |
 | U0-V01 | evidence 상태를 읽는가 | 30 card, task participant | 판독 90% 이상 | visual grammar 재설계 | 대기 |
 | U0-V02 | layout이 재현되는가 | 3 browser, 20 replay | logical hash 일치, 같은 viewport 및 DPR anchor 1px 이하 | layout 교체 | 대기 |
@@ -233,6 +233,40 @@ syntheticRegression                   8/8 PASS
 ```
 
 판정: explicit LensSpec가 있으면 scalar, series, table, ranking, distribution, scenario 6 archetype과 publicBrowser, localPython, localServer 3환경을 generic contract 하나로 처리할 수 있다. unavailable loader 호출 0, missing zero fill 0을 검증했다. 그러나 현재 capability와 Skill OS에서 public lens 의미와 환경을 추정할 근거가 없고 receipt도 없으므로 live ready는 0이다. 226개 capability별 UI adapter는 기각하고 reviewed LensSpec registry만 production 후보로 둔다.
+
+## 4.5 U0-W01 결과
+
+명령:
+
+```powershell
+uv run python -X utf8 tests/_attempts/dartlabUniverse/snapshot/changeReplayProbe.py
+```
+
+결과:
+
+```text
+syntheticRevisionCount              8
+preservedRevisionCount              8
+created                             1
+corrected                           1
+retracted                           1
+newlyKnown                          1
+stale                               1
+lookAheadCount                      0
+evidenceBindingCoverage          100%
+syntheticRegression               8/8 PASS
+dartSampleFiles                    30
+dartSampleRows                359,115
+rceptNoFileCount                30/30
+sourcePublishedAtFileCount       0/30
+availableAtFileCount             0/30
+revisionIdFileCount              0/30
+rowKeyFileCount                  0/30
+revisionGroupCount                  0
+liveExactReplayReady            false
+```
+
+판정: synthetic contract는 query cutoff와 assertion identity를 분리하고, 미래 revision을 diff, artifactHash, sourceRefs에서 제외하며, production VintageRef의 exact as-known 조건을 통과했다. 그러나 live DART sample은 filing ID 외 exact observation time, revision identity, row locator가 없다. 표본은 대표성을 주장하지 않는 정렬 기반 schema census다. U0-W01 계약은 완료하되 live 변화 재생은 `revise`로 차단한다. `rcept_no`에서 임의 시각을 합성하지 않고 reviewed multi-filing fixture가 확보될 때 재심사한다.
 
 ## 5. existing attempts 재사용 지도
 

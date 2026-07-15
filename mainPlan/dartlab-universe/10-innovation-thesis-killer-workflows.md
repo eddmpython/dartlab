@@ -147,7 +147,7 @@ GapReceipt
 
 ### 선행 attempt와 kill 조건
 
-`U0-S01 SourceSnapshotSet`과 `U0-W01 changeReplay`가 선행한다. DART 30사의 공시 revision과 관측을 두 cutoff에서 재현한다.
+`U0-S01 SourceSnapshotSet`과 `U0-W01 changeReplay`가 선행한다. U0-W01 synthetic 계약은 revision 8/8, look-ahead 0, evidence 5/5로 완료했지만 DART finance 정렬 앞 30개에는 exact time, revisionId, rowKey가 0/30이라 live replay는 차단됐다. source field와 reviewed multi-filing fixture를 확보한 뒤 두 cutoff 재현을 다시 승인한다.
 
 - sourcePublishedAt, availableAt, valid interval, revision 보존 100%
 - look-ahead 0건

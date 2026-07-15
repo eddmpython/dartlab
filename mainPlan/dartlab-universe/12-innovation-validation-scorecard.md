@@ -171,7 +171,7 @@ RedistributionReceipt
 | 2 | U0-S01 | SourceSnapshotSet | source version 누락 0 또는 unreplayable 명시 | exact replay 문구 금지 |
 | 3 | U0-P02 | redistribution receipt | public field 100% receipt | source lane 차단 |
 | 4 | U0-L01 | LensAvailability | 6 output archetype과 환경 상태 | 해당 lens 숨김 |
-| 5 | U0-W01 | changeReplay | revision 100%, look-ahead 0 | 변화 우주 범위 축소 |
+| 5 | U0-W01 | changeReplay | synthetic revision 8/8, look-ahead 0, evidence 5/5. live exact fields 0/30 | 계약 완료, live 변화 우주 차단 |
 | 6 | U0-V01 | visual grammar | 상태 판독 90% 이상 | grammar 재설계 |
 | 7 | U0-W02 | workflowProjection | 단계, 근거, 반증 유실 0 | Kill-Chain 보류 |
 | 8 | U0-V06 | renderer bakeoff | task, frame, heap, bundle 개선 | 새 dependency 기각 |

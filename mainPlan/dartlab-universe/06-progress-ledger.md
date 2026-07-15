@@ -26,6 +26,7 @@
 - [x] U0-S01 SourceSnapshotSet과 legacy replay guard
 - [x] U0-P02 RedistributionReceipt와 upstream public admission guard
 - [x] U0-L01 6 output archetype과 환경별 LensAvailability guard
+- [x] U0-W01 append-only change replay 계약과 live DART readiness census
 - [ ] U0 identity, evidence, assertion, projection attempts
 - [ ] U0 workflow, visual, information yield attempts
 - [ ] U1~U2 implementation
@@ -58,6 +59,7 @@
 | 2026-07-15 | U0-S01 SourceSnapshotSet 실행 | source 10개 중 HF 8개와 recipe Git blob 1개는 immutable, live capability catalog 1개는 manifest 부재로 unreplayable. 같은 set hash 2/2 일치, legacy buildId exact replay 차단 |
 | 2026-07-15 | U0-P02 RedistributionReceipt 실행 | live reviewed receipt 0/10으로 publicReady false. synthetic 12건에서 unknown, localOnly, blocked, expired, prohibited, metadataOnly 확대와 금지 upstream false accept 0 |
 | 2026-07-15 | U0-L01 LensAvailability 실행 | capability 226개에 runtime, archetype, unit, coverage, missing 선언 0. Skill OS 286개에 publicBrowser 선언 0. synthetic 6 archetype 및 3환경 8건 통과, current public lens ready 0 |
+| 2026-07-15 | U0-W01 change replay 실행 | synthetic revision 8/8 보존, 다섯 변화 각 1, look-ahead 0, evidence 5/5, 미래 metadata 누출 0. live DART 30개는 filing ID만 30/30이고 exact time, revisionId, rowKey 0/30이라 public exact replay 차단 |
 
 ## 핵심 실측 스냅샷
 
@@ -89,6 +91,19 @@ capability return contracts       83/226
 capability lens declarations       0/226
 Skill OS publicBrowser              0/286
 current public lens ready               0
+synthetic replay revisions            8/8
+synthetic replay change types         5/5
+synthetic replay look-ahead              0
+synthetic replay evidence             5/5
+DART replay sample files                30
+DART replay sample rows            359,115
+DART rcept_no coverage               30/30
+DART sourcePublishedAt coverage       0/30
+DART availableAt coverage             0/30
+DART revisionId coverage              0/30
+DART rowKey coverage                  0/30
+DART observed revision groups             0
+DART live exact replay ready          false
 ```
 
 같은 날 후속 live meta 재감사:
@@ -119,9 +134,10 @@ dart dataAsOf            null
 2. exact evidence resolver의 cold P95와 cold initialization 포함 transfer가 아직 측정되지 않았다.
 3. source version 10개는 SourceSnapshotSet으로 묶였지만 capability catalog의 immutable manifest가 없고 panel dataAsOf가 null이다. 따라서 current public exact replay는 아직 금지한다.
 4. RedistributionReceipt와 LensAvailability admission contract는 있지만 reviewed receipt는 0/10, Skill OS publicBrowser 선언은 0/286, current public lens ready는 0이다. map field의 upstream policy lineage도 결속되지 않았다.
-5. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
-6. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. U1 production 착수 전에 frontend host가 정상 상태인지 재검해야 한다.
+5. DART finance 정렬 앞 30개, 359,115 row에 rcept_no는 있지만 sourcePublishedAt, availableAt, revisionId, rowKey가 0/30이고 observed revision group도 0이다. U0-W01 synthetic 계약은 통과했지만 live 변화 우주 exact replay는 금지한다.
+6. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
+7. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. U1 production 착수 전에 frontend host가 정상 상태인지 재검해야 한다.
 
 ## 다음 단일 행동
 
-`tests/_attempts/dartlabUniverse/snapshot/`에서 U0-W01 change replay probe를 구현한다. revision을 삭제하지 않는 assertion history와 knownAt A, B의 created, corrected, retracted, newlyKnown, stale diff를 synthetic fixture로 먼저 검증한다. 그다음 exact source와 availableAt을 가진 DART 30사 fixture 가용성을 센서스하고 부족하면 live replay를 승인하지 않는다. look-ahead 1건 또는 before, after evidence 결속 실패를 숨기면 기각한다.
+`tests/_attempts/dartlabUniverse/workflow/`에서 U0-W02 workflow projection probe를 구현한다. tested recipe 10개의 procedure, requiredEvidence, falsifier를 orient, focus, evidence, falsify, conclude `SceneBeat[]`로 lossless compile한다. missing required evidence는 GapReceipt로 보존하고 open falsifier가 없는 conclude를 차단한다. same input flight hash 불일치 또는 단계, 근거, 반증 유실 1건이면 Kill-Chain production 이관을 금지한다.
