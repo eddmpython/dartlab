@@ -1,5 +1,16 @@
 """Universe public redistribution 정책 attempt 공개 표면."""
 
+from .lensAvailabilityProbe import (
+    CatalogLensReadinessReport,
+    LensAvailability,
+    LensAvailabilityReport,
+    LensOutput,
+    LensRuntime,
+    LensSpec,
+    inspectCatalogLensReadiness,
+    inspectLensAvailability,
+    resolveLensOutput,
+)
 from .redistributionReceiptProbe import (
     ProjectionField,
     PublicAdmissionReport,
@@ -13,6 +24,12 @@ from .redistributionReceiptProbe import (
 )
 
 __all__ = [
+    "CatalogLensReadinessReport",
+    "LensAvailability",
+    "LensAvailabilityReport",
+    "LensOutput",
+    "LensRuntime",
+    "LensSpec",
     "ProjectionField",
     "PublicAdmissionReport",
     "ReceiptCoverageReport",
@@ -21,5 +38,8 @@ __all__ = [
     "assessPublicProjection",
     "buildRedistributionReceipt",
     "inspectReceiptCoverage",
+    "inspectCatalogLensReadiness",
+    "inspectLensAvailability",
+    "resolveLensOutput",
     "validateRedistributionReceipt",
 ]

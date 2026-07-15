@@ -1,6 +1,6 @@
 # Policy attempts
 
-> 상태: U0-P02 contract 완료, live public gate 차단, U0-L01 대기
+> 상태: U0-P02 및 U0-L01 contract 완료, live public gate 차단
 > 책임: public source별 재배포와 lens 가용성을 fail-closed receipt로 검증한다.
 
 ## 가설
@@ -10,7 +10,7 @@ source별 `RedistributionReceipt`와 환경별 `LensAvailability`를 projection 
 ## 실행 순서
 
 1. U0-P02: source별 allowedFields, attribution, policyVersion을 센서스한다. 완료.
-2. U0-L01: scalar, series, table, ranking, distribution, scenario archetype과 public, local 가용성을 센서스한다.
+2. U0-L01: scalar, series, table, ranking, distribution, scenario archetype과 public, local 가용성을 센서스한다. 완료.
 3. public projection fixture에 unknown, localOnly, expired receipt를 주입한다. 완료.
 
 ## U0-P02 실행
@@ -56,6 +56,33 @@ Contract는 다음을 검증했다.
 
 판정은 `revise`다. admission contract는 완료했지만 현재 reviewed receipt registry가 없고 map artifact field의 upstream policy lineage도 결속되지 않았다. 따라서 live source 10개를 자동 public 승인하지 않는다. 운영자 검토가 끝난 receipt만 후속 production registry 후보가 된다.
 
+## U0-L01 실행
+
+```powershell
+uv run python -X utf8 tests/_attempts/dartlabUniverse/policy/lensAvailabilityProbe.py
+```
+
+## U0-L01 결과
+
+| 항목 | 실측 |
+|---|---:|
+| live capability | 226 |
+| return contract가 있는 capability | 83 |
+| capability runtimeCompatibility | 0 |
+| capability outputArchetype | 0 |
+| capability unit | 0 |
+| capability coveragePolicy | 0 |
+| capability missingPolicy | 0 |
+| Skill OS | 286 |
+| Skill OS runtimeCompatibility | 286 |
+| Skill OS publicBrowser declaration | 0 |
+| current public lens ready | 0 |
+| 6 archetype contract regression | 8/8 PASS |
+
+Contract fixture는 scalar, series, table, ranking, distribution, scenario 6개와 publicBrowser, localPython, localServer 3환경을 모두 검증했다. `limited`와 `unavailable`은 loader를 호출하지 않고, available loader의 `None`은 `missing`으로 보존하며 0으로 바꾸지 않는다. public policy가 false이면 local 실행은 유지하고 publicBrowser만 차단한다.
+
+판정은 `revise`다. capability 226개별 UI adapter를 만들지 않는다. capability와 Skill OS를 참조하는 작은 LensSpec registry가 output archetype, unit, coverage, missing, publicBrowser runtime, receipt를 명시해야 한다. 현재 catalog만으로 이 값을 추정할 수 없으므로 live public lens는 0개다.
+
 ## 합격
 
 - public mark의 redistribution receipt coverage 100%
@@ -74,8 +101,8 @@ Contract는 다음을 검증했다.
 
 - `redistributionReceiptProbe.py`, 완료
 - `testRedistributionReceiptProbe.py`, 완료
-- `lensAvailabilityProbe.py`
-- `testLensAvailabilityProbe.py`
+- `lensAvailabilityProbe.py`, 완료
+- `testLensAvailabilityProbe.py`, 완료
 - source와 lens reviewed fixture, 운영자 검토 전 생성 금지
 
 정책 결론은 법률 자문을 대체하지 않는다. 불명확하면 public에서 차단하고 운영자 검토 대상으로 남긴다.

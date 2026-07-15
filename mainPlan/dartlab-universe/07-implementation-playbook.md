@@ -166,6 +166,8 @@ uv run python -X utf8 tests/_attempts/dartlabUniverse/truth/graphTruthProbe.py
 - missing을 0 또는 빈 성공으로 표시한 사례 0
 - 환경별 unavailable lens 노출 0
 
+2026-07-15 실행 결과: 6 archetype과 3환경 explicit fixture 8건은 통과했고 unavailable loader 호출과 missing zero fill은 0이었다. live capability 226개에는 runtime, archetype, unit, coverage, missing 선언이 없고 Skill OS 286개에는 publicBrowser 선언이 없어 current public lens ready는 0이다. capability별 adapter를 만들지 않고 explicit LensSpec registry가 준비될 때까지 public lens를 차단한다. 상세 evidence는 `tests/_attempts/dartlabUniverse/policy/README.md`가 소유한다.
+
 ### U0-W01 change replay probe
 
 목표: DART 30사의 revision과 observation을 두 cutoff에서 look-ahead 없이 재생한다.

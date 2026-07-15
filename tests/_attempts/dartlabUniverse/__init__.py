@@ -1,6 +1,12 @@
 """DartLab Universe의 근거 계약과 bounded projection을 검증하는 attempt 공개 표면."""
 
 from .policy import (
+    CatalogLensReadinessReport,
+    LensAvailability,
+    LensAvailabilityReport,
+    LensOutput,
+    LensRuntime,
+    LensSpec,
     ProjectionField,
     PublicAdmissionReport,
     ReceiptCoverageReport,
@@ -8,7 +14,10 @@ from .policy import (
     SourceFieldRef,
     assessPublicProjection,
     buildRedistributionReceipt,
+    inspectCatalogLensReadiness,
+    inspectLensAvailability,
     inspectReceiptCoverage,
+    resolveLensOutput,
     validateRedistributionReceipt,
 )
 from .snapshot import (
@@ -24,6 +33,12 @@ from .truth import FactualAdmissionReport, GraphTruthReport, inspectFactualAdmis
 __all__ = [
     "FactualAdmissionReport",
     "GraphTruthReport",
+    "CatalogLensReadinessReport",
+    "LensAvailability",
+    "LensAvailabilityReport",
+    "LensOutput",
+    "LensRuntime",
+    "LensSpec",
     "ProjectionField",
     "PublicAdmissionReport",
     "ReceiptCoverageReport",
@@ -38,7 +53,10 @@ __all__ = [
     "buildSourceSnapshotSet",
     "currentSourceIds",
     "inspectReceiptCoverage",
+    "inspectCatalogLensReadiness",
+    "inspectLensAvailability",
     "inspectFactualAdmission",
     "inspectGraphTruth",
+    "resolveLensOutput",
     "validateRedistributionReceipt",
 ]

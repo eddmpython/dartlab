@@ -25,7 +25,8 @@
 - [x] U0-T02 graph factual admission 강화
 - [x] U0-S01 SourceSnapshotSet과 legacy replay guard
 - [x] U0-P02 RedistributionReceipt와 upstream public admission guard
-- [ ] U0 lens, identity, evidence, assertion, projection attempts
+- [x] U0-L01 6 output archetype과 환경별 LensAvailability guard
+- [ ] U0 identity, evidence, assertion, projection attempts
 - [ ] U0 workflow, visual, information yield attempts
 - [ ] U1~U2 implementation
 - [ ] U3 artifact 변경 승인 여부
@@ -56,6 +57,7 @@
 | 2026-07-15 | U0-T02 factual admission 실행 | live 20,560 edge에서 document ID, section, exact locator, direction, sourcePublishedAt, availableAt, validFrom, policy receipt, observed status와 admitted 모두 0 |
 | 2026-07-15 | U0-S01 SourceSnapshotSet 실행 | source 10개 중 HF 8개와 recipe Git blob 1개는 immutable, live capability catalog 1개는 manifest 부재로 unreplayable. 같은 set hash 2/2 일치, legacy buildId exact replay 차단 |
 | 2026-07-15 | U0-P02 RedistributionReceipt 실행 | live reviewed receipt 0/10으로 publicReady false. synthetic 12건에서 unknown, localOnly, blocked, expired, prohibited, metadataOnly 확대와 금지 upstream false accept 0 |
+| 2026-07-15 | U0-L01 LensAvailability 실행 | capability 226개에 runtime, archetype, unit, coverage, missing 선언 0. Skill OS 286개에 publicBrowser 선언 0. synthetic 6 archetype 및 3환경 8건 통과, current public lens ready 0 |
 
 ## 핵심 실측 스냅샷
 
@@ -83,6 +85,10 @@ snapshot hash repeat           2/2
 reviewed policy receipts        0/10
 public policy ready            false
 policy negative false accept       0
+capability return contracts       83/226
+capability lens declarations       0/226
+Skill OS publicBrowser              0/286
+current public lens ready               0
 ```
 
 같은 날 후속 live meta 재감사:
@@ -112,10 +118,10 @@ dart dataAsOf            null
 1. U0 gold positive 및 hard negative set이 없다.
 2. exact evidence resolver의 cold P95와 cold initialization 포함 transfer가 아직 측정되지 않았다.
 3. source version 10개는 SourceSnapshotSet으로 묶였지만 capability catalog의 immutable manifest가 없고 panel dataAsOf가 null이다. 따라서 current public exact replay는 아직 금지한다.
-4. RedistributionReceipt admission contract는 있지만 운영자 reviewed receipt는 0/10이고 map field의 upstream policy lineage도 결속되지 않았다. 환경별 LensAvailability도 아직 없다.
+4. RedistributionReceipt와 LensAvailability admission contract는 있지만 reviewed receipt는 0/10, Skill OS publicBrowser 선언은 0/286, current public lens ready는 0이다. map field의 upstream policy lineage도 결속되지 않았다.
 5. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
 6. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. U1 production 착수 전에 frontend host가 정상 상태인지 재검해야 한다.
 
 ## 다음 단일 행동
 
-`tests/_attempts/dartlabUniverse/policy/`에서 U0-L01 LensAvailability probe를 구현한다. scalar, series, table, ranking, distribution, scenario의 6 output archetype을 public browser, local Python, local server 환경별로 센서스하고 unit, coverage, missingPolicy를 보존한다. unavailable engine을 client가 임의 실행하거나 missing을 0으로 바꾸면 기각한다. U0 품질 게이트를 통과하기 전 UI나 map artifact를 변경하지 않는다.
+`tests/_attempts/dartlabUniverse/snapshot/`에서 U0-W01 change replay probe를 구현한다. revision을 삭제하지 않는 assertion history와 knownAt A, B의 created, corrected, retracted, newlyKnown, stale diff를 synthetic fixture로 먼저 검증한다. 그다음 exact source와 availableAt을 가진 DART 30사 fixture 가용성을 센서스하고 부족하면 live replay를 승인하지 않는다. look-ahead 1건 또는 before, after evidence 결속 실패를 숨기면 기각한다.
