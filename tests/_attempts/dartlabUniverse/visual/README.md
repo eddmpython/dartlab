@@ -1,6 +1,6 @@
 # Visual attempts
 
-> 상태: U0-V01 및 V04 grammar, U0-V02 layout, U0-V03 density, U0-V05 accessibility contract 완료, reviewed comprehension과 외부 reader 수동 확인 차단
+> 상태: U0-V01 및 V04 grammar, U0-V02 layout, U0-V03 density, U0-V05 accessibility, U0-V06 renderer contract 완료, reviewed comprehension과 외부 reader 수동 확인 차단
 > 책임: semantic LOD, 상태 문법, layout 결정론, renderer 성능, 접근성, 3D uplift를 반증한다.
 
 ## 가설
@@ -14,7 +14,7 @@
 3. U0-V03: 250, 500, 1,000 node density와 omitted receipt. Contract 완료
 4. U0-V04: validAt와 knownAt 이중 시간 comprehension. Grammar contract 완료, participant review 대기
 5. U0-V05: keyboard, screen reader, reduced motion, high contrast, 200% zoom, mobile low GPU. Contract 완료, 외부 reader 수동 확인 대기
-6. U0-V06: SVG, current Cosmos, DOM, 후보 renderer bakeoff
+6. U0-V06: SVG, current Cosmos, DOM, Canvas 2D renderer bakeoff. Contract 완료, 새 외부 dependency 기각
 7. U5-X01: 2D 대비 2.5D 또는 3D uplift
 
 ## U0-V01 실행
@@ -239,6 +239,46 @@ python -m http.server 8767 --bind 127.0.0.1 --directory tests/_attempts/dartlabU
 
 판정은 접근성 동등 경로 계약 `promote`, production admission `revise`다. Spatial DOM과 relation table이 여섯 핵심 command를 같은 순서로 제공하고 keyboard로 각각 6/6을 완료했다. In-app accessibility tree에서 list, table caption, row header, independent time input, polite status를 확인했다. Reduced motion은 0s, high contrast는 double border와 underline, 200% zoom은 horizontal overflow 없음, 390x844 low GPU에서는 spatial surface 없이 table task 6/6을 완료했다. 다만 실제 NVDA, JAWS, VoiceOver 같은 named screen reader 수동 세션은 실행하지 않았으므로 public UI production 이관 전 별도 manual gate로 남긴다.
 
+## U0-V06 실행
+
+```powershell
+node --check tests/_attempts/dartlabUniverse/visual/rendererBakeoffProbe.mjs
+node --check tests/_attempts/dartlabUniverse/visual/rendererBakeoffBrowser.mjs
+node --test tests/_attempts/dartlabUniverse/visual/testRendererBakeoffProbe.mjs
+node tests/_attempts/dartlabUniverse/visual/rendererBakeoffProbe.mjs
+npm install --prefix tests/_attempts/dartlabUniverse/visual/.renderer-bakeoff --no-package-lock --no-save --ignore-scripts @cosmograph/cosmos@1.6.1 esbuild@0.25.6
+python -m http.server 8768 --bind 127.0.0.1 --directory tests/_attempts/dartlabUniverse/visual
+```
+
+Browser audit은 desktop 1280x720에서 500 node 및 1,000 edge, mobile 390x844에서 250 node 및 500 edge를 SVG, locked current Cosmos, DOM relation table, built-in Canvas 2D로 각각 3회 측정한다. Frame은 72개 selection frame의 trial별 P95 중 최악값, mount는 trial P95, heap은 task loop 뒤 `usedJSHeapSize` 최댓값이다. Bundle은 esbuild 0.25.6 minify와 gzip level 9로 재현한다. `.renderer-bakeoff` dependency와 bundle, browser session, local server는 측정 뒤 제거한다.
+
+## U0-V06 결과
+
+| Renderer | Desktop mount P95 | Desktop frame P95 | Desktop heap | Mobile mount P95 | Mobile frame P95 | Mobile heap | Task desktop/mobile |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| SVG reference | 5.5ms | 140.845fps | 9,759,782B | 5.0ms | 140.845fps | 7,231,276B | 6/6, 6/6 |
+| Current Cosmos 1.6.1 | 80.7ms | 140.845fps | 14,703,331B | 145.4ms | 140.845fps | 11,389,243B | 6/6, 6/6 |
+| DOM relation table | 12.3ms | 138.889fps | 7,926,751B | 9.8ms | 138.889fps | 6,048,807B | 6/6, 6/6 |
+| Canvas 2D candidate | 3.9ms | 140.845fps | 10,645,237B | 1.9ms | 135.135fps | 10,840,050B | 6/6, 6/6 |
+
+| Bundle 및 결정 | 실측 |
+|---|---:|
+| Built-in portfolio raw / gzip | 17,438B / 5,770B |
+| Cosmos incremental raw / gzip | 311,453B / 91,863B |
+| Cosmos portfolio raw / gzip | 328,891B / 97,633B |
+| Canvas 2D incremental external dependency | 0B |
+| Desktop task 및 performance ready | 4/4, 4/4 |
+| Mobile task 및 performance ready | 4/4, 4/4 |
+| Current Cosmos license | CC-BY-NC-4.0 |
+| Current Cosmos Universe production license ready | false |
+| New external dependency required | false |
+| Canvas 2D candidate promoted | true |
+| Machine regression | 7/7 PASS |
+| Renderer contract ready | true |
+| Production ready | false |
+
+판정은 renderer contract `promote`, production admission `revise`다. 네 renderer가 bounded fixture와 핵심 task를 전부 보존하고 desktop 45fps 및 512MB, mobile 30fps 및 250MB 예산을 통과했다. Canvas 2D는 Cosmos보다 desktop과 mobile의 최종 heap이 낮고 외부 dependency가 0이며 built-in 포트폴리오 bundle은 Cosmos 포함 포트폴리오의 약 5.3%다. 따라서 Universe L2 및 L3 bounded graph는 SVG, built-in Canvas 2D, DOM table 포트폴리오를 사용하고 새 renderer dependency는 추가하지 않는다. Current Cosmos는 비교 기준으로만 남기며 lockfile의 `CC-BY-NC-4.0` license 때문에 Universe production admission은 false다. 기존 map renderer는 이 attempt에서 변경하지 않는다.
+
 ## 합격
 
 - 상태 판독 90% 이상
@@ -257,6 +297,6 @@ python -m http.server 8767 --bind 127.0.0.1 --directory tests/_attempts/dartlabU
 
 ## 다음
 
-U0-V06에서 SVG, current Cosmos, DOM reference와 후보 adapter의 task, frame, heap, bundle을 같은 fixture로 비교한다. U0-V01과 U0-V04 participant review 및 U0-V05 named screen reader 수동 확인 전 production 이관은 불가하다.
+U0-G01에서 reviewed positive 300개와 hard negative 300개 release gold를 구성하고 precision 98% 및 false accept 1% gate를 실행한다. U0-V01과 U0-V04 participant review 및 U0-V05 named screen reader 수동 확인 전 production 이관은 불가하다.
 
-Production dependency는 U0-V06 결론 전에 추가하지 않는다.
+Universe production renderer에는 새 외부 dependency를 추가하지 않는다.

@@ -208,7 +208,7 @@ DART와 EDGAR의 동형 panel 및 표준 finance로 동일 질문을 비교한�
 - `ui/packages/surfaces/src/universe/components/TimeLens.svelte`: bitemporal controls
 - `ui/packages/surfaces/src/universe/components/LensTray.svelte`: existing capability lens selection
 - `ui/packages/surfaces/src/universe/components/RelationTable.svelte`: graph-equivalent accessible view
-- `ui/packages/surfaces/src/universe/renderers/cosmosRenderer.ts`: existing cosmos adapter
+- `ui/packages/surfaces/src/universe/renderers/canvas2dRenderer.ts`: U0-V06에서 승격한 dependency-free bounded graph adapter
 - `ui/packages/surfaces/src/map/components/EcosystemMap.svelte`: UniverseRenderer adapter
 - `ui/packages/surfaces/src/map/components/IndustryAtlas.svelte`: scene input adapter
 - `ui/packages/surfaces/src/universe/index.ts`: exports

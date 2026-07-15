@@ -145,7 +145,7 @@ UniverseRenderer
   destroy()
 ```
 
-기본 포트폴리오는 산업 atlas와 evidence fan의 SVG, bounded company ego의 current `@cosmograph/cosmos` adapter, exact evidence의 DOM table이다. 현재 `EcosystemMap` 화면 전체를 복제하지 않는다. 선택적 2.5D와 3D는 동일 interface를 구현하고 2D 대비 task uplift를 증명해야 하는 lazy adapter다.
+기본 포트폴리오는 산업 atlas와 evidence fan의 SVG, bounded company ego의 built-in Canvas 2D adapter, exact evidence의 DOM table이다. U0-V06에서 current `@cosmograph/cosmos` 1.6.1을 비교했지만 bundle과 license admission 근거가 없어 Universe production 후보에서 제외했다. 기존 `EcosystemMap` renderer는 이 결정으로 변경하지 않는다. 선택적 2.5D와 3D는 동일 interface를 구현하고 2D 대비 task uplift를 증명해야 하는 lazy adapter다.
 
 renderer가 ontology type을 소유하거나 fetch하지 않는다. package 교체는 adapter 하나로 제한한다. 모든 interactive mark는 keyboard focus ID를 가진다. dependency version, license, bundle size, browser support를 분기마다 점검한다.
 

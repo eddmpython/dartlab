@@ -38,6 +38,7 @@
 - [x] U0-V03 desktop 및 mobile density budget과 exact omission receipt contract
 - [x] U0-V04 validAt 및 knownAt 독립 grammar와 12-task comprehension scoring contract
 - [x] U0-V05 spatial 및 relation table 접근성 동등 경로와 6-profile browser contract
+- [x] U0-V06 desktop 및 mobile 4-renderer bakeoff와 dependency-free Canvas 2D contract
 - [ ] U0 workflow, visual, information yield attempts
 - [ ] U1~U2 implementation
 - [ ] U3 artifact 변경 승인 여부
@@ -64,7 +65,7 @@
 | 2026-07-15 | 전량 3D 점구름 기각 | 정보 수율, 접근성, evidence 판독, runtime ROI가 없음 |
 | 2026-07-15 | SourceSnapshotSet 도입 | 단일 map buildId는 search, panel, finance, capability, recipe exact replay를 보장하지 못함 |
 | 2026-07-15 | query knownAt을 assertion identity에서 제거 | 미래 효력 공시를 허용하고 같은 assertion이 query cutoff마다 다른 ID가 되는 오류 방지 |
-| 2026-07-15 | 시각은 의미 좌표와 L0~L5 representation 교체 | current map의 무작위 force와 화면 전체 복제 대신 SVG, bounded Cosmos, DOM reference surface 분리 |
+| 2026-07-15 | 시각은 의미 좌표와 L0~L5 representation 교체 | current map의 무작위 force와 화면 전체 복제 대신 SVG, bounded raster adapter, DOM reference surface 분리 |
 | 2026-07-15 | U0-T02 factual admission 실행 | live 20,560 edge에서 document ID, section, exact locator, direction, sourcePublishedAt, availableAt, validFrom, policy receipt, observed status와 admitted 모두 0 |
 | 2026-07-15 | U0-S01 SourceSnapshotSet 실행 | source 10개 중 HF 8개와 recipe Git blob 1개는 immutable, live capability catalog 1개는 manifest 부재로 unreplayable. 같은 set hash 2/2 일치, legacy buildId exact replay 차단 |
 | 2026-07-15 | U0-P02 RedistributionReceipt 실행 | live reviewed receipt 0/10으로 publicReady false. synthetic 12건에서 unknown, localOnly, blocked, expired, prohibited, metadataOnly 확대와 금지 upstream false accept 0 |
@@ -80,6 +81,7 @@
 | 2026-07-16 | U0-V03 density and omission 실행 | 250, 500, 1,000 node의 desktop 및 mobile 6 case에서 mark budget, omission receipt, reverse hash 6/6. 1,000 node는 desktop 500, mobile 250으로 축소하고 생략 500/750을 aggregate receipt로 보존. 실제 DOM collision 0%, density contract promote |
 | 2026-07-16 | U0-V04 bitemporal comprehension 실행 | 12 revision task에서 valid 및 known answer 조합 4/4, separate control과 aria 12/12, combined slider 0, machine test 9/9. 실제 participant 0/12와 task response 0/144라 validAt, knownAt, combined 90%는 미측정, production Time Lens 차단 |
 | 2026-07-16 | U0-V05 accessibility equivalence 실행 | Spatial 및 table command parity 6/6, synthetic profile task 36/36, browser keyboard 각 6/6, semantic summary 12/12, reduced motion 0s, high contrast 6/6, 200% zoom overflow 0, mobile low GPU table 6/6. 실제 named screen reader 수동 session 전 production admission 차단 |
+| 2026-07-16 | U0-V06 renderer bakeoff 실행 | SVG, Cosmos, DOM, Canvas 2D를 desktop 500/1,000 및 mobile 250/500에서 각 3회 측정. Task와 performance ready 각 4/4, built-in raw 17,438B 대 Cosmos 포함 328,891B, Canvas heap 개선과 external dependency 0으로 Canvas 2D promote. Cosmos Universe license admission false, 기존 map 유지 |
 
 ## 핵심 실측 스냅샷
 
@@ -245,7 +247,7 @@ dart dataAsOf            null
 
 - [HF dataset card](https://huggingface.co/datasets/eddmpython/dartlab-data): 276GB, CC BY 4.0, KR 약 2,700사와 US 약 1,000사, Parquet 직접 접근
 - [hyparquet](https://github.com/hyparam/hyparquet): browser HTTP range, row 및 column projection
-- [Cosmograph library docs](https://cosmograph.app/docs-lib/): Parquet와 browser graph rendering 가능. 본 계획은 current cosmos renderer를 adapter 뒤에 두며 full product 종속을 전제하지 않음
+- [Cosmograph library docs](https://cosmograph.app/docs-lib/): U0-V06 current renderer 비교 기준. Locked 1.6.1의 bundle과 `CC-BY-NC-4.0` admission 때문에 Universe production portfolio에는 넣지 않음
 
 ## 구현 전 blocker
 
@@ -261,12 +263,13 @@ dart dataAsOf            null
 10. U0-P01 bounded projection은 live 3-scene에서 통과했지만 fact edge는 0이다. U0-V01 및 V04 comprehension, U0-V05 named screen reader 수동 확인이 완료되기 전 public UI production 이관은 금지한다.
 11. U0-V01 grammar machine contract는 통과했지만 reviewed participant는 0/12, reviewed response는 0/360이고 comprehension accuracy는 미측정이다. 실제 review 전 시각 문법 합격을 주장하지 않는다.
 12. U0-V02 layout contract는 통과했지만 current live node의 valid time은 0/94다. Unknown time lane을 보존하고 U0-V04 전 실제 시간 순서를 주장하지 않는다.
-13. U0-V03 density contract와 U0-V05 accessibility equivalence contract는 통과했지만 FPS, heap, hit-test와 named screen reader 수동 session은 미측정이다. U0-V06과 수동 확인 전 renderer production 입장을 열지 않는다.
+13. U0-V03 density, U0-V05 accessibility equivalence, U0-V06 renderer contract는 통과했다. FPS와 heap 및 task는 desktop 및 mobile에서 측정했지만 named screen reader 수동 session은 여전히 미측정이다. 수동 확인 전 renderer production 입장을 열지 않는다.
 14. U0-V04 time grammar machine contract는 통과했지만 reviewed participant는 0/12, task response는 0/144이고 validAt, knownAt, combined accuracy는 미측정이다. 실제 review 전 Time Lens 합격을 주장하지 않는다.
 15. U0-V05는 browser accessibility tree와 keyboard 동등성을 통과했지만 실제 NVDA, JAWS, VoiceOver 같은 named screen reader 수동 session은 실행하지 않았다. Production accessibility 합격은 그 전까지 주장하지 않는다.
-16. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
-17. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. U1 production 착수 전에 frontend host가 정상 상태인지 재검해야 한다.
+16. U0-V06에서 current Cosmos 1.6.1의 locked license가 `CC-BY-NC-4.0`임을 확인했다. Universe는 Cosmos production admission을 열지 않고 dependency-free Canvas 2D를 사용하며 기존 map dependency 변경은 별도 범위다.
+17. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
+18. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. U1 production 착수 전에 frontend host가 정상 상태인지 재검해야 한다.
 
 ## 다음 단일 행동
 
-`tests/_attempts/dartlabUniverse/visual/`에서 U0-V06 renderer bakeoff를 구현한다. SVG, current Cosmos, DOM reference와 후보 adapter를 같은 bounded fixture에서 비교하고 task completion, frame, heap, bundle을 측정한다. 새 dependency가 명확한 개선을 만들지 못하면 기각한다.
+`tests/_attempts/dartlabUniverse/fixtures/`에서 U0-G01 reviewed positive 300개와 hard negative 300개 release gold를 구성한다. Exact evidence와 reviewer 및 reviewedAt이 없는 candidate는 gold로 입장시키지 않고 precision 98% 및 false accept 1% gate를 통과하기 전 U1을 금지한다.

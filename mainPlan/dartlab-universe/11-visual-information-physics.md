@@ -126,7 +126,7 @@ renderer 하나가 모든 task를 소유하지 않는다.
 | 표면 | 기본 후보 | 사용 범위 |
 |---|---|---|
 | L0 atlas와 flow | SVG | territory, bundled path, label, keyboard focus |
-| L2 및 L3 bounded graph | current `@cosmograph/cosmos` adapter | desktop 500 node, mobile 250 node |
+| L2 및 L3 bounded graph | built-in Canvas 2D adapter와 DOM focus mirror | desktop 500 node, mobile 250 node |
 | L4 evidence fan | SVG 또는 Canvas with DOM focus mirror | assertion과 source path |
 | L5 원문과 표 | DOM table 및 chart | exact 읽기와 export |
 | 밀도 집계 후보 | deck.gl HexagonLayer attempt | 회사 분포 집계만 |
@@ -209,6 +209,8 @@ UniverseRenderer
 2026-07-16 U0-V04 실행 결과: 12개 revision task에서 validAt과 knownAt answer 조합 4/4, separate control과 aria 12/12, combined slider 0, machine regression 9/9을 확인했다. 미래 효력 선공시와 과거 사건 지연 공시를 포함하고 query cutoff가 assertion identity를 바꾸지 않는다. Reviewed participant는 0/12, task response는 0/144이고 validAt, knownAt, combined accuracy는 미측정이다. Time grammar contract는 완료했지만 실제 세 accuracy가 각각 90%를 넘기 전 production Time Lens admission을 차단한다.
 
 2026-07-16 U0-V05 실행 결과: 핵심 action 6개를 spatial DOM과 relation table 두 surface에 동등하게 배치해 command parity 6/6, unique focus ID와 native keyboard 및 screen reader summary coverage 12/12, synthetic profile task 36/36, machine regression 11/11을 확인했다. 실제 browser keyboard는 spatial 및 table 각각 6/6, reduced motion 0s, high contrast non-color treatment 6/6, 200% zoom horizontal overflow 없음, 390x844 low GPU table fallback 6/6이며 spatial-only action은 0이다. 접근성 동등 경로 계약은 promote하지만 실제 named screen reader 수동 session 전 production admission은 차단한다.
+
+2026-07-16 U0-V06 실행 결과: SVG, current Cosmos 1.6.1, DOM table, Canvas 2D를 desktop 500 node 및 1,000 edge와 mobile 250 node 및 500 edge에서 각각 3회 측정했다. 네 renderer 모두 양쪽 task 6/6, desktop 최저 138.889fps, mobile 최저 135.135fps로 예산을 통과했다. Built-in 포트폴리오는 raw 17,438B 및 gzip 5,770B이고 Cosmos 포함 포트폴리오는 328,891B 및 97,633B다. Canvas 2D의 외부 dependency는 0이고 desktop 및 mobile heap 모두 Cosmos보다 낮다. Canvas 2D contract를 promote하고 새 external dependency를 기각한다. Current Cosmos는 lockfile license가 `CC-BY-NC-4.0`이라 Universe production admission을 열지 않으며 기존 map renderer는 변경하지 않는다.
 
 ## 12. 유지보수 규칙
 

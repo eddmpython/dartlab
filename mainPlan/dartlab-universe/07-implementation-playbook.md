@@ -495,7 +495,7 @@ U0 졸업 산출:
 변경:
 
 - `ui/packages/surfaces/src/universe/renderers/UniverseRenderer.ts`
-- `ui/packages/surfaces/src/universe/renderers/cosmosRenderer.ts`
+- `ui/packages/surfaces/src/universe/renderers/canvas2dRenderer.ts`
 - `ui/packages/surfaces/src/universe/components/RelationTable.svelte`
 
 종료 조건:

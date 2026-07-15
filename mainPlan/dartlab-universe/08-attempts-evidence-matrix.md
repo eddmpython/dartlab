@@ -93,7 +93,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | U0-V03 | 밀도에서 생략이 정직한가 | 250, 500, 1,000 node, desktop 및 mobile | collision 2% 이하, receipt 100% | lower LOD | 완료, density promote |
 | U0-V04 | 이중 시간을 이해하는가 | revision task 12개, participant 12명 | validAt, knownAt, combined 판독 90% 이상 | Time Lens 재설계 | 계약 완료, participant 0/12 차단 |
 | U0-V05 | 접근성 표면이 동등한가 | keyboard, reader, low GPU | 핵심 task 100% | renderer 기각 | 계약 완료, named reader 수동 gate |
-| U0-V06 | 새 renderer가 필요한가 | SVG, Cosmos, DOM, 후보 | task, frame, heap, bundle 개선 | 새 dependency 기각 | 대기 |
+| U0-V06 | 새 renderer가 필요한가 | SVG, Cosmos, DOM, 후보 | task, frame, heap, bundle 개선 | 새 dependency 기각 | 완료, Canvas 2D promote |
 | U0-G01 | release gold를 통과하는가 | positive 300, negative 300 | precision 98%, false accept 1% 이하 | U1 금지 | 대기 |
 | U1-Y01 | workflow가 실제로 더 유용한가 | 5 task, baseline과 Universe | information yield 개선 | revise 또는 reject | 대기 |
 | U2-R01 | public runtime 예산 안에서 evidence가 열리는가 | reference browsers | cold P95 5초, first cold 4MB provisional, incremental 2MB | runtime 최적화 후 U3 토론 | 대기 |
@@ -598,6 +598,49 @@ productionReady                           false
 ```
 
 판정: 여섯 핵심 action은 spatial DOM과 relation table에서 같은 command, native keyboard control, screen reader summary와 polite status를 제공했다. 실제 browser keyboard task는 두 surface에서 각각 6/6, reduced motion 0s, high contrast non-color treatment 6/6, 200% zoom horizontal overflow 없음, 390x844 low GPU table fallback 6/6이며 spatial-only action은 0이다. U0-V05 접근성 동등 경로 계약은 `promote`한다. 다만 browser accessibility tree 검증은 실제 named screen reader 수동 session을 대체하지 않으므로 production admission은 `revise`로 차단한다.
+
+## 4.16 U0-V06 결과
+
+명령:
+
+```powershell
+node --check tests/_attempts/dartlabUniverse/visual/rendererBakeoffProbe.mjs
+node --check tests/_attempts/dartlabUniverse/visual/rendererBakeoffBrowser.mjs
+node --test tests/_attempts/dartlabUniverse/visual/testRendererBakeoffProbe.mjs
+node tests/_attempts/dartlabUniverse/visual/rendererBakeoffProbe.mjs
+```
+
+결과:
+
+```text
+desktopFixture                    500 node / 1,000 edge
+mobileFixture                       250 node / 500 edge
+rendererCount                                         4
+trialCountPerRenderer                                 3
+desktopTaskReady                                    4/4
+mobileTaskReady                                     4/4
+desktopPerformanceReady                             4/4
+mobilePerformanceReady                              4/4
+desktopMinimumFrameP95                       138.889fps
+mobileMinimumFrameP95                        135.135fps
+builtinPortfolioRawGzip                  17,438B / 5,770B
+cosmosIncrementalRawGzip               311,453B / 91,863B
+cosmosPortfolioRawGzip                 328,891B / 97,633B
+canvas2dIncrementalDependencyBytes                       0
+canvasDesktopHeap                              10,645,237B
+cosmosDesktopHeap                              14,703,331B
+canvasMobileHeap                               10,840,050B
+cosmosMobileHeap                               11,389,243B
+currentCosmosLicense                           CC-BY-NC-4.0
+currentCosmosLicenseReady                              false
+candidatePromoted                                      true
+newExternalDependencyRequired                          false
+machineRegression                                     7/7 PASS
+rendererContractReady                                  true
+productionReady                                       false
+```
+
+판정: SVG, current Cosmos 1.6.1, DOM relation table, Canvas 2D가 desktop과 mobile bounded fixture 및 핵심 task를 100% 보존했고 frame과 heap 예산도 8/8 통과했다. Canvas 2D는 두 환경에서 Cosmos보다 최종 heap이 낮고 외부 dependency가 0이다. Built-in 포트폴리오 bundle은 Cosmos 포함 포트폴리오의 약 5.3%다. U0-V06은 dependency-free Canvas 2D를 `promote`하고 새 external renderer dependency를 기각한다. Current Cosmos는 locked license가 `CC-BY-NC-4.0`이므로 Universe production admission은 false다. 기존 map renderer는 attempt 범위 밖이라 변경하지 않는다.
 
 ## 5. existing attempts 재사용 지도
 
