@@ -39,6 +39,7 @@
 - [x] U0-V04 validAt 및 knownAt 독립 grammar와 12-task comprehension scoring contract
 - [x] U0-V05 spatial 및 relation table 접근성 동등 경로와 6-profile browser contract
 - [x] U0-V06 desktop 및 mobile 4-renderer bakeoff와 dependency-free Canvas 2D contract
+- [x] U0-G01 release gold sampling, review admission, precision과 false acceptance contract
 - [ ] U0 workflow, visual, information yield attempts
 - [ ] U1~U2 implementation
 - [ ] U3 artifact 변경 승인 여부
@@ -82,6 +83,7 @@
 | 2026-07-16 | U0-V04 bitemporal comprehension 실행 | 12 revision task에서 valid 및 known answer 조합 4/4, separate control과 aria 12/12, combined slider 0, machine test 9/9. 실제 participant 0/12와 task response 0/144라 validAt, knownAt, combined 90%는 미측정, production Time Lens 차단 |
 | 2026-07-16 | U0-V05 accessibility equivalence 실행 | Spatial 및 table command parity 6/6, synthetic profile task 36/36, browser keyboard 각 6/6, semantic summary 12/12, reduced motion 0s, high contrast 6/6, 200% zoom overflow 0, mobile low GPU table 6/6. 실제 named screen reader 수동 session 전 production admission 차단 |
 | 2026-07-16 | U0-V06 renderer bakeoff 실행 | SVG, Cosmos, DOM, Canvas 2D를 desktop 500/1,000 및 mobile 250/500에서 각 3회 측정. Task와 performance ready 각 4/4, built-in raw 17,438B 대 Cosmos 포함 328,891B, Canvas heap 개선과 external dependency 0으로 Canvas 2D promote. Cosmos Universe license admission false, 기존 map 유지 |
+| 2026-07-16 | U0-G01 release gold admission 실행 | Positive 300 및 hard negative 300 quota, 12개 negative type, human review receipt와 exact evidence, 600 prediction, precision 98% 및 false acceptance 1% gate 구현. Test 19/19, docstring 위반 0. Reviewed gold 0/600과 prediction 0/600이라 U0 graduation 및 U1 차단 |
 
 ## 핵심 실측 스냅샷
 
@@ -251,7 +253,7 @@ dart dataAsOf            null
 
 ## 구현 전 blocker
 
-1. U0 gold positive 및 hard negative set이 없다.
+1. U0-G01 admission contract와 300 대 300 sampling plan은 있지만 reviewed positive 0/300, hard negative 0/300, prediction 0/600이다. 기존 search query gold 106건은 Universe relation 필드가 0/106이라 전용할 수 없다.
 2. exact evidence resolver의 cold P95와 cold initialization 포함 transfer가 아직 측정되지 않았다.
 3. source version 10개는 SourceSnapshotSet으로 묶였지만 capability catalog의 immutable manifest가 없고 panel dataAsOf가 null이다. 따라서 current public exact replay는 아직 금지한다.
 4. RedistributionReceipt와 LensAvailability admission contract는 있지만 reviewed receipt는 0/10, Skill OS publicBrowser 선언은 0/286, current public lens ready는 0이다. map field의 upstream policy lineage도 결속되지 않았다.
@@ -272,4 +274,4 @@ dart dataAsOf            null
 
 ## 다음 단일 행동
 
-`tests/_attempts/dartlabUniverse/fixtures/`에서 U0-G01 reviewed positive 300개와 hard negative 300개 release gold를 구성한다. Exact evidence와 reviewer 및 reviewedAt이 없는 candidate는 gold로 입장시키지 않고 precision 98% 및 false accept 1% gate를 통과하기 전 U1을 금지한다.
+운영자가 `tests/_attempts/dartlabUniverse/fixtures/README.md` 계약대로 exact document를 열어 positive 및 hard negative review batch를 작성한다. 현재 live source에 exact span, table row/header, time, row-level source version, predicate와 direction이 0이므로 source owner가 그 필드를 먼저 공급해야 한다. Reviewed 300 대 300과 prediction 600을 채워 precision 98% 및 false acceptance 1%를 통과하기 전 U0 graduation과 U1은 금지한다.

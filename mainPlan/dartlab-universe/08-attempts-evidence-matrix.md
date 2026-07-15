@@ -94,7 +94,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | U0-V04 | 이중 시간을 이해하는가 | revision task 12개, participant 12명 | validAt, knownAt, combined 판독 90% 이상 | Time Lens 재설계 | 계약 완료, participant 0/12 차단 |
 | U0-V05 | 접근성 표면이 동등한가 | keyboard, reader, low GPU | 핵심 task 100% | renderer 기각 | 계약 완료, named reader 수동 gate |
 | U0-V06 | 새 renderer가 필요한가 | SVG, Cosmos, DOM, 후보 | task, frame, heap, bundle 개선 | 새 dependency 기각 | 완료, Canvas 2D promote |
-| U0-G01 | release gold를 통과하는가 | positive 300, negative 300 | precision 98%, false accept 1% 이하 | U1 금지 | 대기 |
+| U0-G01 | release gold를 통과하는가 | positive 300, negative 300 | precision 98%, false accept 1% 이하 | U1 금지 | 계약 완료, reviewed 0/600 차단 |
 | U1-Y01 | workflow가 실제로 더 유용한가 | 5 task, baseline과 Universe | information yield 개선 | revise 또는 reject | 대기 |
 | U2-R01 | public runtime 예산 안에서 evidence가 열리는가 | reference browsers | cold P95 5초, first cold 4MB provisional, incremental 2MB | runtime 최적화 후 U3 토론 | 대기 |
 | U2-L01 | 엔진 output을 generic lens로 보이는가 | 6 lens fixtures | axis별 adapter 0, 결손 보존 | Ref contract 보강 | 대기 |
@@ -642,6 +642,40 @@ productionReady                                       false
 
 판정: SVG, current Cosmos 1.6.1, DOM relation table, Canvas 2D가 desktop과 mobile bounded fixture 및 핵심 task를 100% 보존했고 frame과 heap 예산도 8/8 통과했다. Canvas 2D는 두 환경에서 Cosmos보다 최종 heap이 낮고 외부 dependency가 0이다. Built-in 포트폴리오 bundle은 Cosmos 포함 포트폴리오의 약 5.3%다. U0-V06은 dependency-free Canvas 2D를 `promote`하고 새 external renderer dependency를 기각한다. Current Cosmos는 locked license가 `CC-BY-NC-4.0`이므로 Universe production admission은 false다. 기존 map renderer는 attempt 범위 밖이라 변경하지 않는다.
 
+## 4.17 U0-G01 결과
+
+명령:
+
+```powershell
+uv run python -X utf8 tests/_attempts/dartlabUniverse/fixtures/releaseGoldProbe.py
+$env:DARTLAB_TEST_LOCKED='1'; uv run python -X utf8 -m pytest tests/_attempts/dartlabUniverse/fixtures/testReleaseGoldProbe.py -q --tb=short --no-cov
+uv run python -X utf8 tests/audit/docstring4Section.py tests/_attempts/dartlabUniverse/fixtures --strict
+uv run python -X utf8 tests/audit/docstring9Section.py tests/_attempts/dartlabUniverse/fixtures --strict
+```
+
+결과:
+
+```text
+positiveTargetCount                         300
+hardNegativeTargetCount                     300
+reviewedPositiveCount                     0/300
+reviewedHardNegativeCount                 0/300
+predictionCount                           0/600
+quotaDimensionValueCount                     30
+positivePrecision                    unmeasured
+falseAcceptanceRate                  unmeasured
+sourceRefCoverage                    unmeasured
+existingSearchReviewedGold                   106
+existingSearchUniverseRelationFields       0/106
+machineRegression                          19/19 PASS
+docstring4SectionViolations                     0
+docstring9SectionViolations                     0
+contractReady                                true
+liveReady                                   false
+```
+
+판정: Positive는 exact relation identity, document, section, sourceRef, immutable hash, text 또는 table locator, event와 validity 및 source time, A 또는 B evidence class, document-opened review receipt를 모두 요구한다. Hard negative는 OCI, 동일 회사명, 계열사, table header drift, 정정, ticker 변경을 포함한 12개 failure type과 review reason을 각 25건으로 고정했다. Prediction 600개가 모두 있어야 positive exact sourceRef precision과 negative false acceptance를 계산한다. Contract test는 합격했지만 실제 reviewed gold와 prediction이 0이므로 U0-G01은 `revise`다. 기존 search query gold 106건은 Universe 필수 relation 및 time field가 0/106이므로 재사용하지 않는다. Human review와 live exact source field 전 U0 graduation 및 U1을 차단한다.
+
 ## 5. existing attempts 재사용 지도
 
 | 기존 category | 이미 증명한 것 | Universe 사용 | 중복 금지 |
@@ -683,12 +717,14 @@ Universe는 위 attempts를 import해 새 의존성을 만드는 것이 아니�
 
 - 짧은 영문 회사명 일반 단어 충돌
 - 동일 회사명 다른 법인
+- 계열사와 독립 법인 identity 충돌
 - 회사가 자기 자신을 언급한 self-loop
 - 공시 주체와 상대 회사 방향 역전
 - 산업 peer를 거래관계로 오인
 - 정정 전후 문장 충돌
 - 비상장 상대와 상장사 alias 충돌
 - 보고서 section title만 같고 본문 근거 없음
+- 표 header drift로 column 의미가 바뀐 row
 - ticker 변경과 과거 legal entity 혼동
 - cross-market fuzzy name 충돌
 

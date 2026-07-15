@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "releaseGoldSamplingPlan.v1",
+  "positiveTargetCount": 300,
+  "hardNegativeTargetCount": 300,
+  "positiveQuotas": {
+    "market": {"KR": 150, "US": 150},
+    "language": {"ko": 150, "en": 150},
+    "evidenceClass": {"A": 150, "B": 150},
+    "sourceKind": {"DART": 150, "SEC": 150},
+    "predicate": {
+      "suppliesTo": 50,
+      "sellsTo": 50,
+      "ownsStakeIn": 50,
+      "affiliatedWith": 50,
+      "classifiedIn": 50,
+      "filed": 50
+    }
+  },
+  "hardNegativeQuotas": {
+    "market": {"KR": 150, "US": 150},
+    "language": {"ko": 150, "en": 150},
+    "negativeType": {
+      "shortEnglishCommonWord": 25,
+      "sameNameDifferentEntity": 25,
+      "affiliateEntityCollision": 25,
+      "selfLoopMention": 25,
+      "reversedDirection": 25,
+      "industryPeerAsTradeRelation": 25,
+      "preCorrectionConflict": 25,
+      "privateListedAliasCollision": 25,
+      "sectionTitleOnly": 25,
+      "tableHeaderDrift": 25,
+      "historicalTickerCollision": 25,
+      "crossMarketFuzzyCollision": 25
+    }
+  }
+}

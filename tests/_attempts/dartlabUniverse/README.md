@@ -15,6 +15,7 @@
 | `snapshot/` | SourceSnapshotSet과 change replay |
 | `workflow/` | recipe, SceneBeat, falsifier, information yield |
 | `visual/` | 상태 판독, layout, density, 접근성, renderer bakeoff |
+| `fixtures/` | reviewed release gold admission, quota, precision, false acceptance |
 | `policy/` | RedistributionReceipt와 LensAvailability |
 | `identity/`, `evidence/`, `ontology/`, `projection/` | canonical ID, exact source, assertion, bounded scene |
 
@@ -54,6 +55,9 @@ node tests/_attempts/dartlabUniverse/visual/deterministicLayoutProbe.mjs --live
 tests/_attempts/dartlabUniverse/visual/browserLayoutAudit.ps1
 node tests/_attempts/dartlabUniverse/visual/densityOmissionProbe.mjs
 node tests/_attempts/dartlabUniverse/visual/bitemporalComprehensionProbe.mjs
+node tests/_attempts/dartlabUniverse/visual/accessibilityEquivalenceProbe.mjs
+node tests/_attempts/dartlabUniverse/visual/rendererBakeoffProbe.mjs
+uv run python -X utf8 tests/_attempts/dartlabUniverse/fixtures/releaseGoldProbe.py
 ```
 
 pytest는 repository test lock을 획득한 뒤 attempt test file 하나씩 실행한다.
@@ -79,6 +83,7 @@ pytest는 repository test lock을 획득한 뒤 attempt test file 하나씩 실�
 | U0-V04 bitemporal comprehension | validAt와 knownAt이 독립인 12 revision task | answer combination 4/4, separate control 및 aria 12/12, combined slider 0, test 9/9. participant 0/12, task response 0/144 | time grammar contract 완료. 실제 validAt, knownAt, combined 90% 전 Time Lens admission 차단 |
 | U0-V05 accessibility equivalence | 핵심 action 6개, spatial 및 relation table, accessibility profile 6개 | command parity 6/6, synthetic task 36/36, browser keyboard spatial 및 table 각 6/6, semantic summary 12/12, reduced motion 0s, high contrast 6/6, 200% zoom overflow 0, mobile low GPU table 6/6, test 11/11 | 접근성 동등 경로 계약 promote. 실제 named screen reader 수동 session 전 production admission 차단 |
 | U0-V06 renderer bakeoff | SVG, current Cosmos 1.6.1, DOM table, Canvas 2D와 desktop 500/1,000 및 mobile 250/500 fixture | 각 3회 task 6/6, desktop 최저 138.889fps, mobile 최저 135.135fps, heap budget 8/8. Built-in 17,438B raw 및 5,770B gzip, Cosmos 포함 328,891B 및 97,633B, test 7/7 | Canvas 2D contract promote, 새 external dependency 기각. Cosmos license admission false, 기존 map은 변경하지 않음 |
+| U0-G01 release gold admission | Positive 300 및 hard negative 300 sampling plan, optional review 및 prediction JSONL | quota 30개 고정, machine test 19/19, docstring audit 위반 0. reviewed positive 0/300, hard negative 0/300, prediction 0/600. 기존 search gold 106건의 Universe relation 필드 0/106 | admission 및 metric contract 완료. Human review와 exact source field 전 U0 graduation 및 U1 차단 |
 
 ## 금지
 
