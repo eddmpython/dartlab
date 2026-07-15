@@ -2664,7 +2664,24 @@ def _validateCoefficientReceipt(
         raise ScenarioCompositionError("coefficient admission receipt does not match binding")
 
 
-def _validateCoefficientBindings(case: OperatingScenarioCase) -> None:
+def validateScenarioCoefficientBindings(case: OperatingScenarioCase) -> None:
+    """Validate the complete admitted coefficient binding set for one scenario case.
+
+    Args:
+        case: Scenario case carrying factor contracts, measured exposures, bindings,
+            horizon, and the optional runtime admission verifier.
+
+    Returns:
+        None after every measured exposure and signed binding matches exactly.
+
+    Raises:
+        ScenarioCompositionError: If receipt coverage, factor meaning, timing,
+            horizon, exposure content, or runtime verification drifts.
+
+    Example:
+        ``validateScenarioCoefficientBindings(case)``
+    """
+
     bindings = tuple(case.coefficientBindings)
     bindingIds = [binding.admissionReceiptId for binding in bindings]
     if len(set(bindingIds)) != len(bindingIds):
@@ -2728,7 +2745,7 @@ def _validateCases(cases: tuple[OperatingScenarioCase, ...], strategies: tuple[S
         factorIds = {factor.variableId for factor in case.pathSet.factorSpecs}
         if factorIds & _OPERATING_ACTION_IDS:
             raise ScenarioCompositionError("intervention actions must be strategies, not driver path factors")
-        _validateCoefficientBindings(case)
+        validateScenarioCoefficientBindings(case)
         for path in case.pathSet.paths:
             if case.pathSet.audit.assumptionHash and (
                 path.validationStatus == "admitted"

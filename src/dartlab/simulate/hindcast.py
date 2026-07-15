@@ -27,7 +27,7 @@ from datetime import datetime as _dt
 from datetime import timedelta as _td
 from pathlib import Path
 from types import MappingProxyType
-from typing import Mapping
+from typing import TYPE_CHECKING, Mapping
 
 import numpy as np
 import polars as pl
@@ -42,8 +42,18 @@ from dartlab.simulate.vintage import canonicalPayloadHash
 from dartlab.simulate.world import ObjectiveSpec, ScenarioPath, StrategySpec, WorldModel, WorldState, simulateWorld
 from dartlab.synth.expectationSpec import pinballLoss
 
+if TYPE_CHECKING:
+    from dartlab.simulate.admissionRegistry import AdmissionVerifier
+    from dartlab.simulate.driverPaths import DriverPathSet
+    from dartlab.simulate.operatingBridge import OperatingShockBaseline, OperatingTransmissionExposure
+    from dartlab.simulate.operatingWorld import OperatingWorldInputs
+    from dartlab.simulate.scenarioComposition import ScenarioCoefficientBinding
+    from dartlab.simulate.stateCompiler import CompiledPointInTimeState
+    from dartlab.simulate.stateSupport import StatePrimitive
+
 H_STAR_RULES = "hstar-v1: env=|cov90-0.90|>0.10 첫 h, firm=t(IC)<2.0 첫 h. 곡선 통보고, 셀 선별 금지."
 WORLD_TOURNAMENT_EVALUATION_MODE = "conditionalOnRealizedPath"
+OPERATING_MODEL_TOURNAMENT_EVALUATION_MODE = "conditionalOnRealizedDriverPath"
 WORLD_TOURNAMENT_LOSS_RULE = "mean-normalized-squared-error-v1"
 WORLD_TOURNAMENT_WEIGHT_RULE = "softmax-negative-loss-v1"
 
@@ -341,6 +351,50 @@ class WorldModelReplayEpisode:
 
 
 @dataclass(frozen=True)
+class OperatingTransmissionCandidate:
+    """한 admitted factor transmission 계수 후보와 검증 경계를 묶는다."""
+
+    modelId: str
+    modelVersion: str
+    exposures: tuple[OperatingTransmissionExposure, ...]
+    coefficientBindings: tuple[ScenarioCoefficientBinding, ...]
+    admissionVerifier: AdmissionVerifier | None
+    refs: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "exposures", tuple(self.exposures))
+        object.__setattr__(self, "coefficientBindings", tuple(self.coefficientBindings))
+        object.__setattr__(self, "refs", tuple(self.refs))
+
+
+@dataclass(frozen=True)
+class OperatingModelReplayEpisode:
+    """한 PIT origin의 실현 driver 경로와 실제 operating outcome을 묶는다."""
+
+    episodeId: str
+    originAsOf: str
+    outcomeAvailableAt: str
+    regime: str
+    inputs: OperatingWorldInputs
+    realizedPathSet: DriverPathSet
+    baselines: tuple[OperatingShockBaseline, ...]
+    observedPolicy: StrategySpec
+    actualByStep: tuple[Mapping[str, float], ...]
+    compiledState: CompiledPointInTimeState | None = None
+    statePrimitives: tuple[StatePrimitive, ...] = ()
+    stateRef: str = ""
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "baselines", tuple(self.baselines))
+        object.__setattr__(
+            self,
+            "actualByStep",
+            tuple(_freezeTournamentMapping(step) for step in self.actualByStep),
+        )
+        object.__setattr__(self, "statePrimitives", tuple(self.statePrimitives))
+
+
+@dataclass(frozen=True)
 class WorldModelTournamentSpec:
     """채점 지표, 척도, baseline, 표본 문턱, 비교 가중 규칙을 선언한다."""
 
@@ -445,6 +499,55 @@ def _worldReplayEpisodePayload(episode: WorldModelReplayEpisode) -> dict:
     }
 
 
+def _operatingTransmissionCandidatePayload(candidate: OperatingTransmissionCandidate) -> dict:
+    return {
+        "modelId": candidate.modelId,
+        "modelVersion": candidate.modelVersion,
+        "exposures": candidate.exposures,
+        "coefficientBindings": candidate.coefficientBindings,
+        "refs": candidate.refs,
+    }
+
+
+def _operatingReplayEpisodePayload(episode: OperatingModelReplayEpisode) -> dict:
+    path = episode.realizedPathSet.paths[0]
+    compiledState = episode.compiledState
+    return {
+        "episodeId": episode.episodeId,
+        "originAsOf": episode.originAsOf,
+        "outcomeAvailableAt": episode.outcomeAvailableAt,
+        "regime": episode.regime,
+        "inputs": episode.inputs,
+        "realizedPathSet": {
+            "path": path,
+            "factorSpecs": episode.realizedPathSet.factorSpecs,
+            "audit": episode.realizedPathSet.audit,
+        },
+        "baselines": episode.baselines,
+        "observedPolicy": {
+            "strategyId": episode.observedPolicy.strategyId,
+            "actionsByStep": episode.observedPolicy.actionsByStep,
+            "refs": episode.observedPolicy.refs,
+            "policyVersion": episode.observedPolicy.policyVersion,
+            "policyProvenance": episode.observedPolicy.policyProvenance,
+        },
+        "actualByStep": episode.actualByStep,
+        "compiledState": (
+            {
+                "stateId": compiledState.stateId,
+                "manifestHash": compiledState.manifestHash,
+                "stateCompilationContractHash": compiledState.stateCompilationContractHash,
+                "stateReceiptId": compiledState.stateReceiptId,
+                "providerBatchReceiptIds": compiledState.providerBatchReceiptIds,
+            }
+            if compiledState is not None
+            else None
+        ),
+        "statePrimitives": episode.statePrimitives,
+        "stateRef": episode.stateRef,
+    }
+
+
 def _worldModelSharedContractPayload(model: WorldModel) -> dict:
     return {
         "variables": model.variables,
@@ -471,8 +574,8 @@ def _validateWorldModelTournamentSpec(spec: WorldModelTournamentSpec) -> None:
         raise WorldModelTournamentError("unsupported tournament scoring rule")
 
 
-def _validateWorldModelCandidates(
-    candidates: tuple[WorldModel, ...],
+def _validateTournamentCandidateIdentity(
+    candidates: tuple[WorldModel | OperatingTransmissionCandidate, ...],
     spec: WorldModelTournamentSpec,
 ) -> None:
     if len(candidates) < 2:
@@ -482,12 +585,167 @@ def _validateWorldModelCandidates(
         raise WorldModelTournamentError("candidate model ids must be unique")
     if spec.baselineModelId not in modelIds:
         raise WorldModelTournamentError("baseline model is not a tournament candidate")
+    if any(not model.modelId or not _tournamentCandidateVersion(model) for model in candidates):
+        raise WorldModelTournamentError("candidate model identity is incomplete")
+
+
+def _validateWorldModelCandidates(
+    candidates: tuple[WorldModel, ...],
+    spec: WorldModelTournamentSpec,
+) -> None:
+    _validateTournamentCandidateIdentity(candidates, spec)
     sharedContract = canonicalPayloadHash(_worldModelSharedContractPayload(candidates[0]))
     if any(canonicalPayloadHash(_worldModelSharedContractPayload(model)) != sharedContract for model in candidates[1:]):
         raise WorldModelTournamentError("shared variable contract, action contract, and step contract required")
     variableById = {variable.variableId: variable for variable in candidates[0].variables}
     if any(metric not in variableById or variableById[metric].role == "shock" for metric in spec.metrics):
         raise WorldModelTournamentError("tournament metric is not a model output")
+
+
+def _validateOperatingCandidate(candidate: OperatingTransmissionCandidate) -> None:
+    if candidate.admissionVerifier is None:
+        raise WorldModelTournamentError("operating transmission candidate needs an admission verifier")
+    if not candidate.refs or not candidate.exposures or not candidate.coefficientBindings:
+        raise WorldModelTournamentError("operating transmission candidate contract is incomplete")
+    if any(exposure.evidenceKind != "measuredAssociation" for exposure in candidate.exposures):
+        raise WorldModelTournamentError("operating model tournament accepts only measured coefficient exposures")
+
+
+def _validateOperatingReplayTiming(
+    episode: OperatingModelReplayEpisode,
+    evaluationKnowledge: str,
+) -> None:
+    origin = _tournamentDateText(episode.originAsOf, f"origin {episode.episodeId}")
+    outcome = _tournamentDateText(episode.outcomeAvailableAt, f"outcome {episode.episodeId}")
+    if outcome <= origin or outcome > evaluationKnowledge:
+        raise WorldModelTournamentError("operating replay outcome timing is invalid")
+    if not episode.regime:
+        raise WorldModelTournamentError("operating replay episode needs a regime label")
+    inputKnowledge = _tournamentDateText(episode.inputs.knowledgeAsOf, "operating input knowledge")
+    inputDecision = _tournamentDateText(episode.inputs.decisionAsOf, "operating input decision")
+    if inputKnowledge > origin or inputDecision != origin:
+        raise WorldModelTournamentError("operating replay initial state is not PIT at the origin")
+    path = episode.realizedPathSet.paths[0]
+    pathKnowledge = _tournamentDateText(path.knowledgeAsOf, "realized driver path knowledge")
+    auditKnowledge = _tournamentDateText(episode.realizedPathSet.audit.knowledgeAsOf, "driver path audit knowledge")
+    if pathKnowledge <= origin or pathKnowledge > outcome or auditKnowledge != pathKnowledge:
+        raise WorldModelTournamentError("realized driver path timing is not retrospective")
+
+
+def _validateOperatingRealizedPath(episode: OperatingModelReplayEpisode) -> ScenarioPath:
+    pathSet = episode.realizedPathSet
+    if len(pathSet.paths) != 1 or pathSet.audit.pathCount != 1:
+        raise WorldModelTournamentError("operating replay needs exactly one realized driver path")
+    path = pathSet.paths[0]
+    audit = pathSet.audit
+    if path.weightKind != "unweighted" or path.weight is not None:
+        raise WorldModelTournamentError("operating replay realized driver path must be unweighted")
+    if (
+        path.validationStatus != "retrospectiveOnly"
+        or path.historyStatus != "realizedOutcome"
+        or audit.validationStatus != "retrospectiveOnly"
+        or audit.historyStatus != "realizedOutcome"
+        or audit.observedHistoryStatus != "realizedOutcome"
+        or audit.assumptionHash
+        or audit.overlayHash
+    ):
+        raise WorldModelTournamentError("operating replay path set must contain realized outcomes without assumptions")
+    return path
+
+
+def _validateOperatingReplayStepContract(
+    episode: OperatingModelReplayEpisode,
+    path: ScenarioPath,
+) -> int:
+    pathSet = episode.realizedPathSet
+    audit = pathSet.audit
+    horizon = len(path.steps)
+    if horizon < 1 or audit.horizon != horizon:
+        raise WorldModelTournamentError("operating replay driver horizon is invalid")
+    if path.frequency != audit.frequency or path.stepSpan != audit.stepSpan:
+        raise WorldModelTournamentError("operating replay driver step contract drifted")
+    if path.frequency != episode.inputs.stepFrequency or path.stepSpan != episode.inputs.stepSpan:
+        raise WorldModelTournamentError("operating replay input and driver step contracts differ")
+    factorIds = {factor.variableId for factor in pathSet.factorSpecs}
+    if not factorIds or len(factorIds) != len(pathSet.factorSpecs):
+        raise WorldModelTournamentError("operating replay factor contracts are incomplete")
+    if any(set(step) != factorIds for step in path.steps):
+        raise WorldModelTournamentError("operating replay driver factor coverage drifted")
+    return horizon
+
+
+def _validateOperatingReplayOutcomes(
+    episode: OperatingModelReplayEpisode,
+    spec: WorldModelTournamentSpec,
+    horizon: int,
+) -> None:
+    if len(episode.actualByStep) != horizon or len(episode.observedPolicy.actionsByStep) != horizon:
+        raise WorldModelTournamentError("operating replay path, policy, and actual horizon must match")
+    if episode.observedPolicy.policyFn is not None:
+        raise WorldModelTournamentError("operating replay observed policy must be a fixed action record")
+    for step in episode.actualByStep:
+        if not set(spec.metrics) <= set(step):
+            raise WorldModelTournamentError("operating replay actual step is missing tournament metrics")
+        for metric in spec.metrics:
+            _tournamentFinite(step[metric], f"actual {episode.episodeId} {metric}")
+
+
+def _validateOperatingReplayShape(
+    episode: OperatingModelReplayEpisode,
+    spec: WorldModelTournamentSpec,
+) -> None:
+    path = _validateOperatingRealizedPath(episode)
+    horizon = _validateOperatingReplayStepContract(episode, path)
+    _validateOperatingReplayOutcomes(episode, spec, horizon)
+
+
+def _validateOperatingCoefficientCandidate(
+    candidate: OperatingTransmissionCandidate,
+    episode: OperatingModelReplayEpisode,
+) -> None:
+    from dartlab.simulate.scenarioComposition import (
+        OperatingScenarioCase,
+        ScenarioCompositionError,
+        validateScenarioCoefficientBindings,
+    )
+
+    case = OperatingScenarioCase(
+        caseId=f"replay:{episode.episodeId}:{candidate.modelId}",
+        label=f"{candidate.modelId} at {episode.originAsOf}",
+        pathSet=episode.realizedPathSet,
+        exposures=candidate.exposures,
+        baselines=episode.baselines,
+        refs=candidate.refs,
+        coefficientBindings=candidate.coefficientBindings,
+        admissionVerifier=candidate.admissionVerifier,
+    )
+    try:
+        validateScenarioCoefficientBindings(case)
+    except ScenarioCompositionError as error:
+        raise WorldModelTournamentError(f"operating coefficient candidate is invalid: {error}") from error
+
+
+def _validateOperatingModelTournamentInputs(
+    candidates: tuple[OperatingTransmissionCandidate, ...],
+    episodes: tuple[OperatingModelReplayEpisode, ...],
+    spec: WorldModelTournamentSpec,
+) -> None:
+    _validateWorldModelTournamentSpec(spec)
+    _validateTournamentCandidateIdentity(candidates, spec)
+    for candidate in candidates:
+        _validateOperatingCandidate(candidate)
+    if not episodes:
+        raise WorldModelTournamentError("operating model tournament needs replay episodes")
+    episodeIds = tuple(episode.episodeId for episode in episodes)
+    origins = tuple(episode.originAsOf for episode in episodes)
+    if len(set(episodeIds)) != len(episodeIds) or len(set(origins)) != len(origins):
+        raise WorldModelTournamentError("operating replay episode ids and origins must be unique")
+    evaluationKnowledge = _tournamentDateText(spec.evaluationKnowledgeAsOf, "evaluationKnowledgeAsOf")
+    for episode in episodes:
+        _validateOperatingReplayShape(episode, spec)
+        _validateOperatingReplayTiming(episode, evaluationKnowledge)
+        for candidate in candidates:
+            _validateOperatingCoefficientCandidate(candidate, episode)
 
 
 def _validateWorldReplayTiming(
@@ -566,6 +824,30 @@ def _worldModelMeanLoss(records: list[dict]) -> tuple[float, int]:
     return sum(float(record["lossSum"]) for record in records) / count, count
 
 
+def _tournamentCandidateVersion(candidate: WorldModel | OperatingTransmissionCandidate) -> str:
+    return candidate.version if isinstance(candidate, WorldModel) else candidate.modelVersion
+
+
+def _tournamentStepLosses(
+    predictedSteps,
+    actualByStep: tuple[Mapping[str, float], ...],
+    spec: WorldModelTournamentSpec,
+) -> tuple[float, ...]:
+    try:
+        return tuple(
+            sum(
+                ((float(predicted.after[metric]) - float(actual[metric])) / float(spec.metricScales[metric])) ** 2
+                for metric in spec.metrics
+            )
+            / len(spec.metrics)
+            for predicted, actual in zip(predictedSteps, actualByStep, strict=True)
+        )
+    except KeyError as error:
+        raise WorldModelTournamentError(
+            f"tournament metric is not produced by the executable: {error.args[0]}"
+        ) from error
+
+
 def _worldModelTournamentRawScores(
     candidates: tuple[WorldModel, ...],
     episodes: tuple[WorldModelReplayEpisode, ...],
@@ -584,14 +866,7 @@ def _worldModelTournamentRawScores(
             if len(run.traces) != 1:
                 raise WorldModelTournamentError("replay run must retain exactly one trace")
             trace = run.traces[0]
-            stepLosses = tuple(
-                sum(
-                    ((float(predicted.after[metric]) - float(actual[metric])) / float(spec.metricScales[metric])) ** 2
-                    for metric in spec.metrics
-                )
-                / len(spec.metrics)
-                for predicted, actual in zip(trace.steps, episode.actualByStep, strict=True)
-            )
+            stepLosses = _tournamentStepLosses(trace.steps, episode.actualByStep, spec)
             raw.append(
                 {
                     "modelId": model.modelId,
@@ -609,8 +884,85 @@ def _worldModelTournamentRawScores(
     return raw
 
 
+def _operatingModelTournamentRawScores(
+    candidates: tuple[OperatingTransmissionCandidate, ...],
+    episodes: tuple[OperatingModelReplayEpisode, ...],
+    spec: WorldModelTournamentSpec,
+    *,
+    debtLimit: float,
+    maxFinancing: float,
+    maxInvestment: float,
+) -> list[dict]:
+    from dartlab.simulate.driverPaths import driverFactorsToOperatingSpecs
+    from dartlab.simulate.operatingBridge import bridgeOperatingPath
+    from dartlab.simulate.operatingWorld import runOperatingStrategies
+
+    raw: list[dict] = []
+    for candidate in candidates:
+        candidateHash = canonicalPayloadHash(_operatingTransmissionCandidatePayload(candidate))
+        for episode in episodes:
+            path = episode.realizedPathSet.paths[0]
+            bridged = bridgeOperatingPath(
+                path,
+                candidate.exposures,
+                factorSpecs=driverFactorsToOperatingSpecs(episode.realizedPathSet.factorSpecs),
+                baselines=episode.baselines,
+                compiledState=episode.compiledState,
+                statePrimitives=episode.statePrimitives,
+                stateRef=episode.stateRef,
+                admissionVerifier=candidate.admissionVerifier,
+                pathId=f"replay:{episode.episodeId}:{candidate.modelId}",
+            )
+            run = runOperatingStrategies(
+                episode.inputs,
+                (bridged.path,),
+                (episode.observedPolicy,),
+                debtLimit=debtLimit,
+                maxFinancing=maxFinancing,
+                maxInvestment=maxInvestment,
+            )
+            if len(run.traces) != 1:
+                raise WorldModelTournamentError("operating replay run must retain exactly one trace")
+            trace = run.traces[0]
+            stepLosses = _tournamentStepLosses(trace.steps, episode.actualByStep, spec)
+            compositeRunHash = canonicalPayloadHash(
+                {
+                    "runHash": run.runHash,
+                    "bridgeHash": bridged.audit.bridgeHash,
+                    "candidateHash": candidateHash,
+                }
+            )
+            compositeResultHash = canonicalPayloadHash(
+                {
+                    "resultHash": run.resultHash,
+                    "bridgeHash": bridged.audit.bridgeHash,
+                }
+            )
+            compositeExecutableHash = canonicalPayloadHash(
+                {
+                    "worldExecutableHash": run.executableHash,
+                    "transmissionCandidateHash": candidateHash,
+                }
+            )
+            raw.append(
+                {
+                    "modelId": candidate.modelId,
+                    "modelVersion": candidate.modelVersion,
+                    "episodeId": episode.episodeId,
+                    "regime": episode.regime,
+                    "lossSum": sum(stepLosses) * len(spec.metrics),
+                    "observationCount": len(stepLosses) * len(spec.metrics),
+                    "stepLosses": stepLosses,
+                    "runHash": compositeRunHash,
+                    "resultHash": compositeResultHash,
+                    "executableHash": compositeExecutableHash,
+                }
+            )
+    return raw
+
+
 def _worldModelTournamentCandidates(
-    candidates: tuple[WorldModel, ...],
+    candidates: tuple[WorldModel | OperatingTransmissionCandidate, ...],
     raw: list[dict],
     spec: WorldModelTournamentSpec,
 ) -> tuple[WorldModelTournamentCandidate, ...]:
@@ -623,7 +975,7 @@ def _worldModelTournamentCandidates(
         drafts.append(
             {
                 "modelId": model.modelId,
-                "modelVersion": model.version,
+                "modelVersion": _tournamentCandidateVersion(model),
                 "loss": loss,
                 "baselineLoss": baselineLoss,
                 "skillVsBaseline": _worldModelTournamentSkill(loss, baselineLoss),
@@ -676,7 +1028,7 @@ def _worldModelOriginSlices(
 
 
 def _worldModelHorizonSlices(
-    candidates: tuple[WorldModel, ...],
+    candidates: tuple[WorldModel | OperatingTransmissionCandidate, ...],
     raw: list[dict],
     spec: WorldModelTournamentSpec,
 ) -> list[WorldModelSliceScore]:
@@ -699,7 +1051,7 @@ def _worldModelHorizonSlices(
             slices.append(
                 WorldModelSliceScore(
                     modelId=model.modelId,
-                    modelVersion=model.version,
+                    modelVersion=_tournamentCandidateVersion(model),
                     scope="horizon",
                     scopeKey=str(step + 1),
                     loss=loss,
@@ -712,8 +1064,8 @@ def _worldModelHorizonSlices(
 
 
 def _worldModelRegimeSlices(
-    candidates: tuple[WorldModel, ...],
-    episodes: tuple[WorldModelReplayEpisode, ...],
+    candidates: tuple[WorldModel | OperatingTransmissionCandidate, ...],
+    episodes: tuple[WorldModelReplayEpisode | OperatingModelReplayEpisode, ...],
     raw: list[dict],
     spec: WorldModelTournamentSpec,
 ) -> list[WorldModelSliceScore]:
@@ -731,7 +1083,7 @@ def _worldModelRegimeSlices(
             slices.append(
                 WorldModelSliceScore(
                     modelId=model.modelId,
-                    modelVersion=model.version,
+                    modelVersion=_tournamentCandidateVersion(model),
                     scope="regime",
                     scopeKey=regime,
                     loss=loss,
@@ -744,8 +1096,8 @@ def _worldModelRegimeSlices(
 
 
 def _worldModelTournamentSlices(
-    candidates: tuple[WorldModel, ...],
-    episodes: tuple[WorldModelReplayEpisode, ...],
+    candidates: tuple[WorldModel | OperatingTransmissionCandidate, ...],
+    episodes: tuple[WorldModelReplayEpisode | OperatingModelReplayEpisode, ...],
     raw: list[dict],
     spec: WorldModelTournamentSpec,
 ) -> tuple[WorldModelSliceScore, ...]:
@@ -757,6 +1109,66 @@ def _worldModelTournamentSlices(
     scopeOrder = {"origin": 0, "horizon": 1, "regime": 2}
     slices.sort(key=lambda row: (scopeOrder[row.scope], row.scopeKey, row.modelId))
     return tuple(slices)
+
+
+def _buildWorldModelTournamentReport(
+    candidates: tuple[WorldModel | OperatingTransmissionCandidate, ...],
+    episodes: tuple[WorldModelReplayEpisode | OperatingModelReplayEpisode, ...],
+    episodeHashes: tuple[str, ...],
+    raw: list[dict],
+    spec: WorldModelTournamentSpec,
+    *,
+    evaluationMode: str,
+    baseWarnings: tuple[str, ...],
+) -> WorldModelTournamentReport:
+    candidateRows = _worldModelTournamentCandidates(candidates, raw, spec)
+    slices = _worldModelTournamentSlices(candidates, episodes, raw, spec)
+    best = candidateRows[0]
+    warnings = list(baseWarnings)
+    selectionStatus = "eligible"
+    selectedModelId = best.modelId
+    if len(episodes) < spec.minOrigins:
+        selectionStatus = "insufficientEvidence"
+        selectedModelId = ""
+        warnings.append("minimumOriginCountNotMet")
+    elif best.modelId == spec.baselineModelId:
+        selectionStatus = "baselineBest"
+        selectedModelId = ""
+        warnings.append("baselineRemainsBest")
+    elif best.skillVsBaseline <= spec.minSkillVsBaseline:
+        selectionStatus = "noSkillGain"
+        selectedModelId = ""
+        warnings.append("minimumSkillGainNotMet")
+    warningTuple = tuple(warnings)
+    reportPayload = {
+        "schemaVersion": "world-model-tournament-v1",
+        "evaluationMode": evaluationMode,
+        "status": "documented",
+        "admissionStatus": "notAdmitted",
+        "selectionStatus": selectionStatus,
+        "selectedModelId": selectedModelId,
+        "baselineModelId": spec.baselineModelId,
+        "episodeHashes": episodeHashes,
+        "spec": spec,
+        "candidates": candidateRows,
+        "slices": slices,
+        "warnings": warningTuple,
+    }
+    return WorldModelTournamentReport(
+        tournamentHash=canonicalPayloadHash(reportPayload),
+        evaluationMode=evaluationMode,
+        status="documented",
+        admissionStatus="notAdmitted",
+        selectionStatus=selectionStatus,
+        selectedModelId=selectedModelId,
+        baselineModelId=spec.baselineModelId,
+        episodeCount=len(episodes),
+        modelCount=len(candidates),
+        episodeHashes=episodeHashes,
+        candidates=candidateRows,
+        slices=slices,
+        warnings=warningTuple,
+    )
 
 
 def runWorldModelTournament(
@@ -785,56 +1197,83 @@ def runWorldModelTournament(
     episodeTuple = tuple(sorted(episodes, key=lambda episode: (episode.originAsOf, episode.episodeId)))
     _validateWorldModelTournamentInputs(candidateTuple, episodeTuple, spec)
     raw = _worldModelTournamentRawScores(candidateTuple, episodeTuple, spec)
-    candidateRows = _worldModelTournamentCandidates(candidateTuple, raw, spec)
-    slices = _worldModelTournamentSlices(candidateTuple, episodeTuple, raw, spec)
-    best = candidateRows[0]
-    warnings = [
-        "realizedPathIsConditionalLawTest",
-        "comparisonWeightsAreNotProbabilities",
-        "modelTournamentNotAdmission",
-    ]
-    selectionStatus = "eligible"
-    selectedModelId = best.modelId
-    if len(episodeTuple) < spec.minOrigins:
-        selectionStatus = "insufficientEvidence"
-        selectedModelId = ""
-        warnings.append("minimumOriginCountNotMet")
-    elif best.modelId == spec.baselineModelId:
-        selectionStatus = "baselineBest"
-        selectedModelId = ""
-        warnings.append("baselineRemainsBest")
-    elif best.skillVsBaseline <= spec.minSkillVsBaseline:
-        selectionStatus = "noSkillGain"
-        selectedModelId = ""
-        warnings.append("minimumSkillGainNotMet")
-    warningTuple = tuple(warnings)
     episodeHashes = tuple(canonicalPayloadHash(_worldReplayEpisodePayload(episode)) for episode in episodeTuple)
-    reportPayload = {
-        "schemaVersion": "world-model-tournament-v1",
-        "evaluationMode": WORLD_TOURNAMENT_EVALUATION_MODE,
-        "status": "documented",
-        "admissionStatus": "notAdmitted",
-        "selectionStatus": selectionStatus,
-        "selectedModelId": selectedModelId,
-        "baselineModelId": spec.baselineModelId,
-        "episodeHashes": episodeHashes,
-        "spec": spec,
-        "candidates": candidateRows,
-        "slices": slices,
-        "warnings": warningTuple,
-    }
-    return WorldModelTournamentReport(
-        tournamentHash=canonicalPayloadHash(reportPayload),
+    return _buildWorldModelTournamentReport(
+        candidateTuple,
+        episodeTuple,
+        episodeHashes,
+        raw,
+        spec,
         evaluationMode=WORLD_TOURNAMENT_EVALUATION_MODE,
-        status="documented",
-        admissionStatus="notAdmitted",
-        selectionStatus=selectionStatus,
-        selectedModelId=selectedModelId,
-        baselineModelId=spec.baselineModelId,
-        episodeCount=len(episodeTuple),
-        modelCount=len(candidateTuple),
-        episodeHashes=episodeHashes,
-        candidates=candidateRows,
-        slices=slices,
-        warnings=warningTuple,
+        baseWarnings=(
+            "realizedPathIsConditionalLawTest",
+            "comparisonWeightsAreNotProbabilities",
+            "modelTournamentNotAdmission",
+        ),
+    )
+
+
+def runOperatingModelTournament(
+    candidates: tuple[OperatingTransmissionCandidate, ...],
+    episodes: tuple[OperatingModelReplayEpisode, ...],
+    spec: WorldModelTournamentSpec,
+    *,
+    debtLimit: float,
+    maxFinancing: float,
+    maxInvestment: float,
+) -> WorldModelTournamentReport:
+    """Run admitted transmission candidates from realized drivers through the operating world.
+
+    Args:
+        candidates: Two or more signed coefficient candidates that bridge driver factors
+            into operating shocks.
+        episodes: PIT operating states, one realized driver path, observed actions, and
+            actual step outcomes for each historical origin.
+        spec: Shared metrics, scales, baseline id, sample floor, and comparison rule.
+        debtLimit: Hard operating-world debt constraint.
+        maxFinancing: Per-step borrow and repay bound.
+        maxInvestment: Per-step capacity investment bound.
+
+    Returns:
+        Documented tournament report with overall, origin, horizon, and regime scores.
+
+    Raises:
+        WorldModelTournamentError: If PIT timing, realized path status, coefficient
+            admission, factor meaning, horizon, or scoring contracts drift.
+
+    Example:
+        ``report = runOperatingModelTournament(candidates, episodes, spec, debtLimit=1000, maxFinancing=100, maxInvestment=100)``
+    """
+
+    limits = (
+        _tournamentFinite(debtLimit, "debtLimit"),
+        _tournamentFinite(maxFinancing, "maxFinancing"),
+        _tournamentFinite(maxInvestment, "maxInvestment"),
+    )
+    if any(value < 0 for value in limits):
+        raise WorldModelTournamentError("operating tournament limits must be nonnegative")
+    candidateTuple = tuple(sorted(candidates, key=lambda candidate: candidate.modelId))
+    episodeTuple = tuple(sorted(episodes, key=lambda episode: (episode.originAsOf, episode.episodeId)))
+    _validateOperatingModelTournamentInputs(candidateTuple, episodeTuple, spec)
+    raw = _operatingModelTournamentRawScores(
+        candidateTuple,
+        episodeTuple,
+        spec,
+        debtLimit=limits[0],
+        maxFinancing=limits[1],
+        maxInvestment=limits[2],
+    )
+    episodeHashes = tuple(canonicalPayloadHash(_operatingReplayEpisodePayload(episode)) for episode in episodeTuple)
+    return _buildWorldModelTournamentReport(
+        candidateTuple,
+        episodeTuple,
+        episodeHashes,
+        raw,
+        spec,
+        evaluationMode=OPERATING_MODEL_TOURNAMENT_EVALUATION_MODE,
+        baseWarnings=(
+            "realizedDriverPathIsRetrospectiveModelTest",
+            "transmissionComparisonWeightsAreNotProbabilities",
+            "modelTournamentNotAdmission",
+        ),
     )

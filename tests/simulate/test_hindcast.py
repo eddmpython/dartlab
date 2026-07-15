@@ -11,12 +11,33 @@ Covers:
 from __future__ import annotations
 
 from dataclasses import replace
+from types import SimpleNamespace
 
 import numpy as np
 import polars as pl
 import pytest
 
 from dartlab.simulate import hindcast as hc
+from dartlab.simulate.driverPaths import (
+    DriverFactorSpec,
+    DriverPathAudit,
+    DriverPathSet,
+    driverFactorsToOperatingSpecs,
+)
+from dartlab.simulate.operatingBridge import (
+    OperatingShockBaseline,
+    OperatingTransmissionExposure,
+    bridgeOperatingPath,
+    sourceFactorContractHash,
+)
+from dartlab.simulate.operatingWorld import (
+    OperatingPrimitive,
+    buildOperatingStrategy,
+    operatingInputsFromPrimitives,
+    runOperatingStrategies,
+)
+from dartlab.simulate.scenarioComposition import ScenarioCoefficientBinding, scenarioCoefficientExposureContractHash
+from dartlab.simulate.vintage import canonicalPayloadHash
 from dartlab.simulate.world import (
     LawSpec,
     ScenarioPath,
@@ -303,3 +324,299 @@ def testWorldModelTournamentBindsOutcomesAndRejectsUnsafeReplay():
     assert insufficient.selectionStatus == "insufficientEvidence"
     assert insufficient.selectedModelId == ""
     assert insufficient.admissionStatus == "notAdmitted"
+
+
+class _OperatingTournamentVerifier:
+    def __init__(self, receipts):
+        self.receipts = receipts
+
+    def verify(self, receiptId, *, expectedSubjectHash, expectedKind):
+        assert expectedKind == "driverCoefficient"
+        receipt = self.receipts[receiptId]
+        assert receipt.subjectHash == expectedSubjectHash
+        return receipt
+
+
+def _operatingTournamentCandidate(
+    modelId: str,
+    coefficient: float,
+    token: str,
+) -> hc.OperatingTransmissionCandidate:
+    receiptId = token * 64
+    subjectHash = chr(ord(token) + 1) * 64
+    parentReceiptIds = (chr(ord(token) + 2) * 64,)
+    factorHash = sourceFactorContractHash(
+        variableId="demandFactor",
+        unit="ratioChangePerStep",
+        frequency="quarter",
+        timing="innovation",
+        transformId="simple-return-v1",
+    )
+    exposure = OperatingTransmissionExposure(
+        exposureId=f"{modelId}-demand",
+        sourceVariableId="demandFactor",
+        targetShock="demandChange",
+        coefficient=coefficient,
+        coefficientUnit="ratioChangePerStep/ratioChangePerStep",
+        evidenceKind="measuredAssociation",
+        sourceRef=f"driverCoefficientAdmission:{receiptId}",
+        sourceFrequency="quarter",
+        sourceTiming="innovation",
+        sourceTransformId="simple-return-v1",
+        sourceFactorContractHash=factorHash,
+    )
+    binding = ScenarioCoefficientBinding(
+        admissionReceiptId=receiptId,
+        subjectHash=subjectHash,
+        ruleHash="1" * 64,
+        ruleId="driver-coefficient",
+        ruleVersion="1",
+        parentReceiptIds=parentReceiptIds,
+        sourceVariableIds=("demandFactor",),
+        targetShock="demandChange",
+        frequency="quarter",
+        stepSpan=1,
+        maxAdmittedStep=2,
+        coefficientVectorHash="2" * 64,
+        featureSpecHash="3" * 64,
+        designFrameHash="4" * 64,
+        exposureContractHash=scenarioCoefficientExposureContractHash((exposure,)),
+    )
+    receipt = SimpleNamespace(
+        receiptId=receiptId,
+        subjectHash=subjectHash,
+        artifactHash=subjectHash,
+        kind="driverCoefficient",
+        status="admitted",
+        ruleId=binding.ruleId,
+        ruleVersion=binding.ruleVersion,
+        ruleHash=binding.ruleHash,
+        parentReceiptIds=parentReceiptIds,
+        frequency="quarter",
+        stepSpan=1,
+        maxAdmittedStep=2,
+    )
+    verifier = _OperatingTournamentVerifier({receiptId: receipt})
+    return hc.OperatingTransmissionCandidate(
+        modelId=modelId,
+        modelVersion="1",
+        exposures=(exposure,),
+        coefficientBindings=(binding,),
+        admissionVerifier=verifier,
+        refs=(f"candidate:{modelId}",),
+    )
+
+
+def _operatingTournamentInputs(origin: str, knowledgeAsOf: str):
+    primitives = (
+        OperatingPrimitive("price", 10.0, "currencyPerUnit", "observed", "filing://price"),
+        OperatingPrimitive("demandVolume", 100.0, "units", "observed", "filing://demand"),
+        OperatingPrimitive("unitCost", 4.0, "currencyPerUnit", "observed", "filing://unit-cost"),
+        OperatingPrimitive("fixedCost", 20.0, "currency", "observed", "filing://fixed-cost"),
+        OperatingPrimitive("capacityUnits", 1000.0, "units", "observed", "filing://capacity"),
+        OperatingPrimitive("cash", 1000.0, "currency", "observed", "filing://cash"),
+        OperatingPrimitive("debt", 0.0, "currency", "observed", "filing://debt"),
+    )
+    raw = operatingInputsFromPrimitives(
+        primitives,
+        asOf=origin,
+        priceElasticity=1.0,
+        capacityUnitsPerCurrency=1.0,
+    )
+    return replace(raw, knowledgeAsOf=knowledgeAsOf, decisionAsOf=origin)
+
+
+def _operatingTournamentPathSet(
+    origin: str,
+    outcome: str,
+    values: tuple[float, ...],
+) -> DriverPathSet:
+    factor = DriverFactorSpec(
+        "demandFactor",
+        "ratioChangePerStep",
+        "quarter",
+        "innovation",
+        "simple-return-v1",
+    )
+    path = ScenarioPath(
+        pathId=f"realized-{origin}",
+        steps=tuple({"demandFactor": value} for value in values),
+        refs=(f"provider://driver/{origin}",),
+        frequency="quarter",
+        stepSpan=1,
+        validationStatus="retrospectiveOnly",
+        knowledgeAsOf=outcome,
+        historyStatus="realizedOutcome",
+    )
+    digest = canonicalPayloadHash({"origin": origin, "outcome": outcome, "steps": path.steps})
+    audit = DriverPathAudit(
+        pathSetHash=digest,
+        inputHash=digest,
+        historyInputHash=digest,
+        assumptionHash="",
+        assumptionStepHashes=(),
+        basePathSetHash=digest,
+        basePathAdmissionReceiptId="",
+        basePathAdmissionContentHash="",
+        basePathAdmissionSubjectHash="",
+        basePathValidationStatus="retrospectiveOnly",
+        basePathMaxAdmittedStep=0,
+        overlayHash="",
+        registryHash=canonicalPayloadHash({"registry": "actual-driver"}),
+        factorContractHash=canonicalPayloadHash((factor,)),
+        generatorVersion="actual-driver-replay-v1",
+        knowledgeAsOf=outcome,
+        frequency="quarter",
+        stepSpan=1,
+        horizon=len(values),
+        pathCount=1,
+        blockLength=1,
+        seed=0,
+        driverCardIds=("actual-driver",),
+        assumptionDescriptors=(),
+        validationStatus="retrospectiveOnly",
+        observedHistoryStatus="realizedOutcome",
+        historyStatus="realizedOutcome",
+        sourceRefs=(f"provider://driver/{origin}",),
+        warnings=(),
+    )
+    return DriverPathSet((path,), (factor,), audit)
+
+
+def _operatingTournamentBaselines():
+    return tuple(
+        OperatingShockBaseline(target, 0.0, unit, "observed", f"provider://baseline/{target}")
+        for target, unit in (
+            ("marketPriceChange", "ratioChangePerStep"),
+            ("demandChange", "ratioChangePerStep"),
+            ("unitCostChange", "ratioChangePerStep"),
+            ("fixedCostChange", "ratioChangePerStep"),
+            ("capacityChange", "ratioChangePerStep"),
+            ("debtRate", "effectiveRatePerStep"),
+        )
+    )
+
+
+def _operatingTournamentEpisode(
+    index: int,
+    truth: hc.OperatingTransmissionCandidate,
+) -> hc.OperatingModelReplayEpisode:
+    origin = f"202{index}0101"
+    outcome = f"202{index}1001"
+    inputs = _operatingTournamentInputs(origin, f"202{index - 1}1231")
+    pathSet = _operatingTournamentPathSet(origin, outcome, (0.10, -0.05))
+    policy = buildOperatingStrategy(
+        f"observed-{index}",
+        priceChange=(0.0, 0.0),
+        capacityInvestment=(0.0, 0.0),
+        borrow=(0.0, 0.0),
+        repay=(0.0, 0.0),
+        refs=(f"provider://policy/{index}",),
+    )
+    bridged = bridgeOperatingPath(
+        pathSet.paths[0],
+        truth.exposures,
+        factorSpecs=driverFactorsToOperatingSpecs(pathSet.factorSpecs),
+        baselines=_operatingTournamentBaselines(),
+    )
+    run = runOperatingStrategies(
+        inputs,
+        (bridged.path,),
+        (policy,),
+        debtLimit=5000.0,
+        maxFinancing=1000.0,
+        maxInvestment=1000.0,
+    )
+    actual = tuple(
+        {metric: float(step.after[metric]) for metric in ("operatingProfit", "cash")} for step in run.traces[0].steps
+    )
+    return hc.OperatingModelReplayEpisode(
+        episodeId=f"operating-{index}",
+        originAsOf=origin,
+        outcomeAvailableAt=outcome,
+        regime="calm" if index % 2 else "stress",
+        inputs=inputs,
+        realizedPathSet=pathSet,
+        baselines=_operatingTournamentBaselines(),
+        observedPolicy=policy,
+        actualByStep=actual,
+    )
+
+
+def _operatingTournamentSpec() -> hc.WorldModelTournamentSpec:
+    return hc.WorldModelTournamentSpec(
+        evaluationKnowledgeAsOf="20251231",
+        metrics=("operatingProfit", "cash"),
+        metricScales={"operatingProfit": 100.0, "cash": 1000.0},
+        baselineModelId="baseline",
+        minOrigins=2,
+    )
+
+
+def _runOperatingTournament(candidates, episodes):
+    return hc.runOperatingModelTournament(
+        candidates,
+        episodes,
+        _operatingTournamentSpec(),
+        debtLimit=5000.0,
+        maxFinancing=1000.0,
+        maxInvestment=1000.0,
+    )
+
+
+def testOperatingModelTournamentRunsAdmittedTransmissionBeforeWorldEvolution():
+    baseline = _operatingTournamentCandidate("baseline", 0.5, "a")
+    measured = _operatingTournamentCandidate("measured", 1.5, "d")
+    episodes = (_operatingTournamentEpisode(1, measured), _operatingTournamentEpisode(2, measured))
+
+    report = _runOperatingTournament((baseline, measured), episodes)
+    repeated = _runOperatingTournament((measured, baseline), tuple(reversed(episodes)))
+    rows = {row.modelId: row for row in report.candidates}
+
+    assert report == repeated
+    assert report.evaluationMode == "conditionalOnRealizedDriverPath"
+    assert report.selectedModelId == "measured"
+    assert rows["measured"].loss == pytest.approx(0.0)
+    assert rows["measured"].comparisonWeight > rows["baseline"].comparisonWeight
+    assert report.status == "documented"
+    assert report.admissionStatus == "notAdmitted"
+    assert "transmissionComparisonWeightsAreNotProbabilities" in report.warnings
+
+
+def testOperatingModelTournamentRejectsUnverifiedOrAssumptionLaunderedCandidate():
+    baseline = _operatingTournamentCandidate("baseline", 0.5, "a")
+    measured = _operatingTournamentCandidate("measured", 1.5, "d")
+    episodes = (_operatingTournamentEpisode(1, measured), _operatingTournamentEpisode(2, measured))
+
+    with pytest.raises(hc.WorldModelTournamentError, match="admission verifier"):
+        _runOperatingTournament((replace(baseline, admissionVerifier=None), measured), episodes)
+
+    launderedPathSet = replace(
+        episodes[0].realizedPathSet,
+        audit=replace(
+            episodes[0].realizedPathSet.audit,
+            assumptionHash=canonicalPayloadHash({"assumption": "hidden"}),
+        ),
+    )
+    with pytest.raises(hc.WorldModelTournamentError, match="without assumptions"):
+        _runOperatingTournament(
+            (baseline, measured),
+            (replace(episodes[0], realizedPathSet=launderedPathSet), episodes[1]),
+        )
+
+    driftedExposure = replace(measured.exposures[0], coefficient=1.6)
+    with pytest.raises(hc.WorldModelTournamentError, match="exposure contract mismatch"):
+        _runOperatingTournament((baseline, replace(measured, exposures=(driftedExposure,))), episodes)
+
+    changedMeasured = _operatingTournamentCandidate("measured", 1.4, "d")
+    changed = _runOperatingTournament((baseline, changedMeasured), episodes)
+    original = _runOperatingTournament((baseline, measured), episodes)
+    assert changed.tournamentHash != original.tournamentHash
+    assert changed.candidates != original.candidates
+
+    lookaheadInputs = replace(episodes[0].inputs, knowledgeAsOf="20210102")
+    with pytest.raises(hc.WorldModelTournamentError, match="not PIT"):
+        _runOperatingTournament(
+            (baseline, measured),
+            (replace(episodes[0], inputs=lookaheadInputs), episodes[1]),
+        )
