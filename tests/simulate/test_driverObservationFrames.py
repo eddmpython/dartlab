@@ -85,14 +85,21 @@ from dartlab.simulate.operatingWorld import (
     operatingInputsFromPrimitives,
 )
 from dartlab.simulate.scenarioComposition import (
+    CONDITIONAL_PLAY_SCENARIO_DECK_KIND,
+    CONDITIONAL_PLAY_SCENARIO_DECK_RULE_HASH,
+    CONDITIONAL_PLAY_SCENARIO_DECK_RULE_ID,
+    CONDITIONAL_PLAY_SCENARIO_DECK_RULE_VERSION,
     ConditionalPlayControlPatch,
     OperatingScenarioCase,
     ScenarioCompositionError,
+    bindConditionalPlayScenarioDeckReceipt,
     buildScenarioCoefficientBindingFromVerifiedMultivariableAdmission,
     compareOneCompanyTwoScenarioStrategies,
     conditionalPlayControlExecutionSubjectHash,
     conditionalPlayControlSurfaceSubjectHash,
     conditionalPlayReplaySubjectHash,
+    conditionalPlayScenarioDeckArtifact,
+    conditionalPlayScenarioDeckParentReceiptIds,
     conditionalPlayScenarioDeckSubjectHash,
     executeConditionalPlayControlPatch,
     executeConditionalPlayScenarioDeck,
@@ -1060,6 +1067,49 @@ def _issueMultivariableCoefficientAdmission(context, report):
         maxAdmittedStep=report.maxAdmittedStep,
         status="admitted",
         issuedAt="20220201T000000Z",
+        trustedIssuers=trusted,
+    )
+
+
+def _issueConditionalPlayScenarioDeckReceipt(
+    context,
+    deck,
+    *,
+    kind: str = CONDITIONAL_PLAY_SCENARIO_DECK_KIND,
+    status: str = "documented",
+    revisionPolicy: str = "explicitAssumption",
+    coverage: str = "synthetic",
+    maxAdmittedStep: int = 0,
+    parentReceiptIds: tuple[str, ...] | None = None,
+):
+    database, artifacts, privateBytes, trusted, _verifier = context
+    subject = conditionalPlayScenarioDeckSubjectHash(deck)
+    artifactHash = putAdmissionArtifact(artifacts, conditionalPlayScenarioDeckArtifact(deck))
+    assert artifactHash == subject
+    return issueAdmissionReceipt(
+        database,
+        artifacts,
+        privateKey=privateBytes,
+        kind=kind,
+        subjectHash=subject,
+        artifactHash=artifactHash,
+        parentReceiptIds=conditionalPlayScenarioDeckParentReceiptIds(deck)
+        if parentReceiptIds is None
+        else tuple(parentReceiptIds),
+        ruleId=CONDITIONAL_PLAY_SCENARIO_DECK_RULE_ID,
+        ruleVersion=CONDITIONAL_PLAY_SCENARIO_DECK_RULE_VERSION,
+        ruleHash=CONDITIONAL_PLAY_SCENARIO_DECK_RULE_HASH,
+        issuerId="provider-issuer",
+        issuerKeyId="provider-key",
+        issuerExecutableHash="d" * 64,
+        knowledgeAsOf="20250101",
+        revisionPolicy=revisionPolicy,
+        coverage=coverage,
+        frequency="scenario",
+        stepSpan=1,
+        maxAdmittedStep=maxAdmittedStep,
+        status=status,
+        issuedAt="20250102T000000Z",
         trustedIssuers=trusted,
     )
 
@@ -4685,10 +4735,53 @@ def testConditionalPlayScenarioDeckExecutesMultiPlaneStages(tmp_path) -> None:
     assert finalExperiment.strategySetHash != experiment.strategySetHash
     assert finalExperiment.simulationSpecHash != experiment.simulationSpecHash
     assert finalExperiment.resultSetHash != experiment.resultSetHash
+    assert "conditionalPlayScenarioDeckDocumentedOnly" in deck.blockedReasons
+    assert "scenarioDeckReceiptNotPolicyCertificate" in deck.blockedReasons
+    assert "conditionalExperimentNotPolicyRecommendation" in deck.blockedReasons
+    assert "scoreLeaderNotRecommendation" in deck.blockedReasons
     assert all(ledger.initialStateAdmissionReceiptId for ledger in experiment.caseLedgers)
     assert all(not ledger.initialStateAdmissionReceiptId for ledger in finalExperiment.caseLedgers)
     assert finalExperiment.recommendation is None
     assert finalExperiment.decisionStatus == "conditionalOnly"
+    deckParentReceiptIds = conditionalPlayScenarioDeckParentReceiptIds(deck)
+    assert deckParentReceiptIds
+    assert set(experiment.providerObservationBatchReceiptIds).issubset(set(deckParentReceiptIds))
+    assert set(experiment.providerObservationBatchSourceReceiptIds).issubset(set(deckParentReceiptIds))
+    assert set(experiment.priceSourceLegReceiptIds).issubset(set(deckParentReceiptIds))
+    assert set(experiment.derivedReturnReceiptIds).issubset(set(deckParentReceiptIds))
+    assert all(
+        receiptId in deckParentReceiptIds
+        for ledger in experiment.caseLedgers
+        for receiptId in ledger.coefficientAdmissionReceiptIds
+    )
+    deckReceipt = _issueConditionalPlayScenarioDeckReceipt(context, deck)
+    sealedDeck = bindConditionalPlayScenarioDeckReceipt(deck, deckReceipt.receiptId, context[4])
+    assert sealedDeck.deckHash == deck.deckHash
+    assert conditionalPlayScenarioDeckSubjectHash(sealedDeck) == deck.deckHash
+    assert sealedDeck.deckReceiptSubjectHash == deck.deckHash
+    assert sealedDeck.deckReceiptId == deckReceipt.receiptId
+    assert sealedDeck.deckReceiptKind == CONDITIONAL_PLAY_SCENARIO_DECK_KIND
+    assert sealedDeck.deckReceiptStatus == "documented"
+    assert sealedDeck.deckReceiptParentReceiptIds == deckParentReceiptIds
+    missingParentReceipt = _issueConditionalPlayScenarioDeckReceipt(context, deck, parentReceiptIds=())
+    with pytest.raises(ScenarioCompositionError, match="deck receipt parent mismatch"):
+        bindConditionalPlayScenarioDeckReceipt(deck, missingParentReceipt.receiptId, context[4])
+    wrongKindReceipt = _issueConditionalPlayScenarioDeckReceipt(context, deck, kind="policyEvaluation")
+    with pytest.raises(ScenarioCompositionError, match="deck receipt verification failed"):
+        bindConditionalPlayScenarioDeckReceipt(deck, wrongKindReceipt.receiptId, context[4])
+    admittedLikeReceipt = _issueConditionalPlayScenarioDeckReceipt(
+        context,
+        deck,
+        status="admitted",
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        maxAdmittedStep=1,
+    )
+    with pytest.raises(ScenarioCompositionError, match="deck receipt contract mismatch"):
+        bindConditionalPlayScenarioDeckReceipt(deck, admittedLikeReceipt.receiptId, context[4])
+    tamperedDeck = replace(deck, strategyDeltaRows=())
+    with pytest.raises(ScenarioCompositionError, match="deck hash mismatch"):
+        bindConditionalPlayScenarioDeckReceipt(tamperedDeck, deckReceipt.receiptId, context[4])
     repeated = executeConditionalPlayScenarioDeck(
         "005930",
         inputs,

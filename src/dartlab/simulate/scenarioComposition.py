@@ -177,6 +177,18 @@ CONDITIONAL_PLAY_CONTROL_EXECUTION_VERSION = "conditional-play-control-execution
 CONDITIONAL_PLAY_CONTROL_EXECUTION_KIND = "conditionalPlayControlExecution"
 CONDITIONAL_PLAY_SCENARIO_DECK_VERSION = "conditional-play-scenario-deck-v1"
 CONDITIONAL_PLAY_SCENARIO_DECK_KIND = "conditionalPlayScenarioDeck"
+CONDITIONAL_PLAY_SCENARIO_DECK_RULE_ID = "conditional-play-scenario-deck"
+CONDITIONAL_PLAY_SCENARIO_DECK_RULE_VERSION = "1"
+CONDITIONAL_PLAY_SCENARIO_DECK_RULE_HASH = canonicalPayloadHash(
+    {
+        "schemaVersion": CONDITIONAL_PLAY_SCENARIO_DECK_VERSION,
+        "kind": CONDITIONAL_PLAY_SCENARIO_DECK_KIND,
+        "status": "documented",
+        "ruleId": CONDITIONAL_PLAY_SCENARIO_DECK_RULE_ID,
+        "ruleVersion": CONDITIONAL_PLAY_SCENARIO_DECK_RULE_VERSION,
+        "recommendationStatus": "disabled",
+    }
+)
 CONDITIONAL_PLAY_SCENARIO_DECK_PLANE_ORDER = (
     "currentState",
     "conditionFactor",
@@ -1589,6 +1601,8 @@ class ConditionalPlayScenarioDeckReport:
     baseSourceSealHash: str
     finalSourceSealHash: str
     stageChainHash: str
+    baseLineageParentReceiptIds: tuple[str, ...]
+    finalLineageParentReceiptIds: tuple[str, ...]
     changedControlIds: tuple[str, ...]
     semanticPlanes: tuple[str, ...]
     stageExecutionHashes: tuple[str, ...]
@@ -1599,8 +1613,19 @@ class ConditionalPlayScenarioDeckReport:
     finalExperiment: "ConditionalScenarioExperiment"
     blockedReasons: tuple[str, ...]
     warnings: tuple[str, ...]
+    baseExperimentReceiptId: str = ""
+    baseExperimentReceiptSubjectHash: str = ""
+    finalExperimentReceiptId: str = ""
+    finalExperimentReceiptSubjectHash: str = ""
+    deckReceiptSubjectHash: str = ""
+    deckReceiptId: str = ""
+    deckReceiptKind: str = ""
+    deckReceiptStatus: str = ""
+    deckReceiptParentReceiptIds: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "baseLineageParentReceiptIds", tuple(self.baseLineageParentReceiptIds))
+        object.__setattr__(self, "finalLineageParentReceiptIds", tuple(self.finalLineageParentReceiptIds))
         object.__setattr__(self, "changedControlIds", tuple(self.changedControlIds))
         object.__setattr__(self, "semanticPlanes", tuple(self.semanticPlanes))
         object.__setattr__(self, "stageExecutionHashes", tuple(self.stageExecutionHashes))
@@ -1610,6 +1635,7 @@ class ConditionalPlayScenarioDeckReport:
         object.__setattr__(self, "stageReports", tuple(self.stageReports))
         object.__setattr__(self, "blockedReasons", tuple(self.blockedReasons))
         object.__setattr__(self, "warnings", tuple(self.warnings))
+        object.__setattr__(self, "deckReceiptParentReceiptIds", tuple(self.deckReceiptParentReceiptIds))
 
 
 @dataclass(frozen=True)
@@ -4631,12 +4657,73 @@ def _caseLeaderDeltaRows(
     return tuple(rows)
 
 
+def _conditionalPlayDeckLineageParentReceiptIds(
+    experiment: "ConditionalScenarioExperiment",
+) -> tuple[str, ...]:
+    coefficientReceipts = tuple(
+        receiptId for ledger in experiment.caseLedgers for receiptId in ledger.coefficientAdmissionReceiptIds
+    )
+    return _dedupe(
+        (
+            experiment.experimentReceiptId,
+            *_experimentInitialStateAdmissionReceiptIds(experiment),
+            *_experimentScenarioPathPackageReceiptIds(experiment),
+            *coefficientReceipts,
+            *experiment.providerObservationBatchReceiptIds,
+            *experiment.providerObservationBatchSourceReceiptIds,
+            *experiment.priceSourceLegReceiptIds,
+            *experiment.derivedReturnReceiptIds,
+        )
+    )
+
+
+def conditionalPlayScenarioDeckParentReceiptIds(
+    report: ConditionalPlayScenarioDeckReport,
+) -> tuple[str, ...]:
+    """Return receipt parents required to document a conditional play scenario deck."""
+
+    stageParents = tuple(
+        receiptId
+        for stage in report.stageReports
+        for receiptId in _conditionalPlayDeckLineageParentReceiptIds(stage.patchedExperiment)
+    )
+    return _dedupe(
+        (
+            report.baseExperimentReceiptId,
+            report.finalExperimentReceiptId,
+            report.finalExperiment.experimentReceiptId,
+            *report.baseLineageParentReceiptIds,
+            *report.finalLineageParentReceiptIds,
+            *stageParents,
+            *_conditionalPlayDeckLineageParentReceiptIds(report.finalExperiment),
+        )
+    )
+
+
+def _conditionalPlayScenarioDeckBlockedReasons(
+    experiment: "ConditionalScenarioExperiment",
+) -> tuple[str, ...]:
+    reasons = [
+        "conditionalPlayScenarioDeckDocumentedOnly",
+        "scenarioDeckReceiptNotPolicyCertificate",
+    ]
+    reasons.extend(experiment.blockedReasons)
+    if experiment.recommendation is None:
+        reasons.append("automaticRecommendationDisabled")
+    if any(ledger.scoreLeaderStrategies for ledger in experiment.caseLedgers):
+        reasons.append("scoreLeaderNotRecommendation")
+    return _dedupe(tuple(reasons))
+
+
 def conditionalPlayScenarioDeckPayload(report: ConditionalPlayScenarioDeckReport) -> dict:
     """Build canonical payload for a multi-plane conditional scenario deck."""
 
+    parentReceiptIds = conditionalPlayScenarioDeckParentReceiptIds(report)
     return {
         "schemaVersion": report.schemaVersion,
         "kind": report.kind,
+        "status": "documented",
+        "recommendationStatus": "disabled",
         "semanticPlaneOrder": CONDITIONAL_PLAY_SCENARIO_DECK_PLANE_ORDER,
         "baseExperimentHash": report.baseExperimentHash,
         "finalExperimentHash": report.finalExperimentHash,
@@ -4653,6 +4740,24 @@ def conditionalPlayScenarioDeckPayload(report: ConditionalPlayScenarioDeckReport
         "baseSourceSealHash": report.baseSourceSealHash,
         "finalSourceSealHash": report.finalSourceSealHash,
         "sourceSealPreserved": report.baseSourceSealHash == report.finalSourceSealHash,
+        "experimentReceipts": {
+            "baseExperimentReceiptId": report.baseExperimentReceiptId,
+            "baseExperimentReceiptSubjectHash": report.baseExperimentReceiptSubjectHash,
+            "finalExperimentReceiptId": report.finalExperimentReceiptId or report.finalExperiment.experimentReceiptId,
+            "finalExperimentReceiptSubjectHash": (
+                report.finalExperimentReceiptSubjectHash or report.finalExperiment.experimentReceiptSubjectHash
+            ),
+        },
+        "lineageParents": {
+            "baseLineageParentReceiptIds": report.baseLineageParentReceiptIds,
+            "finalLineageParentReceiptIds": report.finalLineageParentReceiptIds,
+            "parentReceiptIds": parentReceiptIds,
+        },
+        "rules": {
+            "ruleId": CONDITIONAL_PLAY_SCENARIO_DECK_RULE_ID,
+            "ruleVersion": CONDITIONAL_PLAY_SCENARIO_DECK_RULE_VERSION,
+            "ruleHash": CONDITIONAL_PLAY_SCENARIO_DECK_RULE_HASH,
+        },
         "stageChainHash": report.stageChainHash,
         "changedControlIds": report.changedControlIds,
         "semanticPlanes": report.semanticPlanes,
@@ -4667,6 +4772,7 @@ def conditionalPlayScenarioDeckPayload(report: ConditionalPlayScenarioDeckReport
         "caseLeaderDeltaHash": canonicalPayloadHash(report.caseLeaderDeltaRows),
         "blockedReasons": report.blockedReasons,
         "warnings": report.warnings,
+        "parentReceiptIds": parentReceiptIds,
     }
 
 
@@ -4674,6 +4780,114 @@ def conditionalPlayScenarioDeckSubjectHash(report: ConditionalPlayScenarioDeckRe
     """Return the content hash for a multi-plane conditional scenario deck."""
 
     return canonicalPayloadHash(conditionalPlayScenarioDeckPayload(report))
+
+
+def conditionalPlayScenarioDeckArtifact(report: ConditionalPlayScenarioDeckReport) -> bytes:
+    """Return canonical bytes for a documented multi-plane conditional scenario deck."""
+
+    return canonicalPayloadBytes(conditionalPlayScenarioDeckPayload(report))
+
+
+def validateConditionalPlayScenarioDeckReceipt(
+    report: ConditionalPlayScenarioDeckReport,
+    receiptId: str,
+    admissionVerifier: AdmissionVerifier,
+) -> "AdmissionReceipt":
+    """Verify a documented conditional play scenario deck receipt."""
+
+    if not _validDigest(receiptId):
+        raise ScenarioCompositionError("conditional play scenario deck receipt identifier is invalid")
+    subjectHash = conditionalPlayScenarioDeckSubjectHash(report)
+    expectedParents = conditionalPlayScenarioDeckParentReceiptIds(report)
+    if not expectedParents:
+        raise ScenarioCompositionError("conditional play scenario deck receipt needs lineage parents")
+    if report.deckHash != subjectHash:
+        raise ScenarioCompositionError("conditional play scenario deck hash mismatch")
+    if (
+        report.schemaVersion != CONDITIONAL_PLAY_SCENARIO_DECK_VERSION
+        or report.kind != CONDITIONAL_PLAY_SCENARIO_DECK_KIND
+    ):
+        raise ScenarioCompositionError("conditional play scenario deck contract mismatch")
+    if report.baseSourceSealHash != report.finalSourceSealHash:
+        raise ScenarioCompositionError("conditional play scenario deck source seal mismatch")
+    if report.finalExperimentHash != report.finalExperiment.experimentHash:
+        raise ScenarioCompositionError("conditional play scenario deck final experiment mismatch")
+    if report.stageExecutionHashes != tuple(stage.executionHash for stage in report.stageReports):
+        raise ScenarioCompositionError("conditional play scenario deck stage hash mismatch")
+    if report.semanticPlanes != tuple(stage.semanticPlane for stage in report.stageReports):
+        raise ScenarioCompositionError("conditional play scenario deck stage plane mismatch")
+    if (
+        report.finalExperiment.recommendation is not None
+        or report.finalExperiment.decisionStatus != "conditionalOnly"
+        or report.finalExperiment.recommendationCeiling != "conditionalOnly"
+    ):
+        raise ScenarioCompositionError("conditional play scenario deck cannot carry recommendation")
+    if any(ledger.policyEvaluationCertificateId for ledger in report.finalExperiment.caseLedgers):
+        raise ScenarioCompositionError("conditional play scenario deck cannot carry policy certificate ids")
+    if any(ledger.pathAdmissionReceiptId for ledger in report.finalExperiment.caseLedgers):
+        raise ScenarioCompositionError("conditional play scenario deck cannot carry path admission ids")
+    requiredReasons = {
+        "conditionalPlayScenarioDeckDocumentedOnly",
+        "scenarioDeckReceiptNotPolicyCertificate",
+        "conditionalExperimentNotPolicyRecommendation",
+        "scoreLeaderNotRecommendation",
+    }
+    if not requiredReasons.issubset(set(report.blockedReasons)):
+        raise ScenarioCompositionError("conditional play scenario deck needs recommendation blockers")
+    try:
+        from dartlab.simulate.admissionRegistry import artifactPath
+
+        receipt = admissionVerifier.verify(
+            receiptId,
+            expectedSubjectHash=subjectHash,
+            expectedKind=CONDITIONAL_PLAY_SCENARIO_DECK_KIND,
+        )
+        parentReceipts = tuple(admissionVerifier.verify(parentId) for parentId in receipt.parentReceiptIds)
+        artifactBytes = artifactPath(admissionVerifier.artifactRoot, subjectHash).read_bytes()
+    except (OSError, RuntimeError, ValueError) as error:
+        raise ScenarioCompositionError(
+            f"conditional play scenario deck receipt verification failed: {error}"
+        ) from error
+    if artifactBytes != conditionalPlayScenarioDeckArtifact(report):
+        raise ScenarioCompositionError("conditional play scenario deck artifact content mismatch")
+    if receipt.parentReceiptIds != expectedParents:
+        raise ScenarioCompositionError("conditional play scenario deck receipt parent mismatch")
+    if (
+        receipt.status != "documented"
+        or receipt.artifactHash != subjectHash
+        or receipt.ruleId != CONDITIONAL_PLAY_SCENARIO_DECK_RULE_ID
+        or receipt.ruleVersion != CONDITIONAL_PLAY_SCENARIO_DECK_RULE_VERSION
+        or receipt.ruleHash != CONDITIONAL_PLAY_SCENARIO_DECK_RULE_HASH
+        or receipt.revisionPolicy != "explicitAssumption"
+        or receipt.coverage != "synthetic"
+        or receipt.frequency != "scenario"
+        or receipt.stepSpan != 1
+        or receipt.maxAdmittedStep != 0
+    ):
+        raise ScenarioCompositionError("conditional play scenario deck receipt contract mismatch")
+    if any(parent.kind in {"policyEvaluation", "policyEpisodeBatch"} for parent in parentReceipts):
+        raise ScenarioCompositionError("conditional play scenario deck cannot depend on policy evaluation receipts")
+    if any(parent.status == "policyAdmitted" for parent in parentReceipts):
+        raise ScenarioCompositionError("conditional play scenario deck cannot inherit policy admitted parents")
+    return receipt
+
+
+def bindConditionalPlayScenarioDeckReceipt(
+    report: ConditionalPlayScenarioDeckReport,
+    receiptId: str,
+    admissionVerifier: AdmissionVerifier,
+) -> ConditionalPlayScenarioDeckReport:
+    """Attach a verified documented receipt to a conditional play scenario deck."""
+
+    receipt = validateConditionalPlayScenarioDeckReceipt(report, receiptId, admissionVerifier)
+    return replace(
+        report,
+        deckReceiptSubjectHash=conditionalPlayScenarioDeckSubjectHash(report),
+        deckReceiptId=receipt.receiptId,
+        deckReceiptKind=receipt.kind,
+        deckReceiptStatus=receipt.status,
+        deckReceiptParentReceiptIds=receipt.parentReceiptIds,
+    )
 
 
 def executeConditionalPlayScenarioDeck(
@@ -4807,6 +5021,8 @@ def executeConditionalPlayScenarioDeck(
         baseSourceSealHash=_deckSourceSealHash(baseExperiment),
         finalSourceSealHash=_deckSourceSealHash(stageExperiment),
         stageChainHash=stageChainHash,
+        baseLineageParentReceiptIds=_conditionalPlayDeckLineageParentReceiptIds(baseExperiment),
+        finalLineageParentReceiptIds=_conditionalPlayDeckLineageParentReceiptIds(stageExperiment),
         changedControlIds=tuple(controlId for stage in stageReports for controlId in stage.changedControlIds),
         semanticPlanes=semanticPlanes,
         stageExecutionHashes=stageExecutionHashes,
@@ -4815,8 +5031,12 @@ def executeConditionalPlayScenarioDeck(
         caseLeaderDeltaRows=caseLeaderDeltaRows,
         stageReports=tuple(stageReports),
         finalExperiment=stageExperiment,
-        blockedReasons=stageExperiment.blockedReasons,
+        blockedReasons=_conditionalPlayScenarioDeckBlockedReasons(stageExperiment),
         warnings=stageExperiment.warnings,
+        baseExperimentReceiptId=baseExperiment.experimentReceiptId,
+        baseExperimentReceiptSubjectHash=baseExperiment.experimentReceiptSubjectHash,
+        finalExperimentReceiptId=stageExperiment.experimentReceiptId,
+        finalExperimentReceiptSubjectHash=stageExperiment.experimentReceiptSubjectHash,
     )
     return replace(draft, deckHash=conditionalPlayScenarioDeckSubjectHash(draft))
 
