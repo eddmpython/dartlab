@@ -84,7 +84,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | U0-O01 | revision과 시간을 보존하는가 | multi-filing fixture | history 손실 0, look-ahead 0 | assertion schema 수정 | 대기 |
 | U0-P01 | bounded scene이 결정론적인가 | atlas, industry, company | bounds 100%, hash 일치 100% | priority/truncation 수정 | 대기 |
 | U0-S01 | source 전체가 재현 가능한가 | map, search, panel, finance, catalog | source version 또는 unreplayable 100% | exact replay 문구 금지 | 완료, capability unreplayable |
-| U0-P02 | public field가 승인됐는가 | source와 field registry | public mark receipt 100%, false accept 0 | source lane 차단 | 대기 |
+| U0-P02 | public field가 승인됐는가 | source와 field registry | public mark receipt 100%, false accept 0 | source lane 차단 | 완료, live 0/10 차단 |
 | U0-L01 | lens가 환경에서 실제 가능한가 | 6 output archetype | unavailable 오표시 0, missing 보존 | 해당 lens 숨김 | 대기 |
 | U0-W01 | 변화를 look-ahead 없이 재생하는가 | DART 30사, cutoff 2개 | revision 100%, look-ahead 0, evidence 95% | 변화 우주 범위 축소 | 대기 |
 | U0-W02 | recipe를 반증 workflow로 만드는가 | tested recipe 10개 | 단계, 근거, falsifier 유실 0 | Kill-Chain 보류 | 대기 |
@@ -184,6 +184,28 @@ hfRepoCommit   c0260a60859f0ba5a30d452a7c05791d79e9bd1d
 
 판정: source version 또는 명시적 unreplayable coverage 100%, 순서와 관측시각 및 OS path 독립 hash, source version 변화 감지, legacy buildId only exact replay 차단을 검증했다. U0-S01 계약은 완료다. 다만 capability catalog는 226개 canonical output hash를 식별할 수 있을 뿐 historical payload를 복원할 immutable manifest가 없으므로 live SourceSnapshotSet의 `exactReplayReady`는 false다. 이 결손을 숨긴 public exact replay 문구는 금지한다. receipt 결손 10개는 U0-P02 입력이다.
 
+## 4.3 U0-P02 결과
+
+명령:
+
+```powershell
+uv run python -X utf8 tests/_attempts/dartlabUniverse/policy/redistributionReceiptProbe.py
+```
+
+결과:
+
+```text
+sourceCount                    10
+reviewedReceiptCount            0
+validPublicReceiptCount         0
+missingReceiptCount            10
+publicReady                 false
+syntheticRegression          12/12 PASS
+negativeFalseAccept             0
+```
+
+판정: canonical receiptId, allowed 및 prohibited field, attribution, policyVersion, reviewer, review window, decision과 upstream lineage admission을 구현했다. unknown, localOnly, blocked, expired, metadataOnly 확대, prohibited field와 mixed upstream hard negative의 false accept는 0이었다. 그러나 live reviewed receipt는 0/10이고 current map field의 upstream receipt lineage도 없으므로 publicReady는 false다. HF README의 CC BY 4.0 표기와 OpenDART 활용 안내는 검토 evidence candidate이며 receipt 자체가 아니다. 운영자 review 전 live source를 public으로 자동 승격하지 않는다.
+
 ## 5. existing attempts 재사용 지도
 
 | 기존 category | 이미 증명한 것 | Universe 사용 | 중복 금지 |
@@ -244,6 +266,7 @@ gold는 자동 생성 candidate를 그대로 승인하지 않는다. 사람이 �
 - [x] demo 결과를 module docstring과 README에 기록
 - [x] U0-T02 factual admission 필드 전수 계수
 - [x] U0-S01 source version, canonical hash, legacy replay guard
+- [x] U0-P02 receipt integrity, expiry, field와 upstream admission guard
 - [ ] identity, evidence, ontology, projection 모듈화
 - [ ] special-case와 중복 rule 제거
 - [ ] camelCase와 SSOT 검토
@@ -268,10 +291,12 @@ gold는 자동 생성 candidate를 그대로 승인하지 않는다. 사람이 �
 - `compileChangeReplay`
 - `compileWorkflowProjection`
 - `validateVisualGrammar`
+- `buildRedistributionReceipt`
 - `validateRedistributionReceipt`
+- `assessPublicProjection`
 - `inspectLensAvailability`
 
-현재 `inspectGraphTruth`, `inspectFactualAdmission`, `buildSourceSnapshotSet`, `assessReplayRequest`가 attempt에 존재한다. 나머지는 해당 attempt가 시작될 때 이름과 책임을 확정한다. README의 예정 파일명은 production API 약속이 아니다.
+현재 `inspectGraphTruth`, `inspectFactualAdmission`, `buildSourceSnapshotSet`, `assessReplayRequest`, `buildRedistributionReceipt`, `validateRedistributionReceipt`, `assessPublicProjection`이 attempt에 존재한다. 나머지는 해당 attempt가 시작될 때 이름과 책임을 확정한다. README의 예정 파일명은 production API 약속이 아니다.
 
 ## 테스트
 

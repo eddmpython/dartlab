@@ -69,6 +69,46 @@ REMOTE_SOURCE_PATHS = (
 )
 
 
+def currentSourceIds() -> tuple[str, ...]:
+    """현재 U0 SourceSnapshotSet이 요구하는 source ID를 반환한다.
+
+    Capabilities
+        network 없이 remote artifact와 local catalog source ID를 한 목록으로 만든다.
+
+    Args
+        없음.
+
+    Returns
+        sourceId로 정렬한 tuple.
+
+    Example
+        ``currentSourceIds()``
+
+    Guide
+        policy와 lens attempt가 source 이름을 별도로 복제하지 않게 한다.
+
+    When
+        U0-S01 source set과 후속 gate의 coverage를 맞출 때 호출한다.
+
+    How
+        REMOTE_SOURCE_PATHS의 ID에 capability와 recipe catalog ID를 더한다.
+
+    Requires
+        없음.
+
+    See Also
+        :func:`inspectLiveSourceSnapshotSet`.
+
+    AIContext
+        AI 역할: 후속 attempt의 source census drift를 막는다.
+
+    Raises
+        고정 상수만 사용하므로 예외를 발생시키지 않는다.
+    """
+
+    return tuple(sorted([sourceId for sourceId, _, _ in REMOTE_SOURCE_PATHS] + ["capabilityCatalog", "recipeCatalog"]))
+
+
 @dataclass(frozen=True)
 class SnapshotSource:
     """한 source의 재현 identity와 진단 metadata를 보존한다.

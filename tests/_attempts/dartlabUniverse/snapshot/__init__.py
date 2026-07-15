@@ -6,6 +6,7 @@ from .sourceSnapshotSetProbe import (
     SourceSnapshotSet,
     assessReplayRequest,
     buildSourceSnapshotSet,
+    currentSourceIds,
     inspectLiveSourceSnapshotSet,
 )
 
@@ -15,5 +16,6 @@ __all__ = [
     "SourceSnapshotSet",
     "assessReplayRequest",
     "buildSourceSnapshotSet",
+    "currentSourceIds",
     "inspectLiveSourceSnapshotSet",
 ]

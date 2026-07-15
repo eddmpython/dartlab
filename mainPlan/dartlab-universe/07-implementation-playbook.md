@@ -147,6 +147,8 @@ uv run python -X utf8 tests/_attempts/dartlabUniverse/truth/graphTruthProbe.py
 - unknown 및 localOnly false accept 0
 - 금지 upstream 파생값 public 승격 0
 
+2026-07-15 실행 결과: receipt validation과 upstream admission contract는 synthetic 12건을 통과했고 negative false accept는 0이었다. live U0-S01 source는 reviewed receipt 0/10이라 publicReady false다. HF dataset license 표기만으로 upstream field를 자동 승인하지 않았고 운영자 reviewed receipt와 field lineage 결속 전까지 live source lane을 차단한다. 상세 evidence는 `tests/_attempts/dartlabUniverse/policy/README.md`가 소유한다.
+
 ### U0-L01 LensAvailability probe
 
 목표: 기존 capability output을 public browser에서 실제로 표현 가능한지 환경별로 검증한다.
